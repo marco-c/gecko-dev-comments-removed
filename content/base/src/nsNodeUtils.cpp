@@ -1,39 +1,39 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *         Jonas Sicking <jonas@sicking.cc> (Original Author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsNodeUtils.h"
 #include "nsContentUtils.h"
@@ -54,8 +54,8 @@
 #include "nsXULElement.h"
 #endif
 
-
-
+// This macro expects the ownerDocument of content_ to be in scope as
+// |nsIDocument* doc|
 #define IMPL_MUTATION_NOTIFICATION(func_, content_, params_)      \
   PR_BEGIN_MACRO                                                  \
   nsINode* node = content_;                                       \
@@ -170,9 +170,9 @@ nsNodeUtils::ContentRemoved(nsINode* aContainer,
 void
 nsNodeUtils::ParentChainChanged(nsIContent *aContent)
 {
-  
-  
-  
+  // No need to notify observers on the parents since their parent
+  // chain must have been changed too and so their observers were
+  // notified at that time.
 
   nsINode::nsSlots* slots = aContent->GetExistingSlots();
   if (slots && !slots->mMutationObservers.IsEmpty()) {
@@ -188,7 +188,6 @@ void
 nsNodeUtils::LastRelease(nsINode* aNode)
 {
   nsINode::nsSlots* slots = aNode->GetExistingSlots();
-  nsRefPtr<nsDOMNodeAllocator> allocator = aNode->GetAllocator();
   if (slots) {
     if (!slots->mMutationObservers.IsEmpty()) {
       NS_OBSERVER_ARRAY_NOTIFY_OBSERVERS(slots->mMutationObservers,
@@ -197,28 +196,21 @@ nsNodeUtils::LastRelease(nsINode* aNode)
     }
 
     PtrBits flags = slots->mFlags | NODE_DOESNT_HAVE_SLOTS;
-    delete slots; 
-    NS_ASSERTION(allocator || aNode->IsNodeOfType(nsINode::eDOCUMENT),
-                 "Should have allocator or document!");
-    nsDOMNodeAllocator* slotsAllocator = allocator ?
-      allocator.get() : aNode->mNodeInfo->NodeInfoManager()->NodeAllocator();
-    size_t* sz = reinterpret_cast<size_t*>(slots);
-    slotsAllocator->Free(*sz, static_cast<void*>(slots));
-    NS_RELEASE(slotsAllocator);
+    delete slots;
     aNode->mFlagsOrSlots = flags;
   }
 
-  
-  
+  // Kill properties first since that may run external code, so we want to
+  // be in as complete state as possible at that time.
   if (aNode->IsNodeOfType(nsINode::eDOCUMENT)) {
-    
-    
-    
+    // Delete all properties before tearing down the document. Some of the
+    // properties are bound to nsINode objects and the destructor functions of
+    // the properties may want to use the owner document of the nsINode.
     static_cast<nsIDocument*>(aNode)->PropertyTable()->DeleteAllProperties();
   }
   else if (aNode->HasProperties()) {
-    
-    
+    // Strong reference to the document so that deleting properties can't
+    // delete the document.
     nsCOMPtr<nsIDocument> document = aNode->GetOwnerDoc();
     if (document) {
       document->PropertyTable()->DeleteAllPropertiesFor(aNode);
@@ -243,16 +235,7 @@ nsNodeUtils::LastRelease(nsINode* aNode)
     aNode->UnsetFlags(NODE_HAS_LISTENERMANAGER);
   }
 
-  if (aNode->IsNodeOfType(nsINode::eDOCUMENT)) {
-    delete aNode;
-  } else {
-    NS_ASSERTION(allocator, "Should have allocator here!");
-    delete aNode; 
-    size_t* sz = reinterpret_cast<size_t*>(aNode);
-    allocator->Free(*sz, static_cast<void*>(aNode));
-    nsDOMNodeAllocator* tmpAlloc = allocator;
-    NS_RELEASE(tmpAlloc);
-  }
+  delete aNode;
 }
 
 static nsresult
@@ -264,13 +247,13 @@ SetUserDataProperty(PRUint16 aCategory, nsINode *aNode, nsIAtom *aKey,
                                    aOldValue);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Property table owns it now.
   NS_ADDREF(aValue);
 
   return NS_OK;
 }
 
-
+/* static */
 nsresult
 nsNodeUtils::SetUserData(nsINode *aNode, const nsAString &aKey,
                          nsIVariant *aData, nsIDOMUserDataHandler *aHandler,
@@ -293,7 +276,7 @@ nsNodeUtils::SetUserData(nsINode *aNode, const nsAString &aKey,
     data = aNode->UnsetProperty(DOM_USER_DATA, key);
   }
 
-  
+  // Take over ownership of the old data from the property table.
   nsCOMPtr<nsIVariant> oldData = dont_AddRef(static_cast<nsIVariant*>(data));
 
   if (aData && aHandler) {
@@ -301,7 +284,7 @@ nsNodeUtils::SetUserData(nsINode *aNode, const nsAString &aKey,
     rv = SetUserDataProperty(DOM_USER_DATA_HANDLER, aNode, key, aHandler,
                              getter_AddRefs(oldHandler));
     if (NS_FAILED(rv)) {
-      
+      // We failed to set the handler, remove the data.
       aNode->DeleteProperty(DOM_USER_DATA, key);
 
       return rv;
@@ -316,7 +299,7 @@ nsNodeUtils::SetUserData(nsINode *aNode, const nsAString &aKey,
   return NS_OK;
 }
 
-
+/* static */
 nsresult
 nsNodeUtils::GetUserData(nsINode *aNode, const nsAString &aKey,
                          nsIVariant **aResult)
@@ -356,7 +339,7 @@ CallHandler(void *aObject, nsIAtom *aKey, void *aHandler, void *aData)
                   handlerData->mDest);
 }
 
-
+/* static */
 nsresult
 nsNodeUtils::CallUserDataHandlers(nsCOMArray<nsINode> &aNodesWithProperties,
                                   nsIDocument *aOwnerDocument,
@@ -368,8 +351,8 @@ nsNodeUtils::CallUserDataHandlers(nsCOMArray<nsINode> &aNodesWithProperties,
 
   nsPropertyTable *table = aOwnerDocument->PropertyTable();
 
-  
-  
+  // Keep the document alive, just in case one of the handlers causes it to go
+  // away.
   nsCOMPtr<nsIDocument> ownerDoc = aOwnerDocument;
 
   nsHandlerData handlerData;
@@ -403,7 +386,7 @@ NoteUserData(void *aObject, nsIAtom *aKey, void *aXPCOMChild, void *aData)
   cb->NoteXPCOMChild(static_cast<nsISupports*>(aXPCOMChild));
 }
 
-
+/* static */
 void
 nsNodeUtils::TraverseUserData(nsINode* aNode,
                               nsCycleCollectionTraversalCallback &aCb)
@@ -419,7 +402,7 @@ nsNodeUtils::TraverseUserData(nsINode* aNode,
   table->Enumerate(aNode, DOM_USER_DATA_HANDLER, NoteUserData, &aCb);
 }
 
-
+/* static */
 nsresult
 nsNodeUtils::CloneNodeImpl(nsINode *aNode, PRBool aDeep, nsIDOMNode **aResult)
 {
@@ -473,8 +456,8 @@ AdoptFunc(nsAttrHashKey::KeyType aKey, nsIDOMNode *aData, void* aUserArg)
 
   AdoptFuncData *data = static_cast<AdoptFuncData*>(aUserArg);
 
-  
-  
+  // If we were passed an element we need to clone the attribute nodes and
+  // insert them into the element.
   PRBool clone = data->mElement != nsnull;
   nsCOMPtr<nsIDOMNode> node;
   nsresult rv = nsNodeUtils::CloneAndAdopt(attr, clone, PR_TRUE,
@@ -494,7 +477,7 @@ AdoptFunc(nsAttrHashKey::KeyType aKey, nsIDOMNode *aData, void* aUserArg)
   return NS_SUCCEEDED(rv) ? PL_DHASH_NEXT : PL_DHASH_STOP;
 }
 
-
+/* static */
 nsresult
 nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
                            nsNodeInfoManager *aNewNodeInfoManager,
@@ -512,14 +495,14 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
 
   *aResult = nsnull;
 
-  
-  
-  
+  // First deal with aNode and walk its attributes (and their children). Then,
+  // if aDeep is PR_TRUE, deal with aNode's children (and recurse into their
+  // attributes and children).
 
   nsresult rv;
   nsNodeInfoManager *nodeInfoManager = aNewNodeInfoManager;
 
-  
+  // aNode.
   nsINodeInfo *nodeInfo = aNode->mNodeInfo;
   nsCOMPtr<nsINodeInfo> newNodeInfo;
   if (nodeInfoManager) {
@@ -542,8 +525,8 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (aParent) {
-      
-      
+      // If we're cloning we need to insert the cloned children into the cloned
+      // parent.
       nsCOMPtr<nsIContent> cloneContent = do_QueryInterface(clone, &rv);
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -551,9 +534,9 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
       NS_ENSURE_SUCCESS(rv, rv);
     }
     else if (aDeep && clone->IsNodeOfType(nsINode::eDOCUMENT)) {
-      
-      
-      
+      // After cloning the document itself, we want to clone the children into
+      // the cloned document (somewhat like cloning and importing them into the
+      // cloned document).
       nodeInfoManager = clone->mNodeInfo->NodeInfoManager();
     }
   }
@@ -605,13 +588,13 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
   }
 
   if (elem) {
-    
+    // aNode's attributes.
     const nsDOMAttributeMap *map = elem->GetAttributeMap();
     if (map) {
       nsCOMPtr<nsIDOMElement> element;
       if (aClone) {
-        
-        
+        // If we're cloning we need to insert the cloned attribute nodes into
+        // the cloned element.
         element = do_QueryInterface(clone, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
       }
@@ -624,17 +607,17 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // The DOM spec says to always adopt/clone/import the children of attribute
+  // nodes.
+  // XXX The following block is here because our implementation of attribute
+  //     nodes is broken when it comes to inserting children. Instead of cloning
+  //     their children we force creation of the only child by calling
+  //     GetChildAt(0). We can remove this when
+  //     https://bugzilla.mozilla.org/show_bug.cgi?id=56758 is fixed.
   if (aClone && aNode->IsNodeOfType(nsINode::eATTRIBUTE)) {
     nsCOMPtr<nsINode> attrChildNode = aNode->GetChildAt(0);
-    
-    
+    // We only need to do this if the child node has properties (because we
+    // might need to call a userdata handler).
     if (attrChildNode && attrChildNode->HasProperties()) {
       nsCOMPtr<nsINode> clonedAttrChildNode = clone->GetChildAt(0);
       if (clonedAttrChildNode) {
@@ -644,9 +627,9 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
       }
     }
   }
-  
+  // XXX End of workaround for broken attribute nodes.
   else if (aDeep || aNode->IsNodeOfType(nsINode::eATTRIBUTE)) {
-    
+    // aNode's children.
     PRUint32 i, length = aNode->GetChildCount();
     for (i = 0; i < length; ++i) {
       nsCOMPtr<nsIDOMNode> child;
@@ -657,17 +640,17 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // XXX setting document on some nodes not in a document so XBL will bind
+  // and chrome won't break. Make XBL bind to document-less nodes!
+  // XXXbz Once this is fixed, fix up the asserts in all implementations of
+  // BindToTree to assert what they would like to assert, and fix the
+  // ChangeDocumentFor() call in nsXULElement::BindToTree as well.  Also,
+  // remove the UnbindFromTree call in ~nsXULElement, and add back in the
+  // precondition in nsXULElement::UnbindFromTree and remove the line in
+  // nsXULElement.h that makes nsNodeUtils a friend of nsXULElement.
+  // Note: Make sure to do this witchery _after_ we've done any deep
+  // cloning, so kids of the new node aren't confused about whether they're
+  // in a document.
 #ifdef MOZ_XUL
   if (aClone && !aParent && aNode->IsNodeOfType(nsINode::eXUL)) {
     nsXULElement *xulElem = static_cast<nsXULElement*>(elem);
@@ -690,14 +673,14 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, PRBool aClone, PRBool aDeep,
 }
 
 
-
+/* static */
 void
 nsNodeUtils::UnlinkUserData(nsINode *aNode)
 {
   NS_ASSERTION(aNode->HasProperties(), "Call to UnlinkUserData not needed.");
 
-  
-  
+  // Strong reference to the document so that deleting properties can't
+  // delete the document.
   nsCOMPtr<nsIDocument> document = aNode->GetOwnerDoc();
   if (document) {
     document->PropertyTable()->DeleteAllPropertiesFor(aNode, DOM_USER_DATA);
