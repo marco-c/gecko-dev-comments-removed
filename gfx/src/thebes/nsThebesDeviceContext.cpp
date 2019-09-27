@@ -227,6 +227,7 @@ nsThebesDeviceContext::SetDPI()
 
         
         dpi = 96;
+
 #elif defined(MOZ_WIDGET_QT)
 		
         dpi = 96;
