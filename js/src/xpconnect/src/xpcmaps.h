@@ -1,57 +1,57 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   John Bandhauer <jband@netscape.com> (original author)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-/* Private maps (hashtables). */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef xpcmaps_h___
 #define xpcmaps_h___
 
-// Maps...
 
-// Note that most of the declarations for hash table entries begin with
-// a pointer to something or another. This makes them look enough like
-// the JSDHashEntryStub struct that the default OPs (JS_DHashGetStubOps())
-// just do the right thing for most of our needs.
 
-// no virtuals in the maps - all the common stuff inlined
-// templates could be used to good effect here.
+
+
+
+
+
+
+
 
 class JSContext2XPCContextMap
 {
@@ -101,13 +101,13 @@ public:
 
     ~JSContext2XPCContextMap();
 private:
-    JSContext2XPCContextMap();    // no implementation
+    JSContext2XPCContextMap();    
     JSContext2XPCContextMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/*************************/
+
 
 class JSObject2WrappedJSMap
 {
@@ -157,13 +157,13 @@ public:
 
     ~JSObject2WrappedJSMap();
 private:
-    JSObject2WrappedJSMap();    // no implementation
+    JSObject2WrappedJSMap();    
     JSObject2WrappedJSMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/*************************/
+
 
 class Native2WrappedNativeMap
 {
@@ -213,13 +213,13 @@ public:
 
     ~Native2WrappedNativeMap();
 private:
-    Native2WrappedNativeMap();    // no implementation
+    Native2WrappedNativeMap();    
     Native2WrappedNativeMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/*************************/
+
 
 class IID2WrappedJSClassMap
 {
@@ -270,13 +270,13 @@ public:
 
     ~IID2WrappedJSClassMap();
 private:
-    IID2WrappedJSClassMap();    // no implementation
+    IID2WrappedJSClassMap();    
     IID2WrappedJSClassMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/*************************/
+
 
 class IID2NativeInterfaceMap
 {
@@ -327,13 +327,13 @@ public:
 
     ~IID2NativeInterfaceMap();
 private:
-    IID2NativeInterfaceMap();    // no implementation
+    IID2NativeInterfaceMap();    
     IID2NativeInterfaceMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/*************************/
+
 
 class ClassInfo2NativeSetMap
 {
@@ -381,13 +381,13 @@ public:
 
     ~ClassInfo2NativeSetMap();
 private:
-    ClassInfo2NativeSetMap();    // no implementation
+    ClassInfo2NativeSetMap();    
     ClassInfo2NativeSetMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/*************************/
+
 
 class ClassInfo2WrappedNativeProtoMap
 {
@@ -435,13 +435,13 @@ public:
 
     ~ClassInfo2WrappedNativeProtoMap();
 private:
-    ClassInfo2WrappedNativeProtoMap();    // no implementation
+    ClassInfo2WrappedNativeProtoMap();    
     ClassInfo2WrappedNativeProtoMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/*************************/
+
 
 class NativeSetMap
 {
@@ -503,13 +503,13 @@ public:
 
     ~NativeSetMap();
 private:
-    NativeSetMap();    // no implementation
+    NativeSetMap();    
     NativeSetMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/***************************************************************************/
+
 
 class IID2ThisTranslatorMap
 {
@@ -567,13 +567,13 @@ public:
 
     ~IID2ThisTranslatorMap();
 private:
-    IID2ThisTranslatorMap();    // no implementation
+    IID2ThisTranslatorMap();    
     IID2ThisTranslatorMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/***************************************************************************/
+
 
 class XPCNativeScriptableSharedMap
 {
@@ -604,13 +604,13 @@ public:
 
     ~XPCNativeScriptableSharedMap();
 private:
-    XPCNativeScriptableSharedMap();    // no implementation
+    XPCNativeScriptableSharedMap();    
     XPCNativeScriptableSharedMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-/***************************************************************************/
+
 
 class XPCWrappedNativeProtoMap
 {
@@ -642,7 +642,7 @@ public:
 
     ~XPCWrappedNativeProtoMap();
 private:
-    XPCWrappedNativeProtoMap();    // no implementation
+    XPCWrappedNativeProtoMap();    
     XPCWrappedNativeProtoMap(int size);
 private:
     JSDHashTable *mTable;
@@ -678,10 +678,67 @@ public:
 
     ~XPCNativeWrapperMap();
 private:
-    XPCNativeWrapperMap();    // no implementation
+    XPCNativeWrapperMap();    
     XPCNativeWrapperMap(int size);
 private:
     JSDHashTable *mTable;
 };
 
-#endif /* xpcmaps_h___ */
+class WrappedNative2WrapperMap
+{
+public:
+    struct Entry : public JSDHashEntryHdr
+    {
+        
+        JSObject*         key;
+        JSObject*         value;
+    };
+
+    static WrappedNative2WrapperMap* newMap(int size);
+
+    inline JSObject* Find(JSObject* wrapper)
+    {
+        NS_PRECONDITION(wrapper, "bad param");
+        Entry* entry = (Entry*)
+            JS_DHashTableOperate(mTable, wrapper, JS_DHASH_LOOKUP);
+        if(JS_DHASH_ENTRY_IS_FREE(entry))
+            return nsnull;
+        return entry->value;
+    }
+
+    
+    
+    inline JSObject* Add(JSObject* wrapper, JSObject *obj)
+    {
+        NS_PRECONDITION(wrapper,"bad param");
+        Entry* entry = (Entry*)
+            JS_DHashTableOperate(mTable, wrapper, JS_DHASH_ADD);
+        if(!entry)
+            return nsnull;
+        JSObject *old;
+        if(!entry->key)
+            entry->key = wrapper;
+        old = entry->value;
+        entry->value = obj;
+        return old;
+    }
+
+    inline void Remove(JSObject* wrapper)
+    {
+        NS_PRECONDITION(wrapper,"bad param");
+        JS_DHashTableOperate(mTable, wrapper, JS_DHASH_REMOVE);
+    }
+
+    inline uint32 Count() {return mTable->entryCount;}
+    inline uint32 Enumerate(JSDHashEnumerator f, void *arg)
+        {return JS_DHashTableEnumerate(mTable, f, arg);}
+
+    ~WrappedNative2WrapperMap();
+private:
+    WrappedNative2WrapperMap();    
+    WrappedNative2WrapperMap(int size);
+private:
+    JSDHashTable *mTable;
+};
+
+#endif 
