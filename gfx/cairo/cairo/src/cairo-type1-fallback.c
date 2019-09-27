@@ -1,39 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* cairo - a vector graphics library with display and print output
+ *
+ * Copyright © 2006 Red Hat, Inc
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it either under the terms of the GNU Lesser General Public
+ * License version 2.1 as published by the Free Software Foundation
+ * (the "LGPL") or, at your option, under the terms of the Mozilla
+ * Public License Version 1.1 (the "MPL"). If you do not alter this
+ * notice, a recipient may use your version of this file under either
+ * the MPL or the LGPL.
+ *
+ * You should have received a copy of the LGPL along with this library
+ * in the file COPYING-LGPL-2.1; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * You should have received a copy of the MPL along with this library
+ * in the file COPYING-MPL-1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY
+ * OF ANY KIND, either express or implied. See the LGPL or the MPL for
+ * the specific language governing rights and limitations.
+ *
+ * The Original Code is the cairo graphics library.
+ *
+ * The Initial Developer of the Original Code is Red Hat, Inc.
+ *
+ * Contributor(s):
+ *	Adrian Johnson <ajohnson@redneon.com>
+ */
 
 #include "cairoint.h"
+#include "cairo-type1-private.h"
 #include "cairo-scaled-font-subsets-private.h"
 #include "cairo-path-fixed-private.h"
 #include "cairo-output-stream-private.h"
@@ -116,13 +117,8 @@ fail:
     return CAIRO_STATUS_NO_MEMORY;
 }
 
-
-static const unsigned short encrypt_c1 = 52845, encrypt_c2 = 22719;
-static const unsigned short private_dict_key = 55665;
-static const unsigned short charstring_key = 4330;
-
-
-
+/* Charstring commands. If the high byte is 0 the command is encoded
+ * with a single byte. */
 #define CHARSTRING_sbw        0x0c07
 #define CHARSTRING_rmoveto    0x0015
 #define CHARSTRING_rlineto    0x0005
@@ -130,10 +126,10 @@ static const unsigned short charstring_key = 4330;
 #define CHARSTRING_closepath  0x0009
 #define CHARSTRING_endchar    0x000e
 
-
-
-
-
+/* Before calling this function, the caller must allocate sufficient
+ * space in data (see _cairo_array_grow_by). The maximum number of
+ * bytes that will be used is 2.
+ */
 static void
 charstring_encode_command (cairo_array_t *data, int command)
 {
@@ -146,8 +142,8 @@ charstring_encode_command (cairo_array_t *data, int command)
         *p++ = command >> 8;
     *p++ = command & 0x00ff;
 
-    
-
+    /* Ensure the array doesn't grow, which allows this function to
+     * have no possibility of failure. */
     orig_size = _cairo_array_size (data);
     status = _cairo_array_append_multiple (data, buf, p - buf);
 
@@ -155,10 +151,10 @@ charstring_encode_command (cairo_array_t *data, int command)
     assert (_cairo_array_size (data) == orig_size);
 }
 
-
-
-
-
+/* Before calling this function, the caller must allocate sufficient
+ * space in data (see _cairo_array_grow_by). The maximum number of
+ * bytes that will be used is 5.
+ */
 static void
 charstring_encode_integer (cairo_array_t *data, int i)
 {
@@ -185,8 +181,8 @@ charstring_encode_integer (cairo_array_t *data, int i)
         *p++ = i & 0xff;
     }
 
-    
-
+    /* Ensure the array doesn't grow, which allows this function to
+     * have no possibility of failure. */
     orig_size = _cairo_array_size (data);
     status = _cairo_array_append_multiple (data, buf, p - buf);
 
@@ -301,13 +297,13 @@ charstring_encrypt (cairo_array_t *data)
     unsigned char *d, *end;
     uint16_t c, p, r;
 
-    r = charstring_key;
+    r = CAIRO_TYPE1_CHARSTRING_KEY;
     d = (unsigned char *) _cairo_array_index (data, 0);
     end = d + _cairo_array_num_elements (data);
     while (d < end) {
 	p = *d;
 	c = p ^ (r >> 8);
-	r = (c + r) * encrypt_c1 + encrypt_c2;
+	r = (c + r) * CAIRO_TYPE1_ENCRYPT_C1 + CAIRO_TYPE1_ENCRYPT_C2;
         *d++ = c;
     }
 }
@@ -317,9 +313,9 @@ create_notdef_charstring (cairo_array_t *data)
 {
     cairo_status_t status;
 
-    
-
-
+    /* We're passing constants below, so we know the 0 values will
+     * only use 1 byte each, and the 500 values will use 2 bytes
+     * each. Then 2 more for each of the commands is 10 total. */
     status = _cairo_array_grow_by (data, 10);
     if (status)
         return status;
@@ -327,7 +323,7 @@ create_notdef_charstring (cairo_array_t *data)
     charstring_encode_integer (data, 0);
     charstring_encode_integer (data, 0);
 
-    
+    /* The width and height is arbitrary. */
     charstring_encode_integer (data, 500);
     charstring_encode_integer (data, 500);
     charstring_encode_command (data, CHARSTRING_sbw);
@@ -348,7 +344,7 @@ cairo_type1_font_create_charstring (cairo_type1_font_t *font,
     t1_path_info_t path_info;
     cairo_text_extents_t *metrics;
 
-    
+    /* This call may return CAIRO_INT_STATUS_UNSUPPORTED for bitmap fonts. */
     status = _cairo_scaled_glyph_lookup (font->type1_scaled_font,
 					 glyph_index,
 					 CAIRO_SCALED_GLYPH_INFO_METRICS|
@@ -427,7 +423,7 @@ cairo_type1_font_write_charstrings (cairo_type1_font_t    *font,
 
     for (i = 0; i < font->scaled_font_subset->num_glyphs; i++) {
         _cairo_array_truncate (&data, 0);
-        
+        /* four "random" bytes required by encryption algorithm */
         status = _cairo_array_append_multiple (&data, zeros, 4);
         if (status)
             goto fail;
@@ -445,10 +441,10 @@ cairo_type1_font_write_charstrings (cairo_type1_font_t    *font,
         _cairo_output_stream_printf (encrypted_output, " ND\n");
     }
 
-    
+    /* All type 1 fonts must have a /.notdef charstring */
 
     _cairo_array_truncate (&data, 0);
-    
+    /* four "random" bytes required by encryption algorithm */
     status = _cairo_array_append_multiple (&data, zeros, 4);
     if (status)
         goto fail;
@@ -495,11 +491,11 @@ cairo_type1_font_write_header (cairo_type1_font_t *font,
 				 matrix.xy,
 				 matrix.yy);
 
-    
+    /* We don't know the bbox values until after the charstrings have
+     * been generated.  Reserve some space and fill in the bbox
+     * later. */
 
-
-
-    
+    /* Worst case for four signed ints with spaces between each number */
     font->bbox_max_chars = 50;
 
     _cairo_output_stream_printf (font->output, "/FontBBox {");
@@ -534,7 +530,7 @@ cairo_type1_write_stream_encrypted (void                *closure,
     while (in < end) {
 	p = *in++;
 	c = p ^ (font->eexec_key >> 8);
-	font->eexec_key = (c + font->eexec_key) * encrypt_c1 + encrypt_c2;
+	font->eexec_key = (c + font->eexec_key) * CAIRO_TYPE1_ENCRYPT_C1 + CAIRO_TYPE1_ENCRYPT_C2;
 
 	if (font->hex_encode) {
 	    digits[0] = hex_digits[c >> 4];
@@ -564,7 +560,7 @@ cairo_type1_font_write_private_dict (cairo_type1_font_t *font,
     cairo_int_status_t status;
     cairo_output_stream_t *encrypted_output;
 
-    font->eexec_key = private_dict_key;
+    font->eexec_key = CAIRO_TYPE1_PRIVATE_DICT_KEY;
     font->hex_column = 0;
     encrypted_output = _cairo_output_stream_create (
         cairo_type1_write_stream_encrypted,
@@ -575,9 +571,9 @@ cairo_type1_font_write_private_dict (cairo_type1_font_t *font,
 	goto fail;
     }
 
-    
-
-
+    /* Note: the first four spaces at the start of this private dict
+     * are the four "random" bytes of plaintext required by the
+     * encryption algorithm */
     _cairo_output_stream_printf (encrypted_output,
                                  "    dup /Private 9 dict dup begin\n"
                                  "/RD {string currentfile exch readstring pop}"
@@ -680,8 +676,9 @@ static void
 cairo_type1_font_destroy (cairo_type1_font_t *font)
 {
     free (font->widths);
-    _cairo_array_fini (&font->contents);
     cairo_scaled_font_destroy (font->type1_scaled_font);
+    _cairo_array_fini (&font->contents);
+    _cairo_output_stream_destroy (font->output);
     free (font);
 }
 

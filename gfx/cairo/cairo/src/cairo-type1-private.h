@@ -1,7 +1,6 @@
-/* cairo - a vector graphics library with display and print output
+/* Cairo - a vector graphics library with display and print output
  *
- * Copyright © 2004 Calum Robinson
- * Copyright (C) 2006,2007 Mozilla Corporation
+ * Copyright © 2007 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it either under the terms of the GNU Lesser General Public
@@ -28,47 +27,19 @@
  *
  * The Original Code is the cairo graphics library.
  *
- * The Initial Developer of the Original Code is Calum Robinson
+ * The Initial Developer of the Original Code is Red Hat, Inc.
  *
  * Contributor(s):
- *    Calum Robinson <calumr@mac.com>
- *    Vladimir Vukicevic <vladimir@mozilla.com>
+ *	Adrian Johnson <ajohnson@redneon.com>
  */
 
-#ifndef CAIRO_QUARTZ_PRIVATE_H
-#define CAIRO_QUARTZ_PRIVATE_H
+#ifndef CAIRO_TYPE1_PRIVATE_H
+#define CAIRO_TYPE1_PRIVATE_H
 
-#include <cairoint.h>
+/* Magic constants for the type1 eexec encryption */
+#define CAIRO_TYPE1_ENCRYPT_C1		((unsigned short) 52845)
+#define CAIRO_TYPE1_ENCRYPT_C2		((unsigned short) 22719)
+#define CAIRO_TYPE1_PRIVATE_DICT_KEY	((unsigned short) 55665)
+#define CAIRO_TYPE1_CHARSTRING_KEY	((unsigned short) 4330)
 
-#ifdef CAIRO_HAS_QUARTZ_SURFACE
-#include <cairo-quartz.h>
-
-typedef struct cairo_quartz_surface {
-    cairo_surface_t base;
-
-    void *imageData;
-
-    CGContextRef cgContext;
-    CGAffineTransform cgContextBaseCTM;
-
-    cairo_rectangle_int16_t extents;
-
-    /* These are stored while drawing operations are in place, set up
-     * by quartz_setup_source() and quartz_finish_source()
-     */
-    CGAffineTransform imageTransform;
-    CGImageRef sourceImage;
-    CGShadingRef sourceShading;
-    CGPatternRef sourcePattern;
-} cairo_quartz_surface_t;
-#endif /* CAIRO_HAS_QUARTZ_SURFACE */
-
-#if CAIRO_HAS_ATSUI_FONT
-ATSUStyle
-_cairo_atsui_scaled_font_get_atsu_style (cairo_scaled_font_t *sfont);
-
-ATSUFontID
-_cairo_atsui_scaled_font_get_atsu_font_id (cairo_scaled_font_t *sfont);
-#endif /* CAIRO_HAS_ATSUI_FONT */
-
-#endif /* CAIRO_QUARTZ_PRIVATE_H */
+#endif /* CAIRO_TYPE1_PRIVATE_H */

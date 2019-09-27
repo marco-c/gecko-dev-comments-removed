@@ -1,43 +1,43 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
+/* Cairo - a vector graphics library with display and print output
+ *
+ * Copyright © 2005 Red Hat, Inc.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it either under the terms of the GNU Lesser General Public
+ * License version 2.1 as published by the Free Software Foundation
+ * (the "LGPL") or, at your option, under the terms of the Mozilla
+ * Public License Version 1.1 (the "MPL"). If you do not alter this
+ * notice, a recipient may use your version of this file under either
+ * the MPL or the LGPL.
+ *
+ * You should have received a copy of the LGPL along with this library
+ * in the file COPYING-LGPL-2.1; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * You should have received a copy of the MPL along with this library
+ * in the file COPYING-MPL-1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY
+ * OF ANY KIND, either express or implied. See the LGPL or the MPL for
+ * the specific language governing rights and limitations.
+ *
+ * The Original Code is the cairo graphics library.
+ *
+ * The Initial Developer of the Original Code is Red Hat, Inc.
+ *
+ * Contributor(s):
+ *	Owen Taylor <otaylor@redhat.com>
+ *	Stuart Parmenter <stuart@mozilla.com>
+ *	Vladimir Vukicevic <vladimir@pobox.com>
+ */
 
 #define WIN32_LEAN_AND_MEAN
-
+/* We require Windows 2000 features such as ETO_PDY */
 #if !defined(WINVER) || (WINVER < 0x0500)
 # define WINVER 0x0500
 #endif
@@ -53,7 +53,7 @@
 
 #undef DEBUG_COMPOSITE
 
-
+/* for older SDKs */
 #ifndef SHADEBLENDCAPS
 #define SHADEBLENDCAPS  120
 #endif
@@ -66,15 +66,15 @@
 
 static const cairo_surface_backend_t cairo_win32_surface_backend;
 
-
-
-
-
-
-
-
-
-
+/**
+ * _cairo_win32_print_gdi_error:
+ * @context: context string to display along with the error
+ *
+ * Helper function to dump out a human readable form of the
+ * current error code.
+ *
+ * Return value: A cairo status code for the error code
+ **/
 cairo_status_t
 _cairo_win32_print_gdi_error (const char *context)
 {
@@ -95,10 +95,10 @@ _cairo_win32_print_gdi_error (const char *context)
 	LocalFree (lpMsgBuf);
     }
 
-    
-
-
-
+    /* We should switch off of last_status, but we'd either return
+     * CAIRO_STATUS_NO_MEMORY or CAIRO_STATUS_UNKNOWN_ERROR and there
+     * is no CAIRO_STATUS_UNKNOWN_ERROR.
+     */
 
     return CAIRO_STATUS_NO_MEMORY;
 }
@@ -111,12 +111,12 @@ _cairo_win32_flags_for_dc (HDC dc)
     if (GetDeviceCaps(dc, TECHNOLOGY) == DT_RASDISPLAY) {
 	flags |= CAIRO_WIN32_SURFACE_IS_DISPLAY;
 
-	
-
-
-
-
-
+	/* These will always be possible, but the actual GetDeviceCaps
+	 * calls will return whether they're accelerated or not.
+	 * We may want to use our own (pixman) routines sometimes
+	 * if they're eventually faster, but for now have GDI do
+	 * everything.
+	 */
 	flags |= CAIRO_WIN32_SURFACE_CAN_BITBLT;
 	flags |= CAIRO_WIN32_SURFACE_CAN_ALPHABLEND;
 	flags |= CAIRO_WIN32_SURFACE_CAN_STRETCHBLT;
@@ -158,7 +158,7 @@ _create_dc_and_bitmap (cairo_win32_surface_t *surface,
     } bmi_stack;
     void *bits;
 
-    int num_palette = 0;	
+    int num_palette = 0;	/* Quiet GCC */
     int i;
 
     surface->dc = NULL;
@@ -190,25 +190,25 @@ _create_dc_and_bitmap (cairo_win32_surface_t *surface,
 
     bitmap_info->bmiHeader.biSize = sizeof (BITMAPINFOHEADER);
     bitmap_info->bmiHeader.biWidth = width == 0 ? 1 : width;
-    bitmap_info->bmiHeader.biHeight = height == 0 ? -1 : - height; 
+    bitmap_info->bmiHeader.biHeight = height == 0 ? -1 : - height; /* top-down */
     bitmap_info->bmiHeader.biSizeImage = 0;
-    bitmap_info->bmiHeader.biXPelsPerMeter = PELS_72DPI; 
-    bitmap_info->bmiHeader.biYPelsPerMeter = PELS_72DPI; 
+    bitmap_info->bmiHeader.biXPelsPerMeter = PELS_72DPI; /* unused here */
+    bitmap_info->bmiHeader.biYPelsPerMeter = PELS_72DPI; /* unused here */
     bitmap_info->bmiHeader.biPlanes = 1;
 
     switch (format) {
-    
-
-
-
-
-
-
+    /* We can't create real RGB24 bitmaps because something seems to
+     * break if we do, especially if we don't set up an image
+     * fallback.  It could be a bug with using a 24bpp pixman image
+     * (and creating one with masks).  So treat them like 32bpp.
+     * NOTE: This causes problems when using BitBlt/AlphaBlend/etc!
+     * see end of file.
+     */
     case CAIRO_FORMAT_RGB24:
     case CAIRO_FORMAT_ARGB32:
 	bitmap_info->bmiHeader.biBitCount = 32;
 	bitmap_info->bmiHeader.biCompression = BI_RGB;
-	bitmap_info->bmiHeader.biClrUsed = 0;	
+	bitmap_info->bmiHeader.biClrUsed = 0;	/* unused */
 	bitmap_info->bmiHeader.biClrImportant = 0;
 	break;
 
@@ -271,7 +271,7 @@ _create_dc_and_bitmap (cairo_win32_surface_t *surface,
 	*bits_out = bits;
 
     if (rowstride_out) {
-	
+	/* Windows bitmaps are padded to 32-bit (dword) boundaries */
 	switch (format) {
 	case CAIRO_FORMAT_ARGB32:
 	case CAIRO_FORMAT_RGB24:
@@ -397,13 +397,13 @@ _cairo_win32_surface_create_similar_internal (void	    *abstract_src,
     cairo_format_t format = _cairo_format_from_content (content);
     cairo_win32_surface_t *new_surf;
 
-    
-
+    /* if the parent is a DIB or if we need alpha, then
+     * we have to create a dib */
     if (force_dib || src->is_dib || (content & CAIRO_CONTENT_ALPHA)) {
 	new_surf = (cairo_win32_surface_t*)
 	    _cairo_win32_surface_create_for_dc (src->dc, format, width, height);
     } else {
-	
+	/* otherwise, create a ddb */
 	HBITMAP ddb = CreateCompatibleBitmap (src->dc, width, height);
 	HDC ddb_dc = CreateCompatibleDC (src->dc);
 	HRGN crgn = CreateRectRgn (0, 0, width, height);
@@ -443,7 +443,7 @@ _cairo_win32_surface_finish (void *abstract_surface)
     if (surface->saved_clip)
 	DeleteObject (surface->saved_clip);
 
-    
+    /* If we created the Bitmap and DC, destroy them */
     if (surface->bitmap) {
 	SelectObject (surface->dc, surface->saved_dc_bitmap);
 	DeleteObject (surface->bitmap);
@@ -485,11 +485,11 @@ _cairo_win32_surface_get_subimage (cairo_win32_surface_t  *surface,
     }
 
     if (status) {
-	
-
-
-
-
+	/* If we failed here, most likely the source or dest doesn't
+	 * support BitBlt/AlphaBlend (e.g. a printer).
+	 * You can't reliably get bits from a printer DC, so just fill in
+	 * the surface as white (common case for printing).
+	 */
 
 	RECT r;
 	r.left = r.top = 0;
@@ -646,7 +646,7 @@ typedef struct {
 #pragma pack()
 #endif
 
-
+/* for compatibility with VC++ 6 */
 #ifndef AC_SRC_ALPHA
 #define AC_SRC_ALPHA                0x01
 #endif
@@ -681,17 +681,17 @@ _composite_alpha_blend (cairo_win32_surface_t *dst,
 
     BLENDFUNCTION blend_function;
 
-    
-
-
+    /* Check for AlphaBlend dynamically to allow compiling on
+     * MSVC 6 and use on older windows versions
+     */
     if (!alpha_blend_checked) {
 	OSVERSIONINFO os;
 
 	os.dwOSVersionInfoSize = sizeof (os);
 	GetVersionEx (&os);
 
-	
-
+	/* If running on Win98, disable using AlphaBlend()
+	 * to avoid Win98 AlphaBlend() bug */
 	if (VER_PLATFORM_WIN32_WINDOWS != os.dwPlatformId ||
 	    os.dwMajorVersion != 4 || os.dwMinorVersion != 10)
 	{
@@ -740,7 +740,7 @@ _cairo_win32_surface_composite_inner (cairo_win32_surface_t *src,
 				      cairo_bool_t needs_alpha,
 				      cairo_bool_t needs_scale)
 {
-    
+    /* Then do BitBlt, StretchDIBits, StretchBlt, AlphaBlend, or MaskBlt */
     if (src_image) {
 	if (needs_alpha || needs_scale)
 	    return CAIRO_INT_STATUS_UNSUPPORTED;
@@ -759,18 +759,18 @@ _cairo_win32_surface_composite_inner (cairo_win32_surface_t *src,
 	    bi.bmiHeader.biClrUsed = 0;
 	    bi.bmiHeader.biClrImportant = 0;
 
-	    
-
-
-
-
-
-
+	    /* StretchDIBits is broken with top-down dibs; you need to do some
+	     * special munging to make the coordinate space work (basically,
+	     * need to address everything based on the bottom left, instead of top left,
+	     * and need to tell it to flip the resulting image.
+	     *
+	     * See http://blog.vlad1.com/archives/2006/10/26/134/ and comments.
+	     */
 	    if (!StretchDIBits (dst->dc,
-				
+				/* dst x,y,w,h */
 				dst_r.x, dst_r.y + dst_r.height - 1,
 				dst_r.width, - (int) dst_r.height,
-				
+				/* src x,y,w,h */
 				src_r.x, src_extents.height - src_r.y + 1,
 				src_r.width, - (int) src_r.height,
 				src_image->data,
@@ -780,7 +780,7 @@ _cairo_win32_surface_composite_inner (cairo_win32_surface_t *src,
 		return _cairo_win32_print_gdi_error ("_cairo_win32_surface_composite(StretchDIBits)");
 	}
     } else if (!needs_alpha) {
-	
+	/* BitBlt or StretchBlt? */
 	if (!needs_scale && (dst->flags & CAIRO_WIN32_SURFACE_CAN_BITBLT)) {
 	    if (!BitBlt (dst->dc,
 			 dst_r.x, dst_r.y,
@@ -790,8 +790,8 @@ _cairo_win32_surface_composite_inner (cairo_win32_surface_t *src,
 			 SRCCOPY))
 		return _cairo_win32_print_gdi_error ("_cairo_win32_surface_composite(BitBlt)");
 	} else if (dst->flags & CAIRO_WIN32_SURFACE_CAN_STRETCHBLT) {
-	    
-	    
+	    /* StretchBlt? */
+	    /* XXX check if we want HALFTONE, based on the src filter */
 	    BOOL success;
 	    int oldmode = SetStretchBltMode(dst->dc, HALFTONE);
 	    success = StretchBlt(dst->dc,
@@ -851,10 +851,10 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 	     op, pattern, mask_pattern, abstract_dst, src_x, src_y, mask_x, mask_y, dst_x, dst_y, width, height);
 #endif
 
-    
-
-
-
+    /* If the destination can't do any of these, then
+     * we may as well give up, since this is what we'll
+     * look to for optimization.
+     */
     if ((dst->flags & (CAIRO_WIN32_SURFACE_CAN_BITBLT |
 		       CAIRO_WIN32_SURFACE_CAN_ALPHABLEND |
 		       CAIRO_WIN32_SURFACE_CAN_STRETCHBLT |
@@ -872,9 +872,9 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 	goto UNSUPPORTED;
 
     if (mask_pattern) {
-	
-
-
+	/* FIXME: When we fully support RENDER style 4-channel
+	 * masks we need to check r/g/b != 1.0.
+	 */
 	if (mask_pattern->type != CAIRO_PATTERN_TYPE_SOLID)
 	    return CAIRO_INT_STATUS_UNSUPPORTED;
 
@@ -889,14 +889,14 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
     if (src->base.type == CAIRO_SURFACE_TYPE_IMAGE &&
 	dst->flags & (CAIRO_WIN32_SURFACE_CAN_STRETCHDIB))
     {
-	
-
-
-
-
-
-
-
+	/* In some very limited cases, we can use StretchDIBits to draw
+	 * an image surface directly:
+	 *  - source is CAIRO_FORMAT_ARGB32
+	 *  - dest is CAIRO_FORMAT_ARGB32
+	 *  - alpha is 255
+	 *  - operator is SOURCE or OVER
+	 *  - image stride is 4*width
+	 */
 	src_image = (cairo_image_surface_t*) src;
 
 	if (src_image->format != CAIRO_FORMAT_RGB24 ||
@@ -929,9 +929,9 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 	     pattern->matrix.x0, pattern->matrix.y0, pattern->matrix.xx, pattern->matrix.yy);
 #endif
 
-    
-
-
+    /* We can only use GDI functions if the source and destination rectangles
+     * are on integer pixel boundaries.  Figure that out here.
+     */
     x0_fixed = _cairo_fixed_from_double(pattern->matrix.x0 / pattern->matrix.xx);
     y0_fixed = _cairo_fixed_from_double(pattern->matrix.y0 / pattern->matrix.yy);
 
@@ -949,17 +949,17 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
     src_r.x += _cairo_fixed_integer_part(x0_fixed);
     src_r.y += _cairo_fixed_integer_part(y0_fixed);
 
-    
+    /* Success, right? */
     if (scalex == 0.0 || scaley == 0.0)
 	return CAIRO_STATUS_SUCCESS;
 
     if (scalex != 1.0 || scaley != 1.0)
 	goto UNSUPPORTED;
 
-    
-
-
-
+    /* If the src coordinates are outside of the source surface bounds,
+     * we have to fix them up, because this is an error for the GDI
+     * functions.
+     */
 
 #ifdef DEBUG_COMPOSITE
     fprintf (stderr, "before: [%d %d %d %d] -> [%d %d %d %d]\n",
@@ -968,19 +968,19 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
     fflush (stderr);
 #endif
 
-    
-
-
-
-
-
+    /* If the src recangle doesn't wholly lie within the src extents,
+     * fudge things.  We really need to do fixup on the unpainted
+     * region -- e.g. the SOURCE operator is broken for areas outside
+     * of the extents, because it won't clear that area to transparent
+     * black.
+     */
 
     if (pattern->extend != CAIRO_EXTEND_REPEAT) {
 	needs_repeat = FALSE;
 
-	
-
-
+	/* If the src rect and the extents of the source image don't overlap at all,
+	 * we can't do anything useful here.
+	 */
 	if (src_r.x > src_extents.width || src_r.y > src_extents.height ||
 	    (src_r.x + src_r.width) < 0 || (src_r.y + src_r.height) < 0)
 	{
@@ -1018,33 +1018,33 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 	needs_repeat = TRUE;
     }
 
-    
+    /*
+     * Operations that we can do:
+     *
+     *  RGB OVER  RGB -> BitBlt (same as SOURCE)
+     *  RGB OVER ARGB -> UNSUPPORTED (AlphaBlend treats this as a BitBlt, even with SCA 255 and no AC_SRC_ALPHA)
+     * ARGB OVER ARGB -> AlphaBlend, with AC_SRC_ALPHA
+     * ARGB OVER  RGB -> AlphaBlend, with AC_SRC_ALPHA; we'll have junk in the dst A byte
+     * 
+     *  RGB OVER  RGB + mask -> AlphaBlend, no AC_SRC_ALPHA
+     *  RGB OVER ARGB + mask -> UNSUPPORTED
+     * ARGB OVER ARGB + mask -> AlphaBlend, with AC_SRC_ALPHA
+     * ARGB OVER  RGB + mask -> AlphaBlend, with AC_SRC_ALPHA; junk in the dst A byte
+     * 
+     *  RGB SOURCE  RGB -> BitBlt
+     *  RGB SOURCE ARGB -> UNSUPPORTED (AlphaBlend treats this as a BitBlt, even with SCA 255 and no AC_SRC_ALPHA)
+     * ARGB SOURCE ARGB -> BitBlt
+     * ARGB SOURCE  RGB -> BitBlt
+     * 
+     *  RGB SOURCE  RGB + mask -> unsupported
+     *  RGB SOURCE ARGB + mask -> unsupported
+     * ARGB SOURCE ARGB + mask -> unsupported
+     * ARGB SOURCE  RGB + mask -> unsupported
+     */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
+    /*
+     * Figure out what action to take.
+     */
     if (op == CAIRO_OPERATOR_OVER) {
 	if (alpha == 0)
 	    return CAIRO_STATUS_SUCCESS;
@@ -1077,7 +1077,7 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
     if (scalex == 1.0 && scaley == 1.0) {
 	needs_scale = FALSE;
     } else {
-	
+	/* Should never be reached until we turn StretchBlt back on */
 	needs_scale = TRUE;
     }
 
@@ -1088,9 +1088,9 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
     fflush (stderr);
 #endif
 
-    
-
-
+    /* If we need to repeat, we turn the repeated blit into
+     * a bunch of piece-by-piece blits.
+     */
     if (needs_repeat) {
 	cairo_rectangle_int32_t piece_src_r, piece_dst_r;
 	uint32_t rendered_width = 0, rendered_height = 0;
@@ -1102,33 +1102,33 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 	if (needs_scale)
 	    goto UNSUPPORTED;
 
-	
-
-
-
-
+	/* If both the src and dest have an image, we may as well fall
+	 * back, because it will be faster than our separate blits.
+	 * Our blit code will be fastest when the src is a DDB and the
+	 * destination is a DDB.
+	 */
 	if ((src_image || src->image) && dst->image)
 	    goto UNSUPPORTED;
 
-	
-
-
+	/* If the src is not a bitmap but an on-screen (or unknown)
+	 * DC, chances are that fallback will be faster.
+	 */
 	if (src->bitmap == NULL)
 	    goto UNSUPPORTED;
 
-	
+	/* If we can use PatBlt, just do so */
 	if (!src_image && !needs_alpha)
 	{
 	    HBRUSH brush;
 	    HGDIOBJ old_brush;
 	    POINT old_brush_origin;
 
-	    
+	    /* Set up the brush with our bitmap */
 	    brush = CreatePatternBrush (src->bitmap);
 
-	    
-
-
+	    /* SetBrushOrgEx sets the coordinates in the destination DC of where the
+	     * pattern should start.
+	     */
 	    SetBrushOrgEx (dst->dc, dst_r.x - src_start_x,
 			   dst_r.y - src_start_y, &old_brush_origin);
 
@@ -1136,7 +1136,7 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 
 	    PatBlt (dst->dc, dst_r.x, dst_r.y, dst_r.width, dst_r.height, PATCOPY);
 
-	    
+	    /* Restore the old brush and pen */
 	    SetBrushOrgEx (dst->dc, old_brush_origin.x, old_brush_origin.y, NULL);
 	    SelectObject (dst->dc, old_brush);
 	    DeleteObject (brush);
@@ -1144,12 +1144,12 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 	    return CAIRO_STATUS_SUCCESS;
 	}
 
-	
+	/* If we were not able to use PatBlt, then manually expand out the blit */
 
-	
-
-
-
+	/* Arbitrary factor; we think that going through
+	 * fallback will be faster if we have to do more
+	 * than this amount of blits in either direction.
+	 */
 	if (dst_r.width / src_extents.width > 5 ||
 	    dst_r.height / src_extents.height > 5)
 	    goto UNSUPPORTED;
@@ -1188,10 +1188,10 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 							       src_extents, piece_src_r, piece_dst_r,
 							       alpha, needs_alpha, needs_scale);
 		if (status != CAIRO_STATUS_SUCCESS) {
-		    
-
-
-
+		    /* Uh oh.  If something failed, and it's the first
+		     * piece, then we can jump to UNSUPPORTED. 
+		     * Otherwise, this is bad times, because part of the
+		     * rendering was already done. */
 		    if (rendered_width == 0 &&
 			rendered_height == 0)
 		    {
@@ -1212,7 +1212,7 @@ _cairo_win32_surface_composite (cairo_operator_t	op,
 	return status;
 
 UNSUPPORTED:
-    
+    /* Fall back to image surface directly, if this is a DIB surface */
     if (dst->image) {
 	GdiFlush();
 
@@ -1227,12 +1227,12 @@ UNSUPPORTED:
     return CAIRO_INT_STATUS_UNSUPPORTED;
 }
 
-
-
-
-
-
-
+/* This big function tells us how to optimize operators for the
+ * case of solid destination and constant-alpha source
+ *
+ * NOTE: This function needs revisiting if we add support for
+ *       super-luminescent colors (a == 0, r,g,b > 0)
+ */
 static enum { DO_CLEAR, DO_SOURCE, DO_NOTHING, DO_UNSUPPORTED }
 categorize_solid_dest_operator (cairo_operator_t op,
 				unsigned short   alpha)
@@ -1247,18 +1247,18 @@ categorize_solid_dest_operator (cairo_operator_t op,
 	source = SOURCE_OTHER;
 
     switch (op) {
-    case CAIRO_OPERATOR_CLEAR:    
-    case CAIRO_OPERATOR_OUT:      
+    case CAIRO_OPERATOR_CLEAR:    /* 0                 0 */
+    case CAIRO_OPERATOR_OUT:      /* 1 - Ab            0 */
 	return DO_CLEAR;
 	break;
 
-    case CAIRO_OPERATOR_SOURCE:   
-    case CAIRO_OPERATOR_IN:       
+    case CAIRO_OPERATOR_SOURCE:   /* 1                 0 */
+    case CAIRO_OPERATOR_IN:       /* Ab                0 */
 	return DO_SOURCE;
 	break;
 
-    case CAIRO_OPERATOR_OVER:     
-    case CAIRO_OPERATOR_ATOP:     
+    case CAIRO_OPERATOR_OVER:     /* 1            1 - Aa */
+    case CAIRO_OPERATOR_ATOP:     /* Ab           1 - Aa */
 	if (source == SOURCE_SOLID)
 	    return DO_SOURCE;
 	else if (source == SOURCE_TRANSPARENT)
@@ -1267,8 +1267,8 @@ categorize_solid_dest_operator (cairo_operator_t op,
 	    return DO_UNSUPPORTED;
 	break;
 
-    case CAIRO_OPERATOR_DEST_OUT: 
-    case CAIRO_OPERATOR_XOR:      
+    case CAIRO_OPERATOR_DEST_OUT: /* 0            1 - Aa */
+    case CAIRO_OPERATOR_XOR:      /* 1 - Ab       1 - Aa */
 	if (source == SOURCE_SOLID)
 	    return DO_CLEAR;
 	else if (source == SOURCE_TRANSPARENT)
@@ -1277,14 +1277,14 @@ categorize_solid_dest_operator (cairo_operator_t op,
 	    return DO_UNSUPPORTED;
     	break;
 
-    case CAIRO_OPERATOR_DEST:     
-    case CAIRO_OPERATOR_DEST_OVER:
-    case CAIRO_OPERATOR_SATURATE: 
+    case CAIRO_OPERATOR_DEST:     /* 0                 1 */
+    case CAIRO_OPERATOR_DEST_OVER:/* 1 - Ab            1 */
+    case CAIRO_OPERATOR_SATURATE: /* min(1,(1-Ab)/Aa)  1 */
 	return DO_NOTHING;
 	break;
 
-    case CAIRO_OPERATOR_DEST_IN:  
-    case CAIRO_OPERATOR_DEST_ATOP:
+    case CAIRO_OPERATOR_DEST_IN:  /* 0                Aa */
+    case CAIRO_OPERATOR_DEST_ATOP:/* 1 - Ab           Aa */
 	if (source == SOURCE_SOLID)
 	    return DO_NOTHING;
 	else if (source == SOURCE_TRANSPARENT)
@@ -1293,7 +1293,7 @@ categorize_solid_dest_operator (cairo_operator_t op,
 	    return DO_UNSUPPORTED;
 	break;
 
-    case CAIRO_OPERATOR_ADD:	  
+    case CAIRO_OPERATOR_ADD:	  /* 1                1 */
 	if (source == SOURCE_TRANSPARENT)
 	    return DO_NOTHING;
 	else
@@ -1318,16 +1318,16 @@ _cairo_win32_surface_fill_rectangles (void			*abstract_surface,
     HBRUSH new_brush;
     int i;
 
-    
-
-
-
+    /* XXXperf If it's not RGB24, we need to do a little more checking
+     * to figure out when we can use GDI.  We don't have that checking
+     * anywhere at the moment, so just bail and use the fallback
+     * paths. */
     if (surface->format != CAIRO_FORMAT_RGB24)
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
-    
-
-
+    /* Optimize for no destination alpha (surface->pixman_image is non-NULL for all
+     * surfaces with alpha.)
+     */
     switch (categorize_solid_dest_operator (op, color->alpha_short)) {
     case DO_CLEAR:
 	new_color = RGB (0, 0, 0);
@@ -1377,9 +1377,9 @@ _cairo_win32_surface_set_clip_region (void              *abstract_surface,
     cairo_win32_surface_t *surface = abstract_surface;
     cairo_status_t status;
 
-    
-
-
+    /* If we are in-memory, then we set the clip on the image surface
+     * as well as on the underlying GDI surface.
+     */
     if (surface->image) {
 	unsigned int serial;
 
@@ -1387,14 +1387,14 @@ _cairo_win32_surface_set_clip_region (void              *abstract_surface,
 	_cairo_surface_set_clip_region (surface->image, region, serial);
     }
 
-    
-
-
-
-
+    /* The semantics we want is that any clip set by cairo combines
+     * is intersected with the clip on device context that the
+     * surface was created for. To implement this, we need to
+     * save the original clip when first setting a clip on surface.
+     */
 
     if (region == NULL) {
-	
+	/* Clear any clip set by cairo, return to the original */
 	if (SelectClipRgn (surface->dc, surface->saved_clip) == ERROR)
 	    return _cairo_win32_print_gdi_error ("_cairo_win32_surface_set_clip_region (reset)");
 
@@ -1410,7 +1410,7 @@ _cairo_win32_surface_set_clip_region (void              *abstract_surface,
 	int i;
 	HRGN gdi_region;
 
-	
+	/* Create a GDI region for the cairo region */
 
 	data_size = sizeof (RGNDATAHEADER) + num_boxes * sizeof (RECT);
 	data = malloc (data_size);
@@ -1440,7 +1440,7 @@ _cairo_win32_surface_set_clip_region (void              *abstract_surface,
 	if (!gdi_region)
 	    return CAIRO_STATUS_NO_MEMORY;
 
-	
+	/* Combine the new region with the original clip */
 
 	if (surface->saved_clip) {
 	    if (CombineRgn (gdi_region, gdi_region, surface->saved_clip, RGN_AND) == ERROR)
@@ -1487,6 +1487,7 @@ _cairo_win32_surface_show_glyphs (void			*surface,
 				  int			 num_glyphs,
 				  cairo_scaled_font_t	*scaled_font)
 {
+#if CAIRO_HAS_WIN32_FONT
     cairo_win32_surface_t *dst = surface;
 
     WORD glyph_buf_stack[STACK_GLYPH_SIZE];
@@ -1506,22 +1507,22 @@ _cairo_win32_surface_show_glyphs (void			*surface,
     double user_x, user_y;
     int logical_x, logical_y;
 
-    
+    /* We can only handle win32 fonts */
     if (cairo_scaled_font_get_type (scaled_font) != CAIRO_FONT_TYPE_WIN32)
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
-    
+    /* We can only handle opaque solid color sources */
     if (!_cairo_pattern_is_opaque_solid(source))
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
-    
-
+    /* We can only handle operator SOURCE or OVER with the destination
+     * having no alpha */
     if ((op != CAIRO_OPERATOR_SOURCE && op != CAIRO_OPERATOR_OVER) ||
 	(dst->format != CAIRO_FORMAT_RGB24))
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
-    
-
+    /* If we have a fallback mask clip set on the dst, we have
+     * to go through the fallback path */
     if (dst->base.clip &&
 	(dst->base.clip->mode != CAIRO_CLIP_MODE_REGION ||
 	 dst->base.clip->surface != NULL))
@@ -1546,11 +1547,11 @@ _cairo_win32_surface_show_glyphs (void			*surface,
         dxy_buf = (int *)malloc(num_glyphs * 2 * sizeof(int));
     }
 
-    
-
-
-
-
+    /* It is vital that dx values for dxy_buf are calculated from the delta of
+     * _logical_ x coordinates (not user x coordinates) or else the sum of all
+     * previous dx values may start to diverge from the current glyph's x
+     * coordinate due to accumulated rounding error. As a result strings could
+     * be painted shorter or longer than expected. */
 
     user_x = glyphs[0].x;
     user_y = glyphs[0].y;
@@ -1580,8 +1581,8 @@ _cairo_win32_surface_show_glyphs (void			*surface,
             next_logical_x = _cairo_lround (next_user_x);
             next_logical_y = _cairo_lround (next_user_y);
 
-            dxy_buf[j] = _cairo_lround ((next_logical_x - logical_x) * WIN32_FONT_LOGICAL_SCALE);
-            dxy_buf[j+1] = _cairo_lround ((next_logical_y - logical_y) * WIN32_FONT_LOGICAL_SCALE);
+            dxy_buf[j] = _cairo_lround (next_logical_x - logical_x);
+            dxy_buf[j+1] = _cairo_lround (next_logical_y - logical_y);
 
             logical_x = next_logical_x;
             logical_y = next_logical_y;
@@ -1607,22 +1608,25 @@ _cairo_win32_surface_show_glyphs (void			*surface,
         free(dxy_buf);
     }
     return (win_result) ? CAIRO_STATUS_SUCCESS : CAIRO_INT_STATUS_UNSUPPORTED;
+#else
+    return CAIRO_INT_STATUS_UNSUPPORTED;
+#endif
 }
 
 #undef STACK_GLYPH_SIZE
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * cairo_win32_surface_create:
+ * @hdc: the DC to create a surface for
+ *
+ * Creates a cairo surface that targets the given DC.  The DC will be
+ * queried for its initial clip extents, and this will be used as the
+ * size of the cairo surface.  Also, if the DC is a raster DC, it will
+ * be queried for its pixel format and the cairo surface format will
+ * be set appropriately.
+ *
+ * Return value: the newly created surface
+ **/
 cairo_surface_t *
 cairo_win32_surface_create (HDC hdc)
 {
@@ -1633,11 +1637,11 @@ cairo_win32_surface_create (HDC hdc)
 
     _cairo_win32_initialize ();
 
-    
-
+    /* Try to figure out the drawing bounds for the Device context
+     */
     if (GetClipBox (hdc, &rect) == ERROR) {
 	_cairo_win32_print_gdi_error ("cairo_win32_surface_create");
-	
+	/* XXX: Can we make a more reasonable guess at the error cause here? */
 	_cairo_error (CAIRO_STATUS_NO_MEMORY);
 	return NIL_SURFACE;
     }
@@ -1704,20 +1708,20 @@ cairo_win32_surface_create (HDC hdc)
     return (cairo_surface_t *)surface;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * cairo_win32_surface_create_with_dib:
+ * @format: format of pixels in the surface to create
+ * @width: width of the surface, in pixels
+ * @height: height of the surface, in pixels
+ *
+ * Creates a device-independent-bitmap surface not associated with
+ * any particular existing surface or device context. The created
+ * bitmap will be uninitialized.
+ *
+ * Return value: the newly created surface
+ *
+ * Since: 1.2
+ **/
 cairo_surface_t *
 cairo_win32_surface_create_with_dib (cairo_format_t format,
 				     int	    width,
@@ -1726,20 +1730,21 @@ cairo_win32_surface_create_with_dib (cairo_format_t format,
     return _cairo_win32_surface_create_for_dc (NULL, format, width, height);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * cairo_win32_surface_create_with_ddb:
+ * @hdc: the DC to create a surface for
+ * @format: format of pixels in the surface to create
+ * @width: width of the surface, in pixels
+ * @height: height of the surface, in pixels
+ *
+ * Creates a device-independent-bitmap surface not associated with
+ * any particular existing surface or device context. The created
+ * bitmap will be uninitialized.
+ *
+ * Return value: the newly created surface
+ *
+ * Since: 1.4
+ **/
 cairo_surface_t *
 cairo_win32_surface_create_with_ddb (HDC hdc,
 				     cairo_format_t format,
@@ -1754,10 +1759,10 @@ cairo_win32_surface_create_with_ddb (HDC hdc,
 
     if (format != CAIRO_FORMAT_RGB24)
 	return NULL;
-
-
-
-
+/* XXX handle these eventually
+	format != CAIRO_FORMAT_A8 ||
+	format != CAIRO_FORMAT_A1)
+*/
 
     if (!hdc) {
 	screen_dc = GetDC (NULL);
@@ -1786,31 +1791,31 @@ cairo_win32_surface_create_with_ddb (HDC hdc,
     return (cairo_surface_t*) new_surf;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * _cairo_surface_is_win32:
+ * @surface: a #cairo_surface_t
+ *
+ * Checks if a surface is an #cairo_win32_surface_t
+ *
+ * Return value: True if the surface is an win32 surface
+ **/
 int
 _cairo_surface_is_win32 (cairo_surface_t *surface)
 {
     return surface->backend == &cairo_win32_surface_backend;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * cairo_win32_surface_get_dc
+ * @surface: a #cairo_surface_t
+ *
+ * Returns the HDC associated with this surface, or NULL if none.
+ * Also returns NULL if the surface is not a win32 surface.
+ *
+ * Return value: HDC or NULL if no HDC available.
+ *
+ * Since: 1.2
+ **/
 HDC
 cairo_win32_surface_get_dc (cairo_surface_t *surface)
 {
@@ -1827,19 +1832,19 @@ cairo_win32_surface_get_dc (cairo_surface_t *surface)
     return winsurf->dc;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * cairo_win32_surface_get_image
+ * @surface: a #cairo_surface_t
+ *
+ * Returns a #cairo_surface_t image surface that refers to the same bits
+ * as the DIB of the Win32 surface.  If the passed-in win32 surface
+ * is not a DIB surface, NULL is returned.
+ *
+ * Return value: a #cairo_surface_t (owned by the win32 cairo_surface_t),
+ * or NULL if the win32 surface is not a DIB.
+ *
+ * Since: 1.4
+ */
 cairo_surface_t *
 cairo_win32_surface_get_image (cairo_surface_t *surface)
 {
@@ -1857,42 +1862,44 @@ static const cairo_surface_backend_t cairo_win32_surface_backend = {
     _cairo_win32_surface_release_source_image,
     _cairo_win32_surface_acquire_dest_image,
     _cairo_win32_surface_release_dest_image,
-    NULL, 
+    NULL, /* clone_similar */
     _cairo_win32_surface_composite,
     _cairo_win32_surface_fill_rectangles,
-    NULL, 
-    NULL, 
-    NULL, 
+    NULL, /* composite_trapezoids */
+    NULL, /* copy_page */
+    NULL, /* show_page */
     _cairo_win32_surface_set_clip_region,
-    NULL, 
+    NULL, /* intersect_clip_path */
     _cairo_win32_surface_get_extents,
-    NULL, 
-    NULL, 
+    NULL, /* old_show_glyphs */
+    NULL, /* get_font_options */
     _cairo_win32_surface_flush,
-    NULL, 
-    NULL, 
-    NULL, 
+    NULL, /* mark_dirty_rectangle */
+    NULL, /* scaled_font_fini */
+    NULL, /* scaled_glyph_fini */
 
-    NULL, 
-    NULL, 
-    NULL, 
-    NULL, 
+    NULL, /* paint */
+    NULL, /* mask */
+    NULL, /* stroke */
+    NULL, /* fill */
     _cairo_win32_surface_show_glyphs,
 
-    NULL  
+    NULL  /* snapshot */
 };
 
-
-
-
-
-
-
+/*
+ * Without pthread, on win32 we need to initialize all the 'mutex'es
+ * before use. It is guaranteed that DllMain will get called single
+ * threaded before any other function.
+ * Initializing more than finally needed should not matter much.
+ */
 #if !defined(HAVE_PTHREAD_H) 
 
-CRITICAL_SECTION cairo_toy_font_face_hash_table_mutex;
-CRITICAL_SECTION cairo_scaled_font_map_mutex;
-CRITICAL_SECTION cairo_ft_unscaled_font_map_mutex;
+CRITICAL_SECTION _cairo_scaled_font_map_mutex;
+#ifdef CAIRO_HAS_FT_FONT
+CRITICAL_SECTION _cairo_ft_unscaled_font_map_mutex;
+#endif
+CRITICAL_SECTION _cairo_font_face_mutex;
 
 static int _cairo_win32_initialized = 0;
 
@@ -1901,10 +1908,12 @@ _cairo_win32_initialize (void) {
     if (_cairo_win32_initialized)
 	return;
 
-    
-    InitializeCriticalSection (&cairo_toy_font_face_hash_table_mutex);
-    InitializeCriticalSection (&cairo_scaled_font_map_mutex);
-    InitializeCriticalSection (&cairo_ft_unscaled_font_map_mutex);
+    /* every 'mutex' from CAIRO_MUTEX_DECALRE needs to be initialized here */
+    InitializeCriticalSection (&_cairo_scaled_font_map_mutex);
+#ifdef CAIRO_HAS_FT_FONT
+    InitializeCriticalSection (&_cairo_ft_unscaled_font_map_mutex);
+#endif
+    InitializeCriticalSection (&_cairo_font_face_mutex);
 
     _cairo_win32_initialized = 1;
 }
@@ -1921,32 +1930,34 @@ DllMain (HINSTANCE hinstDLL,
     _cairo_win32_initialize();
     break;
   case DLL_PROCESS_DETACH:
-    DeleteCriticalSection (&cairo_toy_font_face_hash_table_mutex);
-    DeleteCriticalSection (&cairo_scaled_font_map_mutex);
-    DeleteCriticalSection (&cairo_ft_unscaled_font_map_mutex);
+    DeleteCriticalSection (&_cairo_scaled_font_map_mutex);
+#ifdef CAIRO_HAS_FT_FONT
+    DeleteCriticalSection (&_cairo_ft_unscaled_font_map_mutex);
+#endif
+    DeleteCriticalSection (&_cairo_font_face_mutex);
     break;
   }
   return TRUE;
 }
 #endif
 #else
-
+/* Need a function definition here too since it's called outside of ifdefs */
 void
 _cairo_win32_initialize (void)
 {
 }
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Notes:
+ *
+ * Win32 alpha-understanding functions
+ *
+ * BitBlt - will copy full 32 bits from a 32bpp DIB to result
+ *          (so it's safe to use for ARGB32->ARGB32 SOURCE blits)
+ *          (but not safe going RGB24->ARGB32, if RGB24 is also represented
+ *           as a 32bpp DIB, since the alpha isn't discarded!)
+ *
+ * AlphaBlend - if both the source and dest have alpha, even if AC_SRC_ALPHA isn't set,
+ *              it will still copy over the src alpha, because the SCA value (255) will be
+ *              multiplied by all the src components.
+ */
