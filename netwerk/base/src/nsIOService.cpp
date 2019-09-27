@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim:set ts=4 sw=4 cindent et: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *      Prasad Sunkari <prasad@medhas.org>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsIOService.h"
 #include "nsIProtocolHandler.h"
@@ -70,7 +70,6 @@
 #include "nsINestedURI.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
-#include "nsIPermissionManager.h"
 
 #if defined(XP_WIN)
 #include "nsNativeConnectionHelper.h"
@@ -84,81 +83,81 @@
 
 nsIOService* gIOService = nsnull;
 
-
-
-
-
-
+// A general port blacklist.  Connections to these ports will not be allowed unless 
+// the protocol overrides.
+//
+// TODO: I am sure that there are more ports to be added.  
+//       This cut is based on the classic mozilla codebase
 
 PRInt16 gBadPortList[] = { 
-  1,    
-  7,    
-  9,    
-  11,   
-  13,   
-  15,   
-  17,   
-  19,   
-  20,   
-  21,   
-  22,   
-  23,   
-  25,   
-  37,   
-  42,   
-  43,   
-  53,   
-  77,   
-  79,   
-  87,   
-  95,   
-  101,  
-  102,  
-  103,  
-  104,  
-  109,  
-  110,  
-  111,  
-  113,  
-  115,  
-  117,  
-  119,  
-  123,  
-  135,  
-  139,  
-  143,  
-  179,  
-  389,  
-  465,  
-  512,  
-  513,  
-  514,  
-  515,  
-  526,  
-  530,  
-  531,  
-  532,  
-  540,  
-  556,  
-  563,  
-  587,  
-  601,  
-  636,  
-  993,  
-  995,  
-  2049, 
-  4045, 
-  6000, 
-  0,    
+  1,    // tcpmux          
+  7,    // echo     
+  9,    // discard          
+  11,   // systat   
+  13,   // daytime          
+  15,   // netstat  
+  17,   // qotd             
+  19,   // chargen  
+  20,   // ftp-data         
+  21,   // ftp-cntl 
+  22,   // ssh              
+  23,   // telnet   
+  25,   // smtp     
+  37,   // time     
+  42,   // name     
+  43,   // nicname  
+  53,   // domain  
+  77,   // priv-rjs 
+  79,   // finger   
+  87,   // ttylink  
+  95,   // supdup   
+  101,  // hostriame
+  102,  // iso-tsap 
+  103,  // gppitnp  
+  104,  // acr-nema 
+  109,  // pop2     
+  110,  // pop3     
+  111,  // sunrpc   
+  113,  // auth     
+  115,  // sftp     
+  117,  // uucp-path
+  119,  // nntp     
+  123,  // NTP
+  135,  // loc-srv / epmap         
+  139,  // netbios
+  143,  // imap2  
+  179,  // BGP
+  389,  // ldap        
+  465,  // smtp+ssl
+  512,  // print / exec          
+  513,  // login         
+  514,  // shell         
+  515,  // printer         
+  526,  // tempo         
+  530,  // courier        
+  531,  // Chat         
+  532,  // netnews        
+  540,  // uucp       
+  556,  // remotefs    
+  563,  // nntp+ssl
+  587,  //
+  601,  //       
+  636,  // ldap+ssl
+  993,  // imap+ssl
+  995,  // pop3+ssl
+  2049, // nfs
+  4045, // lockd
+  6000, // x11        
+  0,    // This MUST be zero so that we can populating the array
 };
 
 static const char kProfileChangeNetTeardownTopic[] = "profile-change-net-teardown";
 static const char kProfileChangeNetRestoreTopic[] = "profile-change-net-restore";
 
-
+// Necko buffer cache
 nsIMemory* nsIOService::gBufferCache = nsnull;
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 nsIOService::nsIOService()
     : mOffline(PR_FALSE)
@@ -167,7 +166,7 @@ nsIOService::nsIOService()
     , mChannelEventSinks(NS_CHANNEL_EVENT_SINK_CATEGORY)
     , mContentSniffers(NS_CONTENT_SNIFFER_CATEGORY)
 {
-    
+    // Get the allocator ready
     if (!gBufferCache)
     {
         nsresult rv = NS_OK;
@@ -191,11 +190,11 @@ nsIOService::Init()
 {
     nsresult rv;
     
-    
-    
-    
+    // We need to get references to these services so that we can shut them
+    // down later. If we wait until the nsIOService is being shut down,
+    // GetService will fail at that point.
 
-    
+    // TODO(darin): Load the Socket and DNS services lazily.
 
     mSocketTransportService = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
     if (NS_FAILED(rv)) {
@@ -209,7 +208,7 @@ nsIOService::Init()
         return rv;
     }
 
-    
+    // XXX hack until xpidl supports error info directly (bug 13423)
     nsCOMPtr<nsIErrorService> errorService = do_GetService(NS_ERRORSERVICE_CONTRACTID);
     if (errorService) {
         errorService->RegisterErrorStringBundle(NS_ERROR_MODULE_NETWORK, NECKO_MSGS_URL);
@@ -217,11 +216,11 @@ nsIOService::Init()
     else
         NS_WARNING("failed to get error service");
     
-    
+    // setup our bad port list stuff
     for(int i=0; gBadPortList[i]; i++)
         mRestrictedPortList.AppendElement(reinterpret_cast<void *>(gBadPortList[i]));
 
-    
+    // Further modifications to the port list come from prefs
     nsCOMPtr<nsIPrefBranch2> prefBranch;
     GetPrefBranch(getter_AddRefs(prefBranch));
     if (prefBranch) {
@@ -230,7 +229,7 @@ nsIOService::Init()
         PrefsChanged(prefBranch);
     }
     
-    
+    // Register for profile change notifications
     nsCOMPtr<nsIObserverService> observerService =
         do_GetService("@mozilla.org/observer-service;1");
     if (observerService) {
@@ -244,7 +243,7 @@ nsIOService::Init()
         
     gIOService = this;
     
-    
+    // go into managed mode if we can
     mNetworkLinkService = do_GetService(NS_NETWORK_LINK_SERVICE_CONTRACTID);
     if (mNetworkLinkService) {
         mManageOfflineStatus = PR_TRUE;
@@ -279,15 +278,14 @@ nsIOService::GetInstance() {
     return gIOService;
 }
 
-NS_IMPL_THREADSAFE_ISUPPORTS6(nsIOService,
+NS_IMPL_THREADSAFE_ISUPPORTS5(nsIOService,
                               nsIIOService,
                               nsIIOService2,
                               nsINetUtil,
                               nsIObserver,
-                              nsISupportsWeakReference,
-                              nsINetUtil_MOZILLA_1_9_1)
+                              nsISupportsWeakReference)
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 nsresult
 nsIOService::OnChannelRedirect(nsIChannel* oldChan, nsIChannel* newChan,
@@ -301,7 +299,7 @@ nsIOService::OnChannelRedirect(nsIChannel* oldChan, nsIChannel* newChan,
             return rv;
     }
 
-    
+    // Finally, our category
     const nsCOMArray<nsIChannelEventSink>& entries =
         mChannelEventSinks.GetEntries();
     PRInt32 len = entries.Count();
@@ -323,15 +321,15 @@ nsIOService::CacheProtocolHandler(const char *scheme, nsIProtocolHandler *handle
         {
             nsresult rv;
             NS_ASSERTION(!mWeakHandler[i], "Protocol handler already cached");
-            
+            // Make sure the handler supports weak references.
             nsCOMPtr<nsISupportsWeakReference> factoryPtr = do_QueryInterface(handler, &rv);
             if (!factoryPtr)
             {
-                
-                
+                // Don't cache handlers that don't support weak reference as
+                // there is real danger of a circular reference.
 #ifdef DEBUG_dp
                 printf("DEBUG: %s protcol handler doesn't support weak ref. Not cached.\n", scheme);
-#endif 
+#endif /* DEBUG_dp */
                 return NS_ERROR_FAILURE;
             }
             mWeakHandler[i] = do_GetWeakReference(handler);
@@ -350,8 +348,8 @@ nsIOService::GetCachedProtocolHandler(const char *scheme, nsIProtocolHandler **r
         if (!mWeakHandler[i])
             continue;
 
-        
-        
+        // handle unterminated strings
+        // start is inclusive, end is exclusive, len = end - start - 1
         if (end ? (!nsCRT::strncasecmp(scheme + start, gScheme[i], len)
                    && gScheme[i][len] == '\0')
                 : (!nsCRT::strcasecmp(scheme, gScheme[i])))
@@ -368,9 +366,9 @@ nsIOService::GetProtocolHandler(const char* scheme, nsIProtocolHandler* *result)
     nsresult rv;
 
     NS_ENSURE_ARG_POINTER(scheme);
-    
-    
-    
+    // XXX we may want to speed this up by introducing our own protocol 
+    // scheme -> protocol handler mapping, avoiding the string manipulation
+    // and service manager stuff
 
     rv = GetCachedProtocolHandler(scheme, result);
     if (NS_SUCCEEDED(rv))
@@ -402,13 +400,13 @@ nsIOService::GetProtocolHandler(const char* scheme, nsIProtocolHandler* *result)
         }
 
 #ifdef MOZ_X11
-        
-        
-        
-        
+        // check to see whether GnomeVFS can handle this URI scheme.  if it can
+        // create a nsIURI for the "scheme:", then we assume it has support for
+        // the requested protocol.  otherwise, we failover to using the default
+        // protocol handler.
 
-        
-        
+        // XXX should this be generalized into something that searches a
+        // category?  (see bug 234714)
 
         rv = CallGetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX"moz-gnomevfs",
                             result);
@@ -428,10 +426,10 @@ nsIOService::GetProtocolHandler(const char* scheme, nsIProtocolHandler* *result)
 #endif
     }
 
-    
-    
-    
-    
+    // Okay we don't have a protocol handler to handle this url type, so use
+    // the default protocol handler.  This will cause urls to get dispatched
+    // out to the OS ('cause we can't do anything with them) when we try to
+    // read from a channel created by the default protocol handler.
 
     rv = CallGetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX"default",
                         result);
@@ -486,7 +484,7 @@ nsIOService::NewURI(const nsACString &aSpec, const char *aCharset, nsIURI *aBase
     nsCAutoString scheme;
     nsresult rv = ExtractScheme(aSpec, scheme);
     if (NS_FAILED(rv)) {
-        
+        // then aSpec is relative
         if (!aBaseURI)
             return NS_ERROR_MALFORMED_URI;
 
@@ -494,7 +492,7 @@ nsIOService::NewURI(const nsACString &aSpec, const char *aCharset, nsIURI *aBase
         if (NS_FAILED(rv)) return rv;
     }
 
-    
+    // now get the handler for this scheme
     nsCOMPtr<nsIProtocolHandler> handler;
     rv = GetProtocolHandler(scheme.get(), getter_AddRefs(handler));
     if (NS_FAILED(rv)) return rv;
@@ -542,8 +540,8 @@ nsIOService::NewChannelFromURI(nsIURI *aURI, nsIChannel **result)
     if (NS_FAILED(rv))
         return rv;
 
-    
-    
+    // Talk to the PPS if the protocol handler allows proxying.  Otherwise,
+    // skip this step.  This allows us to lazily load the PPS at startup.
     if (protoFlags & nsIProtocolHandler::ALLOWS_PROXY) {
         nsCOMPtr<nsIProxyInfo> pi;
         if (!mProxyService) {
@@ -559,7 +557,7 @@ nsIOService::NewChannelFromURI(nsIURI *aURI, nsIChannel **result)
         if (pi) {
             nsCAutoString type;
             if (NS_SUCCEEDED(pi->GetType(type)) && type.EqualsLiteral("http")) {
-                
+                // we are going to proxy this channel using an http proxy
                 rv = GetProtocolHandler("http", getter_AddRefs(handler));
                 if (NS_FAILED(rv))
                     return rv;
@@ -600,17 +598,17 @@ nsIOService::SetOffline(PRBool offline)
     nsresult rv;
     if (offline && !mOffline) {
         NS_NAMED_LITERAL_STRING(offlineString, NS_IOSERVICE_OFFLINE);
-        mOffline = PR_TRUE; 
+        mOffline = PR_TRUE; // indicate we're trying to shutdown
 
-        
-        
+        // don't care if notification fails
+        // this allows users to attempt a little cleanup before dns and socket transport are shut down.
         if (observerService)
             observerService->NotifyObservers(static_cast<nsIIOService *>(this),
                                              NS_IOSERVICE_GOING_OFFLINE_TOPIC,
                                              offlineString.get());
 
-        
-        
+        // be sure to try and shutdown both (even if the first fails)...
+        // shutdown dns service first, because it has callbacks for socket transport
         if (mDNSService) {
             rv = mDNSService->Shutdown();
             NS_ASSERTION(NS_SUCCEEDED(rv), "DNS service shutdown failed");
@@ -620,14 +618,14 @@ nsIOService::SetOffline(PRBool offline)
             NS_ASSERTION(NS_SUCCEEDED(rv), "socket transport service shutdown failed");
         }
 
-        
+        // don't care if notification fails
         if (observerService)
             observerService->NotifyObservers(static_cast<nsIIOService *>(this),
                                              NS_IOSERVICE_OFFLINE_STATUS_TOPIC,
                                              offlineString.get());
     }
     else if (!offline && mOffline) {
-        
+        // go online
         if (mDNSService) {
             rv = mDNSService->Init();
             NS_ASSERTION(NS_SUCCEEDED(rv), "DNS service init failed");
@@ -636,14 +634,14 @@ nsIOService::SetOffline(PRBool offline)
             rv = mSocketTransportService->Init();
             NS_ASSERTION(NS_SUCCEEDED(rv), "socket transport service init failed");
         }
-        mOffline = PR_FALSE;    
-                                
+        mOffline = PR_FALSE;    // indicate success only AFTER we've
+                                // brought up the services
          
-        
+        // trigger a PAC reload when we come back online
         if (mProxyService)
             mProxyService->ReloadPAC();
  
-        
+        // don't care if notification fails
         if (observerService)
             observerService->NotifyObservers(static_cast<nsIIOService *>(this),
                                              NS_IOSERVICE_OFFLINE_STATUS_TOPIC,
@@ -662,7 +660,7 @@ nsIOService::AllowPort(PRInt32 inPort, const char *scheme, PRBool *_retval)
         return NS_OK;
     }
         
-    
+    // first check to see if the port is in our blacklist:
     PRInt32 badPortListCnt = mRestrictedPortList.Count();
     for (int i=0; i<badPortListCnt; i++)
     {
@@ -670,7 +668,7 @@ nsIOService::AllowPort(PRInt32 inPort, const char *scheme, PRBool *_retval)
         {
             *_retval = PR_FALSE;
 
-            
+            // check to see if the protocol wants to override
             if (!scheme)
                 return NS_OK;
             
@@ -678,7 +676,7 @@ nsIOService::AllowPort(PRInt32 inPort, const char *scheme, PRBool *_retval)
             nsresult rv = GetProtocolHandler(scheme, getter_AddRefs(handler));
             if (NS_FAILED(rv)) return rv;
 
-            
+            // let the protocol handler decide
             return handler->AllowPort(port, scheme, _retval);
         }
     }
@@ -687,25 +685,25 @@ nsIOService::AllowPort(PRInt32 inPort, const char *scheme, PRBool *_retval)
     return NS_OK;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 void
 nsIOService::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
 {
     if (!prefs) return;
 
-    
+    // Look for extra ports to block
     if (!pref || strcmp(pref, PORT_PREF("banned")) == 0)
         ParsePortList(prefs, PORT_PREF("banned"), PR_FALSE);
 
-    
+    // ...as well as previous blocks to remove.
     if (!pref || strcmp(pref, PORT_PREF("banned.override")) == 0)
         ParsePortList(prefs, PORT_PREF("banned.override"), PR_TRUE);
 
     if (!pref || strcmp(pref, AUTODIAL_PREF) == 0) {
         PRBool enableAutodial = PR_FALSE;
         nsresult rv = prefs->GetBoolPref(AUTODIAL_PREF, &enableAutodial);
-        
+        // If pref not found, default to disabled.
         if (NS_SUCCEEDED(rv)) {
             if (mSocketTransportService)
                 mSocketTransportService->SetAutodialEnabled(enableAutodial);
@@ -718,7 +716,7 @@ nsIOService::ParsePortList(nsIPrefBranch *prefBranch, const char *pref, PRBool r
 {
     nsXPIDLCString portList;
 
-    
+    // Get a pref string and chop it up into a list of ports.
     prefBranch->GetCharPref(pref, getter_Copies(portList));
     if (portList) {
         nsCStringArray portListArray;
@@ -760,7 +758,7 @@ nsIOService::GetPrefBranch(nsIPrefBranch2 **result)
     CallGetService(NS_PREFSERVICE_CONTRACTID, result);
 }
 
-
+// nsIObserver interface
 NS_IMETHODIMP
 nsIOService::Observe(nsISupports *subject,
                      const char *topic,
@@ -789,7 +787,7 @@ nsIOService::Observe(nsISupports *subject,
     else if (!strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
         SetOffline(PR_TRUE);
 
-        
+        // Break circular reference.
         mProxyService = nsnull;
     }
     else if (!strcmp(topic, NS_NETWORK_LINK_TOPIC)) {
@@ -801,7 +799,7 @@ nsIOService::Observe(nsISupports *subject,
     return NS_OK;
 }
 
-
+// nsINetUtil interface
 NS_IMETHODIMP
 nsIOService::ParseContentType(const nsACString &aTypeHeader,
                               nsACString &aCharset,
@@ -846,8 +844,8 @@ nsIOService::URIChainHasFlags(nsIURI   *uri,
         return rv;
     }
 
-    
-    
+    // Dig deeper into the chain.  Note that this is not a do/while loop to
+    // avoid the extra addref/release on |uri| in the common (non-nested) case.
     nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(uri);
     while (nestedURI) {
         nsCOMPtr<nsIURI> innerURI;
@@ -904,19 +902,19 @@ nsIOService::TrackNetworkLinkStatusForOffline()
     if (!mNetworkLinkService)
         return NS_ERROR_FAILURE;
   
-    
+    // check to make sure this won't collide with Autodial
     if (mSocketTransportService) {
         PRBool autodialEnabled = PR_FALSE;
         mSocketTransportService->GetAutodialEnabled(&autodialEnabled);
-        
-        
-        
+        // If autodialing-on-link-down is enabled, check if the OS auto dial 
+        // option is set to always autodial. If so, then we are 
+        // always up for the purposes of offline management.
         if (autodialEnabled) {
 #if defined(XP_WIN) && !defined(WINCE)
-            
-            
-            
-            
+            // On Windows, need to do some registry checking to see if
+            // autodial is enabled at the OS level. Only if that is
+            // enabled are we always up for the purposes of offline
+            // management.
             if(nsNativeConnectionHelper::IsAutodialEnabled()) 
                 return SetOffline(PR_FALSE);
 #else
@@ -982,61 +980,6 @@ nsIOService::ExtractCharsetFromContentType(const nsACString &aTypeHeader,
     if (*aHadCharset && *aCharsetStart == *aCharsetEnd) {
         *aHadCharset = PR_FALSE;
     }
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsIOService::OfflineAppAllowed(nsIURI *aURI,
-                               nsIPrefBranch *aPrefBranch,
-                               PRBool *aAllowed)
-{
-    *aAllowed = PR_FALSE;
-
-    nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
-    if (!innerURI)
-        return NS_OK;
-
-    
-    PRBool match;
-    nsresult rv = innerURI->SchemeIs("http", &match);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!match) {
-        rv = innerURI->SchemeIs("https", &match);
-        NS_ENSURE_SUCCESS(rv, rv);
-        if (!match) {
-            return NS_OK;
-        }
-    }
-
-    nsCOMPtr<nsIPermissionManager> permissionManager =
-        do_GetService(NS_PERMISSIONMANAGER_CONTRACTID);
-    if (!permissionManager) {
-        return NS_OK;
-    }
-
-    PRUint32 perm;
-    permissionManager->TestExactPermission(innerURI, "offline-app", &perm);
-
-    if (perm == nsIPermissionManager::UNKNOWN_ACTION) {
-        nsCOMPtr<nsIPrefBranch> branch = aPrefBranch;
-        if (!branch) {
-            branch = do_GetService(NS_PREFSERVICE_CONTRACTID);
-        }
-        if (branch) {
-            rv = branch->GetBoolPref("offline-apps.allow_by_default", aAllowed);
-            NS_ENSURE_SUCCESS(rv, rv);
-        }
-
-        return NS_OK;
-    }
-
-    if (perm == nsIPermissionManager::DENY_ACTION) {
-        return NS_OK;
-    }
-
-    *aAllowed = PR_TRUE;
-
     return NS_OK;
 }
 
