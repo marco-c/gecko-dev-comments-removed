@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Mozilla SVG project.
+ *
+ * The Initial Developer of the Original Code is
+ * Crocodile Clips Ltd..
+ * Portions created by the Initial Developer are Copyright (C) 2002
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Alex Fritze <alex.fritze@crocodile-clips.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsSVGTextFrame.h"
 #include "nsILookAndFeel.h"
@@ -61,108 +61,108 @@ struct CharacterPosition {
   PRBool draw;
 };
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This is a do-it-all helper class. It supports iterating through the
+ * drawable characters of a string. For each character, it can set up
+ * a graphics context with a transform appropriate for drawing the
+ * character, or a transform appropriate for emitting geometry in the
+ * text metrics coordinate system (which differs from the drawing
+ * coordinate system by a scale factor of AppUnitPerCSSPixels). These
+ * transforms include offsets and rotations of characters along paths, and
+ * the mPosition of the nsSVGGlyphFrame.
+ * 
+ * This helper also creates the textrun as needed. It supports detecting
+ * the special case when the entire textrun can be drawn or measured
+ * as a unit, and setting the graphics context transform up for that. It
+ * takes care of setting up the global transform if requested. It also
+ * provides direct access to the character path position data for the
+ * DOM APIs that need that.
+ * 
+ * If an error occurs, for example, a canvas TM is not available because
+ * the element is in a <defs> section, then the CharacterIterator will
+ * behave as if the frame has no drawable characters.
+ *
+ * XXX should make this iterate clusters instead
+ * XXX needs RTL love
+ * XXX might want to make AdvanceToCharacter constant time (e.g. by
+ * caching advances and/or the CharacterPosition array across DOM
+ * API calls) to ensure that calling Get*OfChar (etc) for each character
+ * in the text is O(N)
+ */
 class CharacterIterator
 {
 public:
-  
-
-
-
-
+  /**
+   * Sets up the iterator so that NextChar will return the first drawable
+   * char.
+   * @param aForceGlobalTransform passed on to EnsureTextRun (see below)
+   */
   CharacterIterator(nsSVGGlyphFrame *aSource, PRBool aForceGlobalTransform);
-  
-
-
-
+  /**
+   * This matrix will be applied to aContext in the SetupFor methods below,
+   * before any glyph translation/rotation.
+   */
   void SetInitialMatrix(gfxContext *aContext) {
     mInitialMatrix = aContext->CurrentMatrix();
     if (mInitialMatrix.IsSingular()) {
       mInError = PR_TRUE;
     }
   }
-  
-
-
-
-
-
-
+  /**
+   * Try to set up aContext so we can draw the whole textrun at once.
+   * This applies any global transform requested by SetInitialMatrix,
+   * then applies the positioning of the text. Returns false if drawing
+   * the whole textrun at once is impossible due to individual positioning
+   * and/or rotation of glyphs.
+   */
   PRBool SetupForDirectTextRunDrawing(gfxContext *aContext) {
     return SetupForDirectTextRun(aContext, mDrawScale);
   }
-  
-
-
-
-
-
-
-
+  /**
+   * Try to set up aContext so we can measure the whole textrun at once.
+   * This applies any global transform requested by SetInitialMatrix,
+   * then applies the positioning of the text, then applies a scale
+   * from appunits to device pixels so drawing in appunits works.
+   * Returns false if drawing the whole textrun at once is impossible due
+   * to individual positioning and/or rotation of glyphs.
+   */
   PRBool SetupForDirectTextRunMetrics(gfxContext *aContext) {
     return SetupForDirectTextRun(aContext, mMetricsScale);
   }
 
-  
-
-
-
+  /**
+   * Returns the index of the next char in the string that should be
+   * drawn, or -1 if there is no such character.
+   */
   PRInt32 NextChar();
-  
-
-
-
-
-
+  /**
+   * Repeated calls NextChar until it returns aIndex (i.e. aIndex is the
+   * current drawable character). Returns false if that never happens
+   * (because aIndex is before or equal to the current character, or
+   * out of bounds, or not drawable).
+   */
   PRBool AdvanceToCharacter(PRInt32 aIndex);
 
-  
-
-
-
-
+  /**
+   * Set up aContext for glyph drawing. This applies any global transform
+   * requested by SetInitialMatrix, then applies any positioning and
+   * rotation for the current character.
+   */
   void SetupForDrawing(gfxContext *aContext) {
     return SetupFor(aContext, mDrawScale);
   }
-  
-
-
-
-
-
+  /**
+   * Set up aContext for glyph measuring. This applies any global transform
+   * requested by SetInitialMatrix, then applies any positioning and
+   * rotation for the current character, then applies a scale from appunits
+   * to device pixels so that drawing in appunits sizes works.
+   */
   void SetupForMetrics(gfxContext *aContext) {
     return SetupFor(aContext, mMetricsScale);
   }
-  
-
-
+  /**
+   * Get the raw position data for the current character.
+   */
   CharacterPosition GetPositionData();
 
 private:
@@ -172,7 +172,7 @@ private:
   nsSVGGlyphFrame *mSource;
   nsAutoTArray<CharacterPosition,80> mPositions;
   gfxMatrix mInitialMatrix;
-  
+  // Textrun advance width from start to mCurrentChar, in appunits
   gfxFloat mCurrentAdvance;
   PRInt32 mCurrentChar;
   float mDrawScale;
@@ -180,8 +180,8 @@ private:
   PRPackedBool mInError;
 };
 
-
-
+//----------------------------------------------------------------------
+// Implementation
 
 nsIFrame*
 NS_NewSVGGlyphFrame(nsIPresShell* aPresShell, nsIContent* aContent, nsIFrame* parentFrame, nsStyleContext* aContext)
@@ -197,8 +197,8 @@ NS_NewSVGGlyphFrame(nsIPresShell* aPresShell, nsIContent* aContent, nsIFrame* pa
   return new (aPresShell) nsSVGGlyphFrame(aContext);
 }
 
-
-
+//----------------------------------------------------------------------
+// nsISupports methods
 
 NS_INTERFACE_MAP_BEGIN(nsSVGGlyphFrame)
   NS_INTERFACE_MAP_ENTRY(nsISVGGlyphFragmentLeaf)
@@ -206,8 +206,8 @@ NS_INTERFACE_MAP_BEGIN(nsSVGGlyphFrame)
   NS_INTERFACE_MAP_ENTRY(nsISVGChildFrame)
 NS_INTERFACE_MAP_END_INHERITING(nsSVGGlyphFrameBase)
 
-
-
+//----------------------------------------------------------------------
+// nsIFrame methods
 
 NS_IMETHODIMP
 nsSVGGlyphFrame::CharacterDataChanged(nsPresContext*  aPresContext,
@@ -220,7 +220,7 @@ nsSVGGlyphFrame::CharacterDataChanged(nsPresContext*  aPresContext,
   return NS_OK;
 }
 
-
+// Usable font size range in devpixels / user-units
 #define CLAMP_MIN_SIZE 8
 #define CLAMP_MAX_SIZE 200
 #define PRECISE_SIZE   200
@@ -248,10 +248,10 @@ nsSVGGlyphFrame::SetSelected(nsPresContext* aPresContext,
 #if defined(DEBUG) && defined(SVG_DEBUG_SELECTION)
   printf("nsSVGGlyphFrame(%p)::SetSelected()\n", this);
 #endif
-
+//  return nsSVGGlyphFrameBase::SetSelected(aPresContext, aRange, aSelected, aSpread, aType);
 
   if (aType == nsISelectionController::SELECTION_NORMAL) {
-    
+    // check whether style allows selection
     PRBool  selectable;
     IsSelectable(&selectable, nsnull);
     if (!selectable)
@@ -296,8 +296,8 @@ nsSVGGlyphFrame::GetType() const
   return nsGkAtoms::svgGlyphFrame;
 }
 
-
-
+//----------------------------------------------------------------------
+// nsISVGChildFrame methods
 
 NS_IMETHODIMP
 nsSVGGlyphFrame::PaintSVG(nsSVGRenderState *aContext, nsIntRect *aDirtyRect)
@@ -333,12 +333,12 @@ nsSVGGlyphFrame::PaintSVG(nsSVGRenderState *aContext, nsIntRect *aDirtyRect)
     return NS_OK;
   }
 
-  
-  
+  // We are adding patterns or gradients to the context. Save
+  // it so we don't leak them into the next object we draw
   gfx->Save();
   SetupGlobalTransform(gfx);
 
-  if (HasFill() && SetupCairoFill(gfx)) {
+  if (SetupCairoFill(gfx)) {
     gfxMatrix matrix = gfx->CurrentMatrix();
     CharacterIterator iter(this, PR_TRUE);
     iter.SetInitialMatrix(gfx);
@@ -347,17 +347,17 @@ nsSVGGlyphFrame::PaintSVG(nsSVGRenderState *aContext, nsIntRect *aDirtyRect)
     gfx->SetMatrix(matrix);
   }
 
-  if (HasStroke() && SetupCairoStroke(gfx)) {
-    
-    
+  if (SetupCairoStroke(gfx)) {
+    // SetupCairoStroke will clear mTextRun whenever
+    // there is a pattern or gradient on the text
     CharacterIterator iter(this, PR_TRUE);
     iter.SetInitialMatrix(gfx);
 
     gfx->NewPath();
     AddCharactersToPath(&iter, gfx);
     gfx->Stroke();
-    
-    
+    // We need to clear the context's path so state doesn't leak
+    // out. See bug 337753.
     gfx->NewPath();
   }
   gfx->Restore();
@@ -369,7 +369,7 @@ NS_IMETHODIMP_(nsIFrame*)
 nsSVGGlyphFrame::GetFrameForPoint(const nsPoint &aPoint)
 {
 #ifdef DEBUG
-  
+  //printf("nsSVGGlyphFrame(%p)::GetFrameForPoint\n", this);
 #endif
 
   if (!mRect.Contains(aPoint))
@@ -433,11 +433,10 @@ nsSVGGlyphFrame::UpdateCoveredRegion()
   
   gfxRect extent;
 
-  if (HasStroke()) {
+  if (SetupCairoStrokeGeometry(tmpCtx)) {
     AddCharactersToPath(&iter, tmpCtx);
-    SetupCairoStrokeGeometry(tmpCtx);
     extent = tmpCtx->UserToDevice(tmpCtx->GetUserStrokeExtent());
-  } else if (HasFill()) {
+  } else if (GetStyleSVG()->mFill.mType != eStyleSVGPaintType_None) {
     AddBoundingBoxesToPath(&iter, tmpCtx);
     tmpCtx->IdentityMatrix();
     extent = tmpCtx->GetUserPathExtent();
@@ -459,7 +458,7 @@ nsSVGGlyphFrame::InitialUpdate()
   NS_ASSERTION(!(mState & NS_FRAME_IN_REFLOW),
                "We don't actually participate in reflow");
 
-  
+  // Do unset the various reflow bits, though.
   mState &= ~(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
               NS_FRAME_HAS_DIRTY_CHILDREN);
   
@@ -480,7 +479,7 @@ nsSVGGlyphFrame::NotifySVGChanged(PRUint32 aFlags)
 NS_IMETHODIMP
 nsSVGGlyphFrame::NotifyRedrawSuspended()
 {
-  
+  // XXX should we cache the fact that redraw is suspended?
   return NS_OK;
 }
 
@@ -563,10 +562,10 @@ nsSVGGlyphFrame::GetBBox(nsIDOMSVGRect **_retval)
   return NS_NewSVGRect(_retval, tmpCtx->GetUserPathExtent());
 }
 
+//----------------------------------------------------------------------
+// nsSVGGeometryFrame methods:
 
-
-
-
+/* readonly attribute nsIDOMSVGMatrix canvasTM; */
 NS_IMETHODIMP
 nsSVGGlyphFrame::GetCanvasTM(nsIDOMSVGMatrix * *aCTM)
 {
@@ -580,8 +579,8 @@ nsSVGGlyphFrame::GetCanvasTM(nsIDOMSVGMatrix * *aCTM)
   return NS_OK;
 }
 
-
-
+//----------------------------------------------------------------------
+// nsSVGGlyphFrame methods:
 
 PRBool
 nsSVGGlyphFrame::GetCharacterData(nsAString & aCharacterData)
@@ -618,14 +617,14 @@ nsSVGGlyphFrame::GetCharacterPositions(nsTArray<CharacterPosition>* aCharacterPo
 
   nsSVGTextPathFrame *textPath = FindTextPathParent();
 
-  
-  
+  /* we're an ordinary fragment - return */
+  /* XXX: we might want to use this for individual x/y/dx/dy adjustment */
   if (!textPath)
     return PR_TRUE;
 
   nsRefPtr<gfxFlattenedPath> data = textPath->GetFlattenedPath();
 
-  
+  /* textPath frame, but invalid target */
   if (!data)
     return PR_FALSE;
 
@@ -645,17 +644,17 @@ nsSVGGlyphFrame::GetCharacterPositions(nsTArray<CharacterPosition>* aCharacterPo
     gfxFloat halfAdvance =
       mTextRun->GetAdvanceWidth(i, 1, nsnull)*aMetricsScale / 2.0;
 
-    
+    /* have we run off the end of the path? */
     if (x + halfAdvance > length)
       break;
 
-    
+    /* check that we've advanced to the start of the path */
     if (x + halfAdvance >= 0.0) {
       cp[i].draw = PR_TRUE;
 
-      
-      
-      
+      // add y (normal)
+      // add rotation
+      // move point back along tangent
       gfxPoint pt = data->FindPoint(gfxPoint(x + halfAdvance, mPosition.y),
                                     &(cp[i].angle));
       cp[i].pos =
@@ -667,10 +666,10 @@ nsSVGGlyphFrame::GetCharacterPositions(nsTArray<CharacterPosition>* aCharacterPo
   return PR_TRUE;
 }
 
+//----------------------------------------------------------------------
 
-
-
-
+// Utilities for converting from indices in the uncompressed content
+// element strings to compressed frame string and back:
 static int
 CompressIndex(int index, const nsTextFragment*fragment)
 {
@@ -714,7 +713,7 @@ CompressIndex(int index, const nsTextFragment*fragment)
 static int
 UncompressIndex(int index, PRBool bRightAffinity, const nsTextFragment*fragment)
 {
-  
+  // XXX
   return index;
 }
 
@@ -737,12 +736,12 @@ nsSVGGlyphFrame::GetHighlight(PRUint32 *charnum, PRUint32 *nchars,
 
   nsPresContext *presContext = PresContext();
 
-  
-  
+  // The selection ranges are relative to the uncompressed text in
+  // the content element. We'll need the text fragment:
   const nsTextFragment *fragment = mContent->GetText();
   NS_ASSERTION(fragment, "no text");
   
-  
+  // get the selection details 
   SelectionDetails *details = nsnull;
   {
     nsCOMPtr<nsFrameSelection> frameSelection;
@@ -808,8 +807,8 @@ nsSVGGlyphFrame::GetHighlight(PRUint32 *charnum, PRUint32 *nchars,
 }
 
 
-
-
+//----------------------------------------------------------------------
+// nsISVGGlyphFragmentLeaf interface:
 
 NS_IMETHODIMP_(void)
 nsSVGGlyphFrame::SetGlyphPosition(float x, float y)
@@ -899,8 +898,8 @@ nsSVGGlyphFrame::GetBaselineOffset(PRUint16 baselineIdentifier,
   gfxFloat baselineAppUnits;
   switch (baselineIdentifier) {
   case BASELINE_HANGING:
-    
-    
+    // not really right, but the best we can do with the information provided
+    // FALLTHROUGH
   case BASELINE_TEXT_BEFORE_EDGE:
     baselineAppUnits = -metrics.mAscent;
     break;
@@ -934,7 +933,7 @@ nsSVGGlyphFrame::GetAdvance(PRBool aForceGlobalTransform)
 NS_IMETHODIMP_(nsSVGTextPathFrame*) 
 nsSVGGlyphFrame::FindTextPathParent()
 {
-  
+  /* check if we're the child of a textPath */
   for (nsIFrame *frame = GetParent();
        frame != nsnull;
        frame = frame->GetParent()) {
@@ -950,15 +949,15 @@ nsSVGGlyphFrame::FindTextPathParent()
 NS_IMETHODIMP_(PRBool)
 nsSVGGlyphFrame::IsStartOfChunk()
 {
-  
-  
-  
+  // this fragment is a chunk if it has a corresponding absolute
+  // position adjustment in an ancestors' x or y array. (At the moment
+  // we don't map the full arrays, but only the first elements.)
 
   return PR_FALSE;
 }
 
 NS_IMETHODIMP_(void)
-nsSVGGlyphFrame::GetAdjustedPosition( float &x,  float &y)
+nsSVGGlyphFrame::GetAdjustedPosition(/* inout */ float &x, /* inout */ float &y)
 {
 }
 
@@ -1017,12 +1016,12 @@ nsSVGGlyphFrame::IsAbsolutelyPositioned()
        frame != nsnull;
        lastFrame = frame, frame = frame->GetParent()) {
 
-    
+    /* need to be the first child if we are absolutely positioned */
     if (!frame ||
         frame->GetFirstChild(nsnull) != lastFrame)
       break;
 
-    
+    // textPath is always absolutely positioned for our purposes
     if (frame->GetType() == nsGkAtoms::svgTextPathFrame)
       return PR_TRUE;
         
@@ -1039,8 +1038,8 @@ nsSVGGlyphFrame::IsAbsolutelyPositioned()
 }
 
 
-
-
+//----------------------------------------------------------------------
+// nsISVGGlyphFragmentNode interface:
 
 NS_IMETHODIMP_(PRUint32)
 nsSVGGlyphFrame::GetNumberOfChars()
@@ -1092,8 +1091,8 @@ nsSVGGlyphFrame::GetCharNumAtPosition(nsIDOMSVGPoint *point)
     tmpCtx->Rectangle(metrics.mBoundingBox);
     tmpCtx->IdentityMatrix();
     if (tmpCtx->PointInFill(pt)) {
-      
-      
+      // Can't return now. If there's glyph overlap, the last character
+      // to be rendered wins.
       last = i;
     }
   }
@@ -1119,7 +1118,7 @@ nsSVGGlyphFrame::GetNextGlyphFragment()
     sibling = sibling->GetNextSibling();
   }
 
-  
+  // no more siblings. go back up the tree.
   
   NS_ASSERTION(mParent, "null parent");
   nsISVGGlyphFragmentNode *node = nsnull;
@@ -1133,8 +1132,8 @@ nsSVGGlyphFrame::SetWhitespaceHandling(PRUint8 aWhitespaceHandling)
   mWhitespaceHandling = aWhitespaceHandling;
 }
 
-
-
+//----------------------------------------------------------------------
+//
 
 void
 nsSVGGlyphFrame::NotifyGlyphMetricsChange()
@@ -1200,11 +1199,11 @@ PRBool
 nsSVGGlyphFrame::EnsureTextRun(float *aDrawScale, float *aMetricsScale,
                                PRBool aForceGlobalTransform)
 {
-  
+  // Compute the size at which the text should render (excluding the CTM)
   const nsStyleFont* fontData = GetStyleFont();
-  
-  
-  
+  // Since SVG has its own scaling, we really don't want
+  // fonts in SVG to respond to the browser's "TextZoom"
+  // (Ctrl++,Ctrl+-)
   nsPresContext *presContext = PresContext();
   float textZoom = presContext->TextZoom();
   double size =
@@ -1225,9 +1224,9 @@ nsSVGGlyphFrame::EnsureTextRun(float *aDrawScale, float *aMetricsScale,
         return PR_FALSE;
     }
 
-    
-    
-    
+    // The context scale is the ratio of the length of the transformed
+    // diagonal vector (1,1) to the length of the untransformed diagonal
+    // (which is sqrt(2)).
     gfxPoint p = m.Transform(gfxPoint(1, 1)) - m.Transform(gfxPoint(0, 0));
     double contextScale = nsSVGUtils::ComputeNormalizedHypotenuse(p.x, p.y);
 
@@ -1259,17 +1258,17 @@ nsSVGGlyphFrame::EnsureTextRun(float *aDrawScale, float *aMetricsScale,
     PRUint32 flags = gfxTextRunFactory::TEXT_NEED_BOUNDING_BOX |
       nsLayoutUtils::GetTextRunFlagsForStyle(GetStyleContext(), GetStyleText(), GetStyleFont());
 
-    
-    
-    
+    // XXX We should use a better surface here! But then we'd have to
+    // change things so we can ensure we always have the "right" sort of
+    // surface available, by creating the textrun only at the right times
     nsRefPtr<gfxContext> tmpCtx = MakeTmpCtx();
     tmpCtx->SetMatrix(m);
 
-    
-    
-    
-    
-    
+    // Use only the word cache here. We don't want to cache the textrun
+    // globally because we'll never hit in that cache, since we create
+    // a new fontgroup every time. Even if we cached fontgroups, we
+    // might render at very many different sizes (e.g. during zoom
+    // animation) and caching a textrun for each such size would be bad.
     gfxTextRunFactory::Parameters params = {
         tmpCtx, nsnull, nsnull, nsnull, 0, GetTextRunUnitsFactor()
     };
@@ -1301,8 +1300,8 @@ nsSVGGlyphFrame::GetMatrixPropagation()
   return (GetStateBits() & NS_STATE_SVG_PROPAGATE_TRANSFORM) != 0;
 }
 
-
-
+//----------------------------------------------------------------------
+// helper class
 
 CharacterIterator::CharacterIterator(nsSVGGlyphFrame *aSource,
         PRBool aForceGlobalTransform)
@@ -1324,8 +1323,8 @@ CharacterIterator::SetupForDirectTextRun(gfxContext *aContext, float aScale)
   aContext->SetMatrix(mInitialMatrix);
   aContext->Translate(mSource->mPosition);
   aContext->Scale(aScale, aScale);
-  
-  
+  // We are scaling the glyphs up/down to the size we want so we need to
+  // inverse scale the outline widths of those glyphs so they are invariant
   aContext->SetLineWidth(aContext->CurrentLineWidth() / aScale);
   return PR_TRUE;
 }
@@ -1377,8 +1376,8 @@ CharacterIterator::SetupFor(gfxContext *aContext, float aScale)
     aContext->Rotate(mPositions[mCurrentChar].angle);
     aContext->Scale(aScale, aScale);
   }
-  
-  
+  // We are scaling the glyphs up/down to the size we want so we need to
+  // inverse scale the outline widths of those glyphs so they are invariant
   aContext->SetLineWidth(aContext->CurrentLineWidth() / aScale);
 }
 

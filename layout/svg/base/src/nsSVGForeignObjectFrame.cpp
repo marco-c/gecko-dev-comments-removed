@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Mozilla SVG project.
+ *
+ * The Initial Developer of the Original Code is
+ * Crocodile Clips Ltd..
+ * Portions created by the Initial Developer are Copyright (C) 2001
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Alex Fritze <alex.fritze@crocodile-clips.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsSVGForeignObjectFrame.h"
 
@@ -56,8 +56,8 @@
 #include "gfxContext.h"
 #include "gfxMatrix.h"
 
-
-
+//----------------------------------------------------------------------
+// Implementation
 
 nsIFrame*
 NS_NewSVGForeignObjectFrame(nsIPresShell   *aPresShell,
@@ -78,18 +78,19 @@ nsSVGForeignObjectFrame::nsSVGForeignObjectFrame(nsStyleContext* aContext)
     mPropagateTransform(PR_TRUE),
     mInReflow(PR_FALSE)
 {
-  AddStateBits(NS_FRAME_REFLOW_ROOT | NS_FRAME_MAY_BE_TRANSFORMED);
+  AddStateBits(NS_FRAME_REFLOW_ROOT |
+               NS_FRAME_MAY_BE_TRANSFORMED_OR_HAVE_RENDERING_OBSERVERS);
 }
 
-
-
+//----------------------------------------------------------------------
+// nsISupports methods
 
 NS_INTERFACE_MAP_BEGIN(nsSVGForeignObjectFrame)
   NS_INTERFACE_MAP_ENTRY(nsISVGChildFrame)
 NS_INTERFACE_MAP_END_INHERITING(nsSVGForeignObjectFrameBase)
 
-
-
+//----------------------------------------------------------------------
+// nsIFrame methods
 
 NS_IMETHODIMP
 nsSVGForeignObjectFrame::Init(nsIContent* aContent,
@@ -124,14 +125,14 @@ nsSVGForeignObjectFrame::AttributeChanged(PRInt32  aNameSpaceID,
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::width ||
         aAttribute == nsGkAtoms::height) {
-      UpdateGraphic(); 
-      
+      UpdateGraphic(); // update mRect before requesting reflow
+      // XXXjwatt: why mark intrinsic widths dirty? can't we just use eResize?
       RequestReflow(nsIPresShell::eStyleChange);
     } else if (aAttribute == nsGkAtoms::x ||
                aAttribute == nsGkAtoms::y) {
       UpdateGraphic();
     } else if (aAttribute == nsGkAtoms::transform) {
-      
+      // make sure our cached transform matrix gets (lazily) updated
       mCanvasTM = nsnull;
       UpdateGraphic();
     }
@@ -146,8 +147,8 @@ nsSVGForeignObjectFrame::Reflow(nsPresContext*           aPresContext,
                                 const nsHTMLReflowState& aReflowState,
                                 nsReflowStatus&          aStatus)
 {
-  
-  
+  // InitialUpdate and AttributeChanged make sure mRect is up to date before
+  // we're called (UpdateCoveredRegion sets mRect).
 
   NS_ASSERTION(!aReflowState.parentReflowState,
                "should only get reflow from being reflow root");
@@ -158,7 +159,7 @@ nsSVGForeignObjectFrame::Reflow(nsPresContext*           aPresContext,
 
   DoReflow();
 
-  
+  // XXX why don't we convert from CSS pixels to app units? How does this work?
   aDesiredSize.width = aReflowState.ComputedWidth();
   aDesiredSize.height = aReflowState.ComputedHeight();
   aDesiredSize.mOverflowArea =
@@ -184,14 +185,14 @@ nsSVGForeignObjectFrame::InvalidateInternal(const nsRect& aDamageRect,
 }
 
 
+//----------------------------------------------------------------------
+// nsISVGChildFrame methods
 
-
-
-
-
-
-
-
+/**
+ * Gets the rectangular region in app units (rounded out device pixels)
+ * that encloses the rectangle after it has been transformed by aMatrix.
+ * Useful in UpdateCoveredRegion/FlushDirtyRegion.
+ */
 static nsRect
 GetTransformedRegion(float aX, float aY, float aWidth, float aHeight,
                      nsIDOMSVGMatrix* aMatrix, nsPresContext *aPresContext)
@@ -238,9 +239,9 @@ nsSVGForeignObjectFrame::PaintSVG(nsSVGRenderState *aContext,
   if (!kid)
     return NS_OK;
 
-  
-  
-  
+  // GetCanvasTM includes a device pixel to CSS pixel scaling. Since non-SVG
+  // content takes care of this itself, we need to remove this pre-scaling from
+  // the matrix returned by GetTMIncludingOffset before painting our children.
   float cssPxPerDevPx =
     PresContext()->AppUnitsToFloatCSSPixels(
                                 PresContext()->AppUnitsPerDevPixel());
@@ -251,7 +252,7 @@ nsSVGForeignObjectFrame::PaintSVG(nsSVGRenderState *aContext,
 
   nsCOMPtr<nsIDOMSVGMatrix> localTM = GetTMIncludingOffset();
 
-  
+  // POST-multiply px conversion!
   nsCOMPtr<nsIDOMSVGMatrix> tm;
   localTM->Multiply(cssPxToDevPxMatrix, getter_AddRefs(tm));
 
@@ -273,7 +274,7 @@ nsSVGForeignObjectFrame::PaintSVG(nsSVGRenderState *aContext,
     static_cast<nsSVGElement*>(mContent)->
       GetAnimatedLengthValues(&x, &y, &width, &height, nsnull);
 
-    
+    // tm already includes the x,y offset
     nsSVGUtils::SetClipRect(gfx, localTM, 0.0f, 0.0f, width, height);
   }
 
@@ -313,11 +314,11 @@ nsSVGForeignObjectFrame::GetTransformMatrix(nsIFrame **aOutAncestor)
 {
   NS_PRECONDITION(aOutAncestor, "We need an ancestor to write to!");
 
-  
+  /* Set the ancestor to be the outer frame. */
   *aOutAncestor = nsSVGUtils::GetOuterSVGFrame(this);
   NS_ASSERTION(*aOutAncestor, "How did we end up without an outer frame?");
 
-  
+  /* Return the matrix back to the root, factoring in the x and y offsets. */
   nsCOMPtr<nsIDOMSVGMatrix> matrix = GetTMIncludingOffset();
   return nsSVGUtils::ConvertSVGMatrixToThebes(matrix);
 }
@@ -366,12 +367,12 @@ nsSVGForeignObjectFrame::UpdateCoveredRegion()
   static_cast<nsSVGForeignObjectElement*>(mContent)->
     GetAnimatedLengthValues(&x, &y, &w, &h, nsnull);
 
-  
+  // If mRect's width or height are negative, reflow blows up! We must clamp!
   if (w < 0.0f) w = 0.0f;
   if (h < 0.0f) h = 0.0f;
 
-  
-  
+  // XXXjwatt: _this_ is where we should reflow _if_ mRect.width has changed!
+  // we should not unconditionally reflow in AttributeChanged
   mRect = GetTransformedRegion(x, y, w, h, ctm, PresContext());
 
   nsSVGUtils::UpdateFilterRegion(this);
@@ -392,7 +393,7 @@ nsSVGForeignObjectFrame::InitialUpdate()
   NS_ASSERTION(!(mState & NS_FRAME_IN_REFLOW),
                "We don't actually participate in reflow");
   
-  
+  // Do unset the various reflow bits, though.
   mState &= ~(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
               NS_FRAME_HAS_DIRTY_CHILDREN);
 
@@ -405,21 +406,21 @@ nsSVGForeignObjectFrame::NotifySVGChanged(PRUint32 aFlags)
   PRBool reflow = PR_FALSE;
 
   if (aFlags & TRANSFORM_CHANGED) {
-    
-    
-    
-    
-    
-    
-    
+    // In an ideal world we would reflow when our CTM changes. This is because
+    // glyph metrics do not necessarily scale uniformly with change in scale
+    // and, as a result, CTM changes may require text to break at different
+    // points. The problem would be how to keep performance acceptable when
+    // e.g. the transform of an ancestor is animated.
+    // We also seem to get some sort of infinite loop post bug 421584 if we
+    // reflow.
     mCanvasTM = nsnull;
     if (!(aFlags & SUPPRESS_INVALIDATION)) {
       UpdateGraphic();
     }
 
   } else if (aFlags & COORD_CONTEXT_CHANGED) {
-    
-    
+    // Our coordinate context's width/height has changed. If we have a
+    // percentage width/height our dimensions will change so we must reflow.
     nsSVGForeignObjectElement *fO =
       static_cast<nsSVGForeignObjectElement*>(mContent);
     if (fO->mLengthAttributes[nsSVGForeignObjectElement::WIDTH].IsPercentage() ||
@@ -429,17 +430,17 @@ nsSVGForeignObjectFrame::NotifySVGChanged(PRUint32 aFlags)
   }
 
   if (reflow) {
-    
-    
-    
-    
-    
-    
-    
+    // If we're called while the PresShell is handling reflow events then we
+    // must have been called as a result of the NotifyViewportChange() call in
+    // our nsSVGOuterSVGFrame's Reflow() method. We must not call RequestReflow
+    // at this point (i.e. during reflow) because it could confuse the
+    // PresShell and prevent it from reflowing us properly in future. Besides
+    // that, nsSVGOuterSVGFrame::DidReflow will take care of reflowing us
+    // synchronously, so there's no need.
     PRBool reflowing;
     PresContext()->PresShell()->IsReflowLocked(&reflowing);
     if (!reflowing) {
-      UpdateGraphic(); 
+      UpdateGraphic(); // update mRect before requesting reflow
       RequestReflow(nsIPresShell::eResize);
     }
   }
@@ -520,7 +521,7 @@ nsSVGForeignObjectFrame::GetBBox(nsIDOMSVGRect **_retval)
   return NS_NewSVGRect(_retval, bounds);
 }
 
-
+//----------------------------------------------------------------------
 
 already_AddRefed<nsIDOMSVGMatrix>
 nsSVGForeignObjectFrame::GetTMIncludingOffset()
@@ -553,14 +554,14 @@ nsSVGForeignObjectFrame::GetCanvasTM()
   }
 
   if (!mCanvasTM) {
-    
+    // get our parent's tm and append local transforms (if any):
     NS_ASSERTION(mParent, "null parent");
     nsSVGContainerFrame *containerFrame = static_cast<nsSVGContainerFrame*>
                                                      (mParent);
     nsCOMPtr<nsIDOMSVGMatrix> parentTM = containerFrame->GetCanvasTM();
     NS_ASSERTION(parentTM, "null TM");
 
-    
+    // got the parent tm, now check for local tm:
     nsSVGGraphicElement *element =
       static_cast<nsSVGGraphicElement*>(mContent);
     nsCOMPtr<nsIDOMSVGMatrix> localTM = element->GetLocalTransformMatrix();
@@ -576,13 +577,13 @@ nsSVGForeignObjectFrame::GetCanvasTM()
   return retval;
 }
 
-
-
+//----------------------------------------------------------------------
+// Implementation helpers
 
 void nsSVGForeignObjectFrame::RequestReflow(nsIPresShell::IntrinsicDirty aType)
 {
   if (GetStateBits() & NS_FRAME_FIRST_REFLOW)
-    
+    // If we haven't had an InitialUpdate yet, nothing to do.
     return;
 
   nsIFrame* kid = GetFirstChild(nsnull);
@@ -596,7 +597,7 @@ void nsSVGForeignObjectFrame::UpdateGraphic()
 {
   nsSVGUtils::UpdateGraphic(this);
 
-  
+  // Clear any layout dirty region since we invalidated our whole area.
   mSameDocDirtyRegion.SetEmpty();
   mCrossDocDirtyRegion.SetEmpty();
 }
@@ -604,16 +605,16 @@ void nsSVGForeignObjectFrame::UpdateGraphic()
 void
 nsSVGForeignObjectFrame::MaybeReflowFromOuterSVGFrame()
 {
-  
-  
-  
-  
+  // If we're already scheduled to reflow (i.e. our kid is dirty) we don't
+  // want to reflow now or else our presShell will do extra work trying to
+  // reflow us a second time. (It will also complain if it finds that a reflow
+  // root scheduled for reflow isn't dirty).
 
   nsIFrame* kid = GetFirstChild(nsnull);
   if (kid->GetStateBits() & NS_FRAME_IS_DIRTY) {
     return;
   }
-  kid->AddStateBits(NS_FRAME_IS_DIRTY); 
+  kid->AddStateBits(NS_FRAME_IS_DIRTY); // we must be fully marked dirty
   if (kid->GetStateBits() & NS_FRAME_HAS_DIRTY_CHILDREN) {
     return;
   }
@@ -642,7 +643,7 @@ nsSVGForeignObjectFrame::DoReflow()
   if (!kid)
     return;
 
-  
+  // initiate a synchronous reflow here and now:  
   nsSize availableSpace(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
   nsCOMPtr<nsIRenderingContext> renderingContext;
   nsIPresShell* presShell = presContext->PresShell();
@@ -670,8 +671,8 @@ nsSVGForeignObjectFrame::DoReflow()
   nsHTMLReflowMetrics desiredSize;
   nsReflowStatus status;
 
-  
-  
+  // We don't use size.height above because that tells the child to do
+  // page/column breaking at that height.
   NS_ASSERTION(reflowState.mComputedBorderPadding == nsMargin(0, 0, 0, 0) &&
                reflowState.mComputedMargin == nsMargin(0, 0, 0, 0),
                "style system should ensure that :-moz-svg-foreign content "
@@ -705,8 +706,8 @@ nsSVGForeignObjectFrame::InvalidateDirtyRect(nsSVGOuterSVGFrame* aOuter,
   float x = r.x, y = r.y, w = r.width, h = r.height;
   nsRect rect = GetTransformedRegion(x, y, w, h, tm, presContext);
 
-  
-  
+  // XXX invalidate the entire covered region
+  // See bug 418063
   rect.UnionRect(rect, mRect);
 
   rect = nsSVGUtils::FindFilterInvalidation(this, rect);
