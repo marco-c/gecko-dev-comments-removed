@@ -3060,8 +3060,11 @@ TraceRecorder::cmp(LOpcode op, int flags)
 
         
 
-        if (flags & CMP_TRY_BRANCH_AFTER_COND) 
+        if (flags & CMP_TRY_BRANCH_AFTER_COND) {
             fuseIf(cx->fp->regs->pc + 1, cond, x);
+        }
+    } else if (flags & CMP_CASE) {
+        return true;
     }
 
     
@@ -3102,8 +3105,11 @@ TraceRecorder::equal(int flags)
 
             
 
-            if (flags & CMP_TRY_BRANCH_AFTER_COND)
+            if (flags & CMP_TRY_BRANCH_AFTER_COND) {
                 fuseIf(cx->fp->regs->pc + 1, cond, x);
+            }
+        } else if (flags & CMP_CASE) {
+            return true;
         }
 
         
@@ -3129,8 +3135,11 @@ TraceRecorder::equal(int flags)
 
             
 
-            if (flags & CMP_TRY_BRANCH_AFTER_COND)
+            if (flags & CMP_TRY_BRANCH_AFTER_COND) {
                 fuseIf(cx->fp->regs->pc + 1, cond, x);
+            }
+        } else if (flags & CMP_CASE) {
+            return true;
         }
 
         
