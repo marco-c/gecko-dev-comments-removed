@@ -1193,7 +1193,10 @@ gfxTextRun::ComputeLigatureData(PRUint32 aPartStart, PRUint32 aPartEnd,
     PRUint32 partClusterIndex = 0;
     PRUint32 partClusterCount = 0;
     for (i = result.mLigatureStart; i < result.mLigatureEnd; ++i) {
-        if (charGlyphs[i].IsClusterStart()) {
+        
+        
+        
+        if (i == result.mLigatureStart || charGlyphs[i].IsClusterStart()) {
             ++totalClusterCount;
             if (i < aPartStart) {
                 ++partClusterIndex;
@@ -1204,8 +1207,20 @@ gfxTextRun::ComputeLigatureData(PRUint32 aPartStart, PRUint32 aPartEnd,
     }
     result.mPartAdvance = ligatureWidth*partClusterIndex/totalClusterCount;
     result.mPartWidth = ligatureWidth*partClusterCount/totalClusterCount;
-    result.mPartIsStartOfLigature = partClusterIndex == 0;
-    result.mPartIsEndOfLigature = partClusterIndex + partClusterCount == totalClusterCount;
+
+    if (partClusterCount == 0) {
+        
+        result.mClipBeforePart = result.mClipAfterPart = PR_TRUE;
+    } else {
+        
+        
+        
+        
+        result.mClipBeforePart = partClusterIndex > 0;
+        
+        
+        result.mClipAfterPart = partClusterIndex + partClusterCount < totalClusterCount;
+    }
 
     if (aProvider && (mFlags & gfxTextRunFactory::TEXT_ENABLE_SPACING)) {
         gfxFont::Spacing spacing;
@@ -1312,16 +1327,14 @@ static void
 ClipPartialLigature(gfxTextRun *aTextRun, gfxFloat *aLeft, gfxFloat *aRight,
                     gfxFloat aXOrigin, gfxTextRun::LigatureData *aLigature)
 {
-    if (!aLigature->mPartIsStartOfLigature) {
-        
+    if (aLigature->mClipBeforePart) {
         if (aTextRun->IsRightToLeft()) {
             *aRight = PR_MIN(*aRight, aXOrigin);
         } else {
             *aLeft = PR_MAX(*aLeft, aXOrigin);
         }
     }
-    if (!aLigature->mPartIsEndOfLigature) {
-        
+    if (aLigature->mClipAfterPart) {
         gfxFloat endEdge = aXOrigin + aTextRun->GetDirection()*aLigature->mPartWidth;
         if (aTextRun->IsRightToLeft()) {
             *aLeft = PR_MAX(*aLeft, endEdge);
@@ -1389,7 +1402,7 @@ HasSyntheticBold(gfxTextRun *aRun, PRUint32 aStart, PRUint32 aLength)
 static PRBool
 HasNonOpaqueColor(gfxContext *aContext, gfxRGBA& aCurrentColor)
 {
-    if (aContext->GetColor(aCurrentColor)) {
+    if (aContext->GetDeviceColor(aCurrentColor)) {
         if (aCurrentColor.a < 1.0 && aCurrentColor.a > 0.0) {
             return PR_TRUE;
         }
@@ -1675,7 +1688,9 @@ gfxTextRun::BreakAndMeasureText(PRUint32 aStart, PRUint32 aMaxLength,
                                 Metrics *aMetrics, PRBool aTightBoundingBox,
                                 gfxContext *aRefContext,
                                 PRBool *aUsedHyphenation,
-                                PRUint32 *aLastBreak)
+                                PRUint32 *aLastBreak,
+                                PRBool aCanWordWrap,
+                                gfxBreakPriority *aBreakPriority)
 {
     aMaxLength = PR_MIN(aMaxLength, mCharacterCount - aStart);
 
@@ -1729,29 +1744,38 @@ gfxTextRun::BreakAndMeasureText(PRUint32 aStart, PRUint32 aMaxLength,
             }
         }
 
-        PRBool lineBreakHere = mCharacterGlyphs[i].CanBreakBefore() &&
-            (!aSuppressInitialBreak || i > aStart);
-        if (lineBreakHere || (haveHyphenation && hyphenBuffer[i - bufferStart])) {
-            gfxFloat hyphenatedAdvance = advance;
-            PRBool hyphenation = !lineBreakHere;
-            if (hyphenation) {
-                hyphenatedAdvance += aProvider->GetHyphenWidth();
-            }
-            
-            if (lastBreak < 0 || width + hyphenatedAdvance - trimmableAdvance <= aWidth) {
-                
-                lastBreak = i;
-                lastBreakTrimmableChars = trimmableChars;
-                lastBreakTrimmableAdvance = trimmableAdvance;
-                lastBreakUsedHyphenation = hyphenation;
-            }
+        
+        
+        
+        
+        if (!aSuppressInitialBreak || i > aStart) {
+            PRBool lineBreakHere = mCharacterGlyphs[i].CanBreakBefore();
+            PRBool hyphenation = haveHyphenation && hyphenBuffer[i - bufferStart];
+            PRBool wordWrapping = aCanWordWrap && *aBreakPriority <= eWordWrapBreak;
 
-            width += advance;
-            advance = 0;
-            if (width - trimmableAdvance > aWidth) {
-                
-                aborted = PR_TRUE;
-                break;
+            if (lineBreakHere || hyphenation || wordWrapping) {
+                gfxFloat hyphenatedAdvance = advance;
+                if (!lineBreakHere && !wordWrapping) {
+                    hyphenatedAdvance += aProvider->GetHyphenWidth();
+                }
+            
+                if (lastBreak < 0 || width + hyphenatedAdvance - trimmableAdvance <= aWidth) {
+                    
+                    lastBreak = i;
+                    lastBreakTrimmableChars = trimmableChars;
+                    lastBreakTrimmableAdvance = trimmableAdvance;
+                    lastBreakUsedHyphenation = !lineBreakHere && !wordWrapping;
+                    *aBreakPriority = hyphenation || lineBreakHere ?
+                        eNormalBreak : eWordWrapBreak;
+                }
+
+                width += advance;
+                advance = 0;
+                if (width - trimmableAdvance > aWidth) {
+                    
+                    aborted = PR_TRUE;
+                    break;
+                }
             }
         }
         

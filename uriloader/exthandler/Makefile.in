@@ -136,10 +136,6 @@ EXPORTS = \
 		$(OSDIR)/nsOSHelperAppService.h \
 			$(NULL)
 
-ifeq ($(MOZ_WIDGET_TOOLKIT),windows)
-EXPORTS += $(OSDIR)/IApplicationAssociationRegistration.h
-endif
-
 XPIDLSRCS = \
 	nsCExternalHandlerService.idl	\
 	nsIExternalProtocolService.idl \
@@ -160,6 +156,12 @@ CPPSRCS	= \
 	nsLocalHandlerApp.cpp \
 	$(OSHELPER) \
 	$(NULL)
+
+ifdef MOZ_ENABLE_DBUS
+CPPSRCS += nsDBusHandlerApp.cpp
+LOCAL_INCLUDES   += $(TK_CFLAGS) $(MOZ_DBUS_GLIB_CFLAGS)
+EXTRA_DSO_LDOPTS += $(MOZ_DBUS_GLIB_LIBS)
+endif
 
 ifeq ($(OS_ARCH),WINNT WINCE)
 OS_LIBS		+= shell32.lib

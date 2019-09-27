@@ -137,8 +137,7 @@
 
 #ifdef MOZ_ENABLE_GTK2
 #ifdef MOZ_PREF_EXTENSIONS
-#define SYSTEMPREF_MODULES MODULE(nsSystemPrefModule) \
-    MODULE(nsAutoConfigModule)
+#define SYSTEMPREF_MODULES MODULE(nsSystemPrefModule)
 #else
 #define SYSTEMPREF_MODULES
 #endif
@@ -260,6 +259,12 @@
 #define UNIXPROXY_MODULE
 #endif
 
+#if defined(XP_MACOSX)
+#define OSXPROXY_MODULE MODULE(nsOSXProxyModule)
+#else
+#define OSXPROXY_MODULE
+#endif
+
 #define XUL_MODULES                          \
     MODULE(xpconnect)                        \
     MATHML_MODULES                           \
@@ -307,11 +312,13 @@
     JSDEBUGGER_MODULES                       \
     MODULE(BOOT)                             \
     MODULE(NSS)                              \
+    MODULE(nsAutoConfigModule)               \
     SYSTEMPREF_MODULES                       \
     SPELLCHECK_MODULE                        \
     XMLEXTRAS_MODULE                         \
     LAYOUT_DEBUG_MODULE                      \
     UNIXPROXY_MODULE                         \
+    OSXPROXY_MODULE                          \
     /* end of list */
 
 #define MODULE(_name) \
