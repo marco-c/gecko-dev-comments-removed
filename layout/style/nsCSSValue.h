@@ -1,41 +1,41 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* representation of simple property values within CSS declarations */
 
 #ifndef nsCSSValue_h___
 #define nsCSSValue_h___
@@ -56,69 +56,69 @@ class nsIDocument;
 class nsIPrincipal;
 
 enum nsCSSUnit {
-  eCSSUnit_Null         = 0,      
-  eCSSUnit_Auto         = 1,      
-  eCSSUnit_Inherit      = 2,      
-  eCSSUnit_Initial      = 3,      
-  eCSSUnit_None         = 4,      
-  eCSSUnit_Normal       = 5,      
-  eCSSUnit_System_Font  = 6,      
-  eCSSUnit_String       = 10,     
-  eCSSUnit_Attr         = 11,     
-  eCSSUnit_Array        = 20,     
-  eCSSUnit_Counter      = 21,     
-  eCSSUnit_Counters     = 22,     
-  eCSSUnit_URL          = 30,     
-  eCSSUnit_Image        = 31,     
-  eCSSUnit_Integer      = 50,     
-  eCSSUnit_Enumerated   = 51,     
-  eCSSUnit_Color        = 80,     
-  eCSSUnit_Percent      = 90,     
-  eCSSUnit_Number       = 91,     
+  eCSSUnit_Null         = 0,      // (n/a) null unit, value is not specified
+  eCSSUnit_Auto         = 1,      // (n/a) value is algorithmic
+  eCSSUnit_Inherit      = 2,      // (n/a) value is inherited
+  eCSSUnit_Initial      = 3,      // (n/a) value is default UA value
+  eCSSUnit_None         = 4,      // (n/a) value is none
+  eCSSUnit_Normal       = 5,      // (n/a) value is normal (algorithmic, different than auto)
+  eCSSUnit_System_Font  = 6,      // (n/a) value is -moz-use-system-font
+  eCSSUnit_String       = 10,     // (PRUnichar*) a string value
+  eCSSUnit_Attr         = 11,     // (PRUnichar*) a attr(string) value
+  eCSSUnit_Array        = 20,     // (nsCSSValue::Array*) a list of values
+  eCSSUnit_Counter      = 21,     // (nsCSSValue::Array*) a counter(string,[string]) value
+  eCSSUnit_Counters     = 22,     // (nsCSSValue::Array*) a counters(string,string[,string]) value
+  eCSSUnit_URL          = 30,     // (nsCSSValue::URL*) value
+  eCSSUnit_Image        = 31,     // (nsCSSValue::Image*) value
+  eCSSUnit_Integer      = 50,     // (int) simple value
+  eCSSUnit_Enumerated   = 51,     // (int) value has enumerated meaning
+  eCSSUnit_Color        = 80,     // (color) an RGBA value
+  eCSSUnit_Percent      = 90,     // (float) 1.0 == 100%) value is percentage of something
+  eCSSUnit_Number       = 91,     // (float) value is numeric (usually multiplier, different behavior that percent)
 
-  
-  
-  eCSSUnit_Inch         = 100,    
-  eCSSUnit_Foot         = 101,    
-  eCSSUnit_Mile         = 102,    
+  // Length units - fixed
+  // US English
+  eCSSUnit_Inch         = 100,    // (float) 0.0254 meters
+  eCSSUnit_Foot         = 101,    // (float) 12 inches
+  eCSSUnit_Mile         = 102,    // (float) 5280 feet
 
-  
-  eCSSUnit_Millimeter   = 207,    
-  eCSSUnit_Centimeter   = 208,    
-  eCSSUnit_Meter        = 210,    
-  eCSSUnit_Kilometer    = 213,    
+  // Metric
+  eCSSUnit_Millimeter   = 207,    // (float) 1/1000 meter
+  eCSSUnit_Centimeter   = 208,    // (float) 1/100 meter
+  eCSSUnit_Meter        = 210,    // (float) Standard length
+  eCSSUnit_Kilometer    = 213,    // (float) 1000 meters
 
-  
-  eCSSUnit_Point        = 300,    
-  eCSSUnit_Pica         = 301,    
+  // US Typographic
+  eCSSUnit_Point        = 300,    // (float) 1/72 inch
+  eCSSUnit_Pica         = 301,    // (float) 12 points == 1/6 inch
 
-  
-  eCSSUnit_Didot        = 400,    
-  eCSSUnit_Cicero       = 401,    
+  // European Typographic
+  eCSSUnit_Didot        = 400,    // (float) 15 didots == 16 points
+  eCSSUnit_Cicero       = 401,    // (float) 12 didots
 
-  
-  
-  eCSSUnit_EM           = 800,    
-  eCSSUnit_EN           = 801,    
-  eCSSUnit_XHeight      = 802,    
-  eCSSUnit_CapHeight    = 803,    
-  eCSSUnit_Char         = 804,    
+  // Length units - relative
+  // Font relative measure
+  eCSSUnit_EM           = 800,    // (float) == current font size
+  eCSSUnit_EN           = 801,    // (float) .5 em
+  eCSSUnit_XHeight      = 802,    // (float) distance from top of lower case x to baseline
+  eCSSUnit_CapHeight    = 803,    // (float) distance from top of uppercase case H to baseline
+  eCSSUnit_Char         = 804,    // (float) number of characters, used for width with monospace font
 
-  
-  eCSSUnit_Pixel        = 900,    
+  // Screen relative measure
+  eCSSUnit_Pixel        = 900,    // (float) CSS pixel unit
 
-  
-  eCSSUnit_Degree       = 1000,    
-  eCSSUnit_Grad         = 1001,    
-  eCSSUnit_Radian       = 1002,    
+  // Angular units
+  eCSSUnit_Degree       = 1000,    // (float) 360 per circle
+  eCSSUnit_Grad         = 1001,    // (float) 400 per circle
+  eCSSUnit_Radian       = 1002,    // (float) 2*pi per circle
 
-  
-  eCSSUnit_Hertz        = 2000,    
-  eCSSUnit_Kilohertz    = 2001,    
+  // Frequency units
+  eCSSUnit_Hertz        = 2000,    // (float) 1/seconds
+  eCSSUnit_Kilohertz    = 2001,    // (float) 1000 Hertz
 
-  
-  eCSSUnit_Seconds      = 3000,    
-  eCSSUnit_Milliseconds = 3001     
+  // Time units
+  eCSSUnit_Seconds      = 3000,    // (float) Standard time
+  eCSSUnit_Milliseconds = 3001     // (float) 1/1000 second
 };
 
 class nsCSSValue {
@@ -132,7 +132,7 @@ public:
   struct Image;
   friend struct Image;
   
-  
+  // for valueless units only (null, auto, inherit, none, normal)
   explicit nsCSSValue(nsCSSUnit aUnit = eCSSUnit_Null)
     : mUnit(aUnit)
   {
@@ -232,6 +232,14 @@ public:
       mValue.mURL->mURI : mValue.mImage->mURI;
   }
 
+  URL* GetURLStructValue() const
+  {
+    // Not allowing this for Image values, because if the caller takes
+    // a ref to them they won't be able to delete them properly.
+    NS_ASSERTION(mUnit == eCSSUnit_URL, "not a URL value");
+    return mValue.mURL;
+  }
+
   const PRUnichar* GetOriginalURLValue() const
   {
     NS_ASSERTION(mUnit == eCSSUnit_URL || mUnit == eCSSUnit_Image,
@@ -241,14 +249,14 @@ public:
                             mValue.mImage->mString);
   }
 
-  
-  
-  
+  // Not making this inline because that would force us to include
+  // imgIRequest.h, which leads to REQUIRES hell, since this header is included
+  // all over.
   NS_HIDDEN_(imgIRequest*) GetImageValue() const;
 
   NS_HIDDEN_(nscoord)   GetLengthTwips() const;
 
-  NS_HIDDEN_(void)  Reset()  
+  NS_HIDDEN_(void)  Reset()  // sets to null
   {
     if (eCSSUnit_String <= mUnit && mUnit <= eCSSUnit_Attr) {
       mValue.mString->Release();
@@ -278,15 +286,15 @@ public:
   NS_HIDDEN_(void)  SetNormalValue();
   NS_HIDDEN_(void)  SetSystemFontValue();
   NS_HIDDEN_(void)  StartImageLoad(nsIDocument* aDocument)
-                                   const;  
+                                   const;  // Not really const, but pretending
 
-  
-  
+  // Returns an already addrefed buffer.  Can return null on allocation
+  // failure.
   static nsStringBuffer* BufferFromString(const nsString& aValue);
   
   struct Array {
 
-    
+    // return |Array| with reference count of zero
     static Array* Create(PRUint16 aItemCount) {
       return new (aItemCount) Array(aItemCount);
     }
@@ -371,16 +379,16 @@ public:
 #undef CSSVALUE_LIST_FOR_VALUES
 
   private:
-    Array(const Array& aOther); 
+    Array(const Array& aOther); // not to be implemented
   };
 
   struct URL {
-    
-    
-    
+    // Methods are not inline because using an nsIPrincipal means requiring
+    // caps, which leads to REQUIRES hell, since this header is included all
+    // over.    
 
-    
-    
+    // aString must not be null.
+    // aOriginPrincipal must not be null.
     URL(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
         nsIPrincipal* aOriginPrincipal) NS_HIDDEN;
 
@@ -388,9 +396,15 @@ public:
 
     NS_HIDDEN_(PRBool) operator==(const URL& aOther) const;
 
-    nsCOMPtr<nsIURI> mURI; 
-    nsStringBuffer* mString; 
-                             
+    // URIEquals only compares URIs and principals (unlike operator==, which
+    // also compares the original strings).  URIEquals also assumes that the
+    // mURI member of both URL objects is non-null.  Do NOT call this method
+    // unless you're sure this is the case.
+    NS_HIDDEN_(PRBool) URIEquals(const URL& aOther) const;
+
+    nsCOMPtr<nsIURI> mURI; // null == invalid URL
+    nsStringBuffer* mString; // Could use nsRefPtr, but it'd add useless
+                             // null-checks; this is never null.
     nsCOMPtr<nsIURI> mReferrer;
     nsCOMPtr<nsIPrincipal> mOriginPrincipal;
 
@@ -401,19 +415,19 @@ public:
   };
 
   struct Image : public URL {
-    
-    
-    
-    
+    // Not making the constructor and destructor inline because that would
+    // force us to include imgIRequest.h, which leads to REQUIRES hell, since
+    // this header is included all over.
+    // aString must not be null.
     Image(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
           nsIPrincipal* aOriginPrincipal, nsIDocument* aDocument) NS_HIDDEN;
     ~Image() NS_HIDDEN;
 
-    
+    // Inherit operator== from nsCSSValue::URL
 
-    nsCOMPtr<imgIRequest> mRequest; 
+    nsCOMPtr<imgIRequest> mRequest; // null == image load blocked or somehow failed
 
-    
+    // Override AddRef/Release so we delete ourselves via the right pointer.
     void AddRef() { ++mRefCnt; }
     void Release() { if (--mRefCnt == 0) delete this; }
   };
@@ -428,8 +442,8 @@ protected:
   union {
     PRInt32    mInt;
     float      mFloat;
-    
-    
+    // Note: the capacity of the buffer may exceed the length of the string.
+    // If we're of a string type, mString is not null.
     nsStringBuffer* mString;
     nscolor    mColor;
     Array*     mArray;
@@ -438,5 +452,5 @@ protected:
   }         mValue;
 };
 
-#endif 
+#endif /* nsCSSValue_h___ */
 

@@ -1,43 +1,43 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   David Hyatt <hyatt@netscape.com>
+ *   Pierre Phaneuf <pp@ludusdesign.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
  
-
+/* the interface (to internal code) for retrieving computed style data */
 
 #include "nsStyleConsts.h"
 #include "nsString.h"
@@ -58,10 +58,10 @@
 #include "nsPrintfCString.h"
 
 #ifdef DEBUG
-
+// #define NOISY_DEBUG
 #endif
 
-
+//----------------------------------------------------------------------
 
 
 nsStyleContext::nsStyleContext(nsStyleContext* aParent,
@@ -105,7 +105,7 @@ nsStyleContext::~nsStyleContext()
     mParent->Release();
   }
 
-  
+  // Free up our data structs.
   if (mCachedStyleData.mResetData || mCachedStyleData.mInheritedData) {
     mCachedStyleData.Destroy(mBits, presContext);
   }
@@ -119,9 +119,9 @@ void nsStyleContext::AddChild(nsStyleContext* aChild)
 
   nsStyleContext **list = aChild->mRuleNode->IsRoot() ? &mEmptyChild : &mChild;
 
-  
+  // Insert at the beginning of the list.  See also FindChildWithRules.
   if (*list) {
-    
+    // Link into existing elements, if there are any.
     aChild->mNextSibling = (*list);
     aChild->mPrevSibling = (*list)->mPrevSibling;
     (*list)->mPrevSibling->mNextSibling = aChild;
@@ -136,7 +136,7 @@ void nsStyleContext::RemoveChild(nsStyleContext* aChild)
 
   nsStyleContext **list = aChild->mRuleNode->IsRoot() ? &mEmptyChild : &mChild;
 
-  if (aChild->mPrevSibling != aChild) { 
+  if (aChild->mPrevSibling != aChild) { // has siblings
     if ((*list) == aChild) {
       (*list) = (*list)->mNextSibling;
     }
@@ -156,8 +156,8 @@ already_AddRefed<nsStyleContext>
 nsStyleContext::FindChildWithRules(const nsIAtom* aPseudoTag, 
                                    nsRuleNode* aRuleNode)
 {
-  PRUint32 threshold = 10; 
-                           
+  PRUint32 threshold = 10; // The # of siblings we're willing to examine
+                           // before just giving this whole thing up.
 
   nsStyleContext* result = nsnull;
   nsStyleContext *list = aRuleNode->IsRoot() ? mEmptyChild : mChild;
@@ -178,12 +178,12 @@ nsStyleContext::FindChildWithRules(const nsIAtom* aPseudoTag,
 
   if (result) {
     if (result != list) {
-      
+      // Move result to the front of the list.
       RemoveChild(result);
       AddChild(result);
     }
 
-    
+    // Add reference for the caller.
     result->AddRef();
   }
 
@@ -213,14 +213,14 @@ PRBool nsStyleContext::Equals(const nsStyleContext* aOther) const
   return result;
 }
 
-
+//=========================================================================================================
 
 const nsStyleStruct* nsStyleContext::GetStyleData(nsStyleStructID aSID)
 {
   const nsStyleStruct* cachedData = mCachedStyleData.GetStyleData(aSID); 
   if (cachedData)
-    return cachedData; 
-  return mRuleNode->GetStyleData(aSID, this, PR_TRUE); 
+    return cachedData; // We have computed data stored on this node in the context tree.
+  return mRuleNode->GetStyleData(aSID, this, PR_TRUE); // Our rule node will take care of it for us.
 }
 
 #define STYLE_STRUCT(name_, checkdata_cb_, ctor_args_)                      \
@@ -240,21 +240,21 @@ inline const nsStyleStruct* nsStyleContext::PeekStyleData(nsStyleStructID aSID)
 {
   const nsStyleStruct* cachedData = mCachedStyleData.GetStyleData(aSID); 
   if (cachedData)
-    return cachedData; 
-  return mRuleNode->GetStyleData(aSID, this, PR_FALSE); 
+    return cachedData; // We have computed data stored on this node in the context tree.
+  return mRuleNode->GetStyleData(aSID, this, PR_FALSE); // Our rule node will take care of it for us.
 }
 
-
-
-
+// This is an evil evil function, since it forces you to alloc your own separate copy of
+// style data!  Do not use this function unless you absolutely have to!  You should avoid
+// this at all costs! -dwh
 nsStyleStruct* 
 nsStyleContext::GetUniqueStyleData(const nsStyleStructID& aSID)
 {
-  
-  
-  
-  
-  
+  // If we already own the struct and no kids could depend on it, then
+  // just return it.  (We leak in this case if there are kids -- and this
+  // function really shouldn't be called for style contexts that could
+  // have kids depending on the data.  ClearStyleData would be OK, but
+  // this test for no mChild or mEmptyChild doesn't catch that case.)
   const nsStyleStruct *current = GetStyleData(aSID);
   if (!mChild && !mEmptyChild &&
       !(mBits & nsCachedStyleData::GetBitForSID(aSID)) &&
@@ -298,14 +298,14 @@ nsStyleContext::GetUniqueStyleData(const nsStyleStructID& aSID)
 void
 nsStyleContext::SetStyle(nsStyleStructID aSID, nsStyleStruct* aStruct)
 {
-  
-  
+  // This method should only be called from nsRuleNode!  It is not a public
+  // method!
   
   NS_ASSERTION(aSID >= 0 && aSID < nsStyleStructID_Length, "out of bounds");
 
-  
-  
-  
+  // NOTE:  nsCachedStyleData::GetStyleData works roughly the same way.
+  // See the comments there (in nsRuleNode.h) for more details about
+  // what this is doing and why.
 
   const nsCachedStyleData::StyleStructInfo& info =
       nsCachedStyleData::gInfo[aSID];
@@ -332,24 +332,24 @@ nsStyleContext::SetStyle(nsStyleStructID aSID, nsStyleStruct* aStruct)
 void
 nsStyleContext::ApplyStyleFixups(nsPresContext* aPresContext)
 {
-  
-  
+  // See if we have any text decorations.
+  // First see if our parent has text decorations.  If our parent does, then we inherit the bit.
   if (mParent && mParent->HasTextDecorations())
     mBits |= NS_STYLE_HAS_TEXT_DECORATIONS;
   else {
-    
+    // We might have defined a decoration.
     const nsStyleTextReset* text = GetStyleTextReset();
     if (text->mTextDecoration != NS_STYLE_TEXT_DECORATION_NONE &&
         text->mTextDecoration != NS_STYLE_TEXT_DECORATION_OVERRIDE_ALL)
       mBits |= NS_STYLE_HAS_TEXT_DECORATIONS;
   }
 
-  
+  // Correct tables.
   const nsStyleDisplay* disp = GetStyleDisplay();
   if (disp->mDisplay == NS_STYLE_DISPLAY_TABLE) {
-    
-    
-    
+    // -moz-center and -moz-right are used for HTML's alignment
+    // This is covering the <div align="right"><table>...</table></div> case.
+    // In this case, we don't want to inherit the text alignment into the table.
     const nsStyleText* text = GetStyleText();
     
     if (text->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_CENTER ||
@@ -360,13 +360,13 @@ nsStyleContext::ApplyStyleFixups(nsPresContext* aPresContext)
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // CSS2.1 section 9.2.4 specifies fixups for the 'display' property of
+  // the root element.  We can't implement them in nsRuleNode because we
+  // don't want to store all display structs that aren't 'block',
+  // 'inline', or 'table' in the style context tree on the off chance
+  // that the root element has its style reresolved later.  So do them
+  // here if needed, by changing the style data, so that other code
+  // doesn't get confused by looking at the style data.
   if (!mParent) {
     if (disp->mDisplay != NS_STYLE_DISPLAY_NONE &&
         disp->mDisplay != NS_STYLE_DISPLAY_BLOCK &&
@@ -380,18 +380,18 @@ nsStyleContext::ApplyStyleFixups(nsPresContext* aPresContext)
     }
   }
 
-  
+  // Computer User Interface style, to trigger loads of cursors
   GetStyleUserInterface();
 }
 
 void
 nsStyleContext::ClearStyleData(nsPresContext* aPresContext)
 {
-  
+  // First we need to clear out all of our style data.
   if (mCachedStyleData.mResetData || mCachedStyleData.mInheritedData)
     mCachedStyleData.Destroy(mBits, aPresContext);
 
-  mBits = 0; 
+  mBits = 0; // Clear all bits.
 
   ApplyStyleFixups(aPresContext);
 
@@ -417,16 +417,16 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther)
 {
   nsChangeHint hint = NS_STYLE_HINT_NONE;
   NS_ENSURE_TRUE(aOther, hint);
-  
-  
-  
-  
+  // We must always ensure that we populate the structs on the new style
+  // context that are filled in on the old context, so that if we get
+  // two style changes in succession, the second of which causes a real
+  // style change, the PeekStyleData doesn't fail.
 
-  
-  
-  
-  
-  
+  // If our rule nodes are the same, then we are looking at the same
+  // style data.  We know this because CalcStyleDifference is always
+  // called on two style contexts that point to the same element, so we
+  // know that our position in the style context tree is the same and
+  // our position in the rule node tree is also the same.
   PRBool compare = mRuleNode != aOther->mRuleNode;
 
   nsChangeHint maxHint = nsChangeHint(NS_STYLE_HINT_FRAMECHANGE |
@@ -453,10 +453,10 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther)
     }                                                                         \
   PR_END_MACRO
 
-  
-  
-  
-  
+  // We begin by examining those style structs that are capable of
+  // causing the maximal difference, a FRAMECHANGE.
+  // FRAMECHANGE Structs: Display, XUL, Content, UserInterface,
+  // Visibility, Outline, TableBorder, Table, UIReset, Quotes
   DO_STRUCT_DIFFERENCE(Display);
   DO_STRUCT_DIFFERENCE(XUL);
   DO_STRUCT_DIFFERENCE(Column);
@@ -468,17 +468,17 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther)
   DO_STRUCT_DIFFERENCE(Table);
   DO_STRUCT_DIFFERENCE(UIReset);
   DO_STRUCT_DIFFERENCE(List);
-  
-  
+  // If the quotes implementation is ever going to change we might not need
+  // a framechange here and a reflow should be sufficient.  See bug 35768.
   DO_STRUCT_DIFFERENCE(Quotes);
 
-  
-  
+  // At this point, we know that the worst kind of damage we could do is
+  // a reflow.
   maxHint = NS_STYLE_HINT_REFLOW;
       
-  
-  
-  
+  // The following structs cause (as their maximal difference) a reflow
+  // to occur.  REFLOW Structs: Font, Margin, Padding, Border, List,
+  // Position, Text, TextReset
   DO_STRUCT_DIFFERENCE(Font);
   DO_STRUCT_DIFFERENCE(Margin);
   DO_STRUCT_DIFFERENCE(Padding);
@@ -487,12 +487,12 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther)
   DO_STRUCT_DIFFERENCE(Text);
   DO_STRUCT_DIFFERENCE(TextReset);
 
-  
-  
+  // At this point, we know that the worst kind of damage we could do is
+  // a re-render (i.e., a VISUAL change).
   maxHint = NS_STYLE_HINT_VISUAL;
 
-  
-  
+  // The following structs cause (as their maximal difference) a
+  // re-render to occur.  VISUAL Structs: Color, Background
   DO_STRUCT_DIFFERENCE(Color);
   DO_STRUCT_DIFFERENCE(Background);
 #ifdef MOZ_SVG
@@ -507,10 +507,10 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther)
 void
 nsStyleContext::Mark()
 {
-  
+  // Mark our rule node.
   mRuleNode->Mark();
 
-  
+  // Mark our children (i.e., tell them to mark their rule nodes, etc.).
   if (mChild) {
     nsStyleContext* child = mChild;
     do {
@@ -551,6 +551,15 @@ public:
       Assign("[none]");
     }
   }
+
+  URICString(nsCSSValue::URL* aURI) {
+    if (aURI) {
+      NS_ASSERTION(aURI->mURI, "Must have URI here!");
+      aURI->mURI->GetSpec(*this);
+    } else {
+      Assign("[none]");
+    }
+  }
   
   URICString& operator=(const URICString& aOther) {
     Assign(aOther);
@@ -560,7 +569,7 @@ public:
 
 void nsStyleContext::List(FILE* out, PRInt32 aIndent)
 {
-  
+  // Indent
   PRInt32 ix;
   for (ix = aIndent; --ix >= 0; ) fputs("  ", out);
   fprintf(out, "%p(%d) parent=%p ",
@@ -608,12 +617,12 @@ void nsStyleContext::List(FILE* out, PRInt32 aIndent)
 static void IndentBy(FILE* out, PRInt32 aIndent) {
   while (--aIndent >= 0) fputs("  ", out);
 }
-
+// virtual 
 void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, PRInt32 aIndent)
 {
   nsAutoString str;
 
-  
+  // FONT
   IndentBy(out,aIndent);
   const nsStyleFont* font = GetStyleFont();
   fprintf(out, "<font %s %d %d %d />\n", 
@@ -622,13 +631,13 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
           font->mSize,
           font->mFlags);
 
-  
+  // COLOR
   IndentBy(out,aIndent);
   const nsStyleColor* color = GetStyleColor();
   fprintf(out, "<color data=\"%ld\"/>\n", 
     (long)color->mColor);
 
-  
+  // BACKGROUND
   IndentBy(out,aIndent);
   const nsStyleBackground* bg = GetStyleBackground();
   fprintf(out, "<background data=\"%d %d %d %ld %ld %ld %s\"/>\n",
@@ -636,12 +645,12 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
     (int)bg->mBackgroundFlags,
     (int)bg->mBackgroundRepeat,
     (long)bg->mBackgroundColor,
-    
-    (long)bg->mBackgroundXPosition.mCoord, 
-    (long)bg->mBackgroundYPosition.mCoord, 
+    // XXX These aren't initialized unless flags are set:
+    (long)bg->mBackgroundXPosition.mCoord, // potentially lossy on some platforms
+    (long)bg->mBackgroundYPosition.mCoord, // potentially lossy on some platforms
     URICString(bg->mBackgroundImage).get());
  
-  
+  // SPACING (ie. margin, padding, border, outline)
   IndentBy(out,aIndent);
   fprintf(out, "<spacing data=\"");
 
@@ -676,7 +685,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
   fprintf(out, "%d", (int)border->mFloatEdge);
   fprintf(out, "\" />\n");
 
-  
+  // LIST
   IndentBy(out,aIndent);
   const nsStyleList* list = GetStyleList();
   fprintf(out, "<list data=\"%d %d %s\" />\n",
@@ -684,7 +693,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
     (int)list->mListStyleType,
     URICString(list->mListStyleImage).get());
 
-  
+  // POSITION
   IndentBy(out,aIndent);
   const nsStylePosition* pos = GetStylePosition();
   fprintf(out, "<position data=\"");
@@ -707,7 +716,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
   fprintf(out, "%s ", NS_ConvertUTF16toUTF8(str).get());
   fprintf(out, "\" />\n");
 
-  
+  // TEXT
   IndentBy(out,aIndent);
   const nsStyleText* text = GetStyleText();
   fprintf(out, "<text data=\"%d %d %d ",
@@ -724,7 +733,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
   fprintf(out, "%s ", NS_ConvertUTF16toUTF8(str).get());
   fprintf(out, "\" />\n");
   
-  
+  // TEXT RESET
   IndentBy(out,aIndent);
   const nsStyleTextReset* textReset = GetStyleTextReset();
   fprintf(out, "<textreset data=\"%d ",
@@ -733,7 +742,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
   fprintf(out, "%s ", NS_ConvertUTF16toUTF8(str).get());
   fprintf(out, "\" />\n");
 
-  
+  // DISPLAY
   IndentBy(out,aIndent);
   const nsStyleDisplay* disp = GetStyleDisplay();
   fprintf(out, "<display data=\"%d %d %f %d %d %d %d %d %d %d %ld %ld %ld %ld %s\" />\n",
@@ -754,7 +763,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
     URICString(disp->mBinding).get()
     );
   
-  
+  // VISIBILITY
   IndentBy(out,aIndent);
   const nsStyleVisibility* vis = GetStyleVisibility();
   fprintf(out, "<visibility data=\"%d %d\" />\n",
@@ -762,7 +771,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
     (int)vis->mVisible
     );
 
-  
+  // TABLE
   IndentBy(out,aIndent);
   const nsStyleTable* table = GetStyleTable();
   fprintf(out, "<table data=\"%d %d %d ",
@@ -774,7 +783,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
     (long)table->mSpan);
   fprintf(out, "\" />\n");
 
-  
+  // TABLEBORDER
   IndentBy(out,aIndent);
   const nsStyleTableBorder* tableBorder = GetStyleTableBorder();
   fprintf(out, "<tableborder data=\"%d ",
@@ -788,27 +797,27 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
     (int)tableBorder->mEmptyCells);
   fprintf(out, "\" />\n");
 
-  
+  // CONTENT
   IndentBy(out,aIndent);
   const nsStyleContent* content = GetStyleContent();
   fprintf(out, "<content data=\"%ld %ld %ld ",
     (long)content->ContentCount(),
     (long)content->CounterIncrementCount(),
     (long)content->CounterResetCount());
-  
+  // XXX: iterate over the content and counters...
   content->mMarkerOffset.ToString(str);
   fprintf(out, "%s ", NS_ConvertUTF16toUTF8(str).get());
   fprintf(out, "\" />\n");
 
-  
+  // QUOTES
   IndentBy(out,aIndent);
   const nsStyleQuotes* quotes = GetStyleQuotes();
   fprintf(out, "<quotes data=\"%ld ",
     (long)quotes->QuotesCount());
-  
+  // XXX: iterate over the quotes...
   fprintf(out, "\" />\n");
 
-  
+  // UI
   IndentBy(out,aIndent);
   const nsStyleUserInterface* ui = GetStyleUserInterface();
   fprintf(out, "<ui data=\"%d %d %d %d\" />\n",
@@ -817,14 +826,14 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
     (int)ui->mUserFocus, 
     (int)ui->mCursor);
 
-  
+  // UIReset
   IndentBy(out,aIndent);
   const nsStyleUIReset* uiReset = GetStyleUIReset();
   fprintf(out, "<uireset data=\"%d %d\" />\n",
     (int)uiReset->mUserSelect,
     (int)uiReset->mIMEMode);
 
-  
+  // Column
   IndentBy(out,aIndent);
   const nsStyleColumn* column = GetStyleColumn();
   fprintf(out, "<column data=\"%d ",
@@ -835,7 +844,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
   fprintf(out, "%s", NS_ConvertUTF16toUTF8(str).get());
   fprintf(out, "\" />\n");
 
-  
+  // XUL
   IndentBy(out,aIndent);
   const nsStyleXUL* xul = GetStyleXUL();
   fprintf(out, "<xul data=\"%d %d %d %d %d %d",
@@ -848,7 +857,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
   fprintf(out, "\" />\n");
 
 #ifdef MOZ_SVG
-  
+  // SVG
   IndentBy(out,aIndent);
   const nsStyleSVG* svg = GetStyleSVG();
   fprintf(out, "<svg data=\"%d ",(int)svg->mFill.mType);
@@ -899,7 +908,7 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
           (int)svg->mTextAnchor,
           (int)svg->mTextRendering);
 
-  
+  // SVGReset
   IndentBy(out,aIndent);
   const nsStyleSVGReset* svgReset = GetStyleSVGReset();
 
@@ -915,32 +924,32 @@ void nsStyleContext::DumpRegressionData(nsPresContext* aPresContext, FILE* out, 
           svgReset->mFloodOpacity,
           (int)svgReset->mDominantBaseline);
 #endif
-  
+  //#insert new style structs here#
 }
 #endif
 
-
-
+// Overloaded new operator. Initializes the memory to 0 and relies on an arena
+// (which comes from the presShell) to perform the allocation.
 void* 
 nsStyleContext::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW
 {
-  
+  // Check the recycle list first.
   return aPresContext->AllocateFromShell(sz);
 }
 
-
-
+// Overridden to prevent the global delete from being called, since the memory
+// came out of an nsIArena instead of the global delete operator's heap.
 void 
 nsStyleContext::Destroy()
 {
-  
+  // Get the pres context from our rule node.
   nsCOMPtr<nsPresContext> presContext = mRuleNode->GetPresContext();
 
-  
+  // Call our destructor.
   this->~nsStyleContext();
 
-  
-  
+  // Don't let the memory be freed, since it will be recycled
+  // instead. Don't call the global operator delete.
   presContext->FreeToShell(sizeof(nsStyleContext), this);
 }
 
