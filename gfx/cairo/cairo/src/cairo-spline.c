@@ -1,43 +1,43 @@
-/* cairo - a vector graphics library with display and print output
- *
- * Copyright © 2002 University of Southern California
- *
- * This library is free software; you can redistribute it and/or
- * modify it either under the terms of the GNU Lesser General Public
- * License version 2.1 as published by the Free Software Foundation
- * (the "LGPL") or, at your option, under the terms of the Mozilla
- * Public License Version 1.1 (the "MPL"). If you do not alter this
- * notice, a recipient may use your version of this file under either
- * the MPL or the LGPL.
- *
- * You should have received a copy of the LGPL along with this library
- * in the file COPYING-LGPL-2.1; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- * You should have received a copy of the MPL along with this library
- * in the file COPYING-MPL-1.1
- *
- * The contents of this file are subject to the Mozilla Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY
- * OF ANY KIND, either express or implied. See the LGPL or the MPL for
- * the specific language governing rights and limitations.
- *
- * The Original Code is the cairo graphics library.
- *
- * The Initial Developer of the Original Code is University of Southern
- * California.
- *
- * Contributor(s):
- *	Carl D. Worth <cworth@cworth.org>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "cairoint.h"
 
 static cairo_status_t
-_cairo_spline_grow (cairo_spline_t *spline);
+_cairo_spline_grow_by (cairo_spline_t *spline, int additional);
 
 static cairo_status_t
 _cairo_spline_add_point (cairo_spline_t *spline, cairo_point_t *point);
@@ -90,47 +90,31 @@ _cairo_spline_init (cairo_spline_t *spline,
 void
 _cairo_spline_fini (cairo_spline_t *spline)
 {
-    if (spline->points && spline->points != spline->points_embedded)
-	free (spline->points);
-
-    spline->points = NULL;
-    spline->points_size = 0;
     spline->num_points = 0;
+    spline->points_size = 0;
+    free (spline->points);
+    spline->points = NULL;
 }
 
-/* make room for at least one more point */
 static cairo_status_t
-_cairo_spline_grow (cairo_spline_t *spline)
+_cairo_spline_grow_by (cairo_spline_t *spline, int additional)
 {
     cairo_point_t *new_points;
     int old_size = spline->points_size;
-    int embedded_size = sizeof (spline->points_embedded) / sizeof (spline->points_embedded[0]);
-    int new_size = 2 * MAX (old_size, 16);
+    int new_size = spline->num_points + additional;
 
-    /* we have a local buffer at spline->points_embedded.  try to fulfill the request
-     * from there. */
-    if (old_size < embedded_size) {
-	spline->points = spline->points_embedded;
-	spline->points_size = embedded_size;
+    if (new_size <= spline->points_size)
 	return CAIRO_STATUS_SUCCESS;
-    }
 
-    assert (spline->num_points <= spline->points_size);
-
-    if (spline->points == spline->points_embedded) {
-	new_points = malloc (new_size * sizeof (cairo_point_t));
-	if (new_points)
-	    memcpy (new_points, spline->points, old_size * sizeof (cairo_point_t));
-    } else {
-	new_points = realloc (spline->points, new_size * sizeof (cairo_point_t));
-    }
+    spline->points_size = new_size;
+    new_points = realloc (spline->points, spline->points_size * sizeof (cairo_point_t));
 
     if (new_points == NULL) {
+	spline->points_size = old_size;
 	return CAIRO_STATUS_NO_MEMORY;
     }
 
     spline->points = new_points;
-    spline->points_size = new_size;
 
     return CAIRO_STATUS_SUCCESS;
 }
@@ -148,7 +132,8 @@ _cairo_spline_add_point (cairo_spline_t *spline, cairo_point_t *point)
     }
 
     if (spline->num_points >= spline->points_size) {
-	status = _cairo_spline_grow (spline);
+	int additional = spline->points_size ? spline->points_size : 32;
+	status = _cairo_spline_grow_by (spline, additional);
 	if (status)
 	    return status;
     }
@@ -208,15 +193,15 @@ _PointDistanceSquaredToSegment (cairo_point_t *p, cairo_point_t *p1, cairo_point
     double pdx, pdy;
     cairo_point_t px;
 
-    /* intersection point (px):
+    
 
-       px = p1 + u(p2 - p1)
-       (p - px) . (p2 - p1) = 0
 
-       Thus:
 
-       u = ((p - p1) . (p2 - p1)) / (||(p2 - p1)|| ^ 2);
-    */
+
+
+
+
+
 
     dx = _cairo_fixed_to_double (p2->x - p1->x);
     dy = _cairo_fixed_to_double (p2->y - p1->y);
@@ -240,8 +225,8 @@ _PointDistanceSquaredToSegment (cairo_point_t *p, cairo_point_t *p1, cairo_point
     return _PointDistanceSquaredToPoint (p, &px);
 }
 
-/* Return an upper bound on the error (squared) that could result from approximating
-   a spline as a line segment connecting the two endpoints */
+
+
 static double
 _cairo_spline_error_squared (cairo_spline_t *spline)
 {
