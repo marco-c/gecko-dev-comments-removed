@@ -54,7 +54,7 @@
 #include "jsatom.h"
 #include "jsbool.h"
 #include "jscntxt.h"
-#include "jsconfig.h"
+#include "jsversion.h"
 #include "jsdbgapi.h"
 #include "jsfun.h"
 #include "jsgc.h"
@@ -68,6 +68,7 @@
 #include "jsscope.h"
 #include "jsscript.h"
 #include "jsstr.h"
+#include "jsstaticcheck.h"
 #ifdef JS_TRACER
 #include "jstracer.h"
 #endif
@@ -930,7 +931,7 @@ js_OnUnknownMethod(JSContext *cx, jsval *vp)
     obj = JSVAL_TO_OBJECT(vp[1]);
     JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr);
 
-    
+    MUST_FLOW_THROUGH("out");
     id = ATOM_TO_JSID(cx->runtime->atomState.noSuchMethodAtom);
 #if JS_HAS_XML_SUPPORT
     if (OBJECT_IS_XML(cx, obj)) {
@@ -1269,7 +1270,7 @@ have_fun:
     frame.xmlNamespace = NULL;
     frame.blockChain = NULL;
 
-    
+    MUST_FLOW_THROUGH("out");
     cx->fp = &frame;
 
     
@@ -1407,6 +1408,8 @@ JSBool
 js_InternalGetOrSet(JSContext *cx, JSObject *obj, jsid id, jsval fval,
                     JSAccessMode mode, uintN argc, jsval *argv, jsval *rval)
 {
+    JSSecurityCallbacks *callbacks;
+
     
 
 
@@ -1429,11 +1432,12 @@ js_InternalGetOrSet(JSContext *cx, JSObject *obj, jsid id, jsval fval,
 
 
     JS_ASSERT(mode == JSACC_READ || mode == JSACC_WRITE);
-    if (cx->runtime->checkObjectAccess &&
+    callbacks = JS_GetSecurityCallbacks(cx);
+    if (callbacks &&
+        callbacks->checkObjectAccess &&
         VALUE_IS_FUNCTION(cx, fval) &&
         FUN_INTERPRETED(GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fval))) &&
-        !cx->runtime->checkObjectAccess(cx, obj, ID_TO_VALUE(id), mode,
-                                        &fval)) {
+        !callbacks->checkObjectAccess(cx, obj, ID_TO_VALUE(id), mode, &fval)) {
         return JS_FALSE;
     }
 
@@ -2422,9 +2426,6 @@ JS_STATIC_ASSERT(JSOP_SETNAME_LENGTH == JSOP_SETPROP_LENGTH);
 JS_STATIC_ASSERT(JSOP_NULL_LENGTH == JSOP_NULLTHIS_LENGTH);
 
 
-JS_STATIC_ASSERT(JSOP_DEFFUN_LENGTH == JSOP_CLOSURE_LENGTH);
-
-
 JS_STATIC_ASSERT(JSOP_IFNE_LENGTH == JSOP_IFEQ_LENGTH);
 JS_STATIC_ASSERT(JSOP_IFNE == JSOP_IFEQ + 1);
 
@@ -2657,7 +2658,7 @@ js_Interpret(JSContext *cx)
         DO_OP();                                                              \
     JS_END_MACRO
 
-    
+    MUST_FLOW_THROUGH("exit");
     ++cx->interpLevel;
 
     
@@ -5655,45 +5656,23 @@ js_Interpret(JSContext *cx)
           END_CASE(JSOP_DEFVAR)
 
           BEGIN_CASE(JSOP_DEFFUN)
+            
+
+
+
+
+
+
             LOAD_FUNCTION(0);
 
-            
+            if (!fp->blockChain) {
+                obj2 = fp->scopeChain;
+            } else {
+                obj2 = js_GetScopeChain(cx, fp);
+                if (!obj2)
+                    goto error;
+            }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            JS_ASSERT(!fp->blockChain);
-            JS_ASSERT((fp->flags & JSFRAME_EVAL) == 0);
-            JS_ASSERT(fp->scopeChain == fp->varobj);
-            obj2 = fp->scopeChain;
-
-            
-
-
-
-            attrs = JSPROP_ENUMERATE | JSPROP_PERMANENT;
-
-          do_deffun:
             
 
 
@@ -5715,8 +5694,17 @@ js_Interpret(JSContext *cx)
 
 
 
+            MUST_FLOW_THROUGH("restore");
             fp->scopeChain = obj;
             rval = OBJECT_TO_JSVAL(obj);
+
+            
+
+
+
+            attrs = (fp->flags & JSFRAME_EVAL)
+                    ? JSPROP_ENUMERATE
+                    : JSPROP_ENUMERATE | JSPROP_PERMANENT;
 
             
 
@@ -5736,8 +5724,7 @@ js_Interpret(JSContext *cx)
 
 
             parent = fp->varobj;
-            if (!parent)
-                goto error;
+            JS_ASSERT(parent);
 
             
 
@@ -5750,7 +5737,6 @@ js_Interpret(JSContext *cx)
             if (ok) {
                 if (attrs == JSPROP_ENUMERATE) {
                     JS_ASSERT(fp->flags & JSFRAME_EVAL);
-                    JS_ASSERT(op == JSOP_CLOSURE);
                     ok = OBJ_SET_PROPERTY(cx, parent, id, &rval);
                 } else {
                     JS_ASSERT(attrs & JSPROP_PERMANENT);
@@ -5768,6 +5754,7 @@ js_Interpret(JSContext *cx)
             }
 
             
+            MUST_FLOW_LABEL(restore)
             fp->scopeChain = obj2;
             if (!ok) {
                 cx->weakRoots.newborn[GCX_OBJECT] = NULL;
@@ -5856,6 +5843,7 @@ js_Interpret(JSContext *cx)
 
 
 
+            MUST_FLOW_THROUGH("restore2");
             fp->scopeChain = obj;
             rval = OBJECT_TO_JSVAL(obj);
 
@@ -5882,6 +5870,7 @@ js_Interpret(JSContext *cx)
                                      NULL);
 
             
+            MUST_FLOW_LABEL(restore2)
             fp->scopeChain = obj2;
             if (!ok) {
                 cx->weakRoots.newborn[GCX_OBJECT] = NULL;
@@ -5894,35 +5883,6 @@ js_Interpret(JSContext *cx)
 
             PUSH_OPND(OBJECT_TO_JSVAL(obj));
           END_CASE(JSOP_NAMEDFUNOBJ)
-
-          BEGIN_CASE(JSOP_CLOSURE)
-            
-
-
-
-
-
-            LOAD_FUNCTION(0);
-
-            
-
-
-
-
-
-            obj2 = js_GetScopeChain(cx, fp);
-            if (!obj2)
-                goto error;
-
-            
-
-
-
-            attrs = JSPROP_ENUMERATE;
-            if (!(fp->flags & JSFRAME_EVAL))
-                attrs |= JSPROP_PERMANENT;
-
-            goto do_deffun;
 
 #if JS_HAS_GETTER_SETTER
           BEGIN_CASE(JSOP_GETTER)
@@ -6814,6 +6774,7 @@ js_Interpret(JSContext *cx)
           L_JSOP_DEFXMLNS:
 # endif
 
+          L_JSOP_UNUSED74:
           L_JSOP_UNUSED76:
           L_JSOP_UNUSED77:
           L_JSOP_UNUSED78:
