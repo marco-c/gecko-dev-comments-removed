@@ -2768,7 +2768,7 @@ interrupt:
 
         switch (op) {
 
-#endif
+#endif 
 
           EMPTY_CASE(JSOP_NOP)
 
