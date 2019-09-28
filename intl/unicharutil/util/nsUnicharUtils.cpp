@@ -249,11 +249,11 @@ nsASCIICaseInsensitiveStringComparator::operator()(const PRUnichar* lhs,
 {
   while (aLength) {
     PRUnichar l = *lhs++;
-    PRUnichar r = *lhs++;
+    PRUnichar r = *rhs++;
     if (l != r) {
       l = ToLowerCaseASCII(l);
       r = ToLowerCaseASCII(r);
-      
+
       if (l > r)
         return 1;
       else if (r > l)
