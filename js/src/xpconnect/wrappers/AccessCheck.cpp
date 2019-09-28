@@ -1,41 +1,41 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99 ft=cpp:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code, released
- * June 24, 2010.
- *
- * The Initial Developer of the Original Code is
- *    The Mozilla Foundation
- *
- * Contributor(s):
- *    Andreas Gal <gal@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "AccessCheck.h"
 
@@ -65,9 +65,9 @@ AccessCheck::isSameOrigin(JSCompartment *a, JSCompartment *b)
     nsIPrincipal *aprin = GetCompartmentPrincipal(a);
     nsIPrincipal *bprin = GetCompartmentPrincipal(b);
 
-    // If either a or b doesn't have principals, we don't have enough
-    // information to tell. Seeing as how this is Gecko, we are default-unsafe
-    // in this case.
+    
+    
+    
     if (!aprin || !bprin)
         return true;
 
@@ -109,18 +109,18 @@ AccessCheck::getPrincipal(JSCompartment *compartment)
 #define NAME(ch, str, cases)                                                  \
     case ch: if (!strcmp(name, str)) switch (propChars[0]) { cases }; break;
 #define PROP(ch, actions) case ch: { actions }; break;
-#define RW(str) if (JS_MatchStringAndAscii(prop, str)) return true;
-#define R(str) if (!set && JS_MatchStringAndAscii(prop, str)) return true;
-#define W(str) if (set && JS_MatchStringAndAscii(prop, str)) return true;
+#define RW(str) if (JS_FlatStringEqualsAscii(prop, str)) return true;
+#define R(str) if (!set && JS_FlatStringEqualsAscii(prop, str)) return true;
+#define W(str) if (set && JS_FlatStringEqualsAscii(prop, str)) return true;
 
-// Hardcoded policy for cross origin property access. This was culled from the
-// preferences file (all.js). We don't want users to overwrite highly sensitive
-// security policies.
+
+
+
 static bool
-IsPermitted(const char *name, JSString *prop, bool set)
+IsPermitted(const char *name, JSFlatString *prop, bool set)
 {
     size_t propLength;
-    const jschar *propChars = JS_GetStringCharsAndLength(prop, &propLength);
+    const jschar *propChars = JS_GetInternedStringCharsAndLength(prop, &propLength);
     if (!propLength)
         return false;
     switch(name[0]) {
@@ -183,8 +183,7 @@ IsFrameId(JSContext *cx, JSObject *obj, jsid id)
     if (JSID_IS_INT(id)) {
         col->Item(JSID_TO_INT(id), getter_AddRefs(domwin));
     } else if (JSID_IS_ATOM(id)) {
-        nsAutoString str(reinterpret_cast<PRUnichar *>
-                         (JS_GetStringChars(ATOM_TO_STRING(JSID_TO_ATOM(id)))));
+        nsAutoString str(JS_GetInternedStringChars(JSID_TO_STRING(id)));
         col->NamedItem(str, getter_AddRefs(domwin));
     } else {
         return false;
@@ -291,15 +290,15 @@ AccessCheck::isCrossOriginAccessPermitted(JSContext *cx, JSObject *wrapper, jsid
         name = clasp->name;
 
     if (JSID_IS_ATOM(id)) {
-        if (IsPermitted(name, JSID_TO_STRING(id), act == JSWrapper::SET))
+        if (IsPermitted(name, JSID_TO_FLAT_STRING(id), act == JSWrapper::SET))
             return true;
     }
 
     if (IsWindow(name) && IsFrameId(cx, obj, id))
         return true;
 
-    // We only reach this point for cross origin location objects (see
-    // SameOriginOrCrossOriginAccessiblePropertiesOnly::check).
+    
+    
     if (!IsLocation(name) && documentDomainMakesSameOrigin(cx, obj))
         return true;
 
@@ -324,13 +323,13 @@ AccessCheck::isSystemOnlyAccessPermitted(JSContext *cx)
 
     if (!fp) {
         if (!JS_FrameIterator(cx, &fp)) {
-            // No code at all is running. So we must be arriving here as the result
-            // of C++ code asking us to do something. Allow access.
+            
+            
             return true;
         }
 
-        // Some code is running, we can't make the assumption, as above, but we
-        // can't use a native frame, so clear fp.
+        
+        
         fp = NULL;
     } else if (!JS_IsScriptFrame(cx, fp)) {
         fp = NULL;
@@ -342,8 +341,8 @@ AccessCheck::isSystemOnlyAccessPermitted(JSContext *cx)
         return true;
     }
 
-    // Allow any code loaded from chrome://global/ to touch us, even if it was
-    // cloned into a less privileged context.
+    
+    
     static const char prefix[] = "chrome://global/";
     const char *filename;
     if (fp &&
@@ -373,7 +372,7 @@ AccessCheck::isScriptAccessOnly(JSContext *cx, JSObject *wrapper)
     uintN flags;
     JSObject *obj = wrapper->unwrap(&flags);
 
-    // If the wrapper indicates script-only access, we are done.
+    
     if (flags & WrapperFactory::SCRIPT_ACCESS_ONLY_FLAG) {
         if (flags & WrapperFactory::SOW_FLAG)
             return !isSystemOnlyAccessPermitted(cx);
@@ -385,24 +384,24 @@ AccessCheck::isScriptAccessOnly(JSContext *cx, JSObject *wrapper)
         if (!ssm)
             return true;
 
-        // Bypass script-only status if UniversalXPConnect is enabled.
+        
         PRBool privileged;
         return !NS_SUCCEEDED(ssm->IsCapabilityEnabled("UniversalXPConnect", &privileged)) ||
                !privileged;
     }
 
-    // In addition, chrome objects can explicitly opt-in by setting .scriptOnly to true.
+    
     if (wrapper->getProxyHandler() == &FilteringWrapper<JSCrossCompartmentWrapper,
         CrossOriginAccessiblePropertiesOnly>::singleton) {
         jsid scriptOnlyId = GetRTIdByIndex(cx, XPCJSRuntime::IDX_SCRIPTONLY);
         jsval scriptOnly;
         if (JS_LookupPropertyById(cx, obj, scriptOnlyId, &scriptOnly) &&
             scriptOnly == JSVAL_TRUE)
-            return true; // script-only
+            return true; 
     }
 
-    // Allow non-script access to same-origin location objects and any other
-    // objects.
+    
+    
     return WrapperFactory::IsLocationObject(obj) && !isLocationObjectSameOrigin(cx, wrapper);
 }
 
@@ -418,7 +417,9 @@ AccessCheck::deny(JSContext *cx, jsid id)
         JSString *str = JS_ValueToString(cx, idval);
         if (!str)
             return;
-        JS_ReportError(cx, "Permission denied to access property '%hs'", JS_GetStringChars(str));
+        const jschar *chars = JS_GetStringCharsZ(cx, str);
+        if (chars)
+            JS_ReportError(cx, "Permission denied to access property '%hs'", chars);
     }
 }
 
@@ -440,11 +441,11 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, JSWrappe
         return false;
     if (!found) {
         perm = PermitObjectAccess;
-        return true; // Allow
+        return true; 
     }
 
     if (id == JSID_VOID) {
-        // This will force the caller to call us back for individual property accesses.
+        
         perm = PermitPropertyAccess;
         return true;
     }
@@ -454,7 +455,7 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, JSWrappe
         return false;
 
     if (JSVAL_IS_VOID(exposedProps) || JSVAL_IS_NULL(exposedProps)) {
-        return true; // Deny
+        return true; 
     }
 
     if (!JSVAL_IS_OBJECT(exposedProps)) {
@@ -468,10 +469,10 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, JSWrappe
 
     JSPropertyDescriptor desc;
     if (!JS_GetPropertyDescriptorById(cx, hallpass, id, JSRESOLVE_QUALIFIED, &desc)) {
-        return false; // Error
+        return false; 
     }
     if (desc.obj == NULL || !(desc.attrs & JSPROP_ENUMERATE)) {
-        return true; // Deny
+        return true; 
     }
 
     if (!JSVAL_IS_STRING(desc.value)) {
@@ -480,8 +481,11 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, JSWrappe
     }
 
     JSString *str = JSVAL_TO_STRING(desc.value);
-    const jschar *chars = JS_GetStringChars(str);
-    size_t length = JS_GetStringLength(str);
+    size_t length;
+    const jschar *chars = JS_GetStringCharsAndLength(cx, str, &length);
+    if (!chars)
+        return false;
+
     for (size_t i = 0; i < length; ++i) {
         switch (chars[i]) {
         case 'r':
@@ -513,11 +517,11 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, JSWrappe
 
     if ((act == JSWrapper::SET && !(access & WRITE)) ||
         (act != JSWrapper::SET && !(access & READ))) {
-        return true; // Deny
+        return true; 
     }
 
     perm = PermitPropertyAccess;
-    return true; // Allow
+    return true; 
 }
 
 }
