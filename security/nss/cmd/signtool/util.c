@@ -1,38 +1,38 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Netscape security libraries.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1994-2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "signtool.h"
 #include "prio.h"
@@ -41,16 +41,16 @@
 
 static int	is_dir (char *filename);
 
-
-
-
+/***********************************************************
+ * Nasty hackish function definitions
+ */
 
 long	*mozilla_event_queue = 0;
 
 #ifndef XP_WIN
 char	*XP_GetString (int i)
 {
-    return SECU_ErrorStringRaw ((int16) i);
+    return SECU_Strerror (i);
 }
 #endif
 
@@ -59,15 +59,15 @@ void	FE_SetPasswordEnabled()
 }
 
 
-void	 *FE_GetInitContext (void)
+void	/*MWContext*/ *FE_GetInitContext (void)
 {
     return 0;
 }
 
 
-void	 *XP_FindSomeContext()
+void	/*MWContext*/ *XP_FindSomeContext()
 {
-    
+    /* No windows context in command tools */
     return NULL;
 }
 
@@ -77,13 +77,13 @@ void	ET_moz_CallFunction()
 }
 
 
-
-
-
-
-
-
-
+/*
+ *  R e m o v e A l l A r c
+ *
+ *  Remove .arc directories that are lingering
+ *  from a previous run of signtool.
+ *
+ */
 int
 RemoveAllArc(char *tree)
 {
@@ -137,12 +137,12 @@ finish:
 }
 
 
-
-
-
-
-
-
+/*
+ *  r m _ d a s h _ r
+ *
+ *  Remove a file, or a directory recursively.
+ *
+ */
 int	rm_dash_r (char *path)
 {
     PRDir	 * dir;
@@ -151,7 +151,7 @@ int	rm_dash_r (char *path)
     char	filename[FNSIZE];
 
     if (PR_GetFileInfo(path, &fileinfo) != PR_SUCCESS) {
-	
+	/*fprintf(stderr, "Error: Unable to access %s\n", filename);*/
 	return - 1;
     }
     if (fileinfo.type == PR_FILE_DIRECTORY) {
@@ -163,7 +163,7 @@ int	rm_dash_r (char *path)
 	    return - 1;
 	}
 
-	
+	/* Recursively delete all entries in the directory */
 	while ((entry = PR_ReadDir(dir, PR_SKIP_BOTH)) != NULL) {
 	    sprintf(filename, "%s/%s", path, entry->name);
 	    if (rm_dash_r(filename)) 
@@ -176,7 +176,7 @@ int	rm_dash_r (char *path)
 	    return - 1;
 	}
 
-	
+	/* Delete the directory itself */
 	if (PR_RmDir(path) != PR_SUCCESS) {
 	    PR_fprintf(errorFD, "Error: Unable to delete %s\n", path);
 	    errorCount++;
@@ -193,12 +193,12 @@ int	rm_dash_r (char *path)
 }
 
 
-
-
-
-
-
-
+/*
+ *  u s a g e 
+ * 
+ *  Print some useful help information
+ *
+ */
 
 
 void
@@ -419,14 +419,14 @@ LongUsage(void)
 #undef FPS
 }
 
-
-
-
-
-
-
-
-
+/*
+ *  p r i n t _ e r r o r
+ *
+ *  For the undocumented -E function. If an older version
+ *  of communicator gives you a numeric error, we can see what
+ *  really happened without doing hex math.
+ *
+ */
 
 void
 print_error (int err)
@@ -437,12 +437,12 @@ print_error (int err)
 }
 
 
-
-
-
-
-
-
+/*
+ *  o u t _ o f _ m e m o r y
+ *
+ *  Out of memory, exit Signtool.
+ * 
+ */
 void
 out_of_memory (void)
 {
@@ -452,29 +452,29 @@ out_of_memory (void)
 }
 
 
-
-
-
-
-
-
-
+/*
+ *  V e r i f y C e r t D i r
+ *
+ *  Validate that the specified directory
+ *  contains a certificate database
+ *
+ */
 void
 VerifyCertDir(char *dir, char *keyName)
 {
     char	fn [FNSIZE];
 
-    
+    /* don't try verifying if we don't have a local directory */
     if (strncmp(dir, "multiaccess:", sizeof("multiaccess:") - 1) == 0) {
 	return;
     }
-    
-
+    /* this function is truly evil. Tools and applications should not have
+     * any knowledge of actual cert databases! */
     return;
 
-    
-
-
+    /* This code is really broken because it makes underlying assumptions about
+   * how the NSS profile directory is laid out, but these names can change
+   * from release to release. */
     sprintf (fn, "%s/cert8.db", dir);
 
     if (PR_Access (fn, PR_ACCESS_EXISTS)) {
@@ -493,8 +493,8 @@ VerifyCertDir(char *dir, char *keyName)
     if (keyName == NULL)
 	return;
 
-    
-
+    /* if the user gave the -k key argument, verify that 
+     a key database already exists */
 
     sprintf (fn, "%s/key3.db", dir);
 
@@ -510,16 +510,16 @@ VerifyCertDir(char *dir, char *keyName)
 }
 
 
-
-
-
-
-
-
-
-
-
-
+/*
+ *  f o r e a c h 
+ * 
+ *  A recursive function to loop through all names in
+ *  the specified directory, as well as all subdirectories.
+ *
+ *  FIX: Need to see if all platforms allow multiple
+ *  opendir's to be called.
+ *
+ */
 
 int
 foreach(char *dirname, char *prefix, 
@@ -546,15 +546,15 @@ PRBool recurse, PRBool includeDirs, void *arg)
     for (entry = PR_ReadDir (dir, 0); entry; entry = PR_ReadDir (dir, 0)) {
 	if ( strcmp(entry->name, ".") == 0   || 
 	    strcmp(entry->name, "..") == 0 ) {
-	    
+	    /* no infinite recursion, please */
 	    continue;
 	}
 
-	
+	/* can't sign self */
 	if (!strcmp (entry->name, "META-INF"))
 	    continue;
 
-	
+	/* -x option */
 	if (PL_HashTableLookup(excludeDirs, entry->name))
 	    continue;
 
@@ -609,13 +609,13 @@ PRBool recurse, PRBool includeDirs, void *arg)
 }
 
 
-
-
-
-
-
-
-
+/*
+ *  i s _ d i r
+ *
+ *  Return 1 if file is a directory.
+ *  Wonder if this runs on a mac, trust not.
+ *
+ */
 static int	is_dir (char *filename)
 {
     PRFileInfo	finfo;
@@ -629,19 +629,19 @@ static int	is_dir (char *filename)
 }
 
 
-
-
-
-
-
-
-
-
+/***************************************************************
+ *
+ * s e c E r r o r S t r i n g
+ *
+ * Returns an error string corresponding to the given error code.
+ * Doesn't cover all errors; returns a default for many.
+ * Returned string is only valid until the next call of this function.
+ */
 const char	*
 secErrorString(long code)
 {
-    static char	errstring[80]; 
-    char	*c; 
+    static char	errstring[80]; /* dynamically constructed error string */
+    char	*c; /* the returned string */
 
     switch (code) {
     case SEC_ERROR_IO: 
@@ -735,12 +735,12 @@ secErrorString(long code)
 }
 
 
-
-
-
-
-
-
+/***************************************************************
+ *
+ * d i s p l a y V e r i f y L o g
+ *
+ * Prints the log of a cert verification.
+ */
 void
 displayVerifyLog(CERTVerifyLog *log)
 {
@@ -758,7 +758,7 @@ displayVerifyLog(CERTVerifyLog *log)
 	    continue;
 	}
 
-	
+	/* Get a name for this cert */
 	if (cert->nickname != NULL) {
 	    name = cert->nickname;
 	} else if (cert->emailAddr && cert->emailAddr[0]) {
@@ -776,14 +776,14 @@ displayVerifyLog(CERTVerifyLog *log)
 }
 
 
-
-
-
-
-
-
-
-
+/*
+ *  J a r L i s t M o d u l e s
+ *
+ *  Print a list of the PKCS11 modules that are
+ *  available. This is useful for smartcard people to
+ *  make sure they have the drivers loaded.
+ *
+ */
 void
 JarListModules(void)
 {
@@ -796,7 +796,7 @@ JarListModules(void)
     SECMODModuleList * mlp;
 
     if ((moduleLock = SECMOD_GetDefaultModuleListLock()) == NULL) {
-	
+	/* this is the wrong text */
 	PR_fprintf(errorFD, "%s: unable to acquire lock on module list\n",
 	     		PROGRAM_NAME);
 	errorCount++;
@@ -860,12 +860,12 @@ JarListModules(void)
 }
 
 
-
-
-
-
-
-
+/**********************************************************************
+ * c h o p
+ *
+ * Eliminates leading and trailing whitespace.  Returns a pointer to the 
+ * beginning of non-whitespace, or an empty string if it's all whitespace.
+ */
 char*
 chop(char *str)
 {
@@ -874,12 +874,12 @@ chop(char *str)
     if (str) {
 	start = str;
 
-	
+	/* Nip leading whitespace */
 	while (isspace(*start)) {
 	    start++;
 	}
 
-	
+	/* Nip trailing whitespace */
 	if (*start) {
 	    end = start + strlen(start) - 1;
 	    while (isspace(*end) && end > start) {
@@ -895,12 +895,12 @@ chop(char *str)
 }
 
 
-
-
-
-
-
-
+/***********************************************************************
+ *
+ * F a t a l E r r o r
+ *
+ * Outputs an error message and bails out of the program.
+ */
 void
 FatalError(char *msg)
 {
@@ -913,10 +913,10 @@ FatalError(char *msg)
 }
 
 
-
-
-
-
+/*************************************************************************
+ *
+ * I n i t C r y p t o
+ */
 int
 InitCrypto(char *cert_dir, PRBool readOnly)
 {
@@ -925,8 +925,8 @@ InitCrypto(char *cert_dir, PRBool readOnly)
     PK11SlotInfo * slotinfo;
 
     if (prior == 0) {
-	
-
+	/* some functions such as OpenKeyDB expect this path to be
+	 * implicitly set prior to calling */
 	if (readOnly) {
 	    rv = NSS_Init(cert_dir);
 	} else {
@@ -939,12 +939,12 @@ InitCrypto(char *cert_dir, PRBool readOnly)
 
 	SECU_ConfigDirectory (cert_dir);
 
-	
+	/* Been there done that */
 	prior++;
 
         PK11_SetPasswordFunc(SECU_GetModulePassword);
 
-	
+	/* Must login to FIPS before you do anything else */
 	if (PK11_IsFIPS()) {
 	    slotinfo = PK11_GetInternalSlot();
 	    if (!slotinfo) {
@@ -952,7 +952,7 @@ InitCrypto(char *cert_dir, PRBool readOnly)
 				    "\n", PROGRAM_NAME);
 		return - 1;
 	    }
-	    if (PK11_Authenticate(slotinfo, PR_FALSE ,
+	    if (PK11_Authenticate(slotinfo, PR_FALSE /*loadCerts*/,
 	         			  &pwdata) != SECSuccess) {
 		fprintf(stderr, "%s: Unable to authenticate to %s.\n",
 				    PROGRAM_NAME, PK11_GetSlotName(slotinfo));
@@ -962,7 +962,7 @@ InitCrypto(char *cert_dir, PRBool readOnly)
 	    PK11_FreeSlot(slotinfo);
 	}
 
-	
+	/* Make sure there is a password set on the internal key slot */
 	slotinfo = PK11_GetInternalKeySlot();
 	if (!slotinfo) {
 	    fprintf(stderr, "%s: Unable to get PKCS #11 Internal Key Slot."
@@ -976,9 +976,9 @@ InitCrypto(char *cert_dir, PRBool readOnly)
 	    warningCount++;
 	}
 
-	
+	/* Make sure we can authenticate to the key slot in FIPS mode */
 	if (PK11_IsFIPS()) {
-	    if (PK11_Authenticate(slotinfo, PR_FALSE ,
+	    if (PK11_Authenticate(slotinfo, PR_FALSE /*loadCerts*/,
 	         			  &pwdata) != SECSuccess) {
 		fprintf(stderr, "%s: Unable to authenticate to %s.\n",
 				PROGRAM_NAME, PK11_GetSlotName(slotinfo));
@@ -993,16 +993,16 @@ InitCrypto(char *cert_dir, PRBool readOnly)
 }
 
 
+/* Windows foolishness is now in the secutil lib */
 
-
-
-
-
-
-
-
-
-
+/*****************************************************************
+ *  g e t _ d e f a u l t _ c e r t _ d i r
+ *
+ *  Attempt to locate a certificate directory.
+ *  Failing that, complain that the user needs to
+ *  use the -d(irectory) parameter.
+ *
+ */
 char	*get_default_cert_dir (void)
 {
     char	*home;
@@ -1022,7 +1022,7 @@ char	*get_default_cert_dir (void)
 #ifdef XP_PC
     FILE * fp;
 
-    
+    /* first check the environment override */
 
     home = getenv ("JAR_HOME");
 
@@ -1035,7 +1035,7 @@ char	*get_default_cert_dir (void)
 	}
     }
 
-    
+    /* try the old navigator directory */
 
     if (cd == NULL) {
 	home = "c:/Program Files/Netscape/Navigator";
@@ -1048,8 +1048,8 @@ char	*get_default_cert_dir (void)
 	}
     }
 
-    
-
+    /* Try the current directory, I wonder if this
+     is really a good idea. Remember, Windows only.. */
 
     if (cd == NULL) {
 	home = ".";
@@ -1077,9 +1077,9 @@ char	*get_default_cert_dir (void)
 }
 
 
-
-
-
+/************************************************************************
+ * g i v e _ h e l p
+ */
 void	give_help (int status)
 {
     if (status == SEC_ERROR_UNKNOWN_ISSUER) {
@@ -1094,12 +1094,12 @@ void	give_help (int status)
 }
 
 
-
-
-
-
-
-
+/**************************************************************************
+ *
+ * p r _ f g e t s
+ *
+ * fgets implemented with NSPR.
+ */
 char*
 pr_fgets(char *buf, int size, PRFileDesc *file)
 {

@@ -1,44 +1,44 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Netscape security libraries.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1994-2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "signtool.h"
 #include "zip.h" 
 #include "prmem.h"
 #include "blapi.h"
-#include "sechash.h"	
+#include "sechash.h"	/* for HASH_GetHashObject() */
 
 static int	create_pk7 (char *dir, char *keyName, int *keyType);
 static int	jar_find_key_type (CERTCertificate *cert);
@@ -61,13 +61,13 @@ static int	optimize = 0;
 static FILE *mf;
 static ZIPfile *zipfile = NULL;
 
-
-
-
-
-
-
-
+/* 
+ *  S i g n A r c h i v e
+ *
+ *  Sign an individual archive tree. A directory 
+ *  called META-INF is created underneath this.
+ *
+ */
 int
 SignArchive(char *tree, char *keyName, char *zip_file, int javascript,
 	char *meta_file, char *install_script, int _optimize, PRBool recurse)
@@ -79,18 +79,18 @@ SignArchive(char *tree, char *keyName, char *zip_file, int javascript,
     metafile = meta_file;
     optimize = _optimize;
 
-    
-
-
+    /* To create XPI compatible Archive manifesto() must be run before 
+     * the zipfile is opened. This is so the signed files are not added
+     * the archive before the crucial rsa/dsa file*/
     if (xpi_arc) {
 	manifesto (tree, install_script, recurse);
     }
 
     if (zip_file) {
-	zipfile = JzipOpen(zip_file, NULL );
+	zipfile = JzipOpen(zip_file, NULL /*no comment*/);
     }
 
-    
+    /*Sign and add files to the archive normally with manifesto()*/
     if (!xpi_arc) {
 	manifesto (tree, install_script, recurse);
     }
@@ -105,36 +105,36 @@ SignArchive(char *tree, char *keyName, char *zip_file, int javascript,
 	}
     }
 
-    
-
+    /* Add the rsa/dsa file as the first file in the archive. This is crucial
+     * for a XPInstall compatible archive */
     if (xpi_arc) {
 	if (verbosity >= 0) {
 	    PR_fprintf(outputFD, "%s \n", XPI_TEXT);
 	}
 
-	
+	/* rsa/dsa to zip */
 	sprintf (tempfn, "META-INF/%s.%s", base, (keyType == dsaKey ?
 	    "dsa" : "rsa"));
 	sprintf (fullfn, "%s/%s", tree, tempfn);
 	JzipAdd(fullfn, tempfn, zipfile, compression_level);
 
-	
-	foreach (tree, "", manifesto_xpi_fn, recurse, PR_FALSE ,
+	/* Loop through all files & subdirectories, add to archive */
+	foreach (tree, "", manifesto_xpi_fn, recurse, PR_FALSE /*include dirs */,
 	     		(void * )NULL);
     }
-    
+    /* mf to zip */
     strcpy (tempfn, "META-INF/manifest.mf");
     sprintf (fullfn, "%s/%s", tree, tempfn);
     JzipAdd(fullfn, tempfn, zipfile, compression_level);
 
-    
+    /* sf to zip */
     sprintf (tempfn, "META-INF/%s.sf", base);
     sprintf (fullfn, "%s/%s", tree, tempfn);
     JzipAdd(fullfn, tempfn, zipfile, compression_level);
 
-    
+    /* Add the rsa/dsa file to the zip archive normally */
     if (!xpi_arc) {
-	
+	/* rsa/dsa to zip */
 	sprintf (tempfn, "META-INF/%s.%s", base, (keyType == dsaKey ?
 	    "dsa" : "rsa"));
 	sprintf (fullfn, "%s/%s", tree, tempfn);
@@ -165,13 +165,13 @@ typedef struct {
     int	optimize;
 } SignArcInfo;
 
-
-
-
-
-
-
-
+/* 
+ *  S i g n A l l A r c
+ *
+ *  Javascript may generate multiple .arc directories, one
+ *  for each jar archive needed. Sign them all.
+ *
+ */
 int
 SignAllArc(char *jartree, char *keyName, int javascript, char *metafile,
 char *install_script, int optimize, PRBool recurse)
@@ -185,7 +185,7 @@ char *install_script, int optimize, PRBool recurse)
     info.optimize = optimize;
 
     return foreach(jartree, "", sign_all_arc_fn, recurse,
-        PR_TRUE , (void * )&info);
+        PR_TRUE /*include dirs*/, (void * )&info);
 }
 
 
@@ -198,8 +198,8 @@ sign_all_arc_fn(char *relpath, char *basedir, char *reldir, char *filename,
     int	retval = 0;
     SignArcInfo * infop = (SignArcInfo * )arg;
 
-    
-
+    /* Make sure there is one and only one ".arc" in the relative path, 
+     * and that it is at the end of the path (don't sign .arcs within .arcs) */
     if ( (PL_strcaserstr(relpath, ".arc") == relpath + strlen(relpath) -
         4) && 
         (PL_strcasestr(relpath, ".arc") == relpath + strlen(relpath) - 4) ) {
@@ -229,7 +229,7 @@ sign_all_arc_fn(char *relpath, char *basedir, char *reldir, char *filename,
 	}
 	retval = SignArchive(archive, infop->keyName, zipfile,
 	    infop->javascript, infop->metafile, infop->install_script,
-	     			infop->optimize, PR_TRUE );
+	     			infop->optimize, PR_TRUE /* recurse */);
     }
 finish:
     if (archive) 
@@ -241,10 +241,10 @@ finish:
 }
 
 
-
-
-
-
+/*********************************************************************
+ *
+ * c r e a t e _ p k 7
+ */
 static int	
 create_pk7 (char *dir, char *keyName, int *keyType)
 {
@@ -259,14 +259,14 @@ create_pk7 (char *dir, char *keyName, int *keyType)
     char	sf_file [FNSIZE];
     char	pk7_file [FNSIZE];
 
-    
+    /* open cert database */
     db = CERT_GetDefaultCertDB();
 
     if (db == NULL)
 	return - 1;
 
-    
-    
+    /* find cert */
+    /*cert = CERT_FindCertByNicknameOrEmailAddr(db, keyName);*/
     cert = PK11_FindCertFromNickname(keyName, &pwdata);
 
     if (cert == NULL) {
@@ -276,7 +276,7 @@ create_pk7 (char *dir, char *keyName, int *keyType)
     }
 
 
-    
+    /* determine the key type, which sets the extension for pkcs7 object */
 
     *keyType = jar_find_key_type (cert);
     file_ext = (*keyType == dsaKey) ? "dsa" : "rsa";
@@ -306,7 +306,7 @@ create_pk7 (char *dir, char *keyName, int *keyType)
 
     if (status) {
 	PR_fprintf(errorFD, "%s: PROBLEM signing data (%s)\n",
-	    PROGRAM_NAME, SECU_ErrorString ((int16) PORT_GetError()));
+	    PROGRAM_NAME, SECU_Strerror(PORT_GetError()));
 	errorCount++;
 	return - 1;
     }
@@ -315,20 +315,20 @@ create_pk7 (char *dir, char *keyName, int *keyType)
 }
 
 
-
-
-
-
-
-
-
+/*
+ *  j a r _ f i n d _ k e y _ t y p e
+ * 
+ *  Determine the key type for a given cert, which 
+ * should be rsaKey or dsaKey. Any error return 0.
+ *
+ */
 static int	
 jar_find_key_type (CERTCertificate *cert)
 {
     SECKEYPrivateKey * privk = NULL;
     KeyType keyType;
 
-    
+    /* determine its type */
     privk = PK11_FindKeyByAnyCert (cert, &pwdata);
     if (privk == NULL) {
 	PR_fprintf(errorFD, "warning - can't find private key for this cert\n");
@@ -342,19 +342,19 @@ jar_find_key_type (CERTCertificate *cert)
 }
 
 
-
-
-
-
-
-
-
+/*
+ *  m a n i f e s t o
+ *
+ *  Run once for every subdirectory in which a 
+ *  manifest is to be created -- usually exactly once.
+ *
+ */
 static int	
 manifesto (char *dirname, char *install_script, PRBool recurse)
 {
     char	metadir [FNSIZE], sfname [FNSIZE];
 
-    
+    /* Create the META-INF directory to hold signing info */
 
     if (PR_Access (dirname, PR_ACCESS_READ_OK)) {
 	PR_fprintf(errorFD, "%s: unable to read your directory: %s\n",
@@ -414,8 +414,8 @@ manifesto (char *dirname, char *install_script, PRBool recurse)
     if (metafile)
 	add_meta (mf, "+");
 
-    
-    foreach (dirname, "", manifesto_fn, recurse, PR_FALSE ,
+    /* Loop through all files & subdirectories */
+    foreach (dirname, "", manifesto_fn, recurse, PR_FALSE /*include dirs */,
          		(void * )NULL);
 
     fclose (mf);
@@ -433,14 +433,14 @@ manifesto (char *dirname, char *install_script, PRBool recurse)
 }
 
 
-
-
-
-
-
-
-
-
+/*
+ *  m a n i f e s t o _ x p i _ f n
+ *
+ *  Called by pointer from SignArchive(), once for
+ *  each file within the directory. This function
+ *  is only used for adding to XPI compatible archive
+ *
+ */
 static int	manifesto_xpi_fn 
 (char *relpath, char *basedir, char *reldir, char *filename, void *arg)
 {
@@ -450,7 +450,7 @@ static int	manifesto_xpi_fn
 	PR_fprintf(outputFD, "--> %s\n", relpath);
     }
 
-    
+    /* extension matching */
     if (extensionsGiven) {
 	char	*ext = PL_strrchr(relpath, '.');
 	if (!ext) 
@@ -465,13 +465,13 @@ static int	manifesto_xpi_fn
 }
 
 
-
-
-
-
-
-
-
+/*
+ *  m a n i f e s t o _ f n
+ *
+ *  Called by pointer from manifesto(), once for
+ *  each file within the directory.
+ *
+ */
 static int	manifesto_fn 
 (char *relpath, char *basedir, char *reldir, char *filename, void *arg)
 {
@@ -484,7 +484,7 @@ static int	manifesto_fn
 	PR_fprintf(outputFD, "--> %s\n", relpath);
     }
 
-    
+    /* extension matching */
     if (extensionsGiven) {
 	char	*ext = PL_strrchr(relpath, '.');
 	if (!ext) 
@@ -502,7 +502,7 @@ static int	manifesto_fn
     if (scriptdir && !PORT_Strcmp (scriptdir, reldir))
 	use_js++;
 
-    
+    /* sign non-.js files inside .arc directories using the javascript magic */
 
     if ( (PL_strcaserstr(filename, ".js") != filename + strlen(filename) - 3)
          && (PL_strcaserstr(reldir, ".arc") == reldir + strlen(filename) - 4))
@@ -542,14 +542,14 @@ static int	manifesto_fn
 }
 
 
-
-
-
-
-
-
-
-
+/*
+ *  a d d _ m e t a
+ *
+ *  Parse the metainfo file, and add any details
+ *  necessary to the manifest file. In most cases you
+ *  should be using the -i option (ie, for SmartUpdate).
+ *
+ */
 static int	add_meta (FILE *fp, char *name)
 {
     FILE * met;
@@ -573,21 +573,21 @@ static int	add_meta (FILE *fp, char *name)
 
 	    pattern = buf;
 
-	    
+	    /* skip to whitespace */
 	    for (s = buf; *s && *s != ' ' && *s != '\t'; s++)
 		;
 
-	    
+	    /* terminate pattern */
 	    if (*s == ' ' || *s == '\t') 
 		*s++ = 0;
 
-	    
+	    /* eat through whitespace */
 	    while (*s == ' ' || *s == '\t') 
 		s++;
 
 	    meta = s;
 
-	    
+	    /* this will eventually be regexp matching */
 
 	    place = 0;
 	    if (!PORT_Strcmp (pattern, name))
@@ -613,10 +613,10 @@ static int	add_meta (FILE *fp, char *name)
 }
 
 
-
-
-
-
+/**********************************************************************
+ *
+ * S i g n F i l e
+ */
 static int	
 SignFile (FILE *outFile, FILE *inFile, CERTCertificate *cert)
 {
@@ -633,7 +633,7 @@ SignFile (FILE *outFile, FILE *inFile, CERTCertificate *cert)
     if (outFile == NULL || inFile == NULL || cert == NULL)
 	return - 1;
 
-    
+    /* XXX probably want to extend interface to allow other hash algorithms */
     hashObj = HASH_GetHashObject(HASH_AlgSHA1);
 
     hashcx = (*hashObj->create)();
@@ -652,7 +652,7 @@ SignFile (FILE *outFile, FILE *inFile, CERTCertificate *cert)
 		(*hashObj->destroy)(hashcx, PR_TRUE);
 		return - 1;
 	    }
-	    
+	    /* eof */
 	    break;
 	}
 	(*hashObj->update)(hashcx, (unsigned char *) ibuf, nb);
@@ -680,7 +680,7 @@ SignFile (FILE *outFile, FILE *inFile, CERTCertificate *cert)
     if (no_time == 0) {
 	rv = SEC_PKCS7AddSigningTime (cinfo);
 	if (rv != SECSuccess) {
-	    
+	    /* don't check error */
 	}
     }
 
@@ -695,14 +695,14 @@ SignFile (FILE *outFile, FILE *inFile, CERTCertificate *cert)
 }
 
 
-
-
-
-
-
-
-
-
+/*
+ *  g e n e r a t e _ S F _ f i l e 
+ *
+ *  From the supplied manifest file, calculates
+ *  digests on the various sections, creating a .SF
+ *  file in the process.
+ * 
+ */
 static int	generate_SF_file (char *manifile, char *who)
 {
     FILE * sf;
@@ -751,10 +751,10 @@ static int	generate_SF_file (char *manifile, char *who)
 
     fseek (mf, 0L, SEEK_SET);
 
-    
+    /* Process blocks of headers, and calculate their hashen */
 
     while (1) {
-	
+	/* Beginning range */
 	r1 = ftell (mf);
 
 	if (fgets (name, BUFSIZ, mf) == NULL)
@@ -777,7 +777,7 @@ static int	generate_SF_file (char *manifile, char *who)
 
 	    line++;
 
-	    
+	    /* Ending range for hashing */
 	    r2 = ftell (mf);
 	}
 
@@ -799,7 +799,7 @@ static int	generate_SF_file (char *manifile, char *who)
 	fprintf (sf, "SHA1-Digest: %s\n", 
 	    BTOA_DataToAscii (dig.sha1, SHA1_LENGTH));
 
-	
+	/* restore normalcy after changing offset position */
 	fseek (mf, r3, SEEK_SET);
     }
 
@@ -813,13 +813,13 @@ static int	generate_SF_file (char *manifile, char *who)
 }
 
 
-
-
-
-
-
-
-
+/*
+ *  c a l c u l a t e _ M D 5 _ r a n g e
+ *
+ *  Calculate the MD5 digest on a range of bytes in
+ *  the specified fopen'd file. Returns base64.
+ *
+ */
 static int	
 calculate_MD5_range (FILE *fp, long r1, long r2, JAR_Digest *dig)
 {
@@ -830,7 +830,7 @@ calculate_MD5_range (FILE *fp, long r1, long r2, JAR_Digest *dig)
 
     range = r2 - r1;
 
-    
+    /* position to the beginning of range */
     fseek (fp, r1, SEEK_SET);
 
     buf = (unsigned char *) PORT_ZAlloc (range);

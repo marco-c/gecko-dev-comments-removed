@@ -1,53 +1,53 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Netscape security libraries.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1994-2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * shlibsign creates the checksum (.chk) files for the NSS libraries,
+ * libsoftokn3/softokn3 and libfreebl/freebl (platforms can have 
+ * multiple freebl variants), that contain the NSS cryptograhic boundary.
+ *
+ * The generated .chk files must be put in the same directory as
+ * the NSS libraries they were generated for.
+ *
+ * When in FIPS 140 mode, the NSS Internal FIPS PKCS #11 Module will
+ * compute the checksum for the NSS cryptographic boundary libraries
+ * and compare the checksum with the value in .chk file.
+ *
+ * $Id: shlibsign.c,v 1.19 2011/04/08 04:02:53 wtc%google.com Exp $
+ */
 
 #ifdef XP_UNIX
 #define USES_LINKS 1
@@ -66,7 +66,7 @@
 #include <sys/stat.h>
 #endif
 
-
+/* nspr headers */
 #include "prlink.h"
 #include "prprf.h"
 #include "prenv.h"
@@ -76,11 +76,11 @@
 #include "plstr.h"
 #include "prerror.h"
 
-
+/* softoken headers */
 #include "pkcs11.h"
 #include "pkcs11t.h"
 
-
+/* freebl headers */
 #include "shsign.h"
 
 #define NUM_ELEM(array) (sizeof(array)/sizeof(array[0]))
@@ -368,9 +368,9 @@ static const tuple_str errStrings[] = {
 
 static const CK_ULONG numStrings = sizeof(errStrings) / sizeof(tuple_str);
 
-
-
-
+/* Returns constant error string for "CRV".
+ * Returns "unknown error" if errNum is unknown.
+ */
 static const char *
 CK_RVtoStr(CK_RV errNum) {
     CK_ULONG low  = 1;
@@ -379,9 +379,9 @@ CK_RVtoStr(CK_RV errNum) {
     CK_RV num;
     static int initDone;
 
-    
-
-
+    /* make sure table is in  ascending order.
+     * binary search depends on it.
+     */
     if (!initDone) {
         CK_RV lastNum = CKR_OK;
         for (i = low; i <= high; ++i) {
@@ -400,7 +400,7 @@ CK_RVtoStr(CK_RV errNum) {
         initDone = 1;
     }
 
-    
+    /* Do binary search of table. */
     while (low + 1 < high) {
         i = (low + high) / 2;
         num = errStrings[i].errNum;
@@ -505,7 +505,7 @@ filePasswd(char *pwFile)
     nb = PR_Read(fd, phrase, sizeof(phrase));
 
     PR_Close(fd);
-    
+    /* handle the Windows EOL case */
     i = 0;
     while (phrase[i] != '\r' && phrase[i] != '\n' && i < nb) i++;
     phrase[i] = '\0';
@@ -522,17 +522,17 @@ checkPath(char *string)
     char *src;
     char *dest;
 
-    
-
-
-
+    /*
+     * windows support convert any back slashes to
+     * forward slashes.
+     */
     for (src=string, dest=string; *src; src++,dest++) {
         if (*src == '\\') {
             *dest = '/';
         }
     }
     dest--;
-    
+    /* if the last char is a / set it to 0 */
     if (*dest == '/')
         *dest = 0;
 
@@ -545,8 +545,8 @@ getSlotList(CK_FUNCTION_LIST_PTR pFunctionList,
     CK_SLOT_ID *pSlotList = NULL;
     CK_ULONG slotCount;
 
-    
-    crv = pFunctionList->C_GetSlotList(CK_FALSE ,
+    /* Get slot list */
+    crv = pFunctionList->C_GetSlotList(CK_FALSE /* all slots */,
                                        NULL, &slotCount);
     if (crv != CKR_OK) {
         pk11error( "C_GetSlotList failed", crv);
@@ -563,7 +563,7 @@ getSlotList(CK_FUNCTION_LIST_PTR pFunctionList,
         lperror("failed to allocate slot list");
         return NULL;
     }
-    crv = pFunctionList->C_GetSlotList(CK_FALSE ,
+    crv = pFunctionList->C_GetSlotList(CK_FALSE /* all slots */,
                                        pSlotList, &slotCount);
     if (crv != CKR_OK) {
         pk11error( "C_GetSlotList failed", crv);
@@ -581,8 +581,8 @@ int main(int argc, char **argv)
     PRLibrary *lib;
     PRFileDesc *fd;
     PRStatus rv = PR_SUCCESS;
-    const char  *input_file = NULL; 
-    char  *output_file = NULL;	
+    const char  *input_file = NULL; /* read/create encrypted data from here */
+    char  *output_file = NULL;	/* write new encrypted data here */
     int bytesRead;
     int bytesWritten;
     unsigned char file_buf[512];
@@ -612,14 +612,14 @@ int main(int argc, char **argv)
     CK_ULONG slotIndex = 0; 
     CK_MECHANISM digestmech;
     CK_ULONG digestLen = 0;
-    CK_BYTE digest[20]; 
-    CK_BYTE sign[40];   
+    CK_BYTE digest[20]; /* SHA1_LENGTH */
+    CK_BYTE sign[40];   /* DSA SIGNATURE LENGTH */
     CK_ULONG signLen = 0 ;
     CK_MECHANISM signMech = {
         CKM_DSA, NULL, 0
     };
 
-    
+    /*** DSA Key ***/
 
     CK_MECHANISM dsaKeyPairGenMech;
     CK_ATTRIBUTE dsaPubKeyTemplate[5];
@@ -630,7 +630,7 @@ int main(int argc, char **argv)
     CK_BYTE dsaPubKey[128];
     CK_ATTRIBUTE dsaPubKeyValue;
 
-    
+    /* DSA key init */
     dsaPubKeyTemplate[0].type       = CKA_PRIME;
     dsaPubKeyTemplate[0].pValue     = (CK_VOID_PTR) &prime;
     dsaPubKeyTemplate[0].ulValueLen = sizeof(prime);
@@ -641,7 +641,7 @@ int main(int argc, char **argv)
     dsaPubKeyTemplate[2].pValue = (CK_VOID_PTR) &base;
     dsaPubKeyTemplate[2].ulValueLen = sizeof(base);
     dsaPubKeyTemplate[3].type = CKA_TOKEN;
-    dsaPubKeyTemplate[3].pValue = &false; 
+    dsaPubKeyTemplate[3].pValue = &false; /* session object */
     dsaPubKeyTemplate[3].ulValueLen = sizeof(false);
     dsaPubKeyTemplate[4].type = CKA_VERIFY;
     dsaPubKeyTemplate[4].pValue = &true;
@@ -650,7 +650,7 @@ int main(int argc, char **argv)
     dsaKeyPairGenMech.pParameter = NULL;
     dsaKeyPairGenMech.ulParameterLen = 0;
     dsaPrivKeyTemplate[0].type       = CKA_TOKEN;
-    dsaPrivKeyTemplate[0].pValue     = &false; 
+    dsaPrivKeyTemplate[0].pValue     = &false; /* session object */
     dsaPrivKeyTemplate[0].ulValueLen = sizeof(false);
     dsaPrivKeyTemplate[1].type       = CKA_PRIVATE;
     dsaPrivKeyTemplate[1].pValue     = &true;
@@ -763,9 +763,9 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    
-
-
+    /* Get the platform-dependent library name of the
+     * NSS cryptographic module.
+     */
     libname = PR_GetLibraryName(NULL, "softokn3");
     assert(libname != NULL);
     lib = PR_LoadLibrary(libname);
@@ -774,12 +774,12 @@ int main(int argc, char **argv)
 
 
     if (FIPSMODE) {
-        
-        
+        /* FIPSMODE == FC_GetFunctionList */
+        /* library path must be set to an already signed softokn3/freebl */
         pC_GetFunctionList = (CK_C_GetFunctionList)
                              PR_FindFunctionSymbol(lib, "FC_GetFunctionList");
     } else {
-        
+        /* NON FIPS mode  == C_GetFunctionList */
         pC_GetFunctionList = (CK_C_GetFunctionList)
                              PR_FindFunctionSymbol(lib, "C_GetFunctionList");
      }
@@ -796,10 +796,10 @@ int main(int argc, char **argv)
         if (crv != CKR_OK) {
             logIt("Failed to use provided database directory "
                   "will just initialize the volatile certdb.\n");
-            crv = softokn_Init(pFunctionList, NULL, NULL); 
+            crv = softokn_Init(pFunctionList, NULL, NULL); /* NoDB Init */
         }
     } else {
-        crv = softokn_Init(pFunctionList, NULL, NULL); 
+        crv = softokn_Init(pFunctionList, NULL, NULL); /* NoDB Init */
     }
 
     if (crv != CKR_OK) {
@@ -821,7 +821,7 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
-    
+    /* check if a password is needed */
     crv = pFunctionList->C_GetTokenInfo(pSlotList[slotIndex], &tokenInfo);
     if (crv != CKR_OK) {
         pk11error( "C_GetTokenInfo failed", crv);
@@ -844,7 +844,7 @@ int main(int argc, char **argv)
         logIt("A password was provided but the password was not used.\n");
     }
 
-    
+    /* Generate a DSA key pair */
     logIt("Generate a DSA key pair ... \n");
     crv = pFunctionList->C_GenerateKeyPair(hRwSession, &dsaKeyPairGenMech,
                                            dsaPubKeyTemplate,
@@ -857,7 +857,7 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
-    
+    /* open the shared library */
     fd = PR_OpenFile(input_file,PR_RDONLY,0);
     if (fd == NULL ) {
         lperror(input_file);
@@ -878,7 +878,7 @@ int main(int argc, char **argv)
         }
         link_buf[ret] = 0;
         link_file = mkoutput(input_file);
-        
+        /* get the dirname of input_file */
         dirpath = PL_strdup(input_file);
         dirend = strrchr(dirpath, '/');
         if (dirend) {
@@ -891,7 +891,7 @@ int main(int argc, char **argv)
         }
         PL_strfree(dirpath);
         input_file = link_buf;
-        
+        /* get the basename of link_file */
         dirend = strrchr(link_file, '/');
         if (dirend) {
             char * tmp_file = NULL;
@@ -905,7 +905,7 @@ int main(int argc, char **argv)
         output_file = mkoutput(input_file);
     }
 
-    
+    /* compute the digest */
     memset(digest, 0, sizeof(digest));
     crv = pFunctionList->C_DigestInit(hRwSession, &digestmech);
     if (crv != CKR_OK) {
@@ -913,7 +913,7 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
-    
+    /* Digest the file */
     while ((bytesRead = PR_Read(fd,file_buf,sizeof(file_buf))) > 0) {
         crv = pFunctionList->C_DigestUpdate(hRwSession, (CK_BYTE_PTR)file_buf,
                                             bytesRead);
@@ -924,7 +924,7 @@ int main(int argc, char **argv)
         count += bytesRead;
     }
 
-    
+    /* close the input_File */
     PR_Close(fd);
     fd = NULL;
     if (bytesRead < 0) {
@@ -946,9 +946,9 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
-    
+    /* sign the hash */
     memset(sign, 0, sizeof(sign));
-    
+    /* SignUpdate  */
     crv = pFunctionList->C_SignInit(hRwSession, &signMech, hDSAprivKey);
     if (crv != CKR_OK) {
         pk11error("C_SignInit failed", crv);
@@ -1011,26 +1011,26 @@ int main(int argc, char **argv)
         }
     }
 
-    
+    /* open the target signature file */
     fd = PR_Open(output_file,PR_WRONLY|PR_CREATE_FILE|PR_TRUNCATE,0666);
     if (fd == NULL ) {
         lperror(output_file);
         goto cleanup;
     }
 
-    
-
-
-
-
-
-
+    /*
+     * we write the key out in a straight binary format because very
+     * low level libraries need to read an parse this file. Ideally we should
+     * just derEncode the public key (which would be pretty simple, and be
+     * more general), but then we'd need to link the ASN.1 decoder with the
+     * freebl libraries.
+     */
 
     file_buf[0] = NSS_SIGN_CHK_MAGIC1;
     file_buf[1] = NSS_SIGN_CHK_MAGIC2;
     file_buf[2] = NSS_SIGN_CHK_MAJOR_VERSION;
     file_buf[3] = NSS_SIGN_CHK_MINOR_VERSION;
-    encodeInt(&file_buf[4],12);  
+    encodeInt(&file_buf[4],12);  /* offset to data start */
     encodeInt(&file_buf[8],CKK_DSA);
     bytesWritten = PR_Write(fd,file_buf, 12);
     if (bytesWritten != 12) {
@@ -1038,7 +1038,7 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
-    
+    /* get DSA Public KeyValue */
     memset(dsaPubKey, 0, sizeof(dsaPubKey));
     dsaPubKeyValue.type =CKA_VALUE;
     dsaPubKeyValue.pValue = (CK_VOID_PTR) &dsaPubKey;
@@ -1051,23 +1051,23 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
-    
+    /* CKA_PRIME */
     rv = writeItem(fd,dsaPubKeyTemplate[0].pValue,
                    dsaPubKeyTemplate[0].ulValueLen, output_file);
     if (rv != PR_SUCCESS) goto cleanup;
-    
+    /* CKA_SUBPRIME */
     rv = writeItem(fd,dsaPubKeyTemplate[1].pValue,
                    dsaPubKeyTemplate[1].ulValueLen, output_file);
     if (rv != PR_SUCCESS) goto cleanup;
-     
+    /* CKA_BASE */ 
     rv = writeItem(fd,dsaPubKeyTemplate[2].pValue,
                    dsaPubKeyTemplate[2].ulValueLen, output_file);
     if (rv != PR_SUCCESS) goto cleanup;
-    
+    /* DSA Public Key value */
     rv = writeItem(fd,dsaPubKeyValue.pValue,
                    dsaPubKeyValue.ulValueLen, output_file);
     if (rv != PR_SUCCESS) goto cleanup;
-    
+    /* DSA SIGNATURE */
     rv = writeItem(fd,&sign, signLen, output_file);
     if (rv != PR_SUCCESS) goto cleanup;
     PR_Close(fd);
@@ -1085,8 +1085,8 @@ int main(int argc, char **argv)
 
 cleanup:
     if (pFunctionList) {
-        
-        
+        /* C_Finalize will automatically logout, close session, */
+        /* and delete the temp objects on the token */
         crv = pFunctionList->C_Finalize(NULL);
         if (crv != CKR_OK) {
             pk11error("C_Finalize failed", crv);
@@ -1104,11 +1104,11 @@ cleanup:
     if (dbPrefix) {
         PL_strfree(dbPrefix);
     }
-    if (output_file) { 
+    if (output_file) { /* allocated by mkoutput function */
         PL_strfree(output_file); 
     }
 #ifdef USES_LINKS
-    if (link_file) { 
+    if (link_file) { /* allocated by mkoutput function */
         PL_strfree(link_file); 
     }
 #endif

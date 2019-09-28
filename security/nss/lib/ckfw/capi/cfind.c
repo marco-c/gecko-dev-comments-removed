@@ -1,54 +1,54 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Netscape security libraries.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1994-2000
+ * the Initial Developer. All Rights Reserved.
+ * Portions created by Red Hat, Inc, are Copyright (C) 2005
+ *
+ * Contributor(s):
+ *   Bob Relyea (rrelyea@redhat.com)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 #ifdef DEBUG
-static const char CVS_ID[] = "@(#) $RCSfile: cfind.c,v $ $Revision: 1.3 $ $Date: 2005/12/16 00:48:02 $";
-#endif 
+static const char CVS_ID[] = "@(#) $RCSfile: cfind.c,v $ $Revision: 1.4 $ $Date: 2011/02/02 17:13:40 $";
+#endif /* DEBUG */
 
 #ifndef CKCAPI_H
 #include "ckcapi.h"
-#endif 
+#endif /* CKCAPI_H */
 
-
-
-
-
-
-
+/*
+ * ckcapi/cfind.c
+ *
+ * This file implements the NSSCKMDFindObjects object for the
+ * "capi" cryptoki module.
+ */
 
 struct ckcapiFOStr {
   NSSArena *arena;
@@ -74,7 +74,7 @@ ckcapi_mdFindObjects_Final
   NSSArena *arena = fo->arena;
   PRUint32 i;
 
-  
+  /* walk down an free the unused 'objs' */
   for (i=fo->i; i < fo->n ; i++) {
     nss_ckcapi_DestroyInternalObject(fo->objs[i]);
   }
@@ -134,9 +134,9 @@ ckcapi_attrmatch
   }
 
   if( a->ulValueLen != b->size ) {
-    
+    /* match a decoded serial number */
     if ((a->type == CKA_SERIAL_NUMBER) && (a->ulValueLen < b->size)) {
-	int len;
+	unsigned int len;
 	unsigned char *data;
 
 	data = nss_ckcapi_DERUnwrap(b->data, b->size, &len, NULL);
@@ -174,7 +174,7 @@ ckcapi_match
     }
   }
 
-  
+  /* Every attribute passed */
   return CK_TRUE;
 }
 
@@ -199,9 +199,9 @@ ckcapi_match
   }
 
 
-
-
-
+/*
+ * pass parameters back through the callback.
+ */
 typedef struct BareCollectParamsStr {
   CK_OBJECT_CLASS objClass;
   CK_ATTRIBUTE_PTR pTemplate;
@@ -211,8 +211,8 @@ typedef struct BareCollectParamsStr {
   PRUint32 count;
 } BareCollectParams;
 
-
-
+/* collect_bare's callback. Called for each object that
+ * supposedly has a PROVINDER_INFO property */
 static BOOL WINAPI
 doBareCollect
 (
@@ -236,7 +236,7 @@ doBareCollect
   void *idData;
   CK_RV error;
  
-  
+  /* make sure there is a Key Provider Info property */
   for (i=0; i < cProp; i++) {
     if (CERT_KEY_PROV_INFO_PROP_ID == propID[i]) {
 	keyProvInfo = (CRYPT_KEY_PROV_INFO *)propData[i];
@@ -247,14 +247,14 @@ doBareCollect
     return 1;
   }
 
-  
+  /* copy the key ID */
   idData = nss_ZNEWARRAY(NULL, char, msKeyID->cbData);
   if ((void *)NULL == idData) {
      goto loser;
   }
   nsslibc_memcpy(idData, msKeyID->pbData, msKeyID->cbData);
 
-    
+  /* build a bare internal object */  
   io = nss_ZNEW(NULL, ckcapiInternalObject);
   if ((ckcapiInternalObject *)NULL == io) {
      goto loser;
@@ -275,7 +275,7 @@ doBareCollect
   io->id.size = msKeyID->cbData;
   idData = NULL;
 
-   
+  /* see if it matches */ 
   if( CK_FALSE == ckcapi_match(bcp->pTemplate, bcp->ulAttributeCount, io) ) {
     goto loser;
   }
@@ -292,9 +292,9 @@ loser:
   return 1;
 }
 
-
-
-
+/*
+ * collect the bare keys running around
+ */
 static PRUint32
 collect_bare(
   CK_OBJECT_CLASS objClass,
@@ -323,9 +323,9 @@ collect_bare(
   return bareCollectParams.count;
 }
 
-
-
-
+/* find all the certs that represent the appropriate object (cert, priv key, or
+ *  pub key) in the cert store.
+ */
 static PRUint32
 collect_class(
   CK_OBJECT_CLASS objClass,
@@ -348,16 +348,16 @@ collect_class(
 
   hStore = CertOpenSystemStore((HCRYPTPROV)NULL, storeStr);
   if (NULL == hStore) {
-     return count; 
+     return count; /* none found does not imply an error */
   }
 
-  
-
+  /* FUTURE: use CertFindCertificateInStore to filter better -- so we don't
+   * have to enumerate all the certificates */
   while ((PCERT_CONTEXT) NULL != 
          (certContext= CertEnumCertificatesInStore(hStore, certContext))) {
-    
+    /* first filter out non user certs if we are looking for keys */
     if (isKey) {
-      
+      /* make sure there is a Key Provider Info property */
       CRYPT_KEY_PROV_INFO *keyProvInfo;
       DWORD size = 0;
       BOOL rv;
@@ -365,12 +365,12 @@ collect_class(
         CERT_KEY_PROV_INFO_PROP_ID, NULL, &size);
       if (!rv) {
 	int reason = GetLastError();
-        
+        /* we only care if it exists, we don't really need to fetch it yet */
 	if (reason == CRYPT_E_NOT_FOUND) {
 	  continue;
 	}
       }
-      
+      /* filter out the non-microsoft providers */
       keyProvInfo = (CRYPT_KEY_PROV_INFO *)nss_ZAlloc(NULL, size);
       if (keyProvInfo) {
         rv =CertGetCertificateContextProperty(certContext,
@@ -385,7 +385,7 @@ collect_class(
 	  }
 	} else {
 	  int reason = GetLastError();
-          
+          /* we only care if it exists, we don't really need to fetch it yet */
           nss_ZFreeIf(keyProvInfo);
 	  if (reason == CRYPT_E_NOT_FOUND) {
 	   continue;
@@ -408,18 +408,18 @@ collect_class(
     next->u.cert.hasID = hasID;
     next->u.cert.certStore = storeStr;
     if( CK_TRUE == ckcapi_match(pTemplate, ulAttributeCount, next) ) {
-      
+      /* clear cached values that may be dependent on our old certContext */
       memset(&next->u.cert, 0, sizeof(next->u.cert));
-      
+      /* get a 'permanent' context */
       next->u.cert.certContext = CertDuplicateCertificateContext(certContext);
       next->objClass = objClass;
       next->u.cert.certContext = certContext;
       next->u.cert.hasID = hasID;
       next->u.cert.certStore = storeStr;
       PUT_Object(next, *pError);
-      next = NULL; 
+      next = NULL; /* need to allocate a new one now */
     } else {
-      
+      /* don't cache the values we just loaded */
       memset(&next->u.cert, 0, sizeof(next->u.cert));
     }
   }
@@ -442,8 +442,8 @@ nss_ckcapi_collect_all_certs(
 {
   count = collect_class(CKO_CERTIFICATE, "My", PR_TRUE, pTemplate, 
 			ulAttributeCount, listp, sizep, count, pError);
-  
-
+  /*count = collect_class(CKO_CERTIFICATE, "AddressBook", PR_FALSE, pTemplate, 
+                        ulAttributeCount, listp, sizep, count, pError); */
   count = collect_class(CKO_CERTIFICATE, "CA", PR_FALSE, pTemplate, 
 			ulAttributeCount, listp, sizep, count, pError);
   count = collect_class(CKO_CERTIFICATE, "Root", PR_FALSE, pTemplate, 
@@ -469,7 +469,7 @@ ckcapi_GetObjectClass(CK_ATTRIBUTE_PTR pTemplate,
       return *(CK_OBJECT_CLASS *) pTemplate[i].pValue;
     }
   }
-  
+  /* need to return a value that says 'fetch them all' */
   return CK_INVALID_HANDLE;
 }
 
@@ -486,9 +486,9 @@ collect_objects(
   PRUint32 size = 0;
   CK_OBJECT_CLASS objClass;
 
-  
-
-
+  /*
+   * first handle the static build in objects (if any)
+   */
   for( i = 0; i < nss_ckcapi_nObjects; i++ ) {
     ckcapiInternalObject *o = (ckcapiInternalObject *)&nss_ckcapi_data[i];
 
@@ -497,9 +497,9 @@ collect_objects(
     }
   }
 
-  
-
-
+  /*
+   * now handle the various object types
+   */
   objClass = ckcapi_GetObjectClass(pTemplate, ulAttributeCount);
   *pError = CKR_OK;
   switch (objClass) {
@@ -519,7 +519,7 @@ collect_objects(
     count = collect_bare(objClass, pTemplate, ulAttributeCount, listp,
 			&size, count, pError);
     break;
-  
+  /* all of them */
   case CK_INVALID_HANDLE:
     count = nss_ckcapi_collect_all_certs(pTemplate, ulAttributeCount, listp, 
                               &size, count, pError);
@@ -533,7 +533,7 @@ collect_objects(
 			&size, count, pError);
     break;
   default:
-    goto done; 
+    goto done; /* no other object types we understand in this module */
   }
   if (CKR_OK != *pError) {
     goto loser;
@@ -558,7 +558,7 @@ nss_ckcapi_FindObjectsInit
   CK_RV *pError
 )
 {
-  
+  /* This could be made more efficient.  I'm rather rushed. */
   NSSArena *arena;
   NSSCKMDFindObjects *rv = (NSSCKMDFindObjects *)NULL;
   struct ckcapiFOStr *fo = (struct ckcapiFOStr *)NULL;
@@ -582,7 +582,7 @@ nss_ckcapi_FindObjectsInit
   }
 
   fo->arena = arena;
-  
+  /* fo->n and fo->i are already zero */
 
   rv->etc = (void *)fo;
   rv->Final = ckcapi_mdFindObjects_Final;

@@ -1,53 +1,53 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Netscape security libraries.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1994-2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Dr Vipul Gupta <vipul.gupta@sun.com>, Sun Microsystems Laboratories
+ *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+**
+** Sample client side test program that uses SSL and NSS
+**
+*/
 
 #include "secutil.h"
 
 #if defined(XP_UNIX)
 #include <unistd.h>
 #else
-#include <ctype.h>	
+#include <ctype.h>	/* for isalpha() */
 #endif
 
 #include <stdio.h>
@@ -81,42 +81,42 @@
 PRIntervalTime maxInterval    = PR_INTERVAL_NO_TIMEOUT;
 
 int ssl2CipherSuites[] = {
-    SSL_EN_RC4_128_WITH_MD5,			
-    SSL_EN_RC4_128_EXPORT40_WITH_MD5,		
-    SSL_EN_RC2_128_CBC_WITH_MD5,		
-    SSL_EN_RC2_128_CBC_EXPORT40_WITH_MD5,	
-    SSL_EN_DES_64_CBC_WITH_MD5,			
-    SSL_EN_DES_192_EDE3_CBC_WITH_MD5,		
+    SSL_EN_RC4_128_WITH_MD5,			/* A */
+    SSL_EN_RC4_128_EXPORT40_WITH_MD5,		/* B */
+    SSL_EN_RC2_128_CBC_WITH_MD5,		/* C */
+    SSL_EN_RC2_128_CBC_EXPORT40_WITH_MD5,	/* D */
+    SSL_EN_DES_64_CBC_WITH_MD5,			/* E */
+    SSL_EN_DES_192_EDE3_CBC_WITH_MD5,		/* F */
     0
 };
 
 int ssl3CipherSuites[] = {
-    -1, 
-    -1, 
-    SSL_RSA_WITH_RC4_128_MD5,			
-    SSL_RSA_WITH_3DES_EDE_CBC_SHA,		
-    SSL_RSA_WITH_DES_CBC_SHA,			
-    SSL_RSA_EXPORT_WITH_RC4_40_MD5,		
-    SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5,		
-    -1, 
-    SSL_RSA_WITH_NULL_MD5,			
-    SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA,		
-    SSL_RSA_FIPS_WITH_DES_CBC_SHA,		
-    TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA,	
-    TLS_RSA_EXPORT1024_WITH_RC4_56_SHA,	        
-    SSL_RSA_WITH_RC4_128_SHA,			
-    TLS_DHE_DSS_WITH_RC4_128_SHA,		
-    SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,		
-    SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA,		
-    SSL_DHE_RSA_WITH_DES_CBC_SHA,		
-    SSL_DHE_DSS_WITH_DES_CBC_SHA,		
-    TLS_DHE_DSS_WITH_AES_128_CBC_SHA, 	    	
-    TLS_DHE_RSA_WITH_AES_128_CBC_SHA,       	
-    TLS_RSA_WITH_AES_128_CBC_SHA,     	    	
-    TLS_DHE_DSS_WITH_AES_256_CBC_SHA, 	    	
-    TLS_DHE_RSA_WITH_AES_256_CBC_SHA,       	
-    TLS_RSA_WITH_AES_256_CBC_SHA,     	    	
-    SSL_RSA_WITH_NULL_SHA,			
+    -1, /* SSL_FORTEZZA_DMS_WITH_FORTEZZA_CBC_SHA* a */
+    -1, /* SSL_FORTEZZA_DMS_WITH_RC4_128_SHA,	 * b */
+    SSL_RSA_WITH_RC4_128_MD5,			/* c */
+    SSL_RSA_WITH_3DES_EDE_CBC_SHA,		/* d */
+    SSL_RSA_WITH_DES_CBC_SHA,			/* e */
+    SSL_RSA_EXPORT_WITH_RC4_40_MD5,		/* f */
+    SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5,		/* g */
+    -1, /* SSL_FORTEZZA_DMS_WITH_NULL_SHA,	 * h */
+    SSL_RSA_WITH_NULL_MD5,			/* i */
+    SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA,		/* j */
+    SSL_RSA_FIPS_WITH_DES_CBC_SHA,		/* k */
+    TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA,	/* l */
+    TLS_RSA_EXPORT1024_WITH_RC4_56_SHA,	        /* m */
+    SSL_RSA_WITH_RC4_128_SHA,			/* n */
+    TLS_DHE_DSS_WITH_RC4_128_SHA,		/* o */
+    SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,		/* p */
+    SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA,		/* q */
+    SSL_DHE_RSA_WITH_DES_CBC_SHA,		/* r */
+    SSL_DHE_DSS_WITH_DES_CBC_SHA,		/* s */
+    TLS_DHE_DSS_WITH_AES_128_CBC_SHA, 	    	/* t */
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA,       	/* u */
+    TLS_RSA_WITH_AES_128_CBC_SHA,     	    	/* v */
+    TLS_DHE_DSS_WITH_AES_256_CBC_SHA, 	    	/* w */
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA,       	/* x */
+    TLS_RSA_WITH_AES_256_CBC_SHA,     	    	/* y */
+    SSL_RSA_WITH_NULL_SHA,			/* z */
     0
 };
 
@@ -279,7 +279,7 @@ disableAllSSLCiphers(void)
     int             i            = SSL_GetNumImplementedCiphers();
     SECStatus       rv;
 
-    
+    /* disable all the SSL3 cipher suites */
     while (--i >= 0) {
 	PRUint16 suite = cipherSuites[i];
         rv = SSL_CipherPrefSetDefault(suite, PR_FALSE);
@@ -293,18 +293,18 @@ disableAllSSLCiphers(void)
     }
 }
 
-
-
-
-
+/*
+ * Callback is called when incoming certificate is not valid.
+ * Returns SECSuccess to accept the cert anyway, SECFailure to reject.
+ */
 static SECStatus 
 ownBadCertHandler(void * arg, PRFileDesc * socket)
 {
     PRErrorCode err = PR_GetError();
-    
+    /* can log invalid cert here */
     fprintf(stderr, "Bad server certificate: %d, %s\n", err, 
             SECU_Strerror(err));
-    return SECSuccess;	
+    return SECSuccess;	/* override, say it's OK. */
 }
 
 SECStatus
@@ -369,15 +369,15 @@ thread_main(void * arg)
 
 #ifdef WIN32
     {
-	
-
-
+	/* Put stdin into O_BINARY mode 
+	** or else incoming \r\n's will become \n's.
+	*/
 	int smrv = _setmode(_fileno(stdin), _O_BINARY);
 	if (smrv == -1) {
 	    fprintf(stderr,
 	    "%s: Cannot change stdin to binary mode. Use -i option instead.\n",
 	            progName);
-	    
+	    /* plow ahead anyway */
 	}
     }
 #endif
@@ -407,18 +407,18 @@ printHostNameAndAddr(const char * host, const PRNetAddr * addr)
     }
 }
 
-
-
-
-
-
-
+/*
+ *  Prints output according to skipProtoHeader flag. If skipProtoHeader
+ *  is not set, prints without any changes, otherwise looking
+ *  for \n\r\n(empty line sequence: HTTP header separator) and
+ *  prints everything after it.
+ */
 static void
 separateReqHeader(const PRFileDesc* outFd, const char* buf, const int nb,
                   PRBool *wrStarted, int *ptrnMatched) {
 
-    
-
+    /* it is sufficient to look for only "\n\r\n". Hopping that
+     * HTTP response format satisfies the standard */
     char *ptrnStr = "\n\r\n";
     char *resPtr;
 
@@ -427,24 +427,24 @@ separateReqHeader(const PRFileDesc* outFd, const char* buf, const int nb,
     }
 
     if (*ptrnMatched > 0) {
-        
-
+        /* Get here only if previous separateReqHeader call found
+         * only a fragment of "\n\r\n" in previous buffer. */
         PORT_Assert(*ptrnMatched < 3);
 
-        
-
+        /* the size of fragment of "\n\r\n" what we want to find in this
+         * buffer is equal to *ptrnMatched */
         if (*ptrnMatched <= nb) {
-            
+            /* move the pointer to the beginning of the fragment */
             int strSize = *ptrnMatched;
             char *tmpPtrn = ptrnStr + (3 - strSize);
             if (PL_strncmp(buf, tmpPtrn, strSize) == 0) {
-                
+                /* print the rest of the buffer(without the fragment) */
                 PR_Write((void*)outFd, buf + strSize, nb - strSize);
                 *wrStarted = PR_TRUE;
                 return;
             }
         } else {
-            
+            /* we are here only when nb == 1 && *ptrnMatched == 2 */
             if (*buf == '\r') {
                 *ptrnMatched = 1;
             } else {
@@ -455,17 +455,17 @@ separateReqHeader(const PRFileDesc* outFd, const char* buf, const int nb,
     }
     resPtr = PL_strnstr(buf, ptrnStr, nb);
     if (resPtr != NULL) {
-        
-
-        int newBn = nb - (resPtr - buf + 3); 
+        /* if "\n\r\n" was found in the buffer, calculate offset
+         * and print the rest of the buffer */
+        int newBn = nb - (resPtr - buf + 3); /* 3 is the length of "\n\r\n" */
 
         PR_Write((void*)outFd, resPtr + 3, newBn);
         *wrStarted = PR_TRUE;
         return;
     } else {
-        
-
-
+        /* try to find a fragment of "\n\r\n" at the end of the buffer.
+         * if found, set *ptrnMatched to the number of chars left to find
+         * in the next buffer.*/
         int i;
         for(i = 1 ;i < 3;i++) {
             char *bufPrt;
@@ -538,7 +538,6 @@ int main(int argc, char **argv)
     PLOptState *optstate;
     PLOptStatus optstatus;
     PRStatus prStatus;
-    PRUint16           socketDomain;
 
     progName = strrchr(argv[0], '/');
     if (!progName)
@@ -639,9 +638,9 @@ int main(int argc, char **argv)
 
     PK11_SetPasswordFunc(SECU_GetModulePassword);
 
-    
+    /* open the cert DB, the key DB, and the secmod DB. */
     if (!certDir) {
-	certDir = SECU_DefaultSSLDir();	
+	certDir = SECU_DefaultSSLDir();	/* Look in $SSL_DIR */
 	certDir = SECU_ConfigDirectory(certDir);
     } else {
 	char *certDirTmp = certDir;
@@ -660,15 +659,15 @@ int main(int argc, char **argv)
     }
     handle = CERT_GetDefaultCertDB();
 
-    
+    /* set the policy bits true for all the cipher suites. */
     if (useExportPolicy)
 	NSS_SetExportPolicy();
     else
 	NSS_SetDomesticPolicy();
 
-    
+    /* all the SSL2 and SSL3 cipher suites are enabled by default. */
     if (cipherString) {
-	
+	/* disable all the ciphers, then enable the ones we want. */
 	disableAllSSLCiphers();
     }
 
@@ -676,7 +675,7 @@ int main(int argc, char **argv)
     if (status == PR_SUCCESS) {
     	addr.inet.port = PR_htons(portno);
     } else {
-	
+	/* Lookup host */
 	PRAddrInfo *addrInfo;
 	void       *enumPtr   = NULL;
 
@@ -700,17 +699,11 @@ int main(int argc, char **argv)
 
     printHostNameAndAddr(host, &addr);
 
-    
-    if (!PR_GetEnv("NSS_USE_SDP")) {
-        socketDomain = addr.raw.family;
-    } else {
-        socketDomain = PR_AF_INET_SDP;
-    }
     if (pingServerFirst) {
 	int iter = 0;
 	PRErrorCode err;
 	do {
-	    s = PR_OpenTCPSocket(socketDomain);
+	    s = PR_OpenTCPSocket(addr.raw.family);
 	    if (s == NULL) {
 		SECU_PrintError(progName, "Failed to create a TCP socket");
 	    }
@@ -747,8 +740,8 @@ int main(int argc, char **argv)
 	return 1;
     }
 
-    
-    s = PR_OpenTCPSocket(socketDomain);
+    /* Create socket */
+    s = PR_OpenTCPSocket(addr.raw.family);
     if (s == NULL) {
 	SECU_PrintError(progName, "error creating socket");
 	return 1;
@@ -757,7 +750,7 @@ int main(int argc, char **argv)
     opt.option = PR_SockOpt_Nonblocking;
     opt.value.non_blocking = PR_TRUE;
     PR_SetSocketOption(s, &opt);
-    
+    /*PR_SetSocketOption(PR_GetSpecialFD(PR_StandardInput), &opt);*/
 
     s = SSL_ImportFD(NULL, s);
     if (s == NULL) {
@@ -777,7 +770,7 @@ int main(int argc, char **argv)
 	return 1;
     }
 
-    
+    /* all the SSL2 and SSL3 cipher suites are enabled by default. */
     if (cipherString) {
     	char *cstringSaved = cipherString;
     	int ndx;
@@ -808,7 +801,7 @@ int main(int argc, char **argv)
 		    Usage(progName);
 		cptr = islower(ndx) ? ssl3CipherSuites : ssl2CipherSuites;
 		for (ndx &= 0x1f; (cipher = *cptr++) != 0 && --ndx > 0; ) 
-		    ;
+		    /* do nothing */;
 	    }
 	    if (cipher > 0) {
 		SECStatus status;
@@ -840,42 +833,42 @@ int main(int argc, char **argv)
 	return 1;
     }
 
-    
+    /* disable ssl2 and ssl2-compatible client hellos. */
     rv = SSL_OptionSet(s, SSL_V2_COMPATIBLE_HELLO, !disableSSL2);
     if (rv != SECSuccess) {
 	SECU_PrintError(progName, "error disabling v2 compatibility");
 	return 1;
     }
 
-    
+    /* enable PKCS11 bypass */
     rv = SSL_OptionSet(s, SSL_BYPASS_PKCS11, bypassPKCS11);
     if (rv != SECSuccess) {
 	SECU_PrintError(progName, "error enabling PKCS11 bypass");
 	return 1;
     }
 
-    
+    /* disable SSL socket locking */
     rv = SSL_OptionSet(s, SSL_NO_LOCKS, disableLocking);
     if (rv != SECSuccess) {
 	SECU_PrintError(progName, "error disabling SSL socket locking");
 	return 1;
     }
 
-    
+    /* enable Session Ticket extension. */
     rv = SSL_OptionSet(s, SSL_ENABLE_SESSION_TICKETS, enableSessionTickets);
     if (rv != SECSuccess) {
 	SECU_PrintError(progName, "error enabling Session Ticket extension");
 	return 1;
     }
 
-    
+    /* enable compression. */
     rv = SSL_OptionSet(s, SSL_ENABLE_DEFLATE, enableCompression);
     if (rv != SECSuccess) {
 	SECU_PrintError(progName, "error enabling compression");
 	return 1;
     }
 
-    
+    /* enable false start. */
     rv = SSL_OptionSet(s, SSL_ENABLE_FALSE_START, enableFalseStart);
     if (rv != SECSuccess) {
 	SECU_PrintError(progName, "error enabling false start");
@@ -896,7 +889,7 @@ int main(int argc, char **argv)
         SSL_SetURL(s, host);
     }
 
-    
+    /* Try to connect to the server */
     status = PR_Connect(s, &addr, PR_INTERVAL_NO_TIMEOUT);
     if (status != PR_SUCCESS) {
 	if (PR_GetError() == PR_IN_PROGRESS_ERROR) {
@@ -918,14 +911,14 @@ int main(int argc, char **argv)
 		FPRINTF(stderr,
 		        "%s: PR_Poll returned 0x%02x for socket out_flags.\n",
 			progName, pollset[SSOCK_FD].out_flags);
-		if (filesReady == 0) {	
+		if (filesReady == 0) {	/* shouldn't happen! */
 		    FPRINTF(stderr, "%s: PR_Poll returned zero!\n", progName);
 		    return 1;
 		}
-		
-
-
-
+		/* Must milliPause between PR_Poll and PR_GetConnectStatus,
+		 * Or else winsock gets mighty confused.
+		 * Sleep(0);
+		 */
 		milliPause(1);
 		status = PR_GetConnectStatus(pollset);
 		if (status == PR_SUCCESS) {
@@ -953,12 +946,12 @@ int main(int argc, char **argv)
     std_out              = PR_GetSpecialFD(PR_StandardOutput);
 
 #if defined(WIN32) || defined(OS2)
-    
-
-
-
-
-
+    /* PR_Poll cannot be used with stdin on Windows or OS/2.  (sigh). 
+    ** But use of PR_Poll and non-blocking sockets is a major feature
+    ** of this program.  So, we simulate a pollable stdin with a 
+    ** TCP socket pair and a  thread that reads stdin and writes to 
+    ** that socket pair.
+    */
   {
     PRFileDesc * fds[2];
     PRThread *   thread;
@@ -982,15 +975,15 @@ int main(int argc, char **argv)
   }
 #endif
 
-    
-
-
-
+    /*
+    ** Select on stdin and on the socket. Write data from stdin to
+    ** socket, read data from socket and write to stdout.
+    */
     FPRINTF(stderr, "%s: ready...\n", progName);
 
     while (pollset[SSOCK_FD].in_flags | pollset[STDIN_FD].in_flags) {
-	char buf[4000];	
-	int nb;		
+	char buf[4000];	/* buffer for stdin */
+	int nb;		/* num bytes read from stdin. */
 
 	pollset[SSOCK_FD].out_flags = 0;
 	pollset[STDIN_FD].out_flags = 0;
@@ -1002,7 +995,7 @@ int main(int argc, char **argv)
 	    error = 1;
 	    goto done;
 	}
-	if (filesReady == 0) {	
+	if (filesReady == 0) {	/* shouldn't happen! */
 	    FPRINTF(stderr, "%s: PR_Poll returned zero!\n", progName);
 	    return 1;
 	}
@@ -1018,7 +1011,7 @@ int main(int argc, char **argv)
 		    progName, pollset[SSOCK_FD].out_flags);
 	}
 	if (pollset[STDIN_FD].out_flags & PR_POLL_READ) {
-	    
+	    /* Read from stdin and write to socket */
 	    nb = PR_Read(pollset[STDIN_FD].fd, buf, sizeof(buf));
 	    FPRINTF(stderr, "%s: stdin read %d bytes\n", progName, nb);
 	    if (nb < 0) {
@@ -1028,7 +1021,7 @@ int main(int argc, char **argv)
 		    break;
 		}
 	    } else if (nb == 0) {
-		
+		/* EOF on stdin, stop polling stdin for read. */
 		pollset[STDIN_FD].in_flags = 0;
 	    } else {
 		char * bufp = buf;
@@ -1075,7 +1068,7 @@ int main(int argc, char **argv)
 	    || (pollset[SSOCK_FD].out_flags & PR_POLL_HUP)
 #endif
 	    ) {
-	    
+	    /* Read from socket and write to stdout */
 	    nb = PR_Recv(pollset[SSOCK_FD].fd, buf, sizeof buf, 0, maxInterval);
 	    FPRINTF(stderr, "%s: Read from server %d bytes\n", progName, nb);
 	    if (nb < 0) {
@@ -1085,7 +1078,7 @@ int main(int argc, char **argv)
 		    goto done;
 	    	}
 	    } else if (nb == 0) {
-		
+		/* EOF from socket... stop polling socket for read */
 		pollset[SSOCK_FD].in_flags = 0;
 	    } else {
 		if (skipProtoHeader != PR_TRUE || wrStarted == PR_TRUE) {

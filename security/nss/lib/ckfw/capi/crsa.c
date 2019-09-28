@@ -1,59 +1,59 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Netscape security libraries.
+ *
+ * The Initial Developer of the Original Code is
+ * Red Hat, Inc.
+ * Portions created by the Initial Developer are Copyright (C) 2005
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Bob Relyea (rrelyea@redhat.com)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifdef DEBUG
-static const char CVS_ID[] = "@(#) $RCSfile: crsa.c,v $ $Revision: 1.4 $ $Date: 2010/04/25 23:37:40 $";
-#endif 
+static const char CVS_ID[] = "@(#) $RCSfile: crsa.c,v $ $Revision: 1.5 $ $Date: 2011/02/02 17:13:40 $";
+#endif /* DEBUG */
 
 #include "ckcapi.h"
 #include "secdert.h"
 
 #define SSL3_SHAMD5_HASH_SIZE  36 /* LEN_MD5 (16) + LEN_SHA1 (20) */
 
+/*
+ * ckcapi/crsa.c
+ *
+ * This file implements the NSSCKMDMechnaism and NSSCKMDCryptoOperation objects
+ * for the RSA operation on the CAPI cryptoki module.
+ */
 
-
-
-
-
-
-
-
-
-
+/*
+ * write a Decimal value to a string
+ */
 
 static char *
 putDecimalString(char *cstr, unsigned long value)
@@ -65,7 +65,7 @@ putDecimalString(char *cstr, unsigned long value)
     unsigned char digit = (unsigned char )(value/tenpower);
     value = value % tenpower;
 
-    
+    /* drop leading zeros */
     if (first && (0 == digit)) {
       continue;
     }
@@ -73,7 +73,7 @@ putDecimalString(char *cstr, unsigned long value)
     *cstr++ = digit + '0';
   }
 
-  
+  /* if value was zero, put one of them out */
   if (first) {
     *cstr++ = '0';
   }
@@ -81,14 +81,14 @@ putDecimalString(char *cstr, unsigned long value)
 }
 
 
-
-
-
+/*
+ * Create a Capi OID string value from a DER OID
+ */
 static char *
 nss_ckcapi_GetOidString
 (
   unsigned char *oidTag,
-  int oidTagSize,
+  unsigned int oidTagSize,
   CK_RV *pError
 )
 {
@@ -96,10 +96,10 @@ nss_ckcapi_GetOidString
   char *oidStr;
   char *cstr;
   unsigned long value;
-  int oidSize;
+  unsigned int oidSize;
 
   if (DER_OBJECT_ID != *oidTag) {
-    
+    /* wasn't an oid */
     *pError = CKR_DATA_INVALID;
     return NULL;
   }
@@ -132,7 +132,7 @@ nss_ckcapi_GetOidString
     }
   }
 
-  *cstr = 0; 
+  *cstr = 0; /* NULL terminate */
 
   if (value != 0) {
     nss_ZFreeIf(oidStr);
@@ -143,13 +143,13 @@ nss_ckcapi_GetOidString
 }
 
 
-
-
-
-
-
-
-
+/*
+ * PKCS #11 sign for RSA expects to take a fully DER-encoded hash value, 
+ * which includes the hash OID. CAPI expects to take a Hash Context. While 
+ * CAPI does have the capability of setting a raw hash value, it does not 
+ * have the ability to sign an arbitrary value. This function tries to
+ * reduce the passed in data into something that CAPI could actually sign.
+ */
 static CK_RV
 ckcapi_GetRawHash
 (
@@ -164,17 +164,17 @@ ckcapi_GetRawHash
    unsigned char *hashData;
    char *oidStr;
    CK_RV error;
-   int oidSize;
-   int size;
-   
-
-
-
-
-
-
-
-
+   unsigned int oidSize;
+   unsigned int size;
+   /*
+    * there are 2 types of hashes NSS typically tries to sign, regular
+    * RSA signature format (with encoded DER_OIDS), and SSL3 Signed hashes.
+    * CAPI knows not to add any oids to SSL3_Signed hashes, so if we have any
+    * random hash that is exactly the same size as an SSL3 hash, then we can
+    * just pass the data through. CAPI has know way of knowing if the value
+    * is really a combined hash or some other arbitrary data, so it's safe to
+    * handle this case first.
+    */
   if (SSL3_SHAMD5_HASH_SIZE == input->size) {
     hash->data = input->data;
     hash->size = input->size;
@@ -184,70 +184,70 @@ ckcapi_GetRawHash
 
   current = (unsigned char *)input->data;
 
-  
+  /* make sure we have a sequence tag */
   if ((DER_SEQUENCE|DER_CONSTRUCTED) != *current) {
     return CKR_DATA_INVALID;
   }
 
-  
+  /* parse the input block to get 1) the hash oid, and 2) the raw hash value.
+   * unfortunatly CAPI doesn't have a builtin function to do this work, so
+   * we go ahead and do it by hand here.
+   *
+   * format is:
+   *  SEQUENCE {
+   *     SECQUENCE { // algid
+   *       OID {}    // oid
+   *       ANY {}    // optional params 
+   *     }
+   *     OCTECT {}   // hash
+   */
 
-
-
-
-
-
-
-
-
-
-
-
-  
+  /* unwrap */
   algid = nss_ckcapi_DERUnwrap(current,input->size, &size, NULL);
   
   if (algid+size != current+input->size) {
-    
+    /* make sure there is not extra data at the end */
     return CKR_DATA_INVALID;
   }
 
   if ((DER_SEQUENCE|DER_CONSTRUCTED) != *algid) {
-    
+    /* wasn't an algid */
     return CKR_DATA_INVALID;
   }
   oid = nss_ckcapi_DERUnwrap(algid, size, &oidSize, &hashData);
 
   if (DER_OCTET_STRING != *hashData) {
-    
+    /* wasn't a hash */
     return CKR_DATA_INVALID;
   }
 
-  
+  /* get the real hash */
   current = hashData;
   size = size - (hashData-algid);
   hash->data = nss_ckcapi_DERUnwrap(current, size, &hash->size, NULL);
 
-  
-
+  /* get the real oid as a string. Again, Microsoft does not
+   * export anything that does this for us */
   oidStr = nss_ckcapi_GetOidString(oid, oidSize, &error);
   if ((char *)NULL == oidStr ) {
     return error;
   }
 
-   
+  /* look up the hash alg from the oid (fortunately CAPI does to this) */ 
   *hashAlg = CertOIDToAlgId(oidStr);
   nss_ZFreeIf(oidStr);
   if (0 == *hashAlg) {
     return CKR_HOST_MEMORY;
   }
 
-  
+  /* hash looks reasonably consistent, we should be able to sign it now */
   return CKR_OK;
 }
 
-
-
-
-
+/*
+ * So everyone else in the worlds stores their bignum data MSB first, but not
+ * Microsoft, we need to byte swap everything coming into and out of CAPI.
+ */
 void
 ckcapi_ReverseData(NSSItem *item)
 {
@@ -277,9 +277,9 @@ struct ckcapiInternalCryptoOperationRSAPrivStr
   NSSItem	       *buffer;
 };
 
-
-
-
+/*
+ * ckcapi_mdCryptoOperationRSAPriv_Create
+ */
 static NSSCKMDCryptoOperation *
 ckcapi_mdCryptoOperationRSAPriv_Create
 (
@@ -298,7 +298,7 @@ ckcapi_mdCryptoOperationRSAPriv_Create
   DWORD       keySpec;
   HCRYPTKEY   hKey;
 
-  
+  /* make sure we have the right objects */
   if (((const NSSItem *)NULL == classItem) ||
       (sizeof(CK_OBJECT_CLASS) != classItem->size) ||
       (CKO_PRIVATE_KEY != *(CK_OBJECT_CLASS *)classItem->data) ||
@@ -378,12 +378,12 @@ ckcapi_mdCryptoOperationRSA_GetFinalLength
 }
 
 
-
-
-
-
-
-
+/*
+ * ckcapi_mdCryptoOperationRSADecrypt_GetOperationLength
+ * we won't know the length until we actually decrypt the
+ * input block. Since we go to all the work to decrypt the
+ * the block, we'll save if for when the block is asked for
+ */
 static CK_ULONG
 ckcapi_mdCryptoOperationRSADecrypt_GetOperationLength
 (
@@ -403,14 +403,14 @@ ckcapi_mdCryptoOperationRSADecrypt_GetOperationLength
        (ckcapiInternalCryptoOperationRSAPriv *)mdOperation->etc;
   BOOL rc;
 
-  
-
+  /* Microsoft's Decrypt operation works in place. Since we don't want
+   * to trash our input buffer, we make a copy of it */
   iOperation->buffer = nssItem_Duplicate((NSSItem *)input, NULL, NULL);
   if ((NSSItem *) NULL == iOperation->buffer) {
     *pError = CKR_HOST_MEMORY;
     return 0;
   }
-  
+  /* Sigh, reverse it */
   ckcapi_ReverseData(iOperation->buffer);
   
   rc = CryptDecrypt(iOperation->hKey, 0, TRUE, 0, 
@@ -434,12 +434,12 @@ ckcapi_mdCryptoOperationRSADecrypt_GetOperationLength
   return iOperation->buffer->size;
 }
 
-
-
-
-
-
-
+/*
+ * ckcapi_mdCryptoOperationRSADecrypt_UpdateFinal
+ *
+ * NOTE: ckcapi_mdCryptoOperationRSADecrypt_GetOperationLength is presumed to 
+ * have been called previously.
+ */
 static CK_RV
 ckcapi_mdCryptoOperationRSADecrypt_UpdateFinal
 (
@@ -467,10 +467,10 @@ ckcapi_mdCryptoOperationRSADecrypt_UpdateFinal
   return CKR_OK;
 }
 
-
-
-
-
+/*
+ * ckcapi_mdCryptoOperationRSASign_UpdateFinal
+ *
+ */
 static CK_RV
 ckcapi_mdCryptoOperationRSASign_UpdateFinal
 (
@@ -494,16 +494,16 @@ ckcapi_mdCryptoOperationRSASign_UpdateFinal
   HCRYPTHASH hHash = 0;
   ALG_ID  hashAlg;
   DWORD  hashSize;
-  DWORD  len; 
+  DWORD  len; /* temp length value we throw away */
   BOOL   rc;
 
-  
-
-
-
-
-
-
+  /*
+   * PKCS #11 sign for RSA expects to take a fully DER-encoded hash value, 
+   * which includes the hash OID. CAPI expects to take a Hash Context. While 
+   * CAPI does have the capability of setting a raw hash value, it does not 
+   * have the ability to sign an arbitrary value. This function tries to
+   * reduce the passed in data into something that CAPI could actually sign.
+   */
   error = ckcapi_GetRawHash(input, &hash, &hashAlg);
   if (CKR_OK != error) {
     goto loser;
@@ -514,7 +514,7 @@ ckcapi_mdCryptoOperationRSASign_UpdateFinal
     goto loser;
   }
 
-  
+  /* make sure the hash lens match before we set it */
   len = sizeof(DWORD);
   rc = CryptGetHashParam(hHash, HP_HASHSIZE, (BYTE *)&hashSize, &len, 0);
   if (!rc) {
@@ -522,41 +522,41 @@ ckcapi_mdCryptoOperationRSASign_UpdateFinal
   }
 
   if (hash.size != hashSize) {
-    
+    /* The input must have been bad for this to happen */
     error = CKR_DATA_INVALID;
     goto loser;
   }
 
-  
-
+  /* we have an explicit hash, set it, note that the length is
+   * implicit by the hashAlg used in create */
   rc = CryptSetHashParam(hHash, HP_HASHVAL, hash.data, 0);
   if (!rc) {
     goto loser;
   }
 
-  
+  /* OK, we have the data in a hash structure, sign it! */
   rc = CryptSignHash(hHash, iOperation->keySpec, NULL, 0,
                      output->data, &output->size);
   if (!rc) {
     goto loser;
   }
 
-  
-
+  /* Don't return a signature that might have been broken because of a cosmic
+   * ray, or a broken processor, verify that it is valid... */
   rc = CryptVerifySignature(hHash, output->data, output->size, 
                             iOperation->hKey, NULL, 0);
   if (!rc) {
     goto loser;
   }
 
-  
-
+  /* OK, Microsoft likes to do things completely differently than anyone
+   * else. We need to reverse the data we received here */
   ckcapi_ReverseData(output);
   CryptDestroyHash(hHash);
   return CKR_OK;
 
 loser:
-  
+  /* map the microsoft error */
   if (CKR_OK == error) {
     msError = GetLastError();
     switch (msError) {
@@ -568,9 +568,9 @@ loser:
       break;
     case ERROR_MORE_DATA:
       return CKR_BUFFER_TOO_SMALL;
-    case ERROR_INVALID_PARAMETER: 
-    case ERROR_INVALID_HANDLE:     
-    case NTE_BAD_ALGID:           
+    case ERROR_INVALID_PARAMETER: /* these params were derived from the */
+    case ERROR_INVALID_HANDLE:    /* inputs, so if they are bad, the input */ 
+    case NTE_BAD_ALGID:           /* data is bad */
     case NTE_BAD_HASH:
       error = CKR_DATA_INVALID;
       break;
@@ -593,38 +593,38 @@ loser:
 
 NSS_IMPLEMENT_DATA const NSSCKMDCryptoOperation
 ckcapi_mdCryptoOperationRSADecrypt_proto = {
-  NULL, 
+  NULL, /* etc */
   ckcapi_mdCryptoOperationRSAPriv_Destroy,
-  NULL, 
+  NULL, /* GetFinalLengh - not needed for one shot Decrypt/Encrypt */
   ckcapi_mdCryptoOperationRSADecrypt_GetOperationLength,
-  NULL, 
-  NULL, 
-  NULL, 
+  NULL, /* Final - not needed for one shot operation */
+  NULL, /* Update - not needed for one shot operation */
+  NULL, /* DigetUpdate - not needed for one shot operation */
   ckcapi_mdCryptoOperationRSADecrypt_UpdateFinal,
-  NULL, 
-  NULL, 
-  (void *)NULL 
+  NULL, /* UpdateCombo - not needed for one shot operation */
+  NULL, /* DigetKey - not needed for one shot operation */
+  (void *)NULL /* null terminator */
 };
 
 NSS_IMPLEMENT_DATA const NSSCKMDCryptoOperation
 ckcapi_mdCryptoOperationRSASign_proto = {
-  NULL, 
+  NULL, /* etc */
   ckcapi_mdCryptoOperationRSAPriv_Destroy,
   ckcapi_mdCryptoOperationRSA_GetFinalLength,
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
+  NULL, /* GetOperationLengh - not needed for one shot Sign/Verify */
+  NULL, /* Final - not needed for one shot operation */
+  NULL, /* Update - not needed for one shot operation */
+  NULL, /* DigetUpdate - not needed for one shot operation */
   ckcapi_mdCryptoOperationRSASign_UpdateFinal,
-  NULL, 
-  NULL, 
-  (void *)NULL 
+  NULL, /* UpdateCombo - not needed for one shot operation */
+  NULL, /* DigetKey - not needed for one shot operation */
+  (void *)NULL /* null terminator */
 };
 
-
-
-
-
+/********** NSSCKMDMechansim functions ***********************/
+/*
+ * ckcapi_mdMechanismRSA_Destroy
+ */
 static void
 ckcapi_mdMechanismRSA_Destroy
 (
@@ -637,9 +637,9 @@ ckcapi_mdMechanismRSA_Destroy
   nss_ZFreeIf(fwMechanism);
 }
 
-
-
-
+/*
+ * ckcapi_mdMechanismRSA_GetMinKeySize
+ */
 static CK_ULONG
 ckcapi_mdMechanismRSA_GetMinKeySize
 (
@@ -655,9 +655,9 @@ ckcapi_mdMechanismRSA_GetMinKeySize
   return 384;
 }
 
-
-
-
+/*
+ * ckcapi_mdMechanismRSA_GetMaxKeySize
+ */
 static CK_ULONG
 ckcapi_mdMechanismRSA_GetMaxKeySize
 (
@@ -673,9 +673,9 @@ ckcapi_mdMechanismRSA_GetMaxKeySize
   return 16384;
 }
 
-
-
-
+/*
+ * ckcapi_mdMechanismRSA_DecryptInit
+ */
 static NSSCKMDCryptoOperation * 
 ckcapi_mdMechanismRSA_DecryptInit
 (
@@ -698,9 +698,9 @@ ckcapi_mdMechanismRSA_DecryptInit
 		mdMechanism, mdKey, pError);
 }
 
-
-
-
+/*
+ * ckcapi_mdMechanismRSA_SignInit
+ */
 static NSSCKMDCryptoOperation * 
 ckcapi_mdMechanismRSA_SignInit
 (
@@ -726,23 +726,23 @@ ckcapi_mdMechanismRSA_SignInit
 
 NSS_IMPLEMENT_DATA const NSSCKMDMechanism
 nss_ckcapi_mdMechanismRSA = {
-  (void *)NULL, 
+  (void *)NULL, /* etc */
   ckcapi_mdMechanismRSA_Destroy,
   ckcapi_mdMechanismRSA_GetMinKeySize,
   ckcapi_mdMechanismRSA_GetMaxKeySize,
-  NULL, 
-  NULL, 
+  NULL, /* GetInHardware - default false */
+  NULL, /* EncryptInit - default errs */
   ckcapi_mdMechanismRSA_DecryptInit,
-  NULL, 
+  NULL, /* DigestInit - default errs*/
   ckcapi_mdMechanismRSA_SignInit,
-  NULL, 
-  ckcapi_mdMechanismRSA_SignInit,  
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
-  (void *)NULL 
+  NULL, /* VerifyInit - default errs */
+  ckcapi_mdMechanismRSA_SignInit,  /* SignRecoverInit */
+  NULL, /* VerifyRecoverInit - default errs */
+  NULL, /* GenerateKey - default errs */
+  NULL, /* GenerateKeyPair - default errs */
+  NULL, /* GetWrapKeyLength - default errs */
+  NULL, /* WrapKey - default errs */
+  NULL, /* UnwrapKey - default errs */
+  NULL, /* DeriveKey - default errs */
+  (void *)NULL /* null terminator */
 };

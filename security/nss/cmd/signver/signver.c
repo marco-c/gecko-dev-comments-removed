@@ -1,38 +1,38 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Netscape security libraries.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1994-2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "secutil.h"
 #include "secmod.h"
@@ -40,14 +40,14 @@
 #include "secoid.h"
 #include "nss.h"
 
-
+/* NSPR 2.0 header files */
 #include "prinit.h"
 #include "prprf.h"
 #include "prsystem.h"
 #include "prmem.h"
-
+/* Portable layer header files */
 #include "plstr.h"
-#include "sechash.h"	
+#include "sechash.h"	/* for HASH_GetHashObject() */
 
 static PRBool debugInfo;
 static PRBool verbose;
@@ -125,19 +125,19 @@ enum {
 
 static secuCommandFlag signver_commands[] =
 {
-    {   'A', PR_FALSE, 0, PR_FALSE },
-    {   'V', PR_FALSE, 0, PR_FALSE }
+    { /* cmd_DisplayAllPCKS7Info*/  'A', PR_FALSE, 0, PR_FALSE },
+    { /* cmd_VerifySignedObj	*/  'V', PR_FALSE, 0, PR_FALSE }
 };
 
 static secuCommandFlag signver_options[] =
 {
-    {   'a', PR_FALSE, 0, PR_FALSE },
-    {   'd', PR_TRUE,  0, PR_FALSE },
-    {   'i', PR_TRUE,  0, PR_FALSE },
-    {   'o', PR_TRUE,  0, PR_FALSE },
-    {   's', PR_TRUE,  0, PR_FALSE },
-    {   'v', PR_FALSE, 0, PR_FALSE },
-    {     0, PR_FALSE, 0, PR_FALSE, "debug" }
+    { /* opt_ASCII		*/  'a', PR_FALSE, 0, PR_FALSE },
+    { /* opt_CertDir		*/  'd', PR_TRUE,  0, PR_FALSE },
+    { /* opt_InputDataFile	*/  'i', PR_TRUE,  0, PR_FALSE },
+    { /* opt_OutputFile 	*/  'o', PR_TRUE,  0, PR_FALSE },
+    { /* opt_InputSigFile	*/  's', PR_TRUE,  0, PR_FALSE },
+    { /* opt_PrintWhyFailure	*/  'v', PR_FALSE, 0, PR_FALSE },
+    { /* opt_DebugInfo		*/    0, PR_FALSE, 0, PR_FALSE, "debug" }
 };
 
 int main(int argc, char **argv)
@@ -177,16 +177,16 @@ int main(int argc, char **argv)
     if (!doVerify && !displayAll)
 	doVerify = PR_TRUE;
 
-    
+    /*	Set the certdb directory (default is ~/.netscape) */
     rv = NSS_Init(SECU_ConfigDirectory(signver.options[opt_CertDir].arg));
     if (rv != SECSuccess) {
 	SECU_PrintPRandOSError(progName);
 	return result;
     }
-    
+    /* below here, goto cleanup */
     SECU_RegisterDynamicOids();
 
-    
+    /*	Open the input content file. */
     if (signver.options[opt_InputDataFile].activated &&
 	signver.options[opt_InputDataFile].arg) {
 	if (PL_strcmp("-", signver.options[opt_InputDataFile].arg)) {
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 	    contentFile = PR_STDIN;
     }
 
-    
+    /*	Open the input signature file.	*/
     if (signver.options[opt_InputSigFile].activated &&
 	signver.options[opt_InputSigFile].arg) {
 	if (PL_strcmp("-", signver.options[opt_InputSigFile].arg)) {
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
 	goto cleanup;
     }
 
-    
+    /*	Open|Create the output file.  */
     if (signver.options[opt_OutputFile].activated) {
 	outFile = fopen(signver.options[opt_OutputFile].arg, "w");
 	if (!outFile) {
@@ -234,7 +234,7 @@ int main(int argc, char **argv)
 	}
     }
 
-    
+    /* read in the input files' contents */
     rv = SECU_ReadDERFromFile(&pkcs7der, signFile,
 			      signver.options[opt_ASCII].activated);
     if (signFile != PR_STDIN)
@@ -251,7 +251,7 @@ int main(int argc, char **argv)
 	    content.data = NULL;
     }
 
-    
+    /* Signature Verification */
     if (doVerify) {
 	SEC_PKCS7ContentInfo *cinfo;
 	SEC_PKCS7SignedData *signedData;
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 	    PR_fprintf(PR_STDERR, "Unable to decode PKCS7 data\n");
 	    goto cleanup;
 	}
-	
+	/* below here, goto done */
 
 	contentIsSigned = SEC_PKCS7ContentIsSigned(cinfo);
 	if (debugInfo) {
@@ -281,7 +281,7 @@ int main(int argc, char **argv)
 
 	signedData = cinfo->content.signedData;
 
-	
+	/* assume that there is only one digest algorithm for now */
 	digestType = AlgorithmToHashType(signedData->digestAlgorithms[0]);
 	if (digestType == HASH_AlgNULL) {
 	    PR_fprintf(PR_STDERR, "Invalid hash algorithmID\n");
@@ -320,7 +320,7 @@ int main(int argc, char **argv)
 		fprintf(outFile, "no");
 		if (verbose) {
 		    fprintf(outFile, ":%s",
-			    SECU_ErrorString((int16)PORT_GetError()));
+			    SECU_Strerror(PORT_GetError()));
 		}
 	    }
 	    fprintf(outFile, "\n");
