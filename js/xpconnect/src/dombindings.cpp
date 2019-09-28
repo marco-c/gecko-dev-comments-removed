@@ -1,45 +1,46 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99 ft=cpp:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code, released
+ * June 24, 2010.
+ *
+ * The Initial Developer of the Original Code is
+ *    The Mozilla Foundation
+ *
+ * Contributor(s):
+ *    Andreas Gal <gal@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "mozilla/Util.h"
 
 #include "dombindings.h"
+#include "xpcpublic.h"
 #include "xpcprivate.h"
 #include "XPCQuickStubs.h"
 #include "XPCWrapper.h"
@@ -97,26 +98,26 @@ Throw(JSContext *cx, nsresult rv)
 }
 
 
-
-
+// Only set allowNativeWrapper to false if you really know you need it, if in
+// doubt use true. Setting it to false disables security wrappers.
 static bool
 XPCOMObjectToJsval(JSContext *cx, JSObject *scope, xpcObjectHelper &helper,
                    bool allowNativeWrapper, jsval *rval)
 {
-    
-    
-    
-    
-    
+    // XXX The OBJ_IS_NOT_GLOBAL here is not really right. In
+    // fact, this code is depending on the fact that the
+    // global object will not have been collected, and
+    // therefore this NativeInterface2JSObject will not end up
+    // creating a new XPCNativeScriptableShared.
 
     XPCLazyCallContext lccx(JS_CALLER, cx, scope);
 
     nsresult rv;
     if (!XPCConvert::NativeInterface2JSObject(lccx, rval, NULL, helper, NULL, NULL,
                                               allowNativeWrapper, OBJ_IS_NOT_GLOBAL, &rv)) {
-        
-        
-        
+        // I can't tell if NativeInterface2JSObject throws JS exceptions
+        // or not.  This is a sloppy stab at the right semantics; the
+        // method really ought to be fixed to behave consistently.
         if (!JS_IsExceptionPending(cx))
             Throw(cx, NS_FAILED(rv) ? rv : NS_ERROR_UNEXPECTED);
         return false;
@@ -199,7 +200,7 @@ Wrap(JSContext *cx, JSObject *scope, nsISupportsResult &result, jsval *vp)
 static inline bool
 Wrap(JSContext *cx, JSObject *scope, nsString &result, jsval *vp)
 {
-    return xpc_qsStringToJsval(cx, result, vp);
+    return xpc::StringToJsval(cx, result, vp);
 }
 
 template<class T>
@@ -283,7 +284,7 @@ ListBase<LC>::instanceIsListObject(JSContext *cx, JSObject *obj, JSObject *calle
     }
 
     if (!objIsList(obj)) {
-        
+        // FIXME: Throw a proper DOM exception.
         JS_ReportError(cx, "type error: wrong object");
         return false;
     }
@@ -601,7 +602,7 @@ ListBase<LC>::getOwnPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id, 
         if (!JS_GetPropertyDescriptorById(cx, expando, id, flags, desc))
             return false;
         if (desc->obj) {
-            
+            // Pretend the property lives on the wrapper.
             desc->obj = proxy;
             return true;
         }
@@ -740,7 +741,7 @@ ListBase<LC>::getOwnPropertyNames(JSContext *cx, JSObject *proxy, AutoIdVector &
         !GetPropertyNames(cx, expando, JSITER_OWNONLY | JSITER_HIDDEN, &props))
         return false;
 
-    
+    // FIXME: Add named items
     return true;
 }
 
@@ -767,7 +768,7 @@ template<class LC>
 bool
 ListBase<LC>::enumerate(JSContext *cx, JSObject *proxy, AutoIdVector &props)
 {
-    
+    // FIXME: enumerate proto as well
     return getOwnPropertyNames(cx, proxy, props);
 }
 
@@ -817,12 +818,12 @@ ListBase<LC>::has(JSContext *cx, JSObject *proxy, jsid id, bool *bp)
 {
     if (!hasOwn(cx, proxy, id, bp))
         return false;
-    
-    
+    // We have the property ourselves; no need to worry about our
+    // prototype chain.
     if (*bp)
         return true;
 
-    
+    // OK, now we have to look at the proto
     JSObject *proto = js::GetObjectProto(proxy);
     if (!proto)
         return true;
@@ -1007,7 +1008,7 @@ ListBase<LC>::hasPropertyOnPrototype(JSContext *cx, JSObject *proxy, jsid id)
     JS_ASSERT(objIsList(proxy));
 
     bool found;
-    
+    // We ignore an error from getPropertyOnPrototype.
     return !getPropertyOnPrototype(cx, proxy, id, &found, NULL) || found;
 }
 
@@ -1027,8 +1028,8 @@ ListBase<LC>::get(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id, V
             if (getItemAt(getListObject(proxy), PRUint32(index), result))
                 return Wrap(cx, proxy, result, vp);
 
-            
-            
+            // Even if we don't have this index, we don't forward the
+            // get on to our expando object.
             getFromExpandoObject = false;
         }
     }
@@ -1085,7 +1086,7 @@ ListBase<LC>::getElementIfPresent(JSContext *cx, JSObject *proxy, JSObject *rece
     if (!JS_IndexToId(cx, index, &id))
         return false;
 
-    
+    // if hasIndexGetter, we skip the expando object
     if (!hasIndexGetter) {
         JSObject *expando = getExpandoObject(proxy);
         if (expando) {
@@ -1099,7 +1100,7 @@ ListBase<LC>::getElementIfPresent(JSContext *cx, JSObject *proxy, JSObject *rece
         }
     }
 
-    
+    // No need to worry about name getters here, so just check the proto.
 
     JSObject *proto = js::GetObjectProto(proxy);
     if (proto) {
@@ -1111,7 +1112,7 @@ ListBase<LC>::getElementIfPresent(JSContext *cx, JSObject *proxy, JSObject *rece
     }
 
     *present = false;
-    
+    // Can't Debug_SetValueRangeToCrashOnTouch because it's not public
     return true;
 }
 
@@ -1150,7 +1151,7 @@ JSString *
 ListBase<LC>::obj_toString(JSContext *cx, JSObject *proxy)
 {
     const char *clazz = sInterfaceClass.name;
-    size_t nchars = 9 + strlen(clazz); 
+    size_t nchars = 9 + strlen(clazz); /* 9 for "[object ]" */
     jschar *chars = (jschar *)JS_malloc(cx, (nchars + 1) * sizeof(jschar));
     if (!chars)
         return NULL;
@@ -1187,9 +1188,9 @@ ListBase<LC>::finalize(JSContext *cx, JSObject *proxy)
 JSObject*
 NoBase::getPrototype(JSContext *cx, XPCWrappedNativeScope *scope)
 {
-    
-    
-    
+    // We need to pass the object prototype to JS_NewObject. If we pass NULL then the JS engine
+    // will look up a prototype on the global by using the class' name and we'll recurse into
+    // getPrototype.
     JSObject* proto;
     if (!js_GetClassPrototype(cx, scope->GetGlobalJSObject(), JSProto_Object, &proto))
         return NULL;

@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#!/usr/bin/env/python
+# ***** BEGIN LICENSE BLOCK *****
+# Version: MPL 1.1/GPL 2.0/LGPL 2.1
+#
+# The contents of this file are subject to the Mozilla Public License Version
+# 1.1 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS" basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+# for the specific language governing rights and limitations under the
+# License.
+#
+# The Original Code is mozilla.org code.
+#
+# The Initial Developer of the Original Code is
+#   Mozilla Foundation.
+# Portions created by the Initial Developer are Copyright (C) 2008
+# the Initial Developer. All Rights Reserved.
+#
+# Contributor(s):
+#   Jason Orendorff <jorendorff@mozilla.com>
+#
+# Alternatively, the contents of this file may be used under the terms of
+# either of the GNU General Public License Version 2 or later (the "GPL"),
+# or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# in which case the provisions of the GPL or the LGPL are applicable instead
+# of those above. If you wish to allow use of your version of this file only
+# under the terms of either the GPL or the LGPL, and not to allow others to
+# use your version of this file under the terms of the MPL, indicate your
+# decision by deleting the provisions above and replace them with the notice
+# and other provisions required by the GPL or the LGPL. If you do not delete
+# the provisions above, a recipient may use your version of this file under
+# the terms of any one of the MPL, the GPL or the LGPL.
+#
+# ***** END LICENSE BLOCK *****
 
 import xpidl
 import header
@@ -42,15 +42,15 @@ import sys
 import os
 import string
 
-
+# === Utils
 
 def warn(msg):
     sys.stderr.write(msg + '\n')
 
 def makeQuote(filename):
-    return filename.replace(' ', '\\ ')  
+    return filename.replace(' ', '\\ ')  # enjoy!
 
-
+# === Types
 
 def isVoidType(type):
     """ Return True if the given xpidl type is void. """
@@ -78,7 +78,7 @@ def isSpecificInterfaceType(t, name):
 def isVariantType(t):
     return isSpecificInterfaceType(t, 'nsIVariant')
 
-
+# === Reading the file
 
 class UserError(Exception):
     pass
@@ -86,8 +86,8 @@ class UserError(Exception):
 def findIDL(includePath, irregularFilenames, interfaceName):
     filename = irregularFilenames.get(interfaceName, interfaceName) + '.idl'
     for d in includePath:
-        
-        
+        # Not os.path.join: we need a forward slash even on Windows because
+        # this filename ends up in makedepend output.
         path = d + '/' + filename
         if os.path.exists(path):
             return path
@@ -95,7 +95,7 @@ def findIDL(includePath, irregularFilenames, interfaceName):
                     "in include path %r"
                     % (interfaceName, includePath))
 
-
+# === Generating code
 
 argumentUnboxingTemplates = {
     'octet':
@@ -188,23 +188,23 @@ argumentUnboxingTemplates = {
         "    jsval ${name} = ${argVal};\n"
     }
 
-
-
-
-
-
-
+# From JSData2Native.
+#
+# Omitted optional arguments are treated as though the caller had passed JS
+# `null`; this behavior is from XPCWrappedNative::CallMethod. The 'jsval' type,
+# however, defaults to 'undefined'.
+#
 def writeArgumentUnboxing(f, i, name, type, haveCcx, optional, rvdeclared,
                           nullBehavior, undefinedBehavior):
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # f - file to write to
+    # i - int or None - Indicates the source jsval.  If i is an int, the source
+    #     jsval is argv[i]; otherwise it is *vp.  But if Python i >= C++ argc,
+    #     which can only happen if optional is True, the argument is missing;
+    #     use JSVAL_NULL as the source jsval instead.
+    # name - str - name of the native C++ variable to create.
+    # type - xpidl.{Interface,Native,Builtin} - IDL type of argument
+    # optional - bool - True if the parameter is optional.
+    # rvdeclared - bool - False if no |nsresult rv| has been declared earlier.
 
     typeName = xpidl.getBuiltinOrNativeTypeName(type)
 
@@ -237,10 +237,10 @@ def writeArgumentUnboxing(f, i, name, type, haveCcx, optional, rvdeclared,
         if template is not None:
             f.write(string.Template(template).substitute(params))
             return rvdeclared
-        
+        # else fall through; the type isn't supported yet.
     elif isInterfaceType(type):
         if type.name == 'nsIVariant':
-            
+            # Totally custom.
             assert haveCcx
             template = (
                 "    nsCOMPtr<nsIVariant> ${name}(already_AddRefed<nsIVariant>("
@@ -252,7 +252,7 @@ def writeArgumentUnboxing(f, i, name, type, haveCcx, optional, rvdeclared,
             f.write(string.Template(template).substitute(params))
             return rvdeclared
         elif type.name == 'nsIAtom':
-            
+            # Should have special atomizing behavior.  Fall through.
             pass
         else:
             if not rvdeclared:
@@ -286,13 +286,13 @@ def writeResultDecl(f, member, varname):
     type = member.realtype
 
     if isVoidType(type):
-        return  
+        return  # nothing to declare
 
     t = xpidl.unaliasType(type)
     if t.kind == 'builtin':
         if not t.nativename.endswith('*'):
             if type.kind == 'typedef':
-                typeName = type.name  
+                typeName = type.name  # use it
             else:
                 typeName = t.nativename
             f.write("    %s %s;\n" % (typeName, varname))
@@ -303,7 +303,7 @@ def writeResultDecl(f, member, varname):
             f.write("    nsString %s;\n" % varname)
             return
         elif name == '[jsval]':
-            return  
+            return  # nothing to declare; see special case in outParamForm
     elif t.kind in ('interface', 'forward'):
         if member.kind == 'method' and member.notxpcom:
             f.write("    %s *%s;\n" % (type.name, varname))
@@ -316,9 +316,9 @@ def writeResultDecl(f, member, varname):
 
 def outParamForm(name, type):
     type = xpidl.unaliasType(type)
-    
-    
-    
+    # If we start allowing [jsval] return types here, we need to tack
+    # the return value onto the arguments list in the callers,
+    # possibly, and handle properly returning it too.  See bug 604198.
     assert type.kind != 'native' or type.specialtype != 'jsval'
     if type.kind == 'builtin':
         return '&' + name
@@ -332,7 +332,7 @@ def outParamForm(name, type):
     else:
         return 'getter_AddRefs(%s)' % name
 
-
+# From NativeData2JS.
 resultConvTemplates = {
     'void':
             "    ${jsvalRef} = JSVAL_VOID;\n"
@@ -373,14 +373,14 @@ resultConvTemplates = {
         "    return JS_TRUE;\n",
 
     '[astring]':
-        "    return xpc_qsStringToJsval(cx, result, ${jsvalPtr});\n",
+        "    return xpc::StringToJsval(cx, result, ${jsvalPtr});\n",
 
     '[domstring]':
-        "    return xpc_qsStringToJsval(cx, result, ${jsvalPtr});\n",
+        "    return xpc::StringToJsval(cx, result, ${jsvalPtr});\n",
 
     '[jsval]':
-        
-        
+        # Here there's nothing to convert, because the result has already been
+        # written directly to *rv. See the special case in outParamForm.
         "    return JS_TRUE;\n"
     }
 
@@ -390,7 +390,7 @@ def writeResultConv(f, type, interfaceResultTemplate, jsvalPtr, jsvalRef):
     The emitted code contains a return statement; it returns JS_TRUE on
     success, JS_FALSE on error.
     """
-    
+    # From NativeData2JS.
     typeName = xpidl.getBuiltinOrNativeTypeName(type)
     if typeName is not None:
         template = resultConvTemplates.get(typeName)
@@ -410,7 +410,7 @@ def writeResultConv(f, type, interfaceResultTemplate, jsvalPtr, jsvalRef):
                   'typeName': type.name}
         f.write(string.Template(template).substitute(values))
         return
-    
+    # else fall through; this type isn't supported yet
 
     warn("Unable to convert result of type %s" % type.name)
     f.write("    !; // TODO - Convert `result` to jsval, store in `%s`.\n"
@@ -443,7 +443,7 @@ def validateParam(member, param):
     if param.const or param.array or param.shared:
         pfail("I am a simple caveman.")
 
-
+# returns the number of arguments that a method takes in JS (including optional arguments)
 def argumentsLength(member):
     assert member.kind == 'method'
 
@@ -469,13 +469,13 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
 
     signature = "static JSBool\n"
     if isAttr:
-        
+        # JSPropertyOp signature.
         if isSetter:
             signature += "%s(JSContext *cx, JSObject *obj, jsid id, JSBool strict,%s jsval *vp)\n"
         else:
             signature += "%s(JSContext *cx, JSObject *obj, jsid id,%s jsval *vp)\n"
     else:
-        
+        # JSFastNative.
         signature += "%s(JSContext *cx, uintN argc,%s jsval *vp)\n"
 
     customMethodCall = customMethodCalls.get(stubName, None)
@@ -499,9 +499,9 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
             elif isSetter:
                 templateName += '_Set'
 
-            
-            
-            
+            # Generate the code for the stub, calling the template function
+            # that's shared between the stubs. The stubs can't have additional
+            # arguments, only the template function can.
             callTemplate = signature % (stubName, '')
             callTemplate += "{\n"
 
@@ -515,9 +515,9 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
                                  % (templateName, argumentValues))
             callTemplate += "}\n\n"
 
-            
-            
-            
+            # Fall through and create the template function stub called from the
+            # real stubs, but only generate the stub once. Otherwise, just write
+            # out the call to the template function and return.
             templateGenerated = templateName + '_generated'
             if templateGenerated in customMethodCall:
                 f.write(callTemplate)
@@ -531,9 +531,9 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
         callTemplate = ""
         code = customMethodCall.get('code', None)
 
-    
+    # Function prolog.
 
-    
+    # Only template functions can have additional arguments.
     if customMethodCall is None or not 'additionalArguments' in customMethodCall:
         additionalArguments = ''
     else:
@@ -542,13 +542,13 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
     f.write("{\n")
     f.write("    XPC_QS_ASSERT_CONTEXT_OK(cx);\n")
 
-    
+    # For methods, compute "this".
     if isMethod:
         f.write("    JSObject *obj = JS_THIS_OBJECT(cx, vp);\n"
                 "    if (!obj)\n"
                 "        return JS_FALSE;\n")
 
-    
+    # Create ccx if needed.
     haveCcx = memberNeedsCcx(member)
     if haveCcx:
         f.write("    XPCCallContext ccx(JS_CALLER, cx, obj, "
@@ -561,7 +561,7 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
     rvdeclared = False
     if isMethod:
         inArgs = argumentsLength(member)
-        
+        # If there are any required arguments, check argc.
         requiredArgs = inArgs
         while requiredArgs and member.params[requiredArgs-1].optional:
             requiredArgs -= 1
@@ -570,7 +570,7 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
             f.write("        return xpc_qsThrow(cx, "
                     "NS_ERROR_XPC_NOT_ENOUGH_ARGS);\n")
 
-        
+        # Convert in-parameters.
         if inArgs > 0:
             f.write("    jsval *argv = JS_ARGV(cx, vp);\n")
         for i in range(inArgs):
@@ -583,7 +583,7 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
             else:
                 realtype = xpidl.Forward(name=customMethodCall[argTypeKey],
                                          location='', doccomments='')
-            
+            # Emit code to convert this argument from jsval.
             rvdeclared = writeArgumentUnboxing(
                 f, i, argName, realtype,
                 haveCcx=haveCcx,
@@ -624,11 +624,11 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
         selfname = prefix + selfname
         nsresultname = prefix + 'rv'
 
-        
+        # Prepare out-parameter.
         if isMethod or isGetter:
             writeResultDecl(f, member, resultname)
 
-        
+        # Call the method.
         if isMethod:
             comName = header.methodNativeName(member)
             argv = ['arg' + str(i) for i in range(inArgs)]
@@ -668,18 +668,18 @@ def writeStub(f, customMethodCalls, member, stubName, writeThisUnwrapping, write
             f.write("#endif\n")
 
     if canFail:
-        
+        # Check for errors.
         writeCheckForFailure(f, isMethod, isGetter, haveCcx)
 
-    
+    # Convert the return value.
     if isMethod or isGetter:
         writeResultWrapping(f, member, 'vp', '*vp')
     else:
         f.write("    return JS_TRUE;\n")
 
-    
+    # Epilog.
     f.write("}\n\n")
 
-    
+    # Now write out the call to the template function.
     if customMethodCall is not None:
         f.write(callTemplate)
