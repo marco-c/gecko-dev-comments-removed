@@ -1,6 +1,6 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
 const AM_Cc = Components.classes;
 const AM_Ci = Components.interfaces;
@@ -21,7 +21,7 @@ var gAddonsList;
 
 function createAppInfo(id, name, version, platformVersion) {
   gAppInfo = {
-    
+    // nsIXULAppInfo
     vendor: "Mozilla",
     name: name,
     ID: id,
@@ -30,16 +30,16 @@ function createAppInfo(id, name, version, platformVersion) {
     platformVersion: platformVersion,
     platformBuildID: "2007010101",
 
-    
+    // nsIXULRuntime
     inSafeMode: false,
     logConsoleErrors: true,
     OS: "XPCShell",
     XPCOMABI: "noarch-spidermonkey",
     invalidateCachesOnRestart: function invalidateCachesOnRestart() {
-      
+      // Do nothing
     },
 
-    
+    // nsICrashReporter
     annotations: {},
 
     annotateCrashReport: function(key, data) {
@@ -64,15 +64,15 @@ function createAppInfo(id, name, version, platformVersion) {
                             XULAPPINFO_CONTRACTID, XULAppInfoFactory);
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Tests that an add-on does appear in the crash report annotations, if
+ * crash reporting is enabled. The test will fail if the add-on is not in the
+ * annotation.
+ * @param  aId
+ *         The ID of the add-on
+ * @param  aVersion
+ *         The version of the add-on
+ */
 function do_check_in_crash_annotation(aId, aVersion) {
   if (!("nsICrashReporter" in AM_Ci))
     return;
@@ -86,15 +86,15 @@ function do_check_in_crash_annotation(aId, aVersion) {
   do_check_false(addons.indexOf(aId + ":" + aVersion) < 0);
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Tests that an add-on does not appear in the crash report annotations, if
+ * crash reporting is enabled. The test will fail if the add-on is in the
+ * annotation.
+ * @param  aId
+ *         The ID of the add-on
+ * @param  aVersion
+ *         The version of the add-on
+ */
 function do_check_not_in_crash_annotation(aId, aVersion) {
   if (!("nsICrashReporter" in AM_Ci))
     return;
@@ -108,13 +108,13 @@ function do_check_not_in_crash_annotation(aId, aVersion) {
   do_check_true(addons.indexOf(aId + ":" + aVersion) < 0);
 }
 
-
-
-
-
-
-
-
+/**
+ * Returns a testcase xpi
+ *
+ * @param  aName
+ *         The name of the testcase (without extension)
+ * @return an nsILocalFile pointing to the testcase xpi
+ */
 function do_get_addon(aName) {
   return do_get_file("addons/" + aName + ".xpi");
 }
@@ -133,7 +133,7 @@ function do_get_addon_hash(aName, aAlgorithm) {
   fis.init(file, -1, -1, false);
   crypto.updateFromStream(fis, file.fileSize);
 
-  
+  // return the two-digit hexadecimal code for a byte
   function toHexString(charCode)
     ("0" + charCode.toString(16)).slice(-2);
 
@@ -141,13 +141,13 @@ function do_get_addon_hash(aName, aAlgorithm) {
   return aAlgorithm + ":" + [toHexString(binary.charCodeAt(i)) for (i in binary)].join("")
 }
 
-
-
-
-
-
-
-
+/**
+ * Returns an extension uri spec
+ *
+ * @param  aProfileDir
+ *         The extension install directory
+ * @return a uri spec pointing to the root of the extension
+ */
 function do_get_addon_root_uri(aProfileDir, aId) {
   let path = aProfileDir.clone();
   path.append(aId);
@@ -166,17 +166,17 @@ function do_get_expected_addon_name(aId) {
   return aId + ".xpi";
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Check that an array of actual add-ons is the same as an array of
+ * expected add-ons.
+ *
+ * @param  aActualAddons
+ *         The array of actual add-ons to check.
+ * @param  aExpectedAddons
+ *         The array of expected add-ons to check against.
+ * @param  aProperties
+ *         An array of properties to check.
+ */
 function do_check_addons(aActualAddons, aExpectedAddons, aProperties) {
   do_check_neq(aActualAddons, null);
   do_check_eq(aActualAddons.length, aExpectedAddons.length);
@@ -184,16 +184,16 @@ function do_check_addons(aActualAddons, aExpectedAddons, aProperties) {
     do_check_addon(aActualAddons[i], aExpectedAddons[i], aProperties);
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Check that the actual add-on is the same as the expected add-on.
+ *
+ * @param  aActualAddon
+ *         The actual add-on to check.
+ * @param  aExpectedAddon
+ *         The expected add-on to check against.
+ * @param  aProperties
+ *         An array of properties to check.
+ */
 function do_check_addon(aActualAddon, aExpectedAddon, aProperties) {
   do_check_neq(aActualAddon, null);
 
@@ -201,7 +201,7 @@ function do_check_addon(aActualAddon, aExpectedAddon, aProperties) {
     let actualValue = aActualAddon[aProperty];
     let expectedValue = aExpectedAddon[aProperty];
 
-    
+    // Check that all undefined expected properties are null on actual add-on
     if (!(aProperty in aExpectedAddon)) {
       if (actualValue !== undefined && actualValue !== null)
         do_throw("Unexpected defined/non-null property for add-on " +
@@ -245,28 +245,28 @@ function do_check_addon(aActualAddon, aExpectedAddon, aProperties) {
   });
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Check that the actual author is the same as the expected author.
+ *
+ * @param  aActual
+ *         The actual author to check.
+ * @param  aExpected
+ *         The expected author to check against.
+ */
 function do_check_author(aActual, aExpected) {
   do_check_eq(aActual.toString(), aExpected.name);
   do_check_eq(aActual.name, aExpected.name);
   do_check_eq(aActual.url, aExpected.url);
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Check that the actual screenshot is the same as the expected screenshot.
+ *
+ * @param  aActual
+ *         The actual screenshot to check.
+ * @param  aExpected
+ *         The expected screenshot to check against.
+ */
 function do_check_screenshot(aActual, aExpected) {
   do_check_eq(aActual.toString(), aExpected.url);
   do_check_eq(aActual.url, aExpected.url);
@@ -274,14 +274,14 @@ function do_check_screenshot(aActual, aExpected) {
   do_check_eq(aActual.caption, aExpected.caption);
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Starts up the add-on manager as if it was started by the application.
+ *
+ * @param  aAppChanged
+ *         An optional boolean parameter to simulate the case where the
+ *         application has changed version since the last run. If not passed it
+ *         defaults to true
+ */
 function startupManager(aAppChanged) {
   if (gInternalManager)
     do_throw("Test attempt to startup manager that was already started.");
@@ -299,18 +299,18 @@ function startupManager(aAppChanged) {
 
   gInternalManager.observe(null, "addons-startup", null);
 
-  
+  // Load the add-ons list as it was after extension registration
   loadAddonsList();
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Restarts the add-on manager as if the host application was restarted.
+ *
+ * @param  aNewVersion
+ *         An optional new version to use for the application. Passing this
+ *         will change nsIXULAppInfo.version and make the startup appear as if
+ *         the application version has changed.
+ */
 function restartManager(aNewVersion) {
   shutdownManager();
   if (aNewVersion) {
@@ -351,17 +351,17 @@ function shutdownManager() {
 
   AddonRepository.shutdown();
 
-  
+  // Load the add-ons list as it was after application shutdown
   loadAddonsList();
 
-  
+  // Clear any crash report annotations
   gAppInfo.annotations = {};
 
   let thr = AM_Cc["@mozilla.org/thread-manager;1"].
             getService(AM_Ci.nsIThreadManager).
             mainThread;
 
-  
+  // Wait until we observe the shutdown notifications
   while (!repositoryShutdown || !xpiShutdown) {
     if (thr.hasPendingEvents())
       thr.processNextEvent(false);
@@ -381,8 +381,8 @@ function loadAddonsList() {
         dirs.push(file);
       }
       catch (e) {
-        
-        
+        // Throws if the directory doesn't exist, we can ignore this since the
+        // platform will too.
       }
     }
     return dirs;
@@ -428,13 +428,13 @@ function isExtensionInAddonsList(aDir, aId) {
   return isItemInAddonsList("extensions", aDir, aId);
 }
 
-
-
-
-
-
-
-
+/**
+ * Escapes any occurances of &, ", < or > with XML entities.
+ *
+ * @param   str
+ *          The string to escape
+ * @return  The escaped string
+ */
 function escapeXML(aStr) {
   return aStr.toString()
              .replace(/&/g, "&amp;")
@@ -509,20 +509,20 @@ function createInstallRDF(aData) {
   return rdf;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Writes an install.rdf manifest into a directory using the properties passed
+ * in a JS object. The objects should contain a property for each property to
+ * appear in the RDFThe object may contain an array of objects with id,
+ * minVersion and maxVersion in the targetApplications property to give target
+ * application compatibility.
+ *
+ * @param   aData
+ *          The object holding data about the add-on
+ * @param   aDir
+ *          The directory to add the install.rdf to
+ * @param   aExtraFile
+ *          An optional dummy file to create in the directory
+ */
 function writeInstallRDFToDir(aData, aDir, aExtraFile) {
   var rdf = createInstallRDF(aData);
   if (!aDir.exists())
@@ -547,23 +547,23 @@ function writeInstallRDFToDir(aData, aDir, aExtraFile) {
   file.create(AM_Ci.nsIFile.NORMAL_FILE_TYPE, 0644);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Writes an install.rdf manifest into an extension using the properties passed
+ * in a JS object. The objects should contain a property for each property to
+ * appear in the RDFThe object may contain an array of objects with id,
+ * minVersion and maxVersion in the targetApplications property to give target
+ * application compatibility.
+ *
+ * @param   aData
+ *          The object holding data about the add-on
+ * @param   aDir
+ *          The install directory to add the extension to
+ * @param   aId
+ *          An optional string to override the default installation aId
+ * @param   aExtraFile
+ *          An optional dummy file to create in the extension
+ * @return  A file pointing to where the extension was installed
+ */
 function writeInstallRDFForExtension(aData, aDir, aId, aExtraFile) {
   var id = aId ? aId : aData.id
 
@@ -594,14 +594,14 @@ function writeInstallRDFForExtension(aData, aDir, aId, aExtraFile) {
   return dir;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Sets the last modified time of the extension, usually to trigger an update
+ * of its metadata. If the extension is unpacked, this function assumes that
+ * the extension contains only the install.rdf file.
+ *
+ * @param aExt   a file pointing to either the packed extension or its unpacked directory.
+ * @param aTime  the time to which we set the lastModifiedTime of the extension
+ */
 function setExtensionModifiedTime(aExt, aTime) {
   aExt.lastModifiedTime = aTime;
   if (aExt.isDirectory()) {
@@ -660,8 +660,8 @@ const AddonListener = {
     do_check_eq("onPropertyChanged", event);
     do_check_eq(aProperties.length, properties.length);
     properties.forEach(function(aProperty) {
-      
-      
+      // Only test that the expected properties are listed, having additional
+      // properties listed is not necessary a problem
       if (aProperties.indexOf(aProperty) == -1)
         do_throw("Did not see property change for " + aProperty);
     });
@@ -814,7 +814,7 @@ function hasFlag(aBits, aFlag) {
   return (aBits & aFlag) != 0;
 }
 
-
+// Just a wrapper around setting the expected events
 function prepare_test(aExpectedEvents, aExpectedInstalls, aNext) {
   AddonManager.addAddonListener(AddonListener);
   AddonManager.addInstallListener(InstallListener);
@@ -824,7 +824,7 @@ function prepare_test(aExpectedEvents, aExpectedInstalls, aNext) {
   gNext = aNext;
 }
 
-
+// Checks if all expected events have been seen and if so calls the callback
 function check_test_completed(aArgs) {
   if (!gNext)
     return;
@@ -845,7 +845,7 @@ function check_test_completed(aArgs) {
   return gNext.apply(null, aArgs);
 }
 
-
+// Verifies that all the expected events for all add-ons were seen
 function ensure_test_completed() {
   for (let i in gExpectedEvents) {
     if (gExpectedEvents[i].length > 0)
@@ -856,15 +856,15 @@ function ensure_test_completed() {
     do_check_eq(gExpectedInstalls.length, 0);
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * A helper method to install an array of AddonInstall to completion and then
+ * call a provided callback.
+ *
+ * @param   aInstalls
+ *          The array of AddonInstalls to install
+ * @param   aCallback
+ *          The callback to call when all installs have finished
+ */
 function completeAllInstalls(aInstalls, aCallback) {
   let count = aInstalls.length;
 
@@ -894,18 +894,18 @@ function completeAllInstalls(aInstalls, aCallback) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A helper method to install an array of files and call a callback after the
+ * installs are completed.
+ *
+ * @param   aFiles
+ *          The array of files to install
+ * @param   aCallback
+ *          The callback to call when all installs have finished
+ * @param   aIgnoreIncompatible
+ *          Optional parameter to ignore add-ons that are incompatible in
+ *          aome way with the application
+ */
 function installAllFiles(aFiles, aCallback, aIgnoreIncompatible) {
   let count = aFiles.length;
   let installs = [];
@@ -965,20 +965,20 @@ if ("nsIWindowsRegKey" in AM_Ci) {
     }
   };
 
-  
-
-
-
+  /**
+   * This is a mock nsIWindowsRegistry implementation. It only implements the
+   * methods that the extension manager requires.
+   */
   function MockWindowsRegKey() {
   }
 
   MockWindowsRegKey.prototype = {
     values: null,
 
-    
+    // --- Overridden nsISupports interface functions ---
     QueryInterface: XPCOMUtils.generateQI([AM_Ci.nsIWindowsRegKey]),
 
-    
+    // --- Overridden nsIWindowsRegKey interface functions ---
     open: function(aRootKey, aRelPath, aMode) {
       switch (aRootKey) {
       case AM_Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE:
@@ -1034,36 +1034,39 @@ if ("nsIWindowsRegKey" in AM_Ci) {
                             "@mozilla.org/windows-registry-key;1", WinRegFactory);
 }
 
-
+// Get the profile directory for tests to use.
 const gProfD = do_get_profile().QueryInterface(AM_Ci.nsILocalFile);
 
-
+// Enable more extensive EM logging
 Services.prefs.setBoolPref("extensions.logging.enabled", true);
 
-
+// By default only load extensions from the profile install location
 Services.prefs.setIntPref("extensions.enabledScopes", AddonManager.SCOPE_PROFILE);
 
-
+// By default, don't cache add-ons in AddonRepository.jsm
 Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
 
-
+// Disable the compatibility updates window by default
 Services.prefs.setBoolPref("extensions.showMismatchUI", false);
 
-
+// By default, don't cache add-ons in AddonRepository.jsm
 Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
 
-
+// Point update checks to the local machine for fast failures
 Services.prefs.setCharPref("extensions.update.url", "http://127.0.0.1/updateURL");
 Services.prefs.setCharPref("extensions.blocklist.url", "http://127.0.0.1/blocklistURL");
 
+// By default ignore bundled add-ons
+Services.prefs.setBoolPref("extensions.installDistroAddons", false);
 
+// Register a temporary directory for the tests.
 const gTmpD = gProfD.clone();
 gTmpD.append("temp");
 gTmpD.create(AM_Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 registerDirectory("TmpD", gTmpD);
 
 do_register_cleanup(function() {
-  
+  // Check that the temporary directory is empty
   var dirEntries = gTmpD.directoryEntries
                         .QueryInterface(AM_Ci.nsIDirectoryEnumerator);
   var entry;
