@@ -11415,13 +11415,16 @@ TraceRecorder::callNative(uintN argc, JSOp mode)
 
                 if (!CallResultEscapes(cx->regs().pc)) {
                     JSObject* proto;
-                    jsid id = ATOM_TO_JSID(cx->runtime->atomState.testAtom);
                     
                     if (js_GetClassPrototype(cx, NULL, JSProto_RegExp, &proto)) {
-                        if (JSObject *tmp = HasNativeMethod(proto, id, js_regexp_test)) {
-                            vp[0] = ObjectValue(*tmp);
-                            funobj = tmp;
-                            fun = tmp->getFunctionPrivate();
+                        Value pval;
+                        jsid id = ATOM_TO_JSID(cx->runtime->atomState.testAtom);
+                        if (HasDataProperty(proto, id, &pval) &&
+                            IsNativeFunction(pval, js_regexp_test))
+                        {
+                            vp[0] = pval;
+                            funobj = &pval.toObject();
+                            fun = funobj->getFunctionPrivate();
                             native = js_regexp_test;
                         }
                     }
@@ -13672,6 +13675,22 @@ TraceRecorder::createThis(JSObject& ctor, LIns* ctor_ins, LIns** thisobj_insp)
 JS_REQUIRES_STACK RecordingStatus
 TraceRecorder::interpretedFunctionCall(Value& fval, JSFunction* fun, uintN argc, bool constructing)
 {
+    
+
+
+
+
+
+    if (fun->script()->isEmpty()) {
+        LIns* rval_ins;
+        if (constructing)
+            CHECK_STATUS(createThis(fval.toObject(), get(&fval), &rval_ins));
+        else
+            rval_ins = w.immiUndefined();
+        stack(-2 - argc, rval_ins);
+        return RECORD_CONTINUE;
+    }
+
     if (fval.toObject().getGlobal() != globalObj)
         RETURN_STOP("JSOP_CALL or JSOP_NEW crosses global scopes");
 

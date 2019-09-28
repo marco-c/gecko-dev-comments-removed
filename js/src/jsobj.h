@@ -1732,8 +1732,8 @@ namespace js {
 
 
 
-extern JSObject *
-HasNativeMethod(JSObject *obj, jsid methodid, Native native);
+extern bool
+HasDataProperty(JSObject *obj, jsid methodid, js::Value *vp);
 
 extern bool
 DefaultValue(JSContext *cx, JSObject *obj, JSType hint, Value *vp);
