@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=2 et tw=80: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Pierre Phaneuf <pp@ludusdesign.com>
- *   Kathleen Brade <brade@netscape.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "nsICharsetAlias.h"
 
 #include "nsCOMPtr.h"
@@ -53,7 +53,7 @@
 #include "nsGkAtoms.h"
 #include "nsIPresShell.h"
 #include "nsPresContext.h"
-#include "nsIDOMNode.h" // for Find
+#include "nsIDOMNode.h" 
 #include "nsIDOMNodeList.h"
 #include "nsIDOMElement.h"
 #include "nsIDOMText.h"
@@ -104,7 +104,7 @@
 #include "nsIFile.h"
 #include "nsIEventListenerManager.h"
 #include "nsFrameSelection.h"
-#include "nsISelectionPrivate.h"//for toStringwithformat code
+#include "nsISelectionPrivate.h"
 
 #include "nsICharsetDetector.h"
 #include "nsICharsetDetectionAdaptor.h"
@@ -113,7 +113,7 @@
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
 #include "nsIDocumentCharsetInfo.h"
-#include "nsIDocumentEncoder.h" //for outputting selection
+#include "nsIDocumentEncoder.h" 
 #include "nsICharsetResolver.h"
 #include "nsICachingChannel.h"
 #include "nsIJSContextStack.h"
@@ -126,7 +126,7 @@
 #include "nsIEffectiveTLDService.h"
 
 #include "nsIPrompt.h"
-//AHMED 12-2
+
 #include "nsBidiUtils.h"
 
 #include "nsIEditingSession.h"
@@ -156,22 +156,22 @@ static PRBool gPlugDetector = PR_FALSE;
 #include "prmem.h"
 #include "prtime.h"
 
-// Find/Search Includes
+
 const PRInt32 kForward  = 0;
 const PRInt32 kBackward = 1;
 
-//#define DEBUG_charset
+
 
 static NS_DEFINE_CID(kCParserCID, NS_PARSER_CID);
 
 PRUint32       nsHTMLDocument::gWyciwygSessionCnt = 0;
 
-// this function will return false if the command is not recognized
-// inCommandID will be converted as necessary for internal operations
-// inParam will be converted as necessary for internal operations
-// outParam will be Empty if no parameter is needed or if returning a boolean
-// outIsBoolean will determine whether to send param as a boolean or string
-// outBooleanParam will not be set unless outIsBoolean
+
+
+
+
+
+
 static PRBool ConvertToMidasInternalCommand(const nsAString & inCommandID,
                                             const nsAString & inParam,
                                             nsACString& outCommandID,
@@ -202,9 +202,9 @@ MyPrefChangedCallback(const char*aPrefName, void* instance_data)
   return 0;
 }
 
-// ==================================================================
-// =
-// ==================================================================
+
+
+
 static void
 ReportUseOfDeprecatedMethod(nsHTMLDocument* aDoc, const char* aWarning)
 {
@@ -256,14 +256,14 @@ NS_NewHTMLDocument(nsIDocument** aInstancePtrResult)
   return rv;
 }
 
-  // NOTE! nsDocument::operator new() zeroes out all members, so don't
-  // bother initializing members to 0.
+  
+  
 
 nsHTMLDocument::nsHTMLDocument()
   : nsDocument("text/html")
 {
-  // NOTE! nsDocument::operator new() zeroes out all members, so don't
-  // bother initializing members to 0.
+  
+  
 
   mIsRegularHTML = PR_TRUE;
   mDefaultElementType = kNameSpaceID_XHTML;
@@ -310,7 +310,7 @@ NS_IMPL_RELEASE_INHERITED(nsHTMLDocument, nsDocument)
 
 DOMCI_NODE_DATA(HTMLDocument, nsHTMLDocument)
 
-// QueryInterface implementation for nsHTMLDocument
+
 NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(nsHTMLDocument)
   NS_DOCUMENT_INTERFACE_TABLE_BEGIN(nsHTMLDocument)
     NS_INTERFACE_TABLE_ENTRY(nsHTMLDocument, nsIHTMLDocument)
@@ -328,8 +328,8 @@ nsHTMLDocument::Init()
   nsresult rv = nsDocument::Init();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Now reset the compatibility mode of the CSSLoader
-  // to match our compat mode.
+  
+  
   CSSLoader()->SetCompatibilityMode(mCompatMode);
 
   return NS_OK;
@@ -367,9 +367,9 @@ nsHTMLDocument::ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
 
   mWyciwygChannel = nsnull;
 
-  // Make the content type default to "text/html", we are a HTML
-  // document, after all. Once we start getting data, this may be
-  // changed.
+  
+  
+  
   SetContentTypeInternal(nsDependentCString("text/html"));
 }
 
@@ -383,9 +383,9 @@ nsHTMLDocument::CreateShell(nsPresContext* aContext,
                        aInstancePtrResult);
 }
 
-// The following Try*Charset will return PR_FALSE only if the charset source
-// should be considered (ie. aCharsetSource < thisCharsetSource) but we failed
-// to get the charset from this source.
+
+
+
 
 PRBool
 nsHTMLDocument::TryHintCharset(nsIMarkupDocumentViewer* aMarkupDV,
@@ -433,7 +433,7 @@ nsHTMLDocument::TryUserForcedCharset(nsIMarkupDocumentViewer* aMarkupDV,
 
   if(NS_SUCCEEDED(rv) && !forceCharsetFromDocShell.IsEmpty()) {
     aCharset = forceCharsetFromDocShell;
-    //TODO: we should define appropriate constant for force charset
+    
     aCharsetSource = kCharsetFromUserForced;
   } else if (aDocInfo) {
     nsCOMPtr<nsIAtom> csAtom;
@@ -500,17 +500,17 @@ nsHTMLDocument::TryParentCharset(nsIDocumentCharsetInfo*  aDocInfo,
     if (kCharsetFromParentForced <= parentSource)
       source = kCharsetFromParentForced;
     else if (kCharsetFromHintPrevDoc == parentSource) {
-      // Make sure that's OK
+      
       if (!aParentDocument || !CheckSameOrigin(this, aParentDocument)) {
         return PR_FALSE;
       }
       
-      // if parent is posted doc, set this prevent autodections
-      // I'm not sure this makes much sense... but whatever.
+      
+      
       source = kCharsetFromHintPrevDoc;
     }
     else if (kCharsetFromCache <= parentSource) {
-      // Make sure that's OK
+      
       if (!aParentDocument || !CheckSameOrigin(this, aParentDocument)) {
         return PR_FALSE;
       }
@@ -539,7 +539,7 @@ nsHTMLDocument::UseWeakDocTypeDefault(PRInt32& aCharsetSource,
 {
   if (kCharsetFromWeakDocTypeDefault <= aCharsetSource)
     return PR_TRUE;
-  // fallback value in case docshell return error
+  
   aCharset.AssignLiteral("ISO-8859-1");
 
   const nsAdoptingString& defCharset =
@@ -582,7 +582,7 @@ nsHTMLDocument::StartAutodetection(nsIDocShell *aDocShell, nsACString& aCharset,
       nsHtml5Module::sEnabled && 
       aCommand && 
       !nsCRT::strcmp(aCommand, "view")) {
-    return; // the HTML5 parser uses chardet directly
+    return; 
   }
   nsCOMPtr <nsIParserFilter> cdetflt;
 
@@ -627,8 +627,8 @@ nsHTMLDocument::StartAutodetection(nsIDocShell *aDocShell, nsACString& aCharset,
       }
     }
     else {
-      // IF we cannot create the detector, don't bother to
-      // create one next time.
+      
+      
       gPlugDetector = PR_FALSE;
     }
   }
@@ -638,8 +638,8 @@ void
 nsHTMLDocument::SetDocumentCharacterSet(const nsACString& aCharSetID)
 {
   nsDocument::SetDocumentCharacterSet(aCharSetID);
-  // Make sure to stash this charset on our channel as needed if it's a wyciwyg
-  // channel.
+  
+  
   nsCOMPtr<nsIWyciwygChannel> wyciwygChannel = do_QueryInterface(mChannel);
   if (wyciwygChannel) {
     wyciwygChannel->SetCharsetAndSource(GetDocumentCharacterSetSource(),
@@ -666,7 +666,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
 
   if (contentType.Equals("application/xhtml+xml") &&
       (!aCommand || nsCRT::strcmp(aCommand, "view-source") != 0)) {
-    // We're parsing XHTML as XML, remember that.
+    
 
     mIsRegularHTML = PR_FALSE;
     mCompatMode = eCompatibility_FullStandards;
@@ -686,13 +686,13 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     loadAsHtml5 = PR_FALSE;
   }
   
-  // TODO: Proper about:blank treatment is bug 543435
+  
   if (loadAsHtml5) {
-    // mDocumentURI hasn't been set, yet, so get the URI from the channel
+    
     nsCOMPtr<nsIURI> uri;
     aChannel->GetOriginalURI(getter_AddRefs(uri));
-    // Adapted from nsDocShell:
-    // GetSpec can be expensive for some URIs, so check the scheme first.
+    
+    
     PRBool isAbout = PR_FALSE;
     if (uri && NS_SUCCEEDED(uri->SchemeIs("about", &isAbout)) && isAbout) {
       nsCAutoString str;
@@ -721,7 +721,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     return rv;
   }
 
-  // Store the security info for future use with wyciwyg channels.
+  
   aChannel->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
 
   nsCOMPtr<nsIURI> uri;
@@ -744,16 +744,16 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
 
   PRInt32 textType = GET_BIDI_OPTION_TEXTTYPE(GetBidiOptions());
 
-  // Look for the parent document.  Note that at this point we don't have our
-  // content viewer set up yet, and therefore do not have a useful
-  // mParentDocument.
+  
+  
+  
 
-  // in this block of code, if we get an error result, we return it
-  // but if we get a null pointer, that's perfectly legal for parent
-  // and parentContentViewer
+  
+  
+  
   nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aContainer));
 
-  // No support yet for docshell-less HTML
+  
   NS_ENSURE_TRUE(docShell || !IsHTML(), NS_ERROR_FAILURE);
 
   nsCOMPtr<nsIDocShellTreeItem> docShellAsItem(do_QueryInterface(docShell));
@@ -774,9 +774,9 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     }
   }
 
-  //
-  // The following logic is mirrored in nsWebShell::Embed!
-  //
+  
+  
+  
   nsCOMPtr<nsIMarkupDocumentViewer> muCV;
   PRBool muCVIsParent = PR_FALSE;
   nsCOMPtr<nsIContentViewer> cv;
@@ -801,12 +801,12 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
   printf("Determining charset for %s\n", urlSpec.get());
 #endif
 
-  // These are the charset source and charset for our document
+  
   PRInt32 charsetSource;
   nsCAutoString charset;
 
-  // These are the charset source and charset for the parser.  This can differ
-  // from that for the document if the channel is a wyciwyg channel.
+  
+  
   PRInt32 parserCharsetSource;
   nsCAutoString parserCharset;
 
@@ -827,39 +827,39 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     charsetSource = kCharsetUninitialized;
     wyciwygChannel = do_QueryInterface(aChannel);
 
-    // The following charset resolving calls has implied knowledge
-    // about charset source priority order. Each try will return true
-    // if the source is higher or equal to the source as its name
-    // describes. Some try call might change charset source to
-    // multiple values, like TryHintCharset and TryParentCharset. It
-    // should be always safe to try more sources.
+    
+    
+    
+    
+    
+    
     if (!TryUserForcedCharset(muCV, dcInfo, charsetSource, charset)) {
       TryHintCharset(muCV, charsetSource, charset);
       TryParentCharset(dcInfo, parentDocument, charsetSource, charset);
 
-      // Don't actually get the charset from the channel if this is a
-      // wyciwyg channel; it'll always be UTF-16
+      
+      
       if (!wyciwygChannel &&
           TryChannelCharset(aChannel, charsetSource, charset)) {
-        // Use the channel's charset (e.g., charset from HTTP
-        // "Content-Type" header).
+        
+        
       }
       else if (cachingChan && !urlSpec.IsEmpty() &&
                TryCacheCharset(cachingChan, charsetSource, charset)) {
-        // Use the cache's charset.
+        
       }
       else if (TryDefaultCharset(muCV, charsetSource, charset)) {
-        // Use the default charset.
-        // previous document charset might be inherited as default charset.
+        
+        
       }
       else {
-        // Use the weak doc type default charset
+        
         UseWeakDocTypeDefault(charsetSource, charset);
       }
     }
 
     PRBool isPostPage = PR_FALSE;
-    // check if current doc is from POST command
+    
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel));
     if (httpChannel) {
       nsCAutoString methodStr;
@@ -878,7 +878,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     }
 
     if (wyciwygChannel) {
-      // We know for sure that the parser needs to be using UTF16.
+      
       parserCharset = "UTF-16";
       parserCharsetSource = charsetSource < kCharsetFromChannel ?
         kCharsetFromChannel : charsetSource;
@@ -892,7 +892,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
           charset = cachedCharset;
         }
       } else {
-        // Don't propagate this error.
+        
         rv = NS_OK;
       }
       
@@ -905,9 +905,9 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
       StartAutodetection(docShell, charset, aCommand);
     }
 
-    // ahmed
-    // Check if 864 but in Implicit mode !
-    // XXXbz why is this happening after StartAutodetection ?
+    
+    
+    
     if ((textType == IBMBIDI_TEXTTYPE_LOGICAL) &&
         (charset.LowerCaseEqualsLiteral("ibm864"))) {
       charset.AssignLiteral("IBM864i");
@@ -917,8 +917,8 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
   SetDocumentCharacterSetSource(charsetSource);
   SetDocumentCharacterSet(charset);
 
-  // set doc charset to muCV for next document.
-  // Don't propagate this back up to the parent document if we have one.
+  
+  
   if (muCV && !muCVIsParent)
     muCV->SetPrevDocCharacterSet(charset);
 
@@ -930,7 +930,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     NS_ASSERTION(NS_SUCCEEDED(rv),"cannot SetMetaDataElement");
   }
 
-  // Set the parser as the stream listener for the document loader...
+  
   if (mParser) {
     rv = mParser->GetStreamListener(aDocListener);
     if (NS_FAILED(rv)) {
@@ -944,7 +944,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     mParser->SetDocumentCharset(parserCharset, parserCharsetSource);
     mParser->SetCommand(aCommand);
 
-    // create the content sink
+    
     nsCOMPtr<nsIContentSink> sink;
 
     if (aSink) {
@@ -977,7 +977,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     }
 
     mParser->SetContentSink(sink);
-    // parser the content of the URI
+    
     mParser->Parse(uri, nsnull, (void *)this);
   }
 
@@ -992,12 +992,12 @@ nsHTMLDocument::StopDocumentLoad()
     if (mWriteState == eDocumentOpened) {
       NS_ASSERTION(IsHTML(), "document.open()ed doc is not HTML?");
 
-      // Marking the document as closed, since pending scripts will be
-      // stopped by nsDocument::StopDocumentLoad() below
+      
+      
       mWriteState = eDocumentClosed;
 
-      // Remove the wyciwyg channel request from the document load group
-      // that we added in OpenCommon().
+      
+      
       NS_ASSERTION(mWyciwygChannel, "nsHTMLDocument::StopDocumentLoad(): "
                    "Trying to remove nonexistent wyciwyg channel!");
       RemoveWyciwygChannel();
@@ -1008,11 +1008,11 @@ nsHTMLDocument::StopDocumentLoad()
     UnblockOnload(PR_FALSE);
     return;
   }
-  // Code for the old parser:
+  
 
-  // If we're writing (i.e., there's been a document.open call), then
-  // nsDocument::StopDocumentLoad will do the wrong thing and simply terminate
-  // our parser.
+  
+  
+  
   if (mWriteState != eNotWriting) {
     Close();
   } else {
@@ -1020,7 +1020,7 @@ nsHTMLDocument::StopDocumentLoad()
   }
 }
 
-// static
+
 void
 nsHTMLDocument::DocumentWriteTerminationFunc(nsISupports *aRef)
 {
@@ -1035,25 +1035,25 @@ nsHTMLDocument::DocumentWriteTerminationFunc(nsISupports *aRef)
 
   nsHTMLDocument *htmldoc = static_cast<nsHTMLDocument*>(doc.get());
 
-  // Check whether htmldoc still has the same parser.  If not, it's
-  // not for us to mess with it.
+  
+  
   if (htmldoc->mParser != parser) {
     return;
   }
 
-  // If the document is in the middle of a document.write() call, this
-  // most likely means that script on a page document.write()'d out a
-  // script tag that did location="..." and we're right now finishing
-  // up executing the script that was written with
-  // document.write(). Since there's still script on the stack (the
-  // script that called document.write()) we don't want to release the
-  // parser now, that would cause the next document.write() call to
-  // cancel the load that was initiated by the location="..." in the
-  // script that was written out by document.write().
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (!htmldoc->mWriteLevel && htmldoc->mWriteState != eDocumentOpened) {
-    // Release the document's parser so that the call to EndLoad()
-    // doesn't just return early and set the termination function again.
+    
+    
 
     htmldoc->mParser = nsnull;
   }
@@ -1065,10 +1065,10 @@ void
 nsHTMLDocument::BeginLoad()
 {
   if (IsEditingOn()) {
-    // Reset() blows away all event listeners in the document, and our
-    // editor relies heavily on those. Midas is turned on, to make it
-    // work, re-initialize it to give it a chance to add its event
-    // listeners again.
+    
+    
+    
+    
 
     TurnEditingOff();
     EditingStateChanged();
@@ -1091,20 +1091,20 @@ nsHTMLDocument::EndLoad()
         nsIScriptContext *scx = nsJSUtils::GetDynamicScriptContext(cx);
 
         if (scx) {
-          // The load of the document was terminated while we're
-          // called from within JS and we have a parser (i.e. we're in
-          // the middle of doing document.write()). In stead of
-          // releasing the parser and ending the document load
-          // directly, we'll make that happen once the script is done
-          // executing. This way subsequent document.write() calls
-          // won't end up creating a new parser and interrupting other
-          // loads that were started while the script was
-          // running. I.e. this makes the following case work as
-          // expected:
-          //
-          //   document.write("foo");
-          //   location.href = "http://www.mozilla.org";
-          //   document.write("bar");
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
 
           nsresult rv;
 
@@ -1118,9 +1118,9 @@ nsHTMLDocument::EndLoad()
               if (NS_SUCCEEDED(rv)) {
                 rv = scx->SetTerminationFunction(DocumentWriteTerminationFunc,
                                                  arr);
-                // If we fail to set the termination function, just go ahead
-                // and EndLoad now.  The slight bugginess involved is better
-                // than leaking.
+                
+                
+                
                 if (NS_SUCCEEDED(rv)) {
                   return;
                 }
@@ -1132,15 +1132,15 @@ nsHTMLDocument::EndLoad()
     }
   }
 
-  // Reset this now, since we're really done "loading" this document.written
-  // document.
+  
+  
   NS_ASSERTION(mWriteState == eNotWriting || mWriteState == ePendingClose ||
                mWriteState == eDocumentClosed, "EndLoad called early");
   mWriteState = eNotWriting;
 
   PRBool turnOnEditing =
     mParser && (HasFlag(NODE_IS_EDITABLE) || mContentEditableCount > 0);
-  // Note: nsDocument::EndLoad nulls out mParser.
+  
   nsDocument::EndLoad();
   if (turnOnEditing) {
     EditingStateChanged();
@@ -1192,9 +1192,9 @@ nsHTMLDocument::SetCompatibilityMode(nsCompatibility aMode)
   }
 }
 
-//
-// nsIDOMDocument interface implementation
-//
+
+
+
 NS_IMETHODIMP
 nsHTMLDocument::CreateElement(const nsAString& aTagName,
                               nsIDOMElement** aReturn)
@@ -1219,7 +1219,7 @@ nsHTMLDocument::CreateProcessingInstruction(const nsAString& aTarget,
     return nsDocument::CreateProcessingInstruction(aTarget, aData, aReturn);
   }
 
-  // There are no PIs for HTML
+  
   *aReturn = nsnull;
 
   return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
@@ -1233,7 +1233,7 @@ nsHTMLDocument::CreateCDATASection(const nsAString& aData,
     return nsDocument::CreateCDATASection(aData, aReturn);
   }
 
-  // There are no CDATASections in HTML
+  
   *aReturn = nsnull;
 
   return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
@@ -1247,7 +1247,7 @@ nsHTMLDocument::CreateEntityReference(const nsAString& aName,
     return nsDocument::CreateEntityReference(aName, aReturn);
   }
 
-  // There are no EntityReferences in HTML
+  
   *aReturn = nsnull;
 
   return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
@@ -1388,15 +1388,9 @@ nsHTMLDocument::NormalizeDocument()
   return nsDocument::NormalizeDocument();
 }
 
-NS_IMETHODIMP
-nsHTMLDocument::GetDefaultView(nsIDOMWindow** aWindow)
-{
-  return nsDocument::GetDefaultView(aWindow);
-}
 
-//
-// nsIDOMHTMLDocument interface implementation
-//
+
+
 NS_IMETHODIMP
 nsHTMLDocument::GetTitle(nsAString& aTitle)
 {
@@ -1436,8 +1430,8 @@ nsHTMLDocument::GetDomain(nsAString& aDomain)
   if (NS_SUCCEEDED(uri->GetHost(hostName))) {
     CopyUTF8toUTF16(hostName, aDomain);
   } else {
-    // If we can't get the host from the URI (e.g. about:, javascript:,
-    // etc), just return an null string.
+    
+    
     SetDOMStringToNull(aDomain);
   }
 
@@ -1450,7 +1444,7 @@ nsHTMLDocument::SetDomain(const nsAString& aDomain)
   if (aDomain.IsEmpty())
     return NS_ERROR_DOM_BAD_DOCUMENT_DOMAIN;
 
-  // Create new URI
+  
   nsCOMPtr<nsIURI> uri;
   GetDomainURI(getter_AddRefs(uri));
 
@@ -1472,9 +1466,9 @@ nsHTMLDocument::SetDomain(const nsAString& aDomain)
   if (NS_FAILED(NS_NewURI(getter_AddRefs(newURI), newURIString)))
     return NS_ERROR_FAILURE;
 
-  // Check new domain - must be a superdomain of the current host
-  // For example, a page from foo.bar.com may set domain to bar.com,
-  // but not to ar.com, baz.com, or fi.foo.bar.com.
+  
+  
+  
   nsCAutoString current, domain;
   if (NS_FAILED(uri->GetAsciiHost(current)))
     current.Truncate();
@@ -1485,8 +1479,8 @@ nsHTMLDocument::SetDomain(const nsAString& aDomain)
   if (current.Length() > domain.Length() &&
       StringEndsWith(current, domain) &&
       current.CharAt(current.Length() - domain.Length() - 1) == '.') {
-    // We're golden if the new domain is the current page's base domain or a
-    // subdomain of it.
+    
+    
     nsCOMPtr<nsIEffectiveTLDService> tldService =
       do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
     if (!tldService)
@@ -1500,7 +1494,7 @@ nsHTMLDocument::SetDomain(const nsAString& aDomain)
     ok = ok && domain.Length() >= currentBaseDomain.Length();
   }
   if (!ok) {
-    // Error: illegal domain
+    
     return NS_ERROR_DOM_BAD_DOCUMENT_DOMAIN;
   }
 
@@ -1529,12 +1523,12 @@ nsHTMLDocument::GetBody(nsresult *aResult)
   *aResult = NS_OK;
 
   if (body) {
-    // There is a body element, return that as the body.
+    
     return body;
   }
 
-  // The document is most likely a frameset document so look for the
-  // outer most frameset element
+  
+  
   nsRefPtr<nsContentList> nodeList =
     NS_GetContentList(this, kNameSpaceID_XHTML, NS_LITERAL_STRING("frameset"));
 
@@ -1558,9 +1552,9 @@ nsHTMLDocument::SetBody(nsIDOMHTMLElement* aBody)
   nsCOMPtr<nsIContent> newBody = do_QueryInterface(aBody);
   Element* root = GetRootElement();
 
-  // The body element must be either a body tag or a frameset tag. And we must
-  // have a html root tag, otherwise GetBody will not return the newly set
-  // body.
+  
+  
+  
   if (!newBody || !(newBody->Tag() == nsGkAtoms::body ||
                     newBody->Tag() == nsGkAtoms::frameset) ||
       !root || !root->IsHTML() ||
@@ -1571,7 +1565,7 @@ nsHTMLDocument::SetBody(nsIDOMHTMLElement* aBody)
   nsCOMPtr<nsIDOMElement> rootElem = do_QueryInterface(root);
   nsCOMPtr<nsIDOMNode> tmp;
 
-  // Use DOM methods so that we pass through the appropriate security checks.
+  
   nsCOMPtr<nsIDOMNode> currentBody = do_QueryInterface(GetBodyElement());
   if (currentBody) {
     return rootElem->ReplaceChild(aBody, currentBody, getter_AddRefs(tmp));
@@ -1701,24 +1695,24 @@ nsHTMLDocument::GetAnchors(nsIDOMHTMLCollection** aAnchors)
 NS_IMETHODIMP
 nsHTMLDocument::GetCookie(nsAString& aCookie)
 {
-  aCookie.Truncate(); // clear current cookie in case service fails;
-                      // no cookie isn't an error condition.
+  aCookie.Truncate(); 
+                      
 
   if (mDisableCookieAccess) {
     return NS_OK;
   }
 
-  // not having a cookie service isn't an error
+  
   nsCOMPtr<nsICookieService> service = do_GetService(NS_COOKIESERVICE_CONTRACTID);
   if (service) {
-    // Get a URI from the document principal. We use the original
-    // codebase in case the codebase was changed by SetDomain
+    
+    
     nsCOMPtr<nsIURI> codebaseURI;
     NodePrincipal()->GetURI(getter_AddRefs(codebaseURI));
 
     if (!codebaseURI) {
-      // Document's principal is not a codebase (may be system), so
-      // can't set cookies
+      
+      
 
       return NS_OK;
     }
@@ -1738,7 +1732,7 @@ nsHTMLDocument::SetCookie(const nsAString& aCookie)
     return NS_OK;
   }
 
-  // not having a cookie service isn't an error
+  
   nsCOMPtr<nsICookieService> service = do_GetService(NS_COOKIESERVICE_CONTRACTID);
   if (service && mDocumentURI) {
     nsCOMPtr<nsIPrompt> prompt;
@@ -1751,8 +1745,8 @@ nsHTMLDocument::SetCookie(const nsAString& aCookie)
     NodePrincipal()->GetURI(getter_AddRefs(codebaseURI));
 
     if (!codebaseURI) {
-      // Document's principal is not a codebase (may be system), so
-      // can't set cookies
+      
+      
 
       return NS_OK;
     }
@@ -1764,12 +1758,12 @@ nsHTMLDocument::SetCookie(const nsAString& aCookie)
   return NS_OK;
 }
 
-// XXX TBI: accepting arguments to the open method.
+
 nsresult
 nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
 {
   if (!IsHTML() || mDisableDocWrite) {
-    // No calling document.open() on XHTML
+    
 
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
@@ -1778,7 +1772,7 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
 
   nsresult rv = NS_OK;
 
-  // If we already have a parser we ignore the document.open call.
+  
   if (mParser) {
 
     return NS_OK;
@@ -1793,10 +1787,10 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
   }
 
-  // check whether we're in the middle of unload.  If so, ignore this call.
+  
   nsCOMPtr<nsIDocShell> shell = do_QueryReferent(mDocumentContainer);
   if (!shell) {
-    // We won't be able to create a parser anyway.
+    
     return NS_OK;
   }
 
@@ -1806,34 +1800,34 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     return NS_OK;
   }
 
-  // Note: We want to use GetDocumentFromContext here because this document
-  // should inherit the security information of the document that's opening us,
-  // (since if it's secure, then it's presumably trusted).
+  
+  
+  
   nsCOMPtr<nsIDocument> callerDoc =
     do_QueryInterface(nsContentUtils::GetDocumentFromContext());
   if (!callerDoc) {
-    // If we're called from C++ or in some other way without an originating
-    // document we can't do a document.open w/o changing the principal of the
-    // document to something like about:blank (as that's the only sane thing to
-    // do when we don't know the origin of this call), and since we can't
-    // change the principals of a document for security reasons we'll have to
-    // refuse to go ahead with this call.
+    
+    
+    
+    
+    
+    
 
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // Grab a reference to the calling documents security info (if any)
-  // and URIs as they may be lost in the call to Reset().
+  
+  
   nsCOMPtr<nsISupports> securityInfo = callerDoc->GetSecurityInfo();
   nsCOMPtr<nsIURI> uri = callerDoc->GetDocumentURI();
   nsCOMPtr<nsIURI> baseURI = callerDoc->GetBaseURI();
   nsCOMPtr<nsIPrincipal> callerPrincipal = callerDoc->NodePrincipal();
 
-  // We're called from script. Make sure the script is from the same
-  // origin, not just that the caller can access the document. This is
-  // needed to keep document principals from ever changing, which is
-  // needed because of the way we use our XOW code, and is a sane
-  // thing to do anyways.
+  
+  
+  
+  
+  
 
   PRBool equals = PR_FALSE;
   if (NS_FAILED(callerPrincipal->Equals(NodePrincipal(), &equals)) ||
@@ -1856,7 +1850,7 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // Stop current loads targeted at the window this document is in.
+  
   if (mScriptGlobalObject) {
     nsCOMPtr<nsIContentViewer> cv;
     shell->GetContentViewer(getter_AddRefs(cv));
@@ -1866,8 +1860,8 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
       rv = cv->PermitUnload(PR_FALSE, &okToUnload);
 
       if (NS_SUCCEEDED(rv) && !okToUnload) {
-        // We don't want to unload, so stop here, but don't throw an
-        // exception.
+        
+        
         return NS_OK;
       }
     }
@@ -1875,15 +1869,15 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     nsCOMPtr<nsIWebNavigation> webnav(do_QueryInterface(shell));
     webnav->Stop(nsIWebNavigation::STOP_NETWORK);
 
-    // The Stop call may have cancelled the onload blocker request or prevented
-    // it from getting added, so we need to make sure it gets added to the
-    // document again otherwise the document could have a non-zero onload block
-    // count without the onload blocker request being in the loadgroup.
+    
+    
+    
+    
     EnsureOnloadBlocker();
   }
 
-  // The open occurred after the document finished loading.
-  // So we reset the document and create a new one.
+  
+  
   nsCOMPtr<nsIChannel> channel;
   nsCOMPtr<nsILoadGroup> group = do_QueryReferent(mDocumentLoadGroup);
 
@@ -1893,25 +1887,25 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     return rv;
   }
 
-  // We can't depend on channels implementing property bags, so do our
-  // base URI manually after reset.
+  
+  
 
-  // Set the caller principal, if any, on the channel so that we'll
-  // make sure to use it when we reset.
+  
+  
   rv = channel->SetOwner(callerPrincipal);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Before we reset the doc notify the globalwindow of the change,
-  // but only if we still have a window (i.e. our window object the
-  // current inner window in our outer window).
+  
+  
+  
 
-  // Hold onto ourselves on the offchance that we're down to one ref
+  
   nsCOMPtr<nsIDOMDocument> kungFuDeathGrip =
     do_QueryInterface((nsIHTMLDocument*)this);
 
   nsPIDOMWindow *window = GetInnerWindow();
   if (window) {
-    // Remember the old scope in case the call to SetNewDocument changes it.
+    
     nsCOMPtr<nsIScriptGlobalObject> oldScope(do_QueryReferent(mScopeObject));
 
 #ifdef DEBUG
@@ -1919,7 +1913,7 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     mWillReparent = PR_TRUE;
 #endif
 
-    // Should this pass PR_TRUE for aForceReuseInnerWindow?
+    
     rv = window->SetNewDocument(this, nsnull, PR_FALSE);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1927,9 +1921,9 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     mWillReparent = willReparent;
 #endif
 
-    // Now make sure we're not flagged as the initial document anymore, now
-    // that we've had stuff done to us.  From now on, if anyone tries to
-    // document.open() us, they get a new inner window.
+    
+    
+    
     SetIsInitialDocument(PR_FALSE);
 
     nsCOMPtr<nsIScriptGlobalObject> newScope(do_QueryReferent(mScopeObject));
@@ -1938,14 +1932,14 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     }
   }
 
-  // Call Reset(), this will now do the full reset
+  
   Reset(channel, group);
   if (baseURI) {
     mDocumentBaseURI = baseURI;
   }
 
-  // Store the security info of the caller now that we're done
-  // resetting the document.
+  
+  
   mSecurityInfo = securityInfo;
 
   if (loadAsHtml5) {
@@ -1955,7 +1949,7 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     mParser = do_CreateInstance(kCParserCID, &rv);  
   }
 
-  // This will be propagated to the parser when someone actually calls write()
+  
   SetContentTypeInternal(aContentType);
 
   mWriteState = eDocumentOpened;
@@ -1969,7 +1963,7 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
       rv = NS_NewHTMLContentSink(getter_AddRefs(sink), this, uri, shell,
                                  channel);
       if (NS_FAILED(rv)) {
-        // Don't use a parser without a content sink.
+        
         mParser = nsnull;
         mWriteState = eNotWriting;
         return rv;
@@ -1979,14 +1973,14 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     }
   }
 
-  // Prepare the docshell and the document viewer for the impending
-  // out of band document.write()
+  
+  
   shell->PrepareForNewContentModel();
 
-  // Now check whether we were opened with a "replace" argument.  If
-  // so, we need to tell the docshell to not create a new history
-  // entry for this load. Otherwise, make sure that we're doing a normal load,
-  // not whatever type of load was previously done on this docshell.
+  
+  
+  
+  
   shell->SetLoadType(aReplace ? LOAD_NORMAL_REPLACE : LOAD_NORMAL);
 
   nsCOMPtr<nsIContentViewer> cv;
@@ -1996,14 +1990,14 @@ nsHTMLDocument::OpenCommon(const nsACString& aContentType, PRBool aReplace)
     docViewer->LoadStart(static_cast<nsIHTMLDocument *>(this));
   }
 
-  // Add a wyciwyg channel request into the document load group
+  
   NS_ASSERTION(!mWyciwygChannel, "nsHTMLDocument::OpenCommon(): wyciwyg "
                "channel already exists!");
 
-  // In case the editor is listening and will see the new channel
-  // being added, make sure mWriteLevel is non-zero so that the editor
-  // knows that document.open/write/close() is being called on this
-  // document.
+  
+  
+  
+  
   ++mWriteLevel;
 
   CreateAndAddWyciwygChannel();
@@ -2033,7 +2027,7 @@ nsHTMLDocument::Open(const nsACString& aContentType, PRBool aReplace,
 NS_IMETHODIMP
 nsHTMLDocument::Clear()
 {
-  // This method has been deprecated
+  
   return NS_OK;
 }
 
@@ -2041,7 +2035,7 @@ NS_IMETHODIMP
 nsHTMLDocument::Close()
 {
   if (!IsHTML()) {
-    // No calling document.close() on XHTML!
+    
 
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
@@ -2058,35 +2052,35 @@ nsHTMLDocument::Close()
                         GetContentTypeInternal(), PR_TRUE);
     --mWriteLevel;
 
-    // XXX Make sure that all the document.written content is
-    // reflowed.  We should remove this call once we change
-    // nsHTMLDocument::OpenCommon() so that it completely destroys the
-    // earlier document's content and frame hierarchy.  Right now, it
-    // re-uses the earlier document's root content object and
-    // corresponding frame objects.  These re-used frame objects think
-    // that they have already been reflowed, so they drop initial
-    // reflows.  For certain cases of document.written content, like a
-    // frameset document, the dropping of the initial reflow means
-    // that we end up in document.close() without appended any reflow
-    // commands to the reflow queue and, consequently, without adding
-    // the dummy layout request to the load group.  Since the dummy
-    // layout request is not added to the load group, the onload
-    // handler of the frameset fires before the frames get reflowed
-    // and loaded.  That is the long explanation for why we need this
-    // one line of code here!
-    // XXXbz as far as I can tell this may not be needed anymore; all
-    // the testcases in bug 57636 pass without this line...  Leaving
-    // it be for now, though.  In any case, there's no reason to do
-    // this if we have no presshell, since in that case none of the
-    // above about reusing frames applies.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (GetShell()) {
       FlushPendingNotifications(Flush_Layout);
     }
 
-    // Remove the wyciwyg channel request from the document load group
-    // that we added in OpenCommon().  If all other requests between
-    // document.open() and document.close() have completed, then this
-    // method should cause the firing of an onload event.
+    
+    
+    
+    
     NS_ASSERTION(mWyciwygChannel, "nsHTMLDocument::Close(): Trying to remove "
                  "nonexistent wyciwyg channel!");
     RemoveWyciwygChannel();
@@ -2106,7 +2100,7 @@ nsHTMLDocument::WriteCommon(const nsAString& aText,
   NS_ENSURE_STATE(!mTooDeepWriteRecursion);
 
   if (!IsHTML() || mDisableDocWrite) {
-    // No calling document.write*() on XHTML!
+    
 
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
@@ -2119,7 +2113,7 @@ nsHTMLDocument::WriteCommon(const nsAString& aText,
        !mPendingScripts.Contains(key)) ||
       (mParser && !mParser->IsInsertionPointDefined())) {
     if (mExternalScriptsBeingEvaluated) {
-      // Instead of implying a call to document.open(), ignore the call.
+      
       nsContentUtils::ReportToConsole(nsContentUtils::eDOM_PROPERTIES,
                                       "DocumentWriteIgnored",
                                       nsnull, 0,
@@ -2136,7 +2130,7 @@ nsHTMLDocument::WriteCommon(const nsAString& aText,
 
   if (!mParser) {
     if (mExternalScriptsBeingEvaluated) {
-      // Instead of implying a call to document.open(), ignore the call.
+      
       nsContentUtils::ReportToConsole(nsContentUtils::eDOM_PROPERTIES,
                                       "DocumentWriteIgnored",
                                       nsnull, 0,
@@ -2148,9 +2142,9 @@ nsHTMLDocument::WriteCommon(const nsAString& aText,
     }
     rv = Open();
 
-    // If Open() fails, or if it didn't create a parser (as it won't
-    // if the user chose to not discard the current document through
-    // onbeforeunload), don't write anything.
+    
+    
+    
     if (NS_FAILED(rv) || !mParser) {
       return rv;
     }
@@ -2158,7 +2152,7 @@ nsHTMLDocument::WriteCommon(const nsAString& aText,
 
   static NS_NAMED_LITERAL_STRING(new_line, "\n");
 
-  // Save the data in cache
+  
   if (mWyciwygChannel) {
     if (!aText.IsEmpty()) {
       mWyciwygChannel->WriteToCacheEntry(aText);
@@ -2171,10 +2165,10 @@ nsHTMLDocument::WriteCommon(const nsAString& aText,
 
   ++mWriteLevel;
 
-  // This could be done with less code, but for performance reasons it
-  // makes sense to have the code for two separate Parse() calls here
-  // since the concatenation of strings costs more than we like. And
-  // why pay that price when we don't need to?
+  
+  
+  
+  
   if (aNewlineTerminate) {
     rv = mParser->Parse(aText + new_line,
                         key, GetContentTypeInternal(),
@@ -2247,7 +2241,7 @@ nsHTMLDocument::MatchNameAttribute(nsIContent* aContent, PRInt32 aNamespaceID,
                           *elementName, eCaseMatters);
 }
 
-/* static */
+
 void*
 nsHTMLDocument::UseExistingNameString(nsINode* aRootNode, const nsString* aName)
 {
@@ -2261,7 +2255,7 @@ nsHTMLDocument::GetElementsByName(const nsAString& aElementName,
   nsRefPtr<nsContentList> list = GetElementsByName(aElementName);
   NS_ENSURE_TRUE(list, NS_ERROR_OUT_OF_MEMORY);
 
-  // Transfer ownership
+  
   list.forget(aReturn);
 
   return NS_OK;
@@ -2286,7 +2280,7 @@ nsHTMLDocument::ScriptExecuted(nsIScriptElement *aScript)
 
   mPendingScripts.RemoveElement(aScript);
   if (mPendingScripts.IsEmpty() && mWriteState == ePendingClose) {
-    // The last pending script just finished, terminate our parser now.
+    
     mWriteState = eDocumentClosed;
   }
 }
@@ -2496,10 +2490,10 @@ nsHTMLDocument::RouteEvent(nsIDOMEvent* aEvt)
   return NS_OK;
 }
 
-// readonly attribute DOMString compatMode;
-// Returns "BackCompat" if we are in quirks mode, "CSS1Compat" if we are
-// in almost standards or full standards mode. See bug 105640.  This was
-// implemented to match MSIE's compatMode property
+
+
+
+
 NS_IMETHODIMP
 nsHTMLDocument::GetCompatMode(nsAString& aCompatMode)
 {
@@ -2517,7 +2511,7 @@ nsHTMLDocument::GetCompatMode(nsAString& aCompatMode)
   return NS_OK;
 }
 
-// Mapped to document.embeds for NS4 compatibility
+
 NS_IMETHODIMP
 nsHTMLDocument::GetPlugins(nsIDOMHTMLCollection** aPlugins)
 {
@@ -2548,8 +2542,8 @@ nsHTMLDocument::ResolveName(const nsAString& aName,
 
   if (length > 0) {
     if (length == 1) {
-      // Only one element in the list, return the element instead of
-      // returning the list
+      
+      
 
       nsIContent *node = list->GetNodeAt(0);
       if (!aForm || nsContentUtils::BelongsInForm(aForm, node)) {
@@ -2560,13 +2554,13 @@ nsHTMLDocument::ResolveName(const nsAString& aName,
       return NS_OK;
     }
 
-    // The list contains more than one element, return the whole
-    // list, unless...
+    
+    
 
     if (aForm) {
-      // ... we're called from a form, in that case we create a
-      // nsFormContentList which will filter out the elements in the
-      // list that don't belong to aForm
+      
+      
+      
 
       nsFormContentList *fc_list = new nsFormContentList(aForm, *list);
       NS_ENSURE_TRUE(fc_list, NS_ERROR_OUT_OF_MEMORY);
@@ -2575,9 +2569,9 @@ nsHTMLDocument::ResolveName(const nsAString& aName,
       fc_list->GetLength(&len);
 
       if (len < 2) {
-        // After the nsFormContentList is done filtering there's either
-        // nothing or one element in the list.  Return that element, or null
-        // if there's no element in the list.
+        
+        
+        
 
         nsIContent *node = fc_list->GetNodeAt(0);
 
@@ -2595,10 +2589,10 @@ nsHTMLDocument::ResolveName(const nsAString& aName,
     return CallQueryInterface(list, aResult);
   }
 
-  // No named items were found, see if there's one registerd by id for
-  // aName. If we get this far, FindNamedItems() will have been called
-  // for aName, so we're guaranteed that if there is an element with
-  // the id aName, it'll be entry's IdContent.
+  
+  
+  
+  
 
   Element *e = entry->GetIdElement();
 
@@ -2618,15 +2612,15 @@ nsHTMLDocument::ResolveName(const nsAString& aName,
   return NS_OK;
 }
 
-//----------------------------
 
-/* virtual */ nsIContent*
+
+ nsIContent*
 nsHTMLDocument::GetBodyContentExternal()
 {
   return GetBodyElement();
 }
 
-// forms related stuff
+
 
 NS_IMETHODIMP
 nsHTMLDocument::GetForms(nsIDOMHTMLCollection** aForms)
@@ -2673,7 +2667,7 @@ nsHTMLDocument::CreateAndAddWyciwygChannel(void)
 
   mDocumentURI->GetSpec(originalSpec);
 
-  // Generate the wyciwyg url
+  
   url = NS_LITERAL_CSTRING("wyciwyg://")
       + nsPrintfCString("%d", gWyciwygSessionCnt++)
       + NS_LITERAL_CSTRING("/")
@@ -2682,10 +2676,10 @@ nsHTMLDocument::CreateAndAddWyciwygChannel(void)
   nsCOMPtr<nsIURI> wcwgURI;
   NS_NewURI(getter_AddRefs(wcwgURI), url);
 
-  // Create the nsIWyciwygChannel to store out-of-band
-  // document.write() script to cache
+  
+  
   nsCOMPtr<nsIChannel> channel;
-  // Create a wyciwyg Channel
+  
   rv = NS_NewChannel(getter_AddRefs(channel), wcwgURI);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -2693,21 +2687,21 @@ nsHTMLDocument::CreateAndAddWyciwygChannel(void)
 
   mWyciwygChannel->SetSecurityInfo(mSecurityInfo);
 
-  // Note: we want to treat this like a "previous document" hint so that,
-  // e.g. a <meta> tag in the document.write content can override it.
+  
+  
   SetDocumentCharacterSetSource(kCharsetFromHintPrevDoc);
   mWyciwygChannel->SetCharsetAndSource(kCharsetFromHintPrevDoc,
                                        GetDocumentCharacterSet());
 
-  // Use our new principal
+  
   channel->SetOwner(NodePrincipal());
 
-  // Inherit load flags from the original document's channel
+  
   channel->SetLoadFlags(mLoadFlags);
 
   nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
 
-  // Use the Parent document's loadgroup to trigger load notifications
+  
   if (loadGroup && channel) {
     rv = channel->SetLoadGroup(loadGroup);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -2731,8 +2725,8 @@ nsHTMLDocument::RemoveWyciwygChannel(void)
 {
   nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
 
-  // note there can be a write request without a load group if
-  // this is a synchronously constructed about:blank document
+  
+  
   if (loadGroup && mWyciwygChannel) {
     mWyciwygChannel->CloseCacheEntry(NS_OK);
     loadGroup->RemoveRequest(mWyciwygChannel, nsnull, NS_OK);
@@ -2747,21 +2741,21 @@ void *
 nsHTMLDocument::GenerateParserKey(void)
 {
   if (!mScriptLoader) {
-    // If we don't have a script loader, then the parser probably isn't parsing
-    // anything anyway, so just return null.
+    
+    
     return nsnull;
   }
 
-  // The script loader provides us with the currently executing script element,
-  // which is guaranteed to be unique per script.
+  
+  
   if (nsHtml5Module::sEnabled) {
     nsIScriptElement* script = mScriptLoader->GetCurrentParserInsertedScript();
     if (script && mParser && mParser->IsScriptCreated()) {
       nsCOMPtr<nsIParser> creatorParser = script->GetCreatorParser();
       if (creatorParser != mParser) {
-        // Make scripts that aren't inserted by the active parser of this document
-        // participate in the context of the script that document.open()ed 
-        // this document.
+        
+        
+        
         return mParser->GetRootContextKey();
       }
     }
@@ -2771,7 +2765,7 @@ nsHTMLDocument::GenerateParserKey(void)
   }
 }
 
-/* attribute DOMString designMode; */
+
 NS_IMETHODIMP
 nsHTMLDocument::GetDesignMode(nsAString & aDesignMode)
 {
@@ -2806,7 +2800,7 @@ nsHTMLDocument::EndUpdate(nsUpdateType aUpdateType)
 }
 
 
-// Helper class, used below in ChangeContentEditableCount().
+
 class DeferredContentEditableCountChangeEvent : public nsRunnable
 {
 public:
@@ -2858,8 +2852,8 @@ nsHTMLDocument::DeferredContentEditableCountChange(nsIContent *aElement)
   NS_ENSURE_SUCCESS(rv, );
 
   if (oldState == mEditingState && mEditingState == eContentEditable) {
-    // We just changed the contentEditable state of a node, we need to reset
-    // the spellchecking state of that node.
+    
+    
     nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aElement);
     if (node) {
       nsPIDOMWindow *window = GetWindow();
@@ -2962,9 +2956,9 @@ nsHTMLDocument::GetDocumentAllResult(const nsAString& aID,
     entry->SetDocAllList(docAllList);
   }
 
-  // Check if there are more than 1 entries. Do this by getting the second one
-  // rather than the length since getting the length always requires walking
-  // the entire document.
+  
+  
+  
 
   nsIContent* cont = docAllList->Item(1, PR_TRUE);
   if (cont) {
@@ -2972,7 +2966,7 @@ nsHTMLDocument::GetDocumentAllResult(const nsAString& aID,
     return static_cast<nsINodeList*>(docAllList);
   }
 
-  // There's only 0 or 1 items. Return the first one or null.
+  
   *aCache = cont = docAllList->Item(0, PR_TRUE);
 
   return cont;
@@ -3035,7 +3029,7 @@ nsHTMLDocument::TurnEditingOff()
   nsCOMPtr<nsIEditingSession> editSession = do_GetInterface(docshell, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // turn editing off
+  
   rv = editSession->TearDownEditorOnWindow(window);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3069,7 +3063,7 @@ nsHTMLDocument::EditingStateChanged()
   }
 
   if (mEditingState == eSettingUp || mEditingState == eTearingDown) {
-    // XXX We shouldn't recurse.
+    
     return NS_OK;
   }
 
@@ -3077,23 +3071,23 @@ nsHTMLDocument::EditingStateChanged()
   EditingState newState = designMode ? eDesignMode :
                           (mContentEditableCount > 0 ? eContentEditable : eOff);
   if (mEditingState == newState) {
-    // No changes in editing mode.
+    
     return NS_OK;
   }
 
   if (newState == eOff) {
-    // Editing is being turned off.
+    
     return TurnEditingOff();
   }
 
-  // Flush out style changes on our _parent_ document, if any, so that
-  // our check for a presshell won't get stale information.
+  
+  
   if (mParentDocument) {
     mParentDocument->FlushPendingNotifications(Flush_Style);
   }
 
-  // get editing session, make sure this is a strong reference so the
-  // window can't get deleted during the rest of this call.
+  
+  
   nsCOMPtr<nsPIDOMWindow> window = GetWindow();
   if (!window)
     return NS_ERROR_FAILURE;
@@ -3109,22 +3103,22 @@ nsHTMLDocument::EditingStateChanged()
   nsCOMPtr<nsIEditor> existingEditor;
   editSession->GetEditorForWindow(window, getter_AddRefs(existingEditor));
   if (existingEditor) {
-    // We might already have an editor if it was set up for mail, let's see
-    // if this is actually the case.
+    
+    
     nsCOMPtr<nsIHTMLEditor> htmlEditor = do_QueryInterface(existingEditor);
     NS_ABORT_IF_FALSE(htmlEditor, "If we have an editor, it must be an HTML editor");
     PRUint32 flags = 0;
     existingEditor->GetFlags(&flags);
     if (flags & nsIPlaintextEditor::eEditorMailMask) {
-      // We already have a mail editor, then we should not attempt to create
-      // another one.
+      
+      
       return NS_OK;
     }
   }
 
   if (!HasPresShell(window)) {
-    // We should not make the window editable or setup its editor.
-    // It's probably style=display:none.
+    
+    
     return NS_OK;
   }
 
@@ -3138,16 +3132,16 @@ nsHTMLDocument::EditingStateChanged()
     nsAutoEditingState push(this, eSettingUp);
 
     if (makeWindowEditable) {
-      // Editing is being turned on (through designMode or contentEditable)
-      // Turn on editor.
-      // XXX This can cause flushing which can change the editing state, so make
-      //     sure to avoid recursing.
+      
+      
+      
+      
       rv = editSession->MakeWindowEditable(window, "html", PR_FALSE, PR_FALSE,
                                            PR_TRUE);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    // XXX Need to call TearDownEditorOnWindow for all failures.
+    
     nsCOMPtr<nsIEditorDocShell> editorDocShell =
       do_QueryInterface(docshell, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -3159,8 +3153,8 @@ nsHTMLDocument::EditingStateChanged()
     nsCOMPtr<nsIPresShell> presShell = GetShell();
     NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
-    // If we're entering the design mode, put the selection at the beginning of
-    // the document for compatibility reasons.
+    
+    
     if (designMode && oldState == eOff) {
       editor->BeginningOfDocument();
     }
@@ -3180,11 +3174,11 @@ nsHTMLDocument::EditingStateChanged()
     rv = agentSheets.AppendObject(sheet);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Should we update the editable state of all the nodes in the document? We
-    // need to do this when the designMode value changes, as that overrides
-    // specific states on the elements.
+    
+    
+    
     if (designMode) {
-      // designMode is being turned on (overrides contentEditable).
+      
       rv = NS_NewURI(getter_AddRefs(uri), NS_LITERAL_STRING("resource://gre/res/designmode.css"));
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3194,7 +3188,7 @@ nsHTMLDocument::EditingStateChanged()
       rv = agentSheets.AppendObject(sheet);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      // Disable scripting and plugins.
+      
       rv = editSession->DisableJSAndPlugins(window);
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3202,7 +3196,7 @@ nsHTMLDocument::EditingStateChanged()
       spellRecheckAll = oldState == eContentEditable;
     }
     else if (oldState == eDesignMode) {
-      // designMode is being turned off (contentEditable is still on).
+      
       RemoveFromAgentSheets(agentSheets, NS_LITERAL_STRING("resource://gre/res/designmode.css"));
 
       rv = editSession->RestoreJSAndPlugins(window);
@@ -3220,16 +3214,16 @@ nsHTMLDocument::EditingStateChanged()
   mEditingState = newState;
 
   if (makeWindowEditable) {
-    // Set the editor to not insert br's on return when in p
-    // elements by default.
-    // XXX Do we only want to do this for designMode?
+    
+    
+    
     PRBool unused;
     rv = ExecCommand(NS_LITERAL_STRING("insertBrOnReturn"), PR_FALSE,
                      NS_LITERAL_STRING("false"), &unused);
 
     if (NS_FAILED(rv)) {
-      // Editor setup failed. Editing is not on after all.
-      // XXX Should we reset the editable flag on nodes?
+      
+      
       editSession->TearDownEditorOnWindow(window);
       mEditingState = eOff;
 
@@ -3242,7 +3236,7 @@ nsHTMLDocument::EditingStateChanged()
     NotifyEditableStateChange(this, this, !designMode);
   }
 
-  // Resync the editor's spellcheck state.
+  
   if (spellRecheckAll) {
     nsCOMPtr<nsISelectionController> selcon;
     nsresult rv = editor->GetSelectionController(getter_AddRefs(selcon));
@@ -3292,10 +3286,10 @@ nsHTMLDocument::SetDesignMode(const nsAString & aDesignMode)
 nsresult
 nsHTMLDocument::GetMidasCommandManager(nsICommandManager** aCmdMgr)
 {
-  // initialize return value
+  
   NS_ENSURE_ARG_POINTER(aCmdMgr);
 
-  // check if we have it cached
+  
   if (mMidasCommandManager) {
     NS_ADDREF(*aCmdMgr = mMidasCommandManager);
     return NS_OK;
@@ -3374,10 +3368,10 @@ static const struct MidasCommand gMidasCommandTable[] = {
   { "enableObjectResizing", "cmd_enableObjectResizing", "", PR_FALSE, PR_TRUE },
   { "enableInlineTableEditing", "cmd_enableInlineTableEditing", "", PR_FALSE, PR_TRUE },
 #if 0
-// no editor support to remove alignments right now
+
   { "justifynone",   "cmd_align",           "", PR_TRUE,  PR_FALSE },
 
-// the following will need special review before being turned on
+
   { "saveas",        "cmd_saveAs",          "", PR_TRUE,  PR_FALSE },
   { "print",         "cmd_print",           "", PR_TRUE,  PR_FALSE },
 #endif
@@ -3414,7 +3408,7 @@ ConvertToMidasInternalCommandInner(const nsAString & inCommandID,
 {
   NS_ConvertUTF16toUTF8 convertedCommandID(inCommandID);
 
-  // Hack to support old boolean commands that were backwards (see bug 301490).
+  
   PRBool invertBool = PR_FALSE;
   if (convertedCommandID.LowerCaseEqualsLiteral("usecss")) {
     convertedCommandID.Assign("styleWithCSS");
@@ -3436,10 +3430,10 @@ ConvertToMidasInternalCommandInner(const nsAString & inCommandID,
   }
 
   if (found) {
-    // set outCommandID (what we use internally)
+    
     outCommandID.Assign(gMidasCommandTable[i].internalCommandString);
 
-    // set outParam & outIsBoolean based on flags from the table
+    
     outIsBoolean = gMidasCommandTable[i].convertToBoolean;
 
     if (!aIgnoreParams) {
@@ -3447,11 +3441,11 @@ ConvertToMidasInternalCommandInner(const nsAString & inCommandID,
         outParam.Assign(gMidasCommandTable[i].internalParamString);
       }
       else {
-        // handle checking of param passed in
+        
         if (outIsBoolean) {
-          // if this is a boolean value and it's not explicitly false
-          // (e.g. no value) we default to "true". For old backwards commands
-          // we invert the check (see bug 301490).
+          
+          
+          
           if (invertBool) {
             outBooleanValue = inParam.LowerCaseEqualsLiteral("false");
           }
@@ -3461,7 +3455,7 @@ ConvertToMidasInternalCommandInner(const nsAString & inCommandID,
           outParam.Truncate();
         }
         else {
-          // check to see if we need to convert the parameter
+          
           if (outCommandID.EqualsLiteral("cmd_paragraphState")) {
             const PRUnichar *start = inParam.BeginReading();
             const PRUnichar *end = inParam.EndReading();
@@ -3488,9 +3482,9 @@ ConvertToMidasInternalCommandInner(const nsAString & inCommandID,
         }
       }
     }
-  } // end else for useNewParam (do convert existing param)
+  } 
   else {
-    // reset results if the command is not found in our table
+    
     outCommandID.SetLength(0);
     outParam.SetLength(0);
     outIsBoolean = PR_FALSE;
@@ -3529,8 +3523,8 @@ nsHTMLDocument::sCutCopyInternal_id = JSID_VOID;
 jsid
 nsHTMLDocument::sPasteInternal_id = JSID_VOID;
 
-/* Helper function to check security of clipboard commands. If aPaste is */
-/* true, we check paste, else we check cutcopy */
+
+
 nsresult
 nsHTMLDocument::DoClipboardSecurityCheck(PRBool aPaste)
 {
@@ -3573,9 +3567,9 @@ nsHTMLDocument::DoClipboardSecurityCheck(PRBool aPaste)
   return rv;
 }
 
-/* TODO: don't let this call do anything if the page is not done loading */
-/* boolean execCommand(in DOMString commandID, in boolean doShowUI,
-                                               in DOMString value); */
+
+
+
 NS_IMETHODIMP
 nsHTMLDocument::ExecCommand(const nsAString & commandID,
                             PRBool doShowUI,
@@ -3584,16 +3578,16 @@ nsHTMLDocument::ExecCommand(const nsAString & commandID,
 {
   NS_ENSURE_ARG_POINTER(_retval);
 
-  //  for optional parameters see dom/src/base/nsHistory.cpp: HistoryImpl::Go()
-  //  this might add some ugly JS dependencies?
+  
+  
 
   *_retval = PR_FALSE;
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
-  // if they are requesting UI from us, let's fail since we have no UI
+  
   if (doShowUI)
     return NS_OK;
 
@@ -3612,7 +3606,7 @@ nsHTMLDocument::ExecCommand(const nsAString & commandID,
   if (NS_FAILED(rv))
     return rv;
 
-  // get command manager and dispatch command to our window if it's acceptable
+  
   nsCOMPtr<nsICommandManager> cmdMgr;
   GetMidasCommandManager(getter_AddRefs(cmdMgr));
   if (!cmdMgr)
@@ -3631,7 +3625,7 @@ nsHTMLDocument::ExecCommand(const nsAString & commandID,
   if (!isBool && paramStr.IsEmpty()) {
     rv = cmdMgr->DoCommand(cmdToDispatch.get(), nsnull, window);
   } else {
-    // we have a command that requires a parameter, create params
+    
     nsCOMPtr<nsICommandParams> cmdParams = do_CreateInstance(
                                             NS_COMMAND_PARAMS_CONTRACTID, &rv);
     if (!cmdParams)
@@ -3655,8 +3649,8 @@ nsHTMLDocument::ExecCommand(const nsAString & commandID,
   return rv;
 }
 
-/* TODO: don't let this call do anything if the page is not done loading */
-/* boolean execCommandShowHelp(in DOMString commandID); */
+
+
 NS_IMETHODIMP
 nsHTMLDocument::ExecCommandShowHelp(const nsAString & commandID,
                                     PRBool *_retval)
@@ -3664,14 +3658,14 @@ nsHTMLDocument::ExecCommandShowHelp(const nsAString & commandID,
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = PR_FALSE;
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-/* boolean queryCommandEnabled(in DOMString commandID); */
+
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandEnabled(const nsAString & commandID,
                                     PRBool *_retval)
@@ -3679,11 +3673,11 @@ nsHTMLDocument::QueryCommandEnabled(const nsAString & commandID,
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = PR_FALSE;
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
-  // get command manager and dispatch command to our window if it's acceptable
+  
   nsCOMPtr<nsICommandManager> cmdMgr;
   GetMidasCommandManager(getter_AddRefs(cmdMgr));
   if (!cmdMgr)
@@ -3700,7 +3694,7 @@ nsHTMLDocument::QueryCommandEnabled(const nsAString & commandID,
   return cmdMgr->IsCommandEnabled(cmdToDispatch.get(), window, _retval);
 }
 
-/* boolean queryCommandIndeterm (in DOMString commandID); */
+
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandIndeterm(const nsAString & commandID,
                                      PRBool *_retval)
@@ -3708,11 +3702,11 @@ nsHTMLDocument::QueryCommandIndeterm(const nsAString & commandID,
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = PR_FALSE;
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
-  // get command manager and dispatch command to our window if it's acceptable
+  
   nsCOMPtr<nsICommandManager> cmdMgr;
   GetMidasCommandManager(getter_AddRefs(cmdMgr));
   if (!cmdMgr)
@@ -3737,24 +3731,24 @@ nsHTMLDocument::QueryCommandIndeterm(const nsAString & commandID,
   if (NS_FAILED(rv))
     return rv;
 
-  // if command does not have a state_mixed value, this call fails, so we fail too,
-  // which is what is expected
+  
+  
   rv = cmdParams->GetBooleanValue("state_mixed", _retval);
   return rv;
 }
 
-/* boolean queryCommandState(in DOMString commandID); */
+
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandState(const nsAString & commandID, PRBool *_retval)
 {
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = PR_FALSE;
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
-  // get command manager and dispatch command to our window if it's acceptable
+  
   nsCOMPtr<nsICommandManager> cmdMgr;
   GetMidasCommandManager(getter_AddRefs(cmdMgr));
   if (!cmdMgr)
@@ -3780,12 +3774,12 @@ nsHTMLDocument::QueryCommandState(const nsAString & commandID, PRBool *_retval)
   if (NS_FAILED(rv))
     return rv;
 
-  // handle alignment as a special case (possibly other commands too?)
-  // Alignment is special because the external api is individual
-  // commands but internally we use cmd_align with different
-  // parameters.  When getting the state of this command, we need to
-  // return the boolean for this particular alignment rather than the
-  // string of 'which alignment is this?'
+  
+  
+  
+  
+  
+  
   if (cmdToDispatch.Equals("cmd_align")) {
     char * actualAlignmentType = nsnull;
     rv = cmdParams->GetCStringValue("state_attribute", &actualAlignmentType);
@@ -3804,7 +3798,7 @@ nsHTMLDocument::QueryCommandState(const nsAString & commandID, PRBool *_retval)
   return rv;
 }
 
-/* boolean queryCommandSupported(in DOMString commandID); */
+
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandSupported(const nsAString & commandID,
                                       PRBool *_retval)
@@ -3812,39 +3806,39 @@ nsHTMLDocument::QueryCommandSupported(const nsAString & commandID,
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = PR_FALSE;
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-/* DOMString queryCommandText(in DOMString commandID); */
+
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandText(const nsAString & commandID,
                                  nsAString & _retval)
 {
   _retval.SetLength(0);
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-/* DOMString queryCommandValue(in DOMString commandID); */
+
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandValue(const nsAString & commandID,
                                   nsAString &_retval)
 {
   _retval.SetLength(0);
 
-  // if editing is not on, bail
+  
   if (!IsEditingOnAfterFlush())
     return NS_ERROR_FAILURE;
 
-  // get command manager and dispatch command to our window if it's acceptable
+  
   nsCOMPtr<nsICommandManager> cmdMgr;
   GetMidasCommandManager(getter_AddRefs(cmdMgr));
   if (!cmdMgr)
@@ -3858,15 +3852,15 @@ nsHTMLDocument::QueryCommandValue(const nsAString & commandID,
   if (!ConvertToMidasInternalCommand(commandID, cmdToDispatch))
     return NS_ERROR_NOT_IMPLEMENTED;
 
-  // create params
+  
   nsresult rv;
   nsCOMPtr<nsICommandParams> cmdParams = do_CreateInstance(
                                            NS_COMMAND_PARAMS_CONTRACTID, &rv);
   if (!cmdParams)
     return NS_ERROR_OUT_OF_MEMORY;
 
-  // this is a special command since we are calling "DoCommand rather than
-  // GetCommandState like the other commands
+  
+  
   if (cmdToDispatch.Equals("cmd_getContents"))
   {
     rv = cmdParams->SetBooleanValue("selection_only", PR_TRUE);
@@ -3905,7 +3899,7 @@ nsHTMLDocument::Clone(nsINodeInfo *aNodeInfo, nsINode **aResult) const
   nsresult rv = CloneDocHelper(clone.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // State from nsHTMLDocument
+  
   clone->mLoadFlags = mLoadFlags;
 
   return CallQueryInterface(clone.get(), aResult);
@@ -3916,8 +3910,8 @@ nsHTMLDocument::IsEditingOnAfterFlush()
 {
   nsIDocument* doc = GetParentDocument();
   if (doc) {
-    // Make sure frames are up to date, since that can affect whether
-    // we're editable.
+    
+    
     doc->FlushPendingNotifications(Flush_Frames);
   }
 
