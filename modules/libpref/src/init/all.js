@@ -97,6 +97,11 @@ pref("offline-apps.quota.warn",         4000);
 #endif
 
 
+pref("dom.indexedDB.enabled", true);
+
+pref("dom.indexedDB.warningQuota", 50);
+
+
 
 pref("browser.sessionhistory.max_total_viewers", -1);
 
