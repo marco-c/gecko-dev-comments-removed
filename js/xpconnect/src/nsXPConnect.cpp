@@ -1770,8 +1770,16 @@ MoveWrapper(XPCCallContext& ccx, XPCWrappedNative *wrapper,
             XPCWrappedNative::GetWrappedNativeOfJSObject(ccx, newParent);
 
         rv = MoveWrapper(ccx, parentWrapper, newScope, oldScope);
-
         NS_ENSURE_SUCCESS(rv, rv);
+
+        
+        
+        
+        
+        if (parentWrapper->GetScope() == oldScope)
+            return NS_OK;
+        NS_ASSERTION(parentWrapper->GetScope() == newScope,
+                     "A _third_ scope? Oh dear...");
 
         newParent = parentWrapper->GetFlatJSObject();
     } else
