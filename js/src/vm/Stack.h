@@ -1127,12 +1127,12 @@ class StackFrame
         return offsetof(StackFrame, exec);
     }
 
-    void *addressOfArgs() {
-        return &args;
-    }
-
     static size_t offsetOfArgs() {
         return offsetof(StackFrame, args);
+    }    
+
+    void *addressOfArgs() {
+        return &args;
     }
 
     static size_t offsetOfScopeChain() {
@@ -1752,13 +1752,6 @@ class GeneratorFrameGuard : public FrameGuard
 };
 
 
-
-
-enum FrameExpandKind {
-    FRAME_EXPAND_NONE,
-    FRAME_EXPAND_TOP,
-    FRAME_EXPAND_ALL
-};
 
 
 

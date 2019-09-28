@@ -785,8 +785,7 @@ QuoteString(Sprinter *sp, JSString *str, uint32 quote)
     for (const jschar *t = s; t < z; s = ++t) {
         
         jschar c = *t;
-        while (JS_ISPRINT(c) && c != qc && c != '\\' && c != '\t' &&
-               !(c >> 8)) {
+        while (c < 127 && isprint(c) && c != qc && c != '\\' && c != '\t') {
             c = *++t;
             if (t == z)
                 break;
@@ -5073,7 +5072,7 @@ js_DecompileValueGenerator(JSContext *cx, intN spindex, jsval v_in,
     if (!cx->hasfp() || !cx->fp()->isScriptFrame())
         goto do_fallback;
 
-    fp = js_GetTopStackFrame(cx, FRAME_EXPAND_TOP);
+    fp = js_GetTopStackFrame(cx, FRAME_EXPAND_ALL);
     script = fp->script();
     pc = fp->hasImacropc() ? fp->imacropc() : cx->regs().pc;
     JS_ASSERT(script->code <= pc && pc < script->code + script->length);
