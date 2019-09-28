@@ -1,48 +1,48 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=99:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define __STDC_LIMIT_MACROS
 
-/*
- * JS shell.
- */
+
+
+
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -85,11 +85,11 @@
 #include "jsdebug.h"
 #ifdef JSDEBUGGER_JAVA_UI
 #include "jsdjava.h"
-#endif /* JSDEBUGGER_JAVA_UI */
+#endif 
 #ifdef JSDEBUGGER_C_UI
 #include "jsdb.h"
-#endif /* JSDEBUGGER_C_UI */
-#endif /* JSDEBUGGER */
+#endif 
+#endif 
 
 #include "jsworkers.h"
 
@@ -104,7 +104,7 @@
 #endif
 
 #if defined(XP_WIN) || defined(XP_OS2)
-#include <io.h>     /* for isatty() */
+#include <io.h>     
 #endif
 
 #ifdef XP_WIN
@@ -122,10 +122,10 @@ typedef enum JSShellExitCode {
 
 size_t gStackChunkSize = 8192;
 
-/* Assume that we can not use more than 5e5 bytes of C stack by default. */
+
 #if (defined(DEBUG) && defined(__SUNPRO_CC))  || defined(JS_CPU_SPARC)
-/* Sun compiler uses larger stack space for js_Interpret() with debug
-   Use a bigger gMaxStackSize to make "make check" happy. */
+
+
 #define DEFAULT_MAX_STACK_SIZE 5000000
 #else
 #define DEFAULT_MAX_STACK_SIZE 500000
@@ -142,10 +142,10 @@ static jsuword gStackBase;
 
 static size_t gScriptStackQuota = JS_DEFAULT_SCRIPT_STACK_QUOTA;
 
-/*
- * Limit the timeout to 30 minutes to prevent an overflow on platfoms
- * that represent the time internally in microseconds using 32-bit int.
- */
+
+
+
+
 static jsdouble MAX_TIMEOUT_INTERVAL = 1800.0;
 static jsdouble gTimeoutInterval = -1.0;
 static volatile bool gCanceled = false;
@@ -171,9 +171,9 @@ ScheduleWatchdog(JSRuntime *rt, jsdouble t);
 static void
 CancelExecution(JSRuntime *rt);
 
-/*
- * Watchdog thread state.
- */
+
+
+
 #ifdef JS_THREADSAFE
 
 static PRLock *gWatchdogLock = NULL;
@@ -279,18 +279,18 @@ GetLine(FILE *file, const char * prompt)
     size_t size;
     char *buffer;
 #ifdef EDITLINE
-    /*
-     * Use readline only if file is stdin, because there's no way to specify
-     * another handle.  Are other filehandles interactive?
-     */
+    
+
+
+
     if (file == stdin) {
         char *linep = readline(prompt);
-        /*
-         * We set it to zero to avoid complaining about inappropriate ioctl
-         * for device in the case of EOF. Looks like errno == 251 if line is
-         * finished with EOF and errno == 25 (EINVAL on Mac) if there is
-         * nothing left to read.
-         */
+        
+
+
+
+
+
         if (errno == 251 || errno == 25 || errno == EINVAL)
             errno = 0;
         if (!linep)
@@ -314,7 +314,7 @@ GetLine(FILE *file, const char * prompt)
         len += strlen(current);
         char *t = buffer + len - 1;
         if (*t == '\n') {
-            /* Line was read. We remove '\n' and exit. */
+            
             *t = '\0';
             return buffer;
         }
@@ -335,14 +335,14 @@ GetLine(FILE *file, const char * prompt)
     return NULL;
 }
 
-/*
- * State to store as JSContext private.
- *
- * We declare such timestamp as volatile as they are updated in the operation
- * callback without taking any locks. Any possible race can only lead to more
- * frequent callback calls. This is safe as the callback does everything based
- * on timing.
- */
+
+
+
+
+
+
+
+
 struct JSShellContextData {
     volatile JSIntervalTime startTime;
 };
@@ -350,7 +350,7 @@ struct JSShellContextData {
 static JSShellContextData *
 NewContextData()
 {
-    /* Prevent creation of new contexts after we have been canceled. */
+    
     if (gCanceled)
         return NULL;
 
@@ -422,18 +422,18 @@ Process(JSContext *cx, JSObject *obj, char *filename, JSBool forceTTY)
     SetContextOptions(cx);
 
 #ifndef WINCE
-    /* windows mobile (and possibly other os's) does not have a TTY */
+    
     if (!forceTTY && !isatty(fileno(file)))
 #endif
     {
-        /*
-         * It's not interactive - just execute it.
-         *
-         * Support the UNIX #! shell hack; gobble the first line if it starts
-         * with '#'.  TODO - this isn't quite compatible with sharp variables,
-         * as a legal js program (using sharp variables) might start with '#'.
-         * But that would require multi-character lookahead.
-         */
+        
+
+
+
+
+
+
+
         int ch = fgetc(file);
         if (ch == '#') {
             while((ch = fgetc(file)) != EOF) {
@@ -458,20 +458,20 @@ Process(JSContext *cx, JSObject *obj, char *filename, JSBool forceTTY)
         goto cleanup;
     }
 
-    /* It's an interactive filehandle; drop into read-eval-print loop. */
+    
     lineno = 1;
     hitEOF = JS_FALSE;
     buffer = NULL;
-    size = 0;           /* assign here to avoid warnings */
+    size = 0;           
     do {
-        /*
-         * Accumulate lines until we get a 'compilable unit' - one that either
-         * generates an error (before running out of source) or that compiles
-         * cleanly.  This should be whenever we get a complete statement that
-         * coincides with the end of a line.
-         */
+        
+
+
+
+
+
         startline = lineno;
-        size_t len = 0; /* initialize to avoid warnings */
+        size_t len = 0; 
         do {
             ScheduleWatchdog(cx->runtime, -1);
             gCanceled = false;
@@ -496,9 +496,9 @@ Process(JSContext *cx, JSObject *obj, char *filename, JSBool forceTTY)
                 len = strlen(buffer);
                 size = len + 1;
             } else {
-                /*
-                 * len + 1 is required to store '\n' in the end of line.
-                 */
+                
+
+
                 size_t newlen = strlen(line) + (len ? len + 1 : 0);
                 if (newlen + 1 > size) {
                     size = newlen + 1 > size * 2 ? newlen + 1 : size * 2;
@@ -528,10 +528,10 @@ Process(JSContext *cx, JSObject *obj, char *filename, JSBool forceTTY)
         if (hitEOF && !buffer)
             break;
 
-        /* Clear any pending exception from previous failed compiles. */
+        
         JS_ClearPendingException(cx);
 
-        /* Even though we're interactive, we have a compile-n-go opportunity. */
+        
         oldopts = JS_GetOptions(cx);
         if (!compileOnly)
             JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
@@ -626,10 +626,10 @@ usage(void)
     return 2;
 }
 
-/*
- * JSContext option name to flag map. The option names are in alphabetical
- * order for better reporting.
- */
+
+
+
+
 static const struct {
     const char  *name;
     uint32      flag;
@@ -694,12 +694,12 @@ ProcessArgs(JSContext *cx, JSObject *obj, char **argv, int argc)
     JSBool isInteractive = JS_TRUE;
     JSBool forceTTY = JS_FALSE;
 
-    /*
-     * Scan past all optional arguments so we can create the arguments object
-     * before processing any -f options, which must interleave properly with
-     * -v and -w options.  This requires two passes, and without getopt, we'll
-     * have to keep the option logic here and in the second for loop in sync.
-     */
+    
+
+
+
+
+
     for (i = 0; i < argc; i++) {
         if (argv[i][0] != '-' || argv[i][1] == '\0') {
             ++i;
@@ -725,10 +725,10 @@ ProcessArgs(JSContext *cx, JSObject *obj, char **argv, int argc)
         }
     }
 
-    /*
-     * Create arguments early and define it to root it, so it's safe from any
-     * GC calls nested below, and so it is available to -f <file> arguments.
-     */
+    
+
+
+
     argsObj = JS_NewArrayObject(cx, 0, NULL);
     if (!argsObj)
         return 1;
@@ -857,7 +857,7 @@ ProcessArgs(JSContext *cx, JSObject *obj, char **argv, int argc)
             break;
 
         case 'c':
-            /* set stack chunk size */
+            
             gStackChunkSize = atoi(argv[++i]);
             break;
 
@@ -869,11 +869,11 @@ ProcessArgs(JSContext *cx, JSObject *obj, char **argv, int argc)
             if (gExitCode != 0)
                 return gExitCode;
 
-            /*
-             * XXX: js -f foo.js should interpret foo.js and then
-             * drop into interactive mode, but that breaks the test
-             * harness. Just execute foo.js for now.
-             */
+            
+
+
+
+
             isInteractive = JS_FALSE;
             break;
 
@@ -884,7 +884,7 @@ ProcessArgs(JSContext *cx, JSObject *obj, char **argv, int argc)
             if (++i == argc)
                 return usage();
 
-            /* Pass a filename of -e to imitate PERL */
+            
             JS_EvaluateScript(cx, obj, argv[i], strlen(argv[i]),
                               "-e", 1, &rval);
 
@@ -905,7 +905,7 @@ ProcessArgs(JSContext *cx, JSObject *obj, char **argv, int argc)
             if (++i == argc)
                 return usage();
 
-            /* Set maximum stack size. */
+            
             gMaxStackSize = atoi(argv[i]);
             break;
 
@@ -1120,11 +1120,11 @@ FileAsString(JSContext *cx, const char *pathname)
     return str;
 }
 
-/*
- * Function to run scripts and return compilation + execution time. Semantics
- * are closely modelled after the equivalent function in WebKit, as this is used
- * to produce benchmark timings by SunSpider.
- */
+
+
+
+
+
 static JSBool
 Run(JSContext *cx, uintN argc, jsval *vp)
 {
@@ -1174,10 +1174,10 @@ Run(JSContext *cx, uintN argc, jsval *vp)
     return true;
 }
 
-/*
- * function readline()
- * Provides a hook for scripts to read a line from stdin.
- */
+
+
+
+
 static JSBool
 ReadLine(JSContext *cx, uintN argc, jsval *vp)
 {
@@ -1200,7 +1200,7 @@ ReadLine(JSContext *cx, uintN argc, jsval *vp)
             js_fgets(buf + buflength, bufsize - buflength, from)) > 0) {
         buflength += gotlength;
 
-        /* Are we done? */
+        
         if (buf[buflength - 1] == '\n') {
             buf[buflength - 1] = '\0';
             sawNewline = JS_TRUE;
@@ -1209,7 +1209,7 @@ ReadLine(JSContext *cx, uintN argc, jsval *vp)
             break;
         }
 
-        /* Else, grow our buffer for another pass. */
+        
         bufsize *= 2;
         if (bufsize > buflength) {
             tmp = (char *) JS_realloc(cx, buf, bufsize);
@@ -1226,14 +1226,14 @@ ReadLine(JSContext *cx, uintN argc, jsval *vp)
         buf = tmp;
     }
 
-    /* Treat the empty string specially. */
+    
     if (buflength == 0) {
         *vp = feof(from) ? JSVAL_NULL : JS_GetEmptyStringValue(cx);
         JS_free(cx, buf);
         return JS_TRUE;
     }
 
-    /* Shrink the buffer to the real size. */
+    
     tmp = (char *) JS_realloc(cx, buf, buflength);
     if (!tmp) {
         JS_free(cx, buf);
@@ -1242,10 +1242,10 @@ ReadLine(JSContext *cx, uintN argc, jsval *vp)
 
     buf = tmp;
 
-    /*
-     * Turn buf into a JSString. Note that buflength includes the trailing null
-     * character.
-     */
+    
+
+
+
     str = JS_NewStringCopyN(cx, buf, sawNewline ? buflength - 1 : buflength);
     JS_free(cx, buf);
     if (!str)
@@ -1511,7 +1511,7 @@ GCZeal(JSContext *cx, uintN argc, jsval *vp)
     *vp = JSVAL_VOID;
     return JS_TRUE;
 }
-#endif /* JS_GC_ZEAL */
+#endif 
 
 typedef struct JSCountHeapNode JSCountHeapNode;
 
@@ -1675,10 +1675,10 @@ finalize_counter_finalize(JSContext *cx, JSObject *obj)
 
 static JSClass FinalizeCounterClass = {
     "FinalizeCounter", JSCLASS_IS_ANONYMOUS,
-    JS_PropertyStub,       /* addProperty */
-    JS_PropertyStub,       /* delProperty */
-    JS_PropertyStub,       /* getProperty */
-    JS_StrictPropertyStub, /* setProperty */
+    JS_PropertyStub,       
+    JS_PropertyStub,       
+    JS_PropertyStub,       
+    JS_StrictPropertyStub, 
     JS_EnumerateStub,
     JS_ResolveStub,
     JS_ConvertStub,
@@ -1746,12 +1746,12 @@ SetDebug(JSContext *cx, uintN argc, jsval *vp)
         return JS_FALSE;
     }
 
-    /*
-     * Debug mode can only be set when there is no JS code executing on the
-     * stack. Unfortunately, that currently means that this call will fail
-     * unless debug mode is already set to what you're trying to set it to.
-     * In the future, this restriction may be lifted.
-     */
+    
+
+
+
+
+
     
     JSBool rv = JS_SetDebugMode(cx, JSVAL_TO_BOOLEAN(argv[0]));
     JS_SET_RVAL(cx, vp, rv ? JSVAL_TRUE : JSVAL_FALSE);
@@ -1972,7 +1972,7 @@ UpdateSwitchTableBounds(JSContext *cx, JSScript *script, uintN offset,
         break;
 
       default:
-        /* [condswitch] switch does not have any jump or lookup tables. */
+        
         JS_ASSERT(op == JSOP_CONDSWITCH);
         return;
     }
@@ -2002,7 +2002,7 @@ SrcNotes(JSContext *cx, JSScript *script)
         type = (JSSrcNoteType) SN_TYPE(sn);
         name = js_SrcNoteSpec[type].name;
         if (type == SRC_LABEL) {
-            /* Check if the source note is for a switch case. */
+            
             if (switchTableStart <= offset && offset < switchTableEnd) {
                 name = "case";
             } else {
@@ -2207,7 +2207,7 @@ Disassemble(JSContext *cx, uintN argc, jsval *vp)
 {
     jsval *argv = JS_ARGV(cx, vp);
 
-    /* Read options off early arguments */
+    
     bool lines = false, recursive = false;
     while (argc > 0 && JSVAL_IS_STRING(argv[0])) {
         JSString *str = JSVAL_TO_STRING(argv[0]);
@@ -2222,7 +2222,7 @@ Disassemble(JSContext *cx, uintN argc, jsval *vp)
     }
 
     if (argc == 0) {
-        /* Without arguments, disassemble the current script. */
+        
         if (JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL)) {
             JSScript *script = JS_GetFrameScript(cx, frame);
             if (!js_Disassemble(cx, script, lines, stdout))
@@ -2251,7 +2251,7 @@ DisassFile(JSContext *cx, uintN argc, jsval *vp)
         return JS_TRUE;
     }
 
-    /* Support extra options at the start, just like Dissassemble. */
+    
     uintN _argc = argc;
     argv += argc-1;
     argc = 1;
@@ -2279,8 +2279,8 @@ DisassFile(JSContext *cx, uintN argc, jsval *vp)
     if (!obj)
         return JS_FALSE;
 
-    argv[0] = OBJECT_TO_JSVAL(obj); /* I like to root it, root it. */
-    JSBool ok = Disassemble(cx, _argc, vp); /* gross, but works! */
+    argv[0] = OBJECT_TO_JSVAL(obj); 
+    JSBool ok = Disassemble(cx, _argc, vp); 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return ok;
 }
@@ -2321,7 +2321,7 @@ DisassWithSrc(JSContext *cx, uintN argc, jsval *vp)
         pc = script->code;
         end = pc + script->length;
 
-        /* burn the leading lines */
+        
         line2 = JS_PCToLineNumber(cx, script, pc);
         for (line1 = 0; line1 < line2 - 1; line1++) {
             char *tmp = fgets(linebuf, LINE_BUF_LEN, file);
@@ -2603,7 +2603,7 @@ DumpObject(JSContext *cx, uintN argc, jsval *vp)
     return JS_TRUE;
 }
 
-#endif /* DEBUG */
+#endif 
 
 #ifdef TEST_CVTARGS
 #include <ctype.h>
@@ -2835,7 +2835,7 @@ GetPDA(JSContext *cx, uintN argc, jsval *vp)
             break;
         }
 
-        /* Protect pdobj from GC by setting it as an element of aobj now */
+        
         v = OBJECT_TO_JSVAL(pdobj);
         ok = JS_SetElement(cx, aobj, i, &v);
         if (!ok)
@@ -2914,21 +2914,21 @@ TestUTF8(JSContext *cx, uintN argc, jsval *vp)
     if (argc && !JS_ValueToInt32(cx, *JS_ARGV(cx, vp), &mode))
         return JS_FALSE;
 
-    /* The following throw errors if compiled with UTF-8. */
+    
     switch (mode) {
-      /* mode 1: malformed UTF-8 string. */
+      
       case 1:
         JS_NewStringCopyZ(cx, badUTF8);
         break;
-      /* mode 2: big UTF-8 character. */
+      
       case 2:
         JS_NewStringCopyZ(cx, bigUTF8);
         break;
-      /* mode 3: bad surrogate character. */
+      
       case 3:
         JS_EncodeCharacters(cx, badSurrogate, 6, bytes, &bytesLength);
         break;
-      /* mode 4: use a too small buffer. */
+      
       case 4:
         JS_DecodeBytes(cx, "1234567890", 10, chars, &charsLength);
         break;
@@ -2949,7 +2949,7 @@ ThrowError(JSContext *cx, uintN argc, jsval *vp)
 
 #define LAZY_STANDARD_CLASSES
 
-/* A class for easily testing the inner/outer object callbacks. */
+
 typedef struct ComplexObject {
     JSBool isInner;
     JSBool frozen;
@@ -2975,7 +2975,7 @@ split_addProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
     if (!cpx)
         return JS_TRUE;
     if (!cpx->isInner && cpx->inner) {
-        /* Make sure to define this property on the inner object. */
+        
         return JS_DefinePropertyById(cx, cpx->inner, id, *vp, NULL, NULL, JSPROP_ENUMERATE);
     }
     return JS_TRUE;
@@ -3051,7 +3051,7 @@ split_delProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
     if (!cpx)
         return JS_TRUE;
     if (!cpx->isInner && cpx->inner) {
-        /* Make sure to define this property on the inner object. */
+        
         if (!JS_ValueToId(cx, *vp, &asId))
             return JS_FALSE;
         return cpx->inner->deleteProperty(cx, asId, Valueify(vp), true);
@@ -3090,10 +3090,10 @@ split_enumerate(JSContext *cx, JSObject *obj, JSIterateOp enum_op,
 
         if (!JSID_IS_VOID(*idp))
             break;
-        /* Fall through. */
+        
 
       case JSENUMERATE_DESTROY:
-        /* Let GC at our iterator object. */
+        
         *statep = JSVAL_NULL;
         break;
     }
@@ -3150,7 +3150,7 @@ split_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **obj
     }
 #endif
 
-    /* XXX For additional realism, let's resolve some random property here. */
+    
     return JS_TRUE;
 }
 
@@ -3168,12 +3168,12 @@ split_mark(JSContext *cx, JSObject *obj, void *arg)
     cpx = (ComplexObject *) JS_GetPrivate(cx, obj);
 
     if (!cpx->isInner && cpx->inner) {
-        /* Mark the inner object. */
+        
         JS_MarkGCThing(cx, OBJECT_TO_JSVAL(cpx->inner), "ComplexObject.inner", arg);
     }
 
     if (cpx->isInner && cpx->outer) {
-        /* Mark the inner object. */
+        
         JS_MarkGCThing(cx, OBJECT_TO_JSVAL(cpx->outer), "ComplexObject.outer", arg);
     }
 
@@ -3226,34 +3226,34 @@ static Class split_global_class = {
     (JSResolveOp)split_resolve,
     ConvertStub,
     split_finalize,
-    NULL,           /* reserved0   */
-    NULL,           /* checkAccess */
-    NULL,           /* call        */
-    NULL,           /* construct   */
-    NULL,           /* xdrObject   */
-    NULL,           /* hasInstance */
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
     split_mark,
     {
         Valueify(split_equality),
         split_outerObject,
         split_innerObject,
-        NULL, /* iteratorObject */
-        NULL, /* wrappedObject  */
+        NULL, 
+        NULL, 
     },
     {
-        NULL, /* lookupProperty */
-        NULL, /* defineProperty */
-        NULL, /* getProperty    */
-        NULL, /* setProperty    */
-        NULL, /* getAttributes  */
-        NULL, /* setAttributes  */
-        NULL, /* deleteProperty */
-        NULL, /* enumerate      */
-        NULL, /* typeOf         */
-        NULL, /* trace          */
-        NULL, /* fix            */
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
+        NULL, 
         split_thisObject,
-        NULL, /* clear          */
+        NULL, 
     },
 };
 
@@ -3566,12 +3566,12 @@ ShapeOf(JSContext *cx, uintN argc, jsval *vp)
 
 #ifdef JS_THREADSAFE
 
-/*
- * Check that t1 comes strictly before t2. The function correctly deals with
- * PRIntervalTime wrap-around between t2 and t1 assuming that t2 and t1 stays
- * within INT32_MAX from each other. We use MAX_TIMEOUT_INTERVAL to enforce
- * this restriction.
- */
+
+
+
+
+
+
 static bool
 IsBefore(PRIntervalTime t1, PRIntervalTime t2)
 {
@@ -3591,7 +3591,7 @@ Sleep_fn(JSContext *cx, uintN argc, jsval *vp)
         if (!JS_ValueToNumber(cx, argc == 0 ? JSVAL_VOID : vp[2], &t_secs))
             return JS_FALSE;
 
-        /* NB: The next condition also filter out NaNs. */
+        
         if (!(t_secs <= MAX_TIMEOUT_INTERVAL)) {
             JS_ReportError(cx, "Excessive sleep interval");
             return JS_FALSE;
@@ -3671,7 +3671,7 @@ RunScatterThread(void *arg)
     td = (ScatterThreadData *)arg;
     cx = td->cx;
 
-    /* Wait for our signal. */
+    
     PR_Lock(td->shared->lock);
     while ((st = td->shared->status) == SCATTER_WAIT)
         PR_WaitCondVar(td->shared->cvar, PR_INTERVAL_NO_TIMEOUT);
@@ -3680,7 +3680,7 @@ RunScatterThread(void *arg)
     if (st == SCATTER_CANCEL)
         return;
 
-    /* We are good to go. */
+    
     JS_SetContextThread(cx);
     JS_SetNativeStackQuota(cx, gMaxStackSize);
     JS_BeginRequest(cx);
@@ -3689,18 +3689,18 @@ RunScatterThread(void *arg)
     JS_ClearContextThread(cx);
 }
 
-/*
- * scatter(fnArray) - Call each function in `fnArray` without arguments, each
- * in a different thread. When all threads have finished, return an array: the
- * return values. Errors are not propagated; if any of the function calls
- * fails, the corresponding element in the results array gets the exception
- * object, if any, else (undefined).
- */
+
+
+
+
+
+
+
 static JSBool
 Scatter(JSContext *cx, uintN argc, jsval *vp)
 {
     jsuint i;
-    jsuint n;  /* number of threads */
+    jsuint n;  
     JSObject *inArr;
     JSObject *arr;
     JSObject *global;
@@ -3795,7 +3795,7 @@ Scatter(JSContext *cx, uintN argc, jsval *vp)
                                       PR_JOINABLE_THREAD,
                                       0);
         if (!t) {
-            /* Failed to start thread. */
+            
             PR_Lock(sd.lock);
             sd.status = SCATTER_CANCEL;
             PR_NotifyAllCondVar(sd.cvar);
@@ -3885,10 +3885,10 @@ KillWatchdog()
     PR_Lock(gWatchdogLock);
     thread = gWatchdogThread;
     if (thread) {
-        /*
-         * The watchdog thread is running, tell it to terminate waking it up
-         * if necessary.
-         */
+        
+
+
+
         gWatchdogThread = NULL;
         PR_NotifyCondVar(gWatchdogWakeup);
     }
@@ -3909,16 +3909,16 @@ WatchdogMain(void *arg)
     while (gWatchdogThread) {
         PRIntervalTime now = PR_IntervalNow();
          if (gWatchdogHasTimeout && !IsBefore(now, gWatchdogTimeout)) {
-            /*
-             * The timeout has just expired. Trigger the operation callback
-             * outside the lock.
-             */
+            
+
+
+
             gWatchdogHasTimeout = false;
             PR_Unlock(gWatchdogLock);
             CancelExecution(rt);
             PR_Lock(gWatchdogLock);
 
-            /* Wake up any threads doing sleep. */
+            
             PR_NotifyAllCondVar(gSleepWakeup);
         } else {
             PRIntervalTime sleepDuration = gWatchdogHasTimeout
@@ -3969,7 +3969,7 @@ ScheduleWatchdog(JSRuntime *rt, jsdouble t)
     return true;
 }
 
-#else /* !JS_THREADSAFE */
+#else 
 
 #ifdef XP_WIN
 static HANDLE gTimerHandle = 0;
@@ -4023,19 +4023,19 @@ ScheduleWatchdog(JSRuntime *rt, jsdouble t)
         return false;
     }
 #else
-    /* FIXME: use setitimer when available for sub-second resolution. */
+    
     if (t <= 0) {
         alarm(0);
         signal(SIGALRM, NULL);
     } else {
-        signal(SIGALRM, AlarmHandler); /* set the Alarm signal capture */
+        signal(SIGALRM, AlarmHandler); 
         alarm(ceil(t));
     }
 #endif
     return true;
 }
 
-#endif /* !JS_THREADSAFE */
+#endif 
 
 static void
 CancelExecution(JSRuntime *rt)
@@ -4051,8 +4051,8 @@ CancelExecution(JSRuntime *rt)
 
     static const char msg[] = "Script runs for too long, terminating.\n";
 #if defined(XP_UNIX) && !defined(JS_THREADSAFE)
-    /* It is not safe to call fputs from signals. */
-    /* Dummy assignment avoids GCC warning on "attribute warn_unused_result" */
+    
+    
     ssize_t dummy = write(2, msg, sizeof(msg) - 1);
     (void)dummy;
 #else
@@ -4063,7 +4063,7 @@ CancelExecution(JSRuntime *rt)
 static JSBool
 SetTimeoutValue(JSContext *cx, jsdouble t)
 {
-    /* NB: The next condition also filter out NaNs. */
+    
     if (!(t <= MAX_TIMEOUT_INTERVAL)) {
         JS_ReportError(cx, "Excessive timeout value");
         return JS_FALSE;
@@ -4126,7 +4126,7 @@ Parent(JSContext *cx, uintN argc, jsval *vp)
     JSObject *parent = JS_GetParent(cx, JSVAL_TO_OBJECT(v));
     *vp = OBJECT_TO_JSVAL(parent);
 
-    /* Outerize if necessary.  Embrace the ugliness! */
+    
     if (parent) {
         if (JSObjectOp op = parent->getClass()->ext.outerObject)
             *vp = OBJECT_TO_JSVAL(op(cx, parent));
@@ -4140,12 +4140,12 @@ Parent(JSContext *cx, uintN argc, jsval *vp)
 #include <fcntl.h>
 #include <sys/stat.h>
 
-/*
- * Returns a JS_malloc'd string (that the caller needs to JS_free)
- * containing the directory (non-leaf) part of |from| prepended to |leaf|.
- * If |from| is empty or a leaf, MakeAbsolutePathname returns a copy of leaf.
- * Returns NULL to indicate an error.
- */
+
+
+
+
+
+
 static char *
 MakeAbsolutePathname(JSContext *cx, const char *from, const char *leaf)
 {
@@ -4163,23 +4163,23 @@ MakeAbsolutePathname(JSContext *cx, const char *from, const char *leaf)
     }
 
     if (!slash) {
-        /* We were given a leaf or |from| was empty. */
+        
         return JS_strdup(cx, leaf);
     }
 
-    /* Else, we were given a real pathname, return that + the leaf. */
+    
     dirlen = slash - from + 1;
     dir = (char*) JS_malloc(cx, dirlen + strlen(leaf) + 1);
     if (!dir)
         return NULL;
 
     strncpy(dir, from, dirlen);
-    strcpy(dir + dirlen, leaf); /* Note: we can't use strcat here. */
+    strcpy(dir + dirlen, leaf); 
 
     return dir;
 }
 
-#endif // XP_UNIX
+#endif 
 
 static JSBool
 Compile(JSContext *cx, uintN argc, jsval *vp)
@@ -4248,7 +4248,7 @@ Snarf(JSContext *cx, uintN argc, jsval *vp)
     if (!filename)
         return JS_FALSE;
 
-    /* Get the currently executing script's name. */
+    
     fp = JS_GetScriptedCaller(cx, NULL);
     JS_ASSERT(fp && fp->script()->filename);
 #ifdef XP_UNIX
@@ -4356,6 +4356,40 @@ StringStats(JSContext *cx, uintN argc, jsval *vp)
     return true;
 }
 
+enum CompartmentKind { SAME_COMPARTMENT, NEW_COMPARTMENT };
+
+static JSObject *
+NewGlobalObject(JSContext *cx, CompartmentKind compartment);
+
+JSBool
+NewGlobal(JSContext *cx, uintN argc, jsval *vp)
+{
+    if (argc != 1 || !JSVAL_IS_STRING(JS_ARGV(cx, vp)[0])) {
+        JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "newGlobal");
+        return false;
+    }
+
+    JSString *str = JSVAL_TO_STRING(JS_ARGV(cx, vp)[0]);
+
+    JSBool equalSame = JS_FALSE, equalNew = JS_FALSE;
+    if (!JS_StringEqualsAscii(cx, str, "same-compartment", &equalSame) ||
+        !JS_StringEqualsAscii(cx, str, "new-compartment", &equalNew)) {
+        return false;
+    }
+
+    if (!equalSame && !equalNew) {
+        JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "newGlobal");
+        return false;
+    }
+
+    JSObject *global = NewGlobalObject(cx, equalSame ? SAME_COMPARTMENT : NEW_COMPARTMENT);
+    if (!global)
+        return false;
+
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(global));
+    return true;
+}
+
 static JSFunctionSpec shell_functions[] = {
     JS_FN("version",        Version,        0,0),
     JS_FN("revertVersion",  RevertVersion,  0,0),
@@ -4452,6 +4486,7 @@ static JSFunctionSpec shell_functions[] = {
     JS_FN("mjitstats",      MJitStats,      0,0),
 #endif
     JS_FN("stringstats",    StringStats,    0,0),
+    JS_FN("newGlobal",      NewGlobal,      1,0),
     JS_FS_END
 };
 
@@ -4477,7 +4512,7 @@ static const char *const shell_help_messages[] = {
 "assertEq(actual, expected[, msg])\n"
 "  Throw if the first two arguments are not the same (both +0 or both -0,\n"
 "  both NaN, or non-zero and ===)",
-"assertJit()              Throw if the calling function failed to JIT\n",
+"assertJit()              Throw if the calling function failed to JIT",
 "gc()                     Run the garbage collector",
 #ifdef JS_GCMETER
 "gcstats()                Print garbage collector statistics",
@@ -4522,7 +4557,7 @@ static const char *const shell_help_messages[] = {
 "dumpObject()             Dump an internal representation of an object",
 "notes([fun])             Show source notes for functions",
 "tracing([true|false|filename]) Turn bytecode execution tracing on/off.\n"
-"                         With filename, send to file.\n",
+"                         With filename, send to file.",
 "stats([string ...])      Dump 'arena', 'atom', 'global' stats",
 #endif
 #ifdef TEST_CVTARGS
@@ -4573,24 +4608,37 @@ static const char *const shell_help_messages[] = {
 "  Get/Set the limit in seconds for the execution time for the current context.\n"
 "  A negative value (default) means that the execution time is unlimited.",
 "elapsed()                Execution time elapsed for the current context.",
-"parent(obj)              Returns the parent of obj.\n",
-"wrap(obj)                Wrap an object into a noop wrapper.\n",
-"serialize(sd)            Serialize sd using JS_WriteStructuredClone. Returns a TypedArray.\n",
-"deserialize(a)           Deserialize data generated by serialize.\n",
+"parent(obj)              Returns the parent of obj.",
+"wrap(obj)                Wrap an object into a noop wrapper.",
+"serialize(sd)            Serialize sd using JS_WriteStructuredClone. Returns a TypedArray.",
+"deserialize(a)           Deserialize data generated by serialize.",
 #ifdef JS_METHODJIT
-"mjitstats()              Return stats on mjit memory usage.\n",
+"mjitstats()              Return stats on mjit memory usage.",
 #endif
-"stringstats()            Return stats on string memory usage.\n"
+"stringstats()            Return stats on string memory usage.",
+"newGlobal(kind)          Return a new global object, in the current\n"
+"                         compartment if kind === 'same-compartment' or in a\n"
+"                         new compartment if kind === 'new-compartment'",
+
+
 #ifdef MOZ_PROFILING
 "startProfiling()         Start a profiling session.\n"
-"                         Profiler must be running with programatic sampling\n"
-"stopProfiling()          Stop a running profiling session"
+"                         Profiler must be running with programatic sampling",
+"stopProfiling()          Stop a running profiling session\n"
 #endif
 };
 
-/* Help messages must match shell functions. */
-JS_STATIC_ASSERT(JS_ARRAY_LENGTH(shell_help_messages) + 1 ==
-                 JS_ARRAY_LENGTH(shell_functions));
+#ifdef MOZ_PROFILING
+#define PROFILING_FUNCTION_COUNT 2
+#else
+#define PROFILING_FUNCTION_COUNT 0
+#endif
+
+
+JS_STATIC_ASSERT(JS_ARRAY_LENGTH(shell_help_messages) - PROFILING_FUNCTION_COUNT ==
+                 JS_ARRAY_LENGTH(shell_functions) - 1 );
+
+#undef PROFILING_FUNCTION_COUNT
 
 #ifdef DEBUG
 static void
@@ -4599,12 +4647,13 @@ CheckHelpMessages()
     const char *const *m;
     const char *lp;
 
-    /* Each message must begin with "function_name(" prefix. */
+    
     for (m = shell_help_messages; m != JS_ARRAY_END(shell_help_messages); ++m) {
         lp = strchr(*m, '(');
         JS_ASSERT(lp);
         JS_ASSERT(memcmp(shell_functions[m - shell_help_messages].name,
                          *m, lp - *m) == 0);
+        JS_ASSERT((*m)[strlen(*m) - 1] != '\n');
     }
 }
 #else
@@ -4691,7 +4740,7 @@ split_setup(JSContext *cx, JSBool evalcx)
             return NULL;
         }
 
-        /* Create a dummy arguments object. */
+        
         arguments = JS_NewArrayObject(cx, 0, NULL);
         if (!arguments ||
             !JS_DefineProperty(cx, inner, "arguments", OBJECT_TO_JSVAL(arguments),
@@ -4710,10 +4759,10 @@ split_setup(JSContext *cx, JSBool evalcx)
     return inner;
 }
 
-/*
- * Define a JS object called "it".  Give it class operations that printf why
- * they're being called for tutorial purposes.
- */
+
+
+
+
 enum its_tinyid {
     ITS_COLOR, ITS_HEIGHT, ITS_WIDTH, ITS_FUNNY, ITS_ARRAY, ITS_RDONLY,
     ITS_CUSTOM, ITS_CUSTOMRDONLY
@@ -4815,13 +4864,13 @@ static JSFunctionSpec its_methods[] = {
 };
 
 #ifdef JSD_LOWLEVEL_SOURCE
-/*
- * This facilitates sending source to JSD (the debugger system) in the shell
- * where the source is loaded using the JSFILE hack in jsscan. The function
- * below is used as a callback for the jsdbgapi JS_SetSourceHandler hook.
- * A more normal embedding (e.g. mozilla) loads source itself and can send
- * source directly to JSD without using this hook scheme.
- */
+
+
+
+
+
+
+
 static void
 SendSourceToJSDebugger(const char *filename, uintN lineno,
                        jschar *str, size_t length,
@@ -4848,10 +4897,10 @@ SendSourceToJSDebugger(const char *filename, uintN lineno,
     }
     *listenerTSData = jsdsrc;
 }
-#endif /* JSD_LOWLEVEL_SOURCE */
+#endif 
 
-static JSBool its_noisy;    /* whether to be noisy when finalizing it */
-static JSBool its_enum_fail;/* whether to fail when enumerating it */
+static JSBool its_noisy;    
+static JSBool its_enum_fail;
 
 static JSBool
 its_addProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
@@ -4913,10 +4962,10 @@ its_setProperty(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
     return JS_TRUE;
 }
 
-/*
- * Its enumerator, implemented using the "new" enumerate API,
- * see class flags.
- */
+
+
+
+
 static JSBool
 its_enumerate(JSContext *cx, JSObject *obj, JSIterateOp enum_op,
               jsval *statep, jsid *idp)
@@ -4950,10 +4999,10 @@ its_enumerate(JSContext *cx, JSObject *obj, JSIterateOp enum_op,
 
         if (!JSID_IS_VOID(*idp))
             break;
-        /* Fall through. */
+        
 
       case JSENUMERATE_DESTROY:
-        /* Allow our iterator object to be GC'd. */
+        
         *statep = JSVAL_NULL;
         break;
     }
@@ -5033,7 +5082,7 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
         return;
     }
 
-    /* Conditionally ignore reported warnings. */
+    
     if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
         return;
 
@@ -5053,7 +5102,7 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
         JS_free(cx, tmp);
     }
 
-    /* embedded newlines -- argh! */
+    
     while ((ctmp = strchr(message, '\n')) != 0) {
         ctmp++;
         if (prefix)
@@ -5062,7 +5111,7 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
         message = ctmp;
     }
 
-    /* If there were no filename or lineno, the prefix might be empty */
+    
     if (prefix)
         fputs(prefix, gErrFile);
     fputs(message, gErrFile);
@@ -5072,7 +5121,7 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
         goto out;
     }
 
-    /* report->linebuf usually ends with a newline. */
+    
     n = strlen(report->linebuf);
     fprintf(gErrFile, ":\n%s%s%s%s",
             prefix,
@@ -5124,7 +5173,7 @@ Exec(JSContext *cx, uintN argc, jsval *vp)
 
     nargc = 1 + argc;
 
-    /* nargc + 1 accounts for the terminating NULL. */ 
+     
     nargv = new (char *)[nargc + 1];
     if (!nargv)
         return JS_FALSE;
@@ -5194,10 +5243,10 @@ global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags,
 
 #if defined(SHELL_HACK) && defined(DEBUG) && defined(XP_UNIX)
     if (!(flags & JSRESOLVE_QUALIFIED)) {
-        /*
-         * Do this expensive hack only for unoptimized Unix builds, which are
-         * not used for benchmarking.
-         */
+        
+
+
+
         char *path, *comp, *full;
         const char *name;
         JSBool ok, found;
@@ -5258,7 +5307,7 @@ JSClass global_class = {
 static JSBool
 env_setProperty(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
 {
-/* XXX porting may be easy, but these don't seem to supply setenv by default */
+
 #if !defined XP_BEOS && !defined XP_OS2 && !defined SOLARIS
     int rv;
 
@@ -5277,13 +5326,13 @@ env_setProperty(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
         }
         rv = putenv(waste);
 #ifdef XP_WIN
-        /*
-         * HPUX9 at least still has the bad old non-copying putenv.
-         *
-         * Per mail from <s.shanmuganathan@digital.com>, OSF1 also has a putenv
-         * that will crash if you pass it an auto char array (so it must place
-         * its argument directly in the char *environ[] array).
-         */
+        
+
+
+
+
+
+
         JS_smprintf_free(waste);
 #endif
     }
@@ -5295,7 +5344,7 @@ env_setProperty(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
         return JS_FALSE;
     }
     *vp = valstr.getJSVal();
-#endif /* !defined XP_BEOS && !defined XP_OS2 && !defined SOLARIS */
+#endif 
     return JS_TRUE;
 }
 
@@ -5369,15 +5418,15 @@ static JSClass env_class = {
     JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
-/*
- * Avoid a reentrancy hazard.
- *
- * The non-JS_THREADSAFE shell uses a signal handler to implement timeout().
- * The JS engine is not really reentrant, but JS_TriggerAllOperationCallbacks
- * is mostly safe--the only danger is that we might interrupt JS_NewContext or
- * JS_DestroyContext while the context list is being modified. Therefore we
- * disable the signal handler around calls to those functions.
- */
+
+
+
+
+
+
+
+
+
 #ifdef JS_THREADSAFE
 # define WITH_SIGNALS_DISABLED(x)  x
 #else
@@ -5424,46 +5473,52 @@ DestroyContext(JSContext *cx, bool withGC)
 }
 
 static JSObject *
-NewGlobalObject(JSContext *cx)
+NewGlobalObject(JSContext *cx, CompartmentKind compartment)
 {
-    JSObject *glob = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+    JSObject *glob = (compartment == NEW_COMPARTMENT)
+                     ? JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL)
+                     : JS_NewGlobalObject(cx, &global_class);
     if (!glob)
         return NULL;
 
-    JSAutoEnterCompartment ac;
-    if (!ac.enter(cx, glob))
-        return NULL;
+    {
+        JSAutoEnterCompartment ac;
+        if (!ac.enter(cx, glob))
+            return NULL;
 
-#ifdef LAZY_STANDARD_CLASSES
-    JS_SetGlobalObject(cx, glob);
-#else
-    if (!JS_InitStandardClasses(cx, glob))
-        return NULL;
+#ifndef LAZY_STANDARD_CLASSES
+        if (!JS_InitStandardClasses(cx, glob))
+            return NULL;
 #endif
+
 #ifdef JS_HAS_CTYPES
-    if (!JS_InitCTypesClass(cx, glob))
-        return NULL;
+        if (!JS_InitCTypesClass(cx, glob))
+            return NULL;
 #endif
-    if (!JS::RegisterPerfMeasurement(cx, glob))
-        return NULL;
-    if (!JS_DefineFunctions(cx, glob, shell_functions) ||
-        !JS_DefineProfilingFunctions(cx, glob)) {
-        return NULL;
+        if (!JS::RegisterPerfMeasurement(cx, glob))
+            return NULL;
+        if (!JS_DefineFunctions(cx, glob, shell_functions) ||
+            !JS_DefineProfilingFunctions(cx, glob)) {
+            return NULL;
+        }
+
+        JSObject *it = JS_DefineObject(cx, glob, "it", &its_class, NULL, 0);
+        if (!it)
+            return NULL;
+        if (!JS_DefineProperties(cx, it, its_props))
+            return NULL;
+        if (!JS_DefineFunctions(cx, it, its_methods))
+            return NULL;
+
+        if (!JS_DefineProperty(cx, glob, "custom", JSVAL_VOID, its_getter,
+                               its_setter, 0))
+            return NULL;
+        if (!JS_DefineProperty(cx, glob, "customRdOnly", JSVAL_VOID, its_getter,
+                               its_setter, JSPROP_READONLY))
+            return NULL;
     }
 
-    JSObject *it = JS_DefineObject(cx, glob, "it", &its_class, NULL, 0);
-    if (!it)
-        return NULL;
-    if (!JS_DefineProperties(cx, it, its_props))
-        return NULL;
-    if (!JS_DefineFunctions(cx, it, its_methods))
-        return NULL;
-
-    if (!JS_DefineProperty(cx, glob, "custom", JSVAL_VOID, its_getter,
-                           its_setter, 0))
-        return NULL;
-    if (!JS_DefineProperty(cx, glob, "customRdOnly", JSVAL_VOID, its_getter,
-                           its_setter, JSPROP_READONLY))
+    if (compartment == NEW_COMPARTMENT && !JS_WrapObject(cx, &glob))
         return NULL;
 
     return glob;
@@ -5474,7 +5529,7 @@ Shell(JSContext *cx, int argc, char **argv, char **envp)
 {
     JSAutoRequest ar(cx);
 
-    JSObject *glob = NewGlobalObject(cx);
+    JSObject *glob = NewGlobalObject(cx, NEW_COMPARTMENT);
     if (!glob)
         return 1;
 
@@ -5482,43 +5537,45 @@ Shell(JSContext *cx, int argc, char **argv, char **envp)
     if (!ac.enter(cx, glob))
         return 1;
 
+    JS_SetGlobalObject(cx, glob);
+
     JSObject *envobj = JS_DefineObject(cx, glob, "environment", &env_class, NULL, 0);
     if (!envobj || !JS_SetPrivate(cx, envobj, envp))
         return 1;
 
 #ifdef JSDEBUGGER
-    /*
-    * XXX A command line option to enable debugging (or not) would be good
-    */
+    
+
+
     jsdc = JSD_DebuggerOnForUser(rt, NULL, NULL);
     if (!jsdc)
         return 1;
     JSD_JSContextInUse(jsdc, cx);
 #ifdef JSD_LOWLEVEL_SOURCE
     JS_SetSourceHandler(rt, SendSourceToJSDebugger, jsdc);
-#endif /* JSD_LOWLEVEL_SOURCE */
+#endif 
 #ifdef JSDEBUGGER_JAVA_UI
     jsdjc = JSDJ_CreateContext();
     if (! jsdjc)
         return 1;
     JSDJ_SetJSDContext(jsdjc, jsdc);
     java_env = JSDJ_CreateJavaVMAndStartDebugger(jsdjc);
-    /*
-    * XXX This would be the place to wait for the debugger to start.
-    * Waiting would be nice in general, but especially when a js file
-    * is passed on the cmd line.
-    */
-#endif /* JSDEBUGGER_JAVA_UI */
+    
+
+
+
+
+#endif 
 #ifdef JSDEBUGGER_C_UI
     jsdbc = JSDB_InitDebugger(rt, jsdc, 0);
-#endif /* JSDEBUGGER_C_UI */
-#endif /* JSDEBUGGER */
+#endif 
+#endif 
 
 #ifdef JS_THREADSAFE
     class ShellWorkerHooks : public js::workers::WorkerHooks {
     public:
         JSObject *newGlobalObject(JSContext *cx) {
-            return NewGlobalObject(cx);
+            return NewGlobalObject(cx, NEW_COMPARTMENT);
         }
     };
     ShellWorkerHooks hooks;
@@ -5542,10 +5599,10 @@ Shell(JSContext *cx, int argc, char **argv, char **envp)
 #ifdef JSDEBUGGER_C_UI
         if (jsdbc)
             JSDB_TermDebugger(jsdc);
-#endif /* JSDEBUGGER_C_UI */
+#endif 
         JSD_DebuggerOff(jsdc);
     }
-#endif  /* JSDEBUGGER */
+#endif  
 
     return result;
 }
@@ -5576,8 +5633,8 @@ main(int argc, char **argv, char **envp)
 #endif
 #ifdef JSDEBUGGER_C_UI
     JSBool jsdbc;
-#endif /* JSDEBUGGER_C_UI */
-#endif /* JSDEBUGGER */
+#endif 
+#endif 
 #ifdef XP_WIN
     {
         const char *crash_option = getenv("XRE_NO_WINDOWS_CRASH_DIALOG");
@@ -5603,8 +5660,8 @@ main(int argc, char **argv, char **envp)
 #endif
 
 #ifdef XP_OS2
-   /* these streams are normally line buffered on OS/2 and need a \n, *
-    * so we need to unbuffer then to get a reasonable prompt          */
+   
+
     setbuf(stdout,0);
     setbuf(stderr,0);
 #endif
@@ -5616,8 +5673,8 @@ main(int argc, char **argv, char **envp)
     argv++;
 
 #ifdef XP_WIN
-    // Set the timer calibration delay count to 0 so we get high
-    // resolution right away, which we need for precise benchmarking.
+    
+    
     extern int CALIBRATION_DELAY_COUNT;
     CALIBRATION_DELAY_COUNT = 0;
 #endif
