@@ -55,7 +55,6 @@
 #include "nsIPrivateDOMEvent.h"
 #include "nsIScriptContext.h"
 #include "nsPIDOMWindow.h"
-#include "nsContentUtils.h"
 #ifdef MOZ_XUL
 #include "nsXULPopupManager.h"
 #endif
@@ -82,8 +81,8 @@ nsXULTooltipListener::nsXULTooltipListener()
 {
   if (sTooltipListenerCount++ == 0) {
     
-    nsContentUtils::RegisterPrefCallback("browser.chrome.toolbar_tips",
-                                         ToolbarTipsPrefChanged, nsnull);
+    Preferences::RegisterCallback(ToolbarTipsPrefChanged,
+                                  "browser.chrome.toolbar_tips");
 
     
     ToolbarTipsPrefChanged("browser.chrome.toolbar_tips", nsnull);
@@ -99,8 +98,8 @@ nsXULTooltipListener::~nsXULTooltipListener()
 
   if (--sTooltipListenerCount == 0) {
     
-    nsContentUtils::UnregisterPrefCallback("browser.chrome.toolbar_tips",
-                                           ToolbarTipsPrefChanged, nsnull);
+    Preferences::UnregisterCallback(ToolbarTipsPrefChanged,
+                                    "browser.chrome.toolbar_tips");
   }
 }
 
