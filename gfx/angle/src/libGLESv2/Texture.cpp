@@ -1,12 +1,12 @@
-//
-// Copyright (c) 2002-2010 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
 
-// Texture.cpp: Implements the gl::Texture class and its derived classes
-// Texture2D and TextureCubeMap. Implements GL texture objects and related
-// functionality. [OpenGL ES 2.0.24] section 3.7 page 63.
+
+
+
+
+
+
+
+
 
 #include "libGLESv2/Texture.h"
 
@@ -264,8 +264,8 @@ void Image::updateSurface(IDirect3DSurface9 *destSurface, GLint xoffset, GLint y
     }
 }
 
-// Store the pixel rectangle designated by xoffset,yoffset,width,height with pixels stored as format/type at input
-// into the target pixel rectangle at output with outputPitch bytes in between each line.
+
+
 void Image::loadData(GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum type,
                      GLint unpackAlignment, const void *input, size_t outputPitch, void *output) const
 {
@@ -335,7 +335,7 @@ void Image::loadData(GLint xoffset, GLint yoffset, GLsizei width, GLsizei height
       case GL_FLOAT:
         switch (mFormat)
         {
-          // float textures are converted to RGBA, not BGRA, as they're stored that way in D3D
+          
           case GL_ALPHA:
             loadAlphaFloatData(xoffset, yoffset, width, height, inputPitch, input, outputPitch, output);
             break;
@@ -357,7 +357,7 @@ void Image::loadData(GLint xoffset, GLint yoffset, GLsizei width, GLsizei height
       case GL_HALF_FLOAT_OES:
         switch (mFormat)
         {
-          // float textures are converted to RGBA, not BGRA, as they're stored that way in D3D
+          
           case GL_ALPHA:
             loadAlphaHalfFloatData(xoffset, yoffset, width, height, inputPitch, input, outputPitch, output);
             break;
@@ -452,7 +452,7 @@ void Image::loadLuminanceData(GLint xoffset, GLint yoffset, GLsizei width, GLsiz
         source = static_cast<const unsigned char*>(input) + y * inputPitch;
         dest = static_cast<unsigned char*>(output) + (y + yoffset) * outputPitch + xoffset * destBytesPerPixel;
 
-        if (!native)   // BGRA8 destination format
+        if (!native)   
         {
             for (int x = 0; x < width; x++)
             {
@@ -462,7 +462,7 @@ void Image::loadLuminanceData(GLint xoffset, GLint yoffset, GLsizei width, GLsiz
                 dest[4 * x + 3] = 0xFF;
             }
         }
-        else   // L8 destination format
+        else   
         {
             memcpy(dest, source, width);
         }
@@ -504,7 +504,7 @@ void Image::loadLuminanceHalfFloatData(GLint xoffset, GLint yoffset, GLsizei wid
             dest[4 * x + 0] = source[x];
             dest[4 * x + 1] = source[x];
             dest[4 * x + 2] = source[x];
-            dest[4 * x + 3] = 0x3C00; // SEEEEEMMMMMMMMMM, S = 0, E = 15, M = 0: 16bit flpt representation of 1
+            dest[4 * x + 3] = 0x3C00; 
         }
     }
 }
@@ -521,7 +521,7 @@ void Image::loadLuminanceAlphaData(GLint xoffset, GLint yoffset, GLsizei width, 
         source = static_cast<const unsigned char*>(input) + y * inputPitch;
         dest = static_cast<unsigned char*>(output) + (y + yoffset) * outputPitch + xoffset * destBytesPerPixel;
         
-        if (!native)   // BGRA8 destination format
+        if (!native)   
         {
             for (int x = 0; x < width; x++)
             {
@@ -654,7 +654,7 @@ void Image::loadRGBHalfFloatData(GLint xoffset, GLint yoffset, GLsizei width, GL
             dest[4 * x + 0] = source[x * 3 + 0];
             dest[4 * x + 1] = source[x * 3 + 1];
             dest[4 * x + 2] = source[x * 3 + 2];
-            dest[4 * x + 3] = 0x3C00; // SEEEEEMMMMMMMMMM, S = 0, E = 15, M = 0: 16bit flpt representation of 1
+            dest[4 * x + 3] = 0x3C00; 
         }
     }
 }
@@ -672,7 +672,7 @@ void Image::loadRGBAUByteDataSSE2(GLint xoffset, GLint yoffset, GLsizei width, G
         dest = reinterpret_cast<unsigned int*>(static_cast<unsigned char*>(output) + (y + yoffset) * outputPitch + xoffset * 4);
         int x = 0;
 
-        // Make output writes aligned
+        
         for (x = 0; ((reinterpret_cast<intptr_t>(&dest[x]) & 15) != 0) && x < width; x++)
         {
             unsigned int rgba = source[x];
@@ -682,17 +682,17 @@ void Image::loadRGBAUByteDataSSE2(GLint xoffset, GLint yoffset, GLsizei width, G
         for (; x + 3 < width; x += 4)
         {
             __m128i sourceData = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&source[x]));
-            // Mask out g and a, which don't change
+            
             __m128i gaComponents = _mm_andnot_si128(brMask, sourceData);
-            // Mask out b and r
+            
             __m128i brComponents = _mm_and_si128(sourceData, brMask);
-            // Swap b and r
+            
             __m128i brSwapped = _mm_shufflehi_epi16(_mm_shufflelo_epi16(brComponents, _MM_SHUFFLE(2, 3, 0, 1)), _MM_SHUFFLE(2, 3, 0, 1));
             __m128i result = _mm_or_si128(gaComponents, brSwapped);
             _mm_store_si128(reinterpret_cast<__m128i*>(&dest[x]), result);
         }
 
-        // Perform leftover writes
+        
         for (; x < width; x++)
         {
             unsigned int rgba = source[x];
@@ -820,84 +820,84 @@ void Image::loadCompressedData(GLint xoffset, GLint yoffset, GLsizei width, GLsi
 }
 
 static void FlipCopyDXT1BlockFull(const unsigned int* source, unsigned int* dest) {
-  // A DXT1 block layout is:
-  // [0-1] color0.
-  // [2-3] color1.
-  // [4-7] color bitmap, 2 bits per pixel.
-  // So each of the 4-7 bytes represents one line, flipping a block is just
-  // flipping those bytes.
+  
+  
+  
+  
+  
+  
 
-  // First 32-bits is two RGB565 colors shared by tile and does not need to be modified.
+  
   dest[0] = source[0];
 
-  // Second 32-bits contains 4 rows of 4 2-bit interpolants between the colors. All rows should be flipped.
+  
   dest[1] = (source[1] >> 24) |
             ((source[1] << 8) & 0x00FF0000) |
             ((source[1] >> 8) & 0x0000FF00) |
             (source[1] << 24);
 }
 
-// Flips the first 2 lines of a DXT1 block in the y direction.
+
 static void FlipCopyDXT1BlockHalf(const unsigned int* source, unsigned int* dest) {
-  // See layout above.
+  
   dest[0] = source[0];
   dest[1] = ((source[1] << 8) & 0x0000FF00) |
             ((source[1] >> 8) & 0x000000FF);
 }
 
-// Flips a full DXT3 block in the y direction.
-static void FlipCopyDXT3BlockFull(const unsigned int* source, unsigned int* dest) {
-  // A DXT3 block layout is:
-  // [0-7]  alpha bitmap, 4 bits per pixel.
-  // [8-15] a DXT1 block.
 
-  // First and Second 32 bits are 4bit per pixel alpha and need to be flipped.
+static void FlipCopyDXT3BlockFull(const unsigned int* source, unsigned int* dest) {
+  
+  
+  
+
+  
   dest[0] = (source[1] >> 16) | (source[1] << 16);
   dest[1] = (source[0] >> 16) | (source[0] << 16);
 
-  // And flip the DXT1 block using the above function.
+  
   FlipCopyDXT1BlockFull(source + 2, dest + 2);
 }
 
-// Flips the first 2 lines of a DXT3 block in the y direction.
+
 static void FlipCopyDXT3BlockHalf(const unsigned int* source, unsigned int* dest) {
-  // See layout above.
+  
   dest[0] = (source[1] >> 16) | (source[1] << 16);
   FlipCopyDXT1BlockHalf(source + 2, dest + 2);
 }
 
-// Flips a full DXT5 block in the y direction.
-static void FlipCopyDXT5BlockFull(const unsigned int* source, unsigned int* dest) {
-  // A DXT5 block layout is:
-  // [0]    alpha0.
-  // [1]    alpha1.
-  // [2-7]  alpha bitmap, 3 bits per pixel.
-  // [8-15] a DXT1 block.
 
-  // The alpha bitmap doesn't easily map lines to bytes, so we have to
-  // interpret it correctly.  Extracted from
-  // http://www.opengl.org/registry/specs/EXT/texture_compression_s3tc.txt :
-  //
-  //   The 6 "bits" bytes of the block are decoded into one 48-bit integer:
-  //
-  //     bits = bits_0 + 256 * (bits_1 + 256 * (bits_2 + 256 * (bits_3 +
-  //                   256 * (bits_4 + 256 * bits_5))))
-  //
-  //   bits is a 48-bit unsigned integer, from which a three-bit control code
-  //   is extracted for a texel at location (x,y) in the block using:
-  //
-  //       code(x,y) = bits[3*(4*y+x)+1..3*(4*y+x)+0]
-  //
-  //   where bit 47 is the most significant and bit 0 is the least
-  //   significant bit.
+static void FlipCopyDXT5BlockFull(const unsigned int* source, unsigned int* dest) {
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const unsigned char* sourceBytes = static_cast<const unsigned char*>(static_cast<const void*>(source));
   unsigned char* destBytes = static_cast<unsigned char*>(static_cast<void*>(dest));
   unsigned int line_0_1 = sourceBytes[2] + 256 * (sourceBytes[3] + 256 * sourceBytes[4]);
   unsigned int line_2_3 = sourceBytes[5] + 256 * (sourceBytes[6] + 256 * sourceBytes[7]);
-  // swap lines 0 and 1 in line_0_1.
+  
   unsigned int line_1_0 = ((line_0_1 & 0x000fff) << 12) |
                           ((line_0_1 & 0xfff000) >> 12);
-  // swap lines 2 and 3 in line_2_3.
+  
   unsigned int line_3_2 = ((line_2_3 & 0x000fff) << 12) |
                           ((line_2_3 & 0xfff000) >> 12);
   destBytes[0] = sourceBytes[0];
@@ -909,13 +909,13 @@ static void FlipCopyDXT5BlockFull(const unsigned int* source, unsigned int* dest
   destBytes[6] = (line_1_0 & 0xff00) >> 8;
   destBytes[7] = (line_1_0 & 0xff0000) >> 16;
 
-  // And flip the DXT1 block using the above function.
+  
   FlipCopyDXT1BlockFull(source + 2, dest + 2);
 }
 
-// Flips the first 2 lines of a DXT5 block in the y direction.
+
 static void FlipCopyDXT5BlockHalf(const unsigned int* source, unsigned int* dest) {
-  // See layout above.
+  
   const unsigned char* sourceBytes = static_cast<const unsigned char*>(static_cast<const void*>(source));
   unsigned char* destBytes = static_cast<unsigned char*>(static_cast<void*>(dest));
   unsigned int line_0_1 = sourceBytes[2] + 256 * (sourceBytes[3] + 256 * sourceBytes[4]);
@@ -941,7 +941,7 @@ void Image::loadDXT1Data(GLint xoffset, GLint yoffset, GLsizei width, GLsizei he
     const unsigned int *source = reinterpret_cast<const unsigned int*>(input);
     unsigned int *dest = reinterpret_cast<unsigned int*>(output);
 
-    // Round width up in case it is less than 4.
+    
     int blocksAcross = (width + 3) / 4;
     int intsAcross = blocksAcross * 2;
 
@@ -950,7 +950,7 @@ void Image::loadDXT1Data(GLint xoffset, GLint yoffset, GLsizei width, GLsizei he
         case 1:
             for (int x = 0; x < intsAcross; x += 2)
             {
-                // just copy the block
+                
                 dest[x] = source[x];
                 dest[x + 1] = source[x + 1];
             }
@@ -989,7 +989,7 @@ void Image::loadDXT3Data(GLint xoffset, GLint yoffset, GLsizei width, GLsizei he
     const unsigned int *source = reinterpret_cast<const unsigned int*>(input);
     unsigned int *dest = reinterpret_cast<unsigned int*>(output);
 
-    // Round width up in case it is less than 4.
+    
     int blocksAcross = (width + 3) / 4;
     int intsAcross = blocksAcross * 4;
 
@@ -998,7 +998,7 @@ void Image::loadDXT3Data(GLint xoffset, GLint yoffset, GLsizei width, GLsizei he
         case 1:
             for (int x = 0; x < intsAcross; x += 4)
             {
-                // just copy the block
+                
                 dest[x] = source[x];
                 dest[x + 1] = source[x + 1];
                 dest[x + 2] = source[x + 2];
@@ -1039,7 +1039,7 @@ void Image::loadDXT5Data(GLint xoffset, GLint yoffset, GLsizei width, GLsizei he
     const unsigned int *source = reinterpret_cast<const unsigned int*>(input);
     unsigned int *dest = reinterpret_cast<unsigned int*>(output);
 
-    // Round width up in case it is less than 4.
+    
     int blocksAcross = (width + 3) / 4;
     int intsAcross = blocksAcross * 4;
 
@@ -1048,7 +1048,7 @@ void Image::loadDXT5Data(GLint xoffset, GLint yoffset, GLsizei width, GLsizei he
         case 1:
             for (int x = 0; x < intsAcross; x += 4)
             {
-                // just copy the block
+                
                 dest[x] = source[x];
                 dest[x + 1] = source[x + 1];
                 dest[x + 2] = source[x + 2];
@@ -1077,7 +1077,7 @@ void Image::loadDXT5Data(GLint xoffset, GLint yoffset, GLsizei width, GLsizei he
     }
 }
 
-// This implements glCopyTex[Sub]Image2D for non-renderable internal texture formats and incomplete textures
+
 void Image::copy(GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height, IDirect3DSurface9 *renderTarget)
 {
     IDirect3DDevice9 *device = getDevice();
@@ -1295,7 +1295,7 @@ Texture::~Texture()
 {
 }
 
-// Returns true on successful filter state update (valid enum parameter)
+
 bool Texture::setMinFilter(GLenum filter)
 {
     switch (filter)
@@ -1319,7 +1319,7 @@ bool Texture::setMinFilter(GLenum filter)
     }
 }
 
-// Returns true on successful filter state update (valid enum parameter)
+
 bool Texture::setMagFilter(GLenum filter)
 {
     switch (filter)
@@ -1339,7 +1339,7 @@ bool Texture::setMagFilter(GLenum filter)
     }
 }
 
-// Returns true on successful wrap state update (valid enum parameter)
+
 bool Texture::setWrapS(GLenum wrap)
 {
     switch (wrap)
@@ -1360,7 +1360,7 @@ bool Texture::setWrapS(GLenum wrap)
     }
 }
 
-// Returns true on successful wrap state update (valid enum parameter)
+
 bool Texture::setWrapT(GLenum wrap)
 {
     switch (wrap)
@@ -1381,7 +1381,7 @@ bool Texture::setWrapT(GLenum wrap)
     }
 }
 
-// Returns true on successful usage state update (valid enum parameter)
+
 bool Texture::setUsage(GLenum usage)
 {
     switch (usage)
@@ -1586,11 +1586,11 @@ GLint Texture::creationLevels(GLsizei width, GLsizei height) const
 {
     if ((isPow2(width) && isPow2(height)) || getContext()->supportsNonPower2Texture())
     {
-        return 0;   // Maximum number of levels
+        return 0;   
     }
     else
     {
-        // OpenGL ES 2.0 without GL_OES_texture_npot does not permit NPOT mipmaps.
+        
         return 1;
     }
 }
@@ -1713,14 +1713,20 @@ GLenum Texture2D::getTarget() const
     return GL_TEXTURE_2D;
 }
 
-GLsizei Texture2D::getWidth() const
+GLsizei Texture2D::getWidth(GLint level) const
 {
-    return mImageArray[0].getWidth();
+    if (level < IMPLEMENTATION_MAX_TEXTURE_LEVELS)
+        return mImageArray[level].getWidth();
+    else
+        return 0;
 }
 
-GLsizei Texture2D::getHeight() const
+GLsizei Texture2D::getHeight(GLint level) const
 {
-    return mImageArray[0].getHeight();
+    if (level < IMPLEMENTATION_MAX_TEXTURE_LEVELS)
+        return mImageArray[level].getHeight();
+    else
+        return 0;
 }
 
 GLenum Texture2D::getInternalFormat() const
@@ -1978,7 +1984,7 @@ void Texture2D::storage(GLsizei levels, GLenum internalformat, GLsizei width, GL
     }
 }
 
-// Tests for 2D texture sampling completeness. [OpenGL ES 2.0.24] section 3.8.2 page 85.
+
 bool Texture2D::isSamplerComplete() const
 {
     GLsizei width = mImageArray[0].getWidth();
@@ -2045,7 +2051,7 @@ bool Texture2D::isSamplerComplete() const
     return true;
 }
 
-// Tests for 2D texture (mipmap) completeness. [OpenGL ES 2.0.24] section 3.7.10 page 81.
+
 bool Texture2D::isMipmapComplete() const
 {
     if (isImmutable())
@@ -2099,7 +2105,7 @@ IDirect3DBaseTexture9 *Texture2D::getBaseTexture() const
     return mTexture ? mTexture->getBaseTexture() : NULL;
 }
 
-// Constructs a Direct3D 9 texture resource from the texture images
+
 void Texture2D::createTexture()
 {
     GLsizei width = mImageArray[0].getWidth();
@@ -2191,7 +2197,7 @@ void Texture2D::generateMipmaps()
         }
     }
 
-    // Purge array levels 1 through q and reset them to represent the generated mipmap levels.
+    
     unsigned int q = log2(std::max(mImageArray[0].getWidth(), mImageArray[0].getHeight()));
     for (unsigned int i = 1; i <= q; i++)
     {
@@ -2341,14 +2347,20 @@ GLenum TextureCubeMap::getTarget() const
     return GL_TEXTURE_CUBE_MAP;
 }
 
-GLsizei TextureCubeMap::getWidth() const
+GLsizei TextureCubeMap::getWidth(GLint level) const
 {
-    return mImageArray[0][0].getWidth();
+    if (level < IMPLEMENTATION_MAX_TEXTURE_LEVELS)
+        return mImageArray[0][level].getWidth();
+    else
+        return 0;
 }
 
-GLsizei TextureCubeMap::getHeight() const
+GLsizei TextureCubeMap::getHeight(GLint level) const
 {
-    return mImageArray[0][0].getHeight();
+    if (level < IMPLEMENTATION_MAX_TEXTURE_LEVELS)
+        return mImageArray[0][level].getHeight();
+    else
+        return 0;
 }
 
 GLenum TextureCubeMap::getInternalFormat() const
@@ -2439,7 +2451,7 @@ void TextureCubeMap::subImageCompressed(GLenum target, GLint level, GLint xoffse
     }
 }
 
-// Tests for cube map sampling completeness. [OpenGL ES 2.0.24] section 3.8.2 page 86.
+
 bool TextureCubeMap::isSamplerComplete() const
 {
     int size = mImageArray[0][0].getWidth();
@@ -2487,7 +2499,7 @@ bool TextureCubeMap::isSamplerComplete() const
     }
     else
     {
-        if (!isMipmapCubeComplete())   // Also tests for isCubeComplete()
+        if (!isMipmapCubeComplete())   
         {
             return false;
         }
@@ -2496,7 +2508,7 @@ bool TextureCubeMap::isSamplerComplete() const
     return true;
 }
 
-// Tests for cube texture completeness. [OpenGL ES 2.0.24] section 3.7.10 page 81.
+
 bool TextureCubeMap::isCubeComplete() const
 {
     if (mImageArray[0][0].getWidth() <= 0 || mImageArray[0][0].getHeight() != mImageArray[0][0].getWidth())
@@ -2568,7 +2580,7 @@ IDirect3DBaseTexture9 *TextureCubeMap::getBaseTexture() const
     return mTexture ? mTexture->getBaseTexture() : NULL;
 }
 
-// Constructs a Direct3D 9 texture resource from the texture images, or returns an existing one
+
 void TextureCubeMap::createTexture()
 {
     GLsizei size = mImageArray[0][0].getWidth();
@@ -2848,7 +2860,7 @@ void TextureCubeMap::generateMipmaps()
         }
     }
 
-    // Purge array levels 1 through q and reset them to represent the generated mipmap levels.
+    
     unsigned int q = log2(mImageArray[0][0].getWidth());
     for (unsigned int f = 0; f < 6; f++)
     {

@@ -1,12 +1,12 @@
-//
-// Copyright (c) 2002-2010 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
 
-// Texture.h: Defines the abstract gl::Texture class and its concrete derived
-// classes Texture2D and TextureCubeMap. Implements GL texture objects and
-// related functionality. [OpenGL ES 2.0.24] section 3.7 page 63.
+
+
+
+
+
+
+
+
 
 #ifndef LIBGLESV2_TEXTURE_H_
 #define LIBGLESV2_TEXTURE_H_
@@ -34,13 +34,13 @@ class Framebuffer;
 
 enum
 {
-    // These are the maximums the implementation can support
-    // The actual GL caps are limited by the device caps
-    // and should be queried from the Context
+    
+    
+    
     IMPLEMENTATION_MAX_TEXTURE_SIZE = 16384,
     IMPLEMENTATION_MAX_CUBE_MAP_TEXTURE_SIZE = 16384,
 
-    IMPLEMENTATION_MAX_TEXTURE_LEVELS = 15   // 1+log2 of MAX_TEXTURE_SIZE
+    IMPLEMENTATION_MAX_TEXTURE_LEVELS = 15   
 };
 
 class Image
@@ -184,8 +184,8 @@ class Texture : public RefCountObject
     GLenum getWrapT() const;
     GLenum getUsage() const;
 
-    virtual GLsizei getWidth() const = 0;
-    virtual GLsizei getHeight() const = 0;
+    virtual GLsizei getWidth(GLint level) const = 0;
+    virtual GLsizei getHeight(GLint level) const = 0;
     virtual GLenum getInternalFormat() const = 0;
     virtual GLenum getType() const = 0;
     virtual D3DFORMAT getD3DFormat() const = 0;
@@ -207,7 +207,7 @@ class Texture : public RefCountObject
 
     bool isImmutable() const;
 
-    static const GLuint INCOMPLETE_TEXTURE_ID = static_cast<GLuint>(-1);   // Every texture takes an id at creation time. The value is arbitrary because it is never registered with the resource manager.
+    static const GLuint INCOMPLETE_TEXTURE_ID = static_cast<GLuint>(-1);   
 
   protected:
     friend class RenderbufferTexture;
@@ -277,8 +277,8 @@ class Texture2D : public Texture
 
     virtual GLenum getTarget() const;
 
-    virtual GLsizei getWidth() const;
-    virtual GLsizei getHeight() const;
+    virtual GLsizei getWidth(GLint level) const;
+    virtual GLsizei getHeight(GLint level) const;
     virtual GLenum getInternalFormat() const;
     virtual GLenum getType() const;
     virtual D3DFORMAT getD3DFormat() const;
@@ -351,8 +351,8 @@ class TextureCubeMap : public Texture
 
     virtual GLenum getTarget() const;
     
-    virtual GLsizei getWidth() const;
-    virtual GLsizei getHeight() const;
+    virtual GLsizei getWidth(GLint level) const;
+    virtual GLsizei getHeight(GLint level) const;
     virtual GLenum getInternalFormat() const;
     virtual GLenum getType() const;
     virtual D3DFORMAT getD3DFormat() const;
@@ -406,4 +406,4 @@ class TextureCubeMap : public Texture
 };
 }
 
-#endif   // LIBGLESV2_TEXTURE_H_
+#endif   
