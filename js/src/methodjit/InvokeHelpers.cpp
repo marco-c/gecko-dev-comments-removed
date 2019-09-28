@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Brendan Eich <brendan@mozilla.org>
+ *
+ * Contributor(s):
+ *   David Anderson <danderson@mozilla.com>
+ *   David Mandelin <dmandelin@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #define __STDC_LIMIT_MACROS
 
@@ -94,7 +94,7 @@ FindExceptionHandler(JSContext *cx)
 
 top:
     if (cx->throwing && script->trynotesOffset) {
-        
+        // The PC is updated before every stub call, so we can use it here.
         unsigned offset = cx->regs->pc - script->main;
 
         JSTryNoteArray *tnarray = script->trynotes();
@@ -115,23 +115,23 @@ top:
                   JS_ASSERT(js_GetOpcode(cx, fp->script, pc) == JSOP_ENTERBLOCK);
 
 #if JS_HAS_GENERATORS
-                  
+                  /* Catch cannot intercept the closing of a generator. */
                   if (JS_UNLIKELY(cx->exception.isMagic(JS_GENERATOR_CLOSING)))
                       break;
 #endif
 
-                  
-
-
-
-
+                  /*
+                   * Don't clear cx->throwing to save cx->exception from GC
+                   * until it is pushed to the stack via [exception] in the
+                   * catch block.
+                   */
                   return pc;
 
                 case JSTRY_FINALLY:
-                  
-
-
-
+                  /*
+                   * Push (true, exception) pair for finally to indicate that
+                   * [retsub] should rethrow the exception.
+                   */
                   cx->regs->sp[0].setBoolean(true);
                   cx->regs->sp[1] = cx->exception;
                   cx->regs->sp += 2;
@@ -140,17 +140,17 @@ top:
 
                 case JSTRY_ITER:
                 {
-                  
-
-
-
-
-
-
+                  /*
+                   * This is similar to JSOP_ENDITER in the interpreter loop,
+                   * except the code now uses the stack slot normally used by
+                   * JSOP_NEXTITER, namely regs.sp[-1] before the regs.sp -= 2
+                   * adjustment and regs.sp[1] after, to save and restore the
+                   * pending exception.
+                   */
                   AutoValueRooter tvr(cx, cx->exception);
                   JS_ASSERT(js_GetOpcode(cx, fp->script, pc) == JSOP_ENDITER);
                   cx->throwing = JS_FALSE;
-                  ok = !!js_CloseIterator(cx, cx->regs->sp[-1]);
+                  ok = !!js_CloseIterator(cx, &cx->regs->sp[-1].toObject());
                   cx->regs->sp -= 1;
                   if (!ok)
                       goto top;
@@ -182,7 +182,7 @@ CreateFrame(VMFrame &f, uint32 flags, uint32 argc)
         return false;
     }
 
-    
+    /* Allocate the frame. */
     StackSpace &stack = cx->stack();
     uintN nslots = newscript->nslots;
     uintN funargs = fun->nargs;
@@ -201,7 +201,7 @@ CreateFrame(VMFrame &f, uint32 flags, uint32 argc)
             return false;
     }
 
-    
+    /* Initialize the frame. */
     newfp->ncode = NULL;
     newfp->callobj = NULL;
     newfp->argsobj = NULL;
@@ -218,24 +218,24 @@ CreateFrame(VMFrame &f, uint32 flags, uint32 argc)
     newfp->thisv = vp[1];
     newfp->imacpc = NULL;
 
-    
+    /* Push void to initialize local variables. */
     Value *newslots = newfp->slots();
     Value *newsp = newslots + fun->u.i.nvars;
     for (Value *v = newslots; v != newsp; ++v)
         v->setUndefined();
 
-    
+    /* Scope with a call object parented by callee's parent. */
     if (fun->isHeavyweight() && !js_GetCallObject(cx, newfp))
         return false;
 
-    
+    /* :TODO: Switch version if currentVersion wasn't overridden. */
     newfp->callerVersion = (JSVersion)cx->version;
 
-    
+    // Marker for debug support.
     if (JSInterpreterHook hook = cx->debugHooks->callHook) {
         newfp->hookData = hook(cx, fp, JS_TRUE, 0,
                                cx->debugHooks->callHookData);
-        
+        // CHECK_INTERRUPT_HANDLER();
     } else {
         newfp->hookData = NULL;
     }
@@ -294,7 +294,7 @@ InlineReturn(JSContext *cx, JSBool ok)
     JS_ASSERT(!fp->blockChain);
     JS_ASSERT(!js_IsActiveWithOrBlock(cx, fp->scopeChain, 0));
 
-    
+    // Marker for debug support.
     void *hookData = fp->hookData;
     if (JS_UNLIKELY(hookData != NULL)) {
         JSInterpreterHook hook;
@@ -302,20 +302,20 @@ InlineReturn(JSContext *cx, JSBool ok)
 
         hook = cx->debugHooks->callHook;
         if (hook) {
-            
-
-
-
+            /*
+             * Do not pass &ok directly as exposing the address inhibits
+             * optimizations and uninitialised warnings.
+             */
             status = ok;
             hook(cx, fp, JS_FALSE, &status, hookData);
             ok = (status == JS_TRUE);
-            
+            // CHECK_INTERRUPT_HANDLER();
         }
     }
 
     fp->putActivationObjects(cx);
 
-    
+    /* :TODO: version stuff */
 
     if (fp->flags & JSFRAME_CONSTRUCTING && fp->rval.isPrimitive())
         fp->rval = fp->thisv;
@@ -436,7 +436,7 @@ CreateLightFrame(VMFrame &f, uint32 flags, uint32 argc)
         return false;
     }
 
-    
+    /* Allocate the frame. */
     StackSpace &stack = cx->stack();
     uintN nslots = newscript->nslots;
     uintN funargs = fun->nargs;
@@ -455,7 +455,7 @@ CreateLightFrame(VMFrame &f, uint32 flags, uint32 argc)
             return false;
     }
 
-    
+    /* Initialize the frame. */
     newfp->ncode = NULL;
     newfp->callobj = NULL;
     newfp->argsobj = NULL;
@@ -474,7 +474,7 @@ CreateLightFrame(VMFrame &f, uint32 flags, uint32 argc)
     newfp->hookData = NULL;
 
 #if 0
-    
+    /* :TODO: Switch version if currentVersion wasn't overridden. */
     newfp->callerVersion = (JSVersion)cx->version;
 #endif
 
@@ -488,9 +488,9 @@ CreateLightFrame(VMFrame &f, uint32 flags, uint32 argc)
     return true;
 }
 
-
-
-
+/*
+ * stubs::Call is guaranteed to be called on a scripted call with JIT'd code.
+ */
 void * JS_FASTCALL
 stubs::Call(VMFrame &f, uint32 argc)
 {
@@ -502,9 +502,9 @@ stubs::Call(VMFrame &f, uint32 argc)
     return f.fp->script->ncode;
 }
 
-
-
-
+/*
+ * stubs::New is guaranteed to be called on a scripted call with JIT'd code.
+ */
 void * JS_FASTCALL
 stubs::New(VMFrame &f, uint32 argc)
 {
@@ -548,7 +548,7 @@ js_InternalThrow(VMFrame &f)
 {
     JSContext *cx = f.cx;
 
-    
+    // Make sure sp is up to date.
     JS_ASSERT(cx->regs == &f.regs);
 
     jsbytecode *pc = NULL;
@@ -557,10 +557,10 @@ js_InternalThrow(VMFrame &f)
         if (pc)
             break;
 
-        
-        
-        
-        
+        // If |f.inlineCallCount == 0|, then we are on the 'topmost' frame (where
+        // topmost means the first frame called into through js_Interpret). In this
+        // case, we still unwind, but we shouldn't return from a JS function, because
+        // we're not in a JS function.
         bool lastFrame = (f.inlineCallCount == 0);
         js_UnwindScope(cx, 0, cx->throwing);
         if (lastFrame)
