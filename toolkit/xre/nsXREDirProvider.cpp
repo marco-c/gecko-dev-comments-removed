@@ -1,43 +1,43 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2002
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *  Brian Ryner <bryner@brianryner.com>
- *  Benjamin Smedberg <bsmedberg@covad.net>
- *  Ben Goodger <ben@mozilla.org>
- *  Jens Bannmann <jens.b@web.de>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsAppRunner.h"
 #include "nsXREDirProvider.h"
@@ -195,8 +195,8 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
   PRBool gettingProfile = PR_FALSE;
 
   if (!strcmp(aProperty, NS_APP_USER_PROFILE_LOCAL_50_DIR)) {
-    // If XRE_NotifyProfile hasn't been called, don't fall through to
-    // mAppProvider on the profile keys.
+    
+    
     if (!mProfileNotified)
       return NS_ERROR_FAILURE;
 
@@ -206,7 +206,7 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
     if (mAppProvider)
       return mAppProvider->GetFile(aProperty, aPersistent, aFile);
 
-    // This falls through to the case below
+    
     gettingProfile = PR_TRUE;
   }
   if (!strcmp(aProperty, NS_APP_USER_PROFILE_50_DIR) || gettingProfile) {
@@ -219,8 +219,8 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
     if (mAppProvider)
       return mAppProvider->GetFile(aProperty, aPersistent, aFile);
 
-    // If we don't succeed here, bail early so that we aren't reentrant
-    // through the "GetProfileDir" call below.
+    
+    
     return NS_ERROR_FAILURE;
   }
 
@@ -249,8 +249,8 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
   }
   else if (!strcmp(aProperty, NS_APP_PREF_DEFAULTS_50_DIR))
   {
-    // return the GRE default prefs directory here, and the app default prefs
-    // directory (if applicable) in NS_APP_PREFS_DEFAULTS_DIR_LIST.
+    
+    
     rv = mGREDir->Clone(getter_AddRefs(file));
     if (NS_SUCCEEDED(rv)) {
       rv = file->AppendNative(NS_LITERAL_CSTRING("defaults"));
@@ -266,7 +266,7 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
 #if defined(XP_WIN) && !defined(WINCE)
     rv = GetUpdateRootDir(getter_AddRefs(file));
 #else
-    // Only supported on Windows other than WINCE, so just immediately fail.
+    
     return NS_ERROR_FAILURE;
 #endif
   }
@@ -283,7 +283,7 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
       rv = file->AppendNative(NS_LITERAL_CSTRING("Profiles"));
 #endif
 
-      // We must create the profile directory here if it does not exist.
+      
       rv |= EnsureDirectoryExists(file);
     }
   }
@@ -295,7 +295,7 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
       rv = file->AppendNative(NS_LITERAL_CSTRING("Profiles"));
 #endif
 
-      // We must create the profile directory here if it does not exist.
+      
       rv |= EnsureDirectoryExists(file);
     }
   }
@@ -344,8 +344,8 @@ nsXREDirProvider::GetFile(const char* aProperty, PRBool* aPersistent,
       rv = file->AppendNative(NS_LITERAL_CSTRING("distribution"));
   }
   else if (NS_SUCCEEDED(GetProfileStartupDir(getter_AddRefs(file)))) {
-    // We need to allow component, xpt, and chrome registration to
-    // occur prior to the profile-after-change notification.
+    
+    
     if (!strcmp(aProperty, NS_APP_USER_CHROME_DIR)) {
       rv = file->AppendNative(NS_LITERAL_CSTRING("chrome"));
     }
@@ -618,7 +618,7 @@ DumpFileArray(const char *key,
     fprintf(stderr, "  %s\n", path.get());
   }
 }
-#endif // DEBUG_bsmedberg
+#endif 
 
 nsresult
 nsXREDirProvider::GetFilesInternal(const char* aProperty,
@@ -667,8 +667,8 @@ nsXREDirProvider::GetFilesInternal(const char* aProperty,
     rv = NS_NewArrayEnumerator(aResult, directories);
   }
   else if (!strcmp(aProperty, NS_APP_CHROME_DIR_LIST)) {
-    // NS_APP_CHROME_DIR_LIST is only used to get default (native) icons
-    // for OS window decoration.
+    
+    
 
     static const char *const kAppendChromeDir[] = { "chrome", nsnull };
     nsCOMArray<nsIFile> directories;
@@ -688,8 +688,8 @@ nsXREDirProvider::GetFilesInternal(const char* aProperty,
     static const char *const kAppendPlugins[] = { "plugins", nsnull };
     nsCOMArray<nsIFile> directories;
 
-    // The root dirserviceprovider does quite a bit for us: we're mainly
-    // interested in xulapp and extension-provided plugins.
+    
+    
     LoadDirsIntoArray(mAppBundleDirectories,
                       kAppendPlugins,
                       directories);
@@ -736,7 +736,7 @@ nsXREDirProvider::DoStartup()
 
     static const PRUnichar kStartup[] = {'s','t','a','r','t','u','p','\0'};
     obsSvc->NotifyObservers(nsnull, "profile-do-change", kStartup);
-    // Init the Extension Manager
+    
     nsCOMPtr<nsIObserver> em = do_GetService("@mozilla.org/addons/integration;1");
     if (em) {
       em->Observe(nsnull, "addons-startup", nsnull);
@@ -749,8 +749,8 @@ nsXREDirProvider::DoStartup()
     obsSvc->NotifyObservers(nsnull, "load-extension-defaults", nsnull);
     obsSvc->NotifyObservers(nsnull, "profile-after-change", kStartup);
 
-    // Any component that has registered for the profile-after-change category
-    // should also be created at this time.
+    
+    
     (void)NS_CreateServicesFromCategory("profile-after-change", nsnull,
                                         "profile-after-change");
 
@@ -799,8 +799,8 @@ nsXREDirProvider::DoShutdown()
       obsSvc->NotifyObservers(cs, "profile-change-net-teardown", kShutdownPersist);
       obsSvc->NotifyObservers(cs, "profile-change-teardown", kShutdownPersist);
 
-      // Phase 2c: Now that things are torn down, force JS GC so that things which depend on
-      // resources which are about to go away in "profile-before-change" are destroyed first.
+      
+      
       nsCOMPtr<nsIThreadJSContextStack> stack
         (do_GetService("@mozilla.org/js/xpc/ContextStack;1"));
       if (stack)
@@ -811,7 +811,7 @@ nsXREDirProvider::DoShutdown()
           ::JS_GC(cx);
       }
 
-      // Phase 3: Notify observers of a profile change
+      
       obsSvc->NotifyObservers(cs, "profile-before-change", kShutdownPersist);
     }
     mProfileNotified = PR_FALSE;
@@ -841,7 +841,7 @@ GetShellFolderPath(int folder, nsAString& _retval)
   buf[bufLength - 1] = L'\0';
   _retval.SetLength(wcslen(buf));
 
-  // sometimes CSIDL_PROFILE shows up without a root slash
+  
   if (folder == CSIDL_PROFILE && buf[0] != '\\') {
     _retval.Insert('\\', 0);
   }
@@ -850,8 +850,8 @@ GetShellFolderPath(int folder, nsAString& _retval)
 
   if (SUCCEEDED(SHGetSpecialFolderLocation(NULL, folder, &pItemIDList)) &&
       SHGetPathFromIDListW(pItemIDList, buf)) {
-    // We're going to use wcslen (wcsnlen not available in msvc7.1) so make
-    // sure to null terminate.
+    
+    
     buf[bufLength - 1] = L'\0';
     _retval.SetLength(wcslen(buf));
   } else {
@@ -866,11 +866,11 @@ GetShellFolderPath(int folder, nsAString& _retval)
 }
 
 #ifndef WINCE
-/**
- * Provides a fallback for getting the path to APPDATA or LOCALAPPDATA by
- * querying the registry when the call to SHGetSpecialFolderLocation or
- * SHGetPathFromIDListW is unable to provide these paths (Bug 513958).
- */
+
+
+
+
+
 static nsresult
 GetRegWindowsAppDataFolder(PRBool aLocal, nsAString& _retval)
 {
@@ -887,15 +887,15 @@ GetRegWindowsAppDataFolder(PRBool aLocal, nsAString& _retval)
   DWORD type, size;
   res = RegQueryValueExW(key, (aLocal ? L"Local AppData" : L"AppData"), NULL,
                          &type, NULL, &size);
-  // The call to RegQueryValueExW must succeed, the type must be REG_SZ, the
-  // buffer size must not equal 0, and the buffer size be a multiple of 2.
+  
+  
   if (res != ERROR_SUCCESS || type != REG_SZ || size == 0 || size % 2 != 0) {
     ::RegCloseKey(key);
     _retval.SetLength(0);
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  // |size| includes room for the terminating null character
+  
   DWORD resultLen = size / 2 - 1;
 
   _retval.SetLength(resultLen);
@@ -928,8 +928,8 @@ nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
   nsresult rv = appDir->GetPath(appPath);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // AppDir may be a short path. Convert to long path to make sure
-  // the consistency of the update folder location
+  
+  
   nsString longPath;
   PRUnichar* buf;
 
@@ -941,15 +941,15 @@ nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
 #else
   DWORD len = GetLongPathNameW(appPath.get(), buf, bufLength);
 
-  // Failing GetLongPathName() is not fatal.
+  
   if (len <= 0 || len >= bufLength)
     longPath.Assign(appPath);
   else
     longPath.SetLength(len);
 #endif
-  // Use <UserLocalDataDir>\updates\<relative path to app dir from
-  // Program Files> if app dir is under Program Files to avoid the
-  // folder virtualization mess on Windows Vista
+  
+  
+  
   nsAutoString programFiles;
   rv = GetShellFolderPath(CSIDL_PROGRAM_FILES, programFiles);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1020,7 +1020,7 @@ nsXREDirProvider::GetProfileDir(nsIFile* *aResult)
 nsresult
 nsXREDirProvider::GetUserDataDirectoryHome(nsILocalFile** aFile, PRBool aLocal)
 {
-  // Copied from nsAppFileLocationProvider (more or less)
+  
   nsresult rv;
   nsCOMPtr<nsILocalFile> localDir;
 
@@ -1072,9 +1072,9 @@ nsXREDirProvider::GetUserDataDirectoryHome(nsILocalFile** aFile, PRBool aLocal)
 
   rv = NS_NewLocalFile(path, PR_TRUE, getter_AddRefs(localDir));
 #elif defined(XP_OS2)
-#if 0 /* For OS/2 we want to always use MOZILLA_HOME */
-  // we want an environment variable of the form
-  // FIREFOX_HOME, etc
+#if 0 
+  
+  
   if (!gAppData)
     return NS_ERROR_FAILURE;
   nsDependentCString envVar(nsDependentCString(gAppData->name));
@@ -1105,13 +1105,6 @@ nsXREDirProvider::GetUserDataDirectoryHome(nsILocalFile** aFile, PRBool aLocal)
   appDir[len+1] = '\0';
 
   rv = NS_NewNativeLocalFile(nsDependentCString(appDir), PR_TRUE,
-                             getter_AddRefs(localDir));
-#elif defined(ANDROID)
-  // used for setting the patch to our profile
-  // XXX: investigate putting the profile somewhere else
-  const char* homeDir = "/data/data/" ANDROID_PACKAGE_NAME;
-
-  rv = NS_NewNativeLocalFile(nsDependentCString(homeDir), PR_TRUE,
                              getter_AddRefs(localDir));
 #elif defined(XP_UNIX)
   const char* homeDir = getenv("HOME");
@@ -1331,9 +1324,9 @@ nsXREDirProvider::AppendProfilePath(nsIFile* aFile)
     rv = AppendProfileString(aFile, gAppData->profile);
   }
   else {
-    // Note that MacOS ignores the vendor when creating the profile hierarchy -
-    // all application preferences directories live alongside one another in
-    // ~/Library/Application Support/
+    
+    
+    
     rv = aFile->AppendNative(nsDependentCString(gAppData->name));
   }
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1352,23 +1345,23 @@ nsXREDirProvider::AppendProfilePath(nsIFile* aFile)
   NS_ENSURE_SUCCESS(rv, rv);
 
 #elif defined(ANDROID)
-  // The directory used for storing profiles
-  // The parent of this directory is set in GetUserDataDirectoryHome
-  // XXX: handle gAppData->profile properly
+  
+  
+  
   rv = aFile->AppendNative(nsDependentCString("mozilla"));
   NS_ENSURE_SUCCESS(rv, rv);
 #elif defined(XP_UNIX)
-  // Make it hidden (i.e. using the ".")
+  
   nsCAutoString folder(".");
 
   if (gAppData->profile) {
-    // Skip any leading path characters
+    
     const char* profileStart = gAppData->profile;
     while (*profileStart == '/' || *profileStart == '\\')
       profileStart++;
 
-    // On the off chance that someone wanted their folder to be hidden don't
-    // let it become ".."
+    
+    
     if (*profileStart == '.')
       profileStart++;
 
