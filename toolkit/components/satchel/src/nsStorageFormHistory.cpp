@@ -1,45 +1,45 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Joe Hewitt <hewitt@netscape.com> (Original Author)
+ *   Brett Wilson <brettw@gmail.com>
+ *   Michael Ventnor <m.ventnor@gmail.com>
+ *   Ehsan Akhgari <ehsan.akhgari@gmail.com>
+ *   Justin Dolske <dolske@mozilla.com>
+ *   Eddy Ferreira <eddy.b.ferreira@gmail.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsStorageFormHistory.h"
 
@@ -56,6 +56,7 @@
 #include "nsReadableUtils.h"
 #include "nsISupportsPrimitives.h"
 #include "nsIDOMNode.h"
+#include "nsIFormControl.h"
 #include "nsIDOMHTMLFormElement.h"
 #include "nsIDOMHTMLInputElement.h"
 #include "nsIDOMHTMLCollection.h"
@@ -80,18 +81,18 @@
 
 #define PR_HOURS ((PRInt64)60 * 60 * 1000000)
 
-
+// Limit the length of names and values stored in form history
 #define MAX_HISTORY_NAME_LEN    200
 #define MAX_HISTORY_VALUE_LEN   200
-
+// Limit the number of fields saved in a form
 #define MAX_FIELDS_SAVED        100
 
 #define PREF_FORMFILL_BRANCH "browser.formfill."
 #define PREF_FORMFILL_ENABLE "enable"
 #define PREF_FORMFILL_SAVE_HTTPS_FORMS "saveHttpsForms"
 
-
-
+// Default number of days for expiration.  Used if browser.formfill.expire_days
+// is not set.
 #define DEFAULT_EXPIRE_DAYS 180
 
 NS_INTERFACE_MAP_BEGIN(nsFormHistory)
@@ -134,7 +135,7 @@ nsFormHistory::Init()
 
   nsresult rv = OpenDatabase(&doImport);
   if (rv == NS_ERROR_FILE_CORRUPTED) {
-    
+    /* If the DB is corrupt, nuke it and try again with a new DB. */
     rv = dbCleanup();
     NS_ENSURE_SUCCESS(rv, rv);
     rv = OpenDatabase(&doImport);
@@ -152,7 +153,7 @@ nsFormHistory::Init()
   return NS_OK;
 }
 
- nsresult
+/* static */ nsresult
 nsFormHistory::InitPrefs()
 {
   nsCOMPtr<nsIPrefService> prefService =
@@ -173,7 +174,7 @@ nsFormHistory::InitPrefs()
   return NS_OK;
 }
 
- PRBool
+/* static */ PRBool
 nsFormHistory::SaveHttpsForms()
 {
   if (!gPrefsInitialized) {
@@ -182,7 +183,7 @@ nsFormHistory::SaveHttpsForms()
   return gSaveHttpsForms;
 }
 
- PRBool
+/* static */ PRBool
 nsFormHistory::FormHistoryEnabled()
 {
   if (!gPrefsInitialized)
@@ -196,7 +197,7 @@ nsFormHistory::GenerateGUID(nsACString &guidString) {
   nsresult rv = mUUIDService->GenerateUUIDInPlace(&rawguid);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Encode 12 bytes (96bits) of randomness into a 16 character base-64 string.
   char *b64 = PL_Base64Encode(reinterpret_cast<const char *>(&rawguid), 12, nsnull);
   if (!b64)
     return NS_ERROR_OUT_OF_MEMORY;
@@ -207,8 +208,8 @@ nsFormHistory::GenerateGUID(nsACString &guidString) {
 }
 
 
-
-
+////////////////////////////////////////////////////////////////////////
+//// nsIFormHistory2
 
 NS_IMETHODIMP
 nsFormHistory::GetHasEntries(PRBool *aHasEntries)
@@ -223,7 +224,7 @@ nsFormHistory::GetHasEntries(PRBool *aHasEntries)
 NS_IMETHODIMP
 nsFormHistory::AddEntry(const nsAString &aName, const nsAString &aValue)
 {
-  
+  // If the user is in private browsing mode, don't add any entry.
   nsresult rv;
   nsCOMPtr<nsIPrivateBrowsingService> pbs =
     do_GetService(NS_PRIVATE_BROWSING_SERVICE_CONTRACTID);
@@ -231,7 +232,7 @@ nsFormHistory::AddEntry(const nsAString &aName, const nsAString &aValue)
     PRBool inPrivateBrowsing = PR_TRUE;
     rv = pbs->GetPrivateBrowsingEnabled(&inPrivateBrowsing);
     if (NS_FAILED(rv))
-      inPrivateBrowsing = PR_TRUE; 
+      inPrivateBrowsing = PR_TRUE; // err on the safe side if we fail
     if (inPrivateBrowsing)
       return NS_OK;
   }
@@ -244,10 +245,10 @@ nsFormHistory::AddEntry(const nsAString &aName, const nsAString &aValue)
 
   if (existingID != -1) {
     mozStorageStatementScoper scope(mDBUpdateEntry);
-    
+    // lastUsed
     rv = mDBUpdateEntry->BindInt64Parameter(0, PR_Now());
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // WHERE id
     rv = mDBUpdateEntry->BindInt64Parameter(1, existingID);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -263,22 +264,22 @@ nsFormHistory::AddEntry(const nsAString &aName, const nsAString &aValue)
     PRInt64 now = PR_Now();
 
     mozStorageStatementScoper scope(mDBInsertNameValue);
-    
+    // fieldname
     rv = mDBInsertNameValue->BindStringParameter(0, aName);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // value
     rv = mDBInsertNameValue->BindStringParameter(1, aValue);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // timesUsed
     rv = mDBInsertNameValue->BindInt32Parameter(2, 1);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // firstUsed
     rv = mDBInsertNameValue->BindInt64Parameter(3, now);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // lastUsed
     rv = mDBInsertNameValue->BindInt64Parameter(4, now);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // guid
     rv = mDBInsertNameValue->BindUTF8StringParameter(5, guid);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -290,7 +291,7 @@ nsFormHistory::AddEntry(const nsAString &aName, const nsAString &aValue)
   return NS_OK;
 }
 
-
+/* Returns -1 if entry not found, or the ID if it was. */
 PRInt64
 nsFormHistory::GetExistingEntryID (const nsAString &aName, 
                                    const nsAString &aValue,
@@ -321,7 +322,7 @@ nsFormHistory::GetExistingEntryID (const nsAString &aName,
   return ID;
 }
 
-
+/* Returns -1 if entry not found, or the ID if it was. */
 PRInt64
 nsFormHistory::GetExistingEntryID (const nsAString &aName,
                                    const nsAString &aValue)
@@ -408,7 +409,7 @@ nsFormHistory::RemoveAllEntries()
                                          getter_AddRefs(dbDeleteAll));
   NS_ENSURE_SUCCESS(rv,rv);
 
-  
+  // privacy cleanup, if there's an old mork formhistory around, just delete it
   nsCOMPtr<nsIFile> oldFormHistoryFile;
   rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                               getter_AddRefs(oldFormHistoryFile));
@@ -444,7 +445,7 @@ nsFormHistory::RemoveEntriesByTimeframe(PRInt64 aStartTime, PRInt64 aEndTime)
     "AND firstUsed <= ?2"), getter_AddRefs(stmt));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Bind the times and execute statement.
   rv = stmt->BindInt64Parameter(0, aStartTime);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = stmt->BindInt64Parameter(1, aEndTime);
@@ -464,8 +465,8 @@ nsFormHistory::GetDBConnection(mozIStorageConnection **aResult)
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////
+//// nsIObserver
 
 NS_IMETHODIMP
 nsFormHistory::Observe(nsISupports *aSubject, const char *aTopic, const PRUnichar *aData) 
@@ -481,8 +482,8 @@ nsFormHistory::Observe(nsISupports *aSubject, const char *aTopic, const PRUnicha
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////
+//// nsIFormSubmitObserver
 
 NS_IMETHODIMP
 nsFormHistory::Notify(nsIDOMHTMLFormElement* formElt, nsIDOMWindowInternal* aWindow, nsIURI* aActionURL, PRBool* aCancelSubmit)
@@ -530,31 +531,30 @@ nsFormHistory::Notify(nsIDOMHTMLFormElement* formElt, nsIDOMWindowInternal* aWin
     elts->Item(i, getter_AddRefs(node));
     nsCOMPtr<nsIDOMHTMLInputElement> inputElt = do_QueryInterface(node);
     if (inputElt) {
-      
-      nsAutoString type;
-      inputElt->GetType(type);
-      if (!type.LowerCaseEqualsLiteral("text"))
+      // Check if input is a type supported by Form Manager.
+      nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(inputElt);
+      if (!formControl || !formControl->IsSingleLineTextControl(PR_TRUE))
         continue;
 
-      
-      
+      // TODO: If Login Manager marked this input, don't save it. The login
+      // manager will deal with remembering it.
 
       nsAutoString autocomplete;
       inputElt->GetAttribute(kAutoComplete, autocomplete);
       if (!autocomplete.LowerCaseEqualsLiteral("off")) {
-        
+        // If this input has a name/id and value, add it to the database
         nsAutoString value;
         inputElt->GetValue(value);
         value.Trim(" \t", PR_TRUE, PR_TRUE);
         if (!value.IsEmpty()) {
-          
-          
+          // Ignore the input if the value hasn't been changed from the
+          // default. We only want to save data entered by the user.
           nsAutoString defaultValue;
           inputElt->GetDefaultValue(defaultValue);
           if (value.Equals(defaultValue))
             continue;
 
-          
+          // We do not want to store credit card numbers (bug #188285)
           if (IsValidCCNumber(value))
             continue;
 
@@ -579,8 +579,8 @@ nsFormHistory::Notify(nsIDOMHTMLFormElement* formElt, nsIDOMWindowInternal* aWin
   return transaction.Commit();
 }
 
-
-
+// Implements the Luhn checksum algorithm as described at
+// http://wikipedia.org/wiki/Luhn_algorithm
 bool
 nsFormHistory::IsValidCCNumber(const nsAString &aString)
 {
@@ -609,7 +609,7 @@ nsFormHistory::IsValidCCNumber(const nsAString &aString)
 nsresult
 nsFormHistory::ExpireOldEntries()
 {
-  
+  // Determine how many days of history we're supposed to keep.
   nsresult rv;
   nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -624,7 +624,7 @@ nsFormHistory::ExpireOldEntries()
 
   PRInt32 beginningCount = CountAllEntries();
 
-  
+  // Purge the form history...
   nsCOMPtr<mozIStorageStatement> stmt;
   rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
           "DELETE FROM moz_formhistory WHERE lastUsed<=?1"),
@@ -637,10 +637,10 @@ nsFormHistory::ExpireOldEntries()
 
   PRInt32 endingCount = CountAllEntries();
 
-  
-  
-  
-  
+  // If we expired a large batch of entries, shrink the DB to reclaim wasted
+  // space. This is expected to happen when entries predating timestamps
+  // (added in the v.1 schema) expire in mass, 180 days after the DB was
+  // upgraded -- entries not used since then expire all at once.
   if (beginningCount - endingCount > 500) {
     rv = mDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING("VACUUM"));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -674,7 +674,7 @@ nsresult
 nsFormHistory::CreateTable()
 {
   nsresult rv;
-  
+  // When adding new columns, also update dbAreExpectedColumnsPresent()!
   rv = mDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
          "CREATE TABLE moz_formhistory ("
            "id INTEGER PRIMARY KEY, fieldname TEXT NOT NULL, "
@@ -732,7 +732,7 @@ nsFormHistory::CreateStatements()
 nsresult
 nsFormHistory::OpenDatabase(PRBool *aDoImport)
 {
-  
+  // init DB service and obtain a connection
   nsresult rv;
   mStorageService = do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -744,7 +744,7 @@ nsFormHistory::OpenDatabase(PRBool *aDoImport)
   rv = mStorageService->OpenDatabase(formHistoryFile, getter_AddRefs(mDBConn));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Use a transaction around initialization and migration for better performance.
   mozStorageTransaction transaction(mDBConn, PR_FALSE);
 
   PRBool exists;
@@ -757,11 +757,11 @@ nsFormHistory::OpenDatabase(PRBool *aDoImport)
     *aDoImport = PR_FALSE;
   }
 
-  
+  // Ensure DB is at the current schema.
   rv = dbMigrate();
   NS_ENSURE_SUCCESS(rv, rv);
   
-  
+  // should commit before starting cache
   transaction.Commit();
 
   rv = CreateStatements();
@@ -770,9 +770,9 @@ nsFormHistory::OpenDatabase(PRBool *aDoImport)
   return NS_OK;
 }
   
-
-
-
+/*
+ * dbMigrate
+ */
 nsresult
 nsFormHistory::dbMigrate()
 {
@@ -780,36 +780,36 @@ nsFormHistory::dbMigrate()
   nsresult rv = mDBConn->GetSchemaVersion(&schemaVersion);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
+  // Upgrade from the version in the DB to the version we expect, step by
+  // step. Note that the formhistory.sqlite in Firefox 3 didn't have a
+  // schema version set, so we start at 0.
   switch (schemaVersion) {
     case 0:
       rv = MigrateToVersion1();
       NS_ENSURE_SUCCESS(rv, rv);
-      
+      // (fallthrough to the next upgrade)
     case 1:
       rv = MigrateToVersion2();
       NS_ENSURE_SUCCESS(rv, rv);
-      
+      // (fallthrough to the next upgrade)
     case 2:
       rv = MigrateToVersion3();
       NS_ENSURE_SUCCESS(rv, rv);
-      
+      // (fallthrough to the next upgrade)
     case DB_SCHEMA_VERSION:
-      
+      // (current version, nothing more to do)
       break;
 
-    
-    
+    // Unknown schema version, it's probably a DB modified by some future
+    // version of this code. Try to use the DB anyway.
     default:
-      
-      
+      // Sanity check: make sure the columns we expect are present. If not,
+      // treat it as corrupt (back it up, nuke it, start from scratch).
       if(!dbAreExpectedColumnsPresent())
         return NS_ERROR_FILE_CORRUPTED;
 
-      
-      
+      // If it's ok, downgrade the schema version so the future version will
+      // know to re-upgrade the DB.
       rv = mDBConn->SetSchemaVersion(DB_SCHEMA_VERSION);
       NS_ENSURE_SUCCESS(rv, rv);
       break;
@@ -819,17 +819,17 @@ nsFormHistory::dbMigrate()
 }
 
 
-
-
-
-
-
-
+/*
+ * MigrateToVersion1
+ *
+ * Updates the DB schema to v1 (bug 463154).
+ * Adds firstUsed, lastUsed, timesUsed columns.
+ */
 nsresult
 nsFormHistory::MigrateToVersion1()
 {
-  
-  
+  // Check to see if the new columns already exist (could be a v1 DB that
+  // was downgraded to v0). If they exist, we don't need to add them.
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
                   "SELECT timesUsed, firstUsed, lastUsed FROM moz_formhistory"),
@@ -849,12 +849,12 @@ nsFormHistory::MigrateToVersion1()
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  
-  
-  
-  
-  
+  // Set the default values for the new columns.
+  //
+  // Note that we set the timestamps to 24 hours in the past. We want a
+  // timestamp that's recent (so that "keep form history for 90 days"
+  // doesn't expire things surprisingly soon), but not so recent that
+  // "forget the last hour of stuff" deletes all freshly migrated data.
   nsCOMPtr<mozIStorageStatement> addDefaultValues;
   rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
          "UPDATE moz_formhistory "
@@ -874,12 +874,12 @@ nsFormHistory::MigrateToVersion1()
 }
 
 
-
-
-
-
-
-
+/*
+ * MigrateToVersion2
+ *
+ * Updates the DB schema to v2 (bug 243136).
+ * Adds lastUsed index, removes moz_dummy_table
+ */
 nsresult
 nsFormHistory::MigrateToVersion2()
 {
@@ -898,19 +898,19 @@ nsFormHistory::MigrateToVersion2()
 }
 
 
-
-
-
-
-
-
+/*
+ * MigrateToVersion3
+ *
+ * Updates the DB schema to v3 (bug 506402).
+ * Adds guid column and index.
+ */
 nsresult
 nsFormHistory::MigrateToVersion3()
 {
   nsresult rv;
 
-  
-  
+  // Check to see if the new column already exists (could be a v3 DB that
+  // was downgraded to v2). If they exist, we don't need to add them.
   nsCOMPtr<mozIStorageStatement> stmt;
   rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
          "SELECT guid FROM moz_formhistory"),
@@ -973,12 +973,12 @@ nsFormHistory::GetDatabaseFile(nsIFile** aFile)
 }
 
 
-
-
-
-
-
-
+/*
+ * dbCleanup 
+ *
+ * Called when a DB is corrupt. We back it up to a .corrupt file, and then
+ * nuke it to start from scratch.
+ */
 nsresult
 nsFormHistory::dbCleanup()
 {
@@ -1001,13 +1001,13 @@ nsFormHistory::dbCleanup()
   return NS_OK;
 }
 
-
-
-
+/*
+ * dbAreExpectedColumnsPresent
+ */
 PRBool
 nsFormHistory::dbAreExpectedColumnsPresent()
 {
-  
+  // If the statement succeeds, all the columns are there.
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
                   "SELECT fieldname, value, timesUsed, firstUsed, lastUsed, guid "
@@ -1015,9 +1015,9 @@ nsFormHistory::dbAreExpectedColumnsPresent()
   return NS_SUCCEEDED(rv) ? PR_TRUE : PR_FALSE;
 }
 
-
-
-
+/*
+ * Send a notification when stored data is changed
+ */
 nsresult
 nsFormHistory::SendNotification(const nsAString &aChangeType, nsISupports *aData)
 {
@@ -1026,9 +1026,9 @@ nsFormHistory::SendNotification(const nsAString &aChangeType, nsISupports *aData
                                            PromiseFlatString(aChangeType).get());
 }
 
-
-
-
+/*
+ * Send a notification with a field name
+ */
 nsresult
 nsFormHistory::SendNotification(const nsAString &aChangeType,
                                 const nsAString &aName)
@@ -1045,9 +1045,9 @@ nsFormHistory::SendNotification(const nsAString &aChangeType,
   return NS_OK;
 }
 
-
-
-
+/*
+ * Send a notification with a name and value entry
+ */
 nsresult
 nsFormHistory::SendNotification(const nsAString &aChangeType,
                                 const nsAString &aName,
@@ -1090,9 +1090,9 @@ nsFormHistory::SendNotification(const nsAString &aChangeType,
   return NS_OK;
 }
 
-
-
-
+/*
+ * Send a notification with a PRInt64
+ */
 nsresult
 nsFormHistory::SendNotification(const nsAString &aChangeType,
                                 const PRInt64 &aNumber)
@@ -1109,9 +1109,9 @@ nsFormHistory::SendNotification(const nsAString &aChangeType,
   return NS_OK;
 }
 
-
-
-
+/*
+ * Send a notification with an array of 2 PRInt64 entries
+ */
 nsresult
 nsFormHistory::SendNotification(const nsAString &aChangeType,
                                 const PRInt64 &aOne,

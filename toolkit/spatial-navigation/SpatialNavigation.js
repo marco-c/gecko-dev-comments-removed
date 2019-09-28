@@ -1,54 +1,54 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Spatial Navigation.
+ *
+ * The Initial Developer of the Original Code is Mozilla Foundation
+ * Portions created by the Initial Developer are Copyright (C) 2008
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *  Doug Turner <dougt@meer.net>  (Original Author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * 
+ * Import this module through
+ *
+ * Components.utils.import("resource://gre/modules/SpatialNavigation.js");
+ *
+ * Usage: (Literal class)
+ *
+ * SpatialNavigation(browser_element, optional_callback);
+ *
+ * optional_callback will be called when a new element is focused.
+ *
+ *    function optional_callback(element) {}
+ *
+ */
 
 
 var EXPORTED_SYMBOLS = ["SpatialNavigation"];
@@ -64,7 +64,7 @@ var SpatialNavigation = {
 };
 
 
-
+// Private stuff
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
@@ -78,7 +78,7 @@ function dump(msg)
 var gDirectionalBias = 10;
 var gRectFudge = 1;
 
-
+// modifier values
 const kAlt   = "alt";
 const kShift = "shift";
 const kCtrl  = "ctrl";
@@ -86,13 +86,13 @@ const kNone  = "none";
 
 function _onInputKeyPress (event, callback) {
 
-  
+  // If it isn't enabled, bail.
   if (!PrefObserver['enabled'])
     return;
 
-  
-  
-  
+  // Use whatever key value is available (either keyCode or charCode).
+  // It might be useful for addons or whoever wants to set different
+  // key to be used here (e.g. "a", "F1", "arrowUp", ...).
   var key = event.which || event.keyCode;
 
   if (key != PrefObserver['keyCodeDown']  &&
@@ -101,7 +101,7 @@ function _onInputKeyPress (event, callback) {
       key != PrefObserver['keyCodeLeft'])
     return;
 
-  
+  // If it is not using the modifiers it should, bail.
   if (!event.altKey && PrefObserver['modifierAlt'])
     return;
 
@@ -111,8 +111,8 @@ function _onInputKeyPress (event, callback) {
   if (!event.crtlKey && PrefObserver['modifierCtrl'])
     return;
 
-  
-  
+  // In some special cases where charCode is equal to one of the default arrow keyCodes we
+  // should bail.
   if (!event.keyCode && 
       (key == Ci.nsIDOMKeyEvent.DOM_VK_LEFT  || key == Ci.nsIDOMKeyEvent.DOM_VK_DOWN ||
        key == Ci.nsIDOMKeyEvent.DOM_VK_RIGHT || key == Ci.nsIDOMKeyEvent.DOM_VK_UP))
@@ -122,42 +122,43 @@ function _onInputKeyPress (event, callback) {
 
   var doc = target.ownerDocument;
 
-  
+  // If it is XUL content (e.g. about:config), bail.
   if (!PrefObserver['xulContentEnabled'] && doc instanceof Ci.nsIDOMXULDocument)
     return ;
 
-  
-  
+  // check to see if we are in a textarea or text input element, and if so,
+  // ensure that we let the arrow keys work properly.
   if (target instanceof Ci.nsIDOMHTMLHtmlElement) {
       _focusNextUsingCmdDispatcher(key, callback);
       return;
   }
 
-  if ((target instanceof Ci.nsIDOMHTMLInputElement && (target.type == "text" || target.type == "password")) ||
-      target instanceof Ci.nsIDOMHTMLTextAreaElement ) {
+  if ((target instanceof Ci.nsIDOMNSHTMLInputElement &&
+       target.mozIsTextField(false)) ||
+      target instanceof Ci.nsIDOMHTMLTextAreaElement) {
     
-    
+    // if there is any selection at all, just ignore
     if (target.selectionEnd - target.selectionStart > 0)
       return;
     
-    
+    // if there is no text, there is nothing special to do.
     if (target.textLength > 0) {
       if (key == PrefObserver['keyCodeRight'] ||
           key == PrefObserver['keyCodeDown'] ) {
-        
+        // we are moving forward into the document
         if (target.textLength != target.selectionEnd)
           return;
       }
       else
       {
-        
+        // we are at the start of the text, okay to move 
         if (target.selectionStart != 0)
           return;
       }
     }
   }
 
-  
+  // Check to see if we are in a select
   if (target instanceof Ci.nsIDOMHTMLSelectElement)
   {
     if (key == PrefObserver['keyCodeDown']) {
@@ -175,7 +176,7 @@ function _onInputKeyPress (event, callback) {
 
     if (node instanceof Ci.nsIDOMHTMLLinkElement ||
         node instanceof Ci.nsIDOMHTMLAnchorElement) {
-      
+      // if a anchor doesn't have a href, don't target it.
       if (node.href == "")
         return Ci.nsIDOMNodeFilter.FILTER_SKIP;
       return  Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
@@ -214,7 +215,7 @@ function _onInputKeyPress (event, callback) {
 
     var distance = _spatialDistance(key, focusedRect, nextRect);
 
-    
+    //dump("looking at: " + nextNode + " " + distance);
     
     if (distance <= distanceToBestElement && distance > 0) {
       distanceToBestElement = distance;
@@ -223,14 +224,15 @@ function _onInputKeyPress (event, callback) {
   }
   
   if (bestElementToFocus != null) {
-    
+    //dump("focusing element  " + bestElementToFocus.nodeName + " " + bestElementToFocus) + "id=" + bestElementToFocus.getAttribute("id");
 
-    
+    // Wishing we could do element.focus()
     doc.defaultView.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).focus(bestElementToFocus);
 
-    
-    if((bestElementToFocus instanceof Ci.nsIDOMHTMLInputElement && (bestElementToFocus.type == "text" || bestElementToFocus.type == "password")) ||
-       bestElementToFocus instanceof Ci.nsIDOMHTMLTextAreaElement ) {
+    // if it is a text element, select all.
+    if ((bestElementToFocus instanceof Ci.nsIDOMNSHTMLInputElement &&
+         bestElementToFocus.mozIsTextField(false)) ||
+        bestElementToFocus instanceof Ci.nsIDOMHTMLTextAreaElement) {
       bestElementToFocus.selectionStart = 0;
       bestElementToFocus.selectionEnd = bestElementToFocus.textLength;
     }
@@ -239,7 +241,7 @@ function _onInputKeyPress (event, callback) {
       callback(bestElementToFocus);
     
   } else {
-    
+    // couldn't find anything.  just advance and hope.
     _focusNextUsingCmdDispatcher(key, callback);
   }
 
@@ -308,25 +310,25 @@ function _spatialDistance(key, a, b)
 
   if (key == PrefObserver['keyCodeLeft']) {
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    //  |---|
+    //  |---|
+    //
+    //  |---|  |---|
+    //  |---|  |---|
+    //
+    //  |---|
+    //  |---|
+    //
     
     if (a.top > b.bottom) {
-      
+      // the b rect is above a.
       mx = a.left;
       my = a.top;
       nx = b.right;
       ny = b.bottom;
     }
     else if (a.bottom < b.top) {
-      
+      // the b rect is below a.
       mx = a.left;
       my = a.bottom;
       nx = b.right;
@@ -340,25 +342,25 @@ function _spatialDistance(key, a, b)
     }
   } else if (key == PrefObserver['keyCodeRight']) {
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    //         |---|
+    //         |---|
+    //
+    //  |---|  |---|
+    //  |---|  |---|
+    //
+    //         |---|
+    //         |---|
+    //
     
     if (a.top > b.bottom) {
-      
+      // the b rect is above a.
       mx = a.right;
       my = a.top;
       nx = b.left;
       ny = b.bottom;
     }
     else if (a.bottom < b.top) {
-      
+      // the b rect is below a.
       mx = a.right;
       my = a.bottom;
       nx = b.left;
@@ -371,27 +373,27 @@ function _spatialDistance(key, a, b)
     }
   } else if (key == PrefObserver['keyCodeUp']) {
 
-    
-    
-    
-    
-    
-    
+    //  |---|  |---|  |---|
+    //  |---|  |---|  |---|
+    //
+    //         |---|
+    //         |---|
+    //
     
     if (a.left > b.right) {
-      
+      // the b rect is to the left of a.
       mx = a.left;
       my = a.top;
       nx = b.right;
       ny = b.bottom;
     } else if (a.right < b.left) {
-      
+      // the b rect is to the right of a
       mx = a.right;
       my = a.top;
       nx = b.left;
       ny = b.bottom;       
     } else {
-      
+      // both b and a share some common x's.
       mx = 0;
       my = a.top;
       nx = 0;
@@ -399,27 +401,27 @@ function _spatialDistance(key, a, b)
     }
   } else if (key == PrefObserver['keyCodeDown']) {
 
-    
-    
-    
-    
-    
-    
+    //         |---|
+    //         |---|
+    //
+    //  |---|  |---|  |---|
+    //  |---|  |---|  |---|
+    //
     
     if (a.left > b.right) {
-      
+      // the b rect is to the left of a.
       mx = a.left;
       my = a.bottom;
       nx = b.right;
       ny = b.top;
     } else if (a.right < b.left) {
-      
+      // the b rect is to the right of a
       mx = a.right;
       my = a.bottom;
       nx = b.left;
       ny = b.top;      
     } else {
-      
+      // both b and a share some common x's.
       mx = 0;
       my = a.bottom;
       nx = 0;
@@ -444,14 +446,14 @@ function _spatialDistance(key, a, b)
   
   var d = Math.pow((mx-nx), 2) + Math.pow((my-ny), 2);
   
-  
+  // prefer elements directly aligned with the focused element
   if (inlineNavigation)
     d /= gDirectionalBias;
   
   return d;
 }
 
-
+// Snav preference observer
 
 PrefObserver = {
 
@@ -464,7 +466,7 @@ PrefObserver = {
     this._branch.QueryInterface(Ci.nsIPrefBranch2);
     this._branch.addObserver("", this, false);
 
-    
+    // set current or default pref values
     this.observe(null, "nsPref:changed", "enabled");
     this.observe(null, "nsPref:changed", "xulContentEnabled");
     this.observe(null, "nsPref:changed", "keyCode.modifier");
@@ -479,8 +481,8 @@ PrefObserver = {
     if(aTopic != "nsPref:changed")
       return;
 
-    
-    
+    // aSubject is the nsIPrefBranch we're observing (after appropriate QI)
+    // aData is the name of the pref that's been changed (relative to aSubject)
     switch (aData) {
       case "enabled":
         try {
@@ -501,14 +503,14 @@ PrefObserver = {
         try {
           this.keyCodeModifier = this._branch.getCharPref("keyCode.modifier");
 
-          
+          // resetting modifiers
           this.modifierAlt = false;
           this.modifierShift = false;
           this.modifierCtrl = false;
 
           if (this.keyCodeModifier != this.kNone)
           {
-            
+            // use are using '+' as a separator in about:config.
             var mods = this.keyCodeModifier.split(/\++/);
             for (var i = 0; i < mods.length; i++) {
               var mod = mods[i].toLowerCase();
