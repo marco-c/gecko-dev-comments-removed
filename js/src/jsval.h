@@ -1,75 +1,75 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=99 ft=cpp:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
- * June 30, 2010
- *
- * The Initial Developer of the Original Code is
- *   the Mozilla Corporation.
- *
- * Contributor(s):
- *   Luke Wagner <lw@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef jsvalimpl_h__
 #define jsvalimpl_h__
-/*
- * JS value implementation details for operations on jsval and jsid.
- * Embeddings should not rely on any of the definitions in this file. For a
- * description of the value representation and the engine-internal C++ value
- * interface, js::Value, see jsvalue.h.
- */
+
+
+
+
+
+
 #include "jsutil.h"
 
 JS_BEGIN_EXTERN_C
 
-/*
- * Try to get jsvals 64-bit aligned. We could almost assert that all values are
- * aligned, but MSVC and GCC occasionally break alignment.
- */
+
+
+
+
 #ifdef __GNUC__
 # define JSVAL_ALIGNMENT        __attribute__((aligned (8)))
 #elif defined(_MSC_VER)
-  /*
-   * Structs can be aligned with MSVC, but not if they are used as parameters,
-   * so we just don't try to align.
-   */
+  
+
+
+
 # define JSVAL_ALIGNMENT
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 # define JSVAL_ALIGNMENT
 #endif
 
-/*
- * We try to use enums so that printing a jsval_layout in the debugger shows
- * nice symbolic type tags, however we can only do this when we can force the
- * underlying type of the enum to be the desired size.
- */
+
+
+
+
+
 #ifdef __cplusplus
 
 #if defined(_MSC_VER)
@@ -84,7 +84,7 @@ JS_BEGIN_EXTERN_C
 # define JS_ENUM_FOOTER(id)                    __attribute__((packed))
 #endif
 
-/* Remember to propagate changes to the C defines below. */
+
 JS_ENUM_HEADER(JSValueType, uint8)
 {
     JSVAL_TYPE_DOUBLE              = 0x00,
@@ -96,7 +96,7 @@ JS_ENUM_HEADER(JSValueType, uint8)
     JSVAL_TYPE_NULL                = 0x06,
     JSVAL_TYPE_OBJECT              = 0x07,
 
-    /* The below types never appear in a jsval; they are only used in tracing. */
+    
 
     JSVAL_TYPE_NONFUNOBJ           = 0x57,
     JSVAL_TYPE_FUNOBJ              = 0x67,
@@ -108,9 +108,11 @@ JS_ENUM_HEADER(JSValueType, uint8)
     JSVAL_TYPE_UNINITIALIZED       = 0xcd
 } JS_ENUM_FOOTER(JSValueType);
 
+JS_STATIC_ASSERT(sizeof(JSValueType) == 1);
+
 #if JS_BITS_PER_WORD == 32
 
-/* Remember to propagate changes to the C defines below. */
+
 JS_ENUM_HEADER(JSValueTag, uint32)
 {
     JSVAL_TAG_CLEAR                = 0xFFFF0000,
@@ -123,9 +125,11 @@ JS_ENUM_HEADER(JSValueTag, uint32)
     JSVAL_TAG_OBJECT               = JSVAL_TAG_CLEAR | JSVAL_TYPE_OBJECT
 } JS_ENUM_FOOTER(JSValueType);
 
+JS_STATIC_ASSERT(sizeof(JSValueTag) == 4);
+
 #elif JS_BITS_PER_WORD == 64
 
-/* Remember to propagate changes to the C defines below. */
+
 JS_ENUM_HEADER(JSValueTag, uint32)
 {
     JSVAL_TAG_MAX_DOUBLE           = 0x1FFF0,
@@ -138,9 +142,11 @@ JS_ENUM_HEADER(JSValueTag, uint32)
     JSVAL_TAG_OBJECT               = JSVAL_TAG_MAX_DOUBLE | JSVAL_TYPE_OBJECT
 } JS_ENUM_FOOTER(JSValueType);
 
+JS_STATIC_ASSERT(sizeof(JSValueTag) == 4);
+
 #endif
 
-#else  /* defined(__cplusplus) */
+#else
 
 typedef uint8 JSValueType;
 #define JSVAL_TYPE_DOUBLE            ((uint8)0x00)
@@ -184,8 +190,8 @@ typedef uint32 JSValueTag;
 #define JSVAL_TAG_NULL               (uint32)(JSVAL_TAG_MAX_DOUBLE | JSVAL_TYPE_NULL)
 #define JSVAL_TAG_OBJECT             (uint32)(JSVAL_TAG_MAX_DOUBLE | JSVAL_TYPE_OBJECT)
 
-#endif  /* JS_BITS_PER_WORD */
-#endif  /* defined(__cplusplus) */
+#endif  
+#endif
 
 #define JSVAL_LOWER_INCL_TYPE_OF_OBJ_OR_NULL_SET        JSVAL_TYPE_NULL
 #define JSVAL_UPPER_EXCL_TYPE_OF_PRIMITIVE_SET          JSVAL_TYPE_OBJECT
@@ -224,20 +230,20 @@ typedef uint32 JSValueTag;
 #define JSVAL_UPPER_EXCL_SHIFTED_TAG_OF_NUMBER_SET       JSVAL_SHIFTED_TAG_UNDEFINED
 #define JSVAL_LOWER_INCL_SHIFTED_TAG_OF_GCTHING_SET      JSVAL_SHIFTED_TAG_STRING
 
-#endif /* JS_BITS_PER_WORD */
+#endif 
 
 typedef enum JSWhyMagic
 {
-    JS_ARRAY_HOLE,               /* a hole in a dense array */
-    JS_ARGS_HOLE,                /* a hole in the args object's array */
-    JS_NATIVE_ENUMERATE,         /* indicates that a custom enumerate hook forwarded
-                                  * to js_Enumerate, which really means the object can be
-                                  * enumerated like a native object. */
-    JS_NO_ITER_VALUE,            /* there is not a pending iterator value */
-    JS_GENERATOR_CLOSING,        /* exception value thrown when closing a generator */
-    JS_NO_CONSTANT,              /* compiler sentinel value */
-    JS_THIS_POISON,              /* used in debug builds to catch tracing errors */
-    JS_GENERIC_MAGIC             /* for local use */
+    JS_ARRAY_HOLE,               
+    JS_ARGS_HOLE,                
+    JS_NATIVE_ENUMERATE,         
+
+
+    JS_NO_ITER_VALUE,            
+    JS_GENERATOR_CLOSING,        
+    JS_NO_CONSTANT,              
+    JS_THIS_POISON,              
+    JS_GENERIC_MAGIC             
 } JSWhyMagic;
 
 typedef struct JSString JSString;
@@ -279,8 +285,8 @@ typedef union jsval_layout
     } s;
     double asDouble;
 } jsval_layout;
-# endif  /* JS_BITS_PER_WORD */
-#else   /* defined(IS_LITTLE_ENDIAN) */
+# endif  
+#else   
 # if JS_BITS_PER_WORD == 32
 typedef union jsval_layout
 {
@@ -299,10 +305,16 @@ typedef union jsval_layout
     } s;
     double asDouble;
 } jsval_layout;
-# endif /* JS_BITS_PER_WORD */
-#endif  /* defined(IS_LITTLE_ENDIAN) */
+# endif 
+#endif  
 
 #if JS_BITS_PER_WORD == 32
+
+
+
+
+
+
 
 #define BUILD_JSVAL(tag, payload) \
     ((((uint64)(uint32)(tag)) << 32) | (uint32)(payload))
@@ -310,7 +322,7 @@ typedef union jsval_layout
 static JS_ALWAYS_INLINE JSBool
 JSVAL_IS_DOUBLE_IMPL(jsval_layout l)
 {
-    return l.s.tag < JSVAL_TAG_CLEAR;
+    return (uint32)l.s.tag < (uint32)JSVAL_TAG_CLEAR;
 }
 
 static JS_ALWAYS_INLINE jsval_layout
@@ -318,7 +330,7 @@ DOUBLE_TO_JSVAL_IMPL(double d)
 {
     jsval_layout l;
     l.asDouble = d;
-    JS_ASSERT(l.s.tag < JSVAL_TAG_CLEAR);
+    JS_ASSERT(JSVAL_IS_DOUBLE_IMPL(l));
     return l;
 }
 
@@ -348,7 +360,7 @@ JSVAL_IS_NUMBER_IMPL(jsval_layout l)
 {
     JSValueTag tag = l.s.tag;
     JS_ASSERT(tag != JSVAL_TAG_CLEAR);
-    return tag <= JSVAL_UPPER_INCL_TAG_OF_NUMBER_SET;
+    return (uint32)tag <= (uint32)JSVAL_UPPER_INCL_TAG_OF_NUMBER_SET;
 }
 
 static JS_ALWAYS_INLINE JSBool
@@ -408,14 +420,14 @@ JSVAL_IS_OBJECT_IMPL(jsval_layout l)
 static JS_ALWAYS_INLINE JSBool
 JSVAL_IS_PRIMITIVE_IMPL(jsval_layout l)
 {
-    return l.s.tag < JSVAL_UPPER_EXCL_TAG_OF_PRIMITIVE_SET;
+    return (uint32)l.s.tag < (uint32)JSVAL_UPPER_EXCL_TAG_OF_PRIMITIVE_SET;
 }
 
 static JS_ALWAYS_INLINE JSBool
 JSVAL_IS_OBJECT_OR_NULL_IMPL(jsval_layout l)
 {
-    JS_ASSERT(l.s.tag <= JSVAL_TAG_OBJECT);
-    return l.s.tag >= JSVAL_LOWER_INCL_TAG_OF_OBJ_OR_NULL_SET;
+    JS_ASSERT((uint32)l.s.tag <= (uint32)JSVAL_TAG_OBJECT);
+    return (uint32)l.s.tag >= (uint32)JSVAL_LOWER_INCL_TAG_OF_OBJ_OR_NULL_SET;
 }
 
 static JS_ALWAYS_INLINE JSObject *
@@ -459,7 +471,8 @@ JSVAL_TO_PRIVATE_PTR_IMPL(jsval_layout l)
 static JS_ALWAYS_INLINE JSBool
 JSVAL_IS_GCTHING_IMPL(jsval_layout l)
 {
-    return l.s.tag >= JSVAL_LOWER_INCL_TAG_OF_GCTHING_SET;
+    
+    return (uint32)l.s.tag >= (uint32)JSVAL_LOWER_INCL_TAG_OF_GCTHING_SET;
 }
 
 static JS_ALWAYS_INLINE void *
@@ -670,7 +683,7 @@ JSVAL_IS_UNDERLYING_TYPE_OF_PRIVATE_IMPL(jsval_layout l)
     return JSVAL_IS_DOUBLE_IMPL(l);
 }
 
-/* See JS_USE_JSVAL_JSID_STRUCT_TYPES comment in jsapi.h. */
+
 #if defined(DEBUG) && !defined(JS_NO_JSVAL_JSID_STRUCT_TYPES)
 # define JS_USE_JSVAL_JSID_STRUCT_TYPES
 #endif
@@ -707,28 +720,28 @@ extern "C++"
         return lhs.asBits != rhs.asBits;
     }
 }
-# endif /* defined(__cplusplus) */
+# endif 
 
-/* Internal helper macros */
+
 #define JSVAL_BITS(v)    (v.asBits)
 #define JSVAL_FROM_LAYOUT(l) (l)
 #define IMPL_TO_JSVAL(v) (v)
 #define JSID_BITS(id)    (id.asBits)
 
-#else /* defined(JS_USE_JSVAL_JSID_STRUCT_TYPES) */
+#else 
 
-/* Use different primitive types so overloading works. */
+
 typedef JSVAL_ALIGNMENT uint64 jsval;
 typedef ptrdiff_t              jsid;
 
-/* Internal helper macros */
+
 #define JSVAL_BITS(v)    (v)
 #define JSVAL_FROM_LAYOUT(l) ((l).asBits)
 #define IMPL_TO_JSVAL(v) ((v).asBits)
 #define JSID_BITS(id)    (id)
 
-#endif /* defined(JS_USE_JSVAL_JSID_STRUCT_TYPES) */
+#endif 
 
 JS_END_EXTERN_C
 
-#endif /* jsvalimpl_h__ */
+#endif
