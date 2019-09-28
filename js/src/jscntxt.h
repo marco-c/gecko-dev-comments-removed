@@ -507,8 +507,6 @@ struct JSRuntime {
     JSDebugHooks        globalDebugHooks;
 
     
-
-
     bool                debugMode;
 
 #ifdef JS_TRACER
@@ -551,7 +549,6 @@ struct JSRuntime {
     PRCondVar           *stateChange;
 
     
-
 
 
 
