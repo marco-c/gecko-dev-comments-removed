@@ -1,43 +1,43 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998-2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Don Bragg <dbragg@netscape.com>
+ *   Samir Gehani <sgehani@netscape.com>
+ *   Mitch Stoltz <mstoltz@netscape.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 
 #ifndef nsJAR_h__
@@ -52,13 +52,13 @@
 #include "prtypes.h"
 #include "prinrval.h"
 
-#include "mozilla/Mutex.h"
 #include "nsIComponentManager.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsIFile.h"
 #include "nsStringEnumerator.h"
 #include "nsHashtable.h"
+#include "nsAutoLock.h"
 #include "nsIZipReader.h"
 #include "nsZipArchive.h"
 #include "nsIPrincipal.h"
@@ -71,7 +71,7 @@ class nsIInputStream;
 class nsJARManifestItem;
 class nsZipReaderCache;
 
-
+/* For mManifestStatus */
 typedef enum
 {
   JAR_MANIFEST_NOT_PARSED = 0,
@@ -84,16 +84,16 @@ typedef enum
   JAR_NOT_SIGNED          = 7
 } JARManifestStatusType;
 
-
-
-
-
-
+/*-------------------------------------------------------------------------
+ * Class nsJAR declaration. 
+ * nsJAR serves as an XPCOM wrapper for nsZipArchive with the addition of 
+ * JAR manifest file parsing. 
+ *------------------------------------------------------------------------*/
 class nsJAR : public nsIZipReader
 {
-  
+  // Allows nsJARInputStream to call the verification functions
   friend class nsJARInputStream;
-  
+  // Allows nsZipReaderCache to access mOuterZipEntry
   friend class nsZipReaderCache;
 
   public:
@@ -130,21 +130,20 @@ class nsJAR : public nsIZipReader
     }
 
   protected:
-    
-    nsCOMPtr<nsIFile>        mZipFile;        
-    nsCString                mOuterZipEntry;  
-    nsAutoPtr<nsZipArchive>  mZip;            
-    nsObjectHashtable        mManifestData;   
-    PRBool                   mParsedManifest; 
-    nsCOMPtr<nsIPrincipal>   mPrincipal;      
-    PRInt16                  mGlobalStatus;   
-    PRIntervalTime           mReleaseTime;    
-    nsZipReaderCache*        mCache;          
-    mozilla::Mutex           mLock;	
+    //-- Private data members
+    nsCOMPtr<nsIFile>        mZipFile;        // The zip/jar file on disk
+    nsCString                mOuterZipEntry;  // The entry in the zip this zip is reading from
+    nsAutoPtr<nsZipArchive>  mZip;            // The underlying zip archive
+    nsObjectHashtable        mManifestData;   // Stores metadata for each entry
+    PRBool                   mParsedManifest; // True if manifest has been parsed
+    nsCOMPtr<nsIPrincipal>   mPrincipal;      // The entity which signed this file
+    PRInt16                  mGlobalStatus;   // Global signature verification status
+    PRIntervalTime           mReleaseTime;    // used by nsZipReaderCache for flushing entries
+    nsZipReaderCache*        mCache;          // if cached, this points to the cache it's contained in
+    PRLock*                  mLock;	
     PRInt64                  mMtime;
     PRInt32                  mTotalItemsInManifest;
-    PRBool                   mOpened;
-
+    
     nsresult ParseManifest();
     void     ReportError(const char* aFilename, PRInt16 errorCode);
     nsresult LoadEntry(const char* aFilename, char** aBuf, 
@@ -157,16 +156,16 @@ class nsJAR : public nsIZipReader
     nsresult CalculateDigest(const char* aInBuf, PRUint32 aInBufLen,
                              nsCString& digest);
 
-    
+    //-- Debugging
     void DumpMetadata(const char* aMessage);
 };
 
-
-
-
-
-
-
+/**
+ * nsJARItem
+ *
+ * An individual JAR entry. A set of nsJARItems macthing a
+ * supplied pattern are returned in a nsJAREnumerator.
+ */
 class nsJARItem : public nsIZipEntry
 {
 public:
@@ -177,8 +176,8 @@ public:
     virtual ~nsJARItem() {}
 
 private:
-    PRUint32     mSize;             
-    PRUint32     mRealsize;         
+    PRUint32     mSize;             /* size in original file */
+    PRUint32     mRealsize;         /* inflated size */
     PRUint32     mCrc32;
     PRTime       mLastModTime;
     PRUint16     mCompression;
@@ -186,12 +185,12 @@ private:
     PRPackedBool mIsSynthetic;
 };
 
-
-
-
-
-
-
+/**
+ * nsJAREnumerator
+ *
+ * Enumerates a list of files in a zip archive 
+ * (based on a pattern match in its member nsZipFind).
+ */
 class nsJAREnumerator : public nsIUTF8StringEnumerator
 {
 public:
@@ -204,13 +203,13 @@ public:
 
 private:
     nsZipFind    *mFind;
-    const char*   mName;    
+    const char*   mName;    // pointer to an name owned by mArchive -- DON'T delete
     PRUint16      mNameLen;
 
     ~nsJAREnumerator() { delete mFind; }
 };
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #if defined(DEBUG_warren) || defined(DEBUG_jband)
 #define ZIP_CACHE_HIT_RATE
@@ -230,7 +229,7 @@ public:
   nsresult ReleaseZip(nsJAR* reader);
 
 protected:
-  mozilla::Mutex        mLock;
+  PRLock*               mLock;
   PRInt32               mCacheSize;
   nsSupportsHashtable   mZips;
 
@@ -243,6 +242,6 @@ protected:
 
 };
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-#endif 
+#endif /* nsJAR_h__ */
