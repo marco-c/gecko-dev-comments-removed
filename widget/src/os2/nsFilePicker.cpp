@@ -1,43 +1,43 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Mozilla browser.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2000
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Stuart Parmenter <pavlov@netscape.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-// Define so header files for openfilename are included
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef WIN32_LEAN_AND_MEAN
 #undef WIN32_LEAN_AND_MEAN
 #endif
@@ -57,7 +57,7 @@
 
 #include "nsOS2Uni.h"
 
-/* Item structure */
+
 typedef struct _MyData
 {
    PAPSZ    papszIFilterList;
@@ -77,11 +77,11 @@ static char* gpszFDFileReadOnly = 0;
 MRESULT EXPENTRY DirDialogProc( HWND hwndDlg, ULONG msg, MPARAM mp1, MPARAM mp2);
 MRESULT EXPENTRY FileDialogProc( HWND hwndDlg, ULONG msg, MPARAM mp1, MPARAM mp2);
 
-//-------------------------------------------------------------------------
-//
-// nsFilePicker constructor
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 nsFilePicker::nsFilePicker()
 {
   mWnd = NULL;
@@ -90,11 +90,11 @@ nsFilePicker::nsFilePicker()
   mSelectedType   = 0;
 }
 
-//-------------------------------------------------------------------------
-//
-// nsFilePicker destructor
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 nsFilePicker::~nsFilePicker()
 {
   mFilters.Clear();
@@ -104,7 +104,7 @@ nsFilePicker::~nsFilePicker()
   NS_IF_RELEASE(mUnicodeDecoder);
 }
 
-/* static */ void
+ void
 nsFilePicker::ReleaseGlobals()
 {
   if (gpszFDSaveCaption) {
@@ -114,11 +114,11 @@ nsFilePicker::ReleaseGlobals()
   }
 }
 
-//-------------------------------------------------------------------------
-//
-// Show - Display the file dialog
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
 {
   NS_ENSURE_ARG_POINTER(retval);
@@ -140,7 +140,7 @@ NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
   nsCAutoString initialDir;
   if (mDisplayDirectory)
     mDisplayDirectory->GetNativePath(initialDir);
-  // If no display directory, re-use the last one.
+  
   if(initialDir.IsEmpty())
     initialDir = mLastUsedDirectory;
 
@@ -189,13 +189,13 @@ NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
     filedlg.ulUser = (ULONG)pmydata;
     filedlg.pfnDlgProc = FileDialogProc;
 
-    PRUint32 i;
+    int i;
 
     PSZ *apszTypeList;
-    apszTypeList = (PSZ *)malloc(mTitles.Length()*sizeof(PSZ)+1);
-    for (i = 0; i < mTitles.Length(); i++)
+    apszTypeList = (PSZ *)malloc(mTitles.Count()*sizeof(PSZ)+1);
+    for (i = 0; i < mTitles.Count(); i++)
     {
-      const nsString& typeWide = mTitles[i];
+      const nsString& typeWide = *mTitles[i];
       nsAutoCharBuffer buffer;
       PRInt32 bufLength;
       WideCharToMultiByte(0, typeWide.get(), typeWide.Length(),
@@ -206,10 +206,10 @@ NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
     filedlg.papszITypeList = (PAPSZ)apszTypeList;
 
     PSZ *apszFilterList;
-    apszFilterList = (PSZ *)malloc(mFilters.Length()*sizeof(PSZ)+1);
-    for (i = 0; i < mFilters.Length(); i++)
+    apszFilterList = (PSZ *)malloc(mFilters.Count()*sizeof(PSZ)+1);
+    for (i = 0; i < mFilters.Count(); i++)
     {
-      const nsString& filterWide = mFilters[i];
+      const nsString& filterWide = *mFilters[i];
       apszFilterList[i] = ToNewCString(filterWide);
     }
     apszFilterList[i] = 0;
@@ -319,13 +319,13 @@ NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
       mSelectedType = (PRInt16)pmydata->ulCurExt;
     }
 
-    for (i = 0; i < mTitles.Length(); i++)
+    for (i = 0; i < mTitles.Count(); i++)
     {
       nsMemory::Free(*(filedlg.papszITypeList[i]));
     }
     free(filedlg.papszITypeList);
 
-    for (i = 0; i < mFilters.Length(); i++)
+    for (i = 0; i < mFilters.Count(); i++)
     {
       nsMemory::Free(*(pmydata->papszIFilterList[i]));
     }
@@ -340,7 +340,7 @@ NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
     PRInt16 returnOKorReplace = returnOK;
 
     nsresult rv;
-    // Remember last used directory.
+    
     nsCOMPtr<nsILocalFile> file(do_CreateInstance("@mozilla.org/file/local;1", &rv));
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -353,8 +353,8 @@ NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
         localDir->GetNativePath(newDir);
         if(!newDir.IsEmpty())
           PL_strncpyz(mLastUsedDirectory, newDir.get(), MAX_PATH+1);
-        // Update mDisplayDirectory with this directory, also.
-        // Some callers rely on this.
+        
+        
         if (!mDisplayDirectory)
            mDisplayDirectory = do_CreateInstance("@mozilla.org/file/local;1");
         if (mDisplayDirectory)
@@ -363,8 +363,8 @@ NS_IMETHODIMP nsFilePicker::Show(PRInt16 *retval)
     }
 
     if (mMode == modeSave) {
-      // Windows does not return resultReplace,
-      //   we must check if file already exists
+      
+      
       PRBool exists = PR_FALSE;
       file->Exists(&exists);
       if (exists)
@@ -398,7 +398,7 @@ NS_IMETHODIMP nsFilePicker::GetFile(nsILocalFile **aFile)
   return NS_OK;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP nsFilePicker::GetFileURL(nsIURI **aFileURL)
 {
   *aFileURL = nsnull;
@@ -416,16 +416,16 @@ NS_IMETHODIMP nsFilePicker::GetFiles(nsISimpleEnumerator **aFiles)
   return NS_NewArrayEnumerator(aFiles, mFiles);
 }
 
-//-------------------------------------------------------------------------
-//
-// Get the file + path
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 NS_IMETHODIMP nsFilePicker::SetDefaultString(const nsAString& aString)
 {
   mDefault = aString;
 
-  //First, make sure the file name is not too long!
+  
   PRInt32 nameLength;
   PRInt32 nameIndex = mDefault.RFind("\\");
   if (nameIndex == kNotFound)
@@ -439,18 +439,18 @@ NS_IMETHODIMP nsFilePicker::SetDefaultString(const nsAString& aString)
     if (extIndex == kNotFound)
       extIndex = mDefault.Length();
 
-    //Let's try to shave the needed characters from the name part
+    
     PRInt32 charsToRemove = nameLength - CCHMAXPATH;
     if (extIndex - nameIndex >= charsToRemove) {
       mDefault.Cut(extIndex - charsToRemove, charsToRemove);
     }
   }
 
-  //Then, we need to replace illegal characters.
-  //Windows has the following statement:
-  //At this stage, we cannot replace the backslash as the string might represent a file path.
-  //But it is not correct - Windows assumes this is not a path as well,
-  //as one of the FILE_ILLEGAL_CHARACTERS is a colon (:)
+  
+  
+  
+  
+  
 
   mDefault.ReplaceChar("\"", '\'');
   mDefault.ReplaceChar("<", '(');
@@ -466,11 +466,11 @@ NS_IMETHODIMP nsFilePicker::GetDefaultString(nsAString& aString)
   return NS_ERROR_FAILURE;
 }
 
-//-------------------------------------------------------------------------
-//
-// The default extension to use for files
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 NS_IMETHODIMP nsFilePicker::GetDefaultExtension(nsAString& aExtension)
 {
   aExtension = mDefaultExtension;
@@ -483,11 +483,11 @@ NS_IMETHODIMP nsFilePicker::SetDefaultExtension(const nsAString& aExtension)
   return NS_OK;
 }
 
-//-------------------------------------------------------------------------
-//
-// Set the filter index
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 NS_IMETHODIMP nsFilePicker::GetFilterIndex(PRInt32 *aFilterIndex)
 {
   *aFilterIndex = mSelectedType;
@@ -500,7 +500,7 @@ NS_IMETHODIMP nsFilePicker::SetFilterIndex(PRInt32 aFilterIndex)
   return NS_OK;
 }
 
-//-------------------------------------------------------------------------
+
 void nsFilePicker::InitNative(nsIWidget *aParent,
                               const nsAString& aTitle,
                               PRInt16 aMode)
@@ -511,7 +511,7 @@ void nsFilePicker::InitNative(nsIWidget *aParent,
 }
 
 
-//-------------------------------------------------------------------------
+
 void nsFilePicker::GetFileSystemCharset(nsCString & fileSystemCharset)
 {
   static nsCAutoString aCharset;
@@ -529,13 +529,13 @@ void nsFilePicker::GetFileSystemCharset(nsCString & fileSystemCharset)
   fileSystemCharset = aCharset;
 }
 
-//-------------------------------------------------------------------------
+
 char * nsFilePicker::ConvertToFileSystemCharset(const nsAString& inString)
 {
   char *outString = nsnull;
   nsresult rv = NS_OK;
 
-  // get file system charset and create a unicode encoder
+  
   if (nsnull == mUnicodeEncoder) {
     nsCAutoString fileSystemCharset;
     GetFileSystemCharset(fileSystemCharset);
@@ -547,7 +547,7 @@ char * nsFilePicker::ConvertToFileSystemCharset(const nsAString& inString)
     }
   }
 
-  // converts from unicode to the file system charset
+  
   if (NS_SUCCEEDED(rv)) {
     PRInt32 inLength = inString.Length();
 
@@ -572,13 +572,13 @@ char * nsFilePicker::ConvertToFileSystemCharset(const nsAString& inString)
   return NS_SUCCEEDED(rv) ? outString : nsnull;
 }
 
-//-------------------------------------------------------------------------
+
 PRUnichar * nsFilePicker::ConvertFromFileSystemCharset(const char *inString)
 {
   PRUnichar *outString = nsnull;
   nsresult rv = NS_OK;
 
-  // get file system charset and create a unicode encoder
+  
   if (nsnull == mUnicodeDecoder) {
     nsCAutoString fileSystemCharset;
     GetFileSystemCharset(fileSystemCharset);
@@ -590,7 +590,7 @@ PRUnichar * nsFilePicker::ConvertFromFileSystemCharset(const char *inString)
     }
   }
 
-  // converts from the file system charset to unicode
+  
   if (NS_SUCCEEDED(rv)) {
     PRInt32 inLength = strlen(inString);
     PRInt32 outLength;
@@ -616,10 +616,10 @@ NS_IMETHODIMP
 nsFilePicker::AppendFilter(const nsAString& aTitle, const nsAString& aFilter)
 {
   if (aFilter.EqualsLiteral("..apps"))
-    mFilters.AppendElement(NS_LITERAL_STRING("*.exe;*.cmd;*.com;*.bat"));
+    mFilters.AppendString(NS_LITERAL_STRING("*.exe;*.cmd;*.com;*.bat"));
   else
-    mFilters.AppendElement(aFilter);
-  mTitles.AppendElement(aTitle);
+    mFilters.AppendString(aFilter);
+  mTitles.AppendString(aTitle);
 
   return NS_OK;
 }
@@ -664,7 +664,7 @@ MRESULT EXPENTRY DirDialogProc( HWND hwndDlg, ULONG msg, MPARAM mp1, MPARAM mp2)
          hwndCancel = WinWindowFromID(hwndDlg, DID_CANCEL);
          
 #define SPACING 10
-         // Reposition drives combobox
+         
          ulCurY = SPACING;
          ulCurX = SPACING + lDlgFrameX;
          WinQueryWindowPos(hwndOK, &swpOK);
@@ -692,7 +692,7 @@ MRESULT EXPENTRY DirDialogProc( HWND hwndDlg, ULONG msg, MPARAM mp1, MPARAM mp2)
          WinSetWindowPos(hwndFileST, 0, ulCurX, ulCurY, swpFileST.cx, swpFileST.cy, SWP_MOVE | SWP_SIZE);
          ulCurY += swpFileST.cy + SPACING;
 
-         // Hide unused stuff
+         
          henum = WinBeginEnumWindows(hwndDlg);
          while ((hwndNext = WinGetNextWindow(henum)) != NULLHANDLE)
          {
@@ -739,7 +739,7 @@ MRESULT EXPENTRY DirDialogProc( HWND hwndDlg, ULONG msg, MPARAM mp1, MPARAM mp2)
        
          strcpy(szString, pfiledlg->szFullFile);
          iLength = strlen(pfiledlg->szFullFile);
-         /* If we are not just a drive */
+         
          if (iLength > 3) {
            if (szString[iLength-1] == '\\') {
              szString[iLength-1] = '\0';
@@ -791,7 +791,7 @@ MRESULT EXPENTRY FileDialogProc( HWND hwndDlg, ULONG msg, MPARAM mp1, MPARAM mp2
 
   switch ( msg ) {
     case WM_INITDLG:
-       /* Create another dropdown that we manage */
+       
        mr = WinDefFileDlgProc(hwndDlg, msg, mp1, mp2);
        hwndTypeCombo = WinWindowFromID(hwndDlg, DID_FILTER_CB);
        WinQueryWindowPos(hwndTypeCombo, &swp);

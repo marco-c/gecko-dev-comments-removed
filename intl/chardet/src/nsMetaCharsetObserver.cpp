@@ -1,39 +1,39 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1999
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "nsDeque.h"
 #include "nsICharsetAlias.h"
 #include "nsMetaCharsetObserver.h"
@@ -62,7 +62,7 @@ static const eHTMLTags gWatchTags[] =
   eHTMLTag_unknown
 };
 
-//-------------------------------------------------------------------------
+
 nsMetaCharsetObserver::nsMetaCharsetObserver()
 {
   bMetaCharsetObserverStarted = PR_FALSE;
@@ -73,23 +73,23 @@ nsMetaCharsetObserver::nsMetaCharsetObserver()
      mAlias = calias;
   }
 }
-//-------------------------------------------------------------------------
+
 nsMetaCharsetObserver::~nsMetaCharsetObserver()
 {
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMPL_ADDREF ( nsMetaCharsetObserver )
 NS_IMPL_RELEASE ( nsMetaCharsetObserver )
 
-// Use the new scheme
+
 NS_IMPL_QUERY_INTERFACE4(nsMetaCharsetObserver, 
                          nsIElementObserver, 
                          nsIObserver, 
                          nsIMetaCharsetService, 
                          nsISupportsWeakReference)
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP nsMetaCharsetObserver::Notify(
                      PRUint32 aDocumentID, 
                      const PRUnichar* aTag, 
@@ -103,7 +103,7 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
     else
         return Notify(aDocumentID, numOfAttributes, nameArray, valueArray);
 }
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP nsMetaCharsetObserver::Notify(
                      PRUint32 aDocumentID, 
                      eHTMLTags aTag, 
@@ -131,18 +131,18 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
        keys.Push((void*)nameArray[i]);
        values.Push((void*)valueArray[i]);
    }
-   return NS_OK;//Notify((nsISupports*)aDocumentID, &keys, &values);
+   return NS_OK;
 }
 NS_IMETHODIMP nsMetaCharsetObserver::Notify(
                      nsISupports* aWebShell,
                      nsISupports* aChannel,
                      const PRUnichar* aTag, 
-                     const nsTArray<nsString>* keys, 
-                     const nsTArray<nsString>* values,
+                     const nsStringArray* keys, 
+                     const nsStringArray* values,
                      const PRUint32 aFlags)
 {
   nsresult result = NS_OK;
-  // bug 125317 - document.write content is already an unicode content.
+  
   if (!(aFlags & nsIElementObserver::IS_DOCUMENT_WRITE)) {
     if(!nsDependentString(aTag).LowerCaseEqualsLiteral("meta")) {
         result = NS_ERROR_ILLEGAL_VALUE;
@@ -159,13 +159,13 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
 NS_IMETHODIMP nsMetaCharsetObserver::Notify(
                     nsISupports* aWebShell,
                     nsISupports* aChannel,
-                    const nsTArray<nsString>* keys, 
-                    const nsTArray<nsString>* values)
+                    const nsStringArray* keys, 
+                    const nsStringArray* values)
 {
     NS_PRECONDITION(keys!=nsnull && values!=nsnull,"Need key-value pair");
 
-    PRUint32 numOfAttributes = keys->Length();
-    NS_ASSERTION( numOfAttributes == values->Length(), "size mismatch");
+    PRInt32 numOfAttributes = keys->Count();
+    NS_ASSERTION( numOfAttributes == values->Count(), "size mismatch");
     nsresult res=NS_OK;
 #ifdef DEBUG
 
@@ -174,9 +174,9 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
     PRUnichar Ucharset[]={'c','h','a','r','s','e','t','\0'};
     
     NS_ASSERTION(numOfAttributes >= 3, "should have at least 3 private attribute");
-    NS_ASSERTION(0==nsCRT::strcmp(Uxcommand,(keys->ElementAt(numOfAttributes-1)).get()),"last name should be 'X_COMMAND'" );
-    NS_ASSERTION(0==nsCRT::strcmp(UcharsetSource,(keys->ElementAt(numOfAttributes-2)).get()),"2nd last name should be 'charsetSource'" );
-    NS_ASSERTION(0==nsCRT::strcmp(Ucharset,(keys->ElementAt(numOfAttributes-3)).get()),"3rd last name should be 'charset'" );
+    NS_ASSERTION(0==nsCRT::strcmp(Uxcommand,(keys->StringAt(numOfAttributes-1))->get()),"last name should be 'X_COMMAND'" );
+    NS_ASSERTION(0==nsCRT::strcmp(UcharsetSource,(keys->StringAt(numOfAttributes-2))->get()),"2nd last name should be 'charsetSource'" );
+    NS_ASSERTION(0==nsCRT::strcmp(Ucharset,(keys->StringAt(numOfAttributes-3))->get()),"3rd last name should be 'charset'" );
 
 #endif
     NS_ASSERTION(mAlias, "Didn't get nsICharsetAlias in constructor");
@@ -184,40 +184,43 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
     if(nsnull == mAlias)
       return NS_ERROR_ABORT;
 
-    // we need at least 5 - HTTP-EQUIV, CONTENT and 3 private
+    
     if(numOfAttributes >= 5 ) 
     {
-      const nsString& srcStr =  values->ElementAt(numOfAttributes-2);
+      const PRUnichar *charset = (values->StringAt(numOfAttributes-3))->get();
+      const PRUnichar *source =  (values->StringAt(numOfAttributes-2))->get();
       PRInt32 err;
+      nsAutoString srcStr(source);
       PRInt32  src = srcStr.ToInteger(&err);
-      // if we cannot convert the string into PRInt32, return error
+      
       NS_ASSERTION(NS_SUCCEEDED(err), "cannot get charset source");
       if(NS_FAILED(err))
           return NS_ERROR_ILLEGAL_VALUE;
 
       if(kCharsetFromMetaTag <= src)
-          return NS_OK; // current charset has higher priority. don't bother to do the following
+          return NS_OK; 
 
+      PRInt32 i;
       const PRUnichar *httpEquivValue=nsnull;
       const PRUnichar *contentValue=nsnull;
       const PRUnichar *charsetValue=nsnull;
 
-      for (PRUint32 i = 0; i < numOfAttributes - 3; i++)
+      for(i=0;i<(numOfAttributes-3);i++)
       {
         const PRUnichar *keyStr;
-        keyStr = keys->ElementAt(i).get();
+        keyStr = (keys->StringAt(i))->get();
 
-        //Change 3.190 in nsHTMLTokens.cpp allow  ws/tab/cr/lf exist before 
-        // and after text value, this need to be skipped before comparison
+        
+        
         while(IS_SPACE_CHARS(*keyStr)) 
           keyStr++;
 
         if(Substring(keyStr, keyStr+10).LowerCaseEqualsLiteral("http-equiv"))
-              httpEquivValue = values->ElementAt(i).get();
+              httpEquivValue = values->StringAt(i)->get();
         else if(Substring(keyStr, keyStr+7).LowerCaseEqualsLiteral("content"))
-              contentValue = values->ElementAt(i).get();
+              contentValue = values->StringAt(i)->get();
         else if (Substring(keyStr, keyStr+7).LowerCaseEqualsLiteral("charset"))
-              charsetValue = values->ElementAt(i).get();
+              charsetValue = values->StringAt(i)->get();
       }
       NS_NAMED_LITERAL_STRING(contenttype, "Content-Type");
       NS_NAMED_LITERAL_STRING(texthtml, "text/html");
@@ -227,13 +230,13 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
 
       while(IS_SPACE_CHARS(*httpEquivValue))
         ++httpEquivValue;
-      // skip opening quote
+      
       if (*httpEquivValue == '\'' || *httpEquivValue == '\"')
         ++httpEquivValue;
 
       while(IS_SPACE_CHARS(*contentValue))
         ++contentValue;
-      // skip opening quote
+      
       if (*contentValue == '\'' || *contentValue == '\"')
         ++contentValue;
 
@@ -252,12 +255,12 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
 
          if (nsnull == charsetValue) 
          {
-           nsAutoString contentPart1(contentValue+9); // after "text/html"
+           nsAutoString contentPart1(contentValue+9); 
            PRInt32 start = contentPart1.RFind("charset=", PR_TRUE ) ;
            PRInt32 end = contentPart1.Length();
            if(kNotFound != start)
            {
-             start += 8; // 8 = "charset=".length 
+             start += 8; 
              while (start < end && contentPart1.CharAt(start) == PRUnichar(' '))
                ++start;
              if (start < end) {
@@ -275,8 +278,7 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
              LossyCopyUTF16toASCII(nsDependentString(charsetValue), newCharset);
          } 
 
-         nsCAutoString charsetString;
-         charsetString.AssignWithConversion(values->ElementAt(numOfAttributes-3));
+         nsCAutoString charsetString; charsetString.AssignWithConversion(charset);
          
          if (!newCharset.IsEmpty())
          {    
@@ -290,28 +292,28 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
                      res2 = mAlias->GetPreferred(newCharset, preferred);
                      if(NS_SUCCEEDED(res2))
                      {
-                        // following charset should have been detected by parser
+                        
                         if (!preferred.EqualsLiteral("UTF-16") &&
                             !preferred.EqualsLiteral("UTF-16BE") &&
                             !preferred.EqualsLiteral("UTF-16LE") &&
                             !preferred.EqualsLiteral("UTF-32") &&
                             !preferred.EqualsLiteral("UTF-32BE") &&
                             !preferred.EqualsLiteral("UTF-32LE")) {
-                          // Propagate the error message so that the parser can
-                          // shutdown correctly. - Ref. Bug 96440
+                          
+                          
                           res = NotifyWebShell(aWebShell,
                                                aChannel,
                                                preferred.get(),
                                                kCharsetFromMetaTag);
                         }
-                     } // if(NS_SUCCEEDED(res)
+                     } 
                  }
              }
              else {
                res = NS_HTMLPARSER_VALID_META_CHARSET;
-             } // if EqualIgnoreCase 
-         } // if !newCharset.IsEmpty()
-      } // if
+             } 
+         } 
+      } 
     }
     else
     {
@@ -329,10 +331,10 @@ NS_IMETHODIMP nsMetaCharsetObserver::Notify(
     return res;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP nsMetaCharsetObserver::GetCharsetFromCompatibilityTag(
-                     const nsTArray<nsString>* keys, 
-                     const nsTArray<nsString>* values, 
+                     const nsStringArray* keys, 
+                     const nsStringArray* values, 
                      nsAString& aCharset)
 {
     if (!mAlias)
@@ -342,35 +344,35 @@ NS_IMETHODIMP nsMetaCharsetObserver::GetCharsetFromCompatibilityTag(
     nsresult res = NS_OK;
 
 
-    // support for non standard case for compatibility
-    // e.g. <META charset="ISO-8859-1">
-    PRUint32 numOfAttributes = keys->Length();
+    
+    
+    PRInt32 numOfAttributes = keys->Count();
     if ((numOfAttributes >= 3) &&
-        (keys->ElementAt(0).LowerCaseEqualsLiteral("charset")))
+        (keys->StringAt(0)->LowerCaseEqualsLiteral("charset")))
     {
-      const nsString& srcStr = values->ElementAt(numOfAttributes-2);
+      nsAutoString srcStr((values->StringAt(numOfAttributes-2))->get());
       PRInt32 err;
       PRInt32  src = srcStr.ToInteger(&err);
-      // if we cannot convert the string into PRInt32, return error
+      
       if (NS_FAILED(err))
           return NS_ERROR_ILLEGAL_VALUE;
       
-      // current charset have a lower priority
+      
       if (kCharsetFromMetaTag > src)
       {
           nsCAutoString newCharset;
-          newCharset.AssignWithConversion(values->ElementAt(0).get());
+          newCharset.AssignWithConversion(values->StringAt(0)->get());
           
           nsCAutoString preferred;
           res = mAlias->GetPreferred(newCharset,
                                      preferred);
           if (NS_SUCCEEDED(res))
           {
-              // compare against the current charset, 
-              // also some charsets which should have been found in
-              // the BOM detection.
-              const nsString& currentCharset = values->ElementAt(numOfAttributes-3);
-              if (!preferred.Equals(NS_LossyConvertUTF16toASCII(currentCharset)) &&
+              
+              
+              
+              nsString* currentCharset = values->StringAt(numOfAttributes-3);
+              if (!preferred.Equals(NS_LossyConvertUTF16toASCII(*currentCharset)) &&
                   !preferred.EqualsLiteral("UTF-16") &&
                   !preferred.EqualsLiteral("UTF-16BE") &&
                   !preferred.EqualsLiteral("UTF-16LE") &&
@@ -385,7 +387,7 @@ NS_IMETHODIMP nsMetaCharsetObserver::GetCharsetFromCompatibilityTag(
   return res;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP nsMetaCharsetObserver::Observe(nsISupports *aSubject,
                             const char *aTopic,
                                const PRUnichar *aData) 
@@ -397,7 +399,7 @@ NS_IMETHODIMP nsMetaCharsetObserver::Observe(nsISupports *aSubject,
   return rv;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP nsMetaCharsetObserver::Start() 
 {
   nsresult rv = NS_OK;
@@ -417,7 +419,7 @@ NS_IMETHODIMP nsMetaCharsetObserver::Start()
 
   return rv;
 }
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP nsMetaCharsetObserver::End() 
 {
   nsresult rv = NS_OK;
@@ -433,7 +435,7 @@ NS_IMETHODIMP nsMetaCharsetObserver::End()
   }
   return rv;
 }
-//========================================================================== 
+
 
 
 

@@ -1,47 +1,46 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla MathML Project.
- *
- * The Initial Developer of the Original Code is
- * The University Of Queensland.
- * Portions created by the Initial Developer are Copyright (C) 1999
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Roger B. Sidje <rbs@maths.uq.edu.au>
- *   Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsHashtable.h"
 #include "nsVoidArray.h"
-#include "nsTArray.h"
 
 #include "nsIComponentManager.h"
 #include "nsIPersistentProperties2.h"
@@ -50,7 +49,7 @@
 
 #include "nsMathMLOperators.h"
 
-// operator dictionary entry
+
 struct OperatorData {
   OperatorData(void)
     : mFlags(0),
@@ -59,22 +58,22 @@ struct OperatorData {
   {
   }
 
-  // member data
+  
   nsString        mStr;
   nsOperatorFlags mFlags;
-  float           mLeftSpace;   // unit is em
-  float           mRightSpace;  // unit is em
+  float           mLeftSpace;   
+  float           mRightSpace;  
 };
 
-/*
-  The MathML REC says:
-  "If the operator does not occur in the dictionary with the specified form,
-  the renderer should use one of the forms which is available there, in the
-  order of preference: infix, postfix, prefix."
 
-  The following variable will be used to keep track of all possible forms
-  encountered in the Operator Dictionary.
-*/
+
+
+
+
+
+
+
+
 static OperatorData*   gOperatorFound[4];
 
 static PRInt32         gTableRefCount = 0;
@@ -82,7 +81,7 @@ static PRInt32         gOperatorCount = 0;
 static OperatorData*   gOperatorArray = nsnull;
 static nsHashtable*    gOperatorTable = nsnull;
 static nsVoidArray*    gStretchyOperatorArray = nsnull;
-static nsTArray<nsString>*  gInvariantCharArray = nsnull;
+static nsStringArray*  gInvariantCharArray = nsnull;
 static PRBool          gInitialized   = PR_FALSE;
 
 static const PRUnichar kNullCh  = PRUnichar('\0');
@@ -115,13 +114,13 @@ SetProperty(OperatorData* aOperatorData,
   if (!aName.Length() || !aValue.Length())
     return;
 
-  // XXX These ones are not kept in the dictionary
-  // Support for these requires nsString member variables 
-  // maxsize (default: infinity)
-  // minsize (default: 1)
+  
+  
+  
+  
 
   if (aValue.EqualsLiteral("true")) {
-    // see if we should enable flags with default value=false
+    
     if (aName.EqualsLiteral("fence"))
       aOperatorData->mFlags |= NS_MATHML_OPERATOR_FENCE;
     else if (aName.EqualsLiteral("accent"))
@@ -134,7 +133,7 @@ SetProperty(OperatorData* aOperatorData,
       aOperatorData->mFlags |= NS_MATHML_OPERATOR_MOVABLELIMITS;
   }
   else if (aValue.EqualsLiteral("false")) {
-    // see if we should disable flags with default value=true
+    
     if (aName.EqualsLiteral("symmetric"))
       aOperatorData->mFlags &= ~NS_MATHML_OPERATOR_SYMMETRIC;
   }
@@ -144,7 +143,7 @@ SetProperty(OperatorData* aOperatorData,
       aOperatorData->mFlags |= NS_MATHML_OPERATOR_STRETCHY_VERT;
     else if (aValue.EqualsLiteral("horizontal"))
       aOperatorData->mFlags |= NS_MATHML_OPERATOR_STRETCHY_HORIZ;
-    else return; // invalid value
+    else return; 
     if (kNotFound == nsMathMLOperators::FindStretchyOperator(aOperatorData->mStr[0])) {
       gStretchyOperatorArray->AppendElement(aOperatorData);
     }
@@ -157,15 +156,15 @@ SetProperty(OperatorData* aOperatorData,
       isLeftSpace = PR_TRUE;
     else if (aName.EqualsLiteral("rspace"))
       isLeftSpace = PR_FALSE;
-    else return;  // input is not applicable
+    else return;  
 
-    // See if it is a numeric value (unit is assumed to be 'em')
+    
     if (nsCRT::IsAsciiDigit(aValue[0])) {
       PRInt32 error = 0;
       space = aValue.ToFloat(&error);
       if (error) return;
     }
-    // See if it is one of the 'namedspace' (ranging 1/18em...7/18em)
+    
     else if (aValue.EqualsLiteral("veryverythinmathspace"))  i = 1;
     else if (aValue.EqualsLiteral("verythinmathspace"))      i = 2;
     else if (aValue.EqualsLiteral("thinmathspace"))          i = 3;
@@ -174,7 +173,7 @@ SetProperty(OperatorData* aOperatorData,
     else if (aValue.EqualsLiteral("verythickmathspace"))     i = 6;
     else if (aValue.EqualsLiteral("veryverythickmathspace")) i = 7;
 
-    if (0 != i) // it was a namedspace value
+    if (0 != i) 
       space = float(i)/float(18);
 
     if (isLeftSpace)
@@ -191,8 +190,8 @@ SetOperator(OperatorData*   aOperatorData,
             nsString&        aAttributes)
 
 {
-  // aOperator is in the expanded format \uNNNN\uNNNN ...
-  // First compress these Unicode points to the internal nsString format
+  
+  
   PRInt32 i = 0;
   nsAutoString name, value;
   PRInt32 len = aOperator.Length();
@@ -234,12 +233,12 @@ SetOperator(OperatorData*   aOperatorData,
   }
   if (0 != state) return PR_FALSE;
 
-  // Quick return when the caller doesn't care about the attributes and just wants
-  // to know if this is a valid operator (this is the case at the first pass of the
-  // parsing of the dictionary in InitOperators())
+  
+  
+  
   if (!aForm) return PR_TRUE;
 
-  // Add operator to hash table (symmetric="true" by default for all operators)
+  
   aOperatorData->mFlags |= aForm | NS_MATHML_OPERATOR_SYMMETRIC;
   aOperatorData->mStr.Assign(value);
   value.AppendInt(aForm, 10);
@@ -249,19 +248,19 @@ SetOperator(OperatorData*   aOperatorData,
 #ifdef NS_DEBUG
   NS_LossyConvertUTF16toASCII str(aAttributes);
 #endif
-  // Loop over the space-delimited list of attributes to get the name:value pairs
-  aAttributes.Append(kNullCh);  // put an extra null at the end
+  
+  aAttributes.Append(kNullCh);  
   PRUnichar* start = aAttributes.BeginWriting();
   PRUnichar* end   = start;
   while ((kNullCh != *start) && (kDashCh != *start)) {
     name.SetLength(0);
     value.SetLength(0);
-    // skip leading space, the dash amounts to the end of the line
+    
     while ((kNullCh!=*start) && (kDashCh!=*start) && nsCRT::IsAsciiSpace(*start)) {
       ++start;
     }
     end = start;
-    // look for ':' or '='
+    
     while ((kNullCh!=*end) && (kDashCh!=*end) && (kColonCh!=*end) && (kEqualCh!=*end)) {
       ++end;
     }
@@ -271,18 +270,18 @@ SetOperator(OperatorData*   aOperatorData,
 #endif
       return PR_TRUE;
     }
-    *end = kNullCh; // end segment here
-    // this segment is the name
+    *end = kNullCh; 
+    
     if (start < end) {
       name.Assign(start);
     }
     start = ++end;
-    // look for space or end of line
+    
     while ((kNullCh!=*end) && (kDashCh!=*start) && !nsCRT::IsAsciiSpace(*end)) {
       ++end;
     }
-    *end = kNullCh; // end segment here
-    // this segment is the value
+    *end = kNullCh; 
+    
     if (start < end) {
       value.Assign(start);
     }
@@ -295,25 +294,25 @@ SetOperator(OperatorData*   aOperatorData,
 nsresult
 InitOperators(void)
 {
-  // Load the property file containing the Operator Dictionary
+  
   nsresult rv;
   nsCOMPtr<nsIPersistentProperties> mathfontProp;
   rv = NS_LoadPersistentPropertiesFromURISpec(getter_AddRefs(mathfontProp),
        NS_LITERAL_CSTRING("resource://gre/res/fonts/mathfont.properties"));
   if (NS_FAILED(rv)) return rv;
 
-  // Get the list of invariant chars
+  
   for (PRInt32 i = 0; i < eMATHVARIANT_COUNT; ++i) {
     nsCAutoString key(NS_LITERAL_CSTRING("mathvariant."));
     key.Append(kMathVariant_name[i]);
     nsAutoString value;
     mathfontProp->GetStringProperty(key, value);
-    gInvariantCharArray->AppendElement(value); // i.e., gInvariantCharArray[i] holds this list
+    gInvariantCharArray->AppendString(value); 
   }
 
-  // Parse the Operator Dictionary in two passes.
-  // The first pass is to count the number of operators; the second pass is to
-  // allocate the necessary space for them and to add them in the hash table.
+  
+  
+  
   for (PRInt32 pass = 1; pass <= 2; pass++) {
     OperatorData dummyData;
     OperatorData* operatorData = &dummyData;
@@ -328,26 +327,26 @@ InitOperators(void)
         if (NS_SUCCEEDED(iterator->GetNext(getter_AddRefs(element)))) {
           if (NS_SUCCEEDED(element->GetKey(name)) &&
               NS_SUCCEEDED(element->GetValue(attributes))) {
-            // expected key: operator.\uNNNN.{infix,postfix,prefix}
+            
             if ((21 <= name.Length()) && (0 == name.Find("operator.\\u"))) {
-              name.Cut(0, 9); // 9 is the length of "operator.";
+              name.Cut(0, 9); 
               PRInt32 len = name.Length();
               nsOperatorFlags form = 0;
               if (kNotFound != name.RFind(".infix")) {
                 form = NS_MATHML_OPERATOR_FORM_INFIX;
-                len -= 6;  // 6 is the length of ".infix";
+                len -= 6;  
               }
               else if (kNotFound != name.RFind(".postfix")) {
                 form = NS_MATHML_OPERATOR_FORM_POSTFIX;
-                len -= 8; // 8 is the length of ".postfix";
+                len -= 8; 
               }
               else if (kNotFound != name.RFind(".prefix")) {
                 form = NS_MATHML_OPERATOR_FORM_PREFIX;
-                len -= 7; // 7 is the length of ".prefix";
+                len -= 7; 
               }
-              else continue; // input is not applicable
+              else continue; 
               name.SetLength(len);
-              if (2 == pass) { // allocate space and start the storage
+              if (2 == pass) { 
                 if (!gOperatorArray) {
                   if (0 == gOperatorCount) return NS_ERROR_UNEXPECTED;
                   gOperatorArray = new OperatorData[gOperatorCount];
@@ -356,9 +355,9 @@ InitOperators(void)
                 operatorData = &gOperatorArray[index];
               }
               else {
-                form = 0; // to quickly return from SetOperator() at pass 1
+                form = 0; 
               }
-              // See if the operator should be retained
+              
               if (SetOperator(operatorData, form, name, attributes)) {
                 index++;
                 if (1 == pass) gOperatorCount = index;
@@ -377,7 +376,7 @@ InitGlobals()
 {
   gInitialized = PR_TRUE;
   nsresult rv = NS_ERROR_OUT_OF_MEMORY;
-  gInvariantCharArray = new nsTArray<nsString>();
+  gInvariantCharArray = new nsStringArray();
   gStretchyOperatorArray = new nsVoidArray();
   if (gInvariantCharArray && gStretchyOperatorArray) {
     gOperatorTable = new nsHashtable();
@@ -450,8 +449,8 @@ nsMathMLOperators::LookupOperator(const nsString&       aOperator,
     nsStringKey hkey(key);
     gOperatorFound[form] = found = (OperatorData*)gOperatorTable->Get(&hkey);
 
-    // If not found, check if the operator exists perhaps in a different form,
-    // in the order of preference: infix, postfix, prefix
+    
+    
     if (!found) {
       if (form != NS_MATHML_OPERATOR_FORM_INFIX) {
         form = NS_MATHML_OPERATOR_FORM_INFIX;
@@ -483,8 +482,8 @@ nsMathMLOperators::LookupOperator(const nsString&       aOperator,
       NS_ASSERTION(found->mStr.Equals(aOperator), "bad setup");
       *aLeftSpace = found->mLeftSpace;
       *aRightSpace = found->mRightSpace;
-      *aFlags &= ~NS_MATHML_OPERATOR_FORM; // clear the form bits
-      *aFlags |= found->mFlags; // just add bits without overwriting
+      *aFlags &= ~NS_MATHML_OPERATOR_FORM; 
+      *aFlags |= found->mFlags; 
       return PR_TRUE;
     }
   }
@@ -514,11 +513,11 @@ nsMathMLOperators::LookupOperators(const nsString&       aOperator,
   aRightSpace[NS_MATHML_OPERATOR_FORM_PREFIX] = 0.0f;
 
   if (gOperatorTable) {
-    // a lookup with form=0 will put all the variants in gOperatorFound[]
+    
     float dummy;
     nsOperatorFlags flags = 0;
-    LookupOperator(aOperator, /*form=*/0, &flags, &dummy, &dummy);
-    // if the operator was found, gOperatorFound contains all its variants
+    LookupOperator(aOperator, 0, &flags, &dummy, &dummy);
+    
     OperatorData* found;
     found = gOperatorFound[NS_MATHML_OPERATOR_FORM_INFIX];
     if (found) {
@@ -547,8 +546,8 @@ nsMathMLOperators::IsMutableOperator(const nsString& aOperator)
   if (!gInitialized) {
     InitGlobals();
   }
-  // lookup all the variants of the operator and return true if there
-  // is a variant that is stretchy or largeop
+  
+  
   nsOperatorFlags flags[4];
   float lspace[4], rspace[4];
   nsMathMLOperators::LookupOperators(aOperator, flags, lspace, rspace);
@@ -614,19 +613,19 @@ nsMathMLOperators::DisableStretchyOperatorAt(PRInt32 aIndex)
   }
 }
 
-/* static */ eMATHVARIANT
+ eMATHVARIANT
 nsMathMLOperators::LookupInvariantChar(const nsAString& aChar)
 {
   if (!gInitialized) {
     InitGlobals();
   }
   if (gInvariantCharArray) {
-    for (PRUint32 i = gInvariantCharArray->Length()-1; i >= 0; --i) {
-      const nsString& list = gInvariantCharArray->ElementAt(i);
+    for (PRInt32 i = gInvariantCharArray->Count()-1; i >= 0; --i) {
+      nsString* list = gInvariantCharArray->StringAt(i);
       nsString::const_iterator start, end;
-      list.BeginReading(start);
-      list.EndReading(end);
-      // Style-invariant characters are at offset 3*j + 1.
+      list->BeginReading(start);
+      list->EndReading(end);
+      
       if (FindInReadable(aChar, start, end) &&
           start.size_backward() % 3 == 1) {
         return eMATHVARIANT(i);
@@ -636,7 +635,7 @@ nsMathMLOperators::LookupInvariantChar(const nsAString& aChar)
   return eMATHVARIANT_NONE;
 }
 
-/* static */ const nsDependentSubstring
+ const nsDependentSubstring
 nsMathMLOperators::TransformVariantChar(const PRUnichar& aChar,
                                         eMATHVARIANT aVariant)
 {
@@ -644,15 +643,15 @@ nsMathMLOperators::TransformVariantChar(const PRUnichar& aChar,
     InitGlobals();
   }
   if (gInvariantCharArray) {
-    nsString list = gInvariantCharArray->ElementAt(aVariant);
-    PRInt32 index = list.FindChar(aChar);
-    // BMP characters are at offset 3*j
-    if (index != kNotFound && index % 3 == 0 && list.Length() - index >= 2 ) {
-      // The style-invariant character is the next character
-      // (and list should contain padding if the next character is in the BMP).
+    nsString* list = gInvariantCharArray->StringAt(aVariant);
+    PRInt32 index = list->FindChar(aChar);
+    
+    if (index != kNotFound && index % 3 == 0 && list->Length() - index >= 2 ) {
+      
+      
       ++index;
-      PRUint32 len = NS_IS_HIGH_SURROGATE(list.CharAt(index)) ? 2 : 1;
-      return nsDependentSubstring(list, index, len);
+      PRUint32 len = NS_IS_HIGH_SURROGATE(list->CharAt(index)) ? 2 : 1;
+      return nsDependentSubstring(*list, index, len);
     }
   }
   return nsDependentSubstring(&aChar, &aChar + 1);  

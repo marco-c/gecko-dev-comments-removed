@@ -1,53 +1,52 @@
-/* vim: set sw=2 sts=2 et cin: */
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Mozilla OS/2 libraries.
- *
- * The Initial Developer of the Original Code is
- * John Fairhurst, <john_fairhurst@iname.com>.
- * Portions created by the Initial Developer are Copyright (C) 1999
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Pierre Phaneuf <pp@ludusdesign.com>
- *   Peter Weilbacher <mozilla@weilbacher.org>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <stdlib.h>
 #include "nsDeviceContextSpecOS2.h"
 
 #include "nsReadableUtils.h"
 #include "nsISupportsArray.h"
-#include "nsTArray.h"
 
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
-#include "prenv.h" /* for PR_GetEnv */
+#include "prenv.h" 
 #include "prtime.h"
 
 #include "nsPrintfCString.h"
@@ -67,12 +66,12 @@
 
 PRINTDLG nsDeviceContextSpecOS2::PrnDlg;
 
-//----------------------------------------------------------------------------------
-// The printer data is shared between the PrinterEnumerator and the nsDeviceContextSpecOS2
-// The PrinterEnumerator creates the printer info
-// but the nsDeviceContextSpecOS2 cleans it up
-// If it gets created (via the Page Setup Dialog) but the user never prints anything
-// then it will never be delete, so this class takes care of that.
+
+
+
+
+
+
 class GlobalPrinters {
 public:
   static GlobalPrinters* GetInstance()   { return &mGlobalPrinters; }
@@ -90,16 +89,16 @@ protected:
   GlobalPrinters() {}
 
   static GlobalPrinters mGlobalPrinters;
-  static nsTArray<nsString>* mGlobalPrinterList;
+  static nsStringArray* mGlobalPrinterList;
   static ULONG          mGlobalNumPrinters;
 
 };
-//---------------
-// static members
+
+
 GlobalPrinters GlobalPrinters::mGlobalPrinters;
-nsTArray<nsString>* GlobalPrinters::mGlobalPrinterList = nsnull;
+nsStringArray* GlobalPrinters::mGlobalPrinterList = nsnull;
 ULONG          GlobalPrinters::mGlobalNumPrinters = 0;
-//---------------
+
 
 nsDeviceContextSpecOS2::nsDeviceContextSpecOS2()
   : mQueue(nsnull), mPrintDC(nsnull), mPrintingStarted(PR_FALSE)
@@ -125,7 +124,7 @@ void SetupDevModeFromSettings(ULONG printer, nsIPrintSettings* aPrintSettings)
     HDC hdc = nsDeviceContextSpecOS2::PrnDlg.GetDCHandle(printer);
     char* driver = nsDeviceContextSpecOS2::PrnDlg.GetDriverType(printer);
 
-    // Setup Orientation
+    
     PRInt32 orientation;
     aPrintSettings->GetOrientation(&orientation);
     if (!strcmp(driver, "LASERJET"))
@@ -138,7 +137,7 @@ void SetupDevModeFromSettings(ULONG printer, nsIPrintSettings* aPrintSettings)
     pDJP->ulValue = orientation == nsIPrintSettings::kPortraitOrientation?DJP_ORI_PORTRAIT:DJP_ORI_LANDSCAPE;
     pDJP++;
 
-    // Setup Number of Copies
+    
     PRInt32 copies;
     aPrintSettings->GetNumCopies(&copies);
     pDJP->cb = sizeof(DJP_ITEM);
@@ -175,7 +174,7 @@ nsresult nsDeviceContextSpecOS2::SetPrintSettingsFromDevMode(nsIPrintSettings* a
 
   HDC hdc = nsDeviceContextSpecOS2::PrnDlg.GetDCHandle(printer);
 
-  //Get Number of Copies from Job Properties
+  
   pDJP->lType = DJP_CURRENT;
   pDJP->cb = sizeof(DJP_ITEM);
   pDJP->ulNumReturned = 1;
@@ -183,7 +182,7 @@ nsresult nsDeviceContextSpecOS2::SetPrintSettingsFromDevMode(nsIPrintSettings* a
   pDJP->ulValue = 1;
   pDJP++;
 
-  //Get Orientation from Job Properties
+  
   pDJP->lType = DJP_CURRENT;
   pDJP->cb = sizeof(DJP_ITEM);
   pDJP->ulNumReturned = 1;
@@ -253,7 +252,7 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::Init(nsIWidget *aWidget,
     }
 
     if (printfile != nsnull) {
-      // ToDo: Use LocalEncoding instead of UTF-8 (see bug 73446)
+      
       strcpy(mPrData.path,    NS_ConvertUTF16toUTF8(printfile).get());
     }
     if (printer != nsnull) 
@@ -324,10 +323,10 @@ NS_IMETHODIMP nsDeviceContextSpecOS2 :: GetUserCancelled( PRBool &aCancel )
   return NS_OK;
 }
 
-/** -------------------------------------------------------
- * Closes the printmanager if it is open.
- *  @update   dc 2/15/98
- */
+
+
+
+
 NS_IMETHODIMP nsDeviceContextSpecOS2 :: ClosePrintManager()
 {
   return NS_OK;
@@ -347,24 +346,24 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::GetSurfaceForPrinter(gfxASurface **surface
 
   PRInt16 outputFormat;
   mPrintSettings->GetOutputFormat(&outputFormat);
-  // for now always set the output format to PDF, see bug 415522:
+  
   printf("print output format is %d but we are setting it to %d (PDF)\n",
          outputFormat, nsIPrintSettings::kOutputFormatPDF);
   outputFormat = nsIPrintSettings::kOutputFormatPDF;
-  mPrintSettings->SetOutputFormat(outputFormat); // save PDF format in settings
+  mPrintSettings->SetOutputFormat(outputFormat); 
 
   if (outputFormat == nsIPrintSettings::kOutputFormatPDF) {
     nsXPIDLString filename;
     mPrintSettings->GetToFileName(getter_Copies(filename));
     nsresult rv;
     if (filename.IsEmpty()) {
-      // print to a file that is visible, like one on the Desktop
+      
       nsCOMPtr<nsIFile> pdfLocation;
       rv = NS_GetSpecialDirectory(NS_OS_DESKTOP_DIR, getter_AddRefs(pdfLocation));
       NS_ENSURE_SUCCESS(rv, rv);
 
-      // construct a print output name using the current time, to make it
-      // unique and not overwrite existing files
+      
+      
       char printName[CCHMAXPATH];
       PRExplodedTime time;
       PR_ExplodeTime(PR_Now(), PR_LocalTimeParameters, &time);
@@ -386,7 +385,7 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::GetSurfaceForPrinter(gfxASurface **surface
 
     double width, height;
     mPrintSettings->GetEffectivePageSize(&width, &height);
-    // convert twips to points
+    
     width  /= TWIPS_PER_POINT_FLOAT;
     height /= TWIPS_PER_POINT_FLOAT;
 
@@ -421,9 +420,9 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::GetSurfaceForPrinter(gfxASurface **surface
            width, height, numCopies);
 #endif
 
-    // we need pixels, so scale from twips to the printer resolution
-    // and take into account that CAPS_*_RESOLUTION are in px/m, default
-    // to approx. 100dpi
+    
+    
+    
     double hDPI = 3937., vDPI = 3937.;
     LONG value;
     if (DevQueryCaps(mPrintDC, CAPS_HORIZONTAL_RESOLUTION, 1, &value))
@@ -438,8 +437,8 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::GetSurfaceForPrinter(gfxASurface **surface
            width, height, hDPI, vDPI, width*height*4./1024./1024.);
 #endif
 
-    // perhaps restrict to usable area
-    // (this or scaling down won't help, we will just get more pages and still crash!)
+    
+    
     if (DevQueryCaps(mPrintDC, CAPS_WIDTH, 1, &value) && width > (double)value)
       width = (double)value;
     if (DevQueryCaps(mPrintDC, CAPS_HEIGHT, 1, &value) && height > (double)value)
@@ -451,8 +450,8 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::GetSurfaceForPrinter(gfxASurface **surface
            width, height, hDPI, vDPI, width*height*4./1024./1024.);
 #endif
 
-    // Now pass the created DC into the thebes surface for printing.
-    // It gets destroyed there.
+    
+    
     newSurface = new(std::nothrow)
       gfxOS2Surface(mPrintDC, gfxIntSize(int(ceil(width)), int(ceil(height))));
   }
@@ -465,8 +464,8 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::GetSurfaceForPrinter(gfxASurface **surface
   return NS_OK;
 }
 
-// Helper function to convert the string to the native codepage,
-// similar to UnicodeToCodepage() in nsDragService.cpp.
+
+
 char *GetACPString(const PRUnichar* aStr)
 {
    nsString str(aStr);
@@ -491,7 +490,7 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::BeginDocument(PRUnichar* aTitle,
          NS_LossyConvertUTF16toASCII(nsString(aTitle)).get(),
          NS_LossyConvertUTF16toASCII(nsString(aPrintToFileName)).get());
 #endif
-  // don't try to send device escapes for non-native output (like PDF)
+  
   PRInt16 outputFormat;
   mPrintSettings->GetOutputFormat(&outputFormat);
   if (outputFormat != nsIPrintSettings::kOutputFormatNative) {
@@ -514,8 +513,8 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::BeginDocument(PRUnichar* aTitle,
 
 NS_IMETHODIMP nsDeviceContextSpecOS2::EndDocument()
 {
-  // don't try to send device escapes for non-native output (like PDF)
-  // but clear the filename to make sure that we don't overwrite it next time
+  
+  
   PRInt16 outputFormat;
   mPrintSettings->GetOutputFormat(&outputFormat);
   if (outputFormat != nsIPrintSettings::kOutputFormatNative) {
@@ -542,7 +541,7 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::BeginPage()
   }
 
   if (mPrintingStarted) {
-    // we don't want an extra page break at the start of the document
+    
     mPrintingStarted = PR_FALSE;
     return NS_OK;
   }
@@ -556,7 +555,7 @@ NS_IMETHODIMP nsDeviceContextSpecOS2::EndPage()
   return NS_OK;
 }
 
-//  Printer Enumerator
+
 nsPrinterEnumeratorOS2::nsPrinterEnumeratorOS2()
 {
 }
@@ -576,7 +575,7 @@ NS_IMETHODIMP nsPrinterEnumeratorOS2::GetPrinterNameList(nsIStringEnumerator **a
   }
 
   ULONG numPrinters = GlobalPrinters::GetInstance()->GetNumPrinters();
-  nsTArray<nsString> *printers = new nsTArray<nsString>(numPrinters);
+  nsStringArray *printers = new nsStringArray(numPrinters);
   if (!printers) {
     GlobalPrinters::GetInstance()->FreeGlobalPrinters();
     return NS_ERROR_OUT_OF_MEMORY;
@@ -585,7 +584,7 @@ NS_IMETHODIMP nsPrinterEnumeratorOS2::GetPrinterNameList(nsIStringEnumerator **a
   ULONG count = 0;
   while( count < numPrinters )
   {
-    printers->AppendElement(*GlobalPrinters::GetInstance()->GetStringAt(count++));
+    printers->AppendString(*GlobalPrinters::GetInstance()->GetStringAt(count++));
   }
   GlobalPrinters::GetInstance()->FreeGlobalPrinters();
 
@@ -599,7 +598,7 @@ NS_IMETHODIMP nsPrinterEnumeratorOS2::GetDefaultPrinterName(PRUnichar * *aDefaul
   return NS_OK;
 }
 
-/* void initPrintSettingsFromPrinter (in wstring aPrinterName, in nsIPrintSettings aPrintSettings); */
+
 NS_IMETHODIMP nsPrinterEnumeratorOS2::InitPrintSettingsFromPrinter(const PRUnichar *aPrinterName, nsIPrintSettings *aPrintSettings)
 {
    NS_ENSURE_ARG_POINTER(aPrinterName);
@@ -617,7 +616,7 @@ NS_IMETHODIMP nsPrinterEnumeratorOS2::InitPrintSettingsFromPrinter(const PRUnich
       nsDeviceContextSpecOS2::SetPrintSettingsFromDevMode(aPrintSettings, i);
   }
 
-  // Free them, we won't need them for a while
+  
   GlobalPrinters::GetInstance()->FreeGlobalPrinters();
   aPrintSettings->SetIsInitializedFromPrinter(PR_TRUE);
   return NS_OK;
@@ -655,13 +654,13 @@ nsresult GlobalPrinters::InitializeGlobalPrinters ()
   if (!mGlobalNumPrinters) 
     return NS_ERROR_GFX_PRINTER_NO_PRINTER_AVAILABLE; 
 
-  mGlobalPrinterList = new nsTArray<nsString>();
+  mGlobalPrinterList = new nsStringArray();
   if (!mGlobalPrinterList) 
      return NS_ERROR_OUT_OF_MEMORY;
 
   nsresult rv;
   nsCOMPtr<nsIPrefBranch> pPrefs = do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
-  BOOL prefFailed = NS_FAILED(rv); // don't return on failure, optional feature
+  BOOL prefFailed = NS_FAILED(rv); 
 
   for (ULONG i = 0; i < mGlobalNumPrinters; i++) {
     nsXPIDLCString printer;
@@ -671,9 +670,9 @@ nsresult GlobalPrinters::InitializeGlobalPrinters ()
     PRInt32 printerNameLength;
     rv = MultiByteToWideChar(0, printer, strlen(printer),
                              printerName, printerNameLength);
-    mGlobalPrinterList->AppendElement(nsDependentString(printerName.Elements()));
+    mGlobalPrinterList->AppendString(nsDependentString(printerName.Elements()));
 
-    // store printer description in prefs for the print dialog
+    
     if (!prefFailed) {
        nsCAutoString printerDescription;
        printerDescription = nsCAutoString(nsDeviceContextSpecOS2::PrnDlg.GetPrintDriver(i)->szDeviceName);
@@ -700,7 +699,7 @@ void GlobalPrinters::GetDefaultPrinterName(PRUnichar*& aDefaultPrinterName)
   if (GetNumPrinters() == 0)
      return;
 
-  // the default printer is always index 0
+  
   nsXPIDLCString printer;
   nsDeviceContextSpecOS2::PrnDlg.GetPrinter(0, getter_Copies(printer));
 
