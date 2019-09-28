@@ -61,6 +61,7 @@
          expected + "], got [" + e.target.id + "]");
     } else {
       var expected = forwardFocusArray.shift();
+      is(e.target, document.activeElement, "Wrong activeElement!");
       ok(expected == e.target.id,
          "(focus) Forward tabbing, expected [" +
          expected + "], got [" + e.target.id + "]");
