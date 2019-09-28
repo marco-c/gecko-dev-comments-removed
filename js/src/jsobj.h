@@ -267,6 +267,10 @@ class NormalArgumentsObject;
 class StrictArgumentsObject;
 class StringObject;
 
+
+extern JSBool
+DefaultValue(JSContext *cx, JSObject *obj, JSType hint, Value *vp);
+
 }
 
 struct JSFunction;
@@ -1178,6 +1182,11 @@ struct JSObject : js::gc::Cell {
         return (op ? op : js_Enumerate)(cx, this, iterop, statep, idp);
     }
 
+    bool defaultValue(JSContext *cx, JSType hint, js::Value *vp) {
+        js::ConvertOp op = getClass()->convert;
+        return (op == js::ConvertStub ? js::DefaultValue : op)(cx, this, hint, vp);
+    }
+
     JSType typeOf(JSContext *cx) {
         js::TypeOfOp op = getOps()->typeOf;
         return (op ? op : js_TypeOf)(cx, this);
@@ -1735,9 +1744,6 @@ namespace js {
 extern bool
 HasDataProperty(JSObject *obj, jsid methodid, js::Value *vp);
 
-extern bool
-DefaultValue(JSContext *cx, JSObject *obj, JSType hint, Value *vp);
-
 extern JSBool
 CheckAccess(JSContext *cx, JSObject *obj, jsid id, JSAccessMode mode,
             js::Value *vp, uintN *attrsp);
@@ -1780,17 +1786,36 @@ namespace js {
 
 
 extern JSObject *
-ToObjectSlow(JSContext *cx, js::Value *vp);
+ToObjectSlow(JSContext *cx, Value *vp);
 
 JS_ALWAYS_INLINE JSObject *
-ToObject(JSContext *cx, js::Value *vp)
+ToObject(JSContext *cx, Value *vp)
 {
     if (vp->isObject())
         return &vp->toObject();
     return ToObjectSlow(cx, vp);
 }
 
+
+static JS_ALWAYS_INLINE bool
+ToPrimitive(JSContext *cx, Value *vp)
+{
+    if (vp->isPrimitive())
+        return true;
+    return vp->toObject().defaultValue(cx, JSTYPE_VOID, vp);
 }
+
+
+static JS_ALWAYS_INLINE bool
+ToPrimitive(JSContext *cx, JSType preferredType, Value *vp)
+{
+    JS_ASSERT(preferredType != JSTYPE_VOID); 
+    if (vp->isPrimitive())
+        return true;
+    return vp->toObject().defaultValue(cx, preferredType, vp);
+}
+
+} 
 
 
 
@@ -1798,9 +1823,6 @@ ToObject(JSContext *cx, js::Value *vp)
 
 extern JSObject *
 js_ValueToNonNullObject(JSContext *cx, const js::Value &v);
-
-extern JSBool
-js_TryValueOf(JSContext *cx, JSObject *obj, JSType type, js::Value *rval);
 
 extern JSBool
 js_XDRObject(JSXDRState *xdr, JSObject **objp);
