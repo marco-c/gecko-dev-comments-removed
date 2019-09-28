@@ -667,6 +667,8 @@ class CallCompiler : public BaseCompiler
                           FrameAddress(offsetof(VMFrame, stubRejoin)));
         }
 
+        masm.bumpStubCounter(f.script(), f.pc(), Registers::ReturnReg);
+
         
         void *compilePtr = JS_FUNC_TO_DATA_PTR(void *, stubs::CompileFunction);
         DataLabelPtr inlined;
@@ -884,6 +886,7 @@ class CallCompiler : public BaseCompiler
 
         
         if (ic.frameSize.isDynamic()) {
+            masm.bumpStubCounter(f.script(), f.pc(), Registers::ReturnReg);
             masm.fallibleVMCall(cx->typeInferenceEnabled(),
                                 JS_FUNC_TO_DATA_PTR(void *, ic::SplatApplyArgs),
                                 f.regs.pc, NULL, initialFrameDepth);
@@ -896,6 +899,7 @@ class CallCompiler : public BaseCompiler
         tempRegs.takeReg(Registers::ArgReg2);
 #endif
         RegisterID t0 = tempRegs.takeAnyReg().reg();
+        masm.bumpStubCounter(f.script(), f.pc(), t0);
 
         
         masm.storePtr(ImmPtr(f.regs.pc),
