@@ -1377,60 +1377,60 @@ struct JSContext
     getTypeCallerInitObject(bool isArray);
 
     
-    inline bool markTypeCallerUnexpected(js::types::jstype type);
-    inline bool markTypeCallerUnexpected(const js::Value &value);
-    inline bool markTypeCallerOverflow();
+    inline void markTypeCallerUnexpected(js::types::jstype type);
+    inline void markTypeCallerUnexpected(const js::Value &value);
+    inline void markTypeCallerOverflow();
 
     
 
 
 
-    inline bool typeMonitorCall(const js::CallArgs &args, bool constructing);
+    inline void typeMonitorCall(const js::CallArgs &args, bool constructing);
 
     
-    inline bool typeMonitorAssign(JSObject *obj, jsid id, const js::Value &value);
+    inline void typeMonitorAssign(JSObject *obj, jsid id, const js::Value &value);
 
     
-    inline bool addTypeProperty(js::types::TypeObject *obj, const char *name, js::types::jstype type);
-    inline bool addTypeProperty(js::types::TypeObject *obj, const char *name, const js::Value &value);
-    inline bool addTypePropertyId(js::types::TypeObject *obj, jsid id, js::types::jstype type);
-    inline bool addTypePropertyId(js::types::TypeObject *obj, jsid id, const js::Value &value);
-    inline bool addTypePropertyId(js::types::TypeObject *obj, jsid id, js::types::ClonedTypeSet *types);
+    inline void addTypeProperty(js::types::TypeObject *obj, const char *name, js::types::jstype type);
+    inline void addTypeProperty(js::types::TypeObject *obj, const char *name, const js::Value &value);
+    inline void addTypePropertyId(js::types::TypeObject *obj, jsid id, js::types::jstype type);
+    inline void addTypePropertyId(js::types::TypeObject *obj, jsid id, const js::Value &value);
+    inline void addTypePropertyId(js::types::TypeObject *obj, jsid id, js::types::ClonedTypeSet *types);
 
     
     inline js::types::TypeObject *getTypeEmpty();
 
     
-    inline bool aliasTypeProperties(js::types::TypeObject *obj, jsid first, jsid second);
+    inline void aliasTypeProperties(js::types::TypeObject *obj, jsid first, jsid second);
 
     
-    inline bool markTypeArrayNotPacked(js::types::TypeObject *obj, bool notDense);
+    inline void markTypeArrayNotPacked(js::types::TypeObject *obj, bool notDense);
 
     
-    inline bool markTypeFunctionUninlineable(js::types::TypeObject *obj);
+    inline void markTypeFunctionUninlineable(js::types::TypeObject *obj);
 
     
-    inline bool markTypeObjectUnknownProperties(js::types::TypeObject *obj);
+    inline void markTypeObjectUnknownProperties(js::types::TypeObject *obj);
 
     
-    inline bool markTypeObjectHasSpecialEquality(js::types::TypeObject *obj);
+    inline void markTypeObjectHasSpecialEquality(js::types::TypeObject *obj);
 
     
-    inline bool markTypePropertyConfigured(js::types::TypeObject *obj, jsid id);
+    inline void markTypePropertyConfigured(js::types::TypeObject *obj, jsid id);
 
     
-    inline bool markGlobalReallocation(JSObject *obj);
+    inline void markGlobalReallocation(JSObject *obj);
 
     
 
 
 
-    inline bool fixArrayType(JSObject *obj);
-    inline bool fixObjectType(JSObject *obj);
+    inline void fixArrayType(JSObject *obj);
+    inline void fixObjectType(JSObject *obj);
 
   private:
 
-    inline bool addTypeFlags(js::types::TypeObject *obj, js::types::TypeObjectFlags flags);
+    inline void addTypeFlags(js::types::TypeObject *obj, js::types::TypeObjectFlags flags);
 
 }; 
 
