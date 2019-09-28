@@ -1,48 +1,48 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Vipul Gupta <vipul.gupta@sun.com>
+ *   Douglas Stebila <douglas@stebila.ca>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 extern "C" {
 #include "secdert.h"
 }
 #include "nspr.h"
-#include "nsNSSComponent.h" 
+#include "nsNSSComponent.h" // for PIPNSS string bundle calls.
 #include "keyhi.h"
 #include "secder.h"
 #include "cryptohi.h"
@@ -65,7 +65,7 @@ extern "C" {
 #include "nsIGenKeypairInfoDlg.h"
 #include "nsNSSShutDown.h"
 
-
+//These defines are taken from the PKCS#11 spec
 #define CKM_RSA_PKCS_KEY_PAIR_GEN     0x00000000
 #define CKM_DH_PKCS_KEY_PAIR_GEN      0x00000020
 #define CKM_DSA_KEY_PAIR_GEN          0x00000010
@@ -157,10 +157,10 @@ pqg_prime_bits(char *str)
 
     params = decode_pqg_params(str);
     if (!params)
-        goto done; 
+        goto done; /* lose */
 
     for (i = 0; params->prime.data[i] == 0; i++)
-        ;
+        /* empty */;
     primeBits = (params->prime.len - i) * 8;
 
 done:
@@ -262,7 +262,7 @@ decode_ec_params(char *curve)
 {
     SECKEYECParams *ecparams;
     SECOidData *oidData = NULL;
-    SECOidTag curveOidTag = SEC_OID_UNKNOWN; 
+    SECOidTag curveOidTag = SEC_OID_UNKNOWN; /* default */
     int i, numCurves;
 
     if (curve && *curve) {
@@ -274,7 +274,7 @@ decode_ec_params(char *curve)
         }
     }
 
-    
+    /* Return NULL if curve name is not recognized */
     if ((curveOidTag == SEC_OID_UNKNOWN) || 
         (oidData = SECOID_FindOIDByTag(curveOidTag)) == NULL) {
         return nsnull;
@@ -285,11 +285,11 @@ decode_ec_params(char *curve)
     if (!ecparams)
       return nsnull;
 
-    
-
-
-
-
+    /* 
+     * ecparams->data needs to contain the ASN encoding of an object ID (OID)
+     * representing the named curve. The actual OID is in 
+     * oidData->oid.data so we simply prepend 0x06 and OID length
+     */
     ecparams->data[0] = SEC_ASN1_OBJECT_ID;
     ecparams->data[1] = oidData->oid.len;
     memcpy(ecparams->data + 2, oidData->oid.data, oidData->oid.len);
@@ -336,7 +336,7 @@ nsKeygenFormProcessor::Init()
   if (NS_FAILED(rv))
     return rv;
 
-  
+  // Init possible key size choices.
   nssComponent->GetPIPNSSBundleString("HighGrade", mSECKeySizeChoiceList[0].name);
   mSECKeySizeChoiceList[0].size = 2048;
 
@@ -357,10 +357,10 @@ PRUint32 MapGenMechToAlgoMech(PRUint32 mechanism)
 {
     PRUint32 searchMech;
 
-    
-
-
-
+    /* We are interested in slots based on the ability to perform
+       a given algorithm, not on their ability to generate keys usable
+       by that algorithm. Therefore, map keygen-specific mechanism tags
+       to tags for the corresponding crypto algorthm. */
     switch(mechanism)
     {
     case CKM_RSA_PKCS_KEY_PAIR_GEN:
@@ -373,14 +373,14 @@ PRUint32 MapGenMechToAlgoMech(PRUint32 mechanism)
         searchMech = CKM_RC4;
         break;
     case CKM_DH_PKCS_KEY_PAIR_GEN:
-        searchMech = CKM_DH_PKCS_DERIVE; 
+        searchMech = CKM_DH_PKCS_DERIVE; /* ### mwelch  is this right? */
         break;
     case CKM_DES_KEY_GEN:
-        
-
-
+        /* What do we do about DES keygen? Right now, we're just using
+           DES_KEY_GEN to look for tokens, because otherwise we'll have
+           to search the token list three times. */
     case CKM_EC_KEY_PAIR_GEN:
-        
+        /* The default should also work for EC key pair generation. */
     default:
         searchMech = mechanism;
         break;
@@ -406,7 +406,7 @@ GetSlotWithMechanism(PRUint32 aMechanism,
 
     *aSlot = nsnull;
 
-    
+    // Get the slot
     slotList = PK11_GetAllTokens(MapGenMechToAlgoMech(aMechanism), 
                                 PR_TRUE, PR_TRUE, m_ctx);
     if (!slotList || !slotList->head) {
@@ -415,17 +415,17 @@ GetSlotWithMechanism(PRUint32 aMechanism,
     }
 
     if (!slotList->head->next) {
-        
+        /* only one slot available, just return it */
         *aSlot = slotList->head->slot;
       } else {
-        
+        // Gerenate a list of slots and ask the user to choose //
         tmpSlot = slotList->head;
         while (tmpSlot) {
             numSlots++;
             tmpSlot = tmpSlot->next;
         }
 
-        
+        // Allocate the slot name buffer //
         tokenNameList = static_cast<PRUnichar**>(nsMemory::Alloc(sizeof(PRUnichar *) * numSlots));
         if (!tokenNameList) {
             rv = NS_ERROR_OUT_OF_MEMORY;
@@ -440,14 +440,14 @@ GetSlotWithMechanism(PRUint32 aMechanism,
             if (tokenNameList[i])
                 i++;
             else {
-                
+                // OOM. adjust numSlots so we don't free unallocated memory. 
                 numSlots = i;
                 rv = NS_ERROR_OUT_OF_MEMORY;
                 goto loser;
             }
         }
 
-		
+		/* Throw up the token list dialog and get back the token */
 		rv = getNSSDialogs((void**)&dialogs,
 			               NS_GET_IID(nsITokenDialogs),
                      NS_TOKENDIALOGS_CONTRACTID);
@@ -471,7 +471,7 @@ GetSlotWithMechanism(PRUint32 aMechanism,
 
 		if (canceled) { rv = NS_ERROR_NOT_AVAILABLE; goto loser; }
 
-        
+        // Get the slot //
         slotElement = PK11_GetFirstSafe(slotList);
         nsAutoString tokenStr(unicodeTokenChosen);
         while (slotElement) {
@@ -487,7 +487,7 @@ GetSlotWithMechanism(PRUint32 aMechanism,
         }
       }
 
-      
+      // Get a reference to the slot //
       PK11_ReferenceSlot(*aSlot);
 loser:
       if (slotList) {
@@ -531,7 +531,7 @@ nsKeygenFormProcessor::GetPublicKey(nsAString& aValue, nsAString& aChallenge,
     nsKeygenThread *KeygenRunnable = 0;
     nsCOMPtr<nsIKeygenThread> runnable;
 
-    
+    // Get the key size //
     for (size_t i = 0; i < number_of_key_size_choices; ++i) {
         if (aValue.Equals(mSECKeySizeChoiceList[i].name)) {
             keysize = mSECKeySizeChoiceList[i].size;
@@ -547,7 +547,7 @@ nsKeygenFormProcessor::GetPublicKey(nsAString& aValue, nsAString& aChallenge,
         goto loser;
     }
 
-    
+    // Set the keygen mechanism
     if (aKeyType.IsEmpty() || aKeyType.LowerCaseEqualsLiteral("rsa")) {
         type = rsaKey;
         keyGenMechanism = CKM_RSA_PKCS_KEY_PAIR_GEN;
@@ -585,12 +585,12 @@ found_match:
 
         type = ecKey;
         keyGenMechanism = CKM_EC_KEY_PAIR_GEN;
-        
+        /* ecParams are initialized later */
     } else {
         goto loser;
     }
 
-    
+    // Get the slot
     rv = GetSlot(keyGenMechanism, &slot);
     if (NS_FAILED(rv)) {
         goto loser;
@@ -603,34 +603,34 @@ found_match:
             params = &rsaParams;
             break;
         case CKM_DSA_KEY_PAIR_GEN:
-            
+            // XXX Fix this! XXX //
             goto loser;
         case CKM_EC_KEY_PAIR_GEN:
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            /* XXX We ought to rethink how the KEYGEN tag is 
+             * displayed. The pulldown selections presented
+             * to the user must depend on the keytype.
+             * The displayed selection could be picked
+             * from the keyparams attribute (this is currently called
+             * the pqg attribute).
+             * For now, we pick ecparams from the keyparams field
+             * if it specifies a valid supported curve, or else 
+             * we pick one of secp384r1, secp256r1 or secp192r1
+             * respectively depending on the user's selection
+             * (High, Medium, Low). 
+             * (RSA uses RSA-2048, RSA-1024 and RSA-512 for historical
+             * reasons, while ECC choices represent a stronger mapping)
+             * NOTE: The user's selection
+             * is silently ignored when a valid curve is presented
+             * in keyparams.
+             */
             if ((params = decode_ec_params(keyparamsString)) == nsnull) {
-                
-
-
-
-
-
-
+                /* The keyparams attribute did not specify a valid
+                 * curve name so use a curve based on the keysize.
+                 * NOTE: Here keysize is used only as an indication of
+                 * High/Medium/Low strength; elliptic curve
+                 * cryptography uses smaller keys than RSA to provide
+                 * equivalent security.
+                 */
                 switch (keysize) {
                 case 2048:
                     params = decode_ec_params("secp384r1");
@@ -641,17 +641,17 @@ found_match:
                     break;
                 } 
             }
-            
-
-
-
+            /* XXX The signature algorithm ought to choose the hashing
+             * algorithm based on key size once ECDSA variations based
+             * on SHA256 SHA384 and SHA512 are standardized.
+             */
             algTag = SEC_OID_ANSIX962_ECDSA_SIGNATURE_WITH_SHA1_DIGEST;
             break;
       default:
           goto loser;
       }
 
-    
+    /* Make sure token is initialized. */
     rv = setPassword(slot, m_ctx);
     if (NS_FAILED(rv))
     goto loser;
@@ -689,8 +689,8 @@ found_match:
               }
               else {
                 rv = dialogs->DisplayGeneratingKeypairInfo(m_ctx, runnable);
-                
-                
+                // We call join on the thread, 
+                // so we can be sure that no simultaneous access to the passed parameters will happen.
                 KeygenRunnable->Join();
               }
             }
@@ -705,28 +705,28 @@ found_match:
     if (NS_FAILED(rv) || !privateKey) {
         goto loser;
     }
-    
+    // just in case we'll need to authenticate to the db -jp //
     privateKey->wincx = m_ctx;
 
-    
-
-
+    /*
+     * Create a subject public key info from the public key.
+     */
     spkInfo = SECKEY_CreateSubjectPublicKeyInfo(publicKey);
     if ( !spkInfo ) {
         goto loser;
     }
     
-    
-
-
+    /*
+     * Now DER encode the whole subjectPublicKeyInfo.
+     */
     sec_rv=DER_Encode(arena, &spkiItem, CERTSubjectPublicKeyInfoTemplate, spkInfo);
     if (sec_rv != SECSuccess) {
         goto loser;
     }
 
-    
-
-
+    /*
+     * set up the PublicKeyAndChallenge data structure, then DER encode it
+     */
     pkac.spki = spkiItem;
     pkac.challenge.len = aChallenge.Length();
     pkac.challenge.data = (unsigned char *)ToNewCString(aChallenge);
@@ -740,18 +740,18 @@ found_match:
         goto loser;
     }
 
-    
-
-
+    /*
+     * now sign the DER encoded PublicKeyAndChallenge
+     */
     sec_rv = SEC_DerSignData(arena, &signedItem, pkacItem.data, pkacItem.len,
 			 privateKey, algTag);
     if ( sec_rv != SECSuccess ) {
         goto loser;
     }
     
-    
-
-
+    /*
+     * Convert the signed public key and challenge into base64/ascii.
+     */
     keystring = BTOA_DataToAscii(signedItem.data, signedItem.len);
     if (!keystring) {
         rv = NS_ERROR_OUT_OF_MEMORY;
@@ -818,16 +818,16 @@ nsKeygenFormProcessor::ProcessValue(nsIDOMHTMLElement *aElement,
 
       res = selectElement->GetAttribute(NS_LITERAL_STRING("keytype"), keyTypeValue);
       if (NS_FAILED(res) || keyTypeValue.IsEmpty()) {
-        
+        // If this field is not present, we default to rsa.
   	    keyTypeValue.AssignLiteral("rsa");
       }
 
       res = selectElement->GetAttribute(NS_LITERAL_STRING("pqg"), 
                                         keyParamsValue);
-      
-
-
-
+      /* XXX We can still support the pqg attribute in the keygen 
+       * tag for backward compatibility while introducing a more 
+       * general attribute named keyparams.
+       */
       if (NS_FAILED(res) || keyParamsValue.IsEmpty()) {
           res = selectElement->GetAttribute(NS_LITERAL_STRING("keyparams"), 
                                             keyParamsValue);
@@ -843,14 +843,14 @@ nsKeygenFormProcessor::ProcessValue(nsIDOMHTMLElement *aElement,
 } 
 
 NS_METHOD nsKeygenFormProcessor::ProvideContent(const nsAString& aFormType, 
-						nsStringArray& aContent, 
+						nsTArray<nsString>& aContent, 
 						nsAString& aAttribute) 
 { 
   if (Compare(aFormType, NS_LITERAL_STRING("SELECT"), 
     nsCaseInsensitiveStringComparator()) == 0) {
 
     for (size_t i = 0; i < number_of_key_size_choices; ++i) {
-      aContent.AppendString(mSECKeySizeChoiceList[i].name);
+      aContent.AppendElement(mSECKeySizeChoiceList[i].name);
     }
     aAttribute.AssignLiteral("-mozilla-keygen");
   }

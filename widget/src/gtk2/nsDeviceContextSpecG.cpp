@@ -1,52 +1,52 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Roland Mainz <roland.mainz@informatik.med.uni-giessen.de>
+ *   Ken Herron <kherron+mozilla@fmailbox.com>
+ *   Julien Lafon <julien.lafon@gmail.com>
+ *   Michael Ventnor <m.ventnor@gmail.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
  
-
-
+/* Store per-printer features in temp. prefs vars that the
+ * print dialog can pick them up... */
 #define SET_PRINTER_FEATURES_VIA_PREFS 1 
 #define PRINTERFEATURES_PREF "print.tmp.printerfeatures"
 
 #ifdef MOZ_LOGGING
 #define FORCE_PR_LOG 1 /* Allow logging in the release build */
-#endif 
+#endif /* MOZ_LOGGING */
 #include "prlog.h"
 
 #include "plstr.h"
@@ -55,7 +55,7 @@
 
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
-#include "prenv.h" 
+#include "prenv.h" /* for PR_GetEnv */
 
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
@@ -64,33 +64,34 @@
 
 #ifdef USE_POSTSCRIPT
 #include "nsPSPrinters.h"
-#include "nsPaperPS.h"  
-#endif 
+#include "nsPaperPS.h"  /* Paper size list */
+#endif /* USE_POSTSCRIPT */
 
 #include "nsPrintSettingsGTK.h"
 
 #include "nsIFileStreams.h"
 #include "nsILocalFile.h"
+#include "nsTArray.h"
 
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
+/* Ensure that the result is always equal to either PR_TRUE or PR_FALSE */
 #define MAKE_PR_BOOL(val) ((val)?(PR_TRUE):(PR_FALSE))
 
 #ifdef PR_LOGGING 
 static PRLogModuleInfo *DeviceContextSpecGTKLM = PR_NewLogModule("DeviceContextSpecGTK");
-#endif 
-
+#endif /* PR_LOGGING */
+/* Macro to make lines shorter */
 #define DO_PR_DEBUG_LOG(x) PR_LOG(DeviceContextSpecGTKLM, PR_LOG_DEBUG, x)
 
-
-
-
-
-
-
+//----------------------------------------------------------------------------------
+// The printer data is shared between the PrinterEnumerator and the nsDeviceContextSpecGTK
+// The PrinterEnumerator creates the printer info
+// but the nsDeviceContextSpecGTK cleans it up
+// If it gets created (via the Page Setup Dialog) but the user never prints anything
+// then it will never be delete, so this class takes care of that.
 class GlobalPrinters {
 public:
   static GlobalPrinters* GetInstance()   { return &mGlobalPrinters; }
@@ -101,94 +102,94 @@ public:
 
   PRBool    PrintersAreAllocated()       { return mGlobalPrinterList != nsnull; }
   PRInt32   GetNumPrinters()
-    { return mGlobalPrinterList ? mGlobalPrinterList->Count() : 0; }
-  nsString* GetStringAt(PRInt32 aInx)    { return mGlobalPrinterList->StringAt(aInx); }
+    { return mGlobalPrinterList ? mGlobalPrinterList->Length() : 0; }
+  nsString* GetStringAt(PRInt32 aInx)    { return &mGlobalPrinterList->ElementAt(aInx); }
   void      GetDefaultPrinterName(PRUnichar **aDefaultPrinterName);
 
 protected:
   GlobalPrinters() {}
 
   static GlobalPrinters mGlobalPrinters;
-  static nsStringArray* mGlobalPrinterList;
+  static nsTArray<nsString>* mGlobalPrinterList;
 };
 
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
-
+/* "Prototype" for the new nsPrinterFeatures service */
 class nsPrinterFeatures {
 public:
   nsPrinterFeatures( const char *printername );
   ~nsPrinterFeatures() {}
 
-  
+  /* Does this printer allow to set/change the paper size ? */
   void SetCanChangePaperSize( PRBool aCanSetPaperSize );
-  
+  /* Does this Mozilla print module allow set/change the paper size ? */
   void SetSupportsPaperSizeChange( PRBool aSupportsPaperSizeChange );
-  
+  /* Set number of paper size records and the records itself */
   void SetNumPaperSizeRecords( PRInt32 aCount );
   void SetPaperRecord( PRInt32 aIndex, const char *aName, PRInt32 aWidthMM, PRInt32 aHeightMM, PRBool aIsInch );
 
-  
+  /* Does this printer allow to set/change the content orientation ? */
   void SetCanChangeOrientation( PRBool aCanSetOrientation );
-  
+  /* Does this Mozilla print module allow set/change the content orientation ? */
   void SetSupportsOrientationChange( PRBool aSupportsOrientationChange );
-  
+  /* Set number of orientation records and the records itself */
   void SetNumOrientationRecords( PRInt32 aCount );
   void SetOrientationRecord( PRInt32 aIndex, const char *aName );
 
-  
+  /* Does this printer allow to set/change the plex mode ? */
   void SetCanChangePlex( PRBool aCanSetPlex );
-  
+  /* Does this Mozilla print module allow set/change the plex mode ? */
   void SetSupportsPlexChange( PRBool aSupportsPlexChange );
-  
+  /* Set number of plex records and the records itself */
   void SetNumPlexRecords( PRInt32 aCount );
   void SetPlexRecord( PRInt32 aIndex, const char *aName );
 
-  
+  /* Does this printer allow to set/change the resolution name ? */
   void SetCanChangeResolutionName( PRBool aCanSetResolutionName );
-  
+  /* Does this Mozilla print module allow set/change the resolution name ? */
   void SetSupportsResolutionNameChange( PRBool aSupportsResolutionChange );
-  
+  /* Set number of resolution records and the records itself */
   void SetNumResolutionNameRecords( PRInt32 aCount );
   void SetResolutionNameRecord( PRInt32 aIndex, const char *aName );
 
-  
+  /* Does this printer allow to set/change the colorspace ? */
   void SetCanChangeColorspace( PRBool aCanSetColorspace );
-  
+  /* Does this Mozilla print module allow set/change the colorspace ? */
   void SetSupportsColorspaceChange( PRBool aSupportsColorspace );
-  
+  /* Set number of colorspace records and the records itself */
   void SetNumColorspaceRecords( PRInt32 aCount );
   void SetColorspaceRecord( PRInt32 aIndex, const char *aName );
 
-  
+  /* Does this device allow to set/change the usage of the internal grayscale mode ? */
   void SetCanChangePrintInColor( PRBool aCanSetPrintInColor );
-  
+  /* Does this printer allow to set/change the usage of the internal grayscale mode ? */
   void SetSupportsPrintInColorChange( PRBool aSupportPrintInColorChange );
 
-  
+  /* Does this device allow to set/change the usage of font download to the printer? */
   void SetCanChangeDownloadFonts( PRBool aCanSetDownloadFonts );
-  
+  /* Does this printer allow to set/change the usage of font download to the printer? */
   void SetSupportsDownloadFontsChange( PRBool aSupportDownloadFontsChange );
 
-  
+  /* Does this device allow to set/change the job title ? */
   void SetCanChangeJobTitle( PRBool aCanSetJobTitle );
-  
+  /* Does this printer allow to set/change the job title ? */
   void SetSupportsJobTitleChange( PRBool aSupportJobTitleChange );
     
-  
+  /* Does this device allow to set/change the spooler command ? */
   void SetCanChangeSpoolerCommand( PRBool aCanSetSpoolerCommand );
-  
+  /* Does this printer allow to set/change the spooler command ? */
   void SetSupportsSpoolerCommandChange( PRBool aSupportSpoolerCommandChange );
   
-  
+  /* Does this device allow to set/change number of copies for an document ? */
   void SetCanChangeNumCopies( PRBool aCanSetNumCopies );
 
-  
-
-
+  /* Does this device allow multiple devicecontext instances to be used in
+   * parallel (e.g. print while the device is already in use by print-preview
+   * or printing while another print job is in progress) ? */
   void SetMultipleConcurrentDeviceContextsSupported( PRBool aCanUseMultipleInstances );
   
 private:
-  
+  /* private helper methods */
   void SetBoolValue( const char *tagname, PRBool value );
   void SetIntValue(  const char *tagname, PRInt32 value );
   void SetCharValue(  const char *tagname, const char *value );
@@ -231,7 +232,7 @@ void nsPrinterFeatures::SetSupportsPaperSizeChange( PRBool aSupportsPaperSizeCha
   SetBoolValue("supports_paper_size_change", aSupportsPaperSizeChange);
 }
 
-
+/* Set number of paper size records and the records itself */
 void nsPrinterFeatures::SetNumPaperSizeRecords( PRInt32 aCount )
 {
   SetIntValue("paper.count", aCount);          
@@ -375,13 +376,13 @@ void nsPrinterFeatures::SetMultipleConcurrentDeviceContextsSupported( PRBool aCa
   SetBoolValue("can_use_multiple_devicecontexts_concurrently", aCanUseMultipleInstances);
 }
 
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
-
-
+//---------------
+// static members
 GlobalPrinters GlobalPrinters::mGlobalPrinters;
-nsStringArray* GlobalPrinters::mGlobalPrinterList = nsnull;
-
+nsTArray<nsString>* GlobalPrinters::mGlobalPrinterList = nsnull;
+//---------------
 
 nsDeviceContextSpecGTK::nsDeviceContextSpecGTK()
 {
@@ -418,8 +419,8 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::GetSurfaceForPrinter(gfxASurface **aSurfac
   double width, height;
   mPrintSettings->GetEffectivePageSize(&width, &height);
 
-  
-  
+  // If we're in landscape mode, we'll be rotating the output --
+  // need to swap width & height.
   PRInt32 orientation;
   mPrintSettings->GetOrientation(&orientation);
   if (nsIPrintSettings::kLandscapeOrientation == orientation) {
@@ -428,15 +429,15 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::GetSurfaceForPrinter(gfxASurface **aSurfac
     height = tmp;
   }
 
-  
+  // convert twips to points
   width  /= TWIPS_PER_POINT_FLOAT;
   height /= TWIPS_PER_POINT_FLOAT;
 
   DO_PR_DEBUG_LOG(("\"%s\", %f, %f\n", path, width, height));
   nsresult rv;
 
-  
-  
+  // Spool file. Use Glib's temporary file function since we're
+  // already dependent on the gtk software stack.
   gchar *buf;
   gint fd = g_file_open_tmp("XXXXXX.tmp", &buf, nsnull);
   if (-1 == fd)
@@ -466,15 +467,15 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::GetSurfaceForPrinter(gfxASurface **aSurfac
   nsRefPtr<gfxASurface> surface;
   gfxSize surfaceSize(width, height);
 
-  
+  // Determine the real format with some GTK magic
   if (format == nsIPrintSettings::kOutputFormatNative) {
     if (mIsPPreview) {
-      
+      // There is nothing to detect on Print Preview, use PS.
       format = nsIPrintSettings::kOutputFormatPS;
     } else {
       const gchar* fmtGTK = gtk_print_settings_get(mGtkPrintSettings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT);
       if (!fmtGTK && GTK_IS_PRINTER(mGtkPrinter)) {
-        
+        // Likely not print-to-file, check printer's capabilities
         format = (gtk_printer_accepts_ps(mGtkPrinter)) ? nsIPrintSettings::kOutputFormatPS
                                                        : nsIPrintSettings::kOutputFormatPDF;
       } else if (nsDependentCString(fmtGTK).EqualsIgnoreCase("pdf")) {
@@ -499,11 +500,11 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::GetSurfaceForPrinter(gfxASurface **aSurfac
   return NS_OK;
 }
 
-
-
-
-
-
+/** -------------------------------------------------------
+ *  Initialize the nsDeviceContextSpecGTK
+ *  @update   dc 2/15/98
+ *  @update   syd 3/2/99
+ */
 NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
                                            nsIPrintSettings* aPS,
                                            PRBool aIsPrintPreview)
@@ -512,12 +513,12 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
 
   if (gtk_major_version < 2 ||
       (gtk_major_version == 2 && gtk_minor_version < 10))
-    return NS_ERROR_NOT_AVAILABLE;  
+    return NS_ERROR_NOT_AVAILABLE;  // I'm so sorry bz
 
   mPrintSettings = aPS;
   mIsPPreview = aIsPrintPreview;
 
-  
+  // This is only set by embedders
   PRBool toFile;
   aPS->GetPrintToFile(&toFile);
 
@@ -531,9 +532,9 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
   mGtkPrintSettings = printSettingsGTK->GetGtkPrintSettings();
   mGtkPageSetup = printSettingsGTK->GetGtkPageSetup();
 
-  
-  
-  
+  // This is a horrible workaround for some printer driver bugs that treat custom page sizes different
+  // to standard ones. If our paper object matches one of a standard one, use a standard paper size
+  // object instead. See bug 414314 for more info.
   GtkPaperSize* geckosHackishPaperSize = gtk_page_setup_get_paper_size(mGtkPageSetup);
   GtkPaperSize* standardGtkPaperSize = gtk_paper_size_new(gtk_paper_size_get_name(geckosHackishPaperSize));
 
@@ -672,7 +673,7 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::GetPrintMethod(PrintMethod &aMethod)
   return GetPrintMethod(mPrinter, aMethod);
 }
 
-
+/* static !! */
 nsresult nsDeviceContextSpecGTK::GetPrintMethod(const char *aPrinter, PrintMethod &aMethod)
 {
 #if defined(USE_POSTSCRIPT)
@@ -723,7 +724,7 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
     NS_ADDREF(mSpoolFile.get());
     gtk_print_job_send(mPrintJob, print_callback, mSpoolFile, ns_release_macro);
   } else {
-    
+    // Handle print-to-file ourselves for the benefit of embedders
     nsXPIDLString targetPath;
     nsCOMPtr<nsILocalFile> destFile;
     mPrintSettings->GetToFileName(getter_Copies(targetPath));
@@ -743,23 +744,23 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
     rv = mSpoolFile->MoveTo(destDir, destLeafName);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // This is the standard way to get the UNIX umask. Ugh.
     mode_t mask = umask(0);
     umask(mask);
-    
-    
+    // If you're not familiar with umasks, they contain the bits of what NOT to set in the permissions
+    // (thats because files and directories have different numbers of bits for their permissions)
     destFile->SetPermissions(0666 & ~(mask));
   }
   return NS_OK;
 }
 
-
-
-
-
-
-
-
+/* Get prefs for printer
+ * Search order:
+ * - Get prefs per printer name and module name
+ * - Get prefs per printer name
+ * - Get prefs per module name
+ * - Get prefs
+ */
 static
 nsresult CopyPrinterCharPref(nsIPrefBranch *pref, const char *modulename, const char *printername,
                              const char *prefname, nsXPIDLCString &return_buf)
@@ -769,7 +770,7 @@ nsresult CopyPrinterCharPref(nsIPrefBranch *pref, const char *modulename, const 
   nsresult rv = NS_ERROR_FAILURE;
  
   if (printername && modulename) {
-    
+    /* Get prefs per printer name and module name */
     nsPrintfCString name(512, "print.%s.printer_%s.%s", modulename, printername, prefname);
     DO_PR_DEBUG_LOG(("trying to get '%s'\n", name.get()));
     rv = pref->GetCharPref(name.get(), getter_Copies(return_buf));
@@ -777,7 +778,7 @@ nsresult CopyPrinterCharPref(nsIPrefBranch *pref, const char *modulename, const 
   
   if (NS_FAILED(rv)) { 
     if (printername) {
-      
+      /* Get prefs per printer name */
       nsPrintfCString name(512, "print.printer_%s.%s", printername, prefname);
       DO_PR_DEBUG_LOG(("trying to get '%s'\n", name.get()));
       rv = pref->GetCharPref(name.get(), getter_Copies(return_buf));
@@ -785,14 +786,14 @@ nsresult CopyPrinterCharPref(nsIPrefBranch *pref, const char *modulename, const 
 
     if (NS_FAILED(rv)) {
       if (modulename) {
-        
+        /* Get prefs per module name */
         nsPrintfCString name(512, "print.%s.%s", modulename, prefname);
         DO_PR_DEBUG_LOG(("trying to get '%s'\n", name.get()));
         rv = pref->GetCharPref(name.get(), getter_Copies(return_buf));
       }
       
       if (NS_FAILED(rv)) {
-        
+        /* Get prefs */
         nsPrintfCString name(512, "print.%s", prefname);
         DO_PR_DEBUG_LOG(("trying to get '%s'\n", name.get()));
         rv = pref->GetCharPref(name.get(), getter_Copies(return_buf));
@@ -808,12 +809,12 @@ nsresult CopyPrinterCharPref(nsIPrefBranch *pref, const char *modulename, const 
   {
     DO_PR_DEBUG_LOG(("CopyPrinterCharPref failure.\n"));
   }
-#endif 
+#endif /* PR_LOG */
 
   return rv;
 }
 
-
+//  Printer Enumerator
 nsPrinterEnumeratorGTK::nsPrinterEnumeratorGTK()
 {
 }
@@ -831,7 +832,7 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::GetPrinterNameList(nsIStringEnumerator **a
   }
 
   PRInt32 numPrinters = GlobalPrinters::GetInstance()->GetNumPrinters();
-  nsStringArray *printers = new nsStringArray(numPrinters);
+  nsTArray<nsString> *printers = new nsTArray<nsString>(numPrinters);
   if (!printers) {
     GlobalPrinters::GetInstance()->FreeGlobalPrinters();
     return NS_ERROR_OUT_OF_MEMORY;
@@ -840,14 +841,14 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::GetPrinterNameList(nsIStringEnumerator **a
   int count = 0;
   while( count < numPrinters )
   {
-    printers->AppendString(*GlobalPrinters::GetInstance()->GetStringAt(count++));
+    printers->AppendElement(*GlobalPrinters::GetInstance()->GetStringAt(count++));
   }
   GlobalPrinters::GetInstance()->FreeGlobalPrinters();
 
   return NS_NewAdoptingStringEnumerator(aPrinterNameList, printers);
 }
 
-
+/* readonly attribute wstring defaultPrinterName; */
 NS_IMETHODIMP nsPrinterEnumeratorGTK::GetDefaultPrinterName(PRUnichar **aDefaultPrinterName)
 {
   DO_PR_DEBUG_LOG(("nsPrinterEnumeratorGTK::GetDefaultPrinterName()\n"));
@@ -859,7 +860,7 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::GetDefaultPrinterName(PRUnichar **aDefault
   return NS_OK;
 }
 
-
+/* void initPrintSettingsFromPrinter (in wstring aPrinterName, in nsIPrintSettings aPrintSettings); */
 NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnichar *aPrinterName, nsIPrintSettings *aPrintSettings)
 {
   DO_PR_DEBUG_LOG(("nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter()"));
@@ -875,8 +876,8 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnich
   if (NS_FAILED(rv))
     return rv;
 
-  nsXPIDLCString fullPrinterName,  
-                 printerName;     
+  nsXPIDLCString fullPrinterName, /* Full name of printer incl. driver-specific prefix */ 
+                 printerName;     /* "Stripped" name of printer */
   fullPrinterName.Assign(NS_ConvertUTF16toUTF8(aPrinterName));
   printerName.Assign(NS_ConvertUTF16toUTF8(aPrinterName));
   DO_PR_DEBUG_LOG(("printerName='%s'\n", printerName.get()));
@@ -887,23 +888,23 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnich
     return rv;
 
 #ifdef USE_POSTSCRIPT
-  
+  /* "Demangle" postscript printer name */
   if (type == pmPostScript) {
-    
-
+    /* Strip the printing method name from the printer,
+     * e.g. turn "PostScript/foobar" to "foobar" */
     PRInt32 slash = printerName.FindChar('/');
     if (kNotFound != slash)
       printerName.Cut(0, slash + 1);
   }
-#endif 
+#endif /* USE_POSTSCRIPT */
 
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
-  
+  /* Defaults to FALSE */
   pPrefs->SetBoolPref(nsPrintfCString(256, PRINTERFEATURES_PREF ".%s.has_special_printerfeatures", fullPrinterName.get()).get(), PR_FALSE);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
   
-  
+  /* Set filename */
   nsXPIDLCString filename;
   if (NS_FAILED(CopyPrinterCharPref(pPrefs, nsnull, printerName, "filename", filename))) {
     const char *path;
@@ -933,11 +934,11 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnich
     printerFeatures.SetSupportsPlexChange(PR_FALSE);
     printerFeatures.SetSupportsResolutionNameChange(PR_FALSE);
     printerFeatures.SetSupportsColorspaceChange(PR_FALSE);
-#endif  
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */ 
       
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetCanChangeOrientation(PR_TRUE);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
     nsXPIDLCString orientation;
     if (NS_SUCCEEDED(CopyPrinterCharPref(pPrefs, "postscript", printerName, "orientation", orientation))) {
@@ -958,44 +959,44 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnich
     printerFeatures.SetOrientationRecord(0, "portrait");
     printerFeatures.SetOrientationRecord(1, "landscape");
     printerFeatures.SetNumOrientationRecords(2);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
-    
+    /* PostScript module does not support changing the plex mode... */
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetCanChangePlex(PR_FALSE);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
     DO_PR_DEBUG_LOG(("setting default plex to '%s'\n", "default"));
     aPrintSettings->SetPlexName(NS_LITERAL_STRING("default").get());
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetPlexRecord(0, "default");
     printerFeatures.SetNumPlexRecords(1);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
-    
+    /* PostScript module does not support changing the resolution mode... */
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetCanChangeResolutionName(PR_FALSE);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
     DO_PR_DEBUG_LOG(("setting default resolution to '%s'\n", "default"));
     aPrintSettings->SetResolutionName(NS_LITERAL_STRING("default").get());
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetResolutionNameRecord(0, "default");
     printerFeatures.SetNumResolutionNameRecords(1);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
-    
+    /* PostScript module does not support changing the colorspace... */
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetCanChangeColorspace(PR_FALSE);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
     DO_PR_DEBUG_LOG(("setting default colorspace to '%s'\n", "default"));
     aPrintSettings->SetColorspace(NS_LITERAL_STRING("default").get());
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetColorspaceRecord(0, "default");
     printerFeatures.SetNumColorspaceRecords(1);
-#endif    
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */   
 
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetCanChangePaperSize(PR_TRUE);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
     nsXPIDLCString papername;
     if (NS_SUCCEEDED(CopyPrinterCharPref(pPrefs, "postscript", printerName, "paper_size", papername))) {
       nsPaperSizePS paper;
@@ -1021,7 +1022,7 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnich
         paper.Next();
       }
       printerFeatures.SetNumPaperSizeRecords(count);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
     }
 
     PRBool hasSpoolerCmd = (nsPSPrinterList::kTypePS ==
@@ -1030,17 +1031,17 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnich
     printerFeatures.SetSupportsSpoolerCommandChange(hasSpoolerCmd);
     printerFeatures.SetCanChangeSpoolerCommand(hasSpoolerCmd);
 
-    
+    /* Postscript module does not pass the job title to lpr */
     printerFeatures.SetSupportsJobTitleChange(PR_FALSE);
     printerFeatures.SetCanChangeJobTitle(PR_FALSE);
-    
+    /* Postscript module has no control over builtin fonts yet */
     printerFeatures.SetSupportsDownloadFontsChange(PR_FALSE);
     printerFeatures.SetCanChangeDownloadFonts(PR_FALSE);
-    
-
+    /* Postscript module does not support multiple colorspaces
+     * so it has to use the old way */
     printerFeatures.SetSupportsPrintInColorChange(PR_TRUE);
     printerFeatures.SetCanChangePrintInColor(PR_TRUE);
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
     if (hasSpoolerCmd) {
       nsXPIDLCString command;
@@ -1054,11 +1055,11 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const PRUnich
     
 #ifdef SET_PRINTER_FEATURES_VIA_PREFS
     printerFeatures.SetCanChangeNumCopies(PR_TRUE);   
-#endif 
+#endif /* SET_PRINTER_FEATURES_VIA_PREFS */
 
     return NS_OK;    
   }
-#endif 
+#endif /* USE_POSTSCRIPT */
 
   return NS_ERROR_UNEXPECTED;
 }
@@ -1069,25 +1070,25 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::DisplayPropertiesDlg(const PRUnichar *aPri
 }
 
 
-
-
-
+//----------------------------------------------------------------------
+//String array enumeration callback to append a printer to the global
+//printer list.
 static PRBool
 GlobalPrinterEnumFunc(nsCString& aName, void *aData)
 {
-  nsStringArray *a = (nsStringArray *)aData;
-  a->AppendString(NS_ConvertUTF8toUTF16(aName));
+  nsTArray<nsString> *a = (nsTArray<nsString> *)aData;
+  a->AppendElement(NS_ConvertUTF8toUTF16(aName));
   return PR_TRUE;
 }
 
-
+//----------------------------------------------------------------------
 nsresult GlobalPrinters::InitializeGlobalPrinters ()
 {
   if (PrintersAreAllocated()) {
     return NS_OK;
   }
 
-  mGlobalPrinterList = new nsStringArray();
+  mGlobalPrinterList = new nsTArray<nsString>();
   if (!mGlobalPrinterList) 
     return NS_ERROR_OUT_OF_MEMORY;
 
@@ -1099,17 +1100,17 @@ nsresult GlobalPrinters::InitializeGlobalPrinters ()
 #ifdef USE_POSTSCRIPT
   nsPSPrinterList psMgr;
   if (NS_SUCCEEDED(psMgr.Init()) && psMgr.Enabled()) {
-    
+    /* Get the list of PostScript-module printers */
     nsCStringArray printerList;
     psMgr.GetPrinterList(printerList);
     printerList.EnumerateForwards(GlobalPrinterEnumFunc, mGlobalPrinterList);
   }
-#endif   
+#endif /* USE_POSTSCRIPT */  
       
-  
-  if (!mGlobalPrinterList->Count())
+  /* If there are no printers available after all checks, return an error */
+  if (!mGlobalPrinterList->Length())
   {
-    
+    /* Make sure we do not cache an empty printer list */
     FreeGlobalPrinters();
 
     return NS_ERROR_GFX_PRINTER_NO_PRINTER_AVAILABLE;
@@ -1118,7 +1119,7 @@ nsresult GlobalPrinters::InitializeGlobalPrinters ()
   return NS_OK;
 }
 
-
+//----------------------------------------------------------------------
 void GlobalPrinters::FreeGlobalPrinters()
 {
   if (mGlobalPrinterList) {

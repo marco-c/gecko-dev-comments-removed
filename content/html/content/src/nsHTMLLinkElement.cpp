@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "nsIDOMHTMLLinkElement.h"
 #include "nsIDOMLinkStyle.h"
 #include "nsIDOMEventTarget.h"
@@ -69,22 +69,22 @@ public:
   nsHTMLLinkElement(nsINodeInfo *aNodeInfo);
   virtual ~nsHTMLLinkElement();
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMNode
+  
   NS_FORWARD_NSIDOMNODE(nsGenericHTMLElement::)
 
-  // nsIDOMElement
+  
   NS_FORWARD_NSIDOMELEMENT(nsGenericHTMLElement::)
 
-  // nsIDOMHTMLElement
+  
   NS_FORWARD_NSIDOMHTMLELEMENT(nsGenericHTMLElement::)
 
-  // nsIDOMHTMLLinkElement
+  
   NS_DECL_NSIDOMHTMLLINKELEMENT
 
-  // nsILink
+  
   NS_IMETHOD    GetLinkState(nsLinkState &aState);
   NS_IMETHOD    SetLinkState(nsLinkState aState);
   NS_IMETHOD    GetHrefURI(nsIURI** aURI);
@@ -123,7 +123,7 @@ protected:
                                  nsAString& aMedia,
                                  PRBool* aIsAlternate);
  
-  // The cached visited state
+  
   nsLinkState mLinkState;
 };
 
@@ -146,7 +146,7 @@ NS_IMPL_ADDREF_INHERITED(nsHTMLLinkElement, nsGenericElement)
 NS_IMPL_RELEASE_INHERITED(nsHTMLLinkElement, nsGenericElement) 
 
 
-// QueryInterface implementation for nsHTMLLinkElement
+
 NS_INTERFACE_TABLE_HEAD(nsHTMLLinkElement)
   NS_HTML_CONTENT_INTERFACE_TABLE4(nsHTMLLinkElement,
                                    nsIDOMHTMLLinkElement,
@@ -236,13 +236,13 @@ nsHTMLLinkElement::UnbindFromTree(PRBool aDeep, PRBool aNullParent)
   nsCOMPtr<nsIDocument> oldDoc = GetCurrentDoc();
   if (oldDoc) {
     GetCurrentDoc()->ForgetLink(this);
-    // If this link is ever reinserted into a document, it might
-    // be under a different xml:base, so forget the cached state now
+    
+    
     mLinkState = eLinkState_Unknown;
   }
 
-  // Once we have XPCOMGC we shouldn't need to call UnbindFromTree during Unlink
-  // and so this messy event dispatch can go away.
+  
+  
   CreateAndDispatchEvent(oldDoc, NS_LITERAL_STRING("DOMLinkRemoved"));
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
   UpdateStyleSheetInternal(oldDoc);
@@ -255,12 +255,12 @@ nsHTMLLinkElement::CreateAndDispatchEvent(nsIDocument* aDoc,
   if (!aDoc)
     return;
 
-  // In the unlikely case that both rev is specified *and* rel=stylesheet,
-  // this code will cause the event to fire, on the principle that maybe the
-  // page really does want to specify that it's author is a stylesheet. Since
-  // this should never actually happen and the performance hit is minimal,
-  // doing the "right" thing costs virtually nothing here, even if it doesn't
-  // make much sense.
+  
+  
+  
+  
+  
+  
   static nsIContent::AttrValuesArray strings[] =
     {&nsGkAtoms::_empty, &nsGkAtoms::stylesheet, nsnull};
 
@@ -272,9 +272,9 @@ nsHTMLLinkElement::CreateAndDispatchEvent(nsIDocument* aDoc,
 
   nsRefPtr<nsPLDOMEvent> event = new nsPLDOMEvent(this, aEventName);
   if (event) {
-    // If we have script blockers on the stack then we want to run as soon as
-    // they are removed. Otherwise punt the runable to the event loop as we
-    // don't know when it will be safe to run script.
+    
+    
+    
     if (nsContentUtils::IsSafeToRunScript())
       event->PostDOMEvent();
     else
@@ -291,9 +291,9 @@ nsHTMLLinkElement::SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
     nsIDocument* doc = GetCurrentDoc();
     if (doc) {
       doc->ForgetLink(this);
-        // The change to 'href' will cause style reresolution which will
-        // eventually recompute the link state and re-add this element
-        // to the link map if necessary.
+        
+        
+        
     }
     SetLinkState(eLinkState_Unknown);
   }
@@ -304,9 +304,9 @@ nsHTMLLinkElement::SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
     PRBool dropSheet = PR_FALSE;
     if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::rel &&
         mStyleSheet) {
-      nsStringArray linkTypes(4);
+      nsAutoTArray<nsString, 4> linkTypes;
       nsStyleLinkElement::ParseLinkTypes(aValue, linkTypes);
-      dropSheet = linkTypes.IndexOf(NS_LITERAL_STRING("stylesheet")) < 0;
+      dropSheet = !linkTypes.Contains(NS_LITERAL_STRING("stylesheet"));
     }
     
     UpdateStyleSheetInternal(nsnull,
@@ -414,11 +414,11 @@ nsHTMLLinkElement::GetStyleSheetInfo(nsAString& aTitle,
   *aIsAlternate = PR_FALSE;
 
   nsAutoString rel;
-  nsStringArray linkTypes(4);
+  nsAutoTArray<nsString, 4> linkTypes;
   GetAttr(kNameSpaceID_None, nsGkAtoms::rel, rel);
   nsStyleLinkElement::ParseLinkTypes(rel, linkTypes);
-  // Is it a stylesheet link?
-  if (linkTypes.IndexOf(NS_LITERAL_STRING("stylesheet")) < 0) {
+  
+  if (!linkTypes.Contains(NS_LITERAL_STRING("stylesheet"))) {
     return;
   }
 
@@ -427,9 +427,9 @@ nsHTMLLinkElement::GetStyleSheetInfo(nsAString& aTitle,
   title.CompressWhitespace();
   aTitle.Assign(title);
 
-  // If alternate, does it have title?
-  if (-1 != linkTypes.IndexOf(NS_LITERAL_STRING("alternate"))) {
-    if (aTitle.IsEmpty()) { // alternates must have title
+  
+  if (linkTypes.Contains(NS_LITERAL_STRING("alternate"))) {
+    if (aTitle.IsEmpty()) { 
       return;
     } else {
       *aIsAlternate = PR_TRUE;
@@ -437,7 +437,7 @@ nsHTMLLinkElement::GetStyleSheetInfo(nsAString& aTitle,
   }
 
   GetAttr(kNameSpaceID_None, nsGkAtoms::media, aMedia);
-  ToLowerCase(aMedia); // HTML4.0 spec is inconsistent, make it case INSENSITIVE
+  ToLowerCase(aMedia); 
 
   nsAutoString mimeType;
   nsAutoString notUsed;
@@ -447,8 +447,8 @@ nsHTMLLinkElement::GetStyleSheetInfo(nsAString& aTitle,
     return;
   }
 
-  // If we get here we assume that we're loading a css file, so set the
-  // type to 'text/css'
+  
+  
   aType.AssignLiteral("text/css");
 
   return;
