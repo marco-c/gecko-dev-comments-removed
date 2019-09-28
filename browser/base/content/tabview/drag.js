@@ -77,9 +77,9 @@ var Drag = function(item, event, isResizing, isFauxDrag) {
     this.item.setZ(999999);
 
     if (this.item.isATabItem && !isResizing)
-      this.safeWindowBounds = Items.getSafeWindowBounds( true );
+      this.safeWindowBounds = Items.getSafeWindowBounds(true);
     else
-      this.safeWindowBounds = Items.getSafeWindowBounds( );
+      this.safeWindowBounds = Items.getSafeWindowBounds();
 
     Trenches.activateOthersTrenches(this.el);
 
@@ -124,10 +124,10 @@ Drag.prototype = {
     
     if ( 
          !Keys.meta
-         && ( !checkItemStatus 
+         && (!checkItemStatus 
               
-              || ( !( this.item.isATabItem && this.item.overlapsWithOtherItems() )
-                 && !iQ(".acceptsDrop").length ) )
+              || (!(this.item.isATabItem && this.item.overlapsWithOtherItems())
+                 && !iQ(".acceptsDrop").length))
         ) {
       newRect = Trenches.snap(bounds,stationaryCorner,assumeConstantSize,keepProportional);
       if (newRect) { 
@@ -202,7 +202,7 @@ Drag.prototype = {
     var updateY = false;
     var snappedTrenches = {};
 
-    var snapRadius = ( Keys.meta ? 0 : Trenches.defaultRadius );
+    var snapRadius = (Keys.meta ? 0 : Trenches.defaultRadius);
     if (rect.left < swb.left + snapRadius ) {
       if (stationaryCorner.indexOf('right') > -1)
         rect.width = rect.right - swb.left;
