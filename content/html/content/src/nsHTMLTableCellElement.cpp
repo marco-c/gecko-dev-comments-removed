@@ -1,41 +1,42 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "nsIDOMHTMLTableCellElement.h"
 #include "nsIDOMHTMLTableRowElement.h"
+#include "nsHTMLTableElement.h"
 #include "nsIDOMHTMLCollection.h"
 #include "nsIDOMEventTarget.h"
 #include "nsMappedAttributes.h"
@@ -44,6 +45,7 @@
 #include "nsStyleConsts.h"
 #include "nsPresContext.h"
 #include "nsRuleData.h"
+#include "nsRuleWalker.h"
 #include "nsIDocument.h"
 #include "celldata.h"
 
@@ -54,19 +56,19 @@ public:
   nsHTMLTableCellElement(already_AddRefed<nsINodeInfo> aNodeInfo);
   virtual ~nsHTMLTableCellElement();
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMNode
+  
   NS_FORWARD_NSIDOMNODE(nsGenericHTMLElement::)
 
-  // nsIDOMElement
+  
   NS_FORWARD_NSIDOMELEMENT(nsGenericHTMLElement::)
 
-  // nsIDOMHTMLElement
+  
   NS_FORWARD_NSIDOMHTMLELEMENT(nsGenericHTMLElement::)
 
-  // nsIDOMHTMLTableCellElement
+  
   NS_DECL_NSIDOMHTMLTABLECELLELEMENT
 
   virtual PRBool ParseAttribute(PRInt32 aNamespaceID,
@@ -81,8 +83,8 @@ public:
 
   virtual nsXPCClassInfo* GetClassInfo();
 protected:
-  // This does not return a nsresult since all we care about is if we
-  // found the row element that this cell is in or not.
+  
+  
   void GetRow(nsIDOMHTMLTableRowElement** aRow);
   nsIContent * GetTable();
 };
@@ -107,7 +109,7 @@ NS_IMPL_RELEASE_INHERITED(nsHTMLTableCellElement, nsGenericElement)
 
 DOMCI_NODE_DATA(HTMLTableCellElement, nsHTMLTableCellElement)
 
-// QueryInterface implementation for nsHTMLTableCellElement
+
 NS_INTERFACE_TABLE_HEAD(nsHTMLTableCellElement)
   NS_HTML_CONTENT_INTERFACE_TABLE1(nsHTMLTableCellElement,
                                    nsIDOMHTMLTableCellElement)
@@ -119,7 +121,7 @@ NS_HTML_CONTENT_INTERFACE_TABLE_TAIL_CLASSINFO(HTMLTableCellElement)
 NS_IMPL_ELEMENT_CLONE(nsHTMLTableCellElement)
 
 
-// protected method
+
 void
 nsHTMLTableCellElement::GetRow(nsIDOMHTMLTableRowElement** aRow)
 {
@@ -133,22 +135,22 @@ nsHTMLTableCellElement::GetRow(nsIDOMHTMLTableRowElement** aRow)
   }
 }
 
-// protected method
+
 nsIContent*
 nsHTMLTableCellElement::GetTable()
 {
   nsIContent *result = nsnull;
 
   nsIContent *parent = GetParent();
-  if (parent) {  // GetParent() should be a row
+  if (parent) {  
     nsIContent* section = parent->GetParent();
     if (section) {
       if (section->IsHTML() &&
           section->NodeInfo()->Equals(nsGkAtoms::table)) {
-        // XHTML, without a row group
+        
         result = section;
       } else {
-        // we have a row group.
+        
         result = section->GetParent();
       }
     }
@@ -203,19 +205,15 @@ nsHTMLTableCellElement::WalkContentStyleRules(nsRuleWalker* aRuleWalker)
   nsresult rv = nsGenericHTMLElement::WalkContentStyleRules(aRuleWalker);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Add style information from the mapped attributes of the table
-  // element.  This depends on the strange behavior of the
-  // |MapAttributesIntoRule| in nsHTMLTableElement.cpp, which is
-  // technically incorrect since it's violating the nsIStyleRule
-  // contract.  However, things are OK (except for the incorrect
-  // dependence on display type rather than tag) since tables and cells
-  // match different, less specific, rules.
-  nsIContent* table = GetTable();
-  if (table) {
-    rv = table->WalkContentStyleRules(aRuleWalker);
+  nsIContent* node = GetTable();
+  if (node && node->IsHTML() && node->NodeInfo()->Equals(nsGkAtoms::table)) {
+    nsHTMLTableElement* table = static_cast<nsHTMLTableElement*>(node);
+    nsMappedAttributes* tableInheritedAttributes =
+      table->GetAttributesMappedForCell();
+    if (tableInheritedAttributes)
+      aRuleWalker->Forward(tableInheritedAttributes);
   }
-
-  return rv;
+  return NS_OK;
 }
 
 
@@ -238,7 +236,7 @@ NS_IMETHODIMP
 nsHTMLTableCellElement::GetAlign(nsAString& aValue)
 {
   if (!GetAttr(kNameSpaceID_None, nsGkAtoms::align, aValue)) {
-    // There's no align attribute, ask the row for the alignment.
+    
 
     nsCOMPtr<nsIDOMHTMLTableRowElement> row;
     GetRow(getter_AddRefs(row));
@@ -273,19 +271,19 @@ nsHTMLTableCellElement::ParseAttribute(PRInt32 aNamespaceID,
                                        nsAttrValue& aResult)
 {
   if (aNamespaceID == kNameSpaceID_None) {
-    /* ignore these attributes, stored simply as strings
-       abbr, axis, ch, headers
-    */
+    
+
+
     if (aAttribute == nsGkAtoms::charoff) {
-      /* attributes that resolve to integers with a min of 0 */
+      
       return aResult.ParseIntWithBounds(aValue, 0);
     }
     if (aAttribute == nsGkAtoms::colspan) {
       PRBool res = aResult.ParseIntWithBounds(aValue, -1);
       if (res) {
         PRInt32 val = aResult.GetIntegerValue();
-        // reset large colspan values as IE and opera do
-        // quirks mode does not honor the special html 4 value of 0
+        
+        
         if (val > MAX_COLSPAN || val < 0 ||
             (0 == val && InNavQuirksMode(GetOwnerDoc()))) {
           aResult.SetTo(1);
@@ -297,7 +295,7 @@ nsHTMLTableCellElement::ParseAttribute(PRInt32 aNamespaceID,
       PRBool res = aResult.ParseIntWithBounds(aValue, -1, MAX_ROWSPAN);
       if (res) {
         PRInt32 val = aResult.GetIntegerValue();
-        // quirks mode does not honor the special html 4 value of 0
+        
         if (val < 0 || (0 == val && InNavQuirksMode(GetOwnerDoc()))) {
           aResult.SetTo(1);
         }
@@ -333,42 +331,42 @@ void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                            nsRuleData* aData)
 {
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Position)) {
-    // width: value
+    
     nsCSSValue* width = aData->ValueForWidth();
     if (width->GetUnit() == eCSSUnit_Null) {
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
       if (value && value->Type() == nsAttrValue::eInteger) {
         if (value->GetIntegerValue() > 0)
           width->SetFloatValue((float)value->GetIntegerValue(), eCSSUnit_Pixel); 
-        // else 0 implies auto for compatibility.
+        
       }
       else if (value && value->Type() == nsAttrValue::ePercent) {
         if (value->GetPercentValue() > 0.0f)
           width->SetPercentValue(value->GetPercentValue());
-        // else 0 implies auto for compatibility
+        
       }
     }
 
-    // height: value
+    
     nsCSSValue* height = aData->ValueForHeight();
     if (height->GetUnit() == eCSSUnit_Null) {
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::height);
       if (value && value->Type() == nsAttrValue::eInteger) {
         if (value->GetIntegerValue() > 0)
           height->SetFloatValue((float)value->GetIntegerValue(), eCSSUnit_Pixel);
-        // else 0 implies auto for compatibility.
+        
       }
       else if (value && value->Type() == nsAttrValue::ePercent) {
         if (value->GetPercentValue() > 0.0f)
           height->SetPercentValue(value->GetPercentValue());
-        // else 0 implies auto for compatibility
+        
       }
     }
   }
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Text)) {
     nsCSSValue* textAlign = aData->ValueForTextAlign();
     if (textAlign->GetUnit() == eCSSUnit_Null) {
-      // align: enum
+      
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::align);
       if (value && value->Type() == nsAttrValue::eEnum)
         textAlign->SetIntValue(value->GetEnumValue(), eCSSUnit_Enumerated);
@@ -376,9 +374,9 @@ void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
 
     nsCSSValue* whiteSpace = aData->ValueForWhiteSpace();
     if (whiteSpace->GetUnit() == eCSSUnit_Null) {
-      // nowrap: enum
+      
       if (aAttributes->GetAttr(nsGkAtoms::nowrap)) {
-        // See if our width is not a nonzero integer width.
+        
         const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
         nsCompatibility mode = aData->mPresContext->CompatibilityMode();
         if (!value || value->Type() != nsAttrValue::eInteger ||
@@ -392,7 +390,7 @@ void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(TextReset)) {
     nsCSSValue* verticalAlign = aData->ValueForVerticalAlign();
     if (verticalAlign->GetUnit() == eCSSUnit_Null) {
-      // valign: enum
+      
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::valign);
       if (value && value->Type() == nsAttrValue::eEnum)
         verticalAlign->SetIntValue(value->GetEnumValue(), eCSSUnit_Enumerated);
@@ -411,8 +409,8 @@ nsHTMLTableCellElement::IsAttributeMapped(const nsIAtom* aAttribute) const
     { &nsGkAtoms::valign },
     { &nsGkAtoms::nowrap },
 #if 0
-    // XXXldb If these are implemented, they might need to move to
-    // GetAttributeChangeHint (depending on how, and preferably not).
+    
+    
     { &nsGkAtoms::abbr },
     { &nsGkAtoms::axis },
     { &nsGkAtoms::headers },
