@@ -202,14 +202,12 @@ public:
                                nsIPrincipal*     aNodePrincipal,
                                nsICSSStyleRule** aResult);
 
-  nsresult ParseAndAppendDeclaration(const nsAString&  aBuffer,
-                                     nsIURI*           aSheetURL,
-                                     nsIURI*           aBaseURL,
-                                     nsIPrincipal*     aSheetPrincipal,
-                                     css::Declaration* aDeclaration,
-                                     PRBool            aParseOnlyOneDecl,
-                                     PRBool*           aChanged,
-                                     PRBool            aClearOldDecl);
+  nsresult ParseDeclarations(const nsAString&  aBuffer,
+                             nsIURI*           aSheetURL,
+                             nsIURI*           aBaseURL,
+                             nsIPrincipal*     aSheetPrincipal,
+                             css::Declaration* aDeclaration,
+                             PRBool*           aChanged);
 
   nsresult ParseRule(const nsAString&        aRule,
                      nsIURI*                 aSheetURL,
@@ -1028,14 +1026,12 @@ CSSParserImpl::ParseStyleAttribute(const nsAString& aAttributeValue,
 }
 
 nsresult
-CSSParserImpl::ParseAndAppendDeclaration(const nsAString&  aBuffer,
-                                         nsIURI*           aSheetURI,
-                                         nsIURI*           aBaseURI,
-                                         nsIPrincipal*     aSheetPrincipal,
-                                         css::Declaration* aDeclaration,
-                                         PRBool            aParseOnlyOneDecl,
-                                         PRBool*           aChanged,
-                                         PRBool            aClearOldDecl)
+CSSParserImpl::ParseDeclarations(const nsAString&  aBuffer,
+                                 nsIURI*           aSheetURI,
+                                 nsIURI*           aBaseURI,
+                                 nsIPrincipal*     aSheetPrincipal,
+                                 css::Declaration* aDeclaration,
+                                 PRBool*           aChanged)
 {
   NS_PRECONDITION(aSheetPrincipal, "Must have principal here!");
   AssertInitialState();
@@ -1046,20 +1042,16 @@ CSSParserImpl::ParseAndAppendDeclaration(const nsAString&  aBuffer,
 
   mSection = eCSSSection_General;
 
-  if (aClearOldDecl) {
-    mData.AssertInitialState();
-    aDeclaration->ClearData();
-    
-    *aChanged = PR_TRUE;
-  } else {
-    aDeclaration->ExpandTo(&mData);
-  }
+  mData.AssertInitialState();
+  aDeclaration->ClearData();
+  
+  *aChanged = PR_TRUE;
 
   nsresult rv = NS_OK;
-  do {
+  for (;;) {
     
     
-    if (!ParseDeclaration(aDeclaration, PR_FALSE, aClearOldDecl, aChanged)) {
+    if (!ParseDeclaration(aDeclaration, PR_FALSE, PR_TRUE, aChanged)) {
       rv = mScanner.GetLowLevelError();
       if (NS_FAILED(rv))
         break;
@@ -1069,9 +1061,9 @@ CSSParserImpl::ParseAndAppendDeclaration(const nsAString&  aBuffer,
         break;
       }
     }
-  } while (!aParseOnlyOneDecl);
-  aDeclaration->CompressFrom(&mData);
+  }
 
+  aDeclaration->CompressFrom(&mData);
   ReleaseScanner();
   return rv;
 }
@@ -1645,7 +1637,7 @@ CSSParserImpl::ParseMediaQuery(PRUnichar aStopSymbol,
         return PR_FALSE;
       }
       
-      nsContentUtils::ASCIIToLower(mToken.mIdent);
+      ToLowerCase(mToken.mIdent);
       mediaType = do_GetAtom(mToken.mIdent);
       if (gotNotOrOnly ||
           (mediaType != nsGkAtoms::_not && mediaType != nsGkAtoms::only))
@@ -1763,7 +1755,7 @@ CSSParserImpl::ParseMediaQueryExpression(nsMediaQuery* aQuery)
   }
 
   
-  nsContentUtils::ASCIIToLower(mToken.mIdent);
+  ToLowerCase(mToken.mIdent);
   const PRUnichar *featureString;
   if (StringBeginsWith(mToken.mIdent, NS_LITERAL_STRING("min-"))) {
     expr->mRange = nsMediaExpression::eMin;
@@ -2922,7 +2914,7 @@ CSSParserImpl::ParseAttributeSelector(PRInt32&       aDataMask,
             short i = 0;
             const char* htmlAttr;
             while ((htmlAttr = caseInsensitiveHTMLAttribute[i++])) {
-              if (attr.LowerCaseEqualsASCII(htmlAttr)) {
+              if (attr.EqualsIgnoreCase(htmlAttr)) {
                 isCaseSensitive = PR_FALSE;
                 break;
               }
@@ -2996,7 +2988,7 @@ CSSParserImpl::ParsePseudoSelector(PRInt32&       aDataMask,
   nsAutoString buffer;
   buffer.Append(PRUnichar(':'));
   buffer.Append(mToken.mIdent);
-  nsContentUtils::ASCIIToLower(buffer);
+  ToLowerCase(buffer);
   nsCOMPtr<nsIAtom> pseudo = do_GetAtom(buffer);
   if (!pseudo) {
     mScanner.SetLowLevelError(NS_ERROR_OUT_OF_MEMORY);
@@ -3331,20 +3323,20 @@ CSSParserImpl::ParsePseudoClassWithNthPairArg(nsCSSSelector& aSelector,
   }
 
   if (eCSSToken_Ident == mToken.mType) {
-    if (mToken.mIdent.LowerCaseEqualsLiteral("odd")) {
+    if (mToken.mIdent.EqualsIgnoreCase("odd")) {
       numbers[0] = 2;
       numbers[1] = 1;
       lookForB = PR_FALSE;
     }
-    else if (mToken.mIdent.LowerCaseEqualsLiteral("even")) {
+    else if (mToken.mIdent.EqualsIgnoreCase("even")) {
       numbers[0] = 2;
       numbers[1] = 0;
       lookForB = PR_FALSE;
     }
-    else if (mToken.mIdent.LowerCaseEqualsLiteral("n")) {
+    else if (mToken.mIdent.EqualsIgnoreCase("n")) {
       numbers[0] = 1;
     }
-    else if (mToken.mIdent.LowerCaseEqualsLiteral("-n")) {
+    else if (mToken.mIdent.EqualsIgnoreCase("-n")) {
       numbers[0] = -1;
     }
     else {
@@ -3361,7 +3353,7 @@ CSSParserImpl::ParsePseudoClassWithNthPairArg(nsCSSSelector& aSelector,
     lookForB = PR_FALSE;
   }
   else if (eCSSToken_Dimension == mToken.mType) {
-    if (!mToken.mIntegerValid || !mToken.mIdent.LowerCaseEqualsLiteral("n")) {
+    if (!mToken.mIntegerValid || !mToken.mIdent.EqualsIgnoreCase("n")) {
       REPORT_UNEXPECTED_TOKEN(PEPseudoClassArgNotNth);
       return eSelectorParsingStatus_Error; 
     }
@@ -9655,19 +9647,16 @@ nsCSSParser::ParseStyleAttribute(const nsAString&  aAttributeValue,
 }
 
 nsresult
-nsCSSParser::ParseAndAppendDeclaration(const nsAString&  aBuffer,
-                                       nsIURI*           aSheetURI,
-                                       nsIURI*           aBaseURI,
-                                       nsIPrincipal*     aSheetPrincipal,
-                                       css::Declaration* aDeclaration,
-                                       PRBool            aParseOnlyOneDecl,
-                                       PRBool*           aChanged,
-                                       PRBool            aClearOldDecl)
+nsCSSParser::ParseDeclarations(const nsAString&  aBuffer,
+                               nsIURI*           aSheetURI,
+                               nsIURI*           aBaseURI,
+                               nsIPrincipal*     aSheetPrincipal,
+                               css::Declaration* aDeclaration,
+                               PRBool*           aChanged)
 {
   return static_cast<CSSParserImpl*>(mImpl)->
-    ParseAndAppendDeclaration(aBuffer, aSheetURI, aBaseURI, aSheetPrincipal,
-                              aDeclaration, aParseOnlyOneDecl, aChanged,
-                              aClearOldDecl);
+    ParseDeclarations(aBuffer, aSheetURI, aBaseURI, aSheetPrincipal,
+                      aDeclaration, aChanged);
 }
 
 nsresult
