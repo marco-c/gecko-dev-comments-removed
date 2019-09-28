@@ -852,17 +852,40 @@ ScriptAnalysis::analyzeLifetimes(JSContext *cx)
             break;
           }
 
-          case JSOP_IFEQ:
-          case JSOP_IFEQX:
-          case JSOP_IFNE:
-          case JSOP_IFNEX:
-          case JSOP_OR:
-          case JSOP_ORX:
-          case JSOP_AND:
-          case JSOP_ANDX:
-          case JSOP_GOTO:
-          case JSOP_GOTOX:
-          case JSOP_ENDFILTER: {
+          case JSOP_LOOKUPSWITCH:
+          case JSOP_LOOKUPSWITCHX:
+          case JSOP_TABLESWITCH:
+          case JSOP_TABLESWITCHX:
+          case JSOP_TRY:
+            
+            for (unsigned i = 0; i < savedCount; i++) {
+                LifetimeVariable &var = *saved[i];
+                var.lifetime = ArenaNew<Lifetime>(pool, offset, var.savedEnd, var.saved);
+                if (!var.lifetime) {
+                    cx->free_(saved);
+                    setOOM(cx);
+                    return;
+                }
+                var.saved = NULL;
+                saved[i--] = saved[--savedCount];
+            }
+            savedCount = 0;
+            break;
+
+          case JSOP_NEW:
+          case JSOP_CALL:
+          case JSOP_EVAL:
+          case JSOP_FUNAPPLY:
+          case JSOP_FUNCALL:
+            if (loop)
+                loop->hasCallsLoops = true;
+            break;
+
+          default:;
+        }
+
+        uint32 type = JOF_TYPE(js_CodeSpec[op].format);
+        if (type == JOF_JUMP || type == JOF_JUMPX) {
             
 
 
@@ -931,68 +954,35 @@ ScriptAnalysis::analyzeLifetimes(JSContext *cx)
                     
                     loop->entry = targetOffset;
                 }
-
-                break;
-            }
-            for (unsigned i = 0; i < savedCount; i++) {
-                LifetimeVariable &var = *saved[i];
-                JS_ASSERT(!var.lifetime && var.saved);
-                if (var.live(targetOffset)) {
-                    
+            } else {
+                for (unsigned i = 0; i < savedCount; i++) {
+                    LifetimeVariable &var = *saved[i];
+                    JS_ASSERT(!var.lifetime && var.saved);
+                    if (var.live(targetOffset)) {
+                        
 
 
 
-                    var.lifetime = ArenaNew<Lifetime>(pool, offset, var.savedEnd, var.saved);
-                    if (!var.lifetime) {
-                        cx->free_(saved);
-                        setOOM(cx);
-                        return;
+                        var.lifetime = ArenaNew<Lifetime>(pool, offset, var.savedEnd, var.saved);
+                        if (!var.lifetime) {
+                            cx->free_(saved);
+                            setOOM(cx);
+                            return;
+                        }
+                        var.saved = NULL;
+                        saved[i--] = saved[--savedCount];
+                    } else if (loop && !var.savedEnd) {
+                        
+
+
+
+
+
+
+                        var.savedEnd = offset;
                     }
-                    var.saved = NULL;
-                    saved[i--] = saved[--savedCount];
-                } else if (loop && !var.savedEnd) {
-                    
-
-
-
-
-
-
-                    var.savedEnd = offset;
                 }
             }
-            break;
-          }
-
-          case JSOP_LOOKUPSWITCH:
-          case JSOP_LOOKUPSWITCHX:
-          case JSOP_TABLESWITCH:
-          case JSOP_TABLESWITCHX:
-            
-            for (unsigned i = 0; i < savedCount; i++) {
-                LifetimeVariable &var = *saved[i];
-                var.lifetime = ArenaNew<Lifetime>(pool, offset, var.savedEnd, var.saved);
-                if (!var.lifetime) {
-                    cx->free_(saved);
-                    setOOM(cx);
-                    return;
-                }
-                var.saved = NULL;
-                saved[i--] = saved[--savedCount];
-            }
-            savedCount = 0;
-            break;
-
-          case JSOP_NEW:
-          case JSOP_CALL:
-          case JSOP_EVAL:
-          case JSOP_FUNAPPLY:
-          case JSOP_FUNCALL:
-            if (loop)
-                loop->hasCallsLoops = true;
-            break;
-
-          default:;
         }
 
         offset--;
