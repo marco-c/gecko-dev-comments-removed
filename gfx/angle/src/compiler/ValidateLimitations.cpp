@@ -1,8 +1,8 @@
-//
-// Copyright (c) 2002-2010 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
+
+
+
+
+
 
 #include "compiler/ValidateLimitations.h"
 #include "compiler/InfoSink.h"
@@ -17,26 +17,37 @@ bool IsLoopIndex(const TIntermSymbol* symbol, const TLoopStack& stack) {
     return false;
 }
 
-// Traverses a node to check if it represents a constant index expression.
-// Definition:
-// constant-index-expressions are a superset of constant-expressions.
-// Constant-index-expressions can include loop indices as defined in
-// GLSL ES 1.0 spec, Appendix A, section 4.
-// The following are constant-index-expressions:
-// - Constant expressions
-// - Loop indices as defined in section 4
-// - Expressions composed of both of the above
+void MarkLoopForUnroll(const TIntermSymbol* symbol, TLoopStack& stack) {
+    for (TLoopStack::iterator i = stack.begin(); i != stack.end(); ++i) {
+        if (i->index.id == symbol->getId()) {
+            ASSERT(i->loop != NULL);
+            i->loop->setUnrollFlag(true);
+            return;
+        }
+    }
+    UNREACHABLE();
+}
+
+
+
+
+
+
+
+
+
+
 class ValidateConstIndexExpr : public TIntermTraverser {
 public:
     ValidateConstIndexExpr(const TLoopStack& stack)
         : mValid(true), mLoopStack(stack) {}
 
-    // Returns true if the parsed node represents a constant index expression.
+    
     bool isValid() const { return mValid; }
 
     virtual void visitSymbol(TIntermSymbol* symbol) {
-        // Only constants and loop indices are allowed in a
-        // constant index expression.
+        
+        
         if (mValid) {
             mValid = (symbol->getQualifier() == EvqConst) ||
                      IsLoopIndex(symbol, mLoopStack);
@@ -54,7 +65,49 @@ private:
     bool mValid;
     const TLoopStack& mLoopStack;
 };
-}  // namespace
+
+
+
+
+class ValidateLoopIndexExpr : public TIntermTraverser {
+public:
+    ValidateLoopIndexExpr(TLoopStack& stack)
+        : mUsesFloatLoopIndex(false),
+          mUsesIntLoopIndex(false),
+          mLoopStack(stack) {}
+
+    bool usesFloatLoopIndex() const { return mUsesFloatLoopIndex; }
+    bool usesIntLoopIndex() const { return mUsesIntLoopIndex; }
+
+    virtual void visitSymbol(TIntermSymbol* symbol) {
+        if (IsLoopIndex(symbol, mLoopStack)) {
+            switch (symbol->getBasicType()) {
+              case EbtFloat:
+                mUsesFloatLoopIndex = true;
+                break;
+              case EbtInt:
+                mUsesIntLoopIndex = true;
+                MarkLoopForUnroll(symbol, mLoopStack);
+                break;
+              default:
+                UNREACHABLE();
+            }
+        }
+    }
+    virtual void visitConstantUnion(TIntermConstantUnion*) {}
+    virtual bool visitBinary(Visit, TIntermBinary*) { return true; }
+    virtual bool visitUnary(Visit, TIntermUnary*) { return true; }
+    virtual bool visitSelection(Visit, TIntermSelection*) { return true; }
+    virtual bool visitAggregate(Visit, TIntermAggregate*) { return true; }
+    virtual bool visitLoop(Visit, TIntermLoop*) { return true; }
+    virtual bool visitBranch(Visit, TIntermBranch*) { return true; }
+
+private:
+    bool mUsesFloatLoopIndex;
+    bool mUsesIntLoopIndex;
+    TLoopStack& mLoopStack;
+};
+}  
 
 ValidateLimitations::ValidateLimitations(ShShaderType shaderType,
                                          TInfoSinkBase& sink)
@@ -74,13 +127,34 @@ void ValidateLimitations::visitConstantUnion(TIntermConstantUnion*)
 
 bool ValidateLimitations::visitBinary(Visit, TIntermBinary* node)
 {
-    // Check if loop index is modified in the loop body.
+    
     validateOperation(node, node->getLeft());
 
-    // Check indexing.
+    
     switch (node->getOp()) {
       case EOpIndexDirect:
+        validateIndexing(node);
+        break;
       case EOpIndexIndirect:
+#if defined(__APPLE__)
+        
+        
+        
+        
+        if ((node->getLeft() != NULL) && (node->getRight() != NULL) &&
+            (node->getLeft()->getAsSymbolNode())) {
+            TIntermSymbol* symbol = node->getLeft()->getAsSymbolNode();
+            if (IsSampler(symbol->getBasicType()) && symbol->isArray()) {
+                ValidateLoopIndexExpr validate(mLoopStack);
+                node->getRight()->traverse(&validate);
+                if (validate.usesFloatLoopIndex()) {
+                    error(node->getLine(),
+                          "sampler array index is float loop index",
+                          "for");
+                }
+            }
+        }
+#endif
         validateIndexing(node);
         break;
       default: break;
@@ -90,7 +164,7 @@ bool ValidateLimitations::visitBinary(Visit, TIntermBinary* node)
 
 bool ValidateLimitations::visitUnary(Visit, TIntermUnary* node)
 {
-    // Check if loop index is modified in the loop body.
+    
     validateOperation(node, node->getOperand());
 
     return true;
@@ -120,6 +194,7 @@ bool ValidateLimitations::visitLoop(Visit, TIntermLoop* node)
 
     TLoopInfo info;
     memset(&info, 0, sizeof(TLoopInfo));
+    info.loop = node;
     if (!validateForLoopHeader(node, &info))
         return false;
 
@@ -130,7 +205,7 @@ bool ValidateLimitations::visitLoop(Visit, TIntermLoop* node)
         mLoopStack.pop_back();
     }
 
-    // The loop is fully processed - no need to visit children.
+    
     return false;
 }
 
@@ -163,7 +238,7 @@ bool ValidateLimitations::validateLoopType(TIntermLoop* node) {
     if (type == ELoopFor)
         return true;
 
-    // Reject while and do-while loops.
+    
     error(node->getLine(),
           "This type of loop is not allowed",
           type == ELoopWhile ? "while" : "do");
@@ -175,10 +250,10 @@ bool ValidateLimitations::validateForLoopHeader(TIntermLoop* node,
 {
     ASSERT(node->getType() == ELoopFor);
 
-    //
-    // The for statement has the form:
-    //    for ( init-declaration ; condition ; expression ) statement
-    //
+    
+    
+    
+    
     if (!validateForLoopInit(node, info))
         return false;
     if (!validateForLoopCond(node, info))
@@ -198,16 +273,16 @@ bool ValidateLimitations::validateForLoopInit(TIntermLoop* node,
         return false;
     }
 
-    //
-    // init-declaration has the form:
-    //     type-specifier identifier = constant-expression
-    //
+    
+    
+    
+    
     TIntermAggregate* decl = init->getAsAggregate();
     if ((decl == NULL) || (decl->getOp() != EOpDeclaration)) {
         error(init->getLine(), "Invalid init declaration", "for");
         return false;
     }
-    // To keep things simple do not allow declaration list.
+    
     TIntermSequence& declSeq = decl->getSequence();
     if (declSeq.size() != 1) {
         error(decl->getLine(), "Invalid init declaration", "for");
@@ -223,14 +298,14 @@ bool ValidateLimitations::validateForLoopInit(TIntermLoop* node,
         error(declInit->getLine(), "Invalid init declaration", "for");
         return false;
     }
-    // The loop index has type int or float.
+    
     TBasicType type = symbol->getBasicType();
     if ((type != EbtInt) && (type != EbtFloat)) {
         error(symbol->getLine(),
               "Invalid type for loop index", getBasicString(type));
         return false;
     }
-    // The loop index is initialized with constant expression.
+    
     if (!isConstExpr(declInit->getRight())) {
         error(declInit->getLine(),
               "Loop index cannot be initialized with non-constant expression",
@@ -250,16 +325,16 @@ bool ValidateLimitations::validateForLoopCond(TIntermLoop* node,
         error(node->getLine(), "Missing condition", "for");
         return false;
     }
-    //
-    // condition has the form:
-    //     loop_index relational_operator constant_expression
-    //
+    
+    
+    
+    
     TIntermBinary* binOp = cond->getAsBinaryNode();
     if (binOp == NULL) {
         error(node->getLine(), "Invalid condition", "for");
         return false;
     }
-    // Loop index should be to the left of relational operator.
+    
     TIntermSymbol* symbol = binOp->getLeft()->getAsSymbolNode();
     if (symbol == NULL) {
         error(binOp->getLine(), "Invalid condition", "for");
@@ -270,7 +345,7 @@ bool ValidateLimitations::validateForLoopCond(TIntermLoop* node,
               "Expected loop index", symbol->getSymbol().c_str());
         return false;
     }
-    // Relational operator is one of: > >= < <= == or !=.
+    
     switch (binOp->getOp()) {
       case EOpEqual:
       case EOpNotEqual:
@@ -285,7 +360,7 @@ bool ValidateLimitations::validateForLoopCond(TIntermLoop* node,
               getOperatorString(binOp->getOp()));
         break;
     }
-    // Loop index must be compared with a constant.
+    
     if (!isConstExpr(binOp->getRight())) {
         error(binOp->getLine(),
               "Loop index cannot be compared with non-constant expression",
@@ -305,15 +380,15 @@ bool ValidateLimitations::validateForLoopExpr(TIntermLoop* node,
         return false;
     }
 
-    // for expression has one of the following forms:
-    //     loop_index++
-    //     loop_index--
-    //     loop_index += constant_expression
-    //     loop_index -= constant_expression
-    //     ++loop_index
-    //     --loop_index
-    // The last two forms are not specified in the spec, but I am assuming
-    // its an oversight.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     TIntermUnary* unOp = expr->getAsUnaryNode();
     TIntermBinary* binOp = unOp ? NULL : expr->getAsBinaryNode();
 
@@ -327,7 +402,7 @@ bool ValidateLimitations::validateForLoopExpr(TIntermLoop* node,
         symbol = binOp->getLeft()->getAsSymbolNode();
     }
 
-    // The operand must be loop index.
+    
     if (symbol == NULL) {
         error(expr->getLine(), "Invalid expression", "for");
         return false;
@@ -338,7 +413,7 @@ bool ValidateLimitations::validateForLoopExpr(TIntermLoop* node,
         return false;
     }
 
-    // The operator is one of: ++ -- += -=.
+    
     switch (op) {
         case EOpPostIncrement:
         case EOpPostDecrement:
@@ -355,7 +430,7 @@ bool ValidateLimitations::validateForLoopExpr(TIntermLoop* node,
             return false;
     }
 
-    // Loop index must be incremented/decremented with a constant.
+    
     if (binOp != NULL) {
         if (!isConstExpr(binOp->getRight())) {
             error(binOp->getLine(),
@@ -372,11 +447,11 @@ bool ValidateLimitations::validateFunctionCall(TIntermAggregate* node)
 {
     ASSERT(node->getOp() == EOpFunctionCall);
 
-    // If not within loop body, there is nothing to check.
+    
     if (!withinLoopBody())
         return true;
 
-    // List of param indices for which loop indices are used as argument.
+    
     typedef std::vector<int> ParamIndex;
     ParamIndex pIndex;
     TIntermSequence& params = node->getSequence();
@@ -385,8 +460,8 @@ bool ValidateLimitations::validateFunctionCall(TIntermAggregate* node)
         if (symbol && isLoopIndex(symbol))
             pIndex.push_back(i);
     }
-    // If none of the loop indices are used as arguments,
-    // there is nothing to check.
+    
+    
     if (pIndex.empty())
         return true;
 
@@ -412,7 +487,7 @@ bool ValidateLimitations::validateFunctionCall(TIntermAggregate* node)
 
 bool ValidateLimitations::validateOperation(TIntermOperator* node,
                                             TIntermNode* operand) {
-    // Check if loop index is modified in the loop body.
+    
     if (!withinLoopBody() || !node->modifiesState())
         return true;
 
@@ -447,15 +522,15 @@ bool ValidateLimitations::validateIndexing(TIntermBinary* node)
 
     bool valid = true;
     TIntermTyped* index = node->getRight();
-    // The index expression must have integral type.
+    
     if (!index->isScalar() || (index->getBasicType() != EbtInt)) {
         error(index->getLine(),
               "Index expression must have integral type",
               index->getCompleteString().c_str());
         valid = false;
     }
-    // The index expession must be a constant-index-expression unless
-    // the operand is a uniform in a vertex shader.
+    
+    
     TIntermTyped* operand = node->getLeft();
     bool skip = (mShaderType == SH_VERTEX_SHADER) &&
                 (operand->getQualifier() == EvqUniform);
