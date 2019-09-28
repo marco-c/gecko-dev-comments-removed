@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=78: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 #include "nsCOMPtr.h"
 #include "nsContentDLF.h"
 #include "nsGenericHTMLElement.h"
@@ -65,12 +65,12 @@
 
 #include "mozilla/FunctionTimer.h"
 
-
+// plugins
 #include "nsIPluginHost.h"
 #include "nsPluginHost.h"
 static NS_DEFINE_CID(kPluginDocumentCID, NS_PLUGINDOCUMENT_CID);
 
-
+// Factory code for creating variations on html documents
 
 #undef NOISY_REGISTRY
 
@@ -86,8 +86,8 @@ static NS_DEFINE_IID(kXULDocumentCID, NS_XULDOCUMENT_CID);
 nsresult
 NS_NewDocumentViewer(nsIDocumentViewer** aResult);
 
-
-
+// XXXbz if you change the MIME types here, be sure to update
+// nsIParser.h and DetermineParseMode in nsParser.cpp accordingly.
 static const char* const gHTMLTypes[] = {
   TEXT_HTML,
   TEXT_PLAIN,
@@ -184,21 +184,21 @@ nsContentDLF::CreateInstance(const char* aCommand,
                        __LINE__, channelURL__.get());
 #endif
 
-  
-  
-  
+  // Declare "type" here.  This is because although the variable itself only
+  // needs limited scope, we need to use the raw string memory -- as returned
+  // by "type.get()" farther down in the function.
   nsCAutoString type;
 
-  
+  // Are we viewing source?
   nsCOMPtr<nsIViewSourceChannel> viewSourceChannel = do_QueryInterface(aChannel);
   if (viewSourceChannel)
   {
     aCommand = "view-source";
 
-    
-    
-    
-    
+    // The parser freaks out when it sees the content-type that a
+    // view-source channel normally returns.  Get the actual content
+    // type of the data.  If it's known, use it; otherwise use
+    // text/plain.
     viewSourceChannel->GetOriginalContentType(type);
     PRBool knownType = PR_FALSE;
     PRInt32 typeIndex;
@@ -230,8 +230,8 @@ nsContentDLF::CreateInstance(const char* aCommand,
     if (knownType) {
       viewSourceChannel->SetContentType(type);
     } else if (IsImageContentType(type.get())) {
-      
-      
+      // If it's an image, we want to display it the same way we normally would.
+      // Also note the lifetime of "type" allows us to safely use "get()" here.
       aContentType = type.get();
     } else {
       viewSourceChannel->SetContentType(NS_LITERAL_CSTRING(TEXT_PLAIN));
@@ -240,7 +240,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     aChannel->SetContentType(NS_LITERAL_CSTRING(TEXT_PLAIN));
     aContentType = TEXT_PLAIN;
   }
-  
+  // Try html
   int typeIndex=0;
   while(gHTMLTypes[typeIndex]) {
     if (0 == PL_strcmp(gHTMLTypes[typeIndex++], aContentType)) {
@@ -251,7 +251,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     }
   }
 
-  
+  // Try XML
   typeIndex = 0;
   while(gXMLTypes[typeIndex]) {
     if (0== PL_strcmp(gXMLTypes[typeIndex++], aContentType)) {
@@ -262,7 +262,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     }
   }
 
-  
+  // Try SVG
   typeIndex = 0;
   while(gSVGTypes[typeIndex]) {
     if (!PL_strcmp(gSVGTypes[typeIndex++], aContentType)) {
@@ -273,7 +273,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     }
   }
 
-  
+  // Try XUL
   typeIndex = 0;
   while (gXULTypes[typeIndex]) {
     if (0 == PL_strcmp(gXULTypes[typeIndex++], aContentType)) {
@@ -297,7 +297,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
   }  
 #endif
 
-  
+  // Try image types
   if (IsImageContentType(aContentType)) {
     return CreateDocument(aCommand, 
                           aChannel, aLoadGroup,
@@ -315,7 +315,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
                           aDocListener, aDocViewer);
   }
 
-  
+  // If we get here, then we weren't able to create anything. Sorry!
   return NS_ERROR_FAILURE;
 }
 
@@ -336,7 +336,7 @@ nsContentDLF::CreateInstanceForDocument(nsISupports* aContainer,
     if (NS_FAILED(rv))
       break;
 
-    
+    // Bind the document to the Content Viewer
     nsIContentViewer* cv = static_cast<nsIContentViewer*>(docv.get());
     rv = cv->LoadStart(aDocument);
     NS_ADDREF(*aDocViewerResult = cv);
@@ -356,11 +356,11 @@ nsContentDLF::CreateBlankDocument(nsILoadGroup *aLoadGroup,
 
   nsresult rv = NS_ERROR_FAILURE;
 
-  
+  // create a new blank HTML document
   nsCOMPtr<nsIDocument> blankDoc(do_CreateInstance(kHTMLDocumentCID));
 
   if (blankDoc) {
-    
+    // initialize
     nsCOMPtr<nsIURI> uri;
     NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("about:blank"));
     if (uri) {
@@ -369,7 +369,7 @@ nsContentDLF::CreateBlankDocument(nsILoadGroup *aLoadGroup,
     }
   }
 
-  
+  // add some simple content structure
   if (NS_SUCCEEDED(rv)) {
     rv = NS_ERROR_FAILURE;
 
@@ -377,22 +377,25 @@ nsContentDLF::CreateBlankDocument(nsILoadGroup *aLoadGroup,
 
     nsCOMPtr<nsINodeInfo> htmlNodeInfo;
 
-    
-    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::html, 0, kNameSpaceID_XHTML);
+    // generate an html html element
+    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::html, 0, kNameSpaceID_XHTML,
+                                    nsIDOMNode::ELEMENT_NODE);
     nsCOMPtr<nsIContent> htmlElement =
       NS_NewHTMLHtmlElement(htmlNodeInfo.forget());
 
-    
-    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::head, 0, kNameSpaceID_XHTML);
+    // generate an html head element
+    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::head, 0, kNameSpaceID_XHTML,
+                                    nsIDOMNode::ELEMENT_NODE);
     nsCOMPtr<nsIContent> headElement =
       NS_NewHTMLHeadElement(htmlNodeInfo.forget());
 
-    
-    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::body, 0, kNameSpaceID_XHTML);
+    // generate an html body elemment
+    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::body, 0, kNameSpaceID_XHTML,
+                                    nsIDOMNode::ELEMENT_NODE);
     nsCOMPtr<nsIContent> bodyElement =
       NS_NewHTMLBodyElement(htmlNodeInfo.forget());
 
-    
+    // blat in the structure
     if (htmlElement && headElement && bodyElement) {
       NS_ASSERTION(blankDoc->GetChildCount() == 0,
                    "Shouldn't have children");
@@ -401,14 +404,14 @@ nsContentDLF::CreateBlankDocument(nsILoadGroup *aLoadGroup,
         rv = htmlElement->AppendChildTo(headElement, PR_FALSE);
 
         if (NS_SUCCEEDED(rv)) {
-          
+          // XXXbz Why not notifying here?
           htmlElement->AppendChildTo(bodyElement, PR_FALSE);
         }
       }
     }
   }
 
-  
+  // add a nice bow
   if (NS_SUCCEEDED(rv)) {
     blankDoc->SetDocumentCharacterSetSource(kCharsetFromDocTypeDefault);
     blankDoc->SetDocumentCharacterSet(NS_LITERAL_CSTRING("UTF-8"));
@@ -449,26 +452,26 @@ nsContentDLF::CreateDocument(const char* aCommand,
   nsCOMPtr<nsIDocument> doc;
   nsCOMPtr<nsIDocumentViewer> docv;
   do {
-    
+    // Create the document
     doc = do_CreateInstance(aDocumentCID, &rv);
     if (NS_FAILED(rv))
       break;
 
-    
+    // Create the document viewer  XXX: could reuse document viewer here!
     rv = NS_NewDocumentViewer(getter_AddRefs(docv));
     if (NS_FAILED(rv))
       break;
 
     doc->SetContainer(aContainer);
 
-    
-    
-    
+    // Initialize the document to begin loading the data.  An
+    // nsIStreamListener connected to the parser is returned in
+    // aDocListener.
     rv = doc->StartDocumentLoad(aCommand, aChannel, aLoadGroup, aContainer, aDocListener, PR_TRUE);
     if (NS_FAILED(rv))
       break;
 
-    
+    // Bind the document to the Content Viewer
     rv = docv->LoadStart(doc);
     *aDocViewer = docv;
     NS_IF_ADDREF(*aDocViewer);
@@ -501,20 +504,20 @@ nsContentDLF::CreateXULDocument(const char* aCommand,
   rv = aChannel->GetURI(getter_AddRefs(aURL));
   if (NS_FAILED(rv)) return rv;
 
-  
-
-
-
-
-
+  /* 
+   * Initialize the document to begin loading the data...
+   *
+   * An nsIStreamListener connected to the parser is returned in
+   * aDocListener.
+   */
 
   doc->SetContainer(aContainer);
 
   rv = doc->StartDocumentLoad(aCommand, aChannel, aLoadGroup, aContainer, aDocListener, PR_TRUE);
   if (NS_SUCCEEDED(rv)) {
-    
-
-
+    /*
+     * Bind the document to the Content Viewer...
+     */
     rv = docv->LoadStart(doc);
     *aDocViewer = docv;
     NS_IF_ADDREF(*aDocViewer);
