@@ -1,46 +1,46 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is WebIDL Parser.
-#
-# The Initial Developer of the Original Code is
-# the Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2011
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#   Kyle Huey <me@kylehuey.com>
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """ A WebIDL parser. """
 
 from ply import lex, yacc
 import re
 
-# Machinery
+
 
 def parseInt(literal):
     string = literal
@@ -66,18 +66,20 @@ def parseInt(literal):
     value = int(string, base)
     return value * sign
 
-# Magic for creating enums
+
 def M_add_class_attribs(attribs):
     def foo(name, bases, dict_):
-        for v, k in attribs:
+        for v, k in enumerate(attribs):
             dict_[k] = v
+        assert 'length' not in dict_
+        dict_['length'] = len(attribs)
         return type(name, bases, dict_)
     return foo
 
 def enum(*names):
     class Foo(object):
-        __metaclass__ = M_add_class_attribs(enumerate(names))
-        def __setattr__(self, name, value):  # this makes it read-only
+        __metaclass__ = M_add_class_attribs(names)
+        def __setattr__(self, name, value):  
             raise NotImplementedError
     return Foo()
 
@@ -93,9 +95,8 @@ class WebIDLError(Exception):
                                self.location)
 
 class Location(object):
-    _line = None
-
     def __init__(self, lexer, lineno, lexpos, filename):
+        self._line = None
         self._lineno = lineno
         self._lexpos = lexpos
         self._lexdata = lexer.lexdata
@@ -105,35 +106,46 @@ class Location(object):
         return self._lexpos == other._lexpos and \
                self._file == other._file
 
+    def filename(self):
+        return self.filename
+
     def resolve(self):
         if self._line:
             return
 
         startofline = self._lexdata.rfind('\n', 0, self._lexpos) + 1
         endofline = self._lexdata.find('\n', self._lexpos, self._lexpos + 80)
-        self._line = self._lexdata[startofline:endofline]
+        if endofline != -1:
+            self._line = self._lexdata[startofline:endofline]
+        else:
+            self._line = self._lexdata[startofline:]
         self._colno = self._lexpos - startofline
-
-    def pointerline(self):
-        def i():
-            for i in xrange(0, self._colno):
-                yield " "
-            yield "^"
-
-        return "".join(i())
 
     def get(self):
         self.resolve()
         return "%s line %s:%s" % (self._file, self._lineno, self._colno)
 
+    def _pointerline(self):
+        return " " * self._colno + "^"
+
     def __str__(self):
         self.resolve()
         return "%s line %s:%s\n%s\n%s" % (self._file, self._lineno, self._colno,
-                                          self._line, self.pointerline())
+                                          self._line, self._pointerline())
 
 class BuiltinLocation(object):
     def __init__(self, text):
         self.msg = text
+
+    def __eq__(self, other):
+        return isinstance(other, BuiltinLocation) and \
+               self.msg == other.msg
+
+    def filename(self):
+        return '<builtin>'
+
+    def resolve(self):
+        pass
 
     def get(self):
         return self.msg
@@ -142,7 +154,7 @@ class BuiltinLocation(object):
         return self.get()
 
 
-# Data Model
+
 
 class IDLObject(object):
     def __init__(self, location):
@@ -150,7 +162,7 @@ class IDLObject(object):
         self.userData = dict()
 
     def filename(self):
-        return self.location._file
+        return self.location.filename()
 
     def isInterface(self):
         return False
@@ -171,10 +183,10 @@ class IDLObject(object):
         self.userData[key] = value
 
     def addExtendedAttributes(self, attrs):
-        assert False # Override me!
+        assert False 
 
     def handleExtendedAttribute(self, attr, value):
-        assert False # Override me!
+        assert False 
 
 class IDLScope(IDLObject):
     def __init__(self, location, parentScope, identifier):
@@ -198,6 +210,11 @@ class IDLScope(IDLObject):
         return "::"
 
     def ensureUnique(self, identifier, object):
+        """
+            Ensure that there is at most one 'identifier' in scope ('self').
+            Note that object can be None.  This occurs if we end up here for an
+            interface type we haven't seen yet.
+        """
         assert isinstance(identifier, IDLUnresolvedIdentifier)
         assert not object or isinstance(object, IDLObjectWithIdentifier)
         assert not object or object.identifier == identifier
@@ -206,7 +223,7 @@ class IDLScope(IDLObject):
             if not object:
                 return
 
-            # ensureUnique twice with the same object is not allowed
+            
             assert object != self._dict[identifier.name]
 
             replacement = self.resolveIdentifierConflict(self, identifier,
@@ -225,7 +242,7 @@ class IDLScope(IDLObject):
            originalObject.identifier.name == newObject.identifier.name:
             return originalObject
             
-        # Default to throwing, derived classes can override.
+        
         conflictdesc = "\n\t%s at %s\n\t%s at %s" % \
           (originalObject, originalObject.location, newObject, newObject.location)
 
@@ -300,6 +317,9 @@ class IDLUnresolvedIdentifier(IDLObject):
             object.identifier = identifier
         return identifier
 
+    def finish(self):
+        assert False 
+
 class IDLObjectWithIdentifier(IDLObject):
     def __init__(self, location, parentScope, identifier):
         IDLObject.__init__(self, location)
@@ -368,9 +388,8 @@ class IDLInterface(IDLObjectWithScope):
 
         self.parent = parent
         self._callback = False
-
-        self.members = list(members) # clone the list
-        assert iter(self.members) # Assert it's iterable
+        self._finished = False
+        self.members = list(members) 
 
         IDLObjectWithScope.__init__(self, location, parentScope, name)
 
@@ -392,19 +411,19 @@ class IDLInterface(IDLObjectWithScope):
 
         if originalObject.tag != IDLInterfaceMember.Tags.Method or \
            newObject.tag != IDLInterfaceMember.Tags.Method:
-            # Call the base class method, which will throw
+            
             IDLScope.resolveIdentifierConflict(self, identifier, originalObject,
                                                newObject)
-            assert False # Not reached
+            assert False 
 
         retval = originalObject.addOverload(newObject)
-        # Might be a ctor, which isn't in self.members
+        
         if newObject in self.members:
             self.members.remove(newObject)
         return retval
 
     def finish(self, scope):
-        if hasattr(self, "_finished"):
+        if self._finished:
             return
 
         self._finished = True
@@ -416,7 +435,6 @@ class IDLInterface(IDLObjectWithScope):
         self.parent = parent
 
         assert iter(self.members)
-        members = None
 
         if self.parent:
             self.parent.finish(scope)
@@ -426,19 +444,6 @@ class IDLInterface(IDLObjectWithScope):
             members.extend(self.members)
         else:
             members = list(self.members)
-
-        SpecialType = enum(
-            'NamedGetter',
-            'NamedSetter',
-            'NamedCreator',
-            'NamedDeleter',
-            'IndexedGetter',
-            'IndexedSetter',
-            'IndexedCreator',
-            'IndexedDeleter'
-        )
-
-        specialMembersSeen = [False for i in range(8)]
 
         def memberNotOnParentChain(member, iface):
             assert iface
@@ -451,59 +456,39 @@ class IDLInterface(IDLObjectWithScope):
                 return False
             return memberNotOnParentChain(member, iface.parent)
 
+        
+        
+        specialMembersSeen = set()
         for member in members:
             if memberNotOnParentChain(member, self):
                 member.resolve(self)
-                
-            if member.tag == IDLInterfaceMember.Tags.Method:
-                if member.isGetter():
-                    if member.isNamed():
-                        if specialMembersSeen[SpecialType.NamedGetter]:
-                            raise WebIDLError("Multiple named getters on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.NamedGetter] = True
-                    else:
-                        assert member.isIndexed()
-                        if specialMembersSeen[SpecialType.IndexedGetter]:
-                            raise WebIDLError("Multiple indexed getters on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.IndexedGetter] = True
-                if member.isSetter():
-                    if member.isNamed():
-                        if specialMembersSeen[SpecialType.NamedSetter]:
-                            raise WebIDLError("Multiple named setters on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.NamedSetter] = True
-                    else:
-                        assert member.isIndexed()
-                        if specialMembersSeen[SpecialType.IndexedSetter]:
-                            raise WebIDLError("Multiple indexed setters on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.IndexedSetter] = True
-                if member.isCreator():
-                    if member.isNamed():
-                        if specialMembersSeen[SpecialType.NamedCreator]:
-                            raise WebIDLError("Multiple named creators on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.NamedCreator] = True
-                    else:
-                        assert member.isIndexed()
-                        if specialMembersSeen[SpecialType.IndexedCreator]:
-                            raise WebIDLError("Multiple indexed creators on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.IndexedCreator] = True
-                if member.isDeleter():
-                    if member.isNamed():
-                        if specialMembersSeen[SpecialType.NamedDeleter]:
-                            raise WebIDLError("Multiple named deleters on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.NamedDeleter] = True
-                    else:
-                        assert member.isIndexed()
-                        if specialMembersSeen[SpecialType.IndexedDeleter]:
-                            raise WebIDLError("Multiple indexed Deleters on %s" % (self),
-                                              self.location)
-                        specialMembersSeen[SpecialType.IndexedDeleter] = True
+
+            if member.tag != IDLInterfaceMember.Tags.Method:
+                continue
+
+            if member.isGetter():
+                memberType = "getters"
+            elif member.isSetter():
+                memberType = "setters"
+            elif member.isCreator():
+                memberType = "creators"
+            elif member.isDeleter():
+                memberType = "deleters"
+            else:
+                continue
+
+            if member.isNamed():
+                memberType = "named " + memberType
+            elif member.isIndexed():
+                memberType = "indexed " + memberType
+            else:
+                continue
+
+            if memberType in specialMembersSeen:
+                raise WebIDLError("Multiple " + memberType + " on %s" % (self),
+                                   self.location)
+
+            specialMembersSeen.add(memberType)
 
         for member in self.members:
             member.finish(scope)
@@ -529,7 +514,7 @@ class IDLInterface(IDLObjectWithScope):
         return depth
 
     def hasConstants(self):
-        return reduce(lambda b, m: b or m.isConst(), self.members, False)
+        return any(m.isConst() for m in self.members)
 
     def hasInterfaceObject(self):
         if self.isCallback():
@@ -545,7 +530,7 @@ class IDLInterface(IDLObjectWithScope):
             attrlist = list(attr)
             identifier = attrlist.pop(0)
 
-            # Special cased attrs
+            
             if identifier == "TreatNonCallableAsNull":
                 raise WebIDLError("TreatNonCallableAsNull cannot be specified on interfaces",
                                   self.location)
@@ -567,10 +552,7 @@ class IDLInterface(IDLObjectWithScope):
                 identifier = IDLUnresolvedIdentifier(self.location, "constructor",
                                                      allowForbidden=True)
 
-                method = IDLMethod(self.location, identifier, retType, args,
-                                   False, False, False, False, False, False,
-                                   False, False)
-
+                method = IDLMethod(self.location, identifier, retType, args)
                 method.resolve(self)
 
             self._extendedAttrDict[identifier] = attrlist if len(attrlist) else True
@@ -600,7 +582,7 @@ class IDLEnum(IDLObjectWithIdentifier):
 
 class IDLType(IDLObject):
     Tags = enum(
-        # The integer types
+        
         'int8',
         'uint8',
         'int16',
@@ -609,17 +591,17 @@ class IDLType(IDLObject):
         'uint32',
         'int64',
         'uint64',
-        # Additional primitive types
+        
         'bool',
         'float',
         'double',
-        # Other types
+        
         'any',
         'domstring',
         'object',
         'date',
         'void',
-        # Funny stuff
+        
         'interface',
         'dictionary',
         'enum',
@@ -680,7 +662,7 @@ class IDLType(IDLObject):
         return True
 
     def tag(self):
-        assert False # Override me!
+        assert False 
 
     def treatNonCallableAsNull(self):
         if not (self.nullable() and self.tag() == IDLType.Tags.callback):
@@ -763,6 +745,12 @@ class IDLNullableType(IDLType):
     def isString(self):
         return self.inner.isString()
 
+    def isFloat(self):
+        return self.inner.isFloat()
+
+    def isInteger(self):
+        return self.inner.isInteger()
+
     def isVoid(self):
         return False
 
@@ -771,6 +759,9 @@ class IDLNullableType(IDLType):
 
     def isArray(self):
         return self.inner.isArray()
+
+    def isArrayBuffer(self):
+        return self.inner.isArrayBuffer()
 
     def isDictionary(self):
         return self.inner.isDictionary()
@@ -797,11 +788,11 @@ class IDLNullableType(IDLType):
         return self
 
     def unroll(self):
-        return self.inner
+        return self.inner.unroll()
 
     def isDistinguishableFrom(self, other):
         if other.nullable():
-            # Can't tell which type null should become
+            
             return False
         return self.inner.isDistinguishableFrom(other)
 
@@ -835,18 +826,19 @@ class IDLSequenceType(IDLType):
         return True
 
     def isArray(self):
-        return self.inner.isArray()
+        return False
 
     def isDictionary(self):
-        return self.inner.isDictionary()
+        return False
 
     def isInterface(self):
-        return self.inner.isInterface()
+        return False
 
     def isEnum(self):
-        return self.inner.isEnum();
+        return False
 
     def tag(self):
+        
         return self.inner.tag()
 
     def resolveType(self, parentScope):
@@ -858,16 +850,17 @@ class IDLSequenceType(IDLType):
 
     def complete(self, scope):
         self.inner = self.inner.complete(scope)
+        self.name = self.inner.name
         return self
 
     def unroll(self):
-        return self.inner
+        return self.inner.unroll()
 
     def isDistinguishableFrom(self, other):
         return (other.isPrimitive() or other.isString() or other.isEnum() or
                 other.isDictionary() or other.isDate() or
-                # XXXbz we should also be checking for indexed
-                # properties on interfaces
+                
+                
                 (other.isInterface() and not other.isCallback() and
                  not other.isArrayBuffer()))
 
@@ -895,32 +888,33 @@ class IDLArrayType(IDLType):
         return False
 
     def isPrimitive(self):
-        return self.inner.isPrimitive()
+        return False
 
     def isString(self):
-        return self.inner.isString()
+        return False
 
     def isVoid(self):
         return False
 
     def isSequence(self):
         assert not self.inner.isSequence()
-        return self.inner.isSequence()
+        return False
 
     def isArray(self):
         return True
 
     def isDictionary(self):
         assert not self.inner.isDictionary()
-        return self.inner.isDictionary()
+        return False
 
     def isInterface(self):
-        return self.inner.isInterface()
+        return False
 
     def isEnum(self):
-        return self.inner.isEnum()
+        return False
 
     def tag(self):
+        
         return self.inner.tag()
 
     def resolveType(self, parentScope):
@@ -932,16 +926,17 @@ class IDLArrayType(IDLType):
 
     def complete(self, scope):
         self.inner = self.inner.complete(scope)
+        self.name = self.inner.name
         return self
 
     def unroll(self):
-        return self.inner
+        return self.inner.unroll()
 
     def isDistinguishableFrom(self, other):
         return (other.isPrimitive() or other.isString() or other.isEnum() or
                 other.isDictionary() or other.isDate() or
-                # XXXbz we should also be checking for indexed
-                # properties on interfaces
+                
+                
                 (other.isInterface() and not other.isCallback() and
                  not other.isArrayBuffer()))
 
@@ -995,7 +990,7 @@ class IDLTypedefType(IDLType, IDLObjectWithIdentifier):
         return self.inner.tag()
 
     def unroll(self):
-        return self.inner
+        return self.inner.unroll()
 
     def isDistinguishableFrom(self, other):
         return self.inner.isDistinguishableFrom(other)
@@ -1041,6 +1036,10 @@ class IDLWrapperType(IDLType):
     def isEnum(self):
         return isinstance(self.inner, IDLEnum)
 
+    def resolveType(self, parentScope):
+        assert isinstance(parentScope, IDLScope)
+        self.inner.resolve(parentScope)
+
     def isComplete(self):
         return True
 
@@ -1061,22 +1060,22 @@ class IDLWrapperType(IDLType):
                     other.isDate())
         if other.isPrimitive() or other.isString() or other.isEnum():
             return True
-        # XXXbz need to check that the interfaces can't be implemented
-        # by the same object
+        
+        
         if other.isInterface():
             return (self != other and
                     (not self.isCallback() or not other.isCallback()))
         if other.isDictionary() or other.isCallback():
             return not self.isCallback()
         if other.isSequence() or other.isArray():
-            # XXXbz should also check self for enumerated properties
-            # and the like
+            
+            
             return not self.isCallback()
 
 class IDLBuiltinType(IDLType):
 
     Types = enum(
-        # The integer types
+        
         'byte',
         'octet',
         'short',
@@ -1085,17 +1084,17 @@ class IDLBuiltinType(IDLType):
         'unsigned_long',
         'long_long',
         'unsigned_long_long',
-        # Additional primitive types
+        
         'boolean',
         'float',
         'double',
-        # Other types
+        
         'any',
         'domstring',
         'object',
         'date',
         'void',
-        # Funny stuff
+        
         'ArrayBuffer'
         )
 
@@ -1122,32 +1121,32 @@ class IDLBuiltinType(IDLType):
     def __init__(self, location, name, type):
         IDLType.__init__(self, location, name)
         self.builtin = True
-        self.type = type
+        self._typeTag = type
 
     def isPrimitive(self):
-        return self.type <= IDLBuiltinType.Types.double
+        return self._typeTag <= IDLBuiltinType.Types.double
 
     def isString(self):
-        return self.type == IDLBuiltinType.Types.domstring
+        return self._typeTag == IDLBuiltinType.Types.domstring
 
     def isInteger(self):
-        return self.type <= IDLBuiltinType.Types.unsigned_long_long
+        return self._typeTag <= IDLBuiltinType.Types.unsigned_long_long
 
     def isArrayBuffer(self):
-        return self.type == IDLBuiltinType.Types.ArrayBuffer
+        return self._typeTag == IDLBuiltinType.Types.ArrayBuffer
 
     def isInterface(self):
-        # ArrayBuffers are interface types per the TypedArray spec,
-        # but we handle them as builtins because SpiderMonkey implements
-        # ArrayBuffers.
-        return self.type == IDLBuiltinType.Types.ArrayBuffer
+        
+        
+        
+        return self._typeTag == IDLBuiltinType.Types.ArrayBuffer
 
     def isFloat(self):
-        return self.type == IDLBuiltinType.Types.float or \
-               self.type == IDLBuiltinType.Types.double
+        return self._typeTag == IDLBuiltinType.Types.float or \
+               self._typeTag == IDLBuiltinType.Types.double
 
     def tag(self):
-        return IDLBuiltinType.TagLookup[self.type]
+        return IDLBuiltinType.TagLookup[self._typeTag]
 
     def isDistinguishableFrom(self, other):
         if self.isPrimitive() or self.isString():
@@ -1156,7 +1155,7 @@ class IDLBuiltinType(IDLType):
                     other.isSequence() or other.isArray() or
                     other.isDate())
         if self.isAny():
-            # Can't tell "any" apart from anything
+            
             return False
         if self.isObject():
             return other.isPrimitive() or other.isString() or other.isEnum()
@@ -1167,12 +1166,12 @@ class IDLBuiltinType(IDLType):
                     other.isArray())
         if self.isVoid():
             return not other.isVoid()
-        # Not much else we could be!
+        
         assert self.isArrayBuffer()
-        # Like interfaces, but we know we're not a callback and we
-        # know that we have indexed properties.
-        # XXXbz this should be checking for indexed properties on
-        # other when other.isInterface()
+        
+        
+        
+        
         return (other.isPrimitive() or other.isString() or other.isEnum() or
                 other.isCallback() or other.isDictionary() or other.isDate() or
                 (other.isInterface() and not other.isArrayBuffer()))
@@ -1265,24 +1264,24 @@ class IDLValue(IDLObject):
 
     def coerceToType(self, type, location):
         if type == self.type:
-            return self # Nothing to do
+            return self 
 
-        # If the type allows null, rerun this matching on the inner type
+        
         if type.nullable():
             innerValue = self.coerceToType(type.inner, location)
             return IDLValue(self.location, type, innerValue.value)
 
-        # Else, see if we can coerce to 'type'.
+        
         if self.type.isInteger():
             if not self.type.isInteger():
                 raise WebIDLError("Cannot coerce type %s to type %s." %
                                   (self.type, type), location)
 
-            # We're both integer types.  See if we fit.
+            
 
-            (min, max) = integerTypeSizes[type.type]
+            (min, max) = integerTypeSizes[type._typeTag]
             if self.value <= max and self.value >= min:
-                # Promote
+                
                 return IDLValue(self.location, type, self.value)
             else:
                 raise WebIDLError("Value %s is out of range for type %s." %
@@ -1290,7 +1289,7 @@ class IDLValue(IDLObject):
         else:
             pass
 
-        assert False # Not implemented!
+        assert False 
 
 class IDLNullValue(IDLObject):
     def __init__(self, location):
@@ -1351,7 +1350,7 @@ class IDLConst(IDLInterfaceMember):
         assert isinstance(type, IDLType)
         self.type = type
 
-        # The value might not match the type
+        
         coercedValue = value.coerceToType(self.type, location)
         assert coercedValue
 
@@ -1425,7 +1424,7 @@ class IDLCallbackType(IDLType, IDLObjectWithScope):
         IDLType.__init__(self, location, identifier.name)
 
         self._returnType = returnType
-        # Clone the list
+        
         self._arguments = list(arguments)
 
         IDLObjectWithScope.__init__(self, location, parentScope, identifier)
@@ -1492,8 +1491,10 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
     )
 
     def __init__(self, location, identifier, returnType, arguments,
-                 static, getter, setter, creator, deleter, specialType, legacycaller,
-                 stringifier):
+                 static=False, getter=False, setter=False, creator=False,
+                 deleter=False, specialType=NamedOrIndexed.Neither,
+                 legacycaller=False, stringifier=False):
+        
         IDLInterfaceMember.__init__(self, location, identifier,
                                     IDLInterfaceMember.Tags.Method)
 
@@ -1518,7 +1519,7 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
         self._stringifier = stringifier
         self._specialType = specialType
 
-        # Clone the list
+        
         self._arguments = [list(arguments)]
 
         self.assertSignatureConstraints()
@@ -1553,10 +1554,10 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
         arguments = self._arguments[0]
 
         for argument in arguments:
-            # Only the last argument can be variadic
+            
             assert not sawVariadicArgument
-            # Once we see an optional argument, there can't be any non-optional
-            # arguments.
+            
+            
             if inOptionalArguments:
                 assert argument.optional
             inOptionalArguments = argument.optional
@@ -1623,7 +1624,7 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
             raise WebIDLError("Overloaded identifier %s appears with different values of the 'legacycaller' attribute" % method1.identifier,
                               method.location)
 
-        # Can't overload special things!
+        
         assert not self.isGetter()
         assert not method.isGetter()
         assert not self.isSetter()
@@ -1663,7 +1664,7 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
                 assert not isinstance(type.name, IDLUnresolvedIdentifier)
                 argument.type = type
 
-# Parser
+
 
 class Tokenizer(object):
     tokens = [
@@ -1678,6 +1679,7 @@ class Tokenizer(object):
     def t_INTEGER(self, t):
         r'-?(0([0-7]+|[Xx][0-9A-Fa-f]+)?|[1-9][0-9]*)'
         try:
+            
             t.value = parseInt(t.value)
         except:
             raise WebIDLError("Invalid integer literal",
@@ -1796,8 +1798,8 @@ class Parser(Tokenizer):
     def globalScope(self):
         return self._globalScope
 
-    # The p_Foo functions here must match the WebIDL spec's grammar.
-    # It's acceptable to split things at '|' boundaries.
+    
+    
     def p_Definitions(self, p):
         """ 
             Definitions : ExtendedAttributeList Definition Definitions
@@ -1828,7 +1830,7 @@ class Parser(Tokenizer):
                        | ImplementsStatement
         """
         p[0] = p[1]
-        assert p[1] # We might not have implemented something ...
+        assert p[1] 
 
     def p_CallbackOrInterfaceCallback(self, p):
         """
@@ -2041,8 +2043,8 @@ class Parser(Tokenizer):
         """
         location = self.getLocation(p, 1)
 
-        # We don't know ahead of time what type the integer literal is.
-        # Determine the smallest type it could possibly fit in and use that.
+        
+        
         integerType = matchIntegerValueToType(p[1])
         if integerType == None:
             raise WebIDLError("Integer literal out of range", location)
@@ -2085,7 +2087,7 @@ class Parser(Tokenizer):
         """
             AttributeOrOperation : STRINGIFIER StringifierAttributeOrOperation
         """
-        assert False # Not implemented
+        assert False 
         pass
 
     def p_AttributeOrOperation(self, p):
@@ -2144,14 +2146,14 @@ class Parser(Tokenizer):
         """
         qualifiers = p[1]
 
-        # Disallow duplicates in the qualifier set
+        
         if not len(set(qualifiers)) == len(qualifiers):
             raise WebIDLError("Duplicate qualifiers are not allowed",
                               self.getLocation(p, 1))
 
         static = True if IDLMethod.Special.Static in p[1] else False
-        # If static is there that's all that's allowed.  This is disallowed
-        # by the parser, so we can assert here.
+        
+        
         assert not static or len(qualifiers) == 1
 
         getter = True if IDLMethod.Special.Getter in p[1] else False
@@ -2230,20 +2232,20 @@ class Parser(Tokenizer):
         inOptionalArguments = False
         variadicArgument = False
         for argument in arguments:
-            # Only the last argument can be variadic
+            
             if variadicArgument:
                 raise WebIDLError("Only the last argument can be variadic",
                                   variadicArgument.location)
-            # Once we see an optional argument, there can't be any non-optional
-            # arguments.
+            
+            
             if inOptionalArguments and not argument.optional:
                 raise WebIDLError("Cannot have a non-optional argument following an optional argument",
                                   argument.location)
             inOptionalArguments = argument.optional
             variadicArgument = argument if argument.variadic else None
 
-        # identifier might be None.  This is only permitted for special methods.
-        # NB: Stringifiers are handled elsewhere.
+        
+        
         if not identifier:
             if not getter and not setter and not creator and \
                not deleter and not legacycaller:
@@ -2261,8 +2263,9 @@ class Parser(Tokenizer):
                  "legacycaller" if legacycaller else ""), allowDoubleUnderscore=True)
 
         method = IDLMethod(self.getLocation(p, 2), identifier, returnType, arguments,
-                           static, getter, setter, creator, deleter, specialType,
-                           legacycaller, False)
+                           static=static, getter=getter, setter=setter, creator=creator,
+                           deleter=deleter, specialType=specialType,
+                           legacycaller=legacycaller, stringifier=False)
         p[0] = method
 
     def p_QualifiersStatic(self, p):
@@ -2677,8 +2680,8 @@ class Parser(Tokenizer):
         """
             UnsignedIntegerType : UNSIGNED IntegerType
         """
-        p[0] = p[2] + 1 # Adding one to a given signed integer type
-                        # gets you the unsigned type.
+        p[0] = p[2] + 1 
+                        
 
     def p_UnsignedIntegerType(self, p):
         """
@@ -2786,7 +2789,7 @@ class Parser(Tokenizer):
         """
             RelativeScopedName : IDENTIFIER ScopedNameParts
         """
-        assert not p[2] # Not implemented!
+        assert not p[2] 
 
         p[0] = IDLUnresolvedIdentifier(self.getLocation(p, 1), p[1])
 
@@ -2850,8 +2853,8 @@ class Parser(Tokenizer):
     def parse(self, t, filename=None):
         self.lexer.input(t)
 
-        #for tok in iter(self.lexer.token, None):
-        #    print tok
+        
+        
 
         self._filename = filename
         self._productions.extend(self.parser.parse(lexer=self.lexer))
@@ -2861,12 +2864,19 @@ class Parser(Tokenizer):
         for production in self._productions:
             production.finish(self.globalScope())
 
-        return set(self._productions)
+        
+        seen = set()
+        result = []
+        for p in self._productions:
+            if p not in seen:
+                seen.add(p)
+                result.append(p)
+        return result
 
     def reset(self):
         return Parser()
 
-    # Builtin IDL defined by WebIDL
+    
     _builtins = """
         typedef unsigned long long DOMTimeStamp;
     """
