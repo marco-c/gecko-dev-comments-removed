@@ -1,36 +1,36 @@
+// Copyright (c) 2010, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// Original author: Jim Blandy <jimb@mozilla.com> <jimb@red-bean.com>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// cfi_frame_info_unittest.cc: Unit tests for CFIFrameInfo,
+// CFIRuleParser, CFIFrameInfoParseHandler, and SimpleCFIWalker.
 
 #include <string.h>
 
@@ -62,10 +62,10 @@ class MockMemoryRegion: public MemoryRegion {
   MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(u_int64_t, u_int64_t *));
 };
 
-
+// Handy definitions for all tests.
 struct CFIFixture {
 
-  
+  // Set up the mock memory object to expect no references.
   void ExpectNoMemoryReferences() {
     EXPECT_CALL(memory, GetBase()).Times(0);
     EXPECT_CALL(memory, GetSize()).Times(0);
@@ -82,22 +82,24 @@ struct CFIFixture {
 
 class Simple: public CFIFixture, public Test { };
 
-
+// FindCallerRegs should fail if no .cfa rule is provided.
 TEST_F(Simple, NoCFA) {
   ExpectNoMemoryReferences();
 
   cfi.SetRARule("0");
   ASSERT_FALSE(cfi.FindCallerRegs<u_int64_t>(registers, memory,
                                              &caller_registers));
+  ASSERT_EQ(".ra: 0", cfi.Serialize());
 }
 
-
+// FindCallerRegs should fail if no .ra rule is provided.
 TEST_F(Simple, NoRA) {
   ExpectNoMemoryReferences();
 
   cfi.SetCFARule("0");
   ASSERT_FALSE(cfi.FindCallerRegs<u_int64_t>(registers, memory,
                                              &caller_registers));
+  ASSERT_EQ(".cfa: 0", cfi.Serialize());
 }
 
 TEST_F(Simple, SetCFAAndRARule) {
@@ -110,6 +112,9 @@ TEST_F(Simple, SetCFAAndRARule) {
   ASSERT_EQ(2U, caller_registers.size());
   ASSERT_EQ(330903416631436410ULL, caller_registers[".cfa"]);
   ASSERT_EQ(5870666104170902211ULL, caller_registers[".ra"]);
+
+  ASSERT_EQ(".cfa: 330903416631436410 .ra: 5870666104170902211",
+            cfi.Serialize());
 }
 
 TEST_F(Simple, SetManyRules) {
@@ -130,6 +135,13 @@ TEST_F(Simple, SetManyRules) {
   ASSERT_EQ(31740999U,          caller_registers["vodkathumbscrewingly"]);
   ASSERT_EQ(-22136316ULL,       caller_registers["pubvexingfjordschmaltzy"]);
   ASSERT_EQ(12U,                caller_registers["uncopyrightables"]);
+  ASSERT_EQ(".cfa: $temp1 68737028 = $temp2 61072337 = $temp1 $temp2 - "
+            ".ra: .cfa 99804755 + "
+            "pubvexingfjordschmaltzy: .cfa 29801007 - "
+            "register1: .cfa 54370437 * "
+            "uncopyrightables: 92642917 .cfa / "
+            "vodkathumbscrewingly: 24076308 .cfa +",
+            cfi.Serialize());
 }
 
 TEST_F(Simple, RulesOverride) {
@@ -143,11 +155,13 @@ TEST_F(Simple, RulesOverride) {
   ASSERT_EQ(2U, caller_registers.size());
   ASSERT_EQ(2828089117179001ULL, caller_registers[".cfa"]);
   ASSERT_EQ(5870666104170902211ULL, caller_registers[".ra"]);
+  ASSERT_EQ(".cfa: 2828089117179001 .ra: 5870666104170902211",
+            cfi.Serialize());
 }
 
 class Scope: public CFIFixture, public Test { };
 
-
+// There should be no value for .cfa in scope when evaluating the CFA rule.
 TEST_F(Scope, CFALacksCFA) {
   ExpectNoMemoryReferences();
 
@@ -157,7 +171,7 @@ TEST_F(Scope, CFALacksCFA) {
                                              &caller_registers));
 }
 
-
+// There should be no value for .ra in scope when evaluating the CFA rule.
 TEST_F(Scope, CFALacksRA) {
   ExpectNoMemoryReferences();
 
@@ -167,8 +181,8 @@ TEST_F(Scope, CFALacksRA) {
                                              &caller_registers));
 }
 
-
-
+// The current frame's registers should be in scope when evaluating
+// the CFA rule.
 TEST_F(Scope, CFASeesCurrentRegs) {
   ExpectNoMemoryReferences();
 
@@ -183,7 +197,7 @@ TEST_F(Scope, CFASeesCurrentRegs) {
             caller_registers[".cfa"]);
 }
 
-
+// .cfa should be in scope in the return address expression.
 TEST_F(Scope, RASeesCFA) {
   ExpectNoMemoryReferences();
 
@@ -195,7 +209,7 @@ TEST_F(Scope, RASeesCFA) {
   ASSERT_EQ(48364076U, caller_registers[".ra"]);
 }
 
-
+// There should be no value for .ra in scope when evaluating the CFA rule.
 TEST_F(Scope, RALacksRA) {
   ExpectNoMemoryReferences();
 
@@ -205,8 +219,8 @@ TEST_F(Scope, RALacksRA) {
                                              &caller_registers));
 }
 
-
-
+// The current frame's registers should be in scope in the return
+// address expression.
 TEST_F(Scope, RASeesCurrentRegs) {
   ExpectNoMemoryReferences();
 
@@ -219,7 +233,7 @@ TEST_F(Scope, RASeesCurrentRegs) {
   ASSERT_EQ(0x54dc4a5d8e5eb503ULL, caller_registers[".ra"]);
 }
 
-
+// .cfa should be in scope for register rules.
 TEST_F(Scope, RegistersSeeCFA) {
   ExpectNoMemoryReferences();
 
@@ -232,7 +246,7 @@ TEST_F(Scope, RegistersSeeCFA) {
   ASSERT_EQ(6515179U, caller_registers["rogerian"]);
 }
 
-
+// The return address should not be in scope for register rules.
 TEST_F(Scope, RegsLackRA) {
   ExpectNoMemoryReferences();
 
@@ -243,7 +257,7 @@ TEST_F(Scope, RegsLackRA) {
                                              &caller_registers));
 }
 
-
+// Register rules can see the current frame's register values.
 TEST_F(Scope, RegsSeeRegs) {
   ExpectNoMemoryReferences();
 
@@ -260,7 +274,7 @@ TEST_F(Scope, RegsSeeRegs) {
   ASSERT_EQ(0x6ed3582c4bedb9adULL, caller_registers["$r2"]);
 }
 
-
+// Each rule's temporaries are separate.
 TEST_F(Scope, SeparateTempsRA) {
   ExpectNoMemoryReferences();
 
@@ -282,12 +296,12 @@ class MockCFIRuleParserHandler: public CFIRuleParser::Handler {
   MOCK_METHOD2(RegisterRule, void(const string &, const string &));
 };
 
-
+// A fixture class for testing CFIRuleParser.
 class CFIParserFixture {
  public:
   CFIParserFixture() : parser(&mock_handler) {
-    
-    
+    // Expect no parsing results to be reported to mock_handler. Individual
+    // tests can override this.
     EXPECT_CALL(mock_handler, CFARule(_)).Times(0);
     EXPECT_CALL(mock_handler, RARule(_)).Times(0);
     EXPECT_CALL(mock_handler, RegisterRule(_, _)).Times(0);
@@ -476,28 +490,28 @@ SimpleCFIWalkerFixture::register_map[7] = {
 class SimpleWalker: public SimpleCFIWalkerFixture, public Test { };
 
 TEST_F(SimpleWalker, Walk) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Stack_top is the current stack pointer, pointing to the lowest
+  // address of a frame that looks like this (all 64-bit words):
+  //
+  // sp ->  saved r0
+  //        garbage
+  //        return address
+  // cfa -> 
+  //
+  // r0 has been saved on the stack.
+  // r1 has been saved in r2.
+  // r2 and r3 are not recoverable.
+  // r4 is not recoverable, even though it is a callee-saves register.
+  //    Some earlier frame's unwinder must have failed to recover it.
 
   u_int64_t stack_top = 0x83254944b20d5512ULL;
 
-  
+  // Saved r0.
   EXPECT_CALL(memory,
               GetMemoryAtAddress(stack_top, A<u_int64_t *>()))
       .WillRepeatedly(DoAll(SetArgumentPointee<1>(0xdc1975eba8602302ULL),
                             Return(true)));
-  
+  // Saved return address.
   EXPECT_CALL(memory,
               GetMemoryAtAddress(stack_top + 16, A<u_int64_t *>()))
       .WillRepeatedly(DoAll(SetArgumentPointee<1>(0xba5ad6d9acce28deULL),
@@ -510,9 +524,9 @@ TEST_F(SimpleWalker, Walk) {
 
   callee_context.r0 = 0x94e030ca79edd119ULL;
   callee_context.r1 = 0x937b4d7e95ce52d9ULL;
-  callee_context.r2 = 0x5fe0027416b8b62aULL; 
-  
-  
+  callee_context.r2 = 0x5fe0027416b8b62aULL; // caller's r1
+  // callee_context.r3 is not valid in callee.
+  // callee_context.r4 is not valid in callee.
   callee_context.sp = stack_top;
   callee_context.pc = 0x25b21b224311d280ULL;
   int callee_validity = R0_VALID | R1_VALID | R2_VALID | SP_VALID | PC_VALID;

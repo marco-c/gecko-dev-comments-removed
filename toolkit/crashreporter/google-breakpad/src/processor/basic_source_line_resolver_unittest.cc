@@ -1,34 +1,37 @@
+// Copyright (c) 2010 Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <stdio.h>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <cstdio>
 #include <string>
+
+#include "breakpad_googletest_includes.h"
 #include "google_breakpad/processor/basic_source_line_resolver.h"
 #include "google_breakpad/processor/code_module.h"
 #include "google_breakpad/processor/stack_frame.h"
@@ -38,16 +41,6 @@
 #include "processor/scoped_ptr.h"
 #include "processor/windows_frame_info.h"
 #include "processor/cfi_frame_info.h"
-
-#define ASSERT_TRUE(cond) \
-  if (!(cond)) {                                                        \
-    fprintf(stderr, "FAILED: %s at %s:%d\n", #cond, __FILE__, __LINE__); \
-    return false; \
-  }
-
-#define ASSERT_FALSE(cond) ASSERT_TRUE(!(cond))
-
-#define ASSERT_EQ(e1, e2) ASSERT_TRUE((e1) == (e2))
 
 namespace {
 
@@ -81,7 +74,7 @@ class TestCodeModule : public CodeModule {
   string code_file_;
 };
 
-
+// A mock memory region object, for use by the STACK CFI tests.
 class MockMemoryRegion: public MemoryRegion {
   u_int64_t GetBase() const { return 0x10000; }
   u_int32_t GetSize() const { return 0x01000; }
@@ -95,12 +88,12 @@ class MockMemoryRegion: public MemoryRegion {
   }
   bool GetMemoryAtAddress(u_int64_t address, u_int32_t *value) const {
     switch (address) {
-      case 0x10008: *value = 0x98ecadc3; break; 
-      case 0x1000c: *value = 0x878f7524; break; 
-      case 0x10010: *value = 0x6312f9a5; break; 
-      case 0x10014: *value = 0x10038;    break; 
-      case 0x10018: *value = 0xf6438648; break; 
-      default: *value = 0xdeadbeef;      break; 
+      case 0x10008: *value = 0x98ecadc3; break; // saved %ebx
+      case 0x1000c: *value = 0x878f7524; break; // saved %esi
+      case 0x10010: *value = 0x6312f9a5; break; // saved %edi
+      case 0x10014: *value = 0x10038;    break; // caller's %ebp
+      case 0x10018: *value = 0xf6438648; break; // return address
+      default: *value = 0xdeadbeef;      break; // junk
     }
     return true;
   }
@@ -110,19 +103,21 @@ class MockMemoryRegion: public MemoryRegion {
   }
 };
 
-
-
-
-
+// Verify that, for every association in ACTUAL, EXPECTED has the same
+// association. (That is, ACTUAL's associations should be a subset of
+// EXPECTED's.) Also verify that ACTUAL has associations for ".ra" and
+// ".cfa".
 static bool VerifyRegisters(
     const char *file, int line,
     const CFIFrameInfo::RegisterValueMap<u_int32_t> &expected,
     const CFIFrameInfo::RegisterValueMap<u_int32_t> &actual) {
   CFIFrameInfo::RegisterValueMap<u_int32_t>::const_iterator a;
   a = actual.find(".cfa");
-  ASSERT_TRUE(a != actual.end());
+  if (a == actual.end())
+    return false;
   a = actual.find(".ra");
-  ASSERT_TRUE(a != actual.end());
+  if (a == actual.end())
+    return false;
   for (a = actual.begin(); a != actual.end(); a++) {
     CFIFrameInfo::RegisterValueMap<u_int32_t>::const_iterator e =
       expected.find(a->first);
@@ -137,19 +132,20 @@ static bool VerifyRegisters(
               file, line, a->first.c_str(), a->second, e->second);
       return false;
     }
-    
-    
-    
+    // Don't complain if this doesn't recover all registers. Although
+    // the DWARF spec says that unmentioned registers are undefined,
+    // GCC uses omission to mean that they are unchanged.
   }
   return true;
 }
 
 
 static bool VerifyEmpty(const StackFrame &frame) {
-  ASSERT_TRUE(frame.function_name.empty());
-  ASSERT_TRUE(frame.source_file_name.empty());
-  ASSERT_EQ(frame.source_line, 0);
-  return true;
+  if (frame.function_name.empty() &&
+      frame.source_file_name.empty() &&
+      frame.source_line == 0)
+    return true;
+  return false;
 }
 
 static void ClearSourceLineInfo(StackFrame *frame) {
@@ -159,17 +155,26 @@ static void ClearSourceLineInfo(StackFrame *frame) {
   frame->source_line = 0;
 }
 
-static bool RunTests() {
-  string testdata_dir = string(getenv("srcdir") ? getenv("srcdir") : ".") +
-                        "/src/processor/testdata";
+class TestBasicSourceLineResolver : public ::testing::Test {
+public:
+  void SetUp() {
+    testdata_dir = string(getenv("srcdir") ? getenv("srcdir") : ".") +
+                         "/src/processor/testdata";
+  }
 
   BasicSourceLineResolver resolver;
-  ASSERT_TRUE(resolver.LoadModule("module1", testdata_dir + "/module1.out"));
-  ASSERT_TRUE(resolver.HasModule("module1"));
-  ASSERT_TRUE(resolver.LoadModule("module2", testdata_dir + "/module2.out"));
-  ASSERT_TRUE(resolver.HasModule("module2"));
+  string testdata_dir;
+};
 
+TEST_F(TestBasicSourceLineResolver, TestLoadAndResolve)
+{
   TestCodeModule module1("module1");
+  ASSERT_TRUE(resolver.LoadModule(&module1, testdata_dir + "/module1.out"));
+  ASSERT_TRUE(resolver.HasModule(&module1));
+  TestCodeModule module2("module2");
+  ASSERT_TRUE(resolver.LoadModule(&module2, testdata_dir + "/module2.out"));
+  ASSERT_TRUE(resolver.HasModule(&module2));
+
 
   StackFrame frame;
   scoped_ptr<WindowsFrameInfo> windows_frame_info;
@@ -231,9 +236,9 @@ static bool RunTests() {
   windows_frame_info.reset(resolver.FindWindowsFrameInfo(&frame));
   ASSERT_FALSE(windows_frame_info.get());
 
-  
-  
-  
+  // module1 has STACK CFI records covering 3d40..3def;
+  // module2 has STACK CFI records covering 3df0..3e9f;
+  // check that FindCFIFrameInfo doesn't claim to find any outside those ranges.
   frame.instruction = 0x3d3f;
   frame.module = &module1;
   cfi_frame_info.reset(resolver.FindCFIFrameInfo(&frame));
@@ -249,8 +254,8 @@ static bool RunTests() {
   CFIFrameInfo::RegisterValueMap<u_int32_t> expected_caller_registers;
   MockMemoryRegion memory;
 
-  
-  
+  // Regardless of which instruction evaluation takes place at, it
+  // should produce the same values for the caller's registers.
   expected_caller_registers[".cfa"] = 0x1001c;
   expected_caller_registers[".ra"]  = 0xf6438648;
   expected_caller_registers["$ebp"] = 0x10038;
@@ -271,8 +276,8 @@ static bool RunTests() {
   ASSERT_TRUE(cfi_frame_info.get()
               ->FindCallerRegs<u_int32_t>(current_registers, memory,
                                           &caller_registers));
-  VerifyRegisters(__FILE__, __LINE__,
-                  expected_caller_registers, caller_registers);
+  ASSERT_TRUE(VerifyRegisters(__FILE__, __LINE__,
+                              expected_caller_registers, caller_registers));
 
   frame.instruction = 0x3d41;
   current_registers["$esp"] = 0x10014;
@@ -281,8 +286,8 @@ static bool RunTests() {
   ASSERT_TRUE(cfi_frame_info.get()
               ->FindCallerRegs<u_int32_t>(current_registers, memory,
                                           &caller_registers));
-  VerifyRegisters(__FILE__, __LINE__,
-                  expected_caller_registers, caller_registers);
+  ASSERT_TRUE(VerifyRegisters(__FILE__, __LINE__,
+                              expected_caller_registers, caller_registers));
 
   frame.instruction = 0x3d43;
   current_registers["$ebp"] = 0x10014;
@@ -334,8 +339,6 @@ static bool RunTests() {
   resolver.FillSourceLineInfo(&frame);
   ASSERT_EQ(frame.function_name, string("LargeFunction"));
 
-  TestCodeModule module2("module2");
-
   frame.instruction = 0x2181;
   frame.module = &module2;
   resolver.FillSourceLineInfo(&frame);
@@ -364,27 +367,41 @@ static bool RunTests() {
   frame.module = &module2;
   resolver.FillSourceLineInfo(&frame);
   ASSERT_EQ(frame.function_name, "Public2_2");
-
-  ASSERT_FALSE(resolver.LoadModule("module3",
-                                   testdata_dir + "/module3_bad.out"));
-  ASSERT_FALSE(resolver.HasModule("module3"));
-  ASSERT_FALSE(resolver.LoadModule("module4",
-                                   testdata_dir + "/module4_bad.out"));
-  ASSERT_FALSE(resolver.HasModule("module4"));
-  ASSERT_FALSE(resolver.LoadModule("module5",
-                                   testdata_dir + "/invalid-filename"));
-  ASSERT_FALSE(resolver.HasModule("module5"));
-  ASSERT_FALSE(resolver.HasModule("invalid-module"));
-  return true;
 }
 
-}  
+TEST_F(TestBasicSourceLineResolver, TestInvalidLoads)
+{
+  TestCodeModule module3("module3");
+  ASSERT_FALSE(resolver.LoadModule(&module3,
+                                   testdata_dir + "/module3_bad.out"));
+  ASSERT_FALSE(resolver.HasModule(&module3));
+  TestCodeModule module4("module4");
+  ASSERT_FALSE(resolver.LoadModule(&module4,
+                                   testdata_dir + "/module4_bad.out"));
+  ASSERT_FALSE(resolver.HasModule(&module4));
+  TestCodeModule module5("module5");
+  ASSERT_FALSE(resolver.LoadModule(&module5,
+                                   testdata_dir + "/invalid-filename"));
+  ASSERT_FALSE(resolver.HasModule(&module5));
+  TestCodeModule invalidmodule("invalid-module");
+  ASSERT_FALSE(resolver.HasModule(&invalidmodule));
+}
 
-int main(int argc, char **argv) {
-  BPLOG_INIT(&argc, &argv);
+TEST_F(TestBasicSourceLineResolver, TestUnload)
+{
+  TestCodeModule module1("module1");
+  ASSERT_FALSE(resolver.HasModule(&module1));
+  ASSERT_TRUE(resolver.LoadModule(&module1, testdata_dir + "/module1.out"));
+  ASSERT_TRUE(resolver.HasModule(&module1));
+  resolver.UnloadModule(&module1);
+  ASSERT_FALSE(resolver.HasModule(&module1));
+  ASSERT_TRUE(resolver.LoadModule(&module1, testdata_dir + "/module1.out"));
+  ASSERT_TRUE(resolver.HasModule(&module1));
+}
 
-  if (!RunTests()) {
-    return 1;
-  }
-  return 0;
+}  // namespace
+
+int main(int argc, char *argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

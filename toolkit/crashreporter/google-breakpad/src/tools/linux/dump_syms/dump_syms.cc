@@ -27,8 +27,8 @@
 
 
 
+#include <stdio.h>
 #include <string>
-#include <cstdio>
 
 #include "common/linux/dump_symbols.h"
 

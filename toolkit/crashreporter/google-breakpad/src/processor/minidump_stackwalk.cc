@@ -1,40 +1,41 @@
+// Copyright (c) 2010 Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// minidump_stackwalk.cc: Process a minidump with MinidumpProcessor, printing
+// the results, including stack traces.
+//
+// Author: Mark Mentovai
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <string>
 #include <vector>
 
@@ -72,17 +73,17 @@ using google_breakpad::StackFrameX86;
 using google_breakpad::StackFrameAMD64;
 using google_breakpad::StackFrameARM;
 
-
+// Separator character for machine readable output.
 static const char kOutputSeparator = '|';
 
-
-
-
-
-
-
-
-
+// PrintRegister prints a register's name and value to stdout.  It will
+// print four registers on a line.  For the first register in a set,
+// pass 0 for |sequence|.  For registers in a set, pass the most recent
+// return value of PrintRegister.  Note that PrintRegister will print a
+// newline before the first register (with |sequence| set to 0) is printed.
+// The caller is responsible for printing the final newline after a set
+// of registers is completely printed, regardless of the number of calls
+// to PrintRegister.
 static int PrintRegister(const char *name, u_int32_t value, int sequence) {
   if (sequence % 4 == 0) {
     printf("\n ");
@@ -91,26 +92,30 @@ static int PrintRegister(const char *name, u_int32_t value, int sequence) {
   return ++sequence;
 }
 
-
-
+// StripSeparator takes a string |original| and returns a copy
+// of the string with all occurences of |kOutputSeparator| removed.
 static string StripSeparator(const string &original) {
   string result = original;
   string::size_type position = 0;
   while ((position = result.find(kOutputSeparator, position)) != string::npos) {
     result.erase(position, 1);
   }
+  position = 0;
+  while ((position = result.find('\n', position)) != string::npos) {
+    result.erase(position, 1);
+  }
   return result;
 }
 
-
-
-
-
-
-
-
-
-
+// PrintStack prints the call stack in |stack| to stdout, in a reasonably
+// useful form.  Module, function, and source file names are displayed if
+// they are available.  The code offset to the base code address of the
+// source line, function, or module is printed, preferring them in that
+// order.  If no source line, function, or module information is available,
+// an absolute code offset is printed.
+//
+// If |cpu| is a recognized CPU name, relevant register state for each stack
+// frame printed is also output, if available.
 static void PrintStack(const CallStack *stack, const string &cpu) {
   int frame_count = stack->frames()->size();
   for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
@@ -226,7 +231,7 @@ static void PrintStack(const CallStack *stack, const string &cpu) {
       const StackFrameARM *frame_arm =
           reinterpret_cast<const StackFrameARM*>(frame);
 
-      
+      // General-purpose callee-saves registers.
       if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R4)
         sequence = PrintRegister("r4", frame_arm->context.iregs[4], sequence);
       if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R5)
@@ -242,7 +247,7 @@ static void PrintStack(const CallStack *stack, const string &cpu) {
       if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R10)
         sequence = PrintRegister("r10", frame_arm->context.iregs[10], sequence);
 
-      
+      // Registers with a dedicated or conventional purpose.
       if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_FP)
         sequence = PrintRegister("fp", frame_arm->context.iregs[11], sequence);
       if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_SP)
@@ -256,13 +261,13 @@ static void PrintStack(const CallStack *stack, const string &cpu) {
   }
 }
 
-
-
-
-
-
-
-
+// PrintStackMachineReadable prints the call stack in |stack| to stdout,
+// in the following machine readable pipe-delimited text format:
+// thread number|frame number|module|function|source file|line|offset
+//
+// Module, function, source file, and source line may all be empty
+// depending on availability.  The code offset follows the same rules as
+// PrintStack above.
 static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
   int frame_count = stack->frames()->size();
   for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
@@ -287,25 +292,25 @@ static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
                  frame->instruction - frame->source_line_base);
         } else {
           printf("%c%c%c0x%" PRIx64,
-                 kOutputSeparator,  
-                 kOutputSeparator,  
+                 kOutputSeparator,  // empty source file
+                 kOutputSeparator,  // empty source line
                  kOutputSeparator,
                  frame->instruction - frame->function_base);
         }
       } else {
         printf("%c%c%c%c0x%" PRIx64,
-               kOutputSeparator,  
-               kOutputSeparator,  
-               kOutputSeparator,  
+               kOutputSeparator,  // empty function name
+               kOutputSeparator,  // empty source file
+               kOutputSeparator,  // empty source line
                kOutputSeparator,
                frame->instruction - frame->module->base_address());
       }
     } else {
-      
+      // the printf before this prints a trailing separator for module name
       printf("%c%c%c%c0x%" PRIx64,
-             kOutputSeparator,  
-             kOutputSeparator,  
-             kOutputSeparator,  
+             kOutputSeparator,  // empty function name
+             kOutputSeparator,  // empty source file
+             kOutputSeparator,  // empty source line
              kOutputSeparator,
              frame->instruction);
     }
@@ -341,11 +346,11 @@ static void PrintModules(const CodeModules *modules) {
   }
 }
 
-
-
-
-
-
+// PrintModulesMachineReadable outputs a list of loaded modules,
+// one per line, in the following machine-readable pipe-delimited
+// text format:
+// Module|{Module Filename}|{Version}|{Debug Filename}|{Debug Identifier}|
+// {Base Address}|{Max Address}|{Main}
 static void PrintModulesMachineReadable(const CodeModules *modules) {
   if (!modules)
     return;
@@ -378,7 +383,7 @@ static void PrintModulesMachineReadable(const CodeModules *modules) {
 }
 
 static void PrintProcessState(const ProcessState& process_state) {
-  
+  // Print OS and CPU information.
   string cpu = process_state.system_info()->cpu;
   string cpu_info = process_state.system_info()->cpu_info;
   printf("Operating system: %s\n", process_state.system_info()->os.c_str());
@@ -386,7 +391,7 @@ static void PrintProcessState(const ProcessState& process_state) {
          process_state.system_info()->os_version.c_str());
   printf("CPU: %s\n", cpu.c_str());
   if (!cpu_info.empty()) {
-    
+    // This field is optional.
     printf("     %s\n", cpu_info.c_str());
   }
   printf("     %d CPU%s\n",
@@ -394,7 +399,7 @@ static void PrintProcessState(const ProcessState& process_state) {
          process_state.system_info()->cpu_count != 1 ? "s" : "");
   printf("\n");
 
-  
+  // Print crash information.
   if (process_state.crashed()) {
     printf("Crash reason:  %s\n", process_state.crash_reason().c_str());
     printf("Crash address: 0x%" PRIx64 "\n", process_state.crash_address());
@@ -407,7 +412,7 @@ static void PrintProcessState(const ProcessState& process_state) {
     printf("Assertion: %s\n", assertion.c_str());
   }
 
-  
+  // If the thread that requested the dump is known, print it first.
   int requesting_thread = process_state.requesting_thread();
   if (requesting_thread != -1) {
     printf("\n");
@@ -418,11 +423,11 @@ static void PrintProcessState(const ProcessState& process_state) {
     PrintStack(process_state.threads()->at(requesting_thread), cpu);
   }
 
-  
+  // Print all of the threads in the dump.
   int thread_count = process_state.threads()->size();
   for (int thread_index = 0; thread_index < thread_count; ++thread_index) {
     if (thread_index != requesting_thread) {
-      
+      // Don't print the crash thread again, it was already printed.
       printf("\n");
       printf("Thread %d\n", thread_index);
       PrintStack(process_state.threads()->at(thread_index), cpu);
@@ -434,9 +439,9 @@ static void PrintProcessState(const ProcessState& process_state) {
 
 static void PrintProcessStateMachineReadable(const ProcessState& process_state)
 {
-  
-  
-  
+  // Print OS and CPU information.
+  // OS|{OS Name}|{OS Version}
+  // CPU|{CPU Name}|{CPU Info}|{Number of CPUs}
   printf("OS%c%s%c%s\n", kOutputSeparator,
          StripSeparator(process_state.system_info()->os).c_str(),
          kOutputSeparator,
@@ -444,23 +449,23 @@ static void PrintProcessStateMachineReadable(const ProcessState& process_state)
   printf("CPU%c%s%c%s%c%d\n", kOutputSeparator,
          StripSeparator(process_state.system_info()->cpu).c_str(),
          kOutputSeparator,
-         
+         // this may be empty
          StripSeparator(process_state.system_info()->cpu_info).c_str(),
          kOutputSeparator,
          process_state.system_info()->cpu_count);
 
   int requesting_thread = process_state.requesting_thread();
 
-  
-  
+  // Print crash information.
+  // Crash|{Crash Reason}|{Crash Address}|{Crashed Thread}
   printf("Crash%c", kOutputSeparator);
   if (process_state.crashed()) {
     printf("%s%c0x%" PRIx64 "%c",
            StripSeparator(process_state.crash_reason()).c_str(),
            kOutputSeparator, process_state.crash_address(), kOutputSeparator);
   } else {
-    
-    
+    // print assertion info, if available, in place of crash reason,
+    // instead of the unhelpful "No crash"
     string assertion = process_state.assertion();
     if (!assertion.empty()) {
       printf("%s%c%c", StripSeparator(assertion).c_str(),
@@ -478,49 +483,49 @@ static void PrintProcessStateMachineReadable(const ProcessState& process_state)
 
   PrintModulesMachineReadable(process_state.modules());
 
-  
+  // blank line to indicate start of threads
   printf("\n");
 
-  
+  // If the thread that requested the dump is known, print it first.
   if (requesting_thread != -1) {
     PrintStackMachineReadable(requesting_thread,
                               process_state.threads()->at(requesting_thread));
   }
 
-  
+  // Print all of the threads in the dump.
   int thread_count = process_state.threads()->size();
   for (int thread_index = 0; thread_index < thread_count; ++thread_index) {
     if (thread_index != requesting_thread) {
-      
+      // Don't print the crash thread again, it was already printed.
       PrintStackMachineReadable(thread_index,
                                 process_state.threads()->at(thread_index));
     }
   }
 }
 
-
-
-
-
-
-
-
-
-
-
+// Processes |minidump_file| using MinidumpProcessor.  |symbol_path|, if
+// non-empty, is the base directory of a symbol storage area, laid out in
+// the format required by SimpleSymbolSupplier.  If such a storage area
+// is specified, it is made available for use by the MinidumpProcessor.
+//
+// Returns the value of MinidumpProcessor::Process.  If processing succeeds,
+// prints identifying OS and CPU information from the minidump, crash
+// information if the minidump was produced as a result of a crash, and
+// call stacks for each thread contained in the minidump.  All information
+// is printed to stdout.
 static bool PrintMinidumpProcess(const string &minidump_file,
                                  const vector<string> &symbol_paths,
                                  bool machine_readable) {
   scoped_ptr<SimpleSymbolSupplier> symbol_supplier;
   if (!symbol_paths.empty()) {
-    
+    // TODO(mmentovai): check existence of symbol_path if specified?
     symbol_supplier.reset(new SimpleSymbolSupplier(symbol_paths));
   }
 
   BasicSourceLineResolver resolver;
   MinidumpProcessor minidump_processor(symbol_supplier.get(), &resolver);
 
-  
+  // Process the minidump.
   ProcessState process_state;
   if (minidump_processor.Process(minidump_file, &process_state) !=
       google_breakpad::PROCESS_OK) {
@@ -537,7 +542,7 @@ static bool PrintMinidumpProcess(const string &minidump_file,
   return true;
 }
 
-}  
+}  // namespace
 
 static void usage(const char *program_name) {
   fprintf(stderr, "usage: %s [-m] <minidump-file> [symbol-path ...]\n"
@@ -572,7 +577,7 @@ int main(int argc, char **argv) {
     symbol_path_arg = 2;
   }
 
-  
+  // extra arguments are symbol paths
   std::vector<std::string> symbol_paths;
   if (argc > symbol_path_arg) {
     for (int argi = symbol_path_arg; argi < argc; ++argi)
