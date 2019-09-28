@@ -31,7 +31,7 @@
 }
 
 #tabs-container[tablet] {
-  -moz-border-end: 0px;
+  -moz-border-end: @border_width_xxlarge@ solid #eaeaea;
   background: #000;
 }
 
@@ -48,7 +48,7 @@
 }
 
 #tabs[tablet] documenttab {
-  /* Use px instead of mozmm because tab bar items have hard-coded pixel sizes */
+  
   width: 200px;
   padding: 12px;
   -moz-margin-start: 0px;
