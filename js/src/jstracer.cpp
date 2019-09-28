@@ -14732,10 +14732,9 @@ JS_REQUIRES_STACK AbortableRecordingStatus
 TraceRecorder::record_JSOP_LEAVEBLOCK()
 {
     
-    if (cx->fp->blockChain != lexicalBlock)
-        return ARECORD_CONTINUE;
-    else
+    if (cx->fp->blockChain == lexicalBlock)
         return ARECORD_STOP;
+    return ARECORD_CONTINUE;
 }
 
 JS_REQUIRES_STACK AbortableRecordingStatus
