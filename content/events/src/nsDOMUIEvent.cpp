@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Steve Clark (buster@netscape.com)
+ *   Ilya Konstantinov (mozilla-code@future.shiny.co.il)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "base/basictypes.h"
 #include "IPC/IPCMessageUtils.h"
@@ -66,8 +66,8 @@ nsDOMUIEvent::nsDOMUIEvent(nsPresContext* aPresContext, nsGUIEvent* aEvent)
     mEvent->time = PR_Now();
   }
   
-  
-  
+  // Fill mDetail and mView according to the mEvent (widget-generated
+  // event) we've got
   switch(mEvent->eventStructType)
   {
     case NS_UI_EVENT:
@@ -176,7 +176,7 @@ nsDOMUIEvent::GetClientPoint()
 }
 
 NS_IMETHODIMP
-nsDOMUIEvent::GetView(nsIDOMAbstractView** aView)
+nsDOMUIEvent::GetView(nsIDOMWindow** aView)
 {
   *aView = mView;
   NS_IF_ADDREF(*aView);
@@ -191,7 +191,11 @@ nsDOMUIEvent::GetDetail(PRInt32* aDetail)
 }
 
 NS_IMETHODIMP
-nsDOMUIEvent::InitUIEvent(const nsAString & typeArg, PRBool canBubbleArg, PRBool cancelableArg, nsIDOMAbstractView *viewArg, PRInt32 detailArg)
+nsDOMUIEvent::InitUIEvent(const nsAString& typeArg,
+                          PRBool canBubbleArg,
+                          PRBool cancelableArg,
+                          nsIDOMWindow* viewArg,
+                          PRInt32 detailArg)
 {
   nsresult rv = nsDOMEvent::InitEvent(typeArg, canBubbleArg, cancelableArg);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -202,7 +206,7 @@ nsDOMUIEvent::InitUIEvent(const nsAString & typeArg, PRBool canBubbleArg, PRBool
   return NS_OK;
 }
 
-
+// ---- nsDOMNSUIEvent implementation -------------------
 nsIntPoint
 nsDOMUIEvent::GetPagePoint()
 {
@@ -212,7 +216,7 @@ nsDOMUIEvent::GetPagePoint()
 
   nsIntPoint pagePoint = GetClientPoint();
 
-  
+  // If there is some scrolling, add scroll info to client point.
   if (mPresContext && mPresContext->GetPresShell()) {
     nsIPresShell* shell = mPresContext->GetPresShell();
     nsIScrollableFrame* scrollframe = shell->GetRootScrollFrameAsScrollable();
@@ -246,7 +250,7 @@ NS_IMETHODIMP
 nsDOMUIEvent::GetWhich(PRUint32* aWhich)
 {
   NS_ENSURE_ARG_POINTER(aWhich);
-  
+  // Usually we never reach here, as this is reimplemented for mouse and keyboard events.
   *aWhich = 0;
   return NS_OK;
 }
@@ -333,7 +337,7 @@ nsDOMUIEvent::GetLayerPoint()
       mEventIsInternal) {
     return mLayerPoint;
   }
-  
+  // XXX I'm not really sure this is correct; it's my best shot, though
   nsIFrame* targetFrame = mPresContext->EventStateManager()->GetEventTarget();
   if (!targetFrame)
     return mLayerPoint;
@@ -382,7 +386,7 @@ nsDOMUIEvent::DuplicatePrivateData()
   mClientPoint = GetClientPoint();
   mLayerPoint = GetLayerPoint();
   mPagePoint = GetPagePoint();
-  
+  // GetScreenPoint converts mEvent->refPoint to right coordinates.
   nsIntPoint screenPoint = GetScreenPoint();
   nsresult rv = nsDOMEvent::DuplicatePrivateData();
   if (NS_SUCCEEDED(rv)) {
@@ -418,9 +422,5 @@ nsresult NS_NewDOMUIEvent(nsIDOMEvent** aInstancePtrResult,
                           nsGUIEvent *aEvent) 
 {
   nsDOMUIEvent* it = new nsDOMUIEvent(aPresContext, aEvent);
-  if (nsnull == it) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
   return CallQueryInterface(it, aInstancePtrResult);
 }
