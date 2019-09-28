@@ -455,13 +455,13 @@ StoreToTypedArray(JSContext *cx, Assembler &masm, js::TypedArray *tarray, T addr
 
             RegisterID newReg;
             if (!avail.empty()) {
-                newReg = avail.takeAnyReg();
+                newReg = avail.takeAnyReg().reg();
             } else {
                 
                 avail = allowMask & ~pinned;
 
                 if (!avail.empty()) {
-                    newReg = avail.takeAnyReg();
+                    newReg = avail.takeAnyReg().reg();
                     saveRHS.preserve(Registers::maskReg(newReg));
                 } else {
                     

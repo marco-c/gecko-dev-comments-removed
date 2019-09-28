@@ -404,14 +404,6 @@ class PunboxAssembler : public JSC::MacroAssembler
         }
         return notHole;
     }
-
-    
-    void breakDouble(FPRegisterID srcDest, RegisterID typeReg, RegisterID dataReg) {
-        m_assembler.movq_rr(srcDest, typeReg);
-        move(Registers::PayloadMaskReg, dataReg);
-        andPtr(typeReg, dataReg);
-        xorPtr(dataReg, typeReg);
-    }
 };
 
 typedef PunboxAssembler ValueAssembler;
