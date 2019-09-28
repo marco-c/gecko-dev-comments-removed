@@ -1,18 +1,18 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
+
+
+
 
 Components.utils.import("resource://gre/modules/AddonManager.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 var pathParts = gTestPath.split("/");
-// Drop the test filename
+
 pathParts.splice(pathParts.length - 1);
 
 var gTestInWindow = /-window$/.test(pathParts[pathParts.length - 1]);
 
-// Drop the UI type
+
 pathParts.splice(pathParts.length - 1);
 pathParts.push("browser");
 
@@ -34,11 +34,11 @@ var gTestStart = null;
 
 var gUseInContentUI = !gTestInWindow && ("switchToTabHavingURI" in window);
 
-// Turn logging on for all tests
+
 Services.prefs.setBoolPref(PREF_LOGGING_ENABLED, true);
-// Turn off remote results in searches
+
 Services.prefs.setIntPref(PREF_SEARCH_MAXRESULTS, 0);
-// Default to a local discovery pane
+
 Services.prefs.setCharPref(PREF_DISCOVERURL, "http://127.0.0.1/extensions-dummy/discoveryURL");
 registerCleanupFunction(function() {
   Services.prefs.clearUserPref(PREF_LOGGING_ENABLED);
@@ -48,7 +48,7 @@ registerCleanupFunction(function() {
   catch (e) {
   }
 
-  // Throw an error if the add-ons manager window is open anywhere
+  
   var windows = Services.wm.getEnumerator("Addons:Manager");
   if (windows.hasMoreElements())
     ok(false, "Found unexpected add-ons manager window still open");
@@ -68,8 +68,8 @@ registerCleanupFunction(function() {
     windows.getNext().QueryInterface(Ci.nsIDOMWindow).close();
 
 
-  // We can for now know that getAllInstalls actually calls its callback before
-  // it returns so this will complete before the next test start.
+  
+  
   AddonManager.getAllInstalls(function(aInstalls) {
     aInstalls.forEach(function(aInstall) {
       if (aInstall instanceof MockInstall)
@@ -309,7 +309,7 @@ function is_hidden(aElement) {
   if (style.visibility != "visible")
     return true;
 
-  // Hiding a parent element will hide all its children
+  
   if (aElement.parentNode != aElement.ownerDocument)
     return is_hidden(aElement.parentNode);
 
@@ -430,7 +430,7 @@ CertOverrideListener.prototype = {
   }
 }
 
-// Add overrides for the bad certificates
+
 function addCertOverride(host, bits) {
   var req = new XMLHttpRequest();
   try {
@@ -439,11 +439,11 @@ function addCertOverride(host, bits) {
     req.send(null);
   }
   catch (e) {
-    // This request will fail since the SSL server is not trusted yet
+    
   }
 }
 
-/***** Mock Provider *****/
+
 
 function MockProvider(aUseAsyncCallbacks) {
   this.addons = [];
@@ -468,29 +468,29 @@ MockProvider.prototype = {
   callbackTimers: null,
   useAsyncCallbacks: null,
 
-  /***** Utility functions *****/
+  
 
-  /**
-   * Register this provider with the AddonManager
-   */
+  
+
+
   register: function MP_register() {
     AddonManagerPrivate.registerProvider(this);
   },
 
-  /**
-   * Unregister this provider with the AddonManager
-   */
+  
+
+
   unregister: function MP_unregister() {
     AddonManagerPrivate.unregisterProvider(this);
   },
 
-  /**
-   * Adds an add-on to the list of add-ons that this provider exposes to the
-   * AddonManager, dispatching appropriate events in the process.
-   *
-   * @param  aAddon
-   *         The add-on to add
-   */
+  
+
+
+
+
+
+
   addAddon: function MP_addAddon(aAddon) {
     var oldAddons = this.addons.filter(function(aOldAddon) aOldAddon.id == aAddon.id);
     var oldAddon = oldAddons.length > 0 ? oldAddons[0] : null;
@@ -509,13 +509,13 @@ MockProvider.prototype = {
                                              oldAddon, requiresRestart)
   },
 
-  /**
-   * Removes an add-on from the list of add-ons that this provider exposes to
-   * the AddonManager, dispatching the onUninstalled event in the process.
-   *
-   * @param  aAddon
-   *         The add-on to add
-   */
+  
+
+
+
+
+
+
   removeAddon: function MP_removeAddon(aAddon) {
     var pos = this.addons.indexOf(aAddon);
     if (pos == -1) {
@@ -531,15 +531,16 @@ MockProvider.prototype = {
     AddonManagerPrivate.callAddonListeners("onUninstalled", aAddon);
   },
 
-  /**
-   * Adds an add-on install to the list of installs that this provider exposes
-   * to the AddonManager, dispatching appropriate events in the process.
-   *
-   * @param  aInstall
-   *         The add-on install to add
-   */
+  
+
+
+
+
+
+
   addInstall: function MP_addInstall(aInstall) {
     this.installs.push(aInstall);
+    aInstall._provider = this;
 
     if (!this.started)
       return;
@@ -547,14 +548,24 @@ MockProvider.prototype = {
     aInstall.callListeners("onNewInstall");
   },
 
-  /**
-   * Creates a set of mock add-on objects and adds them to the list of add-ons
-   * managed by this provider.
-   *
-   * @param  aAddonProperties
-   *         An array of objects containing properties describing the add-ons
-   * @return Array of the new MockAddons
-   */
+  removeInstall: function MP_removeInstall(aInstall) {
+    var pos = this.installs.indexOf(aInstall);
+    if (pos == -1) {
+      ok(false, "Tried to remove an install that wasn't registered with the mock provider");
+      return;
+    }
+
+    this.installs.splice(pos, 1);
+  },
+
+  
+
+
+
+
+
+
+
   createAddons: function MP_createAddons(aAddonProperties) {
     var newAddons = [];
     aAddonProperties.forEach(function(aAddonProp) {
@@ -575,14 +586,14 @@ MockProvider.prototype = {
     return newAddons;
   },
 
-  /**
-   * Creates a set of mock add-on install objects and adds them to the list
-   * of installs managed by this provider.
-   *
-   * @param  aInstallProperties
-   *         An array of objects containing properties describing the installs
-   * @return Array of the new MockInstalls
-   */
+  
+
+
+
+
+
+
+
   createInstalls: function MP_createInstalls(aInstallProperties) {
     var newInstalls = [];
     aInstallProperties.forEach(function(aInstallProp) {
@@ -602,18 +613,18 @@ MockProvider.prototype = {
     return newInstalls;
   },
 
-  /***** AddonProvider implementation *****/
+  
 
-  /**
-   * Called to initialize the provider.
-   */
+  
+
+
   startup: function MP_startup() {
     this.started = true;
   },
 
-  /**
-   * Called when the provider should shutdown.
-   */
+  
+
+
   shutdown: function MP_shutdown() {
     this.callbackTimers.forEach(function(aTimer) {
       aTimer.cancel();
@@ -623,14 +634,14 @@ MockProvider.prototype = {
     this.started = false;
   },
 
-  /**
-   * Called to get an Addon with a particular ID.
-   *
-   * @param  aId
-   *         The ID of the add-on to retrieve
-   * @param  aCallback
-   *         A callback to pass the Addon to
-   */
+  
+
+
+
+
+
+
+
   getAddonByID: function MP_getAddon(aId, aCallback) {
     for (let i = 0; i < this.addons.length; i++) {
       if (this.addons[i].id == aId) {
@@ -642,14 +653,14 @@ MockProvider.prototype = {
     aCallback(null);
   },
 
-  /**
-   * Called to get Addons of a particular type.
-   *
-   * @param  aTypes
-   *         An array of types to fetch. Can be null to get all types.
-   * @param  callback
-   *         A callback to pass an array of Addons to
-   */
+  
+
+
+
+
+
+
+
   getAddonsByTypes: function MP_getAddonsByTypes(aTypes, aCallback) {
     var addons = this.addons.filter(function(aAddon) {
       if (aTypes && aTypes.length > 0 && aTypes.indexOf(aAddon.type) == -1)
@@ -659,14 +670,14 @@ MockProvider.prototype = {
     this._delayCallback(aCallback, addons);
   },
 
-  /**
-   * Called to get Addons that have pending operations.
-   *
-   * @param  aTypes
-   *         An array of types to fetch. Can be null to get all types
-   * @param  aCallback
-   *         A callback to pass an array of Addons to
-   */
+  
+
+
+
+
+
+
+
   getAddonsWithOperationsByTypes: function MP_getAddonsWithOperationsByTypes(aTypes, aCallback) {
     var addons = this.addons.filter(function(aAddon) {
       if (aTypes && aTypes.length > 0 && aTypes.indexOf(aAddon.type) == -1)
@@ -676,17 +687,17 @@ MockProvider.prototype = {
     this._delayCallback(aCallback, addons);
   },
 
-  /**
-   * Called to get the current AddonInstalls, optionally restricting by type.
-   *
-   * @param  aTypes
-   *         An array of types or null to get all types
-   * @param  aCallback
-   *         A callback to pass the array of AddonInstalls to
-   */
+  
+
+
+
+
+
+
+
   getInstallsByTypes: function MP_getInstallsByTypes(aTypes, aCallback) {
     var installs = this.installs.filter(function(aInstall) {
-      // Appear to have actually removed cancelled installs from the provider
+      
       if (aInstall.state == AddonManager.STATE_CANCELLED)
         return false;
 
@@ -698,107 +709,107 @@ MockProvider.prototype = {
     this._delayCallback(aCallback, installs);
   },
 
-  /**
-   * Called when a new add-on has been enabled when only one add-on of that type
-   * can be enabled.
-   *
-   * @param  aId
-   *         The ID of the newly enabled add-on
-   * @param  aType
-   *         The type of the newly enabled add-on
-   * @param  aPendingRestart
-   *         true if the newly enabled add-on will only become enabled after a
-   *         restart
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   addonChanged: function MP_addonChanged(aId, aType, aPendingRestart) {
-    // Not implemented
+    
   },
 
-  /**
-   * Update the appDisabled property for all add-ons.
-   */
+  
+
+
   updateAddonAppDisabledStates: function MP_updateAddonAppDisabledStates() {
-    // Not needed
+    
   },
 
-  /**
-   * Called to get an AddonInstall to download and install an add-on from a URL.
-   *
-   * @param  aUrl
-   *         The URL to be installed
-   * @param  aHash
-   *         A hash for the install
-   * @param  aName
-   *         A name for the install
-   * @param  aIconURL
-   *         An icon URL for the install
-   * @param  aVersion
-   *         A version for the install
-   * @param  aLoadGroup
-   *         An nsILoadGroup to associate requests with
-   * @param  aCallback
-   *         A callback to pass the AddonInstall to
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   getInstallForURL: function MP_getInstallForURL(aUrl, aHash, aName, aIconURL,
                                                   aVersion, aLoadGroup, aCallback) {
-    // Not yet implemented
+    
   },
 
-  /**
-   * Called to get an AddonInstall to install an add-on from a local file.
-   *
-   * @param  aFile
-   *         The file to be installed
-   * @param  aCallback
-   *         A callback to pass the AddonInstall to
-   */
+  
+
+
+
+
+
+
+
   getInstallForFile: function MP_getInstallForFile(aFile, aCallback) {
-    // Not yet implemented
+    
   },
 
-  /**
-   * Called to test whether installing add-ons is enabled.
-   *
-   * @return true if installing is enabled
-   */
+  
+
+
+
+
   isInstallEnabled: function MP_isInstallEnabled() {
     return false;
   },
 
-  /**
-   * Called to test whether this provider supports installing a particular
-   * mimetype.
-   *
-   * @param  aMimetype
-   *         The mimetype to check for
-   * @return true if the mimetype is supported
-   */
+  
+
+
+
+
+
+
+
   supportsMimetype: function MP_supportsMimetype(aMimetype) {
     return false;
   },
 
-  /**
-   * Called to test whether installing add-ons from a URI is allowed.
-   *
-   * @param  aUri
-   *         The URI being installed from
-   * @return true if installing is allowed
-   */
+  
+
+
+
+
+
+
   isInstallAllowed: function MP_isInstallAllowed(aUri) {
     return false;
   },
 
 
-  /***** Internal functions *****/
+  
 
-  /**
-   * Delay calling a callback to fake a time-consuming async operation.
-   * The delay is specified by the apiDelay property, in milliseconds.
-   * Parameters to send to the callback should be specified as arguments after
-   * the aCallback argument.
-   *
-   * @param aCallback Callback to eventually call
-   */
+  
+
+
+
+
+
+
+
   _delayCallback: function MP_delayCallback(aCallback) {
     var params = Array.splice(arguments, 1);
 
@@ -808,7 +819,7 @@ MockProvider.prototype = {
     }
 
     var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    // Need to keep a reference to the timer, so it doesn't get GC'ed
+    
     var pos = this.callbackTimers.length;
     this.callbackTimers.push(timer);
     var self = this;
@@ -819,10 +830,10 @@ MockProvider.prototype = {
   }
 };
 
-/***** Mock Addon object for the Mock Provider *****/
+
 
 function MockAddon(aId, aName, aType, aOperationsRequiringRestart) {
-  // Only set required attributes.
+  
   this.id = aId || "";
   this.name = aName || "";
   this.type = aType || "extension";
@@ -901,7 +912,7 @@ MockAddon.prototype = {
   },
 
   findUpdates: function(aListener, aReason, aAppVersion, aPlatformVersion) {
-    // Tests can implement this if they need to
+    
   },
 
   uninstall: function() {
@@ -956,7 +967,7 @@ MockAddon.prototype = {
   }
 };
 
-/***** Mock AddonInstall object for the Mock Provider *****/
+
 
 function MockInstall(aName, aType, aAddonToInstall) {
   this.name = aName || "";
@@ -977,8 +988,8 @@ function MockInstall(aName, aType, aAddonToInstall) {
   this._addonToInstall = aAddonToInstall;
   this.listeners = [];
 
-  // Another type of install listener for tests that want to check the results
-  // of code run from standard install listeners
+  
+  
   this.testListeners = [];
 }
 
@@ -993,7 +1004,7 @@ MockInstall.prototype = {
           return;
         }
 
-        // Adding addon to MockProvider to be implemented when needed
+        
         if (this._addonToInstall)
           this.addon = this._addonToInstall;
         else {
@@ -1023,12 +1034,13 @@ MockInstall.prototype = {
         AddonManagerPrivate.callAddonListeners("onInstalling", this.addon);
 
         this.state = AddonManager.STATE_INSTALLED;
+        this._provider.removeInstall(this);
         this.callListeners("onInstallEnded");
         break;
       case AddonManager.STATE_DOWNLOADING:
       case AddonManager.STATE_CHECKING:
       case AddonManger.STATE_INSTALLING:
-        // Installation is already running
+        
         return;
       default:
         ok(false, "Cannot start installing when state = " + this.state);
@@ -1045,7 +1057,7 @@ MockInstall.prototype = {
         this.callListeners("onInstallCancelled");
         break;
       default:
-        // Handling cancelling when downloading to be implemented when needed
+        
         ok(false, "Cannot cancel when state = " + this.state);
     }
   },
@@ -1073,8 +1085,8 @@ MockInstall.prototype = {
     var result = AddonManagerPrivate.callInstallListeners(aMethod, this.listeners,
                                                           this, this.addon);
 
-    // Call test listeners after standard listeners to remove race condition
-    // between standard and test listeners
+    
+    
     this.testListeners.forEach(function(aListener) {
       try {
         if (aMethod in aListener)
