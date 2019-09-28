@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=80: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Johnny Stenback <jst@netscape.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef nsDOMClassInfo_h___
 #define nsDOMClassInfo_h___
@@ -45,7 +45,7 @@
 #include "jsapi.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIScriptContext.h"
-#include "nsDOMJSUtils.h" 
+#include "nsDOMJSUtils.h" // for GetScriptContextFromJSContext
 #include "nsIScriptGlobalObject.h"
 #include "nsContentUtils.h"
 
@@ -72,7 +72,7 @@ class nsIDOMSVGTransformList;
 class nsIDOMWindow;
 class nsIForm;
 class nsIHTMLDocument;
-class nsIPluginInstance;
+class nsNPAPIPluginInstance;
 class nsSVGTransformList;
 
 struct nsDOMClassInfoData;
@@ -91,11 +91,11 @@ struct nsDOMClassInfoData
     nsDOMClassInfoExternalConstructorFnc mExternalConstructorFptr;
   } u;
 
-  nsIClassInfo *mCachedClassInfo; 
-                                  
+  nsIClassInfo *mCachedClassInfo; // low bit is set to 1 if external,
+                                  // so be sure to mask if necessary!
   const nsIID *mProtoChainInterface;
   const nsIID **mInterfaces;
-  PRUint32 mScriptableFlags : 31; 
+  PRUint32 mScriptableFlags : 31; // flags must not use more than 31 bits!
   PRUint32 mHasClassInterface : 1;
   PRUint32 mInterfacesBitmap;
   PRPackedBool mChromeOnly;
@@ -113,9 +113,9 @@ struct nsExternalDOMClassInfoData : public nsDOMClassInfoData
 
 typedef PRUptrdiff PtrBits;
 
-
-
-
+// To be used with the nsDOMClassInfoData::mCachedClassInfo pointer.
+// The low bit is set when we created a generic helper for an external
+// (which holds on to the nsDOMClassInfoData).
 #define GET_CLEAN_CI_PTR(_ptr) (nsIClassInfo*)(PtrBits(_ptr) & ~0x1)
 #define MARK_EXTERNAL(_ptr) (nsIClassInfo*)(PtrBits(_ptr) | 0x1)
 #define IS_EXTERNAL(_ptr) (PtrBits(_ptr) & 0x1)
@@ -133,14 +133,14 @@ public:
 
   NS_DECL_NSICLASSINFO
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Helper method that returns a *non* refcounted pointer to a
+  // helper. So please note, don't release this pointer, if you do,
+  // you better make sure you've addreffed before release.
+  //
+  // Whaaaaa! I wanted to name this method GetClassInfo, but nooo,
+  // some of Microsoft devstudio's headers #defines GetClassInfo to
+  // GetClassInfoA so I can't, those $%#@^! bastards!!! What gives
+  // them the right to do that?
 
   static nsIClassInfo* GetClassInfoInstance(nsDOMClassInfoData* aData);
 
@@ -153,17 +153,17 @@ public:
 
   static nsresult ThrowJSException(JSContext *cx, nsresult aResult);
 
-  
-
-
-
-
-
-
-
-
-
-
+  /*
+   * The following two functions exist because of the way that Xray wrappers
+   * work. In order to allow scriptable helpers to define non-IDL defined but
+   * still "safe" properties for Xray wrappers, we call into the scriptable
+   * helper with |obj| being the wrapper.
+   *
+   * Ideally, that would be the end of the story, however due to complications
+   * dealing with document.domain, it's possible to end up in a scriptable
+   * helper with a wrapper, even though we should be treating the lookup as a
+   * transparent one.
+   */
   static PRBool ObjectIsNativeWrapper(JSContext* cx, JSObject* obj);
 
   static nsISupports *GetNative(nsIXPConnectWrappedNative *wrapper, JSObject *obj);
@@ -194,9 +194,9 @@ protected:
   nsresult ResolveConstructor(JSContext *cx, JSObject *obj,
                               JSObject **objp);
 
-  
-  
-  
+  // Checks if id is a number and returns the number, if aIsNumber is
+  // non-null it's set to true if the id is a number and false if it's
+  // not a number. If id is not a number this method returns -1
   static PRInt32 GetArrayIndexFromId(JSContext *cx, jsid id,
                                      PRBool *aIsNumber = nsnull);
 
@@ -237,7 +237,7 @@ protected:
   static nsIXPConnect *sXPConnect;
   static nsIScriptSecurityManager *sSecMan;
 
-  
+  // nsIXPCScriptable code
   static nsresult DefineStaticJSVals(JSContext *cx);
 
   static PRBool sIsInitialized;
@@ -412,9 +412,9 @@ do_QueryWrapper(JSContext *cx, JSObject *obj, nsresult* error)
 
 typedef nsDOMClassInfo nsDOMGenericSH;
 
-
-
-
+// EventProp scriptable helper, this class should be the base class of
+// all objects that should support things like
+// obj.onclick=function{...}
 
 class nsEventReceiverSH : public nsDOMGenericSH
 {
@@ -458,8 +458,8 @@ public:
                          JSObject *obj, jsid id, jsval *vp, PRBool *_retval);
 };
 
-
-
+// Simpler than nsEventReceiverSH
+// Makes sure that the wrapper is preserved if new properties are added.
 class nsEventTargetSH : public nsDOMGenericSH
 {
 protected:
@@ -484,7 +484,7 @@ public:
   }
 };
 
-
+// Window scriptable helper
 
 class nsWindowSH : public nsEventReceiverSH
 {
@@ -559,7 +559,7 @@ public:
   }
 };
 
-
+// Location scriptable helper
 
 class nsLocationSH : public nsDOMGenericSH
 {
@@ -587,7 +587,7 @@ public:
 };
 
 
-
+// Navigator scriptable helper
 
 class nsNavigatorSH : public nsDOMGenericSH
 {
@@ -611,8 +611,8 @@ public:
 };
 
 
-
-
+// DOM Node helper, this class deals with setting the parent for the
+// wrappers
 
 class nsNodeSH : public nsEventReceiverSH
 {
@@ -625,17 +625,17 @@ protected:
   {
   }
 
-  
+  // Helper to check whether a capability is enabled
   PRBool IsCapabilityEnabled(const char* aCapability);
 
   inline PRBool IsPrivilegedScript() {
     return IsCapabilityEnabled("UniversalXPConnect");
   }
 
-  
-  
-  
-  
+  // Helper to define a void property with JSPROP_SHARED; this can do all the
+  // work so it's safe to just return whatever it returns.  |obj| is the object
+  // we're defining on, |id| is the name of the prop.  This must be a string
+  // jsval.  |objp| is the out param if we define successfully.
   nsresult DefineVoidProp(JSContext* cx, JSObject* obj, jsid id,
                           JSObject** objp);
 
@@ -662,7 +662,7 @@ public:
 };
 
 
-
+// Element helper
 
 class nsElementSH : public nsNodeSH
 {
@@ -690,7 +690,7 @@ public:
 };
 
 
-
+// Generic array scriptable helper
 
 class nsGenericArraySH : public nsDOMClassInfo
 {
@@ -720,7 +720,7 @@ public:
 };
 
 
-
+// Array scriptable helper
 
 class nsArraySH : public nsGenericArraySH
 {
@@ -733,8 +733,8 @@ protected:
   {
   }
 
-  
-  
+  // Subclasses need to override this, if the implementation can't fail it's
+  // allowed to not set *aResult.
   virtual nsISupports* GetItemAt(nsISupports *aNative, PRUint32 aIndex,
                                  nsWrapperCache **aCache, nsresult *aResult) = 0;
 
@@ -743,12 +743,12 @@ public:
                          JSObject *obj, jsid id, jsval *vp, PRBool *_retval);
 
 private:
-  
+  // Not implemented, nothing should create an instance of this class.
   static nsIClassInfo *doCreate(nsDOMClassInfoData* aData);
 };
 
 
-
+// NodeList scriptable helper
  
 class nsNodeListSH : public nsArraySH
 {
@@ -773,7 +773,7 @@ public:
 };
 
 
-
+// NamedArray helper
 
 class nsNamedArraySH : public nsArraySH
 {
@@ -800,12 +800,12 @@ public:
                          JSObject *obj, jsid id, jsval *vp, PRBool *_retval);
 
 private:
-  
+  // Not implemented, nothing should create an instance of this class.
   static nsIClassInfo *doCreate(nsDOMClassInfoData* aData);
 };
 
 
-
+// NamedNodeMap helper
 
 class nsNamedNodeMapSH : public nsNamedArraySH
 {
@@ -821,7 +821,7 @@ protected:
   virtual nsISupports* GetItemAt(nsISupports *aNative, PRUint32 aIndex,
                                  nsWrapperCache **aCache, nsresult *aResult);
 
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -835,7 +835,7 @@ public:
 };
 
 
-
+// HTMLCollection helper
 
 class nsHTMLCollectionSH : public nsNamedArraySH
 {
@@ -853,7 +853,7 @@ protected:
   virtual nsISupports* GetItemAt(nsISupports *aNative, PRUint32 aIndex,
                                  nsWrapperCache **aCache, nsresult *aResult);
 
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -867,7 +867,7 @@ public:
 };
 
 
-
+// ContentList helper
 
 class nsContentListSH : public nsNamedArraySH
 {
@@ -897,7 +897,7 @@ public:
 
 
 
-
+// Document helper, for document.location and document.on*
 
 class nsDocumentSH : public nsNodeSH
 {
@@ -929,7 +929,7 @@ public:
 };
 
 
-
+// HTMLDocument helper
 
 class nsHTMLDocumentSH : public nsDocumentSH
 {
@@ -976,7 +976,7 @@ public:
 };
 
 
-
+// HTMLBodyElement helper
 
 class nsHTMLBodyElementSH : public nsElementSH
 {
@@ -1008,7 +1008,7 @@ public:
 };
 
 
-
+// HTMLFormElement helper
 
 class nsHTMLFormElementSH : public nsElementSH
 {
@@ -1044,7 +1044,7 @@ public:
 };
 
 
-
+// HTMLSelectElement helper
 
 class nsHTMLSelectElementSH : public nsElementSH
 {
@@ -1077,7 +1077,7 @@ public:
 };
 
 
-
+// HTMLEmbed/Object/AppletElement helper
 
 class nsHTMLPluginObjElementSH : public nsElementSH
 {
@@ -1093,10 +1093,10 @@ protected:
 
   static nsresult GetPluginInstanceIfSafe(nsIXPConnectWrappedNative *aWrapper,
                                           JSObject *obj,
-                                          nsIPluginInstance **aResult);
+                                          nsNPAPIPluginInstance **aResult);
 
   static nsresult GetPluginJSObject(JSContext *cx, JSObject *obj,
-                                    nsIPluginInstance *plugin_inst,
+                                    nsNPAPIPluginInstance *plugin_inst,
                                     JSObject **plugin_obj,
                                     JSObject **plugin_proto);
 
@@ -1127,7 +1127,7 @@ public:
 };
 
 
-
+// HTMLOptionsCollection helper
 
 class nsHTMLOptionsCollectionSH : public nsHTMLCollectionSH
 {
@@ -1152,7 +1152,7 @@ public:
 };
 
 
-
+// Plugin helper
 
 class nsPluginSH : public nsNamedArraySH
 {
@@ -1168,7 +1168,7 @@ protected:
   virtual nsISupports* GetItemAt(nsISupports *aNative, PRUint32 aIndex,
                                  nsWrapperCache **aCache, nsresult *aResult);
 
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -1182,7 +1182,7 @@ public:
 };
 
 
-
+// PluginArray helper
 
 class nsPluginArraySH : public nsNamedArraySH
 {
@@ -1198,7 +1198,7 @@ protected:
   virtual nsISupports* GetItemAt(nsISupports *aNative, PRUint32 aIndex,
                                  nsWrapperCache **aCache, nsresult *aResult);
 
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -1212,7 +1212,7 @@ public:
 };
 
 
-
+// MimeTypeArray helper
 
 class nsMimeTypeArraySH : public nsNamedArraySH
 {
@@ -1228,7 +1228,7 @@ protected:
   virtual nsISupports* GetItemAt(nsISupports *aNative, PRUint32 aIndex,
                                  nsWrapperCache **aCache, nsresult *aResult);
 
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -1242,7 +1242,7 @@ public:
 };
 
 
-
+// String array helper
 
 class nsStringArraySH : public nsGenericArraySH
 {
@@ -1264,7 +1264,7 @@ public:
 };
 
 
-
+// History helper
 
 class nsHistorySH : public nsStringArraySH
 {
@@ -1292,7 +1292,7 @@ public:
   }
 };
 
-
+// StringList scriptable helper
 
 class nsStringListSH : public nsStringArraySH
 {
@@ -1309,7 +1309,7 @@ protected:
                                nsAString& aResult);
 
 public:
-  
+  // Inherit GetProperty, Enumerate from nsStringArraySH
   
   static nsIClassInfo *doCreate(nsDOMClassInfoData* aData)
   {
@@ -1318,7 +1318,7 @@ public:
 };
 
 
-
+// DOMTokenList scriptable helper
 
 class nsDOMTokenListSH : public nsStringArraySH
 {
@@ -1343,7 +1343,7 @@ public:
 };
 
 
-
+// MediaList helper
 
 class nsMediaListSH : public nsStringArraySH
 {
@@ -1367,7 +1367,7 @@ public:
 };
 
 
-
+// StyleSheetList helper
 
 class nsStyleSheetListSH : public nsArraySH
 {
@@ -1391,7 +1391,7 @@ public:
 };
 
 
-
+// CSSValueList helper
 
 class nsCSSValueListSH : public nsArraySH
 {
@@ -1415,7 +1415,7 @@ public:
 };
 
 
-
+// CSSStyleDeclaration helper
 
 class nsCSSStyleDeclSH : public nsStringArraySH
 {
@@ -1442,7 +1442,7 @@ public:
 };
 
 
-
+// CSSRuleList helper
 
 class nsCSSRuleListSH : public nsArraySH
 {
@@ -1465,7 +1465,7 @@ public:
   }
 };
 
-
+// ClientRectList helper
 
 class nsClientRectListSH : public nsArraySH
 {
@@ -1489,7 +1489,7 @@ public:
 };
 
 
-
+// PaintRequestList helper
 
 class nsPaintRequestListSH : public nsArraySH
 {
@@ -1534,7 +1534,7 @@ public:
 };
 
 #ifdef MOZ_XUL
-
+// TreeColumns helper
 
 class nsTreeColumnsSH : public nsNamedArraySH
 {
@@ -1550,7 +1550,7 @@ protected:
   virtual nsISupports* GetItemAt(nsISupports *aNative, PRUint32 aIndex,
                                  nsWrapperCache **aCache, nsresult *aResult);
 
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -1564,7 +1564,7 @@ public:
 };
 #endif
 
-
+// WebApps Storage helpers
 
 class nsStorageSH : public nsNamedArraySH
 {
@@ -1593,7 +1593,7 @@ protected:
   {
     return nsnull;
   }
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -1654,7 +1654,7 @@ protected:
   {
     return nsnull;
   }
-  
+  // Override nsNamedArraySH::GetNamedItem()
   virtual nsISupports* GetNamedItem(nsISupports *aNative,
                                     const nsAString& aName,
                                     nsWrapperCache **cache,
@@ -1668,12 +1668,12 @@ public:
 };
 
 
-
-
-
-
-
-
+// Event handler 'this' translator class, this is called by XPConnect
+// when a "function interface" (nsIDOMEventListener) is called, this
+// class extracts 'this' fomr the first argument to the called
+// function (nsIDOMEventListener::HandleEvent(in nsIDOMEvent)), this
+// class will pass back nsIDOMEvent::currentTarget to be used as
+// 'this'.
 
 class nsEventListenerThisTranslator : public nsIXPCFunctionThisTranslator
 {
@@ -1686,10 +1686,10 @@ public:
   {
   }
 
-  
+  // nsISupports
   NS_DECL_ISUPPORTS
 
-  
+  // nsIXPCFunctionThisTranslator
   NS_DECL_NSIXPCFUNCTIONTHISTRANSLATOR
 };
 
@@ -1745,7 +1745,7 @@ public:
   }
 };
 
-
+// Need this to override GetFlags() on nsNodeSH
 class nsAttributeSH : public nsNodeSH
 {
 protected:
@@ -1839,7 +1839,7 @@ public:
 };
 
 
-
+// Template for SVGXXXList helpers
  
 template<class ListInterfaceType, class ListType>
 class nsSVGListSH : public nsArraySH
@@ -1864,4 +1864,4 @@ typedef nsSVGListSH<nsIDOMSVGNumberList, mozilla::DOMSVGNumberList> nsSVGNumberL
 typedef nsSVGListSH<nsIDOMSVGPathSegList, mozilla::DOMSVGPathSegList> nsSVGPathSegListSH;
 typedef nsSVGListSH<nsIDOMSVGPointList, mozilla::DOMSVGPointList> nsSVGPointListSH;
 
-#endif
+#endif /* nsDOMClassInfo_h___ */
