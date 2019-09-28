@@ -341,11 +341,12 @@ RegExp::executeInternal(JSContext *cx, RegExpStatics *res, JSString *inputstr,
 
     for (int *it = buf; it != buf + matchItemCount; ++it)
         *it = -1;
-
+    
     JSLinearString *input = inputstr->ensureLinear(cx);
     if (!input)
         return false;
 
+    JS::Anchor<JSString *> anchor(input);
     size_t len = input->length();
     const jschar *chars = input->chars();
 
@@ -447,7 +448,7 @@ RegExp::createObjectNoStatics(JSContext *cx, const jschar *chars, size_t length,
     AlreadyIncRefed<RegExp> re = RegExp::create(cx, str, flags, ts);
     if (!re)
         return NULL;
-    JSObject *obj = NewBuiltinClassInstance(cx, &js_RegExpClass);
+    JSObject *obj = NewBuiltinClassInstance(cx, &RegExpClass);
     if (!obj || !obj->initRegExp(cx, re.get())) {
         re->decref(cx);
         return NULL;
