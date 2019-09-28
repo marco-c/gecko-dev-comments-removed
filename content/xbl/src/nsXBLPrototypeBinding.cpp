@@ -1,40 +1,40 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Original Author: David W. Hyatt (hyatt@netscape.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsCOMPtr.h"
 #include "nsIAtom.h"
@@ -74,10 +74,10 @@
 #include "nsXBLResourceLoader.h"
 #include "mozilla/dom/Element.h"
 
-// Helper Classes =====================================================================
 
-// nsXBLAttributeEntry and helpers.  This class is used to efficiently handle
-// attribute changes in anonymous content.
+
+
+
 
 class nsXBLAttributeEntry {
 public:
@@ -124,25 +124,25 @@ protected:
   }
 
 private:
-  // Hide so that only Create() and Destroy() can be used to
-  // allocate and deallocate from the heap
+  
+  
   static void* operator new(size_t) CPP_THROW_NEW { return 0; }
   static void operator delete(void*, size_t) {}
 };
 
-// nsXBLInsertionPointEntry and helpers.  This class stores all the necessary
-// info to figure out the position of an insertion point.
-// The same insertion point may be in the insertion point table for multiple
-// keys, so we refcount the entries.
+
+
+
+
 
 class nsXBLInsertionPointEntry {
 public:
   ~nsXBLInsertionPointEntry() {
     if (mDefaultContent) {
       nsAutoScriptBlocker scriptBlocker;
-      // mDefaultContent is a sort of anonymous content within the XBL
-      // document, and we own and manage it.  Unhook it here, since we're going
-      // away.
+      
+      
+      
       mDefaultContent->UnbindFromTree();
     }      
   }
@@ -157,11 +157,11 @@ public:
   void SetDefaultContent(nsIContent* aChildren) { mDefaultContent = aChildren; }
 
 
-  // We keep kPool alive as long as there is at least either a
-  // nsXBLPrototypeBinding or a nsXBLInsertionPointEntry alive.
-  // nsXBLPrototypeBinding has its own global refcount so it only adds 1 to
-  // nsXBLInsertionPointEntry::gRefCnt as long as there's at least one
-  // nsXBLPrototypeBinding alive.
+  
+  
+  
+  
+  
 
   static void InitPool(PRInt32 aInitialSize)
   {
@@ -176,7 +176,7 @@ public:
       }
     }
   }
-  static PRBool PoolInited()
+  static bool PoolInited()
   {
     return kPool != nsnull;
   }
@@ -216,8 +216,8 @@ protected:
       mInsertionIndex(0) { }
 
 private:
-  // Hide so that only Create() and Destroy() can be used to
-  // allocate and deallocate from the heap
+  
+  
   static void* operator new(size_t) CPP_THROW_NEW { return 0; }
   static void operator delete(void*, size_t) {}
 
@@ -233,9 +233,9 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_NATIVE(nsXBLInsertionPointEntry)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mInsertionParent)
   if (tmp->mDefaultContent) {
     nsAutoScriptBlocker scriptBlocker;
-    // mDefaultContent is a sort of anonymous content within the XBL
-    // document, and we own and manage it.  Unhook it here, since we're going
-    // away.
+    
+    
+    
     tmp->mDefaultContent->UnbindFromTree();
     tmp->mDefaultContent = nsnull;
   }      
@@ -247,9 +247,9 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsXBLInsertionPointEntry, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsXBLInsertionPointEntry, Release)
 
-// =============================================================================
 
-// Static initialization
+
+
 PRUint32 nsXBLPrototypeBinding::gRefCnt = 0;
 
 nsFixedSizeAllocator* nsXBLPrototypeBinding::kAttrPool;
@@ -265,9 +265,9 @@ static const PRInt32 kAttrInitialSize = (NS_SIZE_IN_HEAP(sizeof(nsXBLAttributeEn
 
 static const PRInt32 kInsInitialSize = (NS_SIZE_IN_HEAP(sizeof(nsXBLInsertionPointEntry))) * kNumElements;
 
-// Implementation /////////////////////////////////////////////////////////////////
 
-// Constructors/Destructors
+
+
 nsXBLPrototypeBinding::nsXBLPrototypeBinding()
 : mImplementation(nsnull),
   mBaseBinding(nsnull),
@@ -295,7 +295,7 @@ nsresult
 nsXBLPrototypeBinding::Init(const nsACString& aID,
                             nsXBLDocumentInfo* aInfo,
                             nsIContent* aElement,
-                            PRBool aFirstBinding)
+                            bool aFirstBinding)
 {
   if (!kAttrPool || !nsXBLInsertionPointEntry::PoolInited()) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -304,8 +304,8 @@ nsXBLPrototypeBinding::Init(const nsACString& aID,
   nsresult rv = aInfo->DocumentURI()->Clone(getter_AddRefs(mBindingURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // The binding URI might be an immutable URI (e.g. for about: URIs). In that case,
-  // we'll fail in SetRef below, but that doesn't matter much for now.
+  
+  
   if (aFirstBinding) {
     rv = mBindingURI->Clone(getter_AddRefs(mAlternateBindingURI));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -318,9 +318,9 @@ nsXBLPrototypeBinding::Init(const nsACString& aID,
   return NS_OK;
 }
 
-PRBool nsXBLPrototypeBinding::CompareBindingURI(nsIURI* aURI) const
+bool nsXBLPrototypeBinding::CompareBindingURI(nsIURI* aURI) const
 {
-  PRBool equal = PR_FALSE;
+  bool equal = false;
   mBindingURI->Equals(aURI, &equal);
   if (!equal && mAlternateBindingURI) {
     mAlternateBindingURI->Equals(aURI, &equal);
@@ -328,7 +328,7 @@ PRBool nsXBLPrototypeBinding::CompareBindingURI(nsIURI* aURI) const
   return equal;
 }
 
-static PRBool
+static bool
 TraverseInsertionPoint(nsHashKey* aKey, void* aData, void* aClosure)
 {
   nsCycleCollectionTraversalCallback &cb = 
@@ -341,7 +341,7 @@ TraverseInsertionPoint(nsHashKey* aKey, void* aData, void* aClosure)
   return kHashEnumerateNext;
 }
 
-static PRBool
+static bool
 TraverseBinding(nsHashKey *aKey, void *aData, void* aClosure)
 {
   nsCycleCollectionTraversalCallback *cb = 
@@ -381,9 +381,9 @@ nsXBLPrototypeBinding::Initialize()
 {
   nsIContent* content = GetImmediateChild(nsGkAtoms::content);
   if (content) {
-    // Make sure to construct the attribute table first, since constructing the
-    // insertion point table removes some of the subtrees, which makes them
-    // unreachable by walking our DOM.
+    
+    
+    
     ConstructAttributeTable(content);
     ConstructInsertionTable(content);
   }
@@ -435,17 +435,17 @@ nsXBLPrototypeBinding::SetBindingElement(nsIContent* aElement)
     mInheritStyle = PR_FALSE;
 }
 
-PRBool
+bool
 nsXBLPrototypeBinding::GetAllowScripts()
 {
   return mXBLDocInfoWeak->GetScriptAccess();
 }
 
-PRBool
+bool
 nsXBLPrototypeBinding::LoadResources()
 {
   if (mResources) {
-    PRBool result;
+    bool result;
     mResources->LoadResources(&result);
     return result;
   }
@@ -536,14 +536,14 @@ nsXBLPrototypeBinding::InstallImplementation(nsIContent* aBoundElement)
   return NS_OK;
 }
 
-// XXXbz this duplicates lots of SetAttrs
+
 void
 nsXBLPrototypeBinding::AttributeChanged(nsIAtom* aAttribute,
                                         PRInt32 aNameSpaceID,
-                                        PRBool aRemoveFlag, 
+                                        bool aRemoveFlag, 
                                         nsIContent* aChangedElement,
                                         nsIContent* aAnonymousContent,
-                                        PRBool aNotify)
+                                        bool aNotify)
 {
   if (!mAttributeTable)
     return;
@@ -558,7 +558,7 @@ nsXBLPrototypeBinding::AttributeChanged(nsIAtom* aAttribute,
   if (!xblAttr)
     return;
 
-  // Iterate over the elements in the array.
+  
   nsCOMPtr<nsIContent> content = GetImmediateChild(nsGkAtoms::content);
   while (xblAttr) {
     nsIContent* element = xblAttr->GetElement();
@@ -568,18 +568,18 @@ nsXBLPrototypeBinding::AttributeChanged(nsIAtom* aAttribute,
                                                       element);
 
     if (realElement) {
-      // Hold a strong reference here so that the atom doesn't go away during
-      // UnsetAttr.
+      
+      
       nsCOMPtr<nsIAtom> dstAttr = xblAttr->GetDstAttribute();
       PRInt32 dstNs = xblAttr->GetDstNameSpace();
 
       if (aRemoveFlag)
         realElement->UnsetAttr(dstNs, dstAttr, aNotify);
       else {
-        PRBool attrPresent = PR_TRUE;
+        bool attrPresent = true;
         nsAutoString value;
-        // Check to see if the src attribute is xbl:text.  If so, then we need to obtain the 
-        // children of the real element and get the text nodes' values.
+        
+        
         if (aAttribute == nsGkAtoms::text && aNameSpaceID == kNameSpaceID_XBL) {
           nsContentUtils::GetNodeTextContent(aChangedElement, PR_FALSE, value);
           value.StripChar(PRUnichar('\n'));
@@ -597,21 +597,21 @@ nsXBLPrototypeBinding::AttributeChanged(nsIAtom* aAttribute,
           realElement->SetAttr(dstNs, dstAttr, value, aNotify);
       }
 
-      // See if we're the <html> tag in XUL, and see if value is being
-      // set or unset on us.  We may also be a tag that is having
-      // xbl:text set on us.
+      
+      
+      
 
       if ((dstAttr == nsGkAtoms::text && dstNs == kNameSpaceID_XBL) ||
           realElement->NodeInfo()->Equals(nsGkAtoms::html,
                                           kNameSpaceID_XUL) &&
           dstAttr == nsGkAtoms::value) {
-        // Flush out all our kids.
+        
         PRUint32 childCount = realElement->GetChildCount();
         for (PRUint32 i = 0; i < childCount; i++)
           realElement->RemoveChildAt(0, aNotify);
 
         if (!aRemoveFlag) {
-          // Construct a new text node and insert it.
+          
           nsAutoString value;
           aChangedElement->GetAttr(aNameSpaceID, aAttribute, value);
           if (!value.IsEmpty()) {
@@ -642,19 +642,19 @@ struct InsertionData {
     :mBinding(aBinding), mPrototype(aPrototype) {}
 };
 
-PRBool InstantiateInsertionPoint(nsHashKey* aKey, void* aData, void* aClosure)
+bool InstantiateInsertionPoint(nsHashKey* aKey, void* aData, void* aClosure)
 {
   nsXBLInsertionPointEntry* entry = static_cast<nsXBLInsertionPointEntry*>(aData);
   InsertionData* data = static_cast<InsertionData*>(aClosure);
   nsXBLBinding* binding = data->mBinding;
   nsXBLPrototypeBinding* proto = data->mPrototype;
 
-  // Get the insertion parent.
+  
   nsIContent* content = entry->GetInsertionParent();
   PRUint32 index = entry->GetInsertionIndex();
   nsIContent* defContent = entry->GetDefaultContent();
 
-  // Locate the real content.
+  
   nsIContent *instanceRoot = binding->GetAnonymousContent();
   nsIContent *templRoot = proto->GetImmediateChild(nsGkAtoms::content);
   nsIContent *realContent = proto->LocateInstance(nsnull, templRoot,
@@ -662,7 +662,7 @@ PRBool InstantiateInsertionPoint(nsHashKey* aKey, void* aData, void* aClosure)
   if (!realContent)
     realContent = binding->GetBoundElement();
 
-  // Now that we have the real content, look it up in our table.
+  
   nsInsertionPointList* points = nsnull;
   binding->GetInsertionPointsFor(realContent, &points);
   nsXBLInsertionPoint* insertionPoint = nsnull;
@@ -674,18 +674,18 @@ PRBool InstantiateInsertionPoint(nsHashKey* aKey, void* aData, void* aClosure)
     nsXBLInsertionPoint* currPoint = points->ElementAt(i);
     currIndex = currPoint->GetInsertionIndex();
     if (currIndex == (PRInt32)index) {
-      // This is a match. Break out of the loop and set our variable.
+      
       insertionPoint = currPoint;
       break;
     }
     
     if (currIndex > (PRInt32)index)
-      // There was no match. Break.
+      
       break;
   }
 
   if (!insertionPoint) {
-    // We need to make a new insertion point.
+    
     insertionPoint = new nsXBLInsertionPoint(realContent, index, defContent);
     if (insertionPoint) {
       points->InsertElementAt(i, insertionPoint);
@@ -727,7 +727,7 @@ nsXBLPrototypeBinding::GetInsertionPoint(nsIContent* aBoundElement,
     realContent = LocateInstance(nsnull, templContent, aCopyRoot, content);
   }
   else {
-    // We got nothin'.  Bail.
+    
     return nsnull;
   }
 
@@ -738,7 +738,7 @@ nsIContent*
 nsXBLPrototypeBinding::GetSingleInsertionPoint(nsIContent* aBoundElement,
                                                nsIContent* aCopyRoot,
                                                PRUint32* aIndex,
-                                               PRBool* aMultipleInsertionPoints)
+                                               bool* aMultipleInsertionPoints)
 { 
   *aMultipleInsertionPoints = PR_FALSE;
   *aIndex = 0;
@@ -756,11 +756,11 @@ nsXBLPrototypeBinding::GetSingleInsertionPoint(nsIContent* aBoundElement,
     static_cast<nsXBLInsertionPointEntry*>(mInsertionPointTable->Get(&key));
 
   if (!entry) {
-    // The only insertion point specified was actually a filtered insertion
-    // point. This means (strictly speaking) that we actually have multiple
-    // insertion points: the filtered one and a generic insertion point
-    // (content that doesn't match the filter will just go right underneath the
-    // bound element).
+    
+    
+    
+    
+    
 
     *aMultipleInsertionPoints = PR_TRUE;
     *aIndex = 0;
@@ -796,10 +796,10 @@ nsXBLPrototypeBinding::GetBaseTag(PRInt32* aNamespaceID)
   return nsnull;
 }
 
-PRBool
+bool
 nsXBLPrototypeBinding::ImplementsInterface(REFNSIID aIID) const
 {
-  // Check our IID table.
+  
   if (mInterfaceTable) {
     nsIIDKey key(aIID);
     nsCOMPtr<nsISupports> supports = getter_AddRefs(static_cast<nsISupports*>(mInterfaceTable->Get(&key)));
@@ -809,7 +809,7 @@ nsXBLPrototypeBinding::ImplementsInterface(REFNSIID aIID) const
   return PR_FALSE;
 }
 
-// Internal helpers ///////////////////////////////////////////////////////////////////////
+
 
 nsIContent*
 nsXBLPrototypeBinding::GetImmediateChild(nsIAtom* aTag)
@@ -845,15 +845,15 @@ nsXBLPrototypeBinding::LocateInstance(nsIContent* aBoundElement,
                                       nsIContent* aCopyRoot, 
                                       nsIContent* aTemplChild)
 {
-  // XXX We will get in trouble if the binding instantiation deviates from the template
-  // in the prototype.
+  
+  
   if (aTemplChild == aTemplRoot || !aTemplChild)
     return nsnull;
 
   nsCOMPtr<nsIContent> templParent = aTemplChild->GetParent();
   nsCOMPtr<nsIContent> childPoint;
 
-  // We may be disconnected from our parent during cycle collection.
+  
   if (!templParent)
     return nsnull;
   
@@ -877,8 +877,8 @@ nsXBLPrototypeBinding::LocateInstance(nsIContent* aBoundElement,
     copyParent = LocateInstance(aBoundElement, aTemplRoot, aCopyRoot, templParent);
   
   if (childPoint && aBoundElement) {
-    // First we have to locate this insertion point and use its index and its
-    // count to detemine our precise position within the template.
+    
+    
     nsIDocument* doc = aBoundElement->GetOwnerDoc();
     nsXBLBinding *binding = doc->BindingManager()->GetBinding(aBoundElement);
     nsIContent *anonContent = nsnull;
@@ -902,21 +902,21 @@ nsXBLPrototypeBinding::LocateInstance(nsIContent* aBoundElement,
       binding->GetInsertionPointsFor(copyParent, &points);
     PRInt32 count = points->Length();
     for (PRInt32 i = 0; i < count; i++) {
-      // Next we have to find the real insertion point for this proto insertion
-      // point.  If it does not contain any default content, then we should 
-      // return null, since the content is not in the clone.
+      
+      
+      
       nsXBLInsertionPoint* currPoint = static_cast<nsXBLInsertionPoint*>(points->ElementAt(i));
       nsCOMPtr<nsIContent> defContent = currPoint->GetDefaultContentTemplate();
       if (defContent == childPoint) {
-        // Now check to see if we even built default content at this
-        // insertion point.
+        
+        
         defContent = currPoint->GetDefaultContent();
         if (defContent) {
-          // Find out the index of the template element within the <children> elt.
+          
           PRInt32 index = childPoint->IndexOf(aTemplChild);
           
-          // Now we just have to find the corresponding elt underneath the cloned
-          // default content.
+          
+          
           result = defContent->GetChildAt(index);
         } 
         break;
@@ -944,8 +944,8 @@ struct nsXBLAttrChangeData
   :mProto(aProto), mBoundElement(aElt), mContent(aContent) {}
 };
 
-// XXXbz this duplicates lots of AttributeChanged
-PRBool SetAttrs(nsHashKey* aKey, void* aData, void* aClosure)
+
+bool SetAttrs(nsHashKey* aKey, void* aData, void* aClosure)
 {
   nsXBLAttributeEntry* entry = static_cast<nsXBLAttributeEntry*>(aData);
   nsXBLAttrChangeData* changeData = static_cast<nsXBLAttrChangeData*>(aClosure);
@@ -953,7 +953,7 @@ PRBool SetAttrs(nsHashKey* aKey, void* aData, void* aClosure)
   nsIAtom* src = entry->GetSrcAttribute();
   PRInt32 srcNs = changeData->mSrcNamespace;
   nsAutoString value;
-  PRBool attrPresent = PR_TRUE;
+  bool attrPresent = true;
 
   if (src == nsGkAtoms::text && srcNs == kNameSpaceID_XBL) {
     nsContentUtils::GetNodeTextContent(changeData->mBoundElement, PR_FALSE,
@@ -1011,7 +1011,7 @@ PRBool SetAttrs(nsHashKey* aKey, void* aData, void* aClosure)
   return PR_TRUE;
 }
 
-PRBool SetAttrsNS(nsHashKey* aKey, void* aData, void* aClosure)
+bool SetAttrsNS(nsHashKey* aKey, void* aData, void* aClosure)
 {
   if (aData && aClosure) {
     nsPRUint32Key * key = static_cast<nsPRUint32Key*>(aKey);
@@ -1054,14 +1054,14 @@ nsXBLPrototypeBinding::GetStyleSheets()
   return nsnull;
 }
 
-static PRBool
+static bool
 DeleteAttributeEntry(nsHashKey* aKey, void* aData, void* aClosure)
 {
   nsXBLAttributeEntry::Destroy(static_cast<nsXBLAttributeEntry*>(aData));
   return PR_TRUE;
 }
 
-static PRBool
+static bool
 DeleteAttributeTable(nsHashKey* aKey, void* aData, void* aClosure)
 {
   delete static_cast<nsObjectHashtable*>(aData);
@@ -1071,8 +1071,8 @@ DeleteAttributeTable(nsHashKey* aKey, void* aData, void* aClosure)
 void
 nsXBLPrototypeBinding::ConstructAttributeTable(nsIContent* aElement)
 {
-  // Don't add entries for <children> elements, since those will get
-  // removed from the DOM when we construct the insertion point table.
+  
+  
   if (!aElement->NodeInfo()->Equals(nsGkAtoms::children, kNameSpaceID_XBL)) {
     nsAutoString inherits;
     aElement->GetAttr(kNameSpaceID_XBL, nsGkAtoms::inherits, inherits);
@@ -1086,26 +1086,26 @@ nsXBLPrototypeBinding::ConstructAttributeTable(nsIContent* aElement)
           return;
       }
 
-      // The user specified at least one attribute.
+      
       char* str = ToNewCString(inherits);
       char* newStr;
-      // XXX We should use a strtok function that tokenizes PRUnichars
-      // so that we don't have to convert from Unicode to ASCII and then back
+      
+      
 
       char* token = nsCRT::strtok( str, ", ", &newStr );
       while( token != NULL ) {
-        // Build an atom out of this attribute.
+        
         nsCOMPtr<nsIAtom> atom;
         PRInt32 atomNsID = kNameSpaceID_None;
         nsCOMPtr<nsIAtom> attribute;
         PRInt32 attributeNsID = kNameSpaceID_None;
 
-        // Figure out if this token contains a :.
+        
         nsAutoString attrTok; attrTok.AssignWithConversion(token);
         PRInt32 index = attrTok.Find("=", PR_TRUE);
         nsresult rv;
         if (index != -1) {
-          // This attribute maps to something different.
+          
           nsAutoString left, right;
           attrTok.Left(left, index);
           attrTok.Right(right, attrTok.Length()-index-1);
@@ -1144,18 +1144,18 @@ nsXBLPrototypeBinding::ConstructAttributeTable(nsIContent* aElement)
           mAttributeTable->Put(&nskey, attributesNS);
         }
       
-        // Create an XBL attribute entry.
+        
         nsXBLAttributeEntry* xblAttr =
           nsXBLAttributeEntry::Create(atom, attribute, attributeNsID, aElement);
 
-        // Now we should see if some element within our anonymous
-        // content is already observing this attribute.
+        
+        
         nsISupportsKey key(atom);
         nsXBLAttributeEntry* entry = static_cast<nsXBLAttributeEntry*>
                                                 (attributesNS->Get(&key));
 
         if (!entry) {
-          // Put it in the table.
+          
           attributesNS->Put(&key, xblAttr);
         } else {
           while (entry->GetNext())
@@ -1164,12 +1164,12 @@ nsXBLPrototypeBinding::ConstructAttributeTable(nsIContent* aElement)
           entry->SetNext(xblAttr);
         }
 
-        // Now remove the inherits attribute from the element so that it doesn't
-        // show up on clones of the element.  It is used
-        // by the template only, and we don't need it anymore.
-        // XXXdwh Don't do this for XUL elements, since it faults them into heavyweight
-        // elements. Should nuke from the prototype instead.
-        // aElement->UnsetAttr(kNameSpaceID_XBL, nsGkAtoms::inherits, PR_FALSE);
+        
+        
+        
+        
+        
+        
 
         token = nsCRT::strtok( newStr, ", ", &newStr );
       }
@@ -1178,7 +1178,7 @@ nsXBLPrototypeBinding::ConstructAttributeTable(nsIContent* aElement)
     }
   }
 
-  // Recur into our children.
+  
   for (nsIContent* child = aElement->GetFirstChild();
        child;
        child = child->GetNextSibling()) {
@@ -1186,7 +1186,7 @@ nsXBLPrototypeBinding::ConstructAttributeTable(nsIContent* aElement)
   }
 }
 
-static PRBool
+static bool
 DeleteInsertionPointEntry(nsHashKey* aKey, void* aData, void* aClosure)
 {
   static_cast<nsXBLInsertionPointEntry*>(aData)->Release();
@@ -1215,7 +1215,7 @@ nsXBLPrototypeBinding::ConstructInsertionTable(nsIContent* aContent)
     nsIContent* child = childrenElements[i];
     nsCOMPtr<nsIContent> parent = child->GetParent(); 
 
-    // Create an XBL insertion point entry.
+    
     nsXBLInsertionPointEntry* xblIns = nsXBLInsertionPointEntry::Create(parent);
 
     nsAutoString includes;
@@ -1226,18 +1226,18 @@ nsXBLPrototypeBinding::ConstructInsertionTable(nsIContent* aContent)
       mInsertionPointTable->Put(&key, xblIns);
     }
     else {
-      // The user specified at least one attribute.
+      
       char* str = ToNewCString(includes);
       char* newStr;
-      // XXX We should use a strtok function that tokenizes PRUnichar's
-      // so that we don't have to convert from Unicode to ASCII and then back
+      
+      
 
       char* token = nsCRT::strtok( str, "| ", &newStr );
       while( token != NULL ) {
         nsAutoString tok;
         tok.AssignWithConversion(token);
 
-        // Build an atom out of this string.
+        
         nsCOMPtr<nsIAtom> atom = do_GetAtom(tok);
            
         nsISupportsKey key(atom);
@@ -1250,39 +1250,39 @@ nsXBLPrototypeBinding::ConstructInsertionTable(nsIContent* aContent)
       nsMemory::Free(str);
     }
 
-    // Compute the index of the <children> element.  This index is
-    // equal to the index of the <children> in the template minus the #
-    // of previous insertion point siblings removed.  Because our childrenElements
-    // array was built in a DFS that went from left-to-right through siblings,
-    // if we dynamically obtain our index each time, then the removals of previous
-    // siblings will cause the index to adjust (and we won't have to take that into
-    // account explicitly).
+    
+    
+    
+    
+    
+    
+    
     PRInt32 index = parent->IndexOf(child);
     xblIns->SetInsertionIndex((PRUint32)index);
 
-    // Now remove the <children> element from the template.  This ensures that the
-    // binding instantiation will not contain a clone of the <children> element when
-    // it clones the binding template.
+    
+    
+    
     parent->RemoveChildAt(index, PR_FALSE);
 
-    // See if the insertion point contains default content.  Default content must
-    // be cached in our insertion point entry, since it will need to be cloned
-    // in situations where no content ends up being placed at the insertion point.
+    
+    
+    
     PRUint32 defaultCount = child->GetChildCount();
     if (defaultCount > 0) {
       nsAutoScriptBlocker scriptBlocker;
-      // Annotate the insertion point with our default content.
+      
       xblIns->SetDefaultContent(child);
 
-      // Reconnect back to our parent for access later.  This makes "inherits" easier
-      // to work with on default content.
-      // XXXbz this is somewhat screwed up, since it's sort of like anonymous
-      // content... but not.
+      
+      
+      
+      
       nsresult rv =
         child->BindToTree(parent->GetCurrentDoc(), parent, nsnull, PR_FALSE);
       if (NS_FAILED(rv)) {
-        // Well... now what?  Just unbind and bail out, I guess...
-        // XXXbz This really shouldn't be a void method!
+        
+        
         child->UnbindFromTree();
         return;
       }
@@ -1294,57 +1294,57 @@ nsresult
 nsXBLPrototypeBinding::ConstructInterfaceTable(const nsAString& aImpls)
 {
   if (!aImpls.IsEmpty()) {
-    // Obtain the interface info manager that can tell us the IID
-    // for a given interface name.
+    
+    
     nsCOMPtr<nsIInterfaceInfoManager>
       infoManager(do_GetService(NS_INTERFACEINFOMANAGER_SERVICE_CONTRACTID));
     if (!infoManager)
       return NS_ERROR_FAILURE;
 
-    // Create the table.
+    
     if (!mInterfaceTable)
       mInterfaceTable = new nsSupportsHashtable(4);
 
-    // The user specified at least one attribute.
+    
     NS_ConvertUTF16toUTF8 utf8impl(aImpls);
     char* str = utf8impl.BeginWriting();
     char* newStr;
-    // XXX We should use a strtok function that tokenizes PRUnichars
-    // so that we don't have to convert from Unicode to ASCII and then back
+    
+    
 
     char* token = nsCRT::strtok( str, ", ", &newStr );
     while( token != NULL ) {
-      // get the InterfaceInfo for the name
+      
       nsCOMPtr<nsIInterfaceInfo> iinfo;
       infoManager->GetInfoForName(token, getter_AddRefs(iinfo));
 
       if (iinfo) {
-        // obtain an IID.
+        
         const nsIID* iid = nsnull;
         iinfo->GetIIDShared(&iid);
 
         if (iid) {
-          // We found a valid iid.  Add it to our table.
+          
           nsIIDKey key(*iid);
           mInterfaceTable->Put(&key, mBinding);
 
-          // this block adds the parent interfaces of each interface
-          // defined in the xbl definition (implements="nsI...")
+          
+          
           nsCOMPtr<nsIInterfaceInfo> parentInfo;
-          // if it has a parent, add it to the table
+          
           while (NS_SUCCEEDED(iinfo->GetParent(getter_AddRefs(parentInfo))) && parentInfo) {
-            // get the iid
+            
             parentInfo->GetIIDShared(&iid);
 
-            // don't add nsISupports to the table
+            
             if (!iid || iid->Equals(NS_GET_IID(nsISupports)))
               break;
 
-            // add the iid to the table
+            
             nsIIDKey parentKey(*iid);
             mInterfaceTable->Put(&parentKey, mBinding);
 
-            // look for the next parent
+            
             iinfo = parentInfo;
           }
         }
@@ -1378,8 +1378,8 @@ nsresult
 nsXBLPrototypeBinding::AddResourceListener(nsIContent* aBoundElement)
 {
   if (!mResources)
-    return NS_ERROR_FAILURE; // Makes no sense to add a listener when the binding
-                             // has no resources.
+    return NS_ERROR_FAILURE; 
+                             
 
   mResources->AddResourceListener(aBoundElement);
   return NS_OK;
