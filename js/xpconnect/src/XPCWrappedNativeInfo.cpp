@@ -1,53 +1,88 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+// vim:cindent:ts=8:et:sw=4:
+/*
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   John Bandhauer <jband@netscape.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Manage the shared info about interfaces for use by wrappedNatives. */
 
 #include "xpcprivate.h"
 
+/***************************************************************************/
 
+/*
+ * Helper that clones JS Function objects along with both of its
+ * reserved slots.
+ */
 
+JSObject *
+xpc_CloneJSFunction(XPCCallContext &ccx, JSObject *funobj, JSObject *parent)
+{
+    JSObject *clone = JS_CloneFunctionObject(ccx, funobj, parent);
+    if (!clone)
+        return nsnull;
 
+    AUTO_MARK_JSVAL(ccx, OBJECT_TO_JSVAL(clone));
 
+    XPCWrappedNativeScope *scope =
+        XPCWrappedNativeScope::FindInJSObjectScope(ccx, parent);
 
+    if (!scope) {
+        return nsnull;
+    }
+
+    // Make sure to break the prototype chain to the function object
+    // we cloned to prevent its scope from leaking into the clones
+    // scope.
+    JS_SetPrototype(ccx, clone, scope->GetPrototypeJSFunction());
+
+    // Copy the reserved slots to the clone.
+    jsval ifaceVal = js::GetFunctionNativeReserved(funobj, 0);
+    jsval memberVal = js::GetFunctionNativeReserved(funobj, 1);
+    js::SetFunctionNativeReserved(clone, 0, ifaceVal);
+    js::SetFunctionNativeReserved(clone, 1, memberVal);
+
+    return clone;
+}
+
+// XPCNativeMember
+
+// static
 JSBool
 XPCNativeMember::GetCallInfo(XPCCallContext& ccx,
                              JSObject* funobj,
@@ -55,13 +90,13 @@ XPCNativeMember::GetCallInfo(XPCCallContext& ccx,
                              XPCNativeMember**    pMember)
 {
     funobj = js::UnwrapObject(funobj);
-    jsval ifaceVal = js::GetReservedSlot(funobj, 0);
-    jsval memberVal = js::GetReservedSlot(funobj, 1);
+    jsval ifaceVal = js::GetFunctionNativeReserved(funobj, 0);
+    jsval memberVal = js::GetFunctionNativeReserved(funobj, 1);
 
     *pInterface = (XPCNativeInterface*) JSVAL_TO_PRIVATE(ifaceVal);
     *pMember = (XPCNativeMember*) JSVAL_TO_PRIVATE(memberVal);
 
-    return true;
+    return JS_TRUE;
 }
 
 JSBool
@@ -82,11 +117,11 @@ XPCNativeMember::Resolve(XPCCallContext& ccx, XPCNativeInterface* iface,
     if (IsConstant()) {
         const nsXPTConstant* constant;
         if (NS_FAILED(iface->GetInterfaceInfo()->GetConstant(mIndex, &constant)))
-            return false;
+            return JS_FALSE;
 
         const nsXPTCMiniVariant& mv = *constant->GetValue();
 
-        
+        // XXX Big Hack!
         nsXPTCVariant v;
         v.flags = 0;
         v.type = constant->GetType();
@@ -96,15 +131,15 @@ XPCNativeMember::Resolve(XPCCallContext& ccx, XPCNativeInterface* iface,
 
         if (!XPCConvert::NativeData2JS(ccx, &resultVal, &v.val, v.type,
                                        nsnull, nsnull))
-            return false;
+            return JS_FALSE;
 
         *vp = resultVal;
 
-        return true;
+        return JS_TRUE;
     }
-    
+    // else...
 
-    
+    // This is a method or attribute - we'll be needing a function object
 
     intN argc;
     JSNative callback;
@@ -112,9 +147,9 @@ XPCNativeMember::Resolve(XPCCallContext& ccx, XPCNativeInterface* iface,
     if (IsMethod()) {
         const nsXPTMethodInfo* info;
         if (NS_FAILED(iface->GetInterfaceInfo()->GetMethodInfo(mIndex, &info)))
-            return false;
+            return JS_FALSE;
 
-        
+        // Note: ASSUMES that retval is last arg.
         argc = (intN) info->GetParamCount();
         if (argc && info->GetParam((uint8)(argc-1)).IsRetval())
             argc-- ;
@@ -127,25 +162,24 @@ XPCNativeMember::Resolve(XPCCallContext& ccx, XPCNativeInterface* iface,
 
     JSFunction *fun = JS_NewFunctionById(ccx, callback, argc, 0, parent, GetName());
     if (!fun)
-        return false;
+        return JS_FALSE;
 
     JSObject* funobj = JS_GetFunctionObject(fun);
     if (!funobj)
-        return false;
+        return JS_FALSE;
 
-    if (!JS_SetReservedSlot(ccx, funobj, 0, PRIVATE_TO_JSVAL(iface))||
-        !JS_SetReservedSlot(ccx, funobj, 1, PRIVATE_TO_JSVAL(this)))
-        return false;
+    js::SetFunctionNativeReserved(funobj, 0, PRIVATE_TO_JSVAL(iface));
+    js::SetFunctionNativeReserved(funobj, 1, PRIVATE_TO_JSVAL(this));
 
     *vp = OBJECT_TO_JSVAL(funobj);
 
-    return true;
+    return JS_TRUE;
 }
 
+/***************************************************************************/
+// XPCNativeInterface
 
-
-
-
+// static
 XPCNativeInterface*
 XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
 {
@@ -156,7 +190,7 @@ XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
     if (!map)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         iface = map->Find(*iid);
     }
@@ -173,7 +207,7 @@ XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
     if (!iface)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         XPCNativeInterface* iface2 = map->Add(iface);
         if (!iface2) {
@@ -189,7 +223,7 @@ XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
     return iface;
 }
 
-
+// static
 XPCNativeInterface*
 XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, nsIInterfaceInfo* info)
 {
@@ -205,7 +239,7 @@ XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, nsIInterfaceInfo* info)
     if (!map)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         iface = map->Find(*iid);
     }
@@ -217,7 +251,7 @@ XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, nsIInterfaceInfo* info)
     if (!iface)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         XPCNativeInterface* iface2 = map->Add(iface);
         if (!iface2) {
@@ -233,7 +267,7 @@ XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, nsIInterfaceInfo* info)
     return iface;
 }
 
-
+// static
 XPCNativeInterface*
 XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, const char* name)
 {
@@ -242,15 +276,15 @@ XPCNativeInterface::GetNewOrUsed(XPCCallContext& ccx, const char* name)
     return info ? GetNewOrUsed(ccx, info) : nsnull;
 }
 
-
+// static
 XPCNativeInterface*
 XPCNativeInterface::GetISupports(XPCCallContext& ccx)
 {
-    
+    // XXX We should optimize this to cache this common XPCNativeInterface.
     return GetNewOrUsed(ccx, &NS_GET_IID(nsISupports));
 }
 
-
+// static
 XPCNativeInterface*
 XPCNativeInterface::NewInstance(XPCCallContext& ccx,
                                 nsIInterfaceInfo* aInfo)
@@ -261,22 +295,22 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
     XPCNativeMember* members = nsnull;
 
     int i;
-    JSBool failed = false;
+    JSBool failed = JS_FALSE;
     PRUint16 constCount;
     PRUint16 methodCount;
     PRUint16 totalCount;
     PRUint16 realTotalCount = 0;
     XPCNativeMember* cur;
-    JSString* str = NULL;
+    JSString*  str;
     jsid name;
     jsid interfaceName;
 
-    
-    
-    
-    
-    
-    
+    // XXX Investigate lazy init? This is a problem given the
+    // 'placement new' scheme - we need to at least know how big to make
+    // the object. We might do a scan of methods to determine needed size,
+    // then make our object, but avoid init'ing *any* members until asked?
+    // Find out how often we create these objects w/o really looking at
+    // (or using) the members.
 
     bool canScript;
     if (NS_FAILED(aInfo->IsScriptable(&canScript)) || !canScript)
@@ -286,11 +320,11 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
         NS_FAILED(aInfo->GetConstantCount(&constCount)))
         return nsnull;
 
-    
-    
-    
-    
-    
+    // If the interface does not have nsISupports in its inheritance chain
+    // then we know we can't reflect its methods. However, some interfaces that
+    // are used just to reflect constants are declared this way. We need to
+    // go ahead and build the thing. But, we'll ignore whatever methods it may
+    // have.
     if (!nsXPConnect::IsISupportsDescendant(aInfo))
         methodCount = 0;
 
@@ -304,17 +338,17 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
         members = local_members;
     }
 
-    
-    
+    // NOTE: since getters and setters share a member, we might not use all
+    // of the member objects.
 
     for (i = 0; i < methodCount; i++) {
         const nsXPTMethodInfo* info;
         if (NS_FAILED(aInfo->GetMethodInfo(i, &info))) {
-            failed = true;
+            failed = JS_TRUE;
             break;
         }
 
-        
+        // don't reflect Addref or Release
         if (i == 1 || i == 2)
             continue;
 
@@ -324,23 +358,23 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
         str = JS_InternString(ccx, info->GetName());
         if (!str) {
             NS_ERROR("bad method name");
-            failed = true;
+            failed = JS_TRUE;
             break;
         }
         name = INTERNED_STRING_TO_JSID(ccx, str);
 
         if (info->IsSetter()) {
             NS_ASSERTION(realTotalCount,"bad setter");
-            
-            
+            // Note: ASSUMES Getter/Setter pairs are next to each other
+            // This is a rule of the typelib spec.
             cur = &members[realTotalCount-1];
             NS_ASSERTION(cur->GetName() == name,"bad setter");
             NS_ASSERTION(cur->IsReadOnlyAttribute(),"bad setter");
             NS_ASSERTION(cur->GetIndex() == i-1,"bad setter");
             cur->SetWritableAttribute();
         } else {
-            
-            
+            // XXX need better way to find dups
+            // NS_ASSERTION(!LookupMemberByID(name),"duplicate method name");
             cur = &members[realTotalCount++];
             cur->SetName(name);
             if (info->IsGetter())
@@ -354,20 +388,20 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
         for (i = 0; i < constCount; i++) {
             const nsXPTConstant* constant;
             if (NS_FAILED(aInfo->GetConstant(i, &constant))) {
-                failed = true;
+                failed = JS_TRUE;
                 break;
             }
 
             str = JS_InternString(ccx, constant->GetName());
             if (!str) {
                 NS_ERROR("bad constant name");
-                failed = true;
+                failed = JS_TRUE;
                 break;
             }
             name = INTERNED_STRING_TO_JSID(ccx, str);
 
-            
-            
+            // XXX need better way to find dups
+            //NS_ASSERTION(!LookupMemberByID(name),"duplicate method/constant name");
 
             cur = &members[realTotalCount++];
             cur->SetName(name);
@@ -379,14 +413,14 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
         const char* bytes;
         if (NS_FAILED(aInfo->GetNameShared(&bytes)) || !bytes ||
             nsnull == (str = JS_InternString(ccx, bytes))) {
-            failed = true;
+            failed = JS_TRUE;
         }
         interfaceName = INTERNED_STRING_TO_JSID(ccx, str);
     }
 
     if (!failed) {
-        
-        
+        // Use placement new to create an object with the right amount of space
+        // to hold the members array
         int size = sizeof(XPCNativeInterface);
         if (realTotalCount > 1)
             size += (realTotalCount - 1) * sizeof(XPCNativeMember);
@@ -396,7 +430,7 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
 
         if (obj) {
             obj->mMemberCount = realTotalCount;
-            
+            // copy valid members
             if (realTotalCount)
                 memcpy(obj->mMembers, members,
                        realTotalCount * sizeof(XPCNativeMember));
@@ -409,7 +443,7 @@ XPCNativeInterface::NewInstance(XPCCallContext& ccx,
     return obj;
 }
 
-
+// static
 void
 XPCNativeInterface::DestroyInstance(XPCNativeInterface* inst)
 {
@@ -431,10 +465,10 @@ XPCNativeInterface::DebugDump(PRInt16 depth)
 #endif
 }
 
+/***************************************************************************/
+// XPCNativeSet
 
-
-
-
+// static
 XPCNativeSet*
 XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
 {
@@ -452,7 +486,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
     if (!map)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         set = map->Find(&key);
     }
@@ -460,13 +494,13 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
     if (set)
         return set;
 
-    
+    // hacky way to get a XPCNativeInterface** using the AutoPtr
     XPCNativeInterface* temp[] = {iface};
     set = NewInstance(ccx, temp, 1);
     if (!set)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         XPCNativeSet* set2 = map->Add(&key, set);
         if (!set2) {
@@ -482,7 +516,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, const nsIID* iid)
     return set;
 }
 
-
+// static
 XPCNativeSet*
 XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, nsIClassInfo* classInfo)
 {
@@ -493,7 +527,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, nsIClassInfo* classInfo)
     if (!map)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         set = map->Find(classInfo);
     }
@@ -506,18 +540,18 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, nsIClassInfo* classInfo)
     PRUint32 iidCount = 0;
 
     if (NS_FAILED(classInfo->GetInterfaces(&iidCount, &iidArray))) {
-        
-        
-        
+        // Note: I'm making it OK for this call to fail so that one can add
+        // nsIClassInfo to classes implemented in script without requiring this
+        // method to be implemented.
 
-        
+        // Make sure these are set correctly...
         iidArray = nsnull;
         iidCount = 0;
     }
 
     NS_ASSERTION((iidCount && iidArray) || !(iidCount || iidArray), "GetInterfaces returned bad array");
 
-    
+    // !!! from here on we only exit through the 'out' label !!!
 
     if (iidCount) {
         AutoMarkingNativeInterfacePtrArrayPtr
@@ -542,7 +576,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, nsIClassInfo* classInfo)
                 XPCNativeInterface::GetNewOrUsed(ccx, iid);
 
             if (!iface) {
-                
+                // XXX warn here
                 continue;
             }
 
@@ -559,7 +593,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, nsIClassInfo* classInfo)
 
                 XPCNativeSetKey key(set, nsnull, 0);
 
-                {   
+                {   // scoped lock
                     XPCAutoLock lock(rt->GetMapLock());
                     XPCNativeSet* set2 = map2->Add(&key, set);
                     if (!set2) {
@@ -580,7 +614,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx, nsIClassInfo* classInfo)
         set = GetNewOrUsed(ccx, &NS_GET_IID(nsISupports));
 
     if (set)
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
 
 #ifdef DEBUG
@@ -600,20 +634,20 @@ out:
     return set;
 }
 
-
+// static
 void
 XPCNativeSet::ClearCacheEntryForClassInfo(nsIClassInfo* classInfo)
 {
     XPCJSRuntime* rt = nsXPConnect::GetRuntimeInstance();
     ClassInfo2NativeSetMap* map = rt->GetClassInfo2NativeSetMap();
     if (map)
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         map->Remove(classInfo);
     }
 }
 
-
+// static
 XPCNativeSet*
 XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx,
                            XPCNativeSet* otherSet,
@@ -628,7 +662,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx,
 
     XPCNativeSetKey key(otherSet, newInterface, position);
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         set = map->Find(&key);
     }
@@ -644,7 +678,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx,
     if (!set)
         return nsnull;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(rt->GetMapLock());
         XPCNativeSet* set2 = map->Add(&key, set);
         if (!set2) {
@@ -660,7 +694,7 @@ XPCNativeSet::GetNewOrUsed(XPCCallContext& ccx,
     return set;
 }
 
-
+// static
 XPCNativeSet*
 XPCNativeSet::NewInstance(XPCCallContext& ccx,
                           XPCNativeInterface** array,
@@ -671,10 +705,10 @@ XPCNativeSet::NewInstance(XPCCallContext& ccx,
     if (!array || !count)
         return nsnull;
 
-    
-    
-    
-    
+    // We impose the invariant:
+    // "All sets have exactly one nsISupports interface and it comes first."
+    // This is the place where we impose that rule - even if given inputs
+    // that don't exactly follow the rule.
 
     XPCNativeInterface* isup = XPCNativeInterface::GetISupports(ccx);
     PRUint16 slots = count+1;
@@ -687,8 +721,8 @@ XPCNativeSet::NewInstance(XPCCallContext& ccx,
             slots--;
     }
 
-    
-    
+    // Use placement new to create an object with the right amount of space
+    // to hold the members array
     int size = sizeof(XPCNativeSet);
     if (slots > 1)
         size += (slots - 1) * sizeof(XPCNativeInterface*);
@@ -697,10 +731,10 @@ XPCNativeSet::NewInstance(XPCCallContext& ccx,
         obj = new(place) XPCNativeSet();
 
     if (obj) {
-        
+        // Stick the nsISupports in front and skip additional nsISupport(s)
         XPCNativeInterface** inp = array;
         XPCNativeInterface** outp = (XPCNativeInterface**) &obj->mInterfaces;
-        PRUint16 memberCount = 1;   
+        PRUint16 memberCount = 1;   // for the one member in nsISupports
 
         *(outp++) = isup;
 
@@ -719,7 +753,7 @@ XPCNativeSet::NewInstance(XPCCallContext& ccx,
     return obj;
 }
 
-
+// static
 XPCNativeSet*
 XPCNativeSet::NewInstanceMutate(XPCNativeSet*       otherSet,
                                 XPCNativeInterface* newInterface,
@@ -732,8 +766,8 @@ XPCNativeSet::NewInstanceMutate(XPCNativeSet*       otherSet,
     if (otherSet && position > otherSet->mInterfaceCount)
         return nsnull;
 
-    
-    
+    // Use placement new to create an object with the right amount of space
+    // to hold the members array
     int size = sizeof(XPCNativeSet);
     if (otherSet)
         size += otherSet->mInterfaceCount * sizeof(XPCNativeInterface*);
@@ -765,7 +799,7 @@ XPCNativeSet::NewInstanceMutate(XPCNativeSet*       otherSet,
     return obj;
 }
 
-
+// static
 void
 XPCNativeSet::DestroyInstance(XPCNativeSet* inst)
 {
