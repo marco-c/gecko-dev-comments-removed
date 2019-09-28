@@ -46,12 +46,6 @@
 #include "jsalloc.h"
 #include "jstl.h"
 
-
-#ifdef mozilla_mozalloc_macro_wrappers_h
-#  define JSHASHTABLE_UNDEFD_MOZALLOC_WRAPPERS
-#  include "mozilla/mozalloc_undef_macro_wrappers.h"
-#endif
-
 namespace js {
 
 
@@ -1222,9 +1216,5 @@ class HashSet
 };
 
 }  
-
-#ifdef JSHASHTABLE_UNDEFD_MOZALLOC_WRAPPERS
-#  include "mozilla/mozalloc_macro_wrappers.h"
-#endif
 
 #endif
