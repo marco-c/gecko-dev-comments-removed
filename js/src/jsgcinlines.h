@@ -267,20 +267,28 @@ static inline void
 MarkChildren(JSTracer *trc, JSObject *obj)
 {
     
+
+
+
+    if (obj->type && !obj->type->marked)
+        obj->type->trace(trc);
+
+    
     if (!obj->map)
         return;
 
     
-    if (!obj->type->marked)
-        obj->type->trace(trc);
     if (!obj->isDenseArray() && obj->newType && !obj->newType->marked)
         obj->newType->trace(trc);
     if (JSObject *parent = obj->getParent())
         MarkObject(trc, *parent, "parent");
 
-    
-    TraceOp op = obj->getOps()->trace;
-    (op ? op : js_TraceObject)(trc, obj);
+    Class *clasp = obj->getClass();
+    if (clasp->trace)
+        clasp->trace(trc, obj);
+
+    if (obj->isNative())
+        js_TraceObject(trc, obj);
 }
 
 static inline void
