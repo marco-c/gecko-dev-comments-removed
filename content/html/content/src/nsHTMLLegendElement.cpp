@@ -1,40 +1,40 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Mats Palmgren <mats.palmgren@bredband.net>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "nsIDOMHTMLLegendElement.h"
 #include "nsIDOMHTMLFormElement.h"
 #include "nsIDOMEventTarget.h"
@@ -45,10 +45,10 @@
 #include "nsIForm.h"
 #include "nsIFormControl.h"
 #include "nsIEventStateManager.h"
-#include "nsIFocusController.h"
 #include "nsIDocument.h"
 #include "nsPIDOMWindow.h"
-
+#include "nsFocusManager.h"
+#include "nsIFrame.h"
 
 class nsHTMLLegendElement : public nsGenericHTMLFormElement,
                             public nsIDOMHTMLLegendElement
@@ -57,34 +57,38 @@ public:
   nsHTMLLegendElement(nsINodeInfo *aNodeInfo);
   virtual ~nsHTMLLegendElement();
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMNode
+  
   NS_FORWARD_NSIDOMNODE(nsGenericHTMLFormElement::)
 
-  // nsIDOMElement
+  
   NS_FORWARD_NSIDOMELEMENT(nsGenericHTMLFormElement::)
 
-  // nsIDOMHTMLElement
+  
   NS_FORWARD_NSIDOMHTMLELEMENT(nsGenericHTMLFormElement::)
 
-  // nsIDOMHTMLLegendElement
+  
   NS_DECL_NSIDOMHTMLLEGENDELEMENT
 
-  // nsIFormControl
+  
   NS_IMETHOD_(PRInt32) GetType() const { return NS_FORM_LEGEND; }
   NS_IMETHOD Reset();
   NS_IMETHOD SubmitNamesValues(nsIFormSubmission* aFormSubmission,
                                nsIContent* aSubmitElement);
 
-  // nsIContent
+  NS_IMETHODIMP Focus();
+
+  virtual void PerformAccesskey(PRBool aKeyCausesActivation,
+                                PRBool aIsTrustedEvent);
+
+  
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent,
                               PRBool aCompileEventHandlers);
   virtual void UnbindFromTree(PRBool aDeep = PR_TRUE,
                               PRBool aNullParent = PR_TRUE);
-  virtual void SetFocus(nsPresContext* aPresContext);
   virtual PRBool ParseAttribute(PRInt32 aNamespaceID,
                                 nsIAtom* aAttribute,
                                 const nsAString& aValue,
@@ -103,9 +107,6 @@ public:
                              PRBool aNotify);
 
   virtual nsresult Clone(nsINodeInfo *aNodeInfo, nsINode **aResult) const;
-
-protected:
-  PRPackedBool mInSetFocus;
 };
 
 
@@ -114,7 +115,6 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Legend)
 
 nsHTMLLegendElement::nsHTMLLegendElement(nsINodeInfo *aNodeInfo)
   : nsGenericHTMLFormElement(aNodeInfo)
-  , mInSetFocus(PR_FALSE)
 {
 }
 
@@ -127,7 +127,7 @@ NS_IMPL_ADDREF_INHERITED(nsHTMLLegendElement, nsGenericElement)
 NS_IMPL_RELEASE_INHERITED(nsHTMLLegendElement, nsGenericElement) 
 
 
-// QueryInterface implementation for nsHTMLLegendElement
+
 NS_INTERFACE_TABLE_HEAD(nsHTMLLegendElement)
   NS_HTML_CONTENT_INTERFACE_TABLE1(nsHTMLLegendElement, nsIDOMHTMLLegendElement)
   NS_HTML_CONTENT_INTERFACE_TABLE_TO_MAP_SEGUE(nsHTMLLegendElement,
@@ -135,7 +135,7 @@ NS_INTERFACE_TABLE_HEAD(nsHTMLLegendElement)
 NS_HTML_CONTENT_INTERFACE_TABLE_TAIL_CLASSINFO(HTMLLegendElement)
 
 
-// nsIDOMHTMLLegendElement
+
 
 
 NS_IMPL_ELEMENT_CLONE(nsHTMLLegendElement)
@@ -151,7 +151,7 @@ nsHTMLLegendElement::GetForm(nsIDOMHTMLFormElement** aForm)
 NS_IMPL_STRING_ATTR(nsHTMLLegendElement, AccessKey, accesskey)
 NS_IMPL_STRING_ATTR(nsHTMLLegendElement, Align, align)
 
-// this contains center, because IE4 does
+
 static const nsAttrValue::EnumTable kAlignTable[] = {
   { "left", NS_STYLE_TEXT_ALIGN_LEFT },
   { "right", NS_STYLE_TEXT_ALIGN_RIGHT },
@@ -253,32 +253,34 @@ nsHTMLLegendElement::UnbindFromTree(PRBool aDeep, PRBool aNullParent)
   nsGenericHTMLFormElement::UnbindFromTree(aDeep, aNullParent);
 }
 
-void
-nsHTMLLegendElement::SetFocus(nsPresContext* aPresContext)
+NS_IMETHODIMP
+nsHTMLLegendElement::Focus()
 {
-  nsIDocument *document = GetCurrentDoc();
-  if (!aPresContext || !document || mInSetFocus) {
-    return;
-  }
+  nsIFrame* frame = GetPrimaryFrame();
+  if (!frame)
+    return NS_OK;
 
-  mInSetFocus = PR_TRUE;
-  if (IsFocusable()) {
-    nsGenericHTMLFormElement::SetFocus(aPresContext);
-  } else {
-    // If the legend isn't focusable (no tabindex) we focus whatever is
-    // focusable following the legend instead, bug 81481.
-    nsCOMPtr<nsPIDOMWindow> ourWindow = document->GetWindow();
-    if (ourWindow) {
-      nsIFocusController* focusController =
-        ourWindow->GetRootFocusController();
-      nsCOMPtr<nsIDOMElement> domElement =
-        do_QueryInterface(static_cast<nsIContent *>(this));
-      if (focusController && domElement) {
-        focusController->MoveFocus(PR_TRUE, domElement);
-      }
-    }
-  }
-  mInSetFocus = PR_FALSE;
+  PRInt32 tabIndex;
+  if (frame->IsFocusable(&tabIndex))
+    return nsGenericHTMLElement::Focus();
+
+  
+  
+  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (!fm)
+    return NS_OK;
+
+  nsCOMPtr<nsIDOMElement> result;
+  return fm->MoveFocus(nsnull, this, nsIFocusManager::MOVEFOCUS_FORWARD, 0,
+                       getter_AddRefs(result));
+}
+
+void
+nsHTMLLegendElement::PerformAccesskey(PRBool aKeyCausesActivation,
+                                      PRBool aIsTrustedEvent)
+{
+  
+  Focus();
 }
 
 NS_IMETHODIMP
