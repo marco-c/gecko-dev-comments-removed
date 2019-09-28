@@ -1,40 +1,40 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla code.
- *
- * The Initial Developer of the Original Code is the Mozilla Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *  Matthew Gregan <kinetik@flim.org>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsAlgorithm.h"
 #include "nsWebMBufferedParser.h"
@@ -44,6 +44,7 @@
 using mozilla::MonitorAutoEnter;
 
 static const double NS_PER_S = 1e9;
+static const double MS_PER_S = 1e3;
 
 static PRUint32
 VIntLength(unsigned char aFirstByte, PRUint32* aMask)
@@ -76,10 +77,10 @@ void nsWebMBufferedParser::Append(const unsigned char* aBuffer, PRUint32 aLength
 
   const unsigned char* p = aBuffer;
 
-  // Parse each byte in aBuffer one-by-one, producing timecodes and updating
-  // aMapping as we go.  Parser pauses at end of stream (which may be at any
-  // point within the parse) and resumes parsing the next time Append is
-  // called with new data.
+  
+  
+  
+  
   while (p < aBuffer + aLength) {
     switch (mState) {
     case CLUSTER_SYNC:
@@ -88,9 +89,9 @@ void nsWebMBufferedParser::Append(const unsigned char* aBuffer, PRUint32 aLength
       } else {
         mClusterIDPos = 0;
       }
-      // Cluster ID found, it's likely this is a valid sync point.  If this
-      // is a spurious match, the later parse steps will encounter an error
-      // and return to CLUSTER_SYNC.
+      
+      
+      
       if (mClusterIDPos == sizeof(CLUSTER_ID)) {
         mClusterIDPos = 0;
         mState = READ_VINT;
@@ -168,8 +169,8 @@ void nsWebMBufferedParser::Append(const unsigned char* aBuffer, PRUint32 aLength
         mBlockTimecode |= *p++;
         mBlockTimecodeLength -= 1;
       } else {
-        // It's possible we've parsed this data before, so avoid inserting
-        // duplicate nsWebMTimeDataOffset entries.
+        
+        
         {
           MonitorAutoEnter mon(aMonitor);
           PRUint32 idx;
@@ -179,7 +180,7 @@ void nsWebMBufferedParser::Append(const unsigned char* aBuffer, PRUint32 aLength
           }
         }
 
-        // Skip rest of block header and the block's payload.
+        
         mBlockSize -= mVIntLength;
         mBlockSize -= 2;
         mSkipBytes = PRUint32(mBlockSize);
@@ -216,22 +217,22 @@ void nsWebMBufferedState::CalculateBufferedForRange(nsTimeRanges* aBuffered,
 {
   MonitorAutoEnter mon(mMonitor);
 
-  // Find the first nsWebMTimeDataOffset at or after aStartOffset.
+  
   PRUint32 start;
   mTimeMapping.GreatestIndexLtEq(aStartOffset, start);
   if (start == mTimeMapping.Length()) {
     return;
   }
 
-  // Find the first nsWebMTimeDataOffset at or before aEndOffset.
+  
   PRUint32 end;
   if (!mTimeMapping.GreatestIndexLtEq(aEndOffset, end) && end > 0) {
-    // No exact match, so adjust end to be the first entry before
-    // aEndOffset.
+    
+    
     end -= 1;
   }
 
-  // Range is empty.
+  
   if (end <= start) {
     return;
   }
@@ -248,9 +249,9 @@ void nsWebMBufferedState::CalculateBufferedForRange(nsTimeRanges* aBuffered,
                  "Must have found greatest nsWebMTimeDataOffset for end");
   }
 
-  // The timestamp of the first media sample, in ns. We must subtract this
-  // from the ranges' start and end timestamps, so that those timestamps are
-  // normalized in the range [0,duration].
+  
+  
+  
 
   double startTime = (mTimeMapping[start].mTimecode * aTimecodeScale - aStartTimeOffsetNS) / NS_PER_S;
   double endTime = (mTimeMapping[end].mTimecode * aTimecodeScale - aStartTimeOffsetNS) / NS_PER_S;
@@ -262,18 +263,18 @@ void nsWebMBufferedState::NotifyDataArrived(const char* aBuffer, PRUint32 aLengt
   NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
   PRUint32 idx;
   if (!mRangeParsers.GreatestIndexLtEq(aOffset, idx)) {
-    // If the incoming data overlaps an already parsed range, adjust the
-    // buffer so that we only reparse the new data.  It's also possible to
-    // have an overlap where the end of the incoming data is within an
-    // already parsed range, but we don't bother handling that other than by
-    // avoiding storing duplicate timecodes when the parser runs.
+    
+    
+    
+    
+    
     if (idx != mRangeParsers.Length() && mRangeParsers[idx].mStartOffset <= aOffset) {
-      // Complete overlap, skip parsing.
+      
       if (aOffset + aLength <= mRangeParsers[idx].mCurrentOffset) {
         return;
       }
 
-      // Partial overlap, adjust the buffer to parse only the new data.
+      
       PRInt64 adjust = mRangeParsers[idx].mCurrentOffset - aOffset;
       NS_ASSERTION(adjust >= 0, "Overlap detection bug.");
       aBuffer += adjust;
@@ -288,7 +289,7 @@ void nsWebMBufferedState::NotifyDataArrived(const char* aBuffer, PRUint32 aLengt
                             mTimeMapping,
                             mMonitor);
 
-  // Merge parsers with overlapping regions and clean up the remnants.
+  
   PRUint32 i = 0;
   while (i + 1 < mRangeParsers.Length()) {
     if (mRangeParsers[i].mCurrentOffset >= mRangeParsers[i + 1].mStartOffset) {
