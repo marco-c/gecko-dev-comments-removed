@@ -1,36 +1,36 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * 
- * Copyright (c) 2008, Mozilla Corporation
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- * * Neither the name of the Mozilla Corporation nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Contributor(s):
- *   Dave Townsend <dtownsend@oxymoronical.com>
- *   Josh Aas <josh@mozilla.com>
- * 
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nptest.h"
 #include "nptest_utils.h"
@@ -60,14 +60,16 @@
 #define PLUGIN_VERSION     "1.0.0.0"
 
 #define ARRAY_LENGTH(a) (sizeof(a)/sizeof(a[0]))
+#define STATIC_ASSERT(condition)                                \
+    extern void np_static_assert(int arg[(condition) ? 1 : -1])
 
-//
-// Intentional crash
-//
+
+
+
 
 int gCrashCount = 0;
 
-static void
+void
 NoteIntentionalCrash()
 {
   char* bloatLog = getenv("XPCOM_MEM_BLOAT_LOG");
@@ -87,19 +89,17 @@ NoteIntentionalCrash()
   }
 }
 
-static void
+void
 IntentionalCrash()
 {
-  NoteIntentionalCrash();
-
   int *pi = NULL;
-  *pi = 55; // Crash dereferencing null pointer
+  *pi = 55; 
   ++gCrashCount;
 }
 
-//
-// static data
-//
+
+
+
 
 static NPNetscapeFuncs* sBrowserFuncs = NULL;
 static NPClass sNPClass;
@@ -110,9 +110,9 @@ testplugin_URLNotify(NPP instance, const char* url, NPReason reason,
 void
 asyncCallback(void* cookie);
 
-//
-// identifiers
-//
+
+
+
 
 typedef bool (* ScriptableFunction)
   (NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
@@ -155,6 +155,7 @@ static bool asyncCallbackTest(NPObject* npobj, const NPVariant* args, uint32_t a
 static bool checkGCRace(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool hangPlugin(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool getClipboardText(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
+static bool crashPluginInNestedLoop(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 
 static const NPUTF8* sPluginMethodIdentifierNames[] = {
   "npnEvaluateTest",
@@ -195,9 +196,10 @@ static const NPUTF8* sPluginMethodIdentifierNames[] = {
   "checkGCRace",
   "hang",
   "getClipboardText",
+  "crashInNestedLoop",
 };
 static NPIdentifier sPluginMethodIdentifiers[ARRAY_LENGTH(sPluginMethodIdentifierNames)];
-static const ScriptableFunction sPluginMethodFunctions[ARRAY_LENGTH(sPluginMethodIdentifierNames)] = {
+static const ScriptableFunction sPluginMethodFunctions[] = {
   npnEvaluateTest,
   npnInvokeTest,
   npnInvokeDefaultTest,
@@ -236,7 +238,11 @@ static const ScriptableFunction sPluginMethodFunctions[ARRAY_LENGTH(sPluginMetho
   checkGCRace,
   hangPlugin,
   getClipboardText,
+  crashPluginInNestedLoop,
 };
+
+STATIC_ASSERT(ARRAY_LENGTH(sPluginMethodIdentifierNames) ==
+              ARRAY_LENGTH(sPluginMethodFunctions));
 
 struct URLNotifyData
 {
@@ -281,19 +287,19 @@ static timerEvent timerEvents[] = {
 };
 static uint32_t totalTimerEvents = sizeof(timerEvents) / sizeof(timerEvent);
 
-/**
- * Incremented for every startWatchingInstanceCount.
- */
+
+
+
 static int32_t sCurrentInstanceCountWatchGeneration = 0;
-/**
- * Tracks the number of instances created or destroyed since the last
- * startWatchingInstanceCount.
- */
+
+
+
+
 static int32_t sInstanceCount = 0;
-/**
- * True when we've had a startWatchingInstanceCount with no corresponding
- * stopWatchingInstanceCount.
- */
+
+
+
+
 static bool sWatchingInstanceCount = false;
 
 static void initializeIdentifiers()
@@ -303,7 +309,7 @@ static void initializeIdentifiers()
         ARRAY_LENGTH(sPluginMethodIdentifierNames), sPluginMethodIdentifiers);
     sIdentifiersInitialized = true;    
 
-    // Check whether NULL is handled in NPN_GetStringIdentifiers
+    
     NPIdentifier IDList[2];
     static char const *const kIDNames[2] = { NULL, "setCookie" };
     NPN_GetStringIdentifiers(const_cast<const NPUTF8**>(kIDNames), 2, IDList);
@@ -389,7 +395,7 @@ static void sendBufferToFrame(NPP instance)
     }
   }
   else {
-    // Convert CRLF to LF, and escape most other non-alphanumeric chars.
+    
     for (size_t i = 0; i < outbuf.length(); i++) {
       if (outbuf[i] == '\n') {
         outbuf.replace(i, 1, "%0a");
@@ -440,9 +446,9 @@ getFuncFromString(const char* funcname)
   return FUNCTION_NONE;
 }
 
-//
-// function signatures
-//
+
+
+
 
 NPObject* scriptableAllocate(NPP npp, NPClass* aClass);
 void scriptableDeallocate(NPObject* npobj);
@@ -457,9 +463,9 @@ bool scriptableRemoveProperty(NPObject* npobj, NPIdentifier name);
 bool scriptableEnumerate(NPObject* npobj, NPIdentifier** identifier, uint32_t* count);
 bool scriptableConstruct(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 
-//
-// npapi plugin functions
-//
+
+
+
 
 #ifdef XP_UNIX
 NP_EXPORT(char*)
@@ -575,7 +581,7 @@ NPError OSCALL NP_Shutdown()
 NPError
 NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* argn[], char* argv[], NPSavedData* saved)
 {
-  // Make sure we can render this plugin
+  
   NPBool browserSupportsWindowless = false;
   NPN_GetValue(instance, NPNVSupportsWindowless, &browserSupportsWindowless);
   if (!browserSupportsWindowless && !pluginSupportsWindowMode()) {
@@ -583,7 +589,7 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
     return NPERR_GENERIC_ERROR;
   }
 
-  // set up our our instance data
+  
   InstanceData* instanceData = new InstanceData;
   if (!instanceData)
     return NPERR_OUT_OF_MEMORY_ERROR;
@@ -621,7 +627,7 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
   instanceData->instanceCountWatchGeneration = sCurrentInstanceCountWatchGeneration;
   
   bool requestWindow = false;
-  // handle extra params
+  
   for (int i = 0; i < argc; i++) {
     if (strcmp(argn[i], "drawmode") == 0) {
       if (strcmp(argv[i], "solid") == 0)
@@ -701,6 +707,7 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
       instanceData->npnNewStream = true;
     }
     if (strcmp(argn[i], "newcrash") == 0) {
+      NoteIntentionalCrash();
       IntentionalCrash();
     }
   }
@@ -713,8 +720,8 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
   if (requestWindow) {
     instanceData->hasWidget = true;
   } else {
-    // NPPVpluginWindowBool should default to true, so we may as well
-    // test that by not setting it in the window case
+    
+    
     NPN_SetValue(instance, NPPVpluginWindowBool, (void*)false);
   }
 
@@ -728,7 +735,7 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
   instanceData->widthAtLastPaint = -1;
   instanceData->paintCount = 0;
 
-  // do platform-specific initialization
+  
   NPError err = pluginInstanceInit(instanceData);
   if (err != NPERR_NO_ERROR) {
     NPN_ReleaseObject(scriptableObject);
@@ -739,7 +746,7 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
   NPVariant variantTrue;
   BOOLEAN_TO_NPVARIANT(true, variantTrue);
 
-  // Set a property on NPNVPluginElementNPObject
+  
   NPObject* o = NULL;
   err = NPN_GetValue(instance, NPNVPluginElementNPObject, &o);
   if (err == NPERR_NO_ERROR) {
@@ -749,7 +756,7 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
     o = NULL;
   }
   
-  // Set a property on NPNVWindowNPObject
+  
   err = NPN_GetValue(instance, NPNVWindowNPObject, &o);
   if (err == NPERR_NO_ERROR) {
     NPN_SetProperty(instance, o,
@@ -783,8 +790,10 @@ NPP_Destroy(NPP instance, NPSavedData** save)
   printf("NPP_Destroy\n");
   InstanceData* instanceData = (InstanceData*)(instance->pdata);
 
-  if (instanceData->crashOnDestroy)
+  if (instanceData->crashOnDestroy) {
+    NoteIntentionalCrash();
     IntentionalCrash();
+  }
 
   if (instanceData->streamBuf) {
     free(instanceData->streamBuf);
@@ -841,7 +850,7 @@ NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream, NPBool seekable, 
 
   if (stream->notifyData &&
       static_cast<URLNotifyData*>(stream->notifyData) != &kNotifyData) {
-    // stream from streamTest
+    
     *stype = NP_NORMAL;
   }
   else {
@@ -936,10 +945,10 @@ NPP_WriteReady(NPP instance, NPStream* stream)
     instanceData->err << "NPP_WriteReady called";
   }
   
-  // temporarily disabled per bug 519870
-  //if (instanceData->writeReadyCount == 1) {
-  //  return 0;
-  //}
+  
+  
+  
+  
 
   return instanceData->streamChunkSize;
 }
@@ -951,14 +960,14 @@ NPP_Write(NPP instance, NPStream* stream, int32_t offset, int32_t len, void* buf
   InstanceData* instanceData = (InstanceData*)(instance->pdata);
   instanceData->writeCount++;
 
-  // temporarily disabled per bug 519870
-  //if (instanceData->writeReadyCount == 1) {
-  //  instanceData->err << "NPP_Write called even though NPP_WriteReady " <<
-  //      "returned 0";
-  //}
+  
+  
+  
+  
+  
 
   if (instanceData->functionToFail == FUNCTION_NPP_WRITE_RPC) {
-    // Make an RPC call and pretend to consume the data
+    
     NPObject* windowObject = NULL;
     NPN_GetValue(instance, NPNVWindowNPObject, &windowObject);
     if (windowObject)
@@ -984,12 +993,12 @@ NPP_Write(NPP instance, NPStream* stream, int32_t offset, int32_t len, void* buf
     return len;
   }
 
-  // If the complete stream has been written, and we're doing a seek test,
-  // then call NPN_RequestRead.
+  
+  
   if (instanceData->streamMode == NP_SEEK &&
       stream->end != 0 && 
       stream->end == ((uint32_t)instanceData->streamBufSize + len)) {
-    // prevent recursion
+    
     instanceData->streamMode = NP_NORMAL;
 
     if (instanceData->testrange != NULL) {
@@ -1119,7 +1128,7 @@ testplugin_URLNotify(NPP instance, const char* url, NPReason reason, void* notif
     NPN_InvokeDefault(instance, ndata->callback, args, 2, &result);
     NPN_ReleaseVariantValue(&result);
 
-    // clean up the URLNotifyData
+    
     NPN_ReleaseObject(ndata->callback);
     free(ndata->data);
     delete ndata;
@@ -1141,7 +1150,7 @@ NPP_GetValue(NPP instance, NPPVariable variable, void* value)
     return NPERR_NO_ERROR;
   }
   if (variable == NPPVpluginNeedsXEmbed) {
-    // Only relevant for X plugins
+    
     *(NPBool*)value = instanceData->hasWidget;
     return NPERR_NO_ERROR;
   }
@@ -1160,9 +1169,9 @@ NPP_SetValue(NPP instance, NPNVariable variable, void* value)
   return NPERR_GENERIC_ERROR;
 }
 
-//
-// npapi browser functions
-//
+
+
+
 
 bool
 NPN_SetProperty(NPP instance, NPObject* obj, NPIdentifier propertyName, const NPVariant* value)
@@ -1417,9 +1426,9 @@ NPN_PluginThreadAsyncCall(NPP plugin, void (*func)(void*), void* userdata)
   return sBrowserFuncs->pluginthreadasynccall(plugin, func, userdata);
 }
 
-//
-// npruntime object functions
-//
+
+
+
 
 NPObject*
 scriptableAllocate(NPP npp, NPClass* aClass)
@@ -1559,9 +1568,9 @@ scriptableConstruct(NPObject* npobj, const NPVariant* args, uint32_t argCount, N
   return false;
 }
 
-//
-// test functions
-//
+
+
+
 
 static bool
 compareVariants(NPP instance, const NPVariant* var1, const NPVariant* var2)
@@ -1595,11 +1604,11 @@ compareVariants(NPP instance, const NPVariant* var1, const NPVariant* var2)
         break;
       }
     case NPVariantType_Void: {
-        // void values are always equivalent
+        
         break;
       }
     case NPVariantType_Null: {
-        // null values are always equivalent
+        
         break;
       }
     case NPVariantType_Bool: {
@@ -2071,7 +2080,7 @@ convertPointY(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVaria
 static bool
 streamTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
 {
-  // .streamTest(url, doPost, doNull, callback)
+  
   if (4 != argCount)
     return false;
 
@@ -2105,7 +2114,7 @@ streamTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant*
   ndata->size = 0;
   ndata->data = NULL;
 
-  /* null-terminate "url" */
+  
   char* urlstr = (char*) malloc(url.UTF8Length + 1);
   strncpy(urlstr, url.UTF8Characters, url.UTF8Length);
   urlstr[url.UTF8Length] = '\0';
@@ -2137,6 +2146,7 @@ streamTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant*
 static bool
 crashPlugin(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
 {
+  NoteIntentionalCrash();
   IntentionalCrash();
   VOID_TO_NPVARIANT(*result);
   return true;
@@ -2187,7 +2197,7 @@ void notifyDidPaint(InstanceData* instanceData)
 
 static const NPClass kTestSharedNPClass = {
   NP_CLASS_STRUCT_VERSION,
-  // Everything else is NULL
+  
 };
 
 static bool getObjectValue(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
@@ -2231,7 +2241,7 @@ static bool enableFPExceptions(NPObject* npobj, const NPVariant* args, uint32_t 
 #endif
 }
 
-// caller is responsible for freeing return buffer
+
 static char* URLForInstanceWindow(NPP instance) {
   char *outString = NULL;
   
@@ -2439,7 +2449,7 @@ asyncCallback(void* cookie)
   InstanceData* id = static_cast<InstanceData*>(npp->pdata);
 
   switch (id->asyncTestPhase) {
-    // async callback triggered from same thread
+    
     case 0:
 #ifdef XP_WIN
       if (_beginthread(ThreadProc, 0, (void*)npobj) == -1)
@@ -2451,7 +2461,7 @@ asyncCallback(void* cookie)
 #endif
       break;
     
-    // async callback triggered from different thread
+    
     default:
       NPObject* windowObject;
       NPN_GetValue(npp, NPNVWindowNPObject, &windowObject);
@@ -2593,10 +2603,10 @@ hangPlugin(NPObject* npobj, const NPVariant* args, uint32_t argCount,
 #else
   pause();
 #endif
-  // NB: returning true here means that we weren't terminated, and
-  // thus the hang detection/handling didn't work correctly.  The
-  // test harness will succeed in calling this function, and the
-  // test will fail.
+  
+  
+  
+  
   return true;
 }
 
@@ -2618,9 +2628,18 @@ getClipboardText(NPObject* npobj, const NPVariant* args, uint32_t argCount,
   selCopy[len] = '\0';
 
   STRINGN_TO_NPVARIANT(selCopy, len, *result);
-  // *result owns str now
+  
 
   return true;
+}
+
+bool
+crashPluginInNestedLoop(NPObject* npobj, const NPVariant* args,
+                        uint32_t argCount, NPVariant* result)
+{
+  NPP npp = static_cast<TestNPObject*>(npobj)->npp;
+  InstanceData* id = static_cast<InstanceData*>(npp->pdata);
+  return pluginCrashInNestedLoop(id);
 }
 
 #else
@@ -2628,7 +2647,15 @@ bool
 getClipboardText(NPObject* npobj, const NPVariant* args, uint32_t argCount,
                  NPVariant* result)
 {
-  /// XXX Not implemented!
+  
+  return false;
+}
+
+bool
+crashPluginInNestedLoop(NPObject* npobj, const NPVariant* args,
+                        uint32_t argCount, NPVariant* result)
+{
+  
   return false;
 }
 #endif
