@@ -57,11 +57,13 @@ namespace js {
 
 struct VMFrame
 {
+    
+    void *scriptedReturn;
+
     union Arguments {
         struct {
             void *ptr;
             void *ptr2;
-            void *ptr3;
         } x;
     } u;
 
@@ -171,11 +173,8 @@ typedef void (JS_FASTCALL *VoidStubPC)(VMFrame &, jsbytecode *);
 
 namespace mjit {
 
-
-JSBool JaegerShot(JSContext *cx);
-
-
-JSBool JaegerShotAtSafePoint(JSContext *cx, void *safePoint);
+JSBool
+JaegerShot(JSContext *cx);
 
 enum CompileStatus
 {
@@ -225,7 +224,7 @@ extern "C" void *JaegerThrowpoline(js::VMFrame *vmFrame);
 #else
 extern "C" void JaegerThrowpoline();
 #endif
-extern "C" void InjectJaegerReturn();
+extern "C" void JaegerFromTracer();
 
 #endif 
 

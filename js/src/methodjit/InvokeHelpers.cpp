@@ -169,6 +169,7 @@ top:
 static inline void
 FixVMFrame(VMFrame &f, JSStackFrame *fp)
 {
+    f.fp->ncode = f.scriptedReturn;
     JS_ASSERT(f.fp == fp->down);
     f.fp = fp;
 }
@@ -499,6 +500,7 @@ CreateLightFrame(VMFrame &f, uint32 flags, uint32 argc)
     }
 
     
+    newfp->ncode = NULL;
     newfp->setCallObj(NULL);
     newfp->setArgsObj(NULL);
     newfp->setScript(newscript);
@@ -632,6 +634,7 @@ js_InternalThrow(VMFrame &f)
 
         JS_ASSERT(f.regs.sp == cx->regs->sp);
         InlineReturn(f, JS_FALSE);
+        f.scriptedReturn = cx->fp->ncode;
     }
 
     JS_ASSERT(f.regs.sp == cx->regs->sp);
@@ -765,8 +768,7 @@ RemoveExcessFrames(VMFrame &f, JSStackFrame *entryFrame)
         fp->flags &= ~JSFRAME_RECORDING;
 
         if (AtSafePoint(cx)) {
-            JSScript *script = fp->getScript();
-            if (!JaegerShotAtSafePoint(cx, script->nmap[cx->regs->pc - script->code])) {
+            if (!JaegerShot(cx)) {
                 if (!SwallowErrors(f, entryFrame))
                     return false;
 
@@ -844,6 +846,9 @@ RunTracer(VMFrame &f)
     if (!cx->jitEnabled)
         return NULL;
 
+    JS_ASSERT_IF(f.fp != f.entryFp,
+                 entryFrame->down->getScript()->isValidJitCode(f.scriptedReturn));
+
     bool blacklist;
     uintN inlineCallCount = 0;
     tpa = MonitorTracePoint(f.cx, inlineCallCount, blacklist);
@@ -876,7 +881,6 @@ RunTracer(VMFrame &f)
     }
 
     
-
 
 
 
@@ -932,7 +936,8 @@ RunTracer(VMFrame &f)
             if (!InlineReturn(f, JS_TRUE))
                 THROWV(NULL);
         }
-        void *retPtr = JS_FUNC_TO_DATA_PTR(void *, InjectJaegerReturn);
+        entryFrame->ncode = f.fp->ncode;
+        void *retPtr = JS_FUNC_TO_DATA_PTR(void *, JaegerFromTracer);
         *f.returnAddressLocation() = retPtr;
         return NULL;
     }
