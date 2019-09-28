@@ -98,6 +98,11 @@ pref("dom.indexedDB.enabled", true);
 pref("dom.indexedDB.warningQuota", 50);
 
 
+pref("dom.workers.enabled", true);
+
+pref("dom.workers.maxPerDomain", 20);
+
+
 pref("dom.enable_performance", true);
 
 
@@ -1306,8 +1311,11 @@ pref("layout.selection.caret_style", 0);
 
 
 
-pref("layout.selection.drag.autoscroll.inner_frame.edge_width", 32);
-pref("layout.selection.drag.autoscroll.inner_frame.amount", 8);
+
+
+
+pref("layout.selection.drag.autoscroll.edge_width", 32);
+pref("layout.selection.drag.autoscroll.edge_scroll_amount", 8);
 
 
 

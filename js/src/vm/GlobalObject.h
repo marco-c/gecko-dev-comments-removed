@@ -118,6 +118,13 @@ class GlobalObject : public ::JSObject {
 
 
 
+    JSFunction *
+    createConstructor(JSContext *cx, Native ctor, Class *clasp, JSAtom *name, uintN length);
+
+    
+
+
+
 
 
 
@@ -176,6 +183,21 @@ class GlobalObject : public ::JSObject {
 
     bool addDebugger(JSContext *cx, Debugger *dbg);
 };
+
+
+
+
+
+
+extern bool
+LinkConstructorAndPrototype(JSContext *cx, JSObject *ctor, JSObject *proto);
+
+
+
+
+
+extern bool
+DefinePropertiesAndBrand(JSContext *cx, JSObject *obj, JSPropertySpec *ps, JSFunctionSpec *fs);
 
 typedef HashSet<GlobalObject *, DefaultHasher<GlobalObject *>, SystemAllocPolicy> GlobalObjectSet;
 

@@ -76,6 +76,7 @@
 #include "jsobj.h"
 #include "jsopcode.h"
 #include "jsparse.h"
+#include "jsprobes.h"
 #include "jsproxy.h"
 #include "jsregexp.h"
 #include "jsscope.h"
@@ -506,7 +507,7 @@ JS_ValueToNumber(JSContext *cx, jsval v, jsdouble *dp)
     assertSameCompartment(cx, v);
 
     AutoValueRooter tvr(cx, Valueify(v));
-    return ValueToNumber(cx, tvr.value(), dp);
+    return ToNumber(cx, tvr.value(), dp);
 }
 
 JS_PUBLIC_API(JSBool)
@@ -632,9 +633,7 @@ JS_IsBuiltinFunctionConstructor(JSFunction *fun)
 
 
 
-#ifdef DEBUG
 static JSBool js_NewRuntimeWasCalled = JS_FALSE;
-#endif
 
 JSRuntime::JSRuntime()
   : gcChunkAllocator(&defaultGCChunkAllocator),
@@ -667,7 +666,7 @@ JSRuntime::init(uint32 maxbytes)
         return false;
     }
 
-    atomsCompartment->systemGCChunks = true;
+    atomsCompartment->isSystemCompartment = true;
     atomsCompartment->setGCLastBytes(8192, GC_NORMAL);
 
     if (!js_InitAtomState(this))
@@ -694,8 +693,6 @@ JSRuntime::init(uint32 maxbytes)
     if (!js_InitThreads(this))
         return false;
     if (!InitRuntimeNumberState(this))
-        return false;
-    if (!InitRuntimeScriptState(this))
         return false;
 
     return true;
@@ -724,7 +721,6 @@ JSRuntime::~JSRuntime()
     FinishJIT();
 #endif
 
-    FreeRuntimeScriptState(this);
     FinishRuntimeNumberState(this);
     js_FinishThreads(this);
     js_FinishAtomState(this);
@@ -749,8 +745,11 @@ JSRuntime::~JSRuntime()
 JS_PUBLIC_API(JSRuntime *)
 JS_NewRuntime(uint32 maxbytes)
 {
-#ifdef DEBUG
     if (!js_NewRuntimeWasCalled) {
+#ifdef MOZ_ETW
+        EventRegisterMozillaSpiderMonkey();
+#endif
+#ifdef DEBUG
         
 
 
@@ -775,10 +774,10 @@ JS_NewRuntime(uint32 maxbytes)
     JS_END_MACRO;
 #include "js.msg"
 #undef MSG_DEF
+#endif 
 
         js_NewRuntimeWasCalled = JS_TRUE;
     }
-#endif 
 
     void *mem = OffTheBooks::calloc_(sizeof(JSRuntime));
     if (!mem)
@@ -810,6 +809,10 @@ JS_ShutDown(void)
     js_CleanupLocks();
 #endif
     PRMJ_NowShutdown();
+
+#ifdef MOZ_ETW
+    EventUnregisterMozillaSpiderMonkey();
+#endif
 }
 
 JS_PUBLIC_API(void *)
@@ -1519,6 +1522,7 @@ JS_InitStandardClasses(JSContext *cx, JSObject *obj)
 
     if (!cx->globalObject)
         JS_SetGlobalObject(cx, obj);
+
     assertSameCompartment(cx, obj);
 
     return obj->asGlobal()->initStandardClasses(cx);
@@ -2724,7 +2728,9 @@ JS_PUBLIC_API(JSString *)
 JS_NewExternalString(JSContext *cx, const jschar *chars, size_t length, intN type)
 {
     CHECK_REQUEST(cx);
-    return JSExternalString::new_(cx, chars, length, type, NULL);
+    JSString *s = JSExternalString::new_(cx, chars, length, type, NULL);
+    Probes::createString(cx, s, length);
+    return s;
 }
 
 extern JS_PUBLIC_API(JSString *)
@@ -4611,8 +4617,9 @@ CompileFileHelper(JSContext *cx, JSObject *obj, JSPrincipals *principals,
 
     
     if (fp == stdin) {
-        JS_ASSERT(len == 0);
-        len = 8;  
+        if (len == 0)
+            len = 8;  
+
         int c;
         bool hitEOF = false;
         while (!hitEOF) {
@@ -4639,7 +4646,9 @@ CompileFileHelper(JSContext *cx, JSObject *obj, JSPrincipals *principals,
             return NULL;
 
         int c;
-        while ((c = fast_getc(fp)) != EOF)
+        
+        
+        while (i < len && (c = fast_getc(fp)) != EOF)
             buf[i++] = (jschar) (unsigned char) c;
     }
 
