@@ -1,39 +1,39 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Android code.
+ *
+ * The Initial Developer of the Original Code is Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2009-2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Vladimir Vukicevic <vladimir@pobox.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 package org.mozilla.gecko;
 
@@ -56,10 +56,10 @@ import java.lang.System;
 
 import android.util.Log;
 
-
-
-
-
+/* We're not allowed to hold on to most events given to us
+ * so we save the parts of the events we want to use in GeckoEvent.
+ * Fields have different meanings depending on the event type.
+ */
 
 public class GeckoEvent {
     private static final String LOGTAG = "GeckoEvent";
@@ -87,7 +87,6 @@ public class GeckoEvent {
     public static final int VISITED = 21;
     public static final int NETWORK_CHANGED = 22;
     public static final int PROXIMITY_EVENT = 23;
-    public static final int SCREENORIENTATION_CHANGED = 24;
 
     public static final int IME_COMPOSITION_END = 0;
     public static final int IME_COMPOSITION_BEGIN = 1;
@@ -113,7 +112,7 @@ public class GeckoEvent {
     public long mTime;
     public Point[] mPoints;
     public int[] mPointIndicies;
-    public int mPointerIndex; 
+    public int mPointerIndex; // index of the point that has changed
     public float[] mOrientations;
     public float[] mPressures;
     public Point[] mPointRadii;
@@ -133,8 +132,6 @@ public class GeckoEvent {
 
     public double mBandwidth;
     public boolean mCanBeMetered;
-
-    public short mScreenOrientation;
 
     public int mNativeWindow;
 
@@ -201,22 +198,22 @@ public class GeckoEvent {
     
             mPoints[index] = new Point(Math.round(geckoPoint.x), Math.round(geckoPoint.y));
             mPointIndicies[index] = event.getPointerId(eventIndex);
-            
+            // getToolMajor, getToolMinor and getOrientation are API Level 9 features
             if (Build.VERSION.SDK_INT >= 9) {
                 double radians = event.getOrientation(eventIndex);
                 mOrientations[index] = (float) Math.toDegrees(radians);
-                
-                
+                // w3c touchevents spec does not allow orientations == 90
+                // this shifts it to -90, which will be shifted to zero below
                 if (mOrientations[index] == 90)
                     mOrientations[index] = -90;
     
-                
-                
-                
-                
-                
-                
-                
+                // w3c touchevent radius are given by an orientation between 0 and 90
+                // the radius is found by removing the orientation and measuring the x and y
+                // radius of the resulting ellipse
+                // for android orientations >= 0 and < 90, the major axis should correspond to
+                // just reporting the y radius as the major one, and x as minor
+                // however, for a radius < 0, we have to shift the orientation by adding 90, and
+                // reverse which radius is major and minor
                 if (mOrientations[index] < 0) {
                     mOrientations[index] += 90;
                     mPointRadii[index] = new Point((int)event.getToolMajor(eventIndex)/2,
@@ -361,10 +358,5 @@ public class GeckoEvent {
         mType = NETWORK_CHANGED;
         mBandwidth = bandwidth;
         mCanBeMetered = canBeMetered;
-    }
-
-    public GeckoEvent(short aScreenOrientation) {
-        mType = SCREENORIENTATION_CHANGED;
-        mScreenOrientation = aScreenOrientation;
     }
 }

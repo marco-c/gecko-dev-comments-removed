@@ -1,39 +1,39 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Android code.
+ *
+ * The Initial Developer of the Original Code is Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Vladimir Vukicevic <vladimir@pobox.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include <android/log.h>
 #include <dlfcn.h>
@@ -51,7 +51,6 @@
 #include "nsThreadUtils.h"
 #include "nsIThreadManager.h"
 #include "mozilla/dom/sms/PSms.h"
-#include "mozilla/dom/ScreenOrientation.h"
 
 #ifdef DEBUG
 #define ALOG_BRIDGE(args...) ALOG(args)
@@ -70,12 +69,12 @@ AndroidBridge *
 AndroidBridge::ConstructBridge(JNIEnv *jEnv,
                                jclass jGeckoAppShellClass)
 {
-    
-
-
-
-
-
+    /* NSS hack -- bionic doesn't handle recursive unloads correctly,
+     * because library finalizer functions are called with the dynamic
+     * linker lock still held.  This results in a deadlock when trying
+     * to call dlclose() while we're already inside dlclose().
+     * Conveniently, NSS has an env var that can prevent it from unloading.
+     */
     putenv("NSS_DISABLE_UNLOAD=1"); 
 
     sBridge = new AndroidBridge();
@@ -174,10 +173,6 @@ AndroidBridge::Init(JNIEnv *jEnv,
     jEnableNetworkNotifications = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "enableNetworkNotifications", "()V");
     jDisableNetworkNotifications = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "disableNetworkNotifications", "()V");
 
-    jGetScreenOrientation = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "getScreenOrientation", "()S");
-    jEnableScreenOrientationNotifications = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "enableScreenOrientationNotifications", "()V");
-    jDisableScreenOrientationNotifications = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "disableScreenOrientationNotifications", "()V");
-
     jEGLContextClass = (jclass) jEnv->NewGlobalRef(jEnv->FindClass("javax/microedition/khronos/egl/EGLContext"));
     jEGL10Class = (jclass) jEnv->NewGlobalRef(jEnv->FindClass("javax/microedition/khronos/egl/EGL10"));
     jEGLSurfaceImplClass = (jclass) jEnv->NewGlobalRef(jEnv->FindClass("com/google/android/gles_jni/EGLSurfaceImpl"));
@@ -187,9 +182,9 @@ AndroidBridge::Init(JNIEnv *jEnv,
 
     InitAndroidJavaWrappers(jEnv);
 
-    
-    
-    
+    // jEnv should NOT be cached here by anything -- the jEnv here
+    // is not valid for the real gecko main thread, which is set
+    // at SetMainThread time.
 
     return true;
 }
@@ -252,8 +247,8 @@ AndroidBridge::NotifyIMEEnabled(int aState, const nsAString& aTypeHint,
             if (NS_SUCCEEDED(
                   Preferences::GetInt(IME_FULLSCREEN_THRESHOLD_PREF,
                                       &landscapeFS))) {
-                
-                
+                // the threshold is hundreths of inches, so convert the 
+                // threshold to pixels and multiply the height by 100
                 if (nsWindow::GetAndroidScreenBounds().height  * 100 < 
                     landscapeFS * Bridge()->GetDPI()) {
                     args[3].z = true;
@@ -703,7 +698,7 @@ AndroidBridge::GetDPI()
 
     JNIEnv *env = GetJNIEnv();
     if (!env)
-        return 72; 
+        return 72; // what is a better value.  If we don't have a env here, we are hosed.
 
     return (int) env->CallStaticIntMethod(mGeckoAppShellClass, jGetDpi);
 }
@@ -796,8 +791,8 @@ AndroidBridge::Vibrate(const nsTArray<PRUint32>& aPattern)
         return;
     }
 
-    
-    
+    // It's clear if this worth special-casing, but it creates less
+    // java junk, so dodges the GC.
     if (len == 1) {
         jlong d = aPattern[0];
         if (d < 0) {
@@ -808,8 +803,8 @@ AndroidBridge::Vibrate(const nsTArray<PRUint32>& aPattern)
        return;
     }
 
-    
-    
+    // First element of the array vibrate() expects is how long to wait
+    // *before* vibrating.  For us, this is always 0.
 
     jlongArray array = env->NewLongArray(len + 1);
     if (!array) {
@@ -831,8 +826,8 @@ AndroidBridge::Vibrate(const nsTArray<PRUint32>& aPattern)
     env->ReleaseLongArrayElements(array, elts, 0);
 
     env->CallStaticVoidMethod(mGeckoAppShellClass, jVibrateA,
-                                  array, -1);
-    
+                                  array, -1/*don't repeat*/);
+    // GC owns |array| now?
 }
 
 void
@@ -910,7 +905,7 @@ AndroidBridge::GetSystemColors(AndroidSystemColors *aColors)
     if (len < colorsCount)
         colorsCount = len;
 
-    
+    // Convert Android colors to nscolor by switching R and B in the ARGB 32 bit value
     nscolor *colors = (nscolor*)aColors;
 
     for (PRUint32 i = 0; i < colorsCount; i++) {
@@ -1005,22 +1000,22 @@ AndroidBridge::CallEglCreateWindowSurface(void *dpy, void *config, AndroidGeckoS
 
     AutoLocalJNIFrame jniFrame(env); 
 
-    
-
-
-
-
-
-
-
-
-
+    /*
+     * This is basically:
+     *
+     *    s = EGLContext.getEGL().eglCreateWindowSurface(new EGLDisplayImpl(dpy),
+     *                                                   new EGLConfigImpl(config),
+     *                                                   view.getHolder(), null);
+     *    return s.mEGLSurface;
+     *
+     * We can't do it from java, because the EGLConfigImpl constructor is private.
+     */
 
     jobject surfaceHolder = sview.GetSurfaceHolder();
     if (!surfaceHolder)
         return nsnull;
 
-    
+    // grab some fields and methods we'll need
     jmethodID constructConfig = env->GetMethodID(jEGLConfigImplClass, "<init>", "(I)V");
     jmethodID constructDisplay = env->GetMethodID(jEGLDisplayImplClass, "<init>", "(I)V");
 
@@ -1032,7 +1027,7 @@ AndroidBridge::CallEglCreateWindowSurface(void *dpy, void *config, AndroidGeckoS
     jobject jdpy = env->NewObject(jEGLDisplayImplClass, constructDisplay, (int) dpy);
     jobject jconf = env->NewObject(jEGLConfigImplClass, constructConfig, (int) config);
 
-    
+    // make the call
     jobject surf = env->CallObjectMethod(egl, createWindowSurface, jdpy, jconf, surfaceHolder, NULL);
     if (!surf)
         return nsnull;
@@ -1105,7 +1100,7 @@ AndroidBridge::SetKeepScreenOn(bool on)
                               sBridge->jSetKeepScreenOn, on);
 }
 
-
+// Available for places elsewhere in the code to link to.
 bool
 mozilla_AndroidBridge_SetMainThread(void *thr)
 {
@@ -1176,8 +1171,8 @@ void
 AndroidBridge::OpenGraphicsLibraries()
 {
     if (!mOpenedGraphicsLibraries) {
-        
-        
+        // Try to dlopen libjnigraphics.so for direct bitmap access on
+        // Android 2.2+ (API level 8)
         mOpenedGraphicsLibraries = true;
         mHasNativeWindowAccess = false;
         mHasNativeBitmapAccess = false;
@@ -1193,8 +1188,8 @@ AndroidBridge::OpenGraphicsLibraries()
             ALOG_BRIDGE("Successfully opened libjnigraphics.so, have native bitmap access? %d", mHasNativeBitmapAccess);
         }
 
-        
-        
+        // Try to dlopen libandroid.so for and native window access on
+        // Android 2.3+ (API level 9)
         handle = dlopen("libandroid.so", RTLD_LAZY | RTLD_LOCAL);
         if (handle) {
             ANativeWindow_fromSurface = (void* (*)(JNIEnv*, jobject))dlsym(handle, "ANativeWindow_fromSurface");
@@ -1309,9 +1304,9 @@ AndroidBridge::HasNativeBitmapAccess()
 bool
 AndroidBridge::ValidateBitmap(jobject bitmap, int width, int height)
 {
-    
-    
-    
+    // This structure is defined in Android API level 8's <android/bitmap.h>
+    // Because we can't depend on this, we get the function pointers via dlsym
+    // and define this struct ourselves.
     struct BitmapInfo {
         uint32_t width;
         uint32_t height;
@@ -1414,8 +1409,8 @@ AndroidBridge::GetCurrentBatteryInformation(hal::BatteryInformation* aBatteryInf
 
     AutoLocalJNIFrame jniFrame(env); 
 
-    
-    
+    // To prevent calling too many methods through JNI, the Java method returns
+    // an array of double even if we actually want a double and a boolean.
     jobject obj = env->CallStaticObjectMethod(mGeckoAppShellClass, jGetCurrentBatteryInformation);
     jdoubleArray arr = static_cast<jdoubleArray>(obj);
     if (!arr || env->GetArrayLength(arr) != 3) {
@@ -1633,8 +1628,8 @@ AndroidBridge::GetCurrentNetworkInformation(hal::NetworkInformation* aNetworkInf
 
     AutoLocalJNIFrame jniFrame(env); 
 
-    
-    
+    // To prevent calling too many methods through JNI, the Java method returns
+    // an array of double even if we actually want a double and a boolean.
     jobject obj = env->CallStaticObjectMethod(mGeckoAppShellClass, jGetCurrentNetworkInformation);
     jdoubleArray arr = static_cast<jdoubleArray>(obj);
     if (!arr || env->GetArrayLength(arr) != 2) {
@@ -1742,25 +1737,25 @@ AndroidBridge::SetNativeWindowFormat(void *window, int width, int height, int fo
 bool
 AndroidBridge::LockWindow(void *window, unsigned char **bits, int *width, int *height, int *format, int *stride)
 {
-    
+    /* Copied from native_window.h in Android NDK (platform-9) */
     typedef struct ANativeWindow_Buffer {
-        
+        // The number of pixels that are show horizontally.
         int32_t width;
 
-        
+        // The number of pixels that are shown vertically.
         int32_t height;
 
-        
-        
+        // The number of *pixels* that a line in the buffer takes in
+        // memory.  This may be >= width.
         int32_t stride;
 
-        
+        // The format of the buffer.  One of WINDOW_FORMAT_*
         int32_t format;
 
-        
+        // The actual bits.
         void* bits;
 
-        
+        // Do not touch.
         uint32_t reserved[6];
     } ANativeWindow_Buffer;
 
@@ -1805,7 +1800,7 @@ AndroidBridge::IsTablet()
     return env->CallStaticBooleanMethod(mGeckoAppShellClass, jIsTablet);
 }
 
-
+/* Implementation file */
 NS_IMPL_ISUPPORTS1(nsAndroidBridge, nsIAndroidBridge)
 
 nsAndroidBridge::nsAndroidBridge()
@@ -1816,14 +1811,14 @@ nsAndroidBridge::~nsAndroidBridge()
 {
 }
 
-
+/* void handleGeckoEvent (in AString message); */
 NS_IMETHODIMP nsAndroidBridge::HandleGeckoMessage(const nsAString & message, nsAString &aRet NS_OUTPARAM)
 {
     AndroidBridge::Bridge()->HandleGeckoMessage(message, aRet);
     return NS_OK;
 }
 
-
+/* void SetDrawMetadataProvider (in nsIAndroidDrawMetadataProvider message); */
 NS_IMETHODIMP nsAndroidBridge::SetDrawMetadataProvider(nsIAndroidDrawMetadataProvider *aProvider)
 {
     gDrawMetadataProvider = aProvider;
@@ -1841,9 +1836,9 @@ AndroidBridge::SetPreventPanning(bool aPreventPanning) {
 }
 
 
-
-
-
+// DO NOT USE THIS unless you need to access JNI from
+// non-main threads.  This is probably not what you want.
+// Questions, ask blassey or dougt.
 
 static void
 JavaThreadDetachFunc(void *arg)
@@ -1963,25 +1958,4 @@ AndroidBridge::HideSurface(jobject surface)
                                             "(Landroid/view/Surface;)V");
   env->CallStaticVoidMethod(cls, method, surface);
 #endif
-}
-
-void
-AndroidBridge::GetScreenOrientation(dom::ScreenOrientationWrapper& aOrientation)
-{
-    ALOG_BRIDGE("AndroidBridge::GetScreenOrientation");
-    aOrientation.orientation = static_cast<dom::ScreenOrientation>(mJNIEnv->CallStaticShortMethod(mGeckoAppShellClass, jGetScreenOrientation));
-}
-
-void
-AndroidBridge::EnableScreenOrientationNotifications()
-{
-    ALOG_BRIDGE("AndroidBridge::EnableScreenOrientationNotifications");
-    mJNIEnv->CallStaticVoidMethod(mGeckoAppShellClass, jEnableScreenOrientationNotifications);
-}
-
-void
-AndroidBridge::DisableScreenOrientationNotifications()
-{
-    ALOG_BRIDGE("AndroidBridge::DisableScreenOrientationNotifications");
-    mJNIEnv->CallStaticVoidMethod(mGeckoAppShellClass, jDisableScreenOrientationNotifications);
 }
