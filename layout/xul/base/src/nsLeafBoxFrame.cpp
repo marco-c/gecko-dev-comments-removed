@@ -1,46 +1,46 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//
+// Eric Vaughan
+// Netscape Communications
+//
+// See documentation in associated header file
+//
 
 #include "nsLeafBoxFrame.h"
 #include "nsBoxFrame.h"
@@ -49,7 +49,6 @@
 #include "nsIFontMetrics.h"
 #include "nsGkAtoms.h"
 #include "nsPresContext.h"
-#include "nsRenderingContext.h"
 #include "nsStyleContext.h"
 #include "nsIContent.h"
 #include "nsINameSpaceManager.h"
@@ -59,11 +58,11 @@
 #include "nsHTMLContainerFrame.h"
 #include "nsDisplayList.h"
 
-
-
-
-
-
+//
+// NS_NewLeafBoxFrame
+//
+// Creates a new Toolbar frame and returns it
+//
 nsIFrame*
 NS_NewLeafBoxFrame (nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
@@ -86,9 +85,9 @@ nsLeafBoxFrame::GetBoxName(nsAutoString& aName)
 #endif
 
 
-
-
-
+/**
+ * Initialize us. This is a good time to get the alignment of the box
+ */
 NS_IMETHODIMP
 nsLeafBoxFrame::Init(
               nsIContent*      aContent,
@@ -141,11 +140,11 @@ nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                  const nsRect&           aDirtyRect,
                                  const nsDisplayListSet& aLists)
 {
-  
-  
-  
-  
-  
+  // REVIEW: GetFrameForPoint used to not report events for the background
+  // layer, whereas this code will put an event receiver for this frame in the
+  // BlockBorderBackground() list. But I don't see any need to preserve
+  // that anomalous behaviour. The important thing I'm preserving is that
+  // leaf boxes continue to receive events in the foreground layer.
   nsresult rv = DisplayBorderBackgroundOutline(aBuilder, aLists);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -156,7 +155,7 @@ nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       nsDisplayEventReceiver(aBuilder, this));
 }
 
- nscoord
+/* virtual */ nscoord
 nsLeafBoxFrame::GetMinWidth(nsRenderingContext *aRenderingContext)
 {
   nscoord result;
@@ -164,10 +163,10 @@ nsLeafBoxFrame::GetMinWidth(nsRenderingContext *aRenderingContext)
   nsBoxLayoutState state(PresContext(), aRenderingContext);
   nsSize minSize = GetMinSize(state);
 
-  
-  
-  
-  
+  // GetMinSize returns border-box width, and we want to return content
+  // width.  Since Reflow uses the reflow state's border and padding, we
+  // actually just want to subtract what GetMinSize added, which is the
+  // result of GetBorderAndPadding.
   nsMargin bp;
   GetBorderAndPadding(bp);
 
@@ -176,7 +175,7 @@ nsLeafBoxFrame::GetMinWidth(nsRenderingContext *aRenderingContext)
   return result;
 }
 
- nscoord
+/* virtual */ nscoord
 nsLeafBoxFrame::GetPrefWidth(nsRenderingContext *aRenderingContext)
 {
   nscoord result;
@@ -184,10 +183,10 @@ nsLeafBoxFrame::GetPrefWidth(nsRenderingContext *aRenderingContext)
   nsBoxLayoutState state(PresContext(), aRenderingContext);
   nsSize prefSize = GetPrefSize(state);
 
-  
-  
-  
-  
+  // GetPrefSize returns border-box width, and we want to return content
+  // width.  Since Reflow uses the reflow state's border and padding, we
+  // actually just want to subtract what GetPrefSize added, which is the
+  // result of GetBorderAndPadding.
   nsMargin bp;
   GetBorderAndPadding(bp);
 
@@ -199,7 +198,7 @@ nsLeafBoxFrame::GetPrefWidth(nsRenderingContext *aRenderingContext)
 nscoord
 nsLeafBoxFrame::GetIntrinsicWidth()
 {
-  
+  // No intrinsic width
   return 0;
 }
 
@@ -209,7 +208,7 @@ nsLeafBoxFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
                                 nsSize aMargin, nsSize aBorder,
                                 nsSize aPadding, PRBool aShrinkWrap)
 {
-  
+  // Important: NOT calling our direct superclass here!
   return nsFrame::ComputeAutoSize(aRenderingContext, aCBSize, aAvailableWidth,
                                   aMargin, aBorder, aPadding, aShrinkWrap);
 }
@@ -220,10 +219,10 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
                      const nsHTMLReflowState& aReflowState,
                      nsReflowStatus&          aStatus)
 {
-  
-  
-  
-  
+  // This is mostly a copy of nsBoxFrame::Reflow().
+  // We aren't able to share an implementation because of the frame
+  // class hierarchy.  If you make changes here, please keep
+  // nsBoxFrame::Reflow in sync.
 
   DO_GLOBAL_REFLOW_COUNT("nsLeafBoxFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowState, aDesiredSize, aStatus);
@@ -260,7 +259,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
 
   aStatus = NS_FRAME_COMPLETE;
 
-  
+  // create the layout state
   nsBoxLayoutState state(aPresContext, aReflowState.rendContext);
 
   nsSize computedSize(aReflowState.ComputedWidth(),aReflowState.ComputedHeight());
@@ -268,9 +267,9 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
   nsMargin m;
   m = aReflowState.mComputedBorderPadding;
 
-  
+  //GetBorderAndPadding(m);
 
-  
+  // this happens sometimes. So lets handle it gracefully.
   if (aReflowState.ComputedHeight() == 0) {
     nsSize minSize = GetMinSize(state);
     computedSize.height = minSize.height - m.top - m.bottom;
@@ -278,7 +277,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
 
   nsSize prefSize(0,0);
 
-  
+  // if we are told to layout intrinic then get our preferred size.
   if (computedSize.width == NS_INTRINSICSIZE || computedSize.height == NS_INTRINSICSIZE) {
      prefSize = GetPrefSize(state);
      nsSize minSize = GetMinSize(state);
@@ -286,7 +285,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
      prefSize = BoundsCheck(minSize, prefSize, maxSize);
   }
 
-  
+  // get our desiredSize
   if (aReflowState.ComputedWidth() == NS_INTRINSICSIZE) {
     computedSize.width = prefSize.width;
   } else {
@@ -299,7 +298,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
     computedSize.height += m.top + m.bottom;
   }
 
-  
+  // handle reflow state min and max sizes
 
   if (computedSize.width > aReflowState.mComputedMaxWidth)
     computedSize.width = aReflowState.mComputedMaxWidth;
@@ -317,15 +316,15 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
 
   SetBounds(state, r);
  
-  
+  // layout our children
   Layout(state);
   
-  
+  // ok our child could have gotten bigger. So lets get its bounds
   aDesiredSize.width  = mRect.width;
   aDesiredSize.height = mRect.height;
   aDesiredSize.ascent = GetBoxAscent(state);
 
-  
+  // the overflow rect is set in SetBounds() above
   aDesiredSize.mOverflowAreas = GetOverflowAreas();
 
 #ifdef DO_NOISY_REFLOW
@@ -365,41 +364,41 @@ nsLeafBoxFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
   return nsLeafFrame::CharacterDataChanged(aInfo);
 }
 
- nsSize
+/* virtual */ nsSize
 nsLeafBoxFrame::GetPrefSize(nsBoxLayoutState& aState)
 {
     return nsBox::GetPrefSize(aState);
 }
 
- nsSize
+/* virtual */ nsSize
 nsLeafBoxFrame::GetMinSize(nsBoxLayoutState& aState)
 {
     return nsBox::GetMinSize(aState);
 }
 
- nsSize
+/* virtual */ nsSize
 nsLeafBoxFrame::GetMaxSize(nsBoxLayoutState& aState)
 {
     return nsBox::GetMaxSize(aState);
 }
 
- nscoord
+/* virtual */ nscoord
 nsLeafBoxFrame::GetFlex(nsBoxLayoutState& aState)
 {
     return nsBox::GetFlex(aState);
 }
 
- nscoord
+/* virtual */ nscoord
 nsLeafBoxFrame::GetBoxAscent(nsBoxLayoutState& aState)
 {
     return nsBox::GetBoxAscent(aState);
 }
 
- void
+/* virtual */ void
 nsLeafBoxFrame::MarkIntrinsicWidthsDirty()
 {
-  
-  
+  // Don't call base class method, since everything it does is within an
+  // IsBoxWrapped check.
 }
 
 NS_IMETHODIMP

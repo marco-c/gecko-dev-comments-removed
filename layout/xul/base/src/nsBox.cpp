@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Author: Eric D Vaughan <evaughan@netscape.com>
+ *   Pierre Phaneuf <pp@ludusdesign.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsBoxLayoutState.h"
 #include "nsBox.h"
@@ -50,7 +50,6 @@
 #include "nsIDOMNode.h"
 #include "nsIDOMNamedNodeMap.h"
 #include "nsIDOMAttr.h"
-#include "nsRenderingContext.h"
 #include "nsIDocument.h"
 #include "nsIDeviceContext.h"
 #include "nsITheme.h"
@@ -100,7 +99,7 @@ nsBox::ListBox(nsAutoString& aResult)
 
     nsIContent* content = GetContent();
 
-    
+    // add on all the set attributes
     if (content) {
       nsCOMPtr<nsIDOMNode> node(do_QueryInterface(content));
       nsCOMPtr<nsIDOMNamedNodeMap> namedMap;
@@ -134,7 +133,7 @@ nsBox::DumpBox(FILE* aFile)
 void
 nsBox::PropagateDebug(nsBoxLayoutState& aState)
 {
-  
+  // propagate debug information
   if (mState & NS_STATE_DEBUG_WAS_SET) {
     if (mState & NS_STATE_SET_TO_DEBUG)
       SetDebug(aState, PR_TRUE);
@@ -166,22 +165,22 @@ nsBox::BeginLayout(nsBoxLayoutState& aState)
   gIndent++;
 #endif
 
-  
-  
-  
+  // mark ourselves as dirty so no child under us
+  // can post an incremental layout.
+  // XXXldb Is this still needed?
   mState |= NS_FRAME_HAS_DIRTY_CHILDREN;
 
   if (GetStateBits() & NS_FRAME_IS_DIRTY)
   {
-    
-    
+    // If the parent is dirty, all the children are dirty (nsHTMLReflowState
+    // does this too).
     nsIFrame* box;
     for (box = GetChildBox(); box; box = box->GetNextBox())
       box->AddStateBits(NS_FRAME_IS_DIRTY);
   }
 
-  
-  
+  // Another copy-over from nsHTMLReflowState.
+  // Since we are in reflow, we don't need to store these properties anymore.
   FrameProperties props = Properties();
   props.Delete(UsedBorderProperty());
   props.Delete(UsedPaddingProperty());
@@ -217,8 +216,8 @@ nsITheme* nsBox::gTheme = nsnull;
 nsBox::nsBox()
 {
   MOZ_COUNT_CTOR(nsBox);
-  
-  
+  //mX = 0;
+  //mY = 0;
   if (!gGotTheme) {
     gGotTheme = PR_TRUE;
     CallGetService("@mozilla.org/chrome/chrome-native-theme;1", &gTheme);
@@ -227,12 +226,12 @@ nsBox::nsBox()
 
 nsBox::~nsBox()
 {
-  
-  
+  // NOTE:  This currently doesn't get called for |nsBoxToBlockAdaptor|
+  // objects, so don't rely on putting anything here.
   MOZ_COUNT_DTOR(nsBox);
 }
 
- void
+/* static */ void
 nsBox::Shutdown()
 {
   gGotTheme = PR_FALSE;
@@ -262,7 +261,7 @@ nsIFrame::GetClientRect(nsRect& aClientRect)
   if (aClientRect.height < 0)
      aClientRect.height = 0;
 
- 
+ // NS_ASSERTION(aClientRect.width >=0 && aClientRect.height >= 0, "Content Size < 0");
 
   return NS_OK;
 }
@@ -286,10 +285,10 @@ nsBox::SetBounds(nsBoxLayoutState& aState, const nsRect& aRect, PRBool aRemoveOv
     else
       SetRect(aRect);
 
-    
-    
+    // Nuke the overflow area. The caller is responsible for restoring
+    // it if necessary.
     if (aRemoveOverflowAreas) {
-      
+      // remove the previously stored overflow area
       ClearOverflowRects();
     }
 
@@ -301,17 +300,17 @@ nsBox::SetBounds(nsBoxLayoutState& aState, const nsRect& aRect, PRBool aRemoveOv
     }
   
 
-   
-
-
-
-
-
-
-
-
-
-
+   /*  
+    // only if the origin changed
+    if ((rect.x != aRect.x) || (rect.y != aRect.y))  {
+      if (frame->HasView()) {
+        nsContainerFrame::PositionFrameView(presContext, frame,
+                                            frame->GetView());
+      } else {
+        nsContainerFrame::PositionChildViews(presContext, frame);
+      }
+    }
+    */
 }
 
 void
@@ -346,7 +345,7 @@ nsBox::GetBorder(nsMargin& aMargin)
     
   const nsStyleDisplay* disp = GetStyleDisplay();
   if (disp->mAppearance && gTheme) {
-    
+    // Go to the theme for the border.
     nsPresContext *context = PresContext();
     if (gTheme->ThemeSupportsWidget(context, this, disp->mAppearance)) {
       nsIntMargin margin(0, 0, 0, 0);
@@ -370,7 +369,7 @@ nsBox::GetPadding(nsMargin& aMargin)
 {
   const nsStyleDisplay *disp = GetStyleDisplay();
   if (disp->mAppearance && gTheme) {
-    
+    // Go to the theme for the padding.
     nsPresContext *context = PresContext();
     if (gTheme->ThemeSupportsWidget(context, this, disp->mAppearance)) {
       nsIntMargin margin(0, 0, 0, 0);
@@ -528,10 +527,10 @@ nsIFrame::GetOrdinal(nsBoxLayoutState& aState)
       ordinal = value.ToInteger(&error);
     }
     else {
-      
+      // No attribute value.  Check CSS.
       const nsStyleXUL* boxInfo = GetStyleXUL();
       if (boxInfo->mBoxOrdinal > 1) {
-        
+        // The ordinal group was defined in CSS.
         ordinal = (nscoord)boxInfo->mBoxOrdinal;
       }
     }
@@ -585,14 +584,14 @@ nsBox::DoesClipChildren()
 nsresult
 nsBox::SyncLayout(nsBoxLayoutState& aState)
 {
-  
-
-
-
-
-
-
-
+  /*
+  PRBool collapsed = PR_FALSE;
+  IsCollapsed(aState, collapsed);
+  if (collapsed) {
+    CollapseChild(aState, this, PR_TRUE);
+    return NS_OK;
+  }
+  */
   
 
   if (GetStateBits() & NS_FRAME_IS_DIRTY)
@@ -619,11 +618,11 @@ nsBox::SyncLayout(nsBoxLayoutState& aState)
     nsRect rect(nsPoint(0, 0), GetSize());
     nsOverflowAreas overflowAreas(rect, rect);
     if (!DoesClipChildren() && !IsCollapsed(aState)) {
-      
-      
-      
-      
-      
+      // See if our child frames caused us to overflow after being laid
+      // out. If so, store the overflow area.  This normally can't happen
+      // in XUL, but it can happen with the CSS 'outline' property and
+      // possibly with other exotic stuff (e.g. relatively positioned
+      // frames in HTML inside XUL).
       for (nsIFrame* kid = GetChildBox(); kid; kid = kid->GetNextBox()) {
         nsOverflowAreas kidOverflow =
           kid->GetOverflowAreas() + kid->GetPosition();
@@ -637,8 +636,8 @@ nsBox::SyncLayout(nsBoxLayoutState& aState)
 
   nsIView* view = GetView();
   if (view) {
-    
-    
+    // Make sure the frame's view is properly sized and positioned and has
+    // things like opacity correct
     nsHTMLContainerFrame::SyncFrameViewAfterReflow(
                              presContext, 
                              this,
@@ -664,8 +663,8 @@ nsIFrame::Redraw(nsBoxLayoutState& aState,
     damageRect = GetVisualOverflowRect();
 
   Invalidate(damageRect);
-  
-  
+  // nsStackLayout, at least, expects us to repaint descendants even
+  // if a damage rect is provided
   FrameLayerBuilder::InvalidateThebesLayersInSubtree(this);
 
   return NS_OK;
@@ -677,21 +676,21 @@ nsIBox::AddCSSPrefSize(nsIBox* aBox, nsSize& aSize, PRBool &aWidthSet, PRBool &a
     aWidthSet = PR_FALSE;
     aHeightSet = PR_FALSE;
 
-    
+    // add in the css min, max, pref
     const nsStylePosition* position = aBox->GetStylePosition();
 
-    
-    
-    
-    
-    
+    // see if the width or height was specifically set
+    // XXX Handle eStyleUnit_Enumerated?
+    // (Handling the eStyleUnit_Enumerated types requires
+    // GetPrefSize/GetMinSize methods that don't consider
+    // (min-/max-/)(width/height) properties.)
     const nsStyleCoord &width = position->mWidth;
     if (width.GetUnit() == eStyleUnit_Coord) {
         aSize.width = width.GetCoordValue();
         aWidthSet = PR_TRUE;
     } else if (width.IsCalcUnit()) {
         if (!width.CalcHasPercent()) {
-            
+            // pass 0 for percentage basis since we know there are no %s
             aSize.width = nsRuleNode::ComputeComputedCalc(width, 0);
             if (aSize.width < 0)
                 aSize.width = 0;
@@ -705,7 +704,7 @@ nsIBox::AddCSSPrefSize(nsIBox* aBox, nsSize& aSize, PRBool &aWidthSet, PRBool &a
         aHeightSet = PR_TRUE;
     } else if (height.IsCalcUnit()) {
         if (!height.CalcHasPercent()) {
-            
+            // pass 0 for percentage basis since we know there are no %s
             aSize.height = nsRuleNode::ComputeComputedCalc(height, 0);
             if (aSize.height < 0)
                 aSize.height = 0;
@@ -714,9 +713,9 @@ nsIBox::AddCSSPrefSize(nsIBox* aBox, nsSize& aSize, PRBool &aWidthSet, PRBool &a
     }
 
     nsIContent* content = aBox->GetContent();
-    
-    
-    
+    // ignore 'height' and 'width' attributes if the actual element is not XUL
+    // For example, we might be magic XUL frames whose primary content is an HTML
+    // <select>
     if (content && content->IsXUL()) {
         nsAutoString value;
         PRInt32 error;
@@ -753,7 +752,7 @@ nsIBox::AddCSSMinSize(nsBoxLayoutState& aState, nsIBox* aBox, nsSize& aSize,
 
     PRBool canOverride = PR_TRUE;
 
-    
+    // See if a native theme wants to supply a minimum size.
     const nsStyleDisplay* display = aBox->GetStyleDisplay();
     if (display->mAppearance) {
       nsITheme *theme = aState.PresContext()->GetTheme();
@@ -775,11 +774,11 @@ nsIBox::AddCSSMinSize(nsBoxLayoutState& aState, nsIBox* aBox, nsSize& aSize,
       }
     }
 
-    
+    // add in the css min, max, pref
     const nsStylePosition* position = aBox->GetStylePosition();
 
-    
-    
+    // same for min size. Unfortunately min size is always set to 0. So for now
+    // we will assume 0 (as a coord) means not set.
     const nsStyleCoord &minWidth = position->mMinWidth;
     if ((minWidth.GetUnit() == eStyleUnit_Coord &&
          minWidth.GetCoordValue() != 0) ||
@@ -793,14 +792,14 @@ nsIBox::AddCSSMinSize(nsBoxLayoutState& aState, nsIBox* aBox, nsSize& aSize,
         NS_ASSERTION(minWidth.GetPercentValue() == 0.0f,
           "Non-zero percentage values not currently supported");
         aSize.width = 0;
-        aWidthSet = PR_TRUE; 
-                             
+        aWidthSet = PR_TRUE; // FIXME: should we really do this for
+                             // nonzero values?
     }
-    
-    
-    
-    
-    
+    // XXX Handle eStyleUnit_Enumerated?
+    // (Handling the eStyleUnit_Enumerated types requires
+    // GetPrefSize/GetMinSize methods that don't consider
+    // (min-/max-/)(width/height) properties.
+    // calc() with percentage is treated like '0' (unset)
 
     const nsStyleCoord &minHeight = position->mMinHeight;
     if ((minHeight.GetUnit() == eStyleUnit_Coord &&
@@ -815,10 +814,10 @@ nsIBox::AddCSSMinSize(nsBoxLayoutState& aState, nsIBox* aBox, nsSize& aSize,
         NS_ASSERTION(position->mMinHeight.GetPercentValue() == 0.0f,
           "Non-zero percentage values not currently supported");
         aSize.height = 0;
-        aHeightSet = PR_TRUE; 
-                              
+        aHeightSet = PR_TRUE; // FIXME: should we really do this for
+                              // nonzero values?
     }
-    
+    // calc() with percentage is treated like '0' (unset)
 
     nsIContent* content = aBox->GetContent();
     if (content) {
@@ -860,28 +859,28 @@ nsIBox::AddCSSMaxSize(nsIBox* aBox, nsSize& aSize, PRBool &aWidthSet, PRBool &aH
     aWidthSet = PR_FALSE;
     aHeightSet = PR_FALSE;
 
-    
+    // add in the css min, max, pref
     const nsStylePosition* position = aBox->GetStylePosition();
 
-    
-    
-    
-    
-    
-    
+    // and max
+    // see if the width or height was specifically set
+    // XXX Handle eStyleUnit_Enumerated?
+    // (Handling the eStyleUnit_Enumerated types requires
+    // GetPrefSize/GetMinSize methods that don't consider
+    // (min-/max-/)(width/height) properties.)
     const nsStyleCoord maxWidth = position->mMaxWidth;
     if (maxWidth.ConvertsToLength()) {
         aSize.width = nsRuleNode::ComputeCoordPercentCalc(maxWidth, 0);
         aWidthSet = PR_TRUE;
     }
-    
+    // percentages and calc() with percentages are treated like 'none'
 
     const nsStyleCoord &maxHeight = position->mMaxHeight;
     if (maxHeight.ConvertsToLength()) {
         aSize.height = nsRuleNode::ComputeCoordPercentCalc(maxHeight, 0);
         aHeightSet = PR_TRUE;
     }
-    
+    // percentages and calc() with percentages are treated like 'none'
 
     nsIContent* content = aBox->GetContent();
     if (content) {
@@ -918,7 +917,7 @@ nsIBox::AddCSSFlex(nsBoxLayoutState& aState, nsIBox* aBox, nscoord& aFlex)
 {
     PRBool flexSet = PR_FALSE;
 
-    
+    // get the flexibility
     nsIContent* content = aBox->GetContent();
     if (content) {
         PRInt32 error;
@@ -931,10 +930,10 @@ nsIBox::AddCSSFlex(nsBoxLayoutState& aState, nsIBox* aBox, nscoord& aFlex)
             flexSet = PR_TRUE;
         }
         else {
-          
+          // No attribute value.  Check CSS.
           const nsStyleXUL* boxInfo = aBox->GetStyleXUL();
           if (boxInfo->mBoxFlex > 0.0f) {
-            
+            // The flex was defined in CSS.
             aFlex = (nscoord)boxInfo->mBoxFlex;
             flexSet = PR_TRUE;
           }
@@ -1035,7 +1034,7 @@ nsBox::GetDebugBoxAt( const nsPoint& aPoint,
     child = child->GetNextBox();
   }
 
-  
+  // found a child
   if (*aBox) {
     return NS_OK;
   }
