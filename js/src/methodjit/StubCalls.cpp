@@ -240,7 +240,7 @@ stubs::SetName(VMFrame &f, JSAtom *origAtom)
 
 
 
-                    js_PurgeScopeChain(cx, obj, shape->id);
+                    js_PurgeScopeChain(cx, obj, shape->propid);
                     break;
                 }
             }
@@ -2226,7 +2226,7 @@ InitPropOrMethod(VMFrame &f, JSAtom *atom, JSOp op)
 
         
         JS_ASSERT(!obj->lastProperty() ||
-                  obj->shape() == obj->lastProperty()->shape);
+                  obj->shape() == obj->lastProperty()->shapeid);
         obj->extend(cx, shape);
 
         
