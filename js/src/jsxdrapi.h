@@ -1,72 +1,72 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=78:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef jsxdrapi_h___
 #define jsxdrapi_h___
 
-/*
- * JS external data representation interface API.
- *
- * The XDR system is comprised of three major parts:
- *
- * - the state serialization/deserialization APIs, which allow consumers
- *   of the API to serialize JS runtime state (script bytecodes, atom maps,
- *   object graphs, etc.) for later restoration.  These portions
- *   are implemented in various appropriate files, such as jsscript.c
- *   for the script portions and jsobj.c for object state.
- * - the callback APIs through which the runtime requests an opaque
- *   representation of a native object, and through which the runtime
- *   constructs a live native object from an opaque representation. These
- *   portions are the responsibility of the native object implementor.
- * - utility functions for en/decoding of primitive types, such as
- *   JSStrings.  This portion is implemented in jsxdrapi.c.
- *
- * Spiritually guided by Sun's XDR, where appropriate.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "jspubtd.h"
 #include "jsprvtd.h"
 
 JS_BEGIN_EXTERN_C
 
-/* We use little-endian byteorder for all encoded data */
+
 
 #if defined IS_LITTLE_ENDIAN
 #define JSXDR_SWAB32(x) x
@@ -110,7 +110,7 @@ struct JSXDRState {
     JSXDRMode   mode;
     JSXDROps    *ops;
     JSContext   *cx;
-    JSClass     **registry;
+    js::Class   **registry;
     uintN       numclasses;
     uintN       maxclasses;
     void        *reghash;
@@ -164,7 +164,7 @@ extern JS_PUBLIC_API(JSBool)
 JS_XDRStringOrNull(JSXDRState *xdr, JSString **strp);
 
 extern JS_PUBLIC_API(JSBool)
-JS_XDRDouble(JSXDRState *xdr, jsdouble *dp);
+JS_XDRDouble(JSXDRState *xdr, jsdouble **dp);
 
 extern JS_PUBLIC_API(JSBool)
 JS_XDRValue(JSXDRState *xdr, jsval *vp);
@@ -173,17 +173,17 @@ extern JS_PUBLIC_API(JSBool)
 JS_XDRScript(JSXDRState *xdr, JSScript **scriptp);
 
 extern JS_PUBLIC_API(JSBool)
-JS_XDRRegisterClass(JSXDRState *xdr, JSClass *clasp, uint32 *lp);
+JS_XDRRegisterClass(JSXDRState *xdr, js::Class *clasp, uint32 *lp);
 
 extern JS_PUBLIC_API(uint32)
 JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name);
 
-extern JS_PUBLIC_API(JSClass *)
+extern JS_PUBLIC_API(js::Class *)
 JS_XDRFindClassById(JSXDRState *xdr, uint32 id);
 
-/*
- * Magic numbers.
- */
+
+
+
 #define JSXDR_MAGIC_SCRIPT_1        0xdead0001
 #define JSXDR_MAGIC_SCRIPT_2        0xdead0002
 #define JSXDR_MAGIC_SCRIPT_3        0xdead0003
@@ -196,23 +196,26 @@ JS_XDRFindClassById(JSXDRState *xdr, uint32 id);
 #define JSXDR_MAGIC_SCRIPT_10       0xdead000a
 #define JSXDR_MAGIC_SCRIPT_CURRENT  JSXDR_MAGIC_SCRIPT_10
 
-/*
- * Bytecode version number. Increment the subtrahend whenever JS bytecode
- * changes incompatibly.
- *
- * This version number should be XDR'ed once near the front of any file or
- * larger storage unit containing XDR'ed bytecode and other data, and checked
- * before deserialization of bytecode.  If the saved version does not match
- * the current version, abort deserialization and invalidate the file.
- */
-#define JSXDR_BYTECODE_VERSION      (0xb973c0de - 67)
 
-/*
- * Library-private functions.
- */
+
+
+
+
+
+
+
+
+#define JSXDR_BYTECODE_VERSION      (0xb973c0de - 62)
+
+
+
+
 extern JSBool
 js_XDRAtom(JSXDRState *xdr, JSAtom **atomp);
 
+extern JSBool
+js_XDRStringAtom(JSXDRState *xdr, JSAtom **atomp);
+
 JS_END_EXTERN_C
 
-#endif /* ! jsxdrapi_h___ */
+#endif 
