@@ -58,7 +58,6 @@
 #include "jsanalyze.h"
 #include "methodjit/BaseCompiler.h"
 #include "methodjit/ICRepatcher.h"
-#include "vm/Debugger.h"
 
 #include "jsinterpinlines.h"
 #include "jspropertycacheinlines.h"
@@ -114,7 +113,6 @@ top:
                 continue;
 
             jsbytecode *pc = script->main + tn->start + tn->length;
-            cx->regs().pc = pc;
             JSBool ok = js_UnwindScope(cx, tn->stackDepth, JS_TRUE);
             JS_ASSERT(cx->regs().sp == fp->base() + tn->stackDepth);
 
@@ -180,27 +178,47 @@ InlineReturn(VMFrame &f)
     JS_ASSERT(f.fp() != f.entryfp);
     JS_ASSERT(!js_IsActiveWithOrBlock(f.cx, &f.fp()->scopeChain(), 0));
     f.cx->stack.popInlineFrame(f.regs);
-
-    JS_ASSERT(*f.regs.pc == JSOP_CALL ||
-              *f.regs.pc == JSOP_NEW ||
-              *f.regs.pc == JSOP_EVAL ||
-              *f.regs.pc == JSOP_FUNCALL ||
-              *f.regs.pc == JSOP_FUNAPPLY);
-    f.regs.pc += JSOP_CALL_LENGTH;
 }
 
 void JS_FASTCALL
 stubs::SlowCall(VMFrame &f, uint32 argc)
 {
-    if (!InvokeKernel(f.cx, CallArgsFromSp(argc, f.regs.sp)))
+    CallArgs args = CallArgsFromSp(argc, f.regs.sp);
+    if (!Invoke(f.cx, args))
         THROW();
+
+    f.script()->types.monitor(f.cx, f.pc(), args.rval());
 }
 
 void JS_FASTCALL
 stubs::SlowNew(VMFrame &f, uint32 argc)
 {
-    if (!InvokeConstructorKernel(f.cx, CallArgsFromSp(argc, f.regs.sp)))
+    CallArgs args = CallArgsFromSp(argc, f.regs.sp);
+    if (!InvokeConstructor(f.cx, args))
         THROW();
+
+    f.script()->types.monitor(f.cx, f.pc(), args.rval());
+}
+
+static inline bool
+CheckStackQuota(VMFrame &f)
+{
+    JS_ASSERT(f.regs.sp == f.fp()->base());
+
+    
+    uintN nvals = f.fp()->script()->nslots + StackSpace::STACK_JIT_EXTRA;
+
+    if ((Value *)f.regs.sp + nvals < f.stackLimit)
+        return true;
+
+    if (f.cx->stack.space().tryBumpLimit(NULL, f.regs.sp, nvals, &f.stackLimit))
+        return true;
+
+    
+    f.cx->stack.popFrameAfterOverflow();
+    js_ReportOverRecursed(f.cx);
+
+    return false;
 }
 
 
@@ -210,14 +228,8 @@ stubs::SlowNew(VMFrame &f, uint32 argc)
 void JS_FASTCALL
 stubs::HitStackQuota(VMFrame &f)
 {
-    
-    f.stackLimit = f.cx->stack.space().getStackLimit(f.cx, DONT_REPORT_ERROR);
-    if (f.stackLimit)
-        return;
-
-    f.cx->stack.popFrameAfterOverflow();
-    js_ReportOverRecursed(f.cx);
-    THROW();
+    if (!CheckStackQuota(f))
+        THROW();
 }
 
 
@@ -238,85 +250,63 @@ stubs::FixupArity(VMFrame &f, uint32 nactual)
 
 
 
-    MaybeConstruct construct = oldfp->isConstructing();
-    JSFunction *fun          = oldfp->fun();
-    JSScript *script         = fun->script();
-    void *ncode              = oldfp->nativeReturnAddress();
+    InitialFrameFlags initial = oldfp->initialFlags();
+    JSFunction *fun           = oldfp->fun();
+    JSScript *script          = fun->script();
+    void *ncode               = oldfp->nativeReturnAddress();
 
     
     f.regs.popPartialFrame((Value *)oldfp);
 
     
     CallArgs args = CallArgsFromSp(nactual, f.regs.sp);
-    StackFrame *fp = cx->stack.getFixupFrame(cx, DONT_REPORT_ERROR, args, fun,
-                                             script, ncode, construct, &f.stackLimit);
-    if (!fp) {
-        
+    StackFrame *fp = cx->stack.getFixupFrame(cx, f.regs, args, fun, script, ncode,
+                                             initial, LimitCheck(&f.stackLimit, ncode));
+
+    
 
 
 
-        f.regs.pc = f.jit()->nativeToPC(ncode);
-        js_ReportOverRecursed(cx);
+
+
+    if (!fp)
         THROWV(NULL);
-    }
 
     
     return fp;
 }
 
+struct ResetStubRejoin {
+    VMFrame &f;
+    ResetStubRejoin(VMFrame &f) : f(f) {}
+    ~ResetStubRejoin() { f.stubRejoin = 0; }
+};
+
 void * JS_FASTCALL
-stubs::CompileFunction(VMFrame &f, uint32 nactual)
+stubs::CompileFunction(VMFrame &f, uint32 argc)
 {
     
 
 
 
-    JSContext *cx = f.cx;
-    StackFrame *fp = f.fp();
 
-    
+    JS_ASSERT_IF(f.cx->typeInferenceEnabled(), f.stubRejoin);
+    ResetStubRejoin reset(f);
 
+    InitialFrameFlags initial = f.fp()->initialFlags();
+    f.regs.popPartialFrame((Value *)f.fp());
 
-
-    JSObject &callee = fp->formalArgsEnd()[-(int(nactual) + 2)].toObject();
-    JSFunction *fun = callee.getFunctionPrivate();
-    JSScript *script = fun->script();
-
-    
-    fp->initJitFrameEarlyPrologue(fun, nactual);
-
-    if (nactual != fp->numFormalArgs()) {
-        fp = (StackFrame *)FixupArity(f, nactual);
-        if (!fp)
-            return NULL;
-    }
-
-    
-    if (!fp->initJitFrameLatePrologue(cx, &f.stackLimit))
-        THROWV(NULL);
-
-    
-    f.regs.prepareToRun(*fp, script);
-
-    if (fun->isHeavyweight() && !js::CreateFunCallObject(cx, fp))
-        THROWV(NULL);
-
-    CompileStatus status = CanMethodJIT(cx, script, fp, CompileRequest_JIT);
-    if (status == Compile_Okay)
-        return script->getJIT(fp->isConstructing())->invokeEntry;
-
-    
-    JSBool ok = Interpret(cx, fp);
-    InlineReturn(f);
-
-    if (!ok)
-        THROWV(NULL);
-
-    return NULL;
+    if (InitialFrameFlagsAreConstructing(initial))
+        return UncachedNew(f, argc);
+    else if (InitialFrameFlagsAreLowered(initial))
+        return UncachedLoweredCall(f, argc);
+    else
+        return UncachedCall(f, argc);
 }
 
 static inline bool
-UncachedInlineCall(VMFrame &f, MaybeConstruct construct, void **pret, bool *unjittable, uint32 argc)
+UncachedInlineCall(VMFrame &f, InitialFrameFlags initial,
+                   void **pret, bool *unjittable, uint32 argc)
 {
     JSContext *cx = f.cx;
     CallArgs args = CallArgsFromSp(argc, f.regs.sp);
@@ -324,20 +314,40 @@ UncachedInlineCall(VMFrame &f, MaybeConstruct construct, void **pret, bool *unji
     JSFunction *newfun = callee.getFunctionPrivate();
     JSScript *newscript = newfun->script();
 
+    bool construct = InitialFrameFlagsAreConstructing(initial);
+
+    bool newType = construct && cx->typeInferenceEnabled() &&
+        types::UseNewType(cx, f.script(), f.pc());
+
+    types::TypeMonitorCall(cx, args, construct);
+
     
-    if (!cx->stack.pushInlineFrame(cx, f.regs, args, callee, newfun, newscript, construct, &f.stackLimit))
+
+
+
+
+
+
+    FrameRegs regs = f.regs;
+
+    
+    LimitCheck check(&f.stackLimit, NULL);
+    if (!cx->stack.pushInlineFrame(cx, regs, args, callee, newfun, newscript, initial, check))
         return false;
 
     
-    if (newfun->isHeavyweight() && !js::CreateFunCallObject(cx, f.fp()))
+    PreserveRegsGuard regsGuard(cx, regs);
+
+    
+    if (newfun->isHeavyweight() && !js::CreateFunCallObject(cx, regs.fp()))
         return false;
 
     
     if (newscript->getJITStatus(f.fp()->isConstructing()) == JITScript_None) {
-        CompileStatus status = CanMethodJIT(cx, newscript, f.fp(), CompileRequest_Interpreter);
+        CompileStatus status = CanMethodJIT(cx, newscript, regs.fp(), CompileRequest_Interpreter);
         if (status == Compile_Error) {
             
-            InlineReturn(f);
+            f.cx->stack.popInlineFrame(regs);
             return false;
         }
         if (status == Compile_Abort)
@@ -345,14 +355,25 @@ UncachedInlineCall(VMFrame &f, MaybeConstruct construct, void **pret, bool *unji
     }
 
     
-    if (JITScript *jit = newscript->getJIT(f.fp()->isConstructing())) {
-        *pret = jit->invokeEntry;
-        return true;
+
+
+
+    if (!newType) {
+        if (JITScript *jit = newscript->getJIT(regs.fp()->isConstructing())) {
+            *pret = jit->invokeEntry;
+
+            
+            regs.popFrame((Value *) regs.fp());
+            return true;
+        }
     }
 
     
     bool ok = !!Interpret(cx, cx->fp());
-    InlineReturn(f);
+    f.cx->stack.popInlineFrame(regs);
+
+    if (ok)
+        f.script()->types.monitor(cx, f.pc(), args.rval());
 
     *pret = NULL;
     return ok;
@@ -376,11 +397,12 @@ stubs::UncachedNewHelper(VMFrame &f, uint32 argc, UncachedCallResult *ucr)
     
     if (IsFunctionObject(args.calleev(), &ucr->fun) && ucr->fun->isInterpretedConstructor()) {
         ucr->callee = &args.callee();
-        if (!UncachedInlineCall(f, CONSTRUCT, &ucr->codeAddr, &ucr->unjittable, argc))
+        if (!UncachedInlineCall(f, INITIAL_CONSTRUCT, &ucr->codeAddr, &ucr->unjittable, argc))
             THROW();
     } else {
-        if (!InvokeConstructorKernel(cx, args))
+        if (!InvokeConstructor(cx, args))
             THROW();
+        f.script()->types.monitor(cx, f.pc(), args.rval());
     }
 }
 
@@ -388,7 +410,15 @@ void * JS_FASTCALL
 stubs::UncachedCall(VMFrame &f, uint32 argc)
 {
     UncachedCallResult ucr;
-    UncachedCallHelper(f, argc, &ucr);
+    UncachedCallHelper(f, argc, false, &ucr);
+    return ucr.codeAddr;
+}
+
+void * JS_FASTCALL
+stubs::UncachedLoweredCall(VMFrame &f, uint32 argc)
+{
+    UncachedCallResult ucr;
+    UncachedCallHelper(f, argc, true, &ucr);
     return ucr.codeAddr;
 }
 
@@ -398,8 +428,10 @@ stubs::Eval(VMFrame &f, uint32 argc)
     CallArgs args = CallArgsFromSp(argc, f.regs.sp);
 
     if (!IsBuiltinEvalForScope(&f.fp()->scopeChain(), args.calleev())) {
-        if (!InvokeKernel(f.cx, args))
+        if (!Invoke(f.cx, args))
             THROW();
+
+        f.script()->types.monitor(f.cx, f.pc(), args.rval());
         return;
     }
 
@@ -407,11 +439,11 @@ stubs::Eval(VMFrame &f, uint32 argc)
     if (!DirectEval(f.cx, args))
         THROW();
 
-    f.regs.sp = args.spAfterCall();
+    f.script()->types.monitor(f.cx, f.pc(), args.rval());
 }
 
 void
-stubs::UncachedCallHelper(VMFrame &f, uint32 argc, UncachedCallResult *ucr)
+stubs::UncachedCallHelper(VMFrame &f, uint32 argc, bool lowered, UncachedCallResult *ucr)
 {
     ucr->init();
 
@@ -420,10 +452,11 @@ stubs::UncachedCallHelper(VMFrame &f, uint32 argc, UncachedCallResult *ucr)
 
     if (IsFunctionObject(args.calleev(), &ucr->callee)) {
         ucr->callee = &args.callee();
-        ucr->fun = ucr->callee->getFunctionPrivate();
+        ucr->fun = GET_FUNCTION_PRIVATE(cx, ucr->callee);
 
         if (ucr->fun->isInterpreted()) {
-            if (!UncachedInlineCall(f, NO_CONSTRUCT, &ucr->codeAddr, &ucr->unjittable, argc))
+            InitialFrameFlags initial = lowered ? INITIAL_LOWERED : INITIAL_NONE;
+            if (!UncachedInlineCall(f, initial, &ucr->codeAddr, &ucr->unjittable, argc))
                 THROW();
             return;
         }
@@ -431,13 +464,15 @@ stubs::UncachedCallHelper(VMFrame &f, uint32 argc, UncachedCallResult *ucr)
         if (ucr->fun->isNative()) {
             if (!CallJSNative(cx, ucr->fun->u.n.native, args))
                 THROW();
+            f.script()->types.monitor(cx, f.pc(), args.rval());
             return;
         }
     }
 
-    if (!InvokeKernel(f.cx, args))
+    if (!Invoke(f.cx, args))
         THROW();
 
+    f.script()->types.monitor(cx, f.pc(), args.rval());
     return;
 }
 
@@ -448,10 +483,40 @@ stubs::PutActivationObjects(VMFrame &f)
     f.fp()->putActivationObjects();
 }
 
+static void
+RemoveOrphanedNative(JSContext *cx, StackFrame *fp)
+{
+    
+
+
+
+
+
+    JaegerCompartment *jc = cx->compartment->jaegerCompartment();
+    if (jc->orphanedNativeFrames.empty())
+        return;
+    for (unsigned i = 0; i < jc->orphanedNativeFrames.length(); i++) {
+        if (fp == jc->orphanedNativeFrames[i]) {
+            jc->orphanedNativeFrames[i] = jc->orphanedNativeFrames.back();
+            jc->orphanedNativeFrames.popBack();
+            break;
+        }
+    }
+    if (jc->orphanedNativeFrames.empty()) {
+        for (unsigned i = 0; i < jc->orphanedNativePools.length(); i++)
+            jc->orphanedNativePools[i]->release();
+        jc->orphanedNativePools.clear();
+    }
+}
+
 extern "C" void *
 js_InternalThrow(VMFrame &f)
 {
     JSContext *cx = f.cx;
+
+    
+    
+    RemoveOrphanedNative(cx, f.fp());
 
     
     
@@ -472,39 +537,31 @@ js_InternalThrow(VMFrame &f)
     
     JS_ASSERT(&cx->regs() == &f.regs);
 
+    
+    JSThrowHook handler = f.cx->debugHooks->throwHook;
+    if (handler) {
+        Value rval;
+        switch (handler(cx, f.script(), f.pc(), Jsvalify(&rval), cx->debugHooks->throwHookData)) {
+          case JSTRAP_ERROR:
+            cx->clearPendingException();
+            return NULL;
+
+          case JSTRAP_RETURN:
+            cx->clearPendingException();
+            cx->fp()->setReturnValue(rval);
+            return cx->jaegerCompartment()->forceReturnFromExternC();
+
+          case JSTRAP_THROW:
+            cx->setPendingException(rval);
+            break;
+
+          default:
+            break;
+        }
+    }
+
     jsbytecode *pc = NULL;
     for (;;) {
-        if (cx->isExceptionPending()) {
-            
-            JSThrowHook handler = cx->debugHooks->throwHook;
-            if (handler || !cx->compartment->getDebuggees().empty()) {
-                Value rval;
-                JSTrapStatus st = Debugger::onExceptionUnwind(cx, &rval);
-                if (st == JSTRAP_CONTINUE && handler) {
-                    st = handler(cx, cx->fp()->script(), cx->regs().pc, Jsvalify(&rval),
-                                 cx->debugHooks->throwHookData);
-                }
-
-                switch (st) {
-                case JSTRAP_ERROR:
-                    cx->clearPendingException();
-                    return NULL;
-
-                case JSTRAP_RETURN:
-                    cx->clearPendingException();
-                    cx->fp()->setReturnValue(rval);
-                    return cx->jaegerCompartment()->forceReturnFromExternC();
-
-                case JSTRAP_THROW:
-                    cx->setPendingException(rval);
-                    break;
-
-                default:
-                    break;
-                }
-            }
-        }
-
         pc = FindExceptionHandler(cx);
         if (pc)
             break;
@@ -535,6 +592,19 @@ js_InternalThrow(VMFrame &f)
 
     StackFrame *fp = cx->fp();
     JSScript *script = fp->script();
+
+    if (!fp->jit()) {
+        
+
+
+
+
+
+        CompileStatus status = TryCompile(cx, fp);
+        if (status != Compile_Okay)
+            return NULL;
+    }
+
     return script->nativeCodeForPC(fp->isConstructing(), pc);
 }
 
@@ -719,6 +789,20 @@ FrameIsFinished(JSContext *cx)
 
 
 
+static inline void
+AdvanceReturnPC(JSContext *cx)
+{
+    JS_ASSERT(*cx->regs().pc == JSOP_CALL ||
+              *cx->regs().pc == JSOP_NEW ||
+              *cx->regs().pc == JSOP_EVAL ||
+              *cx->regs().pc == JSOP_FUNCALL ||
+              *cx->regs().pc == JSOP_FUNAPPLY);
+    cx->regs().pc += JSOP_CALL_LENGTH;
+}
+
+
+
+
 
 
 
@@ -768,6 +852,7 @@ HandleFinishedFrame(VMFrame &f, StackFrame *entryFrame)
 
     if (cx->fp() != entryFrame) {
         InlineReturn(f);
+        AdvanceReturnPC(cx);
     }
 
     return returnOK;
@@ -804,9 +889,10 @@ EvaluateExcessFrame(VMFrame &f, StackFrame *entryFrame)
         return HandleFinishedFrame(f, entryFrame);
 
     if (void *ncode = AtSafePoint(cx)) {
-        if (!JaegerShotAtSafePoint(cx, ncode))
+        if (!JaegerShotAtSafePoint(cx, ncode, false))
             return false;
         InlineReturn(f);
+        AdvanceReturnPC(cx);
         return true;
     }
 
@@ -851,10 +937,10 @@ static void
 DisableTraceHint(JITScript *jit, ic::TraceICInfo &ic)
 {
     Repatcher repatcher(jit);
-    UpdateTraceHintSingle(repatcher, ic.traceHint, ic.jumpTarget);
+    UpdateTraceHintSingle(repatcher, ic.traceHint, ic.fastTarget);
 
     if (ic.hasSlowTraceHint)
-        UpdateTraceHintSingle(repatcher, ic.slowTraceHint, ic.jumpTarget);
+        UpdateTraceHintSingle(repatcher, ic.slowTraceHint, ic.slowTarget);
 }
 
 static void
@@ -869,8 +955,7 @@ ResetTraceHintAt(JSScript *script, js::mjit::JITScript *jit,
     
     JS_ASSERT(ic.jumpTargetPC == pc);
 
-    JaegerSpew(JSpew_PICs, "Enabling trace IC %u in script %p\n", index,
-               static_cast<void*>(script));
+    JaegerSpew(JSpew_PICs, "Enabling trace IC %u in script %p\n", index, script);
 
     Repatcher repatcher(jit);
 
@@ -942,9 +1027,23 @@ RunTracer(VMFrame &f)
     loopCounter = NULL;
     hits = 1;
 #endif
-    tpa = MonitorTracePoint(f.cx, &blacklist, traceData, traceEpoch,
-                            loopCounter, hits);
-    JS_ASSERT(!TRACE_RECORDER(cx));
+
+    {
+        
+
+
+
+
+
+
+
+        FrameRegs regs = f.regs;
+        PreserveRegsGuard regsGuard(cx, regs);
+
+        tpa = MonitorTracePoint(f.cx, &blacklist, traceData, traceEpoch,
+                                loopCounter, hits);
+        JS_ASSERT(!TRACE_RECORDER(cx));
+    }
 
 #if JS_MONOIC
     ic.loopCounterStart = *loopCounter;
@@ -1046,3 +1145,483 @@ stubs::InvokeTracer(VMFrame &f)
 # endif 
 #endif 
 
+
+#if defined(JS_METHODJIT_SPEW)
+static const char *OpcodeNames[] = {
+# define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) #name,
+# include "jsopcode.tbl"
+# undef OPDEF
+};
+#endif
+
+static void
+FinishVarIncOp(VMFrame &f, RejoinState rejoin, Value ov, Value nv, Value *vp)
+{
+    
+    JS_ASSERT(rejoin == REJOIN_POS || rejoin == REJOIN_BINARY);
+
+    JSContext *cx = f.cx;
+
+    JSOp op = js_GetOpcode(cx, f.script(), f.pc());
+    const JSCodeSpec *cs = &js_CodeSpec[op];
+
+    unsigned i = GET_SLOTNO(f.pc());
+    Value *var = (JOF_TYPE(cs->format) == JOF_LOCAL) ? f.fp()->slots() + i : &f.fp()->formalArg(i);
+
+    if (rejoin == REJOIN_POS) {
+        double d = ov.toNumber();
+        double N = (cs->format & JOF_INC) ? 1 : -1;
+        if (!nv.setNumber(d + N))
+            f.script()->types.monitorOverflow(cx, f.pc());
+    }
+
+    *var = nv;
+    *vp = (cs->format & JOF_POST) ? ov : nv;
+}
+
+static bool
+FinishObjIncOp(VMFrame &f, RejoinState rejoin, Value objv, Value ov, Value nv, Value *vp)
+{
+    
+
+
+
+    JS_ASSERT(rejoin == REJOIN_BINDNAME || rejoin == REJOIN_GETTER ||
+              rejoin == REJOIN_POS || rejoin == REJOIN_BINARY);
+
+    JSContext *cx = f.cx;
+
+    JSObject *obj = ValueToObject(cx, &objv);
+    if (!obj)
+        return false;
+
+    JSOp op = js_GetOpcode(cx, f.script(), f.pc());
+    const JSCodeSpec *cs = &js_CodeSpec[op];
+    JS_ASSERT(JOF_TYPE(cs->format) == JOF_ATOM);
+
+    jsid id = ATOM_TO_JSID(f.script()->getAtom(GET_SLOTNO(f.pc())));
+
+    if (rejoin == REJOIN_BINDNAME && !obj->getProperty(cx, id, &ov))
+        return false;
+
+    if (rejoin == REJOIN_BINDNAME || rejoin == REJOIN_GETTER) {
+        double d;
+        if (!ValueToNumber(cx, ov, &d))
+            return false;
+        ov.setNumber(d);
+    }
+
+    if (rejoin == REJOIN_BINDNAME || rejoin == REJOIN_GETTER || rejoin == REJOIN_POS) {
+        double d = ov.toNumber();
+        double N = (cs->format & JOF_INC) ? 1 : -1;
+        if (!nv.setNumber(d + N))
+            f.script()->types.monitorOverflow(cx, f.pc());
+    }
+
+    uint32 setPropFlags = (cs->format & JOF_NAME)
+                          ? JSRESOLVE_ASSIGNING
+                          : JSRESOLVE_ASSIGNING | JSRESOLVE_QUALIFIED;
+
+    {
+        JSAutoResolveFlags rf(cx, setPropFlags);
+        if (!obj->setProperty(cx, id, &nv, f.script()->strictModeCode))
+            return false;
+    }
+
+    *vp = (cs->format & JOF_POST) ? ov : nv;
+    return true;
+}
+
+extern "C" void *
+js_InternalInterpret(void *returnData, void *returnType, void *returnReg, js::VMFrame &f)
+{
+    JSRejoinState jsrejoin = f.fp()->rejoin();
+    RejoinState rejoin;
+    if (jsrejoin & 0x1) {
+        
+        uint32 pcOffset = jsrejoin >> 1;
+        f.regs.pc = f.fp()->script()->code + pcOffset;
+        f.regs.clearInlined();
+        rejoin = REJOIN_SCRIPTED;
+    } else {
+        rejoin = (RejoinState) (jsrejoin >> 1);
+    }
+
+    JSContext *cx = f.cx;
+    StackFrame *fp = f.regs.fp();
+    JSScript *script = fp->script();
+
+    jsbytecode *pc = f.regs.pc;
+    analyze::UntrapOpcode untrap(cx, script, pc);
+
+    JSOp op = JSOp(*pc);
+    const JSCodeSpec *cs = &js_CodeSpec[op];
+
+    analyze::AutoEnterAnalysis enter(cx);
+
+    analyze::ScriptAnalysis *analysis = script->analysis(cx);
+    if (analysis && !analysis->ranBytecode())
+        analysis->analyzeBytecode(cx);
+    if (!analysis || analysis->OOM()) {
+        js_ReportOutOfMemory(cx);
+        return js_InternalThrow(f);
+    }
+
+    
+
+
+
+
+    Value *oldsp = f.regs.sp;
+    f.regs.sp = fp->base() + analysis->getCode(pc).stackDepth;
+
+    jsbytecode *nextpc = pc + analyze::GetBytecodeLength(pc);
+    Value *nextsp = NULL;
+    if (nextpc != script->code + script->length)
+        nextsp = fp->base() + analysis->getCode(nextpc).stackDepth;
+
+    JS_ASSERT(&cx->regs() == &f.regs);
+
+#ifdef JS_METHODJIT_SPEW
+    JaegerSpew(JSpew_Recompile, "interpreter rejoin (file \"%s\") (line \"%d\") (op %s) (opline \"%d\")\n",
+               script->filename, script->lineno, OpcodeNames[op], js_PCToLineNumber(cx, script, pc));
+#endif
+
+    uint32 nextDepth = uint32(-1);
+    bool skipTrap = false;
+
+    if ((cs->format & (JOF_INC | JOF_DEC)) &&
+        rejoin != REJOIN_FALLTHROUGH &&
+        rejoin != REJOIN_RESUME &&
+        rejoin != REJOIN_THIS_PROTOTYPE &&
+        rejoin != REJOIN_CHECK_ARGUMENTS) {
+        
+        nextDepth = analysis->getCode(nextpc).stackDepth;
+        untrap.retrap();
+        enter.leave();
+
+        switch (op) {
+          case JSOP_INCLOCAL:
+          case JSOP_DECLOCAL:
+          case JSOP_LOCALINC:
+          case JSOP_LOCALDEC:
+          case JSOP_INCARG:
+          case JSOP_DECARG:
+          case JSOP_ARGINC:
+          case JSOP_ARGDEC:
+            if (rejoin != REJOIN_BINARY || !analysis->incrementInitialValueObserved(pc)) {
+                
+                FinishVarIncOp(f, rejoin, nextsp[-1], nextsp[-1], &nextsp[-1]);
+            } else {
+                
+                FinishVarIncOp(f, rejoin, nextsp[-1], nextsp[0], &nextsp[-1]);
+            }
+            break;
+
+          case JSOP_INCGNAME:
+          case JSOP_DECGNAME:
+          case JSOP_GNAMEINC:
+          case JSOP_GNAMEDEC:
+          case JSOP_INCNAME:
+          case JSOP_DECNAME:
+          case JSOP_NAMEINC:
+          case JSOP_NAMEDEC:
+          case JSOP_INCPROP:
+          case JSOP_DECPROP:
+          case JSOP_PROPINC:
+          case JSOP_PROPDEC:
+            if (rejoin != REJOIN_BINARY || !analysis->incrementInitialValueObserved(pc)) {
+                
+                if (!FinishObjIncOp(f, rejoin, nextsp[-1], nextsp[0], nextsp[0], &nextsp[-1]))
+                    return js_InternalThrow(f);
+            } else {
+                
+                if (!FinishObjIncOp(f, rejoin, nextsp[0], nextsp[-1], nextsp[1], &nextsp[-1]))
+                    return js_InternalThrow(f);
+            }
+            break;
+
+          default:
+            JS_NOT_REACHED("Bad op");
+        }
+        rejoin = REJOIN_FALLTHROUGH;
+    }
+
+    switch (rejoin) {
+      case REJOIN_SCRIPTED: {
+#ifdef JS_NUNBOX32
+        uint64 rvalBits = ((uint64)returnType << 32) | (uint32)returnData;
+#elif JS_PUNBOX64
+        uint64 rvalBits = (uint64)returnType | (uint64)returnData;
+#else
+#error "Unknown boxing format"
+#endif
+        nextsp[-1].setRawBits(rvalBits);
+
+        
+
+
+
+        script->types.monitor(cx, pc, nextsp[-1]);
+        f.regs.pc = nextpc;
+        break;
+      }
+
+      case REJOIN_NONE:
+        JS_NOT_REACHED("Unpossible rejoin!");
+        break;
+
+      case REJOIN_RESUME:
+        break;
+
+      case REJOIN_TRAP:
+        
+
+
+
+        if (untrap.trap)
+            skipTrap = true;
+        break;
+
+      case REJOIN_FALLTHROUGH:
+        f.regs.pc = nextpc;
+        break;
+
+      case REJOIN_NATIVE:
+      case REJOIN_NATIVE_LOWERED: {
+        
+
+
+
+
+        if (rejoin == REJOIN_NATIVE_LOWERED)
+            nextsp[-1] = nextsp[0];
+
+        
+        RemoveOrphanedNative(cx, fp);
+
+        
+
+
+
+        f.regs.pc = nextpc;
+        break;
+      }
+
+      case REJOIN_PUSH_BOOLEAN:
+        nextsp[-1].setBoolean(returnReg != NULL);
+        f.regs.pc = nextpc;
+        break;
+
+      case REJOIN_PUSH_OBJECT:
+        nextsp[-1].setObject(* (JSObject *) returnReg);
+        f.regs.pc = nextpc;
+        break;
+
+      case REJOIN_DEFLOCALFUN:
+        fp->slots()[GET_SLOTNO(pc)].setObject(* (JSObject *) returnReg);
+        f.regs.pc = nextpc;
+        break;
+
+      case REJOIN_THIS_PROTOTYPE: {
+        JSObject *callee = &fp->callee();
+        JSObject *proto = f.regs.sp[0].isObject() ? &f.regs.sp[0].toObject() : NULL;
+        JSObject *obj = js_CreateThisForFunctionWithProto(cx, callee, proto);
+        if (!obj)
+            return js_InternalThrow(f);
+        fp->formalArgs()[-1].setObject(*obj);
+
+        if (script->debugMode || Probes::callTrackingActive(cx))
+            js::ScriptDebugPrologue(cx, fp);
+        break;
+      }
+
+      case REJOIN_CHECK_ARGUMENTS: {
+        
+
+
+
+
+        if (!CheckStackQuota(f))
+            return js_InternalThrow(f);
+        if (fp->fun()->isHeavyweight()) {
+            if (!js::CreateFunCallObject(cx, fp))
+                return js_InternalThrow(f);
+        }
+
+        fp->scopeChain();
+        SetValueRangeToUndefined(fp->slots(), script->nfixed);
+
+        
+        if (!ScriptPrologueOrGeneratorResume(cx, fp, types::UseNewTypeAtEntry(cx, fp)))
+            return js_InternalThrow(f);
+        break;
+      }
+
+      case REJOIN_CALL_PROLOGUE:
+      case REJOIN_CALL_PROLOGUE_LOWERED_CALL:
+      case REJOIN_CALL_PROLOGUE_LOWERED_APPLY:
+        if (returnReg) {
+            uint32 argc = 0;
+            if (rejoin == REJOIN_CALL_PROLOGUE)
+                argc = GET_ARGC(pc);
+            else if (rejoin == REJOIN_CALL_PROLOGUE_LOWERED_CALL)
+                argc = GET_ARGC(pc) - 1;
+            else
+                argc = f.u.call.dynamicArgc;
+
+            
+
+
+
+
+
+
+
+            f.regs.restorePartialFrame(oldsp); 
+            f.scratch = (void *) argc;         
+            f.fp()->setNativeReturnAddress(JS_FUNC_TO_DATA_PTR(void *, JaegerInterpolineScripted));
+            fp->setRejoin(REJOIN_SCRIPTED | ((pc - script->code) << 1));
+            return returnReg;
+        } else {
+            
+
+
+
+
+            f.regs.pc = nextpc;
+            if (rejoin != REJOIN_CALL_PROLOGUE) {
+                
+                nextsp[-1] = nextsp[0];
+            }
+        }
+        break;
+
+      case REJOIN_CALL_SPLAT: {
+        
+        nextDepth = analysis->getCode(nextpc).stackDepth;
+        untrap.retrap();
+        enter.leave();
+        f.regs.sp = nextsp + 2 + f.u.call.dynamicArgc;
+        if (!Invoke(cx, CallArgsFromSp(f.u.call.dynamicArgc, f.regs.sp)))
+            return js_InternalThrow(f);
+        nextsp[-1] = nextsp[0];
+        f.regs.pc = nextpc;
+        break;
+      }
+
+      case REJOIN_GETTER:
+        
+
+
+
+        switch (op) {
+          case JSOP_NAME:
+          case JSOP_GETGNAME:
+          case JSOP_GETGLOBAL:
+          case JSOP_GETPROP:
+          case JSOP_GETXPROP:
+          case JSOP_LENGTH:
+            
+            f.regs.pc = nextpc;
+            break;
+
+          case JSOP_CALLGNAME:
+            if (!ComputeImplicitThis(cx, &fp->scopeChain(), nextsp[-2], &nextsp[-1]))
+                return js_InternalThrow(f);
+            f.regs.pc = nextpc;
+            break;
+
+          case JSOP_CALLGLOBAL:
+            
+            nextsp[-1].setUndefined();
+            f.regs.pc = nextpc;
+            break;
+
+          case JSOP_CALLPROP: {
+            
+
+
+
+            JS_ASSERT(nextsp[-2].isString());
+            Value tmp = nextsp[-2];
+            nextsp[-2] = nextsp[-1];
+            nextsp[-1] = tmp;
+            f.regs.pc = nextpc;
+            break;
+          }
+
+          case JSOP_INSTANCEOF: {
+            
+
+
+
+
+            if (f.regs.sp[0].isPrimitive()) {
+                js_ReportValueError(cx, JSMSG_BAD_PROTOTYPE, -1, f.regs.sp[-1], NULL);
+                return js_InternalThrow(f);
+            }
+            nextsp[-1].setBoolean(js_IsDelegate(cx, &f.regs.sp[0].toObject(), f.regs.sp[-2]));
+            f.regs.pc = nextpc;
+            break;
+          }
+
+          default:
+            JS_NOT_REACHED("Bad rejoin getter op");
+        }
+        break;
+
+      case REJOIN_POS:
+        
+        JS_ASSERT(op == JSOP_POS);
+        f.regs.pc = nextpc;
+        break;
+
+      case REJOIN_BINARY:
+        
+        JS_ASSERT(op == JSOP_ADD || op == JSOP_SUB || op == JSOP_MUL || op == JSOP_DIV);
+        f.regs.pc = nextpc;
+        break;
+
+      case REJOIN_BRANCH: {
+        
+
+
+
+
+        bool takeBranch = false;
+        analyze::UntrapOpcode untrap(cx, script, nextpc);
+        switch (JSOp(*nextpc)) {
+          case JSOP_IFNE:
+          case JSOP_IFNEX:
+            takeBranch = returnReg != NULL;
+            break;
+          case JSOP_IFEQ:
+          case JSOP_IFEQX:
+            takeBranch = returnReg == NULL;
+            break;
+          default:
+            JS_NOT_REACHED("Bad branch op");
+        }
+        if (takeBranch)
+            f.regs.pc = nextpc + GET_JUMP_OFFSET(nextpc);
+        else
+            f.regs.pc = nextpc + analyze::GetBytecodeLength(nextpc);
+        break;
+      }
+
+      default:
+        JS_NOT_REACHED("Missing rejoin");
+    }
+
+    if (nextDepth == uint32(-1))
+        nextDepth = analysis->getCode(f.regs.pc).stackDepth;
+    f.regs.sp = fp->base() + nextDepth;
+
+    
+    JaegerStatus status = skipTrap ? Jaeger_UnfinishedAtTrap : Jaeger_Unfinished;
+    cx->compartment->jaegerCompartment()->setLastUnfinished(status);
+    *f.oldregs = f.regs;
+
+    return NULL;
+}
