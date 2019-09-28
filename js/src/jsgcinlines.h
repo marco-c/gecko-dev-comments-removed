@@ -115,49 +115,13 @@ const size_t SLOTS_TO_THING_KIND_LIMIT = 17;
 
 
 static inline FinalizeKind
-GetGCObjectKind(size_t numSlots, bool isArray = false)
+GetGCObjectKind(size_t numSlots)
 {
     extern FinalizeKind slotsToThingKind[];
 
-    if (numSlots >= SLOTS_TO_THING_KIND_LIMIT) {
-        
-
-
-
-
-
-        return isArray ? FINALIZE_OBJECT0 : FINALIZE_OBJECT16;
-    }
+    if (numSlots >= SLOTS_TO_THING_KIND_LIMIT)
+        return FINALIZE_OBJECT0;
     return slotsToThingKind[numSlots];
-}
-
-static inline bool
-IsBackgroundFinalizeKind(FinalizeKind kind)
-{
-    JS_ASSERT(kind <= FINALIZE_OBJECT_LAST);
-    return kind % 2 == 1;
-}
-
-static inline FinalizeKind
-GetBackgroundFinalizeKind(FinalizeKind kind)
-{
-    JS_ASSERT(!IsBackgroundFinalizeKind(kind));
-    return (FinalizeKind) (kind + 1);
-}
-
-static inline bool
-CanBumpFinalizeKind(FinalizeKind kind)
-{
-    JS_ASSERT(kind <= FINALIZE_OBJECT_LAST);
-    return (kind + 2) <= FINALIZE_OBJECT_LAST;
-}
-
-
-static inline FinalizeKind
-BumpFinalizeKind(FinalizeKind kind)
-{
-    JS_ASSERT(CanBumpFinalizeKind(kind));
-    return (FinalizeKind) (kind + 2);
 }
 
 
@@ -250,7 +214,6 @@ js_NewGCObject(JSContext *cx, js::gc::FinalizeKind kind)
     JSObject *obj = NewGCThing<JSObject>(cx, kind, js::gc::GCThingSizeMap[kind]);
     if (obj) {
         obj->capacity = js::gc::GetGCKindSlots(kind);
-        obj->type = NULL;     
         obj->lastProp = NULL; 
     }
     return obj;

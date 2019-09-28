@@ -990,12 +990,10 @@ JS_StringToVersion(const char *string);
                                                    don't tune at run-time. */
 #define JSOPTION_PCCOUNT        JS_BIT(17)      
 
-#define JSOPTION_TYPE_INFERENCE JS_BIT(18)      /* Perform type inference. */
-
 
 #define JSCOMPILEOPTION_MASK    (JSOPTION_XML)
 
-#define JSRUNOPTION_MASK        (JS_BITMASK(19) & ~JSCOMPILEOPTION_MASK)
+#define JSRUNOPTION_MASK        (JS_BITMASK(18) & ~JSCOMPILEOPTION_MASK)
 #define JSALLOPTION_MASK        (JSCOMPILEOPTION_MASK | JSRUNOPTION_MASK)
 
 extern JS_PUBLIC_API(uint32)

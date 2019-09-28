@@ -48,13 +48,12 @@ BEGIN_TEST(testConservativeGC)
 bool checkObjectFields(JSObject *savedCopy, JSObject *obj)
 {
     
-    CHECK(savedCopy->lastProp == obj->lastProp);
-    CHECK(savedCopy->clasp == obj->clasp);
-    CHECK(savedCopy->flags == obj->flags);
-    CHECK(savedCopy->newType == obj->newType);
-    CHECK(savedCopy->type == obj->type);
-    CHECK(savedCopy->parent == obj->parent);
-    CHECK(savedCopy->privateData == obj->privateData);
+
+
+
+    savedCopy->objShape = obj->objShape;
+    savedCopy->slots = obj->slots;
+    CHECK(!memcmp(savedCopy, obj, sizeof(*obj)));
     return true;
 }
 

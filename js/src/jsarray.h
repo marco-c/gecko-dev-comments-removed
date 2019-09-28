@@ -42,7 +42,6 @@
 
 
 
-#include "jscntxt.h"
 #include "jsprvtd.h"
 #include "jspubtd.h"
 #include "jsatom.h"
@@ -51,26 +50,41 @@
 
 const uintN MIN_SPARSE_INDEX = 256;
 
-inline uint32
-JSObject::getDenseArrayInitializedLength()
+inline JSObject::EnsureDenseResult
+JSObject::ensureDenseArrayElements(JSContext *cx, uintN index, uintN extra)
 {
     JS_ASSERT(isDenseArray());
-    return initializedLength;
-}
+    uintN currentCapacity = numSlots();
 
-inline void
-JSObject::setDenseArrayInitializedLength(uint32 length)
-{
-    JS_ASSERT(isDenseArray());
-    JS_ASSERT(length <= getDenseArrayCapacity());
-    initializedLength = length;
-}
+    uintN requiredCapacity;
+    if (extra == 1) {
+        
+        if (index < currentCapacity)
+            return ED_OK;
+        requiredCapacity = index + 1;
+        if (requiredCapacity == 0) {
+            
+            return ED_SPARSE;
+        }
+    } else {
+        requiredCapacity = index + extra;
+        if (requiredCapacity < index) {
+            
+            return ED_SPARSE;
+        }
+        if (requiredCapacity <= currentCapacity)
+            return ED_OK;
+    }
 
-inline bool
-JSObject::isPackedDenseArray()
-{
-    JS_ASSERT(isDenseArray());
-    return flags & PACKED_ARRAY;
+    
+
+
+
+    if (requiredCapacity > MIN_SPARSE_INDEX &&
+        willBeSparseDenseArray(requiredCapacity, extra)) {
+        return ED_SPARSE;
+    }
+    return growSlots(cx, requiredCapacity) ? ED_OK : ED_FAILED;
 }
 
 extern bool
@@ -94,6 +108,25 @@ js_IdIsIndex(jsid id, jsuint *indexp)
     return js_StringIsIndex(JSID_TO_ATOM(id), indexp);
 }
 
+extern js::Class js_ArrayClass, js_SlowArrayClass;
+
+inline bool
+JSObject::isDenseArray() const
+{
+    return getClass() == &js_ArrayClass;
+}
+
+inline bool
+JSObject::isSlowArray() const
+{
+    return getClass() == &js_SlowArrayClass;
+}
+
+inline bool
+JSObject::isArray() const
+{
+    return isDenseArray() || isSlowArray();
+}
 
 
 
@@ -113,8 +146,12 @@ js_IdIsIndex(jsid id, jsuint *indexp)
 
 
 
-inline JSObject *
-js_GetProtoIfDenseArray(JSObject *obj);
+
+static JS_INLINE JSObject *
+js_GetProtoIfDenseArray(JSObject *obj)
+{
+    return obj->isDenseArray() ? obj->getProto() : obj;
+}
 
 extern JSObject *
 js_InitArrayClass(JSContext *cx, JSObject *obj);
@@ -132,14 +169,6 @@ NewDenseEmptyArray(JSContext *cx, JSObject *proto=NULL);
 
 extern JSObject * JS_FASTCALL
 NewDenseAllocatedArray(JSContext *cx, uint length, JSObject *proto=NULL);
-
-
-
-
-
-
-extern JSObject * JS_FASTCALL
-NewDenseAllocatedEmptyArray(JSContext *cx, uint length, JSObject *proto=NULL);
 
 
 
@@ -208,18 +237,13 @@ js_MergeSort(void *vec, size_t nel, size_t elsize, JSComparator cmp,
              void *arg, void *tmp, JSMergeSortElemType elemType);
 
 
-namespace js {
 
+
+
+namespace js {
 extern JSBool
 array_sort(JSContext *cx, uintN argc, js::Value *vp);
-
-extern JSBool
-array_push(JSContext *cx, uintN argc, js::Value *vp);
-
-extern JSBool
-array_pop(JSContext *cx, uintN argc, js::Value *vp);
-
-} 
+}
 
 #ifdef DEBUG
 extern JSBool
