@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=78: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Pierre Phaneuf <pp@ludusdesign.com>
+ *   Mats Palmgren <mats.palmgren@bredband.net>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsHTMLOptionElement.h"
 #include "nsHTMLSelectElement.h"
@@ -51,7 +51,7 @@
 #include "nsIDOMHTMLCollection.h"
 #include "nsISelectControlFrame.h"
 
-
+// Notify/query select frame for selected state
 #include "nsIFormControlFrame.h"
 #include "nsIDocument.h"
 #include "nsIFrame.h"
@@ -59,26 +59,25 @@
 #include "nsNodeInfoManager.h"
 #include "nsCOMPtr.h"
 #include "nsEventStates.h"
-#include "nsIDocument.h"
 #include "nsIDOMDocument.h"
 #include "nsContentCreatorFunctions.h"
 #include "mozAutoDocUpdate.h"
 
 using namespace mozilla::dom;
 
-
-
-
+/**
+ * Implementation of &lt;option&gt;
+ */
 
 nsGenericHTMLElement*
 NS_NewHTMLOptionElement(already_AddRefed<nsINodeInfo> aNodeInfo,
                         FromParser aFromParser)
 {
-  
-
-
-
-
+  /*
+   * nsHTMLOptionElement's will be created without a nsINodeInfo passed in
+   * if someone says "var opt = new Option();" in JavaScript, in a case like
+   * that we request the nsINodeInfo from the document's nodeinfo list.
+   */
   nsCOMPtr<nsINodeInfo> nodeInfo(aNodeInfo);
   if (!nodeInfo) {
     nsCOMPtr<nsIDocument> doc =
@@ -100,7 +99,7 @@ nsHTMLOptionElement::nsHTMLOptionElement(already_AddRefed<nsINodeInfo> aNodeInfo
     mIsSelected(false),
     mIsInSetDefaultSelected(false)
 {
-  
+  // We start off enabled
   AddStatesSilently(NS_EVENT_STATE_ENABLED);
 }
 
@@ -108,7 +107,7 @@ nsHTMLOptionElement::~nsHTMLOptionElement()
 {
 }
 
-
+// ISupports
 
 
 NS_IMPL_ADDREF_INHERITED(nsHTMLOptionElement, nsGenericElement)
@@ -117,7 +116,7 @@ NS_IMPL_RELEASE_INHERITED(nsHTMLOptionElement, nsGenericElement)
 
 DOMCI_NODE_DATA(HTMLOptionElement, nsHTMLOptionElement)
 
-
+// QueryInterface implementation for nsHTMLOptionElement
 NS_INTERFACE_TABLE_HEAD(nsHTMLOptionElement)
   NS_HTML_CONTENT_INTERFACE_TABLE2(nsHTMLOptionElement,
                                    nsIDOMHTMLOptionElement,
@@ -151,8 +150,8 @@ nsHTMLOptionElement::SetSelectedInternal(bool aValue, bool aNotify)
   mSelectedChanged = true;
   mIsSelected = aValue;
 
-  
-  
+  // When mIsInSetDefaultSelected is true, the state change will be handled by
+  // SetAttr/UnsetAttr.
   if (!mIsInSetDefaultSelected) {
     UpdateState(aNotify);
   }
@@ -169,13 +168,13 @@ nsHTMLOptionElement::GetSelected(bool* aValue)
 NS_IMETHODIMP
 nsHTMLOptionElement::SetSelected(bool aValue)
 {
-  
-  
+  // Note: The select content obj maintains all the PresState
+  // so defer to it to get the answer
   nsHTMLSelectElement* selectInt = GetSelect();
   if (selectInt) {
     PRInt32 index;
     GetIndex(&index);
-    
+    // This should end up calling SetSelectedInternal
     return selectInt->SetOptionsSelectedByIndex(index, index, aValue,
                                                 false, true, true,
                                                 nsnull);
@@ -188,7 +187,7 @@ nsHTMLOptionElement::SetSelected(bool aValue)
 }
 
 NS_IMPL_BOOL_ATTR(nsHTMLOptionElement, DefaultSelected, selected)
-
+// GetText returns a whitespace compressed .textContent value.
 NS_IMPL_STRING_ATTR_WITH_FALLBACK(nsHTMLOptionElement, Label, label, GetText)
 NS_IMPL_STRING_ATTR_WITH_FALLBACK(nsHTMLOptionElement, Value, value, GetText)
 NS_IMPL_BOOL_ATTR(nsHTMLOptionElement, Disabled, disabled)
@@ -196,10 +195,10 @@ NS_IMPL_BOOL_ATTR(nsHTMLOptionElement, Disabled, disabled)
 NS_IMETHODIMP
 nsHTMLOptionElement::GetIndex(PRInt32* aIndex)
 {
-  
+  // When the element is not in a list of options, the index is 0.
   *aIndex = 0;
 
-  
+  // Only select elements can contain a list of options.
   nsHTMLSelectElement* selectElement = GetSelect();
   if (!selectElement) {
     return NS_OK;
@@ -210,14 +209,14 @@ nsHTMLOptionElement::GetIndex(PRInt32* aIndex)
     return NS_OK;
   }
 
-  
+  // aIndex will not be set if GetOptionsIndex fails.
   return options->GetOptionIndex(this, 0, true, aIndex);
 }
 
 bool
 nsHTMLOptionElement::Selected() const
 {
-  
+  // If we haven't been explictly selected or deselected, use our default value
   if (!mSelectedChanged) {
     return DefaultSelected();
   }
@@ -259,16 +258,16 @@ nsHTMLOptionElement::BeforeSetAttr(PRInt32 aNamespaceID, nsIAtom* aName,
     return NS_OK;
   }
   
-  
-  
-  
+  // We just changed out selected state (since we look at the "selected"
+  // attribute when mSelectedChanged is false).  Let's tell our select about
+  // it.
   nsHTMLSelectElement* selectInt = GetSelect();
   if (!selectInt) {
     return NS_OK;
   }
 
-  
-  
+  // Note that at this point mSelectedChanged is false and as long as that's
+  // true it doesn't matter what value mIsSelected has.
   NS_ASSERTION(!mSelectedChanged, "Shouldn't be here");
   
   bool newSelected = (aValue != nsnull);
@@ -277,18 +276,18 @@ nsHTMLOptionElement::BeforeSetAttr(PRInt32 aNamespaceID, nsIAtom* aName,
   
   PRInt32 index;
   GetIndex(&index);
-  
-  
-  
+  // This should end up calling SetSelectedInternal, which we will allow to
+  // take effect so that parts of SetOptionsSelectedByIndex that might depend
+  // on it working don't get confused.
   rv = selectInt->SetOptionsSelectedByIndex(index, index, newSelected,
                                             false, true, aNotify,
                                             nsnull);
 
-  
-  
+  // Now reset our members; when we finish the attr set we'll end up with the
+  // rigt selected state.
   mIsInSetDefaultSelected = inSetDefaultSelected;
   mSelectedChanged = false;
-  
+  // mIsSelected doesn't matter while mSelectedChanged is false
 
   return rv;
 }
@@ -299,7 +298,7 @@ nsHTMLOptionElement::GetText(nsAString& aText)
   nsAutoString text;
   nsContentUtils::GetNodeTextContent(this, false, text);
 
-  
+  // XXX No CompressWhitespace for nsAString.  Sad.
   text.CompressWhitespace(true, true);
   aText = text;
 
@@ -334,7 +333,7 @@ nsHTMLOptionElement::IntrinsicState() const
   return state;
 }
 
-
+// Get the select content element that contains this option
 nsHTMLSelectElement*
 nsHTMLOptionElement::GetSelect()
 {
@@ -362,13 +361,13 @@ nsHTMLOptionElement::Initialize(nsISupports* aOwner,
   nsresult result = NS_OK;
 
   if (argc > 0) {
-    
+    // The first (optional) parameter is the text of the option
     JSString* jsstr = JS_ValueToString(aContext, argv[0]);
     if (!jsstr) {
       return NS_ERROR_FAILURE;
     }
 
-    
+    // Create a new text node and append it to the option
     nsCOMPtr<nsIContent> textContent;
     result = NS_NewTextNode(getter_AddRefs(textContent),
                             mNodeInfo->NodeInfoManager());
@@ -390,7 +389,7 @@ nsHTMLOptionElement::Initialize(nsISupports* aOwner,
     }
 
     if (argc > 1) {
-      
+      // The second (optional) parameter is the value of the option
       jsstr = JS_ValueToString(aContext, argv[1]);
       if (!jsstr) {
         return NS_ERROR_FAILURE;
@@ -402,7 +401,7 @@ nsHTMLOptionElement::Initialize(nsISupports* aOwner,
         return NS_ERROR_FAILURE;
       }
 
-      
+      // Set the value attribute for this element
       nsAutoString value(chars, length);
 
       result = SetAttr(kNameSpaceID_None, nsGkAtoms::value, value,
@@ -412,7 +411,7 @@ nsHTMLOptionElement::Initialize(nsISupports* aOwner,
       }
 
       if (argc > 2) {
-        
+        // The third (optional) parameter is the defaultSelected value
         JSBool defaultSelected;
         JS_ValueToBoolean(aContext, argv[2], &defaultSelected);
         if (defaultSelected) {
@@ -421,7 +420,7 @@ nsHTMLOptionElement::Initialize(nsISupports* aOwner,
           NS_ENSURE_SUCCESS(result, result);
         }
 
-        
+        // XXX This is *untested* behavior.  Should work though.
         if (argc > 3) {
           JSBool selected;
           JS_ValueToBoolean(aContext, argv[3], &selected);

@@ -1,39 +1,39 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "mozilla/Util.h"
 
@@ -54,18 +54,17 @@
 #include "nsIDocument.h"
 #include "nsContentUtils.h"
 #include "nsIDOMElement.h"
-#include "nsGenericHTMLElement.h"
 #include "nsIHTMLCollection.h"
 #include "nsHTMLStyleSheet.h"
 #include "dombindings.h"
 
 using namespace mozilla;
 
-
-
-
-
-
+/* ------------------------------ TableRowsCollection -------------------------------- */
+/**
+ * This class provides a late-bound collection of rows in a table.
+ * mParent is NOT ref-counted to avoid circular references
+ */
 class TableRowsCollection : public nsIHTMLCollection,
                             public nsWrapperCache
 {
@@ -85,7 +84,7 @@ public:
 
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TableRowsCollection)
 
-  
+  // nsWrapperCache
   virtual JSObject* WrapObject(JSContext *cx, JSObject *scope,
                                bool *triedToWrap)
   {
@@ -94,7 +93,7 @@ public:
   }
 
 protected:
-  
+  // Those rows that are not in table sections
   nsHTMLTableElement* mParent;
   nsRefPtr<nsContentList> mOrphanRows;  
 };
@@ -108,16 +107,16 @@ TableRowsCollection::TableRowsCollection(nsHTMLTableElement *aParent)
                                   nsGkAtoms::tr,
                                   false))
 {
-  
+  // Mark ourselves as a proxy
   SetIsProxy();
 }
 
 TableRowsCollection::~TableRowsCollection()
 {
-  
-  
-  
-  
+  // we do NOT have a ref-counted reference to mParent, so do NOT
+  // release it!  this is to avoid circular references.  The
+  // instantiator who provided mParent is responsible for managing our
+  // reference for us.
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(TableRowsCollection)
@@ -145,11 +144,11 @@ NS_INTERFACE_TABLE_HEAD(TableRowsCollection)
   NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(HTMLCollection)
 NS_INTERFACE_MAP_END
 
-
-
-
-
-
+// Macro that can be used to avoid copy/pasting code to iterate over the
+// rowgroups.  _code should be the code to execute for each rowgroup.  The
+// rowgroup's rows will be in the nsIDOMHTMLCollection* named "rows".  Note
+// that this may be null at any time.  This macro assumes an nsresult named
+// |rv| is in scope.
 #define DO_FOR_EACH_ROWGROUP(_code)                                  \
   do {                                                               \
     if (mParent) {                                                   \
@@ -207,9 +206,9 @@ CountRowsInRowGroup(nsIDOMHTMLCollection* rows)
   return length;
 }
 
-
-
-
+// we re-count every call.  A better implementation would be to set
+// ourselves up as an observer of contentAppended, contentInserted,
+// and contentDeleted
 NS_IMETHODIMP 
 TableRowsCollection::GetLength(PRUint32* aLength)
 {
@@ -222,9 +221,9 @@ TableRowsCollection::GetLength(PRUint32* aLength)
   return NS_OK;
 }
 
-
-
-
+// Returns the item at index aIndex if available. If null is returned,
+// then aCount will be set to the number of rows in this row collection.
+// Otherwise, the value of aCount is undefined.
 static nsIContent*
 GetItemOrCountInRowGroup(nsIDOMHTMLCollection* rows,
                          PRUint32 aIndex, PRUint32* aCount)
@@ -316,14 +315,14 @@ TableRowsCollection::NamedItem(const nsAString& aName,
 NS_IMETHODIMP
 TableRowsCollection::ParentDestroyed()
 {
-  
+  // see comment in destructor, do NOT release mParent!
   mParent = nsnull;
 
   return NS_OK;
 }
 
-
-
+/* -------------------------- nsHTMLTableElement --------------------------- */
+// the class declaration is at the top of this file
 
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Table)
@@ -365,7 +364,7 @@ NS_IMPL_RELEASE_INHERITED(nsHTMLTableElement, nsGenericElement)
 
 DOMCI_NODE_DATA(HTMLTableElement, nsHTMLTableElement)
 
-
+// QueryInterface implementation for nsHTMLTableElement
 NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(nsHTMLTableElement)
   NS_HTML_CONTENT_INTERFACE_TABLE1(nsHTMLTableElement, nsIDOMHTMLTableElement)
   NS_HTML_CONTENT_INTERFACE_TABLE_TO_MAP_SEGUE(nsHTMLTableElement,
@@ -376,9 +375,9 @@ NS_HTML_CONTENT_INTERFACE_TABLE_TAIL_CLASSINFO(HTMLTableElement)
 NS_IMPL_ELEMENT_CLONE(nsHTMLTableElement)
 
 
-
-
-
+// the DOM spec says border, cellpadding, cellSpacing are all "wstring"
+// in fact, they are integers or they are meaningless.  so we store them
+// here as ints.
 
 NS_IMPL_STRING_ATTR(nsHTMLTableElement, Align, align)
 NS_IMPL_STRING_ATTR(nsHTMLTableElement, BgColor, bgcolor)
@@ -530,7 +529,7 @@ nsContentList*
 nsHTMLTableElement::TBodies()
 {
   if (!mTBodies) {
-    
+    // Not using NS_GetContentList because this should not be cached
     mTBodies = new nsContentList(this,
                                  kNameSpaceID_XHTML,
                                  nsGkAtoms::tbody,
@@ -548,7 +547,7 @@ nsHTMLTableElement::CreateTHead(nsIDOMHTMLElement** aValue)
 
   nsRefPtr<nsIDOMHTMLTableSectionElement> head = GetTHead();
   if (head) {
-    
+    // return the existing thead
     head.forget(aValue);
     return NS_OK;
   }
@@ -584,7 +583,7 @@ nsHTMLTableElement::DeleteTHead()
 
   if ((NS_SUCCEEDED(rv)) && childToDelete) {
     nsCOMPtr<nsIDOMNode> resultingChild;
-    
+    // mInner does the notification
     RemoveChild(childToDelete, getter_AddRefs(resultingChild));
   }
 
@@ -598,11 +597,11 @@ nsHTMLTableElement::CreateTFoot(nsIDOMHTMLElement** aValue)
 
   nsRefPtr<nsIDOMHTMLTableSectionElement> foot = GetTFoot();
   if (foot) {
-    
+    // return the existing tfoot
     foot.forget(aValue);
     return NS_OK;
   }
-  
+  // create a new foot rowgroup
   nsCOMPtr<nsINodeInfo> nodeInfo;
   nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tfoot,
                               getter_AddRefs(nodeInfo));
@@ -626,7 +625,7 @@ nsHTMLTableElement::DeleteTFoot()
 
   if ((NS_SUCCEEDED(rv)) && childToDelete) {
     nsCOMPtr<nsIDOMNode> resultingChild;
-    
+    // mInner does the notification
     RemoveChild(childToDelete, getter_AddRefs(resultingChild));
   }
 
@@ -639,12 +638,12 @@ nsHTMLTableElement::CreateCaption(nsIDOMHTMLElement** aValue)
   *aValue = nsnull;
 
   if (nsRefPtr<nsIDOMHTMLTableCaptionElement> caption = GetCaption()) {
-    
+    // return the existing caption
     caption.forget(aValue);
     return NS_OK;
   }
 
-  
+  // create a new head rowgroup
   nsCOMPtr<nsINodeInfo> nodeInfo;
   nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::caption,
                               getter_AddRefs(nodeInfo));
@@ -679,14 +678,14 @@ nsHTMLTableElement::DeleteCaption()
 NS_IMETHODIMP
 nsHTMLTableElement::InsertRow(PRInt32 aIndex, nsIDOMHTMLElement** aValue)
 {
-  
-
-
-
-
-
-
-
+  /* get the ref row at aIndex
+     if there is one, 
+       get its parent
+       insert the new row just before the ref row
+     else
+       get the first row group
+       insert the new row as its first child
+  */
   *aValue = nsnull;
 
   if (aIndex < -1) {
@@ -703,14 +702,14 @@ nsHTMLTableElement::InsertRow(PRInt32 aIndex, nsIDOMHTMLElement** aValue)
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
-  
+  // use local variable refIndex so we can remember original aIndex
   PRUint32 refIndex = (PRUint32)aIndex;
 
   nsresult rv;
   if (rowCount > 0) {
     if (refIndex == rowCount || aIndex == -1) {
-      
-      
+      // we set refIndex to the last row so we can get the last row's
+      // parent we then do an AppendChild below if (rowCount<aIndex)
 
       refIndex = rowCount - 1;
     }
@@ -721,7 +720,7 @@ nsHTMLTableElement::InsertRow(PRInt32 aIndex, nsIDOMHTMLElement** aValue)
     nsCOMPtr<nsIDOMNode> parent;
 
     refRow->GetParentNode(getter_AddRefs(parent));
-    
+    // create the row
     nsCOMPtr<nsINodeInfo> nodeInfo;
     nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tr,
                                 getter_AddRefs(nodeInfo));
@@ -732,15 +731,15 @@ nsHTMLTableElement::InsertRow(PRInt32 aIndex, nsIDOMHTMLElement** aValue)
       nsCOMPtr<nsIDOMNode> newRowNode(do_QueryInterface(newRow));
       nsCOMPtr<nsIDOMNode> retChild;
 
-      
-      
+      // If index is -1 or equal to the number of rows, the new row
+      // is appended.
       if (aIndex == -1 || PRUint32(aIndex) == rowCount) {
         rv = parent->AppendChild(newRowNode, getter_AddRefs(retChild));
         NS_ENSURE_SUCCESS(rv, rv);
       }
       else
       {
-        
+        // insert the new row before the reference row we found above
         rv = parent->InsertBefore(newRowNode, refRow,
                                   getter_AddRefs(retChild));
         NS_ENSURE_SUCCESS(rv, rv);
@@ -751,8 +750,8 @@ nsHTMLTableElement::InsertRow(PRInt32 aIndex, nsIDOMHTMLElement** aValue)
       }
     }
   } else {
-    
-    
+    // the row count was 0, so 
+    // find the first row group and insert there as first child
     nsCOMPtr<nsIDOMNode> rowGroup;
 
     for (nsIContent* child = nsINode::GetFirstChild();
@@ -770,7 +769,7 @@ nsHTMLTableElement::InsertRow(PRInt32 aIndex, nsIDOMHTMLElement** aValue)
       }
     }
 
-    if (!rowGroup) { 
+    if (!rowGroup) { // need to create a TBODY
       nsCOMPtr<nsINodeInfo> nodeInfo;
       nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tbody,
                                   getter_AddRefs(nodeInfo));
@@ -897,7 +896,7 @@ nsHTMLTableElement::ParseAttribute(PRInt32 aNamespaceID,
                                    const nsAString& aValue,
                                    nsAttrValue& aResult)
 {
-  
+  /* ignore summary, just a string */
   if (aNamespaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::cellspacing ||
         aAttribute == nsGkAtoms::cellpadding) {
@@ -912,7 +911,7 @@ nsHTMLTableElement::ParseAttribute(PRInt32 aNamespaceID,
     }
     if (aAttribute == nsGkAtoms::width) {
       if (aResult.ParseSpecialIntValue(aValue)) {
-        
+        // treat 0 width as auto
         nsAttrValue::ValueType type = aResult.Type();
         return !((type == nsAttrValue::eInteger &&
                   aResult.GetIntegerValue() == 0) ||
@@ -954,21 +953,21 @@ static void
 MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                       nsRuleData* aData)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // XXX Bug 211636:  This function is used by a single style rule
+  // that's used to match two different type of elements -- tables, and
+  // table cells.  (nsHTMLTableCellElement overrides
+  // WalkContentStyleRules so that this happens.)  This violates the
+  // nsIStyleRule contract, since it's the same style rule object doing
+  // the mapping in two different ways.  It's also incorrect since it's
+  // testing the display type of the style context rather than checking
+  // which *element* it's matching (style rules should not stop matching
+  // when the display type is changed).
 
   nsPresContext* presContext = aData->mPresContext;
   nsCompatibility mode = presContext->CompatibilityMode();
 
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(TableBorder)) {
-    
+    // cellspacing
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::cellspacing);
     nsCSSValue* borderSpacing = aData->ValueForBorderSpacing();
     if (value && value->Type() == nsAttrValue::eInteger &&
@@ -979,26 +978,26 @@ MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
   }
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Table)) {
     const nsAttrValue* value;
-    
+    // layout
     nsCSSValue* tableLayout = aData->ValueForTableLayout();
     if (tableLayout->GetUnit() == eCSSUnit_Null) {
       value = aAttributes->GetAttr(nsGkAtoms::layout);
       if (value && value->Type() == nsAttrValue::eEnum)
         tableLayout->SetIntValue(value->GetEnumValue(), eCSSUnit_Enumerated);
     }
-    
+    // cols
     value = aAttributes->GetAttr(nsGkAtoms::cols);
     if (value) {
       nsCSSValue* cols = aData->ValueForCols();
       if (value->Type() == nsAttrValue::eInteger)
         cols->SetIntValue(value->GetIntegerValue(), eCSSUnit_Integer);
-      else 
+      else // COLS had no value, so it refers to all columns
         cols->SetIntValue(NS_STYLE_TABLE_COLS_ALL, eCSSUnit_Enumerated);
     }
   }
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Margin)) {
-    
-    
+    // align; Check for enumerated type (it may be another type if
+    // illegal)
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::align);
 
     if (value && value->Type() == nsAttrValue::eEnum) {
@@ -1013,9 +1012,9 @@ MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
       }
     }
 
-    
-    
-    
+    // hspace is mapped into left and right margin,
+    // vspace is mapped into top and bottom margins
+    // - *** Quirks Mode only ***
     if (eCompatibility_NavQuirks == mode) {
       value = aAttributes->GetAttr(nsGkAtoms::hspace);
 
@@ -1041,7 +1040,7 @@ MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
     }
   }
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Position)) {
-    
+    // width: value
     nsCSSValue* width = aData->ValueForWidth();
     if (width->GetUnit() == eCSSUnit_Null) {
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
@@ -1051,7 +1050,7 @@ MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
         width->SetPercentValue(value->GetPercentValue());
     }
 
-    
+    // height: value
     nsCSSValue* height = aData->ValueForHeight();
     if (height->GetUnit() == eCSSUnit_Null) {
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::height);
@@ -1062,7 +1061,7 @@ MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
     }
   }
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Border)) {
-    
+    // bordercolor
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::bordercolor);
     nscolor color;
     if (value && presContext->UseDocumentColors() &&
@@ -1081,16 +1080,16 @@ MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
         borderBottomColor->SetColorValue(color);
     }
 
-    
+    // border
     const nsAttrValue* borderValue = aAttributes->GetAttr(nsGkAtoms::border);
     if (borderValue) {
-      
+      // border = 1 pixel default
       PRInt32 borderThickness = 1;
 
       if (borderValue->Type() == nsAttrValue::eInteger)
         borderThickness = borderValue->GetIntegerValue();
 
-      
+      // by default, set all border sides to the specified width
       nsCSSValue* borderLeftWidth = aData->ValueForBorderLeftWidthValue();
       if (borderLeftWidth->GetUnit() == eCSSUnit_Null)
         borderLeftWidth->SetFloatValue((float)borderThickness, eCSSUnit_Pixel);
@@ -1151,8 +1150,8 @@ MapInheritedTableAttributesIntoRule(const nsMappedAttributes* aAttributes,
   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Padding)) {
     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::cellpadding);
     if (value && value->Type() == nsAttrValue::eInteger) {
-      
-      
+      // We have cellpadding.  This will override our padding values if we
+      // don't have any set.
       nsCSSValue padVal(float(value->GetIntegerValue()), eCSSUnit_Pixel);
 
       nsCSSValue* paddingLeft = aData->ValueForPaddingLeftValue();
@@ -1213,11 +1212,11 @@ nsHTMLTableElement::BuildInheritedAttributes()
       NS_ASSERTION(newAttrs, "out of memory, but handling gracefully");
 
       if (newAttrs != modifiableMapped) {
-        
-        
-        
-        
-        
+        // Reset the stylesheet of modifiableMapped so that it doesn't
+        // spend time trying to remove itself from the hash.  There is no
+        // risk that modifiableMapped is in the hash since we created
+        // it ourselves and it didn't come from the stylesheet (in which
+        // case it would not have been modifiable).
         modifiableMapped->DropStyleSheetReference();
       }
     }

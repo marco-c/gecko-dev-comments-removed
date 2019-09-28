@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla code.
+ *
+ * The Initial Developer of the Original Code is the Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2007
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *  Chris Double <chris.double@double.co.nz>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 #include "nsIDOMHTMLAudioElement.h"
 #include "nsIDOMHTMLSourceElement.h"
 #include "nsHTMLAudioElement.h"
@@ -49,7 +49,6 @@
 #include "plbase64.h"
 #include "nsNetUtil.h"
 #include "prmem.h"
-#include "nsNetUtil.h"
 #include "nsXPCOMStrings.h"
 #include "prlock.h"
 #include "nsThreadUtils.h"
@@ -73,11 +72,11 @@ nsGenericHTMLElement*
 NS_NewHTMLAudioElement(already_AddRefed<nsINodeInfo> aNodeInfo,
                        FromParser aFromParser)
 {
-  
-
-
-
-
+  /*
+   * nsHTMLAudioElement's will be created without a nsINodeInfo passed in
+   * if someone says "var audio = new Audio();" in JavaScript, in a case like
+   * that we request the nsINodeInfo from the document's nodeinfo list.
+   */
   nsCOMPtr<nsINodeInfo> nodeInfo(aNodeInfo);
   if (!nodeInfo) {
     nsCOMPtr<nsIDocument> doc =
@@ -121,20 +120,20 @@ NS_IMETHODIMP
 nsHTMLAudioElement::Initialize(nsISupports* aOwner, JSContext* aContext,
                                JSObject *aObj, PRUint32 argc, jsval *argv)
 {
-  
-  
-  
+  // Audio elements created using "new Audio(...)" should have
+  // 'preload' set to 'auto' (since the script must intend to
+  // play the audio)
   nsresult rv = SetAttr(kNameSpaceID_None, nsGkAtoms::preload,
                         NS_LITERAL_STRING("auto"), true);
   if (NS_FAILED(rv))
     return rv;
 
   if (argc <= 0) {
-    
+    // Nothing more to do here if we don't get any arguments.
     return NS_OK;
   }
 
-  
+  // The only (optional) argument is the url of the audio
   JSString* jsstr = JS_ValueToString(aContext, argv[0]);
   if (!jsstr)
     return NS_ERROR_FAILURE;
@@ -147,7 +146,7 @@ nsHTMLAudioElement::Initialize(nsISupports* aOwner, JSContext* aContext,
   if (NS_FAILED(rv))
     return rv;
 
-  
+  // We have been specified with a src URL. Begin a load.
   QueueSelectResourceTask();
 
   return NS_OK;
@@ -156,12 +155,12 @@ nsHTMLAudioElement::Initialize(nsISupports* aOwner, JSContext* aContext,
 NS_IMETHODIMP
 nsHTMLAudioElement::MozSetup(PRUint32 aChannels, PRUint32 aRate)
 {
-  
+  // If there is already a src provided, don't setup another stream
   if (mDecoder) {
     return NS_ERROR_FAILURE;
   }
 
-  
+  // MozWriteAudio divides by mChannels, so validate now.
   if (0 == aChannels) {
     return NS_ERROR_FAILURE;
   }
@@ -199,7 +198,7 @@ nsHTMLAudioElement::MozWriteAudio(const jsval &aData, JSContext *aCx, PRUint32 *
   JS::AutoValueRooter tsrc_tvr(aCx);
   JSObject *tsrc = NULL;
 
-  
+  // Allow either Float32Array or plain JS Array
   if (js::GetObjectClass(darray) == &js::TypedArray::fastClasses[js::TypedArray::TYPE_FLOAT32])
   {
     tsrc = js::TypedArray::getTypedArray(darray);
@@ -216,13 +215,13 @@ nsHTMLAudioElement::MozWriteAudio(const jsval &aData, JSContext *aCx, PRUint32 *
 
   PRUint32 dataLength = JS_GetTypedArrayLength(tsrc);
 
-  
-  
+  // Make sure that we are going to write the correct amount of data based
+  // on number of channels.
   if (dataLength % mChannels != 0) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
-  
+  // Don't write more than can be written without blocking.
   PRUint32 writeLen = NS_MIN(mAudioStream->Available(), dataLength / mChannels);
 
   nsresult rv = mAudioStream->Write(JS_GetTypedArrayData(tsrc), writeLen);
@@ -230,7 +229,7 @@ nsHTMLAudioElement::MozWriteAudio(const jsval &aData, JSContext *aCx, PRUint32 *
     return rv;
   }
 
-  
+  // Return the actual amount written.
   *aRetVal = writeLen * mChannels;
   return rv;
 }
