@@ -416,6 +416,12 @@ struct JSRuntime {
 
 
 
+    JSCompartment       *gcCheckCompartment;
+
+    
+
+
+
 
 
     bool                gcPoke;
@@ -601,6 +607,12 @@ struct JSRuntime {
 
 #define JS_THREAD_DATA(cx)      (&(cx)->runtime->threadData)
 #endif
+
+  private:
+    JSPrincipals        *trustedPrincipals_;
+  public:
+    void setTrustedPrincipals(JSPrincipals *p) { trustedPrincipals_ = p; }
+    JSPrincipals *trustedPrincipals() const { return trustedPrincipals_; }
 
     
 
