@@ -4111,6 +4111,14 @@ mjit::Compiler::jsop_getprop(JSAtom *atom, JSValueType knownType,
         return true;
     }
 
+    
+    if (top->isNotType(JSVAL_TYPE_OBJECT)) {
+        jsop_getprop_slow(atom, usePropCache);
+        return true;
+    }
+
+    frame.forgetMismatchedObject(top);
+
     if (JSOp(*PC) == JSOP_LENGTH && cx->typeInferenceEnabled() &&
         !hasTypeBarriers(PC) && knownPushedType(0) == JSVAL_TYPE_INT32) {
         
@@ -4181,14 +4189,6 @@ mjit::Compiler::jsop_getprop(JSAtom *atom, JSValueType knownType,
             return true;
         }
     }
-
-    
-    if (top->isNotType(JSVAL_TYPE_OBJECT)) {
-        jsop_getprop_slow(atom, usePropCache);
-        return true;
-    }
-
-    frame.forgetMismatchedObject(top);
 
     
     if (loop && loop->generatingInvariants() && !hasTypeBarriers(PC)) {
