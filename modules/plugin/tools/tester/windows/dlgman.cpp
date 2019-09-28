@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <windows.h>
 #include <windowsx.h>
@@ -52,7 +52,7 @@ extern CLogger * pLogger;
 
 static void onCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify)
 {
-  CPlugin * pPlugin = (CPlugin *)GetWindowLong(hWnd, DWL_USER);
+  CPlugin * pPlugin = (CPlugin *)GetWindowLongPtr(hWnd, DWLP_USER);
   if (!pPlugin)
     return;
 
@@ -99,7 +99,7 @@ static void onCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify)
         SetDlgItemInt(hWnd, IDC_EDIT_ARG3, iLength, FALSE);
       }
 
-      // save values of window size on the fly as we type it
+      
       if(    (strcmp(szString, STRING_NPN_SETVALUE) == 0)
           && ((id == IDC_EDIT_ARG3) || (id == IDC_EDIT_ARG4)) 
           && (codeNotify == EN_CHANGE)
@@ -179,9 +179,9 @@ static void onCommand(HWND hWnd, int id, HWND hWndCtl, UINT codeNotify)
 static BOOL onInitDialog(HWND hWnd, HWND hWndFocus, LPARAM lParam)
 {
   CPlugin * pPlugin = (CPlugin *)lParam;
-  SetWindowLong(hWnd, DWL_USER, (long)pPlugin);
+  SetWindowLongPtr(hWnd, DWLP_USER, (LONG_PTR)pPlugin);
 
-  // look at the last used API call if needed
+  
   int iSel = 0;
   if (pPlugin && pPlugin->m_Pref_bRememberLastCall) {
     char szFileName[_MAX_PATH];
@@ -198,9 +198,9 @@ static BOOL onInitDialog(HWND hWnd, HWND hWndFocus, LPARAM lParam)
 
 static void onDestroy(HWND hWnd)
 {
-  CPlugin * pPlugin = (CPlugin *)GetWindowLong(hWnd, DWL_USER);
+  CPlugin * pPlugin = (CPlugin *)GetWindowLongPtr(hWnd, DWLP_USER);
   if(pPlugin && pPlugin->m_Pref_bRememberLastCall) {
-    // save last API call if needed
+    
     char szFileName[_MAX_PATH];
     GetINIFileName(pPlugin->getInstance(), szFileName, sizeof(szFileName));
     int iSel = ComboBox_GetCurSel(GetDlgItem(hWnd, IDC_COMBO_API_CALL));

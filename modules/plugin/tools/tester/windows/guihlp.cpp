@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "xp.h"
 #include <windowsx.h>
@@ -169,7 +169,7 @@ static void replaceEditWithCombo(HWND hWnd, BOOL b1, BOOL b2, BOOL b3, BOOL b6)
 
 void updateUI(HWND hWnd)
 {
-  CPlugin * pPlugin = (CPlugin *)GetWindowLong(hWnd, DWL_USER);
+  CPlugin * pPlugin = (CPlugin *)GetWindowLongPtr(hWnd, DWLP_USER);
   assert(pPlugin != NULL);
 
   DWORD dwNPInstance = (DWORD)pPlugin->getNPInstance();
@@ -255,18 +255,18 @@ void updateUI(HWND hWnd)
   }
   else if(strcmp(szString, STRING_NPN_REQUESTREAD) == 0)
   {
-//serge
+
     showArgControls7(hWnd, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE);
     enableEdits7(hWnd, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE);
     setStaticTexts7(hWnd, "instance:", "URL:", "Range:", "notifyData:", "", "", "");
     setEditTexts7(hWnd, szNPInstance,NS_SAMPLE_URL,szDefaultNPByteRangeList,"0","","","");
-   /*
-    EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_GO), FALSE);
-    ShowWindow(GetDlgItem(hWnd, IDC_STATIC_INFO), SW_SHOW);
-    Static_SetText(GetDlgItem(hWnd, IDC_STATIC_INFO), szNotImplemented);
-    showArgControls7(hWnd, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE);
-    ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_PASTE), SW_HIDE);
-    */
+   
+
+
+
+
+
+
   }
   else if(strcmp(szString, STRING_NPN_DESTROYSTREAM) == 0)
   {
@@ -427,17 +427,17 @@ void updateUI(HWND hWnd)
     assert(0);
 }
 
-/*      
-NPByteRange g_npByteRangeList[] = {
-   {100, 100, npByteRangeList + 1},
-   {200, 100, npByteRangeList + 2},
-   {300, 100, 0}
-};
-*/
+
+
+
+
+
+
+
 
 void onGo(HWND hWnd)
 {
-  CPlugin * pPlugin = (CPlugin *)GetWindowLong(hWnd, DWL_USER);
+  CPlugin * pPlugin = (CPlugin *)GetWindowLongPtr(hWnd, DWLP_USER);
   assert(pPlugin != NULL);
 
   char szString[80];
@@ -486,7 +486,7 @@ void onGo(HWND hWnd)
     DWORD dwData = (DWORD)GetDlgItemInt(hWnd, IDC_EDIT_ARG4, &bTranslated, FALSE);
     DWORD dwTarget = 0L;
     NPByteRange *npByteRangeList = convertStringToNPByteRangeList(sz2);
-    if (!npByteRangeList) { // use default szDefaultNPByteRangeList
+    if (!npByteRangeList) { 
       npByteRangeList = convertStringToNPByteRangeList(szDefaultNPByteRangeList);
     }
     pPlugin->m_firstAction = action_npn_request_read;
