@@ -1357,13 +1357,6 @@ js_FinalizeStringRT(JSRuntime *rt, JSString *str);
 
 
 
-
-extern void
-js_MarkTraps(JSTracer *trc);
-
-
-
-
 #define IS_GC_MARKING_TRACER(trc) ((trc)->callback == NULL)
 
 #if JS_HAS_XML_SUPPORT
