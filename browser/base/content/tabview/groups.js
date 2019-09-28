@@ -212,7 +212,7 @@ window.Group = function Group(listOfEls, options) {
           "padding-left": "1px"
         }, {
           duration: 200,
-          easing: 'tabcandyBounce'
+          easing: "tabviewBounce"
         });
     }
   };
@@ -272,7 +272,7 @@ window.Group = function Group(listOfEls, options) {
 
   
   this.$expander = iQ("<img/>")
-    .attr('src', 'chrome://browser/skin/tabcandy/stack-expander.png')
+    .attr("src", "chrome://browser/skin/tabview/stack-expander.png")
     .addClass("stackExpander")
     .appendTo($container)
     .hide();
@@ -504,7 +504,7 @@ window.Group.prototype = Utils.extend(new Item(), new Subscribable(), {
       TabItems.pausePainting();
       iQ(this.container).animate(css, {
         duration: 350,
-        easing: 'tabcandyBounce',
+        easing: "tabviewBounce",
         complete: function() {
           TabItems.resumePainting();
         }
@@ -772,7 +772,7 @@ window.Group.prototype = Utils.extend(new Item(), new Subscribable(), {
     if (!immediately)
       this.$ntb.animate(box.css(), {
         duration: 320,
-        easing: 'tabcandyBounce'
+        easing: "tabviewBounce"
       });
     else
       this.$ntb.css(box.css());
@@ -1090,7 +1090,7 @@ window.Group.prototype = Utils.extend(new Item(), new Subscribable(), {
         left: pos.left
       }, {
         duration: 200,
-        easing: 'tabcandyBounce'
+        easing: "tabviewBounce"
       })
       .addClass("overlay");
 
@@ -1151,7 +1151,7 @@ window.Group.prototype = Utils.extend(new Item(), new Subscribable(), {
           opacity: 0
         }, {
           duration: 350,
-          easing: 'tabcandyBounce',
+          easing: "tabviewBounce",
           complete: function() {
             iQ(this).remove();
           }
@@ -1265,7 +1265,7 @@ window.Group.prototype = Utils.extend(new Item(), new Subscribable(), {
     
     
     Utils.timeout(function(){
-      UI.showTabCandy()
+      UI.showTabView()
     }, 1);
 
     var self = this;
@@ -1299,7 +1299,7 @@ window.Group.prototype = Utils.extend(new Item(), new Subscribable(), {
               complete: function(){
                 iQ(tab.container).css({opacity: 1});
                 gBrowser.selectedTab = newTab;
-                UI.hideTabCandy()
+                UI.hideTabView()
                 gWindow.gURLBar.focus();
                 $anim.remove();
                 
