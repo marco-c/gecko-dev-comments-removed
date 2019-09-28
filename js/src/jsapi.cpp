@@ -1683,6 +1683,31 @@ JS_GetGlobalForObject(JSContext *cx, JSObject *obj)
     return obj->getGlobal();
 }
 
+JS_PUBLIC_API(JSObject *)
+JS_GetGlobalForScopeChain(JSContext *cx)
+{
+    
+
+
+
+
+
+
+
+    VOUCH_DOES_NOT_REQUIRE_STACK();
+
+    if (cx->fp)
+        return cx->fp->scopeChain->getGlobal();
+
+    JSObject *scope = cx->globalObject;
+    if (!scope) {
+        JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_INACTIVE);
+        return NULL;
+    }
+    OBJ_TO_INNER_OBJECT(cx, scope);
+    return scope;
+}
+
 JS_PUBLIC_API(jsval)
 JS_ComputeThis(JSContext *cx, jsval *vp)
 {
