@@ -36,12 +36,14 @@
 
 
 
+
 #include "RuntimeService.h"
 
 #include "nsIDOMChromeWindow.h"
 #include "nsIDocument.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIObserverService.h"
+#include "nsIPlatformCharset.h"
 #include "nsIPrincipal.h"
 #include "nsIJSContextStack.h"
 #include "nsIMemoryReporter.h"
@@ -242,15 +244,6 @@ CreateJSContextForWorker(WorkerPrivate* aWorkerPrivate)
     NS_WARNING("Could not create new runtime!");
     return nsnull;
   }
-
-  
-  
-  JSStructuredCloneCallbacks* callbacks =
-    aWorkerPrivate->IsChromeWorker() ?
-    ChromeWorkerStructuredCloneCallbacks() :
-    WorkerStructuredCloneCallbacks();
-
-  JS_SetStructuredCloneCallbacks(runtime, callbacks);
 
   JSContext* workerCx = JS_NewContext(runtime, 0);
   if (!workerCx) {
@@ -929,6 +922,15 @@ RuntimeService::Init()
   PRInt32 maxPerDomain = Preferences::GetInt(PREF_WORKERS_MAX_PER_DOMAIN,
                                              MAX_WORKERS_PER_DOMAIN);
   gMaxWorkersPerDomain = NS_MAX(0, maxPerDomain);
+
+  mDetectorName = Preferences::GetLocalizedCString("intl.charset.detector");
+
+  nsCOMPtr<nsIPlatformCharset> platformCharset =
+    do_GetService(NS_PLATFORMCHARSET_CONTRACTID, &rv);
+  if (NS_SUCCEEDED(rv)) {
+    rv = platformCharset->GetCharset(kPlatformCharsetSel_PlainTextInFile,
+                                     mSystemCharset);
+  }
 
   return NS_OK;
 }
