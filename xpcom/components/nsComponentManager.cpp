@@ -1,60 +1,60 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK *****
+ *
+ * This Original Code has been modified by IBM Corporation.
+ * Modifications made by IBM described herein are
+ * Copyright (c) International Business Machines
+ * Corporation, 2000
+ *
+ * Modifications to Mozilla code or documentation
+ * identified per MPL Section 3.3
+ *
+ * Date             Modified by     Description of modification
+ * 04/20/2000       IBM Corp.      Added PR_CALLBACK for Optlink use in OS2
+ */
 #include <stdlib.h>
 #include "nscore.h"
 #include "nsISupports.h"
 #include "nspr.h"
-#include "nsCRT.h" 
-
-
-
-
+#include "nsCRT.h" // for atoll
+// Arena used by component manager for storing contractid string, dll
+// location strings and small objects
+// CAUTION: Arena align mask needs to be defined before including plarena.h
+//          currently from nsComponentManager.h
 #define PL_ARENA_CONST_ALIGN_MASK 7
 #define NS_CM_BLOCK_SIZE (1024 * 8)
 
@@ -81,7 +81,7 @@
 #include "nsString.h"
 #include "nsXPIDLString.h"
 #include "prcmon.h"
-#include "xptinfo.h" 
+#include "xptinfo.h" // this after nsISupports, to pick up IID so that xpt stuff doesn't try to define it itself...
 #include "nsThreadUtils.h"
 #include "prthread.h"
 #include "private/pprthred.h"
@@ -96,7 +96,7 @@
 #include "nsArrayEnumerator.h"
 #include "nsStringEnumerator.h"
 
-#include NEW_H     
+#include NEW_H     // for placement new
 
 #include "mozilla/Omnijar.h"
 #include "nsJAR.h"
@@ -113,19 +113,19 @@ NS_COM PRLogModuleInfo* nsComponentManagerLog = nsnull;
  #define SHOW_CI_ON_EXISTING_SERVICE
 #endif
 
-
-
-
+// Bloated registry buffer size to improve startup performance -- needs to
+// be big enough to fit the entire file into memory or it'll thrash.
+// 512K is big enough to allow for some future growth in the registry.
 #define BIG_REGISTRY_BUFLEN   (512*1024)
 
-
+// Common Key Names
 const char classIDKeyName[]="classID";
 const char classesKeyName[]="contractID";
 const char componentsKeyName[]="components";
 const char xpcomComponentsKeyName[]="software/mozilla/XPCOM/components";
 const char xpcomKeyName[]="software/mozilla/XPCOM";
 
-
+// Common Value Names
 const char classIDValueName[]="ClassID";
 const char classNameValueName[]="ClassName";
 const char componentCountValueName[]="ComponentsCount";
@@ -174,8 +174,6 @@ NS_DEFINE_CID(kCategoryManagerCID, NS_CATEGORYMANAGER_CID);
 #define COMPMGR_TIME_FUNCTION_CONTRACTID(cid) do {} while (0)
 #endif
 
-#define kOMNIJAR_PREFIX  NS_LITERAL_CSTRING("resource:///")
-
 nsresult
 nsGetServiceFromCategory::operator()(const nsIID& aIID, void** aInstancePtr) const
 {
@@ -189,7 +187,7 @@ nsGetServiceFromCategory::operator()(const nsIID& aIID, void** aInstancePtr) con
     }
 
     if (!mCategory || !mEntry) {
-        
+        // when categories have defaults, use that for null mEntry
         rv = NS_ERROR_NULL_POINTER;
         goto error;
     }
@@ -199,7 +197,7 @@ nsGetServiceFromCategory::operator()(const nsIID& aIID, void** aInstancePtr) con
                                                      getter_AddRefs(catman));
     if (NS_FAILED(rv)) goto error;
 
-    
+    /* find the contractID for category.entry */
     rv = catman->GetCategoryEntry(mCategory, mEntry,
                                   getter_Copies(value));
     if (NS_FAILED(rv)) goto error;
@@ -220,14 +218,14 @@ nsGetServiceFromCategory::operator()(const nsIID& aIID, void** aInstancePtr) con
     return rv;
 }
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+// Arena helper functions
+////////////////////////////////////////////////////////////////////////////////
 char *
 ArenaStrndup(const char *s, PRUint32 len, PLArenaPool *arena)
 {
     void *mem;
-    
+    // Include trailing null in the len
     PL_ARENA_ALLOCATE(mem, arena, len+1);
     if (mem)
         memcpy(mem, s, len+1);
@@ -240,7 +238,7 @@ ArenaStrdup(const char *s, PLArenaPool *arena)
     return ArenaStrndup(s, strlen(s), arena);
 }
 
-
+// this is safe to call during InitXPCOM
 static already_AddRefed<nsILocalFile>
 GetLocationFromDirectoryService(const char* prop)
 {
@@ -275,9 +273,9 @@ CloneAndAppend(nsILocalFile* aBase, const nsACString& append)
     return lf.forget();
 }
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsComponentManagerImpl
+////////////////////////////////////////////////////////////////////////////////
 
 nsresult
 nsComponentManagerImpl::Create(nsISupports* aOuter, REFNSIID aIID, void** aResult)
@@ -301,7 +299,7 @@ nsComponentManagerImpl::nsComponentManagerImpl()
 
 nsTArray<const mozilla::Module*>* nsComponentManagerImpl::sStaticModules;
 
- void
+/* static */ void
 nsComponentManagerImpl::InitializeStaticModules()
 {
     if (sStaticModules)
@@ -318,7 +316,7 @@ nsComponentManagerImpl::InitializeStaticModules()
 nsTArray<nsComponentManagerImpl::ComponentLocation>*
 nsComponentManagerImpl::sModuleLocations;
 
- void
+/* static */ void
 nsComponentManagerImpl::InitializeModuleLocations()
 {
     if (sModuleLocations)
@@ -338,7 +336,7 @@ nsresult nsComponentManagerImpl::Init()
         nsComponentManagerLog = PR_NewLogModule("nsComponentManager");
     }
 
-    
+    // Initialize our arena
     NS_TIME_FUNCTION_MARK("Next: init component manager arena");
     PL_INIT_ARENA_POOL(&mArena, "ComponentManagerArena", NS_CM_BLOCK_SIZE);
 
@@ -385,14 +383,20 @@ nsresult nsComponentManagerImpl::Init()
     for (PRUint32 i = 0; i < sStaticModules->Length(); ++i)
         RegisterModule((*sStaticModules)[i], NULL);
 
-#ifdef MOZ_OMNIJAR
-    if (mozilla::OmnijarPath()) {
-        nsCOMPtr<nsIZipReader> omnijarReader = new nsJAR();
-        rv = omnijarReader->Open(mozilla::OmnijarPath());
-        if (NS_SUCCEEDED(rv))
-            RegisterJarManifest(omnijarReader, "chrome.manifest", false);
+    nsCOMPtr<nsIFile> appOmnijar = mozilla::Omnijar::GetPath(mozilla::Omnijar::APP);
+    if (appOmnijar) {
+        cl = sModuleLocations->InsertElementAt(1); // Insert after greDir
+        cl->type = NS_COMPONENT_LOCATION;
+        cl->location = do_QueryInterface(appOmnijar);
+        cl->jar = true;
     }
-#endif
+    nsCOMPtr<nsIFile> greOmnijar = mozilla::Omnijar::GetPath(mozilla::Omnijar::GRE);
+    if (greOmnijar) {
+        cl = sModuleLocations->InsertElementAt(0);
+        cl->type = NS_COMPONENT_LOCATION;
+        cl->location = do_QueryInterface(greOmnijar);
+        cl->jar = true;
+    }
 
     for (PRUint32 i = 0; i < sModuleLocations->Length(); ++i) {
         ComponentLocation& l = sModuleLocations->ElementAt(i);
@@ -406,15 +410,6 @@ nsresult nsComponentManagerImpl::Init()
         if (NS_SUCCEEDED(rv))
             RegisterJarManifest(reader, "chrome.manifest", false);
     }
-
-#ifdef MOZ_OMNIJAR
-    if (mozilla::OmnijarPath()) {
-        cl = sModuleLocations->InsertElementAt(0);
-        cl->type = NS_COMPONENT_LOCATION;
-        cl->location = mozilla::OmnijarPath();
-        cl->jar = true;
-    }
-#endif
 
     nsCategoryManager::GetSingleton()->SuppressNotifications(false);
 
@@ -609,7 +604,7 @@ struct AutoCloseFD
     PRFileDesc* mFD;
 };
 
-} 
+} // anonymous namespace
 
 void
 nsComponentManagerImpl::RegisterManifestFile(NSLocationType aType,
@@ -996,12 +991,12 @@ nsresult nsComponentManagerImpl::Shutdown(void)
 
     mStatus = SHUTDOWN_IN_PROGRESS;
 
-    
+    // Shutdown the component manager
     PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("nsComponentManager: Beginning Shutdown."));
 
-    
+    // Release all cached factories
     mContractIDs.Clear();
-    mFactories.Clear(); 
+    mFactories.Clear(); // XXX release the objects, don't just clear
     mLoaderMap.Clear();
     mKnownJARModules.Clear();
     mKnownFileModules.Clear();
@@ -1012,10 +1007,10 @@ nsresult nsComponentManagerImpl::Shutdown(void)
     delete sStaticModules;
     delete sModuleLocations;
 
-    
+    // Unload libraries
     mNativeModuleLoader.UnloadLibraries();
 
-    
+    // delete arena for strings and small objects
     PL_FinishArenaPool(&mArena);
 
     mStatus = SHUTDOWN_COMPLETE;
@@ -1047,8 +1042,8 @@ nsresult
 nsComponentManagerImpl::GetInterface(const nsIID & uuid, void **result)
 {
     NS_WARNING("This isn't supported");
-    
-    
+    // fall through to QI as anything QIable is a superset of what can be
+    // got via the GetInterface()
     return  QueryInterface(uuid, result);
 }
 
@@ -1089,12 +1084,12 @@ nsComponentManagerImpl::FindFactory(const char *contractID,
     return entry->GetFactory();
 }
 
-
-
-
-
-
-
+/**
+ * GetClassObject()
+ *
+ * Given a classID, this finds the singleton ClassObject that implements the CID.
+ * Returns an interface of type aIID off the singleton classobject.
+ */
 NS_IMETHODIMP
 nsComponentManagerImpl::GetClassObject(const nsCID &aClass, const nsIID &aIID,
                                        void **aResult)
@@ -1156,13 +1151,13 @@ nsComponentManagerImpl::GetClassObjectByContractID(const char *contractID,
     return rv;
 }
 
-
-
-
-
-
-
-
+/**
+ * CreateInstance()
+ *
+ * Create an instance of an object that implements an interface and belongs
+ * to the implementation aClass using the factory. The factory is immediately
+ * released and not held onto for any longer.
+ */
 NS_IMETHODIMP
 nsComponentManagerImpl::CreateInstance(const nsCID &aClass,
                                        nsISupports *aDelegate,
@@ -1171,18 +1166,18 @@ nsComponentManagerImpl::CreateInstance(const nsCID &aClass,
 {
     COMPMGR_TIME_FUNCTION_CID(aClass);
 
-    
-    
-    
+    // test this first, since there's no point in creating a component during
+    // shutdown -- whether it's available or not would depend on the order it
+    // occurs in the list
     if (gXPCOMShuttingDown) {
-        
+        // When processing shutdown, don't process new GetService() requests
 #ifdef SHOW_DENIED_ON_SHUTDOWN
         nsXPIDLCString cid, iid;
         cid.Adopt(aClass.ToString());
         iid.Adopt(aIID.ToString());
         fprintf(stderr, "Creating new instance on shutdown. Denied.\n"
                "         CID: %s\n         IID: %s\n", cid.get(), iid.get());
-#endif 
+#endif /* SHOW_DENIED_ON_SHUTDOWN */
         return NS_ERROR_UNEXPECTED;
     }
 
@@ -1219,7 +1214,7 @@ nsComponentManagerImpl::CreateInstance(const nsCID &aClass,
         }
     }
     else {
-        
+        // Translate error values
         rv = NS_ERROR_FACTORY_NOT_REGISTERED;
     }
 
@@ -1238,15 +1233,15 @@ nsComponentManagerImpl::CreateInstance(const nsCID &aClass,
     return rv;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * CreateInstanceByContractID()
+ *
+ * A variant of CreateInstance() that creates an instance of the object that
+ * implements the interface aIID and whose implementation has a contractID aContractID.
+ *
+ * This is only a convenience routine that turns around can calls the
+ * CreateInstance() with classid and iid.
+ */
 NS_IMETHODIMP
 nsComponentManagerImpl::CreateInstanceByContractID(const char *aContractID,
                                                    nsISupports *aDelegate,
@@ -1257,17 +1252,17 @@ nsComponentManagerImpl::CreateInstanceByContractID(const char *aContractID,
 
     NS_ENSURE_ARG_POINTER(aContractID);
 
-    
-    
-    
+    // test this first, since there's no point in creating a component during
+    // shutdown -- whether it's available or not would depend on the order it
+    // occurs in the list
     if (gXPCOMShuttingDown) {
-        
+        // When processing shutdown, don't process new GetService() requests
 #ifdef SHOW_DENIED_ON_SHUTDOWN
         nsXPIDLCString iid;
         iid.Adopt(aIID.ToString());
         fprintf(stderr, "Creating new instance on shutdown. Denied.\n"
                "  ContractID: %s\n         IID: %s\n", aContractID, iid.get());
-#endif 
+#endif /* SHOW_DENIED_ON_SHUTDOWN */
         return NS_ERROR_UNEXPECTED;
     }
 
@@ -1306,7 +1301,7 @@ nsComponentManagerImpl::CreateInstanceByContractID(const char *aContractID,
         }
     }
     else {
-        
+        // Translate error values
         rv = NS_ERROR_FACTORY_NOT_REGISTERED;
     }
 
@@ -1339,7 +1334,7 @@ nsComponentManagerImpl::FreeServices()
     return NS_OK;
 }
 
-
+// This should only ever be called within the monitor!
 nsComponentManagerImpl::PendingServiceInfo*
 nsComponentManagerImpl::AddPendingService(const nsCID& aServiceCID,
                                           PRThread* aThread)
@@ -1352,7 +1347,7 @@ nsComponentManagerImpl::AddPendingService(const nsCID& aServiceCID,
   return newInfo;
 }
 
-
+// This should only ever be called within the monitor!
 void
 nsComponentManagerImpl::RemovePendingService(const nsCID& aServiceCID)
 {
@@ -1366,7 +1361,7 @@ nsComponentManagerImpl::RemovePendingService(const nsCID& aServiceCID)
   }
 }
 
-
+// This should only ever be called within the monitor!
 PRThread*
 nsComponentManagerImpl::GetPendingServiceThread(const nsCID& aServiceCID) const
 {
@@ -1380,17 +1375,17 @@ nsComponentManagerImpl::GetPendingServiceThread(const nsCID& aServiceCID) const
   return nsnull;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+// GetService() wants to manually Exit()/Enter() a monitor which is
+// wrapped in ReentrantMonitorAutoEnter, which nsAutoReentrantMonitor used to allow.
+// One use is block-scoped Exit()/Enter(), which could be supported
+// with something like a MonitoAutoExit, but that's not a well-defined
+// operation in general so that helper doesn't exist.  The other use
+// is early-Exit() for perf reasons.  This code is probably hot enough
+// to warrant special considerations.
+//
+// We could use bare mozilla::ReentrantMonitor, but that's error prone.
+// Instead, we just add a hacky wrapper here that acts like the old
+// nsAutoReentrantMonitor.
 struct NS_STACK_CLASS AutoReentrantMonitor
 {
     AutoReentrantMonitor(ReentrantMonitor& aReentrantMonitor) : mReentrantMonitor(&aReentrantMonitor), mEnterCount(0)
@@ -1426,18 +1421,18 @@ nsComponentManagerImpl::GetService(const nsCID& aClass,
                                    const nsIID& aIID,
                                    void* *result)
 {
-    
-    
-    
+    // test this first, since there's no point in returning a service during
+    // shutdown -- whether it's available or not would depend on the order it
+    // occurs in the list
     if (gXPCOMShuttingDown) {
-        
+        // When processing shutdown, don't process new GetService() requests
 #ifdef SHOW_DENIED_ON_SHUTDOWN
         nsXPIDLCString cid, iid;
         cid.Adopt(aClass.ToString());
         iid.Adopt(aIID.ToString());
         fprintf(stderr, "Getting service on shutdown. Denied.\n"
                "         CID: %s\n         IID: %s\n", cid.get(), iid.get());
-#endif 
+#endif /* SHOW_DENIED_ON_SHUTDOWN */
         return NS_ERROR_UNEXPECTED;
     }
 
@@ -1453,13 +1448,13 @@ nsComponentManagerImpl::GetService(const nsCID& aClass,
         return supports->QueryInterface(aIID, result);
     }
 
-    
+    // We only care about time when we create the service.
     COMPMGR_TIME_FUNCTION_CID(aClass);
 
     PRThread* currentPRThread = PR_GetCurrentThread();
     NS_ASSERTION(currentPRThread, "This should never be null!");
 
-    
+    // Needed to optimize the event loop below.
     nsIThread* currentThread = nsnull;
 
     PRThread* pendingPRThread;
@@ -1476,8 +1471,8 @@ nsComponentManagerImpl::GetService(const nsCID& aClass,
             NS_ASSERTION(currentThread, "This should never be null!");
         }
 
-        
-        
+        // This will process a single event or yield the thread if no event is
+        // pending.
         if (!NS_ProcessNextEvent(currentThread, PR_FALSE)) {
             PR_Sleep(PR_INTERVAL_NO_WAIT);
         }
@@ -1485,8 +1480,8 @@ nsComponentManagerImpl::GetService(const nsCID& aClass,
         mon.Enter();
     }
 
-    
-    
+    // It's still possible that the other thread failed to create the
+    // service so we're not guaranteed to have an entry or service yet.
     if (entry->mServiceObject) {
         nsCOMPtr<nsISupports> supports = entry->mServiceObject;
         mon.Exit();
@@ -1500,9 +1495,9 @@ nsComponentManagerImpl::GetService(const nsCID& aClass,
     NS_ASSERTION(newInfo, "Failed to add info to the array!");
 
     nsCOMPtr<nsISupports> service;
-    
-    
-    
+    // We need to not be holding the service manager's monitor while calling
+    // CreateInstance, because it invokes user code which could try to re-enter
+    // the service manager:
     mon.Exit();
 
     nsresult rv = CreateInstance(aClass, nsnull, aIID, getter_AddRefs(service));
@@ -1538,21 +1533,21 @@ nsComponentManagerImpl::IsServiceInstantiated(const nsCID & aClass,
 {
     COMPMGR_TIME_FUNCTION_CID(aClass);
 
-    
-    
+    // Now we want to get the service if we already got it. If not, we don't want
+    // to create an instance of it. mmh!
 
-    
-    
-    
+    // test this first, since there's no point in returning a service during
+    // shutdown -- whether it's available or not would depend on the order it
+    // occurs in the list
     if (gXPCOMShuttingDown) {
-        
+        // When processing shutdown, don't process new GetService() requests
 #ifdef SHOW_DENIED_ON_SHUTDOWN
         nsXPIDLCString cid, iid;
         cid.Adopt(aClass.ToString());
         iid.Adopt(aIID.ToString());
         fprintf(stderr, "Checking for service on shutdown. Denied.\n"
                "         CID: %s\n         IID: %s\n", cid.get(), iid.get());
-#endif 
+#endif /* SHOW_DENIED_ON_SHUTDOWN */
         return NS_ERROR_UNEXPECTED;
     }
 
@@ -1579,20 +1574,20 @@ NS_IMETHODIMP nsComponentManagerImpl::IsServiceInstantiatedByContractID(const ch
 {
     COMPMGR_TIME_FUNCTION_CONTRACTID(aContractID);
 
-    
-    
+    // Now we want to get the service if we already got it. If not, we don't want
+    // to create an instance of it. mmh!
 
-    
-    
-    
+    // test this first, since there's no point in returning a service during
+    // shutdown -- whether it's available or not would depend on the order it
+    // occurs in the list
     if (gXPCOMShuttingDown) {
-        
+        // When processing shutdown, don't process new GetService() requests
 #ifdef SHOW_DENIED_ON_SHUTDOWN
         nsXPIDLCString iid;
         iid.Adopt(aIID.ToString());
         fprintf(stderr, "Checking for service on shutdown. Denied.\n"
                "  ContractID: %s\n         IID: %s\n", aContractID, iid.get());
-#endif 
+#endif /* SHOW_DENIED_ON_SHUTDOWN */
         return NS_ERROR_UNEXPECTED;
     }
 
@@ -1617,17 +1612,17 @@ nsComponentManagerImpl::GetServiceByContractID(const char* aContractID,
                                                const nsIID& aIID,
                                                void* *result)
 {
-    
-    
-    
+    // test this first, since there's no point in returning a service during
+    // shutdown -- whether it's available or not would depend on the order it
+    // occurs in the list
     if (gXPCOMShuttingDown) {
-        
+        // When processing shutdown, don't process new GetService() requests
 #ifdef SHOW_DENIED_ON_SHUTDOWN
         nsXPIDLCString iid;
         iid.Adopt(aIID.ToString());
         fprintf(stderr, "Getting service on shutdown. Denied.\n"
                "  ContractID: %s\n         IID: %s\n", aContractID, iid.get());
-#endif 
+#endif /* SHOW_DENIED_ON_SHUTDOWN */
         return NS_ERROR_UNEXPECTED;
     }
 
@@ -1640,21 +1635,21 @@ nsComponentManagerImpl::GetServiceByContractID(const char* aContractID,
     if (entry->mServiceObject) {
         nsCOMPtr<nsISupports> serviceObject = entry->mServiceObject;
 
-        
-        
-        
-        
+        // We need to not be holding the service manager's monitor while calling
+        // QueryInterface, because it invokes user code which could try to re-enter
+        // the service manager, or try to grab some other lock/monitor/condvar
+        // and deadlock, e.g. bug 282743.
         mon.Exit();
         return serviceObject->QueryInterface(aIID, result);
     }
 
-    
+    // We only care about time when we create the service.
     COMPMGR_TIME_FUNCTION_CONTRACTID(aContractID);
 
     PRThread* currentPRThread = PR_GetCurrentThread();
     NS_ASSERTION(currentPRThread, "This should never be null!");
 
-    
+    // Needed to optimize the event loop below.
     nsIThread* currentThread = nsnull;
 
     PRThread* pendingPRThread;
@@ -1671,8 +1666,8 @@ nsComponentManagerImpl::GetServiceByContractID(const char* aContractID,
             NS_ASSERTION(currentThread, "This should never be null!");
         }
 
-        
-        
+        // This will process a single event or yield the thread if no event is
+        // pending.
         if (!NS_ProcessNextEvent(currentThread, PR_FALSE)) {
             PR_Sleep(PR_INTERVAL_NO_WAIT);
         }
@@ -1681,8 +1676,8 @@ nsComponentManagerImpl::GetServiceByContractID(const char* aContractID,
     }
 
     if (currentThread && entry->mServiceObject) {
-        
-        
+        // If we have a currentThread then we must have waited on another thread
+        // to create the service. Grab it now if that succeeded.
         nsCOMPtr<nsISupports> serviceObject = entry->mServiceObject;
         mon.Exit();
         return serviceObject->QueryInterface(aIID, result);
@@ -1695,9 +1690,9 @@ nsComponentManagerImpl::GetServiceByContractID(const char* aContractID,
     NS_ASSERTION(newInfo, "Failed to add info to the array!");
 
     nsCOMPtr<nsISupports> service;
-    
-    
-    
+    // We need to not be holding the service manager's monitor while calling
+    // CreateInstance, because it invokes user code which could try to re-enter
+    // the service manager:
     mon.Exit();
 
     nsresult rv = CreateInstanceByContractID(aContractID, nsnull, aIID,
@@ -1746,8 +1741,8 @@ nsComponentManagerImpl::RegisterFactory(const nsCID& aClass,
                                         nsIFactory* aFactory)
 {
     if (!aFactory) {
-        
-        
+        // If a null factory is passed in, this call just wants to reset
+        // the contract ID to point to an existing CID entry.
         if (!aContractID)
             return NS_ERROR_INVALID_ARG;
 
@@ -1779,8 +1774,8 @@ NS_IMETHODIMP
 nsComponentManagerImpl::UnregisterFactory(const nsCID& aClass,
                                           nsIFactory* aFactory)
 {
-    
-    
+    // Don't release the dying factory or service object until releasing
+    // the component manager monitor.
     nsCOMPtr<nsIFactory> dyingFactory;
     nsCOMPtr<nsISupports> dyingServiceObject;
 
@@ -1792,9 +1787,9 @@ nsComponentManagerImpl::UnregisterFactory(const nsCID& aClass,
 
         mFactories.Remove(aClass);
 
-        
-        
-        
+        // This might leave a stale contractid -> factory mapping in
+        // place, so null out the factory entry (see
+        // nsFactoryEntry::GetFactory)
         f->mFactory.swap(dyingFactory);
         f->mServiceObject.swap(dyingServiceObject);
     }
@@ -1932,9 +1927,9 @@ nsComponentManagerImpl::ContractIDToCID(const char *aContractID,
     return NS_ERROR_FACTORY_NOT_REGISTERED;
 }
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsFactoryEntry
+////////////////////////////////////////////////////////////////////////////////
 
 nsFactoryEntry::nsFactoryEntry(const mozilla::Module::CIDEntry* entry,
                                nsComponentManagerImpl::KnownModule* module)
@@ -1957,7 +1952,7 @@ nsFactoryEntry::nsFactoryEntry(const nsCID& aCID, nsIFactory* factory)
 
 nsFactoryEntry::~nsFactoryEntry()
 {
-    
+    // If this was a RegisterFactory entry, we own the CIDEntry/CID
     if (!mModule) {
         delete mCIDEntry->cid;
         delete mCIDEntry;
@@ -1968,8 +1963,8 @@ already_AddRefed<nsIFactory>
 nsFactoryEntry::GetFactory()
 {
     if (!mFactory) {
-        
-        
+        // RegisterFactory then UnregisterFactory can leave an entry in mContractIDs
+        // pointing to an unusable nsFactoryEntry.
         if (!mModule)
             return NULL;
 
@@ -1994,9 +1989,9 @@ nsFactoryEntry::GetFactory()
     return mFactory.get();
 }
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+// Static Access Functions
+////////////////////////////////////////////////////////////////////////////////
 
 NS_COM nsresult
 NS_GetComponentManager(nsIComponentManager* *result)
