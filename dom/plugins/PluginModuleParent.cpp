@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: sw=4 ts=4 et :
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Plugin App.
+ *
+ * The Initial Developer of the Original Code is
+ *   Chris Jones <jones.chris.g@gmail.com>
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifdef MOZ_WIDGET_GTK2
 #include <glib.h>
@@ -71,13 +71,13 @@ struct RunnableMethodTraits<mozilla::plugins::PluginModuleParent>
     static void ReleaseCallee(Class* obj) { }
 };
 
-
+// static
 PluginLibrary*
 PluginModuleParent::LoadModule(const char* aFilePath)
 {
     PLUGIN_LOG_DEBUG_FUNCTION;
 
-    
+    // Block on the child process being launched and initialized.
     PluginModuleParent* parent = new PluginModuleParent(aFilePath);
     parent->mSubprocess->Launch();
     parent->Open(parent->mSubprocess->GetChannel(),
@@ -91,6 +91,7 @@ PluginModuleParent::LoadModule(const char* aFilePath)
 
 PluginModuleParent::PluginModuleParent(const char* aFilePath)
     : mSubprocess(new PluginProcessParent(aFilePath))
+    , mPluginThread(0)
     , mShutdown(false)
     , mNPNIface(NULL)
     , mPlugin(NULL)
@@ -141,7 +142,7 @@ PluginModuleParent::WritePluginExtraDataForMinidump(const nsAString& id)
     sprintf(startTime, "%lld", static_cast<PRInt64>(mProcessStartTime));
     notes.Put(CS("StartupTime"), CS(startTime));
 
-    
+    // Get the plugin filename, try to get just the file leafname
     const std::string& pluginFile = mSubprocess->GetPluginFilePath();
     size_t filePos = pluginFile.rfind(FILE_PATH_SEPARATOR);
     if (filePos == std::string::npos)
@@ -150,8 +151,8 @@ PluginModuleParent::WritePluginExtraDataForMinidump(const nsAString& id)
         filePos++;
     notes.Put(CS("PluginFilename"), CS(pluginFile.substr(filePos).c_str()));
 
-    
-    
+    //TODO: add plugin name and version: bug 539841
+    // (as PluginName, PluginVersion)
     notes.Put(CS("PluginName"), CS(""));
     notes.Put(CS("PluginVersion"), CS(""));
 
@@ -168,7 +169,7 @@ PluginModuleParent::WritePluginExtraDataForMinidump(const nsAString& id)
 void
 PluginModuleParent::WriteExtraDataForHang()
 {
-    
+    // this writes HangID
     WritePluginExtraDataForMinidump(mPluginDumpID);
 
     CrashReporter::AnnotationTable notes;
@@ -179,7 +180,7 @@ PluginModuleParent::WriteExtraDataForHang()
     if (!CrashReporter::AppendExtraData(mBrowserDumpID, notes))
         NS_WARNING("problem appending browser data to .extra");
 }
-#endif  
+#endif  // MOZ_CRASHREPORTER
 
 bool
 PluginModuleParent::RecvAppendNotesToCrashReport(const nsCString& aNotes)
@@ -217,6 +218,7 @@ PluginModuleParent::ShouldContinueFromReplyTimeout()
     nsCOMPtr<nsILocalFile> pluginDump;
     nsCOMPtr<nsILocalFile> browserDump;
     if (CrashReporter::CreatePairedMinidumps(OtherProcess(),
+                                             mPluginThread,
                                              &mHangID,
                                              getter_AddRefs(pluginDump),
                                              getter_AddRefs(browserDump)) &&
@@ -234,8 +236,8 @@ PluginModuleParent::ShouldContinueFromReplyTimeout()
     }
 #endif
 
-    
-    
+    // this must run before the error notification from the channel,
+    // or not at all
     MessageLoop::current()->PostTask(
         FROM_HERE,
         mTaskFactory.NewRunnableMethod(
@@ -269,8 +271,8 @@ PluginModuleParent::ActorDestroy(ActorDestroyReason why)
 #endif
 
         mShutdown = true;
-        
-        
+        // Defer the PluginCrashed method so that we don't re-enter
+        // and potentially modify the actor child list while enumerating it.
         if (mPlugin)
             MessageLoop::current()->PostTask(
                 FROM_HERE,
@@ -291,7 +293,7 @@ void
 PluginModuleParent::NotifyPluginCrashed()
 {
     if (!OkToCleanup()) {
-        
+        // there's still plugin code on the C++ stack.  try again
         MessageLoop::current()->PostDelayedTask(
             FROM_HERE,
             mTaskFactory.NewRunnableMethod(
@@ -353,7 +355,7 @@ PluginModuleParent::SetPluginFuncs(NPPluginFuncs* aFuncs)
     aFuncs->version = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;
     aFuncs->javaClass = nsnull;
 
-    aFuncs->newp = nsnull; 
+    aFuncs->newp = nsnull; // Gecko should always call this through a PluginLibrary object
     aFuncs->destroy = NPP_Destroy;
     aFuncs->setwindow = NPP_SetWindow;
     aFuncs->newstream = NPP_NewStream;
@@ -370,13 +372,13 @@ PluginModuleParent::SetPluginFuncs(NPPluginFuncs* aFuncs)
 
 NPError
 PluginModuleParent::NPP_Destroy(NPP instance,
-                                NPSavedData** )
+                                NPSavedData** /*saved*/)
 {
-    
-    
-    
-    
-    
+    // FIXME/cjones:
+    //  (1) send a "destroy" message to the child
+    //  (2) the child shuts down its instance
+    //  (3) remove both parent and child IDs from map
+    //  (4) free parent
     PLUGIN_LOG_DEBUG_FUNCTION;
 
     PluginInstanceParent* parentInstance =
@@ -560,8 +562,8 @@ PluginModuleParent::InstCast(NPP instance)
     PluginInstanceParent* ip =
         static_cast<PluginInstanceParent*>(instance->pdata);
 
-    
-    
+    // If the plugin crashed and the PluginInstanceParent was deleted,
+    // instance->pdata will be NULL.
     if (!ip)
         return NULL;
 
@@ -606,7 +608,7 @@ PluginModuleParent::NP_Initialize(NPNetscapeFuncs* bFuncs, NPPluginFuncs* pFuncs
         return NS_ERROR_FAILURE;
     }
 
-    if (!CallNP_Initialize(error)) {
+    if (!CallNP_Initialize(&mPluginThread, error)) {
         return NS_ERROR_FAILURE;
     }
     else if (*error != NPERR_NO_ERROR) {
@@ -629,7 +631,7 @@ PluginModuleParent::NP_Initialize(NPNetscapeFuncs* bFuncs, NPError* error)
         return NS_ERROR_FAILURE;
     }
 
-    if (!CallNP_Initialize(error))
+    if (!CallNP_Initialize(&mPluginThread, error))
         return NS_ERROR_FAILURE;
 
     return NS_OK;
@@ -648,10 +650,10 @@ PluginModuleParent::NP_Shutdown(NPError* error)
 
     bool ok = CallNP_Shutdown(error);
 
-    
-    
-    
-    
+    // if NP_Shutdown() is nested within another RPC call, this will
+    // break things.  but lord help us if we're doing that anyway; the
+    // plugin dso will have been unloaded on the other side by the
+    // CallNP_Shutdown() message
     Close();
 
     return ok ? NS_OK : NS_ERROR_FAILURE;
@@ -673,7 +675,7 @@ PluginModuleParent::NP_GetValue(void *future, NPPVariable aVariable,
     PR_LOG(gPluginLog, PR_LOG_WARNING, ("%s Not implemented, requested variable %i", __FUNCTION__,
                                         (int) aVariable));
 
-    
+    //TODO: implement this correctly
     *error = NPERR_GENERIC_ERROR;
     return NS_OK;
 }
@@ -703,7 +705,7 @@ PluginModuleParent::NPP_New(NPMIMEType pluginType, NPP instance,
         return NS_ERROR_FAILURE;
     }
 
-    
+    // create the instance on the other side
     nsTArray<nsCString> names;
     nsTArray<nsCString> values;
 
@@ -725,11 +727,11 @@ PluginModuleParent::NPP_New(NPMIMEType pluginType, NPP instance,
     if (!CallPPluginInstanceConstructor(parentInstance,
                                         nsDependentCString(pluginType), mode,
                                         names, values, error)) {
-        
+        // |parentInstance| is automatically deleted.
         instance->pdata = nsnull;
-        
-        
-        
+        // if IPC is down, we'll get an immediate "failed" return, but
+        // without *error being set.  So make sure that the error
+        // condition is signaled to nsNPAPIPluginInstance
         if (NPERR_NO_ERROR == *error)
             *error = NPERR_GENERIC_ERROR;
         return NS_ERROR_FAILURE;

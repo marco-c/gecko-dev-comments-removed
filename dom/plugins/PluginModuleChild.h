@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: sw=4 ts=4 et :
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Plugin App.
+ *
+ * The Initial Developer of the Original Code is
+ *   Ben Turner <bent.mozilla@gmail.com>.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Chris Jones <jones.chris.g@gmail.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef dom_plugins_PluginModuleChild_h
 #define dom_plugins_PluginModuleChild_h 1
@@ -59,14 +59,14 @@
 #include "mozilla/plugins/PluginInstanceChild.h"
 #include "mozilla/plugins/PluginIdentifierChild.h"
 
+// NOTE: stolen from nsNPAPIPlugin.h
 
-
-
-
-
-
-
-
+/*
+ * Use this macro before each exported function
+ * (between the return address and the function
+ * itself), to ensure that the function has the
+ * right calling conventions on OS/2.
+ */
 #ifdef XP_OS2
 #define NP_CALLBACK _System
 #else
@@ -102,8 +102,8 @@ protected:
         return MediateRace(parent, child);
     }
 
-    
-    virtual bool AnswerNP_Initialize(NPError* rv);
+    // Implement the PPluginModuleChild interface
+    virtual bool AnswerNP_Initialize(NativeThreadId* tid, NPError* rv);
 
     virtual PPluginIdentifierChild*
     AllocPPluginIdentifier(const nsCString& aString,
@@ -163,22 +163,22 @@ public:
     bool NPObjectIsRegistered(NPObject* aObject);
 #endif
 
-    
-
-
+    /**
+     * The child implementation of NPN_CreateObject.
+     */
     static NPObject* NP_CALLBACK NPN_CreateObject(NPP aNPP, NPClass* aClass);
-    
-
-
+    /**
+     * The child implementation of NPN_RetainObject.
+     */
     static NPObject* NP_CALLBACK NPN_RetainObject(NPObject* aNPObj);
-    
-
-
+    /**
+     * The child implementation of NPN_ReleaseObject.
+     */
     static void NP_CALLBACK NPN_ReleaseObject(NPObject* aNPObj);
 
-    
-
-
+    /**
+     * The child implementations of NPIdentifier-related functions.
+     */
     static NPIdentifier NP_CALLBACK NPN_GetStringIdentifier(const NPUTF8* aName);
     static void NP_CALLBACK NPN_GetStringIdentifiers(const NPUTF8** aNames,
                                                      int32_t aNameCount,
@@ -204,7 +204,7 @@ private:
     PRLibrary* mLibrary;
     nsCString mUserAgent;
 
-    
+    // we get this from the plugin
     NP_PLUGINSHUTDOWN mShutdownFunc;
 #ifdef OS_LINUX
     NP_PLUGINUNIXINIT mInitializeFunc;
@@ -217,41 +217,41 @@ private:
     NPSavedData mSavedData;
 
 #if defined(MOZ_WIDGET_GTK2)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // If a plugin spins a nested glib event loop in response to a
+    // synchronous IPC message from the browser, the loop might break
+    // only after the browser responds to a request sent by the
+    // plugin.  This can happen if a plugin uses gtk's synchronous
+    // copy/paste, for example.  But because the browser is blocked on
+    // a condvar, it can't respond to the request.  This situation
+    // isn't technically a deadlock, but the symptoms are basically
+    // the same from the user's perspective.
+    //
+    // We take two steps to prevent this
+    //
+    //  (1) Detect nested event loops spun by the plugin.  This is
+    //      done by scheduling a glib timer event in the plugin
+    //      process whenever the browser might block on the plugin.
+    //      If the plugin indeed spins a nested loop, this timer event
+    //      will fire "soon" thereafter.
+    //
+    //  (2) When a nested loop is detected, deschedule the
+    //      nested-loop-detection timer and in its place, schedule
+    //      another timer that periodically calls back into the
+    //      browser and spins a mini event loop.  This mini event loop
+    //      processes a handful of pending native events.
+    //
+    // Because only timer (1) or (2) (or neither) may be active at any
+    // point in time, we use the same member variable
+    // |mNestedLoopTimerId| to refer to both.
+    //
+    // When the browser no longer might be blocked on a plugin's IPC
+    // response, we deschedule whichever of (1) or (2) is active.
     guint mNestedLoopTimerId;
 #  ifdef DEBUG
-    
-    
-    
-    
+    // Depth of the stack of calls to g_main_context_dispatch before any
+    // nested loops are run.  This is 1 when IPC calls are dispatched from
+    // g_main_context_iteration, or 0 when dispatched directly from
+    // MessagePumpForUI.
     int mTopLoopDepth;
 #  endif
 #endif
@@ -264,43 +264,43 @@ private:
             , actor(NULL)
         { }
 
-        
+        // never NULL
         PluginInstanceChild* instance;
 
-        
+        // sometimes NULL (no actor associated with an NPObject)
         PluginScriptableObjectChild* actor;
     };
-    
-
-
-
+    /**
+     * mObjectMap contains all the currently active NPObjects (from NPN_CreateObject until the
+     * final release/dealloc, whether or not an actor is currently associated with the object.
+     */
     nsTHashtable<NPObjectData> mObjectMap;
 
     nsDataHashtable<nsCStringHashKey, PluginIdentifierChild*> mStringIdentifiers;
     nsDataHashtable<nsUint32HashKey, PluginIdentifierChild*> mIntIdentifiers;
 
-public: 
-    
-
-
-
+public: // called by PluginInstanceChild
+    /**
+     * Dealloc an NPObject after last-release or when the associated instance
+     * is destroyed. This function will remove the object from mObjectMap.
+     */
     static void DeallocNPObject(NPObject* o);
 
     NPError NPP_Destroy(PluginInstanceChild* instance) {
         return mFunctions.destroy(instance->GetNPP(), 0);
     }
 
-    
-
-
-
+    /**
+     * Fill PluginInstanceChild.mDeletingHash with all the remaining NPObjects
+     * associated with that instance.
+     */
     void FindNPObjectsForInstance(PluginInstanceChild* instance);
 
 private:
     static PLDHashOperator CollectForInstance(NPObjectData* d, void* userArg);
 };
 
-} 
-} 
+} /* namespace plugins */
+} /* namespace mozilla */
 
-#endif  
+#endif  // ifndef dom_plugins_PluginModuleChild_h
