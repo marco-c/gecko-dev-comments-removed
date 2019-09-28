@@ -231,7 +231,7 @@ EnumerateDenseArrayProperties(JSContext *cx, JSObject *obj, JSObject *pobj, uint
 
     if (pobj->getArrayLength() > 0) {
         size_t initlen = pobj->getDenseArrayInitializedLength();
-        Value *vp = pobj->getDenseArrayElements();
+        const Value *vp = pobj->getDenseArrayElements();
         for (size_t i = 0; i < initlen; ++i, ++vp) {
             if (!vp->isMagic(JS_ARRAY_HOLE)) {
                 
@@ -353,15 +353,6 @@ GetCustomIterator(JSContext *cx, JSObject *obj, uintN flags, Value *vp)
         vp->setUndefined();
         return true;
     }
-
-    
-
-
-
-
-
-    if (!(flags & JSITER_OWNONLY))
-        types::MarkIteratorUnknown(cx);
 
     
     LeaveTrace(cx);
@@ -579,6 +570,7 @@ GetIterator(JSContext *cx, JSObject *obj, uintN flags, Value *vp)
             if (!iterobj)
                 return false;
             vp->setObject(*iterobj);
+            types::MarkIteratorUnknown(cx);
             return true;
         }
 
@@ -646,12 +638,16 @@ GetIterator(JSContext *cx, JSObject *obj, uintN flags, Value *vp)
         }
 
       miss:
-        if (obj->isProxy())
+        if (obj->isProxy()) {
+            types::MarkIteratorUnknown(cx);
             return JSProxy::iterate(cx, obj, flags, vp);
+        }
         if (!GetCustomIterator(cx, obj, flags, vp))
             return false;
-        if (!vp->isUndefined())
+        if (!vp->isUndefined()) {
+            types::MarkIteratorUnknown(cx);
             return true;
+        }
     }
 
     
