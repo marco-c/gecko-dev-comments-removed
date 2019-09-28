@@ -586,14 +586,14 @@ struct JSScopeProperty {
 
   private:
     union {
-        js::PropertyOp rawGetter;       
+        js::PropertyOp  rawGetter;      
         JSObject        *getterObj;     
 
         JSScopeProperty *next;          
     };
 
     union {
-        js::PropertyOp rawSetter;       
+        js::PropertyOp  rawSetter;      
 
         JSObject        *setterObj;     
 
@@ -690,7 +690,7 @@ struct JSScopeProperty {
     bool isMethod() const   { return (flags & METHOD) != 0; }
 
     JSObject *methodObject() const { JS_ASSERT(isMethod()); return getterObj; }
-    jsval methodValue() const      { return OBJECT_TO_JSVAL(methodObject()); }
+    js::Value methodValue() const      { return js::FunObjValue(*methodObject()); }
 
     js::PropertyOp getter() const { return rawGetter; }
     bool hasDefaultGetter() const  { return !rawGetter; }
@@ -700,7 +700,9 @@ struct JSScopeProperty {
     
     js::Value getterValue() const {
         JS_ASSERT(hasGetterValue());
-        return getterObj ? OBJECT_TO_JSVAL(getterObj) : JSVAL_VOID;
+        if (getterObj)
+            return js::FunObjValue(*getterObj);
+        return js::UndefinedValue();
     }
 
     js::PropertyOp setter() const { return rawSetter; }
@@ -709,9 +711,11 @@ struct JSScopeProperty {
     JSObject *setterObject() const { JS_ASSERT(hasSetterValue()); return setterObj; }
 
     
-    jsval setterValue() const {
+    js::Value setterValue() const {
         JS_ASSERT(hasSetterValue());
-        return setterObj ? OBJECT_TO_JSVAL(setterObj) : JSVAL_VOID;
+        if (setterObj)
+            return js::FunObjValue(*setterObj);
+        return js::UndefinedValue();
     }
 
     inline JSDHashNumber hash() const;

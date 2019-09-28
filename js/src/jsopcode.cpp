@@ -5149,7 +5149,7 @@ js_DecompileValueGenerator(JSContext *cx, intN spindex, jsval v,
 
 
 
-            jsval *stackBase = StackBase(fp);
+            jsval *stackBase = fp->base();
             jsval *sp = i.sp();
             do {
                 if (sp == stackBase) {

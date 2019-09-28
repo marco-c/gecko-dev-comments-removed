@@ -3071,8 +3071,8 @@ js_PutBlockObject(JSContext *cx, JSBool normalUnwind)
     
     uintN depth = OBJ_BLOCK_DEPTH(cx, obj);
     uintN count = OBJ_BLOCK_COUNT(cx, obj);
-    JS_ASSERT(depth <= (size_t) (cx->regs->sp - StackBase(fp)));
-    JS_ASSERT(count <= (size_t) (cx->regs->sp - StackBase(fp) - depth));
+    JS_ASSERT(depth <= (size_t) (cx->regs->sp - fp->base()));
+    JS_ASSERT(count <= (size_t) (cx->regs->sp - fp->base() - depth));
 
     
     JS_ASSERT(count >= 1);
@@ -5305,7 +5305,7 @@ JSBool
 js_Enumerate(JSContext *cx, JSObject *obj, JSIterateOp enum_op, jsval *statep, jsid *idp)
 {
     
-    JSClass *clasp = obj->getClass();
+    Class *clasp = obj->getClass();
     JSEnumerateOp enumerate = clasp->enumerate;
     if (clasp->flags & JSCLASS_NEW_ENUMERATE) {
         JS_ASSERT(enumerate != JS_EnumerateStub);
