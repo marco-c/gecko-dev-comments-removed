@@ -415,6 +415,7 @@ ScriptAnalysis::analyzeBytecode(JSContext *cx)
 
 
 
+            code->unconditional = true;
             for (unsigned i = 0; i < defineCount; i++) {
                 uint32 local = defineArray[i];
                 JS_ASSERT_IF(definedLocals[local] != LOCAL_CONDITIONALLY_DEFINED &&
