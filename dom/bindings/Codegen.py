@@ -1,8 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this file,
-# You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Common codegen classes.
+
+
+
+
 
 import os
 import string
@@ -45,13 +45,13 @@ class CGThing():
     Abstract base class for things that spit out code.
     """
     def __init__(self):
-        pass # Nothing for now
+        pass 
     def declare(self):
         """Produce code for a header file."""
-        assert(False)  # Override me!
+        assert(False)  
     def define(self):
         """Produce code for a cpp file."""
-        assert(False) # Override me!
+        assert(False) 
 
 class CGNativePropertyHooks(CGThing):
     """
@@ -81,10 +81,10 @@ class CGDOMJSClass(CGThing):
     def define(self):
         traceHook = TRACE_HOOK_NAME if self.descriptor.customTrace else 'NULL'
         protoList = ['id::' + proto for proto in self.descriptor.prototypeChain]
-        # Pad out the list to the right length with _ID_Count so we
-        # guarantee that all the lists are the same length.  _ID_Count
-        # is never the ID of any prototype, so it's safe to use as
-        # padding.
+        
+        
+        
+        
         while len(protoList) < self.descriptor.config.maxProtoChainLength:
             protoList.append('id::_ID_Count')
         prototypeChainString = ', '.join(protoList)
@@ -121,7 +121,7 @@ class CGPrototypeJSClass(CGThing):
         CGThing.__init__(self)
         self.descriptor = descriptor
     def declare(self):
-        # We're purely for internal consumption
+        
         return ""
     def define(self):
         return """
@@ -149,7 +149,7 @@ class CGInterfaceObjectJSClass(CGThing):
         CGThing.__init__(self)
         self.descriptor = descriptor
     def declare(self):
-        # We're purely for internal consumption
+        
         return ""
     def define(self):
         ctorname = "NULL" if not self.descriptor.interface.ctor() else CONSTRUCT_HOOK_NAME
@@ -205,9 +205,9 @@ class CGGeneric(CGThing):
     def define(self):
         return self.defineText
 
-# We'll want to insert the indent at the beginnings of lines, but we
-# don't want to indent empty lines.  So only indent lines that have a
-# non-newline character on them.
+
+
+
 lineStartDetector = re.compile("^(?=[^\n#])", re.MULTILINE)
 class CGIndenter(CGThing):
     """
@@ -292,7 +292,7 @@ class CGHeaders(CGWrapper):
         file and the files in |defineIncludes| in the .cpp.
         """
 
-        # Determine the filenames for which we need headers.
+        
         interfaceDeps = [d.interface for d in descriptors]
         ancestors = []
         for iface in interfaceDeps:
@@ -302,11 +302,11 @@ class CGHeaders(CGWrapper):
         interfaceDeps.extend(ancestors)
         bindingIncludes = set(self.getInterfaceFilename(d) for d in interfaceDeps)
 
-        # Grab all the implementation declaration files we need.
+        
         implementationIncludes = set(d.headerFile for d in descriptors)
 
-        # Now find all the things we'll need as arguments because we
-        # need to wrap or unwrap them.
+        
+        
         bindingHeaders = set()
         for d in descriptors:
             members = [m for m in d.interface.members]
@@ -331,7 +331,7 @@ class CGHeaders(CGWrapper):
                             implementationIncludes.add(typeDesc.headerFile)
                             bindingHeaders.add(self.getInterfaceFilename(typeDesc.interface))
 
-        # Let the machinery do its thing.
+        
         def _includeString(includes):
             return ''.join(['#include "%s"\n' % i for i in includes]) + '\n'
         CGWrapper.__init__(self, child,
@@ -408,7 +408,7 @@ class CGAbstractMethod(CGThing):
     def definition_epilogue(self):
         return "\n}\n"
     def definition_body(self):
-        assert(False) # Override me!
+        assert(False) 
 
 class CGAbstractStaticMethod(CGAbstractMethod):
     """
@@ -419,7 +419,7 @@ class CGAbstractStaticMethod(CGAbstractMethod):
         CGAbstractMethod.__init__(self, descriptor, name, returnType, args,
                                   inline=False, static=True)
     def declare(self):
-        # We only have implementation
+        
         return ""
 
 class CGAbstractClassHook(CGAbstractStaticMethod):
@@ -441,7 +441,7 @@ class CGAbstractClassHook(CGAbstractStaticMethod):
         return self.definition_body_prologue() + self.generate_code()
 
     def generate_code(self):
-        # Override me
+        
         assert(False)
 
 class CGAddPropertyHook(CGAbstractClassHook):
@@ -470,7 +470,7 @@ class CGClassFinalizeHook(CGAbstractClassHook):
     A hook for finalize, used to release our native object.
     """
     def __init__(self, descriptor):
-        args = [Argument('JSContext*', 'cx'), Argument('JSObject*', 'obj')]
+        args = [Argument('JSFreeOp*', 'fop'), Argument('JSObject*', 'obj')]
         CGAbstractClassHook.__init__(self, descriptor, FINALIZE_HOOK_NAME,
                                      'void', args)
 
@@ -642,8 +642,8 @@ class MethodDefiner(PropertyDefiner):
     def __init__(self, descriptor, name, static):
         PropertyDefiner.__init__(self, descriptor, name)
 
-        # The length of a method is the maximum of the lengths of the
-        # argument lists of all its overloads.
+        
+        
         def methodLength(method):
             signatures = method.signatures()
             return max([len(arguments) for (retType, arguments) in signatures])
@@ -667,11 +667,11 @@ class MethodDefiner(PropertyDefiner):
 
         if static:
             if not descriptor.interface.hasInterfaceObject():
-                # static methods go on the interface object
+                
                 assert not self.hasChromeOnly() and not self.hasNonChromeOnly()
         else:
             if not descriptor.interface.hasInterfacePrototypeObject():
-                # non-static methods go on the interface prototype object
+                
                 assert not self.hasChromeOnly() and not self.hasNonChromeOnly()
 
     @staticmethod
@@ -682,7 +682,7 @@ class MethodDefiner(PropertyDefiner):
         funcdecls = ['  JS_FN("%s", %s, %s, %s)' %
                      (m["name"], m["name"], m["length"], m["flags"])
                      for m in array]
-        # And add our JS_FS_END
+        
         funcdecls.append('  JS_FS_END')
 
         return ("static JSFunctionSpec %s[] = {\n" +
@@ -800,7 +800,7 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
         needInterfaceObject = self.descriptor.interface.hasInterfaceObject()
         needInterfacePrototypeObject = self.descriptor.interface.hasInterfacePrototypeObject()
 
-        # if we don't need to create anything, why are we generating this?
+        
         assert needInterfaceObject or needInterfacePrototypeObject
 
         idsToInit = []
@@ -940,8 +940,8 @@ class CGDefineDOMInterfaceMethod(CGAbstractMethod):
 
     def definition_body(self):
         if self.descriptor.interface.hasInterfacePrototypeObject():
-            # We depend on GetProtoObject defining an interface constructor
-            # object as needed.
+            
+            
             getter = "GetProtoObject"
         else:
             getter = "GetConstructorObject"
@@ -974,7 +974,7 @@ class CGNativeToSupportsMethod(CGAbstractStaticMethod):
 
 class CGWrapMethod(CGAbstractMethod):
     def __init__(self, descriptor):
-        # XXX can we wrap if we don't have an interface prototype object?
+        
         assert descriptor.interface.hasInterfacePrototypeObject()
         args = [Argument('JSContext*', 'aCx'), Argument('JSObject*', 'aScope'),
                 Argument(descriptor.nativeType + '*', 'aObject'),
@@ -1122,28 +1122,28 @@ def getArgumentConversionTemplate(type, descriptor):
 
     if descriptor is not None:
         assert(type.isInterface())
-        # This is an interface that we implement as a concrete class
-        # or an XPCOM interface.
+        
+        
         argIsPointer = type.nullable() or type.unroll().inner.isExternal()
         if argIsPointer:
             nameSuffix = ""
         else:
             nameSuffix = "_ptr"
 
-        # If we're going to QI, we want an nsCOMPtr.  But note that XPConnect
-        # unwrapping may or may not QI, and we don't know whether it will.  So
-        # we use a raw pointer for the isExternal() case, and if a ref is needed
-        # it'll be handled by the xpc_qsSelfRef we put on the stack later.
+        
+        
+        
+        
         if descriptor.castable or type.unroll().inner.isExternal() or descriptor.workers:
             declType = "  ${typeName}*"
         else:
             declType = "  nsCOMPtr<${typeName}>"
         template = declType + " ${name}%s;\n" % nameSuffix
 
-        # We have to be very careful here to put anything that might need to
-        # hold references across the C++ call in |template| and not
-        # |templateBody|, since things in |templateBody| will go out of scope
-        # before the call happens.
+        
+        
+        
+        
         templateBody = "  if (${argVal}.isObject()) {"
         if descriptor.castable:
             templateBody += str(FailureFatalCastableObjectUnwrapper(
@@ -1203,7 +1203,7 @@ def getArgumentConversionTemplate(type, descriptor):
                 "  }")
 
         template += (
-            # XXXbz We don't know whether we're on workers, so play it safe
+            
             " else {\n"
             "    return Throw<false>(cx, NS_ERROR_XPC_BAD_CONVERT_JS);\n"
             "  }")
@@ -1214,11 +1214,11 @@ def getArgumentConversionTemplate(type, descriptor):
         raise TypeError("Interface type with no descriptor: " + type)
 
     if type.isString():
-        # XXXbz Need to figure out string behavior based on extended args?  Also, how to
-        # detect them?
+        
+        
 
-        # For nullable strings that are not otherwise annotated, null
-        # and undefined become null strings.
+        
+        
         if type.nullable():
             nullBehavior = "eNull"
             undefinedBehavior = "eNull"
@@ -1251,8 +1251,8 @@ def getArgumentConversionTemplate(type, descriptor):
                       "values" : enum + "::strings" })
 
     if type.isCallback():
-        # XXXbz we're going to assume that callback types are always
-        # nullable and always have [TreatNonCallableAsNull] for now.
+        
+        
         return (
             "  JSObject* ${name};\n"
             "  if (${argVal}.isObject() && JS_ObjectIsCallable(cx, &${argVal}.toObject())) {\n"
@@ -1288,35 +1288,35 @@ def getArgumentConversionTemplate(type, descriptor):
         replacements["converter"] = "JS_ValueToBoolean"
     elif tag in [IDLType.Tags.int8, IDLType.Tags.uint8, IDLType.Tags.int16,
                  IDLType.Tags.uint16, IDLType.Tags.int32, IDLType.Tags.uint32]:
-        # XXXbz need to add support for [EnforceRange] and [Clamp]
-        # The output of JS_ValueToECMAInt32 is determined as follows:
-        #   1) The value is converted to a double
-        #   2) Anything that's not a finite double returns 0
-        #   3) The double is rounded towards zero to the nearest integer
-        #   4) The resulting integer is reduced mod 2^32.  The output of this
-        #      operation is an integer in the range [0, 2^32).
-        #   5) If the resulting number is >= 2^31, 2^32 is subtracted from it.
-        #
-        # The result of all this is a number in the range [-2^31, 2^31)
-        #
-        # WebIDL conversions for the 8-bit, 16-bit, and 32-bit integer types
-        # are defined in the same way, except that step 4 uses reduction mod
-        # 2^8 and 2^16 for the 8-bit and 16-bit types respectively, and step 5
-        # is only done for the signed types.
-        #
-        # C/C++ define integer conversion semantics to unsigned types as taking
-        # your input integer mod (1 + largest value representable in the
-        # unsigned type).  Since 2^32 is zero mod 2^8, 2^16, and 2^32,
-        # converting to the unsigned int of the relevant width will correctly
-        # perform step 4; in particular, the 2^32 possibly subtracted in step 5
-        # will become 0.
-        #
-        # Once we have step 4 done, we're just going to assume 2s-complement
-        # representation and cast directly to the type we really want.
-        #
-        # So we can cast directly for all unsigned types and for int32_t; for
-        # the smaller-width signed types we need to cast through the
-        # corresponding unsigned type.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         replacements["jstype"] = "int32_t"
         replacements["converter"] = "JS::ToInt32"
         if tag is IDLType.Tags.int8:
@@ -1326,13 +1326,13 @@ def getArgumentConversionTemplate(type, descriptor):
         else:
             replacements["intermediateCast"] = ""
     elif tag is IDLType.Tags.int64:
-        # XXXbz this may not match what WebIDL says to do in terms of reducing
-        # mod 2^64.  Should we check?
+        
+        
         replacements["jstype"] = "PRInt64"
         replacements["converter"] = "xpc_qsValueToInt64"
     elif tag is IDLType.Tags.uint64:
-        # XXXbz this may not match what WebIDL says to do in terms of reducing
-        # mod 2^64.  Should we check?
+        
+        
         replacements["jstype"] = "PRUint64"
         replacements["converter"] = "xpc_qsValueToUint64"
     elif tag in [IDLType.Tags.float, IDLType.Tags.double]:
@@ -1341,10 +1341,10 @@ def getArgumentConversionTemplate(type, descriptor):
     else:
         raise TypeError("Unknown primitive type '%s'" % type);
 
-    # We substitute the %(name)s things here.  Our caller will
-    # substitute the ${name} things.
+    
+    
     return ("  %(jstype)s ${name}_jstype;\n"
-            "%(declareArg)s" # No leading whitespace or newline here, on purpose
+            "%(declareArg)s" 
             "  if (%(converter)s(cx, ${argVal}, &${name}_jstype)) {\n"
             "    %(finalValueSetter)s((${typeName})%(intermediateCast)s${name}_jstype);\n"
             "  } else {\n"
@@ -1372,7 +1372,7 @@ def convertIDLDefaultValueToJSVal(value):
     if value.type:
         tag = value.type.tag()
         if tag == IDLType.Tags.domstring:
-            assert False # Not implemented!
+            assert False 
     return convertConstIDLValueToJSVal(value)
 
 unindenter = re.compile("^  ", re.MULTILINE)
@@ -1385,8 +1385,8 @@ class CGArgumentConverter(CGThing):
     def __init__(self, argument, index, argv, argc, descriptorProvider):
         CGThing.__init__(self)
         self.argument = argument
-        # XXXbz should optional jsval args get JSVAL_VOID? What about
-        # others?
+        
+        
         self.replacementVariables = {
             "index" : index,
             "argc" : argc,
@@ -1449,13 +1449,13 @@ def getWrapTemplateForTypeImpl(type, result, descriptorProvider,
     return true;
   }""" % result
             if descriptor.workers:
-                # Worker bindings can only fail to wrap as a new-binding object
-                # if they already threw an exception
+                
+                
                 wrappingCode += """
   MOZ_ASSERT(JS_IsExceptionPending(cx));
   return false;"""
             else:
-                # Try old-style wrapping for non-worker bindings
+                
                 wrappingCode += """
   return HandleNewBindingWrappingFailure(cx, obj, %s, ${jsvalPtr});""" % result
         else:
@@ -1490,8 +1490,8 @@ def getWrapTemplateForTypeImpl(type, result, descriptorProvider,
                       "strings" : type.inner.identifier.name + "::strings" }
 
     if type.isCallback() and not type.isInterface():
-        # XXXbz we're going to assume that callback types are always
-        # nullable and always have [TreatNonCallableAsNull] for now.
+        
+        
         return """
   ${jsvalRef} = JS::ObjectOrNullValue(%s);
   return true;""" % result
@@ -1524,8 +1524,8 @@ def getWrapTemplateForTypeImpl(type, result, descriptorProvider,
 
     elif tag in [IDLType.Tags.int64, IDLType.Tags.uint64, IDLType.Tags.float,
                  IDLType.Tags.double]:
-        # XXXbz will cast to double do the "even significand" thing that webidl
-        # calls for for 64-bit ints?  Do we care?
+        
+        
         return """
   return JS_NewNumberValue(cx, double(%s), ${jsvalPtr});""" % result
 
@@ -1559,14 +1559,14 @@ class CGCallGenerator(CGThing):
 
         args = CGList([CGGeneric("arg" + str(i)) for i in range(argCount)], ", ")
         resultOutParam = returnType is not None and returnType.isString()
-        # Return values that go in outparams go here
+        
         if resultOutParam:
             args.append(CGGeneric("result"))
         if isFallible:
             args.append(CGGeneric("rv"))
 
         if returnType is None or returnType.isVoid():
-            # Nothing to declare
+            
             result = None
         elif returnType.isPrimitive() and returnType.tag() in builtinNames:
             result = CGGeneric(builtinNames[returnType.tag()])
@@ -1586,8 +1586,8 @@ class CGCallGenerator(CGThing):
             else:
                 result = CGWrapper(result, post="*")
         elif returnType.isCallback():
-            # XXXbz we're going to assume that callback types are always
-            # nullable for now.
+            
+            
             result = CGGeneric("JSObject*")
         elif returnType.tag() is IDLType.Tags.any:
             result = CGGeneric("JS::Value")
@@ -1595,7 +1595,7 @@ class CGCallGenerator(CGThing):
             raise TypeError("Don't know how to declare return value for %s" %
                             returnType)
 
-        # Build up our actual call
+        
         self.cgRoot = CGList([], "\n")
 
         call = CGGeneric(nativeMethodName)
@@ -1641,10 +1641,10 @@ class CGPerSignatureCall(CGThing):
     The idlNode parameter can be either a method or an attr. We can query
     |idlNode.identifier| in both cases, so we can be agnostic between the two.
     """
-    # XXXbz For now each entry in the argument list is either an
-    # IDLArgument or a FakeArgument, but longer-term we may want to
-    # have ways of flagging things like JSContext* or optional_argc in
-    # there.
+    
+    
+    
+    
 
     def __init__(self, returnType, argsPre, arguments, nativeMethodName, static,
                  descriptor, idlNode, extendedAttributes, argConversionStartsAt=0):
@@ -1653,13 +1653,13 @@ class CGPerSignatureCall(CGThing):
         self.descriptor = descriptor
         self.idlNode = idlNode
         self.extendedAttributes = extendedAttributes
-        # Default to already_AddRefed on the main thread, raw pointer in workers
+        
         self.resultAlreadyAddRefed = not descriptor.workers and not 'resultNotAddRefed' in self.extendedAttributes
         self.argsPre = "cx, " if 'implicitJSContext' in self.extendedAttributes else ""
         self.argsPre += argsPre
         self.argCount = len(arguments)
         if self.argCount > argConversionStartsAt:
-            # Insert our argv in there
+            
             cgThings = [CGGeneric(self.getArgvDecl())]
         else:
             cgThings = []
@@ -1798,9 +1798,9 @@ class CGMethodCall(CGThing):
 
         signatures = method.signatures()
         if len(signatures) == 1:
-            # Special case: we can just do a per-signature method call
-            # here for our one signature and not worry about switching
-            # on anything.
+            
+            
+            
             signature = signatures[0]
             self.cgRoot = CGList([ CGIndenter(getPerSignatureCall(signature)) ])
             requiredArgs = requiredArgCount(signature)
@@ -1818,7 +1818,7 @@ class CGMethodCall(CGThing):
                     )
             return
 
-        # Need to find the right overload
+        
         maxSigArgs = maxSigLength(signatures)
         allowedArgCounts = [ i for i in range(0, maxSigArgs+1)
                              if len(signaturesForArgCount(i, signatures)) != 0 ]
@@ -1827,14 +1827,14 @@ class CGMethodCall(CGThing):
         for argCount in allowedArgCounts:
             possibleSignatures = signaturesForArgCount(argCount, signatures)
             if len(possibleSignatures) == 1:
-                # easy case!
+                
                 signature = possibleSignatures[0]
 
-                # (possibly) important optimization: if signature[1] has >
-                # argCount arguments and signature[1][argCount] is optional and
-                # there is only one signature for argCount+1, then the
-                # signature for argCount+1 is just ourselves and we can fall
-                # through.
+                
+                
+                
+                
+                
                 if (len(signature[1]) > argCount and
                     signature[1][argCount].optional and
                     (argCount+1) in allowedArgCounts and
@@ -1867,17 +1867,17 @@ class CGMethodCall(CGThing):
                                                          idx,
                                                          distinguishingIndex))
 
-            # Convert all our arguments up to the distinguishing index.
-            # Doesn't matter which of the possible signatures we use, since
-            # they all have the same types up to that point; just use
-            # possibleSignatures[0]
+            
+            
+            
+            
             caseBody = [CGGeneric("JS::Value* argv_start = JS_ARGV(cx, vp);")]
             caseBody.extend([ CGArgumentConverter(possibleSignatures[0][1][i],
                                                   i, "argv_start", "argc",
                                                   descriptor) for i in
                               range(0, distinguishingIndex) ])
 
-            # Select the right overload from our set.
+            
             distinguishingArg = "argv_start[%d]" % distinguishingIndex
 
             def pickFirstSignature(condition, filterLambda):
@@ -1895,13 +1895,13 @@ class CGMethodCall(CGThing):
                     return True
                 return False
 
-            # First check for null or undefined
+            
             pickFirstSignature("%s.isNullOrUndefined()" % distinguishingArg,
                                lambda s: s[1][distinguishingIndex].type.nullable())
 
-            # XXXbz Now we're supposed to check for distinguishingArg being
-            # an array or a platform object that supports indexed
-            # properties... skip that last for now.  It's a bit of a pain.
+            
+            
+            
             pickFirstSignature("%s.isObject() && IsArrayLike(cx, &%s.toObject()" %
                                (distinguishingArg, distinguishingArg),
                                lambda s:
@@ -1909,11 +1909,11 @@ class CGMethodCall(CGThing):
                                     s[1][distinguishingIndex].type.isSequence() or
                                     s[1][distinguishingIndex].type.isObject()))
 
-            # Now check for distinguishingArg being a platform object.
-            # We can actually check separately for array buffers and
-            # other things.
-            # XXXbz Do we need to worry about security
-            # wrappers around the array buffer?
+            
+            
+            
+            
+            
             pickFirstSignature("%s.isObject() && JS_IsArrayBufferObject(&%s.toObject())" %
                                (distinguishingArg, distinguishingArg),
                                lambda s: (s[1][distinguishingIndex].type.isArrayBuffer() or
@@ -1925,8 +1925,8 @@ class CGMethodCall(CGThing):
                     (s[1][distinguishingIndex].type.isInterface() and
                      not s[1][distinguishingIndex].type.isArrayBuffer() and
                      not s[1][distinguishingIndex].type.isCallback())) ]
-            # There might be more than one of these; we need to check
-            # which ones we unwrap to.
+            
+            
             
             if len(interfacesSigs) > 0:
                 caseBody.append(CGGeneric("if (%s.isObject() &&\n"
@@ -1936,7 +1936,7 @@ class CGMethodCall(CGThing):
                     caseBody.append(CGIndenter(CGGeneric("do {")));
                     type = sig[1][distinguishingIndex].type
                     
-                    # XXXbz this duplicates some argument-unwrapping code!
+                    
                     interfaceDesc = descriptor.getDescriptor(
                         type.unroll().inner.identifier.name)
                     argIsPointer = (type.nullable() or
@@ -1987,49 +1987,49 @@ class CGMethodCall(CGThing):
                             }
                         )
                     caseBody.append(CGIndenter(CGGeneric(testCode)));
-                    # If we got this far, we know we unwrapped to the right
-                    # interface, so just do the call.  Start conversion with
-                    # distinguishingIndex + 1, since we already converted
-                    # distinguishingIndex.
+                    
+                    
+                    
+                    
                     caseBody.append(CGIndenter(CGIndenter(
                             getPerSignatureCall(sig, distinguishingIndex + 1))))
                     caseBody.append(CGIndenter(CGGeneric("} while (0);")))
 
                 caseBody.append(CGGeneric("}"))
 
-            # Check for Date objects
-            # XXXbz Do we need to worry about security wrappers around the Date?
+            
+            
             pickFirstSignature("%s.isObject() && JS_ObjectIsDate(cx, &%s.toObject())" %
                                (distinguishingArg, distinguishingArg),
                                lambda s: (s[1][distinguishingIndex].type.isDate() or
                                           s[1][distinguishingIndex].type.isObject()))
 
-            # Check for vanilla JS objects
-            # XXXbz Do we need to worry about security wrappers?
+            
+            
             pickFirstSignature("%s.isObject() && !IsPlatformObject(cx, &%s.toObject())" %
                                (distinguishingArg, distinguishingArg),
                                lambda s: (s[1][distinguishingIndex].type.isCallback() or
                                           s[1][distinguishingIndex].type.isDictionary() or
                                           s[1][distinguishingIndex].type.isObject()))
 
-            # The remaining cases are mutually exclusive.  The
-            # pickFirstSignature calls are what change caseBody
-            # Check for strings or enums
+            
+            
+            
             if pickFirstSignature(None,
                                   lambda s: (s[1][distinguishingIndex].type.isString() or
                                              s[1][distinguishingIndex].type.isEnum())):
                 pass
-            # Check for primitives
+            
             elif pickFirstSignature(None,
                                     lambda s: s[1][distinguishingIndex].type.isPrimitive()):
                 pass
-            # Check for "any"
+            
             elif pickFirstSignature(None,
                                     lambda s: s[1][distinguishingIndex].type.isAny()):
                 pass
             else:
-                # Just throw; we have no idea what we're supposed to
-                # do with this.
+                
+                
                 caseBody.append(CGGeneric("return Throw<%s>(cx, NS_ERROR_XPC_BAD_CONVERT_JS);" %
                                           toStringBool(not descriptor.workers)))
 
@@ -2085,7 +2085,7 @@ class CGGetterCall(CGGetterSetterCall):
     def getArgvDecl(self):
         if generateNativeAccessors:
             return CGPerSignatureCall.getArgvDecl(self)
-        # We just get our stuff from vp
+        
         return ""
 
 class FakeArgument():
@@ -2106,7 +2106,7 @@ class CGSetterCall(CGGetterSetterCall):
     def wrap_return_value(self):
         if generateNativeAccessors:
             return CGGetterSetterCall.wrap_return_value(self)
-        # We have no return value
+        
         return "\nreturn true;"
     def getArgc(self):
         if generateNativeAccessors:
@@ -2120,7 +2120,7 @@ class CGSetterCall(CGGetterSetterCall):
                     "  argv = &undef;\n"
                     "  argc = 1;\n"
                     "}")
-        # We just get our stuff from vp
+        
         return ""
 
 class CGAbstractBindingMethod(CGAbstractStaticMethod):
@@ -2151,7 +2151,7 @@ class CGAbstractBindingMethod(CGAbstractStaticMethod):
                       "%s* self;" % self.descriptor.nativeType))
 
     def generate_code(self):
-        assert(False) # Override me
+        assert(False) 
 
 def MakeNativeName(name):
     return name[0].upper() + name[1:]
@@ -2232,11 +2232,11 @@ class CGNativeSetter(CGAbstractBindingMethod):
                                        self.attr, self.extendedAttributes))
 
 def getEnumValueName(value):
-    # Some enum values can be empty strings.  Others might have weird
-    # characters in them.  Deal with the former by returning "_empty",
-    # deal with possible name collisions from that by throwing if the
-    # enum value is actually "_empty", and throw on any value
-    # containing chars other than [a-z] or '-' for now. Replace '-' with '_'.
+    
+    
+    
+    
+    
     value = value.replace('-', '_')
     if value == "_empty":
         raise SyntaxError('"_empty" is not an IDL enum value we support yet')
@@ -2287,7 +2287,7 @@ class ClassBase(ClassItem):
     def declare(self, cgClass):
         return '%s %s' % (self.visibility, self.name)
     def define(self, cgClass):
-        # Only in the header
+        
         return ''
 
 class ClassMethod(ClassItem):
@@ -2319,7 +2319,7 @@ class ClassMethod(ClassItem):
         return ''
 
     def getBody(self):
-        # Override me or pass a string to constructor
+        
         assert self.body is not None
         return self.body
 
@@ -2410,7 +2410,7 @@ class ClassTypedef(ClassItem):
         return 'typedef %s %s;\n' % (self.type, self.name)
 
     def define(self, cgClass):
-        # Only goes in the header
+        
         return ''
 
 class ClassEnum(ClassItem):
@@ -2431,7 +2431,7 @@ class ClassEnum(ClassItem):
         return 'enum%s\n{\n  %s\n};\n' % (name, ',\n  '.join(entries))
 
     def define(self, cgClass):
-        # Only goes in the header
+        
         return ''
 
 class CGClass(CGThing):
@@ -2671,7 +2671,7 @@ class CGClassForwardDeclare(CGThing):
         type = 'struct' if self.isStruct else 'class'
         return '%s %s;\n' % (type, self.name)
     def define(self):
-        # Header only
+        
         return ''
 
 def stripTrailingWhitespace(text):
@@ -2701,13 +2701,13 @@ class CGDescriptor(CGThing):
             if not descriptor.workers:
                 cgThings.append(CGAddPropertyHook(descriptor))
 
-            # Always have a finalize hook, regardless of whether the class wants a
-            # custom hook.
+            
+            
             if descriptor.nativeIsISupports:
                 cgThings.append(CGNativeToSupportsMethod(descriptor))
             cgThings.append(CGClassFinalizeHook(descriptor))
 
-            # Only generate a trace hook if the class wants a custom hook.
+            
             if (descriptor.customTrace):
                 cgThings.append(CGClassTraceHook(descriptor))
 
@@ -2758,7 +2758,7 @@ class CGNamespacedEnum(CGThing):
         if not values:
             values = []
 
-        # Account for explicit enum values.
+        
         entries = []
         for i in range(0, len(names)):
             if len(values) > i and values[i] is not None:
@@ -2767,33 +2767,33 @@ class CGNamespacedEnum(CGThing):
                 entry = names[i]
             entries.append(entry)
 
-        # Append a Count.
+        
         entries.append('_' + enumName + '_Count')
 
-        # Indent.
+        
         entries = ['  ' + e for e in entries]
 
-        # Build the enum body.
+        
         enumstr = comment + 'enum %s\n{\n%s\n};\n' % (enumName, ',\n'.join(entries))
         curr = CGGeneric(declare=enumstr)
 
-        # Add some whitespace padding.
+        
         curr = CGWrapper(curr, pre='\n',post='\n')
 
-        # Add the namespace.
+        
         curr = CGNamespace(namespace, curr)
 
-        # Add the typedef
+        
         typedef = '\ntypedef %s::%s %s;\n\n' % (namespace, enumName, enumName)
         curr = CGList([curr, CGGeneric(declare=typedef)])
 
-        # Save the result.
+        
         self.node = curr
 
     def declare(self):
         return self.node.declare()
     def define(self):
-        assert False # Only for headers.
+        assert False 
 
 class CGRegisterProtos(CGAbstractMethod):
     def __init__(self, config):
@@ -2844,12 +2844,12 @@ class CGBindingRoot(CGThing):
                                           descriptors)
         traitsClasses = [CGPrototypeTraitsClass(d) for d in descriptorsWithPrototype]
 
-        # We must have a 1:1 mapping here, skip for prototypes that have more
-        # than one concrete class implementation.
+        
+        
         traitsClasses.extend([CGPrototypeIDMapClass(d) for d in descriptorsWithPrototype
                               if d.uniqueImplementation])
 
-        # Wrap all of that in our namespaces.
+        
         if len(traitsClasses) > 0:
             traitsClasses = CGNamespace.build(['mozilla', 'dom', 'bindings'],
                                      CGWrapper(CGList(traitsClasses),
@@ -2859,20 +2859,20 @@ class CGBindingRoot(CGThing):
         else:
             traitsClasses = CGGeneric()
 
-        # Do codegen for all the descriptors and enums.
+        
         cgthings = [CGWrapper(CGNamespace.build([e.identifier.name],
                                                 CGEnum(e)),
                               post="\n") for e in config.getEnums(webIDLFile)]
         cgthings.extend([CGDescriptor(x) for x in descriptors])
         curr = CGList(cgthings)
 
-        # Wrap all of that in our namespaces.
+        
         curr = CGNamespace.build(['mozilla', 'dom', 'bindings', 'prototypes'],
                                  CGWrapper(curr, pre="\n"))
 
         curr = CGList([forwardDeclares, traitsClasses, curr])
 
-        # Add header includes.
+        
         curr = CGHeaders(descriptors,
                          ['mozilla/dom/bindings/Utils.h',
                           'DOMJSClass.h'],
@@ -2883,13 +2883,13 @@ class CGBindingRoot(CGThing):
                           'nsContentUtils.h'],
                          curr)
 
-        # Add include guards.
+        
         curr = CGIncludeGuard(prefix, curr)
 
-        # Add the auto-generated comment.
+        
         curr = CGWrapper(curr, pre=AUTOGENERATED_WARNING_COMMENT)
 
-        # Store the final result.
+        
         self.root = curr
 
     def declare(self):
@@ -2909,26 +2909,26 @@ class GlobalGenRoots():
     @staticmethod
     def PrototypeList(config):
 
-        # Prototype ID enum.
+        
         protos = [d.name for d in config.getDescriptors(hasInterfacePrototypeObject=True)]
         idEnum = CGNamespacedEnum('id', 'ID', protos, [0])
         idEnum = CGList([idEnum])
         idEnum.append(CGGeneric(declare="const unsigned MaxProtoChainLength = " +
                                 str(config.maxProtoChainLength) + ";\n\n"))
 
-        # Wrap all of that in our namespaces.
+        
         idEnum = CGNamespace.build(['mozilla', 'dom', 'bindings', 'prototypes'],
                                    CGWrapper(idEnum, pre='\n'))
         idEnum = CGWrapper(idEnum, post='\n')
 
         curr = CGList([idEnum])
 
-        # Constructor ID enum.
+        
         constructors = [d.name for d in config.getDescriptors(hasInterfaceObject=True,
                                                               hasInterfacePrototypeObject=False)]
         idEnum = CGNamespacedEnum('id', 'ID', constructors, [0])
 
-        # Wrap all of that in our namespaces.
+        
         idEnum = CGNamespace.build(['mozilla', 'dom', 'bindings', 'constructors'],
                                    CGWrapper(idEnum, pre='\n'))
         idEnum = CGWrapper(idEnum, post='\n')
@@ -2948,35 +2948,35 @@ struct PrototypeIDMap;
 
         curr.append(traitsDecl)
 
-        # Add include guards.
+        
         curr = CGIncludeGuard('PrototypeList', curr)
 
-        # Add the auto-generated comment.
+        
         curr = CGWrapper(curr, pre=AUTOGENERATED_WARNING_COMMENT)
 
-        # Done.
+        
         return curr
 
     @staticmethod
     def Common(config):
 
-        # TODO - Generate the methods we want
+        
         curr = CGRegisterProtos(config)
 
-        # Wrap all of that in our namespaces.
+        
         curr = CGNamespace.build(['mozilla', 'dom', 'bindings'],
                                  CGWrapper(curr, post='\n'))
         curr = CGWrapper(curr, post='\n')
 
-        # Add the includes
+        
         defineIncludes = [CGHeaders.getInterfaceFilename(desc.interface)
                           for desc in config.getDescriptors(hasInterfaceObject=True,
                                                             workers=False)]
         defineIncludes.append('nsScriptNameSpaceManager.h')
         curr = CGHeaders([], [], defineIncludes, curr)
 
-        # Add include guards.
+        
         curr = CGIncludeGuard('Common', curr)
 
-        # Done.
+        
         return curr
