@@ -1,10 +1,10 @@
-//
-// Copyright (c) 2002-2010 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
-// UnfoldSelect is an AST traverser to output the select operator ?: as if-else statements
-//
+
+
+
+
+
+
+
 
 #ifndef COMPILER_UNFOLDSELECT_H_
 #define COMPILER_UNFOLDSELECT_H_
@@ -23,8 +23,9 @@ class UnfoldSelect : public TIntermTraverser
 
     void traverse(TIntermNode *node);
     bool visitSelection(Visit visit, TIntermSelection *node);
+    bool visitLoop(Visit visit, TIntermLoop *node);
 
-    int getTemporaryIndex();
+    int getNextTemporaryIndex();
 
   protected:
     TParseContext &mContext;
@@ -34,4 +35,4 @@ class UnfoldSelect : public TIntermTraverser
 };
 }
 
-#endif   // COMPILER_UNFOLDSELECT_H_
+#endif   
