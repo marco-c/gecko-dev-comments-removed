@@ -588,13 +588,6 @@ private:
     nsresult
     InitPrincipals(PRUint32 prefCount, const char** prefNames);
 
-
-#ifdef XPC_IDISPATCH_SUPPORT
-    
-    
-    nsresult
-    CheckComponentPermissions(JSContext *cx, const nsCID &aCID);
-#endif
 #ifdef DEBUG_CAPS_HACKER
     void
     PrintPolicyDB();
@@ -632,10 +625,6 @@ private:
     PRPackedBool mIsJavaScriptEnabled;
     PRPackedBool mIsWritingPrefs;
     PRPackedBool mPolicyPrefsChanged;
-#ifdef XPC_IDISPATCH_SUPPORT    
-    PRPackedBool mXPCDefaultGrantAll;
-    static const char sXPCDefaultGrantAllName[];
-#endif
 
     static PRBool sStrictFileOriginPolicy;
 
