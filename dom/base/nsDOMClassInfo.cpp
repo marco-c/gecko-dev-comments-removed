@@ -5240,6 +5240,9 @@ nsWindowSH::GlobalScopePolluterGetProperty(JSContext *cx, JSObject *obj,
   
   PrintWarningOnConsole(cx, "GlobalScopeElementReference");
 
+  
+  JS_AddTypePropertyId(cx, obj, id, *vp);
+
   return JS_TRUE;
 }
 
@@ -5362,7 +5365,7 @@ nsWindowSH::InvalidateGlobalScopePolluter(JSContext *cx, JSObject *obj)
 
       
       
-      ::JS_SetPrototype(cx, obj, ::JS_GetPrototype(cx, proto));
+      ::JS_SplicePrototype(cx, obj, ::JS_GetPrototype(cx, proto));
 
       break;
     }
@@ -5409,9 +5412,7 @@ nsWindowSH::InstallGlobalScopePolluter(JSContext *cx, JSObject *obj,
 
   
   
-  if (!::JS_SetPrototype(cx, o, gsp)) {
-    return NS_ERROR_UNEXPECTED;
-  }
+  ::JS_SplicePrototype(cx, o, gsp);
 
   if (!::JS_SetPrivate(cx, gsp, doc)) {
     return NS_ERROR_UNEXPECTED;
