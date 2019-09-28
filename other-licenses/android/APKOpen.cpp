@@ -1,45 +1,45 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Android code.
+ *
+ * The Initial Developer of the Original Code is Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Michael Wu <mwu@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * This custom library loading code is only meant to be called
+ * during initialization. As a result, it takes no special 
+ * precautions to be threadsafe. Any of the library loading functions
+ * like mozload should not be available to other code.
+ */
 
 #include <jni.h>
 #include <android/log.h>
@@ -62,7 +62,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-
+/* compression methods */
 #define STORE    0
 #define DEFLATE  8
 #define LZMA    14
@@ -139,7 +139,7 @@ createAshmem(size_t bytes, const char *name)
   char buf[ASHMEM_NAME_LEN];
 
   strlcpy(buf, name, sizeof(buf));
-  ioctl(fd, ASHMEM_SET_NAME, buf);
+  /*ret = */ioctl(fd, ASHMEM_SET_NAME, buf);
 
   if (!ioctl(fd, ASHMEM_SET_SIZE, bytes))
     return fd;
@@ -238,6 +238,7 @@ SHELL_WRAPPER0(onResume)
 SHELL_WRAPPER0(onLowMemory)
 SHELL_WRAPPER3(callObserver, jstring, jstring, jstring)
 SHELL_WRAPPER1(removeObserver, jstring)
+SHELL_WRAPPER1(onChangeNetworkLinkStatus, jstring)
 
 static void * xul_handle = NULL;
 static time_t apk_mtime = 0;
@@ -521,7 +522,7 @@ static void * mozload(const char * path, void *zip,
       extractLib(entry, data, buf);
       addLibCacheFd(path + 4, fd, lib_size, buf);
     }
-    
+    // preload libxul, to avoid slowly demand-paging it
     if (!strcmp(path, "lib/libxul.so"))
       madvise(buf, entry->uncompressed_size, MADV_WILLNEED);
     data = buf;
@@ -536,8 +537,8 @@ static void * mozload(const char * path, void *zip,
   if (!handle)
     __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Couldn't load %s because %s", path, __wrap_dlerror());
 
-  
-  
+  // if we're extracting the libs to disk and cache_fd is not valid then 
+  // keep this buffer around so it can be used to write to disk
   if (buf && (!extractLibs || cache_fd >= 0))
     munmap(buf, lib_size);
 
@@ -667,6 +668,7 @@ loadLibs(const char *apkName)
   GETFUNC(onLowMemory);
   GETFUNC(callObserver);
   GETFUNC(removeObserver);
+  GETFUNC(onChangeNetworkLinkStatus);
 #undef GETFUNC
   gettimeofday(&t1, 0);
   struct rusage usage2;
@@ -683,8 +685,8 @@ Java_org_mozilla_gecko_GeckoAppShell_loadLibs(JNIEnv *jenv, jclass jGeckoAppShel
     extractLibs = 1;
 
   const char* str;
-  
-  
+  // XXX: java doesn't give us true UTF8, we should figure out something 
+  // better to do here
   str = jenv->GetStringUTFChars(jApkName, NULL);
   if (str == NULL)
     return;
@@ -706,8 +708,8 @@ Java_org_mozilla_gecko_GeckoAppShell_loadLibs(JNIEnv *jenv, jclass jGeckoAppShel
         char tmp_path[256];
         sprintf(tmp_path, "%s.tmp", fullpath);
         int file_fd = open(tmp_path, O_CREAT | O_WRONLY);
-        
-        
+        // using sendfile would be preferable, but it doesn't seem to work
+        // with shared memory on any of the devices we've tested
         uint32_t sent = write(file_fd, info->buffer, info->lib_size);
 
         munmap(info->buffer, info->lib_size);
@@ -741,7 +743,7 @@ ChildProcessInit(int argc, char* argv[])
   fillLibCache(argv[argc - 1]);
   loadLibs(argv[i]);
 
-  
+  // don't pass the last arg - it's only recognized by the lib cache
   argc--;
 
   typedef GeckoProcessType (*XRE_StringToChildProcessType_t)(char*);
