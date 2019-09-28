@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Android code.
+ *
+ * The Initial Developer of the Original Code is Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2009-2012
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Patrick Walton <pcwalton@mozilla.com>
+ *   Kartikaya Gupta <kgupta@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 package org.mozilla.gecko.ui;
 
@@ -58,12 +58,12 @@ import android.view.MotionEvent;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
-
-
-
-
-
+/*
+ * Handles the kinetic scrolling and zooming physics for a layer controller.
+ *
+ * Many ideas are from Joe Hewitt's Scrollability:
+ *   https://github.com/joehewitt/scrollability/
+ */
 public class PanZoomController
     extends GestureDetector.SimpleOnGestureListener
     implements SimpleScaleGestureDetector.SimpleScaleGestureListener, GeckoEventListener
@@ -73,53 +73,53 @@ public class PanZoomController
     private static String MESSAGE_ZOOM_RECT = "Browser:ZoomToRect";
     private static String MESSAGE_ZOOM_PAGE = "Browser:ZoomToPageWidth";
 
-    
+    // Animation stops if the velocity is below this value when overscrolled or panning.
     private static final float STOPPED_THRESHOLD = 4.0f;
 
-    
+    // Animation stops is the velocity is below this threshold when flinging.
     private static final float FLING_STOPPED_THRESHOLD = 0.1f;
 
-    
-    
+    // The distance the user has to pan before we recognize it as such (e.g. to avoid 1-pixel pans
+    // between the touch-down and touch-up of a click). In units of density-independent pixels.
     public static final float PAN_THRESHOLD = 1/16f * GeckoAppShell.getDpi();
 
-    
-    private static final double AXIS_LOCK_ANGLE = Math.PI / 6.0; 
+    // Angle from axis within which we stay axis-locked
+    private static final double AXIS_LOCK_ANGLE = Math.PI / 6.0; // 30 degrees
 
-    
+    // The maximum amount we allow you to zoom into a page
     private static final float MAX_ZOOM = 4.0f;
 
-    
+    /* 16 precomputed frames of the _ease-out_ animation from the CSS Transitions specification. */
     private static final float[] EASE_OUT_ANIMATION_FRAMES = {
-        0.00000f,   
-        0.10211f,   
-        0.19864f,   
-        0.29043f,   
-        0.37816f,   
-        0.46155f,   
-        0.54054f,   
-        0.61496f,   
-        0.68467f,   
-        0.74910f,   
-        0.80794f,   
-        0.86069f,   
-        0.90651f,   
-        0.94471f,   
-        0.97401f,   
-        0.99309f,   
+        0.00000f,   /* 0 */
+        0.10211f,   /* 1 */
+        0.19864f,   /* 2 */
+        0.29043f,   /* 3 */
+        0.37816f,   /* 4 */
+        0.46155f,   /* 5 */
+        0.54054f,   /* 6 */
+        0.61496f,   /* 7 */
+        0.68467f,   /* 8 */
+        0.74910f,   /* 9 */
+        0.80794f,   /* 10 */
+        0.86069f,   /* 11 */
+        0.90651f,   /* 12 */
+        0.94471f,   /* 13 */
+        0.97401f,   /* 14 */
+        0.99309f,   /* 15 */
     };
 
     private enum PanZoomState {
-        NOTHING,        
-        FLING,          
-        TOUCHING,       
-        PANNING_LOCKED, 
-        PANNING,        
-        PANNING_HOLD,   
-
-        PANNING_HOLD_LOCKED, 
-        PINCHING,       
-        ANIMATED_ZOOM   
+        NOTHING,        /* no touch-start events received */
+        FLING,          /* all touches removed, but we're still scrolling page */
+        TOUCHING,       /* one touch-start event received */
+        PANNING_LOCKED, /* touch-start followed by move (i.e. panning with axis lock) */
+        PANNING,        /* panning without axis lock */
+        PANNING_HOLD,   /* in panning, but not moving.
+                         * similar to TOUCHING but after starting a pan */
+        PANNING_HOLD_LOCKED, /* like PANNING_HOLD, but axis lock still in effect */
+        PINCHING,       /* nth touch-start, where n > 1. this mode allows pan and zoom */
+        ANIMATED_ZOOM   /* animated zoom to a new rect */
     }
 
     private final LayerController mController;
@@ -129,15 +129,15 @@ public class PanZoomController
 
     private Thread mMainThread;
 
-    
+    /* The timer that handles flings or bounces. */
     private Timer mAnimationTimer;
-    
+    /* The runnable being scheduled by the animation timer. */
     private AnimationRunnable mAnimationRunnable;
-    
+    /* The zoom focus at the first zoom event (in page coordinates). */
     private PointF mLastZoomFocus;
-    
+    /* The time the last motion event took place. */
     private long mLastEventTime;
-    
+    /* Current state the pan/zoom UI is in. */
     private PanZoomState mState;
 
     public PanZoomController(LayerController controller) {
@@ -155,10 +155,10 @@ public class PanZoomController
         GeckoAppShell.registerGeckoEventListener(MESSAGE_ZOOM_PAGE, this);
     }
 
-    
+    // for debugging bug 713011; it can be taken out once that is resolved.
     private void checkMainThread() {
         if (mMainThread != Thread.currentThread()) {
-            
+            // log with full stack trace
             Log.e(LOGTAG, "Uh-oh, we're running on the wrong thread!", new Exception());
         }
     }
@@ -182,9 +182,9 @@ public class PanZoomController
 
                 RectF viewableRect = mController.getViewport();
                 float y = viewableRect.top;
-                
+                // attempt to keep zoom keep focused on the center of the viewport
                 float newHeight = viewableRect.height() * pageSize.width / viewableRect.width();
-                float dh = viewableRect.height() - newHeight; 
+                float dh = viewableRect.height() - newHeight; // increase in the height
                 final RectF r = new RectF(0.0f,
                                     y + dh/2,
                                     pageSize.width,
@@ -210,13 +210,13 @@ public class PanZoomController
         }
     }
 
-    
+    /** This function must be called from the UI thread. */
     public void abortAnimation() {
         checkMainThread();
-        
-        
-        
-        
+        // this happens when gecko changes the viewport on us or if the device is rotated.
+        // if that's the case, abort any animation in progress and re-zoom so that the page
+        // snaps to edges. for other cases (where the user's finger(s) are down) don't do
+        // anything special.
         if (mState == PanZoomState.FLING) {
             mX.stopFling();
             mY.stopFling();
@@ -224,26 +224,26 @@ public class PanZoomController
         }
     }
 
-    
+    /** This must be called on the UI thread. */
     public void pageSizeUpdated() {
         if (mState == PanZoomState.NOTHING) {
             ViewportMetrics validated = getValidViewportMetrics();
-            if (! (new ViewportMetrics(mController.getViewportMetrics())).fuzzyEquals(validated)) {
-                
-                
+            if (! mController.getViewportMetrics().fuzzyEquals(validated)) {
+                // page size changed such that we are now in overscroll. snap to the
+                // the nearest valid viewport
                 mController.setViewportMetrics(validated);
                 mController.notifyLayerClientOfGeometryChange();
             }
         }
     }
 
-    
-
-
+    /*
+     * Panning/scrolling
+     */
 
     private boolean onTouchStart(MotionEvent event) {
-        
-        
+        // user is taking control of movement, so stop
+        // any auto-movement we have going
         stopAnimationTimer();
         mSubscroller.cancel();
 
@@ -272,7 +272,7 @@ public class PanZoomController
         switch (mState) {
         case NOTHING:
         case FLING:
-            
+            // should never happen
             Log.e(LOGTAG, "Received impossible touch move while in " + mState);
             return false;
 
@@ -282,30 +282,30 @@ public class PanZoomController
             }
             cancelTouch();
             startPanning(event.getX(0), event.getY(0), event.getEventTime());
-            GeckoApp.mAppContext.hidePlugins(false );
-            GeckoApp.mAutoCompletePopup.hide();
+            GeckoApp.mAppContext.hidePlugins(false /* don't hide layers */);
+            GeckoApp.mFormAssistPopup.hide();
             track(event);
             return true;
 
         case PANNING_HOLD_LOCKED:
-            GeckoApp.mAutoCompletePopup.hide();
+            GeckoApp.mFormAssistPopup.hide();
             mState = PanZoomState.PANNING_LOCKED;
-            
+            // fall through
         case PANNING_LOCKED:
             track(event);
             return true;
 
         case PANNING_HOLD:
-            GeckoApp.mAutoCompletePopup.hide();
+            GeckoApp.mFormAssistPopup.hide();
             mState = PanZoomState.PANNING;
-            
+            // fall through
         case PANNING:
             track(event);
             return true;
 
         case ANIMATED_ZOOM:
         case PINCHING:
-            
+            // scale gesture listener will handle this
             return false;
         }
         Log.e(LOGTAG, "Unhandled case " + mState + " in onTouchMove");
@@ -317,14 +317,14 @@ public class PanZoomController
         switch (mState) {
         case NOTHING:
         case FLING:
-            
+            // should never happen
             Log.e(LOGTAG, "Received impossible touch end while in " + mState);
             return false;
         case TOUCHING:
             mState = PanZoomState.NOTHING;
-            
-            
-            
+            // the switch into TOUCHING might have happened while the page was
+            // snapping back after overscroll. we need to finish the snap if that
+            // was the case
             bounce();
             return false;
         case PANNING:
@@ -346,7 +346,7 @@ public class PanZoomController
 
     private boolean onTouchCancel(MotionEvent event) {
         mState = PanZoomState.NOTHING;
-        
+        // ensure we snap back if we're overscrolled
         bounce();
         return false;
     }
@@ -361,11 +361,11 @@ public class PanZoomController
     private void startPanning(float x, float y, long time) {
         float dx = mX.panDistance(x);
         float dy = mY.panDistance(y);
-        double angle = Math.atan2(dy, dx); 
-        angle = Math.abs(angle); 
+        double angle = Math.atan2(dy, dx); // range [-pi, pi]
+        angle = Math.abs(angle); // range [0, pi]
 
-        
-        
+        // When the touch move breaks through the pan threshold, reposition the touch down origin
+        // so the page won't jump when we start panning.
         mX.startTouch(x);
         mY.startTouch(y);
         mLastEventTime = time;
@@ -390,8 +390,8 @@ public class PanZoomController
     private void track(float x, float y, long time) {
         float timeDelta = (float)(time - mLastEventTime);
         if (FloatUtils.fuzzyEquals(timeDelta, 0)) {
-            
-            
+            // probably a duplicate event, ignore it. using a zero timeDelta will mess
+            // up our velocity
             return;
         }
         mLastEventTime = time;
@@ -417,7 +417,7 @@ public class PanZoomController
             } else if (mState == PanZoomState.PANNING_LOCKED) {
                 mState = PanZoomState.PANNING_HOLD_LOCKED;
             } else {
-                
+                // should never happen, but handle anyway for robustness
                 Log.e(LOGTAG, "Impossible case " + mState + " when stopped in track");
                 mState = PanZoomState.PANNING_HOLD_LOCKED;
             }
@@ -440,7 +440,7 @@ public class PanZoomController
         startAnimationTimer(new FlingRunnable());
     }
 
-    
+    /* Performs a bounce-back animation to the given viewport metrics. */
     private void bounce(ViewportMetrics metrics) {
         stopAnimationTimer();
 
@@ -455,19 +455,19 @@ public class PanZoomController
         startAnimationTimer(new BounceRunnable(bounceStartMetrics, metrics));
     }
 
-    
+    /* Performs a bounce-back animation to the nearest valid viewport metrics. */
     private void bounce() {
         bounce(getValidViewportMetrics());
     }
 
-    
+    /* Starts the fling or bounce animation. */
     private void startAnimationTimer(final AnimationRunnable runnable) {
         if (mAnimationTimer != null) {
             Log.e(LOGTAG, "Attempted to start a new fling without canceling the old one!");
             stopAnimationTimer();
         }
 
-        GeckoApp.mAppContext.hidePlugins(false );
+        GeckoApp.mAppContext.hidePlugins(false /* don't hide layers */);
 
         mAnimationTimer = new Timer("Animation Timer");
         mAnimationRunnable = runnable;
@@ -477,7 +477,7 @@ public class PanZoomController
         }, 0, 1000L/60L);
     }
 
-    
+    /* Stops the fling or bounce animation. */
     private void stopAnimationTimer() {
         if (mAnimationTimer != null) {
             mAnimationTimer.cancel();
@@ -519,14 +519,14 @@ public class PanZoomController
     private abstract class AnimationRunnable implements Runnable {
         private boolean mAnimationTerminated;
 
-        
+        /* This should always run on the UI thread */
         public final void run() {
-            
-
-
-
-
-
+            /*
+             * Since the animation timer queues this runnable on the UI thread, it
+             * is possible that even when the animation timer is cancelled, there
+             * are multiple instances of this queued, so we need to have another
+             * mechanism to abort. This is done by using the mAnimationTerminated flag.
+             */
             if (mAnimationTerminated) {
                 return;
             }
@@ -535,20 +535,20 @@ public class PanZoomController
 
         protected abstract void animateFrame();
 
-        
+        /* This should always run on the UI thread */
         protected final void terminate() {
             mAnimationTerminated = true;
         }
     }
 
-    
+    /* The callback that performs the bounce animation. */
     private class BounceRunnable extends AnimationRunnable {
-        
+        /* The current frame of the bounce-back animation */
         private int mBounceFrame;
-        
-
-
-
+        /*
+         * The viewport metrics that represent the start and end of the bounce-back animation,
+         * respectively.
+         */
         private ViewportMetrics mBounceStartMetrics;
         private ViewportMetrics mBounceEndMetrics;
 
@@ -558,29 +558,29 @@ public class PanZoomController
         }
 
         protected void animateFrame() {
-            
-
-
-
-
+            /*
+             * The pan/zoom controller might have signaled to us that it wants to abort the
+             * animation by setting the state to PanZoomState.NOTHING. Handle this case and bail
+             * out.
+             */
             if (mState != PanZoomState.FLING) {
                 finishAnimation();
                 return;
             }
 
-            
+            /* Perform the next frame of the bounce-back animation. */
             if (mBounceFrame < EASE_OUT_ANIMATION_FRAMES.length) {
                 advanceBounce();
                 return;
             }
 
-            
+            /* Finally, if there's nothing else to do, complete the animation and go to sleep. */
             finishBounce();
             finishAnimation();
             mState = PanZoomState.NOTHING;
         }
 
-        
+        /* Performs one frame of a bounce animation. */
         private void advanceBounce() {
             synchronized (mController) {
                 float t = EASE_OUT_ANIMATION_FRAMES[mBounceFrame];
@@ -591,7 +591,7 @@ public class PanZoomController
             }
         }
 
-        
+        /* Concludes a bounce animation and snaps the viewport into place. */
         private void finishBounce() {
             synchronized (mController) {
                 mController.setViewportMetrics(mBounceEndMetrics);
@@ -601,38 +601,38 @@ public class PanZoomController
         }
     }
 
-    
+    // The callback that performs the fling animation.
     private class FlingRunnable extends AnimationRunnable {
         protected void animateFrame() {
-            
-
-
-
-
+            /*
+             * The pan/zoom controller might have signaled to us that it wants to abort the
+             * animation by setting the state to PanZoomState.NOTHING. Handle this case and bail
+             * out.
+             */
             if (mState != PanZoomState.FLING) {
                 finishAnimation();
                 return;
             }
 
-            
+            /* Advance flings, if necessary. */
             boolean flingingX = mX.advanceFling();
             boolean flingingY = mY.advanceFling();
 
             boolean overscrolled = (mX.overscrolled() || mY.overscrolled());
 
-            
+            /* If we're still flinging in any direction, update the origin. */
             if (flingingX || flingingY) {
                 updatePosition();
 
-                
-
-
-
-
-
+                /*
+                 * Check to see if we're still flinging with an appreciable velocity. The threshold is
+                 * higher in the case of overscroll, so we bounce back eagerly when overscrolling but
+                 * coast smoothly to a stop when not. In other words, require a greater velocity to
+                 * maintain the fling once we enter overscroll.
+                 */
                 float threshold = (overscrolled && !mSubscroller.scrolling() ? STOPPED_THRESHOLD : FLING_STOPPED_THRESHOLD);
                 if (getVelocity() >= threshold) {
-                    
+                    // we're still flinging
                     return;
                 }
 
@@ -640,7 +640,7 @@ public class PanZoomController
                 mY.stopFling();
             }
 
-            
+            /* Perform a bounce-back animation if overscrolled. */
             if (overscrolled) {
                 bounce();
             } else {
@@ -656,13 +656,13 @@ public class PanZoomController
         Log.d(LOGTAG, "Finishing animation at " + mController.getViewportMetrics());
         stopAnimationTimer();
 
-        
+        // Force a viewport synchronisation
         GeckoApp.mAppContext.showPlugins();
         mController.setForceRedraw();
         mController.notifyLayerClientOfGeometryChange();
     }
 
-    
+    /* Returns the nearest viewport metrics with no overscroll visible. */
     private ViewportMetrics getValidViewportMetrics() {
         return getValidViewportMetrics(new ViewportMetrics(mController.getViewportMetrics()));
     }
@@ -670,7 +670,7 @@ public class PanZoomController
     private ViewportMetrics getValidViewportMetrics(ViewportMetrics viewportMetrics) {
         Log.d(LOGTAG, "generating valid viewport using " + viewportMetrics);
 
-        
+        /* First, we adjust the zoom factor so that we can make no overscrolled area visible. */
         float zoomFactor = viewportMetrics.getZoomFactor();
         FloatSize pageSize = viewportMetrics.getPageSize();
         RectF viewport = viewportMetrics.getViewport();
@@ -690,11 +690,11 @@ public class PanZoomController
         }
 
         if (!FloatUtils.fuzzyEquals(minZoomFactor, 0.0f)) {
-            
-            
-            
-            
-            
+            // if one (or both) of the page dimensions is smaller than the viewport,
+            // zoom using the top/left as the focus on that axis. this prevents the
+            // scenario where, if both dimensions are smaller than the viewport, but
+            // by different scale factors, we end up scrolled to the end on one axis
+            // after applying the scale
             PointF center = new PointF(focusX, focusY);
             viewportMetrics.scaleTo(minZoomFactor, center);
         } else if (zoomFactor > MAX_ZOOM) {
@@ -702,7 +702,7 @@ public class PanZoomController
             viewportMetrics.scaleTo(MAX_ZOOM, center);
         }
 
-        
+        /* Now we pan to the right origin. */
         viewportMetrics.setViewport(viewportMetrics.getClampedViewport());
         Log.d(LOGTAG, "generated valid viewport as " + viewportMetrics);
 
@@ -729,9 +729,9 @@ public class PanZoomController
         protected float getPageLength() { return mController.getPageSize().height; }
     }
 
-    
-
-
+    /*
+     * Zooming
+     */
     @Override
     public boolean onScaleBegin(SimpleScaleGestureDetector detector) {
         Log.d(LOGTAG, "onScaleBegin in " + mState);
@@ -741,8 +741,8 @@ public class PanZoomController
 
         mState = PanZoomState.PINCHING;
         mLastZoomFocus = new PointF(detector.getFocusX(), detector.getFocusY());
-        GeckoApp.mAppContext.hidePlugins(false );
-        GeckoApp.mAutoCompletePopup.hide();
+        GeckoApp.mAppContext.hidePlugins(false /* don't hide layers, only views */);
+        GeckoApp.mFormAssistPopup.hide();
         cancelTouch();
 
         return true;
@@ -757,16 +757,16 @@ public class PanZoomController
 
         float prevSpan = detector.getPreviousSpan();
         if (FloatUtils.fuzzyEquals(prevSpan, 0.0f)) {
-            
+            // let's eat this one to avoid setting the new zoom to infinity (bug 711453)
             return true;
         }
 
         float spanRatio = detector.getCurrentSpan() / prevSpan;
 
-        
-
-
-
+        /*
+         * Apply edge resistance if we're zoomed out smaller than the page size by scaling the zoom
+         * factor toward 1.0.
+         */
         float resistance = Math.min(mX.getEdgeResistance(), mY.getEdgeResistance());
         if (spanRatio > 1.0f)
             spanRatio = 1.0f + (spanRatio - 1.0f) * resistance;
@@ -776,9 +776,9 @@ public class PanZoomController
         synchronized (mController) {
             float newZoomFactor = mController.getZoomFactor() * spanRatio;
             if (newZoomFactor >= MAX_ZOOM) {
-                
-                
-                
+                // apply resistance when zooming past MAX_ZOOM,
+                // such that it asymptotically reaches MAX_ZOOM + 1.0
+                // but never exceeds that
                 float excessZoom = newZoomFactor - MAX_ZOOM;
                 excessZoom = 1.0f - (float)Math.exp(-excessZoom);
                 newZoomFactor = MAX_ZOOM + excessZoom;
@@ -802,10 +802,10 @@ public class PanZoomController
         if (mState == PanZoomState.ANIMATED_ZOOM)
             return;
 
-        
+        // switch back to the touching state
         startTouch(detector.getFocusX(), detector.getFocusY(), detector.getEventTime());
 
-        
+        // Force a viewport synchronisation
         GeckoApp.mAppContext.showPlugins();
         mController.setForceRedraw();
         mController.notifyLayerClientOfGeometryChange();
@@ -845,7 +845,7 @@ public class PanZoomController
 
     @Override
     public boolean onSingleTapConfirmed(MotionEvent motionEvent) {
-        GeckoApp.mAutoCompletePopup.hide();
+        GeckoApp.mFormAssistPopup.hide();
         sendPointToGecko("Gesture:SingleTap", motionEvent);
         return true;
     }
@@ -862,27 +862,27 @@ public class PanZoomController
     }
 
     private boolean animatedZoomTo(RectF zoomToRect) {
-        GeckoApp.mAutoCompletePopup.hide();
+        GeckoApp.mFormAssistPopup.hide();
 
         mState = PanZoomState.ANIMATED_ZOOM;
         final float startZoom = mController.getZoomFactor();
 
         RectF viewport = mController.getViewport();
-        
-        
-        
-        
+        // 1. adjust the aspect ratio of zoomToRect to match that of the current viewport,
+        // enlarging as necessary (if it gets too big, it will get shrunk in the next step).
+        // while enlarging make sure we enlarge equally on both sides to keep the target rect
+        // centered.
         float targetRatio = viewport.width() / viewport.height();
         float rectRatio = zoomToRect.width() / zoomToRect.height();
         if (FloatUtils.fuzzyEquals(targetRatio, rectRatio)) {
-            
+            // all good, do nothing
         } else if (targetRatio < rectRatio) {
-            
+            // need to increase zoomToRect height
             float newHeight = zoomToRect.width() / targetRatio;
             zoomToRect.top -= (newHeight - zoomToRect.height()) / 2;
             zoomToRect.bottom = zoomToRect.top + newHeight;
-        } else { 
-            
+        } else { // targetRatio > rectRatio) {
+            // need to increase zoomToRect width
             float newWidth = targetRatio * zoomToRect.height();
             zoomToRect.left -= (newWidth - zoomToRect.width()) / 2;
             zoomToRect.right = zoomToRect.left + newWidth;
@@ -894,8 +894,8 @@ public class PanZoomController
         finalMetrics.setOrigin(new PointF(zoomToRect.left, zoomToRect.top));
         finalMetrics.scaleTo(finalZoom, new PointF(0.0f, 0.0f));
 
-        
-        
+        // 2. now run getValidViewportMetrics on it, so that the target viewport is
+        // clamped down to prevent overscroll, over-zoom, and other bad conditions.
         finalMetrics = getValidViewportMetrics(finalMetrics);
 
         bounce(finalMetrics);
