@@ -40,6 +40,7 @@
 #if !defined jsjaeger_framestate_h__ && defined JS_METHODJIT
 #define jsjaeger_framestate_h__
 
+#include "jsanalyze.h"
 #include "jsapi.h"
 #include "methodjit/MachineRegs.h"
 #include "methodjit/FrameEntry.h"
@@ -63,6 +64,17 @@ struct Changes {
     { }
     uint32 nchanges;
 };
+
+struct TemporaryCopy {
+    TemporaryCopy(JSC::MacroAssembler::Address copy, JSC::MacroAssembler::Address temporary)
+        : copy(copy), temporary(temporary)
+    {}
+    JSC::MacroAssembler::Address copy;
+    JSC::MacroAssembler::Address temporary;
+};
+
+class StubCompiler;
+class LoopState;
 
 
 
@@ -108,8 +120,10 @@ class FrameState
     typedef JSC::MacroAssembler::RegisterID RegisterID;
     typedef JSC::MacroAssembler::FPRegisterID FPRegisterID;
     typedef JSC::MacroAssembler::Address Address;
+    typedef JSC::MacroAssembler::AbsoluteAddress AbsoluteAddress;
     typedef JSC::MacroAssembler::Jump Jump;
     typedef JSC::MacroAssembler::Imm32 Imm32;
+    typedef JSC::MacroAssembler::ImmPtr ImmPtr;
 
     static const uint32 InvalidIndex = 0xFFFFFFFF;
 
@@ -188,7 +202,6 @@ class FrameState
 
             fe_ = fe;
             type_ = type;
-            JS_ASSERT(!save_);
         }
 
         
@@ -231,31 +244,27 @@ class FrameState
 
         
         FrameEntry *save_;
-        
+
         
         RematInfo::RematType type_;
     };
 
+    struct ActiveFrame;
+
     FrameState *thisFromCtor() { return this; }
   public:
-    FrameState(JSContext *cx, JSScript *script, JSFunction *fun, Assembler &masm);
+    FrameState(JSContext *cx, Compiler &cc, Assembler &masm, StubCompiler &stubcc);
     ~FrameState();
-    bool init();
 
     
 
 
-    inline void pushSynced();
+    inline void pushSynced(JSValueType knownType);
 
     
 
 
-    inline void pushSyncedType(JSValueType type);
-
-    
-
-
-    inline void pushSynced(JSValueType type, RegisterID reg);
+    inline void pushSynced(JSValueType knownType, RegisterID reg);
 
     
 
@@ -265,7 +274,12 @@ class FrameState
     
 
 
-    inline void push(Address address);
+
+    inline void push(Address address, JSValueType knownType, bool reuseBase = false);
+
+    
+    inline void loadIntoRegisters(Address address, bool reuseBase,
+                                  RegisterID *ptypeReg, RegisterID *pdataReg);
 
     
 
@@ -275,7 +289,37 @@ class FrameState
     
 
 
-    inline void pushRegs(RegisterID type, RegisterID data);
+
+
+
+    inline FPRegisterID storeRegs(int32 depth, RegisterID type, RegisterID data,
+                                  JSValueType knownType);
+    inline FPRegisterID pushRegs(RegisterID type, RegisterID data, JSValueType knownType);
+
+    
+
+
+
+    inline void reloadEntry(Assembler &masm, Address address, FrameEntry *fe);
+
+    
+    void pushDouble(FPRegisterID fpreg);
+    void pushDouble(Address address);
+
+    
+    void ensureDouble(FrameEntry *fe);
+
+    
+    void ensureInteger(FrameEntry *fe);
+
+    
+
+
+
+    void ensureInMemoryDoubles(Assembler &masm);
+
+    
+    void forgetKnownDouble(FrameEntry *fe);
 
     
 
@@ -306,7 +350,7 @@ class FrameState
 
 
 
-    inline void pushNumber(MaybeRegisterID payload, bool asInt32 = false);
+    inline void pushNumber(RegisterID payload, bool asInt32 = false);
 
     
 
@@ -315,12 +359,6 @@ class FrameState
 
 
     inline void pushInt32(RegisterID payload);
-
-    
-
-
-
-    inline void pushInitializerObject(RegisterID payload, bool array, JSObject *baseobj);
 
     
 
@@ -339,6 +377,9 @@ class FrameState
     inline bool haveSameBacking(FrameEntry *lhs, FrameEntry *rhs);
 
     
+    void separateBinaryEntries(FrameEntry *lhs, FrameEntry *rhs);
+
+    
 
 
     inline void enterBlock(uint32 n);
@@ -350,7 +391,13 @@ class FrameState
     void pushArg(uint32 n);
     void pushCallee();
     void pushThis();
-    inline void learnThisIsObject();
+    void pushCopyOf(FrameEntry *fe);
+    inline void learnThisIsObject(bool unsync = true);
+
+    inline FrameEntry *getStack(uint32 slot);
+    inline FrameEntry *getLocal(uint32 slot);
+    inline FrameEntry *getArg(uint32 slot);
+    inline FrameEntry *getSlotEntry(uint32 slot);
 
     
 
@@ -374,17 +421,25 @@ class FrameState
 
 
     inline RegisterID tempRegForData(FrameEntry *fe);
+    inline FPRegisterID tempFPRegForData(FrameEntry *fe);
 
     
 
 
-    inline RegisterID tempRegInMaskForData(FrameEntry *fe, uint32 mask);
+    inline AnyRegisterID tempRegInMaskForData(FrameEntry *fe, uint32 mask);
 
     
 
 
 
     inline RegisterID tempRegForData(FrameEntry *fe, RegisterID reg, Assembler &masm) const;
+
+    
+
+
+
+
+    inline void forgetMismatchedObject(FrameEntry *fe);
 
     
 
@@ -432,14 +487,6 @@ class FrameState
 
 
 
-    FPRegisterID copyEntryIntoFPReg(FrameEntry *fe, FPRegisterID fpreg);
-    FPRegisterID copyEntryIntoFPReg(Assembler &masm, FrameEntry *fe,
-                                    FPRegisterID fpreg);
-
-    
-
-
-
     RegisterID copyTypeIntoReg(FrameEntry *fe);
 
     
@@ -455,7 +502,8 @@ class FrameState
 
 
 
-    void pinEntry(FrameEntry *fe, ValueRemat &vr);
+
+    void pinEntry(FrameEntry *fe, ValueRemat &vr, bool breakDouble = true);
 
     
     void unpinEntry(const ValueRemat &vr);
@@ -470,9 +518,12 @@ class FrameState
         MaybeRegisterID rhsData;
         MaybeRegisterID extraFree;
         RegisterID result;  
+        FPRegisterID lhsFP; 
+        FPRegisterID rhsFP; 
         bool resultHasRhs;  
         bool lhsNeedsRemat; 
         bool rhsNeedsRemat; 
+        bool undoResult;    
     };
 
     
@@ -485,6 +536,12 @@ class FrameState
 
     void allocForBinary(FrameEntry *lhs, FrameEntry *rhs, JSOp op, BinaryAlloc &alloc,
                         bool resultNeeded = true);
+
+    
+
+
+
+    void rematBinary(FrameEntry *lhs, FrameEntry *rhs, const BinaryAlloc &alloc, Assembler &masm);
 
     
     void ensureFullRegs(FrameEntry *fe, MaybeRegisterID *typeReg, MaybeRegisterID *dataReg);
@@ -527,7 +584,7 @@ class FrameState
 
 
 
-    inline void freeReg(RegisterID reg);
+    inline void freeReg(AnyRegisterID reg);
 
     
 
@@ -535,16 +592,17 @@ class FrameState
 
 
     inline RegisterID allocReg();
+    inline FPRegisterID allocFPReg();
 
     
 
 
-    inline RegisterID allocReg(uint32 mask);
+    inline AnyRegisterID allocReg(uint32 mask);
 
     
 
 
-    void takeReg(RegisterID reg);
+    void takeReg(AnyRegisterID reg);
 
     
 
@@ -565,12 +623,9 @@ class FrameState
     void loadThisForReturn(RegisterID typeReg, RegisterID dataReg, RegisterID tempReg);
 
     
-
-
-    void storeLocal(uint32 n, bool popGuaranteed = false, bool typeChange = true);
+    void storeLocal(uint32 n, bool popGuaranteed = false);
     void storeArg(uint32 n, bool popGuaranteed = false);
-    void storeTop(FrameEntry *target, bool popGuaranteed = false, bool typeChange = true);
-    void finishStore(FrameEntry *fe, bool closed);
+    void storeTop(FrameEntry *target);
 
     
 
@@ -588,30 +643,24 @@ class FrameState
 
     void syncAndKill(Registers kill, Uses uses, Uses ignored);
     void syncAndKill(Registers kill, Uses uses) { syncAndKill(kill, uses, Uses(0)); }
+    void syncAndKill(Uses uses) { syncAndKill(Registers(Registers::AvailAnyRegs), uses, Uses(0)); }
 
     
     void syncAndKillEverything() {
-        syncAndKill(Registers(Registers::AvailRegs), Uses(frameSlots()));
+        syncAndKill(Registers(Registers::AvailAnyRegs), Uses(frameSlots()));
     }
 
     
 
 
 
-
-    inline void syncAndForgetEverything(uint32 newStackDepth);
-
-    
-
-
-
-    void syncAndForgetEverything();
-
-    
-
-
-
     void forgetEverything();
+
+    void syncAndForgetEverything()
+    {
+        syncAndKillEverything();
+        forgetEverything();
+    }
 
     
 
@@ -621,7 +670,39 @@ class FrameState
     
 
 
-    inline void learnType(FrameEntry *fe, JSValueType type);
+
+    FrameEntry *snapshotState();
+    void restoreFromSnapshot(FrameEntry *snapshot);
+
+    
+
+
+
+
+
+    bool syncForBranch(jsbytecode *target, Uses uses);
+    void syncForAllocation(RegisterAllocation *alloc, bool inlineReturn, Uses uses);
+
+    
+    bool discardForJoin(RegisterAllocation *&alloc, uint32 stackDepth);
+
+    RegisterAllocation * computeAllocation(jsbytecode *target);
+
+    
+    bool consistentRegisters(jsbytecode *target);
+
+    
+
+
+
+    void prepareForJump(jsbytecode *target, Assembler &masm, bool synced);
+
+    
+
+
+
+    inline void learnType(FrameEntry *fe, JSValueType type, bool unsync = true);
+    inline void learnType(FrameEntry *fe, JSValueType type, RegisterID payload);
 
     
 
@@ -632,6 +713,20 @@ class FrameState
 
 
     void discardFe(FrameEntry *fe);
+
+    
+    struct StackEntryExtra {
+        bool initArray;
+        JSObject *initObject;
+        types::TypeSet *types;
+        JSAtom *name;
+        void reset() { PodZero(this); }
+    };
+    StackEntryExtra& extra(const FrameEntry *fe) {
+        JS_ASSERT(fe >= a->spBase && fe < a->sp);
+        return extraArray[fe - entries];
+    }
+    StackEntryExtra& extra(uint32 slot) { return extra(entries + slot); }
 
     
 
@@ -687,12 +782,12 @@ class FrameState
 
 
 
-    inline void pinReg(RegisterID reg);
+    inline void pinReg(AnyRegisterID reg) { regstate(reg).pin(); }
 
     
 
 
-    inline void unpinReg(RegisterID reg);
+    inline void unpinReg(AnyRegisterID reg) { regstate(reg).unpin(); }
 
     
 
@@ -722,23 +817,34 @@ class FrameState
     
 
 
+    inline void syncAt(int32 n);
+
+    
+
+
 
     inline void giveOwnRegs(FrameEntry *fe);
 
-    uint32 stackDepth() const { return sp - spBase; }
+    uint32 stackDepth() const { return a->sp - a->spBase; }
+
+    
+
+
+
+
+    uint32 totalDepth() const { return a->depth + a->script->nfixed + stackDepth(); }
 
     
     
     
     
     
-    uint32 frameSlots() const { return uint32(sp - entries); }
-
-    
-    uint32 localSlots() const { return uint32(sp - locals); }
+    uint32 frameSlots() const { return uint32(a->sp - a->callee_); }
 
 #ifdef DEBUG
     void assertValidRegisterState() const;
+#else
+    inline void assertValidRegisterState() const {};
 #endif
 
     
@@ -746,12 +852,16 @@ class FrameState
     
     
     Address addressOf(const FrameEntry *fe) const;
+    Address addressOf(uint32 slot) const { return addressOf(a->callee_ + slot); }
 
     
     
     
     
     Address addressForDataRemat(const FrameEntry *fe) const;
+
+    
+    Address addressForInlineReturn() const;
 
     inline StateRemat dataRematInfo(const FrameEntry *fe) const;
 
@@ -777,8 +887,7 @@ class FrameState
     void shift(int32 n);
 
     
-    inline void setClosedVar(uint32 slot);
-    inline void setClosedArg(uint32 slot);
+    void swap();
 
     inline void setInTryBlock(bool inTryBlock) {
         this->inTryBlock = inTryBlock;
@@ -786,11 +895,57 @@ class FrameState
 
     inline uint32 regsInUse() const { return Registers::AvailRegs & ~freeRegs.freeMask; }
 
+    void setPC(jsbytecode *PC) { a->PC = PC; }
+    void setLoop(LoopState *loop) { this->loop = loop; }
+
+    void pruneDeadEntries();
+
+    bool pushActiveFrame(JSScript *script, uint32 argc);
+    void popActiveFrame();
+
+    uint32 entrySlot(const FrameEntry *fe) const {
+        return frameSlot(a, fe);
+    }
+
+    uint32 outerSlot(const FrameEntry *fe) const {
+        ActiveFrame *na = a;
+        while (na->parent) { na = na->parent; }
+        return frameSlot(na, fe);
+    }
+
+    bool isOuterSlot(const FrameEntry *fe) const {
+        if (isTemporary(fe))
+            return true;
+        ActiveFrame *na = a;
+        while (na->parent) { na = na->parent; }
+        return fe < na->spBase && fe != na->callee_;
+    }
+
+#ifdef DEBUG
+    const char * entryName(const FrameEntry *fe) const;
+    void dumpAllocation(RegisterAllocation *alloc);
+#else
+    const char * entryName(const FrameEntry *fe) const { return NULL; }
+#endif
+    const char * entryName(uint32 slot) { return entryName(entries + slot); }
+
+    
+    static const uint32 TEMPORARY_LIMIT = 10;
+
+    uint32 allocTemporary();  
+    void clearTemporaries();
+    inline FrameEntry *getTemporary(uint32 which);
+
+    
+    Vector<TemporaryCopy> *getTemporaryCopies();
+
+    inline void syncAndForgetFe(FrameEntry *fe, bool markSynced = false);
+
   private:
-    inline RegisterID allocReg(FrameEntry *fe, RematInfo::RematType type);
-    inline void forgetReg(RegisterID reg);
-    RegisterID evictSomeReg(uint32 mask);
-    void evictReg(RegisterID reg);
+    inline AnyRegisterID allocAndLoadReg(FrameEntry *fe, bool fp, RematInfo::RematType type);
+    inline void forgetReg(AnyRegisterID reg);
+    AnyRegisterID evictSomeReg(uint32 mask);
+    void evictReg(AnyRegisterID reg);
     inline FrameEntry *rawPush();
     inline void addToTracker(FrameEntry *fe);
 
@@ -804,14 +959,15 @@ class FrameState
     inline void syncType(FrameEntry *fe);
     inline void syncData(FrameEntry *fe);
 
-    inline FrameEntry *getOrTrack(uint32 index);
-    inline FrameEntry *getLocal(uint32 slot);
-    inline FrameEntry *getArg(uint32 slot);
+    
+    inline void fakeSync(FrameEntry *fe);
+
     inline FrameEntry *getCallee();
     inline FrameEntry *getThis();
+    inline FrameEntry *getOrTrack(uint32 index);
+
     inline void forgetAllRegs(FrameEntry *fe);
     inline void swapInTracker(FrameEntry *lhs, FrameEntry *rhs);
-    void pushCopyOf(uint32 index);
 #if defined JS_NUNBOX32
     void syncFancy(Assembler &masm, Registers avail, FrameEntry *resumeAt,
                    FrameEntry *bottom) const;
@@ -832,76 +988,241 @@ class FrameState
     FrameEntry *walkFrameForUncopy(FrameEntry *original);
 
     
+    bool hasOnlyCopy(FrameEntry *backing, FrameEntry *fe);
+
+    
 
 
 
     void forgetEntry(FrameEntry *fe);
 
-    FrameEntry *entryFor(uint32 index) const {
-        JS_ASSERT(entries[index].isTracked());
-        return &entries[index];
+    
+    bool deadEntry(const FrameEntry *fe, unsigned uses = 0) const {
+        return (fe >= (a->sp - uses) && fe < temporaries) || fe >= temporariesTop;
     }
 
-    RegisterID evictSomeReg() { return evictSomeReg(Registers::AvailRegs); }
-    uint32 indexOf(int32 depth) const {
-        JS_ASSERT(uint32((sp + depth) - entries) < feLimit());
-        return uint32((sp + depth) - entries);
+    RegisterState & regstate(AnyRegisterID reg) {
+        JS_ASSERT(reg.reg_ < Registers::TotalAnyRegisters);
+        return regstate_[reg.reg_];
     }
-    uint32 indexOfFe(FrameEntry *fe) const {
-        JS_ASSERT(uint32(fe - entries) < feLimit());
-        return uint32(fe - entries);
-    }
-    uint32 feLimit() const { return script->nslots + nargs + 2; }
 
-    inline bool isClosedVar(uint32 slot);
-    inline bool isClosedArg(uint32 slot);
+    const RegisterState & regstate(AnyRegisterID reg) const {
+        JS_ASSERT(reg.reg_ < Registers::TotalAnyRegisters);
+        return regstate_[reg.reg_];
+    }
+
+    AnyRegisterID bestEvictReg(uint32 mask, bool includePinned) const;
+    void evictDeadEntries(bool includePinned);
+
+    inline analyze::Lifetime * variableLive(FrameEntry *fe, jsbytecode *pc) const;
+    inline bool binaryEntryLive(FrameEntry *fe) const;
+    void relocateReg(AnyRegisterID reg, RegisterAllocation *alloc, Uses uses);
+
+    bool isThis(const FrameEntry *fe) const {
+        return fe == a->this_;
+    }
+
+    bool isArg(const FrameEntry *fe) const {
+        return a->script->fun && fe >= a->args && fe - a->args < a->script->fun->nargs;
+    }
+
+    bool isLocal(const FrameEntry *fe) const {
+        return fe >= a->locals && fe - a->locals < a->script->nfixed;
+    }
+
+    bool isTemporary(const FrameEntry *fe) const {
+        JS_ASSERT_IF(fe >= temporaries, fe < temporariesTop);
+        return fe >= temporaries;
+    }
+
+    int32 frameOffset(const FrameEntry *fe, ActiveFrame *a) const;
+    Address addressOf(const FrameEntry *fe, ActiveFrame *a) const;
+    uint32 frameSlot(ActiveFrame *a, const FrameEntry *fe) const;
+
+    void associateReg(FrameEntry *fe, RematInfo::RematType type, AnyRegisterID reg);
+
+    inline void modifyReg(AnyRegisterID reg);
+
+    MaybeJump guardArrayLengthBase(FrameEntry *obj, Int32Key key);
 
   private:
     JSContext *cx;
-    JSScript *script;
-    JSFunction *fun;
-    uint32 nargs;
     Assembler &masm;
+    Compiler &cc;
+    StubCompiler &stubcc;
 
     
-    Registers freeRegs;
+
+    struct ActiveFrame {
+        ActiveFrame() { PodZero(this); }
+
+        ActiveFrame *parent;
+
+        
+        uint32 depth;
+
+        JSScript *script;
+        jsbytecode *PC;
+        analyze::ScriptAnalysis *analysis;
+
+        
+        FrameEntry *callee_;
+        FrameEntry *this_;
+        FrameEntry *args;
+        FrameEntry *locals;
+        FrameEntry *spBase;
+        FrameEntry *sp;
+    };
+    ActiveFrame *a;
 
     
     FrameEntry *entries;
-
-    FrameEntry *callee_;
-    FrameEntry *this_;
+    uint32 nentries;
 
     
-    FrameEntry *args;
-
-    
-    FrameEntry *locals;
-
-    
-    FrameEntry *spBase;
-
-    
-    FrameEntry *sp;
+    StackEntryExtra *extraArray;
 
     
     Tracker tracker;
-
-    
-
-
-
-    RegisterState regstate[Assembler::TotalRegisters];
 
 #if defined JS_NUNBOX32
     mutable ImmutableSync reifier;
 #endif
 
-    JSPackedBool *closedVars;
-    JSPackedBool *closedArgs;
-    bool eval;
-    bool usesArguments;
+    
+
+
+
+    RegisterState regstate_[Registers::TotalAnyRegisters];
+
+    
+    Registers freeRegs;
+
+    
+    LoopState *loop;
+
+    
+
+
+
+    FrameEntry *temporaries;
+    FrameEntry *temporariesTop;
+
     bool inTryBlock;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct RegisterAllocation {
+  private:
+    typedef JSC::MacroAssembler::RegisterID RegisterID;
+    typedef JSC::MacroAssembler::FPRegisterID FPRegisterID;
+
+    
+    static const uint32 UNASSIGNED_REGISTER = uint32(-1);
+
+    
+
+
+
+
+
+
+    static const uint32 LOOP_REGISTER = uint32(-2);
+
+    
+
+
+
+
+    uint32 regstate_[Registers::TotalAnyRegisters];
+
+    
+    static const uint32 SYNCED = 0x80000000;
+
+    uint32 & regstate(AnyRegisterID reg) {
+        JS_ASSERT(reg.reg_ < Registers::TotalAnyRegisters);
+        return regstate_[reg.reg_];
+    }
+
+  public:
+    RegisterAllocation(bool forLoop)
+    {
+        uint32 entry = forLoop ? (uint32) LOOP_REGISTER : (uint32) UNASSIGNED_REGISTER;
+        for (unsigned i = 0; i < Registers::TotalAnyRegisters; i++) {
+            AnyRegisterID reg = AnyRegisterID::fromRaw(i);
+            bool avail = Registers::maskReg(reg) & Registers::AvailAnyRegs;
+            regstate_[i] = avail ? entry : UNASSIGNED_REGISTER;
+        }
+    }
+
+    bool assigned(AnyRegisterID reg) {
+        return regstate(reg) != UNASSIGNED_REGISTER && regstate(reg) != LOOP_REGISTER;
+    }
+
+    bool loop(AnyRegisterID reg) {
+        return regstate(reg) == LOOP_REGISTER;
+    }
+
+    bool synced(AnyRegisterID reg) {
+        JS_ASSERT(assigned(reg));
+        return regstate(reg) & SYNCED;
+    }
+
+    uint32 index(AnyRegisterID reg) {
+        JS_ASSERT(assigned(reg));
+        return regstate(reg) & ~SYNCED;
+    }
+
+    void set(AnyRegisterID reg, uint32 index, bool synced) {
+        JS_ASSERT(index != LOOP_REGISTER && index != UNASSIGNED_REGISTER);
+        regstate(reg) = index | (synced ? SYNCED : 0);
+    }
+
+    void setUnassigned(AnyRegisterID reg) {
+        regstate(reg) = UNASSIGNED_REGISTER;
+    }
+
+    bool synced() {
+        for (unsigned i = 0; i < Registers::TotalAnyRegisters; i++) {
+            if (assigned(AnyRegisterID::fromRaw(i)))
+                return false;
+        }
+        return true;
+    }
+
+    void clearLoops() {
+        for (unsigned i = 0; i < Registers::TotalAnyRegisters; i++) {
+            AnyRegisterID reg = AnyRegisterID::fromRaw(i);
+            if (loop(reg))
+                setUnassigned(reg);
+        }
+    }
+
+    bool hasAnyReg(uint32 n) {
+        for (unsigned i = 0; i < Registers::TotalAnyRegisters; i++) {
+            AnyRegisterID reg = AnyRegisterID::fromRaw(i);
+            if (assigned(reg) && index(reg) == n)
+                return true;
+        }
+        return false;
+    }
 };
 
 class AutoPreserveAcrossSyncAndKill;
