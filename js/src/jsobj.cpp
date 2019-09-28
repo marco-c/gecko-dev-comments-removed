@@ -5700,6 +5700,10 @@ js_GetPropertyHelperWithShapeInline(JSContext *cx, JSObject *obj, JSObject *rece
         PCMETER(getHow & JSGET_CACHE_RESULT && JS_PROPERTY_CACHE(cx).nofills++);
 
         
+        if (!vp->isUndefined())
+            cx->addTypePropertyId(obj->getType(), id, *vp);
+
+        
 
 
 
