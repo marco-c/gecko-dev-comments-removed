@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
@@ -47,12 +47,12 @@ function openLink(aElement) {
 }
 
 function onPopState(aEvent) {
-  // Called when back/forward is used to change the state of the page
+  
   if (aEvent.state) {
-    // Show the detail page for an addon
+    
     Addons.showDetails(Addons._getElementForAddon(aEvent.state.id));
   } else {
-    // Clear any previous detail addon
+    
     let detailItem = document.querySelector("#addons-details > .addon-item");
     detailItem.addon = null;
 
@@ -61,7 +61,7 @@ function onPopState(aEvent) {
 }
 
 function showList() {
-  // Hide the detail page and show the list
+  
   let details = document.querySelector("#addons-details");
   details.style.display = "none";
   let list = document.querySelector("#addons-list");
@@ -155,7 +155,7 @@ var Addons = {
   },
 
   getAddons: function getAddons() {
-    // Clear all content before filling the addons
+    
     let list = document.getElementById("addons-list");
     list.innerHTML = "";
 
@@ -166,7 +166,7 @@ var Addons = {
         list.appendChild(item);
       }
 
-      // Load the search engines
+      
       let defaults = Services.search.getDefaultEngines({ }).map(function (e) e.name);
       function isDefault(aEngine)
         defaults.indexOf(aEngine.name) != -1
@@ -208,6 +208,22 @@ var Addons = {
   },
 
   showDetails: function showDetails(aListItem) {
+    
+    
+    
+    function stripTextNodes(aNode) {
+      var text = "";
+      for (var i = 0; i < aNode.childNodes.length; i++) {
+        if (aNode.childNodes[i].nodeType != document.ELEMENT_NODE) {
+          text += aNode.childNodes[i].textContent;
+          aNode.removeChild(aNode.childNodes[i--]);
+        } else {
+          text += stripTextNodes(aNode.childNodes[i]);
+        }
+      }
+      return text;
+    }
+
     let detailItem = document.querySelector("#addons-details > .addon-item");
     detailItem.setAttribute("isDisabled", aListItem.getAttribute("isDisabled"));
     detailItem.setAttribute("opType", aListItem.getAttribute("opType"));
@@ -240,30 +256,14 @@ var Addons = {
     let box = document.querySelector("#addons-details > .addon-item .options-box");
     box.innerHTML = "";
 
-    // Retrieve the extensions preferences
+    
     try {
       let optionsURL = aListItem.getAttribute("optionsURL");
       let xhr = new XMLHttpRequest();
       xhr.open("GET", optionsURL, false);
       xhr.send();
       if (xhr.responseXML) {
-        // This function removes and returns the text content of aNode without
-        // removing any child elements. Removing the text nodes ensures any XBL
-        // bindings apply properly.
-        function stripTextNodes(aNode) {
-          var text = '';
-          for (var i = 0; i < aNode.childNodes.length; i++) {
-            if (aNode.childNodes[i].nodeType != document.ELEMENT_NODE) {
-              text += aNode.childNodes[i].textContent;
-              aNode.removeChild(aNode.childNodes[i--]);
-            } else {
-              text += stripTextNodes(aNode.childNodes[i]);
-            }
-          }
-          return text;
-        }
-
-        // Only allow <setting> for now
+        
         let settings = xhr.responseXML.querySelectorAll(":root > setting");
         for (let i = 0; i < settings.length; i++) {
           var setting = settings[i];
@@ -272,17 +272,17 @@ var Addons = {
             setting.setAttribute("desc", desc);
           box.appendChild(setting);
         }
-/*
-        // Send an event so add-ons can prepopulate any non-preference based
-        // settings
-        let event = document.createEvent("Events");
-        event.initEvent("AddonOptionsLoad", true, false);
-        this.dispatchEvent(event);
 
-        // Also send a notification to match the behavior of desktop Firefox
-        let id = this.id.substring(17); // length of |urn:mozilla:item:|
-        Services.obs.notifyObservers(document, "addon-options-displayed", id);
-*/
+
+
+
+
+
+
+
+
+
+
       }
     } catch (e) {
       Cu.reportError(e)
@@ -306,7 +306,7 @@ var Addons = {
       detailItem.addon.engine.hidden = false;
       opType = "needs-enable";
     } else if (detailItem.addon.type == "theme") {
-      // We can have only one theme enabled, so disable the current one if any
+      
       let theme = null;
       let list = document.getElementById("addons-list");
       let item = list.firstElementChild;
@@ -338,7 +338,7 @@ var Addons = {
     detailItem.setAttribute("opType", opType);
     detailItem.setAttribute("isDisabled", isDisabled);
 
-    // Sync to the list item
+    
     let listItem = this._getElementForAddon(detailItem.addon.id);
     listItem.setAttribute("isDisabled", detailItem.getAttribute("isDisabled"));
     listItem.setAttribute("opType", detailItem.getAttribute("opType"));
@@ -377,7 +377,7 @@ var Addons = {
     detailItem.setAttribute("opType", opType);
     detailItem.setAttribute("isDisabled", isDisabled);
 
-    // Sync to the list item
+    
     let listItem = this._getElementForAddon(detailItem.addon.id);
     listItem.setAttribute("isDisabled", detailItem.getAttribute("isDisabled"));
     listItem.setAttribute("opType", detailItem.getAttribute("opType"));
@@ -392,11 +392,11 @@ var Addons = {
     let listItem = this._getElementForAddon(detailItem.addon.id);
 
     if (detailItem.addon.type == "search") {
-      // Make sure the engine isn't hidden before removing it, to make sure it's
-      // visible if the user later re-adds it (works around bug 341833)
+      
+      
       detailItem.addon.engine.hidden = false;
       Services.search.removeEngine(detailItem.addon.engine);
-      // the search-engine-modified observer will take care of updating the list
+      
       history.back();
     } else {
       detailItem.addon.uninstall();
@@ -405,8 +405,8 @@ var Addons = {
       if (detailItem.addon.pendingOperations & AddonManager.PENDING_UNINSTALL) {
         this.showRestart();
 
-        // A disabled addon doesn't need a restart so it has no pending ops and
-        // can't be cancelled
+        
+        
         if (!detailItem.addon.isActive && opType == "")
           opType = "needs-uninstall";
 
@@ -435,11 +435,11 @@ var Addons = {
   },
 
   showRestart: function showRestart(aMode) {
-    // TODO (bug 704406)
+    
   },
 
   hideRestart: function hideRestart(aMode) {
-    // TODO (bug 704406)
+    
   },
 
   onInstallEnded: function(aInstall, aAddon) {
