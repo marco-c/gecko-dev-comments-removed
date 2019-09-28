@@ -2930,27 +2930,36 @@ js_TraceContext(JSTracer *trc, JSContext *acx)
 
 
 
-    fp = js_GetTopStackFrame(acx);
-    nextChain = acx->dormantFrameChain;
-    if (!fp)
-        goto next_chain;
 
-    
-    JS_ASSERT(!fp->dormantNext);
-    for (;;) {
-        do {
-            js_TraceStackFrame(trc, fp);
-        } while ((fp = fp->down) != NULL);
 
-      next_chain:
-        if (!nextChain)
-            break;
-        fp = nextChain;
-        nextChain = nextChain->dormantNext;
+
+
+#ifdef JS_THREADSAFE
+    if (acx->thread)
+#endif
+    {
+        fp = js_GetTopStackFrame(acx);
+        nextChain = acx->dormantFrameChain;
+        if (!fp)
+            goto next_chain;
+
+        
+        JS_ASSERT(!fp->dormantNext);
+        for (;;) {
+            do {
+                js_TraceStackFrame(trc, fp);
+            } while ((fp = fp->down) != NULL);
+
+          next_chain:
+            if (!nextChain)
+                break;
+            fp = nextChain;
+            nextChain = nextChain->dormantNext;
+        }
     }
 
     
-    if (acx->globalObject)
+    if (acx->globalObject && !JS_HAS_OPTION(acx, JSOPTION_UNROOTED_GLOBAL))
         JS_CALL_OBJECT_TRACER(trc, acx->globalObject, "global object");
     TraceWeakRoots(trc, &acx->weakRoots);
     if (acx->throwing) {
