@@ -285,7 +285,7 @@ WrapObject(JSContext *cx, JSObject *scope, jsval v, jsval *vp)
   
   
 
-  if (STOBJ_GET_CLASS(objToWrap) == &js_ScriptClass ||
+  if (objToWrap->getClass() == &js_ScriptClass ||
       (JS_ObjectIsFunction(cx, objToWrap) &&
        JS_GetFunctionFastNative(cx, JS_ValueToFunction(cx, v)) ==
        XPCWrapper::sEvalNative)) {
@@ -406,7 +406,7 @@ WrapJSValue(JSContext *cx, JSObject *obj, jsval val, jsval *rval)
     
     
     JSObject *safeObj = JSVAL_TO_OBJECT(*rval);
-    if (STOBJ_GET_CLASS(safeObj) == &SJOWClass.base &&
+    if (safeObj->getClass() == &SJOWClass.base &&
         JS_GetGlobalForObject(cx, obj) != JS_GetGlobalForObject(cx, safeObj)) {
       
       
