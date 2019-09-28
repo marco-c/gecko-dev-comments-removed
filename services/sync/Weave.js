@@ -58,8 +58,6 @@ WeaveService.prototype = {
       break;
 
     case "final-ui-startup":
-      this.addResourceAlias();
-
       
       this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
       this.timer.initWithCallback({
@@ -70,25 +68,6 @@ WeaveService.prototype = {
         }
       }, 10000, Ci.nsITimer.TYPE_ONE_SHOT);
       break;
-    }
-  },
-
-  addResourceAlias: function() {
-    let ioService = Cc["@mozilla.org/network/io-service;1"]
-                    .getService(Ci.nsIIOService);
-    let resProt = ioService.getProtocolHandler("resource")
-                  .QueryInterface(Ci.nsIResProtocolHandler);
-
-    
-    if (!resProt.hasSubstitution("services-sync")) {
-      let uri = ioService.newURI("resource:///modules/services-sync/",
-                                 null, null);
-      resProt.setSubstitution("services-sync", uri);
-    }
-    if (!resProt.hasSubstitution("services-crypto")) {
-      let uri = ioService.newURI("resource:///modules/services-crypto/",
-                                 null, null);
-      resProt.setSubstitution("services-crypto", uri);
     }
   }
 };
