@@ -73,8 +73,14 @@ JSObject::isPackedDenseArray()
     return flags & PACKED_ARRAY;
 }
 
+namespace js {
+
+const uint32 MAX_ARRAY_INDEX = 4294967294u;
+    
 extern bool
-js_StringIsIndex(JSLinearString *str, jsuint *indexp);
+StringIsArrayIndex(JSLinearString *str, jsuint *indexp);
+    
+}
 
 inline JSBool
 js_IdIsIndex(jsid id, jsuint *indexp)
@@ -91,7 +97,7 @@ js_IdIsIndex(jsid id, jsuint *indexp)
     if (JS_UNLIKELY(!JSID_IS_STRING(id)))
         return JS_FALSE;
 
-    return js_StringIsIndex(JSID_TO_ATOM(id), indexp);
+    return js::StringIsArrayIndex(JSID_TO_ATOM(id), indexp);
 }
 
 
@@ -150,7 +156,7 @@ NewDenseUnallocatedArray(JSContext *cx, uint length, JSObject *proto=NULL);
 
 
 extern JSObject *
-NewDenseCopiedArray(JSContext *cx, uint length, Value *vp, JSObject *proto=NULL);
+NewDenseCopiedArray(JSContext *cx, uint length, const Value *vp, JSObject *proto=NULL);
 
 
 extern JSObject *

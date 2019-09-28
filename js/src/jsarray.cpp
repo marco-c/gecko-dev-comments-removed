@@ -146,63 +146,11 @@ using namespace js;
 using namespace js::gc;
 using namespace js::types;
 
-
-#define MAXINDEX 4294967295u
-#define MAXSTR   "4294967295"
-
 static inline bool
 ENSURE_SLOW_ARRAY(JSContext *cx, JSObject *obj)
 {
     return obj->getClass() == &js_SlowArrayClass ||
            obj->makeDenseArraySlow(cx);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-js_StringIsIndex(JSLinearString *str, jsuint *indexp)
-{
-    const jschar *cp = str->chars();
-    if (JS7_ISDEC(*cp) && str->length() < sizeof(MAXSTR)) {
-        jsuint index = JS7_UNDEC(*cp++);
-        jsuint oldIndex = 0;
-        jsuint c = 0;
-        if (index != 0) {
-            while (JS7_ISDEC(*cp)) {
-                oldIndex = index;
-                c = JS7_UNDEC(*cp);
-                index = 10*index + c;
-                cp++;
-            }
-        }
-
-        
-        if (*cp == 0 &&
-             (oldIndex < (MAXINDEX / 10) ||
-              (oldIndex == (MAXINDEX / 10) && c < (MAXINDEX % 10))))
-        {
-            *indexp = index;
-            return true;
-        }
-    }
-    return false;
 }
 
 JSBool
@@ -232,6 +180,66 @@ js_GetLengthProperty(JSContext *cx, JSObject *obj, jsuint *lengthp)
 
     JS_STATIC_ASSERT(sizeof(jsuint) == sizeof(uint32_t));
     return ValueToECMAUint32(cx, tvr.value(), (uint32_t *)lengthp);
+}
+
+namespace js {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+StringIsArrayIndex(JSLinearString *str, jsuint *indexp)
+{
+    const jschar *s = str->chars();
+    uint32 length = str->length();
+    const jschar *end = s + length;
+
+    if (length == 0 || length > (sizeof("4294967294") - 1) || !JS7_ISDEC(*s))
+        return false;
+
+    uint32 c = 0, previous = 0;    
+    uint32 index = JS7_UNDEC(*s++);
+
+    
+    if (index == 0 && s != end)
+        return false;
+
+    for (; s < end; s++) {
+        if (!JS7_ISDEC(*s))
+            return false;
+
+        previous = index;
+        c = JS7_UNDEC(*s);
+        index = 10 * index + c;
+    }
+
+    
+    if (previous < (MAX_ARRAY_INDEX / 10) || (previous == (MAX_ARRAY_INDEX / 10) && 
+        c <= (MAX_ARRAY_INDEX % 10))) {
+        JS_ASSERT(index <= MAX_ARRAY_INDEX);
+        *indexp = index;
+        return true;
+    }
+    
+    return false;
+}
+
 }
 
 static JSBool
@@ -300,7 +308,7 @@ JSObject::willBeSparseDenseArray(uintN requiredCapacity, uintN newElementsHint)
         return true;
 
     uintN len = getDenseArrayInitializedLength();
-    Value *elems = getDenseArrayElements();
+    const Value *elems = getDenseArrayElements();
     for (uintN i = 0; i < len; i++) {
         if (!elems[i].isMagic(JS_ARRAY_HOLE) && !--minimalDenseCount)
             return false;
@@ -400,9 +408,10 @@ GetElements(JSContext *cx, JSObject *aobj, jsuint length, Value *vp)
     if (aobj->isDenseArray() && length <= aobj->getDenseArrayInitializedLength() &&
         !js_PrototypeHasIndexedProperties(cx, aobj)) {
         
-        Value *srcbeg = aobj->getDenseArrayElements();
-        Value *srcend = srcbeg + length;
-        for (Value *dst = vp, *src = srcbeg; src < srcend; ++dst, ++src)
+        const Value *srcbeg = aobj->getDenseArrayElements();
+        const Value *srcend = srcbeg + length;
+        const Value *src = srcbeg;
+        for (Value *dst = vp; src < srcend; ++dst, ++src)
             *dst = src->isMagic(JS_ARRAY_HOLE) ? UndefinedValue() : *src;
         return true;
     }
@@ -790,7 +799,7 @@ array_setProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp, JSBool stric
         return array_length_setter(cx, obj, id, strict, vp);
 
     if (!obj->isDenseArray())
-        return js_SetProperty(cx, obj, id, vp, strict);
+        return js_SetPropertyHelper(cx, obj, id, 0, vp, strict);
 
     do {
         if (!js_IdIsIndex(id, &i))
@@ -814,7 +823,7 @@ array_setProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp, JSBool stric
 
     if (!obj->makeDenseArraySlow(cx))
         return false;
-    return js_SetProperty(cx, obj, id, vp, strict);
+    return js_SetPropertyHelper(cx, obj, id, 0, vp, strict);
 }
 
 JSBool
@@ -1330,9 +1339,9 @@ array_toString_sub(JSContext *cx, JSObject *obj, JSBool locale,
 
     if (!locale && !seplen && obj->isDenseArray() && !js_PrototypeHasIndexedProperties(cx, obj)) {
         
-        Value *beg = obj->getDenseArrayElements();
-        Value *end = beg + Min(length, obj->getDenseArrayInitializedLength());
-        for (Value *vp = beg; vp != end; ++vp) {
+        const Value *beg = obj->getDenseArrayElements();
+        const Value *end = beg + Min(length, obj->getDenseArrayInitializedLength());
+        for (const Value *vp = beg; vp != end; ++vp) {
             if (!JS_CHECK_OPERATION_LIMIT(cx))
                 return false;
 
@@ -1453,7 +1462,7 @@ InitArrayTypes(JSContext *cx, TypeObject *type, const Value *vector, unsigned co
 static JSBool
 InitArrayElements(JSContext *cx, JSObject *obj, jsuint start, jsuint count, Value *vector, bool updateTypes)
 {
-    JS_ASSERT(count < MAXINDEX);
+    JS_ASSERT(count <= MAX_ARRAY_INDEX);
 
     if (count == 0)
         return JS_TRUE;
@@ -1483,13 +1492,13 @@ InitArrayElements(JSContext *cx, JSObject *obj, jsuint start, jsuint count, Valu
             obj->setDenseArrayLength(newlen);
 
         JS_ASSERT(count < uint32(-1) / sizeof(Value));
-        memcpy(obj->getDenseArrayElements() + start, vector, sizeof(jsval) * count);
+        obj->copyDenseArrayElements(start, vector, count);
         JS_ASSERT_IF(count != 0, !obj->getDenseArrayElement(newlen - 1).isMagic(JS_ARRAY_HOLE));
         return true;
     } while (false);
 
     Value* end = vector + count;
-    while (vector != end && start < MAXINDEX) {
+    while (vector != end && start <= MAX_ARRAY_INDEX) {
         if (!JS_CHECK_OPERATION_LIMIT(cx) ||
             !SetArrayElement(cx, obj, start++, *vector++)) {
             return JS_FALSE;
@@ -1503,10 +1512,10 @@ InitArrayElements(JSContext *cx, JSObject *obj, jsuint start, jsuint count, Valu
     if (obj->isDenseArray() && !ENSURE_SLOW_ARRAY(cx, obj))
         return JS_FALSE;
 
-    JS_ASSERT(start == MAXINDEX);
+    JS_ASSERT(start == MAX_ARRAY_INDEX + 1);
     AutoValueRooter tvr(cx);
     AutoIdRooter idr(cx);
-    Value idval = DoubleValue(MAXINDEX);
+    Value idval = DoubleValue(MAX_ARRAY_INDEX + 1);
     do {
         *tvr.addr() = *vector++;
         if (!js_ValueToStringId(cx, idval, idr.addr()) ||
@@ -2303,14 +2312,13 @@ array_shift(JSContext *cx, uintN argc, Value *vp)
             *vp = obj->getDenseArrayElement(0);
             if (vp->isMagic(JS_ARRAY_HOLE))
                 vp->setUndefined();
-            Value *elems = obj->getDenseArrayElements();
-            memmove(elems, elems + 1, length * sizeof(jsval));
+            obj->moveDenseArrayElements(0, 1, length);
             if (cx->typeInferenceEnabled())
                 obj->setDenseArrayInitializedLength(obj->getDenseArrayInitializedLength() - 1);
             else
                 obj->setDenseArrayElement(length, MagicValue(JS_ARRAY_HOLE));
             obj->setArrayLength(cx, length);
-            if (!js_SuppressDeletedIndexProperties(cx, obj, length, length + 1))
+            if (!js_SuppressDeletedProperty(cx, obj, INT_TO_JSID(length)))
                 return JS_FALSE;
             return JS_TRUE;
         }
@@ -2370,9 +2378,9 @@ array_unshift(JSContext *cx, uintN argc, Value *vp)
                     JS_ASSERT(result == JSObject::ED_SPARSE);
                     break;
                 }
-                Value *elems = obj->getDenseArrayElements();
-                memmove(elems + argc, elems, length * sizeof(jsval));
-                ClearValueRange(obj->getDenseArrayElements(), argc, false);
+                obj->moveDenseArrayElements(argc, 0, length);
+                for (uint32 i = 0; i < argc; i++)
+                    obj->setDenseArrayElement(i, MagicValue(JS_ARRAY_HOLE));
                 optimized = true;
             } while (false);
 
@@ -2522,12 +2530,7 @@ array_splice(JSContext *cx, uintN argc, Value *vp)
                 JS_ASSERT(result == JSObject::ED_SPARSE);
                 break;
             }
-            Value *arraybeg = obj->getDenseArrayElements();
-            Value *srcbeg = arraybeg + last - 1;
-            Value *srcend = arraybeg + end - 1;
-            Value *dstbeg = srcbeg + delta;
-            for (Value *src = srcbeg, *dst = dstbeg; src > srcend; --src, --dst)
-                *dst = *src;
+            obj->moveDenseArrayElements(end + delta, end, last - end);
 
             obj->setArrayLength(cx, obj->getArrayLength() + delta);
             optimized = true;
@@ -2549,12 +2552,7 @@ array_splice(JSContext *cx, uintN argc, Value *vp)
         if (obj->isDenseArray() && !js_PrototypeHasIndexedProperties(cx, obj) &&
             length <= obj->getDenseArrayInitializedLength()) {
 
-            Value *arraybeg = obj->getDenseArrayElements();
-            Value *srcbeg = arraybeg + end;
-            Value *srcend = arraybeg + length;
-            Value *dstbeg = srcbeg - delta;
-            for (Value *src = srcbeg, *dst = dstbeg; src < srcend; ++src, ++dst)
-                *dst = *src;
+            obj->moveDenseArrayElements(end - delta, end, length - end);
         } else {
             for (last = end; last < length; last++) {
                 if (!JS_CHECK_OPERATION_LIMIT(cx) ||
@@ -2596,7 +2594,7 @@ array_concat(JSContext *cx, uintN argc, Value *vp)
     jsuint length;
     if (aobj->isDenseArray()) {
         length = aobj->getArrayLength();
-        Value *vector = aobj->getDenseArrayElements();
+        const Value *vector = aobj->getDenseArrayElements();
         jsuint initlen = aobj->getDenseArrayInitializedLength();
         nobj = NewDenseCopiedArray(cx, initlen, vector);
         if (!nobj)
@@ -3284,7 +3282,7 @@ mjit::stubs::NewDenseUnallocatedArray(VMFrame &f, uint32 length)
 #endif
 
 JSObject *
-NewDenseCopiedArray(JSContext *cx, uintN length, Value *vp, JSObject *proto)
+NewDenseCopiedArray(JSContext *cx, uintN length, const Value *vp, JSObject *proto)
 {
     JSObject* obj = NewArray<true>(cx, length, proto);
     if (!obj)
@@ -3292,16 +3290,11 @@ NewDenseCopiedArray(JSContext *cx, uintN length, Value *vp, JSObject *proto)
 
     JS_ASSERT(obj->getDenseArrayCapacity() >= length);
 
-    if (cx->typeInferenceEnabled()) {
-        if (vp) {
-            memcpy(obj->getDenseArrayElements(), vp, length * sizeof(Value));
-            obj->setDenseArrayInitializedLength(length);
-        } else {
-            obj->setDenseArrayInitializedLength(0);
-        }
-    } else if (vp) {
-        memcpy(obj->getDenseArrayElements(), vp, length * sizeof(Value));
-    }
+    if (cx->typeInferenceEnabled())
+        obj->setDenseArrayInitializedLength(vp ? length : 0);
+
+    if (vp)
+        obj->copyDenseArrayElements(0, vp, length);
 
     return obj;
 }

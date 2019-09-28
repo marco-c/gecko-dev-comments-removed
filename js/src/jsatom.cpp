@@ -42,6 +42,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#include "mozilla/RangedPtr.h"
+
 #include "jstypes.h"
 #include "jsstdint.h"
 #include "jsutil.h"
@@ -123,6 +126,7 @@ const char *const js_common_atom_names[] = {
     js_apply_str,               
     js_arguments_str,           
     js_arity_str,               
+    js_BYTES_PER_ELEMENT_str,   
     js_call_str,                
     js_callee_str,              
     js_caller_str,              
@@ -243,6 +247,7 @@ const char js_anonymous_str[]       = "anonymous";
 const char js_apply_str[]           = "apply";
 const char js_arguments_str[]       = "arguments";
 const char js_arity_str[]           = "arity";
+const char js_BYTES_PER_ELEMENT_str[] = "BYTES_PER_ELEMENT";
 const char js_call_str[]            = "call";
 const char js_callee_str[]          = "callee";
 const char js_caller_str[]          = "caller";
@@ -661,6 +666,98 @@ js_InitAtomMap(JSContext *cx, JSAtomMap *map, AtomIndexMap *indices)
             map->vector[it->value] = atom;
         }
     }
+}
+
+namespace js {
+
+bool
+IndexToIdSlow(JSContext *cx, uint32 index, jsid *idp)
+{
+    JS_ASSERT(index > JSID_INT_MAX);
+
+    jschar buf[UINT32_CHAR_BUFFER_LENGTH];
+    RangedPtr<jschar> end(buf + JS_ARRAY_LENGTH(buf), buf, buf + JS_ARRAY_LENGTH(buf));
+    RangedPtr<jschar> start = BackfillIndexInCharBuffer(index, end);
+
+    JSAtom *atom = js_AtomizeChars(cx, start.get(), end - start);
+    if (!atom)
+        return false;
+
+    *idp = ATOM_TO_JSID(atom);
+    JS_ASSERT(js_CheckForStringIndex(*idp) == *idp);
+    return true;
+}
+
+} 
+
+
+#define JSBOXEDWORD_INT_MAX_STRING "1073741823"
+
+
+
+
+
+
+
+jsid
+js_CheckForStringIndex(jsid id)
+{
+    if (!JSID_IS_ATOM(id))
+        return id;
+
+    JSAtom *atom = JSID_TO_ATOM(id);
+    const jschar *s = atom->chars();
+    jschar ch = *s;
+
+    JSBool negative = (ch == '-');
+    if (negative)
+        ch = *++s;
+
+    if (!JS7_ISDEC(ch))
+        return id;
+
+    size_t n = atom->length() - negative;
+    if (n > sizeof(JSBOXEDWORD_INT_MAX_STRING) - 1)
+        return id;
+
+    const jschar *cp = s;
+    const jschar *end = s + n;
+
+    jsuint index = JS7_UNDEC(*cp++);
+    jsuint oldIndex = 0;
+    jsuint c = 0;
+
+    if (index != 0) {
+        while (JS7_ISDEC(*cp)) {
+            oldIndex = index;
+            c = JS7_UNDEC(*cp);
+            index = 10 * index + c;
+            cp++;
+        }
+    }
+
+    
+
+
+
+    if (cp != end || (negative && index == 0))
+        return id;
+
+    if (negative) {
+        if (oldIndex < -(JSID_INT_MIN / 10) ||
+            (oldIndex == -(JSID_INT_MIN / 10) && c <= (-JSID_INT_MIN % 10)))
+        {
+            id = INT_TO_JSID(-jsint(index));
+        }
+    } else {
+        if (oldIndex < JSID_INT_MAX / 10 ||
+            (oldIndex == JSID_INT_MAX / 10 && c <= (JSID_INT_MAX % 10)))
+        {
+            id = INT_TO_JSID(jsint(index));
+        }
+    }
+
+    return id;
 }
 
 #if JS_HAS_XML_SUPPORT
