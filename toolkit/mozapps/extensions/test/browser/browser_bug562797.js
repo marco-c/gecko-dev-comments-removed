@@ -1,10 +1,10 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
-
-
-
+/**
+ * Tests that history navigation works for the add-ons manager.
+ */
 
 function test() {
   requestLongerTimeout(2);
@@ -102,8 +102,8 @@ function double_click_addon_element(aManager, aId) {
   EventUtils.synthesizeMouseAtCenter(addon, { clickCount: 2 }, aManager);
 }
 
-
-
+// Tests simple forward and back navigation and that the right heading and
+// category is selected
 add_test(function() {
   open_manager("addons://list/extension", function(aManager) {
     info("Part 1");
@@ -155,8 +155,8 @@ add_test(function() {
   });
 });
 
-
-
+// Tests that browsing to the add-ons manager from a website and going back works
+// Only relevant for in-content UI
 add_test(function() {
   if (!gUseInContentUI) {
     run_next_test();
@@ -171,7 +171,7 @@ add_test(function() {
       return;
     gBrowser.removeEventListener("pageshow", arguments.callee, false);
 
-    
+    //Must let the load complete for it to go into the session history
     executeSoon(function() {
       info("Part 2");
       ok(!gBrowser.canGoBack, "Should not be able to go back");
@@ -212,7 +212,7 @@ add_test(function() {
   }, false);
 });
 
-
+// Tests that opening a custom first view only stores a single history entry
 add_test(function() {
   open_manager("addons://list/plugin", function(aManager) {
     info("Part 1");
@@ -237,8 +237,8 @@ add_test(function() {
 });
 
 
-
-
+// Tests that opening a view while the manager is already open adds a new
+// history entry
 add_test(function() {
   open_manager("addons://list/extension", function(aManager) {
     info("Part 1");
@@ -269,9 +269,9 @@ add_test(function() {
   });
 });
 
-
-
-
+// Tests than navigating to a website and then going back returns to the
+// previous view
+// Only relevant for in-content UI
 add_test(function() {
   if (!gUseInContentUI) {
     run_next_test();
@@ -337,7 +337,7 @@ add_test(function() {
   });
 });
 
-
+// Tests that going back to search results works
 add_test(function() {
   open_manager("addons://list/extension", function(aManager) {
     info("Part 1");
@@ -378,16 +378,16 @@ add_test(function() {
   });
 });
 
-
-
-
+// Tests that going back from a webpage to a detail view loaded from a search
+// result works
+// Only relevant for in-content UI
 add_test(function() {
   if (!gUseInContentUI) {
     run_next_test();
     return;
   }
 
-  open_manager(null, function(aManager) {
+  open_manager("addons://list/extension", function(aManager) {
     info("Part 1");
     is_in_list(aManager, "addons://list/extension", false, false);
 
@@ -445,15 +445,15 @@ add_test(function() {
   });
 });
 
-
-
+// Tests that refreshing a list view does not affect the history
+// Only relevant for in-content UI
 add_test(function() {
   if (!gUseInContentUI) {
     run_next_test();
     return;
   }
 
-  open_manager(null, function(aManager) {
+  open_manager("addons://list/extension", function(aManager) {
     info("Part 1");
     is_in_list(aManager, "addons://list/extension", false, false);
 
@@ -486,8 +486,8 @@ add_test(function() {
   });
 });
 
-
-
+// Tests that refreshing a detail view does not affect the history
+// Only relevant for in-content UI
 add_test(function() {
   if (!gUseInContentUI) {
     run_next_test();
@@ -527,10 +527,10 @@ add_test(function() {
   });
 });
 
-
-
+// Tests that removing an extension from the detail view goes back and doesn't
+// allow you to go forward again.
 add_test(function() {
-  open_manager(null, function(aManager) {
+  open_manager("addons://list/extension", function(aManager) {
     info("Part 1");
     is_in_list(aManager, "addons://list/extension", false, false);
 
@@ -545,8 +545,8 @@ add_test(function() {
 
       wait_for_view_load(aManager, function() {
         if (gUseInContentUI) {
-          
-          
+          // TODO until bug 590661 is fixed the back button will be enabled
+          // when displaying in content
           is_in_list(aManager, "addons://list/extension", true, false);
         } else {
           is_in_list(aManager, "addons://list/extension", false, false);
@@ -558,7 +558,7 @@ add_test(function() {
   });
 });
 
-
+// Tests that the back and forward buttons only show up for windowed mode
 add_test(function() {
   open_manager(null, function(aManager) {
     var doc = aManager.document;
@@ -572,5 +572,22 @@ add_test(function() {
     }
 
     close_manager(aManager, run_next_test);
+  });
+});
+
+// Tests that opening the manager opens the last view
+add_test(function() {
+  open_manager("addons://list/plugin", function(aManager) {
+    info("Part 1");
+    is_in_list(aManager, "addons://list/plugin", false, false);
+
+    close_manager(aManager, function() {
+      open_manager(null, function(aManager) {
+        info("Part 1");
+        is_in_list(aManager, "addons://list/plugin", false, false);
+
+        close_manager(aManager, run_next_test);
+      });
+    });
   });
 });

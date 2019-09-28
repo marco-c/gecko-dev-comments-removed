@@ -1,8 +1,8 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
-
+// Tests tha installs and undoing installs show up correctly
 
 var gManagerWindow;
 var gCategoryUtilities;
@@ -14,10 +14,10 @@ function test() {
   requestLongerTimeout(2);
   waitForExplicitFinish();
 
-  
+  // Turn on searching for this test
   Services.prefs.setIntPref(PREF_SEARCH_MAXRESULTS, 15);
   Services.prefs.setCharPref("extensions.getAddons.search.url", TESTROOT + "browser_install.xml");
-  
+  // Allow http update checks
   Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
   open_manager(null, function(aWindow) {
@@ -90,7 +90,7 @@ function cancelInstall(aCallback) {
 
 function installSearchResult(aCallback) {
   var searchBox = gManagerWindow.document.getElementById("header-search");
-  
+  // Search for something different each time
   searchBox.value = "foo" + gSearchCount;
   gSearchCount++;
 
@@ -124,7 +124,7 @@ function check_undo_install() {
 
   let item = get_addon_element(gManagerWindow, "addon1@tests.mozilla.org");
   ok(!!item, "Should see the pending install in the list");
-  
+  // Force XBL to apply
   item.clientTop;
   is_element_visible(get_node(item, "pending"), "Pending message should be visible");
   is(get_node(item, "pending").textContent, "Install Tests will be installed after you restart " + gApp + ".", "Pending message should be correct");
@@ -142,7 +142,7 @@ function check_undo_upgrade() {
 
   let item = get_addon_element(gManagerWindow, "addon1@tests.mozilla.org");
   ok(!!item, "Should see the pending upgrade in the list");
-  
+  // Force XBL to apply
   item.clientTop;
   is_element_visible(get_node(item, "pending"), "Pending message should be visible");
   is(get_node(item, "pending").textContent, "Install Tests will be updated after you restart " + gApp + ".", "Pending message should be correct");
@@ -156,7 +156,7 @@ function check_undo_upgrade() {
   is_element_hidden(get_node(item, "pending"), "Pending message should be hidden");
 }
 
-
+// Install an add-on through the API with the manager open
 add_test(function() {
   gCategoryUtilities.openType("extension", function() {
     installAddon(function() {
@@ -166,7 +166,7 @@ add_test(function() {
   });
 });
 
-
+// Install an add-on with the manager closed then open it
 add_test(function() {
   close_manager(gManagerWindow, function() {
     installAddon(function() {
@@ -180,7 +180,7 @@ add_test(function() {
   });
 });
 
-
+// Install an add-on through the search page and then undo it
 add_test(function() {
   installSearchResult(function() {
     check_undo_install();
@@ -188,8 +188,8 @@ add_test(function() {
   });
 });
 
-
-
+// Install an add-on through the search page then switch to the extensions page
+// and then undo it
 add_test(function() {
   installSearchResult(function() {
     gCategoryUtilities.openType("extension", function() {
@@ -199,12 +199,12 @@ add_test(function() {
   });
 });
 
-
-
+// Install an add-on through the search page then re-open the manager and then
+// undo it
 add_test(function() {
   installSearchResult(function() {
     close_manager(gManagerWindow, function() {
-      open_manager(null, function(aWindow) {
+        open_manager("addons://list/extension", function(aWindow) {
         gManagerWindow = aWindow;
         gCategoryUtilities = new CategoryUtilities(gManagerWindow);
         check_undo_install();
@@ -214,7 +214,7 @@ add_test(function() {
   });
 });
 
-
+// Cancel an install after download with the manager open
 add_test(function() {
   cancelInstall(function() {
     is(get_list_item_count(), 0, "Should be no items in the list");
@@ -223,7 +223,7 @@ add_test(function() {
   });
 });
 
-
+// Cancel an install after download with the manager closed
 add_test(function() {
   close_manager(gManagerWindow, function() {
     cancelInstall(function() {
@@ -238,7 +238,7 @@ add_test(function() {
   });
 });
 
-
+// Install an existing add-on for the subsequent tests
 add_test(function() {
   AddonManager.getInstallForURL(TESTROOT + "addons/browser_install1_1.xpi",
                                 function(aInstall) {
@@ -251,7 +251,7 @@ add_test(function() {
   }, "application/x-xpinstall");
 });
 
-
+// Install an upgrade through the API with the manager open
 add_test(function() {
   installAddon(function() {
     check_undo_upgrade();
@@ -259,7 +259,7 @@ add_test(function() {
   });
 });
 
-
+// Install an upgrade through the API with the manager open
 add_test(function() {
   installUpgrade(function() {
     check_undo_upgrade();
@@ -267,7 +267,7 @@ add_test(function() {
   });
 });
 
-
+// Install an upgrade through the API with the manager closed
 add_test(function() {
   close_manager(gManagerWindow, function() {
     installAddon(function() {
@@ -281,7 +281,7 @@ add_test(function() {
   });
 });
 
-
+// Cancel an upgrade after download with the manager open
 add_test(function() {
   cancelInstall(function() {
     is(get_list_item_count(), 1, "Should be no items in the list");
@@ -293,7 +293,7 @@ add_test(function() {
   });
 });
 
-
+// Cancel an upgrade after download with the manager closed
 add_test(function() {
   close_manager(gManagerWindow, function() {
     cancelInstall(function() {

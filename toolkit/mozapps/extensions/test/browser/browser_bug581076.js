@@ -1,8 +1,8 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
-
+// Bug 581076 - No "See all results" link present when searching for add-ons and not all are displayed (extensions.getAddons.maxResults)
 
 const PREF_GETADDONS_BROWSESEARCHRESULTS = "extensions.getAddons.search.browseURL";
 const PREF_GETADDONS_GETSEARCHRESULTS = "extensions.getAddons.search.url";
@@ -29,7 +29,7 @@ function test() {
 function end_test() {
   Services.prefs.clearUserPref(PREF_GETADDONS_GETSEARCHRESULTS);
 
-  
+  // Test generates a lot of available installs so just cancel them all
   AddonManager.getAllInstalls(function(aInstalls) {
     aInstalls.forEach(function(aInstall) {
       aInstall.cancel();
@@ -40,21 +40,23 @@ function end_test() {
 }
 
 function search(aRemoteSearch, aCallback) {
-  var searchBox = gManagerWindow.document.getElementById("header-search");
-  searchBox.value = SEARCH_QUERY;
+  waitForFocus(function() {
+    var searchBox = gManagerWindow.document.getElementById("header-search");
+    searchBox.value = SEARCH_QUERY;
 
-  EventUtils.synthesizeMouseAtCenter(searchBox, { }, gManagerWindow);
-  EventUtils.synthesizeKey("VK_RETURN", { }, gManagerWindow);
+    EventUtils.synthesizeMouseAtCenter(searchBox, { }, gManagerWindow);
+    EventUtils.synthesizeKey("VK_RETURN", { }, gManagerWindow);
 
-  wait_for_view_load(gManagerWindow, function() {
-    if (aRemoteSearch)
-      var filter = gManagerWindow.document.getElementById("search-filter-remote");
-    else
-      var filter = gManagerWindow.document.getElementById("search-filter-local");
-    EventUtils.synthesizeMouseAtCenter(filter, { }, gManagerWindow);
+    wait_for_view_load(gManagerWindow, function() {
+      if (aRemoteSearch)
+        var filter = gManagerWindow.document.getElementById("search-filter-remote");
+      else
+        var filter = gManagerWindow.document.getElementById("search-filter-local");
+      EventUtils.synthesizeMouseAtCenter(filter, { }, gManagerWindow);
 
-    executeSoon(aCallback);
-  });
+      executeSoon(aCallback);
+    });
+  }, gManagerWindow);
 }
 
 function check_allresultslink(aShouldShow) {
