@@ -1,32 +1,32 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=99 ft=cpp:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Copyright (C) 2009 Apple Inc. All rights reserved.
- * Copyright (C) 2010 Peter Varga (pvarga@inf.u-szeged.hu), University of Szeged
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY APPLE INC. ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE INC. OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "YarrInterpreter.h"
 
@@ -52,8 +52,8 @@ public:
         uintptr_t matchAmount;
     };
     struct BackTrackInfoBackReference {
-        uintptr_t begin; // Not really needed for greedy quantifiers.
-        uintptr_t matchAmount; // Not really needed for fixed quantifiers.
+        uintptr_t begin; 
+        uintptr_t matchAmount; 
     };
     struct BackTrackInfoAlternative {
         uintptr_t offset;
@@ -509,9 +509,9 @@ public:
         int matchBegin = output[(term.atom.subpatternId << 1)];
         int matchEnd = output[(term.atom.subpatternId << 1) + 1];
 
-        // If the end position of the referenced match hasn't set yet then the backreference in the same parentheses where it references to that.
-        // In this case the result of match is empty string like when it references to a parentheses with zero-width match.
-        // Eg.: /(a\1)/
+        
+        
+        
         if (matchEnd == -1)
             return true;
 
@@ -564,7 +564,7 @@ public:
 
         switch (term.atom.quantityType) {
         case QuantifierFixedCount:
-            // for quantityCount == 1, could rewind.
+            
             input.setPos(backTrack->begin);
             break;
 
@@ -631,7 +631,7 @@ public:
 
         switch (term.atom.quantityType) {
         case QuantifierGreedy: {
-            // set this speculatively; if we get to the parens end this will be true.
+            
             backTrack->begin = input.getPos();
             break;
         }
@@ -684,7 +684,7 @@ public:
 
         switch (term.atom.quantityType) {
         case QuantifierGreedy:
-            // if we backtrack to this point, there is another chance - try matching nothing.
+            
             ASSERT(backTrack->begin != notFound);
             backTrack->begin = notFound;
             context->term += term.atom.parenthesesWidth;
@@ -715,9 +715,9 @@ public:
             if (backTrack->begin == notFound) {
                 backTrack->begin = input.getPos();
                 if (term.capture()) {
-                    // Technically this access to inputPosition should be accessing the begin term's
-                    // inputPosition, but for repeats other than fixed these values should be
-                    // the same anyway! (We don't pre-check for greedy or non-greedy matches.)
+                    
+                    
+                    
                     ASSERT((&term - term.atom.parenthesesWidth)->type == ByteTerm::TypeParenthesesSubpatternOnceBegin);
                     ASSERT((&term - term.atom.parenthesesWidth)->inputPosition == term.inputPosition);
                     unsigned subpatternId = term.atom.subpatternId;
@@ -750,11 +750,11 @@ public:
         ASSERT(term.type == ByteTerm::TypeParenthesesSubpatternTerminalEnd);
 
         BackTrackInfoParenthesesTerminal* backTrack = reinterpret_cast<BackTrackInfoParenthesesTerminal*>(context->frame + term.frameLocation);
-        // Empty match is a failed match.
+        
         if (backTrack->begin == input.getPos())
             return false;
 
-        // Successful match! Okay, what's next? - loop around and try to match moar!
+        
         context->term -= (term.atom.parenthesesWidth + 1);
         return true;
     }
@@ -766,16 +766,16 @@ public:
         ASSERT(term.atom.quantityCount == quantifyInfinite);
         ASSERT(!term.capture());
 
-        // If we backtrack to this point, we have failed to match this iteration of the parens.
-        // Since this is greedy / zero minimum a failed is also accepted as a match!
+        
+        
         context->term += term.atom.parenthesesWidth;
         return true;
     }
 
     bool backtrackParenthesesTerminalEnd(ByteTerm&, DisjunctionContext*)
     {
-        // 'Terminal' parentheses are at the end of the regex, and as such a match past end
-        // should always be returned as a successful match - we should never backtrack to here.
+        
+        
         ASSERT_NOT_REACHED();
         return false;
     }
@@ -800,7 +800,7 @@ public:
 
         input.setPos(backTrack->begin);
 
-        // We've reached the end of the parens; if they are inverted, this is failure.
+        
         if (term.invert()) {
             context->term -= term.atom.parenthesesWidth;
             return false;
@@ -814,7 +814,7 @@ public:
         ASSERT(term.type == ByteTerm::TypeParentheticalAssertionBegin);
         ASSERT(term.atom.quantityCount == 1);
 
-        // We've failed to match parens; if they are inverted, this is win!
+        
         if (term.invert()) {
             context->term += term.atom.parenthesesWidth;
             return true;
@@ -848,15 +848,15 @@ public:
 
         switch (term.atom.quantityType) {
         case QuantifierFixedCount: {
-            // While we haven't yet reached our fixed limit,
+            
             while (backTrack->matchAmount < term.atom.quantityCount) {
-                // Try to do a match, and it it succeeds, add it to the list.
+                
                 ParenthesesDisjunctionContext* context = allocParenthesesDisjunctionContext(disjunctionBody, output, term);
                 JSRegExpResult result = matchDisjunction(disjunctionBody, context->getDisjunctionContext(term));
                 if (result == JSRegExpMatch)
                     appendParenthesesDisjunctionContext(backTrack, context);
                 else {
-                    // The match failed; try to find an alternate point to carry on from.
+                    
                     resetMatches(term, context);
                     freeParenthesesDisjunctionContext(context);
 
@@ -907,16 +907,16 @@ public:
         return JSRegExpErrorNoMatch;
     }
 
-    // Rules for backtracking differ depending on whether this is greedy or non-greedy.
-    //
-    // Greedy matches never should try just adding more - you should already have done
-    // the 'more' cases.  Always backtrack, at least a leetle bit.  However cases where
-    // you backtrack an item off the list needs checking, since we'll never have matched
-    // the one less case.  Tracking forwards, still add as much as possible.
-    //
-    // Non-greedy, we've already done the one less case, so don't match on popping.
-    // We haven't done the one more case, so always try to add that.
-    //
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     JSRegExpResult backtrackParentheses(ByteTerm& term, DisjunctionContext* context)
     {
         ASSERT(term.type == ByteTerm::TypeParenthesesSubpattern);
@@ -934,16 +934,16 @@ public:
             if (result != JSRegExpMatch)
                 return result;
 
-            // While we haven't yet reached our fixed limit,
+            
             while (backTrack->matchAmount < term.atom.quantityCount) {
-                // Try to do a match, and it it succeeds, add it to the list.
+                
                 context = allocParenthesesDisjunctionContext(disjunctionBody, output, term);
                 result = matchDisjunction(disjunctionBody, context->getDisjunctionContext(term));
 
                 if (result == JSRegExpMatch)
                     appendParenthesesDisjunctionContext(backTrack, context);
                 else {
-                    // The match failed; try to find an alternate point to carry on from.
+                    
                     resetMatches(term, context);
                     freeParenthesesDisjunctionContext(context);
 
@@ -1001,7 +1001,7 @@ public:
         }
 
         case QuantifierNonGreedy: {
-            // If we've not reached the limit, try to add one more match.
+            
             if (backTrack->matchAmount < term.atom.quantityCount) {
                 ParenthesesDisjunctionContext* context = allocParenthesesDisjunctionContext(disjunctionBody, output, term);
                 JSRegExpResult result = matchNonZeroDisjunction(disjunctionBody, context->getDisjunctionContext(term));
@@ -1018,12 +1018,12 @@ public:
                     return result;
             }
 
-            // Nope - okay backtrack looking for an alternative.
+            
             while (backTrack->matchAmount) {
                 ParenthesesDisjunctionContext* context = backTrack->lastContext;
                 JSRegExpResult result = matchNonZeroDisjunction(disjunctionBody, context->getDisjunctionContext(term), true);
                 if (result == JSRegExpMatch) {
-                    // successful backtrack! we're back in the game!
+                    
                     if (backTrack->matchAmount) {
                         context = backTrack->lastContext;
                         recordParenthesesMatch(term, context);
@@ -1031,7 +1031,7 @@ public:
                     return JSRegExpMatch;
                 }
 
-                // pop a match off the stack
+                
                 resetMatches(term, context);
                 popParenthesesDisjunctionContext(backTrack);
                 freeParenthesesDisjunctionContext(context);
@@ -1243,7 +1243,7 @@ public:
                 MATCH_NEXT();
         }
 
-        // We should never fall-through to here.
+        
         ASSERT_NOT_REACHED();
 
     backtrack:
@@ -1289,7 +1289,7 @@ public:
                 BACKTRACK();
             }
             case ByteTerm::TypeAlternativeEnd: {
-                // We should never backtrack back into an alternative of the main body of the regex.
+                
                 BackTrackInfoAlternative* backTrack = reinterpret_cast<BackTrackInfoAlternative*>(context->frame + currentTerm().frameLocation);
                 unsigned offset = backTrack->offset;
                 context->term -= offset;
@@ -1408,7 +1408,7 @@ public:
 
         pattern->m_allocator->stopAllocator();
 
-        // RegExp.cpp currently expects all error to be converted to -1.
+        
         ASSERT((result == JSRegExpMatch) == (output[0] != -1));
         return output[0];
     }
@@ -1436,9 +1436,9 @@ class ByteCompiler {
     struct ParenthesesStackEntry {
         unsigned beginTerm;
         unsigned savedAlternativeIndex;
-        // For js::Vector. Does not create a valid object.
+        
         ParenthesesStackEntry() {}
-        ParenthesesStackEntry(unsigned beginTerm, unsigned savedAlternativeIndex/*, unsigned subpatternId, bool capture = false*/)
+        ParenthesesStackEntry(unsigned beginTerm, unsigned savedAlternativeIndex)
             : beginTerm(beginTerm)
             , savedAlternativeIndex(savedAlternativeIndex)
         {
@@ -1549,9 +1549,9 @@ public:
 
     void atomParenthesesSubpatternBegin(unsigned subpatternId, bool capture, int inputPosition, unsigned frameLocation, unsigned alternativeFrameLocation)
     {
-        // Errrk! - this is a little crazy, we initially generate as a TypeParenthesesSubpatternOnceBegin,
-        // then fix this up at the end! - simplifying this should make it much clearer.
-        // https://bugs.webkit.org/show_bug.cgi?id=50136
+        
+        
+        
 
         int beginTerm = m_bodyDisjunction->terms.size();
 
@@ -1791,9 +1791,9 @@ public:
             }
 
             unsigned minimumSize = alternative->m_minimumSize;
-            int countToCheck = minimumSize - parenthesesInputCountAlreadyChecked;
+            ASSERT(minimumSize >= parenthesesInputCountAlreadyChecked);
+            unsigned countToCheck = minimumSize - parenthesesInputCountAlreadyChecked;
 
-            ASSERT(countToCheck >= 0);
             if (countToCheck) {
                 checkInput(countToCheck);
                 currentCountAlreadyChecked += countToCheck;
@@ -1834,7 +1834,7 @@ public:
                     unsigned disjunctionAlreadyCheckedCount = 0;
                     if (term.quantityCount == 1 && !term.parentheses.isCopy) {
                         unsigned alternativeFrameLocation = term.frameLocation;
-                        // For QuantifierFixedCount we pre-check the minimum size; for greedy/non-greedy we reserve a slot in the frame.
+                        
                         if (term.quantityType == QuantifierFixedCount)
                             disjunctionAlreadyCheckedCount = term.parentheses.disjunction->m_minimumSize;
                         else
@@ -1861,14 +1861,13 @@ public:
                     unsigned alternativeFrameLocation = term.frameLocation + YarrStackSpaceForBackTrackInfoParentheticalAssertion;
 
                     ASSERT(currentCountAlreadyChecked >= static_cast<unsigned>(term.inputPosition));
-                    int positiveInputOffset = currentCountAlreadyChecked - term.inputPosition;
-                    int uncheckAmount = positiveInputOffset - term.parentheses.disjunction->m_minimumSize;
-
-                    if (uncheckAmount > 0) {
+                    unsigned positiveInputOffset = currentCountAlreadyChecked - static_cast<unsigned>(term.inputPosition);
+                    unsigned uncheckAmount = 0;
+                    if (positiveInputOffset > term.parentheses.disjunction->m_minimumSize) {
+                        uncheckAmount = positiveInputOffset - term.parentheses.disjunction->m_minimumSize;
                         uncheckInput(uncheckAmount);
                         currentCountAlreadyChecked -= uncheckAmount;
-                    } else
-                        uncheckAmount = 0;
+                    }
 
                     atomParentheticalAssertionBegin(term.parentheses.subpatternId, term.invert(), term.frameLocation, alternativeFrameLocation);
                     emitDisjunction(term.parentheses.disjunction, currentCountAlreadyChecked, positiveInputOffset - uncheckAmount);
