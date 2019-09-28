@@ -1,39 +1,39 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla libXUL embedding.
- *
- * The Initial Developer of the Original Code is
- * Benjamin Smedberg <benjamin@smedbergs.us>
- *
- * Portions created by the Initial Developer are Copyright (C) 2005
- * the Mozilla Foundation. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifdef MOZ_IPC
 #include "base/basictypes.h"
@@ -72,7 +72,6 @@
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsWidgetsCID.h"
-#include "nsXPFEComponentsCID.h"
 #include "nsXREDirProvider.h"
 
 #ifdef MOZ_IPC
@@ -101,7 +100,7 @@
 #include "mozilla/_ipdltest/IPDLUnitTestThreadChild.h"
 
 using mozilla::_ipdltest::IPDLUnitTestThreadChild;
-#endif  // ifdef MOZ_IPDL_TESTS
+#endif  
 
 using mozilla::ipc::GeckoChildProcessHost;
 using mozilla::ipc::BrowserProcessSubThread;
@@ -155,14 +154,14 @@ XRE_InitEmbedding(nsILocalFile *aLibXULDirectory,
                   nsStaticModuleInfo const *aStaticComponents,
                   PRUint32 aStaticComponentCount)
 {
-  // Initialize some globals to make nsXREDirProvider happy
+  
   static char* kNullCommandLine[] = { nsnull };
   gArgv = kNullCommandLine;
   gArgc = 0;
 
   NS_ENSURE_ARG(aLibXULDirectory);
 
-  if (++sInitCounter > 1) // XXXbsmedberg is this really the right solution?
+  if (++sInitCounter > 1) 
     return NS_OK;
 
   if (!aAppDirectory)
@@ -170,7 +169,7 @@ XRE_InitEmbedding(nsILocalFile *aLibXULDirectory,
 
   nsresult rv;
 
-  new nsXREDirProvider; // This sets gDirServiceProvider
+  new nsXREDirProvider; 
   if (!gDirServiceProvider)
     return NS_ERROR_OUT_OF_MEMORY;
 
@@ -179,7 +178,7 @@ XRE_InitEmbedding(nsILocalFile *aLibXULDirectory,
   if (NS_FAILED(rv))
     return rv;
 
-  // Combine the toolkit static components and the app components.
+  
   PRUint32 combinedCount = kStaticModuleCount + aStaticComponentCount;
 
   sCombined = new nsStaticModuleInfo[combinedCount];
@@ -196,10 +195,10 @@ XRE_InitEmbedding(nsILocalFile *aLibXULDirectory,
   if (NS_FAILED(rv))
     return rv;
 
-  // We do not need to autoregister components here. The CheckUpdateFile()
-  // bits in NS_InitXPCOM3 check for an .autoreg file. If the app wants
-  // to autoregister every time (for instance, if it's debug), it can do
-  // so after we return from this function.
+  
+  
+  
+  
 
   nsCOMPtr<nsIObserver> startupNotifier
     (do_CreateInstance(NS_APPSTARTUPNOTIFIER_CONTRACTID));
@@ -263,9 +262,9 @@ GeckoProcessType sChildProcessType = GeckoProcessType_Default;
 static MessageLoop* sIOMessageLoop;
 
 #if defined(MOZ_CRASHREPORTER)
-// FIXME/bug 539522: this out-of-place function is stuck here because
-// IPDL wants access to this crashreporter interface, and
-// crashreporter is built in such a way to make that awkward
+
+
+
 PRBool
 XRE_GetMinidumpForChild(PRUint32 aChildPid, nsIFile** aDump)
 {
@@ -273,7 +272,7 @@ XRE_GetMinidumpForChild(PRUint32 aChildPid, nsIFile** aDump)
 }
 
 PRBool
-XRE_SetRemoteExceptionHandler(const char* aPipe/*= 0*/)
+XRE_SetRemoteExceptionHandler(const char* aPipe)
 {
 #if defined(XP_WIN)
   return CrashReporter::SetRemoteExceptionHandler(nsDependentCString(aPipe));
@@ -283,7 +282,7 @@ XRE_SetRemoteExceptionHandler(const char* aPipe/*= 0*/)
 #  error "OOP crash reporter unsupported on this platform"
 #endif
 }
-#endif // if defined(MOZ_CRASHREPORTER)
+#endif 
 
 nsresult
 XRE_InitChildProcess(int aArgc,
@@ -315,8 +314,8 @@ XRE_InitChildProcess(int aArgc,
 #endif
   }
 
-  // child processes launched by GeckoChildProcessHost get this magic
-  // argument appended to their command lines
+  
+  
   const char* const parentPIDString = aArgv[aArgc-1];
   NS_ABORT_IF_FALSE(parentPIDString, "NULL parent PID");
   --aArgc;
@@ -371,7 +370,7 @@ XRE_InitChildProcess(int aArgc,
 
     ChildProcess process(mainThread);
 
-    // Do IPC event loop
+    
     sIOMessageLoop = MessageLoop::current();
 
     sIOMessageLoop->Run();
@@ -413,7 +412,7 @@ private:
   void* mData;
 };
 
-} /* anonymous namespace */
+} 
 
 NS_IMETHODIMP
 MainFunctionRunnable::Run()
@@ -453,7 +452,7 @@ XRE_InitParentProcess(int aArgc,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    // Do event loop
+    
     if (NS_FAILED(appShell->Run())) {
       NS_WARNING("Failed to run appshell");
       return NS_ERROR_FAILURE;
@@ -464,8 +463,8 @@ XRE_InitParentProcess(int aArgc,
 }
 
 #ifdef MOZ_IPDL_TESTS
-//-----------------------------------------------------------------------------
-// IPDL unit test
+
+
 
 int
 XRE_RunIPDLTest(int aArgc, char** aArgv)
@@ -484,7 +483,7 @@ XRE_RunIPDLTest(int aArgc, char** aArgv)
 
     return 0;
 }
-#endif  // ifdef MOZ_IPDL_TESTS
+#endif  
 
 nsresult
 XRE_RunAppShell()
@@ -562,5 +561,5 @@ XRE_InstallX11ErrorHandler()
 }
 #endif
 
-#endif // MOZ_IPC
+#endif 
 
