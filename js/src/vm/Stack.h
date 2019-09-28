@@ -265,7 +265,9 @@ class StackFrame
         HAS_ANNOTATION     =    0x20000,  
         HAS_RVAL           =    0x40000,  
         HAS_SCOPECHAIN     =    0x80000,  
-        HAS_PREVPC         =   0x100000   
+        HAS_PREVPC         =   0x100000,  
+
+        DOWN_FRAMES_EXPANDED = 0x200000   
     };
 
   private:
@@ -799,6 +801,16 @@ class StackFrame
 
     void setRejoin(JSRejoinState state) {
         rejoin_ = state;
+    }
+
+    
+
+    void setDownFramesExpanded() {
+        flags_ |= DOWN_FRAMES_EXPANDED;
+    }
+
+    bool downFramesExpanded() {
+        return flags_ & DOWN_FRAMES_EXPANDED;
     }
 
     
