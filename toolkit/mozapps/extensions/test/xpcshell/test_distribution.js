@@ -1,11 +1,11 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
-// This verifies that add-ons distributed with the application get installed
-// correctly
 
-// Allow distributed add-ons to install
+
+
+
+
+
+
 Services.prefs.setBoolPref("extensions.installDistroAddons", true);
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
@@ -59,8 +59,8 @@ function getInstalledVersion() {
 }
 
 function setOldModificationTime() {
-  // Make sure the installed extension has an old modification time so any
-  // changes will be detected
+  
+  
   shutdownManager()
   let extension = gProfD.clone();
   extension.append("extensions");
@@ -78,7 +78,7 @@ function run_test() {
   run_test_1();
 }
 
-// Tests that on the first startup the add-on gets installed
+
 function run_test_1() {
   writeInstallRDFForExtension(addon1_1, distroDir);
 
@@ -89,13 +89,14 @@ function run_test_1() {
     do_check_eq(a1.version, "1.0");
     do_check_true(a1.isActive);
     do_check_eq(a1.scope, AddonManager.SCOPE_PROFILE);
+    do_check_false(a1.foreignInstall);
 
     run_test_2();
   });
 }
 
-// Tests that starting with a newer version in the distribution dir doesn't
-// install it yet
+
+
 function run_test_2() {
   setOldModificationTime();
 
@@ -113,7 +114,7 @@ function run_test_2() {
   });
 }
 
-// Test that an app upgrade installs the newer version
+
 function run_test_3() {
   restartManager("2");
 
@@ -122,12 +123,13 @@ function run_test_3() {
     do_check_eq(a1.version, "2.0");
     do_check_true(a1.isActive);
     do_check_eq(a1.scope, AddonManager.SCOPE_PROFILE);
+    do_check_false(a1.foreignInstall);
 
     run_test_4();
   });
 }
 
-// Test that an app upgrade doesn't downgrade the extension
+
 function run_test_4() {
   setOldModificationTime();
 
@@ -145,7 +147,7 @@ function run_test_4() {
   });
 }
 
-// Tests that after uninstalling a restart doesn't re-install the extension
+
 function run_test_5() {
   AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
     a1.uninstall();
@@ -160,8 +162,8 @@ function run_test_5() {
   });
 }
 
-// Tests that upgrading the application still doesn't re-install the uninstalled
-// extension
+
+
 function run_test_6() {
   restartManager("4");
 
@@ -172,8 +174,8 @@ function run_test_6() {
   });
 }
 
-// Tests that a pending install of a newer version of a distributed add-on
-// at app change still gets applied
+
+
 function run_test_7() {
   Services.prefs.clearUserPref("extensions.installedDistroAddon.addon1@tests.mozilla.org");
 
@@ -194,8 +196,8 @@ function run_test_7() {
   });
 }
 
-// Tests that a pending install of a older version of a distributed add-on
-// at app change gets replaced by the distributed version
+
+
 function run_test_8() {
   writeInstallRDFForExtension(addon1_3, distroDir);
 
@@ -216,10 +218,10 @@ function run_test_8() {
   });
 }
 
-// Tests that bootstrapped add-ons distributed start up correctly, also that
-// add-ons with multiple directories get copied fully
+
+
 function run_test_9() {
-  // Copy the test add-on to the distro dir
+  
   let addon = do_get_file("data/test_distribution2_2");
   addon.copyTo(distroDir, "addon2@tests.mozilla.org");
 
@@ -236,8 +238,8 @@ function run_test_9() {
     do_check_true(a2.hasResource("subdir/dummy.txt"));
     do_check_true(a2.hasResource("subdir/subdir2/dummy2.txt"));
 
-    // Currently installs are unpacked if the source is a directory regardless
-    // of the install.rdf property or the global preference
+    
+    
 
     let addonDir = profileDir.clone();
     addonDir.append("addon2@tests.mozilla.org");
