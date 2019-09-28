@@ -386,7 +386,7 @@ ValueToId(JSContext *cx, const Value &v, jsid *idp);
 
 
 extern const js::Value &
-js_GetUpvar(JSContext *cx, uintN level, uintN cookie);
+js_GetUpvar(JSContext *cx, uintN level, js::UpvarCookie cookie);
 
 
 
