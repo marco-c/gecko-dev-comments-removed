@@ -80,7 +80,7 @@ JSObject::setDenseArrayNotPacked(JSContext *cx)
     JS_ASSERT(isDenseArray());
     if (flags & PACKED_ARRAY) {
         flags ^= PACKED_ARRAY;
-        cx->markTypeArrayNotPacked(getType(), false);
+        cx->markTypeObjectFlags(getType(), js::types::OBJECT_FLAG_NON_PACKED_ARRAY);
     }
 }
 
@@ -294,13 +294,18 @@ js_MergeSort(void *vec, size_t nel, size_t elsize, JSComparator cmp,
              void *arg, void *tmp, JSMergeSortElemType elemType);
 
 
-
-
-
 namespace js {
+
 extern JSBool
 array_sort(JSContext *cx, uintN argc, js::Value *vp);
-}
+
+extern JSBool
+array_push(JSContext *cx, uintN argc, js::Value *vp);
+
+extern JSBool
+array_pop(JSContext *cx, uintN argc, js::Value *vp);
+
+} 
 
 #ifdef DEBUG
 extern JSBool
