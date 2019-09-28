@@ -34,8 +34,6 @@
 
 
 
-#include "mozilla/Util.h"
-
 #include "SVGNumberList.h"
 #include "SVGAnimatedNumberList.h"
 #include "nsSVGElement.h"
@@ -70,7 +68,7 @@ SVGNumberList::GetValueAsString(nsAString& aValue) const
   for (PRUint32 i = 0; i < mNumbers.Length(); ++i) {
     
     
-    nsTextFormatter::snprintf(buf, ArrayLength(buf),
+    nsTextFormatter::snprintf(buf, NS_ARRAY_LENGTH(buf),
                               NS_LITERAL_STRING("%g").get(),
                               double(mNumbers[i]));
     
