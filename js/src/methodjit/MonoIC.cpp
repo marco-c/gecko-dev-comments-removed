@@ -271,7 +271,8 @@ UpdateSetGlobalName(VMFrame &f, ic::SetGlobalNameIC *ic, JSObject *obj, const Sh
     if (shape->isMethod() ||
         !shape->hasDefaultSetter() ||
         !shape->writable() ||
-        !shape->hasSlot())
+        !shape->hasSlot() ||
+        obj->watched())
     {
         
         PatchSetFallback(f, ic);
@@ -1219,8 +1220,13 @@ ic::SplatApplyArgs(VMFrame &f)
                     THROWV(false);
 
                 
-                n = Min(length, StackSpace::ARGS_LENGTH_MAX);
+                if (length > StackSpace::ARGS_LENGTH_MAX) {
+                    JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL,
+                                         JSMSG_TOO_MANY_FUN_APPLY_ARGS);
+                    THROWV(false);
+                }
 
+                n = length;
                 if (!BumpStack(f, n))
                     THROWV(false);
 
@@ -1274,18 +1280,22 @@ ic::SplatApplyArgs(VMFrame &f)
     JS_ASSERT(!JS_ON_TRACE(cx));
 
     
-    uintN n = uintN(JS_MIN(length, StackSpace::ARGS_LENGTH_MAX));
+    if (length > StackSpace::ARGS_LENGTH_MAX) {
+        JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL,
+                             JSMSG_TOO_MANY_FUN_APPLY_ARGS);
+        THROWV(false);
+    }
 
-    intN delta = n - 1;
+    intN delta = length - 1;
     if (delta > 0 && !BumpStack(f, delta))
         THROWV(false);
     f.regs.sp += delta;
 
     
-    if (!GetElements(cx, aobj, n, f.regs.sp - n))
+    if (!GetElements(cx, aobj, length, f.regs.sp - length))
         THROWV(false);
 
-    f.u.call.dynamicArgc = n;
+    f.u.call.dynamicArgc = length;
     return true;
 }
 
