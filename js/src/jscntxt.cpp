@@ -1042,21 +1042,17 @@ js_DestroyContext(JSContext *cx, JSDestroyContextMode mode)
                 JS_BeginRequest(cx);
 #endif
 
-#ifdef JS_TYPE_INFERENCE
-            {
-                
+            
 
 
 
-                AutoLockGC lock(rt);
-                JSCompartment **compartment = rt->compartments.begin();
-                JSCompartment **end = rt->compartments.end();
-                while (compartment < end) {
-                    (*compartment)->types.finish(cx, *compartment);
-                    compartment++;
-                }
+            AutoLockGC lock(rt);
+            JSCompartment **compartment = rt->compartments.begin();
+            JSCompartment **end = rt->compartments.end();
+            while (compartment < end) {
+                (*compartment)->types.finish(cx, *compartment);
+                compartment++;
             }
-#endif
 
             js_FinishRuntimeNumberState(cx);
 
@@ -2295,15 +2291,14 @@ IsJITBrokenHere()
 void
 JSContext::updateJITEnabled()
 {
-    
-#ifndef JS_TYPE_INFERENCE
 #ifdef JS_TRACER
     traceJitEnabled = ((runOptions & JSOPTION_JIT) &&
                        !IsJITBrokenHere() &&
+                       
+                       !(runOptions & JSOPTION_TYPE_INFERENCE) &&
                        (debugHooks == &js_NullDebugHooks ||
                         (debugHooks == &runtime->globalDebugHooks &&
                          !runtime->debuggerInhibitsJIT())));
-#endif
 #endif
 #ifdef JS_METHODJIT
     methodJitEnabled = (runOptions & JSOPTION_METHODJIT) &&
