@@ -51,7 +51,10 @@ extern "C" {
 #endif
 
 struct PKIX_PL_CertStruct {
-        CERTCertificate *nssCert;
+        CERTCertificate *nssCert;  
+
+
+
         CERTGeneralName *nssSubjAltNames;
         PLArenaPool *arenaNameConstraints;
         PKIX_PL_X500Name *issuer;
