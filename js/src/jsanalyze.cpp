@@ -1442,7 +1442,6 @@ ScriptAnalysis::analyzeSSA(JSContext *cx)
 
           case JSOP_FORNAME:
           case JSOP_FORGNAME:
-          case JSOP_CALLPROP:
             stack[stackDepth - 1] = code->poppedValues[0];
             break;
 
@@ -1822,6 +1821,21 @@ CrossScriptSSA::foldValue(const CrossSSAValue &cv)
                         return foldValue(CrossSSAValue(calleeFrame, analysis->poppedValue(pc, 0)));
                     offset += GetBytecodeLength(pc);
                 }
+            }
+            break;
+          }
+
+          case JSOP_CALLPROP: {
+            
+
+
+
+
+
+
+            if (v.pushedIndex() == 1) {
+                ScriptAnalysis *analysis = frame.script->analysis(cx);
+                return foldValue(CrossSSAValue(cv.frame, analysis->poppedValue(pc, 0)));
             }
             break;
           }
