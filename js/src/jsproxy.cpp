@@ -1,43 +1,43 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Mozilla Foundation
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Andreas Gal <gal@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include <string.h>
 #include "jsapi.h"
@@ -129,7 +129,7 @@ JSProxyHandler::get(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id,
         return true;
     }
     if (desc.attrs & JSPROP_GETTER) {
-        return ExternalGetOrSet(cx, proxy, id, CastAsObjectJsval(desc.getter),
+        return ExternalGetOrSet(cx, receiver, id, CastAsObjectJsval(desc.getter),
                                 JSACC_READ, 0, NULL, vp);
     }
     if (!(desc.attrs & JSPROP_SHARED))
@@ -138,7 +138,7 @@ JSProxyHandler::get(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id,
         vp->setUndefined();
     if (desc.attrs & JSPROP_SHORTID)
         id = INT_TO_JSID(desc.shortid);
-    return CallJSPropertyOp(cx, desc.getter, proxy, id, vp);
+    return CallJSPropertyOp(cx, desc.getter, receiver, id, vp);
 }
 
 bool
@@ -148,45 +148,31 @@ JSProxyHandler::set(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id,
     AutoPropertyDescriptorRooter desc(cx);
     if (!getOwnPropertyDescriptor(cx, proxy, id, true, &desc))
         return false;
-    
+    /* The control-flow here differs from ::get() because of the fall-through case below. */
     if (desc.obj) {
-        if (desc.setter && ((desc.attrs & JSPROP_SETTER) || desc.setter != PropertyStub)) {
-            if (desc.attrs & JSPROP_SETTER) {
-                return ExternalGetOrSet(cx, proxy, id, CastAsObjectJsval(desc.setter),
-                                        JSACC_WRITE, 1, vp, vp);
-            }
-            if (desc.attrs & JSPROP_SHORTID)
-                id = INT_TO_JSID(desc.shortid);
-            return CallJSPropertyOpSetter(cx, desc.setter, proxy, id, vp);
-        }
+        if (desc.setter && ((desc.attrs & JSPROP_SETTER) || desc.setter != PropertyStub))
+            return CallSetter(cx, receiver, id, desc.setter, desc.attrs, desc.shortid, vp);
         if (desc.attrs & JSPROP_READONLY)
             return true;
         desc.value = *vp;
-        return defineProperty(cx, proxy, id, &desc);
+        return defineProperty(cx, receiver, id, &desc);
     }
     if (!getPropertyDescriptor(cx, proxy, id, true, &desc))
         return false;
     if (desc.obj) {
-        if (desc.setter && ((desc.attrs & JSPROP_SETTER) || desc.setter != PropertyStub)) {
-            if (desc.attrs & JSPROP_SETTER) {
-                return ExternalGetOrSet(cx, proxy, id, CastAsObjectJsval(desc.setter),
-                                        JSACC_WRITE, 1, vp, vp);
-            }
-            if (desc.attrs & JSPROP_SHORTID)
-                id = INT_TO_JSID(desc.shortid);
-            return CallJSPropertyOpSetter(cx, desc.setter, proxy, id, vp);
-        }
+        if (desc.setter && ((desc.attrs & JSPROP_SETTER) || desc.setter != PropertyStub))
+            return CallSetter(cx, receiver, id, desc.setter, desc.attrs, desc.shortid, vp);
         if (desc.attrs & JSPROP_READONLY)
             return true;
-        
+        /* fall through */
     }
-    desc.obj = proxy;
+    desc.obj = receiver;
     desc.value = *vp;
     desc.attrs = JSPROP_ENUMERATE;
     desc.getter = NULL;
     desc.setter = NULL;
     desc.shortid = 0;
-    return defineProperty(cx, proxy, id, &desc);
+    return defineProperty(cx, receiver, id, &desc);
 }
 
 bool
@@ -198,7 +184,7 @@ JSProxyHandler::enumerateOwn(JSContext *cx, JSObject *proxy, AutoIdVector &props
     if (!getOwnPropertyNames(cx, proxy, props))
         return false;
 
-    
+    /* Select only the enumerable properties through in-place iteration. */
     AutoPropertyDescriptorRooter desc(cx);
     size_t i = 0;
     for (size_t j = 0, len = props.length(); j < len; j++) {
@@ -221,8 +207,11 @@ JSProxyHandler::iterate(JSContext *cx, JSObject *proxy, uintN flags, Value *vp)
 {
     JS_ASSERT(OperationInProgress(cx, proxy));
     AutoIdVector props(cx);
-    if (!enumerate(cx, proxy, props))
+    if ((flags & JSITER_OWNONLY)
+        ? !enumerateOwn(cx, proxy, props)
+        : !enumerate(cx, proxy, props)) {
         return false;
+    }
     return EnumeratedIdVectorToIterator(cx, proxy, flags, props, vp);
 }
 
@@ -270,19 +259,13 @@ JSProxyHandler::construct(JSContext *cx, JSObject *proxy,
 {
     JS_ASSERT(OperationInProgress(cx, proxy));
     Value fval = GetConstruct(proxy);
-    if (fval.isUndefined()) {
-        fval = GetCall(proxy);
-        JSObject *obj = JS_New(cx, &fval.toObject(), argc, Jsvalify(argv));
-        if (!obj)
-            return false;
-        rval->setObject(*obj);
-        return true;
-    }
+    if (fval.isUndefined())
+        return ExternalInvokeConstructor(cx, GetCall(proxy), argc, argv, rval);
 
-    
-
-
-
+    /*
+     * FIXME: The Proxy proposal says to pass undefined as the this argument,
+     * but primitive this is not supported yet. See bug 576644.
+     */
     JS_ASSERT(fval.isObject());
     JSObject *thisobj = fval.toObject().getGlobal();
     return ExternalInvoke(cx, thisobj, fval, argc, argv, rval);
@@ -295,6 +278,13 @@ JSProxyHandler::hasInstance(JSContext *cx, JSObject *proxy, const Value *vp, boo
     js_ReportValueError(cx, JSMSG_BAD_INSTANCEOF_RHS,
                         JSDVG_SEARCH_STACK, ObjectValue(*proxy), NULL);
     return false;
+}
+
+JSType
+JSProxyHandler::typeOf(JSContext *cx, JSObject *proxy)
+{
+    JS_ASSERT(OperationInProgress(cx, proxy));
+    return proxy->isFunctionProxy() ? JSTYPE_FUNCTION : JSTYPE_OBJECT;
 }
 
 void
@@ -441,13 +431,13 @@ ArrayToIdVector(JSContext *cx, const Value &array, AutoIdVector &props)
     return true;
 }
 
-
+/* Derived class for all scripted proxy handlers. */
 class JSScriptedProxyHandler : public JSProxyHandler {
   public:
     JSScriptedProxyHandler();
     virtual ~JSScriptedProxyHandler();
 
-    
+    /* ES5 Harmony fundamental proxy traps. */
     virtual bool getPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id, bool set,
                                        PropertyDescriptor *desc);
     virtual bool getOwnPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id, bool set,
@@ -459,7 +449,7 @@ class JSScriptedProxyHandler : public JSProxyHandler {
     virtual bool enumerate(JSContext *cx, JSObject *proxy, AutoIdVector &props);
     virtual bool fix(JSContext *cx, JSObject *proxy, Value *vp);
 
-    
+    /* ES5 Harmony derived proxy traps. */
     virtual bool has(JSContext *cx, JSObject *proxy, jsid id, bool *bp);
     virtual bool hasOwn(JSContext *cx, JSObject *proxy, jsid id, bool *bp);
     virtual bool get(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id, Value *vp);
@@ -811,6 +801,20 @@ JSProxy::construct(JSContext *cx, JSObject *proxy, uintN argc, Value *argv, Valu
     return proxy->getProxyHandler()->construct(cx, proxy, argc, argv, rval);
 }
 
+bool
+JSProxy::hasInstance(JSContext *cx, JSObject *proxy, const js::Value *vp, bool *bp)
+{
+    AutoPendingProxyOperation pending(cx, proxy);
+    return proxy->getProxyHandler()->hasInstance(cx, proxy, vp, bp);
+}
+
+JSType
+JSProxy::typeOf(JSContext *cx, JSObject *proxy)
+{
+    AutoPendingProxyOperation pending(cx, proxy);
+    return proxy->getProxyHandler()->typeOf(cx, proxy);
+}
+
 JSString *
 JSProxy::obj_toString(JSContext *cx, JSObject *proxy)
 {
@@ -864,15 +868,15 @@ proxy_DefineProperty(JSContext *cx, JSObject *obj, jsid id, const Value *value,
 }
 
 static JSBool
-proxy_GetProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp)
+proxy_GetProperty(JSContext *cx, JSObject *obj, JSObject *receiver, jsid id, Value *vp)
 {
-    return JSProxy::get(cx, obj, obj, id, vp);
+    return JSProxy::get(cx, obj, receiver, id, vp);
 }
 
 static JSBool
 proxy_SetProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp, JSBool strict)
 {
-    
+    // FIXME (bug 596351): throwing away strict.
     return JSProxy::set(cx, obj, obj, id, vp);
 }
 
@@ -889,7 +893,7 @@ proxy_GetAttributes(JSContext *cx, JSObject *obj, jsid id, uintN *attrsp)
 static JSBool
 proxy_SetAttributes(JSContext *cx, JSObject *obj, jsid id, uintN *attrsp)
 {
-    
+    /* Lookup the current property descriptor so we have setter/getter/value. */
     AutoPropertyDescriptorRooter desc(cx);
     if (!JSProxy::getOwnPropertyDescriptor(cx, obj, id, true, &desc))
         return false;
@@ -900,7 +904,7 @@ proxy_SetAttributes(JSContext *cx, JSObject *obj, jsid id, uintN *attrsp)
 static JSBool
 proxy_DeleteProperty(JSContext *cx, JSObject *obj, jsid id, Value *rval, JSBool strict)
 {
-    
+    // TODO: throwing away strict
     bool deleted;
     if (!JSProxy::delete_(cx, obj, id, &deleted))
         return false;
@@ -925,7 +929,7 @@ proxy_TraceObject(JSTracer *trc, JSObject *obj)
     }
 }
 
-void
+static void
 proxy_Finalize(JSContext *cx, JSObject *obj)
 {
     JS_ASSERT(obj->isProxy());
@@ -938,30 +942,37 @@ proxy_HasInstance(JSContext *cx, JSObject *proxy, const Value *v, JSBool *bp)
 {
     AutoPendingProxyOperation pending(cx, proxy);
     bool b;
-    if (!proxy->getProxyHandler()->hasInstance(cx, proxy, v, &b))
+    if (!JSProxy::hasInstance(cx, proxy, v, &b))
         return false;
     *bp = !!b;
     return true;
 }
 
+static JSType
+proxy_TypeOf(JSContext *cx, JSObject *proxy)
+{
+    JS_ASSERT(proxy->isProxy());
+    return JSProxy::typeOf(cx, proxy);
+}
+
 JS_FRIEND_API(Class) ObjectProxyClass = {
     "Proxy",
     Class::NON_NATIVE | JSCLASS_HAS_RESERVED_SLOTS(3),
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
+    PropertyStub,   /* addProperty */
+    PropertyStub,   /* delProperty */
+    PropertyStub,   /* getProperty */
+    PropertyStub,   /* setProperty */
     EnumerateStub,
     ResolveStub,
     ConvertStub,
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    proxy_HasInstance, 
-    NULL,           
+    NULL,           /* finalize */
+    NULL,           /* reserved0   */
+    NULL,           /* checkAccess */
+    NULL,           /* call        */
+    NULL,           /* construct   */
+    NULL,           /* xdrObject   */
+    proxy_HasInstance, /* hasInstance */
+    NULL,           /* mark        */
     JS_NULL_CLASS_EXT,
     {
         proxy_LookupProperty,
@@ -971,38 +982,38 @@ JS_FRIEND_API(Class) ObjectProxyClass = {
         proxy_GetAttributes,
         proxy_SetAttributes,
         proxy_DeleteProperty,
-        NULL,       
-        NULL,       
+        NULL,       /* enumerate       */
+        proxy_TypeOf,
         proxy_TraceObject,
-        NULL,       
-        NULL,       
-        proxy_Finalize, 
+        NULL,       /* fix             */
+        NULL,       /* thisObject      */
+        proxy_Finalize, /* clear */
     }
 };
 
 JS_FRIEND_API(Class) OuterWindowProxyClass = {
     "Proxy",
     Class::NON_NATIVE | JSCLASS_HAS_RESERVED_SLOTS(3),
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
+    PropertyStub,   /* addProperty */
+    PropertyStub,   /* delProperty */
+    PropertyStub,   /* getProperty */
+    PropertyStub,   /* setProperty */
     EnumerateStub,
     ResolveStub,
     ConvertStub,
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
+    NULL,           /* finalize */
+    NULL,           /* reserved0   */
+    NULL,           /* checkAccess */
+    NULL,           /* call        */
+    NULL,           /* construct   */
+    NULL,           /* xdrObject   */
+    NULL,           /* hasInstance */
+    NULL,           /* mark        */
     {
-        NULL,       
-        NULL,       
+        NULL,       /* equality    */
+        NULL,       /* outerObject */
         proxy_innerObject,
-        NULL        
+        NULL        /* unused */
     },
     {
         proxy_LookupProperty,
@@ -1012,12 +1023,12 @@ JS_FRIEND_API(Class) OuterWindowProxyClass = {
         proxy_GetAttributes,
         proxy_SetAttributes,
         proxy_DeleteProperty,
-        NULL,       
-        NULL,       
+        NULL,       /* enumerate       */
+        NULL,       /* typeof          */
         proxy_TraceObject,
-        NULL,       
-        NULL,       
-        proxy_Finalize, 
+        NULL,       /* fix             */
+        NULL,       /* thisObject      */
+        proxy_Finalize, /* clear */
     }
 };
 
@@ -1042,30 +1053,24 @@ proxy_Construct(JSContext *cx, uintN argc, Value *vp)
     return ok;
 }
 
-static JSType
-proxy_TypeOf_fun(JSContext *cx, JSObject *obj)
-{
-    return JSTYPE_FUNCTION;
-}
-
 JS_FRIEND_API(Class) FunctionProxyClass = {
     "Proxy",
     Class::NON_NATIVE | JSCLASS_HAS_RESERVED_SLOTS(5),
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
+    PropertyStub,   /* addProperty */
+    PropertyStub,   /* delProperty */
+    PropertyStub,   /* getProperty */
+    PropertyStub,   /* setProperty */
     EnumerateStub,
     ResolveStub,
     ConvertStub,
-    NULL,           
-    NULL,           
-    NULL,           
+    NULL,           /* finalize */
+    NULL,           /* reserved0   */
+    NULL,           /* checkAccess */
     proxy_Call,
     proxy_Construct,
-    NULL,           
+    NULL,           /* xdrObject   */
     js_FunctionClass.hasInstance,
-    NULL,           
+    NULL,           /* mark */
     JS_NULL_CLASS_EXT,
     {
         proxy_LookupProperty,
@@ -1075,12 +1080,12 @@ JS_FRIEND_API(Class) FunctionProxyClass = {
         proxy_GetAttributes,
         proxy_SetAttributes,
         proxy_DeleteProperty,
-        NULL,       
-        proxy_TypeOf_fun,
+        NULL,       /* enumerate       */
+        proxy_TypeOf,
         proxy_TraceObject,
-        NULL,       
-        NULL,       
-        NULL,       
+        NULL,       /* fix             */
+        NULL,       /* thisObject      */
+        NULL,       /* clear           */
     }
 };
 
@@ -1271,11 +1276,11 @@ callable_Construct(JSContext *cx, uintN argc, Value *vp)
     JS_ASSERT(callable->getClass() == &CallableObjectClass);
     Value fval = callable->getSlot(JSSLOT_CALLABLE_CONSTRUCT);
     if (fval.isUndefined()) {
-        
+        /* We don't have an explicit constructor so allocate a new object and use the call. */
         fval = callable->getSlot(JSSLOT_CALLABLE_CALL);
         JS_ASSERT(fval.isObject());
 
-        
+        /* callable is the constructor, so get callable.prototype is the proto of the new object. */
         Value protov;
         if (!callable->getProperty(cx, ATOM_TO_JSID(ATOM(classPrototype)), &protov))
             return false;
@@ -1293,7 +1298,7 @@ callable_Construct(JSContext *cx, uintN argc, Value *vp)
         if (!newobj)
             return false;
 
-        
+        /* If the call returns an object, return that, otherwise the original newobj. */
         Value rval;
         if (!ExternalInvoke(cx, newobj, callable->getSlot(JSSLOT_CALLABLE_CALL),
                             argc, vp + 2, &rval)) {
@@ -1315,16 +1320,16 @@ callable_Construct(JSContext *cx, uintN argc, Value *vp)
 Class CallableObjectClass = {
     "Function",
     JSCLASS_HAS_RESERVED_SLOTS(2),
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
+    PropertyStub,   /* addProperty */
+    PropertyStub,   /* delProperty */
+    PropertyStub,   /* getProperty */
+    PropertyStub,   /* setProperty */
     EnumerateStub,
     ResolveStub,
     ConvertStub,
-    NULL,           
-    NULL,           
-    NULL,           
+    NULL,           /* finalize    */
+    NULL,           /* reserved0   */
+    NULL,           /* checkAccess */
     callable_Call,
     callable_Construct,
 };
@@ -1353,15 +1358,15 @@ FixProxy(JSContext *cx, JSObject *proxy, JSBool *bp)
     JSObject *parent = proxy->getParent();
     Class *clasp = proxy->isFunctionProxy() ? &CallableObjectClass : &js_ObjectClass;
 
-    
-
-
-
+    /*
+     * Make a blank object from the recipe fix provided to us.  This must have
+     * number of fixed slots as the proxy so that we can swap their contents.
+     */
     TypeObject *type = cx->getFixedTypeObject(TYPE_OBJECT_NEW_PROXY);
     gc::FinalizeKind kind = gc::FinalizeKind(proxy->arena()->header()->thingKind);
     JSObject *newborn = NewNonFunction<WithProto::Given>(cx, clasp, proto, parent, type, kind);
     if (!newborn)
-        return NULL;
+        return false;
     AutoObjectRooter tvr2(cx, newborn);
 
     if (clasp == &CallableObjectClass) {
@@ -1375,11 +1380,11 @@ FixProxy(JSContext *cx, JSObject *proxy, JSBool *bp)
             return false;
     }
 
-    
+    /* Trade contents between the newborn object and the proxy. */
     if (!proxy->swap(cx, newborn))
         return false;
 
-    
+    /* The GC will dispose of the proxy object. */
 
     *bp = true;
     return true;
@@ -1390,10 +1395,10 @@ FixProxy(JSContext *cx, JSObject *proxy, JSBool *bp)
 Class js_ProxyClass = {
     "Proxy",
     JSCLASS_HAS_CACHED_PROTO(JSProto_Proxy),
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
-    PropertyStub,   
+    PropertyStub,   /* addProperty */
+    PropertyStub,   /* delProperty */
+    PropertyStub,   /* getProperty */
+    PropertyStub,   /* setProperty */
     EnumerateStub,
     ResolveStub,
     ConvertStub
