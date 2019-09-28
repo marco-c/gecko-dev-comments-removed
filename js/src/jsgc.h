@@ -48,6 +48,7 @@
 #include "jsbit.h"
 #include "jsutil.h"
 #include "jstask.h"
+#include "jsvector.h"
 #include "jsversion.h"
 
 #define JSTRACE_DOUBLE      2
@@ -74,8 +75,8 @@ js_GetGCThingTraceKind(void *thing);
 
 
 
-JSRuntime*
-js_GetGCStringRuntime(JSString *str);
+JSRuntime *
+js_GetGCThingRuntime(void *thing);
 
 #if 1
 
@@ -169,7 +170,7 @@ extern void
 js_TraceStackFrame(JSTracer *trc, JSStackFrame *fp);
 
 extern JS_REQUIRES_STACK void
-js_TraceRuntime(JSTracer *trc, JSBool allAtoms);
+js_TraceRuntime(JSTracer *trc);
 
 extern JS_REQUIRES_STACK JS_FRIEND_API(void)
 js_TraceContext(JSTracer *trc, JSContext *acx);
@@ -200,22 +201,13 @@ typedef enum JSGCInvocationKind {
     
 
 
-
-
     GC_LOCK_HELD        = 0x10,
-    GC_KEEP_ATOMS       = GC_LOCK_HELD,
 
     
 
 
 
-    GC_SET_SLOT_REQUEST = GC_LOCK_HELD | 1,
-
-    
-
-
-
-    GC_LAST_DITCH       = GC_LOCK_HELD | 2
+    GC_SET_SLOT_REQUEST = GC_LOCK_HELD | 1
 } JSGCInvocationKind;
 
 extern void
@@ -350,25 +342,52 @@ struct JSWeakRoots {
 #define JS_CLEAR_WEAK_ROOTS(wr) (memset((wr), 0, sizeof(JSWeakRoots)))
 
 #ifdef JS_THREADSAFE
-class JSFreePointerListTask : public JSBackgroundTask {
-    void *head;
+
+namespace js {
+
+
+
+
+
+
+
+
+
+
+
+class BackgroundSweepTask : public JSBackgroundTask {
+    static const size_t FREE_ARRAY_SIZE = size_t(1) << 16;
+    static const size_t FREE_ARRAY_LENGTH = FREE_ARRAY_SIZE / sizeof(void *);
+
+    Vector<void **, 16, js::SystemAllocPolicy> freeVector;
+    void            **freeCursor;
+    void            **freeCursorEnd;
+
+    JS_FRIEND_API(void)
+    replenishAndFreeLater(void *ptr);
+
+    static void freeElementsAndArray(void **array, void **end) {
+        JS_ASSERT(array <= end);
+        for (void **p = array; p != end; ++p)
+            js_free(*p);
+        js_free(array);
+    }
+
   public:
-    JSFreePointerListTask() : head(NULL) {}
+    BackgroundSweepTask()
+        : freeCursor(NULL), freeCursorEnd(NULL) { }
 
-    void add(void* ptr) {
-        *(void**)ptr = head;
-        head = ptr;
+    void freeLater(void* ptr) {
+        if (freeCursor != freeCursorEnd)
+            *freeCursor++ = ptr;
+        else
+            replenishAndFreeLater(ptr);
     }
 
-    void run() {
-        void *ptr = head;
-        while (ptr) {
-            void *next = *(void **)ptr;
-            js_free(ptr);
-            ptr = next;
-        }
-    }
+    virtual void run();
 };
+
+}
 #endif
 
 extern void
@@ -414,15 +433,19 @@ struct JSGCStats {
     uint32  maxunmarked;
 
 #endif
-    uint32  maxlevel;   
-    uint32  poke;       
-    uint32  afree;      
-    uint32  stackseg;   
-    uint32  segslots;   
-    uint32  nclose;     
-    uint32  maxnclose;  
-    uint32  closelater; 
-    uint32  maxcloselater; 
+    uint32  maxlevel;       
+    uint32  poke;           
+    uint32  afree;          
+    uint32  stackseg;       
+    uint32  segslots;       
+    uint32  nclose;         
+    uint32  maxnclose;      
+    uint32  closelater;     
+    uint32  maxcloselater;  
+    uint32  nallarenas;     
+    uint32  maxnallarenas;  
+    uint32  nchunks;        
+    uint32  maxnchunks;     
 
     JSGCArenaStats  arenaStats[FINALIZE_LIMIT];
     JSGCArenaStats  doubleArenaStats;
@@ -495,25 +518,29 @@ void
 TraceObjectVector(JSTracer *trc, JSObject **vec, uint32 len);
 
 inline void
-TraceValues(JSTracer *trc, Value *beg, Value *end, const char *name)
+#ifdef DEBUG
+TraceValues(JSTracer *trc, jsval *beg, jsval *end, const char *name)
+#else
+TraceValues(JSTracer *trc, jsval *beg, jsval *end, const char *) 
+#endif
 {
-    for (Value *vp = beg; vp < end; ++vp) {
-        if (vp->isGCThing()) {
+    for (jsval *vp = beg; vp < end; ++vp) {
+        jsval v = *vp;
+        if (JSVAL_IS_TRACEABLE(v)) {
             JS_SET_TRACING_INDEX(trc, name, vp - beg);
-            CallGCMarkerForGCThing(trc, *vp);
+            js_CallGCMarker(trc, JSVAL_TO_TRACEABLE(v), JSVAL_TRACE_KIND(v));
         }
     }
 }
 
 inline void
-TraceValues(JSTracer *trc, size_t len, Value *vec, const char *name)
+#ifdef DEBUG
+TraceValues(JSTracer *trc, size_t len, jsval *vec, const char *name)
+#else
+TraceValues(JSTracer *trc, size_t len, jsval *vec, const char *) 
+#endif
 {
-    for (Value *vp = vec, *end = vp + len; vp < end; vp++) {
-        if (vp->isGCThing()) {
-            JS_SET_TRACING_INDEX(trc, name, vp - vec);
-            CallGCMarkerForGCThing(trc, *vp);
-        }
-    }
+    TraceValues(trc, vec, vec + len, name);
 }
 
 inline void
@@ -527,6 +554,6 @@ TraceIds(JSTracer *trc, size_t len, jsid *vec, const char *name)
     }
 }
 
-}
+} 
 
 #endif

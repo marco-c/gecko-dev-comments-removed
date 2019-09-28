@@ -50,19 +50,6 @@
 #include "jsdhash.h"
 #endif
 
-struct JSRegExpStatics {
-    JSString    *input;         
-    JSBool      multiline;      
-    uint16      parenCount;     
-    uint16      moreLength;     
-    JSSubString parens[9];      
-    JSSubString *moreParens;    
-    JSSubString lastMatch;      
-    JSSubString lastParen;      
-    JSSubString leftContext;    
-    JSSubString rightContext;   
-};
-
 namespace js { class AutoValueRooter; }
 
 extern JS_FRIEND_API(void)
@@ -93,17 +80,6 @@ typedef struct RECharSet {
         } src;
     } u;
 } RECharSet;
-
-
-
-
-
-#define REGEXP_PAREN_SUBSTRING(res, num)                                      \
-    (((jsuint)(num) < (jsuint)(res)->parenCount)                              \
-     ? ((jsuint)(num) < 9)                                                    \
-       ? &(res)->parens[num]                                                  \
-       : &(res)->moreParens[(num) - 9]                                        \
-     : &js_EmptySubString)
 
 typedef struct RENode RENode;
 
@@ -192,16 +168,6 @@ js_XDRRegExpObject(JSXDRState *xdr, JSObject **objp);
 
 extern JS_FRIEND_API(JSObject *) JS_FASTCALL
 js_CloneRegExpObject(JSContext *cx, JSObject *obj, JSObject *proto);
-
-const uint32 JSSLOT_REGEXP_LAST_INDEX = JSSLOT_PRIVATE + 1;
-const uint32 REGEXP_CLASS_FIXED_RESERVED_SLOTS = 1;
-
-static inline void
-js_ClearRegExpLastIndex(JSObject *obj)
-{
-    JS_ASSERT(obj->getClass() == &js_RegExpClass);
-    obj->fslots[JSSLOT_REGEXP_LAST_INDEX].setInt32(0);
-}
 
 
 extern bool
