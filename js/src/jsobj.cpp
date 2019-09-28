@@ -3959,6 +3959,13 @@ DefineConstructorAndPrototype(JSContext *cx, JSObject *obj, JSProtoKey key, JSAt
     if (!type)
         return NULL;
 
+    
+    if (clasp->ext.equality &&
+        (!cx->markTypeObjectUnknownProperties(type) ||
+         !cx->markTypeObjectUnknownProperties(proto->getType()))) {
+        return NULL;
+    }
+
     proto->syncSpecialEquality();
 
     
