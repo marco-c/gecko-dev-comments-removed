@@ -8007,8 +8007,19 @@ nsDocShell::InternalLoad(nsIURI * aURI,
             NS_SUCCEEDED(URIInheritsSecurityContext(aURI, &inherits)) &&
             inherits) {
 
-            
-            
+            owner = GetInheritedPrincipal(PR_TRUE);
+        }
+    }
+
+    
+    
+    {
+        PRBool willInherit;
+        
+        
+        
+        rv = URIInheritsSecurityContext(aURI, &willInherit);
+        if (NS_FAILED(rv) || willInherit || IsAboutBlank(aURI)) {
             nsCOMPtr<nsIDocShellTreeItem> treeItem = this;
             do {
                 nsCOMPtr<nsIDocShell> itemDocShell =
@@ -8024,11 +8035,9 @@ nsDocShell::InternalLoad(nsIURI * aURI,
                 treeItem->GetSameTypeParent(getter_AddRefs(parent));
                 parent.swap(treeItem);
             } while (treeItem);
-
-            owner = GetInheritedPrincipal(PR_TRUE);
         }
     }
-
+    
     
     
     
@@ -8835,6 +8844,8 @@ nsDocShell::DoURILoad(nsIURI * aURI,
     
     
     PRBool inherit;
+    
+    
     
     
     rv = URIInheritsSecurityContext(aURI, &inherit);
