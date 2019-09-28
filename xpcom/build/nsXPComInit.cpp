@@ -1,41 +1,41 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim:set ts=4 sw=4 sts=4 ci et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Benjamin Smedberg <benjamin@smedbergs.us>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "base/basictypes.h"
 
@@ -78,7 +78,7 @@
 #include "nsThreadPool.h"
 
 #include "nsIProxyObjectManager.h"
-#include "nsProxyEventPrivate.h"  // access to the impl of nsProxyObjectManager for the generic factory registration.
+#include "nsProxyEventPrivate.h"  
 
 #include "xptinfo.h"
 #include "nsIInterfaceInfoManager.h"
@@ -165,13 +165,13 @@ static MessageLoop* sMessageLoop;
 static bool sCommandLineWasInitialized;
 static BrowserProcessSubThread* sIOThread;
 
-} /* anonymous namespace */
+} 
 
-// Registry Factory creation function defined in nsRegistry.cpp
-// We hook into this function locally to create and register the registry
-// Since noone outside xpcom needs to know about this and nsRegistry.cpp
-// does not have a local include file, we are putting this definition
-// here rather than in nsIRegistry.h
+
+
+
+
+
 extern nsresult NS_RegistryGetFactory(nsIFactory** aFactory);
 extern nsresult NS_CategoryManagerGetFactory( nsIFactory** );
 
@@ -322,7 +322,7 @@ const mozilla::Module::ContractIDEntry kXPCOMContracts[] = {
 
 const mozilla::Module kXPCOMModule = { mozilla::Module::kVersion, kXPCOMCIDEntries, kXPCOMContracts };
 
-// gDebug will be freed during shutdown.
+
 static nsIDebug* gDebug = nsnull;
 
 EXPORT_XPCOM_API(nsresult)
@@ -357,7 +357,7 @@ NS_InitXPCOM2(nsIServiceManager* *result,
 
     nsresult rv = NS_OK;
 
-     // We are not shutting down
+     
     gXPCOMShuttingDown = PR_FALSE;
 
     NS_TIME_FUNCTION_MARK("Next: log init");
@@ -366,7 +366,7 @@ NS_InitXPCOM2(nsIServiceManager* *result,
 
     NS_TIME_FUNCTION_MARK("Next: IPC init");
 
-    // Set up chromium libs
+    
     NS_ASSERTION(!sExitManager && !sMessageLoop, "Bad logic!");
 
     if (!AtExitManager::AlreadyRegistered()) {
@@ -394,21 +394,21 @@ NS_InitXPCOM2(nsIServiceManager* *result,
 
     NS_TIME_FUNCTION_MARK("Next: thread manager init");
 
-    // Establish the main thread here.
+    
     rv = nsThreadManager::get()->Init();
     if (NS_FAILED(rv)) return rv;
 
     NS_TIME_FUNCTION_MARK("Next: timer startup");
 
-    // Set up the timer globals/timer thread
+    
     rv = nsTimerImpl::Startup();
     NS_ENSURE_SUCCESS(rv, rv);
 
 #ifndef ANDROID
     NS_TIME_FUNCTION_MARK("Next: setlocale");
 
-    // If the locale hasn't already been setup by our embedder,
-    // get us out of the "C" locale and into the system 
+    
+    
     if (strcmp(setlocale(LC_ALL, NULL), "C") == 0)
         setlocale(LC_ALL, "");
 #endif
@@ -457,11 +457,25 @@ NS_InitXPCOM2(nsIServiceManager* *result,
         if (NS_FAILED(rv)) return rv;
     }
 
+#ifdef MOZ_OMNIJAR
     NS_TIME_FUNCTION_MARK("Next: Omnijar init");
 
-    if (!mozilla::Omnijar::IsInitialized()) {
-        mozilla::Omnijar::Init();
+    if (!mozilla::OmnijarPath()) {
+        nsCOMPtr<nsILocalFile> omnijar;
+        nsCOMPtr<nsIFile> file;
+
+        rv = NS_ERROR_FAILURE;
+        nsDirectoryService::gService->Get(NS_GRE_DIR,
+                                          NS_GET_IID(nsIFile),
+                                          getter_AddRefs(file));
+        if (file)
+            rv = file->Append(NS_LITERAL_STRING("omni.jar"));
+        if (NS_SUCCEEDED(rv))
+            omnijar = do_QueryInterface(file);
+        if (NS_SUCCEEDED(rv))
+            mozilla::SetOmnijar(omnijar);
     }
+#endif
 
     if ((sCommandLineWasInitialized = !CommandLine::IsInitialized())) {
         NS_TIME_FUNCTION_MARK("Next: IPC command line init");
@@ -491,7 +505,7 @@ NS_InitXPCOM2(nsIServiceManager* *result,
 
     NS_TIME_FUNCTION_MARK("Next: component manager init");
 
-    // Create the Component/Service Manager
+    
     nsComponentManagerImpl::gComponentManager = new nsComponentManagerImpl();
     NS_ADDREF(nsComponentManagerImpl::gComponentManager);
     
@@ -513,15 +527,15 @@ NS_InitXPCOM2(nsIServiceManager* *result,
 
     NS_TIME_FUNCTION_MARK("Next: interface info manager init");
 
-    // The iimanager constructor searches and registers XPT files.
-    // (We trigger the singleton's lazy construction here to make that happen.)
+    
+    
     (void) xptiInterfaceInfoManager::GetSingleton();
 
     NS_TIME_FUNCTION_MARK("Next: register category providers");
 
-    // After autoreg, but before we actually instantiate any components,
-    // add any services listed in the "xpcom-directory-providers" category
-    // to the directory service.
+    
+    
+    
     nsDirectoryService::gService->RegisterCategoryProviders();
 
 #ifdef MOZ_ENABLE_LIBXUL
@@ -529,7 +543,7 @@ NS_InitXPCOM2(nsIServiceManager* *result,
 #endif
     NS_TIME_FUNCTION_MARK("Next: create services from category");
 
-    // Notify observers of xpcom autoregistration start
+    
     NS_CreateServicesFromCategory(NS_XPCOM_STARTUP_CATEGORY, 
                                   nsnull,
                                   NS_XPCOM_STARTUP_OBSERVER_ID);
@@ -541,27 +555,27 @@ NS_InitXPCOM2(nsIServiceManager* *result,
 }
 
 
-//
-// NS_ShutdownXPCOM()
-//
-// The shutdown sequence for xpcom would be
-//
-// - Notify "xpcom-shutdown" for modules to release primary (root) references
-// - Shutdown XPCOM timers
-// - Notify "xpcom-shutdown-threads" for thread joins
-// - Shutdown the event queues
-// - Release the Global Service Manager
-//   - Release all service instances held by the global service manager
-//   - Release the Global Service Manager itself
-// - Release the Component Manager
-//   - Release all factories cached by the Component Manager
-//   - Notify module loaders to shut down
-//   - Unload Libraries
-//   - Release Contractid Cache held by Component Manager
-//   - Release dll abstraction held by Component Manager
-//   - Release the Registry held by Component Manager
-//   - Finally, release the component manager itself
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 EXPORT_XPCOM_API(nsresult)
 NS_ShutdownXPCOM(nsIServiceManager* servMgr)
 {
@@ -578,10 +592,10 @@ ShutdownXPCOM(nsIServiceManager* servMgr)
     nsresult rv;
     nsCOMPtr<nsISimpleEnumerator> moduleLoaders;
 
-    // Notify observers of xpcom shutting down
+    
     {
-        // Block it so that the COMPtr will get deleted before we hit
-        // servicemanager shutdown
+        
+        
 
         nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
         NS_ENSURE_STATE(thread);
@@ -619,21 +633,21 @@ ShutdownXPCOM(nsIServiceManager* servMgr)
 
         NS_ProcessPendingEvents(thread);
 
-        // Shutdown the timer thread and all timers that might still be alive before
-        // shutting down the component manager
+        
+        
         nsTimerImpl::Shutdown();
 
         NS_ProcessPendingEvents(thread);
 
-        // Shutdown all remaining threads.  This method does not return until
-        // all threads created using the thread manager (with the exception of
-        // the main thread) have exited.
+        
+        
+        
         nsThreadManager::get()->Shutdown();
 
         NS_ProcessPendingEvents(thread);
 
-        // We save the "xpcom-shutdown-loaders" observers to notify after
-        // the observerservice is gone.
+        
+        
         if (observerService) {
             observerService->
                 EnumerateObservers(NS_XPCOM_SHUTDOWN_LOADERS_OBSERVER_ID,
@@ -643,26 +657,26 @@ ShutdownXPCOM(nsIServiceManager* servMgr)
         }
     }
 
-    // XPCOM is officially in shutdown mode NOW
-    // Set this only after the observers have been notified as this
-    // will cause servicemanager to become inaccessible.
+    
+    
+    
     mozilla::services::Shutdown();
 
 #ifdef DEBUG_dougt
     fprintf(stderr, "* * * * XPCOM shutdown. Access will be denied * * * * \n");
 #endif
-    // We may have AddRef'd for the caller of NS_InitXPCOM, so release it
-    // here again:
+    
+    
     NS_IF_RELEASE(servMgr);
 
-    // Shutdown global servicemanager
+    
     if (nsComponentManagerImpl::gComponentManager) {
         nsComponentManagerImpl::gComponentManager->FreeServices();
     }
 
     nsProxyObjectManager::Shutdown();
 
-    // Release the directory service
+    
     NS_IF_RELEASE(nsDirectoryService::gService);
 
     nsCycleCollector_shutdown();
@@ -674,9 +688,9 @@ ShutdownXPCOM(nsIServiceManager* servMgr)
                more) {
             moduleLoaders->GetNext(getter_AddRefs(el));
 
-            // Don't worry about weak-reference observers here: there is
-            // no reason for weak-ref observers to register for
-            // xpcom-shutdown-loaders
+            
+            
+            
 
             nsCOMPtr<nsIObserver> obs(do_QueryInterface(el));
             if (obs)
@@ -688,28 +702,28 @@ ShutdownXPCOM(nsIServiceManager* servMgr)
         moduleLoaders = nsnull;
     }
 
-    // Shutdown nsLocalFile string conversion
+    
     NS_ShutdownLocalFile();
 #ifdef XP_UNIX
     NS_ShutdownNativeCharsetUtils();
 #endif
 
-    // Shutdown xpcom. This will release all loaders and cause others holding
-    // a refcount to the component manager to release it.
+    
+    
     if (nsComponentManagerImpl::gComponentManager) {
         rv = (nsComponentManagerImpl::gComponentManager)->Shutdown();
         NS_ASSERTION(NS_SUCCEEDED(rv), "Component Manager shutdown failed.");
     } else
         NS_WARNING("Component Manager was never created ...");
 
-    // Release our own singletons
-    // Do this _after_ shutting down the component manager, because the
-    // JS component loader will use XPConnect to call nsIModule::canUnload,
-    // and that will spin up the InterfaceInfoManager again -- bad mojo
+    
+    
+    
+    
     xptiInterfaceInfoManager::FreeInterfaceInfoManager();
 
-    // Finally, release the component manager last because it unloads the
-    // libraries:
+    
+    
     if (nsComponentManagerImpl::gComponentManager) {
       nsrefcnt cnt;
       NS_RELEASE2(nsComponentManagerImpl::gComponentManager, cnt);
@@ -741,11 +755,13 @@ ShutdownXPCOM(nsIServiceManager* servMgr)
         sExitManager = nsnull;
     }
 
-    mozilla::Omnijar::CleanUp();
+#ifdef MOZ_OMNIJAR
+    mozilla::SetOmnijar(nsnull);
+#endif
 
     NS_LogTerm();
 
     return NS_OK;
 }
 
-} // namespace mozilla
+} 
