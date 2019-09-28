@@ -571,10 +571,10 @@ public:
 
 private:
   
-  void EnableAccelerationUpdates();
+  void EnableDeviceMotionUpdates();
 
   
-  void DisableAccelerationUpdates();
+  void DisableDeviceMotionUpdates();
 
 protected:
   friend class HashchangeCallback;
@@ -890,7 +890,7 @@ protected:
   PRPackedBool           mFocusByKeyOccurred : 1;
 
   
-  PRPackedBool           mHasAcceleration : 1;
+  PRPackedBool           mHasDeviceMotion : 1;
 
   
   PRPackedBool           mNotifiedIDDestroyed : 1;
