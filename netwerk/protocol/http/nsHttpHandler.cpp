@@ -1,50 +1,50 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim:set ts=4 sw=4 sts=4 et cin: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications.
- * Portions created by the Initial Developer are Copyright (C) 2001
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Darin Fisher <darin@netscape.com> (original author)
- *   Gagan Saksena <gagan@netscape.com>
- *   Pierre Phaneuf <pp@ludusdesign.com>
- *   Christopher Blizzard <blizzard@mozilla.org>
- *   Adrian Havill <havill@redhat.com>
- *   Gervase Markham <gerv@gerv.net>
- *   Bradley Baetz <bbaetz@netscape.com>
- *   Benjamin Smedberg <bsmedberg@covad.net>
- *   Josh Aas <josh@mozilla.com>
- *   Dão Gottwald <dao@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsHttp.h"
 #include "nsHttpHandler.h"
@@ -69,7 +69,6 @@
 #include "nsPrintfCString.h"
 #include "nsCOMPtr.h"
 #include "nsNetCID.h"
-#include "nsAutoLock.h"
 #include "prprf.h"
 #include "nsReadableUtils.h"
 #include "nsQuickSort.h"
@@ -101,7 +100,7 @@
 #include <os2.h>
 #endif
 
-//-----------------------------------------------------------------------------
+
 using namespace mozilla::net;
 #ifdef MOZ_IPC
 #include "mozilla/net/HttpChannelChild.h"
@@ -110,7 +109,7 @@ using namespace mozilla::net;
 #include "mozilla/FunctionTimer.h"
 
 #ifdef DEBUG
-// defined by the socket transport service while active
+
 extern PRThread *gSocketThread;
 #endif
 
@@ -138,7 +137,7 @@ static NS_DEFINE_CID(kSocketProviderServiceCID, NS_SOCKETPROVIDERSERVICE_CID);
 
 #define NS_HTTP_PROTOCOL_FLAGS (URI_STD | ALLOWS_PROXY | ALLOWS_PROXY_HTTP | URI_LOADABLE_BY_ANYONE)
 
-//-----------------------------------------------------------------------------
+
 
 static nsresult
 NewURI(const nsACString &aSpec,
@@ -159,13 +158,13 @@ NewURI(const nsACString &aSpec,
         return rv;
     }
 
-    *aURI = url; // no QI needed
+    *aURI = url; 
     return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsHttpHandler <public>
-//-----------------------------------------------------------------------------
+
+
+
 
 nsHttpHandler *gHttpHandler = nsnull;
 
@@ -175,7 +174,7 @@ nsHttpHandler::nsHttpHandler()
     , mProxyHttpVersion(NS_HTTP_VERSION_1_1)
     , mCapabilities(NS_HTTP_ALLOW_KEEPALIVE)
     , mProxyCapabilities(NS_HTTP_ALLOW_KEEPALIVE)
-    , mReferrerLevel(0xff) // by default we always send a referrer
+    , mReferrerLevel(0xff) 
     , mIdleTimeout(10)
     , mMaxRequestAttempts(10)
     , mMaxRequestDelay(10)
@@ -215,14 +214,14 @@ nsHttpHandler::~nsHttpHandler()
 {
     LOG(("Deleting nsHttpHandler [this=%x]\n", this));
 
-    // make sure the connection manager is shutdown
+    
     if (mConnMgr) {
         mConnMgr->Shutdown();
         NS_RELEASE(mConnMgr);
     }
 
-    // Note: don't call NeckoChild::DestroyNeckoChild() here, as it's too late
-    // and it'll segfault.  NeckoChild will get cleaned up by process exit.
+    
+    
 
     nsHttp::DestroyAtomTable();
 
@@ -251,11 +250,11 @@ nsHttpHandler::Init()
 #ifdef MOZ_IPC
     if (IsNeckoChild())
         NeckoChild::InitNeckoChild();
-#endif // MOZ_IPC
+#endif 
 
     InitUserAgentComponents();
 
-    // monitor some preference changes
+    
     nsCOMPtr<nsIPrefBranch2> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
     if (prefBranch) {
         prefBranch->AddObserver(HTTP_PREF_PREFIX, this, PR_TRUE);
@@ -284,7 +283,7 @@ nsHttpHandler::Init()
     }
 
 #if DEBUG
-    // dump user agent prefs
+    
     LOG(("> legacy-app-name = %s\n", mLegacyAppName.get()));
     LOG(("> legacy-app-version = %s\n", mLegacyAppVersion.get()));
     LOG(("> platform = %s\n", mPlatform.get()));
@@ -313,8 +312,8 @@ nsHttpHandler::Init()
     if (mProductSub.Length() > 8)
         mProductSub.SetLength(8);
 
-    // Startup the http category
-    // Bring alive the objects in the http-protocol-startup category
+    
+    
     NS_CreateServicesFromCategory(NS_HTTP_STARTUP_CATEGORY,
                                   static_cast<nsISupports*>(static_cast<void*>(this)),
                                   NS_HTTP_STARTUP_TOPIC);    
@@ -363,38 +362,38 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpHeaderArray *request,
 {
     nsresult rv;
 
-    // Add the "User-Agent" header
+    
     rv = request->SetHeader(nsHttp::User_Agent, UserAgent());
     if (NS_FAILED(rv)) return rv;
 
-    // MIME based content negotiation lives!
-    // Add the "Accept" header
+    
+    
     rv = request->SetHeader(nsHttp::Accept, mAccept);
     if (NS_FAILED(rv)) return rv;
 
-    // Add the "Accept-Language" header
+    
     if (!mAcceptLanguages.IsEmpty()) {
-        // Add the "Accept-Language" header
+        
         rv = request->SetHeader(nsHttp::Accept_Language, mAcceptLanguages);
         if (NS_FAILED(rv)) return rv;
     }
 
-    // Add the "Accept-Encoding" header
+    
     rv = request->SetHeader(nsHttp::Accept_Encoding, mAcceptEncodings);
     if (NS_FAILED(rv)) return rv;
 
-    // Add the "Accept-Charset" header
+    
     rv = request->SetHeader(nsHttp::Accept_Charset, mAcceptCharsets);
     if (NS_FAILED(rv)) return rv;
 
-    // RFC2616 section 19.6.2 states that the "Connection: keep-alive"
-    // and "Keep-alive" request headers should not be sent by HTTP/1.1
-    // user-agents.  Otherwise, problems with proxy servers (especially
-    // transparent proxies) can result.
-    //
-    // However, we need to send something so that we can use keepalive
-    // with HTTP/1.0 servers/proxies. We use "Proxy-Connection:" when 
-    // we're talking to an http proxy, and "Connection:" otherwise
+    
+    
+    
+    
+    
+    
+    
+    
     
     NS_NAMED_LITERAL_CSTRING(close, "close");
     NS_NAMED_LITERAL_CSTRING(keepAlive, "keep-alive");
@@ -405,11 +404,11 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpHeaderArray *request,
         if (NS_FAILED(rv)) return rv;
         connectionType = &keepAlive;
     } else if (useProxy) {
-        // Bug 92006
+        
         request->SetHeader(nsHttp::Connection, close);
     }
 
-    // Add the "Do-Not-Track" header
+    
     if (mDoNotTrackEnabled) {
       rv = request->SetHeader(nsHttp::DoNotTrack,
                               NS_LITERAL_CSTRING("1"));
@@ -427,10 +426,10 @@ nsHttpHandler::IsAcceptableEncoding(const char *enc)
     if (!enc)
         return PR_FALSE;
 
-    // HTTP 1.1 allows servers to send x-gzip and x-compress instead
-    // of gzip and compress, for example.  So, we'll always strip off
-    // an "x-" prefix before matching the encoding to one we claim
-    // to accept.
+    
+    
+    
+    
     if (!PL_strncasecmp(enc, "x-", 2))
         enc += 2;
     
@@ -443,14 +442,14 @@ nsHttpHandler::GetCacheSession(nsCacheStoragePolicy storagePolicy,
 {
     nsresult rv;
 
-    // Skip cache if disabled in preferences
+    
     if (!mUseCache)
         return NS_ERROR_NOT_AVAILABLE;
 
-    // We want to get the pointer to the cache service each time we're called,
-    // because it's possible for some add-ons (such as Google Gears) to swap
-    // in new cache services on the fly, and we want to pick them up as
-    // appropriate.
+    
+    
+    
+    
     nsCOMPtr<nsICacheService> serv = do_GetService(NS_CACHESERVICE_CONTRACTID,
                                                    &rv);
     if (NS_FAILED(rv)) return rv;
@@ -486,7 +485,7 @@ PRBool
 nsHttpHandler::InPrivateBrowsingMode()
 {
     if (PRIVATE_BROWSING_UNKNOWN == mInPrivateBrowsingMode) {
-        // figure out if we're starting in private browsing mode
+        
         nsCOMPtr<nsIPrivateBrowsingService> pbs =
             do_GetService(NS_PRIVATE_BROWSING_SERVICE_CONTRACTID);
         if (!pbs)
@@ -548,21 +547,21 @@ nsresult
 nsHttpHandler::AsyncOnChannelRedirect(nsIChannel* oldChan, nsIChannel* newChan,
                                  PRUint32 flags)
 {
-    // TODO E10S This helper has to be initialized on the other process
+    
     nsRefPtr<nsAsyncRedirectVerifyHelper> redirectCallbackHelper =
         new nsAsyncRedirectVerifyHelper();
 
     return redirectCallbackHelper->Init(oldChan, newChan, flags);
 }
 
-/* static */ nsresult
+ nsresult
 nsHttpHandler::GenerateHostPort(const nsCString& host, PRInt32 port,
                                 nsCString& hostLine)
 {
     if (strchr(host.get(), ':')) {
-        // host is an IPv6 address literal and must be encapsulated in []'s
+        
         hostLine.Assign('[');
-        // scope id is not needed for Host header.
+        
         int scopeIdPos = host.FindChar('%');
         if (scopeIdPos == kNotFound)
             hostLine.Append(host);
@@ -581,9 +580,9 @@ nsHttpHandler::GenerateHostPort(const nsCString& host, PRInt32 port,
     return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsHttpHandler <private>
-//-----------------------------------------------------------------------------
+
+
+
 
 const nsAFlatCString &
 nsHttpHandler::UserAgent()
@@ -612,8 +611,8 @@ nsHttpHandler::BuildUserAgent()
                  !mOscpu.IsEmpty(),
                  "HTTP cannot send practical requests without this much");
 
-    // preallocate to worst-case size, which should always be better
-    // than if we didn't preallocate at all.
+    
+    
     mUserAgent.SetCapacity(mLegacyAppName.Length() + 
                            mLegacyAppVersion.Length() + 
 #ifndef UA_SPARE_PLATFORM
@@ -628,13 +627,13 @@ nsHttpHandler::BuildUserAgent()
                            mCompatFirefox.Length() +
                            13);
 
-    // Application portion
+    
     mUserAgent.Assign(mLegacyAppName);
     mUserAgent += '/';
     mUserAgent += mLegacyAppVersion;
     mUserAgent += ' ';
 
-    // Application comment
+    
     mUserAgent += '(';
 #ifndef UA_SPARE_PLATFORM
     mUserAgent += mPlatform;
@@ -645,19 +644,19 @@ nsHttpHandler::BuildUserAgent()
     mUserAgent += mMisc;
     mUserAgent += ')';
 
-    // Product portion
+    
     mUserAgent += ' ';
     mUserAgent += mProduct;
     mUserAgent += '/';
     mUserAgent += mProductSub;
 
-    // "Firefox/x.y.z" compatibility token
+    
     if (!mCompatFirefox.IsEmpty()) {
         mUserAgent += ' ';
         mUserAgent += mCompatFirefox;
     }
 
-    // App portion
+    
     mUserAgent += ' ';
     mUserAgent += mAppName;
     mUserAgent += '/';
@@ -675,7 +674,7 @@ void
 nsHttpHandler::InitUserAgentComponents()
 {
 
-      // Gather platform.
+      
     mPlatform.AssignLiteral(
 #if defined(ANDROID)
     "Android"
@@ -694,7 +693,7 @@ nsHttpHandler::InitUserAgentComponents()
 #endif
     );
 
-    // Gather OS/CPU.
+    
 #if defined(XP_OS2)
     ULONG os2ver = 0;
     DosQuerySysInfo(QSV_VERSION_MINOR, QSV_VERSION_MINOR,
@@ -759,20 +758,20 @@ nsHttpHandler::InitUserAgentComponents()
 
         if (strcmp(name.machine, "x86_64") == 0 &&
             sizeof(void *) == sizeof(PRInt32)) {
-            // We're running 32-bit code on x86_64. Make this browser
-            // look like it's running on i686 hardware, but append "
-            // (x86_64)" to the end of the oscpu identifier to be able
-            // to differentiate this from someone running 64-bit code
-            // on x86_64..
+            
+            
+            
+            
+            
 
             buf += " i686 on x86_64";
         } else {
             buf += ' ';
 
 #ifdef AIX
-            // AIX uname returns machine specific info in the uname.machine
-            // field and does not return the cpu type like other platforms.
-            // We use the AIX version and release numbers instead.
+            
+            
+            
             buf += (char*)name.version;
             buf += '.';
             buf += (char*)name.release;
@@ -800,9 +799,9 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
 #define MULTI_PREF_CHANGED(p) \
   ((pref == nsnull) || !PL_strncmp(pref, p, sizeof(p) - 1))
 
-    //
-    // UA components
-    //
+    
+    
+    
 
     PRBool cVar = PR_FALSE;
 
@@ -816,7 +815,7 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
         mUserAgentIsDirty = PR_TRUE;
     }
 
-    // Gather locale.
+    
     if (PREF_CHANGED(UA_PREF("locale"))) {
         nsCOMPtr<nsIPrefLocalizedString> pls;
         prefs->GetComplexValue(UA_PREF("locale"),
@@ -838,16 +837,16 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
         mUserAgentIsDirty = PR_TRUE;
     }
 
-    // general.useragent.override
+    
     if (PREF_CHANGED(UA_PREF("override"))) {
         prefs->GetCharPref(UA_PREF("override"),
                             getter_Copies(mUserAgentOverride));
         mUserAgentIsDirty = PR_TRUE;
     }
 
-    //
-    // HTTP options
-    //
+    
+    
+    
 
     if (PREF_CHANGED(HTTP_PREF("keep-alive.timeout"))) {
         rv = prefs->GetIntPref(HTTP_PREF("keep-alive.timeout"), &val);
@@ -947,7 +946,7 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
                 mProxyHttpVersion = NS_HTTP_VERSION_1_1;
             else
                 mProxyHttpVersion = NS_HTTP_VERSION_1_0;
-            // it does not make sense to issue a HTTP/0.9 request to a proxy server
+            
         }
     }
 
@@ -1050,14 +1049,14 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
             if (sval.IsEmpty())
                 mDefaultSocketType.Adopt(0);
             else {
-                // verify that this socket type is actually valid
+                
                 nsCOMPtr<nsISocketProviderService> sps(
                         do_GetService(NS_SOCKETPROVIDERSERVICE_CONTRACTID));
                 if (sps) {
                     nsCOMPtr<nsISocketProvider> sp;
                     rv = sps->GetSocketProvider(sval, getter_AddRefs(sp));
                     if (NS_SUCCEEDED(rv)) {
-                        // OK, this looks like a valid socket provider.
+                        
                         mDefaultSocketType.Assign(sval);
                     }
                 }
@@ -1072,7 +1071,7 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
         }
     }
 
-    // enable Persistent caching for HTTPS - bug#205921    
+    
     if (PREF_CHANGED(BROWSER_PREF("disk_cache_ssl"))) {
         cVar = PR_FALSE;
         rv = prefs->GetBoolPref(BROWSER_PREF("disk_cache_ssl"), &cVar);
@@ -1086,9 +1085,9 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
             mPhishyUserPassLength = (PRUint8) NS_CLAMP(val, 0, 0xff);
     }
 
-    //
-    // INTL options
-    //
+    
+    
+    
 
     if (PREF_CHANGED(INTL_ACCEPT_LANGUAGES)) {
         nsCOMPtr<nsIPrefLocalizedString> pls;
@@ -1116,16 +1115,16 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
         } 
     }
 
-    //
-    // IDN options
-    //
+    
+    
+    
 
     if (PREF_CHANGED(NETWORK_ENABLEIDN)) {
         PRBool enableIDN = PR_FALSE;
         prefs->GetBoolPref(NETWORK_ENABLEIDN, &enableIDN);
-        // No locking is required here since this method runs in the main
-        // UI thread, and so do all the methods in nsHttpChannel.cpp
-        // (mIDNConverter is used by nsHttpChannel)
+        
+        
+        
         if (enableIDN && !mIDNConverter) {
             mIDNConverter = do_GetService(NS_IDNSERVICE_CONTRACTID);
             NS_ASSERTION(mIDNConverter, "idnSDK not installed");
@@ -1134,9 +1133,9 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
             mIDNConverter = nsnull;
     }
 
-    //
-    // Tracking options
-    //
+    
+    
+    
 
     if (PREF_CHANGED(DONOTTRACK_HEADER_ENABLED)) {
         cVar = PR_FALSE;
@@ -1150,19 +1149,19 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
 #undef MULTI_PREF_CHANGED
 }
 
-/**
- *  Allocates a C string into that contains a ISO 639 language list
- *  notated with HTTP "q" values for output with a HTTP Accept-Language
- *  header. Previous q values will be stripped because the order of
- *  the langs imply the q value. The q values are calculated by dividing
- *  1.0 amongst the number of languages present.
- *
- *  Ex: passing: "en, ja"
- *      returns: "en,ja;q=0.5"
- *
- *      passing: "en, ja, fr_CA"
- *      returns: "en,ja;q=0.7,fr_CA;q=0.3"
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 static nsresult
 PrepareAcceptLanguages(const char *i_AcceptLanguages, nsACString &o_AcceptLanguages)
 {
@@ -1201,11 +1200,11 @@ PrepareAcceptLanguages(const char *i_AcceptLanguages, nsACString &o_AcceptLangua
         token = net_FindCharNotInSet(token, HTTP_LWS);
         char* trim;
         trim = net_FindCharInSet(token, ";" HTTP_LWS);
-        if (trim != (char*)0)  // remove "; q=..." if present
+        if (trim != (char*)0)  
             *trim = '\0';
 
         if (*token != '\0') {
-            comma = n++ != 0 ? "," : ""; // delimiter if not first item
+            comma = n++ != 0 ? "," : ""; 
             PRUint32 u = QVAL_TO_UINT(q);
             if (u < 10)
                 wrote = PR_snprintf(p2, available, "%s%s;q=0.%u", comma, token, u);
@@ -1235,20 +1234,20 @@ nsHttpHandler::SetAcceptLanguages(const char *aAcceptLanguages)
     return rv;
 }
 
-/**
- *  Allocates a C string into that contains a character set/encoding list
- *  notated with HTTP "q" values for output with a HTTP Accept-Charset
- *  header. If the UTF-8 character set is not present, it will be added.
- *  If a wildcard catch-all is not present, it will be added. If more than
- *  one charset is set (as of 2001-02-07, only one is used), they will be
- *  comma delimited and with q values set for each charset in decending order.
- *
- *  Ex: passing: "euc-jp"
- *      returns: "euc-jp,utf-8;q=0.6,*;q=0.6"
- *
- *      passing: "UTF-8"
- *      returns: "UTF-8, *"
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static nsresult
 PrepareAcceptCharsets(const char *i_AcceptCharset, nsACString &o_AcceptCharset)
 {
@@ -1272,8 +1271,8 @@ PrepareAcceptCharsets(const char *i_AcceptCharset, nsACString &o_AcceptCharset)
             size++;
     }
 
-    // only add "utf-8" and "*" to the list if they aren't
-    // already specified.
+    
+    
 
     if (PL_strcasestr(acceptable, "utf-8") == NULL) {
         n++;
@@ -1299,11 +1298,11 @@ PrepareAcceptCharsets(const char *i_AcceptCharset, nsACString &o_AcceptCharset)
         token = net_FindCharNotInSet(token, HTTP_LWS);
         char* trim;
         trim = net_FindCharInSet(token, ";" HTTP_LWS);
-        if (trim != (char*)0)  // remove "; q=..." if present
+        if (trim != (char*)0)  
             *trim = '\0';
 
         if (*token != '\0') {
-            comma = n++ != 0 ? "," : ""; // delimiter if not first item
+            comma = n++ != 0 ? "," : ""; 
             u = QVAL_TO_UINT(q);
             if (u < 10)
                 wrote = PR_snprintf(p2, available, "%s%s;q=0.%u", comma, token, u);
@@ -1316,7 +1315,7 @@ PrepareAcceptCharsets(const char *i_AcceptCharset, nsACString &o_AcceptCharset)
         }
     }
     if (add_utf) {
-        comma = n++ != 0 ? "," : ""; // delimiter if not first item
+        comma = n++ != 0 ? "," : ""; 
         u = QVAL_TO_UINT(q);
         if (u < 10)
             wrote = PR_snprintf(p2, available, "%sutf-8;q=0.%u", comma, u);
@@ -1328,11 +1327,11 @@ PrepareAcceptCharsets(const char *i_AcceptCharset, nsACString &o_AcceptCharset)
         NS_ASSERTION(available > 0, "allocated string not long enough");
     }
     if (add_asterisk) {
-        comma = n++ != 0 ? "," : ""; // delimiter if not first item
+        comma = n++ != 0 ? "," : ""; 
 
-        // keep q of "*" equal to the lowest q value
-        // in the event of a tie between the q of "*" and a non-wildcard
-        // the non-wildcard always receives preference.
+        
+        
+        
 
         q += dec;
         u = QVAL_TO_UINT(q);
@@ -1346,7 +1345,7 @@ PrepareAcceptCharsets(const char *i_AcceptCharset, nsACString &o_AcceptCharset)
     }
     nsCRT::free(o_Accept);
 
-    // change alloc from C++ new/delete to nsCRT::strdup's way
+    
     o_AcceptCharset.Assign(q_Accept);
 #if defined DEBUG_havill
     printf("Accept-Charset: %s\n", q_Accept);
@@ -1379,9 +1378,9 @@ nsHttpHandler::SetAcceptEncodings(const char *aAcceptEncodings)
     return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsHttpHandler::nsISupports
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMPL_THREADSAFE_ISUPPORTS5(nsHttpHandler,
                               nsIHttpProtocolHandler,
@@ -1390,9 +1389,9 @@ NS_IMPL_THREADSAFE_ISUPPORTS5(nsHttpHandler,
                               nsIObserver,
                               nsISupportsWeakReference)
 
-//-----------------------------------------------------------------------------
-// nsHttpHandler::nsIProtocolHandler
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 nsHttpHandler::GetScheme(nsACString &aScheme)
@@ -1435,7 +1434,7 @@ nsHttpHandler::NewChannel(nsIURI *uri, nsIChannel **result)
 
     PRBool isHttp = PR_FALSE, isHttps = PR_FALSE;
 
-    // Verify that we have been given a valid scheme
+    
     nsresult rv = uri->SchemeIs("http", &isHttp);
     if (NS_FAILED(rv)) return rv;
     if (!isHttp) {
@@ -1453,14 +1452,14 @@ nsHttpHandler::NewChannel(nsIURI *uri, nsIChannel **result)
 NS_IMETHODIMP 
 nsHttpHandler::AllowPort(PRInt32 port, const char *scheme, PRBool *_retval)
 {
-    // don't override anything.  
+    
     *_retval = PR_FALSE;
     return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsHttpHandler::nsIProxiedProtocolHandler
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 nsHttpHandler::NewProxiedChannel(nsIURI *uri,
@@ -1492,8 +1491,8 @@ nsHttpHandler::NewProxiedChannel(nsIURI *uri,
         httpChannel = new nsHttpChannel();
     }
 
-    // select proxy caps if using a non-transparent proxy.  SSL tunneling
-    // should not use proxy settings.
+    
+    
     PRInt8 caps;
     if (proxyInfo && !nsCRT::strcmp(proxyInfo->Type(), "http") && !https)
         caps = mProxyCapabilities;
@@ -1501,7 +1500,7 @@ nsHttpHandler::NewProxiedChannel(nsIURI *uri,
         caps = mCapabilities;
 
     if (https) {
-        // enable pipelining over SSL if requested
+        
         if (mPipeliningOverSSL)
             caps |= NS_HTTP_ALLOW_PIPELINING;
 
@@ -1509,7 +1508,7 @@ nsHttpHandler::NewProxiedChannel(nsIURI *uri,
         if (!IsNeckoChild()) 
 #endif
         {
-            // HACK: make sure PSM gets initialized on the main thread.
+            
             net_EnsurePSMInit();
         }
     }
@@ -1522,9 +1521,9 @@ nsHttpHandler::NewProxiedChannel(nsIURI *uri,
     return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsHttpHandler::nsIHttpProtocolHandler
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 nsHttpHandler::GetUserAgent(nsACString &value)
@@ -1589,9 +1588,9 @@ nsHttpHandler::GetMisc(nsACString &value)
     return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsHttpHandler::nsIObserver
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 nsHttpHandler::Observe(nsISupports *subject,
@@ -1608,19 +1607,19 @@ nsHttpHandler::Observe(nsISupports *subject,
     else if (strcmp(topic, "profile-change-net-teardown")    == 0 ||
              strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)    == 0) {
 
-        // clear cache of all authentication credentials.
+        
         mAuthCache.ClearAll();
 
-        // ensure connection manager is shutdown
+        
         if (mConnMgr)
             mConnMgr->Shutdown();
 
-        // need to reset the session start time since cache validation may
-        // depend on this value.
+        
+        
         mSessionStartTime = NowInSeconds();
     }
     else if (strcmp(topic, "profile-change-net-restore") == 0) {
-        // initialize connection manager
+        
         InitConnectionMgr();
     }
     else if (strcmp(topic, "net:clear-active-logins") == 0) {
@@ -1641,9 +1640,9 @@ nsHttpHandler::Observe(nsISupports *subject,
     return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsHttpsHandler implementation
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMPL_THREADSAFE_ISUPPORTS4(nsHttpsHandler,
                               nsIHttpProtocolHandler,
@@ -1702,7 +1701,7 @@ nsHttpsHandler::NewChannel(nsIURI *aURI, nsIChannel **_retval)
 NS_IMETHODIMP
 nsHttpsHandler::AllowPort(PRInt32 aPort, const char *aScheme, PRBool *_retval)
 {
-    // don't override anything.  
+    
     *_retval = PR_FALSE;
     return NS_OK;
 }

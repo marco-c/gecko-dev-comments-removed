@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "necko-config.h"
 
@@ -77,7 +77,7 @@
 #define BUILD_BINHEX_DECODER 1
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsIOService.h"
 NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsIOService, nsIOService::GetInstance)
@@ -133,7 +133,7 @@ typedef mozilla::net::RedirectChannelRegistrar RedirectChannelRegistrar;
 NS_GENERIC_FACTORY_CONSTRUCTOR(RedirectChannelRegistrar)
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 extern nsresult
 net_NewIncrementalDownload(nsISupports *, const nsIID &, void **);
@@ -148,7 +148,7 @@ net_NewIncrementalDownload(nsISupports *, const nsIID &, void **);
     {0x8a, 0xaf, 0xb1, 0x48, 0xbf, 0xce, 0x42, 0x80} \
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsStreamConverterService.h"
 
@@ -157,12 +157,12 @@ net_NewIncrementalDownload(nsISupports *, const nsIID &, void **);
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsAppleFileDecoder)
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsMIMEHeaderParamImpl.h"
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsMIMEHeaderParamImpl)
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsRequestObserverProxy.h"
 #include "nsSimpleStreamListener.h"
@@ -174,12 +174,12 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsSimpleStreamListener)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsDirIndexParser, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsDirIndex)
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsStreamListenerTee.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsStreamListenerTee)
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #ifdef NECKO_COOKIES
 #include "nsCookieService.h"
@@ -187,7 +187,7 @@ NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsICookieService,
   nsCookieService::GetXPCOMSingleton)
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
+
 #ifdef NECKO_WIFI
 
 #include "nsWifiMonitor.h"
@@ -197,11 +197,11 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsWifiMonitor)
 
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
-// protocols
-///////////////////////////////////////////////////////////////////////////////
 
-// about:blank is mandatory
+
+
+
+
 #include "nsAboutProtocolHandler.h"
 #include "nsAboutBlank.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsAboutProtocolHandler)
@@ -209,7 +209,7 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsSafeAboutProtocolHandler)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsNestedAboutURI)
 
 #ifdef NECKO_PROTOCOL_about
-// about
+
 #ifdef NS_BUILD_REFCNT_LOGGING
 #include "nsAboutBloat.h"
 #endif
@@ -225,19 +225,19 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsApplicationCache)
 #endif
 
 #ifdef NECKO_PROTOCOL_file
-// file
+
 #include "nsFileProtocolHandler.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsFileProtocolHandler, Init)
 #endif
 
 #ifdef NECKO_PROTOCOL_ftp
-// ftp
+
 #include "nsFtpProtocolHandler.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsFtpProtocolHandler, Init)
 #endif
 
 #ifdef NECKO_PROTOCOL_http
-// http/https
+
 #include "nsHttpHandler.h"
 #undef LOG
 #undef LOG_ENABLED
@@ -254,13 +254,13 @@ NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsHttpHandler, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsHttpsHandler, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsHttpAuthManager, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsHttpChannelAuthProvider)
-NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsHttpActivityDistributor, Init)
+NS_GENERIC_FACTORY_CONSTRUCTOR(nsHttpActivityDistributor)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsHttpBasicAuth)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsHttpDigestAuth)
-#endif // !NECKO_PROTOCOL_http
+#endif 
 
 #ifdef NECKO_PROTOCOL_res
-// resource
+
 #include "nsResProtocolHandler.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsResProtocolHandler, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsResURL)
@@ -285,12 +285,12 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsViewSourceHandler)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsWyciwygProtocolHandler)
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsURIChecker.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsURIChecker)
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsURLParsers.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsNoAuthURLParser)
@@ -304,12 +304,12 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsSimpleURI)
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsSimpleNestedURI)
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #include "nsIDNService.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsIDNService, Init)
 
-///////////////////////////////////////////////////////////////////////////////
+
 #if defined(XP_WIN)
 #include "nsNotifyAddrListener.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsNotifyAddrListener, Init)
@@ -327,7 +327,7 @@ NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsQtNetworkLinkService, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsAndroidNetworkLinkService)
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
+
 
 #ifdef NECKO_PROTOCOL_ftp
 #include "nsFTPDirListingConv.h"
@@ -411,7 +411,7 @@ CreateNewStreamConvServiceFactory(nsISupports* aOuter, REFNSIID aIID, void **aRe
     if (NS_FAILED(rv)) {                                             
         *aResult = nsnull;                                           
     }                                                                
-    NS_RELEASE(inst);             /* get rid of extra refcnt */      
+    NS_RELEASE(inst);                   
     return rv;              
 }
 
@@ -436,7 +436,7 @@ CreateNewFTPDirListingConv(nsISupports* aOuter, REFNSIID aIID, void **aResult)
     if (NS_FAILED(rv)) {                                             
         *aResult = nsnull;                                           
     }                                                                
-    NS_RELEASE(inst);             /* get rid of extra refcnt */      
+    NS_RELEASE(inst);                   
     return rv;              
 }
 #endif
@@ -461,7 +461,7 @@ CreateNewMultiMixedConvFactory(nsISupports* aOuter, REFNSIID aIID, void **aResul
     if (NS_FAILED(rv)) {                                             
         *aResult = nsnull;                                           
     }                                                                
-    NS_RELEASE(inst);             /* get rid of extra refcnt */      
+    NS_RELEASE(inst);                   
     return rv;              
 }
 
@@ -485,7 +485,7 @@ CreateNewTXTToHTMLConvFactory(nsISupports* aOuter, REFNSIID aIID, void **aResult
     if (NS_FAILED(rv)) {                                             
         *aResult = nsnull;                                           
     }                                                                
-    NS_RELEASE(inst);             /* get rid of extra refcnt */      
+    NS_RELEASE(inst);                   
     return rv;              
 }
 
@@ -509,7 +509,7 @@ CreateNewHTTPCompressConvFactory (nsISupports* aOuter, REFNSIID aIID, void **aRe
     if (NS_FAILED(rv)) {                                             
         *aResult = nsnull;                                           
     }                                                                
-    NS_RELEASE(inst);             /* get rid of extra refcnt */      
+    NS_RELEASE(inst);                   
     return rv;              
 }
 
@@ -596,10 +596,10 @@ CreateNewNSTXTToHTMLConvFactory(nsISupports *aOuter, REFNSIID aIID, void **aResu
   return rv;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Module implementation for the net library
 
-// Net module startup hook
+
+
+
 static nsresult nsNetStartup()
 {
     gNetStrings = new nsNetStrings();
@@ -607,26 +607,26 @@ static nsresult nsNetStartup()
 }
 
 
-// Net module shutdown hook
+
 static void nsNetShutdown()
 {
-    // Release the url parser that the stdurl is holding.
+    
     nsStandardURL::ShutdownGlobalObjects();
 
-    // Release buffer cache
+    
     NS_IF_RELEASE(nsIOService::gBufferCache);
 
-    // Release global state used by the URL helper module.
+    
     net_ShutdownURLHelper();
 #ifdef XP_MACOSX
     net_ShutdownURLHelperOSX();
 #endif
     
-    // Release necko strings
+    
     delete gNetStrings;
     gNetStrings = nsnull;
     
-    // Release DNS service reference.
+    
     nsDNSPrefetch::Shutdown();
 }
 
@@ -697,7 +697,7 @@ NS_DEFINE_NAMED_CID(NS_HTTPNTLMAUTH_CID);
 NS_DEFINE_NAMED_CID(NS_HTTPAUTHMANAGER_CID);
 NS_DEFINE_NAMED_CID(NS_HTTPCHANNELAUTHPROVIDER_CID);
 NS_DEFINE_NAMED_CID(NS_HTTPACTIVITYDISTRIBUTOR_CID);
-#endif // !NECKO_PROTOCOL_http
+#endif 
 #ifdef NECKO_PROTOCOL_ftp
 NS_DEFINE_NAMED_CID(NS_FTPPROTOCOLHANDLER_CID);
 #endif
@@ -828,7 +828,7 @@ static const mozilla::Module::CIDEntry kNeckoCIDs[] = {
     { &kNS_HTTPAUTHMANAGER_CID, false, NULL, nsHttpAuthManagerConstructor },
     { &kNS_HTTPCHANNELAUTHPROVIDER_CID, false, NULL, nsHttpChannelAuthProviderConstructor },
     { &kNS_HTTPACTIVITYDISTRIBUTOR_CID, false, NULL, nsHttpActivityDistributorConstructor },
-#endif // !NECKO_PROTOCOL_http
+#endif 
 #ifdef NECKO_PROTOCOL_ftp
     { &kNS_FTPPROTOCOLHANDLER_CID, false, NULL, nsFtpProtocolHandlerConstructor },
 #endif
@@ -968,7 +968,7 @@ static const mozilla::Module::ContractIDEntry kNeckoContracts[] = {
     { NS_HTTPAUTHMANAGER_CONTRACTID, &kNS_HTTPAUTHMANAGER_CID },
     { NS_HTTPCHANNELAUTHPROVIDER_CONTRACTID, &kNS_HTTPCHANNELAUTHPROVIDER_CID },
     { NS_HTTPACTIVITYDISTRIBUTOR_CONTRACTID, &kNS_HTTPACTIVITYDISTRIBUTOR_CID },
-#endif // !NECKO_PROTOCOL_http
+#endif 
 #ifdef NECKO_PROTOCOL_ftp
     { NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "ftp", &kNS_FTPPROTOCOLHANDLER_CID },
 #endif
