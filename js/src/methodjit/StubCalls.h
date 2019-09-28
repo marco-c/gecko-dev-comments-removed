@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Brendan Eich <brendan@mozilla.org>
+ *
+ * Contributor(s):
+ *   David Anderson <danderson@mozilla.com>
+ *   David Mandelin <dmandelin@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jslogic_h__
 #define jslogic_h__
@@ -67,21 +67,21 @@ void JS_FASTCALL SlowCall(VMFrame &f, uint32 argc);
 void * JS_FASTCALL UncachedNew(VMFrame &f, uint32 argc);
 void * JS_FASTCALL UncachedCall(VMFrame &f, uint32 argc);
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Result struct for UncachedXHelper.
+ *
+ * These functions can have one of two results:
+ *
+ *   (1) The function was executed in the interpreter. Then all fields
+ *       are NULL.
+ *
+ *   (2) The function was not executed, and the function has been compiled
+ *       to JM native code. Then all fields are non-NULL.
+ */
 struct UncachedCallResult {
-    JSObject   *callee;       
-    JSFunction *fun;          
-    void       *codeAddr;     
+    JSObject   *callee;       // callee object
+    JSFunction *fun;          // callee function
+    void       *codeAddr;     // code address of compiled callee function
 
     void init() {
         callee = NULL;
@@ -90,11 +90,11 @@ struct UncachedCallResult {
     }        
 };
 
-
-
-
-
-
+/*
+ * Helper functions for stubs and IC functions for calling functions.
+ * These functions either execute the function, return a native code
+ * pointer that can be used to call the function, or throw.
+ */
 void UncachedCallHelper(VMFrame &f, uint32 argc, UncachedCallResult *ucr);
 void UncachedNewHelper(VMFrame &f, uint32 argc, UncachedCallResult *ucr);
 
@@ -164,7 +164,7 @@ JSObject * JS_FASTCALL FlatLambda(VMFrame &f, JSFunction *fun);
 void JS_FASTCALL Arguments(VMFrame &f);
 void JS_FASTCALL ArgSub(VMFrame &f, uint32 n);
 void JS_FASTCALL EnterBlock(VMFrame &f, JSObject *obj);
-void JS_FASTCALL LeaveBlock(VMFrame &f);
+void JS_FASTCALL LeaveBlock(VMFrame &f, JSObject *blockChain);
 
 void JS_FASTCALL VpInc(VMFrame &f, Value *vp);
 void JS_FASTCALL VpDec(VMFrame &f, Value *vp);
@@ -213,28 +213,28 @@ void JS_FASTCALL FastInstanceOf(VMFrame &f);
 void JS_FASTCALL ArgCnt(VMFrame &f);
 void JS_FASTCALL Unbrand(VMFrame &f);
 
-} 
+} /* namespace stubs */
 
-
-
-
-
-
-
+/* 
+ * If COND is true, return A; otherwise, return B. This allows us to choose between
+ * function template instantiations without running afoul of C++'s overload resolution
+ * rules. (Try simplifying, and you'll either see the problem --- or have found a
+ * better solution!)
+ */
 template<typename FuncPtr>
 inline FuncPtr FunctionTemplateConditional(bool cond, FuncPtr a, FuncPtr b) {
     return cond ? a : b;
 }
 
-
+/* Return f<true> if the script is strict mode code, f<false> otherwise. */
 #define STRICT_VARIANT(f)                                                     \
     (FunctionTemplateConditional(script->strictModeCode,                      \
                                  f<true>, f<false>))
 
-}} 
+}} /* namespace stubs,mjit,js */
 
 extern "C" void *
 js_InternalThrow(js::VMFrame &f);
 
-#endif 
+#endif /* jslogic_h__ */
 
