@@ -1,10 +1,9 @@
 function paintCountIs(plugin, expected, msg) {
   var count = plugin.getPaintCount();
   var realExpected = expected;
-  var isAsync = SimpleTest.testPluginIsOOP() &&
-    navigator.platform.indexOf("Mac") < 0;
+  var isAsync = SimpleTest.testPluginIsOOP();
   if (isAsync) {
-    ++realExpected; 
+    ++realExpected; // extra paint at startup for all async-rendering plugins
   } else {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
     try {
