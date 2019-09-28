@@ -210,12 +210,15 @@ BookmarksEngine.prototype = {
   },
 
   _processIncoming: function _processIncoming() {
-    SyncEngine.prototype._processIncoming.call(this);
-    
-    this._tracker.ignoreAll = true;
-    this._store._orderChildren();
-    this._tracker.ignoreAll = false;
-    delete this._store._childrenToOrder;
+    try {
+      SyncEngine.prototype._processIncoming.call(this);
+    } finally {
+      
+      this._tracker.ignoreAll = true;
+      this._store._orderChildren();
+      this._tracker.ignoreAll = false;
+      delete this._store._childrenToOrder;
+    }
   },
 
   _syncFinish: function _syncFinish() {
