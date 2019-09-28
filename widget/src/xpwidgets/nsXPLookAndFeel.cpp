@@ -1,39 +1,39 @@
-/* -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nscore.h"
 
@@ -139,12 +139,12 @@ nsLookAndFeelFloatPref nsXPLookAndFeel::sFloatPrefs[] =
 };
 
 
-// This array MUST be kept in the same order as the color list in LookAndFeel.h.
-/* XXX If you add any strings longer than
- * "ui.IMESelectedConvertedTextBackground"
- * to the following array then you MUST update the
- * sizes of the sColorPrefs array in nsXPLookAndFeel.h
- */
+
+
+
+
+
+
 const char nsXPLookAndFeel::sColorPrefs[][38] =
 {
   "ui.windowBackground",
@@ -248,7 +248,7 @@ PRBool nsXPLookAndFeel::sUseNativeColors = PR_TRUE;
 nsLookAndFeel* nsXPLookAndFeel::sInstance = nsnull;
 PRBool nsXPLookAndFeel::sShutdown = PR_FALSE;
 
-// static
+
 nsLookAndFeel*
 nsXPLookAndFeel::GetInstance()
 {
@@ -262,7 +262,7 @@ nsXPLookAndFeel::GetInstance()
   return sInstance;
 }
 
-// static
+
 void
 nsXPLookAndFeel::Shutdown()
 {
@@ -278,7 +278,7 @@ nsXPLookAndFeel::nsXPLookAndFeel() : LookAndFeel()
 {
 }
 
-// static
+
 void
 nsXPLookAndFeel::IntPrefChanged(nsLookAndFeelIntPref *data)
 {
@@ -298,7 +298,7 @@ nsXPLookAndFeel::IntPrefChanged(nsLookAndFeelIntPref *data)
 #endif
 }
 
-// static
+
 void
 nsXPLookAndFeel::FloatPrefChanged(nsLookAndFeelFloatPref *data)
 {
@@ -318,7 +318,7 @@ nsXPLookAndFeel::FloatPrefChanged(nsLookAndFeelFloatPref *data)
 #endif
 }
 
-// static
+
 void
 nsXPLookAndFeel::ColorPrefChanged (unsigned int index, const char *prefName)
 {
@@ -330,7 +330,9 @@ nsXPLookAndFeel::ColorPrefChanged (unsigned int index, const char *prefName)
   if (!colorStr.IsEmpty()) {
     nscolor thecolor;
     if (colorStr[0] == PRUnichar('#')) {
-      if (NS_HexToRGB(nsDependentString(colorStr, 1), &thecolor)) {
+      if (NS_HexToRGB(nsDependentString(
+                        Substring(colorStr, 1, colorStr.Length() - 1)),
+                      &thecolor)) {
         PRInt32 id = NS_PTR_TO_INT32(index);
         CACHE_COLOR(id, thecolor);
       }
@@ -343,8 +345,8 @@ nsXPLookAndFeel::ColorPrefChanged (unsigned int index, const char *prefName)
 #endif
     }
   } else {
-    // Reset to the default color, by clearing the cache
-    // to force lookup when the color is next used
+    
+    
     PRInt32 id = NS_PTR_TO_INT32(index);
     CLEAR_COLOR_CACHE(id);
   }
@@ -392,12 +394,12 @@ nsXPLookAndFeel::InitColorFromPref(PRInt32 i)
   }
 }
 
-// static
+
 int
 nsXPLookAndFeel::OnPrefChanged(const char* aPref, void* aClosure)
 {
 
-  // looping in the same order as in ::Init
+  
 
   nsDependentCString prefName(aPref);
   unsigned int i;
@@ -425,22 +427,22 @@ nsXPLookAndFeel::OnPrefChanged(const char* aPref, void* aClosure)
   return 0;
 }
 
-//
-// Read values from the user's preferences.
-// This is done once at startup, but since the user's preferences
-// haven't actually been read yet at that time, we also have to
-// set a callback to inform us of changes to each pref.
-//
+
+
+
+
+
+
 void
 nsXPLookAndFeel::Init()
 {
-  // Say we're already initialized, and take the chance that it might fail;
-  // protects against some other process writing to our static variables.
+  
+  
   sInitialized = PR_TRUE;
 
-  // XXX If we could reorganize the pref names, we should separate the branch
-  //     for each types.  Then, we could reduce the unnecessary loop from
-  //     nsXPLookAndFeel::OnPrefChanged().
+  
+  
+  
   Preferences::RegisterCallback(OnPrefChanged, "ui.");
   Preferences::RegisterCallback(OnPrefChanged, "accessibility.tabfocus");
 
@@ -491,79 +493,79 @@ nsXPLookAndFeel::IsSpecialColor(ColorID aID, nscolor &aColor)
     case eColorID_SpellCheckerUnderline:
       return NS_IS_SELECTION_SPECIAL_COLOR(aColor);
     default:
-      /*
-       * In GetColor(), every color that is not a special color is color
-       * corrected. Use PR_FALSE to make other colors color corrected.
-       */
+      
+
+
+
       return PR_FALSE;
   }
   return PR_FALSE;
 }
 
-//
-// All these routines will return NS_OK if they have a value,
-// in which case the nsLookAndFeel should use that value;
-// otherwise we'll return NS_ERROR_NOT_AVAILABLE, in which case, the
-// platform-specific nsLookAndFeel should use its own values instead.
-//
+
+
+
+
+
+
 nsresult
 nsXPLookAndFeel::GetColorImpl(ColorID aID, nscolor &aResult)
 {
   if (!sInitialized)
     Init();
 
-  // define DEBUG_SYSTEM_COLOR_USE if you want to debug system color
-  // use in a skin that uses them.  When set, it will make all system
-  // color pairs that are appropriate for foreground/background
-  // pairing the same.  This means if the skin is using system colors
-  // correctly you will not be able to see *any* text.
+  
+  
+  
+  
+  
 #undef DEBUG_SYSTEM_COLOR_USE
 
 #ifdef DEBUG_SYSTEM_COLOR_USE
   {
     nsresult rv = NS_OK;
     switch (aID) {
-        // css2  http://www.w3.org/TR/REC-CSS2/ui.html#system-colors
+        
       case eColorID_activecaption:
-          // active window caption background
+          
       case eColorID_captiontext:
-          // text in active window caption
+          
         aResult = NS_RGB(0xff, 0x00, 0x00);
         break;
 
       case eColorID_highlight:
-          // background of selected item
+          
       case eColorID_highlighttext:
-          // text of selected item
+          
         aResult = NS_RGB(0xff, 0xff, 0x00);
         break;
 
       case eColorID_inactivecaption:
-          // inactive window caption
+          
       case eColorID_inactivecaptiontext:
-          // text in inactive window caption
+          
         aResult = NS_RGB(0x66, 0x66, 0x00);
         break;
 
       case eColorID_infobackground:
-          // tooltip background color
+          
       case eColorID_infotext:
-          // tooltip text color
+          
         aResult = NS_RGB(0x00, 0xff, 0x00);
         break;
 
       case eColorID_menu:
-          // menu background
+          
       case eColorID_menutext:
-          // menu text
+          
         aResult = NS_RGB(0x00, 0xff, 0xff);
         break;
 
       case eColorID_threedface:
       case eColorID_buttonface:
-          // 3-D face color
+          
       case eColorID_buttontext:
-          // text on push buttons
+          
         aResult = NS_RGB(0x00, 0x66, 0x66);
         break;
 
@@ -572,8 +574,8 @@ nsXPLookAndFeel::GetColorImpl(ColorID aID, nscolor &aResult)
         aResult = NS_RGB(0x00, 0x00, 0xff);
         break;
 
-      // from the CSS3 working draft (not yet finalized)
-      // http://www.w3.org/tr/2000/wd-css3-userint-20000216.html#color
+      
+      
 
       case eColorID__moz_field:
       case eColorID__moz_fieldtext:
@@ -591,38 +593,38 @@ nsXPLookAndFeel::GetColorImpl(ColorID aID, nscolor &aResult)
     if (NS_SUCCEEDED(rv))
       return rv;
   }
-#endif // DEBUG_SYSTEM_COLOR_USE
+#endif 
 
   if (IS_COLOR_CACHED(aID)) {
     aResult = sCachedColors[aID];
     return NS_OK;
   }
 
-  // There are no system color settings for these, so set them manually
+  
   if (aID == eColorID_TextSelectBackgroundDisabled) {
-    // This is used to gray out the selection when it's not focused
-    // Used with nsISelectionController::SELECTION_DISABLED
+    
+    
     aResult = NS_RGB(0xb0, 0xb0, 0xb0);
     return NS_OK;
   }
 
   if (aID == eColorID_TextSelectBackgroundAttention) {
-    // This makes the selection stand out when typeaheadfind is on
-    // Used with nsISelectionController::SELECTION_ATTENTION
+    
+    
     aResult = NS_RGB(0x38, 0xd8, 0x78);
     return NS_OK;
   }
 
   if (aID == eColorID_TextHighlightBackground) {
-    // This makes the matched text stand out when findbar highlighting is on
-    // Used with nsISelectionController::SELECTION_FIND
+    
+    
     aResult = NS_RGB(0xef, 0x0f, 0xff);
     return NS_OK;
   }
 
   if (aID == eColorID_TextHighlightForeground) {
-    // The foreground color for the matched text in findbar highlighting
-    // Used with nsISelectionController::SELECTION_FIND
+    
+    
     aResult = NS_RGB(0xff, 0xff, 0xff);
     return NS_OK;
   }
@@ -654,8 +656,8 @@ nsXPLookAndFeel::GetIntImpl(IntID aID, PRInt32 &aResult)
   if (!sInitialized)
     Init();
 
-  // Set the default values for these prefs. but allow different platforms
-  // to override them in their nsLookAndFeel if desired.
+  
+  
   switch (aID) {
     case eIntID_ScrollButtonLeftMouseButtonAction:
       aResult = 0;
@@ -667,10 +669,10 @@ nsXPLookAndFeel::GetIntImpl(IntID aID, PRInt32 &aResult)
       aResult = 3;
       return NS_OK;
     default:
-      /*
-       * The metrics above are hardcoded platform defaults. All the other
-       * metrics are stored in sIntPrefs and can be changed at runtime.
-       */
+      
+
+
+
     break;
   }
 
@@ -703,7 +705,7 @@ nsXPLookAndFeel::GetFloatImpl(FloatID aID, float &aResult)
 void
 nsXPLookAndFeel::RefreshImpl()
 {
-  // Wipe out our color cache.
+  
   PRUint32 i;
   for (i = 0; i < eColorID_LAST_COLOR; i++)
     sCachedColors[i] = 0;
@@ -713,46 +715,46 @@ nsXPLookAndFeel::RefreshImpl()
 
 namespace mozilla {
 
-// static
+
 nsresult
 LookAndFeel::GetColor(ColorID aID, nscolor* aResult)
 {
   return nsLookAndFeel::GetInstance()->GetColorImpl(aID, *aResult);
 }
 
-// static
+
 nsresult
 LookAndFeel::GetInt(IntID aID, PRInt32* aResult)
 {
   return nsLookAndFeel::GetInstance()->GetIntImpl(aID, *aResult);
 }
 
-// static
+
 nsresult
 LookAndFeel::GetFloat(FloatID aID, float* aResult)
 {
   return nsLookAndFeel::GetInstance()->GetFloatImpl(aID, *aResult);
 }
 
-// static
+
 PRUnichar
 LookAndFeel::GetPasswordCharacter()
 {
   return nsLookAndFeel::GetInstance()->GetPasswordCharacterImpl();
 }
 
-// static
+
 PRBool
 LookAndFeel::GetEchoPassword()
 {
   return nsLookAndFeel::GetInstance()->GetEchoPasswordImpl();
 }
 
-// static
+
 void
 LookAndFeel::Refresh()
 {
   nsLookAndFeel::GetInstance()->RefreshImpl();
 }
 
-} // namespace mozilla
+} 
