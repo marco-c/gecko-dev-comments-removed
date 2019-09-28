@@ -529,6 +529,16 @@ nsresult SetExceptionHandler(nsILocalFile* aXREDirectory,
 #error "Implement this for your platform"
 #endif
 
+#ifdef XP_UNIX
+  
+  
+  
+  
+  int fd = open("/dev/null", O_RDONLY);
+  close(fd);
+  write(-1, NULL, 0);
+#endif
+
   
   gExceptionHandler = new google_breakpad::
     ExceptionHandler(tempPath.get(),
