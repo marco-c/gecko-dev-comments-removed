@@ -66,9 +66,15 @@ pref("browser.cache.disk.smart_size.first_run", true);
 pref("browser.cache.disk.smart_size.enabled", true);
 
 pref("browser.cache.disk.capacity",         256000);
+
+
+pref("browser.cache.disk.max_entry_size",    5120);
 pref("browser.cache.memory.enable",         true);
 
 
+
+
+pref("browser.cache.memory.max_entry_size",  5120);
 pref("browser.cache.disk_cache_ssl",        true);
 
 pref("browser.cache.check_doc_frequency",   3);
@@ -189,14 +195,6 @@ pref("gfx.color_management.rendering_intent", 0);
 pref("gfx.downloadable_fonts.enabled", true);
 pref("gfx.downloadable_fonts.fallback_delay", 3000);
 pref("gfx.downloadable_fonts.sanitize", true);
-
-
-
-
-
-#ifdef XP_MACOSX
-pref("gfx.downloadable_fonts.enabled.lion", false);
-#endif
 
 
 #ifdef XP_MACOSX

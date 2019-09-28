@@ -46,6 +46,7 @@
 
 
 
+
 #include "base/basictypes.h"
 
 
@@ -169,7 +170,6 @@
 #include "nsDOMClassInfo.h"
 #include "nsIJSNativeInitializer.h"
 #include "nsIScriptError.h"
-#include "nsIScriptEventManager.h" 
 #include "nsIConsoleService.h"
 #include "nsIControllers.h"
 #include "nsIControllerContext.h"
@@ -189,6 +189,7 @@
 #include "nsFocusManager.h"
 #include "nsIXULWindow.h"
 #include "nsEventStateManager.h"
+#include "nsITimedChannel.h"
 #ifdef MOZ_XUL
 #include "nsXULPopupManager.h"
 #include "nsIDOMXULControlElement.h"
@@ -240,6 +241,8 @@
 #include "nsRefreshDriver.h"
 #include "mozAutoDocUpdate.h"
 
+#include "mozilla/Telemetry.h"
+
 #ifdef PR_LOGGING
 static PRLogModuleInfo* gDOMLeakPRLog;
 #endif
@@ -252,7 +255,7 @@ using mozilla::TimeStamp;
 using mozilla::TimeDuration;
 
 nsIDOMStorageList *nsGlobalWindow::sGlobalStorageList  = nsnull;
-nsGlobalWindow::WindowByIdTable *nsGlobalWindow::sOuterWindowsById = nsnull;
+nsGlobalWindow::WindowByIdTable *nsGlobalWindow::sWindowsById = nsnull;
 
 static nsIEntropyCollector *gEntropyCollector          = nsnull;
 static PRInt32              gRefCnt                    = 0;
@@ -887,18 +890,6 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
 
     mObserver = nsnull;
     SetIsProxy();
-
-    if (!sOuterWindowsById) {
-      sOuterWindowsById = new WindowByIdTable();
-      if (!sOuterWindowsById->Init()) {
-        delete sOuterWindowsById;
-        sOuterWindowsById = nsnull;
-      }
-    }
-
-    if (sOuterWindowsById) {
-      sOuterWindowsById->Put(mWindowID, this);
-    }
   }
 
   
@@ -952,17 +943,35 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     PR_LOG(gDOMLeakPRLog, PR_LOG_DEBUG,
            ("DOMWINDOW %p created outer=%p", this, aOuterWindow));
 #endif
+
+  
+  if (!sWindowsById) {
+    sWindowsById = new WindowByIdTable();
+    if (!sWindowsById->Init()) {
+      delete sWindowsById;
+      sWindowsById = nsnull;
+      NS_ERROR("sWindowsById initialization failed!");
+    }
+  }
+
+  if (sWindowsById) {
+    NS_ASSERTION(!sWindowsById->Get(mWindowID),
+                 "This window shouldn't be in the hash table yet!");
+    sWindowsById->Put(mWindowID, this);
+  }
 }
 
 nsGlobalWindow::~nsGlobalWindow()
 {
-  if (sOuterWindowsById) {
-    sOuterWindowsById->Remove(mWindowID);
+  
+  
+  if (sWindowsById) {
+    NS_ASSERTION(sWindowsById->Get(mWindowID),
+                 "This window should be in the hash table");
+    sWindowsById->Remove(mWindowID);
   }
   if (!--gRefCnt) {
     NS_IF_RELEASE(gEntropyCollector);
-    delete sOuterWindowsById;
-    sOuterWindowsById = nsnull;
   }
 #ifdef DEBUG
   nsCAutoString url;
@@ -1038,6 +1047,9 @@ nsGlobalWindow::ShutDown()
     fclose(gDumpFile);
   }
   gDumpFile = nsnull;
+
+  delete sWindowsById;
+  sWindowsById = nsnull;
 }
 
 
@@ -1340,7 +1352,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsGlobalWindow)
   NS_INTERFACE_MAP_ENTRY(nsIDOMStorageIndexedDB)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMWindow_2_0_BRANCH)
   NS_INTERFACE_MAP_ENTRY(nsIDOMWindowPerformance)
   NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(Window)
   OUTER_WINDOW_ONLY
@@ -2569,7 +2580,8 @@ nsGlobalWindow::PreHandleEvent(nsEventChainPreVisitor& aVisitor)
   } else if (msg == NS_MOUSE_BUTTON_DOWN &&
              NS_IS_TRUSTED_EVENT(aVisitor.mEvent)) {
     gMouseDown = PR_TRUE;
-  } else if (msg == NS_MOUSE_BUTTON_UP &&
+  } else if ((msg == NS_MOUSE_BUTTON_UP ||
+              msg == NS_DRAGDROP_END) &&
              NS_IS_TRUSTED_EVENT(aVisitor.mEvent)) {
     gMouseDown = PR_FALSE;
     if (gDragServiceDisabled) {
@@ -2991,8 +3003,15 @@ nsGlobalWindow::GetPerformance(nsIDOMPerformance** aPerformance)
         return NS_OK;
       }
       nsRefPtr<nsDOMNavigationTiming> timing = mDoc->GetNavigationTiming();
+      nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(mDoc->GetChannel()));
+      PRBool timingEnabled = PR_FALSE;
+      if (!timedChannel ||
+          !NS_SUCCEEDED(timedChannel->GetTimingEnabled(&timingEnabled)) ||
+          !timingEnabled) {
+        timedChannel = nsnull;
+      }
       if (timing) {
-        mPerformance = new nsPerformance(timing);
+        mPerformance = new nsPerformance(timing, timedChannel);
       }
     }
     NS_IF_ADDREF(*aPerformance = mPerformance);
@@ -7474,6 +7493,15 @@ nsGlobalWindow::SetActive(PRBool aActive)
   NotifyDocumentTree(mDoc, nsnull);
 }
 
+void nsGlobalWindow::SetIsBackground(PRBool aIsBackground)
+{
+  PRBool resetTimers = (!aIsBackground && IsBackground());
+  nsPIDOMWindow::SetIsBackground(aIsBackground);
+  if (resetTimers) {
+    ResetTimersForNonBackgroundWindow();
+  }
+}
+
 void nsGlobalWindow::MaybeUpdateTouchState()
 {
   FORWARD_TO_INNER_VOID(MaybeUpdateTouchState, ());
@@ -8222,15 +8250,6 @@ nsGlobalWindow::GetInterface(const nsIID & aIID, void **aSink)
     }
   }
 #endif
-  else if (aIID.Equals(NS_GET_IID(nsIScriptEventManager))) {
-    if (mDoc) {
-      nsIScriptEventManager* mgr = mDoc->GetScriptEventManager();
-      if (mgr) {
-        *aSink = mgr;
-        NS_ADDREF(((nsISupports *) *aSink));
-      }
-    }
-  }
   else if (aIID.Equals(NS_GET_IID(nsIDOMWindowUtils))) {
     FORWARD_TO_OUTER(GetInterface, (aIID, aSink), NS_ERROR_NOT_INITIALIZED);
 
@@ -8839,10 +8858,8 @@ nsGlobalWindow::SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
   }
 
   nsRefPtr<nsTimeout> timeout = new nsTimeout();
-
-  if (aIsInterval) {
-    timeout->mInterval = interval;
-  }
+  timeout->mIsInterval = aIsInterval;
+  timeout->mInterval = interval;
   timeout->mScriptHandler = aHandler;
 
   
@@ -9143,7 +9160,7 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
     ++gRunningTimeoutDepth;
     ++mTimeoutFiringDepth;
 
-    PRBool trackNestingLevel = !timeout->mInterval;
+    PRBool trackNestingLevel = !timeout->mIsInterval;
     PRUint32 nestingLevel;
     if (trackNestingLevel) {
       nestingLevel = sNestingLevel;
@@ -9229,7 +9246,7 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
 
     
     
-    if (timeout->mInterval) {
+    if (timeout->mIsInterval) {
       
       
       TimeDuration nextInterval =
@@ -9300,7 +9317,7 @@ nsGlobalWindow::RunTimeout(nsTimeout *aTimeout)
     }
 
     if (timeout->mTimer) {
-      if (timeout->mInterval) {
+      if (timeout->mIsInterval) {
         isInterval = PR_TRUE;
       } else {
         
@@ -9378,7 +9395,7 @@ nsGlobalWindow::ClearTimeoutOrInterval(PRInt32 aTimerID)
         
 
 
-        timeout->mInterval = 0;
+        timeout->mIsInterval = PR_FALSE;
       }
       else {
         
@@ -9392,6 +9409,94 @@ nsGlobalWindow::ClearTimeoutOrInterval(PRInt32 aTimerID)
         timeout->Release();
       }
       break;
+    }
+  }
+
+  return NS_OK;
+}
+
+nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
+{
+  FORWARD_TO_INNER(ResetTimersForNonBackgroundWindow, (),
+                   NS_ERROR_NOT_INITIALIZED);
+
+  if (IsFrozen() || mTimeoutsSuspendDepth) {
+    return NS_OK;
+  }
+
+  TimeStamp now = TimeStamp::Now();
+
+  for (nsTimeout *timeout = FirstTimeout(); IsTimeout(timeout); ) {
+    
+    
+    
+    if (timeout->mWhen <= now) {
+      timeout = timeout->Next();
+      continue;
+    }
+
+    if (timeout->mWhen - now >
+        TimeDuration::FromMilliseconds(gMinBackgroundTimeoutValue)) {
+      
+      
+      
+      break;
+    }
+
+    
+    
+    
+    TimeDuration interval =
+      TimeDuration::FromMilliseconds(NS_MAX(timeout->mInterval,
+                                            PRUint32(DOMMinTimeoutValue())));
+    PRUint32 oldIntervalMillisecs = 0;
+    timeout->mTimer->GetDelay(&oldIntervalMillisecs);
+    TimeDuration oldInterval = TimeDuration::FromMilliseconds(oldIntervalMillisecs);
+    if (oldInterval > interval) {
+      
+      TimeStamp firingTime =
+        NS_MAX(timeout->mWhen - oldInterval + interval, now);
+
+      NS_ASSERTION(firingTime < timeout->mWhen,
+                   "Our firing time should strictly decrease!");
+
+      TimeDuration delay = firingTime - now;
+      timeout->mWhen = firingTime;
+
+      
+      
+      
+      
+      
+      nsTimeout* nextTimeout = timeout->Next();
+
+      
+      
+      
+      NS_ASSERTION(!IsTimeout(nextTimeout) ||
+                   timeout->mWhen < nextTimeout->mWhen, "How did that happen?");
+      PR_REMOVE_LINK(timeout);
+      
+      
+      PRUint32 firingDepth = timeout->mFiringDepth;
+      InsertTimeoutIntoList(timeout);
+      timeout->mFiringDepth = firingDepth;
+      timeout->Release();
+
+      nsresult rv =
+        timeout->mTimer->InitWithFuncCallback(TimerCallback,
+                                              timeout,
+                                              delay.ToMilliseconds(),
+                                              nsITimer::TYPE_ONE_SHOT);
+
+      if (NS_FAILED(rv)) {
+        NS_WARNING("Error resetting non background timer for DOM timeout!");
+        return rv;
+      }
+
+      timeout = nextTimeout;
+    } else {
+      timeout = timeout->Next();
     }
   }
 
@@ -10896,6 +11001,7 @@ nsNavigator::GetBuildID(nsAString& aBuildID)
 NS_IMETHODIMP
 nsNavigator::JavaEnabled(PRBool *aReturn)
 {
+  Telemetry::AutoTimer<Telemetry::CHECK_JAVA_ENABLED> telemetryTimer;
   
   
   *aReturn = PR_FALSE;
