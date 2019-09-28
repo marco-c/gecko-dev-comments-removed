@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is SpiderMonkey code.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "jsgcmark.h"
 #include "jsprf.h"
@@ -45,34 +45,36 @@
 #include "jsobjinlines.h"
 #include "jsscopeinlines.h"
 
+#include "vm/String-inl.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * There are two mostly separate mark paths. The first is a fast path used
+ * internally in the GC. The second is a slow path used for root marking and
+ * for API consumers like the cycle collector.
+ *
+ * The fast path uses explicit stacks. The basic marking process during a GC is
+ * that all roots are pushed on to a mark stack, and then each item on the
+ * stack is scanned (possibly pushing more stuff) until the stack is empty.
+ *
+ * PushMarkStack pushes a GC thing onto the mark stack. In some cases (shapes
+ * or strings) it eagerly marks the object rather than pushing it. Popping is
+ * done by the drainMarkStack method. For each thing it pops, drainMarkStack
+ * calls ScanObject (or a related function).
+ *
+ * Most of the marking code outside jsgcmark uses functions like MarkObject,
+ * MarkString, etc. These functions check if an object is in the compartment
+ * currently being GCed. If it is, they call PushMarkStack. Roots are pushed
+ * this way as well as pointers traversed inside trace hooks (for things like
+ * js_IteratorClass). It it always valid to call a MarkX function instead of
+ * PushMarkStack, although it may be slower.
+ *
+ * The MarkX functions also handle non-GC object traversal. In this case, they
+ * call a callback for each object visited. This is a recursive process; the
+ * mark stacks are not involved. These callbacks may ask for the outgoing
+ * pointers to be visited. Eventually, this leads to the MarkChildren functions
+ * being called. These functions duplicate much of the functionality of
+ * ScanObject, but they don't push onto an explicit stack.
+ */
 
 using namespace js;
 using namespace js::gc;
@@ -113,10 +115,10 @@ Mark(JSTracer *trc, T *thing)
     JS_ASSERT(thing->arenaHeader()->compartment);
     JS_ASSERT(thing->arenaHeader()->compartment->rt == rt);
 
-    
-
-
-
+    /*
+     * Don't mark things outside a compartment if we are in a per-compartment
+     * GC.
+     */
     if (!rt->gcCurrentCompartment || thing->compartment() == rt->gcCurrentCompartment) {
         if (IS_GC_MARKING_TRACER(trc))
             PushMarkStack(static_cast<GCMarker *>(trc), thing);
@@ -234,7 +236,7 @@ PushMarkStack(GCMarker *gcmarker, const Shape *thing)
     JS_ASSERT_IF(gcmarker->context->runtime->gcCurrentCompartment,
                  thing->compartment() == gcmarker->context->runtime->gcCurrentCompartment);
 
-    
+    /* We mark shapes directly rather than pushing on the stack. */
     if (thing->markIfUnmarked(gcmarker->getMarkColor()))
         ScanShape(gcmarker, thing);
 }
@@ -332,7 +334,7 @@ MarkKind(JSTracer *trc, void *thing, uint32 kind)
     }
 }
 
-
+/* N.B. Assumes JS_SET_TRACING_NAME/INDEX has already been called. */
 void
 MarkValueRaw(JSTracer *trc, const js::Value &v)
 {
@@ -379,7 +381,7 @@ MarkShapeRange(JSTracer *trc, size_t len, const Shape **vec, const char *name)
     MarkShapeRange(trc, vec, vec + len, name);
 }
 
-
+/* N.B. Assumes JS_SET_TRACING_NAME/INDEX has already been called. */
 void
 MarkGCThing(JSTracer *trc, void *thing, uint32 kind)
 {
@@ -612,7 +614,7 @@ ScanObject(GCMarker *gcmarker, JSObject *obj)
         PushMarkStack(gcmarker, shape);
 
         if (gcmarker->context->runtime->gcRegenShapes) {
-            
+            /* We need to regenerate our shape if hasOwnShape(). */
             uint32 newShape = shape->shapeid;
             if (obj->hasOwnShape()) {
                 newShape = js_RegenerateShapeForGC(gcmarker->context->runtime);
@@ -676,11 +678,11 @@ MarkObjectSlots(JSTracer *trc, JSObject *obj)
 void
 MarkChildren(JSTracer *trc, JSObject *obj)
 {
-    
+    /* If obj has no map, it must be a newborn. */
     if (obj->isNewborn())
         return;
 
-    
+    /* Trace universal (ops-independent) members. */
     if (JSObject *proto = obj->getProto())
         MarkObject(trc, *proto, "proto");
     if (JSObject *parent = obj->getParent())
@@ -749,7 +751,7 @@ MarkChildren(JSTracer *trc, JSXML *xml)
 }
 #endif
 
-} 
+} /* namespace gc */
 
 void
 GCMarker::drainMarkStack()
@@ -771,16 +773,16 @@ GCMarker::drainMarkStack()
         }
 
         if (isMarkStackEmpty()) {
-            
-
-
-
+            /*
+             * Mark children of things that caused too deep recursion during the above
+             * tracing. Don't do this until we're done with everything else.
+             */
             markDelayedChildren();
         }
     }
 }
 
-} 
+} /* namespace js */
 
 JS_PUBLIC_API(void)
 JS_TraceChildren(JSTracer *trc, void *thing, uint32 kind)
