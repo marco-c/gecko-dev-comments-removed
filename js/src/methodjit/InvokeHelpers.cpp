@@ -213,17 +213,22 @@ RemovePartialFrame(JSContext *cx, StackFrame *fp)
 static inline bool
 CheckStackQuota(VMFrame &f)
 {
-    uint32 nvals = VALUES_PER_STACK_FRAME + f.fp()->script()->nslots + StackSpace::STACK_JIT_EXTRA;
-    if ((Value *)f.fp() + nvals >= f.stackLimit) {
-        StackSpace &space = f.cx->stack.space();
-        if (!space.bumpLimitWithinQuota(NULL, f.entryfp, f.regs.sp, nvals, &f.stackLimit)) {
-            
-            RemovePartialFrame(f.cx, f.fp());
-            js_ReportOverRecursed(f.cx);
-            return false;
-        }
-    }
-    return true;
+    JS_ASSERT(f.regs.sp == f.fp()->base());
+
+    
+    uintN nvals = f.fp()->script()->nslots + StackSpace::STACK_JIT_EXTRA;
+
+    if ((Value *)f.regs.sp + nvals < f.stackLimit)
+        return true;
+
+    if (f.cx->stack.space().tryBumpLimit(NULL, f.regs.sp, nvals, &f.stackLimit))
+        return true;
+
+    
+    RemovePartialFrame(f.cx, f.fp());
+    js_ReportOverRecursed(f.cx);
+
+    return false;
 }
 
 
@@ -265,7 +270,7 @@ stubs::FixupArity(VMFrame &f, uint32 nactual)
     
     StackFrame *newfp = cx->stack.getInlineFrameWithinLimit(cx, (Value*) oldfp, nactual,
                                                             fun, fun->script(), &flags,
-                                                            f.entryfp, &f.stackLimit, ncode);
+                                                            &f.stackLimit, ncode);
 
     
 
@@ -327,7 +332,7 @@ UncachedInlineCall(VMFrame &f, uint32 flags, void **pret, bool *unjittable, uint
     
     StackFrame *newfp = cx->stack.getInlineFrameWithinLimit(cx, f.regs.sp, argc,
                                                             newfun, newscript, &flags,
-                                                            f.entryfp, &f.stackLimit, NULL);
+                                                            &f.stackLimit, NULL);
     if (JS_UNLIKELY(!newfp))
         return false;
 
@@ -740,7 +745,7 @@ PartialInterpret(VMFrame &f)
 #endif
 
     JSBool ok = JS_TRUE;
-    ok = Interpret(cx, fp, 0, JSINTERP_SAFEPOINT);
+    ok = Interpret(cx, fp, JSINTERP_SAFEPOINT);
 
     return ok;
 }
@@ -990,7 +995,6 @@ RunTracer(VMFrame &f)
     entryFrame->returnValue();
 
     bool blacklist;
-    uintN inlineCallCount = 0;
     void **traceData;
     uintN *traceEpoch;
     uint32 *loopCounter;
@@ -1020,7 +1024,7 @@ RunTracer(VMFrame &f)
         FrameRegs regs = f.regs;
         PreserveRegsGuard regsGuard(cx, regs);
 
-        tpa = MonitorTracePoint(f.cx, inlineCallCount, &blacklist, traceData, traceEpoch,
+        tpa = MonitorTracePoint(f.cx, &blacklist, traceData, traceEpoch,
                                 loopCounter, hits);
         JS_ASSERT(!TRACE_RECORDER(cx));
     }
@@ -1594,7 +1598,7 @@ js_InternalInterpret(void *returnData, void *returnType, void *returnReg, js::VM
     
     enter.leave();
 
-    if (!Interpret(cx, NULL, 0, interpMode))
+    if (!Interpret(cx, NULL, interpMode))
         return js_InternalThrow(f);
 
     
