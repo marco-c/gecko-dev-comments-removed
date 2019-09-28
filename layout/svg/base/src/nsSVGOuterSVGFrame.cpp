@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is the Mozilla SVG project.
+ *
+ * The Initial Developer of the Original Code is
+ * Crocodile Clips Ltd..
+ * Portions created by the Initial Developer are Copyright (C) 2001
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Alex Fritze <alex.fritze@crocodile-clips.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsSVGOuterSVGFrame.h"
 #include "nsIDOMSVGSVGElement.h"
@@ -57,10 +57,10 @@
 class nsSVGMutationObserver : public nsStubMutationObserver
 {
 public:
-  
+  // nsIMutationObserver interface
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
 
-  
+  // nsISupports interface:
   NS_IMETHOD QueryInterface(const nsIID& aIID, void** aInstancePtr);
 private:
   NS_IMETHOD_(nsrefcnt) AddRef() { return 1; }
@@ -69,8 +69,8 @@ private:
   static void UpdateTextFragmentTrees(nsIFrame *aFrame);
 };
 
-
-
+//----------------------------------------------------------------------
+// nsISupports methods
 
 NS_INTERFACE_MAP_BEGIN(nsSVGMutationObserver)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
@@ -78,8 +78,8 @@ NS_INTERFACE_MAP_END
 
 static nsSVGMutationObserver sSVGMutationObserver;
 
-
-
+//----------------------------------------------------------------------
+// nsIMutationObserver methods
 
 void
 nsSVGMutationObserver::AttributeChanged(nsIDocument *aDocument,
@@ -101,19 +101,19 @@ nsSVGMutationObserver::AttributeChanged(nsIDocument *aDocument,
       continue;
     }
 
-    
+    // is the content a child of a text element
     nsSVGTextContainerFrame *containerFrame = do_QueryFrame(frame);
     if (containerFrame) {
       containerFrame->NotifyGlyphMetricsChange();
       continue;
     }
-    
+    // if not, are there text elements amongst its descendents
     UpdateTextFragmentTrees(frame);
   }
 }
 
-
-
+//----------------------------------------------------------------------
+// Implementation helpers
 
 void
 nsSVGMutationObserver::UpdateTextFragmentTrees(nsIFrame *aFrame)
@@ -130,8 +130,8 @@ nsSVGMutationObserver::UpdateTextFragmentTrees(nsIFrame *aFrame)
   }
 }
 
-
-
+//----------------------------------------------------------------------
+// Implementation
 
 nsIFrame*
 NS_NewSVGOuterSVGFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
@@ -169,35 +169,35 @@ nsSVGOuterSVGFrame::Init(nsIContent* aContent,
 
   nsIDocument* doc = mContent->GetCurrentDoc();
   if (doc) {
-    
+    // we only care about our content's zoom and pan values if it's the root element
     if (doc->GetRootContent() == mContent) {
       mIsRootContent = PR_TRUE;
     }
-    
-    
-    
+    // AddMutationObserver checks that the observer is not already added.
+    // sSVGMutationObserver has the same lifetime as the document so does
+    // not need to be removed
     doc->AddMutationObserver(&sSVGMutationObserver);
   }
 
-  SuspendRedraw();  
+  SuspendRedraw();  // UnsuspendRedraw is in DidReflow
 
   return rv;
 }
 
-
-
+//----------------------------------------------------------------------
+// nsQueryFrame methods
 
 NS_QUERYFRAME_HEAD(nsSVGOuterSVGFrame)
   NS_QUERYFRAME_ENTRY(nsISVGSVGFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsSVGOuterSVGFrameBase)
 
-
-
+//----------------------------------------------------------------------
+// nsIFrame methods
   
+//----------------------------------------------------------------------
+// reflowing
 
-
-
- nscoord
+/* virtual */ nscoord
 nsSVGOuterSVGFrame::GetMinWidth(nsIRenderingContext *aRenderingContext)
 {
   nscoord result;
@@ -208,7 +208,7 @@ nsSVGOuterSVGFrame::GetMinWidth(nsIRenderingContext *aRenderingContext)
   return result;
 }
 
- nscoord
+/* virtual */ nscoord
 nsSVGOuterSVGFrame::GetPrefWidth(nsIRenderingContext *aRenderingContext)
 {
   nscoord result;
@@ -218,9 +218,9 @@ nsSVGOuterSVGFrame::GetPrefWidth(nsIRenderingContext *aRenderingContext)
   nsSVGLength2 &width = svg->mLengthAttributes[nsSVGSVGElement::WIDTH];
 
   if (width.IsPercentage()) {
-    
-    
-    
+    // It looks like our containing block's width may depend on our width. In
+    // that case our behavior is undefined according to CSS 2.1 section 10.3.2,
+    // so return zero.
     result = nscoord(0);
   } else {
     result = nsPresContext::CSSPixelsToAppUnits(width.GetAnimValue(svg));
@@ -232,11 +232,11 @@ nsSVGOuterSVGFrame::GetPrefWidth(nsIRenderingContext *aRenderingContext)
   return result;
 }
 
- nsIFrame::IntrinsicSize
+/* virtual */ nsIFrame::IntrinsicSize
 nsSVGOuterSVGFrame::GetIntrinsicSize()
 {
-  
-  
+  // XXXjwatt Note that here we want to return the CSS width/height if they're
+  // specified and we're embedded inside an nsIObjectLoadingContent.
 
   IntrinsicSize intrinsicSize;
 
@@ -267,12 +267,12 @@ nsSVGOuterSVGFrame::GetIntrinsicSize()
   return intrinsicSize;
 }
 
- nsSize
+/* virtual */ nsSize
 nsSVGOuterSVGFrame::GetIntrinsicRatio()
 {
-  
-  
-  
+  // We only have an intrinsic size/ratio if our width and height attributes
+  // are both specified and set to non-percentage values, or we have a viewBox
+  // rect: http://www.w3.org/TR/SVGMobile12/coords.html#IntrinsicSizing
 
   nsSVGSVGElement *content = static_cast<nsSVGSVGElement*>(mContent);
   nsSVGLength2 &width  = content->mLengthAttributes[nsSVGSVGElement::WIDTH];
@@ -290,8 +290,8 @@ nsSVGOuterSVGFrame::GetIntrinsicRatio()
   }
 
   if (content->HasAttr(kNameSpaceID_None, nsGkAtoms::viewBox)) {
-    
-    
+    // XXXjwatt we need to fix our viewBox code so that we can tell whether the
+    // viewBox attribute specifies a valid rect or not.
     const nsSVGViewBoxRect viewbox = content->mViewBox.GetAnimValue();
     float viewBoxWidth = viewbox.width;
     float viewBoxHeight = viewbox.height;
@@ -308,7 +308,7 @@ nsSVGOuterSVGFrame::GetIntrinsicRatio()
   return nsSVGOuterSVGFrameBase::GetIntrinsicRatio();
 }
 
- nsSize
+/* virtual */ nsSize
 nsSVGOuterSVGFrame::ComputeSize(nsIRenderingContext *aRenderingContext,
                                 nsSize aCBSize, nscoord aAvailableWidth,
                                 nsSize aMargin, nsSize aBorder, nsSize aPadding,
@@ -316,8 +316,8 @@ nsSVGOuterSVGFrame::ComputeSize(nsIRenderingContext *aRenderingContext,
 {
   if (mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::viewBox) &&
       EmbeddedByReference()) {
-    
-    
+    // The embedding element has done the replaced element sizing, using our
+    // intrinsic dimensions as necessary. We just need to fill the viewport.
     return aCBSize;
   }
 
@@ -350,13 +350,13 @@ nsSVGOuterSVGFrame::Reflow(nsPresContext*           aPresContext,
 
   NS_ASSERTION(!GetPrevInFlow(), "SVG can't currently be broken across pages.");
 
-  
-  
+  // Make sure we scroll if we're too big:
+  // XXX Use the bounding box of our descendants? (See bug 353460 comment 14.)
   aDesiredSize.mOverflowArea.SetRect(0, 0, aDesiredSize.width, aDesiredSize.height);
   FinishAndStoreOverflow(&aDesiredSize);
 
-  
-  
+  // If our SVG viewport has changed, update our content and notify.
+  // http://www.w3.org/TR/SVG11/coords.html#ViewportSpace
 
   svgFloatSize newViewportSize(
     nsPresContext::AppUnitsToFloatCSSPixels(aReflowState.ComputedWidth()),
@@ -397,7 +397,7 @@ nsSVGOuterSVGFrame::DidReflow(nsPresContext*   aPresContext,
   nsresult rv = nsSVGOuterSVGFrameBase::DidReflow(aPresContext,aReflowState,aStatus);
 
   if (firstReflow) {
-    
+    // call InitialUpdate() on all frames:
     nsIFrame* kid = mFrames.FirstChild();
     while (kid) {
       nsISVGChildFrame* SVGFrame = do_QueryFrame(kid);
@@ -407,10 +407,10 @@ nsSVGOuterSVGFrame::DidReflow(nsPresContext*   aPresContext,
       kid = kid->GetNextSibling();
     }
     
-    UnsuspendRedraw(); 
+    UnsuspendRedraw(); // For the SuspendRedraw in InitSVG
   } else {
-    
-    
+    // Now that all viewport establishing descendants have their correct size,
+    // tell our foreignObject descendants to reflow their children.
     if (mForeignObjectHash.IsInitialized()) {
 #ifdef DEBUG
       PRUint32 count =
@@ -424,8 +424,8 @@ nsSVGOuterSVGFrame::DidReflow(nsPresContext*   aPresContext,
   return rv;
 }
 
-
-
+//----------------------------------------------------------------------
+// container methods
 
 class nsDisplaySVG : public nsDisplayItem {
 public:
@@ -440,8 +440,8 @@ public:
 
   virtual nsIFrame* HitTest(nsDisplayListBuilder* aBuilder, nsPoint aPt,
                             HitTestState* aState);
-  virtual void Paint(nsDisplayListBuilder* aBuilder, nsIRenderingContext* aCtx,
-                     const nsRect& aDirtyRect);
+  virtual void Paint(nsDisplayListBuilder* aBuilder,
+                     nsIRenderingContext* aCtx);
   NS_DISPLAY_DECL_NAME("SVGEventReceiver")
 };
 
@@ -454,14 +454,14 @@ nsDisplaySVG::HitTest(nsDisplayListBuilder* aBuilder, nsPoint aPt,
 }
 
 void
-nsDisplaySVG::Paint(nsDisplayListBuilder* aBuilder, nsIRenderingContext* aCtx,
-                    const nsRect& aDirtyRect)
+nsDisplaySVG::Paint(nsDisplayListBuilder* aBuilder,
+                    nsIRenderingContext* aCtx)
 {
   static_cast<nsSVGOuterSVGFrame*>(mFrame)->
-    Paint(*aCtx, aDirtyRect, aBuilder->ToReferenceFrame(mFrame));
+    Paint(*aCtx, mVisibleRect, aBuilder->ToReferenceFrame(mFrame));
 }
 
-
+// helper
 static inline PRBool
 DependsOnIntrinsicSize(const nsIFrame* aEmbeddingFrame)
 {
@@ -469,9 +469,9 @@ DependsOnIntrinsicSize(const nsIFrame* aEmbeddingFrame)
   nsStyleUnit widthUnit  = pos->mWidth.GetUnit();
   nsStyleUnit heightUnit = pos->mHeight.GetUnit();
 
-  
-  
-  
+  // XXX it would be nice to know if the size of aEmbeddingFrame's containing
+  // block depends on aEmbeddingFrame, then we'd know if we can return false
+  // for eStyleUnit_Percent too.
   return (widthUnit != eStyleUnit_Coord) || (heightUnit != eStyleUnit_Coord);
 }
 
@@ -487,15 +487,15 @@ nsSVGOuterSVGFrame::AttributeChanged(PRInt32  aNameSpaceID,
     EmbeddedByReference(&embeddingFrame);
     if (embeddingFrame) {
       if (DependsOnIntrinsicSize(embeddingFrame)) {
-        
-        
+        // Tell embeddingFrame's presShell it needs to be reflowed (which takes
+        // care of reflowing us too).
         embeddingFrame->PresContext()->PresShell()->
           FrameNeedsReflow(embeddingFrame, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
       }
-      
+      // else our width and height is overridden - don't reflow anything
     } else {
-      
-      
+      // We are not embedded by reference, so our 'width' and 'height'
+      // attributes are not overridden - we need to reflow.
       PresContext()->PresShell()->
         FrameNeedsReflow(this, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
     }
@@ -515,8 +515,8 @@ nsSVGOuterSVGFrame::GetFrameForPoint(const nsPoint& aPoint)
   return nsSVGUtils::HitTestChildren(this, aPoint);
 }
 
-
-
+//----------------------------------------------------------------------
+// painting
 
 NS_IMETHODIMP
 nsSVGOuterSVGFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
@@ -533,7 +533,7 @@ void
 nsSVGOuterSVGFrame::Paint(nsIRenderingContext& aRenderingContext,
                           const nsRect& aDirtyRect, nsPoint aPt)
 {
-  
+  // initialize Mozilla rendering context
   aRenderingContext.PushState();
 
   nsMargin bp = GetUsedBorderAndPadding();
@@ -559,8 +559,8 @@ nsSVGOuterSVGFrame::Paint(nsIRenderingContext& aRenderingContext,
 
 #ifdef XP_MACOSX
   if (mEnableBitmapFallback) {
-    
-    
+    // nquartz fallback paths, which svg tends to trigger, need
+    // a non-window context target
     ctx.GetGfxContext()->PushGroup(gfxASurface::CONTENT_COLOR_ALPHA);
   }
 #endif
@@ -569,20 +569,20 @@ nsSVGOuterSVGFrame::Paint(nsIRenderingContext& aRenderingContext,
 
 #ifdef XP_MACOSX
   if (mEnableBitmapFallback) {
-    
+    // show the surface we pushed earlier for fallbacks
     ctx.GetGfxContext()->PopGroupToSource();
     ctx.GetGfxContext()->Paint();
   }
   
   if (ctx.GetGfxContext()->HasError() && !mEnableBitmapFallback) {
     mEnableBitmapFallback = PR_TRUE;
-    
-    
-    
-    
-    
-    
-    
+    // It's not really clear what area to invalidate here. We might have
+    // stuffed up rendering for the entire window in this paint pass,
+    // so we can't just invalidate our own rect. Invalidate everything
+    // in sight.
+    // This won't work for printing, by the way, but failure to print the
+    // odd document is probably no worse than printing horribly for all
+    // documents. Better to fix things so we don't need fallback.
     nsIFrame* frame = this;
     PRUint32 flags = 0;
     while (PR_TRUE) {
@@ -590,10 +590,10 @@ nsSVGOuterSVGFrame::Paint(nsIRenderingContext& aRenderingContext,
       if (!next)
         break;
       if (frame->GetParent() != next) {
-        
-        
-        
-        
+        // We're crossing a document boundary. Logically, the invalidation is
+        // being triggered by a subdocument of the root document. This will
+        // prevent an untrusted root document being told about invalidation
+        // that happened because a child was using SVG...
         flags |= INVALIDATE_CROSS_DOC;
       }
       frame = next;
@@ -622,8 +622,8 @@ nsSVGOuterSVGFrame::GetType() const
   return nsGkAtoms::svgOuterSVGFrame;
 }
 
-
-
+//----------------------------------------------------------------------
+// nsSVGOuterSVGFrame methods:
 
 void
 nsSVGOuterSVGFrame::InvalidateCoveredRegion(nsIFrame *aFrame)
@@ -660,15 +660,15 @@ nsSVGOuterSVGFrame::IsRedrawSuspended()
   return (mRedrawSuspendCount>0) || !mViewportInitialized;
 }
 
-
-
+//----------------------------------------------------------------------
+// nsISVGSVGFrame methods:
 
 
 NS_IMETHODIMP
 nsSVGOuterSVGFrame::SuspendRedraw()
 {
 #ifdef DEBUG
-  
+  //printf("suspend redraw (count=%d)\n", mRedrawSuspendCount);
 #endif
   if (++mRedrawSuspendCount != 1)
     return NS_OK;
@@ -687,7 +687,7 @@ NS_IMETHODIMP
 nsSVGOuterSVGFrame::UnsuspendRedraw()
 {
 #ifdef DEBUG
-
+//  printf("unsuspend redraw (count=%d)\n", mRedrawSuspendCount);
 #endif
 
   NS_ASSERTION(mRedrawSuspendCount >=0, "unbalanced suspend count!");
@@ -709,35 +709,35 @@ nsSVGOuterSVGFrame::UnsuspendRedraw()
 NS_IMETHODIMP
 nsSVGOuterSVGFrame::NotifyViewportChange()
 {
-  
+  // no point in doing anything when were not init'ed yet:
   if (!mViewportInitialized) {
     return NS_OK;
   }
 
   PRUint32 flags = COORD_CONTEXT_CHANGED;
 
-  
+  // viewport changes only affect our transform if we have a viewBox attribute
 #if 1
   {
 #else
-
+  // XXX this caused reftest failures (bug 413960)
   if (mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::viewBox)) {
 #endif
-
+    // make sure canvas transform matrix gets (lazily) recalculated:
     mCanvasTM = nsnull;
 
     flags |= TRANSFORM_CHANGED;
   }
 
-  
+  // inform children
   SuspendRedraw();
   nsSVGUtils::NotifyChildrenOfSVGChange(this, flags);
   UnsuspendRedraw();
   return NS_OK;
 }
 
-
-
+//----------------------------------------------------------------------
+// nsSVGContainerFrame methods:
 
 gfxMatrix
 nsSVGOuterSVGFrame::GetCanvasTM()
@@ -764,8 +764,8 @@ nsSVGOuterSVGFrame::GetCanvasTM()
   return nsSVGUtils::ConvertSVGMatrixToThebes(mCanvasTM);
 }
 
-
-
+//----------------------------------------------------------------------
+// Implementation helpers
 
 void
 nsSVGOuterSVGFrame::RegisterForeignObject(nsSVGForeignObjectFrame* aFrame)
@@ -801,7 +801,7 @@ PRBool
 nsSVGOuterSVGFrame::EmbeddedByReference(nsIFrame **aEmbeddingFrame)
 {
   if (mContent->GetParent() == nsnull) {
-    
+    // Our content is the document element
     nsCOMPtr<nsISupports> container = PresContext()->GetContainer();
     nsCOMPtr<nsIDOMWindowInternal> window = do_GetInterface(container);
     if (window) {
@@ -809,7 +809,7 @@ nsSVGOuterSVGFrame::EmbeddedByReference(nsIFrame **aEmbeddingFrame)
       window->GetFrameElement(getter_AddRefs(frameElement));
       nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(frameElement);
       if (olc) {
-        
+        // Our document is inside an HTML 'object', 'embed' or 'applet' element
         if (aEmbeddingFrame) {
           nsCOMPtr<nsIContent> element = do_QueryInterface(frameElement);
           *aEmbeddingFrame =
