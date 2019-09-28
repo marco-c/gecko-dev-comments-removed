@@ -1,44 +1,44 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1999
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   John Bandhauer <jband@netscape.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Class used to manage the wrapped native objects within a JS scope. */
 
 #include "xpcprivate.h"
 #include "XPCWrapper.h"
@@ -46,7 +46,7 @@
 #include "XPCNativeWrapper.h"
 #endif
 
-
+/***************************************************************************/
 
 #ifdef XPC_TRACK_SCOPE_STATS
 static int DEBUG_TotalScopeCount;
@@ -108,12 +108,12 @@ static void DEBUG_TrackScopeShutdown()
 #define DEBUG_TrackScopeShutdown() ((void)0)
 #endif
 
-
+/***************************************************************************/
 
 XPCWrappedNativeScope* XPCWrappedNativeScope::gScopes = nsnull;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gDyingScopes = nsnull;
 
-
+// static
 XPCWrappedNativeScope*
 XPCWrappedNativeScope::GetNewOrUsed(XPCCallContext& ccx, JSObject* aGlobal)
 {
@@ -123,12 +123,12 @@ XPCWrappedNativeScope::GetNewOrUsed(XPCCallContext& ccx, JSObject* aGlobal)
         scope = new XPCWrappedNativeScope(ccx, aGlobal);
     else
     {
-        
-        
-        
-        
-        
-        
+        // We need to call SetGlobal in order to refresh our cached
+        // mPrototypeJSObject and mPrototypeJSFunction and to clear
+        // mPrototypeNoHelper (so we get a new one if requested in the
+        // new scope) in the case where the global object is being
+        // reused (JS_ClearScope has been called).  NOTE: We are only
+        // called by nsXPConnect::InitClasses.
         scope->SetGlobal(ccx, aGlobal);
     }
     return scope;
@@ -151,8 +151,8 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(XPCCallContext& ccx,
         , mScriptObjectPrincipal(nsnull)
 #endif
 {
-    
-    {   
+    // add ourselves to the scopes list
+    {   // scoped lock
         XPCAutoLock lock(mRuntime->GetMapLock());
 
 #ifdef DEBUG
@@ -163,7 +163,7 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(XPCCallContext& ccx,
         mNext = gScopes;
         gScopes = this;
 
-        
+        // Grab the XPCContext associated with our context.
         mContext = XPCContext::GetXPCContext(ccx.GetJSContext());
         mContext->AddScope(this);
     }
@@ -175,7 +175,7 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(XPCCallContext& ccx,
     MOZ_COUNT_CTOR(XPCWrappedNativeScope);
 }
 
-
+// static
 JSBool
 XPCWrappedNativeScope::IsDyingScope(XPCWrappedNativeScope *scope)
 {
@@ -195,58 +195,60 @@ XPCWrappedNativeScope::SetComponents(nsXPCComponents* aComponents)
     mComponents = aComponents;
 }
 
+// Dummy JS class to let wrappers w/o an xpc prototype share
+// scopes. By doing this we avoid allocating a new scope for every
+// wrapper on creation of the wrapper, and most wrappers won't need
+// their own scope at all for the lifetime of the wrapper.
+// WRAPPER_SLOTS is key here (even though there's never anything
+// in the private data slot in these prototypes), as the number of
+// reserved slots in this class needs to match that of the wrappers
+// for the JS engine to share scopes.
 
+js::Class XPC_WN_NoHelper_Proto_JSClass = {
+    "XPC_WN_NoHelper_Proto_JSClass",// name;
+    WRAPPER_SLOTS,                  // flags;
 
+    /* Mandatory non-null function pointer members. */
+    js::PropertyStub,               // addProperty;
+    js::PropertyStub,               // delProperty;
+    js::PropertyStub,               // getProperty;
+    js::PropertyStub,               // setProperty;
+    js::EnumerateStub,              // enumerate;
+    JS_ResolveStub,                 // resolve;
+    js::ConvertStub,                // convert;
+    nsnull,                         // finalize;
 
+    /* Optionally non-null members start here. */
+    nsnull,                         // reserved0;
+    nsnull,                         // checkAccess;
+    nsnull,                         // call;
+    nsnull,                         // construct;
+    nsnull,                         // xdrObject;
+    nsnull,                         // hasInstance;
+    nsnull,                         // mark/trace;
 
-
-
-
-
-
-JSClass XPC_WN_NoHelper_Proto_JSClass = {
-    "XPC_WN_NoHelper_Proto_JSClass",
-    WRAPPER_SLOTS,                  
-
-    
-    JS_PropertyStub,                
-    JS_PropertyStub,                
-    JS_PropertyStub,                
-    JS_PropertyStub,                
-    JS_EnumerateStub,               
-    JS_ResolveStub,                 
-    JS_ConvertStub,                 
-    nsnull,                         
-
-    
-    XPC_WN_Proto_GetObjectOps,      
-    nsnull,                         
-    nsnull,                         
-    nsnull,                         
-    nsnull,                         
-    nsnull,                         
-    nsnull,                         
-    nsnull                          
+    JS_NULL_CLASS_EXT,
+    XPC_WN_NoCall_ObjectOps
 };
 
 
 void
 XPCWrappedNativeScope::SetGlobal(XPCCallContext& ccx, JSObject* aGlobal)
 {
-    
-    
+    // We allow for calling this more than once. This feature is used by
+    // nsXPConnect::InitClassesWithNewWrappedGlobal.
 
     mGlobalJSObject = aGlobal;
 #ifndef XPCONNECT_STANDALONE
     mScriptObjectPrincipal = nsnull;
-    
+    // Now init our script object principal, if the new global has one
 
     const JSClass* jsClass = aGlobal->getJSClass();
     if(!(~jsClass->flags & (JSCLASS_HAS_PRIVATE |
                             JSCLASS_PRIVATE_IS_NSISUPPORTS)))
     {
-        
-        
+        // Our global has an nsISupports native pointer.  Let's
+        // see whether it's what we want.
         nsISupports* priv = (nsISupports*)xpc_GetJSPrivate(aGlobal);
         nsCOMPtr<nsIXPConnectWrappedNative> native =
             do_QueryInterface(priv);
@@ -263,9 +265,9 @@ XPCWrappedNativeScope::SetGlobal(XPCCallContext& ccx, JSObject* aGlobal)
     }
 #endif
 
-    
+    // Lookup 'globalObject.Object.prototype' for our wrapper's proto
     {
-        AutoJSErrorAndExceptionEater eater(ccx); 
+        AutoJSErrorAndExceptionEater eater(ccx); // scoped error eater
 
         jsval val;
         jsid idObj = mRuntime->GetStringID(XPCJSRuntime::IDX_OBJECT);
@@ -297,8 +299,8 @@ XPCWrappedNativeScope::SetGlobal(XPCCallContext& ccx, JSObject* aGlobal)
         }
     }
 
-    
-    
+    // Clear the no helper wrapper prototype object so that a new one
+    // gets created if needed.
     mPrototypeNoHelper = nsnull;
 }
 
@@ -307,7 +309,7 @@ XPCWrappedNativeScope::~XPCWrappedNativeScope()
     MOZ_COUNT_DTOR(XPCWrappedNativeScope);
     DEBUG_TrackDeleteScope(this);
 
-    
+    // We can do additional cleanup assertions here...
 
     if(mWrappedNativeMap)
     {
@@ -336,21 +338,22 @@ XPCWrappedNativeScope::~XPCWrappedNativeScope()
     if(mContext)
         mContext->RemoveScope(this);
 
-    
-    
+    // XXX we should assert that we are dead or that xpconnect has shutdown
+    // XXX might not want to do this at xpconnect shutdown time???
     NS_IF_RELEASE(mComponents);
 }
 
 JSObject *
 XPCWrappedNativeScope::GetPrototypeNoHelper(XPCCallContext& ccx)
 {
-    
-    
-    
+    // We could create this prototype in SetGlobal(), but all scopes
+    // don't need one, so we save ourselves a bit of space if we
+    // create these when they're needed.
     if(!mPrototypeNoHelper)
     {
         mPrototypeNoHelper =
-            xpc_NewSystemInheritingJSObject(ccx, &XPC_WN_NoHelper_Proto_JSClass,
+            xpc_NewSystemInheritingJSObject(ccx,
+                                            js::Jsvalify(&XPC_WN_NoHelper_Proto_JSClass),
                                             mPrototypeJSObject,
                                             mGlobalJSObject);
 
@@ -376,15 +379,15 @@ WrappedNativeJSGCThingTracer(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-
+// static
 void
 XPCWrappedNativeScope::TraceJS(JSTracer* trc, XPCJSRuntime* rt)
 {
-    
-    
+    // FIXME The lock may not be necessary during tracing as that serializes
+    // access to JS runtime. See bug 380139.
     XPCAutoLock lock(rt->GetMapLock());
 
-    
+    // Do JS_CallTracer for all wrapped natives with external references.
     for(XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext)
     {
         cur->mWrappedNativeMap->Enumerate(WrappedNativeJSGCThingTracer, trc);
@@ -418,8 +421,8 @@ WrappedNativeSuspecter(JSDHashTable *table, JSDHashEntryHdr *hdr,
         NS_ASSERTION(!JS_IsAboutToBeFinalized(closure->cx, wrapper->GetFlatJSObject()),
                      "WrappedNativeSuspecter attempting to touch dead object");
 
-        
-        
+        // Only record objects that might be part of a cycle as roots, unless
+        // the callback wants all traces (a debug feature).
         if(!(closure->cb.WantAllTraces()) &&
            !nsXPConnect::IsGray(wrapper->GetFlatJSObject()))
             return JS_DHASH_NEXT;
@@ -432,7 +435,7 @@ WrappedNativeSuspecter(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-
+// static
 void
 XPCWrappedNativeScope::SuspectAllWrappers(XPCJSRuntime* rt, JSContext* cx,
                                           nsCycleCollectionTraversalCallback& cb)
@@ -446,17 +449,17 @@ XPCWrappedNativeScope::SuspectAllWrappers(XPCJSRuntime* rt, JSContext* cx,
     }
 }
 
-
+// static
 void
 XPCWrappedNativeScope::FinishedMarkPhaseOfGC(JSContext* cx, XPCJSRuntime* rt)
 {
-    
-    
+    // FIXME The lock may not be necessary since we are inside JSGC_MARK_END
+    // callback and GX serializes access to JS runtime. See bug 380139.
     XPCAutoLock lock(rt->GetMapLock());
 
-    
-    
-    
+    // We are in JSGC_MARK_END and JSGC_FINALIZE_END must always follow it
+    // calling FinishedFinalizationPhaseOfGC and clearing gDyingScopes in
+    // KillDyingScopes.
     NS_ASSERTION(gDyingScopes == nsnull,
                  "JSGC_MARK_END without JSGC_FINALIZE_END");
 
@@ -473,7 +476,7 @@ XPCWrappedNativeScope::FinishedMarkPhaseOfGC(JSContext* cx, XPCJSRuntime* rt)
 #ifndef XPCONNECT_STANDALONE
             cur->mScriptObjectPrincipal = nsnull;
 #endif
-            
+            // Move this scope from the live list to the dying list.
             if(prev)
                 prev->mNext = next;
             else
@@ -506,15 +509,15 @@ XPCWrappedNativeScope::FinishedMarkPhaseOfGC(JSContext* cx, XPCJSRuntime* rt)
     }
 }
 
-
+// static
 void
 XPCWrappedNativeScope::FinishedFinalizationPhaseOfGC(JSContext* cx)
 {
     XPCJSRuntime* rt = nsXPConnect::GetRuntimeInstance();
 
-    
-    
-    
+    // FIXME The lock may not be necessary since we are inside
+    // JSGC_FINALIZE_END callback and at this point GC still serializes access
+    // to JS runtime. See bug 380139.
     XPCAutoLock lock(rt->GetMapLock());
     KillDyingScopes();
 }
@@ -527,8 +530,8 @@ WrappedNativeMarker(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-
-
+// We need to explicitly mark all the protos too because some protos may be
+// alive in the hashtable but not currently in use by any wrapper
 static JSDHashOperator
 WrappedNativeProtoMarker(JSDHashTable *table, JSDHashEntryHdr *hdr,
                          uint32 number, void *arg)
@@ -537,7 +540,7 @@ WrappedNativeProtoMarker(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-
+// static
 void
 XPCWrappedNativeScope::MarkAllWrappedNativesAndProtos()
 {
@@ -568,7 +571,7 @@ ASSERT_WrappedNativeProtoSetNotMarked(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-
+// static
 void
 XPCWrappedNativeScope::ASSERT_NoInterfaceSetsAreMarked()
 {
@@ -592,7 +595,7 @@ WrappedNativeTearoffSweeper(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-
+// static
 void
 XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs()
 {
@@ -602,11 +605,11 @@ XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs()
     DEBUG_TrackScopeTraversal();
 }
 
-
+// static
 void
 XPCWrappedNativeScope::KillDyingScopes()
 {
-    
+    // always called inside the lock!
     XPCWrappedNativeScope* cur = gDyingScopes;
     while(cur)
     {
@@ -656,7 +659,7 @@ WrappedNativeProtoShutdownEnumerator(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_REMOVE;
 }
 
-
+//static
 void
 XPCWrappedNativeScope::SystemIsBeingShutDown(JSContext* cx)
 {
@@ -669,7 +672,7 @@ XPCWrappedNativeScope::SystemIsBeingShutDown(JSContext* cx)
 
     XPCWrappedNativeScope* cur;
 
-    
+    // First move all the scopes to the dying list.
 
     cur = gScopes;
     while(cur)
@@ -682,16 +685,16 @@ XPCWrappedNativeScope::SystemIsBeingShutDown(JSContext* cx)
     }
     gScopes = nsnull;
 
-    
+    // Walk the unified dying list and call shutdown on all wrappers and protos
 
     for(cur = gDyingScopes; cur; cur = cur->mNext)
     {
-        
+        // Give the Components object a chance to try to clean up.
         if(cur->mComponents)
             cur->mComponents->SystemIsBeingShutDown();
 
-        
-        
+        // Walk the protos first. Wrapper shutdown can leave dangling
+        // proto pointers in the proto map.
         cur->mWrappedNativeProtoMap->
                 Enumerate(WrappedNativeProtoShutdownEnumerator,  &data);
         cur->mMainThreadWrappedNativeProtoMap->
@@ -700,7 +703,7 @@ XPCWrappedNativeScope::SystemIsBeingShutDown(JSContext* cx)
                 Enumerate(WrappedNativeShutdownEnumerator,  &data);
     }
 
-    
+    // Now it is safe to kill all the scopes.
     KillDyingScopes();
 
 #ifdef XPC_DUMP_AT_SHUTDOWN
@@ -718,14 +721,14 @@ XPCWrappedNativeScope::SystemIsBeingShutDown(JSContext* cx)
 }
 
 
-
+/***************************************************************************/
 
 static
 XPCWrappedNativeScope*
 GetScopeOfObject(JSObject* obj)
 {
     nsISupports* supports;
-    JSClass* clazz = obj->getJSClass();
+    js::Class* clazz = obj->getClass();
     JSBool isWrapper = IS_WRAPPER_CLASS(clazz);
 
     if(isWrapper && IS_SLIM_WRAPPER_OBJECT(obj))
@@ -759,7 +762,7 @@ GetScopeOfObject(JSObject* obj)
     }
 #endif
 
-    
+    // obj is one of our nsXPConnectWrappedNative objects.
     return ((XPCWrappedNative*)supports)->GetScope();
 }
 
@@ -780,12 +783,12 @@ void DEBUG_CheckForComponentsInScope(JSContext* cx, JSObject* obj,
     if(JS_LookupProperty(cx, obj, name, &prop) && !JSVAL_IS_PRIMITIVE(prop))
         return;
 
-    
-    
-    
-    
-    
-    
+    // This is pretty much always bad. It usually means that native code is
+    // making a callback to an interface implemented in JavaScript, but the
+    // document where the JS object was created has already been cleared and the
+    // global properties of that document's window are *gone*. Generally this
+    // indicates a problem that should be addressed in the design and use of the
+    // callback code.
     NS_ERROR("XPConnect is being called on a scope without a 'Components' property!");
 }
 #else
@@ -793,7 +796,7 @@ void DEBUG_CheckForComponentsInScope(JSContext* cx, JSObject* obj,
     ((void)0)
 #endif
 
-
+// static
 XPCWrappedNativeScope*
 XPCWrappedNativeScope::FindInJSObjectScope(JSContext* cx, JSObject* obj,
                                            JSBool OKIfNotInitialized,
@@ -804,14 +807,14 @@ XPCWrappedNativeScope::FindInJSObjectScope(JSContext* cx, JSObject* obj,
     if(!obj)
         return nsnull;
 
-    
-    
+    // If this object is itself a wrapped native then we can get the
+    // scope directly.
 
     scope = GetScopeOfObject(obj);
     if(scope)
         return scope;
 
-    
+    // Else we'll have to look up the parent chain to get the scope
 
     obj = JS_GetGlobalForObject(cx, obj);
 
@@ -821,10 +824,10 @@ XPCWrappedNativeScope::FindInJSObjectScope(JSContext* cx, JSObject* obj,
         NS_ASSERTION(runtime, "This should never be null!");
     }
 
-    
-    
+    // XXX We are assuming that the scope count is low enough that traversing
+    // the linked list is more reasonable then doing a hashtable lookup.
     XPCWrappedNativeScope* found = nsnull;
-    {   
+    {   // scoped lock
         XPCAutoLock lock(runtime->GetMapLock());
 
         DEBUG_TrackScopeTraversal();
@@ -840,19 +843,19 @@ XPCWrappedNativeScope::FindInJSObjectScope(JSContext* cx, JSObject* obj,
     }
 
     if(found) {
-        
+        // This cannot be called within the map lock!
         DEBUG_CheckForComponentsInScope(cx, obj, OKIfNotInitialized, runtime);
         return found;
     }
 
-    
-    
-    
+    // Failure to find the scope is only OK if the caller told us it might fail.
+    // This flag would only be set in the call from
+    // XPCWrappedNativeScope::GetNewOrUsed
     NS_ASSERTION(OKIfNotInitialized, "No scope has this global object!");
     return nsnull;
 }
 
-
+/***************************************************************************/
 
 static JSDHashOperator
 WNProtoSecPolicyClearer(JSDHashTable *table, JSDHashEntryHdr *hdr,
@@ -874,11 +877,11 @@ WNSecPolicyClearer(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-
+// static
 nsresult
 XPCWrappedNativeScope::ClearAllWrappedNativeSecurityPolicies(XPCCallContext& ccx)
 {
-    
+    // Hold the lock throughout.
     XPCAutoLock lock(ccx.GetRuntime()->GetMapLock());
 
     for(XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext)
@@ -918,16 +921,16 @@ XPCWrappedNativeScope::RemoveWrappedNativeProtos()
         GetRuntime()->GetDetachedWrappedNativeProtoMap());
 }
 
+/***************************************************************************/
 
-
-
+// static
 void
 XPCWrappedNativeScope::DebugDumpAllScopes(PRInt16 depth)
 {
 #ifdef DEBUG
     depth-- ;
 
-    
+    // get scope count.
     int count = 0;
     XPCWrappedNativeScope* cur;
     for(cur = gScopes; cur; cur = cur->mNext)
@@ -978,7 +981,7 @@ XPCWrappedNativeScope::DebugDump(PRInt16 depth)
         XPC_LOG_ALWAYS(("mWrappedNativeMap @ %x with %d wrappers(s)", \
                          mWrappedNativeMap, \
                          mWrappedNativeMap ? mWrappedNativeMap->Count() : 0));
-        
+        // iterate contexts...
         if(depth && mWrappedNativeMap && mWrappedNativeMap->Count())
         {
             XPC_LOG_INDENT();
@@ -989,7 +992,7 @@ XPCWrappedNativeScope::DebugDump(PRInt16 depth)
         XPC_LOG_ALWAYS(("mWrappedNativeProtoMap @ %x with %d protos(s)", \
                          mWrappedNativeProtoMap, \
                          mWrappedNativeProtoMap ? mWrappedNativeProtoMap->Count() : 0));
-        
+        // iterate contexts...
         if(depth && mWrappedNativeProtoMap && mWrappedNativeProtoMap->Count())
         {
             XPC_LOG_INDENT();
@@ -1000,7 +1003,7 @@ XPCWrappedNativeScope::DebugDump(PRInt16 depth)
         XPC_LOG_ALWAYS(("mMainThreadWrappedNativeProtoMap @ %x with %d protos(s)", \
                          mMainThreadWrappedNativeProtoMap, \
                          mMainThreadWrappedNativeProtoMap ? mMainThreadWrappedNativeProtoMap->Count() : 0));
-        
+        // iterate contexts...
         if(depth && mMainThreadWrappedNativeProtoMap && mMainThreadWrappedNativeProtoMap->Count())
         {
             XPC_LOG_INDENT();
@@ -1018,10 +1021,10 @@ XPCWrappedNativeScope::GetWrapperFor(JSContext *cx, JSObject *obj,
 {
     using namespace XPCWrapper;
 
-    
+    // We're going to have to know where obj comes from no matter what.
     XPCWrappedNativeScope *other = FindInJSObjectScope(cx, obj);
 
-    
+    // We have two cases to split out: we can either be chrome or content.
     nsIPrincipal *principal = GetPrincipal();
     PRBool system;
     XPCWrapper::GetSecurityManager()->IsSystemPrincipal(principal, &system);
@@ -1043,25 +1046,25 @@ XPCWrappedNativeScope::GetWrapperFor(JSContext *cx, JSObject *obj,
     if(wn)
         *wn = wrapper;
 
-    
-    
-    
+    // XXX The isSystem checks shouldn't be needed, but are needed because we
+    // can get here before nsGlobalChromeWindows have a non-about:blank
+    // document.
     if(system || mGlobalJSObject->isSystem())
     {
         NS_ASSERTION(hint != XOW && hint != SOW && hint != COW,
                      "bad hint in chrome code");
 
-        
-        
-        
-        
-        
-        
-        
+        // XXX In an ideal world, we would never have a transition from
+        // chrome -> content in a window. However, as the Gecko platform
+        // is pretty far from an ideal world, we need to protect against
+        // principal-changing objects (like window and location objects)
+        // changing. They are identified by ClassNeedsXOW.
+        // But note: we don't want to create XOWs in chrome code, so just
+        // use a SJOW, which does the Right Thing.
         JSBool wantsXOW =
             XPCCrossOriginWrapper::ClassNeedsXOW(obj->getClass()->name);
 
-        
+        // Is other a chrome object?
         if(principalEqual || obj->isSystem())
         {
             if(hint & XPCNW)
@@ -1069,8 +1072,8 @@ XPCWrappedNativeScope::GetWrapperFor(JSContext *cx, JSObject *obj,
             return wantsXOW ? SJOW : NONE;
         }
 
-        
-        
+        // Other isn't a chrome object: we need to wrap it in a SJOW or an
+        // XPCNW.
 
         if(!native)
             hint = SJOW;
@@ -1081,14 +1084,14 @@ XPCWrappedNativeScope::GetWrapperFor(JSContext *cx, JSObject *obj,
         return hint;
     }
 
-    
-    
+    // We're content code. We must never return XPCNW_IMPLICIT from here (but
+    // might return XPCNW_EXPLICIT if hint is already XPCNW_EXPLICIT).
 
     nsIPrincipal *otherprincipal = other->GetPrincipal();
     XPCWrapper::GetSecurityManager()->IsSystemPrincipal(otherprincipal, &system);
     if(system)
     {
-        
+        // Content touching chrome.
         NS_ASSERTION(hint != XOW, "bad edge in object graph");
 
         if(wrapper)
@@ -1102,13 +1105,13 @@ XPCWrappedNativeScope::GetWrapperFor(JSContext *cx, JSObject *obj,
         return COW;
     }
 
-    
-    
+    // If this object isn't an XPCWrappedNative, then we don't need to create
+    // any other types of wrapper than the hint.
     if(!native)
     {
 #if 0
-        
-        
+        // XXX Re-enable these assertions when we have a better mochitest
+        // solution than UniversalXPConnect.
         NS_ASSERTION(principalEqual || hint == COW,
                      "touching non-wrappednative object cross origin?");
         NS_ASSERTION(hint == SJOW || hint == COW || hint == UNKNOWN, "bad hint");
@@ -1118,7 +1121,7 @@ XPCWrappedNativeScope::GetWrapperFor(JSContext *cx, JSObject *obj,
         return hint;
     }
 
-    
+    // NB: obj2 controls whether or not this is actually a "wrapped native".
     if(wrapper)
     {
         if(wrapper->NeedsSOW())
@@ -1132,17 +1135,17 @@ XPCWrappedNativeScope::GetWrapperFor(JSContext *cx, JSObject *obj,
                              "bad object combination");
             }
 #endif
-            return COW; 
+            return COW; // NB: Ignore hint.
         }
     }
 
     if(!principalEqual ||
        XPCCrossOriginWrapper::ClassNeedsXOW(obj->getClass()->name))
     {
-        
-        
-        
-        
+        // NB: We want to assert that hint is not SJOW here, but it can
+        // be because of shallow XPCNativeWrappers. In that case, XOW is
+        // the right return value because XPCNativeWrappers are meant for
+        // chrome, and we're in content which shouldn't expect SJOWs.
         return (hint & XPCNW) ? XPCNW_EXPLICIT : XOW;
     }
 
