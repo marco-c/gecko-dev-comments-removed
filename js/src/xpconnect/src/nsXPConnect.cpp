@@ -1,46 +1,46 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   John Bandhauer <jband@netscape.com> (original author)
+ *   Pierre Phaneuf <pp@ludusdesign.com>
+ *   Nate Nielsen <nielsen@memberwebs.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* High level class and public functions implementation. */
 
 #include "xpcprivate.h"
 #include "XPCWrapper.h"
@@ -55,6 +55,7 @@
 #include "nsNullPrincipal.h"
 #include "nsIURI.h"
 #include "nsJSEnvironment.h"
+#include "plbase64.h"
 #include "jstypedarray.h"
 
 #include "XrayWrapper.h"
@@ -77,8 +78,8 @@ PRUint32     nsXPConnect::gReportAllJSExceptions = 0;
 JSBool       nsXPConnect::gDebugMode = JS_FALSE;
 JSBool       nsXPConnect::gDesiredDebugMode = JS_FALSE;
 
-
-
+// Global cache of the default script security manager (QI'd to
+// nsIScriptSecurityManager)
 nsIScriptSecurityManager *nsXPConnect::gScriptSecurityManager = nsnull;
 
 const char XPC_CONTEXT_STACK_CONTRACTID[] = "@mozilla.org/js/xpc/ContextStack;1";
@@ -89,7 +90,7 @@ const char XPC_SCRIPT_ERROR_CONTRACTID[]  = "@mozilla.org/scripterror;1";
 const char XPC_ID_CONTRACTID[]            = "@mozilla.org/js/xpc/ID;1";
 const char XPC_XPCONNECT_CONTRACTID[]     = "@mozilla.org/js/xpc/XPConnect;1";
 
-
+/***************************************************************************/
 
 nsXPConnect::nsXPConnect()
     :   mRuntime(nsnull),
@@ -117,11 +118,11 @@ nsXPConnect::~nsXPConnect()
 
     JSContext *cx = nsnull;
     if (mRuntime) {
-        
-        
-        
-        
-        
+        // Create our own JSContext rather than an XPCCallContext, since
+        // otherwise we will create a new safe JS context and attach a
+        // components object that won't get GCed.
+        // And do this before calling CleanupAllThreads, so that we
+        // don't create an extra xpcPerThreadData.
         cx = JS_NewContext(mRuntime->GetJSRuntime(), 8192);
     }
 
@@ -130,7 +131,7 @@ nsXPConnect::~nsXPConnect()
     if (cx) {
         JS_BeginRequest(cx);
 
-        
+        // XXX Call even if |mRuntime| null?
         XPCWrappedNativeScope::SystemIsBeingShutDown(cx);
 
         mRuntime->SystemIsBeingShutDown(cx);
@@ -143,7 +144,7 @@ nsXPConnect::~nsXPConnect()
 
     gScriptSecurityManager = nsnull;
 
-    
+    // shutdown the logging system
     XPC_LOG_FINISH();
 
     delete mRuntime;
@@ -152,7 +153,7 @@ nsXPConnect::~nsXPConnect()
     gOnceAliveNowDead = JS_TRUE;
 }
 
-
+// static
 nsXPConnect*
 nsXPConnect::GetXPConnect()
 {
@@ -167,25 +168,25 @@ nsXPConnect::GetXPConnect()
         if(!gSelf->mRuntime ||
            !gSelf->mInterfaceInfoManager)
         {
-            
+            // ctor failed to create an acceptable instance
             delete gSelf;
             gSelf = nsnull;
         }
         else
         {
-            
-            
+            // Initial extra ref to keep the singleton alive
+            // balanced by explicit call to ReleaseXPConnectSingleton()
             NS_ADDREF(gSelf);
             if (NS_FAILED(NS_SetGlobalThreadObserver(gSelf))) {
                 NS_RELEASE(gSelf);
-                
+                // Fall through to returning null
             }
         }
     }
     return gSelf;
 }
 
-
+// static
 nsXPConnect*
 nsXPConnect::GetSingleton()
 {
@@ -194,7 +195,7 @@ nsXPConnect::GetSingleton()
     return xpc;
 }
 
-
+// static
 void
 nsXPConnect::ReleaseXPConnectSingleton()
 {
@@ -204,10 +205,10 @@ nsXPConnect::ReleaseXPConnectSingleton()
         NS_SetGlobalThreadObserver(nsnull);
 
 #ifdef DEBUG
-        
-        
+        // force a dump of the JavaScript gc heap if JS is still alive
+        // if requested through XPC_SHUTDOWN_HEAP_DUMP environment variable
         {
-            
+            // autoscope
             XPCCallContext ccx(NATIVE_CALLER);
             if(ccx.IsValid())
             {
@@ -230,8 +231,8 @@ nsXPConnect::ReleaseXPConnectSingleton()
         }
 #endif
 #ifdef XPC_DUMP_AT_SHUTDOWN
-        
-        
+        // NOTE: to see really interesting stuff turn on the prlog stuff.
+        // See the comment at the top of xpclog.h to see how to do that.
         xpc->DebugDump(7);
 #endif
         nsrefcnt cnt;
@@ -245,10 +246,10 @@ nsXPConnect::ReleaseXPConnectSingleton()
     }
 }
 
-
+// static
 nsresult
 nsXPConnect::GetInterfaceInfoManager(nsIInterfaceInfoSuperManager** iim,
-                                     nsXPConnect* xpc )
+                                     nsXPConnect* xpc /*= nsnull*/)
 {
     if(!xpc && !(xpc = GetXPConnect()))
         return NS_ERROR_FAILURE;
@@ -258,7 +259,7 @@ nsXPConnect::GetInterfaceInfoManager(nsIInterfaceInfoSuperManager** iim,
     return NS_OK;
 }
 
-
+// static
 XPCJSRuntime*
 nsXPConnect::GetRuntimeInstance()
 {
@@ -267,7 +268,7 @@ nsXPConnect::GetRuntimeInstance()
     return xpc->GetRuntime();
 }
 
-
+// static
 JSBool
 nsXPConnect::IsISupportsDescendant(nsIInterfaceInfo* info)
 {
@@ -277,7 +278,7 @@ nsXPConnect::IsISupportsDescendant(nsIInterfaceInfo* info)
     return found;
 }
 
-
+/***************************************************************************/
 
 typedef PRBool (*InfoTester)(nsIInterfaceInfoManager* manager, const void* data,
                              nsIInterfaceInfo** info);
@@ -303,7 +304,7 @@ static nsresult FindInfo(InfoTester tester, const void* data,
     if(tester(iism, data, info))
         return NS_OK;
     
-    
+    // If not found, then let's ask additional managers.
 
     PRBool yes;
     nsCOMPtr<nsISimpleEnumerator> list;
@@ -341,48 +342,48 @@ nsXPConnect::GetInfoForName(const char * name, nsIInterfaceInfo** info)
 void
 nsXPConnect::Collect()
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // We're dividing JS objects into 2 categories:
+    //
+    // 1. "real" roots, held by the JS engine itself or rooted through the root
+    //    and lock JS APIs. Roots from this category are considered black in the
+    //    cycle collector, any cycle they participate in is uncollectable.
+    //
+    // 2. roots held by C++ objects that participate in cycle collection,
+    //    held by XPConnect (see XPCJSRuntime::TraceXPConnectRoots). Roots from
+    //    this category are considered grey in the cycle collector, their final
+    //    color depends on the objects that hold them.
+    //
+    // Note that if a root is in both categories it is the fact that it is in
+    // category 1 that takes precedence, so it will be considered black.
+    //
+    // During garbage collection we switch to an additional mark color (gray)
+    // when tracing inside TraceXPConnectRoots. This allows us to walk those
+    // roots later on and add all objects reachable only from them to the
+    // cycle collector.
+    //
+    // Phases:
+    //
+    // 1. marking of the roots in category 1 by having the JS GC do its marking
+    // 2. marking of the roots in category 2 by XPCJSRuntime::TraceXPConnectRoots
+    //    using an additional color (gray).
+    // 3. end of GC, GC can sweep its heap
+    //
+    // At some later point, when the cycle collector runs:
+    //
+    // 4. walk gray objects and add them to the cycle collector, cycle collect
+    //
+    // JS objects that are part of cycles the cycle collector breaks will be
+    // collected by the next JS.
+    //
+    // If DEBUG_CC is not defined the cycle collector will not traverse roots
+    // from category 1 or any JS objects held by them. Any JS objects they hold
+    // will already be marked by the JS GC and will thus be colored black
+    // themselves. Any C++ objects they hold will have a missing (untraversed)
+    // edge from the JS object to the C++ object and so it will be marked black
+    // too. This decreases the number of objects that the cycle collector has to
+    // deal with.
+    // To improve debugging, if DEBUG_CC is defined all JS objects are
+    // traversed.
 
     XPCCallContext ccx(NATIVE_CALLER);
     if(!ccx.IsValid())
@@ -392,11 +393,11 @@ nsXPConnect::Collect()
 
     JSContext *cx = ccx.GetJSContext();
 
-    
-    
-    
-    
-    
+    // We want to scan the current thread for GC roots only if it was in a
+    // request prior to the Collect call to avoid false positives during the
+    // cycle collection. So to compensate for JS_BeginRequest in
+    // XPCCallContext::Init we disable the conservative scanner if that call
+    // has started the request on this thread.
     JS_ASSERT(cx->thread->data.requestDepth >= 1);
     JS_ASSERT(!cx->thread->data.conservativeGC.requestThreshold);
     if(cx->thread->data.requestDepth == 1)
@@ -413,8 +414,8 @@ nsXPConnect::GarbageCollect()
     return NS_OK;
 }
 
-
-
+// JSTRACE_XML can recursively hold on to more JSTRACE_XML objects, adding it to
+// the cycle collector avoids stack overflow.
 #define ADD_TO_CC(_kind)    ((_kind) == JSTRACE_OBJECT || (_kind) == JSTRACE_XML)
 
 #ifdef DEBUG_CC
@@ -468,12 +469,12 @@ nsXPConnect::BeginCycleCollection(nsCycleCollectionTraversalCallback &cb,
 
     if(explainLiveExpectedGarbage)
     {
-        
+        // Being called from nsCycleCollector::ExplainLiveExpectedGarbage.
 
-        
-        
-        
-        
+        // Record all objects held by the JS runtime. This avoids doing a
+        // complete GC if we're just tracing to explain (from
+        // ExplainLiveExpectedGarbage), which makes the results of cycle
+        // collection identical for DEBUG_CC and non-DEBUG_CC builds.
         if(!PL_DHashTableInit(&mJSRoots, PL_DHashGetStubOps(), nsnull,
                               sizeof(PLDHashEntryStub), PL_DHASH_MIN_SIZE)) {
             mJSRoots.ops = nsnull;
@@ -571,7 +572,7 @@ NoteJSChild(JSTracer *trc, void *thing, uint32 kind)
         TraversalTracer *tracer = static_cast<TraversalTracer*>(trc);
 #if defined(DEBUG)
         if (NS_UNLIKELY(tracer->cb.WantDebugInfo())) {
-            
+            // based on DumpNotify in jsapi.c
             if (tracer->debugPrinter) {
                 char buffer[200];
                 tracer->debugPrinter(trc, buffer, sizeof(buffer));
@@ -603,9 +604,9 @@ WrapperIsNotMainThreadOnly(XPCWrappedNative *wrapper)
     if(proto && proto->ClassIsMainThreadOnly())
         return PR_FALSE;
 
-    
-    
-    
+    // If the native participates in cycle collection then we know it can only
+    // be used on the main thread, in that case we assume the wrapped native
+    // can only be used on the main thread too.
     nsXPCOMCycleCollectionParticipant* participant;
     return NS_FAILED(CallQueryInterface(wrapper->Native(), &participant));
 }
@@ -625,12 +626,12 @@ nsXPConnect::Traverse(void *p, nsCycleCollectionTraversalCallback &cb)
     JSObject *obj;
     js::Class *clazz;
 
-    
-    
-    
-    
-    
-    
+    // We do not want to add wrappers to the cycle collector if they're not
+    // explicitly marked as main thread only, because the cycle collector isn't
+    // able to deal with objects that might be used off of the main thread. We
+    // do want to explicitly mark them for cycle collection if the wrapper has
+    // an external reference, because the wrapper would mark the JS object if
+    // we did add the wrapper to the cycle collector.
     JSBool dontTraverse = PR_FALSE;
     JSBool markJSObject = PR_FALSE;
     if(traceKind == JSTRACE_OBJECT)
@@ -655,19 +656,19 @@ nsXPConnect::Traverse(void *p, nsCycleCollectionTraversalCallback &cb)
     CCNodeType type;
 
 #ifdef DEBUG_CC
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Note that the conditions under which we specify GCMarked vs.
+    // GCUnmarked are different between ExplainLiveExpectedGarbage and
+    // the normal case.  In the normal case, we're saying that anything
+    // reachable from a JS runtime root is itself such a root.  This
+    // doesn't actually break anything; it really just does some of the
+    // cycle collector's work for it.  However, when debugging, we
+    // (1) actually need to know what the root is and (2) don't want to
+    // do an extra GC, so we use mJSRoots, built from JS_TraceRuntime,
+    // which produces a different result because we didn't call
+    // JS_TraceChildren to trace everything that was reachable.
     if(mJSRoots.ops)
     {
-        
+        // ExplainLiveExpectedGarbage codepath
         PLDHashEntryHdr* entry =
             PL_DHashTableOperate(&mJSRoots, p, PL_DHASH_LOOKUP);
         type = markJSObject || PL_DHASH_ENTRY_IS_BUSY(entry) ? GCMarked :
@@ -676,7 +677,7 @@ nsXPConnect::Traverse(void *p, nsCycleCollectionTraversalCallback &cb)
     else
 #endif
     {
-        
+        // Normal codepath (matches non-DEBUG_CC codepath).
         type = !markJSObject && IsGray(p) ? GCUnmarked : GCMarked;
     }
 
@@ -759,10 +760,10 @@ nsXPConnect::Traverse(void *p, nsCycleCollectionTraversalCallback &cb)
         cb.DescribeNode(type, 0, sizeof(JSObject), "JS Object");
     }
 
-    
-    
-    
-    
+    // There's no need to trace objects that have already been marked by the JS
+    // GC. Any JS objects hanging from them will already be marked. Only do this
+    // if DEBUG_CC is not defined, else we do want to know about all JS objects
+    // to get better graphs and explanations.
     if(!cb.WantAllTraces() && type == GCMarked)
         return NS_OK;
 
@@ -776,16 +777,16 @@ nsXPConnect::Traverse(void *p, nsCycleCollectionTraversalCallback &cb)
     
     if(clazz == &XPC_WN_Tearoff_JSClass)
     {
-        
-        
-        
+        // A tearoff holds a strong reference to its native object
+        // (see XPCWrappedNative::FlatJSObjectFinalized). Its XPCWrappedNative
+        // will be held alive through the parent of the JSObject of the tearoff.
         XPCWrappedNativeTearOff *to =
             (XPCWrappedNativeTearOff*) xpc_GetJSPrivate(obj);
         NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "xpc_GetJSPrivate(obj)->mNative");
         cb.NoteXPCOMChild(to->GetNative());
     }
-    
-    
+    // XXX This test does seem fragile, we should probably whitelist classes
+    //     that do hold a strong reference, but that might not be possible.
     else if(clazz->flags & JSCLASS_HAS_PRIVATE &&
             clazz->flags & JSCLASS_PRIVATE_IS_NSISUPPORTS)
     {
@@ -801,8 +802,8 @@ nsXPConnect::GetOutstandingRequests(JSContext* cx)
 {
     unsigned n = cx->outstandingRequests;
     XPCCallContext* context = mCycleCollectionContext;
-    
-    
+    // Ignore the contribution from the XPCCallContext we created for cycle
+    // collection.
     if(context && cx == context->GetJSContext())
     {
         JS_ASSERT(n);
@@ -823,8 +824,8 @@ public:
     }
     NS_IMETHOD Unlink(void *n)
     {
-        
-        
+        // We must not unlink a JSContext because Root/Unroot don't ensure that
+        // the pointer is still valid.
         return NS_OK;
     }
     NS_IMETHOD Unroot(void *n)
@@ -835,10 +836,10 @@ public:
     {
         JSContext *cx = static_cast<JSContext*>(n);
 
-        
-        
-        
-        
+        // Add outstandingRequests to the count, if there are outstanding
+        // requests the context needs to be kept alive and adding unknown
+        // edges will ensure that any cycles this context is in won't be
+        // collected.
         unsigned refCount = nsXPConnect::GetXPConnect()->GetOutstandingRequests(cx) + 1;
 
         cb.DescribeNode(RefCounted, refCount, sizeof(JSContext), "JSContext");
@@ -854,7 +855,7 @@ public:
 
 static JSContextParticipant JSContext_cycleCollectorGlobal;
 
-
+// static
 nsCycleCollectionParticipant*
 nsXPConnect::JSContextParticipant()
 {
@@ -869,9 +870,9 @@ nsXPConnect::NoteJSContext(JSContext *aJSContext,
 }
 
 
-
-
-
+/***************************************************************************/
+/***************************************************************************/
+// nsIXPConnect interface methods...
 
 inline nsresult UnexpectedFailure(nsresult rv)
 {
@@ -896,14 +897,14 @@ private:
     JSStackFrame *mFrame;
 };
 
-
+/* void initClasses (in JSContextPtr aJSContext, in JSObjectPtr aGlobalJSObj); */
 NS_IMETHODIMP
 nsXPConnect::InitClasses(JSContext * aJSContext, JSObject * aGlobalJSObj)
 {
     NS_ASSERTION(aJSContext, "bad param");
     NS_ASSERTION(aGlobalJSObj, "bad param");
 
-    
+    // Nest frame chain save/restore in request created by XPCCallContext.
     XPCCallContext ccx(NATIVE_CALLER, aJSContext);
     if(!ccx.IsValid())
         return UnexpectedFailure(NS_ERROR_FAILURE);
@@ -953,9 +954,9 @@ CreateNewCompartment(JSContext *cx, JSClass *clasp, nsIPrincipal *principal,
                      xpc::CompartmentPrivate *priv, JSObject **global,
                      JSCompartment **compartment)
 {
-    
-    
-    
+    // We take ownership of |priv|. Ensure that either we free it in the case
+    // of failure or give ownership to the compartment in case of success (in
+    // that case it will be free'd in CompartmentCallback during GC).
     nsAutoPtr<xpc::CompartmentPrivate> priv_holder(priv);
     JSPrincipals *principals = nsnull;
     if(principal)
@@ -1023,14 +1024,14 @@ xpc_CreateMTGlobalObject(JSContext *cx, JSClass *clasp,
                          nsISupports *ptr, JSObject **global,
                          JSCompartment **compartment)
 {
-    
+    // NB: We can be either on or off the main thread here.
     XPCMTCompartmentMap& map = nsXPConnect::GetRuntimeInstance()->GetMTCompartmentMap();
     if(!map.Get(ptr, compartment))
     {
-        
-        
-        
-        
+        // We allow the pointer to be a principal, in which case it becomes
+        // the principal for the newly created compartment. The caller is
+        // responsible for ensuring that doing this doesn't violate
+        // threadsafety assumptions.
         nsCOMPtr<nsIPrincipal> principal(do_QueryInterface(ptr));
         xpc::CompartmentPrivate *priv =
             new xpc::CompartmentPrivate(ptr, false, NS_IsMainThread());
@@ -1069,10 +1070,10 @@ nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
     NS_ASSERTION(_retval, "bad param");
     NS_ASSERTION(aExtraPtr || aPrincipal, "must be able to find a compartment");
 
-    
-    
-    
-    
+    // XXX This is not pretty. We make a temporary global object and
+    // init it with all the Components object junk just so we have a
+    // parent with an xpc scope to use when wrapping the object that will
+    // become the 'real' global.
 
     XPCCallContext ccx(NATIVE_CALLER, aJSContext);
 
@@ -1099,8 +1100,8 @@ nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
     jsval v;
     nsCOMPtr<nsIXPConnectJSObjectHolder> holder;
     {
-        
-        
+        // Scope for our auto-marker; it just needs to keep tempGlobal alive
+        // long enough for InitClasses and WrapNative to do their work
         AUTO_MARK_JSVAL(ccx, OBJECT_TO_JSVAL(tempGlobal));
 
         if(NS_FAILED(InitClasses(aJSContext, tempGlobal)))
@@ -1125,7 +1126,7 @@ nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
     if(aFlags & nsIXPConnect::FLAG_SYSTEM_GLOBAL_OBJECT)
         NS_ASSERTION(JS_IsSystemObject(aJSContext, globalJSObj), "huh?!");
 
-    
+    // voodoo to fixup scoping and parenting...
 
     JS_ASSERT(!globalJSObj->getParent());
 
@@ -1144,9 +1145,9 @@ nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
     if(!scope)
         return UnexpectedFailure(NS_ERROR_FAILURE);
 
-    
-    
-    
+    // Note: This call cooperates with a call to wrapper->RefreshPrototype()
+    // in nsJSEnvironment::CreateOuterObject in order to ensure that the
+    // prototype defines its constructor on the right global object.
     if(wrapper->GetProto()->GetScriptableInfo())
         scope->RemoveWrappedNativeProtos();
 
@@ -1165,7 +1166,7 @@ nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
     }
 
     if(!(aFlags & nsIXPConnect::OMIT_COMPONENTS_OBJECT)) {
-        
+        // XPCCallContext gives us an active request needed to save/restore.
         if(!nsXPCComponents::AttachNewComponentsObject(ccx, scope, globalJSObj))
             return UnexpectedFailure(NS_ERROR_FAILURE);
 
@@ -1207,7 +1208,7 @@ NativeInterface2JSObject(XPCLazyCallContext & lccx,
     return NS_OK;
 }
 
-
+/* nsIXPConnectJSObjectHolder wrapNative (in JSContextPtr aJSContext, in JSObjectPtr aScope, in nsISupports aCOMObj, in nsIIDRef aIID); */
 NS_IMETHODIMP
 nsXPConnect::WrapNative(JSContext * aJSContext,
                         JSObject * aScope,
@@ -1230,7 +1231,7 @@ nsXPConnect::WrapNative(JSContext * aJSContext,
                                     PR_FALSE, &v, aHolder);
 }
 
-
+/* void wrapNativeToJSVal (in JSContextPtr aJSContext, in JSObjectPtr aScope, in nsISupports aCOMObj, in nsIIDPtr aIID, out jsval aVal, out nsIXPConnectJSObjectHolder aHolder); */
 NS_IMETHODIMP
 nsXPConnect::WrapNativeToJSVal(JSContext * aJSContext,
                                JSObject * aScope,
@@ -1254,7 +1255,7 @@ nsXPConnect::WrapNativeToJSVal(JSContext * aJSContext,
                                     aAllowWrapping, aVal, aHolder);
 }
 
-
+/* void wrapJS (in JSContextPtr aJSContext, in JSObjectPtr aJSObj, in nsIIDRef aIID, [iid_is (aIID), retval] out nsQIResult result); */
 NS_IMETHODIMP
 nsXPConnect::WrapJS(JSContext * aJSContext,
                     JSObject * aJSObj,
@@ -1300,7 +1301,7 @@ nsXPConnect::JSValToVariant(JSContext *cx,
     return NS_OK;
 }
 
-
+/* void wrapJSAggregatedToNative (in nsISupports aOuter, in JSContextPtr aJSContext, in JSObjectPtr aJSObj, in nsIIDRef aIID, [iid_is (aIID), retval] out nsQIResult result); */
 NS_IMETHODIMP
 nsXPConnect::WrapJSAggregatedToNative(nsISupports *aOuter,
                                       JSContext * aJSContext,
@@ -1326,7 +1327,7 @@ nsXPConnect::WrapJSAggregatedToNative(nsISupports *aOuter,
     return NS_OK;
 }
 
-
+/* nsIXPConnectWrappedNative getWrappedNativeOfJSObject (in JSContextPtr aJSContext, in JSObjectPtr aJSObj); */
 NS_IMETHODIMP
 nsXPConnect::GetWrappedNativeOfJSObject(JSContext * aJSContext,
                                         JSObject * aJSObj,
@@ -1350,12 +1351,12 @@ nsXPConnect::GetWrappedNativeOfJSObject(JSContext * aJSContext,
         return NS_OK;
     }
 
-    
+    // else...
     *_retval = nsnull;
     return NS_ERROR_FAILURE;
 }
 
-
+/* nsISupports getNativeOfWrapper(in JSContextPtr aJSContext, in JSObjectPtr  aJSObj); */
 NS_IMETHODIMP_(nsISupports*)
 nsXPConnect::GetNativeOfWrapper(JSContext * aJSContext,
                                 JSObject * aJSObj)
@@ -1379,7 +1380,7 @@ nsXPConnect::GetNativeOfWrapper(JSContext * aJSContext,
                      (obj2 ? (nsISupports*)xpc_GetJSPrivate(obj2) : nsnull);
 }
 
-
+/* JSObjectPtr getJSObjectOfWrapper (in JSContextPtr aJSContext, in JSObjectPtr aJSObj); */
 NS_IMETHODIMP
 nsXPConnect::GetJSObjectOfWrapper(JSContext * aJSContext,
                                   JSObject * aJSObj,
@@ -1407,12 +1408,12 @@ nsXPConnect::GetJSObjectOfWrapper(JSContext * aJSContext,
         *_retval = obj2;
         return NS_OK;
     }
-    
+    // else...
     *_retval = nsnull;
     return NS_ERROR_FAILURE;
 }
 
-
+/* nsIXPConnectWrappedNative getWrappedNativeOfNativeObject (in JSContextPtr aJSContext, in JSObjectPtr aScope, in nsISupports aCOMObj, in nsIIDRef aIID); */
 NS_IMETHODIMP
 nsXPConnect::GetWrappedNativeOfNativeObject(JSContext * aJSContext,
                                             JSObject * aScope,
@@ -1451,7 +1452,7 @@ nsXPConnect::GetWrappedNativeOfNativeObject(JSContext * aJSContext,
     return NS_OK;
 }
 
-
+/* nsIXPConnectJSObjectHolder reparentWrappedNativeIfFound (in JSContextPtr aJSContext, in JSObjectPtr aScope, in JSObjectPtr aNewParent, in nsISupports aCOMObj); */
 NS_IMETHODIMP
 nsXPConnect::ReparentWrappedNativeIfFound(JSContext * aJSContext,
                                           JSObject * aScope,
@@ -1482,14 +1483,14 @@ static JSDHashOperator
 MoveableWrapperFinder(JSDHashTable *table, JSDHashEntryHdr *hdr,
                       uint32 number, void *arg)
 {
-    
+    // Every element counts.
     nsTArray<nsRefPtr<XPCWrappedNative> > *array =
         static_cast<nsTArray<nsRefPtr<XPCWrappedNative> > *>(arg);
     array->AppendElement(((Native2WrappedNativeMap::Entry*)hdr)->value);
     return JS_DHASH_NEXT;
 }
 
-
+/* void moveWrappers(in JSContextPtr aJSContext, in JSObjectPtr  aOldScope, in JSObjectPtr  aNewScope); */
 NS_IMETHODIMP
 nsXPConnect::MoveWrappers(JSContext *aJSContext,
                           JSObject *aOldScope,
@@ -1509,30 +1510,30 @@ nsXPConnect::MoveWrappers(JSContext *aJSContext,
     if(!newScope)
         return UnexpectedFailure(NS_ERROR_FAILURE);
 
-    
-    
+    // First, look through the old scope and find all of the wrappers that
+    // we're going to move.
     nsTArray<nsRefPtr<XPCWrappedNative> > wrappersToMove;
 
-    {   
+    {   // scoped lock
         XPCAutoLock lock(GetRuntime()->GetMapLock());
         Native2WrappedNativeMap *map = oldScope->GetWrappedNativeMap();
         wrappersToMove.SetCapacity(map->Count());
         map->Enumerate(MoveableWrapperFinder, &wrappersToMove);
     }
 
-    
+    // Now that we have the wrappers, reparent them to the new scope.
     for(PRUint32 i = 0, stop = wrappersToMove.Length(); i < stop; ++i)
     {
-        
-        
+        // First, check to see if this wrapper really needs to be
+        // reparented.
 
         XPCWrappedNative *wrapper = wrappersToMove[i];
         nsISupports *identity = wrapper->GetIdentityObject();
         nsCOMPtr<nsIClassInfo> info(do_QueryInterface(identity));
 
-        
-        
-        
+        // ClassInfo is implemented as singleton objects. If the identity
+        // object here is the same object as returned by the QI, then it
+        // is the singleton classinfo, so we don't need to reparent it.
         if(SameCOMIdentity(identity, info))
             info = nsnull;
 
@@ -1545,8 +1546,8 @@ nsXPConnect::MoveWrappers(JSContext *aJSContext,
             XPCWrappedNative::GatherScriptableCreateInfo(identity, info,
                                                          sciProto, sci);
 
-        
-        
+        // If the wrapper doesn't want precreate, then we don't need to
+        // worry about reparenting it.
         if(!sciWrapper.GetFlags().WantPreCreate())
             continue;
 
@@ -1559,30 +1560,30 @@ nsXPConnect::MoveWrappers(JSContext *aJSContext,
 
         if(newParent == aOldScope)
         {
-            
-            
-            
+            // The old scope still works for this wrapper. We have to assume
+            // that the wrapper will continue to return the old scope from
+            // PreCreate, so don't move it.
             continue;
         }
 
-        
-        
-        
+        // The wrapper returned a new parent. If the new parent is in
+        // a different scope, then we need to reparent it, otherwise,
+        // the old scope is fine.
 
         XPCWrappedNativeScope *betterScope =
             XPCWrappedNativeScope::FindInJSObjectScope(ccx, newParent);
         if(betterScope == oldScope)
         {
-            
-            
-            
+            // The wrapper asked for a different object, but that object
+            // was in the same scope. We assume here that the new parent
+            // simply hasn't been reparented yet.
             newParent = nsnull;
         }
         else
             NS_ASSERTION(betterScope == newScope, "Weird scope returned");
 
-        
-        
+        // Now, reparent the wrapper, since we know that it wants to be
+        // reparented.
 
         nsRefPtr<XPCWrappedNative> junk;
         rv = XPCWrappedNative::ReparentWrapperIfFound(ccx, oldScope,
@@ -1595,7 +1596,7 @@ nsXPConnect::MoveWrappers(JSContext *aJSContext,
     return NS_OK;
 }
 
-
+/* void setSecurityManagerForJSContext (in JSContextPtr aJSContext, in nsIXPCSecurityManager aManager, in PRUint16 flags); */
 NS_IMETHODIMP
 nsXPConnect::SetSecurityManagerForJSContext(JSContext * aJSContext,
                                             nsIXPCSecurityManager *aManager,
@@ -1618,7 +1619,7 @@ nsXPConnect::SetSecurityManagerForJSContext(JSContext * aJSContext,
     return NS_OK;
 }
 
-
+/* void getSecurityManagerForJSContext (in JSContextPtr aJSContext, out nsIXPCSecurityManager aManager, out PRUint16 flags); */
 NS_IMETHODIMP
 nsXPConnect::GetSecurityManagerForJSContext(JSContext * aJSContext,
                                             nsIXPCSecurityManager **aManager,
@@ -1641,7 +1642,7 @@ nsXPConnect::GetSecurityManagerForJSContext(JSContext * aJSContext,
     return NS_OK;
 }
 
-
+/* void setDefaultSecurityManager (in nsIXPCSecurityManager aManager, in PRUint16 flags); */
 NS_IMETHODIMP
 nsXPConnect::SetDefaultSecurityManager(nsIXPCSecurityManager *aManager,
                                        PRUint16 flags)
@@ -1654,14 +1655,14 @@ nsXPConnect::SetDefaultSecurityManager(nsIXPCSecurityManager *aManager,
     nsCOMPtr<nsIScriptSecurityManager> ssm =
         do_QueryInterface(mDefaultSecurityManager);
 
-    
-    
+    // Remember the result of the above QI for fast access to the
+    // script securityt manager.
     gScriptSecurityManager = ssm;
 
     return NS_OK;
 }
 
-
+/* void getDefaultSecurityManager (out nsIXPCSecurityManager aManager, out PRUint16 flags); */
 NS_IMETHODIMP
 nsXPConnect::GetDefaultSecurityManager(nsIXPCSecurityManager **aManager,
                                        PRUint16 *flags)
@@ -1675,7 +1676,7 @@ nsXPConnect::GetDefaultSecurityManager(nsIXPCSecurityManager **aManager,
     return NS_OK;
 }
 
-
+/* nsIStackFrame createStackFrameLocation (in PRUint32 aLanguage, in string aFilename, in string aFunctionName, in PRInt32 aLineNumber, in nsIStackFrame aCaller); */
 NS_IMETHODIMP
 nsXPConnect::CreateStackFrameLocation(PRUint32 aLanguage,
                                       const char *aFilename,
@@ -1694,7 +1695,7 @@ nsXPConnect::CreateStackFrameLocation(PRUint32 aLanguage,
                                                 _retval);
 }
 
-
+/* readonly attribute nsIStackFrame CurrentJSStack; */
 NS_IMETHODIMP
 nsXPConnect::GetCurrentJSStack(nsIStackFrame * *aCurrentJSStack)
 {
@@ -1702,14 +1703,14 @@ nsXPConnect::GetCurrentJSStack(nsIStackFrame * *aCurrentJSStack)
     *aCurrentJSStack = nsnull;
 
     JSContext* cx;
-    
+    // is there a current context available?
     if(NS_SUCCEEDED(Peek(&cx)) && cx)
     {
         nsCOMPtr<nsIStackFrame> stack;
         XPCJSStack::CreateStack(cx, getter_AddRefs(stack));
         if(stack)
         {
-            
+            // peel off native frames...
             PRUint32 language;
             nsCOMPtr<nsIStackFrame> caller;
             while(stack &&
@@ -1726,7 +1727,7 @@ nsXPConnect::GetCurrentJSStack(nsIStackFrame * *aCurrentJSStack)
     return NS_OK;
 }
 
-
+/* readonly attribute nsIXPCNativeCallContext CurrentNativeCallContext; */
 NS_IMETHODIMP
 nsXPConnect::GetCurrentNativeCallContext(nsAXPCNativeCallContext * *aCurrentNativeCallContext)
 {
@@ -1738,12 +1739,12 @@ nsXPConnect::GetCurrentNativeCallContext(nsAXPCNativeCallContext * *aCurrentNati
         *aCurrentNativeCallContext = data->GetCallContext();
         return NS_OK;
     }
-    
+    //else...
     *aCurrentNativeCallContext = nsnull;
     return UnexpectedFailure(NS_ERROR_FAILURE);
 }
 
-
+/* attribute nsIException PendingException; */
 NS_IMETHODIMP
 nsXPConnect::GetPendingException(nsIException * *aPendingException)
 {
@@ -1773,11 +1774,11 @@ nsXPConnect::SetPendingException(nsIException * aPendingException)
 NS_IMETHODIMP
 nsXPConnect::SyncJSContexts(void)
 {
-    
+    // Do-nothing compatibility function
     return NS_OK;
 }
 
-
+/* nsIXPCFunctionThisTranslator setFunctionThisTranslator (in nsIIDRef aIID, in nsIXPCFunctionThisTranslator aTranslator); */
 NS_IMETHODIMP
 nsXPConnect::SetFunctionThisTranslator(const nsIID & aIID,
                                        nsIXPCFunctionThisTranslator *aTranslator,
@@ -1788,7 +1789,7 @@ nsXPConnect::SetFunctionThisTranslator(const nsIID & aIID,
     IID2ThisTranslatorMap* map = rt->GetThisTranslatorMap();
 
     {
-        XPCAutoLock lock(rt->GetMapLock()); 
+        XPCAutoLock lock(rt->GetMapLock()); // scoped lock
         if(_retval)
         {
             old = map->Find(aIID);
@@ -1800,7 +1801,7 @@ nsXPConnect::SetFunctionThisTranslator(const nsIID & aIID,
     return NS_OK;
 }
 
-
+/* nsIXPCFunctionThisTranslator getFunctionThisTranslator (in nsIIDRef aIID); */
 NS_IMETHODIMP
 nsXPConnect::GetFunctionThisTranslator(const nsIID & aIID,
                                        nsIXPCFunctionThisTranslator **_retval)
@@ -1810,7 +1811,7 @@ nsXPConnect::GetFunctionThisTranslator(const nsIID & aIID,
     IID2ThisTranslatorMap* map = rt->GetThisTranslatorMap();
 
     {
-        XPCAutoLock lock(rt->GetMapLock()); 
+        XPCAutoLock lock(rt->GetMapLock()); // scoped lock
         old = map->Find(aIID);
         NS_IF_ADDREF(old);
         *_retval = old;
@@ -1818,7 +1819,7 @@ nsXPConnect::GetFunctionThisTranslator(const nsIID & aIID,
     return NS_OK;
 }
 
-
+/* void setSafeJSContextForCurrentThread (in JSContextPtr cx); */
 NS_IMETHODIMP 
 nsXPConnect::SetSafeJSContextForCurrentThread(JSContext * cx)
 {
@@ -1828,7 +1829,7 @@ nsXPConnect::SetSafeJSContextForCurrentThread(JSContext * cx)
     return ccx.GetThreadData()->GetJSContextStack()->SetSafeJSContext(cx);
 }
 
-
+/* void clearAllWrappedNativeSecurityPolicies (); */
 NS_IMETHODIMP
 nsXPConnect::ClearAllWrappedNativeSecurityPolicies()
 {
@@ -1839,7 +1840,7 @@ nsXPConnect::ClearAllWrappedNativeSecurityPolicies()
     return XPCWrappedNativeScope::ClearAllWrappedNativeSecurityPolicies(ccx);
 }
 
-
+/* void restoreWrappedNativePrototype (in JSContextPtr aJSContext, in JSObjectPtr aScope, in nsIClassInfo aClassInfo, in nsIXPConnectJSObjectHolder aPrototype); */
 NS_IMETHODIMP 
 nsXPConnect::RestoreWrappedNativePrototype(JSContext * aJSContext, 
                                            JSObject * aScope, 
@@ -1888,45 +1889,45 @@ nsXPConnect::RestoreWrappedNativePrototype(JSContext * aJSContext,
         scope->GetWrappedNativeProtoMap(proto->ClassIsMainThreadOnly());
     XPCLock* lock = GetRuntime()->GetMapLock();
 
-    {   
+    {   // scoped lock
         XPCAutoLock al(lock);
 
         XPCWrappedNativeProtoMap* detachedMap =
             GetRuntime()->GetDetachedWrappedNativeProtoMap();
 
-        
-        
-        
+        // If we're replacing an old proto, make sure to put it on the
+        // map of detached wrapped native protos so that the old proto
+        // gets properly cleaned up, especially during shutdown.
         XPCWrappedNativeProto *oldProto = map->Find(aClassInfo);
         if(oldProto)
         {
             detachedMap->Add(oldProto);
 
-            
-            
-            
-            
+            // ClassInfo2WrappedNativeProtoMap doesn't ever replace
+            // entries in the map, so now since we know there's an
+            // entry for aClassInfo in the map we have to remove it to
+            // be able to add the new one.
             map->Remove(aClassInfo);
 
-            
-            
-            
+            // This code should do the right thing even if we're
+            // restoring the current proto, but warn in that case
+            // since doing that is pointless.
             NS_ASSERTION(proto != oldProto,
                          "Restoring current prototype, fix caller!");
         }
 
         map->Add(aClassInfo, proto);
 
-        
-        
-        
+        // Remove the prototype from the map of detached wrapped
+        // native prototypes now that the prototype is part of a scope
+        // again.
         detachedMap->Remove(proto);
     }
 
-    
-    
-    
-    
+    // The global in this scope didn't change, but a prototype did
+    // (most likely the global object's prototype), which means the
+    // scope needs to get a chance to update its cached
+    // Object.prototype pointers etc.
     scope->SetGlobal(ccx, aScope);
 
     return NS_OK;
@@ -1938,7 +1939,7 @@ nsXPConnect::CreateSandbox(JSContext *cx, nsIPrincipal *principal,
 {
 #ifdef XPCONNECT_STANDALONE
     return NS_ERROR_NOT_AVAILABLE;
-#else 
+#else /* XPCONNECT_STANDALONE */
     XPCCallContext ccx(NATIVE_CALLER, cx);
     if(!ccx.IsValid())
         return UnexpectedFailure(NS_ERROR_FAILURE);
@@ -1960,7 +1961,7 @@ nsXPConnect::CreateSandbox(JSContext *cx, nsIPrincipal *principal,
     }
 
     return rv;
-#endif 
+#endif /* XPCONNECT_STANDALONE */
 }
 
 NS_IMETHODIMP
@@ -1970,7 +1971,7 @@ nsXPConnect::EvalInSandboxObject(const nsAString& source, JSContext *cx,
 {
 #ifdef XPCONNECT_STANDALONE
     return NS_ERROR_NOT_AVAILABLE;
-#else 
+#else /* XPCONNECT_STANDALONE */
     if (!sandbox)
         return NS_ERROR_INVALID_ARG;
 
@@ -1981,22 +1982,22 @@ nsXPConnect::EvalInSandboxObject(const nsAString& source, JSContext *cx,
     return xpc_EvalInSandbox(cx, obj, source,
                              NS_ConvertUTF16toUTF8(source).get(), 1,
                              JSVERSION_DEFAULT, returnStringOnly, rval);
-#endif 
+#endif /* XPCONNECT_STANDALONE */
 }
 
-
+/* void GetXPCWrappedNativeJSClassInfo(out JSEqualityOp equality); */
 NS_IMETHODIMP
 nsXPConnect::GetXPCWrappedNativeJSClassInfo(JSEqualityOp *equality)
 {
-    
-    
+    // Expose the equality pointer used by IS_WRAPPER_CLASS(). If that macro
+    // ever changes, this function needs to stay in sync.
 
     *equality = &XPC_WN_Equality;
 
     return NS_OK;
 }
 
-
+/* nsIXPConnectJSObjectHolder getWrappedNativePrototype (in JSContextPtr aJSContext, in JSObjectPtr aScope, in nsIClassInfo aClassInfo); */
 NS_IMETHODIMP 
 nsXPConnect::GetWrappedNativePrototype(JSContext * aJSContext, 
                                        JSObject * aScope, 
@@ -2036,7 +2037,7 @@ nsXPConnect::GetWrappedNativePrototype(JSContext * aJSContext,
     return NS_OK;
 }
 
-
+/* void releaseJSContext (in JSContextPtr aJSContext, in PRBool noGC); */
 NS_IMETHODIMP 
 nsXPConnect::ReleaseJSContext(JSContext * aJSContext, PRBool noGC)
 {
@@ -2052,7 +2053,7 @@ nsXPConnect::ReleaseJSContext(JSContext * aJSContext, PRBool noGC)
             if(cur->GetJSContext() == aJSContext)
             {
                 ccx = cur;
-                
+                // Keep looping to find the deepest matching call context.
             }
         }
     
@@ -2066,7 +2067,7 @@ nsXPConnect::ReleaseJSContext(JSContext * aJSContext, PRBool noGC)
             JS_ClearNewbornRoots(aJSContext);
             return NS_OK;
         }
-        
+        // else continue on and synchronously destroy the JSContext ...
 
         NS_ASSERTION(!tls->GetJSContextStack() || 
                      !tls->GetJSContextStack()->
@@ -2081,7 +2082,7 @@ nsXPConnect::ReleaseJSContext(JSContext * aJSContext, PRBool noGC)
     return NS_OK;
 }
 
-
+/* void debugDump (in short depth); */
 NS_IMETHODIMP
 nsXPConnect::DebugDump(PRInt16 depth)
 {
@@ -2109,7 +2110,7 @@ nsXPConnect::DebugDump(PRInt16 depth)
     return NS_OK;
 }
 
-
+/* void debugDumpObject (in nsISupports aCOMObj, in short depth); */
 NS_IMETHODIMP
 nsXPConnect::DebugDumpObject(nsISupports *p, PRInt16 depth)
 {
@@ -2161,7 +2162,7 @@ nsXPConnect::DebugDumpObject(nsISupports *p, PRInt16 depth)
     return NS_OK;
 }
 
-
+/* void debugDumpJSStack (in PRBool showArgs, in PRBool showLocals, in PRBool showThisProps); */
 NS_IMETHODIMP
 nsXPConnect::DebugDumpJSStack(PRBool showArgs,
                               PRBool showLocals,
@@ -2194,7 +2195,7 @@ nsXPConnect::DebugPrintJSStack(PRBool showArgs,
     return nsnull;
 }
 
-
+/* void debugDumpEvalInJSStackFrame (in PRUint32 aFrameNumber, in string aSourceText); */
 NS_IMETHODIMP
 nsXPConnect::DebugDumpEvalInJSStackFrame(PRUint32 aFrameNumber, const char *aSourceText)
 {
@@ -2209,7 +2210,7 @@ nsXPConnect::DebugDumpEvalInJSStackFrame(PRUint32 aFrameNumber, const char *aSou
     return NS_OK;
 }
 
-
+/* jsval variantToJS (in JSContextPtr ctx, in JSObjectPtr scope, in nsIVariant value); */
 NS_IMETHODIMP 
 nsXPConnect::VariantToJS(JSContext* ctx, JSObject* scope, nsIVariant* value, jsval* _retval)
 {
@@ -2235,7 +2236,7 @@ nsXPConnect::VariantToJS(JSContext* ctx, JSObject* scope, nsIVariant* value, jsv
     return NS_OK;
 }
 
-
+/* nsIVariant JSToVariant (in JSContextPtr ctx, in jsval value); */
 NS_IMETHODIMP 
 nsXPConnect::JSToVariant(JSContext* ctx, const jsval &value, nsIVariant** _retval)
 {
@@ -2254,8 +2255,8 @@ nsXPConnect::JSToVariant(JSContext* ctx, const jsval &value, nsIVariant** _retva
     return NS_OK;
 }
 
-
-
+/* void flagSystemFilenamePrefix (in string filenamePrefix,
+ *                                in PRBool aWantNativeWrappers); */
 NS_IMETHODIMP 
 nsXPConnect::FlagSystemFilenamePrefix(const char *aFilenamePrefix,
                                       PRBool aWantNativeWrappers)
@@ -2275,8 +2276,8 @@ NS_IMETHODIMP
 nsXPConnect::OnProcessNextEvent(nsIThreadInternal *aThread, PRBool aMayWait,
                                 PRUint32 aRecursionDepth)
 {
-    
-    
+    // Push a null JSContext so that we don't see any script during
+    // event processing.
     return Push(nsnull);
 }
 
@@ -2284,7 +2285,7 @@ NS_IMETHODIMP
 nsXPConnect::AfterProcessNextEvent(nsIThreadInternal *aThread,
                                    PRUint32 aRecursionDepth)
 {
-    
+    // Call cycle collector occasionally.
     if (NS_IsMainThread()) {
         nsJSContext::MaybeCCIfUserInactive();
     }
@@ -2314,14 +2315,14 @@ nsXPConnect::RemoveJSHolder(void* aHolder)
 NS_IMETHODIMP
 nsXPConnect::SetReportAllJSExceptions(PRBool newval)
 {
-    
+    // Ignore if the environment variable was set.
     if (gReportAllJSExceptions != 1)
         gReportAllJSExceptions = newval ? 2 : 0;
 
     return NS_OK;
 }
 
-
+/* [noscript, notxpcom] PRBool defineDOMQuickStubs (in JSContextPtr cx, in JSObjectPtr proto, in PRUint32 flags, in PRUint32 interfaceCount, [array, size_is (interfaceCount)] in nsIIDPtr interfaceArray); */
 NS_IMETHODIMP_(PRBool)
 nsXPConnect::DefineDOMQuickStubs(JSContext * cx,
                                  JSObject * proto,
@@ -2333,7 +2334,7 @@ nsXPConnect::DefineDOMQuickStubs(JSContext * cx,
                                 interfaceCount, interfaceArray);
 }
 
-
+/* attribute JSRuntime runtime; */
 NS_IMETHODIMP
 nsXPConnect::GetRuntime(JSRuntime **runtime)
 {
@@ -2344,7 +2345,7 @@ nsXPConnect::GetRuntime(JSRuntime **runtime)
     return NS_OK;
 }
 
-
+/* attribute nsIXPCScriptable backstagePass; */
 NS_IMETHODIMP
 nsXPConnect::GetBackstagePass(nsIXPCScriptable **bsp)
 {
@@ -2369,23 +2370,23 @@ nsXPConnect::GetBackstagePass(nsIXPCScriptable **bsp)
     return NS_OK;
 }
 
-
+/* [noscript, notxpcom] void registerGCCallback(in JSGCCallback func); */
 NS_IMETHODIMP_(void)
 nsXPConnect::RegisterGCCallback(JSGCCallback func)
 {
     mRuntime->AddGCCallback(func);
 }
 
-
+/* [noscript, notxpcom] void unregisterGCCallback(in JSGCCallback func); */
 NS_IMETHODIMP_(void)
 nsXPConnect::UnregisterGCCallback(JSGCCallback func)
 {
     mRuntime->RemoveGCCallback(func);
 }
 
+//  nsIJSContextStack and nsIThreadJSContextStack implementations
 
-
-
+/* readonly attribute PRInt32 Count; */
 NS_IMETHODIMP
 nsXPConnect::GetCount(PRInt32 *aCount)
 {
@@ -2403,7 +2404,7 @@ nsXPConnect::GetCount(PRInt32 *aCount)
     return data->GetJSContextStack()->GetCount(aCount);
 }
 
-
+/* JSContext Peek (); */
 NS_IMETHODIMP
 nsXPConnect::Peek(JSContext * *_retval)
 {
@@ -2424,8 +2425,8 @@ nsXPConnect::Peek(JSContext * *_retval)
 void 
 nsXPConnect::CheckForDebugMode(JSRuntime *rt) {
     if (gDebugMode != gDesiredDebugMode) {
-        
-        
+        // This can happen if a Worker is running, but we don't have the ability
+        // to debug workers right now, so just return.
         if (!NS_IsMainThread()) {
             return;
         }
@@ -2446,14 +2447,14 @@ nsXPConnect::CheckForDebugMode(JSRuntime *rt) {
         if (NS_SUCCEEDED(rv)) {
             gDebugMode = gDesiredDebugMode;
         } else {
-            
+            // if the attempt failed, cancel the debugMode request
             gDesiredDebugMode = gDebugMode;
             JS_SetRuntimeDebugMode(rt, gDebugMode);
         }
     }
 }
 
-
+/* JSContext Pop (); */
 NS_IMETHODIMP
 nsXPConnect::Pop(JSContext * *_retval)
 {
@@ -2469,7 +2470,7 @@ nsXPConnect::Pop(JSContext * *_retval)
     return data->GetJSContextStack()->Pop(_retval);
 }
 
-
+/* void Push (in JSContext cx); */
 NS_IMETHODIMP
 nsXPConnect::Push(JSContext * cx)
 {
@@ -2490,7 +2491,7 @@ nsXPConnect::Push(JSContext * cx)
     return data->GetJSContextStack()->Push(cx);
 }
 
-
+/* attribute JSContext SafeJSContext; */
 NS_IMETHODIMP
 nsXPConnect::GetSafeJSContext(JSContext * *aSafeJSContext)
 {
@@ -2507,7 +2508,7 @@ nsXPConnect::GetSafeJSContext(JSContext * *aSafeJSContext)
     return data->GetJSContextStack()->GetSafeJSContext(aSafeJSContext);
 }
 
-
+/* attribute JSContext SafeJSContext; */
 NS_IMETHODIMP
 nsXPConnect::SetSafeJSContext(JSContext * aSafeJSContext)
 {
@@ -2537,7 +2538,7 @@ nsXPConnect::GetPrincipal(JSObject* obj, PRBool allowShortCircuit) const
                 }
             }
 
-            
+            // If not, check if it points to an nsIScriptObjectPrincipal
             nsCOMPtr<nsIScriptObjectPrincipal> objPrin =
                 do_QueryInterface(xpcWrapper->Native());
             if (objPrin) {
@@ -2590,8 +2591,110 @@ nsXPConnect::GetCaller(JSContext **aJSContext, JSObject **aObj)
     XPCCallContext *ccx = XPCPerThreadData::GetData(nsnull)->GetCallContext();
     *aJSContext = ccx->GetJSContext();
 
-    
+    // Set to the caller in XPC_WN_Helper_{Call,Construct}
     *aObj = ccx->GetFlattenedJSObject();
+}
+
+// static
+nsresult
+nsXPConnect::Base64Encode(const nsACString &aBinaryData,
+                          nsACString &aString)
+{
+  // Check for overflow.
+  if(aBinaryData.Length() > (PR_UINT32_MAX / 4) * 3)
+      return NS_ERROR_FAILURE;
+
+  PRUint32 stringLen = ((aBinaryData.Length() + 2) / 3) * 4;
+
+  char *buffer;
+
+  // Add one byte for null termination.
+  if(aString.SetCapacity(stringLen + 1) &&
+     (buffer = aString.BeginWriting()) &&
+     PL_Base64Encode(aBinaryData.BeginReading(), aBinaryData.Length(), buffer))
+  {
+      // PL_Base64Encode doesn't null terminate the buffer for us when we pass
+      // the buffer in. Do that manually.
+      buffer[stringLen] = '\0';
+
+      aString.SetLength(stringLen);
+      return NS_OK;
+  }
+
+  aString.Truncate();
+  return NS_ERROR_INVALID_ARG;
+}
+
+// static
+nsresult
+nsXPConnect::Base64Encode(const nsAString &aString,
+                          nsAString &aBinaryData)
+{
+    NS_LossyConvertUTF16toASCII string(aString);
+    nsCAutoString binaryData;
+
+    nsresult rv = Base64Encode(string, binaryData);
+    if(NS_SUCCEEDED(rv))
+        CopyASCIItoUTF16(binaryData, aBinaryData);
+    else
+        aBinaryData.Truncate();
+
+    return rv;
+}
+
+// static
+nsresult
+nsXPConnect::Base64Decode(const nsACString &aString,
+                          nsACString &aBinaryData)
+{
+  // Check for overflow.
+  if(aString.Length() > PR_UINT32_MAX / 3)
+      return NS_ERROR_FAILURE;
+
+  PRUint32 binaryDataLen = ((aString.Length() * 3) / 4);
+
+  char *buffer;
+
+  // Add one byte for null termination.
+  if(aBinaryData.SetCapacity(binaryDataLen + 1) &&
+     (buffer = aBinaryData.BeginWriting()) &&
+     PL_Base64Decode(aString.BeginReading(), aString.Length(), buffer))
+  {
+      // PL_Base64Decode doesn't null terminate the buffer for us when we pass
+      // the buffer in. Do that manually, taking into account the number of '='
+      // characters we were passed.
+      if(!aString.IsEmpty() && aString[aString.Length() - 1] == '=')
+      {
+          if(aString.Length() > 1 && aString[aString.Length() - 2] == '=')
+              binaryDataLen -= 2;
+          else
+              binaryDataLen -= 1;
+      }
+      buffer[binaryDataLen] = '\0';
+
+      aBinaryData.SetLength(binaryDataLen);
+      return NS_OK;
+  }
+
+  aBinaryData.Truncate();
+  return NS_ERROR_INVALID_ARG;
+}
+
+// static
+nsresult
+nsXPConnect::Base64Decode(const nsAString &aBinaryData,
+                          nsAString &aString)
+{
+    NS_LossyConvertUTF16toASCII binaryData(aBinaryData);
+    nsCAutoString string;
+
+    nsresult rv = Base64Decode(binaryData, string);
+    if(NS_SUCCEEDED(rv))
+        CopyASCIItoUTF16(string, aString);
+    else
+        aString.Truncate();
+
+    return rv;
 }
 
 NS_IMETHODIMP
@@ -2601,7 +2704,7 @@ nsXPConnect::SetDebugModeWhenPossible(PRBool mode)
     return NS_OK;
 }
 
-
+/* These are here to be callable from a debugger */
 JS_BEGIN_EXTERN_C
 JS_EXPORT_API(void) DumpJSStack()
 {

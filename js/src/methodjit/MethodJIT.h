@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Brendan Eich <brendan@mozilla.org>
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #if !defined jsjaeger_h__ && defined JS_METHODJIT
 #define jsjaeger_h__
@@ -139,16 +139,16 @@ struct VMFrame
 };
 
 #ifdef JS_CPU_ARM
-
+// WARNING: Do not call this function directly from C(++) code because it is not ABI-compliant.
 extern "C" void JaegerStubVeneer(void);
 #endif
 
 namespace mjit {
 
-
-
-
-
+/*
+ * Trampolines to force returns from jit code.
+ * See also TrampolineCompiler::generateForceReturn(Fast).
+ */
 struct Trampolines {
     typedef void (*TrampolinePtr)();
 
@@ -161,16 +161,16 @@ struct Trampolines {
 #endif
 };
 
-
-
-
-
-
-
+/*
+ * Method JIT compartment data. Currently, there is exactly one per
+ * JS compartment. It would be safe for multiple JS compartments to
+ * share a JaegerCompartment as long as only one thread can enter
+ * the JaegerCompartment at a time.
+ */
 class JaegerCompartment {
-    JSC::ExecutableAllocator *execAlloc;     
-    Trampolines              trampolines;    
-    VMFrame                  *activeFrame_;  
+    JSC::ExecutableAllocator *execAlloc;     // allocator for jit code
+    Trampolines              trampolines;    // force-return trampolines
+    VMFrame                  *activeFrame_;  // current active VMFrame
 
     void Finish();
 
@@ -208,13 +208,13 @@ class JaegerCompartment {
 #endif
 };
 
-
-
-
-
-
-
-
+/*
+ * Allocation policy for compiler jstl objects. The goal is to free the
+ * compiler from having to check and propagate OOM after every time we
+ * append to a vector. We do this by reporting OOM to the engine and
+ * setting a flag on the compiler when OOM occurs. The compiler is required
+ * to check for OOM only before trying to use the contents of the list.
+ */
 class CompilerAllocPolicy : public ContextAllocPolicy
 {
     bool *oomFlag;
@@ -290,36 +290,36 @@ struct CallSite;
 
 struct JITScript {
     typedef JSC::MacroAssemblerCodeRef CodeRef;
-    CodeRef         code;       
-    void            **nmap;     
+    CodeRef         code;       /* pool & code addresses */
+    void            **nmap;     /* pc -> JIT code map, sparse */
 
     js::mjit::CallSite *callSites;
     uint32          nCallSites;
 #ifdef JS_MONOIC
-    ic::MICInfo     *mics;      
-    uint32          nMICs;      
-    ic::CallICInfo  *callICs;   
-    uint32          nCallICs;   
+    ic::MICInfo     *mics;      /* MICs in this script. */
+    uint32          nMICs;      /* number of MonoICs */
+    ic::CallICInfo  *callICs;   /* CallICs in this script. */
+    uint32          nCallICs;   /* number of call ICs */
     ic::EqualityICInfo *equalityICs;
     uint32          nEqualityICs;
     ic::TraceICInfo *traceICs;
     uint32          nTraceICs;
 
-    
+    // Additional ExecutablePools that IC stubs were generated into.
     typedef Vector<JSC::ExecutablePool *, 0, SystemAllocPolicy> ExecPoolVector;
     ExecPoolVector execPools;
 #endif
 #ifdef JS_POLYIC
-    ic::PICInfo     *pics;      
-    uint32          nPICs;      
+    ic::PICInfo     *pics;      /* PICs in this script */
+    uint32          nPICs;      /* number of PolyICs */
     ic::GetElementIC *getElems;
     uint32           nGetElems;
     ic::SetElementIC *setElems;
     uint32           nSetElems;
 #endif
-    void            *invokeEntry;       
-    void            *fastEntry;         
-    void            *arityCheckEntry;   
+    void            *invokeEntry;       /* invoke address */
+    void            *fastEntry;         /* cached entry, fastest */
+    void            *arityCheckEntry;   /* arity check address */
 
     ~JITScript();
 
@@ -334,16 +334,16 @@ struct JITScript {
     void purgePICs();
 };
 
-
-
-
-
+/*
+ * Execute the given mjit code. This is a low-level call and callers must
+ * provide the same guarantees as JaegerShot/CheckStackAndEnterMethodJIT.
+ */
 JSBool EnterMethodJIT(JSContext *cx, JSStackFrame *fp, void *code, Value *stackLimit);
 
-
+/* Execute a method that has been JIT compiled. */
 JSBool JaegerShot(JSContext *cx);
 
-
+/* Drop into the middle of a method at an arbitrary point, and execute. */
 JSBool JaegerShotAtSafePoint(JSContext *cx, void *safePoint);
 
 enum CompileStatus
@@ -381,10 +381,10 @@ struct CallSite
     uint32 pcOffset;
     uint32 id;
 
-    
-    
-    
-    
+    // Normally, callsite ID is the __LINE__ in the program that added the
+    // callsite. Since traps can be removed, we make sure they carry over
+    // from each compilation, and identify them with a single, canonical
+    // ID. Hopefully a SpiderMonkey file won't have two billion source lines.
     static const uint32 MAGIC_TRAP_ID = 0xFEDCBABC;
 
     void initialize(uint32 codeOffset, uint32 pcOffset, uint32 id) {
@@ -398,16 +398,16 @@ struct CallSite
     }
 };
 
-
+/* Re-enables a tracepoint in the method JIT. */
 void
 EnableTraceHint(JSScript *script, jsbytecode *pc, uint16_t index);
 
 uintN
 GetCallTargetCount(JSScript *script, jsbytecode *pc);
 
-} 
+} /* namespace mjit */
 
-} 
+} /* namespace js */
 
 inline void *
 JSScript::maybeNativeCodeForPC(bool constructing, jsbytecode *pc)
@@ -441,5 +441,5 @@ extern "C" void JaegerThrowpoline();
 #endif
 extern "C" void InjectJaegerReturn();
 
-#endif 
+#endif /* jsjaeger_h__ */
 
