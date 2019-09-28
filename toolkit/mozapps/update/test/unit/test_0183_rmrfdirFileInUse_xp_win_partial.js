@@ -4,29 +4,30 @@
 
 
 
-const TEST_ID = "0180";
+const TEST_ID = "0183";
+const MAR_IN_USE_WIN_FILE = "data/partial.mar";
 
 
-const TEST_FILES = [
+var TEST_FILES = [
 {
   fileName         : "00png0.png",
   relPathDir       : "0/00/",
   originalContents : null,
   compareContents  : null,
-  originalFile     : null,
-  compareFile      : "data/complete.png"
+  originalFile     : "data/complete.png",
+  compareFile      : "data/partial.png"
 }, {
   fileName         : "00text0",
   relPathDir       : "0/00/",
-  originalContents : "ToBeReplacedWithToBeModified\n",
-  compareContents  : "ToBeModified\n",
+  originalContents : "ToBeModified\n",
+  compareContents  : "Modified\n",
   originalFile     : null,
   compareFile      : null
 }, {
   fileName         : "00text1",
   relPathDir       : "0/00/",
-  originalContents : "ToBeReplacedWithToBeDeleted\n",
-  compareContents  : "ToBeDeleted\n",
+  originalContents : "ToBeDeleted\n",
+  compareContents  : null,
   originalFile     : null,
   compareFile      : null
 }, {
@@ -34,13 +35,27 @@ const TEST_FILES = [
   relPathDir       : "0/",
   originalContents : null,
   compareContents  : null,
-  originalFile     : HELPER_BIN_FILE,
-  compareFile      : "data/complete.png"
+  originalFile     : "data/complete.png",
+  compareFile      : "data/partial.png"
 }, {
   fileName         : "10text0",
   relPathDir       : "1/10/",
-  originalContents : "ToBeReplacedWithToBeDeleted\n",
-  compareContents  : "ToBeDeleted\n",
+  originalContents : "ToBeDeleted\n",
+  compareContents  : null,
+  originalFile     : null,
+  compareFile      : null
+}, {
+  fileName         : "00text2",
+  relPathDir       : "0/00/",
+  originalContents : null,
+  compareContents  : "Added\n",
+  originalFile     : null,
+  compareFile      : null
+}, {
+  fileName         : "20text0",
+  relPathDir       : "2/20/",
+  originalContents : null,
+  compareContents  : "Added\n",
   originalFile     : null,
   compareFile      : null
 }, {
@@ -48,8 +63,8 @@ const TEST_FILES = [
   relPathDir       : "",
   originalContents : null,
   compareContents  : null,
-  originalFile     : HELPER_BIN_FILE,
-  compareFile      : "data/complete.png"
+  originalFile     : "data/complete.png",
+  compareFile      : "data/partial.png"
 }];
 
 function run_test() {
@@ -61,11 +76,19 @@ function run_test() {
   do_test_pending();
   do_register_cleanup(cleanupUpdaterTest);
 
-  setupUpdaterTest(MAR_COMPLETE_FILE);
+  setupUpdaterTest(MAR_IN_USE_WIN_FILE);
+
+  let fileInUseBin = getApplyDirFile(TEST_DIRS[2].relPathDir +
+                                     TEST_DIRS[2].files[0]);
+  
+  
+  fileInUseBin.remove(false);
+
+  let helperBin = do_get_file(HELPER_BIN_FILE);
+  let fileInUseDir = getApplyDirFile(TEST_DIRS[2].relPathDir);
+  helperBin.copyTo(fileInUseDir, TEST_DIRS[2].files[0]);
 
   
-  let fileInUseBin = getApplyDirFile(TEST_FILES[3].relPathDir +
-                                    TEST_FILES[3].fileName);
   let args = [getApplyDirPath(), "input", "output", "-s", "20"];
   let fileInUseProcess = AUS_Cc["@mozilla.org/process/util;1"].
                          createInstance(AUS_Ci.nsIProcess);
@@ -79,7 +102,7 @@ function doUpdate() {
   
   let exitValue = runUpdate();
   logTestInfo("testing updater binary process exitValue for success when " +
-              "applying a complete mar");
+              "applying a partial mar");
   do_check_eq(exitValue, 0);
 
   setupHelperFinish();

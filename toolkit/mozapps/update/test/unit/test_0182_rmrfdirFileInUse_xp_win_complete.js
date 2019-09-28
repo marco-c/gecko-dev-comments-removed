@@ -1,12 +1,12 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
+/* File in use complete MAR file patch apply success test */
 
+const TEST_ID = "0182";
 
-
-
-
-const TEST_ID = "0180";
-
-
+// The files are in the same order as they are applied from the mar
 const TEST_FILES = [
 {
   fileName         : "00png0.png",
@@ -63,9 +63,19 @@ function run_test() {
 
   setupUpdaterTest(MAR_COMPLETE_FILE);
 
-  
-  let fileInUseBin = getApplyDirFile(TEST_FILES[3].relPathDir +
-                                    TEST_FILES[3].fileName);
+  let fileInUseBin = getApplyDirFile(TEST_DIRS[4].relPathDir +
+                                     TEST_DIRS[4].subDirs[0] +
+                                     TEST_DIRS[4].subDirFiles[0]);
+  // Remove the empty file created for the test so the helper application can
+  // replace it.
+  fileInUseBin.remove(false);
+
+  let helperBin = do_get_file(HELPER_BIN_FILE);
+  let fileInUseDir = getApplyDirFile(TEST_DIRS[4].relPathDir +
+                                    TEST_DIRS[4].subDirs[0]);
+  helperBin.copyTo(fileInUseDir, TEST_DIRS[4].subDirFiles[0]);
+
+  // Launch an existing file so it is in use during the update
   let args = [getApplyDirPath(), "input", "output", "-s", "20"];
   let fileInUseProcess = AUS_Cc["@mozilla.org/process/util;1"].
                          createInstance(AUS_Ci.nsIProcess);
@@ -76,7 +86,7 @@ function run_test() {
 }
 
 function doUpdate() {
-  
+  // apply the complete mar
   let exitValue = runUpdate();
   logTestInfo("testing updater binary process exitValue for success when " +
               "applying a complete mar");
