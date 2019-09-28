@@ -362,30 +362,6 @@ class InterpreterFrames {
 
 } 
 
-
-
-
-
-
-
-
-
-
-
-
-#ifndef JS_LONE_INTERPRET
-# ifdef _MSC_VER
-#  define JS_LONE_INTERPRET 0
-# else
-#  define JS_LONE_INTERPRET 1
-# endif
-#endif
-
-#if !JS_LONE_INTERPRET
-# define JS_STATIC_INTERPRET    static
-#else
-# define JS_STATIC_INTERPRET
-
 extern JS_REQUIRES_STACK JSBool
 js_EnterWith(JSContext *cx, jsint stackIndex, JSOp op, size_t oplen);
 
@@ -401,7 +377,6 @@ js_LeaveWith(JSContext *cx);
 extern JSBool
 js_DoIncDec(JSContext *cx, const JSCodeSpec *cs, js::Value *vp, js::Value *vp2);
 
-#endif 
 
 
 
