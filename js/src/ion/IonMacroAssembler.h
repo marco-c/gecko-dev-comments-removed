@@ -403,12 +403,25 @@ class MacroAssembler : public MacroAssemblerSpecific
     
   private:
     CodeOffsetLabel exitCodePatch_;
+
   public:
-    void linkExitFrameAndCode() {
+    void enterExitFrame(const VMFunction *f = NULL) {
         linkExitFrame();
         
         exitCodePatch_ = PushWithPatch(ImmWord(-1));
+        
+        Push(ImmWord(f));
     }
+    void enterFakeExitFrame() {
+        linkExitFrame();
+        Push(ImmWord(uintptr_t(NULL)));
+        Push(ImmWord(uintptr_t(NULL)));
+    }
+
+    void leaveExitFrame() {
+        freeStack(IonExitFooterFrame::Size());
+    }
+
     void link(IonCode *code) {
 
         
