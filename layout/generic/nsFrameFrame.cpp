@@ -90,6 +90,9 @@
 #include "nsDisplayList.h"
 #include "nsUnicharUtils.h"
 #include "nsIReflowCallback.h"
+#include "nsIScrollableFrame.h"
+#include "nsIObjectLoadingContent.h"
+#include "nsLayoutUtils.h"
 
 
 #ifdef ACCESSIBILITY
@@ -133,6 +136,16 @@ public:
 
   virtual void Destroy();
 
+  virtual nscoord GetMinWidth(nsIRenderingContext *aRenderingContext);
+  virtual nscoord GetPrefWidth(nsIRenderingContext *aRenderingContext);
+
+  virtual nsSize  GetIntrinsicRatio();
+
+  virtual nsSize ComputeSize(nsIRenderingContext *aRenderingContext,
+                             nsSize aCBSize, nscoord aAvailableWidth,
+                             nsSize aMargin, nsSize aBorder, nsSize aPadding,
+                             PRBool aShrinkWrap);
+
   NS_IMETHOD Reflow(nsPresContext*          aPresContext,
                     nsHTMLReflowMetrics&     aDesiredSize,
                     const nsHTMLReflowState& aReflowState,
@@ -174,6 +187,16 @@ protected:
   virtual nscoord GetIntrinsicHeight();
 
   virtual PRIntn GetSkipSides() const;
+
+  
+
+
+
+
+
+
+
+  nsIFrame* ObtainIntrinsicSizeFrame();
 
   nsCOMPtr<nsIFrameLoader> mFrameLoader;
   nsIView* mInnerView;
@@ -331,6 +354,9 @@ nsSubDocumentFrame::GetIntrinsicWidth()
     return 0;  
   }
 
+  NS_ASSERTION(ObtainIntrinsicSizeFrame() == nsnull,
+               "Intrinsic width should come from the embedded document.");
+
   
   
   return nsPresContext::CSSPixelsToAppUnits(300);
@@ -345,6 +371,9 @@ nsSubDocumentFrame::GetIntrinsicHeight()
   if (mContent->IsNodeOfType(nsINode::eXUL)) {
     return 0;
   }
+
+  NS_ASSERTION(ObtainIntrinsicSizeFrame() == nsnull,
+               "Intrinsic height should come from the embedded document.");
 
   
   return nsPresContext::CSSPixelsToAppUnits(150);
@@ -361,6 +390,66 @@ nsIAtom*
 nsSubDocumentFrame::GetType() const
 {
   return nsGkAtoms::subDocumentFrame;
+}
+
+ nscoord
+nsSubDocumentFrame::GetMinWidth(nsIRenderingContext *aRenderingContext)
+{
+  nscoord result;
+  DISPLAY_MIN_WIDTH(this, result);
+
+  nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
+  if (subDocRoot) {
+    result = subDocRoot->GetMinWidth(aRenderingContext);
+  } else {
+    result = GetIntrinsicWidth();
+  }
+
+  return result;
+}
+
+ nscoord
+nsSubDocumentFrame::GetPrefWidth(nsIRenderingContext *aRenderingContext)
+{
+  nscoord result;
+  DISPLAY_PREF_WIDTH(this, result);
+
+  nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
+  if (subDocRoot) {
+    result = subDocRoot->GetPrefWidth(aRenderingContext);
+  } else {
+    result = GetIntrinsicWidth();
+  }
+
+  return result;
+}
+
+ nsSize
+nsSubDocumentFrame::GetIntrinsicRatio()
+{
+  nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
+  if (subDocRoot) {
+    return subDocRoot->GetIntrinsicRatio();
+  }
+  return nsLeafFrame::GetIntrinsicRatio();
+}
+
+ nsSize
+nsSubDocumentFrame::ComputeSize(nsIRenderingContext *aRenderingContext,
+                                nsSize aCBSize, nscoord aAvailableWidth,
+                                nsSize aMargin, nsSize aBorder, nsSize aPadding,
+                                PRBool aShrinkWrap)
+{
+  nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
+  if (subDocRoot) {
+    return nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
+                            aRenderingContext, this,
+                            subDocRoot->GetIntrinsicSize(),
+                            subDocRoot->GetIntrinsicRatio(),
+                            aCBSize, aMargin, aBorder, aPadding);
+  }
+  return nsLeafFrame::ComputeSize(aRenderingContext, aCBSize, aAvailableWidth,
+                                  aMargin, aBorder, aPadding, aShrinkWrap);
 }
 
 NS_IMETHODIMP
@@ -823,4 +912,38 @@ nsSubDocumentFrame::CreateViewAndWidget(nsContentType aContentType)
 
   return innerView->CreateWidget(kCChildCID, nsnull, nsnull, PR_TRUE, PR_TRUE,
                                  aContentType);
+}
+
+nsIFrame*
+nsSubDocumentFrame::ObtainIntrinsicSizeFrame()
+{
+  nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(GetContent());
+  if (olc) {
+    
+
+    
+    nsIFrame* subDocRoot = nsnull;
+
+    nsCOMPtr<nsIDocShell> docShell;
+    GetDocShell(getter_AddRefs(docShell));
+    if (docShell) {
+      nsCOMPtr<nsIPresShell> presShell;
+      docShell->GetPresShell(getter_AddRefs(presShell));
+      if (presShell) {
+        nsIScrollableFrame* scrollable = presShell->GetRootScrollFrameAsScrollable();
+        if (scrollable) {
+          nsIFrame* scrolled = scrollable->GetScrolledFrame();
+          if (scrolled) {
+            subDocRoot = scrolled->GetFirstChild(nsnull);
+          }
+        }
+      }
+    }
+
+    if (subDocRoot && subDocRoot->GetContent() &&
+        subDocRoot->GetContent()->NodeInfo()->Equals(nsGkAtoms::svg, kNameSpaceID_SVG)) {
+      return subDocRoot; 
+    }
+  }
+  return nsnull;
 }
