@@ -1,45 +1,42 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: ML 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla code.
+ *
+ * The Initial Developer of the Original Code is the Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *  Chris Double <chris.double@double.co.nz>
+ *  Chris Pearce <chris@pearce.org.nz>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include "nsISeekableStream.h"
-#include "nsClassHashtable.h"
-#include "nsTArray.h"
 #include "nsBuiltinDecoder.h"
 #include "nsBuiltinDecoderReader.h"
 #include "nsBuiltinDecoderStateMachine.h"
@@ -52,14 +49,14 @@ using namespace mozilla;
 using mozilla::layers::ImageContainer;
 using mozilla::layers::PlanarYCbCrImage;
 
-
-
+// Verify these values are sane. Once we've checked the frame sizes, we then
+// can do less integer overflow checking.
 PR_STATIC_ASSERT(MAX_VIDEO_WIDTH < PlanarYCbCrImage::MAX_DIMENSION);
 PR_STATIC_ASSERT(MAX_VIDEO_HEIGHT < PlanarYCbCrImage::MAX_DIMENSION);
 PR_STATIC_ASSERT(PlanarYCbCrImage::MAX_DIMENSION < PR_UINT32_MAX / PlanarYCbCrImage::MAX_DIMENSION);
 
-
-
+// Un-comment to enable logging of seek bisections.
+//#define SEEK_LOGGING
 
 #ifdef PR_LOGGING
 extern PRLogModuleInfo* gBuiltinDecoderLog;
@@ -121,15 +118,15 @@ VideoData* VideoData::Create(nsVideoInfo& aInfo,
     return nsnull;
   }
 
-  
-  
+  // The following situation should never happen unless there is a bug
+  // in the decoder
   if (aBuffer.mPlanes[1].mWidth != aBuffer.mPlanes[2].mWidth ||
       aBuffer.mPlanes[1].mHeight != aBuffer.mPlanes[2].mHeight) {
     NS_ERROR("C planes with different sizes");
     return nsnull;
   }
 
-  
+  // The following situations could be triggered by invalid input
   if (aPicture.width <= 0 || aPicture.height <= 0) {
     NS_WARNING("Empty picture rect");
     return nsnull;
@@ -140,15 +137,15 @@ VideoData* VideoData::Create(nsVideoInfo& aInfo,
     return nsnull;
   }
 
-  
-  
+  // Ensure the picture size specified in the headers can be extracted out of
+  // the frame we've been supplied without indexing out of bounds.
   CheckedUint32 xLimit = aPicture.x + CheckedUint32(aPicture.width);
   CheckedUint32 yLimit = aPicture.y + CheckedUint32(aPicture.height);
   if (!xLimit.valid() || xLimit.value() > aBuffer.mPlanes[0].mStride ||
       !yLimit.valid() || yLimit.value() > aBuffer.mPlanes[0].mHeight)
   {
-    
-    
+    // The specified picture dimensions can't be contained inside the video
+    // frame, we'll stomp memory if we try to copy it. Fail.
     NS_WARNING("Overflowing picture rect");
     return nsnull;
   }
@@ -159,8 +156,8 @@ VideoData* VideoData::Create(nsVideoInfo& aInfo,
                                        aKeyframe,
                                        aTimecode,
                                        aInfo.mDisplay));
-  
-  
+  // Currently our decoder only knows how to output to PLANAR_YCBCR
+  // format.
   Image::Format format = Image::PLANAR_YCBCR;
   v->mImage = aContainer->CreateImage(&format, 1);
   if (!v->mImage) {
@@ -183,7 +180,7 @@ VideoData* VideoData::Create(nsVideoInfo& aInfo,
   data.mPicSize = gfxIntSize(aPicture.width, aPicture.height);
   data.mStereoMode = aInfo.mStereoMode;
 
-  videoImage->SetData(data); 
+  videoImage->SetData(data); // Copies buffer
   return v.forget();
 }
 
@@ -214,8 +211,8 @@ VideoData* nsBuiltinDecoderReader::FindStartTime(PRInt64& aOutStartTime)
   NS_ASSERTION(mDecoder->OnStateMachineThread() || mDecoder->OnDecodeThread(),
                "Should be on state machine or decode thread.");
 
-  
-  
+  // Extract the start times of the bitstreams in order to calculate
+  // the duration.
   PRInt64 videoStartTime = INT64_MAX;
   PRInt64 audioStartTime = INT64_MAX;
   VideoData* videoData = nsnull;
@@ -263,7 +260,7 @@ Data* nsBuiltinDecoderReader::DecodeToFirstData(DecodeFn aDecodeFn,
 
 nsresult nsBuiltinDecoderReader::DecodeToTarget(PRInt64 aTarget)
 {
-  
+  // Decode forward to the target frame. Start with video, if we have it.
   if (HasVideo()) {
     bool eof = false;
     PRInt64 startTime = -1;
@@ -280,15 +277,15 @@ nsresult nsBuiltinDecoderReader::DecodeToTarget(PRInt64 aTarget)
         }
       }
       if (mVideoQueue.GetSize() == 0) {
-        
+        // Hit end of file, we want to display the last frame of the video.
         if (video) {
           mVideoQueue.PushFront(video.forget());
         }
         break;
       }
       video = mVideoQueue.PeekFront();
-      
-      
+      // If the frame end time is less than the seek target, we won't want
+      // to display this frame after the seek, so discard it.
       if (video && video->mEndTime <= aTarget) {
         if (startTime == -1) {
           startTime = video->mTime;
@@ -309,7 +306,7 @@ nsresult nsBuiltinDecoderReader::DecodeToTarget(PRInt64 aTarget)
   }
 
   if (HasAudio()) {
-    
+    // Decode audio forward to the seek target.
     bool eof = false;
     while (HasAudio() && !eof) {
       while (!eof && mAudioQueue.GetSize() == 0) {
@@ -330,27 +327,27 @@ nsresult nsBuiltinDecoderReader::DecodeToTarget(PRInt64 aTarget)
         return NS_ERROR_FAILURE;
       }
       if (startFrame.value() + audio->mFrames <= targetFrame.value()) {
-        
-        
+        // Our seek target lies after the frames in this AudioData. Pop it
+        // off the queue, and keep decoding forwards.
         delete mAudioQueue.PopFront();
         audio = nsnull;
         continue;
       }
       if (startFrame.value() > targetFrame.value()) {
-        
-        
-        
-        
-        
-        
-        
+        // The seek target doesn't lie in the audio block just after the last
+        // audio frames we've seen which were before the seek target. This
+        // could have been the first audio data we've seen after seek, i.e. the
+        // seek terminated after the seek target in the audio stream. Just
+        // abort the audio decode-to-target, the state machine will play
+        // silence to cover the gap. Typically this happens in poorly muxed
+        // files.
         NS_WARNING("Audio not synced after seek, maybe a poorly muxed file?");
         break;
       }
 
-      
-      
-      
+      // The seek target lies somewhere in this AudioData's frames, strip off
+      // any frames which lie before the seek target, so we'll begin playback
+      // exactly at the seek target.
       NS_ASSERTION(targetFrame.value() >= startFrame.value(),
                    "Target must at or be after data start.");
       NS_ASSERTION(targetFrame.value() < startFrame.value() + audio->mFrames,
@@ -358,8 +355,8 @@ nsresult nsBuiltinDecoderReader::DecodeToTarget(PRInt64 aTarget)
 
       PRInt64 framesToPrune = targetFrame.value() - startFrame.value();
       if (framesToPrune > audio->mFrames) {
-        
-        
+        // We've messed up somehow. Don't try to trim frames, the |frames|
+        // variable below will overflow.
         NS_WARNING("Can't prune more frames that we have!");
         break;
       }
