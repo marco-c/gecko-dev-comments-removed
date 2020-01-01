@@ -3100,10 +3100,13 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
 #endif
 
   
-  
   PRBool wasDirty = NS_SUBTREE_DIRTY(aFrame);
   aFrame->AddStateBits(aBitToAdd);
-  PRBool targetFrameDirty = ((aFrame->GetStateBits() & NS_FRAME_IS_DIRTY) != 0);
+
+  
+  
+  PRBool targetFrameDirty = (aBitToAdd == NS_FRAME_IS_DIRTY);
+
 #define FRAME_IS_REFLOW_ROOT(_f)                   \
   ((_f->GetStateBits() & NS_FRAME_REFLOW_ROOT) &&  \
    (_f != aFrame || !targetFrameDirty))
