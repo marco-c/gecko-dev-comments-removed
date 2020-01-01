@@ -160,6 +160,7 @@ static NS_DEFINE_CID(kXTFServiceCID, NS_XTFSERVICE_CID);
 #include "mozilla/Attributes.h"
 #include "nsIParserService.h"
 #include "nsIDOMScriptObjectFactory.h"
+#include "nsSandboxFlags.h"
 
 #include "nsWrapperCacheInlines.h"
 
@@ -921,6 +922,53 @@ nsContentUtils::GetParserService()
   }
 
   return sParserService;
+}
+
+
+
+
+
+
+
+
+PRUint32
+nsContentUtils::ParseSandboxAttributeToFlags(const nsAString& aSandboxAttrValue)
+{
+  
+  
+  PRUint32 out = SANDBOXED_NAVIGATION |
+                 SANDBOXED_TOPLEVEL_NAVIGATION |
+                 SANDBOXED_PLUGINS |
+                 SANDBOXED_ORIGIN |
+                 SANDBOXED_FORMS |
+                 SANDBOXED_SCRIPTS |
+                 SANDBOXED_AUTOMATIC_FEATURES;
+
+  if (!aSandboxAttrValue.IsEmpty()) {
+    
+    
+    HTMLSplitOnSpacesTokenizer tokenizer(aSandboxAttrValue, ' ',
+      nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace>::SEPARATOR_OPTIONAL);
+
+    while (tokenizer.hasMoreTokens()) {
+      nsDependentSubstring token = tokenizer.nextToken();
+
+      if (token.LowerCaseEqualsLiteral("allow-same-origin")) {
+        out &= ~SANDBOXED_ORIGIN;
+      } else if (token.LowerCaseEqualsLiteral("allow-forms")) {
+        out &= ~SANDBOXED_FORMS;
+      } else if (token.LowerCaseEqualsLiteral("allow-scripts")) {
+        
+        
+        out &= ~SANDBOXED_SCRIPTS;
+        out &= ~SANDBOXED_AUTOMATIC_FEATURES;
+      } else if (token.LowerCaseEqualsLiteral("allow-top-navigation")) {
+        out &= ~SANDBOXED_TOPLEVEL_NAVIGATION;
+      }
+    }
+  }
+
+  return out;
 }
 
 #ifdef MOZ_XTF
@@ -6623,8 +6671,13 @@ bool
 nsContentUtils::SetUpChannelOwner(nsIPrincipal* aLoadingPrincipal,
                                   nsIChannel* aChannel,
                                   nsIURI* aURI,
-                                  bool aSetUpForAboutBlank)
+                                  bool aSetUpForAboutBlank,
+                                  bool aForceOwner)
 {
+  
+  
+  
+  
   
   
   
@@ -6646,8 +6699,16 @@ nsContentUtils::SetUpChannelOwner(nsIPrincipal* aLoadingPrincipal,
   
   
   
-  if (NS_SUCCEEDED(URIInheritsSecurityContext(aURI, &inherit)) &&
-      (inherit || (aSetUpForAboutBlank && NS_IsAboutBlank(aURI)))) {
+  if (aForceOwner || ((NS_SUCCEEDED(URIInheritsSecurityContext(aURI, &inherit)) &&
+      (inherit || (aSetUpForAboutBlank && NS_IsAboutBlank(aURI)))))) {
+#ifdef DEBUG
+    
+    if (aForceOwner) {
+      nsCOMPtr<nsIURI> ownerURI;
+      nsresult rv = aLoadingPrincipal->GetURI(getter_AddRefs(ownerURI));
+      MOZ_ASSERT(NS_SUCCEEDED(rv) && SchemeIs(ownerURI, NS_NULLPRINCIPAL_SCHEME));
+    }
+#endif
     aChannel->SetOwner(aLoadingPrincipal);
     return true;
   }
