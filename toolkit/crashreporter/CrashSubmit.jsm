@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/KeyValueParser.jsm");
@@ -35,22 +35,22 @@ function parseINIStrings(file) {
   return obj;
 }
 
-// Since we're basically re-implementing part of the crashreporter
-// client here, we'll just steal the strings we need from crashreporter.ini
+
+
 function getL10nStrings() {
   let dirSvc = Cc["@mozilla.org/file/directory_service;1"].
                getService(Ci.nsIProperties);
   let path = dirSvc.get("GreD", Ci.nsIFile);
   path.append("crashreporter.ini");
   if (!path.exists()) {
-    // see if we're on a mac
+    
     path = path.parent;
     path.append("crashreporter.app");
     path.append("Contents");
     path.append("MacOS");
     path.append("crashreporter.ini");
     if (!path.exists()) {
-      // very bad, but I don't know how to recover
+      
       return;
     }
   }
@@ -103,7 +103,7 @@ function writeSubmittedReport(crashID, viewURL) {
   reportFile.append(crashID + ".txt");
   var fstream = Cc["@mozilla.org/network/file-output-stream;1"].
                 createInstance(Ci.nsIFileOutputStream);
-  // open, write, truncate
+  
   fstream.init(reportFile, -1, -1, 0);
   var os = Cc["@mozilla.org/intl/converter-output-stream;1"].
            createInstance(Ci.nsIConverterOutputStream);
@@ -118,7 +118,7 @@ function writeSubmittedReport(crashID, viewURL) {
   fstream.close();
 }
 
-// the Submitter class represents an individual submission.
+
 function Submitter(id, submitSuccess, submitError, noThrottle) {
   this.id = id;
   this.successCallback = submitSuccess;
@@ -136,10 +136,10 @@ Submitter.prototype = {
       return;
     }
 
-    // Write out the details file to submitted/
+    
     writeSubmittedReport(ret.CrashID, ret.ViewURL);
 
-    // Delete from pending dir
+    
     try {
       this.dump.remove(false);
       this.extra.remove(false);
@@ -148,7 +148,7 @@ Submitter.prototype = {
       }
     }
     catch (ex) {
-      // report an error? not much the user can do here.
+      
     }
 
     this.notifyStatus(SUCCESS, ret);
@@ -156,14 +156,14 @@ Submitter.prototype = {
   },
 
   cleanup: function Submitter_cleanup() {
-    // drop some references just to be nice
+    
     this.successCallback = null;
     this.errorCallback = null;
     this.iframe = null;
     this.dump = null;
     this.extra = null;
     this.additionalDumps = null;
-    // remove this object from the list of active submissions
+    
     let idx = CrashSubmit._activeSubmissions.indexOf(this);
     if (idx != -1)
       CrashSubmit._activeSubmissions.splice(idx, 1);
@@ -176,22 +176,38 @@ Submitter.prototype = {
       return false;
     }
 
+    let serverURL = reportData.ServerURL;
+    delete reportData.ServerURL;
+
+    
+
+    var envOverride = Cc['@mozilla.org/process/environment;1'].
+      getService(Ci.nsIEnvironment).get("MOZ_CRASHREPORTER_URL");
+    if (envOverride != '') {
+      serverURL = envOverride;
+    }
+    else if ('PluginHang' in reportData) {
+      try {
+        serverURL = Services.prefs.
+          getCharPref("toolkit.crashreporter.pluginHangSubmitURL");
+      } catch(e) { }
+    }
+
     let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
               .createInstance(Ci.nsIXMLHttpRequest);
-    xhr.open("POST", reportData.ServerURL, true);
-    delete reportData.ServerURL;
+    xhr.open("POST", serverURL, true);
 
     let formData = Cc["@mozilla.org/files/formdata;1"]
                    .createInstance(Ci.nsIDOMFormData);
-    // add the other data
+    
     for (let [name, value] in Iterator(reportData)) {
       formData.append(name, value);
     }
     if (this.noThrottle) {
-      // tell the server not to throttle this, since it was manually submitted
+      
       formData.append("Throttleable", "0");
     }
-    // add the minidumps
+    
     formData.append("upload_file_minidump", File(this.dump.path));
     if (this.additionalDumps.length > 0) {
       let names = [];
@@ -242,7 +258,7 @@ Submitter.prototype = {
           this.errorCallback(this.id);
         break;
       default:
-        // no callbacks invoked.
+        
     }
   },
 
@@ -285,36 +301,36 @@ Submitter.prototype = {
   }
 };
 
-//===================================
-// External API goes here
+
+
 let CrashSubmit = {
-  /**
-   * Submit the crash report named id.dmp from the "pending" directory.
-   *
-   * @param id
-   *        Filename (minus .dmp extension) of the minidump to submit.
-   * @param params
-   *        An object containing any of the following optional parameters:
-   *        - submitSuccess
-   *          A function that will be called if the report is submitted
-   *          successfully with two parameters: the id that was passed
-   *          to this function, and an object containing the key/value
-   *          data returned from the server in its properties.
-   *        - submitError
-   *          A function that will be called with one parameter if the
-   *          report fails to submit: the id that was passed to this
-   *          function.
-   *        - noThrottle
-   *          If true, this crash report should be submitted with
-   *          an extra parameter of "Throttleable=0" indicating that
-   *          it should be processed right away. This should be set
-   *          when the report is being submitted and the user expects
-   *          to see the results immediately. Defaults to false.
-   *
-   * @return true if the submission began successfully, or false if
-   *         it failed for some reason. (If the dump file does not
-   *         exist, for example.)
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   submit: function CrashSubmit_submit(id, params)
   {
     params = params || {};
@@ -337,9 +353,9 @@ let CrashSubmit = {
     return submitter.submit();
   },
 
-  // List of currently active submit objects
+  
   _activeSubmissions: []
 };
 
-// Run this when first loaded
+
 getL10nStrings();
