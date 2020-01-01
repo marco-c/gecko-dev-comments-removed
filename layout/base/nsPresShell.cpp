@@ -1055,13 +1055,6 @@ protected:
 
   void UnsuppressAndInvalidate();
 
-  
-  
-  
-  
-  
-  void DoneRemovingDirtyRoots();
-
   void     WillCauseReflow() { ++mChangeNestCount; }
   nsresult DidCauseReflow();
   void     WillDoReflow();
@@ -1169,7 +1162,6 @@ protected:
   nsVoidArray mDirtyRoots;
 
   PRPackedBool mDocumentLoading;
-  PRPackedBool mDocumentOnloadBlocked;
   PRPackedBool mIsReflowing;
 
   PRPackedBool mIgnoreFrameDestruction;
@@ -1736,9 +1728,6 @@ PresShell::Destroy()
     mViewEventListener->SetPresShell((nsIPresShell*)nsnull);
     NS_RELEASE(mViewEventListener);
   }
-
-  NS_ASSERTION(!mDocumentOnloadBlocked,
-               "CancelAllPendingReflows() didn't unblock onload?");
 
   KillResizeEventTimer();
 
@@ -3377,8 +3366,6 @@ NS_IMETHODIMP
 PresShell::CancelAllPendingReflows()
 {
   mDirtyRoots.Clear();
-
-  DoneRemovingDirtyRoots();
 
   return NS_OK;
 }
@@ -6036,12 +6023,6 @@ PresShell::PostReflowEvent()
       mDirtyRoots.Count() == 0)
     return;
 
-  
-  if (mDocumentLoading && !mDocumentOnloadBlocked) {
-    mDocument->BlockOnload();
-    mDocumentOnloadBlocked = PR_TRUE;
-  }
-  
   nsRefPtr<ReflowEvent> ev = new ReflowEvent(this);
   if (NS_FAILED(NS_DispatchToCurrentThread(ev))) {
     NS_WARNING("failed to dispatch reflow event");
@@ -6264,11 +6245,6 @@ PresShell::ProcessReflowCommands(PRBool aInterruptible)
       mIsReflowing = PR_FALSE;
     }
 
-    
-    
-    if (mDirtyRoots.Count())
-      PostReflowEvent();
-
     DidDoReflow();
 
 #ifdef DEBUG
@@ -6281,7 +6257,11 @@ PresShell::ProcessReflowCommands(PRBool aInterruptible)
 
     
     
-    DoneRemovingDirtyRoots();
+    
+    
+    
+    if (mDirtyRoots.Count())
+      PostReflowEvent();
   }
   
   MOZ_TIMER_DEBUGLOG(("Stop: Reflow: PresShell::ProcessReflowCommands(), this=%p\n", this));
@@ -6303,19 +6283,6 @@ void
 PresShell::ClearReflowEventStatus()
 {
   mReflowEvent.Forget();
-}
-
-void
-PresShell::DoneRemovingDirtyRoots()
-{
-  
-  
-  
-  
-  if (mDocumentOnloadBlocked && mDirtyRoots.Count() == 0 && !mIsReflowing) {
-    mDocument->UnblockOnload(PR_FALSE);
-    mDocumentOnloadBlocked = PR_FALSE;
-  }
 }
 
 #ifdef MOZ_XUL
