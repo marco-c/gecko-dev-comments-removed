@@ -812,7 +812,8 @@ public:
                                 nsISupports** aResult) const;
   NS_IMETHOD GetPlaceholderFrameFor(nsIFrame*  aFrame,
                                     nsIFrame** aPlaceholderFrame) const;
-  NS_IMETHOD FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty);
+  NS_IMETHOD FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
+                              nsFrameState aBitsToAdd);
   NS_IMETHOD CancelAllPendingReflows();
   NS_IMETHOD IsSafeToFlush(PRBool& aIsSafeToFlush);
   NS_IMETHOD FlushPendingNotifications(mozFlushType aType);
@@ -2462,9 +2463,18 @@ PresShell::InitialReflow(nscoord aWidth, nscoord aHeight)
   }
 
   if (rootFrame) {
-    rootFrame->AddStateBits(NS_FRAME_IS_DIRTY);
-    FrameNeedsReflow(rootFrame, eResize);
-    mDirtyRoots.AppendElement(rootFrame);
+    
+    
+    NS_ASSERTION(mDirtyRoots.IndexOf(rootFrame) == -1,
+                 "Why is the root in mDirtyRoots already?");
+
+    rootFrame->RemoveStateBits(NS_FRAME_IS_DIRTY |
+                               NS_FRAME_HAS_DIRTY_CHILDREN);
+    FrameNeedsReflow(rootFrame, eResize, NS_FRAME_IS_DIRTY);
+
+    NS_ASSERTION(mDirtyRoots.IndexOf(rootFrame) != -1,
+                 "Should be in mDirtyRoots now");
+    NS_ASSERTION(mReflowEvent.IsPending(), "Why no reflow event pending?");
   }
 
   
@@ -2932,13 +2942,7 @@ PresShell::StyleChangeReflow()
   if (!rootFrame)
     return NS_OK;
 
-  if (!(rootFrame->GetStateBits() &
-        (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN))) {
-    rootFrame->AddStateBits(NS_FRAME_IS_DIRTY);
-    mDirtyRoots.AppendElement(rootFrame);
-  }
-
-  return FrameNeedsReflow(rootFrame, eStyleChange);
+  return FrameNeedsReflow(rootFrame, eStyleChange, NS_FRAME_IS_DIRTY);
 }
 
 nsIFrame*
@@ -3109,11 +3113,12 @@ PresShell::VerifyHasDirtyRootAncestor(nsIFrame* aFrame)
 #endif
 
 NS_IMETHODIMP
-PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty)
+PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
+                            nsFrameState aBitsToAdd)
 {
-  NS_PRECONDITION(aFrame->GetStateBits() &
-                    (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN),
-                  "frame not dirty");
+  NS_PRECONDITION(aBitsToAdd == NS_FRAME_IS_DIRTY ||
+                  aBitsToAdd == NS_FRAME_HAS_DIRTY_CHILDREN,
+                  "Unexpected bits being added");
 
   
   
@@ -3146,12 +3151,23 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty)
 
   
   
+  PRBool wasDirty = NS_SUBTREE_DIRTY(aFrame);
+  aFrame->AddStateBits(aBitsToAdd);
+  PRBool targetFrameDirty = ((aFrame->GetStateBits() & NS_FRAME_IS_DIRTY) != 0);
+#define FRAME_IS_REFLOW_ROOT(_f)                   \
+  ((_f->GetStateBits() & NS_FRAME_REFLOW_ROOT) &&  \
+   (_f != aFrame || !targetFrameDirty))
+
+
+  
+  
 
   if (aIntrinsicDirty != eResize) {
     
     
+    
     for (nsIFrame *a = aFrame;
-         a && (!(a->GetStateBits() & NS_FRAME_REFLOW_ROOT) || a == aFrame);
+         a && !FRAME_IS_REFLOW_ROOT(a);
          a = a->GetParent())
       a->MarkIntrinsicWidthsDirty();
   }
@@ -3183,10 +3199,8 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty)
   
   
   nsIFrame *f = aFrame;
-  PRBool wasDirty = PR_TRUE;
   for (;;) {
-    if (((f->GetStateBits() & NS_FRAME_REFLOW_ROOT) && f != aFrame) ||
-        !f->GetParent()) {
+    if (FRAME_IS_REFLOW_ROOT(f) || !f->GetParent()) {
       
       if (!wasDirty) {
         
@@ -3207,8 +3221,7 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty)
 
     nsIFrame *child = f;
     f = f->GetParent();
-    wasDirty = ((f->GetStateBits() & 
-                 (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)) != 0);
+    wasDirty = NS_SUBTREE_DIRTY(f);
     f->ChildIsDirty(child);
     NS_ASSERTION(f->GetStateBits() & NS_FRAME_HAS_DIRTY_CHILDREN,
                  "ChildIsDirty didn't do its job");
@@ -6139,8 +6152,7 @@ PresShell::ProcessReflowCommands(PRBool aInterruptible)
         nsIFrame *target = NS_STATIC_CAST(nsIFrame*, mDirtyRoots[idx]);
         mDirtyRoots.RemoveElementAt(idx);
 
-        if (!(target->GetStateBits() &
-              (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN))) {
+        if (!NS_SUBTREE_DIRTY(target)) {
           
           
           
