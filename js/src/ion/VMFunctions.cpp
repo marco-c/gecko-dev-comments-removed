@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "Ion.h"
 #include "IonCompartment.h"
@@ -20,7 +20,7 @@
 
 #include "jsboolinlines.h"
 
-#include "ion/IonFrames-inl.h" // for GetTopIonJSScript
+#include "ion/IonFrames-inl.h" 
 
 #include "vm/Interpreter-inl.h"
 #include "vm/StringObject-inl.h"
@@ -31,9 +31,9 @@ using namespace js::ion;
 namespace js {
 namespace ion {
 
-// Don't explicitly initialize, it's not guaranteed that this initializer will
-// run before the constructors for static VMFunctions.
-/* static */ VMFunction *VMFunction::functions;
+
+
+ VMFunction *VMFunction::functions;
 
 void
 VMFunction::addToFunctions()
@@ -55,7 +55,7 @@ InvokeFunction(JSContext *cx, HandleFunction fun0, uint32_t argc, Value *argv, V
         if (fun->isInterpretedLazy() && !fun->getOrCreateScript(cx))
             return false;
 
-        // Clone function at call site if needed.
+        
         if (fun->nonLazyScript()->shouldCloneAtCallsite) {
             RootedScript script(cx);
             jsbytecode *pc;
@@ -66,13 +66,13 @@ InvokeFunction(JSContext *cx, HandleFunction fun0, uint32_t argc, Value *argv, V
         }
     }
 
-    // Data in the argument vector is arranged for a JIT -> JIT call.
+    
     Value thisv = argv[0];
     Value *argvWithoutThis = argv + 1;
 
-    // For constructing functions, |this| is constructed at caller side and we can just call Invoke.
-    // When creating this failed / is impossible at caller site, i.e. MagicValue(JS_IS_CONSTRUCTING),
-    // we use InvokeConstructor that creates it at the callee side.
+    
+    
+    
     if (thisv.isMagic(JS_IS_CONSTRUCTING))
         return InvokeConstructor(cx, ObjectValue(*fun), argc, argvWithoutThis, rval);
     return Invoke(cx, thisv, ObjectValue(*fun), argc, argvWithoutThis, rval);
@@ -87,18 +87,18 @@ NewGCThing(JSContext *cx, gc::AllocKind allocKind, size_t thingSize)
 bool
 CheckOverRecursed(JSContext *cx)
 {
-    // IonMonkey's stackLimit is equal to nativeStackLimit by default. When we
-    // want to trigger an operation callback, we set the ionStackLimit to NULL,
-    // which causes the stack limit check to fail.
-    //
-    // There are two states we're concerned about here:
-    //   (1) The interrupt bit is set, and we need to fire the interrupt callback.
-    //   (2) The stack limit has been exceeded, and we need to throw an error.
-    //
-    // Note that we can reach here if ionStackLimit is MAXADDR, but interrupt
-    // has not yet been set to 1. That's okay; it will be set to 1 very shortly,
-    // and in the interim we might just fire a few useless calls to
-    // CheckOverRecursed.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     JS_CHECK_RECURSION(cx, return false);
 
     if (cx->runtime()->interrupt)
@@ -110,7 +110,7 @@ CheckOverRecursed(JSContext *cx)
 bool
 DefVarOrConst(JSContext *cx, HandlePropertyName dn, unsigned attrs, HandleObject scopeChain)
 {
-    // Given the ScopeChain, extract the VarObj.
+    
     RootedObject obj(cx, scopeChain);
     while (!obj->isVarObj())
         obj = obj->enclosingScope();
@@ -121,7 +121,7 @@ DefVarOrConst(JSContext *cx, HandlePropertyName dn, unsigned attrs, HandleObject
 bool
 SetConst(JSContext *cx, HandlePropertyName name, HandleObject scopeChain, HandleValue rval)
 {
-    // Given the ScopeChain, extract the VarObj.
+    
     RootedObject obj(cx, scopeChain);
     while (!obj->isVarObj())
         obj = obj->enclosingScope();
@@ -132,7 +132,7 @@ SetConst(JSContext *cx, HandlePropertyName name, HandleObject scopeChain, Handle
 bool
 InitProp(JSContext *cx, HandleObject obj, HandlePropertyName name, HandleValue value)
 {
-    // Copy the incoming value. This may be overwritten; the return value is discarded.
+    
     RootedValue rval(cx, value);
     RootedId id(cx, NameToId(name));
 
@@ -309,7 +309,7 @@ NewInitObjectWithClassPrototype(JSContext *cx, HandleObject templateObject)
 bool
 ArrayPopDense(JSContext *cx, HandleObject obj, MutableHandleValue rval)
 {
-    JS_ASSERT(obj->isArray());
+    JS_ASSERT(obj->is<ArrayObject>());
 
     AutoDetectInvalidation adi(cx, rval.address());
 
@@ -318,8 +318,8 @@ ArrayPopDense(JSContext *cx, HandleObject obj, MutableHandleValue rval)
     if (!js::array_pop(cx, 0, argv))
         return false;
 
-    // If the result is |undefined|, the array was probably empty and we
-    // have to monitor the return value.
+    
+    
     rval.set(argv[0]);
     if (rval.isUndefined())
         types::TypeScript::Monitor(cx, rval);
@@ -329,7 +329,7 @@ ArrayPopDense(JSContext *cx, HandleObject obj, MutableHandleValue rval)
 bool
 ArrayPushDense(JSContext *cx, HandleObject obj, HandleValue v, uint32_t *length)
 {
-    JS_ASSERT(obj->isArray());
+    JS_ASSERT(obj->is<ArrayObject>());
 
     Value argv[] = { UndefinedValue(), ObjectValue(*obj), v };
     AutoValueArray ava(cx, argv, 3);
@@ -343,7 +343,7 @@ ArrayPushDense(JSContext *cx, HandleObject obj, HandleValue v, uint32_t *length)
 bool
 ArrayShiftDense(JSContext *cx, HandleObject obj, MutableHandleValue rval)
 {
-    JS_ASSERT(obj->isArray());
+    JS_ASSERT(obj->is<ArrayObject>());
 
     AutoDetectInvalidation adi(cx, rval.address());
 
@@ -352,8 +352,8 @@ ArrayShiftDense(JSContext *cx, HandleObject obj, MutableHandleValue rval)
     if (!js::array_shift(cx, 0, argv))
         return false;
 
-    // If the result is |undefined|, the array was probably empty and we
-    // have to monitor the return value.
+    
+    
     rval.set(argv[0]);
     if (rval.isUndefined())
         types::TypeScript::Monitor(cx, rval);
@@ -363,12 +363,12 @@ ArrayShiftDense(JSContext *cx, HandleObject obj, MutableHandleValue rval)
 JSObject *
 ArrayConcatDense(JSContext *cx, HandleObject obj1, HandleObject obj2, HandleObject res)
 {
-    JS_ASSERT(obj1->isArray());
-    JS_ASSERT(obj2->isArray());
-    JS_ASSERT_IF(res, res->isArray());
+    JS_ASSERT(obj1->is<ArrayObject>());
+    JS_ASSERT(obj2->is<ArrayObject>());
+    JS_ASSERT_IF(res, res->is<ArrayObject>());
 
     if (res) {
-        // Fast path if we managed to allocate an object inline.
+        
         if (!js::array_concat_dense(cx, obj1, obj2, res))
             return NULL;
         return res;
@@ -410,8 +410,8 @@ SetProperty(JSContext *cx, HandleObject obj, HandlePropertyName name, HandleValu
     RootedId id(cx, NameToId(name));
 
     if (jsop == JSOP_SETALIASEDVAR) {
-        // Aliased var assigns ignore readonly attributes on the property, as
-        // required for initializing 'const' closure variables.
+        
+        
         Shape *shape = obj->nativeLookup(cx, name);
         JS_ASSERT(shape && shape->hasSlot());
         JSObject::nativeSetSlotWithType(cx, obj, shape, value);
@@ -504,11 +504,11 @@ GetIntrinsicValue(JSContext *cx, HandlePropertyName name, MutableHandleValue rva
     if (!cx->global()->getIntrinsicValue(cx, name, rval))
         return false;
 
-    // This function is called when we try to compile a cold getintrinsic
-    // op. MCallGetIntrinsicValue has an AliasSet of None for optimization
-    // purposes, as its side effect is not observable from JS. We are
-    // guaranteed to bail out after this function, but because of its AliasSet,
-    // type info will not be reflowed. Manually monitor here.
+    
+    
+    
+    
+    
     types::TypeScript::Monitor(cx, rval);
 
     return true;
@@ -538,9 +538,9 @@ CreateThis(JSContext *cx, HandleObject callee, MutableHandleValue rval)
 void
 GetDynamicName(JSContext *cx, JSObject *scopeChain, JSString *str, Value *vp)
 {
-    // Lookup a string on the scope chain, returning either the value found or
-    // undefined through rval. This function is infallible, and cannot GC or
-    // invalidate.
+    
+    
+    
 
     JSAtom *atom;
     if (str->isAtom()) {
@@ -571,10 +571,10 @@ GetDynamicName(JSContext *cx, JSObject *scopeChain, JSString *str, Value *vp)
 JSBool
 FilterArguments(JSContext *cx, JSString *str)
 {
-    // getChars() is fallible, but cannot GC: it can only allocate a character
-    // for the flattened string. If this call fails then the calling Ion code
-    // will bailout, resume in the interpreter and likely fail again when
-    // trying to flatten the string and unwind the stack.
+    
+    
+    
+    
     const jschar *chars = str->getChars(cx);
     if (!chars)
         return false;
@@ -595,9 +595,9 @@ PostWriteBarrier(JSRuntime *rt, JSObject *obj)
 uint32_t
 GetIndexFromString(JSString *str)
 {
-    // Masks the return value UINT32_MAX as failure to get the index.
-    // I.e. it is impossible to distinguish between failing to get the index
-    // or the actual index UINT32_MAX.
+    
+    
+    
 
     if (!str->isAtom())
         return UINT32_MAX;
@@ -621,8 +621,8 @@ DebugPrologue(JSContext *cx, BaselineFrame *frame, JSBool *mustReturn)
         return true;
 
       case JSTRAP_RETURN:
-        // The script is going to return immediately, so we have to call the
-        // debug epilogue handler as well.
+        
+        
         JS_ASSERT(frame->hasReturnValue());
         *mustReturn = true;
         return ion::DebugEpilogue(cx, frame, true);
@@ -639,12 +639,12 @@ DebugPrologue(JSContext *cx, BaselineFrame *frame, JSBool *mustReturn)
 bool
 DebugEpilogue(JSContext *cx, BaselineFrame *frame, JSBool ok)
 {
-    // Unwind scope chain to stack depth 0.
+    
     UnwindScope(cx, frame, 0);
 
-    // If ScriptDebugEpilogue returns |true| we have to return the frame's
-    // return value. If it returns |false|, the debugger threw an exception.
-    // In both cases we have to pop debug scopes.
+    
+    
+    
     ok = ScriptDebugEpilogue(cx, frame, ok);
 
     if (frame->isNonEvalFunctionFrame()) {
@@ -655,18 +655,18 @@ DebugEpilogue(JSContext *cx, BaselineFrame *frame, JSBool ok)
         DebugScopes::onPopStrictEvalScope(frame);
     }
 
-    // If the frame has a pushed SPS frame, make sure to pop it.
+    
     if (frame->hasPushedSPSFrame()) {
         cx->runtime()->spsProfiler.exit(cx, frame->script(), frame->maybeFun());
-        // Unset the pushedSPSFrame flag because DebugEpilogue may get called before
-        // Probes::exitScript in baseline during exception handling, and we don't
-        // want to double-pop SPS frames.
+        
+        
+        
         frame->unsetPushedSPSFrame();
     }
 
     if (!ok) {
-        // Pop this frame by updating ionTop, so that the exception handling
-        // code will start at the previous frame.
+        
+        
 
         IonJSFrameLayout *prefix = frame->framePrefix();
         EnsureExitFrame(prefix);
@@ -703,13 +703,13 @@ InitRestParameter(JSContext *cx, uint32_t length, Value *rest, HandleObject temp
                   HandleObject res)
 {
     if (res) {
-        JS_ASSERT(res->isArray());
+        JS_ASSERT(res->is<ArrayObject>());
         JS_ASSERT(!res->getDenseInitializedLength());
         JS_ASSERT(res->type() == templateObj->type());
         JS_ASSERT(res->type()->unknownProperties());
 
-        // Fast path: we managed to allocate the array inline; initialize the
-        // slots.
+        
+        
         if (length > 0) {
             if (!res->ensureElements(cx, length))
                 return NULL;
@@ -826,5 +826,5 @@ InitBaselineFrameForOsr(BaselineFrame *frame, StackFrame *interpFrame, uint32_t 
     return frame->initForOsr(interpFrame, numStackValues);
 }
 
-} // namespace ion
-} // namespace js
+} 
+} 
