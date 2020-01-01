@@ -695,12 +695,13 @@ struct GetPropHelper {
     
     JSContext   *cx;
     JSObject    *obj;
-    RootedVarPropertyName name;
+    PropertyName *name;
     IC          &ic;
     VMFrame     &f;
 
     
     
+    JSObject    *aobj;
     JSObject    *holder;
     JSProperty  *prop;
 
@@ -709,13 +710,13 @@ struct GetPropHelper {
     const Shape *shape;
 
     GetPropHelper(JSContext *cx, JSObject *obj, PropertyName *name, IC &ic, VMFrame &f)
-      : cx(cx), obj(obj), name(cx, name), ic(ic), f(f), holder(NULL), prop(NULL), shape(NULL)
+      : cx(cx), obj(obj), name(name), ic(ic), f(f), holder(NULL), prop(NULL), shape(NULL)
     { }
 
   public:
     LookupStatus bind() {
         RecompilationMonitor monitor(cx);
-        RootedVarObject scopeChain(cx, cx->stack.currentScriptedScopeChain());
+        JSObject *scopeChain = cx->stack.currentScriptedScopeChain();
         if (js_CodeSpec[*f.pc()].format & JOF_GNAME)
             scopeChain = &scopeChain->global();
         if (!FindProperty(cx, name, scopeChain, &obj, &holder, &prop))
@@ -733,9 +734,7 @@ struct GetPropHelper {
     }
 
     LookupStatus lookup() {
-        JSObject *aobj = obj;
-        if (obj->isDenseArray())
-            aobj = obj->getProto();
+        JSObject *aobj = js_GetProtoIfDenseArray(obj);
         if (!aobj->isNative())
             return ic.disable(f, "non-native");
 
@@ -2383,6 +2382,7 @@ GetElementIC::update(VMFrame &f, JSObject *obj, const Value &v, jsid id, Value *
 
 
 
+
     uint32_t dummy;
     if (v.isString() && JSID_IS_ATOM(id) && !JSID_TO_ATOM(id)->isIndex(&dummy))
         return attachGetProp(f, obj, v, JSID_TO_ATOM(id)->asPropertyName(), vp);
@@ -2421,7 +2421,7 @@ ic::GetElement(VMFrame &f, ic::GetElementIC *ic)
 
     RecompilationMonitor monitor(cx);
 
-    RootedVarObject obj(cx, ValueToObject(cx, f.regs.sp[-2]));
+    JSObject *obj = ValueToObject(cx, f.regs.sp[-2]);
     if (!obj)
         THROW();
 
