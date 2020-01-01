@@ -55,7 +55,6 @@
 
 #include "nsWidgetsCID.h"
 #include "nsDragService.h"
-#include "nsIDragSessionGTK.h"
 
 #include "nsGtkKeyUtils.h"
 #include "nsGtkCursors.h"
@@ -273,9 +272,6 @@ static void    drag_data_received_event_cb(GtkWidget *aWidget,
 static nsresult    initialize_prefs        (void);
 
 
-nsWindow *nsWindow::sLastDragMotionWindow = NULL;
-
-
 
 static guint32 sLastButtonReleaseTime = 0;
 static guint32 sLastUserInputTime = GDK_CURRENT_TIME;
@@ -433,9 +429,6 @@ nsWindow::nsWindow()
 nsWindow::~nsWindow()
 {
     LOG(("nsWindow::~nsWindow() [%p]\n", (void *)this));
-    if (sLastDragMotionWindow == this) {
-        sLastDragMotionWindow = NULL;
-    }
 
     delete[] mTransparencyBitmap;
     mTransparencyBitmap = nsnull;
@@ -687,6 +680,11 @@ nsWindow::Destroy(void)
         gRollupListener = nsnull;
     }
 
+    nsDragService *dragService = nsDragService::GetInstance();
+    if (this == dragService->GetMostRecentDestWindow()) {
+        dragService->ScheduleLeaveEvent();
+    }
+
     NativeShow(false);
 
     if (mIMModule) {
@@ -714,11 +712,6 @@ nsWindow::Destroy(void)
     
     
     mThebesSurface = nsnull;
-
-    if (mDragLeaveTimer) {
-        mDragLeaveTimer->Cancel();
-        mDragLeaveTimer = nsnull;
-    }
 
     GtkWidget *owningWidget = GetMozContainerWidget();
     if (mShell) {
@@ -3310,66 +3303,6 @@ nsWindow::ThemeChanged()
 }
 
 void
-nsWindow::CheckNeedDragLeave(nsWindow* aInnerMostWidget,
-                             nsIDragService* aDragService,
-                             GdkDragContext *aDragContext,
-                             nscoord aX, nscoord aY)
-{
-    
-    if (sLastDragMotionWindow) {
-        
-        if (sLastDragMotionWindow == aInnerMostWidget) {
-            UpdateDragStatus(aDragContext, aDragService);
-            return;
-        }
-
-        
-        nsRefPtr<nsWindow> kungFuDeathGrip = sLastDragMotionWindow;
-        sLastDragMotionWindow->OnDragLeave();
-    }
-
-    
-    aDragService->StartDragSession();
-
-    
-    UpdateDragStatus(aDragContext, aDragService);
-
-    
-    sLastDragMotionWindow = aInnerMostWidget;
-}
-
-void
-nsWindow::DispatchDragMotionEvents(nsDragService *aDragService,
-                                   const nsIntPoint& aWindowPoint, guint aTime)
-{
-    aDragService->SetCanDrop(false);
-
-    aDragService->FireDragEventAtSource(NS_DRAGDROP_DRAG);
-
-    DispatchDragEvent(NS_DRAGDROP_OVER, aWindowPoint, aTime);
-}
-
-
-gboolean
-nsWindow::DispatchDragDropEvent(nsDragService *aDragService,
-                                const nsIntPoint& aWindowPoint, guint aTime)
-{
-    
-    
-    
-    if (mIsDestroyed)
-        return FALSE;
-
-    bool canDrop;
-    aDragService->GetCanDrop(&canDrop);
-    PRUint32 msg = canDrop ? NS_DRAGDROP_DROP : NS_DRAGDROP_EXIT;
-
-    DispatchDragEvent(msg, aWindowPoint, aTime);
-
-    return canDrop;
-}
-
-void
 nsWindow::DispatchDragEvent(PRUint32 aMsg, const nsIntPoint& aRefPoint,
                             guint aTime)
 {
@@ -3386,170 +3319,6 @@ nsWindow::DispatchDragEvent(PRUint32 aMsg, const nsIntPoint& aRefPoint,
     DispatchEvent(&event, status);
 }
 
-gboolean
-nsWindow::OnDragMotionEvent(GtkWidget *aWidget,
-                            GdkDragContext *aDragContext,
-                            gint aX,
-                            gint aY,
-                            guint aTime,
-                            gpointer aData)
-{
-    LOGDRAG(("nsWindow::OnDragMotionSignal\n"));
-
-    
-    nsCOMPtr<nsIDragService> dragService = do_GetService(kCDragServiceCID);
-    nsDragService *dragServiceGTK =
-        static_cast<nsDragService*>(dragService.get());
-
-    
-    
-    nscoord retx = 0;
-    nscoord rety = 0;
-
-    GdkWindow *innerWindow = get_inner_gdk_window(gtk_widget_get_window(aWidget), aX, aY,
-                                                  &retx, &rety);
-    nsRefPtr<nsWindow> innerMostWidget = get_window_for_gdk_window(innerWindow);
-
-    if (!innerMostWidget)
-        innerMostWidget = this;
-
-    
-    
-    if (mDragLeaveTimer) {
-        mDragLeaveTimer->Cancel();
-        mDragLeaveTimer = nsnull;
-    }
-
-    CheckNeedDragLeave(innerMostWidget, dragService, aDragContext, retx, rety);
-
-    
-    dragServiceGTK->TargetSetLastContext(aWidget, aDragContext, aTime);
-
-    innerMostWidget->
-        DispatchDragMotionEvents(dragServiceGTK, nsIntPoint(retx, rety), aTime);
-
-    
-    
-    dragServiceGTK->TargetEndDragMotion(aWidget, aDragContext, aTime);
-
-    
-    dragServiceGTK->TargetSetLastContext(0, 0, 0);
-
-    return TRUE;
-}
-
-void
-nsWindow::OnDragLeaveEvent(GtkWidget *aWidget,
-                           GdkDragContext *aDragContext,
-                           guint aTime,
-                           gpointer aData)
-{
-    
-
-    LOGDRAG(("nsWindow::OnDragLeaveSignal(%p)\n", (void*)this));
-
-    if (mDragLeaveTimer) {
-        return;
-    }
-
-    
-    
-    
-    mDragLeaveTimer = do_CreateInstance("@mozilla.org/timer;1");
-    NS_ASSERTION(mDragLeaveTimer, "Failed to create drag leave timer!");
-    
-    mDragLeaveTimer->InitWithFuncCallback(DragLeaveTimerCallback,
-                                          (void *)this,
-                                          20, nsITimer::TYPE_ONE_SHOT);
-}
-
-gboolean
-nsWindow::OnDragDropEvent(GtkWidget *aWidget,
-                          GdkDragContext *aDragContext,
-                          gint aX,
-                          gint aY,
-                          guint aTime,
-                          gpointer aData)
-
-{
-    LOGDRAG(("nsWindow::OnDragDropSignal\n"));
-
-    
-    nsCOMPtr<nsIDragService> dragService = do_GetService(kCDragServiceCID);
-    nsDragService *dragServiceGTK = static_cast<nsDragService*>(dragService.get());
-
-    dragServiceGTK->SetDragEndPoint(nsIntPoint(aX, aY) + WidgetToScreenOffset());
-
-    nscoord retx = 0;
-    nscoord rety = 0;
-
-    GdkWindow *innerWindow = get_inner_gdk_window(gtk_widget_get_window(aWidget), aX, aY,
-                                                  &retx, &rety);
-    nsRefPtr<nsWindow> innerMostWidget = get_window_for_gdk_window(innerWindow);
-
-    if (!innerMostWidget)
-        innerMostWidget = this;
-
-    
-    
-    if (mDragLeaveTimer) {
-        mDragLeaveTimer->Cancel();
-        mDragLeaveTimer = nsnull;
-    }
-
-    CheckNeedDragLeave(innerMostWidget, dragService, aDragContext, retx, rety);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    dragServiceGTK->TargetSetLastContext(aWidget, aDragContext, aTime);
-
-    innerMostWidget->
-        DispatchDragMotionEvents(dragServiceGTK, nsIntPoint(retx, rety), aTime);
-
-    gboolean success = innerMostWidget->
-        DispatchDragDropEvent(dragServiceGTK, nsIntPoint(retx, rety), aTime);
-
-    
-
-    gdk_drop_finish(aDragContext, success, aTime);
-
-    
-    
-    
-    
-    dragServiceGTK->TargetSetLastContext(0, 0, 0);
-
-    
-    sLastDragMotionWindow = 0;
-
-    
-    
-    dragService->EndDragSession(true);
-
-    return TRUE;
-}
-
 void
 nsWindow::OnDragDataReceivedEvent(GtkWidget *aWidget,
                                   GdkDragContext *aDragContext,
@@ -3562,40 +3331,9 @@ nsWindow::OnDragDataReceivedEvent(GtkWidget *aWidget,
 {
     LOGDRAG(("nsWindow::OnDragDataReceived(%p)\n", (void*)this));
 
-    
-    nsCOMPtr<nsIDragService> dragService = do_GetService(kCDragServiceCID);
-    nsCOMPtr<nsIDragSessionGTK> dragSessionGTK = do_QueryInterface(dragService);
-
-    dragSessionGTK->TargetDataReceived(aWidget, aDragContext, aX, aY,
-                                       aSelectionData, aInfo, aTime);
-}
-
-void
-nsWindow::OnDragLeave(void)
-{
-    LOGDRAG(("nsWindow::OnDragLeave(%p)\n", (void*)this));
-
-    DispatchDragEvent(NS_DRAGDROP_EXIT, nsIntPoint(0, 0), 0);
-
-    nsCOMPtr<nsIDragService> dragService = do_GetService(kCDragServiceCID);
-
-    if (dragService) {
-        nsCOMPtr<nsIDragSession> currentDragSession;
-        dragService->GetCurrentSession(getter_AddRefs(currentDragSession));
-
-        if (currentDragSession) {
-            nsCOMPtr<nsIDOMNode> sourceNode;
-            currentDragSession->GetSourceNode(getter_AddRefs(sourceNode));
-
-            if (!sourceNode) {
-                
-                
-                
-                
-                dragService->EndDragSession(false);
-            }
-        }
-    }
+    nsDragService::GetInstance()->
+        TargetDataReceived(aWidget, aDragContext, aX, aY,
+                           aSelectionData, aInfo, aTime);
 }
 
 static void
@@ -5906,43 +5644,6 @@ nsWindow::InitDragEvent(nsDragEvent &aEvent)
     KeymapWrapper::InitInputEvent(aEvent, modifierState);
 }
 
-
-
-
-
-void
-nsWindow::UpdateDragStatus(GdkDragContext *aDragContext,
-                           nsIDragService *aDragService)
-{
-    
-    int action = nsIDragService::DRAGDROP_ACTION_NONE;
-    GdkDragAction gdkAction = gdk_drag_context_get_actions(aDragContext);
-
-    
-    if (gdkAction & GDK_ACTION_DEFAULT)
-        action = nsIDragService::DRAGDROP_ACTION_MOVE;
-
-    
-    if (gdkAction & GDK_ACTION_MOVE)
-        action = nsIDragService::DRAGDROP_ACTION_MOVE;
-
-    
-    else if (gdkAction & GDK_ACTION_LINK)
-        action = nsIDragService::DRAGDROP_ACTION_LINK;
-
-    
-    else if (gdkAction & GDK_ACTION_COPY)
-        action = nsIDragService::DRAGDROP_ACTION_COPY;
-
-    
-    nsCOMPtr<nsIDragSession> session;
-    aDragService->GetCurrentSession(getter_AddRefs(session));
-
-    if (session)
-        session->SetDragAction(action);
-}
-
-
 static gboolean
 drag_motion_event_cb(GtkWidget *aWidget,
                      GdkDragContext *aDragContext,
@@ -5973,9 +5674,24 @@ drag_motion_event_cb(GtkWidget *aWidget,
       }
     }
 
-    return window->OnDragMotionEvent(aWidget,
-                                     aDragContext,
-                                     aX, aY, aTime, aData);
+    
+    nscoord retx = 0;
+    nscoord rety = 0;
+
+    GdkWindow *innerWindow =
+        get_inner_gdk_window(gtk_widget_get_window(aWidget), aX, aY,
+                             &retx, &rety);
+    nsRefPtr<nsWindow> innerMostWindow = get_window_for_gdk_window(innerWindow);
+
+    if (!innerMostWindow) {
+        innerMostWindow = window;
+    }
+
+    LOGDRAG(("nsWindow drag-motion signal for %p\n", (void*)innerMostWindow));
+
+    return nsDragService::GetInstance()->
+        ScheduleMotionEvent(innerMostWindow, aDragContext,
+                            nsIntPoint(aX, aY), aTime);
 }
 
 static void
@@ -5988,7 +5704,31 @@ drag_leave_event_cb(GtkWidget *aWidget,
     if (!window)
         return;
 
-    window->OnDragLeaveEvent(aWidget, aDragContext, aTime, aData);
+    nsDragService *dragService = nsDragService::GetInstance();
+
+    nsWindow *mostRecentDragWindow = dragService->GetMostRecentDestWindow();
+    if (!mostRecentDragWindow) {
+        
+        
+        
+        
+        
+        return;
+    }
+
+    GtkWidget *mozContainer = mostRecentDragWindow->GetMozContainerWidget();
+    if (aWidget != mozContainer)
+    {
+        
+        
+        
+        return;
+    }
+
+    LOGDRAG(("nsWindow drag-leave signal for %p\n",
+             (void*)mostRecentDragWindow));
+
+    dragService->ScheduleLeaveEvent();
 }
 
 
@@ -6004,9 +5744,24 @@ drag_drop_event_cb(GtkWidget *aWidget,
     if (!window)
         return FALSE;
 
-    return window->OnDragDropEvent(aWidget,
-                                   aDragContext,
-                                   aX, aY, aTime, aData);
+    
+    nscoord retx = 0;
+    nscoord rety = 0;
+
+    GdkWindow *innerWindow =
+        get_inner_gdk_window(gtk_widget_get_window(aWidget), aX, aY,
+                             &retx, &rety);
+    nsRefPtr<nsWindow> innerMostWindow = get_window_for_gdk_window(innerWindow);
+
+    if (!innerMostWindow) {
+        innerMostWindow = window;
+    }
+
+    LOGDRAG(("nsWindow drag-drop signal for %p\n", (void*)innerMostWindow));
+
+    return nsDragService::GetInstance()->
+        ScheduleDropEvent(innerMostWindow, aDragContext,
+                          nsIntPoint(aX, aY), aTime);
 }
 
 static void
@@ -6039,30 +5794,6 @@ initialize_prefs(void)
         Preferences::GetBool("mozilla.widget.disable-native-theme", false);
 
     return NS_OK;
-}
-
-void
-nsWindow::FireDragLeaveTimer(void)
-{
-    LOGDRAG(("nsWindow::FireDragLeaveTimer(%p)\n", (void*)this));
-
-    mDragLeaveTimer = nsnull;
-
-    
-    if (sLastDragMotionWindow) {
-        nsRefPtr<nsWindow> kungFuDeathGrip = sLastDragMotionWindow;
-        
-        sLastDragMotionWindow->OnDragLeave();
-        sLastDragMotionWindow = 0;
-    }
-}
-
-
-void
-nsWindow::DragLeaveTimerCallback(nsITimer *aTimer, void *aClosure)
-{
-    nsRefPtr<nsWindow> window = static_cast<nsWindow *>(aClosure);
-    window->FireDragLeaveTimer();
 }
 
 static GdkWindow *

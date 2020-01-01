@@ -168,14 +168,6 @@ nsSystemPrincipal::CanEnableCapability(const char *capability,
 }
 
 NS_IMETHODIMP 
-nsSystemPrincipal::SetCanEnableCapability(const char *capability, 
-                                          PRInt16 canEnable)
-{
-    return NS_ERROR_FAILURE;
-}
-
-
-NS_IMETHODIMP 
 nsSystemPrincipal::IsCapabilityEnabled(const char *capability, 
                                        void *annotation, 
                                        bool *result)
@@ -189,22 +181,6 @@ nsSystemPrincipal::EnableCapability(const char *capability, void **annotation)
 {
     *annotation = nsnull;
     return NS_OK;
-}
-
-NS_IMETHODIMP 
-nsSystemPrincipal::RevertCapability(const char *capability, void **annotation)
-{
-    *annotation = nsnull;
-    return NS_OK;
-}
-
-NS_IMETHODIMP 
-nsSystemPrincipal::DisableCapability(const char *capability, void **annotation) 
-{
-    
-    
-    *annotation = nsnull;
-    return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP 

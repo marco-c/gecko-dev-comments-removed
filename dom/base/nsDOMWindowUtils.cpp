@@ -331,19 +331,6 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
       
       
       presShell->SetIgnoreViewportScrolling(true);
-
-      
-      
-      
-      
-      nsPresContext* presContext = GetPresContext();
-      if (presContext && presContext->IsRoot()) {
-        nsIFrame* rootFrame = presShell->GetRootFrame();
-        nsIView* view = rootFrame->GetView();
-        if (view) {
-          view->SetInvalidationDimensions(&displayport);
-        }
-      }
     }
   }
 
@@ -360,7 +347,10 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
         nsIFrame::INVALIDATE_NO_THEBES_LAYERS);
 
       
-      if (displayport.IsEmpty()) {
+      
+      
+      if (displayport.IsEmpty() &&
+          rootFrame == nsLayoutUtils::GetDisplayRootFrame(rootFrame)) {
         nsCOMPtr<nsIWidget> widget = GetWidget();
         if (widget) {
           bool isRetainingManager;

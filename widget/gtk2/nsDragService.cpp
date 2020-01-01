@@ -62,6 +62,10 @@
 #include "nsCRT.h"
 #include "mozilla/Services.h"
 
+#if defined(MOZ_WIDGET_GTK2)
+#include "gtk2compat.h"
+#endif
+
 #include "gfxASurface.h"
 #include "gfxXlibSurface.h"
 #include "gfxContext.h"
@@ -127,6 +131,7 @@ invisibleSourceDragDataGet(GtkWidget        *aWidget,
                            gpointer          aData);
 
 nsDragService::nsDragService()
+    : mTaskSource(0)
 {
     
     
@@ -162,9 +167,6 @@ nsDragService::nsDragService()
         sDragLm = PR_NewLogModule("nsDragService");
     PR_LOG(sDragLm, PR_LOG_DEBUG, ("nsDragService::nsDragService"));
     mGrabWidget = 0;
-    mTargetWidget = 0;
-    mTargetDragContext = 0;
-    mTargetTime = 0;
     mCanDrop = false;
     mTargetDragDataReceived = false;
     mTargetDragData = 0;
@@ -174,10 +176,21 @@ nsDragService::nsDragService()
 nsDragService::~nsDragService()
 {
     PR_LOG(sDragLm, PR_LOG_DEBUG, ("nsDragService::~nsDragService"));
+    if (mTaskSource)
+        g_source_remove(mTaskSource);
+
 }
 
-NS_IMPL_ISUPPORTS_INHERITED2(nsDragService, nsBaseDragService,
-                             nsIDragSessionGTK, nsIObserver)
+NS_IMPL_ISUPPORTS_INHERITED1(nsDragService, nsBaseDragService, nsIObserver)
+
+ nsDragService*
+nsDragService::GetInstance()
+{
+    static const nsIID iid = NS_DRAGSERVICE_CID;
+    nsCOMPtr<nsIDragService> dragService = do_GetService(iid);
+    return static_cast<nsDragService*>(dragService.get());
+    
+}
 
 
 
@@ -304,6 +317,14 @@ nsDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
                                  PRUint32 aActionType)
 {
     PR_LOG(sDragLm, PR_LOG_DEBUG, ("nsDragService::InvokeDragSession"));
+
+    
+    
+    
+    
+    if (mSourceNode)
+        return NS_ERROR_NOT_AVAILABLE;
+
     nsresult rv = nsBaseDragService::InvokeDragSession(aDOMNode,
                                                        aArrayTransferables,
                                                        aRegion, aActionType);
@@ -1000,36 +1021,14 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
     return NS_OK;
 }
 
-
-
-NS_IMETHODIMP
-nsDragService::TargetSetLastContext(GtkWidget      *aWidget,
-                                    GdkDragContext *aContext,
-                                    guint           aTime)
-{
-    PR_LOG(sDragLm, PR_LOG_DEBUG, ("nsDragService::TargetSetLastContext"));
-    mTargetWidget = aWidget;
-    mTargetDragContext = aContext;
-    mTargetTime = aTime;
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDragService::TargetStartDragMotion(void)
-{
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDragService::TargetEndDragMotion(GtkWidget      *aWidget,
-                                   GdkDragContext *aContext,
-                                   guint           aTime)
+void
+nsDragService::ReplyToDragMotion()
 {
     PR_LOG(sDragLm, PR_LOG_DEBUG,
-           ("nsDragService::TargetEndDragMotion %d", mCanDrop));
+           ("nsDragService::ReplyToDragMotion %d", mCanDrop));
 
+    GdkDragAction action = (GdkDragAction)0;
     if (mCanDrop) {
-        GdkDragAction action;
         
         switch (mDragAction) {
         case DRAGDROP_ACTION_COPY:
@@ -1042,16 +1041,12 @@ nsDragService::TargetEndDragMotion(GtkWidget      *aWidget,
           action = GDK_ACTION_MOVE;
           break;
         }
-        gdk_drag_status(aContext, action, aTime);
-    }
-    else {
-        gdk_drag_status(aContext, (GdkDragAction)0, aTime);
     }
 
-    return NS_OK;
+    gdk_drag_status(mTargetDragContext, action, mTargetTime);
 }
 
-NS_IMETHODIMP
+void
 nsDragService::TargetDataReceived(GtkWidget         *aWidget,
                                   GdkDragContext    *aContext,
                                   gint               aX,
@@ -1073,16 +1068,7 @@ nsDragService::TargetDataReceived(GtkWidget         *aWidget,
                ("Failed to get data.  selection data len was %d\n",
                 aSelectionData->length));
     }
-    return NS_OK;
 }
-
-
-NS_IMETHODIMP
-nsDragService::TargetSetTimeCallback(nsIDragSessionGTKTimeCB aCallback)
-{
-    return NS_OK;
-}
-
 
 bool
 nsDragService::IsTargetContextList(void)
@@ -1122,7 +1108,8 @@ nsDragService::GetTargetDragData(GdkAtom aFlavor)
 {
     PR_LOG(sDragLm, PR_LOG_DEBUG, ("getting data flavor %d\n", aFlavor));
     PR_LOG(sDragLm, PR_LOG_DEBUG, ("mLastWidget is %p and mLastContext is %p\n",
-                                   mTargetWidget, mTargetDragContext));
+                                   mTargetWidget.get(),
+                                   mTargetDragContext.get()));
     
     TargetResetData();
     gtk_drag_get_data(mTargetWidget, mTargetDragContext, aFlavor, mTargetTime);
@@ -1349,8 +1336,10 @@ nsDragService::SourceEndDragSession(GdkDragContext *aContext,
     
     mSourceDataItems = nsnull;
 
-    if (!mDoingDrag)
-        return; 
+    if (!mDoingDrag || mScheduledTask == eDragTaskSourceEnd)
+        
+        
+        return;
 
     if (mEndDragPoint.x < 0) {
         
@@ -1404,7 +1393,7 @@ nsDragService::SourceEndDragSession(GdkDragContext *aContext,
     }
 
     
-    EndDragSession(true);
+    Schedule(eDragTaskSourceEnd, nsnull, NULL, nsIntPoint(), 0);
 }
 
 static void
@@ -1693,3 +1682,323 @@ invisibleSourceDragEnd(GtkWidget        *aWidget,
     dragService->SourceEndDragSession(aContext, MOZ_GTK_DRAG_RESULT_SUCCESS);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+gboolean
+nsDragService::ScheduleMotionEvent(nsWindow *aWindow,
+                                   GdkDragContext *aDragContext,
+                                   nsIntPoint aWindowPoint, guint aTime)
+{
+    if (mScheduledTask == eDragTaskMotion) {
+        
+        
+        
+        
+        
+        NS_WARNING("Drag Motion message received before previous reply was sent");
+    }
+
+    
+    
+    return Schedule(eDragTaskMotion, aWindow, aDragContext,
+                    aWindowPoint, aTime);
+}
+
+void
+nsDragService::ScheduleLeaveEvent()
+{
+    
+    
+    
+    if (!Schedule(eDragTaskLeave, nsnull, NULL, nsIntPoint(), 0)) {
+        NS_WARNING("Drag leave after drop");
+    }        
+}
+
+gboolean
+nsDragService::ScheduleDropEvent(nsWindow *aWindow,
+                                 GdkDragContext *aDragContext,
+                                 nsIntPoint aWindowPoint, guint aTime)
+{
+    if (!Schedule(eDragTaskDrop, aWindow,
+                  aDragContext, aWindowPoint, aTime)) {
+        NS_WARNING("Additional drag drop ignored");
+        return FALSE;        
+    }
+
+    SetDragEndPoint(aWindowPoint + aWindow->WidgetToScreenOffset());
+
+    
+    return TRUE;
+}
+
+gboolean
+nsDragService::Schedule(DragTask aTask, nsWindow *aWindow,
+                        GdkDragContext *aDragContext,
+                        nsIntPoint aWindowPoint, guint aTime)
+{
+    
+    
+    
+
+    
+    
+    
+    
+    
+    if (mScheduledTask == eDragTaskSourceEnd ||
+        (mScheduledTask == eDragTaskDrop && aTask != eDragTaskSourceEnd))
+        return FALSE;
+
+    mScheduledTask = aTask;
+    mPendingWindow = aWindow;
+    mPendingDragContext = aDragContext;
+    mPendingWindowPoint = aWindowPoint;
+    mPendingTime = aTime;
+
+    if (!mTaskSource) {
+        
+        
+        
+        
+        
+        
+        mTaskSource =
+            g_idle_add_full(G_PRIORITY_HIGH, TaskDispatchCallback, this, NULL);
+    }
+    return TRUE;
+}
+
+gboolean
+nsDragService::TaskDispatchCallback(gpointer data)
+{
+    nsRefPtr<nsDragService> dragService = static_cast<nsDragService*>(data);
+    return dragService->RunScheduledTask();
+}
+
+gboolean
+nsDragService::RunScheduledTask()
+{
+    if (mTargetWindow && mTargetWindow != mPendingWindow) {
+        PR_LOG(sDragLm, PR_LOG_DEBUG,
+               ("nsDragService: dispatch drag leave (%p)\n",
+                mTargetWindow.get()));
+        mTargetWindow->
+            DispatchDragEvent(NS_DRAGDROP_EXIT, mTargetWindowPoint, 0);
+
+        if (!mSourceNode) {
+            
+            
+            
+            EndDragSession(false);
+        }
+    }
+
+    
+    
+
+    
+    
+    
+    
+    bool positionHasChanged =
+        mPendingWindow != mTargetWindow ||
+        mPendingWindowPoint != mTargetWindowPoint;
+    DragTask task = mScheduledTask;
+    mScheduledTask = eDragTaskNone;
+    mTargetWindow = mPendingWindow.forget();
+    mTargetWindowPoint = mPendingWindowPoint;
+
+    if (task == eDragTaskLeave || task == eDragTaskSourceEnd) {
+        if (task == eDragTaskSourceEnd) {
+            
+            EndDragSession(true);
+        }
+
+        
+        
+        mTaskSource = 0;
+        return FALSE;
+    }
+
+    
+    StartDragSession();
+
+    
+    
+    
+    
+    mTargetWidget = mTargetWindow->GetMozContainerWidget();
+    mTargetDragContext.steal(mPendingDragContext);
+    mTargetTime = mPendingTime;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (task == eDragTaskMotion || positionHasChanged) {
+        UpdateDragAction();
+        DispatchMotionEvents();
+
+        if (task == eDragTaskMotion) {
+            
+            
+            ReplyToDragMotion();
+        }
+    }
+
+    if (task == eDragTaskDrop) {
+        gboolean success = DispatchDropEvent();
+
+        
+        
+        
+        gtk_drag_finish(mTargetDragContext, success,
+                         FALSE, mTargetTime);
+
+        
+        
+        mTargetWindow = nsnull;
+        
+        
+        EndDragSession(true);
+    }
+
+    
+    mTargetWidget = NULL;
+    mTargetDragContext = NULL;
+
+    
+    
+    
+    if (mScheduledTask != eDragTaskNone)
+        return TRUE;
+
+    
+    
+    mTaskSource = 0;
+    return FALSE;
+}
+
+
+
+
+
+void
+nsDragService::UpdateDragAction()
+{
+    
+    
+    
+    
+    
+    
+
+    
+    int action = nsIDragService::DRAGDROP_ACTION_NONE;
+    GdkDragAction gdkAction = gdk_drag_context_get_actions(mTargetDragContext);
+
+    
+    if (gdkAction & GDK_ACTION_DEFAULT)
+        action = nsIDragService::DRAGDROP_ACTION_MOVE;
+
+    
+    if (gdkAction & GDK_ACTION_MOVE)
+        action = nsIDragService::DRAGDROP_ACTION_MOVE;
+
+    
+    else if (gdkAction & GDK_ACTION_LINK)
+        action = nsIDragService::DRAGDROP_ACTION_LINK;
+
+    
+    else if (gdkAction & GDK_ACTION_COPY)
+        action = nsIDragService::DRAGDROP_ACTION_COPY;
+
+    
+    SetDragAction(action);
+}
+
+void
+nsDragService::DispatchMotionEvents()
+{
+    mCanDrop = false;
+
+    FireDragEventAtSource(NS_DRAGDROP_DRAG);
+
+    mTargetWindow->
+        DispatchDragEvent(NS_DRAGDROP_OVER, mTargetWindowPoint, mTargetTime);
+}
+
+
+gboolean
+nsDragService::DispatchDropEvent()
+{
+    
+    
+    
+    if (mTargetWindow->IsDestroyed())
+        return FALSE;
+
+    PRUint32 msg = mCanDrop ? NS_DRAGDROP_DROP : NS_DRAGDROP_EXIT;
+
+    mTargetWindow->DispatchDragEvent(msg, mTargetWindowPoint, mTargetTime);
+
+    return mCanDrop;
+}
