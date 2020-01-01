@@ -1,40 +1,40 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is SpiderMonkey E4X code, released August, 2004.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef jsxml_h___
 #define jsxml_h___
@@ -105,10 +105,8 @@ struct JSXMLArrayCursor
 #ifdef DEBUG
         size_t index = 0;
 #endif
-        for (JSXMLArrayCursor *cursor = this; cursor; cursor = cursor->next) {
-            JS_SET_TRACING_INDEX(trc, "cursor_root", index++);
-            js::CallGCMarkerForGCThing(trc, cursor->root);
-        }
+        for (JSXMLArrayCursor *cursor = this; cursor; cursor = cursor->next)
+            js::MarkGCThing(trc, cursor->root, "cursor_root", index++);
     }
 };
 
@@ -116,10 +114,10 @@ struct JSXMLArrayCursor
 #define JSXML_CAPACITY_MASK     JS_BITMASK(31)
 #define JSXML_CAPACITY(array)   ((array)->capacity & JSXML_CAPACITY_MASK)
 
-/*
- * NB: don't reorder this enum without changing all array initializers that
- * depend on it in jsxml.c.
- */
+
+
+
+
 typedef enum JSXMLClass {
     JSXML_CLASS_LIST,
     JSXML_CLASS_ELEMENT,
@@ -141,13 +139,13 @@ typedef enum JSXMLClass {
 #endif
 
 typedef struct JSXMLListVar {
-    JSXMLArray          kids;           /* NB: must come first */
+    JSXMLArray          kids;           
     JSXML               *target;
     JSObject            *targetprop;
 } JSXMLListVar;
 
 typedef struct JSXMLElemVar {
-    JSXMLArray          kids;           /* NB: must come first */
+    JSXMLArray          kids;           
     JSXMLArray          namespaces;
     JSXMLArray          attrs;
 } JSXMLElemVar;
@@ -158,11 +156,11 @@ struct JSXML {
     uint32              serial;
 #endif
     JSObject            *object;
-    void                *domnode;       /* DOM node if mapped info item */
+    void                *domnode;       
     JSXML               *parent;
     JSObject            *name;
-    uint32              xml_class;      /* discriminates u, below */
-    uint32              xml_flags;      /* flags, see below */
+    uint32              xml_class;      
+    uint32              xml_flags;      
     union {
         JSXMLListVar    list;
         JSXMLElemVar    elem;
@@ -172,7 +170,7 @@ struct JSXML {
 
 JS_STATIC_ASSERT(sizeof(JSXML) % JSBOXEDWORD_ALIGN == 0);
 
-/* union member shorthands */
+
 #define xml_kids        u.list.kids
 #define xml_target      u.list.target
 #define xml_targetprop  u.list.targetprop
@@ -180,10 +178,10 @@ JS_STATIC_ASSERT(sizeof(JSXML) % JSBOXEDWORD_ALIGN == 0);
 #define xml_attrs       u.elem.attrs
 #define xml_value       u.value
 
-/* xml_flags values */
+
 #define XMLF_WHITESPACE_TEXT    0x1
 
-/* xml_class-testing macros */
+
 #define JSXML_HAS_KIDS(xml)     JSXML_CLASS_HAS_KIDS((xml)->xml_class)
 #define JSXML_HAS_VALUE(xml)    JSXML_CLASS_HAS_VALUE((xml)->xml_class)
 #define JSXML_HAS_NAME(xml)     JSXML_CLASS_HAS_NAME((xml)->xml_class)
@@ -214,13 +212,13 @@ extern JS_FRIEND_DATA(js::Class)         js_AttributeNameClass;
 extern JS_FRIEND_DATA(js::Class)         js_AnyNameClass;
 extern js::Class                         js_XMLFilterClass;
 
-/*
- * Methods to test whether an object or a value is of type "xml" (per typeof).
- * NB: jsobj.h must be included before any call to OBJECT_IS_XML, and jsapi.h
- * and jsobj.h must be included before any call to VALUE_IS_XML.
- *
- * FIXME: bogus cx parameters for OBJECT_IS_XML and VALUE_IS_XML.
- */
+
+
+
+
+
+
+
 inline bool
 JSObject::isXML() const
 {
@@ -258,10 +256,10 @@ js_InitXMLClasses(JSContext *cx, JSObject *obj);
 extern JSBool
 js_GetFunctionNamespace(JSContext *cx, js::Value *vp);
 
-/*
- * If obj is QName corresponding to function::name, set *funidp to name's id,
- * otherwise set *funidp to 0.
- */
+
+
+
+
 JSBool
 js_IsFunctionQName(JSContext *cx, JSObject *obj, jsid *funidp);
 
@@ -271,11 +269,11 @@ js_GetDefaultXMLNamespace(JSContext *cx, jsval *vp);
 extern JSBool
 js_SetDefaultXMLNamespace(JSContext *cx, const js::Value &v);
 
-/*
- * Return true if v is a XML QName object, or if it converts to a string that
- * contains a valid XML qualified name (one containing no :), false otherwise.
- * NB: This function is an infallible predicate, it hides exceptions.
- */
+
+
+
+
+
 extern JSBool
 js_IsXMLName(JSContext *cx, jsval v);
 
@@ -302,9 +300,9 @@ js_ConstructXMLQNameObject(JSContext *cx, const js::Value & nsval,
 extern JSBool
 js_GetAnyName(JSContext *cx, jsid *idp);
 
-/*
- * Note: nameval must be either QName, AttributeName, or AnyName.
- */
+
+
+
 extern JSBool
 js_FindXMLProperty(JSContext *cx, const js::Value &nameval, JSObject **objp, jsid *idp);
 
@@ -342,7 +340,7 @@ js_MakeXMLCommentString(JSContext *cx, JSString *str);
 extern JSString *
 js_MakeXMLPIString(JSContext *cx, JSString *name, JSString *str);
 
-/* The caller must ensure that either v1 or v2 is an object. */
+
 extern JSBool
 js_TestXMLEquality(JSContext *cx, const js::Value &v1, const js::Value &v2,
                    JSBool *bp);
@@ -350,4 +348,4 @@ js_TestXMLEquality(JSContext *cx, const js::Value &v1, const js::Value &v2,
 extern JSBool
 js_ConcatenateXML(JSContext *cx, JSObject *obj1, JSObject *obj2, js::Value *vp);
 
-#endif /* jsxml_h___ */
+#endif 
