@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Brendan Eich <brendan@mozilla.org>
+ *
+ * Contributor(s):
+ *   David Anderson <danderson@mozilla.com>
+ *   David Mandelin <dmandelin@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "jscntxt.h"
 #include "jsscope.h"
@@ -88,7 +88,7 @@ stubs::BindName(VMFrame &f)
 {
     PropertyCacheEntry *entry;
 
-    
+    /* Fast-path should have caught this. See comment in interpreter. */
     JS_ASSERT(!f.fp()->scopeChain().isGlobal());
 
     JSAtom *atom;
@@ -136,37 +136,37 @@ stubs::SetName(VMFrame &f, JSAtom *origAtom)
     do {
         PropertyCache *cache = &JS_PROPERTY_CACHE(cx);
 
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        /*
+         * Probe the property cache, specializing for two important
+         * set-property cases. First:
+         *
+         *   function f(a, b, c) {
+         *     var o = {p:a, q:b, r:c};
+         *     return o;
+         *   }
+         *
+         * or similar real-world cases, which evolve a newborn native
+         * object predicatably through some bounded number of property
+         * additions. And second:
+         *
+         *   o.p = x;
+         *
+         * in a frequently executed method or loop body, where p will
+         * (possibly after the first iteration) always exist in native
+         * object o.
+         */
         PropertyCacheEntry *entry;
         JSObject *obj2;
         JSAtom *atom;
         if (cache->testForSet(cx, f.pc(), obj, &entry, &obj2, &atom)) {
-            
-
-
-
-
-
-
-
+            /*
+             * Property cache hit, only partially confirmed by testForSet. We
+             * know that the entry applies to regs.pc and that obj's shape
+             * matches.
+             *
+             * The entry predicts a set either an existing "own" property, or
+             * on a prototype property that has a setter.
+             */
             const Shape *shape = entry->prop;
             JS_ASSERT_IF(shape->isDataDescriptor(), shape->writable());
             JS_ASSERT_IF(shape->hasSlot(), !entry->vindex);
@@ -299,8 +299,8 @@ NameOp(VMFrame &f, JSObject *obj, bool callname)
         if (!js_FindPropertyHelper(cx, id, true, global, &obj, &obj2, &prop))
             return NULL;
         if (!prop) {
-            
-            JSOp op2 = js_GetOpcode(cx, f.script(), f.pc() + JSOP_NAME_LENGTH);
+            /* Kludge to allow (typeof foo == "undefined") tests. */
+            JSOp op2 = JSOp(f.pc()[JSOP_NAME_LENGTH]);
             if (op2 == JSOP_TYPEOF) {
                 f.regs.sp++;
                 f.regs.sp[-1].setUndefined();
@@ -310,7 +310,7 @@ NameOp(VMFrame &f, JSObject *obj, bool callname)
             return NULL;
         }
 
-        
+        /* Take the slow path if prop was not found in a native object. */
         if (!obj->isNative() || !obj2->isNative()) {
             if (!obj->getGeneric(cx, id, &rval))
                 return NULL;
@@ -322,10 +322,10 @@ NameOp(VMFrame &f, JSObject *obj, bool callname)
             NATIVE_GET(cx, normalized, obj2, shape, JSGET_METHOD_BARRIER, &rval, return NULL);
         }
 
-        
-
-
-
+        /*
+         * If this is an incop, update the property's types themselves,
+         * to capture the type effect on the intermediate value.
+         */
         if (rval.isUndefined() && (js_CodeSpec[*f.pc()].format & (JOF_INC|JOF_DEC)))
             AddTypePropertyId(cx, obj, id, Type::UndefinedType());
     }
@@ -440,18 +440,18 @@ stubs::CallElem(VMFrame &f)
     JSContext *cx = f.cx;
     FrameRegs &regs = f.regs;
 
-    
+    /* Find the object on which to look for |this|'s properties. */
     Value thisv = regs.sp[-2];
     JSObject *thisObj = ValuePropertyBearer(cx, thisv, -2);
     if (!thisObj)
         THROW();
 
-    
+    /* Fetch index and convert it to id suitable for use with thisObj. */
     jsid id;
     if (!FetchElementId(f, thisObj, regs.sp[-1], id, &regs.sp[-2]))
         THROW();
 
-    
+    /* Get or set the element. */
     if (!js_GetMethod(cx, thisObj, id, JSGET_NO_METHOD_BARRIER, &regs.sp[-2]))
         THROW();
 
@@ -513,10 +513,10 @@ stubs::SetElem(VMFrame &f)
     if (!obj->setGeneric(cx, id, &rval, strict))
         THROW();
   end_setelem:
-    
-
-
-
+    /* :FIXME: Moving the assigned object into the lowest stack slot
+     * is a temporary hack. What we actually want is an implementation
+     * of popAfterSet() that allows popping more than one value;
+     * this logic can then be handled in Compiler.cpp. */
     regs.sp[-3] = regs.sp[-1];
 }
 
@@ -549,11 +549,11 @@ stubs::CallName(VMFrame &f)
         THROW();
 }
 
-
-
-
-
-
+/*
+ * Push the implicit this value, with the assumption that the callee
+ * (which is on top of the stack) was read as a property from the
+ * global object.
+ */
 void JS_FASTCALL
 stubs::PushImplicitThisForGlobal(VMFrame &f)
 {
@@ -565,10 +565,9 @@ stubs::BitOr(VMFrame &f)
 {
     int32_t i, j;
 
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-2], &i) ||
-        !ValueToECMAInt32(f.cx, f.regs.sp[-1], &j)) {
+    if (!ToInt32(f.cx, f.regs.sp[-2], &i) || !ToInt32(f.cx, f.regs.sp[-1], &j))
         THROW();
-    }
+
     i = i | j;
     f.regs.sp[-2].setInt32(i);
 }
@@ -578,10 +577,9 @@ stubs::BitXor(VMFrame &f)
 {
     int32_t i, j;
 
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-2], &i) ||
-        !ValueToECMAInt32(f.cx, f.regs.sp[-1], &j)) {
+    if (!ToInt32(f.cx, f.regs.sp[-2], &i) || !ToInt32(f.cx, f.regs.sp[-1], &j))
         THROW();
-    }
+
     i = i ^ j;
     f.regs.sp[-2].setInt32(i);
 }
@@ -591,10 +589,9 @@ stubs::BitAnd(VMFrame &f)
 {
     int32_t i, j;
 
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-2], &i) ||
-        !ValueToECMAInt32(f.cx, f.regs.sp[-1], &j)) {
+    if (!ToInt32(f.cx, f.regs.sp[-2], &i) || !ToInt32(f.cx, f.regs.sp[-1], &j))
         THROW();
-    }
+
     i = i & j;
     f.regs.sp[-2].setInt32(i);
 }
@@ -604,7 +601,7 @@ stubs::BitNot(VMFrame &f)
 {
     int32_t i;
 
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-1], &i))
+    if (!ToInt32(f.cx, f.regs.sp[-1], &i))
         THROW();
     i = ~i;
     f.regs.sp[-1].setInt32(i);
@@ -614,9 +611,9 @@ void JS_FASTCALL
 stubs::Lsh(VMFrame &f)
 {
     int32_t i, j;
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-2], &i))
+    if (!ToInt32(f.cx, f.regs.sp[-2], &i))
         THROW();
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-1], &j))
+    if (!ToInt32(f.cx, f.regs.sp[-1], &j))
         THROW();
     i = i << (j & 31);
     f.regs.sp[-2].setInt32(i);
@@ -626,9 +623,9 @@ void JS_FASTCALL
 stubs::Rsh(VMFrame &f)
 {
     int32_t i, j;
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-2], &i))
+    if (!ToInt32(f.cx, f.regs.sp[-2], &i))
         THROW();
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-1], &j))
+    if (!ToInt32(f.cx, f.regs.sp[-1], &j))
         THROW();
     i = i >> (j & 31);
     f.regs.sp[-2].setInt32(i);
@@ -638,10 +635,10 @@ void JS_FASTCALL
 stubs::Ursh(VMFrame &f)
 {
     uint32_t u;
-    if (!ValueToECMAUint32(f.cx, f.regs.sp[-2], &u))
+    if (!ToUint32(f.cx, f.regs.sp[-2], &u))
         THROW();
     int32_t j;
-    if (!ValueToECMAInt32(f.cx, f.regs.sp[-1], &j))
+    if (!ToInt32(f.cx, f.regs.sp[-1], &j))
         THROW();
 
     u >>= (j & 31);
@@ -659,20 +656,20 @@ stubs::DefFun(VMFrame &f, JSFunction *fun)
     JSContext *cx = f.cx;
     StackFrame *fp = f.fp();
 
-    
-
-
-
-
-
+    /*
+     * A top-level function defined in Global or Eval code (see ECMA-262
+     * Ed. 3), or else a SpiderMonkey extension: a named function statement in
+     * a compound statement (not at the top statement level of global code, or
+     * at the top level of a function body).
+     */
     JSObject *obj = fun;
 
     if (fun->isNullClosure()) {
-        
-
-
-
-
+        /*
+         * Even a null closure needs a parent for principals finding.
+         * FIXME: bug 476950, although debugger users may also demand some kind
+         * of scope link for debugger-assisted eval-in-frame.
+         */
         obj2 = &fp->scopeChain();
     } else {
         JS_ASSERT(!fun->isFlatClosure());
@@ -682,15 +679,15 @@ stubs::DefFun(VMFrame &f, JSFunction *fun)
             THROW();
     }
 
-    
-
-
-
-
-
-
-
-
+    /*
+     * If static link is not current scope, clone fun's object to link to the
+     * current scope via parent. We do this to enable sharing of compiled
+     * functions among multiple equivalent scopes, amortizing the cost of
+     * compilation over a number of executions.  Examples include XUL scripts
+     * and event handlers shared among Firefox or other Mozilla app chrome
+     * windows, and user-defined JS functions precompiled and then shared among
+     * requests in server-side JS.
+     */
     if (obj->toFunction()->environment() != obj2) {
         obj = CloneFunctionObjectIfNotSingleton(cx, fun, obj2);
         if (!obj)
@@ -698,22 +695,22 @@ stubs::DefFun(VMFrame &f, JSFunction *fun)
         JS_ASSERT_IF(f.script()->compileAndGo, obj->getGlobal() == fun->getGlobal());
     }
 
-    
-
-
-
+    /*
+     * ECMA requires functions defined when entering Eval code to be
+     * impermanent.
+     */
     uintN attrs = fp->isEvalFrame()
                   ? JSPROP_ENUMERATE
                   : JSPROP_ENUMERATE | JSPROP_PERMANENT;
 
-    
-
-
-
-
+    /*
+     * We define the function as a property of the variable object and not the
+     * current scope chain even for the case of function expression statements
+     * and functions defined by eval inside let or with blocks.
+     */
     JSObject *parent = &fp->varObj();
 
-    
+    /* ES5 10.5 (NB: with subsequent errata). */
     PropertyName *name = fun->atom->asPropertyName();
     jsid id = ATOM_TO_JSID(name);
     JSProperty *prop = NULL;
@@ -724,7 +721,7 @@ stubs::DefFun(VMFrame &f, JSFunction *fun)
     Value rval = ObjectValue(*obj);
 
     do {
-        
+        /* Steps 5d, 5f. */
         if (!prop || pobj != parent) {
             if (!parent->defineProperty(cx, name, rval,
                                         JS_PropertyStub, JS_StrictPropertyStub, attrs))
@@ -734,7 +731,7 @@ stubs::DefFun(VMFrame &f, JSFunction *fun)
             break;
         }
 
-        
+        /* Step 5e. */
         JS_ASSERT(parent->isNative());
         Shape *shape = reinterpret_cast<Shape *>(prop);
         if (parent->isGlobal()) {
@@ -757,14 +754,14 @@ stubs::DefFun(VMFrame &f, JSFunction *fun)
             }
         }
 
-        
+        /*
+         * Non-global properties, and global properties which we aren't simply
+         * redefining, must be set.  First, this preserves their attributes.
+         * Second, this will produce warnings and/or errors as necessary if the
+         * specified Call object property is not writable (const).
+         */
 
-
-
-
-
-
-        
+        /* Step 5f. */
         if (!parent->setProperty(cx, name, &rval, strict))
             THROW();
     } while (false);
@@ -849,7 +846,7 @@ StubEqualityOp(VMFrame &f)
 
     JSBool cond;
 
-    
+    /* The string==string case is easily the hottest;  try it first. */
     if (lval.isString() && rval.isString()) {
         JSString *l = lval.toString();
         JSString *r = rval.toString();
@@ -868,7 +865,7 @@ StubEqualityOp(VMFrame &f)
 #endif
 
     if (SameType(lval, rval)) {
-        JS_ASSERT(!lval.isString());    
+        JS_ASSERT(!lval.isString());    /* this case is handled above */
         if (lval.isDouble()) {
             double l = lval.toDouble();
             double r = rval.toDouble();
@@ -901,10 +898,10 @@ StubEqualityOp(VMFrame &f)
             if (!ToPrimitive(cx, &rval))
                 return false;
 
-            
-
-
-
+            /*
+             * The string==string case is repeated because ToPrimitive can
+             * convert lval/rval to strings.
+             */
             if (lval.isString() && rval.isString()) {
                 JSString *l = lval.toString();
                 JSString *r = rval.toString();
@@ -953,7 +950,7 @@ stubs::Add(VMFrame &f)
     Value rval = regs.sp[-1];
     Value lval = regs.sp[-2];
 
-    
+    /* The string + string case is easily the hottest;  try it first. */
     bool lIsString = lval.isString();
     bool rIsString = rval.isString();
     JSString *lstr, *rstr;
@@ -983,7 +980,7 @@ stubs::Add(VMFrame &f)
             if (lIsString) {
                 lstr = lval.toString();
             } else {
-                lstr = js_ValueToString(cx, lval);
+                lstr = ToString(cx, lval);
                 if (!lstr)
                     THROW();
                 regs.sp[-2].setString(lstr);
@@ -991,7 +988,7 @@ stubs::Add(VMFrame &f)
             if (rIsString) {
                 rstr = rval.toString();
             } else {
-                rstr = js_ValueToString(cx, rval);
+                rstr = ToString(cx, rval);
                 if (!rstr)
                     THROW();
                 regs.sp[-1].setString(rstr);
@@ -1061,7 +1058,7 @@ stubs::Div(VMFrame &f)
     if (d2 == 0) {
         const Value *vp;
 #ifdef XP_WIN
-        
+        /* XXX MSVC miscompiles such that (NaN == 0) */
         if (JSDOUBLE_IS_NaN(d2))
             vp = &rt->NaNValue;
         else
@@ -1155,7 +1152,7 @@ stubs::RecompileForInline(VMFrame &f)
 {
     ExpandInlineFrames(f.cx->compartment);
     Recompiler recompiler(f.cx, f.script());
-    recompiler.recompile( false);
+    recompiler.recompile(/* resetUses */ false);
 }
 
 void JS_FASTCALL
@@ -1163,17 +1160,17 @@ stubs::Trap(VMFrame &f, uint32 trapTypes)
 {
     Value rval;
 
-    
-
-
-
-
+    /*
+     * Trap may be called for a single-step interrupt trap and/or a
+     * regular trap. Try the single-step first, and if it lets control
+     * flow through or does not exist, do the regular trap.
+     */
     JSTrapStatus result = JSTRAP_CONTINUE;
     if (trapTypes & JSTRAP_SINGLESTEP) {
-        
-
-
-
+        /*
+         * single step mode may be paused without recompiling by
+         * setting the interruptHook to NULL.
+         */
         JSInterruptHook hook = f.cx->debugHooks->interruptHook;
         if (hook)
             result = hook(f.cx, f.script(), f.pc(), &rval, f.cx->debugHooks->interruptHookData);
@@ -1208,10 +1205,10 @@ stubs::Trap(VMFrame &f, uint32 trapTypes)
 void JS_FASTCALL
 stubs::This(VMFrame &f)
 {
-    
-
-
-
+    /*
+     * We can't yet inline scripts which need to compute their 'this' object
+     * from a primitive; the frame we are computing 'this' for does not exist yet.
+     */
     if (f.regs.inlined()) {
         f.script()->uninlineable = true;
         MarkTypeObjectFlags(f.cx, &f.fp()->callee(), OBJECT_FLAG_UNINLINEABLE);
@@ -1278,26 +1275,26 @@ stubs::InitElem(VMFrame &f, uint32 last)
     JSContext *cx = f.cx;
     FrameRegs &regs = f.regs;
 
-    
+    /* Pop the element's value into rval. */
     JS_ASSERT(regs.sp - f.fp()->base() >= 3);
     const Value &rref = regs.sp[-1];
 
-    
+    /* Find the object being initialized at top of stack. */
     const Value &lref = regs.sp[-3];
     JS_ASSERT(lref.isObject());
     JSObject *obj = &lref.toObject();
 
-    
+    /* Fetch id now that we have obj. */
     jsid id;
     const Value &idval = regs.sp[-2];
     if (!FetchElementId(f, obj, idval, id, &regs.sp[-2]))
         THROW();
 
-    
-
-
-
-
+    /*
+     * If rref is a hole, do not call JSObject::defineProperty. In this case,
+     * obj must be an array, so if the current op is the last element
+     * initialiser, set the array length to one greater than id.
+     */
     if (rref.isMagic(JS_ARRAY_HOLE)) {
         JS_ASSERT(obj->isArray());
         JS_ASSERT(JSID_IS_INT(id));
@@ -1313,7 +1310,7 @@ stubs::InitElem(VMFrame &f, uint32 last)
 void JS_FASTCALL
 stubs::GetUpvar(VMFrame &f, uint32 ck)
 {
-    
+    /* :FIXME: We can do better, this stub isn't needed. */
     uint32 staticLevel = f.script()->staticLevel;
     UpvarCookie cookie;
     cookie.fromInteger(ck);
@@ -1323,33 +1320,28 @@ stubs::GetUpvar(VMFrame &f, uint32 ck)
 JSObject * JS_FASTCALL
 stubs::DefLocalFun(VMFrame &f, JSFunction *fun)
 {
-    
-
-
-
-
-
-
+    /*
+     * Define a local function (i.e., one nested at the top level of another
+     * function), parented by the current scope chain, stored in a local
+     * variable slot that the compiler allocated.  This is an optimization over
+     * JSOP_DEFFUN that avoids requiring a call object for the outer function's
+     * activation.
+     */
     JS_ASSERT(fun->isInterpreted());
     JS_ASSERT(!fun->isFlatClosure());
-    JSObject *obj = fun;
 
+    JSObject *parent;
     if (fun->isNullClosure()) {
-        obj = CloneFunctionObjectIfNotSingleton(f.cx, fun, &f.fp()->scopeChain());
-        if (!obj)
-            THROWV(NULL);
+        parent = &f.fp()->scopeChain();
     } else {
-        JSObject *parent = GetScopeChainFast(f.cx, f.fp(), JSOP_DEFLOCALFUN,
-                                             JSOP_DEFLOCALFUN_LENGTH);
+        parent = GetScopeChainFast(f.cx, f.fp(), JSOP_DEFLOCALFUN,
+                                   JSOP_DEFLOCALFUN_LENGTH);
         if (!parent)
             THROWV(NULL);
-
-        if (obj->toFunction()->environment() != parent) {
-            obj = CloneFunctionObjectIfNotSingleton(f.cx, fun, parent);
-            if (!obj)
-                THROWV(NULL);
-        }
     }
+    JSObject *obj = CloneFunctionObjectIfNotSingleton(f.cx, fun, parent);
+    if (!obj)
+        THROWV(NULL);
 
     JS_ASSERT_IF(f.script()->compileAndGo, obj->getGlobal() == fun->getGlobal());
 
@@ -1368,10 +1360,10 @@ stubs::DefLocalFun_FC(VMFrame &f, JSFunction *fun)
 void JS_FASTCALL
 stubs::RegExp(VMFrame &f, JSObject *regex)
 {
-    
-
-
-
+    /*
+     * Push a regexp object cloned from the regexp literal object mapped by the
+     * bytecode at pc.
+     */
     JSObject *proto = f.fp()->scopeChain().getGlobal()->getOrCreateRegExpPrototype(f.cx);
     if (!proto)
         THROW();
@@ -1410,19 +1402,19 @@ stubs::LambdaJoinableForCall(VMFrame &f, JSFunction *fun)
     JS_ASSERT(fun->joinable());
     jsbytecode *nextpc = (jsbytecode *) f.scratch;
 
-    
-
-
-
-
-
+    /*
+     * Array.prototype.sort and String.prototype.replace are optimized as if
+     * they are special form. We know that they won't leak the joined function
+     * object fun, therefore we don't need to clone that compiler-created
+     * function object for identity/mutation reasons.
+     */
     int iargc = GET_ARGC(nextpc);
 
-    
-
-
-
-
+    /*
+     * Note that we have not yet pushed fun as the final argument, so
+     * regs.sp[1 - (iargc + 2)], and not regs.sp[-(iargc + 2)], is the callee
+     * for this JSOP_CALL.
+     */
     const Value &cref = f.regs.sp[1 - (iargc + 2)];
     JSFunction *callee;
 
@@ -1475,7 +1467,7 @@ InlineGetProp(VMFrame &f)
     Value *vp = &f.regs.sp[-1];
 
     if (vp->isMagic(JS_LAZY_ARGUMENTS)) {
-        JS_ASSERT(js_GetOpcode(cx, f.script(), f.pc()) == JSOP_LENGTH);
+        JS_ASSERT(JSOp(*f.pc()) == JSOP_LENGTH);
         regs.sp[-1] = Int32Value(regs.fp()->numActualArgs());
         return true;
     }
@@ -1486,11 +1478,11 @@ InlineGetProp(VMFrame &f)
 
     Value rval;
     do {
-        
-
-
-
-
+        /*
+         * We do not impose the method read barrier if in an imacro,
+         * assuming any property gets it does (e.g., for 'toString'
+         * from JSOP_NEW) will not be leaked to the calling script.
+         */
         JSObject *aobj = js_GetProtoIfDenseArray(obj);
 
         PropertyCacheEntry *entry;
@@ -1536,7 +1528,7 @@ stubs::GetPropNoCache(VMFrame &f, JSAtom *atom)
     if (!obj->getGeneric(cx, ATOM_TO_JSID(atom), vp))
         THROW();
 
-    
+    /* Don't check for undefined, this is only used for 'prototype'. See ic::GetProp. */
 }
 
 void JS_FASTCALL
@@ -1584,10 +1576,10 @@ stubs::CallProp(VMFrame &f, JSAtom *origAtom)
         regs.sp[-2] = rval;
         regs.sp[-1] = lval;
     } else {
-        
-
-
-
+        /*
+         * Cache miss: use the immediate atom that was loaded for us under
+         * PropertyCache::test.
+         */
         jsid id;
         id = ATOM_TO_JSID(origAtom);
 
@@ -1637,26 +1629,26 @@ InitPropOrMethod(VMFrame &f, JSAtom *atom, JSOp op)
     JSContext *cx = f.cx;
     FrameRegs &regs = f.regs;
 
-    
+    /* Load the property's initial value into rval. */
     JS_ASSERT(regs.sp - f.fp()->base() >= 2);
     Value rval;
     rval = regs.sp[-1];
 
-    
+    /* Load the object being initialized into lval/obj. */
     JSObject *obj = &regs.sp[-2].toObject();
     JS_ASSERT(obj->isNative());
 
-    
-
-
-
-
-
-
-
-
-
-
+    /*
+     * Probe the property cache.
+     *
+     * We can not assume that the object created by JSOP_NEWINIT is still
+     * single-threaded as the debugger can access it from other threads.
+     * So check first.
+     *
+     * On a hit, if the cached shape has a non-default setter, it must be
+     * __proto__. If shape->previous() != obj->lastProperty(), there must be a
+     * repeated property name. The fast path does not handle these two cases.
+     */
     PropertyCacheEntry *entry;
     JSObject *obj2;
     JSAtom *atom2;
@@ -1664,12 +1656,12 @@ InitPropOrMethod(VMFrame &f, JSAtom *atom, JSOp op)
         entry->prop->hasDefaultSetter() &&
         entry->vindex == 0) {
         JS_ASSERT(obj == obj2);
-        
+        /* Fast path. Property cache hit. */
         obj->nativeSetSlotWithType(cx, entry->prop, rval);
     } else {
         PCMETER(JS_PROPERTY_CACHE(cx).inipcmisses++);
 
-        
+        /* Get the immediate property name into id. */
         jsid id = ATOM_TO_JSID(atom);
 
         uintN defineHow = (op == JSOP_INITMETHOD)
@@ -1818,10 +1810,10 @@ stubs::FastInstanceOf(VMFrame &f)
     const Value &lref = f.regs.sp[-1];
 
     if (lref.isPrimitive()) {
-        
-
-
-
+        /*
+         * Throw a runtime error if instanceof is called on a function that
+         * has a non-object as its .prototype value.
+         */
         js_ReportValueError(f.cx, JSMSG_BAD_PROTOTYPE, -1, f.regs.sp[-2], NULL);
         THROW();
     }
@@ -1849,13 +1841,13 @@ stubs::EnterBlock(VMFrame &f, JSObject *obj)
 #ifdef DEBUG
     JSContext *cx = f.cx;
 
-    
-
-
-
-
-
-
+    /*
+     * The young end of fp->scopeChain() may omit blocks if we haven't closed
+     * over them, but if there are any closure blocks on fp->scopeChain(), they'd
+     * better be (clones of) ancestors of the block we're entering now;
+     * anything else we should have popped off fp->scopeChain() when we left its
+     * static scope.
+     */
     JSObject *obj2 = &fp->scopeChain();
     while (obj2->isWith())
         obj2 = obj2->internalScopeChain();
@@ -1882,11 +1874,11 @@ stubs::LeaveBlock(VMFrame &f, JSObject *blockChain)
 
     JS_ASSERT(blockDepth <= StackDepth(fp->script()));
 #endif
-    
-
-
-
-
+    /*
+     * If we're about to leave the dynamic scope of a block that has been
+     * cloned onto fp->scopeChain(), clear its private data, move its locals from
+     * the stack into the clone, and pop it off the chain.
+     */
     JSObject *obj = &fp->scopeChain();
     if (obj->getProto() == blockChain) {
         JS_ASSERT(obj->isBlock());
@@ -1902,7 +1894,7 @@ stubs::LookupSwitch(VMFrame &f, jsbytecode *pc)
     JSScript *script = f.fp()->script();
     bool ctor = f.fp()->isConstructing();
 
-    
+    /* This is correct because the compiler adjusts the stack beforehand. */
     Value lval = f.regs.sp[-1];
 
     if (!lval.isPrimitive()) {
@@ -1982,7 +1974,7 @@ stubs::TableSwitch(VMFrame &f, jsbytecode *origPc)
     unsigned jumpLength = (op == JSOP_TABLESWITCHX) ? JUMPX_OFFSET_LEN : JUMP_OFFSET_LEN;
     pc += jumpLength;
 
-    
+    /* Note: compiler adjusts the stack beforehand. */
     Value rval = f.regs.sp[-1];
 
     jsint tableIdx;
@@ -1991,7 +1983,7 @@ stubs::TableSwitch(VMFrame &f, jsbytecode *origPc)
     } else if (rval.isDouble()) {
         double d = rval.toDouble();
         if (d == 0) {
-            
+            /* Treat -0 (double) as 0. */
             tableIdx = 0;
         } else if (!JSDOUBLE_IS_INT32(d, (int32_t *)&tableIdx)) {
             goto finally;
@@ -2016,7 +2008,7 @@ stubs::TableSwitch(VMFrame &f, jsbytecode *origPc)
     }
 
 finally:
-    
+    /* Provide the native address. */
     JSScript* script = f.fp()->script();
     void* native = script->nativeCodeForPC(f.fp()->isConstructing(),
                                            originalPC + jumpOffset);
@@ -2042,10 +2034,10 @@ stubs::DelName(VMFrame &f, JSAtom *atom)
     if (!js_FindProperty(f.cx, id, false, &obj, &obj2, &prop))
         THROW();
 
-    
+    /* Strict mode code should never contain JSOP_DELNAME opcodes. */
     JS_ASSERT(!f.script()->strictModeCode);
 
-    
+    /* ECMA says to return true if name is undefined or inherited. */
     f.regs.sp++;
     f.regs.sp[-1] = BooleanValue(true);
     if (prop) {
@@ -2104,15 +2096,15 @@ stubs::DefVarOrConst(VMFrame &f, JSAtom *atom_)
     if (!fp->isEvalFrame())
         attrs |= JSPROP_PERMANENT;
 
-    
+    /* Lookup id in order to check for redeclaration problems. */
     PropertyName *name = atom_->asPropertyName();
     jsid id = ATOM_TO_JSID(name);
     bool shouldDefine;
     if (JSOp(*f.pc()) == JSOP_DEFVAR) {
-        
-
-
-
+        /*
+         * Redundant declaration of a |var|, even one for a non-writable
+         * property like |undefined| in ES5, does nothing.
+         */
         JSProperty *prop;
         JSObject *obj2;
         if (!obj->lookupProperty(cx, name, &obj2, &prop))
@@ -2124,14 +2116,14 @@ stubs::DefVarOrConst(VMFrame &f, JSAtom *atom_)
         if (!CheckRedeclaration(cx, obj, id, attrs))
             THROW();
 
-        
-
-
-
+        /*
+         * As attrs includes readonly, CheckRedeclaration can succeed only
+         * if prop does not exist.
+         */
         shouldDefine = true;
     }
 
-    
+    /* Bind a variable only if it's not yet defined. */
     if (shouldDefine && 
         !DefineNativeProperty(cx, obj, id, UndefinedValue(), JS_PropertyStub, JS_StrictPropertyStub,
                               attrs, 0, 0)) {
@@ -2186,16 +2178,16 @@ stubs::TypeBarrierHelper(VMFrame &f, uint32 which)
 {
     JS_ASSERT(which == 0 || which == 1);
 
-    
+    /* The actual pushed value is at sp[0], fix up the stack. See finishBarrier. */
     Value &result = f.regs.sp[-1 - (int)which];
     result = f.regs.sp[0];
 
-    
-
-
-
-
-
+    /*
+     * Break type barriers at this bytecode if we have added many objects to
+     * the target already. This isn't needed if inference results for the
+     * script have been destroyed, as we will reanalyze and prune type barriers
+     * as they are regenerated.
+     */
     if (f.script()->hasAnalysis() && f.script()->analysis()->ranInference()) {
         AutoEnterTypeInference enter(f.cx);
         f.script()->analysis()->breakTypeBarriers(f.cx, f.pc() - f.script()->code, false);
@@ -2217,10 +2209,10 @@ stubs::StubTypeHelper(VMFrame &f, int32 which)
     TypeScript::Monitor(f.cx, f.script(), f.pc(), result);
 }
 
-
-
-
-
+/*
+ * Variant of TypeBarrierHelper for checking types after making a native call.
+ * The stack is already correct, and no fixup should be performed.
+ */
 void JS_FASTCALL
 stubs::TypeBarrierReturn(VMFrame &f, Value *vp)
 {
@@ -2243,7 +2235,7 @@ stubs::CheckArgumentTypes(VMFrame &f)
     RecompilationMonitor monitor(f.cx);
 
     {
-        
+        /* Postpone recompilations until all args have been updated. */
         types::AutoEnterTypeInference enter(f.cx);
 
         if (!f.fp()->isConstructing())
@@ -2268,10 +2260,10 @@ stubs::AssertArgumentTypes(VMFrame &f)
     JSFunction *fun = fp->fun();
     JSScript *script = fun->script();
 
-    
-
-
-
+    /*
+     * Don't check the type of 'this' for constructor frames, the 'this' value
+     * has not been constructed yet.
+     */
     if (!fp->isConstructing()) {
         Type type = GetValueType(f.cx, fp->thisValue());
         if (!TypeScript::ThisTypes(script)->hasType(type))
@@ -2286,30 +2278,30 @@ stubs::AssertArgumentTypes(VMFrame &f)
 }
 #endif
 
-
-
-
-
+/*
+ * These two are never actually called, they just give us a place to rejoin if
+ * there is an invariant failure when initially entering a loop.
+ */
 void JS_FASTCALL stubs::MissedBoundsCheckEntry(VMFrame &f) {}
 void JS_FASTCALL stubs::MissedBoundsCheckHead(VMFrame &f) {}
 
 void * JS_FASTCALL
 stubs::InvariantFailure(VMFrame &f, void *rval)
 {
-    
-
-
-
-
-
-
-
+    /*
+     * Patch this call to the return site of the call triggering the invariant
+     * failure (or a MissedBoundsCheck* function if the failure occurred on
+     * initial loop entry), and trigger a recompilation which will then
+     * redirect to the rejoin point for that call. We want to make things look
+     * to the recompiler like we are still inside that call, and that after
+     * recompilation we will return to the call's rejoin point.
+     */
     void *repatchCode = f.scratch;
     JS_ASSERT(repatchCode);
     void **frameAddr = f.returnAddressLocation();
     *frameAddr = repatchCode;
 
-    
+    /* Recompile the outermost script, and don't hoist any bounds checks. */
     JSScript *script = f.fp()->script();
     JS_ASSERT(!script->failedBoundsCheck);
     script->failedBoundsCheck = true;
@@ -2319,15 +2311,15 @@ stubs::InvariantFailure(VMFrame &f, void *rval)
     Recompiler recompiler(f.cx, script);
     recompiler.recompile();
 
-    
+    /* Return the same value (if any) as the call triggering the invariant failure. */
     return rval;
 }
 
 void JS_FASTCALL
 stubs::Exception(VMFrame &f)
 {
-    
-    
+    // Check the interrupt flag to allow interrupting deeply nested exception
+    // handling.
     if (JS_THREAD_DATA(f.cx)->interruptFlags && !js_HandleExecutionInterrupt(f.cx))
         THROW();
 
@@ -2351,12 +2343,16 @@ stubs::FunctionFrameEpilogue(VMFrame &f)
 void JS_FASTCALL
 stubs::AnyFrameEpilogue(VMFrame &f)
 {
-    
-
-
-
-
-    if (!ScriptEpilogue(f.cx, f.fp(), true))
+    /*
+     * On the normal execution path, emitReturn calls ScriptDebugEpilogue
+     * and inlines ScriptEpilogue. This function implements forced early
+     * returns, so it must have the same effect.
+     */
+    bool ok = true;
+    if (f.cx->compartment->debugMode())
+        ok = js::ScriptDebugEpilogue(f.cx, f.fp(), ok);
+    ok = ScriptEpilogue(f.cx, f.fp(), ok);
+    if (!ok)
         THROW();
     if (f.fp()->isNonEvalFunctionFrame())
         f.fp()->functionEpilogue();

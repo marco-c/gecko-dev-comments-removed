@@ -1,45 +1,45 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1999
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributors:
+ *   Mike Shaver <shaver@zeroknowledge.com>
+ *   John Bandhauer <jband@netscape.com>
+ *   IBM Corp.
+ *   Robert Ginda <rginda@netscape.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifdef MOZ_LOGGING
 #define FORCE_PR_LOG
@@ -78,7 +78,7 @@
 #include "nsDOMFile.h"
 #include "jsxdrapi.h"
 #include "jsprf.h"
-
+// For reporting errors with the console service
 #include "nsIScriptError.h"
 #include "nsIConsoleService.h"
 #include "nsIStorageStream.h"
@@ -98,6 +98,7 @@
 
 #include "mozilla/FunctionTimer.h"
 
+using namespace mozilla;
 using namespace mozilla::scache;
 
 static const char kJSRuntimeServiceContractID[] = "@mozilla.org/js/xpc/RuntimeService;1";
@@ -105,26 +106,26 @@ static const char kXPConnectServiceContractID[] = "@mozilla.org/js/xpc/XPConnect
 static const char kObserverServiceContractID[] = "@mozilla.org/observer-service;1";
 static const char kJSCachePrefix[] = "jsloader";
 
-
+/* Some platforms don't have an implementation of PR_MemMap(). */
 #ifndef XP_OS2
 #define HAVE_PR_MEMMAP
 #endif
 
-
-
-
-
+/**
+ * Buffer sizes for serialization and deserialization of scripts.
+ * FIXME: bug #411579 (tune this macro!) Last updated: Jan 2008
+ */
 #define XPC_SERIALIZATION_BUFFER_SIZE   (64 * 1024)
 #define XPC_DESERIALIZATION_BUFFER_SIZE (12 * 8192)
 
 #ifdef PR_LOGGING
-
+// NSPR_LOG_MODULES=JSComponentLoader:5
 static PRLogModuleInfo *gJSCLLog;
 #endif
 
 #define LOG(args) PR_LOG(gJSCLLog, PR_LOG_DEBUG, args)
 
-
+// Components.utils.import error messages
 #define ERROR_SCOPE_OBJ "%s - Second argument must be an object."
 #define ERROR_NOT_PRESENT "%s - EXPORTED_SYMBOLS is not present."
 #define ERROR_NOT_AN_ARRAY "%s - EXPORTED_SYMBOLS is not an array."
@@ -138,23 +139,23 @@ mozJSLoaderErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep)
 {
     nsresult rv;
 
-    
+    /* Use the console service to register the error. */
     nsCOMPtr<nsIConsoleService> consoleService =
         do_GetService(NS_CONSOLESERVICE_CONTRACTID);
 
-    
-
-
-
-
+    /*
+     * Make an nsIScriptError, populate it with information from this
+     * error, then log it with the console service.  The UI can then
+     * poll the service to update the Error console.
+     */
     nsCOMPtr<nsIScriptError> errorObject =
         do_CreateInstance(NS_SCRIPTERROR_CONTRACTID);
 
     if (consoleService && errorObject) {
-        
-
-
-
+        /*
+         * Got an error object; prepare appropriate-width versions of
+         * various arguments to it.
+         */
         nsAutoString fileUni;
         fileUni.AssignWithConversion(rep->filename);
 
@@ -170,18 +171,18 @@ mozJSLoaderErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep)
         if (NS_SUCCEEDED(rv)) {
             rv = consoleService->LogMessage(errorObject);
             if (NS_SUCCEEDED(rv)) {
-                
-                
-                
-                
+                // We're done!  Skip return to fall thru to stderr
+                // printout, for the benefit of those invoking the
+                // browser with -console
+                // return;
             }
         }
     }
 
-    
-
-
-
+    /*
+     * If any of the above fails for some reason, fall back to
+     * printing to stderr.
+     */
 #ifdef DEBUG
     fprintf(stderr, "JS Component Loader: %s %s:%d\n"
             "                     %s\n",
@@ -317,9 +318,9 @@ private:
     nsIThreadJSContextStack* mContextStack;
     char*      mBuf;
 
-    
-    JSCLContextHelper(const JSCLContextHelper &); 
-    const JSCLContextHelper& operator=(const JSCLContextHelper &); 
+    // prevent copying and assignment
+    JSCLContextHelper(const JSCLContextHelper &); // not implemented
+    const JSCLContextHelper& operator=(const JSCLContextHelper &); // not implemented
 };
 
 
@@ -333,9 +334,9 @@ public:
 private:
     JSContext* mContext;
     JSErrorReporter mOldReporter;
-    
-    JSCLAutoErrorReporterSetter(const JSCLAutoErrorReporterSetter &); 
-    const JSCLAutoErrorReporterSetter& operator=(const JSCLAutoErrorReporterSetter &); 
+    // prevent copying and assignment
+    JSCLAutoErrorReporterSetter(const JSCLAutoErrorReporterSetter &); // not implemented
+    const JSCLAutoErrorReporterSetter& operator=(const JSCLAutoErrorReporterSetter &); // not implemented
 };
 
 static nsresult
@@ -422,11 +423,11 @@ mozJSComponentLoader::ReallyInit()
     nsresult rv;
 
 
-    
-
-
-
-
+    /*
+     * Get the JSRuntime from the runtime svc, if possible.
+     * We keep a reference around, because it's a Bad Thing if the runtime
+     * service gets shut down before we're done.  Bad!
+     */
 
     mRuntimeService = do_GetService(kJSRuntimeServiceContractID, &rv);
     if (NS_FAILED(rv) ||
@@ -437,7 +438,7 @@ mozJSComponentLoader::ReallyInit()
     if (NS_FAILED(rv))
         return rv;
 
-    
+    // Create our compilation context.
     mContext = JS_NewContext(mRuntime, 256);
     if (!mContext)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -445,10 +446,10 @@ mozJSComponentLoader::ReallyInit()
     uint32 options = JS_GetOptions(mContext);
     JS_SetOptions(mContext, options | JSOPTION_XML);
 
-    
+    // Always use the latest js version
     JS_SetVersion(mContext, JSVERSION_LATEST);
 
-    
+    // Limit C stack consumption to a reasonable 512K
     JS_SetNativeStackQuota(mContext, 512 * 1024);
 
     nsCOMPtr<nsIScriptSecurityManager> secman =
@@ -474,7 +475,7 @@ mozJSComponentLoader::ReallyInit()
     rv = obsSvc->AddObserver(this, "xpcom-shutdown-loaders", false);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Set up localized comparison and string conversion
     xpc_LocalizeContext(mContext);
 
 #ifdef DEBUG_shaver_off
@@ -485,112 +486,22 @@ mozJSComponentLoader::ReallyInit()
     return NS_OK;
 }
 
-nsresult
-mozJSComponentLoader::FileKey(nsILocalFile* aFile, nsAString &aResult)
-{
-    nsresult rv = NS_OK;
-    nsAutoString canonicalPath;
-
-#if defined(XP_WIN)
-    nsCOMPtr<nsILocalFileWin> winFile = do_QueryInterface(aFile, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    winFile->GetCanonicalPath(canonicalPath);
-#else
-    aFile->GetPath(canonicalPath);
-#endif
-
-    aResult = NS_LITERAL_STRING("f");
-    aResult += canonicalPath;
-
-    return rv;
-}
-
-nsresult
-mozJSComponentLoader::JarKey(nsILocalFile* aFile,
-                             const nsACString &aComponentPath,
-                             nsAString &aResult)
-{
-    nsresult rv = NS_OK;
-    nsAutoString canonicalPath;
-
-#if defined(XP_WIN)
-    nsCOMPtr<nsILocalFileWin> winFile = do_QueryInterface(aFile, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    winFile->GetCanonicalPath(canonicalPath);
-#else
-    aFile->GetPath(canonicalPath);
-#endif
-
-    aResult = NS_LITERAL_STRING("j");
-    aResult += canonicalPath;
-    AppendUTF8toUTF16(aComponentPath, aResult);
-
-    return rv;
-}
-
 const mozilla::Module*
-mozJSComponentLoader::LoadModule(nsILocalFile* aComponentFile)
+mozJSComponentLoader::LoadModule(FileLocation &aFile)
 {
-    nsCOMPtr<nsIURI> uri;
-    nsCAutoString spec;
-    NS_GetURLSpecFromActualFile(aComponentFile, spec);
+    nsCOMPtr<nsILocalFile> file = aFile.GetBaseFile();
 
+    nsCString spec;
+    aFile.GetURIString(spec);
+
+    nsCOMPtr<nsIURI> uri;
     nsresult rv = NS_NewURI(getter_AddRefs(uri), spec);
     if (NS_FAILED(rv))
         return NULL;
 
-    nsAutoString hashstring;
-    rv = FileKey(aComponentFile, hashstring);
-    if (NS_FAILED(rv))
-        return NULL;
-
-    return LoadModuleImpl(aComponentFile,
-                          hashstring,
-                          uri);
-}
-
-const mozilla::Module*
-mozJSComponentLoader::LoadModuleFromJAR(nsILocalFile *aJarFile,
-                                        const nsACString &aComponentPath)
-{
-    nsresult rv;
-
-    nsCAutoString fullSpec, fileSpec;
-    NS_GetURLSpecFromActualFile(aJarFile, fileSpec);
-    fullSpec = "jar:";
-    fullSpec += fileSpec;
-    fullSpec += "!/";
-    fullSpec += aComponentPath;
-
-    nsCOMPtr<nsIURI> uri;
-    rv = NS_NewURI(getter_AddRefs(uri), fullSpec);
-    if (NS_FAILED(rv))
-        return NULL;
-
-    nsAutoString hashstring;
-    rv = JarKey(aJarFile, aComponentPath, hashstring);
-    if (NS_FAILED(rv))
-        return NULL;
-
-    return LoadModuleImpl(aJarFile,
-                          hashstring,
-                          uri);
-}
-
-const mozilla::Module*
-mozJSComponentLoader::LoadModuleImpl(nsILocalFile* aSourceFile,
-                                     nsAString &aKey,
-                                     nsIURI* aComponentURI)
-{
-    nsresult rv;
-
 #ifdef NS_FUNCTION_TIMER
-    nsCAutoString spec__("N/A");
-    aComponentURI->GetSpec(spec__);
     NS_TIME_FUNCTION_FMT("%s (line %d) (file: %s)", MOZ_FUNCTION_NAME,
-                         __LINE__, spec__.get());
+                         __LINE__, spec.get());
 #endif
 
     if (!mInitialized) {
@@ -600,14 +511,14 @@ mozJSComponentLoader::LoadModuleImpl(nsILocalFile* aSourceFile,
     }
 
     ModuleEntry* mod;
-    if (mModules.Get(aKey, &mod))
+    if (mModules.Get(spec, &mod))
 	return mod;
 
     nsAutoPtr<ModuleEntry> entry(new ModuleEntry);
     if (!entry)
         return NULL;
 
-    rv = GlobalForLocation(aSourceFile, aComponentURI, &entry->global,
+    rv = GlobalForLocation(file, uri, &entry->global,
                            &entry->location, nsnull);
     if (NS_FAILED(rv)) {
 #ifdef DEBUG_shaver
@@ -655,7 +566,7 @@ mozJSComponentLoader::LoadModuleImpl(nsILocalFile* aSourceFile,
 
     JSObject* file_jsobj;
     nsCOMPtr<nsIXPConnectJSObjectHolder> file_holder;
-    rv = xpc->WrapNative(cx, entry->global, aSourceFile,
+    rv = xpc->WrapNative(cx, entry->global, file,
                          NS_GET_IID(nsIFile),
                          getter_AddRefs(file_holder));
 
@@ -679,7 +590,7 @@ mozJSComponentLoader::LoadModuleImpl(nsILocalFile* aSourceFile,
 
     if (JS_TypeOfValue(cx, NSGetFactory_val) != JSTYPE_FUNCTION) {
         nsCAutoString spec;
-        aComponentURI->GetSpec(spec);
+        uri->GetSpec(spec);
         JS_ReportError(cx, "%s has NSGetFactory property that is not a function",
                        spec.get());
         return NULL;
@@ -688,29 +599,29 @@ mozJSComponentLoader::LoadModuleImpl(nsILocalFile* aSourceFile,
     JSObject *jsGetFactoryObj;
     if (!JS_ValueToObject(cx, NSGetFactory_val, &jsGetFactoryObj) ||
         !jsGetFactoryObj) {
-        
+        /* XXX report error properly */
         return NULL;
     }
 
     rv = xpc->WrapJS(cx, jsGetFactoryObj,
                      NS_GET_IID(xpcIJSGetFactory), getter_AddRefs(entry->getfactoryobj));
     if (NS_FAILED(rv)) {
-        
+        /* XXX report error properly */
 #ifdef DEBUG
         fprintf(stderr, "mJCL: couldn't get nsIModule from jsval\n");
 #endif
         return NULL;
     }
 
-    
-    if (!mModules.Put(aKey, entry))
+    // Cache this module for later
+    if (!mModules.Put(spec, entry))
         return NULL;
 
-    
+    // The hash owns the ModuleEntry now, forget about it
     return entry.forget();
 }
 
-
+// Some stack based classes for cleaning up on early return
 #ifdef HAVE_PR_MEMMAP
 class FileAutoCloser
 {
@@ -756,7 +667,7 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
 
     JS_AbortIfWrongThread(JS_GetRuntime(cx));
 
-    
+    // preserve caller's compartment
     js::AutoPreserveCompartment pc(cx);
 
     rv = mSystemPrincipal->GetJSPrincipals(cx, &jsPrincipals);
@@ -774,8 +685,8 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
         do_GetService(kXPConnectServiceContractID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
+    // Make sure InitClassesWithNewWrappedGlobal() installs the
+    // backstage pass as the global in our compilation context.
     JS_SetGlobalObject(cx, nsnull);
 
     nsCOMPtr<nsIXPConnectJSObjectHolder> holder;
@@ -802,9 +713,9 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
     }
 
     bool realFile = false;
-    
-    
-    
+    // need to be extra careful checking for URIs pointing to files
+    // EnsureFile may not always get called, especially on resource URIs
+    // so we need to call GetFile to make sure this is a valid file
     nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
     nsCOMPtr<nsIFile> testFile;
     if (NS_SUCCEEDED(rv)) {
@@ -833,8 +744,8 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
     rv = aURI->GetSpec(nativePath);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
+    // Expose the URI from which the script was imported through a special
+    // variable that we insert into the JSM.
     JSString *exposedUri = JS_NewStringCopyN(cx, nativePath.get(), nativePath.Length());
     if (!JS_DefineProperty(cx, global, "__URI__",
                            STRING_TO_JSVAL(exposedUri), nsnull, nsnull, 0))
@@ -843,9 +754,9 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
 
     JSScript *script = nsnull;
 
-    
-    
-    
+    // Before compiling the script, first check to see if we have it in
+    // the startupcache.  Note: as a rule, startupcache errors are not fatal
+    // to loading the script, since we can always slow-load.
 
     bool writeToCache = false;
     StartupCache* cache = StartupCache::GetSingleton();
@@ -859,20 +770,20 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
         if (NS_SUCCEEDED(rv)) {
             LOG(("Successfully loaded %s from startupcache\n", nativePath.get()));
         } else {
-            
-            
-            
+            // This is ok, it just means the script is not yet in the
+            // cache. Could mean that the cache was corrupted and got removed,
+            // but either way we're going to write this out.
             writeToCache = true;
         }
     }
 
     if (!script) {
-        
+        // The script wasn't in the cache , so compile it now.
         LOG(("Slow loading %s\n", nativePath.get()));
 
-        
-        
-        
+        // If |exception| is non-null, then our caller wants us to propagate
+        // any exceptions out to our caller. Ensure that the engine doesn't
+        // eagerly report the exception.
         uint32 oldopts = JS_GetOptions(cx);
         JS_SetOptions(cx, oldopts | JSOPTION_NO_SCRIPT_RVAL |
                       (exception ? JSOPTION_DONT_REPORT_UNCAUGHT : 0));
@@ -901,7 +812,7 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
                 return NS_ERROR_FILE_NOT_FOUND;
             }
 
-            
+            // Make sure the file is closed, no matter how we return.
             FileAutoCloser fileCloser(fileHandle);
 
             PRFileMap *map = PR_CreateFileMap(fileHandle, fileSize,
@@ -912,7 +823,7 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
                 return NS_ERROR_FAILURE;
             }
 
-            
+            // Make sure the file map is closed, no matter how we return.
             FileMapAutoCloser mapCloser(map);
 
             PRUint32 fileSize32;
@@ -930,12 +841,12 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
 
             PR_MemUnmap(buf, fileSize32);
 
-#else  
+#else  /* HAVE_PR_MEMMAP */
 
-            
-
-
-
+            /**
+             * No memmap implementation, so fall back to using
+             * JS_CompileFileHandleForPrincipals().
+             */
 
             FILE *fileHandle;
             rv = aComponentFile->OpenANSIFileDesc("r", &fileHandle);
@@ -946,8 +857,8 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
 
             script = JS_CompileFileHandleForPrincipalsVersion(cx, global, nativePath.get(), fileHandle, jsPrincipals, JSVERSION_LATEST);
 
-            
-#endif 
+            /* JS will close the filehandle after compilation is complete. */
+#endif /* HAVE_PR_MEMMAP */
         } else {
             nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
             NS_ENSURE_SUCCESS(rv, rv);
@@ -967,12 +878,12 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
             if (!len)
                 return NS_ERROR_FAILURE;
 
-            
+            /* malloc an internal buf the size of the file */
             nsAutoArrayPtr<char> buf(new char[len + 1]);
             if (!buf)
                 return NS_ERROR_OUT_OF_MEMORY;
 
-            
+            /* read the file in one swoop */
             rv = scriptStream->Read(buf, len, &bytesRead);
             if (bytesRead != len)
                 return NS_BASE_STREAM_OSERROR;
@@ -982,8 +893,8 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
             script = JS_CompileScriptForPrincipalsVersion(cx, global, jsPrincipals, buf, bytesRead, nativePath.get(), 1,
                                                           JSVERSION_LATEST);
         }
-        
-        
+        // Propagate the exception, if one exists. Also, don't leave the stale
+        // exception on this context.
         JS_SetOptions(cx, oldopts);
         if (!script && exception) {
             JS_GetPendingException(cx, exception);
@@ -1005,11 +916,11 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
 #endif
 
     if (writeToCache) {
-        
+        // We successfully compiled the script, so cache it.
         rv = WriteCachedScript(cache, cachePath, cx, script);
 
-        
-        
+        // Don't treat failure to write as fatal, since we might be working
+        // with a read-only cache.
         if (NS_SUCCEEDED(rv)) {
             LOG(("Successfully wrote to cache\n"));
         } else {
@@ -1017,8 +928,8 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
         }
     }
 
-    
-    
+    // Assign aGlobal here so that it's available to recursive imports.
+    // See bug 384168.
     *aGlobal = global;
 
     if (!JS_ExecuteScriptVersion(cx, global, script, NULL, JSVERSION_LATEST)) {
@@ -1029,7 +940,7 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
         return NS_ERROR_FAILURE;
     }
 
-    
+    /* Freed when we remove from the table. */
     *aLocation = ToNewCString(nativePath);
     if (!*aLocation) {
         *aGlobal = nsnull;
@@ -1040,8 +951,8 @@ mozJSComponentLoader::GlobalForLocation(nsILocalFile *aComponentFile,
     return NS_OK;
 }
 
- PLDHashOperator
-mozJSComponentLoader::ClearModules(const nsAString& key, ModuleEntry*& entry, void* cx)
+/* static */ PLDHashOperator
+mozJSComponentLoader::ClearModules(const nsACString& key, ModuleEntry*& entry, void* cx)
 {
     entry->Clear();
     return PL_DHASH_REMOVE;
@@ -1057,7 +968,7 @@ mozJSComponentLoader::UnloadModules()
 
     mModules.Enumerate(ClearModules, NULL);
 
-    
+    // Destroying our context will force a GC.
     JS_DestroyContext(mContext);
     mContext = nsnull;
 
@@ -1068,12 +979,12 @@ mozJSComponentLoader::UnloadModules()
 #endif
 }
 
-
-
+/* [JSObject] import (in AUTF8String registryLocation,
+                      [optional] in JSObject targetObj ); */
 NS_IMETHODIMP
 mozJSComponentLoader::Import(const nsACString & registryLocation)
 {
-    
+    // This function should only be called from JS.
     nsresult rv;
 
     NS_TIME_FUNCTION_FMT("%s (line %d) (file: %s)", MOZ_FUNCTION_NAME,
@@ -1089,7 +1000,7 @@ mozJSComponentLoader::Import(const nsACString & registryLocation)
 
 #ifdef DEBUG
     {
-    
+    // ensure that we are being call from JS, from this method
     nsCOMPtr<nsIInterfaceInfo> info;
     rv = cc->GetCalleeInterface(getter_AddRefs(info));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1121,7 +1032,7 @@ mozJSComponentLoader::Import(const nsACString & registryLocation)
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (argc > 1) {
-        
+        // The caller passed in the optional second argument. Get it.
         jsval *argv = nsnull;
         rv = cc->GetArgvPtr(&argv);
         NS_ENSURE_SUCCESS(rv, rv);
@@ -1131,8 +1042,8 @@ mozJSComponentLoader::Import(const nsACString & registryLocation)
         }
         targetObject = JSVAL_TO_OBJECT(argv[1]);
     } else {
-        
-        
+        // Our targetObject is the caller's global object. Find it by
+        // walking the calling object's parent chain.
 
         nsCOMPtr<nsIXPConnectWrappedNative> wn;
         rv = cc->GetCalleeWrapper(getter_AddRefs(wn));
@@ -1169,8 +1080,8 @@ mozJSComponentLoader::Import(const nsACString & registryLocation)
     return rv;
 }
 
-
-
+/* [noscript] JSObjectPtr importInto(in AUTF8String registryLocation,
+                                     in JSObjectPtr targetObj); */
 NS_IMETHODIMP
 mozJSComponentLoader::ImportInto(const nsACString & aLocation,
                                  JSObject * targetObj,
@@ -1188,12 +1099,12 @@ mozJSComponentLoader::ImportInto(const nsACString & aLocation,
     nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Get the URI.
     nsCOMPtr<nsIURI> resURI;
     rv = ioService->NewURI(aLocation, nsnull, nsnull, getter_AddRefs(resURI));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // figure out the resolved URI
     nsCOMPtr<nsIChannel> scriptChannel;
     rv = ioService->NewChannelFromURI(resURI, getter_AddRefs(scriptChannel));
     NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
@@ -1202,20 +1113,17 @@ mozJSComponentLoader::ImportInto(const nsACString & aLocation,
     rv = scriptChannel->GetURI(getter_AddRefs(resolvedURI));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // get the JAR if there is one
     nsCOMPtr<nsIJARURI> jarURI;
     jarURI = do_QueryInterface(resolvedURI, &rv);
     nsCOMPtr<nsIFileURL> baseFileURL;
-    nsCAutoString jarEntry;
     if (NS_SUCCEEDED(rv)) {
         nsCOMPtr<nsIURI> baseURI;
-        rv = jarURI->GetJARFile(getter_AddRefs(baseURI));
-        NS_ENSURE_SUCCESS(rv, rv);
-
+        while (jarURI) {
+            jarURI->GetJARFile(getter_AddRefs(baseURI));
+            jarURI = do_QueryInterface(baseURI, &rv);
+        }
         baseFileURL = do_QueryInterface(baseURI, &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        jarURI->GetJAREntry(jarEntry);
         NS_ENSURE_SUCCESS(rv, rv);
     } else {
         baseFileURL = do_QueryInterface(resolvedURI, &rv);
@@ -1230,12 +1138,8 @@ mozJSComponentLoader::ImportInto(const nsACString & aLocation,
     sourceLocalFile = do_QueryInterface(sourceFile, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsAutoString key;
-    if (jarEntry.IsEmpty()) {
-        rv = FileKey(sourceLocalFile, key);
-    } else {
-        rv = JarKey(sourceLocalFile, jarEntry, key);
-    }
+    nsCAutoString key;
+    rv = resolvedURI->GetSpec(key);
     NS_ENSURE_SUCCESS(rv, rv);
 
     ModuleEntry* mod;
@@ -1255,15 +1159,15 @@ mozJSComponentLoader::ImportInto(const nsACString & aLocation,
             *_retval = nsnull;
 
             if (!JSVAL_IS_VOID(exception)) {
-                
-                
+                // An exception was thrown during compilation. Propagate it
+                // out to our caller so they can report it.
                 JSContext *callercx;
                 cc->GetJSContext(&callercx);
                 JS_SetPendingException(callercx, exception);
                 return NS_OK;
             }
 
-            
+            // Something failed, but we don't know what it is, guess.
             return NS_ERROR_FILE_NOT_FOUND;
         }
 
@@ -1295,7 +1199,7 @@ mozJSComponentLoader::ImportInto(const nsACString & aLocation,
                                   PromiseFlatCString(aLocation).get());
         }
 
-        
+        // Iterate over symbols array, installing symbols on targetObj:
 
         jsuint symbolCount = 0;
         if (!JS_GetArrayLength(mContext, symbolsObj, &symbolCount)) {
@@ -1355,7 +1259,7 @@ mozJSComponentLoader::ImportInto(const nsACString & aLocation,
         }
     }
 
-    
+    // Cache this module for later
     if (newEntry) {
         if (!mImports.Put(key, newEntry))
             return NS_ERROR_OUT_OF_MEMORY;
@@ -1377,12 +1281,12 @@ mozJSComponentLoader::Unload(const nsACString & aLocation)
     nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Get the URI.
     nsCOMPtr<nsIURI> resURI;
     rv = ioService->NewURI(aLocation, nsnull, nsnull, getter_AddRefs(resURI));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // figure out the resolved URI
     nsCOMPtr<nsIChannel> scriptChannel;
     rv = ioService->NewChannelFromURI(resURI, getter_AddRefs(scriptChannel));
     NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
@@ -1391,40 +1295,8 @@ mozJSComponentLoader::Unload(const nsACString & aLocation)
     rv = scriptChannel->GetURI(getter_AddRefs(resolvedURI));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    nsCOMPtr<nsIJARURI> jarURI;
-    jarURI = do_QueryInterface(resolvedURI, &rv);
-    nsCOMPtr<nsIFileURL> baseFileURL;
-    nsCAutoString jarEntry;
-    if (NS_SUCCEEDED(rv)) {
-        nsCOMPtr<nsIURI> baseURI;
-        rv = jarURI->GetJARFile(getter_AddRefs(baseURI));
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        baseFileURL = do_QueryInterface(baseURI, &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        jarURI->GetJAREntry(jarEntry);
-        NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-        baseFileURL = do_QueryInterface(resolvedURI, &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    nsCOMPtr<nsIFile> sourceFile;
-    rv = baseFileURL->GetFile(getter_AddRefs(sourceFile));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsCOMPtr<nsILocalFile> sourceLocalFile;
-    sourceLocalFile = do_QueryInterface(sourceFile, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsAutoString key;
-    if (jarEntry.IsEmpty()) {
-        rv = FileKey(sourceLocalFile, key);
-    } else {
-        rv = JarKey(sourceLocalFile, jarEntry, key);
-    }
+    nsCAutoString key;
+    rv = resolvedURI->GetSpec(key);
     NS_ENSURE_SUCCESS(rv, rv);
 
     ModuleEntry* mod;
@@ -1448,7 +1320,7 @@ mozJSComponentLoader::Observe(nsISupports *subject, const char *topic,
     return NS_OK;
 }
 
- already_AddRefed<nsIFactory>
+/* static */ already_AddRefed<nsIFactory>
 mozJSComponentLoader::ModuleEntry::GetFactory(const mozilla::Module& module,
                                               const mozilla::Module::CIDEntry& entry)
 {
@@ -1463,7 +1335,7 @@ mozJSComponentLoader::ModuleEntry::GetFactory(const mozilla::Module& module,
     return f.forget();
 }
 
-
+//----------------------------------------------------------------------
 
 JSCLContextHelper::JSCLContextHelper(mozJSComponentLoader *loader)
     : mContext(loader->mContext), mContextThread(0),
