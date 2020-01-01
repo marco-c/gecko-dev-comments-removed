@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 #ifndef jslock_h__
 #define jslock_h__
 
@@ -91,28 +91,28 @@ typedef PRLock JSLock;
 typedef struct JSTitle JSTitle;
 
 struct JSTitle {
-    JSContext       *ownercx;           
-    JSThinLock      lock;               
-    union {                             
-        jsrefcount  count;              
-        JSTitle     *link;              
+    JSContext       *ownercx;           /* creating context, NULL if shared */
+    JSThinLock      lock;               /* binary semaphore protecting title */
+    union {                             /* union lockful and lock-free state: */
+        jsrefcount  count;              /* lock entry count for reentrancy */
+        JSTitle     *link;              /* next link in rt->titleSharingTodo */
     } u;
 #ifdef JS_DEBUG_TITLE_LOCKS
-    const char      *file[4];           
-    unsigned int    line[4];            
+    const char      *file[4];           /* file where lock was (re-)taken */
+    unsigned int    line[4];            /* line where lock was (re-)taken */
 #endif
 };
 
-
-
-
+/*
+ * Title structure is always allocated as a field of JSScope.
+ */
 #define TITLE_TO_SCOPE(title)                                                 \
     ((JSScope *)((uint8 *) (title) - offsetof(JSScope, title)))
 
-
-
-
-
+/*
+ * Atomic increment and decrement for a reference counter, given jsrefcount *p.
+ * NB: jsrefcount is int32, aka PRInt32, so that pratom.h functions work.
+ */
 #define JS_ATOMIC_INCREMENT(p)      PR_AtomicIncrement((PRInt32 *)(p))
 #define JS_ATOMIC_DECREMENT(p)      PR_AtomicDecrement((PRInt32 *)(p))
 #define JS_ATOMIC_ADD(p,v)          PR_AtomicAdd((PRInt32 *)(p), (PRInt32)(v))
@@ -147,13 +147,13 @@ struct JSTitle {
 #define JS_LOCK_RUNTIME(rt)         js_LockRuntime(rt)
 #define JS_UNLOCK_RUNTIME(rt)       js_UnlockRuntime(rt)
 
-
-
-
-
-
-
-
+/*
+ * NB: The JS_LOCK_OBJ and JS_UNLOCK_OBJ macros work *only* on native objects
+ * (objects for which obj->isNative() returns true).  All uses of these macros in
+ * the engine are predicated on obj->isNative or equivalent checks.  These uses
+ * are for optimizations above the JSObjectOps layer, under which object locks
+ * normally hide.
+ */
 #define CX_OWNS_SCOPE_TITLE(cx,scope)   ((scope)->title.ownercx == (cx))
 
 #define JS_LOCK_OBJ(cx,obj)                                                   \
@@ -209,9 +209,9 @@ extern void js_SetSlotThreadSafe(JSContext *, JSObject *, uint32, jsval);
 extern void js_InitLock(JSThinLock *);
 extern void js_FinishLock(JSThinLock *);
 
-
-
-
+/*
+ * This function must be called with the GC lock held.
+ */
 extern void
 js_ShareWaitingTitles(JSContext *cx);
 
@@ -234,9 +234,9 @@ extern void js_SetScopeInfo(JSScope *scope, const char *file, int line);
 #define JS_IS_OBJ_LOCKED(cx,obj)        1
 #define JS_IS_TITLE_LOCKED(cx,title)    1
 
-#endif 
+#endif /* DEBUG */
 
-#else  
+#else  /* !JS_THREADSAFE */
 
 #define JS_ATOMIC_INCREMENT(p)      (++*(p))
 #define JS_ATOMIC_DECREMENT(p)      (--*(p))
@@ -271,7 +271,7 @@ extern void js_SetScopeInfo(JSScope *scope, const char *file, int line);
 #define JS_IS_OBJ_LOCKED(cx,obj)        1
 #define JS_IS_TITLE_LOCKED(cx,title)    1
 
-#endif 
+#endif /* !JS_THREADSAFE */
 
 #define JS_LOCK_RUNTIME_VOID(rt,e)                                            \
     JS_BEGIN_MACRO                                                            \
@@ -302,14 +302,14 @@ extern void js_SetScopeInfo(JSScope *scope, const char *file, int line);
 extern JSBool
 js_CompareAndSwap(volatile jsword *w, jsword ov, jsword nv);
 
-
+/* Atomically bitwise-or the mask into the word *w using compare and swap. */
 extern void
 js_AtomicSetMask(volatile jsword *w, jsword mask);
 
-
-
-
-
+/*
+ * Atomically bitwise-and the complement of the mask into the word *w using
+ * compare and swap.
+ */
 extern void
 js_AtomicClearMask(volatile jsword *w, jsword mask);
 
@@ -327,7 +327,7 @@ js_CompareAndSwap(jsword *w, jsword ov, jsword nv)
 #define JS_ATOMIC_SET_MASK(w, mask) (*(w) |= (mask))
 #define JS_ATOMIC_CLEAR_MASK(w, mask) (*(w) &= ~(mask))
 
-#endif 
+#endif /* JS_THREADSAFE */
 
 JS_END_EXTERN_C
 
@@ -346,4 +346,4 @@ class AutoLock {
 }
 #endif
 
-#endif 
+#endif /* jslock_h___ */

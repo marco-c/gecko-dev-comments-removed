@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=99:
+ *
+ * This tests user-specified (via JSExtendedClass) equality operations on
+ * trace.
+ */
 
 #include "tests.h"
 
@@ -22,7 +22,7 @@ JSExtendedClass TestExtendedEq_JSClass = {
         NULL,               NULL,              NULL,              NULL,
         NULL,               NULL,              NULL,              NULL
     },
-    
+    // JSExtendedClass initialization
     my_Equality,
     NULL, NULL, NULL, NULL, JSCLASS_NO_RESERVED_MEMBERS
 };
