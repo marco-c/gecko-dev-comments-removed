@@ -785,11 +785,13 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 	    extendMode = D2D1_EXTEND_MODE_CLAMP;
 	}
 	RefPtr<ID2D1Bitmap> sourceBitmap;
-	bool tiled = false;
+	bool partial = false;
 	unsigned int xoffset = 0;
 	unsigned int yoffset = 0;
 	unsigned int width;
 	unsigned int height;
+	unsigned char *data = NULL;
+ 	unsigned int stride = 0;
 	*remaining_runs = 0;
 	if (surfacePattern->surface->type == CAIRO_SURFACE_TYPE_D2D) {
 	    
@@ -814,6 +816,12 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 		alpha = D2D1_ALPHA_MODE_IGNORE;
 	    }
 
+	    data = srcSurf->data;
+	    stride = srcSurf->stride;
+
+	    
+	    pixman_image_t *pix_image = NULL;
+
 	    DXGI_FORMAT format;
 	    unsigned int Bpp;
 	    if (srcSurf->format == CAIRO_FORMAT_ARGB32) {
@@ -833,34 +841,98 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 	    UINT32 maxSize = d2dsurf->rt->GetMaximumBitmapSize() - 2;
 
 	    if ((UINT32)srcSurf->width > maxSize || (UINT32)srcSurf->height > maxSize) {
-		tiled = true;
-		UINT32 horiz_tiles = (UINT32)ceil((float)srcSurf->width / maxSize);
-		UINT32 vert_tiles = (UINT32)ceil((float)srcSurf->height / maxSize);
-		UINT32 current_vert_tile = last_run / horiz_tiles;
-		UINT32 current_horiz_tile = last_run % horiz_tiles;
-		xoffset = current_horiz_tile * maxSize;
-		yoffset = current_vert_tile * maxSize;
-		*remaining_runs = horiz_tiles * vert_tiles - last_run - 1;
-		width = min(maxSize, srcSurf->width - maxSize * current_horiz_tile);
-		height = min(maxSize, srcSurf->height - maxSize * current_vert_tile);
 		
-		cairo_matrix_translate(&mat, xoffset, yoffset);
-		if (true) {
-		    RefPtr<ID2D1RectangleGeometry> clipRect;
-		    D2DSurfFactory::Instance()->CreateRectangleGeometry(D2D1::RectF(0, 0, (float)width, (float)height),
-									&clipRect);
+		partial = true;
+		
+  
+		
+		cairo_matrix_t invMat = mat;
+                if (_cairo_matrix_is_invertible(&mat)) {
+                  
+		  cairo_matrix_invert(&invMat);
+                }
 
-		    if (!d2dsurf->helperLayer) {
-			d2dsurf->rt->CreateLayer(&d2dsurf->helperLayer);
-		    }
+		RefPtr<IDXGISurface> surf;
+		d2dsurf->surface->QueryInterface(&surf);
+		DXGI_SURFACE_DESC desc;
+		surf->GetDesc(&desc);
+
+                double leftMost = 0;
+                double rightMost = desc.Width;
+                double topMost = 0;
+                double bottomMost = desc.Height;
+
+                _cairo_matrix_transform_bounding_box(&invMat, &leftMost, &topMost, &rightMost, &bottomMost, NULL);
+
+                leftMost -= 1;
+                topMost -= 1;
+                rightMost += 1;
+                bottomMost += 1;
+
+		
+		xoffset = (unsigned int)MAX(0, floor(leftMost));
+		yoffset = (unsigned int)MAX(0, floor(topMost));
+		width = (unsigned int)MIN(MAX(0, ceil(rightMost - xoffset)), srcSurf->width - xoffset);
+		height = (unsigned int)MIN(MAX(0, ceil(bottomMost - yoffset)), srcSurf->height - yoffset);
+
+	        cairo_matrix_translate(&mat, xoffset, yoffset);
+
+		if (width > maxSize || height > maxSize) {
 		    
-		    d2dsurf->rt->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(),
-								 clipRect,
-								 D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
-								 _cairo_d2d_matrix_from_matrix(&mat)),
-					   d2dsurf->helperLayer);
-		    *pushed_clip = true;
-		}
+
+
+
+
+
+
+
+
+
+
+
+
+		    unsigned int minSize = (unsigned int)ceil(sqrt(pow((float)desc.Width, 2) + pow((float)desc.Height, 2)));
+		    
+		    unsigned int newWidth = MIN(minSize, MIN(width, maxSize));
+		    unsigned int newHeight = MIN(minSize, MIN(height, maxSize));
+		    double xRatio = (double)width / newWidth;
+		    double yRatio = (double)height / newHeight;
+
+		    if (newWidth > maxSize || newHeight > maxSize) {
+			
+
+
+
+			return NULL;
+  		    }
+
+		    
+		    pix_image = pixman_image_create_bits(srcSurf->pixman_format,
+							 newWidth,
+							 newHeight,
+							 NULL,
+							 -1);
+
+		    
+		    pixman_transform_t transform;
+		    pixman_transform_init_scale(&transform, pixman_double_to_fixed(xRatio), pixman_double_to_fixed(yRatio));
+		    pixman_transform_translate(&transform, NULL, pixman_int_to_fixed(xoffset), pixman_int_to_fixed(yoffset));
+
+		    pixman_image_set_transform(srcSurf->pixman_image, &transform);
+		    pixman_image_composite(PIXMAN_OP_SRC, srcSurf->pixman_image, NULL, pix_image, 0, 0, 0, 0, 0, 0, newWidth, newHeight);
+
+		    
+		    cairo_matrix_scale(&mat, xRatio, yRatio);
+
+		    data = (unsigned char*)pixman_image_get_data(pix_image);
+		    stride = pixman_image_get_stride(pix_image);
+
+		    
+		    xoffset = 0;
+		    yoffset = 0;
+		    width = newWidth;
+		    height = newHeight;
+  		}
 	    } else {
 		width = srcSurf->width;
 		height = srcSurf->height;
@@ -868,7 +940,7 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 
 	    cached_bitmap *cachebitmap = NULL;
 
-	    if (!tiled) {
+	    if (!partial) {
 		cachebitmap = 
 		    (cached_bitmap*)cairo_surface_get_user_data(
 		    surfacePattern->surface,
@@ -901,11 +973,10 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 						   _d2d_snapshot_detached);
 		}
 	    } else {
-		cached_bitmap *cachebitmap = new cached_bitmap;
 		if (pattern->extend != CAIRO_EXTEND_NONE) {
 		    d2dsurf->rt->CreateBitmap(D2D1::SizeU(width, height),
-							  srcSurf->data + yoffset * srcSurf->stride + xoffset,
-							  srcSurf->stride,
+							  data + yoffset * stride + xoffset * Bpp,
+							  stride,
 							  D2D1::BitmapProperties(D2D1::PixelFormat(format,
 												   alpha)),
 					      &sourceBitmap);
@@ -925,7 +996,7 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 		    for (unsigned int y = 0; y < height; y++) {
 			memcpy(
 			    tmp + tmpWidth * Bpp * y + tmpWidth * Bpp + Bpp, 
-			    srcSurf->data + yoffset * srcSurf->stride + y * srcSurf->stride + xoffset, 
+			    data + yoffset * stride + y * stride + xoffset * Bpp, 
 			    width * Bpp);
 		    }
 
@@ -938,22 +1009,33 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 		    delete [] tmp;
 		}
 
-		cachebitmap->dirty = false;
-		cachebitmap->bitmap = sourceBitmap;
-		cachebitmap->refs = 2;
-		cairo_surface_set_user_data(surfacePattern->surface,
-					    key,
-					    cachebitmap,
-					    _d2d_release_bitmap);
-		cairo_surface_t *nullSurf =
-		    _cairo_null_surface_create(CAIRO_CONTENT_COLOR_ALPHA);
-		cairo_surface_set_user_data(nullSurf,
-					    &bitmap_key_snapshot,
-					    cachebitmap,
-					    NULL);
-		_cairo_surface_attach_snapshot(surfacePattern->surface,
-					       nullSurf,
-					       _d2d_snapshot_detached);
+		if (!partial) {
+		    cached_bitmap *cachebitmap = new cached_bitmap;
+		    
+		    cachebitmap->dirty = false;
+		    cachebitmap->bitmap = sourceBitmap;
+                    
+
+
+
+		    cachebitmap->refs = 2;
+		    cairo_surface_set_user_data(surfacePattern->surface,
+						key,
+						cachebitmap,
+						_d2d_release_bitmap);
+		    cairo_surface_t *nullSurf =
+			_cairo_null_surface_create(CAIRO_CONTENT_COLOR_ALPHA);
+		    cairo_surface_set_user_data(nullSurf,
+						&bitmap_key_snapshot,
+						cachebitmap,
+						NULL);
+		    _cairo_surface_attach_snapshot(surfacePattern->surface,
+						   nullSurf,
+						   _d2d_snapshot_detached);
+		}
+		if (pix_image) {
+		    pixman_image_unref(pix_image);
+  		}
 	    }
 	} else {
 	    return NULL;
