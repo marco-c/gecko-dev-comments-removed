@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef imgLoader_h__
 #define imgLoader_h__
@@ -58,7 +58,7 @@ public:
     --mRefCnt;
     NS_LOG_RELEASE(this, mRefCnt, "imgCacheEntry");
     if (mRefCnt == 0) {
-      mRefCnt = 1; 
+      mRefCnt = 1; /* stabilize */
       delete this;
       return 0;
     }
@@ -83,7 +83,7 @@ public:
   void SetTouchedTime(int32_t time)
   {
     mTouchedTime = time;
-    Touch( false);
+    Touch(/* updateTime = */ false);
   }
 
   int32_t GetExpiryTime() const
@@ -138,7 +138,7 @@ public:
     return mLoader;
   }
 
-private: 
+private: // methods
   friend class imgLoader;
   friend class imgCacheQueue;
   void Touch(bool updateTime = true);
@@ -149,10 +149,10 @@ private:
   }
   void SetHasNoProxies(bool hasNoProxies);
 
-  
+  // Private, unimplemented copy constructor.
   imgCacheEntry(const imgCacheEntry &);
 
-private: 
+private: // data
   nsAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
 
@@ -228,8 +228,8 @@ public:
 
   static nsresult GetMimeTypeFromContent(const char* aContents, uint32_t aLength, nsACString& aContentType);
 
-  static void GlobalInit(); 
-  static void Shutdown(); 
+  static void GlobalInit(); // for use by the factory
+  static void Shutdown(); // for use by the factory
 
   nsresult ClearChromeImageCache();
   nsresult ClearImageCache();
@@ -242,9 +242,9 @@ public:
 
   bool PutIntoCache(nsIURI *key, imgCacheEntry *entry);
 
-  
-  
-  
+  // Returns true if we should prefer evicting cache entry |two| over cache
+  // entry |one|.
+  // This mixes units in the worst way, but provides reasonable results.
   inline static bool CompareCacheEntries(const nsRefPtr<imgCacheEntry> &one,
                                          const nsRefPtr<imgCacheEntry> &two)
   {
@@ -255,9 +255,9 @@ public:
 
     const double sizeweight = 1.0 - sCacheTimeWeight;
 
-    
-    
-    
+    // We want large, old images to be evicted first (depending on their
+    // relative weights). Since a larger time is actually newer, we subtract
+    // time's weight, so an older image has a larger weight.
     double oneweight = double(one->GetDataSize()) * sizeweight -
                        double(one->GetTouchedTime()) * sCacheTimeWeight;
     double twoweight = double(two->GetDataSize()) * sizeweight -
@@ -268,21 +268,21 @@ public:
 
   void VerifyCacheSizes();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The image loader maintains a hash table of all imgCacheEntries. However,
+  // only some of them will be evicted from the cache: those who have no
+  // imgRequestProxies watching their imgRequests. 
+  //
+  // Once an imgRequest has no imgRequestProxies, it should notify us by
+  // calling HasNoObservers(), and null out its cache entry pointer.
+  // 
+  // Upon having a proxy start observing again, it should notify us by calling
+  // HasObservers(). The request's cache entry will be re-set before this
+  // happens, by calling imgRequest::SetCacheEntry() when an entry with no
+  // observers is re-requested.
   bool SetHasNoProxies(nsIURI *key, imgCacheEntry *entry);
   bool SetHasProxies(nsIURI *key);
 
-private: 
+private: // methods
 
 
   bool ValidateEntry(imgCacheEntry *aEntry, nsIURI *aKey,
@@ -322,10 +322,10 @@ private:
 
   imgCacheTable &GetCache(nsIURI *aURI);
   imgCacheQueue &GetCacheQueue(nsIURI *aURI);
-  void CacheEntriesChanged(nsIURI *aURI, PRInt32 sizediff = 0);
+  void CacheEntriesChanged(nsIURI *aURI, int32_t sizediff = 0);
   void CheckCacheLimits(imgCacheTable &cache, imgCacheQueue &queue);
 
-private: 
+private: // data
   friend class imgCacheEntry;
   friend class imgMemoryReporter;
 
@@ -347,9 +347,9 @@ private:
 
 
 
-
-
-
+/**
+ * proxy stream listener class used to handle multipart/x-mixed-replace
+ */
 
 #include "nsCOMPtr.h"
 #include "nsIStreamListener.h"
@@ -360,7 +360,7 @@ public:
   ProxyListener(nsIStreamListener *dest);
   virtual ~ProxyListener();
 
-  
+  /* additional members */
   NS_DECL_ISUPPORTS
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
@@ -369,12 +369,12 @@ private:
   nsCOMPtr<nsIStreamListener> mDestListener;
 };
 
-
-
-
-
-
-
+/**
+ * A class that implements nsIProgressEventSink and forwards all calls to it to
+ * the original notification callbacks of the channel. Also implements
+ * nsIInterfaceRequestor and gives out itself for nsIProgressEventSink calls,
+ * and forwards everything else to the channel's notification callbacks.
+ */
 class nsProgressNotificationProxy MOZ_FINAL
   : public nsIProgressEventSink
   , public nsIChannelEventSink
@@ -398,9 +398,9 @@ class nsProgressNotificationProxy MOZ_FINAL
     nsCOMPtr<nsIRequest> mImageRequest;
 };
 
-
-
-
+/**
+ * validate checker
+ */
 
 #include "nsCOMArray.h"
 
@@ -440,4 +440,4 @@ private:
   imgLoader* mImgLoader;
 };
 
-#endif  
+#endif  // imgLoader_h__

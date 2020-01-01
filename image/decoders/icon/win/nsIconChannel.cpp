@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Util.h"
 
@@ -29,7 +29,7 @@
 #endif
 #define _WIN32_WINNT 0x0600
 
-
+// we need windows.h to read out registry information...
 #include <windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
@@ -57,17 +57,17 @@ struct ICONENTRY {
 
 typedef HRESULT (WINAPI*SHGetStockIconInfoPtr) (SHSTOCKICONID siid, UINT uFlags, SHSTOCKICONINFO *psii);
 
-
+// Match stock icons with names
 static SHSTOCKICONID GetStockIconIDForName(const nsACString &aStockName)
 {
-  
+  // UAC shield icon
   if (aStockName == NS_LITERAL_CSTRING("uac-shield"))
     return SIID_SHIELD;
 
   return SIID_INVALID;
 }
 
-
+// nsIconChannel methods
 nsIconChannel::nsIconChannel()
 {
 }
@@ -91,8 +91,8 @@ nsresult nsIconChannel::Init(nsIURI* uri)
   return rv;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIRequest methods:
 
 NS_IMETHODIMP nsIconChannel::GetName(nsACString &result)
 {
@@ -146,8 +146,8 @@ NS_IMETHODIMP nsIconChannel::SetLoadFlags(uint32_t aLoadAttributes)
   return mPump->SetLoadFlags(aLoadAttributes);
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIChannel methods:
 
 NS_IMETHODIMP nsIconChannel::GetOriginalURI(nsIURI* *aURI)
 {
@@ -207,16 +207,16 @@ NS_IMETHODIMP nsIconChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports
   if (NS_FAILED(rv))
     return rv;
 
-  
+  // Init our streampump
   rv = mPump->Init(inStream, int64_t(-1), int64_t(-1), 0, 0, false);
   if (NS_FAILED(rv))
     return rv;
 
   rv = mPump->AsyncRead(this, ctxt);
   if (NS_SUCCEEDED(rv)) {
-    
+    // Store our real listener
     mListener = aListener;
-    
+    // Add ourself to the load group, if available
     if (mLoadGroup)
       mLoadGroup->AddRequest(this, nullptr);
   }
@@ -267,12 +267,12 @@ nsresult nsIconChannel::GetHIconFromFile(HICON *hIcon)
 {
   nsXPIDLCString contentType;
   nsCString fileExt;
-  nsCOMPtr<nsIFile> localFile; 
+  nsCOMPtr<nsIFile> localFile; // file we want an icon for
   uint32_t desiredImageSize;
   nsresult rv = ExtractIconInfoFromUrl(getter_AddRefs(localFile), &desiredImageSize, contentType, fileExt);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // if the file exists, we are going to use it's real attributes...otherwise we only want to use it for it's extension...
   SHFILEINFOW      sfi;
   UINT infoFlags = SHGFI_ICON;
   
@@ -287,7 +287,7 @@ nsresult nsIconChannel::GetHIconFromFile(HICON *hIcon)
 
     localFile->GetPath(filePath);
     if (filePath.Length() < 2 || filePath[1] != ':')
-      return NS_ERROR_MALFORMED_URI; 
+      return NS_ERROR_MALFORMED_URI; // UNC
 
     if (filePath.Last() == ':')
       filePath.Append('\\');
@@ -303,8 +303,8 @@ nsresult nsIconChannel::GetHIconFromFile(HICON *hIcon)
 
   infoFlags |= GetSizeInfoFlag(desiredImageSize);
 
-  
-  
+  // if we have a content type... then use it! but for existing files, we want
+  // to show their real icon.
   if (!fileExists && !contentType.IsEmpty())
   {
     nsCOMPtr<nsIMIMEService> mimeService (do_GetService(NS_MIMESERVICE_CONTRACTID, &rv));
@@ -312,25 +312,25 @@ nsresult nsIconChannel::GetHIconFromFile(HICON *hIcon)
 
     nsAutoCString defFileExt;
     mimeService->GetPrimaryExtension(contentType, fileExt, defFileExt);
-    
-    
-    
+    // If the mime service does not know about this mime type, we show
+    // the generic icon.
+    // In any case, we need to insert a '.' before the extension.
     filePath = NS_LITERAL_STRING(".") + NS_ConvertUTF8toUTF16(defFileExt);
   }
 
-  
+  // Is this the "Desktop" folder?
   DWORD shellResult = GetSpecialFolderIcon(localFile, CSIDL_DESKTOP, &sfi, infoFlags);
   if (!shellResult) {
-    
+    // Is this the "My Documents" folder?
     shellResult = GetSpecialFolderIcon(localFile, CSIDL_PERSONAL, &sfi, infoFlags);
   }
 
-  
-  
-  
-  
+  // There are other "Special Folders" and Namespace entities that we are not 
+  // fetching icons for, see: 
+  // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/enums/csidl.asp
+  // If we ever need to get them, code to do so would be inserted here. 
 
-  
+  // Not a special folder, or something else failed above.
   if (!shellResult)
     shellResult = ::SHGetFileInfoW(filePath.get(),
                                    FILE_ATTRIBUTE_ARCHIVE, &sfi, sizeof(sfi), infoFlags);
@@ -347,7 +347,7 @@ nsresult nsIconChannel::GetStockHIcon(nsIMozIconURI *aIconURI, HICON *hIcon)
 {
   nsresult rv = NS_OK;
 
-  
+  // We can only do this on Vista or above
   HMODULE hShellDLL = ::LoadLibraryW(L"shell32.dll");
   SHGetStockIconInfoPtr pSHGetStockIconInfo =
     (SHGetStockIconInfoPtr) ::GetProcAddress(hShellDLL, "SHGetStockIconInfo");
@@ -386,12 +386,12 @@ nsresult nsIconChannel::GetStockHIcon(nsIMozIconURI *aIconURI, HICON *hIcon)
   return rv;
 }
 
-
+// Given a BITMAPINFOHEADER, returns the size of the color table.
 static int GetColorTableSize(BITMAPINFOHEADER* aHeader)
 {
   int colorTableSize = -1;
 
-  
+  // http://msdn.microsoft.com/en-us/library/dd183376%28v=VS.85%29.aspx
   switch (aHeader->biBitCount) {
   case 0:
     colorTableSize = 0;
@@ -402,8 +402,8 @@ static int GetColorTableSize(BITMAPINFOHEADER* aHeader)
   case 4:
   case 8:
   {
-    
-    
+    // The maximum possible size for the color table is 2**bpp, so check for
+    // that and fail if we're not in those bounds
     unsigned int maxEntries = 1 << (aHeader->biBitCount);
     if (aHeader->biClrUsed > 0 && aHeader->biClrUsed <= maxEntries)
       colorTableSize = aHeader->biClrUsed * sizeof(RGBQUAD);
@@ -413,12 +413,12 @@ static int GetColorTableSize(BITMAPINFOHEADER* aHeader)
   }
   case 16:
   case 32:
-    
-    
-    
-    
-    
-    
+    // If we have BI_BITFIELDS compression, we would normally need 3 DWORDS for
+    // the bitfields mask which would be stored in the color table; However, 
+    // we instead force the bitmap to request data of type BI_RGB so the color
+    // table should be of size 0.  
+    // Setting aHeader->biCompression = BI_RGB forces the later call to 
+    // GetDIBits to return to us BI_RGB data.
     if (aHeader->biCompression == BI_BITFIELDS) {
       aHeader->biCompression = BI_RGB;
     }
@@ -435,8 +435,8 @@ static int GetColorTableSize(BITMAPINFOHEADER* aHeader)
   return colorTableSize;
 }
 
-
-
+// Given a header and a size, creates a freshly allocated BITMAPINFO structure.
+// It is the caller's responsibility to null-check and delete the structure.
 static BITMAPINFO* CreateBitmapInfo(BITMAPINFOHEADER* aHeader,
                                     size_t aColorTableSize)
 {
@@ -452,10 +452,10 @@ static BITMAPINFO* CreateBitmapInfo(BITMAPINFOHEADER* aHeader,
 
 nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocking)
 {
-  
+  // Check whether the icon requested's a file icon or a stock icon
   nsresult rv = NS_ERROR_NOT_AVAILABLE;
 
-  
+  // GetDIBits does not exist on windows mobile.
   HICON hIcon = NULL;
 
   nsCOMPtr<nsIMozIconURI> iconURI(do_QueryInterface(mUrl, &rv));
@@ -472,12 +472,12 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocki
 
   if (hIcon)
   {
-    
+    // we got a handle to an icon. Now we want to get a bitmap for the icon using GetIconInfo....
     ICONINFO iconInfo;
     if (GetIconInfo(hIcon, &iconInfo))
     {
-      
-      HDC hDC = CreateCompatibleDC(NULL); 
+      // we got the bitmaps, first find out their size
+      HDC hDC = CreateCompatibleDC(NULL); // get a device context for the screen.
       BITMAPINFOHEADER maskHeader  = {sizeof(BITMAPINFOHEADER)};
       BITMAPINFOHEADER colorHeader = {sizeof(BITMAPINFOHEADER)};
       int colorTableSize, maskTableSize;
@@ -503,7 +503,7 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocki
           char *whereTo = buffer;
           int howMuch;
 
-          
+          // the data starts with an icon file header
           ICONFILEHEADER iconHeader;
           iconHeader.ifhReserved = 0;
           iconHeader.ifhType = 1;
@@ -512,7 +512,7 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocki
           memcpy(whereTo, &iconHeader, howMuch);
           whereTo += howMuch;
 
-          
+          // followed by the single icon entry
           ICONENTRY iconEntry;
           iconEntry.ieWidth = colorHeader.biWidth;
           iconEntry.ieHeight = colorHeader.biHeight;
@@ -528,8 +528,8 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocki
           memcpy(whereTo, &iconEntry, howMuch);
           whereTo += howMuch;
 
-          
-          
+          // followed by the bitmap info header
+          // (doubling the height because icons have two bitmaps)
           colorHeader.biHeight *= 2;
           colorHeader.biSizeImage += maskHeader.biSizeImage;
           howMuch = sizeof(BITMAPINFOHEADER);
@@ -538,20 +538,20 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocki
           colorHeader.biHeight /= 2;
           colorHeader.biSizeImage -= maskHeader.biSizeImage;
 
-          
-          
+          // followed by the XOR bitmap data (colorHeader)
+          // (you'd expect the color table to come here, but it apparently doesn't)
           BITMAPINFO* colorInfo = CreateBitmapInfo(&colorHeader, colorTableSize);
           if (colorInfo && GetDIBits(hDC, iconInfo.hbmColor, 0,
                                      colorHeader.biHeight, whereTo, colorInfo,
                                      DIB_RGB_COLORS)) {
             whereTo += colorHeader.biSizeImage;
 
-            
+            // and finally the AND bitmap data (maskHeader)
             BITMAPINFO* maskInfo = CreateBitmapInfo(&maskHeader, maskTableSize);
             if (maskInfo && GetDIBits(hDC, iconInfo.hbmMask, 0,
                                       maskHeader.biHeight, whereTo, maskInfo,
                                       DIB_RGB_COLORS)) {
-              
+              // Now, create a pipe and stuff our data into it
               nsCOMPtr<nsIInputStream> inStream;
               nsCOMPtr<nsIOutputStream> outStream;
               rv = NS_NewPipe(getter_AddRefs(inStream), getter_AddRefs(outStream),
@@ -564,22 +564,22 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocki
                 }
               }
 
-            } 
+            } // if we got bitmap bits
             delete maskInfo;
-          } 
+          } // if we got mask bits
           delete colorInfo;
           delete [] buffer;
-        } 
-      } 
+        } // if we allocated the buffer
+      } // if we got mask size
 
       DeleteDC(hDC);
       DeleteObject(iconInfo.hbmColor);
       DeleteObject(iconInfo.hbmMask);
-    } 
+    } // if we got icon info
     DestroyIcon(hIcon);
-  } 
+  } // if we got an hIcon
 
-  
+  // If we didn't make a stream, then fail.
   if (!*_retval && NS_SUCCEEDED(rv))
     rv = NS_ERROR_NOT_AVAILABLE;
   return rv;
@@ -594,8 +594,8 @@ NS_IMETHODIMP nsIconChannel::GetContentType(nsACString &aContentType)
 NS_IMETHODIMP
 nsIconChannel::SetContentType(const nsACString &aContentType)
 {
-  
-  
+  // It doesn't make sense to set the content-type on this type
+  // of channel...
   return NS_ERROR_FAILURE;
 }
 
@@ -608,8 +608,8 @@ NS_IMETHODIMP nsIconChannel::GetContentCharset(nsACString &aContentCharset)
 NS_IMETHODIMP
 nsIconChannel::SetContentCharset(const nsACString &aContentCharset)
 {
-  
-  
+  // It doesn't make sense to set the content-charset on this type
+  // of channel...
   return NS_ERROR_FAILURE;
 }
 
@@ -675,7 +675,7 @@ NS_IMETHODIMP nsIconChannel::GetSecurityInfo(nsISupports * *aSecurityInfo)
   return NS_OK;
 }
 
-
+// nsIRequestObserver methods
 NS_IMETHODIMP nsIconChannel::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
 {
   if (mListener)
@@ -690,21 +690,21 @@ NS_IMETHODIMP nsIconChannel::OnStopRequest(nsIRequest* aRequest, nsISupports* aC
     mListener = nullptr;
   }
 
-  
+  // Remove from load group
   if (mLoadGroup)
     mLoadGroup->RemoveRequest(this, nullptr, aStatus);
 
-  
+  // Drop notification callbacks to prevent cycles.
   mCallbacks = nullptr;
 
   return NS_OK;
 }
 
-
+// nsIStreamListener methods
 NS_IMETHODIMP nsIconChannel::OnDataAvailable(nsIRequest* aRequest,
                                              nsISupports* aContext,
                                              nsIInputStream* aStream,
-                                             uint32_t aOffset,
+                                             uint64_t aOffset,
                                              uint32_t aCount)
 {
   if (mListener)

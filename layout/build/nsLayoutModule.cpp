@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/basictypes.h"
 
@@ -56,7 +56,7 @@
 #include "nsIEventListenerService.h"
 #include "nsIMessageManager.h"
 
-
+// Transformiix stuff
 #include "nsXPathEvaluator.h"
 #include "txMozillaXSLTProcessor.h"
 #include "txNodeSetAdaptor.h"
@@ -68,12 +68,12 @@
 #include "nsWebSocket.h"
 #include "nsEventSource.h"
 
-
+// view stuff
 #include "nsViewsCID.h"
 #include "nsViewManager.h"
 #include "nsContentCreatorFunctions.h"
 
-
+// DOM includes
 #include "nsDOMException.h"
 #include "nsDOMFileReader.h"
 
@@ -110,6 +110,15 @@ using mozilla::dom::gonk::SystemWorkerManager;
   "@mozilla.org/telephony/system-worker-manager;1"
 #endif
 
+#ifdef MOZ_B2G_BT
+#include "BluetoothService.h"
+using mozilla::dom::bluetooth::BluetoothService;
+#define BLUETOOTHSERVICE_CID \
+  {0xa753b487, 0x3344, 0x4de4, {0xad, 0x5f, 0x06, 0x36, 0x76, 0xa7, 0xc1, 0x04}}
+#define BLUETOOTHSERVICE_CONTRACTID \
+  "@mozilla.org/bluetooth/service;1"
+#endif
+
 #ifdef MOZ_WIDGET_GONK
 #include "AudioManager.h"
 using mozilla::dom::gonk::AudioManager;
@@ -118,11 +127,11 @@ using mozilla::system::nsVolumeService;
 #endif
 #include "nsDOMMutationObserver.h"
 
-
+// Editor stuff
 #include "nsEditorCID.h"
 #include "nsEditor.h"
 #include "nsPlaintextEditor.h"
-#include "nsEditorController.h" 
+#include "nsEditorController.h" //CID
 
 #include "nsHTMLEditor.h"
 #include "nsTextServicesDocument.h"
@@ -182,7 +191,7 @@ class nsIDocumentLoaderFactory;
   "@mozilla.org/content/element/html;1?name=audio"
 #endif
 
-
+/* 0ddf4df8-4dbb-4133-8b79-9afb966514f5 */
 #define NS_PLUGINDOCLOADERFACTORY_CID \
 { 0x0ddf4df8, 0x4dbb, 0x4133, { 0x8b, 0x79, 0x9a, 0xfb, 0x96, 0x65, 0x14, 0xf5 } }
 
@@ -194,7 +203,7 @@ class nsIDocumentLoaderFactory;
 
 #ifdef MOZ_XUL
 #include "inDOMView.h"
-#endif 
+#endif /* MOZ_XUL */
 
 #include "inDeepTreeWalker.h"
 #include "inFlasher.h"
@@ -239,15 +248,15 @@ using mozilla::dom::power::PowerManagerService;
 
 using mozilla::dom::alarm::AlarmHalService;
 
-
-
+// Transformiix
+/* 5d5d92cd-6bf8-11d9-bf4a-000a95dc234c */
 #define TRANSFORMIIX_NODESET_CID \
 { 0x5d5d92cd, 0x6bf8, 0x11d9, { 0xbf, 0x4a, 0x0, 0x0a, 0x95, 0xdc, 0x23, 0x4c } }
 
 #define TRANSFORMIIX_NODESET_CONTRACTID \
 "@mozilla.org/transformiix-nodeset;1"
 
-
+// Factory Constructor
 NS_GENERIC_FACTORY_CONSTRUCTOR(txMozillaXSLTProcessor)
 NS_GENERIC_AGGREGATED_CONSTRUCTOR_INIT(nsXPathEvaluator, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(txNodeSetAdaptor, Init)
@@ -273,6 +282,10 @@ NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(DOMRequestService,
 NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(SystemWorkerManager,
                                          SystemWorkerManager::FactoryCreate)
 #endif
+#ifdef MOZ_B2G_BT
+NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(BluetoothService,
+                                         BluetoothService::FactoryCreate)
+#endif
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsDOMMutationObserver)
 
 #ifdef MOZ_WIDGET_GONK
@@ -295,13 +308,13 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(SmsRequestManager)
 NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsIAlarmHalService,
                                          AlarmHalService::GetInstance)
 
+//-----------------------------------------------------------------------------
 
-
-
-
-
-
-
+// Per bug 209804, it is necessary to observe the "xpcom-shutdown" event and
+// perform shutdown of the layout modules at that time instead of waiting for
+// our module destructor to run.  If we do not do this, then we risk holding
+// references to objects in other component libraries that have already been
+// shutdown (and possibly unloaded if 60709 is ever fixed).
 
 class LayoutShutdownObserver MOZ_FINAL : public nsIObserver
 {
@@ -324,13 +337,13 @@ LayoutShutdownObserver::Observe(nsISupports *aSubject,
   return NS_OK;
 }
 
-
+//-----------------------------------------------------------------------------
 
 static bool gInitialized = false;
 
+// Perform our one-time intialization for this module
 
-
-
+// static
 nsresult
 Initialize()
 {
@@ -356,7 +369,7 @@ Initialize()
     return rv;
   }
 
-  
+  // Add our shutdown observer.
   nsCOMPtr<nsIObserverService> observerService =
     mozilla::services::GetObserverService();
 
@@ -377,9 +390,9 @@ Initialize()
   return NS_OK;
 }
 
+// Shutdown this module, releasing all of the module resources
 
-
-
+// static
 void
 Shutdown()
 {
@@ -444,10 +457,10 @@ ctor_(nsISupports* aOuter, REFNSIID aIID, void** aResult) \
   return rv;                                              \
 }
 
-
-
-
-
+// As above, but expects
+//   already_AddRefed<nsIFoo> NS_NewFoo();
+// instead of
+//   nsresult NS_NewFoo(nsIFoo**);
 #define MAKE_CTOR2(ctor_, iface_, func_)                  \
 static nsresult                                           \
 ctor_(nsISupports* aOuter, REFNSIID aIID, void** aResult) \
@@ -476,7 +489,7 @@ MAKE_CTOR(CreateNewPopupBoxObject,      nsIBoxObject,           NS_NewPopupBoxOb
 MAKE_CTOR(CreateNewScrollBoxObject,     nsIBoxObject,           NS_NewScrollBoxObject)
 MAKE_CTOR(CreateNewTreeBoxObject,       nsIBoxObject,           NS_NewTreeBoxObject)
 MAKE_CTOR(CreateNewContainerBoxObject,  nsIBoxObject,           NS_NewContainerBoxObject)
-#endif 
+#endif // MOZ_XUL
 
 #ifdef MOZ_XUL
 NS_GENERIC_FACTORY_CONSTRUCTOR(inDOMView)
@@ -496,9 +509,9 @@ MAKE_CTOR(CreateDOMSelection,             nsISelection,                NS_NewDom
 MAKE_CTOR2(CreateContentIterator,         nsIContentIterator,          NS_NewContentIterator)
 MAKE_CTOR2(CreatePreContentIterator,      nsIContentIterator,          NS_NewPreContentIterator)
 MAKE_CTOR2(CreateSubtreeIterator,         nsIContentIterator,          NS_NewContentSubtreeIterator)
-
-
-
+// CreateHTMLImgElement, see below
+// CreateHTMLOptionElement, see below
+// CreateHTMLAudioElement, see below
 MAKE_CTOR(CreateTextEncoder,              nsIDocumentEncoder,          NS_NewTextEncoder)
 MAKE_CTOR(CreateHTMLCopyTextEncoder,      nsIDocumentEncoder,          NS_NewHTMLCopyTextEncoder)
 MAKE_CTOR(CreateXMLContentSerializer,     nsIContentSerializer,        NS_NewXMLContentSerializer)
@@ -508,10 +521,10 @@ MAKE_CTOR(CreatePlainTextSerializer,      nsIContentSerializer,        NS_NewPla
 MAKE_CTOR(CreateContentPolicy,            nsIContentPolicy,            NS_NewContentPolicy)
 #ifdef MOZ_XUL
 MAKE_CTOR(CreateXULSortService,           nsIXULSortService,           NS_NewXULSortService)
-
-
+// NS_NewXULContentBuilder
+// NS_NewXULTreeBuilder
 MAKE_CTOR(CreateXULDocument,              nsIXULDocument,              NS_NewXULDocument)
-
+// NS_NewXULControllers
 #endif
 #ifdef MOZ_XTF
 MAKE_CTOR(CreateXTFService,               nsIXTFService,               NS_NewXTFService)
@@ -538,8 +551,8 @@ NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsStyleSheetService, Init)
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsJSURI)
 
-
-
+// views are not refcounted, so this is the same as
+// NS_GENERIC_FACTORY_CONSTRUCTOR without the NS_ADDREF/NS_RELEASE
 #define NS_GENERIC_FACTORY_CONSTRUCTOR_NOREFS(_InstanceClass)                 \
 static nsresult                                                               \
 _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
@@ -571,7 +584,7 @@ CreateHTMLImgElement(nsISupports* aOuter, REFNSIID aIID, void** aResult)
   *aResult = nullptr;
   if (aOuter)
     return NS_ERROR_NO_AGGREGATION;
-  
+  // Note! NS_NewHTMLImageElement is special cased to handle a null nodeinfo
   nsCOMPtr<nsINodeInfo> ni;
   nsIContent* inst = NS_NewHTMLImageElement(ni.forget());
   nsresult rv = NS_ERROR_OUT_OF_MEMORY;
@@ -589,7 +602,7 @@ CreateHTMLOptionElement(nsISupports* aOuter, REFNSIID aIID, void** aResult)
   *aResult = nullptr;
   if (aOuter)
     return NS_ERROR_NO_AGGREGATION;
-  
+  // Note! NS_NewHTMLOptionElement is special cased to handle a null nodeinfo
   nsCOMPtr<nsINodeInfo> ni;
   nsIContent* inst = NS_NewHTMLOptionElement(ni.forget());
   nsresult rv = NS_ERROR_OUT_OF_MEMORY;
@@ -608,7 +621,7 @@ CreateHTMLAudioElement(nsISupports* aOuter, REFNSIID aIID, void** aResult)
   *aResult = nullptr;
   if (aOuter)
     return NS_ERROR_NO_AGGREGATION;
-  
+  // Note! NS_NewHTMLAudioElement is special cased to handle a null nodeinfo
   nsCOMPtr<nsINodeInfo> ni;
   nsCOMPtr<nsIContent> inst(NS_NewHTMLAudioElement(ni.forget()));
   return inst ? inst->QueryInterface(aIID, aResult) : NS_ERROR_OUT_OF_MEMORY;
@@ -668,7 +681,7 @@ NS_DEFINE_NAMED_CID(NS_POPUPBOXOBJECT_CID);
 NS_DEFINE_NAMED_CID(NS_CONTAINERBOXOBJECT_CID);
 NS_DEFINE_NAMED_CID(NS_SCROLLBOXOBJECT_CID);
 NS_DEFINE_NAMED_CID(NS_TREEBOXOBJECT_CID);
-#endif 
+#endif // MOZ_XUL
 #ifdef MOZ_XUL
 NS_DEFINE_NAMED_CID(IN_DOMVIEW_CID);
 #endif
@@ -752,6 +765,9 @@ NS_DEFINE_NAMED_CID(DOMREQUEST_SERVICE_CID);
 #ifdef MOZ_B2G_RIL
 NS_DEFINE_NAMED_CID(SYSTEMWORKERMANAGER_CID);
 #endif
+#ifdef MOZ_B2G_BT
+NS_DEFINE_NAMED_CID(BLUETOOTHSERVICE_CID);
+#endif
 #ifdef MOZ_WIDGET_GONK
 NS_DEFINE_NAMED_CID(NS_AUDIOMANAGER_CID);
 NS_DEFINE_NAMED_CID(NS_VOLUMESERVICE_CID);
@@ -825,7 +841,7 @@ CreateWindowControllerWithSingletonCommandTable(nsISupports *aOuter,
   nsCOMPtr<nsIControllerCommandTable> windowCommandTable = do_GetService(kNS_WINDOWCOMMANDTABLE_CID, &rv);
   if (NS_FAILED(rv)) return rv;
 
-  
+  // this is a singleton; make it immutable
   windowCommandTable->MakeImmutable();
 
   nsCOMPtr<nsIControllerContext> controllerContext = do_QueryInterface(controller, &rv);
@@ -837,8 +853,8 @@ CreateWindowControllerWithSingletonCommandTable(nsISupports *aOuter,
   return controller->QueryInterface(aIID, aResult);
 }
 
-
-
+// Constructor of a controller which is set up to use, internally, a
+// singleton command-table pre-filled with editor commands.
 static nsresult
 nsEditorControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
                               void **aResult)
@@ -850,7 +866,7 @@ nsEditorControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
   nsCOMPtr<nsIControllerCommandTable> editorCommandTable = do_GetService(kNS_EDITORCOMMANDTABLE_CID, &rv);
   if (NS_FAILED(rv)) return rv;
 
-  
+  // this guy is a singleton, so make it immutable
   editorCommandTable->MakeImmutable();
 
   nsCOMPtr<nsIControllerContext> controllerContext = do_QueryInterface(controller, &rv);
@@ -862,8 +878,8 @@ nsEditorControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
   return controller->QueryInterface(aIID, aResult);
 }
 
-
-
+// Constructor of a controller which is set up to use, internally, a
+// singleton command-table pre-filled with editing commands.
 static nsresult
 nsEditingControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
                                 void **aResult)
@@ -875,7 +891,7 @@ nsEditingControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
   nsCOMPtr<nsIControllerCommandTable> editingCommandTable = do_GetService(kNS_EDITINGCOMMANDTABLE_CID, &rv);
   if (NS_FAILED(rv)) return rv;
 
-  
+  // this guy is a singleton, so make it immutable
   editingCommandTable->MakeImmutable();
 
   nsCOMPtr<nsIControllerContext> controllerContext = do_QueryInterface(controller, &rv);
@@ -887,7 +903,7 @@ nsEditingControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
   return controller->QueryInterface(aIID, aResult);
 }
 
-
+// Constructor for a command-table pre-filled with editor commands
 static nsresult
 nsEditorCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
                                             void **aResult)
@@ -900,13 +916,13 @@ nsEditorCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
   rv = nsEditorController::RegisterEditorCommands(commandTable);
   if (NS_FAILED(rv)) return rv;
 
-  
-  
+  // we don't know here whether we're being created as an instance,
+  // or a service, so we can't become immutable
 
   return commandTable->QueryInterface(aIID, aResult);
 }
 
-
+// Constructor for a command-table pre-filled with editing commands
 static nsresult
 nsEditingCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
                                               void **aResult)
@@ -919,8 +935,8 @@ nsEditingCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
   rv = nsEditorController::RegisterEditingCommands(commandTable);
   if (NS_FAILED(rv)) return rv;
 
-  
-  
+  // we don't know here whether we're being created as an instance,
+  // or a service, so we can't become immutable
 
   return commandTable->QueryInterface(aIID, aResult);
 }
@@ -941,7 +957,7 @@ static const mozilla::Module::CIDEntry kLayoutCIDs[] = {
   { &kNS_CONTAINERBOXOBJECT_CID, false, NULL, CreateNewContainerBoxObject },
   { &kNS_SCROLLBOXOBJECT_CID, false, NULL, CreateNewScrollBoxObject },
   { &kNS_TREEBOXOBJECT_CID, false, NULL, CreateNewTreeBoxObject },
-#endif 
+#endif // MOZ_XUL
 #ifdef MOZ_XUL
   { &kIN_DOMVIEW_CID, false, NULL, inDOMViewConstructor },
 #endif
@@ -1025,6 +1041,9 @@ static const mozilla::Module::CIDEntry kLayoutCIDs[] = {
 #ifdef MOZ_B2G_RIL
   { &kSYSTEMWORKERMANAGER_CID, true, NULL, SystemWorkerManagerConstructor },
 #endif
+#ifdef MOZ_B2G_BT
+  { &kBLUETOOTHSERVICE_CID, true, NULL, BluetoothServiceConstructor },
+#endif
 #ifdef MOZ_WIDGET_GONK
   { &kNS_AUDIOMANAGER_CID, true, NULL, AudioManagerConstructor },
   { &kNS_VOLUMESERVICE_CID, true, NULL, nsVolumeServiceConstructor },
@@ -1081,7 +1100,7 @@ static const mozilla::Module::ContractIDEntry kLayoutContracts[] = {
   { "@mozilla.org/layout/xul-boxobject-container;1", &kNS_CONTAINERBOXOBJECT_CID },
   { "@mozilla.org/layout/xul-boxobject-scrollbox;1", &kNS_SCROLLBOXOBJECT_CID },
   { "@mozilla.org/layout/xul-boxobject-tree;1", &kNS_TREEBOXOBJECT_CID },
-#endif 
+#endif // MOZ_XUL
 #ifdef MOZ_XUL
   { "@mozilla.org/inspector/dom-view;1", &kIN_DOMVIEW_CID },
 #endif
@@ -1160,8 +1179,11 @@ static const mozilla::Module::ContractIDEntry kLayoutContracts[] = {
   { "@mozilla.org/editor/texteditor;1", &kNS_TEXTEDITOR_CID },
   { INDEXEDDB_MANAGER_CONTRACTID, &kINDEXEDDB_MANAGER_CID },
   { DOMREQUEST_SERVICE_CONTRACTID, &kDOMREQUEST_SERVICE_CID },
-#ifdef MOZ_B2G_RIL  
+#ifdef MOZ_B2G_RIL
   { SYSTEMWORKERMANAGER_CONTRACTID, &kSYSTEMWORKERMANAGER_CID },
+#endif
+#ifdef MOZ_B2G_BT
+  { BLUETOOTHSERVICE_CONTRACTID, &kBLUETOOTHSERVICE_CID },
 #endif
 #ifdef MOZ_WIDGET_GONK
   { NS_AUDIOMANAGER_CONTRACTID, &kNS_AUDIOMANAGER_CID },
@@ -1230,6 +1252,9 @@ static const mozilla::Module::CategoryEntry kLayoutCategories[] = {
   CONTENTDLF_CATEGORIES
 #ifdef MOZ_B2G_RIL
   { "profile-after-change", "Telephony System Worker Manager", SYSTEMWORKERMANAGER_CONTRACTID },
+#endif
+#ifdef MOZ_B2G_BT
+  { "profile-after-change", "Bluetooth Service", BLUETOOTHSERVICE_CONTRACTID },
 #endif
   { NULL }
 };

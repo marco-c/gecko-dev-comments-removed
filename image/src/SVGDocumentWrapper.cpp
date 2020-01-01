@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SVGDocumentWrapper.h"
 
@@ -75,7 +75,7 @@ SVGDocumentWrapper::GetWidthOrHeight(Dimension aDimension,
   NS_ABORT_IF_FALSE(rootElem, "root elem missing or of wrong type");
   nsresult rv;
 
-  
+  // Get the width or height SVG object
   nsRefPtr<nsIDOMSVGAnimatedLength> domAnimLength;
   if (aDimension == eWidth) {
     rv = rootElem->GetWidth(getter_AddRefs(domAnimLength));
@@ -86,13 +86,13 @@ SVGDocumentWrapper::GetWidthOrHeight(Dimension aDimension,
   NS_ENSURE_SUCCESS(rv, false);
   NS_ENSURE_TRUE(domAnimLength, false);
 
-  
+  // Get the animated value from the object
   nsRefPtr<nsIDOMSVGLength> domLength;
   rv = domAnimLength->GetAnimVal(getter_AddRefs(domLength));
   NS_ENSURE_SUCCESS(rv, false);
   NS_ENSURE_TRUE(domLength, false);
 
-  
+  // Check if it's a percent value (and fail if so)
   uint16_t unitType;
   rv = domLength->GetUnitType(&unitType);
   NS_ENSURE_SUCCESS(rv, false);
@@ -100,7 +100,7 @@ SVGDocumentWrapper::GetWidthOrHeight(Dimension aDimension,
     return false;
   }
 
-  
+  // Non-percent value - woot! Grab it & return it.
   float floatLength;
   rv = domLength->GetValue(&floatLength);
   NS_ENSURE_SUCCESS(rv, false);
@@ -153,8 +153,8 @@ SVGDocumentWrapper::IsAnimated()
 void
 SVGDocumentWrapper::StartAnimation()
 {
-  
-  
+  // Can be called for animated images during shutdown, after we've
+  // already Observe()'d XPCOM shutdown and cleared out our mViewer pointer.
   if (!mViewer)
     return;
 
@@ -171,8 +171,8 @@ SVGDocumentWrapper::StartAnimation()
 void
 SVGDocumentWrapper::StopAnimation()
 {
-  
-  
+  // Can be called for animated images during shutdown, after we've
+  // already Observe()'d XPCOM shutdown and cleared out our mViewer pointer.
   if (!mViewer)
     return;
 
@@ -201,24 +201,24 @@ SVGDocumentWrapper::ResetAnimation()
 }
 
 
+/** nsIStreamListener methods **/
 
-
-
-
-
+/* void onDataAvailable (in nsIRequest request, in nsISupports ctxt,
+                         in nsIInputStream inStr, in unsigned long sourceOffset,
+                         in unsigned long count); */
 NS_IMETHODIMP
 SVGDocumentWrapper::OnDataAvailable(nsIRequest* aRequest, nsISupports* ctxt,
                                     nsIInputStream* inStr,
-                                    uint32_t sourceOffset,
+                                    uint64_t sourceOffset,
                                     uint32_t count)
 {
   return mListener->OnDataAvailable(aRequest, ctxt, inStr,
                                     sourceOffset, count);
 }
 
+/** nsIRequestObserver methods **/
 
-
-
+/* void onStartRequest (in nsIRequest request, in nsISupports ctxt); */
 NS_IMETHODIMP
 SVGDocumentWrapper::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
 {
@@ -229,7 +229,7 @@ SVGDocumentWrapper::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   if (NS_SUCCEEDED(rv) &&
       NS_SUCCEEDED(mListener->OnStartRequest(aRequest, nullptr))) {
     mViewer->GetDocument()->SetIsBeingUsedAsImage();
-    StopAnimation(); 
+    StopAnimation(); // otherwise animations start automatically in helper doc
 
     rv = mViewer->Init(nullptr, nsIntRect(0, 0, 0, 0));
     if (NS_SUCCEEDED(rv)) {
@@ -240,19 +240,19 @@ SVGDocumentWrapper::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
 }
 
 
-
-
+/* void onStopRequest (in nsIRequest request, in nsISupports ctxt,
+                       in nsresult status); */
 NS_IMETHODIMP
 SVGDocumentWrapper::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
                                   nsresult status)
 {
   if (mListener) {
     mListener->OnStopRequest(aRequest, ctxt, status);
-    
-    
-    
-    
-    
+    // A few levels up the stack, imgRequest::OnStopRequest is about to tell
+    // all of its observers that we know our size and are ready to paint.  That
+    // might not be true at this point, though -- so here, we synchronously
+    // finish parsing & layout in our helper-document to make sure we can hold
+    // up to this promise.
     nsCOMPtr<nsIParser> parser = do_QueryInterface(mListener);
     while (!parser->IsComplete()) {
       parser->CancelParsingEvents();
@@ -261,37 +261,37 @@ SVGDocumentWrapper::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
     FlushLayout();
     mListener = nullptr;
 
-    
-    
-    
+    // In a normal document, this would be called by nsDocShell - but we don't
+    // have a nsDocShell. So we do it ourselves. (If we don't, painting will
+    // stay suppressed for a little while longer, for no good reason).
     mViewer->LoadComplete(NS_OK);
   }
 
   return NS_OK;
 }
 
-
+/** nsIObserver Methods **/
 NS_IMETHODIMP
 SVGDocumentWrapper::Observe(nsISupports* aSubject,
                             const char* aTopic,
                             const PRUnichar *aData)
 {
   if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
-    
+    // Sever ties from rendering observers to helper-doc's root SVG node
     nsSVGSVGElement* svgElem = GetRootSVGElem();
     if (svgElem) {
       nsSVGEffects::RemoveAllRenderingObservers(svgElem);
     }
 
-    
+    // Clean up at XPCOM shutdown time.
     DestroyViewer();
     if (mListener)
       mListener = nullptr;
     if (mLoadGroup)
       mLoadGroup = nullptr;
 
-    
-    
+    // Turn off "registered" flag, or else we'll try to unregister when we die.
+    // (No need for that now, and the try would fail anyway -- it's too late.)
     mRegisteredForXPCOMShutdown = false;
   } else {
     NS_ERROR("Unexpected observer topic.");
@@ -299,10 +299,10 @@ SVGDocumentWrapper::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
+/** Private helper methods **/
 
-
-
-
+// This method is largely cribbed from
+// nsExternalResourceMap::PendingLoad::SetupViewer.
 nsresult
 SVGDocumentWrapper::SetupViewer(nsIRequest* aRequest,
                                 nsIContentViewer** aViewer,
@@ -311,7 +311,7 @@ SVGDocumentWrapper::SetupViewer(nsIRequest* aRequest,
   nsCOMPtr<nsIChannel> chan(do_QueryInterface(aRequest));
   NS_ENSURE_TRUE(chan, NS_ERROR_UNEXPECTED);
 
-  
+  // Check for HTTP error page
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aRequest));
   if (httpChannel) {
     bool requestSucceeded;
@@ -321,7 +321,7 @@ SVGDocumentWrapper::SetupViewer(nsIRequest* aRequest,
     }
   }
 
-  
+  // Give this document its own loadgroup
   nsCOMPtr<nsILoadGroup> loadGroup;
   chan->GetLoadGroup(getter_AddRefs(loadGroup));
 
@@ -355,7 +355,7 @@ SVGDocumentWrapper::SetupViewer(nsIRequest* aRequest,
   nsCOMPtr<nsIParser> parser = do_QueryInterface(listener);
   NS_ENSURE_TRUE(parser, NS_ERROR_UNEXPECTED);
 
-  
+  // XML-only, because this is for SVG content
   nsIContentSink* sink = parser->GetContentSink();
   nsCOMPtr<nsIXMLContentSink> xmlSink = do_QueryInterface(sink);
   NS_ENSURE_TRUE(sink, NS_ERROR_UNEXPECTED);
@@ -373,10 +373,10 @@ SVGDocumentWrapper::RegisterForXPCOMShutdown()
 {
   NS_ABORT_IF_FALSE(!mRegisteredForXPCOMShutdown,
                     "re-registering for XPCOM shutdown");
-  
-  
-  
-  
+  // Listen for xpcom-shutdown so that we can drop references to our
+  // helper-document at that point. (Otherwise, we won't get cleaned up
+  // until imgLoader::Shutdown, which can happen after the JAR service
+  // and RDF service have been unregistered.)
   nsresult rv;
   nsCOMPtr<nsIObserverService> obsSvc = do_GetService(OBSERVER_SVC_CID, &rv);
   if (NS_FAILED(rv) ||
@@ -418,11 +418,11 @@ nsSVGSVGElement*
 SVGDocumentWrapper::GetRootSVGElem()
 {
   if (!mViewer)
-    return nullptr; 
+    return nullptr; // Can happen during destruction
 
   nsIDocument* doc = mViewer->GetDocument();
   if (!doc)
-    return nullptr; 
+    return nullptr; // Can happen during destruction
 
   Element* rootElem = mViewer->GetDocument()->GetRootElement();
   if (!rootElem || !rootElem->IsSVG(nsGkAtoms::svg)) {
@@ -432,5 +432,5 @@ SVGDocumentWrapper::GetRootSVGElem()
   return static_cast<nsSVGSVGElement*>(rootElem);
 }
 
-} 
-} 
+} // namespace image
+} // namespace mozilla
