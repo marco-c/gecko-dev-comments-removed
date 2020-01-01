@@ -275,11 +275,6 @@ struct JSStmtInfo {
 
 
 
-#define TCF_NEED_SCRIPT_OBJECT 0x40000000
-
-
-
-
 #define TCF_RETURN_FLAGS        (TCF_RETURN_EXPR | TCF_RETURN_VOID)
 
 
@@ -370,7 +365,7 @@ struct JSTreeContext {
         topStmt(NULL), topScopeStmt(NULL), blockChainBox(NULL), blockNode(NULL),
         decls(prs->context), parser(prs), yieldNode(NULL), argumentsNode(NULL), scopeChain_(NULL),
         lexdeps(prs->context), parent(prs->tc), staticLevel(0), funbox(NULL), functionList(NULL),
-        innermostWith(NULL), bindings(prs->context, prs->emptyCallShape), sharpSlotBase(-1)
+        innermostWith(NULL), bindings(prs->context), sharpSlotBase(-1)
     {
         prs->tc = this;
     }
@@ -663,6 +658,7 @@ struct JSCodeGenerator : public JSTreeContext
     SlotVector      closedVars;
 
     uint16          traceIndex;     
+    uint16          typesetIndex;   
 
     
 
@@ -985,7 +981,6 @@ typedef enum JSSrcNoteType {
     SRC_CONT2LABEL  = 17,       
     SRC_SWITCH      = 18,       
 
-    SRC_SWITCHBREAK = 18,       
     SRC_FUNCDEF     = 19,       
     SRC_CATCH       = 20,       
     SRC_EXTENDED    = 21,       

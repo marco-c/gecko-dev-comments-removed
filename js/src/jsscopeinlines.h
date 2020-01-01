@@ -67,8 +67,8 @@ js::Shape::freeTable(JSContext *cx)
 }
 
 inline js::EmptyShape *
-JSObject::getEmptyShape(JSContext *cx, js::Class *aclasp,
-                         unsigned kind)
+js::types::TypeObject::getEmptyShape(JSContext *cx, js::Class *aclasp,
+                                      unsigned kind)
 {
     JS_ASSERT(kind >= js::gc::FINALIZE_OBJECT0 && kind <= js::gc::FINALIZE_OBJECT_LAST);
     int i = kind - js::gc::FINALIZE_OBJECT0;
@@ -103,7 +103,7 @@ JSObject::getEmptyShape(JSContext *cx, js::Class *aclasp,
 }
 
 inline bool
-JSObject::canProvideEmptyShape(js::Class *aclasp)
+js::types::TypeObject::canProvideEmptyShape(js::Class *aclasp)
 {
     return !emptyShapes || emptyShapes[0]->getClass() == aclasp;
 }
@@ -222,7 +222,7 @@ Shape::hash() const
     JSDHashNumber hash = 0;
 
     
-    JS_ASSERT_IF(isMethod(), !rawSetter);
+    JS_ASSERT_IF(isMethod(), !rawSetter || rawSetter == js_watch_set);
     if (rawGetter)
         hash = JS_ROTATE_LEFT32(hash, 4) ^ jsuword(rawGetter);
     if (rawSetter)
@@ -267,7 +267,7 @@ Shape::get(JSContext* cx, JSObject *receiver, JSObject* obj, JSObject *pobj, js:
     if (hasGetterValue()) {
         JS_ASSERT(!isMethod());
         js::Value fval = getterValue();
-        return js::InvokeGetterOrSetter(cx, receiver, fval, 0, 0, vp);
+        return js::ExternalGetOrSet(cx, receiver, propid, fval, JSACC_READ, 0, 0, vp);
     }
 
     if (isMethod()) {
@@ -291,7 +291,7 @@ Shape::set(JSContext* cx, JSObject* obj, bool strict, js::Value* vp) const
 
     if (attrs & JSPROP_SETTER) {
         js::Value fval = setterValue();
-        return js::InvokeGetterOrSetter(cx, obj, fval, 1, vp, vp);
+        return js::ExternalGetOrSet(cx, obj, propid, fval, JSACC_WRITE, 1, vp, vp);
     }
 
     if (attrs & JSPROP_GETTER)
