@@ -4,15 +4,16 @@
 
 
 
+#include "ion/ParallelSafetyAnalysis.h"
+
 #include <stdio.h>
 
 #include "ion/Ion.h"
+#include "ion/IonAnalysis.h"
+#include "ion/IonSpewer.h"
 #include "ion/MIR.h"
 #include "ion/MIRGraph.h"
-#include "ion/ParallelSafetyAnalysis.h"
-#include "ion/IonSpewer.h"
 #include "ion/UnreachableCodeElimination.h"
-#include "ion/IonAnalysis.h"
 #include "vm/Stack.h"
 
 #include "jsinferinlines.h"
