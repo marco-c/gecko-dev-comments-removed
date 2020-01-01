@@ -172,7 +172,8 @@ private:
   
 
 
-  void CallWillPaintOnObservers();
+  void CallWillPaintOnObservers(PRBool aWillSendDidPaint);
+  void CallDidPaintOnObservers();
   void ReparentChildWidgets(nsIView* aView, nsIWidget *aNewWidget);
   void ReparentWidgets(nsIView* aView, nsIView *aParent);
   void UpdateWidgetArea(nsView *aWidgetView, nsIWidget* aWidget,
