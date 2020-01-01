@@ -956,12 +956,6 @@ JS_StringToVersion(const char *string);
 #define JSOPTION_METHODJIT      JS_BIT(14)      
 #define JSOPTION_PROFILING      JS_BIT(15)      
 
-
-#define JSCOMPILEOPTION_MASK    (JSOPTION_XML | JSOPTION_ANONFUNFIX)
-
-#define JSRUNOPTION_MASK        (JS_BITMASK(16) & ~JSCOMPILEOPTION_MASK)
-#define JSALLOPTION_MASK        (JSCOMPILEOPTION_MASK | JSRUNOPTION_MASK)
-
 extern JS_PUBLIC_API(uint32)
 JS_GetOptions(JSContext *cx);
 
