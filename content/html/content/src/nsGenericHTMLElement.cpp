@@ -1235,11 +1235,24 @@ nsGenericHTMLElement::AfterSetAttr(PRInt32 aNamespaceID, nsIAtom* aName,
 }
 
 nsEventListenerManager*
-nsGenericHTMLElement::GetEventListenerManagerForAttr(PRBool* aDefer)
+nsGenericHTMLElement::GetEventListenerManagerForAttr(nsIAtom* aAttrName,
+                                                     PRBool* aDefer)
 {
   
-  if (mNodeInfo->Equals(nsGkAtoms::body) ||
-      mNodeInfo->Equals(nsGkAtoms::frameset)) {
+  if ((mNodeInfo->Equals(nsGkAtoms::body) ||
+       mNodeInfo->Equals(nsGkAtoms::frameset)) &&
+      
+      (0
+#define EVENT(name_, id_, type_, struct_) 
+#define FORWARDED_EVENT(name_, id_, type_, struct_) \
+       || nsGkAtoms::on##name_ == aAttrName
+#define WINDOW_EVENT FORWARDED_EVENT
+#include "nsEventNameList.h"
+#undef WINDOW_EVENT
+#undef FORWARDED_EVENT
+#undef EVENT
+       )
+      ) {
     nsPIDOMWindow *win;
 
     
@@ -1265,7 +1278,8 @@ nsGenericHTMLElement::GetEventListenerManagerForAttr(PRBool* aDefer)
     return nsnull;
   }
 
-  return nsGenericHTMLElementBase::GetEventListenerManagerForAttr(aDefer);
+  return nsGenericHTMLElementBase::GetEventListenerManagerForAttr(aAttrName,
+                                                                  aDefer);
 }
 
 nsresult
