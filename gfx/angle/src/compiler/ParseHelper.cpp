@@ -1,8 +1,8 @@
-//
-// Copyright (c) 2002-2010 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
+
+
+
+
+
 
 #include "compiler/ParseHelper.h"
 
@@ -24,7 +24,7 @@ static void ReportInfo(TInfoSinkBase& sink,
                        const char* reason, const char* token, 
                        const char* extraInfo)
 {
-    /* VC++ format: file(linenum) : error #: 'token' : extrainfo */
+    
     sink.prefix(type);
     sink.location(loc);
     sink << "'" << token <<  "' : " << reason << " " << extraInfo << "\n";
@@ -38,16 +38,16 @@ static void DefineExtensionMacros(const TExtensionBehavior& extBehavior)
     }
 }
 
-///////////////////////////////////////////////////////////////////////
-//
-// Sub- vector and matrix fields
-//
-////////////////////////////////////////////////////////////////////////
 
-//
-// Look at a '.' field selector string and change it into offsets
-// for a vector.
-//
+
+
+
+
+
+
+
+
+
 bool TParseContext::parseVectorFields(const TString& compString, int vecSize, TVectorFields& fields, int line)
 {
     fields.num = (int) compString.size();
@@ -137,10 +137,10 @@ bool TParseContext::parseVectorFields(const TString& compString, int vecSize, TV
 }
 
 
-//
-// Look at a '.' field selector string and change it into offsets
-// for a matrix.
-//
+
+
+
+
 bool TParseContext::parseMatrixFields(const TString& compString, int matSize, TMatrixFields& fields, int line)
 {
     fields.wholeRow = false;
@@ -185,22 +185,22 @@ bool TParseContext::parseMatrixFields(const TString& compString, int matSize, TM
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////
-//
-// Errors
-//
-////////////////////////////////////////////////////////////////////////
 
-//
-// Track whether errors have occurred.
-//
+
+
+
+
+
+
+
+
 void TParseContext::recover()
 {
 }
 
-//
-// Used by flex/bison to output all syntax and parsing errors.
-//
+
+
+
 void TParseContext::error(TSourceLoc loc,
                           const char* reason, const char* token, 
                           const char* extraInfoFormat, ...)
@@ -229,18 +229,18 @@ void TParseContext::warning(TSourceLoc loc,
     va_end(marker);
 }
 
-//
-// Same error message for all places assignments don't work.
-//
+
+
+
 void TParseContext::assignError(int line, const char* op, TString left, TString right)
 {
     error(line, "", op, "cannot convert from '%s' to '%s'",
           right.c_str(), left.c_str());
 }
 
-//
-// Same error message for all places unary operations don't work.
-//
+
+
+
 void TParseContext::unaryOpError(int line, const char* op, TString operand)
 {
    error(line, " wrong operand type", op, 
@@ -248,9 +248,9 @@ void TParseContext::unaryOpError(int line, const char* op, TString operand)
           op, operand.c_str());
 }
 
-//
-// Same error message for all binary operations don't work.
-//
+
+
+
 void TParseContext::binaryOpError(int line, const char* op, TString left, TString right)
 {
     error(line, " wrong operand types ", op, 
@@ -281,12 +281,12 @@ bool TParseContext::precisionErrorCheck(int line, TPrecision precision, TBasicTy
     return false;
 }
 
-//
-// Both test and if necessary, spit out an error, to see if the node is really
-// an l-value that can be operated on this way.
-//
-// Returns true if the was an error.
-//
+
+
+
+
+
+
 bool TParseContext::lValueErrorCheck(int line, const char* op, TIntermTyped* node)
 {
     TIntermSymbol* symNode = node->getAsSymbolNode();
@@ -347,9 +347,9 @@ bool TParseContext::lValueErrorCheck(int line, const char* op, TIntermTyped* nod
     case EvqPointCoord:     message = "can't modify gl_PointCoord";  break;
     default:
 
-        //
-        // Type that can't be written to?
-        //
+        
+        
+        
         switch (node->getBasicType()) {
         case EbtSampler2D:
         case EbtSamplerCube:
@@ -370,15 +370,15 @@ bool TParseContext::lValueErrorCheck(int line, const char* op, TIntermTyped* nod
     }
 
 
-    //
-    // Everything else is okay, no error.
-    //
+    
+    
+    
     if (message == 0)
         return false;
 
-    //
-    // If we get here, we have an error and a message.
-    //
+    
+    
+    
     if (symNode)
         error(line, " l-value required", op, "\"%s\" (%s)", symbol, message);
     else
@@ -387,12 +387,12 @@ bool TParseContext::lValueErrorCheck(int line, const char* op, TIntermTyped* nod
     return true;
 }
 
-//
-// Both test, and if necessary spit out an error, to see if the node is really
-// a constant.
-//
-// Returns true if the was an error.
-//
+
+
+
+
+
+
 bool TParseContext::constErrorCheck(TIntermTyped* node)
 {
     if (node->getQualifier() == EvqConst)
@@ -403,12 +403,12 @@ bool TParseContext::constErrorCheck(TIntermTyped* node)
     return true;
 }
 
-//
-// Both test, and if necessary spit out an error, to see if the node is really
-// an integer.
-//
-// Returns true if the was an error.
-//
+
+
+
+
+
+
 bool TParseContext::integerErrorCheck(TIntermTyped* node, const char* token)
 {
     if (node->getBasicType() == EbtInt && node->getNominalSize() == 1)
@@ -419,12 +419,12 @@ bool TParseContext::integerErrorCheck(TIntermTyped* node, const char* token)
     return true;
 }
 
-//
-// Both test, and if necessary spit out an error, to see if we are currently
-// globally scoped.
-//
-// Returns true if the was an error.
-//
+
+
+
+
+
+
 bool TParseContext::globalErrorCheck(int line, bool global, const char* token)
 {
     if (global)
@@ -435,15 +435,15 @@ bool TParseContext::globalErrorCheck(int line, bool global, const char* token)
     return true;
 }
 
-//
-// For now, keep it simple:  if it starts "gl_", it's reserved, independent
-// of scope.  Except, if the symbol table is at the built-in push-level,
-// which is when we are parsing built-ins.
-// Also checks for "webgl_" and "_webgl_" reserved identifiers if parsing a
-// webgl shader.
-//
-// Returns true if there was an error.
-//
+
+
+
+
+
+
+
+
+
 bool TParseContext::reservedErrorCheck(int line, const TString& identifier)
 {
     static const char* reservedErrMsg = "reserved built-in name";
@@ -463,8 +463,8 @@ bool TParseContext::reservedErrorCheck(int line, const TString& identifier)
             }
         }
         if (identifier.find("__") != TString::npos) {
-            //error(line, "Two consecutive underscores are reserved for future use.", identifier.c_str(), "", "");
-            //return true;
+            
+            
             infoSink.info.message(EPrefixWarning, "Two consecutive underscores are reserved for future use.", line);
             return false;
         }
@@ -473,13 +473,13 @@ bool TParseContext::reservedErrorCheck(int line, const TString& identifier)
     return false;
 }
 
-//
-// Make sure there is enough data provided to the constructor to build
-// something of the type of the constructor.  Also returns the type of
-// the constructor.
-//
-// Returns true if there was an error in construction.
-//
+
+
+
+
+
+
+
 bool TParseContext::constructorErrorCheck(int line, TIntermNode* node, TFunction& function, TOperator op, TType* type)
 {
     *type = function.getReturnType();
@@ -495,11 +495,11 @@ bool TParseContext::constructorErrorCheck(int line, TIntermNode* node, TFunction
         break;
     }
 
-    //
-    // Note: It's okay to have too many components available, but not okay to have unused
-    // arguments.  'full' will go to true when enough args have been seen.  If we loop
-    // again, there is an extra argument, so 'overfull' will become true.
-    //
+    
+    
+    
+    
+    
 
     int size = 0;
     bool constType = true;
@@ -578,10 +578,10 @@ bool TParseContext::constructorErrorCheck(int line, TIntermNode* node, TFunction
     return false;
 }
 
-// This function checks to see if a void variable has been declared and raise an error message for such a case
-//
-// returns true in case of an error
-//
+
+
+
+
 bool TParseContext::voidErrorCheck(int line, const TString& identifier, const TPublicType& pubType)
 {
     if (pubType.type == EbtVoid) {
@@ -592,10 +592,10 @@ bool TParseContext::voidErrorCheck(int line, const TString& identifier, const TP
     return false;
 }
 
-// This function checks to see if the node (for the expression) contains a scalar boolean expression or not
-//
-// returns true in case of an error
-//
+
+
+
+
 bool TParseContext::boolErrorCheck(int line, const TIntermTyped* type)
 {
     if (type->getBasicType() != EbtBool || type->isArray() || type->isMatrix() || type->isVector()) {
@@ -606,10 +606,10 @@ bool TParseContext::boolErrorCheck(int line, const TIntermTyped* type)
     return false;
 }
 
-// This function checks to see if the node (for the expression) contains a scalar boolean expression or not
-//
-// returns true in case of an error
-//
+
+
+
+
 bool TParseContext::boolErrorCheck(int line, const TPublicType& pType)
 {
     if (pType.type != EbtBool || pType.array || pType.matrix || (pType.size > 1)) {
@@ -681,11 +681,11 @@ bool TParseContext::containsSampler(TType& type)
     return false;
 }
 
-//
-// Do size checking for an array type's size.
-//
-// Returns true if there was an error.
-//
+
+
+
+
+
 bool TParseContext::arraySizeErrorCheck(int line, TIntermTyped* expr, int& size)
 {
     TIntermConstantUnion* constant = expr->getAsConstantUnion();
@@ -705,11 +705,11 @@ bool TParseContext::arraySizeErrorCheck(int line, TIntermTyped* expr, int& size)
     return false;
 }
 
-//
-// See if this qualifier can be an array.
-//
-// Returns true if there is an error.
-//
+
+
+
+
+
 bool TParseContext::arrayQualifierErrorCheck(int line, TPublicType type)
 {
     if ((type.qualifier == EvqAttribute) || (type.qualifier == EvqConst)) {
@@ -720,16 +720,16 @@ bool TParseContext::arrayQualifierErrorCheck(int line, TPublicType type)
     return false;
 }
 
-//
-// See if this type can be an array.
-//
-// Returns true if there is an error.
-//
+
+
+
+
+
 bool TParseContext::arrayTypeErrorCheck(int line, TPublicType type)
 {
-    //
-    // Can the type be an array?
-    //
+    
+    
+    
     if (type.array) {
         error(line, "cannot declare arrays of arrays", TType(type).getCompleteString().c_str(), "");
         return true;
@@ -738,20 +738,20 @@ bool TParseContext::arrayTypeErrorCheck(int line, TPublicType type)
     return false;
 }
 
-//
-// Do all the semantic checking for declaring an array, with and 
-// without a size, and make the right changes to the symbol table.
-//
-// size == 0 means no specified size.
-//
-// Returns true if there was an error.
-//
+
+
+
+
+
+
+
+
 bool TParseContext::arrayErrorCheck(int line, TString& identifier, TPublicType type, TVariable*& variable)
 {
-    //
-    // Don't check for reserved word use until after we know it's not in the symbol table,
-    // because reserved arrays can be redeclared.
-    //
+    
+    
+    
+    
 
     bool builtIn = false; 
     bool sameScope = false;
@@ -824,8 +824,8 @@ bool TParseContext::arraySetMaxSize(TIntermSymbol *node, TType* type, int size, 
     type->setArrayInformationType(variable->getArrayInformationType());
     variable->updateArrayInformationType(type);
 
-    // special casing to test index value of gl_FragData. If the accessed index is >= gl_MaxDrawBuffers
-    // its an error
+    
+    
     if (node->getSymbol() == "gl_FragData") {
         TSymbol* fragData = symbolTable.find("gl_MaxDrawBuffers", &builtIn);
         if (fragData == 0) {
@@ -840,8 +840,8 @@ bool TParseContext::arraySetMaxSize(TIntermSymbol *node, TType* type, int size, 
         }
     }
 
-    // we dont want to update the maxArraySize when this flag is not set, we just want to include this 
-    // node type in the chain of node types so that its updated when a higher maxArraySize comes in.
+    
+    
     if (!updateFlag)
         return false;
 
@@ -858,16 +858,16 @@ bool TParseContext::arraySetMaxSize(TIntermSymbol *node, TType* type, int size, 
     return false;
 }
 
-//
-// Enforce non-initializer type/qualifier rules.
-//
-// Returns true if there was an error.
-//
+
+
+
+
+
 bool TParseContext::nonInitConstErrorCheck(int line, TString& identifier, TPublicType& type)
 {
-    //
-    // Make the qualifier make sense.
-    //
+    
+    
+    
     if (type.qualifier == EvqConst) {
         type.qualifier = EvqTemporary;
         error(line, "variables with qualifier 'const' must be initialized", identifier.c_str(), "");
@@ -877,12 +877,12 @@ bool TParseContext::nonInitConstErrorCheck(int line, TString& identifier, TPubli
     return false;
 }
 
-//
-// Do semantic checking for a variable declaration that has no initializer,
-// and update the symbol table.
-//
-// Returns true if there was an error.
-//
+
+
+
+
+
+
 bool TParseContext::nonInitErrorCheck(int line, TString& identifier, TPublicType& type, TVariable*& variable)
 {
     if (reservedErrorCheck(line, identifier))
@@ -929,7 +929,7 @@ bool TParseContext::extensionErrorCheck(int line, const TString& extension)
         error(line, "extension", extension.c_str(), "is not supported");
         return true;
     }
-    // In GLSL ES, an extension's default behavior is "disable".
+    
     if (iter->second == EBhDisable || iter->second == EBhUndefined) {
         error(line, "extension", extension.c_str(), "is disabled");
         return true;
@@ -949,21 +949,21 @@ bool TParseContext::supportsExtension(const char* extension)
     return (iter != extensionBehavior.end());
 }
 
-/////////////////////////////////////////////////////////////////////////////////
-//
-// Non-Errors.
-//
-/////////////////////////////////////////////////////////////////////////////////
 
-//
-// Look up a function name in the symbol table, and make sure it is a function.
-//
-// Return the function symbol if found, otherwise 0.
-//
+
+
+
+
+
+
+
+
+
+
 const TFunction* TParseContext::findFunction(int line, TFunction* call, bool *builtIn)
 {
-    // First find by unmangled name to check whether the function name has been
-    // hidden by a variable name or struct typename.
+    
+    
     const TSymbol* symbol = symbolTable.find(call->getName(), builtIn);
     if (symbol == 0) {
         symbol = symbolTable.find(call->getMangledName(), builtIn);
@@ -982,10 +982,10 @@ const TFunction* TParseContext::findFunction(int line, TFunction* call, bool *bu
     return static_cast<const TFunction*>(symbol);
 }
 
-//
-// Initializers show up in several places in the grammar.  Have one set of
-// code to handle them here.
-//
+
+
+
+
 bool TParseContext::executeInitializer(TSourceLoc line, TString& identifier, TPublicType& pType, 
                                        TIntermTyped* initializer, TIntermNode*& intermNode, TVariable* variable)
 {
@@ -998,29 +998,29 @@ bool TParseContext::executeInitializer(TSourceLoc line, TString& identifier, TPu
         if (voidErrorCheck(line, identifier, pType))
             return true;
 
-        //
-        // add variable to symbol table
-        //
+        
+        
+        
         variable = new TVariable(&identifier, type);
         if (! symbolTable.insert(*variable)) {
             error(line, "redefinition", variable->getName().c_str(), "");
             return true;
-            // don't delete variable, it's used by error recovery, and the pool 
-            // pop will take care of the memory
+            
+            
         }
     }
 
-    //
-    // identifier must be of type constant, a global, or a temporary
-    //
+    
+    
+    
     TQualifier qualifier = variable->getType().getQualifier();
     if ((qualifier != EvqTemporary) && (qualifier != EvqGlobal) && (qualifier != EvqConst)) {
         error(line, " cannot initialize this type of qualifier ", variable->getType().getQualifierString(), "");
         return true;
     }
-    //
-    // test for and propagate constant
-    //
+    
+    
+    
 
     if (qualifier == EvqConst) {
         if (qualifier != initializer->getType().getQualifier()) {
@@ -1076,8 +1076,8 @@ bool TParseContext::areAllChildConst(TIntermAggregate* aggrNode)
 
     bool allConstant = true;
 
-    // check if all the child nodes are constants so that they can be inserted into 
-    // the parent node
+    
+    
     TIntermSequence &sequence = aggrNode->getSequence() ;
     for (TIntermSequence::iterator p = sequence.begin(); p != sequence.end(); ++p) {
         if (!(*p)->getAsTyped()->getAsConstantUnion())
@@ -1087,11 +1087,11 @@ bool TParseContext::areAllChildConst(TIntermAggregate* aggrNode)
     return allConstant;
 }
 
-// This function is used to test for the correctness of the parameters passed to various constructor functions
-// and also convert them to the right datatype if it is allowed and required. 
-//
-// Returns 0 for an error or the constructed node (aggregate or typed) for no error.
-//
+
+
+
+
+
 TIntermTyped* TParseContext::addConstructor(TIntermNode* node, const TType* type, TOperator op, TFunction* fnCall, TSourceLoc line)
 {
     if (node == 0)
@@ -1118,8 +1118,8 @@ TIntermTyped* TParseContext::addConstructor(TIntermNode* node, const TType* type
 
     TIntermTyped *newNode;
     if (singleArg) {
-        // If structure constructor or array constructor is being called 
-        // for only one parameter inside the structure, we need to call constructStruct function once.
+        
+        
         if (type->isArray())
             newNode = constructStruct(node, &elementType, 1, node->getLine(), false);
         else if (op == EOpConstructStruct)
@@ -1136,18 +1136,18 @@ TIntermTyped* TParseContext::addConstructor(TIntermNode* node, const TType* type
         return newNode;
     }
     
-    //
-    // Handle list of arguments.
-    //
-    TIntermSequence &sequenceVector = aggrNode->getSequence() ;    // Stores the information about the parameter to the constructor
-    // if the structure constructor contains more than one parameter, then construct
-    // each parameter
     
-    int paramCount = 0;  // keeps a track of the constructor parameter number being checked    
     
-    // for each parameter to the constructor call, check to see if the right type is passed or convert them 
-    // to the right type if possible (and allowed).
-    // for structure constructors, just check if the right type is passed, no conversion is allowed.
+    
+    TIntermSequence &sequenceVector = aggrNode->getSequence() ;    
+    
+    
+    
+    int paramCount = 0;  
+    
+    
+    
+    
     
     for (TIntermSequence::iterator p = sequenceVector.begin(); 
                                    p != sequenceVector.end(); p++, paramCount++) {
@@ -1193,21 +1193,21 @@ TIntermTyped* TParseContext::foldConstConstructor(TIntermAggregate* aggrNode, co
     return 0;
 }
 
-// Function for constructor implementation. Calls addUnaryMath with appropriate EOp value
-// for the parameter to the constructor (passed to this function). Essentially, it converts
-// the parameter types correctly. If a constructor expects an int (like ivec2) and is passed a 
-// float, then float is converted to int.
-//
-// Returns 0 for an error or the constructed node.
-//
+
+
+
+
+
+
+
 TIntermTyped* TParseContext::constructBuiltIn(const TType* type, TOperator op, TIntermNode* node, TSourceLoc line, bool subset)
 {
     TIntermTyped* newNode;
     TOperator basicOp;
 
-    //
-    // First, convert types as needed.
-    //
+    
+    
+    
     switch (op) {
     case EOpConstructVec2:
     case EOpConstructVec3:
@@ -1245,23 +1245,23 @@ TIntermTyped* TParseContext::constructBuiltIn(const TType* type, TOperator op, T
         return 0;
     }
 
-    //
-    // Now, if there still isn't an operation to do the construction, and we need one, add one.
-    //
     
-    // Otherwise, skip out early.
+    
+    
+    
+    
     if (subset || (newNode != node && newNode->getType() == *type))
         return newNode;
 
-    // setAggregateOperator will insert a new node for the constructor, as needed.
+    
     return intermediate.setAggregateOperator(newNode, op, line);
 }
 
-// This function tests for the type of the parameters to the structures constructors. Raises
-// an error message if the expected type does not match the parameter passed to the constructor.
-//
-// Returns 0 for an error or the input node itself if the expected and the given parameter types match.
-//
+
+
+
+
+
 TIntermTyped* TParseContext::constructStruct(TIntermNode* node, TType* type, int paramCount, TSourceLoc line, bool subset)
 {
     if (*type == node->getAsTyped()->getType()) {
@@ -1278,13 +1278,13 @@ TIntermTyped* TParseContext::constructStruct(TIntermNode* node, TType* type, int
     return 0;
 }
 
-//
-// This function returns the tree representation for the vector field(s) being accessed from contant vector.
-// If only one component of vector is accessed (v.x or v[0] where v is a contant vector), then a contant node is
-// returned, else an aggregate node is returned (for v.xy). The input to this function could either be the symbol
-// node or it could be the intermediate tree representation of accessing fields in a constant structure or column of 
-// a constant matrix.
-//
+
+
+
+
+
+
+
 TIntermTyped* TParseContext::addConstVectorNode(TVectorFields& fields, TIntermTyped* node, TSourceLoc line)
 {
     TIntermTyped* typedNode;
@@ -1294,13 +1294,13 @@ TIntermTyped* TParseContext::addConstVectorNode(TVectorFields& fields, TIntermTy
     if (tempConstantNode) {
         unionArray = tempConstantNode->getUnionArrayPointer();
 
-        if (!unionArray) {  // this error message should never be raised
+        if (!unionArray) {  
             infoSink.info.message(EPrefixInternalError, "ConstantUnion not initialized in addConstVectorNode function", line);
             recover();
 
             return node;
         }
-    } else { // The node has to be either a symbol node or an aggregate node or a tempConstant node, else, its an error
+    } else { 
         error(line, "Cannot offset into the vector", "Error", "");
         recover();
 
@@ -1323,12 +1323,12 @@ TIntermTyped* TParseContext::addConstVectorNode(TVectorFields& fields, TIntermTy
     return typedNode;
 }
 
-//
-// This function returns the column being accessed from a constant matrix. The values are retrieved from
-// the symbol table and parse-tree is built for a vector (each column of a matrix is a vector). The input 
-// to the function could either be a symbol node (m[0] where m is a constant matrix)that represents a 
-// constant matrix or it could be the tree representation of the constant matrix (s.m1[0] where s is a constant structure)
-//
+
+
+
+
+
+
 TIntermTyped* TParseContext::addConstMatrixNode(int index, TIntermTyped* node, TSourceLoc line)
 {
     TIntermTyped* typedNode;
@@ -1355,12 +1355,12 @@ TIntermTyped* TParseContext::addConstMatrixNode(int index, TIntermTyped* node, T
 }
 
 
-//
-// This function returns an element of an array accessed from a constant array. The values are retrieved from
-// the symbol table and parse-tree is built for the type of the element. The input 
-// to the function could either be a symbol node (a[0] where a is a constant array)that represents a 
-// constant array or it could be the tree representation of the constant array (s.a1[0] where s is a constant structure)
-//
+
+
+
+
+
+
 TIntermTyped* TParseContext::addConstArrayNode(int index, TIntermTyped* node, TSourceLoc line)
 {
     TIntermTyped* typedNode;
@@ -1390,11 +1390,11 @@ TIntermTyped* TParseContext::addConstArrayNode(int index, TIntermTyped* node, TS
 }
 
 
-//
-// This function returns the value of a particular field inside a constant structure from the symbol table. 
-// If there is an embedded/nested struct, it appropriately calls addConstStructNested or addConstStructFromAggr
-// function and returns the parse-tree with the values of the embedded/nested struct.
-//
+
+
+
+
+
 TIntermTyped* TParseContext::addConstStruct(TString& identifier, TIntermTyped* node, TSourceLoc line)
 {
     const TTypeList* fields = node->getType().getStruct();
@@ -1414,7 +1414,7 @@ TIntermTyped* TParseContext::addConstStruct(TString& identifier, TIntermTyped* n
     if (tempConstantNode) {
          ConstantUnion* constArray = tempConstantNode->getUnionArrayPointer();
 
-         typedNode = intermediate.addConstantUnion(constArray+instanceSize, tempConstantNode->getType(), line); // type will be changed in the calling function
+         typedNode = intermediate.addConstantUnion(constArray+instanceSize, tempConstantNode->getType(), line); 
     } else {
         error(line, "Cannot offset into the structure", "Error", "");
         recover();
@@ -1429,9 +1429,9 @@ bool TParseContext::enterStructDeclaration(int line, const TString& identifier)
 {
     ++structNestingLevel;
 
-    // Embedded structure definitions are not supported per GLSL ES spec.
-    // They aren't allowed in GLSL either, but we need to detect this here
-    // so we don't rely on the GLSL compiler to catch it.
+    
+    
+    
     if (structNestingLevel > 1) {
         error(line, "", "Embedded struct definitions are not allowed", "");
         return true;
@@ -1449,7 +1449,7 @@ namespace {
 
 const int kWebGLMaxStructNesting = 4;
 
-}  // namespace
+}  
 
 bool TParseContext::structNestingErrorCheck(TSourceLoc line, const TType& fieldType)
 {
@@ -1461,9 +1461,9 @@ bool TParseContext::structNestingErrorCheck(TSourceLoc line, const TType& fieldT
         return false;
     }
 
-    // We're already inside a structure definition at this point, so add
-    // one to the field's struct nesting.
-    if (1 + fieldType.getDeepestStructNesting() >= kWebGLMaxStructNesting) {
+    
+    
+    if (1 + fieldType.getDeepestStructNesting() > kWebGLMaxStructNesting) {
         error(line, "", "", "Reference of struct type %s exceeds maximum struct nesting of %d",
               fieldType.getTypeName().c_str(), kWebGLMaxStructNesting);
         return true;
@@ -1472,17 +1472,17 @@ bool TParseContext::structNestingErrorCheck(TSourceLoc line, const TType& fieldT
     return false;
 }
 
-//
-// Parse an array of strings using yyparse.
-//
-// Returns 0 for success.
-//
+
+
+
+
+
 int PaParseStrings(int count, const char* const string[], const int length[],
                    TParseContext* context) {
     if ((count == 0) || (string == NULL))
         return 1;
 
-    // setup preprocessor.
+    
     if (InitPreprocessor())
         return 1;
     DefineExtensionMacros(context->extensionBehavior);
@@ -1507,9 +1507,9 @@ bool InitializeParseContextIndex()
         return false;
     }
 
-    //
-    // Allocate a TLS index.
-    //
+    
+    
+    
     GlobalParseContextIndex = OS_AllocTLSIndex();
     
     if (GlobalParseContextIndex == OS_INVALID_TLS_INDEX) {
@@ -1575,9 +1575,9 @@ bool FreeParseContext()
 
 TParseContextPointer& GetGlobalParseContext()
 {
-    //
-    // Minimal error checking for speed
-    //
+    
+    
+    
 
     TThreadParseContext *lpParseContext = static_cast<TThreadParseContext *>(OS_GetTLSValue(GlobalParseContextIndex));
 
