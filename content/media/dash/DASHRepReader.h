@@ -58,6 +58,9 @@ public:
   
   virtual void RequestSwitchAtSubsegment(int32_t aCluster,
                                          MediaDecoderReader* aNextReader) = 0;
+
+  
+  virtual bool IsDataCachedAtEndOfSubsegments() = 0;
 };
 
 }
