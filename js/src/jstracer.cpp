@@ -7623,7 +7623,6 @@ TraceRecorder::guardPrototypeHasNoIndexedProperties(JSObject* obj, LIns* obj_ins
     if (js_PrototypeHasIndexedProperties(cx, obj))
         return JSRS_STOP;
 
-    
     while (guardHasPrototype(obj, obj_ins, &obj, &obj_ins, exit)) {
         LIns* map_ins = lir->insLoad(LIR_ldp, obj_ins, (int)offsetof(JSObject, map));
         LIns* ops_ins;
