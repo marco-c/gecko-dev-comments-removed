@@ -88,6 +88,7 @@
 #include "prdtoa.h"
 #include "mozilla/dom/Element.h"
 #include "gfxUtils.h"
+#include "mozilla/Preferences.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -175,7 +176,7 @@ static const char SMIL_PREF_STR[] = "svg.smil.enabled";
 static int
 SMILPrefChanged(const char *aPref, void *aClosure)
 {
-  PRBool prefVal = nsContentUtils::GetBoolPref(SMIL_PREF_STR);
+  PRBool prefVal = Preferences::GetBool(SMIL_PREF_STR);
   gSMILEnabled = prefVal;
   return 0;
 }
@@ -187,7 +188,7 @@ NS_SMILEnabled()
   
   if (!sInitialized) {
     
-    gSMILEnabled = nsContentUtils::GetBoolPref(SMIL_PREF_STR);
+    gSMILEnabled = Preferences::GetBool(SMIL_PREF_STR);
     nsContentUtils::RegisterPrefCallback(SMIL_PREF_STR, SMILPrefChanged, nsnull);
 
     sInitialized = PR_TRUE;
