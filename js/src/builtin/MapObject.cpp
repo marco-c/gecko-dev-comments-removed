@@ -25,6 +25,7 @@ using mozilla::DoubleIsInt32;
 using mozilla::IsNaN;
 using mozilla::OldMove;
 using mozilla::MoveRef;
+using JS::DoubleNaNValue;
 
 
 
@@ -802,7 +803,7 @@ HashableValue::setValue(JSContext *cx, HandleValue v)
             value = Int32Value(i);
         } else if (IsNaN(d)) {
             
-            value = DoubleValue(js_NaN);
+            value = DoubleNaNValue();
         } else {
             value = v;
         }
