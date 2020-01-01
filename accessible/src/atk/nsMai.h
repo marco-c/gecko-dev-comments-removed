@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef __NS_MAI_H__
 #define __NS_MAI_H__
@@ -46,6 +46,6 @@ PR_END_MACRO
                                          MAI_TYPE_ATK_OBJECT, \
                                          MaiAtkObjectClass))
 GType mai_atk_object_get_type(void);
-AccessibleWrap* GetAccessibleWrap(AtkObject* aAtkObj);
+mozilla::a11y::AccessibleWrap* GetAccessibleWrap(AtkObject* aAtkObj);
 
-#endif /* __NS_MAI_H__ */
+#endif 
