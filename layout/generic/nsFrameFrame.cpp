@@ -94,10 +94,6 @@
 #include "nsIObjectLoadingContent.h"
 #include "nsLayoutUtils.h"
 
-#ifdef MOZ_XUL
-#include "nsXULPopupManager.h"
-#endif
-
 
 #ifdef ACCESSIBILITY
 #include "nsIAccessibilityService.h"
@@ -676,15 +672,6 @@ nsSubDocumentFrame::AttributeChanged(PRInt32 aNameSpaceID,
       mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::type, value);
 
       PRBool is_primary = value.LowerCaseEqualsLiteral("content-primary");
-
-#ifdef MOZ_XUL
-      
-      if (!is_primary) {
-        nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-        if (pm)
-          pm->HidePopupsInDocShell(docShellAsItem);
-      }
-#endif
 
       parentTreeOwner->ContentShellRemoved(docShellAsItem);
 
