@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim:expandtab:shiftwidth=4:tabstop=4:
+ */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is Christopher Blizzard
+ * <blizzard@mozilla.org>.  Portions created by the Initial Developer
+ * are Copyright (C) 2001 the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Masayuki Nakano <masayuki@d-toybox.com>
+ *   Vladimir Vukicevic <vladimir@pobox.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef __nsWindow_h__
 #define __nsWindow_h__
@@ -56,7 +56,7 @@
 
 #ifdef MOZ_LOGGING
 
-
+// make sure that logging is enabled before including prlog.h
 #define FORCE_PR_LOG
 
 #include "prlog.h"
@@ -95,7 +95,7 @@ extern PRLogModuleInfo *gWidgetDrawLog;
 
 #endif
 
-#endif 
+#endif /* MOZ_LOGGING */
 
 class QEvent;
 class QGraphicsView;
@@ -117,9 +117,9 @@ public:
 
     NS_DECL_ISUPPORTS_INHERITED
 
-    
-    
-    
+    //
+    // nsIWidget
+    //
 
     NS_IMETHOD         ConfigureChildren(const nsTArray<nsIWidget::Configuration>&);
 
@@ -196,14 +196,14 @@ public:
                                       const InputContextAction& aAction);
     NS_IMETHOD_(InputContext) GetInputContext();
 
-    
-    
-    
+    //
+    // utility methods
+    //
     void               QWidgetDestroyed();
 
-    
+    /***** from CommonWidget *****/
 
-    
+    // event handling code
 
     void DispatchActivateEvent(void);
     void DispatchDeactivateEvent(void);
@@ -217,44 +217,45 @@ public:
         return status;
     }
 
-    
+    // Some of the nsIWidget methods
     NS_IMETHOD         IsEnabled        (bool *aState);
 
-    
+    // called when we are destroyed
     void OnDestroy(void);
 
-    
+    // called to check and see if a widget's dimensions are sane
     bool AreBoundsSane(void);
 
     NS_IMETHOD         ReparentNativeWidget(nsIWidget* aNewParent);
 
     QWidget* GetViewWidget();
+    virtual PRUint32 GetGLFrameBufferFormat() MOZ_OVERRIDE;
 
 protected:
     nsCOMPtr<nsIWidget> mParent;
-    
+    // Is this a toplevel window?
     bool                mIsTopLevel;
-    
+    // Has this widget been destroyed yet?
     bool                mIsDestroyed;
 
-    
+    // This flag tracks if we're hidden or shown.
     bool                mIsShown;
-    
+    // is this widget enabled?
     bool                mEnabled;
-    
-    
+    // Has anyone set an x/y location for this widget yet? Toplevels
+    // shouldn't be automatically set to 0,0 for first show.
     bool                mPlaced;
 
-    
-    
+    // Remember the last sizemode so that we can restore it when
+    // leaving fullscreen
     nsSizeMode         mLastSizeMode;
 
     InputContext mInputContext;
 
-    
-
-
-
+    /**
+     * Event handlers (proxied from the actual qwidget).
+     * They follow normal Qt widget semantics.
+     */
     void Initialize(MozQWidget *widget);
     friend class nsQtEventDispatcher;
     friend class InterceptContainer;
@@ -284,7 +285,7 @@ protected:
     virtual nsEventStatus showEvent(QShowEvent *);
     virtual nsEventStatus hideEvent(QHideEvent *);
 
-
+//Gestures are only supported in qt > 4.6
 #if (QT_VERSION >= QT_VERSION_CHECK(4, 6, 0))
     virtual nsEventStatus OnTouchEvent(QTouchEvent *event, bool &handled);
 
@@ -308,9 +309,9 @@ protected:
     void               NativeShow  (bool    aAction);
 
     enum PluginType {
-        PluginType_NONE = 0,   
-        PluginType_XEMBED,     
-        PluginType_NONXEMBED   
+        PluginType_NONE = 0,   /* do not have any plugin */
+        PluginType_XEMBED,     /* the plugin support xembed */
+        PluginType_NONXEMBED   /* the plugin does not support xembed */
     };
 
     void               SetPluginType(PluginType aPluginType);
@@ -358,21 +359,21 @@ private:
 
     bool         mIsTransparent;
  
-    
-    
+    // all of our DND stuff
+    // this is the last window that had a drag event happen on it.
     void   InitDragEvent         (nsMouseEvent &aEvent);
 
-    
-    
+    // this is everything we need to be able to fire motion events
+    // repeatedly
     PRUint32 mKeyDownFlags[8];
 
-    
+    /* Helper methods for DOM Key Down event suppression. */
     PRUint32* GetFlagWord32(PRUint32 aKeyCode, PRUint32* aMask) {
-        
+        /* Mozilla DOM Virtual Key Code is from 0 to 224. */
         NS_ASSERTION((aKeyCode <= 0xFF), "Invalid DOM Key Code");
         aKeyCode &= 0xFF;
 
-        
+        /* 32 = 2^5 = 0x20 */
         *aMask = PRUint32(1) << (aKeyCode & 0x1F);
         return &mKeyDownFlags[(aKeyCode >> 5)];
     }
@@ -396,8 +397,8 @@ private:
     }
     PRInt32 mQCursor;
 
-    
-    
+    // Call this function when the users activity is the direct cause of an
+    // event (like a keypress or mouse click).
     void UserActivity();
 
     inline void ProcessMotionEvent() {
@@ -438,7 +439,7 @@ private:
         }
     }
 
-    
+    // Remember dirty area caused by ::Scroll
     QRegion mDirtyScrollArea;
 
 #if (QT_VERSION >= QT_VERSION_CHECK(4, 6, 0))
@@ -472,5 +473,5 @@ public:
 
     PRInt32 mChildID;
 };
-#endif 
+#endif /* __nsWindow_h__ */
 
