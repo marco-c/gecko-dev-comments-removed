@@ -1,11 +1,11 @@
-// 3D Cube Rotation
-// http://www.speich.net/computer/moztesting/3d.htm
-// Created by Simon Speich
+
+
+
 
 var Q = new Array();
-var MTrans = new Array();  // transformation matrix
-var MQube = new Array();  // position information of qube
-var I = new Array();      // entity matrix
+var MTrans = new Array();  
+var MQube = new Array();  
+var I = new Array();      
 var Origin = new Object();
 var Testing = new Object();
 var LoopTimer;
@@ -54,7 +54,6 @@ function DrawLine(From, To) {
   NumPix = Math.round(Q.LastPx + NumPix);
 
   var i = Q.LastPx;
-/* BEGIN LOOP */
   for (; i < NumPix; i++) {
     Num += NumAdd;
     if (Num >= Den) {
@@ -65,7 +64,6 @@ function DrawLine(From, To) {
     x += IncX2;
     y += IncY2;
   }
-/* END LOOP */
   Q.LastPx = NumPix;
 }
 
@@ -79,17 +77,13 @@ function CalcCross(V0, V1) {
 
 function CalcNormal(V0, V1, V2) {
   var A = new Array();   var B = new Array(); 
-/* BEGIN LOOP */
   for (var i = 0; i < 3; i++) {
     A[i] = V0[i] - V1[i];
     B[i] = V2[i] - V1[i];
   }
-/* END LOOP */
   A = CalcCross(A, B);
   var Length = Math.sqrt(A[0]*A[0] + A[1]*A[1] + A[2]*A[2]); 
-/* BEGIN LOOP */
   for (var i = 0; i < 3; i++) A[i] = A[i] / Length;
-/* END LOOP */
   A[3] = 1;
   return A;
 }
@@ -98,54 +92,42 @@ function CreateP(X,Y,Z) {
   this.V = [X,Y,Z,1];
 }
 
-// multiplies two matrices
+
 function MMulti(M1, M2) {
   var M = [[],[],[],[]];
   var i = 0;
   var j = 0;
-/* BEGIN LOOP */
   for (; i < 4; i++) {
     j = 0;
-/* BEGIN LOOP */
     for (; j < 4; j++) M[i][j] = M1[i][0] * M2[0][j] + M1[i][1] * M2[1][j] + M1[i][2] * M2[2][j] + M1[i][3] * M2[3][j];
-/* END LOOP */
   }
-/* END LOOP */
   return M;
 }
 
-//multiplies matrix with vector
+
 function VMulti(M, V) {
   var Vect = new Array();
   var i = 0;
-/* BEGIN LOOP */
   for (;i < 4; i++) Vect[i] = M[i][0] * V[0] + M[i][1] * V[1] + M[i][2] * V[2] + M[i][3] * V[3];
-/* END LOOP */
   return Vect;
 }
 
 function VMulti2(M, V) {
   var Vect = new Array();
   var i = 0;
-/* BEGIN LOOP */
   for (;i < 3; i++) Vect[i] = M[i][0] * V[0] + M[i][1] * V[1] + M[i][2] * V[2];
-/* END LOOP */
   return Vect;
 }
 
-// add to matrices
+
 function MAdd(M1, M2) {
   var M = [[],[],[],[]];
   var i = 0;
   var j = 0;
-/* BEGIN LOOP */
   for (; i < 4; i++) {
     j = 0;
-/* BEGIN LOOP */
     for (; j < 4; j++) M[i][j] = M1[i][j] + M2[i][j];
-/* END LOOP */
   }
-/* END LOOP */
   return M;
 }
 
@@ -202,13 +184,11 @@ function RotateZ(M, Phi) {
 }
 
 function DrawQube() {
-  // calc current normals
+  
   var CurN = new Array();
   var i = 5;
   Q.LastPx = 0;
-/* BEGIN LOOP */
   for (; i > -1; i--) CurN[i] = VMulti2(MQube, Q.Normal[i]);
-/* END LOOP */
   if (CurN[0][2] < 0) {
     if (!Q.Line[0]) { DrawLine(Q[0], Q[1]); Q.Line[0] = true; };
     if (!Q.Line[1]) { DrawLine(Q[1], Q[2]); Q.Line[1] = true; };
@@ -252,9 +232,7 @@ function DrawQube() {
 function Loop() {
   if (Testing.LoopCount > Testing.LoopMax) return;
   var TestingStr = String(Testing.LoopCount);
-/* BEGIN LOOP */
   while (TestingStr.length < 3) TestingStr = "0" + TestingStr;
-/* END LOOP */
   MTrans = Translate(I, -Q[8].V[0], -Q[8].V[1], -Q[8].V[2]);
   MTrans = RotateX(MTrans, 1);
   MTrans = RotateY(MTrans, 3);
@@ -262,18 +240,16 @@ function Loop() {
   MTrans = Translate(MTrans, Q[8].V[0], Q[8].V[1], Q[8].V[2]);
   MQube = MMulti(MTrans, MQube);
   var i = 8;
-/* BEGIN LOOP */
   for (; i > -1; i--) {
     Q[i].V = VMulti(MTrans, Q[i].V);
   }
-/* END LOOP */
   DrawQube();
   Testing.LoopCount++;
   Loop();
 }
 
 function Init(CubeSize) {
-  // init/reset vars
+  
   Origin.V = [150,150,20,1];
   Testing.LoopCount = 0;
   Testing.LoopMax = 50;
@@ -284,7 +260,7 @@ function Init(CubeSize) {
   Testing.TimeTotal = 0;
   Testing.Init = false;
 
-  // transformation matrix
+  
   MTrans = [
   [1,0,0,0],
   [0,1,0,0],
@@ -292,7 +268,7 @@ function Init(CubeSize) {
   [0,0,0,1]
   ];
   
-  // position information of qube
+  
   MQube = [
   [1,0,0,0],
   [0,1,0,0],
@@ -300,7 +276,7 @@ function Init(CubeSize) {
   [0,0,0,1]
   ];
   
-  // entity matrix
+  
   I = [
   [1,0,0,0],
   [0,1,0,0],
@@ -308,7 +284,7 @@ function Init(CubeSize) {
   [0,0,0,1]
   ];
   
-  // create qube
+  
   Q[0] = new CreateP(-CubeSize,-CubeSize, CubeSize);
   Q[1] = new CreateP(-CubeSize, CubeSize, CubeSize);
   Q[2] = new CreateP( CubeSize, CubeSize, CubeSize);
@@ -318,46 +294,38 @@ function Init(CubeSize) {
   Q[6] = new CreateP( CubeSize, CubeSize,-CubeSize);
   Q[7] = new CreateP( CubeSize,-CubeSize,-CubeSize);
   
-  // center of gravity
+  
   Q[8] = new CreateP(0, 0, 0);
   
-  // anti-clockwise edge check
+  
   Q.Edge = [[0,1,2],[3,2,6],[7,6,5],[4,5,1],[4,0,3],[1,5,6]];
   
-  // calculate squad normals
-  Q.Normal = new Array();
-/* BEGIN LOOP */
-  for (var i = 0; i < Q.Edge.length; i++) Q.Normal[i] = CalcNormal(Q[Q.Edge[i][0]].V, Q[Q.Edge[i][1]].V, Q[Q.Edge[i][2]].V);
-/* END LOOP */
   
-  // line drawn ?
+  Q.Normal = new Array();
+  for (var i = 0; i < Q.Edge.length; i++) Q.Normal[i] = CalcNormal(Q[Q.Edge[i][0]].V, Q[Q.Edge[i][1]].V, Q[Q.Edge[i][2]].V);
+  
+  
   Q.Line = [false,false,false,false,false,false,false,false,false,false,false,false];
   
-  // create line pixels
+  
   Q.NumPx = 9 * 2 * CubeSize;
-/* BEGIN LOOP */
   for (var i = 0; i < Q.NumPx; i++) CreateP(0,0,0);
-/* END LOOP */
   
   MTrans = Translate(MTrans, Origin.V[0], Origin.V[1], Origin.V[2]);
   MQube = MMulti(MTrans, MQube);
 
   var i = 0;
-/* BEGIN LOOP */
   for (; i < 9; i++) {
     Q[i].V = VMulti(MTrans, Q[i].V);
   }
-/* END LOOP */
   DrawQube();
   Testing.Init = true;
   Loop();
 }
 
-/* BEGIN LOOP */
 for ( var i = 20; i <= 160; i *= 2 ) {
   Init(i);
 }
-/* END LOOP */
 
 Q = null;
 MTrans = null;
