@@ -33,7 +33,7 @@ size_t RNG_FileUpdate(const char *fileName, size_t limit);
 static size_t CopyLowBits(void *dst, size_t dstlen, void *src, size_t srclen)
 {
     union endianness {
-	int32 i;
+	PRInt32 i;
 	char c[4];
     } u;
 
@@ -611,7 +611,7 @@ static void
 GiveSystemInfo(void)
 {
     system_info *info = NULL;
-    int32 val;                     
+    PRInt32 val;
     get_system_info(info);
     if (info) {
         val = info->boot_time;
