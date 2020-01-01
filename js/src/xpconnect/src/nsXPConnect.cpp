@@ -426,9 +426,9 @@ nsXPConnect::GarbageCollect()
 
 
 inline bool
-AddToCCKind(uint32 kind)
+AddToCCKind(JSGCTraceKind kind)
 {
-    return kind == JSTRACE_OBJECT || kind == JSTRACE_XML;
+    return kind == JSTRACE_OBJECT || kind == JSTRACE_XML || kind == JSTRACE_SCRIPT;
 }
 
 #ifdef DEBUG_CC
@@ -445,7 +445,7 @@ struct NoteJSRootTracer : public JSTracer
 };
 
 static void
-NoteJSRoot(JSTracer *trc, void *thing, uint32 kind)
+NoteJSRoot(JSTracer *trc, void *thing, JSGCTraceKind kind)
 {
     if(AddToCCKind(kind))
     {
@@ -881,6 +881,10 @@ nsXPConnect::Traverse(void *p, nsCycleCollectionTraversalCallback &cb)
     TraversalTracer trc(cb);
 
     JS_TRACER_INIT(&trc, cx, NoteJSChild);
+    
+    
+    
+    
     JS_TraceChildren(&trc, p, traceKind);
 
     if(traceKind != JSTRACE_OBJECT || dontTraverse)
