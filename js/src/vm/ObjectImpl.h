@@ -1239,7 +1239,14 @@ class ObjectImpl : public gc::Cell
         return type_->clasp;
     }
 
-    inline bool isExtensible() const;
+    static inline bool
+    isExtensible(JSContext *cx, Handle<ObjectImpl*> obj, bool *extensible);
+
+    
+    
+    
+    
+    inline bool nonProxyIsExtensible() const;
 
     
     

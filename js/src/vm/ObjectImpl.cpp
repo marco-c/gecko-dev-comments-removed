@@ -481,7 +481,10 @@ DenseElementsHeader::defineElement(JSContext *cx, Handle<ObjectImpl*> obj, uint3
 
 
 
-    if (!obj->isExtensible()) {
+    bool extensible;
+    if (!JSObject::isExtensible(cx, obj, &extensible))
+        return false;
+    if (!extensible) {
         *succeeded = false;
         if (!shouldThrow)
             return true;
