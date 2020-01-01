@@ -1,50 +1,18 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//-----------------------------------------------------------------------------
 var BUGNUMBER = 348986;
 var summary = 'Recursion check of nested functions';
 var actual = 'No Crash';
 var expect = 'No Crash';
 
 
-
+//-----------------------------------------------------------------------------
 test();
-
+//-----------------------------------------------------------------------------
 
 function test()
 {
@@ -52,8 +20,8 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
  
-
-
+// Construct f(){function f(){function f(){...}}} with maximum
+// nested function declaration still does not hit recursion limit.
 
   var deepestFunction;
 
@@ -90,9 +58,9 @@ function test()
 
   print("Max callAfterConsumingCStack levels:"+n);
 
-
-
-
+// Here n is max possible value when callAfterConsumingCStack(n, emptyFunction)
+// does not trigger stackOverflow. Decrease it slightly to give some C stack
+// space for deepestFunction.toSource()
  
   n = Math.max(0, n - 10);
   try {
@@ -127,8 +95,8 @@ function callAfterConsumingCStack(n, action)
 }
 
 
-
-
+// Return the maximum positive value of N where action(N) still returns true
+// or 0 if no such value exists.
 function findActionMax(action)
 {
   var N, next, increase;

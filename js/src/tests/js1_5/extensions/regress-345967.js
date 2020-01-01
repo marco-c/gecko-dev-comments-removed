@@ -1,51 +1,19 @@
+// |reftest| skip -- slow
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//-----------------------------------------------------------------------------
 var BUGNUMBER = 345967;
 var summary = 'Yet another unrooted atom in jsarray.c';
 var actual = '';
 var expect = '';
 
 
-
+//-----------------------------------------------------------------------------
 test();
-
+//-----------------------------------------------------------------------------
 
 function test()
 {
@@ -79,9 +47,9 @@ function test()
 			 tmp /= 10;
 		       }
 		       for (var i = 0; i != 1000; ++i) {
-			 
-			 
-			 
+			 // Make string with 11 characters that would take
+			 // (11 + 1) * 2 bytes or sizeof(JSAtom) so eventually
+			 // malloc will ovewrite just freed atoms.
 			 var tmp2 = Array(12).join(' ');
 		       }
 		     });

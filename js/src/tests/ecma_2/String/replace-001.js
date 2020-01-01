@@ -14,38 +14,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var SECTION = "String/replace-001.js";
 var VERSION = "ECMA_2";
 var TITLE   = "String.prototype.replace( regexp, replaceValue )";
