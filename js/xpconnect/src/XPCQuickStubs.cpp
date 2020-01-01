@@ -549,7 +549,7 @@ getWrapper(JSContext *cx,
     
     
     if (js::IsWrapper(obj)) {
-        obj = js::UnwrapObjectChecked(obj,  false);
+        obj = js::CheckedUnwrap(obj,  false);
 
         
         
