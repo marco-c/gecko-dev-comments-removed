@@ -3161,6 +3161,7 @@ _cairo_d2d_mask(void			*surface,
     cairo_rectangle_int_t extents;
 
     cairo_clip_t *actual_clip = clip;
+    cairo_clip_t temporary_clip;
 
     cairo_int_status_t status;
 
@@ -3210,7 +3211,18 @@ _cairo_d2d_mask(void			*surface,
 		
 		
 		
-		actual_clip = NULL;
+		
+		
+		
+		
+		temporary_clip.path = find_common_ancestor(clip->path, d2dsurf->clip.path);
+
+		
+		
+		
+		temporary_clip.all_clipped = FALSE;
+
+		actual_clip = &temporary_clip;
 	    }
 	}
 
