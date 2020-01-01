@@ -1,30 +1,30 @@
-/*
- * Copyright © 2007,2008,2009  Red Hat, Inc.
- * Copyright © 2011,2012  Google, Inc.
- *
- *  This is part of HarfBuzz, a text shaping library.
- *
- * Permission is hereby granted, without written agreement and without
- * license or royalty fees, to use, copy, modify, and distribute this
- * software and its documentation for any purpose, provided that the
- * above copyright notice and the following two paragraphs appear in
- * all copies of this software.
- *
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
- * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
- * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
- * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
- * DAMAGE.
- *
- * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
- * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
- * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
- * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
- *
- * Red Hat Author(s): Behdad Esfahbod
- * Google Author(s): Behdad Esfahbod
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef HB_PRIVATE_HH
 #define HB_PRIVATE_HH
@@ -45,24 +45,30 @@
 #include <string.h>
 #include <assert.h>
 
-/* We only use these two for debug output.  However, the debug code is
- * always seen by the compiler (and optimized out in non-debug builds.
- * If including these becomes a problem, we can start thinking about
- * someway around that. */
+
+
+
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
 
 
 
-/* Essentials */
+
 
 #ifndef NULL
 # define NULL ((void *) 0)
 #endif
 
 
-/* Basics */
+
+struct _hb_void_t {};
+typedef const _hb_void_t &hb_void_t;
+#define HB_VOID (* (const _hb_void_t *) NULL)
+
+
+
 
 
 #undef MIN
@@ -76,8 +82,8 @@ static inline Type MAX (const Type &a, const Type &b) { return a > b ? a : b; }
 
 #undef  ARRAY_LENGTH
 template <typename Type, unsigned int n>
-static inline unsigned int ARRAY_LENGTH (const Type (&a)[n]) { return n; }
-/* A const version, but does not detect erratically being called on pointers. */
+static inline unsigned int ARRAY_LENGTH (const Type (&)[n]) { return n; }
+
 #define ARRAY_LENGTH_CONST(__array) ((signed int) (sizeof (__array) / sizeof (__array[0])))
 
 #define HB_STMT_START do
@@ -93,7 +99,7 @@ static inline unsigned int ARRAY_LENGTH (const Type (&a)[n]) { return n; }
 #define _PASTE1(a,b) a##b
 #define PASTE(a,b) _PASTE1(a,b)
 
-/* Lets assert int types.  Saves trouble down the road. */
+
 
 ASSERT_STATIC (sizeof (int8_t) == 1);
 ASSERT_STATIC (sizeof (uint8_t) == 1);
@@ -110,7 +116,7 @@ ASSERT_STATIC (sizeof (hb_mask_t) == 4);
 ASSERT_STATIC (sizeof (hb_var_int_t) == 4);
 
 
-/* We like our types POD */
+
 
 #define _ASSERT_TYPE_POD1(_line, _type)	union _type_##_type##_on_line_##_line##_is_not_POD { _type instance; }
 #define _ASSERT_TYPE_POD0(_line, _type)	_ASSERT_TYPE_POD1 (_line, _type)
@@ -128,7 +134,7 @@ ASSERT_STATIC (sizeof (hb_var_int_t) == 4);
 # define _ASSERT_INSTANCE_POD0(_line, _instance)	_ASSERT_INSTANCE_POD1 (_line, _instance)
 # define ASSERT_INSTANCE_POD(_instance)			_ASSERT_INSTANCE_POD0 (__LINE__, _instance)
 
-/* Check _assertion in a method environment */
+
 #define _ASSERT_POD1(_line) \
 	inline void _static_assertion_on_line_##_line (void) const \
 	{ _ASSERT_INSTANCE_POD1 (_line, *this); /* Make sure it's POD. */ }
@@ -137,7 +143,7 @@ ASSERT_STATIC (sizeof (hb_var_int_t) == 4);
 
 
 
-/* Misc */
+
 
 
 #if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
@@ -202,14 +208,14 @@ ASSERT_STATIC (sizeof (hb_var_int_t) == 4);
 #endif
 
 
-/* Return the number of 1 bits in mask. */
+
 static inline HB_CONST_FUNC unsigned int
 _hb_popcount32 (uint32_t mask)
 {
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
   return __builtin_popcount (mask);
 #else
-  /* "HACKMEM 169" */
+  
   register uint32_t y;
   y = (mask >> 1) &033333333333;
   y = mask - y - ((y >>1) & 033333333333);
@@ -217,7 +223,7 @@ _hb_popcount32 (uint32_t mask)
 #endif
 }
 
-/* Returns the number of bits needed to store number */
+
 static inline HB_CONST_FUNC unsigned int
 _hb_bit_storage (unsigned int number)
 {
@@ -233,7 +239,7 @@ _hb_bit_storage (unsigned int number)
 #endif
 }
 
-/* Returns the number of zero bits in the least significant side of number */
+
 static inline HB_CONST_FUNC unsigned int
 _hb_ctz (unsigned int number)
 {
@@ -257,13 +263,13 @@ _hb_unsigned_int_mul_overflows (unsigned int count, unsigned int size)
 }
 
 
-/* Type of bsearch() / qsort() compare function */
+
 typedef int (*hb_compare_func_t) (const void *, const void *);
 
 
 
 
-/* arrays and maps */
+
 
 
 #define HB_PREALLOCED_ARRAY_INIT {0}
@@ -289,7 +295,7 @@ struct hb_prealloced_array_t
     if (likely (len < allocated))
       return &array[len++];
 
-    /* Need to reallocate */
+    
     unsigned int new_allocated = allocated + (allocated >> 1) + 8;
     Type *new_array = NULL;
 
@@ -315,14 +321,14 @@ struct hb_prealloced_array_t
   inline void pop (void)
   {
     len--;
-    /* TODO: shrink array if needed */
+    
   }
 
   inline void shrink (unsigned int l)
   {
      if (l < len)
        len = l;
-    /* TODO: shrink array if needed */
+    
   }
 
   template <typename T>
@@ -448,7 +454,7 @@ struct hb_lockable_set_t
   inline void finish (lock_t &l)
   {
     if (!items.len) {
-      /* No need for locking. */
+      
       items.finish ();
       return;
     }
@@ -469,7 +475,7 @@ struct hb_lockable_set_t
 
 
 
-/* Big-endian handling */
+
 
 static inline uint16_t hb_be_uint16 (const uint16_t v)
 {
@@ -487,13 +493,13 @@ static inline uint32_t hb_uint32_swap (const uint32_t v)
   return (hb_uint16_swap (v) << 16) | hb_uint16_swap (v >> 16);
 }
 
-/* Note, of the following macros, uint16_get is the one called many many times.
- * If there is any optimizations to be done, it's in that macro.  However, I
- * already confirmed that on my T400 ThinkPad at least, using bswap_16(), which
- * results in a single ror instruction, does NOT speed this up.  In fact, it
- * resulted in a minor slowdown.  At any rate, note that v may not be correctly
- * aligned, so I think the current implementation is optimal.
- */
+
+
+
+
+
+
+
 
 #define hb_be_uint16_put(v,V)	HB_STMT_START { v[0] = (V>>8); v[1] = (V); } HB_STMT_END
 #define hb_be_uint16_get(v)	(uint16_t) ((v[0] << 8) + v[1])
@@ -503,8 +509,12 @@ static inline uint32_t hb_uint32_swap (const uint32_t v)
 #define hb_be_uint32_get(v)	(uint32_t) ((v[0] << 24) + (v[1] << 16) + (v[2] << 8) + v[3])
 #define hb_be_uint32_eq(a,b)	(a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3])
 
+#define hb_be_uint24_put(v,V)	HB_STMT_START { v[0] = (V>>16); v[1] = (V>>8); v[2] (V); } HB_STMT_END
+#define hb_be_uint24_get(v)	(uint32_t) ((v[0] << 16) + (v[1] << 8) + v[2])
+#define hb_be_uint24_eq(a,b)	(a[0] == b[0] && a[1] == b[1] && a[2] == b[2])
 
-/* ASCII tag/character handling */
+
+
 
 static inline unsigned char ISALPHA (unsigned char c)
 { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
@@ -521,15 +531,15 @@ static inline unsigned char TOLOWER (unsigned char c)
 				  ((const char *) s)[3]))
 
 
-/* C++ helpers */
 
-/* Makes class uncopyable.  Use in private: section. */
+
+
 #define NO_COPY(T) \
   T (const T &o); \
   T &operator = (const T &o)
 
 
-/* Debug */
+
 
 
 #ifndef HB_DEBUG
@@ -567,8 +577,8 @@ _hb_debug_msg_va (const char *what,
     fprintf (stderr, " %*s  ", (unsigned int) (2 * sizeof (void *)), "");
 
   if (indented) {
-/* One may want to add ASCII version of these.  See:
- * https://bugs.freedesktop.org/show_bug.cgi?id=50970 */
+
+
 #define VBAR	"\342\224\202"	/* U+2502 BOX DRAWINGS LIGHT VERTICAL */
 #define VRBAR	"\342\224\234"	/* U+251C BOX DRAWINGS LIGHT VERTICAL AND RIGHT */
 #define DLBAR	"\342\225\256"	/* U+256E BOX DRAWINGS LIGHT ARC DOWN AND LEFT */
@@ -582,12 +592,16 @@ _hb_debug_msg_va (const char *what,
   } else
     fprintf (stderr, "   " VRBAR LBAR);
 
-  if (func) {
-    /* Skip return type */
+  if (func)
+  {
+    
+    if (0 == strncmp (func, "typename ", 9))
+      func += 9;
+    
     const char *space = strchr (func, ' ');
     if (space)
       func = space + 1;
-    /* Skip parameter list */
+    
     const char *paren = strchr (func, '(');
     unsigned int func_len = paren ? paren - func : strlen (func);
     fprintf (stderr, "%.*s: ", func_len, func);
@@ -656,11 +670,40 @@ _hb_debug_msg<0> (const char *what HB_UNUSED,
 #define DEBUG_MSG_FUNC(WHAT, OBJ, ...)				_hb_debug_msg<HB_DEBUG_##WHAT> (#WHAT, (OBJ), HB_FUNC, false, 0, 0, __VA_ARGS__)
 
 
-/*
- * Trace
- */
 
-template <int max_level>
+
+
+
+template <typename T>
+struct hb_printer_t {};
+
+template <>
+struct hb_printer_t<bool> {
+  const char *print (bool v) { return v ? "true" : "false"; }
+};
+
+template <>
+struct hb_printer_t<hb_void_t> {
+  const char *print (hb_void_t) { return ""; }
+};
+
+
+
+
+
+
+template <typename T>
+static inline void _hb_warn_no_return (bool returned)
+{
+  if (unlikely (!returned)) {
+    fprintf (stderr, "OUCH, returned with no call to TRACE_RETURN.  This is a bug, please report.\n");
+  }
+}
+template <>
+inline void _hb_warn_no_return<hb_void_t> (bool returned HB_UNUSED)
+{}
+
+template <int max_level, typename ret_t>
 struct hb_auto_trace_t {
   explicit inline hb_auto_trace_t (unsigned int *plevel_,
 				   const char *what_,
@@ -678,23 +721,23 @@ struct hb_auto_trace_t {
   }
   inline ~hb_auto_trace_t (void)
   {
-    if (unlikely (!returned)) {
-      fprintf (stderr, "OUCH, returned with no call to TRACE_RETURN.  This is a bug, please report.  Level was %d.\n", plevel ? *plevel : -1);
+    _hb_warn_no_return<ret_t> (returned);
+    if (!returned) {
       _hb_debug_msg<max_level> (what, obj, NULL, true, plevel ? *plevel : 1, -1, " ");
-      return;
     }
-
     if (plevel) --*plevel;
   }
 
-  inline bool ret (bool v, unsigned int line = 0)
+  inline ret_t ret (ret_t v, unsigned int line = 0)
   {
     if (unlikely (returned)) {
       fprintf (stderr, "OUCH, double calls to TRACE_RETURN.  This is a bug, please report.\n");
       return v;
     }
 
-    _hb_debug_msg<max_level> (what, obj, NULL, true, plevel ? *plevel : 1, -1, "return %s (line %d)", v ? "true" : "false", line);
+    _hb_debug_msg<max_level> (what, obj, NULL, true, plevel ? *plevel : 1, -1,
+			      "return %s (line %d)",
+			      hb_printer_t<ret_t>().print (v), line);
     if (plevel) --*plevel;
     plevel = NULL;
     returned = true;
@@ -703,12 +746,12 @@ struct hb_auto_trace_t {
 
   private:
   unsigned int *plevel;
-  bool returned;
   const char *what;
   const void *obj;
+  bool returned;
 };
-template <> /* Optimize when tracing is disabled */
-struct hb_auto_trace_t<0> {
+template <typename ret_t> 
+struct hb_auto_trace_t<0, ret_t> {
   explicit inline hb_auto_trace_t (unsigned int *plevel_ HB_UNUSED,
 				   const char *what HB_UNUSED,
 				   const void *obj HB_UNUSED,
@@ -716,19 +759,18 @@ struct hb_auto_trace_t<0> {
 				   const char *message HB_UNUSED,
 				   ...) {}
 
-  template <typename T>
-  inline T ret (T v, unsigned int line = 0) { return v; }
+  inline ret_t ret (ret_t v, unsigned int line HB_UNUSED = 0) { return v; }
 };
 
 #define TRACE_RETURN(RET) trace.ret (RET, __LINE__)
 
-/* Misc */
 
 
-/* Pre-mature optimization:
- * Checks for lo <= u <= hi but with an optimization if lo and hi
- * are only different in a contiguous set of lower-most bits.
- */
+
+
+
+
+
 template <typename T> static inline bool
 hb_in_range (T u, T lo, T hi)
 {
@@ -747,10 +789,10 @@ hb_in_ranges (T u, T lo1, T hi1, T lo2, T hi2, T lo3, T hi3)
 }
 
 
-/* Useful for set-operations on small enums.
- * For example, for testing "x ∈ {x1, x2, x3}" use:
- * (FLAG(x) & (FLAG(x1) | FLAG(x2) | FLAG(x3)))
- */
+
+
+
+
 #define FLAG(x) (1<<(x))
 #define FLAG_RANGE(x,y) (ASSERT_STATIC_EXPR_ZERO ((x) < (y)) + FLAG(y+1) - FLAG(x))
 
@@ -797,7 +839,7 @@ hb_bubble_sort (T *array, unsigned int len, int(*compar)(const T *, const T *))
 static inline hb_bool_t
 hb_codepoint_parse (const char *s, unsigned int len, int base, hb_codepoint_t *out)
 {
-  /* Pain because we don't know whether s is nul-terminated. */
+  
   char buf[64];
   strncpy (buf, s, MIN (ARRAY_LENGTH (buf) - 1, len));
   buf[MIN (ARRAY_LENGTH (buf) - 1, len)] = '\0';
@@ -812,4 +854,4 @@ hb_codepoint_parse (const char *s, unsigned int len, int base, hb_codepoint_t *o
 }
 
 
-#endif /* HB_PRIVATE_HH */
+#endif 
