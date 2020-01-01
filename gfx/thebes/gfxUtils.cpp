@@ -3,38 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "gfxUtils.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
@@ -513,6 +481,10 @@ gfxUtils::DrawPixelSnapped(gfxContext*      aContext,
     
     
     
+#ifndef MOZ_GFX_OPTIMIZE_MOBILE
+    
+    
+    
     
     
     if (aContext->CurrentMatrix().HasNonIntegerTranslation() ||
@@ -531,6 +503,7 @@ gfxUtils::DrawPixelSnapped(gfxContext*      aContext,
         
         doTile = false;
     }
+#endif
 
     gfxContext::GraphicsOperator op = aContext->CurrentOperator();
     if ((op == gfxContext::OPERATOR_OVER || workaround.PushedGroup()) &&

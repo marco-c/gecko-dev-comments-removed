@@ -5,39 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "jsgc.h"
 #include "jsinfer.h"
 #include "jsinterp.h"
@@ -181,7 +148,7 @@ ArgumentsObject::createUnexpected(JSContext *cx, StackIter &iter)
 }
 
 static JSBool
-args_delProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp)
+args_delProperty(JSContext *cx, HandleObject obj, HandleId id, Value *vp)
 {
     ArgumentsObject &argsobj = obj->asArguments();
     if (JSID_IS_INT(id)) {
@@ -199,7 +166,7 @@ args_delProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp)
 }
 
 static JSBool
-ArgGetter(JSContext *cx, JSObject *obj, jsid id, Value *vp)
+ArgGetter(JSContext *cx, HandleObject obj, HandleId id, Value *vp)
 {
     if (!obj->isNormalArguments())
         return true;
@@ -213,7 +180,7 @@ ArgGetter(JSContext *cx, JSObject *obj, jsid id, Value *vp)
         unsigned arg = unsigned(JSID_TO_INT(id));
         if (arg < argsobj.initialLength() && !argsobj.isElementDeleted(arg)) {
             if (StackFrame *fp = argsobj.maybeStackFrame()) {
-                JS_ASSERT_IF(arg < fp->numFormalArgs(), fp->script()->argIsAliased(arg));
+                JS_ASSERT_IF(arg < fp->numFormalArgs(), fp->script()->formalIsAliased(arg));
                 *vp = fp->canonicalActualArg(arg);
             } else {
                 *vp = argsobj.element(arg);
@@ -232,7 +199,7 @@ ArgGetter(JSContext *cx, JSObject *obj, jsid id, Value *vp)
 }
 
 static JSBool
-ArgSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, Value *vp)
+ArgSetter(JSContext *cx, HandleObject obj, HandleId id, JSBool strict, Value *vp)
 {
     if (!obj->isNormalArguments())
         return true;
@@ -246,7 +213,7 @@ ArgSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, Value *vp)
                 JSScript *script = fp->functionScript();
                 JS_ASSERT(script->needsArgsObj());
                 if (arg < fp->numFormalArgs()) {
-                    JS_ASSERT(fp->script()->argIsAliased(arg));
+                    JS_ASSERT(fp->script()->formalIsAliased(arg));
                     types::TypeScript::SetArgument(cx, script, arg, *vp);
                 }
                 fp->canonicalActualArg(arg) = *vp;
@@ -267,12 +234,12 @@ ArgSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, Value *vp)
 
 
     RootedVarValue value(cx);
-    return js_DeleteGeneric(cx, &argsobj, id, value.address(), false) &&
-           js_DefineProperty(cx, &argsobj, id, vp, NULL, NULL, JSPROP_ENUMERATE);
+    return baseops::DeleteGeneric(cx, obj, id, value.address(), false) &&
+           baseops::DefineProperty(cx, obj, id, vp, NULL, NULL, JSPROP_ENUMERATE);
 }
 
 static JSBool
-args_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags,
+args_resolve(JSContext *cx, HandleObject obj, HandleId id, unsigned flags,
              JSObject **objp)
 {
     *objp = NULL;
@@ -298,7 +265,7 @@ args_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags,
     }
 
     Value undef = UndefinedValue();
-    if (!js_DefineProperty(cx, argsobj, id, &undef, ArgGetter, ArgSetter, attrs))
+    if (!baseops::DefineProperty(cx, argsobj, id, &undef, ArgGetter, ArgSetter, attrs))
         return JS_FALSE;
 
     *objp = argsobj;
@@ -347,13 +314,14 @@ NormalArgumentsObject::optimizedGetElem(JSContext *cx, StackFrame *fp, const Val
     if (!proto)
         return false;
 
-    return proto->getGeneric(cx, id, vp);
+    return proto->getGeneric(cx, RootedVarId(cx, id), vp);
 }
 
 static JSBool
-args_enumerate(JSContext *cx, JSObject *obj)
+args_enumerate(JSContext *cx, HandleObject obj)
 {
     RootedVar<NormalArgumentsObject*> argsobj(cx, &obj->asNormalArguments());
+    RootedVarId id(cx);
 
     
 
@@ -361,22 +329,22 @@ args_enumerate(JSContext *cx, JSObject *obj)
 
     int argc = int(argsobj->initialLength());
     for (int i = -2; i != argc; i++) {
-        jsid id = (i == -2)
-                  ? NameToId(cx->runtime->atomState.lengthAtom)
-                  : (i == -1)
-                  ? NameToId(cx->runtime->atomState.calleeAtom)
-                  : INT_TO_JSID(i);
+        id = (i == -2)
+             ? NameToId(cx->runtime->atomState.lengthAtom)
+             : (i == -1)
+             ? NameToId(cx->runtime->atomState.calleeAtom)
+             : INT_TO_JSID(i);
 
         JSObject *pobj;
         JSProperty *prop;
-        if (!js_LookupProperty(cx, argsobj, id, &pobj, &prop))
+        if (!baseops::LookupProperty(cx, argsobj, id, &pobj, &prop))
             return false;
     }
     return true;
 }
 
 static JSBool
-StrictArgGetter(JSContext *cx, JSObject *obj, jsid id, Value *vp)
+StrictArgGetter(JSContext *cx, HandleObject obj, HandleId id, Value *vp)
 {
     if (!obj->isStrictArguments())
         return true;
@@ -400,13 +368,12 @@ StrictArgGetter(JSContext *cx, JSObject *obj, jsid id, Value *vp)
 }
 
 static JSBool
-StrictArgSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, Value *vp)
+StrictArgSetter(JSContext *cx, HandleObject obj, HandleId id, JSBool strict, Value *vp)
 {
     if (!obj->isStrictArguments())
         return true;
 
     RootedVar<StrictArgumentsObject*> argsobj(cx, &obj->asStrictArguments());
-    RootId idRoot(cx, &id);
 
     if (JSID_IS_INT(id)) {
         unsigned arg = unsigned(JSID_TO_INT(id));
@@ -425,12 +392,12 @@ StrictArgSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, Value *vp)
 
 
     RootedVarValue value(cx);
-    return js_DeleteGeneric(cx, argsobj, id, value.address(), strict) &&
-           js_SetPropertyHelper(cx, argsobj, id, 0, vp, strict);
+    return baseops::DeleteGeneric(cx, argsobj, id, value.address(), strict) &&
+           baseops::SetPropertyHelper(cx, argsobj, id, 0, vp, strict);
 }
 
 static JSBool
-strictargs_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject **objp)
+strictargs_resolve(JSContext *cx, HandleObject obj, HandleId id, unsigned flags, JSObject **objp)
 {
     *objp = NULL;
 
@@ -461,7 +428,7 @@ strictargs_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObje
     }
 
     Value undef = UndefinedValue();
-    if (!js_DefineProperty(cx, argsobj, id, &undef, getter, setter, attrs))
+    if (!baseops::DefineProperty(cx, argsobj, id, &undef, getter, setter, attrs))
         return false;
 
     *objp = argsobj;
@@ -469,9 +436,9 @@ strictargs_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObje
 }
 
 static JSBool
-strictargs_enumerate(JSContext *cx, JSObject *obj)
+strictargs_enumerate(JSContext *cx, HandleObject obj)
 {
-    StrictArgumentsObject *argsobj = &obj->asStrictArguments();
+    RootedVar<StrictArgumentsObject*> argsobj(cx, &obj->asStrictArguments());
 
     
 
@@ -479,21 +446,26 @@ strictargs_enumerate(JSContext *cx, JSObject *obj)
 
     JSObject *pobj;
     JSProperty *prop;
+    RootedVarId id(cx);
 
     
-    if (!js_LookupProperty(cx, argsobj, NameToId(cx->runtime->atomState.lengthAtom), &pobj, &prop))
+    id = NameToId(cx->runtime->atomState.lengthAtom);
+    if (!baseops::LookupProperty(cx, argsobj, id, &pobj, &prop))
         return false;
 
     
-    if (!js_LookupProperty(cx, argsobj, NameToId(cx->runtime->atomState.calleeAtom), &pobj, &prop))
+    id = NameToId(cx->runtime->atomState.calleeAtom);
+    if (!baseops::LookupProperty(cx, argsobj, id, &pobj, &prop))
         return false;
 
     
-    if (!js_LookupProperty(cx, argsobj, NameToId(cx->runtime->atomState.callerAtom), &pobj, &prop))
+    id = NameToId(cx->runtime->atomState.callerAtom);
+    if (!baseops::LookupProperty(cx, argsobj, id, &pobj, &prop))
         return false;
 
     for (uint32_t i = 0, argc = argsobj->initialLength(); i < argc; i++) {
-        if (!js_LookupProperty(cx, argsobj, INT_TO_JSID(i), &pobj, &prop))
+        id = INT_TO_JSID(i);
+        if (!baseops::LookupProperty(cx, argsobj, id, &pobj, &prop))
             return false;
     }
 

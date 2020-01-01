@@ -3,42 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef nsScriptSecurityManager_h__
 #define nsScriptSecurityManager_h__
 
@@ -426,8 +390,8 @@ private:
     virtual ~nsScriptSecurityManager();
 
     static JSBool
-    CheckObjectAccess(JSContext *cx, JSObject *obj,
-                      jsid id, JSAccessMode mode,
+    CheckObjectAccess(JSContext *cx, JSHandleObject obj,
+                      JSHandleId id, JSAccessMode mode,
                       jsval *vp);
 
     static JSPrincipals *

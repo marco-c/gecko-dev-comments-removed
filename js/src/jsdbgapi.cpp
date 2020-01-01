@@ -8,40 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <string.h>
 #include <stdarg.h>
 #include "jsprvtd.h"
@@ -282,14 +248,13 @@ JS_SetWatchPoint(JSContext *cx, JSObject *obj_, jsid id,
 
     RootedVarObject obj(cx, obj_), closure(cx, closure_);
 
-    JSObject *origobj;
-    Value v;
-    unsigned attrs;
-
-    origobj = obj;
-    OBJ_TO_INNER_OBJECT(cx, obj.reference());
+    JSObject *origobj = obj;
+    obj = GetInnerObject(cx, obj);
     if (!obj)
         return false;
+
+    Value v;
+    unsigned attrs;
 
     RootedVarId propid(cx);
 
@@ -570,40 +535,44 @@ JS_PUBLIC_API(JSObject *)
 JS_GetFrameScopeChain(JSContext *cx, JSStackFrame *fpArg)
 {
     StackFrame *fp = Valueify(fpArg);
-    JS_ASSERT(cx->stack.containsSlow(fp));
+    JS_ASSERT(cx->stack.space().containsSlow(fp));
 
     js::AutoCompartment ac(cx, fp->scopeChain());
     if (!ac.enter())
         return NULL;
 
-    
-    (void) JS_GetFrameCallObject(cx, Jsvalify(fp));
-    return GetScopeChain(cx, fp);
+    return GetDebugScopeForFrame(cx, fp);
 }
 
 JS_PUBLIC_API(JSObject *)
 JS_GetFrameCallObject(JSContext *cx, JSStackFrame *fpArg)
 {
     StackFrame *fp = Valueify(fpArg);
-    JS_ASSERT(cx->stack.containsSlow(fp));
-
-    if (!fp->compartment()->debugMode())
-        return NULL;
+    JS_ASSERT(cx->stack.space().containsSlow(fp));
 
     if (!fp->isFunctionFrame())
         return NULL;
 
-    js::AutoCompartment ac(cx, fp->scopeChain());
-    if (!ac.enter())
-        return NULL;
+    JSObject *o = GetDebugScopeForFrame(cx, fp);
 
     
 
 
 
-    if (!fp->hasCallObj() && fp->isNonEvalFunctionFrame())
-        return CallObject::createForFunction(cx, fp);
-    return &fp->callObj();
+
+
+
+
+    while (o) {
+        ScopeObject &scope = o->asDebugScope().scope();
+        if (scope.isCall()) {
+            JS_ASSERT_IF(cx->compartment->debugMode() && fp->isNonEvalFunctionFrame(),
+                         fp == scope.asCall().maybeStackFrame());
+            return o;
+        }
+        o = o->enclosingScope();
+    }
+    return NULL;
 }
 
 JS_PUBLIC_API(JSBool)
@@ -662,6 +631,14 @@ JS_PUBLIC_API(JSObject *)
 JS_GetFrameCalleeObject(JSContext *cx, JSStackFrame *fp)
 {
     return Valueify(fp)->maybeCalleev().toObjectOrNull();
+}
+
+JS_PUBLIC_API(const char *)
+JS_GetDebugClassName(JSObject *obj)
+{
+    if (obj->isDebugScope())
+        return obj->asDebugScope().scope().getClass()->name;
+    return obj->getClass()->name;
 }
 
 JS_PUBLIC_API(JSBool)
@@ -809,7 +786,7 @@ GetPropertyDesc(JSContext *cx, JSObject *obj_, Shape *shape, JSPropertyDesc *pd)
         lastException = cx->getPendingException();
     cx->clearPendingException();
 
-    if (!js_GetProperty(cx, obj, shape->propid(), &pd->value)) {
+    if (!baseops::GetProperty(cx, obj, RootedVarId(cx, shape->propid()), &pd->value)) {
         if (!cx->isExceptionPending()) {
             pd->flags = JSPD_ERROR;
             pd->value = JSVAL_VOID;
@@ -843,31 +820,58 @@ GetPropertyDesc(JSContext *cx, JSObject *obj_, Shape *shape, JSPropertyDesc *pd)
 }
 
 JS_PUBLIC_API(JSBool)
-JS_GetPropertyDescArray(JSContext *cx, JSObject *obj, JSPropertyDescArray *pda)
+JS_GetPropertyDescArray(JSContext *cx, JSObject *obj_, JSPropertyDescArray *pda)
 {
-    assertSameCompartment(cx, obj);
+    RootedVarObject obj(cx, obj_);
 
-    Class *clasp = obj->getClass();
+    assertSameCompartment(cx, obj);
+    uint32_t i = 0;
+    JSPropertyDesc *pd = NULL;
+
+    if (obj->isDebugScope()) {
+        AutoIdVector props(cx);
+        if (!Proxy::enumerate(cx, obj, props))
+            return false;
+
+        pd = (JSPropertyDesc *)cx->calloc_(props.length() * sizeof(JSPropertyDesc));
+        if (!pd)
+            return false;
+
+        for (i = 0; i < props.length(); ++i) {
+            if (!js_AddRoot(cx, &pd[i].id, NULL))
+                goto bad;
+            pd[i].id = IdToValue(props[i]);
+            if (!js_AddRoot(cx, &pd[i].value, NULL))
+                goto bad;
+            if (!Proxy::get(cx, obj, obj, props[i], &pd[i].value))
+                goto bad;
+        }
+
+        pda->length = props.length();
+        pda->array = pd;
+        return true;
+    }
+
+    Class *clasp;
+    clasp = obj->getClass();
     if (!obj->isNative() || (clasp->flags & JSCLASS_NEW_ENUMERATE)) {
         JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL,
                              JSMSG_CANT_DESCRIBE_PROPS, clasp->name);
-        return JS_FALSE;
+        return false;
     }
     if (!clasp->enumerate(cx, obj))
-        return JS_FALSE;
+        return false;
 
     
     if (obj->nativeEmpty()) {
         pda->length = 0;
         pda->array = NULL;
-        return JS_TRUE;
+        return true;
     }
 
-    uint32_t n = obj->propertyCount();
-    JSPropertyDesc *pd = (JSPropertyDesc *) cx->malloc_(size_t(n) * sizeof(JSPropertyDesc));
+    pd = (JSPropertyDesc *)cx->malloc_(obj->propertyCount() * sizeof(JSPropertyDesc));
     if (!pd)
-        return JS_FALSE;
-    uint32_t i = 0;
+        return false;
     for (Shape::Range r = obj->lastProperty()->all(); !r.empty(); r.popFront()) {
         if (!js_AddRoot(cx, &pd[i].id, NULL))
             goto bad;
@@ -878,18 +882,18 @@ JS_GetPropertyDescArray(JSContext *cx, JSObject *obj, JSPropertyDescArray *pda)
             goto bad;
         if ((pd[i].flags & JSPD_ALIAS) && !js_AddRoot(cx, &pd[i].alias, NULL))
             goto bad;
-        if (++i == n)
+        if (++i == obj->propertyCount())
             break;
     }
     pda->length = i;
     pda->array = pd;
-    return JS_TRUE;
+    return true;
 
 bad:
     pda->length = i + 1;
     pda->array = pd;
     JS_PutPropertyDescArray(cx, pda);
-    return JS_FALSE;
+    return false;
 }
 
 JS_PUBLIC_API(void)
@@ -906,6 +910,8 @@ JS_PutPropertyDescArray(JSContext *cx, JSPropertyDescArray *pda)
             js_RemoveRoot(cx->runtime, &pd[i].alias);
     }
     cx->free_(pd);
+    pda->array = NULL;
+    pda->length = 0;
 }
 
 
@@ -1365,7 +1371,7 @@ DumpCallgrind(JSContext *cx, unsigned argc, jsval *vp)
 
     JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(js_DumpCallgrind(outFile.mBytes)));
     return JS_TRUE;
-}    
+}
 #endif
 
 #ifdef MOZ_VTUNE

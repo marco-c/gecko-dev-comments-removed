@@ -7,39 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef jscntxt_h___
 #define jscntxt_h___
 
@@ -108,6 +75,7 @@ class IonActivation;
 
 class WeakMapBase;
 class InterpreterFrames;
+class DebugScopes;
 
 
 
@@ -380,6 +348,10 @@ class FreeOp : public JSFreeOp {
 };
 
 } 
+
+namespace JS {
+struct RuntimeSizes;
+}
 
 struct JSRuntime : js::RuntimeFriendFields
 {
@@ -703,6 +675,9 @@ struct JSRuntime : js::RuntimeFriendFields
     JSCList             debuggerList;
 
     
+    js::DebugScopes     *debugScopes;
+
+    
     void                *data;
 
 #ifdef JS_THREADSAFE
@@ -926,9 +901,8 @@ struct JSRuntime : js::RuntimeFriendFields
         return jitHardening;
     }
 
-    void sizeOfExcludingThis(JSMallocSizeOfFun mallocSizeOf, size_t *normal, size_t *temporary,
-                             size_t *mjitCode, size_t *regexpCode, size_t *unusedCodeMemory,
-                             size_t *stackCommitted, size_t *gcMarker);
+    void sizeOfIncludingThis(JSMallocSizeOfFun mallocSizeOf, JS::RuntimeSizes *runtime);
+    size_t sizeOfExplicitNonHeap();
 };
 
 
@@ -1223,6 +1197,8 @@ struct JSContext : js::ContextFriendFields
     js::LifoAlloc &tempLifoAlloc() { return runtime->tempLifoAlloc; }
     inline js::LifoAlloc &typeLifoAlloc();
 
+    inline js::PropertyTree &propertyTree();
+
 #ifdef JS_THREADSAFE
     unsigned            outstandingRequests;
 
@@ -1304,7 +1280,6 @@ struct JSContext : js::ContextFriendFields
     }
 
     inline void* calloc_(size_t bytes) {
-        JS_ASSERT(bytes != 0);
         return runtime->calloc_(bytes, this);
     }
 
@@ -1344,20 +1319,26 @@ struct JSContext : js::ContextFriendFields
         this->exception.setUndefined();
     }
 
-    
-
-
-
-
-    unsigned activeCompilations;
-
 #ifdef DEBUG
     
 
 
 
     bool stackIterAssertionEnabled;
+
+    
+
+
+
+    unsigned okToAccessUnaliasedBindings;
 #endif
+
+    
+
+
+
+
+    unsigned activeCompilations;
 
     
 
@@ -1385,6 +1366,23 @@ struct JSContext : js::ContextFriendFields
 }; 
 
 namespace js {
+
+class AutoAllowUnaliasedVarAccess
+{
+    JSContext *cx;
+  public:
+    AutoAllowUnaliasedVarAccess(JSContext *cx) : cx(cx) {
+#ifdef DEBUG
+        cx->okToAccessUnaliasedBindings++;
+#endif
+    }
+    ~AutoAllowUnaliasedVarAccess() {
+#ifdef DEBUG
+        JS_ASSERT(cx->okToAccessUnaliasedBindings);
+        cx->okToAccessUnaliasedBindings--;
+#endif
+    }
+};
 
 struct AutoResolving {
   public:
@@ -1422,7 +1420,7 @@ struct AutoResolving {
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-#ifdef JS_HAS_XML_SUPPORT
+#if JS_HAS_XML_SUPPORT
 class AutoXMLRooter : private AutoGCRooter {
   public:
     AutoXMLRooter(JSContext *cx, JSXML *xml

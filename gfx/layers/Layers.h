@@ -3,38 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GFX_LAYERS_H
 #define GFX_LAYERS_H
 
@@ -64,6 +32,8 @@
 struct PRLogModuleInfo;
 #  define MOZ_LAYERS_LOG(_args)
 #endif  
+
+#define MOZ_ENABLE_MASK_LAYERS
 
 class gfxContext;
 class nsPaintEvent;
@@ -719,6 +689,7 @@ public:
 
   void SetMaskLayer(Layer* aMaskLayer)
   {
+#ifdef MOZ_ENABLE_MASK_LAYERS
 #ifdef DEBUG
     if (aMaskLayer) {
       gfxMatrix maskTransform;
@@ -730,6 +701,7 @@ public:
 
     mMaskLayer = aMaskLayer;
     Mutated();
+#endif
   }
 
   

@@ -5,39 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef jsscript_h___
 #define jsscript_h___
 
@@ -620,6 +587,19 @@ struct JSScript : public js::gc::Cell
     static bool applySpeculationFailed(JSContext *cx, JSScript *script);
 
     
+
+
+
+
+
+
+
+
+    bool argsObjAliasesFormals() const {
+        return needsArgsObj() && !strictModeCode;
+    }
+
+    
     JSScript *&evalHashLink() { return *globalObject.unsafeGetUnioned(); }
 
     js::ion::IonScript *ion;          
@@ -881,9 +861,9 @@ struct JSScript : public js::gc::Cell
 
 #ifdef DEBUG
     bool varIsAliased(unsigned varSlot);
-    bool argIsAliased(unsigned argSlot);
-    bool argLivesInArgumentsObject(unsigned argSlot);
-    bool argLivesInCallObject(unsigned argSlot);
+    bool formalIsAliased(unsigned argSlot);
+    bool formalLivesInArgumentsObject(unsigned argSlot);
+    bool formalLivesInCallObject(unsigned argSlot);
 #endif
   private:
     

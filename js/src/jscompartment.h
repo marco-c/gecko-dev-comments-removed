@@ -4,39 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef jscompartment_h___
 #define jscompartment_h___
 
@@ -423,8 +390,6 @@ class js::AutoDebugModeGC
         needGC = true;
     }
 };
-
-#define JS_PROPERTY_TREE(cx)    ((cx)->compartment->propertyTree)
 
 inline void
 JSContext::setCompartment(JSCompartment *compartment)

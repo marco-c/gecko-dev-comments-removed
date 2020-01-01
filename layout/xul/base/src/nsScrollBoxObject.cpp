@@ -3,40 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "nsCOMPtr.h"
 #include "nsIScrollBoxObject.h"
 #include "nsBoxObject.h"
@@ -90,13 +56,7 @@ NS_IMETHODIMP nsScrollBoxObject::ScrollTo(PRInt32 x, PRInt32 y)
   nsIScrollableFrame* sf = GetScrollFrame();
   if (!sf)
     return NS_ERROR_FAILURE;
-
-  nsPoint pt(nsPresContext::CSSPixelsToAppUnits(x),
-             nsPresContext::CSSPixelsToAppUnits(y));
-  nscoord halfPixel = nsPresContext::CSSPixelsToAppUnits(0.5f);
-  
-  nsRect range(pt.x - halfPixel, pt.y - halfPixel, halfPixel*2 - 1, halfPixel*2 - 1);
-  sf->ScrollTo(pt, nsIScrollableFrame::INSTANT, &range);
+  sf->ScrollToCSSPixels(nsIntPoint(x, y));
   return NS_OK;
 }
 

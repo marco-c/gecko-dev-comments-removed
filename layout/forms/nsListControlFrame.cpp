@@ -3,40 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "nscore.h"
 #include "nsCOMPtr.h"
 #include "nsReadableUtils.h"
@@ -344,26 +310,6 @@ GetMaxOptionHeight(nsIFrame* aContainer)
       result = optionHeight;
   }
   return result;
-}
-
-static PRUint32
-GetNumberOfOptionsRecursive(nsIContent* aContent)
-{
-  if (!aContent) {
-    return 0;
-  }
-
-  PRUint32 optionCount = 0;
-  for (nsIContent* cur = aContent->GetFirstChild();
-       cur;
-       cur = cur->GetNextSibling()) {
-    if (cur->IsHTML(nsGkAtoms::option)) {
-      ++optionCount;
-    } else if (cur->IsHTML(nsGkAtoms::optgroup)) {
-      optionCount += GetNumberOfOptionsRecursive(cur);
-    }
-  }
-  return optionCount;
 }
 
 

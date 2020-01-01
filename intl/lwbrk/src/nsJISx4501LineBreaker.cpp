@@ -1,39 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
 
 
 
@@ -46,210 +14,210 @@
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
 
-/* 
-
-   Simplification of Pair Table in JIS X 4051
-
-   1. The Origion Table - in 4.1.3
-
-   In JIS x 4051. The pair table is defined as below
-
-   Class of
-   Leading    Class of Trailing Char Class
-   Char        
-
-              1  2  3  4  5  6  7  8  9 10 11 12 13 13 14 14 15 16 17 18 19 20
-                                                 *  #  *  #
-        1     X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  E
-        2        X  X  X  X  X                                               X
-        3        X  X  X  X  X                                               X
-        4        X  X  X  X  X                                               X
-        5        X  X  X  X  X                                               X
-        6        X  X  X  X  X                                               X
-        7        X  X  X  X  X  X                                            X
-        8        X  X  X  X  X                                X              E
-        9        X  X  X  X  X                                               X
-       10        X  X  X  X  X                                               X
-       11        X  X  X  X  X                                               X
-       12        X  X  X  X  X                                               X
-       13        X  X  X  X  X                    X                          X
-       14        X  X  X  X  X                          X                    X
-       15        X  X  X  X  X        X                       X        X     X
-       16        X  X  X  X  X                                   X     X     X
-       17        X  X  X  X  X                                               E
-       18        X  X  X  X  X                                X  X     X     X
-       19     X  E  E  E  E  E  X  X  X  X  X  X  X  X  X  X  X  X  E  X  E  E
-       20        X  X  X  X  X                                               E
-
-   * Same Char
-   # Other Char
-
-   X Cannot Break
-
-   The classes mean:
-      1: Open parenthesis
-      2: Close parenthesis
-      3: Prohibit a line break before
-      4: Punctuation for sentence end (except Full stop, e.g., "!" and "?")
-      5: Middle dot (e.g., U+30FB KATAKANA MIDDLE DOT)
-      6: Full stop
-      7: Non-breakable between same characters
-      8: Prefix (e.g., "$", "NO.")
-      9: Postfix (e.g., "%")
-     10: Ideographic space
-     11: Hiragana
-     12: Japanese characters (except class 11)
-     13: Subscript
-     14: Ruby
-     15: Numeric
-     16: Alphabet
-     17: Space for Western language
-     18: Western characters (except class 17)
-     19: Split line note (Warichu) begin quote
-     20: Split line note (Warichu) end quote
-
-   2. Simplified by remove the class which we do not care
-
-   However, since we do not care about class 13(Subscript), 14(Ruby),
-   16 (Aphabet), 19(split line note begin quote), and 20(split line note end
-   quote) we can simplify this par table into the following
-
-   Class of
-   Leading    Class of Trailing Char Class
-   Char
-
-              1  2  3  4  5  6  7  8  9 10 11 12 15 17 18
-
-        1     X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
-        2        X  X  X  X  X                           
-        3        X  X  X  X  X                           
-        4        X  X  X  X  X                           
-        5        X  X  X  X  X                           
-        6        X  X  X  X  X                           
-        7        X  X  X  X  X  X                        
-        8        X  X  X  X  X                    X      
-        9        X  X  X  X  X                           
-       10        X  X  X  X  X                           
-       11        X  X  X  X  X                           
-       12        X  X  X  X  X                           
-       15        X  X  X  X  X        X           X     X
-       17        X  X  X  X  X                           
-       18        X  X  X  X  X                    X     X
-
-   3. Simplified by merged classes
-
-   After the 2 simplification, the pair table have some duplication
-   a. class 2, 3, 4, 5, 6,  are the same- we can merged them
-   b. class 10, 11, 12, 17  are the same- we can merged them
 
 
-   Class of
-   Leading    Class of Trailing Char Class
-   Char
-
-              1 [a] 7  8  9 [b]15 18
-
-        1     X  X  X  X  X  X  X  X
-      [a]        X                  
-        7        X  X               
-        8        X              X   
-        9        X                  
-      [b]        X                  
-       15        X        X     X  X
-       18        X              X  X
 
 
-   4. We add COMPLEX characters and make it breakable w/ all ther class
-      except after class 1 and before class [a]
-
-   Class of
-   Leading    Class of Trailing Char Class
-   Char
-
-              1 [a] 7  8  9 [b]15 18 COMPLEX
-
-        1     X  X  X  X  X  X  X  X  X
-      [a]        X                     
-        7        X  X                  
-        8        X              X      
-        9        X                     
-      [b]        X                     
-       15        X        X     X  X   
-       18        X              X  X   
-  COMPLEX        X                    T
-
-     T : need special handling
 
 
-   5. However, we need two special class for some punctuations/parentheses,
-      theirs breaking rules like character class (18), see bug 389056.
-      And also we need character like punctuation that is same behavior with 18,
-      but the characters are not letters of all languages. (e.g., '_')
-      [c]. Based on open parenthesis class (1), but it is not breakable after
-           character class (18) or numeric class (15).
-      [d]. Based on close parenthesis (or punctuation) class (2), but it is not
-           breakable before character class (18) or numeric class (15).
-
-   Class of
-   Leading    Class of Trailing Char Class
-   Char
-
-              1 [a] 7  8  9 [b]15 18 COMPLEX [c] [d]
-
-        1     X  X  X  X  X  X  X  X  X       X    X
-      [a]        X                            X    X
-        7        X  X                               
-        8        X              X                   
-        9        X                                  
-      [b]        X                                 X
-       15        X        X     X  X          X    X
-       18        X              X  X          X    X
-  COMPLEX        X                    T             
-      [c]     X  X  X  X  X  X  X  X  X       X    X
-      [d]        X              X  X               X
 
 
-   6. And Unicode has "NON-BREAK" characters. The lines should be broken around
-      them. But in JIS X 4051, such class is not, therefore, we create [e].
-
-   Class of
-   Leading    Class of Trailing Char Class
-   Char
-
-              1 [a] 7  8  9 [b]15 18 COMPLEX [c] [d] [e]
-
-        1     X  X  X  X  X  X  X  X  X       X    X   X
-      [a]        X                                 X   X
-        7        X  X                                  X
-        8        X              X                      X
-        9        X                                     X
-      [b]        X                                 X   X
-       15        X        X     X  X          X    X   X
-       18        X              X  X          X    X   X
-  COMPLEX        X                    T                X
-      [c]     X  X  X  X  X  X  X  X  X       X    X   X
-      [d]        X              X  X               X   X
-      [e]     X  X  X  X  X  X  X  X  X       X    X   X
 
 
-   7. Now we use one bit to encode weather it is breakable, and use 2 bytes
-      for one row, then the bit table will look like:
 
-                 18    <-   1
 
-       1  0000 1111 1111 1111  = 0x0FFF
-      [a] 0000 1100 0000 0010  = 0x0C02
-       7  0000 1000 0000 0110  = 0x0806
-       8  0000 1000 0100 0010  = 0x0842
-       9  0000 1000 0000 0010  = 0x0802
-      [b] 0000 1100 0000 0010  = 0x0C02
-      15  0000 1110 1101 0010  = 0x0ED2
-      18  0000 1110 1100 0010  = 0x0EC2
- COMPLEX  0000 1001 0000 0010  = 0x0902
-      [c] 0000 1111 1111 1111  = 0x0FFF
-      [d] 0000 1100 1100 0010  = 0x0CC2
-      [e] 0000 1111 1111 1111  = 0x0FFF
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define MAX_CLASSES 12
 
@@ -269,47 +237,47 @@ static const PRUint16 gPair[MAX_CLASSES] = {
 };
 
 
-/*
 
-   8. And if the character is not enough far from word start, word end and
-      another break point, we should not break in non-CJK languages.
-      I.e., Don't break around 15, 18, [c] and [d], but don't change
-      that if they are related to [b].
 
-   Class of
-   Leading    Class of Trailing Char Class
-   Char
 
-              1 [a] 7  8  9 [b]15 18 COMPLEX [c] [d] [e]
 
-        1     X  X  X  X  X  X  X  X  X       X    X   X
-      [a]        X              X  X          X    X   X
-        7        X  X           X  X          X    X   X
-        8        X              X  X          X    X   X
-        9        X              X  X          X    X   X
-      [b]        X                                 X   X
-       15     X  X  X  X  X     X  X  X       X    X   X
-       18     X  X  X  X  X     X  X  X       X    X   X
-  COMPLEX        X              X  X  T       X    X   X
-      [c]     X  X  X  X  X  X  X  X  X       X    X   X
-      [d]     X  X  X  X  X     X  X  X       X    X   X
-      [e]     X  X  X  X  X  X  X  X  X       X    X   X
 
-                 18    <-   1
 
-       1  0000 1111 1111 1111  = 0x0FFF
-      [a] 0000 1110 1100 0010  = 0x0EC2
-       7  0000 1110 1100 0110  = 0x0EC6
-       8  0000 1110 1100 0010  = 0x0EC2
-       9  0000 1110 1100 0010  = 0x0EC2
-      [b] 0000 1100 0000 0010  = 0x0C02
-      15  0000 1111 1101 1111  = 0x0FDF
-      18  0000 1111 1101 1111  = 0x0FDF
- COMPLEX  0000 1111 1100 0010  = 0x0FC2
-      [c] 0000 1111 1111 1111  = 0x0FFF
-      [d] 0000 1111 1101 1111  = 0x0FDF
-      [e] 0000 1111 1111 1111  = 0x0FFF
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static const PRUint16 gPairConservative[MAX_CLASSES] = {
   0x0FFF,
@@ -327,38 +295,38 @@ static const PRUint16 gPairConservative[MAX_CLASSES] = {
 };
 
 
-/*
 
-   9. Now we map the class to number
 
-      0: 1 
-      1: [a]- 2, 3, 4, 5, 6
-      2: 7
-      3: 8
-      4: 9
-      5: [b]- 10, 11, 12, 17
-      6: 15
-      7: 18
-      8: COMPLEX
-      9: [c]
-      A: [d]
-      B: [e]
 
-    and they mean:
-      0: Open parenthesis
-      1: Punctuation that prohibits break before
-      2: Non-breakable between same classes
-      3: Prefix
-      4: Postfix
-      5: Breakable character (Spaces and Most Japanese characters)
-      6: Numeric
-      7: Characters
-      8: Need special handling characters (E.g., Thai)
-      9: Open parentheses like Character (See bug 389056)
-      A: Close parenthese (or punctuations) like Character (See bug 389056)
-      B: Non breakable (See bug 390920)
 
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define CLASS_NONE                             PR_INT8_MAX
 
@@ -424,17 +392,17 @@ IS_CJK_CHAR(PRUnichar u)
 static inline bool
 IS_NONBREAKABLE_SPACE(PRUnichar u)
 {
-  return u == 0x00A0 || u == 0x2007; // NO-BREAK SPACE, FIGURE SPACE
+  return u == 0x00A0 || u == 0x2007; 
 }
 
 static inline bool
 IS_HYPHEN(PRUnichar u)
 {
   return (u == U_HYPHEN ||
-          u == 0x058A || // ARMENIAN HYPHEN
-          u == 0x2010 || // HYPHEN
-          u == 0x2012 || // FIGURE DASH
-          u == 0x2013);  // EN DASH
+          u == 0x058A || 
+          u == 0x2010 || 
+          u == 0x2012 || 
+          u == 0x2013);  
 }
 
 static PRInt8
@@ -444,7 +412,7 @@ GetClass(PRUnichar u)
    PRUint16 l = u & 0x00ff;
    PRInt8 c;
 
-   // Handle 3 range table first
+   
    if (0x0000 == h) {
      c = GETCLASSFROMTABLE(gLBClass00, l);
    } else if (NS_NeedsPlatformNativeHandling(u)) {
@@ -457,12 +425,12 @@ GetClass(PRUnichar u)
      c = GETCLASSFROMTABLE(gLBClass21, l);
    } else if (0x3000 == h) {
      c = GETCLASSFROMTABLE(gLBClass30, l);
-   } else if (((0x3200 <= u) && (u <= 0xA4CF)) || // CJK and Yi
-              ((0xAC00 <= h) && (h <= 0xD7FF)) || // Hangul
+   } else if (((0x3200 <= u) && (u <= 0xA4CF)) || 
+              ((0xAC00 <= h) && (h <= 0xD7FF)) || 
               ((0xf900 <= h) && (h <= 0xfaff))) {
-     c = CLASS_BREAKABLE; // CJK character, Han, and Han Compatibility
+     c = CLASS_BREAKABLE; 
    } else if (0xff00 == h) {
-     if (l < 0x0060) { // Fullwidth ASCII variant
+     if (l < 0x0060) { 
        c = GETCLASSFROMTABLE(gLBClass00, (l+0x20));
      } else if (l < 0x00a0) {
        switch (l) {
@@ -475,14 +443,14 @@ GetClass(PRUnichar u)
          case 0x9f: c = GetClass(0x309c); break;
          default:
            if (IS_HALFWIDTH_IN_JISx4051_CLASS3(u))
-              c = CLASS_CLOSE; // jis x4051 class 3
+              c = CLASS_CLOSE; 
            else
-              c = CLASS_BREAKABLE; // jis x4051 class 11
+              c = CLASS_BREAKABLE; 
            break;
        }
-     // Halfwidth Katakana variants
+     
      } else if (l < 0x00e0) {
-       c = CLASS_CHARACTER; // Halfwidth Hangul variants
+       c = CLASS_CHARACTER; 
      } else if (l < 0x00f0) {
        static PRUnichar NarrowFFEx[16] = {
          0x00A2, 0x00A3, 0x00AC, 0x00AF, 0x00A6, 0x00A5, 0x20A9, 0x0000,
@@ -493,13 +461,13 @@ GetClass(PRUnichar u)
        c = CLASS_CHARACTER;
      }
    } else if (0x3100 == h) { 
-     if (l <= 0xbf) { // Hangul Compatibility Jamo, Bopomofo, Kanbun
-                      // XXX: This is per UAX #14, but UAX #14 may change
-                      // the line breaking rules about Kanbun and Bopomofo.
+     if (l <= 0xbf) { 
+                      
+                      
        c = CLASS_BREAKABLE;
-     } else if (l >= 0xf0) { // Katakana small letters for Ainu
+     } else if (l >= 0xf0) { 
        c = CLASS_CLOSE;
-     } else { // unassigned
+     } else { 
        c = CLASS_CHARACTER;
      }
    } else if (0x0300 == h) {
@@ -508,7 +476,7 @@ GetClass(PRUnichar u)
      else
        c = CLASS_CHARACTER;
    } else if (0x0500 == h) {
-     // ARMENIAN HYPHEN (for "Breaking Hyphens" of UAX#14)
+     
      if (l == 0x8A)
        c = GETCLASSFROMTABLE(gLBClass00, PRUint16(U_HYPHEN));
      else
@@ -524,7 +492,7 @@ GetClass(PRUnichar u)
      else
        c = CLASS_CHARACTER;
    } else {
-     c = CLASS_CHARACTER; // others
+     c = CLASS_CHARACTER; 
    }
    return c;
 }
@@ -587,14 +555,14 @@ public:
 
   void NotifyBreakBefore() { mLastBreakIndex = mIndex; }
 
-// A word of western language should not be broken. But even if the word has
-// only ASCII characters, non-natural context words should be broken, e.g.,
-// URL and file path. For protecting the natural words, we should use
-// conservative breaking rules at following conditions:
-//   1. at near the start of word
-//   2. at near the end of word
-//   3. at near the latest broken point
-// CONSERVATIVE_BREAK_RANGE define the 'near' in characters.
+
+
+
+
+
+
+
+
 #define CONSERVATIVE_BREAK_RANGE 6
 
   bool UseConservativeBreaking(PRUint32 aOffset = 0) {
@@ -607,15 +575,15 @@ public:
     if (result || !mHasNonbreakableSpace)
       return result;
 
-    // This text has no-breakable space, we need to check whether the index
-    // is near it.
+    
+    
 
-    // Note that index is always larger than CONSERVATIVE_BREAK_RANGE here.
+    
     for (PRUint32 i = index; index - CONSERVATIVE_BREAK_RANGE < i; --i) {
       if (IS_NONBREAKABLE_SPACE(GetCharAt(i - 1)))
         return true;
     }
-    // Note that index is always less than mLength - CONSERVATIVE_BREAK_RANGE.
+    
     for (PRUint32 i = index + 1; i < index + CONSERVATIVE_BREAK_RANGE; ++i) {
       if (IS_NONBREAKABLE_SPACE(GetCharAt(i)))
         return true;
@@ -675,36 +643,36 @@ private:
   const PRUint8* mText;
 
   PRUint32 mIndex;
-  PRUint32 mLength;         // length of text
+  PRUint32 mLength;         
   PRUint32 mLastBreakIndex;
-  PRUnichar mPreviousNonHyphenCharacter; // The last character we have seen
-                                         // which is not U_HYPHEN
-  bool mHasCJKChar; // if the text has CJK character, this is true.
-  bool mHasNonbreakableSpace; // if the text has no-breakable space,
-                                     // this is true.
-  bool mHasPreviousEqualsSign; // True if we have seen a U_EQUAL
-  bool mHasPreviousSlash;      // True if we have seen a U_SLASH
-  bool mHasPreviousBackslash;  // True if we have seen a U_BACKSLASH
+  PRUnichar mPreviousNonHyphenCharacter; 
+                                         
+  bool mHasCJKChar; 
+  bool mHasNonbreakableSpace; 
+                                     
+  bool mHasPreviousEqualsSign; 
+  bool mHasPreviousSlash;      
+  bool mHasPreviousBackslash;  
 };
 
 static PRInt8
 ContextualAnalysis(PRUnichar prev, PRUnichar cur, PRUnichar next,
                    ContextState &aState)
 {
-  // Don't return CLASS_OPEN/CLASS_CLOSE if aState.UseJISX4051 is FALSE.
+  
 
   if (IS_HYPHEN(cur)) {
-    // If next character is hyphen, we don't need to break between them.
+    
     if (IS_HYPHEN(next))
       return CLASS_CHARACTER;
-    // If prev and next characters are numeric, it may be in Math context.
-    // So, we should not break here.
+    
+    
     bool prevIsNum = IS_ASCII_DIGIT(prev);
     bool nextIsNum = IS_ASCII_DIGIT(next);
     if (prevIsNum && nextIsNum)
       return CLASS_NUMERIC;
-    // If one side is numeric and the other is a character, or if both sides are
-    // characters, the hyphen should be breakable.
+    
+    
     if (!aState.UseConservativeBreaking(1)) {
       PRUnichar prevOfHyphen = aState.GetPreviousNonHyphenCharacter();
       if (prevOfHyphen && next) {
@@ -719,11 +687,11 @@ ContextualAnalysis(PRUnichar prev, PRUnichar cur, PRUnichar next,
   } else {
     aState.NotifyNonHyphenCharacter(cur);
     if (cur == U_SLASH || cur == U_BACKSLASH) {
-      // If this is immediately after same char, we should not break here.
+      
       if (prev == cur)
         return CLASS_CHARACTER;
-      // If this text has two or more (BACK)SLASHs, this may be file path or URL.
-      // Make sure to compute shouldReturn before we notify on this slash.
+      
+      
       bool shouldReturn = !aState.UseConservativeBreaking() &&
         (cur == U_SLASH ?
          aState.HasPreviousSlash() : aState.HasPreviousBackslash());
@@ -737,7 +705,7 @@ ContextualAnalysis(PRUnichar prev, PRUnichar cur, PRUnichar next,
       if (shouldReturn)
         return CLASS_OPEN;
     } else if (cur == U_PERCENT) {
-      // If this is a part of the param of URL, we should break before.
+      
       if (!aState.UseConservativeBreaking()) {
         if (aState.Index() >= 3 &&
             aState.GetCharAt(aState.Index() - 3) == U_PERCENT)
@@ -747,16 +715,16 @@ ContextualAnalysis(PRUnichar prev, PRUnichar cur, PRUnichar next,
           return CLASS_OPEN;
       }
     } else if (cur == U_AMPERSAND || cur == U_SEMICOLON) {
-      // If this may be a separator of params of URL, we should break after.
+      
       if (!aState.UseConservativeBreaking(1) &&
           aState.HasPreviousEqualsSign())
         return CLASS_CLOSE;
     } else if (cur == U_OPEN_SINGLE_QUOTE ||
                cur == U_OPEN_DOUBLE_QUOTE ||
                cur == U_OPEN_GUILLEMET) {
-      // for CJK usage, we treat these as openers to allow a break before them,
-      // but otherwise treat them as normal characters because quote mark usage
-      // in various Western languages varies too much; see bug #450088 discussion.
+      
+      
+      
       if (!aState.UseConservativeBreaking() && IS_CJK_CHAR(next))
         return CLASS_OPEN;
     } else {
@@ -788,9 +756,9 @@ nsJISx4051LineBreaker::WordMove(const PRUnichar* aText, PRUint32 aLen,
   PRInt32 ret;
   nsAutoTArray<PRUint8, 2000> breakState;
   if (!textNeedsJISx4051 || !breakState.AppendElements(end - begin)) {
-    // No complex text character, do not try to do complex line break.
-    // (This is required for serializers. See Bug #344816.)
-    // Also fall back to this when out of memory.
+    
+    
+    
     if (aDirection < 0) {
       ret = (begin == PRInt32(aPos)) ? begin - 1 : begin;
     } else {
@@ -881,15 +849,15 @@ nsJISx4051LineBreaker::GetJISx4051Breaks(const PRUnichar* aChars, PRUint32 aLeng
 
       NS_GetComplexLineBreaks(aChars + cur, end - cur, aBreakBefore + cur);
 
-      // We have to consider word-break value again for complex characters
+      
       if (aWordBreak != nsILineBreaker::kWordBreak_Normal) {
-        // Respect word-break property 
+        
         for (PRUint32 i = cur; i < end; i++)
           aBreakBefore[i] = (aWordBreak == nsILineBreaker::kWordBreak_BreakAll);
       }
 
-      // restore breakability at chunk begin, which was always set to false
-      // by the complex line breaker
+      
+      
       aBreakBefore[cur] = allowBreak;
 
       cur = end - 1;

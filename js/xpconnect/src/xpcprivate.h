@@ -83,42 +83,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef xpcprivate_h___
 #define xpcprivate_h___
 
@@ -210,7 +174,7 @@
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIPrincipal.h"
 #include "nsISecurityCheckedComponent.h"
-
+#include "xpcObjectHelper.h"
 #include "nsIThreadInternal.h"
 
 #ifdef XP_WIN
@@ -1375,7 +1339,7 @@ extern js::Class XPC_WN_Tearoff_JSClass;
 extern js::Class XPC_WN_NoHelper_Proto_JSClass;
 
 extern JSBool
-XPC_WN_Equality(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp);
+XPC_WN_Equality(JSContext *cx, JSHandleObject obj, const jsval *v, JSBool *bp);
 
 extern JSBool
 XPC_WN_CallMethod(JSContext *cx, unsigned argc, jsval *vp);
@@ -1384,20 +1348,20 @@ extern JSBool
 XPC_WN_GetterSetter(JSContext *cx, unsigned argc, jsval *vp);
 
 extern JSBool
-XPC_WN_JSOp_Enumerate(JSContext *cx, JSObject *obj, JSIterateOp enum_op,
+XPC_WN_JSOp_Enumerate(JSContext *cx, JSHandleObject obj, JSIterateOp enum_op,
                       jsval *statep, jsid *idp);
 
 extern JSType
-XPC_WN_JSOp_TypeOf_Object(JSContext *cx, JSObject *obj);
+XPC_WN_JSOp_TypeOf_Object(JSContext *cx, JSHandleObject obj);
 
 extern JSType
-XPC_WN_JSOp_TypeOf_Function(JSContext *cx, JSObject *obj);
+XPC_WN_JSOp_TypeOf_Function(JSContext *cx, JSHandleObject obj);
 
 extern void
-XPC_WN_JSOp_Clear(JSContext *cx, JSObject *obj);
+XPC_WN_JSOp_Clear(JSContext *cx, JSHandleObject obj);
 
 extern JSObject*
-XPC_WN_JSOp_ThisObject(JSContext *cx, JSObject *obj);
+XPC_WN_JSOp_ThisObject(JSContext *cx, JSHandleObject obj);
 
 
 #define XPC_WN_WithCall_ObjectOps                                             \
@@ -3224,126 +3188,6 @@ private:
 
 
 
-
-class xpcObjectHelper
-{
-public:
-    xpcObjectHelper(nsISupports *aObject, nsWrapperCache *aCache = nsnull)
-    : mCanonical(nsnull),
-      mObject(aObject),
-      mCache(aCache),
-      mIsNode(false)
-    {
-        if (!mCache) {
-            if (aObject)
-                CallQueryInterface(aObject, &mCache);
-            else
-                mCache = nsnull;
-        }
-    }
-
-    nsISupports* Object()
-    {
-        return mObject;
-    }
-
-    nsISupports* GetCanonical()
-    {
-        if (!mCanonical) {
-            mCanonicalStrong = do_QueryInterface(mObject);
-            mCanonical = mCanonicalStrong;
-        }
-        return mCanonical;
-    }
-
-    already_AddRefed<nsISupports> forgetCanonical()
-    {
-        NS_ASSERTION(mCanonical, "Huh, no canonical to forget?");
-
-        if (!mCanonicalStrong)
-            mCanonicalStrong = mCanonical;
-        mCanonical = nsnull;
-        return mCanonicalStrong.forget();
-    }
-
-    nsIClassInfo *GetClassInfo()
-    {
-        if (mXPCClassInfo)
-          return mXPCClassInfo;
-        if (!mClassInfo)
-            mClassInfo = do_QueryInterface(mObject);
-        return mClassInfo;
-    }
-    nsXPCClassInfo *GetXPCClassInfo()
-    {
-        if (!mXPCClassInfo) {
-            if (mIsNode)
-                mXPCClassInfo = static_cast<nsINode*>(GetCanonical())->GetClassInfo();
-            else
-                CallQueryInterface(mObject, getter_AddRefs(mXPCClassInfo));
-        }
-        return mXPCClassInfo;
-    }
-
-    already_AddRefed<nsXPCClassInfo> forgetXPCClassInfo()
-    {
-        GetXPCClassInfo();
-
-        return mXPCClassInfo.forget();
-    }
-
-    
-    PRUint32 GetScriptableFlags()
-    {
-        
-        nsCOMPtr<nsIXPCScriptable> sinfo = GetXPCClassInfo();
-
-        
-        if (!sinfo)
-            sinfo = do_QueryInterface(GetCanonical());
-
-        
-        MOZ_ASSERT(sinfo);
-
-        
-        PRUint32 flags;
-        mozilla::DebugOnly<nsresult> rv = sinfo->GetScriptableFlags(&flags);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-        return flags;
-    }
-
-    nsWrapperCache *GetWrapperCache()
-    {
-        return mCache;
-    }
-
-protected:
-    xpcObjectHelper(nsISupports *aObject, nsISupports *aCanonical,
-                    nsWrapperCache *aCache, bool aIsNode)
-    : mCanonical(aCanonical),
-      mObject(aObject),
-      mCache(aCache),
-      mIsNode(aIsNode)
-    {
-        if (!mCache && aObject)
-            CallQueryInterface(aObject, &mCache);
-    }
-
-    nsCOMPtr<nsISupports>    mCanonicalStrong;
-    nsISupports*             mCanonical;
-
-private:
-    xpcObjectHelper(xpcObjectHelper& aOther);
-
-    nsISupports*             mObject;
-    nsWrapperCache*          mCache;
-    nsCOMPtr<nsIClassInfo>   mClassInfo;
-    nsRefPtr<nsXPCClassInfo> mXPCClassInfo;
-    bool                     mIsNode;
-};
-
-
 class XPCConvert
 {
 public:
@@ -4500,6 +4344,9 @@ namespace xpc {
 
 struct CompartmentPrivate
 {
+    typedef nsDataHashtable<nsPtrHashKey<XPCWrappedNative>, JSObject *> ExpandoMap;
+    typedef nsTHashtable<nsPtrHashKey<JSObject> > DOMExpandoMap;
+
     CompartmentPrivate(bool wantXrays)
         : wantXrays(wantXrays)
     {
@@ -4511,20 +4358,17 @@ struct CompartmentPrivate
     bool wantXrays;
     nsAutoPtr<JSObject2JSObjectMap> waiverWrapperMap;
     
-    nsAutoPtr<nsDataHashtable<nsPtrHashKey<XPCWrappedNative>, JSObject *> > expandoMap;
-    nsAutoPtr<nsTHashtable<nsPtrHashKey<JSObject> > > domExpandoMap;
+    nsAutoPtr<ExpandoMap> expandoMap;
+    nsAutoPtr<DOMExpandoMap> domExpandoMap;
     nsCString location;
 
     bool RegisterExpandoObject(XPCWrappedNative *wn, JSObject *expando) {
         if (!expandoMap) {
-            expandoMap = new nsDataHashtable<nsPtrHashKey<XPCWrappedNative>, JSObject *>();
-            if (!expandoMap->Init(8)) {
-                expandoMap = nsnull;
-                return false;
-            }
+            expandoMap = new ExpandoMap();
+            expandoMap->Init(8);
         }
         wn->SetHasExpandoObject();
-        return expandoMap->Put(wn, expando);
+        return expandoMap->Put(wn, expando, mozilla::fallible_t());
     }
 
     
@@ -4550,13 +4394,10 @@ struct CompartmentPrivate
 
     bool RegisterDOMExpandoObject(JSObject *expando) {
         if (!domExpandoMap) {
-            domExpandoMap = new nsTHashtable<nsPtrHashKey<JSObject> >();
-            if (!domExpandoMap->Init(8)) {
-                domExpandoMap = nsnull;
-                return false;
-            }
+            domExpandoMap = new DOMExpandoMap();
+            domExpandoMap->Init(8);
         }
-        return domExpandoMap->PutEntry(expando);
+        return domExpandoMap->PutEntry(expando, mozilla::fallible_t());
     }
     void RemoveDOMExpandoObject(JSObject *expando) {
         if (domExpandoMap)

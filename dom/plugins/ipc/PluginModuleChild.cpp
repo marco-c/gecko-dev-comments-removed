@@ -4,39 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef MOZ_WIDGET_QT
 #include <QtCore/QTimer>
 #include "nsQAppInstance.h"
@@ -177,20 +144,9 @@ PluginModuleChild::Init(const std::string& aPluginFilename,
 
     NS_ASSERTION(aChannel, "need a channel");
 
-    if (!mObjectMap.Init()) {
-       NS_WARNING("Failed to initialize object hashtable!");
-       return false;
-    }
-
-    if (!mStringIdentifiers.Init()) {
-       NS_ERROR("Failed to initialize string identifier hashtable!");
-       return false;
-    }
-
-    if (!mIntIdentifiers.Init()) {
-       NS_ERROR("Failed to initialize int identifier hashtable!");
-       return false;
-    }
+    mObjectMap.Init();
+    mStringIdentifiers.Init();
+    mIntIdentifiers.Init();
 
     if (!InitGraphics())
         return false;

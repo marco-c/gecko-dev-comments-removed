@@ -21,38 +21,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef small
 #undef small
 #endif 
@@ -1364,6 +1332,7 @@ GK_ATOM(unicode_bidi, "unicode-bidi")
 GK_ATOM(userSpaceOnUse, "userSpaceOnUse")
 GK_ATOM(view, "view")
 GK_ATOM(viewBox, "viewBox")
+GK_ATOM(viewTarget, "viewTarget")
 GK_ATOM(vkern, "vkern")
 GK_ATOM(word_spacing, "word-spacing")
 GK_ATOM(x, "x")
@@ -1377,6 +1346,7 @@ GK_ATOM(y2, "y2")
 GK_ATOM(yChannelSelector, "yChannelSelector")
 GK_ATOM(z, "z")
 GK_ATOM(zoomAndPan, "zoomAndPan")
+GK_ATOM(vector_effect, "vector-effect")
 
 GK_ATOM(accumulate, "accumulate")
 GK_ATOM(additive, "additive")
@@ -1716,6 +1686,7 @@ GK_ATOM(onMozTouchUp, "onMozTouchUp")
 GK_ATOM(ondevicemotion, "ondevicemotion")
 GK_ATOM(ondeviceorientation, "ondeviceorientation")
 GK_ATOM(ondeviceproximity, "ondeviceproximity")
+GK_ATOM(onuserproximity, "onuserproximity")
 
 
 GK_ATOM(ondevicelight, "ondevicelight")

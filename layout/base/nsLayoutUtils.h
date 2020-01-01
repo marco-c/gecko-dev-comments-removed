@@ -3,41 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef nsLayoutUtils_h__
 #define nsLayoutUtils_h__
 
@@ -55,6 +20,7 @@ class nsClientRectList;
 class nsFontFaceList;
 
 #include "prtypes.h"
+#include "nsChangeHint.h"
 #include "nsStyleContext.h"
 #include "nsAutoPtr.h"
 #include "nsStyleSet.h"
@@ -1651,6 +1617,15 @@ public:
   static void DeregisterImageRequest(nsPresContext* aPresContext,
                                      imgIRequest* aRequest,
                                      bool* aRequestRegistered);
+
+  
+
+
+
+
+  static void PostRestyleEvent(mozilla::dom::Element* aElement,
+                               nsRestyleHint aRestyleHint,
+                               nsChangeHint aMinChangeHint);
 
 #ifdef DEBUG
   

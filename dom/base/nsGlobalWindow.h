@@ -4,42 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef nsGlobalWindow_h___
 #define nsGlobalWindow_h___
 
@@ -99,6 +63,7 @@
 #include "nsIDOMTouchEvent.h"
 #include "nsIInlineEventHandlers.h"
 #include "nsWrapperCacheInlines.h"
+#include "nsIDOMApplicationRegistry.h"
 
 
 #include "jsapi.h"
@@ -825,6 +790,7 @@ protected:
                              nsCOMPtr<nsIDOMStorageEvent>& aEvent);
 
   void SetIsApp(bool aValue);
+  nsresult SetApp(const nsAString& aManifestURL);
 
   
   
@@ -992,6 +958,10 @@ protected:
   nsTHashtable<nsPtrHashKey<nsDOMEventTargetHelper> > mEventTargetObjects;
 
   nsTArray<PRUint32> mEnabledSensors;
+
+  
+  
+  nsCOMPtr<mozIDOMApplication> mApp;
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;

@@ -8,40 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "mozilla/Util.h"
 
 #include "nsCSSProps.h"
@@ -1512,6 +1478,12 @@ const PRInt32 nsCSSProps::kTextRenderingKTable[] = {
   eCSSKeyword_optimizespeed, NS_STYLE_TEXT_RENDERING_OPTIMIZESPEED,
   eCSSKeyword_optimizelegibility, NS_STYLE_TEXT_RENDERING_OPTIMIZELEGIBILITY,
   eCSSKeyword_geometricprecision, NS_STYLE_TEXT_RENDERING_GEOMETRICPRECISION,
+  eCSSKeyword_UNKNOWN, -1
+};
+
+const PRInt32 nsCSSProps::kVectorEffectKTable[] = {
+  eCSSKeyword_none, NS_STYLE_VECTOR_EFFECT_NONE,
+  eCSSKeyword_non_scaling_stroke, NS_STYLE_VECTOR_EFFECT_NON_SCALING_STROKE,
   eCSSKeyword_UNKNOWN, -1
 };
 

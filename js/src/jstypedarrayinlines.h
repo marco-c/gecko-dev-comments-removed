@@ -4,39 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef jstypedarrayinlines_h
 #define jstypedarrayinlines_h
 
@@ -129,7 +96,7 @@ TypedArray::getDataOffset(JSObject *obj) {
 
 inline DataViewObject *
 DataViewObject::create(JSContext *cx, uint32_t byteOffset, uint32_t byteLength,
-                       Handle<ArrayBufferObject*> arrayBuffer)
+                       Handle<ArrayBufferObject*> arrayBuffer, JSObject *proto)
 {
     JS_ASSERT(byteOffset <= INT32_MAX);
     JS_ASSERT(byteLength <= INT32_MAX);
@@ -137,6 +104,21 @@ DataViewObject::create(JSContext *cx, uint32_t byteOffset, uint32_t byteLength,
     RootedVarObject obj(cx, NewBuiltinClassInstance(cx, &DataViewClass));
     if (!obj)
         return NULL;
+
+    types::TypeObject *type;
+    if (proto) {
+        type = proto->getNewType(cx);
+    } else {
+        
+
+
+
+        JSProtoKey key = JSCLASS_CACHED_PROTO_KEY(&DataViewClass);
+        type = types::GetTypeCallerInitObject(cx, key);
+        if (!type)
+            return NULL;
+    }
+    obj->setType(type);
 
     JS_ASSERT(arrayBuffer->isArrayBuffer());
 

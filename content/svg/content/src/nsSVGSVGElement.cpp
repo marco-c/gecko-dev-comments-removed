@@ -3,44 +3,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "mozilla/Util.h"
 
 #include "nsGkAtoms.h"
+#include "nsLayoutUtils.h"
 #include "DOMSVGNumber.h"
 #include "DOMSVGLength.h"
 #include "nsSVGAngle.h"
@@ -204,7 +170,8 @@ nsSVGSVGElement::nsSVGSVGElement(already_AddRefed<nsINodeInfo> aNodeInfo,
     mPreviousScale(1.0f),
     mStartAnimationOnBindToTree(!aFromParser),
     mImageNeedsTransformInvalidation(false),
-    mIsPaintingSVGImageElement(false)
+    mIsPaintingSVGImageElement(false),
+    mHasChildrenOnlyTransform(false)
 {
 }
 
@@ -954,13 +921,6 @@ ComputeSynthesizedViewBoxDimension(const nsSVGLength2& aLength,
 gfxMatrix
 nsSVGSVGElement::GetViewBoxTransform() const
 {
-  
-  const SVGPreserveAspectRatio* overridePARPtr =
-    GetImageOverridePreserveAspectRatio();
-
-  
-  SVGPreserveAspectRatio tmpPAR;
-
   float viewportWidth, viewportHeight;
   if (IsInner()) {
     nsSVGSVGElement *ctx = GetCtx();
@@ -975,39 +935,8 @@ nsSVGSVGElement::GetViewBoxTransform() const
     return gfxMatrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0); 
   }
 
-  nsSVGViewBoxRect viewBox;
-  if (HasViewBox()) {
-    viewBox = mViewBox.GetAnimValue();
-  } else {
-    viewBox.x = viewBox.y = 0.0f;
-    if (ShouldSynthesizeViewBox()) {
-      
-      
-      viewBox.width =
-        ComputeSynthesizedViewBoxDimension(mLengthAttributes[WIDTH],
-                                           mViewportWidth, this);
-      viewBox.height =
-        ComputeSynthesizedViewBoxDimension(mLengthAttributes[HEIGHT],
-                                           mViewportHeight, this);
-      NS_ABORT_IF_FALSE(!overridePARPtr,
-                        "shouldn't have overridePAR if we're "
-                        "synthesizing a viewBox");
-
-      
-      tmpPAR.SetAlign(nsIDOMSVGPreserveAspectRatio::SVG_PRESERVEASPECTRATIO_NONE);
-
-      
-      tmpPAR.SetDefer(false);
-      tmpPAR.SetMeetOrSlice(nsIDOMSVGPreserveAspectRatio::SVG_MEETORSLICE_SLICE);
-
-      overridePARPtr = &tmpPAR;
-    } else {
-      
-      
-      viewBox.width  = viewportWidth;
-      viewBox.height = viewportHeight;
-    }
-  }
+  nsSVGViewBoxRect viewBox =
+    GetViewBoxWithSynthesis(viewportWidth, viewportHeight);
 
   if (viewBox.width <= 0.0f || viewBox.height <= 0.0f) {
     return gfxMatrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0); 
@@ -1017,8 +946,34 @@ nsSVGSVGElement::GetViewBoxTransform() const
                                          viewportWidth, viewportHeight,
                                          viewBox.x, viewBox.y,
                                          viewBox.width, viewBox.height,
-                                         overridePARPtr ? *overridePARPtr :
-                                         mPreserveAspectRatio.GetAnimValue());
+                                         GetPreserveAspectRatioWithOverride());
+}
+
+void
+nsSVGSVGElement::ChildrenOnlyTransformChanged()
+{
+  
+  NS_ABORT_IF_FALSE(!(GetPrimaryFrame()->GetStateBits() &
+                      NS_STATE_SVG_NONDISPLAY_CHILD),
+                    "Non-display SVG frames don't maintain overflow rects");
+
+  bool hasChildrenOnlyTransform = HasViewBoxOrSyntheticViewBox() ||
+    (IsRoot() && (mCurrentTranslate != nsSVGTranslatePoint(0.0f, 0.0f) ||
+                  mCurrentScale != 1.0f));
+
+  
+  
+  
+  
+
+  nsChangeHint changeHint =
+    nsChangeHint(nsChangeHint_RepaintFrame |
+                 nsChangeHint_UpdateOverflow |
+                 nsChangeHint_ChildrenOnlyTransform);
+
+  nsLayoutUtils::PostRestyleEvent(this, nsRestyleHint(0), changeHint);
+
+  mHasChildrenOnlyTransform = hasChildrenOnlyTransform;
 }
 
 nsresult
@@ -1118,6 +1073,50 @@ nsSVGSVGElement::HasPreserveAspectRatio()
 {
   return HasAttr(kNameSpaceID_None, nsGkAtoms::preserveAspectRatio) ||
     mPreserveAspectRatio.IsAnimated();
+}
+
+nsSVGViewBoxRect
+nsSVGSVGElement::GetViewBoxWithSynthesis(
+  float aViewportWidth, float aViewportHeight) const
+{
+  if (HasViewBox()) {
+    return mViewBox.GetAnimValue();
+  }
+
+  if (ShouldSynthesizeViewBox()) {
+    
+    
+    return nsSVGViewBoxRect(0, 0,
+              ComputeSynthesizedViewBoxDimension(mLengthAttributes[WIDTH],
+                                                 mViewportWidth, this),
+              ComputeSynthesizedViewBoxDimension(mLengthAttributes[HEIGHT],
+                                                 mViewportHeight, this));
+
+  }
+
+  
+  
+  return nsSVGViewBoxRect(0, 0, aViewportWidth, aViewportHeight);
+}
+
+SVGPreserveAspectRatio
+nsSVGSVGElement::GetPreserveAspectRatioWithOverride() const
+{
+  if (GetCurrentDoc()->IsBeingUsedAsImage()) {
+    const SVGPreserveAspectRatio *pAROverridePtr = GetPreserveAspectRatioProperty();
+    if (pAROverridePtr) {
+      return *pAROverridePtr;
+    }
+  }
+
+  if (!HasViewBox() && ShouldSynthesizeViewBox()) {
+    
+    return SVGPreserveAspectRatio(
+         nsIDOMSVGPreserveAspectRatio::SVG_PRESERVEASPECTRATIO_NONE,
+         nsIDOMSVGPreserveAspectRatio::SVG_MEETORSLICE_SLICE);
+  }
+
+  return mPreserveAspectRatio.GetAnimValue();
 }
 
 
@@ -1272,6 +1271,43 @@ ReleasePreserveAspectRatioPropertyValue(void*    aObject,
   delete valPtr;
 }
 
+bool
+nsSVGSVGElement::
+  SetPreserveAspectRatioProperty(const SVGPreserveAspectRatio& aPAR)
+{
+  SVGPreserveAspectRatio* pAROverridePtr = new SVGPreserveAspectRatio(aPAR);
+  nsresult rv = SetProperty(nsGkAtoms::overridePreserveAspectRatio,
+                            pAROverridePtr,
+                            ReleasePreserveAspectRatioPropertyValue);
+  NS_ABORT_IF_FALSE(rv != NS_PROPTABLE_PROP_OVERWRITTEN,
+                    "Setting override value when it's already set...?"); 
+
+  if (NS_UNLIKELY(NS_FAILED(rv))) {
+    
+    delete pAROverridePtr;
+    return false;
+  }
+  return true;
+}
+
+const SVGPreserveAspectRatio*
+nsSVGSVGElement::GetPreserveAspectRatioProperty() const
+{
+  void* valPtr = GetProperty(nsGkAtoms::overridePreserveAspectRatio);
+  if (valPtr) {
+    return static_cast<SVGPreserveAspectRatio*>(valPtr);
+  }
+  return nsnull;
+}
+
+bool
+nsSVGSVGElement::ClearPreserveAspectRatioProperty()
+{
+  void* valPtr = UnsetProperty(nsGkAtoms::overridePreserveAspectRatio);
+  delete static_cast<SVGPreserveAspectRatio*>(valPtr);
+  return valPtr;
+}
+
 void
 nsSVGSVGElement::
   SetImageOverridePreserveAspectRatio(const SVGPreserveAspectRatio& aPAR)
@@ -1297,18 +1333,8 @@ nsSVGSVGElement::
     return; 
   }
 
-  SVGPreserveAspectRatio* pAROverridePtr = new SVGPreserveAspectRatio(aPAR);
-  nsresult rv = SetProperty(nsGkAtoms::overridePreserveAspectRatio,
-                            pAROverridePtr,
-                            ReleasePreserveAspectRatioPropertyValue);
-  NS_ABORT_IF_FALSE(rv != NS_PROPTABLE_PROP_OVERWRITTEN,
-                    "Setting override value when it's already set...?"); 
-
-  if (NS_LIKELY(NS_SUCCEEDED(rv))) {
+  if (SetPreserveAspectRatioProperty(aPAR)) {
     mImageNeedsTransformInvalidation = true;
-  } else {
-    
-    delete pAROverridePtr;
   }
 }
 
@@ -1317,7 +1343,7 @@ nsSVGSVGElement::ClearImageOverridePreserveAspectRatio()
 {
 #ifdef DEBUG
   NS_ABORT_IF_FALSE(GetCurrentDoc()->IsBeingUsedAsImage(),
-                    "should only override preserveAspectRatio in images");
+                    "should only override image preserveAspectRatio in images");
 #endif
 
   mIsPaintingSVGImageElement = false;
@@ -1328,25 +1354,9 @@ nsSVGSVGElement::ClearImageOverridePreserveAspectRatio()
     mImageNeedsTransformInvalidation = true;
   }
 
-  void* valPtr = UnsetProperty(nsGkAtoms::overridePreserveAspectRatio);
-  if (valPtr) {
+  if (ClearPreserveAspectRatioProperty()) {
     mImageNeedsTransformInvalidation = true;
-    delete static_cast<SVGPreserveAspectRatio*>(valPtr);
   }
-}
-
-const SVGPreserveAspectRatio*
-nsSVGSVGElement::GetImageOverridePreserveAspectRatio() const
-{
-  void* valPtr = GetProperty(nsGkAtoms::overridePreserveAspectRatio);
-#ifdef DEBUG
-  if (valPtr) {
-    NS_ABORT_IF_FALSE(GetCurrentDoc()->IsBeingUsedAsImage(),
-                      "should only override preserveAspectRatio in images");
-  }
-#endif
-
-  return static_cast<SVGPreserveAspectRatio*>(valPtr);
 }
 
 void
@@ -1361,3 +1371,78 @@ nsSVGSVGElement::FlushImageTransformInvalidation()
     mImageNeedsTransformInvalidation = false;
   }
 }
+
+
+static void
+ReleaseViewBoxPropertyValue(void*    aObject,       
+                            nsIAtom* aPropertyName, 
+                            void*    aPropertyValue,
+                            void*    aData          )
+{
+  nsSVGViewBoxRect* valPtr =
+    static_cast<nsSVGViewBoxRect*>(aPropertyValue);
+  delete valPtr;
+}
+
+bool
+nsSVGSVGElement::SetViewBoxProperty(const nsSVGViewBoxRect& aViewBox)
+{
+  nsSVGViewBoxRect* pViewBoxOverridePtr = new nsSVGViewBoxRect(aViewBox);
+  nsresult rv = SetProperty(nsGkAtoms::viewBox,
+                            pViewBoxOverridePtr,
+                            ReleaseViewBoxPropertyValue);
+  NS_ABORT_IF_FALSE(rv != NS_PROPTABLE_PROP_OVERWRITTEN,
+                    "Setting override value when it's already set...?"); 
+
+  if (NS_UNLIKELY(NS_FAILED(rv))) {
+    
+    delete pViewBoxOverridePtr;
+    return false;
+  }
+  return true;
+}
+
+const nsSVGViewBoxRect*
+nsSVGSVGElement::GetViewBoxProperty() const
+{
+  void* valPtr = GetProperty(nsGkAtoms::viewBox);
+  if (valPtr) {
+    return static_cast<nsSVGViewBoxRect*>(valPtr);
+  }
+  return nsnull;
+}
+
+bool
+nsSVGSVGElement::ClearViewBoxProperty()
+{
+  void* valPtr = UnsetProperty(nsGkAtoms::viewBox);
+  delete static_cast<nsSVGViewBoxRect*>(valPtr);
+  return valPtr;
+}
+
+bool
+nsSVGSVGElement::SetZoomAndPanProperty(PRUint16 aValue)
+{
+  nsresult rv = SetProperty(nsGkAtoms::zoomAndPan, reinterpret_cast<void*>(aValue));
+  NS_ABORT_IF_FALSE(rv != NS_PROPTABLE_PROP_OVERWRITTEN,
+                    "Setting override value when it's already set...?"); 
+
+  return NS_SUCCEEDED(rv);
+}
+
+const PRUint16*
+nsSVGSVGElement::GetZoomAndPanProperty() const
+{
+  void* valPtr = GetProperty(nsGkAtoms::zoomAndPan);
+  if (valPtr) {
+    return reinterpret_cast<PRUint16*>(valPtr);
+  }
+  return nsnull;
+}
+
+bool
+nsSVGSVGElement::ClearZoomAndPanProperty()
+{
+  return UnsetProperty(nsGkAtoms::viewBox);
+}
+

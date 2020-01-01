@@ -4,39 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "PluginInstanceParent.h"
 #include "BrowserStreamParent.h"
 #include "PluginBackgroundDestroyer.h"
@@ -137,7 +104,8 @@ PluginInstanceParent::~PluginInstanceParent()
 bool
 PluginInstanceParent::Init()
 {
-    return !!mScriptableObjects.Init();
+    mScriptableObjects.Init();
+    return true;
 }
 
 void
@@ -1200,8 +1168,7 @@ PluginInstanceParent::NPP_HandleEvent(void* event)
             }
         }
         if (DoublePassRenderingEvent() == npevent->event) {
-            CallPaint(npremoteevent, &handled);
-            return handled;
+            return CallPaint(npremoteevent, &handled) && handled;
         }
 
         switch (npevent->event) {
@@ -1209,7 +1176,9 @@ PluginInstanceParent::NPP_HandleEvent(void* event)
             {
                 RECT rect;
                 SharedSurfaceBeforePaint(rect, npremoteevent);
-                CallPaint(npremoteevent, &handled);
+                if (!CallPaint(npremoteevent, &handled)) {
+                    handled = false;
+                }
                 SharedSurfaceAfterPaint(npevent);
                 return handled;
             }
@@ -1237,10 +1206,7 @@ PluginInstanceParent::NPP_HandleEvent(void* event)
             case WM_WINDOWPOSCHANGED:
             {
                 
-                SendWindowPosChanged(npremoteevent);
-                
-                
-                return 1;
+                return SendWindowPosChanged(npremoteevent);
             }
             break;
         }
@@ -1544,7 +1510,8 @@ PluginInstanceParent::RegisterNPObjectForActor(
     NS_ASSERTION(aObject && aActor, "Null pointers!");
     NS_ASSERTION(mScriptableObjects.IsInitialized(), "Hash not initialized!");
     NS_ASSERTION(!mScriptableObjects.Get(aObject, nsnull), "Duplicate entry!");
-    return !!mScriptableObjects.Put(aObject, aActor);
+    mScriptableObjects.Put(aObject, aActor);
+    return true;
 }
 
 void
@@ -1792,7 +1759,7 @@ PluginInstanceParent::PluginWindowHookProc(HWND hWnd,
     switch (message) {
         case WM_SETFOCUS:
         
-        self->CallSetPluginFocus();
+        unused << self->CallSetPluginFocus();
         break;
 
         case WM_CLOSE:
@@ -1821,7 +1788,7 @@ PluginInstanceParent::SubclassPluginWindow(HWND aWnd)
         mPluginWndProc = 
             (WNDPROC)::SetWindowLongPtrA(mPluginHWND, GWLP_WNDPROC,
                          reinterpret_cast<LONG_PTR>(PluginWindowHookProc));
-        bool bRes = ::SetPropW(mPluginHWND, kPluginInstanceParentProperty, this);
+        DebugOnly<bool> bRes = ::SetPropW(mPluginHWND, kPluginInstanceParentProperty, this);
         NS_ASSERTION(mPluginWndProc,
           "PluginInstanceParent::SubclassPluginWindow failed to set subclass!");
         NS_ASSERTION(bRes,
