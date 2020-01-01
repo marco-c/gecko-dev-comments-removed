@@ -60,8 +60,8 @@
 
   function dumpEvent(aEvent) {
     var detail = "target=" + aEvent.target + ", originalTarget=" +
-                 aEvent.originalTarget + ", getPreventDefault()=" +
-                 aEvent.getPreventDefault() + ", isTrusted=" + aEvent.isTrusted;
+                 aEvent.originalTarget + ", defaultPrevented=" +
+                 aEvent.defaultPrevented + ", isTrusted=" + aEvent.isTrusted;
     switch (aEvent.type) {
       case "keydown":
       case "keypress":
