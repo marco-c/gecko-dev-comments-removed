@@ -19,10 +19,10 @@ class nsIWeakReference;
 
 
 
-class nsXULColumnsAccessible : public nsAccessibleWrap
+class nsXULColumAccessible : public AccessibleWrap
 {
 public:
-  nsXULColumnsAccessible(nsIContent* aContent, nsDocAccessible* aDoc);
+  nsXULColumAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   virtual mozilla::a11y::role NativeRole();
@@ -36,7 +36,7 @@ public:
 class nsXULColumnItemAccessible : public nsLeafAccessible
 {
 public:
-  nsXULColumnItemAccessible(nsIContent* aContent, nsDocAccessible* aDoc);
+  nsXULColumnItemAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   NS_IMETHOD GetActionName(PRUint8 aIndex, nsAString& aName);
@@ -61,7 +61,7 @@ class nsXULListboxAccessible : public XULSelectControlAccessible,
                                public mozilla::a11y::TableAccessible
 {
 public:
-  nsXULListboxAccessible(nsIContent* aContent, nsDocAccessible* aDoc);
+  nsXULListboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~nsXULListboxAccessible() {}
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -72,7 +72,7 @@ public:
   
   virtual PRUint32 ColCount();
   virtual PRUint32 RowCount();
-  virtual nsAccessible* CellAt(PRUint32 aRowIndex, PRUint32 aColumnIndex);
+  virtual Accessible* CellAt(PRUint32 aRowIndex, PRUint32 aColumnIndex);
   virtual void UnselectRow(PRUint32 aRowIdx);
 
   
@@ -89,7 +89,7 @@ public:
   virtual bool IsActiveWidget() const;
   virtual bool AreItemsOperable() const;
 
-  virtual nsAccessible* ContainerWidget() const;
+  virtual Accessible* ContainerWidget() const;
 
 protected:
   bool IsMulticolumn();
@@ -105,7 +105,7 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
   
-  nsXULListitemAccessible(nsIContent* aContent, nsDocAccessible* aDoc);
+  nsXULListitemAccessible(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~nsXULListitemAccessible() {}
 
   
@@ -120,13 +120,13 @@ public:
   virtual bool CanHaveAnonChildren();
 
   
-  virtual nsAccessible* ContainerWidget() const;
+  virtual Accessible* ContainerWidget() const;
 
 protected:
   
 
 
-  nsAccessible *GetListAccessible();
+  Accessible* GetListAccessible();
 
 private:
   bool mIsCheckbox;
@@ -139,7 +139,7 @@ class nsXULListCellAccessible : public nsHyperTextAccessibleWrap,
                                 public nsIAccessibleTableCell
 {
 public:
-  nsXULListCellAccessible(nsIContent* aContent, nsDocAccessible* aDoc);
+  nsXULListCellAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   NS_DECL_ISUPPORTS_INHERITED

@@ -920,7 +920,15 @@ class JS_PUBLIC_API(AutoGCRooter) {
         IDVECTOR =    -15, 
         OBJVECTOR =   -16, 
         SCRIPTVECTOR =-17, 
-        IONMASM =     -18  
+        PROPDESC =    -18, 
+        SHAPERANGE =  -19, 
+        STACKSHAPE =  -20, 
+        STACKBASESHAPE=-21,
+        BINDINGS =    -22, 
+        GETTERSETTER =-23, 
+        REGEXPSTATICS=-24, 
+        HASHABLEVALUE=-25,
+        IONMASM =     -26  
     };
 
   private:
@@ -1411,7 +1419,6 @@ typedef JSBool
 
 
 
-
 typedef JSBool
 (* JSNewResolveOp)(JSContext *cx, JSHandleObject obj, JSHandleId id, unsigned flags,
                    JSObject **objp);
@@ -1560,7 +1567,7 @@ typedef enum JSFinalizeStatus {
 } JSFinalizeStatus;
 
 typedef void
-(* JSFinalizeCallback)(JSFreeOp *fop, JSFinalizeStatus status);
+(* JSFinalizeCallback)(JSFreeOp *fop, JSFinalizeStatus status, JSBool isCompartment);
 
 
 
@@ -2193,9 +2200,11 @@ class AutoIdRooter : private AutoGCRooter
 
 #define JSFUN_HEAVYWEIGHT_TEST(f)  ((f) & JSFUN_HEAVYWEIGHT)
 
-
-#define JSFUN_CONSTRUCTOR     0x0200    /* native that can be called as a ctor
+#define JSFUN_HAS_REST          0x0100  /* function has a rest (...) parameter */
+#define JSFUN_CONSTRUCTOR       0x0200  /* native that can be called as a ctor
                                            without creating a this object */
+#define JSFUN_HAS_DEFAULTS      0x0400  /* function has at least one default
+                                           parameter */
 
 #define JSFUN_FLAGS_MASK      0x07f8    /* overlay JSFUN_* attributes --
                                            bits 12-15 are used internally to
@@ -2722,56 +2731,61 @@ JS_StringToVersion(const char *string);
                                                    option supported for the
                                                    XUL preprocessor and kindred
                                                    beasts. */
-#define JSOPTION_XML            JS_BIT(6)       /* EMCAScript for XML support:
-                                                   parse <!-- --> as a token,
-                                                   not backward compatible with
-                                                   the comment-hiding hack used
-                                                   in HTML script tags. */
-#define JSOPTION_DONT_REPORT_UNCAUGHT \
-                                JS_BIT(8)       
+#define JSOPTION_ALLOW_XML      JS_BIT(6)       /* enable E4X syntax (deprecated)
+                                                   and define the E4X-related
+                                                   globals: XML, XMLList,
+                                                   Namespace, etc. */
+#define JSOPTION_MOAR_XML       JS_BIT(7)       
 
 
 
 
 
-#define JSOPTION_RELIMIT        JS_BIT(9)       
+#define JSOPTION_DONT_REPORT_UNCAUGHT                                   \
+                                JS_BIT(8)       /* When returning from the
+                                                   outermost API call, prevent
+                                                   uncaught exceptions from
+                                                   being converted to error
+                                                   reports */
+
+#define JSOPTION_RELIMIT        JS_BIT(9)       /* Throw exception on any
+                                                   regular expression which
+                                                   backtracks more than n^3
+                                                   times, where n is length
+                                                   of the input string */
 
 
 
 
+#define JSOPTION_NO_SCRIPT_RVAL JS_BIT(12)      /* A promise to the compiler
+                                                   that a null rval out-param
+                                                   will be passed to each call
+                                                   to JS_ExecuteScript. */
+#define JSOPTION_UNROOTED_GLOBAL JS_BIT(13)     /* The GC will not root the
+                                                   contexts' global objects
+                                                   (see JS_GetGlobalObject),
+                                                   leaving that up to the
+                                                   embedding. */
 
-
-
-
-#define JSOPTION_NO_SCRIPT_RVAL JS_BIT(12)      
-
-
-
-#define JSOPTION_UNROOTED_GLOBAL JS_BIT(13)     
-
-
-
-
-
-#define JSOPTION_METHODJIT      JS_BIT(14)      
+#define JSOPTION_METHODJIT      JS_BIT(14)      /* Whole-method JIT. */
 
 
 
 #define JSOPTION_METHODJIT_ALWAYS \
-                                JS_BIT(16)      
-
+                                JS_BIT(16)      /* Always whole-method JIT,
+                                                   don't tune at run-time. */
 #define JSOPTION_PCCOUNT        JS_BIT(17)      
 
-#define JSOPTION_TYPE_INFERENCE JS_BIT(18)      
-#define JSOPTION_STRICT_MODE    JS_BIT(19)      
+#define JSOPTION_TYPE_INFERENCE JS_BIT(18)      /* Perform type inference. */
+#define JSOPTION_STRICT_MODE    JS_BIT(19)      /* Provides a way to force
+                                                   strict mode for all code
+                                                   without requiring
+                                                   "use strict" annotations. */
+
+#define JSOPTION_ION            JS_BIT(20)      /* IonMonkey */
 
 
-
-
-#define JSOPTION_ION            JS_BIT(20)      
-
-
-#define JSCOMPILEOPTION_MASK    (JSOPTION_XML)
+#define JSCOMPILEOPTION_MASK    (JSOPTION_ALLOW_XML | JSOPTION_MOAR_XML)
 
 #define JSRUNOPTION_MASK        (JS_BITMASK(21) & ~JSCOMPILEOPTION_MASK)
 #define JSALLOPTION_MASK        (JSCOMPILEOPTION_MASK | JSRUNOPTION_MASK)
@@ -3806,8 +3820,7 @@ JS_IdToValue(JSContext *cx, jsid id, jsval *vp);
 #define JSRESOLVE_ASSIGNING     0x02    /* resolve on the left of assignment */
 #define JSRESOLVE_DETECTING     0x04    /* 'if (o.p)...' or '(o.p) ?...:...' */
 #define JSRESOLVE_DECLARING     0x08    /* var, const, or function prolog op */
-#define JSRESOLVE_CLASSNAME     0x10    /* class name used when constructing */
-#define JSRESOLVE_WITH          0x20    /* resolve inside a with statement */
+#define JSRESOLVE_WITH          0x10    /* resolve inside a with statement */
 
 
 

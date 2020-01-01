@@ -19,7 +19,7 @@ class nsXULTreeGridAccessible : public nsXULTreeAccessible,
                                 public mozilla::a11y::TableAccessible
 {
 public:
-  nsXULTreeGridAccessible(nsIContent* aContent, nsDocAccessible* aDoc);
+  nsXULTreeGridAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -30,7 +30,7 @@ public:
   
   virtual PRUint32 ColCount();
   virtual PRUint32 RowCount();
-  virtual nsAccessible* CellAt(PRUint32 aRowIndex, PRUint32 aColumnIndex);
+  virtual Accessible* CellAt(PRUint32 aRowIndex, PRUint32 aColumnIndex);
   virtual void UnselectRow(PRUint32 aRowIdx);
 
   
@@ -43,7 +43,7 @@ public:
 protected:
 
   
-  virtual already_AddRefed<nsAccessible> CreateTreeItemAccessible(PRInt32 aRow);
+  virtual already_AddRefed<Accessible> CreateTreeItemAccessible(PRInt32 aRow);
 };
 
 
@@ -54,11 +54,10 @@ protected:
 class nsXULTreeGridRowAccessible : public nsXULTreeItemAccessibleBase
 {
 public:
-  using nsAccessible::GetChildCount;
-  using nsAccessible::GetChildAt;
+  using Accessible::GetChildAt;
 
-  nsXULTreeGridRowAccessible(nsIContent* aContent, nsDocAccessible* aDoc,
-                             nsAccessible* aParent, nsITreeBoxObject* aTree,
+  nsXULTreeGridRowAccessible(nsIContent* aContent, DocAccessible* aDoc,
+                             Accessible* aParent, nsITreeBoxObject* aTree,
                              nsITreeView* aTreeView, PRInt32 aRow);
 
   
@@ -72,14 +71,14 @@ public:
   
   virtual mozilla::a11y::role NativeRole();
   virtual mozilla::a11y::ENameValueFlag Name(nsString& aName);
-  virtual nsAccessible* ChildAtPoint(PRInt32 aX, PRInt32 aY,
-                                     EWhichChildAtPoint aWhichChild);
+  virtual Accessible* ChildAtPoint(PRInt32 aX, PRInt32 aY,
+                                   EWhichChildAtPoint aWhichChild);
 
-  virtual nsAccessible* GetChildAt(PRUint32 aIndex);
-  virtual PRInt32 GetChildCount();
+  virtual Accessible* GetChildAt(PRUint32 aIndex);
+  virtual PRUint32 ChildCount() const;
 
   
-  virtual nsAccessible* GetCellAccessible(nsITreeColumn *aColumn);
+  virtual Accessible* GetCellAccessible(nsITreeColumn* aColumn);
   virtual void RowInvalidated(PRInt32 aStartColIdx, PRInt32 aEndColIdx);
 
 protected:
@@ -88,7 +87,7 @@ protected:
   virtual void CacheChildren();
 
   
-  nsAccessibleHashtable mAccessibleCache;
+  AccessibleHashtable mAccessibleCache;
 };
 
 
@@ -109,9 +108,8 @@ class nsXULTreeGridCellAccessible : public nsLeafAccessible,
                                     public nsIAccessibleTableCell
 {
 public:
-  using nsAccessible::GetParent;
 
-  nsXULTreeGridCellAccessible(nsIContent* aContent, nsDocAccessible* aDoc,
+  nsXULTreeGridCellAccessible(nsIContent* aContent, DocAccessible* aDoc,
                               nsXULTreeGridRowAccessible* aRowAcc,
                               nsITreeBoxObject* aTree, nsITreeView* aTreeView,
                               PRInt32 aRow, nsITreeColumn* aColumn);
@@ -138,7 +136,7 @@ public:
 
   
   virtual mozilla::a11y::ENameValueFlag Name(nsString& aName);
-  virtual nsAccessible* FocusedChild();
+  virtual Accessible* FocusedChild();
   virtual nsresult GetAttributesInternal(nsIPersistentProperties *aAttributes);
   virtual PRInt32 IndexInParent() const;
   virtual Relation RelationByType(PRUint32 aType);
@@ -164,8 +162,8 @@ public:
 
 protected:
   
-  virtual nsAccessible* GetSiblingAtOffset(PRInt32 aOffset,
-                                           nsresult *aError = nsnull) const;
+  virtual Accessible* GetSiblingAtOffset(PRInt32 aOffset,
+                                         nsresult *aError = nsnull) const;
   virtual void DispatchClickEvent(nsIContent *aContent, PRUint32 aActionIndex);
 
   
