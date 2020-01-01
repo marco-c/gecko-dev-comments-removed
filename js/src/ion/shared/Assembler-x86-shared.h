@@ -1,43 +1,43 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=79:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   David Anderson <dvander@alliedmods.net>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jsion_assembler_x86_shared__
 #define jsion_assembler_x86_shared__
@@ -106,7 +106,7 @@ class AssemblerX86Shared
 
     static void TraceRelocations(JSTracer *trc, IonCode *code, CompactBufferReader &reader);
 
-    
+    // MacroAssemblers hold onto gcthings, so they are traced by the GC.
     void trace(JSTracer *trc);
 
     bool oom() const {
@@ -132,15 +132,15 @@ class AssemblerX86Shared
         return codeLabels_.append(label);
     }
 
-    
+    // Size of the instruction stream, in bytes.
     size_t size() const {
         return masm.size();
     }
-    
+    // Size of the relocation table, in bytes.
     size_t relocationTableSize() const {
         return relocations_.length();
     }
-    
+    // Size of the data table, in bytes.
     size_t dataSize() const {
         return dataBytesNeeded_;
     }
@@ -211,12 +211,22 @@ class AssemblerX86Shared
         }
     }
 
+    void load16(const Operand &src, const Register &dest) {
+        switch (src.kind()) {
+          case Operand::REG_DISP:
+            masm.movzwl_mr(src.disp(), src.base(), dest.code());
+            break;
+          default:
+            JS_NOT_REACHED("unexpected operand kind");
+        }
+    }
+
     void j(Condition cond, Label *label) {
         if (label->bound()) {
-            
+            // The jump can be immediately patched to the correct destination.
             masm.linkJump(masm.jCC(static_cast<JSC::X86Assembler::Condition>(cond)), JmpDst(label->offset()));
         } else {
-            
+            // Thread the jump list through the unpatched jump targets.
             JmpSrc j = masm.jCC(static_cast<JSC::X86Assembler::Condition>(cond));
             JmpSrc prev = JmpSrc(label->use(j.offset()));
             masm.setNextJump(j, prev);
@@ -224,10 +234,10 @@ class AssemblerX86Shared
     }
     void jmp(Label *label) {
         if (label->bound()) {
-            
+            // The jump can be immediately patched to the correct destination.
             masm.linkJump(masm.jmp(), JmpDst(label->offset()));
         } else {
-            
+            // Thread the jump list through the unpatched jump targets.
             JmpSrc j = masm.jmp();
             JmpSrc prev = JmpSrc(label->use(j.offset()));
             masm.setNextJump(j, prev);
@@ -260,7 +270,7 @@ class AssemblerX86Shared
         label->bind(masm.label().offset());
     }
 
-    
+    // Re-routes pending jumps to a new label.
     void retarget(Label *label, Label *target) {
         JSC::MacroAssembler::Label jsclabel;
         if (label->used()) {
@@ -271,10 +281,10 @@ class AssemblerX86Shared
                 more = masm.nextJump(jmp, &next);
 
                 if (target->bound()) {
-                    
+                    // The jump can be immediately patched to the correct destination.
                     masm.linkJump(jmp, JmpDst(target->offset()));
                 } else {
-                    
+                    // Thread the jump list through the unpatched jump targets.
                     JmpSrc prev = JmpSrc(target->use(jmp.offset()));
                     masm.setNextJump(jmp, prev);
                 }
@@ -335,9 +345,9 @@ class AssemblerX86Shared
         return JSC::MacroAssembler::getSSEState() >= JSC::MacroAssembler::HasSSE4_1;
     }
 
-    
-    
-    
+    // The below cmpl methods switch the lhs and rhs when it invokes the
+    // macroassembler to conform with intel standard.  When calling this
+    // function put the left operand on the left as you would expect.
     void cmpl(const Register &lhs, const Register &rhs) {
         masm.cmpl_rr(rhs.code(), lhs.code());
     }
@@ -631,7 +641,7 @@ class AssemblerX86Shared
         masm.pop_r(src.code());
     }
 
-    
+    // Zero-extend byte to 32-bit integer.
     void movzxbl(const Register &src, const Register &dest) {
         masm.movzbl_rr(src.code(), dest.code());
     }
@@ -703,8 +713,8 @@ class AssemblerX86Shared
     }
 };
 
-} 
-} 
+} // namespace ion
+} // namespace js
 
-#endif 
+#endif // jsion_assembler_x86_shared__
 

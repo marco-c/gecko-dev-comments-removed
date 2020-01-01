@@ -1,43 +1,43 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=79:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   David Anderson <danderson@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "IonBuilder.h"
 #include "MIR.h"
@@ -166,7 +166,7 @@ MDefinition::congruentTo(MDefinition * const &ins) const
 MDefinition *
 MDefinition::foldsTo(bool useValueNumbers)
 {
-    
+    // In the default case, there are no constants to fold.
     return this;
 }
 
@@ -247,12 +247,12 @@ IsPowerOfTwo(uint32 n)
 MIRType
 MDefinition::usedAsType() const
 {
-    
+    // usedTypes() should never have MIRType_Value in its set.
     JS_ASSERT(!(usedTypes() & (1 << MIRType_Value)));
 
     if (IsPowerOfTwo(usedTypes())) {
-        
-        
+        // If all uses of this instruction want a specific type, then set the
+        // result as that type.
         int t;
         JS_FLOOR_LOG2(t, usedTypes());
         return MIRType(t);
@@ -279,8 +279,8 @@ MConstant::MConstant(const js::Value &vp)
 HashNumber
 MConstant::valueHash() const
 {
-    
-    
+    // This disregards some state, since values are 64 bits. But for a hash,
+    // it's completely acceptable.
     return (HashNumber)value_.asRawBits();
 }
 bool
@@ -344,7 +344,7 @@ MParameter::printOpcode(FILE *fp)
 HashNumber
 MParameter::valueHash() const
 {
-    return index_; 
+    return index_; // Why not?
 }
 
 bool
@@ -356,10 +356,19 @@ MParameter::congruentTo(MDefinition * const &ins) const
     return ins->toParameter()->index() == index_;
 }
 
+MCall *
+MCall::New(size_t argc)
+{
+    MCall *ins = new MCall;
+    if (!ins->init(argc + NumNonArgumentOperands))
+        return NULL;
+    return ins;
+}
+
 MCopy *
 MCopy::New(MDefinition *ins)
 {
-    
+    // Don't create nested copies.
     if (ins->isCopy())
         ins = ins->toCopy()->getOperand(0);
 
@@ -432,9 +441,9 @@ MPhi::congruentTo(MDefinition *const &ins) const
 {
     if (!ins->isPhi())
         return false;
-    
-    
-    
+    // Since we do not know which predecessor we are merging from, we must
+    // assume that phi instructions in different blocks are not equal.
+    // (Bug 674656)
     if (ins->block()->id() != block()->id())
         return false;
 
@@ -452,6 +461,23 @@ MReturn *
 MReturn::New(MDefinition *ins)
 {
     return new MReturn(ins);
+}
+
+uint32
+MPrepareCall::argc() const
+{
+    JS_ASSERT(useCount() == 1);
+    MCall *call = usesBegin()->node()->toDefinition()->toCall();
+    return call->argc();
+}
+
+void
+MCall::addArg(size_t argnum, MPassArg *arg)
+{
+    // The operand vector is initialized in reverse order by the IonBuilder.
+    // It cannot be checked for consistency until all arguments are added.
+    arg->setArgnum(argnum);
+    return MNode::initOperand(argnum + NumNonArgumentOperands, arg->toDefinition());
 }
 
 void
@@ -519,7 +545,7 @@ MBinaryArithInstruction::foldsTo(bool useValueNumbers)
         return folded;
 
     if (IsConstant(lhs, getIdentity()))
-        return rhs; 
+        return rhs; // x op id => x
 
     if (IsConstant(rhs, getIdentity()))
         return lhs;
@@ -554,11 +580,11 @@ MBinaryArithInstruction::infer(const TypeOracle::Binary &b)
 void
 MCompare::infer(const TypeOracle::Binary &b)
 {
-    
+    // If neither operand is an object, then we are idempotent
     if (b.lhs != MIRType_Object && b.rhs != MIRType_Object)
         setIdempotent();
 
-    
+    // Set specialization
     if (b.lhs < MIRType_String && b.rhs < MIRType_String) {
         if (CoercesToDouble(b.lhs) || CoercesToDouble(b.rhs))
             specialization_ = MIRType_Double;
@@ -590,7 +616,7 @@ MBitNot::foldsTo(bool useValueNumbers)
     }
 
     if (input->isBitNot())
-        return input->getOperand(0); 
+        return input->getOperand(0); // ~~x => x
 
     return this;
 }
