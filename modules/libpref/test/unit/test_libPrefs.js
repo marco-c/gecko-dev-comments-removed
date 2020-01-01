@@ -100,8 +100,7 @@ function run_test() {
   
 
   do_check_eq(pb.prefHasUserValue("UserPref.nonexistent.hasUserValue"), false);
-  do_check_throws(function() {
-    pb.clearUserPref("UserPref.nonexistent.clearUserPref");},  Cr.NS_ERROR_UNEXPECTED);
+  pb.clearUserPref("UserPref.nonexistent.clearUserPref"); 
   do_check_eq(pb.getPrefType("UserPref.nonexistent.getPrefType"), PREF_INVALID);
   do_check_eq(pb.root, "");
 
