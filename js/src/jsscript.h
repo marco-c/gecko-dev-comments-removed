@@ -119,7 +119,7 @@ struct JSScript {
 
     bool            savedCallerFun:1; 
     bool            hasSharps:1;      
-    bool            strictModeCode:1;   
+    bool            strictModeCode:1; 
 
     jsbytecode      *main;      
     JSAtomMap       atomMap;    
@@ -261,7 +261,7 @@ extern void
 js_MarkScriptFilename(const char *filename);
 
 extern void
-js_MarkScriptFilenames(JSRuntime *rt, JSBool keepAtoms);
+js_MarkScriptFilenames(JSRuntime *rt);
 
 extern void
 js_SweepScriptFilenames(JSRuntime *rt);

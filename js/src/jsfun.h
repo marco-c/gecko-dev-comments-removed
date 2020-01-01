@@ -164,7 +164,7 @@ struct JSFunction : public JSObject
     bool isInterpreted()    const { return FUN_INTERPRETED(this); }
     bool isFastNative()     const { return flags & JSFUN_FAST_NATIVE; }
     bool isHeavyweight()    const { return JSFUN_HEAVYWEIGHT_TEST(flags); }
-    bool minArgs()          const { return FUN_MINARGS(this); }
+    unsigned minArgs()      const { return FUN_MINARGS(this); }
 
     uintN countVars() const {
         JS_ASSERT(FUN_INTERPRETED(this));
@@ -426,71 +426,15 @@ js_IsNamedLambda(JSFunction *fun) { return (fun->flags & JSFUN_LAMBDA) && fun->a
 
 
 
-
-
-
-
-
-
-const uint32 JSSLOT_ARGS_LENGTH = JSSLOT_PRIVATE + 1;
-const uint32 JSSLOT_ARGS_CALLEE = JSSLOT_PRIVATE + 2;
-const uint32 JSSLOT_ARGS_START  = JSSLOT_PRIVATE + 3;
-
-JS_STATIC_ASSERT(JSSLOT_ARGS_START == JS_INITIAL_NSLOTS);
-
-
-const uint32 ARGS_FIXED_RESERVED_SLOTS = JSSLOT_ARGS_START - JSSLOT_ARGS_LENGTH;
-
-
-
-
-
-
-
-
-
-
-
 const uint32 JS_ARGS_LENGTH_MAX = JS_BIT(19) - 1024;
 
 
 
 
 
+
 JS_STATIC_ASSERT(JS_ARGS_LENGTH_MAX <= JS_BIT(30));
-
-namespace js {
-
-inline const Value &
-GetArgsSlot(JSObject *argsobj, uint32 arg)
-{
-    return argsobj->dslots[arg];
-}
-
-inline void
-SetArgsSlot(JSObject *argsobj, uint32 arg, const Value &v)
-{
-    argsobj->dslots[arg].copy(v);
-}
-
-inline bool
-IsOverriddenArgsLength(JSObject *obj)
-{
-    JS_ASSERT(obj->isArguments());
-    return (obj->fslots[JSSLOT_ARGS_LENGTH].asInt32() & 1) != 0;
-}
-
-inline uint32
-GetArgsLength(JSObject *obj)
-{
-    JS_ASSERT(obj->isArguments());
-
-    uint32 argc = uint32(obj->fslots[JSSLOT_ARGS_LENGTH].asInt32()) >> 1;
-    JS_ASSERT(argc <= JS_ARGS_LENGTH_MAX);
-    return argc;
-}
-
-} 
+JS_STATIC_ASSERT(jsval((JS_ARGS_LENGTH_MAX << 1) | 1) <= JSVAL_INT_MAX);
 
 extern JSBool
 js_XDRFunctionObject(JSXDRState *xdr, JSObject **objp);
