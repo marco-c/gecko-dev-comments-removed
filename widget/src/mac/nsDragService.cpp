@@ -318,7 +318,7 @@ nsDragService::InvokeDragSession (nsIDOMNode *aDOMNode, nsISupportsArray * aTran
   
   StartDragSession();
   ::TrackDrag ( theDragRef, &theEvent, theDragRgn );
-  EndDragSession();
+  EndDragSession(PR_TRUE);
   
   
   ::DisposeRgn ( theDragRgn );
