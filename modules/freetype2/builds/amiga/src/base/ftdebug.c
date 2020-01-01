@@ -41,7 +41,7 @@
   
 
 
-
+  
 
 
 
@@ -59,9 +59,9 @@
 #include <clib/debug_protos.h>
 
 #ifndef __amigaos4__
-extern struct Library *DOSBase;
+  extern struct Library *DOSBase;
 #else
-extern struct DOSIFace *IDOS;
+  extern struct DOSIFace *IDOS;
 #endif
 
 
@@ -75,13 +75,13 @@ extern struct DOSIFace *IDOS;
   
 
   FT_BASE_DEF( void )
-  FT_Message( const char*  fmt, ... )
+  FT_Message( const char*  fmt,
+              ... )
   {
     va_list  ap;
 
 
     va_start( ap, fmt );
-
     KVPrintF( fmt, ap );
     va_end( ap );
   }
@@ -90,17 +90,32 @@ extern struct DOSIFace *IDOS;
   
 
   FT_BASE_DEF( void )
-  FT_Panic( const char*  fmt, ... )
+  FT_Panic( const char*  fmt,
+            ... )
   {
     va_list  ap;
 
 
     va_start( ap, fmt );
-
     KVPrintF( fmt, ap );
     va_end( ap );
 
 
+  }
+
+
+  
+
+  FT_BASE_DEF( int )
+  FT_Throw( FT_Error     error,
+            int          line,
+            const char*  file )
+  {
+    FT_UNUSED( error );
+    FT_UNUSED( line );
+    FT_UNUSED( file );
+
+    return 0;
   }
 
 #endif 
@@ -193,6 +208,9 @@ extern struct DOSIFace *IDOS;
         while ( *p && *p != ':' )
           p++;
 
+        if ( !*p )
+          break;
+
         if ( *p == ':' && p > q )
         {
           FT_Int  n, i, len = (FT_Int)( p - q );
@@ -221,7 +239,7 @@ extern struct DOSIFace *IDOS;
           p++;
           if ( *p )
           {
-            level = *p++ - '0';
+            level = *p - '0';
             if ( level < 0 || level > 7 )
               level = -1;
           }
