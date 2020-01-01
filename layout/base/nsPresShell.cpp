@@ -1640,6 +1640,9 @@ PresShell::Destroy()
 #ifdef MOZ_XUL
       os->RemoveObserver(this, "chrome-flush-skin-caches");
 #endif
+#ifdef ACCESSIBILITY
+      os->RemoveObserver(this, "a11y-init-or-shutdown");
+#endif
     }
   }
 
@@ -5682,6 +5685,9 @@ PresShell::HandleEventInternal(nsEvent* aEvent, nsIView *aView,
       
       
       NS_STATIC_CAST(nsAccessibleEvent*, aEvent)->accessible = acc;
+      
+      
+      gIsAccessibilityActive = PR_TRUE;
       return NS_OK;
     }
   }
