@@ -420,6 +420,11 @@ class JSPCCounters {
     }
 };
 
+static const uint32 JS_SCRIPT_COOKIE = 0xc00cee;
+
+static JSObject * const JS_NEW_SCRIPT = (JSObject *)0x12345678;
+static JSObject * const JS_CACHED_SCRIPT = (JSObject *)0x12341234;
+
 struct JSScript {
     
 
@@ -443,6 +448,8 @@ struct JSScript {
     JSCList         links;      
     jsbytecode      *code;      
     uint32          length;     
+
+    uint32          cookie1;
 
   private:
     uint16          version;    
@@ -498,6 +505,11 @@ struct JSScript {
     js::Bindings    bindings;   
 
     JSPrincipals    *principals;
+
+    JSObject        *ownerObject;
+
+    void setOwnerObject(JSObject *owner);
+
     union {
         
 
@@ -527,6 +539,8 @@ struct JSScript {
 
     
     JSPCCounters    pcCounters;
+
+    uint32          cookie2;
 
   public:
 #ifdef JS_METHODJIT
@@ -722,7 +736,7 @@ extern void
 js_DestroyScript(JSContext *cx, JSScript *script);
 
 extern void
-js_DestroyScriptFromGC(JSContext *cx, JSScript *script);
+js_DestroyScriptFromGC(JSContext *cx, JSScript *script, JSObject *owner);
 
 
 
@@ -733,8 +747,21 @@ js_DestroyScriptFromGC(JSContext *cx, JSScript *script);
 extern void
 js_DestroyCachedScript(JSContext *cx, JSScript *script);
 
+namespace js {
+
+
+
+
+
+
+
+void
+CheckCompartmentScripts(JSCompartment *comp);
+
+} 
+
 extern void
-js_TraceScript(JSTracer *trc, JSScript *script);
+js_TraceScript(JSTracer *trc, JSScript *script, JSObject *owner);
 
 extern JSObject *
 js_NewScriptObject(JSContext *cx, JSScript *script);

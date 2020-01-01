@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jsatom_h___
 #define jsatom_h___
@@ -52,7 +52,7 @@
 
 #include "vm/String.h"
 
-
+/* Engine-internal extensions of jsid */
 
 static JS_ALWAYS_INLINE jsid
 JSID_FROM_BITS(size_t bits)
@@ -69,7 +69,7 @@ ATOM_TO_JSID(JSAtom *atom)
     return JSID_FROM_BITS((size_t)atom);
 }
 
-
+/* All strings stored in jsids are atomized. */
 static JS_ALWAYS_INLINE JSBool
 JSID_IS_ATOM(jsid id)
 {
@@ -115,7 +115,7 @@ struct DefaultHasher<jsid>
     typedef jsid Lookup;
     static HashNumber hash(const Lookup &l) {
         JS_ASSERT(l == js_CheckForStringIndex(l));
-        return JSID_BITS(l);
+        return HashNumber(JSID_BITS(l));
     }
     static bool match(const jsid &id, const Lookup &l) {
         JS_ASSERT(l == js_CheckForStringIndex(l));
@@ -134,61 +134,28 @@ struct DefaultHasher<jsid>
 # error "Unsupported configuration"
 #endif
 
-
-
-
-
+/*
+ * Return a printable, lossless char[] representation of a string-type atom.
+ * The lifetime of the result matches the lifetime of bytes.
+ */
 extern const char *
 js_AtomToPrintableString(JSContext *cx, JSAtom *atom, JSAutoByteString *bytes);
 
 struct JSAtomMap {
-    JSAtom **vector;    
-    uint32 length;      
+    JSAtom **vector;    /* array of ptrs to indexed atoms */
+    uint32 length;      /* count of (to-be-)indexed atoms */
 };
 
 namespace js {
 
+/* N.B. must correspond to boolean tagging behavior. */
 enum InternBehavior
 {
-    DoNotInternAtom = 0,
-    InternAtom = 1
+    DoNotInternAtom = false,
+    InternAtom = true
 };
 
-
-
-
-
-
-struct AtomStateEntry {
-    uintptr_t bits;
-
-    static const uintptr_t INTERNED_FLAG = 0x1;
-
-    AtomStateEntry() : bits(0) {}
-    AtomStateEntry(const AtomStateEntry &other) : bits(other.bits) {}
-
-    AtomStateEntry(JSFixedString *futureAtom, bool intern)
-      : bits(uintptr_t(futureAtom) | uintptr_t(intern))
-    {}
-
-    bool isInterned() const {
-        return bits & INTERNED_FLAG;
-    }
-
-    
-    static void makeInterned(AtomStateEntry *self, InternBehavior ib) {
-        JS_STATIC_ASSERT(DoNotInternAtom == 0 && InternAtom == 1);
-        JS_ASSERT(ib <= InternAtom);
-        self->bits |= uintptr_t(ib);
-    }
-
-    JS_ALWAYS_INLINE
-    JSAtom *toAtom() const {
-        JS_ASSERT(bits != 0); 
-        JS_ASSERT(((JSString *) (bits & ~INTERNED_FLAG))->isAtom());
-        return (JSAtom *) (bits & ~INTERNED_FLAG);
-    }
-};
+typedef TaggedPointerEntry<JSAtom> AtomStateEntry;
 
 struct AtomHasher
 {
@@ -196,7 +163,7 @@ struct AtomHasher
     {
         const jschar    *chars;
         size_t          length;
-        const JSAtom    *atom; 
+        const JSAtom    *atom; /* Optional. */
 
         Lookup(const jschar *chars, size_t length) : chars(chars), length(length), atom(NULL) {}
         Lookup(const JSAtom *atom) : chars(atom->chars()), length(atom->length()), atom(atom) {}
@@ -206,8 +173,8 @@ struct AtomHasher
         return HashChars(l.chars, l.length);
     }
 
-    static bool match(AtomStateEntry entry, const Lookup &lookup) {
-        JSAtom *key = entry.toAtom();
+    static bool match(const AtomStateEntry &entry, const Lookup &lookup) {
+        JSAtom *key = entry.asPtr();
 
         if (lookup.atom)
             return lookup.atom == key;
@@ -219,7 +186,7 @@ struct AtomHasher
 
 typedef HashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy> AtomSet;
 
-}  
+}  /* namespace js */
 
 struct JSAtomState
 {
@@ -229,31 +196,31 @@ struct JSAtomState
     JSThinLock          lock;
 #endif
 
-    
+    /*
+     * From this point until the end of struct definition the struct must
+     * contain only JSAtom fields. We use this to access the storage occupied
+     * by the common atoms in js_FinishCommonAtoms.
+     *
+     * js_common_atom_names defined in jsatom.c contains C strings for atoms
+     * in the order of atom fields here. Therefore you must update that array
+     * if you change member order here.
+     */
 
-
-
-
-
-
-
-
-
-    
+    /* The rt->emptyString atom, see jsstr.c's js_InitRuntimeStringState. */
     JSAtom              *emptyAtom;
 
-    
-
-
-
+    /*
+     * Literal value and type names.
+     * NB: booleanAtoms must come right before typeAtoms!
+     */
     JSAtom              *booleanAtoms[2];
     JSAtom              *typeAtoms[JSTYPE_LIMIT];
     JSAtom              *nullAtom;
 
-    
+    /* Standard class constructor or prototype names. */
     JSAtom              *classAtoms[JSProto_LIMIT];
 
-    
+    /* Various built-in or commonly-used atoms, pinned on first context. */
     JSAtom              *anonymousAtom;
     JSAtom              *applyAtom;
     JSAtom              *argumentsAtom;
@@ -321,7 +288,7 @@ struct JSAtomState
     JSAtom              *tagcAtom;
     JSAtom              *xmlAtom;
 
-    
+    /* Represents an invalid URI, for internal use only. */
     JSAtom              *functionNamespaceURIAtom;
 #endif
 
@@ -347,7 +314,7 @@ struct JSAtomState
     JSAtom              *returnAtom;
     JSAtom              *throwAtom;
 
-    
+    /* Less frequently used atoms, pinned lazily by JS_ResolveStandardClass. */
     struct {
         JSAtom          *XMLListAtom;
         JSAtom          *decodeURIAtom;
@@ -413,13 +380,13 @@ AtomIsInterned(JSContext *cx, JSAtom *atom);
 extern const char *const js_common_atom_names[];
 extern const size_t      js_common_atom_count;
 
-
-
-
+/*
+ * Macros to access C strings for JSType and boolean literals.
+ */
 #define JS_BOOLEAN_STR(type) (js_common_atom_names[1 + (type)])
 #define JS_TYPE_STR(type)    (js_common_atom_names[1 + 2 + (type)])
 
-
+/* Well-known predefined C strings. */
 #define JS_PROTO(name,code,init) extern const char js_##name##_str[];
 #include "jsproto.tbl"
 #undef JS_PROTO
@@ -486,24 +453,24 @@ extern const char   js_writable_str[];
 extern const char   js_value_str[];
 extern const char   js_test_str[];
 
-
-
-
-
-
+/*
+ * Initialize atom state. Return true on success, false on failure to allocate
+ * memory. The caller must zero rt->atomState before calling this function and
+ * only call it after js_InitGC successfully returns.
+ */
 extern JSBool
 js_InitAtomState(JSRuntime *rt);
 
-
-
-
-
+/*
+ * Free and clear atom state including any interned string atoms. This
+ * function must be called before js_FinishGC.
+ */
 extern void
 js_FinishAtomState(JSRuntime *rt);
 
-
-
-
+/*
+ * Atom tracing and garbage collection hooks.
+ */
 
 extern void
 js_TraceAtomState(JSTracer *trc);
@@ -517,10 +484,10 @@ js_InitCommonAtoms(JSContext *cx);
 extern void
 js_FinishCommonAtoms(JSContext *cx);
 
-
-
-
-
+/*
+ * Find or create the atom for a string. Return null on failure to allocate
+ * memory.
+ */
 extern JSAtom *
 js_AtomizeString(JSContext *cx, JSString *str, js::InternBehavior ib = js::DoNotInternAtom);
 
@@ -533,10 +500,10 @@ extern JSAtom *
 js_AtomizeChars(JSContext *cx, const jschar *chars, size_t length,
                 js::InternBehavior ib = js::DoNotInternAtom);
 
-
-
-
-
+/*
+ * Return an existing atom for the given char array or null if the char
+ * sequence is currently not atomized.
+ */
 extern JSAtom *
 js_GetExistingStringAtom(JSContext *cx, const jschar *chars, size_t length);
 
@@ -560,12 +527,12 @@ inline bool
 js_InternNonIntElementId(JSContext *cx, JSObject *obj, const js::Value &idval,
                          jsid *idp, js::Value *vp);
 
-
-
-
-
-
+/*
+ * For all unmapped atoms recorded in al, add a mapping from the atom's index
+ * to its address. map->length must already be set to the number of atoms in
+ * the list and map->vector must point to pre-allocated memory.
+ */
 extern void
 js_InitAtomMap(JSContext *cx, JSAtomMap *map, js::AtomIndexMap *indices);
 
-#endif 
+#endif /* jsatom_h___ */
