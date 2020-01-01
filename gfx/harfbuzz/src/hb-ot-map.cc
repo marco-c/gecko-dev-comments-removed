@@ -1,30 +1,30 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Copyright © 2009,2010  Red Hat, Inc.
+ * Copyright © 2010,2011  Google, Inc.
+ *
+ *  This is part of HarfBuzz, a text shaping library.
+ *
+ * Permission is hereby granted, without written agreement and without
+ * license or royalty fees, to use, copy, modify, and distribute this
+ * software and its documentation for any purpose, provided that the
+ * above copyright notice and the following two paragraphs appear in
+ * all copies of this software.
+ *
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+ * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+ * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ *
+ * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+ * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+ * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+ *
+ * Red Hat Author(s): Behdad Esfahbod
+ * Google Author(s): Behdad Esfahbod
+ */
 
 #include "hb-ot-map-private.hh"
 
@@ -60,7 +60,7 @@ hb_ot_map_t::add_lookups (hb_face_t    *face,
 }
 
 
-void hb_ot_map_builder_t::add_feature (hb_tag_t tag, unsigned int value, bool global)
+void hb_ot_map_builder_t::add_feature (hb_tag_t tag, unsigned int value, bool global, bool has_fallback)
 {
   feature_info_t *info = feature_infos.push();
   if (unlikely (!info)) return;
@@ -68,12 +68,13 @@ void hb_ot_map_builder_t::add_feature (hb_tag_t tag, unsigned int value, bool gl
   info->seq = feature_infos.len;
   info->max_value = value;
   info->global = global;
+  info->has_fallback = has_fallback;
   info->default_value = global ? value : 0;
   info->stage[0] = current_stage[0];
   info->stage[1] = current_stage[1];
 }
 
-
+/* Keep the next two functions in sync. */
 
 void hb_ot_map_t::substitute (const hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const
 {
@@ -116,16 +117,8 @@ void hb_ot_map_t::position (const hb_ot_shape_plan_t *plan, hb_font_t *font, hb_
 void hb_ot_map_t::substitute_closure (const hb_ot_shape_plan_t *plan, hb_face_t *face, hb_set_t *glyphs) const
 {
   unsigned int table_index = 0;
-  unsigned int i = 0;
-
-  for (unsigned int pause_index = 0; pause_index < pauses[table_index].len; pause_index++) {
-    const pause_map_t *pause = &pauses[table_index][pause_index];
-    for (; i < pause->num_lookups; i++)
-      hb_ot_layout_substitute_closure_lookup (face, glyphs, lookups[table_index][i].index);
-  }
-
-  for (; i < lookups[table_index].len; i++)
-    hb_ot_layout_substitute_closure_lookup (face, glyphs, lookups[table_index][i].index);
+  for (unsigned int i = 0; i < lookups[table_index].len; i++)
+    hb_ot_layout_substitute_closure_lookup (face, lookups[table_index][i].index, glyphs);
 }
 
 void hb_ot_map_builder_t::add_pause (unsigned int table_index, hb_ot_map_t::pause_func_t pause_func)
@@ -150,8 +143,8 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
     return;
 
 
-  
-
+  /* Fetch script/language indices for GSUB/GPOS.  We need these later to skip
+   * features not available in either table and not waste precious bits for them. */
 
   hb_tag_t script_tags[3] = {HB_TAG_NONE};
   hb_tag_t language_tag;
@@ -167,7 +160,7 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
   }
 
 
-  
+  /* Sort features and merge duplicates */
   {
     feature_infos.sort ();
     unsigned int j = 0;
@@ -183,15 +176,16 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
 	  feature_infos[j].global = false;
 	  feature_infos[j].max_value = MAX (feature_infos[j].max_value, feature_infos[i].max_value);
 	}
+	feature_infos[j].has_fallback = feature_infos[j].has_fallback || feature_infos[i].has_fallback;
 	feature_infos[j].stage[0] = MIN (feature_infos[j].stage[0], feature_infos[i].stage[0]);
 	feature_infos[j].stage[1] = MIN (feature_infos[j].stage[1], feature_infos[i].stage[1]);
-	
+	/* Inherit default_value from j */
       }
     feature_infos.shrink (j + 1);
   }
 
 
-  
+  /* Allocate bits now */
   unsigned int next_bit = 1;
   for (unsigned int i = 0; i < feature_infos.len; i++) {
     const feature_info_t *info = &feature_infos[i];
@@ -199,13 +193,13 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
     unsigned int bits_needed;
 
     if (info->global && info->max_value == 1)
-      
+      /* Uses the global bit */
       bits_needed = 0;
     else
       bits_needed = _hb_bit_storage (info->max_value);
 
     if (!info->max_value || next_bit + bits_needed > 8 * sizeof (hb_mask_t))
-      continue; 
+      continue; /* Feature disabled, or not enough bits. */
 
 
     bool found = false;
@@ -217,7 +211,7 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
 						   language_index[table_index],
 						   info->tag,
 						   &feature_index[table_index]);
-    if (!found)
+    if (!found && !info->has_fallback)
       continue;
 
 
@@ -231,7 +225,7 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
     map->stage[0] = info->stage[0];
     map->stage[1] = info->stage[1];
     if (info->global && info->max_value == 1) {
-      
+      /* Uses the global bit */
       map->shift = 0;
       map->mask = 1;
     } else {
@@ -242,9 +236,10 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
 	m.global_mask |= (info->default_value << map->shift) & map->mask;
     }
     map->_1_mask = (1 << map->shift) & map->mask;
+    map->needs_fallback = !found;
 
   }
-  feature_infos.shrink (0); 
+  feature_infos.shrink (0); /* Done with these */
 
 
   add_gsub_pause (NULL);
@@ -253,7 +248,7 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
   for (unsigned int table_index = 0; table_index < 2; table_index++) {
     hb_tag_t table_tag = table_tags[table_index];
 
-    
+    /* Collect lookup indices for features */
 
     unsigned int required_feature_index;
     if (hb_ot_layout_language_get_required_feature_index (face,
@@ -271,7 +266,7 @@ hb_ot_map_builder_t::compile (hb_face_t *face,
         if (m.features[i].stage[table_index] == stage)
 	  m.add_lookups (face, table_index, m.features[i].index[table_index], m.features[i].mask);
 
-      
+      /* Sort lookups and merge duplicates */
       if (last_num_lookups < m.lookups[table_index].len)
       {
 	m.lookups[table_index].sort (last_num_lookups, m.lookups[table_index].len);

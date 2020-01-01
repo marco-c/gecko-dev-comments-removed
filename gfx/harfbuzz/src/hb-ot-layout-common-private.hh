@@ -1,30 +1,30 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Copyright © 2007,2008,2009  Red Hat, Inc.
+ * Copyright © 2010,2012  Google, Inc.
+ *
+ *  This is part of HarfBuzz, a text shaping library.
+ *
+ * Permission is hereby granted, without written agreement and without
+ * license or royalty fees, to use, copy, modify, and distribute this
+ * software and its documentation for any purpose, provided that the
+ * above copyright notice and the following two paragraphs appear in
+ * all copies of this software.
+ *
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+ * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+ * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ *
+ * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+ * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+ * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+ *
+ * Red Hat Author(s): Behdad Esfahbod
+ * Google Author(s): Behdad Esfahbod
+ */
 
 #ifndef HB_OT_LAYOUT_COMMON_PRIVATE_HH
 #define HB_OT_LAYOUT_COMMON_PRIVATE_HH
@@ -34,21 +34,24 @@
 #include "hb-set-private.hh"
 
 
+namespace OT {
+
+
 #define NOT_COVERED		((unsigned int) -1)
 #define MAX_NESTING_LEVEL	8
 
 
 
+/*
+ *
+ * OpenType Layout Common Table Formats
+ *
+ */
 
 
-
-
-
-
-
-
-
-
+/*
+ * Script, ScriptList, LangSys, Feature, FeatureList, Lookup, LookupList
+ */
 
 template <typename Type>
 struct Record
@@ -62,10 +65,10 @@ struct Record
     return TRACE_RETURN (c->check_struct (this) && offset.sanitize (c, base));
   }
 
-  Tag		tag;		
+  Tag		tag;		/* 4-byte Tag identifier */
   OffsetTo<Type>
-		offset;		
-
+		offset;		/* Offset from beginning of object holding
+				 * the Record */
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -74,15 +77,15 @@ template <typename Type>
 struct RecordArrayOf : SortedArrayOf<Record<Type> > {
   inline const Tag& get_tag (unsigned int i) const
   {
-    
-
-
+    /* We cheat slightly and don't define separate Null objects
+     * for Record types.  Instead, we return the correct Null(Tag)
+     * here. */
     if (unlikely (i >= this->len)) return Null(Tag);
     return (*this)[i].tag;
   }
   inline unsigned int get_tags (unsigned int start_offset,
-				unsigned int *record_count ,
-				hb_tag_t     *record_tags ) const
+				unsigned int *record_count /* IN/OUT */,
+				hb_tag_t     *record_tags /* OUT */) const
   {
     if (record_count) {
       const Record<Type> *arr = this->sub_array (start_offset, record_count);
@@ -139,9 +142,9 @@ struct RangeRecord
     glyphs->add_range (start, end);
   }
 
-  GlyphID	start;		
-  GlyphID	end;		
-  USHORT	value;		
+  GlyphID	start;		/* First GlyphID in the range */
+  GlyphID	end;		/* Last GlyphID in the range */
+  USHORT	value;		/* Value */
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -151,8 +154,8 @@ DEFINE_NULL_DATA (RangeRecord, "\000\001");
 struct IndexArray : ArrayOf<Index>
 {
   inline unsigned int get_indexes (unsigned int start_offset,
-				   unsigned int *_count ,
-				   unsigned int *_indexes ) const
+				   unsigned int *_count /* IN/OUT */,
+				   unsigned int *_indexes /* OUT */) const
   {
     if (_count) {
       const USHORT *arr = this->sub_array (start_offset, _count);
@@ -177,8 +180,8 @@ struct LangSys
   inline hb_tag_t get_feature_index (unsigned int i) const
   { return featureIndex[i]; }
   inline unsigned int get_feature_indexes (unsigned int start_offset,
-					   unsigned int *feature_count ,
-					   unsigned int *feature_indexes ) const
+					   unsigned int *feature_count /* IN/OUT */,
+					   unsigned int *feature_indexes /* OUT */) const
   { return featureIndex.get_indexes (start_offset, feature_count, feature_indexes); }
 
   inline bool has_required_feature (void) const { return reqFeatureIndex != 0xffff; }
@@ -194,12 +197,12 @@ struct LangSys
     return TRACE_RETURN (c->check_struct (this) && featureIndex.sanitize (c));
   }
 
-  Offset	lookupOrder;	
-
-  USHORT	reqFeatureIndex;
-
-
-  IndexArray	featureIndex;	
+  Offset	lookupOrder;	/* = Null (reserved for an offset to a
+				 * reordering table) */
+  USHORT	reqFeatureIndex;/* Index of a feature required for this
+				 * language system--if no required features
+				 * = 0xFFFF */
+  IndexArray	featureIndex;	/* Array of indices into the FeatureList */
   public:
   DEFINE_SIZE_ARRAY (6, featureIndex);
 };
@@ -213,8 +216,8 @@ struct Script
   inline const Tag& get_lang_sys_tag (unsigned int i) const
   { return langSys.get_tag (i); }
   inline unsigned int get_lang_sys_tags (unsigned int start_offset,
-					 unsigned int *lang_sys_count ,
-					 hb_tag_t     *lang_sys_tags ) const
+					 unsigned int *lang_sys_count /* IN/OUT */,
+					 hb_tag_t     *lang_sys_tags /* OUT */) const
   { return langSys.get_tags (start_offset, lang_sys_count, lang_sys_tags); }
   inline const LangSys& get_lang_sys (unsigned int i) const
   {
@@ -234,11 +237,11 @@ struct Script
 
   protected:
   OffsetTo<LangSys>
-		defaultLangSys;	
-
+		defaultLangSys;	/* Offset to DefaultLangSys table--from
+				 * beginning of Script table--may be Null */
   RecordArrayOf<LangSys>
-		langSys;	
-
+		langSys;	/* Array of LangSysRecords--listed
+				 * alphabetically by LangSysTag */
   public:
   DEFINE_SIZE_ARRAY (4, langSys);
 };
@@ -253,8 +256,8 @@ struct Feature
   inline hb_tag_t get_lookup_index (unsigned int i) const
   { return lookupIndex[i]; }
   inline unsigned int get_lookup_indexes (unsigned int start_index,
-					  unsigned int *lookup_count ,
-					  unsigned int *lookup_tags ) const
+					  unsigned int *lookup_count /* IN/OUT */,
+					  unsigned int *lookup_tags /* OUT */) const
   { return lookupIndex.get_indexes (start_index, lookup_count, lookup_tags); }
 
   inline bool sanitize (hb_sanitize_context_t *c) {
@@ -262,11 +265,11 @@ struct Feature
     return TRACE_RETURN (c->check_struct (this) && lookupIndex.sanitize (c));
   }
 
-  Offset	featureParams;	
-
-
-
-  IndexArray	 lookupIndex;	
+  Offset	featureParams;	/* Offset to Feature Parameters table (if one
+				 * has been defined for the feature), relative
+				 * to the beginning of the Feature Table; = Null
+				 * if not required */
+  IndexArray	 lookupIndex;	/* Array of LookupList indices */
   public:
   DEFINE_SIZE_ARRAY (4, lookupIndex);
 };
@@ -296,9 +299,9 @@ struct Lookup
 
   inline unsigned int get_type (void) const { return lookupType; }
 
-  
-
-
+  /* lookup_props is a 32-bit integer where the lower 16-bit is LookupFlag and
+   * higher 16-bit is mark-filtering-set if the lookup uses one.
+   * Not to be confused with glyph_props which is very similar. */
   inline uint32_t get_props (void) const
   {
     unsigned int flag = lookupFlag;
@@ -310,11 +313,29 @@ struct Lookup
     return flag;
   }
 
+  inline bool serialize (hb_serialize_context_t *c,
+			 unsigned int lookup_type,
+			 uint32_t lookup_props,
+			 unsigned int num_subtables)
+  {
+    TRACE_SERIALIZE ();
+    if (unlikely (!c->extend_min (*this))) return TRACE_RETURN (false);
+    lookupType.set (lookup_type);
+    lookupFlag.set (lookup_props & 0xFFFF);
+    if (unlikely (!subTable.serialize (c, num_subtables))) return TRACE_RETURN (false);
+    if (lookupFlag & LookupFlag::UseMarkFilteringSet)
+    {
+      USHORT &markFilteringSet = StructAfter<USHORT> (subTable);
+      markFilteringSet.set (lookup_props >> 16);
+    }
+    return TRACE_RETURN (true);
+  }
+
   inline bool sanitize (hb_sanitize_context_t *c) {
     TRACE_SANITIZE ();
-    
+    /* Real sanitize of the subtables is done by GSUB/GPOS/... */
     if (!(c->check_struct (this) && subTable.sanitize (c))) return TRACE_RETURN (false);
-    if (unlikely (lookupFlag & LookupFlag::UseMarkFilteringSet))
+    if (lookupFlag & LookupFlag::UseMarkFilteringSet)
     {
       USHORT &markFilteringSet = StructAfter<USHORT> (subTable);
       if (!markFilteringSet.sanitize (c)) return TRACE_RETURN (false);
@@ -322,13 +343,13 @@ struct Lookup
     return TRACE_RETURN (true);
   }
 
-  USHORT	lookupType;		
-  USHORT	lookupFlag;		
+  USHORT	lookupType;		/* Different enumerations for GSUB and GPOS */
+  USHORT	lookupFlag;		/* Lookup qualifiers */
   ArrayOf<Offset>
-		subTable;		
-  USHORT	markFilteringSetX[VAR];	
-
-
+		subTable;		/* Array of SubTables */
+  USHORT	markFilteringSetX[VAR];	/* Index (base 0) into GDEF mark glyph sets
+					 * structure. This field is only present if bit
+					 * UseMarkFilteringSet of lookup flags is set. */
   public:
   DEFINE_SIZE_ARRAY2 (6, subTable, markFilteringSetX);
 };
@@ -336,9 +357,9 @@ struct Lookup
 typedef OffsetListOf<Lookup> LookupList;
 
 
-
-
-
+/*
+ * Coverage Table
+ */
 
 struct CoverageFormat1
 {
@@ -350,6 +371,20 @@ struct CoverageFormat1
     int i = glyphArray.search (glyph_id);
     ASSERT_STATIC (((unsigned int) -1) == NOT_COVERED);
     return i;
+  }
+
+  inline bool serialize (hb_serialize_context_t *c,
+			 Supplier<GlyphID> &glyphs,
+			 unsigned int num_glyphs)
+  {
+    TRACE_SERIALIZE ();
+    if (unlikely (!c->extend_min (*this))) return TRACE_RETURN (false);
+    glyphArray.len.set (num_glyphs);
+    if (unlikely (!c->extend (glyphArray))) return TRACE_RETURN (false);
+    for (unsigned int i = 0; i < num_glyphs; i++)
+      glyphArray[i] = glyphs[i];
+    glyphs.advance (num_glyphs);
+    return TRACE_RETURN (true);
   }
 
   inline bool sanitize (hb_sanitize_context_t *c) {
@@ -381,9 +416,9 @@ struct CoverageFormat1
   };
 
   protected:
-  USHORT	coverageFormat;	
+  USHORT	coverageFormat;	/* Format identifier--format = 1 */
   SortedArrayOf<GlyphID>
-		glyphArray;	
+		glyphArray;	/* Array of GlyphIDs--in numerical order */
   public:
   DEFINE_SIZE_ARRAY (4, glyphArray);
 };
@@ -401,6 +436,38 @@ struct CoverageFormat2
       return (unsigned int) range.value + (glyph_id - range.start);
     }
     return NOT_COVERED;
+  }
+
+  inline bool serialize (hb_serialize_context_t *c,
+			 Supplier<GlyphID> &glyphs,
+			 unsigned int num_glyphs)
+  {
+    TRACE_SERIALIZE ();
+    if (unlikely (!c->extend_min (*this))) return TRACE_RETURN (false);
+
+    if (unlikely (!num_glyphs)) return TRACE_RETURN (true);
+
+    unsigned int num_ranges = 1;
+    for (unsigned int i = 1; i < num_glyphs; i++)
+      if (glyphs[i - 1] + 1 != glyphs[i])
+        num_ranges++;
+    rangeRecord.len.set (num_ranges);
+    if (unlikely (!c->extend (rangeRecord))) return TRACE_RETURN (false);
+
+    unsigned int range = 0;
+    rangeRecord[range].start = glyphs[0];
+    rangeRecord[range].value.set (0);
+    for (unsigned int i = 1; i < num_glyphs; i++)
+      if (glyphs[i - 1] + 1 != glyphs[i]) {
+	range++;
+	rangeRecord[range].start = glyphs[i];
+	rangeRecord[range].value.set (i);
+        rangeRecord[range].end = glyphs[i];
+      } else {
+        rangeRecord[range].end = glyphs[i];
+      }
+    glyphs.advance (num_glyphs);
+    return TRACE_RETURN (true);
   }
 
   inline bool sanitize (hb_sanitize_context_t *c) {
@@ -457,11 +524,11 @@ struct CoverageFormat2
   };
 
   protected:
-  USHORT	coverageFormat;	
+  USHORT	coverageFormat;	/* Format identifier--format = 2 */
   SortedArrayOf<RangeRecord>
-		rangeRecord;	
-
-
+		rangeRecord;	/* Array of glyph ranges--ordered by
+				 * Start GlyphID. rangeCount entries
+				 * long */
   public:
   DEFINE_SIZE_ARRAY (4, rangeRecord);
 };
@@ -479,6 +546,24 @@ struct Coverage
     }
   }
 
+  inline bool serialize (hb_serialize_context_t *c,
+			 Supplier<GlyphID> &glyphs,
+			 unsigned int num_glyphs)
+  {
+    TRACE_SERIALIZE ();
+    if (unlikely (!c->extend_min (*this))) return TRACE_RETURN (false);
+    unsigned int num_ranges = 1;
+    for (unsigned int i = 1; i < num_glyphs; i++)
+      if (glyphs[i - 1] + 1 != glyphs[i])
+        num_ranges++;
+    u.format.set (num_glyphs * 2 < num_ranges * 3 ? 1 : 2);
+    switch (u.format) {
+    case 1: return TRACE_RETURN (u.format1.serialize (c, glyphs, num_glyphs));
+    case 2: return TRACE_RETURN (u.format2.serialize (c, glyphs, num_glyphs));
+    default:return TRACE_RETURN (false);
+    }
+  }
+
   inline bool sanitize (hb_sanitize_context_t *c) {
     TRACE_SANITIZE ();
     if (!u.format.sanitize (c)) return TRACE_RETURN (false);
@@ -490,7 +575,7 @@ struct Coverage
   }
 
   inline bool intersects (const hb_set_t *glyphs) const {
-    
+    /* TODO speed this up */
     Coverage::Iter iter;
     for (iter.init (*this); iter.more (); iter.next ()) {
       if (glyphs->has (iter.get_glyph ()))
@@ -565,7 +650,7 @@ struct Coverage
 
   protected:
   union {
-  USHORT		format;		
+  USHORT		format;		/* Format identifier */
   CoverageFormat1	format1;
   CoverageFormat2	format2;
   } u;
@@ -574,9 +659,9 @@ struct Coverage
 };
 
 
-
-
-
+/*
+ * Class Definition Table
+ */
 
 struct ClassDefFormat1
 {
@@ -604,10 +689,10 @@ struct ClassDefFormat1
   }
 
   protected:
-  USHORT	classFormat;		
-  GlyphID	startGlyph;		
+  USHORT	classFormat;		/* Format identifier--format = 1 */
+  GlyphID	startGlyph;		/* First GlyphID of the classValueArray */
   ArrayOf<USHORT>
-		classValue;		
+		classValue;		/* Array of Class Values--one per GlyphID */
   public:
   DEFINE_SIZE_ARRAY (6, classValue);
 };
@@ -639,10 +724,10 @@ struct ClassDefFormat2
   }
 
   protected:
-  USHORT	classFormat;	
+  USHORT	classFormat;	/* Format identifier--format = 2 */
   SortedArrayOf<RangeRecord>
-		rangeRecord;	
-
+		rangeRecord;	/* Array of glyph ranges--ordered by
+				 * Start GlyphID */
   public:
   DEFINE_SIZE_ARRAY (4, rangeRecord);
 };
@@ -680,7 +765,7 @@ struct ClassDef
 
   protected:
   union {
-  USHORT		format;		
+  USHORT		format;		/* Format identifier */
   ClassDefFormat1	format1;
   ClassDefFormat2	format2;
   } u;
@@ -689,9 +774,9 @@ struct ClassDef
 };
 
 
-
-
-
+/*
+ * Device Tables
+ */
 
 struct Device
 {
@@ -750,18 +835,20 @@ struct Device
   }
 
   protected:
-  USHORT	startSize;		
-  USHORT	endSize;		
-  USHORT	deltaFormat;		
-
-
-
-
-  USHORT	deltaValue[VAR];	
+  USHORT	startSize;		/* Smallest size to correct--in ppem */
+  USHORT	endSize;		/* Largest size to correct--in ppem */
+  USHORT	deltaFormat;		/* Format of DeltaValue array data: 1, 2, or 3
+					 * 1	Signed 2-bit value, 8 values per uint16
+					 * 2	Signed 4-bit value, 4 values per uint16
+					 * 3	Signed 8-bit value, 2 values per uint16
+					 */
+  USHORT	deltaValue[VAR];	/* Array of compressed data */
   public:
   DEFINE_SIZE_ARRAY (6, deltaValue);
 };
 
 
+} // namespace OT
 
-#endif 
+
+#endif /* HB_OT_LAYOUT_COMMON_PRIVATE_HH */
