@@ -1,3 +1,7 @@
+
+
+
+
 function testVal(aExpected) {
   gURLBar.value = aExpected.replace(/[<>]/g, "");
 
@@ -67,6 +71,12 @@ function test() {
   testVal("mailto:admin@mozilla.org");
   testVal("gopher://mozilla.org/");
   testVal("about:config");
+  testVal("jar:http://mozilla.org/example.jar!/");
+  testVal("view-source:http://mozilla.org/");
+  testVal("foo9://mozilla.org/");
+  testVal("foo+://mozilla.org/");
+  testVal("foo.://mozilla.org/");
+  testVal("foo-://mozilla.org/");
 
   Services.prefs.setBoolPref(prefname, false);
 
