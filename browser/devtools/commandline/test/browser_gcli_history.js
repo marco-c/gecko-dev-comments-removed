@@ -42,43 +42,43 @@ exports.testSimpleHistory = function (options) {
   var history = new History({});
   history.add('foo');
   history.add('bar');
-  assert.is('bar', history.backward());
-  assert.is('foo', history.backward());
+  assert.is(history.backward(), 'bar');
+  assert.is(history.backward(), 'foo');
 
   
   history.add('quux');
-  assert.is('quux', history.backward());
-  assert.is('bar', history.backward());
-  assert.is('foo', history.backward());
+  assert.is(history.backward(), 'quux');
+  assert.is(history.backward(), 'bar');
+  assert.is(history.backward(), 'foo');
 };
 
 exports.testBackwardsPastIndex = function (options) {
   var history = new History({});
   history.add('foo');
   history.add('bar');
-  assert.is('bar', history.backward());
-  assert.is('foo', history.backward());
+  assert.is(history.backward(), 'bar');
+  assert.is(history.backward(), 'foo');
 
   
   
-  assert.is('foo', history.backward());
+  assert.is(history.backward(), 'foo');
 };
 
 exports.testForwardsPastIndex = function (options) {
   var history = new History({});
   history.add('foo');
   history.add('bar');
-  assert.is('bar', history.backward());
-  assert.is('foo', history.backward());
+  assert.is(history.backward(), 'bar');
+  assert.is(history.backward(), 'foo');
 
   
-  assert.is('bar', history.forward());
+  assert.is(history.forward(), 'bar');
 
   
-  assert.is('', history.forward());
+  assert.is(history.forward(), '');
 
   
-  assert.is('', history.forward());
+  assert.is(history.forward(), '');
 };
 
 
