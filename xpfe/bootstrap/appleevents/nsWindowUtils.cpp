@@ -427,7 +427,8 @@ void nsWindowUtils::GetCleanedWindowName(WindowPtr wind, char* outName, long max
   ThrowErrIfNil(title, paramErr);
 
   
-  CFStringRef windowTitleCFString = ::CFStringCreateWithCharacters(kCFAllocatorDefault, title.get(), kCFStringEncodingUTF16);
+  const char* cTitle = NS_ConvertUTF16toUTF8(title).get();
+  CFStringRef windowTitleCFString = ::CFStringCreateWithCString(kCFAllocatorDefault, (char *)cTitle, kCFStringEncodingUTF8);
   if (windowTitleCFString) {
     ::CFStringGetCString(windowTitleCFString, outName, maxLen, kCFStringEncodingMacRoman);
     outName[maxLen - 1] = '\0'; 
