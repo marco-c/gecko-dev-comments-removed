@@ -5231,11 +5231,13 @@ struct cs_info * get_current_cs(const char * es) {
     return nsnull;
 
   rv = ccm->GetUnicodeEncoder(es, getter_AddRefs(encoder));
-  if (encoder && NS_SUCCEEDED(rv))
-    encoder->SetOutputErrorBehavior(encoder->kOnError_Replace, nsnull, '?');
   if (NS_FAILED(rv))
     return nsnull;
+  encoder->SetOutputErrorBehavior(encoder->kOnError_Signal, nsnull, '?');
   rv = ccm->GetUnicodeDecoder(es, getter_AddRefs(decoder));
+  if (NS_FAILED(rv))
+    return nsnull;
+  decoder->SetInputErrorBehavior(decoder->kOnError_Signal);
 
   caseConv = do_GetService(kUnicharUtilCID, &rv);
   if (NS_FAILED(rv))
@@ -5243,48 +5245,59 @@ struct cs_info * get_current_cs(const char * es) {
 
   ccs = (struct cs_info *) malloc(256 * sizeof(cs_info));
 
-  PRInt32 charLength = 256;
-  PRInt32 uniLength = 512;
-  char *source = (char *)malloc(charLength * sizeof(char));
-  PRUnichar *uni = (PRUnichar *)malloc(uniLength * sizeof(PRUnichar));
-  char *lower = (char *)malloc(charLength * sizeof(char));
-  char *upper = (char *)malloc(charLength * sizeof(char));
-
-  
-  unsigned int i;
-  for (i = 0x00; i <= 0xff ; ++i) {
-    source[i] = i;
-  }
-
-  
-  rv = decoder->Convert(source, &charLength, uni, &uniLength);
-
-  
-  caseConv->ToUpper(uni, uni, uniLength);
-  encoder->Convert(uni, &uniLength, upper, &charLength);
-
-  uniLength = 512;
-  charLength = 256;
-  rv = decoder->Convert(source, &charLength, uni, &uniLength);
-  caseConv->ToLower(uni, uni, uniLength);
-  encoder->Convert(uni, &uniLength, lower, &charLength);
-
-  
-  for (i = 0x00; i <= 0xff ; ++i) {
-    ccs[i].cupper = upper[i];
-    ccs[i].clower = lower[i];
+  for (unsigned int i = 0; i <= 0xff; ++i) {
+    PRBool success = PR_FALSE;
     
+    
+    
+    
+    char lower, upper;
+    do {
+      if (i == 0)
+        break;
+      const char source = char(i);
+      PRUnichar uni, uniCased;
+      PRInt32 charLength = 1, uniLength = 1;
+
+      rv = decoder->Convert(&source, &charLength, &uni, &uniLength);
+      
+      
+      if (rv != NS_OK || charLength != 1 || uniLength != 1)
+        break;
+      rv = caseConv->ToLower(uni, &uniCased);
+      if (NS_FAILED(rv))
+        break;
+      rv = encoder->Convert(&uniCased, &uniLength, &lower, &charLength);
+      
+      
+      if (rv != NS_OK || charLength != 1 || uniLength != 1)
+        break;
+
+      rv = caseConv->ToUpper(uni, &uniCased);
+      if (NS_FAILED(rv))
+        break;
+      rv = encoder->Convert(&uniCased, &uniLength, &upper, &charLength);
+      
+      
+      if (rv != NS_OK || charLength != 1 || uniLength != 1)
+        break;
+
+      success = PR_TRUE;
+    } while (0);
+
+    if (success) {
+      ccs[i].cupper = upper;
+      ccs[i].clower = lower;
+    } else {
+      ccs[i].cupper = i;
+      ccs[i].clower = i;
+    }
+
     if (ccs[i].clower != (unsigned char)i)
       ccs[i].ccase = true;
     else
       ccs[i].ccase = false;
-      
   }
-
-  free(source);
-  free(uni);
-  free(lower);
-  free(upper);
 
   return ccs;
 }
