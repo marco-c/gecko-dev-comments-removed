@@ -2303,6 +2303,13 @@ public:
 
 
 
+  nsRect GetPreEffectsVisualOverflowRect() const;
+
+  
+
+
+
+
 
   bool FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
                               nsSize aNewSize);
@@ -2992,7 +2999,7 @@ private:
   bool SetOverflowAreas(const nsOverflowAreas& aOverflowAreas);
   nsPoint GetOffsetToCrossDoc(const nsIFrame* aOther, const PRInt32 aAPD) const;
 
-#ifdef NS_DEBUG
+#ifdef DEBUG
 public:
   
   NS_IMETHOD  List(FILE* out, PRInt32 aIndent) const = 0;
