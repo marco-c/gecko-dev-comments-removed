@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "jsversion.h"
 
@@ -50,8 +50,8 @@
 #include "jsapi.h"
 #include "jscntxt.h"
 #include "jsnum.h"
-#include "jsobj.h"              
-#include "jsscript.h"           
+#include "jsobj.h"              /* js_XDRObject */
+#include "jsscript.h"           /* js_XDRScript */
 #include "jsstr.h"
 #include "jsxdrapi.h"
 
@@ -255,7 +255,7 @@ JS_XDRNewMem(JSContext *cx, JSXDRMode mode)
             return NULL;
         }
     } else {
-        
+        /* XXXbe ok, so better not deref MEM_BASE(xdr) if not ENCODE */
         MEM_BASE(xdr) = NULL;
     }
     xdr->ops = &xdrmem_ops;
@@ -373,11 +373,11 @@ JS_XDRBytes(JSXDRState *xdr, char *bytes, uint32 len)
     return JS_TRUE;
 }
 
-
-
-
-
-
+/**
+ * Convert between a C string and the XDR representation:
+ * leading 32-bit count, then counted vector of chars,
+ * then possibly \0 padding to multiple of 4.
+ */
 JS_PUBLIC_API(JSBool)
 JS_XDRCString(JSXDRState *xdr, char **sp)
 {
@@ -414,9 +414,9 @@ JS_XDRCStringOrNull(JSXDRState *xdr, char **sp)
     return JS_XDRCString(xdr, sp);
 }
 
-
-
-
+/*
+ * Convert between a JS (Unicode) string and the XDR representation.
+ */
 JS_PUBLIC_API(JSBool)
 JS_XDRString(JSXDRState *xdr, JSString **strp)
 {
@@ -428,10 +428,10 @@ JS_XDRString(JSXDRState *xdr, JSString **strp)
                                              (*strp)->getChars(xdr->cx),
                                              (*strp)->length(),
                                              true);
-        
+        /* js_GetDeflatedUTF8StringLength never fails in CESU8 mode */
         JS_ASSERT(len != (size_t) -1);
         JS_ASSERT(size_t(uint32(len)) == len);
-        
+        /* ensure MAX_LENGTH strings can always fit when CESU8 encoded */
         JS_STATIC_ASSERT(JSString::MAX_LENGTH < (uint32(-1) / 3));
         nchars = (uint32)len;
     }
@@ -658,7 +658,7 @@ js_XDRAtom(JSXDRState *xdr, JSAtom **atomp)
             if (!buf)
                 return false;
 
-            JSAtom *atom = js_Atomize(xdr->cx, buf, len, 0, true);
+            JSAtom *atom = js_Atomize(xdr->cx, buf, len, DoNotInternAtom, true);
             if (!atom)
                 return false;
 
@@ -718,7 +718,7 @@ JS_XDRScriptObject(JSXDRState *xdr, JSObject **scriptObjp)
         return false;
 
     if (magic != JSXDR_MAGIC_SCRIPT_CURRENT) {
-        
+        /* We do not provide binary compatibility with older scripts. */
         JS_ReportErrorNumber(xdr->cx, js_GetErrorMessage, NULL, JSMSG_BAD_SCRIPT_MAGIC);
         return false;
     }
@@ -804,7 +804,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
     if (numclasses >= 10) {
         JSRegHashEntry *entry;
 
-        
+        /* Bootstrap reghash from registry on first overpopulated Find. */
         if (!xdr->reghash) {
             xdr->reghash =
                 JS_NewDHashTable(JS_DHashGetStubOps(), NULL,
@@ -822,7 +822,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
             }
         }
 
-        
+        /* If we managed to create reghash, use it for O(1) Find. */
         if (xdr->reghash) {
             entry = (JSRegHashEntry *)
                 JS_DHashTableOperate((JSDHashTable *) xdr->reghash,
@@ -832,7 +832,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
         }
     }
 
-    
+    /* Only a few classes, or we couldn't malloc reghash: use linear search. */
     for (i = 0; i < numclasses; i++) {
         if (!strcmp(name, xdr->registry[i]->name))
             return CLASS_INDEX_TO_ID(i);
@@ -850,4 +850,4 @@ JS_XDRFindClassById(JSXDRState *xdr, uint32 id)
     return xdr->registry[i];
 }
 
-#endif 
+#endif /* JS_HAS_XDR */
