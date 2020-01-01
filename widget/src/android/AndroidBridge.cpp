@@ -1,39 +1,39 @@
-/* -*- Mode: c++; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Android code.
- *
- * The Initial Developer of the Original Code is Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Vladimir Vukicevic <vladimir@pobox.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <android/log.h>
 
@@ -67,12 +67,12 @@ AndroidBridge *
 AndroidBridge::ConstructBridge(JNIEnv *jEnv,
                                jclass jGeckoAppShellClass)
 {
-    /* NSS hack -- bionic doesn't handle recursive unloads correctly,
-     * because library finalizer functions are called with the dynamic
-     * linker lock still held.  This results in a deadlock when trying
-     * to call dlclose() while we're already inside dlclose().
-     * Conveniently, NSS has an env var that can prevent it from unloading.
-     */
+    
+
+
+
+
+
     putenv(strdup("NSS_DISABLE_UNLOAD=1"));
 
     sBridge = new AndroidBridge();
@@ -107,7 +107,7 @@ AndroidBridge::Init(JNIEnv *jEnv,
     jNotifyAppShellReady = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "onAppShellReady", "()V");
     jNotifyXreExit = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "onXreExit", "()V");
     jGetHandlersForMimeType = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "getHandlersForMimeType", "(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;");
-    jGetHandlersForProtocol = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "getHandlersForProtocol", "(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;");
+    jGetHandlersForURL = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "getHandlersForURL", "(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;");
     jOpenUriExternal = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "openUriExternal", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z");
     jGetMimeTypeFromExtensions = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "getMimeTypeFromExtensions", "(Ljava/lang/String;)Ljava/lang/String;");
     jMoveTaskToBack = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "moveTaskToBack", "()V");
@@ -132,9 +132,9 @@ AndroidBridge::Init(JNIEnv *jEnv,
 
     InitAndroidJavaWrappers(jEnv);
 
-    // jEnv should NOT be cached here by anything -- the jEnv here
-    // is not valid for the real gecko main thread, which is set
-    // at SetMainThread time.
+    
+    
+    
 
     return PR_TRUE;
 }
@@ -352,20 +352,20 @@ AndroidBridge::GetHandlersForMimeType(const char *aMimeType,
 }
 
 PRBool
-AndroidBridge::GetHandlersForProtocol(const char *aScheme,
+AndroidBridge::GetHandlersForURL(const char *aURL,
                                       nsIMutableArray* aHandlersArray,
                                       nsIHandlerApp **aDefaultApp,
                                       const nsAString& aAction)
 {
     AutoLocalJNIFrame jniFrame;
-    NS_ConvertUTF8toUTF16 wScheme(aScheme);
+    NS_ConvertUTF8toUTF16 wScheme(aURL);
     jstring jstrScheme = mJNIEnv->NewString(wScheme.get(), wScheme.Length());
     const PRUnichar* wAction;
     PRUint32 actionLen = NS_StringGetData(aAction, &wAction);
     jstring jstrAction = mJNIEnv->NewString(wAction, actionLen);
 
     jobject obj = mJNIEnv->CallStaticObjectMethod(mGeckoAppShellClass,
-                                                  jGetHandlersForProtocol,
+                                                  jGetHandlersForURL,
                                                   jstrScheme, jstrAction);
     jobjectArray arr = static_cast<jobjectArray>(obj);
     if (!arr)
@@ -580,22 +580,22 @@ AndroidBridge::CallEglCreateWindowSurface(void *dpy, void *config, AndroidGeckoS
 {
     AutoLocalJNIFrame jniFrame;
 
-    /*
-     * This is basically:
-     *
-     *    s = EGLContext.getEGL().eglCreateWindowSurface(new EGLDisplayImpl(dpy),
-     *                                                   new EGLConfigImpl(config),
-     *                                                   view.getHolder(), null);
-     *    return s.mEGLSurface;
-     *
-     * We can't do it from java, because the EGLConfigImpl constructor is private.
-     */
+    
+
+
+
+
+
+
+
+
+
 
     jobject surfaceHolder = sview.GetSurfaceHolder();
     if (!surfaceHolder)
         return nsnull;
 
-    // grab some fields and methods we'll need
+    
     jmethodID constructConfig = mJNIEnv->GetMethodID(jEGLConfigImplClass, "<init>", "(I)V");
     jmethodID constructDisplay = mJNIEnv->GetMethodID(jEGLDisplayImplClass, "<init>", "(I)V");
 
@@ -607,7 +607,7 @@ AndroidBridge::CallEglCreateWindowSurface(void *dpy, void *config, AndroidGeckoS
     jobject jdpy = mJNIEnv->NewObject(jEGLDisplayImplClass, constructDisplay, (int) dpy);
     jobject jconf = mJNIEnv->NewObject(jEGLConfigImplClass, constructConfig, (int) config);
 
-    // make the call
+    
     jobject surf = mJNIEnv->CallObjectMethod(egl, createWindowSurface, jdpy, jconf, surfaceHolder, NULL);
     if (!surf)
         return nsnull;
@@ -639,7 +639,7 @@ AndroidBridge::GetStaticStringField(const char *className, const char *fieldName
     return true;
 }
 
-// Available for places elsewhere in the code to link to.
+
 PRBool
 mozilla_AndroidBridge_SetMainThread(void *thr)
 {
