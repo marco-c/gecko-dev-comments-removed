@@ -1152,13 +1152,15 @@ function delayedStartup()
   
   
   
-  try {
-    ContentPrefSink.init();
-    TextZoom.init();
-  }
-  catch(ex) {
-    Components.utils.reportError(ex);
-  }
+  
+
+
+
+
+
+
+
+
 
   
   if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
@@ -1184,13 +1186,15 @@ function delayedStartup()
 
 function BrowserShutdown()
 {
-  try {
-    TextZoom.destroy();
-    ContentPrefSink.destroy();
-  }
-  catch(ex) {
-    Components.utils.reportError(ex);
-  }
+  
+
+
+
+
+
+
+
+
 
   var os = Components.classes["@mozilla.org/observer-service;1"]
     .getService(Components.interfaces.nsIObserverService);
@@ -5633,8 +5637,10 @@ var FeedHandler = {
 #include browser-places.js
 #endif
 
-#include browser-contentPrefSink.js
-#include browser-textZoom.js
+
+
+
+
 
 
 
