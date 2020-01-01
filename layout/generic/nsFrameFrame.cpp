@@ -231,7 +231,7 @@ nsSubDocumentFrame::Init(nsIContent*     aContent,
   if (NS_FAILED(rv))
     return rv;
     
-  nsPresContext *aPresContext = GetPresContext();
+  nsPresContext *aPresContext = PresContext();
 
   
   
