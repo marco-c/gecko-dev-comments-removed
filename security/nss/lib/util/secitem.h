@@ -43,8 +43,26 @@ extern SECItem *SECITEM_AllocItem(PLArenaPool *arena, SECItem *item,
 
 
 
-extern SECStatus SECITEM_ReallocItem(PLArenaPool *arena, SECItem *item,
+
+
+
+
+
+extern SECStatus SECITEM_ReallocItem( 
+				     PLArenaPool *arena, SECItem *item,
 				     unsigned int oldlen, unsigned int newlen);
+
+
+
+
+
+
+
+
+
+
+extern SECStatus SECITEM_ReallocItemV2(PLArenaPool *arena, SECItem *item,
+				       unsigned int newlen);
 
 
 
