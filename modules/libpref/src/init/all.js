@@ -597,7 +597,7 @@ pref("javascript.options.methodjit.chrome",  false);
 
 
 pref("javascript.options.mem.high_water_mark", 32);
-pref("javascript.options.mem.gc_frequency",   1600);
+pref("javascript.options.mem.gc_frequency",   300);
 
 
 pref("advanced.mailftp",                    false);
