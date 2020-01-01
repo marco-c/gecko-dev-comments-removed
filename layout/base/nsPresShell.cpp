@@ -1055,7 +1055,6 @@ protected:
 
   nsresult ClearPreferenceStyleRules(void);
   nsresult CreatePreferenceStyleSheet(void);
-  nsresult SetPrefColorRules(void);
   nsresult SetPrefLinkRules(void);
   nsresult SetPrefFocusRules(void);
   nsresult SetPrefNoScriptRule();
@@ -1784,11 +1783,6 @@ PresShell::SetPreferenceStyleRules(PRBool aForceReflow)
       result = ClearPreferenceStyleRules();
       
       
-      if (NS_SUCCEEDED(result)) {
-        result = SetPrefColorRules();
-      }
-
-      
       
       
       if (NS_SUCCEEDED(result)) {
@@ -1882,73 +1876,6 @@ nsresult PresShell::CreatePreferenceStyleSheet(void)
 
 
 static PRUint32 sInsertPrefSheetRulesAt = 1;
-
-nsresult PresShell::SetPrefColorRules(void)
-{
-  NS_ASSERTION(mPresContext,"null prescontext not allowed");
-  if (mPresContext) {
-    nsresult result = NS_OK;
-
-    
-    PRBool useDocColors =
-      mPresContext->GetCachedBoolPref(kPresContext_UseDocumentColors);
-    if (!useDocColors) {
-
-#ifdef DEBUG_attinasi
-      printf(" - Creating rules for document colors\n");
-#endif
-
-      
-      if (!mPrefStyleSheet) {
-        result = CreatePreferenceStyleSheet();
-      }
-      if (NS_SUCCEEDED(result)) {
-        NS_ASSERTION(mPrefStyleSheet, "prefstylesheet should not be null");
-
-        nscolor bgColor = mPresContext->DefaultBackgroundColor();
-        nscolor textColor = mPresContext->DefaultColor();
-
-        
-        nsCOMPtr<nsIDOMCSSStyleSheet> sheet(do_QueryInterface(mPrefStyleSheet,&result));
-        if (NS_SUCCEEDED(result)) {
-          PRUint32 index = 0;
-          nsAutoString strColor, strBackgroundColor;
-
-          
-          
-          
-          
-          
-
-          
-          
-          
-          ColorToString(textColor,strColor);
-          ColorToString(bgColor,strBackgroundColor);
-          result = sheet->InsertRule(NS_LITERAL_STRING("*|*:root {color:") +
-                                     strColor +
-                                     NS_LITERAL_STRING(" !important; ") +
-                                     NS_LITERAL_STRING("border-color: -moz-use-text-color !important; ") +
-                                     NS_LITERAL_STRING("background:") +
-                                     strBackgroundColor +
-                                     NS_LITERAL_STRING(" !important; }"),
-                                     sInsertPrefSheetRulesAt, &index);
-          NS_ENSURE_SUCCESS(result, result);
-
-          
-          
-          
-          
-          result = sheet->InsertRule(NS_LITERAL_STRING("*|* {color: inherit !important; border-color: -moz-use-text-color !important; background-image: none !important; } "),
-                                     sInsertPrefSheetRulesAt, &index);
-        }
-      }
-    }
-    return result;
-  } else {
-    return NS_ERROR_FAILURE;
-  }
-}
 
 nsresult
 PresShell::SetPrefNoScriptRule()
@@ -2046,11 +1973,7 @@ nsresult PresShell::SetPrefLinkRules(void)
   nscolor activeColor(mPresContext->DefaultActiveLinkColor());
   nscolor visitedColor(mPresContext->DefaultVisitedLinkColor());
   
-  PRBool useDocColors =
-    mPresContext->GetCachedBoolPref(kPresContext_UseDocumentColors);
-  NS_NAMED_LITERAL_STRING(notImportantStr, "}");
-  NS_NAMED_LITERAL_STRING(importantStr, "!important}");
-  const nsAString& ruleClose = useDocColors ? notImportantStr : importantStr;
+  NS_NAMED_LITERAL_STRING(ruleClose, "}");
   PRUint32 index = 0;
   nsAutoString strColor;
 
