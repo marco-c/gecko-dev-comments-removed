@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Corp.
- * Portions created by the Initial Developer are Copyright (C) 2003
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Aaron Leventhal
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-// NOTE: alphabetically ordered
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "nsTextAccessibleWrap.h"
 #include "ISimpleDOMText_i.c"
 #include "nsIAccessibleDocument.h"
@@ -48,9 +48,9 @@
 #include "nsIWidget.h"
 #include "nsIComponentManager.h"
 
-// --------------------------------------------------------
-// nsTextAccessibleWrap Accessible
-// --------------------------------------------------------
+
+
+
 
 nsTextAccessibleWrap::nsTextAccessibleWrap(nsIDOMNode* aDOMNode, nsIWeakReference* aShell):
 nsTextAccessible(aDOMNode, aShell)
@@ -82,13 +82,13 @@ STDMETHODIMP nsTextAccessibleWrap::QueryInterface(REFIID iid, void** ppv)
 }
 
 STDMETHODIMP nsTextAccessibleWrap::get_domText( 
-    /* [retval][out] */ BSTR __RPC_FAR *aDomText)
+     BSTR __RPC_FAR *aDomText)
 {
 __try {
   *aDomText = NULL;
 
   if (!mDOMNode) {
-    return E_FAIL; // Node already shut down
+    return E_FAIL; 
   }
   nsAutoString nodeValue;
 
@@ -106,12 +106,12 @@ __try {
 }
 
 STDMETHODIMP nsTextAccessibleWrap::get_clippedSubstringBounds( 
-    /* [in] */ unsigned int aStartIndex,
-    /* [in] */ unsigned int aEndIndex,
-    /* [out] */ int __RPC_FAR *aX,
-    /* [out] */ int __RPC_FAR *aY,
-    /* [out] */ int __RPC_FAR *aWidth,
-    /* [out] */ int __RPC_FAR *aHeight)
+     unsigned int aStartIndex,
+     unsigned int aEndIndex,
+     int __RPC_FAR *aX,
+     int __RPC_FAR *aY,
+     int __RPC_FAR *aWidth,
+     int __RPC_FAR *aHeight)
 {
 __try {
   *aX = *aY = *aWidth = *aHeight = 0;
@@ -143,18 +143,18 @@ __try {
 }
 
 STDMETHODIMP nsTextAccessibleWrap::get_unclippedSubstringBounds( 
-    /* [in] */ unsigned int aStartIndex,
-    /* [in] */ unsigned int aEndIndex,
-    /* [out] */ int __RPC_FAR *aX,
-    /* [out] */ int __RPC_FAR *aY,
-    /* [out] */ int __RPC_FAR *aWidth,
-    /* [out] */ int __RPC_FAR *aHeight)
+     unsigned int aStartIndex,
+     unsigned int aEndIndex,
+     int __RPC_FAR *aX,
+     int __RPC_FAR *aY,
+     int __RPC_FAR *aWidth,
+     int __RPC_FAR *aHeight)
 {
 __try {
   *aX = *aY = *aWidth = *aHeight = 0;
 
   if (!mDOMNode) {
-    return E_FAIL; // Node already shut down
+    return E_FAIL; 
   }
 
   if (NS_FAILED(GetCharacterExtents(aStartIndex, aEndIndex, 
@@ -168,8 +168,8 @@ __try {
 
 
 STDMETHODIMP nsTextAccessibleWrap::scrollToSubstring(
-    /* [in] */ unsigned int aStartIndex,
-    /* [in] */ unsigned int aEndIndex)
+     unsigned int aStartIndex,
+     unsigned int aEndIndex)
 {
 __try {
   nsresult rv =
@@ -198,9 +198,9 @@ nsIFrame* nsTextAccessibleWrap::GetPointFromOffset(nsIFrame *aContainingFrame,
   return textFrame;
 }
 
-/*
- * Given an offset, the x, y, width, and height values are filled appropriately.
- */
+
+
+
 nsresult nsTextAccessibleWrap::GetCharacterExtents(PRInt32 aStartOffset, PRInt32 aEndOffset,
                                                    PRInt32* aX, PRInt32* aY, 
                                                    PRInt32* aWidth, PRInt32* aHeight) 
@@ -244,14 +244,14 @@ nsresult nsTextAccessibleWrap::GetCharacterExtents(PRInt32 aStartOffset, PRInt32
 }
 
 STDMETHODIMP nsTextAccessibleWrap::get_fontFamily(
-    /* [retval][out] */ BSTR __RPC_FAR *aFontFamily)
+     BSTR __RPC_FAR *aFontFamily)
 {
 __try {
   *aFontFamily = NULL;
 
   nsIFrame *frame = GetFrame();
   nsCOMPtr<nsIPresShell> presShell = GetPresShell();
-  if (!frame || !presShell) {
+  if (!frame || !presShell || !presShell->GetPresContext()) {
     return E_FAIL;
   }
 
@@ -265,7 +265,8 @@ __try {
 
   const nsStyleVisibility *visibility = frame->GetStyleVisibility();
 
-  if (NS_FAILED(rc->SetFont(font->mFont, visibility->mLangGroup))) {
+  if (NS_FAILED(rc->SetFont(font->mFont, visibility->mLangGroup,
+                            presShell->GetPresContext()->GetUserFontSet()))) {
     return E_FAIL;
   }
 
