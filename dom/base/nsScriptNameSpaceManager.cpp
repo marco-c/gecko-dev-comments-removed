@@ -1,39 +1,39 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsScriptNameSpaceManager.h"
 #include "nsCOMPtr.h"
@@ -55,15 +55,16 @@
 #include "nsDOMClassInfo.h"
 #include "nsCRT.h"
 #include "nsIObserverService.h"
+#include "mozilla/Services.h"
 
 #define NS_INTERFACE_PREFIX "nsI"
 #define NS_DOM_INTERFACE_PREFIX "nsIDOM"
 
-
+// Our extended PLDHashEntryHdr
 class GlobalNameMapEntry : public PLDHashEntryHdr
 {
 public:
-  
+  // Our hash table ops don't care about the order of these members
   nsString mKey;
   nsGlobalNameStruct mGlobalName;
 };
@@ -93,27 +94,27 @@ GlobalNameHashClearEntry(PLDHashTable *table, PLDHashEntryHdr *entry)
 {
   GlobalNameMapEntry *e = static_cast<GlobalNameMapEntry *>(entry);
 
-  
-  
+  // An entry is being cleared, let the key (nsString) do its own
+  // cleanup.
   e->mKey.~nsString();
   if (e->mGlobalName.mType == nsGlobalNameStruct::eTypeExternalClassInfo) {
     nsIClassInfo* ci = GET_CLEAN_CI_PTR(e->mGlobalName.mData->mCachedClassInfo);
 
-    
-    
+    // If we constructed an internal helper, we'll let the helper delete 
+    // the nsDOMClassInfoData structure, if not we do it here.
     if (!ci || e->mGlobalName.mData->u.mExternalConstructorFptr) {
       delete e->mGlobalName.mData;
     }
 
-    
+    // Release our pointer to the helper.
     NS_IF_RELEASE(ci);
   }
   else if (e->mGlobalName.mType == nsGlobalNameStruct::eTypeExternalConstructorAlias) {
     delete e->mGlobalName.mAlias;
   }
 
-  
-  
+  // This will set e->mGlobalName.mType to
+  // nsGlobalNameStruct::eTypeNotInitialized
   memset(&e->mGlobalName, 0, sizeof(nsGlobalNameStruct));
 }
 
@@ -124,11 +125,11 @@ GlobalNameHashInitEntry(PLDHashTable *table, PLDHashEntryHdr *entry,
   GlobalNameMapEntry *e = static_cast<GlobalNameMapEntry *>(entry);
   const nsAString *keyStr = static_cast<const nsAString *>(key);
 
-  
+  // Initialize the key in the entry with placement new
   new (&e->mKey) nsString(*keyStr);
 
-  
-  
+  // This will set e->mGlobalName.mType to
+  // nsGlobalNameStruct::eTypeNotInitialized
   memset(&e->mGlobalName, 0, sizeof(nsGlobalNameStruct));
   return true;
 }
@@ -146,7 +147,7 @@ nsScriptNameSpaceManager::nsScriptNameSpaceManager()
 nsScriptNameSpaceManager::~nsScriptNameSpaceManager()
 {
   if (mIsInitialized) {
-    
+    // Destroy the hash
     PL_DHashTableFinish(&mGlobalNames);
     PL_DHashTableFinish(&mNavigatorNames);
   }
@@ -213,13 +214,13 @@ nsScriptNameSpaceManager::FillHash(nsICategoryManager *aCategoryManager,
 }
 
 
-
-
-
-
-
-
-
+// This method enumerates over all installed interfaces (in .xpt
+// files) and finds ones that start with "nsIDOM" and has constants
+// defined in the interface itself (inherited constants doesn't
+// count), once such an interface is found the "nsIDOM" prefix is cut
+// off the name and the rest of the name is added into the hash for
+// global names. This makes things like 'Node.ELEMENT_NODE' work in
+// JS. See nsCommonWindowSH::GlobalResolve() for detais on how this is used.
 
 nsresult
 nsScriptNameSpaceManager::FillHashWithDOMInterfaces()
@@ -228,7 +229,7 @@ nsScriptNameSpaceManager::FillHashWithDOMInterfaces()
     iim(do_GetService(NS_INTERFACEINFOMANAGER_SERVICE_CONTRACTID));
   NS_ENSURE_TRUE(iim, NS_ERROR_UNEXPECTED);
 
-  
+  // First look for all interfaces whose name starts with nsIDOM
   nsCOMPtr<nsIEnumerator> domInterfaces;
   nsresult rv =
     iim->EnumerateInterfacesWhoseNamesStartWith(NS_DOM_INTERFACE_PREFIX,
@@ -240,7 +241,7 @@ nsScriptNameSpaceManager::FillHashWithDOMInterfaces()
   rv = domInterfaces->First();
 
   if (NS_FAILED(rv)) {
-    
+    // Empty interface list?
 
     NS_WARNING("What, no nsIDOM interfaces installed?");
 
@@ -268,7 +269,7 @@ nsScriptNameSpaceManager::FillHashWithDOMInterfaces()
 #endif
   }
 
-  
+  // Next, look for externally registered DOM interfaces
   rv = RegisterExternalInterfaces(false);
 
   return rv;
@@ -339,7 +340,7 @@ nsScriptNameSpaceManager::RegisterExternalInterfaces(bool aAsProto)
       const char* name;
       if (dom_prefix) {
         if (!aAsProto) {
-          
+          // nsIDOM* interfaces have already been registered.
           break;
         }
         name = if_name + sizeof(NS_DOM_INTERFACE_PREFIX) - 1;
@@ -445,10 +446,10 @@ nsScriptNameSpaceManager::Init()
   rv = FillHash(cm, JAVASCRIPT_NAVIGATOR_PROPERTY_CATEGORY);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
+  // Initial filling of the has table has been done.
+  // Now, listen for changes.
   nsCOMPtr<nsIObserverService> serv = 
-    do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
+    mozilla::services::GetObserverService();
 
   if (serv) {
     serv->AddObserver(this, NS_XPCOM_CATEGORY_ENTRY_ADDED_OBSERVER_ID, true);
@@ -559,8 +560,8 @@ nsScriptNameSpaceManager::RegisterClassName(const char *aClassName,
     return NS_OK;
   }
 
-  
-  
+  // If a external constructor is already defined with aClassName we
+  // won't overwrite it.
 
   if (s->mType == nsGlobalNameStruct::eTypeExternalConstructor) {
     return NS_OK;
@@ -610,8 +611,8 @@ nsScriptNameSpaceManager::RegisterExternalClassName(const char *aClassName,
   nsGlobalNameStruct *s = AddToHash(&mGlobalNames, aClassName);
   NS_ENSURE_TRUE(s, NS_ERROR_OUT_OF_MEMORY);
 
-  
-  
+  // If an external constructor is already defined with aClassName we
+  // won't overwrite it.
 
   if (s->mType == nsGlobalNameStruct::eTypeExternalConstructor) {
     return NS_OK;
@@ -640,15 +641,15 @@ nsScriptNameSpaceManager::RegisterDOMCIData(const char *aName,
   nsGlobalNameStruct *s = AddToHash(&mGlobalNames, aName, &className);
   NS_ENSURE_TRUE(s, NS_ERROR_OUT_OF_MEMORY);
 
-  
-  
+  // If an external constructor is already defined with aClassName we
+  // won't overwrite it.
 
   if (s->mType == nsGlobalNameStruct::eTypeClassConstructor ||
       s->mType == nsGlobalNameStruct::eTypeExternalClassInfo) {
     return NS_OK;
   }
 
-  
+  // XXX Should we bail out here?
   NS_ASSERTION(s->mType == nsGlobalNameStruct::eTypeNotInitialized ||
                s->mType == nsGlobalNameStruct::eTypeExternalClassInfoCreator,
                "Someone tries to register classinfo data for a class that isn't new or external!");
@@ -662,7 +663,7 @@ nsScriptNameSpaceManager::RegisterDOMCIData(const char *aName,
   if (aConstructorFptr)
     s->mData->u.mExternalConstructorFptr = aConstructorFptr;
   else
-    
+    // null constructor will cause us to use nsDOMGenericSH::doCreate
     s->mData->u.mExternalConstructorFptr = nsnull;
   s->mData->mCachedClassInfo = nsnull;
   s->mData->mProtoChainInterface = aProtoChainInterface;
@@ -679,10 +680,10 @@ nsScriptNameSpaceManager::AddCategoryEntryToHash(nsICategoryManager* aCategoryMa
                                                  const char* aCategory,
                                                  nsISupports* aEntry)
 {
-  
-  
-  
-  
+  // Get the type from the category name.
+  // NOTE: we could have passed the type in FillHash() and guessed it in
+  // Observe() but this way, we have only one place to update and this is
+  // not performance sensitive.
   nsGlobalNameStruct::nametype type;
   if (strcmp(aCategory, JAVASCRIPT_GLOBAL_CONSTRUCTOR_CATEGORY) == 0) {
     type = nsGlobalNameStruct::eTypeExternalConstructor;
@@ -727,8 +728,8 @@ nsScriptNameSpaceManager::AddCategoryEntryToHash(nsICategoryManager* aCategoryMa
     return NS_OK;
   }
 
-  
-  
+  // Copy CID onto the stack, so we can free it right away and avoid having
+  // to add cleanup code at every exit point from this function.
   nsCID cid = *cidPtr;
   nsMemory::Free(cidPtr);
 
@@ -797,9 +798,9 @@ nsScriptNameSpaceManager::Observe(nsISupports* aSubject, const char* aTopic,
                                   aSubject);
   }
 
-  
-  
-  
+  // TODO: we could observe NS_XPCOM_CATEGORY_ENTRY_REMOVED_OBSERVER_ID
+  // and NS_XPCOM_CATEGORY_CLEARED_OBSERVER_ID but we are safe without it.
+  // See bug 600460.
 
   return NS_OK;
 }

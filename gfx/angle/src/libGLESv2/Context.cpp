@@ -1,11 +1,11 @@
-//
-// Copyright (c) 2002-2011 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
 
-// Context.cpp: Implements the gl::Context class, managing all GL state and performing
-// rendering operations. It is the GLES2 specific implementation of EGLContext.
+
+
+
+
+
+
+
 
 #include "libGLESv2/Context.h"
 
@@ -40,7 +40,7 @@ namespace gl
 {
 Context::Context(const egl::Config *config, const gl::Context *shareContext, bool notifyResets, bool robustAccess) : mConfig(config)
 {
-    ASSERT(robustAccess == false);   // Unimplemented
+    ASSERT(robustAccess == false);   
 
     mDisplay = NULL;
     mDevice = NULL;
@@ -125,11 +125,11 @@ Context::Context(const egl::Config *config, const gl::Context *shareContext, boo
         mResourceManager = new ResourceManager();
     }
 
-    // [OpenGL ES 2.0.24] section 3.7 page 83:
-    // In the initial state, TEXTURE_2D and TEXTURE_CUBE_MAP have twodimensional
-    // and cube map texture state vectors respectively associated with them.
-    // In order that access to these initial textures not be lost, they are treated as texture
-    // objects all of whose names are 0.
+    
+    
+    
+    
+    
 
     mTexture2DZero.set(new Texture2D(0));
     mTextureCubeMapZero.set(new TextureCubeMap(0));
@@ -334,7 +334,7 @@ void Context::makeCurrent(egl::Display *display, egl::Surface *surface)
         mHasBeenCurrent = true;
     }
 
-    // Wrap the existing Direct3D 9 resources into GL objects and assign them to the '0' names
+    
     IDirect3DSurface9 *defaultRenderTarget = surface->getRenderTarget();
     IDirect3DSurface9 *depthStencil = surface->getDepthStencil();
 
@@ -357,7 +357,7 @@ void Context::makeCurrent(egl::Display *display, egl::Surface *surface)
     markAllStateDirty();
 }
 
-// This function will set all of the state-related dirty flags, so that all state is set during next pre-draw.
+
 void Context::markAllStateDirty()
 {
     for (int t = 0; t < MAX_TEXTURE_IMAGE_UNITS; t++)
@@ -732,9 +732,9 @@ void Context::setGenerateMipmapHint(GLenum hint)
 void Context::setFragmentShaderDerivativeHint(GLenum hint)
 {
     mState.fragmentShaderDerivativeHint = hint;
-    // TODO: Propagate the hint to shader translator so we can write
-    // ddx, ddx_coarse, or ddx_fine depending on the hint.
-    // Ignore for now. It is valid for implementations to ignore hint.
+    
+    
+    
 }
 
 void Context::setViewportParams(GLint x, GLint y, GLsizei width, GLsizei height)
@@ -891,7 +891,7 @@ GLuint Context::createRenderbuffer()
     return mResourceManager->createRenderbuffer();
 }
 
-// Returns an unused framebuffer name
+
 GLuint Context::createFramebuffer()
 {
     GLuint handle = mFramebufferHandleAllocator.allocate();
@@ -1072,7 +1072,7 @@ void Context::bindRenderbuffer(GLuint renderbuffer)
 void Context::useProgram(GLuint program)
 {
     GLuint priorProgram = mState.currentProgram;
-    mState.currentProgram = program;               // Must switch before trying to delete, otherwise it only gets flagged.
+    mState.currentProgram = program;               
 
     if (priorProgram != program)
     {
@@ -1170,7 +1170,7 @@ Texture *Context::getSamplerTexture(unsigned int sampler, TextureType type)
 {
     GLuint texid = mState.samplerTexture[type][sampler].id();
 
-    if (texid == 0)   // Special case: 0 refers to different initial textures based on the target
+    if (texid == 0)   
     {
         switch (type)
         {
@@ -1215,10 +1215,10 @@ bool Context::getBooleanv(GLenum pname, GLboolean *params)
 
 bool Context::getFloatv(GLenum pname, GLfloat *params)
 {
-    // Please note: DEPTH_CLEAR_VALUE is included in our internal getFloatv implementation
-    // because it is stored as a float, despite the fact that the GL ES 2.0 spec names
-    // GetIntegerv as its native query function. As it would require conversion in any
-    // case, this should make no difference to the calling application.
+    
+    
+    
+    
     switch (pname)
     {
       case GL_LINE_WIDTH:               *params = mState.lineWidth;            break;
@@ -1259,11 +1259,11 @@ bool Context::getFloatv(GLenum pname, GLfloat *params)
 
 bool Context::getIntegerv(GLenum pname, GLint *params)
 {
-    // Please note: DEPTH_CLEAR_VALUE is not included in our internal getIntegerv implementation
-    // because it is stored as a float, despite the fact that the GL ES 2.0 spec names
-    // GetIntegerv as its native query function. As it would require conversion in any
-    // case, this should make no difference to the calling application. You may find it in 
-    // Context::getFloatv.
+    
+    
+    
+    
+    
     switch (pname)
     {
       case GL_MAX_VERTEX_ATTRIBS:               *params = gl::MAX_VERTEX_ATTRIBS;               break;
@@ -1275,10 +1275,10 @@ bool Context::getIntegerv(GLenum pname, GLint *params)
       case GL_MAX_FRAGMENT_UNIFORM_VECTORS:     *params = getMaximumFragmentUniformVectors();   break;
       case GL_MAX_RENDERBUFFER_SIZE:            *params = getMaximumRenderbufferDimension();    break;
       case GL_NUM_SHADER_BINARY_FORMATS:        *params = 0;                                    break;
-      case GL_SHADER_BINARY_FORMATS:      /* no shader binary formats are supported */          break;
+      case GL_SHADER_BINARY_FORMATS:                break;
       case GL_ARRAY_BUFFER_BINDING:             *params = mState.arrayBuffer.id();              break;
       case GL_ELEMENT_ARRAY_BUFFER_BINDING:     *params = mState.elementArrayBuffer.id();       break;
-      //case GL_FRAMEBUFFER_BINDING:            // now equivalent to GL_DRAW_FRAMEBUFFER_BINDING_ANGLE
+      
       case GL_DRAW_FRAMEBUFFER_BINDING_ANGLE:   *params = mState.drawFramebuffer;               break;
       case GL_READ_FRAMEBUFFER_BINDING_ANGLE:   *params = mState.readFramebuffer;               break;
       case GL_RENDERBUFFER_BINDING:             *params = mState.renderbuffer.id();             break;
@@ -1488,13 +1488,13 @@ bool Context::getIntegerv(GLenum pname, GLint *params)
 
 bool Context::getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *numParams)
 {
-    // Please note: the query type returned for DEPTH_CLEAR_VALUE in this implementation
-    // is FLOAT rather than INT, as would be suggested by the GL ES 2.0 spec. This is due
-    // to the fact that it is stored internally as a float, and so would require conversion
-    // if returned from Context::getIntegerv. Since this conversion is already implemented 
-    // in the case that one calls glGetIntegerv to retrieve a float-typed state variable, we
-    // place DEPTH_CLEAR_VALUE with the floats. This should make no difference to the calling
-    // application.
+    
+    
+    
+    
+    
+    
+    
     switch (pname)
     {
       case GL_COMPRESSED_TEXTURE_FORMATS:
@@ -1604,9 +1604,9 @@ bool Context::getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *nu
       case GL_SHADER_COMPILER:
       case GL_SAMPLE_COVERAGE_INVERT:
       case GL_DEPTH_WRITEMASK:
-      case GL_CULL_FACE:                // CULL_FACE through DITHER are natural to IsEnabled,
-      case GL_POLYGON_OFFSET_FILL:      // but can be retrieved through the Get{Type}v queries.
-      case GL_SAMPLE_ALPHA_TO_COVERAGE: // For this purpose, they are treated here as bool-natural
+      case GL_CULL_FACE:                
+      case GL_POLYGON_OFFSET_FILL:      
+      case GL_SAMPLE_ALPHA_TO_COVERAGE: 
       case GL_SAMPLE_COVERAGE:
       case GL_SCISSOR_TEST:
       case GL_STENCIL_TEST:
@@ -1657,8 +1657,8 @@ bool Context::getQueryParameterInfo(GLenum pname, GLenum *type, unsigned int *nu
     return true;
 }
 
-// Applies the render target surface, depth stencil surface, viewport rectangle and
-// scissor rectangle to the Direct3D 9 device
+
+
 bool Context::applyRenderTarget(bool ignoreViewport)
 {
     Framebuffer *framebufferObject = getDrawFramebuffer();
@@ -1668,25 +1668,23 @@ bool Context::applyRenderTarget(bool ignoreViewport)
         return error(GL_INVALID_FRAMEBUFFER_OPERATION, false);
     }
 
-    IDirect3DSurface9 *renderTarget = NULL;
-    IDirect3DSurface9 *depthStencil = NULL;
-
     bool renderTargetChanged = false;
     unsigned int renderTargetSerial = framebufferObject->getRenderTargetSerial();
     if (renderTargetSerial != mAppliedRenderTargetSerial)
     {
-        renderTarget = framebufferObject->getRenderTarget();
-
+        IDirect3DSurface9 *renderTarget = framebufferObject->getRenderTarget();
         if (!renderTarget)
         {
-            return false;   // Context must be lost
+            return false;   
         }
         mDevice->SetRenderTarget(0, renderTarget);
         mAppliedRenderTargetSerial = renderTargetSerial;
-        mScissorStateDirty = true; // Scissor area must be clamped to render target's size-- this is different for different render targets.
+        mScissorStateDirty = true; 
         renderTargetChanged = true;
+        renderTarget->Release();
     }
 
+    IDirect3DSurface9 *depthStencil = NULL;
     unsigned int depthbufferSerial = 0;
     unsigned int stencilbufferSerial = 0;
     if (framebufferObject->getDepthbufferType() != GL_NONE)
@@ -1724,17 +1722,14 @@ bool Context::applyRenderTarget(bool ignoreViewport)
 
     if (!mRenderTargetDescInitialized || renderTargetChanged)
     {
+        IDirect3DSurface9 *renderTarget = framebufferObject->getRenderTarget();
         if (!renderTarget)
         {
-            renderTarget = framebufferObject->getRenderTarget();
-
-            if (!renderTarget)
-            {
-                return false;   // Context must be lost
-            }
+            return false;   
         }
         renderTarget->GetDesc(&mRenderTargetDesc);
         mRenderTargetDescInitialized = true;
+        renderTarget->Release();
     }
 
     D3DVIEWPORT9 viewport;
@@ -1764,7 +1759,7 @@ bool Context::applyRenderTarget(bool ignoreViewport)
 
     if (viewport.Width <= 0 || viewport.Height <= 0)
     {
-        return false;   // Nothing to render
+        return false;   
     }
 
     if (renderTargetChanged || !mViewportInitialized || memcmp(&viewport, &mSetViewport, sizeof mSetViewport) != 0)
@@ -1822,7 +1817,7 @@ bool Context::applyRenderTarget(bool ignoreViewport)
     return true;
 }
 
-// Applies the fixed-function state (culling, depth test, alpha blending, stenciling, etc) to the Direct3D 9 device
+
 void Context::applyState(GLenum drawMode)
 {
     Program *programObject = getCurrentProgram();
@@ -1841,11 +1836,11 @@ void Context::applyState(GLenum drawMode)
 
     D3DADAPTER_IDENTIFIER9 *identifier = mDisplay->getAdapterIdentifier();
     bool zeroColorMaskAllowed = identifier->VendorId != 0x1002;
-    // Apparently some ATI cards have a bug where a draw with a zero color
-    // write mask can cause later draws to have incorrect results. Instead,
-    // set a nonzero color write mask but modify the blend state so that no
-    // drawing is done.
-    // http://code.google.com/p/angleproject/issues/detail?id=169
+    
+    
+    
+    
+    
 
     if (mCullStateDirty || mFrontFaceDirty)
     {
@@ -1935,7 +1930,7 @@ void Context::applyState(GLenum drawMode)
             mDevice->SetRenderState(D3DRS_STENCILENABLE, TRUE);
             mDevice->SetRenderState(D3DRS_TWOSIDEDSTENCILMODE, TRUE);
 
-            // FIXME: Unsupported by D3D9
+            
             const D3DRENDERSTATETYPE D3DRS_CCW_STENCILREF = D3DRS_STENCILREF;
             const D3DRENDERSTATETYPE D3DRS_CCW_STENCILMASK = D3DRS_STENCILMASK;
             const D3DRENDERSTATETYPE D3DRS_CCW_STENCILWRITEMASK = D3DRS_STENCILWRITEMASK;
@@ -1947,7 +1942,7 @@ void Context::applyState(GLenum drawMode)
                 return error(GL_INVALID_OPERATION);
             }
 
-            // get the maximum size of the stencil ref
+            
             gl::Renderbuffer *stencilbuffer = framebufferObject->getStencilbuffer();
             GLuint maxStencil = (1 << stencilbuffer->getStencilSize()) - 1;
 
@@ -1994,7 +1989,7 @@ void Context::applyState(GLenum drawMode)
                                                 mState.colorMaskBlue, mState.colorMaskAlpha);
         if (colorMask == 0 && !zeroColorMaskAllowed)
         {
-            // Enable green channel, but set blending so nothing will be drawn.
+            
             mDevice->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_GREEN);
             mDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 
@@ -2095,7 +2090,7 @@ GLenum Context::applyVertexBuffer(GLint first, GLsizei count)
     return mVertexDeclarationCache.applyDeclaration(mDevice, attributes, getCurrentProgram());
 }
 
-// Applies the indices and element array bindings to the Direct3D 9 device
+
 GLenum Context::applyIndexBuffer(const void *indices, GLsizei count, GLenum mode, GLenum type, TranslatedIndexData *indexInfo)
 {
     GLenum err = mIndexDataManager->prepareIndexData(type, count, mState.elementArrayBuffer.get(), indices, indexInfo);
@@ -2112,7 +2107,7 @@ GLenum Context::applyIndexBuffer(const void *indices, GLsizei count, GLenum mode
     return err;
 }
 
-// Applies the shaders and shader constants to the Direct3D 9 device
+
 void Context::applyShaders()
 {
     Program *programObject = getCurrentProgram();
@@ -2130,7 +2125,7 @@ void Context::applyShaders()
     programObject->applyUniforms();
 }
 
-// Applies the textures and sampler states to the Direct3D 9 device
+
 void Context::applyTextures()
 {
     applyTextures(SAMPLER_PIXEL);
@@ -2141,21 +2136,21 @@ void Context::applyTextures()
     }
 }
 
-// For each Direct3D 9 sampler of either the pixel or vertex stage,
-// looks up the corresponding OpenGL texture image unit and texture type,
-// and sets the texture and its addressing/filtering state (or NULL when inactive).
+
+
+
 void Context::applyTextures(SamplerType type)
 {
     Program *programObject = getCurrentProgram();
 
-    int samplerCount = (type == SAMPLER_PIXEL) ? MAX_TEXTURE_IMAGE_UNITS : MAX_VERTEX_TEXTURE_IMAGE_UNITS_VTF;   // Range of Direct3D 9 samplers of given sampler type
+    int samplerCount = (type == SAMPLER_PIXEL) ? MAX_TEXTURE_IMAGE_UNITS : MAX_VERTEX_TEXTURE_IMAGE_UNITS_VTF;   
     unsigned int *appliedTextureSerial = (type == SAMPLER_PIXEL) ? mAppliedTextureSerialPS : mAppliedTextureSerialVS;
     int d3dSamplerOffset = (type == SAMPLER_PIXEL) ? 0 : D3DVERTEXTEXTURESAMPLER0;
     int samplerRange = programObject->getUsedSamplerRange(type);
 
     for (int samplerIndex = 0; samplerIndex < samplerRange; samplerIndex++)
     {
-        int textureUnit = programObject->getSamplerMapping(type, samplerIndex);   // OpenGL texture image unit index
+        int textureUnit = programObject->getSamplerMapping(type, samplerIndex);   
         int d3dSampler = samplerIndex + d3dSamplerOffset;
 
         if (textureUnit != -1)
@@ -2237,7 +2232,7 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
     }
 
     GLsizei outputPitch = ComputePitch(width, format, type, mState.packAlignment);
-    // sized query sanity check
+    
     if (bufSize)
     {
         int requiredSize = outputPitch * height;
@@ -2248,10 +2243,9 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
     }
 
     IDirect3DSurface9 *renderTarget = framebuffer->getRenderTarget();
-
     if (!renderTarget)
     {
-        return;   // Context must be lost, return silently
+        return;   
     }
 
     D3DSURFACE_DESC desc;
@@ -2259,7 +2253,8 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 
     if (desc.MultiSampleType != D3DMULTISAMPLE_NONE)
     {
-        UNIMPLEMENTED();   // FIXME: Requires resolve using StretchRect into non-multisampled render target
+        UNIMPLEMENTED();   
+        renderTarget->Release();
         return error(GL_OUT_OF_MEMORY);
     }
 
@@ -2270,12 +2265,12 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                           desc.Format == D3DFMT_A8R8G8B8 && format == GL_BGRA_EXT && type == GL_UNSIGNED_BYTE;
     if (directToPixels)
     {
-        // Use the pixels ptr as a shared handle to write directly into client's memory
+        
         result = mDevice->CreateOffscreenPlainSurface(desc.Width, desc.Height, desc.Format,
                                                       D3DPOOL_SYSTEMMEM, &systemSurface, &pixels);
         if (FAILED(result))
         {
-            // Try again without the shared handle
+            
             directToPixels = false;
         }
     }
@@ -2292,13 +2287,15 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
     }
 
     result = mDevice->GetRenderTargetData(renderTarget, systemSurface);
+    renderTarget->Release();
+    renderTarget = NULL;
 
     if (FAILED(result))
     {
         systemSurface->Release();
 
-        // It turns out that D3D will sometimes produce more error
-        // codes than those documented.
+        
+        
         if (checkDeviceLost(result))
             return error(GL_OUT_OF_MEMORY);
         else
@@ -2329,7 +2326,7 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
         UNREACHABLE();
         systemSurface->Release();
 
-        return;   // No sensible error to generate
+        return;   
     }
 
     unsigned char *dest = (unsigned char*)pixels;
@@ -2354,9 +2351,9 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
             format == GL_BGRA_EXT &&
             type == GL_UNSIGNED_BYTE)
         {
-            // Fast path for EXT_read_format_bgra, given
-            // an RGBA source buffer.  Note that buffers with no
-            // alpha go through the slow path below.
+            
+            
+            
             memcpy(dest + j * outputPitch,
                    source + j * inputPitch,
                    (rect.right - rect.left) * 4);
@@ -2424,7 +2421,7 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                 break;
               case D3DFMT_A32B32G32R32F:
                 {
-                    // float formats in D3D are stored rgba, rather than the other way round
+                    
                     r = *((float*)(source + 16 * i + j * inputPitch) + 0);
                     g = *((float*)(source + 16 * i + j * inputPitch) + 1);
                     b = *((float*)(source + 16 * i + j * inputPitch) + 2);
@@ -2433,7 +2430,7 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                 break;
               case D3DFMT_A16B16G16R16F:
                 {
-                    // float formats in D3D are stored rgba, rather than the other way round
+                    
                     float abgr[4];
 
                     D3DXFloat16To32Array(abgr, (D3DXFLOAT16*)(source + 8 * i + j * inputPitch), 4);
@@ -2445,7 +2442,7 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                 }
                 break;
               default:
-                UNIMPLEMENTED();   // FIXME
+                UNIMPLEMENTED();   
                 UNREACHABLE();
             }
 
@@ -2473,13 +2470,13 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                     dest[4 * i + j * outputPitch + 3] = (unsigned char)(255 * a + 0.5f);
                     break;
                   case GL_UNSIGNED_SHORT_4_4_4_4_REV_EXT:
-                    // According to the desktop GL spec in the "Transfer of Pixel Rectangles" section
-                    // this type is packed as follows:
-                    //   15   14   13   12   11   10    9    8    7    6    5    4    3    2    1    0
-                    //  --------------------------------------------------------------------------------
-                    // |       4th         |        3rd         |        2nd        |   1st component   |
-                    //  --------------------------------------------------------------------------------
-                    // in the case of BGRA_EXT, B is the first component, G the second, and so forth.
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     dest16[i + j * outputPitch / sizeof(unsigned short)] =
                         ((unsigned short)(15 * a + 0.5f) << 12)|
                         ((unsigned short)(15 * r + 0.5f) << 8) |
@@ -2487,13 +2484,13 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                         ((unsigned short)(15 * b + 0.5f) << 0);
                     break;
                   case GL_UNSIGNED_SHORT_1_5_5_5_REV_EXT:
-                    // According to the desktop GL spec in the "Transfer of Pixel Rectangles" section
-                    // this type is packed as follows:
-                    //   15   14   13   12   11   10    9    8    7    6    5    4    3    2    1    0
-                    //  --------------------------------------------------------------------------------
-                    // | 4th |          3rd           |           2nd          |      1st component     |
-                    //  --------------------------------------------------------------------------------
-                    // in the case of BGRA_EXT, B is the first component, G the second, and so forth.
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     dest16[i + j * outputPitch / sizeof(unsigned short)] =
                         ((unsigned short)(     a + 0.5f) << 15) |
                         ((unsigned short)(31 * r + 0.5f) << 10) |
@@ -2503,10 +2500,10 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height,
                   default: UNREACHABLE();
                 }
                 break;
-              case GL_RGB:   // IMPLEMENTATION_COLOR_READ_FORMAT
+              case GL_RGB:   
                 switch (type)
                 {
-                  case GL_UNSIGNED_SHORT_5_6_5:   // IMPLEMENTATION_COLOR_READ_TYPE
+                  case GL_UNSIGNED_SHORT_5_6_5:   
                     dest16[i + j * outputPitch / sizeof(unsigned short)] = 
                         ((unsigned short)(31 * b + 0.5f) << 0) |
                         ((unsigned short)(63 * g + 0.5f) << 5) |
@@ -2587,7 +2584,7 @@ void Context::clear(GLbitfield mask)
         return error(GL_INVALID_VALUE);
     }
 
-    if (!applyRenderTarget(true))   // Clips the clear to the scissor rectangle but not the viewport
+    if (!applyRenderTarget(true))   
     {
         return;
     }
@@ -2600,14 +2597,15 @@ void Context::clear(GLbitfield mask)
     int stencil = mState.stencilClearValue & 0x000000FF;
 
     IDirect3DSurface9 *renderTarget = framebufferObject->getRenderTarget();
-
     if (!renderTarget)
     {
-        return;   // Context must be lost, return silently
+        return;   
     }
 
     D3DSURFACE_DESC desc;
     renderTarget->GetDesc(&desc);
+    renderTarget->Release();
+    renderTarget = NULL;
 
     bool alphaUnmasked = (dx2es::GetAlphaSize(desc.Format) == 0) || mState.colorMaskAlpha;
 
@@ -2619,9 +2617,9 @@ void Context::clear(GLbitfield mask)
 
     if (needMaskedColorClear || needMaskedStencilClear)
     {
-        // State which is altered in all paths from this point to the clear call is saved.
-        // State which is altered in only some paths will be flagged dirty in the case that
-        //  that path is taken.
+        
+        
+        
         HRESULT hr;
         if (mMaskedClearSavedState == NULL)
         {
@@ -2708,7 +2706,7 @@ void Context::clear(GLbitfield mask)
         mDevice->SetRenderState(D3DRS_TEXTUREFACTOR, color);
         mDevice->SetRenderState(D3DRS_MULTISAMPLEMASK, 0xFFFFFFFF);
 
-        float quad[4][4];   // A quadrilateral covering the target, aligned to match the edges
+        float quad[4][4];   
         quad[0][0] = -0.5f;
         quad[0][1] = desc.Height - 0.5f;
         quad[0][2] = 0.0f;
@@ -2795,7 +2793,7 @@ void Context::drawArrays(GLenum mode, GLint first, GLsizei count)
         
         mDevice->DrawPrimitive(primitiveType, 0, primitiveCount);
 
-        if (mode == GL_LINE_LOOP)   // Draw the last segment separately
+        if (mode == GL_LINE_LOOP)   
         {
             drawClosingLine(0, count - 1, 0);
         }
@@ -2860,16 +2858,17 @@ void Context::drawElements(GLenum mode, GLsizei count, GLenum type, const void *
 
         mDevice->DrawIndexedPrimitive(primitiveType, -(INT)indexInfo.minIndex, indexInfo.minIndex, vertexCount, indexInfo.startIndex, primitiveCount);
 
-        if (mode == GL_LINE_LOOP)   // Draw the last segment separately
+        if (mode == GL_LINE_LOOP)   
         {
             drawClosingLine(count, type, indices, indexInfo.minIndex);
         }
     }
 }
 
-// Implements glFlush when block is false, glFinish when block is true
+
 void Context::sync(bool block)
 {
+    egl::Display *display = getDisplay();
     IDirect3DQuery9 *eventQuery = NULL;
     HRESULT result;
 
@@ -2900,8 +2899,15 @@ void Context::sync(bool block)
 
         if(block && result == S_FALSE)
         {
-            // Keep polling, but allow other threads to do something useful first
+            
             Sleep(0);
+            
+            
+            
+            if (display->testDeviceLost())
+            {
+                result = D3DERR_DEVICELOST;
+            }
         }
     }
     while(block && result == S_FALSE);
@@ -3034,8 +3040,8 @@ void Context::recordInvalidFramebufferOperation()
     mInvalidFramebufferOperation = true;
 }
 
-// Get one of the recorded errors and clear its flag, if any.
-// [OpenGL ES 2.0.24] section 2.5 page 13.
+
+
 GLenum Context::getError()
 {
     if (mInvalidEnum)
@@ -3084,7 +3090,7 @@ GLenum Context::getResetStatus()
 
         if (lost)
         {
-            mDisplay->notifyDeviceLost();   // Sets mResetStatus
+            mDisplay->notifyDeviceLost();   
         }
     }
 
@@ -3252,9 +3258,9 @@ bool Context::supportsNonPower2Texture() const
 
 void Context::detachBuffer(GLuint buffer)
 {
-    // [OpenGL ES 2.0.24] section 2.9 page 22:
-    // If a buffer object is deleted while it is bound, all bindings to that object in the current context
-    // (i.e. in the thread that called Delete-Buffers) are reset to zero.
+    
+    
+    
 
     if (mState.arrayBuffer.id() == buffer)
     {
@@ -3277,9 +3283,9 @@ void Context::detachBuffer(GLuint buffer)
 
 void Context::detachTexture(GLuint texture)
 {
-    // [OpenGL ES 2.0.24] section 3.8 page 84:
-    // If a texture object is deleted, it is as if all texture units which are bound to that texture object are
-    // rebound to texture object zero
+    
+    
+    
 
     for (int type = 0; type < TEXTURE_TYPE_COUNT; type++)
     {
@@ -3292,10 +3298,10 @@ void Context::detachTexture(GLuint texture)
         }
     }
 
-    // [OpenGL ES 2.0.24] section 4.4 page 112:
-    // If a texture object is deleted while its image is attached to the currently bound framebuffer, then it is
-    // as if FramebufferTexture2D had been called, with a texture of 0, for each attachment point to which this
-    // image was attached in the currently bound framebuffer.
+    
+    
+    
+    
 
     Framebuffer *readFramebuffer = getReadFramebuffer();
     Framebuffer *drawFramebuffer = getDrawFramebuffer();
@@ -3313,9 +3319,9 @@ void Context::detachTexture(GLuint texture)
 
 void Context::detachFramebuffer(GLuint framebuffer)
 {
-    // [OpenGL ES 2.0.24] section 4.4 page 107:
-    // If a framebuffer that is currently bound to the target FRAMEBUFFER is deleted, it is as though
-    // BindFramebuffer had been executed with the target of FRAMEBUFFER and framebuffer of zero.
+    
+    
+    
 
     if (mState.readFramebuffer == framebuffer)
     {
@@ -3330,19 +3336,19 @@ void Context::detachFramebuffer(GLuint framebuffer)
 
 void Context::detachRenderbuffer(GLuint renderbuffer)
 {
-    // [OpenGL ES 2.0.24] section 4.4 page 109:
-    // If a renderbuffer that is currently bound to RENDERBUFFER is deleted, it is as though BindRenderbuffer
-    // had been executed with the target RENDERBUFFER and name of zero.
+    
+    
+    
 
     if (mState.renderbuffer.id() == renderbuffer)
     {
         bindRenderbuffer(0);
     }
 
-    // [OpenGL ES 2.0.24] section 4.4 page 111:
-    // If a renderbuffer object is deleted while its image is attached to the currently bound framebuffer,
-    // then it is as if FramebufferRenderbuffer had been called, with a renderbuffer of 0, for each attachment
-    // point to which this image was attached in the currently bound framebuffer.
+    
+    
+    
+    
 
     Framebuffer *readFramebuffer = getReadFramebuffer();
     Framebuffer *drawFramebuffer = getDrawFramebuffer();
@@ -3370,7 +3376,7 @@ Texture *Context::getIncompleteTexture(TextureType type)
         {
           default:
             UNREACHABLE();
-            // default falls through to TEXTURE_2D
+            
 
           case TEXTURE_2D:
             {
@@ -3438,15 +3444,15 @@ void Context::setVertexAttrib(GLuint index, const GLfloat *values)
     mVertexDataManager->dirtyCurrentValue(index);
 }
 
-// keep list sorted in following order
-// OES extensions
-// EXT extensions
-// Vendor extensions
+
+
+
+
 void Context::initExtensionString()
 {
     mExtensionString = "";
 
-    // OES extensions
+    
     if (supports32bitIndices())
     {
         mExtensionString += "GL_OES_element_index_uint ";
@@ -3478,7 +3484,7 @@ void Context::initExtensionString()
         mExtensionString += "GL_OES_texture_npot ";
     }
 
-    // Multi-vendor (EXT) extensions
+    
     mExtensionString += "GL_EXT_read_format_bgra ";
     mExtensionString += "GL_EXT_robustness ";
 
@@ -3490,7 +3496,7 @@ void Context::initExtensionString()
     mExtensionString += "GL_EXT_texture_format_BGRA8888 ";
     mExtensionString += "GL_EXT_texture_storage ";
 
-    // ANGLE-specific extensions
+    
     mExtensionString += "GL_ANGLE_framebuffer_blit ";
     if (getMaxSupportedSamples() != 0)
     {
@@ -3511,7 +3517,7 @@ void Context::initExtensionString()
     mExtensionString += "GL_ANGLE_texture_usage ";
     mExtensionString += "GL_ANGLE_translated_shader_source ";
 
-    // Other vendor-specific extensions
+    
     if (supportsEventQueries())
     {
         mExtensionString += "GL_NV_fence ";
@@ -3604,9 +3610,9 @@ void Context::blitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1
 
     if (mState.scissorTest)
     {
-        // Only write to parts of the destination framebuffer which pass the scissor test
-        // Please note: the destRect is now in D3D-style coordinates, so the *top* of the
-        // rect will be checked against scissorY, rather than the bottom.
+        
+        
+        
         if (destRect.left < mState.scissorX)
         {
             int xDiff = mState.scissorX - destRect.left;
@@ -3642,8 +3648,8 @@ void Context::blitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1
     RECT sourceTrimmedRect = sourceScissoredRect;
     RECT destTrimmedRect = destScissoredRect;
 
-    // The source & destination rectangles also may need to be trimmed if they fall out of the bounds of 
-    // the actual draw and read surfaces.
+    
+    
     if (sourceTrimmedRect.left < 0)
     {
         int xDiff = 0 - sourceTrimmedRect.left;
@@ -3737,8 +3743,8 @@ void Context::blitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1
         Renderbuffer *readDSBuffer = NULL;
         Renderbuffer *drawDSBuffer = NULL;
 
-        // We support OES_packed_depth_stencil, and do not support a separately attached depth and stencil buffer, so if we have
-        // both a depth and stencil buffer, it will be the same buffer.
+        
+        
 
         if (mask & GL_DEPTH_BUFFER_BIT)
         {
@@ -3775,7 +3781,7 @@ void Context::blitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1
         if (partialBufferCopy)
         {
             ERR("Only whole-buffer depth and stencil blits are supported by this implementation.");
-            return error(GL_INVALID_OPERATION); // only whole-buffer copies are permitted
+            return error(GL_INVALID_OPERATION); 
         }
 
         if ((drawDSBuffer && drawDSBuffer->getSamples() != 0) || 
@@ -3791,8 +3797,14 @@ void Context::blitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1
 
         if (blitRenderTarget)
         {
-            HRESULT result = mDevice->StretchRect(readFramebuffer->getRenderTarget(), &sourceTrimmedRect, 
-                                                 drawFramebuffer->getRenderTarget(), &destTrimmedRect, D3DTEXF_NONE);
+            IDirect3DSurface9* readRenderTarget = readFramebuffer->getRenderTarget();
+            IDirect3DSurface9* drawRenderTarget = drawFramebuffer->getRenderTarget();
+
+            HRESULT result = mDevice->StretchRect(readRenderTarget, &sourceTrimmedRect, 
+                                                  drawRenderTarget, &destTrimmedRect, D3DTEXF_NONE);
+
+            readRenderTarget->Release();
+            drawRenderTarget->Release();
 
             if (FAILED(result))
             {
@@ -3896,8 +3908,8 @@ GLenum VertexDeclarationCache::applyDeclaration(IDirect3DDevice9 *device, Transl
     {
         lastCache->vertexDeclaration->Release();
         lastCache->vertexDeclaration = NULL;
-        // mLastSetVDecl is set to the replacement, so we don't have to worry
-        // about it.
+        
+        
     }
 
     memcpy(lastCache->cachedElements, elements, (element - elements) * sizeof(D3DVERTEXELEMENT9));

@@ -1,38 +1,38 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Initial Developer of the Original Code is Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Bas Schouten <bschouten@mozilla.com>
- *   Vladimir Vukicevic <vladimir@pobox.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "GLContextProvider.h"
 #include "GLContext.h"
@@ -74,7 +74,7 @@ CreateDummyWindow(HDC *aWindowDC = nsnull)
         wc.lpszClassName = L"GLContextWGLClass";
         if (!RegisterClassW(&wc)) {
             NS_WARNING("Failed to register GLContextWGLClass?!");
-            // er. failed to register our class?
+            
             return NULL;
         }
     }
@@ -163,12 +163,12 @@ WGLLibrary::EnsureInitialized()
         return false;
     }
 
-    // This is ridiculous -- we have to actually create a context to
-    // get the OpenGL ICD to load.
+    
+    
     gSharedWindow = CreateDummyWindow(&gSharedWindowDC);
     NS_ENSURE_TRUE(gSharedWindow, false);
 
-    // create rendering context
+    
     gSharedWindowGLContext = fCreateContext(gSharedWindowDC);
     NS_ENSURE_TRUE(gSharedWindowGLContext, false);
 
@@ -180,8 +180,8 @@ WGLLibrary::EnsureInitialized()
         return false;
     }
 
-    // Now we can grab all the other symbols that we couldn't without having
-    // a context current.
+    
+    
 
     LibrarySymbolLoader::SymLoadStruct pbufferSymbols[] = {
         { (PRFuncPtr*) &fCreatePbuffer, { "wglCreatePbufferARB", "wglCreatePbufferEXT", NULL } },
@@ -201,14 +201,14 @@ WGLLibrary::EnsureInitialized()
     if (!LibrarySymbolLoader::LoadSymbols(mOGLLibrary, &pbufferSymbols[0],
          (LibrarySymbolLoader::PlatformLookupFunction)fGetProcAddress))
     {
-        // this isn't an error, just means that pbuffers aren't supported
+        
         fCreatePbuffer = nsnull;
     }
 
     if (!LibrarySymbolLoader::LoadSymbols(mOGLLibrary, &pixFmtSymbols[0],
          (LibrarySymbolLoader::PlatformLookupFunction)fGetProcAddress))
     {
-        // this isn't an error, just means that we don't have the pixel format extension
+        
         fChoosePixelFormat = nsnull;
     }
 
@@ -234,7 +234,7 @@ WGLLibrary::EnsureInitialized()
         }
     }
 
-    // reset back to the previous context, just in case
+    
     fMakeCurrent(curDC, curCtx);
 
     if (mHasRobustness) {
@@ -255,9 +255,9 @@ WGLLibrary::EnsureInitialized()
 
     mInitialized = true;
 
-    // Call this to create the global GLContext instance,
-    // and to check for errors.  Note that this must happen /after/
-    // setting mInitialized to TRUE, or an infinite loop results.
+    
+    
+    
     if (GLContextProviderWGL::GetGlobalContext() == nsnull) {
         mInitialized = false;
         return false;
@@ -332,10 +332,10 @@ public:
     {
         BOOL succeeded = true;
 
-        // wglGetCurrentContext seems to just pull the HGLRC out
-        // of its TLS slot, so no need to do our own tls slot.
-        // You would think that wglMakeCurrent would avoid doing
-        // work if mContext was already current, but not so much..
+        
+        
+        
+        
         if (aForce || sWGLLibrary.fGetCurrentContext() != mContext) {
             succeeded = sWGLLibrary.fMakeCurrent(mDC, mContext);
             NS_ASSERTION(succeeded, "Failed to make GL context current!");
@@ -443,9 +443,9 @@ GLContextWGL::UnbindTex2DOffscreen(GLContext *aOffscreen)
 
     GLContextWGL *offs = static_cast<GLContextWGL*>(aOffscreen);
     if (offs->mPBuffer) {
-        // XXX so, according to the extension, ReleaseTexImage is not required to
-        // preserve color buffer contents.  This sucks, but everywhere that I've
-        // tried it the color buffer is preserved.  So let's cross our fingers..
+        
+        
+        
         sWGLLibrary.fReleaseTexImage(offs->mPBuffer, LOCAL_WGL_FRONT_LEFT_ARB);
     }
 }
@@ -457,7 +457,7 @@ GetMaxSize(HDC hDC, int format, gfxIntSize& size)
     int query[] = {LOCAL_WGL_MAX_PBUFFER_WIDTH_ARB, LOCAL_WGL_MAX_PBUFFER_HEIGHT_ARB};
     int result[2];
 
-    // (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int* piAttributes, int *piValues)
+    
     if (!sWGLLibrary.fGetPixelFormatAttribiv(hDC, format, 0, 2, query, result))
         return false;
 
@@ -538,11 +538,11 @@ GLContextProviderWGL::CreateForWindow(nsIWidget *aWidget)
         return nsnull;
     }
 
-    /**
-       * We need to make sure we call SetPixelFormat -after- calling 
-       * EnsureInitialized, otherwise it can load/unload the dll and 
-       * wglCreateContext will fail.
-       */
+    
+
+
+
+
 
     HDC dc = (HDC)aWidget->GetNativeData(NS_NATIVE_GRAPHIC);
 
@@ -571,6 +571,14 @@ GLContextProviderWGL::CreateForWindow(nsIWidget *aWidget)
             if (context && shareContext && !sWGLLibrary.fShareLists(shareContext->Context(), context)) {
                 shareContext = nsnull;
             }
+        }
+    } else {
+        context = sWGLLibrary.fCreateContext(dc);
+        if (context &&
+            shareContext &&
+            !sWGLLibrary.fShareLists(shareContext->Context(), context))
+        {
+            shareContext = nsnull;
         }
     }
 
@@ -645,7 +653,7 @@ CreatePBufferOffscreenContext(const gfxIntSize& aSize,
         return nsnull;
     }
 
-    // XXX add back the priority choosing code here
+    
     int chosenFormat = formats[0];
 
     if (!IsValidSizeForFormat(gSharedWindowDC, chosenFormat, aSize))
@@ -692,7 +700,7 @@ CreatePBufferOffscreenContext(const gfxIntSize& aSize,
 static already_AddRefed<GLContextWGL>
 CreateWindowOffscreenContext(const ContextFormat& aFormat)
 {
-    // CreateWindowOffscreenContext must return a global-shared context
+    
     GLContextWGL *shareContext = GetGlobalContextWGL();
     if (!shareContext) {
         return nsnull;
@@ -746,8 +754,8 @@ GLContextProviderWGL::CreateOffscreen(const gfxIntSize& aSize,
 
     nsRefPtr<GLContextWGL> glContext;
 
-    // Always try to create a pbuffer context first, because we
-    // want the context isolation.
+    
+    
     NS_ENSURE_TRUE(Preferences::GetRootBranch(), nsnull);
     const bool preferFBOs = Preferences::GetBool("wgl.prefer-fbo", false);
     if (!preferFBOs &&
@@ -757,7 +765,7 @@ GLContextProviderWGL::CreateOffscreen(const gfxIntSize& aSize,
         glContext = CreatePBufferOffscreenContext(aSize, aFormat);
     }
 
-    // If it failed, then create a window context and use a FBO.
+    
     if (!glContext) {
         glContext = CreateWindowOffscreenContext(aFormat);
     }
@@ -797,7 +805,7 @@ GLContextProviderWGL::GetGlobalContext()
     if (!triedToCreateContext && !gGlobalContext) {
         triedToCreateContext = true;
 
-        // conveniently, we already have what we need...
+        
         gGlobalContext = new GLContextWGL(ContextFormat(ContextFormat::BasicRGB24), nsnull,
                                           gSharedWindowDC, gSharedWindowGLContext);
         if (!gGlobalContext->Init()) {
@@ -818,5 +826,5 @@ GLContextProviderWGL::Shutdown()
     gGlobalContext = nsnull;
 }
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 

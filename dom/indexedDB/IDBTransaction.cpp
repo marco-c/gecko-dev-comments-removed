@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Indexed Database.
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Ben Turner <bent.mozilla@gmail.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "IDBTransaction.h"
 
@@ -74,8 +74,8 @@ DoomCachedStatements(const nsACString& aQuery,
   return PL_DHASH_REMOVE;
 }
 
-
-
+// This runnable doesn't actually do anything beyond "prime the pump" and get
+// transactions in the right order on the transaction thread pool.
 class StartTransactionRunnable : public nsIRunnable
 {
 public:
@@ -83,12 +83,12 @@ public:
 
   NS_IMETHOD Run()
   {
-    
+    // NOP
     return NS_OK;
   }
 };
 
-
+// Could really use those NS_REFCOUNTING_HAHA_YEAH_RIGHT macros here.
 NS_IMETHODIMP_(nsrefcnt) StartTransactionRunnable::AddRef()
 {
   return 2;
@@ -103,9 +103,9 @@ NS_IMPL_QUERY_INTERFACE1(StartTransactionRunnable, nsIRunnable)
 
 StartTransactionRunnable gStartTransactionRunnable;
 
-} 
+} // anonymous namespace
 
-
+// static
 already_AddRefed<IDBTransaction>
 IDBTransaction::Create(IDBDatabase* aDatabase,
                        nsTArray<nsString>& aObjectStoreNames,
@@ -121,6 +121,8 @@ IDBTransaction::Create(IDBDatabase* aDatabase,
 
   transaction->mDatabase = aDatabase;
   transaction->mMode = aMode;
+  
+  transaction->mDatabaseInfo = aDatabase->Info();
 
   if (!transaction->mObjectStoreNames.AppendElements(aObjectStoreNames)) {
     NS_ERROR("Out of memory!");
@@ -137,7 +139,7 @@ IDBTransaction::Create(IDBDatabase* aDatabase,
       do_QueryInterface(NS_GetCurrentThread());
     NS_ENSURE_TRUE(thread, nsnull);
 
-    
+    // We need the current recursion depth first.
     PRUint32 depth;
     nsresult rv = thread->GetRecursionDepth(&depth);
     NS_ENSURE_SUCCESS(rv, nsnull);
@@ -211,8 +213,13 @@ IDBTransaction::OnRequestFinished()
 }
 
 void
-IDBTransaction::ReleaseCachedObjectStore(const nsAString& aName)
+IDBTransaction::RemoveObjectStore(const nsAString& aName)
 {
+  NS_ASSERTION(mMode == nsIIDBTransaction::VERSION_CHANGE,
+               "Only remove object stores on VERSION_CHANGE transactions");
+
+  mDatabaseInfo->RemoveObjectStore(aName);
+
   for (PRUint32 i = 0; i < mCreatedObjectStores.Length(); i++) {
     if (mCreatedObjectStores[i]->Name() == aName) {
       mCreatedObjectStores.RemoveElementAt(i);
@@ -237,7 +244,8 @@ IDBTransaction::CommitOrRollback()
   TransactionThreadPool* pool = TransactionThreadPool::GetOrCreate();
   NS_ENSURE_STATE(pool);
 
-  nsRefPtr<CommitHelper> helper(new CommitHelper(this, mListener));
+  nsRefPtr<CommitHelper> helper(new CommitHelper(this, mListener,
+                                                 mCreatedObjectStores));
 
   mCachedStatements.Enumerate(DoomCachedStatements, helper);
   NS_ASSERTION(!mCachedStatements.Count(), "Statements left!");
@@ -364,119 +372,6 @@ IDBTransaction::GetOrCreateConnection(mozIStorageConnection** aResult)
 }
 
 already_AddRefed<mozIStorageStatement>
-IDBTransaction::AddStatement(bool aCreate,
-                             bool aOverwrite,
-                             bool aAutoIncrement)
-{
-#ifdef DEBUG
-  if (!aCreate) {
-    NS_ASSERTION(aOverwrite, "Bad param combo!");
-  }
-#endif
-
-  if (aAutoIncrement) {
-    if (aCreate) {
-      if (aOverwrite) {
-        return GetCachedStatement(
-          "INSERT OR FAIL INTO ai_object_data (object_store_id, id, data, "
-          "file_ids) "
-          "VALUES (:osid, :key_value, :data, :file_ids)"
-        );
-      }
-      return GetCachedStatement(
-        "INSERT INTO ai_object_data (object_store_id, data, file_ids) "
-        "VALUES (:osid, :data, :file_ids)"
-      );
-    }
-    return GetCachedStatement(
-      "UPDATE ai_object_data "
-      "SET data = :data, file_ids = :file_ids "
-      "WHERE object_store_id = :osid "
-      "AND id = :key_value"
-    );
-  }
-  if (aCreate) {
-    if (aOverwrite) {
-      return GetCachedStatement(
-        "INSERT OR FAIL INTO object_data (object_store_id, key_value, data, "
-        "file_ids) "
-        "VALUES (:osid, :key_value, :data, :file_ids)"
-      );
-    }
-    return GetCachedStatement(
-      "INSERT INTO object_data (object_store_id, key_value, data, file_ids) "
-      "VALUES (:osid, :key_value, :data, :file_ids)"
-    );
-  }
-  return GetCachedStatement(
-    "UPDATE object_data "
-    "SET data = :data, file_ids = :file_ids "
-    "WHERE object_store_id = :osid "
-    "AND key_value = :key_value"
-  );
-}
-
-already_AddRefed<mozIStorageStatement>
-IDBTransaction::IndexDataInsertStatement(bool aAutoIncrement,
-                                         bool aUnique)
-{
-  if (aAutoIncrement) {
-    if (aUnique) {
-      return GetCachedStatement(
-        "INSERT INTO ai_unique_index_data "
-          "(index_id, ai_object_data_id, value) "
-        "VALUES (:index_id, :object_data_id, :value)"
-      );
-    }
-    return GetCachedStatement(
-      "INSERT OR IGNORE INTO ai_index_data "
-        "(index_id, ai_object_data_id, value) "
-      "VALUES (:index_id, :object_data_id, :value)"
-    );
-  }
-  if (aUnique) {
-    return GetCachedStatement(
-      "INSERT INTO unique_index_data "
-        "(index_id, object_data_id, object_data_key, value) "
-      "VALUES (:index_id, :object_data_id, :object_data_key, :value)"
-    );
-  }
-  return GetCachedStatement(
-    "INSERT OR IGNORE INTO index_data ("
-      "index_id, object_data_id, object_data_key, value) "
-    "VALUES (:index_id, :object_data_id, :object_data_key, :value)"
-  );
-}
-
-already_AddRefed<mozIStorageStatement>
-IDBTransaction::IndexDataDeleteStatement(bool aAutoIncrement,
-                                         bool aUnique)
-{
-  if (aAutoIncrement) {
-    if (aUnique) {
-      return GetCachedStatement(
-        "DELETE FROM ai_unique_index_data "
-        "WHERE ai_object_data_id = :object_data_id"
-      );
-    }
-    return GetCachedStatement(
-      "DELETE FROM ai_index_data "
-      "WHERE ai_object_data_id = :object_data_id"
-    );
-  }
-  if (aUnique) {
-    return GetCachedStatement(
-      "DELETE FROM unique_index_data "
-      "WHERE object_data_id = :object_data_id"
-    );
-  }
-  return GetCachedStatement(
-    "DELETE FROM index_data "
-    "WHERE object_data_id = :object_data_id"
-  );
-}
-
-already_AddRefed<mozIStorageStatement>
 IDBTransaction::GetCachedStatement(const nsACString& aQuery)
 {
   NS_ASSERTION(!NS_IsMainThread(), "Wrong thread!");
@@ -515,18 +410,18 @@ IDBTransaction::IsOpen() const
 {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 
-  
+  // If we haven't started anything then we're open.
   if (mReadyState == nsIIDBTransaction::INITIAL) {
     NS_ASSERTION(AsyncConnectionHelper::GetCurrentTransaction() != this,
                  "This should be some other transaction (or null)!");
     return true;
   }
 
-  
-  
-  
-  
-  
+  // If we've already started then we need to check to see if we still have the
+  // mCreating flag set. If we do (i.e. we haven't returned to the event loop
+  // from the time we were created) then we are open. Otherwise check the
+  // currently running transaction to see if it's the same. We only allow other
+  // requests to be made if this transaction is currently running.
   if (mReadyState == nsIIDBTransaction::LOADING) {
     if (mCreating) {
       return true;
@@ -557,13 +452,9 @@ IDBTransaction::GetOrCreateObjectStore(const nsAString& aName,
     }
   }
 
-  retval = IDBObjectStore::Create(this, aObjectStoreInfo);
-  NS_ENSURE_TRUE(retval, nsnull);
+  retval = IDBObjectStore::Create(this, aObjectStoreInfo, mDatabaseInfo->id);
 
-  if (!mCreatedObjectStores.AppendElement(retval)) {
-    NS_WARNING("Out of memory!");
-    return nsnull;
-  }
+  mCreatedObjectStores.AppendElement(retval);
 
   return retval.forget();
 }
@@ -600,7 +491,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(IDBTransaction,
                                                 nsDOMEventTargetHelper)
-  
+  // Don't unlink mDatabase!
   NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mOnErrorListener)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mOnCompleteListener)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mOnAbortListener)
@@ -658,12 +549,7 @@ IDBTransaction::GetObjectStoreNames(nsIDOMDOMStringList** aObjectStores)
   nsTArray<nsString>* arrayOfNames;
 
   if (mMode == IDBTransaction::VERSION_CHANGE) {
-    DatabaseInfo* info = mDatabase->Info();
-
-    if (!info->GetObjectStoreNames(stackArray)) {
-      NS_ERROR("Out of memory!");
-      return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-    }
+    mDatabaseInfo->GetObjectStoreNames(stackArray);
 
     arrayOfNames = &stackArray;
   }
@@ -695,7 +581,7 @@ IDBTransaction::ObjectStore(const nsAString& aName,
 
   if (mMode == nsIIDBTransaction::VERSION_CHANGE ||
       mObjectStoreNames.Contains(aName)) {
-    mDatabase->Info()->GetObjectStore(aName, &info);
+    info = mDatabaseInfo->GetObjectStore(aName);
   }
 
   if (!info) {
@@ -714,8 +600,8 @@ IDBTransaction::Abort()
 {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 
-  
-  
+  // We can't use IsOpen here since we need it to be possible to call Abort()
+  // even from outside of transaction callbacks.
   if (mReadyState != IDBTransaction::INITIAL &&
       mReadyState != IDBTransaction::LOADING) {
     return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
@@ -727,12 +613,12 @@ IDBTransaction::Abort()
   mReadyState = nsIIDBTransaction::DONE;
 
   if (Mode() == nsIIDBTransaction::VERSION_CHANGE) {
-    
+    // If a version change transaction is aborted, the db must be closed
     mDatabase->Close();
   }
 
-  
-  
+  // Fire the abort event if there are no outstanding requests. Otherwise the
+  // abort event will be fired when all outstanding requests finish.
   if (needToCommitOrRollback) {
     return CommitOrRollback();
   }
@@ -795,7 +681,7 @@ IDBTransaction::PreHandleEvent(nsEventChainPreVisitor& aVisitor)
   return NS_OK;
 }
 
-
+// XXX Once nsIThreadObserver gets split this method will disappear.
 NS_IMETHODIMP
 IDBTransaction::OnDispatchedEvent(nsIThreadInternal* aThread)
 {
@@ -826,10 +712,10 @@ IDBTransaction::AfterProcessNextEvent(nsIThreadInternal* aThread,
   NS_ASSERTION(mCreating, "Should be true!");
 
   if (aRecursionDepth == mCreatedRecursionDepth) {
-    
+    // We're back at the event loop, no longer newborn.
     mCreating = false;
 
-    
+    // Maybe set the readyState to DONE if there were no requests generated.
     if (mReadyState == nsIIDBTransaction::INITIAL) {
       mReadyState = nsIIDBTransaction::DONE;
 
@@ -838,7 +724,7 @@ IDBTransaction::AfterProcessNextEvent(nsIThreadInternal* aThread,
       }
     }
 
-    
+    // No longer need to observe thread events.
     if(NS_FAILED(aThread->RemoveObserver(this))) {
       NS_ERROR("Failed to remove observer!");
     }
@@ -847,15 +733,23 @@ IDBTransaction::AfterProcessNextEvent(nsIThreadInternal* aThread,
   return NS_OK;
 }
 
-CommitHelper::CommitHelper(IDBTransaction* aTransaction,
-                           IDBTransactionListener* aListener)
+CommitHelper::CommitHelper(
+              IDBTransaction* aTransaction,
+              IDBTransactionListener* aListener,
+              const nsTArray<nsRefPtr<IDBObjectStore> >& aUpdatedObjectStores)
 : mTransaction(aTransaction),
   mListener(aListener),
-  mAborted(!!aTransaction->mAborted),
-  mHaveMetadata(false)
+  mAborted(!!aTransaction->mAborted)
 {
   mConnection.swap(aTransaction->mConnection);
   mUpdateFileRefcountFunction.swap(aTransaction->mUpdateFileRefcountFunction);
+
+  for (PRUint32 i = 0; i < aUpdatedObjectStores.Length(); i++) {
+    ObjectStoreInfo* info = aUpdatedObjectStores[i]->Info();
+    if (info->comittedAutoIncrementId != info->nextAutoIncrementId) {
+      mAutoIncrementObjectStores.AppendElement(aUpdatedObjectStores[i]);
+    }
+  }
 }
 
 CommitHelper::~CommitHelper()
@@ -872,8 +766,8 @@ CommitHelper::Run()
 
     mTransaction->mReadyState = nsIIDBTransaction::DONE;
 
-    
-    
+    // Release file infos on the main thread, so they will eventually get
+    // destroyed on correct thread.
     mTransaction->ClearCreatedFileInfos();
     if (mUpdateFileRefcountFunction) {
       mUpdateFileRefcountFunction->ClearFileInfoEntries();
@@ -882,19 +776,11 @@ CommitHelper::Run()
 
     nsCOMPtr<nsIDOMEvent> event;
     if (mAborted) {
-      if (mHaveMetadata) {
-        NS_ASSERTION(mTransaction->Mode() == nsIIDBTransaction::VERSION_CHANGE,
-                     "Bad transaction type!");
-
-        DatabaseInfo* dbInfo = mTransaction->Database()->Info();
-
-        if (NS_FAILED(IDBFactory::UpdateDatabaseMetadata(dbInfo, mOldVersion,
-                                                         mOldObjectStores))) {
-          NS_WARNING("Failed to update database metadata!");
-        }
-        else {
-          NS_ASSERTION(mOldObjectStores.IsEmpty(), "Should have swapped!");
-        }
+      if (mTransaction->Mode() == nsIIDBTransaction::VERSION_CHANGE) {
+        // This will make the database take a snapshot of it's DatabaseInfo
+        mTransaction->Database()->Close();
+        // Then remove the info from the hash as it contains invalid data.
+        DatabaseInfo::Remove(mTransaction->Database()->Id());
       }
 
       event = CreateGenericEvent(NS_LITERAL_STRING(ABORT_EVT_STR),
@@ -915,7 +801,7 @@ CommitHelper::Run()
     mTransaction->mFiredCompleteOrAbort = true;
 #endif
 
-    
+    // Tell the listener (if we have one) that we're done
     if (mListener) {
       mListener->NotifyTransactionComplete(mTransaction);
     }
@@ -938,12 +824,17 @@ CommitHelper::Run()
       mAborted = true;
     }
 
+    if (!mAborted && NS_FAILED(WriteAutoIncrementCounts())) {
+      mAborted = true;
+    }
+
     if (!mAborted) {
       NS_NAMED_LITERAL_CSTRING(release, "COMMIT TRANSACTION");
       if (NS_SUCCEEDED(mConnection->ExecuteSimpleSQL(release))) {
         if (mUpdateFileRefcountFunction) {
           mUpdateFileRefcountFunction->UpdateFileInfos();
         }
+        CommitAutoIncrementCounts();
       }
       else {
         mAborted = true;
@@ -951,22 +842,10 @@ CommitHelper::Run()
     }
 
     if (mAborted) {
+      RevertAutoIncrementCounts();
       NS_NAMED_LITERAL_CSTRING(rollback, "ROLLBACK TRANSACTION");
       if (NS_FAILED(mConnection->ExecuteSimpleSQL(rollback))) {
         NS_WARNING("Failed to rollback transaction!");
-      }
-
-      if (mTransaction->Mode() == nsIIDBTransaction::VERSION_CHANGE) {
-        nsresult rv =
-          IDBFactory::LoadDatabaseInformation(mConnection,
-                                              mTransaction->Database()->Id(),
-                                              &mOldVersion, mOldObjectStores);
-        if (NS_SUCCEEDED(rv)) {
-          mHaveMetadata = true;
-        }
-        else {
-          NS_WARNING("Failed to get database information!");
-        }
       }
     }
   }
@@ -989,6 +868,55 @@ CommitHelper::Run()
   }
 
   return NS_OK;
+}
+
+nsresult
+CommitHelper::WriteAutoIncrementCounts()
+{
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv;
+  for (PRUint32 i = 0; i < mAutoIncrementObjectStores.Length(); i++) {
+    ObjectStoreInfo* info = mAutoIncrementObjectStores[i]->Info();
+    if (!stmt) {
+      rv = mConnection->CreateStatement(NS_LITERAL_CSTRING(
+        "UPDATE object_store SET auto_increment = :ai "
+        "WHERE id = :osid;"), getter_AddRefs(stmt));
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    else {
+      stmt->Reset();
+    }
+
+    rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("osid"), info->id);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("ai"),
+                               info->nextAutoIncrementId);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = stmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  
+  return NS_OK;
+}
+
+void
+CommitHelper::CommitAutoIncrementCounts()
+{
+  for (PRUint32 i = 0; i < mAutoIncrementObjectStores.Length(); i++) {
+    ObjectStoreInfo* info = mAutoIncrementObjectStores[i]->Info();
+    info->comittedAutoIncrementId = info->nextAutoIncrementId;
+  }
+}
+
+void
+CommitHelper::RevertAutoIncrementCounts()
+{
+  for (PRUint32 i = 0; i < mAutoIncrementObjectStores.Length(); i++) {
+    ObjectStoreInfo* info = mAutoIncrementObjectStores[i]->Info();
+    info->nextAutoIncrementId = info->comittedAutoIncrementId;
+  }
 }
 
 nsresult
