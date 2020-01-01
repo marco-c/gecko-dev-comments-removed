@@ -782,8 +782,6 @@ pref("network.http.use-cache", true);
 
 pref("network.http.default-socket-type", "");
 
-pref("network.http.keep-alive", true); 
-pref("network.http.proxy.keep-alive", true);
 
 
 
@@ -796,11 +794,6 @@ pref("network.http.keep-alive.timeout", 115);
 
 
 pref("network.http.max-connections", 256);
-
-
-
-
-pref("network.http.max-connections-per-server", 15);
 
 
 

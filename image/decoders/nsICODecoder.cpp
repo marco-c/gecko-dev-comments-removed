@@ -1,10 +1,10 @@
+/* vim:set tw=80 expandtab softtabstop=4 ts=4 sw=4: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* This is a Cross-Platform ICO Decoder, which should work everywhere, including
+ * Big-Endian machines like the PowerPC. */
 
 #include <stdlib.h>
 
@@ -27,19 +27,19 @@ namespace image {
 #define BITMAPINFOSIZE 40
 #define PREFICONSIZE 16
 
-
-
-
+// ----------------------------------------
+// Actual Data Processing
+// ----------------------------------------
 
 PRUint32
 nsICODecoder::CalcAlphaRowSize() 
 {
-  
-  PRUint32 rowSize = (GetRealWidth() + 31) / 32; 
-  return rowSize * 4; 
+  // Calculate rowsize in DWORD's and then return in # of bytes
+  PRUint32 rowSize = (GetRealWidth() + 31) / 32; // + 31 to round up
+  return rowSize * 4; // Return rowSize in bytes
 }
 
-
+// Obtains the number of colors from the bits per pixel
 PRUint16
 nsICODecoder::GetNumColors() 
 {
@@ -69,7 +69,7 @@ nsICODecoder::nsICODecoder(RasterImage &aImage, imgIDecoderObserver* aObserver)
   mPos = mImageOffset = mCurrIcon = mNumIcons = mBPP = mRowBytes = 0;
   mIsPNG = false;
   mRow = nsnull;
-  mOldLine = mCurLine = 1; 
+  mOldLine = mCurLine = 1; // Otherwise decoder will never start
 }
 
 nsICODecoder::~nsICODecoder()
@@ -82,22 +82,22 @@ nsICODecoder::~nsICODecoder()
 void
 nsICODecoder::FinishInternal()
 {
-  
+  // We shouldn't be called in error cases
   NS_ABORT_IF_FALSE(!HasError(), "Shouldn't call FinishInternal after error!");
 
-  
+  // Finish the internally used decoder as well
   if (mContainedDecoder) {
     mContainedDecoder->FinishSharedDecoder();
     mDecodeDone = mContainedDecoder->GetDecodeDone();
   }
 }
 
-
-
-
-
-
-
+// Returns a buffer filled with the bitmap file header in little endian:
+// Signature 2 bytes 'BM'
+// FileSize	 4 bytes File size in bytes
+// reserved	 4 bytes unused (=0)
+// DataOffset	 4 bytes File offset to Raster Data
+// Returns true if successful
 bool nsICODecoder::FillBitmapFileHeaderBuffer(PRInt8 *bfh) 
 {
   memset(bfh, 0, 14);
@@ -107,7 +107,7 @@ bool nsICODecoder::FillBitmapFileHeaderBuffer(PRInt8 *bfh)
   PRInt32 fileSize = 0;
   dataOffset = BFH_LENGTH + BITMAPINFOSIZE;
 
-  
+  // The color table is present only if BPP is <= 8
   if (mDirEntry.mBitCount <= 8) {
     PRUint16 numColors = GetNumColors();
     if (numColors == (PRUint16)-1) {
@@ -127,45 +127,47 @@ bool nsICODecoder::FillBitmapFileHeaderBuffer(PRInt8 *bfh)
   return true;
 }
 
-
-
-
+// A BMP inside of an ICO has *2 height because of the AND mask
+// that follows the actual bitmap.  The BMP shouldn't know about
+// this difference though.
 bool
 nsICODecoder::FixBitmapHeight(PRInt8 *bih) 
 {
-  
+  // Get the height from the BMP file information header
   PRInt32 height;
   memcpy(&height, bih + 8, sizeof(height));
   height = LITTLE_TO_NATIVE32(height);
+  // BMPs can be stored inverted by having a negative height
+  height = abs(height);
 
-  
-  
+  // The bitmap height is by definition * 2 what it should be to account for
+  // the 'AND mask'. It is * 2 even if the `AND mask` is not present.
   height /= 2;
 
   if (height > 256) {
     return false;
   }
 
-  
-  
+  // We should always trust the height from the bitmap itself instead of 
+  // the ICO height.  So fix the ICO height.
   if (height == 256) {
     mDirEntry.mHeight = 0;
   } else {
     mDirEntry.mHeight = (PRInt8)height;
   }
 
-  
+  // Fix the BMP height in the BIH so that the BMP decoder can work properly
   height = NATIVE32_TO_LITTLE(height);
   memcpy(bih + 8, &height, sizeof(height));
   return true;
 }
 
-
-
+// We should always trust the contained resource for the width
+// information over our own information.
 bool
 nsICODecoder::FixBitmapWidth(PRInt8 *bih) 
 {
-  
+  // Get the width from the BMP file information header
   PRInt32 width;
   memcpy(&width, bih + 4, sizeof(width));
   width = LITTLE_TO_NATIVE32(width);
@@ -173,8 +175,8 @@ nsICODecoder::FixBitmapWidth(PRInt8 *bih)
     return false;
   }
 
-  
-  
+  // We should always trust the width  from the bitmap itself instead of 
+  // the ICO width.
   if (width == 256) {
     mDirEntry.mWidth = 0;
   } else {
@@ -183,8 +185,8 @@ nsICODecoder::FixBitmapWidth(PRInt8 *bih)
   return true;
 }
 
-
-
+// The BMP information header's bits per pixel should be trusted
+// more than what we have.  Usually the ICO's BPP is set to 0
 PRInt32 
 nsICODecoder::ExtractBPPFromBitmap(PRInt8 *bih)
 {
@@ -228,11 +230,11 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
 {
   NS_ABORT_IF_FALSE(!HasError(), "Shouldn't call WriteInternal after error!");
 
-  if (!aCount) 
+  if (!aCount) // aCount=0 means EOF
     return;
 
-  while (aCount && (mPos < ICONCOUNTOFFSET)) { 
-    if (mPos == 2) { 
+  while (aCount && (mPos < ICONCOUNTOFFSET)) { // Skip to the # of icons.
+    if (mPos == 2) { // if the third byte is 1: This is an icon, 2: a cursor
       if ((*aBuffer != 1) && (*aBuffer != 2)) {
         PostDataError();
         return;
@@ -250,10 +252,10 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
   }
 
   if (mNumIcons == 0)
-    return; 
+    return; // Nothing to do.
 
   PRUint16 colorDepth = 0;
-  
+  // Loop through each entry's dir entry
   while (mCurrIcon < mNumIcons) { 
     if (mPos >= DIRENTRYOFFSET + (mCurrIcon * sizeof(mDirEntryArray)) && 
         mPos < DIRENTRYOFFSET + ((mCurrIcon + 1) * sizeof(mDirEntryArray))) {
@@ -268,22 +270,22 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
       aBuffer += toCopy;
     }
     if (aCount == 0)
-      return; 
+      return; // Need more data
 
     IconDirEntry e;
     if (mPos == (DIRENTRYOFFSET + ICODIRENTRYSIZE) + 
                 (mCurrIcon * sizeof(mDirEntryArray))) {
       mCurrIcon++;
       ProcessDirEntry(e);
-      
-      
+      // We can't use GetRealWidth and GetRealHeight here because those operate
+      // on mDirEntry, here we are going through each item in the directory
       if (((e.mWidth == 0 ? 256 : e.mWidth) == PREFICONSIZE && 
            (e.mHeight == 0 ? 256 : e.mHeight) == PREFICONSIZE && 
            (e.mBitCount >= colorDepth)) ||
           (mCurrIcon == mNumIcons && mImageOffset == 0)) {
         mImageOffset = e.mImageOffset;
 
-        
+        // ensure mImageOffset is >= size of the direntry headers (bug #245631)
         PRUint32 minImageOffset = DIRENTRYOFFSET + 
                                   mNumIcons * sizeof(mDirEntryArray);
         if (mImageOffset < minImageOffset) {
@@ -298,7 +300,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
   }
 
   if (mPos < mImageOffset) {
-    
+    // Skip to (or at least towards) the desired image offset
     PRUint32 toSkip = mImageOffset - mPos;
     if (toSkip > aCount)
       toSkip = aCount;
@@ -308,9 +310,9 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
     aCount  -= toSkip;
   }
 
-  
-  
-  
+  // If we are within the first PNGSIGNATURESIZE bytes of the image data,
+  // then we have either a BMP or a PNG.  We use the first PNGSIGNATURESIZE
+  // bytes to determine which one we have.
   if (mCurrIcon == mNumIcons && mPos >= mImageOffset && 
       mPos < mImageOffset + PNGSIGNATURESIZE)
   {
@@ -335,7 +337,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
     }
   }
 
-  
+  // If we have a PNG, let the PNG decoder do all of the rest of the work
   if (mIsPNG && mContainedDecoder && mPos >= mImageOffset + PNGSIGNATURESIZE) {
     if (!WriteToContainedDecoder(aBuffer, aCount)) {
       return;
@@ -344,27 +346,27 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
     aBuffer += aCount;
     aCount = 0;
 
-    
-    
+    // Raymond Chen says that 32bpp only are valid PNG ICOs
+    // http://blogs.msdn.com/b/oldnewthing/archive/2010/10/22/10079192.aspx
     if (!static_cast<nsPNGDecoder*>(mContainedDecoder.get())->IsValidICO()) {
       PostDataError();
     }
     return;
   }
 
-  
-  
+  // We've processed all of the icon dir entries and are within the 
+  // bitmap info size
   if (!mIsPNG && mCurrIcon == mNumIcons && mPos >= mImageOffset && 
       mPos >= mImageOffset + PNGSIGNATURESIZE && 
       mPos < mImageOffset + BITMAPINFOSIZE) {
 
-    
-    
-    
-    
+    // As we were decoding, we did not know if we had a PNG signature or the
+    // start of a bitmap information header.  At this point we know we had
+    // a bitmap information header and not a PNG signature, so fill the bitmap
+    // information header with the data it should already have.
     memcpy(mBIHraw, mSignature, PNGSIGNATURESIZE);
 
-    
+    // We've found the icon.
     PRUint32 toCopy = sizeof(mBIHraw) - (mPos - mImageOffset);
     if (toCopy > aCount)
       toCopy = aCount;
@@ -375,31 +377,31 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
     aBuffer += toCopy;
   }
 
-  
+  // If we have a BMP inside the ICO and we have read the BIH header
   if (!mIsPNG && mPos == mImageOffset + BITMAPINFOSIZE) {
 
-    
+    // Make sure we have a sane value for the bitmap information header
     PRInt32 bihSize = ExtractBIHSizeFromBitmap(reinterpret_cast<PRInt8*>(mBIHraw));
     if (bihSize != BITMAPINFOSIZE) {
       PostDataError();
       return;
     }
-    
-    
+    // We are extracting the BPP from the BIH header as it should be trusted 
+    // over the one we have from the icon header
     mBPP = ExtractBPPFromBitmap(reinterpret_cast<PRInt8*>(mBIHraw));
     
-    
-    
-    
+    // Init the bitmap decoder which will do most of the work for us
+    // It will do everything except the AND mask which isn't present in bitmaps
+    // bmpDecoder is for local scope ease, it will be freed by mContainedDecoder
     nsBMPDecoder *bmpDecoder = new nsBMPDecoder(mImage, mObserver); 
     mContainedDecoder = bmpDecoder;
     bmpDecoder->SetUseAlphaData(true);
     mContainedDecoder->SetSizeDecode(IsSizeDecode());
     mContainedDecoder->InitSharedDecoder();
 
-    
-    
-    
+    // The ICO format when containing a BMP does not include the 14 byte
+    // bitmap file header. To use the code of the BMP decoder we need to 
+    // generate this header ourselves and feed it to the BMP decoder.
     PRInt8 bfhBuffer[BMPFILEHEADERSIZE];
     if (!FillBitmapFileHeaderBuffer(bfhBuffer)) {
       PostDataError();
@@ -409,38 +411,38 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
       return;
     }
 
-    
+    // Setup the cursor hot spot if one is present
     SetHotSpotIfCursor();
 
-    
-    
+    // Fix the ICO height from the BIH.
+    // Fix the height on the BIH to be /2 so our BMP decoder will understand.
     if (!FixBitmapHeight(reinterpret_cast<PRInt8*>(mBIHraw))) {
       PostDataError();
       return;
     }
 
-    
+    // Fix the ICO width from the BIH.
     if (!FixBitmapWidth(reinterpret_cast<PRInt8*>(mBIHraw))) {
       PostDataError();
       return;
     }
 
-    
+    // Write out the BMP's bitmap info header
     if (!WriteToContainedDecoder(mBIHraw, sizeof(mBIHraw))) {
       return;
     }
 
-    
-    
+    // We have the size. If we're doing a size decode, we got what
+    // we came for.
     if (IsSizeDecode())
       return;
 
-    
-    
-    
+    // Sometimes the ICO BPP header field is not filled out
+    // so we should trust the contained resource over our own
+    // information.
     mBPP = bmpDecoder->GetBitsPerPixel();
 
-    
+    // Check to make sure we have valid color settings
     PRUint16 numColors = GetNumColors();
     if (numColors == (PRUint16)-1) {
       PostDataError();
@@ -448,24 +450,24 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
     }
   }
 
-  
+  // If we have a BMP
   if (!mIsPNG && mContainedDecoder && mPos >= mImageOffset + BITMAPINFOSIZE) {
     PRUint16 numColors = GetNumColors();
     if (numColors == (PRUint16)-1) {
       PostDataError();
       return;
     }
-    
+    // Feed the actual image data (not including headers) into the BMP decoder
     PRInt32 bmpDataOffset = mDirEntry.mImageOffset + BITMAPINFOSIZE;
     PRInt32 bmpDataEnd = mDirEntry.mImageOffset + BITMAPINFOSIZE + 
                          static_cast<nsBMPDecoder*>(mContainedDecoder.get())->GetCompressedImageSize() +
                          4 * numColors;
 
-    
-    
+    // If we are feeding in the core image data, but we have not yet
+    // reached the ICO's 'AND buffer mask'
     if (mPos >= bmpDataOffset && mPos < bmpDataEnd) {
 
-      
+      // Figure out how much data the BMP decoder wants
       PRUint32 toFeed = bmpDataEnd - mPos;
       if (toFeed > aCount) {
         toFeed = aCount;
@@ -480,16 +482,16 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
       aBuffer += toFeed;
     }
   
-    
-    
+    // If the bitmap is fully processed, treat any left over data as the ICO's
+    // 'AND buffer mask' which appears after the bitmap resource.
     if (!mIsPNG && mPos >= bmpDataEnd) {
-      
-      
-      
-      
+      // There may be an optional AND bit mask after the data.  This is
+      // only used if the alpha data is not already set. The alpha data 
+      // is used for 32bpp bitmaps as per the comment in ICODecoder.h
+      // The alpha mask should be checked in all other cases.
       if (static_cast<nsBMPDecoder*>(mContainedDecoder.get())->GetBitsPerPixel() != 32 || 
           !static_cast<nsBMPDecoder*>(mContainedDecoder.get())->HasAlphaData()) {
-        PRUint32 rowSize = ((GetRealWidth() + 31) / 32) * 4; 
+        PRUint32 rowSize = ((GetRealWidth() + 31) / 32) * 4; // + 31 to round up
         if (mPos == bmpDataEnd) {
           mPos++;
           mRowBytes = 0;
@@ -501,7 +503,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
           }
         }
 
-        
+        // Ensure memory has been allocated before decoding.
         NS_ABORT_IF_FALSE(mRow, "mRow is null");
         if (!mRow) {
           PostDataError();
@@ -532,7 +534,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, PRUint32 aCount)
             while (p < p_end) {
               PRUint8 idx = *p++;
               for (PRUint8 bit = 0x80; bit && decoded<decoded_end; bit >>= 1) {
-                
+                // Clear pixel completely for transparency.
                 if (idx & bit) {
                   *decoded = 0;
                 }
@@ -578,5 +580,5 @@ nsICODecoder::ProcessDirEntry(IconDirEntry& aTarget)
   aTarget.mImageOffset = LITTLE_TO_NATIVE32(aTarget.mImageOffset);
 }
 
-} 
-} 
+} // namespace image
+} // namespace mozilla

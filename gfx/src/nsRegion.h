@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
 #ifndef nsRegion_h__
@@ -12,32 +12,32 @@
 
 class nsIntRegion;
 
-
-
-
-
-
-
-
+/**
+ * Implementation of regions.
+ * A region is represented as circular double-linked list of nsRegion::RgnRect structures.
+ * Rectangles in this list do not overlap and are sorted by (y, x) coordinates.
+ *
+ * nsRegions use nscoord coordinates and nsRects.
+ */
 class NS_GFX nsRegion
 {
   friend class nsRegionRectIterator;
   friend class RgnRectMemoryAllocator;
 
 
-
-
-
-
-
-
+// Special version of nsRect structure for speed optimizations in nsRegion code.
+// Most important functions could be made inline and be sure that passed rectangles
+// will always be non-empty.
+// 
+// Do not add any new member variables to this structure! 
+// Otherwise it will break casts from nsRect to nsRectFast, which expect data parts to be identical.
   struct nsRectFast : public nsRect
   {
-    nsRectFast () {}      
+    nsRectFast () {}      // No need to call parent constructor to set default values
     nsRectFast (PRInt32 aX, PRInt32 aY, PRInt32 aWidth, PRInt32 aHeight) : nsRect (aX, aY, aWidth, aHeight) {}
     nsRectFast (const nsRect& aRect) : nsRect (aRect) {}
 
-    
+    // Override nsRect methods to make them inline. Do not check for emptiness.
     inline bool Contains (const nsRect& aRect) const;
     inline bool Intersects (const nsRect& aRect) const;
     inline bool IntersectRect (const nsRect& aRect1, const nsRect& aRect2);
@@ -50,14 +50,14 @@ class NS_GFX nsRegion
     RgnRect* prev;
     RgnRect* next;
 
-    RgnRect () {}                           
+    RgnRect () {}                           // No need to call parent constructor to set default values
     RgnRect (PRInt32 aX, PRInt32 aY, PRInt32 aWidth, PRInt32 aHeight) : nsRectFast (aX, aY, aWidth, aHeight) {}
     RgnRect (const nsRectFast& aRect) : nsRectFast (aRect) {}
 
     void* operator new (size_t) CPP_THROW_NEW;
     void  operator delete (void* aRect, size_t);
 
-    RgnRect& operator = (const RgnRect& aRect)      
+    RgnRect& operator = (const RgnRect& aRect)      // Do not overwrite prev/next pointers
     {
       x = aRect.x;
       y = aRect.y;
@@ -147,64 +147,66 @@ public:
   bool IsEqual (const nsRegion& aRegion) const;
   PRUint32 GetNumRects () const { return mRectCount; }
   const nsRect& GetBounds () const { return mBoundRect; }
-  
-  
-  
+  // Converts this region from aFromAPP, an appunits per pixel ratio, to
+  // aToAPP. This applies nsRect::ConvertAppUnitsRoundOut/In to each rect of
+  // the region.
   nsRegion ConvertAppUnitsRoundOut (PRInt32 aFromAPP, PRInt32 aToAPP) const;
   nsRegion ConvertAppUnitsRoundIn (PRInt32 aFromAPP, PRInt32 aToAPP) const;
   nsRegion& ScaleRoundOut(float aXScale, float aYScale);
   nsRegion& ScaleInverseRoundOut(float aXScale, float aYScale);
   nsIntRegion ScaleToOutsidePixels (float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
+  nsIntRegion ScaleToInsidePixels (float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
+  nsIntRegion ScaleToNearestPixels (float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
   nsIntRegion ToOutsidePixels (nscoord aAppUnitsPerPixel) const;
   nsIntRegion ToNearestPixels (nscoord aAppUnitsPerPixel) const;
 
-  
-
-
-
-
-
+  /**
+   * Gets the largest rectangle contained in the region.
+   * @param aContainingRect if non-empty, we choose a rectangle that
+   * maximizes the area intersecting with aContainingRect (and break ties by
+   * then choosing the largest rectangle overall)
+   */
   nsRect GetLargestRectangle (const nsRect& aContainingRect = nsRect()) const;
 
-  
-
-
-
-
-
+  /**
+   * Make sure the region has at most aMaxRects by adding area to it
+   * if necessary. The simplified region will be a superset of the
+   * original region. The simplified region's bounding box will be
+   * the same as for the current region.
+   */
   void SimplifyOutward (PRUint32 aMaxRects);
-  
-
-
-
-
+  /**
+   * Make sure the region has at most aMaxRects by removing area from
+   * it if necessary. The simplified region will be a subset of the
+   * original region.
+   */
   void SimplifyInward (PRUint32 aMaxRects);
-  
-
-
-
-
-
-
+  /**
+   * Efficiently try to remove a rectangle from this region. The actual
+   * area removed could be some sub-area contained by the rectangle
+   * (even possibly nothing at all).
+   * 
+   * We remove all rectangles that are contained by aRect.
+   */
   void SimpleSubtract (const nsRect& aRect);
-  
-
-
-
-
-
-
-
+  /**
+   * Efficiently try to remove a region from this region. The actual
+   * area removed could be some sub-area contained by aRegion
+   * (even possibly nothing at all).
+   * 
+   * We remove all rectangles of this region that are contained by
+   * a rectangle of aRegion.
+   */
   void SimpleSubtract (const nsRegion& aRegion);
 
-  
-
-
+  /**
+   * Initialize any static data associated with nsRegion.
+   */
   static nsresult InitStatic();
 
-  
-
-
+  /**
+   * Deinitialize static data.
+   */
   static void ShutdownStatic();
 
 private:
@@ -237,7 +239,7 @@ private:
 
 
 
-
+// Allow read-only access to region rectangles by iterating the list
 
 class NS_GFX nsRegionRectIterator
 {
@@ -269,9 +271,9 @@ public:
   }
 };
 
-
-
-
+/**
+ * nsIntRegions use PRInt32 coordinates and nsIntRects.
+ */
 class NS_GFX nsIntRegion
 {
   friend class nsIntRegionRectIterator;
@@ -417,44 +419,44 @@ public:
     return *this;
   }
 
-  
-
-
-
-
-
+  /**
+   * Make sure the region has at most aMaxRects by adding area to it
+   * if necessary. The simplified region will be a superset of the
+   * original region. The simplified region's bounding box will be
+   * the same as for the current region.
+   */
   void SimplifyOutward (PRUint32 aMaxRects)
   {
     mImpl.SimplifyOutward (aMaxRects);
   }
-  
-
-
-
-
+  /**
+   * Make sure the region has at most aMaxRects by removing area from
+   * it if necessary. The simplified region will be a subset of the
+   * original region.
+   */
   void SimplifyInward (PRUint32 aMaxRects)
   {
     mImpl.SimplifyInward (aMaxRects);
   }
-  
-
-
-
-
-
-
+  /**
+   * Efficiently try to remove a rectangle from this region. The actual
+   * area removed could be some sub-area contained by the rectangle
+   * (even possibly nothing at all).
+   * 
+   * We remove all rectangles that are contained by aRect.
+   */
   void SimpleSubtract (const nsIntRect& aRect)
   {
     mImpl.SimpleSubtract (ToRect (aRect));
   }
-  
-
-
-
-
-
-
-
+  /**
+   * Efficiently try to remove a region from this region. The actual
+   * area removed could be some sub-area contained by aRegion
+   * (even possibly nothing at all).
+   * 
+   * We remove all rectangles of this region that are contained by
+   * a rectangle of aRegion.
+   */
   void SimpleSubtract (const nsIntRegion& aRegion)
   {
     mImpl.SimpleSubtract (aRegion.mImpl);

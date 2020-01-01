@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=79:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jscompartment_h___
 #define jscompartment_h___
@@ -16,29 +16,30 @@
 #include "jsobj.h"
 #include "jsscope.h"
 
+#include "gc/StoreBuffer.h"
 #include "vm/GlobalObject.h"
 #include "vm/RegExpObject.h"
 
 namespace js {
 
-
+/* Defined in jsapi.cpp */
 extern Class dummy_class;
 namespace ion {
     class IonCompartment;
 }
 
 
-
-
-
-
-
-
-
+/*
+ * A single-entry cache for some base-10 double-to-string conversions. This
+ * helps date-format-xparb.js.  It also avoids skewing the results for
+ * v8-splay.js when measured by the SunSpider harness, where the splay tree
+ * initialization (which includes many repeated double-to-string conversions)
+ * is erroneously included in the measurement; see bug 562553.
+ */
 class DtoaCache {
     double        d;
     int         base;
-    JSFixedString *s;      
+    JSFixedString *s;      // if s==NULL, d and base are not valid
   public:
     DtoaCache() : s(NULL) {}
     void purge() { s = NULL; }
@@ -55,7 +56,7 @@ class DtoaCache {
 
 };
 
-
+/* If HashNumber grows, need to change WrapperHasher. */
 JS_STATIC_ASSERT(sizeof(HashNumber) == 4);
 
 struct CrossCompartmentKey
@@ -107,7 +108,7 @@ struct WrapperHasher
 typedef HashMap<CrossCompartmentKey, ReadBarrieredValue,
                 WrapperHasher, SystemAllocPolicy> WrapperMap;
 
-} 
+} /* namespace js */
 
 namespace JS {
 struct TypeInferenceSizes;
@@ -126,16 +127,16 @@ struct JSCompartment
     friend struct JSContext;
     js::GlobalObject             *global_;
   public:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Nb: global_ might be NULL, if (a) it's the atoms compartment, or (b) the
+    // compartment's global has been collected.  The latter can happen if e.g.
+    // a string in a compartment is rooted but no object is, and thus the
+    // global isn't rooted, and thus the global can be finalized while the
+    // compartment lives on.
+    //
+    // In contrast, JSObject::global() is infallible because marking a JSObject
+    // always marks its global as well.
+    // TODO: add infallible JSScript::global()
+    //
     js::GlobalObject *maybeGlobal() const {
         JS_ASSERT_IF(global_, global_->compartment() == this);
         return global_;
@@ -149,6 +150,11 @@ struct JSCompartment
 
   public:
     js::gc::ArenaLists           arenas;
+
+#ifdef JSGC_GENERATIONAL
+    js::gc::Nursery              gcNursery;
+    js::gc::StoreBuffer          gcStoreBuffer;
+#endif
 
   private:
     bool                         needsBarrier_;
@@ -181,7 +187,7 @@ struct JSCompartment
 
   public:
     bool isCollecting() const {
-        
+        /* Allow this if we're in the middle of an incremental GC. */
         if (rt->isHeapBusy()) {
             return gcState == GCRunning;
         } else {
@@ -194,10 +200,10 @@ struct JSCompartment
         return gcPreserveCode;
     }
 
-    
-
-
-
+    /*
+     * If this returns true, all object tracing must be done with a GC marking
+     * tracer.
+     */
     bool requireGCTracer() const {
         return gcState == GCRunning;
     }
@@ -240,24 +246,24 @@ struct JSCompartment
 
     int64_t                      lastCodeRelease;
 
-    
-
-
-
-
+    /*
+     * Pool for analysis and intermediate type information in this compartment.
+     * Cleared on every GC, unless the GC happens during analysis (indicated
+     * by activeAnalysis, which is implied by activeInference).
+     */
     static const size_t TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 128 * 1024;
     js::LifoAlloc                typeLifoAlloc;
     bool                         activeAnalysis;
     bool                         activeInference;
 
-    
+    /* Type information about the scripts and objects in this compartment. */
     js::types::TypeCompartment   types;
 
     void                         *data;
-    bool                         active;  
+    bool                         active;  // GC flag, whether there are active frames
     js::WrapperMap               crossCompartmentWrappers;
 
-    
+    /* Last time at which an animation was played for a global in this compartment. */
     int64_t                      lastAnimationTime;
 
     js::RegExpCompartment        regExps;
@@ -265,51 +271,51 @@ struct JSCompartment
     size_t sizeOfShapeTable(JSMallocSizeOfFun mallocSizeOf);
     void sizeOfTypeInferenceData(JS::TypeInferenceSizes *stats, JSMallocSizeOfFun mallocSizeOf);
 
-    
-
-
+    /*
+     * Shared scope property tree, and arena-pool for allocating its nodes.
+     */
     js::PropertyTree             propertyTree;
 
-    
+    /* Set of all unowned base shapes in the compartment. */
     js::BaseShapeSet             baseShapes;
     void sweepBaseShapeTable();
 
-    
+    /* Set of initial shapes in the compartment. */
     js::InitialShapeSet          initialShapes;
     void sweepInitialShapeTable();
 
-    
+    /* Set of default 'new' or lazy types in the compartment. */
     js::types::TypeObjectSet     newTypeObjects;
     js::types::TypeObjectSet     lazyTypeObjects;
     void sweepNewTypeObjectTable(js::types::TypeObjectSet &table);
 
     js::ReadBarriered<js::types::TypeObject> emptyTypeObject;
 
-    
+    /* Get the default 'new' type for objects with a NULL prototype. */
     inline js::types::TypeObject *getEmptyType(JSContext *cx);
 
     js::types::TypeObject *getLazyType(JSContext *cx, JSObject *proto);
 
-    
-
-
-
-
-
+    /*
+     * Keeps track of the total number of malloc bytes connected to a
+     * compartment's GC things. This counter should be used in preference to
+     * gcMallocBytes. These counters affect collection in the same way as
+     * gcBytes and gcTriggerBytes.
+     */
     size_t                       gcMallocAndFreeBytes;
     size_t                       gcTriggerMallocAndFreeBytes;
 
   private:
-    
-
-
-
-
+    /*
+     * Malloc counter to measure memory pressure for GC scheduling. It runs from
+     * gcMaxMallocBytes down to zero. This counter should be used only when it's
+     * not possible to know the size of a free.
+     */
     ptrdiff_t                    gcMallocBytes;
 
     enum { DebugFromC = 1, DebugFromJS = 2 };
 
-    unsigned                     debugModeBits;  
+    unsigned                     debugModeBits;  // see debugMode() below
 
   public:
     JSCompartment(JSRuntime *rt);
@@ -317,7 +323,7 @@ struct JSCompartment
 
     bool init(JSContext *cx);
 
-    
+    /* Mark cross-compartment wrappers. */
     void markCrossCompartmentWrappers(JSTracer *trc);
 
     bool wrap(JSContext *cx, js::Value *vp);
@@ -368,30 +374,30 @@ struct JSCompartment
     js::DtoaCache dtoaCache;
 
   private:
-    
-
-
-
+    /*
+     * Weak reference to each global in this compartment that is a debuggee.
+     * Each global has its own list of debuggers.
+     */
     js::GlobalObjectSet              debuggees;
 
   private:
     JSCompartment *thisForCtor() { return this; }
 
   public:
-    
-
-
-
-
-
-
+    /*
+     * There are dueling APIs for debug mode. It can be enabled or disabled via
+     * JS_SetDebugModeForCompartment. It is automatically enabled and disabled
+     * by Debugger objects. Therefore debugModeBits has the DebugFromC bit set
+     * if the C API wants debug mode and the DebugFromJS bit set if debuggees
+     * is non-empty.
+     */
     bool debugMode() const { return !!debugModeBits; }
 
-    
+    /* True if any scripts from this compartment are on the JS stack. */
     bool hasScriptsOnStack();
 
   private:
-    
+    /* This is called only when debugMode() has just toggled. */
     void updateForDebugMode(js::FreeOp *fop, js::AutoDebugModeGC &dmgc);
 
   public:
@@ -428,10 +434,10 @@ struct JSCompartment
 #endif
 };
 
-
-
-
-
+// For use when changing the debug mode flag on one or more compartments.
+// Do not run scripts in any compartment that is scheduled for GC using this
+// object. See comment in updateForDebugMode.
+//
 class js::AutoDebugModeGC
 {
     JSRuntime *rt;
@@ -440,10 +446,10 @@ class js::AutoDebugModeGC
     explicit AutoDebugModeGC(JSRuntime *rt) : rt(rt), needGC(false) {}
 
     ~AutoDebugModeGC() {
-        
-        
-        
-        
+        // Under some circumstances (say, in the midst of an animation),
+        // the garbage collector may try to retain JIT code and analyses.
+        // The DEBUG_MODE_GC reason forces the collector to always throw
+        // everything away, as required for debug mode transitions.
         if (needGC)
             GC(rt, GC_NORMAL, gcreason::DEBUG_MODE_GC);
     }
@@ -485,7 +491,7 @@ class PreserveCompartment {
     }
 
     ~PreserveCompartment() {
-        
+        /* The old compartment may have been destroyed, so we can't use cx->setCompartment. */
         cx->compartment = oldCompartment;
         cx->inferenceEnabled = oldInferenceEnabled;
     }
@@ -550,11 +556,11 @@ class AutoCompartment
     AutoCompartment & operator=(const AutoCompartment &) MOZ_DELETE;
 };
 
-
-
-
-
-
+/*
+ * Use this to change the behavior of an AutoCompartment slightly on error. If
+ * the exception happens to be an Error object, copy it to the origin compartment
+ * instead of wrapping it.
+ */
 class ErrorCopier
 {
     AutoCompartment &ac;
@@ -593,6 +599,6 @@ class CompartmentsIter {
     JSCompartment *operator->() const { return get(); }
 };
 
-} 
+} /* namespace js */
 
-#endif 
+#endif /* jscompartment_h___ */

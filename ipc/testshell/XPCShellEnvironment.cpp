@@ -1,14 +1,14 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdlib.h>
 #include <errno.h>
 #ifdef HAVE_IO_H
-#include <io.h>     
+#include <io.h>     /* for isatty() */
 #endif
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>     
+#include <unistd.h>     /* for isatty() */
 #endif
 
 #include "base/basictypes.h"
@@ -106,14 +106,14 @@ ScriptErrorReporter(JSContext *cx,
     const char *ctmp;
     nsCOMPtr<nsIXPConnect> xpc;
 
-    
-    
+    // Don't report an exception from inner JS frames as the callers may intend
+    // to handle it.
     if (JS_DescribeScriptedCaller(cx, nsnull, nsnull)) {
         return;
     }
 
-    
-    
+    // In some cases cx->fp is null here so use XPConnect to tell us about inner
+    // frames.
     if ((xpc = do_GetService(nsIXPConnect::GetCID()))) {
         nsAXPCNativeCallContext *cc = nsnull;
         xpc->GetCurrentNativeCallContext(&cc);
@@ -134,7 +134,7 @@ ScriptErrorReporter(JSContext *cx,
         return;
     }
 
-    
+    /* Conditionally ignore reported warnings. */
     if (JSREPORT_IS_WARNING(report->flags) &&
         !Environment(cx)->ShouldReportWarnings()) {
         return;
@@ -155,14 +155,14 @@ ScriptErrorReporter(JSContext *cx,
         JS_free(cx, tmp);
     }
 
-    
+    /* embedded newlines -- argh! */
     while ((ctmp = strchr(message, '\n')) != 0) {
         ctmp++;
         if (prefix) fputs(prefix, stderr);
         fwrite(message, 1, ctmp - message, stderr);
         message = ctmp;
     }
-    
+    /* If there were no filename or lineno, the prefix might be empty */
     if (prefix)
         fputs(prefix, stderr);
     fputs(message, stderr);
@@ -488,7 +488,7 @@ DumpHeap(JSContext *cx,
     return JS_FALSE;
 }
 
-#endif 
+#endif /* DEBUG */
 
 JSFunctionSpec gGlobalFunctions[] =
 {
@@ -544,14 +544,14 @@ ProcessFile(JSContext *cx,
     if (!isatty(fileno(file)))
 #endif
     {
-        
-
-
-
-
-
-
-
+        /*
+         * It's not interactive - just execute it.
+         *
+         * Support the UNIX #! shell hack; gobble the first line if it starts
+         * with '#'.  TODO - this isn't quite compatible with sharp variables,
+         * as a legal js program (using sharp variables) might start with '#'.
+         * But that would require multi-character lookahead.
+         */
         int ch = fgetc(file);
         if (ch == '#') {
             while((ch = fgetc(file)) != EOF) {
@@ -578,7 +578,7 @@ ProcessFile(JSContext *cx,
         return;
     }
 
-    
+    /* It's an interactive filehandle; drop into read-eval-print loop. */
     lineno = 1;
     hitEOF = JS_FALSE;
     do {
@@ -593,12 +593,12 @@ ProcessFile(JSContext *cx,
             return;
         }
 
-        
-
-
-
-
-
+        /*
+         * Accumulate lines until we get a 'compilable unit' - one that either
+         * generates an error (before running out of source) or that compiles
+         * cleanly.  This should be whenever we get a complete statement that
+         * coincides with the end of a line.
+         */
         startline = lineno;
         do {
             if (!GetLine(bufp, file, startline == lineno ? "js> " : "")) {
@@ -609,7 +609,7 @@ ProcessFile(JSContext *cx,
             lineno++;
         } while (!JS_BufferIsCompilableUnit(cx, JS_FALSE, obj, buffer, strlen(buffer)));
 
-        
+        /* Clear any pending exception from previous failed compiles.  */
         JS_ClearPendingException(cx);
         script =
             JS_CompileScriptForPrincipals(cx, obj, env->GetPrincipal(), buffer,
@@ -620,7 +620,7 @@ ProcessFile(JSContext *cx,
             if (!env->ShouldCompileOnly()) {
                 ok = JS_ExecuteScript(cx, obj, script, &result);
                 if (ok && result != JSVAL_VOID) {
-                    
+                    /* Suppress error reports from JS_ValueToString(). */
                     older = JS_SetErrorReporter(cx, NULL);
                     str = JS_ValueToString(cx, result);
                     JSAutoByteString bytes;
@@ -640,7 +640,7 @@ ProcessFile(JSContext *cx,
     fprintf(stdout, "\n");
 }
 
-} 
+} /* anonymous namespace */
 
 NS_INTERFACE_MAP_BEGIN(FullTrustSecMan)
     NS_INTERFACE_MAP_ENTRY(nsIXPCSecurityManager)
@@ -765,8 +765,8 @@ FullTrustSecMan::GetCertificatePrincipal(const nsACString & aCertFingerprint,
 }
 
 NS_IMETHODIMP
-FullTrustSecMan::GetCodebasePrincipal(nsIURI *aURI,
-                                      nsIPrincipal **_retval)
+FullTrustSecMan::GetSimpleCodebasePrincipal(nsIURI *aURI,
+                                            nsIPrincipal **_retval)
 {
     NS_IF_ADDREF(*_retval = mSystemPrincipal);
     return *_retval ? NS_OK : NS_ERROR_FAILURE;
@@ -776,7 +776,7 @@ NS_IMETHODIMP
 FullTrustSecMan::GetNoAppCodebasePrincipal(nsIURI *aURI,
                                            nsIPrincipal **_retval)
 {
-    return GetCodebasePrincipal(aURI, _retval);
+    return GetSimpleCodebasePrincipal(aURI, _retval);
 }
 
 NS_IMETHODIMP
@@ -785,7 +785,7 @@ FullTrustSecMan::GetAppCodebasePrincipal(nsIURI *aURI,
                                          bool aInMozBrowser,
                                          nsIPrincipal **_retval)
 {
-    return GetCodebasePrincipal(aURI, _retval);
+    return GetSimpleCodebasePrincipal(aURI, _retval);
 }
 
 NS_IMETHODIMP
@@ -793,7 +793,7 @@ FullTrustSecMan::GetDocShellCodebasePrincipal(nsIURI *aURI,
                                               nsIDocShell* aDocShell,
                                               nsIPrincipal **_retval)
 {
-    return GetCodebasePrincipal(aURI, _retval);
+    return GetSimpleCodebasePrincipal(aURI, _retval);
 }
 
 NS_IMETHODIMP
@@ -952,7 +952,7 @@ AutoContextPusher::~AutoContextPusher()
     }
 }
 
-
+// static
 XPCShellEnvironment*
 XPCShellEnvironment::CreateEnvironment()
 {
@@ -1011,8 +1011,8 @@ XPCShellEnvironment::Init()
     nsresult rv;
 
 #ifdef HAVE_SETBUF
-    
-    
+    // unbuffer stdout so that output is in the correct order; note that stderr
+    // is unbuffered by default
     setbuf(stdout, 0);
 #endif
 
@@ -1070,7 +1070,7 @@ XPCShellEnvironment::Init()
         if (NS_FAILED(rv)) {
             fprintf(stderr, "+++ Failed to obtain SystemPrincipal from ScriptSecurityManager service.\n");
         } else {
-            
+            // fetch the JS principals and stick in a global
             mJSPrincipals = nsJSPrincipals::get(principal);
             JS_HoldPrincipals(mJSPrincipals);
             secman->SetSystemPrincipal(principal);
