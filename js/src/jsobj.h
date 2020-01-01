@@ -421,7 +421,7 @@ struct JSObject {
         parent = newParent;
     }
 
-    JSObject *getGlobal();
+    JSObject *getGlobal() const;
 
     void *getPrivate() const {
         JS_ASSERT(getClass()->flags & JSCLASS_HAS_PRIVATE);
@@ -507,6 +507,9 @@ struct JSObject {
 
 
 
+
+
+
     static const uint32 JSSLOT_ARGS_CALLEE = JSSLOT_PRIVATE + 2;
 
   public:
@@ -514,8 +517,21 @@ struct JSObject {
     static const uint32 JSSLOT_ARGS_LENGTH = JSSLOT_PRIVATE + 1;
     static const uint32 ARGS_FIXED_RESERVED_SLOTS = 2;
 
-    inline uint32 getArgsLength() const;
+    
+    static const uint32 ARGS_LENGTH_OVERRIDDEN_BIT = 0x1;
+    static const uint32 ARGS_PACKED_BITS_COUNT = 1;
+
+    
+
+
     inline void setArgsLength(uint32 argc);
+
+    
+
+
+
+    inline uint32 getArgsInitialLength() const;
+
     inline void setArgsLengthOverridden();
     inline bool isArgsLengthOverridden() const;
 
@@ -530,16 +546,26 @@ struct JSObject {
 
 
 
-  private:
-    
-    static const uint32 JSSLOT_DATE_UTC_TIME   = JSSLOT_PRIVATE;
-    static const uint32 JSSLOT_DATE_LOCAL_TIME = JSSLOT_PRIVATE + 1;
-
   public:
-    static const uint32 DATE_FIXED_RESERVED_SLOTS = 2;
+    static const uint32 JSSLOT_DATE_UTC_TIME = JSSLOT_PRIVATE;
 
-    inline const js::Value &getDateLocalTime() const;
-    inline void setDateLocalTime(const js::Value &pthis);
+    
+
+
+
+
+    static const uint32 JSSLOT_DATE_COMPONENTS_START = JSSLOT_PRIVATE + 1;
+
+    static const uint32 JSSLOT_DATE_LOCAL_TIME = JSSLOT_PRIVATE + 1;
+    static const uint32 JSSLOT_DATE_LOCAL_YEAR = JSSLOT_PRIVATE + 2;
+    static const uint32 JSSLOT_DATE_LOCAL_MONTH = JSSLOT_PRIVATE + 3;
+    static const uint32 JSSLOT_DATE_LOCAL_DATE = JSSLOT_PRIVATE + 4;
+    static const uint32 JSSLOT_DATE_LOCAL_DAY = JSSLOT_PRIVATE + 5;
+    static const uint32 JSSLOT_DATE_LOCAL_HOURS = JSSLOT_PRIVATE + 6;
+    static const uint32 JSSLOT_DATE_LOCAL_MINUTES = JSSLOT_PRIVATE + 7;
+    static const uint32 JSSLOT_DATE_LOCAL_SECONDS = JSSLOT_PRIVATE + 8;
+
+    static const uint32 DATE_CLASS_RESERVED_SLOTS = 9;
 
     inline const js::Value &getDateUTCTime() const;
     inline void setDateUTCTime(const js::Value &pthis);
@@ -559,6 +585,8 @@ struct JSObject {
 
     inline bool hasMethodObj(const JSObject& obj) const;
     inline void setMethodObj(JSObject& obj);
+
+    inline JSFunction *getFunctionPrivate() const;
 
     
 
@@ -731,11 +759,15 @@ struct JSObject {
 
     JS_FRIEND_API(JSCompartment *) getCompartment(JSContext *cx);
 
+    inline JSObject *getThrowTypeError() const;
+
     void swap(JSObject *obj);
 
     inline bool canHaveMethodBarrier() const;
 
     inline bool isArguments() const;
+    inline bool isNormalArguments() const;
+    inline bool isStrictArguments() const;
     inline bool isArray() const;
     inline bool isDenseArray() const;
     inline bool isSlowArray() const;
