@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/Util.h"
 
@@ -16,7 +16,6 @@
 #include "nsINameSpaceManager.h"
 #include "nsIScriptContext.h"
 #include "nsIDocument.h"
-#include "nsIDOMDocument.h"
 #include "nsIJSEventListener.h"
 #include "nsIController.h"
 #include "nsIControllers.h"
@@ -104,7 +103,7 @@ nsXBLPrototypeHandler::nsXBLPrototypeHandler(nsIContent* aHandlerElement)
 {
   Init();
 
-  // Make sure our prototype is initialized.
+  
   ConstructPrototype(aHandlerElement);
 }
 
@@ -126,7 +125,7 @@ nsXBLPrototypeHandler::~nsXBLPrototypeHandler()
     nsMemory::Free(mHandlerText);
   }
 
-  // We own the next handler in the chain, so delete it now.
+  
   NS_CONTENT_DELETE_LIST_MEMBER(nsXBLPrototypeHandler, this, mNextHandler);
 }
 
@@ -147,7 +146,7 @@ void
 nsXBLPrototypeHandler::AppendHandlerText(const nsAString& aText) 
 {
   if (mHandlerText) {
-    // Append our text to the existing text.
+    
     PRUnichar* temp = mHandlerText;
     mHandlerText = ToNewUnicode(nsDependentString(temp) + aText);
     nsMemory::Free(temp);
@@ -157,17 +156,17 @@ nsXBLPrototypeHandler::AppendHandlerText(const nsAString& aText)
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// Get the menu access key from prefs.
-// XXX Eventually pick up using CSS3 key-equivalent property or somesuch
+
+
+
 void
 nsXBLPrototypeHandler::InitAccessKeys()
 {
   if (kAccelKey >= 0 && kMenuAccessKey >= 0)
     return;
 
-  // Compiled-in defaults, in case we can't get the pref --
-  // mac doesn't have menu shortcuts, other platforms use alt.
+  
+  
 #ifdef XP_MACOSX
   kMenuAccessKey = 0;
   kAccelKey = nsIDOMKeyEvent::DOM_VK_META;
@@ -176,7 +175,7 @@ nsXBLPrototypeHandler::InitAccessKeys()
   kAccelKey = nsIDOMKeyEvent::DOM_VK_CONTROL;
 #endif
 
-  // Get the menu access key value from prefs, overriding the default:
+  
   kMenuAccessKey =
     Preferences::GetInt("ui.key.menuAccessKey", kMenuAccessKey);
   kAccelKey = Preferences::GetInt("ui.key.accelKey", kAccelKey);
@@ -188,25 +187,25 @@ nsXBLPrototypeHandler::ExecuteHandler(nsIDOMEventTarget* aTarget,
 {
   nsresult rv = NS_ERROR_FAILURE;
 
-  // Prevent default action?
+  
   if (mType & NS_HANDLER_TYPE_PREVENTDEFAULT) {
     aEvent->PreventDefault();
-    // If we prevent default, then it's okay for
-    // mHandlerElement and mHandlerText to be null
+    
+    
     rv = NS_OK;
   }
 
-  if (!mHandlerElement) // This works for both types of handlers.  In both cases, the union's var should be defined.
+  if (!mHandlerElement) 
     return rv;
 
-  // See if our event receiver is a content node (and not us).
+  
   bool isXULKey = !!(mType & NS_HANDLER_TYPE_XUL);
   bool isXBLCommand = !!(mType & NS_HANDLER_TYPE_XBL_COMMAND);
   NS_ASSERTION(!(isXULKey && isXBLCommand),
                "can't be both a key and xbl command handler");
 
-  // XUL handlers and commands shouldn't be triggered by non-trusted
-  // events.
+  
+  
   if (isXULKey || isXBLCommand) {
     nsCOMPtr<nsIDOMNSEvent> domNSEvent = do_QueryInterface(aEvent);
     bool trustedEvent = false;
@@ -222,19 +221,19 @@ nsXBLPrototypeHandler::ExecuteHandler(nsIDOMEventTarget* aTarget,
     return DispatchXBLCommand(aTarget, aEvent);
   }
 
-  // If we're executing on a XUL key element, just dispatch a command
-  // event at the element.  It will take care of retargeting it to its
-  // command element, if applicable, and executing the event handler.
+  
+  
+  
   if (isXULKey) {
     return DispatchXULKeyCommand(aEvent);
   }
 
-  // Look for a compiled handler on the element. 
-  // Should be compiled and bound with "on" in front of the name.
+  
+  
   nsCOMPtr<nsIAtom> onEventAtom = do_GetAtom(NS_LITERAL_STRING("onxbl") +
                                              nsDependentAtomString(mEventName));
 
-  // Compile the handler and bind it to the element.
+  
   nsCOMPtr<nsIScriptGlobalObject> boundGlobal;
   nsCOMPtr<nsPIWindowRoot> winRoot(do_QueryInterface(aTarget));
   nsCOMPtr<nsPIDOMWindow> window;
@@ -254,7 +253,7 @@ nsXBLPrototypeHandler::ExecuteHandler(nsIDOMEventTarget* aTarget,
   if (!boundGlobal) {
     nsCOMPtr<nsIDocument> boundDocument(do_QueryInterface(aTarget));
     if (!boundDocument) {
-      // We must be an element.
+      
       nsCOMPtr<nsIContent> content(do_QueryInterface(aTarget));
       if (!content)
         return NS_OK;
@@ -280,17 +279,23 @@ nsXBLPrototypeHandler::ExecuteHandler(nsIDOMEventTarget* aTarget,
     scriptTarget = aTarget;
   }
 
+  
+  
+  
+  nsCxPusher pusher;
+  NS_ENSURE_STATE(pusher.Push(aTarget));
+
   rv = EnsureEventHandler(boundGlobal, boundContext, onEventAtom, handler);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Bind it to the bound element
+  
   JSObject* scope = boundGlobal->GetGlobalJSObject();
   nsScriptObjectHolder<JSObject> boundHandler(boundContext);
   rv = boundContext->BindCompiledEventHandler(scriptTarget, scope,
                                               handler.get(), boundHandler);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Execute it.
+  
   nsCOMPtr<nsIJSEventListener> eventListener;
   rv = NS_NewJSEventListener(boundContext, scope,
                              scriptTarget, onEventAtom,
@@ -298,7 +303,7 @@ nsXBLPrototypeHandler::ExecuteHandler(nsIDOMEventTarget* aTarget,
                              getter_AddRefs(eventListener));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Handle the event.
+  
   eventListener->HandleEvent(aEvent);
   eventListener->Disconnect();
   return NS_OK;
@@ -310,7 +315,7 @@ nsXBLPrototypeHandler::EnsureEventHandler(nsIScriptGlobalObject* aGlobal,
                                           nsIAtom *aName,
                                           nsScriptObjectHolder<JSObject>& aHandler)
 {
-  // Check to see if we've already compiled this
+  
   nsCOMPtr<nsPIDOMWindow> pWindow = do_QueryInterface(aGlobal);
   if (pWindow) {
     JSObject* cachedHandler = pWindow->GetCachedXBLPrototypeHandler(this);
@@ -320,7 +325,7 @@ nsXBLPrototypeHandler::EnsureEventHandler(nsIScriptGlobalObject* aGlobal,
     }
   }
 
-  // Ensure that we have something to compile
+  
   nsDependentString handlerText(mHandlerText);
   if (handlerText.IsEmpty())
     return NS_ERROR_FAILURE;
@@ -349,10 +354,10 @@ nsXBLPrototypeHandler::EnsureEventHandler(nsIScriptGlobalObject* aGlobal,
 nsresult
 nsXBLPrototypeHandler::DispatchXBLCommand(nsIDOMEventTarget* aTarget, nsIDOMEvent* aEvent)
 {
-  // This is a special-case optimization to make command handling fast.
-  // It isn't really a part of XBL, but it helps speed things up.
+  
+  
 
-  // See if preventDefault has been set.  If so, don't execute.
+  
   bool preventDefault = false;
   nsCOMPtr<nsIDOMNSEvent> domNSEvent = do_QueryInterface(aEvent);
   if (domNSEvent) {
@@ -368,8 +373,8 @@ nsXBLPrototypeHandler::DispatchXBLCommand(nsIDOMEventTarget* aTarget, nsIDOMEven
       return NS_OK;
   }
 
-  // Instead of executing JS, let's get the controller for the bound
-  // element and call doCommand on it.
+  
+  
   nsCOMPtr<nsIController> controller;
 
   nsCOMPtr<nsPIDOMWindow> privateWindow;
@@ -382,10 +387,10 @@ nsXBLPrototypeHandler::DispatchXBLCommand(nsIDOMEventTarget* aTarget, nsIDOMEven
     if (!privateWindow) {
       nsCOMPtr<nsIContent> elt(do_QueryInterface(aTarget));
       nsCOMPtr<nsIDocument> doc;
-      // XXXbz sXBL/XBL2 issue -- this should be the "scope doc" or
-      // something... whatever we use when wrapping DOM nodes
-      // normally.  It's not clear that the owner doc is the right
-      // thing.
+      
+      
+      
+      
       if (elt)
         doc = elt->OwnerDoc();
 
@@ -407,13 +412,13 @@ nsXBLPrototypeHandler::DispatchXBLCommand(nsIDOMEventTarget* aTarget, nsIDOMEven
   if (windowRoot)
     windowRoot->GetControllerForCommand(command.get(), getter_AddRefs(controller));
   else
-    controller = GetController(aTarget); // We're attached to the receiver possibly.
+    controller = GetController(aTarget); 
 
   if (mEventName == nsGkAtoms::keypress &&
       mDetail == nsIDOMKeyEvent::DOM_VK_SPACE &&
       mMisc == 1) {
-    // get the focused element so that we can pageDown only at
-    // certain times.
+    
+    
 
     nsCOMPtr<nsPIDOMWindow> windowToCheck;
     if (windowRoot)
@@ -431,10 +436,10 @@ nsXBLPrototypeHandler::DispatchXBLCommand(nsIDOMEventTarget* aTarget, nsIDOMEven
     bool isLink = false;
     nsIContent *content = focusedContent;
 
-    // if the focused element is a link then we do want space to 
-    // scroll down. The focused element may be an element in a link,
-    // we need to check the parent node too. Only do this check if an
-    // element is focused and has a parent.
+    
+    
+    
+    
     if (focusedContent && focusedContent->GetParent()) {
       while (content) {
         if (content->Tag() == nsGkAtoms::a && content->IsHTML()) {
@@ -459,8 +464,8 @@ nsXBLPrototypeHandler::DispatchXBLCommand(nsIDOMEventTarget* aTarget, nsIDOMEven
     }
   }
 
-  // We are the default action for this command.
-  // Stop any other default action from executing.
+  
+  
   aEvent->PreventDefault();
   
   if (controller)
@@ -478,13 +483,13 @@ nsXBLPrototypeHandler::DispatchXULKeyCommand(nsIDOMEvent* aEvent)
                                   nsGkAtoms::disabled,
                                   nsGkAtoms::_true,
                                   eCaseMatters)) {
-    // Don't dispatch command events for disabled keys.
+    
     return NS_OK;
   }
 
   aEvent->PreventDefault();
 
-  // Copy the modifiers from the key event.
+  
   nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aEvent);
   if (!keyEvent) {
     NS_ERROR("Trying to execute a key handler for a non-key event!");
@@ -517,8 +522,8 @@ nsXBLPrototypeHandler::GetEventName()
 already_AddRefed<nsIController>
 nsXBLPrototypeHandler::GetController(nsIDOMEventTarget* aTarget)
 {
-  // XXX Fix this so there's a generic interface that describes controllers, 
-  // This code should have no special knowledge of what objects might have controllers.
+  
+  
   nsCOMPtr<nsIControllers> controllers;
 
   nsCOMPtr<nsIDOMXULElement> xulElement(do_QueryInterface(aTarget));
@@ -543,12 +548,12 @@ nsXBLPrototypeHandler::GetController(nsIDOMEventTarget* aTarget)
       domWindow->GetControllers(getter_AddRefs(controllers));
   }
 
-  // Return the first controller.
-  // XXX This code should be checking the command name and using supportscommand and
-  // iscommandenabled.
+  
+  
+  
   nsIController* controller;
   if (controllers) {
-    controllers->GetControllerAt(0, &controller);  // return reference
+    controllers->GetControllerAt(0, &controller);  
   }
   else controller = nsnull;
 
@@ -561,7 +566,7 @@ nsXBLPrototypeHandler::KeyEventMatched(nsIDOMKeyEvent* aKeyEvent,
                                        bool aIgnoreShiftKey)
 {
   if (mDetail != -1) {
-    // Get the keycode or charcode of the key event.
+    
     PRUint32 code;
 
     if (mMisc) {
@@ -586,7 +591,7 @@ bool
 nsXBLPrototypeHandler::MouseEventMatched(nsIDOMMouseEvent* aMouseEvent)
 {
   if (mDetail == -1 && mMisc == 0 && (mKeyMask & cAllModifiers) == 0)
-    return true; // No filters set up. It's generic.
+    return true; 
 
   PRUint16 button;
   aMouseEvent->GetButton(&button);
@@ -607,9 +612,9 @@ struct keyCodeData {
   PRUint32 keycode;
 };
 
-// All of these must be uppercase, since the function below does
-// case-insensitive comparison by converting to uppercase.
-// XXX: be sure to check this periodically for new symbol additions!
+
+
+
 static const keyCodeData gKeyCodes[] = {
 
 #define NS_DEFINE_VK(aDOMKeyName, aDOMKeyCode) \
@@ -622,8 +627,8 @@ PRInt32 nsXBLPrototypeHandler::GetMatchingKeyCode(const nsAString& aKeyName)
 {
   nsCAutoString keyName;
   keyName.AssignWithConversion(aKeyName);
-  ToUpperCase(keyName); // We want case-insensitive comparison with data
-                        // stored as uppercase.
+  ToUpperCase(keyName); 
+                        
 
   PRUint32 keyNameLength = keyName.Length();
   const char* keyNameStr = keyName.get();
@@ -651,7 +656,7 @@ PRInt32 nsXBLPrototypeHandler::KeyToMask(PRInt32 key)
     default:
       return cControl | cControlMask;
   }
-  return cControl | cControlMask;  // for warning avoidance
+  return cControl | cControlMask;  
 }
 
 void
@@ -665,7 +670,7 @@ nsXBLPrototypeHandler::GetEventType(nsAString& aEvent)
   handlerElement->GetAttr(kNameSpaceID_None, nsGkAtoms::event, aEvent);
   
   if (aEvent.IsEmpty() && (mType & NS_HANDLER_TYPE_XUL))
-    // If no type is specified for a XUL <key> element, let's assume that we're "keypress".
+    
     aEvent.AssignLiteral("keypress");
 }
 
@@ -727,15 +732,15 @@ nsXBLPrototypeHandler::ConstructPrototype(nsIContent* aKeyElement,
       mPhase = NS_PHASE_TARGET;
   }
 
-  // Button and clickcount apply only to XBL handlers and don't apply to XUL key
-  // handlers.  
+  
+  
   if (aButton && *aButton)
     mDetail = *aButton - '0';
 
   if (aClickCount && *aClickCount)
     mMisc = *aClickCount - '0';
 
-  // Modifiers are supported by both types of handlers (XUL and XBL).  
+  
   nsAutoString modifiers(aModifiers);
   if (mType & NS_HANDLER_TYPE_XUL)
     aKeyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::modifiers, modifiers);
@@ -781,7 +786,7 @@ nsXBLPrototypeHandler::ConstructPrototype(nsIContent* aKeyElement,
       mKeyMask = cAllModifiers;
     nsContentUtils::ASCIIToLower(key);
 
-    // We have a charcode.
+    
     mMisc = 1;
     mDetail = key[0];
     const PRUint8 GTK2Modifiers = cShift | cControl | cShiftMask | cControlMask;
@@ -916,8 +921,8 @@ nsXBLPrototypeHandler::Read(nsIScriptContext* aContext, nsIObjectInputStream* aS
 nsresult
 nsXBLPrototypeHandler::Write(nsIScriptContext* aContext, nsIObjectOutputStream* aStream)
 {
-  // Make sure we don't write out NS_HANDLER_TYPE_XUL types, as they are used
-  // for <keyset> elements.
+  
+  
   if ((mType & NS_HANDLER_TYPE_XUL) || !mEventName)
     return NS_OK;
 

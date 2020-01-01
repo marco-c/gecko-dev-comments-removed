@@ -4,7 +4,6 @@
 
 
 #include "nscore.h"
-#include "nsIDOMDocument.h"
 #include "nsEditor.h"
 #include "nsIDOMElement.h"
 #include "nsIDOMNode.h"
@@ -98,10 +97,7 @@ nsHTMLEditor::InsertCell(nsIDOMElement *aCell, PRInt32 aRowSpan, PRInt32 aColSpa
   NS_ENSURE_SUCCESS(res, res);
   NS_ENSURE_TRUE(cellParent, NS_ERROR_NULL_POINTER);
 
-
-  PRInt32 cellOffset;
-  res = GetChildOffset(aCell, cellParent, cellOffset);
-  NS_ENSURE_SUCCESS(res, res);
+  PRInt32 cellOffset = GetChildOffset(aCell, cellParent);
 
   nsCOMPtr<nsIDOMElement> newCell;
   if (aIsHeader)
@@ -661,8 +657,7 @@ nsHTMLEditor::InsertTableRow(PRInt32 aNumber, bool aAfter)
       parentRow->GetParentNode(getter_AddRefs(parentOfRow));
       NS_ENSURE_TRUE(parentOfRow, NS_ERROR_NULL_POINTER);
 
-      res = GetChildOffset(parentRow, parentOfRow, newRowOffset);
-      NS_ENSURE_SUCCESS(res, res);
+      newRowOffset = GetChildOffset(parentRow, parentOfRow);
       
       
       if (aAfter && startRowIndex >= rowCount)
@@ -2871,8 +2866,9 @@ nsHTMLEditor::GetCellContext(nsISelection **aSelection,
     *aCellParent = cellParent.get();
     NS_ADDREF(*aCellParent);
 
-    if (aCellOffset)
-      res = GetChildOffset(cell, cellParent, *aCellOffset);
+    if (aCellOffset) {
+      *aCellOffset = GetChildOffset(cell, cellParent);
+    }
   }
 
   return res;
@@ -3140,12 +3136,11 @@ nsHTMLEditor::SetSelectionAfterTableEdit(nsIDOMElement* aTable, PRInt32 aRow, PR
   
   
   nsCOMPtr<nsIDOMNode> tableParent;
-  PRInt32 tableOffset;
   res = aTable->GetParentNode(getter_AddRefs(tableParent));
   if(NS_SUCCEEDED(res) && tableParent)
   {
-    if(NS_SUCCEEDED(GetChildOffset(aTable, tableParent, tableOffset)))
-      return selection->Collapse(tableParent, tableOffset);
+    PRInt32 tableOffset = GetChildOffset(aTable, tableParent);
+    return selection->Collapse(tableParent, tableOffset);
   }
   
   
