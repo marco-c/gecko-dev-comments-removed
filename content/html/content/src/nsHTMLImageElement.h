@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef nsHTMLImageElement_h
 #define nsHTMLImageElement_h
@@ -20,16 +20,16 @@ public:
   nsHTMLImageElement(already_AddRefed<nsINodeInfo> aNodeInfo);
   virtual ~nsHTMLImageElement();
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMNode
+  
   NS_FORWARD_NSIDOMNODE(nsGenericHTMLElement::)
 
-  // nsIDOMElement
+  
   NS_FORWARD_NSIDOMELEMENT(nsGenericHTMLElement::)
 
-  // nsIDOMHTMLElement
+  
   NS_FORWARD_NSIDOMHTMLELEMENT_BASIC(nsGenericHTMLElement::)
   NS_SCRIPTABLE NS_IMETHOD Click() {
     return nsGenericHTMLElement::Click();
@@ -51,17 +51,17 @@ public:
     return nsGenericHTMLElement::SetInnerHTML(aInnerHTML);
   }
 
-  // nsIDOMHTMLImageElement
+  
   NS_DECL_NSIDOMHTMLIMAGEELEMENT
 
-  // override from nsImageLoadingContent
+  
   mozilla::CORSMode GetCORSMode();
 
-  // nsIJSNativeInitializer
+  
   NS_IMETHOD Initialize(nsISupports* aOwner, JSContext* aContext,
                         JSObject* aObj, PRUint32 argc, jsval* argv);
 
-  // nsIContent
+  
   virtual bool ParseAttribute(PRInt32 aNamespaceID,
                                 nsIAtom* aAttribute,
                                 const nsAString& aValue,
@@ -75,8 +75,8 @@ public:
 
   bool IsHTMLFocusable(bool aWithMouse, bool *aIsFocusable, PRInt32 *aTabIndex);
 
-  // SetAttr override.  C++ is stupid, so have to override both
-  // overloaded methods.
+  
+  
   nsresult SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
                    const nsAString& aValue, bool aNotify)
   {
@@ -103,6 +103,8 @@ public:
 protected:
   nsIntPoint GetXY();
   nsSize GetWidthHeight();
+  virtual void GetItemValueText(nsAString& text);
+  virtual void SetItemValueText(const nsAString& text);
 };
 
-#endif /* nsHTMLImageElement_h */
+#endif 
