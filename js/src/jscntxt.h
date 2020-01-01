@@ -377,6 +377,7 @@ struct JSRuntime {
 
     
     js::GCChunkSet      gcChunkSet;
+    js::GCChunkSet      gcSystemChunkSet;
 
     js::RootedValueMap  gcRootsHash;
     js::GCLocks         gcLocksHash;
@@ -620,11 +621,6 @@ struct JSRuntime {
 
     JSWrapObjectCallback wrapObjectCallback;
     JSPreWrapCallback    preWrapObjectCallback;
-
-#ifdef JS_METHODJIT
-    
-    size_t               mjitDataSize;
-#endif
 
     
 
