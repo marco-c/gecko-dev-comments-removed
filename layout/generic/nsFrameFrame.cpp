@@ -454,7 +454,7 @@ nsSubDocumentFrame::ReflowFinished()
 
     if (!weakFrame.IsAlive()) {
       
-      return;
+      return PR_FALSE;
     }
 
     
