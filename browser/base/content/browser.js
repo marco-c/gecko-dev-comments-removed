@@ -1275,7 +1275,9 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
   gBrowser.addEventListener("command", BrowserOnCommand, false);
 
   tabPreviews.init();
+#ifdef USE_TAB_PREVIEWS
   ctrlTab.init();
+#endif
 
   
   
@@ -1322,8 +1324,9 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
 function BrowserShutdown()
 {
   tabPreviews.uninit();
+#ifdef USE_TAB_PREVIEWS
   ctrlTab.uninit();
-
+#endif
   gGestureSupport.init(false);
 
   try {
