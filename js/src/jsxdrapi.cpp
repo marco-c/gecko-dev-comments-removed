@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 #include "jsversion.h"
 
 #if JS_HAS_XDR
@@ -43,14 +43,14 @@
 #include <string.h>
 #include "jstypes.h"
 #include "jsstdint.h"
-#include "jsutil.h" 
+#include "jsutil.h" /* Added by JSIFY */
 #include "jsdhash.h"
 #include "jsprf.h"
 #include "jsapi.h"
 #include "jscntxt.h"
 #include "jsnum.h"
-#include "jsobj.h"              
-#include "jsscript.h"           
+#include "jsobj.h"              /* js_XDRObject */
+#include "jsscript.h"           /* js_XDRScript */
 #include "jsstr.h"
 #include "jsxdrapi.h"
 
@@ -90,7 +90,7 @@ typedef struct JSXDRMemState {
             if (MEM_LIMIT(xdr) &&                                             \
                 MEM_COUNT(xdr) + bytes > MEM_LIMIT(xdr)) {                    \
                 uint32 limit_ = JS_ROUNDUP(MEM_COUNT(xdr) + bytes, MEM_BLOCK);\
-                void *data_ = JS_realloc((xdr)->cx, MEM_BASE(xdr), limit_);   \
+                void *data_ = (xdr)->cx->realloc(MEM_BASE(xdr), limit_);      \
                 if (!data_)                                                   \
                     return 0;                                                 \
                 MEM_BASE(xdr) = (char *) data_;                               \
@@ -216,7 +216,7 @@ mem_tell(JSXDRState *xdr)
 static void
 mem_finalize(JSXDRState *xdr)
 {
-    JS_free(xdr->cx, MEM_BASE(xdr));
+    xdr->cx->free(MEM_BASE(xdr));
 }
 
 static JSXDROps xdrmem_ops = {
@@ -239,17 +239,17 @@ JS_XDRInitBase(JSXDRState *xdr, JSXDRMode mode, JSContext *cx)
 JS_PUBLIC_API(JSXDRState *)
 JS_XDRNewMem(JSContext *cx, JSXDRMode mode)
 {
-    JSXDRState *xdr = (JSXDRState *) JS_malloc(cx, sizeof(JSXDRMemState));
+    JSXDRState *xdr = (JSXDRState *) cx->malloc(sizeof(JSXDRMemState));
     if (!xdr)
         return NULL;
     JS_XDRInitBase(xdr, mode, cx);
     if (mode == JSXDR_ENCODE) {
-        if (!(MEM_BASE(xdr) = (char *) JS_malloc(cx, MEM_BLOCK))) {
-            JS_free(cx, xdr);
+        if (!(MEM_BASE(xdr) = (char *) cx->malloc(MEM_BLOCK))) {
+            cx->free(xdr);
             return NULL;
         }
     } else {
-        
+        /* XXXbe ok, so better not deref MEM_BASE(xdr) if not ENCODE */
         MEM_BASE(xdr) = NULL;
     }
     xdr->ops = &xdrmem_ops;
@@ -299,11 +299,11 @@ JS_XDRDestroy(JSXDRState *xdr)
     JSContext *cx = xdr->cx;
     xdr->ops->finalize(xdr);
     if (xdr->registry) {
-        JS_free(cx, xdr->registry);
+        cx->free(xdr->registry);
         if (xdr->reghash)
             JS_DHashTableDestroy((JSDHashTable *) xdr->reghash);
     }
-    JS_free(cx, xdr);
+    cx->free(xdr);
 }
 
 JS_PUBLIC_API(JSBool)
@@ -367,11 +367,11 @@ JS_XDRBytes(JSXDRState *xdr, char *bytes, uint32 len)
     return JS_TRUE;
 }
 
-
-
-
-
-
+/**
+ * Convert between a C string and the XDR representation:
+ * leading 32-bit count, then counted vector of chars,
+ * then possibly \0 padding to multiple of 4.
+ */
 JS_PUBLIC_API(JSBool)
 JS_XDRCString(JSXDRState *xdr, char **sp)
 {
@@ -381,18 +381,18 @@ JS_XDRCString(JSXDRState *xdr, char **sp)
         len = strlen(*sp);
     JS_XDRUint32(xdr, &len);
     if (xdr->mode == JSXDR_DECODE) {
-        if (!(*sp = (char *) JS_malloc(xdr->cx, len + 1)))
+        if (!(*sp = (char *) xdr->cx->malloc(len + 1)))
             return JS_FALSE;
     }
     if (!JS_XDRBytes(xdr, *sp, len)) {
         if (xdr->mode == JSXDR_DECODE)
-            JS_free(xdr->cx, *sp);
+            xdr->cx->free(*sp);
         return JS_FALSE;
     }
     if (xdr->mode == JSXDR_DECODE) {
         (*sp)[len] = '\0';
     } else if (xdr->mode == JSXDR_FREE) {
-        JS_free(xdr->cx, *sp);
+        xdr->cx->free(*sp);
         *sp = NULL;
     }
     return JS_TRUE;
@@ -437,9 +437,9 @@ XDRChars(JSXDRState *xdr, jschar *chars, uint32 nchars)
     return JS_TRUE;
 }
 
-
-
-
+/*
+ * Convert between a JS (Unicode) string and the XDR representation.
+ */
 JS_PUBLIC_API(JSBool)
 JS_XDRString(JSXDRState *xdr, JSString **strp)
 {
@@ -452,7 +452,7 @@ JS_XDRString(JSXDRState *xdr, JSString **strp)
         return JS_FALSE;
 
     if (xdr->mode == JSXDR_DECODE) {
-        chars = (jschar *) JS_malloc(xdr->cx, (nchars + 1) * sizeof(jschar));
+        chars = (jschar *) xdr->cx->malloc((nchars + 1) * sizeof(jschar));
         if (!chars)
             return JS_FALSE;
     } else {
@@ -471,7 +471,7 @@ JS_XDRString(JSXDRState *xdr, JSString **strp)
 
 bad:
     if (xdr->mode == JSXDR_DECODE)
-        JS_free(xdr->cx, chars);
+        xdr->cx->free(chars);
     return JS_FALSE;
 }
 
@@ -515,7 +515,7 @@ JS_XDRDouble(JSXDRState *xdr, jsdouble **dpp)
     return JS_TRUE;
 }
 
-
+/* These are magic pseudo-tags: see jsapi.h, near the top, for real tags. */
 #define JSVAL_XDRNULL   0x8
 #define JSVAL_XDRVOID   0xA
 
@@ -611,10 +611,10 @@ js_XDRAtom(JSXDRState *xdr, JSAtom **atomp)
         return JS_XDRValue(xdr, &v);
     }
 
-    
-
-
-
+    /*
+     * Inline JS_XDRValue when decoding to avoid ceation of GC things when
+     * then corresponding atom already exists. See bug 321985.
+     */
     if (!JS_XDRUint32(xdr, &type))
         return JS_FALSE;
     if (type == JSVAL_STRING)
@@ -647,10 +647,10 @@ js_XDRStringAtom(JSXDRState *xdr, JSAtom **atomp)
         return JS_XDRString(xdr, &str);
     }
 
-    
-
-
-
+    /*
+     * Inline JS_XDRString when decoding to avoid JSString allocation
+     * for already existing atoms. See bug 321985.
+     */
     if (!JS_XDRUint32(xdr, &nchars))
         return JS_FALSE;
     atom = NULL;
@@ -658,11 +658,11 @@ js_XDRStringAtom(JSXDRState *xdr, JSAtom **atomp)
     if (nchars <= JS_ARRAY_LENGTH(stackChars)) {
         chars = stackChars;
     } else {
-        
-
-
-
-        chars = (jschar *) JS_malloc(cx, nchars * sizeof(jschar));
+        /*
+         * This is very uncommon. Don't use the tempPool arena for this as
+         * most allocations here will be bigger than tempPool's arenasize.
+         */
+        chars = (jschar *) cx->malloc(nchars * sizeof(jschar));
         if (!chars)
             return JS_FALSE;
     }
@@ -670,7 +670,7 @@ js_XDRStringAtom(JSXDRState *xdr, JSAtom **atomp)
     if (XDRChars(xdr, chars, nchars))
         atom = js_AtomizeChars(cx, chars, nchars, 0);
     if (chars != stackChars)
-        JS_free(cx, chars);
+        cx->free(chars);
 
     if (!atom)
         return JS_FALSE;
@@ -709,7 +709,7 @@ JS_XDRRegisterClass(JSXDRState *xdr, JSClass *clasp, uint32 *idp)
     if (numclasses == maxclasses) {
         maxclasses = (maxclasses == 0) ? CLASS_REGISTRY_MIN : maxclasses << 1;
         registry = (JSClass **)
-            JS_realloc(xdr->cx, xdr->registry, maxclasses * sizeof(JSClass *));
+            xdr->cx->realloc(xdr->registry, maxclasses * sizeof(JSClass *));
         if (!registry)
             return JS_FALSE;
         xdr->registry = registry;
@@ -745,7 +745,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
     if (numclasses >= 10) {
         JSRegHashEntry *entry;
 
-        
+        /* Bootstrap reghash from registry on first overpopulated Find. */
         if (!xdr->reghash) {
             xdr->reghash =
                 JS_NewDHashTable(JS_DHashGetStubOps(), NULL,
@@ -763,7 +763,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
             }
         }
 
-        
+        /* If we managed to create reghash, use it for O(1) Find. */
         if (xdr->reghash) {
             entry = (JSRegHashEntry *)
                 JS_DHashTableOperate((JSDHashTable *) xdr->reghash,
@@ -773,7 +773,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
         }
     }
 
-    
+    /* Only a few classes, or we couldn't malloc reghash: use linear search. */
     for (i = 0; i < numclasses; i++) {
         if (!strcmp(name, xdr->registry[i]->name))
             return CLASS_INDEX_TO_ID(i);
@@ -791,4 +791,4 @@ JS_XDRFindClassById(JSXDRState *xdr, uint32 id)
     return xdr->registry[i];
 }
 
-#endif 
+#endif /* JS_HAS_XDR */

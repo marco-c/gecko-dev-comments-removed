@@ -1,46 +1,46 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+** Portable safe sprintf code.
+**
+** Author: Kipp E.B. Hickman
+*/
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,14 +48,14 @@
 #include "jsprf.h"
 #include "jsstdint.h"
 #include "jslong.h"
-#include "jsutil.h" 
+#include "jsutil.h" /* Added by JSIFY */
 #include "jspubtd.h"
 #include "jsstr.h"
 
-
-
-
-
+/*
+** Note: on some platforms va_list is defined as an array,
+** and requires array notation.
+*/
 #ifdef HAVE_VA_COPY
 #define VARARGS_ASSIGN(foo, bar)        VA_COPY(foo,bar)
 #elif defined(HAVE_VA_LIST_AS_ARRAY)
@@ -64,13 +64,13 @@
 #define VARARGS_ASSIGN(foo, bar)        (foo) = (bar)
 #endif
 
+/*
+** WARNING: This code may *NOT* call JS_LOG (because JS_LOG calls it)
+*/
 
-
-
-
-
-
-
+/*
+** XXX This needs to be internationalized!
+*/
 
 typedef struct SprintfStateStr SprintfState;
 
@@ -85,12 +85,12 @@ struct SprintfStateStr {
     void *arg;
 };
 
-
-
-
+/*
+** Numbered Arguement State
+*/
 struct NumArgState{
-    int     type;               
-    va_list ap;                 
+    int     type;               /* type of the current ap                    */
+    va_list ap;                 /* point to the corresponding position on ap */
 };
 
 #define NAS_DEFAULT_NUM 20  /* default number of NumberedArgumentState array */
@@ -116,9 +116,9 @@ struct NumArgState{
 #define FLAG_ZEROS      0x8
 #define FLAG_NEG        0x10
 
-
-
-
+/*
+** Fill into the buffer using the data in src
+*/
 static int fill2(SprintfState *ss, const char *src, int srclen, int width,
                 int flags)
 {
@@ -126,7 +126,7 @@ static int fill2(SprintfState *ss, const char *src, int srclen, int width,
     int rv;
 
     width -= srclen;
-    if ((width > 0) && ((flags & FLAG_LEFT) == 0)) {    
+    if ((width > 0) && ((flags & FLAG_LEFT) == 0)) {    /* Right adjusting */
         if (flags & FLAG_ZEROS) {
             space = '0';
         }
@@ -138,13 +138,13 @@ static int fill2(SprintfState *ss, const char *src, int srclen, int width,
         }
     }
 
-    
+    /* Copy out the source data */
     rv = (*ss->stuff)(ss, src, (JSUint32)srclen);
     if (rv < 0) {
         return rv;
     }
 
-    if ((width > 0) && ((flags & FLAG_LEFT) != 0)) {    
+    if ((width > 0) && ((flags & FLAG_LEFT) != 0)) {    /* Left adjusting */
         while (--width >= 0) {
             rv = (*ss->stuff)(ss, &space, 1);
             if (rv < 0) {
@@ -155,9 +155,9 @@ static int fill2(SprintfState *ss, const char *src, int srclen, int width,
     return 0;
 }
 
-
-
-
+/*
+** Fill a number. The order is: optional-sign zero-filling conversion-digits
+*/
 static int fill_n(SprintfState *ss, const char *src, int srclen, int width,
                   int prec, int type, int flags)
 {
@@ -186,26 +186,26 @@ static int fill_n(SprintfState *ss, const char *src, int srclen, int width,
 
     if (prec > 0) {
         if (prec > srclen) {
-            precwidth = prec - srclen;          
+            precwidth = prec - srclen;          /* Need zero filling */
             cvtwidth += precwidth;
         }
     }
 
     if ((flags & FLAG_ZEROS) && (prec < 0)) {
         if (width > cvtwidth) {
-            zerowidth = width - cvtwidth;       
+            zerowidth = width - cvtwidth;       /* Zero filling */
             cvtwidth += zerowidth;
         }
     }
 
     if (flags & FLAG_LEFT) {
         if (width > cvtwidth) {
-            
+            /* Space filling on the right (i.e. left adjusting) */
             rightspaces = width - cvtwidth;
         }
     } else {
         if (width > cvtwidth) {
-            
+            /* Space filling on the left (i.e. right adjusting) */
             leftspaces = width - cvtwidth;
         }
     }
@@ -246,9 +246,9 @@ static int fill_n(SprintfState *ss, const char *src, int srclen, int width,
     return 0;
 }
 
-
-
-
+/*
+** Convert a long into its printable form
+*/
 static int cvt_l(SprintfState *ss, long num, int width, int prec, int radix,
                  int type, int flags, const char *hexp)
 {
@@ -256,16 +256,16 @@ static int cvt_l(SprintfState *ss, long num, int width, int prec, int radix,
     char *cvt;
     int digits;
 
-    
+    /* according to the man page this needs to happen */
     if ((prec == 0) && (num == 0)) {
         return 0;
     }
 
-    
-
-
-
-
+    /*
+    ** Converting decimal is a little tricky. In the unsigned case we
+    ** need to stop when we hit 10 digits. In the signed case, we can
+    ** stop when the number is zero.
+    */
     cvt = cvtbuf + sizeof(cvtbuf);
     digits = 0;
     while (num) {
@@ -279,16 +279,16 @@ static int cvt_l(SprintfState *ss, long num, int width, int prec, int radix,
         digits++;
     }
 
-    
-
-
-
+    /*
+    ** Now that we have the number converted without its sign, deal with
+    ** the sign and zero padding.
+    */
     return fill_n(ss, cvt, digits, width, prec, type, flags);
 }
 
-
-
-
+/*
+** Convert a 64-bit integer into its printable form
+*/
 static int cvt_ll(SprintfState *ss, JSInt64 num, int width, int prec, int radix,
                   int type, int flags, const char *hexp)
 {
@@ -297,16 +297,16 @@ static int cvt_ll(SprintfState *ss, JSInt64 num, int width, int prec, int radix,
     int digits;
     JSInt64 rad;
 
-    
+    /* according to the man page this needs to happen */
     if ((prec == 0) && (JSLL_IS_ZERO(num))) {
         return 0;
     }
 
-    
-
-
-
-
+    /*
+    ** Converting decimal is a little tricky. In the unsigned case we
+    ** need to stop when we hit 10 digits. In the signed case, we can
+    ** stop when the number is zero.
+    */
     JSLL_I2L(rad, radix);
     cvt = cvtbuf + sizeof(cvtbuf);
     digits = 0;
@@ -324,19 +324,19 @@ static int cvt_ll(SprintfState *ss, JSInt64 num, int width, int prec, int radix,
         digits++;
     }
 
-    
-
-
-
+    /*
+    ** Now that we have the number converted without its sign, deal with
+    ** the sign and zero padding.
+    */
     return fill_n(ss, cvt, digits, width, prec, type, flags);
 }
 
-
-
-
-
-
-
+/*
+** Convert a double precision floating point number into its printable
+** form.
+**
+** XXX stop using sprintf to convert floating point
+*/
 static int cvt_f(SprintfState *ss, double d, const char *fmt0, const char *fmt1)
 {
     char fin[20];
@@ -345,13 +345,13 @@ static int cvt_f(SprintfState *ss, double d, const char *fmt0, const char *fmt1)
 
     JS_ASSERT((amount > 0) && (amount < (int)sizeof(fin)));
     if (amount >= (int)sizeof(fin)) {
-        
+        /* Totally bogus % command to sprintf. Just ignore it */
         return 0;
     }
     memcpy(fin, fmt0, (size_t)amount);
     fin[amount] = 0;
 
-    
+    /* Convert floating point using the native sprintf code */
 #ifdef DEBUG
     {
         const char *p = fin;
@@ -363,21 +363,21 @@ static int cvt_f(SprintfState *ss, double d, const char *fmt0, const char *fmt1)
 #endif
     sprintf(fout, fin, d);
 
-    
-
-
-
-
+    /*
+    ** This assert will catch overflow's of fout, when building with
+    ** debugging on. At least this way we can track down the evil piece
+    ** of calling code and fix it!
+    */
     JS_ASSERT(strlen(fout) < sizeof(fout));
 
     return (*ss->stuff)(ss, fout, strlen(fout));
 }
 
-
-
-
-
-
+/*
+** Convert a string into its printable form.  "width" is the output
+** width. "prec" is the maximum number of characters of "s" to output,
+** where -1 means until NUL.
+*/
 static int cvt_s(SprintfState *ss, const char *s, int width, int prec,
                  int flags)
 {
@@ -386,7 +386,7 @@ static int cvt_s(SprintfState *ss, const char *s, int width, int prec,
     if (prec == 0)
         return 0;
 
-    
+    /* Limit string length by precision value */
     slen = s ? strlen(s) : 6;
     if (prec > 0) {
         if (prec < slen) {
@@ -394,7 +394,7 @@ static int cvt_s(SprintfState *ss, const char *s, int width, int prec,
         }
     }
 
-    
+    /* and away we go */
     return fill2(ss, s ? s : "(null)", slen, width, flags);
 }
 
@@ -402,29 +402,29 @@ static int cvt_ws(SprintfState *ss, const jschar *ws, int width, int prec,
                   int flags)
 {
     int result;
-    
-
-
-
+    /*
+     * Supply NULL as the JSContext; errors are not reported,
+     * and malloc() is used to allocate the buffer buffer.
+     */
     if (ws) {
         int slen = js_strlen(ws);
         char *s = js_DeflateString(NULL, ws, slen);
         if (!s)
-            return -1; 
+            return -1; /* JSStuffFunc error indicator. */
         result = cvt_s(ss, s, width, prec, flags);
-        free(s);
+        js_free(s);
     } else {
         result = cvt_s(ss, NULL, width, prec, flags);
     }
     return result;
 }
 
-
-
-
-
-
-
+/*
+** BuildArgArray stands for Numbered Argument list Sprintf
+** for example,
+**      fmp = "%4$i, %2$d, %3s, %1d";
+** the number must start from 1, and no gap among them
+*/
 
 static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, struct NumArgState* nasArray )
 {
@@ -434,10 +434,10 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
     struct NumArgState *nas;
 
 
-    
-
-
-
+    /*
+    **  first pass:
+    **  detemine how many legal % I have got, then allocate space
+    */
 
     p = fmt;
     *rv = 0;
@@ -445,18 +445,18 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
     while( ( c = *p++ ) != 0 ){
         if( c != '%' )
             continue;
-        if( ( c = *p++ ) == '%' )       
+        if( ( c = *p++ ) == '%' )       /* skip %% case */
             continue;
 
         while( c != 0 ){
             if( c > '9' || c < '0' ){
-                if( c == '$' ){         
+                if( c == '$' ){         /* numbered argument csae */
                     if( i > 0 ){
                         *rv = -1;
                         return NULL;
                     }
                     number++;
-                } else {                
+                } else {                /* non-numbered argument case */
                     if( number > 0 ){
                         *rv = -1;
                         return NULL;
@@ -490,10 +490,10 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
     }
 
 
-    
-
-
-
+    /*
+    ** second pass:
+    ** set nas[].type
+    */
 
     p = fmt;
     while( ( c = *p++ ) != 0 ){
@@ -502,7 +502,7 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
         if( c == '%' )  continue;
 
         cn = 0;
-        while( c && c != '$' ){     
+        while( c && c != '$' ){     /* should improve error check later */
             cn = cn*10 + c - '0';
             c = *p++;
         }
@@ -512,16 +512,16 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
             break;
         }
 
-        
+        /* nas[cn] starts from 0, and make sure nas[cn].type is not assigned */
         cn--;
         if( nas[cn].type != TYPE_UNKNOWN )
             continue;
 
         c = *p++;
 
-        
+        /* width */
         if (c == '*') {
-            
+            /* not supported feature, for the argument is not numbered */
             *rv = -1;
             break;
         }
@@ -530,11 +530,11 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
             c = *p++;
         }
 
-        
+        /* precision */
         if (c == '.') {
             c = *p++;
             if (c == '*') {
-                
+                /* not supported feature, for the argument is not numbered */
                 *rv = -1;
                 break;
             }
@@ -544,13 +544,13 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
             }
         }
 
-        
+        /* size */
         nas[cn].type = TYPE_INTN;
         if (c == 'h') {
             nas[cn].type = TYPE_INT16;
             c = *p++;
         } else if (c == 'L') {
-            
+            /* XXX not quite sure here */
             nas[cn].type = TYPE_INT64;
             c = *p++;
         } else if (c == 'l') {
@@ -562,7 +562,7 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
             }
         }
 
-        
+        /* format */
         switch (c) {
         case 'd':
         case 'c':
@@ -580,7 +580,7 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
             break;
 
         case 'p':
-            
+            /* XXX should use cpp */
             if (sizeof(void *) == sizeof(JSInt32)) {
                 nas[ cn ].type = TYPE_UINT32;
             } else if (sizeof(void *) == sizeof(JSInt64)) {
@@ -596,7 +596,7 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
         case 'S':
         case 'E':
         case 'G':
-            
+            /* XXX not supported I suppose */
             JS_ASSERT(0);
             nas[ cn ].type = TYPE_UNKNOWN;
             break;
@@ -615,7 +615,7 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
             break;
         }
 
-        
+        /* get a legal para. */
         if( nas[ cn ].type == TYPE_UNKNOWN ){
             *rv = -1;
             break;
@@ -623,14 +623,14 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
     }
 
 
-    
-
-
-
+    /*
+    ** third pass
+    ** fill the nas[cn].ap
+    */
 
     if( *rv < 0 ){
         if( nas != nasArray )
-            free( nas );
+            js_free( nas );
         return NULL;
     }
 
@@ -667,7 +667,7 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
 
         default:
             if( nas != nasArray )
-                free( nas );
+                js_free( nas );
             *rv = -1;
             return NULL;
         }
@@ -679,9 +679,9 @@ static struct NumArgState* BuildArgArray( const char *fmt, va_list ap, int* rv, 
     return nas;
 }
 
-
-
-
+/*
+** The workhorse sprintf code.
+*/
 static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
 {
     char c;
@@ -705,18 +705,18 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
     struct NumArgState *nas = NULL;
     struct NumArgState nasArray[ NAS_DEFAULT_NUM ];
     char pattern[20];
-    const char *dolPt = NULL;  
+    const char *dolPt = NULL;  /* in "%4$.2f", dolPt will poiont to . */
     uint8 utf8buf[6];
     int utf8len;
 
-    
-
-
-
+    /*
+    ** build an argument array, IF the fmt is numbered argument
+    ** list style, to contain the Numbered Argument list pointers
+    */
 
     nas = BuildArgArray( fmt, ap, &rv, nasArray );
     if( rv < 0 ){
-        
+        /* the fmt contains error Numbered Argument format, jliu@netscape.com */
         JS_ASSERT(0);
         return rv;
     }
@@ -731,14 +731,14 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
         }
         fmt0 = fmt - 1;
 
-        
-
-
-
+        /*
+        ** Gobble up the % format string. Hopefully we have handled all
+        ** of the strange cases!
+        */
         flags = 0;
         c = *fmt++;
         if (c == '%') {
-            
+            /* quoting a % with %% */
             rv = (*ss->stuff)(ss, fmt - 1, 1);
             if (rv < 0) {
                 return rv;
@@ -747,16 +747,16 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
         }
 
         if( nas != NULL ){
-            
+            /* the fmt contains the Numbered Arguments feature */
             i = 0;
-            while( c && c != '$' ){         
+            while( c && c != '$' ){         /* should imporve error check later */
                 i = ( i * 10 ) + ( c - '0' );
                 c = *fmt++;
             }
 
             if( nas[i-1].type == TYPE_UNKNOWN ){
                 if( nas && ( nas != nasArray ) )
-                    free( nas );
+                    js_free( nas );
                 return -1;
             }
 
@@ -765,13 +765,13 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
             c = *fmt++;
         }
 
-        
-
-
-
-
-
-
+        /*
+         * Examine optional flags.  Note that we do not implement the
+         * '#' flag of sprintf().  The ANSI C spec. of the '#' flag is
+         * somewhat ambiguous and not ideal, which is perhaps why
+         * the various sprintf() implementations are inconsistent
+         * on this feature.
+         */
         while ((c == '-') || (c == '+') || (c == ' ') || (c == '0')) {
             if (c == '-') flags |= FLAG_LEFT;
             if (c == '+') flags |= FLAG_SIGNED;
@@ -782,7 +782,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
         if (flags & FLAG_SIGNED) flags &= ~FLAG_SPACED;
         if (flags & FLAG_LEFT) flags &= ~FLAG_ZEROS;
 
-        
+        /* width */
         if (c == '*') {
             c = *fmt++;
             width = va_arg(ap, int);
@@ -794,7 +794,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
             }
         }
 
-        
+        /* precision */
         prec = -1;
         if (c == '.') {
             c = *fmt++;
@@ -810,13 +810,13 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
             }
         }
 
-        
+        /* size */
         type = TYPE_INTN;
         if (c == 'h') {
             type = TYPE_INT16;
             c = *fmt++;
         } else if (c == 'L') {
-            
+            /* XXX not quite sure here */
             type = TYPE_INT64;
             c = *fmt++;
         } else if (c == 'l') {
@@ -828,29 +828,29 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
             }
         }
 
-        
+        /* format */
         hexp = hex;
         switch (c) {
-          case 'd': case 'i':                   
+          case 'd': case 'i':                   /* decimal/integer */
             radix = 10;
             goto fetch_and_convert;
 
-          case 'o':                             
+          case 'o':                             /* octal */
             radix = 8;
             type |= 1;
             goto fetch_and_convert;
 
-          case 'u':                             
+          case 'u':                             /* unsigned decimal */
             radix = 10;
             type |= 1;
             goto fetch_and_convert;
 
-          case 'x':                             
+          case 'x':                             /* unsigned hex */
             radix = 16;
             type |= 1;
             goto fetch_and_convert;
 
-          case 'X':                             
+          case 'X':                             /* unsigned HEX */
             radix = 16;
             hexp = HEX;
             type |= 1;
@@ -944,7 +944,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
             }
             switch (type) {
               case TYPE_INT16:
-                
+                /* Treat %hc as %c unless js_CStringsAreUTF8. */
                 if (js_CStringsAreUTF8) {
                     u.wch = va_arg(ap, int);
                     utf8len = js_OneUcs4ToUtf8Char (utf8buf, u.wch);
@@ -988,17 +988,17 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
           case 'S':
           case 'E':
           case 'G':
-            
+            /* XXX not supported I suppose */
             JS_ASSERT(0);
             break;
 #endif
 
           case 's':
             if(type == TYPE_INT16) {
-                
-
-
-
+                /*
+                 * This would do a simple string/byte conversion
+                 * unless js_CStringsAreUTF8.
+                 */
                 u.ws = va_arg(ap, const jschar*);
                 rv = cvt_ws(ss, u.ws, width, prec, flags);
             } else {
@@ -1018,7 +1018,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
             break;
 
           default:
-            
+            /* Not a % token after all... skip it */
 #if 0
             JS_ASSERT(0);
 #endif
@@ -1033,17 +1033,17 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
         }
     }
 
-    
+    /* Stuff trailing NUL */
     rv = (*ss->stuff)(ss, "\0", 1);
 
     if( nas && ( nas != nasArray ) ){
-        free( nas );
+        js_free( nas );
     }
 
     return rv;
 }
 
-
+/************************************************************************/
 
 static int FuncStuff(SprintfState *ss, const char *sp, JSUint32 len)
 {
@@ -1083,10 +1083,10 @@ JS_PUBLIC_API(JSUint32) JS_vsxprintf(JSStuffFunc func, void *arg,
     return (rv < 0) ? (JSUint32)-1 : ss.maxlen;
 }
 
-
-
-
-
+/*
+** Stuff routine that automatically grows the malloc'd output buffer
+** before it overflows.
+*/
 static int GrowStuff(SprintfState *ss, const char *sp, JSUint32 len)
 {
     ptrdiff_t off;
@@ -1095,15 +1095,15 @@ static int GrowStuff(SprintfState *ss, const char *sp, JSUint32 len)
 
     off = ss->cur - ss->base;
     if (off + len >= ss->maxlen) {
-        
+        /* Grow the buffer */
         newlen = ss->maxlen + ((len > 32) ? len : 32);
         if (ss->base) {
-            newbase = (char*) realloc(ss->base, newlen);
+            newbase = (char*) js_realloc(ss->base, newlen);
         } else {
-            newbase = (char*) malloc(newlen);
+            newbase = (char*) js_malloc(newlen);
         }
         if (!newbase) {
-            
+            /* Ran out of memory */
             return -1;
         }
         ss->base = newbase;
@@ -1111,7 +1111,7 @@ static int GrowStuff(SprintfState *ss, const char *sp, JSUint32 len)
         ss->cur = ss->base + off;
     }
 
-    
+    /* Copy data */
     while (len) {
         --len;
         *ss->cur++ = *sp++;
@@ -1120,9 +1120,9 @@ static int GrowStuff(SprintfState *ss, const char *sp, JSUint32 len)
     return 0;
 }
 
-
-
-
+/*
+** sprintf into a malloc'd buffer
+*/
 JS_PUBLIC_API(char *) JS_smprintf(const char *fmt, ...)
 {
     va_list ap;
@@ -1134,12 +1134,12 @@ JS_PUBLIC_API(char *) JS_smprintf(const char *fmt, ...)
     return rv;
 }
 
-
-
-
+/*
+** Free memory allocated, for the caller, by JS_smprintf
+*/
 JS_PUBLIC_API(void) JS_smprintf_free(char *mem)
 {
-        free(mem);
+        js_free(mem);
 }
 
 JS_PUBLIC_API(char *) JS_vsmprintf(const char *fmt, va_list ap)
@@ -1154,16 +1154,16 @@ JS_PUBLIC_API(char *) JS_vsmprintf(const char *fmt, va_list ap)
     rv = dosprintf(&ss, fmt, ap);
     if (rv < 0) {
         if (ss.base) {
-            free(ss.base);
+            js_free(ss.base);
         }
         return 0;
     }
     return ss.base;
 }
 
-
-
-
+/*
+** Stuff routine that discards overflow data
+*/
 static int LimitStuff(SprintfState *ss, const char *sp, JSUint32 len)
 {
     JSUint32 limit = ss->maxlen - (ss->cur - ss->base);
@@ -1178,10 +1178,10 @@ static int LimitStuff(SprintfState *ss, const char *sp, JSUint32 len)
     return 0;
 }
 
-
-
-
-
+/*
+** sprintf into a fixed size buffer. Make sure there is a NUL at the end
+** when finished.
+*/
 JS_PUBLIC_API(JSUint32) JS_snprintf(char *out, JSUint32 outlen, const char *fmt, ...)
 {
     va_list ap;
@@ -1215,7 +1215,7 @@ JS_PUBLIC_API(JSUint32) JS_vsnprintf(char *out, JSUint32 outlen,const char *fmt,
     ss.maxlen = outlen;
     (void) dosprintf(&ss, fmt, ap);
 
-    
+    /* If we added chars, and we didn't append a null, do it now. */
     if( (ss.cur != ss.base) && (ss.cur[-1] != '\0') )
         ss.cur[-1] = '\0';
 
@@ -1253,7 +1253,7 @@ JS_PUBLIC_API(char *) JS_vsprintf_append(char *last, const char *fmt, va_list ap
     rv = dosprintf(&ss, fmt, ap);
     if (rv < 0) {
         if (ss.base) {
-            free(ss.base);
+            js_free(ss.base);
         }
         return 0;
     }

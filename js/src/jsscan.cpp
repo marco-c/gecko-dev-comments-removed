@@ -1,47 +1,47 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set sw=4 ts=8 et tw=78:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <stdio.h>      
+/*
+ * JS lexical scanner.
+ */
+#include <stdio.h>      /* first to avoid trouble on some systems */
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
@@ -53,9 +53,9 @@
 #include <string.h>
 #include "jstypes.h"
 #include "jsstdint.h"
-#include "jsarena.h" 
+#include "jsarena.h" /* Added by JSIFY */
 #include "jsbit.h"
-#include "jsutil.h" 
+#include "jsutil.h" /* Added by JSIFY */
 #include "jsdtoa.h"
 #include "jsprf.h"
 #include "jsapi.h"
@@ -82,10 +82,10 @@
 #undef JS_KEYWORD
 
 struct keyword {
-    const char  *chars;         
-    JSTokenType tokentype;      
-    JSOp        op;             
-    JSVersion   version;        
+    const char  *chars;         /* C string with keyword text */
+    JSTokenType tokentype;      /* JSTokenType */
+    JSOp        op;             /* JSOp */
+    JSVersion   version;        /* JSVersion */
 };
 
 static const struct keyword keyword_defs[] = {
@@ -258,7 +258,7 @@ void
 js_CloseTokenStream(JSContext *cx, JSTokenStream *ts)
 {
     if (ts->flags & TSF_OWNFILENAME)
-        JS_free(cx, (void *) ts->filename);
+        cx->free((void *) ts->filename);
 }
 
 JS_FRIEND_API(int)
@@ -274,13 +274,13 @@ js_fgets(char *buf, int size, FILE *file)
     crflag = JS_FALSE;
     for (i = 0; i < n && (c = getc(file)) != EOF; i++) {
         buf[i] = c;
-        if (c == '\n') {        
-            i++;                
+        if (c == '\n') {        /* any \n ends a line */
+            i++;                /* keep the \n; we know there is room for \0 */
             break;
         }
-        if (crflag) {           
+        if (crflag) {           /* \r not followed by \n ends line at the \r */
             ungetc(c, file);
-            break;              
+            break;              /* and overwrite c in buf with \0 */
         }
         crflag = (c == '\r');
     }
@@ -309,7 +309,7 @@ GetChar(JSTokenStream *ts)
                     return EOF;
                 }
 
-                
+                /* Fill ts->userbuf so that \r and \r\n convert to \n. */
                 crflag = (ts->flags & TSF_CRFLAG) != 0;
                 len = js_fgets(cbuf, JS_LINE_LIMIT - crflag, ts->file);
                 if (len <= 0) {
@@ -339,16 +339,16 @@ GetChar(JSTokenStream *ts)
 
             nl = ts->saveEOL;
             if (!nl) {
-                
-
-
-
-
+                /*
+                 * Any one of \n, \r, or \r\n ends a line (the longest
+                 * match wins).  Also allow the Unicode line and paragraph
+                 * separators.
+                 */
                 for (nl = ts->userbuf.ptr; nl < ts->userbuf.limit; nl++) {
-                    
-
-
-
+                    /*
+                     * Try to prevent value-testing on most characters by
+                     * filtering out characters that aren't 000x or 202x.
+                     */
                     if ((*nl & 0xDFD0) == 0) {
                         if (*nl == '\n')
                             break;
@@ -363,10 +363,10 @@ GetChar(JSTokenStream *ts)
                 }
             }
 
-            
-
-
-
+            /*
+             * If there was a line terminator, copy thru it into linebuf.
+             * Else copy JS_LINE_LIMIT-1 bytes into linebuf.
+             */
             if (nl < ts->userbuf.limit)
                 len = (nl - ts->userbuf.ptr) + 1;
             if (len >= JS_LINE_LIMIT) {
@@ -379,29 +379,29 @@ GetChar(JSTokenStream *ts)
             ts->userbuf.ptr += len;
             olen = len;
 
-            
-
-
-
+            /*
+             * Make sure linebuf contains \n for EOL (don't do this in
+             * userbuf because the user's string might be readonly).
+             */
             if (nl < ts->userbuf.limit) {
                 if (*nl == '\r') {
                     if (ts->linebuf.base[len-1] == '\r') {
-                        
-
-
-
-
-
+                        /*
+                         * Does the line segment end in \r?  We must check
+                         * for a \n at the front of the next segment before
+                         * storing a \n into linebuf.  This case matters
+                         * only when we're reading from a file.
+                         */
                         if (nl + 1 == ts->userbuf.limit && ts->file) {
                             len--;
-                            ts->flags |= TSF_CRFLAG; 
+                            ts->flags |= TSF_CRFLAG; /* clear NLFLAG? */
                             if (len == 0) {
-                                
-
-
-
-
-
+                                /*
+                                 * This can happen when a segment ends in
+                                 * \r\r.  Start over.  ptr == limit in this
+                                 * case, so we'll fall into buffer-filling
+                                 * code.
+                                 */
                                 return GetChar(ts);
                             }
                         } else {
@@ -421,11 +421,11 @@ GetChar(JSTokenStream *ts)
                 }
             }
 
-            
+            /* Reset linebuf based on adjusted segment length. */
             ts->linebuf.limit = ts->linebuf.base + len;
             ts->linebuf.ptr = ts->linebuf.base;
 
-            
+            /* Update position of linebuf within physical userbuf line. */
             if (!(ts->flags & TSF_NLFLAG))
                 ts->linepos += ts->linelen;
             else
@@ -435,7 +435,7 @@ GetChar(JSTokenStream *ts)
             else
                 ts->flags &= ~TSF_NLFLAG;
 
-            
+            /* Update linelen from original segment length. */
             ts->linelen = olen;
         }
         c = *ts->linebuf.ptr++;
@@ -466,11 +466,11 @@ PeekChar(JSTokenStream *ts)
     return c;
 }
 
-
-
-
-
-
+/*
+ * Peek n chars ahead into ts.  Return true if n chars were read, false if
+ * there weren't enough characters in the input stream.  This function cannot
+ * be used to peek into or past a newline.
+ */
 static JSBool
 PeekChars(JSTokenStream *ts, intN n, jschar *cp)
 {
@@ -557,12 +557,12 @@ js_ReportCompileErrorNumber(JSContext *cx, JSTokenStream *ts, JSParseNode *pn,
             goto report;
         tp = &pn->pn_pos;
     } else {
-        
+        /* Point to the current token, not the next one to get. */
         tp = &ts->tokens[ts->cursor].pos;
     }
     report.lineno = ts->lineno;
     linelength = ts->linebuf.limit - ts->linebuf.base;
-    linechars = (jschar *)JS_malloc(cx, (linelength + 1) * sizeof(jschar));
+    linechars = (jschar *)cx->malloc((linelength + 1) * sizeof(jschar));
     if (!linechars) {
         warning = JS_FALSE;
         goto out;
@@ -576,14 +576,14 @@ js_ReportCompileErrorNumber(JSContext *cx, JSTokenStream *ts, JSParseNode *pn,
     }
     report.linebuf = linebytes;
 
-    
-
-
-
-
-
-
-
+    /*
+     * FIXME: What should instead happen here is that we should
+     * find error-tokens in userbuf, if !ts->file.  That will
+     * allow us to deliver a more helpful error message, which
+     * includes all or part of the bad string or bad token.  The
+     * code here yields something that looks truncated.
+     * See https://bugzilla.mozilla.org/show_bug.cgi?id=352970
+     */
     index = 0;
     if (tp->begin.lineno == tp->end.lineno) {
         if (tp->begin.index < ts->linepos)
@@ -596,51 +596,51 @@ js_ReportCompileErrorNumber(JSContext *cx, JSTokenStream *ts, JSParseNode *pn,
     report.uclinebuf = linechars;
     report.uctokenptr = report.uclinebuf + index;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * If there's a runtime exception type associated with this error
+     * number, set that as the pending exception.  For errors occuring at
+     * compile time, this is very likely to be a JSEXN_SYNTAXERR.
+     *
+     * If an exception is thrown but not caught, the JSREPORT_EXCEPTION
+     * flag will be set in report.flags.  Proper behavior for an error
+     * reporter is to ignore a report with this flag for all but top-level
+     * compilation errors.  The exception will remain pending, and so long
+     * as the non-top-level "load", "eval", or "compile" native function
+     * returns false, the top-level reporter will eventually receive the
+     * uncaught exception report.
+     *
+     * XXX it'd probably be best if there was only one call to this
+     * function, but there seem to be two error reporter call points.
+     */
   report:
     onError = cx->errorReporter;
 
-    
-
-
-
-
+    /*
+     * Try to raise an exception only if there isn't one already set --
+     * otherwise the exception will describe the last compile-time error,
+     * which is likely spurious.
+     */
     if (!(ts->flags & TSF_ERROR)) {
         if (js_ErrorToException(cx, message, &report))
             onError = NULL;
     }
 
-    
-
-
-
-
-
+    /*
+     * Suppress any compile-time errors that don't occur at the top level.
+     * This may still fail, as interplevel may be zero in contexts where we
+     * don't really want to call the error reporter, as when js is called
+     * by other code which could catch the error.
+     */
     if (cx->interpLevel != 0 && !JSREPORT_IS_WARNING(flags))
         onError = NULL;
 
     if (onError) {
         JSDebugErrorHook hook = cx->debugHooks->debugErrorHook;
 
-        
-
-
-
+        /*
+         * If debugErrorHook is present then we give it a chance to veto
+         * sending the error on to the regular error reporter.
+         */
         if (hook && !hook(cx, message, &report,
                           cx->debugHooks->debugErrorHookData)) {
             onError = NULL;
@@ -651,25 +651,25 @@ js_ReportCompileErrorNumber(JSContext *cx, JSTokenStream *ts, JSParseNode *pn,
 
   out:
     if (linebytes)
-        JS_free(cx, linebytes);
+        cx->free(linebytes);
     if (linechars)
-        JS_free(cx, linechars);
+        cx->free(linechars);
     if (message)
-        JS_free(cx, message);
+        cx->free(message);
     if (report.ucmessage)
-        JS_free(cx, (void *)report.ucmessage);
+        cx->free((void *)report.ucmessage);
 
     if (report.messageArgs) {
         if (!(flags & JSREPORT_UC)) {
             i = 0;
             while (report.messageArgs[i])
-                JS_free(cx, (void *)report.messageArgs[i++]);
+                cx->free((void *)report.messageArgs[i++]);
         }
-        JS_free(cx, (void *)report.messageArgs);
+        cx->free((void *)report.messageArgs);
     }
 
     if (!JSREPORT_IS_WARNING(flags)) {
-        
+        /* Set the error flag to suppress spurious reports. */
         ts->flags |= TSF_ERROR;
     }
 
@@ -682,13 +682,13 @@ GrowStringBuffer(JSStringBuffer *sb, size_t amount)
     ptrdiff_t offset = sb->ptr - sb->base;
     JS_ASSERT(offset >= 0);
 
-    
-
-
-
+    /*
+     * This addition needs an overflow check, but we can defer bounding against
+     * ~size_t(0) / sizeof(jschar) till later to consolidate that test.
+     */
     size_t newlength = offset + amount + 1;
     if (size_t(offset) < newlength) {
-        
+        /* Grow by powers of two until 16MB, then grow by that chunk size. */
         const size_t CHUNK_SIZE_MASK = JS_BITMASK(24);
 
         if (newlength <= CHUNK_SIZE_MASK)
@@ -696,9 +696,9 @@ GrowStringBuffer(JSStringBuffer *sb, size_t amount)
         else if (newlength & CHUNK_SIZE_MASK)
             newlength = (newlength | CHUNK_SIZE_MASK) + 1;
 
-        
+        /* Now do the full overflow check. */
         if (size_t(offset) < newlength && newlength < ~size_t(0) / sizeof(jschar)) {
-            jschar *bp = (jschar *) realloc(sb->base, newlength * sizeof(jschar));
+            jschar *bp = (jschar *) js_realloc(sb->base, newlength * sizeof(jschar));
             if (bp) {
                 sb->base = bp;
                 sb->ptr = bp + offset;
@@ -708,8 +708,8 @@ GrowStringBuffer(JSStringBuffer *sb, size_t amount)
         }
     }
 
-    
-    free(sb->base);
+    /* Either newlength overflow or realloc failure: poison the well. */
+    js_free(sb->base);
     sb->base = STRING_BUFFER_ERROR_BASE;
     return false;
 }
@@ -719,7 +719,7 @@ FreeStringBuffer(JSStringBuffer *sb)
 {
     JS_ASSERT(STRING_BUFFER_OK(sb));
     if (sb->base)
-        free(sb->base);
+        js_free(sb->base);
 }
 
 void
@@ -818,7 +818,7 @@ GetXMLEntity(JSContext *cx, JSTokenStream *ts)
     char *bytes;
     JSErrNum msg;
 
-    
+    /* Put the entity, including the '&' already scanned, in ts->tokenbuf. */
     offset = ts->tokenbuf.ptr - ts->tokenbuf.base;
     js_FastAppendChar(&ts->tokenbuf, '&');
     if (!STRING_BUFFER_OK(&ts->tokenbuf))
@@ -834,16 +834,16 @@ GetXMLEntity(JSContext *cx, JSTokenStream *ts)
             return JS_FALSE;
     }
 
-    
+    /* Let length be the number of jschars after the '&', including the ';'. */
     length = (ts->tokenbuf.ptr - ts->tokenbuf.base) - offset;
     bp = ts->tokenbuf.base + offset;
     c = d = 0;
     ispair = JS_FALSE;
     if (length > 2 && bp[1] == '#') {
-        
+        /* Match a well-formed XML Character Reference. */
         i = 2;
         if (length > 3 && JS_TOLOWER(bp[i]) == 'x') {
-            if (length > 9)     
+            if (length > 9)     /* at most 6 hex digits allowed */
                 goto badncr;
             while (++i < length) {
                 digit = bp[i];
@@ -863,12 +863,12 @@ GetXMLEntity(JSContext *cx, JSTokenStream *ts)
         }
 
         if (0x10000 <= c && c <= 0x10FFFF) {
-            
+            /* Form a surrogate pair (c, d) -- c is the high surrogate. */
             d = 0xDC00 + (c & 0x3FF);
             c = 0xD7C0 + (c >> 10);
             ispair = JS_TRUE;
         } else {
-            
+            /* Enforce the http://www.w3.org/TR/REC-xml/#wf-Legalchar WFC. */
             if (c != 0x9 && c != 0xA && c != 0xD &&
                 !(0x20 <= c && c <= 0xD7FF) &&
                 !(0xE000 <= c && c <= 0xFFFD)) {
@@ -876,7 +876,7 @@ GetXMLEntity(JSContext *cx, JSTokenStream *ts)
             }
         }
     } else {
-        
+        /* Try to match one of the five XML 1.0 predefined entities. */
         switch (length) {
           case 3:
             if (bp[2] == 't') {
@@ -905,7 +905,7 @@ GetXMLEntity(JSContext *cx, JSTokenStream *ts)
         }
     }
 
-    
+    /* If we matched, retract ts->tokenbuf and store the entity's value. */
     *bp++ = (jschar) c;
     if (ispair)
         *bp++ = (jschar) d;
@@ -916,7 +916,7 @@ GetXMLEntity(JSContext *cx, JSTokenStream *ts)
 badncr:
     msg = JSMSG_BAD_XML_NCR;
 bad:
-    
+    /* No match: throw a TypeError per ECMA-357 10.3.2.1 step 8(a). */
     JS_ASSERT(STRING_BUFFER_OK(&ts->tokenbuf));
     JS_ASSERT((ts->tokenbuf.ptr - bp) >= 1);
     bytes = js_DeflateString(cx, bp + 1,
@@ -924,12 +924,12 @@ bad:
     if (bytes) {
         js_ReportCompileErrorNumber(cx, ts, NULL, JSREPORT_ERROR,
                                     msg, bytes);
-        JS_free(cx, bytes);
+        cx->free(bytes);
     }
     return JS_FALSE;
 }
 
-#endif 
+#endif /* JS_HAS_XML_SUPPORT */
 
 JSTokenType
 js_PeekToken(JSContext *cx, JSTokenStream *ts)
@@ -958,11 +958,11 @@ js_PeekTokenSameLine(JSContext *cx, JSTokenStream *ts)
     return tt;
 }
 
-
-
-
-
-
+/*
+ * We have encountered a '\': check for a Unicode escape sequence after it,
+ * returning the character code value if we found a Unicode escape sequence.
+ * Otherwise, non-destructively return the original '\'.
+ */
 static int32
 GetUnicodeEscape(JSTokenStream *ts)
 {
@@ -1001,7 +1001,7 @@ NewToken(JSTokenStream *ts, ptrdiff_t adjust)
 static JS_ALWAYS_INLINE JSBool
 ScanAsSpace(jschar c)
 {
-    
+    /* Treat little- and big-endian BOMs as whitespace for compatibility. */
     if (JS_ISSPACE(c) || c == 0xfffe || c == 0xfeff)
         return JS_TRUE;
     return JS_FALSE;
@@ -1037,14 +1037,14 @@ js_GetToken(JSContext *cx, JSTokenStream *ts)
                                     goto error;                               \
                             JS_END_MACRO
 
-
+/* The following 4 macros should only be used when TOKENBUF_OK() is true. */
 #define TOKENBUF_BASE()     (ts->tokenbuf.base)
 #define TOKENBUF_END()      (ts->tokenbuf.ptr)
 #define TOKENBUF_CHAR(i)    (ts->tokenbuf.base[i])
 #define TRIM_TOKENBUF(i)    (ts->tokenbuf.ptr = ts->tokenbuf.base + i)
 #define NUL_TERM_TOKENBUF() (*ts->tokenbuf.ptr = 0)
 
-    
+    /* Check for a pushed-back token resulting from mismatching lookahead. */
     while (ts->lookahead != 0) {
         JS_ASSERT(!(ts->flags & TSF_XMLTEXTMODE));
         ts->lookahead--;
@@ -1054,13 +1054,13 @@ js_GetToken(JSContext *cx, JSTokenStream *ts)
             return tt;
     }
 
-    
+    /* If there was a fatal error, keep returning TOK_ERROR. */
     if (ts->flags & TSF_ERROR)
         return TOK_ERROR;
 
 #if JS_HAS_XML_SUPPORT
     if (ts->flags & TSF_XMLTEXTMODE) {
-        tt = TOK_XMLSPACE;      
+        tt = TOK_XMLSPACE;      /* veto if non-space, return TOK_XMLTEXT */
         tp = NewToken(ts, 0);
         INIT_TOKENBUF();
         qc = (ts->flags & TSF_XMLONLYMODE) ? '<' : '{';
@@ -1164,11 +1164,11 @@ js_GetToken(JSContext *cx, JSTokenStream *ts)
                     goto error;
                 }
 
-                
-
-
-
-
+                /*
+                 * XML attribute values are double-quoted when pretty-printed,
+                 * so escape " if it is expressed directly in a single-quoted
+                 * attribute value.
+                 */
                 if (c == '"' && !(ts->flags & TSF_XMLONLYMODE)) {
                     JS_ASSERT(qc == '\'');
                     js_AppendCString(&ts->tokenbuf, js_quot_entity_str);
@@ -1201,7 +1201,7 @@ js_GetToken(JSContext *cx, JSTokenStream *ts)
                 tt = TOK_XMLPTAGC;
                 goto out;
             }
-            
+            /* FALL THROUGH */
 
           bad_xml_char:
           default:
@@ -1209,9 +1209,9 @@ js_GetToken(JSContext *cx, JSTokenStream *ts)
                                         JSMSG_BAD_XML_CHARACTER);
             goto error;
         }
-        
+        /* NOTREACHED */
     }
-#endif 
+#endif /* JS_HAS_XML_SUPPORT */
 
 retry:
     do {
@@ -1253,10 +1253,10 @@ retry:
         }
         UngetChar(ts, c);
 
-        
-
-
-
+        /*
+         * Check for keywords unless we saw Unicode escape or parser asks
+         * to ignore keywords.
+         */
         if (!hadUnicodeEscape &&
             !(ts->flags & TSF_KEYWORD_IS_NAME) &&
             TOKENBUF_OK() &&
@@ -1310,11 +1310,11 @@ retry:
                 if (JS7_ISLET(c))
                     break;
 
-                
-
-
-
-
+                /*
+                 * We permit 08 and 09 as decimal numbers, which makes our
+                 * behaviour a superset of the ECMA numeric grammar.  We might
+                 * not always be so permissive, so we warn about it.
+                 */
                 if (radix == 8 && c >= '8') {
                     if (!js_ReportCompileErrorNumber(cx, ts, NULL,
                                                      JSREPORT_WARNING,
@@ -1355,7 +1355,7 @@ retry:
             }
         }
 
-        
+        /* Put back the next char and NUL-terminate tokenbuf for js_strto*. */
         UngetChar(ts, c);
         ADD_TO_TOKENBUF(0);
 
@@ -1439,7 +1439,7 @@ retry:
                             SkipChars(ts, 2);
                         }
                     } else if (c == '\n') {
-                        
+                        /* ECMA follows C by removing escaped newlines. */
                         continue;
                     }
                     break;
@@ -1485,10 +1485,10 @@ retry:
             break;
         }
 #endif
-        
-
-
-
+        /*
+         * Default so compiler can modify to JSOP_GETTER if 'p getter: v' in an
+         * object initializer, likewise for setter.
+         */
         tp->t_op = JSOP_NOP;
         tt = TOK_COLON;
         break;
@@ -1552,42 +1552,42 @@ retry:
 
       case '<':
 #if JS_HAS_XML_SUPPORT
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        /*
+         * After much testing, it's clear that Postel's advice to protocol
+         * designers ("be liberal in what you accept, and conservative in what
+         * you send") invites a natural-law repercussion for JS as "protocol":
+         *
+         * "If you are liberal in what you accept, others will utterly fail to
+         *  be conservative in what they send."
+         *
+         * Which means you will get <!-- comments to end of line in the middle
+         * of .js files, and after if conditions whose then statements are on
+         * the next line, and other wonders.  See at least the following bugs:
+         * https://bugzilla.mozilla.org/show_bug.cgi?id=309242
+         * https://bugzilla.mozilla.org/show_bug.cgi?id=309712
+         * https://bugzilla.mozilla.org/show_bug.cgi?id=310993
+         *
+         * So without JSOPTION_XML, we changed around Firefox 1.5 never to scan
+         * an XML comment or CDATA literal.  Instead, we always scan <! as the
+         * start of an HTML comment hack to end of line, used since Netscape 2
+         * to hide script tag content from script-unaware browsers.
+         *
+         * But this still leaves XML resources with certain internal structure
+         * vulnerable to being loaded as script cross-origin, and some internal
+         * data stolen, so for Firefox 3.5 and beyond, we reject programs whose
+         * source consists only of XML literals. See:
+         *
+         * https://bugzilla.mozilla.org/show_bug.cgi?id=336551
+         *
+         * The check for this is in jsparse.cpp, JSCompiler::compileScript.
+         */
         if ((ts->flags & TSF_OPERAND) &&
             (JS_HAS_XML_OPTION(cx) || PeekChar(ts) != '!')) {
-            
+            /* Check for XML comment or CDATA section. */
             if (MatchChar(ts, '!')) {
                 INIT_TOKENBUF();
 
-                
+                /* Scan XML comment. */
                 if (MatchChar(ts, '-')) {
                     if (!MatchChar(ts, '-'))
                         goto bad_xml_markup;
@@ -1601,7 +1601,7 @@ retry:
                     goto finish_xml_markup;
                 }
 
-                
+                /* Scan CDATA section. */
                 if (MatchChar(ts, '[')) {
                     jschar cp[6];
                     if (PeekChars(ts, 6, cp) &&
@@ -1620,7 +1620,7 @@ retry:
                                 goto bad_xml_markup;
                             ADD_TO_TOKENBUF(c);
                         }
-                        GetChar(ts);            
+                        GetChar(ts);            /* discard ] but not > */
                         tt = TOK_XMLCDATA;
                         tp->t_op = JSOP_XMLCDATA;
                         goto finish_xml_markup;
@@ -1629,7 +1629,7 @@ retry:
                 }
             }
 
-            
+            /* Check for processing instruction. */
             if (MatchChar(ts, '?')) {
                 inTarget = JS_TRUE;
                 targetLength = 0;
@@ -1687,7 +1687,7 @@ retry:
                 goto out;
             }
 
-            
+            /* An XML start-of-tag character. */
             tt = MatchChar(ts, '/') ? TOK_XMLETAGO : TOK_XMLSTAGO;
             goto out;
 
@@ -1696,9 +1696,9 @@ retry:
                                         JSMSG_BAD_XML_MARKUP);
             goto error;
         }
-#endif 
+#endif /* JS_HAS_XML_SUPPORT */
 
-        
+        /* NB: treat HTML begin-comment as comment-till-end-of-line */
         if (MatchChar(ts, '!')) {
             if (MatchChar(ts, '-')) {
                 if (MatchChar(ts, '-')) {
@@ -1735,11 +1735,11 @@ retry:
 
       case '/':
         if (MatchChar(ts, '/')) {
-            
-
-
-
-
+            /*
+             * Hack for source filters such as the Mozilla XUL preprocessor:
+             * "//@line 123\n" sets the number of the *next* line after the
+             * comment to 123.
+             */
             if (JS_HAS_ATLINE_OPTION(cx)) {
                 jschar cp[5];
                 uintN i, line, temp;
@@ -1759,7 +1759,7 @@ retry:
                         while ((c = GetChar(ts)) != EOF && JS7_ISDEC(c)) {
                             temp = 10 * line + JS7_UNDEC(c);
                             if (temp < line) {
-                                
+                                /* Ignore overlarge line numbers. */
                                 goto skipline;
                             }
                             line = temp;
@@ -1788,7 +1788,7 @@ retry:
                         if (c == '\n') {
                             if (i > 0) {
                                 if (ts->flags & TSF_OWNFILENAME)
-                                    JS_free(cx, (void *) ts->filename);
+                                    cx->free((void *) ts->filename);
                                 ts->filename = JS_strdup(cx, filename);
                                 if (!ts->filename)
                                     goto error;
@@ -1802,7 +1802,7 @@ retry:
             }
 
 skipline:
-            
+            /* Optimize line skipping if we are not in an HTML comment. */
             if (ts->flags & TSF_IN_HTML_COMMENT) {
                 while ((c = GetChar(ts)) != EOF && c != '\n') {
                     if (c == '-' && MatchChar(ts, '-') && MatchChar(ts, '>'))
@@ -1821,7 +1821,7 @@ skipline:
             uintN lineno = ts->lineno;
             while ((c = GetChar(ts)) != EOF &&
                    !(c == '*' && MatchChar(ts, '/'))) {
-                
+                /* Ignore all characters until comment close. */
             }
             if (c == EOF) {
                 js_ReportCompileErrorNumber(cx, ts, NULL, JSREPORT_ERROR,
@@ -1858,7 +1858,7 @@ skipline:
                 } else if (c == ']') {
                     inCharClass = JS_FALSE;
                 } else if (c == '/' && !inCharClass) {
-                    
+                    /* For compat with IE, allow unescaped / in char classes. */
                     break;
                 }
                 ADD_TO_TOKENBUF(c);
@@ -1887,7 +1887,7 @@ skipline:
                 (void) GetChar(ts);
                 goto error;
             }
-            
+            /* XXXbe fix jsregexp.c so it doesn't depend on NUL termination */
             if (!TOKENBUF_OK())
                 goto error;
             NUL_TERM_TOKENBUF();
@@ -1981,7 +1981,7 @@ skipline:
             goto badchar;
         break;
       }
-#endif 
+#endif /* JS_HAS_SHARP_VARS */
 
 #if JS_HAS_SHARP_VARS || JS_HAS_XML_SUPPORT
       badchar:

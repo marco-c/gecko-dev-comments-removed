@@ -1,55 +1,57 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * PR assertion checker.
+ */
 
 #ifndef jsutil_h___
 #define jsutil_h___
 
+#include <stdlib.h>
+
 JS_BEGIN_EXTERN_C
 
-
-
-
-
+/*
+ * JS_Assert is present even in release builds, for the benefit of applications
+ * that build DEBUG and link against a non-DEBUG SpiderMonkey library.
+ */
 extern JS_PUBLIC_API(void)
 JS_Assert(const char *s, const char *file, JSIntn ln);
 
@@ -70,20 +72,20 @@ JS_Assert(const char *s, const char *file, JSIntn ln);
 #define JS_ASSERT_IF(cond,expr) ((void) 0)
 #define JS_NOT_REACHED(reason)
 
-#endif 
+#endif /* defined(DEBUG) */
 
+/*
+ * Compile-time assert. "cond" must be a constant expression.
+ * The macro can be used only in places where an "extern" declaration is
+ * allowed.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Sun Studio C++ compiler has a bug
+ * "sizeof expression not accepted as size of array parameter"
+ * The bug number is 6688515. It is not public yet.
+ * Turn off this assert for Sun Studio until this bug is fixed.
+ */
 #ifdef __SUNPRO_CC
 #define JS_STATIC_ASSERT(cond)
 #else
@@ -99,11 +101,11 @@ JS_Assert(const char *s, const char *file, JSIntn ln);
 
 #define JS_STATIC_ASSERT_IF(cond, expr) JS_STATIC_ASSERT(!(cond) || (expr))
 
-
-
-
-
-
+/*
+ * Abort the process in a non-graceful manner. This will cause a core file,
+ * call to the debugger or other moral equivalent as well as causing the
+ * entire process to stop.
+ */
 extern JS_PUBLIC_API(void) JS_Abort(void);
 
 #if 0
@@ -124,7 +126,7 @@ typedef struct JSBasicStats {
     uint32      max;
     double      sum;
     double      sqsum;
-    uint32      logscale;           
+    uint32      logscale;           /* logarithmic scale: 0 (linear), 2, 10 */
     uint32      hist[11];
 } JSBasicStats;
 
@@ -151,9 +153,9 @@ JS_DumpHistogram(JSBasicStats *bs, FILE *fp);
 
 #else
 
-#define JS_BASIC_STATS_ACCUM(bs,val)
+#define JS_BASIC_STATS_ACCUM(bs,val) /* nothing */
 
-#endif 
+#endif /* JS_BASIC_STATS */
 
 
 #if defined(DEBUG_notme) && defined(XP_UNIX)
@@ -176,9 +178,30 @@ JS_Backtrace(int skip);
 
 extern JS_FRIEND_API(void)
 JS_DumpBacktrace(JSCallsite *trace);
-
 #endif
+
+static JS_INLINE void* js_malloc(size_t bytes) {
+    if (bytes < sizeof(void*)) /* for asyncFree */
+        bytes = sizeof(void*);
+    return malloc(bytes);
+}
+
+static JS_INLINE void* js_calloc(size_t bytes) {
+    if (bytes < sizeof(void*)) /* for asyncFree */
+        bytes = sizeof(void*);
+    return calloc(bytes, 1);
+}
+
+static JS_INLINE void* js_realloc(void* p, size_t bytes) {
+    if (bytes < sizeof(void*)) /* for asyncFree */
+        bytes = sizeof(void*);
+    return realloc(p, bytes);
+}
+
+static JS_INLINE void js_free(void* p) {
+    free(p);
+}
 
 JS_END_EXTERN_C
 
-#endif 
+#endif /* jsutil_h___ */
