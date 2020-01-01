@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCycleCollectionHoldDrop_h_
-#define nsCycleCollectionHoldDrop_h_
+#ifndef mozilla_HoldDropJSObjects_h
+#define mozilla_HoldDropJSObjects_h
 
 #include "mozilla/TypeTraits.h"
 #include "nsCycleCollectionParticipant.h"
