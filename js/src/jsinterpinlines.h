@@ -287,12 +287,11 @@ GetPropertyOperation(JSContext *cx, jsbytecode *pc, MutableHandleValue lval, Mut
 inline bool
 SetPropertyOperation(JSContext *cx, jsbytecode *pc, HandleValue lval, HandleValue rval)
 {
+    JS_ASSERT(*pc == JSOP_SETPROP);
+
     RootedObject obj(cx, ToObjectFromStack(cx, lval));
     if (!obj)
         return false;
-
-    JS_ASSERT_IF(*pc == JSOP_SETNAME || *pc == JSOP_SETGNAME, lval.isObject());
-    JS_ASSERT_IF(*pc == JSOP_SETGNAME, obj == &cx->fp()->global());
 
     PropertyCacheEntry *entry;
     JSObject *obj2;
@@ -341,14 +340,9 @@ SetPropertyOperation(JSContext *cx, jsbytecode *pc, HandleValue lval, HandleValu
     bool strict = cx->stack.currentScript()->strictModeCode;
     RootedValue rref(cx, rval);
 
-    JSOp op = JSOp(*pc);
-
     RootedId id(cx, NameToId(name));
     if (JS_LIKELY(!obj->getOps()->setProperty)) {
-        unsigned defineHow = (op == JSOP_SETNAME)
-                             ? DNP_CACHE_RESULT | DNP_UNQUALIFIED
-                             : DNP_CACHE_RESULT;
-        if (!baseops::SetPropertyHelper(cx, obj, obj, id, defineHow, &rref, strict))
+        if (!baseops::SetPropertyHelper(cx, obj, obj, id, DNP_CACHE_RESULT, &rref, strict))
             return false;
     } else {
         if (!obj->setGeneric(cx, obj, id, &rref, strict))
@@ -371,7 +365,7 @@ IntrinsicNameOperation(JSContext *cx, JSScript *script, jsbytecode *pc, Value *v
 inline bool
 NameOperation(JSContext *cx, JSScript *script, jsbytecode *pc, Value *vp)
 {
-    RootedObject obj(cx, cx->stack.currentScriptedScopeChain());
+    RootedPropertyName name(cx, script->getName(pc));
 
     
 
@@ -382,23 +376,20 @@ NameOperation(JSContext *cx, JSScript *script, jsbytecode *pc, Value *vp)
 
 
 
-    if (js_CodeSpec[*pc].format & JOF_GNAME)
-        obj = &obj->global();
+    HandleObject scopeChain = IsGlobalOp(JSOp(*pc)) ? cx->global() : cx->fp()->scopeChain();
 
-    PropertyCacheEntry *entry;
-    Rooted<JSObject*> obj2(cx);
-    RootedPropertyName name(cx);
-    JS_PROPERTY_CACHE(cx).test(cx, pc, obj.get(), obj2.get(), entry, name.get());
-    if (!name) {
-        AssertValidPropertyCacheHit(cx, obj, obj2, entry);
-        if (!NativeGet(cx, obj, obj2, entry->prop, 0, vp))
-            return false;
-        return true;
-    }
+    
 
+
+
+
+
+
+    RootedObject scope(cx), pobj(cx);
     RootedShape shape(cx);
-    if (!FindPropertyHelper(cx, name, true, obj, &obj, &obj2, &shape))
+    if (!LookupName(cx, name, scopeChain, &scope, &pobj, &shape))
         return false;
+
     if (!shape) {
         
         JSOp op2 = JSOp(pc[JSOP_NAME_LENGTH]);
@@ -413,21 +404,46 @@ NameOperation(JSContext *cx, JSScript *script, jsbytecode *pc, Value *vp)
     }
 
     
-    if (!obj->isNative() || !obj2->isNative()) {
-        Rooted<jsid> id(cx, NameToId(name));
+    if (!scope->isNative() || !pobj->isNative()) {
+        RootedId id(cx, NameToId(name));
         RootedValue value(cx);
-        if (!obj->getGeneric(cx, id, &value))
+        if (!scope->getGeneric(cx, id, &value))
             return false;
         *vp = value;
     } else {
-        Rooted<JSObject*> normalized(cx, obj);
+        RootedObject normalized(cx, scope);
         if (normalized->getClass() == &WithClass && !shape->hasDefaultGetter())
             normalized = &normalized->asWith().object();
-        if (!NativeGet(cx, normalized, obj2, shape, 0, vp))
+        if (!NativeGet(cx, normalized, pobj, shape, 0, vp))
             return false;
     }
 
     return true;
+}
+
+inline bool
+SetNameOperation(JSContext *cx, jsbytecode *pc, HandleObject scope, HandleValue val)
+{
+    JS_ASSERT(*pc == JSOP_SETNAME || *pc == JSOP_SETGNAME);
+    JS_ASSERT_IF(*pc == JSOP_SETGNAME, scope == cx->global());
+
+    JSScript *script = cx->fp()->script();
+    bool strict = script->strictModeCode;
+    RootedPropertyName name(cx, script->getName(pc));
+    RootedValue valCopy(cx, val);
+
+    
+
+
+
+
+    if (scope->isGlobal()) {
+        JS_ASSERT(!scope->getOps()->setProperty);
+        RootedId id(cx, NameToId(name));
+        return baseops::SetPropertyHelper(cx, scope, scope, id, DNP_UNQUALIFIED, &valCopy, strict);
+    }
+
+    return scope->setProperty(cx, scope, name, &valCopy, strict);
 }
 
 inline bool
