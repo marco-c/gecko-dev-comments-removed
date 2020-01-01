@@ -130,6 +130,7 @@ struct _cairo_d2d_surface {
     
     enum TextRenderingState {
         TEXT_RENDERING_UNINITIALIZED,
+        TEXT_RENDERING_NO_CLEARTYPE,
         TEXT_RENDERING_NORMAL,
         TEXT_RENDERING_GDI_CLASSIC
     };
