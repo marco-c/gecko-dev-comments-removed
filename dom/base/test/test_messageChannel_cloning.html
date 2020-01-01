@@ -64,7 +64,7 @@
   }
 
   SimpleTest.waitForExplicitFinish();
-  runTest();
+  SpecialPowers.pushPrefEnv({"set": [["dom.messageChannel.enabled", true]]}, runTest);
   </script>
 </body>
 </html>
