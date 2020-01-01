@@ -1,4 +1,4 @@
-
+﻿
 
 
 
@@ -9,13 +9,20 @@
 
 #include "mozilla/dom/indexedDB/IndexedDatabase.h"
 
+namespace IPC {
+
+template <class T> struct ParamTraits;
+
+} 
+
 BEGIN_INDEXEDDB_NAMESPACE
 
 class Key;
 
 class KeyPath
 {
-public:
+  template<class T> friend struct IPC::ParamTraits;
+
   enum KeyPathType {
     NONEXISTENT,
     STRING,
@@ -28,6 +35,7 @@ public:
   
   bool AppendStringWithValidation(JSContext* aCx, const nsAString& aString);
 
+public:
   explicit KeyPath(int aDummy)
   : mType(NONEXISTENT)
   {
@@ -91,6 +99,7 @@ public:
 
   bool IsAllowedForObjectStore(bool aAutoIncrement) const;
 
+private:
   KeyPathType mType;
 
   nsTArray<nsString> mStrings;
