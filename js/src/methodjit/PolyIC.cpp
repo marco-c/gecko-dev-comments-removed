@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 #include "PolyIC.h"
 #include "StubCalls.h"
 #include "CodeGenIncludes.h"
@@ -34,12 +34,12 @@ typedef JSC::MacroAssembler::RegisterID RegisterID;
 typedef JSC::MacroAssembler::Jump Jump;
 typedef JSC::MacroAssembler::Imm32 Imm32;
 
-/* Rough over-estimate of how much memory we need to unprotect. */
+
 static const uint32_t INLINE_PATH_LENGTH = 64;
 
-// Helper class to simplify LinkBuffer usage in PIC stub generators.
-// This guarantees correct OOM and refcount handling for buffers while they
-// are instantiated and rooted.
+
+
+
 class PICLinker : public LinkerHelper
 {
     ic::BasePolyIC &ic;
@@ -81,10 +81,10 @@ class PICStubCompiler : public BaseCompiler
     { }
 
     LookupStatus error() {
-        /*
-         * N.B. Do not try to disable the IC, we do not want to guard on
-         * whether the IC has been recompiled when propagating errors.
-         */
+        
+
+
+
         return Lookup_Error;
     }
 
@@ -201,13 +201,13 @@ class SetPropCompiler : public PICStubCompiler
             CodeLocationInstruction istr = labels.getDslotsLoad(pic.fastPathRejoin, pic.u.vr);
             repatcher.repatchLoadPtrToLEA(istr);
 
-            //
-            // We've patched | mov dslots, [obj + DSLOTS_OFFSET]
-            // To:           | lea fslots, [obj + DSLOTS_OFFSET]
-            //
-            // Because the offset is wrong, it's necessary to correct it
-            // below.
-            //
+            
+            
+            
+            
+            
+            
+            
             int32_t diff = int32_t(JSObject::getFixedSlotOffset(0)) -
                          int32_t(JSObject::offsetOfSlots());
             JS_ASSERT(diff != 0);
@@ -235,9 +235,9 @@ class SetPropCompiler : public PICStubCompiler
         Repatcher repatcher(pic.lastCodeBlock(f.chunk()));
         CodeLocationLabel label = pic.lastPathStart();
 
-        // Patch either the inline fast path or a generated stub. The stub
-        // omits the prefix of the inline fast path that loads the shape, so
-        // the offsets are different.
+        
+        
+        
         if (pic.stubsGenerated) {
             repatcher.relink(pic.setPropLabels().getStubShapeJump(label), cs);
         } else {
@@ -253,14 +253,14 @@ class SetPropCompiler : public PICStubCompiler
         if (hadGC())
             return Lookup_Uncacheable;
 
-        /* Exits to the slow path. */
+        
         Vector<Jump, 8> slowExits(cx);
         Vector<Jump, 8> otherGuards(cx);
 
         MJITInstrumentation sps(&f.cx->runtime->spsProfiler);
         Assembler masm(&sps, &f);
 
-        // Shape guard.
+        
         if (pic.shapeNeedsRemat()) {
             masm.loadShape(pic.objReg, pic.shapeReg);
             pic.shapeRegHasBaseShape = true;
@@ -275,22 +275,22 @@ class SetPropCompiler : public PICStubCompiler
         pic.setPropLabels().setStubShapeJump(masm, start, stubShapeJumpLabel);
 
         if (pic.typeMonitored || adding) {
-            /*
-             * There are now two reasons we would want a type barrier. The
-             * first, if we are Type Monitored:
-             * Inference does not know the type of the object being updated,
-             * and we need to make sure that the updateMonitoredTypes() call
-             * covers this stub, i.e. we will be writing to an object with the
-             * same type. Add a type guard in addition to the shape guard.
-             * Note: it is possible that this test gets a spurious hit if the
-             * object has a lazy type, but in such cases no analyzed scripts
-             * depend on the object and we will reconstruct its type from the
-             * value being written here.
-             * We could also want to add a type monitor if we are simulating
-             * adding the property to the object. This is to ensure that for
-             * objects of different type, but the same shape, we ensure that the
-             * property gets marked as 'own' on the other type objects.
-             */
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             Jump typeGuard = masm.branchPtr(Assembler::NotEqual,
                                             Address(pic.objReg, JSObject::offsetOfType()),
                                             ImmPtr(obj->getType(cx)));
@@ -309,7 +309,7 @@ class SetPropCompiler : public PICStubCompiler
                 return error();
             }
 
-            /* Emit shape guards for the object's prototype chain. */
+            
             JSObject *proto = obj->getProto();
             RegisterID lastReg = pic.objReg;
             while (proto) {
@@ -328,12 +328,12 @@ class SetPropCompiler : public PICStubCompiler
                                 JSObject::getFixedSlotOffset(shape->slot()));
                 masm.storeValue(pic.u.vr, address);
             } else {
-                /*
-                 * Note: the guard on the initial shape determines the object's
-                 * number of fixed slots and slot span, which in turn determine
-                 * the number of dynamic slots allocated for the object.
-                 * We don't need to check capacity here.
-                 */
+                
+
+
+
+
+
                 masm.loadPtr(Address(pic.objReg, JSObject::offsetOfSlots()), pic.shapeReg);
                 Address address(pic.shapeReg, obj->dynamicSlotIndex(shape->slot()) * sizeof(Value));
                 masm.storeValue(pic.u.vr, address);
@@ -342,7 +342,7 @@ class SetPropCompiler : public PICStubCompiler
             JS_ASSERT(shape == obj->lastProperty());
             JS_ASSERT(shape != initialShape);
 
-            /* Write the object's new shape. */
+            
             masm.storePtr(ImmPtr(shape), Address(pic.objReg, JSObject::offsetOfShape()));
         } else if (shape->hasDefaultSetter()) {
             Address address = masm.objPropAddress(obj, pic.objReg, shape->slot());
@@ -351,7 +351,7 @@ class SetPropCompiler : public PICStubCompiler
 
         Jump done = masm.jump();
 
-        // Common all secondary guards into one big exit.
+        
         MaybeJump slowExit;
         if (otherGuards.length()) {
             for (Jump *pj = otherGuards.begin(); pj != otherGuards.end(); ++pj)
@@ -386,9 +386,9 @@ class SetPropCompiler : public PICStubCompiler
                    pic.stubsGenerated,
                    cs.executableAddress());
 
-        // This function can patch either the inline fast path for a generated
-        // stub. The stub omits the prefix of the inline fast path that loads
-        // the shape, so the offsets are different.
+        
+        
+        
         patchPreviousToHere(cs);
 
         pic.stubsGenerated++;
@@ -455,14 +455,14 @@ class SetPropCompiler : public PICStubCompiler
         RootedObject holder(cx);
         RootedShape shape(cx);
 
-        /* lookupProperty can trigger recompilations. */
+        
         RecompilationMonitor monitor(cx);
         if (!JSObject::lookupProperty(cx, obj, name, &holder, &shape))
             return error();
         if (monitor.recompiled())
             return Lookup_Uncacheable;
 
-        /* If the property exists but is on a prototype, treat as addprop. */
+        
         if (shape && holder != obj) {
             if (!holder->isNative())
                 return disable("non-native holder");
@@ -480,7 +480,7 @@ class SetPropCompiler : public PICStubCompiler
         }
 
         if (!shape) {
-            /* Adding a property to the object. */
+            
             if (obj->isDelegate())
                 return disable("delegate");
             if (!obj->isExtensible())
@@ -491,17 +491,17 @@ class SetPropCompiler : public PICStubCompiler
             if (clasp->ops.defineProperty)
                 return disable("ops define property hook");
 
-            /*
-             * Don't add properties for SETNAME, which requires checks in
-             * strict mode code.
-             */
+            
+
+
+
             if (JSOp(*f.pc()) == JSOP_SETNAME)
                 return disable("add property under SETNAME");
 
-            /*
-             * When adding a property we need to check shapes along the entire
-             * prototype chain to watch for an added setter.
-             */
+            
+
+
+
             JSObject *proto = obj;
             while (proto) {
                 if (!proto->isNative())
@@ -515,11 +515,11 @@ class SetPropCompiler : public PICStubCompiler
             unsigned flags = 0;
             PropertyOp getter = clasp->getProperty;
 
-            /*
-             * Define the property but do not set it yet. For setmethod,
-             * populate the slot to satisfy the method invariant (in case we
-             * hit an early return below).
-             */
+            
+
+
+
+
             shape =
                 obj->putProperty(cx, name, getter, clasp->setProperty,
                                  SHAPE_INVALID_SLOT, JSPROP_ENUMERATE, flags, 0);
@@ -529,11 +529,11 @@ class SetPropCompiler : public PICStubCompiler
             if (monitor.recompiled())
                 return Lookup_Uncacheable;
 
-            /*
-             * Test after calling putProperty since it can switch obj into
-             * dictionary mode, specifically if the shape tree ancestor line
-             * exceeds PropertyTree::MAX_HEIGHT.
-             */
+            
+
+
+
+
             if (obj->inDictionaryMode())
                 return disable("dictionary");
 
@@ -542,26 +542,26 @@ class SetPropCompiler : public PICStubCompiler
             if (!shape->hasSlot())
                 return disable("adding invalid slot");
 
-            /*
-             * Watch for cases where the object reallocated its slots when
-             * adding the property, and disable the PIC.  Otherwise we will
-             * keep generating identical PICs as side exits are taken on the
-             * capacity checks.  Alternatively, we could avoid the disable
-             * and just not generate a stub in case there are multiple shapes
-             * that can flow here which don't all require reallocation.
-             * Doing this would cause us to walk down this same update path
-             * every time a reallocation is needed, however, which will
-             * usually be a slowdown even if there *are* other shapes that
-             * don't realloc.
-             */
+            
+
+
+
+
+
+
+
+
+
+
+
             if (obj->numDynamicSlots() != slots)
                 return disable("insufficient slot capacity");
 
 #ifdef JSGC_INCREMENTAL_MJ
-            /*
-             * Since we're changing the object's shape, we need a write
-             * barrier. Taking the slow path is the easiest way to get one.
-             */
+            
+
+
+
             if (cx->compartment->compileBarriers())
                 return disable("ADDPROP write barrier required");
 #endif
@@ -601,11 +601,11 @@ static bool
 IsCacheableProtoChain(JSObject *obj, JSObject *holder)
 {
     while (obj != holder) {
-        /*
-         * We cannot assume that we find the holder object on the prototype
-         * chain and must check for null proto. The prototype chain can be
-         * altered during the lookupProperty call.
-         */
+        
+
+
+
+
         JSObject *proto = obj->getProto();
         if (!proto || !proto->isNative())
             return false;
@@ -633,20 +633,20 @@ IsCacheableListBase(JSObject *obj)
 
 template <typename IC>
 struct GetPropHelper {
-    // These fields are set in the constructor and describe a property lookup.
+    
     JSContext          *cx;
     RootedObject       obj;
     RootedPropertyName name;
     IC                 &ic;
     VMFrame            &f;
 
-    // These fields are set by |bind| and |lookup|. After a call to either
-    // function, these are set exactly as they are in JSOP_GETPROP or JSOP_NAME.
+    
+    
     RootedObject       holder;
     RootedShape        prop;
 
-    // This field is set by |bind| and |lookup| only if they returned
-    // Lookup_Cacheable, otherwise it is NULL.
+    
+    
     RootedShape        shape;
 
     GetPropHelper(JSContext *cx, JSObject *obj, PropertyName *name, IC &ic, VMFrame &f)
@@ -690,27 +690,31 @@ struct GetPropHelper {
             return Lookup_Uncacheable;
 
         if (!prop) {
-            /*
-             * Just because we didn't find the property on the object doesn't
-             * mean it won't magically appear through various engine hacks:
-             */
+            
+
+
+
             if (obj->getClass()->getProperty && obj->getClass()->getProperty != JS_PropertyStub)
                 return Lookup_Uncacheable;
 
-            /*
-             * Don't generate missing property ICs if we skipped a non-native
-             * object, as lookups may extend beyond the prototype chain (e.g.
-             * for ListBase proxies).
-             */
-            if (!obj->isNative())
-                return Lookup_Uncacheable;
+            
+
+
+
+
+            JSObject *obj2 = obj;
+            while (obj2) {
+                if (!obj2->isNative())
+                    return Lookup_Uncacheable;
+                obj2 = obj2->getProto();
+            }
 
 #if JS_HAS_NO_SUCH_METHOD
-            /*
-             * The __noSuchMethod__ hook may substitute in a valid method.
-             * Since, if o.m is missing, o.m() will probably be an error,
-             * just mark all missing callprops as uncacheable.
-             */
+            
+
+
+
+
             if (*f.pc() == JSOP_CALLPROP)
                 return Lookup_Uncacheable;
 #endif
@@ -735,11 +739,11 @@ struct GetPropHelper {
             if (!ic.canCallHook)
                 return ic.disable(f, "can't call getter hook");
             if (f.regs.inlined()) {
-                /*
-                 * As with native stubs, getter hook stubs can't be
-                 * generated for inline frames. Mark the inner function
-                 * as uninlineable and recompile.
-                 */
+                
+
+
+
+
                 f.script()->uninlineable = true;
                 MarkTypeObjectFlags(cx, f.script()->function(),
                                     types::OBJECT_FLAG_UNINLINEABLE);
@@ -802,7 +806,7 @@ class GetPropCompiler : public PICStubCompiler
         repatcher.relink(labels.getInlineShapeJump(pic.getFastShapeGuard()), pic.slowPathStart);
 
         if (pic.hasTypeCheck()) {
-            /* TODO: combine pic.u.get into ICLabels? */
+            
             repatcher.relink(labels.getInlineTypeJump(pic.fastPathStart), pic.getSlowTypeCheck());
         }
 
@@ -920,16 +924,16 @@ class GetPropCompiler : public PICStubCompiler
         MJITInstrumentation sps(&f.cx->runtime->spsProfiler);
         Assembler masm(&sps, &f);
 
-        /* Only strings are allowed. */
+        
         Jump notString = masm.branchPtr(Assembler::NotEqual, pic.typeReg(),
                                         ImmType(JSVAL_TYPE_STRING));
 
-        /*
-         * Clobber objReg with String.prototype and do some PIC stuff. Well,
-         * really this is now a MIC, except it won't ever be patched, so we
-         * just disable the PIC at the end. :FIXME:? String.prototype probably
-         * does not get random shape changes.
-         */
+        
+
+
+
+
+
         masm.move(ImmPtr(obj), pic.objReg);
         masm.loadShape(pic.objReg, pic.shapeReg);
         Jump shapeMismatch = masm.branchPtr(Assembler::NotEqual, pic.shapeReg,
@@ -957,13 +961,13 @@ class GetPropCompiler : public PICStubCompiler
         JaegerSpew(JSpew_PICs, "generate string call stub at %p\n",
                    cs.executableAddress());
 
-        /* Patch the type check to jump here. */
+        
         if (pic.hasTypeCheck()) {
             Repatcher repatcher(f.chunk());
             repatcher.relink(pic.getPropLabels().getInlineTypeJump(pic.fastPathStart), cs);
         }
 
-        /* Disable the PIC so we don't keep generating stubs on the above shape mismatch. */
+        
         disable("generated string call stub");
         return Lookup_Cacheable;
     }
@@ -977,7 +981,7 @@ class GetPropCompiler : public PICStubCompiler
         Jump notString = masm.branchPtr(Assembler::NotEqual, pic.typeReg(),
                                         ImmType(JSVAL_TYPE_STRING));
         masm.loadPtr(Address(pic.objReg, JSString::offsetOfLengthAndFlags()), pic.objReg);
-        // String length is guaranteed to be no more than 2**28, so the 32-bit operation is OK.
+        
         masm.urshift32(Imm32(JSString::LENGTH_SHIFT), pic.objReg);
         masm.move(ImmType(JSVAL_TYPE_INT32), pic.shapeReg);
         Jump done = masm.jump();
@@ -1021,13 +1025,13 @@ class GetPropCompiler : public PICStubCompiler
             CodeLocationInstruction istr = labels.getDslotsLoad(pic.fastPathRejoin);
             repatcher.repatchLoadPtrToLEA(istr);
 
-            //
-            // We've patched | mov dslots, [obj + DSLOTS_OFFSET]
-            // To:           | lea fslots, [obj + DSLOTS_OFFSET]
-            //
-            // Because the offset is wrong, it's necessary to correct it
-            // below.
-            //
+            
+            
+            
+            
+            
+            
+            
             int32_t diff = int32_t(JSObject::getFixedSlotOffset(0)) -
                          int32_t(JSObject::offsetOfSlots());
             JS_ASSERT(diff != 0);
@@ -1044,14 +1048,14 @@ class GetPropCompiler : public PICStubCompiler
         return Lookup_Cacheable;
     }
 
-    /* For JSPropertyOp getters. */
+    
     void generateGetterStub(Assembler &masm, Shape *shape, jsid userid,
                             Label start, Vector<Jump, 8> &shapeMismatches)
     {
-        /*
-         * Getter hook needs to be called from the stub. The state is fully
-         * synced and no registers are live except the result registers.
-         */
+        
+
+
+
         JS_ASSERT(pic.canCallHook);
         PropertyOp getter = shape->getterOp();
 
@@ -1062,7 +1066,7 @@ class GetPropCompiler : public PICStubCompiler
         if (tempRegs.hasReg(Registers::ClobberInCall))
             tempRegs.takeReg(Registers::ClobberInCall);
 
-        /* Get a register to hold obj while we set up the rest of the frame. */
+        
         RegisterID holdObjReg = pic.objReg;
         if (tempRegs.hasReg(pic.objReg)) {
             tempRegs.takeReg(pic.objReg);
@@ -1074,31 +1078,31 @@ class GetPropCompiler : public PICStubCompiler
         RegisterID t0 = tempRegs.takeAnyReg().reg();
         masm.bumpStubCount(f.script(), f.pc(), t0);
 
-        /*
-         * Use three values above sp on the stack for use by the call to store
-         * the object and id being passed into the call as handles and to store
-         * the resulting value. Temporary slots are used by GETPROP for this,
-         * plus there is extra room on the stack reserved for a callee frame.
-         */
+        
+
+
+
+
+
         int32_t initialFrameDepth = f.regs.sp - f.fp()->slots() + 3;
         int32_t vpOffset = (char *) f.regs.sp - (char *) f.fp();
         int32_t idHandleOffset = (char *) (f.regs.sp + 1) - (char *) f.fp();
         int32_t objHandleOffset = (char *) (f.regs.sp + 2) - (char *) f.fp();
 
-        /*
-         * Make sure we handle endianness correctly.
-         */
+        
+
+
         masm.storePtr(holdObjReg, masm.payloadOf(Address(JSFrameReg, objHandleOffset)));
         masm.storePtr(ImmPtr((void *) JSID_BITS(userid)), masm.payloadOf(Address(JSFrameReg, idHandleOffset)));
 
-        /*
-         * On 32 bit platforms zero the upper portion of the values so that
-         * the GC does not see a corrupt value in the handle slots. The two
-         * slots will look like doubles, so won't be traced, but the objects
-         * will be held live by the object value still in place on the stack.
-         * This will need to be addressed once a moving GC can relocate the
-         * objects, as the created handles will need to be properly registered.
-         */
+        
+
+
+
+
+
+
+
 #if JS_BITS_PER_WORD == 32
         masm.storePtr(ImmPtr(NULL), masm.tagOf(Address(JSFrameReg, objHandleOffset)));
         masm.storePtr(ImmPtr(NULL), masm.tagOf(Address(JSFrameReg, idHandleOffset)));
@@ -1114,7 +1118,7 @@ class GetPropCompiler : public PICStubCompiler
 
         masm.setupFallibleABICall(cx->typeInferenceEnabled(), f.regs.pc, initialFrameDepth);
 
-        /* Grab cx. */
+        
 #ifdef JS_CPU_X86
         RegisterID cxReg = tempRegs.takeAnyReg().reg();
 #else
@@ -1122,7 +1126,7 @@ class GetPropCompiler : public PICStubCompiler
 #endif
         masm.loadPtr(FrameAddress(offsetof(VMFrame, cx)), cxReg);
 
-        /* Use a temporary for parameters. */
+        
         masm.addPtr(Imm32(vpOffset), JSFrameReg, t0);
 
         masm.restoreStackBase();
@@ -1154,14 +1158,14 @@ class GetPropCompiler : public PICStubCompiler
         linkerEpilogue(linker, start, shapeMismatches);
     }
 
-    /* For getters backed by a JSNative. */
+    
     void generateNativeGetterStub(Assembler &masm, Shape *shape,
                                   Label start, Vector<Jump, 8> &shapeMismatches)
     {
-        /*
-         * Getter hook needs to be called from the stub. The state is fully
-         * synced and no registers are live except the result registers.
-         */
+        
+
+
+
         JS_ASSERT(pic.canCallHook);
 
         JSFunction *fun = shape->getterObject()->toFunction();
@@ -1174,7 +1178,7 @@ class GetPropCompiler : public PICStubCompiler
         if (tempRegs.hasReg(Registers::ClobberInCall))
             tempRegs.takeReg(Registers::ClobberInCall);
 
-        /* Get a register to hold obj while we set up the rest of the frame. */
+        
         RegisterID holdObjReg = pic.objReg;
         if (tempRegs.hasReg(pic.objReg)) {
             tempRegs.takeReg(pic.objReg);
@@ -1186,29 +1190,29 @@ class GetPropCompiler : public PICStubCompiler
         RegisterID t0 = tempRegs.takeAnyReg().reg();
         masm.bumpStubCount(f.script(), f.pc(), t0);
 
-        /*
-         * A JSNative has the following signature:
-         *
-         *   JSBool native(JSContext *cx, unsigned argc, Value *vp);
-         *
-         * Since we are calling a getter, argc is always 0. vp must point to two
-         * values, the callee and the holder. We use vp == sp to avoid clobbering
-         * stack values.
-         */
+        
+
+
+
+
+
+
+
+
         int32_t vpOffset = (char *) f.regs.sp - (char *) f.fp();
 
         masm.storeValue(ObjectValue(*fun), Address(JSFrameReg, vpOffset));
         masm.storeValueFromComponents(ImmType(JSVAL_TYPE_OBJECT), holdObjReg,
                                       Address(JSFrameReg, vpOffset + sizeof(js::Value)));
 
-        /*
-         * sp + 2 to avoid clobbering vp[0] and vp[1] if the getter calls
-         * scripted functions.
-         */
+        
+
+
+
         int32_t initialFrameDepth = f.regs.sp + 2 - f.fp()->slots();
         masm.setupFallibleABICall(cx->typeInferenceEnabled(), f.regs.pc, initialFrameDepth);
 
-        /* Grab cx. */
+        
 #ifdef JS_CPU_X86
         RegisterID cxReg = tempRegs.takeAnyReg().reg();
 #else
@@ -1216,14 +1220,14 @@ class GetPropCompiler : public PICStubCompiler
 #endif
         masm.loadPtr(FrameAddress(offsetof(VMFrame, cx)), cxReg);
 
-        /* Grab vp. */
+        
         RegisterID vpReg = t0;
         masm.addPtr(Imm32(vpOffset), JSFrameReg, vpReg);
 
         masm.restoreStackBase();
         masm.setupABICall(Registers::NormalCall, 3);
         masm.storeArg(2, vpReg);
-        masm.storeArg(1, Imm32(0)); // argc
+        masm.storeArg(1, Imm32(0)); 
         masm.storeArg(0, cxReg);
 
         masm.callWithABI(JS_FUNC_TO_DATA_PTR(void *, native), false);
@@ -1253,7 +1257,7 @@ class GetPropCompiler : public PICStubCompiler
         MJITInstrumentation sps(&f.cx->runtime->spsProfiler);
         Assembler masm(&sps, &f);
 
-        // Ignore GC pointers baked into assembly visible on the stack.
+        
         SkipRoot skip(cx, &masm);
 
         Label start;
@@ -1269,10 +1273,10 @@ class GetPropCompiler : public PICStubCompiler
                                             Address(pic.objReg, JSObject::offsetOfShape()),
                                             ImmPtr(obj->lastProperty()));
 
-            /*
-             * No need to assert validity of GETPROP_STUB_SHAPE_JUMP in this case:
-             * the IC is disabled after a dense array hit, so no patching can occur.
-             */
+            
+
+
+
 #ifndef JS_HAS_IC_LABELS
             setStubShapeOffset = false;
 #endif
@@ -1291,17 +1295,17 @@ class GetPropCompiler : public PICStubCompiler
         if (!shapeMismatches.append(shapeGuardJump))
             return error();
 
-        // Guard on the proxy guts for ListBase accesses, if applicable.
+        
         if (IsCacheableListBase(obj)) {
-            // The shape check above ensures this is a proxy with the correct
-            // number of fixed slots, but we need further checks to ensure that
-            //
-            // (a) the object is a ListBase.
-            // (b) the object does not have any expando properties, or has an
-            //     expando which does not have the desired property.
-            //
-            // If both of these hold, all accesses on non-indexed PropertyName
-            // properties will go through the object's native prototype chain.
+            
+            
+            
+            
+            
+            
+            
+            
+            
 
             Address handler(pic.objReg, JSObject::getFixedSlotOffset(JSSLOT_PROXY_HANDLER));
             Jump handlerGuard = masm.testPrivate(Assembler::NotEqual, handler, GetProxyHandler(obj));
@@ -1313,9 +1317,9 @@ class GetPropCompiler : public PICStubCompiler
             Value expandoValue = obj->getFixedSlot(GetListBaseExpandoSlot());
             JSObject *expando = expandoValue.isObject() ? &expandoValue.toObject() : NULL;
 
-            // Expando objects just hold any extra properties the object has
-            // been given by a script, and have no prototype or anything else
-            // that will complicate property lookups on them.
+            
+            
+            
             JS_ASSERT_IF(expando, expando->isNative() && expando->getProto() == NULL);
 
             if (expando && expando->nativeLookupNoAllocation(name) == NULL) {
@@ -1346,18 +1350,18 @@ class GetPropCompiler : public PICStubCompiler
             }
 
             if (holder) {
-                // Bake in the holder identity. Careful not to clobber |objReg|, since we can't remat it.
+                
                 holderReg = pic.shapeReg;
                 masm.move(ImmPtr(holder), holderReg);
                 pic.shapeRegHasBaseShape = false;
 
-                // Guard on the holder's shape.
+                
                 Jump j = masm.guardShape(holderReg, holder);
                 if (!shapeMismatches.append(j))
                     return error();
             } else {
-                // Like when we add a property, we need to guard on the shape of
-                // everything on the prototype chain.
+                
+                
                 JSObject *proto = obj->getProto();
                 RegisterID lastReg = pic.objReg;
                 while (proto) {
@@ -1393,13 +1397,13 @@ class GetPropCompiler : public PICStubCompiler
             return Lookup_Cacheable;
         }
 
-        /*
-         * A non-null 'shape' tells us where to find the property value in the
-         * holder object. A null shape means that the above checks guard the
-         * absence of the property, so the get-prop returns 'undefined'. A
-         * missing property guarantees a type barrier below so we don't have to
-         * check type information.
-         */
+        
+
+
+
+
+
+
         if (shape)
             masm.loadObjProp(holder, holderReg, shape, pic.shapeReg, pic.objReg);
         else
@@ -1417,7 +1421,7 @@ class GetPropCompiler : public PICStubCompiler
             return disable("code memory is out of range");
         }
 
-        // The final exit jumps to the store-back in the inline stub.
+        
         buffer.link(done, pic.fastPathRejoin);
 
         linkerEpilogue(buffer, start, shapeMismatches);
@@ -1429,7 +1433,7 @@ class GetPropCompiler : public PICStubCompiler
 
     void linkerEpilogue(LinkerHelper &buffer, Label start, Vector<Jump, 8> &shapeMismatches)
     {
-        // The guard exit jumps to the original slow case.
+        
         for (Jump *pj = shapeMismatches.begin(); pj != shapeMismatches.end(); ++pj)
             buffer.link(*pj, pic.slowPathStart);
 
@@ -1452,9 +1456,9 @@ class GetPropCompiler : public PICStubCompiler
         Repatcher repatcher(pic.lastCodeBlock(f.chunk()));
         CodeLocationLabel label = pic.lastPathStart();
 
-        // Patch either the inline fast path or a generated stub. The stub
-        // omits the prefix of the inline fast path that loads the shape, so
-        // the offsets are different.
+        
+        
+        
         int shapeGuardJumpOffset;
         if (pic.stubsGenerated)
             shapeGuardJumpOffset = pic.getPropLabels().getStubShapeJumpOffset();
@@ -1480,15 +1484,15 @@ class GetPropCompiler : public PICStubCompiler
         LookupStatus status = getprop.lookupAndTest();
 
         if (status != Lookup_Cacheable && status != Lookup_NoProperty) {
-            /* Don't touch the IC if it may have been destroyed. */
+            
             if (!monitor.recompiled())
                 pic.hadUncacheable = true;
             MarkNotIdempotent(f.script(), f.pc());
             return status;
         }
 
-        // Mark as not idempotent to avoid recompilation in Ion Monkey
-        // GetPropertyCache.
+        
+        
         if (!obj->hasIdempotentProtoChain())
             MarkNotIdempotent(f.script(), f.pc());
 
@@ -1507,8 +1511,8 @@ class GetPropCompiler : public PICStubCompiler
     }
 };
 
-}  // namespace mjit
-}  // namespace js
+}  
+}  
 
 class ScopeNameCompiler : public PICStubCompiler
 {
@@ -1527,7 +1531,7 @@ class ScopeNameCompiler : public PICStubCompiler
         CodeLocationLabel       start = pic.lastPathStart();
         JSC::CodeLocationJump   jump;
 
-        // Patch either the inline fast path or a generated stub.
+        
         if (pic.stubsGenerated)
             jump = labels.getStubJump(start);
         else
@@ -1537,10 +1541,10 @@ class ScopeNameCompiler : public PICStubCompiler
 
     LookupStatus walkScopeChain(Assembler &masm, JumpList &fails)
     {
-        /* Walk the scope chain. */
+        
         JSObject *tobj = scopeChain;
 
-        /* For GETXPROP, we'll never enter this loop. */
+        
         JS_ASSERT_IF(pic.kind == ic::PICInfo::XNAME, tobj && tobj == getprop.holder);
         JS_ASSERT_IF(pic.kind == ic::PICInfo::XNAME, getprop.obj == tobj);
 
@@ -1549,14 +1553,14 @@ class ScopeNameCompiler : public PICStubCompiler
                 return disable("non-cacheable scope chain object");
             JS_ASSERT(tobj->isNative());
 
-            /* Guard on intervening shapes. */
+            
             masm.loadShape(pic.objReg, pic.shapeReg);
             Jump j = masm.branchPtr(Assembler::NotEqual, pic.shapeReg,
                                     ImmPtr(tobj->lastProperty()));
             if (!fails.append(j))
                 return error();
 
-            /* Load the next link in the scope chain. */
+            
             Address parent(pic.objReg, ScopeObject::offsetOfEnclosingScope());
             masm.loadPayload(parent, pic.objReg);
 
@@ -1581,7 +1585,7 @@ class ScopeNameCompiler : public PICStubCompiler
     {
         ScopeNameLabels &labels = pic.scopeNameLabels();
 
-        /* Link the inline path back to the slow path. */
+        
         JSC::CodeLocationJump inlineJump = labels.getInlineJump(pic.fastPathStart);
         repatcher.relink(inlineJump, pic.slowPathStart);
 
@@ -1608,7 +1612,7 @@ class ScopeNameCompiler : public PICStubCompiler
         JumpList fails(cx);
         ScopeNameLabels &labels = pic.scopeNameLabels();
 
-        /* For GETXPROP, the object is already in objReg. */
+        
         if (pic.kind == ic::PICInfo::NAME)
             masm.loadPtr(Address(JSFrameReg, StackFrame::offsetOfScopeChain()), pic.objReg);
 
@@ -1619,7 +1623,7 @@ class ScopeNameCompiler : public PICStubCompiler
         if (status != Lookup_Cacheable)
             return status;
 
-        /* If a scope chain walk was required, the final object needs a NULL test. */
+        
         MaybeJump finalNull;
         if (pic.kind == ic::PICInfo::NAME)
             finalNull = masm.branchTestPtr(Assembler::Zero, pic.objReg, pic.objReg);
@@ -1631,7 +1635,7 @@ class ScopeNameCompiler : public PICStubCompiler
 
         Jump done = masm.jump();
 
-        /* All failures flow to here, so there is a common point to patch. */
+        
         for (Jump *pj = fails.begin(); pj != fails.end(); ++pj)
             pj->linkTo(masm.label(), &masm);
         if (finalNull.isSet())
@@ -1681,7 +1685,7 @@ class ScopeNameCompiler : public PICStubCompiler
         Vector<Jump, 8> fails(cx);
         ScopeNameLabels &labels = pic.scopeNameLabels();
 
-        /* For GETXPROP, the object is already in objReg. */
+        
         if (pic.kind == ic::PICInfo::NAME)
             masm.loadPtr(Address(JSFrameReg, StackFrame::offsetOfScopeChain()), pic.objReg);
 
@@ -1696,7 +1700,7 @@ class ScopeNameCompiler : public PICStubCompiler
         if (status != Lookup_Cacheable)
             return status;
 
-        /* If a scope chain walk was required, the final object needs a NULL test. */
+        
         MaybeJump finalNull;
         if (pic.kind == ic::PICInfo::NAME)
             finalNull = masm.branchTestPtr(Assembler::Zero, pic.objReg, pic.objReg);
@@ -1705,12 +1709,12 @@ class ScopeNameCompiler : public PICStubCompiler
                                          ImmPtr(getprop.holder->lastProperty()));
         Address address = masm.objPropAddress(obj, pic.objReg, shape->slot());
 
-        /* Safe because type is loaded first. */
+        
         masm.loadValueAsComponents(address, pic.shapeReg, pic.objReg);
 
         Jump done = masm.jump();
 
-        // All failures flow to here, so there is a common point to patch.
+        
         for (Jump *pj = fails.begin(); pj != fails.end(); ++pj)
             pj->linkTo(masm.label(), &masm);
         if (finalNull.isSet())
@@ -1749,7 +1753,7 @@ class ScopeNameCompiler : public PICStubCompiler
 
     LookupStatus updateForName()
     {
-        // |getprop.obj| is filled by bind()
+        
         LookupStatus status = getprop.bind();
         if (status != Lookup_Cacheable)
             return status;
@@ -1759,7 +1763,7 @@ class ScopeNameCompiler : public PICStubCompiler
 
     LookupStatus updateForXName()
     {
-        // |obj| and |getprop.obj| are NULL, but should be the given scopeChain.
+        
         getprop.obj = scopeChain;
         LookupStatus status = getprop.lookup();
         if (status != Lookup_Cacheable)
@@ -1793,7 +1797,7 @@ class ScopeNameCompiler : public PICStubCompiler
         RootedShape prop(cx, getprop.prop);
 
         if (!prop) {
-            /* Kludge to allow (typeof foo == "undefined") tests. */
+            
             if (kind == ic::PICInfo::NAME) {
                 JSOp op2 = JSOp(f.pc()[JSOP_NAME_LENGTH]);
                 if (op2 == JSOP_TYPEOF) {
@@ -1805,8 +1809,8 @@ class ScopeNameCompiler : public PICStubCompiler
             return false;
         }
 
-        // If the property was found, but we decided not to cache it, then
-        // take a slow path and do a full property fetch.
+        
+        
         if (!getprop.shape) {
             if (!JSObject::getProperty(cx, obj, obj, name, vp))
                 return false;
@@ -1838,11 +1842,11 @@ class BindNameCompiler : public PICStubCompiler
     {
         BindNameLabels &labels = pic.bindNameLabels();
 
-        /* Link the inline jump back to the slow path. */
+        
         JSC::CodeLocationJump inlineJump = labels.getInlineJump(pic.getFastShapeGuard());
         repatcher.relink(inlineJump, pic.slowPathStart);
 
-        /* Link the slow path to call the IC entry point. */
+        
         FunctionPtr target(JS_FUNC_TO_DATA_PTR(void *, ic::BindName));
         repatcher.relink(pic.slowPathCall, target);
     }
@@ -1853,7 +1857,7 @@ class BindNameCompiler : public PICStubCompiler
         Repatcher repatcher(pic.lastCodeBlock(f.chunk()));
         JSC::CodeLocationJump jump;
 
-        /* Patch either the inline fast path or a generated stub. */
+        
         if (pic.stubsGenerated)
             jump = labels.getStubJump(pic.lastPathStart());
         else
@@ -1872,14 +1876,14 @@ class BindNameCompiler : public PICStubCompiler
         if (!IsCacheableNonGlobalScope(scopeChain))
             return disable("non-cacheable obj at start of scope chain");
 
-        /* Guard on the shape of the scope chain. */
+        
         masm.loadPtr(Address(JSFrameReg, StackFrame::offsetOfScopeChain()), pic.objReg);
         masm.loadShape(pic.objReg, pic.shapeReg);
         Jump firstShape = masm.branchPtr(Assembler::NotEqual, pic.shapeReg,
                                          ImmPtr(scopeChain->lastProperty()));
 
         if (scopeChain != obj) {
-            /* Walk up the scope chain. */
+            
             JSObject *tobj = &scopeChain->asScope().enclosingScope();
             Address parent(pic.objReg, ScopeObject::offsetOfEnclosingScope());
             while (tobj) {
@@ -1901,7 +1905,7 @@ class BindNameCompiler : public PICStubCompiler
 
         Jump done = masm.jump();
 
-        // All failures flow to here, so there is a common point to patch.
+        
         for (Jump *pj = fails.begin(); pj != fails.end(); ++pj)
             pj->linkTo(masm.label(), &masm);
         firstShape.linkTo(masm.label(), &masm);
@@ -2072,7 +2076,7 @@ ic::SetPropOrName(VMFrame &f, ic::PICInfo *pic)
     JS_ASSERT(pic->isSet());
     JS_ASSERT(*f.pc() == JSOP_SETPROP || *f.pc() == JSOP_SETNAME);
 
-    // Save this in case the compiler triggers a recompilation of this script.
+    
     RootedPropertyName name(f.cx, pic->name);
 
     RecompilationMonitor monitor(f.cx);
@@ -2082,8 +2086,8 @@ ic::SetPropOrName(VMFrame &f, ic::PICInfo *pic)
     if (!obj)
         THROW();
 
-    // Note, we can't use SetProp/Name for PROPINC PICs because the property
-    // cache can't handle a GET and SET from the same scripted PC.
+    
+    
     if (!monitor.recompiled() && pic->shouldUpdate(f)) {
         VoidStubPIC disabled = *f.pc() == JSOP_SETPROP ? DisabledSetPropIC : DisabledSetNameIC;
         SetPropCompiler cc(f, obj, *pic, name, disabled);
@@ -2115,7 +2119,7 @@ DisabledXNameIC(VMFrame &f, ic::PICInfo *pic)
 void JS_FASTCALL
 ic::XName(VMFrame &f, ic::PICInfo *pic)
 {
-    /* GETXPROP is guaranteed to have an object. */
+    
     JSObject *obj = &f.regs.sp[-1].toObject();
 
     ScopeNameCompiler cc(f, obj, *pic, pic->name, DisabledXNameIC);
@@ -2174,7 +2178,7 @@ BaseIC::spew(VMFrame &f, const char *event, const char *message)
 #endif
 }
 
-/* Total length of scripts preceding a frame. */
+
 inline uint32_t frameCountersOffset(VMFrame &f)
 {
     JSContext *cx = f.cx;
@@ -2292,7 +2296,7 @@ GetElementIC::error(JSContext *cx)
 void
 GetElementIC::purge(Repatcher &repatcher)
 {
-    // Repatch the inline jumps.
+    
     if (inlineTypeGuardPatched)
         repatcher.relink(fastPathStart.jumpAtOffset(inlineTypeGuard), slowPathStart);
     if (inlineShapeGuardPatched)
@@ -2313,7 +2317,7 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
     JS_ASSERT(v.isString());
     JSContext *cx = f.cx;
 
-    // don't handle special logic required for property access on proxies.
+    
     if (!obj->isNative())
         return Lookup_Uncacheable;
 
@@ -2322,33 +2326,33 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
     if (status != Lookup_Cacheable)
         return status;
 
-    // With TI enabled, string property stubs can only be added to an opcode if
-    // the value read will go through a type barrier afterwards. TI only
-    // accounts for integer-valued properties accessed by GETELEM/CALLELEM.
+    
+    
+    
     if (cx->typeInferenceEnabled() && !forcedTypeBarrier)
         return disable(f, "string element access may not have type barrier");
 
     MJITInstrumentation sps(&f.cx->runtime->spsProfiler);
     Assembler masm(&sps, &f);
 
-    // Guard on the string's type and identity.
+    
     MaybeJump atomTypeGuard;
     if (hasInlineTypeGuard() && !inlineTypeGuardPatched) {
-        // We link all string-key dependent stubs together, and store the
-        // first set of guards in the IC, separately, from int-key dependent
-        // stubs. As long as we guarantee that the first string-key dependent
-        // stub guards on the key type, then all other string-key stubs can
-        // omit the guard.
+        
+        
+        
+        
+        
         JS_ASSERT(!idRemat.isTypeKnown());
         atomTypeGuard = masm.testString(Assembler::NotEqual, typeReg);
     } else {
-        // If there was no inline type guard, then a string type is guaranteed.
-        // Otherwise, we are guaranteed the type has already been checked, via
-        // the comment above.
+        
+        
+        
         JS_ASSERT_IF(!hasInlineTypeGuard(), idRemat.knownType() == JSVAL_TYPE_STRING);
     }
 
-    // Reify the shape before guards that could flow into shape guarding stubs.
+    
     if (!obj->isDenseArray() && !typeRegHasBaseShape) {
         masm.loadShape(objReg, typeReg);
         typeRegHasBaseShape = true;
@@ -2358,12 +2362,12 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
     if (!idRemat.isConstant())
         atomIdGuard = masm.branchPtr(Assembler::NotEqual, idRemat.dataReg(), ImmPtr(v.toString()));
 
-    // Guard on the base shape.
+    
     Jump shapeGuard = masm.branchPtr(Assembler::NotEqual, typeReg, ImmPtr(obj->lastProperty()));
 
     Vector<Jump, 8> otherGuards(cx);
 
-    // Guard on the prototype, if applicable.
+    
     MaybeJump protoGuard;
     JSObject *holder = getprop.holder;
     RegisterID holderReg = objReg;
@@ -2371,16 +2375,16 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
         if (!GeneratePrototypeGuards(cx, otherGuards, masm, obj, holder, objReg, typeReg))
             return error(cx);
 
-        // Bake in the holder identity. Careful not to clobber |objReg|, since we can't remat it.
+        
         holderReg = typeReg;
         masm.move(ImmPtr(holder), holderReg);
         typeRegHasBaseShape = false;
 
-        // Guard on the holder's shape.
+        
         protoGuard = masm.guardShape(holderReg, holder);
     }
 
-    // Load the value.
+    
     Shape *shape = getprop.shape;
     masm.loadObjProp(holder, holderReg, shape, typeReg, objReg);
 
@@ -2397,7 +2401,7 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
     if (!buffer.verifyRange(f.chunk()))
         return disable(f, "code memory is out of range");
 
-    // Patch all guards.
+    
     buffer.maybeLink(atomIdGuard, slowPathStart);
     buffer.maybeLink(atomTypeGuard, slowPathStart);
     buffer.link(shapeGuard, slowPathStart);
@@ -2415,13 +2419,13 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
     js_free(chars);
 #endif
 
-    // Update the inline guards, if needed.
+    
     if (shouldPatchInlineTypeGuard() || shouldPatchUnconditionalShapeGuard()) {
         Repatcher repatcher(f.chunk());
 
         if (shouldPatchInlineTypeGuard()) {
-            // A type guard is present in the inline path, and this is the
-            // first string stub, so patch it now.
+            
+            
             JS_ASSERT(!inlineTypeGuardPatched);
             JS_ASSERT(atomTypeGuard.isSet());
 
@@ -2430,10 +2434,10 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
         }
 
         if (shouldPatchUnconditionalShapeGuard()) {
-            // The shape guard is unconditional, meaning there is no type
-            // check. This is the first stub, so it has to be patched. Note
-            // that it is wrong to patch the inline shape guard otherwise,
-            // because it follows an integer-id guard.
+            
+            
+            
+            
             JS_ASSERT(!hasInlineTypeGuard());
 
             repatcher.relink(fastPathStart.jumpAtOffset(inlineShapeGuard), cs);
@@ -2441,7 +2445,7 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
         }
     }
 
-    // If there were previous stub guards, patch them now.
+    
     if (hasLastStringStub) {
         Repatcher repatcher(lastStringStub);
         CodeLocationLabel stub(lastStringStub.start());
@@ -2452,7 +2456,7 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
             repatcher.relink(stub.jumpAtOffset(secondShapeGuard), cs);
     }
 
-    // Update state.
+    
     hasLastStringStub = true;
     lastStringStub = JITCode(cs.executableAddress(), buffer.size());
     if (atomIdGuard.isSet()) {
@@ -2478,7 +2482,7 @@ GetElementIC::attachGetProp(VMFrame &f, HandleObject obj, HandleValue v, HandleP
     if (stubsGenerated == MAX_GETELEM_IC_STUBS)
         disable(f, "max stubs reached");
 
-    // Finally, fetch the value to avoid redoing the property lookup.
+    
     vp.set(holder->getSlot(shape->slot()));
 
     return Lookup_Cacheable;
@@ -2496,17 +2500,17 @@ GetElementIC::attachTypedArray(VMFrame &f, HandleObject obj, HandleValue v, Hand
     if (JSOp(*f.pc()) == JSOP_CALLELEM)
         return disable(f, "typed array with call");
 
-    // The fast-path guarantees that after the dense shape guard, the type is
-    // known to be int32, either via type inference or the inline type check.
+    
+    
     JS_ASSERT(hasInlineTypeGuard() || idRemat.knownType() == JSVAL_TYPE_INT32);
 
     MJITInstrumentation sps(&f.cx->runtime->spsProfiler);
     Assembler masm(&sps, &f);
 
-    // Guard on this typed array's shape/class.
+    
     Jump shapeGuard = masm.guardShape(objReg, obj);
 
-    // Bounds check.
+    
     Jump outOfBounds;
     Address typedArrayLength = masm.payloadOf(Address(objReg, TypedArray::lengthOffset()));
     if (idRemat.isConstant()) {
@@ -2516,7 +2520,7 @@ GetElementIC::attachTypedArray(VMFrame &f, HandleObject obj, HandleValue v, Hand
         outOfBounds = masm.branch32(Assembler::BelowOrEqual, typedArrayLength, idRemat.dataReg());
     }
 
-    // Load the array's packed data vector.
+    
     masm.loadPtr(Address(objReg, TypedArray::dataOffset()), objReg);
 
     Int32Key key = idRemat.isConstant()
@@ -2552,8 +2556,8 @@ GetElementIC::attachTypedArray(VMFrame &f, HandleObject obj, HandleValue v, Hand
     CodeLocationLabel cs = buffer.finalizeCodeAddendum();
     JaegerSpew(JSpew_PICs, "generated getelem typed array stub at %p\n", cs.executableAddress());
 
-    // If we can generate a typed array stub, the shape guard is conditional.
-    // Also, we only support one typed array.
+    
+    
     JS_ASSERT(!shouldPatchUnconditionalShapeGuard());
     JS_ASSERT(!inlineShapeGuardPatched);
 
@@ -2563,30 +2567,30 @@ GetElementIC::attachTypedArray(VMFrame &f, HandleObject obj, HandleValue v, Hand
 
     stubsGenerated++;
 
-    // In the future, it might make sense to attach multiple typed array stubs.
-    // For simplicitly, they are currently monomorphic.
+    
+    
     if (stubsGenerated == MAX_GETELEM_IC_STUBS)
         disable(f, "max stubs reached");
 
     disable(f, "generated typed array stub");
 
-    // Fetch the value as expected of Lookup_Cacheable for GetElement.
+    
     Rooted<jsid> idRoot(cx, id);
     if (!JSObject::getGeneric(cx, obj, obj, idRoot, vp))
         return Lookup_Error;
 
     return Lookup_Cacheable;
 }
-#endif /* JS_METHODJIT_TYPED_ARRAY */
+#endif 
 
 LookupStatus
 GetElementIC::update(VMFrame &f, HandleObject obj, HandleValue v, HandleId id, MutableHandleValue vp)
 {
-    /*JSObject *obj, const Value &v, jsid id, Value *vp)
-     * Only treat this as a GETPROP for non-numeric string identifiers. The
-     * GETPROP IC assumes the id has already gone through filtering for string
-     * indexes in the emitter.
-     */
+    
+
+
+
+
     uint32_t dummy;
     if (v.isString() && JSID_IS_ATOM(id) && !JSID_TO_ATOM(id)->isIndex(&dummy)) {
         RootedPropertyName name(f.cx, JSID_TO_ATOM(id)->asPropertyName());
@@ -2594,16 +2598,16 @@ GetElementIC::update(VMFrame &f, HandleObject obj, HandleValue v, HandleId id, M
     }
 
 #if defined JS_METHODJIT_TYPED_ARRAY
-    /*
-     * Typed array ICs can make stub calls, and need to know which registers
-     * are in use and need to be restored after the call. If type inference is
-     * enabled then we don't necessarily know the full set of such registers
-     * when generating the IC (loop-carried registers may be allocated later),
-     * and additionally the push/pop instructions used to save/restore in the
-     * IC are not compatible with carrying entries in floating point registers.
-     * Since we can use type information to generate inline paths for typed
-     * arrays, just don't generate these ICs with inference enabled.
-     */
+    
+
+
+
+
+
+
+
+
+
     if (!f.cx->typeInferenceEnabled() && obj->isTypedArray())
         return attachTypedArray(f, obj, v, id, vp);
 #endif
@@ -2616,7 +2620,7 @@ ic::GetElement(VMFrame &f, ic::GetElementIC *ic)
 {
     JSContext *cx = f.cx;
 
-    // Right now, we don't optimize for strings or lazy arguments.
+    
     if (!f.regs.sp[-2].isObject()) {
         ic->disable(f, "non-object");
         stubs::GetElem(f);
@@ -2633,8 +2637,8 @@ ic::GetElement(VMFrame &f, ic::GetElementIC *ic)
         THROW();
 
 #if JS_HAS_XML_SUPPORT
-    // Some XML properties behave differently when accessed in a call vs. normal
-    // context, so we fall back to stubs::GetElem.
+    
+    
     if (obj->isXML()) {
         ic->disable(f, "XML object");
         stubs::GetElem(f);
@@ -2661,7 +2665,7 @@ ic::GetElement(VMFrame &f, ic::GetElementIC *ic)
             if (status == Lookup_Error)
                 THROW();
 
-            // If the result can be cached, the value was already retrieved.
+            
             JS_ASSERT(!f.regs.sp[-2].isMagic());
             return;
         }
@@ -2699,7 +2703,7 @@ SetElementIC::error(JSContext *cx)
 void
 SetElementIC::purge(Repatcher &repatcher)
 {
-    // Repatch the inline jumps.
+    
     if (inlineShapeGuardPatched)
         repatcher.relink(fastPathStart.jumpAtOffset(inlineShapeGuard), slowPathStart);
     if (inlineHoleGuardPatched)
@@ -2721,9 +2725,9 @@ SetElementIC::attachHoleStub(VMFrame &f, JSObject *obj, int32_t keyval)
     if (keyval < 0)
         return disable(f, "negative key index");
 
-    // We may have failed a capacity check instead of a dense array check.
-    // However we should still build the IC in this case, since it could
-    // be in a loop that is filling in the array.
+    
+    
+    
 
     if (js_PrototypeHasIndexedProperties(cx, obj))
         return disable(f, "prototype has indexed properties");
@@ -2736,11 +2740,11 @@ SetElementIC::attachHoleStub(VMFrame &f, JSObject *obj, int32_t keyval)
     if (!GeneratePrototypeGuards(cx, fails, masm, obj, NULL, objReg, objReg))
         return error(cx);
 
-    // Test for indexed properties in Array.prototype. We test each shape
-    // along the proto chain. This affords us two optimizations:
-    //  1) Loading the prototype can be avoided because the shape would change;
-    //     instead we can bake in their identities.
-    //  2) We only have to test the shape, rather than INDEXED.
+    
+    
+    
+    
+    
     for (JSObject *pobj = obj->getProto(); pobj; pobj = pobj->getProto()) {
         if (!pobj->isNative())
             return disable(f, "non-native array prototype");
@@ -2750,25 +2754,25 @@ SetElementIC::attachHoleStub(VMFrame &f, JSObject *obj, int32_t keyval)
             return error(cx);
     }
 
-    // Restore |obj|.
+    
     masm.rematPayload(StateRemat::FromInt32(objRemat), objReg);
 
-    // Load the elements.
+    
     masm.loadPtr(Address(objReg, JSObject::offsetOfElements()), objReg);
 
     Int32Key key = hasConstantKey ? Int32Key::FromConstant(keyValue) : Int32Key::FromRegister(keyReg);
 
-    // Guard that the initialized length is being updated exactly.
+    
     fails.append(masm.guardArrayExtent(ObjectElements::offsetOfInitializedLength(),
                                        objReg, key, Assembler::NotEqual));
 
-    // Check the array capacity.
+    
     fails.append(masm.guardArrayExtent(ObjectElements::offsetOfCapacity(),
                                        objReg, key, Assembler::BelowOrEqual));
 
     masm.bumpKey(key, 1);
 
-    // Update the length and initialized length.
+    
     masm.storeKey(key, Address(objReg, ObjectElements::offsetOfInitializedLength()));
     Jump lengthGuard = masm.guardArrayExtent(ObjectElements::offsetOfLength(),
                                              objReg, key, Assembler::AboveOrEqual);
@@ -2777,7 +2781,7 @@ SetElementIC::attachHoleStub(VMFrame &f, JSObject *obj, int32_t keyval)
 
     masm.bumpKey(key, -1);
 
-    // Store the value back.
+    
     if (hasConstantKey) {
         Address slot(objReg, keyValue * sizeof(Value));
         masm.storeValue(vr, slot);
@@ -2799,7 +2803,7 @@ SetElementIC::attachHoleStub(VMFrame &f, JSObject *obj, int32_t keyval)
     if (!buffer.verifyRange(f.chunk()))
         return disable(f, "code memory is out of range");
 
-    // Patch all guards.
+    
     for (size_t i = 0; i < fails.length(); i++)
         buffer.link(fails[i], slowPathStart);
     buffer.link(done, fastPathRejoin);
@@ -2820,20 +2824,20 @@ SetElementIC::attachHoleStub(VMFrame &f, JSObject *obj, int32_t keyval)
 LookupStatus
 SetElementIC::attachTypedArray(VMFrame &f, JSObject *obj, int32_t key)
 {
-    // Right now, only one shape guard extension is supported.
+    
     JS_ASSERT(!inlineShapeGuardPatched);
 
     JSContext *cx = f.cx;
     MJITInstrumentation sps(&f.cx->runtime->spsProfiler);
     Assembler masm(&sps, &f);
 
-    // Restore |obj|.
+    
     masm.rematPayload(StateRemat::FromInt32(objRemat), objReg);
 
-    // Guard on this typed array's shape.
+    
     Jump shapeGuard = masm.guardShape(objReg, obj);
 
-    // Bounds check.
+    
     Jump outOfBounds;
     Address typedArrayLength = masm.payloadOf(Address(objReg, TypedArray::lengthOffset()));
     if (hasConstantKey)
@@ -2841,7 +2845,7 @@ SetElementIC::attachTypedArray(VMFrame &f, JSObject *obj, int32_t key)
     else
         outOfBounds = masm.branch32(Assembler::BelowOrEqual, typedArrayLength, keyReg);
 
-    // Load the array's packed data vector.
+    
     masm.loadPtr(Address(objReg, TypedArray::dataOffset()), objReg);
 
     if (!masm.supportsFloatingPoint() &&
@@ -2876,9 +2880,9 @@ SetElementIC::attachTypedArray(VMFrame &f, JSObject *obj, int32_t key)
 
     Jump done = masm.jump();
 
-    // The stub does not rely on any pointers or numbers that could be ruined
-    // by a GC or shape regenerated GC. We let this stub live for the lifetime
-    // of the script.
+    
+    
+    
     JS_ASSERT(!execPool);
     LinkerHelper buffer(masm, JSC::METHOD_CODE);
     execPool = buffer.init(cx);
@@ -2888,7 +2892,7 @@ SetElementIC::attachTypedArray(VMFrame &f, JSObject *obj, int32_t key)
     if (!buffer.verifyRange(f.chunk()))
         return disable(f, "code memory is out of range");
 
-    // Note that the out-of-bounds path simply does nothing.
+    
     buffer.link(shapeGuard, slowPathStart);
     buffer.link(outOfBounds, fastPathRejoin);
     buffer.link(done, fastPathRejoin);
@@ -2903,8 +2907,8 @@ SetElementIC::attachTypedArray(VMFrame &f, JSObject *obj, int32_t key)
 
     stubsGenerated++;
 
-    // In the future, it might make sense to attach multiple typed array stubs.
-    // For simplicitly, they are currently monomorphic.
+    
+    
     if (stubsGenerated == MAX_GETELEM_IC_STUBS)
         disable(f, "max stubs reached");
 
@@ -2912,7 +2916,7 @@ SetElementIC::attachTypedArray(VMFrame &f, JSObject *obj, int32_t key)
 
     return Lookup_Cacheable;
 }
-#endif /* JS_METHODJIT_TYPED_ARRAY */
+#endif 
 
 LookupStatus
 SetElementIC::update(VMFrame &f, const Value &objval, const Value &idval)
@@ -2929,7 +2933,7 @@ SetElementIC::update(VMFrame &f, const Value &objval, const Value &idval)
         return attachHoleStub(f, obj, key);
 
 #if defined JS_METHODJIT_TYPED_ARRAY
-    /* Not attaching typed array stubs with linear scan allocator, see GetElementIC. */
+    
     if (!f.cx->typeInferenceEnabled() && obj->isTypedArray())
         return attachTypedArray(f, obj, key);
 #endif
@@ -2968,5 +2972,5 @@ ic::SetElement(VMFrame &f, ic::SetElementIC *ic)
 template void JS_FASTCALL ic::SetElement<true>(VMFrame &f, SetElementIC *ic);
 template void JS_FASTCALL ic::SetElement<false>(VMFrame &f, SetElementIC *ic);
 
-#endif /* JS_POLYIC */
+#endif 
 
