@@ -969,8 +969,6 @@ JS_StringToVersion(const char *string);
 
 
 
-#define JSOPTION_ANONFUNFIX     JS_BIT(10)      
-
 
 
 #define JSOPTION_JIT            JS_BIT(11)      
@@ -993,7 +991,7 @@ JS_StringToVersion(const char *string);
 #define JSOPTION_PCCOUNT        JS_BIT(17)      
 
 
-#define JSCOMPILEOPTION_MASK    (JSOPTION_XML | JSOPTION_ANONFUNFIX)
+#define JSCOMPILEOPTION_MASK    (JSOPTION_XML)
 
 #define JSRUNOPTION_MASK        (JS_BITMASK(18) & ~JSCOMPILEOPTION_MASK)
 #define JSALLOPTION_MASK        (JSCOMPILEOPTION_MASK | JSRUNOPTION_MASK)
