@@ -47,7 +47,8 @@ spinbuttons {
 .spinbuttons-up {
   -moz-appearance: none;
   -moz-box-flex: 1;
-  min-width: 12px;
+  min-width: 1px;
+  min-height: 1px;
   margin: 0;
   padding: 0;
 }
@@ -55,7 +56,8 @@ spinbuttons {
 .spinbuttons-down {
   -moz-appearance: none;
   -moz-box-flex: 1;
-  min-width: 12px;
+  min-width: 1px;
+  min-height: 1px;
   margin: 0;
   padding: 0;
 }
