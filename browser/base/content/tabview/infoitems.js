@@ -40,7 +40,7 @@
 
 
 
-(function(){
+(function() {
 
 
 
@@ -114,7 +114,7 @@ window.InfoItem = function(bounds, options) {
 
     this._inited = true;
     this.save();
-  } catch(e){
+  } catch(e) {
     Utils.log(e);
   }
 };
