@@ -1092,9 +1092,6 @@ protected:
   };
 
   
-  PRBool IsDragInProgress ( ) const ;
-
-  
   nsIScrollableView* GetViewToScroll(nsLayoutUtils::Direction aDirection);
 
   PRBool mCaretEnabled;
@@ -2654,15 +2651,6 @@ PresShell::sPaintSuppressionCallback(nsITimer *aTimer, void* aPresShell)
 NS_IMETHODIMP
 PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
 {
-  NS_ASSERTION(mViewManager, "Must have view manager");
-  mViewManager->BeginUpdateViewBatch();
-
-  
-  
-
-  WillCauseReflow();
-  WillDoReflow();
-
   
   
   
@@ -2679,6 +2667,15 @@ PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
   if (!rootFrame)
     return NS_OK;
 
+  NS_ASSERTION(mViewManager, "Must have view manager");
+  mViewManager->BeginUpdateViewBatch();
+
+  
+  
+
+  WillCauseReflow();
+  WillDoReflow();
+
   {
     
     AUTO_LAYOUT_PHASE_ENTRY_POINT(GetPresContext(), Reflow);
@@ -2690,7 +2687,6 @@ PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
   }
 
   DidCauseReflow();
-
   DidDoReflow();
   mViewManager->EndUpdateViewBatch(NS_VMREFRESH_NO_SYNC);
 
@@ -3320,27 +3316,6 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty)
 
   return NS_OK;
 }
-
-
-
-
-
-
-
-PRBool
-PresShell :: IsDragInProgress ( ) const
-{
-  PRBool dragInProgress = PR_FALSE;
-  if ( mDragService ) {
-    nsCOMPtr<nsIDragSession> session;
-    mDragService->GetCurrentSession ( getter_AddRefs(session) );
-    if ( session )
-      dragInProgress = PR_TRUE;
-  }
-  
-  return dragInProgress;
-
-} 
 
 nsIScrollableView*
 PresShell::GetViewToScroll(nsLayoutUtils::Direction aDirection)
