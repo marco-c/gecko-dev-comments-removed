@@ -1757,7 +1757,7 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   mozilla::AndroidBridge::Bridge()->ScheduleRestart();
 #else
 #if defined(XP_MACOSX)
-  SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
+  CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
   LaunchChildMac(gRestartArgc, gRestartArgv);
 #else
   nsCOMPtr<nsILocalFile> lf;
@@ -1963,7 +1963,7 @@ ShowProfileManager(nsIToolkitProfileService* aProfileSvc,
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
 #ifdef XP_MACOSX
-    SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
+    CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
 #endif
 
 #ifdef XP_WIN
@@ -2053,7 +2053,7 @@ ImportProfiles(nsIToolkitProfileService* aPService,
       xpcom.RegisterProfileService();
 
 #ifdef XP_MACOSX
-      SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
+      CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
 #endif
 
       nsCOMPtr<nsIProfileMigrator> migrator
@@ -2477,9 +2477,6 @@ static void RemoveComponentRegistries(nsIFile* aProfileDir, nsIFile* aLocalProfi
     return;
 
   file->AppendNative(NS_LITERAL_CSTRING("compreg.dat"));
-  file->Remove(PR_FALSE);
-
-  file->SetNativeLeafName(NS_LITERAL_CSTRING("xpti.dat"));
   file->Remove(PR_FALSE);
 
   if (aRemoveEMFiles) {
@@ -3571,13 +3568,12 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
             cmdLine = do_CreateInstance("@mozilla.org/toolkit/command-line;1");
             NS_ENSURE_TRUE(cmdLine, 1);
 
-            SetupMacCommandLine(gArgc, gArgv, PR_FALSE);
+            CommandLineServiceMac::SetupMacCommandLine(gArgc, gArgv, PR_FALSE);
 
             rv = cmdLine->Init(gArgc, gArgv,
                                workingDir, nsICommandLine::STATE_INITIAL_LAUNCH);
             NS_ENSURE_SUCCESS(rv, 1);
-#endif
-#ifdef MOZ_WIDGET_COCOA
+            
             
             SetupMacApplicationDelegate();
 #endif
@@ -3614,7 +3610,6 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
                                      PromiseFlatCString(profileName).get());
 #endif 
 
-            
             nativeApp->Enable();
           }
 
@@ -3670,7 +3665,7 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
 #endif
 
 #ifdef XP_MACOSX
-          SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
+          CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv, PR_TRUE);
 #endif
         }
       }
