@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNativeTheme.h"
 #include "nsIWidget.h"
@@ -37,9 +37,9 @@ nsNativeTheme::GetPresShell(nsIFrame* aFrame)
   if (!aFrame)
     return nullptr;
 
-  
-  
-  nsPresContext *context = aFrame->StyleContext()->GetRuleNode()->GetPresContext();
+  // this is a workaround for the egcs 1.1.2 not inliningg
+  // aFrame->GetPresContext(), which causes an undefined symbol
+  nsPresContext *context = aFrame->StyleContext()->RuleNode()->GetPresContext();
   return context ? context->GetPresShell() : nullptr;
 }
 
@@ -74,11 +74,11 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
       flags |= NS_EVENT_STATE_FOCUS;
   }
 
-  
-  
-  
+  // On Windows and Mac, only draw focus rings if they should be shown. This
+  // means that focus rings are only shown once the keyboard has been used to
+  // focus something in the window.
 #if defined(XP_MACOSX)
-  
+  // Mac always draws focus rings for textboxes and lists.
   if (aWidgetType == NS_THEME_TEXTFIELD ||
       aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
       aWidgetType == NS_THEME_SEARCHFIELD ||
@@ -87,7 +87,7 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
   }
 #endif
 #if defined(XP_WIN)
-  
+  // On Windows, focused buttons are always drawn as such by the native theme.
   if (aWidgetType == NS_THEME_BUTTON)
     return flags;
 #endif    
@@ -114,9 +114,9 @@ nsNativeTheme::CheckBooleanAttr(nsIFrame* aFrame, nsIAtom* aAtom)
   if (content->IsHTML())
     return content->HasAttr(kNameSpaceID_None, aAtom);
 
-  
-  
-  
+  // For XML/XUL elements, an attribute must be equal to the literal
+  // string "true" to be counted as true.  An empty string should _not_
+  // be counted as true.
   return content->AttrValueIs(kNameSpaceID_None, aAtom,
                               NS_LITERAL_STRING("true"), eCaseMatters);
 }
@@ -146,11 +146,11 @@ nsNativeTheme::GetCheckedOrSelected(nsIFrame* aFrame, bool aCheckSelected)
   nsIContent* content = aFrame->GetContent();
 
   if (content->IsXUL()) {
-    
-    
+    // For a XUL checkbox or radio button, the state of the parent determines
+    // the checked state
     aFrame = aFrame->GetParent();
   } else {
-    
+    // Check for an HTML input element
     nsCOMPtr<nsIDOMHTMLInputElement> inputElt = do_QueryInterface(content);
     if (inputElt) {
       bool checked;
@@ -195,12 +195,12 @@ nsNativeTheme::GetIndeterminate(nsIFrame* aFrame)
   nsIContent* content = aFrame->GetContent();
 
   if (content->IsXUL()) {
-    
-    
+    // For a XUL checkbox or radio button, the state of the parent determines
+    // the state
     return CheckBooleanAttr(aFrame->GetParent(), nsGkAtoms::indeterminate);
   }
 
-  
+  // Check for an HTML input element
   nsCOMPtr<nsIDOMHTMLInputElement> inputElt = do_QueryInterface(content);
   if (inputElt) {
     bool indeterminate;
@@ -215,20 +215,20 @@ bool
 nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
                               uint8_t aWidgetType)
 {
-  
+  // Check for specific widgets to see if HTML has overridden the style.
   if (!aFrame)
     return false;
 
-  
-  
-  
-  
-  
+  // Resizers have some special handling, dependent on whether in a scrollable
+  // container or not. If so, use the scrollable container's to determine
+  // whether the style is overriden instead of the resizer. This allows a
+  // non-native transparent resizer to be used instead. Otherwise, we just
+  // fall through and return false.
   if (aWidgetType == NS_THEME_RESIZER) {
     nsIFrame* parentFrame = aFrame->GetParent();
     if (parentFrame && parentFrame->GetType() == nsGkAtoms::scrollFrame) {
-      
-      
+      // if the parent is a scrollframe, the resizer should be native themed
+      // only if the scrollable area doesn't override the widget style.
       parentFrame = parentFrame->GetParent();
       if (parentFrame) {
         return IsWidgetStyled(aPresContext, parentFrame,
@@ -237,10 +237,10 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
     }
   }
 
-  
-
-
-
+  /**
+   * Progress bar appearance should be the same for the bar and the container
+   * frame. nsProgressFrame owns the logic and will tell us what we should do.
+   */
   if (aWidgetType == NS_THEME_PROGRESSBAR_CHUNK ||
       aWidgetType == NS_THEME_PROGRESSBAR) {
     nsProgressFrame* progressFrame = do_QueryFrame(aWidgetType == NS_THEME_PROGRESSBAR_CHUNK
@@ -250,10 +250,10 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
     }
   }
 
-  
-
-
-
+  /**
+   * Meter bar appearance should be the same for the bar and the container
+   * frame. nsMeterFrame owns the logic and will tell us what we should do.
+   */
   if (aWidgetType == NS_THEME_METERBAR_CHUNK ||
       aWidgetType == NS_THEME_METERBAR) {
     nsMeterFrame* meterFrame = do_QueryFrame(aWidgetType == NS_THEME_METERBAR_CHUNK
@@ -290,9 +290,9 @@ nsNativeTheme::IsDisabled(nsIFrame* aFrame, nsEventStates aEventStates)
     return aEventStates.HasState(NS_EVENT_STATE_DISABLED);
   }
 
-  
-  
-  
+  // For XML/XUL elements, an attribute must be equal to the literal
+  // string "true" to be counted as true.  An empty string should _not_
+  // be counted as true.
   return content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
                               NS_LITERAL_STRING("true"), eCaseMatters);
 }
@@ -303,7 +303,7 @@ nsNativeTheme::IsFrameRTL(nsIFrame* aFrame)
   return aFrame && aFrame->GetStyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
 }
 
-
+// scrollbar button:
 int32_t
 nsNativeTheme::GetScrollbarButtonType(nsIFrame* aFrame)
 {
@@ -327,7 +327,7 @@ nsNativeTheme::GetScrollbarButtonType(nsIFrame* aFrame)
   return 0;
 }
 
-
+// treeheadercell:
 nsNativeTheme::TreeSortDirection
 nsNativeTheme::GetTreeSortDirection(nsIFrame* aFrame)
 {
@@ -352,17 +352,17 @@ nsNativeTheme::IsLastTreeHeaderCell(nsIFrame* aFrame)
   if (!aFrame)
     return false;
 
-  
+  // A tree column picker is always the last header cell.
   if (aFrame->GetContent()->Tag() == nsGkAtoms::treecolpicker)
     return true;
 
-  
+  // Find the parent tree.
   nsIContent* parent = aFrame->GetContent()->GetParent();
   while (parent && parent->Tag() != nsGkAtoms::tree) {
     parent = parent->GetParent();
   }
 
-  
+  // If the column picker is visible, this can't be the last column.
   if (parent && !parent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::hidecolumnpicker,
                                      NS_LITERAL_STRING("true"), eCaseMatters))
     return false;
@@ -374,7 +374,7 @@ nsNativeTheme::IsLastTreeHeaderCell(nsIFrame* aFrame)
   return true;
 }
 
-
+// tab:
 bool
 nsNativeTheme::IsBottomTab(nsIFrame* aFrame)
 {
@@ -440,7 +440,7 @@ nsNativeTheme::IsNextToSelectedTab(nsIFrame* aFrame, int32_t aOffset)
   return (thisTabIndex - selectedTabIndex == aOffset);
 }
 
-
+// progressbar:
 bool
 nsNativeTheme::IsIndeterminateProgress(nsIFrame* aFrame,
                                        nsEventStates aEventStates)
@@ -471,7 +471,7 @@ nsNativeTheme::IsVerticalMeter(nsIFrame* aFrame)
   return aFrame->GetStyleDisplay()->mOrient == NS_STYLE_ORIENT_VERTICAL;
 }
 
-
+// menupopup:
 bool
 nsNativeTheme::IsSubmenu(nsIFrame* aFrame, bool* aLeftOfParent)
 {
@@ -560,8 +560,8 @@ nsNativeTheme::Notify(nsITimer* aTimer)
 {
   NS_ASSERTION(aTimer == mAnimatedContentTimer, "Wrong timer!");
 
-  
-  
+  // XXX Assumes that calling nsIFrame::Invalidate won't reenter
+  //     QueueAnimatedContentForRefresh.
 
   uint32_t count = mAnimatedContentList.Length();
   for (uint32_t index = 0; index < count; index++) {
@@ -583,13 +583,13 @@ nsNativeTheme::GetAdjacentSiblingFrameWithSameAppearance(nsIFrame* aFrame,
   if (!aFrame)
     return nullptr;
 
-  
+  // Find the next visible sibling.
   nsIFrame* sibling = aFrame;
   do {
     sibling = aNextSibling ? sibling->GetNextSibling() : sibling->GetPrevSibling();
   } while (sibling && sibling->GetRect().width == 0);
 
-  
+  // Check same appearance and adjacency.
   if (!sibling ||
       sibling->GetStyleDisplay()->mAppearance != aFrame->GetStyleDisplay()->mAppearance ||
       (sibling->GetRect().XMost() != aFrame->GetRect().x &&
