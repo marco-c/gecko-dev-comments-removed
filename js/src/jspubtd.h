@@ -4,13 +4,46 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef jspubtd_h___
 #define jspubtd_h___
 
 
 
-
 #include "jstypes.h"
+#include "jscompat.h"
 
 
 
@@ -60,10 +93,16 @@ typedef ptrdiff_t jsid;
 
 JS_BEGIN_EXTERN_C
 
+
+typedef JSInt32   jsint;
+typedef JSUint32  jsuint;
+typedef float64   jsdouble;
+typedef JSInt32   jsrefcount;   
+
 #ifdef WIN32
 typedef wchar_t   jschar;
 #else
-typedef uint16_t  jschar;
+typedef JSUint16  jschar;
 #endif
 
 
@@ -115,11 +154,7 @@ typedef enum JSProtoKey {
 
 typedef enum JSAccessMode {
     JSACC_PROTO  = 0,           
-
-                                
-
-
-
+    JSACC_PARENT = 1,           
 
                                 
 
@@ -162,11 +197,11 @@ typedef enum {
 
 
 
+    JSTRACE_IONCODE,
 #if JS_HAS_XML_SUPPORT
     JSTRACE_XML,
 #endif
     JSTRACE_SHAPE,
-    JSTRACE_BASE_SHAPE,
     JSTRACE_TYPE_OBJECT,
     JSTRACE_LAST = JSTRACE_TYPE_OBJECT
 } JSGCTraceKind;
@@ -197,6 +232,7 @@ typedef struct JSStructuredCloneCallbacks   JSStructuredCloneCallbacks;
 typedef struct JSStructuredCloneReader      JSStructuredCloneReader;
 typedef struct JSStructuredCloneWriter      JSStructuredCloneWriter;
 typedef struct JSTracer                     JSTracer;
+typedef struct JSXDRState                   JSXDRState;
 
 #ifdef __cplusplus
 class                                       JSFlatString;
@@ -204,127 +240,8 @@ class                                       JSString;
 #else
 typedef struct JSFlatString                 JSFlatString;
 typedef struct JSString                     JSString;
-#endif 
-
-#ifdef JS_THREADSAFE
-typedef struct PRCallOnceType    JSCallOnceType;
-#else
-typedef JSBool                   JSCallOnceType;
 #endif
-typedef JSBool                 (*JSInitCallback)(void);
 
 JS_END_EXTERN_C
-
-#ifdef __cplusplus
-
-namespace JS {
-
-template <typename T>
-class Rooted;
-
-class SkipRoot;
-
-enum ThingRootKind
-{
-    THING_ROOT_OBJECT,
-    THING_ROOT_SHAPE,
-    THING_ROOT_BASE_SHAPE,
-    THING_ROOT_TYPE_OBJECT,
-    THING_ROOT_STRING,
-    THING_ROOT_SCRIPT,
-    THING_ROOT_XML,
-    THING_ROOT_ID,
-    THING_ROOT_PROPERTY_ID,
-    THING_ROOT_VALUE,
-    THING_ROOT_TYPE,
-    THING_ROOT_LIMIT
-};
-
-template <typename T>
-struct RootKind;
-
-
-
-
-
-
-template<typename T, ThingRootKind Kind>
-struct SpecificRootKind
-{
-    static ThingRootKind rootKind() { return Kind; }
-};
-
-template <> struct RootKind<JSObject *> : SpecificRootKind<JSObject *, THING_ROOT_OBJECT> {};
-template <> struct RootKind<JSFunction *> : SpecificRootKind<JSFunction *, THING_ROOT_OBJECT> {};
-template <> struct RootKind<JSString *> : SpecificRootKind<JSString *, THING_ROOT_STRING> {};
-template <> struct RootKind<JSScript *> : SpecificRootKind<JSScript *, THING_ROOT_SCRIPT> {};
-template <> struct RootKind<jsid> : SpecificRootKind<jsid, THING_ROOT_ID> {};
-template <> struct RootKind<Value> : SpecificRootKind<Value, THING_ROOT_VALUE> {};
-
-struct ContextFriendFields {
-    JSRuntime *const    runtime;
-
-    ContextFriendFields(JSRuntime *rt)
-      : runtime(rt) { }
-
-    static const ContextFriendFields *get(const JSContext *cx) {
-        return reinterpret_cast<const ContextFriendFields *>(cx);
-    }
-
-    static ContextFriendFields *get(JSContext *cx) {
-        return reinterpret_cast<ContextFriendFields *>(cx);
-    }
-
-#if defined(JSGC_ROOT_ANALYSIS) || defined(JSGC_USE_EXACT_ROOTING)
-    
-
-
-
-    Rooted<void*> *thingGCRooters[THING_ROOT_LIMIT];
-#endif
-
-#if defined(DEBUG) && defined(JS_GC_ZEAL) && defined(JSGC_ROOT_ANALYSIS) && !defined(JS_THREADSAFE)
-    
-
-
-
-
-
-
-
-    SkipRoot *skipGCRooters;
-#endif
-};
-
-struct RuntimeFriendFields {
-    
-
-
-
-    volatile int32_t    interrupt;
-
-    
-    uintptr_t           nativeStackLimit;
-
-#if defined(JSGC_ROOT_ANALYSIS) || defined(JSGC_USE_EXACT_ROOTING)
-    
-
-
-
-    Rooted<void*> *thingGCRooters[THING_ROOT_LIMIT];
-#endif
-
-    RuntimeFriendFields()
-      : interrupt(0),
-        nativeStackLimit(0) { }
-
-    static const RuntimeFriendFields *get(const JSRuntime *rt) {
-        return reinterpret_cast<const RuntimeFriendFields *>(rt);
-    }
-};
-
-} 
-
-#endif 
 
 #endif 
