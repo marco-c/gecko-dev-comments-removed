@@ -324,7 +324,6 @@ js::DirectEval(JSContext *cx, const CallArgs &args)
 {
     
     StackFrame *caller = cx->fp();
-    JS_ASSERT(caller->isScriptFrame());
     JS_ASSERT(IsBuiltinEvalForScope(caller->scopeChain(), args.calleev()));
     JS_ASSERT(JSOp(*cx->regs().pc) == JSOP_EVAL);
 
@@ -366,5 +365,5 @@ js::PrincipalsForCompiledCode(const CallReceiver &call, JSContext *cx)
     
     
 
-    return call.callee().principals(cx);
+    return call.callee().compartment()->principals;
 }
