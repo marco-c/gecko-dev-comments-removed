@@ -288,20 +288,8 @@ Recompiler::recompile()
             next = fp;
         }
 
-        
-        
-        
-        
-        
-        
         void **addr = f->returnAddressLocation();
-        if (script->jitCtor && script->jitCtor->isValidCode(*addr)) {
-            if (!ctorPatches.append(findPatch(script->jitCtor, addr)))
-                return false;
-        } else if (script->jitNormal && script->jitNormal->isValidCode(*addr)) {
-            if (!normalPatches.append(findPatch(script->jitNormal, addr)))
-                return false;
-        } else if (f->fp()->script() == script) {
+        if (f->fp()->script() == script && f->scratch == NATIVE_CALL_SCRATCH_VALUE) {
             
             if (f->fp()->isConstructing()) {
                 if (!ctorNatives.append(stealNative(script->jitCtor, f->fp()->pc(cx, NULL))))
@@ -310,6 +298,12 @@ Recompiler::recompile()
                 if (!normalNatives.append(stealNative(script->jitNormal, f->fp()->pc(cx, NULL))))
                     return false;
             }
+        } else if (script->jitCtor && script->jitCtor->isValidCode(*addr)) {
+            if (!ctorPatches.append(findPatch(script->jitCtor, addr)))
+                return false;
+        } else if (script->jitNormal && script->jitNormal->isValidCode(*addr)) {
+            if (!normalPatches.append(findPatch(script->jitNormal, addr)))
+                return false;
         }
     }
 

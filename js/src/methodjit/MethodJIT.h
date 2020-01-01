@@ -78,6 +78,13 @@ struct VMFrame
     Value        *stackLimit;
     JSStackFrame *entryfp;
 
+
+
+
+
+
+#define NATIVE_CALL_SCRATCH_VALUE (void *) 0x1
+
 #if defined(JS_CPU_X86)
     void *savedEBX;
     void *savedEDI;
