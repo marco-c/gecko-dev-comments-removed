@@ -194,7 +194,7 @@ window.InfoItem.prototype = Utils.extend(new Item(), new Subscribable(), {
         TabItems.pausePainting();
         iQ(this.container).animate(css, {
           duration: 350,
-          easing: 'tabcandyBounce',
+          easing: "tabviewBounce",
           complete: function() {
             TabItems.resumePainting();
           }

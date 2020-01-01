@@ -53,7 +53,6 @@
 
 
 
-
 function iQ(selector, context) {
   
   return new iQClass(selector, context);
@@ -117,13 +116,13 @@ let iQClass = function(selector, context) {
 
         if (ret) {
           if (Utils.isPlainObject(context)) {
-            Utils.assert(false, 'does not support HTML creation with context');
+            Utils.assert('does not support HTML creation with context', false);
           } else {
             selector = [doc.createElement(ret[1])];
           }
 
         } else {
-          Utils.assert(false, 'does not support complex HTML creation');
+            Utils.assert('does not support complex HTML creation', false);
         }
 
         return Utils.merge(this, selector);
@@ -166,7 +165,7 @@ let iQClass = function(selector, context) {
     return null;
   }
 
-  if (typeof selector.selector !== "undefined") {
+  if (selector.selector !== undefined) {
     this.selector = selector.selector;
     this.context = selector.context;
   }
@@ -181,12 +180,14 @@ let iQClass = function(selector, context) {
     }
   }
   return ret;
-};
-  
+}
 iQClass.prototype = {
 
   
   selector: "",
+
+  
+  iq: "1.4.2",
 
   
   length: 0,
@@ -196,7 +197,7 @@ iQClass.prototype = {
   
   each: function(callback) {
     if (typeof callback != "function") {
-      Utils.assert(false, "each's argument must be a function");
+      Utils.assert("each's argument must be a function", false);
       return null;
     }
     for (let i = 0; this[i] != null; i++) {
@@ -209,8 +210,10 @@ iQClass.prototype = {
   
   
   addClass: function(value) {
-    Utils.assertThrow(typeof value == "string" && value,
-                      'requires a valid string argument');
+    if (typeof value != "string" || !value) {
+      Utils.assert('requires a valid string argument', false);
+      return null;
+    }
 
     let length = this.length;
     for (let i = 0; i < length; i++) {
@@ -230,7 +233,7 @@ iQClass.prototype = {
   
   removeClass: function(value) {
     if (typeof value != "string" || !value) {
-      Utils.assert(false, 'does not support function argument');
+      Utils.assert('does not support function argument', false);
       return null;
     }
 
@@ -296,7 +299,8 @@ iQClass.prototype = {
   
   
   
-  remove: function() {
+  remove: function(unused) {
+    Utils.assert('does not accept a selector', unused === undefined);
     for (let i = 0; this[i] != null; i++) {
       let elem = this[i];
       if (elem.parentNode) {
@@ -322,36 +326,37 @@ iQClass.prototype = {
   
   
   
-  width: function() {
-    let bounds = this.bounds();
-    return bounds.width;
+  width: function(unused) {
+    Utils.assert('does not yet support setting', unused === undefined);
+    return parseInt(this.css('width'));
   },
 
   
   
   
-  height: function() {
-    let bounds = this.bounds();
-    return bounds.height;
+  height: function(unused) {
+    Utils.assert('does not yet support setting', unused === undefined);
+    return parseInt(this.css('height'));
   },
 
   
   
   
   
-  position: function() {
-    let bounds = this.bounds();
-    return new Point(bounds.left, bounds.top);
+  position: function(unused) {
+    Utils.assert('does not yet support setting', unused === undefined);
+    return {
+      left: parseInt(this.css('left')),
+      top: parseInt(this.css('top'))
+    };
   },
 
   
   
   
   bounds: function() {
-    Utils.assert(this.length == 1, 'does not yet support multi-objects (or null objects)');
-    let rect = this[0].getBoundingClientRect();
-    return new Rect(Math.floor(rect.left), Math.floor(rect.top),
-                    Math.floor(rect.width), Math.floor(rect.height));
+    let p = this.position();
+    return new Rect(p.left, p.top, this.width(), this.height());
   },
 
   
@@ -360,8 +365,8 @@ iQClass.prototype = {
   
   data: function(key, value) {
     let data = null;
-    if (typeof value === "undefined") {
-      Utils.assert(this.length == 1, 'does not yet support multi-objects (or null objects)');
+    if (value === undefined) {
+      Utils.assert('does not yet support multi-objects (or null objects)', this.length == 1);
       data = this[0].iQData;
       if (data)
         return data[key];
@@ -387,8 +392,8 @@ iQClass.prototype = {
   
   
   html: function(value) {
-    Utils.assert(this.length == 1, 'does not yet support multi-objects (or null objects)');
-    if (typeof value === "undefined")
+    Utils.assert('does not yet support multi-objects (or null objects)', this.length == 1);
+    if (value === undefined)
       return this[0].innerHTML;
 
     this[0].innerHTML = value;
@@ -400,8 +405,8 @@ iQClass.prototype = {
   
   
   text: function(value) {
-    Utils.assert(this.length == 1, 'does not yet support multi-objects (or null objects)');
-    if (typeof value === "undefined") {
+    Utils.assert('does not yet support multi-objects (or null objects)', this.length == 1);
+    if (value === undefined) {
       return this[0].textContent;
     }
 
@@ -412,8 +417,8 @@ iQClass.prototype = {
   
   
   val: function(value) {
-    Utils.assert(this.length == 1, 'does not yet support multi-objects (or null objects)');
-    if (typeof value === "undefined") {
+    Utils.assert('does not yet support multi-objects (or null objects)', this.length == 1);
+    if (value === undefined) {
       return this[0].value;
     }
 
@@ -425,7 +430,7 @@ iQClass.prototype = {
   
   
   appendTo: function(selector) {
-    Utils.assert(this.length == 1, 'does not yet support multi-objects (or null objects)');
+    Utils.assert('does not yet support multi-objects (or null objects)', this.length == 1);
     iQ(selector).append(this);
     return this;
   },
@@ -435,8 +440,7 @@ iQClass.prototype = {
   
   append: function(selector) {
     let object = iQ(selector);
-    Utils.assert(object.length == 1 && this.length == 1, 
-        'does not yet support multi-objects (or null objects)');
+    Utils.assert('does not yet support multi-objects (or null objects)', object.length == 1 && this.length == 1);
     this[0].appendChild(object[0]);
     return this;
   },
@@ -445,14 +449,18 @@ iQClass.prototype = {
   
   
   attr: function(key, value) {
-    Utils.assert(typeof key === 'string', 'string key');
-    if (typeof value === "undefined") {
-      Utils.assert(this.length == 1, 'retrieval does not support multi-objects (or null objects)');
-      return this[0].getAttribute(key);
+    try {
+      Utils.assert('string key', typeof key === 'string');
+      if (value === undefined) {
+        Utils.assert('retrieval does not support multi-objects (or null objects)', this.length == 1);
+        return this[0].getAttribute(key);
+      }
+      for (let i = 0; this[i] != null; i++) {
+        this[i].setAttribute(key, value);
+      }
+    } catch(e) {
+      Utils.log(e);
     }
-
-    for (let i = 0; this[i] != null; i++)
-      this[i].setAttribute(key, value);
 
     return this;
   },
@@ -471,10 +479,15 @@ iQClass.prototype = {
 
     if (typeof a === 'string') {
       let key = a;
-      if (typeof b === "undefined") {
-        Utils.assert(this.length == 1, 'retrieval does not support multi-objects (or null objects)');
+      if (b === undefined) {
+        Utils.assert('retrieval does not support multi-objects (or null objects)', this.length == 1);
 
-        return window.getComputedStyle(this[0], null).getPropertyValue(key);
+        let substitutions = {
+          'MozTransform': '-moz-transform',
+          'zIndex': 'z-index'
+        };
+
+        return window.getComputedStyle(this[0], null).getPropertyValue(substitutions[key] || key);
       }
       properties = {};
       properties[key] = b;
@@ -495,12 +508,10 @@ iQClass.prototype = {
       let elem = this[i];
       for (let key in properties) {
         let value = properties[key];
-        if (pixels[key] && typeof value != 'string')
+        if (pixels[key] && typeof(value) != 'string')
           value += 'px';
 
-        if (value == null) {
-          elem.style.removeProperty(key);
-        } else if (key.indexOf('-') != -1)
+        if (key.indexOf('-') != -1)
           elem.style.setProperty(key, value, '');
         else
           elem.style[key] = value;
@@ -525,53 +536,55 @@ iQClass.prototype = {
   
   
   animate: function(css, options) {
-    Utils.assert(this.length == 1, 'does not yet support multi-objects (or null objects)');
+    try {
+      Utils.assert('does not yet support multi-objects (or null objects)', this.length == 1);
 
-    if (!options)
-      options = {};
+      if (!options)
+        options = {};
 
-    let easings = {
-      tabviewBounce: "cubic-bezier(0.0, 0.63, .6, 1.0)", 
+      let easings = {
+        tabviewBounce: "cubic-bezier(0.0, 0.63, .6, 1.29)",
+        easeInQuad: 'ease-in', 
+        fast: 'cubic-bezier(0.7,0,1,1)'
+      };
+
+      let duration = (options.duration || 400);
+      let easing = (easings[options.easing] || 'ease');
+
       
       
-      easeInQuad: 'ease-in', 
-      fast: 'cubic-bezier(0.7,0,1,1)'
-    };
-
-    let duration = (options.duration || 400);
-    let easing = (easings[options.easing] || 'ease');
-
-    
-    
-    
-    let rupper = /([A-Z])/g;
-    this.each(function(elem) {
-      let cStyle = window.getComputedStyle(elem, null);
-      for (let prop in css) {
-        prop = prop.replace(rupper, "-$1").toLowerCase();
-        iQ(elem).css(prop, cStyle.getPropertyValue(prop));
-      }
-    });
-
-    this.css({
-      '-moz-transition-property': 'all', 
-      '-moz-transition-duration': (duration / 1000) + 's',
-      '-moz-transition-timing-function': easing
-    });
-
-    this.css(css);
-
-    let self = this;
-    setTimeout(function() {
-      self.css({
-        '-moz-transition-property': 'none',
-        '-moz-transition-duration': '',
-        '-moz-transition-timing-function': ''
+      
+      let rupper = /([A-Z])/g;
+      this.each(function(elem){
+        let cStyle = window.getComputedStyle(elem, null);
+        for (let prop in css){
+          prop = prop.replace(rupper, "-$1").toLowerCase();
+          iQ(elem).css(prop, cStyle.getPropertyValue(prop));
+        }
       });
 
-      if (typeof options.complete == "function")
-        options.complete.apply(self);
-    }, duration);
+      this.css({
+        '-moz-transition-property': 'all', 
+        '-moz-transition-duration': (duration / 1000) + 's',
+        '-moz-transition-timing-function': easing
+      });
+
+      this.css(css);
+
+      let self = this;
+      Utils.timeout(function() {
+        self.css({
+          '-moz-transition-property': 'none',
+          '-moz-transition-duration': '',
+          '-moz-transition-timing-function': ''
+        });
+
+        if (typeof options.complete == "function")
+          options.complete.apply(self);
+      }, duration);
+    } catch(e) {
+      Utils.log(e);
+    }
 
     return this;
   },
@@ -580,9 +593,7 @@ iQClass.prototype = {
   
   
   fadeOut: function(callback) {
-    Utils.assert(typeof callback == "function" || typeof callback === "undefined", 
-        'does not yet support duration');
-
+    Utils.assert('does not yet support duration', typeof callback == "function" || callback === undefined);
     this.animate({
       opacity: 0
     }, {
@@ -601,12 +612,16 @@ iQClass.prototype = {
   
   
   fadeIn: function() {
-    this.css({display: ''});
-    this.animate({
-      opacity: 1
-    }, {
-      duration: 400
-    });
+    try {
+      this.css({display: ''});
+      this.animate({
+        opacity: 1
+      }, {
+        duration: 400
+      });
+    } catch(e) {
+      Utils.log(e);
+    }
 
     return this;
   },
@@ -615,7 +630,12 @@ iQClass.prototype = {
   
   
   hide: function() {
-    this.css({display: 'none', opacity: 0});
+    try {
+      this.css({display: 'none', opacity: 0});
+    } catch(e) {
+      Utils.log(e);
+    }
+
     return this;
   },
 
@@ -623,7 +643,12 @@ iQClass.prototype = {
   
   
   show: function() {
-    this.css({display: '', opacity: 1});
+    try {
+      this.css({display: '', opacity: 1});
+    } catch(e) {
+      Utils.log(e);
+    }
+
     return this;
   },
 
@@ -632,7 +657,15 @@ iQClass.prototype = {
   
   
   bind: function(type, func) {
-    let handler = function(event) func.apply(this, [event]);
+    Utils.assert('does not support eventData argument', typeof func == "function");
+
+    let handler = function(event) {
+      try {
+        return func.apply(this, [event]);
+      } catch(e) {
+        Utils.log(e);
+      }
+    };
 
     for (let i = 0; this[i] != null; i++) {
       let elem = this[i];
@@ -658,7 +691,7 @@ iQClass.prototype = {
   
   
   one: function(type, func) {
-    Utils.assert(typeof func == "function", 'does not support eventData argument');
+    Utils.assert('does not support eventData argument', typeof func == "function");
 
     let handler = function(e) {
       iQ(this).unbind(type, handler);
@@ -672,7 +705,7 @@ iQClass.prototype = {
   
   
   unbind: function(type, func) {
-    Utils.assert(typeof func == "function", 'Must provide a function');
+    Utils.assert('Must provide a function', typeof func == "function");
 
     for (let i = 0; this[i] != null; i++) {
       let elem = this[i];
