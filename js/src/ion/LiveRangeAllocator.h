@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef js_ion_liverangeallocator_h__
 #define js_ion_liverangeallocator_h__
@@ -12,8 +12,8 @@
 #include "RegisterAllocator.h"
 #include "StackSlotAllocator.h"
 
-
-
+// Common structures and functions used by register allocators that operate on
+// virtual register live ranges.
 
 namespace js {
 namespace ion {
@@ -35,7 +35,7 @@ class Requirement
     Requirement(Kind kind)
       : kind_(kind)
     {
-        
+        // These have dedicated constructors;
         JS_ASSERT(kind != FIXED && kind != SAME_AS_OTHER);
     }
 
@@ -49,8 +49,8 @@ class Requirement
         allocation_(fixed)
     { }
 
-    
-    
+    // Only useful as a hint, encodes where the fixed requirement is used to
+    // avoid allocating a fixed register too early.
     Requirement(LAllocation fixed, CodePosition at)
       : kind_(FIXED),
         allocation_(fixed),
@@ -113,8 +113,8 @@ UseCompatibleWith(const LUse *use, LAllocation alloc)
       case LUse::REGISTER:
         return alloc.isRegister();
       case LUse::FIXED:
-          
-          
+          // Fixed uses are handled using fixed intervals. The
+          // UsePosition is only used as hint.
         return alloc.isRegister();
       default:
         JS_NOT_REACHED("Unknown use policy");
@@ -152,7 +152,7 @@ DefinitionCompatibleWith(LInstruction *ins, const LDefinition *def, LAllocation 
     return false;
 }
 
-#endif 
+#endif // DEBUG
 
 static inline LDefinition *
 FindReusingDefinition(LInstruction *ins, LAllocation *alloc)
@@ -172,20 +172,20 @@ FindReusingDefinition(LInstruction *ins, LAllocation *alloc)
     return NULL;
 }
 
-
-
-
-
-
+/*
+ * A live interval is a set of disjoint ranges of code positions where a
+ * virtual register is live. Register allocation operates on these intervals,
+ * splitting them as necessary and assigning allocations to them as it runs.
+ */
 class LiveInterval
   : public InlineListNode<LiveInterval>,
     public TempObject
 {
   public:
-    
-
-
-
+    /*
+     * A range is a contiguous sequence of CodePositions where the virtual
+     * register associated with this interval is live.
+     */
     struct Range {
         Range()
           : from(),
@@ -199,18 +199,18 @@ class LiveInterval
         }
         CodePosition from;
 
-        
+        // The end of this range, exclusive.
         CodePosition to;
 
         bool empty() const {
             return from >= to;
         }
 
-        
+        // Whether this range wholly contains other.
         bool contains(const Range *other) const;
 
-        
-        
+        // Intersect this range with other, returning the subranges of this
+        // that are before, inside, or after other.
         void intersect(const Range *other, Range *pre, Range *inside, Range *post) const;
     };
 
@@ -262,8 +262,8 @@ class LiveInterval
         return &ranges_[i];
     }
     void setLastProcessedRange(size_t range, mozilla::DebugOnly<CodePosition> pos) {
-        
-        
+        // If the range starts after pos, we may not be able to use
+        // it in the next lastProcessedRangeIfValid call.
         JS_ASSERT(ranges_[range].from <= pos);
         lastProcessedRange_ = range;
     }
@@ -296,14 +296,14 @@ class LiveInterval
         return &requirement_;
     }
     void setRequirement(const Requirement &requirement) {
-        
-        
+        // A SAME_AS_OTHER requirement complicates regalloc too much; it
+        // should only be used as hint.
         JS_ASSERT(requirement.kind() != Requirement::SAME_AS_OTHER);
         requirement_ = requirement;
     }
     bool addRequirement(const Requirement &newRequirement) {
-        
-        
+        // Merge newRequirement with any existing requirement, returning false
+        // if the new and old requirements conflict.
         JS_ASSERT(newRequirement.kind() != Requirement::SAME_AS_OTHER);
 
         if (newRequirement.kind() == Requirement::FIXED) {
@@ -349,11 +349,11 @@ class LiveInterval
 #endif
 };
 
-
-
-
-
-
+/*
+ * Represents all of the register allocation state associated with a virtual
+ * register, including all associated intervals and pointers to relevant LIR
+ * structures.
+ */
 class VirtualRegister
 {
     uint32_t id_;
@@ -362,7 +362,7 @@ class VirtualRegister
     LDefinition *def_;
     Vector<LiveInterval *, 1, IonAllocPolicy> intervals_;
 
-    
+    // Whether def_ is a temp or an output.
     bool isTemp_ : 1;
 
   public:
@@ -378,7 +378,7 @@ class VirtualRegister
             return false;
         return intervals_.append(initial);
     }
-    uint32_t id() {
+    uint32_t id() const {
         return id_;
     }
     LBlock *block() {
@@ -414,7 +414,7 @@ class VirtualRegister
     bool addInterval(LiveInterval *interval) {
         JS_ASSERT(interval->numRanges());
 
-        
+        // Preserve ascending order for faster lookups.
         LiveInterval **found = NULL;
         LiveInterval **i;
         for (i = intervals_.begin(); i != intervals_.end(); i++) {
@@ -436,8 +436,8 @@ class VirtualRegister
     LiveInterval *getFirstInterval();
 };
 
-
-
+// Index of the virtual registers in a graph. VREG is a subclass of
+// VirtualRegister extended with any allocator specific state for the vreg.
 template <typename VREG>
 class VirtualRegisterMap
 {
@@ -515,23 +515,23 @@ template <typename VREG>
 class LiveRangeAllocator : public RegisterAllocator
 {
   protected:
-    
+    // Computed inforamtion
     BitSet **liveIn;
     VirtualRegisterMap<VREG> vregs;
     FixedArityList<LiveInterval *, AnyRegister::Total> fixedIntervals;
 
-    
-    
+    // Union of all ranges in fixedIntervals, used to quickly determine
+    // whether an interval intersects with a fixed register.
     LiveInterval *fixedIntervalsUnion;
 
-    
-    
-    
-    
-    
+    // Whether the underlying allocator is LSRA. This changes the generated
+    // live ranges in various ways: inserting additional fixed uses of
+    // registers, and shifting the boundaries of live ranges by small amounts.
+    // This exists because different allocators handle live ranges differently;
+    // ideally, they would all treat live ranges in the same way.
     bool forLSRA;
 
-    
+    // Allocation state
     StackSlotAllocator stackSlotAllocator;
 
   public:
@@ -605,12 +605,12 @@ class LiveRangeAllocator : public RegisterAllocator
 
     void addLiveRegistersForInterval(VirtualRegister *reg, LiveInterval *interval)
     {
-        
+        // Fill in the live register sets for all non-call safepoints.
         LAllocation *a = interval->getAllocation();
         if (!a->isRegister())
             return;
 
-        
+        // Don't add output registers to the safepoint.
         CodePosition start = interval->start();
         if (interval->index() == 0 && !reg->isTemp())
             start = start.next();
@@ -620,8 +620,8 @@ class LiveRangeAllocator : public RegisterAllocator
             LInstruction *ins = graph.getNonCallSafepoint(i);
             CodePosition pos = inputOf(ins);
 
-            
-            
+            // Safepoints are sorted, so we can shortcut out of this loop
+            // if we go out of range.
             if (interval->end() < pos)
                 break;
 
@@ -633,8 +633,8 @@ class LiveRangeAllocator : public RegisterAllocator
         }
     }
 
-    
-    size_t findFirstSafepoint(LiveInterval *interval, size_t startFrom)
+    // Finds the first safepoint that is within range of an interval.
+    size_t findFirstSafepoint(const LiveInterval *interval, size_t startFrom) const
     {
         size_t i = startFrom;
         for (; i < graph.numSafepoints(); i++) {
@@ -646,7 +646,7 @@ class LiveRangeAllocator : public RegisterAllocator
     }
 };
 
-} 
-} 
+} // namespace ion
+} // namespace js
 
 #endif

@@ -1,15 +1,15 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef SparcAssembler_h
 #define SparcAssembler_h
 
 #include <assembler/wtf/Platform.h>
 
-
+// Some debug code uses s(n)printf for instruction logging.
 #include <stdio.h>
 
 #if ENABLE_ASSEMBLER && WTF_CPU_SPARC
@@ -32,14 +32,14 @@ namespace JSC {
 
     namespace SparcRegisters {
         typedef enum {
-            g0 = 0, 
-            g1 = 1, 
+            g0 = 0, // g0 is always 0
+            g1 = 1, // g1 is a scratch register for v8
             g2 = 2,
             g3 = 3,
             g4 = 4,
-            g5 = 5, 
-            g6 = 6, 
-            g7 = 7, 
+            g5 = 5, // Reserved for system
+            g6 = 6, // Reserved for system
+            g7 = 7, // Reserved for system
 
             o0 = 8,
             o1 = 9,
@@ -47,7 +47,7 @@ namespace JSC {
             o3 = 11,
             o4 = 12,
             o5 = 13,
-            o6 = 14, 
+            o6 = 14, // SP
             o7 = 15,
 
             l0 = 16,
@@ -65,7 +65,7 @@ namespace JSC {
             i3 = 27,
             i4 = 28,
             i5 = 29,
-            i6 = 30, 
+            i6 = 30, // FP
             i7 = 31,
 
             sp = o6,
@@ -107,7 +107,7 @@ namespace JSC {
             f31 = 31
         } FPRegisterID;
 
-    } 
+    } // namespace SparcRegisters
 
     class SparcAssembler : public GenericAssembler {
     public:
@@ -116,17 +116,17 @@ namespace JSC {
         AssemblerBuffer m_buffer;
         bool oom() const { return m_buffer.oom(); }
 
-        
+        // Sparc conditional constants
         typedef enum {
-            ConditionE   = 0x1, 
+            ConditionE   = 0x1, // Zero
             ConditionLE  = 0x2,
             ConditionL   = 0x3,
             ConditionLEU = 0x4,
             ConditionCS  = 0x5,
             ConditionNEG = 0x6,
             ConditionVS  = 0x7,
-            ConditionA   = 0x8, 
-            ConditionNE  = 0x9, 
+            ConditionA   = 0x8, // branch_always
+            ConditionNE  = 0x9, // Non-zero
             ConditionG   = 0xa,
             ConditionGE  = 0xb,
             ConditionGU  = 0xc,
@@ -195,7 +195,7 @@ namespace JSC {
             signed int m_offset : 31;
         };
 
-        
+        // Instruction formating
 
         void format_2_1(int rd, int op2, int imm22)
         {
@@ -375,7 +375,7 @@ namespace JSC {
             format_3_1_imm(2, rd, 0x2, rs1, simm13);
         }
 
-        
+        // sethi %hi(imm22) rd
         void sethi(int imm22, int rd)
         {
             js::JaegerSpew(js::JSpew_Insns,
@@ -945,7 +945,7 @@ namespace JSC {
             return jump_common(BranchOnCondition, ConditionA);
         }
 
-        
+        // Assembler admin methods:
 
         JmpDst label()
         {
@@ -955,7 +955,7 @@ namespace JSC {
             return r;
         }
 
-        
+        // General helpers
 
         size_t size() const { return m_buffer.size(); }
         unsigned char *buffer() const { return m_buffer.buffer(); }
@@ -1006,7 +1006,7 @@ namespace JSC {
 
         static void patchPointerInternal(void* where, int value)
         {
-            
+            // Patch move_nocheck.
             uint32_t *branch = (uint32_t*) where;
             branch[0] &= 0xFFC00000;
             branch[0] |= (value >> 10) & 0x3FFFFF;
@@ -1115,7 +1115,7 @@ namespace JSC {
 
         static void repatchLoadPtrToLEA(void* where)
         {
-            
+            // sethi is used. The offset is in a register
             if (*(uint32_t *)((int)where) & 0x01000000)
                 where = (void *)((intptr_t)where + 8);
 
@@ -1126,7 +1126,7 @@ namespace JSC {
 
         static void repatchLEAToLoadPtr(void* where)
         {
-            
+            // sethi is used. The offset is in a register
             if (*(uint32_t *)((int)where) & 0x01000000)
                 where = (void *)((intptr_t)where + 8);
 
@@ -1140,7 +1140,7 @@ namespace JSC {
         {
             ASSERT(reg <= 31);
             ASSERT(reg >= 0);
-            static char const * names[] = {
+            static char const * const names[] = {
                 "%g0", "%g1", "%g2", "%g3",
                 "%g4", "%g5", "%g6", "%g7",
                 "%o0", "%o1", "%o2", "%o3",
@@ -1157,7 +1157,7 @@ namespace JSC {
         {
             ASSERT(reg <= 31);
             ASSERT(reg >= 0);
-            static char const * names[] = {
+            static char const * const names[] = {
                 "%f0",   "%f1",   "%f2",   "%f3",
                 "%f4",   "%f5",   "%f6",   "%f7",
                 "%f8",   "%f9",  "%f10",  "%f11",
@@ -1176,7 +1176,7 @@ namespace JSC {
             ASSERT(cc >= 0);
 
             uint32_t    ccIndex = cc;
-            static char const * inames[] = {
+            static char const * const inames[] = {
                 "   ", "e  ",
                 "le ", "l  ",
                 "leu", "cs ",
@@ -1195,7 +1195,7 @@ namespace JSC {
             ASSERT(cc >= 0);
 
             uint32_t    ccIndex = cc;
-            static char const * fnames[] = {
+            static char const * const fnames[] = {
                 "   ", "ne ",
                 "   ", "ul ",
                 "l  ", "ug ",
@@ -1211,8 +1211,8 @@ namespace JSC {
 
     };
 
-} 
+} // namespace JSC
 
-#endif 
+#endif // ENABLE(ASSEMBLER) && CPU(SPARC)
 
-#endif 
+#endif // SparcAssembler_h

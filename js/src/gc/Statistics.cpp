@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gc/Statistics.h"
 
@@ -29,7 +29,7 @@ using namespace js::gcstats;
 
 using mozilla::PodArrayZero;
 
-
+/* Except for the first and last, slices of less than 42ms are not reported. */
 static const int64_t SLICE_MIN_REPORT_TIME = 42 * PRMJ_USEC_PER_MSEC;
 
 class gcstats::StatisticsSerializer
@@ -240,11 +240,11 @@ class gcstats::StatisticsSerializer
     }
 };
 
-
-
-
-
-
+/*
+ * If this fails, then you can either delete this assertion and allow all
+ * larger-numbered reasons to pile up in the last telemetry bucket, or switch
+ * to GC_REASON_3 and bump the max value.
+ */
 JS_STATIC_ASSERT(JS::gcreason::NUM_TELEMETRY_REASONS >= JS::gcreason::NUM_REASONS);
 
 static const char *
@@ -278,7 +278,7 @@ struct PhaseInfo
 
 static const Phase PHASE_NO_PARENT = PHASE_LIMIT;
 
-static PhaseInfo phases[] = {
+static const PhaseInfo phases[] = {
     { PHASE_GC_BEGIN, "Begin Callback", PHASE_NO_PARENT },
     { PHASE_WAIT_BACKGROUND_THREAD, "Wait Background Thread", PHASE_NO_PARENT },
     { PHASE_MARK_DISCARD_CODE, "Mark Discard Code", PHASE_NO_PARENT },
@@ -583,12 +583,12 @@ Statistics::beginSlice(int collectedCount, int zoneCount, int compartmentCount,
         beginGC();
 
     SliceData data(reason, PRMJ_Now(), gc::GetPageFaultCount());
-    (void) slices.append(data); 
+    (void) slices.append(data); /* Ignore any OOMs here. */
 
     if (JSAccumulateTelemetryDataCallback cb = runtime->telemetryCallback)
         (*cb)(JS_TELEMETRY_GC_REASON, reason);
 
-    
+    // Slice callbacks should only fire for the outermost level
     if (++gcDepth == 1) {
         bool wasFullGC = collectedCount == zoneCount;
         if (JS::GCSliceCallback cb = runtime->gcSliceCallback)
@@ -612,7 +612,7 @@ Statistics::endSlice()
     if (last)
         endGC();
 
-    
+    // Slice callbacks should only fire for the outermost level
     if (--gcDepth == 0) {
         bool wasFullGC = collectedCount == zoneCount;
         if (JS::GCSliceCallback cb = runtime->gcSliceCallback)
@@ -620,7 +620,7 @@ Statistics::endSlice()
                   JS::GCDescription(!wasFullGC));
     }
 
-    
+    /* Do this after the slice callback since it uses these values. */
     if (last)
         PodArrayZero(counts);
 }
@@ -628,7 +628,7 @@ Statistics::endSlice()
 void
 Statistics::beginPhase(Phase phase)
 {
-    
+    /* Guard against re-entry */
     JS_ASSERT(!phaseStartTimes[phase]);
 
 #ifdef DEBUG
@@ -669,15 +669,15 @@ Statistics::endSCC(unsigned scc, int64_t start)
     sccTimes[scc] += PRMJ_Now() - start;
 }
 
-
-
-
-
-
-
-
-
-
+/*
+ * MMU (minimum mutator utilization) is a measure of how much garbage collection
+ * is affecting the responsiveness of the system. MMU measurements are given
+ * with respect to a certain window size. If we report MMU(50ms) = 80%, then
+ * that means that, for any 50ms window of time, at least 80% of the window is
+ * devoted to the mutator. In other words, the GC is running for at most 20% of
+ * the window, or 10ms. The GC can run multiple slices during the 50ms window
+ * as long as the total time it spends is at most 10ms.
+ */
 double
 Statistics::computeMMU(int64_t window)
 {

@@ -1,40 +1,40 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# ToCAsciiArray and ToCArray are from V8's js2c.py.
+#
+# Copyright 2012 the V8 project authors. All rights reserved.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#     * Neither the name of Google Inc. nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# This utility converts JS files containing self-hosted builtins into a C
+# header file that can be embedded into SpiderMonkey.
+#
+# It uses the C preprocessor to process its inputs.
 
 from __future__ import with_statement
 import re, sys, os, fileinput, subprocess
@@ -64,7 +64,7 @@ namespace js {
 namespace selfhosted {
     static const %(sources_type)s data[] = { %(sources_data)s };
 
-    static const %(sources_type)s *%(sources_name)s = reinterpret_cast<const %(sources_type)s *>(data);
+    static const %(sources_type)s * const %(sources_name)s = reinterpret_cast<const %(sources_type)s *>(data);
 
     uint32_t GetCompressedSize() {
         return %(compressed_total_length)i;
@@ -78,8 +78,8 @@ namespace selfhosted {
 """
 
 def embed(cpp, msgs, sources, c_out, js_out, env):
-  
-  
+  # Clang seems to complain and not output anything if the extension of the
+  # input is not something it recognizes, so just fake a .h here.
   tmp = 'selfhosted.js.h'
   with open(tmp, 'wb') as output:
     output.write('\n'.join([msgs] + ['#include "%(s)s"' % { 's': source } for source in sources]))
@@ -115,8 +115,8 @@ def embed(cpp, msgs, sources, c_out, js_out, env):
       })
 
 def process_msgs(cpp, msgs):
-  
-  
+  # Clang seems to complain and not output anything if the extension of the
+  # input is not something it recognizes, so just fake a .h here.
   tmp = 'selfhosted.msg.h'
   with open(tmp, 'wb') as output:
     output.write("""\
