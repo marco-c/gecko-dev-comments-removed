@@ -915,9 +915,6 @@ JS_StringToVersion(const char *string);
 
 
 #define JSOPTION_METHODJIT      JS_BIT(14)      
-#define JSOPTION_PROFILING      JS_BIT(15)      
-#define JSOPTION_ROPES          JS_BIT(16)      
-
 
 extern JS_PUBLIC_API(uint32)
 JS_GetOptions(JSContext *cx);
@@ -1719,10 +1716,6 @@ struct JSClass {
 
 #define JSCLASS_MARK_IS_TRACE           (1<<(JSCLASS_HIGH_FLAGS_SHIFT+3))
 #define JSCLASS_INTERNAL_FLAG2          (1<<(JSCLASS_HIGH_FLAGS_SHIFT+4))
-
-
-#define JSCLASS_FREEZE_PROTO            (1<<(JSCLASS_HIGH_FLAGS_SHIFT+5))
-#define JSCLASS_FREEZE_CTOR             (1<<(JSCLASS_HIGH_FLAGS_SHIFT+6))
 
 
 #define JSRESERVED_GLOBAL_SLOTS_COUNT     3
