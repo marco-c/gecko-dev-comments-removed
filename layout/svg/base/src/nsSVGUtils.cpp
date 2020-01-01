@@ -620,7 +620,7 @@ nsSVGUtils::FindFilterInvalidation(nsIFrame *aFrame, const nsRect& aRect)
         viewportFrame = GetOuterSVGFrame(aFrame);
       }
       if (viewportFrame->GetType() == nsGkAtoms::svgOuterSVGFrame) {
-        nsRect r = viewportFrame->GetOverflowRect();
+        nsRect r = viewportFrame->GetVisualOverflowRect();
         
         
         r.MoveBy(viewportFrame->GetPosition() - viewportFrame->GetContentRect().TopLeft());
