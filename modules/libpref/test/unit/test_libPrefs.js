@@ -359,6 +359,8 @@ function run_test() {
 
   
   ps.readUserPrefs(savePrefFile);
+  
+  savePrefFile.remove(false);
   do_check_eq(ps.getBoolPref("ReadPref.bool"), true);
   do_check_eq(ps.getIntPref("ReadPref.int"), 230);
   do_check_eq(ps.getCharPref("ReadPref.char"), "hello");
