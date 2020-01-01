@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifndef _FSM_H_
 #define _FSM_H_
@@ -14,16 +14,16 @@
 #include "sessionConstants.h"
 #include "ccsdp.h"
 
-/* TODO: BLASBERG
- * fsm.h only needs the following from ccsip_core.h
- * should put basic sip types into a separate hdr file
-typedef enum {
-    ALERTING_NONE,
-    ALERTING_OLD,
-    ALERTING_TONE,
-    ALERTING_RING
-} alertingType;
-*/
+
+
+
+
+
+
+
+
+
+
 
 
 #define FSMCNF_MAX_CCBS            (LSM_MAX_LINES)
@@ -35,7 +35,7 @@ typedef enum {
 #define FSMDEF_MAX_DIGEST_ALG_LEN  10
 #define FSMDEF_MAX_DIGEST_LEN      32 * 3
 
-// Should match define for SIP stack MAX_SIP_URL_LENGTH
+
 #define FSMDEF_MAX_CALLER_ID_LEN (256)
 
 #ifndef fim_icb_t__
@@ -101,37 +101,37 @@ typedef enum {
     FSMDEF_PLAYTONE_ZIP
 } fsmdef_play_tone_action_e;
 
-/* Local crypto parameter is the local parameters to offer */
+
 typedef struct fsmdef_crypto_param_t_ {
-    int32_t                tag;           /* crypto attribute tag    */
-    vcm_crypto_algorithmID algorithmID;   /* encryption algorithm.   */
-    vcm_crypto_key_t       key;           /* local key               */
+    int32_t                tag;           
+    vcm_crypto_algorithmID algorithmID;   
+    vcm_crypto_key_t       key;           
 } fsmdef_crypto_param_t;
 
-/* Negotiated crypto parameter */
+
 #define FSMDEF_CRYPTO_TX_CHANGE   (1 << 0) /* crypto Tx parms. change */
 #define FSMDEF_CRYPTO_RX_CHANGE   (1 << 1) /* crypto Tx parms. change */
 typedef struct fsmdef_negotiated_crypto_t_ {
-    int32_t                 tag;           /* crypto attribute tag    */
-    vcm_crypto_algorithmID  algorithmID;   /* algorithm ID            */
-    vcm_crypto_key_t        tx_key;        /* tx key                  */
-    vcm_crypto_key_t        rx_key;        /* rx key                  */
-    uint32_t                flags;         /* misc. flags.            */
+    int32_t                 tag;           
+    vcm_crypto_algorithmID  algorithmID;   
+    vcm_crypto_key_t        tx_key;        
+    vcm_crypto_key_t        rx_key;        
+    uint32_t                flags;         
     char                    algorithm[FSMDEF_MAX_DIGEST_ALG_LEN];
     char                    digest[FSMDEF_MAX_DIGEST_LEN];
 } fsmdef_negotiated_crypto_t;
 
-/*
- * Saved attributes of interest from previously received SDP
- */
+
+
+
 typedef struct fsmdef_previous_sdp_ {
     uint16_t        dest_port;
     cpr_ip_addr_t   dest_addr;
     int32_t         avt_payload_type;
 
-    /*
-     * This field contains the number of elements in the payloads field.
-     */
+    
+
+
     int32_t num_payloads;
     vcm_payload_info_t* payloads;
 
@@ -143,10 +143,10 @@ typedef struct fsmdef_previous_sdp_ {
 } fsmdef_previous_sdp_t;
 
 typedef struct fsmdef_media_t_ {
-    sll_lite_node_t node;     /* link node, must be first member of struct */
-    media_refid_t   refid;    /* media reference id                        */
-    sdp_media_e     type;     /* audio, video etc. media                   */
-    sdp_addrtype_e  addr_type;/* ipv4, ipv6                                */
+    sll_lite_node_t node;     
+    media_refid_t   refid;    
+    sdp_media_e     type;     
+    sdp_addrtype_e  addr_type;
     int32_t         avt_payload_type;
     vcm_vad_t       vad;
     uint16_t        packetization_period;
@@ -154,98 +154,98 @@ typedef struct fsmdef_media_t_ {
     uint16_t        mode;
     uint16_t        level;
     boolean         direction_set;
-    sdp_direction_e direction;         /* current negotiated direction    */
-    sdp_direction_e support_direction; /* supported direction             */
+    sdp_direction_e direction;         
+    sdp_direction_e support_direction; 
     sdp_transport_e transport;
-    uint16_t        src_port;   /* source port for this media stream      */
-    cpr_ip_addr_t   src_addr;   /* source addr for this media stream      */
-    uint16_t        dest_port;  /* destination port for this media stream */
-    cpr_ip_addr_t   dest_addr;  /* destination addr for this media straam */
-    /* Flag to indicate if Multicast */
+    uint16_t        src_port;   
+    cpr_ip_addr_t   src_addr;   
+    uint16_t        dest_port;  
+    cpr_ip_addr_t   dest_addr;  
+    
     boolean         is_multicast;
     uint16_t        multicast_port;
-    /*
-     * rcv_chan indicates if the receive media stream has been opened
-     */
+    
+
+
     boolean         rcv_chan;
-    /*
-     * xmit_chan indicates if the transmit media stream has been opened
-     */
+    
+
+
     boolean         xmit_chan;
 
-    /*
-     * SRTP support.
-     */
+    
+
+
     fsmdef_negotiated_crypto_t negotiated_crypto;
 
-    /*
-     * Local crypto holds the local offered crypto set, keeps it in the
-     * dcb for fast access. The alternative to be kept in the
-     * SDP structure but is slower in retrieving it. In the future,
-     * it is possible that more than 1 crypto lines are offered but
-     * for now it is one.
-     */
+    
+
+
+
+
+
+
     fsmdef_crypto_param_t local_crypto;
 
-    /*
-     * Used to track previously received SDP for comparisons to
-     * newly received media to determine if RTP port recycling is
-     * required. Eliminates unnecessary recycling of ports which
-     * causes breaks in the audio stream.
-     */
+    
+
+
+
+
+
     fsmdef_previous_sdp_t previous_sdp;
 
-    /*
-     * hold tracks the hold state. The flag is a bit map so it is possible that
-     * the phone may have multiple holding states, ie. local and remote
-     */
+    
+
+
+
     uint32_t hold;
-    /*
-     * Flags fields for various bit flags
-     */
+    
+
+
 #define FSM_MEDIA_F_SUPPORT_SECURITY (1 << 0)  /* supported security */
     uint32_t flags;
 
-    /*
-     * capability index. The index into the media capbilty table
-     * that this media entry is coresponding to.
-     */
+    
+
+
+
     uint8_t         cap_index;
 
-    /* Values cached from attributes */
+    
     int32_t         tias_bw;
     int32_t         profile_level;
 
     void *video;
 
-    /* ICE Candidates */
+    
     char **candidatesp;
     int candidate_ct;
 
-    /*
-     * rtcp-mux indicates media stream is muxed for RTP and RTCP
-     */
+    
+
+
     boolean        rtcp_mux;
 
-    /*
-     * port number used in m= data channel line
-     */
+    
+
+
     uint16_t       sctp_port;
 
-    /*
-     * Data Channel properties
-     */
+    
+
+
     uint32         streams;
     char          *protocol;
 
-    /*
-     * This field contains the number of elements in the payloads field.
-     */
+    
+
+
     int32_t num_payloads;
 
-    /*
-     * List of active lists of payloads negotiated
-     */
+    
+
+
     vcm_payload_info_t* payloads;
 
 } fsmdef_media_t;
@@ -266,125 +266,126 @@ typedef struct {
     int             msgs_rcvd;
     boolean         onhook_received;
 
-    /*
-     * inband indicates if inband alerting is active
-     */
+    
+
+
     boolean inband;
 
-    /*
-     * inband_received indicates if inband alerting has been received.
-     * Once set, this bool stays set until dcb is reset.
-     */
+    
+
+
+
     boolean inband_received;
 
-    /*
-     * outofband tracks the payload type for outofband DTMF
-     */
+    
+
+
     int outofband;
 
-    /*
-     * Boolean indication of whether call was originated by phone or
-     * far end party.
-     */
+    
+
+
+
     boolean inbound;
 
-    /*
-     * The following data tracks the RTP info
-     */
+    
+
+
     boolean        remote_sdp_present;
     boolean        remote_sdp_in_ack;
+    boolean        local_sdp_complete;
     uint16_t       src_sdp_version;
     cc_sdp_t       *sdp;
 
-    /* media list corresponding to m lines */
+    
     sll_lite_list_t media_list;
 
-    /*
-     * dial_mode tracks the state of the dialing mode icon, ie. alphanumeric or
-     * numeric
-     */
+    
+
+
+
     dialMode_t dial_mode;
 
-    /*
-     * pd_updated tracks whether or not the personal directory has
-     * been updated
-     */
+    
+
+
+
     boolean pd_updated;
 
-    /* tracks the ringing pattern to play */
+    
     vcm_ring_mode_t alerting_ring;
 
-    /* tracks the tone to play */
+    
     vcm_tones_t alerting_tone;
 
-    /* tracks the direction to play the tone. */
+    
     uint16_t tone_direction;
 
-    /* Was an alert-info header present, if so what did it contain */
+    
     cc_alerting_type alert_info;
 
-    /* used to determine when SIP stack releases the call early. */
+    
     boolean early_error_release;
 
-    /* used to determine when we are played a tone via the dialplan */
+    
     boolean dialplan_tone;
 
-    /* active tone (i.e. tone currently being played or requested to be played) */
+    
     vcm_tones_t active_tone;
 
-    /* indicates the action of monitor and recorder tones */
+    
     fsmdef_monrec_tone_action_e monrec_tone_action;
 
-    /* monitor/recorder tone direction to play out to */
+    
     uint16_t monitor_tone_direction;
     uint16_t recorder_tone_direction;
 
-    /* indicates the action of play tone for a single time */
+    
     fsmdef_play_tone_action_e play_tone_action;
 
     struct fsm_fcb_t_ *fcb;
 
-    /* Feature that is currently active */
+    
     cc_features_t active_feature;
 
-    /* Reason for hold */
+    
     cc_hold_resume_reason_e hold_reason;
 
-    /* Feature invocation state.
-     * Each feature will correspond to unique bit in variable.
-     * Bit will be Set if feature is invoked and awaiting feature ACK.
-     * Bit will be Cleared if feature is ACKed or not yet invoked.
-     * Each array element will hold invocation state for 32 features.
-     * The resource manager utility is utilized to maintain the bit settings.
-     */
+    
+
+
+
+
+
+
     void *feature_invocation_state;
 
-    /* TRUE if CCM has requested phone to show ringout UI */
+    
     boolean spoof_ringout_requested;
-    /* TRUE if GSM has applied ringout due to CCMs request to show ringout UI */
+    
     boolean spoof_ringout_applied;
 
-    /* Timer to go on hook after any call error */
+    
     cprTimer_t err_onhook_tmr;
 
-    /* Request pending timer */
+    
     cprTimer_t req_pending_tmr;
 
-    /* Ringback delay timer */
+    
     cprTimer_t ringback_delay_tmr;
 
-    /*
-     * save of orientation from callInfo to update UI at any time
-     * other than during call info. update such as after Tx start in
-     * order to update security icon.
-     */
+    
+
+
+
+
     cc_orientation_e orientation;
 
-    /*
-     * This boolean is used to short circuit sending UI update requests to the platform
-     * so that requests are only made when one of the call ui components requires
-     * updating. The same is done for placed call history.
-     */
+    
+
+
+
+
     boolean ui_update_required;
     boolean placed_call_update_required;
 
@@ -393,7 +394,7 @@ typedef struct {
     cc_security_e security;
     cc_policy_e policy;
 
-    /* auto answer timer */
+    
     cprTimer_t autoAnswerTimer;
     int32_t    reversionInterval;
     cprTimer_t revertTimer;
@@ -406,32 +407,32 @@ typedef struct {
 
     boolean call_not_counted_in_mnc_bt;
 
-    /*
-     * The media_cap holds the current media caps of the call
-     */
+    
+
+
     cc_media_cap_table_t *media_cap_tbl;
 
-    /*
-     * Holds the remote stream track information to be passed to UI
-     */
+    
+
+
     cc_media_remote_stream_table_t *remote_media_stream_tbl;
 
-    /*
-     * Holds the local stream track information passed in from the UI
-     */
+    
+
+
     cc_media_local_track_table_t *local_media_track_tbl;
 
 #define FSMDEF_F_HOLD_REQ_PENDING  (1 << 0)/* hold feature pending    */
 #define FSMDEF_F_XFER_COMPLETE     (1 << 1)/* hold feature pending    */
-    uint32_t                flags;         /* misc. flags.            */
+    uint32_t                flags;         
 
     int log_disp;
 
     uint8_t cur_video_avail;
     sdp_direction_e  video_pref;
-    unsigned int callref;      /* Callref (CI) from CUCM */
+    unsigned int callref;      
 
-    char peerconnection[PC_HANDLE_SIZE];  /* A handle to the peerconnection */
+    char peerconnection[PC_HANDLE_SIZE];  
     boolean peerconnection_set;
 
     char *ice_ufrag;
@@ -486,7 +487,7 @@ typedef struct fsmcnf_ccb_t_ {
     boolean  active;
     boolean  bridged;
 
-/* The following field encodes flags */
+
 #define JOINED  0x1
 #define XFER    0x2
 #define LCL_CNF    0x4
@@ -540,24 +541,24 @@ typedef struct fsm_fcb_t_ {
     fsm_types_t fsm_type;
 
 
-    /*
-     * fsmdef specific data
-     */
+    
+
+
     fsmdef_dcb_t *dcb;
 
-    /*
-     * fsmxfr specific data
-     */
+    
+
+
 
     fsmxfr_xcb_t *xcb;
-    /*
-     * fsmcnf specific data
-     */
+    
+
+
     fsmcnf_ccb_t *ccb;
 
-    /*
-     * fsmb2bcnf specific data
-     */
+    
+
+
     fsmcnf_ccb_t *b2bccb;
 
 } fsm_fcb_t;
@@ -695,12 +696,12 @@ fsmdef_dcb_t *fsmdef_get_dcb_by_call_instance_id(line_t line,
 boolean fsmb2bcnf_check_if_ok_to_setup_conf (callid_t call_id);
 boolean fsmdef_check_if_chaperone_call_exist (void);
 void fsmdef_call_cc_state_dialing(fsmdef_dcb_t *dcb, boolean suppressStutter);
-/* This macro is to identify incoming joining call */
+
 #define fsm_is_joining_call(feat_data)  \
       ((feat_data.newcall.join.join_call_id != CC_NO_CALL_ID) && \
       ((feat_data.newcall.cause == CC_CAUSE_BARGE) || \
       (feat_data.newcall.cause == CC_CAUSE_MONITOR)))
-/* These macros are for SRTP support */
+
 #define FSM_GET_SECURITY_STATUS(dcb) (dcb->security)
 #define FSM_SET_SECURITY_STATUS(dcb, status) (dcb->security = status)
 #define FSM_GET_POLICY(dcb) (dcb->policy)
