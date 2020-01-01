@@ -2157,7 +2157,7 @@ JS_StringToVersion(const char *string);
 
 
 
-#define JSOPTION_JIT            JS_BIT(11)      
+
 
 #define JSOPTION_NO_SCRIPT_RVAL JS_BIT(12)      
 
@@ -2170,7 +2170,9 @@ JS_StringToVersion(const char *string);
 
 
 #define JSOPTION_METHODJIT      JS_BIT(14)      
-#define JSOPTION_PROFILING      JS_BIT(15)      
+
+
+
 #define JSOPTION_METHODJIT_ALWAYS \
                                 JS_BIT(16)      
 
