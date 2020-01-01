@@ -3,6 +3,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const PREFIX_ITEM_URI = "urn:mozilla:item:";
 const PREFIX_NS_EM = "http://www.mozilla.org/2004/em-rdf#";
 
@@ -16,6 +48,21 @@ const URI_GENERIC_ICON_XPINSTALL = "drawable://alertaddons";
 const URI_GENERIC_ICON_XPINSTALL = "chrome://browser/skin/images/alert-addons-30.png";
 #endif
 const ADDONS_NOTIFICATION_NAME = "addons";
+
+XPCOMUtils.defineLazyGetter(this, "AddonManager", function() {
+  Cu.import("resource://gre/modules/AddonManager.jsm");
+  return AddonManager;
+});
+
+XPCOMUtils.defineLazyGetter(this, "AddonRepository", function() {
+  Cu.import("resource://gre/modules/AddonRepository.jsm");
+  return AddonRepository;
+});
+
+XPCOMUtils.defineLazyGetter(this, "NetUtil", function() {
+  Cu.import("resource://gre/modules/NetUtil.jsm");
+  return NetUtil;
+});
 
 var ExtensionsView = {
   _strings: {},
@@ -518,18 +565,18 @@ var ExtensionsView = {
     
     Util.forceOnline();
 
-    if (this._AddonRepository.isSearching)
-      this._AddonRepository.cancelSearch();
+    if (AddonRepository.isSearching)
+      AddonRepository.cancelSearch();
 
     let strings = Strings.browser;
     if (aTerms) {
       AddonSearchResults.selectFirstResult = aSelectFirstResult;
       this.displaySectionMessage("repo", strings.GetStringFromName("addonsSearchStart.label"), strings.GetStringFromName("addonsSearchStart.button"), false);
-      this._AddonRepository.searchAddons(aTerms, Services.prefs.getIntPref(PREF_GETADDONS_MAXRESULTS), AddonSearchResults);
+      AddonRepository.searchAddons(aTerms, Services.prefs.getIntPref(PREF_GETADDONS_MAXRESULTS), AddonSearchResults);
     }
     else {
       this.displaySectionMessage("repo", strings.GetStringFromName("addonsSearchStart.label"), strings.GetStringFromName("addonsSearchStart.button"), false);
-      this._AddonRepository.retrieveRecommendedAddons(Services.prefs.getIntPref(PREF_GETADDONS_MAXRESULTS), RecommendedSearchResults);
+      AddonRepository.retrieveRecommendedAddons(Services.prefs.getIntPref(PREF_GETADDONS_MAXRESULTS), RecommendedSearchResults);
     }
   },
 
@@ -858,9 +905,6 @@ function searchFailed() {
   let failButton = strings.GetStringFromName("addonsSearchFail.retryButton");
   ExtensionsView.displaySectionMessage("repo", failLabel, failButton, true);
 }
- 
-XPCOMUtils.defineLazyModuleGetter(ExtensionsView, "_AddonRepository",
-                                  "resource://gre/modules/AddonRepository.jsm", "AddonRepository");
 
 
 
@@ -870,8 +914,7 @@ var RecommendedSearchResults = {
 
   searchSucceeded: function(aAddons, aAddonCount, aTotalResults) {
     this.cache = aAddons;
-    ExtensionsView._AddonRepository.searchAddons(" ", Services.prefs.getIntPref(PREF_GETADDONS_MAXRESULTS),
-                                                 BrowseSearchResults);
+    AddonRepository.searchAddons(" ", Services.prefs.getIntPref(PREF_GETADDONS_MAXRESULTS), BrowseSearchResults);
   },
 
   searchFailed: searchFailed

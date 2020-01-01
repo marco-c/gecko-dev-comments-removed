@@ -1,7 +1,3 @@
-
-
-
-
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cu = Components.utils;

@@ -3,6 +3,40 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
+
 #ifdef ANDROID
 const URI_GENERIC_ICON_DOWNLOAD = "drawable://alertdownloads";
 #else
@@ -265,7 +299,7 @@ var DownloadsView = {
     let fileSize = Number(aItem.getAttribute("maxBytes"));
     let sizeText = strings.GetStringFromName("downloadsUnknownSize");
     if (fileSize >= 0) {
-      let [size, unit] = this._DownloadUtils.convertByteUnits(fileSize);
+      let [size, unit] = DownloadUtils.convertByteUnits(fileSize);
       sizeText = this._replaceInsert(strings.GetStringFromName("downloadsKnownSize"), 1, size);
       sizeText = this._replaceInsert(sizeText, 2, unit);
     }
@@ -274,7 +308,7 @@ var DownloadsView = {
     status = this._replaceInsert(strings.GetStringFromName("downloadsStatus"), 1, sizeText);
 
     
-    let [displayHost, fullHost] = this._DownloadUtils.getURIHost(this._getReferrerOrSource(aItem));
+    let [displayHost, fullHost] = DownloadUtils.getURIHost(this._getReferrerOrSource(aItem));
     status = this._replaceInsert(status, 2, displayHost);
   
     
@@ -284,7 +318,7 @@ var DownloadsView = {
       let passedTime = (Date.now() - aItem.getAttribute("startTime"))/1000;
       let totalTime = (passedTime / downloadSize) * fileSize;
       let leftTime = totalTime - passedTime;
-      let [time, lastTime] = this._DownloadUtils.getTimeLeft(leftTime);
+      let [time, lastTime] = DownloadUtils.getTimeLeft(leftTime);
 
       let stringTime = this._replaceInsert(strings.GetStringFromName("downloadsTime"), 1, time);
       status = status + " " + stringTime;
@@ -457,9 +491,6 @@ var DownloadsView = {
     return this;
   }
 };
-
-XPCOMUtils.defineLazyModuleGetter(DownloadsView, "_DownloadUtils",
-                                  "resource://gre/modules/DownloadUtils.jsm", "DownloadUtils");
 
 
 

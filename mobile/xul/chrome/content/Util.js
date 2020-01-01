@@ -7,6 +7,42 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let Util = {
   
   dumpf: function dumpf(str) {
@@ -140,24 +176,6 @@ let Util = {
     else if (tabletPref == 1)
       return this._isTablet = true;
 
-#ifdef ANDROID
-    let sysInfo = Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2);
-    let shellVersion = sysInfo.get("shellVersion") || "";
-    let matches = shellVersion.match(/\((\d+)\)$/);
-    if (matches) {
-      let sdkVersion = parseInt(matches[1]);
-      
-      if (sdkVersion < 11)
-        return this._isTablet = false;
-
-      
-      if (sdkVersion < 14)
-        return this._isTablet = true;
-    }
-    
-    return this._isTablet = sysInfo.get("tablet");
-#endif
-
     let dpi = this.displayDPI;
     if (dpi <= 96)
       return this._isTablet = (window.innerWidth > 1024);
@@ -179,10 +197,10 @@ let Util = {
   },
 
   modifierMaskFromEvent: function modifierMaskFromEvent(aEvent) {
-    return (aEvent.altKey   ? Ci.nsIDOMEvent.ALT_MASK     : 0) |
-           (aEvent.ctrlKey  ? Ci.nsIDOMEvent.CONTROL_MASK : 0) |
-           (aEvent.shiftKey ? Ci.nsIDOMEvent.SHIFT_MASK   : 0) |
-           (aEvent.metaKey  ? Ci.nsIDOMEvent.META_MASK    : 0);
+    return (aEvent.altKey   ? Ci.nsIDOMNSEvent.ALT_MASK     : 0) |
+           (aEvent.ctrlKey  ? Ci.nsIDOMNSEvent.CONTROL_MASK : 0) |
+           (aEvent.shiftKey ? Ci.nsIDOMNSEvent.SHIFT_MASK   : 0) |
+           (aEvent.metaKey  ? Ci.nsIDOMNSEvent.META_MASK    : 0);
   },
 
   get displayDPI() {
