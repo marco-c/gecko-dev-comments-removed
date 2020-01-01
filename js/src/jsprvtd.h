@@ -401,22 +401,6 @@ static inline JSWatchPointHandler Jsvalify(WatchPointHandler f)   { return (JSWa
 static inline PropertyIdOp        Valueify(JSPropertyIdOp f);     
 static inline JSPropertyIdOp      Jsvalify(PropertyIdOp f);       
 
-
-
-
-static JS_ALWAYS_INLINE void
-SetValueRangeToUndefined(Value *vec, Value *end)
-{
-    for (Value *v = vec; v != end; ++v)
-        v->setUndefined();
-}
-
-static JS_ALWAYS_INLINE void
-SetValueRangeToUndefined(Value *vec, uintN len)
-{
-    return SetValueRangeToUndefined(vec, vec + len);
-}
-
 }  
 #endif 
 
