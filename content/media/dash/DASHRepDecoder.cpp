@@ -473,7 +473,14 @@ ReentrantMonitor&
 DASHRepDecoder::GetReentrantMonitor()
 {
   NS_ASSERTION(mMainDecoder, "Can't get monitor if main decoder is null!");
-  return mMainDecoder->GetReentrantMonitor();
+  if (mMainDecoder) {
+    return mMainDecoder->GetReentrantMonitor();
+  } else {
+    
+    
+    
+    return MediaDecoder::GetReentrantMonitor();
+  }
 }
 
 mozilla::layers::ImageContainer*
