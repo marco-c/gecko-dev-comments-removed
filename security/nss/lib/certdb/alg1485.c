@@ -1,40 +1,40 @@
-/* alg1485.c - implementation of RFCs 1485, 1779 and 2253.
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Netscape security libraries.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1994-2000
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "prprf.h"
 #include "cert.h"
@@ -44,21 +44,22 @@
 #include "secitem.h"
 #include "secerr.h"
 
-struct NameToKind {
+typedef struct NameToKindStr {
     const char * name;
-    unsigned int maxLen; /* max bytes in UTF8 encoded string value */
+    unsigned int maxLen; 
     SECOidTag    kind;
     int		 valueType;
-};
+} NameToKind;
 
-/* local type for directory string--could be printable_string or utf8 */
+
 #define SEC_ASN1_DS SEC_ASN1_HIGH_TAG_NUMBER
 
-/* Add new entries to this table, and maybe to function CERT_ParseRFC1485AVA */
-static const struct NameToKind name2kinds[] = {
-/* IANA registered type names
-   (See: http://www.iana.org/assignments/ldap-parameters) */
-    /* RFC 3280,4630 MUST SUPPORT */
+
+static const NameToKind name2kinds[] = {
+
+
+
+
     { "CN",             64, SEC_OID_AVA_COMMON_NAME,    SEC_ASN1_DS},
     { "ST",            128, SEC_OID_AVA_STATE_OR_PROVINCE,
 							SEC_ASN1_DS},
@@ -69,7 +70,8 @@ static const struct NameToKind name2kinds[] = {
     { "dnQualifier", 32767, SEC_OID_AVA_DN_QUALIFIER, SEC_ASN1_PRINTABLE_STRING},
     { "C",               2, SEC_OID_AVA_COUNTRY_NAME, SEC_ASN1_PRINTABLE_STRING},
     { "serialNumber",   64, SEC_OID_AVA_SERIAL_NUMBER,SEC_ASN1_PRINTABLE_STRING},
-    /* RFC 3280,4630 SHOULD SUPPORT */
+
+
     { "L",             128, SEC_OID_AVA_LOCALITY,       SEC_ASN1_DS},
     { "title",          64, SEC_OID_AVA_TITLE,          SEC_ASN1_DS},
     { "SN",             64, SEC_OID_AVA_SURNAME,        SEC_ASN1_DS},
@@ -78,24 +80,34 @@ static const struct NameToKind name2kinds[] = {
     { "generationQualifier",
                         64, SEC_OID_AVA_GENERATION_QUALIFIER,
                                                         SEC_ASN1_DS},
-    /* RFC 3280,4630 MAY SUPPORT */
+
     { "DC",            128, SEC_OID_AVA_DC,             SEC_ASN1_IA5_STRING},
-    /* values from draft-ietf-ldapbis-user-schema-05 (not in RFC 3280) */
+    { "MAIL",          256, SEC_OID_RFC1274_MAIL,       SEC_ASN1_IA5_STRING},
+    { "UID",           256, SEC_OID_RFC1274_UID,        SEC_ASN1_DS},
+
+
+
+
+
+
+
+
+
+
+
     { "postalAddress", 128, SEC_OID_AVA_POSTAL_ADDRESS, SEC_ASN1_DS},
     { "postalCode",     40, SEC_OID_AVA_POSTAL_CODE,    SEC_ASN1_DS},
     { "postOfficeBox",  40, SEC_OID_AVA_POST_OFFICE_BOX,SEC_ASN1_DS},
     { "houseIdentifier",64, SEC_OID_AVA_HOUSE_IDENTIFIER,SEC_ASN1_DS},
-    /* legacy keywords */
-    { "MAIL",          256, SEC_OID_RFC1274_MAIL,       SEC_ASN1_IA5_STRING},
-    { "UID",           256, SEC_OID_RFC1274_UID,        SEC_ASN1_DS},
-    
-/* end of IANA registered type names */
+
+
+
     { "E",             128, SEC_OID_PKCS9_EMAIL_ADDRESS,SEC_ASN1_DS},
 
-
-#if 0 /* removed.  Not yet in any IETF draft or RFC. */
+#if 0 
     { "pseudonym",      64, SEC_OID_AVA_PSEUDONYM,      SEC_ASN1_DS},
 #endif
+
     { 0,           256, SEC_OID_UNKNOWN                      , 0},
 };
 
@@ -131,7 +143,7 @@ static const struct NameToKind name2kinds[] = {
 int
 cert_AVAOidTagToMaxLen(SECOidTag tag)
 {
-    const struct NameToKind *n2k = name2kinds;
+    const NameToKind *n2k = name2kinds;
 
     while (n2k->kind != tag && n2k->kind != SEC_OID_UNKNOWN) {
 	++n2k;
@@ -172,14 +184,14 @@ scanTag(char **pbp, char *endptr, char *tagBuf, int tagBufSize)
 
     PORT_Assert(tagBufSize > 0);
     
-    /* skip optional leading space */
+    
     skipSpace(pbp, endptr);
     if (*pbp == endptr) {
-	/* nothing left */
+	
 	return SECFailure;
     }
     
-    /* fill tagBuf */
+    
     taglen = 0;
     bp = *pbp;
     tagBufp = tagBuf;
@@ -190,21 +202,21 @@ scanTag(char **pbp, char *endptr, char *tagBuf, int tagBufSize)
 	}
 	*tagBufp++ = *bp++;
     }
-    /* null-terminate tagBuf -- guaranteed at least one space left */
+    
     *tagBufp++ = 0;
     *pbp = bp;
     
-    /* skip trailing spaces till we hit something - should be an equal sign */
+    
     skipSpace(pbp, endptr);
     if (*pbp == endptr) {
-	/* nothing left */
+	
 	return SECFailure;
     }
     if (**pbp != C_EQUAL) {
-	/* should be an equal sign */
+	
 	return SECFailure;
     }
-    /* skip over the equal sign */
+    
     (*pbp)++;
     
     return SECSuccess;
@@ -219,19 +231,19 @@ scanVal(char **pbp, char *endptr, char *valBuf, int valBufSize)
     
     PORT_Assert(valBufSize > 0);
     
-    /* skip optional leading space */
+    
     skipSpace(pbp, endptr);
     if(*pbp == endptr) {
-	/* nothing left */
+	
 	return SECFailure;
     }
     
     bp = *pbp;
     
-    /* quoted? */
+    
     if (*bp == C_DOUBLE_QUOTE) {
 	isQuoted = PR_TRUE;
-	/* skip over it */
+	
 	bp++;
     } else {
 	isQuoted = PR_FALSE;
@@ -242,23 +254,23 @@ scanVal(char **pbp, char *endptr, char *valBuf, int valBufSize)
     while (bp < endptr) {
 	char c = *bp;
 	if (c == C_BACKSLASH) {
-	    /* escape character */
+	    
 	    bp++;
 	    if (bp >= endptr) {
-		/* escape charater must appear with paired char */
+		
 		*pbp = bp;
 		return SECFailure;
 	    }
 	} else if (c == '#' && bp == *pbp) {
-	    /* ignore leading #, quotation not required for it. */
+	    
 	} else if (!isQuoted && SPECIAL_CHAR(c)) {
-	    /* unescaped special and not within quoted value */
+	    
 	    break;
 	} else if (c == C_DOUBLE_QUOTE) {
-	    /* reached unescaped double quote */
+	    
 	    break;
 	}
-	/* append character */
+	
         vallen++;
 	if (vallen >= valBufSize) {
 	    *pbp = bp;
@@ -267,7 +279,7 @@ scanVal(char **pbp, char *endptr, char *valBuf, int valBufSize)
 	*valBufp++ = *bp++;
     }
     
-    /* stip trailing spaces from unquoted values */
+    
     if (!isQuoted) {
 	if (valBufp > valBuf) {
 	    valBufp--;
@@ -279,12 +291,12 @@ scanVal(char **pbp, char *endptr, char *valBuf, int valBufSize)
     }
     
     if (isQuoted) {
-	/* insist that we stopped on a double quote */
+	
 	if (*bp != C_DOUBLE_QUOTE) {
 	    *pbp = bp;
 	    return SECFailure;
 	}
-	/* skip over the quote and skip optional space */
+	
 	bp++;
 	skipSpace(&bp, endptr);
     }
@@ -292,11 +304,11 @@ scanVal(char **pbp, char *endptr, char *valBuf, int valBufSize)
     *pbp = bp;
     
     if (valBufp == valBuf) {
-	/* empty value -- not allowed */
+	
 	return SECFailure;
     }
     
-    /* null-terminate valBuf -- guaranteed at least one space left */
+    
     *valBufp++ = 0;
     
     return SECSuccess;
@@ -304,25 +316,25 @@ scanVal(char **pbp, char *endptr, char *valBuf, int valBufSize)
 
 static const PRInt16 x2b[256] = 
 {
-/* #0x */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #1x */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #2x */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #3x */  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1, 
-/* #4x */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #5x */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #6x */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #7x */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #8x */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #9x */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #ax */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #bx */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #cx */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #dx */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #ex */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-/* #fx */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1, 
+ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
-/* Caller must set error code upon failure */
+
 static SECStatus
 hexToBin(PLArenaPool *pool, SECItem * destItem, const char * src, int len)
 {
@@ -355,7 +367,7 @@ CERT_ParseRFC1485AVA(PRArenaPool *arena, char **pbp, char *endptr,
 		    PRBool singleAVA) 
 {
     CERTAVA *a;
-    const struct NameToKind *n2k;
+    const NameToKind *n2k;
     char *bp;
     int       vt = -1;
     int       valLen;
@@ -372,19 +384,19 @@ CERT_ParseRFC1485AVA(PRArenaPool *arena, char **pbp, char *endptr,
 	goto loser;
     }
 
-    /* insist that if we haven't finished we've stopped on a separator */
+    
     bp = *pbp;
     if (bp < endptr) {
 	if (singleAVA || (*bp != ',' && *bp != ';')) {
 	    *pbp = bp;
 	    goto loser;
 	}
-	/* ok, skip over separator */
+	
 	bp++;
     }
     *pbp = bp;
 
-    /* is this a dotted decimal OID attribute type ? */
+    
     if (!PL_strncasecmp("oid.", tagBuf, 4)) {
         rv = SEC_StringToOID(arena, &derOid, tagBuf, strlen(tagBuf));
     } else {
@@ -404,9 +416,9 @@ CERT_ParseRFC1485AVA(PRArenaPool *arena, char **pbp, char *endptr,
     if (kind == SEC_OID_UNKNOWN && rv != SECSuccess) 
 	goto loser;
 
-    /* Is this a hex encoding of a DER attribute value ? */
+    
     if ('#' == valBuf[0]) {
-    	/* convert attribute value from hex to binary */
+    	
 	SECItem  derVal = { 0, NULL, 0};
 	valLen = PORT_Strlen(valBuf+1);
 	rv = hexToBin(arena, &derVal, valBuf + 1, valLen);
@@ -423,7 +435,7 @@ CERT_ParseRFC1485AVA(PRArenaPool *arena, char **pbp, char *endptr,
 	    !IsPrintable((unsigned char*) valBuf, valLen)) 
 	    goto loser;
 	if (vt == SEC_ASN1_DS) {
-	    /* RFC 4630: choose PrintableString or UTF8String */
+	    
 	    if (IsPrintable((unsigned char*) valBuf, valLen))
 		vt = SEC_ASN1_PRINTABLE_STRING;
 	    else 
@@ -435,7 +447,7 @@ CERT_ParseRFC1485AVA(PRArenaPool *arena, char **pbp, char *endptr,
     return a;
 
 loser:
-    /* matched no kind -- invalid tag */
+    
     PORT_SetError(SEC_ERROR_INVALID_AVA);
     return 0;
 }
@@ -467,25 +479,25 @@ ParseRFC1485Name(char *buf, int len)
     }
 
     if (name->rdns[0] == 0) {
-	/* empty name -- illegal */
+	
 	goto loser;
     }
 
-    /* Reverse order of RDNS to comply with RFC */
+    
     {
 	CERTRDN **firstRdn;
 	CERTRDN **lastRdn;
 	CERTRDN *tmp;
 	
-	/* get first one */
+	
 	firstRdn = name->rdns;
 	
-	/* find last one */
+	
 	lastRdn = name->rdns;
 	while (*lastRdn) lastRdn++;
 	lastRdn--;
 	
-	/* reverse list */
+	
 	for ( ; firstRdn < lastRdn; firstRdn++, lastRdn--) {
 	    tmp = *firstRdn;
 	    *firstRdn = *lastRdn;
@@ -493,7 +505,7 @@ ParseRFC1485Name(char *buf, int len)
 	}
     }
     
-    /* return result */
+    
     return name;
     
   loser:
@@ -509,7 +521,7 @@ CERT_AsciiToName(char *string)
     return name;
 }
 
-/************************************************************************/
+
 
 typedef struct stringBufStr {
     char *buffer;
@@ -526,7 +538,7 @@ AppendStr(stringBuf *bufp, char *str)
     unsigned bufLen, bufSize, len;
     int size = 0;
 
-    /* Figure out how much to grow buf by (add in the '\0') */
+    
     buf = bufp->buffer;
     bufLen = bufp->offset;
     len = PORT_Strlen(str);
@@ -548,11 +560,47 @@ AppendStr(stringBuf *bufp, char *str)
     bufp->buffer = buf;
     bufp->offset = bufSize;
 
-    /* Concatenate str onto buf */
+    
     buf = buf + bufLen;
-    if (bufLen) buf--;			/* stomp on old '\0' */
-    PORT_Memcpy(buf, str, len+1);		/* put in new null */
+    if (bufLen) buf--;			
+    PORT_Memcpy(buf, str, len+1);		
     return SECSuccess;
+}
+
+static int
+cert_RFC1485_GetRequiredLen(const char *src, int srclen, PRBool *pNeedsQuoting)
+{
+    int i, reqLen=0;
+    PRBool needsQuoting = PR_FALSE;
+    char lastC = 0;
+
+    
+    for (i = 0; i < srclen; i++) {
+	char c = src[i];
+	reqLen++;
+	if (!needsQuoting && (SPECIAL_CHAR(c) ||
+	    (OPTIONAL_SPACE(c) && OPTIONAL_SPACE(lastC)))) {
+	    
+	    needsQuoting = PR_TRUE;
+	}
+	if (c == C_DOUBLE_QUOTE || c == C_BACKSLASH) {
+	    
+	    reqLen++;
+	}
+	lastC = c;
+    }
+    
+    if (!needsQuoting && srclen > 0 && 
+	(OPTIONAL_SPACE(src[srclen-1]) || OPTIONAL_SPACE(src[0]))) {
+	needsQuoting = PR_TRUE;
+    }
+
+    if (needsQuoting) 
+    	reqLen += 2;
+    if (pNeedsQuoting)
+    	*pNeedsQuoting = needsQuoting;
+
+    return reqLen;
 }
 
 SECStatus
@@ -561,45 +609,20 @@ CERT_RFC1485_EscapeAndQuote(char *dst, int dstlen, char *src, int srclen)
     int i, reqLen=0;
     char *d = dst;
     PRBool needsQuoting = PR_FALSE;
-    char lastC = 0;
-    
-    /* need to make an initial pass to determine if quoting is needed */
-    for (i = 0; i < srclen; i++) {
-	char c = src[i];
-	reqLen++;
-	if (!needsQuoting && (SPECIAL_CHAR(c) ||
-	    (OPTIONAL_SPACE(c) && OPTIONAL_SPACE(lastC)))) {
-	    /* entirety will need quoting */
-	    needsQuoting = PR_TRUE;
-	}
-	if (c == C_DOUBLE_QUOTE || c == C_BACKSLASH) {
-	    /* this char will need escaping */
-	    reqLen++;
-	}
-	lastC = c;
-    }
-    /* if it begins or ends in optional space it needs quoting */
-    if (!needsQuoting && srclen > 0 && 
-	(OPTIONAL_SPACE(src[srclen-1]) || OPTIONAL_SPACE(src[0]))) {
-	needsQuoting = PR_TRUE;
-    }
-    
-    if (needsQuoting) reqLen += 2;
 
-    /* space for terminal null */
-    reqLen++;
     
+    reqLen = cert_RFC1485_GetRequiredLen(src, srclen, &needsQuoting) + 1;
     if (reqLen > dstlen) {
 	PORT_SetError(SEC_ERROR_OUTPUT_LEN);
 	return SECFailure;
     }
-    
+
     d = dst;
     if (needsQuoting) *d++ = C_DOUBLE_QUOTE;
     for (i = 0; i < srclen; i++) {
 	char c = src[i];
 	if (c == C_DOUBLE_QUOTE || c == C_BACKSLASH) {
-	    /* escape it */
+	    
 	    *d++ = C_BACKSLASH;
 	}
 	*d++ = c;
@@ -609,8 +632,8 @@ CERT_RFC1485_EscapeAndQuote(char *dst, int dstlen, char *src, int srclen)
     return SECSuccess;
 }
 
-/* convert an OID to dotted-decimal representation */
-/* Returns a string that must be freed with PR_smprintf_free(), */
+
+
 char *
 CERT_GetOidString(const SECItem *oid)
 {
@@ -627,16 +650,16 @@ CERT_GetOidString(const SECItem *oid)
 	return NULL;
     }
 
-    /* d will point to the next sequence of bytes to decode */
+    
     d = (PRUint8 *)oid->data;
-    /* end points to one past the legitimate data */
+    
     end = &d[ oid->len ];
 
-    /*
-     * Check for our pseudo-encoded single-digit OIDs
-     */
+    
+
+
     if( (*d == 0x80) && (2 == oid->len) ) {
-	/* Funky encoding.  The second byte is the number */
+	
 	a = PR_smprintf("%lu", (PRUint32)d[1]);
 	if( (char *)NULL == a ) {
 	    PORT_SetError(SEC_ERROR_NO_MEMORY);
@@ -654,7 +677,7 @@ CERT_GetOidString(const SECItem *oid)
 	}
     
 	if( ((e-d) > 4) || (((e-d) == 4) && (*d & 0x70)) ) {
-	    /* More than a 32-bit number */
+	    
 	} else {
 	    PRUint32 n = 0;
       
@@ -672,8 +695,8 @@ CERT_GetOidString(const SECItem *oid)
 	    }
       
 	    if( (char *)NULL == a ) {
-		/* This is the first number.. decompose it */
-		PRUint32 one = PR_MIN(n/40, 2); /* never > 2 */
+		
+		PRUint32 one = PR_MIN(n/40, 2); 
 		PRUint32 two = n - one * 40;
         
 		a = PR_smprintf("OID.%lu.%lu", one, two);
@@ -698,7 +721,7 @@ CERT_GetOidString(const SECItem *oid)
     return a;
 }
 
-/* convert DER-encoded hex to a string */
+
 static SECItem *
 get_hex_string(SECItem *data)
 {
@@ -706,7 +729,7 @@ get_hex_string(SECItem *data)
     unsigned int i, j;
     static const char hex[] = { "0123456789ABCDEF" };
 
-    /* '#' + 2 chars per octet + terminator */
+    
     rv = SECITEM_AllocItem(NULL, NULL, data->len*2 + 2);
     if (!rv) {
 	return NULL;
@@ -722,98 +745,199 @@ get_hex_string(SECItem *data)
     return rv;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static SECStatus
-AppendAVA(stringBuf *bufp, CERTAVA *ava)
+AppendAVA(stringBuf *bufp, CERTAVA *ava, CertStrictnessLevel strict)
 {
-    const struct NameToKind *n2k = name2kinds;
-    const char *tagName;
-    unsigned len, maxLen;
-    int tag;
-    SECStatus rv;
-    SECItem *avaValue = NULL;
-    char *unknownTag = NULL;
-    PRBool hexValue = PR_FALSE;
-    char tmpBuf[384];
+    const NameToKind *pn2k   = name2kinds;
+    SECItem     *avaValue    = NULL;
+    char        *unknownTag  = NULL;
+    char        *encodedAVA  = NULL;
+    PRBool       useHex      = PR_FALSE;  
+    SECOidTag    endKind;
+    SECStatus    rv;
+    unsigned int len;
+    int          nameLen, valueLen;
+    NameToKind   n2k         = { NULL, 32767, SEC_OID_UNKNOWN, SEC_ASN1_DS };
+    char         tmpBuf[384];
 
+#define tagName  n2k.name    /* non-NULL means use NAME= form */
+#define maxBytes n2k.maxLen
+#define tag      n2k.kind
+#define vt       n2k.valueType
+
+    
+
+
+
+    endKind = (strict == CERT_N2A_READABLE) ? SEC_OID_UNKNOWN
+                                            : SEC_OID_AVA_POSTAL_ADDRESS;
     tag = CERT_GetAVATag(ava);
-    while (n2k->kind != tag && n2k->kind != SEC_OID_UNKNOWN) {
-        ++n2k;
+    while (pn2k->kind != tag && pn2k->kind != endKind) {
+        ++pn2k;
     }
-    if (n2k->kind != SEC_OID_UNKNOWN) {
-        tagName = n2k->name;
-    } else {
-	/* handle unknown attribute types per RFC 2253 */
+
+    if (pn2k->kind != endKind ) {
+        n2k = *pn2k;
+    } else if (strict != CERT_N2A_READABLE) {
+        useHex = PR_TRUE;
+    }
+    
+    if (strict == CERT_N2A_INVERTIBLE && vt == SEC_ASN1_DS) {
+	tagName = NULL;      
+	useHex = PR_TRUE;    
+    }
+    if (!useHex) {
+	avaValue = CERT_DecodeAVAValue(&ava->value);
+	if (!avaValue) {
+	    useHex = PR_TRUE;
+	    if (strict != CERT_N2A_READABLE) {
+		tagName = NULL;  
+	    }
+	}
+    }
+    if (!tagName) {
+	
 	tagName = unknownTag = CERT_GetOidString(&ava->type);
-	if (!tagName)
+	if (!tagName) {
+	    if (avaValue)
+		SECITEM_FreeItem(avaValue, PR_TRUE);
 	    return SECFailure;
+	}
     }
-    maxLen = n2k->maxLen;
-
-#ifdef NSS_STRICT_RFC_2253_VALUES_ONLY
-    if (!unknownTag)
-#endif
-    avaValue = CERT_DecodeAVAValue(&ava->value);
-    if(!avaValue) {
-	/* the attribute value is not recognized, get the hex value */
+    if (useHex) {
 	avaValue = get_hex_string(&ava->value);
-	if(!avaValue) {
-	    if (unknownTag) PR_smprintf_free(unknownTag);
+	if (!avaValue) {
+	    if (unknownTag) 
+	    	PR_smprintf_free(unknownTag);
 	    return SECFailure;
 	}
-	hexValue = PR_TRUE;
     }
 
-    /* Check value length */
-    if (avaValue->len > maxLen + 3) {  /* must be room for "..." */
-	/* avaValue is a UTF8 string, freshly allocated and returned to us 
-	** by CERT_DecodeAVAValue or get_hex_string just above, so we can
-	** modify it here.  See if we're in the middle of a multi-byte
-	** UTF8 character.
-	*/
-	while (((avaValue->data[maxLen] & 0xc0) == 0x80) && maxLen > 0) {
-	   maxLen--;
+    if (strict == CERT_N2A_READABLE) {
+    	if (maxBytes > sizeof(tmpBuf) - 4)
+	    maxBytes = sizeof(tmpBuf) - 4;
+	
+	if (avaValue->len > maxBytes + 3) {
+	    
+
+
+
+
+	    len = maxBytes;
+	    while (((avaValue->data[len] & 0xc0) == 0x80) && len > 0) {
+	       len--;
+	    }
+	    
+	    avaValue->data[len++] = '.'; 
+	    avaValue->data[len++] = '.';
+	    avaValue->data[len++] = '.';
+	    avaValue->data[len]   = 0;
+	    avaValue->len = len;
 	}
-	/* add elipsis to signify truncation. */
-	avaValue->data[maxLen++] = '.'; 
-	avaValue->data[maxLen++] = '.';
-	avaValue->data[maxLen++] = '.';
-	avaValue->data[maxLen]   = 0;
-	avaValue->len = maxLen;
     }
 
-    len = PORT_Strlen(tagName);
-    if (len+1 > sizeof(tmpBuf)) {
-	if (unknownTag) PR_smprintf_free(unknownTag);
-	SECITEM_FreeItem(avaValue, PR_TRUE);
+    nameLen  = strlen(tagName);
+    valueLen = (useHex ? avaValue->len : 
+            cert_RFC1485_GetRequiredLen(avaValue->data, avaValue->len, NULL));
+    len = nameLen + valueLen + 2; 
+
+    if (len <= sizeof(tmpBuf)) {
+    	encodedAVA = tmpBuf;
+    } else if (strict == CERT_N2A_READABLE) {
 	PORT_SetError(SEC_ERROR_OUTPUT_LEN);
+    } else {
+	encodedAVA = PORT_Alloc(len);
+    }
+    if (!encodedAVA) {
+	SECITEM_FreeItem(avaValue, PR_TRUE);
+	if (unknownTag) 
+	    PR_smprintf_free(unknownTag);
 	return SECFailure;
     }
-    PORT_Memcpy(tmpBuf, tagName, len);
-    if (unknownTag) PR_smprintf_free(unknownTag);
-    tmpBuf[len++] = '=';
+    memcpy(encodedAVA, tagName, nameLen);
+    if (unknownTag) 
+    	PR_smprintf_free(unknownTag);
+    encodedAVA[nameLen++] = '=';
     
-    /* escape and quote as necessary - don't quote hex strings */
-    if (hexValue) {
-        /* appent avaValue to tmpBuf */
-	if (avaValue->len + len + 1 > sizeof tmpBuf) {
-	    PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-	    rv = SECFailure;
-    	} else {
-	    PORT_Strncpy(tmpBuf+len, (char *)avaValue->data, avaValue->len + 1);
-	    rv = SECSuccess;
-	}
+    
+    if (useHex) {
+	memcpy(encodedAVA + nameLen, (char *)avaValue->data, avaValue->len);
+	encodedAVA[nameLen + avaValue->len] = '\0';
+	rv = SECSuccess;
     } else 
-	rv = CERT_RFC1485_EscapeAndQuote(tmpBuf+len, sizeof(tmpBuf)-len, 
-		    		     (char *)avaValue->data, avaValue->len);
+	rv = CERT_RFC1485_EscapeAndQuote(encodedAVA + nameLen, len - nameLen, 
+		    		        (char *)avaValue->data, avaValue->len);
     SECITEM_FreeItem(avaValue, PR_TRUE);
-    if (rv) return SECFailure;
-    
-    rv = AppendStr(bufp, tmpBuf);
+    if (rv == SECSuccess)
+	rv = AppendStr(bufp, encodedAVA);
+    if (encodedAVA != tmpBuf)
+    	PORT_Free(encodedAVA);
     return rv;
 }
 
+#undef tagName
+#undef maxBytes
+#undef tag
+#undef vt
+
 char *
-CERT_NameToAscii(CERTName *name)
+CERT_NameToAsciiInvertible(CERTName *name, CertStrictnessLevel strict)
 {
     CERTRDN** rdns;
     CERTRDN** lastRdn;
@@ -826,35 +950,35 @@ CERT_NameToAscii(CERTName *name)
 	return NULL;
     }
     
-    /* find last RDN */
+    
     lastRdn = rdns;
     while (*lastRdn) lastRdn++;
     lastRdn--;
     
-    /*
-     * Loop over name contents in _reverse_ RDN order appending to string
-     */
+    
+
+
     for (rdn = lastRdn; rdn >= rdns; rdn--) {
 	CERTAVA** avas = (*rdn)->avas;
 	CERTAVA* ava;
 	PRBool newRDN = PR_TRUE;
 
-	/* 
-	 * XXX Do we need to traverse the AVAs in reverse order, too?
-	 */
+	
+
+
 	while (avas && (ava = *avas++) != NULL) {
 	    SECStatus rv;
-	    /* Put in comma or plus separator */
+	    
 	    if (!first) {
-		/* Use of spaces is deprecated in RFC 2253. */
+		
 		rv = AppendStr(&strBuf, newRDN ? "," : "+");
 		if (rv) goto loser;
 	    } else {
 		first = PR_FALSE;
 	    }
 	    
-	    /* Add in tag type plus value into buf */
-	    rv = AppendAVA(&strBuf, ava);
+	    
+	    rv = AppendAVA(&strBuf, ava, strict);
 	    if (rv) goto loser;
 	    newRDN = PR_FALSE;
 	}
@@ -867,10 +991,16 @@ loser:
     return NULL;
 }
 
-/*
- * Return the string representation of a DER encoded distinguished name
- * "dername" - The DER encoded name to convert
- */
+char *
+CERT_NameToAscii(CERTName *name)
+{
+    return CERT_NameToAsciiInvertible(name, CERT_N2A_READABLE);
+}
+
+
+
+
+
 char *
 CERT_DerNameToAscii(SECItem *dername)
 {
@@ -901,9 +1031,9 @@ loser:
     return(retstr);
 }
 
-/* RDNs are sorted from most general to most specific.
- * This code returns the FIRST one found, the most general one found.
- */
+
+
+
 static char *
 CERT_GetNameElement(PRArenaPool *arena, CERTName *name, int wantedTag)
 {
@@ -941,10 +1071,10 @@ CERT_GetNameElement(PRArenaPool *arena, CERTName *name, int wantedTag)
     return buf;
 }
 
-/* RDNs are sorted from most general to most specific.
- * This code returns the LAST one found, the most specific one found.
- * This is particularly appropriate for Common Name.  See RFC 2818.
- */
+
+
+
+
 static char *
 CERT_GetLastNameElement(PRArenaPool *arena, CERTName *name, int wantedTag)
 {
@@ -1053,7 +1183,7 @@ CERT_GetCertificateEmailAddress(CERTCertificate *cert)
 
 finish:
 
-    /* Don't free nameList, it's part of the arena. */
+    
 
     if (arena) {
 	PORT_FreeArena(arena, PR_FALSE);
@@ -1097,10 +1227,10 @@ appendItemToBuf(char *dest, SECItem *src, PRUint32 *pRemaining)
     return dest;
 }
 
-/* Returns a pointer to an environment-like string, a series of 
-** null-terminated strings, terminated by a zero-length string.
-** This function is intended to be internal to NSS.
-*/
+
+
+
+
 char *
 cert_GetCertificateEmailAddresses(CERTCertificate *cert)
 {
@@ -1120,7 +1250,7 @@ cert_GetCertificateEmailAddresses(CERTCertificate *cert)
     maxLen = cert->derCert.len;
     PORT_Assert(maxLen);
     if (!maxLen) 
-	maxLen = 2000;  /* a guess, should never happen */
+	maxLen = 2000;  
 
     pBuf = addrBuf = (char *)PORT_ArenaZAlloc(tmpArena, maxLen + 1);
     if (!addrBuf) 
@@ -1159,9 +1289,9 @@ cert_GetCertificateEmailAddresses(CERTCertificate *cert)
 	    } while (current != nameList);
 	}
 	SECITEM_FreeItem(&subAltName, PR_FALSE);
-	/* Don't free nameList, it's part of the tmpArena. */
+	
     }
-    /* now copy superstring to cert's arena */
+    
     finalLen = (pBuf - addrBuf) + 1;
     pBuf = NULL;
     if (finalLen > 1) {
@@ -1177,11 +1307,11 @@ loser:
     return pBuf;
 }
 
-/* returns pointer to storage in cert's arena.  Storage remains valid
-** as long as cert's reference count doesn't go to zero.
-** Caller should strdup or otherwise copy.
-*/
-const char *	/* const so caller won't muck with it. */
+
+
+
+
+const char *	
 CERT_GetFirstEmailAddress(CERTCertificate * cert)
 {
     if (cert && cert->emailAddr && cert->emailAddr[0])
@@ -1189,11 +1319,11 @@ CERT_GetFirstEmailAddress(CERTCertificate * cert)
     return NULL;
 }
 
-/* returns pointer to storage in cert's arena.  Storage remains valid
-** as long as cert's reference count doesn't go to zero.
-** Caller should strdup or otherwise copy.
-*/
-const char *	/* const so caller won't muck with it. */
+
+
+
+
+const char *	
 CERT_GetNextEmailAddress(CERTCertificate * cert, const char * prev)
 {
     if (cert && prev && prev[0]) {
@@ -1205,10 +1335,10 @@ CERT_GetNextEmailAddress(CERTCertificate * cert, const char * prev)
     return NULL;
 }
 
-/* This is seriously bogus, now that certs store their email addresses in
-** subject Alternative Name extensions. 
-** Returns a string allocated by PORT_StrDup, which the caller must free.
-*/
+
+
+
+
 char *
 CERT_GetCertEmailAddress(CERTName *name)
 {
@@ -1227,7 +1357,7 @@ CERT_GetCertEmailAddress(CERTName *name)
     return(emailAddr);
 }
 
-/* The return value must be freed with PORT_Free. */
+
 char *
 CERT_GetCommonName(CERTName *name)
 {
