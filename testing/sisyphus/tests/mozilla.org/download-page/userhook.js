@@ -8,7 +8,7 @@ function userOnStart()
 
   loadBundle('chrome:
   loadBundle('chrome:
-  loadBundle('resource:/browserconfig.properties');
+  loadBundle('chrome:
 
 }
 
