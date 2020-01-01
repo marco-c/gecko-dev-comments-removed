@@ -1,40 +1,40 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Content Preferences (cpref).
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2006
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Myk Melez <myk@mozilla.org>
- *   Ehsan Akhgari <ehsan.akhgari@gmail.com>
- *   Geoff Lankow <geoff@darktrojan.net>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const Ci = Components.interfaces;
 const Cc = Components.classes;
@@ -43,111 +43,29 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-/**
- * Remotes the service. All the remoting/electrolysis code is in here,
- * so the regular service code below remains uncluttered and maintainable.
- */
-function electrolify(service) {
-  // FIXME: For now, use the wrappedJSObject hack, until bug
-  //        593407 which will clean that up.
-  service.wrappedJSObject = service;
-
-  var appInfo = Cc["@mozilla.org/xre/app-info;1"];
-  if (!appInfo || appInfo.getService(Ci.nsIXULRuntime).processType ==
-      Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-    // Parent process
-
-    // Setup listener for child messages. We don't need to call
-    // addMessageListener as the wakeup service will do that for us.
-    service.receiveMessage = function(aMessage) {
-      var json = aMessage.json;
-      // We have a whitelist for getting/setting. This is because
-      // there are potential privacy issues with a compromised
-      // content process checking the user's content preferences
-      // and using that to discover all the websites visited, etc.
-      // Also there are both potential race conditions (if two processes
-      // set more than one value in succession, and the values
-      // only make sense together), as well as security issues, if
-      // a compromised content process can send arbitrary setPref
-      // messages. The whitelist contains only those settings that
-      // are not at risk for either.
-      // We currently whitelist saving/reading the last directory of file
-      // uploads, which is so far the only need we have identified.
-
-      const NAME_WHITELIST = ["browser.upload.lastDir"];
-      if (NAME_WHITELIST.indexOf(json.name) == -1)
-        return { succeeded: false };
-
-      switch (aMessage.name) {
-        case "ContentPref:getPref":
-          return { succeeded: true,
-                   value: service.getPref(json.group, json.name, json.value) };
-
-        case "ContentPref:setPref":
-          service.setPref(json.group, json.name, json.value);
-          return { succeeded: true };
-      }
-    };
-  } else {
-    // Child process
-
-    service._dbInit = function(){}; // No local DB
-
-    service.messageManager = Cc["@mozilla.org/childprocessmessagemanager;1"].
-                             getService(Ci.nsISyncMessageSender);
-
-    // Child method remoting
-    [
-      ['getPref', ['group', 'name'], ['_parseGroupParam']],
-      ['setPref', ['group', 'name', 'value'], ['_parseGroupParam']],
-    ].forEach(function(data) {
-      var method = data[0];
-      var params = data[1];
-      var parsers = data[2];
-      service[method] = function __remoted__() {
-        var json = {};
-        for (var i = 0; i < params.length; i++) {
-          if (params[i]) {
-            json[params[i]] = arguments[i];
-            if (parsers[i])
-              json[params[i]] = this[parsers[i]](json[params[i]]);
-          }
-        }
-        var ret = service.messageManager.sendSyncMessage('ContentPref:' + method, json)[0];
-        if (!ret.succeeded)
-          throw "ContentPrefs remoting failed to pass whitelist";
-        return ret.value;
-      };
-    });
-  }
-}
-
 function ContentPrefService() {
-  electrolify(this);
-
-  // If this throws an exception, it causes the getService call to fail,
-  // but the next time a consumer tries to retrieve the service, we'll try
-  // to initialize the database again, which might work if the failure
-  // was due to a temporary condition (like being out of disk space).
+  
+  
+  
+  
   this._dbInit();
 
-  // Observe shutdown so we can shut down the database connection.
+  
   this._observerSvc.addObserver(this, "xpcom-shutdown", false);
 }
 
 ContentPrefService.prototype = {
-  //**************************************************************************//
-  // XPCOM Plumbing
+  
+  
 
   classID:          Components.ID("{e6a3f533-4ffa-4615-8eb4-d4e72d883fa7}"),
-  QueryInterface:   XPCOMUtils.generateQI([Ci.nsIContentPrefService,
-                                           Ci.nsIFrameMessageListener]),
+  QueryInterface:   XPCOMUtils.generateQI([Ci.nsIContentPrefService]),
 
 
-  //**************************************************************************//
-  // Convenience Getters
+  
+  
 
-  // Observer Service
+  
   __observerSvc: null,
   get _observerSvc() {
     if (!this.__observerSvc)
@@ -156,7 +74,7 @@ ContentPrefService.prototype = {
     return this.__observerSvc;
   },
 
-  // Console Service
+  
   __consoleSvc: null,
   get _consoleSvc() {
     if (!this.__consoleSvc)
@@ -165,7 +83,7 @@ ContentPrefService.prototype = {
     return this.__consoleSvc;
   },
 
-  // Preferences Service
+  
   __prefSvc: null,
   get _prefSvc() {
     if (!this.__prefSvc)
@@ -175,32 +93,32 @@ ContentPrefService.prototype = {
   },
 
 
-  //**************************************************************************//
-  // Destruction
+  
+  
 
   _destroy: function ContentPrefService__destroy() {
     this._observerSvc.removeObserver(this, "xpcom-shutdown");
 
-    // Finalize statements which may have been used asynchronously.
+    
     if (this.__stmtSelectPref)
       this.__stmtSelectPref.finalize();
     if (this.__stmtSelectGlobalPref)
       this.__stmtSelectGlobalPref.finalize();
 
-    // Delete references to XPCOM components to make sure we don't leak them
-    // (although we haven't observed leakage in tests).  Also delete references
-    // in _observers and _genericObservers to avoid cycles with those that
-    // refer to us and don't remove themselves from those observer pools.
+    
+    
+    
+    
     for (var i in this) {
       try { this[i] = null }
-      // Ignore "setting a property that has only a getter" exceptions.
+      
       catch(ex) {}
     }
   },
 
 
-  //**************************************************************************//
-  // nsIObserver
+  
+  
 
   observe: function ContentPrefService_observe(subject, topic, data) {
     switch (topic) {
@@ -211,31 +129,36 @@ ContentPrefService.prototype = {
   },
 
 
-  //**************************************************************************//
-  // nsIContentPrefService
+  
+  
 
   getPref: function ContentPrefService_getPref(aGroup, aName, aCallback) {
     if (!aName)
       throw Components.Exception("aName cannot be null or an empty string",
                                  Cr.NS_ERROR_ILLEGAL_VALUE);
 
-    var group = this._parseGroupParam(aGroup);
-    if (group == null)
+    if (aGroup == null)
       return this._selectGlobalPref(aName, aCallback);
-    return this._selectPref(group, aName, aCallback);
+    if (aGroup.constructor.name == "String")
+      return this._selectPref(aGroup.toString(), aName, aCallback);
+    if (aGroup instanceof Ci.nsIURI)
+      return this._selectPref(this.grouper.group(aGroup), aName, aCallback);
+
+    throw Components.Exception("aGroup is not a string, nsIURI or null",
+                               Cr.NS_ERROR_ILLEGAL_VALUE);
   },
 
   setPref: function ContentPrefService_setPref(aGroup, aName, aValue) {
-    // If the pref is already set to the value, there's nothing more to do.
+    
     var currentValue = this.getPref(aGroup, aName);
     if (typeof currentValue != "undefined") {
       if (currentValue == aValue)
         return;
     }
     else {
-      // If we are in private browsing mode, refuse to set new prefs
+      
       var inPrivateBrowsing = false;
-      try { // The Private Browsing service might not be available.
+      try { 
         var pbs = Cc["@mozilla.org/privatebrowsing;1"].
                   getService(Ci.nsIPrivateBrowsingService);
         inPrivateBrowsing = pbs.privateBrowsingEnabled;
@@ -245,18 +168,29 @@ ContentPrefService.prototype = {
     }
 
     var settingID = this._selectSettingID(aName) || this._insertSetting(aName);
-    var group = this._parseGroupParam(aGroup);
-    var groupID, prefID;
-    if (group == null) {
+    var group, groupID, prefID;
+    if (aGroup == null) {
+      group = null;
       groupID = null;
       prefID = this._selectGlobalPrefID(settingID);
     }
-    else {
+    else if (aGroup.constructor.name == "String") {
+      group = aGroup.toString();
       groupID = this._selectGroupID(group) || this._insertGroup(group);
       prefID = this._selectPrefID(groupID, settingID);
     }
+    else if (aGroup instanceof Ci.nsIURI) {
+      group = this.grouper.group(aGroup);
+      groupID = this._selectGroupID(group) || this._insertGroup(group);
+      prefID = this._selectPrefID(groupID, settingID);
+    }
+    else {
+      
+      throw Components.Exception("aGroup is not a string, nsIURI or null",
+                                 Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
 
-    // Update the existing record, if any, or create a new one.
+    
     if (prefID)
       this._updatePref(prefID, aValue);
     else
@@ -273,32 +207,42 @@ ContentPrefService.prototype = {
   },
 
   hasPref: function ContentPrefService_hasPref(aGroup, aName) {
-    // XXX If consumers end up calling this method regularly, then we should
-    // optimize this to query the database directly.
+    
+    
     return (typeof this.getPref(aGroup, aName) != "undefined");
   },
 
   removePref: function ContentPrefService_removePref(aGroup, aName) {
-    // If there's no old value, then there's nothing to remove.
+    
     if (!this.hasPref(aGroup, aName))
       return;
 
-
     var settingID = this._selectSettingID(aName);
-    var group = this._parseGroupParam(aGroup);
-    var groupID, prefID;
-    if (group == null) {
+    var group, groupID, prefID;
+    if (aGroup == null) {
+      group = null;
       groupID = null;
       prefID = this._selectGlobalPrefID(settingID);
     }
-    else {
+    else if (aGroup.constructor.name == "String") {
+      group = aGroup.toString();
       groupID = this._selectGroupID(group);
       prefID = this._selectPrefID(groupID, settingID);
+    }
+    else if (aGroup instanceof Ci.nsIURI) {
+      group = this.grouper.group(aGroup);
+      groupID = this._selectGroupID(group);
+      prefID = this._selectPrefID(groupID, settingID);
+    }
+    else {
+      
+      throw Components.Exception("aGroup is not a string, nsIURI or null",
+                                 Cr.NS_ERROR_ILLEGAL_VALUE);
     }
 
     this._deletePref(prefID);
 
-    // Get rid of extraneous records that are no longer being used.
+    
     this._deleteSettingIfUnused(settingID);
     if (groupID)
       this._deleteGroupIfUnused(groupID);
@@ -362,16 +306,24 @@ ContentPrefService.prototype = {
 
     for (var i = 0; i < groupNames.length; i++) {
       this._notifyPrefRemoved(groupNames[i], aName);
-      if (groupNames[i]) // ie. not null, which will be last (and i == groupIDs.length)
+      if (groupNames[i]) 
         this._deleteGroupIfUnused(groupIDs[i]);
     }
   },
 
   getPrefs: function ContentPrefService_getPrefs(aGroup) {
-    var group = this._parseGroupParam(aGroup);
-    if (group == null)
+    if (aGroup == null)
       return this._selectGlobalPrefs();
-    return this._selectPrefs(group);
+    if (aGroup.constructor.name == "String") {
+      group = aGroup.toString();
+      return this._selectPrefs(group);
+    }
+    if (aGroup instanceof Ci.nsIURI) {
+      var group = this.grouper.group(aGroup);
+      return this._selectPrefs(group);
+    }
+    throw Components.Exception("aGroup is not a string, nsIURI or null",
+                               Cr.NS_ERROR_ILLEGAL_VALUE);
   },
 
   getPrefsByName: function ContentPrefService_getPrefsByName(aName) {
@@ -382,10 +334,10 @@ ContentPrefService.prototype = {
     return this._selectPrefsByName(aName);
   },
 
-  // A hash of arrays of observers, indexed by setting name.
+  
   _observers: {},
 
-  // An array of generic observers, which observe all settings.
+  
   _genericObservers: [],
 
   addObserver: function ContentPrefService_addObserver(aName, aObserver) {
@@ -416,13 +368,13 @@ ContentPrefService.prototype = {
       observers.splice(observers.indexOf(aObserver), 1);
   },
 
-  /**
-   * Construct a list of observers to notify about a change to some setting,
-   * putting setting-specific observers before before generic ones, so observers
-   * that initialize individual settings (like the page style controller)
-   * execute before observers that display multiple settings and depend on them
-   * being initialized first (like the content prefs sidebar).
-   */
+  
+
+
+
+
+
+
   _getObservers: function ContentPrefService__getObservers(aName) {
     var observers = [];
 
@@ -457,8 +409,8 @@ ContentPrefService.prototype = {
   },
 
 
-  //**************************************************************************//
-  // Data Retrieval & Modification
+  
+  
 
   __stmtSelectPref: null,
   get _stmtSelectPref() {
@@ -846,8 +798,8 @@ ContentPrefService.prototype = {
   },
 
 
-  //**************************************************************************//
-  // Database Creation & Access
+  
+  
 
   _dbVersion: 3,
 
@@ -896,10 +848,10 @@ ContentPrefService.prototype = {
     return statement;
   },
 
-  // _dbInit and the methods it calls (_dbCreate, _dbMigrate, and version-
-  // specific migration methods) must be careful not to call any method
-  // of the service that assumes the database connection has already been
-  // initialized, since it won't be initialized until at the end of _dbInit.
+  
+  
+  
+  
 
   _dbInit: function ContentPrefService__dbInit() {
     var dirService = Cc["@mozilla.org/file/directory_service;1"].
@@ -918,18 +870,18 @@ ContentPrefService.prototype = {
       try {
         dbConnection = dbService.openDatabase(dbFile);
       }
-      // If the connection isn't ready after we open the database, that means
-      // the database has been corrupted, so we back it up and then recreate it.
+      
+      
       catch (e if e.result == Cr.NS_ERROR_FILE_CORRUPTED) {
         dbConnection = this._dbBackUpAndRecreate(dbService, dbFile,
                                                  dbConnection);
       }
 
-      // Get the version of the schema in the file.
+      
       var version = dbConnection.schemaVersion;
 
-      // Try to migrate the schema in the database to the current schema used by
-      // the service.  If migration fails, back up the database and recreate it.
+      
+      
       if (version != this._dbVersion) {
         try {
           this._dbMigrate(dbConnection, version, this._dbVersion);
@@ -941,18 +893,18 @@ ContentPrefService.prototype = {
       }
     }
 
-    // Turn off disk synchronization checking to reduce disk churn and speed up
-    // operations when prefs are changed rapidly (such as when a user repeatedly
-    // changes the value of the browser zoom setting for a site).
-    //
-    // Note: this could cause database corruption if the OS crashes or machine
-    // loses power before the data gets written to disk, but this is considered
-    // a reasonable risk for the not-so-critical data stored in this database.
-    //
-    // If you really don't want to take this risk, however, just set the
-    // toolkit.storage.synchronous pref to 1 (NORMAL synchronization) or 2
-    // (FULL synchronization), in which case mozStorageConnection::Initialize
-    // will use that value, and we won't override it here.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!this._prefSvc.prefHasUserValue("toolkit.storage.synchronous"))
       dbConnection.executeSimpleSQL("PRAGMA synchronous = OFF");
 
@@ -967,9 +919,9 @@ ContentPrefService.prototype = {
       dbConnection.schemaVersion = this._dbVersion;
     }
     catch(ex) {
-      // If we failed to create the database (perhaps because the disk ran out
-      // of space), then remove the database file so we don't leave it in some
-      // half-created state from which we won't know how to recover.
+      
+      
+      
       dbConnection.close();
       aDBFile.remove(false);
       throw ex;
@@ -1002,9 +954,9 @@ ContentPrefService.prototype = {
                                                                          aDBConnection) {
     aDBService.backupDatabaseFile(aDBFile, "content-prefs.sqlite.corrupt");
 
-    // Close the database, ignoring the "already closed" exception, if any.
-    // It'll be open if we're here because of a migration failure but closed
-    // if we're here because of database corruption.
+    
+    
+    
     try { aDBConnection.close() } catch(ex) {}
 
     aDBFile.remove(false);
@@ -1032,13 +984,13 @@ ContentPrefService.prototype = {
             " to version " + aNewVersion);
   },
 
-  /**
-   * If the schema version is 0, that means it was never set, which means
-   * the database was somehow created without the schema being applied, perhaps
-   * because the system ran out of disk space (although we check for this
-   * in _createDB) or because some other code created the database file without
-   * applying the schema.  In any case, recover by simply reapplying the schema.
-   */
+  
+
+
+
+
+
+
   _dbMigrate0To3: function ContentPrefService___dbMigrate0To3(aDBConnection) {
     this._dbCreateSchema(aDBConnection);
   },
@@ -1059,59 +1011,48 @@ ContentPrefService.prototype = {
 
   _dbMigrate2To3: function ContentPrefService__dbMigrate2To3(aDBConnection) {
     this._dbCreateIndices(aDBConnection);
-  },
+  }
 
-  _parseGroupParam: function ContentPrefService__parseGroupParam(aGroup) {
-    if (aGroup == null)
-      return null;
-    if (aGroup.constructor.name == "String")
-      return aGroup.toString();
-    if (aGroup instanceof Ci.nsIURI)
-      return this.grouper.group(aGroup);
-
-    throw Components.Exception("aGroup is not a string, nsIURI or null",
-                               Cr.NS_ERROR_ILLEGAL_VALUE);
-  },
 };
 
 
 function HostnameGrouper() {}
 
 HostnameGrouper.prototype = {
-  //**************************************************************************//
-  // XPCOM Plumbing
+  
+  
   
   classID:          Components.ID("{8df290ae-dcaa-4c11-98a5-2429a4dc97bb}"),
   QueryInterface:   XPCOMUtils.generateQI([Ci.nsIContentURIGrouper]),
 
-  //**************************************************************************//
-  // nsIContentURIGrouper
+  
+  
 
   group: function HostnameGrouper_group(aURI) {
     var group;
 
     try {
-      // Accessing the host property of the URI will throw an exception
-      // if the URI is of a type that doesn't have a host property.
-      // Otherwise, we manually throw an exception if the host is empty,
-      // since the effect is the same (we can't derive a group from it).
+      
+      
+      
+      
 
       group = aURI.host;
       if (!group)
         throw("can't derive group from host; no host in URI");
     }
     catch(ex) {
-      // If we don't have a host, then use the entire URI (minus the query,
-      // reference, and hash, if possible) as the group.  This means that URIs
-      // like about:mozilla and about:blank will be considered separate groups,
-      // but at least they'll be grouped somehow.
       
-      // This also means that each individual file: URL will be considered
-      // its own group.  This seems suboptimal, but so does treating the entire
-      // file: URL space as a single group (especially if folks start setting
-      // group-specific capabilities prefs).
+      
+      
+      
+      
+      
+      
+      
+      
 
-      // XXX Is there something better we can do here?
+      
 
       try {
         var url = aURI.QueryInterface(Ci.nsIURL);
@@ -1153,8 +1094,8 @@ AsyncStatement.prototype = {
   }
 };
 
-//****************************************************************************//
-// XPCOM Plumbing
+
+
 
 var components = [ContentPrefService, HostnameGrouper];
 var NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
