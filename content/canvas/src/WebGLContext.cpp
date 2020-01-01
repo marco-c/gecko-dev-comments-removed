@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ *   Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Vladimir Vukicevic <vladimir@pobox.com> (original author)
+ *   Mark Steele <mwsteele@gmail.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "WebGLContext.h"
 
@@ -52,7 +52,6 @@
 #include "gfxUtils.h"
 
 #include "CanvasUtils.h"
-#include "NativeJSContext.h"
 
 #include "GLContextProvider.h"
 
@@ -199,8 +198,8 @@ WebGLContext::DestroyResourcesAndContext()
     mMapRenderbuffers.EnumerateRead(DeleteRenderbufferFunction, gl);
     mMapRenderbuffers.Clear();
 
-    
-    
+    // We just got rid of everything, so the context had better
+    // have been going away.
     printf_stderr("--- WebGL context destroyed: %p\n", gl.get());
 
     gl = nsnull;
@@ -223,7 +222,7 @@ WebGLContext::Invalidate()
     HTMLCanvasElement()->InvalidateFrame();
 }
 
-
+/* readonly attribute nsIDOMHTMLCanvasElement canvas; */
 NS_IMETHODIMP
 WebGLContext::GetCanvas(nsIDOMHTMLCanvasElement **canvas)
 {
@@ -232,9 +231,9 @@ WebGLContext::GetCanvas(nsIDOMHTMLCanvasElement **canvas)
     return NS_OK;
 }
 
-
-
-
+//
+// nsICanvasRenderingContextInternal
+//
 
 NS_IMETHODIMP
 WebGLContext::SetCanvasElement(nsHTMLCanvasElement* aParentCanvas)
@@ -253,31 +252,31 @@ WebGLContext::SetDimensions(PRInt32 width, PRInt32 height)
     if (mWidth == width && mHeight == height)
         return NS_OK;
 
-    
-    
+    // If we already have a gl context, then we just need to resize
+    // FB0.
     if (gl &&
         gl->ResizeOffscreen(gfxIntSize(width, height)))
     {
-        
+        // everything's good, we're done here
         mWidth = width;
         mHeight = height;
         mResetLayer = PR_TRUE;
         return NS_OK;
     }
 
-    
-    
-    
-    
+    // We're going to create an entirely new context.  If our
+    // generation is not 0 right now (that is, if this isn't the first
+    // context we're creating), we may have to dispatch a context lost
+    // event.
 
-    
-    
-    
+    // If incrementing the generation would cause overflow,
+    // don't allow it.  Allowing this would allow us to use
+    // resource handles created from older context generations.
     if (!(mGeneration+1).valid())
-        return NS_ERROR_FAILURE; 
+        return NS_ERROR_FAILURE; // exit without changing the value of mGeneration
 
-    
-    
+    // We're going to recreate our context, so make sure we clean up
+    // after ourselves.
     DestroyResourcesAndContext();
 
     gl::ContextFormat format(gl::ContextFormat::BasicRGBA32);
@@ -292,13 +291,13 @@ WebGLContext::SetDimensions(PRInt32 width, PRInt32 height)
 
     if (!forceOSMesa) {
     #ifdef XP_WIN
-        
-        
-        
-        
+        // On Windows, we may have a choice of backends, including straight
+        // OpenGL, D3D through ANGLE via EGL, or straight EGL/GLES2.
+        // We don't differentiate the latter two yet, but we allow for
+        // a env var to try EGL first, instead of last.
         bool preferEGL = PR_GetEnv("MOZ_WEBGL_PREFER_EGL") != nsnull;
 
-        
+        // if we want EGL, try it first
         if (!gl && preferEGL) {
             gl = gl::GLContextProviderEGL::CreateOffscreen(gfxIntSize(width, height), format);
             if (gl && !InitAndValidateGL()) {
@@ -306,7 +305,7 @@ WebGLContext::SetDimensions(PRInt32 width, PRInt32 height)
             }
         }
 
-        
+        // if it failed, then try the default provider, whatever that is
         if (!gl) {
             gl = gl::GLContextProvider::CreateOffscreen(gfxIntSize(width, height), format);
             if (gl && !InitAndValidateGL()) {
@@ -314,7 +313,7 @@ WebGLContext::SetDimensions(PRInt32 width, PRInt32 height)
             }
         }
 
-        
+        // if that failed, and we weren't already preferring EGL, try it now.
         if (!gl && !preferEGL) {
             gl = gl::GLContextProviderEGL::CreateOffscreen(gfxIntSize(width, height), format);
             if (gl && !InitAndValidateGL()) {
@@ -322,7 +321,7 @@ WebGLContext::SetDimensions(PRInt32 width, PRInt32 height)
             }
         }
     #else
-        
+        // other platforms just use whatever the default is
         if (!gl) {
             gl = gl::GLContextProvider::CreateOffscreen(gfxIntSize(width, height), format);
             if (gl && !InitAndValidateGL()) {
@@ -332,15 +331,15 @@ WebGLContext::SetDimensions(PRInt32 width, PRInt32 height)
     #endif
     }
 
-    
+    // last chance, try OSMesa
     if (!gl) {
         gl = gl::GLContextProviderOSMesa::CreateOffscreen(gfxIntSize(width, height), format);
         if (gl) {
             if (!InitAndValidateGL()) {
                 gl = nsnull;
             } else {
-                
-                
+                // make sure we notify always in this case, because it's likely going to be
+                // painfully slow
                 LogMessage("WebGL: Using software rendering via OSMesa");
             }
         }
@@ -367,19 +366,19 @@ WebGLContext::SetDimensions(PRInt32 width, PRInt32 height)
     mHeight = height;
     mResetLayer = PR_TRUE;
 
-    
+    // increment the generation number
     ++mGeneration;
 
 #if 0
     if (mGeneration > 0) {
-        
+        // XXX dispatch context lost event
     }
 #endif
 
     MakeContextCurrent();
 
-    
-    
+    // Make sure that we clear this out, otherwise
+    // we'll end up displaying random memory
     gl->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, gl->GetOffscreenFBO());
     gl->fViewport(0, 0, mWidth, mHeight);
     gl->fClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -426,7 +425,7 @@ WebGLContext::GetInputStream(const char* aMimeType,
 {
     return NS_ERROR_FAILURE;
 
-    
+    // XXX fix this
 #if 0
     if (!mGLPbuffer ||
         !mGLPbuffer->ThebesSurface())
@@ -470,8 +469,8 @@ WebGLContext::GetInputStream(const char* aMimeType,
     m.Scale(1.0, -1.0);
     pat->SetMatrix(m);
 
-    
-    
+    // XXX I don't want to use PixelSnapped here, but layout doesn't guarantee
+    // pixel alignment for this stuff!
     ctx->NewPath();
     ctx->PixelSnappedRectangleAndSetPattern(gfxRect(0, 0, mWidth, mHeight), pat);
     ctx->SetOperator(gfxContext::OPERATOR_SOURCE);
@@ -518,9 +517,9 @@ WebGLContext::GetCanvasLayer(CanvasLayer *aOldLayer,
 
     CanvasLayer::Data data;
 
-    
-    
-    
+    // the gl context may either provide a native PBuffer, in which case we want to initialize
+    // data with the gl context directly, or may provide a surface to which it renders (this is the case
+    // of OSMesa contexts), in which case we want to initialize data with that surface.
 
     void* native_surface = gl->GetNativeData(gl::GLContext::NativeImageSurface);
 
@@ -543,9 +542,9 @@ WebGLContext::GetCanvasLayer(CanvasLayer *aOldLayer,
     return canvasLayer.forget().get();
 }
 
-
-
-
+//
+// XPCOM goop
+//
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF_AMBIGUOUS(WebGLContext, nsICanvasRenderingContextWebGL)
 NS_IMPL_CYCLE_COLLECTING_RELEASE_AMBIGUOUS(WebGLContext, nsICanvasRenderingContextWebGL)
@@ -652,6 +651,18 @@ NS_INTERFACE_MAP_BEGIN(WebGLUniformLocation)
   NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(WebGLUniformLocation)
 NS_INTERFACE_MAP_END
 
+NS_IMPL_ADDREF(WebGLActiveInfo)
+NS_IMPL_RELEASE(WebGLActiveInfo)
+
+DOMCI_DATA(WebGLActiveInfo, WebGLActiveInfo)
+
+NS_INTERFACE_MAP_BEGIN(WebGLActiveInfo)
+  NS_INTERFACE_MAP_ENTRY(WebGLActiveInfo)
+  NS_INTERFACE_MAP_ENTRY(nsIWebGLActiveInfo)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(WebGLActiveInfo)
+NS_INTERFACE_MAP_END
+
 #define NAME_NOT_SUPPORTED(base) \
 NS_IMETHODIMP base::GetName(WebGLuint *aName) \
 { return NS_ERROR_NOT_IMPLEMENTED; } \
@@ -665,7 +676,7 @@ NAME_NOT_SUPPORTED(WebGLShader)
 NAME_NOT_SUPPORTED(WebGLFramebuffer)
 NAME_NOT_SUPPORTED(WebGLRenderbuffer)
 
-
+/* [noscript] attribute WebGLint location; */
 NS_IMETHODIMP WebGLUniformLocation::GetLocation(WebGLint *aLocation)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
@@ -673,4 +684,25 @@ NS_IMETHODIMP WebGLUniformLocation::GetLocation(WebGLint *aLocation)
 NS_IMETHODIMP WebGLUniformLocation::SetLocation(WebGLint aLocation)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+/* readonly attribute WebGLint size; */
+NS_IMETHODIMP WebGLActiveInfo::GetSize(WebGLint *aSize)
+{
+    *aSize = mSize;
+    return NS_OK;
+}
+
+/* readonly attribute WebGLenum type; */
+NS_IMETHODIMP WebGLActiveInfo::GetType(WebGLenum *aType)
+{
+    *aType = mType;
+    return NS_OK;
+}
+
+/* readonly attribute DOMString name; */
+NS_IMETHODIMP WebGLActiveInfo::GetName(nsAString & aName)
+{
+    aName = mName;
+    return NS_OK;
 }
