@@ -28,6 +28,7 @@ enum StructuredCloneTags {
 
   
   SCTAG_DOM_IMAGEDATA,
+  SCTAG_DOM_MESSAGEPORT,
 
   SCTAG_DOM_MAX
 };
