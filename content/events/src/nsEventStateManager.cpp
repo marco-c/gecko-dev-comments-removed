@@ -65,19 +65,7 @@
 #include "nsIComboboxControlFrame.h"
 #include "nsIScrollableFrame.h"
 #include "nsIDOMNSHTMLElement.h"
-#include "nsIDOMHTMLAnchorElement.h"
-#include "nsIDOMHTMLInputElement.h"
-#include "nsIDOMHTMLLabelElement.h"
-#include "nsIDOMHTMLSelectElement.h"
-#include "nsIDOMHTMLTextAreaElement.h"
-#include "nsIDOMHTMLAreaElement.h"
-#include "nsIDOMHTMLButtonElement.h"
-#include "nsIDOMHTMLObjectElement.h"
-#include "nsIDOMHTMLImageElement.h"
-#include "nsIDOMHTMLMapElement.h"
-#include "nsIDOMHTMLBodyElement.h"
 #include "nsIDOMXULControlElement.h"
-#include "nsIDOMXULTextboxElement.h"
 #include "nsINameSpaceManager.h"
 #include "nsIBaseWindow.h"
 #include "nsIView.h"
@@ -85,7 +73,6 @@
 #include "nsISelection.h"
 #include "nsFrameSelection.h"
 #include "nsIPrivateDOMEvent.h"
-#include "nsIDOMWindowInternal.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowRoot.h"
 #include "nsIEnumerator.h"
@@ -116,7 +103,6 @@
 #include "nsDOMDragEvent.h"
 #include "nsIDOMNSEditableElement.h"
 
-#include "nsIDOMRange.h"
 #include "nsCaret.h"
 #include "nsILookAndFeel.h"
 #include "nsWidgetsCID.h"
@@ -218,7 +204,7 @@ PrintDocTree(nsIDocShellTreeItem* aParentItem, int aLevel)
   if (cv)
     cv->GetDOMDocument(getter_AddRefs(domDoc));
   nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDoc);
-  nsCOMPtr<nsIDOMWindowInternal> domwin = doc ? doc->GetWindow() : nsnull;
+  nsCOMPtr<nsIDOMWindow> domwin = doc ? doc->GetWindow() : nsnull;
   nsIURI* uri = doc ? doc->GetDocumentURI() : nsnull;
 
   printf("DS %p  Type %s  Cnt %d  Doc %p  DW %p  EM %p%c",
@@ -1522,6 +1508,35 @@ nsEventStateManager::ExecuteAccessKey(nsTArray<PRUint32>& aAccessCharCodes,
   return PR_FALSE;
 }
 
+PRBool
+nsEventStateManager::GetAccessKeyLabelPrefix(nsAString& aPrefix)
+{
+  aPrefix.Truncate();
+  nsAutoString separator, modifierText;
+  nsContentUtils::GetModifierSeparatorText(separator);
+
+  nsCOMPtr<nsISupports> container = mPresContext->GetContainer();
+  PRInt32 modifier = GetAccessModifierMask(container);
+
+  if (modifier & NS_MODIFIER_CONTROL) {
+    nsContentUtils::GetControlText(modifierText);
+    aPrefix.Append(modifierText + separator);
+  }
+  if (modifier & NS_MODIFIER_META) {
+    nsContentUtils::GetMetaText(modifierText);
+    aPrefix.Append(modifierText + separator);
+  }
+  if (modifier & NS_MODIFIER_ALT) {
+    nsContentUtils::GetAltText(modifierText);
+    aPrefix.Append(modifierText + separator);
+  }
+  if (modifier & NS_MODIFIER_SHIFT) {
+    nsContentUtils::GetShiftText(modifierText);
+    aPrefix.Append(modifierText + separator);
+  }
+  return !aPrefix.IsEmpty();
+}
+
 void
 nsEventStateManager::HandleAccessKey(nsPresContext* aPresContext,
                                      nsKeyEvent *aEvent,
@@ -2386,7 +2401,7 @@ nsEventStateManager::GetMarkupDocumentViewer(nsIMarkupDocumentViewer** aMv)
   nsCOMPtr<nsPIDOMWindow> ourWindow = do_QueryInterface(focusedWindow);
   if(!ourWindow) return NS_ERROR_FAILURE;
 
-  nsIDOMWindowInternal *rootWindow = ourWindow->GetPrivateRoot();
+  nsIDOMWindow *rootWindow = ourWindow->GetPrivateRoot();
   if(!rootWindow) return NS_ERROR_FAILURE;
 
   nsCOMPtr<nsIDOMWindow> contentWindow;
