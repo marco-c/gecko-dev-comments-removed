@@ -134,7 +134,7 @@ class SimpleStringDictionary {
   
   
   
-  const char *GetValueForKey(const char *key) const;
+  const char *GetValueForKey(const char *key);
     
   
   

@@ -52,8 +52,7 @@ class MachoWalker {
                                       off_t offset, bool swap, void *context);
 
   MachoWalker(const char *path, LoadCommandCallback callback, void *context);
-  MachoWalker(void *memory, size_t size, LoadCommandCallback callback,
-              void *context);
+  MachoWalker(int file_descriptor, LoadCommandCallback callback, void *context);
   ~MachoWalker();
 
   
@@ -69,7 +68,7 @@ class MachoWalker {
 
   
   bool ReadBytes(void *buffer, size_t size, off_t offset);
-
+  
   
   bool CurrentHeader(struct mach_header_64 *header, off_t *offset);
 
@@ -89,15 +88,9 @@ class MachoWalker {
   int file_;
 
   
-  void *memory_;
-
-  
-  size_t memory_size_;
-
-  
   LoadCommandCallback callback_;
   void *callback_context_;
-
+  
   
   
   
@@ -106,7 +99,7 @@ class MachoWalker {
   struct mach_header_64 *current_header_;
   unsigned long current_header_size_;
   off_t current_header_offset_;
-
+  
  private:
   MachoWalker(const MachoWalker &);
   MachoWalker &operator=(const MachoWalker &);

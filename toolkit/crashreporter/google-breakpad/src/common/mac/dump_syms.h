@@ -40,7 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -52,9 +51,9 @@ namespace google_breakpad {
 
 class DumpSymbols {
  public:
-  DumpSymbols()
+  DumpSymbols() 
       : input_pathname_(),
-        object_filename_(),
+        object_filename_(), 
         contents_(),
         selected_object_file_(),
         selected_object_name_() { }
@@ -84,7 +83,7 @@ class DumpSymbols {
   
   
   bool SetArchitecture(cpu_type_t cpu_type, cpu_subtype_t cpu_subtype);
-
+  
   
   
   
@@ -94,7 +93,7 @@ class DumpSymbols {
   
   
   bool SetArchitecture(const std::string &arch_name);
-
+  
   
   
   
@@ -112,7 +111,7 @@ class DumpSymbols {
   
   
   
-  bool WriteSymbolFile(std::ostream &stream, bool cfi);
+  bool WriteSymbolFile(FILE *stream);
 
  private:
   

@@ -38,18 +38,19 @@
 #ifndef COMMON_LINUX_MODULE_H__
 #define COMMON_LINUX_MODULE_H__
 
-#include <iostream>
+#include <stdio.h>
+
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "common/using_std_string.h"
 #include "google_breakpad/common/breakpad_types.h"
 
 namespace google_breakpad {
 
 using std::set;
+using std::string;
 using std::vector;
 using std::map;
 
@@ -64,7 +65,6 @@ class Module {
   struct File;
   struct Function;
   struct Line;
-  struct Extern;
 
   
   
@@ -118,12 +118,6 @@ class Module {
   };
 
   
-  struct Extern {
-    Address address;
-    string name;
-  };
-
-  
   
   
   
@@ -157,13 +151,6 @@ class Module {
                      const Function *rhs) const {
       if (lhs->address == rhs->address)
         return lhs->name < rhs->name;
-      return lhs->address < rhs->address;
-    }
-  };
-
-  struct ExternCompare {
-    bool operator() (const Extern *lhs,
-                     const Extern *rhs) const {
       return lhs->address < rhs->address;
     }
   };
@@ -202,12 +189,8 @@ class Module {
   
   
   
+  
   void AddStackFrameEntry(StackFrameEntry *stack_frame_entry);
-
-  
-  
-  
-  void AddExtern(Extern *ext);
 
   
   
@@ -226,13 +209,6 @@ class Module {
   
   
   void GetFunctions(vector<Function *> *vec, vector<Function *>::iterator i);
-
-  
-  
-  
-  
-  
-  void GetExterns(vector<Extern *> *vec, vector<Extern *>::iterator i);
 
   
   
@@ -263,11 +239,10 @@ class Module {
   
   
   
-  
-  
-  bool Write(std::ostream &stream, bool cfi);
+  bool Write(FILE *stream);
 
  private:
+
   
   
   static bool ReportError();
@@ -275,7 +250,7 @@ class Module {
   
   
   
-  static bool WriteRuleMap(const RuleMap &rule_map, std::ostream &stream);
+  static bool WriteRuleMap(const RuleMap &rule_map, FILE *stream);
 
   
   string name_, os_, architecture_, id_;
@@ -288,18 +263,13 @@ class Module {
   
   
   struct CompareStringPtrs {
-    bool operator()(const string *x, const string *y) { return *x < *y; }
+    bool operator()(const string *x, const string *y) { return *x < *y; };
   };
 
   
   
   typedef map<const string *, File *, CompareStringPtrs> FileByNameMap;
-
-  
   typedef set<Function *, FunctionCompare> FunctionSet;
-
-  
-  typedef set<Extern *, ExternCompare> ExternSet;
 
   
   
@@ -310,12 +280,8 @@ class Module {
   
   
   vector<StackFrameEntry *> stack_frame_entries_;
-
-  
-  
-  ExternSet externs_;
 };
 
-}  
+} 
 
 #endif  

@@ -32,17 +32,17 @@
 
 #include <assert.h>
 #include <string>
-
-#include "common/using_std_string.h"
 #include "google_breakpad/common/breakpad_types.h"
 
 namespace google_breakpad {
+
+using std::string;
 
 class Minidump;
 class ProcessState;
 class SourceLineResolverInterface;
 class SymbolSupplier;
-struct SystemInfo;
+class SystemInfo;
 
 enum ProcessResult {
   PROCESS_OK,                                 
@@ -94,14 +94,6 @@ class MinidumpProcessor {
   
   MinidumpProcessor(SymbolSupplier *supplier,
                     SourceLineResolverInterface *resolver);
-
-  
-  
-  
-  MinidumpProcessor(SymbolSupplier *supplier,
-                    SourceLineResolverInterface *resolver,
-                    bool enable_exploitability);
-
   ~MinidumpProcessor();
 
   
@@ -157,11 +149,6 @@ class MinidumpProcessor {
  private:
   SymbolSupplier *supplier_;
   SourceLineResolverInterface *resolver_;
-
-  
-  
-  
-  bool enable_exploitability_;
 };
 
 }  
