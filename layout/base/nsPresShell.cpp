@@ -3618,10 +3618,12 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, PRBool aScroll)
 
 
 
+
 static void
 UnionRectForClosestScrolledView(nsIFrame* aFrame,
                                 PRIntn aVPercent,
                                 nsRect& aRect,
+                                PRBool& aHaveRect,
                                 nsIView*& aClosestScrolledView)
 {
   nsRect  frameBounds = aFrame->GetRect();
@@ -3697,7 +3699,19 @@ UnionRectForClosestScrolledView(nsIFrame* aFrame,
     aClosestScrolledView = closestView;
 
   if (aClosestScrolledView == closestView) {
-    aRect.UnionRect(aRect, frameBounds);
+    if (aHaveRect) {
+      
+      
+      
+      nscoord x = PR_MIN(aRect.x, frameBounds.x),
+              y = PR_MIN(aRect.y, frameBounds.y),
+          xmost = PR_MAX(aRect.XMost(), frameBounds.XMost()),
+          ymost = PR_MAX(aRect.YMost(), frameBounds.YMost());
+      aRect.SetRect(x, y, xmost - x, ymost - y);
+    } else {
+      aHaveRect = PR_TRUE;
+      aRect = frameBounds;
+    }
   }
 }
 
@@ -3849,8 +3863,10 @@ PresShell::ScrollContentIntoView(nsIContent* aContent,
   
   nsIView *closestView = nsnull;
   nsRect frameBounds;
+  PRBool haveRect = PR_FALSE;
   do {
-    UnionRectForClosestScrolledView(frame, aVPercent, frameBounds, closestView);
+    UnionRectForClosestScrolledView(frame, aVPercent, frameBounds, haveRect,
+                                    closestView);
   } while ((frame = frame->GetNextContinuation()));
 
   
