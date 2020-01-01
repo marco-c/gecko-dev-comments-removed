@@ -1,9 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=99:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jsoptparse.h"
 #include <ctype.h>
@@ -69,7 +68,7 @@ OptionParser::error(const char *fmt, ...)
     return ParseError;
 }
 
-/* Quick and dirty paragraph printer. */
+
 static void
 PrintParagraph(const char *text, unsigned startColno, const unsigned limitColno, bool padFirstLine)
 {
@@ -82,15 +81,15 @@ PrintParagraph(const char *text, unsigned startColno, const unsigned limitColno,
     while (*it != '\0') {
         JS_ASSERT(!isspace(*it));
 
-        /* Delimit the current token. */
+        
         const char *limit = it;
         while (!isspace(*limit) && *limit != '\0')
             ++limit;
 
-        /*
-         * If the current token is longer than the available number of columns,
-         * then make a line break before printing the token.
-         */
+        
+
+
+
         JS_ASSERT(limit - it > 0);
         size_t tokLen = limit - it;
         JS_ASSERT(tokLen);
@@ -113,11 +112,11 @@ PrintParagraph(const char *text, unsigned startColno, const unsigned limitColno,
                 ++it;
             break;
           case '\n':
-            /* |text| wants to force a newline here. */
+            
             printf("\n%*s", startColno, "");
             colno = startColno;
             it = limit + 1;
-            /* Could also have line-leading spaces. */
+            
             while (*it == ' ') {
                 putchar(' ');
                 ++colno;
@@ -138,7 +137,7 @@ OptionFlagsToFormatInfo(char shortflag, bool isValued, size_t *length)
                                   "  -%c --%s=%s ",
                                   "  --%s=%s " };
 
-    /* How mny chars w/o longflag? */
+    
     size_t lengths[4] = { strlen(fmt[0]) - 3,
                           strlen(fmt[1]) - 3,
                           strlen(fmt[2]) - 5,
@@ -194,7 +193,7 @@ OptionParser::printHelp(const char *progname)
     if (!options.empty()) {
         printf("Options:\n");
 
-        /* Calculate sizes for column alignment. */
+        
         size_t lhsLen = 0;
         for (Option **it = options.begin(), **end = options.end(); it != end; ++it) {
             Option *opt = *it;
@@ -209,7 +208,7 @@ OptionParser::printHelp(const char *progname)
             lhsLen = Max(lhsLen, len);
         }
 
-        /* Print option help text. */
+        
         for (Option **it = options.begin(), **end = options.end(); it != end; ++it) {
             Option *opt = *it;
             size_t fmtLen;
@@ -270,10 +269,10 @@ OptionParser::handleOption(Option *opt, size_t argc, char **argv, size_t *i, boo
         opt->asBoolOption()->value = true;
         return Okay;
       }
-      /*
-       * Valued options are allowed to specify their values either via
-       * successive arguments or a single --longflag=value argument.
-       */
+      
+
+
+
       case OptionKindString:
       {
         char *value = NULL;
@@ -322,7 +321,7 @@ OptionParser::handleArg(size_t argc, char **argv, size_t *i, bool *optionsAllowe
         return Okay;
       case OptionKindMultiString:
       {
-        /* Don't advance the next argument -- there can only be one (final) variadic argument. */
+        
         StringArg value(argv[*i], *i);
         return arg->asMultiStringOption()->strings.append(value) ? Okay : Fail;
       }
@@ -337,23 +336,23 @@ OptionParser::parseArgs(int inputArgc, char **argv)
 {
     JS_ASSERT(inputArgc >= 0);
     size_t argc = inputArgc;
-    /* Permit a "no more options" capability, like |--| offers in many shell interfaces. */
+    
     bool optionsAllowed = true;
 
     for (size_t i = 1; i < argc; ++i) {
         char *arg = argv[i];
         Result r;
-        /* Note: solo dash option is actually a 'stdin' argument. */
+        
         if (arg[0] == '-' && arg[1] != '\0' && optionsAllowed) {
-            /* Option. */
+            
             Option *opt;
             if (arg[1] == '-') {
-                /* Long option. */
+                
                 opt = findOption(arg + 2);
                 if (!opt)
                     return error("Invalid long option: %s", arg);
             } else {
-                /* Short option */
+                
                 if (arg[2] != '\0')
                     return error("Short option followed by junk: %s", arg);
                 opt = findOption(arg[1]);
@@ -363,7 +362,7 @@ OptionParser::parseArgs(int inputArgc, char **argv)
 
             r = handleOption(opt, argc, argv, &i, &optionsAllowed);
         } else {
-            /* Argument. */
+            
             r = handleArg(argc, argv, &i, &optionsAllowed);
         }
 
@@ -471,7 +470,7 @@ OptionParser::findOption(const char *longflag)
         const char *target = (*it)->longflag;
         if ((*it)->isValued()) {
             size_t targetLen = strlen(target);
-            /* Permit a trailing equals sign on the longflag argument. */
+            
             for (size_t i = 0; i < targetLen; ++i) {
                 if (longflag[i] == '\0' || longflag[i] != target[i])
                     goto no_match;
@@ -494,7 +493,7 @@ OptionParser::findOption(const char *longflag) const
     return const_cast<OptionParser *>(this)->findOption(longflag);
 }
 
-/* Argument accessors */
+
 
 Option *
 OptionParser::findArgument(const char *name)
@@ -526,7 +525,7 @@ OptionParser::getMultiStringArg(const char *name) const
     return MultiStringRange(mso->strings.begin(), mso->strings.end());
 }
 
-/* Option builders */
+
 
 bool
 OptionParser::addIntOption(char shortflag, const char *longflag, const char *metavar,
@@ -579,7 +578,7 @@ OptionParser::addMultiStringOption(char shortflag, const char *longflag, const c
     return true;
 }
 
-/* Argument builders */
+
 
 bool
 OptionParser::addOptionalStringArg(const char *name, const char *help)
