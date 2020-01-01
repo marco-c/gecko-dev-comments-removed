@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 50; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsAtomTable.h"
 #include "nsAutoPtr.h"
@@ -11,6 +11,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsMemoryReporterManager.h"
 #include "nsArrayEnumerator.h"
+#include "nsIConsoleService.h"
 #include "nsISimpleEnumerator.h"
 #include "nsIFile.h"
 #include "nsIFileStreams.h"
@@ -30,7 +31,7 @@ using namespace mozilla;
 #if defined(MOZ_MEMORY)
 #  define HAVE_JEMALLOC_STATS 1
 #  include "jemalloc.h"
-#endif  // MOZ_MEMORY
+#endif  
 
 #if defined(XP_LINUX) || defined(XP_MACOSX) || defined(SOLARIS)
 
@@ -60,15 +61,15 @@ static nsresult GetSoftPageFaults(int64_t *n)
     return NS_OK;
 }
 
-#endif  // HAVE_PAGE_FAULT_REPORTERS
+#endif  
 
 #if defined(XP_LINUX)
 
 #include <unistd.h>
 static nsresult GetProcSelfStatmField(int field, int64_t *n)
 {
-    // There are more than two fields, but we're only interested in the first
-    // two.
+    
+    
     static const int MAX_FIELD = 2;
     size_t fields[MAX_FIELD];
     MOZ_ASSERT(field < MAX_FIELD, "bad field number");
@@ -112,13 +113,13 @@ static void XMappingIter(int64_t& vsize, int64_t& resident)
         if (!fstat(mapfd, &st)) {
             int nmap = st.st_size / sizeof(prxmap_t);
             while (1) {
-                // stat(2) on /proc/<pid>/xmap returns an incorrect value,
-                // prior to the release of Solaris 11.
-                // Here is a workaround for it.
+                
+                
+                
                 nmap *= 2;
                 prmapp = (prxmap_t*)malloc((nmap + 1) * sizeof(prxmap_t));
                 if (!prmapp) {
-                    // out of memory
+                    
                     break;
                 }
                 int n = pread(mapfd, prmapp, (nmap + 1) * sizeof(prxmap_t), 0);
@@ -178,9 +179,9 @@ static bool GetTaskBasicInfo(struct task_basic_info *ti)
     return kr == KERN_SUCCESS;
 }
 
-// The VSIZE figure on Mac includes huge amounts of shared memory and is always
-// absurdly high, eg. 2GB+ even at start-up.  But both 'top' and 'ps' report
-// it, so we might as well too.
+
+
+
 #define HAVE_VSIZE_AND_RESIDENT_REPORTERS 1
 static nsresult GetVsize(int64_t *n)
 {
@@ -195,13 +196,13 @@ static nsresult GetVsize(int64_t *n)
 static nsresult GetResident(int64_t *n)
 {
 #ifdef HAVE_JEMALLOC_STATS
-    // If we're using jemalloc on Mac, we need to instruct jemalloc to purge
-    // the pages it has madvise(MADV_FREE)'d before we read our RSS.  The OS
-    // will take away MADV_FREE'd pages when there's memory pressure, so they
-    // shouldn't count against our RSS.
-    //
-    // Purging these pages shouldn't take more than 10ms or so, but we want to
-    // keep an eye on it since GetResident() is called on each Telemetry ping.
+    
+    
+    
+    
+    
+    
+    
     {
       Telemetry::AutoTimer<Telemetry::MEMORY_FREE_PURGED_PAGES_MS> timer;
       jemalloc_purge_freed_pages();
@@ -273,7 +274,7 @@ NS_FALLIBLE_MEMORY_REPORTER_IMPLEMENT(Private,
     "is committed and marked MEM_PRIVATE, data that is not mapped, and "
     "executable pages that have been written to.")
 
-#endif  // XP_<PLATFORM>
+#endif  
 
 #ifdef HAVE_VSIZE_AND_RESIDENT_REPORTERS
 NS_FALLIBLE_MEMORY_REPORTER_IMPLEMENT(Vsize,
@@ -300,7 +301,7 @@ NS_FALLIBLE_MEMORY_REPORTER_IMPLEMENT(Resident,
     "but it depends both on other processes being run and details of the OS "
     "kernel and so is best used for comparing the memory usage of a single "
     "process at different points in time.")
-#endif  // HAVE_VSIZE_AND_RESIDENT_REPORTERS
+#endif  
 
 #ifdef HAVE_PAGE_FAULT_REPORTERS
 NS_FALLIBLE_MEMORY_REPORTER_IMPLEMENT(PageFaultsSoft,
@@ -333,13 +334,13 @@ NS_FALLIBLE_MEMORY_REPORTER_IMPLEMENT(PageFaultsHard,
     "accessing the disk is up to a million times slower than accessing RAM, "
     "the program may run very slowly when it is experiencing more than 100 or "
     "so hard page faults a second.")
-#endif  // HAVE_PAGE_FAULT_REPORTERS
+#endif  
 
-/**
- ** memory reporter implementation for jemalloc and OSX malloc,
- ** to obtain info on total memory in use (that we know about,
- ** at least -- on OSX, there are sometimes other zones in use).
- **/
+
+
+
+
+
 
 #if HAVE_JEMALLOC_STATS
 
@@ -446,9 +447,9 @@ static int64_t GetHeapAllocated()
     return stats.bytes_used;
 }
 
-// malloc_zone_statistics() crashes when run under DMD because Valgrind doesn't
-// intercept it.  This measurement isn't important for DMD, so don't even try
-// to get it.
+
+
+
 #ifndef MOZ_DMD
 #define HAVE_HEAP_ZONE0_REPORTERS 1
 static int64_t GetHeapZone0Committed()
@@ -480,7 +481,7 @@ NS_MEMORY_REPORTER_IMPLEMENT(HeapZone0Used,
     GetHeapZone0Used,
     "Memory mapped by the heap allocator in the default zone that is "
     "allocated to the application.")
-#endif  // MOZ_DMD
+#endif  
 
 #endif
 
@@ -504,8 +505,8 @@ NS_MEMORY_REPORTER_IMPLEMENT(HeapAllocated,
     "application because the allocator regularly rounds up request sizes. (The "
     "exact amount requested is not recorded.)")
 
-// The computation of "explicit" fails if "heap-allocated" isn't available,
-// which is why this is depends on HAVE_HEAP_ALLOCATED_AND_EXPLICIT_REPORTERS.
+
+
 #define HAVE_EXPLICIT_REPORTER 1
 static nsresult GetExplicit(int64_t *n)
 {
@@ -524,7 +525,7 @@ NS_FALLIBLE_MEMORY_REPORTER_IMPLEMENT(Explicit,
     "This is the same measurement as the root of the 'explicit' tree.  "
     "However, it is measured at a different time and so gives slightly "
     "different results.")
-#endif  // HAVE_HEAP_ALLOCATED_REPORTERS
+#endif  
 
 NS_MEMORY_REPORTER_MALLOC_SIZEOF_FUN(AtomTableMallocSizeOf, "atom-table")
 
@@ -532,11 +533,11 @@ static int64_t GetAtomTableSize() {
   return NS_SizeOfAtomTablesIncludingThis(AtomTableMallocSizeOf);
 }
 
-// Why is this here?  At first glance, you'd think it could be defined and
-// registered with nsMemoryReporterManager entirely within nsAtomTable.cpp.
-// However, the obvious time to register it is when the table is initialized,
-// and that happens before XPCOM components are initialized, which means the
-// NS_RegisterMemoryReporter call fails.  So instead we do it here.
+
+
+
+
+
 NS_MEMORY_REPORTER_IMPLEMENT(AtomTable,
     "explicit/atom-tables",
     KIND_HEAP,
@@ -544,9 +545,9 @@ NS_MEMORY_REPORTER_IMPLEMENT(AtomTable,
     GetAtomTableSize,
     "Memory used by the dynamic and static atoms tables.")
 
-/**
- ** nsMemoryReporterManager implementation
- **/
+
+
+
 
 NS_IMPL_THREADSAFE_ISUPPORTS1(nsMemoryReporterManager, nsIMemoryReporterManager)
 
@@ -698,8 +699,8 @@ struct MemoryReport {
 };
 
 #ifdef DEBUG
-// This is just a wrapper for int64_t that implements nsISupports, so it can be
-// passed to nsIMemoryMultiReporter::CollectReports.
+
+
 class Int64Wrapper MOZ_FINAL : public nsISupports {
 public:
     NS_DECL_ISUPPORTS
@@ -746,8 +747,8 @@ nsMemoryReporterManager::GetExplicit(int64_t *aExplicit)
     nsresult rv;
     bool more;
 
-    // Get "heap-allocated" and all the KIND_NONHEAP measurements from normal
-    // (i.e. non-multi) "explicit" reporters.
+    
+    
     int64_t heapAllocated = int64_t(-1);
     int64_t explicitNonHeapNormalSize = 0;
     nsCOMPtr<nsISimpleEnumerator> e;
@@ -764,35 +765,35 @@ nsMemoryReporterManager::GetExplicit(int64_t *aExplicit)
         rv = r->GetPath(path);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        // We're only interested in NONHEAP explicit reporters and
-        // the 'heap-allocated' reporter.
+        
+        
         if (kind == nsIMemoryReporter::KIND_NONHEAP &&
             path.Find("explicit") == 0)
         {
-            // Just skip any NONHEAP reporters that fail, because
-            // "heap-allocated" is the most important one.
+            
+            
             int64_t amount;
             rv = r->GetAmount(&amount);
             if (NS_SUCCEEDED(rv)) {
                 explicitNonHeapNormalSize += amount;
             }
         } else if (path.Equals("heap-allocated")) {
-            // If we don't have "heap-allocated", give up, because the result
-            // would be horribly inaccurate.
+            
+            
             rv = r->GetAmount(&heapAllocated);
             NS_ENSURE_SUCCESS(rv, rv);
         }
     }
 
-    // For each multi-reporter we could call CollectReports and filter out the
-    // non-explicit, non-NONHEAP measurements.  But that's lots of wasted work,
-    // so we instead use GetExplicitNonHeap() which exists purely for this
-    // purpose.
-    //
-    // (Actually, in debug builds we also do it the slow way and compare the
-    // result to the result obtained from GetExplicitNonHeap().  This
-    // guarantees the two measurement paths are equivalent.  This is wise
-    // because it's easy for memory reporters to have bugs.)
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     int64_t explicitNonHeapMultiSize = 0;
     nsCOMPtr<nsISimpleEnumerator> e2;
@@ -820,9 +821,9 @@ nsMemoryReporterManager::GetExplicit(int64_t *aExplicit)
     }
     int64_t explicitNonHeapMultiSize2 = wrappedExplicitNonHeapMultiSize2->mValue;
 
-    // Check the two measurements give the same result.  This was an
-    // NS_ASSERTION but they occasionally don't match due to races (bug
-    // 728990).
+    
+    
+    
     if (explicitNonHeapMultiSize != explicitNonHeapMultiSize2) {
         char *msg = PR_smprintf("The two measurements of 'explicit' memory "
                                 "usage don't match (%lld vs %lld)",
@@ -831,11 +832,11 @@ nsMemoryReporterManager::GetExplicit(int64_t *aExplicit)
         NS_WARNING(msg);
         PR_smprintf_free(msg);
     }
-#endif  // DEBUG
+#endif  
 
     *aExplicit = heapAllocated + explicitNonHeapNormalSize + explicitNonHeapMultiSize;
     return NS_OK;
-#endif // HAVE_HEAP_ALLOCATED_AND_EXPLICIT_REPORTERS
+#endif 
 }
 
 NS_IMETHODIMP
@@ -866,9 +867,9 @@ DumpReport(nsIFileOutputStream *aOStream, bool isFirst,
 {
     DUMP(aOStream, isFirst ? "[" : ",");
 
-    // We only want to dump reports for this process.  If |aProcess| is
-    // non-NULL that means we've received it from another process in response
-    // to a "child-memory-reporter-request" event;  ignore such reports.
+    
+    
+    
     if (!aProcess.IsEmpty()) {
         return NS_OK;    
     }
@@ -880,7 +881,7 @@ DumpReport(nsIFileOutputStream *aOStream, bool isFirst,
 
     DUMP(aOStream, "\", \"path\": \"");
     nsCString path(aPath);
-    path.ReplaceSubstring("\\", "\\\\");    // escape backslashes for JSON
+    path.ReplaceSubstring("\\", "\\\\");    
     DUMP(aOStream, path.get());
 
     DUMP(aOStream, "\", \"kind\": ");
@@ -893,9 +894,9 @@ DumpReport(nsIFileOutputStream *aOStream, bool isFirst,
     DUMP(aOStream, nsPrintfCString("%lld", aAmount).get());
 
     nsCString description(aDescription);
-    description.ReplaceSubstring("\\", "\\\\");    /* <backslash> --> \\ */
-    description.ReplaceSubstring("\"", "\\\"");    // " --> \"
-    description.ReplaceSubstring("\n", "\\n");     // <newline> --> \n
+    description.ReplaceSubstring("\\", "\\\\");    
+    description.ReplaceSubstring("\"", "\\\"");    
+    description.ReplaceSubstring("\n", "\\n");     
     DUMP(aOStream, ", \"description\": \"");
     DUMP(aOStream, description.get());
     DUMP(aOStream, "\"}");
@@ -917,9 +918,9 @@ public:
         if (!ostream)
             return NS_ERROR_FAILURE;
 
-        // The |isFirst = false| assumes that at least one single reporter is
-        // present and so will have been processed in DumpReports() below.
-        return DumpReport(ostream, /* isFirst = */ false, aProcess, aPath,
+        
+        
+        return DumpReport(ostream,  false, aProcess, aPath,
                           aKind, aUnits, aAmount, aDescription);
     }
 };
@@ -932,14 +933,14 @@ NS_IMPL_ISUPPORTS1(
 NS_IMETHODIMP
 nsMemoryReporterManager::DumpReports()
 {
-    // Open a file in NS_OS_TEMP_DIR for writing.
+    
 
     nsCOMPtr<nsIFile> tmpFile;
     nsresult rv =
         NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmpFile));
     NS_ENSURE_SUCCESS(rv, rv);
    
-    // Basic filename form: "memory-reports-<pid>.json".
+    
     nsCString filename("memory-reports-");
     filename.AppendInt(getpid());
     filename.AppendLiteral(".json");
@@ -954,9 +955,9 @@ nsMemoryReporterManager::DumpReports()
     rv = ostream->Init(tmpFile, -1, -1, 0);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Dump the memory reports to the file.
+    
 
-    // Increment this number if the format changes.
+    
     DUMP(ostream, "{\n  \"version\": 1,\n");
 
     DUMP(ostream, "  \"hasMozMallocUsableSize\": ");
@@ -967,7 +968,7 @@ nsMemoryReporterManager::DumpReports()
     DUMP(ostream, ",\n");
     DUMP(ostream, "  \"reports\": ");
 
-    // Process single reporters.
+    
     bool isFirst = true;
     bool more;
     nsCOMPtr<nsISimpleEnumerator> e;
@@ -1007,7 +1008,7 @@ nsMemoryReporterManager::DumpReports()
         isFirst = false;
     }
 
-    // Process multi-reporters.
+    
     nsCOMPtr<nsISimpleEnumerator> e2;
     EnumerateMultiReporters(getter_AddRefs(e2));
     nsRefPtr<DumpMultiReporterCallback> cb = new DumpMultiReporterCallback();
@@ -1022,7 +1023,18 @@ nsMemoryReporterManager::DumpReports()
     rv = ostream->Close();
     NS_ENSURE_SUCCESS(rv, rv);
 
-    return NS_OK;
+    nsCOMPtr<nsIConsoleService> cs =
+        do_GetService(NS_CONSOLESERVICE_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsString path;
+    tmpFile->GetPath(path);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsString msg =
+        NS_LITERAL_STRING("nsIMemoryReporterManager::dumpReports() dumped reports to ");
+    msg.Append(path);
+    return cs->LogStringMessage(msg.get());
 }
 
 #undef DUMP
@@ -1134,7 +1146,7 @@ public:
                         const nsACString &aDescription,
                         nsISupports *aData)
     {
-        // Do nothing;  the reporter has already reported to DMD.
+        
         return NS_OK;
     }
 };
@@ -1149,7 +1161,7 @@ DMDCheckAndDump()
     nsCOMPtr<nsIMemoryReporterManager> mgr =
         do_GetService("@mozilla.org/memory-reporter-manager;1");
 
-    // Do vanilla reporters.
+    
     nsCOMPtr<nsISimpleEnumerator> e;
     mgr->EnumerateReporters(getter_AddRefs(e));
     bool more;
@@ -1157,12 +1169,12 @@ DMDCheckAndDump()
         nsCOMPtr<nsIMemoryReporter> r;
         e->GetNext(getter_AddRefs(r));
 
-        // Just getting the amount is enough for the reporter to report to DMD.
+        
         int64_t amount;
         (void)r->GetAmount(&amount);
     }
 
-    // Do multi-reporters.
+    
     nsCOMPtr<nsISimpleEnumerator> e2;
     mgr->EnumerateMultiReporters(getter_AddRefs(e2));
     nsRefPtr<NullMultiReporterCallback> cb = new NullMultiReporterCallback();
@@ -1175,6 +1187,6 @@ DMDCheckAndDump()
     VALGRIND_DMD_CHECK_REPORTING;
 }
 
-#endif  /* defined(MOZ_DMD) */
+#endif  
 
 }
