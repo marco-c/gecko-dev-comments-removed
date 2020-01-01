@@ -383,6 +383,12 @@ T* DowncastCCParticipant(void *p)
 
 
 
+
+
+
+
+
+
 #define NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(_class)                          \
   NS_METHOD                                                                    \
   NS_CYCLE_COLLECTION_CLASSNAME(_class)::UnlinkImpl(void *p)                   \
@@ -398,6 +404,13 @@ T* DowncastCCParticipant(void *p)
     ImplCycleCollectionUnlink(tmp->_field);
 
 #define NS_IMPL_CYCLE_COLLECTION_UNLINK_END                                    \
+    (void)tmp;                                                                 \
+    return NS_OK;                                                              \
+  }
+
+#define NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(_base_class)             \
+    nsISupports *s = static_cast<nsISupports*>(p);                             \
+    NS_CYCLE_COLLECTION_CLASSNAME(_base_class)::UnlinkImpl(s);                 \
     (void)tmp;                                                                 \
     return NS_OK;                                                              \
   }
