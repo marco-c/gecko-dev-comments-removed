@@ -197,6 +197,10 @@ class BinaryBlock
   public:
     static const Class class_;
 
+    
+    
+    static size_t dataOffset();
+
     static bool isBlock(HandleObject val);
     static uint8_t *mem(HandleObject val);
 
