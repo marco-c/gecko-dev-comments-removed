@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=99 ft=cpp:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is SpiderMonkey JavaScript engine.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2011-2012
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *  Jason Orendorff <jorendorff@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "builtin/MapObject.h"
 
@@ -73,13 +73,13 @@ InitClass(JSContext *cx, GlobalObject *global, Class *clasp, JSProtoKey key, Nat
 }
 
 
-/*** HashableValue *******************************************************************************/
+
 
 bool
 HashableValue::setValue(JSContext *cx, const Value &v)
 {
     if (v.isString() && v.toString()->isRope()) {
-        /* Flatten this rope so that equals() is infallible. */
+        
         JSString *str = v.toString()->ensureLinear(cx);
         if (!str)
             return false;
@@ -88,16 +88,12 @@ HashableValue::setValue(JSContext *cx, const Value &v)
         jsdouble d = v.toDouble();
         int32_t i;
         if (JSDOUBLE_IS_INT32(d, &i)) {
-            /* Normalize int32-valued doubles to int32 for faster hashing and testing. */
+            
             value = Int32Value(i);
+        } else if (JSDOUBLE_IS_NaN(d)) {
+            
+            value = DoubleValue(js_NaN);
         } else {
-#ifdef DEBUG
-            /* All NaN values are the same. The bit-pattern must reflect this. */
-            jsval_layout a, b;
-            a.asDouble = d;
-            b.asDouble = JS_CANONICALIZE_NAN(d);
-            JS_ASSERT(a.asBits == b.asBits);
-#endif
             value = v;
         }
     } else {
@@ -112,17 +108,17 @@ HashableValue::setValue(JSContext *cx, const Value &v)
 HashNumber
 HashableValue::hash() const
 {
-    /*
-     * HashableValue::setValue normalizes values so that the SameValue relation
-     * on HashableValues is the same as the == relationship on
-     * value.data.asBits, except for strings.
-     */
+    
+
+
+
+
     if (value.isString()) {
         JSLinearString &s = value.toString()->asLinear();
         return HashChars(s.chars(), s.length());
     }
 
-    /* Having dispensed with strings, we can just hash asBits. */
+    
     uint64_t u = value.asRawBits();
     return HashNumber((u >> 3) ^ (u >> (32 + 3)) ^ (u << (32 - 3)));
 }
@@ -130,7 +126,7 @@ HashableValue::hash() const
 bool
 HashableValue::equals(const HashableValue &other) const
 {
-    /* Two HashableValues are equal if they have equal bits or they're equal strings. */
+    
     bool b = (value.asRawBits() == other.value.asRawBits()) ||
               (value.isString() &&
                other.value.isString() &&
@@ -146,26 +142,26 @@ HashableValue::equals(const HashableValue &other) const
 }
 
 
-/*** Map *****************************************************************************************/
+
 
 Class MapObject::class_ = {
     "Map",
     JSCLASS_HAS_PRIVATE |
     JSCLASS_HAS_CACHED_PROTO(JSProto_Map),
-    JS_PropertyStub,         /* addProperty */
-    JS_PropertyStub,         /* delProperty */
-    JS_PropertyStub,         /* getProperty */
-    JS_StrictPropertyStub,   /* setProperty */
+    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_StrictPropertyStub,   
     JS_EnumerateStub,
     JS_ResolveStub,
     JS_ConvertStub,
     finalize,
-    NULL,                    /* reserved0   */
-    NULL,                    /* checkAccess */
-    NULL,                    /* call        */
-    NULL,                    /* construct   */
-    NULL,                    /* xdrObject   */
-    NULL,                    /* hasInstance */
+    NULL,                    
+    NULL,                    
+    NULL,                    
+    NULL,                    
+    NULL,                    
+    NULL,                    
     mark
 };
 
@@ -294,26 +290,26 @@ js_InitMapClass(JSContext *cx, JSObject *obj)
 }
 
 
-/*** Set *****************************************************************************************/
+
 
 Class SetObject::class_ = {
     "Set",
     JSCLASS_HAS_PRIVATE |
     JSCLASS_HAS_CACHED_PROTO(JSProto_Set),
-    JS_PropertyStub,         /* addProperty */
-    JS_PropertyStub,         /* delProperty */
-    JS_PropertyStub,         /* getProperty */
-    JS_StrictPropertyStub,   /* setProperty */
+    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_StrictPropertyStub,   
     JS_EnumerateStub,
     JS_ResolveStub,
     JS_ConvertStub,
     finalize,
-    NULL,                    /* reserved0   */
-    NULL,                    /* checkAccess */
-    NULL,                    /* call        */
-    NULL,                    /* construct   */
-    NULL,                    /* xdrObject   */
-    NULL,                    /* hasInstance */
+    NULL,                    
+    NULL,                    
+    NULL,                    
+    NULL,                    
+    NULL,                    
+    NULL,                    
     mark
 };
 
