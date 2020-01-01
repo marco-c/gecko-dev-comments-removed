@@ -36,7 +36,6 @@
 
 
 
-var gTestfile = 'regress-444979.js';
 
 var BUGNUMBER = 444979;
 var summary = 'switch -0 is same as switch 0';

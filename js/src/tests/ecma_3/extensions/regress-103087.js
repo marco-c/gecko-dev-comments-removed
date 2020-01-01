@@ -1,55 +1,54 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   bedney@technicalpursuit.com, pschwartau@netscape.com
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var gTestfile = 'regress-103087.js';
+/*
+ * Date: 04 October 2001
+ *
+ * SUMMARY:  Arose from Bugzilla bug 103087:
+ * "The RegExp MarkupSPE in demo crashes Mozilla"
+ *
+ * See http://bugzilla.mozilla.org/show_bug.cgi?id=103087
+ * The SpiderMonkey shell crashed on some of these regexps.
+ *
+ * The reported crash was on i=24 below ('MarkupSPE' regexp)
+ * I crashed on that, and also on i=43 ('XML_SPE' regexp)
+ */
+//-----------------------------------------------------------------------------
 var UBound = 0;
 var BUGNUMBER = 103087;
 var summary = "Testing that we don't crash on any of these regexps -";
@@ -59,7 +58,7 @@ var lc = '';
 var rc = '';
 
 
-
+// the regexps are built in pieces  -
 var NameStrt = "[A-Za-z_:]|[^\\x00-\\x7F]";
 var NameChar = "[A-Za-z0-9_:.-]|[^\\x00-\\x7F]";
 var Name = "(" + NameStrt + ")(" + NameChar + ")*";
@@ -109,7 +108,7 @@ var EntityValue_PE = CGRef_APE + "|" + PERef_APE + "|[^%&]+";
 var rePatterns = new Array(AttValSE, CDATA_CE, CDATA_RE, CDATA_SPE, CGRef_APE, CommentCE, CommentRE, CommentSPE, DT_IdentSE, DT_ItemSE, DeclCE, DocTypeCE, DocTypeSPE, ElemTagCE, ElemTagRE, ElemTagSE, ElemTagSPE, EndTagCE, EndTagRE, EndTagSPE, EntityValue_PE, Erroneous_PI_SE, HexPart, MarkupDeclCE, MarkupSPE, Name, NameChar, NameStrt, NumPart, PERef_APE, PI_CE, PI_RE, PI_SPE, PI_Tail, QuoteSE, S, S1, TextSE, Text_PE, Until2Hyphens, UntilHyphen, UntilQMs, UntilRSBs, XML_SPE);
 
 
-
+// here's a big string to test the regexps on -
 var str = '';
 str += '<html xmlns="http://www.w3.org/1999/xhtml"' + '\n';
 str += '      xmlns:xlink="http://www.w3.org/XML/XLink/0.9">' + '\n';
@@ -134,9 +133,9 @@ str += '</html>';
 
 
 
-
+//-----------------------------------------------------------------------------
 test();
-
+//-----------------------------------------------------------------------------
 
 
 
@@ -151,15 +150,15 @@ function test()
     status = inSection(i);
     re = new RegExp(rePatterns[i]);
 
-    
+    // Test that we don't crash on any of these -
     re.exec(str);
     getResults();
 
-    
+    // Just for the heck of it, test the current leftContext
     re.exec(lc);
     getResults();
 
-    
+    // Test the current rightContext
     re.exec(rc);
     getResults();
   }
