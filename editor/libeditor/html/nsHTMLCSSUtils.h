@@ -187,6 +187,14 @@ public:
 
 
 
+
+
+  bool IsCSSEquivalentToHTMLInlineStyleSet(nsIContent* aContent,
+                                           nsIAtom* aProperty,
+                                           const nsAString* aAttribute,
+                                           const nsAString& aValue,
+                                           PRUint8 aStyleType);
+
   nsresult    IsCSSEquivalentToHTMLInlineStyleSet(nsIDOMNode * aNode,
                                                   nsIAtom * aHTMLProperty,
                                                   const nsAString * aAttribute,
@@ -205,6 +213,14 @@ public:
 
 
 
+
+
+
+  PRInt32     SetCSSEquivalentToHTMLStyle(mozilla::dom::Element* aElement,
+                                          nsIAtom* aProperty,
+                                          const nsAString* aAttribute,
+                                          const nsAString* aValue,
+                                          bool aSuppressTransaction);
   nsresult    SetCSSEquivalentToHTMLStyle(nsIDOMNode * aNode,
                                           nsIAtom * aHTMLProperty,
                                           const nsAString * aAttribute,
@@ -259,6 +275,8 @@ public:
 
 
 
+  bool ElementsSameStyle(mozilla::dom::Element* aFirstNode,
+                         mozilla::dom::Element* aSecondNode);
   bool ElementsSameStyle(nsIDOMNode *aFirstNode, nsIDOMNode *aSecondNode);
 
   
