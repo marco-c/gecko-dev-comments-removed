@@ -1,13 +1,13 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * style sheet and style rule processor representing data from presentational
- * HTML attributes
- */
+
+
+
+
+
+
+
+
+
 
 #ifndef nsHTMLStyleSheet_h_
 #define nsHTMLStyleSheet_h_
@@ -28,12 +28,11 @@ class nsHTMLStyleSheet MOZ_FINAL : public nsIStyleSheet,
                                    public nsIStyleRuleProcessor
 {
 public:
-  nsHTMLStyleSheet(void);
-  nsresult Init();
+  nsHTMLStyleSheet(nsIURI* aURL, nsIDocument* aDocument);
 
   NS_DECL_ISUPPORTS
 
-  // nsIStyleSheet api
+  
   virtual nsIURI* GetSheetURI() const;
   virtual nsIURI* GetBaseURI() const;
   virtual void GetTitle(nsString& aTitle) const;
@@ -43,14 +42,14 @@ public:
   virtual void SetEnabled(bool aEnabled);
   virtual bool IsComplete() const;
   virtual void SetComplete();
-  virtual nsIStyleSheet* GetParentSheet() const;  // will be null
+  virtual nsIStyleSheet* GetParentSheet() const;  
   virtual nsIDocument* GetOwningDocument() const;
   virtual void SetOwningDocument(nsIDocument* aDocumemt);
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, PRInt32 aIndent = 0) const;
 #endif
 
-  // nsIStyleRuleProcessor API
+  
   virtual void RulesMatching(ElementRuleProcessorData* aData);
   virtual void RulesMatching(PseudoElementRuleProcessorData* aData);
   virtual void RulesMatching(AnonBoxRuleProcessorData* aData);
@@ -68,13 +67,12 @@ public:
     SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const MOZ_OVERRIDE;
   size_t DOMSizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const;
 
-  nsresult Init(nsIURI* aURL, nsIDocument* aDocument);
   void Reset(nsIURI* aURL);
   nsresult SetLinkColor(nscolor aColor);
   nsresult SetActiveLinkColor(nscolor aColor);
   nsresult SetVisitedLinkColor(nscolor aColor);
 
-  // Mapped Attribute management methods
+  
   already_AddRefed<nsMappedAttributes>
     UniqueMappedAttributes(nsMappedAttributes* aMapped);
   void DropMappedAttributes(nsMappedAttributes* aMapped);
@@ -93,7 +91,7 @@ private:
 
     NS_DECL_ISUPPORTS
 
-    // nsIStyleRule interface
+    
     virtual void MapRuleInfoInto(nsRuleData* aRuleData);
   #ifdef DEBUG
     virtual void List(FILE* out = stdout, PRInt32 aIndent = 0) const;
@@ -102,7 +100,7 @@ private:
     nscolor             mColor;
   };
 
-  // Implementation of SetLink/VisitedLink/ActiveLinkColor
+  
   nsresult ImplLinkColorSetter(nsRefPtr<HTMLColorRule>& aRule, nscolor aColor);
 
   class GenericTableRule;
@@ -114,14 +112,14 @@ private:
 
     NS_DECL_ISUPPORTS
 
-    // nsIStyleRule interface
+    
     virtual void MapRuleInfoInto(nsRuleData* aRuleData) = 0;
   #ifdef DEBUG
     virtual void List(FILE* out = stdout, PRInt32 aIndent = 0) const;
   #endif
   };
 
-  // this rule handles <th> inheritance
+  
   class TableTHRule;
   friend class TableTHRule;
   class TableTHRule MOZ_FINAL : public GenericTableRule {
@@ -131,7 +129,7 @@ private:
     virtual void MapRuleInfoInto(nsRuleData* aRuleData);
   };
 
-  // Rule to handle quirk table colors
+  
   class TableQuirkColorRule MOZ_FINAL : public GenericTableRule {
   public:
     TableQuirkColorRule() {}
@@ -150,12 +148,4 @@ private:
   PLDHashTable            mMappedAttrTable;
 };
 
-// XXX convenience method. Calls Initialize() automatically.
-nsresult
-NS_NewHTMLStyleSheet(nsHTMLStyleSheet** aInstancePtrResult, nsIURI* aURL, 
-                     nsIDocument* aDocument);
-
-nsresult
-NS_NewHTMLStyleSheet(nsHTMLStyleSheet** aInstancePtrResult);
-
-#endif /* !defined(nsHTMLStyleSheet_h_) */
+#endif 
