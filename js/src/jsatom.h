@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jsatom_h___
 #define jsatom_h___
@@ -21,10 +21,10 @@
 
 struct JSIdArray {
     int length;
-    js::HeapId vector[1];    /* actually, length jsid words */
+    js::HeapId vector[1];    
 };
 
-/* Engine-internal extensions of jsid */
+
 
 static JS_ALWAYS_INLINE jsid
 JSID_FROM_BITS(size_t bits)
@@ -34,27 +34,27 @@ JSID_FROM_BITS(size_t bits)
     return id;
 }
 
-/*
- * Must not be used on atoms that are representable as integer jsids.
- * Prefer NameToId or AtomToId over this function:
- *
- * A PropertyName is an atom that does not contain an integer in the range
- * [0, UINT32_MAX]. However, jsid can only hold an integer in the range
- * [0, JSID_INT_MAX] (where JSID_INT_MAX == 2^31-1).  Thus, for the range of
- * integers (JSID_INT_MAX, UINT32_MAX], to represent as a jsid 'id', it must be
- * the case JSID_IS_ATOM(id) and !JSID_TO_ATOM(id)->isPropertyName().  In most
- * cases when creating a jsid, code does not have to care about this corner
- * case because:
- *
- * - When given an arbitrary JSAtom*, AtomToId must be used, which checks for
- *   integer atoms representable as integer jsids, and does this conversion.
- *
- * - When given a PropertyName*, NameToId can be used which which does not need
- *   to do any dynamic checks.
- *
- * Thus, it is only the rare third case which needs this function, which
- * handles any JSAtom* that is known not to be representable with an int jsid.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static JS_ALWAYS_INLINE jsid
 NON_INTEGER_ATOM_TO_JSID(JSAtom *atom)
 {
@@ -64,7 +64,7 @@ NON_INTEGER_ATOM_TO_JSID(JSAtom *atom)
     return id;
 }
 
-/* All strings stored in jsids are atomized, but are not necessarily property names. */
+
 static JS_ALWAYS_INLINE JSBool
 JSID_IS_ATOM(jsid id)
 {
@@ -127,16 +127,16 @@ struct DefaultHasher<jsid>
 
 }
 
-/*
- * Return a printable, lossless char[] representation of a string-type atom.
- * The lifetime of the result matches the lifetime of bytes.
- */
+
+
+
+
 extern const char *
 js_AtomToPrintableString(JSContext *cx, JSAtom *atom, JSAutoByteString *bytes);
 
 namespace js {
 
-/* Compute a hash function from chars/length. */
+
 inline uint32_t
 HashChars(const jschar *chars, size_t length)
 {
@@ -165,10 +165,10 @@ class AtomStateEntry
         return bits & 0x1;
     }
 
-    /*
-     * Non-branching code sequence. Note that the const_cast is safe because
-     * the hash function doesn't consider the tag to be a portion of the key.
-     */
+    
+
+
+
     void setTagged(bool enabled) const {
         const_cast<AtomStateEntry *>(this)->bits |= uintptr_t(enabled);
     }
@@ -182,7 +182,7 @@ struct AtomHasher
     {
         const jschar    *chars;
         size_t          length;
-        const JSAtom    *atom; /* Optional. */
+        const JSAtom    *atom; 
 
         Lookup(const jschar *chars, size_t length) : chars(chars), length(length), atom(NULL) {}
         inline Lookup(const JSAtom *atom);
@@ -194,22 +194,22 @@ struct AtomHasher
 
 typedef HashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy> AtomSet;
 
-/*
- * On encodings:
- *
- * - Some string functions have an optional FlationCoding argument that allow
- *   the caller to force CESU-8 encoding handling.
- * - Functions that don't take a FlationCoding base their NormalEncoding
- *   behavior on the js_CStringsAreUTF8 value. NormalEncoding is either raw
- *   (simple zero-extension) or UTF-8 depending on js_CStringsAreUTF8.
- * - Functions that explicitly state their encoding do not use the
- *   js_CStringsAreUTF8 value.
- *
- * CESU-8 (Compatibility Encoding Scheme for UTF-16: 8-bit) is a variant of
- * UTF-8 that allows us to store any wide character string as a narrow
- * character string. For strings containing mostly ascii, it saves space.
- * http://www.unicode.org/reports/tr26/
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 enum FlationCoding
 {
@@ -219,37 +219,37 @@ enum FlationCoding
 
 class PropertyName;
 
-}  /* namespace js */
+}  
 
 struct JSAtomState
 {
     js::AtomSet         atoms;
 
-    /*
-     * From this point until the end of struct definition the struct must
-     * contain only js::PropertyName fields. We use this to access the storage
-     * occupied by the common atoms in js_FinishCommonAtoms.
-     *
-     * js_common_atom_names defined in jsatom.cpp contains C strings for atoms
-     * in the order of atom fields here. Therefore you must update that array
-     * if you change member order here.
-     */
+    
 
-    /* The rt->emptyString atom, see jsstr.c's js_InitRuntimeStringState. */
+
+
+
+
+
+
+
+
+    
     js::PropertyName    *emptyAtom;
 
-    /*
-     * Literal value and type names.
-     * NB: booleanAtoms must come right before typeAtoms!
-     */
+    
+
+
+
     js::PropertyName    *booleanAtoms[2];
     js::PropertyName    *typeAtoms[JSTYPE_LIMIT];
     js::PropertyName    *nullAtom;
 
-    /* Standard class constructor or prototype names. */
+    
     js::PropertyName    *classAtoms[JSProto_LIMIT];
 
-    /* Various built-in or commonly-used atoms, pinned on first context. */
+    
 #define DEFINE_ATOM(id, text)          js::PropertyName *id##Atom;
 #define DEFINE_PROTOTYPE_ATOM(id)      js::PropertyName *id##Atom;
 #define DEFINE_KEYWORD_ATOM(id)        js::PropertyName *id##Atom;
@@ -293,17 +293,17 @@ AtomIsInterned(JSContext *cx, JSAtom *atom);
 extern const char *const js_common_atom_names[];
 extern const size_t      js_common_atom_count;
 
-/*
- * Macros to access C strings for JSType and boolean literals.
- */
+
+
+
 #define JS_BOOLEAN_STR(type) (js_common_atom_names[1 + (type)])
 #define JS_TYPE_STR(type)    (js_common_atom_names[1 + 2 + (type)])
 
-/* Type names. */
+
 extern const char   js_object_str[];
 extern const char   js_undefined_str[];
 
-/* Well-known predefined C strings. */
+
 #define JS_PROTO(name,code,init) extern const char js_##name##_str[];
 #include "jsproto.tbl"
 #undef JS_PROTO
@@ -321,32 +321,32 @@ extern const char   js_close_str[];
 extern const char   js_send_str[];
 #endif
 
-/* Constant strings that are not atomized. */
+
 extern const char   js_getter_str[];
 extern const char   js_setter_str[];
 
 namespace js {
 
-/*
- * Initialize atom state. Return true on success, false on failure to allocate
- * memory. The caller must zero rt->atomState before calling this function and
- * only call it after js_InitGC successfully returns.
- */
+
+
+
+
+
 extern JSBool
 InitAtomState(JSRuntime *rt);
 
-/*
- * Free and clear atom state including any interned string atoms. This
- * function must be called before js_FinishGC.
- */
+
+
+
+
 extern void
 FinishAtomState(JSRuntime *rt);
 
-/*
- * Atom tracing and garbage collection hooks.
- */
+
+
+
 extern void
-MarkAtomState(JSTracer *trc, bool markAll);
+MarkAtomState(JSTracer *trc);
 
 extern void
 SweepAtomState(JSRuntime *rt);
@@ -357,7 +357,7 @@ InitCommonAtoms(JSContext *cx);
 extern void
 FinishCommonAtoms(JSRuntime *rt);
 
-/* N.B. must correspond to boolean tagging behavior. */
+
 enum InternBehavior
 {
     DoNotInternAtom = false,
@@ -394,6 +394,6 @@ template<XDRMode mode>
 bool
 XDRAtom(XDRState<mode> *xdr, JSAtom **atomp);
 
-} /* namespace js */
+} 
 
-#endif /* jsatom_h___ */
+#endif 

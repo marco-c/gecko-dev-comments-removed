@@ -1,15 +1,15 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-// vim:set et sw=2 sts=2 cin:
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/Util.h"
 
 #include "nsGenericHTMLElement.h"
 #include "nsObjectLoadingContent.h"
 #include "nsGkAtoms.h"
-#include "nsDOMError.h"
+#include "nsError.h"
 #include "nsIDocument.h"
 #include "nsIDOMDocument.h"
 #include "nsIDOMHTMLAppletElement.h"
@@ -34,16 +34,16 @@ public:
                             mozilla::dom::FromParser aFromParser = mozilla::dom::NOT_FROM_PARSER);
   virtual ~nsHTMLSharedObjectElement();
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMNode
+  
   NS_FORWARD_NSIDOMNODE(nsGenericHTMLElement::)
 
-  // nsIDOMElement
+  
   NS_FORWARD_NSIDOMELEMENT(nsGenericHTMLElement::)
 
-  // nsIDOMHTMLElement
+  
   NS_FORWARD_NSIDOMHTMLELEMENT_BASIC(nsGenericHTMLElement::)
   NS_IMETHOD Click() {
     return nsGenericHTMLElement::Click();
@@ -63,19 +63,19 @@ public:
     return nsGenericHTMLElement::SetInnerHTML(aInnerHTML);
   }
 
-  // nsIDOMHTMLAppletElement
+  
   NS_DECL_NSIDOMHTMLAPPLETELEMENT
 
-  // Can't use macro for nsIDOMHTMLEmbedElement because it has conflicts with
-  // NS_DECL_NSIDOMHTMLAPPLETELEMENT.
+  
+  
 
-  // nsIDOMHTMLEmbedElement
+  
   NS_IMETHOD GetSrc(nsAString &aSrc);
   NS_IMETHOD SetSrc(const nsAString &aSrc);
   NS_IMETHOD GetType(nsAString &aType);
   NS_IMETHOD SetType(const nsAString &aType);
 
-  // nsIDOMGetSVGDocument
+  
   NS_DECL_NSIDOMGETSVGDOCUMENT
 
   virtual nsresult BindToTree(nsIDocument *aDocument, nsIContent *aParent,
@@ -102,7 +102,7 @@ public:
   virtual nsEventStates IntrinsicState() const;
   virtual void DestroyContent();
 
-  // nsObjectLoadingContent
+  
   virtual PRUint32 GetCapabilities() const;
 
   virtual nsresult Clone(nsINodeInfo *aNodeInfo, nsINode **aResult) const;
@@ -125,9 +125,9 @@ public:
     return static_cast<nsIDOMHTMLAppletElement*>(this);
   }
 private:
-  /**
-   * Calls LoadObject with the correct arguments to start the plugin load.
-   */
+  
+
+
   NS_HIDDEN_(void) StartObjectLoad(bool aNotify);
 
   void GetTypeAttrValue(nsCString &aValue) const
@@ -150,8 +150,8 @@ private:
            nsGkAtoms::src;
   }
 
-  // mIsDoneAddingChildren is only really used for <applet>.  This boolean is
-  // always true for <embed>, per the documentation in nsIContent.h.
+  
+  
   bool mIsDoneAddingChildren;
 
   virtual void GetItemValueText(nsAString& text);
@@ -170,7 +170,7 @@ nsHTMLSharedObjectElement::nsHTMLSharedObjectElement(already_AddRefed<nsINodeInf
   RegisterFreezableElement();
   SetIsNetworkCreated(aFromParser == FROM_PARSER_NETWORK);
 
-  // By default we're in the loading state
+  
   AddStatesSilently(NS_EVENT_STATE_LOADING);
 }
 
@@ -212,8 +212,8 @@ nsHTMLSharedObjectElement::DoneAddingChildren(bool aHaveNotified)
   if (!mIsDoneAddingChildren) {
     mIsDoneAddingChildren = true;
 
-    // If we're already in a document, we need to trigger the load
-    // Otherwise, BindToTree takes care of that.
+    
+    
     if (IsInDoc()) {
       StartObjectLoad(aHaveNotified);
     }
@@ -254,6 +254,7 @@ NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(nsHTMLSharedObjectElement)
     NS_INTERFACE_TABLE_ENTRY(nsHTMLSharedObjectElement, nsIObjectLoadingContent)
     NS_INTERFACE_TABLE_ENTRY(nsHTMLSharedObjectElement, imgIDecoderObserver)
     NS_INTERFACE_TABLE_ENTRY(nsHTMLSharedObjectElement, nsIImageLoadingContent)
+    NS_INTERFACE_TABLE_ENTRY(nsHTMLSharedObjectElement, imgIOnloadBlocker)
     NS_INTERFACE_TABLE_ENTRY(nsHTMLSharedObjectElement, nsIInterfaceRequestor)
     NS_INTERFACE_TABLE_ENTRY(nsHTMLSharedObjectElement, nsIChannelEventSink)
   NS_OFFSET_AND_INTERFACE_TABLE_END
@@ -284,7 +285,7 @@ nsHTMLSharedObjectElement::BindToTree(nsIDocument *aDocument,
                                           aCompileEventHandlers);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // If we already have all the children, start the load.
+  
   if (mIsDoneAddingChildren) {
     void (nsHTMLSharedObjectElement::*start)() =
       &nsHTMLSharedObjectElement::StartObjectLoad;
@@ -312,13 +313,13 @@ nsHTMLSharedObjectElement::SetAttr(PRInt32 aNameSpaceID, nsIAtom *aName,
                                               aValue, aNotify);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // if aNotify is false, we are coming from the parser or some such place;
-  // we'll get bound after all the attributes have been set, so we'll do the
-  // object load from BindToTree/DoneAddingChildren.
-  // Skip the LoadObject call in that case.
-  // We also don't want to start loading the object when we're not yet in
-  // a document, just in case that the caller wants to set additional
-  // attributes before inserting the node into the document.
+  
+  
+  
+  
+  
+  
+  
   if (aNotify && IsInDoc() && mIsDoneAddingChildren &&
       aNameSpaceID == kNameSpaceID_None && aName == URIAttrName()) {
     return LoadObject(aNotify, true);
@@ -333,15 +334,15 @@ nsHTMLSharedObjectElement::IsHTMLFocusable(bool aWithMouse,
                                            PRInt32 *aTabIndex)
 {
   if (mNodeInfo->Equals(nsGkAtoms::embed) || Type() == eType_Plugin) {
-    // Has plugin content: let the plugin decide what to do in terms of
-    // internal focus from mouse clicks
+    
+    
     if (aTabIndex) {
       GetTabIndex(aTabIndex);
     }
 
     *aIsFocusable = true;
 
-    // Let the plugin decide, so override.
+    
     return true;
   }
 
@@ -384,7 +385,7 @@ nsHTMLSharedObjectElement::GetSVGDocument(nsIDOMDocument **aResult)
     return NS_OK;
   }
 
-  // XXXbz should this use GetCurrentDoc()?  sXBL/XBL2 issue!
+  
   nsIDocument *sub_doc = OwnerDoc()->GetSubDocumentFor(this);
   if (!sub_doc) {
     return NS_OK;
@@ -427,10 +428,10 @@ static void
 EmbedMapAttributesIntoRule(const nsMappedAttributes *aAttributes,
                            nsRuleData *aData)
 {
-  // NOTE: this should call the exact some methods than MapAttributesIntoRule
-  // except that MapCommonAttributesExceptHiddenInto is called instead of
-  // MapCommonAttributesInto.
-  // TODO: This method should be removed when bug 614825 will be fixed.
+  
+  
+  
+  
   nsGenericHTMLElement::MapImageBorderAttributeInto(aAttributes, aData);
   nsGenericHTMLElement::MapImageMarginAttributeInto(aAttributes, aData);
   nsGenericHTMLElement::MapImageSizeAttributesInto(aAttributes, aData);
@@ -465,8 +466,8 @@ nsHTMLSharedObjectElement::GetAttributeMappingFunction() const
 void
 nsHTMLSharedObjectElement::StartObjectLoad(bool aNotify)
 {
-  // BindToTree can call us asynchronously, and we may be removed from the tree
-  // in the interim
+  
+  
   if (!IsInDoc() || !OwnerDoc()->IsActive()) {
     return;
   }
