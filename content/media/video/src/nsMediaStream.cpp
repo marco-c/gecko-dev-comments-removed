@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla code.
+ *
+ * The Initial Developer of the Original Code is the Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2007
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *  Chris Double <chris.double@double.co.nz>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 #include "nsDebug.h"
 #include "nsMediaStream.h"
 #include "nsMediaDecoder.h"
@@ -75,7 +75,7 @@ nsMediaChannelStream::nsMediaChannelStream(nsMediaDecoder* aDecoder,
 nsMediaChannelStream::~nsMediaChannelStream()
 {
   if (mListener) {
-    
+    // Kill its reference to us since we're going away
     mListener->Revoke();
   }
   if (mLock) {
@@ -83,12 +83,12 @@ nsMediaChannelStream::~nsMediaChannelStream()
   }
 }
 
-
-
-
-
-
-
+// nsMediaChannelStream::Listener just observes the channel and
+// forwards notifications to the nsMediaChannelStream. We use multiple
+// listener objects so that when we open a new stream for a seek we can
+// disconnect the old listener from the nsMediaChannelStream and hook up
+// a new listener, so notifications from the old channel are discarded
+// and don't confuse us.
 NS_IMPL_ISUPPORTS4(nsMediaChannelStream::Listener,
                    nsIRequestObserver, nsIStreamListener, nsIChannelEventSink,
                    nsIInterfaceRequestor)
@@ -148,8 +148,8 @@ nsMediaChannelStream::OnStartRequest(nsIRequest* aRequest)
   nsHTMLMediaElement* element = mDecoder->GetMediaElement();
   NS_ENSURE_TRUE(element, NS_ERROR_FAILURE);
   if (element->ShouldCheckAllowOrigin()) {
-    
-    
+    // If the request was cancelled by nsCrossSiteListenerProxy due to failing
+    // the Access Control check, send an error through to the media element.
     nsresult status;
     nsresult rv = aRequest->GetStatus(&status);
     if (NS_FAILED(rv) || status == NS_ERROR_DOM_BAD_URI) {
@@ -167,12 +167,12 @@ nsMediaChannelStream::OnStartRequest(nsIRequest* aRequest)
     PRBool acceptsRanges = ranges.EqualsLiteral("bytes"); 
 
     if (mLastSeekOffset == 0) {
-      
-      
-      
-      
-      
-      
+      // Look for duration headers from known Ogg content systems. In the case
+      // of multiple options for obtaining the duration the order of precedence is;
+      // 1) The Media resource metadata if possible (done by the decoder itself).
+      // 2) X-Content-Duration.
+      // 3) x-amz-meta-content-duration.
+      // 4) Perform a seek in the decoder to find the value.
       nsCAutoString durationText;
       PRInt32 ec = 0;
       nsresult rv = hc->GetResponseHeader(NS_LITERAL_CSTRING("X-Content-Duration"), durationText);
@@ -191,15 +191,15 @@ nsMediaChannelStream::OnStartRequest(nsIRequest* aRequest)
     PRUint32 responseStatus = 0; 
     hc->GetResponseStatus(&responseStatus);
     if (mLastSeekOffset > 0 && responseStatus == HTTP_OK_CODE) {
-      
-      
-      
+      // If we get an OK response but we were seeking, we have to assume
+      // that seeking doesn't work. We also need to tell the cache that
+      // it's getting data for the start of the stream.
       mCacheStream.NotifyDataStarted(0);
     } else if (mLastSeekOffset == 0 && 
                (responseStatus == HTTP_OK_CODE ||
                 responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
-      
-      
+      // We weren't seeking and got a valid response status,
+      // set the length of the content.
       PRInt32 cl = -1;
       hc->GetContentLength(&cl);
       if (cl >= 0) {
@@ -207,9 +207,9 @@ nsMediaChannelStream::OnStartRequest(nsIRequest* aRequest)
       }
     }
 
-    
-    
-    
+    // If we get an HTTP_OK_CODE response to our byte range request,
+    // and the server isn't sending Accept-Ranges:bytes then we don't
+    // support seeking.
     seekable =
       responseStatus == HTTP_PARTIAL_RESPONSE_CODE || acceptsRanges;
   }
@@ -231,12 +231,12 @@ nsMediaChannelStream::OnStartRequest(nsIRequest* aRequest)
   }
 
   if (mSuspendCount > 0) {
-    
+    // Re-suspend the channel if it needs to be suspended
     mChannel->Suspend();
   }
 
-  
-  
+  // Fires an initial progress event and sets up the stall counter so stall events
+  // fire if no download occurs within the required time frame.
   mDecoder->Progress(PR_FALSE);
 
   return NS_OK;
@@ -321,8 +321,8 @@ nsMediaChannelStream::OnDataAvailable(nsIRequest* aRequest,
   }
   mDecoder->NotifyBytesDownloaded();
 
-  
-  
+  // Fire a progress events according to the time and byte constraints outlined
+  // in the spec.
   mDecoder->Progress(PR_FALSE);
   return NS_OK;
 }
@@ -363,8 +363,8 @@ nsresult nsMediaChannelStream::OpenChannel(nsIStreamListener** aStreamListener,
 
     nsCOMPtr<nsIStreamListener> listener = mListener.get();
 
-    
-    
+    // Ensure that if we're loading cross domain, that the server is sending
+    // an authorizing Access-Control header.
     nsHTMLMediaElement* element = mDecoder->GetMediaElement();
     NS_ENSURE_TRUE(element, NS_ERROR_FAILURE);
     if (element->ShouldCheckAllowOrigin()) {
@@ -395,10 +395,10 @@ nsresult nsMediaChannelStream::OpenChannel(nsIStreamListener** aStreamListener,
 
 void nsMediaChannelStream::SetupChannelHeaders()
 {
-  
-  
-  
-  
+  // Always use a byte range request even if we're reading from the start
+  // of the resource.
+  // This enables us to detect if the stream supports byte range
+  // requests, and therefore seeking, early.
   nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(mChannel);
   if (hc) {
     nsCAutoString rangeString("bytes=");
@@ -443,16 +443,16 @@ void nsMediaChannelStream::CloseChannel()
 
   if (mChannel) {
     if (mSuspendCount > 0) {
-      
+      // Resume the channel before we cancel it
       mChannel->Resume();
     }
-    
-    
-    
-    
-    
-    
-    
+    // The status we use here won't be passed to the decoder, since
+    // we've already revoked the listener. It can however be passed
+    // to DocumentViewerImpl::LoadComplete if our channel is the one
+    // that kicked off creation of a video document. We don't want that
+    // document load to think there was an error.
+    // NS_ERROR_PARSED_DATA_CACHED is the best thing we have for that
+    // at the moment.
     mChannel->Cancel(NS_ERROR_PARSED_DATA_CACHED);
     mChannel = nsnull;
   }
@@ -504,8 +504,8 @@ void nsMediaChannelStream::Resume()
       mChannelStatistics.Start(TimeStamp::Now());
     }
     mChannel->Resume();
-    
-    
+    // XXX need to do something fancier here because we often won't
+    // be able to resume cleanly
   }
 }
 
@@ -522,7 +522,7 @@ nsMediaChannelStream::CacheClientSeek(PRInt64 aOffset)
 
   nsHTMLMediaElement* element = mDecoder->GetMediaElement();
   if (!element) {
-    
+    // The decoder is being shut down, so don't bother opening a new channel
     return NS_OK;
   }
   nsCOMPtr<nsILoadGroup> loadGroup = element->GetDocumentLoadGroup();
@@ -571,9 +571,9 @@ nsMediaChannelStream::CacheClientSuspend()
   }
   Suspend();
 
-  
-  
-  
+  // We have to spawn an event here since we're being called back from
+  // a sensitive place in nsMediaCache, which doesn't want us to reenter
+  // the decoder and cause deadlocks or other unpleasantness
   nsCOMPtr<nsIRunnable> event = new SuspendedStatusChanged(mDecoder);
   NS_DispatchToMainThread(event, NS_DISPATCH_NORMAL);
   return NS_OK;
@@ -588,12 +588,18 @@ nsMediaChannelStream::CacheClientResume()
     --mCacheSuspendCount;
   }
 
-  
-  
-  
+  // We have to spawn an event here since we're being called back from
+  // a sensitive place in nsMediaCache, which doesn't want us to reenter
+  // the decoder and cause deadlocks or other unpleasantness
   nsCOMPtr<nsIRunnable> event = new SuspendedStatusChanged(mDecoder);
   NS_DispatchToMainThread(event, NS_DISPATCH_NORMAL);
   return NS_OK;
+}
+
+PRInt64
+nsMediaChannelStream::GetNextCachedData(PRInt64 aOffset)
+{
+  return mCacheStream.GetNextCachedData(aOffset);
 }
 
 PRInt64
@@ -667,53 +673,57 @@ public:
     }
   }
 
-  
+  // Main thread
   virtual nsresult Open(nsIStreamListener** aStreamListener);
   virtual nsresult Close();
   virtual void     Suspend() {}
   virtual void     Resume() {}
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal();
 
-  
+  // These methods are called off the main thread.
 
-  
+  // Other thread
   virtual void     SetReadMode(nsMediaCacheStream::ReadMode aMode) {}
   virtual void     SetPlaybackRate(PRUint32 aBytesPerSecond) {}
   virtual nsresult Read(char* aBuffer, PRUint32 aCount, PRUint32* aBytes);
   virtual nsresult Seek(PRInt32 aWhence, PRInt64 aOffset);
   virtual PRInt64  Tell();
 
-  
+  // Any thread
   virtual void    Pin() {}
   virtual void    Unpin() {}
   virtual double  GetDownloadRate(PRPackedBool* aIsReliable)
   {
-    
+    // The data's all already here
     *aIsReliable = PR_TRUE;
-    return 100*1024*1024; 
+    return 100*1024*1024; // arbitray, use 100MB/s
   }
   virtual PRInt64 GetLength() { return mSize; }
+  virtual PRInt64 GetNextCachedData(PRInt64 aOffset)
+  {
+    return (aOffset < mSize) ? aOffset : -1;
+  }
   virtual PRInt64 GetCachedDataEnd(PRInt64 aOffset) { return PR_MAX(aOffset, mSize); }
   virtual PRBool  IsDataCachedToEndOfStream(PRInt64 aOffset) { return PR_TRUE; }
   virtual PRBool  IsSuspendedByCache() { return PR_FALSE; }
 
 private:
-  
+  // The file size, or -1 if not known. Immutable after Open().
   PRInt64 mSize;
 
-  
-  
-  
-  
-  
+  // This lock handles synchronisation between calls to Close() and
+  // the Read, Seek, etc calls. Close must not be called while a
+  // Read or Seek is in progress since it resets various internal
+  // values to null.
+  // This lock protects mSeekable and mInput.
   PRLock* mLock;
 
-  
-  
+  // Seekable stream interface to file. This can be used from any
+  // thread.
   nsCOMPtr<nsISeekableStream> mSeekable;
 
-  
-  
+  // Input stream for the media data. This can be used from any
+  // thread.
   nsCOMPtr<nsIInputStream>  mInput;
 };
 
@@ -749,9 +759,9 @@ nsresult nsMediaFileStream::Open(nsIStreamListener** aStreamListener)
 
   nsresult rv;
   if (aStreamListener) {
-    
-    
-    
+    // The channel is already open. We need a synchronous stream that
+    // implements nsISeekableStream, so we have to find the underlying
+    // file and reopen it
     nsCOMPtr<nsIFileChannel> fc(do_QueryInterface(mChannel));
     if (!fc)
       return NS_ERROR_UNEXPECTED;
@@ -762,8 +772,8 @@ nsresult nsMediaFileStream::Open(nsIStreamListener** aStreamListener)
 
     rv = NS_NewLocalFileInputStream(getter_AddRefs(mInput), file);
   } else {
-    
-    
+    // Ensure that we never load a local file from some page on a 
+    // web server.
     nsHTMLMediaElement* element = mDecoder->GetMediaElement();
     NS_ENSURE_TRUE(element, NS_ERROR_FAILURE);
 
@@ -779,15 +789,15 @@ nsresult nsMediaFileStream::Open(nsIStreamListener** aStreamListener)
 
   mSeekable = do_QueryInterface(mInput);
   if (!mSeekable) {
-    
-    
-    
-    
+    // XXX The file may just be a .url or similar
+    // shortcut that points to a Web site. We need to fix this by
+    // doing an async open and waiting until we locate the real resource,
+    // then using that (if it's still a file!).
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // Get the file size and inform the decoder. Only files up to 4GB are
+  // supported here.
   PRUint32 size;
   rv = mInput->Available(&size);
   if (NS_SUCCEEDED(rv)) {
@@ -904,7 +914,7 @@ void nsMediaStream::MoveLoadsToBackground() {
   NS_ASSERTION(!mLoadInBackground, "Why are you calling this more than once?");
   mLoadInBackground = PR_TRUE;
   if (!mChannel) {
-    
+    // No channel, resource is probably already loaded.
     return;
   }
 
@@ -919,7 +929,7 @@ void nsMediaStream::MoveLoadsToBackground() {
   NS_ASSERTION(NS_SUCCEEDED(rv), "GetLoadGroup() failed!");
   nsresult status;
   mChannel->GetStatus(&status);
-  
+  // Note: if (NS_FAILED(status)), the channel won't be in the load group.
   PRBool isPending = PR_FALSE;
   if (loadGroup &&
       NS_SUCCEEDED(status) &&
