@@ -24,7 +24,7 @@ nsDOMCompositionEvent::nsDOMCompositionEvent(nsPresContext* aPresContext,
     
     
     
-    mEvent->flags |= NS_EVENT_FLAG_CANT_CANCEL;
+    mEvent->mFlags.mCancelable = false;
   }
 
   mData = static_cast<nsCompositionEvent*>(mEvent)->data;
