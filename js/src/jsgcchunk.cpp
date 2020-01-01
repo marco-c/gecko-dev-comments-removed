@@ -35,13 +35,13 @@
 #include "jstypes.h"
 #include "jsstdint.h"
 #include "jsgcchunk.h"
+#ifdef JS_64BIT
+# include "jsstr.h"
+#endif
+
 
 #ifdef XP_WIN
 # include <windows.h>
-
-#ifdef _M_X64
-# include "jsstr.h"
-#endif
 
 # ifdef _MSC_VER
 #  pragma warning( disable: 4267 4996 4146 )
@@ -183,27 +183,6 @@ UnmapPages(void *addr, size_t size)
     NtFreeVirtualMemory(INVALID_HANDLE_VALUE, &addr, &size, MEM_RELEASE);
 }
 
-bool
-JSString::initStringTables()
-{
-    char *p = (char *) MapPages(NULL, unitStringTableSize + intStringTableSize);
-    if (!p)
-        return false;
-    unitStringTable = (JSString*) memcpy(p, staticUnitStringTable, unitStringTableSize);
-    intStringTable = (JSString*) memcpy(p + unitStringTableSize, 
-                                        staticIntStringTable, intStringTableSize);
-
-    return true;
-}
-
-void
-JSString::freeStringTables()
-{
-    UnmapPages(unitStringTable, unitStringTableSize + intStringTableSize);
-    unitStringTable = NULL;
-    intStringTable = NULL;
-}
-
 #  else 
 
 static void *
@@ -273,10 +252,57 @@ MapAlignedPages(size_t size, size_t alignment)
 
 	
     void *p = mmap((caddr_t) alignment, size, PROT_READ | PROT_WRITE,
-                     MAP_PRIVATE | MAP_NOSYNC | MAP_ALIGN | MAP_ANON, -1, 0);
+                     MAP_PRIVATE | MAP_NOSYNC | MAP_ALIGN | MAP_ANON | MAP_32BIT, -1, 0);
     if (p == MAP_FAILED)
         return NULL;
     return p;
+}
+
+# else 
+
+# if defined(__MACH__) && defined(__APPLE__) && defined(__x86_64__)
+
+
+static void *
+MapPages(void *addr, size_t size)
+{
+    void * const start = (void *) 0x10000;
+    void * const end = (void *) 0x100000000;
+
+    
+    if (addr) {
+        JS_ASSERT(addr < end);
+        void *p = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+        if (p == MAP_FAILED)
+            return NULL;
+        if (p != addr) {
+            JS_ALWAYS_TRUE(munmap(p, size) == 0);
+            return NULL;
+        }
+        return p;
+    }
+
+    
+    
+    
+    
+    static void *base = start;
+    while (true) {
+        void *p = mmap(base, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+        if (p == MAP_FAILED)
+            return NULL;
+        
+        if (start <= p && p < end) {
+            base = (void *) (uintptr_t(p) + size);
+            return p;
+        }
+        
+        
+        munmap(p, size);
+        if (base != start)
+            return NULL;
+        base = start;
+    }
 }
 
 # else 
@@ -289,7 +315,7 @@ MapPages(void *addr, size_t size)
 
 
 	
-    void *p = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON,
+    void *p = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_32BIT,
                    -1, 0);
     if (p == MAP_FAILED)
         return NULL;
@@ -303,12 +329,37 @@ MapPages(void *addr, size_t size)
 
 # endif 
 
+# endif 
+
 static void
 UnmapPages(void *addr, size_t size)
 {
     JS_ALWAYS_TRUE(munmap((caddr_t) addr, size) == 0);
 }
 
+#endif
+
+#ifdef JS_64BIT
+bool
+JSString::initStringTables()
+{
+    char *p = (char *) MapPages(NULL, unitStringTableSize + intStringTableSize);
+    if (!p)
+        return false;
+    unitStringTable = (JSString*) memcpy(p, staticUnitStringTable, unitStringTableSize);
+    intStringTable = (JSString*) memcpy(p + unitStringTableSize, 
+                                        staticIntStringTable, intStringTableSize);
+
+    return true;
+}
+
+void
+JSString::freeStringTables()
+{
+    UnmapPages(unitStringTable, unitStringTableSize + intStringTableSize);
+    unitStringTable = NULL;
+    intStringTable = NULL;
+}
 #endif
 
 namespace js {
