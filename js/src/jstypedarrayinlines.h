@@ -1,8 +1,8 @@
-/* -*- Mode: C++; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil -*- */
-/* vim: set ts=4 sw=4 et tw=99: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jstypedarrayinlines_h
 #define jstypedarrayinlines_h
@@ -16,11 +16,11 @@
 inline void
 js::ArrayBufferObject::setElementsHeader(js::ObjectElements *header, uint32_t bytes)
 {
-    /*
-     * Note that |bytes| may not be a multiple of |sizeof(Value)|, so
-     * |capacity * sizeof(Value)| may underestimate the size by up to
-     * |sizeof(Value) - 1| bytes.
-     */
+    
+
+
+
+
     header->capacity = bytes / sizeof(js::Value);
     header->initializedLength = bytes;
     header->length = 0;
@@ -76,7 +76,7 @@ inline Value
 TypedArray::lengthValue(JSObject *obj)
 {
     JS_ASSERT(obj->isTypedArray());
-    return obj->getFixedSlot(FIELD_LENGTH);
+    return obj->getFixedSlot(LENGTH_SLOT);
 }
 
 inline uint32_t
@@ -89,7 +89,7 @@ inline Value
 TypedArray::byteOffsetValue(JSObject *obj)
 {
     JS_ASSERT(obj->isTypedArray());
-    return obj->getFixedSlot(FIELD_BYTEOFFSET);
+    return obj->getFixedSlot(BYTEOFFSET_SLOT);
 }
 
 inline uint32_t
@@ -102,7 +102,7 @@ inline Value
 TypedArray::byteLengthValue(JSObject *obj)
 {
     JS_ASSERT(obj->isTypedArray());
-    return obj->getFixedSlot(FIELD_BYTELENGTH);
+    return obj->getFixedSlot(BYTELENGTH_SLOT);
 }
 
 inline uint32_t
@@ -115,14 +115,14 @@ inline uint32_t
 TypedArray::type(JSObject *obj)
 {
     JS_ASSERT(obj->isTypedArray());
-    return obj->getFixedSlot(FIELD_TYPE).toInt32();
+    return obj->getFixedSlot(TYPE_SLOT).toInt32();
 }
 
 inline Value
 TypedArray::bufferValue(JSObject *obj)
 {
     JS_ASSERT(obj->isTypedArray());
-    return obj->getFixedSlot(FIELD_BUFFER);
+    return obj->getFixedSlot(BUFFER_SLOT);
 }
 
 inline ArrayBufferObject *
@@ -135,7 +135,7 @@ inline void *
 TypedArray::viewData(JSObject *obj)
 {
     JS_ASSERT(obj->isTypedArray());
-    return (void *)obj->getPrivate(NUM_FIXED_SLOTS);
+    return (void *)obj->getPrivate(DATA_SLOT);
 }
 
 inline uint32_t
@@ -183,7 +183,7 @@ class TypedArrayPrivateRef : public gc::BufferableRef
       : obj(obj), buffer(buffer), byteOffset(byteOffset) {}
 
     bool match(void *location) {
-        // The private field  of obj is not traced, but needs to be updated by mark.
+        
         return false;
     }
 
@@ -194,11 +194,11 @@ class TypedArrayPrivateRef : public gc::BufferableRef
 static inline void
 InitTypedArrayDataPointer(JSObject *obj, ArrayBufferObject *buffer, size_t byteOffset)
 {
-    /*
-     * N.B. The base of the array's data is stored in the object's
-     * private data rather than a slot to avoid alignment restrictions
-     * on private Values.
-     */
+    
+
+
+
+
     obj->initPrivate(buffer->dataPointer() + byteOffset);
 #ifdef JSGC_GENERATIONAL
     JSCompartment *comp = obj->compartment();
@@ -249,7 +249,8 @@ DataViewObject::create(JSContext *cx, uint32_t byteOffset, uint32_t byteLength,
     InitTypedArrayDataPointer(obj, arrayBuffer, byteOffset);
     JS_ASSERT(byteOffset + byteLength <= arrayBuffer->byteLength());
 
-    JS_ASSERT(dvobj.numFixedSlots() == RESERVED_SLOTS);
+    
+    JS_ASSERT(dvobj.numFixedSlots() == DATA_SLOT);
 
     arrayBuffer->asArrayBuffer().addView(cx, &dvobj);
 
@@ -313,6 +314,6 @@ DataViewObject::byteLengthValue(DataViewObject &view)
     return Int32Value(view.byteLength());
 }
 
-} /* namespace js */
+} 
 
-#endif /* jstypedarrayinlines_h */
+#endif 
