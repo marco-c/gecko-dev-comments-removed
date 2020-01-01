@@ -412,7 +412,7 @@ ForceFrame::enter()
     JSObject *scopeChain = target->getGlobal();
     JS_ASSERT(scopeChain->isNative());
 
-    return context->stack.pushDummyFrame(context, *scopeChain, frame);
+    return context->stack.pushDummyFrame(context, REPORT_ERROR, *scopeChain, frame);
 }
 
 AutoCompartment::AutoCompartment(JSContext *cx, JSObject *target)
@@ -437,13 +437,23 @@ AutoCompartment::enter()
     if (origin != destination) {
         LeaveTrace(context);
 
-        context->compartment = destination;
         JSObject *scopeChain = target->getGlobal();
         JS_ASSERT(scopeChain->isNative());
 
         frame.construct();
-        if (!context->stack.pushDummyFrame(context, *scopeChain, &frame.ref())) {
+
+        
+
+
+
+
+
+
+
+        context->compartment = destination;
+        if (!context->stack.pushDummyFrame(context, DONT_REPORT_ERROR, *scopeChain, &frame.ref())) {
             context->compartment = origin;
+            js_ReportOverRecursed(context);
             return false;
         }
 
@@ -769,6 +779,12 @@ JSCrossCompartmentWrapper::defaultValue(JSContext *cx, JSObject *wrapper, JSType
 
     call.leave();
     return call.origin->wrap(cx, vp);
+}
+
+void
+JSCrossCompartmentWrapper::trace(JSTracer *trc, JSObject *wrapper)
+{
+    MarkCrossCompartmentObject(trc, *wrappedObject(wrapper), "wrappedObject");
 }
 
 JSCrossCompartmentWrapper JSCrossCompartmentWrapper::singleton(0u);
