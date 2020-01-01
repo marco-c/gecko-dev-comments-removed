@@ -1060,13 +1060,11 @@ protected:
   
   nsRect ClipListToRange(nsDisplayListBuilder *aBuilder,
                          nsDisplayList* aList,
-                         nsIRange* aRange,
-                         nsIRenderingContext* aRenderingContext);
+                         nsIRange* aRange);
 
   
   
   RangePaintInfo* CreateRangePaintInfo(nsIDOMRange* aRange,
-                                       nsIRenderingContext* aRenderingContext,
                                        nsRect& aSurfaceRect);
 
   
@@ -4808,8 +4806,7 @@ PresShell::RenderDocument(const nsRect& aRect, PRBool aUntrusted,
 nsRect
 PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
                            nsDisplayList* aList,
-                           nsIRange* aRange,
-                           nsIRenderingContext* aRenderingContext)
+                           nsIRange* aRange)
 {
   
   
@@ -4846,10 +4843,8 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
             
             nsPoint startPoint, endPoint;
             nsPresContext* presContext = GetPresContext();
-            frame->GetPointFromOffset(presContext, aRenderingContext,
-                                      hilightStart, &startPoint);
-            frame->GetPointFromOffset(presContext, aRenderingContext,
-                                      hilightEnd, &endPoint);
+            frame->GetPointFromOffset(hilightStart, &startPoint);
+            frame->GetPointFromOffset(hilightEnd, &endPoint);
 
             
             
@@ -4887,7 +4882,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
       
       if (sublist)
         surfaceRect.UnionRect(surfaceRect,
-          ClipListToRange(aBuilder, sublist, aRange, aRenderingContext));
+          ClipListToRange(aBuilder, sublist, aRange));
     }
     else {
       
@@ -4903,7 +4898,6 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
 
 RangePaintInfo*
 PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
-                                nsIRenderingContext* aRenderingContext,
                                 nsRect& aSurfaceRect)
 {
   RangePaintInfo* info = nsnull;
@@ -4957,8 +4951,7 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
                                                     ancestorRect, &info->mList);
   info->mBuilder.LeavePresShell(ancestorFrame, ancestorRect);
 
-  nsRect rangeRect = ClipListToRange(&info->mBuilder, &info->mList,
-                                     range, aRenderingContext);
+  nsRect rangeRect = ClipListToRange(&info->mBuilder, &info->mList, range);
 
   
   
@@ -5094,11 +5087,6 @@ PresShell::RenderNode(nsIDOMNode* aNode,
                       nsRect* aScreenRect)
 {
   
-  nsCOMPtr<nsIRenderingContext> tmprc;
-  nsresult rv = CreateRenderingContext(GetRootFrame(), getter_AddRefs(tmprc));
-  NS_ENSURE_SUCCESS(rv, nsnull);
-
-  
   
   nsRect area;
   nsTArray<nsAutoPtr<RangePaintInfo> > rangeItems;
@@ -5107,7 +5095,7 @@ PresShell::RenderNode(nsIDOMNode* aNode,
   NS_NewRange(getter_AddRefs(range));
   range->SelectNode(aNode);
 
-  RangePaintInfo* info = CreateRangePaintInfo(range, tmprc, area);
+  RangePaintInfo* info = CreateRangePaintInfo(range, area);
   if (info && !rangeItems.AppendElement(info)) {
     delete info;
     return nsnull;
@@ -5142,11 +5130,6 @@ PresShell::RenderSelection(nsISelection* aSelection,
                            nsRect* aScreenRect)
 {
   
-  nsCOMPtr<nsIRenderingContext> tmprc;
-  nsresult rv = CreateRenderingContext(GetRootFrame(), getter_AddRefs(tmprc));
-  NS_ENSURE_SUCCESS(rv, nsnull);
-
-  
   
   nsRect area;
   nsTArray<nsAutoPtr<RangePaintInfo> > rangeItems;
@@ -5163,7 +5146,7 @@ PresShell::RenderSelection(nsISelection* aSelection,
     nsCOMPtr<nsIDOMRange> range;
     aSelection->GetRangeAt(r, getter_AddRefs(range));
 
-    RangePaintInfo* info = CreateRangePaintInfo(range, tmprc, area);
+    RangePaintInfo* info = CreateRangePaintInfo(range, area);
     if (info && !rangeItems.AppendElement(info)) {
       delete info;
       return nsnull;
