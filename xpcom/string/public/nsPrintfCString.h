@@ -63,17 +63,6 @@ class nsPrintfCString : public nsFixedCString
           va_end(ap);
         }
 
-      
-      
-      nsPrintfCString( size_type n, const char_type* format, ...)
-        : nsFixedCString(mLocalBuffer, kLocalBufferSize, 0)
-        {
-          va_list ap;
-          va_start(ap, format);
-          AppendPrintf(format, ap);
-          va_end(ap);
-        }
-
     private:
       enum { kLocalBufferSize=15 };
       
