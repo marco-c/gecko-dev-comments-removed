@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sw=2 et tw=78: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsHtml5TreeOperation.h"
 #include "nsContentUtils.h"
@@ -40,10 +40,10 @@ namespace dom = mozilla::dom;
 
 static NS_DEFINE_CID(kFormProcessorCID, NS_FORMPROCESSOR_CID);
 
-/**
- * Helper class that opens a notification batch if the current doc
- * is different from the executor doc.
- */
+
+
+
+
 class NS_STACK_CLASS nsHtml5OtherDocUpdate {
   public:
     nsHtml5OtherDocUpdate(nsIDocument* aCurrentDoc, nsIDocument* aExecutorDoc)
@@ -51,7 +51,7 @@ class NS_STACK_CLASS nsHtml5OtherDocUpdate {
       NS_PRECONDITION(aCurrentDoc, "Node has no doc?");
       NS_PRECONDITION(aExecutorDoc, "Executor has no doc?");
       if (NS_LIKELY(aCurrentDoc == aExecutorDoc)) {
-        mDocument = nsnull;
+        mDocument = nullptr;
       } else {
         mDocument = aCurrentDoc;
         aCurrentDoc->BeginUpdate(UPDATE_CONTENT_MODEL);        
@@ -105,7 +105,7 @@ nsHtml5TreeOperation::~nsHtml5TreeOperation()
     case eTreeOpProcessOfflineManifest:
       nsMemory::Free(mOne.unicharPtr);
       break;
-    default: // keep the compiler happy
+    default: 
       break;
   }
 }
@@ -119,8 +119,8 @@ nsHtml5TreeOperation::AppendTextToTextNode(const PRUnichar* aBuffer,
   NS_PRECONDITION(aTextNode, "Got null text node.");
 
   if (aBuilder->HaveNotified(aTextNode)) {
-    // This text node has already been notified on, so it's necessary to
-    // notify on the append
+    
+    
     nsresult rv = NS_OK;
     PRUint32 oldLength = aTextNode->TextLength();
     CharacterDataChangeInfo info = {
@@ -180,7 +180,7 @@ nsHtml5TreeOperation::Append(nsIContent* aNode,
   NS_ASSERTION(parentDoc, "Null owner doc on old node.");
 
   if (NS_LIKELY(executorDoc == parentDoc)) {
-    // the usual case. the parent is in the parser's doc
+    
     rv = aParent->AppendChildTo(aNode, false);
     if (NS_SUCCEEDED(rv)) {
       aBuilder->PostPendingAppendNotification(aParent, aNode);
@@ -188,7 +188,7 @@ nsHtml5TreeOperation::Append(nsIContent* aNode,
     return rv;
   }
 
-  // The parent has been moved to another doc
+  
   parentDoc->BeginUpdate(UPDATE_CONTENT_MODEL);
 
   PRUint32 childCount = aParent->GetChildCount();
@@ -303,15 +303,15 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       PRInt32 len = attributes->getLength();
       for (PRInt32 i = len; i > 0;) {
         --i;
-        // prefix doesn't need regetting. it is always null or a static atom
-        // local name is never null
+        
+        
         nsCOMPtr<nsIAtom> localName = Reget(attributes->getLocalName(i));
         PRInt32 nsuri = attributes->getURI(i);
         if (!node->HasAttr(nsuri, localName)) {
-          // prefix doesn't need regetting. it is always null or a static atom
-          // local name is never null
+          
+          
           node->SetAttr(nsuri, localName, attributes->getPrefix(i), *(attributes->getValue(i)), true);
-          // XXX what to do with nsresult?
+          
         }
       }
       
@@ -331,7 +331,7 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       
       nsCOMPtr<nsIContent> newContent;
       nsCOMPtr<nsINodeInfo> nodeInfo = aBuilder->GetNodeInfoManager()->
-        GetNodeInfo(name, nsnull, ns, nsIDOMNode::ELEMENT_NODE);
+        GetNodeInfo(name, nullptr, ns, nsIDOMNode::ELEMENT_NODE);
       NS_ASSERTION(nodeInfo, "Got null nodeinfo.");
       NS_NewElement(getter_AddRefs(newContent),
                     nodeInfo.forget(),
@@ -351,7 +351,7 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           ssle->SetEnableUpdates(false);
         }
       } else if (NS_UNLIKELY(isKeygen)) {
-        // Adapted from CNavDTD
+        
         nsCOMPtr<nsIFormProcessor> theFormProcessor =
           do_GetService(kFormProcessorCID, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
@@ -365,13 +365,13 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
 
         newContent->SetAttr(kNameSpaceID_None, 
                             nsGkAtoms::moztype, 
-                            nsnull, 
+                            nullptr, 
                             theAttribute,
                             false);
 
         nsCOMPtr<nsINodeInfo> optionNodeInfo = 
           aBuilder->GetNodeInfoManager()->GetNodeInfo(nsHtml5Atoms::option, 
-                                                      nsnull, 
+                                                      nullptr, 
                                                       kNameSpaceID_XHTML,
                                                       nsIDOMNode::ELEMENT_NODE);
                                                       
@@ -402,14 +402,14 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       PRInt32 len = attributes->getLength();
       for (PRInt32 i = len; i > 0;) {
         --i;
-        // prefix doesn't need regetting. it is always null or a static atom
-        // local name is never null
+        
+        
         nsCOMPtr<nsIAtom> localName = Reget(attributes->getLocalName(i));
         if (ns == kNameSpaceID_XHTML &&
             nsHtml5Atoms::a == name &&
             nsHtml5Atoms::name == localName) {
-          // This is an HTML5-incompliant Geckoism.
-          // Remove when fixing bug 582361
+          
+          
           NS_ConvertUTF16toUTF8 cname(*(attributes->getValue(i)));
           NS_ConvertUTF8toUTF16 uv(nsUnescape(cname.BeginWriting()));
           newContent->SetAttr(attributes->getURI(i), localName,
@@ -426,11 +426,11 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       nsIContent* node = *(mOne.node);
       nsIContent* parent = *(mTwo.node);
       nsCOMPtr<nsIFormControl> formControl(do_QueryInterface(node));
-      // NS_ASSERTION(formControl, "Form-associated element did not implement nsIFormControl.");
-      // TODO: uncomment the above line when <keygen> (bug 101019) is supported by Gecko
+      
+      
       nsCOMPtr<nsIDOMHTMLFormElement> formElement(do_QueryInterface(parent));
       NS_ASSERTION(formElement, "The form element doesn't implement nsIDOMHTMLFormElement.");
-      // avoid crashing on <keygen>
+      
       if (formControl &&
           !node->HasAttr(kNameSpaceID_None, nsGkAtoms::form)) {
         formControl->SetForm(formElement);
@@ -454,7 +454,7 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
         return rv;
       }
       if (!len) {
-        // Don't bother appending a zero-length text node.
+        
         return NS_OK;
       }
       return AppendText(prompt.BeginReading(), len, parent, aBuilder);
@@ -529,8 +529,8 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       nsString systemId;
       pair->Get(publicId, systemId);
       
-      // Adapted from nsXMLContentSink
-      // Create a new doctype node
+      
+      
       nsCOMPtr<nsIDOMDocumentType> docType;
       nsAutoString voidString;
       voidString.SetIsVoid(true);
@@ -618,17 +618,17 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       nsIContent* node = *(mOne.node);
       nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(node);
       if (sele) {
-        // Make sure to serialize this script correctly, for nice round tripping.
+        
         sele->SetIsMalformed();
       }
       return rv;
     }
     case eTreeOpStreamEnded: {
-      aBuilder->DidBuildModel(false); // this causes a notifications flush anyway
+      aBuilder->DidBuildModel(false); 
       return rv;
     }
     case eTreeOpStartLayout: {
-      aBuilder->StartLayout(); // this causes a notification flush anyway
+      aBuilder->StartLayout(); 
       return rv;
     }
     case eTreeOpDocumentMode: {
@@ -669,7 +669,7 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       nsIContent* node = *(mOne.node);
       PRUnichar* str = mTwo.unicharPtr;
       nsDependentString depStr(str);
-      // See viewsource.css for the possible classes
+      
       nsAutoString klass;
       node->GetAttr(kNameSpaceID_None, nsGkAtoms::_class, klass);
       if (!klass.IsEmpty()) {
@@ -706,11 +706,11 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
                      aBuilder->GetViewSourceBaseURI());
       NS_ENSURE_SUCCESS(rv, rv);
 
-      // Reuse the fix for bug 467852
-      // URLs that execute script (e.g. "javascript:" URLs) should just be
-      // ignored.  There's nothing reasonable we can do with them, and allowing
-      // them to execute in the context of the view-source window presents a
-      // security risk.  Just return the empty string in this case.
+      
+      
+      
+      
+      
       bool openingExecutesScript = false;
       rv = NS_URIChainHasFlags(uri,
                                nsIProtocolHandler::URI_OPENING_EXECUTES_SCRIPT,
@@ -721,9 +721,9 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
 
       nsCAutoString viewSourceUrl;
 
-      // URLs that return data (e.g. "http:" URLs) should be prefixed with
-      // "view-source:".  URLs that don't return data should just be returned
-      // undecorated.
+      
+      
+      
       bool doesNotReturnData = false;
       rv = NS_URIChainHasFlags(uri,
                                nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
@@ -749,7 +749,7 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       char* msgId = mTwo.charPtr;
       nsCOMPtr<nsIAtom> atom = Reget(mThree.atom);
       nsCOMPtr<nsIAtom> otherAtom = Reget(mFour.atom);
-      // See viewsource.css for the possible classes in addition to "error".
+      
       nsAutoString klass;
       node->GetAttr(kNameSpaceID_None, nsGkAtoms::_class, klass);
       if (!klass.IsEmpty()) {
@@ -795,5 +795,5 @@ nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       NS_NOTREACHED("Bogus tree op");
     }
   }
-  return rv; // keep compiler happy
+  return rv; 
 }

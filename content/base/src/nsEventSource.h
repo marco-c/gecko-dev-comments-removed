@@ -1,14 +1,14 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * This implementation has support only for http requests. It is because the
+ * spec has defined event streams only for http. HTTP is required because
+ * this implementation uses some http headers: "Last-Event-ID", "Cache-Control"
+ * and "Accept".
+ */
 
 #ifndef nsEventSource_h__
 #define nsEventSource_h__
@@ -56,7 +56,7 @@ public:
 
   NS_DECL_NSIEVENTSOURCE
 
-  
+  // nsIJSNativeInitializer
   NS_IMETHOD Initialize(nsISupports* aOwner, JSContext* cx, JSObject* obj,
                         PRUint32 argc, jsval* argv);
 
@@ -66,7 +66,7 @@ public:
   NS_DECL_NSICHANNELEVENTSINK
   NS_DECL_NSIINTERFACEREQUESTOR
 
-  
+  // Determine if preferences allow EventSource
   static bool PrefEnabled();
 
   virtual void DisconnectFromOwner();
@@ -106,14 +106,14 @@ protected:
   nsresult ResetEvent();
   nsresult DispatchCurrentMessageEvent();
   nsresult ParseCharacter(PRUnichar aChr);
-  bool CheckCanRequestSrc(nsIURI* aSrc = nsnull);  
+  bool CheckCanRequestSrc(nsIURI* aSrc = nullptr);  // if null, it tests mSrc
   nsresult CheckHealthOfRequestCallback(nsIRequest *aRequestCallback);
   nsresult OnRedirectVerifyCallback(nsresult result);
 
   nsCOMPtr<nsIURI> mSrc;
 
   nsString mLastEventID;
-  PRUint32 mReconnectionTime;  
+  PRUint32 mReconnectionTime;  // in ms
 
   struct Message {
     nsString mEventName;
@@ -123,50 +123,50 @@ protected:
   nsDeque mMessagesToDispatch;
   Message mCurrentMessage;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * A simple state machine used to manage the event-source's line buffer
+   *
+   * PARSE_STATE_OFF              -> PARSE_STATE_BEGIN_OF_STREAM
+   *
+   * PARSE_STATE_BEGIN_OF_STREAM  -> PARSE_STATE_BOM_WAS_READ |
+   *                                 PARSE_STATE_CR_CHAR |
+   *                                 PARSE_STATE_BEGIN_OF_LINE |
+   *                                 PARSE_STATE_COMMENT |
+   *                                 PARSE_STATE_FIELD_NAME
+   *
+   * PARSE_STATE_BOM_WAS_READ     -> PARSE_STATE_CR_CHAR |
+   *                                 PARSE_STATE_BEGIN_OF_LINE |
+   *                                 PARSE_STATE_COMMENT |
+   *                                 PARSE_STATE_FIELD_NAME
+   *
+   * PARSE_STATE_CR_CHAR -> PARSE_STATE_CR_CHAR |
+   *                        PARSE_STATE_COMMENT |
+   *                        PARSE_STATE_FIELD_NAME |
+   *                        PARSE_STATE_BEGIN_OF_LINE
+   *
+   * PARSE_STATE_COMMENT -> PARSE_STATE_CR_CHAR |
+   *                        PARSE_STATE_BEGIN_OF_LINE
+   *
+   * PARSE_STATE_FIELD_NAME   -> PARSE_STATE_CR_CHAR |
+   *                             PARSE_STATE_BEGIN_OF_LINE |
+   *                             PARSE_STATE_FIRST_CHAR_OF_FIELD_VALUE
+   *
+   * PARSE_STATE_FIRST_CHAR_OF_FIELD_VALUE  -> PARSE_STATE_FIELD_VALUE |
+   *                                           PARSE_STATE_CR_CHAR |
+   *                                           PARSE_STATE_BEGIN_OF_LINE
+   *
+   * PARSE_STATE_FIELD_VALUE      -> PARSE_STATE_CR_CHAR |
+   *                                 PARSE_STATE_BEGIN_OF_LINE
+   *
+   * PARSE_STATE_BEGIN_OF_LINE   -> PARSE_STATE_CR_CHAR |
+   *                                PARSE_STATE_COMMENT |
+   *                                PARSE_STATE_FIELD_NAME |
+   *                                PARSE_STATE_BEGIN_OF_LINE
+   *
+   * Whenever the parser find an empty line or the end-of-file
+   * it dispatches the stacked event.
+   *
+   */
   enum ParserStatus {
     PARSE_STATE_OFF,
     PARSE_STATE_BEGIN_OF_STREAM,
@@ -186,7 +186,7 @@ protected:
   bool mWithCredentials;
   bool mWaitingForOnStopRequest;
 
-  
+  // used while reading the input streams
   nsCOMPtr<nsIUnicodeDecoder> mUnicodeDecoder;
   nsresult mLastConvertionResult;
   nsString mLastFieldName;
@@ -198,10 +198,10 @@ protected:
 
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
-  
-
-
-
+  /**
+   * The notification callbacks the channel had initially.
+   * We want to forward things here as needed.
+   */
   nsCOMPtr<nsIInterfaceRequestor> mNotificationCallbacks;
   nsCOMPtr<nsIChannelEventSink>   mChannelEventSink;
 
@@ -219,19 +219,19 @@ protected:
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;
   nsCOMPtr<nsIChannel> mNewRedirectChannel;
 
-  
-  
-  
-  
-  
-  
+  // Event Source owner information:
+  // - the script file name
+  // - source code line number where the Event Source object was constructed.
+  // - the ID of the inner window where the script lives. Note that this may not
+  //   be the same as the Event Source owner window.
+  // These attributes are used for error reporting.
   nsString mScriptFile;
   PRUint32 mScriptLine;
   PRUint64 mInnerWindowID;
 
 private:
-  nsEventSource(const nsEventSource& x);   
+  nsEventSource(const nsEventSource& x);   // prevent bad usage
   nsEventSource& operator=(const nsEventSource& x);
 };
 
-#endif 
+#endif // nsEventSource_h__

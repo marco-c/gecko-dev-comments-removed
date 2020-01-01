@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/*
+ * Implementation of nsIDOMDOMTokenList specified by HTML5.
+ */
 
 #ifndef nsDOMTokenList_h___
 #define nsDOMTokenList_h___
@@ -14,8 +14,8 @@
 
 class nsAttrValue;
 
-
-
+// nsISupports must be on the primary inheritance chain 
+// because nsDOMSettableTokenList is traversed by nsGenericElement.
 class nsDOMTokenList : public nsIDOMDOMTokenList,
                        public nsWrapperCache
 {
@@ -38,7 +38,7 @@ public:
 
   const nsAttrValue* GetParsedAttr() {
     if (!mElement) {
-      return nsnull;
+      return nullptr;
     }
     return mElement->GetAttrInfo(kNameSpaceID_None, mAttrAtom).mValue;
   }
@@ -54,4 +54,4 @@ protected:
   nsCOMPtr<nsIAtom> mAttrAtom;
 };
 
-#endif 
+#endif // nsDOMTokenList_h___

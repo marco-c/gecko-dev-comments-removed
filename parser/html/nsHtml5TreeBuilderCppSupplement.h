@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sw=2 et tw=78: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsContentErrors.h"
 #include "nsIPresShell.h"
@@ -18,10 +18,10 @@ nsHtml5TreeBuilder::nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink,
                                        nsHtml5TreeOpStage* aStage)
   : scriptingEnabled(false)
   , fragment(false)
-  , contextNode(nsnull)
-  , formPointer(nsnull)
-  , headPointer(nsnull)
-  , mViewSource(nsnull)
+  , contextNode(nullptr)
+  , formPointer(nullptr)
+  , headPointer(nullptr)
+  , mViewSource(nullptr)
   , mOpSink(aOpSink)
   , mHandles(new nsIContent*[NS_HTML5_TREE_BUILDER_HANDLE_ARRAY_LENGTH])
   , mHandlesUsed(0)
@@ -60,10 +60,10 @@ nsHtml5TreeBuilder::createElement(PRInt32 aNamespace, nsIAtom* aName, nsHtml5Htm
                aAttributes,
                content,
                !!mSpeculativeLoadStage);
-  // mSpeculativeLoadStage is non-null only in the off-the-main-thread
-  // tree builder, which handles the network stream
   
-  // Start wall of code for speculative loading and line numbers
+  
+  
+  
   
   if (mSpeculativeLoadStage) {
     switch (aNamespace) {
@@ -99,8 +99,8 @@ nsHtml5TreeBuilder::createElement(PRInt32 aNamespace, nsIAtom* aName, nsHtml5Htm
           }
         } else if (nsHtml5Atoms::link == aName) {
           nsString* rel = aAttributes->getValue(nsHtml5AttributeName::ATTR_REL);
-          // Not splitting on space here is bogus but the old parser didn't even
-          // do a case-insensitive check.
+          
+          
           if (rel && rel->LowerCaseEqualsASCII("stylesheet")) {
             nsString* url = aAttributes->getValue(nsHtml5AttributeName::ATTR_HREF);
             if (url) {
@@ -168,7 +168,7 @@ nsHtml5TreeBuilder::createElement(PRInt32 aNamespace, nsIAtom* aName, nsHtml5Htm
         break;
     }
   } else if (aNamespace != kNameSpaceID_MathML) {
-    // No speculative loader--just line numbers and defer/async check
+    
     if (nsHtml5Atoms::style == aName) {
       nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement();
       NS_ASSERTION(treeOp, "Tree op allocation failed.");
@@ -195,7 +195,7 @@ nsHtml5TreeBuilder::createElement(PRInt32 aNamespace, nsIAtom* aName, nsHtml5Htm
     }
   }
 
-  // End wall of code for speculative loading
+  
   
   return content;
 }
@@ -366,7 +366,7 @@ void
 nsHtml5TreeBuilder::start(bool fragment)
 {
   mCurrentHtmlScriptIsAsyncOrDefer = false;
-  deepTreeSurrogateParent = nsnull;
+  deepTreeSurrogateParent = nullptr;
 #ifdef DEBUG
   mActive = true;
 #endif
@@ -389,8 +389,8 @@ nsHtml5TreeBuilder::appendDoctypeToDocument(nsIAtom* aName, nsString* aPublicId,
   nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement();
   NS_ASSERTION(treeOp, "Tree op allocation failed.");
   treeOp->Init(aName, *aPublicId, *aSystemId);
-  // nsXMLContentSink can flush here, but what's the point?
-  // It can also interrupt here, but we can't.
+  
+  
 }
 
 void
@@ -399,25 +399,25 @@ nsHtml5TreeBuilder::elementPushed(PRInt32 aNamespace, nsIAtom* aName, nsIContent
   NS_ASSERTION(aNamespace == kNameSpaceID_XHTML || aNamespace == kNameSpaceID_SVG || aNamespace == kNameSpaceID_MathML, "Element isn't HTML, SVG or MathML!");
   NS_ASSERTION(aName, "Element doesn't have local name!");
   NS_ASSERTION(aElement, "No element!");
-  /*
-   * The frame constructor uses recursive algorithms, so it can't deal with
-   * arbitrarily deep trees. This is especially a problem on Windows where
-   * the permitted depth of the runtime stack is rather small.
-   *
-   * The following is a protection against author incompetence--not against
-   * malice. There are other ways to make the DOM deep anyway.
-   *
-   * The basic idea is that when the tree builder stack gets too deep,
-   * append operations no longer append to the node that the HTML parsing
-   * algorithm says they should but instead text nodes are append to the last
-   * element that was seen before a magic tree builder stack threshold was
-   * reached and element and comment nodes aren't appended to the DOM at all.
-   *
-   * However, for security reasons, non-child descendant text nodes inside an
-   * SVG script or style element should not become children. Also, non-cell
-   * table elements shouldn't be used as surrogate parents for user experience
-   * reasons.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   if (!deepTreeSurrogateParent && currentPtr >= MAX_REFLOW_DEPTH &&
       !(aName == nsHtml5Atoms::script ||
         aName == nsHtml5Atoms::table ||
@@ -441,9 +441,9 @@ nsHtml5TreeBuilder::elementPushed(PRInt32 aNamespace, nsIAtom* aName, nsIContent
   if (aName == nsHtml5Atoms::input ||
       aName == nsHtml5Atoms::button) {
     if (!formPointer) {
-      // If form inputs don't belong to a form, their state preservation
-      // won't work right without an append notification flush at this
-      // point. See bug 497861.
+      
+      
+      
       mOpQueue.AppendElement()->Init(eTreeOpFlushPendingAppendNotifications);
     }
     mOpQueue.AppendElement()->Init(eTreeOpDoneCreatingElement, aElement);
@@ -464,12 +464,12 @@ nsHtml5TreeBuilder::elementPopped(PRInt32 aNamespace, nsIAtom* aName, nsIContent
   NS_ASSERTION(aName, "Element doesn't have local name!");
   NS_ASSERTION(aElement, "No element!");
   if (deepTreeSurrogateParent && currentPtr <= MAX_REFLOW_DEPTH) {
-    deepTreeSurrogateParent = nsnull;
+    deepTreeSurrogateParent = nullptr;
   }
   if (aNamespace == kNameSpaceID_MathML) {
     return;
   }
-  // we now have only SVG and HTML
+  
   if (aName == nsHtml5Atoms::script) {
     if (mPreventScriptExecution) {
       mOpQueue.AppendElement()->Init(eTreeOpPreventScriptExecution, aElement);
@@ -510,10 +510,10 @@ nsHtml5TreeBuilder::elementPopped(PRInt32 aNamespace, nsIAtom* aName, nsIContent
     }
     return;
   }
-  // we now have only HTML
-  // Some HTML nodes need DoneAddingChildren() called to initialize
-  // properly (e.g. form state restoration).
-  // XXX expose ElementName group here and do switch
+  
+  
+  
+  
   if (aName == nsHtml5Atoms::object ||
       aName == nsHtml5Atoms::applet) {
     nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement();
@@ -524,9 +524,9 @@ nsHtml5TreeBuilder::elementPopped(PRInt32 aNamespace, nsIAtom* aName, nsIContent
   if (aName == nsHtml5Atoms::select || 
       aName == nsHtml5Atoms::textarea) {
     if (!formPointer) {
-      // If form inputs don't belong to a form, their state preservation
-      // won't work right without an append notification flush at this 
-      // point. See bug 497861 and bug 539895.
+      
+      
+      
       nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement();
       NS_ASSERTION(treeOp, "Tree op allocation failed.");
       treeOp->Init(eTreeOpFlushPendingAppendNotifications);
@@ -590,10 +590,10 @@ nsHtml5TreeBuilder::Flush(bool aDiscretionary)
       !(charBufferLen &&
         currentPtr >= 0 &&
         stack[currentPtr]->isFosterParenting())) {
-    // Don't flush text on discretionary flushes if the current element on
-    // the stack is a foster-parenting element and there's pending text,
-    // because flushing in that case would make the tree shape dependent on
-    // where the flush points fall.
+    
+    
+    
+    
     flushCharacters();
   }
   FlushLoads();
@@ -604,7 +604,7 @@ nsHtml5TreeBuilder::Flush(bool aDiscretionary)
     }
     return hasOps;
   }
-  // no op sink: throw away ops
+  
   mOpQueue.Clear();
   return false;
 }
@@ -633,11 +633,11 @@ nsHtml5TreeBuilder::SetDocumentCharset(nsACString& aCharset,
 void
 nsHtml5TreeBuilder::StreamEnded()
 {
-  // The fragment mode calls DidBuildModel from nsHtml5Parser. 
-  // Letting DidBuildModel be called from the executor in the fragment case
-  // confuses the EndLoad logic of nsHTMLDocument, since nsHTMLDocument
-  // thinks it is dealing with document.written content as opposed to 
-  // innerHTML content.
+  
+  
+  
+  
+  
   if (!fragment) {
     nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement();
     NS_ASSERTION(treeOp, "Tree op allocation failed.");
@@ -684,7 +684,7 @@ nsHtml5TreeBuilder::DropHandles()
 void
 nsHtml5TreeBuilder::MarkAsBroken()
 {
-  mOpQueue.Clear(); // Previous ops don't matter anymore
+  mOpQueue.Clear(); 
   mOpQueue.AppendElement()->Init(eTreeOpMarkAsBroken);
 }
 
@@ -695,7 +695,7 @@ nsHtml5TreeBuilder::StartPlainTextViewSource(const nsAutoString& aTitle)
            nsHtml5HtmlAttributes::EMPTY_ATTRIBUTES,
            false);
 
-  // XUL will add the "Source of: " prefix.
+  
   PRUint32 length = aTitle.Length();
   if (length > PR_INT32_MAX) {
     length = PR_INT32_MAX;
@@ -723,7 +723,7 @@ nsHtml5TreeBuilder::StartPlainText()
   needToDropLF = false;
 }
 
-// DocumentModeHandler
+
 void
 nsHtml5TreeBuilder::documentMode(nsHtml5DocumentMode m)
 {
@@ -732,7 +732,7 @@ nsHtml5TreeBuilder::documentMode(nsHtml5DocumentMode m)
   treeOp->Init(m);
 }
 
-// Error reporting
+
 
 void
 nsHtml5TreeBuilder::EnableViewSource(nsHtml5Highlighter* aHighlighter)

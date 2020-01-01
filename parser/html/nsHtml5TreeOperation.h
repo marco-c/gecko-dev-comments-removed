@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
  
 #ifndef nsHtml5TreeOperation_h__
 #define nsHtml5TreeOperation_h__
@@ -17,7 +17,7 @@ enum eHtml5TreeOperation {
 #ifdef DEBUG
   eTreeOpUninitialized,
 #endif
-  // main HTML5 ops
+  
   eTreeOpAppend,
   eTreeOpDetach,
   eTreeOpAppendChildrenToNewParent,
@@ -34,7 +34,7 @@ enum eHtml5TreeOperation {
   eTreeOpAppendComment,
   eTreeOpAppendCommentToDocument,
   eTreeOpAppendDoctypeToDocument,
-  // Gecko-specific on-pop ops
+  
   eTreeOpMarkAsBroken,
   eTreeOpRunScript,
   eTreeOpRunScriptAsyncDefer,
@@ -172,7 +172,7 @@ class nsHtml5TreeOperation {
       NS_PRECONDITION(aNode, "Initialized tree op with null node.");
       mOpCode = eTreeOpRunScript;
       mOne.node = aNode;
-      mTwo.state = nsnull;
+      mTwo.state = nullptr;
     }
     
     inline void Init(PRInt32 aNamespace, 
@@ -191,7 +191,7 @@ class nsHtml5TreeOperation {
       mOne.node = aTarget;
       mTwo.atom = aName;
       if (aAttributes == nsHtml5HtmlAttributes::EMPTY_ATTRIBUTES) {
-        mThree.attributes = nsnull;
+        mThree.attributes = nullptr;
       } else {
         mThree.attributes = aAttributes;
       }
@@ -272,12 +272,12 @@ class nsHtml5TreeOperation {
     inline void Init(nsIContent** aElement,
                      const char* aMsgId,
                      nsIAtom* aAtom) {
-      Init(aElement, aMsgId, aAtom, nsnull);
+      Init(aElement, aMsgId, aAtom, nullptr);
     }
 
     inline void Init(nsIContent** aElement,
                      const char* aMsgId) {
-      Init(aElement, aMsgId, nsnull, nsnull);
+      Init(aElement, aMsgId, nullptr, nullptr);
     }
 
     inline void Init(const char* aMsgId,
@@ -316,7 +316,7 @@ class nsHtml5TreeOperation {
         "Op code must be uninitialized when initializing.");
       NS_PRECONDITION(aNode, "Initialized tree op with null node.");
       NS_PRECONDITION(aClass, "Initialized tree op with null string.");
-      // aClass must be a literal string that does not need freeing
+      
       mOpCode = eTreeOpAddClass;
       mOne.node = aNode;
       mTwo.unicharPtr = (PRUnichar*)aClass;
@@ -328,7 +328,7 @@ class nsHtml5TreeOperation {
         "Op code must be uninitialized when initializing.");
       NS_PRECONDITION(aNode, "Initialized tree op with null node.");
       NS_PRECONDITION(aLineNumber > 0, "Initialized tree op with line number.");
-      // aClass must be a literal string that does not need freeing
+      
       mOpCode = eTreeOpAddLineNumberId;
       mOne.node = aNode;
       mFour.integer = aLineNumber;
@@ -376,9 +376,9 @@ class nsHtml5TreeOperation {
     nsresult AppendToDocument(nsIContent* aNode,
                               nsHtml5TreeOpExecutor* aBuilder);
   
-    // possible optimization:
-    // Make the queue take items the size of pointer and make the op code
-    // decide how many operands it dequeues after it.
+    
+    
+    
     eHtml5TreeOperation mOpCode;
     union {
       nsIContent**                    node;
@@ -393,4 +393,4 @@ class nsHtml5TreeOperation {
     }                   mOne, mTwo, mThree, mFour;
 };
 
-#endif // nsHtml5TreeOperation_h__
+#endif 

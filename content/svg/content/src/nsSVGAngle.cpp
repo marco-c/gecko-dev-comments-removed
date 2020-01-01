@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/Util.h"
 
@@ -11,21 +11,21 @@
 #include "nsSVGUtils.h"
 #include "nsSVGMarkerElement.h"
 #include "nsMathUtils.h"
-#include "nsContentUtils.h" // NS_ENSURE_FINITE
+#include "nsContentUtils.h" 
 #include "nsSMILValue.h"
 #include "SVGOrientSMILType.h"
 #include "mozilla/Attributes.h"
 
 using namespace mozilla;
 
-/**
- * Mutable SVGAngle class for SVGSVGElement.createSVGAngle().
- *
- * Note that this class holds its own nsSVGAngle, which therefore can't be
- * animated. This means SVGMarkerElement::setOrientToAngle(angle) must copy
- * any DOMSVGAngle passed in. Perhaps this is wrong and inconsistent with
- * other parts of SVG, but it's how the code works for now.
- */
+
+
+
+
+
+
+
+
 class DOMSVGAngle MOZ_FINAL : public nsIDOMSVGAngle
 {
 public:
@@ -42,7 +42,7 @@ public:
   NS_IMETHOD SetValue(float aValue)
     {
       NS_ENSURE_FINITE(aValue, NS_ERROR_ILLEGAL_VALUE);
-      mVal.SetBaseValue(aValue, nsnull, false);
+      mVal.SetBaseValue(aValue, nullptr, false);
       return NS_OK;
     }
 
@@ -56,18 +56,18 @@ public:
     }
 
   NS_IMETHOD SetValueAsString(const nsAString& aValue)
-    { return mVal.SetBaseValueString(aValue, nsnull, false); }
+    { return mVal.SetBaseValueString(aValue, nullptr, false); }
   NS_IMETHOD GetValueAsString(nsAString& aValue)
     { mVal.GetBaseValueString(aValue); return NS_OK; }
 
   NS_IMETHOD NewValueSpecifiedUnits(PRUint16 unitType,
                                     float valueInSpecifiedUnits)
     {
-      return mVal.NewValueSpecifiedUnits(unitType, valueInSpecifiedUnits, nsnull);
+      return mVal.NewValueSpecifiedUnits(unitType, valueInSpecifiedUnits, nullptr);
     }
 
   NS_IMETHOD ConvertToSpecifiedUnits(PRUint16 unitType)
-    { return mVal.ConvertToSpecifiedUnits(unitType, nsnull); }
+    { return mVal.ConvertToSpecifiedUnits(unitType, nullptr); }
 
 private:
   nsSVGAngle mVal;
@@ -120,14 +120,14 @@ NS_INTERFACE_MAP_END
 
 static nsIAtom** const unitMap[] =
 {
-  nsnull, /* SVG_ANGLETYPE_UNKNOWN */
-  nsnull, /* SVG_ANGLETYPE_UNSPECIFIED */
+  nullptr, 
+  nullptr, 
   &nsGkAtoms::deg,
   &nsGkAtoms::rad,
   &nsGkAtoms::grad
 };
 
-/* Helper functions */
+
 
 static bool
 IsValidUnitType(PRUint16 unit)
@@ -207,7 +207,7 @@ GetValueFromString(const nsAString &aValueAsString,
   return NS_ERROR_DOM_SYNTAX_ERR;
 }
 
-/* static */ float
+ float
 nsSVGAngle::GetDegreesPerUnit(PRUint8 aUnit)
 {
   switch (aUnit) {
@@ -260,8 +260,8 @@ nsSVGAngle::ConvertToSpecifiedUnits(PRUint16 unitType,
 
   float valueInUserUnits = mBaseVal * GetDegreesPerUnit(mBaseValUnit);
   mBaseValUnit = PRUint8(unitType);
-  // Setting aDoSetAttr to false here will ensure we don't call
-  // Will/DidChangeAngle a second time (and dispatch duplicate notifications).
+  
+  
   SetBaseValue(valueInUserUnits, aSVGElement, false);
 
   if (aSVGElement) {
@@ -325,7 +325,7 @@ nsSVGAngle::ToDOMAnimVal(nsIDOMSVGAngle **aResult, nsSVGElement *aSVGElement)
   return NS_OK;
 }
 
-/* Implementation */
+
 
 nsresult
 nsSVGAngle::SetBaseValueString(const nsAString &aValueAsString,
@@ -441,15 +441,15 @@ nsSVGAngle::ToSMILAttr(nsSVGElement *aSVGElement)
     nsSVGMarkerElement *marker = static_cast<nsSVGMarkerElement*>(aSVGElement);
     return new SMILOrient(marker->GetOrientType(), this, aSVGElement);
   }
-  // SMILOrient would not be useful for general angle attributes (also,
-  // "orient" is the only animatable <angle>-valued attribute in SVG 1.1).
+  
+  
   NS_NOTREACHED("Trying to animate unknown angle attribute.");
-  return nsnull;
+  return nullptr;
 }
 
 nsresult
 nsSVGAngle::SMILOrient::ValueFromString(const nsAString& aStr,
-                                        const nsISMILAnimationElement* /*aSrcElement*/,
+                                        const nsISMILAnimationElement* ,
                                         nsSMILValue& aValue,
                                         bool& aPreventCachingOfSandwich) const
 {

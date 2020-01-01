@@ -1,11 +1,11 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+/*
+ * Implementation of DOM Core's nsIDOMDocumentFragment.
+ */
 
 #include "nsISupports.h"
 #include "nsIContent.h"
@@ -23,25 +23,25 @@ class nsDocumentFragment : public nsGenericElement,
                            public nsIDOMDocumentFragment
 {
 public:
-  
+  // nsISupports
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // interface nsIDOMNode
   NS_FORWARD_NSIDOMNODE(nsGenericElement::)
 
-  
-  
+  // interface nsIDOMDocumentFragment
+  // NS_DECL_NSIDOCUMENTFRAGMENT  Empty
 
   nsDocumentFragment(already_AddRefed<nsINodeInfo> aNodeInfo);
   virtual ~nsDocumentFragment()
   {
   }
 
-  
+  // nsIContent
   nsresult SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
                    const nsAString& aValue, bool aNotify)
   {
-    return SetAttr(aNameSpaceID, aName, nsnull, aValue, aNotify);
+    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
   }
   virtual nsresult SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
                            nsIAtom* aPrefix, const nsAString& aValue,
@@ -61,7 +61,7 @@ public:
   }
   virtual const nsAttrName* GetAttrNameAt(PRUint32 aIndex) const
   {
-    return nsnull;
+    return nullptr;
   }
 
   virtual bool IsNodeOfType(PRUint32 aFlags) const;
@@ -85,7 +85,7 @@ NS_NewDocumentFragment(nsIDOMDocumentFragment** aInstancePtrResult,
 
   nsCOMPtr<nsINodeInfo> nodeInfo;
   nodeInfo = aNodeInfoManager->GetNodeInfo(nsGkAtoms::documentFragmentNodeName,
-                                           nsnull, kNameSpaceID_None,
+                                           nullptr, kNameSpaceID_None,
                                            nsIDOMNode::DOCUMENT_FRAGMENT_NODE);
   NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
 
@@ -114,18 +114,18 @@ nsDocumentFragment::IsNodeOfType(PRUint32 aFlags) const
 nsIAtom*
 nsDocumentFragment::DoGetID() const
 {
-  return nsnull;  
+  return nullptr;  
 }
 
 nsIAtom*
 nsDocumentFragment::GetIDAttributeName() const
 {
-  return nsnull;
+  return nullptr;
 }
 
 DOMCI_NODE_DATA(DocumentFragment, nsDocumentFragment)
 
-
+// QueryInterface implementation for nsDocumentFragment
 NS_INTERFACE_MAP_BEGIN(nsDocumentFragment)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(nsDocumentFragment)
@@ -138,10 +138,10 @@ NS_INTERFACE_MAP_BEGIN(nsDocumentFragment)
                                  new nsNodeSupportsWeakRefTearoff(this))
   NS_INTERFACE_MAP_ENTRY_TEAROFF(nsIDOMNodeSelector,
                                  new nsNodeSelectorTearoff(this))
-  
-  
-  
-  
+  // nsNodeSH::PreCreate() depends on the identity pointer being the
+  // same as nsINode (which nsIContent inherits), so if you change the
+  // below line, make sure nsNodeSH::PreCreate() still does the right
+  // thing!
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIContent)
   NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(DocumentFragment)
 NS_INTERFACE_MAP_END

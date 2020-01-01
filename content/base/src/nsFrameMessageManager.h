@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef nsFrameMessageManager_h__
 #define nsFrameMessageManager_h__
 
@@ -69,10 +69,10 @@ public:
     NS_ASSERTION(mContext || (aChrome && !aParentManager) || aProcessManager,
                  "Should have mContext in non-global/non-process manager!");
     NS_ASSERTION(aChrome || !aParentManager, "Should not set parent manager!");
-    
-    
-    
-    
+    // This is a bit hackish. When parent manager is global, we want
+    // to attach the window message manager to it immediately.
+    // Is it just the frame message manager which waits until the
+    // content process is running.
     if (mParentManager && (mCallbackData || IsWindowLevel())) {
       mParentManager->AddChildManager(this);
     }
@@ -86,15 +86,15 @@ public:
     }
     if (mIsProcessManager) {
       if (this == sParentProcessManager) {
-        sParentProcessManager = nsnull;
+        sParentProcessManager = nullptr;
       }
       if (this == sChildProcessManager) {
-        sChildProcessManager = nsnull;
+        sChildProcessManager = nullptr;
         delete sPendingSameProcessAsyncMessages;
-        sPendingSameProcessAsyncMessages = nsnull;
+        sPendingSameProcessAsyncMessages = nullptr;
       }
       if (this == sSameProcessParentManager) {
-        sSameProcessParentManager = nsnull;
+        sSameProcessParentManager = nullptr;
       }
     }
   }
@@ -115,7 +115,7 @@ public:
                           bool aSync, const nsAString& aJSON,
                           JSObject* aObjectsArray,
                           InfallibleTArray<nsString>* aJSONRetVal,
-                          JSContext* aContext = nsnull);
+                          JSContext* aContext = nullptr);
   void AddChildManager(nsFrameMessageManager* aManager,
                        bool aLoadScripts = true);
   void RemoveChildManager(nsFrameMessageManager* aManager)
@@ -197,13 +197,13 @@ public:
   static void Shutdown();
 protected:
   friend class nsFrameScriptCx;
-  nsFrameScriptExecutor() : mCx(nsnull), mCxStackRefCnt(0),
+  nsFrameScriptExecutor() : mCx(nullptr), mCxStackRefCnt(0),
                             mDelayedCxDestroy(false)
   { MOZ_COUNT_CTOR(nsFrameScriptExecutor); }
   ~nsFrameScriptExecutor()
   { MOZ_COUNT_DTOR(nsFrameScriptExecutor); }
   void DidCreateCx();
-  
+  // Call this when you want to destroy mCx.
   void DestroyCx();
   void LoadFrameScriptInternal(const nsAString& aURL);
   bool InitTabChildGlobalInternal(nsISupports* aScope);

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsScriptElement.h"
 #include "mozilla/dom/Element.h"
@@ -31,8 +31,8 @@ nsScriptElement::ScriptAvailable(nsresult aResult,
     return nsContentUtils::DispatchTrustedEvent(cont->OwnerDoc(),
                                                 cont,
                                                 NS_LITERAL_STRING("error"),
-                                                false ,
-                                                false );
+                                                false /* bubbles */,
+                                                false /* cancelable */);
   }
 
   return NS_OK;
@@ -55,11 +55,11 @@ nsScriptElement::ScriptEvaluated(nsresult aResult,
     PRUint32 type = NS_SUCCEEDED(aResult) ? NS_LOAD : NS_LOAD_ERROR;
     nsEvent event(true, type);
     if (type == NS_LOAD) {
-      
+      // Load event doesn't bubble.
       event.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
     }
 
-    nsEventDispatcher::Dispatch(cont, presContext, &event, nsnull, &status);
+    nsEventDispatcher::Dispatch(cont, presContext, &event, nullptr, &status);
   }
 
   return rv;
@@ -126,7 +126,7 @@ nsScriptElement::MaybeProcessScript()
     if (sink) {
       nsCOMPtr<nsIDocument> parserDoc = do_QueryInterface(sink->GetTarget());
       if (ownerDoc != parserDoc) {
-        
+        // Willful violation of HTML5 as of 2010-12-01
         return false;
       }
     }
