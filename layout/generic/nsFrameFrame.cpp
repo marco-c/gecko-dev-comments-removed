@@ -406,6 +406,9 @@ nsSubDocumentFrame::Reflow(nsPresContext*          aPresContext,
   
   CheckInvalidateSizeChange(aPresContext, aDesiredSize, aReflowState);
 
+  FinishAndStoreOverflow(&aDesiredSize);
+
+  
   
   nsRect rect(nsPoint(0, 0), GetSize());
   Invalidate(rect, PR_FALSE);
