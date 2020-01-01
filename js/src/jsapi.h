@@ -2730,53 +2730,56 @@ JS_StringToVersion(const char *string);
                                                    option supported for the
                                                    XUL preprocessor and kindred
                                                    beasts. */
-#define JSOPTION_ALLOW_XML      JS_BIT(6)       /* enable E4X syntax (deprecated) */
-#define JSOPTION_MOAR_XML       JS_BIT(7)       /* enable E4X even in versions
-                                                   that don't normally get it;
-                                                   parse <!-- --> as a token,
-                                                   not backward compatible with
-                                                   the comment-hiding hack used
-                                                   in HTML script tags. */
+#define JSOPTION_ALLOW_XML      JS_BIT(6)       /* enable E4X syntax (deprecated)
+                                                   and define the E4X-related
+                                                   globals: XML, XMLList,
+                                                   Namespace, etc. */
+#define JSOPTION_MOAR_XML       JS_BIT(7)       
+
+
+
+
+
 #define JSOPTION_DONT_REPORT_UNCAUGHT                                   \
-                                JS_BIT(8)       
+                                JS_BIT(8)       /* When returning from the
+                                                   outermost API call, prevent
+                                                   uncaught exceptions from
+                                                   being converted to error
+                                                   reports */
+
+#define JSOPTION_RELIMIT        JS_BIT(9)       /* Throw exception on any
+                                                   regular expression which
+                                                   backtracks more than n^3
+                                                   times, where n is length
+                                                   of the input string */
 
 
 
 
+#define JSOPTION_NO_SCRIPT_RVAL JS_BIT(12)      /* A promise to the compiler
+                                                   that a null rval out-param
+                                                   will be passed to each call
+                                                   to JS_ExecuteScript. */
+#define JSOPTION_UNROOTED_GLOBAL JS_BIT(13)     /* The GC will not root the
+                                                   contexts' global objects
+                                                   (see JS_GetGlobalObject),
+                                                   leaving that up to the
+                                                   embedding. */
 
-#define JSOPTION_RELIMIT        JS_BIT(9)       
-
-
-
-
-
-
-
-
-#define JSOPTION_NO_SCRIPT_RVAL JS_BIT(12)      
-
-
-
-#define JSOPTION_UNROOTED_GLOBAL JS_BIT(13)     
-
-
-
-
-
-#define JSOPTION_METHODJIT      JS_BIT(14)      
+#define JSOPTION_METHODJIT      JS_BIT(14)      /* Whole-method JIT. */
 
 
 
 #define JSOPTION_METHODJIT_ALWAYS \
-                                JS_BIT(16)      
-
+                                JS_BIT(16)      /* Always whole-method JIT,
+                                                   don't tune at run-time. */
 #define JSOPTION_PCCOUNT        JS_BIT(17)      
 
-#define JSOPTION_TYPE_INFERENCE JS_BIT(18)      
-#define JSOPTION_STRICT_MODE    JS_BIT(19)      
-
-
-
+#define JSOPTION_TYPE_INFERENCE JS_BIT(18)      /* Perform type inference. */
+#define JSOPTION_STRICT_MODE    JS_BIT(19)      /* Provides a way to force
+                                                   strict mode for all code
+                                                   without requiring
+                                                   "use strict" annotations. */
 
 
 #define JSCOMPILEOPTION_MASK    (JSOPTION_ALLOW_XML | JSOPTION_MOAR_XML)
