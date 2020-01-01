@@ -5548,7 +5548,7 @@ struct cs_info * get_current_cs(const char * es) {
   ccs = new cs_info[256];
 
   for (unsigned int i = 0; i <= 0xff; ++i) {
-    PRBool success = PR_FALSE;
+    bool success = false;
     
     
     

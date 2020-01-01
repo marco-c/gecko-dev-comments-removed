@@ -1,56 +1,56 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim:cindent:ts=2:et:sw=2:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK *****
- *
- * This Original Code has been modified by IBM Corporation. Modifications made by IBM 
- * described herein are Copyright (c) International Business Machines Corporation, 2000.
- * Modifications to Mozilla code or documentation identified per MPL Section 3.3
- *
- * Date             Modified by     Description of modification
- * 04/20/2000       IBM Corp.      OS/2 VisualAge build.
- */
 
-/**
- * nsPropertyTable allows a set of arbitrary key/value pairs to be stored
- * for any number of nodes, in a global hashtable rather than on the nodes
- * themselves.  Nodes can be any type of object; the hashtable keys are
- * nsIAtom pointers, and the values are void pointers.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsPropertyTable.h"
 #include "pldhash.h"
@@ -62,34 +62,34 @@ struct PropertyListMapEntry : public PLDHashEntryHdr {
   void        *value;
 };
 
-//----------------------------------------------------------------------
+
 
 class nsPropertyTable::PropertyList {
 public:
   PropertyList(nsIAtom*           aName,
                NSPropertyDtorFunc aDtorFunc,
                void*              aDtorData,
-               PRBool             aTransfer) NS_HIDDEN;
+               bool               aTransfer) NS_HIDDEN;
   ~PropertyList() NS_HIDDEN;
 
-  // Removes the property associated with the given object, and destroys
-  // the property value
-  NS_HIDDEN_(PRBool) DeletePropertyFor(nsPropertyOwner aObject);
+  
+  
+  NS_HIDDEN_(bool) DeletePropertyFor(nsPropertyOwner aObject);
 
-  // Destroy all remaining properties (without removing them)
+  
   NS_HIDDEN_(void) Destroy();
 
-  NS_HIDDEN_(PRBool) Equals(nsIAtom *aPropertyName)
+  NS_HIDDEN_(bool) Equals(nsIAtom *aPropertyName)
   {
     return mName == aPropertyName;
   }
 
-  nsCOMPtr<nsIAtom>  mName;           // property name
-  PLDHashTable       mObjectValueMap; // map of object/value pairs
-  NSPropertyDtorFunc mDtorFunc;       // property specific value dtor function
-  void*              mDtorData;       // pointer to pass to dtor
-  PRPackedBool       mTransfer;       // whether to transfer in
-                                      // TransferOrDeleteAllPropertiesFor
+  nsCOMPtr<nsIAtom>  mName;           
+  PLDHashTable       mObjectValueMap; 
+  NSPropertyDtorFunc mDtorFunc;       
+  void*              mDtorData;       
+  bool               mTransfer;       
+                                      
   
   PropertyList*      mNext;
 };
@@ -164,7 +164,7 @@ nsPropertyTable::Enumerate(nsPropertyOwner aObject,
 void*
 nsPropertyTable::GetPropertyInternal(nsPropertyOwner aObject,
                                      nsIAtom    *aPropertyName,
-                                     PRBool      aRemove,
+                                     bool        aRemove,
                                      nsresult   *aResult)
 {
   NS_PRECONDITION(aPropertyName && aObject, "unexpected null param");
@@ -179,7 +179,7 @@ nsPropertyTable::GetPropertyInternal(nsPropertyOwner aObject,
     if (PL_DHASH_ENTRY_IS_BUSY(entry)) {
       propValue = entry->value;
       if (aRemove) {
-        // don't call propertyList->mDtorFunc.  That's the caller's job now.
+        
         PL_DHashTableRawRemove(&propertyList->mObjectValueMap, entry);
       }
       rv = NS_OK;
@@ -198,7 +198,7 @@ nsPropertyTable::SetPropertyInternal(nsPropertyOwner     aObject,
                                      void               *aPropertyValue,
                                      NSPropertyDtorFunc  aPropDtorFunc,
                                      void               *aPropDtorData,
-                                     PRBool              aTransfer,
+                                     bool                aTransfer,
                                      void              **aOldValue)
 {
   NS_PRECONDITION(aPropertyName && aObject, "unexpected null param");
@@ -206,7 +206,7 @@ nsPropertyTable::SetPropertyInternal(nsPropertyOwner     aObject,
   PropertyList* propertyList = GetPropertyListFor(aPropertyName);
 
   if (propertyList) {
-    // Make sure the dtor function and data and the transfer flag match
+    
     if (aPropDtorFunc != propertyList->mDtorFunc ||
         aPropDtorData != propertyList->mDtorData ||
         aTransfer != propertyList->mTransfer) {
@@ -226,15 +226,15 @@ nsPropertyTable::SetPropertyInternal(nsPropertyOwner     aObject,
     mPropertyList = propertyList;
   }
 
-  // The current property value (if there is one) is replaced and the current
-  // value is destroyed
+  
+  
   nsresult result = NS_OK;
   PropertyListMapEntry *entry = static_cast<PropertyListMapEntry*>
                                            (PL_DHashTableOperate(&propertyList->mObjectValueMap, aObject, PL_DHASH_ADD));
   if (!entry)
     return NS_ERROR_OUT_OF_MEMORY;
-  // A NULL entry->key is the sign that the entry has just been allocated
-  // for us.  If it's non-NULL then we have an existing entry.
+  
+  
   if (entry->key) {
     if (aOldValue)
       *aOldValue = entry->value;
@@ -281,12 +281,12 @@ nsPropertyTable::GetPropertyListFor(nsIAtom* aPropertyName) const
   return result;
 }
 
-//----------------------------------------------------------------------
+
     
 nsPropertyTable::PropertyList::PropertyList(nsIAtom            *aName,
                                             NSPropertyDtorFunc  aDtorFunc,
                                             void               *aDtorData,
-                                            PRBool              aTransfer)
+                                            bool                aTransfer)
   : mName(aName),
     mDtorFunc(aDtorFunc),
     mDtorData(aDtorData),
@@ -319,13 +319,13 @@ DestroyPropertyEnumerator(PLDHashTable *table, PLDHashEntryHdr *hdr,
 void
 nsPropertyTable::PropertyList::Destroy()
 {
-  // Enumerate any remaining object/value pairs and destroy the value object
+  
   if (mDtorFunc)
     PL_DHashTableEnumerate(&mObjectValueMap, DestroyPropertyEnumerator,
                            nsnull);
 }
 
-PRBool
+bool
 nsPropertyTable::PropertyList::DeletePropertyFor(nsPropertyOwner aObject)
 {
   PropertyListMapEntry *entry = static_cast<PropertyListMapEntry*>
@@ -342,7 +342,7 @@ nsPropertyTable::PropertyList::DeletePropertyFor(nsPropertyOwner aObject)
   return PR_TRUE;
 }
 
-/* static */
+
 void
 nsPropertyTable::SupportsDtorFunc(void *aObject, nsIAtom *aPropertyName,
                                   void *aPropertyValue, void *aData)

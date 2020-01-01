@@ -1,44 +1,44 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Peter Van der Beken <peterv@netscape.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-/*
- * A service that provides methods for synchronously loading a DOM in various ways.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsSyncLoadService.h"
 #include "nsCOMPtr.h"
@@ -58,9 +58,9 @@
 #include "nsStreamUtils.h"
 #include "nsCrossSiteListenerProxy.h"
 
-/**
- * This class manages loading a single XML document
- */
+
+
+
 
 class nsSyncLoader : public nsIStreamListener,
                      public nsIChannelEventSink,
@@ -74,7 +74,7 @@ public:
     NS_DECL_ISUPPORTS
 
     nsresult LoadDocument(nsIChannel* aChannel, nsIPrincipal *aLoaderPrincipal,
-                          PRBool aChannelIsSync, PRBool aForceToXML,
+                          bool aChannelIsSync, bool aForceToXML,
                           nsIDOMDocument** aResult);
 
     NS_FORWARD_NSISTREAMLISTENER(mListener->)
@@ -90,7 +90,7 @@ private:
 
     nsCOMPtr<nsIChannel> mChannel;
     nsCOMPtr<nsIStreamListener> mListener;
-    PRPackedBool mLoading;
+    bool mLoading;
     nsresult mAsyncLoadStatus;
 };
 
@@ -158,8 +158,8 @@ NS_IMPL_ISUPPORTS5(nsSyncLoader,
 nsresult
 nsSyncLoader::LoadDocument(nsIChannel* aChannel,
                            nsIPrincipal *aLoaderPrincipal,
-                           PRBool aChannelIsSync,
-                           PRBool aForceToXML,
+                           bool aChannelIsSync,
+                           bool aForceToXML,
                            nsIDOMDocument **aResult)
 {
     NS_ENSURE_ARG_POINTER(aResult);
@@ -182,23 +182,23 @@ nsSyncLoader::LoadDocument(nsIChannel* aChannel,
         }
     }
 
-    // Hook us up to listen to redirects and the like.
-    // Do this before setting up the cross-site proxy since
-    // that installs its own proxies.
+    
+    
+    
     mChannel->SetNotificationCallbacks(this);
 
-    // Get the loadgroup of the channel
+    
     nsCOMPtr<nsILoadGroup> loadGroup;
     rv = aChannel->GetLoadGroup(getter_AddRefs(loadGroup));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Create document
+    
     nsCOMPtr<nsIDocument> document;
     rv = NS_NewXMLDocument(getter_AddRefs(document));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Start the document load. Do this before we attach the load listener
-    // since we reset the document which drops all observers.
+    
+    
     nsCOMPtr<nsIStreamListener> listener;
     rv = document->StartDocumentLoad(kLoadAsData, mChannel, 
                                      loadGroup, nsnull, 
@@ -227,14 +227,14 @@ nsSyncLoader::LoadDocument(nsIChannel* aChannel,
 
     http = do_QueryInterface(mChannel);
     if (NS_SUCCEEDED(rv) && http) {
-        PRBool succeeded;
+        bool succeeded;
         if (NS_FAILED(http->GetRequestSucceeded(&succeeded)) || !succeeded) {
             rv = NS_ERROR_FAILURE;
         }
     }
     mChannel = nsnull;
 
-    // check that the load succeeded
+    
     NS_ENSURE_SUCCESS(rv, rv);
 
     NS_ENSURE_TRUE(document->GetRootElement(), NS_ERROR_FAILURE);
@@ -249,15 +249,15 @@ nsSyncLoader::PushAsyncStream(nsIStreamListener* aListener)
 
     mAsyncLoadStatus = NS_OK;
 
-    // Start reading from the channel
+    
     nsresult rv = mChannel->AsyncOpen(this, nsnull);
 
     if (NS_SUCCEEDED(rv)) {
-        // process events until we're finished.
+        
         mLoading = PR_TRUE;
         nsIThread *thread = NS_GetCurrentThread();
         while (mLoading && NS_SUCCEEDED(rv)) {
-            PRBool processedEvent; 
+            bool processedEvent; 
             rv = thread->ProcessNextEvent(PR_TRUE, &processedEvent);
             if (NS_SUCCEEDED(rv) && !processedEvent)
                 rv = NS_ERROR_UNEXPECTED;
@@ -268,8 +268,8 @@ nsSyncLoader::PushAsyncStream(nsIStreamListener* aListener)
 
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Note that if AsyncOpen failed that's ok -- the only caller of
-    // this method nulls out mChannel immediately after we return.
+    
+    
 
     return mAsyncLoadStatus;
 }
@@ -331,10 +331,10 @@ nsSyncLoader::GetInterface(const nsIID & aIID,
     return QueryInterface(aIID, aResult);
 }
 
-/* static */
+
 nsresult
 nsSyncLoadService::LoadDocument(nsIURI *aURI, nsIPrincipal *aLoaderPrincipal,
-                                nsILoadGroup *aLoadGroup, PRBool aForceToXML,
+                                nsILoadGroup *aLoadGroup, bool aForceToXML,
                                 nsIDOMDocument** aResult)
 {
     nsCOMPtr<nsIChannel> channel;
@@ -346,8 +346,8 @@ nsSyncLoadService::LoadDocument(nsIURI *aURI, nsIPrincipal *aLoaderPrincipal,
         channel->SetContentType(NS_LITERAL_CSTRING("text/xml"));
     }
 
-    PRBool isChrome = PR_FALSE, isResource = PR_FALSE;
-    PRBool isSync = (NS_SUCCEEDED(aURI->SchemeIs("chrome", &isChrome)) &&
+    bool isChrome = false, isResource = false;
+    bool isSync = (NS_SUCCEEDED(aURI->SchemeIs("chrome", &isChrome)) &&
                      isChrome) ||
                     (NS_SUCCEEDED(aURI->SchemeIs("resource", &isResource)) &&
                      isResource);
@@ -358,13 +358,13 @@ nsSyncLoadService::LoadDocument(nsIURI *aURI, nsIPrincipal *aLoaderPrincipal,
 
 }
 
-/* static */
+
 nsresult
 nsSyncLoadService::PushSyncStreamToListener(nsIInputStream* aIn,
                                             nsIStreamListener* aListener,
                                             nsIChannel* aChannel)
 {
-    // Set up buffering stream
+    
     nsresult rv;
     nsCOMPtr<nsIInputStream> bufferedStream;
     if (!NS_InputStreamIsBuffered(aIn)) {
@@ -382,7 +382,7 @@ nsSyncLoadService::PushSyncStreamToListener(nsIInputStream* aIn,
         aIn = bufferedStream;
     }
 
-    // Load
+    
     rv = aListener->OnStartRequest(aChannel, nsnull);
     if (NS_SUCCEEDED(rv)) {
         PRUint32 sourceOffset = 0;
@@ -391,7 +391,7 @@ nsSyncLoadService::PushSyncStreamToListener(nsIInputStream* aIn,
             rv = aIn->Available(&readCount);
             if (NS_FAILED(rv) || !readCount) {
                 if (rv == NS_BASE_STREAM_CLOSED) {
-                    // End of file, but not an error
+                    
                     rv = NS_OK;
                 }
                 break;

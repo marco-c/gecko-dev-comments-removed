@@ -1,38 +1,38 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsFileDataProtocolHandler.h"
 #include "nsSimpleURI.h"
@@ -49,8 +49,8 @@
 #include "nsIObjectOutputStream.h"
 #include "nsIProgrammingLanguage.h"
 
-// -----------------------------------------------------------------------
-// Hash table
+
+
 struct FileDataInfo
 {
   nsCOMPtr<nsIDOMBlob> mFile;
@@ -121,8 +121,8 @@ GetFileDataInfo(const nsACString& aUri)
   return res;
 }
 
-// -----------------------------------------------------------------------
-// Uri
+
+
 
 #define NS_FILEDATAURI_CID \
 { 0xf5475c51, 0x59a7, 0x4757, \
@@ -139,7 +139,7 @@ public:
   {}
   virtual ~nsFileDataURI() {}
 
-  // For use only from deserialization
+  
   nsFileDataURI() : nsSimpleURI() {}
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -147,15 +147,15 @@ public:
   NS_DECL_NSISERIALIZABLE
   NS_DECL_NSICLASSINFO
 
-  // Override CloneInternal() and EqualsInternal()
+  
   virtual nsresult CloneInternal(RefHandlingEnum aRefHandlingMode,
                                  nsIURI** aClone);
   virtual nsresult EqualsInternal(nsIURI* aOther,
                                   RefHandlingEnum aRefHandlingMode,
-                                  PRBool* aResult);
+                                  bool* aResult);
 
-  // Override StartClone to hand back a nsFileDataURI
-  virtual nsSimpleURI* StartClone(RefHandlingEnum /* unused */)
+  
+  virtual nsSimpleURI* StartClone(RefHandlingEnum )
   { return new nsFileDataURI(); }
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
@@ -172,16 +172,16 @@ NS_INTERFACE_MAP_BEGIN(nsFileDataURI)
   if (aIID.Equals(kFILEDATAURICID))
     foundInterface = static_cast<nsIURI*>(this);
   else if (aIID.Equals(kThisSimpleURIImplementationCID)) {
-    // Need to return explicitly here, because if we just set foundInterface
-    // to null the NS_INTERFACE_MAP_END_INHERITING will end up calling into
-    // nsSimplURI::QueryInterface and finding something for this CID.
+    
+    
+    
     *aInstancePtr = nsnull;
     return NS_NOINTERFACE;
   }
   else
 NS_INTERFACE_MAP_END_INHERITING(nsSimpleURI)
 
-// nsIURIWithPrincipal methods:
+
 
 NS_IMETHODIMP
 nsFileDataURI::GetPrincipal(nsIPrincipal** aPrincipal)
@@ -204,7 +204,7 @@ nsFileDataURI::GetPrincipalUri(nsIURI** aUri)
   return NS_OK;
 }
 
-// nsISerializable methods:
+
 
 NS_IMETHODIMP
 nsFileDataURI::Read(nsIObjectInputStream* aStream)
@@ -226,7 +226,7 @@ nsFileDataURI::Write(nsIObjectOutputStream* aStream)
                                         PR_TRUE);
 }
 
-// nsIURI methods:
+
 nsresult
 nsFileDataURI::CloneInternal(nsSimpleURI::RefHandlingEnum aRefHandlingMode,
                              nsIURI** aClone)
@@ -251,10 +251,10 @@ nsFileDataURI::CloneInternal(nsSimpleURI::RefHandlingEnum aRefHandlingMode,
   return NS_OK;
 }
 
-/* virtual */ nsresult
+ nsresult
 nsFileDataURI::EqualsInternal(nsIURI* aOther,
                               nsSimpleURI::RefHandlingEnum aRefHandlingMode,
-                              PRBool* aResult)
+                              bool* aResult)
 {
   if (!aOther) {
     *aResult = PR_FALSE;
@@ -268,23 +268,23 @@ nsFileDataURI::EqualsInternal(nsIURI* aOther,
     return NS_OK;
   }
 
-  // Compare the member data that our base class knows about.
+  
   if (!nsSimpleURI::EqualsInternal(otherFileDataUri, aRefHandlingMode)) {
     *aResult = PR_FALSE;
     return NS_OK;
    }
 
-  // Compare the piece of additional member data that we add to base class.
+  
   if (mPrincipal && otherFileDataUri->mPrincipal) {
-    // Both of us have mPrincipals. Compare them.
+    
     return mPrincipal->Equals(otherFileDataUri->mPrincipal, aResult);
   }
-  // else, at least one of us lacks a principal; only equal if *both* lack it.
+  
   *aResult = (!mPrincipal && !otherFileDataUri->mPrincipal);
   return NS_OK;
 }
 
-// nsIClassInfo methods:
+
 NS_IMETHODIMP 
 nsFileDataURI::GetInterfaces(PRUint32 *count, nsIID * **array)
 {
@@ -303,8 +303,8 @@ nsFileDataURI::GetHelperForLanguage(PRUint32 language, nsISupports **_retval)
 NS_IMETHODIMP 
 nsFileDataURI::GetContractID(char * *aContractID)
 {
-  // Make sure to modify any subclasses as needed if this ever
-  // changes.
+  
+  
   *aContractID = nsnull;
   return NS_OK;
 }
@@ -319,8 +319,8 @@ nsFileDataURI::GetClassDescription(char * *aClassDescription)
 NS_IMETHODIMP 
 nsFileDataURI::GetClassID(nsCID * *aClassID)
 {
-  // Make sure to modify any subclasses as needed if this ever
-  // changes to not call the virtual GetClassIDNoAlloc.
+  
+  
   *aClassID = (nsCID*) nsMemory::Alloc(sizeof(nsCID));
   NS_ENSURE_TRUE(*aClassID, NS_ERROR_OUT_OF_MEMORY);
 
@@ -348,8 +348,8 @@ nsFileDataURI::GetClassIDNoAlloc(nsCID *aClassIDNoAlloc)
   return NS_OK;
 }
 
-// -----------------------------------------------------------------------
-// Protocol handler
+
+
 
 NS_IMPL_ISUPPORTS1(nsFileDataProtocolHandler, nsIProtocolHandler)
 
@@ -449,9 +449,9 @@ nsFileDataProtocolHandler::NewChannel(nsIURI* uri, nsIChannel* *result)
 
 NS_IMETHODIMP 
 nsFileDataProtocolHandler::AllowPort(PRInt32 port, const char *scheme,
-                                     PRBool *_retval)
+                                     bool *_retval)
 {
-    // don't override anything.  
+    
     *_retval = PR_FALSE;
     return NS_OK;
 }
