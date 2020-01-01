@@ -1,46 +1,46 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Jerry.Kirk@Nexwarecorp.com
+ *   Chris Seawood <cls@seawood.org>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * This module is supposed to abstract signal handling away from the other
+ * platforms that do not support it.
+ */
 
 #include "nsSigHandlers.h"
 
@@ -61,7 +61,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
-#include <stdlib.h> 
+#include <stdlib.h> // atoi
 #include <ucontext.h>
 #endif
 
@@ -76,7 +76,7 @@
 #include "nsCOMPtr.h"
 #include "nsIServiceManager.h"
 #include "nsIAppStartup.h"
-#include "nsXPFEComponentsCID.h"
+#include "nsToolkitCompsCID.h"
 #endif
 
 #ifdef MOZ_WIDGET_PHOTON
@@ -87,8 +87,8 @@ static char _progname[1024] = "huh?";
 static unsigned int _gdb_sleep_duration = 300;
 
 #ifdef MOZ_IPC
-
-
+// NB: keep me up to date with the same variable in
+// ipc/chromium/chrome/common/ipc_channel_posix.cc
 static const int kClientChannelFd = 3;
 #endif
 
@@ -100,7 +100,7 @@ static const int kClientChannelFd = 3;
 #ifdef MOZ_WIDGET_PHOTON
 void abnormal_exit_handler(int signum)
 {
-  
+  /* Free any shared memory that has been allocated */
   PgShmemCleanup();
 
 #if defined(DEBUG)
@@ -178,7 +178,7 @@ child_ah_crap_handler(int signum)
 }
 #endif
 
-#endif 
+#endif // CRAWL_STACK_ON_SIGSEGV
 
 #ifdef XP_BEOS
 void beos_signal_handler(int signum) {
@@ -188,20 +188,20 @@ void beos_signal_handler(int signum) {
 	nsresult rv;
 	nsCOMPtr<nsIAppStartup> appStartup(do_GetService(NS_APPSTARTUP_CONTRACTID, &rv));
 	if (NS_FAILED(rv)) {
-		
+		// Failed to get the appstartup service so shutdown the hard way
 #ifdef DEBUG
 		fprintf(stderr, "beos_signal_handler: appShell->do_GetService() failed\n");
 #endif
 		exit(13);
 	}
 
-	
+	// Exit the appshell so that the app can shutdown normally
 	appStartup->Quit(nsIAppStartup::eAttemptQuit);
 }
 #endif
 
 #ifdef MOZ_WIDGET_GTK2
-
+// Need this include for version test below.
 #include <glib.h>
 #endif
 
@@ -215,7 +215,7 @@ my_glib_log_func(const gchar *log_domain, GLogLevelFlags log_level,
                  const gchar *message, gpointer user_data);
 }
 
- void
+/* static */ void
 my_glib_log_func(const gchar *log_domain, GLogLevelFlags log_level,
                  const gchar *message, gpointer user_data)
 {
@@ -232,8 +232,8 @@ my_glib_log_func(const gchar *log_domain, GLogLevelFlags log_level,
 
 static void fpehandler(int signum, siginfo_t *si, void *context)
 {
-  
-  
+  /* Integer divide by zero or integer overflow. */
+  /* Note: FPE_INTOVF is ignored on Intel, PowerPC and SPARC systems. */
   if (si->si_code == FPE_INTDIV || si->si_code == FPE_INTOVF) {
     NS_DebugBreak(NS_DEBUG_ABORT, "Divide by zero", nsnull, __FILE__, __LINE__);
   }
@@ -250,18 +250,18 @@ static void fpehandler(int signum, siginfo_t *si, void *context)
     status->__precis = status->__stkflt = status->__errsumm = 0;
 
   __uint32_t *mxcsr = &uc->uc_mcontext->__fs.__fpu_mxcsr;
-  *mxcsr |= SSE_EXCEPTION_MASK; 
-  *mxcsr &= ~SSE_STATUS_FLAGS; 
+  *mxcsr |= SSE_EXCEPTION_MASK; /* disable all SSE exceptions */
+  *mxcsr &= ~SSE_STATUS_FLAGS; /* clear all pending SSE exceptions */
 #endif
 #endif
 #ifdef LINUX
   ucontext_t *uc = (ucontext_t *)context;
 
 #if defined(__i386__)
-  
-
-
-
+  /*
+   * It seems that we have no access to mxcsr on Linux. libc
+   * seems to be translating cw/sw to mxcsr.
+   */
   unsigned long int *cw = &uc->uc_mcontext.fpregs->cw;
   *cw |= FPU_EXCEPTION_MASK;
 
@@ -276,8 +276,8 @@ static void fpehandler(int signum, siginfo_t *si, void *context)
   *sw &= ~FPU_STATUS_FLAGS;
 
   __uint32_t *mxcsr = &uc->uc_mcontext.fpregs->mxcsr;
-  *mxcsr |= SSE_EXCEPTION_MASK; 
-  *mxcsr &= ~SSE_STATUS_FLAGS; 
+  *mxcsr |= SSE_EXCEPTION_MASK; /* disable all SSE exceptions */
+  *mxcsr &= ~SSE_STATUS_FLAGS; /* clear all pending SSE exceptions */
 #endif
 #endif
 #ifdef SOLARIS
@@ -290,7 +290,7 @@ static void fpehandler(int signum, siginfo_t *si, void *context)
   uint32_t *sw = &uc->uc_mcontext.fpregs.fp_reg_set.fpchip_state.state[1];
   *sw &= ~FPU_STATUS_FLAGS;
 
-  
+  /* address of the instruction that caused the exception */
   uint32_t *ip = &uc->uc_mcontext.fpregs.fp_reg_set.fpchip_state.state[3];
   uc->uc_mcontext.gregs[REG_PC] = *ip;
 #endif
@@ -302,8 +302,8 @@ static void fpehandler(int signum, siginfo_t *si, void *context)
   *sw &= ~FPU_STATUS_FLAGS;
 
   uint32_t *mxcsr = &uc->uc_mcontext.fpregs.fp_reg_set.fpchip_state.mxcsr;
-  *mxcsr |= SSE_EXCEPTION_MASK; 
-  *mxcsr &= ~SSE_STATUS_FLAGS; 
+  *mxcsr |= SSE_EXCEPTION_MASK; /* disable all SSE exceptions */
+  *mxcsr &= ~SSE_STATUS_FLAGS; /* clear all pending SSE exceptions */
 #endif
 #endif
 }
@@ -322,7 +322,7 @@ void InstallSignalHandlers(const char *ProgramName)
   }
 
 #if defined(MOZ_WIDGET_PHOTON)
- 
+ /* Neutrino need this to free shared memory in case of a crash */
   signal(SIGTERM, abnormal_exit_handler);
   signal(SIGQUIT, abnormal_exit_handler);
   signal(SIGINT,  abnormal_exit_handler);
@@ -343,9 +343,9 @@ void InstallSignalHandlers(const char *ProgramName)
     signal(SIGILL, crap_handler);
     signal(SIGABRT, crap_handler);
   }
-#endif 
+#endif // CRAWL_STACK_ON_SIGSEGV
 
-  
+  /* Install a handler for floating point exceptions and disable them if they occur. */
   struct sigaction sa, osa;
   sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
   sa.sa_sigaction = fpehandler;
@@ -368,7 +368,7 @@ void InstallSignalHandlers(const char *ProgramName)
 #if defined(SOLARIS)
 #define NOFILES 512
 
-    
+    // Boost Solaris file descriptors
     {
 	struct rlimit rl;
 	
@@ -384,10 +384,10 @@ void InstallSignalHandlers(const char *ProgramName)
 #if defined(DEBUG)
 	    	if (getrlimit(RLIMIT_NOFILE, &rl) == 0)
 		    printf("File descriptors set to %d\n", rl.rlim_cur);
-#endif 
+#endif //DEBUG
 	    }
     }
-#endif 
+#endif //SOLARIS
 
 #ifdef XP_BEOS
 	signal(SIGTERM, beos_signal_handler);
@@ -401,7 +401,7 @@ void InstallSignalHandlers(const char *ProgramName)
        !strcmp(assertString, "abort") ||
        !strcmp(assertString, "trap") ||
        !strcmp(assertString, "break"))) {
-    
+    // Override the default glib logging function so we get stacks for it too.
     orig_log_func = g_log_set_default_handler(my_glib_log_func, NULL);
   }
 #endif
@@ -412,10 +412,10 @@ void InstallSignalHandlers(const char *ProgramName)
 #include <windows.h>
 
 #ifdef _M_IX86
-
-
-
-
+/*
+ * WinNT.h prior to SDK7 does not expose the structure of the ExtendedRegisters for ia86.
+ * We known that MxCsr is at offset 0x18 and is a DWORD.
+ */
 #define MXCSR(ctx) (*(DWORD *)(((BYTE *)(ctx)->ExtendedRegisters) + 0x18))
 #endif
 
@@ -433,10 +433,10 @@ void InstallSignalHandlers(const char *ProgramName)
 #define X87SW(ctx) (ctx)->FloatSave.StatusWord
 #endif
 
-
-
-
-
+/*
+ * SSE traps raise these exception codes, which are defined in internal NT headers
+ * but not winbase.h
+ */
 #define STATUS_FLOAT_MULTIPLE_FAULTS 0xC00002B4
 #define STATUS_FLOAT_MULTIPLE_TRAPS  0xC00002B5
 
@@ -457,13 +457,13 @@ LONG __stdcall FpeHandler(PEXCEPTION_POINTERS pe)
     case STATUS_FLOAT_UNDERFLOW:
     case STATUS_FLOAT_MULTIPLE_FAULTS:
     case STATUS_FLOAT_MULTIPLE_TRAPS:
-      X87CW(c) |= FPU_EXCEPTION_MASK; 
-      X87SW(c) &= ~FPU_STATUS_FLAGS;  
+      X87CW(c) |= FPU_EXCEPTION_MASK; /* disable all FPU exceptions */
+      X87SW(c) &= ~FPU_STATUS_FLAGS;  /* clear all pending FPU exceptions */
 #ifdef _M_IX86
       if (c->ContextFlags & CONTEXT_EXTENDED_REGISTERS) {
 #endif
         MXCSR(c) |= SSE_EXCEPTION_MASK; /* disable all SSE exceptions */
-        MXCSR(c) &= ~SSE_STATUS_FLAGS;  
+        MXCSR(c) &= ~SSE_STATUS_FLAGS;  /* clear all pending SSE exceptions */
 #ifdef _M_IX86
       }
 #endif
@@ -490,7 +490,7 @@ void InstallSignalHandlers(const char *ProgramName)
 #endif
 
 #elif defined(XP_OS2)
-
+/* OS/2's FPE handler is implemented in NSPR */
 
 #else
 #error No signal handling implementation for this platform.
