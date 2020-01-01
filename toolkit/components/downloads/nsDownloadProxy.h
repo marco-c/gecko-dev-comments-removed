@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
 #ifndef downloadproxy___h___
 #define downloadproxy___h___
@@ -16,6 +16,11 @@
 #define PREF_BDM_SHOWWHENSTARTING "browser.download.manager.showWhenStarting"
 #define PREF_BDM_FOCUSWHENSTARTING "browser.download.manager.focusWhenStarting"
 
+// This class only exists because nsDownload cannot inherit from nsITransfer
+// directly. The reason for this is that nsDownloadManager (incorrectly) keeps
+// an nsCOMArray of nsDownloads, and nsCOMArray is only intended for use with
+// abstract classes. Using a concrete class that multiply inherits from classes
+// deriving from nsISupports will throw ambiguous base class errors.
 class nsDownloadProxy : public nsITransfer
 {
 public:
@@ -141,6 +146,12 @@ public:
   {
     NS_ENSURE_TRUE(mInner, NS_ERROR_NOT_INITIALIZED);
     return mInner->OnSecurityChange(aWebProgress, aRequest, aState);
+  }
+
+  NS_IMETHODIMP SetSha256Hash(const nsACString& aHash)
+  {
+    NS_ENSURE_TRUE(mInner, NS_ERROR_NOT_INITIALIZED);
+    return mInner->SetSha256Hash(aHash);
   }
 
 private:
