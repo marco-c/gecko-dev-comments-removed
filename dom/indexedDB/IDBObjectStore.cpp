@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/basictypes.h"
 
@@ -152,7 +152,7 @@ public:
                                   MOZ_OVERRIDE;
 
 private:
-  
+  // These may change in the autoincrement case.
   StructuredCloneWriteInfo mCloneWriteInfo;
   Key mKey;
   nsTArray<IndexUpdateInfo> mIndexUpdateInfo;
@@ -196,11 +196,11 @@ public:
                                   MOZ_OVERRIDE;
 
 protected:
-  
+  // In-params.
   nsRefPtr<IDBKeyRange> mKeyRange;
 
 private:
-  
+  // Out-params.
   StructuredCloneReadInfo mCloneReadInfo;
 };
 
@@ -292,18 +292,18 @@ public:
 private:
   nsresult EnsureCursor();
 
-  
+  // In-params.
   nsRefPtr<IDBKeyRange> mKeyRange;
   const IDBCursor::Direction mDirection;
 
-  
+  // Out-params.
   Key mKey;
   StructuredCloneReadInfo mCloneReadInfo;
   nsCString mContinueQuery;
   nsCString mContinueToQuery;
   Key mRangeKey;
 
-  
+  // Only used in the parent process.
   nsRefPtr<IDBCursor> mCursor;
   SerializedStructuredCloneReadInfo mSerializedCloneReadInfo;
 };
@@ -335,7 +335,7 @@ private:
 
   static PRUintn sTLSIndex;
 
-  
+  // In-params.
   nsRefPtr<IDBIndex> mIndex;
 };
 
@@ -354,7 +354,7 @@ public:
                                   MOZ_OVERRIDE;
 
 private:
-  
+  // In-params
   nsString mName;
 };
 
@@ -397,12 +397,12 @@ public:
                                   MOZ_OVERRIDE;
 
 protected:
-  
+  // In-params.
   nsRefPtr<IDBKeyRange> mKeyRange;
   const PRUint32 mLimit;
 
 private:
-  
+  // Out-params.
   nsTArray<StructuredCloneReadInfo> mCloneReadInfos;
 };
 
@@ -560,7 +560,7 @@ GetJSValFromKeyPath(JSContext* aCx,
                     jsval& aKey)
 {
   NS_ASSERTION(aCx, "Null pointer!");
-  
+  // aVal can be primitive iff the key path is empty.
   NS_ASSERTION(IDBObjectStore::IsValidKeyPath(aCx, aKeyPath),
                "This will explode!");
 
@@ -651,9 +651,9 @@ JSClass gDummyPropClass = {
   JS_ConvertStub
 };
 
-} 
+} // anonymous namespace
 
-
+// static
 already_AddRefed<IDBObjectStore>
 IDBObjectStore::Create(IDBTransaction* aTransaction,
                        ObjectStoreInfo* aStoreInfo,
@@ -699,7 +699,7 @@ IDBObjectStore::Create(IDBTransaction* aTransaction,
   return objectStore.forget();
 }
 
-
+// static
 bool
 IDBObjectStore::IsValidKeyPath(JSContext* aCx,
                                const nsAString& aKeyPath)
@@ -729,8 +729,8 @@ IDBObjectStore::IsValidKeyPath(JSContext* aCx,
     }
   }
 
-  
-  
+  // If the very last character was a '.', the tokenizer won't give us an empty
+  // token, but the keyPath is still invalid.
   if (!aKeyPath.IsEmpty() &&
       aKeyPath.CharAt(aKeyPath.Length() - 1) == '.') {
     return false;
@@ -739,7 +739,7 @@ IDBObjectStore::IsValidKeyPath(JSContext* aCx,
   return true;
 }
 
-
+// static
 nsresult
 IDBObjectStore::AppendIndexUpdateInfo(
                                     PRInt64 aIndexID,
@@ -788,7 +788,7 @@ IDBObjectStore::AppendIndexUpdateInfo(
       Key value;
       if (NS_FAILED(value.SetFromJSVal(aCx, arrayItem)) ||
           value.IsUnset()) {
-        
+        // Not a value we can do anything with, ignore it.
         continue;
       }
 
@@ -802,7 +802,7 @@ IDBObjectStore::AppendIndexUpdateInfo(
     Key value;
     if (NS_FAILED(value.SetFromJSVal(aCx, key)) ||
         value.IsUnset()) {
-      
+      // Not a value we can do anything with, ignore it.
       return NS_OK;
     }
 
@@ -815,7 +815,7 @@ IDBObjectStore::AppendIndexUpdateInfo(
   return NS_OK;
 }
 
-
+// static
 nsresult
 IDBObjectStore::UpdateIndexes(IDBTransaction* aTransaction,
                               PRInt64 aObjectStoreId,
@@ -837,6 +837,7 @@ IDBObjectStore::UpdateIndexes(IDBTransaction* aTransaction,
       "WHERE object_data_id = :object_data_id; "
       "DELETE FROM index_data "
       "WHERE object_data_id = :object_data_id");
+    NS_ENSURE_TRUE(stmt, NS_ERROR_FAILURE);
 
     mozStorageStatementScoper scoper(stmt);
 
@@ -851,7 +852,7 @@ IDBObjectStore::UpdateIndexes(IDBTransaction* aTransaction,
   for (PRUint32 i = 0; i < infoCount; i++) {
     const IndexUpdateInfo& updateInfo = aUpdateInfoArray[i];
 
-    
+    // Insert new values.
 
     stmt = updateInfo.indexUnique ?
       aTransaction->GetCachedStatement(
@@ -883,16 +884,16 @@ IDBObjectStore::UpdateIndexes(IDBTransaction* aTransaction,
 
     rv = stmt->Execute();
     if (rv == NS_ERROR_STORAGE_CONSTRAINT && updateInfo.indexUnique) {
-      
-      
-      
+      // If we're inserting multiple entries for the same unique index, then
+      // we might have failed to insert due to colliding with another entry for
+      // the same index in which case we should ignore it.
       
       for (PRInt32 j = (PRInt32)i - 1;
            j >= 0 && aUpdateInfoArray[j].indexId == updateInfo.indexId;
            --j) {
         if (updateInfo.value == aUpdateInfoArray[j].value) {
-          
-          
+          // We found a key with the same value for the same index. So we
+          // must have had a collision with a value we just inserted.
           rv = NS_OK;
           break;
         }
@@ -907,7 +908,7 @@ IDBObjectStore::UpdateIndexes(IDBTransaction* aTransaction,
   return NS_OK;
 }
 
-
+// static
 nsresult
 IDBObjectStore::GetStructuredCloneReadInfoFromStatement(
                                            mozIStorageStatement* aStatement,
@@ -985,7 +986,7 @@ IDBObjectStore::GetStructuredCloneReadInfoFromStatement(
   return NS_OK;
 }
 
-
+// static
 void
 IDBObjectStore::ClearStructuredCloneBuffer(JSAutoStructuredCloneBuffer& aBuffer)
 {
@@ -994,7 +995,7 @@ IDBObjectStore::ClearStructuredCloneBuffer(JSAutoStructuredCloneBuffer& aBuffer)
   }
 }
 
-
+// static
 bool
 IDBObjectStore::DeserializeValue(JSContext* aCx,
                                  StructuredCloneReadInfo& aCloneReadInfo,
@@ -1022,7 +1023,7 @@ IDBObjectStore::DeserializeValue(JSContext* aCx,
   return buffer.read(aCx, aValue, &callbacks, &aCloneReadInfo);
 }
 
-
+// static
 bool
 IDBObjectStore::SerializeValue(JSContext* aCx,
                                StructuredCloneWriteInfo& aCloneWriteInfo,
@@ -1255,8 +1256,8 @@ IDBObjectStore::StructuredCloneWriteCallback(JSContext* aCx,
 
     nsCOMPtr<nsIDOMBlob> blob = do_QueryInterface(supports);
     if (blob) {
-      
-      
+      // Check if it is a blob created from this db or the blob was already
+      // stored in this db
 
       nsRefPtr<FileInfo> fileInfo = transaction->GetFileInfo(blob);
       nsCOMPtr<nsIInputStream> inputStream;
@@ -1332,8 +1333,8 @@ IDBObjectStore::StructuredCloneWriteCallback(JSContext* aCx,
     if (fileHandle) {
       nsRefPtr<FileInfo> fileInfo = fileHandle->GetFileInfo();
 
-      
-      
+      // Throw when trying to store non IDB file handles or IDB file handles
+      // across databases.
       if (!fileInfo || fileInfo->Manager() != fileManager) {
         return false;
       }
@@ -1370,7 +1371,7 @@ IDBObjectStore::StructuredCloneWriteCallback(JSContext* aCx,
     }
   }
 
-  
+  // try using the runtime callbacks
   const JSStructuredCloneCallbacks* runtimeCallbacks =
     js::GetContextStructuredCloneCallbacks(aCx);
   if (runtimeCallbacks) {
@@ -1432,8 +1433,8 @@ IDBObjectStore::GetAddInfo(JSContext* aCx,
 {
   nsresult rv;
 
-  
-  
+  // Return DATA_ERR if a key was passed in and this objectStore uses inline
+  // keys.
   if (!JSVAL_IS_VOID(aKeyVal) && HasKeyPath()) {
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
@@ -1441,15 +1442,15 @@ IDBObjectStore::GetAddInfo(JSContext* aCx,
   JSAutoRequest ar(aCx);
 
   if (!HasKeyPath()) {
-    
+    // Out-of-line keys must be passed in.
     rv = aKey.SetFromJSVal(aCx, aKeyVal);
     if (NS_FAILED(rv)) {
       return rv;
     }
   }
   else if (!mAutoIncrement) {
-    
-    
+    // Inline keys live on the object. Make sure that the value passed in is an
+    // object.
     if (UsesKeyPathArray()) {
       rv = GetKeyFromValue(aCx, aValue, mKeyPathArray, aKey);
     }
@@ -1459,15 +1460,15 @@ IDBObjectStore::GetAddInfo(JSContext* aCx,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  
+  // Return DATA_ERR if no key was specified this isn't an autoIncrement
+  // objectStore.
   if (aKey.IsUnset() && !mAutoIncrement) {
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
 
-  
+  // Figure out indexes and the index values to update here.
   PRUint32 count = mInfo->indexes.Length();
-  aUpdateInfoArray.SetCapacity(count); 
+  aUpdateInfoArray.SetCapacity(count); // Pretty good estimate
   for (PRUint32 indexesIndex = 0; indexesIndex < count; indexesIndex++) {
     const IndexInfo& indexInfo = mInfo->indexes[indexesIndex];
 
@@ -1504,28 +1505,28 @@ IDBObjectStore::GetAddInfo(JSContext* aCx,
   
       JSBool hasProp;
       if (!targetObject) {
-        
+        // We're still walking the chain of existing objects
 
         JSBool ok = JS_HasUCProperty(aCx, obj, keyPathChars, keyPathLen,
                                      &hasProp);
         NS_ENSURE_TRUE(ok, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
         if (hasProp) {
-          
+          // Get if the property exists...
           jsval intermediate;
           JSBool ok = JS_GetUCProperty(aCx, obj, keyPathChars, keyPathLen,
                                        &intermediate);
           NS_ENSURE_TRUE(ok, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
           if (tokenizer.hasMoreTokens()) {
-            
+            // ...and walk to it if there are more steps...
             if (JSVAL_IS_PRIMITIVE(intermediate)) {
               return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
             }
             obj = JSVAL_TO_OBJECT(intermediate);
           }
           else {
-            
+            // ...otherwise use it as key
             aKey.SetFromJSVal(aCx, intermediate);
             if (aKey.IsUnset()) {
               return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
@@ -1533,19 +1534,19 @@ IDBObjectStore::GetAddInfo(JSContext* aCx,
           }
         }
         else {
-          
-          
+          // If the property doesn't exist, fall into below path of starting
+          // to define properties
           targetObject = obj;
           targetObjectPropName = token;
         }
       }
 
       if (targetObject) {
-        
-        
+        // We have started inserting new objects or are about to just insert
+        // the first one.
         if (tokenizer.hasMoreTokens()) {
-          
-          
+          // If we're not at the end, we need to add a dummy object to the
+          // chain.
           JSObject* dummy = JS_NewObject(aCx, nsnull, nsnull, nsnull);
           if (!dummy) {
             rv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
@@ -1583,16 +1584,16 @@ IDBObjectStore::GetAddInfo(JSContext* aCx,
   aCloneWriteInfo.mOffsetToKeyProp = 0;
   aCloneWriteInfo.mTransaction = mTransaction;
 
-  
-  
+  // We guard on rv being a success because we need to run the property
+  // deletion code below even if we should not be serializing the value
   if (NS_SUCCEEDED(rv) && 
       !IDBObjectStore::SerializeValue(aCx, aCloneWriteInfo, aValue)) {
     rv = NS_ERROR_DOM_DATA_CLONE_ERR;
   }
 
   if (targetObject) {
-    
-    
+    // If this fails, we lose, and the web page sees a magical property
+    // appear on the object :-(
     jsval succeeded;
     if (!JS_DeleteUCProperty2(aCx, targetObject,
                               targetObjectPropName.get(),
@@ -1894,7 +1895,7 @@ IDBObjectStore::CreateIndexInternal(const IndexInfo& aInfo,
   indexInfo->unique = aInfo.unique;
   indexInfo->multiEntry = aInfo.multiEntry;
 
-  
+  // Don't leave this in the list if we fail below!
   AutoRemoveIndex autoRemove(mInfo, aInfo.name);
 
   nsRefPtr<IDBIndex> index = IDBIndex::Create(this, indexInfo, true);
@@ -1974,7 +1975,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IDBObjectStore)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IDBObjectStore)
-  
+  // Don't unlink mTransaction!
 
   tmp->mCreatedIndexes.Clear();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -2087,7 +2088,7 @@ IDBObjectStore::Get(const jsval& aKey,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!keyRange) {
-    
+    // Must specify a key or keyRange for get().
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
 
@@ -2198,7 +2199,7 @@ IDBObjectStore::Delete(const jsval& aKey,
   }
 
   if (!keyRange) {
-    
+    // Must specify a key or keyRange for delete().
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
 
@@ -2276,11 +2277,11 @@ IDBObjectStore::CreateIndex(const nsAString& aName,
 {
   NS_PRECONDITION(NS_IsMainThread(), "Wrong thread!");
 
-  
+  // Get KeyPath
   nsString keyPath;
   nsTArray<nsString> keyPathArray;
 
-  
+  // See if this is a JS array.
   if (!JSVAL_IS_PRIMITIVE(aKeyPath) &&
       JS_IsArrayObject(aCx, JSVAL_TO_OBJECT(aKeyPath))) {
 
@@ -2331,7 +2332,7 @@ IDBObjectStore::CreateIndex(const nsAString& aName,
     keyPath = str;
   }
 
-  
+  // Check name and current mode
   IDBTransaction* transaction = AsyncConnectionHelper::GetCurrentTransaction();
 
   if (!transaction ||
@@ -2366,7 +2367,7 @@ IDBObjectStore::CreateIndex(const nsAString& aName,
   nsresult rv;
   mozilla::dom::IDBIndexParameters params;
 
-  
+  // Get optional arguments.
   if (!JSVAL_IS_VOID(aOptions) && !JSVAL_IS_NULL(aOptions)) {
     rv = params.Init(aCx, &aOptions);
     if (NS_FAILED(rv)) {
@@ -2604,10 +2605,10 @@ AddHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
   PRInt64 osid = mObjectStore->Id();
   const nsString& keyPath = mObjectStore->KeyPath();
 
-  
-  
-  
-  
+  // The "|| keyUnset" here is mostly a debugging tool. If a key isn't
+  // specified we should never have a collision and so it shouldn't matter
+  // if we allow overwrite or not. By not allowing overwrite we raise
+  // detectable errors rather than corrupting data
   nsCOMPtr<mozIStorageStatement> stmt = !mOverwrite || keyUnset ?
     mTransaction->GetCachedStatement(
       "INSERT INTO object_data (object_store_id, key_value, data, file_ids) "
@@ -2642,11 +2643,11 @@ AddHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
     }
 
     if (keyUnset && !keyPath.IsEmpty()) {
-      
-      
-      
+      // Special case where someone put an object into an autoIncrement'ing
+      // objectStore with no key in its keyPath set. We needed to figure out
+      // which row id we would get above before we could set that properly.
 
-      
+      // This is a duplicate of the js engine's byte munging here
       union {
         double d;
         PRUint64 u;
@@ -2663,14 +2664,14 @@ AddHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
 
   mKey.BindToStatement(stmt, NS_LITERAL_CSTRING("key_value"));
 
-  
+  // Compress the bytes before adding into the database.
   const char* uncompressed =
     reinterpret_cast<const char*>(mCloneWriteInfo.mCloneBuffer.data());
   size_t uncompressedLength = mCloneWriteInfo.mCloneBuffer.nbytes();
 
   size_t compressedLength = snappy::MaxCompressedLength(uncompressedLength);
-  
-  
+  // This will hold our compressed data until the end of the method. The
+  // BindBlobByName function will copy it.
   nsAutoArrayPtr<char> compressed(new char[compressedLength]);
 
   snappy::RawCompress(uncompressed, uncompressedLength, compressed.get(),
@@ -2684,7 +2685,7 @@ AddHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
                             dataBufferLength);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
-  
+  // Handle blobs
   nsRefPtr<FileManager> fileManager = mDatabase->Manager();
   nsCOMPtr<nsIFile> directory = fileManager->GetDirectory();
   NS_ENSURE_TRUE(directory, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
@@ -2700,7 +2701,7 @@ AddHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
 
     PRInt64 id = fileInfo->Id();
     if (inputStream) {
-      
+      // Copy it
       nsCOMPtr<nsIFile> nativeFile =
         fileManager->GetFileForId(directory, id);
       NS_ENSURE_TRUE(nativeFile, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
@@ -2740,7 +2741,7 @@ AddHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
   rv = aConnection->GetLastInsertRowID(&objectDataId);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
-  
+  // Update our indexes if needed.
   if (mOverwrite || !mIndexUpdateInfo.IsEmpty()) {
     rv = IDBObjectStore::UpdateIndexes(mTransaction, osid, mKey, mOverwrite,
                                        objectDataId, mIndexUpdateInfo);
@@ -2845,7 +2846,7 @@ AddHelper::UnpackResponseFromParentProcess(const ResponseValue& aResponseValue)
 }
 
 nsresult
-GetHelper::DoDatabaseWork(mozIStorageConnection* )
+GetHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
 {
   NS_ASSERTION(mKeyRange, "Must have a key range here!");
 
@@ -2972,7 +2973,7 @@ GetHelper::UnpackResponseFromParentProcess(const ResponseValue& aResponseValue)
 }
 
 nsresult
-DeleteHelper::DoDatabaseWork(mozIStorageConnection* )
+DeleteHelper::DoDatabaseWork(mozIStorageConnection* /*aConnection */)
 {
   NS_ASSERTION(mKeyRange, "Must have a key range here!");
 
@@ -3189,7 +3190,7 @@ OpenCursorHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
     mDatabase, mCloneReadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Now we need to make the query to get the next match.
   keyRangeClause.Truncate();
   nsCAutoString continueToKeyRangeClause;
 
@@ -3296,8 +3297,8 @@ OpenCursorHelper::ReleaseMainThreadObjects()
 
   mCursor = nsnull;
 
-  
-  
+  // These don't need to be released on the main thread but they're only valid
+  // as long as mCursor is set.
   mSerializedCloneReadInfo.data = nsnull;
   mSerializedCloneReadInfo.dataLength = 0;
 
@@ -3440,7 +3441,7 @@ OpenCursorHelper::UnpackResponseFromParentProcess(
 nsresult
 CreateIndexHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
 {
-  
+  // Insert the data into the database.
   nsCOMPtr<mozIStorageStatement> stmt =
     mTransaction->GetCachedStatement(
     "INSERT INTO object_store_index (id, name, key_path, unique_index, "
@@ -3459,10 +3460,10 @@ CreateIndexHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
   if (mIndex->UsesKeyPathArray()) {
-    
-    
-    
-    
+    // We use a comma in the beginning to indicate that it's an array of
+    // key paths. This is to be able to tell a string-keypath from an
+    // array-keypath which contains only one item.
+    // It also makes serializing easier :-)
     nsAutoString keyPath;
     const nsTArray<nsString>& keyPaths = mIndex->KeyPathArray();
     for (PRUint32 i = 0; i < keyPaths.Length(); ++i) {
@@ -3502,7 +3503,7 @@ CreateIndexHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
   }
 #endif
 
-  
+  // Now we need to populate the index with data from the object store.
   rv = InsertDataFromObjectStore(aConnection);
   if (NS_FAILED(rv)) {
     return rv;
@@ -3540,7 +3541,7 @@ CreateIndexHelper::InsertDataFromObjectStore(mozIStorageConnection* aConnection)
   rv = stmt->ExecuteStep(&hasResult);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   if (!hasResult) {
-    
+    // Bail early if we have no data to avoid creating the below runtime
     return NS_OK;
   }
 

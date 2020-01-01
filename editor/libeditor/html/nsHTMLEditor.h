@@ -277,7 +277,6 @@ public:
   virtual bool TagCanContainTag(nsIAtom* aParentTag, nsIAtom* aChildTag);
   
   
-  virtual bool IsContainer(nsINode* aNode);
   virtual bool IsContainer(nsIDOMNode *aNode);
 
   
@@ -454,7 +453,7 @@ protected:
   bool AllCellsInRowSelected(nsIDOMElement *aTable, PRInt32 aRowIndex, PRInt32 aNumberOfColumns);
   bool AllCellsInColumnSelected(nsIDOMElement *aTable, PRInt32 aColIndex, PRInt32 aNumberOfRows);
 
-  bool     IsEmptyCell(nsIDOMElement *aCell);
+  bool IsEmptyCell(mozilla::dom::Element* aCell);
 
   
   
