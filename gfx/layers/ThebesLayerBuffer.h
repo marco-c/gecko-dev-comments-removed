@@ -140,9 +140,6 @@ public:
   gfxASurface* GetBuffer() { return mBuffer; }
 
 protected:
-  
-  static void ClipToRegion(gfxContext* aContext, const nsIntRegion& aRegion);
-
   enum XSide {
     LEFT, RIGHT
   };
