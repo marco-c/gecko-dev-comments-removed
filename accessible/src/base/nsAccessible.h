@@ -251,7 +251,7 @@ public:
   
 
 
-  nsAccessible* GetParent();
+  virtual nsAccessible* GetParent();
 
   
 
