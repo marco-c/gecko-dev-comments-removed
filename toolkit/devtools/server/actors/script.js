@@ -2372,7 +2372,12 @@ Object.defineProperty(Debugger.Frame.prototype, "line", {
 
 
 
-function ChromeDebuggerActor(aHooks)
+
+
+
+
+
+function ChromeDebuggerActor(aConnection, aHooks)
 {
   ThreadActor.call(this, aHooks);
 }
