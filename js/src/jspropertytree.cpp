@@ -1,10 +1,8 @@
-/* -*- Mode: C++; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil -*- */
-/* vim: set ts=4 sw=4 et tw=99: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <new>
+
+
+
+
 
 #include "jstypes.h"
 #include "jsprf.h"
@@ -114,16 +112,16 @@ Shape::removeChild(Shape *child)
     }
 
     KidsHash *hash = kidp->toHash();
-    JS_ASSERT(hash->count() >= 2);      /* otherwise kidp->isShape() should be true */
+    JS_ASSERT(hash->count() >= 2);      
 
     hash->remove(child);
     child->parent = NULL;
 
     if (hash->count() == 1) {
-        /* Convert from HASH form back to SHAPE form. */
+        
         KidsHash::Range r = hash->all();
         Shape *otherChild = r.front();
-        JS_ASSERT((r.popFront(), r.empty()));    /* No more elements! */
+        JS_ASSERT((r.popFront(), r.empty()));    
         kidp->setShape(otherChild);
         js_delete(hash);
     }
@@ -136,14 +134,14 @@ PropertyTree::getChild(JSContext *cx, Shape *parent_, uint32_t nfixed, const Sta
 
     JS_ASSERT(parent_);
 
-    /*
-     * The property tree has extremely low fan-out below its root in
-     * popular embeddings with real-world workloads. Patterns such as
-     * defining closures that capture a constructor's environment as
-     * getters or setters on the new object that is passed in as
-     * |this| can significantly increase fan-out below the property
-     * tree root -- see bug 335700 for details.
-     */
+    
+
+
+
+
+
+
+
     KidsPointer *kidp = &parent_->kids;
     if (kidp->isShape()) {
         Shape *kid = kidp->toShape();
@@ -152,27 +150,27 @@ PropertyTree::getChild(JSContext *cx, Shape *parent_, uint32_t nfixed, const Sta
     } else if (kidp->isHash()) {
         shape = *kidp->toHash()->lookup(child);
     } else {
-        /* If kidp->isNull(), we always insert. */
+        
     }
 
 #ifdef JSGC_INCREMENTAL
     if (shape) {
         JSCompartment *comp = shape->compartment();
         if (comp->needsBarrier()) {
-            /*
-             * We need a read barrier for the shape tree, since these are weak
-             * pointers.
-             */
+            
+
+
+
             Shape *tmp = shape;
             MarkShapeUnbarriered(comp->barrierTracer(), &tmp, "read barrier");
             JS_ASSERT(tmp == shape);
         } else if (comp->isGCSweeping() && !shape->isMarked() &&
                    !shape->arenaHeader()->allocatedDuringIncremental)
         {
-            /*
-             * The shape we've found is unreachable and due to be finalized, so
-             * remove our weak reference to it and don't use it.
-             */
+            
+
+
+
             JS_ASSERT(parent_->isMarked());
             parent_->removeChild(shape);
             shape = NULL;
@@ -202,11 +200,11 @@ void
 Shape::finalize(FreeOp *fop)
 {
     if (!inDictionary()) {
-        /*
-         * Note that due to incremental sweeping, if !parent->isMarked() then
-         * the parent may point to a new shape allocated in the same cell that
-         * use to hold our parent.
-         */
+        
+
+
+
+
         if (parent && parent->isMarked())
             parent->removeChild(this);
 
@@ -341,15 +339,15 @@ js::PropertyTree::dumpShapes(JSRuntime *rt)
     for (gc::GCCompartmentsIter c(rt); !c.done(); c.next()) {
         fprintf(dumpfp, "*** Compartment %p ***\n", (void *)c.get());
 
-        /*
-        typedef JSCompartment::EmptyShapeSet HS;
-        HS &h = c->emptyShapes;
-        for (HS::Range r = h.all(); !r.empty(); r.popFront()) {
-            Shape *empty = r.front();
-            empty->dumpSubtree(rt, 0, dumpfp);
-            putc('\n', dumpfp);
-        }
-        */
+        
+
+
+
+
+
+
+
+
     }
 }
 #endif
