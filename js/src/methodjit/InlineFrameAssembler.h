@@ -76,6 +76,7 @@ class InlineFrameAssembler {
     Assembler &masm;
     FrameSize  frameSize;       
     RegisterID funObjReg;       
+    jsbytecode *pc;             
     uint32     flags;           
 
   public:
@@ -86,7 +87,7 @@ class InlineFrameAssembler {
     Registers  tempRegs;
 
     InlineFrameAssembler(Assembler &masm, ic::CallICInfo &ic, uint32 flags)
-      : masm(masm), flags(flags), tempRegs(Registers::AvailRegs)
+      : masm(masm), pc(ic.pc), flags(flags)
     {
         frameSize = ic.frameSize;
         funObjReg = ic.funObjReg;
@@ -95,7 +96,7 @@ class InlineFrameAssembler {
     }
 
     InlineFrameAssembler(Assembler &masm, Compiler::CallGenInfo &gen, uint32 flags)
-      : masm(masm), flags(flags), tempRegs(Registers::AvailRegs)
+      : masm(masm), pc(gen.pc), flags(flags)
     {
         frameSize = gen.frameSize;
         funObjReg = gen.funObjReg;
@@ -130,7 +131,7 @@ class InlineFrameAssembler {
 
 
 
-            RegisterID newfp = tempRegs.takeAnyReg().reg();
+            RegisterID newfp = tempRegs.takeAnyReg();
             masm.loadPtr(FrameAddress(offsetof(VMFrame, regs.sp)), newfp);
 
             Address flagsAddr(newfp, StackFrame::offsetOfFlags());

@@ -494,20 +494,6 @@ js_DestroyContext(JSContext *cx, JSDestroyContextMode mode)
 #endif
 
             
-
-
-
-            {
-                AutoLockGC lock(rt);
-                JSCompartment **compartment = rt->compartments.begin();
-                JSCompartment **end = rt->compartments.end();
-                while (compartment < end) {
-                    (*compartment)->types.print(cx, *compartment);
-                    compartment++;
-                }
-            }
-
-            
             js_FinishCommonAtoms(cx);
 
             
@@ -678,8 +664,6 @@ js_ReportOutOfMemory(JSContext *cx)
         return;
 #endif
 
-    cx->runtime->hadOutOfMemory = true;
-
     JSErrorReport report;
     JSErrorReporter onError = cx->errorReporter;
 
@@ -744,8 +728,8 @@ checkReportFlags(JSContext *cx, uintN *flags)
 
 
 
-        JSScript *script = cx->stack.currentScript();
-        if (script && script->strictModeCode)
+        StackFrame *fp = js_GetScriptedCaller(cx, NULL);
+        if (fp && fp->script()->strictModeCode)
             *flags &= ~JSREPORT_WARNING;
         else if (cx->hasStrictOption())
             *flags |= JSREPORT_WARNING;
@@ -1254,7 +1238,7 @@ StackFrame *
 js_GetScriptedCaller(JSContext *cx, StackFrame *fp)
 {
     if (!fp)
-        fp = js_GetTopStackFrame(cx, FRAME_EXPAND_TOP);
+        fp = js_GetTopStackFrame(cx);
     while (fp && fp->isDummyFrame())
         fp = fp->prev();
     JS_ASSERT_IF(fp, fp->isScriptFrame());
@@ -1388,7 +1372,6 @@ JSContext::resetCompartment()
     }
 
     compartment = scopeobj->compartment();
-    inferenceEnabled = compartment->types.inferenceEnabled;
 
     if (isExceptionPending())
         wrapPendingException();

@@ -47,7 +47,6 @@
 #include "jsprvtd.h"
 #include "jsdbgapi.h"
 #include "jsclist.h"
-#include "jsinfer.h"
 
 
 
@@ -177,7 +176,7 @@ class Bindings {
     bool hasExtensibleParents;
 
   public:
-    inline Bindings(JSContext *cx);
+    inline Bindings(JSContext *cx, EmptyShape *emptyCallShape);
 
     
 
@@ -203,9 +202,6 @@ class Bindings {
 
     bool hasUpvars() const { return nupvars > 0; }
     bool hasLocalNames() const { return countLocalNames() > 0; }
-
-    
-    inline bool ensureShape(JSContext *cx);
 
     
     inline js::Shape *lastShape() const;
@@ -379,10 +375,14 @@ enum JITScriptStatus {
     JITScript_Valid
 };
 
-namespace js { namespace mjit { struct JITScript; } }
-#endif
+namespace js {
+namespace mjit {
 
-namespace js { namespace analyze { class ScriptAnalysis; } }
+struct JITScript;
+
+}
+}
+#endif
 
 class JSPCCounters {
     size_t numBytecodes;
@@ -435,8 +435,7 @@ struct JSScript {
     static JSScript *NewScript(JSContext *cx, uint32 length, uint32 nsrcnotes, uint32 natoms,
                                uint32 nobjects, uint32 nupvars, uint32 nregexps,
                                uint32 ntrynotes, uint32 nconsts, uint32 nglobals,
-                               uint16 nClosedArgs, uint16 nClosedVars, uint32 nTypeSets,
-                               JSVersion version);
+                               uint16 nClosedArgs, uint16 nClosedVars, JSVersion version);
 
     static JSScript *NewScriptFromCG(JSContext *cx, JSCodeGenerator *cg);
 
@@ -446,17 +445,13 @@ struct JSScript {
     uint32          length;     
 
   private:
-    size_t          useCount_;  
-
-
-
     uint16          version;    
 
   public:
     uint16          nfixed;     
 
-    uint16          nTypeSets;  
-
+  private:
+    size_t          callCount_; 
 
     
 
@@ -485,20 +480,10 @@ struct JSScript {
     bool            warnedAboutTwoArgumentEval:1; 
 
 
-    bool            warnedAboutUndefinedProp:1; 
-
-
     bool            hasSingletons:1;  
-    bool            isActiveEval:1;   
-    bool            isCachedEval:1;   
-    bool            isUncachedEval:1; 
-    bool            calledWithNew:1;  
-    bool            usedLazyArgs:1;   
-    bool            ranInference:1;   
 #ifdef JS_METHODJIT
     bool            debugMode:1;      
     bool            singleStepMode:1; 
-    bool            failedBoundsCheck:1; 
 #endif
 
     jsbytecode      *main;      
@@ -544,60 +529,6 @@ struct JSScript {
     JSPCCounters    pcCounters;
 
   public:
-
-    
-    JSFunction *fun;
-
-    
-
-
-
-    bool typeSetFunction(JSContext *cx, JSFunction *fun);
-
-    
-    js::GlobalObject *global_;
-    inline bool hasGlobal() const;
-    inline js::GlobalObject *global() const;
-
-    inline bool hasClearedGlobal() const;
-
-#ifdef DEBUG
-    
-
-
-
-    unsigned id_;
-    unsigned id() { return id_; }
-#else
-    unsigned id() { return 0; }
-#endif
-
-    
-
-
-
-  private:
-    js::analyze::ScriptAnalysis *analysis_;
-    void makeAnalysis(JSContext *cx);
-  public:
-
-    bool hasAnalysis() { return analysis_ != NULL; }
-
-    js::analyze::ScriptAnalysis *analysis(JSContext *cx) {
-        if (!analysis_)
-            makeAnalysis(cx);
-        return analysis_;
-    }
-
-    
-    inline bool ensureRanInference(JSContext *cx);
-
-    
-    js::types::TypeScript types;
-
-    inline bool isAboutToBeFinalized(JSContext *cx);
-    void sweepAnalysis(JSContext *cx);
-
 #ifdef JS_METHODJIT
     
     
@@ -622,10 +553,8 @@ struct JSScript {
         return constructing ? jitCtor : jitNormal;
     }
 
-    size_t useCount() const  { return useCount_; }
-    size_t incUseCount() { return ++useCount_; }
-    size_t *addressOfUseCount() { return &useCount_; }
-    void resetUseCount() { useCount_ = 0; }
+    size_t callCount() const  { return callCount_; }
+    size_t incCallCount() { return ++callCount_; }
 
     JITScriptStatus getJITStatus(bool constructing) {
         void *addr = constructing ? jitArityCheckCtor : jitArityCheckNormal;
