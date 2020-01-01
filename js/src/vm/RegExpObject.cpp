@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=99 ft=cpp:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla SpiderMonkey JavaScript code.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2011
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *  Chris Leary <cdleary@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "frontend/TokenStream.h"
 #include "vm/RegExpStatics.h"
@@ -56,7 +56,7 @@ JS_STATIC_ASSERT(GlobalFlag == JSREG_GLOB);
 JS_STATIC_ASSERT(MultilineFlag == JSREG_MULTILINE);
 JS_STATIC_ASSERT(StickyFlag == JSREG_STICKY);
 
-/* RegExpMatcher */
+
 
 bool
 RegExpMatcher::initWithTestOptimized(RegExpObject &reobj)
@@ -69,16 +69,16 @@ RegExpMatcher::initWithTestOptimized(RegExpObject &reobj)
     if (!shared_)
         return false;
 
-    /*
-     * Create a dummy RegExpObject to persist this RegExpShared until the next GC.
-     * Note that we give the ref we have to this new object.
-     */
+    
+
+
+
     RegExpObjectBuilder builder(cx_);
     shared_->incref(cx_);
     return !!builder.build(AlreadyIncRefed<RegExpShared>(shared_.get()));
 }
 
-/* RegExpObjectBuilder */
+
 
 bool
 RegExpObjectBuilder::getOrCreate()
@@ -143,12 +143,12 @@ RegExpObjectBuilder::clone(RegExpObject *other, RegExpObject *proto)
     if (!getOrCreateClone(proto))
         return NULL;
 
-    /*
-     * Check that the RegExpShared for the original is okay to use in
-     * the clone -- if the |RegExpStatics| provides more flags we'll
-     * need a different |RegExpShared|.
-     */
-    RegExpStatics *res = proto->getParent()->asGlobal().getRegExpStatics();
+    
+
+
+
+
+    RegExpStatics *res = cx->regExpStatics();
     RegExpFlag origFlags = other->getFlags();
     RegExpFlag staticsFlags = res->getFlags();
     if ((origFlags & staticsFlags) != staticsFlags) {
@@ -164,7 +164,7 @@ RegExpObjectBuilder::clone(RegExpObject *other, RegExpObject *proto)
     return build(AlreadyIncRefed<RegExpShared>(toShare));
 }
 
-/* MatchPairs */
+
 
 MatchPairs *
 MatchPairs::create(LifoAlloc &alloc, size_t pairCount, size_t backingPairCount)
@@ -201,10 +201,10 @@ RegExpShared::execute(JSContext *cx, const jschar *chars, size_t length, size_t 
     if (!matchPairs)
         return RegExpRunStatus_Error;
 
-    /*
-     * |displacement| emulates sticky mode by matching from this offset
-     * into the char buffer and subtracting the delta off at the end.
-     */
+    
+
+
+
     size_t start = *lastIndex;
     size_t displacement = 0;
 
@@ -272,14 +272,14 @@ RegExpObject::assignInitialShape(JSContext *cx)
     JS_STATIC_ASSERT(MULTILINE_FLAG_SLOT == IGNORE_CASE_FLAG_SLOT + 1);
     JS_STATIC_ASSERT(STICKY_FLAG_SLOT == MULTILINE_FLAG_SLOT + 1);
 
-    /* The lastIndex property alone is writable but non-configurable. */
+    
     if (!addDataProperty(cx, ATOM_TO_JSID(cx->runtime->atomState.lastIndexAtom),
                          LAST_INDEX_SLOT, JSPROP_PERMANENT))
     {
         return NULL;
     }
 
-    /* Remaining instance properties are non-writable and non-configurable. */
+    
     if (!addDataProperty(cx, ATOM_TO_JSID(cx->runtime->atomState.sourceAtom),
                          SOURCE_SLOT, JSPROP_PERMANENT | JSPROP_READONLY) ||
         !addDataProperty(cx, ATOM_TO_JSID(cx->runtime->atomState.globalAtom),
@@ -332,11 +332,11 @@ js_XDRRegExpObject(JSXDRState *xdr, JSObject **objp)
     return true;
 }
 
-#else  /* !JS_HAS_XDR */
+#else  
 
 #define js_XDRRegExpObject NULL
 
-#endif /* !JS_HAS_XDR */
+#endif 
 
 static void
 regexp_finalize(JSContext *cx, JSObject *obj)
@@ -356,20 +356,20 @@ Class js::RegExpClass = {
     JSCLASS_HAS_PRIVATE |
     JSCLASS_HAS_RESERVED_SLOTS(RegExpObject::RESERVED_SLOTS) |
     JSCLASS_HAS_CACHED_PROTO(JSProto_RegExp),
-    JS_PropertyStub,         /* addProperty */
-    JS_PropertyStub,         /* delProperty */
-    JS_PropertyStub,         /* getProperty */
-    JS_StrictPropertyStub,   /* setProperty */
-    JS_EnumerateStub,        /* enumerate */
+    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_StrictPropertyStub,   
+    JS_EnumerateStub,        
     JS_ResolveStub,
     JS_ConvertStub,
     regexp_finalize,
-    NULL,                    /* reserved0 */
-    NULL,                    /* checkAccess */
-    NULL,                    /* call */
-    NULL,                    /* construct */
+    NULL,                    
+    NULL,                    
+    NULL,                    
+    NULL,                    
     js_XDRRegExpObject,
-    NULL,                    /* hasInstance */
+    NULL,                    
     regexp_trace
 };
 
@@ -393,7 +393,7 @@ RegExpCode::reportYarrError(JSContext *cx, TokenStream *ts, ErrorCode error)
       COMPILE_EMSG(QuantifierWithoutAtom, JSMSG_BAD_QUANTIFIER);
       COMPILE_EMSG(MissingParentheses, JSMSG_MISSING_PAREN);
       COMPILE_EMSG(ParenthesesUnmatched, JSMSG_UNMATCHED_RIGHT_PAREN);
-      COMPILE_EMSG(ParenthesesTypeInvalid, JSMSG_BAD_QUANTIFIER); /* "(?" with bad next char */
+      COMPILE_EMSG(ParenthesesTypeInvalid, JSMSG_BAD_QUANTIFIER); 
       COMPILE_EMSG(CharacterClassUnmatched, JSMSG_BAD_CLASS_RANGE);
       COMPILE_EMSG(CharacterClassInvalidRange, JSMSG_BAD_CLASS_RANGE);
       COMPILE_EMSG(CharacterClassOutOfOrder, JSMSG_BAD_CLASS_RANGE);
@@ -405,7 +405,7 @@ RegExpCode::reportYarrError(JSContext *cx, TokenStream *ts, ErrorCode error)
     }
 }
 
-#else /* !ENABLE_YARR_JIT */
+#else 
 
 void
 RegExpCode::reportPCREError(JSContext *cx, int error)
@@ -439,7 +439,7 @@ RegExpCode::reportPCREError(JSContext *cx, int error)
 #undef REPORT
 }
 
-#endif /* ENABLE_YARR_JIT */
+#endif 
 
 bool
 js::ParseRegExpFlags(JSContext *cx, JSString *flagStr, RegExpFlag *flagsOut)
@@ -507,7 +507,7 @@ RegExpShared::createTestOptimized(JSContext *cx, JSAtom *cacheKey, RegExpFlag fl
     if (cached)
         return cached;
 
-    /* Strip off the greedy star characters, create a new RegExpShared, and cache. */
+    
     JS_ASSERT(cacheKey->length() > JS_ARRAY_LENGTH(GreedyStarChars));
     JSDependentString *stripped =
       JSDependentString::new_(cx, cacheKey, cacheKey->chars() + JS_ARRAY_LENGTH(GreedyStarChars),
@@ -540,7 +540,7 @@ RegExpShared::create(JSContext *cx, JSLinearString *str, JSString *opt, TokenStr
     return create(cx, str, flags, ts);
 }
 
-JSObject *
+JSObject * JS_FASTCALL
 js_CloneRegExpObject(JSContext *cx, JSObject *obj, JSObject *proto)
 {
     JS_ASSERT(obj->isRegExp());
