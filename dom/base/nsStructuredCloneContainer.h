@@ -63,11 +63,11 @@ class nsStructuredCloneContainer : public nsIStructuredCloneContainer
     NS_DECL_NSISTRUCTUREDCLONECONTAINER
 
   private:
-    PRUint64* mData;
+    uint64_t* mData;
 
     
     size_t mSize;
-    PRUint32 mVersion;
+    uint32_t mVersion;
 };
 
 #endif
