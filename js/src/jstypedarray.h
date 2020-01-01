@@ -1,8 +1,8 @@
-/* -*- Mode: C++; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil -*- */
-/* vim: set ts=4 sw=4 et tw=99: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jstypedarray_h
 #define jstypedarray_h
@@ -17,14 +17,14 @@ typedef struct JSProperty JSProperty;
 
 namespace js {
 
-/*
- * ArrayBufferObject
- *
- * This class holds the underlying raw buffer that the various ArrayBufferView
- * subclasses (DataView and the TypedArrays) access. It can be created
- * explicitly and passed to an ArrayBufferView subclass, or can be created
- * implicitly by constructing a TypedArray with a size.
- */
+
+
+
+
+
+
+
+
 class ArrayBufferObject : public JSObject
 {
     static bool byteLengthGetterImpl(JSContext *cx, CallArgs args);
@@ -137,7 +137,7 @@ class ArrayBufferObject : public JSObject
 
     static JSBool
     obj_enumerate(JSContext *cx, HandleObject obj, JSIterateOp enum_op,
-                  Value *statep, jsid *idp);
+                  MutableHandleValue statep, MutableHandleId idp);
 
     static bool
     stealContents(JSContext *cx, JSObject *obj, void **contents);
@@ -154,10 +154,10 @@ class ArrayBufferObject : public JSObject
     bool
     allocateSlots(JSContext *cx, uint32_t size, uint8_t *contents = NULL);
 
-    /*
-     * Ensure that the data is not stored inline. Used when handing back a
-     * GC-safe pointer.
-     */
+    
+
+
+
     bool
     uninlineData(JSContext *cx);
 
@@ -165,21 +165,21 @@ class ArrayBufferObject : public JSObject
 
     inline uint8_t * dataPointer() const;
 
-   /*
-     * Check if the arrayBuffer contains any data. This will return false for
-     * ArrayBuffer.prototype and neutered ArrayBuffers.
-     */
+   
+
+
+
     inline bool hasData() const;
 
 };
 
-/*
- * TypedArray
- *
- * The non-templated base class for the specific typed implementations.
- * This class holds all the member variables that are used by
- * the subclasses.
- */
+
+
+
+
+
+
+
 
 struct TypedArray {
     enum {
@@ -192,17 +192,17 @@ struct TypedArray {
         TYPE_FLOAT32,
         TYPE_FLOAT64,
 
-        /*
-         * Special type that's a uint8, but assignments are clamped to 0 .. 255.
-         * Treat the raw data type as a uint8.
-         */
+        
+
+
+
         TYPE_UINT8_CLAMPED,
 
         TYPE_MAX
     };
 
     enum {
-        /* Properties of the typed array stored in reserved slots. */
+        
         FIELD_LENGTH = 0,
         FIELD_BYTEOFFSET,
         FIELD_BYTELENGTH,
@@ -213,11 +213,11 @@ struct TypedArray {
         NUM_FIXED_SLOTS = 7
     };
 
-    // and MUST NOT be used to construct new objects.
+    
     static Class classes[TYPE_MAX];
 
-    // These are the proto/original classes, used
-    // fo constructing new objects
+    
+    
     static Class protoClasses[TYPE_MAX];
 
     static JSBool obj_lookupGeneric(JSContext *cx, HandleObject obj, HandleId id,
@@ -262,10 +262,10 @@ struct TypedArray {
     static inline uint32_t slotWidth(int atype);
     static inline int slotWidth(JSObject *obj);
 
-    /*
-     * Byte length above which created typed arrays and data views will have
-     * singleton types regardless of the context in which they are created.
-     */
+    
+
+
+
     static const uint32_t SINGLETON_TYPE_BYTE_LENGTH = 1024 * 1024 * 10;
 
     static int lengthOffset();
@@ -324,8 +324,8 @@ private:
     defineGetter(JSContext *cx, PropertyName *name, HandleObject proto);
 
   public:
-    // 4 slots + 1 private = 5, which gets rounded up to FINALIZE_OBJECT8,
-    // which is 7 non-private
+    
+    
     static const size_t RESERVED_SLOTS  = 7;
 
     static inline Value bufferValue(DataViewObject &view);
@@ -412,6 +412,6 @@ private:
 bool
 IsDataView(JSObject *obj);
 
-} // namespace js
+} 
 
-#endif /* jstypedarray_h */
+#endif 
