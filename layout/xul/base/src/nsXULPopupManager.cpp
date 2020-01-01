@@ -260,7 +260,7 @@ nsXULPopupManager::GetSubmenuWidgetChain(nsTArray<nsIWidget*> *aWidgetChain)
 }
 
 void
-nsXULPopupManager::AdjustPopupsOnWindowChange()
+nsXULPopupManager::AdjustPopupsOnWindowChange(nsPIDOMWindow* aWindow)
 {
   
   
@@ -268,8 +268,24 @@ nsXULPopupManager::AdjustPopupsOnWindowChange()
   nsMenuChainItem* item = mNoHidePanels;
   while (item) {
     
-    if (item->Frame()->GetAutoPosition())
-      item->Frame()->SetPopupPosition(nsnull, PR_TRUE);
+    
+    nsMenuPopupFrame* frame= item->Frame();
+    if (frame->GetAutoPosition()) {
+      nsIContent* popup = frame->GetContent();
+      if (popup) {
+        nsIDocument* document = popup->GetCurrentDoc();
+        if (document) {
+          nsPIDOMWindow* window = document->GetWindow();
+          if (window) {
+            window = window->GetPrivateRoot();
+            if (window == aWindow) {
+              frame->SetPopupPosition(nsnull, PR_TRUE);
+            }
+          }
+        }
+      }
+    }
+
     item = item->GetParent();
   }
 }
