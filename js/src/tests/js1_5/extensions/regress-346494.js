@@ -1,18 +1,18 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//-----------------------------------------------------------------------------
+
+
+
+
+
 var BUGNUMBER = 346494;
 var summary = 'try-catch-finally scope';
 var actual = '';
 var expect = '';
 
 
-//-----------------------------------------------------------------------------
+
 test();
-//-----------------------------------------------------------------------------
+
 
 function test()
 {
@@ -49,19 +49,6 @@ function test()
   }
   reportCompare(expect, actual, summary);
 
-  expect =
-    'function g() {\n' +
-    '    try {\n' +
-    '        throw "foo";\n' +
-    '    } catch (e if e == "bar") {\n' +
-    '    } catch (e if e == "baz") {\n' +
-    '    } finally {\n' +
-    '    }\n' +
-    '}';
-
-  actual = g + '';
-  reportCompare(expect, actual, summary);
-
   function h()
   {
     try
@@ -89,19 +76,6 @@ function test()
   {
     actual = ex + '';
   }
-  reportCompare(expect, actual, summary);
-
-  expect =
-    'function h() {\n' +
-    '    try {\n' +
-    '        throw "foo";\n' +
-    '    } catch (e if e == "bar") {\n' +
-    '    } catch (e) {\n' +
-    '    } finally {\n' +
-    '    }\n' +
-    '}';
-
-  actual = h + '';
   reportCompare(expect, actual, summary);
 
   exitFunc ('test');
