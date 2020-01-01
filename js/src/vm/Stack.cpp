@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=79 ft=cpp:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is SpiderMonkey JavaScript engine.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Luke Wagner <luke@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "jsgcmark.h"
 #include "methodjit/MethodJIT.h"
@@ -47,7 +47,7 @@
 
 #include "Stack-inl.h"
 
-
+/* Includes to get to low-level memory-mapping functionality. */
 #ifdef XP_WIN
 # include "jswin.h"
 #elif defined(XP_OS2)
@@ -67,7 +67,7 @@
 
 using namespace js;
 
-
+/*****************************************************************************/
 
 #ifdef DEBUG
 JSObject *const StackFrame::sInvalidScopeChain = (JSObject *)0xbeef;
@@ -108,7 +108,7 @@ StackFrame::pc(JSContext *cx, StackFrame *next, JSInlinedSite **pinlined)
     return next->prevpc(pinlined);
 }
 
-
+/*****************************************************************************/
 
 JS_REQUIRES_STACK bool
 StackSegment::contains(const StackFrame *fp) const
@@ -155,7 +155,7 @@ StackSegment::computeNextFrame(StackFrame *fp) const
     return next;
 }
 
-
+/*****************************************************************************/
 
 StackSpace::StackSpace()
   : base_(NULL),
@@ -265,33 +265,33 @@ StackSpace::varObjForFrame(const StackFrame *fp)
 void
 StackSpace::mark(JSTracer *trc)
 {
-    
-
-
-
+    /*
+     * JIT code can leave values in an incoherent (i.e., unsafe for precise
+     * marking) state, hence MarkStackRangeConservatively.
+     */
     Value *end = firstUnused();
     for (StackSegment *seg = seg_; seg; seg = seg->previousInMemory()) {
         STATIC_ASSERT(ubound(end) >= 0);
         if (seg->empty()) {
-            
+            /* Mark slots/args trailing off segment. */
             MarkStackRangeConservatively(trc, seg->valueRangeBegin(), end);
         } else {
-            
+            /* This may be the only pointer to the initialVarObj. */
             if (seg->hasInitialVarObj())
                 gc::MarkObject(trc, seg->initialVarObj(), "varobj");
 
-            
+            /* Mark slots/args trailing off of the last stack frame. */
             StackFrame *fp = seg->currentFrame();
             MarkStackRangeConservatively(trc, fp->slots(), end);
 
-            
+            /* Mark stack frames and slots/args between stack frames. */
             StackFrame *initial = seg->initialFrame();
             for (StackFrame *f = fp; f != initial; f = f->prev()) {
                 js_TraceStackFrame(trc, f);
                 MarkStackRangeConservatively(trc, f->prev()->slots(), (Value *)f);
             }
 
-            
+            /* Mark initial stack frame and leading args. */
             js_TraceStackFrame(trc, initial);
             MarkStackRangeConservatively(trc, seg->valueRangeBegin(), (Value *)initial);
         }
@@ -311,14 +311,14 @@ StackSpace::bumpCommit(JSContext *maybecx, Value *from, ptrdiff_t nvals) const
     Value *newCommit = commitEnd_;
     Value *request = from + nvals;
 
-    
+    /* Use a dumb loop; will probably execute once. */
     JS_ASSERT((end_ - newCommit) % COMMIT_VALS == 0);
     do {
         newCommit += COMMIT_VALS;
         JS_ASSERT((end_ - newCommit) >= 0);
     } while (newCommit < request);
 
-    
+    /* The cast is safe because CAPACITY_BYTES is small. */
     int32 size = static_cast<int32>(newCommit - commitEnd_) * sizeof(Value);
 
     if (!VirtualAlloc(commitEnd_, size, MEM_COMMIT, PAGE_READWRITE)) {
@@ -358,12 +358,12 @@ StackSpace::bumpLimit(JSContext *cx, StackFrame *fp, Value *sp,
     JS_ASSERT(*limit > base_);
     JS_ASSERT(sp < *limit);
 
-    
-
-
-
-
-
+    /*
+     * Ideally, we would only ensure space for 'nvals', not 'nvals + remain',
+     * since this is ~500K. However, this whole call should be a rare case: some
+     * script is passing a obscene number of args to 'apply' and we are just
+     * trying to keep the stack limit heuristic from breaking the script.
+     */
     Value *quota = (Value *)fp + STACK_QUOTA;
     uintN remain = quota - sp;
     uintN inc = nvals + remain;
@@ -388,7 +388,7 @@ StackSpace::pushSegment(StackSegment &seg)
     seg_ = &seg;
 }
 
-
+/*****************************************************************************/
 
 ContextStack::ContextStack(JSContext *cx)
   : regs_(NULL),
@@ -565,7 +565,7 @@ bool
 ContextStack::pushDummyFrame(JSContext *cx, JSObject &scopeChain,
                              DummyFrameGuard *frameGuard)
 {
-    if (!getSegmentAndFrame(cx, 0 , 0 , frameGuard))
+    if (!getSegmentAndFrame(cx, 0 /*vplen*/, 0 /*nslots*/, frameGuard))
         return false;
 
     StackFrame *fp = frameGuard->fp();
@@ -580,7 +580,7 @@ bool
 ContextStack::getGeneratorFrame(JSContext *cx, uintN vplen, uintN nslots,
                                 GeneratorFrameGuard *frameGuard)
 {
-    
+    /* The regs will be set by SendToGenerator. */
     return getSegmentAndFrame(cx, vplen, nslots, frameGuard);
 }
 
@@ -598,11 +598,11 @@ bool
 ContextStack::pushInvokeArgsSlow(JSContext *cx, uintN argc,
                                  InvokeArgsGuard *argsGuard)
 {
-    
-
-
-
-
+    /*
+     * Either there is no code running on this context or its not at the top of
+     * the contiguous stack. Either way, push a new empty segment which will
+     * root the args for invoke and later contain the frame pushed by Invoke.
+     */
     JS_ASSERT(!isCurrentAndActive());
 
     Value *start = space().firstUnused();
@@ -617,10 +617,10 @@ ContextStack::pushInvokeArgsSlow(JSContext *cx, uintN argc,
     Value *vp = seg->valueRangeBegin();
     ImplicitCast<CallArgs>(*argsGuard) = CallArgsFromVp(argc, vp);
 
-    
-
-
-
+    /*
+     * Use stack override to root vp until the frame is pushed. Don't need to
+     * MakeRangeGCSafe: the VM stack is conservatively marked.
+     */
     space().pushSegment(*seg);
     space().pushOverride(vp + vplen, &argsGuard->prevOverride_);
 
@@ -653,10 +653,10 @@ ContextStack::popInvokeFrameSlow(const InvokeFrameGuard &frameGuard)
     popSegmentAndFrameImpl();
 }
 
-
-
-
-
+/*
+ * NB: this function can call out and observe the stack (e.g., through GC), so
+ * it should only be called from a consistent stack state.
+ */
 void
 ContextStack::notifyIfNoCodeRunning()
 {
@@ -667,7 +667,7 @@ ContextStack::notifyIfNoCodeRunning()
     cx_->maybeMigrateVersionOverride();
 }
 
-
+/*****************************************************************************/
 
 void
 FrameRegsIter::initSlow()
@@ -685,24 +685,24 @@ FrameRegsIter::initSlow()
     pc_ = seg_->suspendedRegs().pc;
 }
 
-
-
-
-
-
-
+/*
+ * Using the invariant described in the js::StackSegment comment, we know that,
+ * when a pair of prev-linked stack frames are in the same segment, the
+ * first frame's address is the top of the prev-frame's stack, modulo missing
+ * arguments.
+ */
 void
 FrameRegsIter::incSlow(StackFrame *oldfp)
 {
     JS_ASSERT(oldfp == seg_->initialFrame());
     JS_ASSERT(fp_ == oldfp->prev());
 
-    
-
-
-
-
-
+    /*
+     * Segments from arbitrary context stacks can interleave so we must do a
+     * linear scan over segments in this context stack. Furthermore, 'prev' can
+     * be any frame in the segment (not only the suspendedFrame), so we must
+     * scan each stack frame in each segment. Fortunately, this is not hot code.
+     */
     seg_ = seg_->previousInContext();
     sp_ = seg_->suspendedRegs().sp;
     pc_ = seg_->suspendedRegs().pc;
@@ -723,12 +723,16 @@ FrameRegsIter::incSlow(StackFrame *oldfp)
     }
 }
 
-
+/*****************************************************************************/
 
 AllFramesIter::AllFramesIter(JSContext *cx)
-  : seg_(cx->stack.currentSegment()),
-    fp_(seg_ ? seg_->currentFrame() : NULL)
+  : seg_(cx->stack.currentSegment())
 {
+#ifdef JS_METHODJIT
+    mjit::ExpandInlineFrames(cx, true);
+#endif
+
+    fp_ = seg_ ? seg_->currentFrame() : NULL;
 }
 
 AllFramesIter&
