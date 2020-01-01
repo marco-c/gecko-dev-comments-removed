@@ -1,17 +1,17 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Copyright 2012 Mozilla Foundation and Mozilla contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 "use strict";
 
@@ -25,10 +25,10 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 var RIL = {};
 Cu.import("resource://gre/modules/ril_consts.js", RIL);
 
-
+// set to true to in ril_consts.js to see debug messages
 var DEBUG = RIL.DEBUG_CONTENT_HELPER;
 
-
+// Read debug setting from pref
 try {
   let debugPref = Services.prefs.getBoolPref("ril.debugging.enabled");
   DEBUG = RIL.DEBUG_CONTENT_HELPER || debugPref;
@@ -75,7 +75,6 @@ const RIL_IPC_MSG_NAMES = [
   "RIL:SelectNetwork",
   "RIL:SelectNetworkAuto",
   "RIL:CallStateChanged",
-  "RIL:EmergencyCbModeChanged",
   "RIL:VoicemailNotification",
   "RIL:VoicemailInfoChanged",
   "RIL:CallError",
@@ -107,8 +106,7 @@ const RIL_IPC_MSG_NAMES = [
   "RIL:UpdateIccContact",
   "RIL:SetRoamingPreference",
   "RIL:GetRoamingPreference",
-  "RIL:CdmaCallWaiting",
-  "RIL:ExitEmergencyCbMode"
+  "RIL:CdmaCallWaiting"
 ];
 
 XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
@@ -154,7 +152,7 @@ IccInfo.prototype = {
     interfaces:       [Ci.nsIDOMMozIccInfo]
   }),
 
-  
+  // nsIDOMMozIccInfo
 
   iccid: null,
   mcc: null,
@@ -180,7 +178,7 @@ MobileConnectionInfo.prototype = {
     interfaces:       [Ci.nsIDOMMozMobileConnectionInfo]
   }),
 
-  
+  // nsIDOMMozMobileConnectionInfo
 
   connected: false,
   state: null,
@@ -210,7 +208,7 @@ MobileNetworkInfo.prototype = {
     interfaces:       [Ci.nsIDOMMozMobileNetworkInfo]
   }),
 
-  
+  // nsIDOMMozMobileNetworkInfo
 
   shortName: null,
   longName: null,
@@ -230,7 +228,7 @@ MobileCellInfo.prototype = {
     interfaces:       [Ci.nsIDOMMozMobileCellInfo]
   }),
 
-  
+  // nsIDOMMozMobileCellInfo
 
   gsmLocationAreaCode: -1,
   gsmCellId: -1,
@@ -252,7 +250,7 @@ VoicemailStatus.prototype = {
     interfaces:       [Ci.nsIDOMMozVoicemailStatus]
   }),
 
-  
+  // nsIDOMMozVoicemailStatus
 
   hasMessages: false,
   messageCount: Ci.nsIDOMMozVoicemailStatus.MESSAGE_COUNT_UNKNOWN,
@@ -277,7 +275,7 @@ MobileCFInfo.prototype = {
     interfaces:       [Ci.nsIDOMMozMobileCFInfo]
   }),
 
-  
+  // nsIDOMMozMobileCFInfo
 
   active: false,
   action: -1,
@@ -310,7 +308,7 @@ CellBroadcastMessage.prototype = {
     interfaces:       [Ci.nsIDOMMozCellBroadcastMessage]
   }),
 
-  
+  // nsIDOMMozCellBroadcastMessage
 
   geographicalScope: null,
   messageCode: null,
@@ -340,7 +338,7 @@ CellBroadcastEtwsInfo.prototype = {
     interfaces:       [Ci.nsIDOMMozCellBroadcastEtwsInfo]
   }),
 
-  
+  // nsIDOMMozCellBroadcastEtwsInfo
 
   warningType: null,
   emergencyUserAlert: null,
@@ -407,7 +405,7 @@ function RILContentHelper() {
   };
   this.voicemailInfo = new VoicemailInfo();
 
-  this.initDOMRequestHelper( null, RIL_IPC_MSG_NAMES);
+  this.initDOMRequestHelper(/* aWindow */ null, RIL_IPC_MSG_NAMES);
   this._windowsMap = [];
   Services.obs.addObserver(this, "xpcom-shutdown", false);
 }
@@ -431,7 +429,7 @@ RILContentHelper.prototype = {
                                                  Ci.nsITelephonyProvider,
                                                  Ci.nsIIccProvider]}),
 
-  
+  // An utility function to copy objects.
   updateInfo: function updateInfo(srcInfo, destInfo) {
     for (let key in srcInfo) {
       destInfo[key] = srcInfo[key];
@@ -476,9 +474,9 @@ RILContentHelper.prototype = {
   rilContext: null,
 
   getRilContext: function getRilContext() {
-    
-    
-    
+    // Update ril context by sending IPC message to chrome only when the first
+    // time we require it. The information will be updated by following info
+    // changed messages.
     this.getRilContext = function getRilContext() {
       return this.rilContext;
     };
@@ -498,9 +496,9 @@ RILContentHelper.prototype = {
     return this.rilContext;
   },
 
-  
-
-
+  /**
+   * nsIMobileConnectionProvider
+   */
 
   get iccInfo() {
     let context = this.getRilContext();
@@ -527,10 +525,10 @@ RILContentHelper.prototype = {
     return context && context.networkSelectionMode;
   },
 
-  
-
-
-
+  /**
+   * The network that is currently trying to be selected (or "automatic").
+   * This helps ensure that only one network is selected at a time.
+   */
   _selectingNetwork: null,
 
   getNetworks: function getNetworks(window) {
@@ -579,8 +577,8 @@ RILContentHelper.prototype = {
     if (this.rilContext.networkSelectionMode == RIL.GECKO_NETWORK_SELECTION_MANUAL &&
         this.rilContext.voiceConnectionInfo.network === network) {
 
-      
-      
+      // Already manually selected this network, so schedule
+      // onsuccess to be fired on the next tick
       this.dispatchFireRequestSuccess(requestId, null);
       return request;
     }
@@ -614,8 +612,8 @@ RILContentHelper.prototype = {
     let requestId = this.getRequestId(request);
 
     if (this.rilContext.networkSelectionMode == RIL.GECKO_NETWORK_SELECTION_AUTOMATIC) {
-      
-      
+      // Already using automatic selection mode, so schedule
+      // onsuccess to be be fired on the next tick
       this.dispatchFireRequestSuccess(requestId, null);
       return request;
     }
@@ -735,8 +733,8 @@ RILContentHelper.prototype = {
   },
 
   sendMMI: function sendMMI(window, mmi) {
-    
-    
+    // We need to save the global window to get the proper MMIError
+    // constructor once we get the reply from the parent process.
     this._window = window;
 
     debug("Sending MMI " + mmi);
@@ -860,7 +858,7 @@ RILContentHelper.prototype = {
     let request = Services.DOMRequest.createRequest(window);
     let requestId = this.getRequestId(request);
 
-    
+    //Potentially you need serialization here and can't pass the jsval through
     cpmm.sendAsyncMessage("RIL:IccExchangeAPDU", {
       clientId: 0,
       data: {
@@ -921,7 +919,7 @@ RILContentHelper.prototype = {
     let request = Services.DOMRequest.createRequest(window);
     let requestId = this.getRequestId(request);
 
-    
+    // Parsing nsDOMContact to Icc Contact format
     let iccContact = {};
 
     if (Array.isArray(contact.name) && contact.name[0]) {
@@ -1140,24 +1138,6 @@ RILContentHelper.prototype = {
     return request;
   },
 
-  exitEmergencyCbMode: function exitEmergencyCbMode(window) {
-    if (window == null) {
-      throw Components.Exception("Can't get window object",
-                                  Cr.NS_ERROR_UNEXPECTED);
-    }
-    let request = Services.DOMRequest.createRequest(window);
-    let requestId = this.getRequestId(request);
-
-    cpmm.sendAsyncMessage("RIL:ExitEmergencyCbMode", {
-      clientId: 0,
-      data: {
-        requestId: requestId,
-      }
-    });
-
-    return request;
-  },
-
   _mobileConnectionListeners: null,
   _telephonyListeners: null,
   _cellBroadcastListeners: null,
@@ -1168,7 +1148,7 @@ RILContentHelper.prototype = {
   voicemailStatus: null,
 
   getVoicemailInfo: function getVoicemailInfo() {
-    
+    // Get voicemail infomation by IPC only on first time.
     this.getVoicemailInfo = function getVoicemailInfo() {
       return this.voicemailInfo;
     };
@@ -1234,8 +1214,8 @@ RILContentHelper.prototype = {
   unregisterTelephonyMsg: function unregisteTelephonyMsg(listener) {
     this.unregisterListener("_telephonyListeners", listener);
 
-    
-    
+    // We also need to make sure the listener is removed from
+    // _enumerateTelephonyCallbacks.
     let index = this._enumerateTelephonyCallbacks.indexOf(listener);
     if (index != -1) {
       this._enumerateTelephonyCallbacks.splice(index, 1);
@@ -1275,8 +1255,8 @@ RILContentHelper.prototype = {
 
   enumerateCalls: function enumerateCalls(callback) {
     debug("Requesting enumeration of calls for callback: " + callback);
-    
-    
+    // We need 'requestId' to meet the 'RILContentHelper <--> RadioInterfaceLayer'
+    // protocol.
     let requestId = this._getRandomId();
     cpmm.sendAsyncMessage("RIL:EnumerateCalls", {
       clientId: 0,
@@ -1377,7 +1357,7 @@ RILContentHelper.prototype = {
     });
   },
 
-  
+  // nsIObserver
 
   observe: function observe(subject, topic, data) {
     if (topic == "xpcom-shutdown") {
@@ -1386,7 +1366,7 @@ RILContentHelper.prototype = {
     }
   },
 
-  
+  // nsIMessageListener
 
   fireRequestSuccess: function fireRequestSuccess(requestId, result) {
     let request = this.takeRequest(requestId);
@@ -1630,15 +1610,6 @@ RILContentHelper.prototype = {
                            "notifyCdmaCallWaiting",
                            [msg.json.data]);
         break;
-      case "RIL:ExitEmergencyCbMode":
-        this.handleExitEmergencyCbMode(msg.json);
-        break;
-      case "RIL:EmergencyCbModeChanged":
-        let data = msg.json.data;
-        this._deliverEvent("_mobileConnectionListeners",
-                           "notifyEmergencyCbModeChanged",
-                           [data.active, data.timeoutMs]);
-        break;
     }
   },
 
@@ -1735,7 +1706,7 @@ RILContentHelper.prototype = {
         prop.email = [{value: c.email}];
       }
 
-      
+      // ANR - Additional Number
       let anrLen = c.anr ? c.anr.length : 0;
       for (let i = 0; i < anrLen; i++) {
         prop.tel.push({value: c.anr[i]});
@@ -1764,7 +1735,7 @@ RILContentHelper.prototype = {
       changed = true;
       this.voicemailStatus.messageCount = message.msgCount;
     } else if (message.msgCount == -1) {
-      
+      // For MWI using DCS the message count is not available
       changed = true;
     }
 
@@ -1824,20 +1795,6 @@ RILContentHelper.prototype = {
     this.fireRequestSuccess(message.requestId, status);
   },
 
-  handleExitEmergencyCbMode: function handleExitEmergencyCbMode(message) {
-    let requestId = message.requestId;
-    let request = this.takeRequest(requestId);
-    if (!request) {
-      return;
-    }
-
-    if (!message.success) {
-      Services.DOMRequest.fireError(request, message.errorMsg);
-      return;
-    }
-    Services.DOMRequest.fireSuccess(request, null);
-  },
-
   handleSendCancelMMI: function handleSendCancelMMI(message) {
     debug("handleSendCancelMMI " + JSON.stringify(message));
     let request = this.takeRequest(message.requestId);
@@ -1847,9 +1804,9 @@ RILContentHelper.prototype = {
 
     let success = message.success;
 
-    
-    
-    
+    // We expect to have an IMEI at this point if the request was supposed
+    // to query for the IMEI, so getting a successful reply from the RIL
+    // without containing an actual IMEI number is considered an error.
     if (message.mmiServiceCode === RIL.MMI_KS_SC_IMEI &&
         !message.statusMessage) {
         message.errorMsg = message.errorMsg ?
@@ -1857,9 +1814,9 @@ RILContentHelper.prototype = {
         success = false;
     }
 
-    
-    
-    
+    // MMI query call forwarding options request returns a set of rules that
+    // will be exposed in the form of an array of nsIDOMMozMobileCFInfo
+    // instances.
     if (message.mmiServiceCode === RIL.MMI_KS_SC_CALL_FORWARDING &&
         message.additionalInformation) {
       this._cfRulesToMobileCfInfo(message.additionalInformation);
@@ -1910,9 +1867,9 @@ RILContentHelper.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Helper for guarding us again invalid reason values for call forwarding.
+   */
   _isValidCFReason: function _isValidCFReason(reason) {
     switch (reason) {
       case Ci.nsIDOMMozMobileCFInfo.CALL_FORWARD_REASON_UNCONDITIONAL:
@@ -1927,9 +1884,9 @@ RILContentHelper.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Helper for guarding us again invalid action values for call forwarding.
+   */
   _isValidCFAction: function _isValidCFAction(action) {
     switch (action) {
       case Ci.nsIDOMMozMobileCFInfo.CALL_FORWARD_ACTION_DISABLE:
@@ -1942,9 +1899,9 @@ RILContentHelper.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Helper for guarding us against invalid program values for call barring.
+   */
   _isValidCallBarringProgram: function _isValidCallBarringProgram(program) {
     switch (program) {
       case Ci.nsIDOMMozMobileConnection.CALL_BARRING_PROGRAM_ALL_OUTGOING:
@@ -1958,9 +1915,9 @@ RILContentHelper.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Helper for guarding us against invalid option for call barring.
+   */
   _isValidCallBarringOption: function _isValidCallBarringOption(option) {
     return (option
             && option.serviceClass != null
