@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsIsIndexFrame.h"
 
@@ -100,7 +100,7 @@ nsIsIndexFrame::~nsIsIndexFrame()
 void
 nsIsIndexFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
-  // remove ourself as a listener of the text control (bug 40533)
+  
   if (mInputContent) {
     if (mListener) {
       mInputContent->RemoveEventListenerByIID(mListener, NS_GET_IID(nsIDOMKeyListener));
@@ -113,8 +113,8 @@ nsIsIndexFrame::DestroyFrom(nsIFrame* aDestructRoot)
   nsBlockFrame::DestroyFrom(aDestructRoot);
 }
 
-// REVIEW: We don't need to override BuildDisplayList, nsBlockFrame will honour
-// our visibility setting
+
+
 
 nsresult
 nsIsIndexFrame::UpdatePromptLabel(PRBool aNotify)
@@ -123,17 +123,17 @@ nsIsIndexFrame::UpdatePromptLabel(PRBool aNotify)
 
   nsresult result = NS_OK;
 
-  // Get the text from the "prompt" attribute.
-  // If it is zero length, set it to a default value (localized)
+  
+  
   nsXPIDLString prompt;
   if (mContent)
     mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::prompt, prompt);
 
   if (prompt.IsEmpty()) {
-    // Generate localized label.
-    // We can't make any assumption as to what the default would be
-    // because the value is localized for non-english platforms, thus
-    // it might not be the string "This is a searchable index. Enter search keywords: "
+    
+    
+    
+    
     result =
       nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
                                          "IsIndexPromptWithSpace", prompt);
@@ -189,11 +189,11 @@ nsIsIndexFrame::SetFocus(PRBool aOn, PRBool aRepaint)
 nsresult
 nsIsIndexFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 {
-  // Get the node info manager (used to create hr's and input's)
+  
   nsCOMPtr<nsIDocument> doc = mContent->GetDocument();
   nsNodeInfoManager *nimgr = doc->NodeInfoManager();
 
-  // Create an hr
+  
   nsCOMPtr<nsINodeInfo> hrInfo;
   hrInfo = nimgr->GetNodeInfo(nsGkAtoms::hr, nsnull, kNameSpaceID_XHTML,
                               nsIDOMNode::ELEMENT_NODE);
@@ -203,17 +203,17 @@ nsIsIndexFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   if (!mPreHr || !aElements.AppendElement(mPreHr))
     return NS_ERROR_OUT_OF_MEMORY;
 
-  // Add a child text content node for the label
+  
   NS_NewTextNode(getter_AddRefs(mTextContent), nimgr);
   if (!mTextContent)
     return NS_ERROR_OUT_OF_MEMORY;
 
-  // set the value of the text node and add it to the child list
+  
   UpdatePromptLabel(PR_FALSE);
   if (!aElements.AppendElement(mTextContent))
     return NS_ERROR_OUT_OF_MEMORY;
 
-  // Create text input field
+  
   nsCOMPtr<nsINodeInfo> inputInfo;
   inputInfo = nimgr->GetNodeInfo(nsGkAtoms::input, nsnull, kNameSpaceID_XHTML,
                                  nsIDOMNode::ELEMENT_NODE);
@@ -229,11 +229,11 @@ nsIsIndexFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   if (!aElements.AppendElement(mInputContent))
     return NS_ERROR_OUT_OF_MEMORY;
 
-  // Register as an event listener to submit on Enter press
+  
   mListener = new nsIsIndexFrame::KeyListener(this);
   mInputContent->AddEventListenerByIID(mListener, NS_GET_IID(nsIDOMKeyListener));
 
-  // Create an hr
+  
   hrInfo = nimgr->GetNodeInfo(nsGkAtoms::hr, nsnull, kNameSpaceID_XHTML,
                               nsIDOMNode::ELEMENT_NODE);
   NS_NewHTMLElement(getter_AddRefs(mPostHr), hrInfo.forget(),
@@ -267,8 +267,8 @@ nsIsIndexFrame::GetMinWidth(nsRenderingContext *aRenderingContext)
   nscoord result;
   DISPLAY_MIN_WIDTH(this, result);
 
-  // Our min width is our pref width; the rest of our reflow is
-  // happily handled by nsBlockFrame
+  
+  
   result = GetPrefWidth(aRenderingContext);
   return result;
 }
@@ -312,7 +312,7 @@ nsIsIndexFrame::KeyPress(nsIDOMEvent* aEvent)
     }
     if (nsIDOMKeyEvent::DOM_VK_RETURN == code) {
       OnSubmit(PresContext());
-      aEvent->PreventDefault(); // XXX Needed?
+      aEvent->PreventDefault(); 
     }
   }
 }
@@ -325,8 +325,8 @@ nsIsIndexFrame::GetFrameName(nsAString& aResult) const
 }
 #endif
 
-// submission
-// much of this is cut and paste from nsFormFrame::OnSubmit
+
+
 NS_IMETHODIMP
 nsIsIndexFrame::OnSubmit(nsPresContext* aPresContext)
 {
@@ -340,58 +340,58 @@ nsIsIndexFrame::OnSubmit(nsPresContext* aPresContext)
 
   nsresult result = NS_OK;
 
-  // Begin ProcessAsURLEncoded
+  
   nsAutoString data;
 
   nsCOMPtr<nsIUnicodeEncoder> encoder;
-  if(NS_FAILED(GetEncoder(getter_AddRefs(encoder))))  // Non-fatal error
+  if(NS_FAILED(GetEncoder(getter_AddRefs(encoder))))  
      encoder = nsnull;
 
   nsAutoString value;
   GetInputValue(value);
   URLEncode(value, encoder, data);
-  // End ProcessAsURLEncoded
+  
 
-  // make the url string
+  
   nsAutoString href;
 
-  // Get the document.
-  // We'll need it now to form the URL we're submitting to.
-  // We'll also need it later to get the DOM window when notifying form submit observers (bug 33203)
+  
+  
+  
   nsCOMPtr<nsIDocument> document = mContent->GetDocument();
-  if (!document) return NS_OK; // No doc means don't submit, see Bug 28988
+  if (!document) return NS_OK; 
 
-  // Resolve url to an absolute url
+  
   nsIURI *baseURI = document->GetDocBaseURI();
   if (!baseURI) {
     NS_ERROR("No Base URL found in Form Submit!");
-    return NS_OK; // No base URL -> exit early, see Bug 30721
+    return NS_OK; 
   }
 
-  // If an action is not specified and we are inside 
-  // a HTML document then reload the URL. This makes us
-  // compatible with 4.x browsers.
-  // If we are in some other type of document such as XML or
-  // XUL, do nothing. This prevents undesirable reloading of
-  // a document inside XUL.
+  
+  
+  
+  
+  
+  
 
   nsresult rv;
   nsCOMPtr<nsIHTMLDocument> htmlDoc;
   htmlDoc = do_QueryInterface(document, &rv);
   if (NS_FAILED(rv)) {   
-    // Must be a XML, XUL or other non-HTML document type
-    // so do nothing.
+    
+    
     return NS_OK;
   } 
 
-  // Necko's MakeAbsoluteURI doesn't reuse the baseURL's rel path if it is
-  // passed a zero length rel path.
+  
+  
   nsCAutoString relPath;
   baseURI->GetSpec(relPath);
   if (!relPath.IsEmpty()) {
     CopyUTF8toUTF16(relPath, href);
 
-    // If re-using the same URL, chop off old query string (bug 25330)
+    
     PRInt32 queryStart = href.FindChar('?');
     if (kNotFound != queryStart) {
       href.Truncate(queryStart);
@@ -401,8 +401,8 @@ nsIsIndexFrame::OnSubmit(nsPresContext* aPresContext)
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  // Add the URI encoded form values to the URI
-  // Get the scheme of the URI.
+  
+  
   nsCOMPtr<nsIURI> actionURL;
   nsXPIDLCString scheme;
   PRBool isJSURL = PR_FALSE;
@@ -414,12 +414,12 @@ nsIsIndexFrame::OnSubmit(nsPresContext* aPresContext)
                                       baseURI))) {
     result = actionURL->SchemeIs("javascript", &isJSURL);
   }
-  // Append the URI encoded variable/value pairs for GET's
-  if (!isJSURL) { // Not for JS URIs, see bug 26917
-    if (href.FindChar('?') == kNotFound) { // Add a ? if needed
+  
+  if (!isJSURL) { 
+    if (href.FindChar('?') == kNotFound) { 
       href.Append(PRUnichar('?'));
-    } else {                              // Adding to existing query string
-      if (href.Last() != '&' && href.Last() != '?') {   // Add a & if needed
+    } else {                              
+      if (href.Last() != '&' && href.Last() != '?') {   
         href.Append(PRUnichar('&'));
       }
     }
@@ -430,20 +430,20 @@ nsIsIndexFrame::OnSubmit(nsPresContext* aPresContext)
                      flatDocCharset.get(), baseURI);
   if (NS_FAILED(result)) return result;
 
-  // Now pretend we're triggering a link
+  
   nsContentUtils::TriggerLink(mContent, aPresContext, uri,
-                              EmptyString(), PR_TRUE, PR_TRUE);
+                              EmptyString(), PR_TRUE, PR_TRUE, PR_TRUE);
   return result;
 }
 
 void nsIsIndexFrame::GetSubmitCharset(nsCString& oCharset)
 {
-  oCharset.AssignLiteral("UTF-8"); // default to utf-8
-  // XXX
-  // We may want to get it from the HTML 4 Accept-Charset attribute first
-  // see 17.3 The FORM element in HTML 4 for details
+  oCharset.AssignLiteral("UTF-8"); 
+  
+  
+  
 
-  // Get the charset from document
+  
   nsIDocument* doc = mContent->GetDocument();
   if (doc) {
     oCharset = doc->GetDocumentCharacterSet();
@@ -457,7 +457,7 @@ NS_IMETHODIMP nsIsIndexFrame::GetEncoder(nsIUnicodeEncoder** encoder)
   nsresult rv = NS_OK;
   GetSubmitCharset(charset);
   
-  // Get Charset, get the encoder.
+  
   nsICharsetConverterManager * ccm = nsnull;
   rv = CallGetService(NS_CHARSETCONVERTERMANAGER_CONTRACTID, &ccm);
   if(NS_SUCCEEDED(rv) && (nsnull != ccm)) {
@@ -473,7 +473,7 @@ NS_IMETHODIMP nsIsIndexFrame::GetEncoder(nsIUnicodeEncoder** encoder)
   return rv;
 }
 
-// XXX i18n helper routines
+
 char*
 nsIsIndexFrame::UnicodeToNewBytes(const PRUnichar* aSrc, PRUint32 aLen, nsIUnicodeEncoder* encoder)
 {
@@ -500,7 +500,7 @@ nsIsIndexFrame::UnicodeToNewBytes(const PRUnichar* aSrc, PRUint32 aLen, nsIUnico
    return res;
 }
 
-// XXX i18n helper routines
+
 void
 nsIsIndexFrame::URLEncode(const nsString& aString, nsIUnicodeEncoder* encoder, nsString& oString) 
 {
@@ -511,7 +511,7 @@ nsIsIndexFrame::URLEncode(const nsString& aString, nsIUnicodeEncoder* encoder, n
   if(nsnull == inBuf)
     inBuf  = ToNewCString(aString);
 
-  // convert to CRLF breaks
+  
   char* convertedBuf = nsLinebreakConverter::ConvertLineBreaks(inBuf,
                            nsLinebreakConverter::eLinebreakAny, nsLinebreakConverter::eLinebreakNet);
   delete [] inBuf;
@@ -522,9 +522,9 @@ nsIsIndexFrame::URLEncode(const nsString& aString, nsIUnicodeEncoder* encoder, n
   nsMemory::Free(convertedBuf);
 }
 
-//----------------------------------------------------------------------
-// nsIStatefulFrame
-//----------------------------------------------------------------------
+
+
+
 NS_IMETHODIMP
 nsIsIndexFrame::SaveState(SpecialStateID aStateID, nsPresState** aState)
 {
@@ -532,13 +532,13 @@ nsIsIndexFrame::SaveState(SpecialStateID aStateID, nsPresState** aState)
 
   *aState = nsnull;
 
-  // Get the value string
+  
   nsAutoString stateString;
   GetInputValue(stateString);
 
   if (! stateString.IsEmpty()) {
 
-    // Construct a pres state and store value in it.
+    
     *aState = new nsPresState();
     if (!*aState)
       return NS_ERROR_OUT_OF_MEMORY;
@@ -561,7 +561,7 @@ nsIsIndexFrame::RestoreState(nsPresState* aState)
 {
   NS_ENSURE_ARG_POINTER(aState);
 
-  // Set the value to the stored state.
+  
   nsCOMPtr<nsISupportsString> stateString
     (do_QueryInterface(aState->GetStateProperty()));
 
