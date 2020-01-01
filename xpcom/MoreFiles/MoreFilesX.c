@@ -2318,9 +2318,10 @@ BadParameter:
 
 
 
-#if 0
+
+
 OSErr
-FSVolumeMount(
+MFX_FSVolumeMount(
 	const void *volMountInfo,
 	FSVolumeRefNum *volRefNum)
 {
@@ -2342,7 +2343,6 @@ BadParameter:
 
 	return ( result );
 }
-#endif
 
 
 
