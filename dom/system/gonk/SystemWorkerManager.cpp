@@ -1,19 +1,19 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* Copyright 2012 Mozilla Foundation and Mozilla contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "SystemWorkerManager.h"
 
@@ -55,7 +55,7 @@ namespace {
 NS_DEFINE_CID(kWifiWorkerCID, NS_WIFIWORKER_CID);
 NS_DEFINE_CID(kNetworkManagerCID, NS_NETWORKMANAGER_CID);
 
-
+// Doesn't carry a reference, we're owned by services.
 SystemWorkerManager *gInstance = nullptr;
 
 class ConnectWorkerToRIL : public WorkerTask
@@ -151,8 +151,8 @@ PostToRIL(JSContext *cx, unsigned argc, JS::Value *vp)
 bool
 ConnectWorkerToRIL::RunTask(JSContext *aCx)
 {
-  
-  
+  // Set up the postRILMessage on the function for worker -> RIL thread
+  // communication.
   NS_ASSERTION(!NS_IsMainThread(), "Expecting to be on the worker thread");
   NS_ASSERTION(!JS_IsRunning(aCx), "Are we being called somehow?");
   JSObject *workerGlobal = JS_GetGlobalForScopeChain(aCx);
@@ -232,7 +232,7 @@ DoNetdCommand(JSContext *cx, unsigned argc, JS::Value *vp)
     return false;
   }
 
-  
+  // Reserve one space for '\0'.
   if (size > MAX_COMMAND_SIZE - 1 || size <= 0) {
     JS_ReportError(cx, "Passed-in data size is invalid");
     return false;
@@ -241,7 +241,7 @@ DoNetdCommand(JSContext *cx, unsigned argc, JS::Value *vp)
   NetdCommand* command = new NetdCommand();
 
   memcpy(command->mData, data, size);
-  
+  // Include the null terminate to the command to make netd happy.
   command->mData[size] = 0;
   command->mSize = size + 1;
   SendNetdCommand(command);
@@ -257,8 +257,8 @@ public:
 bool
 ConnectWorkerToNetd::RunTask(JSContext *aCx)
 {
-  
-  
+  // Set up the DoNetdCommand on the function for worker <--> Netd process
+  // communication.
   NS_ASSERTION(!NS_IsMainThread(), "Expecting to be on the worker thread");
   NS_ASSERTION(!JS_IsRunning(aCx), "Are we being called somehow?");
   JSObject *workerGlobal = JS_GetGlobalForScopeChain(aCx);
@@ -313,9 +313,9 @@ NetdReceiver::DispatchNetdEvent::RunTask(JSContext *aCx)
                              argv, argv);
 }
 
-#endif 
+#endif // MOZ_WIDGET_GONK
 
-} 
+} // anonymous namespace
 
 SystemWorkerManager::SystemWorkerManager()
   : mShutdown(false)
@@ -410,7 +410,7 @@ SystemWorkerManager::Shutdown()
   }
 }
 
-
+// static
 already_AddRefed<SystemWorkerManager>
 SystemWorkerManager::FactoryCreate()
 {
@@ -431,7 +431,7 @@ SystemWorkerManager::FactoryCreate()
   return instance.forget();
 }
 
-
+// static
 nsIInterfaceRequestor*
 SystemWorkerManager::GetInterfaceRequestor()
 {
@@ -445,7 +445,7 @@ SystemWorkerManager::SendRilRawData(unsigned long aClientId,
   if ((gInstance->mRilConsumers.Length() <= aClientId) ||
       !gInstance->mRilConsumers[aClientId] ||
       gInstance->mRilConsumers[aClientId]->GetConnectionStatus() != SOCKET_CONNECTED) {
-    
+    // Probably shuting down.
     delete aRaw;
     return true;
   }
@@ -487,7 +487,6 @@ SystemWorkerManager::RegisterRilWorker(unsigned int aClientId,
     return NS_ERROR_FAILURE;
   }
 
-  JSAutoRequest ar(aCx);
   JSAutoCompartment ac(aCx, JSVAL_TO_OBJECT(aWorker));
 
   WorkerCrossThreadDispatcher *wctd =
@@ -503,7 +502,7 @@ SystemWorkerManager::RegisterRilWorker(unsigned int aClientId,
     return NS_ERROR_UNEXPECTED;
   }
 
-  
+  // Now that we're set up, connect ourselves to the RIL thread.
   mRilConsumers[aClientId] = new RilConsumer(aClientId, wctd);
   return NS_OK;
 }
@@ -520,7 +519,6 @@ SystemWorkerManager::InitNetd(JSContext *cx)
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(!JSVAL_IS_PRIMITIVE(workerval), NS_ERROR_UNEXPECTED);
 
-  JSAutoRequest ar(cx);
   JSAutoCompartment ac(cx, JSVAL_TO_OBJECT(workerval));
 
   WorkerCrossThreadDispatcher *wctd =
@@ -536,7 +534,7 @@ SystemWorkerManager::InitNetd(JSContext *cx)
     return NS_ERROR_UNEXPECTED;
   }
 
-  
+  // Now that we're set up, connect ourselves to the Netd process.
   mozilla::RefPtr<NetdReceiver> receiver = new NetdReceiver(wctd);
   StartNetd(receiver);
   mNetdWorker = worker;

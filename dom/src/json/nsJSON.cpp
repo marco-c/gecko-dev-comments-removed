@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=79: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsapi.h"
 #include "jsdbgapi.h"
@@ -60,7 +60,7 @@ NS_IMETHODIMP
 nsJSON::Encode(const JS::Value& aValue, JSContext* cx, uint8_t aArgc,
                nsAString &aJSON)
 {
-  
+  // This function should only be called from JS.
   nsresult rv = WarnDeprecatedMethod(EncodeWarning);
   if (NS_FAILED(rv))
     return rv;
@@ -74,10 +74,10 @@ nsJSON::Encode(const JS::Value& aValue, JSContext* cx, uint8_t aArgc,
   nsJSONWriter writer;
   rv = EncodeInternal(cx, aValue, &writer);
 
-  
+  // FIXME: bug 408838. Get exception types sorted out
   if (NS_SUCCEEDED(rv) || rv == NS_ERROR_INVALID_ARG) {
     rv = NS_OK;
-    
+    // if we didn't consume anything, it's not JSON, so return null
     if (!writer.DidWrite()) {
       aJSON.Truncate();
       aJSON.SetIsVoid(true);
@@ -96,7 +96,7 @@ static const char UTF16BEBOM[] = "\xFE\xFF";
 
 static nsresult CheckCharset(const char* aCharset)
 {
-  
+  // Check that the charset is permissible
   if (!(strcmp(aCharset, "UTF-8") == 0 ||
         strcmp(aCharset, "UTF-16LE") == 0 ||
         strcmp(aCharset, "UTF-16BE") == 0)) {
@@ -114,23 +114,23 @@ nsJSON::EncodeToStream(nsIOutputStream *aStream,
                        JSContext* cx,
                        uint8_t aArgc)
 {
-  
+  // This function should only be called from JS.
   NS_ENSURE_ARG(aStream);
   nsresult rv;
 
   rv = CheckCharset(aCharset);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Check to see if we have a buffered stream
   nsCOMPtr<nsIOutputStream> bufferedStream;
-  
-  
-  
+  // FIXME: bug 408514.
+  // NS_OutputStreamIsBuffered(aStream) asserts on file streams...
+  //if (!NS_OutputStreamIsBuffered(aStream)) {
     rv = NS_NewBufferedOutputStream(getter_AddRefs(bufferedStream),
                                     aStream, 4096);
     NS_ENSURE_SUCCESS(rv, rv);
-  
-  
+  //  aStream = bufferedStream;
+  //}
 
   uint32_t ignored;
   if (aWriteBOM) {
@@ -175,9 +175,6 @@ nsJSON::EncodeFromJSVal(JS::Value *value, JSContext *cx, nsAString &result)
 {
   result.Truncate();
 
-  
-  JSAutoRequest ar(cx);
-
   mozilla::Maybe<JSAutoCompartment> ac;
   if (value->isObject()) {
     ac.construct(cx, &value->toObject());
@@ -198,53 +195,51 @@ nsresult
 nsJSON::EncodeInternal(JSContext* cx, const JS::Value& aValue,
                        nsJSONWriter* writer)
 {
-  JSAutoRequest ar(cx);
-
-  
-  
+  // Backward compatibility:
+  // nsIJSON does not allow to serialize anything other than objects
   if (!aValue.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
   JS::Rooted<JSObject*> obj(cx, &aValue.toObject());
 
-  
-
-
-
-
-
+  /* Backward compatibility:
+   * Manually call toJSON if implemented by the object and check that
+   * the result is still an object
+   * Note: It is perfectly fine to not implement toJSON, so it is
+   * perfectly fine for GetMethod to fail
+   */
   JS::Rooted<JS::Value> val(cx, aValue);
   JS::Rooted<JS::Value> toJSON(cx);
   if (JS_GetProperty(cx, obj, "toJSON", toJSON.address()) &&
       toJSON.isObject() &&
       JS_ObjectIsCallable(cx, &toJSON.toObject())) {
-    
+    // If toJSON is implemented, it must not throw
     if (!JS_CallFunctionValue(cx, obj, toJSON, 0, NULL, val.address())) {
       if (JS_IsExceptionPending(cx))
-        
+        // passing NS_OK will throw the pending exception
         return NS_OK;
 
-      
+      // No exception, but still failed
       return NS_ERROR_FAILURE;
     }
 
-    
-    
+    // Backward compatibility:
+    // nsIJSON does not allow to serialize anything other than objects
     if (val.isPrimitive())
       return NS_ERROR_INVALID_ARG;
   }
-  
+  // GetMethod may have thrown
   else if (JS_IsExceptionPending(cx))
-    
+    // passing NS_OK will throw the pending exception
     return NS_OK;
 
-  
-  
+  // Backward compatibility:
+  // function shall not pass, just "plain" objects and arrays
   JSType type = JS_TypeOfValue(cx, val);
   if (type == JSTYPE_FUNCTION)
     return NS_ERROR_INVALID_ARG;
 
-  
+  // We're good now; try to stringify
   if (!JS_Stringify(cx, val.address(), NULL, JSVAL_NULL, WriteCallback, writer))
     return NS_ERROR_FAILURE;
 
@@ -311,7 +306,7 @@ nsJSONWriter::Write(const PRUnichar *aBuffer, uint32_t aLength)
   }
 
   if (JSON_STREAM_BUFSIZE <= aLength) {
-    
+    // we know mBufferCount is 0 because we know we hit the if above
     mOutputString.Append(aBuffer, aLength);
   } else {
     memcpy(&mBuffer[mBufferCount], aBuffer, aLength * sizeof(PRUnichar));
@@ -342,12 +337,12 @@ nsJSONWriter::WriteToStream(nsIOutputStream *aStream,
   int32_t srcLength = aLength;
   uint32_t bytesWritten;
 
-  
+  // The bytes written to the stream might differ from the PRUnichar size
   int32_t aDestLength;
   rv = encoder->GetMaxLength(aBuffer, srcLength, &aDestLength);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // create the buffer we need
   char* destBuf = (char *) NS_Alloc(aDestLength);
   if (!destBuf)
     return NS_ERROR_OUT_OF_MEMORY;
@@ -390,8 +385,6 @@ nsJSON::DecodeFromStream(nsIInputStream *aStream, int32_t aContentLength,
 NS_IMETHODIMP
 nsJSON::DecodeToJSVal(const nsAString &str, JSContext *cx, JS::Value *result)
 {
-  JSAutoRequest ar(cx);
-
   if (!JS_ParseJSON(cx, static_cast<const jschar*>(PromiseFlatString(str).get()),
                     str.Length(), result)) {
     return NS_ERROR_UNEXPECTED;
@@ -406,11 +399,9 @@ nsJSON::DecodeInternal(JSContext* cx,
                        int32_t aContentLength,
                        bool aNeedsConverter,
                        JS::Value* aRetval,
-                       DecodingMode mode )
+                       DecodingMode mode /* = STRICT */)
 {
-  JSAutoRequest ar(cx);
-
-  
+  // Consume the stream
   nsCOMPtr<nsIChannel> jsonChannel;
   if (!mURI) {
     NS_NewURI(getter_AddRefs(mURI), NS_LITERAL_CSTRING("about:blank"), 0, 0 );
@@ -427,7 +418,7 @@ nsJSON::DecodeInternal(JSContext* cx,
   nsRefPtr<nsJSONListener> jsonListener =
     new nsJSONListener(cx, aRetval, aNeedsConverter, mode);
 
-  
+  //XXX this stream pattern should be consolidated in netwerk
   rv = jsonListener->OnStartRequest(jsonChannel, nullptr);
   if (NS_FAILED(rv)) {
     jsonChannel->Cancel(rv);
@@ -449,7 +440,7 @@ nsJSON::DecodeInternal(JSContext* cx,
       break;
     }
     if (!available)
-      break; 
+      break; // blocking input stream has none available when done
 
     if (available > UINT32_MAX)
       available = UINT32_MAX;
@@ -499,8 +490,6 @@ nsJSON::LegacyDecodeFromStream(nsIInputStream *aStream, int32_t aContentLength,
 NS_IMETHODIMP
 nsJSON::LegacyDecodeToJSVal(const nsAString &str, JSContext *cx, JS::Value *result)
 {
-  JSAutoRequest ar(cx);
-
   JS::RootedValue reviver(cx, JS::NullValue()), value(cx);
 
   JS::StableCharPtr chars(static_cast<const jschar*>(PromiseFlatString(str).get()),
@@ -529,7 +518,7 @@ NS_NewJSON(nsISupports* aOuter, REFNSIID aIID, void** aResult)
 
 nsJSONListener::nsJSONListener(JSContext *cx, JS::Value *rootVal,
                                bool needsConverter,
-                               DecodingMode mode )
+                               DecodingMode mode /* = STRICT */)
   : mNeedsConverter(needsConverter), 
     mCx(cx),
     mRootVal(rootVal),
@@ -565,9 +554,9 @@ nsJSONListener::OnStopRequest(nsIRequest *aRequest, nsISupports *aContext,
 {
   nsresult rv;
 
-  
+  // This can happen with short UTF-8 messages (<4 bytes)
   if (!mSniffBuffer.IsEmpty()) {
-    
+    // Just consume mSniffBuffer
     rv = ProcessBytes(nullptr, 0);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -622,13 +611,13 @@ nsresult
 nsJSONListener::ProcessBytes(const char* aBuffer, uint32_t aByteLength)
 {
   nsresult rv;
-  
+  // Check for BOM, or sniff charset
   nsAutoCString charset;
   if (mNeedsConverter && !mDecoder) {
     if (!nsContentUtils::CheckForBOM((const unsigned char*) mSniffBuffer.get(),
                                       mSniffBuffer.Length(), charset)) {
-      
-      
+      // OK, found no BOM, sniff the first character to see what this is
+      // See section 3 of RFC4627 for details on why this works.
       const char *buffer = mSniffBuffer.get();
       if (mSniffBuffer.Length() >= 4) {
         if (buffer[0] == 0x00 && buffer[1] != 0x00 &&
@@ -642,12 +631,12 @@ nsJSONListener::ProcessBytes(const char* aBuffer, uint32_t aByteLength)
           charset = "UTF-8";
         }
       } else {
-        
+        // Not enough bytes to sniff, assume UTF-8
         charset = "UTF-8";
       }
     }
 
-    
+    // We should have a unicode charset by now
     rv = CheckCharset(charset.get());
     NS_ENSURE_SUCCESS(rv, rv);
     nsCOMPtr<nsICharsetConverterManager> ccm =
@@ -656,7 +645,7 @@ nsJSONListener::ProcessBytes(const char* aBuffer, uint32_t aByteLength)
     rv = ccm->GetUnicodeDecoderRaw(charset.get(), getter_AddRefs(mDecoder));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // consume the sniffed bytes
     rv = ConsumeConverted(mSniffBuffer.get(), mSniffBuffer.Length());
     NS_ENSURE_SUCCESS(rv, rv);
     mSniffBuffer.Truncate();

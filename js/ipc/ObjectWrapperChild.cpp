@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/GuardObjects.h"
 
@@ -27,7 +27,6 @@ namespace {
     class MOZ_STACK_CLASS AutoContextPusher {
 
         nsCxPusher mStack;
-        JSAutoRequest mRequest;
         JSContext* const mContext;
         const uint32_t mSavedOptions;
         MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -36,8 +35,7 @@ namespace {
 
         AutoContextPusher(JSContext* cx
                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-            : mRequest(cx)
-            , mContext(cx)
+            : mContext(cx)
             , mSavedOptions(JS_SetOptions(cx, (JS_GetOptions(cx) |
                                                JSOPTION_DONT_REPORT_UNCAUGHT)))
         {
@@ -59,12 +57,12 @@ namespace {
         StatusPtrOwner() : mStatusPtr(NULL) {}
         void SetStatusPtr(OperationStatus* statusPtr) {
             mStatusPtr = statusPtr;
-            
-            
-            
-            
-            
-            
+            // By default, initialize mStatusPtr to failure without an
+            // exception.  Doing so only when the union is uninitialized
+            // allows AutoCheckOperation classes to be nested on the
+            // stack, just in case AnswerConstruct, for example, calls
+            // AnswerCall (as it once did, before there were unrelated
+            // problems with that approach).
             if (mStatusPtr->type() == OperationStatus::T__None)
                 *mStatusPtr = JS_FALSE;
         }
@@ -107,7 +105,7 @@ ObjectWrapperChild::CheckOperation(JSContext*,
                      "Operation succeeded but exception was thrown?");
         JSVariant exception;
         if (!jsval_to_JSVariant(cx, thrown, &exception))
-            exception = void_t(); 
+            exception = void_t(); // XXX Useful?
         *status = exception;
         JS_ClearPendingException(cx);
     }
@@ -117,7 +115,6 @@ ObjectWrapperChild::ObjectWrapperChild(JSContext* cx, JSObject* obj)
     : mObj(obj)
 {
     AutoContextPusher acp(cx);
-    JSAutoRequest request(cx);
 #ifdef DEBUG
     bool added =
 #endif
@@ -130,7 +127,6 @@ ObjectWrapperChild::ActorDestroy(ActorDestroyReason why)
 {
     JSContext* cx = Manager()->GetContext();
     AutoContextPusher acp(cx);
-    JSAutoRequest request(cx);
     JS_RemoveObjectRoot(cx, &mObj);
 }
 
@@ -152,9 +148,9 @@ ObjectWrapperChild::jsval_to_JSVariant(JSContext* cx, jsval from, JSVariant* to)
     case JSTYPE_NULL:
         if (from != JSVAL_NULL)
             return false;
-        
+        // fall through
     case JSTYPE_FUNCTION:
-        
+        // fall through
     case JSTYPE_OBJECT:
         return JSObject_to_JSVariant(cx, JSVAL_TO_OBJECT(from), to);
     case JSTYPE_STRING:
@@ -180,7 +176,7 @@ ObjectWrapperChild::jsval_to_JSVariant(JSContext* cx, jsval from, JSVariant* to)
     }
 }
 
- bool
+/*static*/ bool
 ObjectWrapperChild::
 JSObject_from_PObjectWrapperChild(JSContext*,
                                   const PObjectWrapperChild* from,
@@ -192,7 +188,7 @@ JSObject_from_PObjectWrapperChild(JSContext*,
     return true;
 }
     
- bool
+/*static*/ bool
 ObjectWrapperChild::JSObject_from_JSVariant(JSContext* cx,
                                             const JSVariant& from,
                                             JSObject** to)
@@ -204,7 +200,7 @@ ObjectWrapperChild::JSObject_from_JSVariant(JSContext* cx,
                                              to);
 }
 
- bool
+/*static*/ bool
 ObjectWrapperChild::jsval_from_JSVariant(JSContext* cx, const JSVariant& from,
                                          jsval* to)
 {
@@ -274,23 +270,23 @@ jsid_from_nsString(JSContext* cx, const nsString& from, jsid* to)
 }
 
 #if 0
-
+// The general schema for ObjectWrapperChild::Answer* methods:
 bool
-ObjectWrapperChild::AnswerSomething(
-                                    )
+ObjectWrapperChild::AnswerSomething(/* in-parameters */
+                                    /* out-parameters */)
 {
-    
+    // initialize out-parameters for failure
     JSContext* cx = Manager()->GetContext();
     AutoContextPusher acp(cx);
-    
-    
-    
+    // validate in-parameters, else return false
+    // successfully perform local JS operations, else return true
+    // perform out-parameter conversions, else return false
     return true;
 }
-
-
-
-
+// There's an important subtlety here: though a local JS operation may
+// fail, leaving out-parameters uninitialized, we must initialize all
+// out-parameters when reporting success (returning true) to the IPC
+// messaging system.  See AnswerGetProperty for illustration.
 #endif
 
 bool
@@ -325,11 +321,11 @@ ObjectWrapperChild::AnswerGetProperty(const nsString& id,
 
     *status = JS_GetPropertyById(cx, mObj, interned_id, val.address());
 
-    
-    
-    
-    
-    
+    // Since we fully expect this call to jsval_to_JSVariant to return
+    // true, we can't just leave vp uninitialized when JS_GetPropertyById
+    // returns JS_FALSE.  This pitfall could be avoided in general if IPDL
+    // ensured that outparams were pre-initialized to some default value
+    // (XXXfixme cjones?).
     return jsval_to_JSVariant(cx, aco.Ok() ? val : JSVAL_VOID, vp);
 }
 
@@ -394,7 +390,7 @@ CPOW_NewEnumerateState_Finalize(JSFreeOp* fop, JSObject* state)
     CPOW_NewEnumerateState_FreeIds(state);
 }
 
-
+// Similar to IteratorClass in XPCWrapper.cpp
 static const JSClass sCPOW_NewEnumerateState_JSClass = {
     "CPOW NewEnumerate State",
     JSCLASS_HAS_PRIVATE |
@@ -406,7 +402,7 @@ static const JSClass sCPOW_NewEnumerateState_JSClass = {
 };
 
 bool
-ObjectWrapperChild::AnswerNewEnumerateInit(
+ObjectWrapperChild::AnswerNewEnumerateInit(/* no in-parameters */
                                            OperationStatus* status, JSVariant* statep, int* idp)
 {
     *idp = 0;
@@ -549,7 +545,7 @@ ObjectWrapperChild::AnswerConvert(const JSType& type,
 }
 
 namespace {
-    
+    // Should be an overestimate of typical JS function arity.
     typedef nsAutoTArray<jsval, 5> AutoJSArgs;
 }
 

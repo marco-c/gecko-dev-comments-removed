@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/message_loop.h"
 #include "jsapi.h"
@@ -56,17 +56,17 @@ public:
     JSContext *cx = nsContentUtils::GetCurrentJSContext();
     NS_ENSURE_TRUE(cx, NS_OK);
 
-    
-    
-    
-    
+    // If we don't have time.timezone value in the settings, we need
+    // to initialize the settings based on the current system timezone
+    // to make settings consistent with system. This usually happens
+    // at the very first boot. After that, settings must have a value.
     if (aResult.isNull()) {
-      
+      // Get the current system timezone and convert it to a JS string.
       nsCString curTimezone = hal::GetTimezone();
       NS_ConvertUTF8toUTF16 utf16Str(curTimezone);
       JSString *jsStr = JS_NewUCStringCopyN(cx, utf16Str.get(), utf16Str.Length());
 
-      
+      // Set the settings based on the current system timezone.
       nsCOMPtr<nsISettingsServiceLock> lock;
       nsCOMPtr<nsISettingsService> settingsService =
         do_GetService("@mozilla.org/settingsService;1");
@@ -79,9 +79,8 @@ public:
       return NS_OK;
     }
 
-    
+    // Set the system timezone based on the current settings.
     if (aResult.isString()) {
-      JSAutoRequest ar(cx);
       return TimeZoneSettingObserver::SetTimeZone(aResult, cx);
     }
 
@@ -98,7 +97,7 @@ NS_IMPL_ISUPPORTS1(TimeZoneSettingCb, nsISettingsServiceCallback)
 
 TimeZoneSettingObserver::TimeZoneSettingObserver()
 {
-  
+  // Setup an observer to watch changes to the setting.
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (!observerService) {
     ERR("GetObserverService failed");
@@ -111,8 +110,8 @@ TimeZoneSettingObserver::TimeZoneSettingObserver()
     return;
   }
 
-  
-  
+  // Read the 'time.timezone' setting in order to start with a known
+  // value at boot time. The handle() will be called after reading.
   nsCOMPtr<nsISettingsServiceLock> lock;
   nsCOMPtr<nsISettingsService> settingsService =
     do_GetService("@mozilla.org/settingsService;1");
@@ -127,7 +126,7 @@ TimeZoneSettingObserver::TimeZoneSettingObserver()
 
 nsresult TimeZoneSettingObserver::SetTimeZone(const JS::Value &aValue, JSContext *aContext)
 {
-  
+  // Convert the JS value to a nsCString type.
   nsDependentJSString valueStr;
   if (!valueStr.init(aContext, aValue.toString())) {
     ERR("Failed to convert JS value to nsCString");
@@ -135,7 +134,7 @@ nsresult TimeZoneSettingObserver::SetTimeZone(const JS::Value &aValue, JSContext
   }
   nsCString newTimezone = NS_ConvertUTF16toUTF8(valueStr);
 
-  
+  // Set the timezone only when the system timezone is not identical.
   nsCString curTimezone = hal::GetTimezone();
   if (!curTimezone.Equals(newTimezone)) {
     hal::SetTimezone(newTimezone);
@@ -163,15 +162,15 @@ TimeZoneSettingObserver::Observe(nsISupports *aSubject,
     return NS_OK;
   }
 
-  
-  
-  
-  
-  
+  // Note that this function gets called for any and all settings changes,
+  // so we need to carefully check if we have the one we're interested in.
+  //
+  // The string that we're interested in will be a JSON string that looks like:
+  // {"key":"time.timezone","value":"America/Chicago"}
 
   AutoSafeJSContext cx;
 
-  
+  // Parse the JSON value.
   nsDependentString dataStr(aData);
   JS::Value val;
   if (!JS_ParseJSON(cx, dataStr.get(), dataStr.Length(), &val) ||
@@ -179,7 +178,7 @@ TimeZoneSettingObserver::Observe(nsISupports *aSubject,
     return NS_OK;
   }
 
-  
+  // Get the key, which should be the JS string "time.timezone".
   JSObject &obj(val.toObject());
   JS::Value key;
   if (!JS_GetProperty(cx, &obj, "key", &key) ||
@@ -192,18 +191,18 @@ TimeZoneSettingObserver::Observe(nsISupports *aSubject,
     return NS_OK;
   }
 
-  
+  // Get the value, which should be a JS string like "America/Chicago".
   JS::Value value;
   if (!JS_GetProperty(cx, &obj, "value", &value) ||
       !value.isString()) {
     return NS_OK;
   }
 
-  
+  // Set the system timezone.
   return SetTimeZone(value, cx);
 }
 
-} 
+} // anonymous namespace
 
 static mozilla::StaticRefPtr<TimeZoneSettingObserver> sTimeZoneSettingObserver;
 namespace mozilla {
@@ -215,5 +214,5 @@ InitializeTimeZoneSettingObserver()
   ClearOnShutdown(&sTimeZoneSettingObserver);
 }
 
-} 
-} 
+} // namespace system
+} // namespace mozilla

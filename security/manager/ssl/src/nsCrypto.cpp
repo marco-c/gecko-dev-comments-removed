@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsCrypto.h"
 #include "nsNSSComponent.h"
 #include "secmod.h"
@@ -67,7 +67,7 @@
 #include "secmod.h"
 #include "ScopedNSSTypes.h"
 
-#include "ssl.h" 
+#include "ssl.h" // For SSL_ClearSessionCache
 
 #include "nsNSSCleaner.h"
 
@@ -77,10 +77,10 @@
 
 using namespace mozilla;
 
-
-
-
-
+/*
+ * These are the most common error strings that are returned
+ * by the JavaScript methods in case of error.
+ */
 
 #define JS_ERROR       "error:"
 #define JS_ERROR_INTERNAL  JS_ERROR"internalError"
@@ -106,19 +106,19 @@ namespace {
   
 NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
 
-} 
+} // unnamed namespace
 
 #ifndef MOZ_DISABLE_CRYPTOLEGACY
 
 NSSCleanupAutoPtrClass_WithParam(PK11Context, PK11_DestroyContext, TrueParam, true)
 
-
-
-
-
-
-
-
+/*
+ * This structure is used to store information for one key generation.
+ * The nsCrypto::GenerateCRMFRequest method parses the inputs and then
+ * stores one of these structures for every key generation that happens.
+ * The information stored in this structure is then used to set some
+ * values in the CRMF request.
+ */
 typedef enum {
   rsaEnc, rsaDualUse, rsaSign, rsaNonrepudiation, rsaSignNonrepudiation,
   ecEnc, ecDualUse, ecSign, ecNonrepudiation, ecSignNonrepudiation,
@@ -144,23 +144,23 @@ bool isECKeyGenType(nsKeyGenType kgt)
 }
 
 typedef struct nsKeyPairInfoStr {
-  SECKEYPublicKey  *pubKey;     
-
-  SECKEYPrivateKey *privKey;     
-  nsKeyGenType      keyGenType; 
+  SECKEYPublicKey  *pubKey;     /* The putlic key associated with gen'd 
+                                   priv key. */
+  SECKEYPrivateKey *privKey;    /* The private key we generated */ 
+  nsKeyGenType      keyGenType; /* What type of key gen are we doing.*/
 
   CERTCertificate *ecPopCert;
-                   
-
-
+                   /* null: use signing for pop
+                      other than null: a cert that defines EC keygen params
+                                       and will be used for dhMac PoP. */
 
   SECKEYPublicKey  *ecPopPubKey;
-                   
+                   /* extracted public key from ecPopCert */
 } nsKeyPairInfo;
 
 
-
-
+//This class is just used to pass arguments
+//to the nsCryptoRunnable event.
 class nsCryptoRunArgs : public nsISupports {
 public:
   nsCryptoRunArgs();
@@ -173,10 +173,10 @@ public:
   NS_DECL_ISUPPORTS
 };
 
-
-
-
-
+//This class is used to run the callback code
+//passed to crypto.generateCRMFRequest
+//We have to do that for backwards compatibility
+//reasons w/ PSM 1.x and Communciator 4.x
 class nsCryptoRunnable : public nsIRunnable {
 public:
   nsCryptoRunnable(nsCryptoRunArgs *args);
@@ -189,10 +189,10 @@ private:
 };
 
 
-
-
-
-
+//We're going to inherit the memory passed
+//into us.
+//This class backs up an array of certificates
+//as an event.
 class nsP12Runnable : public nsIRunnable {
 public:
   nsP12Runnable(nsIX509Cert **certArr, int32_t numCerts, nsIPK11Token *token);
@@ -206,7 +206,7 @@ private:
   int32_t       mNumCerts;
 };
 
-
+// QueryInterface implementation for nsCrypto
 NS_INTERFACE_MAP_BEGIN(nsCrypto)
   NS_INTERFACE_MAP_ENTRY(nsIDOMCrypto)
 NS_INTERFACE_MAP_END_INHERITING(mozilla::dom::Crypto)
@@ -214,7 +214,7 @@ NS_INTERFACE_MAP_END_INHERITING(mozilla::dom::Crypto)
 NS_IMPL_ADDREF_INHERITED(nsCrypto, mozilla::dom::Crypto)
 NS_IMPL_RELEASE_INHERITED(nsCrypto, mozilla::dom::Crypto)
  
-
+// QueryInterface implementation for nsCRMFObject
 NS_INTERFACE_MAP_BEGIN(nsCRMFObject)
   NS_INTERFACE_MAP_ENTRY(nsIDOMCRMFObject)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
@@ -224,8 +224,8 @@ NS_INTERFACE_MAP_END
 NS_IMPL_ADDREF(nsCRMFObject)
 NS_IMPL_RELEASE(nsCRMFObject)
 
-
-#endif 
+// QueryInterface implementation for nsPkcs11
+#endif // MOZ_DISABLE_CRYPTOLEGACY
 
 NS_INTERFACE_MAP_BEGIN(nsPkcs11)
   NS_INTERFACE_MAP_ENTRY(nsIPKCS11)
@@ -237,13 +237,13 @@ NS_IMPL_RELEASE(nsPkcs11)
 
 #ifndef MOZ_DISABLE_CRYPTOLEGACY
 
-
+// ISupports implementation for nsCryptoRunnable
 NS_IMPL_ISUPPORTS1(nsCryptoRunnable, nsIRunnable)
 
-
+// ISupports implementation for nsP12Runnable
 NS_IMPL_ISUPPORTS1(nsP12Runnable, nsIRunnable)
 
-
+// ISupports implementation for nsCryptoRunArgs
 NS_IMPL_ISUPPORTS0(nsCryptoRunArgs)
 
 nsCrypto::nsCrypto() :
@@ -260,9 +260,9 @@ nsCrypto::SetEnableSmartCardEvents(bool aEnable)
 {
   nsresult rv = NS_OK;
 
-  
-  
-  
+  // this has the side effect of starting the nssComponent (and initializing
+  // NSS) even if it isn't already going. Starting the nssComponent is a 
+  // prerequisite for getting smartCard events.
   if (aEnable) {
     nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(kNSSComponentCID, &rv));
   }
@@ -282,17 +282,17 @@ nsCrypto::GetEnableSmartCardEvents(bool *aEnable)
   return NS_OK;
 }
 
-
-
+//A quick function to let us know if the key we're trying to generate
+//can be escrowed.
 static bool
 ns_can_escrow(nsKeyGenType keyGenType)
 {
-  
+  /* For now, we only escrow rsa-encryption and ec-encryption keys. */
   return (bool)(keyGenType == rsaEnc || keyGenType == ecEnc);
 }
 
-
-
+//Retrieve crypto.version so that callers know what
+//version of PSM this is.
 NS_IMETHODIMP
 nsCrypto::GetVersion(nsAString& aVersion)
 {
@@ -300,10 +300,10 @@ nsCrypto::GetVersion(nsAString& aVersion)
   return NS_OK;
 }
 
-
-
-
-
+/*
+ * Given an nsKeyGenType, return the PKCS11 mechanism that will
+ * perform the correct key generation.
+ */
 static uint32_t
 cryptojs_convert_to_mechanism(nsKeyGenType keyGenType)
 {
@@ -338,11 +338,11 @@ cryptojs_convert_to_mechanism(nsKeyGenType keyGenType)
   return retMech;
 }
 
-
-
-
-
-
+/*
+ * This function converts a string read through JavaScript parameters
+ * and translates it to the internal enumeration representing the
+ * key gen type.
+ */
 static nsKeyGenType
 cryptojs_interpret_key_gen_type(char *keyAlg)
 {
@@ -350,7 +350,7 @@ cryptojs_interpret_key_gen_type(char *keyAlg)
   if (!keyAlg) {
     return invalidKeyGen;
   }
-  
+  /* First let's remove all leading and trailing white space */
   while (isspace(keyAlg[0])) keyAlg++;
   end = strchr(keyAlg, '\0');
   if (!end) {
@@ -391,19 +391,19 @@ cryptojs_interpret_key_gen_type(char *keyAlg)
   return invalidKeyGen;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* 
+ * input: null terminated char* pointing to (the remainder of) an
+ * EC key param string.
+ *
+ * bool return value, false means "no more name=value pair found",
+ *                    true means "found, see out params"
+ * 
+ * out param name: char * pointing to name (not zero terminated)
+ * out param name_len: length of found name
+ * out param value: char * pointing to value (not zero terminated)
+ * out param value_len: length of found value
+ * out param next_pair: to be used for a follow up call to this function
+ */
 
 bool getNextNameValueFromECKeygenParamString(char *input,
                                                char *&name,
@@ -415,7 +415,7 @@ bool getNextNameValueFromECKeygenParamString(char *input,
   if (!input || !*input)
     return false;
 
-  
+  // we allow leading ; and leading space in front of each name value pair
 
   while (*input && *input == ';')
     ++input;
@@ -445,9 +445,9 @@ bool getNextNameValueFromECKeygenParamString(char *input,
   return true;
 }
 
-
-
-
+//Take the string passed into us via crypto.generateCRMFRequest
+//as the keygen type parameter and convert it to parameters 
+//we can actually pass to the PKCS#11 layer.
 static void*
 nsConvertToActualKeyGenParams(uint32_t keyGenMech, char *params,
                               uint32_t paramLen, int32_t keySize,
@@ -459,8 +459,8 @@ nsConvertToActualKeyGenParams(uint32_t keyGenMech, char *params,
   switch (keyGenMech) {
   case CKM_RSA_PKCS_KEY_PAIR_GEN:
   {
-    
-    
+    // For RSA, we don't support passing in key generation arguments from
+    // the JS code just yet.
     if (params)
       return nullptr;
 
@@ -471,9 +471,9 @@ nsConvertToActualKeyGenParams(uint32_t keyGenMech, char *params,
     if (!rsaParams) {
       return nullptr;
     }
-    
-
-
+    /* I'm just taking the same parameters used in 
+     * certdlgs.c:GenKey
+     */
     if (keySize > 0) {
       rsaParams->keySizeInBits = keySize;
     } else {
@@ -485,38 +485,38 @@ nsConvertToActualKeyGenParams(uint32_t keyGenMech, char *params,
   }
   case CKM_EC_KEY_PAIR_GEN:
   {
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * keygen params for generating EC keys must be composed of name=value pairs,
+     * multiple pairs allowed, separated using semicolon ;
+     *
+     * Either param "curve" or param "popcert" must be specified.
+     * curve=name-of-curve
+     * popcert=base64-encoded-cert
+     *
+     * When both params are specified, popcert will be used.
+     * If no popcert param is given, or if popcert can not be decoded,
+     * we will fall back to the curve param.
+     *
+     * Additional name=value pairs may be defined in the future.
+     *
+     * If param popcert is present and valid, the given certificate will be used
+     * to determine the key generation params. In addition the certificate
+     * will be used to produce a dhMac based Proof of Posession,
+     * using the cert's public key, subject and issuer names,
+     * as specified in RFC 2511 section 4.3 paragraph 2 and Appendix A.
+     *
+     * If neither param popcert nor param curve could be used,
+     * tse a curve based on the keysize param.
+     * NOTE: Here keysize is used only as an indication of
+     * High/Medium/Low strength; elliptic curve
+     * cryptography uses smaller keys than RSA to provide
+     * equivalent security.
+     */
 
     char *curve = nullptr;
 
     {
-      
+      // extract components of name=value list
 
       char *next_input = params;
       char *name = nullptr;
@@ -548,19 +548,19 @@ nsConvertToActualKeyGenParams(uint32_t keyGenMech, char *params,
       }
     }
 
-    
+    // first try to use the params of the provided CA cert
     if (keyPairInfo->ecPopPubKey)
     {
       returnParams = SECITEM_DupItem(&keyPairInfo->ecPopPubKey->u.ec.DEREncodedParams);
     }
 
-    
+    // if we did not yet find good params, do we have a curve name?
     if (!returnParams && curve)
     {
       returnParams = decode_ec_params(curve);
     }
 
-    
+    // if we did not yet find good params, do something based on keysize
     if (!returnParams)
     {
       switch (keySize) {
@@ -582,8 +582,8 @@ nsConvertToActualKeyGenParams(uint32_t keyGenMech, char *params,
   }
   case CKM_DSA_KEY_PAIR_GEN:
   {
-    
-    
+    // For DSA, we don't support passing in key generation arguments from
+    // the JS code just yet.
     if (params)
       return nullptr;
 
@@ -616,9 +616,9 @@ nsConvertToActualKeyGenParams(uint32_t keyGenMech, char *params,
   return returnParams;
 }
 
-
-
-
+//We need to choose which PKCS11 slot we're going to generate
+//the key on.  Calls the default implementation provided by
+//nsKeygenHandler.cpp
 static PK11SlotInfo*
 nsGetSlotForKeyGen(nsKeyGenType keyGenType, nsIInterfaceRequestor *ctx)
 {
@@ -634,8 +634,8 @@ nsGetSlotForKeyGen(nsKeyGenType keyGenType, nsIInterfaceRequestor *ctx)
   return slot;
 }
 
-
-
+//Free the parameters that were passed into PK11_GenerateKeyPair
+//depending on the mechanism type used.
 static void
 nsFreeKeyGenParams(CK_MECHANISM_TYPE keyGenMechanism, void *params)
 {
@@ -652,11 +652,11 @@ nsFreeKeyGenParams(CK_MECHANISM_TYPE keyGenMechanism, void *params)
   }
 }
 
-
-
-
-
-
+//Function that is used to generate a single key pair.
+//Once all the arguments have been parsed and processed, this
+//function gets called and takes care of actually generating
+//the key pair passing the appopriate parameters to the NSS
+//functions.
 static nsresult
 cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo, 
                             int32_t keySize, char *params, 
@@ -682,8 +682,8 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
+  // Make sure the token has password already set on it before trying
+  // to generate the key.
 
   nsresult rv = setPassword(slot, uiCxt);
   if (NS_FAILED(rv))
@@ -692,23 +692,23 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
   if (PK11_Authenticate(slot, true, uiCxt) != SECSuccess)
     return NS_ERROR_FAILURE;
  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Smart cards will not let you extract a private key once 
+  // it is on the smart card.  If we've been told to escrow
+  // a private key that will be stored on a smart card,
+  // then we'll use the following strategy to ensure we can escrow it.
+  // We'll attempt to generate the key on our internal token,
+  // because this is expected to avoid some problems.
+  // If it works, we'll escrow, move the key to the smartcard, done.
+  // If it didn't work (or the internal key doesn't support the desired
+  // mechanism), then we'll attempt to generate the key on
+  // the destination token, with the EXTRACTABLE flag set.
+  // If it works, we'll extract, escrow, done.
+  // If it failed, then we're unable to escrow and return failure.
+  // NOTE: We call PK11_GetInternalSlot instead of PK11_GetInternalKeySlot
+  //       so that the key has zero chance of being store in the
+  //       user's key3.db file.  Which the slot returned by
+  //       PK11_GetInternalKeySlot has access to and PK11_GetInternalSlot
+  //       does not.
   ScopedPK11SlotInfo intSlot;
   
   if (willEscrow && !PK11_IsInternal(slot)) {
@@ -716,7 +716,7 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
     NS_ASSERTION(intSlot,"Couldn't get the internal slot");
     
     if (!PK11_DoesMechanism(intSlot, mechanism)) {
-      
+      // Set to null, and the subsequent code will not attempt to use it.
       intSlot = nullptr;
     }
   }
@@ -732,8 +732,8 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
     }
   }
   
-  
-  
+  // "firstAttemptSlot" and "secondAttemptSlot" are alternative names
+  // for better code readability, we don't increase the reference counts.
   
   PK11SlotInfo *firstAttemptSlot = nullptr;
   PK11AttrFlags firstAttemptFlags = 0;
@@ -746,8 +746,8 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
   }
   
   if (!intSlot || PK11_IsInternal(slot)) {
-    
-    
+    // if we cannot use the internal slot, then there is only one attempt
+    // if the destination slot is the internal slot, then there is only one attempt
     firstAttemptSlot = secondAttemptSlot;
     firstAttemptFlags = secondAttemptFlags;
     secondAttemptSlot = nullptr;
@@ -757,15 +757,15 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
     firstAttemptSlot = intSlot;
     firstAttemptFlags = sensitiveFlags | temporarySessionFlags;
     
-    
-    
+    // We always need the extractable flag on the first attempt,
+    // because we want to move the key to another slot - ### is this correct?
     firstAttemptFlags |= extractableFlags;
   }
 
   bool mustMoveKey = false;
   
   if (NS_FAILED(rv) || !KeygenRunnable) {
-    
+    /* execute key generation on this thread */
     rv = NS_OK;
     
     keyPairInfo->privKey = 
@@ -774,7 +774,7 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
                                     firstAttemptFlags, uiCxt);
     
     if (keyPairInfo->privKey) {
-      
+      // success on first attempt
       if (secondAttemptSlot) {
         mustMoveKey = true;
       }
@@ -787,7 +787,7 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
     }
     
   } else {
-    
+    /* execute key generation on separate thread */
     KeygenRunnable->SetParams( firstAttemptSlot, firstAttemptFlags,
                                secondAttemptSlot, secondAttemptFlags,
                                mechanism, keyGenParams, uiCxt );
@@ -802,8 +802,8 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
         }
         else {
           rv = dialogs->DisplayGeneratingKeypairInfo(uiCxt, runnable);
-          
-          
+          // We call join on the thread, 
+          // so we can be sure that no simultaneous access to the passed parameters will happen.
           KeygenRunnable->Join();
         }
       }
@@ -838,8 +838,8 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
     return NS_ERROR_FAILURE;
   }
  
-  
-  
+  //If we generated the key pair on the internal slot because the
+  // keys were going to be escrowed, move the keys over right now.
   if (mustMoveKey) {
     ScopedSECKEYPrivateKey newPrivKey(PK11_LoadPrivKey(slot,
                                                     keyPairInfo->privKey,
@@ -848,65 +848,65 @@ cryptojs_generateOneKeyPair(JSContext *cx, nsKeyPairInfo *keyPairInfo,
     if (!newPrivKey)
       return NS_ERROR_FAILURE;
 
-    
-    
-    
-    
+    // The private key is stored on the selected slot now, and the copy we
+    // ultimately use for escrowing when the time comes lives 
+    // in the internal slot.  We will delete it from that slot
+    // after the requests are made.
   }  
 
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * FUNCTION: cryptojs_ReadArgsAndGenerateKey
+ * -------------------------------------
+ * INPUTS:
+ *  cx
+ *    The JSContext associated with the execution of the corresponging
+ *    crypto.generateCRMFRequest call
+ *  argv
+ *    A pointer to an array of JavaScript parameters passed to the
+ *    method crypto.generateCRMFRequest.  The array should have the
+ *    3 arguments keySize, "keyParams", and "keyGenAlg" mentioned in
+ *    the definition of crypto.generateCRMFRequest at the following
+ *    document http://docs.iplanet.com/docs/manuals/psm/11/cmcjavascriptapi.html 
+ *  keyGenType
+ *    A structure used to store the information about the newly created
+ *    key pair.
+ *  uiCxt
+ *    An interface requestor that would be used to get an nsIPrompt
+ *    if we need to ask the user for a password.
+ *  slotToUse
+ *    The PKCS11 slot to use for generating the key pair. If nullptr, then
+ *    this function should select a slot that can do the key generation 
+ *    from the keytype associted with the keyPairInfo, and pass it back to
+ *    the caller so that subsequence key generations can use the same slot. 
+ *  willEscrow
+ *    If true, then that means we will try to escrow the generated
+ *    private key when building the CRMF request.  If false, then
+ *    we will not try to escrow the private key.
+ *
+ * NOTES:
+ * This function takes care of reading a set of 3 parameters that define
+ * one key generation.  The argv pointer should be one that originates
+ * from the argv parameter passed in to the method nsCrypto::GenerateCRMFRequest.
+ * The function interprets the argument in the first index as an integer and
+ * passes that as the key size for the key generation-this parameter is
+ * mandatory.  The second parameter is read in as a string.  This value can
+ * be null in JavaScript world and everything will still work.  The third
+ * parameter is a mandatory string that indicates what kind of key to generate.
+ * There should always be 1-to-1 correspondence between the strings compared
+ * in the function cryptojs_interpret_key_gen_type and the strings listed in
+ * document at http://docs.iplanet.com/docs/manuals/psm/11/cmcjavascriptapi.html 
+ * under the definition of the method generateCRMFRequest, for the parameter
+ * "keyGenAlgN".  After reading the parameters, the function then 
+ * generates the key pairs passing the parameters parsed from the JavaScript i
+ * routine.  
+ *
+ * RETURN:
+ * NS_OK if creating the Key was successful.  Any other return value
+ * indicates an error.
+ */
 
 static nsresult
 cryptojs_ReadArgsAndGenerateKey(JSContext *cx,
@@ -971,8 +971,8 @@ loser:
   return NS_ERROR_FAILURE;
 }
 
-
-
+//Utility funciton to free up the memory used by nsKeyPairInfo
+//arrays.
 static void
 nsFreeKeyPairInfo(nsKeyPairInfo *keyids, int numIDs)
 {
@@ -993,7 +993,7 @@ nsFreeKeyPairInfo(nsKeyPairInfo *keyids, int numIDs)
   delete []keyids;
 }
 
-
+//Utility funciton used to free the genertaed cert request messages
 static void
 nsFreeCertReqMessages(CRMFCertReqMsg **certReqMsgs, int32_t numMessages)
 {
@@ -1004,10 +1004,10 @@ nsFreeCertReqMessages(CRMFCertReqMsg **certReqMsgs, int32_t numMessages)
   delete []certReqMsgs;
 }
 
-
-
-
-
+//If the form called for escrowing the private key we just generated,
+//this function adds all the correct elements to the request.
+//That consists of adding CRMFEncryptedKey to the reques as part
+//of the CRMFPKIArchiveOptions Control.
 static nsresult
 nsSetEscrowAuthority(CRMFCertRequest *certReq, nsKeyPairInfo *keyInfo,
                      nsNSSCertificate *wrappingCert)
@@ -1040,8 +1040,8 @@ nsSetEscrowAuthority(CRMFCertRequest *certReq, nsKeyPairInfo *keyInfo,
   return NS_OK;
 }
 
-
-
+//Set the Distinguished Name (Subject Name) for the cert
+//being requested.
 static nsresult
 nsSetDNForRequest(CRMFCertRequest *certReq, char *reqDN)
 {
@@ -1058,11 +1058,11 @@ nsSetDNForRequest(CRMFCertRequest *certReq, char *reqDN)
   return (srv == SECSuccess) ? NS_OK : NS_ERROR_FAILURE;
 }
 
-
+//Set Registration Token Control on the request.
 static nsresult
 nsSetRegToken(CRMFCertRequest *certReq, char *regToken)
 {
-  
+  // this should never happen, but might as well add this.
   NS_ASSERTION(certReq, "A bogus certReq passed to nsSetRegToken");
   if (regToken){
     if (CRMF_CertRequestIsControlPresent(certReq, crmfRegTokenControl))
@@ -1085,12 +1085,12 @@ nsSetRegToken(CRMFCertRequest *certReq, char *regToken)
   return NS_OK;
 }
 
-
-
+//Set the Authenticator control on the cert reuest.  It's just
+//a string that gets passed along.
 static nsresult
 nsSetAuthenticator(CRMFCertRequest *certReq, char *authenticator)
 {
-  
+  //This should never happen, but might as well check.
   NS_ASSERTION(certReq, "Bogus certReq passed to nsSetAuthenticator");
   if (authenticator) {
     if (CRMF_CertRequestIsControlPresent(certReq, crmfAuthenticatorControl))
@@ -1113,19 +1113,19 @@ nsSetAuthenticator(CRMFCertRequest *certReq, char *authenticator)
   return NS_OK;
 }
 
-
-
-
-
+// ASN1 DER encoding rules say that when encoding a BIT string,
+// the length in the header for the bit string is the number 
+// of "useful" bits in the BIT STRING.  So the function finds
+// it and sets accordingly for the returned item.
 static void
 nsPrepareBitStringForEncoding (SECItem *bitsmap, SECItem *value)
 {
   unsigned char onebyte;
   unsigned int i, len = 0;
 
-  
+  /* to prevent warning on some platform at compile time */
   onebyte = '\0';
-  
+  /* Get the position of the right-most turn-on bit */
   for (i = 0; i < (value->len ) * 8; ++i) {
     if (i % 8 == 0)
       onebyte = value->data[i/8];
@@ -1135,18 +1135,18 @@ nsPrepareBitStringForEncoding (SECItem *bitsmap, SECItem *value)
   }
 
   bitsmap->data = value->data;
-  
+  /* Add one here since we work with base 1 */
   bitsmap->len = len + 1;
 }
 
-
-
-
-
-
-
-
-
+//This next section defines all the functions that sets the 
+//keyUsageExtension for all the different types of key gens
+//we handle.  The keyUsageExtension is just a bit flag extension
+//that we set in wrapper functions that call straight into
+//nsSetKeyUsageExtension.  There is one wrapper funciton for each
+//keyGenType.  The correct function will eventually be called 
+//by going through a switch statement based on the nsKeyGenType
+//in the nsKeyPairInfo struct.
 static nsresult
 nsSetKeyUsageExtension(CRMFCertRequest *crmfReq,
                        unsigned char   keyUsage)
@@ -1368,10 +1368,10 @@ nsSetKeyUsageExtension(CRMFCertRequest *crmfReq, nsKeyGenType keyGenType)
   return rv;
 }
 
-
-
-
-
+//Create a single CRMFCertRequest with all of the necessary parts 
+//already installed.  The request returned by this function will
+//have all the parts necessary and can just be added to a 
+//Certificate Request Message.
 static CRMFCertRequest*
 nsCreateSingleCertReq(nsKeyPairInfo *keyInfo, char *reqDN, char *regToken, 
                       char *authenticator, nsNSSCertificate *wrappingCert)
@@ -1379,9 +1379,9 @@ nsCreateSingleCertReq(nsKeyPairInfo *keyInfo, char *reqDN, char *regToken,
   uint32_t reqID;
   nsresult rv;
 
-  
-  
-  
+  //The draft says the ID of the request should be a random
+  //number.  We don't have a way of tracking this number
+  //to compare when the reply actually comes back,though.
   PK11_GenerateRandom((unsigned char*)&reqID, sizeof(reqID));
   CRMFCertRequest *certReq = CRMF_CreateCertRequest(reqID);
   if (!certReq)
@@ -1432,11 +1432,11 @@ loser:
   return nullptr;
 }
 
-
-
-
-
-
+/*
+ * This function will set the Proof Of Possession (POP) for a request
+ * associated with a key pair intended to do Key Encipherment.  Currently
+ * this means encryption only keys.
+ */
 static nsresult
 nsSetKeyEnciphermentPOP(CRMFCertReqMsg *certReqMsg, bool isEscrowed)
 {
@@ -1445,23 +1445,23 @@ nsSetKeyEnciphermentPOP(CRMFCertReqMsg *certReqMsg, bool isEscrowed)
   SECStatus     srv;
 
   if (isEscrowed) {
-    
-
-
-
-
-
-
-    der[0] = 0x03; 
-    der[1] = 0x00; 
+    /* For proof of possession on escrowed keys, we use the
+     * this Message option of POPOPrivKey and include a zero
+     * length bit string in the POP field.  This is OK because the encrypted
+     * private key already exists as part of the PKIArchiveOptions
+     * Control and that for all intents and purposes proves that
+     * we do own the private key.
+     */
+    der[0] = 0x03; /*We've got a bit string          */
+    der[1] = 0x00; /*We've got a 0 length bit string */
     bitString.data = der;
     bitString.len  = 2;
     srv = CRMF_CertReqMsgSetKeyEnciphermentPOP(certReqMsg, crmfThisMessage,
                                               crmfNoSubseqMess, &bitString);
   } else {
-    
-
-
+    /* If the encryption key is not being escrowed, then we set the 
+     * Proof Of Possession to be a Challenge Response mechanism.
+     */
     srv = CRMF_CertReqMsgSetKeyEnciphermentPOP(certReqMsg,
                                               crmfSubsequentMessage,
                                               crmfChallengeResp, nullptr);
@@ -1480,13 +1480,13 @@ nsSet_EC_DHMAC_ProofOfPossession(CRMFCertReqMsg *certReqMsg,
                                  nsKeyPairInfo  *keyInfo,
                                  CRMFCertRequest *certReq)
 {
-  
-  
-  
-  
-  
-  
-  
+  // RFC 2511 Appendix A section 2 a) defines,
+  // the "text" input for HMAC shall be the DER encoded version of
+  // of the single cert request.
+  // We'll produce that encoding and destroy it afterwards,
+  // because when sending the complete package to the CA,
+  // we'll use a different encoding, one that includes POP and
+  // allows multiple requests to be sent in one step.
 
   unsigned long der_request_len = 0;
   ScopedSECItem der_request;
@@ -1500,9 +1500,9 @@ nsSet_EC_DHMAC_ProofOfPossession(CRMFCertReqMsg *certReqMsg,
   if (!der_request)
     return NS_ERROR_FAILURE;
 
-  
-  
-  
+  // set len in returned SECItem back to zero, because it will
+  // be used as the destination offset inside the 
+  // nsCRMFEncoderItemStore callback.
 
   der_request->len = 0;
 
@@ -1511,10 +1511,10 @@ nsSet_EC_DHMAC_ProofOfPossession(CRMFCertReqMsg *certReqMsg,
                                            der_request))
     return NS_ERROR_FAILURE;
 
-  
-  
-  
-  
+  // RFC 2511 Appendix A section 2 c):
+  // "A key K is derived from the shared secret Kec and the subject and
+  //  issuer names in the CA's certificate as follows:
+  //  K = SHA1(DER-encoded-subjectName | Kec | DER-encoded-issuerName)"
 
   ScopedPK11SymKey shared_secret;
   ScopedPK11SymKey subject_and_secret;
@@ -1522,18 +1522,18 @@ nsSet_EC_DHMAC_ProofOfPossession(CRMFCertReqMsg *certReqMsg,
   ScopedPK11SymKey sha1_of_subject_and_secret_and_issuer;
 
   shared_secret = 
-    PK11_PubDeriveWithKDF(keyInfo->privKey, 
-                          keyInfo->ecPopPubKey,  
-                          false, 
-                          nullptr, 
-                          nullptr, 
-                          CKM_ECDH1_DERIVE, 
-                          CKM_CONCATENATE_DATA_AND_BASE, 
-                          CKA_DERIVE, 
-                          0, 
-                          CKD_NULL, 
-                          nullptr, 
-                          nullptr); 
+    PK11_PubDeriveWithKDF(keyInfo->privKey, // SECKEYPrivateKey *privKey
+                          keyInfo->ecPopPubKey,  // SECKEYPublicKey *pubKey
+                          false, // bool isSender
+                          nullptr, // SECItem *randomA
+                          nullptr, // SECItem *randomB
+                          CKM_ECDH1_DERIVE, // CK_MECHANISM_TYPE derive
+                          CKM_CONCATENATE_DATA_AND_BASE, // CK_MECHANISM_TYPE target
+                          CKA_DERIVE, // CK_ATTRIBUTE_TYPE operation
+                          0, // int keySize
+                          CKD_NULL, // CK_ULONG kdf
+                          nullptr, // SECItem *sharedData
+                          nullptr); // void *wincx
 
   if (!shared_secret)
     return NS_ERROR_FAILURE;
@@ -1546,12 +1546,12 @@ nsSet_EC_DHMAC_ProofOfPossession(CRMFCertReqMsg *certReqMsg,
   concat_data_base_item.len = sizeof(CK_KEY_DERIVATION_STRING_DATA);
 
   subject_and_secret =
-    PK11_Derive(shared_secret, 
-                CKM_CONCATENATE_DATA_AND_BASE, 
-                &concat_data_base_item, 
-                CKM_CONCATENATE_BASE_AND_DATA, 
-                CKA_DERIVE, 
-                0); 
+    PK11_Derive(shared_secret, // PK11SymKey *baseKey
+                CKM_CONCATENATE_DATA_AND_BASE, // CK_MECHANISM_TYPE mechanism
+                &concat_data_base_item, // SECItem *param
+                CKM_CONCATENATE_BASE_AND_DATA, // CK_MECHANISM_TYPE target
+                CKA_DERIVE, // CK_ATTRIBUTE_TYPE operation
+                0); // int keySize
 
   if (!subject_and_secret)
     return NS_ERROR_FAILURE;
@@ -1564,23 +1564,23 @@ nsSet_EC_DHMAC_ProofOfPossession(CRMFCertReqMsg *certReqMsg,
   concat_base_data_item.len = sizeof(CK_KEY_DERIVATION_STRING_DATA);
 
   subject_and_secret_and_issuer =
-    PK11_Derive(subject_and_secret, 
-                CKM_CONCATENATE_BASE_AND_DATA, 
-                &concat_base_data_item, 
-                CKM_SHA1_KEY_DERIVATION, 
-                CKA_DERIVE, 
-                0); 
+    PK11_Derive(subject_and_secret, // PK11SymKey *baseKey
+                CKM_CONCATENATE_BASE_AND_DATA, // CK_MECHANISM_TYPE mechanism
+                &concat_base_data_item, // SECItem *param
+                CKM_SHA1_KEY_DERIVATION, // CK_MECHANISM_TYPE target
+                CKA_DERIVE, // CK_ATTRIBUTE_TYPE operation
+                0); // int keySize
 
   if (!subject_and_secret_and_issuer)
     return NS_ERROR_FAILURE;
 
   sha1_of_subject_and_secret_and_issuer =
-    PK11_Derive(subject_and_secret_and_issuer, 
-                CKM_SHA1_KEY_DERIVATION, 
-                nullptr, 
-                CKM_SHA_1_HMAC, 
-                CKA_SIGN, 
-                0); 
+    PK11_Derive(subject_and_secret_and_issuer, // PK11SymKey *baseKey
+                CKM_SHA1_KEY_DERIVATION, // CK_MECHANISM_TYPE mechanism
+                nullptr, // SECItem *param
+                CKM_SHA_1_HMAC, // CK_MECHANISM_TYPE target
+                CKA_SIGN, // CK_ATTRIBUTE_TYPE operation
+                0); // int keySize
 
   if (!sha1_of_subject_and_secret_and_issuer)
     return NS_ERROR_FAILURE;
@@ -1593,10 +1593,10 @@ nsSet_EC_DHMAC_ProofOfPossession(CRMFCertReqMsg *certReqMsg,
   ignore.len = 0;
 
   context = 
-    PK11_CreateContextBySymKey(CKM_SHA_1_HMAC, 
-                               CKA_SIGN, 
-                               sha1_of_subject_and_secret_and_issuer, 
-                               &ignore); 
+    PK11_CreateContextBySymKey(CKM_SHA_1_HMAC, // CK_MECHANISM_TYPE type
+                               CKA_SIGN, // CK_ATTRIBUTE_TYPE operation
+                               sha1_of_subject_and_secret_and_issuer, // PK11SymKey *symKey
+                               &ignore); // SECItem *param
 
   if (!context)
     return NS_ERROR_FAILURE;
@@ -1630,22 +1630,22 @@ nsSetProofOfPossession(CRMFCertReqMsg *certReqMsg,
                        nsKeyPairInfo  *keyInfo,
                        CRMFCertRequest *certReq)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Depending on the type of cert request we'll try
+  // POP mechanisms in different order,
+  // and add the result to the cert request message.
+  //
+  // For any signing or dual use cert,
+  //   try signing first,
+  //   fall back to DHMAC if we can
+  //     (EC cert requests that provide keygen param "popcert"),
+  //   otherwise fail.
+  //
+  // For encryption only certs that get escrowed, this is sufficient.
+  //
+  // For encryption only certs, that are not being escrowed, 
+  //   try DHMAC if we can 
+  //     (EC cert requests that provide keygen param "popcert"),
+  //   otherwise we'll indicate challenge response should be used.
   
   bool isEncryptionOnlyCertRequest = false;
   bool escrowEncryptionOnlyCert = false;
@@ -1671,9 +1671,9 @@ nsSetProofOfPossession(CRMFCertReqMsg *certReqMsg,
       break;
     
     case dhEx:
-    
-
-
+    /* This case may be supported in the future, but for now, we just fall 
+      * though to the default case and return an error for diffie-hellman keys.
+    */
     default:
       return NS_ERROR_FAILURE;
   };
@@ -1696,15 +1696,15 @@ nsSetProofOfPossession(CRMFCertReqMsg *certReqMsg,
   if (isEncryptionOnlyCertRequest)
   {
     if (escrowEncryptionOnlyCert)
-      return nsSetKeyEnciphermentPOP(certReqMsg, true); 
+      return nsSetKeyEnciphermentPOP(certReqMsg, true); // escrowed
     
     if (gotDHMACParameters)
       return nsSet_EC_DHMAC_ProofOfPossession(certReqMsg, keyInfo, certReq);
     
-    return nsSetKeyEnciphermentPOP(certReqMsg, false); 
+    return nsSetKeyEnciphermentPOP(certReqMsg, false); // not escrowed
   }
   
-  
+  // !isEncryptionOnlyCertRequest
   
   SECStatus srv = CRMF_CertReqMsgSetSignaturePOP(certReqMsg,
                                                  keyInfo->privKey,
@@ -1763,20 +1763,20 @@ nsEncodeCertReqMessages(CRMFCertReqMsg **certReqMsgs)
   return dest;
 }
 
-
-
-
-
+//Create a Base64 encoded CRMFCertReqMsg that can be sent to a CA
+//requesting one or more certificates to be issued.  This function
+//creates a single cert request per key pair and then appends it to
+//a message that is ultimately sent off to a CA.
 static char*
 nsCreateReqFromKeyPairs(nsKeyPairInfo *keyids, int32_t numRequests,
                         char *reqDN, char *regToken, char *authenticator,
                         nsNSSCertificate *wrappingCert) 
 {
-  
-  
+  // We'use the goto notation for clean-up purposes in this function
+  // that calls the C API of NSS.
   int32_t i;
-  
-  
+  // The ASN1 encoder in NSS wants the last entry in the array to be
+  // nullptr so that it knows when the last element is.
   CRMFCertReqMsg **certReqMsgs = new CRMFCertReqMsg*[numRequests+1];
   CRMFCertRequest *certReq;
   if (!certReqMsgs)
@@ -1824,8 +1824,8 @@ GetISupportsFromContext(JSContext *cx)
     return nullptr;
 }
 
-
-
+//The top level method which is a member of nsIDOMCrypto
+//for generate a base64 encoded CRMF request.
 NS_IMETHODIMP
 nsCrypto::GenerateCRMFRequest(nsIDOMCRMFObject** aReturn)
 {
@@ -1859,11 +1859,9 @@ nsCrypto::GenerateCRMFRequest(nsIDOMCRMFObject** aReturn)
 
   nsCOMPtr<nsIXPConnectJSObjectHolder> holder;
 
-  JSAutoRequest ar(cx);
-
-  
-
-
+  /*
+   * Get all of the parameters.
+   */
   if (argc < 5 || ((argc-5) % 3) != 0) {
     JS_ReportError(cx, "%s", "%s%s\n", JS_ERROR,
                   "incorrect number of parameters");
@@ -1924,10 +1922,10 @@ nsCrypto::GenerateCRMFRequest(nsIDOMCRMFObject** aReturn)
   JS::RootedObject script_obj(cx, holder->GetJSObject());
   NS_ENSURE_STATE(script_obj);
 
-  
-  
-  
-  
+  //Put up some UI warning that someone is trying to 
+  //escrow the private key.
+  //Don't addref this copy.  That way ths reference goes away
+  //at the same the nsIX09Cert ref goes away.
   nsNSSCertificate *escrowCert = nullptr;
   nsCOMPtr<nsIX509Cert> nssCert;
   bool willEscrow = false;
@@ -1976,7 +1974,7 @@ nsCrypto::GenerateCRMFRequest(nsIDOMCRMFObject** aReturn)
   int keyInfoIndex;
   uint32_t i;
   PK11SlotInfo *slot = nullptr;
-  
+  // Go through all of the arguments and generate the appropriate key pairs.
   for (i=5,keyInfoIndex=0; i<argc; i+=3,keyInfoIndex++) {
     nrv = cryptojs_ReadArgsAndGenerateKey(cx, &argv[i], &keyids[keyInfoIndex],
                                          uiCxt, &slot, willEscrow);
@@ -1988,7 +1986,7 @@ nsCrypto::GenerateCRMFRequest(nsIDOMCRMFObject** aReturn)
       return nrv;
     }
   }
-  
+  // By this time we'd better have a slot for the key gen.
   NS_ASSERTION(slot, "There was no slot selected for key generation");
   if (slot) 
     PK11_FreeSlot(slot);
@@ -2007,20 +2005,20 @@ nsCrypto::GenerateCRMFRequest(nsIDOMCRMFObject** aReturn)
   nsCRMFObject *newObject = new nsCRMFObject();
   newObject->SetCRMFRequest(encodedRequest);
   *aReturn = newObject;
-  
+  //Give a reference to the returnee.
   NS_ADDREF(*aReturn);
   nsFreeKeyPairInfo(keyids, numRequests);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // 
+  // Post an event on the UI queue so that the JS gets called after
+  // we return control to the JS layer.  Why do we have to this?
+  // Because when this API was implemented for PSM 1.x w/ Communicator,
+  // the only way to make this method work was to have a callback
+  // in the JS layer that got called after key generation had happened.
+  // So for backwards compatibility, we return control and then just post
+  // an event to call the JS the script provides as the code to execute
+  // when the request has been generated.
+  //
 
 
   nsCOMPtr<nsIScriptSecurityManager> secMan =
@@ -2051,8 +2049,8 @@ nsCrypto::GenerateCRMFRequest(nsIDOMCRMFObject** aReturn)
 }
 
 
-
-
+// Reminder that we inherit the memory passed into us here.
+// An implementation to let us back up certs as an event.
 nsP12Runnable::nsP12Runnable(nsIX509Cert **certArr, int32_t numCerts,
                              nsIPK11Token *token)
 {
@@ -2071,7 +2069,7 @@ nsP12Runnable::~nsP12Runnable()
 }
 
 
-
+//Implementation that backs cert(s) into a PKCS12 file
 NS_IMETHODIMP
 nsP12Runnable::Run()
 {
@@ -2088,8 +2086,8 @@ nsP12Runnable::Run()
   if (NS_FAILED(rv))
     return rv;
 
-  
-  
+  //Build up the message that let's the user know we're trying to 
+  //make PKCS12 backups of the new certs.
   nssComponent->GetPIPNSSBundleString("ForcedBackup1", final);
   final.Append(NS_LITERAL_STRING("\n\n").get());
   nssComponent->GetPIPNSSBundleString("ForcedBackup2", temp);
@@ -2128,8 +2126,8 @@ nsP12Runnable::Run()
   int16_t dialogReturn;
   filePicker->Show(&dialogReturn);
   if (dialogReturn == nsIFilePicker::returnCancel)
-    return NS_OK;  
-                   
+    return NS_OK;  //User canceled.  It'd be nice if they couldn't, 
+                   //but oh well.
 
   nsCOMPtr<nsIFile> localFile;
   rv = filePicker->GetFile(getter_AddRefs(localFile));
@@ -2170,8 +2168,8 @@ nsCryptoRunnable::~nsCryptoRunnable()
   NS_IF_RELEASE(m_args);
 }
 
-
-
+//Implementation that runs the callback passed to 
+//crypto.generateCRMFRequest as an event.
 NS_IMETHODIMP
 nsCryptoRunnable::Run()
 {
@@ -2189,8 +2187,8 @@ nsCryptoRunnable::Run()
   return ok ? NS_OK : NS_ERROR_FAILURE;
 }
 
-
-
+//Quick helper function to check if a newly issued cert
+//already exists in the user's database.
 static bool
 nsCertAlreadyExists(SECItem *derCert)
 {
@@ -2200,8 +2198,8 @@ nsCertAlreadyExists(SECItem *derCert)
   ScopedCERTCertificate cert(CERT_FindCertByDERCert(handle, derCert));
   if (cert) {
     if (cert->isperm && !cert->nickname && !cert->emailAddr) {
-      
-      
+      //If the cert doesn't have a nickname or email addr, it is
+      //bogus cruft, so delete it.
       SEC_DeletePermCertificate(cert);
     } else if (cert->isperm) {
       retVal = true;
@@ -2225,8 +2223,8 @@ nsCertListCount(CERTCertList *certList)
 }
 
 
-
-
+//Import user certificates that arrive as a CMMF base64 encoded
+//string.
 NS_IMETHODIMP
 nsCrypto::ImportUserCertificates(const nsAString& aNickname, 
                                  const nsAString& aCmmfResponse, 
@@ -2274,12 +2272,12 @@ nsCrypto::ImportUserCertificates(const nsAString& aNickname,
   numResponses = CMMF_CertRepContentGetNumResponses(certRepContent);
 
   if (aDoForcedBackup) {
-    
-    
-    
+    //We've been asked to force the user to back up these
+    //certificates.  Let's keep an array of them around which
+    //we pass along to the nsP12Runnable to use.
     certArr = new nsIX509Cert*[numResponses];
-    
-    
+    // If this is NULL, chances are we're gonna fail really soon,
+    // but let's try to keep going just in case.
     if (!certArr)
       aDoForcedBackup = false;
 
@@ -2293,7 +2291,7 @@ nsCrypto::ImportUserCertificates(const nsAString& aNickname,
     }
     reqStatus = CMMF_CertResponseGetPKIStatusInfoStatus(currResponse);
     if (!(reqStatus == cmmfGranted || reqStatus == cmmfGrantedWithMods)) {
-      
+      // The CA didn't give us the cert we requested.
       rv = NS_ERROR_FAILURE;
       goto loser;
     }
@@ -2315,19 +2313,19 @@ nsCrypto::ImportUserCertificates(const nsAString& aNickname,
       CMMF_DestroyCertResponse(currResponse);
       continue;
     }
-    
-    
-    
+    // Let's figure out which nickname to give the cert.  If 
+    // a certificate with the same subject name already exists,
+    // then just use that one, otherwise, get the default nickname.
     if (currCert->nickname) {
       localNick = currCert->nickname;
     }
     else if (!nickname || nickname[0] == '\0') {
       nsNSSCertificateDB::get_default_nickname(currCert, ctx, localNick);
     } else {
-      
-      
-      
-      
+      //This is the case where we're getting a brand new
+      //cert that doesn't have the same subjectName as a cert
+      //that already exists in our db and the CA page has 
+      //designated a nickname to use for the newly issued cert.
       localNick = nickname;
     }
     {
@@ -2352,11 +2350,11 @@ nsCrypto::ImportUserCertificates(const nsAString& aNickname,
     PK11_FreeSlot(slot);
     CMMF_DestroyCertResponse(currResponse);
   }
-  
-  
-  
+  //Let the loser: label take care of freeing up our reference to
+  //nickname (This way we don't free it twice and avoid crashing.
+  //That would be a good thing.
 
-  
+  //Import the root chain into the cert db.
  {
   ScopedCERTCertList caPubs(CMMF_CertRepContentGetCAPubs(certRepContent));
   if (caPubs) {
@@ -2385,9 +2383,9 @@ nsCrypto::ImportUserCertificates(const nsAString& aNickname,
  }
 
   if (aDoForcedBackup) {
-    
-    
-    
+    // I can't pop up a file picker from the depths of JavaScript,
+    // so I'll just post an event on the UI queue to do the backups
+    // later.
     nsCOMPtr<nsIRunnable> p12Runnable = new nsP12Runnable(certArr, numResponses,
                                                           token);
     if (!p12Runnable) {
@@ -2395,9 +2393,9 @@ nsCrypto::ImportUserCertificates(const nsAString& aNickname,
       goto loser;
     }
 
-    
-    
-    
+    // null out the certArr pointer which has now been inherited by
+    // the nsP12Runnable instance so that we don't free up the
+    // memory on the way out.
     certArr = nullptr;
 
     rv = NS_DispatchToMainThread(p12Runnable);
@@ -2441,7 +2439,7 @@ nsCrypto::Random(int32_t aNumBytes, nsAString& aReturn)
 static void
 GetDocumentFromContext(JSContext *cx, nsIDocument **aDocument)
 {
-  
+  // Get the script context.
   nsIScriptContext* scriptContext = GetScriptContextFromJSContext(cx);
   if (!scriptContext) {
     return;
@@ -2473,8 +2471,8 @@ NS_IMETHODIMP
 nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
                    nsAString& aResult)
 {
-  
-  
+  // XXX This code should return error codes, but we're keeping this
+  //     backwards compatible with NS4.x and so we can't throw exceptions.
   NS_NAMED_LITERAL_STRING(internalError, "error:internalError");
 
   aResult.Truncate();
@@ -2511,8 +2509,8 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
     return NS_OK;
   }
 
-  
-  
+  // It was decided to always behave as if "ask" were specified.
+  // XXX Should we warn in the JS Console for auto?
 
   nsCOMPtr<nsIInterfaceRequestor> uiContext = new PipUIContext;
   if (!uiContext) {
@@ -2589,7 +2587,7 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
     return NS_OK;
   }
 
-  
+  // Get the hostname from the URL of the document.
   nsIURI* uri = document->GetDocumentURI();
   if (!uri) {
     aResult.Append(internalError);
@@ -2669,8 +2667,8 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
   bool tryAgain, canceled;
   nsAutoString password;
   do {
-    
-    
+    // Throw up the form signing confirmation dialog and get back the index
+    // of the selected cert.
     int32_t selectedIndex = -1;
     rv = fsd->ConfirmSignText(uiContext, utf16Host, aStringToSign,
                               const_cast<const PRUnichar**>(certNicknameList.get()),
@@ -2678,7 +2676,7 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
                               certsToUse, &selectedIndex, password,
                               &canceled);
     if (NS_FAILED(rv) || canceled) {
-      break; 
+      break; // out of tryAgain loop
     }
 
     int32_t j = 0;
@@ -2686,14 +2684,14 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
          node = CERT_LIST_NEXT(node)) {
       if (j == selectedIndex) {
         signingCert = CERT_DupCertificate(node->cert);
-        break; 
+        break; // out of cert list iteration loop
       }
       ++j;
     }
 
     if (!signingCert) {
       rv = NS_ERROR_FAILURE;
-      break; 
+      break; // out of tryAgain loop
     }
 
     NS_ConvertUTF16toUTF8 pwUtf8(password);
@@ -2701,7 +2699,7 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
     tryAgain =
       PK11_CheckUserPassword(signingCert->slot,
                              const_cast<char *>(pwUtf8.get())) != SECSuccess;
-    
+    // XXX we should show an error dialog before retrying
   } while (tryAgain);
 
   int32_t k;
@@ -2710,7 +2708,7 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
     nsMemory::Free(certDetailsList[k]);
   }
 
-  if (NS_FAILED(rv)) { 
+  if (NS_FAILED(rv)) { // something went wrong inside the tryAgain loop
     aResult.Append(internalError);
 
     return NS_OK;
@@ -2731,8 +2729,8 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
 
   nsAutoCString charset(document->GetDocumentCharacterSet());
 
-  
-  
+  // XXX Doing what nsFormSubmission::GetEncoder does (see
+  //     http://bugzilla.mozilla.org/show_bug.cgi?id=81203).
   if (charset.EqualsLiteral("ISO-8859-1")) {
     charset.AssignLiteral("windows-1252");
   }
@@ -2824,7 +2822,7 @@ nsCrypto::SignText(const nsAString& aStringToSign, const nsAString& aCaOption,
   return NS_OK;
 }
 
-
+//Logout out of all installed PKCS11 tokens.
 NS_IMETHODIMP
 nsCrypto::Logout()
 {
@@ -2883,7 +2881,7 @@ nsCRMFObject::SetCRMFRequest(char *inRequest)
   return NS_OK;
 }
 
-#endif 
+#endif // MOZ_DISABLE_CRYPTOLEGACY
 
 nsPkcs11::nsPkcs11()
 {
@@ -2893,7 +2891,7 @@ nsPkcs11::~nsPkcs11()
 {
 }
 
-
+//Delete a PKCS11 module from the user's profile.
 NS_IMETHODIMP
 nsPkcs11::DeleteModule(const nsAString& aModuleName)
 {
@@ -2927,7 +2925,7 @@ nsPkcs11::DeleteModule(const nsAString& aModuleName)
   return rv;
 }
 
-
+//Add a new PKCS11 module to the user's profile.
 NS_IMETHODIMP
 nsPkcs11::AddModule(const nsAString& aModuleName, 
                     const nsAString& aLibraryFullPath, 
@@ -2940,7 +2938,7 @@ nsPkcs11::AddModule(const nsAString& aModuleName,
 
   NS_ConvertUTF16toUTF8 moduleName(aModuleName);
   nsCString fullPath;
-  
+  // NSS doesn't support Unicode path.  Use native charset
   NS_CopyUnicodeToNative(aLibraryFullPath, fullPath);
   uint32_t mechFlags = SECMOD_PubMechFlagstoInternal(aCryptoMechanismFlags);
   uint32_t cipherFlags = SECMOD_PubCipherFlagstoInternal(aCipherFlags);
@@ -2956,8 +2954,8 @@ nsPkcs11::AddModule(const nsAString& aModuleName,
     }
   }
 
-  
-  
+  // The error message we report to the user depends directly on 
+  // what the return value for SEDMOD_AddNewModule is
   switch (srv) {
   case SECSuccess:
     return NS_OK;

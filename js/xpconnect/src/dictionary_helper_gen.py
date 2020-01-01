@@ -1,9 +1,9 @@
-
-
-
-
-
-
+#!/usr/bin/env python
+# header.py - Generate C++ header files from IDL.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import sys, os, xpidl, makeutils
 
@@ -19,8 +19,8 @@ def strip_end(text, suffix):
 
 def findIDL(includePath, interfaceFileName):
     for d in includePath:
-        
-        
+        # Not os.path.join: we need a forward slash even on Windows because
+        # this filename ends up in makedepend output.
         path = d + '/' + interfaceFileName
         if os.path.exists(path):
             return path
@@ -94,7 +94,7 @@ def print_header_file(fd, conf):
              "#include \"nsString.h\"\n"
              "#include \"nsCOMPtr.h\"\n\n")
 
-    
+    # win32 namespace issues
     fd.write("#undef near\n"
              "\n\n")
 
@@ -211,7 +211,6 @@ def print_cpp_file(fd, conf):
              "bool\n"
              "InternStaticDictionaryJSVals(JSContext* aCx)\n"
              "{\n"
-             "  JSAutoRequest ar(aCx);\n"
              "  return\n")
     for a in attrnames:
         fd.write("    InternStaticJSVal(aCx, %s, \"%s\") &&\n"
@@ -407,7 +406,6 @@ def write_cpp(iface, fd):
              "  JS::RootedObject obj(aCx, &aVal->toObject());\n"
              "  nsCxPusher pusher;\n"
              "  pusher.Push(aCx);\n"
-             "  JSAutoRequest ar(aCx);\n"
              "  JSAutoCompartment ac(aCx, obj);\n")
 
     fd.write("  return %s_InitInternal(*this, aCx, obj);\n}\n\n" %
@@ -438,7 +436,7 @@ if __name__ == '__main__':
             os.mkdir(options.cachedir)
         sys.path.append(options.cachedir)
 
-    
+    # Instantiate the parser.
     p = xpidl.IDLParser(outputdir=options.cachedir)
 
     conf = readConfigFile(filename)

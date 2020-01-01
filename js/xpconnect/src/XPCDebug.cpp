@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "xpcprivate.h"
 
@@ -59,7 +59,7 @@ xpc_PrintJSStack(JSContext* cx, JSBool showArgs, JSBool showLocals,
     return buf;
 }
 
-
+/***************************************************************************/
 
 static void
 xpcDumpEvalErrorReporter(JSContext *cx, const char *message,
@@ -97,8 +97,6 @@ xpc_DumpEvalInJSStackFrame(JSContext* cx, uint32_t frameno, const char* text)
         return false;
     }
 
-    JSAutoRequest ar(cx);
-
     JSExceptionState* exceptionState = JS_SaveExceptionState(cx);
     JSErrorReporter older = JS_SetErrorReporter(cx, xpcDumpEvalErrorReporter);
 
@@ -116,7 +114,7 @@ xpc_DumpEvalInJSStackFrame(JSContext* cx, uint32_t frameno, const char* text)
     return true;
 }
 
-
+/***************************************************************************/
 
 JSTrapStatus
 xpc_DebuggerKeywordHandler(JSContext *cx, JSScript *script, jsbytecode *pc,

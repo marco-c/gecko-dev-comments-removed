@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "xpcprivate.h"
 #include "XPCJSWeakReference.h"
@@ -16,8 +16,6 @@ NS_IMPL_ISUPPORTS1(xpcJSWeakReference, xpcIJSWeakReference)
 
 nsresult xpcJSWeakReference::Init(JSContext* cx, const JS::Value& object)
 {
-    JSAutoRequest ar(cx);
-
     if (!object.isObject())
         return NS_OK;
 
@@ -25,7 +23,7 @@ nsresult xpcJSWeakReference::Init(JSContext* cx, const JS::Value& object)
 
     XPCCallContext ccx(NATIVE_CALLER, cx);
 
-    
+    // See if the object is a wrapped native that supports weak references.
     nsISupports* supports =
         nsXPConnect::GetXPConnect()->GetNativeOfWrapper(cx, obj);
     nsCOMPtr<nsISupportsWeakReference> supportsWeakRef =
@@ -36,10 +34,10 @@ nsresult xpcJSWeakReference::Init(JSContext* cx, const JS::Value& object)
             return NS_OK;
         }
     }
-    
-    
+    // If it's not a wrapped native, or it is a wrapped native that does not
+    // support weak references, fall back to getting a weak ref to the object.
 
-    
+    // See if object is a wrapped JSObject.
     nsRefPtr<nsXPCWrappedJS> wrapped;
     nsresult rv = nsXPCWrappedJS::GetNewOrUsed(ccx,
                                                obj,
@@ -70,8 +68,8 @@ xpcJSWeakReference::Get(JSContext* aCx, JS::Value* aRetval)
 
     nsCOMPtr<nsIXPConnectWrappedJS> wrappedObj = do_QueryInterface(supports);
     if (!wrappedObj) {
-        
-        
+        // We have a generic XPCOM object that supports weak references here.
+        // Wrap it and pass it out.
         JS::Rooted<JSObject*> global(aCx, JS_GetGlobalForScopeChain(aCx));
         return nsContentUtils::WrapNative(aCx, global,
                                           supports, &NS_GET_IID(nsISupports),
@@ -83,11 +81,11 @@ xpcJSWeakReference::Get(JSContext* aCx, JS::Value* aRetval)
         return NS_OK;
     }
 
-    
-    
-    
-    
-    
+    // Most users of XPCWrappedJS don't need to worry about
+    // re-wrapping because things are implicitly rewrapped by
+    // xpcconvert. However, because we're doing this directly
+    // through the native call context, we need to call
+    // JS_WrapObject().
     if (!JS_WrapObject(aCx, obj.address())) {
         return NS_ERROR_FAILURE;
     }
