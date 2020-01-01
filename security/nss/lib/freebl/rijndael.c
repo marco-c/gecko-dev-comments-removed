@@ -1110,10 +1110,13 @@ AES_InitContext(AESContext *cx, const unsigned char *key, unsigned int keysize,
 	baseencrypt = PR_TRUE;
 	break;
     }
+    
+    cx->worker_cx = NULL;
+    cx->destroy = NULL;
     rv = aes_InitContext(cx, key, keysize, iv, basemode, 
 					baseencrypt, blocksize);
     if (rv != SECSuccess) {
-	AES_DestroyContext(cx, PR_TRUE);
+	AES_DestroyContext(cx, PR_FALSE);
 	return rv;
     }
 
@@ -1160,7 +1163,7 @@ AES_InitContext(AESContext *cx, const unsigned char *key, unsigned int keysize,
 	
 	cx->destroy = NULL; 
 			    
-	AES_DestroyContext(cx, PR_TRUE);
+	AES_DestroyContext(cx, PR_FALSE);
 	return SECFailure;
     }
     return SECSuccess;
@@ -1196,9 +1199,10 @@ AES_CreateContext(const unsigned char *key, const unsigned char *iv,
 void 
 AES_DestroyContext(AESContext *cx, PRBool freeit)
 {
-
     if (cx->worker_cx && cx->destroy) {
 	(*cx->destroy)(cx->worker_cx, PR_TRUE);
+	cx->worker_cx = NULL;
+	cx->destroy = NULL;
     }
     if (freeit)
 	PORT_Free(cx);
