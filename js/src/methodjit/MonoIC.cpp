@@ -809,7 +809,7 @@ class CallCompiler : public BaseCompiler
         JITScript *jit = f.jit();
 
         
-        uintN initialFrameDepth = f.regs.sp - f.regs.fp()->slots();
+        uintN initialFrameDepth = f.regs.sp - f.fp()->slots();
 
         
 
@@ -817,7 +817,7 @@ class CallCompiler : public BaseCompiler
 
         Value *vp;
         if (ic.frameSize.isStatic()) {
-            JS_ASSERT(f.regs.sp - f.regs.fp()->slots() == (int)ic.frameSize.staticLocalSlots());
+            JS_ASSERT(f.regs.sp - f.fp()->slots() == (int)ic.frameSize.staticLocalSlots());
             vp = f.regs.sp - (2 + ic.frameSize.staticArgc());
         } else {
             JS_ASSERT(!f.regs.inlined());
@@ -842,6 +842,8 @@ class CallCompiler : public BaseCompiler
 
         if (!CallJSNative(cx, fun->u.n.native, ic.frameSize.getArgc(f), vp))
             THROWV(true);
+
+        f.script()->types.monitor(f.cx, f.pc(), vp[0]);
 
         
         if (monitor.recompiled())
@@ -920,29 +922,23 @@ class CallCompiler : public BaseCompiler
         masm.loadPtr(FrameAddress(offsetof(VMFrame, cx)), cxReg);
 
         
+
+
+
+
 #ifdef JS_CPU_X86
         RegisterID vpReg = t0;
 #else
         RegisterID vpReg = Registers::ArgReg2;
 #endif
+        uint32 vpOffset = (uint32) ((char *) vp - (char *) f.fp());
+        masm.addPtr(Imm32(vpOffset), JSFrameReg, vpReg);
+
+        
         MaybeRegisterID argcReg;
-        if (ic.frameSize.isStatic()) {
-            uint32 vpOffset = sizeof(StackFrame) + (vp - f.regs.fp()->slots()) * sizeof(Value);
-            masm.addPtr(Imm32(vpOffset), JSFrameReg, vpReg);
-        } else {
+        if (!ic.frameSize.isStatic()) {
             argcReg = tempRegs.takeAnyReg().reg();
             masm.load32(FrameAddress(offsetof(VMFrame, u.call.dynamicArgc)), argcReg.reg());
-            masm.loadPtr(FrameAddress(offsetof(VMFrame, regs.sp)), vpReg);
-
-            
-            RegisterID vpOff = tempRegs.takeAnyReg().reg();
-            masm.move(argcReg.reg(), vpOff);
-            masm.add32(Imm32(2), vpOff);  
-            JS_STATIC_ASSERT(sizeof(Value) == 8);
-            masm.lshift32(Imm32(3), vpOff);
-            masm.subPtr(vpOff, vpReg);
-
-            tempRegs.putReg(vpOff);
         }
 
         
@@ -974,15 +970,39 @@ class CallCompiler : public BaseCompiler
 
         masm.callWithABI(JS_FUNC_TO_DATA_PTR(void *, native), false);
 
-        if (cx->typeInferenceEnabled())
-            masm.storePtr(ImmPtr(NULL), FrameAddress(offsetof(VMFrame, stubRejoin)));
-
         
         masm.loadPtr(FrameAddress(VMFrame::offsetOfFp), JSFrameReg);
 
         Jump hasException = masm.branchTest32(Assembler::Zero, Registers::ReturnReg,
                                               Registers::ReturnReg);
 
+        Vector<Jump> mismatches(f.cx);
+        if (cx->typeInferenceEnabled()) {
+            
+
+
+
+
+
+
+
+            Address address(JSFrameReg, vpOffset);
+            types::TypeSet *types = f.script()->types.bytecodeTypes(f.pc());
+            if (!masm.generateTypeCheck(f.cx, address, types, &mismatches))
+                THROWV(true);
+
+            
+
+
+
+            masm.storePtr(ImmPtr(NULL), FrameAddress(offsetof(VMFrame, stubRejoin)));
+        }
+
+        
+
+
+
+        Label finished = masm.label();
 #ifdef JS_CPU_X64
         void *slowJoin = ic.slowPathStart.labelAtOffset(ic.slowJoinOffset).executableAddress();
         DataLabelPtr done = masm.moveWithPatch(ImmPtr(slowJoin), Registers::ValueReg);
@@ -992,7 +1012,20 @@ class CallCompiler : public BaseCompiler
 #endif
 
         
+        if (!mismatches.empty()) {
+            for (unsigned i = 0; i < mismatches.length(); i++)
+                mismatches[i].linkTo(masm.label(), &masm);
+            masm.addPtr(Imm32(vpOffset), JSFrameReg, Registers::ArgReg1);
+            masm.fallibleVMCall(true, JS_FUNC_TO_DATA_PTR(void *, stubs::TypeBarrierReturn),
+                                f.regs.pc, NULL, initialFrameDepth);
+            masm.storePtr(ImmPtr(NULL), FrameAddress(offsetof(VMFrame, stubRejoin)));
+            masm.jump().linkTo(finished, &masm);
+        }
+
+        
         hasException.linkTo(masm.label(), &masm);
+        if (cx->typeInferenceEnabled())
+            masm.storePtr(ImmPtr(NULL), FrameAddress(offsetof(VMFrame, stubRejoin)));
         masm.throwInJIT();
 
         LinkerHelper linker(masm);
@@ -1250,72 +1283,6 @@ ic::SplatApplyArgs(VMFrame &f)
     return true;
 }
 
-static bool
-GenerateTypeCheck(JSContext *cx, Assembler &masm, Address address,
-                  types::TypeSet *types, Vector<Jump> *mismatches)
-{
-    if (types->unknown())
-        return true;
-
-    Vector<Jump> matches(cx);
-
-    if (types->hasType(types::TYPE_DOUBLE)) {
-        
-        if (!matches.append(masm.testNumber(Assembler::Equal, address)))
-            return false;
-    } else if (types->hasType(types::TYPE_INT32)) {
-        if (!matches.append(masm.testInt32(Assembler::Equal, address)))
-            return false;
-    }
-
-    if (types->hasType(types::TYPE_UNDEFINED)) {
-        if (!matches.append(masm.testUndefined(Assembler::Equal, address)))
-            return false;
-    }
-
-    if (types->hasType(types::TYPE_BOOLEAN)) {
-        if (!matches.append(masm.testBoolean(Assembler::Equal, address)))
-            return false;
-    }
-
-    if (types->hasType(types::TYPE_STRING)) {
-        if (!matches.append(masm.testString(Assembler::Equal, address)))
-            return false;
-    }
-
-    if (types->hasType(types::TYPE_NULL)) {
-        if (!matches.append(masm.testNull(Assembler::Equal, address)))
-            return false;
-    }
-
-    unsigned count = types->getObjectCount();
-    if (count != 0) {
-        if (!mismatches->append(masm.testObject(Assembler::NotEqual, address)))
-            return false;
-        Registers tempRegs(Registers::AvailRegs);
-        RegisterID reg = tempRegs.takeAnyReg().reg();
-
-        masm.loadPayload(address, reg);
-        masm.loadPtr(Address(reg, offsetof(JSObject, type)), reg);
-
-        for (unsigned i = 0; i < count; i++) {
-            types::TypeObject *object = types->getObject(i);
-            if (object) {
-                if (!matches.append(masm.branchPtr(Assembler::Equal, reg, ImmPtr(object))))
-                    return false;
-            }
-        }
-    }
-
-    if (!mismatches->append(masm.jump()))
-        return false;
-
-    for (unsigned i = 0; i < matches.length(); i++)
-        matches[i].linkTo(masm.label(), &masm);
-
-    return true;
-}
-
 void
 ic::GenerateArgumentCheckStub(VMFrame &f)
 {
@@ -1334,13 +1301,13 @@ ic::GenerateArgumentCheckStub(VMFrame &f)
 
     if (!f.fp()->isConstructing()) {
         Address address(JSFrameReg, StackFrame::offsetOfThis(fun));
-        if (!GenerateTypeCheck(f.cx, masm, address, script->types.thisTypes(), &mismatches))
+        if (!masm.generateTypeCheck(f.cx, address, script->types.thisTypes(), &mismatches))
             return;
     }
 
     for (unsigned i = 0; i < fun->nargs; i++) {
         Address address(JSFrameReg, StackFrame::offsetOfFormalArg(fun, i));
-        if (!GenerateTypeCheck(f.cx, masm, address, script->types.argTypes(i), &mismatches))
+        if (!masm.generateTypeCheck(f.cx, address, script->types.argTypes(i), &mismatches))
             return;
     }
 
