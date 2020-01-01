@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=79 ft=cpp:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #ifndef jsscriptinlines_h___
 #define jsscriptinlines_h___
@@ -60,12 +60,12 @@ Bindings::lastShape() const
 Shape *
 Bindings::initialShape(JSContext *cx) const
 {
-    /* Get an allocation kind to match an empty call object. */
+    
     gc::AllocKind kind = gc::FINALIZE_OBJECT2_BACKGROUND;
     JS_ASSERT(gc::GetGCKindSlots(kind) == CallObject::RESERVED_SLOTS);
 
     return EmptyShape::getInitialShape(cx, &CallClass, NULL, NULL, kind,
-                                       BaseShape::VAROBJ);
+                                       BaseShape::VAROBJ | BaseShape::DELEGATE);
 }
 
 bool
@@ -114,16 +114,16 @@ ScriptCounts::destroy(FreeOp *fop)
 inline void
 MarkScriptFilename(JSRuntime *rt, const char *filename)
 {
-    /*
-     * As an invariant, a ScriptFilenameEntry should not be 'marked' outside of
-     * a GC. Since SweepScriptFilenames is only called during a full gc,
-     * to preserve this invariant, only mark during a full gc.
-     */
+    
+
+
+
+
     if (rt->gcIsFull)
         ScriptFilenameEntry::fromFilename(filename)->marked = true;
 }
 
-} // namespace js
+} 
 
 inline void
 JSScript::setFunction(JSFunction *fun)
@@ -171,11 +171,11 @@ JSScript::isEmpty() const
 inline bool
 JSScript::hasGlobal() const
 {
-    /*
-     * Make sure that we don't try to query information about global objects
-     * which have had their scopes cleared. compileAndGo code should not run
-     * anymore against such globals.
-     */
+    
+
+
+
+
     JS_ASSERT(types && types->hasScope());
     js::GlobalObject *obj = types->global;
     return obj && !obj->isCleared();
@@ -229,7 +229,7 @@ JSScript::destroyJITInfo(js::FreeOp *fop)
     fop->delete_(jitInfo);
     jitInfo = NULL;
 }
-#endif /* JS_METHODJIT */
+#endif 
 
 inline void
 JSScript::writeBarrierPre(JSScript *script)
@@ -253,4 +253,4 @@ JSScript::writeBarrierPost(JSScript *script, void *addr)
 {
 }
 
-#endif /* jsscriptinlines_h___ */
+#endif 
