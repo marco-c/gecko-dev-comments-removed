@@ -729,7 +729,11 @@ _cairo_d2d_create_strokestyle_for_stroke_style(const cairo_stroke_style_t *style
     if (style->num_dashes) {
 	dashes = new FLOAT[style->num_dashes];
 	for (unsigned int i = 0; i < style->num_dashes; i++) {
-	    dashes[i] = (FLOAT)style->dash[i];
+	    
+
+
+
+	    dashes[i] = (FLOAT) (style->dash[i] / style->line_width);
 	}
     }
 
