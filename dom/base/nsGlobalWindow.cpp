@@ -119,7 +119,6 @@
 #include "nsIDOMMessageEvent.h"
 #include "nsIDOMPopupBlockedEvent.h"
 #include "nsIDOMPopStateEvent.h"
-#include "nsIDOMPopStateEvent_MOZILLA_2_BRANCH.h"
 #include "nsIDOMOfflineResourceList.h"
 #include "nsIDOMGeoGeolocation.h"
 #include "nsIDOMDesktopNotification.h"
@@ -183,7 +182,6 @@
 #include "nsIXULAppInfo.h"
 #include "nsNetUtil.h"
 #include "nsFocusManager.h"
-#include "nsIJSON.h"
 #include "nsIXULWindow.h"
 #include "nsEventStateManager.h"
 #ifdef MOZ_XUL
@@ -6470,7 +6468,8 @@ nsGlobalWindow::LeaveModalState(nsIDOMWindow *aCallerWin)
   if (aCallerWin) {
     nsCOMPtr<nsIScriptGlobalObject> sgo(do_QueryInterface(aCallerWin));
     nsIScriptContext *scx = sgo->GetContext();
-    scx->LeaveModalState();
+    if (scx)
+      scx->LeaveModalState();
   }
 
   if (mContext) {
@@ -7699,9 +7698,9 @@ nsGlobalWindow::FireHashchange()
 }
 
 nsresult
-nsGlobalWindow::DispatchSyncPopState(PRBool aIsInitial)
+nsGlobalWindow::DispatchSyncPopState()
 {
-  FORWARD_TO_INNER(DispatchSyncPopState, (aIsInitial), NS_OK);
+  FORWARD_TO_INNER(DispatchSyncPopState, (), NS_OK);
 
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
                "Must be safe to run script here.");
@@ -7718,59 +7717,16 @@ nsGlobalWindow::DispatchSyncPopState(PRBool aIsInitial)
   }
 
   
-  if (!mDoc) {
-    return NS_OK;
-  }
-
-  nsIDocument::ReadyState readyState = mDoc->GetReadyStateEnum();
-  if (readyState != nsIDocument::READYSTATE_COMPLETE) {
-    return NS_OK;
-  }
-
   
   
-  
-  nsAString& stateObjJSON = mDoc->GetPendingStateObject();
-
   nsCOMPtr<nsIVariant> stateObj;
-  
-  if (!stateObjJSON.IsEmpty()) {
-    
-    
-    nsCOMPtr<nsIDocument> document = do_QueryInterface(mDocument);
-    NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
-
-    
-    
-    nsIScriptGlobalObject *sgo = document->GetScopeObject();
-    NS_ENSURE_TRUE(sgo, NS_ERROR_FAILURE);
-
-    nsIScriptContext *scx = sgo->GetContext();
-    NS_ENSURE_TRUE(scx, NS_ERROR_FAILURE);
-
-    JSContext *cx = (JSContext*) scx->GetNativeContext();
-
-    
-    JSAutoRequest ar(cx);
-
-    
-    
-    nsCxPusher cxPusher;
-
-    jsval jsStateObj = JSVAL_NULL;
-
-    
-    nsCOMPtr<nsIJSON> json = do_GetService("@mozilla.org/dom/json;1");
-    NS_ENSURE_TRUE(cxPusher.Push(cx), NS_ERROR_FAILURE);
-    rv = json->DecodeToJSVal(stateObjJSON, cx, &jsStateObj);
-    NS_ENSURE_SUCCESS(rv, rv);
-    cxPusher.Pop();
-
-    nsCOMPtr<nsIXPConnect> xpconnect = do_GetService(nsIXPConnect::GetCID());
-    NS_ENSURE_TRUE(xpconnect, NS_ERROR_FAILURE);
-    rv = xpconnect->JSValToVariant(cx, &jsStateObj, getter_AddRefs(stateObj));
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIDOMNSDocument_MOZILLA_2_0_BRANCH> doc2 = do_QueryInterface(mDoc);
+  if (!doc2) {
+    return NS_OK;
   }
+  
+  rv = doc2->GetMozCurrentStateObject(getter_AddRefs(stateObj));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsIPresShell *shell = mDoc->GetShell();
@@ -7790,12 +7746,10 @@ nsGlobalWindow::DispatchSyncPopState(PRBool aIsInitial)
   NS_ENSURE_TRUE(privateEvent, NS_ERROR_FAILURE);
 
   
-  nsCOMPtr<nsIDOMPopStateEvent_MOZILLA_2_BRANCH> popstateEvent =
-    do_QueryInterface(domEvent);
+  nsCOMPtr<nsIDOMPopStateEvent> popstateEvent = do_QueryInterface(domEvent);
   rv = popstateEvent->InitPopStateEvent(NS_LITERAL_STRING("popstate"),
                                         PR_TRUE, PR_FALSE,
-                                        stateObj,
-                                        aIsInitial);
+                                        stateObj);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = privateEvent->SetTrusted(PR_TRUE);
@@ -7809,7 +7763,7 @@ nsGlobalWindow::DispatchSyncPopState(PRBool aIsInitial)
   NS_ENSURE_SUCCESS(rv, rv);
 
   PRBool dummy; 
-  return DispatchEvent(domEvent, &dummy);
+  return DispatchEvent(popstateEvent, &dummy);
 }
 
 
