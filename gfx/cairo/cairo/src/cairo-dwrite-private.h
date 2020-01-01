@@ -34,13 +34,13 @@
 
 
 #include <dwrite.h>
-#include <D2d1.h>
+#include <d2d1.h>
 
 
 typedef HRESULT (WINAPI*DWriteCreateFactoryFunc)(
-  __in   DWRITE_FACTORY_TYPE factoryType,
-  __in   REFIID iid,
-  __out  IUnknown **factory
+  DWRITE_FACTORY_TYPE factoryType,
+  REFIID iid,
+  IUnknown **factory
 );
 
 
