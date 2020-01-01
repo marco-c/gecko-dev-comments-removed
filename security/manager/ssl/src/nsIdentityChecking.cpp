@@ -1,41 +1,41 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Red Hat, Inc.
- * Portions created by the Initial Developer are Copyright (C) 2007
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Kai Engert <kengert@redhat.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsStreamUtils.h"
@@ -71,8 +71,8 @@ NSSCleanupAutoPtrClass_WithParam(SECItem, SECITEM_FreeItem, TrueParam, true)
 struct nsMyTrustedEVInfo
 {
   const char *dotted_oid;
-  const char *oid_name; // Set this to null to signal an invalid structure,
-                  // (We can't have an empty list, so we'll use a dummy entry)
+  const char *oid_name; 
+                  
   SECOidTag oid_tag;
   const char *ev_root_sha1_fingerprint;
   const char *issuer_base64;
@@ -81,14 +81,14 @@ struct nsMyTrustedEVInfo
 };
 
 static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
-  /*
-   * IMPORTANT! When extending this list, 
-   * pairs of dotted_oid and oid_name should always be unique pairs.
-   * In other words, if you add another list, that uses the same dotted_oid
-   * as an existing entry, then please use the same oid_name.
-   */
+  
+
+
+
+
+
   {
-    // CN=WellsSecure Public Root Certificate Authority,OU=Wells Fargo Bank NA,O=Wells Fargo WellsSecure,C=US
+    
     "2.16.840.1.114171.500.9",
     "WellsSecure EV OID",
     SEC_OID_UNKNOWN,
@@ -100,7 +100,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // OU=Security Communication EV RootCA1,O="SECOM Trust Systems CO.,LTD.",C=JP
+    
     "1.2.392.200091.100.721.1",
     "SECOM EV OID",
     SEC_OID_UNKNOWN,
@@ -112,7 +112,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Cybertrust Global Root,O=Cybertrust, Inc
+    
     "1.3.6.1.4.1.6334.1.100.1",
     "Cybertrust EV OID",
     SEC_OID_UNKNOWN,
@@ -123,7 +123,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=SwissSign Gold CA - G2,O=SwissSign AG,C=CH
+    
     "2.16.756.1.89.1.2.1.1",
     "SwissSign EV OID",
     SEC_OID_UNKNOWN,
@@ -134,7 +134,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=StartCom Certification Authority,OU=Secure Digital Certificate Signing,O=StartCom Ltd.,C=IL
+    
     "1.3.6.1.4.1.23223.2",
     "StartCom EV OID",
     SEC_OID_UNKNOWN,
@@ -146,7 +146,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=VeriSign Class 3 Public Primary Certification Authority - G5,OU="(c) 2006 VeriSign, Inc. - For authorized use only",OU=VeriSign Trust Network,O="VeriSign, Inc.",C=US
+    
     "2.16.840.1.113733.1.7.23.6",
     "VeriSign EV OID",
     SEC_OID_UNKNOWN,
@@ -160,7 +160,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=GeoTrust Primary Certification Authority,O=GeoTrust Inc.,C=US
+    
     "1.3.6.1.4.1.14370.1.6",
     "GeoTrust EV OID",
     SEC_OID_UNKNOWN,
@@ -171,7 +171,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=thawte Primary Root CA,OU="(c) 2006 thawte, Inc. - For authorized use only",OU=Certification Services Division,O="thawte, Inc.",C=US
+    
     "2.16.840.1.113733.1.7.48.1",
     "Thawte EV OID",
     SEC_OID_UNKNOWN,
@@ -184,7 +184,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=XRamp Global Certification Authority,O=XRamp Security Services Inc,OU=www.xrampsecurity.com,C=US
+    
     "2.16.840.1.114404.1.1.2.4.1",
     "Trustwave EV OID",
     SEC_OID_UNKNOWN,
@@ -196,7 +196,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=SecureTrust CA,O=SecureTrust Corporation,C=US
+    
     "2.16.840.1.114404.1.1.2.4.1",
     "Trustwave EV OID",
     SEC_OID_UNKNOWN,
@@ -207,7 +207,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Secure Global CA,O=SecureTrust Corporation,C=US
+    
     "2.16.840.1.114404.1.1.2.4.1",
     "Trustwave EV OID",
     SEC_OID_UNKNOWN,
@@ -218,7 +218,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=COMODO ECC Certification Authority,O=COMODO CA Limited,L=Salford,ST=Greater Manchester,C=GB
+    
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     SEC_OID_UNKNOWN,
@@ -230,7 +230,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=COMODO Certification Authority,O=COMODO CA Limited,L=Salford,ST=Greater Manchester,C=GB
+    
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     SEC_OID_UNKNOWN,
@@ -242,7 +242,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=AddTrust External CA Root,OU=AddTrust External TTP Network,O=AddTrust AB,C=SE
+    
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     SEC_OID_UNKNOWN,
@@ -254,7 +254,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=UTN - DATACorp SGC,OU=http://www.usertrust.com,O=The USERTRUST Network,L=Salt Lake City,ST=UT,C=US
+    
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     SEC_OID_UNKNOWN,
@@ -267,7 +267,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=UTN-USERFirst-Hardware,OU=http://www.usertrust.com,O=The USERTRUST Network,L=Salt Lake City,ST=UT,C=US
+    
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     SEC_OID_UNKNOWN,
@@ -280,7 +280,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // OU=Go Daddy Class 2 Certification Authority,O=\"The Go Daddy Group, Inc.\",C=US
+    
     "2.16.840.1.114413.1.7.23.3",
     "Go Daddy EV OID a",
     SEC_OID_UNKNOWN,
@@ -292,7 +292,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Go Daddy Root Certificate Authority - G2,O="GoDaddy.com, Inc.",L=Scottsdale,ST=Arizona,C=US
+    
     "2.16.840.1.114413.1.7.23.3",
     "Go Daddy EV OID a",
     SEC_OID_UNKNOWN,
@@ -304,7 +304,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // E=info@valicert.com,CN=http://www.valicert.com/,OU=ValiCert Class 2 Policy Validation Authority,O=\"ValiCert, Inc.\",L=ValiCert Validation Network
+    
     "2.16.840.1.114413.1.7.23.3",
     "Go Daddy EV OID a",
     SEC_OID_UNKNOWN,
@@ -317,7 +317,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // E=info@valicert.com,CN=http://www.valicert.com/,OU=ValiCert Class 2 Policy Validation Authority,O=\"ValiCert, Inc.\",L=ValiCert Validation Network
+    
     "2.16.840.1.114414.1.7.23.3",
     "Go Daddy EV OID b",
     SEC_OID_UNKNOWN,
@@ -330,7 +330,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // OU=Starfield Class 2 Certification Authority,O=\"Starfield Technologies, Inc.\",C=US
+    
     "2.16.840.1.114414.1.7.23.3",
     "Go Daddy EV OID b",
     SEC_OID_UNKNOWN,
@@ -342,7 +342,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Starfield Root Certificate Authority - G2,O="Starfield Technologies, Inc.",L=Scottsdale,ST=Arizona,C=US
+    
     "2.16.840.1.114414.1.7.23.3",
     "Go Daddy EV OID b",
     SEC_OID_UNKNOWN,
@@ -355,7 +355,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=DigiCert High Assurance EV Root CA,OU=www.digicert.com,O=DigiCert Inc,C=US
+    
     "2.16.840.1.114412.2.1",
     "DigiCert EV OID",
     SEC_OID_UNKNOWN,
@@ -367,7 +367,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=QuoVadis Root CA 2,O=QuoVadis Limited,C=BM
+    
     "1.3.6.1.4.1.8024.0.2.100.1.2",
     "Quo Vadis EV OID",
     SEC_OID_UNKNOWN,
@@ -378,7 +378,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Network Solutions Certificate Authority,O=Network Solutions L.L.C.,C=US
+    
     "1.3.6.1.4.1.782.1.2.1.8.1",
     "Network Solutions EV OID",
     SEC_OID_UNKNOWN,
@@ -390,7 +390,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Entrust Root Certification Authority,OU="(c) 2006 Entrust, Inc.",OU=www.entrust.net/CPS is incorporated by reference,O="Entrust, Inc.",C=US
+    
     "2.16.840.1.114028.10.1.2",
     "Entrust EV OID",
     SEC_OID_UNKNOWN,
@@ -403,7 +403,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE
+    
     "1.3.6.1.4.1.4146.1.1",
     "GlobalSign EV OID",
     SEC_OID_UNKNOWN,
@@ -414,7 +414,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=GlobalSign,O=GlobalSign,OU=GlobalSign Root CA - R2
+    
     "1.3.6.1.4.1.4146.1.1",
     "GlobalSign EV OID",
     SEC_OID_UNKNOWN,
@@ -425,7 +425,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=GlobalSign,O=GlobalSign,OU=GlobalSign Root CA - R3
+    
     "1.3.6.1.4.1.4146.1.1",
     "GlobalSign EV OID",
     SEC_OID_UNKNOWN,
@@ -436,7 +436,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Buypass Class 3 CA 1,O=Buypass AS-983163327,C=NO
+    
     "2.16.578.1.26.1.3.3",
     "Buypass Class 3 CA 1",
     SEC_OID_UNKNOWN,
@@ -447,7 +447,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Class 2 Primary CA,O=Certplus,C=FR
+    
     "1.3.6.1.4.1.22234.2.5.2.3.1",
     "Certplus EV OID",
     SEC_OID_UNKNOWN,
@@ -458,7 +458,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Chambers of Commerce Root - 2008,O=AC Camerfirma S.A.,serialNumber=A82743287,L=Madrid (see current address at www.camerfirma.com/address),C=EU
+    
     "1.3.6.1.4.1.17326.10.14.2.1.2",
     "Camerfirma EV OID a",
     SEC_OID_UNKNOWN,
@@ -471,7 +471,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Global Chambersign Root - 2008,O=AC Camerfirma S.A.,serialNumber=A82743287,L=Madrid (see current address at www.camerfirma.com/address),C=EU
+    
     "1.3.6.1.4.1.17326.10.8.12.1.2",
     "Camerfirma EV OID b",
     SEC_OID_UNKNOWN,
@@ -484,7 +484,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=TC TrustCenter Universal CA III,OU=TC TrustCenter Universal CA,O=TC TrustCenter GmbH,C=DE
+    
     "1.2.276.0.44.1.1.1.4",
     "TC TrustCenter EV OID",
     SEC_OID_UNKNOWN,
@@ -496,7 +496,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=AffirmTrust Commercial,O=AffirmTrust,C=US
+    
     "1.3.6.1.4.1.34697.2.1",
     "AffirmTrust EV OID a",
     SEC_OID_UNKNOWN,
@@ -507,7 +507,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=AffirmTrust Networking,O=AffirmTrust,C=US
+    
     "1.3.6.1.4.1.34697.2.2",
     "AffirmTrust EV OID b",
     SEC_OID_UNKNOWN,
@@ -518,7 +518,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=AffirmTrust Premium,O=AffirmTrust,C=US
+    
     "1.3.6.1.4.1.34697.2.3",
     "AffirmTrust EV OID c",
     SEC_OID_UNKNOWN,
@@ -529,7 +529,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=AffirmTrust Premium ECC,O=AffirmTrust,C=US
+    
     "1.3.6.1.4.1.34697.2.4",
     "AffirmTrust EV OID d",
     SEC_OID_UNKNOWN,
@@ -540,7 +540,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Certum Trusted Network CA,OU=Certum Certification Authority,O=Unizeto Technologies S.A.,C=PL
+    
     "1.2.616.1.113527.2.5.1.1",
     "Certum EV OID",
     SEC_OID_UNKNOWN,
@@ -552,7 +552,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Izenpe.com,O=IZENPE S.A.,C=ES
+    
     "1.3.6.1.4.1.14777.6.1.1",
     "Izenpe EV OID 1",
     SEC_OID_UNKNOWN,
@@ -563,7 +563,7 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // CN=Izenpe.com,O=IZENPE S.A.,C=ES
+    
     "1.3.6.1.4.1.14777.6.1.2",
     "Izenpe EV OID 2",
     SEC_OID_UNKNOWN,
@@ -574,11 +574,11 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     nsnull
   },
   {
-    // OU=Sample Certification Authority,O=\"Sample, Inc.\",C=US
+    
     "0.0.0.0",
-    0, // for real entries use a string like "Sample INVALID EV OID"
+    0, 
     SEC_OID_UNKNOWN,
-    "00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33", //UPPERCASE!
+    "00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33", 
     "Cg==",
     "Cg==",
     nsnull
@@ -622,7 +622,7 @@ nsMyTrustedEVInfoClass::nsMyTrustedEVInfoClass()
 
 nsMyTrustedEVInfoClass::~nsMyTrustedEVInfoClass()
 {
-  // Cast away const-ness in order to free these strings
+  
   free(const_cast<char*>(dotted_oid));
   free(const_cast<char*>(oid_name));
   free(const_cast<char*>(ev_root_sha1_fingerprint));
@@ -697,20 +697,20 @@ loadTestEVInfos()
   nsCAutoString buffer;
   bool isMore = true;
 
-  /* file format
-   *
-   * file format must be strictly followed
-   * strings in file must be UTF-8
-   * each record consists of multiple lines
-   * each line consists of a descriptor, a single space, and the data
-   * the descriptors are:
-   *   1_fingerprint (in format XX:XX:XX:...)
-   *   2_readable_oid (treated as a comment)
-   * the input file must strictly follow this order
-   * the input file may contain 0, 1 or many records
-   * completely empty lines are ignored
-   * lines that start with the # char are ignored
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   int line_counter = 0;
   bool found_error = false;
@@ -914,7 +914,7 @@ isEVPolicy(SECOidTag policyOIDTag)
 {
   for (size_t iEV=0; iEV < (sizeof(myTrustedEVInfos)/sizeof(nsMyTrustedEVInfo)); ++iEV) {
     nsMyTrustedEVInfo &entry = myTrustedEVInfos[iEV];
-    if (!entry.oid_name) // invalid or placeholder list entry
+    if (!entry.oid_name) 
       continue;
     if (policyOIDTag == entry.oid_tag) {
       return true;
@@ -939,7 +939,7 @@ getRootsForOid(SECOidTag oid_tag)
 
   for (size_t iEV=0; iEV < (sizeof(myTrustedEVInfos)/sizeof(nsMyTrustedEVInfo)); ++iEV) {
     nsMyTrustedEVInfo &entry = myTrustedEVInfos[iEV];
-    if (!entry.oid_name) // invalid or placeholder list entry
+    if (!entry.oid_name) 
       continue;
     if (entry.oid_tag == oid_tag)
       CERT_AddCertToListTail(certList, CERT_DupCertificate(entry.cert));
@@ -959,7 +959,7 @@ isApprovedForEV(SECOidTag policyOIDTag, CERTCertificate *rootCert)
 
   for (size_t iEV=0; iEV < (sizeof(myTrustedEVInfos)/sizeof(nsMyTrustedEVInfo)); ++iEV) {
     nsMyTrustedEVInfo &entry = myTrustedEVInfos[iEV];
-    if (!entry.oid_name) // invalid or placeholder list entry
+    if (!entry.oid_name) 
       continue;
     if (isEVMatch(policyOIDTag, rootCert, entry)) {
       return true;
@@ -980,7 +980,7 @@ nsNSSComponent::IdentityInfoInit()
 {
   for (size_t iEV=0; iEV < (sizeof(myTrustedEVInfos)/sizeof(nsMyTrustedEVInfo)); ++iEV) {
     nsMyTrustedEVInfo &entry = myTrustedEVInfos[iEV];
-    if (!entry.oid_name) // invalid or placeholder list entry
+    if (!entry.oid_name) 
       continue;
 
     SECStatus rv;
@@ -1040,7 +1040,7 @@ nsNSSComponent::IdentityInfoInit()
   return PR_SUCCESS;
 }
 
-// Find the first policy OID that is known to be an EV policy OID.
+
 static SECStatus getFirstEVPolicy(CERTCertificate *cert, SECOidTag &outOidTag)
 {
   if (!cert)
@@ -1071,7 +1071,7 @@ static SECStatus getFirstEVPolicy(CERTCertificate *cert, SECOidTag &outOidTag)
 
         SECOidTag oid_tag = policyInfo->oid;
         if (oid_tag != SEC_OID_UNKNOWN && isEVPolicy(oid_tag)) {
-          // in our list of OIDs accepted for EV
+          
           outOidTag = oid_tag;
           found = true;
           break;
@@ -1096,21 +1096,20 @@ nsSSLStatus::GetIsExtendedValidation(bool* aIsEV)
   nsresult rv;
   nsCOMPtr<nsIIdentityInfo> idinfo = do_QueryInterface(cert, &rv);
 
-  // mServerCert should never be null when this method is called because
-  // nsSSLStatus objects always have mServerCert set right after they are
-  // constructed and before they are returned. GetIsExtendedValidation should
-  // only be called in the chrome process (in e10s), and mServerCert will always
-  // implement nsIIdentityInfo in the chrome process.
+  
+  
+  
+  
+  
   if (!idinfo) {
     NS_ERROR("nsSSLStatus has null mServerCert or was called in the content "
              "process");
     return NS_ERROR_UNEXPECTED;
   }
 
-  // Never allow bad certs for EV, regardless of overrides.
-  if (!mHaveCertErrorBits)
+  
+  if (mHaveCertErrorBits)
     return NS_OK;
-
 
   return idinfo->GetIsExtendedValidation(aIsEV);
 }
@@ -1137,7 +1136,7 @@ nsNSSCertificate::hasValidEVOidTag(SECOidTag &resultOidTag, bool &validEV)
   certdb = do_GetService(NS_X509CERTDB_CONTRACTID);
   if (certdb)
     certdb->GetIsOcspOn(&isOCSPEnabled);
-  // No OCSP, no EV
+  
   if (!isOCSPEnabled)
     return NS_OK;
 
@@ -1146,7 +1145,7 @@ nsNSSCertificate::hasValidEVOidTag(SECOidTag &resultOidTag, bool &validEV)
   if (rv != SECSuccess)
     return NS_OK;
 
-  if (oid_tag == SEC_OID_UNKNOWN) // not in our list of OIDs accepted for EV
+  if (oid_tag == SEC_OID_UNKNOWN) 
     return NS_OK;
 
   CERTCertList *rootList = getRootsForOid(oid_tag);
@@ -1307,7 +1306,7 @@ nsNSSComponent::EnsureIdentityInfoLoaded()
   return (rv == PR_SUCCESS) ? NS_OK : NS_ERROR_FAILURE; 
 }
 
-// only called during shutdown
+
 void
 nsNSSComponent::CleanupIdentityInfo()
 {
