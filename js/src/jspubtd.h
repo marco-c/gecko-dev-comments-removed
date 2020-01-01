@@ -193,6 +193,16 @@ typedef JSBool
 
 
 
+typedef JSBool
+(* JSStrictPropertyOp)(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp);
+
+
+
+
+
+
+
+
 
 
 
@@ -531,7 +541,7 @@ typedef JSBool
                     jsval *rval);
 
 typedef JSBool
-(* JSLocaleToUnicode)(JSContext *cx, char *src, jsval *rval);
+(* JSLocaleToUnicode)(JSContext *cx, const char *src, jsval *rval);
 
 
 
@@ -599,8 +609,9 @@ typedef JSBool
 
 
 
+
 typedef JSObject *(*ReadStructuredCloneOp)(JSContext *cx, JSStructuredCloneReader *r,
-                                           uint32 tag, uint32 data);
+                                           uint32 tag, uint32 data, void *closure);
 
 
 
@@ -613,7 +624,8 @@ typedef JSObject *(*ReadStructuredCloneOp)(JSContext *cx, JSStructuredCloneReade
 
 
 
-typedef JSBool (*WriteStructuredCloneOp)(JSContext *cx, JSStructuredCloneWriter *w, JSObject *obj);
+typedef JSBool (*WriteStructuredCloneOp)(JSContext *cx, JSStructuredCloneWriter *w,
+                                         JSObject *obj, void *closure);
 
 
 
