@@ -245,7 +245,7 @@ class Script
     }
 
     bool localHasUseBeforeDef(uint32 local) {
-        JS_ASSERT(local < script->nfixed && !failed());
+        JS_ASSERT(!failed());
         return local >= localCount() || locals[local] == LOCAL_USE_BEFORE_DEF;
     }
 
@@ -327,7 +327,17 @@ class Script
     
 
     
-    void analyzeTypes(JSContext *cx, Bytecode *codeType);
+    struct TypeState {
+        
+        bool hasGetSet;
+
+        TypeState()
+            : hasGetSet(false)
+        {}
+    };
+
+    
+    void analyzeTypes(JSContext *cx, Bytecode *codeType, TypeState &state);
 
     
 
