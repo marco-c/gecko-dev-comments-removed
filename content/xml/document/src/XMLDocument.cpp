@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 
 #include "mozilla/dom/XMLDocument.h"
@@ -56,9 +56,9 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-// ==================================================================
-// =
-// ==================================================================
+
+
+
 
 
 nsresult
@@ -73,9 +73,9 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
                   nsIGlobalObject* aEventObject,
                   DocumentFlavor aFlavor)
 {
-  // Note: can't require that aDocumentURI/aBaseURI/aPrincipal be non-null,
-  // since at least one caller (XMLHttpRequest) doesn't have decent args to
-  // pass in.
+  
+  
+  
   
   nsresult rv;
 
@@ -114,7 +114,7 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
     else if (publicId.EqualsLiteral("-//W3C//DTD SVG 1.1//EN")) {
       rv = NS_NewSVGDocument(getter_AddRefs(d));
     }
-    // XXX Add support for XUL documents.
+    
     else {
       rv = NS_NewXMLDocument(getter_AddRefs(d));
     }
@@ -141,12 +141,12 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
   nsDocument* doc = static_cast<nsDocument*>(d.get());
   doc->SetLoadedAsData(aLoadedAsData);
   doc->nsDocument::SetDocumentURI(aDocumentURI);
-  // Must set the principal first, since SetBaseURI checks it.
+  
   doc->SetPrincipal(aPrincipal);
   doc->SetBaseURI(aBaseURI);
 
-  // XMLDocuments and documents "created in memory" get to be UTF-8 by default,
-  // unlike the legacy HTML mess
+  
+  
   doc->SetDocumentCharacterSet(NS_LITERAL_CSTRING("UTF-8"));
   
   if (aDoctype) {
@@ -219,17 +219,17 @@ XMLDocument::XMLDocument(const char* aContentType)
   : nsDocument(aContentType),
     mAsync(true)
 {
-  // NOTE! nsDocument::operator new() zeroes out all members, so don't
-  // bother initializing members to 0.
+  
+  
 }
 
 XMLDocument::~XMLDocument()
 {
-  // XXX We rather crash than hang
+  
   mLoopingForSyncLoad = false;
 }
 
-// QueryInterface implementation for XMLDocument
+
 NS_IMPL_ISUPPORTS_INHERITED1(XMLDocument, nsDocument, nsIDOMXMLDocument)
 
 nsresult
@@ -279,7 +279,7 @@ static void
 ReportUseOfDeprecatedMethod(nsIDocument *aDoc, const char* aWarning)
 {
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                  "DOM3 Load", aDoc,
+                                  NS_LITERAL_CSTRING("DOM3 Load"), aDoc,
                                   nsContentUtils::eDOM_PROPERTIES,
                                   aWarning);
 }
@@ -315,7 +315,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
     charset = callingDoc->GetDocumentCharacterSet();
   }
 
-  // Create a new URI
+  
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), aUrl, charset.get(), baseURI);
   if (NS_FAILED(rv)) {
@@ -323,14 +323,14 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
     return false;
   }
 
-  // Check to see whether the current document is allowed to load this URI.
-  // It's important to use the current document's principal for this check so
-  // that we don't end up in a case where code with elevated privileges is
-  // calling us and changing the principal of this document.
+  
+  
+  
+  
 
-  // Enforce same-origin even for chrome loaders to avoid someone accidentally
-  // using a document that content has a reference to and turn that into a
-  // chrome document.
+  
+  
+  
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
   if (!nsContentUtils::IsSystemPrincipal(principal)) {
     rv = principal->CheckMayLoad(uri, false, false);
@@ -359,8 +359,8 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
       return false;
     }
   } else {
-    // We're called from chrome, check to make sure the URI we're
-    // about to load is also chrome.
+    
+    
 
     bool isChrome = false;
     if (NS_FAILED(uri->SchemeIs("chrome", &isChrome)) || !isChrome) {
@@ -403,19 +403,19 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
     }
   }
 
-  // Partial Reset, need to restore principal for security reasons and
-  // event listener manager so that load listeners etc. will
-  // remain. This should be done before the security check is done to
-  // ensure that the document is reset even if the new document can't
-  // be loaded.  Note that we need to hold a strong ref to |principal|
-  // here, because ResetToURI will null out our node principal before
-  // setting the new one.
+  
+  
+  
+  
+  
+  
+  
   nsRefPtr<nsEventListenerManager> elm(mListenerManager);
   mListenerManager = nullptr;
 
-  // When we are called from JS we can find the load group for the page,
-  // and add ourselves to it. This way any pending requests
-  // will be automatically aborted if the user leaves the page.
+  
+  
+  
 
   nsCOMPtr<nsILoadGroup> loadGroup;
   if (callingDoc) {
@@ -426,7 +426,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
 
   mListenerManager = elm;
 
-  // Create a channel
+  
   nsCOMPtr<nsIInterfaceRequestor> req = nsContentUtils::GetSameOriginChecker();
   if (!req) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
@@ -434,8 +434,8 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
   }
 
   nsCOMPtr<nsIChannel> channel;
-  // nsIRequest::LOAD_BACKGROUND prevents throbber from becoming active,
-  // which in turn keeps STOP button from becoming active  
+  
+  
   rv = NS_NewChannel(getter_AddRefs(channel), uri, nullptr, loadGroup, req, 
                      nsIRequest::LOAD_BACKGROUND);
   if (NS_FAILED(rv)) {
@@ -443,15 +443,15 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
     return false;
   }
 
-  // StartDocumentLoad asserts that readyState is uninitialized, so
-  // uninitialize it. SetReadyStateInternal make this transition invisible to
-  // Web content. But before doing that, assert that the current readyState
-  // is complete as it should be after the call to ResetToURI() above.
+  
+  
+  
+  
   MOZ_ASSERT(GetReadyStateEnum() == nsIDocument::READYSTATE_COMPLETE,
              "Bad readyState");
   SetReadyStateInternal(nsIDocument::READYSTATE_UNINITIALIZED);
 
-  // Prepare for loading the XML document "into oneself"
+  
   nsCOMPtr<nsIStreamListener> listener;
   if (NS_FAILED(rv = StartDocumentLoad(kLoadAsData, channel, 
                                        loadGroup, nullptr, 
@@ -462,10 +462,10 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
     return false;
   }
 
-  // After this point, if we error out of this method we should clear
-  // mChannelIsPending.
+  
+  
 
-  // Start an asynchronous read of the XML document
+  
   rv = channel->AsyncOpen(listener, nullptr);
   if (NS_FAILED(rv)) {
     mChannelIsPending = false;
@@ -483,7 +483,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
         break;
     }
 
-    // We set return to true unless there was a parsing error
+    
     Element* rootElement = GetRootElement();
     if (!rootElement) {
       return false;
@@ -518,7 +518,7 @@ XMLDocument::StartDocumentLoad(const char* aCommand,
 
   if (nsCRT::strcmp("loadAsInteractiveData", aCommand) == 0) {
     mLoadedAsInteractiveData = true;
-    aCommand = kLoadAsData; // XBL, for example, needs scripts and styles
+    aCommand = kLoadAsData; 
   }
 
 
@@ -551,7 +551,7 @@ XMLDocument::StartDocumentLoad(const char* aCommand,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  // Set the parser as the stream listener for the document loader...
+  
   rv = CallQueryInterface(mParser, aDocListener);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -578,22 +578,22 @@ XMLDocument::EndLoad()
   if (mSynchronousDOMContentLoaded) {
     mSynchronousDOMContentLoaded = false;
     nsDocument::SetReadyStateInternal(nsIDocument::READYSTATE_COMPLETE);
-    // Generate a document load event for the case when an XML
-    // document was loaded as pure data without any presentation
-    // attached to it.
+    
+    
+    
     nsEvent event(true, NS_LOAD);
     nsEventDispatcher::Dispatch(static_cast<nsIDocument*>(this), nullptr,
                                 &event);
   }    
 }
  
-/* virtual */ void
+ void
 XMLDocument::DocSizeOfExcludingThis(nsWindowSizes* aWindowSizes) const
 {
   nsDocument::DocSizeOfExcludingThis(aWindowSizes);
 }
 
-// nsIDOMDocument interface
+
 
 nsresult
 XMLDocument::Clone(nsINodeInfo *aNodeInfo, nsINode **aResult) const
@@ -605,7 +605,7 @@ XMLDocument::Clone(nsINodeInfo *aNodeInfo, nsINode **aResult) const
   nsresult rv = CloneDocHelper(clone);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // State from XMLDocument
+  
   clone->mAsync = mAsync;
 
   return CallQueryInterface(clone.get(), aResult);
@@ -617,5 +617,5 @@ XMLDocument::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aScope)
   return XMLDocumentBinding::Wrap(aCx, aScope, this);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
