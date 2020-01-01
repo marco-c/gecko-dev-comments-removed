@@ -75,6 +75,8 @@
 #include "mozilla/Services.h"
 #include <stdlib.h>
 #include "nsIMemoryReporter.h"
+#include "nsIPrefService.h"
+#include "nsIPrefBranch.h"
 
 static NS_DEFINE_CID(kCharsetConverterManagerCID, NS_ICHARSETCONVERTERMANAGER_CID);
 static NS_DEFINE_CID(kUnicharUtilCID, NS_UNICHARUTIL_CID);
@@ -373,10 +375,25 @@ mozHunspell::LoadDictionaryList()
     return;
 
   
+  
   nsCOMPtr<nsIFile> dictDir;
-  rv = dirSvc->Get(DICTIONARY_SEARCH_DIRECTORY,
-                   NS_GET_IID(nsIFile), getter_AddRefs(dictDir));
-  if (NS_SUCCEEDED(rv)) {
+
+  
+  nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID));
+  if (prefs) {
+    nsCString extDictPath;
+    rv = prefs->GetCharPref("spellchecker.dictionary_path", getter_Copies(extDictPath));
+    if (NS_SUCCEEDED(rv)) {
+      
+      rv = NS_NewNativeLocalFile(extDictPath, true, getter_AddRefs(dictDir));
+    }
+  }
+  if (!dictDir) {
+    
+    rv = dirSvc->Get(DICTIONARY_SEARCH_DIRECTORY,
+                     NS_GET_IID(nsIFile), getter_AddRefs(dictDir));
+  }
+  if (dictDir) {
     LoadDictionariesFromDir(dictDir);
   }
   else {
