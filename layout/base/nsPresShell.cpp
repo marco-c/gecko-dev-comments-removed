@@ -5409,7 +5409,7 @@ PresShell::HandleEvent(nsIView         *aView,
 
     nsPresContext* framePresContext = frame->PresContext();
     nsPresContext* rootPresContext = framePresContext->RootPresContext();
-    NS_ASSERTION(rootPresContext = mPresContext->RootPresContext(),
+    NS_ASSERTION(rootPresContext == mPresContext->RootPresContext(),
                  "How did we end up outside the connected prescontext/viewmanager hierarchy?"); 
     
     
