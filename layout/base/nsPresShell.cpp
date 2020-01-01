@@ -1099,6 +1099,11 @@ protected:
   
   void RestoreRootScrollPosition();
 
+  
+  
+  nsresult DoFlushPendingNotifications(mozFlushType aType,
+                                       PRBool aInterruptibleReflow);
+
   nsICSSStyleSheet*         mPrefStyleSheet; 
 #ifdef DEBUG
   PRUint32                  mUpdateCount;
@@ -4369,9 +4374,14 @@ PresShell::IsSafeToFlush(PRBool& aIsSafeToFlush)
 NS_IMETHODIMP 
 PresShell::FlushPendingNotifications(mozFlushType aType)
 {
-  NS_ASSERTION(aType & (Flush_StyleReresolves | Flush_OnlyReflow |
-                        Flush_OnlyPaint),
-               "Why did we get called?");
+  return DoFlushPendingNotifications(aType, PR_FALSE);
+}
+
+NS_IMETHODIMP
+PresShell::DoFlushPendingNotifications(mozFlushType aType,
+                                       PRBool aInterruptibleReflow)
+{
+  NS_ASSERTION(aType >= Flush_Frames, "Why did we get called?");
   
   PRBool isSafeToFlush;
   IsSafeToFlush(isSafeToFlush);
@@ -4391,22 +4401,20 @@ PresShell::FlushPendingNotifications(mozFlushType aType)
     
     viewManager->BeginUpdateViewBatch();
 
-    if (aType & Flush_StyleReresolves) {
-      mFrameConstructor->ProcessPendingRestyles();
-    }
+    mFrameConstructor->ProcessPendingRestyles();
 
-    if (aType & Flush_OnlyReflow && !mIsDestroying) {
+    if (aType >= Flush_Layout && !mIsDestroying) {
       mFrameConstructor->RecalcQuotesAndCounters();
-      ProcessReflowCommands(PR_FALSE);
+      ProcessReflowCommands(aInterruptibleReflow);
     }
 
     PRUint32 updateFlags = NS_VMREFRESH_NO_SYNC;
-    if (aType & Flush_OnlyPaint) {
+    if (aType >= Flush_Display) {
       
       
       updateFlags = NS_VMREFRESH_IMMEDIATE;
     }
-    else if (!(aType & Flush_OnlyReflow)) {
+    else if (aType < Flush_Layout) {
       
       
       
@@ -5786,12 +5794,7 @@ PresShell::WillPaint()
   
   
   
-  
-  
-  NS_ASSERTION(mViewManager, "Something weird is going on");
-  mViewManager->BeginUpdateViewBatch();
-  ProcessReflowCommands(PR_TRUE);
-  mViewManager->EndUpdateViewBatch(NS_VMREFRESH_NO_SYNC);
+  DoFlushPendingNotifications(Flush_Layout, PR_TRUE);
 }
 
 nsresult
@@ -5929,9 +5932,8 @@ PresShell::ReflowEvent::Run() {
     
     
     nsCOMPtr<nsIViewManager> viewManager = ps->GetViewManager();
-    viewManager->BeginUpdateViewBatch();
-    ps->ProcessReflowCommands(PR_TRUE);
-    viewManager->EndUpdateViewBatch(NS_VMREFRESH_NO_SYNC);
+
+    ps->DoFlushPendingNotifications(Flush_Layout, PR_TRUE);
 
     
     ps = nsnull;
