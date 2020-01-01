@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set tw=80 expandtab softtabstop=2 ts=2 sw=2: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Mats Palmgren <mats.palmgren@bredband.net>
+ *   Daniel Kraft <d@domob.eu>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsStyledElement.h"
 #include "nsGkAtoms.h"
@@ -57,8 +57,8 @@
 
 namespace css = mozilla::css;
 
-
-
+//----------------------------------------------------------------------
+// nsIContent methods
 
 nsIAtom*
 nsStyledElementNotElementCSSInlineStyle::GetClassAttributeName() const
@@ -77,9 +77,9 @@ nsStyledElementNotElementCSSInlineStyle::DoGetID() const
 {
   NS_ASSERTION(HasID(), "Unexpected call");
 
-  
-  
-  
+  // The nullcheck here is needed because nsGenericElement::UnsetAttr calls
+  // out to various code between removing the attribute and we get a chance to
+  // ClearHasID().
 
   const nsAttrValue* attr = mAttrsAndChildren.GetAttr(nsGkAtoms::id);
 
@@ -93,7 +93,7 @@ nsStyledElementNotElementCSSInlineStyle::DoGetClasses() const
   return mAttrsAndChildren.GetAttr(nsGkAtoms::_class);
 }
 
-bool
+PRBool
 nsStyledElementNotElementCSSInlineStyle::ParseAttribute(PRInt32 aNamespaceID,
                                                         nsIAtom* aAttribute,
                                                         const nsAString& aValue,
@@ -111,8 +111,8 @@ nsStyledElementNotElementCSSInlineStyle::ParseAttribute(PRInt32 aNamespaceID,
       return PR_TRUE;
     }
     if (aAttribute == nsGkAtoms::id) {
-      
-      
+      // Store id as an atom.  id="" means that the element has no id,
+      // not that it has an emptystring as the id.
       RemoveFromIdTable();
       if (aValue.IsEmpty()) {
         ClearHasID();
@@ -132,11 +132,11 @@ nsStyledElementNotElementCSSInlineStyle::ParseAttribute(PRInt32 aNamespaceID,
 nsresult
 nsStyledElementNotElementCSSInlineStyle::UnsetAttr(PRInt32 aNameSpaceID,
                                                    nsIAtom* aAttribute,
-                                                   bool aNotify)
+                                                   PRBool aNotify)
 {
   nsAutoScriptBlocker scriptBlocker;
   if (aAttribute == nsGkAtoms::id && aNameSpaceID == kNameSpaceID_None) {
-    
+    // Have to do this before clearing flag. See RemoveFromIdTable
     RemoveFromIdTable();
   }
 
@@ -147,13 +147,13 @@ nsresult
 nsStyledElementNotElementCSSInlineStyle::AfterSetAttr(PRInt32 aNamespaceID,
                                                       nsIAtom* aAttribute,
                                                       const nsAString* aValue,
-                                                      bool aNotify)
+                                                      PRBool aNotify)
 {
   if (aNamespaceID == kNameSpaceID_None && !aValue &&
       aAttribute == nsGkAtoms::id) {
-    
-    
-    
+    // The id has been removed when calling UnsetAttr but we kept it because
+    // the id is used for some layout stuff between UnsetAttr and AfterSetAttr.
+    // Now. the id is really removed so it would not be safe to keep this flag.
     ClearHasID();
   }
 
@@ -163,25 +163,25 @@ nsStyledElementNotElementCSSInlineStyle::AfterSetAttr(PRInt32 aNamespaceID,
 
 NS_IMETHODIMP
 nsStyledElementNotElementCSSInlineStyle::SetInlineStyleRule(css::StyleRule* aStyleRule,
-                                                            bool aNotify)
+                                                            PRBool aNotify)
 {
   SetMayHaveStyle();
-  bool modification = false;
+  PRBool modification = PR_FALSE;
   nsAutoString oldValueStr;
 
-  bool hasListeners = aNotify &&
+  PRBool hasListeners = aNotify &&
     nsContentUtils::HasMutationListeners(this,
                                          NS_EVENT_BITS_MUTATION_ATTRMODIFIED,
                                          this);
 
-  
-  
-  
-  
+  // There's no point in comparing the stylerule pointers since we're always
+  // getting a new stylerule here. And we can't compare the stringvalues of
+  // the old and the new rules since both will point to the same declaration
+  // and thus will be the same.
   if (hasListeners) {
-    
-    
-    
+    // save the old attribute so we can set up the mutation event properly
+    // XXXbz if the old rule points to the same declaration as the new one,
+    // this is getting the new attr value, not the old one....
     modification = GetAttr(kNameSpaceID_None, nsGkAtoms::style,
                            oldValueStr);
   }
@@ -191,7 +191,7 @@ nsStyledElementNotElementCSSInlineStyle::SetInlineStyleRule(css::StyleRule* aSty
 
   nsAttrValue attrValue(aStyleRule, nsnull);
 
-  
+  // XXXbz do we ever end up with ADDITION here?  I doubt it.
   PRUint8 modType = modification ?
     static_cast<PRUint8>(nsIDOMMutationEvent::MODIFICATION) :
     static_cast<PRUint8>(nsIDOMMutationEvent::ADDITION);
@@ -220,7 +220,7 @@ nsresult
 nsStyledElementNotElementCSSInlineStyle::BindToTree(nsIDocument* aDocument,
                                                     nsIContent* aParent,
                                                     nsIContent* aBindingParent,
-                                                    bool aCompileEventHandlers)
+                                                    PRBool aCompileEventHandlers)
 {
   nsresult rv = nsStyledElementBase::BindToTree(aDocument, aParent,
                                                 aBindingParent,
@@ -232,8 +232,8 @@ nsStyledElementNotElementCSSInlineStyle::BindToTree(nsIDocument* aDocument,
   }
 
   if (!IsXUL()) {
-    
-    
+    // XXXbz if we already have a style attr parsed, this won't do
+    // anything... need to fix that.
     ReparseStyleAttribute(PR_FALSE);
   }
 
@@ -241,8 +241,8 @@ nsStyledElementNotElementCSSInlineStyle::BindToTree(nsIDocument* aDocument,
 }
 
 void
-nsStyledElementNotElementCSSInlineStyle::UnbindFromTree(bool aDeep,
-                                                        bool aNullParent)
+nsStyledElementNotElementCSSInlineStyle::UnbindFromTree(PRBool aDeep,
+                                                        PRBool aNullParent)
 {
   RemoveFromIdTable();
 
@@ -250,8 +250,8 @@ nsStyledElementNotElementCSSInlineStyle::UnbindFromTree(bool aDeep,
 }
 
 
-
-
+// ---------------------------------------------------------------
+// Others and helpers
 
 nsIDOMCSSStyleDeclaration*
 nsStyledElementNotElementCSSInlineStyle::GetStyle(nsresult* retval)
@@ -268,13 +268,13 @@ nsStyledElementNotElementCSSInlineStyle::GetStyle(nsresult* retval)
   nsGenericElement::nsDOMSlots *slots = DOMSlots();
 
   if (!slots->mStyle) {
-    
+    // Just in case...
     ReparseStyleAttribute(PR_TRUE);
 
     slots->mStyle = new nsDOMCSSAttributeDeclaration(this
 #ifdef MOZ_SMIL
                                                      , PR_FALSE
-#endif 
+#endif // MOZ_SMIL
                                                      );
     SetMayHaveStyle();
   }
@@ -284,7 +284,7 @@ nsStyledElementNotElementCSSInlineStyle::GetStyle(nsresult* retval)
 }
 
 nsresult
-nsStyledElementNotElementCSSInlineStyle::ReparseStyleAttribute(bool aForceInDataDoc)
+nsStyledElementNotElementCSSInlineStyle::ReparseStyleAttribute(PRBool aForceInDataDoc)
 {
   if (!MayHaveStyle()) {
     return NS_OK;
@@ -296,8 +296,8 @@ nsStyledElementNotElementCSSInlineStyle::ReparseStyleAttribute(bool aForceInData
     nsAutoString stringValue;
     oldVal->ToString(stringValue);
     ParseStyleAttribute(stringValue, attrValue, aForceInDataDoc);
-    
-    
+    // Don't bother going through SetInlineStyleRule, we don't want to fire off
+    // mutation events or document notifications anyway
     nsresult rv = mAttrsAndChildren.SetAndTakeAttr(nsGkAtoms::style, attrValue);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -308,17 +308,17 @@ nsStyledElementNotElementCSSInlineStyle::ReparseStyleAttribute(bool aForceInData
 void
 nsStyledElementNotElementCSSInlineStyle::ParseStyleAttribute(const nsAString& aValue,
                                                              nsAttrValue& aResult,
-                                                             bool aForceInDataDoc)
+                                                             PRBool aForceInDataDoc)
 {
   nsIDocument* doc = GetOwnerDoc();
 
   if (doc && (aForceInDataDoc ||
               !doc->IsLoadedAsData() ||
               doc->IsStaticDocument())) {
-    bool isCSS = true; 
+    PRBool isCSS = PR_TRUE; // assume CSS until proven otherwise
 
-    if (!IsInNativeAnonymousSubtree()) {  
-                                          
+    if (!IsInNativeAnonymousSubtree()) {  // native anonymous content
+                                          // always assumes CSS
       nsAutoString styleType;
       doc->GetHeaderData(nsGkAtoms::headerContentStyleType, styleType);
       if (!styleType.IsEmpty()) {

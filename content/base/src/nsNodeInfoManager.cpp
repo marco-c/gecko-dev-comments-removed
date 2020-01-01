@@ -1,43 +1,43 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * A class for handing out nodeinfos and ensuring sharing of them as needed.
+ */
 
 #include "nsNodeInfoManager.h"
 #include "nsNodeInfo.h"
@@ -56,7 +56,7 @@
 #include "nsHashKeys.h"
 
 #ifdef MOZ_LOGGING
-
+// so we can get logging even in release builds
 #define FORCE_PR_LOG 1
 #endif
 #include "prlog.h"
@@ -141,7 +141,7 @@ nsNodeInfoManager::~nsNodeInfoManager()
   if (mNodeInfoHash)
     PL_HashTableDestroy(mNodeInfoHash);
 
-  
+  // Note: mPrincipal may be null here if we never got inited correctly
   NS_IF_RELEASE(mPrincipal);
 
   NS_IF_RELEASE(mBindingManager);
@@ -198,7 +198,7 @@ nsNodeInfoManager::Init(nsIDocument *aDocument)
   return NS_OK;
 }
 
-
+// static
 PRIntn
 nsNodeInfoManager::DropNodeInfoDocument(PLHashEntry *he, PRIntn hashIndex, void *arg)
 {
@@ -213,7 +213,7 @@ nsNodeInfoManager::DropDocumentReference()
     mBindingManager->DropDocumentReference();
   }
 
-  
+  // This is probably not needed anymore.
   PL_HashTableEnumerateEntries(mNodeInfoHash, DropNodeInfoDocument, nsnull);
 
   NS_ASSERTION(!mNonDocumentNodeInfos, "Shouldn't have non-document nodeinfos!");
@@ -224,7 +224,7 @@ nsNodeInfoManager::DropDocumentReference()
 already_AddRefed<nsINodeInfo>
 nsNodeInfoManager::GetNodeInfo(nsIAtom *aName, nsIAtom *aPrefix,
                                PRInt32 aNamespaceID, PRUint16 aNodeType,
-                               nsIAtom* aExtraName )
+                               nsIAtom* aExtraName /* = nsnull */)
 {
   CHECK_VALID_NODEINFO(aNodeType, aName, aNamespaceID, aExtraName);
 
@@ -250,8 +250,8 @@ nsNodeInfoManager::GetNodeInfo(nsIAtom *aName, nsIAtom *aPrefix,
   he = PL_HashTableAdd(mNodeInfoHash, &newNodeInfo->mInner, newNodeInfo);
   NS_ENSURE_TRUE(he, nsnull);
 
-  
-  
+  // Have to do the swap thing, because already_AddRefed<nsNodeInfo>
+  // doesn't cast to already_AddRefed<nsINodeInfo>
   ++mNonDocumentNodeInfos;
   if (mNonDocumentNodeInfos == 1) {
     NS_IF_ADDREF(mDocument);
@@ -369,7 +369,7 @@ nsNodeInfoManager::GetDocumentNodeInfo()
                                     nsIDOMNode::DOCUMENT_NODE, nsnull).get();
     --mNonDocumentNodeInfos;
     if (!mNonDocumentNodeInfos) {
-      mDocument->Release(); 
+      mDocument->Release(); // Don't set mDocument to null!
     }
   }
   else {
@@ -403,12 +403,12 @@ nsNodeInfoManager::RemoveNodeInfo(nsNodeInfo *aNodeInfo)
   } else {
     if (--mNonDocumentNodeInfos == 0) {
       if (mDocument) {
-        
-        
+        // Note, whoever calls this method should keep NodeInfoManager alive,
+        // even if mDocument gets deleted.
         mDocument->Release();
       }
     }
-    
+    // Drop weak reference if needed
     if (aNodeInfo == mTextNodeInfo) {
       mTextNodeInfo = nsnull;
     }
@@ -418,7 +418,7 @@ nsNodeInfoManager::RemoveNodeInfo(nsNodeInfo *aNodeInfo)
   }
 
 #ifdef DEBUG
-  bool ret =
+  PRBool ret =
 #endif
   PL_HashTableRemove(mNodeInfoHash, &aNodeInfo->mInner);
 

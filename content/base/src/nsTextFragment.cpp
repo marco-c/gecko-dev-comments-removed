@@ -1,45 +1,45 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * A class which represents a fragment of text (eg inside a text
+ * node); if only codepoints below 256 are used, the text is stored as
+ * a char*; otherwise the text is stored as a PRUnichar*
+ */
 
 #include "nsTextFragment.h"
 #include "nsCRT.h"
@@ -53,16 +53,16 @@
 #define TEXTFRAG_WHITE_AFTER_NEWLINE 50
 #define TEXTFRAG_MAX_NEWLINES 7
 
-
+// Static buffer used for common fragments
 static char* sSpaceSharedString[TEXTFRAG_MAX_NEWLINES + 1];
 static char* sTabSharedString[TEXTFRAG_MAX_NEWLINES + 1];
 static char sSingleCharSharedString[256];
 
-
+// static
 nsresult
 nsTextFragment::Init()
 {
-  
+  // Create whitespace strings
   PRUint32 i;
   for (i = 0; i <= TEXTFRAG_MAX_NEWLINES; ++i) {
     sSpaceSharedString[i] = new char[1 + i + TEXTFRAG_WHITE_AFTER_NEWLINE];
@@ -82,7 +82,7 @@ nsTextFragment::Init()
     }
   }
 
-  
+  // Create single-char strings
   for (i = 0; i < 256; ++i) {
     sSingleCharSharedString[i] = i;
   }
@@ -90,7 +90,7 @@ nsTextFragment::Init()
   return NS_OK;
 }
 
-
+// static
 void
 nsTextFragment::Shutdown()
 {
@@ -113,13 +113,13 @@ void
 nsTextFragment::ReleaseText()
 {
   if (mState.mLength && m1b && mState.mInHeap) {
-    nsMemory::Free(m2b); 
+    nsMemory::Free(m2b); // m1b == m2b as far as nsMemory is concerned
   }
 
   m1b = nsnull;
   mState.mIsBidi = PR_FALSE;
 
-  
+  // Set mState.mIs2b, mState.mInHeap, and mState.mLength = 0 with mAllBits;
   mAllBits = 0;
 }
 
@@ -130,7 +130,7 @@ nsTextFragment::operator=(const nsTextFragment& aOther)
 
   if (aOther.mState.mLength) {
     if (!aOther.mState.mInHeap) {
-      m1b = aOther.m1b; 
+      m1b = aOther.m1b; // This will work even if aOther is using m2b
     }
     else {
       m2b = static_cast<PRUnichar*>
@@ -164,7 +164,7 @@ FirstNon8BitUnvectorized(const PRUnichar *str, const PRUnichar *end)
   const PRInt32 len = end - str;
   PRInt32 i = 0;
 
-  
+  // Align ourselves to a word boundary.
   PRInt32 alignLen =
     NS_MIN(len, PRInt32(((-NS_PTR_TO_INT32(str)) & alignMask) / sizeof(PRUnichar)));
   for (; i < alignLen; i++) {
@@ -172,7 +172,7 @@ FirstNon8BitUnvectorized(const PRUnichar *str, const PRUnichar *end)
       return i;
   }
 
-  
+  // Check one word at a time.
   const PRInt32 wordWalkEnd = ((len - i) / numUnicharsPerWord) * numUnicharsPerWord;
   for (; i < wordWalkEnd; i += numUnicharsPerWord) {
     const size_t word = *reinterpret_cast<const size_t*>(str + i);
@@ -180,7 +180,7 @@ FirstNon8BitUnvectorized(const PRUnichar *str, const PRUnichar *end)
       return i;
   }
 
-  
+  // Take care of the remainder one character at a time.
   for (; i < len; i++) {
     if (str[i] > 255)
       return i;
@@ -197,13 +197,13 @@ namespace mozilla {
 }
 #endif
 
-
-
-
-
-
-
-
+/*
+ * This function returns -1 if all characters in str are 8 bit characters.
+ * Otherwise, it returns a value less than or equal to the index of the first
+ * non-8bit character in str. For example, if first non-8bit character is at
+ * position 25, it may return 25, or for example 24, or 16. But it guarantees
+ * there is no non-8bit character before returned value.
+ */
 static inline PRInt32
 FirstNon8Bit(const PRUnichar *str, const PRUnichar *end)
 {
@@ -217,7 +217,7 @@ FirstNon8Bit(const PRUnichar *str, const PRUnichar *end)
 }
 
 void
-nsTextFragment::SetTo(const PRUnichar* aBuffer, PRInt32 aLength, bool aUpdateBidi)
+nsTextFragment::SetTo(const PRUnichar* aBuffer, PRInt32 aLength, PRBool aUpdateBidi)
 {
   ReleaseText();
 
@@ -238,7 +238,7 @@ nsTextFragment::SetTo(const PRUnichar* aBuffer, PRInt32 aLength, bool aUpdateBid
   const PRUnichar *ucp = aBuffer;
   const PRUnichar *uend = aBuffer + aLength;
 
-  
+  // Check if we can use a shared string
   if (aLength <= 1 + TEXTFRAG_WHITE_AFTER_NEWLINE + TEXTFRAG_MAX_NEWLINES &&
      (firstChar == ' ' || firstChar == '\n' || firstChar == '\t')) {
     if (firstChar == ' ') {
@@ -262,7 +262,7 @@ nsTextFragment::SetTo(const PRUnichar* aBuffer, PRInt32 aLength, bool aUpdateBid
       char** strings = space == ' ' ? sSpaceSharedString : sTabSharedString;
       m1b = strings[endNewLine - start];
 
-      
+      // If we didn't find a space in the beginning, skip it now.
       if (firstChar != ' ') {
         ++m1b;
       }
@@ -275,11 +275,11 @@ nsTextFragment::SetTo(const PRUnichar* aBuffer, PRInt32 aLength, bool aUpdateBid
     }
   }
 
-  
+  // See if we need to store the data in ucs2 or not
   PRInt32 first16bit = FirstNon8Bit(ucp, uend);
 
-  if (first16bit != -1) { 
-    
+  if (first16bit != -1) { // aBuffer contains no non-8bit character
+    // Use ucs2 storage because we have to
     m2b = (PRUnichar *)nsMemory::Clone(aBuffer,
                                        aLength * sizeof(PRUnichar));
     if (!m2b) {
@@ -292,20 +292,20 @@ nsTextFragment::SetTo(const PRUnichar* aBuffer, PRInt32 aLength, bool aUpdateBid
     }
 
   } else {
-    
+    // Use 1 byte storage because we can
     char* buff = (char *)nsMemory::Alloc(aLength * sizeof(char));
     if (!buff) {
       return;
     }
 
-    
+    // Copy data
     LossyConvertEncoding16to8 converter(buff);
     copy_string(aBuffer, aBuffer+aLength, converter);
     m1b = buff;
     mState.mIs2b = PR_FALSE;
   }
 
-  
+  // Setup our fields
   mState.mInHeap = PR_TRUE;
   mState.mLength = aLength;
 }
@@ -337,20 +337,20 @@ nsTextFragment::CopyTo(PRUnichar *aDest, PRInt32 aOffset, PRInt32 aCount)
 }
 
 void
-nsTextFragment::Append(const PRUnichar* aBuffer, PRUint32 aLength, bool aUpdateBidi)
+nsTextFragment::Append(const PRUnichar* aBuffer, PRUint32 aLength, PRBool aUpdateBidi)
 {
-  
-  
+  // This is a common case because some callsites create a textnode
+  // with a value by creating the node and then calling AppendData.
   if (mState.mLength == 0) {
     SetTo(aBuffer, aLength, aUpdateBidi);
 
     return;
   }
 
-  
+  // Should we optimize for aData.Length() == 0?
 
   if (mState.mIs2b) {
-    
+    // Already a 2-byte string so the result will be too
     PRUnichar* buff = (PRUnichar*)nsMemory::Realloc(m2b, (mState.mLength + aLength) * sizeof(PRUnichar));
     if (!buff) {
       return;
@@ -367,19 +367,19 @@ nsTextFragment::Append(const PRUnichar* aBuffer, PRUint32 aLength, bool aUpdateB
     return;
   }
 
-  
+  // Current string is a 1-byte string, check if the new data fits in one byte too.
   PRInt32 first16bit = FirstNon8Bit(aBuffer, aBuffer + aLength);
 
-  if (first16bit != -1) { 
-    
-    
+  if (first16bit != -1) { // aBuffer contains no non-8bit character
+    // The old data was 1-byte, but the new is not so we have to expand it
+    // all to 2-byte
     PRUnichar* buff = (PRUnichar*)nsMemory::Alloc((mState.mLength + aLength) *
                                                   sizeof(PRUnichar));
     if (!buff) {
       return;
     }
 
-    
+    // Copy data into buff
     LossyConvertEncoding8to16 converter(buff);
     copy_string(m1b, m1b+mState.mLength, converter);
 
@@ -401,7 +401,7 @@ nsTextFragment::Append(const PRUnichar* aBuffer, PRUint32 aLength, bool aUpdateB
     return;
   }
 
-  
+  // The new and the old data is all 1-byte
   char* buff;
   if (mState.mInHeap) {
     buff = (char*)nsMemory::Realloc(const_cast<char*>(m1b),
@@ -420,7 +420,7 @@ nsTextFragment::Append(const PRUnichar* aBuffer, PRUint32 aLength, bool aUpdateB
     mState.mInHeap = PR_TRUE;
   }
 
-  
+  // Copy aBuffer into buff.
   LossyConvertEncoding16to8 converter(buff + mState.mLength);
   copy_string(aBuffer, aBuffer + aLength, converter);
 
@@ -429,8 +429,8 @@ nsTextFragment::Append(const PRUnichar* aBuffer, PRUint32 aLength, bool aUpdateB
 
 }
 
-
-
+// To save time we only do this when we really want to know, not during
+// every allocation
 void
 nsTextFragment::UpdateBidiFlag(const PRUnichar* aBuffer, PRUint32 aLength)
 {
