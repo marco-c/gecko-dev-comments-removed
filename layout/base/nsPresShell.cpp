@@ -3206,7 +3206,8 @@ PresShell::GetViewToScroll(nsLayoutUtils::Direction aDirection)
   if (focusedContent) {
     nsIFrame* startFrame = GetPrimaryFrameFor(focusedContent);
     if (startFrame) {
-      nsCOMPtr<nsIScrollableViewProvider> svp = do_QueryInterface(startFrame);
+      nsIScrollableViewProvider* svp;
+      CallQueryInterface(startFrame, &svp);
       
       
       
@@ -5351,7 +5352,7 @@ PresShell::HandleEvent(nsIView         *aView,
       if (shell != this) {
         
         
-        nsRefPtr<nsIPresShell> kungFuDeathGrip(shell);
+        nsCOMPtr<nsIPresShell> kungFuDeathGrip(shell);
         nsIView* subshellRootView;
         shell->GetViewManager()->GetRootView(subshellRootView);
         
@@ -6127,7 +6128,6 @@ PresShell::ProcessReflowCommands(PRBool aInterruptible)
     DidDoReflow();
 
 #ifdef DEBUG
-    nsIFrame* rootFrame = FrameManager()->GetRootFrame();
     if (VERIFY_REFLOW_DUMP_COMMANDS & gVerifyReflowFlags) {
       printf("\nPresShell::ProcessReflowCommands() finished: this=%p\n", (void*)this);
     }
