@@ -1,13 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/MathAlgorithms.h"
 
 #include <math.h>
 #include <stdio.h>
+
+#include "jsanalyze.h"
 
 #include "vm/NumericConversions.h"
 
@@ -27,63 +29,63 @@ using mozilla::IsInfinite;
 using mozilla::IsNaN;
 using mozilla::IsNegative;
 
-// This algorithm is based on the paper "Eliminating Range Checks Using
-// Static Single Assignment Form" by Gough and Klaren.
-//
-// We associate a range object with each SSA name, and the ranges are consulted
-// in order to determine whether overflow is possible for arithmetic
-// computations.
-//
-// An important source of range information that requires care to take
-// advantage of is conditional control flow. Consider the code below:
-//
-// if (x < 0) {
-//   y = x + 2000000000;
-// } else {
-//   if (x < 1000000000) {
-//     y = x * 2;
-//   } else {
-//     y = x - 3000000000;
-//   }
-// }
-//
-// The arithmetic operations in this code cannot overflow, but it is not
-// sufficient to simply associate each name with a range, since the information
-// differs between basic blocks. The traditional dataflow approach would be
-// associate ranges with (name, basic block) pairs. This solution is not
-// satisfying, since we lose the benefit of SSA form: in SSA form, each
-// definition has a unique name, so there is no need to track information about
-// the control flow of the program.
-//
-// The approach used here is to add a new form of pseudo operation called a
-// beta node, which associates range information with a value. These beta
-// instructions take one argument and additionally have an auxiliary constant
-// range associated with them. Operationally, beta nodes are just copies, but
-// the invariant expressed by beta node copies is that the output will fall
-// inside the range given by the beta node.  Gough and Klaeren refer to SSA
-// extended with these beta nodes as XSA form. The following shows the example
-// code transformed into XSA form:
-//
-// if (x < 0) {
-//   x1 = Beta(x, [INT_MIN, -1]);
-//   y1 = x1 + 2000000000;
-// } else {
-//   x2 = Beta(x, [0, INT_MAX]);
-//   if (x2 < 1000000000) {
-//     x3 = Beta(x2, [INT_MIN, 999999999]);
-//     y2 = x3*2;
-//   } else {
-//     x4 = Beta(x2, [1000000000, INT_MAX]);
-//     y3 = x4 - 3000000000;
-//   }
-//   y4 = Phi(y2, y3);
-// }
-// y = Phi(y1, y4);
-//
-// We insert beta nodes for the purposes of range analysis (they might also be
-// usefully used for other forms of bounds check elimination) and remove them
-// after range analysis is performed. The remaining compiler phases do not ever
-// encounter beta nodes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static bool
 IsDominatedUse(MBasicBlock *block, MUse *use)
@@ -139,7 +141,7 @@ RangeAnalysis::addBetaNobes()
 
         MCompare *compare = test->getOperand(0)->toCompare();
 
-        // TODO: support unsigned comparisons
+        
         if (compare->compareType() == MCompare::Compare_UInt32)
             continue;
 
@@ -215,8 +217,8 @@ RangeAnalysis::addBetaNobes()
             comp.setLower(bound);
             comp.setUpper(bound);
           default:
-            break; // well, for neq we could have
-                   // [-\inf, bound-1] U [bound+1, \inf] but we only use contiguous ranges.
+            break; 
+                   
         }
 
         IonSpew(IonSpew_Range, "Adding beta node for %d", val->id());
@@ -244,9 +246,9 @@ RangeAnalysis::removeBetaNobes()
                 def->replaceAllUsesWith(op);
                 iter = block->discardDefAt(iter);
             } else {
-                // We only place Beta nodes at the beginning of basic
-                // blocks, so if we see something else, we can move on
-                // to the next block.
+                
+                
+                
                 break;
             }
         }
@@ -268,7 +270,7 @@ Range::print(Sprinter &sp) const
     JS_ASSERT_IF(lower_infinite_, lower_ == JSVAL_INT_MIN);
     JS_ASSERT_IF(upper_infinite_, upper_ == JSVAL_INT_MAX);
 
-    // Real or Natural subset.
+    
     if (decimal_)
         sp.printf("R");
     else
@@ -324,20 +326,20 @@ Range::intersect(const Range *lhs, const Range *rhs, bool *emptyRange)
     r->lower_infinite_ = lhs->lower_infinite_ && rhs->lower_infinite_;
     r->upper_infinite_ = lhs->upper_infinite_ && rhs->upper_infinite_;
 
-    // :TODO: This information could be used better. If upper < lower, then we
-    // have conflicting constraints. Consider:
-    //
-    // if (x < 0) {
-    //   if (x > 0) {
-    //     [Some code.]
-    //   }
-    // }
-    //
-    // In this case, the block is dead. Right now, we just disregard this fact
-    // and make the range infinite, rather than empty.
-    //
-    // Instead, we should use it to eliminate the dead block.
-    // (Bug 765127)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (r->upper_ < r->lower_) {
         *emptyRange = true;
         r->makeRangeInfinite();
@@ -433,22 +435,22 @@ Range::and_(const Range *lhs, const Range *rhs)
     int64_t lower;
     int64_t upper;
 
-    // If both numbers can be negative, result can be negative in the whole range
+    
     if (lhs->lower_ < 0 && rhs->lower_ < 0) {
         lower = INT_MIN;
         upper = Max(lhs->upper_, rhs->upper_);
         return new Range(lower, upper);
     }
 
-    // Only one of both numbers can be negative.
-    // - result can't be negative
-    // - Upper bound is minimum of both upper range,
+    
+    
+    
     lower = 0;
     upper = Min(lhs->upper_, rhs->upper_);
 
-    // EXCEPT when upper bound of non negative number is max value,
-    // because negative value can return the whole max value.
-    // -1 & 5 = 5
+    
+    
+    
     if (lhs->lower_ < 0)
        upper = rhs->upper_;
     if (rhs->lower_ < 0)
@@ -463,7 +465,7 @@ Range::or_(const Range *lhs, const Range *rhs)
     int64_t lower = INT32_MIN;
     int64_t upper = INT32_MAX;
 
-    // If the sign bits are the same, the result has the same sign.
+    
     if (lhs->lower_ >= 0 && rhs->lower_ >= 0)
         lower = 0;
     else if (lhs->upper_ < 0 || rhs->upper_ < 0)
@@ -478,7 +480,7 @@ Range::xor_(const Range *lhs, const Range *rhs)
     int64_t lower = INT32_MIN;
     int64_t upper = INT32_MAX;
 
-    // If the sign bits are identical, the result is non-negative.
+    
     if (lhs->lower_ >= 0 && rhs->lower_ >= 0)
         lower = 0;
     else if (lhs->upper_ < 0 && rhs->upper_ < 0)
@@ -493,7 +495,7 @@ Range::not_(const Range *op)
     int64_t lower = INT32_MIN;
     int64_t upper = INT32_MAX;
 
-    // Not inverts all bits, including the sign bit.
+    
     if (op->lower_ >= 0)
         upper = -1;
     else if (op->upper_ < 0)
@@ -524,8 +526,8 @@ Range::lsh(const Range *lhs, int32_t c)
 {
     int32_t shift = c & 0x1f;
 
-    // If the shift doesn't loose bits or shift bits into the sign bit, we
-    // can simply compute the correct range by shifting.
+    
+    
     if (((uint32_t)lhs->lower_ << shift << 1 >> shift >> 1) == lhs->lower_ &&
         ((uint32_t)lhs->upper_ << shift << 1 >> shift >> 1) == lhs->upper_)
     {
@@ -551,8 +553,8 @@ Range::ursh(const Range *lhs, int32_t c)
 {
     int32_t shift = c & 0x1f;
 
-    // If the value is always non-negative or always negative, we can simply
-    // compute the correct range by shifting.
+    
+    
     if ((lhs->lower_ >= 0 && !lhs->isUpperInfinite()) ||
         (lhs->upper_ < 0 && !lhs->isLowerInfinite()))
     {
@@ -561,7 +563,7 @@ Range::ursh(const Range *lhs, int32_t c)
             (int64_t)((uint32_t)lhs->upper_ >> shift));
     }
 
-    // Otherwise return the most general range after the shift.
+    
     return new Range(0, (int64_t)(UINT32_MAX >> shift));
 }
 
@@ -586,9 +588,9 @@ Range::ursh(const Range *lhs, const Range *rhs)
 Range *
 Range::abs(const Range *op)
 {
-    // Get the lower and upper values of the operand, and adjust them
-    // for infinities. Range's constructor treats any value beyond the
-    // int32_t range as infinity.
+    
+    
+    
     int64_t l = (int64_t)op->lower() - op->isLowerInfinite();
     int64_t u = (int64_t)op->upper() + op->isUpperInfinite();
 
@@ -601,9 +603,9 @@ Range::abs(const Range *op)
 Range *
 Range::min(const Range *lhs, const Range *rhs)
 {
-    // Get the lower and upper values of the operand, and adjust them
-    // for infinities. Range's constructor treats any value beyond the
-    // int32_t range as infinity.
+    
+    
+    
     int64_t leftLower = (int64_t)lhs->lower() - lhs->isLowerInfinite();
     int64_t leftUpper = (int64_t)lhs->upper() + lhs->isUpperInfinite();
     int64_t rightLower = (int64_t)rhs->lower() - rhs->isLowerInfinite();
@@ -618,9 +620,9 @@ Range::min(const Range *lhs, const Range *rhs)
 Range *
 Range::max(const Range *lhs, const Range *rhs)
 {
-    // Get the lower and upper values of the operand, and adjust them
-    // for infinities. Range's constructor treats any value beyond the
-    // int32_t range as infinity.
+    
+    
+    
     int64_t leftLower = (int64_t)lhs->lower() - lhs->isLowerInfinite();
     int64_t leftUpper = (int64_t)lhs->upper() + lhs->isUpperInfinite();
     int64_t rightLower = (int64_t)rhs->lower() - rhs->isLowerInfinite();
@@ -635,15 +637,15 @@ Range::max(const Range *lhs, const Range *rhs)
 bool
 Range::negativeZeroMul(const Range *lhs, const Range *rhs)
 {
-    // Both values are positive
+    
     if (lhs->lower_ >= 0 && rhs->lower_ >= 0)
         return false;
 
-    // Both values are negative (non zero)
+    
     if (lhs->upper_ < 0 && rhs->upper_ < 0)
         return false;
 
-    // One operand is positive (non zero)
+    
     if (lhs->lower_ > 0 || rhs->lower_ > 0)
         return false;
 
@@ -672,9 +674,9 @@ Range::update(const Range *other)
     return changed;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Range Computation for MIR Nodes
-///////////////////////////////////////////////////////////////////////////////
+
+
+
 
 void
 MPhi::computeRange()
@@ -726,13 +728,13 @@ MConstant::computeRange()
     double d = value().toDouble();
     int exp = Range::MaxDoubleExponent;
 
-    // NaN is estimated as a Double which covers everything.
+    
     if (IsNaN(d)) {
         setRange(new Range(RANGE_INF_MIN, RANGE_INF_MAX, true, exp));
         return;
     }
 
-    // Infinity is used to set both lower and upper to the range boundaries.
+    
     if (IsInfinite(d)) {
         if (IsNegative(d))
             setRange(new Range(RANGE_INF_MIN, RANGE_INF_MIN, false, exp));
@@ -741,27 +743,27 @@ MConstant::computeRange()
         return;
     }
 
-    // Extract the exponent, to approximate it with the range analysis.
+    
     exp = ExponentComponent(d);
     if (exp < 0) {
-        // This double only has a decimal part.
+        
         if (IsNegative(d))
             setRange(new Range(-1, 0, true, 0));
         else
             setRange(new Range(0, 1, true, 0));
     } else if (exp < Range::MaxTruncatableExponent) {
-        // Extract the integral part.
+        
         int64_t integral = ToInt64(d);
-        // Extract the decimal part.
+        
         double rest = d - (double) integral;
-        // Estimate the smallest integral boundaries.
-        //   Safe double comparisons, because there is no precision loss.
+        
+        
         int64_t l = integral - ((rest < 0) ? 1 : 0);
         int64_t h = integral + ((rest > 0) ? 1 : 0);
         setRange(new Range(l, h, (rest != 0), exp));
     } else {
-        // This double has a precision loss. This also mean that it cannot
-        // encode any decimals.
+        
+        
         if (IsNegative(d))
             setRange(new Range(RANGE_INF_MIN, RANGE_INF_MIN, false, exp));
         else
@@ -772,8 +774,8 @@ MConstant::computeRange()
 void
 MCharCodeAt::computeRange()
 {
-    setRange(new Range(0, 65535)); //ECMA 262 says that the integer will be
-                                   //non-negative and at most 65535.
+    setRange(new Range(0, 65535)); 
+                                   
 }
 
 void
@@ -924,7 +926,7 @@ MMod::computeRange()
     Range lhs(getOperand(0));
     Range rhs(getOperand(1));
 
-    // Infinite % x is NaN
+    
     if (lhs.isInfinite())
         return;
 
@@ -996,18 +998,18 @@ MLoadTypedArrayElementStatic::computeRange()
         setRange(range);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Range Analysis
-///////////////////////////////////////////////////////////////////////////////
+
+
+
 
 void
 RangeAnalysis::markBlocksInLoopBody(MBasicBlock *header, MBasicBlock *current)
 {
-    // Visited.
+    
     current->mark();
 
-    // If we haven't reached the loop header yet, recursively explore predecessors
-    // if we haven't seen them already.
+    
+    
     if (current != header) {
         for (size_t i = 0; i < current->numPredecessors(); i++) {
             if (current->getPredecessor(i)->isMarked())
@@ -1020,12 +1022,12 @@ RangeAnalysis::markBlocksInLoopBody(MBasicBlock *header, MBasicBlock *current)
 void
 RangeAnalysis::analyzeLoop(MBasicBlock *header)
 {
-    // Try to compute an upper bound on the number of times the loop backedge
-    // will be taken. Look for tests that dominate the backedge and which have
-    // an edge leaving the loop body.
+    
+    
+    
     MBasicBlock *backedge = header->backedge();
 
-    // Ignore trivial infinite loops.
+    
     if (backedge == header)
         return;
 
@@ -1070,8 +1072,8 @@ RangeAnalysis::analyzeLoop(MBasicBlock *header)
     }
 #endif
 
-    // Try to compute symbolic bounds for the phi nodes at the head of this
-    // loop, expressed in terms of the iteration bound just computed.
+    
+    
 
     for (MDefinitionIterator iter(header); iter; iter++) {
         MDefinition *def = *iter;
@@ -1079,7 +1081,7 @@ RangeAnalysis::analyzeLoop(MBasicBlock *header)
             analyzeLoopPhi(header, iterationBound, def->toPhi());
     }
 
-    // Try to hoist any bounds checks from the loop using symbolic bounds.
+    
 
     Vector<MBoundsCheck *, 0, IonAllocPolicy> hoistedChecks;
 
@@ -1097,11 +1099,11 @@ RangeAnalysis::analyzeLoop(MBasicBlock *header)
         }
     }
 
-    // Note: replace all uses of the original bounds check with the
-    // actual index. This is usually done during bounds check elimination,
-    // but in this case it's safe to do it here since the load/store is
-    // definitely not loop-invariant, so we will never move it before
-    // one of the bounds checks we just added.
+    
+    
+    
+    
+    
     for (size_t i = 0; i < hoistedChecks.length(); i++) {
         MBoundsCheck *ins = hoistedChecks[i];
         ins->replaceAllUsesWith(ins->index());
@@ -1121,7 +1123,7 @@ RangeAnalysis::analyzeLoopIterationCount(MBasicBlock *header,
     if (!ExtractLinearInequality(test, direction, &lhs, &rhs, &lessEqual))
         return NULL;
 
-    // Ensure the rhs is a loop invariant term.
+    
     if (rhs && rhs->block()->isMarked()) {
         if (lhs.term && lhs.term->block()->isMarked())
             return NULL;
@@ -1135,27 +1137,27 @@ RangeAnalysis::analyzeLoopIterationCount(MBasicBlock *header,
 
     JS_ASSERT_IF(rhs, !rhs->block()->isMarked());
 
-    // Ensure the lhs is a phi node from the start of the loop body.
+    
     if (!lhs.term || !lhs.term->isPhi() || lhs.term->block() != header)
         return NULL;
 
-    // Check that the value of the lhs changes by a constant amount with each
-    // loop iteration. This requires that the lhs be written in every loop
-    // iteration with a value that is a constant difference from its value at
-    // the start of the iteration.
+    
+    
+    
+    
 
     if (lhs.term->toPhi()->numOperands() != 2)
         return NULL;
 
-    // The first operand of the phi should be the lhs' value at the start of
-    // the first executed iteration, and not a value written which could
-    // replace the second operand below during the middle of execution.
+    
+    
+    
     MDefinition *lhsInitial = lhs.term->toPhi()->getOperand(0);
     if (lhsInitial->block()->isMarked())
         return NULL;
 
-    // The second operand of the phi should be a value written by an add/sub
-    // in every loop iteration, i.e. in a block which dominates the backedge.
+    
+    
     MDefinition *lhsWrite = lhs.term->toPhi()->getOperand(1);
     if (lhsWrite->isBeta())
         lhsWrite = lhsWrite->getOperand(0);
@@ -1170,25 +1172,25 @@ RangeAnalysis::analyzeLoopIterationCount(MBasicBlock *header,
 
     SimpleLinearSum lhsModified = ExtractLinearSum(lhsWrite);
 
-    // Check that the value of the lhs at the backedge is of the form
-    // 'old(lhs) + N'. We can be sure that old(lhs) is the value at the start
-    // of the iteration, and not that written to lhs in a previous iteration,
-    // as such a previous value could not appear directly in the addition:
-    // it could not be stored in lhs as the lhs add/sub executes in every
-    // iteration, and if it were stored in another variable its use here would
-    // be as an operand to a phi node for that variable.
+    
+    
+    
+    
+    
+    
+    
     if (lhsModified.term != lhs.term)
         return NULL;
 
     LinearSum bound;
 
     if (lhsModified.constant == 1 && !lessEqual) {
-        // The value of lhs is 'initial(lhs) + iterCount' and this will end
-        // execution of the loop if 'lhs + lhsN >= rhs'. Thus, an upper bound
-        // on the number of backedges executed is:
-        //
-        // initial(lhs) + iterCount + lhsN == rhs
-        // iterCount == rhsN - initial(lhs) - lhsN
+        
+        
+        
+        
+        
+        
 
         if (rhs) {
             if (!bound.add(rhs, 1))
@@ -1203,11 +1205,11 @@ RangeAnalysis::analyzeLoopIterationCount(MBasicBlock *header,
         if (!bound.add(lhsConstant))
             return NULL;
     } else if (lhsModified.constant == -1 && lessEqual) {
-        // The value of lhs is 'initial(lhs) - iterCount'. Similar to the above
-        // case, an upper bound on the number of backedges executed is:
-        //
-        // initial(lhs) - iterCount + lhsN == rhs
-        // iterCount == initial(lhs) - rhs + lhsN
+        
+        
+        
+        
+        
 
         if (!bound.add(lhsInitial, 1))
             return NULL;
@@ -1227,12 +1229,12 @@ RangeAnalysis::analyzeLoopIterationCount(MBasicBlock *header,
 void
 RangeAnalysis::analyzeLoopPhi(MBasicBlock *header, LoopIterationBound *loopBound, MPhi *phi)
 {
-    // Given a bound on the number of backedges taken, compute an upper and
-    // lower bound for a phi node that may change by a constant amount each
-    // iteration. Unlike for the case when computing the iteration bound
-    // itself, the phi does not need to change the same amount every iteration,
-    // but is required to change at most N and be either nondecreasing or
-    // nonincreasing.
+    
+    
+    
+    
+    
+    
 
     if (phi->numOperands() != 2)
         return;
@@ -1259,21 +1261,21 @@ RangeAnalysis::analyzeLoopPhi(MBasicBlock *header, LoopIterationBound *loopBound
     if (!initialSum.add(initial, 1))
         return;
 
-    // The phi may change by N each iteration, and is either nondecreasing or
-    // nonincreasing. initial(phi) is either a lower or upper bound for the
-    // phi, and initial(phi) + loopBound * N is either an upper or lower bound,
-    // at all points within the loop, provided that loopBound >= 0.
-    //
-    // We are more interested, however, in the bound for phi at points
-    // dominated by the loop bound's test; if the test dominates e.g. a bounds
-    // check we want to hoist from the loop, using the value of the phi at the
-    // head of the loop for this will usually be too imprecise to hoist the
-    // check. These points will execute only if the backedge executes at least
-    // one more time (as the test passed and the test dominates the backedge),
-    // so we know both that loopBound >= 1 and that the phi's value has changed
-    // at most loopBound - 1 times. Thus, another upper or lower bound for the
-    // phi is initial(phi) + (loopBound - 1) * N, without requiring us to
-    // ensure that loopBound >= 0.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     LinearSum limitSum(loopBound->sum);
     if (!limitSum.multiply(modified.constant) || !limitSum.add(initialSum))
@@ -1300,8 +1302,8 @@ RangeAnalysis::analyzeLoopPhi(MBasicBlock *header, LoopIterationBound *loopBound
     SpewRange(phi);
 }
 
-// Whether bound is valid at the specified bounds check instruction in a loop,
-// and may be used to hoist ins.
+
+
 static inline bool
 SymbolicBoundIsValid(MBasicBlock *header, MBoundsCheck *ins, const SymbolicBound *bound)
 {
@@ -1315,8 +1317,8 @@ SymbolicBoundIsValid(MBasicBlock *header, MBoundsCheck *ins, const SymbolicBound
     return bb == bound->loop->test->block();
 }
 
-// Convert all components of a linear sum *except* its constant to a definition,
-// adding any necessary instructions to the end of block.
+
+
 static inline MDefinition *
 ConvertLinearSum(MBasicBlock *block, const LinearSum &sum)
 {
@@ -1366,19 +1368,19 @@ ConvertLinearSum(MBasicBlock *block, const LinearSum &sum)
 bool
 RangeAnalysis::tryHoistBoundsCheck(MBasicBlock *header, MBoundsCheck *ins)
 {
-    // The bounds check's length must be loop invariant.
+    
     if (ins->length()->block()->isMarked())
         return false;
 
-    // The bounds check's index should not be loop invariant (else we would
-    // already have hoisted it during LICM).
+    
+    
     SimpleLinearSum index = ExtractLinearSum(ins->index());
     if (!index.term || !index.term->block()->isMarked())
         return false;
 
-    // Check for a symbolic lower and upper bound on the index. If either
-    // condition depends on an iteration bound for the loop, only hoist if
-    // the bounds check is dominated by the iteration bound's test.
+    
+    
+    
     if (!index.term->range())
         return false;
     const SymbolicBound *lower = index.term->range()->symbolicLower();
@@ -1399,11 +1401,11 @@ RangeAnalysis::tryHoistBoundsCheck(MBasicBlock *header, MBoundsCheck *ins)
     if (!upperTerm)
         return false;
 
-    // We are checking that index + indexConstant >= 0, and know that
-    // index >= lowerTerm + lowerConstant. Thus, check that:
-    //
-    // lowerTerm + lowerConstant + indexConstant >= 0
-    // lowerTerm >= -lowerConstant - indexConstant
+    
+    
+    
+    
+    
 
     int32_t lowerConstant = 0;
     if (!SafeSub(lowerConstant, index.constant, &lowerConstant))
@@ -1413,10 +1415,10 @@ RangeAnalysis::tryHoistBoundsCheck(MBasicBlock *header, MBoundsCheck *ins)
     MBoundsCheckLower *lowerCheck = MBoundsCheckLower::New(lowerTerm);
     lowerCheck->setMinimum(lowerConstant);
 
-    // We are checking that index < boundsLength, and know that
-    // index <= upperTerm + upperConstant. Thus, check that:
-    //
-    // upperTerm + upperConstant < boundsLength
+    
+    
+    
+    
 
     int32_t upperConstant = index.constant;
     if (!SafeAdd(upper->sum.constant(), upperConstant, &upperConstant))
@@ -1425,7 +1427,7 @@ RangeAnalysis::tryHoistBoundsCheck(MBasicBlock *header, MBoundsCheck *ins)
     upperCheck->setMinimum(upperConstant);
     upperCheck->setMaximum(upperConstant);
 
-    // Hoist the loop invariant upper and lower bounds checks.
+    
     preLoop->insertBefore(preLoop->lastIns(), lowerCheck);
     preLoop->insertBefore(preLoop->lastIns(), upperCheck);
 
@@ -1455,9 +1457,9 @@ RangeAnalysis::analyze()
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Range based Truncation
-///////////////////////////////////////////////////////////////////////////////
+
+
+
 
 void
 Range::truncate()
@@ -1472,7 +1474,7 @@ Range::truncate()
 bool
 MDefinition::truncate()
 {
-    // No procedure defined for truncating this instruction.
+    
     return false;
 }
 
@@ -1482,7 +1484,7 @@ MConstant::truncate()
     if (!value_.isDouble())
         return false;
 
-    // Truncate the double to int, since all uses truncates it.
+    
     value_.setInt32(ToInt32(value_.toDouble()));
     setResultType(MIRType_Int32);
     if (range())
@@ -1493,10 +1495,10 @@ MConstant::truncate()
 bool
 MAdd::truncate()
 {
-    // Remember analysis, needed for fallible checks.
+    
     setTruncated(true);
 
-    // Modify the instruction if needed.
+    
     if (type() != MIRType_Double)
         return false;
 
@@ -1510,10 +1512,10 @@ MAdd::truncate()
 bool
 MSub::truncate()
 {
-    // Remember analysis, needed for fallible checks.
+    
     setTruncated(true);
 
-    // Modify the instruction if needed.
+    
     if (type() != MIRType_Double)
         return false;
 
@@ -1527,10 +1529,10 @@ MSub::truncate()
 bool
 MMul::truncate()
 {
-    // Remember analysis, needed to remove negative zero checks.
+    
     setTruncated(true);
 
-    // Modify the instruction.
+    
     bool truncated = type() == MIRType_Int32;
     if (type() == MIRType_Double) {
         specialization_ = MIRType_Int32;
@@ -1551,20 +1553,20 @@ MMul::truncate()
 bool
 MDiv::truncate()
 {
-    // Remember analysis, needed to remove negative zero checks.
+    
     setTruncated(true);
 
-    // No modifications.
+    
     return false;
 }
 
 bool
 MMod::truncate()
 {
-    // Remember analysis, needed to remove negative zero checks.
+    
     setTruncated(true);
 
-    // No modifications.
+    
     return false;
 }
 
@@ -1573,8 +1575,8 @@ MToDouble::truncate()
 {
     JS_ASSERT(type() == MIRType_Double);
 
-    // We use the return type to flag that this MToDouble sould be replaced by a
-    // MTruncateToInt32 when modifying the graph.
+    
+    
     setResultType(MIRType_Int32);
     if (range())
         range()->truncate();
@@ -1628,20 +1630,20 @@ MMul::isOperandTruncated(size_t index) const
 bool
 MToDouble::isOperandTruncated(size_t index) const
 {
-    // The return type is used to flag that we are replacing this Double by a
-    // Truncate of its operand if needed.
+    
+    
     return type() == MIRType_Int32;
 }
 
-// Ensure that all observables uses can work with a truncated
-// version of the |candidate|'s result.
+
+
 static bool
 AllUsesTruncate(MInstruction *candidate)
 {
     for (MUseIterator use(candidate->usesBegin()); use != candidate->usesEnd(); use++) {
         if (!use->consumer()->isDefinition()) {
-            // We can only skip testing resume points, if all original uses are still present.
-            // Only than testing all uses is enough to guarantee the truncation isn't observerable.
+            
+            
             if (candidate->isUseRemoved())
                 return false;
             continue;
@@ -1690,17 +1692,17 @@ AdjustTruncatedInputs(MInstruction *truncated)
     }
 }
 
-// Iterate backward on all instruction and attempt to truncate operations for
-// each instruction which respect the following list of predicates: Has been
-// analyzed by range analysis, the range has no rounding errors, all uses cases
-// are truncating the result.
-//
-// If the truncation of the operation is successful, then the instruction is
-// queue for later updating the graph to restore the type correctness by
-// converting the operands that need to be truncated.
-//
-// We iterate backward because it is likely that a truncated operation truncates
-// some of its operands.
+
+
+
+
+
+
+
+
+
+
+
 bool
 RangeAnalysis::truncate()
 {
@@ -1711,7 +1713,7 @@ RangeAnalysis::truncate()
 
     for (PostorderIterator block(graph_.poBegin()); block != graph_.poEnd(); block++) {
         for (MInstructionReverseIterator iter(block->rbegin()); iter != block->rend(); iter++) {
-            // Remember all bitop instructions for folding after range analysis.
+            
             switch (iter->op()) {
               case MDefinition::Op_BitAnd:
               case MDefinition::Op_BitOr:
@@ -1724,29 +1726,29 @@ RangeAnalysis::truncate()
               default:;
             }
 
-            // Set truncated flag if range analysis ensure that it has no
-            // rounding errors and no fractional part.
+            
+            
             const Range *r = iter->range();
             if (!r || r->hasRoundingErrors())
                 continue;
 
-            // Ensure all observable uses are truncated.
+            
             if (!AllUsesTruncate(*iter))
                 continue;
 
-            // Truncate this instruction if possible.
+            
             if (!iter->truncate())
                 continue;
 
-            // Delay updates of inputs/outputs to avoid creating node which
-            // would be removed by the truncation of the next operations.
+            
+            
             iter->setInWorklist();
             if (!worklist.append(*iter))
                 return false;
         }
     }
 
-    // Update inputs/outputs of truncated instructions.
+    
     IonSpew(IonSpew_Range, "Do graph type fixup (dequeue)");
     while (!worklist.empty()) {
         MInstruction *ins = worklist.popCopy();
@@ -1755,9 +1757,9 @@ RangeAnalysis::truncate()
         AdjustTruncatedInputs(ins);
     }
 
-    // Fold any unnecessary bitops in the graph, such as (x | 0) on an integer
-    // input. This is done after range analysis rather than during GVN as the
-    // presence of the bitop can change which instructions are truncated.
+    
+    
+    
     for (size_t i = 0; i < bitops.length(); i++) {
         MBinaryBitwiseInstruction *ins = bitops[i];
         MDefinition *folded = ins->foldUnnecessaryBitop();
