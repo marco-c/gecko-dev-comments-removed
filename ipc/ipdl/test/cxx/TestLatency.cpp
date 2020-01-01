@@ -1,16 +1,16 @@
 #include "TestLatency.h"
 
-#include "IPDLUnitTests.h"      // fail etc.
+#include "IPDLUnitTests.h"      
 
-// A ping/pong trial takes O(100us) or more, so if we don't have 10us
-// resolution or better, the results will not be terribly useful
-static const double kTimingResolutionCutoff = 0.00001; // 10us
+
+
+static const double kTimingResolutionCutoff = 0.00001; 
 
 namespace mozilla {
 namespace _ipdltest {
 
-//-----------------------------------------------------------------------------
-// parent
+
+
 
 TestLatencyParent::TestLatencyParent() :
     mStart(),
@@ -18,8 +18,7 @@ TestLatencyParent::TestLatencyParent() :
     mPP5TimeTotal(),
     mRpcTimeTotal(),
     mPPTrialsToGo(NR_TRIALS),
-    mPP5TrialsToGo(NR_TRIALS),
-    mPongsToGo(0)
+    mPP5TrialsToGo(NR_TRIALS)
 {
     MOZ_COUNT_CTOR(TestLatencyParent);
 }
@@ -60,8 +59,6 @@ void
 TestLatencyParent::Ping5Pong5Trial()
 {
     mStart = TimeStamp::Now();
-    // HACK
-    mPongsToGo = 5;
 
     if (!SendPing5() ||
         !SendPing5() ||
@@ -97,8 +94,7 @@ TestLatencyParent::RecvPong()
 bool
 TestLatencyParent::RecvPong5()
 {
-    // HACK
-    if (0 < --mPongsToGo)
+    if (PTestLatency::PING5 != state())
         return true;
 
     TimeDuration thisTrial = (TimeStamp::Now() - mStart);
@@ -136,8 +132,8 @@ TestLatencyParent::RpcTrials()
     Exit();
 }
 
-//-----------------------------------------------------------------------------
-// child
+
+
 
 TestLatencyChild::TestLatencyChild()
 {
@@ -159,7 +155,16 @@ TestLatencyChild::RecvPing()
 bool
 TestLatencyChild::RecvPing5()
 {
-    SendPong5();
+    if (PTestLatency::PONG1 != state())
+        return true;
+
+    if (!SendPong5() ||
+        !SendPong5() ||
+        !SendPong5() ||
+        !SendPong5() ||
+        !SendPong5())
+        fail("sending Pong5()");
+
     return true;
 }
 
@@ -169,5 +174,5 @@ TestLatencyChild::AnswerRpc()
     return true;
 }
 
-} // namespace _ipdltest
-} // namespace mozilla
+} 
+} 
