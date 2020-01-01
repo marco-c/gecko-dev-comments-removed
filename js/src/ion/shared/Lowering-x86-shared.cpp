@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/MathAlgorithms.h"
 
@@ -81,8 +81,8 @@ LIRGeneratorX86Shared::lowerForShift(LInstructionHelper<1, 2, 0> *ins, MDefiniti
 {
     ins->setOperand(0, useRegisterAtStart(lhs));
 
-    // shift operator should be constant or in register ecx
-    // x86 can't shift a non-ecx register
+    
+    
     if (rhs->isConstant())
         ins->setOperand(1, useOrConstant(rhs));
     else
@@ -117,10 +117,19 @@ LIRGeneratorX86Shared::lowerForFPU(LInstructionHelper<1, 2, 0> *ins, MDefinition
 }
 
 bool
+LIRGeneratorX86Shared::lowerForBitAndAndBranch(LBitAndAndBranch *baab, MInstruction *mir,
+                                               MDefinition *lhs, MDefinition *rhs)
+{
+    baab->setOperand(0, useRegister(lhs));
+    baab->setOperand(1, useRegisterOrConstant(rhs));
+    return add(baab, mir);
+}
+
+bool
 LIRGeneratorX86Shared::lowerMulI(MMul *mul, MDefinition *lhs, MDefinition *rhs)
 {
-    // Note: lhs is used twice, so that we can restore the original value for the
-    // negative zero check.
+    
+    
     LMulI *lir = new LMulI(useRegisterAtStart(lhs), useOrConstant(rhs), use(lhs));
     if (mul->fallible() && !assignSnapshot(lir))
         return false;
@@ -133,16 +142,16 @@ LIRGeneratorX86Shared::lowerDivI(MDiv *div)
     if (div->isUnsigned())
         return lowerUDiv(div);
 
-    // Division instructions are slow. Division by constant denominators can be
-    // rewritten to use other instructions.
+    
+    
     if (div->rhs()->isConstant()) {
         int32_t rhs = div->rhs()->toConstant()->value().toInt32();
 
-        // Check for division by a positive power of two, which is an easy and
-        // important case to optimize. Note that other optimizations are also
-        // possible; division by negative powers of two can be optimized in a
-        // similar manner as positive powers of two, and division by other
-        // constants can be optimized by a reciprocal multiplication technique.
+        
+        
+        
+        
+        
         int32_t shift = FloorLog2(rhs);
         if (rhs > 0 && 1 << shift == rhs) {
             LDivPowTwoI *lir = new LDivPowTwoI(useRegisterAtStart(div->lhs()), useRegister(div->lhs()), shift);
@@ -253,7 +262,7 @@ LIRGeneratorX86Shared::visitConstant(MConstant *ins)
     if (ins->type() == MIRType_Double)
         return lowerConstantDouble(ins->value().toDouble(), ins);
 
-    // Emit non-double constants at their uses.
+    
     if (ins->canEmitAtUses())
         return emitAtUses(ins);
 

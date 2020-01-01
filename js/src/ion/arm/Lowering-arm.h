@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef ion_arm_Lowering_arm_h
 #define ion_arm_Lowering_arm_h
@@ -20,8 +20,8 @@ class LIRGeneratorARM : public LIRGeneratorShared
     { }
 
   protected:
-    // Adds a box input to an instruction, setting operand |n| to the type and
-    // |n+1| to the payload.
+    
+    
     bool useBox(LInstruction *lir, size_t n, MDefinition *mir,
                 LUse::Policy policy = LUse::REGISTER, bool useAtStart = false);
     bool useBoxFixed(LInstruction *lir, size_t n, MDefinition *mir, Register reg1, Register reg2);
@@ -45,6 +45,8 @@ class LIRGeneratorARM : public LIRGeneratorShared
                      MDefinition *src);
     bool lowerForFPU(LInstructionHelper<1, 2, 0> *ins, MDefinition *mir,
                      MDefinition *lhs, MDefinition *rhs);
+    bool lowerForBitAndAndBranch(LBitAndAndBranch *baab, MInstruction *mir,
+                                 MDefinition *lhs, MDefinition *rhs);
 
     bool lowerTruncateDToInt32(MTruncateToInt32 *ins);
 
@@ -84,7 +86,7 @@ class LIRGeneratorARM : public LIRGeneratorShared
 
 typedef LIRGeneratorARM LIRGeneratorSpecific;
 
-} // namespace ion
-} // namespace js
+} 
+} 
 
-#endif /* ion_arm_Lowering_arm_h */
+#endif 

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef ion_shared_CodeGenerator_x86_shared_h
 #define ion_shared_CodeGenerator_x86_shared_h
@@ -29,7 +29,7 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
     bool bailout(const T &t, LSnapshot *snapshot);
 
   protected:
-    // Label for the common return path.
+    
     NonAssertingLabel returnLabel_;
     NonAssertingLabel deoptLabel_;
 
@@ -63,8 +63,8 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
 
     void emitCompare(MCompare::CompareType type, const LAllocation *left, const LAllocation *right);
 
-    // Emits a branch that directs control flow to the true block if |cond| is
-    // true, and the false block if |cond| is false.
+    
+    
     void emitBranch(Assembler::Condition cond, MBasicBlock *ifTrue, MBasicBlock *ifFalse,
                     Assembler::NaNCond ifNaN = Assembler::NaN_HandledByCond);
     void emitBranch(Assembler::DoubleCondition cond, MBasicBlock *ifTrue, MBasicBlock *ifFalse);
@@ -75,7 +75,7 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
     CodeGeneratorX86Shared(MIRGenerator *gen, LIRGraph *graph, MacroAssembler *masm);
 
   public:
-    // Instruction visitors.
+    
     virtual bool visitDouble(LDouble *ins);
     virtual bool visitMinMaxD(LMinMaxD *ins);
     virtual bool visitAbsD(LAbsD *ins);
@@ -98,6 +98,7 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
     virtual bool visitCompareAndBranch(LCompareAndBranch *comp);
     virtual bool visitCompareD(LCompareD *comp);
     virtual bool visitCompareDAndBranch(LCompareDAndBranch *comp);
+    virtual bool visitBitAndAndBranch(LBitAndAndBranch *baab);
     virtual bool visitNotI(LNotI *comp);
     virtual bool visitNotD(LNotD *comp);
     virtual bool visitMathD(LMathD *math);
@@ -113,7 +114,7 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
     bool visitNegI(LNegI *lir);
     bool visitNegD(LNegD *lir);
 
-    // Out of line visitors.
+    
     bool visitOutOfLineBailout(OutOfLineBailout *ool);
     bool visitOutOfLineUndoALUOperation(OutOfLineUndoALUOperation *ool);
     bool visitMulNegativeZeroCheck(MulNegativeZeroCheck *ool);
@@ -121,7 +122,7 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
     bool generateInvalidateEpilogue();
 };
 
-// An out-of-line bailout thunk.
+
 class OutOfLineBailout : public OutOfLineCodeBase<CodeGeneratorX86Shared>
 {
     LSnapshot *snapshot_;
@@ -138,7 +139,7 @@ class OutOfLineBailout : public OutOfLineCodeBase<CodeGeneratorX86Shared>
     }
 };
 
-} // namespace ion
-} // namespace js
+} 
+} 
 
-#endif /* ion_shared_CodeGenerator_x86_shared_h */
+#endif 

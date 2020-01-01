@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/MathAlgorithms.h"
 
@@ -56,7 +56,7 @@ LIRGeneratorARM::visitConstant(MConstant *ins)
         return define(lir, ins);
     }
 
-    // Emit non-double constants at their uses.
+    
     if (ins->canEmitAtUses())
         return emitAtUses(ins);
 
@@ -68,7 +68,7 @@ LIRGeneratorARM::visitBox(MBox *box)
 {
     MDefinition *inner = box->getOperand(0);
 
-    // If the box wrapped a double, it needs a new register.
+    
     if (inner->type() == MIRType_Double)
         return defineBox(new LBoxDouble(useRegisterAtStart(inner), tempCopy(inner, 0)), box);
 
@@ -80,18 +80,18 @@ LIRGeneratorARM::visitBox(MBox *box)
 
     LBox *lir = new LBox(use(inner), inner->type());
 
-    // Otherwise, we should not define a new register for the payload portion
-    // of the output, so bypass defineBox().
+    
+    
     uint32_t vreg = getVirtualRegister();
     if (vreg >= MAX_VIRTUAL_REGISTERS)
         return false;
 
-    // Note that because we're using PASSTHROUGH, we do not change the type of
-    // the definition. We also do not define the first output as "TYPE",
-    // because it has no corresponding payload at (vreg + 1). Also note that
-    // although we copy the input's original type for the payload half of the
-    // definition, this is only for clarity. PASSTHROUGH definitions are
-    // ignored.
+    
+    
+    
+    
+    
+    
     lir->setDef(0, LDefinition(vreg, LDefinition::GENERAL));
     lir->setDef(1, LDefinition(inner->virtualRegister(), LDefinition::TypeFrom(inner->type()),
                                LDefinition::PASSTHROUGH));
@@ -102,9 +102,9 @@ LIRGeneratorARM::visitBox(MBox *box)
 bool
 LIRGeneratorARM::visitUnbox(MUnbox *unbox)
 {
-    // An unbox on arm reads in a type tag (either in memory or a register) and
-    // a payload. Unlike most instructions conusming a box, we ask for the type
-    // second, so that the result can re-use the first input.
+    
+    
+    
     MDefinition *inner = unbox->getOperand(0);
 
     if (!ensureDefined(inner))
@@ -119,7 +119,7 @@ LIRGeneratorARM::visitUnbox(MUnbox *unbox)
         return define(lir, unbox);
     }
 
-    // Swap the order we use the box pieces so we can re-use the payload register.
+    
     LUnbox *lir = new LUnbox;
     lir->setOperand(0, usePayloadInRegisterAtStart(inner));
     lir->setOperand(1, useType(inner, LUse::REGISTER));
@@ -127,12 +127,12 @@ LIRGeneratorARM::visitUnbox(MUnbox *unbox)
     if (unbox->fallible() && !assignSnapshot(lir, unbox->bailoutKind()))
         return false;
 
-    // Note that PASSTHROUGH here is illegal, since types and payloads form two
-    // separate intervals. If the type becomes dead before the payload, it
-    // could be used as a Value without the type being recoverable. Unbox's
-    // purpose is to eagerly kill the definition of a type tag, so keeping both
-    // alive (for the purpose of gcmaps) is unappealing. Instead, we create a
-    // new virtual register.
+    
+    
+    
+    
+    
+    
     return defineReuseInput(lir, unbox, 0);
 }
 
@@ -148,7 +148,7 @@ LIRGeneratorARM::visitReturn(MReturn *ret)
     return fillBoxUses(ins, 0, opd) && add(ins);
 }
 
-// x = !y
+
 bool
 LIRGeneratorARM::lowerForALU(LInstructionHelper<1, 1, 0> *ins, MDefinition *mir, MDefinition *input)
 {
@@ -157,7 +157,7 @@ LIRGeneratorARM::lowerForALU(LInstructionHelper<1, 1, 0> *ins, MDefinition *mir,
                   LDefinition(LDefinition::TypeFrom(mir->type()), LDefinition::DEFAULT));
 }
 
-// z = x+y
+
 bool
 LIRGeneratorARM::lowerForALU(LInstructionHelper<1, 2, 0> *ins, MDefinition *mir, MDefinition *lhs, MDefinition *rhs)
 {
@@ -183,6 +183,15 @@ LIRGeneratorARM::lowerForFPU(LInstructionHelper<1, 2, 0> *ins, MDefinition *mir,
     ins->setOperand(1, useRegister(rhs));
     return define(ins, mir,
                   LDefinition(LDefinition::TypeFrom(mir->type()), LDefinition::DEFAULT));
+}
+
+bool
+LIRGeneratorARM::lowerForBitAndAndBranch(LBitAndAndBranch *baab, MInstruction *mir,
+                                         MDefinition *lhs, MDefinition *rhs)
+{
+    baab->setOperand(0, useRegister(lhs));
+    baab->setOperand(1, useRegisterOrConstant(rhs));
+    return add(baab, mir);
 }
 
 bool
@@ -212,7 +221,7 @@ LIRGeneratorARM::defineUntypedPhi(MPhi *phi, size_t lirIndex)
 void
 LIRGeneratorARM::lowerUntypedPhiInput(MPhi *phi, uint32_t inputPosition, LBlock *block, size_t lirIndex)
 {
-    // oh god, what is this code?
+    
     MDefinition *operand = phi->getOperand(inputPosition);
     LPhi *type = block->getPhi(lirIndex + VREG_TYPE_OFFSET);
     LPhi *payload = block->getPhi(lirIndex + VREG_DATA_OFFSET);
@@ -235,15 +244,15 @@ LIRGeneratorARM::lowerDivI(MDiv *div)
     if (div->isUnsigned())
         return lowerUDiv(div);
 
-    // Division instructions are slow. Division by constant denominators can be
-    // rewritten to use other instructions.
+    
+    
     if (div->rhs()->isConstant()) {
         int32_t rhs = div->rhs()->toConstant()->value().toInt32();
-        // Check for division by a positive power of two, which is an easy and
-        // important case to optimize. Note that other optimizations are also
-        // possible; division by negative powers of two can be optimized in a
-        // similar manner as positive powers of two, and division by other
-        // constants can be optimized by a reciprocal multiplication technique.
+        
+        
+        
+        
+        
         int32_t shift = FloorLog2(rhs);
         if (rhs > 0 && 1 << shift == rhs) {
             LDivPowTwoI *lir = new LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);
@@ -539,4 +548,4 @@ LIRGeneratorARM::visitStoreTypedArrayElementStatic(MStoreTypedArrayElementStatic
     MOZ_ASSUME_UNREACHABLE("NYI");
 }
 
-//__aeabi_uidiv
+
