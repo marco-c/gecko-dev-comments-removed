@@ -1,41 +1,41 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "jsversion.h"
 
 #if JS_HAS_XDR
@@ -43,14 +43,14 @@
 #include <string.h>
 #include "jstypes.h"
 #include "jsstdint.h"
-#include "jsutil.h" /* Added by JSIFY */
+#include "jsutil.h" 
 #include "jsdhash.h"
 #include "jsprf.h"
 #include "jsapi.h"
 #include "jscntxt.h"
 #include "jsnum.h"
-#include "jsobj.h"              /* js_XDRObject */
-#include "jsscript.h"           /* js_XDRScript */
+#include "jsobj.h"              
+#include "jsscript.h"           
 #include "jsstr.h"
 #include "jsxdrapi.h"
 
@@ -249,7 +249,7 @@ JS_XDRNewMem(JSContext *cx, JSXDRMode mode)
             return NULL;
         }
     } else {
-        /* XXXbe ok, so better not deref MEM_BASE(xdr) if not ENCODE */
+        
         MEM_BASE(xdr) = NULL;
     }
     xdr->ops = &xdrmem_ops;
@@ -367,11 +367,11 @@ JS_XDRBytes(JSXDRState *xdr, char *bytes, uint32 len)
     return JS_TRUE;
 }
 
-/**
- * Convert between a C string and the XDR representation:
- * leading 32-bit count, then counted vector of chars,
- * then possibly \0 padding to multiple of 4.
- */
+
+
+
+
+
 JS_PUBLIC_API(JSBool)
 JS_XDRCString(JSXDRState *xdr, char **sp)
 {
@@ -437,9 +437,9 @@ XDRChars(JSXDRState *xdr, jschar *chars, uint32 nchars)
     return JS_TRUE;
 }
 
-/*
- * Convert between a JS (Unicode) string and the XDR representation.
- */
+
+
+
 JS_PUBLIC_API(JSBool)
 JS_XDRString(JSXDRState *xdr, JSString **strp)
 {
@@ -515,7 +515,7 @@ JS_XDRDouble(JSXDRState *xdr, jsdouble **dpp)
     return JS_TRUE;
 }
 
-/* These are magic pseudo-tags: see jsapi.h, near the top, for real tags. */
+
 #define JSVAL_XDRNULL   0x8
 #define JSVAL_XDRVOID   0xA
 
@@ -604,23 +604,23 @@ js_XDRAtom(JSXDRState *xdr, JSAtom **atomp)
 {
     jsval v;
     uint32 type;
-    jsdouble d;
 
     if (xdr->mode == JSXDR_ENCODE) {
         v = ATOM_KEY(*atomp);
         return JS_XDRValue(xdr, &v);
     }
 
-    /*
-     * Inline JS_XDRValue when decoding to avoid ceation of GC things when
-     * then corresponding atom already exists. See bug 321985.
-     */
+    
+
+
+
     if (!JS_XDRUint32(xdr, &type))
         return JS_FALSE;
     if (type == JSVAL_STRING)
         return js_XDRStringAtom(xdr, atomp);
 
     if (type == JSVAL_DOUBLE) {
+        jsdouble d = 0;
         if (!XDRDoubleValue(xdr, &d))
             return JS_FALSE;
         *atomp = js_AtomizeDouble(xdr->cx, d);
@@ -647,10 +647,10 @@ js_XDRStringAtom(JSXDRState *xdr, JSAtom **atomp)
         return JS_XDRString(xdr, &str);
     }
 
-    /*
-     * Inline JS_XDRString when decoding to avoid JSString allocation
-     * for already existing atoms. See bug 321985.
-     */
+    
+
+
+
     if (!JS_XDRUint32(xdr, &nchars))
         return JS_FALSE;
     atom = NULL;
@@ -658,10 +658,10 @@ js_XDRStringAtom(JSXDRState *xdr, JSAtom **atomp)
     if (nchars <= JS_ARRAY_LENGTH(stackChars)) {
         chars = stackChars;
     } else {
-        /*
-         * This is very uncommon. Don't use the tempPool arena for this as
-         * most allocations here will be bigger than tempPool's arenasize.
-         */
+        
+
+
+
         chars = (jschar *) cx->malloc(nchars * sizeof(jschar));
         if (!chars)
             return JS_FALSE;
@@ -745,7 +745,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
     if (numclasses >= 10) {
         JSRegHashEntry *entry;
 
-        /* Bootstrap reghash from registry on first overpopulated Find. */
+        
         if (!xdr->reghash) {
             xdr->reghash =
                 JS_NewDHashTable(JS_DHashGetStubOps(), NULL,
@@ -763,7 +763,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
             }
         }
 
-        /* If we managed to create reghash, use it for O(1) Find. */
+        
         if (xdr->reghash) {
             entry = (JSRegHashEntry *)
                 JS_DHashTableOperate((JSDHashTable *) xdr->reghash,
@@ -773,7 +773,7 @@ JS_XDRFindClassIdByName(JSXDRState *xdr, const char *name)
         }
     }
 
-    /* Only a few classes, or we couldn't malloc reghash: use linear search. */
+    
     for (i = 0; i < numclasses; i++) {
         if (!strcmp(name, xdr->registry[i]->name))
             return CLASS_INDEX_TO_ID(i);
@@ -791,4 +791,4 @@ JS_XDRFindClassById(JSXDRState *xdr, uint32 id)
     return xdr->registry[i];
 }
 
-#endif /* JS_HAS_XDR */
+#endif 
