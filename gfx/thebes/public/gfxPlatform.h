@@ -100,6 +100,13 @@ enum eFontPrefLang {
     eFontPrefLang_AllCount    = 32
 };
 
+enum eCMSMode {
+    eCMSMode_Off          = 0,     
+    eCMSMode_All          = 1,     
+    eCMSMode_TaggedOnly   = 2,     
+    eCMSMode_AllCount     = 3
+};
+
 
 const PRUint32 kMaxLenPrefLangList = 32;
 
@@ -214,7 +221,7 @@ public:
     
 
 
-    static PRBool IsCMSEnabled();
+    static eCMSMode GetCMSMode();
 
     
 
