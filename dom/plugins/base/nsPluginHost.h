@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef nsPluginHost_h_
 #define nsPluginHost_h_
@@ -19,7 +19,7 @@
 #include "nsWeakPtr.h"
 #include "nsIPrompt.h"
 #include "nsWeakReference.h"
-#include "nsThreadUtils.h"
+#include "MainThreadUtils.h"
 #include "nsTArray.h"
 #include "nsTObserverArray.h"
 #include "nsITimer.h"
@@ -152,16 +152,16 @@ public:
 
   static nsresult GetPluginTempDir(nsIFile **aDir);
 
-  // Writes updated plugins settings to disk and unloads the plugin
-  // if it is now disabled
+  
+  
   nsresult UpdatePluginInfo(nsPluginTag* aPluginTag);
 
-  // Helper that checks if a type is whitelisted in plugin.allowed_types.
-  // Always returns true if plugin.allowed_types is not set
+  
+  
   static bool IsTypeWhitelisted(const char *aType);
 
-  // checks whether aTag is a "java" plugin tag (a tag for a plugin
-  // that does Java)
+  
+  
   static bool IsJavaMIMEType(const char *aType);
 
   static nsresult GetPrompt(nsIPluginInstanceOwner *aOwner, nsIPrompt **aPrompt);
@@ -180,16 +180,16 @@ public:
 
   void DestroyRunningInstances(nsPluginTag* aPluginTag);
 
-  // Return the tag for |aLibrary| if found, nullptr if not.
+  
   nsPluginTag* FindTagForLibrary(PRLibrary* aLibrary);
 
-  // The last argument should be false if we already have an in-flight stream
-  // and don't need to set up a new stream.
+  
+  
   nsresult InstantiatePluginInstance(const char *aMimeType, nsIURI* aURL,
                                      nsObjectLoadingContent *aContent,
                                      nsPluginInstanceOwner** aOwner);
 
-  // Does not accept NULL and should never fail.
+  
   nsPluginTag* TagForPlugin(nsNPAPIPlugin* aPlugin);
 
   nsresult GetPlugin(const char *aMimeType, nsNPAPIPlugin** aPlugin);
@@ -205,8 +205,8 @@ private:
   nsPluginTag*
   FindPreferredPlugin(const InfallibleTArray<nsPluginTag*>& matches);
 
-  // Return an nsPluginTag for this type, if any.  If aCheckEnabled is
-  // true, only enabled plugins will be returned.
+  
+  
   nsPluginTag*
   FindPluginForType(const char* aMimeType, bool aCheckEnabled);
 
@@ -219,8 +219,8 @@ private:
   nsresult
   FindPlugins(bool aCreatePluginList, bool * aPluginsChanged);
 
-  // Registers or unregisters the given mime type with the category manager
-  // (performs no checks - see UpdateCategoryManager)
+  
+  
   enum nsRegisterType { ePluginRegister, ePluginUnregister };
   void RegisterWithCategoryManager(nsCString &aMimeType, nsRegisterType aType);
 
@@ -238,24 +238,24 @@ private:
 
   bool IsRunningPlugin(nsPluginTag * aPluginTag);
 
-  // Stores all plugins info into the registry
+  
   nsresult WritePluginInfo();
 
-  // Loads all cached plugins info into mCachedPlugins
+  
   nsresult ReadPluginInfo();
 
-  // Given a file path, returns the plugins info from our cache
-  // and removes it from the cache.
+  
+  
   void RemoveCachedPluginsInfo(const char *filePath,
                                nsPluginTag **result);
 
-  // Checks to see if a tag object is in our list of live tags.
+  
   bool IsLiveTag(nsIPluginTag* tag);
   
-  // Checks our list of live tags for an equivalent tag.
+  
   nsPluginTag* HaveSamePlugin(const nsPluginTag * aPluginTag);
     
-  // Returns the first plugin at |path|
+  
   nsPluginTag* FirstPluginWithPath(const nsCString& path);
 
   nsresult EnsurePrivateDirServiceProvider();
@@ -268,16 +268,16 @@ private:
   nsTArray< nsRefPtr<nsPluginPlayPreviewInfo> > mPlayPreviewMimeTypes;
   bool mPluginsLoaded;
 
-  // set by pref plugin.override_internal_types
+  
   bool mOverrideInternalTypes;
 
-  // set by pref plugin.disable
+  
   bool mPluginsDisabled;
-  // set by pref plugins.click_to_play
+  
   bool mPluginsClickToPlay;
 
-  // Any instances in this array will have valid plugin objects via GetPlugin().
-  // When removing an instance it might not die - be sure to null out it's plugin.
+  
+  
   nsTArray< nsRefPtr<nsNPAPIPluginInstance> > mInstances;
 
   nsCOMPtr<nsIFile> mPluginRegFile;
@@ -288,19 +288,19 @@ private:
   nsCOMPtr<nsIEffectiveTLDService> mTLDService;
   nsCOMPtr<nsIIDNService> mIDNService;
 
-  // Helpers for ClearSiteData and SiteHasData.
+  
   nsresult NormalizeHostname(nsCString& host);
   nsresult EnumerateSiteData(const nsACString& domain,
                              const InfallibleTArray<nsCString>& sites,
                              InfallibleTArray<nsCString>& result,
                              bool firstMatchOnly);
 
-  nsWeakPtr mCurrentDocument; // weak reference, we use it to id document only
+  nsWeakPtr mCurrentDocument; 
 
   static nsIFile *sPluginTempDir;
 
-  // We need to hold a global ptr to ourselves because we register for
-  // two different CIDs for some reason...
+  
+  
   static nsPluginHost* sInst;
 };
 
@@ -332,4 +332,4 @@ protected:
   static PRCList sListHead;
 };
 
-#endif // nsPluginHost_h_
+#endif 

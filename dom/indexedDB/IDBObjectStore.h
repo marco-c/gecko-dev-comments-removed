@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_indexeddb_idbobjectstore_h__
 #define mozilla_dom_indexeddb_idbobjectstore_h__
@@ -13,7 +13,7 @@
 #include "mozilla/dom/IDBIndexBinding.h"
 #include "mozilla/dom/IDBObjectStoreBinding.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsThreadUtils.h"
+#include "MainThreadUtils.h"
 
 #include "mozilla/dom/indexedDB/IDBRequest.h"
 #include "mozilla/dom/indexedDB/IDBTransaction.h"
@@ -119,14 +119,14 @@ public:
   ConvertFileIdsToArray(const nsAString& aFileIds,
                         nsTArray<int64_t>& aResult);
 
-  // Called only in the main process.
+  
   static nsresult
   ConvertBlobsToActors(ContentParent* aContentParent,
                        FileManager* aFileManager,
                        const nsTArray<StructuredCloneFile>& aFiles,
                        InfallibleTArray<PBlobParent*>& aActors);
 
-  // Called only in the child process.
+  
   static void
   ConvertActorsToBlobs(const InfallibleTArray<PBlobChild*>& aActors,
                        nsTArray<StructuredCloneFile>& aFiles);
@@ -246,11 +246,11 @@ public:
 
   static const JSClass sDummyPropJSClass;
 
-  // nsWrapperCache
+  
   virtual JSObject*
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aScope) MOZ_OVERRIDE;
 
-  // WebIDL
+  
   IDBTransaction*
   GetParentObject() const
   {
@@ -387,4 +387,4 @@ private:
 
 END_INDEXEDDB_NAMESPACE
 
-#endif // mozilla_dom_indexeddb_idbobjectstore_h__
+#endif 
