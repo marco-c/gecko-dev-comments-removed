@@ -137,6 +137,12 @@ public:
   void NotifySuspendedStatusChanged();
 
   
+  
+  void NotifyDecodedFrames(uint32_t aParsed, uint32_t aDecoded) MOZ_OVERRIDE {
+    if (mMainDecoder) {mMainDecoder->NotifyDecodedFrames(aParsed, aDecoded); }
+  }
+
+  
   nsresult GetByteRangeForSeek(int64_t const aOffset,
                                MediaByteRange& aByteRange);
 
