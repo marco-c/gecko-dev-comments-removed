@@ -1392,15 +1392,15 @@ GeneratorState::GeneratorState(JSContext *cx, JSGenerator *gen, JSGeneratorState
 
 GeneratorState::~GeneratorState()
 {
+    gen_->fp->setSuspended();
+
     if (entered_)
         cx_->leaveGenerator(gen_);
 }
 
 StackFrame *
-GeneratorState::pushInterpreterFrame(JSContext *cx)
+GeneratorState::pushInterpreterFrame(JSContext *cx, FrameGuard *)
 {
-    gfg_.construct();
-
     
 
 
@@ -1414,21 +1414,17 @@ GeneratorState::pushInterpreterFrame(JSContext *cx)
 
     GeneratorWriteBarrierPre(cx, gen_);
 
-    if (!cx->stack.pushGeneratorFrame(cx, gen_, gfg_.addr())) {
-        SetGeneratorClosed(cx, gen_);
-        return NULL;
-    }
-
     
 
 
 
     gen_->state = futureState_;
-    gen_->regs = cx->stack.regs();
+
+    gen_->fp->clearSuspended();
 
     cx->enterGenerator(gen_);   
     entered_ = true;
-    return gfg_.ref().fp();
+    return gen_->fp;
 }
 
 static void
@@ -1504,13 +1500,14 @@ js_NewGenerator(JSContext *cx, const FrameRegs &stackRegs)
     JS_ASSERT(nbytes % sizeof(Value) == 0);
     JS_STATIC_ASSERT(sizeof(StackFrame) % sizeof(HeapValue) == 0);
 
-    JSGenerator *gen = (JSGenerator *) cx->malloc_(nbytes);
+    JSGenerator *gen = (JSGenerator *) cx->calloc_(nbytes);
     if (!gen)
         return NULL;
-    SetValueRangeToUndefined((Value *)gen, nbytes / sizeof(Value));
 
     
     HeapValue *genvp = gen->stackSnapshot;
+    SetValueRangeToUndefined((Value *)genvp, vplen);
+
     StackFrame *genfp = reinterpret_cast<StackFrame *>(genvp + vplen);
 
     
@@ -1523,7 +1520,7 @@ js_NewGenerator(JSContext *cx, const FrameRegs &stackRegs)
     gen->regs.rebaseFromTo(stackRegs, *genfp);
     genfp->copyFrameAndValues<StackFrame::DoPostBarrier>(cx, (Value *)genvp, stackfp,
                                                          stackvp, stackRegs.sp);
-
+    genfp->setSuspended();
     obj->setPrivate(gen);
     return obj;
 }
