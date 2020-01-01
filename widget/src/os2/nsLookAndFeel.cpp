@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   John Fairhurst <john_fairhurst@iname.com>
+ *   Michael Lowe <michael.lowe@bigfoot.com>
+ *   Pierre Phaneuf <pp@ludusdesign.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #define INCL_WIN
 #include <os2.h>
@@ -118,7 +118,7 @@ nsresult nsLookAndFeel::NativeGetColor(const nsColorID aID, nscolor &aColor)
         aColor = NS_RGB(0xff, 0, 0);
         return NS_OK;
 
-    
+    // New CSS 2 Color definitions
     case eColor_activeborder:
       idx = SYSCLR_ACTIVEBORDER;
       break;
@@ -232,9 +232,9 @@ nsresult nsLookAndFeel::NativeGetColor(const nsColorID aID, nscolor &aColor)
     case eColor__moz_menuhover:
       if (WinQuerySysColor(HWND_DESKTOP, SYSCLR_MENUHILITEBGND, 0) ==
           WinQuerySysColor(HWND_DESKTOP, SYSCLR_MENU, 0)) {
-        
-        
-        
+        // if this happens, we would paint menu selections unreadable
+        // (we are most likely on Warp3), so let's fake a dark grey
+        // background for the selected menu item
         aColor = NS_RGB( 132, 130, 132);
         return res;
       } else {
@@ -245,7 +245,7 @@ nsresult nsLookAndFeel::NativeGetColor(const nsColorID aID, nscolor &aColor)
     case eColor__moz_menubarhovertext:
       if (WinQuerySysColor(HWND_DESKTOP, SYSCLR_MENUHILITEBGND, 0) ==
           WinQuerySysColor(HWND_DESKTOP, SYSCLR_MENU, 0)) {
-        
+        // white text to be readable on dark grey
         aColor = NS_RGB( 255, 255, 255);
         return res;
       } else {
@@ -279,60 +279,6 @@ NS_IMETHODIMP nsLookAndFeel::GetMetric(const nsMetricID aID, PRInt32 & aMetric)
   res = NS_OK;
 
   switch (aID) {
-    case eMetric_WindowTitleHeight:
-        aMetric = WinQuerySysValue( HWND_DESKTOP, SV_CYTITLEBAR);
-        break;
-    case eMetric_WindowBorderWidth:
-        aMetric = WinQuerySysValue( HWND_DESKTOP, SV_CXSIZEBORDER);
-        break;
-    case eMetric_WindowBorderHeight:
-        aMetric = WinQuerySysValue( HWND_DESKTOP, SV_CYSIZEBORDER);
-        break;
-    case eMetric_Widget3DBorder:
-        aMetric = WinQuerySysValue( HWND_DESKTOP, SV_CXBORDER);
-        break;
-    case eMetric_TextFieldBorder:
-        aMetric = 3;
-        break;
-    case eMetric_TextFieldHeight:
-        aMetric = 24;
-        break;
-    case eMetric_ButtonHorizontalInsidePaddingNavQuirks:
-        aMetric = 10;
-        break;
-    case eMetric_ButtonHorizontalInsidePaddingOffsetNavQuirks:
-        aMetric = 8;
-        break;
-    case eMetric_CheckboxSize:
-        aMetric = 12;
-        break;
-    case eMetric_RadioboxSize:
-        aMetric = 12;
-        break;
-    case eMetric_TextHorizontalInsideMinimumPadding:
-        aMetric = 3;
-        break;
-    case eMetric_TextVerticalInsidePadding:
-        aMetric = 0;
-        break;
-    case eMetric_TextShouldUseVerticalInsidePadding:
-        aMetric = 0;
-        break;
-    case eMetric_TextShouldUseHorizontalInsideMinimumPadding:
-        aMetric = 1;
-        break;
-    case eMetric_ListShouldUseHorizontalInsideMinimumPadding:
-        aMetric = 0;
-        break;
-    case eMetric_ListHorizontalInsideMinimumPadding:
-        aMetric = 3;
-        break;
-    case eMetric_ListShouldUseVerticalInsidePadding:
-        aMetric = 0;
-        break;
-    case eMetric_ListVerticalInsidePadding:
-        aMetric = 0;
-        break;
     case eMetric_CaretBlinkTime:
         aMetric = WinQuerySysValue( HWND_DESKTOP, SV_CURSORRATE);
         break;
@@ -343,15 +289,15 @@ NS_IMETHODIMP nsLookAndFeel::GetMetric(const nsMetricID aID, PRInt32 & aMetric)
         aMetric = 0;
         break;
     case eMetric_SelectTextfieldsOnKeyFocus:
-        
-        
+        // Do not select textfield content when focused by kbd
+        // used by nsEventStateManager::sTextfieldSelectModel
         aMetric = 0;
         break;
     case eMetric_SubmenuDelay:
         aMetric = 300;
         break;
     case eMetric_MenusCanOverlapOSBar:
-        
+        // we want XUL popups to be able to overlap the task bar.
         aMetric = 1;
         break;
     case eMetric_ScrollArrowStyle:
@@ -414,30 +360,6 @@ NS_IMETHODIMP nsLookAndFeel::GetMetric(const nsMetricFloatID aID, float & aMetri
   res = NS_OK;
 
   switch (aID) {
-    case eMetricFloat_TextFieldVerticalInsidePadding:
-        aMetric = 0.25f;
-        break;
-    case eMetricFloat_TextFieldHorizontalInsidePadding:
-        aMetric = 1.025f;
-        break;
-    case eMetricFloat_TextAreaVerticalInsidePadding:
-        aMetric = 0.40f;
-        break;
-    case eMetricFloat_TextAreaHorizontalInsidePadding:
-        aMetric = 0.40f;
-        break;
-    case eMetricFloat_ListVerticalInsidePadding:
-        aMetric = 0.10f;
-        break;
-    case eMetricFloat_ListHorizontalInsidePadding:
-        aMetric = 0.40f;
-        break;
-    case eMetricFloat_ButtonVerticalInsidePadding:
-        aMetric = 0.25f;
-        break;
-    case eMetricFloat_ButtonHorizontalInsidePadding:
-        aMetric = 0.25f;
-        break;
     case eMetricFloat_IMEUnderlineRelativeSize:
         aMetric = 1.0f;
         break;
@@ -472,23 +394,23 @@ NS_IMETHODIMP nsLookAndFeel::GetNavSize(const nsMetricNavWidgetID aWidgetID,
   }
 
   PRInt32 kTextFieldWidths[2][7] = {
-    {106,147,169,211,253,338,506}, 
-    {152,214,237,281,366,495,732}  
+    {106,147,169,211,253,338,506}, // Courier
+    {152,214,237,281,366,495,732}  // sans-serif
   };
 
   PRInt32 kTextFieldHeights[2][7] = {
-    {18,21,24,27,33,45,63}, 
-    {18,21,24,27,34,48,67}  
+    {18,21,24,27,33,45,63}, // Courier
+    {18,21,24,27,34,48,67}  // sans-serif
   };
 
   PRInt32 kTextAreaWidths[2][7] = {
-    {121,163,184,226,268,352,520}, 
-    {163,226,247,289,373,499,730}  
+    {121,163,184,226,268,352,520}, // Courier
+    {163,226,247,289,373,499,730}  // sans-serif
   };
 
   PRInt32 kTextAreaHeights[2][7] = {
-    {40,44,48,52,60,76,100}, 
-    {40,44,48,52,62,80,106}  
+    {40,44,48,52,60,76,100}, // Courier
+    {40,44,48,52,62,80,106}  // sans-serif
   };
 
   switch (aWidgetID) {
@@ -500,14 +422,14 @@ NS_IMETHODIMP nsLookAndFeel::GetNavSize(const nsMetricNavWidgetID aWidgetID,
       aSize.width  = kTextAreaWidths[aFontID][aFontSize-1];
       aSize.height = kTextAreaHeights[aFontID][aFontSize-1];
       break;
-   
+   /* Added to avoid warning errors - these are not used right now */
    case eMetricSize_ListBox:
    case eMetricSize_ComboBox:
    case eMetricSize_Radio:
    case eMetricSize_CheckBox:
    case eMetricSize_Button:
       break;
-  } 
+  } //switch
 
   return NS_OK;
 
