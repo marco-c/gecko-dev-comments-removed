@@ -1,31 +1,30 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * This file contains implementations of the nsIBinaryInputStream and
- * nsIBinaryOutputStream interfaces.  Together, these interfaces allows reading
- * and writing of primitive data types (integers, floating-point values,
- * booleans, etc.) to a stream in a binary, untagged, fixed-endianness format.
- * This might be used, for example, to implement network protocols or to
- * produce architecture-neutral binary disk files, i.e. ones that can be read
- * and written by both big-endian and little-endian platforms.  Output is
- * written in big-endian order (high-order byte first), as this is traditional
- * network order.
- *
- * @See nsIBinaryInputStream
- * @See nsIBinaryOutputStream
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <string.h>
 #include "nsBinaryStream.h"
 #include "nsCRT.h"
-#include "prlong.h"
 #include "nsString.h"
 #include "nsISerializable.h"
 #include "nsIClassInfo.h"
 #include "nsComponentManagerUtils.h"
-#include "nsIURI.h" // for NS_IURI_IID
+#include "nsIURI.h" 
 #include "mozilla/Endian.h"
 
 #include "jsapi.h"
@@ -184,7 +183,7 @@ nsBinaryOutputStream::WriteWStringZ(const PRUnichar* aString)
 #ifdef IS_BIG_ENDIAN
     rv = WriteBytes(reinterpret_cast<const char*>(aString), byteCount);
 #else
-    // XXX use WriteSegments here to avoid copy!
+    
     PRUnichar *copy, temp[64];
     if (length <= 64) {
         copy = temp;
@@ -247,7 +246,7 @@ nsBinaryOutputStream::WriteCompoundObject(nsISupports* aObject,
                                           const nsIID& aIID,
                                           bool aIsStrongRef)
 {
-    // Can't deal with weak refs
+    
     NS_ENSURE_TRUE(aIsStrongRef, NS_ERROR_UNEXPECTED);
     
     nsCOMPtr<nsIClassInfo> classInfo = do_QueryInterface(aObject);
@@ -317,14 +316,14 @@ nsBinaryInputStream::Read(char* aBuffer, uint32_t aCount, uint32_t *aNumRead)
 {
     NS_ENSURE_STATE(mInputStream);
 
-    // mInputStream might give us short reads, so deal with that.
+    
     uint32_t totalRead = 0;
 
     uint32_t bytesRead;
     do {
         nsresult rv = mInputStream->Read(aBuffer, aCount, &bytesRead);
         if (rv == NS_BASE_STREAM_WOULD_BLOCK && totalRead != 0) {
-            // We already read some data.  Return it.
+            
             break;
         }
         
@@ -343,20 +342,20 @@ nsBinaryInputStream::Read(char* aBuffer, uint32_t aCount, uint32_t *aNumRead)
 }
 
 
-// when forwarding ReadSegments to mInputStream, we need to make sure
-// 'this' is being passed to the writer each time. To do this, we need
-// a thunking function which keeps the real input stream around.
 
-// the closure wrapper
+
+
+
+
 struct ReadSegmentsClosure {
     nsIInputStream* mRealInputStream;
     void* mRealClosure;
     nsWriteSegmentFun mRealWriter;
     nsresult mRealResult;
-    uint32_t mBytesRead;  // to properly implement aToOffset
+    uint32_t mBytesRead;  
 };
 
-// the thunking function
+
 static NS_METHOD
 ReadSegmentForwardingThunk(nsIInputStream* aStream,
                            void *aClosure,
@@ -389,7 +388,7 @@ nsBinaryInputStream::ReadSegments(nsWriteSegmentFun writer, void * closure, uint
 
     ReadSegmentsClosure thunkClosure = { this, closure, writer, NS_OK, 0 };
     
-    // mInputStream might give us short reads, so deal with that.
+    
     uint32_t bytesRead;
     do {
         nsresult rv = mInputStream->ReadSegments(ReadSegmentForwardingThunk,
@@ -397,7 +396,7 @@ nsBinaryInputStream::ReadSegments(nsWriteSegmentFun writer, void * closure, uint
                                                  count, &bytesRead);
 
         if (rv == NS_BASE_STREAM_WOULD_BLOCK && thunkClosure.mBytesRead != 0) {
-            // We already read some data.  Return it.
+            
             break;
         }
         
@@ -556,30 +555,30 @@ nsBinaryInputStream::ReadCString(nsACString& aString)
 }
 
 
-// sometimes, WriteSegmentToString will be handed an odd-number of
-// bytes, which means we only have half of the last PRUnichar
+
+
 struct WriteStringClosure {
     PRUnichar *mWriteCursor;
     bool mHasCarryoverByte;
     char mCarryoverByte;
 };
 
-// there are a few cases we have to account for here:
-// * even length buffer, no carryover - easy, just append
-// * odd length buffer, no carryover - the last byte needs to be saved
-//                                     for carryover
-// * odd length buffer, with carryover - first byte needs to be used
-//                              with the carryover byte, and
-//                              the rest of the even length
-//                              buffer is appended as normal
-// * even length buffer, with carryover - the first byte needs to be
-//                              used with the previous carryover byte.
-//                              this gives you an odd length buffer,
-//                              so you have to save the last byte for
-//                              the next carryover
 
 
-// same version of the above, but with correct casting and endian swapping
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static NS_METHOD
 WriteSegmentToString(nsIInputStream* aStream,
                      void *aClosure,
@@ -594,49 +593,49 @@ WriteSegmentToString(nsIInputStream* aStream,
     WriteStringClosure* closure = static_cast<WriteStringClosure*>(aClosure);
     PRUnichar *cursor = closure->mWriteCursor;
 
-    // we're always going to consume the whole buffer no matter what
-    // happens, so take care of that right now.. that allows us to
-    // tweak aCount later. Do NOT move this!
+    
+    
+    
     *aWriteCount = aCount;
 
-    // if the last Write had an odd-number of bytes read, then 
+    
     if (closure->mHasCarryoverByte) {
-        // re-create the two-byte sequence we want to work with
+        
         char bytes[2] = { closure->mCarryoverByte, *aFromSegment };
         *cursor = *(PRUnichar*)bytes;
-        // Now the little endianness dance
+        
         mozilla::NativeEndian::swapToBigEndianInPlace(cursor, 1);
         ++cursor;
         
-        // now skip past the first byte of the buffer.. code from here
-        // can assume normal operations, but should not assume aCount
-        // is relative to the ORIGINAL buffer
+        
+        
+        
         ++aFromSegment;
         --aCount;
 
         closure->mHasCarryoverByte = false;
     }
     
-    // this array is possibly unaligned... be careful how we access it!
+    
     const PRUnichar *unicodeSegment =
         reinterpret_cast<const PRUnichar*>(aFromSegment);
 
-    // calculate number of full characters in segment (aCount could be odd!)
+    
     uint32_t segmentLength = aCount / sizeof(PRUnichar);
 
-    // copy all data into our aligned buffer.  byte swap if necessary.
-    // cursor may be unaligned, so we cannot use copyAndSwapToBigEndian directly
+    
+    
     memcpy(cursor, unicodeSegment, segmentLength * sizeof(PRUnichar));
     PRUnichar *end = cursor + segmentLength;
     mozilla::NativeEndian::swapToBigEndianInPlace(cursor, segmentLength);
     closure->mWriteCursor = end;
 
-    // remember this is the modifed aCount and aFromSegment,
-    // so that will take into account the fact that we might have
-    // skipped the first byte in the buffer
+    
+    
+    
     if (aCount % sizeof(PRUnichar) != 0) {
-        // we must have had a carryover byte, that we'll need the next
-        // time around
+        
+        
         closure->mCarryoverByte = aFromSegment[aCount - 1];
         closure->mHasCarryoverByte = true;
     }
@@ -659,7 +658,7 @@ nsBinaryInputStream::ReadString(nsAString& aString)
       return NS_OK;
     }
 
-    // pre-allocate output buffer, and get direct access to buffer...
+    
     if (!aString.SetLength(length, mozilla::fallible_t()))
         return NS_ERROR_OUT_OF_MEMORY;
 
@@ -749,20 +748,20 @@ nsBinaryInputStream::ReadObject(bool aIsStrongRef, nsISupports* *aObject)
     rv = ReadID(&iid);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // HACK: Intercept old (pre-gecko6) nsIURI IID, and replace with
-    // the updated IID, so that we're QI'ing to an actual interface.
-    // (As soon as we drop support for upgrading from pre-gecko6, we can
-    // remove this chunk.)
+    
+    
+    
+    
     static const nsIID oldURIiid =
         { 0x7a22cc0, 0xce5, 0x11d3,
           { 0x93, 0x31, 0x0, 0x10, 0x4b, 0xa0, 0xfd, 0x40 }};
 
-    // hackaround for bug 670542
+    
     static const nsIID oldURIiid2 =
         { 0xd6d04c36, 0x0fa4, 0x4db3,
           { 0xbe, 0x05, 0x4a, 0x18, 0x39, 0x71, 0x03, 0xe2 }};
 
-    // hackaround for bug 682031
+    
     static const nsIID oldURIiid3 =
         { 0x12120b20, 0x0929, 0x40e9,
           { 0x88, 0xcf, 0x6e, 0x08, 0x76, 0x6e, 0x8b, 0x23 }};
@@ -773,7 +772,7 @@ nsBinaryInputStream::ReadObject(bool aIsStrongRef, nsISupports* *aObject)
         const nsIID newURIiid = NS_IURI_IID;
         iid = newURIiid;
     }
-    // END HACK
+    
 
     nsCOMPtr<nsISupports> object = do_CreateInstance(cid, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
