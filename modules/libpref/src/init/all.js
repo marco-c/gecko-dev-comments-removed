@@ -624,6 +624,7 @@ pref("javascript.options.methodjit.chrome",  true);
 pref("javascript.options.jitprofiling.content", true);
 pref("javascript.options.jitprofiling.chrome",  true);
 pref("javascript.options.methodjit_always", false);
+pref("javascript.options.typeinference", true);
 
 
 

@@ -458,12 +458,27 @@ js_CloneFunctionObject(JSContext *cx, JSFunction *fun, JSObject *parent,
                        JSObject *proto);
 
 inline JSObject *
-CloneFunctionObject(JSContext *cx, JSFunction *fun, JSObject *parent)
+CloneFunctionObject(JSContext *cx, JSFunction *fun, JSObject *parent,
+                    bool ignoreSingletonClone = false)
 {
     JS_ASSERT(parent);
     JSObject *proto;
     if (!js_GetClassPrototype(cx, parent, JSProto_Function, &proto))
         return NULL;
+
+    
+
+
+
+
+
+
+    if (ignoreSingletonClone && fun->hasSingletonType()) {
+        JS_ASSERT(fun->getProto() == proto);
+        fun->setParent(parent);
+        return fun;
+    }
+
     return js_CloneFunctionObject(cx, fun, parent, proto);
 }
 
@@ -480,7 +495,7 @@ js_DefineFunction(JSContext *cx, JSObject *obj, jsid id, js::Native native,
 
 
 
-#define JSV2F_CONSTRUCT         CONSTRUCT
+#define JSV2F_CONSTRUCT         INITIAL_CONSTRUCT
 #define JSV2F_SEARCH_STACK      0x10000
 
 extern JSFunction *
