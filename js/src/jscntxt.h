@@ -2309,7 +2309,8 @@ class AutoGCRooter {
         IDVECTOR =    -15, 
         BINDINGS =    -16, 
         SHAPEVECTOR = -17, 
-        TYPE =        -18  
+        TYPE =        -18, 
+        VALARRAY =    -19  
     };
 
     private:
@@ -3366,6 +3367,25 @@ class AutoShapeVector : public AutoVectorRooter<const Shape *>
     {
         JS_GUARD_OBJECT_NOTIFIER_INIT;
     }
+
+    JS_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
+class AutoValueArray : public AutoGCRooter
+{
+    js::Value *start_;
+    unsigned length_;
+
+  public:
+    AutoValueArray(JSContext *cx, js::Value *start, unsigned length
+                   JS_GUARD_OBJECT_NOTIFIER_PARAM)
+        : AutoGCRooter(cx, VALARRAY), start_(start), length_(length)
+    {
+        JS_GUARD_OBJECT_NOTIFIER_INIT;
+    }
+
+    Value *start() const { return start_; }
+    unsigned length() const { return length_; }
 
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
