@@ -5,7 +5,8 @@
 
 
 
-#include "prinit.h"
+#include "mozilla/Assertions.h"
+
 #include "plstr.h"
 
 #include "jsapi.h"
@@ -27,36 +28,74 @@
 
 
 
-
-
-
-
-
-
-
-
 struct XPCLocaleCallbacks : public JSLocaleCallbacks
 {
+  XPCLocaleCallbacks()
+#ifdef DEBUG
+    : mThread(PR_GetCurrentThread())
+#endif
+  {
+    MOZ_COUNT_CTOR(XPCLocaleCallbacks);
+
+    localeToUpperCase = LocaleToUpperCase;
+    localeToLowerCase = LocaleToLowerCase;
+    localeCompare = LocaleCompare;
+    localeToUnicode = LocaleToUnicode;
+    localeGetErrorMessage = nullptr;
+  }
+
+  ~XPCLocaleCallbacks()
+  {
+    AssertThreadSafety();
+    MOZ_COUNT_DTOR(XPCLocaleCallbacks);
+  }
+
   
 
 
 
-
-
-
-
-
   static XPCLocaleCallbacks*
-  MaybeThis(JSContext* cx)
+  This(JSRuntime *rt)
   {
-    JSLocaleCallbacks* lc = JS_GetLocaleCallbacks(cx);
-    return (lc &&
-            lc->localeToUpperCase == LocaleToUpperCase &&
-            lc->localeToLowerCase == LocaleToLowerCase &&
-            lc->localeCompare == LocaleCompare &&
-            lc->localeToUnicode == LocaleToUnicode) ? This(cx) : nullptr;
+    
+    
+    JSLocaleCallbacks* lc = JS_GetLocaleCallbacks(rt);
+    MOZ_ASSERT(lc);
+    MOZ_ASSERT(lc->localeToUpperCase == LocaleToUpperCase);
+    MOZ_ASSERT(lc->localeToLowerCase == LocaleToLowerCase);
+    MOZ_ASSERT(lc->localeCompare == LocaleCompare);
+    MOZ_ASSERT(lc->localeToUnicode == LocaleToUnicode);
+
+    XPCLocaleCallbacks* ths = static_cast<XPCLocaleCallbacks*>(lc);
+    ths->AssertThreadSafety();
+    return ths;
   }
 
+  static JSBool
+  LocaleToUpperCase(JSContext *cx, JSString *src, jsval *rval)
+  {
+    return ChangeCase(cx, src, rval, ToUpperCase);
+  }
+
+  static JSBool
+  LocaleToLowerCase(JSContext *cx, JSString *src, jsval *rval)
+  {
+    return ChangeCase(cx, src, rval, ToLowerCase);
+  }
+
+  static JSBool
+  LocaleToUnicode(JSContext* cx, const char* src, jsval* rval)
+  {
+    return This(JS_GetRuntime(cx))->ToUnicode(cx, src, rval);
+  }
+
+  static JSBool
+  LocaleCompare(JSContext *cx, JSString *src1, JSString *src2, jsval *rval)
+  {
+    return This(JS_GetRuntime(cx))->Compare(cx, src1, src2, rval);
+  }
+
+private:
   static JSBool
   ChangeCase(JSContext* cx, JSString* src, jsval* rval,
              void(*changeCaseFnc)(const nsAString&, nsAString&))
@@ -76,70 +115,54 @@ struct XPCLocaleCallbacks : public JSLocaleCallbacks
     }
 
     *rval = STRING_TO_JSVAL(ucstr);
-
     return true;
   }
 
-  static JSBool
-  LocaleToUpperCase(JSContext *cx, JSString *src, jsval *rval)
+  JSBool
+  Compare(JSContext *cx, JSString *src1, JSString *src2, jsval *rval)
   {
-    return ChangeCase(cx, src, rval, ToUpperCase);
-  }
+    nsresult rv;
 
-  static JSBool
-  LocaleToLowerCase(JSContext *cx, JSString *src, jsval *rval)
-  {
-    return ChangeCase(cx, src, rval, ToLowerCase);
-  }
+    if (!mCollation) {
+      nsCOMPtr<nsILocaleService> localeService =
+        do_GetService(NS_LOCALESERVICE_CONTRACTID, &rv);
 
-  
+      if (NS_SUCCEEDED(rv)) {
+        nsCOMPtr<nsILocale> locale;
+        rv = localeService->GetApplicationLocale(getter_AddRefs(locale));
 
+        if (NS_SUCCEEDED(rv)) {
+          nsCOMPtr<nsICollationFactory> colFactory =
+            do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID, &rv);
 
+          if (NS_SUCCEEDED(rv)) {
+            rv = colFactory->CreateCollation(locale, getter_AddRefs(mCollation));
+          }
+        }
+      }
 
+      if (NS_FAILED(rv)) {
+        xpc::Throw(cx, rv);
+        return false;
+      }
+    }
 
+    nsDependentJSString depStr1, depStr2;
+    if (!depStr1.init(cx, src1) || !depStr2.init(cx, src2)) {
+      return false;
+    }
 
+    int32_t result;
+    rv = mCollation->CompareString(nsICollation::kCollationStrengthDefault,
+                                   depStr1, depStr2, &result);
 
+    if (NS_FAILED(rv)) {
+      xpc::Throw(cx, rv);
+      return false;
+    }
 
-
-  static XPCLocaleCallbacks*
-  This(JSContext* cx)
-  {
-    XPCLocaleCallbacks* ths =
-      static_cast<XPCLocaleCallbacks*>(JS_GetLocaleCallbacks(cx));
-    ths->AssertThreadSafety();
-    return ths;
-  }
-
-  static JSBool
-  LocaleToUnicode(JSContext* cx, const char* src, jsval* rval)
-  {
-    return This(cx)->ToUnicode(cx, src, rval);
-  }
-
-  static JSBool
-  LocaleCompare(JSContext *cx, JSString *src1, JSString *src2, jsval *rval)
-  {
-    return This(cx)->Compare(cx, src1, src2, rval);
-  }
-
-  XPCLocaleCallbacks()
-#ifdef DEBUG
-    : mThread(nullptr)
-#endif
-  {
-    MOZ_COUNT_CTOR(XPCLocaleCallbacks);
-
-    localeToUpperCase = LocaleToUpperCase;
-    localeToLowerCase = LocaleToLowerCase;
-    localeCompare = LocaleCompare;
-    localeToUnicode = LocaleToUnicode;
-    localeGetErrorMessage = nullptr;
-  }
-
-  ~XPCLocaleCallbacks()
-  {
-    MOZ_COUNT_DTOR(XPCLocaleCallbacks);
-    AssertThreadSafety();
+    *rval = INT_TO_JSVAL(result);
+    return true;
   }
 
   JSBool
@@ -217,161 +240,47 @@ struct XPCLocaleCallbacks : public JSLocaleCallbacks
     return true;
   }
 
-  JSBool
-  Compare(JSContext *cx, JSString *src1, JSString *src2, jsval *rval)
+  void AssertThreadSafety()
   {
-    nsresult rv;
-
-    if (!mCollation) {
-      nsCOMPtr<nsILocaleService> localeService =
-        do_GetService(NS_LOCALESERVICE_CONTRACTID, &rv);
-
-      if (NS_SUCCEEDED(rv)) {
-        nsCOMPtr<nsILocale> locale;
-        rv = localeService->GetApplicationLocale(getter_AddRefs(locale));
-
-        if (NS_SUCCEEDED(rv)) {
-          nsCOMPtr<nsICollationFactory> colFactory =
-            do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID, &rv);
-
-          if (NS_SUCCEEDED(rv)) {
-            rv = colFactory->CreateCollation(locale, getter_AddRefs(mCollation));
-          }
-        }
-      }
-
-      if (NS_FAILED(rv)) {
-        xpc::Throw(cx, rv);
-
-        return false;
-      }
-    }
-
-    nsDependentJSString depStr1, depStr2;
-    if (!depStr1.init(cx, src1) || !depStr2.init(cx, src2)) {
-      return false;
-    }
-
-    int32_t result;
-    rv = mCollation->CompareString(nsICollation::kCollationStrengthDefault,
-                                   depStr1, depStr2, &result);
-
-    if (NS_FAILED(rv)) {
-      xpc::Throw(cx, rv);
-
-      return false;
-    }
-
-    *rval = INT_TO_JSVAL(result);
-
-    return true;
+    MOZ_ASSERT(mThread == PR_GetCurrentThread(),
+               "XPCLocaleCallbacks used unsafely!");
   }
 
   nsCOMPtr<nsICollation> mCollation;
   nsCOMPtr<nsIUnicodeDecoder> mDecoder;
-
 #ifdef DEBUG
   PRThread* mThread;
-
-  
-  
-  
-  void AssertThreadSafety()
-  {
-    NS_ABORT_IF_FALSE(!mThread || mThread == PR_GetCurrentThread(),
-                      "XPCLocaleCallbacks used unsafely!");
-    if (!mThread) {
-      mThread = PR_GetCurrentThread();
-    }
-  }
-#else
-    void AssertThreadSafety() { }
-#endif  
+#endif
 };
 
-
-
-
-
-
-
-
-
-
-
-
-static PRCallOnceType sHookRuntime;
-static JSContextCallback sOldContextCallback;
-#ifdef DEBUG
-static JSRuntime* sHookedRuntime;
-#endif  
-
-static JSBool
-DelocalizeContextCallback(JSContext *cx, unsigned contextOp)
+NS_EXPORT_(bool)
+xpc_LocalizeRuntime(JSRuntime *rt)
 {
-  NS_ABORT_IF_FALSE(JS_GetRuntime(cx) == sHookedRuntime, "unknown runtime!");
-
-  JSBool ok = true;
-  if (sOldContextCallback && !sOldContextCallback(cx, contextOp)) {
-    ok = false;
-    
-    
-  }
-
-  if (contextOp == JSCONTEXT_DESTROY) {
-    if (XPCLocaleCallbacks* lc = XPCLocaleCallbacks::MaybeThis(cx)) {
-      
-      JS_SetLocaleCallbacks(cx, nullptr);
-      delete lc;
-    }
-  }
-
-  return ok;
-}
-
-static PRStatus
-HookRuntime(void* arg)
-{
-  JSRuntime* rt = static_cast<JSRuntime*>(arg);
-
-  NS_ABORT_IF_FALSE(!sHookedRuntime && !sOldContextCallback,
-                    "PRCallOnce called twice?");
+  JS_SetLocaleCallbacks(rt, new XPCLocaleCallbacks());
 
   
-  
-  
-  sOldContextCallback = JS_SetContextCallback(rt, DelocalizeContextCallback);
-#ifdef DEBUG
-  sHookedRuntime = rt;
-#endif
+  nsCOMPtr<nsILocaleService> localeService =
+    do_GetService(NS_LOCALESERVICE_CONTRACTID);
+  if (!localeService)
+    return false;
 
-  return PR_SUCCESS;
+  nsCOMPtr<nsILocale> appLocale;
+  nsresult rv = localeService->GetApplicationLocale(getter_AddRefs(appLocale));
+  if (NS_FAILED(rv))
+    return false;
+
+  nsAutoString localeStr;
+  rv = appLocale->GetCategory(NS_LITERAL_STRING(NSILOCALE_TIME), localeStr);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get app locale info");
+  NS_LossyConvertUTF16toASCII locale(localeStr);
+
+  return !!JS_SetDefaultLocale(rt, locale.get());
 }
 
 NS_EXPORT_(void)
-xpc_LocalizeContext(JSContext *cx)
+xpc_DelocalizeRuntime(JSRuntime *rt)
 {
-  JSRuntime* rt = JS_GetRuntime(cx);
-  PR_CallOnceWithArg(&sHookRuntime, HookRuntime, rt);
-
-  NS_ABORT_IF_FALSE(sHookedRuntime == rt, "created multiple JSRuntimes?");
-
-  JS_SetLocaleCallbacks(cx, new XPCLocaleCallbacks());
-
-  
-  nsresult rv;
-  nsCOMPtr<nsILocaleService> localeService =
-    do_GetService(NS_LOCALESERVICE_CONTRACTID, &rv);
-  if (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsILocale> appLocale;
-    rv = localeService->GetApplicationLocale(getter_AddRefs(appLocale));
-    if (NS_SUCCEEDED(rv)) {
-      nsAutoString localeStr;
-      rv = appLocale->
-           GetCategory(NS_LITERAL_STRING(NSILOCALE_TIME), localeStr);
-      NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get app locale info");
-      NS_LossyConvertUTF16toASCII locale(localeStr);
-      JS_SetDefaultLocale(cx, locale.get());
-    }
-  }
+  XPCLocaleCallbacks* lc = XPCLocaleCallbacks::This(rt);
+  JS_SetLocaleCallbacks(rt, nullptr);
+  delete lc;
 }
