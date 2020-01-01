@@ -1111,7 +1111,6 @@ function prepareForStartup() {
 
   
   gBrowser.addProgressListener(window.XULBrowserWindow, Components.interfaces.nsIWebProgress.NOTIFY_ALL);
-  gBrowser.addTabsProgressListener(window.TabsProgressListener);
 
   
   gBrowser.addEventListener("DOMLinkAdded", DOMLinkHandler, false);
@@ -1275,9 +1274,7 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
   gBrowser.addEventListener("command", BrowserOnCommand, false);
 
   tabPreviews.init();
-#ifdef USE_TAB_PREVIEWS
   ctrlTab.init();
-#endif
 
   
   
@@ -1324,9 +1321,8 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
 function BrowserShutdown()
 {
   tabPreviews.uninit();
-#ifdef USE_TAB_PREVIEWS
   ctrlTab.uninit();
-#endif
+
   gGestureSupport.init(false);
 
   try {
@@ -1343,7 +1339,6 @@ function BrowserShutdown()
 
   try {
     gBrowser.removeProgressListener(window.XULBrowserWindow);
-    gBrowser.removeTabsProgressListener(window.TabsProgressListener);
   } catch (ex) {
   }
 
@@ -3801,7 +3796,8 @@ var XULBrowserWindow = {
   },
   
   onLinkIconAvailable: function (aBrowser) {
-    if (gProxyFavIcon && gBrowser.userTypedValue === null)
+    if (gProxyFavIcon && gBrowser.mCurrentBrowser == aBrowser &&
+        gBrowser.userTypedValue === null)
       PageProxySetIcon(aBrowser.mIconURL); 
   },
 
@@ -3862,6 +3858,8 @@ var XULBrowserWindow = {
         if (aWebProgress.DOMWindow == content) {
           if (aRequest)
             this.endDocumentLoad(aRequest, aStatus);
+          if (!gBrowser.mTabbedMode && !gBrowser.mCurrentBrowser.mIconURL)
+            gBrowser.useDefaultIcon(gBrowser.mCurrentTab);
 
           if (Components.isSuccessCode(aStatus) &&
               content.document.documentElement.getAttribute("manifest"))
@@ -3998,6 +3996,9 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
+      if (!gBrowser.mTabbedMode && aWebProgress.isLoadingDocument)
+        gBrowser.setIcon(gBrowser.mCurrentTab, null);
+
       if (gURLBar) {
         
         let uri = aLocationURI;
@@ -4041,6 +4042,55 @@ var XULBrowserWindow = {
   onStatusChange: function (aWebProgress, aRequest, aStatus, aMessage) {
     this.status = aMessage;
     this.updateStatusField();
+  },
+
+  onRefreshAttempted: function (aWebProgress, aURI, aDelay, aSameURI) {
+    if (gPrefService.getBoolPref("accessibility.blockautorefresh")) {
+      let brandBundle = document.getElementById("bundle_brand");
+      let brandShortName = brandBundle.getString("brandShortName");
+      let refreshButtonText =
+        gNavigatorBundle.getString("refreshBlocked.goButton");
+      let refreshButtonAccesskey =
+        gNavigatorBundle.getString("refreshBlocked.goButton.accesskey");
+      let message =
+        gNavigatorBundle.getFormattedString(aSameURI ? "refreshBlocked.refreshLabel"
+                                                     : "refreshBlocked.redirectLabel",
+                                            [brandShortName]);
+      let topBrowser = getBrowserFromContentWindow(aWebProgress.DOMWindow.top);
+      let docShell = aWebProgress.DOMWindow
+                                 .QueryInterface(Ci.nsIInterfaceRequestor)
+                                 .getInterface(Ci.nsIWebNavigation)
+                                 .QueryInterface(Ci.nsIDocShell);
+      let notificationBox = gBrowser.getNotificationBox(topBrowser);
+      let notification = notificationBox.getNotificationWithValue("refresh-blocked");
+      if (notification) {
+        notification.label = message;
+        notification.refreshURI = aURI;
+        notification.delay = aDelay;
+        notification.docShell = docShell;
+      } else {
+        let buttons = [{
+          label: refreshButtonText,
+          accessKey: refreshButtonAccesskey,
+          callback: function (aNotification, aButton) {
+            var refreshURI = aNotification.docShell
+                                          .QueryInterface(Ci.nsIRefreshURI);
+            refreshURI.forceRefreshURI(aNotification.refreshURI,
+                                       aNotification.delay, true);
+          }
+        }];
+        notification =
+          notificationBox.appendNotification(message, "refresh-blocked",
+                                             "chrome://browser/skin/Info.png",
+                                             notificationBox.PRIORITY_INFO_MEDIUM,
+                                             buttons);
+        notification.refreshURI = aURI;
+        notification.delay = aDelay;
+        notification.docShell = docShell;
+      }
+      return false;
+    }
+    return true;
   },
 
   
@@ -4197,73 +4247,6 @@ var XULBrowserWindow = {
       observerService.notifyObservers(content, notification, urlStr);
     } catch (e) {
     }
-  }
-}
-
-var TabsProgressListener = {
-  onProgressChange: function (aBrowser, aWebProgress, aRequest,
-                              aCurSelfProgress, aMaxSelfProgress,
-                              aCurTotalProgress, aMaxTotalProgress) {
-  },
-
-  onStateChange: function (aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-  },
-
-  onLocationChange: function (aBrowser, aWebProgress, aRequest, aLocationURI) {
-  },
-  
-  onStatusChange: function (aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
-  },
-
-  onRefreshAttempted: function (aBrowser, aWebProgress, aURI, aDelay, aSameURI) {
-    if (gPrefService.getBoolPref("accessibility.blockautorefresh")) {
-      let brandBundle = document.getElementById("bundle_brand");
-      let brandShortName = brandBundle.getString("brandShortName");
-      let refreshButtonText =
-        gNavigatorBundle.getString("refreshBlocked.goButton");
-      let refreshButtonAccesskey =
-        gNavigatorBundle.getString("refreshBlocked.goButton.accesskey");
-      let message =
-        gNavigatorBundle.getFormattedString(aSameURI ? "refreshBlocked.refreshLabel"
-                                                     : "refreshBlocked.redirectLabel",
-                                            [brandShortName]);
-      let docShell = aWebProgress.DOMWindow
-                                 .QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsIWebNavigation)
-                                 .QueryInterface(Ci.nsIDocShell);
-      let notificationBox = gBrowser.getNotificationBox(aBrowser);
-      let notification = notificationBox.getNotificationWithValue("refresh-blocked");
-      if (notification) {
-        notification.label = message;
-        notification.refreshURI = aURI;
-        notification.delay = aDelay;
-        notification.docShell = docShell;
-      } else {
-        let buttons = [{
-          label: refreshButtonText,
-          accessKey: refreshButtonAccesskey,
-          callback: function (aNotification, aButton) {
-            var refreshURI = aNotification.docShell
-                                          .QueryInterface(Ci.nsIRefreshURI);
-            refreshURI.forceRefreshURI(aNotification.refreshURI,
-                                       aNotification.delay, true);
-          }
-        }];
-        notification =
-          notificationBox.appendNotification(message, "refresh-blocked",
-                                             "chrome://browser/skin/Info.png",
-                                             notificationBox.PRIORITY_INFO_MEDIUM,
-                                             buttons);
-        notification.refreshURI = aURI;
-        notification.delay = aDelay;
-        notification.docShell = docShell;
-      }
-      return false;
-    }
-    return true;
-  },
-
-  onSecurityChange: function (aBrowser, aWebProgress, aRequest, aState) {
   }
 }
 
