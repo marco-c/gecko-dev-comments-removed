@@ -3160,6 +3160,8 @@ _cairo_d2d_mask(void			*surface,
     cairo_d2d_surface_t *d2dsurf = static_cast<cairo_d2d_surface_t*>(surface);
     cairo_rectangle_int_t extents;
 
+    cairo_clip_t *actual_clip = clip;
+
     cairo_int_status_t status;
 
     status = (cairo_int_status_t)_cairo_surface_mask_extents (&d2dsurf->base,
@@ -3168,17 +3170,6 @@ _cairo_d2d_mask(void			*surface,
 		    clip, &extents);
     if (unlikely (status))
 	    return status;
-
-
-    D2D1_RECT_F rect = D2D1::RectF(0,
-				   0,
-				   (FLOAT)d2dsurf->rt->GetPixelSize().width,
-				   (FLOAT)d2dsurf->rt->GetPixelSize().height);
-
-    rect.left = (FLOAT)extents.x;
-    rect.right = (FLOAT)(extents.x + extents.width);
-    rect.top = (FLOAT)extents.y;
-    rect.bottom = (FLOAT)(extents.y + extents.height);
 
     bool isSolidAlphaMask = false;
     float solidAlphaValue = 1.0f;
@@ -3192,12 +3183,47 @@ _cairo_d2d_mask(void			*surface,
 	}
     }
 
+    cairo_box_t box;
+    _cairo_box_from_rectangle(&box, &extents);
+
+    if (clip) {
+	
+	
+	
+	
+	int num_boxes = 1;
+	cairo_box_t box_stack;
+	cairo_box_t *boxes;
+	boxes = &box_stack;
+
+	
+	
+	status = _cairo_clip_get_boxes(clip, &boxes, &num_boxes);
+
+	if (!status && num_boxes == 1) {
+	    box.p1.x = MAX(box.p1.x, boxes->p1.x);
+	    box.p2.x = MIN(box.p2.x, boxes->p2.x);
+	    box.p1.y = MAX(box.p1.y, boxes->p1.y);
+	    box.p2.y = MIN(box.p2.y, boxes->p2.y);
+
+	    if (clip->path != d2dsurf->clip.path) {
+		
+		
+		
+		actual_clip = NULL;
+	    }
+	}
+
+	if (boxes != &box_stack) {
+	    
+	    free(boxes);
+	}
+    }
+
     if (isSolidAlphaMask) {
 	if (source->type == CAIRO_PATTERN_TYPE_SURFACE) {
 	    const cairo_surface_pattern_t *surf_pattern = 
 		reinterpret_cast<const cairo_surface_pattern_t*>(source);
-	    cairo_box_t box;
-	    _cairo_box_from_rectangle(&box, &extents);
 	    cairo_int_status_t rv = _cairo_d2d_try_fastblit(d2dsurf,
 							    surf_pattern->surface,
 							    &box,
@@ -3228,12 +3254,17 @@ _cairo_d2d_mask(void			*surface,
 #ifndef ALWAYS_MANUAL_COMPOSITE
     } else {
 	_begin_draw_state(d2dsurf);
-	status = (cairo_int_status_t)_cairo_d2d_set_clip (d2dsurf, clip);
 
+	status = (cairo_int_status_t)_cairo_d2d_set_clip (d2dsurf, actual_clip);
 	if (unlikely(status))
 	    return status;
     }
 #endif
+
+    D2D1_RECT_F rect = D2D1::RectF(_cairo_fixed_to_float(box.p1.x),
+				   _cairo_fixed_to_float(box.p1.y),
+				   _cairo_fixed_to_float(box.p2.x),
+				   _cairo_fixed_to_float(box.p2.y));
 
     if (isSolidAlphaMask) {
 	brush->SetOpacity(solidAlphaValue);
