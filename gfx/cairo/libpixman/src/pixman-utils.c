@@ -1,27 +1,30 @@
-/*
- * Copyright © 2000 SuSE, Inc.
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of SuSE not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  SuSE makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty.
- *
- * SuSE DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE
- * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Author:  Keith Packard, SuSE, Inc.
- */
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if HAVE_CONFIG_H
 #include <config.h>
+#endif
+
 #include <stdlib.h>
 #include "pixman.h"
 #include "pixman-private.h"
@@ -196,10 +199,10 @@ pixman_fill (uint32_t *bits,
 }
 	    
 
-/*
- * Compute the smallest value no less than y which is on a
- * grid row
- */
+
+
+
+
 
 pixman_fixed_t
 pixman_sample_ceil_y (pixman_fixed_t y, int n)
@@ -218,10 +221,10 @@ pixman_sample_ceil_y (pixman_fixed_t y, int n)
 
 #define _div(a,b)    ((a) >= 0 ? (a) / (b) : -((-(a) + (b) - 1) / (b)))
 
-/*
- * Compute the largest value no greater than y which is on a
- * grid row
- */
+
+
+
+
 pixman_fixed_t
 pixman_sample_floor_y (pixman_fixed_t y, int n)
 {
@@ -237,9 +240,9 @@ pixman_sample_floor_y (pixman_fixed_t y, int n)
     return (i | f);
 }
 
-/*
- * Step an edge by any amount (including negative values)
- */
+
+
+
 void
 pixman_edge_step (pixman_edge_t *e, int n)
 {
@@ -269,10 +272,10 @@ pixman_edge_step (pixman_edge_t *e, int n)
     }
 }
 
-/*
- * A private routine to initialize the multi-step
- * elements of an edge structure
- */
+
+
+
+
 static void
 _pixman_edge_tMultiInit (pixman_edge_t *e, int n, pixman_fixed_t *stepx_p, pixman_fixed_t *dx_p)
 {
@@ -291,10 +294,10 @@ _pixman_edge_tMultiInit (pixman_edge_t *e, int n, pixman_fixed_t *stepx_p, pixma
     *stepx_p = stepx;
 }
 
-/*
- * Initialize one edge structure given the line endpoints and a
- * starting y value
- */
+
+
+
+
 void
 pixman_edge_init (pixman_edge_t	*e,
 		  int		n,
@@ -335,10 +338,10 @@ pixman_edge_init (pixman_edge_t	*e,
     pixman_edge_step (e, y_start - y_top);
 }
 
-/*
- * Initialize one edge structure given a line, starting y value
- * and a pixel offset for the line
- */
+
+
+
+
 void
 pixman_line_fixed_edge_init (pixman_edge_t *e,
 			     int	    n,

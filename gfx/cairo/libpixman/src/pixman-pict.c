@@ -1,28 +1,31 @@
-/*
- * Copyright © 2000 SuSE, Inc.
- * Copyright © 2007 Red Hat, Inc.
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of SuSE not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  SuSE makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty.
- *
- * SuSE DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE
- * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Author:  Keith Packard, SuSE, Inc.
- */
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if HAVE_CONFIG_H
 #include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,11 +86,11 @@ fbIn (uint32_t x, uint8_t y)
     return m|n|o|p;
 }
 
-/*
- * Naming convention:
- *
- *  opSRCxMASKxDST
- */
+
+
+
+
+
 
 static void
 fbCompositeOver_x888x8x8888 (pixman_op_t      op,
@@ -961,7 +964,7 @@ fbCompositeSrcAdd_1000x1000 (pixman_op_t	op,
 			     uint16_t     width,
 			     uint16_t     height)
 {
-    /* FIXME */
+    
 #if 0
     
     uint32_t	*dstBits, *srcBits;
@@ -1011,7 +1014,7 @@ fbCompositeSolidMask_nx1xn (pixman_op_t op,
 			    uint16_t     width,
 			    uint16_t     height)
 {
-    /* FIXME */
+    
 #if 0
     uint32_t	*dstBits;
     uint32_t	*maskBits;
@@ -1059,9 +1062,9 @@ fbCompositeSolidMask_nx1xn (pixman_op_t op,
 #endif
 }
 
-/*
- * Apply a constant alpha value in an over computation
- */
+
+
+
 static void
 fbCompositeSrcSrc_nxn  (pixman_op_t	   op,
 			pixman_image_t * pSrc,
@@ -1076,9 +1079,9 @@ fbCompositeSrcSrc_nxn  (pixman_op_t	   op,
 			uint16_t     width,
 			uint16_t     height);
 
-/*
- * Simple bitblt
- */
+
+
+
 
 static void
 fbCompositeSrcSrc_nxn  (pixman_op_t	   op,
@@ -1094,7 +1097,7 @@ fbCompositeSrcSrc_nxn  (pixman_op_t	   op,
 			uint16_t     width,
 			uint16_t     height)
 {
-    /* FIXME */
+    
 #if 0
     uint32_t	*dst;
     uint32_t	*src;
@@ -1548,7 +1551,7 @@ pixman_image_composite (pixman_op_t      op,
 			    uint32_t src;
 
 #if 0
-			    /* FIXME */
+			    
 			    fbComposeGetSolid(pSrc, src, pDst->bits.format);
 			    if ((src & 0xff000000) == 0xff000000)
 				func = fbCompositeSolidMask_nx1xn;
@@ -1566,14 +1569,14 @@ pixman_image_composite (pixman_op_t      op,
 		if (func)
 		    srcRepeat = FALSE;
 	    }
-	    else if (!srcRepeat) /* has mask and non-repeating source */
+	    else if (!srcRepeat) 
 	    {
 		if (pSrc->bits.bits == pMask->bits.bits &&
 		    xSrc == xMask &&
 		    ySrc == yMask &&
 		    !pMask->common.component_alpha && !maskRepeat)
 		{
-		    /* source == mask: non-premultiplied data */
+		    
 		    switch (pSrc->bits.format) {
 		    case PIXMAN_x8b8g8r8:
 			switch (pMask->bits.format) {
@@ -1673,9 +1676,9 @@ pixman_image_composite (pixman_op_t      op,
 		else
 		{
 #if 0
-		    /* FIXME: This code is commented out since it's apparently not
-		     * actually faster than the generic code.
-		     */
+		    
+
+
 		    if (pMask->bits.format == PIXMAN_a8)
 		    {
 			if ((pSrc->bits.format == PIXMAN_x8r8g8b8 &&
@@ -1697,11 +1700,11 @@ pixman_image_composite (pixman_op_t      op,
 		}
 	    }
 	}
-	else /* no mask */
+	else 
 	{
 	    if (can_get_solid(pSrc))
 	    {
-		/* no mask and repeating source */
+		
 		if (pSrc->type == SOLID || pSrc->bits.format == PIXMAN_a8r8g8b8)
 		{
 		    switch (pDst->bits.format) {
@@ -1732,9 +1735,9 @@ pixman_image_composite (pixman_op_t      op,
 	    }
 	    else if (! srcRepeat)
 	    {
-		/*
-		 * Formats without alpha bits are just Copy with Over
-		 */
+		
+
+
 		if (pSrc->bits.format == pDst->bits.format && !PIXMAN_FORMAT_A(pSrc->bits.format))
 		{
 #ifdef USE_MMX
@@ -1744,7 +1747,7 @@ pixman_image_composite (pixman_op_t      op,
 		    else
 #endif
 #if 0
-		    /* FIXME */
+		    
 			func = fbCompositeSrcSrc_nxn
 #endif
 			    ;
@@ -1883,7 +1886,7 @@ pixman_image_composite (pixman_op_t      op,
 		switch (pDst->bits.format) {
 		case PIXMAN_a1:
 #if 0
-		    /* FIXME */
+		    
 		    func = fbCompositeSrcAdd_1000x1000;
 #endif
 		    break;
@@ -1966,7 +1969,7 @@ pixman_image_composite (pixman_op_t      op,
 		    func = fbCompositeCopyAreammx;
 		else
 #endif
-		    /* FIXME */
+		    
 #if 0
 		    func = fbCompositeSrcSrc_nxn
 #endif
@@ -2021,21 +2024,21 @@ pixman_image_composite (pixman_op_t      op,
 	 pMask->bits.width == 1		&&
 	 pMask->bits.height == 1))
     {
-	/* If src or mask are repeating 1x1 images and srcRepeat or
-	 * maskRepeat are still TRUE, it means the fast path we
-	 * selected does not actually handle repeating images.
-	 *
-	 * So rather than call the "fast path" with a zillion
-	 * 1x1 requests, we just use the general code (which does
-	 * do something sensible with 1x1 repeating images).
-	 */
+	
+
+
+
+
+
+
+
 	func = NULL;
     }
     
     if (!func) {
 	func = pixman_image_composite_rect;
 
-	/* CompositeGeneral optimizes 1x1 repeating images itself */
+	
 	if (pSrc->type == BITS &&
 	    pSrc->bits.width == 1 && pSrc->bits.height == 1)
 	{
@@ -2048,7 +2051,7 @@ pixman_image_composite (pixman_op_t      op,
 	    maskRepeat = FALSE;
 	}
 
-	/* if we are transforming, repeats are handled in fbFetchTransformed */
+	
 	if (srcTransform)
 	    srcRepeat = FALSE;
 	
@@ -2063,11 +2066,11 @@ pixman_image_composite (pixman_op_t      op,
 
 
 #ifdef USE_MMX
-/* The CPU detection code needs to be in a file not compiled with
- * "-mmmx -msse", as gcc would generate CMOV instructions otherwise
- * that would lead to SIGILL instructions on old CPUs that don't have
- * it.
- */
+
+
+
+
+
 #if !defined(__amd64__) && !defined(__x86_64__)
 
 #ifdef HAVE_GETISAX
@@ -2109,14 +2112,14 @@ static unsigned int detectCPUFeatures(void) {
     vendor[12] = 0;
 
 #ifdef __GNUC__
-    /* see p. 118 of amd64 instruction set manual Vol3 */
-    /* We need to be careful about the handling of %ebx and
-     * %esp here. We can't declare either one as clobbered
-     * since they are special registers (%ebx is the "PIC
-     * register" holding an offset to global data, %esp the
-     * stack pointer), so we need to make sure they have their
-     * original values when we access the output operands.
-     */
+    
+    
+
+
+
+
+
+
     __asm__ ("pushf\n"
              "pop %%eax\n"
              "mov %%eax, %%ecx\n"
@@ -2191,7 +2194,7 @@ static unsigned int detectCPUFeatures(void) {
     
     features = 0;
     if (result) {
-        /* result now contains the standard feature bits */
+        
         if (result & (1 << 15))
             features |= CMOV;
         if (result & (1 << 23))
@@ -2203,7 +2206,7 @@ static unsigned int detectCPUFeatures(void) {
         if ((features & MMX) && !(features & SSE) &&
             (strcmp(vendor, "AuthenticAMD") == 0 ||
              strcmp(vendor, "Geode by NSC") == 0)) {
-            /* check for AMD MMX extensions */
+            
 #ifdef __GNUC__
             __asm__("push %%ebx\n"
                     "mov $0x80000000, %%eax\n"
@@ -2239,7 +2242,7 @@ static unsigned int detectCPUFeatures(void) {
                 features |= MMX_Extensions;
         }
     }
-#endif /* HAVE_GETISAX */
+#endif 
 
     return features;
 }
@@ -2259,5 +2262,5 @@ pixman_have_mmx (void)
     
     return mmx_present;
 }
-#endif /* __amd64__ */
+#endif 
 #endif 
