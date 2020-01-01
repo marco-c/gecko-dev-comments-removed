@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=78:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jscntxtinlines_h___
 #define jscntxtinlines_h___
@@ -38,7 +38,7 @@ NewObjectCache::lookup(Class *clasp, gc::Cell *key, gc::AllocKind kind, EntryInd
 
     Entry *entry = &entries[*pentry];
 
-    
+    /* N.B. Lookups with the same clasp/key but different kinds map to different entries. */
     return (entry->clasp == clasp && entry->key == key);
 }
 
@@ -88,7 +88,7 @@ NewObjectCache::fillProto(EntryIndex entry, Class *clasp, JSObject *proto, gc::A
 inline void
 NewObjectCache::fillGlobal(EntryIndex entry, Class *clasp, js::GlobalObject *global, gc::AllocKind kind, JSObject *obj)
 {
-    
+    //JS_ASSERT(global == obj->getGlobal());
     return fill(entry, clasp, global, kind, obj);
 }
 
@@ -112,7 +112,7 @@ NewObjectCache::newObjectFromHit(JSContext *cx, EntryIndex entry_)
         return obj;
     }
 
-    
+    /* Copy the entry to the stack first in case it is purged by a GC. */
     size_t nbytes = entry->nbytes;
     char stackObject[sizeof(JSObject_Slots16)];
     JS_ASSERT(nbytes <= sizeof(stackObject));
@@ -190,7 +190,7 @@ class AutoNamespaceArray : protected AutoGCRooter {
     JSXMLArray<JSObject> array;
 };
 
-#endif 
+#endif /* JS_HAS_XML_SUPPORT */
 
 template <typename T>
 class AutoPtr
@@ -228,16 +228,16 @@ class CompartmentChecker
         check(cx->hasfp() ? JS_GetGlobalForScopeChain(cx) : cx->globalObject);
     }
 
-    
-
-
-
+    /*
+     * Set a breakpoint here (break js::CompartmentChecker::fail) to debug
+     * compartment mismatches.
+     */
     static void fail(JSCompartment *c1, JSCompartment *c2) {
         printf("*** Compartment mismatch %p vs. %p\n", (void *) c1, (void *) c2);
         JS_NOT_REACHED("compartment mismatched");
     }
 
-    
+    /* Note: should only be used when neither c1 nor c2 may be the default compartment. */
     static void check(JSCompartment *c1, JSCompartment *c2) {
         JS_ASSERT(c1 != c1->rt->atomsCompartment);
         JS_ASSERT(c2 != c2->rt->atomsCompartment);
@@ -254,7 +254,7 @@ class CompartmentChecker
         }
     }
 
-    void check(JSPrincipals *) {  }
+    void check(JSPrincipals *) { /* nothing for now */ }
 
     void check(JSObject *obj) {
         if (obj)
@@ -318,10 +318,10 @@ class CompartmentChecker
 
 #endif
 
-
-
-
-
+/*
+ * Don't perform these checks when called from a finalizer. The checking
+ * depends on other objects not having been swept yet.
+ */
 #define START_ASSERT_SAME_COMPARTMENT()                                       \
     if (cx->runtime->gcRunning)                                               \
         return;                                                               \
@@ -414,21 +414,21 @@ CallJSNativeConstructor(JSContext *cx, Native native, const CallArgs &args)
     if (!CallJSNative(cx, native, args))
         return false;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * Native constructors must return non-primitive values on success.
+     * Although it is legal, if a constructor returns the callee, there is a
+     * 99.9999% chance it is a bug. If any valid code actually wants the
+     * constructor to return the callee, the assertion can be removed or
+     * (another) conjunct can be added to the antecedent.
+     *
+     * Proxies are exceptions to both rules: they can return primitives and
+     * they allow content to return the callee.
+     *
+     * CallOrConstructBoundFunction is an exception as well because we
+     * might have used bind on a proxy function.
+     *
+     * (new Object(Object)) returns the callee.
+     */
     JS_ASSERT_IF(native != FunctionProxyClass.construct &&
                  native != js::CallOrConstructBoundFunction &&
                  (!callee->isFunction() || callee->toFunction()->native() != js_Object),
@@ -479,7 +479,7 @@ FrameAtomBase(JSContext *cx, js::StackFrame *fp)
     return fp->script()->atoms;
 }
 
-}  
+}  /* namespace js */
 
 inline JSVersion
 JSContext::findVersion() const
@@ -488,7 +488,7 @@ JSContext::findVersion() const
         return versionOverride;
 
     if (stack.hasfp()) {
-        
+        /* There may be a scripted function somewhere on the stack! */
         js::StackFrame *f = fp();
         while (f && !f->isScriptFrame())
             f = f->prev();
@@ -541,28 +541,11 @@ JSContext::setCompileOptions(unsigned newcopts)
     maybeOverrideVersion(newVersion);
 }
 
-inline void
-JSContext::assertValidStackDepth(unsigned depth)
-{
-#ifdef DEBUG
-    JS_ASSERT(0 <= regs().sp - fp()->base());
-    JS_ASSERT(depth <= uintptr_t(regs().sp - fp()->base()));
-#endif
-}
 
 inline js::LifoAlloc &
 JSContext::typeLifoAlloc()
 {
     return compartment->typeLifoAlloc;
-}
-
-inline bool
-JSContext::ensureGeneratorStackSpace()
-{
-    bool ok = genStack.reserve(genStack.length() + 1);
-    if (!ok)
-        js_ReportOutOfMemory(this);
-    return ok;
 }
 
 inline void
@@ -588,7 +571,7 @@ JSContext::propertyTree()
     return compartment->propertyTree;
 }
 
-
+/* Get the current frame, first lazily instantiating stack frames if needed. */
 static inline js::StackFrame *
 js_GetTopStackFrame(JSContext *cx, FrameExpandKind expand)
 {
@@ -600,4 +583,4 @@ js_GetTopStackFrame(JSContext *cx, FrameExpandKind expand)
     return cx->maybefp();
 }
 
-#endif 
+#endif /* jscntxtinlines_h___ */

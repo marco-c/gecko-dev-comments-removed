@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99 ft=cpp:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Util.h"
 
@@ -38,9 +38,9 @@ AccessCheck::isSameOrigin(JSCompartment *a, JSCompartment *b)
     nsIPrincipal *aprin = GetCompartmentPrincipal(a);
     nsIPrincipal *bprin = GetCompartmentPrincipal(b);
 
-    
-    
-    
+    // If either a or b doesn't have principals, we don't have enough
+    // information to tell. Seeing as how this is Gecko, we are default-unsafe
+    // in this case.
     if (!aprin || !bprin)
         return true;
 
@@ -57,25 +57,25 @@ AccessCheck::isSameOrigin(JSCompartment *a, JSCompartment *b)
 bool
 AccessCheck::isLocationObjectSameOrigin(JSContext *cx, JSObject *wrapper)
 {
-    
+    // The caller must ensure that the given wrapper wraps a Location object.
     MOZ_ASSERT(WrapperFactory::IsLocationObject(js::UnwrapObject(wrapper)));
 
-    
-    
-    
+    // Location objects are parented to the outer window for which they
+    // were created. This gives us an easy way to determine whether our
+    // object is same origin with the current inner window:
 
-    
+    // Grab the outer window...
     JSObject *obj = js::GetObjectParent(js::UnwrapObject(wrapper));
     if (!js::GetObjectClass(obj)->ext.innerObject) {
-        
+        // ...which might be wrapped in a security wrapper.
         obj = js::UnwrapObject(obj);
         JS_ASSERT(js::GetObjectClass(obj)->ext.innerObject);
     }
 
-    
+    // Now innerize it to find the *current* inner window for our outer.
     obj = JS_ObjectToInnerObject(cx, obj);
 
-    
+    // Which lets us compare the current compartment against the old one.
     return obj &&
            (isSameOrigin(js::GetObjectCompartment(wrapper),
                          js::GetObjectCompartment(obj)) ||
@@ -108,9 +108,9 @@ AccessCheck::getPrincipal(JSCompartment *compartment)
 #define R(str) if (!set && JS_FlatStringEqualsAscii(prop, str)) return true;
 #define W(str) if (set && JS_FlatStringEqualsAscii(prop, str)) return true;
 
-
-
-
+// Hardcoded policy for cross origin property access. This was culled from the
+// preferences file (all.js). We don't want users to overwrite highly sensitive
+// security policies.
 static bool
 IsPermitted(const char *name, JSFlatString *prop, bool set)
 {
@@ -257,10 +257,10 @@ AccessCheck::isCrossOriginAccessPermitted(JSContext *cx, JSObject *wrapper, jsid
 
     JSObject *obj = Wrapper::wrappedObject(wrapper);
 
-    
-    
-    
-    
+    // LocationPolicy checks PUNCTURE first, so we should never get here for
+    // Location wrappers. For all other wrappers interested in cross-origin
+    // semantics, we want to allow puncturing only for the same-origin
+    // document.domain case.
     if (act == Wrapper::PUNCTURE) {
         MOZ_ASSERT(!WrapperFactory::IsLocationObject(obj));
         return documentDomainMakesSameOrigin(cx, obj);
@@ -282,13 +282,13 @@ AccessCheck::isCrossOriginAccessPermitted(JSContext *cx, JSObject *wrapper, jsid
     if (IsWindow(name) && IsFrameId(cx, obj, id))
         return true;
 
-    
-    
-    
-    
-    
-    
-    
+    // Do the dynamic document.domain check.
+    //
+    // Location also needs a dynamic access check, but it's a different one, and
+    // we do it in LocationPolicy::check. Before LocationPolicy::check does that
+    // though, it first calls this function to check whether the property is
+    // accessible to anyone regardless of origin. So make sure not to do the
+    // document.domain check in that case.
     if (!IsLocation(name) && documentDomainMakesSameOrigin(cx, obj))
         return true;
 
@@ -314,8 +314,8 @@ AccessCheck::isSystemOnlyAccessPermitted(JSContext *cx)
     JSScript *script = nsnull;
     if (!fp) {
         if (!JS_DescribeScriptedCaller(cx, &script, nsnull)) {
-            
-            
+            // No code at all is running. So we must be arriving here as the result
+            // of C++ code asking us to do something. Allow access.
             return true;
         }
     } else if (JS_IsScriptFrame(cx, fp)) {
@@ -328,8 +328,8 @@ AccessCheck::isSystemOnlyAccessPermitted(JSContext *cx)
         return true;
     }
 
-    
-    
+    // Allow any code loaded from chrome://global/ to touch us, even if it was
+    // cloned into a less privileged context.
     static const char prefix[] = "chrome://global/";
     const char *filename;
     if (script &&
@@ -359,7 +359,7 @@ AccessCheck::isScriptAccessOnly(JSContext *cx, JSObject *wrapper)
     unsigned flags;
     JSObject *obj = js::UnwrapObject(wrapper, true, &flags);
 
-    
+    // If the wrapper indicates script-only access, we are done.
     if (flags & WrapperFactory::SCRIPT_ACCESS_ONLY_FLAG) {
         if (flags & WrapperFactory::SOW_FLAG)
             return !isSystemOnlyAccessPermitted(cx);
@@ -371,13 +371,13 @@ AccessCheck::isScriptAccessOnly(JSContext *cx, JSObject *wrapper)
         if (!ssm)
             return true;
 
-        
+        // Bypass script-only status if UniversalXPConnect is enabled.
         bool privileged;
         return !NS_SUCCEEDED(ssm->IsCapabilityEnabled("UniversalXPConnect", &privileged)) ||
                !privileged;
     }
 
-    
+    // In addition, chrome objects can explicitly opt-in by setting .scriptOnly to true.
     if (js::GetProxyHandler(wrapper) ==
         &FilteringWrapper<CrossCompartmentSecurityWrapper,
         CrossOriginAccessiblePropertiesOnly>::singleton) {
@@ -385,11 +385,11 @@ AccessCheck::isScriptAccessOnly(JSContext *cx, JSObject *wrapper)
         jsval scriptOnly;
         if (JS_LookupPropertyById(cx, obj, scriptOnlyId, &scriptOnly) &&
             scriptOnly == JSVAL_TRUE)
-            return true; 
+            return true; // script-only
     }
 
-    
-    
+    // Allow non-script access to same-origin location objects and any other
+    // objects.
     return WrapperFactory::IsLocationObject(obj) && !isLocationObjectSameOrigin(cx, wrapper);
 }
 
@@ -416,10 +416,10 @@ enum Access { READ = (1<<0), WRITE = (1<<1), NO_ACCESS = 0 };
 static bool
 Deny(JSContext *cx, jsid id, Wrapper::Action act)
 {
-    
+    // Refuse to perform the action and just return the default value.
     if (act == Wrapper::GET)
         return true;
-    
+    // If its a set, deny it and throw an exception.
     AccessCheck::deny(cx, id);
     return false;
 }
@@ -428,8 +428,8 @@ bool
 PermitIfUniversalXPConnect(JSContext *cx, jsid id, Wrapper::Action act,
                            ExposedPropertiesOnly::Permission &perm)
 {
-    
-    
+    // If UniversalXPConnect is enabled, allow access even if __exposedProps__ doesn't
+    // exists.
     nsIScriptSecurityManager *ssm = XPCWrapper::GetSecurityManager();
     if (!ssm) {
         return false;
@@ -438,10 +438,10 @@ PermitIfUniversalXPConnect(JSContext *cx, jsid id, Wrapper::Action act,
     if (NS_SUCCEEDED(ssm->IsCapabilityEnabled("UniversalXPConnect", &privileged)) &&
         privileged) {
         perm = ExposedPropertiesOnly::PermitPropertyAccess;
-        return true; 
+        return true; // Allow
     }
 
-    
+    // Deny
     return Deny(cx, id, act);
 }
 
@@ -455,12 +455,10 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, Wrapper:
         perm = PermitObjectAccess;
         return true;
     }
-    if (act == Wrapper::PUNCTURE) {
-        perm = DenyAccess;
-        return false;
-    }
 
     perm = DenyAccess;
+    if (act == Wrapper::PUNCTURE)
+        return PermitIfUniversalXPConnect(cx, id, act, perm); // Deny
 
     jsid exposedPropsId = GetRTIdByIndex(cx, XPCJSRuntime::IDX_EXPOSEDPROPS);
 
@@ -470,20 +468,20 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, Wrapper:
         !JS_HasPropertyById(cx, wrappedObject, exposedPropsId, &found))
         return false;
 
-    
+    // Always permit access to "length" and indexed properties of arrays.
     if (JS_IsArrayObject(cx, wrappedObject) &&
         ((JSID_IS_INT(id) && JSID_TO_INT(id) >= 0) ||
          (JSID_IS_STRING(id) && JS_FlatStringEqualsAscii(JSID_TO_FLAT_STRING(id), "length")))) {
         perm = PermitPropertyAccess;
-        return true; 
+        return true; // Allow
     }
 
-    
+    // If no __exposedProps__ existed, deny access.
     if (!found) {
-        
+        // For now, only do this on functions.
         if (!JS_ObjectIsFunction(cx, wrappedObject)) {
 
-            
+            // This little loop hole will go away soon! See bug 553102.
             JSAutoEnterCompartment innerAc;
             if (!innerAc.enter(cx, wrapper))
                 return false;
@@ -494,18 +492,18 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, Wrapper:
                     do_QueryInterface(win->GetExtantDocument());
                 if (doc) {
                     doc->WarnOnceAbout(nsIDocument::eNoExposedProps,
-                                        true);
+                                       /* asError = */ true);
                 }
             }
 
             perm = PermitPropertyAccess;
             return true;
         }
-        return PermitIfUniversalXPConnect(cx, id, act, perm); 
+        return PermitIfUniversalXPConnect(cx, id, act, perm); // Deny
     }
 
     if (id == JSID_VOID) {
-        
+        // This will force the caller to call us back for individual property accesses.
         perm = PermitPropertyAccess;
         return true;
     }
@@ -515,7 +513,7 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, Wrapper:
         return false;
 
     if (exposedProps.isNullOrUndefined()) {
-        return PermitIfUniversalXPConnect(cx, id, act, perm); 
+        return PermitIfUniversalXPConnect(cx, id, act, perm); // Deny
     }
 
     if (!exposedProps.isObject()) {
@@ -529,10 +527,10 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, Wrapper:
 
     JSPropertyDescriptor desc;
     if (!JS_GetPropertyDescriptorById(cx, hallpass, id, JSRESOLVE_QUALIFIED, &desc)) {
-        return false; 
+        return false; // Error
     }
     if (desc.obj == NULL || !(desc.attrs & JSPROP_ENUMERATE)) {
-        return PermitIfUniversalXPConnect(cx, id, act, perm); 
+        return PermitIfUniversalXPConnect(cx, id, act, perm); // Deny
     }
 
     if (!JSVAL_IS_STRING(desc.value)) {
@@ -577,11 +575,11 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, Wrapper:
 
     if ((act == Wrapper::SET && !(access & WRITE)) ||
         (act != Wrapper::SET && !(access & READ))) {
-        return PermitIfUniversalXPConnect(cx, id, act, perm); 
+        return PermitIfUniversalXPConnect(cx, id, act, perm); // Deny
     }
 
     perm = PermitPropertyAccess;
-    return true; 
+    return true; // Allow
 }
 
 bool
@@ -606,7 +604,7 @@ ComponentsObjectPolicy::check(JSContext *cx, JSObject *wrapper, jsid id, Wrapper
         }
     }
 
-    return PermitIfUniversalXPConnect(cx, id, act, perm);  
+    return PermitIfUniversalXPConnect(cx, id, act, perm);  // Deny
 }
 
 }

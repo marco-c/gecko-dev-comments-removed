@@ -1,14 +1,14 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jsfun_h___
 #define jsfun_h___
-
-
-
+/*
+ * JS function definitions.
+ */
 #include "jsprvtd.h"
 #include "jspubtd.h"
 #include "jsobj.h"
@@ -18,22 +18,22 @@
 
 #include "gc/Barrier.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * The high two bits of JSFunction.flags encode whether the function is native
+ * or interpreted, and if interpreted, what kind of optimized closure form (if
+ * any) it might be.
+ *
+ *   00   not interpreted
+ *   01   interpreted, not null closure
+ *   11   interpreted, null closure
+ *
+ * NB: JSFUN_EXPR_CLOSURE reuses JSFUN_STUB_GSOPS, which is an API request flag
+ * bit only, never stored in fun->flags.
+ *
+ * If we need more bits in the future, all flags for interpreted functions can
+ * move to u.i.script->flags. For now we use function flag bits to minimize
+ * pointer-chasing.
+ */
 #define JSFUN_PROTOTYPE     0x0800  /* function is Function.prototype for some
                                        global object */
 
@@ -48,20 +48,20 @@ namespace js { class FunctionExtended; }
 
 struct JSFunction : public JSObject
 {
-    uint16_t        nargs;        
-
-    uint16_t        flags;        
+    uint16_t        nargs;        /* maximum number of specified arguments,
+                                     reflected as f.length/f.arity */
+    uint16_t        flags;        /* flags, see JSFUN_* below and in jsapi.h */
     union U {
-        js::Native  native;       
+        js::Native  native;       /* native method pointer or null */
         struct Scripted {
-            JSScript    *script_; 
-
-            JSObject    *env_;    
-
+            JSScript    *script_; /* interpreted bytecode descriptor or null;
+                                     use the accessor! */
+            JSObject    *env_;    /* environment for new activations;
+                                     use the accessor! */
         } i;
         void            *nativeOrScript;
     } u;
-    js::HeapPtrAtom  atom;        
+    js::HeapPtrAtom  atom;        /* name for diagnostics and decompiling */
 
     bool hasDefaults()       const { return flags & JSFUN_HAS_DEFAULTS; }
     bool hasRest()           const { return flags & JSFUN_HAS_REST; }
@@ -79,7 +79,7 @@ struct JSFunction : public JSObject
         flags = (flags & ~JSFUN_KINDMASK) | k;
     }
 
-    
+    /* Returns the strictness of this function, which must be interpreted. */
     inline bool inStrictMode() const;
 
     void setArgCount(uint16_t nargs) {
@@ -97,13 +97,13 @@ struct JSFunction : public JSObject
         this->flags |= JSFUN_HAS_DEFAULTS;
     }
 
-    
+    /* uint16_t representation bounds number of call object dynamic slots. */
     enum { MAX_ARGS_AND_VARS = 2 * ((1U << 16) - 1) };
 
-    
-
-
-
+    /*
+     * For an interpreted function, accessors for the initial scope object of
+     * activations (stack frames) of the function.
+     */
     inline JSObject *environment() const;
     inline void setEnvironment(JSObject *obj);
     inline void initEnvironment(JSObject *obj);
@@ -162,7 +162,7 @@ struct JSFunction : public JSObject
 
     inline void trace(JSTracer *trc);
 
-    
+    /* Bound function accessors. */
 
     inline bool initBoundFunction(JSContext *cx, js::HandleValue thisArg,
                                   const js::Value *args, unsigned argslen);
@@ -183,16 +183,16 @@ struct JSFunction : public JSObject
     }
 
   public:
-    
+    /* Accessors for data stored in extended functions. */
     inline void initializeExtended();
     inline void setExtendedSlot(size_t which, const js::Value &val);
     inline const js::Value &getExtendedSlot(size_t which) const;
 
   private:
-    
-
-
-
+    /*
+     * These member functions are inherited from JSObject, but should never be applied to
+     * a value statically known to be a JSFunction.
+     */
     inline JSFunction *toFunction() MOZ_DELETE;
     inline const JSFunction *toFunction() const MOZ_DELETE;
 };
@@ -229,9 +229,9 @@ js_DefineFunction(JSContext *cx, js::HandleObject obj, js::HandleId id, JSNative
                   unsigned nargs, unsigned flags,
                   js::gc::AllocKind kind = JSFunction::FinalizeKind);
 
-
-
-
+/*
+ * Flags for js_ValueToFunction and js_ReportIsNotFunction.
+ */
 #define JSV2F_CONSTRUCT         INITIAL_CONSTRUCT
 #define JSV2F_SEARCH_STACK      0x10000
 
@@ -244,25 +244,22 @@ js_ValueToCallableObject(JSContext *cx, js::Value *vp, unsigned flags);
 extern void
 js_ReportIsNotFunction(JSContext *cx, const js::Value *vp, unsigned flags);
 
-extern void
-js_PutCallObject(js::StackFrame *fp, js::CallObject &callobj);
-
 namespace js {
 
-
-
-
-
-
+/*
+ * Function extended with reserved slots for use by various kinds of functions.
+ * Most functions do not have these extensions, but enough are that efficient
+ * storage is required (no malloc'ed reserved slots).
+ */
 class FunctionExtended : public JSFunction
 {
     friend struct JSFunction;
 
-    
+    /* Reserved slots available for storage by particular native functions. */
     HeapValue extendedSlots[2];
 };
 
-} 
+} // namespace js
 
 inline js::FunctionExtended *
 JSFunction::toExtended()
@@ -278,9 +275,6 @@ JSFunction::toExtended() const
     return static_cast<const js::FunctionExtended *>(this);
 }
 
-extern void
-js_PutArgsObject(js::StackFrame *fp);
-
 inline bool
 js_IsNamedLambda(JSFunction *fun) { return (fun->flags & JSFUN_LAMBDA) && fun->atom; }
 
@@ -293,7 +287,7 @@ XDRInterpretedFunction(XDRState<mode> *xdr, JSObject **objp, JSScript *parentScr
 extern JSObject *
 CloneInterpretedFunction(JSContext *cx, JSFunction *fun);
 
-} 
+} /* namespace js */
 
 extern JSBool
 js_fun_apply(JSContext *cx, unsigned argc, js::Value *vp);
@@ -305,4 +299,4 @@ extern JSObject*
 js_fun_bind(JSContext *cx, js::HandleObject target, js::HandleValue thisArg,
             js::Value *boundArgs, unsigned argslen);
 
-#endif 
+#endif /* jsfun_h___ */

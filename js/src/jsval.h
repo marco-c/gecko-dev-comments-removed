@@ -1,16 +1,16 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99 ft=cpp:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jsvalimpl_h__
 #define jsvalimpl_h__
 
-
-
-
+/*
+ * Implementation details for js::Value in jsapi.h.
+ */
 
 #include "mozilla/FloatingPoint.h"
 
@@ -18,17 +18,17 @@
 
 JS_BEGIN_EXTERN_C
 
-
-
-
-
+/*
+ * Try to get jsvals 64-bit aligned. We could almost assert that all values are
+ * aligned, but MSVC and GCC occasionally break alignment.
+ */
 #if defined(__GNUC__) || defined(__xlc__) || defined(__xlC__)
 # define JSVAL_ALIGNMENT        __attribute__((aligned (8)))
 #elif defined(_MSC_VER)
-  
-
-
-
+  /*
+   * Structs can be aligned with MSVC, but not if they are used as parameters,
+   * so we just don't try to align.
+   */
 # define JSVAL_ALIGNMENT
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 # define JSVAL_ALIGNMENT
@@ -40,11 +40,11 @@ JS_BEGIN_EXTERN_C
 # define JSVAL_TAG_SHIFT 47
 #endif
 
-
-
-
-
-
+/*
+ * We try to use enums so that printing a jsval_layout in the debugger shows
+ * nice symbolic type tags, however we can only do this when we can force the
+ * underlying type of the enum to be the desired size.
+ */
 #if defined(__cplusplus) && !defined(__SUNPRO_CC) && !defined(__xlC__)
 
 #if defined(_MSC_VER)
@@ -55,7 +55,7 @@ JS_BEGIN_EXTERN_C
 # define JS_ENUM_FOOTER(id)                    __attribute__((packed))
 #endif
 
-
+/* Remember to propagate changes to the C defines below. */
 JS_ENUM_HEADER(JSValueType, uint8_t)
 {
     JSVAL_TYPE_DOUBLE              = 0x00,
@@ -67,7 +67,7 @@ JS_ENUM_HEADER(JSValueType, uint8_t)
     JSVAL_TYPE_NULL                = 0x06,
     JSVAL_TYPE_OBJECT              = 0x07,
 
-    
+    /* These never appear in a jsval; they are only provided as an out-of-band value. */
     JSVAL_TYPE_UNKNOWN             = 0x20,
     JSVAL_TYPE_MISSING             = 0x21
 } JS_ENUM_FOOTER(JSValueType);
@@ -76,7 +76,7 @@ JS_STATIC_ASSERT(sizeof(JSValueType) == 1);
 
 #if JS_BITS_PER_WORD == 32
 
-
+/* Remember to propagate changes to the C defines below. */
 JS_ENUM_HEADER(JSValueTag, uint32_t)
 {
     JSVAL_TAG_CLEAR                = 0xFFFFFF80,
@@ -93,7 +93,7 @@ JS_STATIC_ASSERT(sizeof(JSValueTag) == 4);
 
 #elif JS_BITS_PER_WORD == 64
 
-
+/* Remember to propagate changes to the C defines below. */
 JS_ENUM_HEADER(JSValueTag, uint32_t)
 {
     JSVAL_TAG_MAX_DOUBLE           = 0x1FFF0,
@@ -124,7 +124,7 @@ JS_STATIC_ASSERT(sizeof(JSValueShiftedTag) == sizeof(uint64_t));
 
 #endif
 
-#else
+#else  /* defined(__cplusplus) */
 
 typedef uint8_t JSValueType;
 #define JSVAL_TYPE_DOUBLE            ((uint8_t)0x00)
@@ -171,8 +171,8 @@ typedef uint64_t JSValueShiftedTag;
 #define JSVAL_SHIFTED_TAG_NULL       (((uint64_t)JSVAL_TAG_NULL)       << JSVAL_TAG_SHIFT)
 #define JSVAL_SHIFTED_TAG_OBJECT     (((uint64_t)JSVAL_TAG_OBJECT)     << JSVAL_TAG_SHIFT)
 
-#endif  
-#endif
+#endif  /* JS_BITS_PER_WORD */
+#endif  /* defined(__cplusplus) && !defined(__SUNPRO_CC) */
 
 #define JSVAL_LOWER_INCL_TYPE_OF_OBJ_OR_NULL_SET        JSVAL_TYPE_NULL
 #define JSVAL_UPPER_EXCL_TYPE_OF_PRIMITIVE_SET          JSVAL_TYPE_OBJECT
@@ -205,28 +205,29 @@ typedef uint64_t JSValueShiftedTag;
 #define JSVAL_UPPER_EXCL_SHIFTED_TAG_OF_NUMBER_SET       JSVAL_SHIFTED_TAG_UNDEFINED
 #define JSVAL_LOWER_INCL_SHIFTED_TAG_OF_GCTHING_SET      JSVAL_SHIFTED_TAG_STRING
 
-#endif 
+#endif /* JS_BITS_PER_WORD */
 
 typedef enum JSWhyMagic
 {
-    JS_ARRAY_HOLE,               
-    JS_NATIVE_ENUMERATE,         
-
-
-    JS_NO_ITER_VALUE,            
-    JS_GENERATOR_CLOSING,        
-    JS_NO_CONSTANT,              
-    JS_THIS_POISON,              
-    JS_ARG_POISON,               
-    JS_SERIALIZE_NO_NODE,        
-    JS_LAZY_ARGUMENTS,           
-    JS_UNASSIGNED_ARGUMENTS,     
-    JS_OPTIMIZED_ARGUMENTS,      
-    JS_IS_CONSTRUCTING,          
-    JS_OVERWRITTEN_CALLEE,       
-    JS_ION_ERROR,                
-    JS_ION_BAILOUT,              
-    JS_GENERIC_MAGIC             
+    JS_ARRAY_HOLE,               /* a hole in a dense array */
+    JS_NATIVE_ENUMERATE,         /* indicates that a custom enumerate hook forwarded
+                                  * to JS_EnumerateState, which really means the object can be
+                                  * enumerated like a native object. */
+    JS_NO_ITER_VALUE,            /* there is not a pending iterator value */
+    JS_GENERATOR_CLOSING,        /* exception value thrown when closing a generator */
+    JS_NO_CONSTANT,              /* compiler sentinel value */
+    JS_THIS_POISON,              /* used in debug builds to catch tracing errors */
+    JS_ARG_POISON,               /* used in debug builds to catch tracing errors */
+    JS_SERIALIZE_NO_NODE,        /* an empty subnode in the AST serializer */
+    JS_LAZY_ARGUMENTS,           /* lazy arguments value on the stack */
+    JS_OPTIMIZED_ARGUMENTS,      /* optimized-away 'arguments' value */
+    JS_IS_CONSTRUCTING,          /* magic value passed to natives to indicate construction */
+    JS_OVERWRITTEN_CALLEE,       /* arguments.callee has been overwritten */
+    JS_FORWARD_TO_CALL_OBJECT,   /* args object element stored in call object */
+    JS_BLOCK_NEEDS_CLONE,        /* value of static block object slot */
+    JS_ION_ERROR,                /* error while running Ion code */
+    JS_ION_BAILOUT,              /* status code to signal EnterIon will OSR into Interpret */
+    JS_GENERIC_MAGIC             /* for local use */
 } JSWhyMagic;
 
 #if defined(IS_LITTLE_ENDIAN)
@@ -256,7 +257,7 @@ typedef union jsval_layout
 {
     uint64_t asBits;
 #if (!defined(_WIN64) && defined(__cplusplus))
-    
+    /* MSVC does not pack these correctly :-( */
     struct {
         uint64_t           payload47 : 47;
         JSValueTag         tag : 17;
@@ -274,8 +275,8 @@ typedef union jsval_layout
     size_t asWord;
     uintptr_t asUIntPtr;
 } JSVAL_ALIGNMENT jsval_layout;
-# endif  
-#else   
+# endif  /* JS_BITS_PER_WORD */
+#else   /* defined(IS_LITTLE_ENDIAN) */
 # if JS_BITS_PER_WORD == 32
 typedef union jsval_layout
 {
@@ -318,18 +319,18 @@ typedef union jsval_layout
     size_t asWord;
     uintptr_t asUIntPtr;
 } JSVAL_ALIGNMENT jsval_layout;
-# endif 
-#endif  
+# endif /* JS_BITS_PER_WORD */
+#endif  /* defined(IS_LITTLE_ENDIAN) */
 
 JS_STATIC_ASSERT(sizeof(jsval_layout) == 8);
 
 #if JS_BITS_PER_WORD == 32
 
-
-
-
-
-
+/*
+ * N.B. GCC, in some but not all cases, chooses to emit signed comparison of
+ * JSValueTag even though its underlying type has been forced to be uint32_t.
+ * Thus, all comparisons should explicitly cast operands to uint32_t.
+ */
 
 static JS_ALWAYS_INLINE jsval_layout
 BUILD_JSVAL(JSValueTag tag, uint32_t payload)
@@ -500,7 +501,7 @@ JSVAL_TO_PRIVATE_PTR_IMPL(jsval_layout l)
 static JS_ALWAYS_INLINE JSBool
 JSVAL_IS_GCTHING_IMPL(jsval_layout l)
 {
-    
+    /* gcc sometimes generates signed < without explicit casts. */
     return (uint32_t)l.s.tag >= (uint32_t)JSVAL_LOWER_INCL_TAG_OF_GCTHING_SET;
 }
 
@@ -822,7 +823,7 @@ JSVAL_EXTRACT_NON_DOUBLE_TYPE_IMPL(jsval_layout l)
    return (JSValueType)type;
 }
 
-#endif  
+#endif  /* JS_BITS_PER_WORD */
 
 static JS_ALWAYS_INLINE double
 JS_CANONICALIZE_NAN(double d)
@@ -842,4 +843,4 @@ static jsval_layout JSVAL_TO_IMPL(JS::Value);
 static JS::Value IMPL_TO_JSVAL(jsval_layout);
 #endif
 
-#endif
+#endif /* jsvalimpl_h__ */
