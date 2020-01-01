@@ -1885,14 +1885,6 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
         if (st_id == nsIProgrammingLanguage::JAVASCRIPT)
             JS_EndRequest((JSContext *)this_ctx->GetNativeContext());
       }
-
-      nsCOMPtr<nsIContent> frame = do_QueryInterface(GetFrameElementInternal());
-      if (frame && frame->GetOwnerDoc()) {
-        nsPIDOMWindow* parentWindow = frame->GetOwnerDoc()->GetWindow();
-        if (parentWindow && parentWindow->TimeoutSuspendCount()) {
-          SuspendTimeouts(parentWindow->TimeoutSuspendCount());
-        }
-      }
     }
     
     NS_STID_FOR_ID(st_id) {
@@ -2062,7 +2054,7 @@ nsGlobalWindow::SetDocShell(nsIDocShell* aDocShell)
     
     
     
-    for (nsRefPtr<nsGlobalWindow> inner = (nsGlobalWindow *)PR_LIST_HEAD(this);
+    for (nsGlobalWindow *inner = (nsGlobalWindow *)PR_LIST_HEAD(this);
          inner != this;
          inner = (nsGlobalWindow*)PR_NEXT_LINK(inner)) {
       NS_ASSERTION(inner->mOuterWindow == this, "bad outer window pointer");
@@ -8397,39 +8389,37 @@ nsGlobalWindow::RestoreWindowState(nsISupports *aState)
 }
 
 void
-nsGlobalWindow::SuspendTimeouts(PRUint32 aIncrease,
-                                PRBool aFreezeChildren)
+nsGlobalWindow::SuspendTimeouts()
 {
-  FORWARD_TO_INNER_VOID(SuspendTimeouts, (aIncrease, aFreezeChildren));
+  FORWARD_TO_INNER_VOID(SuspendTimeouts, ());
 
-  PRBool suspended = (mTimeoutsSuspendDepth != 0);
-  mTimeoutsSuspendDepth += aIncrease;
+  if (++mTimeoutsSuspendDepth != 1) {
+    return;
+  }
 
-  if (!suspended) {
-    nsDOMThreadService* dts = nsDOMThreadService::get();
-    if (dts) {
-      dts->SuspendWorkersForGlobal(static_cast<nsIScriptGlobalObject*>(this));
-    }
-  
-    PRTime now = PR_Now();
-    for (nsTimeout *t = FirstTimeout(); IsTimeout(t); t = t->Next()) {
+  nsDOMThreadService* dts = nsDOMThreadService::get();
+  if (dts) {
+    dts->SuspendWorkersForGlobal(static_cast<nsIScriptGlobalObject*>(this));
+  }
+
+  PRTime now = PR_Now();
+  for (nsTimeout *t = FirstTimeout(); IsTimeout(t); t = t->Next()) {
+    
+    if (t->mWhen > now)
+      t->mWhen -= now;
+    else
+      t->mWhen = 0;
+
+    
+    if (t->mTimer) {
+      t->mTimer->Cancel();
+      t->mTimer = nsnull;
+
       
-      if (t->mWhen > now)
-        t->mWhen -= now;
-      else
-        t->mWhen = 0;
-  
       
-      if (t->mTimer) {
-        t->mTimer->Cancel();
-        t->mTimer = nsnull;
-  
-        
-        
-        
-        
-        t->Release();
-      }
+      
+      
+      t->Release();
     }
   }
 
@@ -8449,11 +8439,12 @@ nsGlobalWindow::SuspendTimeouts(PRUint32 aIncrease,
         nsGlobalWindow *win =
           static_cast<nsGlobalWindow*>
                      (static_cast<nsPIDOMWindow*>(pWin));
-        win->SuspendTimeouts(aIncrease, aFreezeChildren);
+
+        win->SuspendTimeouts();
 
         NS_ASSERTION(win->IsOuterWindow(), "Expected outer window");
         nsGlobalWindow* inner = win->GetCurrentInnerWindowInternal();
-        if (inner && aFreezeChildren) {
+        if (inner) {
           inner->Freeze();
         }
       }
@@ -8462,68 +8453,67 @@ nsGlobalWindow::SuspendTimeouts(PRUint32 aIncrease,
 }
 
 nsresult
-nsGlobalWindow::ResumeTimeouts(PRBool aThawChildren)
+nsGlobalWindow::ResumeTimeouts()
 {
   FORWARD_TO_INNER(ResumeTimeouts, (), NS_ERROR_NOT_INITIALIZED);
 
   NS_ASSERTION(mTimeoutsSuspendDepth, "Mismatched calls to ResumeTimeouts!");
-  --mTimeoutsSuspendDepth;
-  PRBool shouldResume = (mTimeoutsSuspendDepth == 0);
+  if (--mTimeoutsSuspendDepth != 0) {
+    return NS_OK;
+  }
+
+  nsDOMThreadService* dts = nsDOMThreadService::get();
+  if (dts) {
+    dts->ResumeWorkersForGlobal(static_cast<nsIScriptGlobalObject*>(this));
+  }
+
+  
+  
+
+  PRTime now = PR_Now();
   nsresult rv;
 
-  if (shouldResume) {
-    nsDOMThreadService* dts = nsDOMThreadService::get();
-    if (dts) {
-      dts->ResumeWorkersForGlobal(static_cast<nsIScriptGlobalObject*>(this));
+#ifdef DEBUG
+  PRBool _seenDummyTimeout = PR_FALSE;
+#endif
+
+  for (nsTimeout *t = FirstTimeout(); IsTimeout(t); t = t->Next()) {
+    
+    
+    
+    if (!t->mWindow) {
+#ifdef DEBUG
+      NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
+      _seenDummyTimeout = PR_TRUE;
+#endif
+      continue;
     }
 
     
     
+    
+    
+    
+    PRUint32 delay =
+      PR_MAX(((PRUint32)(t->mWhen / (PRTime)PR_USEC_PER_MSEC)),
+              DOM_MIN_TIMEOUT_VALUE);
 
-    PRTime now = PR_Now();
+    
+    
+    t->mWhen += now;
 
-#ifdef DEBUG
-    PRBool _seenDummyTimeout = PR_FALSE;
-#endif
+    t->mTimer = do_CreateInstance("@mozilla.org/timer;1");
+    NS_ENSURE_TRUE(t->mTimer, NS_ERROR_OUT_OF_MEMORY);
 
-    for (nsTimeout *t = FirstTimeout(); IsTimeout(t); t = t->Next()) {
-      
-      
-      
-      if (!t->mWindow) {
-#ifdef DEBUG
-        NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
-        _seenDummyTimeout = PR_TRUE;
-#endif
-        continue;
-      }
-
-      
-      
-      
-      
-      
-      PRUint32 delay =
-        PR_MAX(((PRUint32)(t->mWhen / (PRTime)PR_USEC_PER_MSEC)),
-                DOM_MIN_TIMEOUT_VALUE);
-
-      
-      
-      t->mWhen += now;
-
-      t->mTimer = do_CreateInstance("@mozilla.org/timer;1");
-      NS_ENSURE_TRUE(t->mTimer, NS_ERROR_OUT_OF_MEMORY);
-
-      rv = t->mTimer->InitWithFuncCallback(TimerCallback, t, delay,
-                                           nsITimer::TYPE_ONE_SHOT);
-      if (NS_FAILED(rv)) {
-        t->mTimer = nsnull;
-        return rv;
-      }
-
-      
-      t->AddRef();
+    rv = t->mTimer->InitWithFuncCallback(TimerCallback, t, delay,
+                                         nsITimer::TYPE_ONE_SHOT);
+    if (NS_FAILED(rv)) {
+      t->mTimer = nsnull;
+      return rv;
     }
+
+    
+    t->AddRef();
   }
 
   
@@ -8546,24 +8536,17 @@ nsGlobalWindow::ResumeTimeouts(PRBool aThawChildren)
 
         NS_ASSERTION(win->IsOuterWindow(), "Expected outer window");
         nsGlobalWindow* inner = win->GetCurrentInnerWindowInternal();
-        if (inner && aThawChildren) {
+        if (inner) {
           inner->Thaw();
         }
 
-        rv = win->ResumeTimeouts(aThawChildren);
+        rv = win->ResumeTimeouts();
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
   }
 
   return NS_OK;
-}
-
-PRUint32
-nsGlobalWindow::TimeoutSuspendCount()
-{
-  FORWARD_TO_INNER(TimeoutSuspendCount, (), 0);
-  return mTimeoutsSuspendDepth;
 }
 
 NS_IMETHODIMP
