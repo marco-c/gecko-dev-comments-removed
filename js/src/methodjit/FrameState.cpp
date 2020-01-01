@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Brendan Eich <brendan@mozilla.org>
+ *
+ * Contributor(s):
+ *   David Anderson <danderson@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 #include "jscntxt.h"
 #include "FrameState.h"
 #include "FrameState-inl.h"
@@ -43,7 +43,7 @@
 using namespace js;
 using namespace js::mjit;
 
-
+/* Because of Value alignment */
 JS_STATIC_ASSERT(sizeof(FrameEntry) % 8 == 0);
 
 FrameState::FrameState(JSContext *cx, JSScript *script, Assembler &masm)
@@ -71,10 +71,10 @@ FrameState::init(uint32 nargs)
     if ((eval = script->usesEval))
         nlocals = 0;
 
-    uint8 *cursor = (uint8 *)cx->malloc(sizeof(FrameEntry) * nslots +       
-                                        sizeof(FrameEntry *) * nslots +     
-                                        sizeof(FrameEntry *) * nslots +     
-                                        sizeof(uint32) * nlocals            
+    uint8 *cursor = (uint8 *)cx->malloc(sizeof(FrameEntry) * nslots +       // entries[]
+                                        sizeof(FrameEntry *) * nslots +     // base[]
+                                        sizeof(FrameEntry *) * nslots +     // tracker.entries[]
+                                        sizeof(uint32) * nlocals            // escaping[]
                                         );
     if (!cursor)
         return false;
@@ -147,16 +147,16 @@ FrameState::evictSomeReg(uint32 mask)
     for (uint32 i = 0; i < JSC::MacroAssembler::TotalRegisters; i++) {
         RegisterID reg = RegisterID(i);
 
-        
+        /* Register is not allocatable, don't bother.  */
         if (!(Registers::maskReg(reg) & mask))
             continue;
 
-        
+        /* Register is not owned by the FrameState. */
         FrameEntry *fe = regstate[i].fe;
         if (!fe)
             continue;
 
-        
+        /* Try to find a candidate... that doesn't need spilling. */
 #ifdef DEBUG
         fallbackSet = true;
 #endif
@@ -209,16 +209,16 @@ FrameState::storeTo(FrameEntry *fe, Address address, bool popped)
     if (fe->isCopy())
         fe = fe->copyOf();
 
-    
+    /* Cannot clobber the address's register. */
     JS_ASSERT(!freeRegs.hasReg(address.base));
 
     if (fe->data.inRegister()) {
-        masm.storeData32(fe->data.reg(), address);
+        masm.storePayload(fe->data.reg(), address);
     } else {
         JS_ASSERT(fe->data.inMemory());
         RegisterID reg = popped ? allocReg() : allocReg(fe, RematInfo::DATA);
-        masm.loadData32(addressOf(fe), reg);
-        masm.storeData32(reg, address);
+        masm.loadPayload(addressOf(fe), reg);
+        masm.storePayload(reg, address);
         if (popped)
             freeReg(reg);
         else
@@ -226,7 +226,7 @@ FrameState::storeTo(FrameEntry *fe, Address address, bool popped)
     }
 
     if (fe->isTypeKnown()) {
-        masm.storeTypeTag(ImmTag(fe->getKnownTag()), address);
+        masm.storeTypeTag(ImmType(fe->getKnownType()), address);
     } else if (fe->type.inRegister()) {
         masm.storeTypeTag(fe->type.reg(), address);
     } else {
@@ -278,7 +278,7 @@ void
 FrameState::syncFancy(Assembler &masm, Registers avail, uint32 resumeAt,
                       FrameEntry *bottom) const
 {
-    
+    /* :TODO: can be resumeAt? */
     reifier.reset(&masm, avail, tracker.nentries, bottom);
 
     FrameEntry *tos = tosFe();
@@ -294,10 +294,10 @@ FrameState::syncFancy(Assembler &masm, Registers avail, uint32 resumeAt,
 void
 FrameState::sync(Assembler &masm, Uses uses) const
 {
-    
-
-
-
+    /*
+     * Keep track of free registers using a bitmask. If we have to drop into
+     * syncFancy(), then this mask will help avoid eviction.
+     */
     Registers avail(freeRegs);
     Registers temp(Registers::TempRegs);
 
@@ -315,13 +315,13 @@ FrameState::sync(Assembler &masm, Uses uses) const
         Address address = addressOf(fe);
 
         if (!fe->isCopy()) {
-            
+            /* Keep track of registers that can be clobbered. */
             if (fe->data.inRegister())
                 avail.putReg(fe->data.reg());
             if (fe->type.inRegister())
                 avail.putReg(fe->type.reg());
 
-            
+            /* Sync. */
             if (!fe->data.synced() && (fe->data.inRegister() || fe >= bottom)) {
                 syncData(fe, address, masm);
                 if (fe->isConstant())
@@ -334,10 +334,10 @@ FrameState::sync(Assembler &masm, Uses uses) const
             JS_ASSERT(backing != fe);
             JS_ASSERT(!backing->isConstant() && !fe->isConstant());
 
-            
-
-
-
+            /*
+             * If the copy is backed by something not in a register, fall back
+             * to a slower sync algorithm.
+             */
             if ((!fe->type.synced() && !fe->type.inRegister()) ||
                 (!fe->data.synced() && !fe->data.inRegister())) {
                 syncFancy(masm, avail, i, bottom);
@@ -345,17 +345,17 @@ FrameState::sync(Assembler &masm, Uses uses) const
             }
 
             if (!fe->type.synced()) {
-                
+                /* :TODO: we can do better, the type is learned for all copies. */
                 if (fe->isTypeKnown()) {
-                    
-                    masm.storeTypeTag(ImmTag(fe->getKnownTag()), address);
+                    //JS_ASSERT(fe->getTypeTag() == backing->getTypeTag());
+                    masm.storeTypeTag(ImmType(fe->getKnownType()), address);
                 } else {
                     masm.storeTypeTag(backing->type.reg(), address);
                 }
             }
 
             if (!fe->data.synced())
-                masm.storeData32(backing->data.reg(), address);
+                masm.storePayload(backing->data.reg(), address);
         }
     }
 }
@@ -363,7 +363,7 @@ FrameState::sync(Assembler &masm, Uses uses) const
 void
 FrameState::syncAndKill(Registers kill, Uses uses)
 {
-    
+    /* Backwards, so we can allocate registers to backing slots better. */
     FrameEntry *tos = tosFe();
     FrameEntry *bottom = tos - uses.nuses;
 
@@ -429,7 +429,7 @@ FrameState::syncAllRegs(uint32 mask)
 {
     Registers regs(mask);
 
-    
+    /* Same as syncAndKill(), minus the killing. */
     FrameEntry *tos = tosFe();
     for (uint32 i = tracker.nentries - 1; i < tracker.nentries; i--) {
         FrameEntry *fe = tracker[i];
@@ -472,7 +472,7 @@ FrameState::merge(Assembler &masm, Changes changes) const
         if (fe >= tos)
             continue;
 
-        
+        /* Copies do not have registers. */
         if (fe->isCopy()) {
             JS_ASSERT(!fe->data.inRegister());
             JS_ASSERT(!fe->type.inRegister());
@@ -480,7 +480,7 @@ FrameState::merge(Assembler &masm, Changes changes) const
         }
 
         if (fe->data.inRegister())
-            masm.loadData32(addressOf(fe), fe->data.reg());
+            masm.loadPayload(addressOf(fe), fe->data.reg());
         if (fe->type.inRegister())
             masm.loadTypeTag(addressOf(fe), fe->type.reg());
     }
@@ -520,7 +520,7 @@ FrameState::copyDataIntoReg(Assembler &masm, FrameEntry *fe)
     if (!freeRegs.empty())
         masm.move(tempRegForData(fe), reg);
     else
-        masm.loadData32(addressOf(fe),reg);
+        masm.loadPayload(addressOf(fe),reg);
 
     return reg;
 }
@@ -589,7 +589,7 @@ FrameState::copyEntryIntoFPReg(Assembler &masm, FrameEntry *fe, FPRegisterID fpr
     if (fe->isCopy())
         fe = fe->copyOf();
 
-    
+    /* The entry must be synced to memory. */
     if (fe->data.isConstant()) {
         if (!fe->data.synced())
             syncData(fe, addressOf(fe), masm);
@@ -613,7 +613,7 @@ FrameState::ownRegForType(FrameEntry *fe)
 
     RegisterID reg;
     if (fe->isCopy()) {
-        
+        /* For now, just do an extra move. The reg must be mutable. */
         FrameEntry *backing = fe->copyOf();
         if (!backing->type.inRegister()) {
             JS_ASSERT(backing->type.inMemory());
@@ -621,7 +621,7 @@ FrameState::ownRegForType(FrameEntry *fe)
         }
 
         if (freeRegs.empty()) {
-            
+            /* For now... just steal the register that already exists. */
             if (!backing->type.synced())
                 syncType(backing, addressOf(backing), masm);
             reg = backing->type.reg();
@@ -636,7 +636,7 @@ FrameState::ownRegForType(FrameEntry *fe)
 
     if (fe->type.inRegister()) {
         reg = fe->type.reg();
-        
+        /* Remove ownership of this register. */
         JS_ASSERT(regstate[reg].fe == fe);
         JS_ASSERT(regstate[reg].type == RematInfo::TYPE);
         regstate[reg].fe = NULL;
@@ -656,7 +656,7 @@ FrameState::ownRegForData(FrameEntry *fe)
 
     RegisterID reg;
     if (fe->isCopy()) {
-        
+        /* For now, just do an extra move. The reg must be mutable. */
         FrameEntry *backing = fe->copyOf();
         if (!backing->data.inRegister()) {
             JS_ASSERT(backing->data.inMemory());
@@ -664,7 +664,7 @@ FrameState::ownRegForData(FrameEntry *fe)
         }
 
         if (freeRegs.empty()) {
-            
+            /* For now... just steal the register that already exists. */
             if (!backing->data.synced())
                 syncData(backing, addressOf(backing), masm);
             reg = backing->data.reg();
@@ -681,14 +681,14 @@ FrameState::ownRegForData(FrameEntry *fe)
         uncopy(fe);
         if (fe->isCopied()) {
             reg = allocReg();
-            masm.loadData32(addressOf(fe), reg);
+            masm.loadPayload(addressOf(fe), reg);
             return reg;
         }
     }
     
     if (fe->data.inRegister()) {
         reg = fe->data.reg();
-        
+        /* Remove ownership of this register. */
         JS_ASSERT(regstate[reg].fe == fe);
         JS_ASSERT(regstate[reg].type == RematInfo::DATA);
         regstate[reg].fe = NULL;
@@ -696,7 +696,7 @@ FrameState::ownRegForData(FrameEntry *fe)
     } else {
         JS_ASSERT(fe->data.inMemory());
         reg = allocReg();
-        masm.loadData32(addressOf(fe), reg);
+        masm.loadPayload(addressOf(fe), reg);
     }
     return reg;
 }
@@ -723,7 +723,7 @@ FrameState::pushCopyOf(uint32 index)
             backing->setCopied();
         }
 
-        
+        /* Maintain tracker ordering guarantees for copies. */
         JS_ASSERT(backing->isCopied());
         if (fe->trackerIndex() < backing->trackerIndex())
             swapInTracker(fe, backing);
@@ -735,7 +735,7 @@ FrameState::uncopy(FrameEntry *original)
 {
     JS_ASSERT(original->isCopied());
 
-    
+    /* Find the first copy. */
     uint32 firstCopy = InvalidIndex;
     FrameEntry *tos = tosFe();
     for (uint32 i = 0; i < tracker.nentries; i++) {
@@ -753,7 +753,7 @@ FrameState::uncopy(FrameEntry *original)
         return;
     }
 
-    
+    /* Mark all extra copies as copies of the new backing index. */
     FrameEntry *fe = tracker[firstCopy];
 
     fe->setCopyOf(NULL);
@@ -762,7 +762,7 @@ FrameState::uncopy(FrameEntry *original)
         if (other >= tos)
             continue;
 
-        
+        /* The original must be tracked before copies. */
         JS_ASSERT(other != original);
 
         if (!other->isCopy() || other->copyOf() != original)
@@ -772,17 +772,17 @@ FrameState::uncopy(FrameEntry *original)
         fe->setCopied();
     }
 
-    
-
-
-
-
+    /*
+     * Switch the new backing store to the old backing store. During
+     * this process we also necessarily make sure the copy can be
+     * synced.
+     */
     if (!original->isTypeKnown()) {
-        
-
-
-
-
+        /*
+         * If the copy is unsynced, and the original is in memory,
+         * give the original a register. We do this below too; it's
+         * okay if it's spilled.
+         */
         if (original->type.inMemory() && !fe->type.synced())
             tempRegForType(original);
         fe->type.inherit(original->type);
@@ -816,14 +816,14 @@ FrameState::storeLocal(uint32 n, bool popGuaranteed, bool typeChange)
 
     bool wasSynced = localFe->type.synced();
 
-    
+    /* Detect something like (x = x) which is a no-op. */
     FrameEntry *top = peek(-1);
     if (top->isCopy() && top->copyOf() == localFe) {
         JS_ASSERT(localFe->isCopied());
         return;
     }
 
-    
+    /* Completely invalidate the local variable. */
     if (localFe->isCopied()) {
         uncopy(localFe);
         if (!localFe->isCopied())
@@ -834,7 +834,7 @@ FrameState::storeLocal(uint32 n, bool popGuaranteed, bool typeChange)
 
     localFe->resetUnsynced();
 
-    
+    /* Constants are easy to propagate. */
     if (top->isConstant()) {
         localFe->setCopyOf(NULL);
         localFe->setNotCopied();
@@ -842,18 +842,18 @@ FrameState::storeLocal(uint32 n, bool popGuaranteed, bool typeChange)
         return;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * When dealing with copies, there are two important invariants:
+     *
+     * 1) The backing store precedes all copies in the tracker.
+     * 2) The backing store of a local is never a stack slot, UNLESS the local
+     *    variable itself is a stack slot (blocks) that precesed the stack
+     *    slot.
+     *
+     * If the top is a copy, and the second condition holds true, the local
+     * can be rewritten as a copy of the original backing slot. If the first
+     * condition does not hold, force it to hold by swapping in-place.
+     */
     FrameEntry *backing = top;
     if (top->isCopy()) {
         backing = top->copyOf();
@@ -862,7 +862,7 @@ FrameState::storeLocal(uint32 n, bool popGuaranteed, bool typeChange)
         uint32 backingIndex = indexOfFe(backing);
         uint32 tol = uint32(spBase - base);
         if (backingIndex < tol || backingIndex < localIndex(n)) {
-            
+            /* local.idx < backing.idx means local cannot be a copy yet */
             if (localFe->trackerIndex() < backing->trackerIndex())
                 swapInTracker(backing, localFe);
             localFe->setNotCopied();
@@ -875,24 +875,24 @@ FrameState::storeLocal(uint32 n, bool popGuaranteed, bool typeChange)
             return;
         }
 
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        /*
+         * If control flow lands here, then there was a bytecode sequence like
+         *
+         *  ENTERBLOCK 2
+         *  GETLOCAL 1
+         *  SETLOCAL 0
+         *
+         * The problem is slot N can't be backed by M if M could be popped
+         * before N. We want a guarantee that when we pop M, even if it was
+         * copied, it has no outstanding copies.
+         * 
+         * Because of |let| expressions, it's kind of hard to really know
+         * whether a region on the stack will be popped all at once. Bleh!
+         *
+         * This should be rare except in browser code (and maybe even then),
+         * but even so there's a quick workaround. We take all copies of the
+         * backing fe, and redirect them to be copies of the destination.
+         */
         FrameEntry *tos = tosFe();
         for (uint32 i = backing->trackerIndex() + 1; i < tracker.nentries; i++) {
             FrameEntry *fe = tracker[i];
@@ -904,18 +904,18 @@ FrameState::storeLocal(uint32 n, bool popGuaranteed, bool typeChange)
     }
     backing->setNotCopied();
     
-    
-
-
-
-
+    /*
+     * This is valid from the top->isCopy() path because we're guaranteed a
+     * consistent ordering - all copies of |backing| are tracked after 
+     * |backing|. Transitively, only one swap is needed.
+     */
     if (backing->trackerIndex() < localFe->trackerIndex())
         swapInTracker(backing, localFe);
 
-    
-
-
-
+    /*
+     * Move the backing store down - we spill registers here, but we could be
+     * smarter and re-use the type reg.
+     */
     RegisterID reg = tempRegForData(backing);
     localFe->data.setRegister(reg);
     moveOwnership(reg, localFe);
@@ -930,7 +930,7 @@ FrameState::storeLocal(uint32 n, bool popGuaranteed, bool typeChange)
         }
     } else {
         if (!wasSynced)
-            masm.storeTypeTag(ImmTag(backing->getKnownTag()), addressOf(localFe));
+            masm.storeTypeTag(ImmType(backing->getKnownType()), addressOf(localFe));
         localFe->type.setMemory();
     }
 
