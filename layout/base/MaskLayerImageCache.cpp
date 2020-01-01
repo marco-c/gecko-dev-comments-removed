@@ -4,10 +4,19 @@
 
 
 #include "MaskLayerImageCache.h"
+#include "ImageContainer.h"
 
 using namespace mozilla::layers;
 
 namespace mozilla {
+
+MaskLayerImageCache::MaskLayerImageCache()
+{
+  mMaskImageContainers.Init();
+}
+MaskLayerImageCache::~MaskLayerImageCache()
+{}
+
 
  PLDHashOperator
 MaskLayerImageCache::SweepFunc(MaskLayerImageEntry* aEntry,

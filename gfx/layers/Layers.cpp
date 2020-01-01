@@ -7,9 +7,9 @@
 
 #include "mozilla/layers/PLayers.h"
 #include "mozilla/layers/ShadowLayers.h"
-#include "mozilla/layers/ImageBridgeChild.h" 
 
 #include "ImageLayers.h"
+#include "ImageContainer.h"
 #include "Layers.h"
 #include "gfxPlatform.h"
 #include "ReadbackLayer.h"
