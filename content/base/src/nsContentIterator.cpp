@@ -569,7 +569,7 @@ nsContentIterator::GetDeepFirstChild(nsINode *aRoot,
   }
 
   nsINode *n = aRoot;
-  nsINode *nChild = n->GetChildAt(0);
+  nsINode *nChild = n->GetFirstChild();
 
   while (nChild)
   {
@@ -579,7 +579,7 @@ nsContentIterator::GetDeepFirstChild(nsINode *aRoot,
       aIndexes->AppendElement(0);
     }
     n = nChild;
-    nChild = n->GetChildAt(0);
+    nChild = n->GetFirstChild();
   }
 
   return n;
@@ -747,7 +747,7 @@ nsContentIterator::NextNode(nsINode *aNode, nsTArray<PRInt32> *aIndexes)
     
     if (NodeHasChildren(n))
     {
-      nsINode *nFirstChild = n->GetChildAt(0);
+      nsINode *nFirstChild = n->GetFirstChild();
 
       
       if (aIndexes)
@@ -889,7 +889,8 @@ nsContentIterator::PrevNode(nsINode *aNode, nsTArray<PRInt32> *aIndexes)
     
     if (numChildren)
     {
-      nsINode *nLastChild = n->GetChildAt(--numChildren);
+      nsINode *nLastChild = n->GetLastChild();
+      numChildren--;
 
       
       if (aIndexes)
@@ -1300,7 +1301,7 @@ nsresult nsContentSubtreeIterator::Init(nsIDOMRange* aRange)
   
   if (startParent == endParent)
   {
-    nsINode* nChild = nStartP->GetChildAt(0);
+    nsINode* nChild = nStartP->GetFirstChild();
   
     if (!nChild) 
     {
@@ -1490,7 +1491,7 @@ nsContentSubtreeIterator::Next()
   {
     
     
-    nextNode = nextNode->GetChildAt(0);
+    nextNode = nextNode->GetFirstChild();
     NS_ASSERTION(nextNode, "Iterator error, expected a child node!");
 
     
