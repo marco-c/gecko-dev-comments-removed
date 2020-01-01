@@ -74,6 +74,18 @@ public:
     virtual ~nsSimpleURI();
 
 protected:
+    
+    enum RefHandlingEnum {
+        eIgnoreRef,
+        eHonorRef
+    };
+
+    
+    
+    virtual nsresult EqualsInternal(nsIURI* other,
+                                    RefHandlingEnum refHandlingMode,
+                                    PRBool* result);
+
     virtual nsSimpleURI* StartClone();
 
     nsCString mScheme;

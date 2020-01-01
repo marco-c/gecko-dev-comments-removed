@@ -94,6 +94,17 @@ public:
     nsresult SetSpecWithBase(const nsACString& aSpec, nsIURI* aBaseURL);
 
 protected:
+    
+    enum RefHandlingEnum {
+        eIgnoreRef,
+        eHonorRef
+    };
+
+    
+    virtual nsresult EqualsInternal(nsIURI* other,
+                                    RefHandlingEnum refHandlingMode,
+                                    PRBool* result);
+
     nsCOMPtr<nsIURI> mJARFile;
     
     
