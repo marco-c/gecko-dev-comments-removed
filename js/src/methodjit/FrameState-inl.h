@@ -1,41 +1,41 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
- * May 28, 2008.
- *
- * The Initial Developer of the Original Code is
- *   Brendan Eich <brendan@mozilla.org>
- *
- * Contributor(s):
- *   David Anderson <danderson@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if !defined jsjaeger_framestate_inl_h__ && defined JS_METHODJIT
 #define jsjaeger_framestate_inl_h__
 
@@ -248,10 +248,10 @@ FrameState::push(Address address)
 {
     FrameEntry *fe = rawPush();
 
-    /* :XXX: X64 */
+    
     fe->resetUnsynced();
 
-    /* Prevent us from clobbering this reg. */
+    
     bool free = freeRegs.hasReg(address.base);
     if (free)
         freeRegs.takeReg(address.base);
@@ -260,7 +260,7 @@ FrameState::push(Address address)
     masm.loadPayload(address, reg);
     fe->data.setRegister(reg);
 
-    /* Now it's safe to grab this register again. */
+    
     if (free)
         freeRegs.putReg(address.base);
 
@@ -306,20 +306,20 @@ FrameState::pushUntypedPayload(JSValueType type, RegisterID payload,
 
     fe->clear();
 
-    /*
-     * This is a hack, but it's safe. Callers of pushUntypedPayload use this
-     * because they type checked the fast-path for the given type. It's even
-     * valid to re-use the old |fe| to detect synced-ness, because the |fe|
-     * is not mutated in between pop() and now. And this is always used when
-     * consuming values, so the value has been properly initialized.
-     */
+    
+
+
+
+
+
+
     if (popGuaranteed) {
         fe->setType(type);
     } else {
         if (!fastType || !fe->type.synced())
             masm.storeTypeTag(ImmType(type), addressOf(fe));
 
-        /* The forceful type sync will assert otherwise. */
+        
 #ifdef DEBUG
         fe->type.unsync();
 #endif
@@ -330,23 +330,6 @@ FrameState::pushUntypedPayload(JSValueType type, RegisterID payload,
     fe->setCopyOf(NULL);
     fe->data.setRegister(payload);
     regstate[payload] = RegisterState(fe, RematInfo::DATA);
-}
-
-inline JSC::MacroAssembler::RegisterID
-FrameState::predictRegForType(FrameEntry *fe)
-{
-    JS_ASSERT(!fe->type.isConstant());
-    if (fe->isCopy())
-        fe = fe->copyOf();
-
-    if (fe->type.inRegister())
-        return fe->type.reg();
-
-    /* :XXX: X64 */
-
-    RegisterID reg = allocReg(fe, RematInfo::TYPE);
-    fe->type.setRegister(reg);
-    return reg;
 }
 
 inline JSC::MacroAssembler::RegisterID
@@ -361,7 +344,7 @@ FrameState::tempRegForType(FrameEntry *fe, RegisterID fallback)
     if (fe->type.inRegister())
         return fe->type.reg();
 
-    /* :XXX: X86 */
+    
 
     masm.loadTypeTag(addressOf(fe), fallback);
     return fallback;
@@ -379,7 +362,7 @@ FrameState::tempRegForType(FrameEntry *fe)
     if (fe->type.inRegister())
         return fe->type.reg();
 
-    /* :XXX: X86 */
+    
 
     RegisterID reg = allocReg(fe, RematInfo::TYPE);
     masm.loadTypeTag(addressOf(fe), reg);
@@ -417,7 +400,7 @@ FrameState::tempRegForData(FrameEntry *fe, RegisterID reg)
         if (old == reg)
             return reg;
 
-        /* Keep the old register pinned. */
+        
         regstate[old].fe = NULL;
         if (!freeRegs.hasReg(reg))
             evictReg(reg);
@@ -660,7 +643,7 @@ FrameState::pushLocal(uint32 n)
         pushCopyOf(indexOfFe(getLocal(n)));
     } else {
         if (FrameEntry *fe = base[localIndex(n)]) {
-            /* :TODO: we could do better here. */
+            
             if (!fe->type.synced())
                 syncType(fe, addressOf(fe), masm);
             if (!fe->data.synced())
@@ -679,7 +662,7 @@ FrameState::leaveBlock(uint32 n)
 inline void
 FrameState::enterBlock(uint32 n)
 {
-    /* expect that tracker has 0 entries, for now. */
+    
     JS_ASSERT(!tracker.nentries);
     JS_ASSERT(uint32(sp + n - locals) <= script->nslots);
 
@@ -741,8 +724,39 @@ FrameState::giveOwnRegs(FrameEntry *fe)
     }
 }
 
-} /* namspace mjit */
-} /* namspace js */
+inline void
+FrameState::loadDouble(FrameEntry *fe, FPRegisterID fpReg, Assembler &masm) const
+{
+    if (fe->type.synced() && fe->data.synced()) {
+        masm.loadDouble(addressOf(fe), fpReg);
+        return;
+    }
 
-#endif /* include */
+    if (fe->isCopy()) {
+        FrameEntry *backing = fe->copyOf();
+        if (backing->type.synced() && backing->data.synced()) {
+            masm.loadDouble(addressOf(backing), fpReg);
+            return;
+        }
+        fe = backing;
+    }
+
+    Address address = addressOf(fe);
+    do {
+        if (!fe->data.synced()) {
+            syncData(fe, address, masm);
+            if (fe->isConstant())
+                break;
+        }
+        if (!fe->type.synced())
+            syncType(fe, address, masm);
+    } while (0);
+
+    masm.loadDouble(address, fpReg);
+}
+
+} 
+} 
+
+#endif 
 
