@@ -1,15 +1,15 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Hal.h"
-#include "mozilla/ClearOnShutdown.h"
+
+
+
+
 #include "DateCacheCleaner.h"
 
-#include "nsContentUtils.h"
-#include "nsCxPusher.h"
+#include "jsapi.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Hal.h"
 #include "mozilla/StaticPtr.h"
+#include "nsCxPusher.h"
 
 using namespace mozilla::hal;
 
@@ -48,6 +48,6 @@ InitializeDateCacheCleaner()
   }
 }
 
-} // namespace time
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
