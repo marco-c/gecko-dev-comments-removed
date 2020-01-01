@@ -1,42 +1,42 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Mats Palmgren <mats.palmgren@bredband.net>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* base class for DOM objects for element.style and cssStyleRule.style */
 
 #include "nsDOMCSSDeclaration.h"
 #include "nsIDOMCSSRule.h"
@@ -62,14 +62,15 @@ nsDOMCSSDeclaration::~nsDOMCSSDeclaration()
 {
 }
 
-
-
-NS_INTERFACE_MAP_BEGIN(nsDOMCSSDeclaration)
-  NS_INTERFACE_MAP_ENTRY(nsICSSDeclaration)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMCSSStyleDeclaration)
+NS_INTERFACE_TABLE_HEAD(nsDOMCSSDeclaration)
+  NS_OFFSET_AND_INTERFACE_TABLE_BEGIN(nsDOMCSSDeclaration)
+    NS_INTERFACE_TABLE_ENTRY(nsDOMCSSDeclaration, nsICSSDeclaration)
+    NS_INTERFACE_TABLE_ENTRY(nsDOMCSSDeclaration, nsIDOMCSSStyleDeclaration)
+    NS_INTERFACE_TABLE_ENTRY(nsDOMCSSDeclaration, nsISupports)
+  NS_OFFSET_AND_INTERFACE_TABLE_END
+  NS_OFFSET_AND_INTERFACE_TABLE_TO_MAP_SEGUE
   NS_INTERFACE_MAP_ENTRY_AGGREGATED(nsIDOMCSS2Properties, &mInner)
   NS_INTERFACE_MAP_ENTRY_AGGREGATED(nsIDOMNSCSS2Properties, &mInner)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMCSSStyleDeclaration)
   NS_INTERFACE_MAP_ENTRY_CONTENT_CLASSINFO(CSSStyleDeclaration)
 NS_INTERFACE_MAP_END
 
@@ -96,8 +97,8 @@ nsDOMCSSDeclaration::SetPropertyValue(const nsCSSProperty aPropID,
                                       const nsAString& aValue)
 {
   if (aValue.IsEmpty()) {
-    
-    
+    // If the new value of the property is an empty string we remove the
+    // property.
     return RemoveProperty(aPropID);
   }
 
@@ -146,7 +147,7 @@ nsDOMCSSDeclaration::GetPropertyCSSValue(const nsAString& aPropertyName,
 {
   NS_ENSURE_ARG_POINTER(aReturn);
 
-  
+  // We don't support CSSValue yet so we'll just return null...
   *aReturn = nsnull;
 
   return NS_OK;
@@ -199,15 +200,15 @@ nsDOMCSSDeclaration::SetProperty(const nsAString& aPropertyName,
                                  const nsAString& aValue, 
                                  const nsAString& aPriority)
 {
-  
+  // In the common (and fast) cases we can use the property id
   nsCSSProperty propID = nsCSSProps::LookupProperty(aPropertyName);
   if (propID == eCSSProperty_UNKNOWN) {
     return NS_OK;
   }
   
   if (aValue.IsEmpty()) {
-    
-    
+    // If the new value of the property is an empty string we remove the
+    // property.
     return RemoveProperty(propID);
   }
 
@@ -215,10 +216,10 @@ nsDOMCSSDeclaration::SetProperty(const nsAString& aPropertyName,
     return ParsePropertyValue(propID, aValue);
   }
 
-  
-  
-  
-  
+  // ParsePropertyValue does not handle priorities correctly -- it's
+  // optimized for speed.  And the priority is not part of the
+  // property value anyway.... So we have to use the full-blown
+  // ParseDeclaration()
   return ParseDeclaration(aPropertyName + NS_LITERAL_STRING(":") +
                           aValue + NS_LITERAL_STRING("!") + aPriority,
                           PR_TRUE, PR_FALSE);
@@ -337,16 +338,16 @@ nsDOMCSSDeclaration::RemoveProperty(const nsCSSProperty aPropID)
   if (NS_SUCCEEDED(rv)) {
     rv = DeclarationChanged();
   } else {
-    
-    
-    
+    // RemoveProperty used to throw in all sorts of situations -- e.g.
+    // if the property was a shorthand one.  Do not propagate its return
+    // value to callers.  (XXX or should we propagate it again now?)
     rv = NS_OK;
   }
 
   return rv;
 }
 
-
+//////////////////////////////////////////////////////////////////////////////
 
 CSS2PropertiesTearoff::CSS2PropertiesTearoff(nsICSSDeclaration *aOuter)
   : mOuter(aOuter)
@@ -376,8 +377,8 @@ CSS2PropertiesTearoff::QueryInterface(REFNSIID aIID, void** aInstancePtr)
   return mOuter->QueryInterface(aIID, aInstancePtr);
 }
 
-
-
+// nsIDOMCSS2Properties
+// nsIDOMNSCSS2Properties
 
 #define CSS_PROP(name_, id_, method_, flags_, datastruct_, member_, type_, kwtable_) \
   NS_IMETHODIMP                                                              \
@@ -397,7 +398,7 @@ CSS2PropertiesTearoff::QueryInterface(REFNSIID aIID, void** aInstancePtr)
   CSS_PROP(name_, id_, method_, flags_, X, X, X, X)
 #include "nsCSSPropList.h"
 
-
+// Aliases
 CSS_PROP(X, opacity, MozOpacity, 0, X, X, X, X)
 CSS_PROP(X, outline, MozOutline, 0, X, X, X, X)
 CSS_PROP(X, outline_color, MozOutlineColor, 0, X, X, X, X)
