@@ -121,8 +121,6 @@
 #include "nsXPCOM.h"
 #include "nsISupportsPrimitives.h"
 #include "nsILayoutHistoryState.h"
-#include "nsIScrollPositionListener.h"
-#include "nsICompositeListener.h"
 #include "nsILineIterator.h" 
 #include "nsTimer.h"
 #include "nsWeakPtr.h"
