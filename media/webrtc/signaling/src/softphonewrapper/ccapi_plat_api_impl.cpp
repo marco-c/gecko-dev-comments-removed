@@ -2,6 +2,8 @@
 
 
 
+#include "CSFLog.h"
+
 #include "CC_Common.h"
 #include "csf_common.h"
 #ifdef WIN32
@@ -18,7 +20,7 @@
 #endif
 
 #include "cpr_string.h"
-#include "CSFLog.h"
+
 static const char* logTag = "sipcc";
 
 extern "C"
