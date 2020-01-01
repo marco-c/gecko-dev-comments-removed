@@ -381,7 +381,7 @@ IonRuntime::generateArgumentsRectifier(JSContext *cx, ExecutionMode mode, void *
 
     
     masm.push(rdx); 
-    masm.push(rax); 
+    masm.pushCalleeToken(rax, mode);
     masm.push(r9); 
 
     
