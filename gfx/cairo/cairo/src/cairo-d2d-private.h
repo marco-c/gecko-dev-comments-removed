@@ -49,6 +49,7 @@
 #include "cairo-win32-refptr.h"
 #include "cairo-d2d-private-fx.h"
 #include "cairo-win32.h"
+#include "cairo-list-private.h"
 
 
 struct d2d_clip;
@@ -81,7 +82,11 @@ struct _cairo_d2d_surface {
             textRenderingState(TEXT_RENDERING_UNINITIALIZED)
     {
 	_cairo_clip_init (&this->clip);
+        cairo_list_init(&this->dependent_surfaces);
     }
+    
+    ~_cairo_d2d_surface();
+
 
     cairo_surface_t base;
     
@@ -139,10 +144,22 @@ struct _cairo_d2d_surface {
     RefPtr<ID3D10RenderTargetView> buffer_rt_view;
     RefPtr<ID3D10ShaderResourceView> buffer_sr_view;
 
-
+    
+    
+    
+    
+    
+    
+    cairo_list_t dependent_surfaces;
     
 };
 typedef struct _cairo_d2d_surface cairo_d2d_surface_t;
+
+struct _cairo_d2d_surface_entry
+{
+    cairo_list_t link;
+    cairo_d2d_surface_t *surface;
+};
 
 typedef HRESULT (WINAPI*D2D1CreateFactoryFunc)(
     __in D2D1_FACTORY_TYPE factoryType,
