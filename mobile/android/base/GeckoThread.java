@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko;
 
@@ -86,8 +86,8 @@ public class GeckoThread extends Thread implements GeckoEventListener {
     }
 
     private String initGeckoEnvironment() {
-        
-        
+        // At some point while loading the gecko libs our default locale gets set
+        // so just save it to locale here and reset it as default after the join
         Locale locale = Locale.getDefault();
 
         if (locale.toString().equalsIgnoreCase("zh_hk")) {
@@ -137,16 +137,22 @@ public class GeckoThread extends Thread implements GeckoEventListener {
 
     private String addCustomProfileArg(String args) {
         String profile = "";
+        String guest = "";
         if (GeckoAppShell.getGeckoInterface() != null) {
             if (GeckoAppShell.getGeckoInterface().getProfile().inGuestMode()) {
                 try {
                     profile = " -profile " + GeckoAppShell.getGeckoInterface().getProfile().getDir().getCanonicalPath();
                 } catch (IOException ioe) { Log.e(LOGTAG, "error getting guest profile path", ioe); }
+
+                if (args == null || !args.contains(BrowserApp.GUEST_BROWSING_ARG)) {
+                    guest = " " + BrowserApp.GUEST_BROWSING_ARG;
+                }
             } else if (GeckoApp.sIsUsingCustomProfile) {
                 profile = " -P " + GeckoAppShell.getGeckoInterface().getProfile().getName();
             }
         }
-        return (args != null ? args : "") + profile;
+
+        return (args != null ? args : "") + profile + guest;
     }
 
     @Override
@@ -163,7 +169,7 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         String args = addCustomProfileArg(mArgs);
         String type = getTypeFromAction(mAction);
 
-        
+        // and then fire us up
         Log.i(LOGTAG, "RunGecko - args = " + args);
         GeckoAppShell.runGecko(path, args, mUri, type);
     }
@@ -191,10 +197,10 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         }
     }
 
-    
-
-
-
+    /**
+     * Set the launch state to <code>setState</code> and return true if the current launch
+     * state is <code>checkState</code>; otherwise do nothing and return false.
+     */
     static boolean checkAndSetLaunchState(LaunchState checkState, LaunchState setState) {
         synchronized (sLock) {
             if (sLaunchState != checkState)
