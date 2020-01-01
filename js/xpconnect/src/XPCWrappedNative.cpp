@@ -1685,7 +1685,7 @@ RescueOrphans(XPCCallContext& ccx, JSObject* obj)
     JSObject *parentObj = js::GetObjectParent(obj);
     if (!parentObj)
         return NS_OK; 
-    parentObj = js::UncheckedUnwrap(parentObj,  false);
+    parentObj = js::UnwrapObject(parentObj,  false);
 
     
     js::AutoMaybeTouchDeadZones agc(parentObj);
@@ -1730,7 +1730,7 @@ RescueOrphans(XPCCallContext& ccx, JSObject* obj)
 
     
     if (isWN) {
-        JSObject *realParent = js::UncheckedUnwrap(parentObj);
+        JSObject *realParent = js::UnwrapObject(parentObj);
         XPCWrappedNative *wn =
             static_cast<XPCWrappedNative*>(js::GetObjectPrivate(obj));
         return wn->ReparentWrapperIfFound(ccx, GetObjectScope(parentObj),

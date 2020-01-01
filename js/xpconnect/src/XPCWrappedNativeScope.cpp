@@ -261,7 +261,7 @@ XPCWrappedNativeScope::EnsureXBLScope(JSContext *cx)
     mXBLScope = &v.toObject();
 
     
-    EnsureCompartmentPrivate(js::UncheckedUnwrap(mXBLScope))->scope->mIsXBLScope = true;
+    EnsureCompartmentPrivate(js::UnwrapObject(mXBLScope))->scope->mIsXBLScope = true;
 
     
     return mXBLScope;
@@ -273,7 +273,7 @@ JSObject *GetXBLScope(JSContext *cx, JSObject *contentScope)
     JSAutoCompartment ac(cx, contentScope);
     JSObject *scope = EnsureCompartmentPrivate(contentScope)->scope->EnsureXBLScope(cx);
     NS_ENSURE_TRUE(scope, nullptr); 
-    scope = js::UncheckedUnwrap(scope);
+    scope = js::UnwrapObject(scope);
     xpc_UnmarkGrayObject(scope);
     return scope;
 }

@@ -52,7 +52,7 @@ using namespace XrayUtils;
 XrayType
 GetXrayType(JSObject *obj)
 {
-    obj = js::UncheckedUnwrap(obj,  false);
+    obj = js::UnwrapObject(obj,  false);
     if (mozilla::dom::UseDOMXray(obj))
         return XrayForDOMObject;
 
@@ -131,7 +131,7 @@ class XrayTraits
 {
 public:
     static JSObject* getTargetObject(JSObject *wrapper) {
-        return js::UncheckedUnwrap(wrapper,  false);
+        return js::UnwrapObject(wrapper,  false);
     }
 
     virtual bool resolveOwnProperty(JSContext *cx, Wrapper &jsWrapper,
