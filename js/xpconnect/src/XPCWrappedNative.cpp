@@ -487,8 +487,14 @@ XPCWrappedNative::GetNewOrUsed(XPCCallContext& ccx,
     
     
     
-    JSBool isClassInfo = Interface &&
-                         Interface->GetIID()->Equals(NS_GET_IID(nsIClassInfo));
+    bool iidIsClassInfo = Interface &&
+                          Interface->GetIID()->Equals(NS_GET_IID(nsIClassInfo));
+    PRUint32 classInfoFlags;
+    bool isClassInfoSingleton = helper.GetClassInfo() == helper.Object() &&
+                                NS_SUCCEEDED(helper.GetClassInfo()
+                                                   ->GetFlags(&classInfoFlags)) &&
+                                (classInfoFlags & nsIClassInfo::SINGLETON_CLASSINFO);
+    bool isClassInfo = iidIsClassInfo || isClassInfoSingleton;
 
     nsIClassInfo *info = helper.GetClassInfo();
 
@@ -1652,6 +1658,11 @@ XPCWrappedNative::ReparentWrapperIfFound(XPCCallContext& ccx,
                 return NS_ERROR_FAILURE;
             }
         }
+
+        
+        XPCNativeScriptableInfo* si = wrapper->GetScriptableInfo();
+        if (si->GetFlags().WantPostCreate())
+            (void) si->GetCallback()->PostTransplant(wrapper, ccx, flat);
     }
 
     
