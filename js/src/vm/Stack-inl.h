@@ -1,42 +1,42 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=79 ft=cpp:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is SpiderMonkey JavaScript engine.
- *
- * The Initial Developer of the Original Code is
- * Mozilla Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Luke Wagner <luke@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef Stack_inl_h__
 #define Stack_inl_h__
@@ -44,21 +44,22 @@
 #include "jscntxt.h"
 #include "jscompartment.h"
 
-#include "Stack.h"
+#include "methodjit/MethodJIT.h"
+#include "vm/Stack.h"
 
 #include "jsscriptinlines.h"
-#include "ArgumentsObject-inl.h"
-#include "CallObject-inl.h"
 
-#include "methodjit/MethodJIT.h"
+#include "ArgumentsObject-inl.h"
+#include "ScopeObject-inl.h"
+
 
 namespace js {
 
-/*
- * We cache name lookup results only for the global object or for native
- * non-global objects without prototype or with prototype that never mutates,
- * see bug 462734 and bug 487039.
- */
+
+
+
+
+
 static inline bool
 IsCacheableNonGlobalScope(JSObject *obj)
 {
@@ -84,7 +85,7 @@ StackFrame::varObj()
 {
     JSObject *obj = &scopeChain();
     while (!obj->isVarObj())
-        obj = obj->scopeChain();
+        obj = obj->enclosingScope();
     return *obj;
 }
 
@@ -124,10 +125,10 @@ StackFrame::resetGeneratorPrev(JSContext *cx)
 inline void
 StackFrame::initInlineFrame(JSFunction *fun, StackFrame *prevfp, jsbytecode *prevpc)
 {
-    /*
-     * Note: no need to ensure the scopeChain is instantiated for inline
-     * frames. Functions which use the scope chain are never inlined.
-     */
+    
+
+
+
     flags_ = StackFrame::FUNCTION;
     exec.fun = fun;
     resetInlinePrev(prevfp, prevpc);
@@ -153,7 +154,7 @@ StackFrame::initCallFrame(JSContext *cx, JSFunction &callee,
                             UNDERFLOW_ARGS)) == 0);
     JS_ASSERT(script == callee.toFunction()->script());
 
-    /* Initialize stack frame members. */
+    
     flags_ = FUNCTION | HAS_PREVPC | HAS_SCOPECHAIN | HAS_BLOCKCHAIN | flagsArg;
     exec.fun = &callee;
     args.nactual = nactual;
@@ -214,10 +215,10 @@ StackFrame::initJitFrameCallerHalf(StackFrame *prev, StackFrame::Flags flags, vo
     ncode_ = ncode;
 }
 
-/*
- * The "early prologue" refers to either the fast path or arity check path up
- * to the "late prologue".
- */
+
+
+
+
 inline void
 StackFrame::initJitFrameEarlyPrologue(JSFunction *fun, uint32_t nactual)
 {
@@ -225,10 +226,10 @@ StackFrame::initJitFrameEarlyPrologue(JSFunction *fun, uint32_t nactual)
     args.nactual = nactual;
 }
 
-/*
- * The "late prologue" (in generatePrologue) extends from the join point of the
- * fast path and arity check to where the call object is (possibly) created.
- */
+
+
+
+
 inline bool
 StackFrame::initJitFrameLatePrologue(JSContext *cx, Value **limit)
 {
@@ -262,7 +263,7 @@ StackFrame::canonicalActualArg(uintN i) const
 
 template <class Op>
 inline bool
-StackFrame::forEachCanonicalActualArg(Op op, uintN start /* = 0 */, uintN count /* = uintN(-1) */)
+StackFrame::forEachCanonicalActualArg(Op op, uintN start , uintN count )
 {
     uintN nformal = fun()->nargs;
     JS_ASSERT(start <= nformal);
@@ -324,14 +325,14 @@ struct CopyTo
 inline uintN
 StackFrame::numActualArgs() const
 {
-    /*
-     * args.nactual is always coherent, except for method JIT frames where the
-     * callee does not access its arguments and the number of actual arguments
-     * matches the number of formal arguments. The JIT requires that all frames
-     * which do not have an arguments object and use their arguments have a
-     * coherent args.nactual (even though the below code may not use it), as
-     * JIT code may access the field directly.
-     */
+    
+
+
+
+
+
+
+
     JS_ASSERT(hasArgs());
     if (JS_UNLIKELY(flags_ & (OVERFLOW_ARGS | UNDERFLOW_ARGS)))
         return hasArgsObj() ? argsObj().initialLength() : args.nactual;
@@ -377,10 +378,10 @@ StackFrame::setScopeChainNoCallObj(JSObject &obj)
         if (hasCallObj()) {
             JSObject *pobj = &obj;
             while (pobj && pobj->getPrivate() != this)
-                pobj = pobj->scopeChain();
+                pobj = pobj->enclosingScope();
             JS_ASSERT(pobj);
         } else {
-            for (JSObject *pobj = &obj; pobj->isInternalScope(); pobj = pobj->scopeChain())
+            for (JSObject *pobj = &obj; pobj->isScope(); pobj = pobj->enclosingScope())
                 JS_ASSERT_IF(pobj->isCall(), pobj->getPrivate() != this);
         }
     }
@@ -405,17 +406,17 @@ StackFrame::callObj() const
 
     JSObject *pobj = &scopeChain();
     while (JS_UNLIKELY(!pobj->isCall()))
-        pobj = pobj->scopeChain();
+        pobj = pobj->enclosingScope();
     return pobj->asCall();
 }
 
 inline bool
 StackFrame::maintainNestingState() const
 {
-    /*
-     * Whether to invoke the nesting epilogue/prologue to maintain active
-     * frame counts and check for reentrant outer functions.
-     */
+    
+
+
+
     return isNonEvalFunctionFrame() && !isGeneratorFrame() && script()->nesting();
 }
 
@@ -430,7 +431,7 @@ StackFrame::functionPrologue(JSContext *cx)
         if (!CreateFunCallObject(cx, this))
             return false;
     } else {
-        /* Force instantiation of the scope chain, for JIT frames. */
+        
         scopeChain();
     }
 
@@ -448,7 +449,7 @@ StackFrame::functionEpilogue()
     JS_ASSERT(isNonEvalFunctionFrame());
 
     if (flags_ & (HAS_ARGS_OBJ | HAS_CALL_OBJ)) {
-        /* NB: there is an ordering dependency here. */
+        
         if (hasCallObj())
             js_PutCallObject(this);
         else if (hasArgsObj())
@@ -468,30 +469,30 @@ StackFrame::markFunctionEpilogueDone()
             flags_ &= ~HAS_ARGS_OBJ;
         }
         if (hasCallObj() && !callObj().maybeStackFrame()) {
-            /*
-             * For function frames, the call object may or may not have have an
-             * enclosing DeclEnv object, so we use the callee's parent, since
-             * it was the initial scope chain. For global (strict) eval frames,
-             * there is no callee, but the call object's parent is the initial
-             * scope chain.
-             */
+            
+
+
+
+
+
+
             scopeChain_ = isFunctionFrame()
                           ? callee().toFunction()->environment()
-                          : scopeChain_->internalScopeChain();
+                          : &scopeChain_->asScope().enclosingScope();
             flags_ &= ~HAS_CALL_OBJ;
         }
     }
 
-    /*
-     * For outer/inner function frames, undo the active frame balancing so that
-     * when we redo it in the epilogue we get the right final value. The other
-     * nesting epilogue changes (update active args/vars) are idempotent.
-     */
+    
+
+
+
+
     if (maintainNestingState())
         script()->nesting()->activeFrames++;
 }
 
-/*****************************************************************************/
+
 
 STATIC_POSTCONDITION(!return || ubound(from) >= nvals)
 JS_ALWAYS_INLINE bool
@@ -518,11 +519,11 @@ StackSpace::getStackLimit(JSContext *cx, MaybeReportError report)
            : NULL;
 }
 
-/*****************************************************************************/
+
 
 JS_ALWAYS_INLINE StackFrame *
 ContextStack::getCallFrame(JSContext *cx, MaybeReportError report, const CallArgs &args,
-                           JSFunction *fun, JSScript *script, /*StackFrame::Flags*/ uint32_t *flags) const
+                           JSFunction *fun, JSScript *script,  uint32_t *flags) const
 {
     JS_ASSERT(fun->script() == script);
     uintN nformal = fun->nargs;
@@ -530,10 +531,10 @@ ContextStack::getCallFrame(JSContext *cx, MaybeReportError report, const CallArg
     Value *firstUnused = args.end();
     JS_ASSERT(firstUnused == space().firstUnused());
 
-    /* Include extra space to satisfy the method-jit stackLimit invariant. */
+    
     uintN nvals = VALUES_PER_STACK_FRAME + script->nslots + StackSpace::STACK_JIT_EXTRA;
 
-    /* Maintain layout invariant: &formalArgs[0] == ((Value *)fp) - nformal. */
+    
 
     if (args.length() == nformal) {
         if (!space().ensureSpace(cx, report, firstUnused, nvals))
@@ -567,21 +568,21 @@ ContextStack::pushInlineFrame(JSContext *cx, FrameRegs &regs, const CallArgs &ar
 {
     JS_ASSERT(onTop());
     JS_ASSERT(regs.sp == args.end());
-    /* Cannot assert callee == args.callee() since this is called from LeaveTree. */
+    
     JS_ASSERT(script == callee.toFunction()->script());
 
-    /*StackFrame::Flags*/ uint32_t flags = ToFrameFlags(initial);
+     uint32_t flags = ToFrameFlags(initial);
     StackFrame *fp = getCallFrame(cx, REPORT_ERROR, args, &callee, script, &flags);
     if (!fp)
         return false;
 
-    /* Initialize frame, locals, regs. */
+    
     fp->initCallFrame(cx, callee, script, args.length(), (StackFrame::Flags) flags);
 
-    /*
-     * N.B. regs may differ from the active registers, if the parent is about
-     * to repoint the active registers to regs. See UncachedInlineCall.
-     */
+    
+
+
+
     regs.prepareToRun(*fp, script);
     return true;
 }
@@ -606,12 +607,12 @@ ContextStack::getFixupFrame(JSContext *cx, MaybeReportError report,
     JS_ASSERT(fun->script() == args.callee().toFunction()->script());
     JS_ASSERT(fun->script() == script);
 
-    /*StackFrame::Flags*/ uint32_t flags = ToFrameFlags(initial);
+     uint32_t flags = ToFrameFlags(initial);
     StackFrame *fp = getCallFrame(cx, report, args, fun, script, &flags);
     if (!fp)
         return NULL;
 
-    /* Do not init late prologue or regs; this is done by jit code. */
+    
     fp->initJitFrameCallerHalf(cx->fp(), (StackFrame::Flags) flags, ncode);
     fp->initJitFrameEarlyPrologue(fun, args.length());
 
@@ -638,7 +639,7 @@ ContextStack::popInlineFrame(FrameRegs &regs)
 inline void
 ContextStack::popFrameAfterOverflow()
 {
-    /* Restore the regs to what they were on entry to JSOP_CALL. */
+    
     FrameRegs &regs = seg_->regs();
     StackFrame *fp = regs.fp();
     regs.popFrame(fp->actualArgsEnd());
@@ -686,7 +687,7 @@ ContextStack::currentScriptedScopeChain() const
     return &fp()->scopeChain();
 }
 
-/*****************************************************************************/
+
 
 namespace detail {
 
@@ -703,7 +704,7 @@ struct STATIC_SKIP_INFERENCE CopyNonHoleArgsTo
     }
 };
 
-} /* namespace detail */
+} 
 
 inline bool
 ArgumentsObject::getElement(uint32_t i, Value *vp)
@@ -713,18 +714,18 @@ ArgumentsObject::getElement(uint32_t i, Value *vp)
 
     *vp = element(i);
 
-    /*
-     * If the argument was overwritten, it could be in any object slot, so we
-     * can't optimize.
-     */
+    
+
+
+
     if (vp->isMagic(JS_ARGS_HOLE))
         return false;
 
-    /*
-     * If this arguments object has an associated stack frame, that contains
-     * the canonical argument value.  Note that strict arguments objects do not
-     * alias named arguments and never have a stack frame.
-     */
+    
+
+
+
+
     StackFrame *fp = maybeStackFrame();
     JS_ASSERT_IF(isStrictArguments(), !fp);
     if (fp)
@@ -743,7 +744,7 @@ ArgumentsObject::getElements(uint32_t start, uint32_t count, Value *vp)
 
     StackFrame *fp = maybeStackFrame();
 
-    /* If there's no stack frame for this, argument values are in elements(). */
+    
     if (!fp) {
         const Value *srcbeg = elements() + start;
         const Value *srcend = srcbeg + count;
@@ -756,10 +757,10 @@ ArgumentsObject::getElements(uint32_t start, uint32_t count, Value *vp)
         return true;
     }
 
-    /* Otherwise, element values are on the stack. */
+    
     JS_ASSERT(fp->numActualArgs() <= StackSpace::ARGS_LENGTH_MAX);
     return fp->forEachCanonicalActualArg(detail::CopyNonHoleArgsTo(this, vp), start, count);
 }
 
-} /* namespace js */
-#endif /* Stack_inl_h__ */
+} 
+#endif 

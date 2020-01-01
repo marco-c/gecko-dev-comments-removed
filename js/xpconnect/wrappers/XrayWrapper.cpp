@@ -1,41 +1,41 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99 ft=cpp:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code, released
- * June 24, 2010.
- *
- * The Initial Developer of the Original Code is
- *    The Mozilla Foundation
- *
- * Contributor(s):
- *    Andreas Gal <gal@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "XrayWrapper.h"
 #include "AccessCheck.h"
@@ -55,9 +55,9 @@ namespace xpc {
 
 using namespace js;
 
-static const uint32 JSSLOT_WN = 0;
-static const uint32 JSSLOT_RESOLVING = 1;
-static const uint32 JSSLOT_EXPANDO = 2;
+static const uint32_t JSSLOT_WN = 0;
+static const uint32_t JSSLOT_RESOLVING = 1;
+static const uint32_t JSSLOT_EXPANDO = 2;
 
 class ResolvingId
 {
@@ -167,12 +167,12 @@ EnsureExpandoObject(JSContext *cx, JSObject *holder)
         expando = JS_NewObjectWithGivenProto(cx, nsnull, nsnull, js::GetObjectParent(holder));
         if (!expando)
             return NULL;
-        // Add the expando object to the expando map to keep it alive.
+        
         if (!priv->RegisterExpandoObject(wn, expando)) {
             JS_ReportOutOfMemory(cx);
             return NULL;
         }
-        // Make sure the wn stays alive so it keeps the expando object alive.
+        
         nsRefPtr<nsXPCClassInfo> ci;
         CallQueryInterface(wn->Native(), getter_AddRefs(ci));
         if (ci)
@@ -188,15 +188,15 @@ FindWrapper(JSObject *wrapper)
     while (!js::IsWrapper(wrapper) ||
            !(Wrapper::wrapperHandler(wrapper)->flags() & WrapperFactory::IS_XRAY_WRAPPER_FLAG)) {
         wrapper = js::GetObjectProto(wrapper);
-        // NB: we must eventually hit our wrapper.
+        
     }
 
     return wrapper;
 }
 
-// Some DOM objects have shared properties that don't have an explicit
-// getter/setter and rely on the class getter/setter. We install a
-// class getter/setter on the holder object to trigger them.
+
+
+
 static JSBool
 holder_get(JSContext *cx, JSObject *wrapper, jsid id, jsval *vp)
 {
@@ -256,13 +256,13 @@ ResolveNativeProperty(JSContext *cx, JSObject *wrapper, JSObject *holder, jsid i
     JSObject *wnObject = GetWrappedNativeObjectFromHolder(holder);
     XPCWrappedNative *wn = GetWrappedNative(wnObject);
 
-    // This will do verification and the method lookup for us.
+    
     XPCCallContext ccx(JS_CALLER, cx, wnObject, nsnull, id);
 
-    // There are no native numeric properties, so we can shortcut here. We will not
-    // find the property.
+    
+    
     if (!JSID_IS_ATOM(id)) {
-        /* Not found */
+        
         return true;
     }
 
@@ -272,7 +272,7 @@ ResolveNativeProperty(JSContext *cx, JSObject *wrapper, JSObject *holder, jsid i
         !wn->IsValid()  ||
         !(iface = ccx.GetInterface()) ||
         !(member = ccx.GetMember())) {
-        /* Not found */
+        
         return true;
     }
 
@@ -290,7 +290,7 @@ ResolveNativeProperty(JSContext *cx, JSObject *wrapper, JSObject *holder, jsid i
             return false;
         }
     } else if (member->IsAttribute()) {
-        // This is a getter/setter. Clone a function for it.
+        
         if (!member->NewFunctionObject(ccx, iface, wrapper, &fval)) {
             JS_ReportError(cx, "Failed to clone function object for native getter/setter");
             return false;
@@ -300,20 +300,20 @@ ResolveNativeProperty(JSContext *cx, JSObject *wrapper, JSObject *holder, jsid i
         if (member->IsWritableAttribute())
             desc->attrs |= JSPROP_SETTER;
 
-        // Make the property shared on the holder so no slot is allocated
-        // for it. This avoids keeping garbage alive through that slot.
+        
+        
         desc->attrs |= JSPROP_SHARED;
     } else {
-        // This is a method. Clone a function for it.
+        
         if (!member->NewFunctionObject(ccx, iface, wrapper, &desc->value)) {
             JS_ReportError(cx, "Failed to clone function object for native function");
             return false;
         }
 
-        // Without a wrapper the function would live on the prototype. Since we
-        // don't have one, we have to avoid calling the scriptable helper's
-        // GetProperty method for this property, so stub out the getter and
-        // setter here explicitly.
+        
+        
+        
+        
         desc->getter = JS_PropertyStub;
         desc->setter = JS_StrictPropertyStub;
     }
@@ -326,7 +326,7 @@ ResolveNativeProperty(JSContext *cx, JSObject *wrapper, JSObject *holder, jsid i
     if (desc->attrs & JSPROP_SETTER)
         desc->setter = js::CastAsJSStrictPropertyOp(JSVAL_TO_OBJECT(fval));
 
-    // Define the property.
+    
     return JS_DefinePropertyById(cx, holder, id, desc->value,
                                  desc->getter, desc->setter, desc->attrs);
 }
@@ -524,7 +524,7 @@ class AutoLeaveHelper
 static bool
 IsPrivilegedScript()
 {
-    // Redirect access straight to the wrapper if UniversalXPConnect is enabled.
+    
     nsIScriptSecurityManager *ssm = XPCWrapper::GetSecurityManager();
     if (ssm) {
         bool privileged;
@@ -545,7 +545,7 @@ IsTransparent(JSContext *cx, JSObject *wrapper)
     if (!WrapperFactory::IsPartiallyTransparent(wrapper))
         return false;
 
-    // Redirect access straight to the wrapper if UniversalXPConnect is enabled.
+    
     if (IsPrivilegedScript())
         return true;
 
@@ -570,16 +570,16 @@ bool
 XrayWrapper<Base>::resolveOwnProperty(JSContext *cx, JSObject *wrapper, jsid id, bool set,
                                       PropertyDescriptor *desc)
 {
-    // Partially transparent wrappers (which used to be known as XOWs) don't
-    // have a .wrappedJSObject property.
+    
+    
     XPCJSRuntime* rt = nsXPConnect::GetRuntimeInstance();
     if (!WrapperFactory::IsPartiallyTransparent(wrapper) &&
         (id == rt->GetStringID(XPCJSRuntime::IDX_WRAPPED_JSOBJECT) ||
-         // Check for baseURIObject and nodePrincipal no nodes and
-         // documentURIObject on documents, but only from privileged scripts.
-         // Do the id checks before the QIs and IsPrivilegedScript() checks,
-         // since they're cheaper and will tend to fail most of the time
-         // anyway.
+         
+         
+         
+         
+         
          ((((id == rt->GetStringID(XPCJSRuntime::IDX_BASEURIOBJECT) ||
              id == rt->GetStringID(XPCJSRuntime::IDX_NODEPRINCIPAL)) &&
             Is<nsINode>(wrapper)) ||
@@ -588,7 +588,7 @@ XrayWrapper<Base>::resolveOwnProperty(JSContext *cx, JSObject *wrapper, jsid id,
           IsPrivilegedScript()))) {
         bool status;
         Wrapper::Action action = set ? Wrapper::SET : Wrapper::GET;
-        desc->obj = NULL; // default value
+        desc->obj = NULL; 
         if (!this->enter(cx, wrapper, id, action, &status))
             return status;
 
@@ -616,12 +616,12 @@ XrayWrapper<Base>::resolveOwnProperty(JSContext *cx, JSObject *wrapper, jsid id,
     JSObject *holder = GetHolder(wrapper);
     JSObject *expando = GetExpandoObject(holder);
 
-    // Check for expando properties first.
+    
     if (expando && !JS_GetPropertyDescriptorById(cx, expando, id, flags, desc)) {
         return false;
     }
     if (desc->obj) {
-        // Pretend the property lives on the wrapper.
+        
         desc->obj = wrapper;
         return true;
     }
@@ -633,7 +633,7 @@ XrayWrapper<Base>::resolveOwnProperty(JSContext *cx, JSObject *wrapper, jsid id,
     if (!hasProp) {
         XPCWrappedNative *wn = GetWrappedNativeFromHolder(holder);
 
-        // Run the resolve hook of the wrapped native.
+        
         if (!NATIVE_HAS_FLAG(wn, WantNewResolve)) {
             desc->obj = nsnull;
             return true;
@@ -663,7 +663,7 @@ XrayWrapper<Base>::resolveOwnProperty(JSContext *cx, JSObject *wrapper, jsid id,
     if (!JS_GetPropertyDescriptorById(cx, holder, id, flags, desc))
         return false;
 
-    // Pretend we found the property on the wrapper, not the holder.
+    
     desc->obj = wrapper;
 
     return true;
@@ -682,7 +682,7 @@ XrayWrapper<Base>::getPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid 
 
     bool status;
     Wrapper::Action action = set ? Wrapper::SET : Wrapper::GET;
-    desc->obj = NULL; // default value
+    desc->obj = NULL; 
     if (!this->enter(cx, wrapper, id, action, &status))
         return status;
 
@@ -690,7 +690,7 @@ XrayWrapper<Base>::getPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid 
 
     ResolvingId resolving(holder, id);
 
-    // Redirect access straight to the wrapper if we should be transparent.
+    
     if (XrayUtils::IsTransparent(cx, wrapper)) {
         JSObject *wnObject = GetWrappedNativeObjectFromHolder(holder);
 
@@ -750,7 +750,7 @@ XrayWrapper<Base>::getOwnPropertyDescriptor(JSContext *cx, JSObject *wrapper, js
 
     bool status;
     Wrapper::Action action = set ? Wrapper::SET : Wrapper::GET;
-    desc->obj = NULL; // default value
+    desc->obj = NULL; 
     if (!this->enter(cx, wrapper, id, action, &status))
         return status;
 
@@ -758,9 +758,9 @@ XrayWrapper<Base>::getOwnPropertyDescriptor(JSContext *cx, JSObject *wrapper, js
 
     ResolvingId resolving(holder, id);
 
-    // NB: Nothing we do here acts on the wrapped native itself, so we don't
-    // enter our policy.
-    // Redirect access straight to the wrapper if we should be transparent.
+    
+    
+    
     if (XrayUtils::IsTransparent(cx, wrapper)) {
         JSObject *wnObject = GetWrappedNativeObjectFromHolder(holder);
 
@@ -791,7 +791,7 @@ XrayWrapper<Base>::defineProperty(JSContext *cx, JSObject *wrapper, jsid id,
     JSObject *holder = GetHolder(wrapper);
     JSPropertyDescriptor *jsdesc = desc;
 
-    // Redirect access straight to the wrapper if we should be transparent.
+    
     if (XrayUtils::IsTransparent(cx, wrapper)) {
         JSObject *wnObject = GetWrappedNativeObjectFromHolder(holder);
 
@@ -811,7 +811,7 @@ XrayWrapper<Base>::defineProperty(JSContext *cx, JSObject *wrapper, jsid id,
         return false;
 
     if (existing_desc.obj && (existing_desc.attrs & JSPROP_PERMANENT))
-        return true; // silently ignore attempt to overwrite native property
+        return true; 
 
     if (IsResolving(holder, id)) {
         if (!(jsdesc->attrs & (JSPROP_GETTER | JSPROP_SETTER))) {
@@ -840,7 +840,7 @@ EnumerateNames(JSContext *cx, JSObject *wrapper, uintN flags, js::AutoIdVector &
 
     JSObject *wnObject = GetWrappedNativeObjectFromHolder(holder);
 
-    // Redirect access straight to the wrapper if we should be transparent.
+    
     if (XrayUtils::IsTransparent(cx, wrapper)) {
         JSAutoEnterCompartment ac;
         if (!ac.enter(cx, wnObject))
@@ -854,12 +854,12 @@ EnumerateNames(JSContext *cx, JSObject *wrapper, uintN flags, js::AutoIdVector &
         return false;
     }
 
-    // Enumerate expando properties first.
+    
     JSObject *expando = GetExpandoObject(holder);
     if (expando && !js::GetPropertyNames(cx, expando, flags, &props))
         return false;
 
-    // Force all native properties to be materialized onto the wrapped native.
+    
     js::AutoIdVector wnProps(cx);
     {
         JSAutoEnterCompartment ac;
@@ -869,7 +869,7 @@ EnumerateNames(JSContext *cx, JSObject *wrapper, uintN flags, js::AutoIdVector &
             return false;
     }
 
-    // Go through the properties we got and enumerate all native ones.
+    
     for (size_t n = 0; n < wnProps.length(); ++n) {
         jsid id = wnProps[n];
         JSBool hasProp;
@@ -897,7 +897,7 @@ XrayWrapper<Base>::delete_(JSContext *cx, JSObject *wrapper, jsid id, bool *bp)
     jsval v;
     JSBool b;
 
-    // Redirect access straight to the wrapper if we should be transparent.
+    
     if (XrayUtils::IsTransparent(cx, wrapper)) {
         JSObject *wnObject = GetWrappedNativeObjectFromHolder(holder);
 
@@ -943,9 +943,9 @@ bool
 XrayWrapper<Base>::get(JSContext *cx, JSObject *wrapper, JSObject *receiver, jsid id,
                        js::Value *vp)
 {
-    // Skip our Base if it isn't already ProxyHandler.
-    // NB: None of the functions we call are prepared for the receiver not
-    // being the wrapper, so ignore the receiver here.
+    
+    
+    
     return ProxyHandler::get(cx, wrapper, wrapper, id, vp);
 }
 
@@ -954,9 +954,9 @@ bool
 XrayWrapper<Base>::set(JSContext *cx, JSObject *wrapper, JSObject *receiver, jsid id,
                        bool strict, js::Value *vp)
 {
-    // Skip our Base if it isn't already ProxyHandler.
-    // NB: None of the functions we call are prepared for the receiver not
-    // being the wrapper, so ignore the receiver here.
+    
+    
+    
     return ProxyHandler::set(cx, wrapper, wrapper, id, strict, vp);
 }
 
@@ -964,7 +964,7 @@ template <typename Base>
 bool
 XrayWrapper<Base>::has(JSContext *cx, JSObject *wrapper, jsid id, bool *bp)
 {
-    // Skip our Base if it isn't already ProxyHandler.
+    
     return ProxyHandler::has(cx, wrapper, id, bp);
 }
 
@@ -972,7 +972,7 @@ template <typename Base>
 bool
 XrayWrapper<Base>::hasOwn(JSContext *cx, JSObject *wrapper, jsid id, bool *bp)
 {
-    // Skip our Base if it isn't already ProxyHandler.
+    
     return ProxyHandler::hasOwn(cx, wrapper, id, bp);
 }
 
@@ -980,7 +980,7 @@ template <typename Base>
 bool
 XrayWrapper<Base>::keys(JSContext *cx, JSObject *wrapper, js::AutoIdVector &props)
 {
-    // Skip our Base if it isn't already ProxyHandler.
+    
     return ProxyHandler::keys(cx, wrapper, props);
 }
 
@@ -988,7 +988,7 @@ template <typename Base>
 bool
 XrayWrapper<Base>::iterate(JSContext *cx, JSObject *wrapper, uintN flags, js::Value *vp)
 {
-    // Skip our Base if it isn't already ProxyHandler.
+    
     return ProxyHandler::iterate(cx, wrapper, flags, vp);
 }
 
@@ -999,7 +999,7 @@ XrayWrapper<Base>::call(JSContext *cx, JSObject *wrapper, uintN argc, js::Value 
     JSObject *holder = GetHolder(wrapper);
     XPCWrappedNative *wn = GetWrappedNativeFromHolder(holder);
 
-    // Run the resolve hook of the wrapped native.
+    
     if (NATIVE_HAS_FLAG(wn, WantCall)) {
         XPCCallContext ccx(JS_CALLER, cx, wrapper, nsnull, JSID_VOID, argc,
                            vp + 2, vp);
@@ -1026,7 +1026,7 @@ XrayWrapper<Base>::construct(JSContext *cx, JSObject *wrapper, uintN argc,
     JSObject *holder = GetHolder(wrapper);
     XPCWrappedNative *wn = GetWrappedNativeFromHolder(holder);
 
-    // Run the resolve hook of the wrapped native.
+    
     if (NATIVE_HAS_FLAG(wn, WantConstruct)) {
         XPCCallContext ccx(JS_CALLER, cx, wrapper, nsnull, JSID_VOID, argc, argv, rval);
         if (!ccx.IsValid())
@@ -1058,14 +1058,14 @@ XrayWrapper<Base>::createHolder(JSContext *cx, JSObject *wrappedNative, JSObject
     XPCWrappedNative *wn = GetWrappedNative(inner);
     Value expando = ObjectOrNullValue(priv->LookupExpandoObject(wn));
 
-    // A note about ownership: the holder has a direct pointer to the wrapped
-    // native that we're wrapping. Normally, we'd have to AddRef the pointer
-    // so that it doesn't have to be collected, but then we'd have to tell the
-    // cycle collector. Fortunately for us, we know that the Xray wrapper
-    // itself has a reference to the flat JS object which will hold the
-    // wrapped native alive. Furthermore, the reachability of that object and
-    // the associated holder are exactly the same, so we can use that for our
-    // strong reference.
+    
+    
+    
+    
+    
+    
+    
+    
     JS_ASSERT(IS_WN_WRAPPER(wrappedNative) ||
               js::GetObjectClass(wrappedNative)->ext.innerObject);
     js::SetReservedSlot(holder, JSSLOT_WN, PrivateValue(wn));
@@ -1083,9 +1083,9 @@ XrayProxy::~XrayProxy()
 {
 }
 
-// The 'holder' here isn't actually of [[Class]] HolderClass like those used by
-// XrayWrapper. Instead, it's a funny hybrid of the 'expando' and 'holder'
-// properties. However, we store it in the same slot. Exercise caution.
+
+
+
 static JSObject *
 GetHolderObject(JSContext *cx, JSObject *wrapper, bool createHolder = true)
 {
@@ -1110,7 +1110,7 @@ XrayProxy::getPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid id,
 
     bool status;
     Wrapper::Action action = set ? Wrapper::SET : Wrapper::GET;
-    desc->obj = NULL; // default value
+    desc->obj = NULL; 
     if (!this->enter(cx, wrapper, id, action, &status))
         return status;
 
@@ -1133,9 +1133,9 @@ XrayProxy::getPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid id,
         return JS_WrapPropertyDescriptor(cx, desc);
     }
 
-    // We don't want to cache own properties on our holder. So we first do this
-    // call, and return if we find it (without caching). If we don't find it,
-    // we check the cache and do a full resolve (caching any result).
+    
+    
+    
     if (!js::GetProxyHandler(obj)->getOwnPropertyDescriptor(cx, wrapper, id, set, desc))
         return false;
     if (desc->obj) {
@@ -1143,8 +1143,8 @@ XrayProxy::getPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid id,
         return true;
     }
 
-    // Now that we're sure this isn't an own property, look up cached non-own
-    // properties before calling all the way through.
+    
+    
     if (!JS_GetPropertyDescriptorById(cx, holder, id, JSRESOLVE_QUALIFIED, desc))
         return false;
     if (desc->obj) {
@@ -1152,7 +1152,7 @@ XrayProxy::getPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid id,
         return true;
     }
 
-    // Nothing in the cache. Call through, and cache the result.
+    
     if (!js::GetProxyHandler(obj)->getPropertyDescriptor(cx, wrapper, id, set, desc))
         return false;
 
@@ -1187,7 +1187,7 @@ XrayProxy::getOwnPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid id,
 
     bool status;
     Wrapper::Action action = set ? Wrapper::SET : Wrapper::GET;
-    desc->obj = NULL; // default value
+    desc->obj = NULL; 
     if (!this->enter(cx, wrapper, id, action, &status))
         return status;
 
@@ -1220,11 +1220,11 @@ XrayProxy::getOwnPropertyDescriptor(JSContext *cx, JSObject *wrapper, jsid id,
     if (!js::GetProxyHandler(obj)->getOwnPropertyDescriptor(cx, wrapper, id, set, desc))
         return false;
 
-    // The 'not found' property descriptor has obj == NULL.
+    
     if (desc->obj)
       desc->obj = wrapper;
 
-    // Own properties don't get cached on the holder. Just return.
+    
     return true;
 }
 
@@ -1251,7 +1251,7 @@ XrayProxy::defineProperty(JSContext *cx, JSObject *wrapper, jsid id,
         return false;
 
     if (existing_desc.obj && (existing_desc.attrs & JSPROP_PERMANENT))
-        return true; // silently ignore attempt to overwrite native property
+        return true; 
 
     return JS_DefinePropertyById(cx, holder, id, desc->value, desc->getter, desc->setter,
                                  desc->attrs);
@@ -1262,7 +1262,7 @@ EnumerateProxyNames(JSContext *cx, JSObject *wrapper, uintN flags, js::AutoIdVec
 {
     JSObject *obj = &js::GetProxyPrivate(wrapper).toObject();
 
-    // Redirect access straight to the wrapper if we should be transparent.
+    
     if (XrayUtils::IsTransparent(cx, wrapper)) {
         JSAutoEnterCompartment ac;
         if (!ac.enter(cx, obj))

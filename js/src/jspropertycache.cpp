@@ -1,42 +1,42 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=98:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "jspropertycache.h"
 #include "jscntxt.h"
@@ -46,45 +46,45 @@
 
 using namespace js;
 
-JS_REQUIRES_STACK PropertyCacheEntry *
+PropertyCacheEntry *
 PropertyCache::fill(JSContext *cx, JSObject *obj, uintN scopeIndex, JSObject *pobj,
                     const Shape *shape)
 {
     JS_ASSERT(this == &JS_PROPERTY_CACHE(cx));
     JS_ASSERT(!cx->runtime->gcRunning);
 
-    /*
-     * Check for fill from js_SetPropertyHelper where the setter removed shape
-     * from pobj (via unwatch or delete, e.g.).
-     */
+    
+
+
+
     if (!pobj->nativeContains(cx, *shape)) {
         PCMETER(oddfills++);
         return JS_NO_PROP_CACHE_FILL;
     }
 
-    /*
-     * Check for overdeep scope and prototype chain. Because resolve, getter,
-     * and setter hooks can change the prototype chain using JS_SetPrototype
-     * after LookupPropertyWithFlags has returned, we calculate the protoIndex
-     * here and not in LookupPropertyWithFlags.
-     *
-     * The scopeIndex can't be wrong. We require JS_SetParent calls to happen
-     * before any running script might consult a parent-linked scope chain. If
-     * this requirement is not satisfied, the fill in progress will never hit,
-     * but scope shape tests ensure nothing malfunctions.
-     */
+    
+
+
+
+
+
+
+
+
+
+
     JS_ASSERT_IF(obj == pobj, scopeIndex == 0);
 
     JSObject *tmp = obj;
     for (uintN i = 0; i < scopeIndex; i++)
-        tmp = tmp->internalScopeChain();
+        tmp = &tmp->asScope().enclosingScope();
 
     uintN protoIndex = 0;
     while (tmp != pobj) {
-        /*
-         * Don't cache entries across prototype lookups which can mutate in
-         * arbitrary ways without a shape change.
-         */
+        
+
+
+
         if (tmp->hasUncacheableProto()) {
             PCMETER(noprotos++);
             return JS_NO_PROP_CACHE_FILL;
@@ -92,11 +92,11 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, uintN scopeIndex, JSObject *po
 
         tmp = tmp->getProto();
 
-        /*
-         * We cannot cache properties coming from native objects behind
-         * non-native ones on the prototype chain. The non-natives can
-         * mutate in arbitrary way without changing any shapes.
-         */
+        
+
+
+
+
         if (!tmp || !tmp->isNative()) {
             PCMETER(noprotos++);
             return JS_NO_PROP_CACHE_FILL;
@@ -110,10 +110,10 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, uintN scopeIndex, JSObject *po
         return JS_NO_PROP_CACHE_FILL;
     }
 
-    /*
-     * Optimize the cached vword based on our parameters and the current pc's
-     * opcode format flags.
-     */
+    
+
+
+
     jsbytecode *pc;
     (void) cx->stack.currentScript(&pc);
     JSOp op = JSOp(*pc);
@@ -133,10 +133,10 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, uintN scopeIndex, JSObject *po
 #endif
 
         if (scopeIndex != 0 || protoIndex != 1) {
-            /*
-             * Make sure that a later shadowing assignment will enter
-             * PurgeProtoChain and invalidate this entry, bug 479198.
-             */
+            
+
+
+
             if (!obj->isDelegate())
                 return JS_NO_PROP_CACHE_FILL;
         }
@@ -149,10 +149,10 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, uintN scopeIndex, JSObject *po
     empty = false;
     PCMETER(fills++);
 
-    /*
-     * The modfills counter is not exact. It increases if a getter or setter
-     * recurse into the interpreter.
-     */
+    
+
+
+
     PCMETER(entry == pctestentry || modfills++);
     PCMETER(pctestentry = NULL);
     return entry;
@@ -164,8 +164,8 @@ GetAtomFromBytecode(JSContext *cx, jsbytecode *pc, JSOp op, const JSCodeSpec &cs
     if (op == JSOP_LENGTH)
         return cx->runtime->atomState.lengthAtom;
 
-    // The method JIT's implementation of instanceof contains an internal lookup
-    // of the prototype property.
+    
+    
     if (op == JSOP_INSTANCEOF)
         return cx->runtime->atomState.classPrototypeAtom;
 
@@ -176,7 +176,7 @@ GetAtomFromBytecode(JSContext *cx, jsbytecode *pc, JSOp op, const JSCodeSpec &cs
     return atom;
 }
 
-JS_REQUIRES_STACK JSAtom *
+JSAtom *
 PropertyCache::fullTest(JSContext *cx, jsbytecode *pc, JSObject **objp, JSObject **pobjp,
                         PropertyCacheEntry *entry)
 {
@@ -222,16 +222,16 @@ PropertyCache::fullTest(JSContext *cx, jsbytecode *pc, JSObject **objp, JSObject
         return GetAtomFromBytecode(cx, pc, op, cs);
     }
 
-    /*
-     * PropertyCache::test handles only the direct and immediate-prototype hit
-     * cases. All others go here.
-     */
+    
+
+
+
     pobj = obj;
 
     if (JOF_MODE(cs.format) == JOF_NAME) {
         uint8_t scopeIndex = entry->scopeIndex;
         while (scopeIndex > 0) {
-            tmp = pobj->scopeChain();
+            tmp = pobj->enclosingScope();
             if (!tmp || !tmp->isNative())
                 break;
             pobj = tmp;
