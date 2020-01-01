@@ -401,19 +401,21 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    CodeOffsetLabel exitCodePatch;
+  private:
+    CodeOffsetLabel exitCodePatch_;
+  public:
     void linkExitFrameAndCode() {
         linkExitFrame();
         
-        exitCodePatch = PushWithPatch(ImmWord(-1));
+        exitCodePatch_ = PushWithPatch(ImmWord(-1));
     }
     void link(IonCode *code) {
 
         
         
         
-        if (exitCodePatch.offset() != 0) {
-            patchDataWithValueCheck(CodeLocationLabel(code, exitCodePatch),
+        if (exitCodePatch_.offset() != 0) {
+            patchDataWithValueCheck(CodeLocationLabel(code, exitCodePatch_),
                                     ImmWord(uintptr_t(code)),
                                     ImmWord(uintptr_t(-1)));
         }
