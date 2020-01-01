@@ -1,8 +1,8 @@
 #filter substitution
-
-
-
-
+// -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; js2-basic-offset: 2; js2-skip-preprocessor-directives: t; -*-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 let Cc = Components.classes;
@@ -59,7 +59,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "uuidgen",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
 
-
+// Lazily-loaded browser scripts:
 [
   ["HelperApps", "chrome://browser/content/HelperApps.js"],
   ["SelectHelper", "chrome://browser/content/SelectHelper.js"],
@@ -78,7 +78,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "uuidgen",
   });
 });
 
-
+// Lazily-loaded browser scripts that use observer notifcations:
 var LazyNotificationGetter = {
   observers: [],
   shutdown: function lng_shutdown() {
@@ -133,7 +133,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "MediaManagerService",
   "@mozilla.org/mediaManagerService;1", "nsIMediaManagerService");
 #endif
 
-const kStateActive = 0x00000001; 
+const kStateActive = 0x00000001; // :active pseudoclass for elements
 
 const kXLinkNamespace = "http://www.w3.org/1999/xlink";
 
@@ -178,10 +178,10 @@ function fuzzyEquals(a, b) {
   return (Math.abs(a - b) < 1e-6);
 }
 
-
-
-
-
+/**
+ * Convert a font size to CSS pixels (px) from twentieiths-of-a-point
+ * (twips).
+ */
 function convertFromTwipsToPx(aSize) {
   return aSize/240 * 16.0;
 }
@@ -219,9 +219,9 @@ function shouldShowProgress(url) {
   return (url != "about:home" && !url.startsWith("about:reader"));
 }
 
-
-
-
+/**
+ * Cache of commonly used string bundles.
+ */
 var Strings = {};
 [
   ["brand",      "chrome://branding/locale/brand.properties"],
@@ -236,7 +236,7 @@ var Strings = {};
 
 const kFormHelperModeDisabled = 0;
 const kFormHelperModeEnabled = 1;
-const kFormHelperModeDynamic = 2;   
+const kFormHelperModeDynamic = 2;   // disabled on tablets
 
 var BrowserApp = {
   _tabs: [],
@@ -313,8 +313,8 @@ var BrowserApp = {
         showFullScreenWarning();
     }, false);
 
-    
-    
+    // When a restricted key is pressed in DOM full-screen mode, we should display
+    // the "Press ESC to exit" warning message.
     window.addEventListener("MozShowFullScreenWarning", showFullScreenWarning, true);
 
     NativeWindow.init();
@@ -342,7 +342,7 @@ var BrowserApp = {
     AccessFu.attach(window);
 #endif
 
-    
+    // Init LoginManager
     Cc["@mozilla.org/login-manager;1"].getService(Ci.nsILoginManager);
 
     let url = null;
@@ -368,10 +368,10 @@ var BrowserApp = {
       this.initContextMenu();
     }
 
-    
+    // XXX maybe we don't do this if the launch was kicked off from external
     Services.io.offline = false;
 
-    
+    // Broadcast a UIReady message so add-ons know we are finished with startup
     let event = document.createEvent("Events");
     event.initEvent("UIReady", true, false);
     window.dispatchEvent(event);
@@ -379,14 +379,14 @@ var BrowserApp = {
     if (status)
       this.onAppUpdated();
 
-    
+    // Store the low-precision buffer pref
     this.gUseLowPrecision = Services.prefs.getBoolPref("layers.low-precision-buffer");
 
-    
+    // notify java that gecko has loaded
     sendMessageToJava({ type: "Gecko:Ready" });
 
 #ifdef MOZ_SAFE_BROWSING
-    
+    // Bug 778855 - Perf regression if we do this here. To be addressed in bug 779008.
     setTimeout(function() { SafeBrowsing.init(); }, 5000);
 #endif
   },
@@ -406,7 +406,7 @@ var BrowserApp = {
   },
 
   initContextMenu: function ba_initContextMenu() {
-    
+    // TODO: These should eventually move into more appropriate classes
     NativeWindow.contextmenus.add(Strings.browser.GetStringFromName("contextmenu.openInNewTab"),
       NativeWindow.contextmenus.linkOpenableNonPrivateContext,
       function(aTarget) {
@@ -603,8 +603,8 @@ var BrowserApp = {
     NativeWindow.contextmenus.add(
       function(aTarget) {
         if (aTarget instanceof HTMLVideoElement) {
-          
-          
+          // If a video element is zero width or height, its essentially
+          // an HTMLAudioElement.
           if (aTarget.videoWidth == 0 || aTarget.videoHeight == 0 )
             return Strings.browser.GetStringFromName("contextmenu.saveAudio");
           return Strings.browser.GetStringFromName("contextmenu.saveVideo");
@@ -618,7 +618,7 @@ var BrowserApp = {
         let filePickerTitleKey = (aTarget instanceof HTMLVideoElement &&
                                   (aTarget.videoWidth != 0 && aTarget.videoHeight != 0))
                                   ? "SaveVideoTitle" : "SaveAudioTitle";
-        
+        // Skipped trying to pull MIME type out of cache for now
         ContentAreaUtils.internalSave(url, null, null, null, null, false,
                                       filePickerTitleKey, null, aTarget.ownerDocument.documentURIObject,
                                       aTarget.ownerDocument, true, null);
@@ -626,12 +626,12 @@ var BrowserApp = {
   },
 
   onAppUpdated: function() {
-    
+    // initialize the form history and passwords databases on upgrades
     Services.obs.notifyObservers(null, "FormHistory:Init", "");
     Services.obs.notifyObservers(null, "Passwords:Init", "");
 
-    
-    
+    // Migrate user-set "plugins.click_to_play" pref. See bug 884694.
+    // Because the default value is true, a user-set pref means that the pref was set to false.
     if (Services.prefs.prefHasUserValue("plugins.click_to_play")) {
       Services.prefs.setIntPref("plugin.default.state", Ci.nsIPluginTag.STATE_ENABLED);
       Services.prefs.clearUserPref("plugins.click_to_play");
@@ -661,11 +661,11 @@ var BrowserApp = {
 #endif
   },
 
-  
-  
-  
-  
-  
+  // This function returns false during periods where the browser displayed document is
+  // different from the browser content document, so user actions and some kinds of viewport
+  // updates should be ignored. This period starts when we start loading a new page or
+  // switch tabs, and ends when the new browser content document has been drawn and handed
+  // off to the compositor.
   isBrowserContentDocumentDisplayed: function() {
     try {
       if (!Services.androidBridge.isContentDocumentDisplayed())
@@ -711,7 +711,7 @@ var BrowserApp = {
     aTab.setResolution(aTab._zoom, true);
     this.contentDocumentChanged();
     this.deck.selectedPanel = aTab.browser;
-    
+    // Focus the browser so that things like selection will be styled correctly.
     aTab.browser.focus();
   },
 
@@ -826,9 +826,9 @@ var BrowserApp = {
     return newTab;
   },
 
-  
-  
-  
+  // Use this method to close a tab from JS. This method sends a message
+  // to Java to close the tab in the Java UI (we'll get a Tab:Closed message
+  // back from Java when that happens).
   closeTab: function closeTab(aTab) {
     if (!aTab) {
       Cu.reportError("Error trying to close tab (tab doesn't exist)");
@@ -842,8 +842,8 @@ var BrowserApp = {
     sendMessageToJava(message);
   },
 
-  
-  
+  // Calling this will update the state in BrowserApp after a tab has been
+  // closed in the Java UI.
   _handleTabClosed: function _handleTabClosed(aTab) {
     if (aTab == this.selectedTab)
       this.selectedTab = null;
@@ -856,16 +856,16 @@ var BrowserApp = {
     this._tabs.splice(this._tabs.indexOf(aTab), 1);
   },
 
-  
-  
-  
+  // Use this method to select a tab from JS. This method sends a message
+  // to Java to select the tab in the Java UI (we'll get a Tab:Selected message
+  // back from Java when that happens).
   selectTab: function selectTab(aTab) {
     if (!aTab) {
       Cu.reportError("Error trying to select tab (tab doesn't exist)");
       return;
     }
 
-    
+    // There's nothing to do if the tab is already selected
     if (aTab == this.selectedTab)
       return;
 
@@ -876,12 +876,12 @@ var BrowserApp = {
     sendMessageToJava(message);
   },
 
-  
-
-
-
-
-
+  /**
+   * Gets an open tab with the given URL.
+   *
+   * @param  aURL URL to look for
+   * @return the tab with the given URL, or null if no such tab exists
+   */
   getTabWithURL: function getTabWithURL(aURL) {
     let uri = Services.io.newURI(aURL, null, null);
     for (let i = 0; i < this._tabs.length; ++i) {
@@ -893,12 +893,12 @@ var BrowserApp = {
     return null;
   },
 
-  
-
-
-
-
-
+  /**
+   * If a tab with the given URL already exists, that tab is selected.
+   * Otherwise, a new tab is opened with the given URL.
+   *
+   * @param aURL URL to open
+   */
   selectOrOpenTab: function selectOrOpenTab(aURL) {
     let tab = this.getTabWithURL(aURL);
     if (tab == null) {
@@ -908,8 +908,8 @@ var BrowserApp = {
     }
   },
 
-  
-  
+  // This method updates the state in BrowserApp after a tab has been selected
+  // in the Java UI.
   _handleTabSelected: function _handleTabSelected(aTab) {
     this.selectedTab = aTab;
 
@@ -919,7 +919,7 @@ var BrowserApp = {
   },
 
   quit: function quit() {
-    
+    // Figure out if there's at least one other browser window around.
     let lastBrowser = true;
     let e = Services.wm.getEnumerator("navigator:browser");
     while (e.hasMoreElements() && lastBrowser) {
@@ -929,7 +929,7 @@ var BrowserApp = {
     }
 
     if (lastBrowser) {
-      
+      // Let everyone know we are closing the last browser window
       let closingCanceled = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
       Services.obs.notifyObservers(closingCanceled, "browser-lastwindow-close-requested", null);
       if (closingCanceled.data)
@@ -943,7 +943,7 @@ var BrowserApp = {
   },
 
   saveAsPDF: function saveAsPDF(aBrowser) {
-    
+    // Create the final destination file location
     let fileName = ContentAreaUtils.getDefaultFileName(aBrowser.contentTitle, aBrowser.currentURI, null, null);
     fileName = fileName.trim() + ".pdf";
 
@@ -964,7 +964,7 @@ var BrowserApp = {
     printSettings.printFrameType = Ci.nsIPrintSettings.kFramesAsIs;
     printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
 
-    
+    //XXX we probably need a preference here, the header can be useful
     printSettings.footerStrCenter = "";
     printSettings.footerStrLeft   = "";
     printSettings.footerStrRight  = "";
@@ -972,7 +972,7 @@ var BrowserApp = {
     printSettings.headerStrLeft   = "";
     printSettings.headerStrRight  = "";
 
-    
+    // Create a valid mimeInfo for the PDF
     let ms = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
     let mimeInfo = ms.getFromTypeAndExtension("application/pdf", "pdf");
 
@@ -1019,24 +1019,24 @@ var BrowserApp = {
         Services.prefs.addObserver(prefName, this, false);
       }
 
-      
-      
-      
+      // These pref names are not "real" pref names.
+      // They are used in the setting menu,
+      // and these are passed when initializing the setting menu.
       switch (prefName) {
-        
-        
+        // The plugin pref is actually two separate prefs, so
+        // we need to handle it differently
         case "plugin.enable":
-          pref.type = "string";
+          pref.type = "string";// Use a string type for java's ListPreference
           pref.value = PluginHelper.getPluginPreference();
           prefs.push(pref);
           continue;
-        
+        // Handle master password
         case "privacy.masterpassword.enabled":
           pref.type = "bool";
           pref.value = MasterPassword.enabled;
           prefs.push(pref);
           continue;
-        
+        // Handle do-not-track preference
         case "privacy.donottrackheader":
           pref.type = "string";
 
@@ -1052,7 +1052,7 @@ var BrowserApp = {
           prefs.push(pref);
           continue;
 #ifdef MOZ_CRASHREPORTER
-        
+        // Crash reporter submit pref must be fetched from nsICrashReporter service.
         case "datareporting.crashreporter.submitEnabled":
           pref.type = "bool";
           pref.value = CrashReporter.submitReports;
@@ -1061,10 +1061,10 @@ var BrowserApp = {
 #endif
       }
 
-      
+      // Pref name translation.
       switch (prefName) {
 #ifdef MOZ_TELEMETRY_REPORTING
-        
+        // Telemetry pref differs based on build.
         case Telemetry.SHARED_PREF_TELEMETRY_ENABLED:
 #ifdef MOZ_TELEMETRY_ON_BY_DEFAULT
           prefName = "toolkit.telemetry.enabledPreRelease";
@@ -1089,7 +1089,7 @@ var BrowserApp = {
           default:
             pref.type = "string";
             try {
-              
+              // Try in case it's a localized string (will throw an exception if not)
               pref.value = Services.prefs.getComplexValue(prefName, Ci.nsIPrefLocalizedString).data;
             } catch (e) {
               pref.value = Services.prefs.getCharPref(prefName);
@@ -1098,17 +1098,17 @@ var BrowserApp = {
         }
       } catch (e) {
         dump("Error reading pref [" + prefName + "]: " + e);
-        
+        // preference does not exist; do not send it
         continue;
       }
 
-      
-      
-      
-      
-      
+      // Some Gecko preferences use integers or strings to reference
+      // state instead of directly representing the value.
+      // Since the Java UI uses the type to determine which ui elements
+      // to show and how to handle them, we need to normalize these
+      // preferences to the correct type.
       switch (prefName) {
-        
+        // (string) index for determining which multiple choice value to display.
         case "browser.chrome.titlebarMode":
         case "network.cookie.cookieBehavior":
         case "font.size.inflation.minTwips":
@@ -1122,7 +1122,7 @@ var BrowserApp = {
 
     sendMessageToJava({
       type: "Preferences:Data",
-      requestId: aPrefsRequest.requestId,    
+      requestId: aPrefsRequest.requestId,    // opaque request identifier, can be any string/int/whatever
       preferences: prefs
     });
   },
@@ -1131,13 +1131,13 @@ var BrowserApp = {
     let newPrefObservers = [];
     for (let prefName in this._prefObservers) {
       let requestIds = this._prefObservers[prefName];
-      
+      // Remove the requestID from the preference handlers
       let i = requestIds.indexOf(aRequestId);
       if (i >= 0) {
         requestIds.splice(i, 1);
       }
 
-      
+      // If there are no more request IDs, remove the observer
       if (requestIds.length == 0) {
         Services.prefs.removeObserver(prefName, this);
       } else {
@@ -1151,13 +1151,13 @@ var BrowserApp = {
     let json = JSON.parse(aPref);
 
     switch (json.name) {
-      
-      
+      // The plugin pref is actually two separate prefs, so
+      // we need to handle it differently
       case "plugin.enable":
         PluginHelper.setPluginPreference(json.value);
         return;
 
-      
+      // MasterPassword pref is not real, we just need take action and leave
       case "privacy.masterpassword.enabled":
         if (MasterPassword.enabled)
           MasterPassword.removePassword(json.value);
@@ -1165,20 +1165,20 @@ var BrowserApp = {
           MasterPassword.setPassword(json.value);
         return;
 
-      
+      // "privacy.donottrackheader" is not "real" pref name, it's used in the setting menu.
       case "privacy.donottrackheader":
         switch (json.value) {
-          
+          // Don't tell anything about tracking me
           case kDoNotTrackPrefState.NO_PREF:
             Services.prefs.setBoolPref("privacy.donottrackheader.enabled", false);
             Services.prefs.clearUserPref("privacy.donottrackheader.value");
             break;
-          
+          // Accept tracking me
           case kDoNotTrackPrefState.ALLOW_TRACKING:
             Services.prefs.setBoolPref("privacy.donottrackheader.enabled", true);
             Services.prefs.setIntPref("privacy.donottrackheader.value", 0);
             break;
-          
+          // Not accept tracking me
           case kDoNotTrackPrefState.DISALLOW_TRACKING:
             Services.prefs.setBoolPref("privacy.donottrackheader.enabled", true);
             Services.prefs.setIntPref("privacy.donottrackheader.value", 1);
@@ -1186,20 +1186,20 @@ var BrowserApp = {
         }
         return;
 
-      
+      // Enabling or disabling suggestions will prevent future prompts
       case SearchEngines.PREF_SUGGEST_ENABLED:
         Services.prefs.setBoolPref(SearchEngines.PREF_SUGGEST_PROMPTED, true);
         break;
 
 #ifdef MOZ_CRASHREPORTER
-      
+      // Crash reporter preference is in a service; set and return.
       case "datareporting.crashreporter.submitEnabled":
         CrashReporter.submitReports = json.value;
         return;
 #endif
-      
-      
-      
+      // When sending to Java, we normalized special preferences that use
+      // integers and strings to represent booleans. Here, we convert them back
+      // to their actual types so we can store them.
       case "browser.chrome.titlebarMode":
       case "network.cookie.cookieBehavior":
       case "font.size.inflation.minTwips":
@@ -1208,10 +1208,10 @@ var BrowserApp = {
         break;
     }
 
-    
+    // Pref name translation.
     switch (json.name) {
 #ifdef MOZ_TELEMETRY_REPORTING
-      
+      // Telemetry pref differs based on build.
       case Telemetry.SHARED_PREF_TELEMETRY_ENABLED:
 #ifdef MOZ_TELEMETRY_ON_BY_DEFAULT
         json.name = "toolkit.telemetry.enabledPreRelease";
@@ -1251,9 +1251,9 @@ var BrowserApp = {
           case "history_downloads":
             Sanitizer.clearItem("history");
 
-            
-            
-            
+            // If we're also removing downloaded files, don't clear the
+            // download history yet since it will be handled when the files are
+            // removed.
             if (!json["downloadFiles"]) {
               Sanitizer.clearItem("downloads");
             }
@@ -1300,9 +1300,9 @@ var BrowserApp = {
     if (focused && (focused instanceof HTMLTextAreaElement || focused.isContentEditable)) {
 
       if (focused instanceof HTMLBodyElement) {
-        
-        
-        
+        // we are putting focus into a contentEditable frame. scroll the frame into
+        // view instead of the contentEditable document contained within, because that
+        // results in a better user experience
         focused = focused.ownerDocument.defaultView.frameElement;
       }
       return focused;
@@ -1321,7 +1321,7 @@ var BrowserApp = {
       let shouldZoom = Services.prefs.getBoolPref("formhelper.autozoom");
       if (formHelperMode == kFormHelperModeDynamic && this.isTablet)
         shouldZoom = false;
-       
+       // _zoomToElement will handle not sending any message if this input is already mostly filling the screen
       BrowserEventHandler._zoomToElement(focused, -1, false,
           aAllowZoom && shouldZoom && !ViewportHandler.getViewportMetadata(aBrowser.contentWindow).isSpecified);
     }
@@ -1347,9 +1347,9 @@ var BrowserApp = {
             allowMixedContent = data.allowMixedContent;
         }
 
-        
-        
-        
+        // Try to use the session history to reload so that framesets are
+        // handled properly. If the window has no session history, fall back
+        // to using the web navigation's reload method.
         let flags = allowMixedContent ? Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT :
                     Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_PROXY | Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
         let webNav = browser.webNavigation;
@@ -1375,8 +1375,8 @@ var BrowserApp = {
       case "Tab:Load": {
         let data = JSON.parse(aData);
 
-        
-        
+        // Pass LOAD_FLAGS_DISALLOW_INHERIT_OWNER to prevent any loads from
+        // inheriting the currently loaded document's principal.
         let flags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
         if (data.userEntered) {
           flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_OWNER;
@@ -1405,7 +1405,7 @@ var BrowserApp = {
           }
         }
 
-        
+        // Don't show progress throbber for about:home or about:reader
         if (!shouldShowProgress(url))
           params.showProgress = false;
 
@@ -1425,7 +1425,7 @@ var BrowserApp = {
         break;
 
       case "keyword-search":
-        
+        // This assumes that the user can only perform a keyword search on the selected tab.
         this.selectedTab.userSearch = aData;
 
         let engine = aSubject.QueryInterface(Ci.nsISearchEngine);
@@ -1461,8 +1461,8 @@ var BrowserApp = {
         break;
 
       case "ScrollTo:FocusedInput":
-        
-        
+        // these messages come from a change in the viewable area and not user interaction
+        // we allow scrolling to the selected input, but not zooming the page
         this.scrollToFocusedInput(browser, false);
         break;
 
@@ -1492,7 +1492,7 @@ var BrowserApp = {
       }
 
       case "FormHistory:Init": {
-        
+        // Force creation/upgrade of formhistory.sqlite
         FormHistory.count({});
         Services.obs.removeObserver(this, "FormHistory:Init");
         break;
@@ -1528,13 +1528,13 @@ var BrowserApp = {
     return this.defaultBrowserWidth = width;
   },
 
-  
+  // nsIAndroidBrowserApp
   getBrowserTab: function(tabId) {
     return this.getTabForId(tabId);
   },
 
-  
-  
+  // This method will print a list from fromIndex to toIndex, optionally
+  // selecting selIndex(if fromIndex<=selIndex<=toIndex)
   showHistory: function(fromIndex, toIndex, selIndex) {
     let browser = this.selectedBrowser;
     let hist = browser.sessionHistory;
@@ -1609,8 +1609,8 @@ var NativeWindow = {
         msg.button = {
           label: aOptions.button.label,
           id: uuidgen.generateUUID().toString(),
-          
-          
+          // If the caller specified a button, make sure we convert any chrome urls
+          // to jar:jar urls so that the frontend can show them
           icon: aOptions.button.icon ? resolveGeckoURI(aOptions.button.icon) : null,
         };
         this._callbacks[msg.button.id] = aOptions.button.callback;
@@ -1693,22 +1693,22 @@ var NativeWindow = {
     _callbacksId: 0,
     _promptId: 0,
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * @param aOptions
+   *        An options JavaScript object holding additional properties for the
+   *        notification. The following properties are currently supported:
+   *        persistence: An integer. The notification will not automatically
+   *                     dismiss for this many page loads. If persistence is set
+   *                     to -1, the doorhanger will never automatically dismiss.
+   *        persistWhileVisible:
+   *                     A boolean. If true, a visible notification will always
+   *                     persist across location changes.
+   *        timeout:     A time in milliseconds. The notification will not
+   *                     automatically dismiss before this time.
+   *        checkbox:    A string to appear next to a checkbox under the notification
+   *                     message. The button callback functions will be called with
+   *                     the checked state as an argument.                   
+   */
     show: function(aMessage, aValue, aButtons, aTabID, aOptions) {
       aButtons.forEach((function(aButton) {
         this._callbacks[this._callbacksId] = { cb: aButton.callback, prompt: this._promptId };
@@ -1722,7 +1722,7 @@ var NativeWindow = {
         message: aMessage,
         value: aValue,
         buttons: aButtons,
-        
+        // use the current tab if none is provided
         tabID: aTabID || BrowserApp.selectedTab.id,
         options: aOptions || {}
       };
@@ -1761,7 +1761,7 @@ var NativeWindow = {
       let reply_id = data["callback"];
 
       if (this.doorhanger._callbacks[reply_id]) {
-        
+        // Pass the value of the optional checkbox to the callback
         let checked = data["checked"];
         this.doorhanger._callbacks[reply_id].cb(checked, data.inputs);
 
@@ -1775,9 +1775,9 @@ var NativeWindow = {
     }
   },
   contextmenus: {
-    items: {}, 
-    _nativeItemsSeparator: 0, 
-    _contextId: 0, 
+    items: {}, //  a list of context menu items that we may show
+    _nativeItemsSeparator: 0, // the index to insert native context menu items at
+    _contextId: 0, // id to assign to new context menu items if they are added
 
     init: function() {
       Services.obs.addObserver(this, "Gesture:LongPress", false);
@@ -1917,7 +1917,7 @@ var NativeWindow = {
     imageSaveableContext: {
       matches: function imageSaveableContextMatches(aElement) {
         if (aElement instanceof Ci.nsIImageLoadingContent && aElement.currentURI) {
-          
+          // The image must be loaded to allow saving
           let request = aElement.getRequest(Ci.nsIImageLoadingContent.CURRENT_REQUEST);
           return (request && (request.imageStatus & request.STATUS_SIZE_AVAILABLE));
         }
@@ -1983,7 +1983,7 @@ var NativeWindow = {
           id: id,
           isGroup: false,
           callback: (function(aTarget, aX, aY) {
-            
+            // If this is a menu item, show a new context menu with the submenu in it
             if (item instanceof Ci.nsIDOMHTMLMenuElement) {
               this.menuitems = [];
               this._nativeItemsSeparator = 0;
@@ -1991,7 +1991,7 @@ var NativeWindow = {
               this._addHTMLContextMenuItems(item, id);
               this._innerShow(aTarget, aX, aY);
             } else {
-              
+              // oltherwise just click the item
               item.click();
             }
           }).bind(this),
@@ -2026,13 +2026,13 @@ var NativeWindow = {
       return null;
     },
 
-    
-    
-    
+    // Checks if there are context menu items to show, and if it finds them
+    // sends a contextmenu event to content. We also send showing events to
+    // any html5 context menus we are about to show
     _sendToContent: function(aX, aY) {
-      
-      
-      
+      // find and store the top most element this context menu is being shown for
+      // use the highlighted element if possible, otherwise look for nearby clickable elements
+      // If we still don't find one we fall back to using anything
       let target = BrowserEventHandler._highlightElement || ElementTouchHelper.elementFromPoint(aX, aY);
       if (!target)
         target = ElementTouchHelper.anyElementFromPoint(aX, aY);
@@ -2040,7 +2040,7 @@ var NativeWindow = {
       if (!target)
         return;
 
-      
+      // store a weakref to the target to be used when the context menu event returns
       this._target = target;
 
       this.menuitems = [];
@@ -2048,20 +2048,20 @@ var NativeWindow = {
 
       Services.obs.notifyObservers(null, "before-build-contextmenu", "");
 
-      
+      // now walk up the tree and for each node look for any context menu items that apply
       let element = target;
       this._nativeItemsSeparator = 0;
       while (element) {
-        
+        // first check for any html5 context menus that might exist
         let contextmenu = element.contextMenu;
         if (contextmenu) {
-          
+          // send this before we build the list to make sure the site can update the menu
           contextmenu.QueryInterface(Components.interfaces.nsIHTMLMenu);
           contextmenu.sendShowEvent();
           this._addHTMLContextMenuItems(contextmenu, null);
         }
 
-        
+        // then check for any context menu items registered in the ui
         for (let itemId of Object.keys(this.items)) {
           let item = this.items[itemId];
           if (!this._getMenuItemForId(item.id) && item.matches(element, aX, aY)) {
@@ -2072,7 +2072,7 @@ var NativeWindow = {
         element = element.parentNode;
       }
 
-      
+      // only send the contextmenu event to content if we are planning to show a context menu (i.e. not on every long tap)
       if (this.menuitems.length > 0) {
         let event = target.ownerDocument.createEvent("MouseEvent");
         event.initMouseEvent("contextmenu", true, true, content,
@@ -2089,8 +2089,8 @@ var NativeWindow = {
       }
     },
 
-    
-    
+    // Actually shows the native context menu by passing a list of context menu items to
+    // show to the Java.
     _show: function(aEvent) {
       let popupNode = this._target;
       this._target = null;
@@ -2103,7 +2103,7 @@ var NativeWindow = {
     _innerShow: function(aTarget, aX, aY) {
       Haptic.performSimpleAction(Haptic.LongPress);
 
-      
+      // spin through the tree looking for a title for this context menu
       let node = aTarget;
       let title ="";
       while(node && !title) {
@@ -2120,12 +2120,12 @@ var NativeWindow = {
         node = node.parentNode;
       }
 
-      
+      // convert this.menuitems object to an array for sending to native code
       let itemArray = [];
       for (let i = 0; i < this.menuitems.length; i++) {
         let val = this.menuitems[i].getValue(aTarget);
 
-        
+        // hidden menu items will return null from getValue
         if (val)
           itemArray.push(val);
       }
@@ -2139,7 +2139,7 @@ var NativeWindow = {
       }).setSingleChoiceItems(itemArray)
       .show((function(data) {
         if (data.button == -1) {
-          
+          // prompt was cancelled
           return;
         }
 
@@ -2149,7 +2149,7 @@ var NativeWindow = {
         this.menuitems = null;
         if (selectedItem && selectedItem.callback) {
           if (selectedItem.matches) {
-            
+            // for menuitems added using the native UI, pass the dom element that matched that item to the callback
             while (aTarget) {
               if (selectedItem.matches(aTarget, aX, aY)) {
                 selectedItem.callback.call(selectedItem, aTarget, aX, aY);
@@ -2158,7 +2158,7 @@ var NativeWindow = {
               aTarget = aTarget.parentNode;
             }
           } else {
-            
+            // if this was added using the html5 context menu api, just click on the context menu item
             selectedItem.callback.call(selectedItem, aTarget, aX, aY);
           }
         }
@@ -2173,13 +2173,13 @@ var NativeWindow = {
 
     observe: function(aSubject, aTopic, aData) {
       let data = JSON.parse(aData);
-      
+      // content gets first crack at cancelling context menus
       this._sendToContent(data.x, data.y);
     },
 
-    
+    // XXX - These are stolen from Util.js, we should remove them if we bring it back
     makeURLAbsolute: function makeURLAbsolute(base, url) {
-      
+      // Note:  makeURI() will throw if url is not a valid URI
       return this.makeURI(url, null, this.makeURI(base)).spec;
     },
 
@@ -2208,8 +2208,8 @@ var NativeWindow = {
 
       href = aLink.getAttributeNS(kXLinkNamespace, "href");
       if (!href || !href.match(/\S/)) {
-        
-        
+        // Without this we try to save as the current doc,
+        // for example, HTML case also throws if empty
         throw "Empty href";
       }
 
@@ -2253,7 +2253,7 @@ var LightWeightThemeWebInstaller = {
       case "InstallBrowserTheme":
       case "PreviewBrowserTheme":
       case "ResetBrowserThemePreview":
-        
+        // ignore requests from background tabs
         if (event.target.ownerDocument.defaultView.top != content)
           return;
     }
@@ -2355,7 +2355,7 @@ var DesktopUserAgent = {
     Services.obs.addObserver(this, "DesktopMode:Change", false);
     UserAgentOverrides.addComplexOverride(this.onRequest.bind(this));
 
-    
+    // See https://developer.mozilla.org/en/Gecko_user_agent_string_reference
     this.DESKTOP_UA = Cc["@mozilla.org/network/protocol;1?name=http"]
                         .getService(Ci.nsIHttpProtocolHandler).userAgent
                         .replace(/Android; [a-zA-Z]+/, "X11; Linux x86_64")
@@ -2384,7 +2384,7 @@ var DesktopUserAgent = {
   },
 
   getUserAgentForTab: function ua_getUserAgentForTab(aTab) {
-    
+    // Send desktop UA if "Request Desktop Site" is enabled.
     if (aTab.desktopMode)
       return this.DESKTOP_UA;
 
@@ -2444,7 +2444,7 @@ nsBrowserAccess.prototype = {
         case Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL:
           aWhere = Services.prefs.getIntPref("browser.link.open_external");
           break;
-        default: 
+        default: // OPEN_NEW or an illegal value
           aWhere = Services.prefs.getIntPref("browser.link.open_newwindow");
       }
     }
@@ -2491,7 +2491,7 @@ nsBrowserAccess.prototype = {
         }
       }
 
-      
+      // BrowserApp.addTab calls loadURIWithFlags with the appropriate params
       let tab = BrowserApp.addTab(aURI ? aURI.spec : "about:blank", { flags: loadflags,
                                                                       referrerURI: referrer,
                                                                       external: isExternal,
@@ -2503,7 +2503,7 @@ nsBrowserAccess.prototype = {
       return tab.browser;
     }
 
-    
+    // OPEN_CURRENTWINDOW and illegal values
     let browser = BrowserApp.selectedBrowser;
     if (aURI && browser)
       browser.loadURIWithFlags(aURI.spec, loadflags, referrer, null, null);
@@ -2531,16 +2531,16 @@ nsBrowserAccess.prototype = {
 };
 
 
-
-
+// track the last known screen size so that new tabs
+// get created with the right size rather than being 1x1
 let gScreenWidth = 1;
 let gScreenHeight = 1;
 let gReflowPending = null;
 
-
-
-
-
+// The margins that should be applied to the viewport for fixed position
+// children. This is used to avoid browser chrome permanently obscuring
+// fixed position content, and also to make sure window-sized pages take
+// into account said browser chrome.
 let gViewportMargins = { top: 0, right: 0, bottom: 0, left: 0};
 
 function Tab(aURL, aParams) {
@@ -2586,8 +2586,8 @@ Tab.prototype = {
     this.browser.setAttribute("type", "content-targetable");
     this.setBrowserSize(kDefaultCSSViewportWidth, kDefaultCSSViewportHeight);
 
-    
-    
+    // Make sure the previously selected panel remains selected. The selected panel of a deck is
+    // not stable when panels are added.
     let selectedPanel = BrowserApp.deck.selectedPanel;
     BrowserApp.deck.insertBefore(this.browser, aParams.sibling || null);
     BrowserApp.deck.selectedPanel = selectedPanel;
@@ -2601,7 +2601,7 @@ Tab.prototype = {
       }
     }
 
-    
+    // Must be called after appendChild so the docshell has been created.
     this.setActive(false);
 
     let isPrivate = ("isPrivate" in aParams) && aParams.isPrivate;
@@ -2614,17 +2614,17 @@ Tab.prototype = {
     let frameLoader = this.browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
     frameLoader.renderMode = Ci.nsIFrameLoader.RENDER_MODE_ASYNC_SCROLL;
 
-    
+    // only set tab uri if uri is valid
     let uri = null;
     let title = aParams.title || aURL;
     try {
       uri = Services.io.newURI(aURL, null, null).spec;
     } catch (e) {}
 
-    
-    
-    
-    
+    // When the tab is stubbed from Java, there's a window between the stub
+    // creation and the tab creation in Gecko where the stub could be removed
+    // (which is easiest to hit during startup).  We need to differentiate
+    // between tab stubs from Java and new tabs from Gecko to prevent breakage.
     let stub = false;
 
     if (!aParams.zombifying) {
@@ -2676,7 +2676,7 @@ Tab.prototype = {
     this.browser.addEventListener("blur", this, true);
     this.browser.addEventListener("scroll", this, true);
     this.browser.addEventListener("MozScrolledAreaChanged", this, true);
-    
+    // Note that the XBL binding is untrusted
     this.browser.addEventListener("PluginBindingAttached", this, true, true);
     this.browser.addEventListener("pageshow", this, true);
     this.browser.addEventListener("MozApplicationManifest", this, true);
@@ -2685,8 +2685,8 @@ Tab.prototype = {
     Services.prefs.addObserver("browser.ui.zoom.force-user-scalable", this, false);
 
     if (aParams.delayLoad) {
-      
-      
+      // If this is a zombie tab, attach restore data so the tab will be
+      // restored when selected
       this.browser.__SS_data = {
         entries: [{
           url: aURL,
@@ -2701,10 +2701,10 @@ Tab.prototype = {
       let referrerURI = "referrerURI" in aParams ? aParams.referrerURI : null;
       let charset = "charset" in aParams ? aParams.charset : null;
 
-      
+      // This determines whether or not we show the progress throbber in the urlbar
       this.showProgress = "showProgress" in aParams ? aParams.showProgress : true;
 
-      
+      // The search term the user entered to load the current URL
       this.userSearch = "userSearch" in aParams ? aParams.userSearch : "";
 
       try {
@@ -2720,26 +2720,26 @@ Tab.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Retrieves the font size in twips for a given element.
+   */
   getInflatedFontSizeFor: function(aElement) {
-    
+    // GetComputedStyle should always give us CSS pixels for a font size.
     let fontSizeStr = this.window.getComputedStyle(aElement)['fontSize'];
     let fontSize = fontSizeStr.slice(0, -2);
     return aElement.fontSizeInflation * fontSize;
   },
 
-  
-
-
-
-
+  /**
+   * This returns the zoom necessary to match the font size of an element to
+   * the minimum font size specified by the browser.zoom.reflowOnZoom.minFontSizeTwips
+   * preference.
+   */
   getZoomToMinFontSize: function(aElement) {
-    
-    
-    
-    
+    // We only use the font.size.inflation.minTwips preference because this is
+    // the only one that is controlled by the user-interface in the 'Settings'
+    // menu. Thus, if font.size.inflation.emPerLine is changed, this does not
+    // effect reflow-on-zoom.
     let minFontSize = convertFromTwipsToPx(Services.prefs.getIntPref("font.size.inflation.minTwips"));
     return minFontSize / this.getInflatedFontSizeFor(aElement);
   },
@@ -2754,18 +2754,18 @@ Tab.prototype = {
         clearTimeout(gReflowPending);
       }
 
-      
-      
+      // We add in a bit of fudge just so that the end characters
+      // don't accidentally get clipped. 15px is an arbitrary choice.
       gReflowPending = setTimeout(doChangeMaxLineBoxWidth,
                                   reflozTimeout,
                                   viewportWidth - 15);
   },
 
-  
-
-
+  /** 
+   * Reloads the tab with the desktop mode setting.
+   */
   reloadWithMode: function (aDesktopMode) {
-    
+    // Set desktop mode for tab and send change to Java
     if (this.desktopMode != aDesktopMode) {
       this.desktopMode = aDesktopMode;
       sendMessageToJava({
@@ -2775,7 +2775,7 @@ Tab.prototype = {
       });
     }
 
-    
+    // Only reload the page for http/https schemes
     let currentURI = this.browser.currentURI;
     if (!currentURI.schemeIs("http") && !currentURI.schemeIs("https"))
       return;
@@ -2783,20 +2783,20 @@ Tab.prototype = {
     let url = currentURI.spec;
     let flags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
     if (this.originalURI && !this.originalURI.equals(currentURI)) {
-      
+      // We were redirected; reload the original URL
       url = this.originalURI.spec;
       flags |= Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
     } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Many sites use mobile-specific URLs, such as:
+      //   http://m.yahoo.com
+      //   http://www.google.com/m
+      // If the user clicks "Request Desktop Site" while on a mobile site, it
+      // will appear to do nothing since the mobile URL is still being
+      // requested. To address this, we do the following:
+      //   1) Remove the path from the URL (http://www.google.com/m?q=query -> http://www.google.com)
+      //   2) If a host subdomain is "m", remove it (http://en.m.wikipedia.org -> http://en.wikipedia.org)
+      // This means the user is sent to site's home page, but this is better
+      // than the setting having no effect at all.
       if (aDesktopMode)
         url = currentURI.prePath.replace(/([\/\.])m\./g, "$1");
       else
@@ -2831,8 +2831,8 @@ Tab.prototype = {
     Services.obs.removeObserver(this, "before-first-paint");
     Services.prefs.removeObserver("browser.ui.zoom.force-user-scalable", this);
 
-    
-    
+    // Make sure the previously selected panel remains selected. The selected panel of a deck is
+    // not stable when panels are removed.
     let selectedPanel = BrowserApp.deck.selectedPanel;
     BrowserApp.deck.removeChild(this.browser);
     BrowserApp.deck.selectedPanel = selectedPanel;
@@ -2841,7 +2841,7 @@ Tab.prototype = {
     this.savedArticle = null;
   },
 
-  
+  // This should be called to update the browser when the tab gets selected/unselected
   setActive: function setActive(aActive) {
     if (!this.browser || !this.browser.docShell)
       return;
@@ -2867,24 +2867,24 @@ Tab.prototype = {
     if (zoom <= 0 || resolution <= 0)
       return;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // "zoom" is the user-visible zoom of the "this" tab
+    // "resolution" is the zoom at which we wish gecko to render "this" tab at
+    // these two may be different if we are, for example, trying to render a
+    // large area of the page at low resolution because the user is panning real
+    // fast.
+    // The gecko scroll position is in CSS pixels. The display port rect
+    // values (aDisplayPort), however, are in CSS pixels multiplied by the desired
+    // rendering resolution. Therefore care must be taken when doing math with
+    // these sets of values, to ensure that they are normalized to the same coordinate
+    // space first.
 
     let element = this.browser.contentDocument.documentElement;
     if (!element)
       return;
 
-    
-    
-    
+    // we should never be drawing background tabs at resolutions other than the user-
+    // visible zoom. for foreground tabs, however, if we are drawing at some other
+    // resolution, we need to set the resolution as specified.
     let cwu = window.top.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
     if (BrowserApp.selectedTab == this) {
       if (resolution != this._drawZoom) {
@@ -2895,11 +2895,11 @@ Tab.prototype = {
       dump("Warning: setDisplayPort resolution did not match zoom for background tab! (" + resolution + " != " + zoom + ")");
     }
 
-    
-    
-    
-    
-    
+    // Finally, we set the display port, taking care to convert everything into the CSS-pixel
+    // coordinate space, because that is what the function accepts. Also we have to fudge the
+    // displayport somewhat to make sure it gets through all the conversions gecko will do on it
+    // without deforming too much. See https://bugzilla.mozilla.org/show_bug.cgi?id=737510#c10
+    // for details on what these operations are.
     let geckoScrollX = this.browser.contentWindow.scrollX;
     let geckoScrollY = this.browser.contentWindow.scrollY;
     aDisplayPort = this._dirtiestHackEverToWorkAroundGeckoRounding(aDisplayPort, geckoScrollX, geckoScrollY);
@@ -2919,11 +2919,11 @@ Tab.prototype = {
         !fuzzyEquals(displayPort.width, this._oldDisplayPort.width) ||
         !fuzzyEquals(displayPort.height, this._oldDisplayPort.height)) {
       if (BrowserApp.gUseLowPrecision) {
-        
-        
-        
-        
-        
+        // Set the display-port to be 4x the size of the critical display-port,
+        // on each dimension, giving us a 0.25x lower precision buffer around the
+        // critical display-port. Spare area is *not* redistributed to the other
+        // axis, as display-list building and invalidation cost scales with the
+        // size of the display-port.
         let pageRect = cwu.getRootBounds();
         let pageXMost = pageRect.right - geckoScrollX;
         let pageYMost = pageRect.bottom - geckoScrollY;
@@ -2949,30 +2949,30 @@ Tab.prototype = {
     this._oldDisplayPort = displayPort;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * Yes, this is ugly. But it's currently the safest way to account for the rounding errors that occur
+   * when we pump the displayport coordinates through gecko and they pop out in the compositor.
+   *
+   * In general, the values are converted from page-relative device pixels to viewport-relative app units,
+   * and then back to page-relative device pixels (now as ints). The first half of this is only slightly
+   * lossy, but it's enough to throw off the numbers a little. Because of this, when gecko calls
+   * ScaleToOutsidePixels to generate the final rect, the rect may get expanded more than it should,
+   * ending up a pixel larger than it started off. This is undesirable in general, but specifically
+   * bad for tiling, because it means we means we end up painting one line of pixels from a tile,
+   * causing an otherwise unnecessary upload of the whole tile.
+   *
+   * In order to counteract the rounding error, this code simulates the conversions that will happen
+   * to the display port, and calculates whether or not that final ScaleToOutsidePixels is actually
+   * expanding the rect more than it should. If so, it determines how much rounding error was introduced
+   * up until that point, and adjusts the original values to compensate for that rounding error.
+   */
   _dirtiestHackEverToWorkAroundGeckoRounding: function(aDisplayPort, aGeckoScrollX, aGeckoScrollY) {
     const APP_UNITS_PER_CSS_PIXEL = 60.0;
     const EXTRA_FUDGE = 0.04;
 
     let resolution = aDisplayPort.resolution;
 
-    
+    // Some helper functions that simulate conversion processes in gecko
 
     function cssPixelsToAppUnits(aVal) {
       return Math.floor((aVal * APP_UNITS_PER_CSS_PIXEL) + 0.5);
@@ -2986,13 +2986,13 @@ Tab.prototype = {
       return cssPixelsToAppUnits(aVal / resolution);
     }
 
-    
-    
+    // Stash our original (desired) displayport width and height away, we need it
+    // later and we might modify the displayport in between.
     let originalWidth = aDisplayPort.right - aDisplayPort.left;
     let originalHeight = aDisplayPort.bottom - aDisplayPort.top;
 
-    
-    
+    // This is the first conversion the displayport goes through, going from page-relative
+    // device pixels to viewport-relative app units.
     let appUnitDisplayPort = {
       x: cssPixelsToAppUnits((aDisplayPort.left / resolution) - aGeckoScrollX),
       y: cssPixelsToAppUnits((aDisplayPort.top / resolution) - aGeckoScrollY),
@@ -3000,48 +3000,48 @@ Tab.prototype = {
       h: cssPixelsToAppUnits((aDisplayPort.bottom - aDisplayPort.top) / resolution)
     };
 
-    
-    
+    // This is the translation gecko applies when converting back from viewport-relative
+    // device pixels to page-relative device pixels.
     let geckoTransformX = -Math.floor((-aGeckoScrollX * resolution) + 0.5);
     let geckoTransformY = -Math.floor((-aGeckoScrollY * resolution) + 0.5);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // The final "left" value as calculated in gecko is:
+    //    left = geckoTransformX + Math.floor(appUnitsToDevicePixels(appUnitDisplayPort.x))
+    // In a perfect world, this value would be identical to aDisplayPort.left, which is what
+    // we started with. However, this may not be the case if the value being floored has accumulated
+    // enough error to drop below what it should be.
+    // For example, assume geckoTransformX is 0, and aDisplayPort.left is 4, but
+    // appUnitsToDevicePixels(appUnitsToDevicePixels.x) comes out as 3.9 because of rounding error.
+    // That's bad, because the -0.1 error has caused it to floor to 3 instead of 4. (If it had errored
+    // the other way and come out as 4.1, there's no problem). In this example, we need to increase the
+    // "left" value by some amount so that the 3.9 actually comes out as >= 4, and it gets floored into
+    // the expected value of 4. The delta values calculated below calculate that error amount (e.g. -0.1).
     let errorLeft = (geckoTransformX + appUnitsToDevicePixels(appUnitDisplayPort.x)) - aDisplayPort.left;
     let errorTop = (geckoTransformY + appUnitsToDevicePixels(appUnitDisplayPort.y)) - aDisplayPort.top;
 
-    
-    
-    
-    
+    // If the error was negative, that means it will floor incorrectly, so we need to bump up the
+    // original aDisplayPort.left and/or aDisplayPort.top values. The amount we bump it up by is
+    // the error amount (increased by a small fudge factor to ensure it's sufficient), converted
+    // backwards through the conversion process.
     if (errorLeft < 0) {
       aDisplayPort.left += appUnitsToDevicePixels(devicePixelsToAppUnits(EXTRA_FUDGE - errorLeft));
-      
+      // After we modify the left value, we need to re-simulate some values to take that into account
       appUnitDisplayPort.x = cssPixelsToAppUnits((aDisplayPort.left / resolution) - aGeckoScrollX);
       appUnitDisplayPort.w = cssPixelsToAppUnits((aDisplayPort.right - aDisplayPort.left) / resolution);
     }
     if (errorTop < 0) {
       aDisplayPort.top += appUnitsToDevicePixels(devicePixelsToAppUnits(EXTRA_FUDGE - errorTop));
-      
+      // After we modify the top value, we need to re-simulate some values to take that into account
       appUnitDisplayPort.y = cssPixelsToAppUnits((aDisplayPort.top / resolution) - aGeckoScrollY);
       appUnitDisplayPort.h = cssPixelsToAppUnits((aDisplayPort.bottom - aDisplayPort.top) / resolution);
     }
 
-    
-    
-    
+    // At this point, the aDisplayPort.left and aDisplayPort.top values have been corrected to account
+    // for the error in conversion such that they end up where we want them. Now we need to also do the
+    // same for the right/bottom values so that the width/height end up where we want them.
 
-    
-    
+    // This is the final conversion that the displayport goes through before gecko spits it back to
+    // us. Note that the width/height calculates are of the form "ceil(transform(right)) - floor(transform(left))"
     let scaledOutDevicePixels = {
       x: Math.floor(appUnitsToDevicePixels(appUnitDisplayPort.x)),
       y: Math.floor(appUnitsToDevicePixels(appUnitDisplayPort.y)),
@@ -3049,21 +3049,21 @@ Tab.prototype = {
       h: Math.ceil(appUnitsToDevicePixels(appUnitDisplayPort.y + appUnitDisplayPort.h)) - Math.floor(appUnitsToDevicePixels(appUnitDisplayPort.y))
     };
 
-    
-    
-    
-    
-    
+    // The final "width" value as calculated in gecko is scaledOutDevicePixels.w.
+    // In a perfect world, this would equal originalWidth. However, things are not perfect, and as before,
+    // we need to calculate how much rounding error has been introduced. In this case the rounding error is causing
+    // the Math.ceil call above to ceiling to the wrong final value. For example, 4 gets converted 4.1 and gets
+    // ceiling'd to 5; in this case the error is 0.1.
     let errorRight = (appUnitsToDevicePixels(appUnitDisplayPort.x + appUnitDisplayPort.w) - scaledOutDevicePixels.x) - originalWidth;
     let errorBottom = (appUnitsToDevicePixels(appUnitDisplayPort.y + appUnitDisplayPort.h) - scaledOutDevicePixels.y) - originalHeight;
 
-    
-    
-    
+    // If the error was positive, that means it will ceiling incorrectly, so we need to bump down the
+    // original aDisplayPort.right and/or aDisplayPort.bottom. Again, we back-convert the error amount
+    // with a small fudge factor to figure out how much to adjust the original values.
     if (errorRight > 0) aDisplayPort.right -= appUnitsToDevicePixels(devicePixelsToAppUnits(errorRight + EXTRA_FUDGE));
     if (errorBottom > 0) aDisplayPort.bottom -= appUnitsToDevicePixels(devicePixelsToAppUnits(errorBottom + EXTRA_FUDGE));
 
-    
+    // Et voila!
     return aDisplayPort;
   },
 
@@ -3076,13 +3076,13 @@ Tab.prototype = {
     let [pageWidth, pageHeight] = this.getPageSize(this.browser.contentDocument,
                                                    viewportWidth, viewportHeight);
 
-    
-    
-    
-    
-    
-    
-    
+    // Check if the page would fit into either of the viewport dimensions minus
+    // the margins and shrink the screen size accordingly so that the aspect
+    // ratio calculation below works correctly in these situations.
+    // We take away the margin size over two to account for rounding errors,
+    // as the browser size set in updateViewportSize doesn't allow for any
+    // size between these two values (and thus anything between them is
+    // attributable to rounding error).
     if ((pageHeight * zoom) < gScreenHeight - (gViewportMargins.top + gViewportMargins.bottom) / 2) {
       screenHeight = gScreenHeight - gViewportMargins.top - gViewportMargins.bottom;
       viewportHeight = screenHeight / zoom;
@@ -3092,8 +3092,8 @@ Tab.prototype = {
       viewportWidth = screenWidth / zoom;
     }
 
-    
-    
+    // Make sure the aspect ratio of the screen is maintained when setting
+    // the clamping scroll-port size.
     let factor = Math.min(viewportWidth / screenWidth, pageWidth / screenWidth,
                           viewportHeight / screenHeight, pageHeight / screenHeight);
     let scrollPortWidth = screenWidth * factor;
@@ -3105,25 +3105,25 @@ Tab.prototype = {
   },
 
   setViewport: function(aViewport) {
-    
+    // Transform coordinates based on zoom
     let x = aViewport.x / aViewport.zoom;
     let y = aViewport.y / aViewport.zoom;
 
     this.setScrollClampingSize(aViewport.zoom);
 
-    
-    
+    // Adjust the max line box width to be no more than the viewport width, but
+    // only if the reflow-on-zoom preference is enabled.
     let isZooming = !fuzzyEquals(aViewport.zoom, this._zoom);
     if (BrowserApp.selectedTab.reflozPinchSeen &&
         isZooming && aViewport.zoom < 1.0) {
-      
-      
+      // In this case, we want to restore the max line box width,
+      // because we are pinch-zooming to zoom out.
       BrowserEventHandler.resetMaxLineBoxWidth();
       BrowserApp.selectedTab.reflozPinchSeen = false;
     } else if (BrowserApp.selectedTab.reflozPinchSeen &&
                isZooming) {
-      
-      
+      // In this case, the user pinch-zoomed in, so we don't want to
+      // preserve position as we would with reflow-on-zoom.
       BrowserApp.selectedTab.probablyNeedRefloz = false;
       BrowserApp.selectedTab._mReflozPoint = null;
     }
@@ -3146,7 +3146,7 @@ Tab.prototype = {
     if (aViewport.displayPort)
       this.setDisplayPort(aViewport.displayPort);
 
-    
+    // Store fixed margins for later retrieval in getViewport.
     this._fixedMarginLeft = aViewport.fixedMarginLeft;
     this._fixedMarginTop = aViewport.fixedMarginTop;
     this._fixedMarginRight = aViewport.fixedMarginRight;
@@ -3163,7 +3163,7 @@ Tab.prototype = {
   },
 
   setResolution: function(aZoom, aForce) {
-    
+    // Set zoom level
     if (aForce || !fuzzyEquals(aZoom, this._zoom)) {
       this._zoom = aZoom;
       if (BrowserApp.selectedTab == this) {
@@ -3194,7 +3194,7 @@ Tab.prototype = {
       pageTop: 0,
       pageRight: screenW,
       pageBottom: screenH,
-      
+      // We make up matching css page dimensions
       cssPageLeft: 0,
       cssPageTop: 0,
       cssPageRight: screenW / this._zoom,
@@ -3206,11 +3206,11 @@ Tab.prototype = {
       zoom: this._zoom,
     };
 
-    
+    // Set the viewport offset to current scroll offset
     viewport.cssX = this.browser.contentWindow.scrollX || 0;
     viewport.cssY = this.browser.contentWindow.scrollY || 0;
 
-    
+    // Transform coordinates based on zoom
     viewport.x = Math.round(viewport.cssX * viewport.zoom);
     viewport.y = Math.round(viewport.cssY * viewport.zoom);
 
@@ -3219,16 +3219,16 @@ Tab.prototype = {
       let cwu = this.browser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
       let cssPageRect = cwu.getRootBounds();
 
-      
-
-
-
-
-
-
-
-
-
+      /*
+       * Avoid sending page sizes of less than screen size before we hit DOMContentLoaded, because
+       * this causes the page size to jump around wildly during page load. After the page is loaded,
+       * send updates regardless of page size; we'll zoom to fit the content as needed.
+       *
+       * In the check below, we floor the viewport size because there might be slight rounding errors
+       * introduced in the CSS page size due to the conversion to and from app units in Gecko. The
+       * error should be no more than one app unit so doing the floor is overkill, but safe in the
+       * sense that the extra page size updates that get sent as a result will be mostly harmless.
+       */
       let pageLargerThanScreen = (cssPageRect.width >= Math.floor(viewport.cssWidth))
                               && (cssPageRect.height >= Math.floor(viewport.cssHeight));
       if (doc.readyState === 'complete' || pageLargerThanScreen) {
@@ -3236,7 +3236,7 @@ Tab.prototype = {
         viewport.cssPageTop = cssPageRect.top;
         viewport.cssPageRight = cssPageRect.right;
         viewport.cssPageBottom = cssPageRect.bottom;
-        
+        /* Transform the page width and height based on the zoom factor. */
         viewport.pageLeft = (viewport.cssPageLeft * viewport.zoom);
         viewport.pageTop = (viewport.cssPageTop * viewport.zoom);
         viewport.pageRight = (viewport.cssPageRight * viewport.zoom);
@@ -3259,17 +3259,17 @@ Tab.prototype = {
     let hasVerticalMargins = gViewportMargins.top != 0 || gViewportMargins.bottom != 0;
 
     if (!hasHorizontalMargins && !hasVerticalMargins) {
-      
+      // If there are no margins, then we don't need to do any remeasuring
       return;
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // If the page size has changed so that it might or might not fit on the
+    // screen with the margins included, run updateViewportSize to resize the
+    // browser accordingly.
+    // A page will receive the smaller viewport when its page size fits
+    // within the screen size, so remeasure when the page size remains within
+    // the threshold of screen + margins, in case it's sizing itself relative
+    // to the viewport.
     let viewport = this.getViewport();
     let pageWidth = viewport.pageRight - viewport.pageLeft;
     let pageHeight = viewport.pageBottom - viewport.pageTop;
@@ -3295,8 +3295,8 @@ Tab.prototype = {
         this.viewportMeasureCallback = setTimeout(function() {
           this.viewportMeasureCallback = null;
 
-          
-          
+          // Re-fetch the viewport as it may have changed between setting the timeout
+          // and running this callback
           let viewport = this.getViewport();
           let pageWidth = viewport.pageRight - viewport.pageLeft;
           let pageHeight = viewport.pageBottom - viewport.pageTop;
@@ -3308,9 +3308,9 @@ Tab.prototype = {
         }.bind(this), kViewportRemeasureThrottle);
       }
     } else if (this.viewportMeasureCallback) {
-      
-      
-      
+      // If the page changed size twice since we last measured the viewport and
+      // the latest size change reveals we don't need to remeasure, cancel any
+      // pending remeasure.
       clearTimeout(this.viewportMeasureCallback);
       this.viewportMeasureCallback = null;
     }
@@ -3323,20 +3323,20 @@ Tab.prototype = {
 
         LoginManagerContent.onContentLoaded(aEvent);
 
-        
+        // ignore on frames and other documents
         if (target != this.browser.contentDocument)
           return;
 
-        
-        
-        
+        // Sample the background color of the page and pass it along. (This is used to draw the
+        // checkerboard.) Right now we don't detect changes in the background color after this
+        // event fires; it's not clear that doing so is worth the effort.
         var backgroundColor = null;
         try {
           let { contentDocument, contentWindow } = this.browser;
           let computedStyle = contentWindow.getComputedStyle(contentDocument.body);
           backgroundColor = computedStyle.backgroundColor;
         } catch (e) {
-          
+          // Ignore. Catching and ignoring exceptions here ensures that Talos succeeds.
         }
 
         sendMessageToJava({
@@ -3345,10 +3345,10 @@ Tab.prototype = {
           bgColor: backgroundColor
         });
 
-        
-        
-        
-        
+        // Attach a listener to watch for "click" events bubbling up from error
+        // pages and other similar page. This lets us fix bugs like 401575 which
+        // require error page UI to do privileged things, without letting error
+        // pages have any privilege themselves.
         let docURI = target.documentURI;
         if (docURI.startsWith("about:certerror") || docURI.startsWith("about:blocked")) {
           this.browser.addEventListener("click", ErrorPageEventHandler, true);
@@ -3371,11 +3371,11 @@ Tab.prototype = {
         if (!target.href || target.disabled)
           return;
 
-        
+        // Ignore on frames and other documents
         if (target.ownerDocument != this.browser.contentDocument)
           return;
 
-        
+        // Sanitize the rel string
         let list = [];
         if (target.rel) {
           list = target.rel.toLowerCase().split(/\s+/);
@@ -3387,21 +3387,21 @@ Tab.prototype = {
         }
 
         if (list.indexOf("[icon]") != -1) {
-          
+          // We want to get the largest icon size possible for our UI.
           let maxSize = 0;
 
-          
-          
+          // We use the sizes attribute if available
+          // see http://www.whatwg.org/specs/web-apps/current-work/multipage/links.html#rel-icon
           if (target.hasAttribute("sizes")) {
             let sizes = target.getAttribute("sizes").toLowerCase();
 
             if (sizes == "any") {
-              
+              // Since Java expects an integer, use -1 to represent icons with sizes="any"
               maxSize = -1; 
             } else {
               let tokens = sizes.split(" ");
               tokens.forEach(function(token) {
-                
+                // TODO: check for invalid tokens
                 let [w, h] = token.split("x");
                 maxSize = Math.max(maxSize, Math.max(w, h));
               });
@@ -3426,7 +3426,7 @@ Tab.prototype = {
             return;
 
           try {
-            
+            // urlSecurityCeck will throw if things are not OK
             ContentAreaUtils.urlSecurityCheck(target.href, target.ownerDocument.nodePrincipal, Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL);
 
             if (!this.browser.feeds)
@@ -3447,7 +3447,7 @@ Tab.prototype = {
         if (!aEvent.isTrusted)
           return;
 
-        
+        // ignore on frames and other documents
         if (aEvent.originalTarget != this.browser.contentDocument)
           return;
 
@@ -3463,7 +3463,7 @@ Tab.prototype = {
         if (!aEvent.isTrusted)
           return;
 
-        
+        // Find the relevant tab, and close it from Java
         if (this.browser.contentWindow == aEvent.target) {
           aEvent.preventDefault();
 
@@ -3479,8 +3479,8 @@ Tab.prototype = {
         if (!aEvent.isTrusted)
           return;
 
-        
-        
+        // We're about to open a modal dialog, make sure the opening
+        // tab is brought to the front.
         let tab = BrowserApp.getTabForWindow(aEvent.target.top);
         BrowserApp.selectTab(tab);
         break;
@@ -3501,9 +3501,9 @@ Tab.prototype = {
       }
 
       case "MozScrolledAreaChanged": {
-        
-        
-        
+        // This event is only fired for root scroll frames, and only when the
+        // scrolled area has actually changed, so no need to check for that.
+        // Just make sure it's the event for the correct root scroll frame.
         if (aEvent.originalTarget != this.browser.contentDocument)
           return;
 
@@ -3523,7 +3523,7 @@ Tab.prototype = {
       }
 
       case "pageshow": {
-        
+        // only send pageshow for the top-level document
         if (aEvent.originalTarget.defaultView != this.browser.contentWindow)
           return;
 
@@ -3535,14 +3535,14 @@ Tab.prototype = {
         if (!Reader.isEnabledForParseOnLoad)
           return;
 
-        
+        // Once document is fully loaded, parse it
         Reader.parseDocumentFromTab(this.id, function (article) {
-          
-          
+          // Do nothing if there's no article or the page in this tab has
+          // changed
           let tabURL = this.browser.currentURI.specIgnoringRef;
           if (article == null || (article.url != tabURL)) {
-            
-            
+            // Don't clear the article for about:reader pages since we want to
+            // use the article from the previous page
             if (!tabURL.startsWith("about:reader")) {
               this.savedArticle = null;
               this.readerEnabled = false;
@@ -3575,24 +3575,24 @@ Tab.prototype = {
     if (contentWin != contentWin.top)
         return;
 
-    
+    // Filter optimization: Only really send NETWORK state changes to Java listener
     if (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
       if ((aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) && aWebProgress.isLoadingDocument) {
-        
-        
+        // We may receive a document stop event while a document is still loading
+        // (such as when doing URI fixup). Don't notify Java UI in these cases.
         return;
       }
 
-      
-      
+      // Check to see if we restoring the content from a previous presentation (session)
+      // since there should be no real network activity
       let restoring = aStateFlags & Ci.nsIWebProgressListener.STATE_RESTORING;
       let showProgress = restoring ? false : this.showProgress;
 
-      
+      // true if the page loaded successfully (i.e., no 404s or other errors)
       let success = false; 
       let uri = "";
       try {
-        
+        // Remember original URI for UA changes on redirected pages
         this.originalURI = aRequest.QueryInterface(Components.interfaces.nsIChannel).originalURI;
 
         if (this.originalURI != null)
@@ -3612,7 +3612,7 @@ Tab.prototype = {
       };
       sendMessageToJava(message);
 
-      
+      // Reset showProgress after state change
       this.showProgress = true;
     }
   },
@@ -3620,9 +3620,9 @@ Tab.prototype = {
   onLocationChange: function(aWebProgress, aRequest, aLocationURI, aFlags) {
     let contentWin = aWebProgress.DOMWindow;
 
-    
-    
-    
+    // Browser webapps may load content inside iframes that can not reach across the app/frame boundary
+    // i.e. even though the page is loaded in an iframe window.top != webapp
+    // Make cure this window is a top level tab before moving on.
     if (BrowserApp.getBrowserForWindow(contentWin) == null)
       return;
 
@@ -3636,20 +3636,20 @@ Tab.prototype = {
     let documentURI = contentWin.document.documentURIObject.spec;
     let contentType = contentWin.document.contentType;
 
-    
-    
-    
-    
+    // If fixedURI matches browser.lastURI, we assume this isn't a real location
+    // change but rather a spurious addition like a wyciwyg URI prefix. See Bug 747883.
+    // Note that we have to ensure fixedURI is not the same as aLocationURI so we
+    // don't false-positive page reloads as spurious additions.
     let sameDocument = (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) != 0 ||
                        ((this.browser.lastURI != null) && fixedURI.equals(this.browser.lastURI) && !fixedURI.equals(aLocationURI));
     this.browser.lastURI = fixedURI;
 
-    
+    // Reset state of click-to-play plugin notifications.
     clearTimeout(this.pluginDoorhangerTimeout);
     this.pluginDoorhangerTimeout = null;
     this.shouldShowPluginDoorhanger = true;
     this.clickToPlayPluginsActivated = false;
-    
+    // Borrowed from desktop Firefox: http://mxr.mozilla.org/mozilla-central/source/browser/base/content/urlbarBindings.xml#174
     let matchedURL = documentURI.match(/^((?:[a-z]+:\/\/)?(?:[^\/]+@)?)(.+?)(?::\d+)?(?:\/|$)/);
     let baseDomain = "";
     if (matchedURL) {
@@ -3659,7 +3659,7 @@ Tab.prototype = {
       try {
         baseDomain = Services.eTLD.getBaseDomainFromHost(domain);
         if (!domain.endsWith(baseDomain)) {
-          
+          // getBaseDomainFromHost converts its resultant to ACE.
           let IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(Ci.nsIIDNService);
           baseDomain = IDNService.convertACEtoUTF8(baseDomain);
         }
@@ -3679,12 +3679,12 @@ Tab.prototype = {
 
     sendMessageToJava(message);
 
-    
+    // The search term is only valid for this location change event, so reset it here.
     this.userSearch = "";
 
     if (!sameDocument) {
-      
-      
+      // XXX This code assumes that this is the earliest hook we have at which
+      // browser.contentDocument is changed to the new document we're loading
       this.contentDocumentIsDisplayed = false;
       this.hasTouchListener = false;
     } else {
@@ -3692,12 +3692,12 @@ Tab.prototype = {
     }
   },
 
-  
+  // Properties used to cache security state used to update the UI
   _state: null,
-  _hostChanged: false, 
+  _hostChanged: false, // onLocationChange will flip this bit
 
   onSecurityChange: function(aWebProgress, aRequest, aState) {
-    
+    // Don't need to do anything if the data we use to update the UI hasn't changed
     if (this._state == aState && !this._hostChanged)
       return;
 
@@ -3754,8 +3754,8 @@ Tab.prototype = {
   },
 
   OnHistoryReload: function(aUri, aFlags) {
-    
-    
+    // we don't do anything with this, so don't propagate it
+    // for now anyway
     return true;
   },
 
@@ -3773,7 +3773,7 @@ Tab.prototype = {
     return ViewportHandler.getMetadataForDocument(this.browser.contentDocument);
   },
 
-  
+  /** Update viewport when the metadata changes. */
   updateViewportMetadata: function updateViewportMetadata(aMetadata, aInitialLoad) {
     if (Services.prefs.getBoolPref("browser.ui.zoom.force-user-scalable")) {
       aMetadata.allowZoom = true;
@@ -3796,13 +3796,13 @@ Tab.prototype = {
     this.sendViewportMetadata();
   },
 
-  
+  /** Update viewport when the metadata or the window size changes. */
   updateViewportSize: function updateViewportSize(aOldScreenWidth, aInitialLoad) {
-    
-    
-    
-    
-    
+    // When this function gets called on window resize, we must execute
+    // this.sendViewportUpdate() so that refreshDisplayPort is called.
+    // Ensure that when making changes to this function that code path
+    // is not accidentally removed (the call to sendViewportUpdate() is
+    // at the very end).
 
     if (this.viewportMeasureCallback) {
       clearTimeout(this.viewportMeasureCallback);
@@ -3827,7 +3827,7 @@ Tab.prototype = {
       viewportW = metadata.width;
       viewportH = metadata.height;
 
-      
+      // If (scale * width) < device-width, increase the width (bug 561413).
       let maxInitialZoom = metadata.defaultZoom || metadata.maxZoom;
       if (maxInitialZoom && viewportW) {
         viewportW = Math.max(viewportW, screenW / maxInitialZoom);
@@ -3842,36 +3842,36 @@ Tab.prototype = {
         viewportH = viewportW * (screenH / screenW);
     }
 
-    
-    
-    
-    
-    
-    
+    // Make sure the viewport height is not shorter than the window when
+    // the page is zoomed out to show its full width. Note that before
+    // we set the viewport width, the "full width" of the page isn't properly
+    // defined, so that's why we have to call setBrowserSize twice - once
+    // to set the width, and the second time to figure out the height based
+    // on the layout at that width.
     let oldBrowserWidth = this.browserWidth;
     this.setBrowserSize(viewportW, viewportH);
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // if this page has not been painted yet, then this must be getting run
+    // because a meta-viewport element was added (via the DOMMetaAdded handler).
+    // in this case, we should not do anything that forces a reflow (see bug 759678)
+    // such as requesting the page size or sending a viewport update. this code
+    // will get run again in the before-first-paint handler and that point we
+    // will run though all of it. the reason we even bother executing up to this
+    // point on the DOMMetaAdded handler is so that scripts that use window.innerWidth
+    // before they are painted have a correct value (bug 771575).
     if (!this.contentDocumentIsDisplayed) {
       return;
     }
 
     let minScale = 1.0;
     if (this.browser.contentDocument) {
-      
-      
+      // this may get run during a Viewport:Change message while the document
+      // has not yet loaded, so need to guard against a null document.
       let [pageWidth, pageHeight] = this.getPageSize(this.browser.contentDocument, viewportW, viewportH);
 
-      
-      
-      
+      // In the situation the page size equals or exceeds the screen size,
+      // lengthen the viewport on the corresponding axis to include the margins.
+      // The '- 0.5' is to account for rounding errors.
       if (pageWidth * this._zoom > gScreenWidth - 0.5) {
         screenW = gScreenWidth;
         this.viewportExcludesHorizontalMargins = false;
@@ -3881,8 +3881,8 @@ Tab.prototype = {
         this.viewportExcludesVerticalMargins = false;
       }
 
-      
-      
+      // Store the page size that was used to calculate the viewport so that we
+      // can verify it's changed when we consider remeasuring in updateViewportForPageSize
       this.lastPageSizeUsedForViewportChange = {
         width: pageWidth,
         height: pageHeight
@@ -3894,23 +3894,23 @@ Tab.prototype = {
     viewportH = Math.max(viewportH, screenH / minScale);
     this.setBrowserSize(viewportW, viewportH);
 
-    
+    // Avoid having the scroll position jump around after device rotation.
     let win = this.browser.contentWindow;
     this.userScrollPos.x = win.scrollX;
     this.userScrollPos.y = win.scrollY;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This change to the zoom accounts for all types of changes I can conceive:
+    // 1. screen size changes, CSS viewport does not (pages with no meta viewport
+    //    or a fixed size viewport)
+    // 2. screen size changes, CSS viewport also does (pages with a device-width
+    //    viewport)
+    // 3. screen size remains constant, but CSS viewport changes (meta viewport
+    //    tag is added or removed)
+    // 4. neither screen size nor CSS viewport changes
+    //
+    // In all of these cases, we maintain how much actual content is visible
+    // within the screen width. Note that "actual content" may be different
+    // with respect to CSS pixels because of the CSS viewport size changing.
     let zoomScale = (screenW * oldBrowserWidth) / (aOldScreenWidth * viewportW);
     let zoom = (aInitialLoad && metadata.defaultZoom) ? metadata.defaultZoom : this.clampZoom(this._zoom * zoomScale);
     this.setResolution(zoom, false);
@@ -3945,7 +3945,7 @@ Tab.prototype = {
     cwu.setCSSViewport(aWidth, aHeight);
   },
 
-  
+  /** Takes a scale and restricts it based on this tab's zoom limits. */
   clampZoom: function clampZoom(aZoom) {
     let zoom = ViewportHandler.clamp(aZoom, kViewportMinScale, kViewportMaxScale);
 
@@ -3963,7 +3963,7 @@ Tab.prototype = {
   observe: function(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "before-first-paint":
-        
+        // Is it on the top level?
         let contentDocument = aSubject;
         if (contentDocument == this.browser.contentDocument) {
           if (BrowserApp.selectedTab == this) {
@@ -3971,27 +3971,27 @@ Tab.prototype = {
           }
           this.contentDocumentIsDisplayed = true;
 
-          
-          
-          
-          
-          
+          // reset CSS viewport and zoom to default on new page, and then calculate
+          // them properly using the actual metadata from the page. note that the
+          // updateMetadata call takes into account the existing CSS viewport size
+          // and zoom when calculating the new ones, so we need to reset these
+          // things here before calling updateMetadata.
           this.setBrowserSize(kDefaultCSSViewportWidth, kDefaultCSSViewportHeight);
           this.setResolution(gScreenWidth / this.browserWidth, false);
           ViewportHandler.updateMetadata(this, true);
 
-          
-          
-          
-          
-          
+          // Note that if we draw without a display-port, things can go wrong. By the
+          // time we execute this, it's almost certain a display-port has been set via
+          // the MozScrolledAreaChanged event. If that didn't happen, the updateMetadata
+          // call above does so at the end of the updateViewportSize function. As long
+          // as that is happening, we don't need to do it again here.
 
           if (contentDocument.mozSyntheticDocument) {
-            
-            
-            
-            
-            
+            // for images, scale to fit width. this needs to happen *after* the call
+            // to updateMetadata above, because that call sets the CSS viewport which
+            // will affect the page size (i.e. contentDocument.body.scroll*) that we
+            // use in this calculation. also we call sendViewportUpdate after changing
+            // the resolution so that the display port gets recalculated appropriately.
             let fitZoom = Math.min(gScreenWidth / contentDocument.body.scrollWidth,
                                    gScreenHeight / contentDocument.body.scrollHeight);
             this.setResolution(fitZoom, false);
@@ -3999,16 +3999,16 @@ Tab.prototype = {
           }
         }
 
-        
-        
-        
-        
+        // If the reflow-text-on-page-load pref is enabled, and reflow-on-zoom
+        // is enabled, and our defaultZoom level is set, then we need to get
+        // the default zoom and reflow the text according to the defaultZoom
+        // level.
         let rzEnabled = BrowserEventHandler.mReflozPref;
         let rzPl = Services.prefs.getBoolPref("browser.zoom.reflowZoom.reflowTextOnPageLoad");
 
         if (rzEnabled && rzPl) {
-          
-          
+          // Retrieve the viewport width and adjust the max line box width
+          // accordingly.
           let vp = BrowserApp.selectedTab.getViewport();
           BrowserApp.selectedTab.performReflowOnZoom(vp);
         }
@@ -4040,7 +4040,7 @@ Tab.prototype = {
     return this._readerActive;
   },
 
-  
+  // nsIBrowserTab
   get window() {
     if (!this.browser)
       return null;
@@ -4114,13 +4114,13 @@ var BrowserEventHandler = {
     let closest = aEvent.target;
 
     if (closest) {
-      
-      
+      // If we've pressed a scrollable element, let Java know that we may
+      // want to override the scroll behaviour (for document sub-frames)
       this._scrollableElement = this._findScrollableElement(closest, true);
       this._firstScrollEvent = true;
 
       if (this._scrollableElement != null) {
-        
+        // Discard if it's the top-level scrollable, we let Java handle this
         let doc = BrowserApp.selectedBrowser.contentDocument;
         if (this._scrollableElement != doc.body && this._scrollableElement != doc.documentElement)
           sendMessageToJava({ type: "Panning:Override" });
@@ -4172,9 +4172,9 @@ var BrowserEventHandler = {
       return;
     }
 
-    
-    
-    
+    // the remaining events are all dependent on the browser content document being the
+    // same as the browser displayed document. if they are not the same, we should ignore
+    // the event.
     if (BrowserApp.isBrowserContentDocumentDisplayed()) {
       this.handleUserEvent(aTopic, aData);
     }
@@ -4184,20 +4184,20 @@ var BrowserEventHandler = {
     switch (aTopic) {
 
       case "Gesture:Scroll": {
-        
-        
-        
+        // If we've lost our scrollable element, return. Don't cancel the
+        // override, as we probably don't want Java to handle panning until the
+        // user releases their finger.
         if (this._scrollableElement == null)
           return;
 
-        
-        
-        
+        // If this is the first scroll event and we can't scroll in the direction
+        // the user wanted, and neither can any non-root sub-frame, cancel the
+        // override so that Java can handle panning the main document.
         let data = JSON.parse(aData);
 
-        
-        
-        
+        // round the scroll amounts because they come in as floats and might be
+        // subject to minor rounding errors because of zoom values. I've seen values
+        // like 0.99 come in here and get truncated to 0; this avoids that problem.
         let zoom = BrowserApp.selectedTab._zoom;
         let x = Math.round(data.x / zoom);
         let y = Math.round(data.y / zoom);
@@ -4218,7 +4218,7 @@ var BrowserEventHandler = {
           this._firstScrollEvent = false;
         }
 
-        
+        // Scroll the scrollable element
         if (this._elementCanScroll(this._scrollableElement, x, y)) {
           this._scrollElementBy(this._scrollableElement, x, y);
           sendMessageToJava({ type: "Gesture:ScrollAck", scrolled: true });
@@ -4249,12 +4249,12 @@ var BrowserEventHandler = {
             this._sendMouseEvent("mousedown", element, x, y);
             this._sendMouseEvent("mouseup",   element, x, y);
 
-            
+            // See if its a input element
             if ((element instanceof HTMLInputElement && element.mozIsTextField(false)) ||
                 (element instanceof HTMLTextAreaElement))
                SelectionHandler.attachCaret(element);
 
-            
+            // scrollToFocusedInput does its own checks to find out if an element should be zoomed into
             BrowserApp.scrollToFocusedInput(BrowserApp.selectedBrowser);
           } catch(e) {
             Cu.reportError(e);
@@ -4285,15 +4285,15 @@ var BrowserEventHandler = {
   },
 
   _isRectZoomedIn: function(aRect, aViewport) {
-    
-    
-    
-    
-    
-    
+    // This function checks to see if the area of the rect visible in the
+    // viewport (i.e. the "overlapArea" variable below) is approximately
+    // the max area of the rect we can show. It also checks that the rect
+    // is actually on-screen by testing the left and right edges of the rect.
+    // In effect, this tells us whether or not zooming in to this rect
+    // will significantly change what the user is seeing.
     const minDifference = -20;
     const maxDifference = 20;
-    const maxZoomAllowed = 4; 
+    const maxZoomAllowed = 4; // keep this in sync with mobile/android/base/ui/PanZoomController.MAX_ZOOM
 
     let vRect = new Rect(aViewport.cssX, aViewport.cssY, aViewport.cssWidth, aViewport.cssHeight);
     let overlap = vRect.intersect(aRect);
@@ -4304,8 +4304,8 @@ var BrowserEventHandler = {
     let dx = (aRect.x - vRect.x);
 
     if (fuzzyEquals(aViewport.zoom, maxZoomAllowed) && overlap.width / aRect.width > 0.9) {
-      
-      
+      // we're already at the max zoom and the block is not spilling off the side of the screen so that even
+      // if the block isn't taking up most of the viewport we can't pan/zoom in any more. return true so that we zoom out
       return true;
     }
 
@@ -4318,9 +4318,9 @@ var BrowserEventHandler = {
     let data = JSON.parse(aData);
     let element = ElementTouchHelper.anyElementFromPoint(data.x, data.y);
 
-    
-    
-    
+    // We only want to do this if reflow-on-zoom is enabled, we don't already
+    // have a reflow-on-zoom event pending, and the element upon which the user
+    // double-tapped isn't of a type we want to avoid reflow-on-zoom.
     if (BrowserEventHandler.mReflozPref &&
        !BrowserApp.selectedTab._mReflozPoint &&
        !this._shouldSuppressReflowOnZoom(element)) {
@@ -4348,13 +4348,13 @@ var BrowserEventHandler = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Determine if reflow-on-zoom functionality should be suppressed, given a
+   * particular element. Double-tapping on the following elements suppresses
+   * reflow-on-zoom:
+   *
+   * <video>, <object>, <embed>, <applet>, <canvas>, <img>, <media>, <pre>
+   */
   _shouldSuppressReflowOnZoom: function(aElement) {
     if (aElement instanceof Ci.nsIDOMHTMLVideoElement ||
         aElement instanceof Ci.nsIDOMHTMLObjectElement ||
@@ -4370,9 +4370,9 @@ var BrowserEventHandler = {
     return false;
   },
 
-  
-
-
+  /* Zoom to an element, optionally keeping a particular part of it
+   * in view if it is really tall.
+   */
   _zoomToElement: function(aElement, aClickY = -1, aCanZoomOut = true, aCanScrollHorizontally = true) {
     const margin = 15;
     let rect = ElementTouchHelper.getBoundingContentRect(aElement);
@@ -4382,11 +4382,11 @@ var BrowserEventHandler = {
                          rect.y,
                          aCanScrollHorizontally ? rect.w + 2 * margin : viewport.cssWidth,
                          rect.h);
-    
+    // constrict the rect to the screen's right edge
     bRect.width = Math.min(bRect.width, viewport.cssPageRight - bRect.x);
 
-    
-    
+    // if the rect is already taking up most of the visible area and is stretching the
+    // width of the page, then we want to zoom out instead.
     if (BrowserEventHandler.mReflozPref) {
       let zoomFactor = BrowserApp.selectedTab.getZoomToMinFontSize(aElement);
 
@@ -4412,10 +4412,10 @@ var BrowserEventHandler = {
     rect.h = Math.min(bRect.width * viewport.cssHeight / viewport.cssWidth, bRect.height);
 
     if (aClickY >= 0) {
-      
-      
-      
-      
+      // if the block we're zooming to is really tall, and we want to keep a particular
+      // part of it in view, then adjust the y-coordinate of the target rect accordingly.
+      // the 1.2 multiplier is just a little fuzz to compensate for bRect including horizontal
+      // margins but not vertical ones.
       let cssTapY = viewport.cssY + aClickY;
       if ((bRect.height > rect.h) && (cssTapY > rect.y + (rect.h * 1.2))) {
         rect.y = cssTapY - (rect.h / 2);
@@ -4436,7 +4436,7 @@ var BrowserEventHandler = {
     }
 
     let viewport = BrowserApp.selectedTab.getViewport();
-    let fudge = 15; 
+    let fudge = 15; // Add a bit of fudge.
     let boundingElement = aRange.offsetNode;
     while (!boundingElement.getBoundingClientRect && boundingElement.parentNode) {
       boundingElement = boundingElement.parentNode;
@@ -4448,11 +4448,11 @@ var BrowserEventHandler = {
       BrowserApp.selectedBrowser.contentDocument.documentElement.scrollTop ||
       BrowserApp.selectedBrowser.contentDocument.body.scrollTop;
 
-    
-    
+    // We subtract half the height of the viewport so that we can (ideally)
+    // center the area of interest on the screen.
     let topPos = scrollTop + drRect.top - (viewport.cssHeight / 2.0);
 
-    
+    // Factor in the border and padding
     let boundingStyle = window.getComputedStyle(boundingElement);
     let leftAdjustment = parseInt(boundingStyle.paddingLeft) +
                          parseInt(boundingStyle.borderLeftWidth);
@@ -4508,8 +4508,8 @@ var BrowserEventHandler = {
     if (!this._highlightElement)
       return;
 
-    
-    
+    // If the active element is in a sub-frame, we need to make that frame's document
+    // active to remove the element's active state.
     if (this._highlightElement.ownerDocument != BrowserApp.selectedBrowser.contentWindow.document)
       DOMUtils.setContentState(this._highlightElement.ownerDocument.documentElement, kStateActive);
 
@@ -4526,8 +4526,8 @@ var BrowserEventHandler = {
   },
 
   _moveClickPoint: function(aElement, aX, aY) {
-    
-    
+    // the element can be out of the aX/aY point because of the touch radius
+    // if outside, we gracefully move the touch point to the edge of the element
     if (!(aElement instanceof HTMLHtmlElement)) {
       let isTouchClick = true;
       let rects = ElementTouchHelper.getContentClientRects(aElement);
@@ -4544,7 +4544,7 @@ var BrowserEventHandler = {
 
       if (isTouchClick) {
         let rect = rects[0];
-        
+        // if either width or height is zero, we don't want to move the click to the edge of the element. See bug 757208
         if (rect.width != 0 && rect.height != 0) {
           aX = Math.min(Math.floor(rect.left + rect.width), Math.max(Math.ceil(rect.left), aX));
           aY = Math.min(Math.floor(rect.top + rect.height), Math.max(Math.ceil(rect.top),  aY));
@@ -4576,15 +4576,15 @@ var BrowserEventHandler = {
   },
 
   _findScrollableElement: function(elem, checkElem) {
-    
+    // Walk the DOM tree until we find a scrollable element
     let scrollable = false;
     while (elem) {
-      
-
-
-
-
-
+      /* Element is scrollable if its scroll-size exceeds its client size, and:
+       * - It has overflow 'auto' or 'scroll'
+       * - It's a textarea
+       * - It's an HTML/BODY node
+       * - It's a select element showing multiple rows
+       */
       if (checkElem) {
         if ((elem.scrollTopMax > 0 || elem.scrollLeftMax > 0) &&
             (this._hasScrollableOverflow(elem) ||
@@ -4597,7 +4597,7 @@ var BrowserEventHandler = {
         checkElem = true;
       }
 
-      
+      // Propagate up iFrames
       if (!elem.parentNode && elem.documentElement && elem.documentElement.ownerDocument)
         elem = elem.documentElement.ownerDocument.defaultView.frameElement;
       else
@@ -4626,13 +4626,13 @@ var BrowserEventHandler = {
   }
 };
 
-const kReferenceDpi = 240; 
+const kReferenceDpi = 240; // standard "pixel" size used in some preferences
 
 const ElementTouchHelper = {
-  
-
-
-
+  /* Return the element at the given coordinates, starting from the given window and
+     drilling down through frames. If no window is provided, the top-level window of
+     the currently selected tab is used. The coordinates provided should be CSS pixels
+     relative to the window's scroll position. */
   anyElementFromPoint: function(aX, aY, aWindow) {
     let win = (aWindow ? aWindow : BrowserApp.selectedBrowser.contentWindow);
     let cwu = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
@@ -4649,21 +4649,21 @@ const ElementTouchHelper = {
     return elem;
   },
 
-  
-
-
-
-
+  /* Return the most appropriate clickable element (if any), starting from the given window
+     and drilling down through iframes as necessary. If no window is provided, the top-level
+     window of the currently selected tab is used. The coordinates provided should be CSS
+     pixels relative to the window's scroll position. The element returned may not actually
+     contain the coordinates passed in because of touch radius and clickability heuristics. */
   elementFromPoint: function(aX, aY, aWindow) {
-    
-    
+    // browser's elementFromPoint expect browser-relative client coordinates.
+    // subtract browser's scroll values to adjust
     let win = (aWindow ? aWindow : BrowserApp.selectedBrowser.contentWindow);
     let cwu = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
     let elem = this.getClosest(cwu, aX, aY);
 
-    
+    // step through layers of IFRAMEs and FRAMES to find innermost element
     while (elem && (elem instanceof HTMLIFrameElement || elem instanceof HTMLFrameElement)) {
-      
+      // adjust client coordinates' origin to be top left of iframe viewport
       let rect = elem.getBoundingClientRect();
       aX -= rect.left;
       aY -= rect.top;
@@ -4674,7 +4674,7 @@ const ElementTouchHelper = {
     return elem;
   },
 
-  
+  /* Returns the touch radius in content px. */
   getTouchRadius: function getTouchRadius() {
     let dpiRatio = ViewportHandler.displayDPI / kReferenceDpi;
     let zoom = BrowserApp.selectedTab._zoom;
@@ -4686,7 +4686,7 @@ const ElementTouchHelper = {
     };
   },
 
-  
+  /* Returns the touch radius in reference pixels. */
   get radius() {
     let prefs = Services.prefs;
     delete this.radius;
@@ -4702,15 +4702,15 @@ const ElementTouchHelper = {
     return this.weight = { "visited": Services.prefs.getIntPref("browser.ui.touch.weight.visited") };
   },
 
-  
+  /* Retrieve the closest element to a point by looking at borders position */
   getClosest: function getClosest(aWindowUtils, aX, aY) {
     let target = aWindowUtils.elementFromPoint(aX, aY,
-                                               true,   
-                                               false); 
+                                               true,   /* ignore root scroll frame*/
+                                               false); /* don't flush layout */
 
-    
-    
-    
+    // if this element is clickable we return quickly. also, if it isn't,
+    // use a cache to speed up future calls to isElementClickable in the
+    // loop below.
     let unclickableCache = new Array();
     if (this.isElementClickable(target, unclickableCache, false))
       return target;
@@ -4728,7 +4728,7 @@ const ElementTouchHelper = {
       let rect = current.getBoundingClientRect();
       let distance = this._computeDistanceFromRect(aX, aY, rect);
 
-      
+      // increase a little bit the weight for already visited items
       if (current && current.mozMatchesSelector("*:visited"))
         distance *= (this.weight.visited / 100);
 
@@ -4768,8 +4768,8 @@ const ElementTouchHelper = {
     let xmost = aRect.left + aRect.width;
     let ymost = aRect.top + aRect.height;
 
-    
-    
+    // compute horizontal distance from left/right border depending if X is
+    // before/inside/after the element's rectangle
     if (aRect.left < aX && aX < xmost)
       x = Math.min(xmost - aX, aX - aRect.left);
     else if (aX < aRect.left)
@@ -4777,8 +4777,8 @@ const ElementTouchHelper = {
     else if (aX > xmost)
       x = aX - xmost;
 
-    
-    
+    // compute vertical distance from top/bottom border depending if Y is
+    // above/inside/below the element's rectangle
     if (aRect.top < aY && aY < ymost)
       y = Math.min(ymost - aY, aY - aRect.top);
     else if (aY < aRect.top)
@@ -4805,9 +4805,9 @@ const ElementTouchHelper = {
     let offset = { x: 0, y: 0 };
 
     let nativeRects = aElement.getClientRects();
-    
+    // step out of iframes and frames, offsetting scroll values
     for (let frame = aElement.ownerDocument.defaultView; frame.frameElement; frame = frame.parent) {
-      
+      // adjust client coordinates' origin to be top left of iframe viewport
       let rect = frame.frameElement.getBoundingClientRect();
       let left = frame.getComputedStyle(frame.frameElement, "").borderLeftWidth;
       let top = frame.getComputedStyle(frame.frameElement, "").borderTopWidth;
@@ -4841,9 +4841,9 @@ const ElementTouchHelper = {
 
     let r = aElement.getBoundingClientRect();
 
-    
+    // step out of iframes and frames, offsetting scroll values
     for (let frame = aElement.ownerDocument.defaultView; frame.frameElement && frame != content; frame = frame.parent) {
-      
+      // adjust client coordinates' origin to be top left of iframe viewport
       let rect = frame.frameElement.getBoundingClientRect();
       let left = frame.getComputedStyle(frame.frameElement, "").borderLeftWidth;
       let top = frame.getComputedStyle(frame.frameElement, "").borderTopWidth;
@@ -4862,22 +4862,22 @@ var ErrorPageEventHandler = {
   handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "click": {
-        
+        // Don't trust synthetic events
         if (!aEvent.isTrusted)
           return;
 
         let target = aEvent.originalTarget;
         let errorDoc = target.ownerDocument;
 
-        
-        
+        // If the event came from an ssl error page, it is probably either the "Add
+        // Exception…" or "Get me out of here!" button
         if (errorDoc.documentURI.startsWith("about:certerror?e=nssBadCert")) {
           let perm = errorDoc.getElementById("permanentExceptionButton");
           let temp = errorDoc.getElementById("temporaryExceptionButton");
           if (target == temp || target == perm) {
-            
+            // Handle setting an cert exception and reloading the page
             try {
-              
+              // Add a new SSL exception for this URL
               let uri = Services.io.newURI(errorDoc.location.href, null, null);
               let sslExceptions = new SSLExceptions();
 
@@ -4893,9 +4893,9 @@ var ErrorPageEventHandler = {
             errorDoc.location = "about:home";
           }
         } else if (errorDoc.documentURI.startsWith("about:blocked")) {
-          
-          
-          
+          // The event came from a button on a malware/phishing block page
+          // First check whether it's malware or phishing, so that we can
+          // use the right strings/links
           let isMalware = errorDoc.documentURI.contains("e=malwareBlocked");
           let bucketName = isMalware ? "WARNING_MALWARE_PAGE_" : "WARNING_PHISHING_PAGE_";
           let nsISecTel = Ci.nsISecurityUITelemetry;
@@ -4908,15 +4908,15 @@ var ErrorPageEventHandler = {
             Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "GET_ME_OUT_OF_HERE"]);
             errorDoc.location = "about:home";
           } else if (target == errorDoc.getElementById("reportButton")) {
-            
-            
+            // We log even if malware/phishing info URL couldn't be found:
+            // the measurement is for how many users clicked the WHY BLOCKED button
             Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "WHY_BLOCKED"]);
 
-            
-            
-            
+            // This is the "Why is this site blocked" button.  For malware,
+            // we can fetch a site-specific report, for phishing, we redirect
+            // to the generic page describing phishing protection.
             if (isMalware) {
-              
+              // Get the stop badware "why is this blocked" report url, append the current url, and go there.
               try {
                 let reportURL = formatter.formatURLPref("browser.safebrowsing.malware.reportURL");
                 reportURL += errorDoc.location.href;
@@ -4925,7 +4925,7 @@ var ErrorPageEventHandler = {
                 Cu.reportError("Couldn't get malware report URL: " + e);
               }
             } else {
-              
+              // It's a phishing site, not malware. (There's no report URL)
               try {
                 let reportURL = formatter.formatURLPref("browser.safebrowsing.warning.infoURL");
                 BrowserApp.selectedBrowser.loadURI(reportURL);
@@ -4936,13 +4936,13 @@ var ErrorPageEventHandler = {
           } else if (target == errorDoc.getElementById("ignoreWarningButton")) {
             Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "IGNORE_WARNING"]);
 
-            
+            // Allow users to override and continue through to the site,
             let webNav = BrowserApp.selectedBrowser.docShell.QueryInterface(Ci.nsIWebNavigation);
             let location = BrowserApp.selectedBrowser.contentWindow.location;
             webNav.loadURI(location, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER, null, null, null);
 
-            
-            
+            // ....but add a notify bar as a reminder, so that they don't lose
+            // track after, e.g., tab switching.
             NativeWindow.doorhanger.show(Strings.browser.GetStringFromName("safeBrowsingDoorhanger"), "safebrowsing-warning", [], BrowserApp.selectedTab.id);
           }
         }
@@ -4955,13 +4955,13 @@ var ErrorPageEventHandler = {
 var FormAssistant = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormSubmitObserver]),
 
-  
-  
+  // Used to keep track of the element that corresponds to the current
+  // autocomplete suggestions
   _currentInputElement: null,
 
   _isBlocklisted: false,
 
-  
+  // Keep track of whether or not an invalid form has been submitted
   _invalidSubmit: false,
 
   init: function() {
@@ -4971,7 +4971,7 @@ var FormAssistant = {
     Services.obs.addObserver(this, "invalidformsubmit", false);
     Services.obs.addObserver(this, "PanZoom:StateChange", false);
 
-    
+    // We need to use a capturing listener for focus events
     BrowserApp.deck.addEventListener("focus", this, true);
     BrowserApp.deck.addEventListener("click", this, true);
     BrowserApp.deck.addEventListener("input", this, false);
@@ -4994,11 +4994,11 @@ var FormAssistant = {
   observe: function(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "PanZoom:StateChange":
-        
+        // If the user is just touching the screen and we haven't entered a pan or zoom state yet do nothing
         if (aData == "TOUCHING" || aData == "WAITING_LISTENERS")
           break;
         if (aData == "NOTHING") {
-          
+          // only look for input elements, not contentEditable or multiline text areas
           let focused = BrowserApp.getFocusedInput(BrowserApp.selectedBrowser, true);
           if (!focused)
             break;
@@ -5007,7 +5007,7 @@ var FormAssistant = {
             break;
           this._showAutoCompleteSuggestions(focused, function () {});
         } else {
-          
+          // temporarily hide the form assist popup while we're panning or zooming the page
           this._hideFormAssistPopup();
         }
         break;
@@ -5017,8 +5017,8 @@ var FormAssistant = {
 
         let editableElement = this._currentInputElement.QueryInterface(Ci.nsIDOMNSEditableElement);
 
-        
-        
+        // If we have an active composition string, commit it before sending
+        // the autocomplete event with the text that will replace it.
         try {
           let imeEditor = editableElement.editor.QueryInterface(Ci.nsIEditorIMESupport);
           if (imeEditor.composing)
@@ -5046,14 +5046,14 @@ var FormAssistant = {
     if (!aInvalidElements.length)
       return;
 
-    
+    // Ignore this notificaiton if the current tab doesn't contain the invalid form
     if (BrowserApp.selectedBrowser.contentDocument !=
         aFormElement.ownerDocument.defaultView.top.document)
       return;
 
     this._invalidSubmit = true;
 
-    
+    // Our focus listener will show the element's validation message
     let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     currentElement.focus();
   },
@@ -5063,16 +5063,16 @@ var FormAssistant = {
       case "focus":
         let currentElement = aEvent.target;
 
-        
+        // Only show a validation message on focus.
         this._showValidationMessage(currentElement);
         break;
 
       case "click":
         currentElement = aEvent.target;
 
-        
-        
-        
+        // Prioritize a form validation message over autocomplete suggestions
+        // when the element is first focused (a form validation message will
+        // only be available if an invalid form was submitted)
         if (this._showValidationMessage(currentElement))
           break;
 
@@ -5088,8 +5088,8 @@ var FormAssistant = {
       case "input":
         currentElement = aEvent.target;
 
-        
-        
+        // Since we can only show one popup at a time, prioritze autocomplete
+        // suggestions over a form validation message
         let checkResultsInput = hasResults => {
           if (hasResults)
             return;
@@ -5097,14 +5097,14 @@ var FormAssistant = {
           if (this._showValidationMessage(currentElement))
             return;
 
-          
+          // If we're not showing autocomplete suggestions, hide the form assist popup
           this._hideFormAssistPopup();
         };
 
         this._showAutoCompleteSuggestions(currentElement, checkResultsInput);
         break;
 
-      
+      // Reset invalid submit state on each pageshow
       case "pageshow":
         let target = aEvent.originalTarget;
         let selectedDocument = BrowserApp.selectedBrowser.contentDocument;
@@ -5113,7 +5113,7 @@ var FormAssistant = {
     }
   },
 
-  
+  // We only want to show autocomplete suggestions for certain elements
   _isAutoComplete: function _isAutoComplete(aElement) {
     if (!(aElement instanceof HTMLInputElement) || aElement.readOnly ||
         (aElement.getAttribute("type") == "password") ||
@@ -5124,10 +5124,10 @@ var FormAssistant = {
     return true;
   },
 
-  
-  
+  // Retrieves autocomplete suggestions for an element from the form autocomplete service.
+  // aCallback(array_of_suggestions) is called when results are available.
   _getAutoCompleteSuggestions: function _getAutoCompleteSuggestions(aSearchString, aElement, aCallback) {
-    
+    // Cache the form autocomplete service for future use
     if (!this._formAutoCompleteService)
       this._formAutoCompleteService = Cc["@mozilla.org/satchel/form-autocomplete;1"].
                                       getService(Ci.nsIFormAutoComplete);
@@ -5137,11 +5137,11 @@ var FormAssistant = {
       for (let i = 0; i < results.matchCount; i++) {
         let value = results.getValueAt(i);
 
-        
+        // Do not show the value if it is the current one in the input field
         if (value == aSearchString)
           continue;
 
-        
+        // Supply a label and value, since they can differ for datalist suggestions
         suggestions.push({ label: value, value: value });
       }
       aCallback(suggestions);
@@ -5152,12 +5152,12 @@ var FormAssistant = {
                                                           resultsAvailable);
   },
 
-  
-
-
-
-
-
+  /**
+   * (Copied from mobile/xul/chrome/content/forms.js)
+   * This function is similar to getListSuggestions from
+   * components/satchel/src/nsInputListAutoComplete.js but sadly this one is
+   * used by the autocomplete.xml binding which is not in used in fennec
+   */
   _getListSuggestions: function _getListSuggestions(aElement) {
     if (!(aElement instanceof HTMLInputElement) || !aElement.list)
       return [];
@@ -5185,30 +5185,30 @@ var FormAssistant = {
     return suggestions;
   },
 
-  
-  
-  
-  
+  // Retrieves autocomplete suggestions for an element from the form autocomplete service
+  // and sends the suggestions to the Java UI, along with element position data. As
+  // autocomplete queries are asynchronous, calls aCallback when done with a true
+  // argument if results were found and false if no results were found.
   _showAutoCompleteSuggestions: function _showAutoCompleteSuggestions(aElement, aCallback) {
     if (!this._isAutoComplete(aElement)) {
       aCallback(false);
       return;
     }
 
-    
-    
+    // Don't display the form auto-complete popup after the user starts typing
+    // to avoid confusing somes IME. See bug 758820 and bug 632744.
     if (this._isBlocklisted && aElement.value.length > 0) {
       aCallback(false);
       return;
     }
 
     let resultsAvailable = autoCompleteSuggestions => {
-      
-      
+      // On desktop, we show datalist suggestions below autocomplete suggestions,
+      // without duplicates removed.
       let listSuggestions = this._getListSuggestions(aElement);
       let suggestions = autoCompleteSuggestions.concat(listSuggestions);
 
-      
+      // Return false if there are no suggestions to show
       if (!suggestions.length) {
         aCallback(false);
         return;
@@ -5220,8 +5220,8 @@ var FormAssistant = {
         rect: ElementTouchHelper.getBoundingContentRect(aElement)
       });
 
-      
-      
+      // Keep track of input element so we can fill it in if the user
+      // selects an autocomplete suggestion
       this._currentInputElement = aElement;
       aCallback(true);
     };
@@ -5229,8 +5229,8 @@ var FormAssistant = {
     this._getAutoCompleteSuggestions(aElement.value, aElement, resultsAvailable);
   },
 
-  
-  
+  // Only show a validation message if the user submitted an invalid form,
+  // there's a non-empty message string, and the element is the correct type
   _isValidateable: function _isValidateable(aElement) {
     if (!this._invalidSubmit ||
         !aElement.validationMessage ||
@@ -5243,8 +5243,8 @@ var FormAssistant = {
     return true;
   },
 
-  
-  
+  // Sends a validation message and position data for an element to the Java UI.
+  // Returns true if there's a validation message to show, false otherwise.
   _showValidationMessage: function _sendValidationMessage(aElement) {
     if (!this._isValidateable(aElement))
       return false;
@@ -5263,14 +5263,14 @@ var FormAssistant = {
   }
 };
 
-
-
-
-
+/**
+ * An object to watch for Gecko status changes -- add-on installs, pref changes
+ * -- and reflect them back to Java.
+ */
 let HealthReportStatusListener = {
   TELEMETRY_PREF: 
 #ifdef MOZ_TELEMETRY_REPORTING
-    
+    // Telemetry pref differs based on build.
 #ifdef MOZ_TELEMETRY_ON_BY_DEFAULT
     "toolkit.telemetry.enabledPreRelease",
 #else
@@ -5328,18 +5328,18 @@ let HealthReportStatusListener = {
     "hasBinaryComponents",
   ],
 
-  
-  
+  // Add-on types for which full details are recorded in FHR.
+  // All other types are ignored.
   FULL_DETAIL_TYPES: [
     "plugin",
     "extension",
     "service",
   ],
 
-  
-
-
-
+  /**
+   * Return true if the add-on is not of a type for which we report full details.
+   * These add-ons will still make it over to Java, but will be filtered out.
+   */
   _shouldIgnore: function (aAddon) {
     return this.FULL_DETAIL_TYPES.indexOf(aAddon.type) == -1;
   },
@@ -5372,7 +5372,7 @@ let HealthReportStatusListener = {
     sendMessageToJava({ type: aAction, id: aAddon.id, json: json });
   },
 
-  
+  // Add-on listeners.
   onEnabling: function (aAddon, aNeedsRestart) {
     this.notifyJava(aAddon, aNeedsRestart);
   },
@@ -5405,7 +5405,7 @@ let HealthReportStatusListener = {
               }
               json[addon.id] = addonJSON;
             } catch (e) {
-              
+              // Just skip this add-on.
             }
           }
         }
@@ -5474,7 +5474,7 @@ var XPInstallObserver = {
           buttons = [{
             label: strings.GetStringFromName("xpinstallPromptAllowButton"),
             callback: function() {
-              
+              // Kick off the install
               installInfo.install();
               return false;
             }
@@ -5495,7 +5495,7 @@ var XPInstallObserver = {
     if (needsRestart) {
       this.showRestartPrompt();
     } else {
-      
+      // Display completion message for new installs or updates not done Automatically
       if (!aInstall.existingAddon || !AddonManager.shouldAutoUpdate(aInstall.existingAddon)) {
         let message = Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart");
         NativeWindow.toast.show(message, "short");
@@ -5526,10 +5526,10 @@ var XPInstallObserver = {
     else if (aInstall.addon && (!aInstall.addon.isCompatible || !aInstall.addon.isPlatformCompatible))
       error += "Incompatible";
     else
-      return; 
+      return; // No need to show anything in this case.
 
     let msg = Strings.browser.GetStringFromName(error);
-    
+    // TODO: formatStringFromName
     msg = msg.replace("#1", aInstall.name);
     if (host)
       msg = msg.replace("#2", host);
@@ -5543,11 +5543,11 @@ var XPInstallObserver = {
     let buttons = [{
       label: Strings.browser.GetStringFromName("notificationRestart.button"),
       callback: function() {
-        
+        // Notify all windows that an application quit has been requested
         let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
         Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
 
-        
+        // If nothing aborted, quit the app
         if (cancelQuit.data == false) {
           let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup);
           appStartup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
@@ -5564,7 +5564,7 @@ var XPInstallObserver = {
   }
 };
 
-
+// Blindly copied from Safari documentation for now.
 const kViewportMinScale  = 0;
 const kViewportMaxScale  = 10;
 const kViewportMinWidth  = 200;
@@ -5573,9 +5573,9 @@ const kViewportMinHeight = 223;
 const kViewportMaxHeight = 10000;
 
 var ViewportHandler = {
-  
-  
-  
+  // The cached viewport metadata for each document. We tie viewport metadata to each document
+  // instead of to each tab so that we don't have to update it when the document changes. Using an
+  // ES6 weak map lets us avoid leaks.
   _metadata: new WeakMap(),
 
   init: function init() {
@@ -5626,18 +5626,18 @@ var ViewportHandler = {
     tab.updateViewportMetadata(metadata, aInitialLoad);
   },
 
-  
-
-
+  /**
+   * Returns the ViewportMetadata object.
+   */
   getViewportMetadata: function getViewportMetadata(aWindow) {
     let windowUtils = aWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
 
-    
-    
-    
+    // viewport details found here
+    // http://developer.apple.com/safari/library/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html
+    // http://developer.apple.com/safari/library/documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html
 
-    
-    
+    // Note: These values will be NaN if parseFloat or parseInt doesn't find a number.
+    // Remember that NaN is contagious: Math.max(1, NaN) == Math.min(1, NaN) == NaN.
     let hasMetaViewport = true;
     let scale = parseFloat(windowUtils.getDocumentMetadata("viewport-initial-scale"));
     let minScale = parseFloat(windowUtils.getDocumentMetadata("viewport-minimum-scale"));
@@ -5648,16 +5648,16 @@ var ViewportHandler = {
     let width = this.clamp(parseInt(widthStr), kViewportMinWidth, kViewportMaxWidth) || 0;
     let height = this.clamp(parseInt(heightStr), kViewportMinHeight, kViewportMaxHeight) || 0;
 
-    
-    
-    
+    // Allow zoom unless explicity disabled or minScale and maxScale are equal.
+    // WebKit allows 0, "no", or "false" for viewport-user-scalable.
+    // Note: NaN != NaN. Therefore if minScale and maxScale are undefined the clause has no effect.
     let allowZoomStr = windowUtils.getDocumentMetadata("viewport-user-scalable");
     let allowZoom = !/^(0|no|false)$/.test(allowZoomStr) && (minScale != maxScale);
 
     let autoSize = true;
 
     if (isNaN(scale) && isNaN(minScale) && isNaN(maxScale) && allowZoomStr == "" && widthStr == "" && heightStr == "") {
-      
+      // Only check for HandheldFriendly if we don't have a viewport meta tag
       let handheldFriendly = windowUtils.getDocumentMetadata("HandheldFriendly");
       if (handheldFriendly == "true") {
         return new ViewportMetadata({
@@ -5689,7 +5689,7 @@ var ViewportHandler = {
     maxScale = this.clamp(maxScale, minScale, kViewportMaxScale);
 
     if (autoSize) {
-      
+      // If initial scale is 1.0 and width is not set, assume width=device-width
       autoSize = (widthStr == "device-width" ||
                   (!widthStr && (heightStr == "device-height" || scale == 1.0)));
     }
@@ -5719,16 +5719,16 @@ var ViewportHandler = {
     return this.displayDPI = utils.displayDPI;
   },
 
-  
-
-
-
+  /**
+   * Returns the viewport metadata for the given document, or the default metrics if no viewport
+   * metadata is available for that document.
+   */
   getMetadataForDocument: function getMetadataForDocument(aDocument) {
     let metadata = this._metadata.get(aDocument, new ViewportMetadata());
     return metadata;
   },
 
-  
+  /** Updates the saved viewport metadata for the given content document. */
   setMetadataForDocument: function setMetadataForDocument(aDocument, aMetadata) {
     if (!aMetadata)
       this._metadata.delete(aDocument);
@@ -5738,17 +5738,17 @@ var ViewportHandler = {
 
 };
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * An object which represents the page's preferred viewport properties:
+ *   width (int): The CSS viewport width in px.
+ *   height (int): The CSS viewport height in px.
+ *   defaultZoom (float): The initial scale when the page is loaded.
+ *   minZoom (float): The minimum zoom level.
+ *   maxZoom (float): The maximum zoom level.
+ *   autoSize (boolean): Resize the CSS viewport when the window resizes.
+ *   allowZoom (boolean): Let the user zoom in or out.
+ *   isSpecified (boolean): Whether the page viewport is specified or not.
+ */
 function ViewportMetadata(aMetadata = {}) {
   this.width = ("width" in aMetadata) ? aMetadata.width : 0;
   this.height = ("height" in aMetadata) ? aMetadata.height : 0;
@@ -5775,9 +5775,9 @@ ViewportMetadata.prototype = {
 };
 
 
-
-
-
+/**
+ * Handler for blocked popups, triggered by DOMUpdatePageReport events in browser.xml
+ */
 var PopupBlockerObserver = {
   onUpdatePageReport: function onUpdatePageReport(aEvent) {
     let browser = BrowserApp.selectedBrowser;
@@ -5791,9 +5791,9 @@ var PopupBlockerObserver = {
     if (result == Ci.nsIPermissionManager.DENY_ACTION)
       return;
 
-    
-    
-    
+    // Only show the notification again if we've not already shown it. Since
+    // notifications are per-browser, we don't need to worry about re-adding
+    // it.
     if (!browser.pageReport.reported) {
       if (Services.prefs.getBoolPref("privacy.popups.showBrowserMessage")) {
         let brandShortName = Strings.brand.GetStringFromName("brandShortName");
@@ -5808,7 +5808,7 @@ var PopupBlockerObserver = {
           {
             label: strings.GetStringFromName("popup.show"),
             callback: function(aChecked) {
-              
+              // Set permission before opening popup windows
               if (aChecked)
                 PopupBlockerObserver.allowPopupsForSite(true);
 
@@ -5827,8 +5827,8 @@ var PopupBlockerObserver = {
         let options = { checkbox: Strings.browser.GetStringFromName("popup.dontAskAgain") };
         NativeWindow.doorhanger.show(message, "popup-blocked", buttons, null, options);
       }
-      
-      
+      // Record the fact that we've reported this blocked popup, so we don't
+      // show it again.
       browser.pageReport.reported = true;
     }
   },
@@ -5848,11 +5848,11 @@ var PopupBlockerObserver = {
       for (let i = 0; i < pageReport.length; ++i) {
         let popupURIspec = pageReport[i].popupWindowURI.spec;
 
-        
-        
-        
-        
-        
+        // Sometimes the popup URI that we get back from the pageReport
+        // isn't useful (for instance, netscape.com's popup URI ends up
+        // being "http://www.netscape.com", which isn't really the URI of
+        // the popup they're trying to show).  This isn't going to be
+        // useful to the user, so we won't create a menu item for it.
         if (popupURIspec == "" || popupURIspec == "about:blank" || popupURIspec == uri.spec)
           continue;
 
@@ -5918,27 +5918,27 @@ var IndexedDB = {
       responseTopic = this._quotaResponse;
     }
 
-    const firstTimeoutDuration = 300000; 
+    const firstTimeoutDuration = 300000; // 5 minutes
 
     let timeoutId;
 
     let notificationID = responseTopic + host;
     let observer = requestor.getInterface(Ci.nsIObserver);
 
-    
-    
-    
+    // This will be set to the result of PopupNotifications.show() below, or to
+    // the result of PopupNotifications.getNotification() if this is a
+    // quotaCancel notification.
     let notification;
 
     function timeoutNotification() {
-      
+      // Remove the notification.
       NativeWindow.doorhanger.hide(notificationID, tab.id);
 
-      
-      
+      // Clear all of our timeout stuff. We may be called directly, not just
+      // when the timeout actually elapses.
       clearTimeout(timeoutId);
 
-      
+      // And tell the page that the popup timed out.
       observer.observe(null, responseTopic, Ci.nsIPermissionManager.UNKNOWN_ACTION);
     }
 
@@ -5968,15 +5968,15 @@ var IndexedDB = {
     let options = { checkbox: Strings.browser.GetStringFromName("offlineApps.dontAskAgain") };
     NativeWindow.doorhanger.show(message, notificationID, buttons, tab.id, options);
 
-    
-    
-    
+    // Set the timeoutId after the popup has been created, and use the long
+    // timeout value. If the user doesn't notice the popup after this amount of
+    // time then it is most likely not visible and we want to alert the page.
     timeoutId = setTimeout(timeoutNotification, firstTimeoutDuration);
   }
 };
 
 var ClipboardHelper = {
-  
+  // Recorded so search with option can be removed/replaced when default engine changed.
   _searchMenuItem: -1,
 
   init: function() {
@@ -5988,7 +5988,7 @@ var ClipboardHelper = {
     NativeWindow.contextmenus.add(Strings.browser.GetStringFromName("contextmenu.paste"), ClipboardHelper.pasteContext, ClipboardHelper.paste.bind(ClipboardHelper));
     NativeWindow.contextmenus.add(Strings.browser.GetStringFromName("contextmenu.changeInputMethod"), NativeWindow.contextmenus.textContext, ClipboardHelper.inputMethod.bind(ClipboardHelper));
 
-    
+    // We add this contextmenu item right before the menu is built to avoid having to initialise the search service early.
     Services.obs.addObserver(this, "before-build-contextmenu", false);
   },
 
@@ -6066,13 +6066,13 @@ var ClipboardHelper = {
   getCopyContext: function(isCopyAll) {
     return {
       matches: function(aElement, aX, aY) {
-        
+        // Do not show "Copy All" for normal non-input text selection.
         if (!isCopyAll && SelectionHandler.shouldShowContextMenu(aX, aY))
           return true;
 
         if (NativeWindow.contextmenus.textContext.matches(aElement)) {
-          
-          
+          // Don't include "copy" for password fields.
+          // mozIsTextField(true) tests for only non-password fields.
           if (aElement instanceof Ci.nsIDOMHTMLInputElement && !aElement.mozIsTextField(true))
             return false;
 
@@ -6162,7 +6162,7 @@ var CharacterEncoding = {
     let showCharEncoding = "false";
     try {
       showCharEncoding = Services.prefs.getComplexValue("browser.menu.showCharacterEncoding", Ci.nsIPrefLocalizedString).data;
-    } catch (e) {  }
+    } catch (e) { /* Optional */ }
 
     sendMessageToJava({
       type: "CharEncoding:State",
@@ -6195,7 +6195,7 @@ var CharacterEncoding = {
       });
     }
 
-    
+    // if document charset is not in charset options, add it
     let docCharset = normalizeCharsetCode(BrowserApp.selectedBrowser.contentDocument.characterSet);
     let selected = 0;
     let charsetCount = this._charsets.length;
@@ -6223,42 +6223,42 @@ var CharacterEncoding = {
 };
 
 var IdentityHandler = {
-  
+  // No trusted identity information. No site identity icon is shown.
   IDENTITY_MODE_UNKNOWN: "unknown",
 
-  
+  // Minimal SSL CA-signed domain verification. Blue lock icon is shown.
   IDENTITY_MODE_DOMAIN_VERIFIED: "verified",
 
-  
+  // High-quality identity information. Green lock icon is shown.
   IDENTITY_MODE_IDENTIFIED: "identified",
 
-  
-  
-  
+  // The following mixed content modes are only used if "security.mixed_content.block_active_content"
+  // is enabled. Even though the mixed content state and identitity state are orthogonal,
+  // our Java frontend coalesces them into one indicator.
 
-  
+  // Blocked active mixed content. Shield icon is shown, with a popup option to load content.
   IDENTITY_MODE_MIXED_CONTENT_BLOCKED: "mixed_content_blocked",
 
-  
+  // Loaded active mixed content. Yellow triangle icon is shown.
   IDENTITY_MODE_MIXED_CONTENT_LOADED: "mixed_content_loaded",
 
-  
+  // Cache the most recent SSLStatus and Location seen in getIdentityStrings
   _lastStatus : null,
   _lastLocation : null,
 
-  
-
-
-
+  /**
+   * Helper to parse out the important parts of _lastStatus (of the SSL cert in
+   * particular) for use in constructing identity UI strings
+  */
   getIdentityData : function() {
     let result = {};
     let status = this._lastStatus.QueryInterface(Components.interfaces.nsISSLStatus);
     let cert = status.serverCert;
 
-    
+    // Human readable name of Subject
     result.subjectOrg = cert.organization;
 
-    
+    // SubjectName fields, broken up for individual access
     if (cert.subjectName) {
       result.subjectNameFields = {};
       cert.subjectName.split(",").forEach(function(v) {
@@ -6266,27 +6266,27 @@ var IdentityHandler = {
         this[field[0]] = field[1];
       }, result.subjectNameFields);
 
-      
+      // Call out city, state, and country specifically
       result.city = result.subjectNameFields.L;
       result.state = result.subjectNameFields.ST;
       result.country = result.subjectNameFields.C;
     }
 
-    
+    // Human readable name of Certificate Authority
     result.caOrg =  cert.issuerOrganization || cert.issuerCommonName;
     result.cert = cert;
 
     return result;
   },
 
-  
-
-
+  /**
+   * Determines the identity mode corresponding to the icon we show in the urlbar.
+   */
   getIdentityMode: function getIdentityMode(aState) {
     if (aState & Ci.nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT)
       return this.IDENTITY_MODE_MIXED_CONTENT_BLOCKED;
 
-    
+    // Only show an indicator for loaded mixed content if the pref to block it is enabled
     if ((aState & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT) &&
          Services.prefs.getBoolPref("security.mixed_content.block_active_content"))
       return this.IDENTITY_MODE_MIXED_CONTENT_LOADED;
@@ -6300,18 +6300,18 @@ var IdentityHandler = {
     return this.IDENTITY_MODE_UNKNOWN;
   },
 
-  
-
-
-
+  /**
+   * Determine the identity of the page being displayed by examining its SSL cert
+   * (if available). Return the data needed to update the UI.
+   */
   checkIdentity: function checkIdentity(aState, aBrowser) {
     this._lastStatus = aBrowser.securityUI
                                .QueryInterface(Components.interfaces.nsISSLStatusProvider)
                                .SSLStatus;
 
-    
-    
-    
+    // Don't pass in the actual location object, since it can cause us to 
+    // hold on to the window object too long.  Just pass in the fields we
+    // care about. (bug 424829)
     let locationObj = {};
     try {
       let location = aBrowser.contentWindow.location;
@@ -6319,62 +6319,62 @@ var IdentityHandler = {
       locationObj.hostname = location.hostname;
       locationObj.port = location.port;
     } catch (ex) {
-      
-      
-      
+      // Can sometimes throw if the URL being visited has no host/hostname,
+      // e.g. about:blank. The _state for these pages means we won't need these
+      // properties anyways, though.
     }
     this._lastLocation = locationObj;
 
     let mode = this.getIdentityMode(aState);
     let result = { mode: mode };
 
-    
-    
+    // Don't show identity data for pages with an unknown identity or if any
+    // mixed content is loaded (mixed display content is loaded by default).
     if (mode == this.IDENTITY_MODE_UNKNOWN ||
         aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN)
       return result;
 
-    
+    // Ideally we'd just make this a Java string
     result.encrypted = Strings.browser.GetStringFromName("identity.encrypted2");
     result.host = this.getEffectiveHost();
 
     let iData = this.getIdentityData();
     result.verifier = Strings.browser.formatStringFromName("identity.identified.verifier", [iData.caOrg], 1);
 
-    
+    // If the cert is identified, then we can populate the results with credentials
     if (aState & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL) {
       result.owner = iData.subjectOrg;
 
-      
+      // Build an appropriate supplemental block out of whatever location data we have
       let supplemental = "";
       if (iData.city)
         supplemental += iData.city + "\n";
       if (iData.state && iData.country)
         supplemental += Strings.browser.formatStringFromName("identity.identified.state_and_country", [iData.state, iData.country], 2);
-      else if (iData.state) 
+      else if (iData.state) // State only
         supplemental += iData.state;
-      else if (iData.country) 
+      else if (iData.country) // Country only
         supplemental += iData.country;
       result.supplemental = supplemental;
 
       return result;
     }
     
-    
+    // Otherwise, we don't know the cert owner
     result.owner = Strings.browser.GetStringFromName("identity.ownerUnknown3");
 
-    
+    // Cache the override service the first time we need to check it
     if (!this._overrideService)
       this._overrideService = Cc["@mozilla.org/security/certoverride;1"].getService(Ci.nsICertOverrideService);
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // Check whether this site is a security exception. XPConnect does the right
+    // thing here in terms of converting _lastLocation.port from string to int, but
+    // the overrideService doesn't like undefined ports, so make sure we have
+    // something in the default case (bug 432241).
+    // .hostname can return an empty string in some exceptional cases -
+    // hasMatchingOverride does not handle that, so avoid calling it.
+    // Updating the tooltip value in those cases isn't critical.
+    // FIXME: Fixing bug 646690 would probably makes this check unnecessary
     if (this._lastLocation.hostname &&
         this._overrideService.hasMatchingOverride(this._lastLocation.hostname,
                                                   (this._lastLocation.port || 443),
@@ -6384,9 +6384,9 @@ var IdentityHandler = {
     return result;
   },
 
-  
-
-
+  /**
+   * Return the eTLD+1 version of the current hostname
+   */
   getEffectiveHost: function getEffectiveHost() {
     if (!this._IDNService)
       this._IDNService = Cc["@mozilla.org/network/idn-service;1"]
@@ -6395,8 +6395,8 @@ var IdentityHandler = {
       let baseDomain = Services.eTLD.getBaseDomainFromHost(this._lastLocation.hostname);
       return this._IDNService.convertToDisplayIDN(baseDomain, {});
     } catch (e) {
-      
-      
+      // If something goes wrong (e.g. hostname is an IP address) just fail back
+      // to the full domain.
       return this._lastLocation.hostname;
     }
   }
@@ -6453,7 +6453,7 @@ var SearchEngines = {
       NativeWindow.contextmenus.remove(this._contextMenuId);
   },
 
-  
+  // Fetch list of search engines. all ? All engines : Visible engines only.
   _handleSearchEnginesGet: function _handleSearchEnginesGet(rv, all) {
     if (!Components.isSuccessCode(rv)) {
       Cu.reportError("Could not initialize search service, bailing out.");
@@ -6466,7 +6466,7 @@ var SearchEngines = {
       engineData = Services.search.getVisibleEngines({});
     }
 
-    
+    // These engines are the bundled ones - they may not be uninstalled.
     let immutableEngines = Services.search.getDefaultEngines();
 
     let searchEngines = engineData.map(function (engine) {
@@ -6488,7 +6488,7 @@ var SearchEngines = {
     }
 
 
-    
+    // By convention, the currently configured default engine is at position zero in searchEngines.
     sendMessageToJava({
       type: "SearchEngines:Data",
       searchEngines: searchEngines,
@@ -6508,7 +6508,7 @@ var SearchEngines = {
     this._handleSearchEnginesGet(rv, false)
   },
 
-  
+  // Helper method to extract the engine name from a JSON. Simplifies the observe function.
   _extractEngineFromJSON: function _extractEngineFromJSON(aData) {
     let data = JSON.parse(aData);
     return Services.search.getEngineByName(data.engine);
@@ -6521,18 +6521,18 @@ var SearchEngines = {
         Services.search.init(this._handleSearchEnginesGetVisible.bind(this));
         break;
       case "SearchEngines:Get":
-        
+        // Return a list of all engines, including "Hidden" ones.
         Services.search.init(this._handleSearchEnginesGetAll.bind(this));
         break;
       case "SearchEngines:SetDefault":
         engine = this._extractEngineFromJSON(aData);
-        
+        // Move the new default search engine to the top of the search engine list.
         Services.search.moveEngine(engine, 0);
         Services.search.defaultEngine = engine;
         break;
       case "SearchEngines:Remove":
-        
-        
+        // Make sure the engine isn't hidden before removing it, to make sure it's
+        // visible if the user later re-adds it (works around bug 341833)
         engine = this._extractEngineFromJSON(aData);
         engine.hidden = false;
         Services.search.removeEngine(engine);
@@ -6569,7 +6569,7 @@ var SearchEngines = {
       if (!el.type)
         continue;
 
-      
+      // make this text field a generic search parameter
       if (aElement == el) {
         formData.push({ name: el.name, value: "{searchTerms}" });
         continue;
@@ -6579,7 +6579,7 @@ var SearchEngines = {
       let escapedName = escape(el.name);
       let escapedValue = escape(el.value);
 
-      
+      // add other form elements as parameters
       switch (el.type) {
         case "checkbox":
         case "radio":
@@ -6599,13 +6599,13 @@ var SearchEngines = {
       }
     }
 
-    
+    // prompt user for name of search engine
     let promptTitle = Strings.browser.GetStringFromName("contextmenu.addSearchEngine");
     let title = { value: (aElement.ownerDocument.title || docURI.host) };
     if (!Services.prompt.prompt(null, promptTitle, null, title, null, {}))
       return;
 
-    
+    // fetch the favicon for this page
     let dbFile = FileUtils.getFile("ProfD", ["browser.db"]);
     let mDBConn = Services.storage.openDatabase(dbFile);
     let stmts = [];
@@ -6623,8 +6623,8 @@ var SearchEngines = {
           favicon = "data:image/png;base64," + btoa(String.fromCharCode.apply(null, bytes));
         },
         handleCompletion: function (reason) {
-          
-          
+          // if there's already an engine with this name, add a number to
+          // make the name unique (e.g., "Google" becomes "Google 2")
           let name = title.value;
           for (let i = 2; Services.search.getEngineByName(name); i++)
             name = title.value + " " + i;
@@ -6726,7 +6726,7 @@ var WebappsUI = {
         this.openURL(data.manifestURL, data.origin);
         break;
       case "webapps-sync-install":
-        
+        // Create a system notification allowing the user to launch the app
         DOMApplicationRegistry.getManifestFor(data.origin, (function(aManifest) {
           if (!aManifest)
             return;
@@ -6772,10 +6772,10 @@ var WebappsUI = {
         return iconURI.spec;
       }
     } catch (ex) {
-      
+      // we don't have a biggestIcon or its not a valid url
     }
 
-    
+    // if we have an origin, try to resolve biggestIcon as a relative url
     if (!iconURI && aOrigin) {
       try {
         iconURI = Services.io.newURI(aOrigin.resolve(biggestIcon), null, null);
@@ -6793,7 +6793,7 @@ var WebappsUI = {
     let showPrompt = true;
 
     if (!showPrompt || Services.prompt.confirm(null, Strings.browser.GetStringFromName("webapps.installTitle"), manifest.name + "\n" + aData.app.origin)) {
-      
+      // Get a profile for the app to be installed in. We'll download everything before creating the icons.
       let origin = aData.app.origin;
       let profilePath = sendMessageToJava({
         type: "WebApps:PreInstall",
@@ -6810,12 +6810,12 @@ var WebappsUI = {
           function (aManifest) {
             let localeManifest = new ManifestHelper(aManifest, aData.app.origin);
 
-            
-            
+            // the manifest argument is the manifest from within the zip file,
+            // TODO so now would be a good time to ask about permissions.
             self.makeBase64Icon(self.getBiggestIcon(manifest.icons, Services.io.newURI(aData.app.origin, null, null)),
               function(scaledIcon, fullsizeIcon) {
-                
-                
+                // if java returned a profile path to us, try to use it to pre-populate the app cache
+                // also save the icon so that it can be used in the splash screen
                 try {
                   let iconFile = file.clone();
                   iconFile.append("logo.png");
@@ -6826,7 +6826,7 @@ var WebappsUI = {
                   let source = Services.io.newURI(fullsizeIcon, "UTF8", null);
                   persist.saveURI(source, null, null, null, null, iconFile, null);
 
-                  
+                  // aData.app.origin may now point to the app: url that hosts this app
                   sendMessageToJava({
                     type: "WebApps:PostInstall",
                     name: localeManifest.name,
@@ -6836,7 +6836,7 @@ var WebappsUI = {
                     iconURL: fullsizeIcon
                   });
                   if (!!aData.isPackage) {
-                    
+                    // For packaged apps, put a notification in the notification bar.
                     let message = Strings.browser.GetStringFromName("webapps.alertSuccess");
                     let alerts = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
                     alerts.showAlertNotification("drawable://alert_app", localeManifest.name, message, true, "", {
@@ -6860,13 +6860,13 @@ var WebappsUI = {
   },
 
   writeDefaultPrefs: function webapps_writeDefaultPrefs(aProfile, aManifest) {
-      
+      // build any app specific default prefs
       let prefs = [];
       if (aManifest.orientation) {
         prefs.push({name:"app.orientation.default", value: aManifest.orientation.join(",") });
       }
 
-      
+      // write them into the app profile
       let defaultPrefsFile = aProfile.clone();
       defaultPrefsFile.append(this.DEFAULT_PREFS_FILENAME);
       this._writeData(defaultPrefsFile, prefs);
@@ -6936,8 +6936,8 @@ var WebappsUI = {
     favicon.onerror = function() {
       Cu.reportError("CreateShortcut: favicon image load error");
 
-      
-      
+      // if the image failed to load, and it was not our default icon, attempt to
+      // use our default as a fallback
       let uri = Services.io.newURI(favicon.src, null, null);
       if (!/^chrome$/.test(uri.scheme)) {
         favicon.src = WebappsUI.getBiggestIcon(null);
@@ -6999,12 +6999,12 @@ var RemoteDebugger = {
     return Services.prefs.getBoolPref("devtools.debugger.remote-enabled");
   },
 
-  
-
-
-
-
-
+  /**
+   * Prompt the user to accept or decline the incoming connection.
+   * This is passed to DebuggerService.init as a callback.
+   *
+   * @return true if the connection should be permitted, false otherwise
+   */
   _showConnectionPrompt: function rd_showConnectionPrompt() {
     let title = Strings.browser.GetStringFromName("remoteIncomingPromptTitle");
     let msg = Strings.browser.GetStringFromName("remoteIncomingPromptMessage");
@@ -7012,7 +7012,7 @@ var RemoteDebugger = {
     let cancel = Strings.browser.GetStringFromName("remoteIncomingPromptCancel");
     let agree = Strings.browser.GetStringFromName("remoteIncomingPromptAccept");
 
-    
+    // Make prompt. Note: button order is in reverse.
     let prompt = new Prompt({
       window: null,
       title: title,
@@ -7021,14 +7021,14 @@ var RemoteDebugger = {
       priority: 1
     });
 
-    
+    // The debugger server expects a synchronous response, so spin on result since Prompt is async.
     let result = null;
 
     prompt.show(function(data) {
       result = data.button;
     });
 
-    
+    // Spin this thread while we wait for a result.
     let thread = Services.tm.currentThread;
     while (result == null)
       thread.processNextEvent(true);
@@ -7095,7 +7095,7 @@ var Telemetry = {
 };
 
 let Reader = {
-  
+  // Version of the cache database schema
   DB_VERSION: 1,
 
   DEBUG: 0,
@@ -7104,8 +7104,8 @@ let Reader = {
   READER_ADD_FAILED: 1,
   READER_ADD_DUPLICATE: 2,
 
-  
-  
+  // Don't try to parse the page if it has too many elements (for memory and
+  // performance reasons)
   MAX_ELEMS_TO_PARSE: 3000,
 
   isEnabledForParseOnLoad: false,
@@ -7167,7 +7167,7 @@ let Reader = {
       case "Reader:Add": {
         let args = JSON.parse(aData);
         if ('fromAboutReader' in args) {
-          
+          // Ignore adds initiated from aboutReader menu banner
           break;
         }
 
@@ -7214,7 +7214,7 @@ let Reader = {
         }.bind(this);
 
         this.getArticleFromCache(urlWithoutRef, function (article) {
-          
+          // If the article is already in reading list, bail
           if (article) {
             sendResult(this.READER_ADD_DUPLICATE, "");
             return;
@@ -7248,14 +7248,14 @@ let Reader = {
   getStateForParseOnLoad: function Reader_getStateForParseOnLoad() {
     let isEnabled = Services.prefs.getBoolPref("reader.parse-on-load.enabled");
     let isForceEnabled = Services.prefs.getBoolPref("reader.parse-on-load.force-enabled");
-    
-    
+    // For low-memory devices, don't allow reader mode since it takes up a lot of memory.
+    // See https://bugzilla.mozilla.org/show_bug.cgi?id=792603 for details.
     return isForceEnabled || (isEnabled && !BrowserApp.isOnLowMemoryPlatform);
   },
 
   parseDocumentFromURL: function Reader_parseDocumentFromURL(url, callback) {
-    
-    
+    // If there's an on-going request for the same URL, simply append one
+    // more callback to it to be called when the request is done.
     if (url in this._requests) {
       let request = this._requests[url];
       request.callbacks.push(callback);
@@ -7268,7 +7268,7 @@ let Reader = {
     try {
       this.log("parseDocumentFromURL: " + url);
 
-      
+      // First, try to find a cached parsed article in the DB
       this.getArticleFromCache(url, function(article) {
         if (article) {
           this.log("Page found in cache, return article immediately");
@@ -7281,8 +7281,8 @@ let Reader = {
           return;
         }
 
-        
-        
+        // Article hasn't been found in the cache DB, we need to
+        // download the page and parse the article out of it.
         this._downloadAndParseDocument(url, request);
       }.bind(this));
     } catch (e) {
@@ -7318,7 +7318,7 @@ let Reader = {
         return;
       }
 
-      
+      // First, try to find a cached parsed article in the DB
       this.getArticleFromCache(url, function(article) {
         if (article) {
           this.log("Page found in cache, return article immediately");
@@ -7468,8 +7468,8 @@ let Reader = {
     worker.onmessage = function (evt) {
       let article = evt.data;
 
-      
-      
+      // Append URL to the article data. specIgnoringRef will ignore any hash
+      // in the URL.
       if (article) {
         article.url = uri.specIgnoringRef;
         let flags = Ci.nsIDocumentEncoder.OutputSelectionOnly | Ci.nsIDocumentEncoder.OutputAbsoluteLinks;
@@ -7506,9 +7506,9 @@ let Reader = {
   },
 
   _downloadDocument: function Reader_downloadDocument(url, callback) {
-    
-    
-    
+    // We want to parse those arbitrary pages safely, outside the privileged
+    // context of chrome. We create a hidden browser element to fetch the
+    // loaded page's document object then discard the browser element.
 
     let browser = document.createElement("browser");
     browser.setAttribute("type", "content");
@@ -7526,7 +7526,7 @@ let Reader = {
     browser.addEventListener("DOMContentLoaded", function (event) {
       let doc = event.originalTarget;
 
-      
+      // ignore on frames and other documents
       if (doc != browser.contentDocument)
         return;
 
@@ -7534,7 +7534,7 @@ let Reader = {
       if (doc.location.href == "about:blank") {
         callback(null);
 
-        
+        // Request has finished with error, remove browser element
         browser.parentNode.removeChild(browser);
         return;
       }
@@ -7565,7 +7565,7 @@ let Reader = {
 
         let uri = Services.io.newURI(url, null, null);
         this._readerParse(uri, doc, function (article) {
-          
+          // Delete reference to the browser element as we've finished parsing.
           let browser = request.browser;
           if (browser) {
             browser.parentNode.removeChild(browser);
@@ -7615,7 +7615,7 @@ let Reader = {
 
       let cacheDB = event.target.result;
 
-      
+      // Create the articles object store
       this.log("Creating articles object store");
       cacheDB.createObjectStore("articles", { keyPath: "url" });
 
@@ -7627,12 +7627,26 @@ let Reader = {
 var ExternalApps = {
   _contextMenuId: -1,
 
+  // extend _getLink to pickup html5 media links.
+  _getMediaLink: function(aElement) {
+    let uri = NativeWindow.contextmenus._getLink(aElement);
+    if (uri == null) {
+      if (aElement.nodeType == Ci.nsIDOMNode.ELEMENT_NODE && (aElement instanceof Ci.nsIDOMHTMLMediaElement && mediaSrc)) {
+        try {
+          let mediaSrc = aElement.currentSrc || aElement.src;
+          uri = ContentAreaUtils.makeURI(mediaSrc, null, null);
+        } catch (e) {}
+      }
+    }
+    return uri;
+  },
+
   init: function helper_init() {
     this._contextMenuId = NativeWindow.contextmenus.add(function(aElement) {
       let uri = null;
       var node = aElement;
       while (node && !uri) {
-        uri = NativeWindow.contextmenus._getLink(node);
+        uri = ExternalApps._getMediaLink(node);
         node = node.parentNode;
       }
       let apps = [];
@@ -7650,7 +7664,7 @@ var ExternalApps = {
 
   filter: {
     matches: function(aElement) {
-      let uri = NativeWindow.contextmenus._getLink(aElement);
+      let uri = ExternalApps._getMediaLink(aElement);
       let apps = [];
       if (uri) {
         apps = HelperApps.getAppsForUri(uri);
@@ -7660,13 +7674,13 @@ var ExternalApps = {
   },
 
   openExternal: function(aElement) {
-    let uri = NativeWindow.contextmenus._getLink(aElement);
+    let uri = ExternalApps._getMediaLink(aElement);
     HelperApps.openUriInApp(uri);
   }
 };
 
 var Distribution = {
-  
+  // File used to store campaign data
   _file: null,
 
   init: function dc_init() {
@@ -7674,8 +7688,8 @@ var Distribution = {
     Services.obs.addObserver(this, "prefservice:after-app-defaults", false);
     Services.obs.addObserver(this, "Campaign:Set", false);
 
-    
-    
+    // Look for file outside the APK:
+    // /data/data/org.mozilla.xxx/distribution.json
     this._file = Services.dirsvc.get("XCurProcD", Ci.nsIFile);
     this._file.append("distribution.json");
     this.readJSON(this._file, this.update);
@@ -7690,7 +7704,7 @@ var Distribution = {
   observe: function dc_observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "Distribution:Set":
-        
+        // Reload the default prefs so we can observe "prefservice:after-app-defaults"
         Services.prefs.QueryInterface(Ci.nsIObserver).observe(null, "reload-default-prefs", null);
         break;
 
@@ -7699,7 +7713,7 @@ var Distribution = {
         break;
 
       case "Campaign:Set": {
-        
+        // Update the prefs for this session
         try {
           this.update(JSON.parse(aData));
         } catch (ex) {
@@ -7707,14 +7721,14 @@ var Distribution = {
           return;
         }
 
-        
+        // Save the data for the later sessions
         let ostream = Cc["@mozilla.org/network/safe-file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
         ostream.init(this._file, 0x02 | 0x08 | 0x20, parseInt("600", 8), ostream.DEFER_OPEN);
 
         let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
         converter.charset = "UTF-8";
 
-        
+        // Asynchronously copy the data to the file.
         let istream = converter.convertToInputStream(aData);
         NetUtil.asyncCopy(istream, ostream, function(rc) { });
         break;
@@ -7723,14 +7737,14 @@ var Distribution = {
   },
 
   update: function dc_update(aData) {
-    
+    // Force the distribution preferences on the default branch
     let defaults = Services.prefs.getDefaultBranch(null);
     defaults.setCharPref("distribution.id", aData.id);
     defaults.setCharPref("distribution.version", aData.version);
   },
 
   getPrefs: function dc_getPrefs() {
-    
+    // Get the distribution directory, and bail if it doesn't exist.
     let file = FileUtils.getDir("XREAppDist", [], false);
     if (!file.exists())
       return;
@@ -7740,14 +7754,14 @@ var Distribution = {
   },
 
   applyPrefs: function dc_applyPrefs(aData) {
-    
+    // Check for required Global preferences
     let global = aData["Global"];
     if (!(global && global["id"] && global["version"] && global["about"])) {
       Cu.reportError("Distribution: missing or incomplete Global preferences");
       return;
     }
 
-    
+    // Force the distribution preferences on the default branch
     let defaults = Services.prefs.getDefaultBranch(null);
     defaults.setCharPref("distribution.id", global["id"]);
     defaults.setCharPref("distribution.version", global["version"]);
@@ -7773,10 +7787,10 @@ var Distribution = {
             defaults.setCharPref(key, value);
             break;
         }
-      } catch (e) {  }
+      } catch (e) { /* ignore bad prefs and move on */ }
     }
 
-    
+    // Apply a lightweight theme if necessary
     if (prefs["lightweightThemes.isThemeSelected"])
       Services.obs.notifyObservers(null, "lightweight-theme-apply", "");
 
@@ -7788,7 +7802,7 @@ var Distribution = {
         value = value.replace("%LOCALE%", locale, "g");
         localizedString.data = "data:text/plain," + key + "=" + value;
         defaults.setComplexValue(key, Ci.nsIPrefLocalizedString, localizedString);
-      } catch (e) {  }
+      } catch (e) { /* ignore bad prefs and move on */ }
     }
 
     let localizeablePrefsOverrides = aData["LocalizablePreferences." + locale];
@@ -7797,14 +7811,14 @@ var Distribution = {
         let value = localizeablePrefsOverrides[key];
         localizedString.data = "data:text/plain," + key + "=" + value;
         defaults.setComplexValue(key, Ci.nsIPrefLocalizedString, localizedString);
-      } catch (e) {  }
+      } catch (e) { /* ignore bad prefs and move on */ }
     }
 
     sendMessageToJava({ type: "Distribution:Set:OK" });
   },
 
-  
-  
+  // aFile is an nsIFile
+  // aCallback takes the parsed JSON object as a parameter
   readJSON: function dc_readJSON(aFile, aCallback) {
     if (!aFile.exists())
       return;
@@ -7830,15 +7844,15 @@ var Distribution = {
 };
 
 var Tabs = {
-  
-  
-  
+  // This object provides functions to manage a most-recently-used list
+  // of tabs. Each tab has a timestamp associated with it that indicates when
+  // it was last touched.
 
   _enableTabExpiration: false,
 
   init: function() {
-    
-    
+    // on low-memory platforms, always allow tab expiration. on high-mem
+    // platforms, allow it to be turned on once we hit a low-mem situation
     if (BrowserApp.isOnLowMemoryPlatform) {
       this._enableTabExpiration = true;
     } else {
@@ -7848,8 +7862,8 @@ var Tabs = {
 
   uninit: function() {
     if (!this._enableTabExpiration) {
-      
-      
+      // if _enableTabExpiration is true then we won't have this
+      // observer registered any more.
       Services.obs.removeObserver(this, "memory-pressure");
     }
   },
@@ -7871,24 +7885,24 @@ var Tabs = {
     }
     let expireTimeMs = Services.prefs.getIntPref("browser.tabs.expireTime") * 1000;
     if (expireTimeMs < 0) {
-      
+      // this behaviour is disabled
       return false;
     }
     let tabs = BrowserApp.tabs;
     let selected = BrowserApp.selectedTab;
     let lruTab = null;
-    
+    // find the least recently used non-zombie tab
     for (let i = 0; i < tabs.length; i++) {
       if (tabs[i] == selected || tabs[i].browser.__SS_restore) {
-        
+        // this tab is selected or already a zombie, skip it
         continue;
       }
       if (lruTab == null || tabs[i].lastTouchedAt < lruTab.lastTouchedAt) {
         lruTab = tabs[i];
       }
     }
-    
-    
+    // if the tab was last touched more than browser.tabs.expireTime seconds ago,
+    // zombify it
     if (lruTab) {
       let tabAgeMs = Date.now() - lruTab.lastTouchedAt;
       if (tabAgeMs > expireTimeMs) {
@@ -7900,7 +7914,7 @@ var Tabs = {
     return false;
   },
 
-  
+  // for debugging
   dump: function(aPrefix) {
     let tabs = BrowserApp.tabs;
     for (let i = 0; i < tabs.length; i++) {
