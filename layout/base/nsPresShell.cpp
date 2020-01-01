@@ -3305,6 +3305,11 @@ NS_IMETHODIMP
 PresShell::RecreateFramesFor(nsIContent* aContent)
 {
   NS_ENSURE_TRUE(mPresContext, NS_ERROR_FAILURE);
+  if (!mDidInitialReflow) {
+    
+    
+    return NS_OK;
+  }
 
   
   
