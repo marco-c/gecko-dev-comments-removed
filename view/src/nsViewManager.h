@@ -270,7 +270,8 @@ public:
 private:
   nsCOMPtr<nsIDeviceContext> mContext;
   nsIViewObserver   *mObserver;
-  nsIntPoint        mMouseLocation; 
+  
+  nsPoint           mMouseLocation;
 
   
   
