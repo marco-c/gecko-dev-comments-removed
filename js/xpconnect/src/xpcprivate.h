@@ -2241,10 +2241,6 @@ private:
     XPCNativeScriptableInfo* mScriptableInfo;
 };
 
-class xpcObjectHelper;
-extern JSBool ConstructSlimWrapper(xpcObjectHelper &aHelper,
-                                   XPCWrappedNativeScope* xpcScope,
-                                   JS::MutableHandleValue rval);
 extern JSBool MorphSlimWrapper(JSContext *cx, JS::HandleObject obj);
 
 
@@ -3949,4 +3945,4 @@ bool IsJSContextOnStack(JSContext *aCx);
 
 
 
-#endif
+#endif 
