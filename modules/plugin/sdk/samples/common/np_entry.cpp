@@ -37,9 +37,6 @@
 
 
 
-
-
-
 #include "npplat.h"
 #include "pluginbase.h"
 
@@ -53,29 +50,11 @@ NPError OSCALL NP_Shutdown()
 
 static NPError fillPluginFunctionTable(NPPluginFuncs* aNPPFuncs)
 {
-  if(aNPPFuncs == NULL)
+  if (!aNPPFuncs)
     return NPERR_INVALID_FUNCTABLE_ERROR;
 
   
-  
-  
-
   aNPPFuncs->version       = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;
-#ifdef XP_MAC
-  aNPPFuncs->newp          = NewNPP_NewProc(Private_New);
-  aNPPFuncs->destroy       = NewNPP_DestroyProc(Private_Destroy);
-  aNPPFuncs->setwindow     = NewNPP_SetWindowProc(Private_SetWindow);
-  aNPPFuncs->newstream     = NewNPP_NewStreamProc(Private_NewStream);
-  aNPPFuncs->destroystream = NewNPP_DestroyStreamProc(Private_DestroyStream);
-  aNPPFuncs->asfile        = NewNPP_StreamAsFileProc(Private_StreamAsFile);
-  aNPPFuncs->writeready    = NewNPP_WriteReadyProc(Private_WriteReady);
-  aNPPFuncs->write         = NewNPP_WriteProc(Private_Write);
-  aNPPFuncs->print         = NewNPP_PrintProc(Private_Print);
-  aNPPFuncs->event         = NewNPP_HandleEventProc(Private_HandleEvent);	
-  aNPPFuncs->urlnotify     = NewNPP_URLNotifyProc(Private_URLNotify);			
-  aNPPFuncs->getvalue      = NewNPP_GetValueProc(Private_GetValue);
-  aNPPFuncs->setvalue      = NewNPP_SetValueProc(Private_SetValue);
-#else
   aNPPFuncs->newp          = NPP_New;
   aNPPFuncs->destroy       = NPP_Destroy;
   aNPPFuncs->setwindow     = NPP_SetWindow;
@@ -89,20 +68,19 @@ static NPError fillPluginFunctionTable(NPPluginFuncs* aNPPFuncs)
   aNPPFuncs->urlnotify     = NPP_URLNotify;
   aNPPFuncs->getvalue      = NPP_GetValue;
   aNPPFuncs->setvalue      = NPP_SetValue;
-#endif
 
   return NPERR_NO_ERROR;
 }
 
 static NPError fillNetscapeFunctionTable(NPNetscapeFuncs* aNPNFuncs)
 {
-  if(aNPNFuncs == NULL)
+  if (!aNPNFuncs)
     return NPERR_INVALID_FUNCTABLE_ERROR;
 
-  if(HIBYTE(aNPNFuncs->version) > NP_VERSION_MAJOR)
+  if (HIBYTE(aNPNFuncs->version) > NP_VERSION_MAJOR)
     return NPERR_INCOMPATIBLE_VERSION_ERROR;
 
-  if(aNPNFuncs->size < sizeof(NPNetscapeFuncs))
+  if (aNPNFuncs->size < sizeof(NPNetscapeFuncs))
     return NPERR_INVALID_FUNCTABLE_ERROR;
 
   NPNFuncs.size             = aNPNFuncs->size;
@@ -134,17 +112,11 @@ static NPError fillNetscapeFunctionTable(NPNetscapeFuncs* aNPNFuncs)
 
 
 
-
-
-
-
-
 #ifdef XP_WIN
-
 NPError OSCALL NP_Initialize(NPNetscapeFuncs* aNPNFuncs)
 {
   NPError rv = fillNetscapeFunctionTable(aNPNFuncs);
-  if(rv != NPERR_NO_ERROR)
+  if (rv != NPERR_NO_ERROR)
     return rv;
 
   return NS_PluginInitialize();
@@ -154,24 +126,17 @@ NPError OSCALL NP_GetEntryPoints(NPPluginFuncs* aNPPFuncs)
 {
   return fillPluginFunctionTable(aNPPFuncs);
 }
-
 #endif 
 
-
-
-
-
-
 #ifdef XP_UNIX
-
 NPError NP_Initialize(NPNetscapeFuncs* aNPNFuncs, NPPluginFuncs* aNPPFuncs)
 {
   NPError rv = fillNetscapeFunctionTable(aNPNFuncs);
-  if(rv != NPERR_NO_ERROR)
+  if (rv != NPERR_NO_ERROR)
     return rv;
 
   rv = fillPluginFunctionTable(aNPPFuncs);
-  if(rv != NPERR_NO_ERROR)
+  if (rv != NPERR_NO_ERROR)
     return rv;
 
   return NS_PluginInitialize();
@@ -186,20 +151,9 @@ NPError NP_GetValue(void *future, NPPVariable aVariable, void *aValue)
 {
   return NS_PluginGetValue(aVariable, aValue);
 }
-
 #endif 
 
-
-
-
-
-
 #ifdef XP_MAC
-
-#if !TARGET_API_MAC_CARBON
-QDGlobals* gQDPtr; 
-#endif
-
 short gResFile; 
 
 NPError Private_Initialize(void)
@@ -214,85 +168,11 @@ void Private_Shutdown(void)
   __destroy_global_chain();
 }
 
-void SetUpQD(void);
-
-void SetUpQD(void)
-{
-  ProcessSerialNumber PSN;
-  FSSpec              myFSSpec;
-  Str63               name;
-  ProcessInfoRec      infoRec;
-  OSErr               result = noErr;
-  CFragConnectionID   connID;
-  Str255              errName;
-
-  
-  gResFile = CurResFile();
-
-#if !TARGET_API_MAC_CARBON
-  
-  long response;
-  OSErr err = Gestalt(gestaltCFMAttr, &response);
-  Boolean hasCFM = BitTst(&response, 31-gestaltCFMPresent);
-
-  if (hasCFM) {
-    
-    
-    
-    infoRec.processInfoLength = sizeof(ProcessInfoRec);
-    infoRec.processName = name;
-    infoRec.processAppSpec = &myFSSpec;
-
-    PSN.highLongOfPSN = 0;
-    PSN.lowLongOfPSN = kCurrentProcess;
-
-    result = GetProcessInformation(&PSN, &infoRec);
-  }
-	else
-    
-    result = -1;		
-
-  if (result == noErr) {
-    
-    
-    
-    
-    Ptr mainAddr; 	
-    result =  GetDiskFragment(infoRec.processAppSpec, 0L, 0L, infoRec.processName,
-                              kReferenceCFrag, &connID, (Ptr*)&mainAddr, errName);
-  }
-
-  if (result == noErr) {
-    
-    
-    
-    CFragSymbolClass symClass;
-    result = FindSymbol(connID, "\pqd", (Ptr*)&gQDPtr, &symClass);
-  }
-  else {
-    
-    
-    gQDPtr = (QDGlobals*)(*((long*)SetCurrentA5()) - (sizeof(QDGlobals) - sizeof(GrafPtr)));
-  }
-#endif 
-}
-
-NPError main(NPNetscapeFuncs* nsTable, NPPluginFuncs* pluginFuncs, NPP_ShutdownUPP* unloadUpp);
-
-#if !TARGET_API_MAC_CARBON
-#pragma export on
-#if GENERATINGCFM
-RoutineDescriptor mainRD = BUILD_ROUTINE_DESCRIPTOR(uppNPP_MainEntryProcInfo, main);
-#endif
-#pragma export off
-#endif 
-
-
 NPError main(NPNetscapeFuncs* aNPNFuncs, NPPluginFuncs* aNPPFuncs, NPP_ShutdownUPP* aUnloadUpp)
 {
   NPError rv = NPERR_NO_ERROR;
 
-  if (aUnloadUpp == NULL)
+  if (!aUnloadUpp)
     rv = NPERR_INVALID_FUNCTABLE_ERROR;
 
   if (rv == NPERR_NO_ERROR)
@@ -305,9 +185,9 @@ NPError main(NPNetscapeFuncs* aNPNFuncs, NPPluginFuncs* aNPPFuncs, NPP_ShutdownU
   }
 
   *aUnloadUpp = NewNPP_ShutdownProc(Private_Shutdown);
-  SetUpQD();
+  gResFile = CurResFile();
   rv = Private_Initialize();
-	
+
   return rv;
 }
 #endif 
