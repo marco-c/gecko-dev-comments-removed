@@ -81,15 +81,6 @@ class Bytecode
     bool exceptionEntry : 1;
 
     
-    bool inTryBlock : 1;
-
-    
-    bool inLoop : 1;
-
-    
-    bool safePoint : 1;
-
-    
 
 
 
@@ -296,13 +287,6 @@ static inline uint32_t GetBytecodeSlot(JSScript *script, jsbytecode *pc)
 }
 
 
-static inline bool
-BytecodeUpdatesSlot(JSOp op)
-{
-    return (op == JSOP_SETARG || op == JSOP_SETLOCAL);
-}
-
-
 
 
 
@@ -328,13 +312,6 @@ struct Lifetime
 
 
 
-
-    bool loopTail;
-
-    
-
-
-
     bool write;
 
     
@@ -342,7 +319,7 @@ struct Lifetime
 
     Lifetime(uint32_t offset, uint32_t savedEnd, Lifetime *next)
         : start(offset), end(offset), savedEnd(savedEnd),
-          loopTail(false), write(false), next(next)
+          write(false), next(next)
     {}
 };
 
@@ -361,29 +338,6 @@ class LoopAnalysis
 
 
     uint32_t backedge;
-
-    
-    uint32_t entry;
-
-    
-
-
-
-
-
-    uint32_t lastBlock;
-
-    
-    uint16_t depth;
-
-    
-
-
-
-    bool hasSafePoints;
-
-    
-    bool hasCallsLoops;
 };
 
 
@@ -711,11 +665,7 @@ class ScriptAnalysis
 
     
 
-    bool usesReturnValue_:1;
     bool usesScopeChain_:1;
-    bool usesThisValue_:1;
-    bool hasFunctionCalls_:1;
-    bool modifiesArguments_:1;
     bool localsAliasStack_:1;
     bool isIonInlineable:1;
     bool canTrackVars:1;
@@ -764,22 +714,11 @@ class ScriptAnalysis
     uint32_t numPropertyReads() const { return numPropertyReads_; }
 
     
-    bool usesReturnValue() const { return usesReturnValue_; }
-
-    
     bool usesScopeChain() const { return usesScopeChain_; }
 
-    bool usesThisValue() const { return usesThisValue_; }
-    bool hasFunctionCalls() const { return hasFunctionCalls_; }
     uint32_t numReturnSites() const { return numReturnSites_; }
 
     bool hasLoops() const { return hasLoops_; }
-
-    
-
-
-
-    bool modifiesArguments() { return modifiesArguments_; }
 
     
 
@@ -862,9 +801,6 @@ class ScriptAnalysis
     inline types::StackTypeSet *poppedTypes(uint32_t offset, uint32_t which);
     inline types::StackTypeSet *poppedTypes(const jsbytecode *pc, uint32_t which);
 
-    
-    bool integerOperation(jsbytecode *pc);
-
     bool trackUseChain(const SSAValue &v) {
         JS_ASSERT_IF(v.kind() == SSAValue::VAR, trackSlot(v.varSlot()));
         return v.kind() != SSAValue::EMPTY &&
@@ -876,12 +812,6 @@ class ScriptAnalysis
 
 
     inline SSAUseChain *& useChain(const SSAValue &v);
-
-    LoopAnalysis *getLoop(uint32_t offset) {
-        JS_ASSERT(offset < script_->length);
-        return getCode(offset).loop;
-    }
-    LoopAnalysis *getLoop(const jsbytecode *pc) { return getLoop(pc - script_->code); }
 
 
     
