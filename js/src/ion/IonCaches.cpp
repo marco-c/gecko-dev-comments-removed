@@ -1,43 +1,43 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=79:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Brian Hackett <bhackett@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "jsscope.h"
 
@@ -106,8 +106,8 @@ GeneratePrototypeGuards(JSContext *cx, MacroAssembler &masm, JSObject *obj, JSOb
     JS_ASSERT(obj != holder);
 
     if (obj->hasUncacheableProto()) {
-        // Note: objectReg and scratchReg may be the same register, so we cannot
-        // use objectReg in the rest of this function.
+        
+        
         masm.loadPtr(Address(objectReg, JSObject::offsetOfType()), scratchReg);
         Address proto(scratchReg, offsetof(types::TypeObject, proto));
         masm.branchPtr(Assembler::NotEqual, proto, ImmGCPtr(obj->getProto()), failures);
@@ -140,9 +140,9 @@ struct GetNativePropertyStub
                   const Shape *shape, Register object, TypedOrValueRegister output,
                   Label *failures)
     {
-        // If there's a single jump to |failures|, we can patch the shape guard
-        // jump directly. Otherwise, jump to the end of the stub, so there's a
-        // common point to patch.
+        
+        
+        
         bool multipleFailureJumps = failures->used();
         exitOffset = masm.branchPtrWithPatch(Assembler::NotEqual,
                                              Address(object, JSObject::offsetOfShape()),
@@ -150,11 +150,11 @@ struct GetNativePropertyStub
                                              failures);
 
         bool restoreScratch = false;
-        Register scratchReg = Register::FromCode(0); // Quell compiler warning.
+        Register scratchReg = Register::FromCode(0); 
 
-        // If we need a scratch register, use either an output register or the object
-        // register (and restore it afterwards). After this point, we cannot jump
-        // directly to |failures| since we may still have to pop the object register.
+        
+        
+        
         Label prototypeFailures;
         if (obj != holder || !holder->isFixedSlot(shape->slot())) {
             if (output.hasValue()) {
@@ -170,10 +170,10 @@ struct GetNativePropertyStub
 
         Register holderReg;
         if (obj != holder) {
-            // Note: this may clobber the object register if it's used as scratch.
+            
             GeneratePrototypeGuards(cx, masm, obj, holder, object, scratchReg, &prototypeFailures);
 
-            // Guard on the holder's shape.
+            
             holderReg = scratchReg;
             masm.movePtr(ImmGCPtr(holder), holderReg);
             masm.branchPtr(Assembler::NotEqual,
@@ -246,11 +246,11 @@ static bool
 IsCacheableProtoChain(JSObject *obj, JSObject *holder)
 {
     while (obj != holder) {
-        /*
-         * We cannot assume that we find the holder object on the prototype
-         * chain and must check for null proto. The prototype chain can be
-         * altered during the lookupProperty call.
-         */
+        
+
+
+
+
         JSObject *proto = obj->getProto();
         if (!proto || !proto->isNative())
             return false;
@@ -281,19 +281,17 @@ js::ion::GetPropertyCache(JSContext *cx, size_t cacheIndex, JSObject *obj, Value
     jsbytecode *pc;
     cache.getScriptedLocation(&script, &pc);
 
-    // Root the object.
+    
     RootedVarObject objRoot(cx, obj);
 
-    // Override the return value if we are invalidated (bug 728188).
+    
     AutoDetectInvalidation adi(cx, vp, topScript);
 
-    // For now, just stop generating new stubs once we hit the stub count
-    // limit. Once we can make calls from within generated stubs, a new call
-    // stub will be generated instead and the previous stubs unlinked.
+    
+    
+    
     if (cache.stubCount() < MAX_STUBS && obj->isNative()) {
         cache.incrementStubCount();
-
-        jsid id = AtomToId(atom);
 
         JSObject *holder;
         JSProperty *prop;
@@ -312,14 +310,14 @@ js::ion::GetPropertyCache(JSContext *cx, size_t cacheIndex, JSObject *obj, Value
         return false;
 
 #if JS_HAS_NO_SUCH_METHOD
-    // Handle objects with __noSuchMethod__.
+    
     if (JSOp(*pc) == JSOP_CALLPROP && JS_UNLIKELY(vp->isPrimitive())) {
         if (!OnUnknownMethod(cx, objRoot, IdToValue(id), vp))
             return false;
     }
 #endif
 
-    // Monitor changes to cache entry.
+    
     types::TypeScript::Monitor(cx, script, pc, *vp);
 
     return true;
@@ -388,34 +386,34 @@ IonCacheSetProperty::attachNativeAdding(JSContext *cx, JSObject *obj, const Shap
 
     Label failures;
 
-    /* Guard shapes along prototype chain. */
+    
     masm.branchTestObjShape(Assembler::NotEqual, object(), oldShape, &failures);
 
     Label protoFailures;
-    masm.push(object());    // save object reg because we clobber it
+    masm.push(object());    
 
     JSObject *proto = obj->getProto();
     Register protoReg = object();
     while (proto) {
         Shape *protoShape = proto->lastProperty();
 
-        // load next prototype
+        
         masm.loadPtr(Address(protoReg, JSObject::offsetOfType()), protoReg);
         masm.loadPtr(Address(protoReg, offsetof(types::TypeObject, proto)), protoReg);
 
-        // ensure that the prototype is not NULL and that its shape matches
+        
         masm.branchTestPtr(Assembler::Zero, protoReg, protoReg, &protoFailures);
         masm.branchTestObjShape(Assembler::NotEqual, protoReg, protoShape, &protoFailures);
 
         proto = proto->getProto();
     }
 
-    masm.pop(object());     // restore object reg
+    masm.pop(object());     
 
-    /* Changing object shape.  Write the object's new shape. */
+    
     masm.storePtr(ImmGCPtr(newShape), Address(object(), JSObject::offsetOfShape()));
 
-    /* Set the value on the object. */
+    
     if (obj->isFixedSlot(propShape->slot())) {
         Address addr(object(), JSObject::getFixedSlotOffset(propShape->slot()));
         masm.storeConstantOrRegister(value(), addr);
@@ -428,12 +426,12 @@ IonCacheSetProperty::attachNativeAdding(JSContext *cx, JSObject *obj, const Shap
         masm.storeConstantOrRegister(value(), addr);
     }
 
-    /* Success. */
+    
     Label rejoin_;
     CodeOffsetJump rejoinOffset = masm.jumpWithPatch(&rejoin_);
     masm.bind(&rejoin_);
 
-    /* Failure. */
+    
     masm.bind(&protoFailures);
     masm.pop(object());
     masm.bind(&failures);
@@ -463,8 +461,8 @@ IonCacheSetProperty::attachNativeAdding(JSContext *cx, JSObject *obj, const Shap
 static bool
 IsPropertyInlineable(JSObject *obj, IonCacheSetProperty &cache)
 {
-    // Stop generating new stubs once we hit the stub count limit, see
-    // GetPropertyCache.
+    
+    
     if (cache.stubCount() >= MAX_STUBS)
         return false;
 
@@ -505,7 +503,7 @@ static bool
 IsPropertyAddInlineable(JSContext *cx, HandleObject obj, jsid id, uint32_t oldSlots,
                        const Shape **pShape)
 {
-    // This is not a Add, the property exists.
+    
     if (*pShape)
         return false;
 
@@ -513,32 +511,32 @@ IsPropertyAddInlineable(JSContext *cx, HandleObject obj, jsid id, uint32_t oldSl
     if (!shape || shape->inDictionary() || !shape->hasSlot() || !shape->hasDefaultSetter())
         return false;
 
-    // If object has a non-default resolve hook, don't inline
+    
     if (obj->getClass()->resolve != JS_ResolveStub)
         return false;
 
-    // walk up the object prototype chain and ensure that all prototypes
-    // are native, and that all prototypes have no getter or setter
-    // defined on the property
+    
+    
+    
     for (JSObject *proto = obj->getProto(); proto; proto = proto->getProto()) {
-        // if prototype is non-native, don't optimize
+        
         if (!proto->isNative())
             return false;
 
-        // if prototype defines this property in a non-plain way, don't optimize
+        
         const Shape *protoShape = proto->nativeLookup(cx, id);
         if (protoShape && !protoShape->hasDefaultSetter())
             return false;
 
-        // Otherise, if there's no such property, watch out for a resolve hook that would need
-        // to be invoked and thus prevent inlining of property addition.
+        
+        
         if (proto->getClass()->resolve != JS_ResolveStub)
              return false;
     }
 
-    // Only add a IC entry if the dynamic slots didn't change when the shapes
-    // changed.  Need to ensure that a shape change for a subsequent object
-    // won't involve reallocating the slot array.
+    
+    
+    
     if (obj->numDynamicSlots() != oldSlots)
         return false;
 
@@ -566,12 +564,12 @@ js::ion::SetPropertyCache(JSContext *cx, size_t cacheIndex, HandleObject obj, Ha
     uint32_t oldSlots = obj->numDynamicSlots();
     const Shape *oldShape = obj->lastProperty();
 
-    // Set/Add the property on the object, the inlined cache are setup for the next execution.
+    
     if (!SetProperty(cx, obj, atom, value, cache.strict(), isSetName))
         return false;
 
-    // The property did not exists before, now we can try again to inline the
-    // procedure which is adding the property.
+    
+    
     if (inlinable && IsPropertyAddInlineable(cx, obj, id, oldSlots, &shape)) {
         const Shape *newShape = obj->lastProperty();
         cache.incrementStubCount();
@@ -602,7 +600,7 @@ IonCacheGetElement::attachGetProp(JSContext *cx, JSObject *obj, const Value &idv
     Label failures;
     MacroAssembler masm;
 
-    // Guard on the index value.
+    
     ValueOperand val = index().reg().valueReg();
     masm.branchTestValue(Assembler::NotEqual, val, idval, &failures);
 
@@ -626,7 +624,7 @@ IonCacheGetElement::attachGetProp(JSContext *cx, JSObject *obj, const Value &idv
     return true;
 }
 
-// Get the common shape used by all dense arrays with a prototype at globalObj.
+
 static inline Shape *
 GetDenseArrayShape(JSContext *cx, JSObject *globalObj)
 {
@@ -647,35 +645,35 @@ IonCacheGetElement::attachDenseArray(JSContext *cx, JSObject *obj, const Value &
     Label failures;
     MacroAssembler masm;
 
-    // Guard object is a dense array.
+    
     Shape *shape = GetDenseArrayShape(cx, script->global());
     if (!shape)
         return false;
     masm.branchTestObjShape(Assembler::NotEqual, object(), shape, &failures);
 
-    // Ensure the index is an int32 value.
+    
     ValueOperand val = index().reg().valueReg();
     masm.branchTestInt32(Assembler::NotEqual, val, &failures);
 
-    // Load elements vector.
+    
     masm.push(object());
     masm.loadPtr(Address(object(), JSObject::offsetOfElements()), object());
 
-    // Unbox the index.
+    
     ValueOperand out = output().valueReg();
     Register scratchReg = out.scratchReg();
     masm.unboxInt32(val, scratchReg);
 
     Label hole;
 
-    // Guard on the initialized length.
+    
     Address initLength(object(), ObjectElements::offsetOfInitializedLength());
     masm.branch32(Assembler::BelowOrEqual, initLength, scratchReg, &hole);
 
-    // Load the value.
+    
     masm.loadValue(BaseIndex(object(), scratchReg, TimesEight), out);
 
-    // Hole check.
+    
     masm.branchTestMagic(Assembler::Equal, out, &hole);
 
     masm.pop(object());
@@ -683,7 +681,7 @@ IonCacheGetElement::attachDenseArray(JSContext *cx, JSObject *obj, const Value &
     CodeOffsetJump rejoinOffset = masm.jumpWithPatch(&rejoin_);
     masm.bind(&rejoin_);
 
-    // All failures flow to here.
+    
     masm.bind(&hole);
     masm.pop(object());
     masm.bind(&failures);
@@ -719,7 +717,7 @@ js::ion::GetElementCache(JSContext *cx, size_t cacheIndex, JSObject *obj, const 
 
     IonCacheGetElement &cache = ion->getCache(cacheIndex).toGetElement();
 
-    // Override the return value if we are invalidated (bug 728188).
+    
     AutoDetectInvalidation adi(cx, res, script);
 
     jsid id;
@@ -737,7 +735,7 @@ js::ion::GetElementCache(JSContext *cx, size_t cacheIndex, JSObject *obj, const 
                     return false;
             }
         } else if (!cache.hasDenseArrayStub() && obj->isDenseArray() && idval.isInt32()) {
-            // Generate at most one dense array stub.
+            
             cache.incrementStubCount();
 
             if (!cache.attachDenseArray(cx, obj, idval, res))
@@ -763,7 +761,7 @@ IonCacheBindName::attachGlobal(JSContext *cx, JSObject *scopeChain)
 
     MacroAssembler masm;
 
-    // Guard on the scope chain.
+    
     Label exit_;
     CodeOffsetJump exitOffset = masm.branchPtrWithPatch(Assembler::NotEqual, scopeChainReg(),
                                                         ImmGCPtr(scopeChain), &exit_);
@@ -797,22 +795,22 @@ GenerateScopeChainGuards(MacroAssembler &masm, JSObject *scopeChain, JSObject *h
 {
     JS_ASSERT(scopeChain != holder);
 
-    // Load the parent of the scope object into outputReg.
+    
     JSObject *tobj = &scopeChain->asScope().enclosingScope();
     masm.extractObject(Address(scopeChainReg, ScopeObject::offsetOfEnclosingScope()), outputReg);
 
-    // Walk up the scope chain. Note that IsCacheableScopeChain guarantees the
-    // |tobj == holder| condition terminates the loop.
+    
+    
     while (true) {
         JS_ASSERT(IsCacheableNonGlobalScope(tobj));
 
-        // Test intervening shapes.
+        
         Address shapeAddr(outputReg, JSObject::offsetOfShape());
         masm.branchPtr(Assembler::NotEqual, shapeAddr, ImmGCPtr(tobj->lastProperty()), failures);
         if (tobj == holder)
             break;
 
-        // Load the next link.
+        
         tobj = &tobj->asScope().enclosingScope();
         masm.extractObject(Address(outputReg, ScopeObject::offsetOfEnclosingScope()), outputReg);
     }
@@ -825,7 +823,7 @@ IonCacheBindName::attachNonGlobal(JSContext *cx, JSObject *scopeChain, JSObject 
 
     MacroAssembler masm;
 
-    // Guard on the shape of the scope chain.
+    
     Label failures;
     CodeOffsetJump exitOffset =
         masm.branchPtrWithPatch(Assembler::NotEqual,
@@ -838,13 +836,13 @@ IonCacheBindName::attachNonGlobal(JSContext *cx, JSObject *scopeChain, JSObject 
     else
         masm.movePtr(scopeChainReg(), outputReg());
 
-    // At this point outputReg holds the object on which the property
-    // was found, so we're done.
+    
+    
     Label rejoin_;
     CodeOffsetJump rejoinOffset = masm.jumpWithPatch(&rejoin_);
     masm.bind(&rejoin_);
 
-    // All failures flow to here, so there is a common point to patch.
+    
     masm.bind(&failures);
     if (holder != scopeChain) {
         Label exit_;
@@ -908,8 +906,8 @@ js::ion::BindNameCache(JSContext *cx, size_t cacheIndex, HandleObject scopeChain
             return NULL;
     }
 
-    // Stop generating new stubs once we hit the stub count limit, see
-    // GetPropertyCache.
+    
+    
     if (cache.stubCount() < MAX_STUBS) {
         cache.incrementStubCount();
 
