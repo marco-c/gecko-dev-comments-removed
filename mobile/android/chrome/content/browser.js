@@ -1566,9 +1566,7 @@ var SelectionHandler = {
       }
       case "after-viewport-change": {
         
-        
         this.updateCacheForSelection();
-        this.positionHandles();
         break;
       }
       case "TextSelection:Move": {
@@ -1871,13 +1869,15 @@ var SelectionHandler = {
     
     
     let offset = this._getViewOffset();
+    let scrollX = {}, scrollY = {};
+    this._view.top.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).getScrollXY(false, scrollX, scrollY);
     sendMessageToJava({
       gecko: {
         type: "TextSelection:PositionHandles",
-        startLeft: this.cache.start.x + offset.x,
-        startTop: this.cache.start.y + offset.y,
-        endLeft: this.cache.end.x + offset.x,
-        endTop: this.cache.end.y + offset.y
+        startLeft: this.cache.start.x + offset.x + scrollX.value,
+        startTop: this.cache.start.y + offset.y + scrollY.value,
+        endLeft: this.cache.end.x + offset.x + scrollX.value,
+        endTop: this.cache.end.y + offset.y + scrollY.value
       }
     });
   },
@@ -2588,7 +2588,7 @@ Tab.prototype = {
         let target = aEvent.originalTarget;
 
         
-        if (target.defaultView != this.browser.contentWindow)
+        if (target != this.browser.contentDocument)
           return;
 
         
@@ -2634,7 +2634,7 @@ Tab.prototype = {
           return;
 
         
-        if (target.ownerDocument.defaultView != this.browser.contentWindow)
+        if (target.ownerDocument != this.browser.contentDocument)
           return;
 
         
@@ -2688,7 +2688,7 @@ Tab.prototype = {
           return;
 
         
-        if (aEvent.target.defaultView != this.browser.contentWindow)
+        if (aEvent.originalTarget != this.browser.contentDocument)
           return;
 
         sendMessageToJava({
@@ -6098,6 +6098,7 @@ var RemoteDebugger = {
     try {
       if (!DebuggerServer.initialized) {
         DebuggerServer.init(this._allowConnection);
+        DebuggerServer.addBrowserActors();
         DebuggerServer.addActors("chrome://browser/content/dbg-browser-actors.js");
       }
 
@@ -6320,18 +6321,18 @@ let Reader = {
         let doc = tab.browser.contentWindow.document.cloneNode(true);
 
         let readability = new Readability(uri, doc);
-        article = readability.parse();
+        readability.parse(function (article) {
+          if (!article) {
+            this.log("Failed to parse page");
+            callback(null);
+            return;
+          }
 
-        if (!article) {
-          this.log("Failed to parse page");
-          callback(null);
-          return;
-        }
+          
+          article.url = url;
 
-        
-        article.url = url;
-
-        callback(article);
+          callback(article);
+        }.bind(this));
       }.bind(this));
     } catch (e) {
       this.log("Error parsing document from tab: " + e);
@@ -6358,7 +6359,7 @@ let Reader = {
         let doc = tab.browser.contentWindow.document;
 
         let readability = new Readability(uri, doc);
-        callback(readability.check());
+        readability.check(callback);
       }.bind(this));
     } catch (e) {
       this.log("Error checking tab readability: " + e);
@@ -6501,9 +6502,6 @@ let Reader = {
       }
 
       callback(doc);
-
-      
-      browser.parentNode.removeChild(browser);
     }.bind(this));
 
     browser.loadURIWithFlags(url, Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
@@ -6519,33 +6517,37 @@ let Reader = {
       request.browser = this._downloadDocument(url, function(doc) {
         this.log("Finished loading page: " + doc);
 
-        
-        
-        delete request.browser;
-
         if (!doc) {
           this.log("Error loading page");
           this._runCallbacksAndFinish(request, null);
+          return;
         }
 
         this.log("Parsing response with Readability");
 
         let uri = Services.io.newURI(url, null, null);
         let readability = new Readability(uri, doc);
-        let article = readability.parse();
+        readability.parse(function (article) {
+          
+          let browser = request.browser;
+          if (browser) {
+            browser.parentNode.removeChild(browser);
+            delete request.browser;
+          }
 
-        if (!article) {
-          this.log("Failed to parse page");
-          this._runCallbacksAndFinish(request, null);
-          return;
-        }
+          if (!article) {
+            this.log("Failed to parse page");
+            this._runCallbacksAndFinish(request, null);
+            return;
+          }
 
-        this.log("Parsing has been successful");
+          this.log("Parsing has been successful");
 
-        
-        article.url = url;
+          
+          article.url = url;
 
-        this._runCallbacksAndFinish(request, article);
+          this._runCallbacksAndFinish(request, article);
+        }.bind(this));
       }.bind(this));
     } catch (e) {
       this.log("Error downloading and parsing document: " + e);

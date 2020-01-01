@@ -1,13 +1,13 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=78:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JS script operations.
- */
+
+
+
+
+
+
+
+
+
 
 #include <string.h>
 #include "jstypes.h"
@@ -101,7 +101,7 @@ js::GetOrderedBindings(JSContext *cx, Bindings &bindings, BindingVector *vec)
     for (BindingIter bi(cx, bindings); bi; bi++)
         vec->infallibleAppend(*bi);
 
-    /* Variables/arguments are stored in reverse order. */
+    
     Reverse(vec->begin(), vec->end());
     return true;
 }
@@ -137,11 +137,11 @@ Bindings::add(JSContext *cx, HandleAtom name, BindingKind kind)
         return false;
     }
 
-    /*
-     * We still follow 10.2.3 of ES3 and make argument and variable properties
-     * of the Call objects enumerable. ES5 reformulated all of its Clause 10 to
-     * avoid objects as activations, something we should do too.
-     */
+    
+
+
+
+
     unsigned attrs = JSPROP_ENUMERATE | JSPROP_PERMANENT;
 
     uint16_t *indexp;
@@ -162,7 +162,7 @@ Bindings::add(JSContext *cx, HandleAtom name, BindingKind kind)
 
     RootedId id(cx);
     if (!name) {
-        JS_ASSERT(kind == ARGUMENT); /* destructuring */
+        JS_ASSERT(kind == ARGUMENT); 
         id = INT_TO_JSID(nargs);
     } else {
         id = AtomToId(name);
@@ -175,7 +175,7 @@ Bindings::add(JSContext *cx, HandleAtom name, BindingKind kind)
 
     StackShape child(nbase, id, slot, 0, attrs, Shape::HAS_SHORTID, *indexp);
 
-    /* Shapes in bindings cannot be dictionaries. */
+    
     Shape *shape = lastBinding->getChildBinding(cx, child);
     if (!shape)
         return false;
@@ -191,11 +191,11 @@ Bindings::callObjectShape(JSContext *cx) const
     if (!hasDup())
         return lastBinding;
 
-    /*
-     * Build a vector of non-duplicate properties in order from last added
-     * to first (i.e., the order we normally have iterate over Shapes). Choose
-     * the last added property in each set of dups.
-     */
+    
+
+
+
+
     Vector<Shape *> shapes(cx);
     HashSet<jsid> seen(cx);
     if (!seen.init())
@@ -212,9 +212,9 @@ Bindings::callObjectShape(JSContext *cx) const
         }
     }
 
-    /*
-     * Now build the Shape without duplicate properties.
-     */
+    
+
+
     RootedShape shape(cx, initialShape(cx));
     for (int i = shapes.length() - 1; i >= 0; --i) {
         shape = shape->getChildBinding(cx, shapes[i]);
@@ -236,11 +236,11 @@ template<XDRMode mode>
 static bool
 XDRScriptConst(XDRState<mode> *xdr, HeapValue *vp)
 {
-    /*
-     * A script constant can be an arbitrary primitive value as they are used
-     * to implement JSOP_LOOKUPSWITCH. But they cannot be objects, see
-     * bug 407186.
-     */
+    
+
+
+
+
     enum ConstTag {
         SCRIPT_INT     = 0,
         SCRIPT_DOUBLE  = 1,
@@ -345,7 +345,7 @@ bool
 js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enclosingScript,
               HandleFunction fun, JSScript **scriptp)
 {
-    /* NB: Keep this in sync with CloneScript. */
+    
 
     enum ScriptBits {
         NoScriptRval,
@@ -375,7 +375,7 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
     nsrcnotes = ntrynotes = natoms = nobjects = nregexps = nconsts = nClosedArgs = nClosedVars = 0;
     jssrcnote *notes = NULL;
 
-    /* XDR arguments and vars. */
+    
     uint16_t nargs = 0, nvars = 0;
     uint32_t argsVars = 0;
     if (mode == XDR_ENCODE) {
@@ -402,14 +402,14 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
     if (nameCount > 0) {
         LifoAllocScope las(&cx->tempLifoAlloc());
 
-        /*
-         * To xdr the names we prefix the names with a bitmap descriptor and
-         * then xdr the names as strings. For argument names (indexes below
-         * nargs) the corresponding bit in the bitmap is unset when the name
-         * is null. Such null names are not encoded or decoded. For variable
-         * names (indexes starting from nargs) bitmap's bit is set when the
-         * name is declared as const, not as ordinary var.
-         * */
+        
+
+
+
+
+
+
+
         unsigned bitmapLength = JS_HOWMANY(nameCount, JS_BITS_PER_UINT32);
         uint32_t *bitmap = cx->tempLifoAlloc().newArray<uint32_t>(bitmapLength);
         if (!bitmap) {
@@ -539,10 +539,10 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
     if (!xdr->codeUint32(&version))
         return JS_FALSE;
 
-    /*
-     * To fuse allocations, we need srcnote, atom, objects, regexp, and trynote
-     * counts early.
-     */
+    
+
+
+
     if (!xdr->codeUint32(&natoms))
         return JS_FALSE;
     if (!xdr->codeUint32(&nsrcnotes))
@@ -565,22 +565,17 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
         return JS_FALSE;
 
     if (mode == XDR_DECODE) {
-        /* Note: version is packed into the 32b space with another 16b value. */
+        
         JSVersion version_ = JSVersion(version & JS_BITMASK(16));
         JS_ASSERT((version_ & VersionFlags::FULL_MASK) == unsigned(version_));
 
-        // principals and originPrincipals are set with xdr->initScriptPrincipals(script) below.
-        // staticLevel is set below.
-        script = JSScript::Create(cx,
-                                  enclosingScope,
-                                  !!(scriptBits & (1 << SavedCallerFun)),
-                                  /* principals = */ NULL,
-                                  /* originPrincipals = */ NULL,
-                                  /* compileAndGo = */ false,
-                                  !!(scriptBits & (1 << NoScriptRval)),
-                                  version_,
-                                  /* staticLevel = */ 0,
-                                  NULL, 0, 0);
+        
+        
+        CompileOptions options(cx);
+        options.setVersion(version_)
+               .setNoScriptRval(!!(scriptBits & (1 << NoScriptRval)));
+        script = JSScript::Create(cx, enclosingScope, !!(scriptBits & (1 << SavedCallerFun)),
+                                  options,  0, NULL, 0, 0);
         if (!script || !JSScript::partiallyInit(cx, script,
                                                 length, nsrcnotes, natoms, nobjects,
                                                 nregexps, ntrynotes, nconsts, nClosedArgs,
@@ -592,7 +587,7 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
         script->mainOffset = prologLength;
         script->nfixed = uint16_t(version >> 16);
 
-        /* If we know nsrcnotes, we allocated space for notes in script. */
+        
         notes = script->notes();
         *scriptp = script;
 
@@ -678,11 +673,11 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
         }
     }
 
-    /*
-     * Here looping from 0-to-length to xdr objects is essential to ensure that
-     * all references to enclosing blocks (via FindBlockIndex below) happen
-     * after the enclosing block has been XDR'd.
-     */
+    
+
+
+
+
     for (i = 0; i != nobjects; ++i) {
         HeapPtr<JSObject> *objp = &script->objects()->vector[i];
         uint32_t isBlock;
@@ -694,7 +689,7 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
         if (!xdr->codeUint32(&isBlock))
             return false;
         if (isBlock == 0) {
-            /* Code the nested function's enclosing scope. */
+            
             uint32_t funEnclosingScopeIndex = 0;
             if (mode == XDR_ENCODE) {
                 StaticScopeIter ssi((*objp)->toFunction()->script()->enclosingStaticScope());
@@ -723,7 +718,7 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
                 return false;
             *objp = tmp;
         } else {
-            /* Code the nested block's enclosing scope. */
+            
             JS_ASSERT(isBlock == 1);
             uint32_t blockEnclosingScopeIndex = 0;
             if (mode == XDR_ENCODE) {
@@ -764,10 +759,10 @@ js::XDRScript(XDRState<mode> *xdr, HandleObject enclosingScope, HandleScript enc
     }
 
     if (ntrynotes != 0) {
-        /*
-         * We combine tn->kind and tn->stackDepth when serializing as XDR is not
-         * efficient when serializing small integer types.
-         */
+        
+
+
+
         JSTryNote *tn, *tnfirst;
         uint32_t kindAndDepth;
         JS_STATIC_ASSERT(sizeof(tn->kind) == sizeof(uint8_t));
@@ -835,7 +830,7 @@ JSScript::initScriptCounts(JSContext *cx)
     if (!cursor)
         return false;
 
-    /* Create compartment's scriptCountsMap if necessary. */
+    
     ScriptCountsMap *map = compartment()->scriptCountsMap;
     if (!map) {
         map = cx->new_<ScriptCountsMap>();
@@ -869,11 +864,11 @@ JSScript::initScriptCounts(JSContext *cx)
         cx->delete_(map);
         return false;
     }
-    hasScriptCounts = true; // safe to set this;  we can't fail after this point
+    hasScriptCounts = true; 
 
     JS_ASSERT(size_t(cursor - base) == bytes);
 
-    /* Enable interrupts in any interpreter frames running on this script. */
+    
     InterpreterFrames *frames;
     for (frames = cx->runtime->interpreterFrames; frames; frames = frames->older)
         frames->enableInterruptsIfRunning(this);
@@ -920,7 +915,7 @@ JSScript::setSourceMap(JSContext *cx, jschar *sourceMap)
 {
     JS_ASSERT(!hasSourceMap);
 
-    /* Create compartment's sourceMapMap if necessary. */
+    
     SourceMapMap *map = compartment()->sourceMapMap;
     if (!map) {
         map = cx->new_<SourceMapMap>();
@@ -934,7 +929,7 @@ JSScript::setSourceMap(JSContext *cx, jschar *sourceMap)
     if (!map->putNew(this, sourceMap))
         return false;
 
-    hasSourceMap = true; // safe to set this;  we can't fail after this point
+    hasSourceMap = true; 
 
     return true;
 }
@@ -1003,7 +998,7 @@ SourceCompressorThread::finish()
 {
     if (thread) {
         PR_Lock(lock);
-        // We should only be compressing things when in the compiler.
+        
         JS_ASSERT(state == IDLE);
         PR_NotifyCondVar(wakeup);
         state = SHUTDOWN;
@@ -1034,7 +1029,7 @@ SourceCompressorThread::threadLoop()
             JS_ASSERT(tok);
             JS_ASSERT(!tok->ss->ready());
             tok->ss->considerCompressing(rt, tok->chars);
-            // We hold the lock, so no one should have changed this.
+            
             JS_ASSERT(state == COMPRESSING);
             state = IDLE;
             PR_NotifyCondVar(done);
@@ -1047,9 +1042,9 @@ void
 SourceCompressorThread::compress(SourceCompressionToken *sct)
 {
     if (tok)
-        // We have reentered the compiler. (This can happen through the
-        // debugger.) Complete the current compression before starting the next
-        // one.
+        
+        
+        
         waitOnCompression(tok);
     JS_ASSERT(state == IDLE);
     JS_ASSERT(!tok);
@@ -1075,7 +1070,7 @@ SourceCompressorThread::waitOnCompression(SourceCompressionToken *userTok)
     tok = NULL;
     PR_Unlock(lock);
 }
-#endif /* JS_THREADSAFE */
+#endif 
 
 bool
 JSScript::loadSource(JSContext *cx, bool *worked)
@@ -1202,12 +1197,12 @@ ScriptSource::createFromSource(JSContext *cx, const jschar *src, uint32_t length
 #endif
 
 #ifdef JSGC_INCREMENTAL
-    /*
-     * During the IGC we need to ensure that source is marked whenever it is
-     * accessed even if the name was already in the table. At this point old
-     * scripts pointing to the source may no longer be reachable.
-     */
-    if (cx->runtime->gcIncrementalState == MARK && cx->runtime->gcIsFull)
+    
+
+
+
+
+    if (cx->runtime->gcIncrementalState != NO_INCREMENTAL && cx->runtime->gcIsFull)
         ss->marked = true;
 #endif
 
@@ -1288,8 +1283,8 @@ ScriptSource::sizeOfIncludingThis(JSMallocSizeOfFun mallocSizeOf)
 {
     JS_ASSERT(onRuntime());
     JS_ASSERT(ready());
-    // data is a union, but both members are pointers to allocated memory, so
-    // just using compressed will work.
+    
+    
     return mallocSizeOf(this) + mallocSizeOf(data.compressed);
 }
 
@@ -1346,8 +1341,8 @@ ScriptSource::performXDR(XDRState<mode> *xdr, ScriptSource **ssp)
         ss->data.compressed = NULL;
         cleanup.protect(ss);
 #ifdef JSGC_INCREMENTAL
-        // See comment in ScriptSource::createFromSource.
-        if (xdr->cx()->runtime->gcIncrementalState == MARK &&
+        
+        if (xdr->cx()->runtime->gcIncrementalState != NO_INCREMENTAL &&
             xdr->cx()->runtime->gcIsFull)
             ss->marked = true;
 #endif
@@ -1379,9 +1374,9 @@ ScriptSource::performXDR(XDRState<mode> *xdr, ScriptSource **ssp)
     return true;
 }
 
-/*
- * Shared script filename management.
- */
+
+
+
 
 const char *
 js::SaveScriptFilename(JSContext *cx, const char *filename)
@@ -1409,13 +1404,13 @@ js::SaveScriptFilename(JSContext *cx, const char *filename)
 
     ScriptFilenameEntry *sfe = *p;
 #ifdef JSGC_INCREMENTAL
-    /*
-     * During the IGC we need to ensure that filename is marked whenever it is
-     * accessed even if the name was already in the table. At this point old
-     * scripts or exceptions pointing to the filename may no longer be
-     * reachable.
-     */
-    if (rt->gcIncrementalState == MARK && rt->gcIsFull)
+    
+
+
+
+
+
+    if (rt->gcIncrementalState != NO_INCREMENTAL && rt->gcIsFull)
         sfe->marked = true;
 #endif
 
@@ -1448,54 +1443,54 @@ js::FreeScriptFilenames(JSRuntime *rt)
     table.clear();
 }
 
-/*
- * JSScript::data has a complex, manually-controlled, memory layout.
- *
- * First are some optional array headers.  They are optional because they
- * often aren't needed, i.e. the corresponding arrays often have zero elements.
- * Each header has a bit in JSScript::hasArrayBits that indicates if it's
- * present within |data|;  from this the offset of each present array header
- * can be computed.  Each header has an accessor function in JSScript that
- * encapsulates this offset computation.
- *
- * Array type       Array elements  Accessor
- * ----------       --------------  --------
- * ConstArray       Consts          consts()
- * ObjectArray      Objects         objects()
- * ObjectArray      Regexps         regexps()
- * TryNoteArray     Try notes       trynotes()
- * ClosedSlotArray  ClosedArgs      closedArgs()
- * ClosedSlotArray  ClosedVars      closedVars()
- *
- * Then are the elements of several arrays.
- * - Most of these arrays have headers listed above (if present).  For each of
- *   these, the array pointer and the array length is stored in the header.
- * - The remaining arrays have pointers and lengths that are stored directly in
- *   JSScript.  This is because, unlike the others, they are nearly always
- *   non-zero length and so the optional-header space optimization isn't
- *   worthwhile.
- *
- * Array elements   Pointed to by         Length
- * --------------   -------------         ------
- * Consts           consts()->vector      consts()->length
- * Atoms            atoms                 natoms
- * Objects          objects()->vector     objects()->length
- * Regexps          regexps()->vector     regexps()->length
- * Try notes        trynotes()->vector    trynotes()->length
- * Closed args      closedArgs()->vector  closedArgs()->length
- * Closed vars      closedVars()->vector  closedVars()->length
- * Bytecodes        code                  length
- * Source notes     notes()               numNotes() * sizeof(jssrcnote)
- *
- * IMPORTANT: This layout has two key properties.
- * - It ensures that everything has sufficient alignment;  in particular, the
- *   consts() elements need jsval alignment.
- * - It ensures there are no gaps between elements, which saves space and makes
- *   manual layout easy.  In particular, in the second part, arrays with larger
- *   elements precede arrays with smaller elements.
- *
- * The following static assertions check these properties.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define KEEPS_JSVAL_ALIGNMENT(T) \
     (JS_ALIGNMENT_OF(jsval) % JS_ALIGNMENT_OF(T) == 0 && \
@@ -1508,18 +1503,18 @@ js::FreeScriptFilenames(JSRuntime *rt)
 #define NO_PADDING_BETWEEN_ENTRIES(T1, T2) \
     (JS_ALIGNMENT_OF(T1) % JS_ALIGNMENT_OF(T2) == 0)
 
-/*
- * These assertions ensure that there is no padding between the array headers,
- * and also that the consts() elements (which follow immediately afterward) are
- * jsval-aligned.  (There is an assumption that |data| itself is jsval-aligned;
- * we check this below).
- */
-JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(ConstArray));
-JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(ObjectArray));       /* there are two of these */
-JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(TryNoteArray));
-JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(ClosedSlotArray));   /* there are two of these */
 
-/* These assertions ensure there is no padding required between array elements. */
+
+
+
+
+
+JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(ConstArray));
+JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(ObjectArray));       
+JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(TryNoteArray));
+JS_STATIC_ASSERT(KEEPS_JSVAL_ALIGNMENT(ClosedSlotArray));   
+
+
 JS_STATIC_ASSERT(HAS_JSVAL_ALIGNMENT(HeapValue));
 JS_STATIC_ASSERT(NO_PADDING_BETWEEN_ENTRIES(HeapValue, JSAtom *));
 JS_STATIC_ASSERT(NO_PADDING_BETWEEN_ENTRIES(JSAtom *, HeapPtrObject));
@@ -1558,8 +1553,7 @@ ScriptDataSize(uint32_t length, uint32_t nsrcnotes, uint32_t natoms,
 
 JSScript *
 JSScript::Create(JSContext *cx, HandleObject enclosingScope, bool savedCallerFun,
-                 JSPrincipals *principals, JSPrincipals *originPrincipals,
-                 bool compileAndGo, bool noScriptRval, JSVersion version, unsigned staticLevel,
+                 const CompileOptions &options, unsigned staticLevel,
                  ScriptSource *ss, uint32_t bufStart, uint32_t bufEnd)
 {
     JSScript *script = js_NewGCScript(cx);
@@ -1571,27 +1565,28 @@ JSScript::Create(JSContext *cx, HandleObject enclosingScope, bool savedCallerFun
     script->enclosingScope_ = enclosingScope;
     script->savedCallerFun = savedCallerFun;
 
-    /* Establish invariant: principals implies originPrincipals. */
-    if (principals) {
-        script->principals = principals;
-        script->originPrincipals = originPrincipals ? originPrincipals : principals;
+    
+    if (options.principals) {
+        script->principals = options.principals;
+        script->originPrincipals
+            = options.originPrincipals ? options.originPrincipals : options.principals;
         JS_HoldPrincipals(script->principals);
         JS_HoldPrincipals(script->originPrincipals);
-    } else if (originPrincipals) {
-        script->originPrincipals = originPrincipals;
+    } else if (options.originPrincipals) {
+        script->originPrincipals = options.originPrincipals;
         JS_HoldPrincipals(script->originPrincipals);
     }
 
-    script->compileAndGo = compileAndGo;
-    script->noScriptRval = noScriptRval;
+    script->compileAndGo = options.compileAndGo;
+    script->noScriptRval = options.noScriptRval;
+ 
+    script->version = options.version;
+    JS_ASSERT(script->getVersion() == options.version);     
 
-    script->version = version;
-    JS_ASSERT(script->getVersion() == version);     // assert that no overflow occurred
-
-    // This is an unsigned-to-uint16_t conversion, test for too-high values.
-    // In practice, recursion in Parser and/or BytecodeEmitter will blow the
-    // stack if we nest functions more than a few hundred deep, so this will
-    // never trigger.  Oh well.
+    
+    
+    
+    
     if (staticLevel > UINT16_MAX) {
         JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_TOO_DEEP, js_function_str);
         return NULL;
@@ -1616,7 +1611,7 @@ AllocScriptData(JSContext *cx, size_t size)
     return data;
 }
 
-/* static */ bool
+ bool
 JSScript::partiallyInit(JSContext *cx, Handle<JSScript*> script,
                         uint32_t length, uint32_t nsrcnotes, uint32_t natoms,
                         uint32_t nobjects, uint32_t nregexps, uint32_t ntrynotes, uint32_t nconsts,
@@ -1714,10 +1709,10 @@ JSScript::partiallyInit(JSContext *cx, Handle<JSScript*> script,
     return true;
 }
 
-/* static */ bool
+ bool
 JSScript::fullyInitTrivial(JSContext *cx, Handle<JSScript*> script)
 {
-    if (!partiallyInit(cx, script, /* length = */ 1, /* nsrcnotes = */ 1, 0, 0, 0, 0, 0, 0, 0, 0))
+    if (!partiallyInit(cx, script,  1,  1, 0, 0, 0, 0, 0, 0, 0, 0))
         return false;
 
     script->code[0] = JSOP_STOP;
@@ -1726,10 +1721,10 @@ JSScript::fullyInitTrivial(JSContext *cx, Handle<JSScript*> script)
     return true;
 }
 
-/* static */ bool
+ bool
 JSScript::fullyInitFromEmitter(JSContext *cx, Handle<JSScript*> script, BytecodeEmitter *bce)
 {
-    /* The counts of indexed things must be checked during code generation. */
+    
     JS_ASSERT(bce->atomIndices->count() <= INDEX_LIMIT);
     JS_ASSERT(bce->objectList.length <= INDEX_LIMIT);
     JS_ASSERT(bce->regexpList.length <= INDEX_LIMIT);
@@ -1803,7 +1798,7 @@ JSScript::fullyInitFromEmitter(JSContext *cx, Handle<JSScript*> script, Bytecode
 
     if (bce->sc->inFunction()) {
         if (bce->sc->funArgumentsHasLocalBinding()) {
-            // This must precede the script->bindings.transfer() call below
+            
             script->setArgumentsHasVarBinding();
             if (bce->sc->funDefinitelyNeedsArgsObj())
                 script->setNeedsArgsObj(true);
@@ -1827,10 +1822,10 @@ JSScript::fullyInitFromEmitter(JSContext *cx, Handle<JSScript*> script, Bytecode
         script->setFunction(bce->sc->fun());
     }
 
-    /*
-     * initScriptCounts updates scriptCountsMap if necessary. The other script
-     * maps in JSCompartment are populated lazily.
-     */
+    
+
+
+
     if (cx->hasRunOption(JSOPTION_PCCOUNT))
         (void) script->initScriptCounts(cx);
 
@@ -1851,10 +1846,10 @@ JSScript::sizeOfData(JSMallocSizeOfFun mallocSizeOf)
     return mallocSizeOf(data);
 }
 
-/*
- * Nb: srcnotes are variable-length.  This function computes the number of
- * srcnote *slots*, which may be greater than the number of srcnotes.
- */
+
+
+
+
 uint32_t
 JSScript::numNotes()
 {
@@ -1862,19 +1857,19 @@ JSScript::numNotes()
     jssrcnote *notes_ = notes();
     for (sn = notes_; !SN_IS_TERMINATOR(sn); sn = SN_NEXT(sn))
         continue;
-    return sn - notes_ + 1;    /* +1 for the terminator */
+    return sn - notes_ + 1;    
 }
 
 bool
 JSScript::enclosingScriptsCompiledSuccessfully() const
 {
-    /*
-     * When a nested script is succesfully compiled, it is eagerly given the
-     * static JSFunction of its enclosing script. The enclosing function's
-     * 'script' field will be NULL until the enclosing script successfully
-     * compiles. Thus, we can detect failed compilation by looking for
-     * JSFunctions in the enclosingScope chain without scripts.
-     */
+    
+
+
+
+
+
+
     JSObject *enclosing = enclosingScope_;
     while (enclosing) {
         if (enclosing->isFunction()) {
@@ -1917,10 +1912,10 @@ js::CallDestroyScriptHook(FreeOp *fop, JSScript *script)
 void
 JSScript::finalize(FreeOp *fop)
 {
-    // NOTE: this JSScript may be partially initialized at this point.  E.g. we
-    // may have created it and partially initialized it with
-    // JSScript::Create(), but not yet finished initializing it with
-    // fullyInitFromEmitter() or fullyInitTrivial().
+    
+    
+    
+    
 
     CallDestroyScriptHook(fop, this);
     fop->runtime()->spsProfiler.onScriptFinalized(this);
@@ -1965,7 +1960,7 @@ GSNCache::purge()
         map.finish();
 }
 
-} /* namespace js */
+} 
 
 jssrcnote *
 js_GetSrcNoteCached(JSContext *cx, JSScript *script, jsbytecode *pc)
@@ -2027,11 +2022,11 @@ js::PCToLineNumber(unsigned startLine, jssrcnote *notes, jsbytecode *code, jsbyt
 {
     unsigned lineno = startLine;
 
-    /*
-     * Walk through source notes accumulating their deltas, keeping track of
-     * line-number notes, until we pass the note for pc's offset within
-     * script->code.
-     */
+    
+
+
+
+
     ptrdiff_t offset = 0;
     ptrdiff_t target = pc - code;
     for (jssrcnote *sn = notes; !SN_IS_TERMINATOR(sn); sn = SN_NEXT(sn)) {
@@ -2054,14 +2049,14 @@ js::PCToLineNumber(unsigned startLine, jssrcnote *notes, jsbytecode *code, jsbyt
 unsigned
 js::PCToLineNumber(JSScript *script, jsbytecode *pc)
 {
-    /* Cope with StackFrame.pc value prior to entering js_Interpret. */
+    
     if (!pc)
         return 0;
 
     return PCToLineNumber(script->lineno, script->notes(), script->code, pc);
 }
 
-/* The line number limit is the same as the jssrcnote offset limit. */
+
 #define SN_LINE_LIMIT   (SN_3BYTE_OFFSET_FLAG << 16)
 
 jsbytecode *
@@ -2072,10 +2067,10 @@ js_LineNumberToPC(JSScript *script, unsigned target)
     unsigned lineno = script->lineno;
     unsigned bestdiff = SN_LINE_LIMIT;
     for (jssrcnote *sn = script->notes(); !SN_IS_TERMINATOR(sn); sn = SN_NEXT(sn)) {
-        /*
-         * Exact-match only if offset is not in the prolog; otherwise use
-         * nearest greater-or-equal line number match.
-         */
+        
+
+
+
         if (lineno == target && offset >= ptrdiff_t(script->mainOffset))
             goto out;
         if (lineno >= target) {
@@ -2155,7 +2150,7 @@ CurrentScriptFileLineOriginSlow(JSContext *cx, const char **file, unsigned *line
     *origin = script->originPrincipals;
 }
 
-}  /* namespace js */
+}  
 
 template <class T>
 static inline T *
@@ -2168,7 +2163,7 @@ Rebase(JSScript *dst, JSScript *src, T *srcp)
 JSScript *
 js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, HandleScript src)
 {
-    /* NB: Keep this in sync with XDRScript. */
+    
 
     uint32_t nconsts   = src->hasConsts()   ? src->consts()->length   : 0;
     uint32_t nobjects  = src->hasObjects()  ? src->objects()->length  : 0;
@@ -2177,7 +2172,7 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
     uint32_t nClosedArgs = src->numClosedArgs();
     uint32_t nClosedVars = src->numClosedVars();
 
-    /* Script data */
+    
 
     size_t size = ScriptDataSize(src->length, src->numNotes(), src->natoms,
                                  nobjects, nregexps, ntrynotes, nconsts, nClosedArgs, nClosedVars);
@@ -2186,7 +2181,7 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
     if (!data)
         return NULL;
 
-    /* Bindings */
+    
 
     Bindings bindings;
     Bindings::AutoRooter bindingsRoot(cx, &bindings);
@@ -2209,7 +2204,7 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
     if (!bindings.ensureShape(cx))
         return NULL;
 
-    /* Objects */
+    
 
     AutoObjectVector objects(cx);
     if (nobjects != 0) {
@@ -2244,7 +2239,7 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
         }
     }
 
-    /* RegExps */
+    
 
     AutoObjectVector regexps(cx);
     for (unsigned i = 0; i < nregexps; i++) {
@@ -2256,12 +2251,16 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
         }
     }
 
-    /* Now that all fallible allocation is complete, create the GC thing. */
+    
 
+    CompileOptions options(cx);
+    options.setPrincipals(cx->compartment->principals)
+           .setOriginPrincipals(src->originPrincipals)
+           .setCompileAndGo(src->compileAndGo)
+           .setNoScriptRval(src->noScriptRval)
+           .setVersion(src->getVersion());
     JSScript *dst = JSScript::Create(cx, enclosingScope, src->savedCallerFun,
-                                     cx->compartment->principals, src->originPrincipals,
-                                     src->compileAndGo, src->noScriptRval,
-                                     src->getVersion(), src->staticLevel,
+                                     options, src->staticLevel,
                                      src->source, src->sourceStart, src->sourceEnd);
     if (!dst) {
         Foreground::free_(data);
@@ -2271,16 +2270,16 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
     new (&dst->bindings) Bindings;
     dst->bindings.transfer(&bindings);
 
-    /* This assignment must occur before all the Rebase calls. */
+    
     dst->data = data;
     memcpy(data, src->data, size);
 
     dst->code = Rebase<jsbytecode>(dst, src, src->code);
 
-    /* Script filenames are runtime-wide. */
+    
     dst->filename = src->filename;
 
-    /* Atoms are runtime-wide. */
+    
     if (src->natoms != 0)
         dst->atoms = Rebase<HeapPtrAtom>(dst, src, src->atoms);
 
@@ -2305,10 +2304,10 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
     dst->isGenerator = src->isGenerator;
     dst->isGeneratorExp = src->isGeneratorExp;
 
-    /*
-     * initScriptCounts updates scriptCountsMap if necessary. The other script
-     * maps in JSCompartment are populated lazily.
-     */
+    
+
+
+
     if (cx->hasRunOption(JSOPTION_PCCOUNT))
         (void) dst->initScriptCounts(cx);
 
@@ -2372,7 +2371,7 @@ JSScript::destroyDebugScript(FreeOp *fop)
         jsbytecode *end = code + length;
         for (jsbytecode *pc = code; pc < end; pc++) {
             if (BreakpointSite *site = getBreakpointSite(pc)) {
-                /* Breakpoints are swept before finalization. */
+                
                 JS_ASSERT(site->firstBreakpoint() == NULL);
                 site->clearTrap(fop, NULL, NULL);
                 JS_ASSERT(getBreakpointSite(pc) == NULL);
@@ -2393,7 +2392,7 @@ JSScript::ensureHasDebugScript(JSContext *cx)
     if (!debug)
         return false;
 
-    /* Create compartment's debugScriptMap if necessary. */
+    
     DebugScriptMap *map = compartment()->debugScriptMap;
     if (!map) {
         map = cx->new_<DebugScriptMap>();
@@ -2410,13 +2409,13 @@ JSScript::ensureHasDebugScript(JSContext *cx)
         cx->delete_(map);
         return false;
     }
-    hasDebugScript = true; // safe to set this;  we can't fail after this point
+    hasDebugScript = true; 
 
-    /*
-     * Ensure that any Interpret() instances running on this script have
-     * interrupts enabled. The interrupts must stay enabled until the
-     * debug state is destroyed.
-     */
+    
+
+
+
+
     InterpreterFrames *frames;
     for (frames = cx->runtime->interpreterFrames; frames; frames = frames->older)
         frames->enableInterruptsIfRunning(this);
@@ -2445,7 +2444,7 @@ JSScript::tryNewStepMode(JSContext *cx, uint32_t newValue)
     debug->stepMode = newValue;
 
     if (!prior != !newValue) {
-        /* Step mode has been enabled or disabled. Alert the methodjit. */
+        
         recompileForStepMode(cx->runtime->defaultFreeOp());
 
         if (!stepModeEnabled() && !debug->numSites)
@@ -2558,10 +2557,10 @@ JSScript::clearTraps(FreeOp *fop)
 void
 JSScript::markChildren(JSTracer *trc)
 {
-    // NOTE: this JSScript may be partially initialized at this point.  E.g. we
-    // may have created it and partially initialized it with
-    // JSScript::Create(), but not yet finished initializing it with
-    // fullyInitFromEmitter() or fullyInitTrivial().
+    
+    
+    
+    
 
     JS_ASSERT_IF(trc->runtime->gcStrictCompartmentChecking, compartment()->isCollecting());
 
@@ -2641,7 +2640,7 @@ JSScript::setNeedsArgsObj(bool needsArgsObj)
     needsArgsObj_ = needsArgsObj;
 }
 
-/* static */ bool
+ bool
 JSScript::argumentsOptimizationFailed(JSContext *cx, JSScript *script_)
 {
     Rooted<JSScript*> script(cx, script_);
@@ -2650,12 +2649,12 @@ JSScript::argumentsOptimizationFailed(JSContext *cx, JSScript *script_)
     JS_ASSERT(script->argumentsHasVarBinding());
     JS_ASSERT(!script->isGenerator);
 
-    /*
-     * It is possible that the apply speculation has already failed, everything
-     * has been fixed up, but there was an outstanding magic value on the
-     * stack that has just now flowed into an apply. In this case, there is
-     * nothing to do; GuardFunApplySpeculation will patch in the real argsobj.
-     */
+    
+
+
+
+
+
     if (script->needsArgsObj())
         return true;
 
@@ -2663,33 +2662,33 @@ JSScript::argumentsOptimizationFailed(JSContext *cx, JSScript *script_)
 
     const unsigned var = script->bindings.argumentsVarIndex(cx);
 
-    /*
-     * By design, the apply-arguments optimization is only made when there
-     * are no outstanding cases of MagicValue(JS_OPTIMIZED_ARGUMENTS) other
-     * than this particular invocation of 'f.apply(x, arguments)'. Thus, there
-     * are no outstanding values of MagicValue(JS_OPTIMIZED_ARGUMENTS) on the
-     * stack. However, there are three things that need fixup:
-     *  - there may be any number of activations of this script that don't have
-     *    an argsObj that now need one.
-     *  - jit code compiled (and possible active on the stack) with the static
-     *    assumption of !script->needsArgsObj();
-     *  - type inference data for the script assuming script->needsArgsObj; and
-     */
+    
+
+
+
+
+
+
+
+
+
+
+
     for (AllFramesIter i(cx->stack.space()); !i.done(); ++i) {
         StackFrame *fp = i.fp();
         if (fp->isFunctionFrame() && fp->script() == script) {
             ArgumentsObject *argsobj = ArgumentsObject::createExpected(cx, fp);
             if (!argsobj) {
-                /*
-                 * We can't leave stack frames with script->needsArgsObj but no
-                 * arguments object. It is, however, safe to leave frames with
-                 * an arguments object but !script->needsArgsObj.
-                 */
+                
+
+
+
+
                 script->needsArgsObj_ = false;
                 return false;
             }
 
-            /* Note: 'arguments' may have already been overwritten. */
+            
             if (fp->unaliasedLocal(var).isMagic(JS_OPTIMIZED_ARGUMENTS))
                 fp->unaliasedLocal(var) = ObjectValue(*argsobj);
         }
