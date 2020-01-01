@@ -135,12 +135,12 @@ class GeckoSurfaceView
             mSurfaceLock.unlock();
         }
     }
- 
+
     public void surfaceCreated(SurfaceHolder holder) {
         if (GeckoAppShell.sGeckoRunning)
             mSurfaceNeedsRedraw = true;
     }
- 
+
     public void surfaceDestroyed(SurfaceHolder holder) {
         Log.i("GeckoAppJava", "surface destroyed");
         mSurfaceValid = false;
@@ -211,6 +211,10 @@ class GeckoSurfaceView
     }
 
     public void draw2D(ByteBuffer buffer) {
+        if (GeckoApp.mAppContext.mProgressDialog != null) {
+            GeckoApp.mAppContext.mProgressDialog.dismiss();
+            GeckoApp.mAppContext.mProgressDialog = null;
+        }
         Canvas c = getHolder().lockCanvas();
         if (c == null)
             return;
