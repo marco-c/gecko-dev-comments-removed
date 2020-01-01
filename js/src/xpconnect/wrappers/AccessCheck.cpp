@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99 ft=cpp:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code, released
+ * June 24, 2010.
+ *
+ * The Initial Developer of the Original Code is
+ *    The Mozilla Foundation
+ *
+ * Contributor(s):
+ *    Andreas Gal <gal@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "AccessCheck.h"
 
@@ -80,9 +80,9 @@ AccessCheck::isChrome(JSCompartment *compartment)
 #define R(str) if (!set && !strcmp(prop, str)) return true;
 #define W(str) if (set && !strcmp(prop, str)) return true;
 
-
-
-
+// Hardcoded policy for cross origin property access. This was culled from the
+// preferences file (all.js). We don't want users to overwrite highly sensitive
+// security policies.
 static bool
 IsPermitted(const char *name, const char* prop, bool set)
 {
@@ -199,15 +199,15 @@ AccessCheck::isSystemOnlyAccessPermitted(JSContext *cx)
 
     if (!fp) {
         if (!JS_FrameIterator(cx, &fp)) {
-            
-            
+            // No code at all is running. So we must be arriving here as the result
+            // of C++ code asking us to do something. Allow access.
             return true;
         }
 
-        
-        
+        // Some code is running, we can't make the assumption, as above, but we
+        // can't use a native frame, so clear fp.
         fp = NULL;
-    } else if (!fp->hasScript()) {
+    } else if (!fp->script) {
         fp = NULL;
     }
 
@@ -217,12 +217,12 @@ AccessCheck::isSystemOnlyAccessPermitted(JSContext *cx)
         return true;
     }
 
-    
-    
+    // Allow any code loaded from chrome://global/ to touch us, even if it was
+    // cloned into a less privileged context.
     static const char prefix[] = "chrome://global/";
     const char *filename;
     if (fp &&
-        (filename = fp->getScript()->filename) &&
+       (filename = fp->script->filename) &&
         !strncmp(filename, prefix, NS_ARRAY_LENGTH(prefix) - 1)) {
         return true;
     }
@@ -241,7 +241,7 @@ AccessCheck::needsSystemOnlyWrapper(JSObject *obj)
 void
 AccessCheck::deny(JSContext *cx, jsid id)
 {
-    if (id == JSID_VOID) {
+    if (id == JSVID_VOID) {
         JS_ReportError(cx, "Permission denied to access object");
     } else {
         jsval idval;
@@ -270,11 +270,11 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, bool set
         return false;
     if (!found) {
         perm = PermitObjectAccess;
-        return true; 
+        return true; // Allow
     }
 
-    if (id == JSID_VOID) {
-        
+    if (id == JSVAL_VOID) {
+        // This will force the caller to call us back for individual property accesses.
         perm = PermitPropertyAccess;
         return true;
     }
@@ -284,7 +284,7 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, bool set
         return false;
 
     if (JSVAL_IS_VOID(exposedProps) || JSVAL_IS_NULL(exposedProps)) {
-        return true; 
+        return true; // Deny
     }
 
     if (!JSVAL_IS_OBJECT(exposedProps)) {
@@ -298,7 +298,7 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, bool set
 
     jsval v;
     if (!JS_LookupPropertyById(cx, hallpass, id, &v)) {
-        return false; 
+        return false; // Error
     }
 
     if (!JSVAL_IS_STRING(v)) {
@@ -340,11 +340,11 @@ ExposedPropertiesOnly::check(JSContext *cx, JSObject *wrapper, jsid id, bool set
 
     if ((set && !(access & WRITE)) ||
         (!set && !(access & READ))) {
-        return true; 
+        return true; // Deny
     }
 
     perm = PermitPropertyAccess;
-    return true; 
+    return true; // Allow
 }
 
 }
