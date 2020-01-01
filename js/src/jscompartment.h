@@ -488,7 +488,9 @@ struct JS_FRIEND_API(JSCompartment) {
 
   private:
     enum { DebugFromC = 1, DebugFromJS = 2 };
+
     uintN                        debugModeBits;  
+
   public:
     JSCList                      scripts;        
 
