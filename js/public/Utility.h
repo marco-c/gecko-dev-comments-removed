@@ -21,6 +21,7 @@
 #include "jstypes.h"
 
 #ifdef __cplusplus
+# include "mozilla/Scoped.h"
 
 
 namespace JS {}
@@ -594,6 +595,15 @@ public:
 class UnwantedForeground : public Foreground {
 };
 
+template <typename T>
+struct ScopedDeletePtrTraits
+{
+    typedef T *type;
+    static T *empty() { return NULL; }
+    static void release(T *ptr) { Foreground::delete_(ptr); }
+};
+SCOPED_TEMPLATE(ScopedDeletePtr, ScopedDeletePtrTraits)
+
 } 
 
 
@@ -917,7 +927,7 @@ inline bool IsPoisonedPtr(T *v)
 
 }
 
-#endif 
+#endif
 
 
 
@@ -965,4 +975,4 @@ typedef size_t(*JSMallocSizeOfFun)(const void *p);
 # define STATIC_SKIP_INFERENCE STATIC_INVARIANT(skip_inference())
 #endif 
 
-#endif 
+#endif
