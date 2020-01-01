@@ -1,14 +1,14 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
+//
+// Eric Vaughan
+// Netscape Communications
+//
+// See documentation in associated header file
+//
 
 #include "nsStackFrame.h"
 #include "nsStyleContext.h"
@@ -37,27 +37,30 @@ nsStackFrame::nsStackFrame(nsIPresShell* aPresShell, nsStyleContext* aContext):
   SetLayoutManager(layout);
 }
 
-
-
-
-
-
-
-void
+// REVIEW: The old code put everything in the background layer. To be more
+// consistent with the way other frames work, I'm putting everything in the
+// Content() (i.e., foreground) layer (see nsFrame::BuildDisplayListForChild,
+// the case for stacking context but non-positioned, non-floating frames).
+// This could easily be changed back by hacking nsBoxFrame::BuildDisplayListInternal
+// a bit more.
+NS_IMETHODIMP
 nsStackFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
                                           const nsRect&           aDirtyRect,
                                           const nsDisplayListSet& aLists)
 {
-  
-  
-  
+  // BuildDisplayListForChild puts stacking contexts into the PositionedDescendants
+  // list. So we need to map that list to aLists.Content(). This is an easy way to
+  // do that.
   nsDisplayList* content = aLists.Content();
   nsDisplayListSet kidLists(content, content, content, content, content, content);
   nsIFrame* kid = mFrames.FirstChild();
   while (kid) {
-    
-    BuildDisplayListForChild(aBuilder, kid, aDirtyRect, kidLists,
-                             DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
+    // Force each child into its own true stacking context.
+    nsresult rv =
+      BuildDisplayListForChild(aBuilder, kid, aDirtyRect, kidLists,
+                               DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
+    NS_ENSURE_SUCCESS(rv, rv);
     kid = kid->GetNextSibling();
   }
+  return NS_OK;
 }
