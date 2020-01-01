@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPluginArray.h"
 #include "nsMimeTypeArray.h"
@@ -15,6 +15,8 @@
 #include "nsDOMClassInfoID.h"
 #include "nsError.h"
 #include "nsPluginHost.h"
+#include "nsIContentViewer.h"
+#include "nsIDocument.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -41,7 +43,7 @@ nsPluginArray::~nsPluginArray()
 
 DOMCI_DATA(PluginArray, nsPluginArray)
 
-
+// QueryInterface implementation for nsPluginArray
 NS_INTERFACE_MAP_BEGIN(nsPluginArray)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMPluginArray)
   NS_INTERFACE_MAP_ENTRY(nsIDOMPluginArray)
@@ -65,14 +67,13 @@ nsPluginArray::GetLength(PRUint32* aLength)
 bool
 nsPluginArray::AllowPlugins()
 {
-  bool allowPlugins = false;
   nsCOMPtr<nsIDocShell> docShell = do_QueryReferent(mDocShell);
 
-  if (docShell)
-    if (NS_FAILED(docShell->GetAllowPlugins(&allowPlugins)))
-      allowPlugins = false;
+  if (!docShell) {
+    return false;
+  }
 
-  return allowPlugins;
+  return docShell->PluginsAllowedInCurrentDoc();
 }
 
 nsIDOMPlugin*
@@ -182,14 +183,14 @@ nsPluginArray::Refresh(bool aReloadDocuments)
     return res;
   }
 
-  
-  
+  // NS_ERROR_PLUGINS_PLUGINSNOTCHANGED on reloading plugins indicates
+  // that plugins did not change and was not reloaded
   bool pluginsNotChanged = false;
   if(mPluginHost)
     pluginsNotChanged = (NS_ERROR_PLUGINS_PLUGINSNOTCHANGED == mPluginHost->ReloadPlugins(aReloadDocuments));
 
-  
-  
+  // no need to reload the page if plugins have not been changed
+  // in fact, if we do reload we can hit recursive load problem, see bug 93351
   if(pluginsNotChanged)
     return res;
 
@@ -229,29 +230,29 @@ nsPluginArray::GetPlugins()
     nsPluginHost *pluginHost = static_cast<nsPluginHost*>(mPluginHost.get());
     rv = pluginHost->GetPlugins(mPluginCount, mPluginArray);
     if (NS_SUCCEEDED(rv)) {
-      
-      
+      // need to wrap each of these with a nsPluginElement, which
+      // is scriptable.
       for (PRUint32 i = 0; i < mPluginCount; i++) {
         nsIDOMPlugin* wrapper = new nsPluginElement(mPluginArray[i]);
         NS_IF_ADDREF(wrapper);
         mPluginArray[i] = wrapper;
       }
     } else {
-      
-
-
-
+      /* XXX this code is all broken. If GetPlugins fails, there's no contract
+       *     explaining what should happen. Instead of deleting elements in an
+       *     array of random pointers, we mark the array as 0 length.
+       */
       mPluginCount = 0;
     }
   }
   return rv;
 }
 
-
+//
 
 nsPluginElement::nsPluginElement(nsIDOMPlugin* plugin)
 {
-  mPlugin = plugin;  
+  mPlugin = plugin;  // don't AddRef, see nsPluginArray::Item.
   mMimeTypeCount = 0;
   mMimeTypeArray = nullptr;
 }
@@ -275,7 +276,7 @@ nsPluginElement::~nsPluginElement()
 
 DOMCI_DATA(Plugin, nsPluginElement)
 
-
+// QueryInterface implementation for nsPluginElement
 NS_INTERFACE_MAP_BEGIN(nsPluginElement)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
   NS_INTERFACE_MAP_ENTRY(nsIDOMPlugin)

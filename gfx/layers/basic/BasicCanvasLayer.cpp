@@ -1,12 +1,13 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/layers/PLayersParent.h"
 #include "gfxImageSurface.h"
 #include "GLContext.h"
 #include "gfxUtils.h"
+#include "gfxPlatform.h"
 
 #include "BasicLayersImpl.h"
 #include "nsXULAppAPI.h"
@@ -117,8 +118,8 @@ BasicCanvasLayer::UpdateSurface(gfxASurface* aDestSurface, Layer* aMaskLayer)
 {
   if (mDrawTarget) {
     mDrawTarget->Flush();
-    // TODO Fix me before turning accelerated quartz canvas by default
-    //mSurface = gfxPlatform::GetPlatform()->GetThebesSurfaceForDrawTarget(mDrawTarget);
+    
+    
   }
 
   if (!mGLContext && aDestSurface) {
@@ -139,15 +140,15 @@ BasicCanvasLayer::UpdateSurface(gfxASurface* aDestSurface, Layer* aMaskLayer)
       return;
     }
 
-    // We need to read from the GLContext
+    
     mGLContext->MakeCurrent();
 
 #if defined (MOZ_X11) && defined (MOZ_EGL_XRENDER_COMPOSITE)
     mGLContext->GuaranteeResolve();
     gfxASurface* offscreenSurface = mGLContext->GetOffscreenPixmapSurface();
 
-    // XRender can only blend premuliplied alpha, so only allow xrender
-    // path if we have premultiplied alpha or opaque content.
+    
+    
     if (offscreenSurface && (mGLBufferIsPremultiplied || (GetContentFlags() & CONTENT_OPAQUE))) {  
         mSurface = offscreenSurface;
         mNeedsYFlip = false;
@@ -174,34 +175,19 @@ BasicCanvasLayer::UpdateSurface(gfxASurface* aDestSurface, Layer* aMaskLayer)
 
     NS_ASSERTION(isurf->Stride() == mBounds.width * 4, "gfxImageSurface stride isn't what we expect!");
 
-    PRUint32 currentFramebuffer = 0;
-
-    mGLContext->fGetIntegerv(LOCAL_GL_FRAMEBUFFER_BINDING, (GLint*)&currentFramebuffer);
-
-    // Make sure that we read pixels from the correct framebuffer, regardless
-    // of what's currently bound.
-    if (currentFramebuffer != mCanvasFramebuffer)
-      mGLContext->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, mCanvasFramebuffer);
-
-    // We need to Flush() the surface before modifying it outside of cairo.
+    
     isurf->Flush();
-    mGLContext->ReadPixelsIntoImageSurface(0, 0,
-                                           mBounds.width, mBounds.height,
-                                           isurf);
+    mGLContext->ReadScreenIntoImageSurface(isurf);
     isurf->MarkDirty();
 
-    // Put back the previous framebuffer binding.
-    if (currentFramebuffer != mCanvasFramebuffer)
-      mGLContext->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, currentFramebuffer);
-
-    // If the underlying GLContext doesn't have a framebuffer into which
-    // premultiplied values were written, we have to do this ourselves here.
-    // Note that this is a WebGL attribute; GL itself has no knowledge of
-    // premultiplied or unpremultiplied alpha.
+    
+    
+    
+    
     if (!mGLBufferIsPremultiplied)
       gfxUtils::PremultiplyImageSurface(isurf);
 
-    // stick our surface into mSurface, so that the Paint() path is the same
+    
     if (!aDestSurface) {
       mSurface = isurf;
     }
@@ -243,9 +229,9 @@ BasicCanvasLayer::PaintWithOpacity(gfxContext* aContext,
     aContext->Scale(1.0, -1.0);
   }
 
-  // If content opaque, then save off current operator and set to source.
-  // This ensures that alpha is not applied even if the source surface
-  // has an alpha channel
+  
+  
+  
   gfxContext::GraphicsOperator savedOp;
   if (GetContentFlags() & CONTENT_OPAQUE) {
     savedOp = aContext->CurrentOperator();
@@ -254,7 +240,7 @@ BasicCanvasLayer::PaintWithOpacity(gfxContext* aContext,
 
   AutoSetOperator setOperator(aContext, GetOperator());
   aContext->NewPath();
-  // No need to snap here; our transform is already set up to snap our rect
+  
   aContext->Rectangle(gfxRect(0, 0, mBounds.width, mBounds.height));
   aContext->SetPattern(pat);
 
@@ -262,13 +248,13 @@ BasicCanvasLayer::PaintWithOpacity(gfxContext* aContext,
 
 #if defined (MOZ_X11) && defined (MOZ_EGL_XRENDER_COMPOSITE)
   if (mGLContext) {
-    // Wait for X to complete all operations before continuing
-    // Otherwise gl context could get cleared before X is done.
+    
+    
     mGLContext->WaitNative();
   }
 #endif
 
-  // Restore surface operator
+  
   if (GetContentFlags() & CONTENT_OPAQUE) {
     aContext->SetOperator(savedOp);
   }  
@@ -356,8 +342,8 @@ BasicShadowableCanvasLayer::Initialize(const Data& aData)
   if (!HasShadow())
       return;
 
-  // XXX won't get here currently; need to figure out what to do on
-  // canvas resizes
+  
+  
 
   if (IsSurfaceDescriptorValid(mBackBuffer)) {
     AutoOpenSurface backSurface(OPEN_READ_ONLY, mBackBuffer);
@@ -378,7 +364,7 @@ BasicShadowableCanvasLayer::Paint(gfxContext* aContext, Layer* aMaskLayer)
   if (mGLContext &&
       BasicManager()->GetParentBackendType() == mozilla::layers::LAYERS_OPENGL) {
     TextureImage::TextureShareType flags;
-    // if process type is default, then it is single-process (non-e10s)
+    
     if (XRE_GetProcessType() == GeckoProcessType_Default)
       flags = TextureImage::ThreadShared;
     else
@@ -398,7 +384,7 @@ BasicShadowableCanvasLayer::Paint(gfxContext* aContext, Layer* aMaskLayer)
       BasicManager()->PaintedCanvas(BasicManager()->Hold(this),
                                     mNeedsYFlip,
                                     mBackBuffer);
-      // Move SharedTextureHandle ownership to ShadowLayer
+      
       mBackBuffer = SurfaceDescriptor();
       return;
     }
@@ -484,7 +470,7 @@ BasicShadowCanvasLayer::Swap(const CanvasSurface& aNewFront, bool needYFlip,
                              CanvasSurface* aNewBack)
 {
   AutoOpenSurface autoSurface(OPEN_READ_ONLY, aNewFront);
-  // Destroy mFrontBuffer if size different
+  
   gfxIntSize sz = autoSurface.Size();
   bool surfaceConfigChanged = sz != gfxIntSize(mBounds.width, mBounds.height);
   if (IsSurfaceDescriptorValid(mFrontSurface)) {
@@ -498,7 +484,7 @@ BasicShadowCanvasLayer::Swap(const CanvasSurface& aNewFront, bool needYFlip,
   }
 
   mNeedsYFlip = needYFlip;
-  // If mFrontBuffer
+  
   if (IsSurfaceDescriptorValid(mFrontSurface)) {
     *aNewBack = mFrontSurface;
   } else {
@@ -534,7 +520,7 @@ BasicShadowCanvasLayer::Paint(gfxContext* aContext, Layer* aMaskLayer)
 
   AutoSetOperator setOperator(aContext, GetOperator());
   aContext->NewPath();
-  // No need to snap here; our transform has already taken care of it
+  
   aContext->Rectangle(r);
   aContext->SetPattern(pat);
   FillWithMask(aContext, GetEffectiveOpacity(), aMaskLayer);

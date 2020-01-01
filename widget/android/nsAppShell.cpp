@@ -1,9 +1,9 @@
-/* -*- Mode: c++; tab-width: 40; indent-tabs-mode: nil; c-basic-offset: 4; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Make sure the order of included headers
+
+
+
+
+
 #include "base/basictypes.h"
 #include "nspr/prtypes.h"
 #include "base/message_loop.h"
@@ -120,8 +120,8 @@ class AfterPaintListener : public nsIDOMEventListener {
     virtual nsresult HandleEvent(nsIDOMEvent* aEvent) {
         PRUint32 generation = nsFrameManager::GetGlobalGenerationNumber();
         if (mLastGeneration == generation) {
-            // the frame tree has not changed since our last AfterPaint
-            // so we can drop this event.
+            
+            
             return NS_OK;
         }
 
@@ -180,6 +180,10 @@ nsAppShell::nsAppShell()
 {
     gAppShell = this;
     sAfterPaintListener = new AfterPaintListener();
+
+    if (XRE_GetProcessType() != GeckoProcessType_Default) {
+        return;
+    }
 
     sPowerManagerService = do_GetService(POWERMANAGERSERVICE_CONTRACTID);
 
@@ -274,8 +278,8 @@ nsAppShell::Observe(nsISupports* aSubject,
                     const PRUnichar* aData)
 {
     if (!strcmp(aTopic, "xpcom-shutdown")) {
-        // We need to ensure no observers stick around after XPCOM shuts down
-        // or we'll see crashes, as the app shell outlives XPConnect.
+        
+        
         mObserversHash.Clear();
         return nsBaseAppShell::Observe(aSubject, aTopic, aData);
     } else if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) && aData && (
@@ -318,7 +322,7 @@ nsAppShell::ScheduleNativeEventCallback()
 {
     EVLOG("nsAppShell::ScheduleNativeEventCallback pth: %p thread: %p main: %d", (void*) pthread_self(), (void*) NS_GetCurrentThread(), NS_IsMainThread());
 
-    // this is valid to be called from any thread, so do so.
+    
     PostEvent(new AndroidGeckoEvent(AndroidGeckoEvent::NATIVE_POKE));
 }
 
@@ -335,7 +339,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
         curEvent = PopNextEvent();
         if (!curEvent && mayWait) {
             SAMPLE_LABEL("nsAppShell::ProcessNextNativeEvent", "Wait");
-            // hmm, should we really hardcode this 10s?
+            
 #if defined(DEBUG_ANDROID_EVENTS)
             PRTime t0, t1;
             EVLOG("nsAppShell: waiting on mQueueCond");
@@ -435,25 +439,25 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
 
     case AndroidGeckoEvent::ACTIVITY_PAUSING: {
         if (curEvent->Flags() == 0) {
-            // We aren't transferring to one of our own activities, so set
-            // background status
+            
+            
             nsCOMPtr<nsIObserverService> obsServ =
                 mozilla::services::GetObserverService();
             obsServ->NotifyObservers(nullptr, "application-background", nullptr);
 
-            // If we are OOM killed with the disk cache enabled, the entire
-            // cache will be cleared (bug 105843), so shut down the cache here
-            // and re-init on resume
+            
+            
+            
             if (nsCacheService::GlobalInstance())
                 nsCacheService::GlobalInstance()->Shutdown();
         }
 
-        // We really want to send a notification like profile-before-change,
-        // but profile-before-change ends up shutting some things down instead
-        // of flushing data
+        
+        
+        
         nsIPrefService* prefs = Preferences::GetService();
         if (prefs) {
-            // reset the crash loop state
+            
             nsCOMPtr<nsIPrefBranch> prefBranch;
             prefs->GetBranch("browser.sessionstore.", getter_AddRefs(prefBranch));
             if (prefBranch)
@@ -557,7 +561,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
     }
 
     case AndroidGeckoEvent::SIZE_CHANGED: {
-        // store the last resize event to dispatch it to new windows with a FORCED_RESIZE event
+        
         if (curEvent != gLastSizeChange) {
             gLastSizeChange = new AndroidGeckoEvent(curEvent);
         }
@@ -580,14 +584,14 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
 
     case AndroidGeckoEvent::ACTIVITY_RESUMING: {
         if (curEvent->Flags() == 0) {
-            // If we are OOM killed with the disk cache enabled, the entire
-            // cache will be cleared (bug 105843), so shut down cache on pause
-            // and re-init here
+            
+            
+            
             if (nsCacheService::GlobalInstance())
                 nsCacheService::GlobalInstance()->Init();
 
-            // We didn't return from one of our own activities, so restore
-            // to foreground status
+            
+            
             nsCOMPtr<nsIObserverService> obsServ =
                 mozilla::services::GetObserverService();
             obsServ->NotifyObservers(nullptr, "application-foreground", nullptr);
@@ -671,17 +675,17 @@ void
 nsAppShell::PostEvent(AndroidGeckoEvent *ae)
 {
     {
-        // set this to true when inserting events that we can coalesce
-        // viewport events across. this is effectively maintaining a whitelist
-        // of events that are unaffected by viewport changes.
+        
+        
+        
         bool allowCoalescingNextViewport = false;
 
         MutexAutoLock lock(mQueueLock);
         EVLOG("nsAppShell::PostEvent %p %d", ae, ae->Type());
         switch (ae->Type()) {
         case AndroidGeckoEvent::SURFACE_DESTROYED:
-            // Give priority to this event, and discard any pending
-            // SURFACE_CREATED events.
+            
+            
             mEventQueue.InsertElementAt(0, ae);
             AndroidGeckoEvent *event;
             for (int i = mEventQueue.Length() - 1; i >= 1; i--) {
@@ -696,7 +700,7 @@ nsAppShell::PostEvent(AndroidGeckoEvent *ae)
 
         case AndroidGeckoEvent::COMPOSITOR_PAUSE:
         case AndroidGeckoEvent::COMPOSITOR_RESUME:
-            // Give priority to these events, but maintain their order wrt each other.
+            
             {
                 PRUint32 i = 0;
                 while (i < mEventQueue.Length() &&
@@ -711,24 +715,24 @@ nsAppShell::PostEvent(AndroidGeckoEvent *ae)
 
         case AndroidGeckoEvent::DRAW:
             if (mQueuedDrawEvent) {
-                // coalesce this new draw event with the one already in the queue
+                
                 const nsIntRect& oldRect = mQueuedDrawEvent->Rect();
                 const nsIntRect& newRect = ae->Rect();
                 int combinedArea = (oldRect.width * oldRect.height) +
                                    (newRect.width * newRect.height);
 
                 nsIntRect combinedRect = oldRect.Union(newRect);
-                // XXX We may want to consider using regions instead of rectangles.
-                //     Print an error if we're upload a lot more than we would
-                //     if we handled this as two separate events.
+                
+                
+                
                 int boundsArea = combinedRect.width * combinedRect.height;
                 if (boundsArea > combinedArea * 8)
                     ALOG("nsAppShell: Area of bounds greatly exceeds combined area: %d > %d",
                          boundsArea, combinedArea);
 
-                // coalesce into the new draw event rather than the queued one because
-                // it is not always safe to move draws earlier in the queue; there may
-                // be events between the two draws that affect scroll position or something.
+                
+                
+                
                 ae->Init(AndroidGeckoEvent::DRAW, combinedRect);
 
                 EVLOG("nsAppShell: Coalescing previous DRAW event at %p into new DRAW event %p", mQueuedDrawEvent, ae);
@@ -737,9 +741,9 @@ nsAppShell::PostEvent(AndroidGeckoEvent *ae)
             }
 
             if (!mAllowCoalescingNextDraw) {
-                // if we're not allowing coalescing of this draw event, then
-                // don't set mQueuedDrawEvent to point to this; that way the
-                // next draw event that comes in won't kill this one.
+                
+                
+                
                 mAllowCoalescingNextDraw = true;
                 mQueuedDrawEvent = nullptr;
             } else {
@@ -753,14 +757,14 @@ nsAppShell::PostEvent(AndroidGeckoEvent *ae)
 
         case AndroidGeckoEvent::VIEWPORT:
             if (mQueuedViewportEvent) {
-                // drop the previous viewport event now that we have a new one
+                
                 EVLOG("nsAppShell: Dropping old viewport event at %p in favour of new VIEWPORT event %p", mQueuedViewportEvent, ae);
                 mEventQueue.RemoveElement(mQueuedViewportEvent);
                 delete mQueuedViewportEvent;
             }
             mQueuedViewportEvent = ae;
-            // temporarily turn off draw-coalescing, so that we process a draw
-            // event as soon as possible after a viewport change
+            
+            
             mAllowCoalescingNextDraw = false;
             allowCoalescingNextViewport = true;
 
@@ -773,7 +777,7 @@ nsAppShell::PostEvent(AndroidGeckoEvent *ae)
                 if (len > 0) {
                     AndroidGeckoEvent* event = mEventQueue[len - 1];
                     if (event->Type() == AndroidGeckoEvent::MOTION_EVENT && event->Action() == AndroidMotionEvent::ACTION_MOVE) {
-                        // consecutive motion-move events; drop the last one before adding the new one
+                        
                         EVLOG("nsAppShell: Dropping old move event at %p in favour of new move event %p", event, ae);
                         mEventQueue.RemoveElementAt(len - 1);
                         delete event;
@@ -785,16 +789,16 @@ nsAppShell::PostEvent(AndroidGeckoEvent *ae)
 
         case AndroidGeckoEvent::NATIVE_POKE:
             allowCoalescingNextViewport = true;
-            // fall through
+            
 
         default:
             mEventQueue.AppendElement(ae);
             break;
         }
 
-        // if the event wasn't on our whitelist then reset mQueuedViewportEvent
-        // so that we don't coalesce future viewport events into the last viewport
-        // event we added
+        
+        
+        
         if (!allowCoalescingNextViewport)
             mQueuedViewportEvent = nullptr;
     }
@@ -814,9 +818,9 @@ nsAppShell::AddObserver(const nsAString &aObserverKey, nsIObserver *aObserver)
     return NS_OK;
 }
 
-/**
- * The XPCOM event that will call the observer on the main thread.
- */
+
+
+
 class ObserverCaller : public nsRunnable {
 public:
     ObserverCaller(nsIObserver *aObserver, const char *aTopic, const PRUnichar *aData) :
@@ -852,10 +856,10 @@ nsAppShell::CallObserver(const nsAString &aObserverKey, const nsAString &aTopic,
     const nsPromiseFlatString& sData = PromiseFlatString(aData);
 
     if (NS_IsMainThread()) {
-        // This branch will unlikely be hit, have it just in case
+        
         observer->Observe(nullptr, sTopic.get(), sData.get());
     } else {
-        // Java is not running on main thread, so we have to use NS_DispatchToMainThread
+        
         nsCOMPtr<nsIRunnable> observerCaller = new ObserverCaller(observer, sTopic.get(), sData.get());
         nsresult rv = NS_DispatchToMainThread(observerCaller);
         ALOG("NS_DispatchToMainThread result: %d", rv);
@@ -869,7 +873,7 @@ nsAppShell::RemoveObserver(const nsAString &aObserverKey)
     mObserversHash.Remove(aObserverKey);
 }
 
-// NotifyObservers support.  NotifyObservers only works on main thread.
+
 
 class NotifyObserversCaller : public nsRunnable {
 public:
@@ -897,13 +901,13 @@ nsAppShell::NotifyObservers(nsISupports *aSupports,
                             const char *aTopic,
                             const PRUnichar *aData)
 {
-    // This isn't main thread, so post this to main thread
+    
     nsCOMPtr<nsIRunnable> caller =
         new NotifyObserversCaller(aSupports, aTopic, aData);
     NS_DispatchToMainThread(caller);
 }
 
-// Used by IPC code
+
 namespace mozilla {
 
 bool ProcessNextEvent()

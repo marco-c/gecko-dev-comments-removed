@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "mozilla/layers/PLayers.h"
 #include "mozilla/layers/ShadowLayers.h"
@@ -17,8 +17,8 @@
 namespace mozilla {
 namespace layers {
 
-// Return true if we're likely compositing using X and so should use
-// Xlib surfaces in shadow layers.
+
+
 static bool
 UsingXCompositing()
 {
@@ -26,8 +26,8 @@ UsingXCompositing()
           gfxPlatform::GetPlatform()->ScreenReferenceSurface()->GetType());
 }
 
-// LookReturn a pointer to |aFormat| that lives in the Xrender library.
-// All code using render formats assumes it doesn't need to copy.
+
+
 static XRenderPictFormat*
 GetXRenderPictFormatFromId(Display* aDisplay, PictFormat aFormatId)
 {
@@ -43,7 +43,7 @@ TakeAndDestroyXlibSurface(SurfaceDescriptor* aSurface)
     aSurface->get_SurfaceDescriptorX11().OpenForeign();
   surf->TakePixmap();
   *aSurface = SurfaceDescriptor();
-  // the Pixmap is destroyed when |surf| goes out of scope
+  
   return true;
 }
 
@@ -77,9 +77,9 @@ SurfaceDescriptorX11::OpenForeign() const
   if (pictFormat) {
     surf = new gfxXlibSurface(screen, mId, pictFormat, mSize);
   } else {
-    Visual* visual = NULL;
-    unsigned int depth;
-    XVisualIDToInfo(display, mFormat, &visual, &depth);
+    Visual* visual;
+    int depth;
+    FindVisualAndDepth(display, mFormat, &visual, &depth);
     if (!visual)
       return nullptr;
 
@@ -95,14 +95,14 @@ ShadowLayerForwarder::PlatformAllocBuffer(const gfxIntSize& aSize,
                                           SurfaceDescriptor* aBuffer)
 {
   if (!UsingXCompositing()) {
-    // If we're not using X compositing, we're probably compositing on
-    // the client side, in which case X surfaces would just slow
-    // things down.  Use Shmem instead.
+    
+    
+    
     return false;
   }
   if (MAP_AS_IMAGE_SURFACE & aCaps) {
-    // We can't efficiently map pixmaps as gfxImageSurface, in
-    // general.  Fall back on Shmem.
+    
+    
     return false;
   }
 
@@ -115,14 +115,14 @@ ShadowLayerForwarder::PlatformAllocBuffer(const gfxIntSize& aSize,
   }
 
   gfxXlibSurface* bufferX = static_cast<gfxXlibSurface*>(buffer.get());
-  // Release Pixmap ownership to the layers model
+  
   bufferX->ReleasePixmap();
 
   *aBuffer = SurfaceDescriptorX11(bufferX);
   return true;
 }
 
-/*static*/ already_AddRefed<gfxASurface>
+ already_AddRefed<gfxASurface>
 ShadowLayerForwarder::PlatformOpenDescriptor(OpenMode aMode,
                                              const SurfaceDescriptor& aSurface)
 {
@@ -132,14 +132,14 @@ ShadowLayerForwarder::PlatformOpenDescriptor(OpenMode aMode,
   return aSurface.get_SurfaceDescriptorX11().OpenForeign();
 }
 
-/*static*/ bool
+ bool
 ShadowLayerForwarder::PlatformCloseDescriptor(const SurfaceDescriptor& aDescriptor)
 {
-  // XIDs don't need to be "closed".
+  
   return false;
 }
 
-/*static*/ bool
+ bool
 ShadowLayerForwarder::PlatformGetDescriptorSurfaceContentType(
   const SurfaceDescriptor& aDescriptor, OpenMode aMode,
   gfxContentType* aContent,
@@ -148,7 +148,7 @@ ShadowLayerForwarder::PlatformGetDescriptorSurfaceContentType(
   return false;
 }
 
-/*static*/ bool
+ bool
 ShadowLayerForwarder::PlatformGetDescriptorSurfaceSize(
   const SurfaceDescriptor& aDescriptor, OpenMode aMode,
   gfxIntSize* aSize,
@@ -166,37 +166,37 @@ ShadowLayerForwarder::PlatformDestroySharedSurface(SurfaceDescriptor* aSurface)
   return TakeAndDestroyXlibSurface(aSurface);
 }
 
-/*static*/ void
+ void
 ShadowLayerForwarder::PlatformSyncBeforeUpdate()
 {
   if (UsingXCompositing()) {
-    // If we're using X surfaces, then we need to finish all pending
-    // operations on the back buffers before handing them to the
-    // parent, otherwise the surface might be used by the parent's
-    // Display in between two operations queued by our Display.
+    
+    
+    
+    
     XSync(DefaultXDisplay(), False);
   }
 }
 
-/*static*/ void
+ void
 ShadowLayerManager::PlatformSyncBeforeReplyUpdate()
 {
   if (UsingXCompositing()) {
-    // If we're using X surfaces, we need to finish all pending
-    // operations on the *front buffers* before handing them back to
-    // the child, even though they will be read operations.
-    // Otherwise, the child might start scribbling on new back buffers
-    // that are still participating in requests as old front buffers.
+    
+    
+    
+    
+    
     FinishX(DefaultXDisplay());
   }
 }
 
-/*static*/ already_AddRefed<TextureImage>
+ already_AddRefed<TextureImage>
 ShadowLayerManager::OpenDescriptorForDirectTexturing(GLContext*,
                                                      const SurfaceDescriptor&,
                                                      GLenum)
 {
-  // FIXME/bug XXXXXX: implement this using texture-from-pixmap
+  
   return nullptr;
 }
 
@@ -209,5 +209,5 @@ ShadowLayerManager::PlatformDestroySharedSurface(SurfaceDescriptor* aSurface)
   return TakeAndDestroyXlibSurface(aSurface);
 }
 
-} // namespace layers
-} // namespace mozilla
+} 
+} 
