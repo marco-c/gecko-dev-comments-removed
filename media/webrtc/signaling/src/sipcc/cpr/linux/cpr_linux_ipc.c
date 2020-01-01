@@ -43,7 +43,7 @@
 #define STATIC static
 
 
-#define OS_MSGTQL 31 
+#define OS_MSGTQL 31
 
 
 
@@ -241,7 +241,7 @@ cprCreateMessageQueue (const char *name, uint16_t depth)
 
     key = ftok("/proc/self", key_id++);
     printf("key = %x\n", key);
-    
+
     if (key == -1) {
         CPR_ERROR("%s: Key generation failed: %d\n", fname, errno);
         cpr_free(msgq);
@@ -258,32 +258,32 @@ cprCreateMessageQueue (const char *name, uint16_t depth)
                 
             msgq->queueId = msgget(key, (IPC_CREAT | 0666));
             if (msgctl(msgq->queueId, IPC_RMID, &buf) == -1) {
-                
+
                 CPR_ERROR("%s: Destruction failed: %s: %d\n", fname,
                           msgq->name, errno);
-                
+
                 return NULL;
             }
             msgq->queueId = msgget(key, (IPC_CREAT | 0666));
         }
     } else {
         printf("there was no preexisting q..\n");
-        
+
     }
-    
-    
-    
+
+
+
     if (msgq->queueId == -1) {
         CPR_ERROR("%s: Creation failed: %s: %d\n", fname, name, errno);
         if (errno == EEXIST) {
-            
+
         }
-        
+
         cpr_free(msgq);
         return NULL;
     }
     printf("create message q with id=%x\n", msgq->queueId);
-    
+
     
 
     
@@ -348,7 +348,7 @@ cprDestroyMessageQueue (cprMsgQueue_t msgQueue)
     void *msg;
     struct msqid_ds buf;
     printf("Destroy message Q called..\n");
-    
+
 
     msgq = (cpr_msg_queue_t *) msgQueue;
     if (msgq == NULL) {
