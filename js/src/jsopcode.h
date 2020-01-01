@@ -61,7 +61,16 @@ typedef enum JSOp {
     op = val,
 #include "jsopcode.tbl"
 #undef OPDEF
-    JSOP_LIMIT
+    JSOP_LIMIT,
+
+    
+
+
+
+
+    JSOP_GETPROP2 = JSOP_LIMIT,
+    JSOP_GETELEM2 = JSOP_LIMIT + 1,
+    JSOP_FAKE_LIMIT = JSOP_GETELEM2
 } JSOp;
 
 
