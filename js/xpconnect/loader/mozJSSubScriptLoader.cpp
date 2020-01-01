@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=80:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "mozJSSubScriptLoader.h"
 #include "mozJSLoaderUtils.h"
@@ -28,13 +28,12 @@
 #include "jsfriendapi.h"
 #include "nsJSPrincipals.h"
 
-#include "mozilla/FunctionTimer.h"
 #include "mozilla/scache/StartupCache.h"
 #include "mozilla/scache/StartupCacheUtils.h"
 
 using namespace mozilla::scache;
 
-/* load() error msgs, XXX localize? */
+
 #define LOAD_ERROR_NOSERVICE "Error creating IO Service."
 #define LOAD_ERROR_NOURI "Error creating URI (invalid URL scheme?)"
 #define LOAD_ERROR_NOSCHEME "Failed to get URI scheme.  This is bad."
@@ -47,7 +46,7 @@ using namespace mozilla::scache;
 #define LOAD_ERROR_NOPRINCIPALS "Failed to get principals."
 #define LOAD_ERROR_NOSPEC "Failed to get URI spec.  This is bad."
 
-// We just use the same reporter as the component loader
+
 extern void
 mozJSLoaderErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep);
 
@@ -57,7 +56,7 @@ mozJSSubScriptLoader::mozJSSubScriptLoader() : mSystemPrincipal(nullptr)
 
 mozJSSubScriptLoader::~mozJSSubScriptLoader()
 {
-    /* empty */
+    
 }
 
 NS_IMPL_THREADSAFE_ISUPPORTS1(mozJSSubScriptLoader, mozIJSSubScriptLoader)
@@ -80,8 +79,8 @@ mozJSSubScriptLoader::ReadScript(nsIURI *uri, JSContext *cx, JSObject *target_ob
     JSErrorReporter  er;
 
     nsresult rv;
-    // Instead of calling NS_OpenURI, we create the channel ourselves and call
-    // SetContentType, to avoid expensive MIME type lookups (bug 632490).
+    
+    
     rv = NS_NewChannel(getter_AddRefs(chan), uri, serv,
                        nullptr, nullptr, nsIRequest::LOAD_NORMAL);
     if (NS_SUCCEEDED(rv)) {
@@ -105,8 +104,8 @@ mozJSSubScriptLoader::ReadScript(nsIURI *uri, JSContext *cx, JSObject *target_ob
     if (NS_FAILED(rv))
         return rv;
 
-    /* set our own error reporter so we can report any bad things as catchable
-     * exceptions, including the source/line number */
+    
+
     er = JS_SetErrorReporter(cx, mozJSLoaderErrorReporter);
 
     JS::CompileOptions options(cx);
@@ -129,7 +128,7 @@ mozJSSubScriptLoader::ReadScript(nsIURI *uri, JSContext *cx, JSObject *target_ob
         *scriptp = JS::Compile(cx, target_obj_root, options, buf.get(), len);
     }
 
-    /* repent for our evil deeds */
+    
     JS_SetErrorReporter(cx, er);
 
     return NS_OK;
@@ -142,25 +141,20 @@ mozJSSubScriptLoader::LoadSubScript(const nsAString& url,
                                     JSContext* cx,
                                     JS::Value* retval)
 {
-    /*
-     * Loads a local url and evals it into the current cx
-     * Synchronous (an async version would be cool too.)
-     *   url: The url to load.  Must be local so that it can be loaded
-     *        synchronously.
-     *   target_obj: Optional object to eval the script onto (defaults to context
-     *               global)
-     *   returns: Whatever jsval the script pointed to by the url returns.
-     * Should ONLY (O N L Y !) be called from JavaScript code.
-     */
+    
+
+
+
+
+
+
+
+
+
 
     nsresult rv = NS_OK;
 
-#ifdef NS_FUNCTION_TIMER
-    NS_TIME_FUNCTION_FMT("%s (line %d) (url: %s)", MOZ_FUNCTION_NAME,
-                         __LINE__, NS_LossyConvertUTF16toASCII(url).get());
-#endif
-
-    /* set the system principal if it's not here already */
+    
     if (!mSystemPrincipal) {
         nsCOMPtr<nsIScriptSecurityManager> secman =
             do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);
@@ -180,8 +174,8 @@ mozJSSubScriptLoader::LoadSubScript(const nsAString& url,
 
 
     if (!targetObj) {
-        // If the user didn't provide an object to eval onto, find the global
-        // object by walking the parent chain of the calling object.
+        
+        
         nsCOMPtr<nsIXPConnect> xpc = do_GetService(nsIXPConnect::GetCID());
         NS_ENSURE_TRUE(xpc, NS_ERROR_FAILURE);
 
@@ -199,8 +193,8 @@ mozJSSubScriptLoader::LoadSubScript(const nsAString& url,
         targetObj = JS_GetGlobalForObject(cx, targetObj);
     }
 
-    // Remember an object out of the calling compartment so that we
-    // can properly wrap the result later.
+    
+    
     nsCOMPtr<nsIPrincipal> principal = mSystemPrincipal;
     JSObject *result_obj = targetObj;
     targetObj = JS_FindCompilationScope(cx, targetObj);
@@ -219,21 +213,21 @@ mozJSSubScriptLoader::LoadSubScript(const nsAString& url,
 
     JSAutoCompartment ac(cx, targetObj);
 
-    /* load up the url.  From here on, failures are reflected as ``custom''
-     * js exceptions */
+    
+
     nsCOMPtr<nsIURI> uri;
     nsAutoCString uriStr;
     nsAutoCString scheme;
 
     JSScript* script = nullptr;
 
-    // Figure out who's calling us
+    
     if (!JS_DescribeScriptedCaller(cx, &script, nullptr)) {
-        // No scripted frame means we don't know who's calling, bail.
+        
         return NS_ERROR_FAILURE;
     }
 
-    // Suppress caching if we're compiling as content.
+    
     StartupCache* cache = (principal == mSystemPrincipal)
                           ? StartupCache::GetSingleton()
                           : nullptr;
@@ -242,8 +236,8 @@ mozJSSubScriptLoader::LoadSubScript(const nsAString& url,
         return ReportError(cx, LOAD_ERROR_NOSERVICE);
     }
 
-    // Make sure to explicitly create the URI, since we'll need the
-    // canonicalized spec.
+    
+    
     rv = NS_NewURI(getter_AddRefs(uri), NS_LossyConvertUTF16toASCII(url).get(), nullptr, serv);
     if (NS_FAILED(rv)) {
         return ReportError(cx, LOAD_ERROR_NOURI);
@@ -260,15 +254,15 @@ mozJSSubScriptLoader::LoadSubScript(const nsAString& url,
     }
 
     if (!scheme.EqualsLiteral("chrome")) {
-        // This might be a URI to a local file, though!
+        
         nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(uri);
         nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(innerURI);
         if (!fileURL) {
             return ReportError(cx, LOAD_ERROR_URI_NOT_LOCAL);
         }
 
-        // For file URIs prepend the filename with the filename of the
-        // calling script, and " -> ". See bug 418356.
+        
+        
         nsAutoCString tmp(JS_GetScriptFilename(cx, script));
         tmp.AppendLiteral(" -> ");
         tmp.Append(uriStr);

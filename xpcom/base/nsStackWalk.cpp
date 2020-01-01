@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* API for getting a stack trace of the C/C++ stack on the current thread */
+
+
+
+
+
+
 
 #include "mozilla/Util.h"
 #include "mozilla/StackWalk.h"
@@ -15,8 +15,8 @@
 
 using namespace mozilla;
 
-// The presence of this address is the stack must stop the stack walk. If
-// there is no such address, the structure will be {NULL, true}.
+
+
 struct CriticalAddress {
   void* mAddr;
   bool mInit;
@@ -56,10 +56,10 @@ stack_callback(void *pc, void *sp, void *closure)
   const char *name = reinterpret_cast<char *>(closure);
   Dl_info info;
 
-  // On Leopard dladdr returns the wrong value for "new_sem_from_pool". The
-  // stack shows up as having two pthread_cond_wait$UNIX2003 frames. The
-  // correct one is the first that we find on our way up, so the
-  // following check for gCriticalAddress.mAddr is critical.
+  
+  
+  
+  
   if (gCriticalAddress.mAddr || dladdr(pc, &info) == 0  ||
       info.dli_sname == NULL || strcmp(info.dli_sname, name) != 0)
     return;
@@ -98,33 +98,33 @@ my_malloc_logger(uint32_t type, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
     return;
   once = true;
 
-  // On Leopard dladdr returns the wrong value for "new_sem_from_pool". The
-  // stack shows up as having two pthread_cond_wait$UNIX2003 frames.
+  
+  
   const char *name = OnSnowLeopardOrLater() ? "new_sem_from_pool" :
     "pthread_cond_wait$UNIX2003";
   NS_StackWalk(stack_callback, 0, const_cast<char*>(name), 0);
 }
 
-// This is called from NS_LogInit() and from the stack walking functions, but
-// only the first call has any effect.  We need to call this function from both
-// places because it must run before any mutexes are created, and also before
-// any objects whose refcounts we're logging are created.  Running this
-// function during NS_LogInit() ensures that we meet the first criterion, and
-// running this function during the stack walking functions ensures we meet the
-// second criterion.
+
+
+
+
+
+
+
 void
 StackWalkInitCriticalAddress()
 {
   if(gCriticalAddress.mInit)
     return;
   gCriticalAddress.mInit = true;
-  // We must not do work when 'new_sem_from_pool' calls realloc, since
-  // it holds a non-reentrant spin-lock and we will quickly deadlock.
-  // new_sem_from_pool is not directly accessible using dlsym, so
-  // we force a situation where new_sem_from_pool is on the stack and
-  // use dladdr to check the addresses.
+  
+  
+  
+  
+  
 
-  // malloc_logger can be set by external tools like 'Instruments' or 'leaks'
+  
   malloc_logger_t *old_malloc_logger = malloc_logger;
   malloc_logger = my_malloc_logger;
 
@@ -139,12 +139,12 @@ StackWalkInitCriticalAddress()
   struct timespec abstime = {0, 1};
   r = pthread_cond_timedwait_relative_np(&cond, &mutex, &abstime);
 
-  // restore the previous malloc logger
+  
   malloc_logger = old_malloc_logger;
 
-  // On Lion, malloc is no longer called from pthread_cond_*wait*. This prevents
-  // us from finding the address, but that is fine, since with no call to malloc
-  // there is no critical address.
+  
+  
+  
   MOZ_ASSERT(OnLionOrLater() || gCriticalAddress.mAddr != NULL);
   MOZ_ASSERT(r == ETIMEDOUT);
   r = pthread_mutex_unlock(&mutex);
@@ -164,9 +164,9 @@ static bool IsCriticalAddress(void* aPC)
 {
   return false;
 }
-// We still initialize gCriticalAddress.mInit so that this code behaves
-// the same on all platforms. Otherwise a failure to init would be visible
-// only on OS X.
+
+
+
 void
 StackWalkInitCriticalAddress()
 {
@@ -174,7 +174,7 @@ StackWalkInitCriticalAddress()
 }
 #endif
 
-#if defined(_WIN32) && (defined(_M_IX86) || defined(_M_AMD64) || defined(_M_IA64)) // WIN32 x86 stack walking code
+#if defined(_WIN32) && (defined(_M_IX86) || defined(_M_AMD64) || defined(_M_IA64)) 
 
 #include "nscore.h"
 #include <windows.h>
@@ -182,23 +182,22 @@ StackWalkInitCriticalAddress()
 #include <stdio.h>
 #include <malloc.h>
 #include "plstr.h"
-#include "mozilla/FunctionTimer.h"
 
 #include "nspr.h"
 #include <imagehlp.h>
-// We need a way to know if we are building for WXP (or later), as if we are, we
-// need to use the newer 64-bit APIs. API_VERSION_NUMBER seems to fit the bill.
-// A value of 9 indicates we want to use the new APIs.
+
+
+
 #if API_VERSION_NUMBER < 9
 #error Too old imagehlp.h
 #endif
 
-// Define these as static pointers so that we can load the DLL on the
-// fly (and not introduce a link-time dependency on it). Tip o' the
-// hat to Matt Pietrick for this idea. See:
-//
-//   http://msdn.microsoft.com/library/periodic/period97/F1/D3/S245C6.htm
-//
+
+
+
+
+
+
 PR_BEGIN_EXTERN_C
 
 extern HANDLE hStackWalkMutex; 
@@ -232,8 +231,8 @@ CRITICAL_SECTION gDbgHelpCS;
 
 PR_END_EXTERN_C
 
-// Routine to print an error message to standard error.
-// Will also call callback with error, if data supplied.
+
+
 void PrintError(char *prefix)
 {
     LPVOID lpMsgBuf;
@@ -242,7 +241,7 @@ void PrintError(char *prefix)
       FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
       NULL,
       lastErr,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
       (LPSTR) &lpMsgBuf,
       0,
       NULL
@@ -261,13 +260,13 @@ EnsureImageHlpInitialized()
     if (gInitialized)
         return gInitialized;
 
-    // Hope that our first call doesn't happen during static
-    // initialization.  If it does, this CreateThread call won't
-    // actually start the thread until after the static initialization
-    // is done, which means we'll deadlock while waiting for it to
-    // process a stack.
-    HANDLE readyEvent = ::CreateEvent(NULL, FALSE /* auto-reset*/,
-                            FALSE /* initially non-signaled */, NULL);
+    
+    
+    
+    
+    
+    HANDLE readyEvent = ::CreateEvent(NULL, FALSE ,
+                            FALSE , NULL);
     unsigned int threadID;
     HANDLE hStackWalkThread = (HANDLE)
       _beginthreadex(NULL, 0, WalkStackThread, (void*)readyEvent,
@@ -279,7 +278,7 @@ EnsureImageHlpInitialized()
     }
     ::CloseHandle(hStackWalkThread);
 
-    // Wait for the thread's event loop to start before posting events to it.
+    
     ::WaitForSingleObject(readyEvent, INFINITE);
     ::CloseHandle(readyEvent);
 
@@ -291,20 +290,20 @@ EnsureImageHlpInitialized()
 void
 WalkStackMain64(struct WalkStackData* data)
 {
-    // Get the context information for the thread. That way we will
-    // know where our sp, fp, pc, etc. are and can fill in the
-    // STACKFRAME64 with the initial values.
+    
+    
+    
     CONTEXT context;
     HANDLE myProcess = data->process;
     HANDLE myThread = data->thread;
     DWORD64 addr;
     DWORD64 spaddr;
     STACKFRAME64 frame64;
-    // skip our own stack walking frames
+    
     int skip = (data->walkCallingThread ? 3 : 0) + data->skipFrames;
     BOOL ok;
 
-    // Get a context for the specified thread.
+    
     memset(&context, 0, sizeof(CONTEXT));
     context.ContextFlags = CONTEXT_FULL;
     if (!GetThreadContext(myThread, &context)) {
@@ -312,7 +311,7 @@ WalkStackMain64(struct WalkStackData* data)
         return;
     }
 
-    // Setup initial stack frame to walk from
+    
     memset(&frame64, 0, sizeof(frame64));
 #ifdef _M_IX86
     frame64.AddrPC.Offset    = context.Eip;
@@ -334,10 +333,10 @@ WalkStackMain64(struct WalkStackData* data)
     frame64.AddrFrame.Mode   = AddrModeFlat;
     frame64.AddrReturn.Mode  = AddrModeFlat;
 
-    // Now walk the stack
+    
     while (1) {
 
-        // debug routines are not threadsafe, so grab the lock.
+        
         EnterCriticalSection(&gDbgHelpCS);
         ok = StackWalk64(
 #ifdef _M_AMD64
@@ -354,8 +353,8 @@ WalkStackMain64(struct WalkStackData* data)
           &frame64,
           &context,
           NULL,
-          SymFunctionTableAccess64, // function table access routine
-          SymGetModuleBase64,       // module base routine
+          SymFunctionTableAccess64, 
+          SymGetModuleBase64,       
           0
         );
         LeaveCriticalSection(&gDbgHelpCS);
@@ -398,11 +397,11 @@ WalkStackThread(void* aData)
     BOOL msgRet;
     MSG msg;
 
-    // Call PeekMessage to force creation of a message queue so that
-    // other threads can safely post events to us.
+    
+    
     ::PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 
-    // and tell the thread that created us that we're ready.
+    
     HANDLE readyEvent = (HANDLE)aData;
     ::SetEvent(readyEvent);
 
@@ -416,14 +415,14 @@ WalkStackThread(void* aData)
             if (!data)
               continue;
 
-            // Don't suspend the calling thread until it's waiting for
-            // us; otherwise the number of frames on the stack could vary.
+            
+            
             ret = ::WaitForSingleObject(data->eventStart, INFINITE);
             if (ret != WAIT_OBJECT_0)
                 PrintError("WaitForSingleObject");
 
-            // Suspend the calling thread, dump his stack, and then resume him.
-            // He's currently waiting for us to finish so now should be a good time.
+            
+            
             ret = ::SuspendThread( data->thread );
             if (ret == -1) {
                 PrintError("ThreadSuspend");
@@ -444,13 +443,13 @@ WalkStackThread(void* aData)
     return 0;
 }
 
-/**
- * Walk the stack, translating PC's found into strings and recording the
- * chain in aBuffer. For this to work properly, the DLLs must be rebased
- * so that the address in the file agrees with the address in memory.
- * Otherwise StackWalk will return FALSE when it hits a frame in a DLL
- * whose in memory address doesn't match its in-file address.
- */
+
+
+
+
+
+
+
 
 EXPORT_XPCOM_API(nsresult)
 NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
@@ -469,12 +468,12 @@ NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
     data.walkCallingThread = true;
     if (aThread) {
         HANDLE threadToWalk = reinterpret_cast<HANDLE> (aThread);
-        // walkCallingThread indicates whether we are walking the caller's stack
+        
         data.walkCallingThread = (threadToWalk == targetThread);
         targetThread = threadToWalk;
     }
 
-    // Have to duplicate handle to get a real handle.
+    
     if (!myProcess) {
         if (!::DuplicateHandle(::GetCurrentProcess(),
                                ::GetCurrentProcess(),
@@ -507,8 +506,8 @@ NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
     data.sp_size = ArrayLength(local_pcs);
 
     if (aThread) {
-        // If we're walking the stack of another thread, we don't need to
-        // use a separate walker thread.
+        
+        
         WalkStackMain64(&data);
 
         if (data.pc_count > data.pc_size) {
@@ -521,10 +520,10 @@ NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
             WalkStackMain64(&data);
         }
     } else {
-        data.eventStart = ::CreateEvent(NULL, FALSE /* auto-reset*/,
-                              FALSE /* initially non-signaled */, NULL);
-        data.eventEnd = ::CreateEvent(NULL, FALSE /* auto-reset*/,
-                            FALSE /* initially non-signaled */, NULL);
+        data.eventStart = ::CreateEvent(NULL, FALSE ,
+                              FALSE , NULL);
+        data.eventEnd = ::CreateEvent(NULL, FALSE ,
+                            FALSE , NULL);
 
         ::PostThreadMessage(gStackWalkThread, WM_USER, 0, (LPARAM)&data);
 
@@ -568,16 +567,16 @@ static BOOL CALLBACK callbackEspecial64(
     BOOL retval = TRUE;
     DWORD64 addr = *(DWORD64*)aUserContext;
 
-    /*
-     * You'll want to control this if we are running on an
-     *  architecture where the addresses go the other direction.
-     * Not sure this is even a realistic consideration.
-     */
+    
+
+
+
+
     const BOOL addressIncreases = TRUE;
 
-    /*
-     * If it falls in side the known range, load the symbols.
-     */
+    
+
+
     if (addressIncreases
        ? (addr >= aModuleBase && addr <= (aModuleBase + aModuleSize))
        : (addr <= aModuleBase && addr >= (aModuleBase - aModuleSize))
@@ -590,25 +589,25 @@ static BOOL CALLBACK callbackEspecial64(
     return retval;
 }
 
-/*
- * SymGetModuleInfoEspecial
- *
- * Attempt to determine the module information.
- * Bug 112196 says this DLL may not have been loaded at the time
- *  SymInitialize was called, and thus the module information
- *  and symbol information is not available.
- * This code rectifies that problem.
- */
 
-// New members were added to IMAGEHLP_MODULE64 (that show up in the
-// Platform SDK that ships with VC8, but not the Platform SDK that ships
-// with VC7.1, i.e., between DbgHelp 6.0 and 6.1), but we don't need to
-// use them, and it's useful to be able to function correctly with the
-// older library.  (Stock Windows XP SP2 seems to ship with dbghelp.dll
-// version 5.1.)  Since Platform SDK version need not correspond to
-// compiler version, and the version number in debughlp.h was NOT bumped
-// when these changes were made, ifdef based on a constant that was
-// added between these versions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef SSRVOPT_SETCONTEXT
 #define NS_IMAGEHLP_MODULE64_SIZE (((offsetof(IMAGEHLP_MODULE64, LoadedPdbName) + sizeof(DWORD64) - 1) / sizeof(DWORD64)) * sizeof(DWORD64))
 #else
@@ -619,55 +618,55 @@ BOOL SymGetModuleInfoEspecial64(HANDLE aProcess, DWORD64 aAddr, PIMAGEHLP_MODULE
 {
     BOOL retval = FALSE;
 
-    /*
-     * Init the vars if we have em.
-     */
+    
+
+
     aModuleInfo->SizeOfStruct = NS_IMAGEHLP_MODULE64_SIZE;
     if (nullptr != aLineInfo) {
         aLineInfo->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
     }
 
-    /*
-     * Give it a go.
-     * It may already be loaded.
-     */
+    
+
+
+
     retval = SymGetModuleInfo64(aProcess, aAddr, aModuleInfo);
 
     if (FALSE == retval) {
         BOOL enumRes = FALSE;
 
-        /*
-         * Not loaded, here's the magic.
-         * Go through all the modules.
-         */
-        // Need to cast to PENUMLOADED_MODULES_CALLBACK64 because the
-        // constness of the first parameter of
-        // PENUMLOADED_MODULES_CALLBACK64 varies over SDK versions (from
-        // non-const to const over time).  See bug 391848 and bug
-        // 415426.
+        
+
+
+
+        
+        
+        
+        
+        
         enumRes = EnumerateLoadedModules64(aProcess, (PENUMLOADED_MODULES_CALLBACK64)callbackEspecial64, (PVOID)&aAddr);
         if (FALSE != enumRes)
         {
-            /*
-             * One final go.
-             * If it fails, then well, we have other problems.
-             */
+            
+
+
+
             retval = SymGetModuleInfo64(aProcess, aAddr, aModuleInfo);
             if (!retval)
                 PrintError("SymGetModuleInfo64");
         }
     }
 
-    /*
-     * If we got module info, we may attempt line info as well.
-     * We will not report failure if this does not work.
-     */
+    
+
+
+
     if (FALSE != retval && nullptr != aLineInfo) {
         DWORD displacement = 0;
         BOOL lineRes = FALSE;
         lineRes = SymGetLineFromAddr64(aProcess, aAddr, &displacement, aLineInfo);
         if (!lineRes) {
-            // Clear out aLineInfo to indicate that it's not valid
+            
             memset(aLineInfo, 0, sizeof(*aLineInfo));
         }
     }
@@ -684,8 +683,6 @@ EnsureSymInitialized()
     if (gInitialized)
         return gInitialized;
 
-    NS_TIME_FUNCTION;
-
     if (!EnsureImageHlpInitialized())
         return false;
 
@@ -695,7 +692,7 @@ EnsureSymInitialized()
         PrintError("SymInitialize");
 
     gInitialized = retStat;
-    /* XXX At some point we need to arrange to call SymCleanup */
+    
 
     return retStat;
 }
@@ -717,13 +714,13 @@ NS_DescribeCodeAddress(void *aPC, nsCodeAddressDetails *aDetails)
     HANDLE myProcess = ::GetCurrentProcess();
     BOOL ok;
 
-    // debug routines are not threadsafe, so grab the lock.
+    
     EnterCriticalSection(&gDbgHelpCS);
 
-    //
-    // Attempt to load module info before we attempt to resolve the symbol.
-    // This just makes sure we get good info if available.
-    //
+    
+    
+    
+    
 
     DWORD64 addr = (DWORD64)aPC;
     IMAGEHLP_MODULE64 modInfo;
@@ -758,7 +755,7 @@ NS_DescribeCodeAddress(void *aPC, nsCodeAddressDetails *aDetails)
         aDetails->foffset = displacement;
     }
 
-    LeaveCriticalSection(&gDbgHelpCS); // release our lock
+    LeaveCriticalSection(&gDbgHelpCS); 
     return NS_OK;
 }
 
@@ -788,8 +785,8 @@ NS_FormatCodeAddressDetails(void *aPC, const nsCodeAddressDetails *aDetails,
     return NS_OK;
 }
 
-// WIN32 x86 stack walking code
-// i386 or PPC Linux stackwalking code or Solaris
+
+
 #elif HAVE_DLADDR && (HAVE__UNWIND_BACKTRACE || NSSTACKWALK_SUPPORTS_LINUX || NSSTACKWALK_SUPPORTS_SOLARIS || NSSTACKWALK_SUPPORTS_MACOSX)
 
 #include <stdlib.h>
@@ -799,20 +796,20 @@ NS_FormatCodeAddressDetails(void *aPC, const nsCodeAddressDetails *aDetails,
 #include <stdio.h>
 #include "plstr.h"
 
-// On glibc 2.1, the Dl_info api defined in <dlfcn.h> is only exposed
-// if __USE_GNU is defined.  I suppose its some kind of standards
-// adherence thing.
-//
+
+
+
+
 #if (__GLIBC_MINOR__ >= 1) && !defined(__USE_GNU)
 #define __USE_GNU
 #endif
 
-// This thing is exported by libstdc++
-// Yes, this is a gcc only hack
+
+
 #if defined(MOZ_DEMANGLE_SYMBOLS)
 #include <cxxabi.h>
-#include <stdlib.h> // for free()
-#endif // MOZ_DEMANGLE_SYMBOLS
+#include <stdlib.h> 
+#endif 
 
 void DemangleSymbol(const char * aSymbol, 
                     char * aBuffer,
@@ -821,7 +818,7 @@ void DemangleSymbol(const char * aSymbol,
     aBuffer[0] = '\0';
 
 #if defined(MOZ_DEMANGLE_SYMBOLS)
-    /* See demangle.h in the gcc source for the voodoo */
+    
     char * demangled = abi::__cxa_demangle(aSymbol,0,0,0);
     
     if (demangled)
@@ -829,15 +826,15 @@ void DemangleSymbol(const char * aSymbol,
         strncpy(aBuffer,demangled,aBufLen);
         free(demangled);
     }
-#endif // MOZ_DEMANGLE_SYMBOLS
+#endif 
 }
 
 
 #if NSSTACKWALK_SUPPORTS_SOLARIS
 
-/*
- * Stack walking code for Solaris courtesy of Bart Smaalder's "memtrak".
- */
+
+
+
 
 #include <synch.h>
 #include <ucontext.h>
@@ -857,11 +854,11 @@ static void   cs_operate ( void (*operate_func)(void *, void *, void *),
 
 #ifndef STACK_BIAS
 #define STACK_BIAS 0
-#endif /*STACK_BIAS*/
+#endif 
 
 #define LOGSIZE 4096
 
-/* type of demangling function */
+
 typedef int demf_t(const char *, char *, size_t);
 
 static demf_t *demf;
@@ -902,16 +899,16 @@ myinit()
         void *handle;
         const char *libdem = "libdemangle.so.1";
 
-        /* load libdemangle if we can and need to (only try this once) */
+        
         if ((handle = dlopen(libdem, RTLD_LAZY)) != NULL) {
             demf = (demf_t *)dlsym(handle,
-                           "cplus_demangle"); /*lint !e611 */
-                /*
-                 * lint override above is to prevent lint from
-                 * complaining about "suspicious cast".
-                 */
+                           "cplus_demangle"); 
+                
+
+
+
         }
-#endif /*__GNUC__*/
+#endif 
     }    
     initialized = 1;
 }
@@ -952,7 +949,7 @@ static struct bucket *
 newbucket(void * pc)
 {
     struct bucket * ptr = (struct bucket *) malloc(sizeof (*ptr));
-    static int index; /* protected by lock in caller */
+    static int index; 
                      
     ptr->index = index++;
     ptr->next = NULL;
@@ -973,7 +970,7 @@ csgetframeptr()
         ((char *)u.uc_mcontext.gregs[FRAME_PTR_REGISTER] +
         STACK_BIAS);
 
-    /* make sure to return parents frame pointer.... */
+    
 
     return ((struct frame *)((ulong_t)fp->fr_savfp + STACK_BIAS));
 }
@@ -988,10 +985,10 @@ cswalkstack(struct frame *fp, int (*operate_func)(void *, void *, void *),
 
         if (operate_func((void *)fp->fr_savpc, NULL, usrarg) != 0)
             break;
-        /*
-         * watch out - libthread stacks look funny at the top
-         * so they may not have their STACK_BIAS set
-         */
+        
+
+
+
 
         fp = (struct frame *)((ulong_t)fp->fr_savfp +
             (fp->fr_savfp?(ulong_t)STACK_BIAS:0));
@@ -1018,7 +1015,7 @@ NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
         myinit();
 
     args.callback = aCallback;
-    args.skipFrames = aSkipFrames; /* XXX Not handled! */
+    args.skipFrames = aSkipFrames; 
     args.closure = aClosure;
     cs_operate(load_address, &args);
     return NS_OK;
@@ -1050,7 +1047,7 @@ NS_DescribeCodeAddress(void *aPC, nsCodeAddressDetails *aDetails)
 #else
             if (!demf || demf(info.dli_sname, dembuff, sizeof (dembuff)))
                 dembuff[0] = 0;
-#endif /*__GNUC__*/
+#endif 
             PL_strncpyz(aDetails->function,
                         (dembuff[0] != '\0') ? dembuff : info.dli_sname,
                         sizeof(aDetails->function));
@@ -1072,7 +1069,7 @@ NS_FormatCodeAddressDetails(void *aPC, const nsCodeAddressDetails *aDetails,
     return NS_OK;
 }
 
-#else // not __sun-specific
+#else 
 
 #if __GLIBC__ > 2 || __GLIBC_MINOR > 1
 #define HAVE___LIBC_STACK_END 1
@@ -1081,34 +1078,34 @@ NS_FormatCodeAddressDetails(void *aPC, const nsCodeAddressDetails *aDetails,
 #endif
 
 #if HAVE___LIBC_STACK_END
-extern void *__libc_stack_end; // from ld-linux.so
+extern void *__libc_stack_end; 
 #endif
 namespace mozilla {
 nsresult
 FramePointerStackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
                       void *aClosure, void **bp, void *aStackEnd)
 {
-  // Stack walking code courtesy Kipp's "leaky".
+  
 
   int skip = aSkipFrames;
   while (1) {
     void **next = (void**)*bp;
-    // bp may not be a frame pointer on i386 if code was compiled with
-    // -fomit-frame-pointer, so do some sanity checks.
-    // (bp should be a frame pointer on ppc(64) but checking anyway may help
-    // a little if the stack has been corrupted.)
-    // We don't need to check against the begining of the stack because
-    // we can assume that bp > sp
+    
+    
+    
+    
+    
+    
     if (next <= bp ||
         next > aStackEnd ||
         (long(next) & 3)) {
       break;
     }
 #if (defined(__ppc__) && defined(XP_MACOSX)) || defined(__powerpc64__)
-    // ppc mac or powerpc64 linux
+    
     void *pc = *(bp+2);
     bp += 3;
-#else // i386 or powerpc32 linux
+#else 
     void *pc = *(bp+1);
     bp += 2;
 #endif
@@ -1117,10 +1114,10 @@ FramePointerStackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
       return NS_ERROR_UNEXPECTED;
     }
     if (--skip < 0) {
-      // Assume that the SP points to the BP of the function
-      // it called. We can't know the exact location of the SP
-      // but this should be sufficient for our use the SP
-      // to order elements on the stack.
+      
+      
+      
+      
       (*aCallback)(pc, bp, aClosure);
     }
     bp = next;
@@ -1131,7 +1128,7 @@ FramePointerStackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
 }
 
 #define X86_OR_PPC (defined(__i386) || defined(PPC) || defined(__ppc__))
-#if X86_OR_PPC && (NSSTACKWALK_SUPPORTS_MACOSX || NSSTACKWALK_SUPPORTS_LINUX) // i386 or PPC Linux or Mac stackwalking code
+#if X86_OR_PPC && (NSSTACKWALK_SUPPORTS_MACOSX || NSSTACKWALK_SUPPORTS_LINUX) 
 
 EXPORT_XPCOM_API(nsresult)
 NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
@@ -1140,14 +1137,14 @@ NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
   MOZ_ASSERT(!aThread);
   StackWalkInitCriticalAddress();
 
-  // Get the frame pointer
+  
   void **bp;
 #if defined(__i386) 
   __asm__( "movl %%ebp, %0" : "=g"(bp));
 #else
-  // It would be nice if this worked uniformly, but at least on i386 and
-  // x86_64, it stopped working with gcc 4.1, because it points to the
-  // end of the saved registers instead of the start.
+  
+  
+  
   bp = (void**) __builtin_frame_address(0);
 #endif
 
@@ -1164,7 +1161,7 @@ NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
 
 #elif defined(HAVE__UNWIND_BACKTRACE)
 
-// libgcc_s.so symbols _Unwind_Backtrace@@GCC_3.3 and _Unwind_GetIP@@GCC_3.0
+
 #define _GNU_SOURCE
 #include <unwind.h>
 
@@ -1179,12 +1176,12 @@ unwind_callback (struct _Unwind_Context *context, void *closure)
 {
     unwind_info *info = static_cast<unwind_info *>(closure);
     void *pc = reinterpret_cast<void *>(_Unwind_GetIP(context));
-    // TODO Use something like '_Unwind_GetGR()' to get the stack pointer.
+    
     if (IsCriticalAddress(pc)) {
         printf("Aborting stack trace, PC is critical\n");
-        /* We just want to stop the walk, so any error code will do.
-           Using _URC_NORMAL_STOP would probably be the most accurate,
-           but it is not defined on Android for ARM. */
+        
+
+
         return _URC_FOREIGN_EXCEPTION_CAUGHT;
     }
     if (--info->skip < 0)
@@ -1269,7 +1266,7 @@ NS_FormatCodeAddressDetails(void *aPC, const nsCodeAddressDetails *aDetails,
 
 #endif
 
-#else // unsupported platform.
+#else 
 
 EXPORT_XPCOM_API(nsresult)
 NS_StackWalk(NS_WalkStackCallback aCallback, uint32_t aSkipFrames,
