@@ -1,13 +1,12 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #include "nsISupportsUtils.h"
 #include "nsIMenuBoxObject.h"
 #include "nsBoxObject.h"
 #include "nsIFrame.h"
 #include "nsGUIEvent.h"
-#include "nsIDOMNSEvent.h"
 #include "nsMenuBarFrame.h"
 #include "nsMenuBarListener.h"
 #include "nsMenuFrame.h"
@@ -34,7 +33,7 @@ nsMenuBoxObject::~nsMenuBoxObject()
 
 NS_IMPL_ISUPPORTS_INHERITED1(nsMenuBoxObject, nsBoxObject, nsIMenuBoxObject)
 
-/* void openMenu (in boolean openFlag); */
+
 NS_IMETHODIMP nsMenuBoxObject::OpenMenu(bool aOpenFlag)
 {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
@@ -76,7 +75,7 @@ NS_IMETHODIMP nsMenuBoxObject::SetActiveChild(nsIDOMElement* aResult)
   return NS_OK;
 }
 
-/* boolean handleKeyPress (in nsIDOMKeyEvent keyEvent); */
+
 NS_IMETHODIMP nsMenuBoxObject::HandleKeyPress(nsIDOMKeyEvent* aKeyEvent, bool* aHandledFlag)
 {
   *aHandledFlag = false;
@@ -86,13 +85,9 @@ NS_IMETHODIMP nsMenuBoxObject::HandleKeyPress(nsIDOMKeyEvent* aKeyEvent, bool* a
   if (!pm)
     return NS_OK;
 
-  // if event has already been handled, bail
-  nsCOMPtr<nsIDOMNSEvent> domNSEvent = do_QueryInterface(aKeyEvent);
-  if (!domNSEvent)
-    return NS_OK;
-
+  
   bool eventHandled = false;
-  domNSEvent->GetPreventDefault(&eventHandled);
+  aKeyEvent->GetPreventDefault(&eventHandled);
   if (eventHandled)
     return NS_OK;
 
@@ -150,7 +145,7 @@ nsMenuBoxObject::GetOpenedWithKey(bool* aOpenedWithKey)
 }
 
 
-// Creation Routine ///////////////////////////////////////////////////////////////////////
+
 
 nsresult
 NS_NewMenuBoxObject(nsIBoxObject** aResult)
