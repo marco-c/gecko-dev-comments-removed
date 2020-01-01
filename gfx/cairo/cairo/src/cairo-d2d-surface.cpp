@@ -3281,7 +3281,7 @@ _cairo_d2d_mask(void			*surface,
     cairo_box_t box;
     _cairo_box_from_rectangle(&box, &extents);
 
-    if (clip && isSolidAlphaMask) {
+    if (clip) {
 	
 	
 	
