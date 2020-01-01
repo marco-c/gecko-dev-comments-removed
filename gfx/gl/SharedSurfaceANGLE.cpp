@@ -216,6 +216,7 @@ SharedSurface_ANGLEShareHandle::Create(GLContext* gl, ID3D10Device1* d3d,
     
     
     bool failed = true;
+    HRESULT hr;
 
     
     if (!egl->fQuerySurfacePointerANGLE(
@@ -230,7 +231,7 @@ SharedSurface_ANGLEShareHandle::Create(GLContext* gl, ID3D10Device1* d3d,
 
     
     
-    HRESULT hr = d3d->OpenSharedResource(shareHandle,
+    hr = d3d->OpenSharedResource(shareHandle,
                                          __uuidof(ID3D10Texture2D),
                                          getter_AddRefs(texture));
     if (FAILED(hr))
