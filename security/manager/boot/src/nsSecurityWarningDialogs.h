@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsSecurityWarningDialogs_h
 #define nsSecurityWarningDialogs_h
@@ -27,10 +27,10 @@ protected:
   nsresult AlertDialog(nsIInterfaceRequestor *ctx, const char *prefName,
                    const PRUnichar *messageName,
                    const PRUnichar *showAgainName,
-                   bool aAsync, const PRUint32 aBucket);
+                   bool aAsync, const uint32_t aBucket);
   nsresult ConfirmDialog(nsIInterfaceRequestor *ctx, const char *prefName,
                    const PRUnichar *messageName, 
-                   const PRUnichar *showAgainName, const PRUint32 aBucket,
+                   const PRUnichar *showAgainName, const uint32_t aBucket,
                    bool* _result);
   nsCOMPtr<nsIStringBundle> mStringBundle;
   nsCOMPtr<nsIPrefBranch> mPrefBranch;

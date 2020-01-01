@@ -1,14 +1,14 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * 
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * A base class which implements nsIStyleSheetLinkingElement and can
- * be subclassed by various content nodes that want to load
- * stylesheets (<style>, <link>, processing instructions, etc).
- */
+
+
+
+
+
+
+
+
+
+
 
 #ifndef nsStyleLinkElement_h___
 #define nsStyleLinkElement_h___
@@ -37,10 +37,10 @@ public:
 
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) = 0;
 
-  // nsIDOMLinkStyle
+  
   NS_DECL_NSIDOMLINKSTYLE
 
-  // nsIStyleSheetLinkingElement  
+  
   NS_IMETHOD SetStyleSheet(nsIStyleSheet* aStyleSheet);
   NS_IMETHOD GetStyleSheet(nsIStyleSheet*& aStyleSheet);
   NS_IMETHOD InitStyleLinkElement(bool aDontLoadStyle);
@@ -51,20 +51,20 @@ public:
   NS_IMETHOD GetCharset(nsAString& aCharset);
 
   virtual void OverrideBaseURI(nsIURI* aNewBaseURI);
-  virtual void SetLineNumber(PRUint32 aLineNumber);
+  virtual void SetLineNumber(uint32_t aLineNumber);
 
-  static PRUint32 ParseLinkTypes(const nsAString& aTypes);
+  static uint32_t ParseLinkTypes(const nsAString& aTypes);
   
   void UpdateStyleSheetInternal() { UpdateStyleSheetInternal(nullptr); }
 protected:
-  /**
-   * @param aOldDocument should be non-null only if we're updating because we
-   *                     removed the node from the document.
-   * @param aForceUpdate true will force the update even if the URI has not
-   *                     changed.  This should be used in cases when something
-   *                     about the content that affects the resulting sheet
-   *                     changed but the URI may not have changed.
-   */
+  
+
+
+
+
+
+
+
   nsresult UpdateStyleSheetInternal(nsIDocument *aOldDocument,
                                     bool aForceUpdate = false);
 
@@ -77,14 +77,14 @@ protected:
   nsIStyleSheet* GetStyleSheet() { return mStyleSheet; }
 
 private:
-  /**
-   * @param aOldDocument should be non-null only if we're updating because we
-   *                     removed the node from the document.
-   * @param aForceUpdate true will force the update even if the URI has not
-   *                     changed.  This should be used in cases when something
-   *                     about the content that affects the resulting sheet
-   *                     changed but the URI may not have changed.
-   */
+  
+
+
+
+
+
+
+
   nsresult DoUpdateStyleSheet(nsIDocument *aOldDocument,
                               nsICSSLoaderObserver* aObserver,
                               bool* aWillNotify,
@@ -95,8 +95,8 @@ private:
 protected:
   bool mDontLoadStyle;
   bool mUpdatesEnabled;
-  PRUint32 mLineNumber;
+  uint32_t mLineNumber;
 };
 
-#endif /* nsStyleLinkElement_h___ */
+#endif 
 

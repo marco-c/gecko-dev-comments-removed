@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef nsXULTemplateQueryProcessorStorage_h__
 #define nsXULTemplateQueryProcessorStorage_h__
@@ -30,15 +30,15 @@ private:
 
 public:
 
-    // nsISupports interface
+    
     NS_DECL_ISUPPORTS
 
-    // nsISimpleEnumerator interface
+    
     NS_DECL_NSISIMPLEENUMERATOR
 
     nsXULTemplateResultSetStorage(mozIStorageStatement* aStatement);
 
-    PRInt32 GetColumnIndex(nsIAtom* aColumnName);
+    int32_t GetColumnIndex(nsIAtom* aColumnName);
 
     void FillColumnValues(nsCOMArray<nsIVariant>& aArray);
 
@@ -50,10 +50,10 @@ public:
 
     nsXULTemplateQueryProcessorStorage();
 
-    // nsISupports interface
+    
     NS_DECL_ISUPPORTS
 
-    // nsIXULTemplateQueryProcessor interface
+    
     NS_DECL_NSIXULTEMPLATEQUERYPROCESSOR
 
 private:
@@ -62,4 +62,4 @@ private:
     bool mGenerationStarted;
 };
 
-#endif // nsXULTemplateQueryProcessorStorage_h__
+#endif 

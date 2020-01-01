@@ -1,7 +1,7 @@
-/* vim: set shiftwidth=2 tabstop=8 autoindent cindent expandtab: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_css_AnimationCommon_h
 #define mozilla_css_AnimationCommon_h
@@ -19,8 +19,11 @@
 
 class nsPresContext;
 
+
 namespace mozilla {
 namespace css {
+
+bool IsGeometricProperty(nsCSSProperty aProperty);
 
 struct CommonElementAnimationData;
 
@@ -30,10 +33,10 @@ public:
   CommonAnimationManager(nsPresContext *aPresContext);
   virtual ~CommonAnimationManager();
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS
 
-  // nsIStyleRuleProcessor (parts)
+  
   virtual nsRestyleHint HasStateDependentStyle(StateRuleProcessorData* aData);
   virtual bool HasDocumentStateDependentStyle(StateRuleProcessorData* aData);
   virtual nsRestyleHint
@@ -44,9 +47,9 @@ public:
   virtual NS_MUST_OVERRIDE size_t
     SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const MOZ_OVERRIDE;
 
-  /**
-   * Notify the manager that the pres context is going away.
-   */
+  
+
+
   void Disconnect();
 
   static bool ExtractComputedValueForTransition(
@@ -54,29 +57,29 @@ public:
                   nsStyleContext* aStyleContext,
                   nsStyleAnimation::Value& aComputedValue);
 protected:
-  friend struct CommonElementAnimationData; // for ElementDataRemoved
+  friend struct CommonElementAnimationData; 
 
   void AddElementData(CommonElementAnimationData* aData);
   void ElementDataRemoved();
   void RemoveAllElementData();
 
   PRCList mElementData;
-  nsPresContext *mPresContext; // weak (non-null from ctor to Disconnect)
+  nsPresContext *mPresContext; 
 };
 
-/**
- * A style rule that maps property-nsStyleAnimation::Value pairs.
- */
+
+
+
 class AnimValuesStyleRule MOZ_FINAL : public nsIStyleRule
 {
 public:
-  // nsISupports implementation
+  
   NS_DECL_ISUPPORTS
 
-  // nsIStyleRule implementation
+  
   virtual void MapRuleInfoInto(nsRuleData* aRuleData);
 #ifdef DEBUG
-  virtual void List(FILE* out = stdout, PRInt32 aIndent = 0) const;
+  virtual void List(FILE* out = stdout, int32_t aIndent = 0) const;
 #endif
 
   void AddValue(nsCSSProperty aProperty, nsStyleAnimation::Value &aStartValue)
@@ -85,7 +88,7 @@ public:
     mPropertyValuePairs.AppendElement(v);
   }
 
-  // Caller must fill in returned value.
+  
   nsStyleAnimation::Value* AddEmptyValue(nsCSSProperty aProperty)
   {
     PropertyValuePair *p = mPropertyValuePairs.AppendElement();
@@ -112,11 +115,11 @@ public:
     return &mTimingFunction;
   }
   Type GetType() const { return mType; }
-  PRUint32 GetSteps() const { return mSteps; }
+  uint32_t GetSteps() const { return mSteps; }
 private:
   Type mType;
   nsSMILKeySpline mTimingFunction;
-  PRUint32 mSteps;
+  uint32_t mSteps;
 };
 
 struct CommonElementAnimationData : public PRCList
@@ -144,21 +147,33 @@ struct CommonElementAnimationData : public PRCList
 
   void Destroy()
   {
-    // This will call our destructor.
+    
     mElement->DeleteProperty(mElementProperty);
   }
 
   static bool
   CanAnimatePropertyOnCompositor(const dom::Element *aElement,
-                                 nsCSSProperty aProperty);
+                                 nsCSSProperty aProperty,
+                                 bool aHasGeometricProperties);
 
   dom::Element *mElement;
 
-  // the atom we use in mElement's prop table (must be a static atom,
-  // i.e., in an atom list)
+  
+  
   nsIAtom *mElementProperty;
 
   CommonAnimationManager *mManager;
+
+  
+  
+  
+  
+  
+  
+  
+  nsRefPtr<mozilla::css::AnimValuesStyleRule> mStyleRule;
+  
+  TimeStamp mStyleRuleRefreshTime;
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;
@@ -168,4 +183,4 @@ struct CommonElementAnimationData : public PRCList
 }
 }
 
-#endif /* !defined(mozilla_css_AnimationCommon_h) */
+#endif 

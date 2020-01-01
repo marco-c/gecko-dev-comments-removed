@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #define NS_HTML5_TREE_BUILDER_HANDLE_ARRAY_LENGTH 512
 
@@ -10,7 +10,7 @@
     nsTArray<nsHtml5SpeculativeLoad>       mSpeculativeLoadQueue;
     nsAHtml5TreeOpSink*                    mOpSink;
     nsAutoArrayPtr<nsIContent*>            mHandles;
-    PRInt32                                mHandlesUsed;
+    int32_t                                mHandlesUsed;
     nsTArray<nsAutoArrayPtr<nsIContent*> > mOldHandles;
     nsHtml5TreeOpStage*                    mSpeculativeLoadStage;
     nsIContent**                           mDeepTreeSurrogateParent;
@@ -20,38 +20,38 @@
     bool                                   mActive;
 #endif
 
-    // DocumentModeHandler
-    /**
-     * Tree builder uses this to report quirkiness of the document
-     */
+    
+    
+
+
     void documentMode(nsHtml5DocumentMode m);
 
-    /**
-     * Using nsIContent** instead of nsIContent* is the parser deals with DOM
-     * nodes in a way that works off the main thread. Non-main-thread code
-     * can't refcount or otherwise touch nsIContent objects in any way.
-     * Yet, the off-the-main-thread code needs to have a way to hold onto a
-     * particular node and repeatedly operate on the same node.
-     *
-     * The way this works is that the off-the-main-thread code has an
-     * nsIContent** for each DOM node and a given nsIContent** is only ever
-     * actually dereferenced into an actual nsIContent* on the main thread.
-     * When the off-the-main-thread code requests a new node, it gets an
-     * nsIContent** immediately and a tree op is enqueued for later allocating
-     * an actual nsIContent object and writing a pointer to it into the memory
-     * location pointed to by the nsIContent**.
-     *
-     * Since tree ops are in a queue, the node creating tree op will always
-     * run before tree ops that try to further operate on the node that the
-     * nsIContent** is a handle to.
-     *
-     * On-the-main-thread parts of the parser use the same mechanism in order
-     * to avoid having to have duplicate code paths for on-the-main-thread and
-     * off-the-main-thread tree builder instances.)
-     */
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     nsIContent** AllocateContentHandle();
     
-    void accumulateCharactersForced(const PRUnichar* aBuf, PRInt32 aStart, PRInt32 aLength)
+    void accumulateCharactersForced(const PRUnichar* aBuf, int32_t aStart, int32_t aLength)
     {
       accumulateCharacters(aBuf, aStart, aLength);
     }
@@ -81,19 +81,19 @@
     
     void FlushLoads();
 
-    void SetDocumentCharset(nsACString& aCharset, PRInt32 aCharsetSource);
+    void SetDocumentCharset(nsACString& aCharset, int32_t aCharsetSource);
 
     void StreamEnded();
 
     void NeedsCharsetSwitchTo(const nsACString& aEncoding,
-                              PRInt32 aSource,
-                              PRInt32 aLineNumber);
+                              int32_t aSource,
+                              int32_t aLineNumber);
 
     void MaybeComplainAboutCharset(const char* aMsgId,
                                    bool aError,
-                                   PRInt32 aLineNumber);
+                                   int32_t aLineNumber);
 
-    void AddSnapshotToScript(nsAHtml5TreeBuilderState* aSnapshot, PRInt32 aLine);
+    void AddSnapshotToScript(nsAHtml5TreeBuilderState* aSnapshot, int32_t aLine);
 
     void DropHandles();
 
@@ -107,11 +107,11 @@
 
     void errStrayEndTag(nsIAtom* aName);
 
-    void errUnclosedElements(PRInt32 aIndex, nsIAtom* aName);
+    void errUnclosedElements(int32_t aIndex, nsIAtom* aName);
 
-    void errUnclosedElementsImplied(PRInt32 aIndex, nsIAtom* aName);
+    void errUnclosedElementsImplied(int32_t aIndex, nsIAtom* aName);
 
-    void errUnclosedElementsCell(PRInt32 aIndex);
+    void errUnclosedElementsCell(int32_t aIndex);
 
     void errStrayDoctype();
 

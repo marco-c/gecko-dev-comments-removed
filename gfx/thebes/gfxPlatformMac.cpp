@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "gfxPlatformMac.h"
 
@@ -28,18 +28,18 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 
-// cribbed from CTFontManager.h
+
 enum {
    kAutoActivationDisabled = 1
 };
 typedef uint32_t AutoActivationSetting;
 
-// bug 567552 - disable auto-activation of fonts
+
 
 static void 
 DisableFontActivation()
 {
-    // get the main bundle identifier
+    
     CFBundleRef mainBundle = ::CFBundleGetMainBundle();
     CFStringRef mainBundleID = NULL;
 
@@ -47,14 +47,14 @@ DisableFontActivation()
         mainBundleID = ::CFBundleGetIdentifier(mainBundle);
     }
 
-    // if possible, fetch CTFontManagerSetAutoActivationSetting
+    
     void (*CTFontManagerSetAutoActivationSettingPtr)
             (CFStringRef, AutoActivationSetting);
     CTFontManagerSetAutoActivationSettingPtr =
         (void (*)(CFStringRef, AutoActivationSetting))
         dlsym(RTLD_DEFAULT, "CTFontManagerSetAutoActivationSetting");
 
-    // bug 567552 - disable auto-activation of fonts
+    
     if (CTFontManagerSetAutoActivationSettingPtr) {
         CTFontManagerSetAutoActivationSettingPtr(mainBundleID,
                                                  kAutoActivationDisabled);
@@ -70,7 +70,7 @@ gfxPlatformMac::gfxPlatformMac()
     }
     mFontAntiAliasingThreshold = ReadAntiAliasingThreshold();
 
-    PRUint32 backendMask = (1 << BACKEND_CAIRO) | (1 << BACKEND_SKIA) | (1 << BACKEND_COREGRAPHICS);
+    uint32_t backendMask = (1 << BACKEND_CAIRO) | (1 << BACKEND_SKIA) | (1 << BACKEND_COREGRAPHICS);
     InitCanvasBackend(backendMask);
 }
 
@@ -125,7 +125,7 @@ gfxPlatformMac::OptimizeImage(gfxImageSurface *aSurface,
     if (format != aSurface->Format()) {
         isurf = new gfxImageSurface (surfaceSize, format);
         if (!isurf->CopyFrom (aSurface)) {
-            // don't even bother doing anything more
+            
             NS_ADDREF(aSurface);
             return aSurface;
         }
@@ -172,7 +172,7 @@ gfxPlatformMac::CreateFontGroup(const nsAString &aFamilies,
     return new gfxFontGroup(aFamilies, aStyle, aUserFontSet);
 }
 
-// these will move to gfxPlatform once all platforms support the fontlist
+
 gfxFontEntry* 
 gfxPlatformMac::LookupLocalFont(const gfxProxyFontEntry *aProxyEntry,
                                 const nsAString& aFontName)
@@ -183,24 +183,24 @@ gfxPlatformMac::LookupLocalFont(const gfxProxyFontEntry *aProxyEntry,
 
 gfxFontEntry* 
 gfxPlatformMac::MakePlatformFont(const gfxProxyFontEntry *aProxyEntry,
-                                 const PRUint8 *aFontData, PRUint32 aLength)
+                                 const uint8_t *aFontData, uint32_t aLength)
 {
-    // Ownership of aFontData is received here, and passed on to
-    // gfxPlatformFontList::MakePlatformFont(), which must ensure the data
-    // is released with NS_Free when no longer needed
+    
+    
+    
     return gfxPlatformFontList::PlatformFontList()->MakePlatformFont(aProxyEntry,
                                                                      aFontData,
                                                                      aLength);
 }
 
 bool
-gfxPlatformMac::IsFontFormatSupported(nsIURI *aFontURI, PRUint32 aFormatFlags)
+gfxPlatformMac::IsFontFormatSupported(nsIURI *aFontURI, uint32_t aFormatFlags)
 {
-    // check for strange format flags
+    
     NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
                  "strange font format hint set");
 
-    // accept supported formats
+    
     if (aFormatFlags & (gfxUserFontSet::FLAG_FORMAT_WOFF     |
                         gfxUserFontSet::FLAG_FORMAT_OPENTYPE | 
                         gfxUserFontSet::FLAG_FORMAT_TRUETYPE | 
@@ -208,16 +208,16 @@ gfxPlatformMac::IsFontFormatSupported(nsIURI *aFontURI, PRUint32 aFormatFlags)
         return true;
     }
 
-    // reject all other formats, known and unknown
+    
     if (aFormatFlags != 0) {
         return false;
     }
 
-    // no format hint set, need to look at data
+    
     return true;
 }
 
-// these will also move to gfxPlatform once all platforms support the fontlist
+
 nsresult
 gfxPlatformMac::GetFontList(nsIAtom *aLangGroup,
                             const nsACString& aGenericFamily,
@@ -247,20 +247,20 @@ static const char kFontPlantagenetCherokee[] = "Plantagenet Cherokee";
 static const char kFontSTHeiti[] = "STHeiti";
 
 void
-gfxPlatformMac::GetCommonFallbackFonts(const PRUint32 aCh,
-                                       PRInt32 aRunScript,
+gfxPlatformMac::GetCommonFallbackFonts(const uint32_t aCh,
+                                       int32_t aRunScript,
                                        nsTArray<const char*>& aFontList)
 {
     aFontList.AppendElement(kFontLucidaGrande);
 
     if (!IS_IN_BMP(aCh)) {
-        PRUint32 p = aCh >> 16;
+        uint32_t p = aCh >> 16;
         if (p == 1) {
             aFontList.AppendElement(kFontAppleSymbols);
             aFontList.AppendElement(kFontGeneva);
         }
     } else {
-        PRUint32 b = (aCh >> 8) & 0xff;
+        uint32_t b = (aCh >> 8) & 0xff;
 
         switch (b) {
         case 0x03:
@@ -273,17 +273,17 @@ gfxPlatformMac::GetCommonFallbackFonts(const PRUint32 aCh,
         case 0x10:
             aFontList.AppendElement(kFontMenlo);
             break;
-        case 0x13:  // Cherokee
+        case 0x13:  
             aFontList.AppendElement(kFontPlantagenetCherokee);
             break;
-        case 0x18:  // Mongolian
+        case 0x18:  
             aFontList.AppendElement(kFontSTHeiti);
             break;
         case 0x1d:
         case 0x1e:
             aFontList.AppendElement(kFontGeneva);
             break;
-        case 0x20:  // Symbol ranges
+        case 0x20:  
         case 0x21:
         case 0x22:
         case 0x23:
@@ -304,13 +304,13 @@ gfxPlatformMac::GetCommonFallbackFonts(const PRUint32 aCh,
         case 0x2d:
             aFontList.AppendElement(kFontGeneva);
             break;
-        case 0x28:  // Braille
+        case 0x28:  
             aFontList.AppendElement(kFontAppleBraille);
             break;
         case 0x4d:
             aFontList.AppendElement(kFontAppleSymbols);
             break;
-        case 0xa0:  // Yi
+        case 0xa0:  
         case 0xa1:
         case 0xa2:
         case 0xa3:
@@ -331,19 +331,19 @@ gfxPlatformMac::GetCommonFallbackFonts(const PRUint32 aCh,
         }
     }
 
-    // Arial Unicode MS has lots of glyphs for obscure, use it as a last resort
+    
     aFontList.AppendElement(kFontArialUnicodeMS);
 }
 
 
-PRInt32 
+int32_t 
 gfxPlatformMac::OSXVersion()
 {
     if (!mOSXVersion) {
-        // minor version is not accurate, use gestaltSystemVersionMajor, gestaltSystemVersionMinor, gestaltSystemVersionBugFix for these
+        
         OSErr err = ::Gestalt(gestaltSystemVersion, reinterpret_cast<SInt32*>(&mOSXVersion));
         if (err != noErr) {
-            //This should probably be changed when our minimum version changes
+            
             NS_ERROR("Couldn't determine OS X version, assuming 10.4");
             mOSXVersion = MAC_OS_X_VERSION_10_4_HEX;
         }
@@ -351,19 +351,19 @@ gfxPlatformMac::OSXVersion()
     return mOSXVersion;
 }
 
-PRUint32
+uint32_t
 gfxPlatformMac::ReadAntiAliasingThreshold()
 {
-    PRUint32 threshold = 0;  // default == no threshold
+    uint32_t threshold = 0;  
     
-    // first read prefs flag to determine whether to use the setting or not
+    
     bool useAntiAliasingThreshold = Preferences::GetBool("gfx.use_text_smoothing_setting", false);
 
-    // if the pref setting is disabled, return 0 which effectively disables this feature
+    
     if (!useAntiAliasingThreshold)
         return threshold;
         
-    // value set via Appearance pref panel, "Turn off text smoothing for font sizes xxx and smaller"
+    
     CFNumberRef prefValue = (CFNumberRef)CFPreferencesCopyAppValue(CFSTR("AppleAntiAliasingThreshold"), kCFPreferencesCurrentApplication);
 
     if (prefValue) {
@@ -385,14 +385,14 @@ gfxPlatformMac::GetThebesSurfaceForDrawTarget(DrawTarget *aTarget)
     unsigned char* data = sourceData->GetData();
     nsRefPtr<gfxImageSurface> surf = new gfxImageSurface(data, ThebesIntSize(sourceData->GetSize()), sourceData->Stride(),
                                                          gfxImageSurface::ImageFormatARGB32);
-    // We could fix this by telling gfxImageSurface it owns data.
+    
     nsRefPtr<gfxImageSurface> cpy = new gfxImageSurface(ThebesIntSize(sourceData->GetSize()), gfxImageSurface::ImageFormatARGB32);
     cpy->CopyFrom(surf);
     return cpy.forget();
   } else if (aTarget->GetType() == BACKEND_COREGRAPHICS) {
     CGContextRef cg = static_cast<CGContextRef>(aTarget->GetNativeSurface(NATIVE_SURFACE_CGCONTEXT));
 
-    //XXX: it would be nice to have an implicit conversion from IntSize to gfxIntSize
+    
     IntSize intSize = aTarget->GetSize();
     gfxIntSize size(intSize.width, intSize.height);
 
@@ -408,7 +408,7 @@ gfxPlatformMac::GetThebesSurfaceForDrawTarget(DrawTarget *aTarget)
 bool
 gfxPlatformMac::UseAcceleratedCanvas()
 {
-  // Lion or later is required
+  
   return false && OSXVersion() >= 0x1070 && Preferences::GetBool("gfx.canvas.azure.accelerated", false);
 }
 
@@ -420,31 +420,31 @@ gfxPlatformMac::GetPlatformCMSOutputProfile()
     CMProfileLocation *location;
     UInt32 locationSize;
 
-    /* There a number of different ways that we could try to get a color
-       profile to use.  On 10.5 all of these methods seem to give the same
-       results. On 10.6, the results are different and the following method,
-       using CGMainDisplayID() seems to best match what we are looking for.
-       Currently, both Google Chrome and Qt4 use a similar method.
+    
 
-       CMTypes.h describes CMDisplayIDType:
-       "Data type for ColorSync DisplayID reference
-        On 8 & 9 this is a AVIDType
-	On X this is a CGSDisplayID"
 
-       CGMainDisplayID gives us a CGDirectDisplayID which presumeably
-       corresponds directly to a CGSDisplayID */
+
+
+
+
+
+
+
+
+
+
     CGDirectDisplayID displayID = CGMainDisplayID();
 
     CMError err = CMGetProfileByAVID(static_cast<CMDisplayIDType>(displayID), &cmProfile);
     if (err != noErr)
         return nullptr;
 
-    // get the size of location
+    
     err = NCMGetProfileLocation(cmProfile, NULL, &locationSize);
     if (err != noErr)
         return nullptr;
 
-    // allocate enough room for location
+    
     location = static_cast<CMProfileLocation*>(malloc(locationSize));
     if (!location)
         goto fail_close;

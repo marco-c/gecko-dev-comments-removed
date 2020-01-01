@@ -1,9 +1,9 @@
-/* vim: se cin sw=2 ts=2 et : */
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #ifndef __GfxInfoX11_h__
 #define __GfxInfoX11_h__
@@ -17,8 +17,8 @@ class GfxInfo : public GfxInfoBase
 {
 public:
 
-  // We only declare the subset of nsIGfxInfo that we actually implement. The
-  // rest is brought forward from GfxInfoBase.
+  
+  
   NS_IMETHOD GetD2DEnabled(bool *aD2DEnabled);
   NS_IMETHOD GetDWriteEnabled(bool *aDWriteEnabled);
   NS_IMETHOD GetDWriteVersion(nsAString & aDwriteVersion);
@@ -53,8 +53,8 @@ public:
 
 protected:
 
-  virtual nsresult GetFeatureStatusImpl(PRInt32 aFeature, 
-                                        PRInt32 *aStatus, 
+  virtual nsresult GetFeatureStatusImpl(int32_t aFeature, 
+                                        int32_t *aStatus, 
                                         nsAString & aSuggestedDriverVersion, 
                                         const nsTArray<GfxDriverInfo>& aDriverInfo, 
                                         OperatingSystem* aOS = nullptr);
@@ -74,7 +74,7 @@ private:
   void AddCrashReportAnnotations();
 };
 
-} // namespace widget
-} // namespace mozilla
+} 
+} 
 
-#endif /* __GfxInfoX11_h__ */
+#endif 

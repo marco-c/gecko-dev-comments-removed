@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef nsNPAPIPluginInstance_h_
 #define nsNPAPIPluginInstance_h_
@@ -30,8 +30,8 @@ class SharedPluginTexture;
 
 struct JSObject;
 
-class nsPluginStreamListenerPeer; // browser-initiated stream class
-class nsNPAPIPluginStreamListener; // plugin-initiated stream class
+class nsPluginStreamListenerPeer; 
+class nsNPAPIPluginStreamListener; 
 class nsIPluginInstanceOwner;
 class nsIOutputStream;
 
@@ -73,9 +73,9 @@ public:
   nsresult SetWindow(NPWindow* window);
   nsresult NewStreamFromPlugin(const char* type, const char* target, nsIOutputStream* *result);
   nsresult Print(NPPrint* platformPrint);
-  nsresult HandleEvent(void* event, PRInt16* result);
+  nsresult HandleEvent(void* event, int16_t* result);
   nsresult GetValueFromPlugin(NPPVariable variable, void* value);
-  nsresult GetDrawingModel(PRInt32* aModel);
+  nsresult GetDrawingModel(int32_t* aModel);
   nsresult IsRemoteDrawingCoreAnimation(bool* aDrawing);
   nsresult GetJSObject(JSContext *cx, JSObject** outObject);
   bool ShouldCache();
@@ -92,7 +92,7 @@ public:
   nsresult GetFormValue(nsAString& aValue);
   nsresult PushPopupsEnabledState(bool aEnabled);
   nsresult PopPopupsEnabledState();
-  nsresult GetPluginAPIVersion(PRUint16* version);
+  nsresult GetPluginAPIVersion(uint16_t* version);
   nsresult InvalidateRect(NPRect *invalidRect);
   nsresult InvalidateRegion(NPRegion invalidRegion);
   nsresult GetMIMEType(const char* *result);
@@ -135,23 +135,23 @@ public:
     return mOnScreen;
   }
 
-  PRUint32 GetANPDrawingModel() { return mANPDrawingModel; }
-  void SetANPDrawingModel(PRUint32 aModel);
+  uint32_t GetANPDrawingModel() { return mANPDrawingModel; }
+  void SetANPDrawingModel(uint32_t aModel);
 
   void* GetJavaSurface();
 
   void PostEvent(void* event);
 
-  // These are really mozilla::dom::ScreenOrientation, but it's
-  // difficult to include that here
-  PRUint32 FullScreenOrientation() { return mFullScreenOrientation; }
-  void SetFullScreenOrientation(PRUint32 orientation);
+  
+  
+  uint32_t FullScreenOrientation() { return mFullScreenOrientation; }
+  void SetFullScreenOrientation(uint32_t orientation);
 
   void SetWakeLock(bool aLock);
 
   mozilla::gl::GLContext* GLContext();
   
-  // For ANPOpenGL
+  
   class TextureInfo {
   public:
     TextureInfo() :
@@ -159,26 +159,26 @@ public:
     {
     }
 
-    TextureInfo(GLuint aTexture, PRInt32 aWidth, PRInt32 aHeight, GLuint aInternalFormat) :
+    TextureInfo(GLuint aTexture, int32_t aWidth, int32_t aHeight, GLuint aInternalFormat) :
       mTexture(aTexture), mWidth(aWidth), mHeight(aHeight), mInternalFormat(aInternalFormat)
     {
     }
 
     GLuint mTexture;
-    PRInt32 mWidth;
-    PRInt32 mHeight;
+    int32_t mWidth;
+    int32_t mHeight;
     GLuint mInternalFormat;
   };
 
   TextureInfo LockContentTexture();
   void ReleaseContentTexture(TextureInfo& aTextureInfo);
 
-  // For ANPNativeWindow
+  
   void* AcquireContentWindow();
 
   mozilla::gl::SharedTextureHandle CreateSharedHandle();
 
-  // For ANPVideo
+  
   class VideoInfo {
   public:
     VideoInfo(nsSurfaceTexture* aSurfaceTexture) :
@@ -211,11 +211,11 @@ public:
   nsNPAPIPluginInstance();
   virtual ~nsNPAPIPluginInstance();
 
-  // To be called when an instance becomes orphaned, when
-  // it's plugin is no longer guaranteed to be around.
+  
+  
   void Destroy();
 
-  // Indicates whether the plugin is running normally.
+  
   bool IsRunning() {
     return RUNNING == mRunning;
   }
@@ -223,15 +223,15 @@ public:
     return mRunning >= DESTROYING;
   }
 
-  // Indicates whether the plugin is running normally or being shut down
+  
   bool CanFireNotifications() {
     return mRunning == RUNNING || mRunning == DESTROYING;
   }
 
-  // return is only valid when the plugin is not running
+  
   mozilla::TimeStamp StopTime();
 
-  // cache this NPAPI plugin
+  
   void SetCached(bool aCache);
 
   already_AddRefed<nsPIDOMWindow> GetDOMWindow();
@@ -240,7 +240,7 @@ public:
 
   nsresult GetDOMElement(nsIDOMElement* *result);
 
-  nsNPAPITimer* TimerWithID(uint32_t id, PRUint32* index);
+  nsNPAPITimer* TimerWithID(uint32_t id, uint32_t* index);
   uint32_t      ScheduleTimer(uint32_t interval, NPBool repeat, void (*timerFunc)(NPP npp, uint32_t timerID));
   void          UnscheduleTimer(uint32_t timerID);
   NPError       PopUpContextMenu(NPMenu* menu);
@@ -260,27 +260,27 @@ public:
   NPError FinalizeAsyncSurface(NPAsyncSurface *surface);
   void SetCurrentAsyncSurface(NPAsyncSurface *surface, NPRect *changed);
 
-  // Called when the instance fails to instantiate beceause the Carbon
-  // event model is not supported.
+  
+  
   void CarbonNPAPIFailure();
 
 protected:
 
   nsresult GetTagType(nsPluginTagType *result);
-  nsresult GetAttributes(PRUint16& n, const char*const*& names,
+  nsresult GetAttributes(uint16_t& n, const char*const*& names,
                          const char*const*& values);
-  nsresult GetParameters(PRUint16& n, const char*const*& names,
+  nsresult GetParameters(uint16_t& n, const char*const*& names,
                          const char*const*& values);
-  nsresult GetMode(PRInt32 *result);
+  nsresult GetMode(int32_t *result);
 
-  // The structure used to communicate between the plugin instance and
-  // the browser.
+  
+  
   NPP_t mNPP;
 
   NPDrawingModel mDrawingModel;
 
 #ifdef MOZ_WIDGET_ANDROID
-  PRUint32 mANPDrawingModel;
+  uint32_t mANPDrawingModel;
 
   friend class PluginEventRunnable;
 
@@ -288,7 +288,7 @@ protected:
   void PopPostedEvent(PluginEventRunnable* r);
   void OnSurfaceTextureFrameAvailable();
 
-  PRUint32 mFullScreenOrientation;
+  uint32_t mFullScreenOrientation;
   bool mWakeLocked;
   bool mFullScreen;
   bool mInverted;
@@ -304,15 +304,15 @@ protected:
     DESTROYED
   } mRunning;
 
-  // these are used to store the windowless properties
-  // which the browser will later query
+  
+  
   bool mWindowless;
   bool mTransparent;
   bool mCached;
   bool mUsesDOMForCursor;
 
 public:
-  // True while creating the plugin, or calling NPP_SetWindow() on it.
+  
   bool mInPluginInitCall;
 
   nsXPIDLCString mFakeURL;
@@ -328,17 +328,17 @@ private:
 
   char* mMIMEType;
 
-  // Weak pointer to the owner. The owner nulls this out (by calling
-  // InvalidateOwner()) when it's no longer our owner.
+  
+  
   nsIPluginInstanceOwner *mOwner;
 
   nsTArray<nsNPAPITimer*> mTimers;
 
-  // non-null during a HandleEvent call
+  
   void* mCurrentPluginEvent;
 
-  // Timestamp for the last time this plugin was stopped.
-  // This is only valid when the plugin is actually stopped!
+  
+  
   mozilla::TimeStamp mStopTime;
 
   bool mUsePluginLayersPref;
@@ -353,4 +353,4 @@ private:
 #endif
 };
 
-#endif // nsNPAPIPluginInstance_h_
+#endif 

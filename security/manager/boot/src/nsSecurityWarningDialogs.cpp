@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsSecurityWarningDialogs.h"
 #include "nsIComponentManager.h"
@@ -125,7 +125,7 @@ public:
                const PRUnichar* aShowAgainName,
                nsIPrefBranch*   aPrefBranch,
                nsIStringBundle* aStringBundle,
-               PRUint32         aBucket)
+               uint32_t         aBucket)
   : mPrompt(aPrompt), mPrefName(aPrefName),
     mDialogMessageName(aDialogMessageName),
     mShowAgainName(aShowAgainName), mPrefBranch(aPrefBranch),
@@ -140,7 +140,7 @@ protected:
   nsString                  mShowAgainName;
   nsCOMPtr<nsIPrefBranch>   mPrefBranch;
   nsCOMPtr<nsIStringBundle> mStringBundle;
-  PRUint32                  mBucket;
+  uint32_t                  mBucket;
 };
 
 NS_IMETHODIMP
@@ -148,19 +148,19 @@ nsAsyncAlert::Run()
 {
   nsresult rv;
 
-  // Get user's preference for this alert
+  
   bool prefValue;
   rv = mPrefBranch->GetBoolPref(mPrefName.get(), &prefValue);
   if (NS_FAILED(rv)) prefValue = true;
 
-  // Stop if alert is not requested
+  
   if (!prefValue) return NS_OK;
 
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::SECURITY_UI, mBucket);
-  // Check for a show-once pref for this dialog.
-  // If the show-once pref is set to true:
-  //   - The default value of the "show every time" checkbox is unchecked
-  //   - If the user checks the checkbox, we clear the show-once pref.
+  
+  
+  
+  
 
   nsCAutoString showOncePref(mPrefName);
   showOncePref += ".show_once";
@@ -171,7 +171,7 @@ nsAsyncAlert::Run()
   if (showOnce)
     prefValue = false;
 
-  // Get messages strings from localization file
+  
   nsXPIDLString windowTitle, message, dontShowAgain;
 
   mStringBundle->GetStringFromName(NS_LITERAL_STRING("Title").get(),
@@ -201,9 +201,9 @@ nsSecurityWarningDialogs::AlertDialog(nsIInterfaceRequestor* aCtx,
                                       const PRUnichar* aDialogMessageName,
                                       const PRUnichar* aShowAgainName,
                                       bool aAsync,
-                                      const PRUint32 aBucket)
+                                      const uint32_t aBucket)
 {
-  // Get Prompt to use
+  
   nsCOMPtr<nsIPrompt> prompt = do_GetInterface(aCtx);
   if (!prompt) return NS_ERROR_FAILURE;
 
@@ -226,7 +226,7 @@ nsSecurityWarningDialogs::ConfirmPostToInsecure(nsIInterfaceRequestor *ctx, bool
 {
   nsresult rv;
 
-  // The Telemetry clickthrough constant is 1 more than the constant for the dialog.
+  
   rv = ConfirmDialog(ctx, INSECURE_SUBMIT_PREF,
                      NS_LITERAL_STRING("PostToInsecureFromInsecureMessage").get(),
                      NS_LITERAL_STRING("PostToInsecureFromInsecureShowAgain").get(),
@@ -241,8 +241,8 @@ nsSecurityWarningDialogs::ConfirmPostToInsecureFromSecure(nsIInterfaceRequestor 
 {
   nsresult rv;
 
-  // The Telemetry clickthrough constant is 1 more than the constant for the dialog.
-  rv = ConfirmDialog(ctx, nullptr, // No preference for this one - it's too important
+  
+  rv = ConfirmDialog(ctx, nullptr, 
                      NS_LITERAL_STRING("PostToInsecureFromSecureMessage").get(),
                      nullptr,
                      nsISecurityUITelemetry::WARNING_CONFIRM_POST_TO_INSECURE_FROM_SECURE,
@@ -255,13 +255,13 @@ nsresult
 nsSecurityWarningDialogs::ConfirmDialog(nsIInterfaceRequestor *ctx, const char *prefName,
                             const PRUnichar *messageName, 
                             const PRUnichar *showAgainName, 
-                            const PRUint32 aBucket,
+                            const uint32_t aBucket,
                             bool* _result)
 {
   nsresult rv;
 
-  // Get user's preference for this alert
-  // prefName, showAgainName are null if there is no preference for this dialog
+  
+  
   bool prefValue = true;
   
   if (prefName != nullptr) {
@@ -269,7 +269,7 @@ nsSecurityWarningDialogs::ConfirmDialog(nsIInterfaceRequestor *ctx, const char *
     if (NS_FAILED(rv)) prefValue = true;
   }
   
-  // Stop if confirm is not requested
+  
   if (!prefValue) {
     *_result = true;
     return NS_OK;
@@ -277,7 +277,7 @@ nsSecurityWarningDialogs::ConfirmDialog(nsIInterfaceRequestor *ctx, const char *
   
   MOZ_ASSERT(NS_IsMainThread());
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::SECURITY_UI, aBucket);
-  // See AlertDialog() for a description of how showOnce works.
+  
   nsCAutoString showOncePref(prefName);
   showOncePref += ".show_once";
 
@@ -287,11 +287,11 @@ nsSecurityWarningDialogs::ConfirmDialog(nsIInterfaceRequestor *ctx, const char *
   if (showOnce)
     prefValue = false;
 
-  // Get Prompt to use
+  
   nsCOMPtr<nsIPrompt> prompt = do_GetInterface(ctx);
   if (!prompt) return NS_ERROR_FAILURE;
 
-  // Get messages strings from localization file
+  
   nsXPIDLString windowTitle, message, alertMe, cont;
 
   mStringBundle->GetStringFromName(NS_LITERAL_STRING("Title").get(),
@@ -304,20 +304,20 @@ nsSecurityWarningDialogs::ConfirmDialog(nsIInterfaceRequestor *ctx, const char *
   }
   mStringBundle->GetStringFromName(NS_LITERAL_STRING("Continue").get(),
                                    getter_Copies(cont));
-  // alertMe is allowed to be null
+  
   if (!windowTitle || !message || !cont) return NS_ERROR_FAILURE;
       
-  // Replace # characters with newlines to lay out the dialog.
+  
   PRUnichar* msgchars = message.BeginWriting();
   
-  PRUint32 i = 0;
+  uint32_t i = 0;
   for (i = 0; msgchars[i] != '\0'; i++) {
     if (msgchars[i] == '#') {
       msgchars[i] = '\n';
     }
   }  
 
-  PRInt32 buttonPressed;
+  int32_t buttonPressed;
 
   rv  = prompt->ConfirmEx(windowTitle, 
                           message, 
@@ -334,8 +334,8 @@ nsSecurityWarningDialogs::ConfirmDialog(nsIInterfaceRequestor *ctx, const char *
 
   *_result = (buttonPressed != 1);
   if (*_result) {
-  // For confirmation dialogs, the clickthrough constant is 1 more
-  // than the constant for the dialog.
+  
+  
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::SECURITY_UI, aBucket + 1);
   }
 
