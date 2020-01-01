@@ -123,6 +123,7 @@ cubeb_refill_stream(cubeb_stream * stm)
   got = stm->data_callback(stm, stm->user_ptr, hdr->lpData, wanted);
   EnterCriticalSection(&stm->lock);
   if (got < 0) {
+    LeaveCriticalSection(&stm->lock);
     
     assert(0);
     return;
@@ -224,6 +225,12 @@ cubeb_init(cubeb ** context, char const * context_name)
   *context = ctx;
 
   return CUBEB_OK;
+}
+
+char const *
+cubeb_get_backend_id(cubeb * ctx)
+{
+  return "winmm";
 }
 
 void
