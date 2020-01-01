@@ -2139,6 +2139,13 @@ cairo_d2d_surface_create_for_hwnd(HWND wnd)
 
     hr = dxgiFactory->CreateSwapChain(dxgiDevice, &swapDesc, &newSurf->dxgiChain);
 
+    
+
+
+
+
+    dxgiFactory->MakeWindowAssociation(wnd, DXGI_MWA_NO_WINDOW_CHANGES);
+
     if (FAILED(hr)) {
 	goto FAIL_HWND;
     }
