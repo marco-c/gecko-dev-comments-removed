@@ -1324,7 +1324,8 @@ nsSVGUtils::GetBBox(nsIFrame *aFrame)
     
     
     
-    nsSVGTextContainerFrame* metrics = do_QueryFrame(aFrame);
+    nsSVGTextContainerFrame* metrics = do_QueryFrame(
+      GetFirstNonAAncestorFrame(aFrame));
     if (metrics) {
       while (aFrame->GetType() != nsGkAtoms::svgTextFrame) {
         aFrame = aFrame->GetParent();
