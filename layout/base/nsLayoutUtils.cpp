@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sw=2 et tw=78: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   L. David Baron <dbaron@dbaron.org>, Mozilla Corporation
- *   Mats Palmgren <mats.palmgren@bredband.net>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsLayoutUtils.h"
 #include "nsIFontMetrics.h"
@@ -83,9 +83,9 @@
 #include "nsSVGOuterSVGFrame.h"
 #endif
 
-/**
- * A namespace class for static layout utilities.
- */
+
+
+
 
 #ifdef DEBUG
 PRBool nsLayoutUtils::sDisableGetUsedXAssertions = PR_FALSE;
@@ -103,25 +103,25 @@ nsLayoutUtils::GetLastContinuationWithChild(nsIFrame* aFrame)
   return aFrame;
 }
 
-/**
- * GetFirstChildFrame returns the first "real" child frame of a
- * given frame.  It will descend down into pseudo-frames (unless the
- * pseudo-frame is the :before generated frame).   
- * @param aFrame the frame
- * @param aFrame the frame's content node
- */
+
+
+
+
+
+
+
 static nsIFrame*
 GetFirstChildFrame(nsIFrame*       aFrame,
                    nsIContent*     aContent)
 {
   NS_PRECONDITION(aFrame, "NULL frame pointer");
 
-  // Get the first child frame
+  
   nsIFrame* childFrame = aFrame->GetFirstChild(nsnull);
 
-  // If the child frame is a pseudo-frame, then return its first child.
-  // Note that the frame we create for the generated content is also a
-  // pseudo-frame and so don't drill down in that case
+  
+  
+  
   if (childFrame &&
       childFrame->IsPseudoFrame(aContent) &&
       !childFrame->IsGeneratedContentFrame()) {
@@ -131,23 +131,23 @@ GetFirstChildFrame(nsIFrame*       aFrame,
   return childFrame;
 }
 
-/**
- * GetLastChildFrame returns the last "real" child frame of a
- * given frame.  It will descend down into pseudo-frames (unless the
- * pseudo-frame is the :after generated frame).   
- * @param aFrame the frame
- * @param aFrame the frame's content node
- */
+
+
+
+
+
+
+
 static nsIFrame*
 GetLastChildFrame(nsIFrame*       aFrame,
                   nsIContent*     aContent)
 {
   NS_PRECONDITION(aFrame, "NULL frame pointer");
 
-  // Get the last continuation frame that's a parent
+  
   nsIFrame* lastParentContinuation = nsLayoutUtils::GetLastContinuationWithChild(aFrame);
 
-  // Get the last child frame
+  
   nsIFrame* firstChildFrame = lastParentContinuation->GetFirstChild(nsnull);
   if (firstChildFrame) {
     nsFrameList frameList(firstChildFrame);
@@ -155,13 +155,13 @@ GetLastChildFrame(nsIFrame*       aFrame,
 
     NS_ASSERTION(lastChildFrame, "unexpected error");
 
-    // Get the frame's first continuation. This matters in case the frame has
-    // been continued across multiple lines or split by BiDi resolution.
+    
+    
     lastChildFrame = lastChildFrame->GetFirstContinuation();
     
-    // If the last child frame is a pseudo-frame, then return its last child.
-    // Note that the frame we create for the generated content is also a
-    // pseudo-frame and so don't drill down in that case
+    
+    
+    
     if (lastChildFrame &&
         lastChildFrame->IsPseudoFrame(aContent) &&
         !lastChildFrame->IsGeneratedContentFrame()) {
@@ -174,7 +174,7 @@ GetLastChildFrame(nsIFrame*       aFrame,
   return nsnull;
 }
 
-// static
+
 nsIFrame*
 nsLayoutUtils::GetBeforeFrame(nsIFrame* aFrame)
 {
@@ -192,7 +192,7 @@ nsLayoutUtils::GetBeforeFrame(nsIFrame* aFrame)
   return nsnull;
 }
 
-// static
+
 nsIFrame*
 nsLayoutUtils::GetAfterFrame(nsIFrame* aFrame)
 {
@@ -208,7 +208,7 @@ nsLayoutUtils::GetAfterFrame(nsIFrame* aFrame)
   return nsnull;
 }
 
-// static
+
 nsIFrame*
 nsLayoutUtils::GetClosestFrameOfType(nsIFrame* aFrame, nsIAtom* aFrameType)
 {
@@ -235,7 +235,7 @@ nsLayoutUtils::GetFloatFromPlaceholder(nsIFrame* aFrame) {
   return nsnull;
 }
 
-// static
+
 PRBool
 nsLayoutUtils::IsGeneratedContentFor(nsIContent* aContent,
                                      nsIFrame* aFrame,
@@ -250,7 +250,7 @@ nsLayoutUtils::IsGeneratedContentFor(nsIContent* aContent,
   nsIFrame* parent = aFrame->GetParent();
   NS_ASSERTION(parent, "Generated content can't be root frame");
   if (parent->IsGeneratedContentFrame()) {
-    // Not the root of the generated content
+    
     return PR_FALSE;
   }
   
@@ -262,7 +262,7 @@ nsLayoutUtils::IsGeneratedContentFor(nsIContent* aContent,
     (aPseudoElement == nsCSSPseudoElements::before);
 }
 
-// static
+
 nsIFrame*
 nsLayoutUtils::GetCrossDocParentFrame(const nsIFrame* aFrame,
                                       nsPoint* aExtraOffset)
@@ -274,19 +274,19 @@ nsLayoutUtils::GetCrossDocParentFrame(const nsIFrame* aFrame,
   nsIView* v = aFrame->GetView();
   if (!v)
     return nsnull;
-  v = v->GetParent(); // anonymous inner view
+  v = v->GetParent(); 
   if (!v)
     return nsnull;
   if (aExtraOffset) {
     *aExtraOffset += v->GetPosition();
   }
-  v = v->GetParent(); // subdocumentframe's view
+  v = v->GetParent(); 
   if (!v)
     return nsnull;
   return static_cast<nsIFrame*>(v->GetClientData());
 }
 
-// static
+
 PRBool
 nsLayoutUtils::IsProperAncestorFrameCrossDoc(nsIFrame* aAncestorFrame, nsIFrame* aFrame,
                                              nsIFrame* aCommonAncestor)
@@ -306,7 +306,7 @@ nsLayoutUtils::IsProperAncestorFrameCrossDoc(nsIFrame* aAncestorFrame, nsIFrame*
   return PR_FALSE;
 }
 
-// static
+
 PRBool
 nsLayoutUtils::IsProperAncestorFrame(nsIFrame* aAncestorFrame, nsIFrame* aFrame,
                                      nsIFrame* aCommonAncestor)
@@ -328,7 +328,7 @@ nsLayoutUtils::IsProperAncestorFrame(nsIFrame* aAncestorFrame, nsIFrame* aFrame,
   return PR_FALSE;
 }
 
-// static
+
 PRInt32
 nsLayoutUtils::DoCompareTreePosition(nsIContent* aContent1,
                                      nsIContent* aContent2,
@@ -345,8 +345,8 @@ nsLayoutUtils::DoCompareTreePosition(nsIContent* aContent1,
     content1Ancestors.AppendElement(c1);
   }
   if (!c1 && aCommonAncestor) {
-    // So, it turns out aCommonAncestor was not an ancestor of c1. Oops.
-    // Never mind. We can continue as if aCommonAncestor was null.
+    
+    
     aCommonAncestor = nsnull;
   }
 
@@ -356,8 +356,8 @@ nsLayoutUtils::DoCompareTreePosition(nsIContent* aContent1,
     content2Ancestors.AppendElement(c2);
   }
   if (!c2 && aCommonAncestor) {
-    // So, it turns out aCommonAncestor was not an ancestor of c2.
-    // We need to retry with no common ancestor hint.
+    
+    
     return DoCompareTreePosition(aContent1, aContent2,
                                  aIf1Ancestor, aIf2Ancestor, nsnull);
   }
@@ -378,26 +378,26 @@ nsLayoutUtils::DoCompareTreePosition(nsIContent* aContent1,
       NS_ASSERTION(aContent1 == aContent2, "internal error?");
       return 0;
     }
-    // aContent1 is an ancestor of aContent2
+    
     return aIf1Ancestor;
   }
 
   if (last2 < 0) {
-    // aContent2 is an ancestor of aContent1
+    
     return aIf2Ancestor;
   }
 
-  // content1Ancestor != content2Ancestor, so they must be siblings with the same parent
+  
   nsINode* parent = content1Ancestor->GetNodeParent();
   NS_ASSERTION(parent, "no common ancestor at all???");
-  if (!parent) { // different documents??
+  if (!parent) { 
     return 0;
   }
 
   PRInt32 index1 = parent->IndexOf(content1Ancestor);
   PRInt32 index2 = parent->IndexOf(content2Ancestor);
   if (index1 < 0 || index2 < 0) {
-    // one of them must be anonymous; we can't determine the order
+    
     return 0;
   }
 
@@ -415,7 +415,7 @@ static nsIFrame* FillAncestors(nsIFrame* aFrame,
   return aFrame;
 }
 
-// Return true if aFrame1 is after aFrame2
+
 static PRBool IsFrameAfter(nsIFrame* aFrame1, nsIFrame* aFrame2)
 {
   nsIFrame* f = aFrame2;
@@ -427,7 +427,7 @@ static PRBool IsFrameAfter(nsIFrame* aFrame1, nsIFrame* aFrame2)
   return PR_FALSE;
 }
 
-// static
+
 PRInt32
 nsLayoutUtils::DoCompareTreePosition(nsIFrame* aFrame1,
                                      nsIFrame* aFrame2,
@@ -447,16 +447,16 @@ nsLayoutUtils::DoCompareTreePosition(nsIFrame* aFrame1,
 
   nsAutoTArray<nsIFrame*,20> frame1Ancestors;
   if (!FillAncestors(aFrame1, aCommonAncestor, frameManager, &frame1Ancestors)) {
-    // We reached the root of the frame tree ... if aCommonAncestor was set,
-    // it is wrong
+    
+    
     aCommonAncestor = nsnull;
   }
 
   nsAutoTArray<nsIFrame*,20> frame2Ancestors;
   if (!FillAncestors(aFrame2, aCommonAncestor, frameManager, &frame2Ancestors) &&
       aCommonAncestor) {
-    // We reached the root of the frame tree ... aCommonAncestor was wrong.
-    // Try again with no hint.
+    
+    
     return DoCompareTreePosition(aFrame1, aFrame2,
                                  aIf1Ancestor, aIf2Ancestor, nsnull);
   }
@@ -474,18 +474,18 @@ nsLayoutUtils::DoCompareTreePosition(nsIFrame* aFrame1,
       NS_ASSERTION(aFrame1 == aFrame2, "internal error?");
       return 0;
     }
-    // aFrame1 is an ancestor of aFrame2
+    
     return aIf1Ancestor;
   }
 
   if (last2 < 0) {
-    // aFrame2 is an ancestor of aFrame1
+    
     return aIf2Ancestor;
   }
 
   nsIFrame* ancestor1 = frame1Ancestors[last1];
   nsIFrame* ancestor2 = frame2Ancestors[last2];
-  // Now we should be able to walk sibling chains to find which one is first
+  
   if (IsFrameAfter(ancestor2, ancestor1))
     return -1;
   if (IsFrameAfter(ancestor1, ancestor2))
@@ -494,7 +494,7 @@ nsLayoutUtils::DoCompareTreePosition(nsIFrame* aFrame1,
   return 0;
 }
 
-// static
+
 nsIFrame* nsLayoutUtils::GetLastSibling(nsIFrame* aFrame) {
   if (!aFrame) {
     return nsnull;
@@ -507,7 +507,7 @@ nsIFrame* nsLayoutUtils::GetLastSibling(nsIFrame* aFrame) {
   return aFrame;
 }
 
-// static
+
 nsIView*
 nsLayoutUtils::FindSiblingViewFor(nsIView* aParentView, nsIFrame* aFrame) {
   nsIFrame* parentViewFrame = static_cast<nsIFrame*>(aParentView->GetClientData());
@@ -516,7 +516,7 @@ nsLayoutUtils::FindSiblingViewFor(nsIView* aParentView, nsIFrame* aFrame) {
        insertBefore = insertBefore->GetNextSibling()) {
     nsIFrame* f = static_cast<nsIFrame*>(insertBefore->GetClientData());
     if (!f) {
-      // this view could be some anonymous view attached to a meaningful parent
+      
       for (nsIView* searchView = insertBefore->GetParent(); searchView;
            searchView = searchView->GetParent()) {
         f = static_cast<nsIFrame*>(searchView->GetClientData());
@@ -528,15 +528,15 @@ nsLayoutUtils::FindSiblingViewFor(nsIView* aParentView, nsIFrame* aFrame) {
     }
     if (!f || !aFrame->GetContent() || !f->GetContent() ||
         CompareTreePosition(aFrame->GetContent(), f->GetContent(), parentViewContent) > 0) {
-      // aFrame's content is after f's content (or we just don't know),
-      // so put our view before f's view
+      
+      
       return insertBefore;
     }
   }
   return nsnull;
 }
 
-//static
+
 nsIScrollableFrame*
 nsLayoutUtils::GetScrollableFrameFor(nsIFrame *aScrolledFrame)
 {
@@ -549,7 +549,7 @@ nsLayoutUtils::GetScrollableFrameFor(nsIFrame *aScrolledFrame)
   return sf;
 }
 
-//static
+
 nsIScrollableFrame*
 nsLayoutUtils::GetScrollableFrameFor(nsIScrollableView *aScrollableView)
 {
@@ -562,7 +562,7 @@ nsLayoutUtils::GetScrollableFrameFor(nsIScrollableView *aScrollableView)
   return nsnull;
 }
 
-//static
+
 nsPresContext::ScrollbarStyles
 nsLayoutUtils::ScrollbarStylesOfView(nsIScrollableView *aScrollableView)
 {
@@ -572,15 +572,15 @@ nsLayoutUtils::ScrollbarStylesOfView(nsIScrollableView *aScrollableView)
                                              NS_STYLE_OVERFLOW_HIDDEN);
 }
 
-// static
+
 nsIScrollableView*
 nsLayoutUtils::GetNearestScrollingView(nsIView* aView, Direction aDirection)
 {
-  // If aDirection is eEither, find first view with a scrolllable frame.
-  // Otherwise, find the first view that has a scrollable frame whose
-  // ScrollbarStyles is not NS_STYLE_OVERFLOW_HIDDEN in aDirection
-  // and where there is something currently not visible
-  // that can be scrolled to in aDirection.
+  
+  
+  
+  
+  
   NS_ASSERTION(aView, "GetNearestScrollingView expects a non-null view");
   nsIScrollableView* scrollableView = nsnull;
   for (; aView; aView = aView->GetParent()) {
@@ -591,14 +591,14 @@ nsLayoutUtils::GetNearestScrollingView(nsIView* aView, Direction aDirection)
       nsIScrollableFrame *scrollableFrame = GetScrollableFrameFor(scrollableView);
       NS_ASSERTION(scrollableFrame, "Must have scrollable frame for view!");
       nsMargin margin = scrollableFrame->GetActualScrollbarSizes();
-      // Get size of total scrollable area
+      
       nscoord totalWidth, totalHeight;
       scrollableView->GetContainerSize(&totalWidth, &totalHeight);
-      // Get size of currently visible area
+      
       nsSize visibleSize = aView->GetBounds().Size();
-      // aDirection can be eHorizontal, eVertical, or eEither
-      // If scrolling in a specific direction, require visible scrollbars or
-      // something to scroll to in that direction.
+      
+      
+      
       if (aDirection != eHorizontal &&
           ss.mVertical != NS_STYLE_OVERFLOW_HIDDEN &&
           (aDirection == eEither || totalHeight > visibleSize.height || margin.LeftRight()))
@@ -638,8 +638,8 @@ nsLayoutUtils::GetEventCoordinatesRelativeTo(const nsEvent* aEvent, nsIFrame* aF
   if (!GUIEvent->widget)
     return nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
 
-  // If it is, or is a descendant of, an SVG foreignobject frame,
-  // then we need to do extra work
+  
+  
   nsIFrame* rootFrame = aFrame;
   for (nsIFrame* f = aFrame; f; f = GetCrossDocParentFrame(f)) {
 #ifdef MOZ_SVG
@@ -735,8 +735,8 @@ nsLayoutUtils::TranslateWidgetToView(nsPresContext* aPresContext,
   return widgetAppUnits - viewOffset;
 }
 
-// Combine aNewBreakType with aOrigBreakType, but limit the break types
-// to NS_STYLE_CLEAR_LEFT, RIGHT, LEFT_AND_RIGHT.
+
+
 PRUint8
 nsLayoutUtils::CombineBreakType(PRUint8 aOrigBreakType,
                                 PRUint8 aNewBreakType)
@@ -811,10 +811,10 @@ nsLayoutUtils::GetFrameForPoint(nsIFrame* aFrame, nsPoint aPt,
   return result;
 }
 
-/**
- * A simple display item that just renders a solid color across the entire
- * visible area.
- */
+
+
+
+
 class nsDisplaySolidColor : public nsDisplayItem {
 public:
   nsDisplaySolidColor(nsIFrame* aFrame, nscolor aColor)
@@ -841,22 +841,22 @@ void nsDisplaySolidColor::Paint(nsDisplayListBuilder* aBuilder,
   aCtx->FillRect(aDirtyRect);
 }
 
-/**
- * Remove all leaf display items that are not for descendants of
- * aBuilder->GetReferenceFrame() from aList, and move all nsDisplayClip
- * wrappers to their correct locations.
- * @param aExtraPage the page we constructed aList for
- * @param aY the Y-coordinate where aPage would be positioned relative
- * to the main page (aBuilder->GetReferenceFrame()), considering only
- * the content and ignoring page margins and dead space
- * @param aList the list that is modified in-place
- */
+
+
+
+
+
+
+
+
+
+
 static void
 PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
         nsIFrame* aExtraPage, nscoord aY, nsDisplayList* aList)
 {
   nsDisplayList newList;
-  // The page which we're really constructing a display list for
+  
   nsIFrame* mainPage = aBuilder->ReferenceFrame();
 
   while (PR_TRUE) {
@@ -867,17 +867,17 @@ PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
     if (subList) {
       PruneDisplayListForExtraPage(aBuilder, aExtraPage, aY, subList);
       if (i->GetType() == nsDisplayItem::TYPE_CLIP) {
-        // This might clip an element which should appear on the first
-        // page, and that element might be visible if this uses a 'clip'
-        // property with a negative top.
-        // The clip area needs to be moved because the frame geometry doesn't
-        // put page content frames for adjacent pages vertically adjacent,
-        // there are page margins and dead space between them in print 
-        // preview, and in printing all pages are at (0,0)...
-        // XXX we have no way to test this right now that I know of;
-        // the 'clip' property requires an abs-pos element and we never
-        // paint abs-pos elements that start after the main page
-        // (bug 426909).
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         nsDisplayClip* clip = static_cast<nsDisplayClip*>(i);
         clip->SetClipRect(clip->GetClipRect() + nsPoint(0, aY) -
                 aExtraPage->GetOffsetTo(mainPage));
@@ -886,11 +886,11 @@ PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
     } else {
       nsIFrame* f = i->GetUnderlyingFrame();
       if (f && nsLayoutUtils::IsProperAncestorFrameCrossDoc(mainPage, f)) {
-        // This one is in the page we care about, keep it
+        
         newList.AppendToTop(i);
       } else {
-        // We're throwing this away so call its destructor now. The memory
-        // is owned by aBuilder which destroys all items at once.
+        
+        
         i->nsDisplayItem::~nsDisplayItem();
       }
     }
@@ -903,12 +903,12 @@ BuildDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
         nsIFrame* aPage, nscoord aY, nsDisplayList* aList)
 {
   nsDisplayList list;
-  // Pass an empty dirty rect since we're only interested in finding
-  // placeholders whose out-of-flows are in the page
-  // aBuilder->GetReferenceFrame(), and the paths to those placeholders
-  // have already been marked as NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO.
-  // Note that we should still do a prune step since we don't want to
-  // rely on dirty-rect checking for correctness.
+  
+  
+  
+  
+  
+  
   nsresult rv = aPage->BuildDisplayListForStackingContext(aBuilder, nsRect(), &list);
   if (NS_FAILED(rv))
     return rv;
@@ -920,7 +920,7 @@ BuildDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
 static nsIFrame*
 GetNextPage(nsIFrame* aPageContentFrame)
 {
-  // XXX ugh
+  
   nsIFrame* pageFrame = aPageContentFrame->GetParent();
   NS_ASSERTION(pageFrame->GetType() == nsGkAtoms::pageFrame,
                "pageContentFrame has unexpected parent");
@@ -953,13 +953,13 @@ nsLayoutUtils::PaintFrame(nsIRenderingContext* aRenderingContext, nsIFrame* aFra
       aFrame->BuildDisplayListForStackingContext(&builder, dirtyRect, &list);
     
     if (NS_SUCCEEDED(rv) && aFrame->GetType() == nsGkAtoms::pageContentFrame) {
-      // We may need to paint out-of-flow frames whose placeholders are
-      // on other pages. Add those pages to our display list. Note that
-      // out-of-flow frames can't be placed after their placeholders so
-      // we don't have to process earlier pages. The display lists for
-      // these extra pages are pruned so that only display items for the
-      // page we currently care about (which we would have reached by
-      // following placeholders to their out-of-flows) end up on the list.
+      
+      
+      
+      
+      
+      
+      
       nsIFrame* page = aFrame;
       nscoord y = aFrame->GetSize().height;
       while ((page = GetNextPage(page)) != nsnull) {
@@ -975,11 +975,11 @@ nsLayoutUtils::PaintFrame(nsIRenderingContext* aRenderingContext, nsIFrame* aFra
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (NS_GET_A(aBackground) > 0) {
-    // Fill the visible area with a background color. In the common case,
-    // the visible area is entirely covered by the background of the root
-    // document (at least!) so this will be removed by the optimizer. In some
-    // cases we might not have a root frame, so this will prevent garbage
-    // from being drawn.
+    
+    
+    
+    
+    
     rv = list.AppendNewToBottom(new (&builder) nsDisplaySolidColor(aFrame, aBackground));
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -1003,7 +1003,7 @@ nsLayoutUtils::PaintFrame(nsIRenderingContext* aRenderingContext, nsIFrame* aFra
 #endif
   
   list.Paint(&builder, aRenderingContext, aDirtyRegion.GetBounds());
-  // Flush the list so we don't trigger the IsEmpty-on-destruction assertion
+  
   list.DeleteAll();
   return NS_OK;
 }
@@ -1040,26 +1040,26 @@ AddItemsToRegion(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
       if (item->GetType() == nsDisplayItem::TYPE_CLIP) {
         nsDisplayClip* clipItem = static_cast<nsDisplayClip*>(item);
         nsRect clip = aClipRect;
-        // If the clipping frame is moving, then it isn't clipping any
-        // non-moving content (see ApplyAbsPosClipping), so we don't need
-        // to do anything special, but we should not restrict aClipRect.
+        
+        
+        
         if (!aBuilder->IsMovingFrame(clipItem->GetClippingFrame())) {
           clip.IntersectRect(clip, clipItem->GetClipRect());
 
-          // Invalidate the translation of the source area that was clipped out
+          
           nsRegion clippedOutSource;
           clippedOutSource.Sub(aRect, clip);
           clippedOutSource.MoveBy(aDelta);
           aRegion->Or(*aRegion, clippedOutSource);
 
-          // Invalidate the destination area that is clipped out
+          
           nsRegion clippedOutDestination;
           clippedOutDestination.Sub(aRect + aDelta, clip);
           aRegion->Or(*aRegion, clippedOutDestination);
         }
         AddItemsToRegion(aBuilder, sublist, aRect, clip, aDelta, aRegion);
       } else {
-        // opacity, or a generic sublist
+        
         AddItemsToRegion(aBuilder, sublist, aRect, aClipRect, aDelta, aRegion);
       }
     } else {
@@ -1070,22 +1070,22 @@ AddItemsToRegion(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
         nsRect exclude;
         if (aBuilder->IsMovingFrame(f)) {
           if (item->IsVaryingRelativeToMovingFrame(aBuilder)) {
-            // something like background-attachment:fixed that varies
-            // its drawing when it moves
+            
+            
             AccumulateItemInRegion(aRegion, aRect + aDelta, r, exclude, item);
           }
         } else {
-          // not moving.
+          
           if (item->IsUniform(aBuilder)) {
-            // If it's uniform, we don't need to invalidate where one part
-            // of the item was copied to another part.
+            
+            
             exclude.IntersectRect(r, r + aDelta);
           }
-          // area where a non-moving element is visible must be repainted
+          
           AccumulateItemInRegion(aRegion, aRect + aDelta, r, exclude, item);
-          // we may have bitblitted an area that was painted by a non-moving
-          // element. This bitblitted data is invalid and was copied to
-          // "r + aDelta".
+          
+          
+          
           AccumulateItemInRegion(aRegion, aRect + aDelta, r + aDelta,
                                  exclude, item);
         }
@@ -1104,18 +1104,18 @@ nsLayoutUtils::ComputeRepaintRegionForCopy(nsIFrame* aRootFrame,
   NS_ASSERTION(aRootFrame != aMovingFrame,
                "The root frame shouldn't be the one that's moving, that makes no sense");
 
-  // Build the 'after' display list over the whole area of interest.
-  // (We have to build the 'after' display list because the frame/view
-  // hierarchy has already been updated for the move.
-  // We need to ensure that the non-moving frame display items we get
-  // are the same ones we would have gotten if we had constructed the
-  // 'before' display list. So opaque moving items are only considered to
-  // cover the intersection of their old and new bounds (see
-  // nsDisplayItem::OptimizeVisibility). A moving clip item is not allowed
-  // to clip non-moving items --- this is enforced by the code that sets
-  // up nsDisplayClip items, in particular see ApplyAbsPosClipping.
-  // XXX but currently a non-moving clip item can incorrectly clip
-  // moving items! See bug 428156.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsRect rect;
   rect.UnionRect(aCopyRect, aCopyRect + aDelta);
   nsDisplayListBuilder builder(aRootFrame, PR_FALSE, PR_TRUE);
@@ -1139,8 +1139,8 @@ nsLayoutUtils::ComputeRepaintRegionForCopy(nsIFrame* aRootFrame,
   }
 #endif
 
-  // Optimize for visibility, but frames under aMovingFrame will not be
-  // considered opaque, so they don't cover non-moving frames.
+  
+  
   nsRegion visibleRegion(aCopyRect);
   visibleRegion.Or(visibleRegion, aCopyRect + aDelta);
   list.OptimizeVisibility(&builder, &visibleRegion);
@@ -1153,17 +1153,17 @@ nsLayoutUtils::ComputeRepaintRegionForCopy(nsIFrame* aRootFrame,
 #endif
 
   aRepaintRegion->SetEmpty();
-  // Any visible non-moving display items get added to the repaint region
-  // a) at their current location and b) offset by -aPt (their position in
-  // the 'before' display list) (unless they're uniform and we can exclude them).
-  // Also, any visible position-varying display items get added to the
-  // repaint region. All these areas are confined to aCopyRect+aDelta.
-  // We could do more work here: e.g., do another optimize-visibility pass
-  // with the moving items taken into account, either on the before-list
-  // or the after-list, or even both if we cloned the display lists ... but
-  // it's probably not worth it.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   AddItemsToRegion(&builder, &list, aCopyRect, rect, aDelta, aRepaintRegion);
-  // Flush the list so we don't trigger the IsEmpty-on-destruction assertion
+  
   list.DeleteAll();
   return NS_OK;
 }
@@ -1178,22 +1178,22 @@ nsLayoutUtils::GetZIndex(nsIFrame* aFrame) {
   if (position->mZIndex.GetUnit() == eStyleUnit_Integer)
     return position->mZIndex.GetIntValue();
 
-  // sort the auto and 0 elements together
+  
   return 0;
 }
 
-/**
- * Uses a binary search for find where the cursor falls in the line of text
- * It also keeps track of the part of the string that has already been measured
- * so it doesn't have to keep measuring the same text over and over
- *
- * @param "aBaseWidth" contains the width in twips of the portion 
- * of the text that has already been measured, and aBaseInx contains
- * the index of the text that has already been measured.
- *
- * @param aTextWidth returns the (in twips) the length of the text that falls
- * before the cursor aIndex contains the index of the text where the cursor falls
- */
+
+
+
+
+
+
+
+
+
+
+
+
 PRBool
 nsLayoutUtils::BinarySearchForPosition(nsIRenderingContext* aRendContext, 
                         const PRUnichar* aText,
@@ -1214,7 +1214,7 @@ nsLayoutUtils::BinarySearchForPosition(nsIRenderingContext* aRendContext,
 
   PRInt32 inx = aStartInx + (range / 2);
 
-  // Make sure we don't leave a dangling low surrogate
+  
   if (NS_IS_HIGH_SURROGATE(aText[inx-1]))
     inx++;
 
@@ -1359,7 +1359,7 @@ nsLayoutUtils::FindChildContainingDescendant(nsIFrame* aParent, nsIFrame* aDesce
       break;
     }
 
-    // The frame is not an immediate child of aParent so walk up another level
+    
     result = parent;
   }
 
@@ -1409,7 +1409,7 @@ nsLayoutUtils::GetClosestCommonAncestorViaPlaceholders(nsIFrame* aFrame1,
 
   nsPresContext* presContext = aFrame1->PresContext();
   if (presContext != aFrame2->PresContext()) {
-    // different documents, no common ancestor
+    
     return nsnull;
   }
   nsFrameManager* frameManager = presContext->PresShell()->FrameManager();
@@ -1421,8 +1421,8 @@ nsLayoutUtils::GetClosestCommonAncestorViaPlaceholders(nsIFrame* aFrame1,
     frame1Ancestors.AppendElement(f1);
   }
   if (!f1 && aKnownCommonAncestorHint) {
-    // So, it turns out aKnownCommonAncestorHint was not an ancestor of f1. Oops.
-    // Never mind. We can continue as if aKnownCommonAncestorHint was null.
+    
+    
     aKnownCommonAncestorHint = nsnull;
   }
 
@@ -1433,15 +1433,15 @@ nsLayoutUtils::GetClosestCommonAncestorViaPlaceholders(nsIFrame* aFrame1,
     frame2Ancestors.AppendElement(f2);
   }
   if (!f2 && aKnownCommonAncestorHint) {
-    // So, it turns out aKnownCommonAncestorHint was not an ancestor of f2.
-    // We need to retry with no common ancestor hint.
+    
+    
     return GetClosestCommonAncestorViaPlaceholders(aFrame1, aFrame2, nsnull);
   }
 
-  // now frame1Ancestors and frame2Ancestors give us the parent frame chain
-  // up to aKnownCommonAncestorHint, or if that is null, up to and including
-  // the root frame. We need to walk from the end (i.e., the top of the
-  // frame (sub)tree) down to aFrame1/aFrame2 looking for the first difference.
+  
+  
+  
+  
   nsIFrame* lastCommonFrame = aKnownCommonAncestorHint;
   PRInt32 last1 = frame1Ancestors.Count() - 1;
   PRInt32 last2 = frame2Ancestors.Count() - 1;
@@ -1464,8 +1464,8 @@ nsLayoutUtils::GetNextContinuationOrSpecialSibling(nsIFrame *aFrame)
     return result;
 
   if ((aFrame->GetStateBits() & NS_FRAME_IS_SPECIAL) != 0) {
-    // We only store the "special sibling" annotation with the first
-    // frame in the flow. Walk back to find that frame now.
+    
+    
     aFrame = aFrame->GetFirstInFlow();
 
     void* value = aFrame->GetProperty(nsGkAtoms::IBSplitSpecialSibling);
@@ -1503,8 +1503,8 @@ static nscoord AddPercents(nsLayoutUtils::IntrinsicWidthType aType,
 {
   nscoord result = aCurrent;
   if (aPercent > 0.0f && aType == nsLayoutUtils::PREF_WIDTH) {
-    // XXX Should we also consider percentages for min widths, up to a
-    // limit?
+    
+    
     if (aPercent >= 1.0f)
       result = nscoord_MAX;
     else
@@ -1546,11 +1546,11 @@ GetPercentHeight(const nsStyleCoord& aStyle,
     NS_ASSERTION(pos->mHeight.GetUnit() == eStyleUnit_Auto ||
                  pos->mHeight.GetUnit() == eStyleUnit_Percent,
                  "unknown height unit");
-    // There's no basis for the percentage height, so it acts like auto.
-    // Should we consider a max-height < min-height pair a basis for
-    // percentage heights?  The spec is somewhat unclear, and not doing
-    // so is simpler and avoids troubling discontinuities in behavior,
-    // so I'll choose not to. -LDB
+    
+    
+    
+    
+    
     return PR_FALSE;
   }
 
@@ -1579,10 +1579,10 @@ GetPercentHeight(const nsStyleCoord& aStyle,
   return PR_TRUE;
 }
 
-// Handles only -moz-max-content and -moz-min-content, and
-// -moz-fit-content for min-width and max-width, since the others
-// (-moz-fit-content for width, and -moz-available) have no effect on
-// intrinsic widths.
+
+
+
+
 enum eWidthProperty { PROP_WIDTH, PROP_MAX_WIDTH, PROP_MIN_WIDTH };
 static PRBool
 GetIntrinsicCoord(const nsStyleCoord& aStyle,
@@ -1605,12 +1605,12 @@ GetIntrinsicCoord(const nsStyleCoord& aStyle,
     return PR_FALSE;
   if (val == NS_STYLE_WIDTH_FIT_CONTENT) {
     if (aProperty == PROP_WIDTH)
-      return PR_FALSE; // handle like 'width: auto'
+      return PR_FALSE; 
     if (aProperty == PROP_MAX_WIDTH)
-      // constrain large 'width' values down to -moz-max-content
+      
       val = NS_STYLE_WIDTH_MAX_CONTENT;
     else
-      // constrain small 'width' or 'max-width' values up to -moz-min-content
+      
       val = NS_STYLE_WIDTH_MIN_CONTENT;
   }
 
@@ -1630,7 +1630,7 @@ GetIntrinsicCoord(const nsStyleCoord& aStyle,
 static PRInt32 gNoiseIndent = 0;
 #endif
 
-/* static */ nscoord
+ nscoord
 nsLayoutUtils::IntrinsicForContainer(nsIRenderingContext *aRenderingContext,
                                      nsIFrame *aFrame,
                                      IntrinsicWidthType aType)
@@ -1654,28 +1654,28 @@ nsLayoutUtils::IntrinsicForContainer(nsIRenderingContext *aRenderingContext,
   const nsStyleCoord &styleMinWidth = stylePos->mMinWidth;
   const nsStyleCoord &styleMaxWidth = stylePos->mMaxWidth;
 
-  // We build up two values starting with the content box, and then
-  // adding padding, border and margin.  The result is normally
-  // |result|.  Then, when we handle 'width', 'min-width', and
-  // 'max-width', we use the results we've been building in |min| as a
-  // minimum, overriding 'min-width'.  This ensures two things:
-  //   * that we don't let a value of 'box-sizing' specifying a width
-  //     smaller than the padding/border inside the box-sizing box give
-  //     a content width less than zero
-  //   * that we prevent tables from becoming smaller than their
-  //     intrinsic minimum width
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nscoord result = 0, min = 0;
 
-  // If we have a specified width (or a specified 'min-width' greater
-  // than the specified 'max-width', which works out to the same thing),
-  // don't even bother getting the frame's intrinsic width.
+  
+  
+  
   if (styleWidth.GetUnit() == eStyleUnit_Enumerated &&
       (styleWidth.GetIntValue() == NS_STYLE_WIDTH_MAX_CONTENT ||
        styleWidth.GetIntValue() == NS_STYLE_WIDTH_MIN_CONTENT)) {
-    // -moz-fit-content and -moz-available enumerated widths compute intrinsic
-    // widths just like auto.
-    // For -moz-max-content and -moz-min-content, we handle them like
-    // specified widths, but ignore -moz-box-sizing.
+    
+    
+    
+    
     boxSizing = NS_STYLE_BOX_SIZING_CONTENT;
   } else if (styleWidth.GetUnit() != eStyleUnit_Coord &&
              (styleMinWidth.GetUnit() != eStyleUnit_Coord ||
@@ -1696,8 +1696,8 @@ nsLayoutUtils::IntrinsicForContainer(nsIRenderingContext *aRenderingContext,
            aType == MIN_WIDTH ? "min" : "pref", result);
 #endif
 
-    // Handle elements with an intrinsic ratio (or size) and a specified
-    // height, min-height, or max-height.
+    
+    
     const nsStyleCoord &styleHeight = stylePos->mHeight;
     const nsStyleCoord &styleMinHeight = stylePos->mMinHeight;
     const nsStyleCoord &styleMaxHeight = stylePos->mMaxHeight;
@@ -1735,18 +1735,18 @@ nsLayoutUtils::IntrinsicForContainer(nsIRenderingContext *aRenderingContext,
   }
       
   if (aFrame->GetType() == nsGkAtoms::tableFrame) {
-    // Tables can't shrink smaller than their intrinsic minimum width,
-    // no matter what.
+    
+    
     min = aFrame->GetMinWidth(aRenderingContext);
   }
 
-  // We also need to track what has been added on outside of the box
-  // (controlled by 'box-sizing') where 'width', 'min-width' and
-  // 'max-width' are applied.  We have to account for these properties
-  // after getting all the offsets (margin, border, padding) because
-  // percentages do not operate linearly.
-  // Doing this is ok because although percentages aren't handled
-  // linearly, they are handled monotonically.
+  
+  
+  
+  
+  
+  
+  
   nscoord coordOutsideWidth = offsets.hPadding;
   float pctOutsideWidth = offsets.hPctPadding;
 
@@ -1787,8 +1787,8 @@ nsLayoutUtils::IntrinsicForContainer(nsIRenderingContext *aRenderingContext,
   }
   else if (aType == MIN_WIDTH && eStyleUnit_Percent == styleWidth.GetUnit() &&
            aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
-    // A percentage width on replaced elements means they can shrink to 0.
-    result = 0; // let |min| handle padding/border/margin
+    
+    result = 0; 
   }
   else {
     result = AddPercents(aType, result, pctTotal);
@@ -1827,7 +1827,7 @@ nsLayoutUtils::IntrinsicForContainer(nsIRenderingContext *aRenderingContext,
 
     nscoord themeWidth = presContext->DevPixelsToAppUnits(size.width);
 
-    // GMWS() returns a border-box width
+    
     themeWidth += offsets.hMargin;
     themeWidth = AddPercents(aType, themeWidth, offsets.hPctMargin);
 
@@ -1845,7 +1845,7 @@ nsLayoutUtils::IntrinsicForContainer(nsIRenderingContext *aRenderingContext,
   return result;
 }
 
-/* static */ nscoord
+ nscoord
 nsLayoutUtils::ComputeWidthDependentValue(
                  nscoord              aContainingBlockWidth,
                  const nsStyleCoord&  aCoord)
@@ -1853,6 +1853,7 @@ nsLayoutUtils::ComputeWidthDependentValue(
   NS_PRECONDITION(aContainingBlockWidth != NS_UNCONSTRAINEDSIZE,
                   "unconstrained widths no longer supported");
 
+  nscoord result;
   if (eStyleUnit_Coord == aCoord.GetUnit()) {
     return aCoord.GetCoordValue();
   }
@@ -1865,7 +1866,7 @@ nsLayoutUtils::ComputeWidthDependentValue(
   return 0;
 }
 
-/* static */ nscoord
+ nscoord
 nsLayoutUtils::ComputeWidthValue(
                  nsIRenderingContext* aRenderingContext,
                  nsIFrame*            aFrame,
@@ -1925,22 +1926,23 @@ nsLayoutUtils::ComputeWidthValue(
 }
 
 
-/* static */ nscoord
+ nscoord
 nsLayoutUtils::ComputeHeightDependentValue(
                  nscoord              aContainingBlockHeight,
                  const nsStyleCoord&  aCoord)
 {
+  nscoord result;
   if (eStyleUnit_Coord == aCoord.GetUnit()) {
     return aCoord.GetCoordValue();
   }
   if (eStyleUnit_Percent == aCoord.GetUnit()) {
-    // XXXldb Some callers explicitly check aContainingBlockHeight
-    // against NS_AUTOHEIGHT *and* unit against eStyleUnit_Percent
-    // before calling this function, so this assertion probably needs to
-    // be inside the percentage case.  However, it would be much more
-    // likely to catch problems if it were at the start of the function.
-    // XXXldb Many callers pass a non-'auto' containing block height when
-    // according to CSS2.1 they should be passing 'auto'.
+    
+    
+    
+    
+    
+    
+    
     NS_PRECONDITION(NS_AUTOHEIGHT != aContainingBlockHeight,
                     "unexpected 'containing block height'");
 
@@ -1958,15 +1960,15 @@ inline PRBool
 IsAutoHeight(const nsStyleCoord &aCoord, nscoord aCBHeight)
 {
   nsStyleUnit unit = aCoord.GetUnit();
-  return unit == eStyleUnit_Auto ||  // only for 'height'
-         unit == eStyleUnit_None ||  // only for 'max-height'
+  return unit == eStyleUnit_Auto ||  
+         unit == eStyleUnit_None ||  
          (unit == eStyleUnit_Percent && 
           aCBHeight == NS_AUTOHEIGHT);
 }
 
 #define MULDIV(a,b,c) (nscoord(PRInt64(a) * PRInt64(b) / PRInt64(c)))
 
-/* static */ nsSize
+ nsSize
 nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
                    nsIRenderingContext* aRenderingContext, nsIFrame* aFrame,
                    const nsIFrame::IntrinsicSize& aIntrinsicSize,
@@ -1974,13 +1976,13 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
                    nsSize aMargin, nsSize aBorder, nsSize aPadding)
 {
   const nsStylePosition *stylePos = aFrame->GetStylePosition();
-  // Handle intrinsic sizes and their interaction with
-  // {min-,max-,}{width,height} according to the rules in
-  // http://www.w3.org/TR/CSS21/visudet.html#min-max-widths
+  
+  
+  
 
-  // Note: throughout the following section of the function, I avoid
-  // a * (b / c) because of its reduced accuracy relative to a * b / c
-  // or (a * b) / c (which are equivalent).
+  
+  
+  
 
   const PRBool isAutoWidth = stylePos->mWidth.GetUnit() == eStyleUnit_Auto;
   const PRBool isAutoHeight = IsAutoHeight(stylePos->mHeight, aCBSize.height);
@@ -1989,7 +1991,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
   switch (stylePos->mBoxSizing) {
     case NS_STYLE_BOX_SIZING_BORDER:
       boxSizingAdjust += aBorder;
-      // fall through
+      
     case NS_STYLE_BOX_SIZING_PADDING:
       boxSizingAdjust += aPadding;
   }
@@ -2047,7 +2049,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
     minHeight = 0;
   }
 
-  // Resolve percentage intrinsic width/height as necessary:
+  
 
   NS_ASSERTION(aCBSize.width != NS_UNCONSTRAINEDSIZE,
                "Our containing block must not have unconstrained width!");
@@ -2082,14 +2084,14 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
   NS_ASSERTION(aIntrinsicRatio.width >= 0 && aIntrinsicRatio.height >= 0,
                "Intrinsic ratio has a negative component!");
 
-  // Now calculate the used values for width and height:
+  
 
   if (isAutoWidth) {
     if (isAutoHeight) {
 
-      // 'auto' width, 'auto' height
+      
 
-      // Get tentative values - CSS 2.1 sections 10.3.2 and 10.6.2:
+      
 
       nscoord tentWidth, tentHeight;
 
@@ -2098,7 +2100,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
       } else if (hasIntrinsicHeight && aIntrinsicRatio.height > 0) {
         tentWidth = MULDIV(intrinsicHeight, aIntrinsicRatio.width, aIntrinsicRatio.height);
       } else if (aIntrinsicRatio.width > 0) {
-        tentWidth = aCBSize.width - boxSizingToMarginEdgeWidth; // XXX scrollbar?
+        tentWidth = aCBSize.width - boxSizingToMarginEdgeWidth; 
         if (tentWidth < 0) tentWidth = 0;
       } else {
         tentWidth = nsPresContext::CSSPixelsToAppUnits(300);
@@ -2112,7 +2114,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
         tentHeight = nsPresContext::CSSPixelsToAppUnits(150);
       }
 
-      // Now apply min/max-width/height - CSS 2.1 sections 10.4 and 10.7:
+      
 
       if (minWidth > maxWidth)
         maxWidth = minWidth;
@@ -2146,7 +2148,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
         widthAtMinHeight = tentWidth;
       }
 
-      // The table at http://www.w3.org/TR/CSS21/visudet.html#min-max-widths :
+      
 
       if (tentWidth > maxWidth) {
         if (tentHeight > maxHeight) {
@@ -2159,9 +2161,9 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
             height = maxHeight;
           }
         } else {
-          // This also covers "(w > max-width) and (h < min-height)" since in
-          // that case (max-width/w < 1), and with (h < min-height):
-          //   max(max-width * h/w, min-height) == min-height
+          
+          
+          
           width = maxWidth;
           height = heightAtMaxWidth;
         }
@@ -2176,9 +2178,9 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
             height = heightAtMinWidth;
           }
         } else {
-          // This also covers "(w < min-width) and (h > max-height)" since in
-          // that case (min-width/w > 1), and with (h > max-height):
-          //   min(min-width * h/w, max-height) == max-height
+          
+          
+          
           width = minWidth;
           height = heightAtMinWidth;
         }
@@ -2197,7 +2199,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
 
     } else {
 
-      // 'auto' width, non-'auto' height
+      
       height = NS_CSS_MINMAX(height, minHeight, maxHeight);
       if (aIntrinsicRatio.height > 0) {
         width = MULDIV(height, aIntrinsicRatio.width, aIntrinsicRatio.height);
@@ -2212,7 +2214,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
   } else {
     if (isAutoHeight) {
 
-      // non-'auto' width, 'auto' height
+      
       width = NS_CSS_MINMAX(width, minWidth, maxWidth);
       if (aIntrinsicRatio.width > 0) {
         height = MULDIV(width, aIntrinsicRatio.height, aIntrinsicRatio.width);
@@ -2225,7 +2227,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
 
     } else {
 
-      // non-'auto' width, non-'auto' height
+      
       width = NS_CSS_MINMAX(width, minWidth, maxWidth);
       height = NS_CSS_MINMAX(height, minHeight, maxHeight);
 
@@ -2235,7 +2237,7 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(
   return nsSize(width, height);
 }
 
-/* static */ nscoord
+ nscoord
 nsLayoutUtils::MinWidthFromInline(nsIFrame* aFrame,
                                   nsIRenderingContext* aRenderingContext)
 {
@@ -2246,7 +2248,7 @@ nsLayoutUtils::MinWidthFromInline(nsIFrame* aFrame,
   return data.prevLines;
 }
 
-/* static */ nscoord
+ nscoord
 nsLayoutUtils::PrefWidthFromInline(nsIFrame* aFrame,
                                    nsIRenderingContext* aRenderingContext)
 {
@@ -2281,7 +2283,7 @@ nsLayoutUtils::DrawString(const nsIFrame*      aFrame,
     }
   }
   if (NS_FAILED(rv))
-#endif // IBMBIDI
+#endif 
   { 
     aContext->SetTextRunRTL(PR_FALSE);
     aContext->DrawString(aString, aLength, aPoint.x, aPoint.y);
@@ -2308,27 +2310,27 @@ nsLayoutUtils::GetStringWidth(const nsIFrame*      aFrame,
                                          direction, presContext, *aContext);
     }
   }
-#endif // IBMBIDI
+#endif 
   aContext->SetTextRunRTL(PR_FALSE);
   nscoord width;
   aContext->GetWidth(aString, aLength, width);
   return width;
 }
 
-/* static */ PRBool
+ PRBool
 nsLayoutUtils::GetFirstLineBaseline(const nsIFrame* aFrame, nscoord* aResult)
 {
   const nsBlockFrame* block = nsLayoutUtils::GetAsBlock(const_cast<nsIFrame*>(aFrame));
   if (!block) {
-    // For the first-line baseline we also have to check for a table, and if
-    // so, use the baseline of its first row.
+    
+    
     nsIAtom* fType = aFrame->GetType();
     if (fType == nsGkAtoms::tableOuterFrame) {
       *aResult = aFrame->GetBaseline();
       return PR_TRUE;
     }
 
-    // For first-line baselines, we have to consider scroll frames.
+    
     if (fType == nsGkAtoms::scrollFrame) {
       nsIScrollableFrame *sFrame;
       if (NS_FAILED(CallQueryInterface(const_cast<nsIFrame*>
@@ -2337,16 +2339,16 @@ nsLayoutUtils::GetFirstLineBaseline(const nsIFrame* aFrame, nscoord* aResult)
       }
       nscoord kidBaseline;
       if (GetFirstLineBaseline(sFrame->GetScrolledFrame(), &kidBaseline)) {
-        // Consider only the border and padding that contributes to the
-        // kid's position, not the scrolling, so we get the initial
-        // position.
+        
+        
+        
         *aResult = kidBaseline + aFrame->GetUsedBorderAndPadding().top;
         return PR_TRUE;
       }
       return PR_FALSE;
     }
 
-    // No baseline.
+    
     return PR_FALSE;
   }
 
@@ -2361,8 +2363,8 @@ nsLayoutUtils::GetFirstLineBaseline(const nsIFrame* aFrame, nscoord* aResult)
         return PR_TRUE;
       }
     } else {
-      // XXX Is this the right test?  We have some bogus empty lines
-      // floating around, but IsEmpty is perhaps too weak.
+      
+      
       if (line->GetHeight() != 0 || !line->IsEmpty()) {
         *aResult = line->mBounds.y + line->GetAscent();
         return PR_TRUE;
@@ -2372,12 +2374,12 @@ nsLayoutUtils::GetFirstLineBaseline(const nsIFrame* aFrame, nscoord* aResult)
   return PR_FALSE;
 }
 
-/* static */ PRBool
+ PRBool
 nsLayoutUtils::GetLastLineBaseline(const nsIFrame* aFrame, nscoord* aResult)
 {
   const nsBlockFrame* block = nsLayoutUtils::GetAsBlock(const_cast<nsIFrame*>(aFrame));
   if (!block)
-    // No baseline.  (We intentionally don't descend into scroll frames.)
+    
     return PR_FALSE;
 
   for (nsBlockFrame::const_reverse_line_iterator line = block->rbegin_lines(),
@@ -2390,14 +2392,14 @@ nsLayoutUtils::GetLastLineBaseline(const nsIFrame* aFrame, nscoord* aResult)
         *aResult = kidBaseline + kid->GetPosition().y;
         return PR_TRUE;
       } else if (kid->GetType() == nsGkAtoms::scrollFrame) {
-        // Use the bottom of the scroll frame.
-        // XXX CSS2.1 really doesn't say what to do here.
+        
+        
         *aResult = kid->GetRect().YMost();
         return PR_TRUE;
       }
     } else {
-      // XXX Is this the right test?  We have some bogus empty lines
-      // floating around, but IsEmpty is perhaps too weak.
+      
+      
       if (line->GetHeight() != 0 || !line->IsEmpty()) {
         *aResult = line->mBounds.y + line->GetAscent();
         return PR_TRUE;
@@ -2430,7 +2432,7 @@ CalculateBlockContentBottom(nsBlockFrame* aFrame)
   return contentBottom;
 }
 
-/* static */ nscoord
+ nscoord
 nsLayoutUtils::CalculateContentBottom(nsIFrame* aFrame)
 {
   NS_PRECONDITION(aFrame, "null ptr");
@@ -2467,7 +2469,7 @@ nsLayoutUtils::CalculateContentBottom(nsIFrame* aFrame)
   return contentBottom;
 }
 
-/* static */ nsIFrame*
+ nsIFrame*
 nsLayoutUtils::GetClosestLayer(nsIFrame* aFrame)
 {
   nsIFrame* layer;
@@ -2482,7 +2484,7 @@ nsLayoutUtils::GetClosestLayer(nsIFrame* aFrame)
   return aFrame->PresContext()->PresShell()->FrameManager()->GetRootFrame();
 }
 
-/* static */ nsresult
+ nsresult
 nsLayoutUtils::DrawImage(nsIRenderingContext* aRenderingContext,
                          imgIContainer* aImage,
                          const nsRect& aDestRect,
@@ -2501,9 +2503,9 @@ nsLayoutUtils::DrawImage(nsIRenderingContext* aRenderingContext,
   nsCOMPtr<nsIImage> img(do_GetInterface(imgFrame));
   if (!img) return NS_ERROR_FAILURE;
 
-  // twSrcRect is always in appunits (twips),
-  // and has nothing to do with the current transform (it's a region
-  // of the image)
+  
+  
+  
   gfxRect pxSrc;
   if (aSourceRect) {
     pxSrc.pos.x = nsIDeviceContext::AppUnitsToGfxCSSPixels(aSourceRect->x);
@@ -2525,11 +2527,11 @@ nsLayoutUtils::DrawImage(nsIRenderingContext* aRenderingContext,
 
   gfxContext *ctx = aRenderingContext->ThebesContext();
 
-  // the dest rect is affected by the current transform; that'll be
-  // handled by Image::Draw(), when we actually set up the rectangle.
   
-  // Snap the edges of where layout wants the image to the nearest
-  // pixel, but then convert back to gfxFloats for the rest of the math.
+  
+  
+  
+  
   gfxRect pxDest;
   {
     pxDest.pos.x = dc->AppUnitsToGfxUnits(aDestRect.x);
@@ -2540,10 +2542,10 @@ nsLayoutUtils::DrawImage(nsIRenderingContext* aRenderingContext,
       pxDest = ctx->DeviceToUser(pxDest);
   }
 
-  // And likewise for the dirty rect.  (Is should be OK to round to
-  // nearest rather than outwards, since any dirty rects coming from the
-  // OS should be on pixel boundaries; the rest is other things it's
-  // been intersected with, and we should be rounding those consistently.)
+  
+  
+  
+  
   gfxRect pxDirty;
   {
     pxDirty.pos.x = dc->AppUnitsToGfxUnits(dirtyRect.x);
@@ -2554,7 +2556,7 @@ nsLayoutUtils::DrawImage(nsIRenderingContext* aRenderingContext,
       pxDirty = ctx->DeviceToUser(pxDirty);
   }
 
-  // Reduce the src rect to what's needed for the dirty rect.
+  
   if (pxDirty.size.width != pxDest.size.width) {
     const gfxFloat ratio = pxSrc.size.width / pxDest.size.width;
     pxSrc.pos.x += (pxDirty.pos.x - pxDest.pos.x) * ratio;
@@ -2566,16 +2568,16 @@ nsLayoutUtils::DrawImage(nsIRenderingContext* aRenderingContext,
     pxSrc.size.height = pxDirty.size.height * ratio;
   }
 
-  // If we were asked to draw a 0-width or 0-height image,
-  // as either the src or dst, just bail; we can't do anything
-  // useful with this.
+  
+  
+  
   if (pxSrc.IsEmpty() || pxDirty.IsEmpty())
   {
     return NS_OK;
   }
 
-  // For Bug 87819
-  // imgFrame may want image to start at different position, so adjust
+  
+  
   nsIntRect pxImgFrameRect;
   imgFrame->GetRect(pxImgFrameRect);
 
@@ -2649,7 +2651,7 @@ static PRBool NonZeroStyleCoord(const nsStyleCoord& aCoord)
   }
 }
 
-/* static */ PRBool 
+ PRBool 
 nsLayoutUtils::HasNonZeroSide(const nsStyleSides& aSides)
 {
   return NonZeroStyleCoord(aSides.GetTop()) ||
@@ -2658,7 +2660,7 @@ nsLayoutUtils::HasNonZeroSide(const nsStyleSides& aSides)
          NonZeroStyleCoord(aSides.GetLeft());
 }
 
-/* static */ nsTransparencyMode
+ nsTransparencyMode
 nsLayoutUtils::GetFrameTransparency(nsIFrame* aFrame) {
   if (aFrame->GetStyleContext()->GetStyleDisplay()->mOpacity < 1.0f)
     return eTransparencyTransparent;
@@ -2692,7 +2694,7 @@ IsNonzeroCoord(const nsStyleCoord& aCoord)
   return PR_FALSE;
 }
 
-/* static */ PRUint32
+ PRUint32
 nsLayoutUtils::GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
                                        const nsStyleText* aStyleText,
                                        const nsStyleFont* aStyleFont)
@@ -2719,7 +2721,7 @@ nsLayoutUtils::GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
   return result;
 }
 
-/* static */ void
+ void
 nsLayoutUtils::GetRectDifferenceStrips(const nsRect& aR1, const nsRect& aR2,
                                        nsRect* aHStrip, nsRect* aVStrip) {
   NS_ASSERTION(aR1.TopLeft() == aR2.TopLeft(),
@@ -2741,13 +2743,13 @@ nsLayoutUtils::GetDeviceContextForScreenInfo(nsIDocShell* aDocShell)
 {
   nsCOMPtr<nsIDocShell> docShell = aDocShell;
   while (docShell) {
-    // Now make sure our size is up to date.  That will mean that the device
-    // context does the right thing on multi-monitor systems when we return it to
-    // the caller.  It will also make sure that our prescontext has been created,
-    // if we're supposed to have one.
+    
+    
+    
+    
     nsCOMPtr<nsPIDOMWindow> win = do_GetInterface(docShell);
     if (!win) {
-      // No reason to go on
+      
       return nsnull;
     }
 
