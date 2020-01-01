@@ -1,32 +1,32 @@
-/*
- * Run an xpcshell subprocess and crash it.
- *
- * @param setup
- *        A string of JavaScript code to execute in the subprocess
- *        before crashing. If this is a function and not a string,
- *        it will have .toSource() called on it, and turned into
- *        a call to itself. (for programmer convenience)
- *        This code will be evaluted between crasher_subprocess_head.js
- *        and crasher_subprocess_tail.js, so it will have access
- *        to everything defined in crasher_subprocess_head.js,
- *        which includes "crashReporter", a variable holding
- *        the crash reporter service.
- *
- * @param callback
- *        A JavaScript function to be called after the subprocess
- *        crashes. It will be passed (minidump, extra), where
- *         minidump is an nsILocalFile of the minidump file produced,
- *         and extra is an object containing the key,value pairs from
- *         the .extra file.
- *
- * @param canReturnZero
- *       If true, the subprocess may return with a zero exit code.
- *       Certain types of crashes may not cause the process to
- *       exit with an error.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function do_crash(setup, callback, canReturnZero)
 {
-  // get current process filename (xpcshell)
+  
   let ds = Components.classes["@mozilla.org/file/directory_service;1"]
     .getService(Components.interfaces.nsIProperties);
   let bin = ds.get("CurProcD", Components.interfaces.nsILocalFile);
@@ -35,14 +35,14 @@ function do_crash(setup, callback, canReturnZero)
     bin.leafName = "xpcshell.exe";
     do_check_true(bin.exists());
     if (!bin.exists())
-      // weird, can't find xpcshell binary?
+      
       do_throw("Can't find xpcshell binary!");
   }
-  // get Gre dir (GreD)
+  
   let greD = ds.get("GreD", Components.interfaces.nsILocalFile);
   let headfile = do_get_file("crasher_subprocess_head.js");
   let tailfile = do_get_file("crasher_subprocess_tail.js");
-  // run xpcshell -g GreD -f head -e "some setup code" -f tail
+  
   let process = Components.classes["@mozilla.org/process/util;1"]
                   .createInstance(Components.interfaces.nsIProcess);
   process.init(bin);
@@ -50,7 +50,7 @@ function do_crash(setup, callback, canReturnZero)
               '-f', headfile.path];
   if (setup) {
     if (typeof(setup) == "function")
-      // funky, but convenient
+      
       setup = "("+setup.toSource()+")();";
     args.push('-e', setup);
   }
@@ -58,10 +58,10 @@ function do_crash(setup, callback, canReturnZero)
   try {
       process.run(true, args, args.length);
   }
-  catch(ex) {} // on Windows we exit with a -1 status when crashing.
+  catch(ex) {} 
 
   if (!canReturnZero) {
-    // should exit with an error (should have crashed)
+    
     do_check_neq(process.exitValue, 0);
   }
 
@@ -70,9 +70,9 @@ function do_crash(setup, callback, canReturnZero)
 
 function handleMinidump(callback)
 {
-  // find minidump
+  
   let minidump = null;
-  let en = do_get_cwd().directoryEntries;
+  let en = do_get_tempdir().directoryEntries;
   while (en.hasMoreElements()) {
     let f = en.getNext().QueryInterface(Components.interfaces.nsILocalFile);
     if (f.leafName.substr(-4) == ".dmp") {
@@ -87,7 +87,7 @@ function handleMinidump(callback)
   let extrafile = minidump.clone();
   extrafile.leafName = extrafile.leafName.slice(0, -4) + ".extra";
 
-  // Just in case, don't let these files linger.
+  
   do_register_cleanup(function() {
           if (minidump.exists())
               minidump.remove(false);
@@ -111,30 +111,30 @@ function do_content_crash(setup, callback)
   do_load_child_test_harness();
   do_test_pending();
 
-  // Setting the minidump path won't work in the child, so we need to do
-  // that here.
+  
+  
   let crashReporter =
       Components.classes["@mozilla.org/toolkit/crash-reporter;1"]
       .getService(Components.interfaces.nsICrashReporter);
-  crashReporter.minidumpPath = do_get_cwd();
+  crashReporter.minidumpPath = do_get_tempdir();
 
   let headfile = do_get_file("../unit/crasher_subprocess_head.js");
   let tailfile = do_get_file("../unit/crasher_subprocess_tail.js");
   if (setup) {
     if (typeof(setup) == "function")
-      // funky, but convenient
+      
       setup = "("+setup.toSource()+")();";
   }
 
   let handleCrash = function() {
-    try {            
+    try {
       handleMinidump(callback);
     } catch (x) {
       do_report_unexpected_exception(x);
     }
     do_test_finished();
   };
-  
+
   sendCommand("load(\"" + headfile.path.replace(/\\/g, "/") + "\");", function()
     sendCommand(setup, function()
       sendCommand("load(\"" + tailfile.path.replace(/\\/g, "/") + "\");",
@@ -144,6 +144,6 @@ function do_content_crash(setup, callback)
   );
 }
 
-// Import binary APIs via js-ctypes.
+
 Components.utils.import("resource://test/CrashTestUtils.jsm");
 Components.utils.import("resource://gre/modules/KeyValueParser.jsm");
