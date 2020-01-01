@@ -5098,7 +5098,8 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
 
   
   
-  while (ancestorFrame && ancestorFrame->GetNextInFlow())
+  while (ancestorFrame &&
+         nsLayoutUtils::GetNextContinuationOrSpecialSibling(ancestorFrame))
     ancestorFrame = ancestorFrame->GetParent();
 
   if (!ancestorFrame)
