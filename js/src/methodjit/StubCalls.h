@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Brendan Eich <brendan@mozilla.org>
+ *
+ * Contributor(s):
+ *   David Anderson <danderson@mozilla.com>
+ *   David Mandelin <dmandelin@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #if !defined jslogic_h__ && defined JS_METHODJIT
 #define jslogic_h__
@@ -78,21 +78,21 @@ void JS_FASTCALL ScriptDebugEpilogue(VMFrame &f);
 void JS_FASTCALL ScriptProbeOnlyPrologue(VMFrame &f);
 void JS_FASTCALL ScriptProbeOnlyEpilogue(VMFrame &f);
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Result struct for UncachedXHelper.
+ *
+ * These functions can have one of two results:
+ *
+ *   (1) The function was executed in the interpreter. Then all fields
+ *       are NULL except unjittable.
+ *
+ *   (2) The function was not executed, and the function has been compiled
+ *       to JM native code. Then all fields are non-NULL.
+ */
 struct UncachedCallResult {
-    JSFunction *fun;          
-    void       *codeAddr;     
-    bool       unjittable;    
+    JSFunction *fun;          // callee function
+    void       *codeAddr;     // code address of compiled callee function
+    bool       unjittable;    // did we try to JIT and fail?
 
     void init() {
         fun = NULL;
@@ -101,11 +101,11 @@ struct UncachedCallResult {
     }        
 };
 
-
-
-
-
-
+/*
+ * Helper functions for stubs and IC functions for calling functions.
+ * These functions either execute the function, return a native code
+ * pointer that can be used to call the function, or throw.
+ */
 void UncachedCallHelper(VMFrame &f, uint32_t argc, bool lowered, UncachedCallResult *ucr);
 void UncachedNewHelper(VMFrame &f, uint32_t argc, UncachedCallResult *ucr);
 
@@ -115,26 +115,19 @@ void JS_FASTCALL Throw(VMFrame &f);
 void * JS_FASTCALL LookupSwitch(VMFrame &f, jsbytecode *pc);
 void * JS_FASTCALL TableSwitch(VMFrame &f, jsbytecode *origPc);
 
-void JS_FASTCALL BindName(VMFrame &f);
-void JS_FASTCALL BindNameNoCache(VMFrame &f, PropertyName *name);
+void JS_FASTCALL BindName(VMFrame &f, PropertyName *name);
 JSObject * JS_FASTCALL BindGlobalName(VMFrame &f);
 template<JSBool strict> void JS_FASTCALL SetName(VMFrame &f, PropertyName *name);
-template<JSBool strict> void JS_FASTCALL SetPropNoCache(VMFrame &f, PropertyName *name);
 template<JSBool strict> void JS_FASTCALL SetGlobalName(VMFrame &f, PropertyName *name);
-template<JSBool strict> void JS_FASTCALL SetGlobalNameNoCache(VMFrame &f, PropertyName *name);
 void JS_FASTCALL Name(VMFrame &f);
-void JS_FASTCALL GetProp(VMFrame &f);
+void JS_FASTCALL GetProp(VMFrame &f, PropertyName *name);
 void JS_FASTCALL GetPropNoCache(VMFrame &f, PropertyName *name);
 void JS_FASTCALL GetElem(VMFrame &f);
-void JS_FASTCALL CallElem(VMFrame &f);
 template<JSBool strict> void JS_FASTCALL SetElem(VMFrame &f);
 void JS_FASTCALL ToId(VMFrame &f);
-void JS_FASTCALL CallName(VMFrame &f);
-void JS_FASTCALL PushImplicitThisForGlobal(VMFrame &f);
+void JS_FASTCALL ImplicitThis(VMFrame &f, PropertyName *name);
 void JS_FASTCALL GetUpvar(VMFrame &f, uint32_t index);
-void JS_FASTCALL GetGlobalName(VMFrame &f);
 
-void JS_FASTCALL CallProp(VMFrame &f, PropertyName *name);
 template <JSBool strict> void JS_FASTCALL DelProp(VMFrame &f, PropertyName *name);
 template <JSBool strict> void JS_FASTCALL DelElem(VMFrame &f);
 void JS_FASTCALL DelName(VMFrame &f, PropertyName *name);
@@ -191,10 +184,10 @@ JSString * JS_FASTCALL TypeOf(VMFrame &f);
 JSBool JS_FASTCALL InstanceOf(VMFrame &f);
 void JS_FASTCALL FastInstanceOf(VMFrame &f);
 
-
-
-
-
+/*
+ * Helper for triggering recompilation should a name read miss a type barrier,
+ * produce undefined or -0.
+ */
 void JS_FASTCALL TypeBarrierHelper(VMFrame &f, uint32_t which);
 void JS_FASTCALL TypeBarrierReturn(VMFrame &f, Value *vp);
 void JS_FASTCALL NegZeroHelper(VMFrame &f);
@@ -230,20 +223,20 @@ void JS_FASTCALL ArrayShift(VMFrame &f);
 void JS_FASTCALL WriteBarrier(VMFrame &f, Value *addr);
 void JS_FASTCALL GCThingWriteBarrier(VMFrame &f, Value *addr);
 
-} 
+} /* namespace stubs */
 
-
-
-
-
-
-
+/* 
+ * If COND is true, return A; otherwise, return B. This allows us to choose between
+ * function template instantiations without running afoul of C++'s overload resolution
+ * rules. (Try simplifying, and you'll either see the problem --- or have found a
+ * better solution!)
+ */
 template<typename FuncPtr>
 inline FuncPtr FunctionTemplateConditional(bool cond, FuncPtr a, FuncPtr b) {
     return cond ? a : b;
 }
 
-}} 
+}} /* namespace stubs,mjit,js */
 
 extern "C" void *
 js_InternalThrow(js::VMFrame &f);
@@ -251,5 +244,5 @@ js_InternalThrow(js::VMFrame &f);
 extern "C" void *
 js_InternalInterpret(void *returnData, void *returnType, void *returnReg, js::VMFrame &f);
 
-#endif 
+#endif /* jslogic_h__ */
 

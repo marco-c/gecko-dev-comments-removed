@@ -1,39 +1,39 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# ***** BEGIN LICENSE BLOCK *****
+# Version: MPL 1.1/GPL 2.0/LGPL 2.1
+#
+# The contents of this file are subject to the Mozilla Public License Version
+# 1.1 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS" basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+# for the specific language governing rights and limitations under the
+# License.
+#
+# The Original Code is mozilla.org code.
+#
+# The Initial Developer of the Original Code is Joel Maher.
+#
+# Portions created by the Initial Developer are Copyright (C) 2010
+# the Initial Developer. All Rights Reserved.
+#
+# Contributor(s):
+# Joel Maher <joel.maher@gmail.com> (Original Developer)
+#
+# Alternatively, the contents of this file may be used under the terms of
+# either the GNU General Public License Version 2 or later (the "GPL"), or
+# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# in which case the provisions of the GPL or the LGPL are applicable instead
+# of those above. If you wish to allow use of your version of this file only
+# under the terms of either the GPL or the LGPL, and not to allow others to
+# use your version of this file under the terms of the MPL, indicate your
+# decision by deleting the provisions above and replace them with the notice
+# and other provisions required by the GPL or the LGPL. If you do not delete
+# the provisions above, a recipient may use your version of this file under
+# the terms of any one of the MPL, the GPL or the LGPL.
+#
+# ***** END LICENSE BLOCK *****
 
 import sys
 import os
@@ -109,8 +109,13 @@ class RemoteOptions(MochitestOptions):
 
         self.add_option("--robocop", action = "store",
                     type = "string", dest = "robocop",
-                    help = "use when running robotium tests on native UI")
+                    help = "name of the .ini file containing the list of tests to run")
         defaults["robocop"] = ""
+
+        self.add_option("--robocop-path", action = "store",
+                    type = "string", dest = "robocopPath",
+                    help = "Path to the folder where robocop.apk is located at.  Primarily used for ADB test running")
+        defaults["robocopPath"] = ""
 
         defaults["remoteTestRoot"] = None
         defaults["logFile"] = "mochitest.log"
@@ -147,18 +152,18 @@ class RemoteOptions(MochitestOptions):
         if (options.remoteLogFile.count('/') < 1):
             options.remoteLogFile = options.remoteTestRoot + '/' + options.remoteLogFile
 
-        
+        # remoteAppPath or app must be specified to find the product to launch
         if (options.remoteAppPath and options.app):
             print "ERROR: You cannot specify both the remoteAppPath and the app setting"
             return None
         elif (options.remoteAppPath):
             options.app = options.remoteTestRoot + "/" + options.remoteAppPath
         elif (options.app == None):
-            
+            # Neither remoteAppPath nor app are set -- error
             print "ERROR: You must specify either appPath or app"
             return None
 
-        
+        # Only reset the xrePath if it wasn't provided
         if (options.xrePath == None):
             if (automation._product == "fennec"):
                 options.xrePath = productRoot + "/xulrunner"
@@ -170,10 +175,23 @@ class RemoteOptions(MochitestOptions):
             f.write("%s" % os.getpid())
             f.close()
 
+        # Robocop specific options
+        if options.robocop != "":
+            if not os.path.exists(options.robocop):
+                print "ERROR: Unable to find specified manifest '%s'" % options.robocop
+                return None
+            options.robocop = os.path.abspath(options.robocop)
+
+        if options.robocopPath != "":
+            if not os.path.exists(os.path.join(options.robocopPath, 'robocop.apk')):
+                print "ERROR: Unable to find robocop.apk in path '%s'" % options.robocopPath
+                return None
+            options.robocopPath = os.path.abspath(options.robocopPath)
+
         return options
 
     def verifyOptions(self, options, mochitest):
-        
+        # since we are reusing verifyOptions, it will exit if App is not found
         temp = options.app
         options.app = sys.argv[0]
         tempPort = options.httpPort
@@ -191,6 +209,7 @@ class MochiRemote(Mochitest):
 
     _automation = None
     _dm = None
+    localProfile = None
 
     def __init__(self, automation, devmgr, options):
         self._automation = automation
@@ -278,6 +297,8 @@ class MochiRemote(Mochitest):
         self.server.stop()
         
     def buildProfile(self, options):
+        if self.localProfile:
+            options.profilePath = self.localProfile
         manifest = Mochitest.buildProfile(self, options)
         self.localProfile = options.profilePath
         self._dm.removeDir(self.remoteProfile)
@@ -292,7 +313,7 @@ class MochiRemote(Mochitest):
         options.logFile = self.remoteLog
         options.profilePath = self.localProfile
         retVal = Mochitest.buildURLOptions(self, options, env)
-        
+        #we really need testConfig.js (for browser chrome)
         if self._dm.pushDir(options.profilePath, self.remoteProfile) == None:
             raise devicemanager.FileError("Unable to copy profile to device.")
 
@@ -319,7 +340,7 @@ def main():
     auto = RemoteAutomation(dm_none, "fennec")
     parser = RemoteOptions(auto, scriptdir)
     options, args = parser.parse_args()
-    if (options.dm_trans == "adb" or options.robocop):
+    if (options.dm_trans == "adb"):
         if (options.deviceIP):
             dm = devicemanagerADB.DeviceManagerADB(options.deviceIP, options.devicePort)
         else:
@@ -351,39 +372,45 @@ def main():
 
     procName = options.app.split('/')[-1]
     if (dm.processExist(procName)):
-      dm.killProcess(procName)
+        dm.killProcess(procName)
     
-    if (options.robocop):
-      mp = manifestparser.TestManifest(strict=False)
-      
-      mp.read('robocop.ini')
-      robocop_tests = mp.active_tests(exists=False)
+    if options.robocop != "":
+        mp = manifestparser.TestManifest(strict=False)
+        # TODO: pull this in dynamically
+        mp.read(options.robocop)
+        robocop_tests = mp.active_tests(exists=False)
 
-      fHandle = open("robotium.config", "w")
-      fHandle.write("profile=%s\n" % (mochitest.remoteProfile))
-      fHandle.write("logfile=%s\n" % (options.remoteLogFile))
-      fHandle.close()
-      deviceRoot = dm.getDeviceRoot()
+        fHandle = open("robotium.config", "w")
+        fHandle.write("profile=%s\n" % (mochitest.remoteProfile))
+        fHandle.write("logfile=%s\n" % (options.remoteLogFile))
+        fHandle.close()
+        deviceRoot = dm.getDeviceRoot()
       
-      
-      dm.pushFile("robotium.config", "/sdcard/robotium.config")
-      dm.pushFile(os.path.abspath(options.robocop + "/fennec_ids.txt"), "/sdcard/fennec_ids.txt")
-      options.extraPrefs.append('robocop.logfile="%s/robocop.log"' % deviceRoot)
+        # Note, we are pushing to /sdcard since we have this location hard coded in robocop
+        dm.pushFile("robotium.config", "/sdcard/robotium.config")
+        dm.pushFile(os.path.abspath(options.robocop + "/fennec_ids.txt"), "/sdcard/fennec_ids.txt")
+        options.extraPrefs.append('robocop.logfile="%s/robocop.log"' % deviceRoot)
 
-      manifest = mochitest.buildProfile(options)
-      mochitest.startWebServer(options)
+        if (options.dm_trans == 'adb' and options.robocopPath):
+          dm.checkCmd(["install", "-r", os.path.join(options.robocopPath, "robocop.apk")])
 
-      if (options.dm_trans == 'adb'):
-        dm.checkCmd(["install", "-r", os.path.join(options.robocop, "robocop.apk")])
+        appname = options.app
         for test in robocop_tests:
-          cmd = ["shell", "am", "instrument", "-w", "-e", "class"]
-          cmd.append("%s.tests.%s" % (options.app, test['name']))
-          cmd.append("org.mozilla.roboexample.test/android.test.InstrumentationTestRunner")
-          retVal = dm.checkCmd(cmd)
-      else:
-        
-        retVal = dm.launchProcess(["am", "instrument", "-w", "org.mozilla.roboexample.test/android.test.InstrumentationTestRunner"])
-      mochitest.stopWebServer(options)
+            if options.testPath and options.testPath != test['name']:
+                continue
+
+            options.app = "am"
+            options.browserArgs = ["instrument", "-w", "-e", "class"]
+            options.browserArgs.append("%s.tests.%s" % (appname, test['name']))
+            options.browserArgs.append("org.mozilla.roboexample.test/android.test.InstrumentationTestRunner")
+
+            try:
+                retVal = mochitest.runTests(options)
+            except:
+                print "TEST-UNEXPECTED-ERROR | %s | Exception caught while running robocop tests." % sys.exc_info()[1]
+                mochitest.stopWebServer(options)
+                mochitest.stopWebSocketServer(options)
+                sys.exit(1)
     else:
       try:
         retVal = mochitest.runTests(options)
@@ -392,7 +419,7 @@ def main():
         mochitest.stopWebServer(options)
         mochitest.stopWebSocketServer(options)
         sys.exit(1)
-      
+
     sys.exit(retVal)
         
 if __name__ == "__main__":
