@@ -915,6 +915,8 @@ JS_StringToVersion(const char *string);
 
 
 #define JSOPTION_METHODJIT      JS_BIT(14)      
+#define JSOPTION_ROPES          JS_BIT(16)      
+
 
 extern JS_PUBLIC_API(uint32)
 JS_GetOptions(JSContext *cx);
