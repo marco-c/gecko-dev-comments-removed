@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ScriptProcessorNode.h"
 #include "mozilla/dom/ScriptProcessorNodeBinding.h"
@@ -34,8 +34,8 @@ NS_INTERFACE_MAP_END_INHERITING(AudioNode)
 NS_IMPL_ADDREF_INHERITED(ScriptProcessorNode, AudioNode)
 NS_IMPL_RELEASE_INHERITED(ScriptProcessorNode, AudioNode)
 
-// This class manages a queue of output buffers shared between
-// the main thread and the Media Stream Graph thread.
+
+
 class SharedBuffers
 {
 private:
@@ -55,7 +55,7 @@ private:
       return mBufferList.size();
     }
 
-    // Produce one buffer
+    
     AudioChunk& Produce()
     {
       mMutex.AssertCurrentThreadOwns();
@@ -64,7 +64,7 @@ private:
       return mBufferList.back();
     }
 
-    // Consumes one buffer.
+    
     AudioChunk Consume()
     {
       mMutex.AssertCurrentThreadOwns();
@@ -78,11 +78,11 @@ private:
   private:
     typedef std::deque<AudioChunk> BufferList;
 
-    // Synchronizes access to mBufferList.  Note that it's the responsibility
-    // of the callers to perform the required locking, and we assert that every
-    // time we access mBufferList.
+    
+    
+    
     Mutex mMutex;
-    // The list representing the queue.
+    
     BufferList mBufferList;
   };
 
@@ -93,7 +93,7 @@ public:
   {
   }
 
-  // main thread
+  
   void FinishProducingOutputBuffer(ThreadSharedFloatArrayBufferList* aBuffer,
                                    uint32_t aBufferSize)
   {
@@ -117,7 +117,7 @@ public:
     }
   }
 
-  // graph thread
+  
   AudioChunk GetOutputBuffer()
   {
     MOZ_ASSERT(!NS_IsMainThread());
@@ -131,10 +131,10 @@ public:
         }
         buffer = mOutputQueue.Consume();
       } else {
-        // If we're out of buffers to consume, just output silence
+        
         buffer.SetNull(WEBAUDIO_BLOCK_SIZE);
         if (mDelaySoFar != TRACK_TICKS_MAX) {
-          // Remember the delay that we just hit
+          
           mDelaySoFar += WEBAUDIO_BLOCK_SIZE;
         }
       }
@@ -151,9 +151,9 @@ public:
 
 private:
   OutputQueue mOutputQueue;
-  // How much delay we've seen so far.  This measures the amount of delay
-  // caused by the main thread lagging behind in producing output buffers.
-  // TRACK_TICKS_MAX means that we have not received our first buffer yet.
+  
+  
+  
   TrackTicks mDelaySoFar;
 };
 
@@ -190,13 +190,13 @@ public:
   {
     MutexAutoLock lock(NodeMutex());
 
-    // If our node is dead, just output silence
+    
     if (!Node()) {
       aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
       return;
     }
 
-    // First, record our input buffer
+    
     for (uint32_t i = 0; i < mInputChannels.Length(); ++i) {
       if (aInput.IsNull()) {
         PodZero(mInputChannels[i] + mInputWriteIndex,
@@ -211,9 +211,9 @@ public:
     }
     mInputWriteIndex += aInput.GetDuration();
 
-    // Now, see if we have data to output
-    // Note that we need to do this before sending the buffer to the main
-    // thread so that our delay time is updated.
+    
+    
+    
     *aOutput = mSharedBuffers->GetOutputBuffer();
 
     if (mInputWriteIndex >= mBufferSize) {
@@ -238,13 +238,13 @@ private:
   {
     MOZ_ASSERT(!NS_IsMainThread());
 
-    // we now have a full input buffer ready to be sent to the main thread.
+    
     TrackTicks playbackTick = mSource->GetCurrentPosition();
-    // Add the duration of the current sample
+    
     playbackTick += WEBAUDIO_BLOCK_SIZE;
-    // Add the delay caused by the main thread
+    
     playbackTick += mSharedBuffers->DelaySoFar();
-    // Compute the playback time in the coordinate system of the destination
+    
     double playbackTime =
       WebAudioUtils::StreamPositionToDestinationTime(playbackTick,
                                                      mSource,
@@ -271,7 +271,7 @@ private:
 
       NS_IMETHODIMP Run()
       {
-        // If it's not safe to run scripts right now, schedule this to run later
+        
         if (!nsContentUtils::IsSafeToRunScript()) {
           nsContentUtils::AddScriptRunner(this);
           return NS_OK;
@@ -279,10 +279,10 @@ private:
 
         nsRefPtr<ScriptProcessorNode> node;
         {
-          // No need to keep holding the lock for the whole duration of this
-          // function, since we're holding a strong reference to it, so if
-          // we can obtain the reference, we will hold the node alive in
-          // this function.
+          
+          
+          
+          
           MutexAutoLock lock(mStream->Engine()->NodeMutex());
           node = static_cast<ScriptProcessorNode*>(mStream->Engine()->Node());
         }
@@ -294,7 +294,7 @@ private:
         if (cx) {
           JSAutoRequest ar(cx);
 
-          // Create the input buffer
+          
           nsRefPtr<AudioBuffer> inputBuffer;
           if (!mNullInput) {
             inputBuffer = new AudioBuffer(node->Context(),
@@ -303,30 +303,30 @@ private:
             if (!inputBuffer->InitializeBuffers(mInputChannels.Length(), cx)) {
               return NS_OK;
             }
-            // Put the channel data inside it
+            
             for (uint32_t i = 0; i < mInputChannels.Length(); ++i) {
               inputBuffer->SetRawChannelContents(cx, i, mInputChannels[i]);
             }
           }
 
-          // Ask content to produce data in the output buffer
-          // Note that we always avoid creating the output buffer here, and we try to
-          // avoid creating the input buffer as well.  The AudioProcessingEvent class
-          // knows how to lazily create them if needed once the script tries to access
-          // them.  Otherwise, we may be able to get away without creating them!
+          
+          
+          
+          
+          
           nsRefPtr<AudioProcessingEvent> event = new AudioProcessingEvent(node, nullptr, nullptr);
           event->InitEvent(inputBuffer,
                            mInputChannels.Length(),
                            mPlaybackTime);
           node->DispatchTrustedEvent(event);
 
-          // Steal the output buffers
+          
           nsRefPtr<ThreadSharedFloatArrayBufferList> output;
           if (event->HasOutputBuffer()) {
             output = event->OutputBuffer()->GetThreadSharedChannelsForRate(cx);
           }
 
-          // Append it to our output buffer queue
+          
           node->GetSharedBuffers()->FinishProducingOutputBuffer(output, node->BufferSize());
         }
         return NS_OK;
@@ -350,7 +350,7 @@ private:
   AudioNodeStream* mDestination;
   InputChannels mInputChannels;
   const uint32_t mBufferSize;
-  // The write index into the current input buffer
+  
   uint32_t mInputWriteIndex;
   bool mSeenNonSilenceInput;
 };
@@ -360,13 +360,13 @@ ScriptProcessorNode::ScriptProcessorNode(AudioContext* aContext,
                                          uint32_t aNumberOfInputChannels,
                                          uint32_t aNumberOfOutputChannels)
   : AudioNode(aContext,
-              2,
-              ChannelCountMode::Explicit,
-              ChannelInterpretation::Speakers)
+              aNumberOfInputChannels,
+              mozilla::dom::ChannelCountMode::Explicit,
+              mozilla::dom::ChannelInterpretation::Speakers)
   , mSharedBuffers(new SharedBuffers())
   , mBufferSize(aBufferSize ?
-                  aBufferSize : // respect what the web developer requested
-                  4096)         // choose our own buffer size -- 4KB for now
+                  aBufferSize : 
+                  4096)         
   , mNumberOfOutputChannels(aNumberOfOutputChannels)
 {
   MOZ_ASSERT(BufferSize() % WEBAUDIO_BLOCK_SIZE == 0, "Invalid buffer size");
@@ -375,8 +375,7 @@ ScriptProcessorNode::ScriptProcessorNode(AudioContext* aContext,
                                   aContext->Destination(),
                                   BufferSize(),
                                   aNumberOfInputChannels);
-  mStream = aContext->Graph()->CreateAudioNodeStream(engine, MediaStreamGraph::INTERNAL_STREAM,
-                                                     aNumberOfInputChannels);
+  mStream = aContext->Graph()->CreateAudioNodeStream(engine, MediaStreamGraph::INTERNAL_STREAM);
   engine->SetSourceStream(static_cast<AudioNodeStream*> (mStream.get()));
 }
 
