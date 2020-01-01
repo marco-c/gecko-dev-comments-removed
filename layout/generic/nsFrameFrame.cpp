@@ -337,7 +337,16 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   aBuilder->EnterPresShell(f, dirty);
 
-  rv = f->BuildDisplayListForStackingContext(aBuilder, dirty, aLists.Content());
+  
+  nsDisplayList childItems;
+  rv = f->BuildDisplayListForStackingContext(aBuilder, dirty, &childItems);
+  if (NS_SUCCEEDED(rv)) {
+    rv = aLists.Content()->AppendNewToTop(
+        new (aBuilder) nsDisplayClip(nsnull, &childItems,
+              nsRect(aBuilder->ToReferenceFrame(f), f->GetSize())));
+    
+    childItems.DeleteAll();
+  }
 
   aBuilder->LeavePresShell(f, dirty);
   return rv;
