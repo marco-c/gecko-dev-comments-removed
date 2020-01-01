@@ -170,19 +170,19 @@ nsHTMLFormatConverter::CanConvert(const char *aFromDataFlavor, const char *aToDa
 
     
   
-  *_retval = PR_FALSE;
+  *_retval = false;
   nsAutoString fromFlavor; fromFlavor.AssignWithConversion( aFromDataFlavor );
   if ( !nsCRT::strcmp(aFromDataFlavor, kHTMLMime) ) {
     if ( !nsCRT::strcmp(aToDataFlavor, kHTMLMime) )
-      *_retval = PR_TRUE;
+      *_retval = true;
     else if ( !nsCRT::strcmp(aToDataFlavor, kUnicodeMime) )
-      *_retval = PR_TRUE;
+      *_retval = true;
 #if NOT_NOW
 
 
 
     else if ( toFlavor.Equals(kAOLMailMime) )
-      *_retval = PR_TRUE;
+      *_retval = true;
 #endif
   }
   return NS_OK;
@@ -302,7 +302,7 @@ nsHTMLFormatConverter::ConvertFromHTMLToUnicode(const nsAutoString & aFromStr, n
 
   parser->SetContentSink(sink);
 
-  parser->Parse(aFromStr, 0, NS_LITERAL_CSTRING("text/html"), PR_TRUE, eDTDMode_fragment);
+  parser->Parse(aFromStr, 0, NS_LITERAL_CSTRING("text/html"), true, eDTDMode_fragment);
   
   return NS_OK;
 } 
