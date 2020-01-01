@@ -5,6 +5,7 @@
 
 
 @namespace url(http:
+@namespace xml url(http:
 
 style, script, symbol {
  display: none;
@@ -59,4 +60,8 @@ foreignObject {
 
 *|*::-moz-svg-text {
   unicode-bidi: inherit;
+}
+
+*[xml|space=preserve] {
+  white-space: -moz-pre-discard-newlines;
 }
