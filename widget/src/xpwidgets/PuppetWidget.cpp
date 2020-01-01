@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at:
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Code.
- *
- * The Initial Developer of the Original Code is
- *   The Mozilla Foundation
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Chris Jones <jones.chris.g@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "mozilla/dom/PBrowserChild.h"
 #include "BasicLayers.h"
@@ -53,11 +53,11 @@ InvalidateRegion(nsIWidget* aWidget, const nsIntRegion& aRegion)
 {
   nsIntRegionRectIterator it(aRegion);
   while(const nsIntRect* r = it.Next()) {
-    aWidget->Invalidate(*r, PR_FALSE/*async*/);
+    aWidget->Invalidate(*r, PR_FALSE);
   }
 }
 
-/*static*/ already_AddRefed<nsIWidget>
+ already_AddRefed<nsIWidget>
 nsIWidget::CreatePuppetWidget(PBrowserChild *aTabChild)
 {
   NS_ABORT_IF_FALSE(nsIWidget::UsePuppetWidgets(),
@@ -70,7 +70,7 @@ nsIWidget::CreatePuppetWidget(PBrowserChild *aTabChild)
 namespace mozilla {
 namespace widget {
 
-// Arbitrary, fungible.
+
 const size_t PuppetWidget::kMaxDimension = 4000;
 
 NS_IMPL_ISUPPORTS_INHERITED1(PuppetWidget, nsBaseWidget,
@@ -111,8 +111,9 @@ PuppetWidget::Create(nsIWidget        *aParent,
                                       gfxASurface::ContentFromFormat(gfxASurface::ImageFormatARGB32));
 
   mIMEComposing = PR_FALSE;
-  mIMELastReceivedSeqno = 0;
-  mIMELastBlurSeqno = 0;
+  PRUint32 chromeSeqno;
+  mTabChild->SendNotifyIMEFocus(false, &mIMEPreference, &chromeSeqno);
+  mIMELastBlurSeqno = mIMELastReceivedSeqno = chromeSeqno;
 
   PuppetWidget* parent = static_cast<PuppetWidget*>(aParent);
   if (parent) {
@@ -188,8 +189,8 @@ PuppetWidget::Resize(PRInt32 aWidth,
     return mChild->Resize(aWidth, aHeight, aRepaint);
   }
 
-  // XXX: roc says that |aRepaint| dictates whether or not to
-  // invalidate the expanded area
+  
+  
   if (oldBounds.Size() < mBounds.Size() && aRepaint) {
     nsIntRegion dirty(mBounds);
     dirty.Sub(dirty,  oldBounds);
@@ -206,8 +207,8 @@ PuppetWidget::Resize(PRInt32 aWidth,
 NS_IMETHODIMP
 PuppetWidget::SetFocus(PRBool aRaise)
 {
-  // XXX/cjones: someone who knows about event handling needs to
-  // decide how this should work.
+  
+  
   return NS_OK;
 }
 
@@ -259,7 +260,7 @@ PuppetWidget::InitEvent(nsGUIEvent& event, nsIntPoint* aPoint)
     event.refPoint.y = 0;
   }
   else {
-    // use the point override if provided
+    
     event.refPoint.x = aPoint->x;
     event.refPoint.y = aPoint->y;
   }
@@ -406,7 +407,7 @@ PuppetWidget::OnIMEFocusChange(PRBool aFocus)
     nsEventStatus status;
     nsQueryContentEvent queryEvent(PR_TRUE, NS_QUERY_TEXT_CONTENT, this);
     InitEvent(queryEvent, nsnull);
-    // Query entire content
+    
     queryEvent.InitForQueryTextContent(0, PR_UINT32_MAX);
     DispatchEvent(&queryEvent, status);
 
@@ -414,7 +415,7 @@ PuppetWidget::OnIMEFocusChange(PRBool aFocus)
       mTabChild->SendNotifyIMETextHint(queryEvent.mReply.mString);
     }
   } else {
-    // ResetInputState might not have been called yet
+    
     ResetInputState();
   }
 
@@ -426,9 +427,9 @@ PuppetWidget::OnIMEFocusChange(PRBool aFocus)
 
   if (aFocus) {
     if (!mIMEPreference.mWantUpdates && !mIMEPreference.mWantHints)
-      // call OnIMEFocusChange on blur but no other updates
+      
       return NS_SUCCESS_IME_NO_UPDATES;
-    OnIMESelectionChange(); // Update selection
+    OnIMESelectionChange(); 
   } else {
     mIMELastBlurSeqno = chromeSeqno;
   }
@@ -491,7 +492,7 @@ PuppetWidget::DispatchPaintEvent()
   event.region = mDirtyRegion;
   event.willSendDidPaint = PR_TRUE;
 
-  // reset repaint tracking
+  
   mDirtyRegion.SetEmpty();
   mPaintTask.Revoke();
 
@@ -519,7 +520,7 @@ PuppetWidget::DispatchResizeEvent()
 {
   nsSizeEvent event(PR_TRUE, NS_SIZE, this);
 
-  nsIntRect rect = mBounds;     // copy in case something messes with it
+  nsIntRect rect = mBounds;     
   event.windowSize = &rect;
   event.refPoint.x = rect.x;
   event.refPoint.y = rect.y;
@@ -549,5 +550,5 @@ PuppetWidget::PaintTask::Run()
   return NS_OK;
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
