@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim: set sw=4 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/basictypes.h"
 
@@ -96,6 +96,11 @@
 # include "AndroidBridge.h"
 #endif
 
+#ifdef MOZ_WIDGET_GONK
+#include "nsIVolume.h"
+#include "nsIVolumeService.h"
+#endif
+
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 static const char* sClipboardTextFlavors[] = { kUnicodeMime };
 
@@ -150,10 +155,10 @@ nsDataHashtable<nsStringHashKey, ContentParent*>* ContentParent::gAppContentPare
 nsTArray<ContentParent*>* ContentParent::gNonAppContentParents;
 nsTArray<ContentParent*>* ContentParent::gPrivateContent;
 
-
+// The first content child has ID 1, so the chrome process can have ID 0.
 static PRUint64 gContentChildID = 1;
 
- ContentParent*
+/*static*/ ContentParent*
 ContentParent::GetNewOrUsed()
 {
     if (!gNonAppContentParents)
@@ -171,13 +176,13 @@ ContentParent::GetNewOrUsed()
     }
 
     nsRefPtr<ContentParent> p =
-        new ContentParent( EmptyString());
+        new ContentParent(/* appManifestURL = */ EmptyString());
     p->Init();
     gNonAppContentParents->AppendElement(p);
     return p;
 }
 
- TabParent*
+/*static*/ TabParent*
 ContentParent::CreateBrowser(mozIApplication* aApp, bool aIsBrowserElement)
 {
     if (!aApp) {
@@ -185,9 +190,9 @@ ContentParent::CreateBrowser(mozIApplication* aApp, bool aIsBrowserElement)
             nsRefPtr<TabParent> tp(new TabParent(aApp, aIsBrowserElement));
             return static_cast<TabParent*>(
                 cp->SendPBrowserConstructor(
-                    
+                    // DeallocPBrowserParent() releases the ref we take here
                     tp.forget().get(),
-                    0,
+                    /*chromeFlags*/0,
                     aIsBrowserElement, nsIScriptSecurityManager::NO_APP_ID));
         }
         return nullptr;
@@ -199,7 +204,7 @@ ContentParent::CreateBrowser(mozIApplication* aApp, bool aIsBrowserElement)
         gAppContentParents->Init();
     }
 
-    
+    // Each app gets its own ContentParent instance.
     nsAutoString manifestURL;
     if (NS_FAILED(aApp->GetManifestURL(manifestURL))) {
         NS_ERROR("Failed to get manifest URL");
@@ -212,8 +217,8 @@ ContentParent::CreateBrowser(mozIApplication* aApp, bool aIsBrowserElement)
         return nullptr;
     }
 
-    
-    
+    // Send the local app ID to the new TabChild so it knows what app
+    // it is.
     PRUint32 appId;
     if (NS_FAILED(appsService->GetAppLocalIdByManifestURL(manifestURL, &appId))) {
         NS_ERROR("Failed to get local app ID");
@@ -229,9 +234,9 @@ ContentParent::CreateBrowser(mozIApplication* aApp, bool aIsBrowserElement)
 
     nsRefPtr<TabParent> tp(new TabParent(aApp, aIsBrowserElement));
     return static_cast<TabParent*>(
-        
+        // DeallocPBrowserParent() releases the ref we take here
         p->SendPBrowserConstructor(tp.forget().get(),
-                                   0,
+                                   /*chromeFlags*/0,
                                    aIsBrowserElement, appId));
 }
 
@@ -270,6 +275,9 @@ ContentParent::Init()
         obs->AddObserver(this, "child-gc-request", false);
         obs->AddObserver(this, "child-cc-request", false);
         obs->AddObserver(this, "last-pb-context-exited", false);
+#ifdef MOZ_WIDGET_GONK
+        obs->AddObserver(this, NS_VOLUME_STATE_CHANGED, false);
+#endif
 #ifdef ACCESSIBILITY
         obs->AddObserver(this, "a11y-init-or-shutdown", false);
 #endif
@@ -285,8 +293,8 @@ ContentParent::Init()
     }
 
 #ifdef ACCESSIBILITY
-    
-    
+    // If accessibility is running in chrome process then start it in content
+    // process.
     if (nsIPresShell::IsAccessibilityActive()) {
         unused << SendActivateA11y();
     }
@@ -297,12 +305,12 @@ void
 ContentParent::ShutDown()
 {
     if (mIsAlive) {
-        
-        
+        // Close() can only be called once.  It kicks off the
+        // destruction sequence.
         Close();
     }
-    
-    
+    // NB: must MarkAsDead() here so that this isn't accidentally
+    // returned from Get*() while in the midst of shutdown.
     MarkAsDead();
 }
 
@@ -347,16 +355,16 @@ ContentParent::OnChannelConnected(int32 pid)
         SetOtherProcess(handle);
 
 #if defined(ANDROID) || defined(LINUX)
-        
+        // Check nice preference
         PRInt32 nice = Preferences::GetInt("dom.ipc.content.nice", 0);
 
-        
+        // Environment variable overrides preference
         char* relativeNicenessStr = getenv("MOZ_CHILD_PROCESS_RELATIVE_NICENESS");
         if (relativeNicenessStr) {
             nice = atoi(relativeNicenessStr);
         }
 
-        
+        /* make the GUI thread have higher priority on single-cpu devices */
         nsCOMPtr<nsIPropertyBag2> infoService = do_GetService(NS_SYSTEMINFO_CONTRACTID);
         if (infoService) {
             PRInt32 cpus;
@@ -376,20 +384,20 @@ void
 ContentParent::ProcessingError(Result what)
 {
     if (MsgDropped == what) {
-        
+        // Messages sent after crashes etc. are not a big deal.
         return;
     }
-    
-    
-    
-    
+    // Other errors are big deals.  This ensures the process is
+    // eventually killed, but doesn't immediately KILLITWITHFIRE
+    // because we want to get a minidump if possible.  After a timeout
+    // though, the process is forceably killed.
     if (!KillProcess(OtherProcess(), 1, false)) {
         NS_WARNING("failed to kill subprocess!");
     }
     XRE_GetIOMessageLoop()->PostTask(
         FROM_HERE,
         NewRunnableFunction(&ProcessWatcher::EnsureProcessTerminated,
-                            OtherProcess(), true));
+                            OtherProcess(), /*force=*/true));
 }
 
 namespace {
@@ -402,14 +410,14 @@ DelayedDeleteSubprocess(GeckoChildProcessHost* aSubprocess)
                    new DeleteTask<GeckoChildProcessHost>(aSubprocess));
 }
 
-
-
-
+// This runnable only exists to delegate ownership of the
+// ContentParent to this runnable, until it's deleted by the event
+// system.
 struct DelayedDeleteContentParentTask : public nsRunnable
 {
     DelayedDeleteContentParentTask(ContentParent* aObj) : mObj(aObj) { }
 
-    
+    // No-op
     NS_IMETHODIMP Run() { return NS_OK; }
 
     nsRefPtr<ContentParent> mObj;
@@ -431,6 +439,9 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
         obs->RemoveObserver(static_cast<nsIObserver*>(this), "child-gc-request");
         obs->RemoveObserver(static_cast<nsIObserver*>(this), "child-cc-request");
         obs->RemoveObserver(static_cast<nsIObserver*>(this), "last-pb-context-exited");
+#ifdef MOZ_WIDGET_GONK
+        obs->RemoveObserver(static_cast<nsIObserver*>(this), NS_VOLUME_STATE_CHANGED);
+#endif
 #ifdef ACCESSIBILITY
         obs->RemoveObserver(static_cast<nsIObserver*>(this), "a11y-init-or-shutdown");
 #endif
@@ -438,11 +449,11 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
 
     mMessageManager->Disconnect();
 
-    
+    // clear the child memory reporters
     InfallibleTArray<MemoryReport> empty;
     SetChildMemoryReporters(empty);
 
-    
+    // remove the global remote preferences observers
     Preferences::RemoveObserver(this, "");
 
     RecvRemoveGeolocationListener();
@@ -483,22 +494,22 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
                  NewRunnableFunction(DelayedDeleteSubprocess, mSubprocess));
     mSubprocess = NULL;
 
-    
-    
-    
-    
-    
-    
-    
+    // IPDL rules require actors to live on past ActorDestroy, but it
+    // may be that the kungFuDeathGrip above is the last reference to
+    // |this|.  If so, when we go out of scope here, we're deleted and
+    // all hell breaks loose.
+    //
+    // This runnable ensures that a reference to |this| lives on at
+    // least until after the current task finishes running.
     NS_DispatchToCurrentThread(new DelayedDeleteContentParentTask(this));
 }
 
 void
 ContentParent::NotifyTabDestroyed(PBrowserParent* aTab)
 {
-    
-    
-    
+    // There can be more than one PBrowser for a given app process
+    // because of popup windows.  When the last one closes, shut
+    // us down.
     if (IsForApp() && ManagedPBrowserParent().Length() == 1) {
         MessageLoop::current()->PostTask(
             FROM_HERE,
@@ -534,8 +545,8 @@ ContentParent::ContentParent(const nsAString& aAppManifestURL)
     , mSendPermissionUpdates(false)
     , mAppManifestURL(aAppManifestURL)
 {
-    
-    
+    // From this point on, NS_WARNING, NS_ASSERTION, etc. should print out the
+    // PID along with the warning.
     nsDebugImpl::SetMultiprocessMode("Parent");
 
     NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
@@ -543,8 +554,8 @@ ContentParent::ContentParent(const nsAString& aAppManifestURL)
 
     bool useOffMainThreadCompositing = !!CompositorParent::CompositorLoop();
     if (useOffMainThreadCompositing) {
-        
-        
+        // We need the subprocess's ProcessHandle to create the
+        // PCompositor channel below.  Block just until we have that.
         mSubprocess->LaunchAndWaitForProcessHandle();
     } else {
         mSubprocess->AsyncLaunch();
@@ -552,14 +563,14 @@ ContentParent::ContentParent(const nsAString& aAppManifestURL)
     Open(mSubprocess->GetChannel(), mSubprocess->GetChildProcessHandle());
     unused << SendSetID(gContentChildID++);
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // NB: internally, this will send an IPC message to the child
+    // process to get it to create the CompositorChild.  This
+    // message goes through the regular IPC queue for this
+    // channel, so delivery will happen-before any other messages
+    // we send.  The CompositorChild must be created before any
+    // PBrowsers are created, because they rely on the Compositor
+    // already being around.  (Creation is async, so can't happen
+    // on demand.)
     if (useOffMainThreadCompositing) {
         DebugOnly<bool> opened = PCompositor::Open(this);
         MOZ_ASSERT(opened);
@@ -575,7 +586,7 @@ ContentParent::ContentParent(const nsAString& aAppManifestURL)
         nsCString version(gAppData->version);
         nsCString buildID(gAppData->buildID);
 
-        
+        //Sending all information to content process
         unused << SendAppInfo(version, buildID);
     }
 
@@ -589,7 +600,7 @@ ContentParent::~ContentParent()
 
     NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 
-    
+    // We should be removed from all these lists in ActorDestroy.
     MOZ_ASSERT(!gPrivateContent || !gPrivateContent->Contains(this));
     if (mAppManifestURL.IsEmpty()) {
         MOZ_ASSERT(!gNonAppContentParents ||
@@ -667,7 +678,7 @@ ContentParent::RecvReadPermissions(InfallibleTArray<IPC::Permission>* aPermissio
                                                     expireType, expireTime));
     }
 
-    
+    // Ask for future changes
     mSendPermissionUpdates = true;
 #endif
 
@@ -692,7 +703,7 @@ ContentParent::RecvSetClipboardText(const nsString& text, const PRInt32& whichCl
     NS_ENSURE_SUCCESS(rv, true);
     trans->Init(nullptr);
     
-    
+    // If our data flavor has already been added, this will fail. But we don't care
     trans->AddDataFlavor(kUnicodeMime);
     
     nsCOMPtr<nsISupports> nsisupportsDataWrapper =
@@ -725,7 +736,7 @@ ContentParent::RecvGetClipboardText(const PRInt32& whichClipboard, nsString* tex
         return false;
 
     nsCOMPtr<nsISupportsString> supportsString = do_QueryInterface(tmp);
-    
+    // No support for non-text data
     if (!supportsString)
         return false;
     supportsString->GetData(*text);
@@ -762,14 +773,14 @@ ContentParent::RecvGetSystemColors(const PRUint32& colorsCount, InfallibleTArray
 #ifdef MOZ_WIDGET_ANDROID
     NS_ASSERTION(AndroidBridge::Bridge() != nullptr, "AndroidBridge is not available");
     if (AndroidBridge::Bridge() == nullptr) {
-        
+        // Do not fail - the colors won't be right, but it's not critical
         return true;
     }
 
     colors->AppendElements(colorsCount);
 
-    
-    
+    // The array elements correspond to the members of AndroidSystemColors structure,
+    // so just pass the pointer to the elements buffer
     AndroidBridge::Bridge()->GetSystemColors((AndroidSystemColors*)colors->Elements());
 #endif
     return true;
@@ -781,7 +792,7 @@ ContentParent::RecvGetIconForExtension(const nsCString& aFileExt, const PRUint32
 #ifdef MOZ_WIDGET_ANDROID
     NS_ASSERTION(AndroidBridge::Bridge() != nullptr, "AndroidBridge is not available");
     if (AndroidBridge::Bridge() == nullptr) {
-        
+        // Do not fail - just no icon will be shown
         return true;
     }
 
@@ -795,7 +806,7 @@ ContentParent::RecvGetIconForExtension(const nsCString& aFileExt, const PRUint32
 bool
 ContentParent::RecvGetShowPasswordSetting(bool* showPassword)
 {
-    
+    // default behavior is to show the last password character
     *showPassword = true;
 #ifdef MOZ_WIDGET_ANDROID
     NS_ASSERTION(AndroidBridge::Bridge() != nullptr, "AndroidBridge is not available");
@@ -826,13 +837,13 @@ ContentParent::Observe(nsISupports* aSubject,
     if (!mIsAlive || !mSubprocess)
         return NS_OK;
 
-    
+    // listening for memory pressure event
     if (!strcmp(aTopic, "memory-pressure")) {
         unused << SendFlushMemory(nsDependentString(aData));
     }
-    
+    // listening for remotePrefs...
     else if (!strcmp(aTopic, "nsPref:changed")) {
-        
+        // We know prefs are ASCII here.
         NS_LossyConvertUTF16toASCII strData(aData);
 
         PrefTuple pref;
@@ -842,7 +853,7 @@ ContentParent::Observe(nsISupports* aSubject,
               return NS_ERROR_NOT_AVAILABLE;
           }
         } else {
-          
+          // Pref wasn't found.  It was probably removed.
           if (!SendClearUserPreference(strData)) {
               return NS_ERROR_NOT_AVAILABLE;
           }
@@ -854,7 +865,7 @@ ContentParent::Observe(nsISupports* aSubject,
       if (!SendSetOffline(!strcmp(offline, "true") ? true : false))
           return NS_ERROR_NOT_AVAILABLE;
     }
-    
+    // listening for alert notifications
     else if (!strcmp(aTopic, "alertfinished") ||
              !strcmp(aTopic, "alertclickcallback") ) {
         if (!SendNotifyAlertsObserver(nsDependentCString(aTopic),
@@ -873,9 +884,27 @@ ContentParent::Observe(nsISupports* aSubject,
     else if (!strcmp(aTopic, "last-pb-context-exited")) {
         unused << SendLastPrivateDocShellDestroyed();
     }
+#ifdef MOZ_WIDGET_GONK
+    else if(!strcmp(aTopic, NS_VOLUME_STATE_CHANGED)) {
+        nsCOMPtr<nsIVolume> vol = do_QueryInterface(aSubject);
+        if (!vol) {
+            return NS_ERROR_NOT_AVAILABLE;
+        }
+
+        nsString volName;
+        nsString mountPoint;
+        PRInt32  state;
+
+        vol->GetName(volName);
+        vol->GetMountPoint(mountPoint);
+        vol->GetState(&state);
+
+        unused << SendFileSystemUpdate(volName, mountPoint, state);
+    }
+#endif
 #ifdef ACCESSIBILITY
-    
-    
+    // Make sure accessibility is running in content process when accessibility
+    // gets initiated in chrome process.
     else if (aData && (*aData == '1') &&
              !strcmp(aTopic, "a11y-init-or-shutdown")) {
         unused << SendActivateA11y();
@@ -896,20 +925,20 @@ PBrowserParent*
 ContentParent::AllocPBrowser(const PRUint32& aChromeFlags,
                              const bool& aIsBrowserElement, const AppId& aApp)
 {
-    
-    
-    
-    
-    
+    // We only use this Alloc() method when the content processes asks
+    // us to open a window.  In that case, we're expecting to see the
+    // opening PBrowser as its app descriptor, and we can trust the data
+    // associated with that PBrowser since it's fully owned by this
+    // process.
     if (AppId::TPBrowserParent != aApp.type()) {
         NS_ERROR("Content process attempting to forge app ID");
         return nullptr;
     }
     TabParent* opener = static_cast<TabParent*>(aApp.get_PBrowserParent());
 
-    
-    
-    
+    // Popup windows of isBrowser frames are isBrowser if the parent
+    // isBrowser.  Allocating a !isBrowser frame with same app ID
+    // would allow the content to access data it's not supposed to.
     if (opener && opener->IsBrowserElement() && !aIsBrowserElement) {
         NS_ERROR("Content process attempting to escalate data access privileges");
         return nullptr;
@@ -917,7 +946,7 @@ ContentParent::AllocPBrowser(const PRUint32& aChromeFlags,
 
     TabParent* parent = new TabParent(opener ? opener->GetApp() : nullptr,
                                       aIsBrowserElement);
-    
+    // We release this ref in DeallocPBrowser()
     NS_ADDREF(parent);
     return parent;
 }
@@ -933,13 +962,16 @@ ContentParent::DeallocPBrowser(PBrowserParent* frame)
 PDeviceStorageRequestParent*
 ContentParent::AllocPDeviceStorageRequest(const DeviceStorageParams& aParams)
 {
-  return new DeviceStorageRequestParent(aParams);
+  DeviceStorageRequestParent* result = new DeviceStorageRequestParent(aParams);
+  NS_ADDREF(result);
+  return result;
 }
 
 bool
 ContentParent::DeallocPDeviceStorageRequest(PDeviceStorageRequestParent* doomed)
 {
-  delete doomed;
+  DeviceStorageRequestParent *parent = static_cast<DeviceStorageRequestParent*>(doomed);
+  NS_RELEASE(parent);
   return true;
 }
 
@@ -972,16 +1004,16 @@ ContentParent::GetOrCreateActorForBlob(nsIDOMBlob* aBlob)
     return actor;
   }
 
-  
-  
-  
+  // XXX This is only safe so long as all blob implementations in our tree
+  //     inherit nsDOMFileBase. If that ever changes then this will need to grow
+  //     a real interface or something.
   const nsDOMFileBase* blob = static_cast<nsDOMFileBase*>(aBlob);
 
   BlobConstructorParams params;
 
   if (blob->IsSizeUnknown()) {
-    
-    
+    // We don't want to call GetSize yet since that may stat a file on the main
+    // thread here. Instead we'll learn the size lazily from the other process.
     params = MysteryBlobConstructorParams();
   }
   else {
@@ -1326,13 +1358,13 @@ ContentParent::RecvShowFilePicker(const PRInt16& mode,
         return true;
     }
 
-    
-    
+    // as the parent given to the content process would be meaningless in this
+    // process, always use active window as the parent
     nsCOMPtr<nsIWindowWatcher> ww = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
     nsCOMPtr<nsIDOMWindow> window;
     ww->GetActiveWindow(getter_AddRefs(window));
 
-    
+    // initialize the "real" picker with all data given
     *result = filePicker->Init(window, title, mode);
     if (NS_FAILED(*result))
         return true;
@@ -1348,7 +1380,7 @@ ContentParent::RecvShowFilePicker(const PRInt16& mode,
     filePicker->SetDefaultExtension(defaultExtension);
     filePicker->SetFilterIndex(selectedType);
 
-    
+    // and finally open the dialog
     *result = filePicker->Show(retValue);
     if (NS_FAILED(*result))
         return true;
@@ -1372,7 +1404,7 @@ ContentParent::RecvShowFilePicker(const PRInt16& mode,
     nsCOMPtr<nsIFile> file;
     filePicker->GetFile(getter_AddRefs(file));
 
-    
+    // even with NS_OK file can be null if nothing was selected 
     if (file) {                                 
         nsAutoString filePath;
         file->GetPath(filePath);
@@ -1393,7 +1425,7 @@ ContentParent::RecvLoadURIExternal(const IPC::URI& uri)
     return true;
 }
 
-
+/* void onDispatchedEvent (in nsIThreadInternal thread); */
 NS_IMETHODIMP
 ContentParent::OnDispatchedEvent(nsIThreadInternal *thread)
 {
@@ -1401,7 +1433,7 @@ ContentParent::OnDispatchedEvent(nsIThreadInternal *thread)
    return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
+/* void onProcessNextEvent (in nsIThreadInternal thread, in boolean mayWait, in unsigned long recursionDepth); */
 NS_IMETHODIMP
 ContentParent::OnProcessNextEvent(nsIThreadInternal *thread,
                                   bool mayWait,
@@ -1413,7 +1445,7 @@ ContentParent::OnProcessNextEvent(nsIThreadInternal *thread,
     return NS_OK;
 }
 
-
+/* void afterProcessNextEvent (in nsIThreadInternal thread, in unsigned long recursionDepth); */
 NS_IMETHODIMP
 ContentParent::AfterProcessNextEvent(nsIThreadInternal *thread,
                                      PRUint32 recursionDepth)
@@ -1652,5 +1684,5 @@ ContentParent::WatchedFile::Update(const char* aReason, nsIFile* aFile)
   return NS_OK;
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

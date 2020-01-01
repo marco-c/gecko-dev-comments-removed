@@ -1,7 +1,7 @@
-
-
-
-
+//* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
@@ -44,39 +44,39 @@
 #include "mozilla/Attributes.h"
 #include "nsIPrincipal.h"
 
-
+// Needed to interpert mozIStorageConnection::GetLastError
 #include <sqlite3.h>
 
 using namespace mozilla;
 
+/**
+ * The DBServices stores a set of Fragments.  A fragment is one URL
+ * fragment containing two or more domain components and some number
+ * of path components.
+ *
+ * Fragment examples:
+ *   example.com/
+ *   www.example.com/foo/bar
+ *   www.mail.example.com/mail
+ *
+ * Fragments are described in "Simplified Regular Expression Lookup"
+ * section of the protocol document at
+ * http://code.google.com/p/google-safe-browsing/wiki/Protocolv2Spec
+ *
+ * A fragment is associated with a domain.  The domain for a given
+ * fragment is the three-host-component domain of the fragment (two
+ * host components for URLs with only two components) with a trailing
+ * slash.  So for the fragments listed above, the domains are
+ * example.com/, www.example.com/ and mail.example.com/.
+ *
+ * Fragments and domains are hashed in the database.  The hash is described
+ * in the protocol document, but it's basically a truncated SHA256 hash.
+ *
+ * A (table, chunk id, domain key, fragment) tuple is referred to as
+ * an Entry.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// NSPR_LOG_MODULES=UrlClassifierDbService:5
 #if defined(PR_LOGGING)
 static const PRLogModuleInfo *gUrlClassifierDbServiceLog = nullptr;
 #define LOG(args) PR_LOG(gUrlClassifierDbServiceLog, PR_LOG_DEBUG, args)
@@ -86,32 +86,32 @@ static const PRLogModuleInfo *gUrlClassifierDbServiceLog = nullptr;
 #define LOG_ENABLED() (false)
 #endif
 
+// Schema versioning:  note that we don't bother to migrate between different
+// versions of the schema, we just start fetching the data freshly with each
+// migration.
 
-
-
-
-
-
-
-
+// The database filename is updated when there is an incompatible
+// schema change and we expect both implementations to continue
+// accessing the same database (such as between stable versions of the
+// platform).
 #define DATABASE_FILENAME "urlclassifier3.sqlite"
 
-
-
-
-
+// The implementation version is updated during development when we
+// want to change schema, or to recover from updating bugs.  When an
+// implementation version change is detected, the database is scrapped
+// and we start over.
 #define IMPLEMENTATION_VERSION 7
 
-
+// Name of the persistent PrefixSet storage
 #define PREFIXSET_FILENAME  "urlclassifier.pset"
 
 #define MAX_HOST_COMPONENTS 5
 #define MAX_PATH_COMPONENTS 4
 
-
+// Updates will fail if fed chunks larger than this
 #define MAX_CHUNK_SIZE (1024 * 1024)
 
-
+// Prefs for implementing nsIURIClassifier to block page loads
 #define CHECK_MALWARE_PREF      "browser.safebrowsing.malware.enabled"
 #define CHECK_MALWARE_DEFAULT   false
 
@@ -132,26 +132,26 @@ static const PRLogModuleInfo *gUrlClassifierDbServiceLog = nullptr;
 #define LOOKUP_CACHE_SIZE_PREF    "urlclassifier.lookupcachemax"
 #define LOOKUP_CACHE_SIZE_DEFAULT -1
 
-
-
-
+// Amount of time to spend updating before committing and delaying, in
+// seconds.  This is checked after each update stream, so the actual
+// time spent can be higher than this, depending on update stream size.
 #define UPDATE_WORKING_TIME         "urlclassifier.workingtime"
 #define UPDATE_WORKING_TIME_DEFAULT 5
 
-
-
+// The amount of time to delay after hitting UPDATE_WORKING_TIME, in
+// seconds.
 #define UPDATE_DELAY_TIME           "urlclassifier.updatetime"
 #define UPDATE_DELAY_TIME_DEFAULT   60
 
 class nsUrlClassifierDBServiceWorker;
 
-
+// Singleton instance.
 static nsUrlClassifierDBService* sUrlClassifierDBService;
 
 nsIThread* nsUrlClassifierDBService::gDbBackgroundThread = nullptr;
 
-
-
+// Once we've committed to shutting down, don't do work in the background
+// thread.
 static bool gShuttingDownThread = false;
 
 static PRInt32 gFreshnessGuarantee = CONFIRM_AGE_DEFAULT_SEC;
@@ -180,11 +180,11 @@ SplitTables(const nsACString& str, nsTArray<nsCString>& tables)
   }
 }
 
+// -------------------------------------------------------------------------
+// Hash class implementation
 
-
-
-
-
+// A convenience wrapper around the potentially-truncated hash for a
+// domain or fragment.
 
 template <PRUint32 S>
 struct nsUrlClassifierHash
@@ -194,9 +194,9 @@ struct nsUrlClassifierHash
   PRUint8 buf[S];
 
   nsresult FromPlaintext(const nsACString& plainText, nsICryptoHash *hash) {
-    
-    
-    
+    // From the protocol doc:
+    // Each entry in the chunk is composed of the 128 most significant bits
+    // of the SHA 256 hash of a suffix/prefix expression.
 
     nsresult rv = hash->Init(nsICryptoHash::SHA256);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -251,11 +251,11 @@ typedef nsUrlClassifierHash<PARTIAL_LENGTH> nsUrlClassifierPartialHash;
 typedef nsUrlClassifierHash<COMPLETE_LENGTH> nsUrlClassifierCompleteHash;
 
 
+// -------------------------------------------------------------------------
+// Entry class implementation
 
-
-
-
-
+// This class represents one entry in the classifier database.  It consists
+// of a table id, a chunk id, a domain hash, and a partial or complete hash.
 class nsUrlClassifierEntry
 {
 public:
@@ -269,22 +269,22 @@ public:
     {}
   ~nsUrlClassifierEntry() {}
 
-  
+  // Check that this entry could potentially match the complete hash.
   bool Match(const nsUrlClassifierCompleteHash &hash);
 
-  
+  // Check that the sub entry should apply to this entry.
   bool SubMatch(const nsUrlClassifierEntry& sub);
 
-  
+  // Clear out the entry structure
   void Clear();
 
-  
+  // Set the partial hash for this domain.
   void SetHash(const nsUrlClassifierPartialHash &partialHash) {
     mPartialHash = partialHash;
     mHavePartial = true;
   }
 
-  
+  // Set the complete hash for this domain.
   void SetHash(const nsUrlClassifierCompleteHash &completeHash) {
     mCompleteHash = completeHash;
     mHaveComplete = true;
@@ -358,10 +358,10 @@ nsUrlClassifierEntry::Clear()
   mHaveComplete = false;
 }
 
+// -------------------------------------------------------------------------
+// Lookup result class implementation
 
-
-
-
+// This helper class wraps a nsUrlClassifierEntry found during a lookup.
 class nsUrlClassifierLookupResult
 {
 public:
@@ -371,90 +371,90 @@ public:
   ~nsUrlClassifierLookupResult() {}
 
   bool operator==(const nsUrlClassifierLookupResult &result) const {
-    
+    // Don't need to compare table name, it's contained by id in the entry.
     return (mLookupFragment == result.mLookupFragment &&
             mConfirmed == result.mConfirmed &&
             mEntry == result.mEntry);
   }
 
   bool operator<(const nsUrlClassifierLookupResult &result) const {
-    
+    // Don't need to compare table name, it's contained by id in the entry.
     return (mLookupFragment < result.mLookupFragment ||
             mConfirmed < result.mConfirmed ||
             mEntry < result.mEntry);
   }
 
-  
+  // The hash that matched this entry.
   nsUrlClassifierCompleteHash mLookupFragment;
 
-  
+  // The entry that was found during the lookup.
   nsUrlClassifierEntry mEntry;
 
-  
-  
+  // TRUE if the lookup matched a complete hash (not just a partial
+  // one).
   bool mConfirmed;
 
-  
-  
+  // TRUE if this lookup is gethash noise.  Does not represent an actual
+  // result.
   bool mNoise;
 
-  
+  // The table name associated with mEntry.mTableId.
   nsCString mTableName;
 };
 
+// -------------------------------------------------------------------------
+// Store class implementation
 
-
-
-
+// This class mediates access to the classifier and chunk entry tables.
 class nsUrlClassifierStore
 {
 public:
   nsUrlClassifierStore() {}
   virtual ~nsUrlClassifierStore() {}
 
-  
+  // Initialize the statements for the store.
   nsresult Init(nsUrlClassifierDBServiceWorker *worker,
                 mozIStorageConnection *connection,
                 const nsACString& entriesTableName);
-  
+  // Shut down the store.
   void Close();
 
-  
+  // Read an entry from a database statement
   virtual bool ReadStatement(mozIStorageStatement* statement,
                                nsUrlClassifierEntry& entry);
 
-  
+  // Prepare a statement to write this entry to the database
   virtual nsresult BindStatement(const nsUrlClassifierEntry& entry,
                                  mozIStorageStatement* statement);
 
-  
+  // Read the entry with a given ID from the database
   nsresult ReadEntry(PRInt64 id, nsUrlClassifierEntry& entry, bool *exists);
 
-  
+  // Remove an entry from the database
   nsresult DeleteEntry(nsUrlClassifierEntry& entry);
 
-  
+  // Write an entry to the database
   nsresult WriteEntry(nsUrlClassifierEntry& entry);
 
-  
-  
+  // Update an entry in the database.  The entry must already exist in the
+  // database or this method will fail.
   nsresult UpdateEntry(nsUrlClassifierEntry& entry);
 
-  
+  // Remove all entries for a given table/chunk pair from the database.
   nsresult Expire(PRUint32 tableId,
                   PRUint32 chunkNum);
 
-  
-  
+  // Read a certain number of rows adjacent to the requested rowid that
+  // don't have complete hash data.
   nsresult ReadNoiseEntries(PRInt64 rowID,
                             PRUint32 numRequested,
                             bool before,
                             nsTArray<nsUrlClassifierEntry> &entries);
 
-  
-  
+  // Ask the db for a random number.  This is temporary, and should be
+  // replaced with nsIRandomGenerator when 419739 is fixed.
   nsresult RandomNumber(PRInt64 *randomNum);
-  
+  // Return an array with all Prefixes known
   nsresult ReadPrefixes(FallibleTArray<PRUint32>& array, PRUint32 aKey);
 
 
@@ -608,8 +608,8 @@ nsUrlClassifierStore::ReadStatement(mozIStorageStatement* statement,
     memcpy(entry.mCompleteHash.buf, blob, COMPLETE_LENGTH);
   }
 
-  
-  
+  // If we only have a partial entry, and that partial entry matches the
+  // domain, we don't save the extra copy to the database.
   if (!(entry.mHavePartial || entry.mHaveComplete)) {
     entry.SetHash(entry.mKey);
   }
@@ -636,8 +636,8 @@ nsUrlClassifierStore::BindStatement(const nsUrlClassifierEntry &entry,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (entry.mHavePartial) {
-    
-    
+    // If we only have a partial entry and that entry matches the domain,
+    // we'll save some space by only storing the domain hash.
     if (!entry.mHaveComplete && entry.mKey == entry.mPartialHash) {
       rv = statement->BindNullByIndex(2);
     } else {
@@ -662,7 +662,7 @@ nsUrlClassifierStore::BindStatement(const nsUrlClassifierEntry &entry,
   rv = statement->BindInt32ByIndex(5, entry.mTableId);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return true;
+  return NS_OK;
 }
 
 nsresult
@@ -740,8 +740,8 @@ nsUrlClassifierStore::ReadNoiseEntries(PRInt64 rowID,
   if (numRead >= numRequested)
     return NS_OK;
 
-  
-  
+  // If we didn't get enough entries, we need the search to wrap around from
+  // beginning to end (or vice-versa)
 
   mozIStorageStatement *wraparoundStatement =
     before ? mPartialEntriesStatement : mLastPartialEntriesStatement;
@@ -768,10 +768,10 @@ nsUrlClassifierStore::RandomNumber(PRInt64 *randomNum)
   return NS_OK;
 }
 
+// -------------------------------------------------------------------------
+// nsUrlClassifierAddStore class implementation
 
-
-
-
+// This class accesses the moz_classifier table.
 class nsUrlClassifierAddStore: public nsUrlClassifierStore
 {
 public:
@@ -784,13 +784,13 @@ public:
 
   void Close();
 
-  
+  // Read the entries for a given key/table/chunk from the database
   nsresult ReadAddEntries(const nsUrlClassifierDomainHash& key,
                           PRUint32 tableId,
                           PRUint32 chunkId,
                           nsTArray<nsUrlClassifierEntry>& entry);
 
-  
+  // Read the entries for a given host key from the database.
   nsresult ReadAddEntries(const nsUrlClassifierDomainHash& key,
                           nsTArray<nsUrlClassifierEntry>& entry);
 
@@ -879,10 +879,10 @@ nsUrlClassifierAddStore::ReadAddEntries(const nsUrlClassifierDomainHash& hash,
   return ReadEntries(mLookupStatement, entries);
 }
 
+// -------------------------------------------------------------------------
+// nsUrlClassifierSubStore class implementation
 
-
-
-
+// This class accesses the moz_subs table.
 class nsUrlClassifierSubStore : public nsUrlClassifierStore
 {
 public:
@@ -895,19 +895,19 @@ public:
 
   void Close();
 
-  
+  // Read an entry from a database statement
   virtual bool ReadStatement(mozIStorageStatement* statement,
                                nsUrlClassifierEntry& entry);
 
-  
+  // Prepare a statement to write this entry to the database
   virtual nsresult BindStatement(const nsUrlClassifierEntry& entry,
                                  mozIStorageStatement* statement);
 
-  
+  // Read sub entries for a given add chunk
   nsresult ReadSubEntries(PRUint32 tableId, PRUint32 chunkId,
                           nsTArray<nsUrlClassifierEntry> &subEntry);
 
-  
+  // Expire sub entries for a given add chunk
   nsresult ExpireAddChunk(PRUint32 tableId, PRUint32 chunkId);
 
 protected:
@@ -1009,41 +1009,41 @@ nsUrlClassifierSubStore::Close()
   mExpireAddChunkStatement = nullptr;
 }
 
-
-
-
-
-
+// Similar to GetKey(), but if the domain contains three or more components,
+// two keys will be returned:
+//  hostname.com/foo/bar -> [hostname.com]
+//  mail.hostname.com/foo/bar -> [hostname.com, mail.hostname.com]
+//  www.mail.hostname.com/foo/bar -> [hostname.com, mail.hostname.com]
 static nsresult GetHostKeys(const nsACString &spec,
                             nsTArray<nsCString> &hostKeys);
 
-
-
-
+// take a lookup string (www.hostname.com/path/to/resource.html) and
+// expand it into the set of fragments that should be searched for in an
+// entry
 static nsresult GetLookupFragments(const nsCSubstring& spec,
                                    nsTArray<nsCString>& fragments);
 
-
+// Check for a canonicalized IP address.
 static bool IsCanonicalizedIP(const nsACString& host);
 
-
-
-
-
-
+// Get the database key for a given URI.  This is the top three
+// domain components if they exist, otherwise the top two.
+//  hostname.com/foo/bar -> hostname.com
+//  mail.hostname.com/foo/bar -> mail.hostname.com
+//  www.mail.hostname.com/foo/bar -> mail.hostname.com
 static nsresult GetKey(const nsACString& spec, nsUrlClassifierDomainHash& hash,
                        nsICryptoHash * aCryptoHash);
 
-
-
-
-
+// We have both a prefix and a domain. Drop the domain, but
+// hash the domain, the prefix and a random value together,
+// ensuring any collisions happens at a different points for
+// different users.
 static nsresult KeyedHash(PRUint32 aPref, PRUint32 aDomain,
                           PRUint32 aKey, PRUint32 *aOut);
 
 
-
-
+// -------------------------------------------------------------------------
+// Actual worker implemenatation
 class nsUrlClassifierDBServiceWorker MOZ_FINAL :
   public nsIUrlClassifierDBServiceWorker
 {
@@ -1054,44 +1054,44 @@ public:
   NS_DECL_NSIURLCLASSIFIERDBSERVICE
   NS_DECL_NSIURLCLASSIFIERDBSERVICEWORKER
 
-  
+  // Initialize, called in the main thread
   nsresult Init(PRInt32 gethashNoise,
                 nsRefPtr<nsUrlClassifierPrefixSet> & prefSet);
 
-  
+  // Queue a lookup for the worker to perform, called in the main thread.
   nsresult QueueLookup(const nsACString& lookupKey,
                        nsIUrlClassifierLookupCallback* callback);
 
-  
-  
+  // Handle any queued-up lookups.  We call this function during long-running
+  // update operations to prevent lookups from blocking for too long.
   nsresult HandlePendingLookups();
 
-  
-  
-  
+  // Blocks the PrefixSet from being updated while the main thread is doing
+  // its lookups. LockPrefixSet will return whether the PrefixSet is in a
+  // usable state. If not, we should fall through to SQLite lookups.
   bool LockPrefixSet();
   void UnlockPrefixSet();
 
 private:
-  
+  // No subclassing
   ~nsUrlClassifierDBServiceWorker();
 
-  
+  // Disallow copy constructor
   nsUrlClassifierDBServiceWorker(nsUrlClassifierDBServiceWorker&);
 
-  
+  // Try to open the db, DATABASE_FILENAME.
   nsresult OpenDb();
 
-  
+  // Create table in the db if they don't exist.
   nsresult MaybeCreateTables(mozIStorageConnection* connection);
 
   nsresult GetTableName(PRUint32 tableId, nsACString& table);
   nsresult GetTableId(const nsACString& table, PRUint32* tableId);
 
-  
+  // Decompress a zlib'ed chunk (used for -exp tables)
   nsresult InflateChunk(nsACString& chunk);
 
-  
+  // Expand shavar chunk into its individual entries
   nsresult GetShaEntries(PRUint32 tableId,
                          PRUint32 chunkType,
                          PRUint32 chunkNum,
@@ -1100,7 +1100,7 @@ private:
                          nsACString& chunk,
                          nsTArray<nsUrlClassifierEntry>& entries);
 
-  
+  // Expand a chunk into its individual entries
   nsresult GetChunkEntries(const nsACString& table,
                            PRUint32 tableId,
                            PRUint32 chunkType,
@@ -1109,97 +1109,97 @@ private:
                            nsACString& chunk,
                            nsTArray<nsUrlClassifierEntry>& entries);
 
-  
-  
-  
+  // Parse one stringified range of chunks of the form "n" or "n-m" from a
+  // comma-separated list of chunks.  Upon return, 'begin' will point to the
+  // next range of chunks in the list of chunks.
   bool ParseChunkRange(nsACString::const_iterator &begin,
                          const nsACString::const_iterator &end,
                          PRUint32 *first, PRUint32 *last);
 
-  
+  // Expand a stringified chunk list into an array of ints.
   nsresult ParseChunkList(const nsACString& chunkStr,
                           nsTArray<PRUint32>& chunks);
 
-  
+  // Join an array of ints into a stringified chunk list.
   nsresult JoinChunkList(nsTArray<PRUint32>& chunks, nsCString& chunkStr);
 
-  
+  // List the add/subtract chunks that have been applied to a table
   nsresult GetChunkLists(PRUint32 tableId,
                          nsACString& addChunks,
                          nsACString& subChunks);
 
-  
+  // Set the list of add/subtract chunks that have been applied to a table
   nsresult SetChunkLists(PRUint32 tableId,
                          const nsACString& addChunks,
                          const nsACString& subChunks);
 
-  
-  
-  
+  // Cache the list of add/subtract chunks applied to the table, optionally
+  // parsing the add or sub lists.  These lists are cached while updating
+  // tables to avoid excessive database reads/writes and parsing.
   nsresult CacheChunkLists(PRUint32 tableId,
                            bool parseAdds,
                            bool parseSubs);
 
-  
+  // Clear the cached list of add/subtract chunks.
   void ClearCachedChunkLists();
 
-  
+  // Flush the cached add/subtract lists to the database.
   nsresult FlushChunkLists();
 
-  
-  
+  // Inserts a chunk id into the list, sorted.  Returns TRUE if the
+  // number was successfully added, FALSE if the chunk already exists.
   bool InsertChunkId(nsTArray<PRUint32>& chunks, PRUint32 chunkNum);
 
-  
-  
+  // Add a list of entries to the database, merging with
+  // existing entries as necessary
   nsresult AddChunk(PRUint32 tableId, PRUint32 chunkNum,
                     nsTArray<nsUrlClassifierEntry>& entries);
 
-  
+  // Expire an add chunk
   nsresult ExpireAdd(PRUint32 tableId, PRUint32 chunkNum);
 
-  
+  // Subtract a list of entries from the database
   nsresult SubChunk(PRUint32 tableId, PRUint32 chunkNum,
                     nsTArray<nsUrlClassifierEntry>& entries);
 
-  
+  // Expire a subtract chunk
   nsresult ExpireSub(PRUint32 tableId, PRUint32 chunkNum);
 
-  
+  // Handle line-oriented control information from a stream update
   nsresult ProcessResponseLines(bool* done);
-  
+  // Handle chunk data from a stream update
   nsresult ProcessChunk(bool* done);
 
-  
+  // Sets up a transaction and begins counting update time.
   nsresult SetupUpdate();
 
-  
+  // Applies the current transaction and resets the update/working times.
   nsresult ApplyUpdate();
 
-  
+  // Reset the in-progress update stream
   void ResetStream();
 
-  
+  // Reset the in-progress update
   void ResetUpdate();
 
-  
-  
+  // Look for a given lookup string (www.hostname.com/path/to/resource.html)
+  // Returns a list of entries that match.
   nsresult Check(const nsCSubstring& spec,
                  nsTArray<nsUrlClassifierLookupResult>& results);
 
-  
+  // Perform a classifier lookup for a given url.
   nsresult DoLookup(const nsACString& spec, nsIUrlClassifierLookupCallback* c);
 
-  
+  // Add entries to the results.
   nsresult AddNoise(PRInt64 nearID,
                     PRInt32 count,
                     nsTArray<nsUrlClassifierLookupResult>& results);
 
-  
+  // Construct a Prefix Set with known prefixes
   nsresult LoadPrefixSet(nsCOMPtr<nsIFile> & aFile);
   nsresult ConstructPrefixSet();
 
-  
+  // Set the SQLite cache size
   nsresult SetCacheSize(mozIStorageConnection * aConnection,
                         PRInt32 aCacheSize);
 
@@ -1208,16 +1208,16 @@ private:
 
   nsCOMPtr<nsICryptoHash> mCryptoHash;
 
-  
-  
-  
+  // Holds a connection to the Db.  We lazily initialize this because it has
+  // to be created in the background thread (currently mozStorageConnection
+  // isn't thread safe).
   nsCOMPtr<mozIStorageConnection> mConnection;
 
-  
-  
+  // The main collection of entries.  This is the store that will be checked
+  // when classifying a URL.
   nsUrlClassifierAddStore mMainStore;
 
-  
+  // The collection of subs waiting for their accompanying add.
   nsUrlClassifierSubStore mPendingSubStore;
 
   nsCOMPtr<mozIStorageStatement> mGetChunkListsStatement;
@@ -1229,11 +1229,11 @@ private:
   nsCOMPtr<mozIStorageStatement> mInsertTableIdStatement;
   nsCOMPtr<mozIStorageStatement> mGetPageSizeStatement;
 
-  
+  // Stores the last time a given table was updated.
   nsDataHashtable<nsCStringHashKey, PRInt64> mTableFreshness;
 
-  
-  
+  // We receive data in small chunks that may be broken in the middle of
+  // a line.  So we save the last partial line here.
   nsCString mPendingStreamUpdate;
 
   PRInt32 mUpdateWait;
@@ -1255,7 +1255,7 @@ private:
   PRUint32 mHashSize;
   PRUint32 mChunkLen;
 
-  
+  // List of tables included in this update.
   nsTArray<nsCString> mUpdateTables;
 
   nsCString mUpdateTable;
@@ -1278,28 +1278,28 @@ private:
   bool mHaveCachedSubChunks;
   nsTArray<PRUint32> mCachedSubChunks;
 
-  
+  // The client key with which the data from the server will be MAC'ed.
   nsCString mUpdateClientKey;
 
-  
+  // The MAC stated by the server.
   nsCString mServerMAC;
 
-  
-  
+  // Start time of the current update interval.  This will be reset
+  // every time we apply the update.
   PRIntervalTime mUpdateStartTime;
 
   nsCOMPtr<nsICryptoHMAC> mHMAC;
-  
+  // The number of noise entries to add to the set of lookup results.
   PRInt32 mGethashNoise;
 
-  
+  // Set of prefixes known to be in the database
   nsRefPtr<nsUrlClassifierPrefixSet> mPrefixSet;
-  
+  // Can we use the PrefixSet (low memory conditions)
   bool mPrefixSetEnabled;
   Mutex mPrefixSetEnabledLock;
 
-  
-  
+  // Pending lookups are stored in a queue for processing.  The queue
+  // is protected by mPendingLookupLock.
   Mutex mPendingLookupLock;
 
   class PendingLookup {
@@ -1308,7 +1308,7 @@ private:
     nsCOMPtr<nsIUrlClassifierLookupCallback> mCallback;
   };
 
-  
+  // list of pending lookups
   nsTArray<PendingLookup> mPendingLookups;
 };
 
@@ -1356,10 +1356,10 @@ nsUrlClassifierDBServiceWorker::Init(PRInt32 gethashNoise,
   mGethashNoise = gethashNoise;
   mPrefixSet = prefSet;
 
-  
+  // Compute database filename
 
-  
-  
+  // Because we dump raw integers into the database, this database isn't
+  // portable between machine types, so store it in the local profile dir.
   nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR,
                                        getter_AddRefs(mDBFile));
 
@@ -1407,18 +1407,18 @@ nsUrlClassifierDBService::CheckClean(const nsACString &spec,
 {
   Telemetry::AutoTimer<Telemetry::URLCLASSIFIER_PS_LOOKUP_TIME> timer;
 
-  
+  // Is the PrefixSet usable?
   bool usePrefixSet = mWorker->LockPrefixSet();
 
-  
-  
+  // No, bail out and pretend the URL is not clean. We will do
+  // a database lookup and get the correct result.
   if (!usePrefixSet) {
     mWorker->UnlockPrefixSet();
     *clean = false;
     return NS_OK;
   }
 
-  
+  // Get the set of fragments to look up.
   nsTArray<nsCString> fragments;
   nsresult rv = GetLookupFragments(spec, fragments);
   if (NS_FAILED(rv)) {
@@ -1437,12 +1437,12 @@ nsUrlClassifierDBService::CheckClean(const nsACString &spec,
     nsUrlClassifierDomainHash fragmentKeyHash;
     fragmentKeyHash.FromPlaintext(fragments[i], mHash);
 
-    
+    // Find the corresponding host key
     nsUrlClassifierDomainHash hostkey;
     rv = GetKey(fragments[i], hostkey, mHash);
     if (NS_FAILED(rv)) {
-      
-
+      /* This happens for hosts on the local network,
+         can't check these against the DB */
       continue;
     }
 
@@ -1455,7 +1455,7 @@ nsUrlClassifierDBService::CheckClean(const nsACString &spec,
     }
 
     bool found = false;
-    bool ready = false;  
+    bool ready = false;  /* opportunistic probe */
     rv = mPrefixSet->Probe(codedkey, prefixkey, &ready, &found);
     if (NS_FAILED(rv)) {
       goto error_checkclean;
@@ -1503,11 +1503,11 @@ static nsresult GetHostKeys(const nsACString &spec,
   ParseString(PromiseFlatCString(host), '.', hostComponents);
 
   if (hostComponents.Length() < 2) {
-    
+    // no host or toplevel host, this won't match anything in the db
     return NS_OK;
   }
 
-  
+  // First check with two domain components
   PRInt32 last = PRInt32(hostComponents.Length()) - 1;
   nsCString *lookupHost = hostKeys.AppendElement();
   if (!lookupHost)
@@ -1518,7 +1518,7 @@ static nsresult GetHostKeys(const nsACString &spec,
   lookupHost->Append(hostComponents[last]);
   lookupHost->Append("/");
 
-  
+  // Now check with three domain components
   if (hostComponents.Length() > 2) {
     nsCString *lookupHost2 = hostKeys.AppendElement();
     if (!lookupHost2)
@@ -1550,15 +1550,15 @@ GetLookupFragments(const nsACString& spec,
   nsCAutoString path;
   path.Assign(Substring(iter, end));
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * From the protocol doc:
+   * For the hostname, the client will try at most 5 different strings.  They
+   * are:
+   * a) The exact hostname of the url
+   * b) The 4 hostnames formed by starting with the last 5 components and
+   *    successivly removing the leading component.  The top-level component
+   *    can be skipped. This is not done if the hostname is a numerical IP.
+   */
   nsTArray<nsCString> hosts;
   hosts.AppendElement(host);
 
@@ -1568,7 +1568,7 @@ GetLookupFragments(const nsACString& spec,
     int numHostComponents = 0;
     while (RFindInReadable(NS_LITERAL_CSTRING("."), begin, end) &&
            numHostComponents < MAX_HOST_COMPONENTS) {
-      
+      // don't bother checking toplevel domains
       if (++numHostComponents >= 2) {
         host.EndReading(iter);
         hosts.AppendElement(Substring(end, iter));
@@ -1578,18 +1578,18 @@ GetLookupFragments(const nsACString& spec,
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * From the protocol doc:
+   * For the path, the client will also try at most 6 different strings.
+   * They are:
+   * a) the exact path of the url, including query parameters
+   * b) the exact path of the url, without query parameters
+   * c) the 4 paths formed by starting at the root (/) and
+   *    successively appending path components, including a trailing
+   *    slash.  This behavior should only extend up to the next-to-last
+   *    path component, that is, a trailing slash should never be
+   *    appended that was not present in the original url.
+   */
   nsTArray<nsCString> paths;
   nsCAutoString pathToAdd;
 
@@ -1612,11 +1612,11 @@ GetLookupFragments(const nsACString& spec,
     numPathComponents++;
   }
 
-  
+  // If we haven't already done so, add the full path
   if (!pathToAdd.Equals(path)) {
     paths.AppendElement(path);
   }
-  
+  // Check an empty path (for whole-domain blacklist entries)
   paths.AppendElement(EmptyCString());
 
   for (PRUint32 hostIndex = 0; hostIndex < hosts.Length(); hostIndex++) {
@@ -1640,28 +1640,28 @@ nsUrlClassifierDBServiceWorker::Check(const nsACString& spec,
 {
   PRInt64 now = (PR_Now() / PR_USEC_PER_SEC);
 
-  
+  // Get list of host keys to look up
   nsAutoTArray<nsCString, 2> lookupHosts;
   nsresult rv = GetHostKeys(spec, lookupHosts);
 
   nsTArray<nsUrlClassifierEntry> mCachedEntries;
 
-  
+  // Gather host's prefixes
   for (PRUint32 i = 0; i < lookupHosts.Length(); i++) {
-    
+    // Find the corresponding host key
     nsUrlClassifierDomainHash hostKey;
     nsresult rv = GetKey(lookupHosts[i], hostKey, mCryptoHash);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+    // Read the entries for this fragments host from SQLite
     mMainStore.ReadAddEntries(hostKey, mCachedEntries);
   }
 
-  
+  // Now get the set of fragments to look up.
   nsTArray<nsCString> fragments;
   rv = GetLookupFragments(spec, fragments);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Now check each lookup fragment against the entries in the DB.
   for (PRUint32 i = 0; i < fragments.Length(); i++) {
     nsUrlClassifierCompleteHash lookupHash;
     lookupHash.FromPlaintext(fragments[i], mCryptoHash);
@@ -1669,10 +1669,10 @@ nsUrlClassifierDBServiceWorker::Check(const nsACString& spec,
     for (PRUint32 j = 0; j < mCachedEntries.Length(); j++) {
       nsUrlClassifierEntry &entry = mCachedEntries[j];
       if (entry.Match(lookupHash)) {
-        
-        
-        
-        
+        // If the entry doesn't contain a complete hash, we need to
+        // save it here so that it can be compared against the
+        // complete hash.  However, we don't set entry.mHaveComplete
+        // because it isn't a verified part of the entry yet.
         nsUrlClassifierLookupResult *result = results.AppendElement();
         if (!result)
           return NS_ERROR_OUT_OF_MEMORY;
@@ -1680,7 +1680,7 @@ nsUrlClassifierDBServiceWorker::Check(const nsACString& spec,
         result->mLookupFragment = lookupHash;
         result->mEntry = entry;
 
-        
+        // Fill in the table name.
         GetTableName(entry.mTableId, result->mTableName);
 
         bool fresh;
@@ -1694,8 +1694,8 @@ nsUrlClassifierDBServiceWorker::Check(const nsACString& spec,
           fresh = false;
         }
 
-        
-        
+        // This is a confirmed result if we match a complete fragment in
+        // an up-to-date table.
         result->mConfirmed = entry.mHaveComplete && fresh;
 
         LOG(("Found a result.  complete=%d, fresh=%d",
@@ -1707,17 +1707,17 @@ nsUrlClassifierDBServiceWorker::Check(const nsACString& spec,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Lookup up a key in the database is a two step process:
+ *
+ * a) First we look for any Entries in the database that might apply to this
+ *    url.  For each URL there are one or two possible domain names to check:
+ *    the two-part domain name (example.com) and the three-part name
+ *    (www.example.com).  We check the database for both of these.
+ * b) If we find any entries, we check the list of fragments for that entry
+ *    against the possible subfragments of the URL as described in the
+ *    "Simplified Regular Expression Lookup" section of the protocol doc.
+ */
 nsresult
 nsUrlClassifierDBServiceWorker::DoLookup(const nsACString& spec,
                                          nsIUrlClassifierLookupCallback* c)
@@ -1747,8 +1747,8 @@ nsUrlClassifierDBServiceWorker::DoLookup(const nsACString& spec,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  
-  
+  // we ignore failures from Check because we'd rather return the
+  // results that were found than fail.
   Check(spec, *results);
 
 #if defined(PR_LOGGING)
@@ -1761,13 +1761,13 @@ nsUrlClassifierDBServiceWorker::DoLookup(const nsACString& spec,
 
   for (PRUint32 i = 0; i < results->Length(); i++) {
     if (!results->ElementAt(i).mConfirmed) {
-      
+      // We're going to be doing a gethash request, add some extra entries.
       AddNoise(results->ElementAt(i).mEntry.mId, mGethashNoise, *results);
       break;
     }
   }
 
-  
+  // At this point ownership of 'results' is handed to the callback.
   c->LookupComplete(results.forget());
 
   return NS_OK;
@@ -1820,7 +1820,7 @@ nsUrlClassifierDBServiceWorker::AddNoise(PRInt64 nearID,
     result->mConfirmed = false;
     result->mNoise = true;
 
-    
+    // Fill in the table name.
     GetTableName(noiseEntries[i].mTableId, result->mTableName);
   }
 
@@ -1828,7 +1828,7 @@ nsUrlClassifierDBServiceWorker::AddNoise(PRInt64 nearID,
 }
 
 
-
+// Lookup a key in the db.
 NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::Lookup(nsIPrincipal* aPrincipal,
                                        nsIUrlClassifierCallback* c)
@@ -2007,7 +2007,7 @@ nsresult
 nsUrlClassifierStore::WriteEntry(nsUrlClassifierEntry& entry)
 {
   if (entry.mId != -1) {
-    
+    // existing entry, just ignore it
     return NS_OK;
   }
 
@@ -2051,8 +2051,8 @@ nsUrlClassifierStore::UpdateEntry(nsUrlClassifierEntry& entry)
 static bool
 IsCanonicalizedIP(const nsACString& host)
 {
-  
-  
+  // The canonicalization process will have left IP addresses in dotted
+  // decimal with no surprises.
   PRUint32 i1, i2, i3, i4;
   char c;
   if (PR_sscanf(PromiseFlatCString(host).get(), "%u.%u.%u.%u%c",
@@ -2123,13 +2123,13 @@ nsUrlClassifierDBServiceWorker::GetShaEntries(PRUint32 tableId,
     domain.Assign(Substring(chunk, start, DOMAIN_LENGTH));
     start += domainSize;
 
-    
+    // then there is a one-byte count of fragments
     PRUint8 numEntries = static_cast<PRUint8>(chunk[start]);
     start++;
 
     if (numEntries == 0) {
-      
-      
+      // if there are no fragments, the domain itself is treated as a
+      // fragment.  This will only work if domainHashSize == hashSize
       if (domainSize != fragmentSize) {
         NS_WARNING("Received 0-fragment entry where domainSize != fragmentSize");
         return NS_ERROR_FAILURE;
@@ -2145,7 +2145,7 @@ nsUrlClassifierDBServiceWorker::GetShaEntries(PRUint32 tableId,
 
       if (chunkType == CHUNK_SUB) {
         if (start + 4 > chunk.Length()) {
-          
+          // there isn't as much data as there should be.
           NS_WARNING("Received a zero-entry sub chunk without an associated add.");
           return NS_ERROR_FAILURE;
         }
@@ -2165,7 +2165,7 @@ nsUrlClassifierDBServiceWorker::GetShaEntries(PRUint32 tableId,
         entrySize += 4;
       }
       if (start + (numEntries * entrySize) > chunk.Length()) {
-        
+        // there isn't as much data as they said there would be.
         NS_WARNING("Received a chunk without enough data");
         return NS_ERROR_FAILURE;
       }
@@ -2222,7 +2222,7 @@ nsUrlClassifierDBServiceWorker::GetChunkEntries(const nsACString& table,
 {
   nsresult rv;
   if (StringEndsWith(table, NS_LITERAL_CSTRING("-exp"))) {
-    
+    // regexp tables need to be ungzipped
     rv = InflateChunk(chunk);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -2235,7 +2235,7 @@ nsUrlClassifierDBServiceWorker::GetChunkEntries(const nsACString& table,
     nsTArray<nsCString> lines;
     ParseString(PromiseFlatCString(chunk), '\n', lines);
 
-    
+    // non-hashed tables need to be hashed
     for (PRInt32 i = 0; i < PRInt32(lines.Length()); i++) {
       nsUrlClassifierEntry *entry = entries.AppendElement();
       if (!entry)
@@ -2470,7 +2470,7 @@ nsUrlClassifierDBServiceWorker::FlushChunkLists()
   nsresult rv = SetChunkLists(mCachedListsTable,
                               mCachedAddsStr, mCachedSubsStr);
 
-  
+  // clear out the cache before checking/returning the error here.
   ClearCachedChunkLists();
 
   return rv;
@@ -2626,7 +2626,7 @@ nsUrlClassifierDBServiceWorker::SubChunk(PRUint32 tableId,
 
     HandlePendingLookups();
 
-    
+    // Check if we have the add chunk associated with the sub.
     bool haveAdds = (mCachedAddChunks.BinaryIndexOf(thisEntry.mAddChunkId) !=
                        mCachedAddChunks.NoIndex);
 
@@ -2646,7 +2646,7 @@ nsUrlClassifierDBServiceWorker::SubChunk(PRUint32 tableId,
     }
 
     if (!haveAdds) {
-      
+      // Save this entry in the pending subtraction store.
       rv = mPendingSubStore.WriteEntry(thisEntry);
       NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -2668,7 +2668,7 @@ nsUrlClassifierDBServiceWorker::ExpireSub(PRUint32 tableId, PRUint32 chunkNum)
 nsresult
 nsUrlClassifierDBServiceWorker::ProcessChunk(bool* done)
 {
-  
+  // wait until the chunk has been read
   if (mPendingStreamUpdate.Length() < static_cast<PRUint32>(mChunkLen)) {
     *done = true;
     return NS_OK;
@@ -2704,7 +2704,7 @@ nsUrlClassifierDBServiceWorker::ProcessResponseLines(bool* done)
   PRInt32 next;
 
   nsresult rv;
-  
+  // We will run to completion unless we find a chunk line
   *done = true;
 
   nsACString& updateString = mPendingStreamUpdate;
@@ -2717,14 +2717,14 @@ nsUrlClassifierDBServiceWorker::ProcessResponseLines(bool* done)
     LOG(("Processing %s\n", PromiseFlatCString(line).get()));
 
     if (mHMAC && mServerMAC.IsEmpty()) {
-      
-      
-      
+      // If we did not receive a server MAC during BeginStream(), we
+      // require the first line of the update to be either a MAC or
+      // a request to rekey.
       if (StringBeginsWith(line, NS_LITERAL_CSTRING("m:"))) {
         mServerMAC = Substring(line, 2);
         nsUrlClassifierUtils::UnUrlsafeBase64(mServerMAC);
 
-        
+        // The remainder of the pending update needs to be digested.
         const nsCSubstring &toDigest = Substring(updateString, cur);
         rv = mHMAC->Update(reinterpret_cast<const PRUint8*>(toDigest.BeginReading()),
                            toDigest.Length());
@@ -2757,7 +2757,7 @@ nsUrlClassifierDBServiceWorker::ProcessResponseLines(bool* done)
 
       const nsCSubstring& data = Substring(line, 2);
       if (mHMAC) {
-        
+        // We're expecting MACs alongside any url forwards.
         nsCSubstring::const_iterator begin, end, sepBegin, sepEnd;
         data.BeginReading(begin);
         sepBegin = begin;
@@ -2776,7 +2776,7 @@ nsUrlClassifierDBServiceWorker::ProcessResponseLines(bool* done)
                                             mUpdateTable,
                                             serverMAC);
       } else {
-        
+        // We didn't ask for a MAC, none should have been specified.
         mUpdateObserver->UpdateUrlRequested(data, mUpdateTable,
                                             NS_LITERAL_CSTRING(""));
       }
@@ -2800,7 +2800,7 @@ nsUrlClassifierDBServiceWorker::ProcessResponseLines(bool* done)
 
       mChunkType = (command == 'a') ? CHUNK_ADD : CHUNK_SUB;
 
-      
+      // Done parsing lines, move to chunk state now
       *done = false;
       break;
     } else if (StringBeginsWith(line, NS_LITERAL_CSTRING("ad:"))) {
@@ -2920,8 +2920,8 @@ nsUrlClassifierDBServiceWorker::BeginUpdate(nsIUrlClassifierUpdateObserver *obse
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  
+  // The first stream in an update is the only stream that may request
+  // forwarded updates.
   mPrimaryStream = true;
 
   SplitTables(tables, mUpdateTables);
@@ -2939,8 +2939,8 @@ nsUrlClassifierDBServiceWorker::BeginStream(const nsACString &table,
   NS_ENSURE_STATE(mUpdateObserver);
   NS_ENSURE_STATE(!mInStream);
 
-  
-  
+  // We may have committed the update in FinishStream, if so set it up
+  // again here.
   nsresult rv = SetupUpdate();
   if (NS_FAILED(rv)) {
     mUpdateStatus = rv;
@@ -2949,7 +2949,7 @@ nsUrlClassifierDBServiceWorker::BeginStream(const nsACString &table,
 
   mInStream = true;
 
-  
+  // If we're expecting a MAC, create the nsICryptoHMAC component now.
   if (!mUpdateClientKey.IsEmpty()) {
     nsCOMPtr<nsIKeyObjectFactory> keyObjectFactory(do_GetService(
         "@mozilla.org/security/keyobjectfactory;1", &rv));
@@ -2994,37 +2994,37 @@ nsUrlClassifierDBServiceWorker::BeginStream(const nsACString &table,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Updating the database:
+ *
+ * The Update() method takes a series of chunks separated with control data,
+ * as described in
+ * http://code.google.com/p/google-safe-browsing/wiki/Protocolv2Spec
+ *
+ * It will iterate through the control data until it reaches a chunk.  By
+ * the time it reaches a chunk, it should have received
+ * a) the table to which this chunk applies
+ * b) the type of chunk (add, delete, expire add, expire delete).
+ * c) the chunk ID
+ * d) the length of the chunk.
+ *
+ * For add and subtract chunks, it needs to read the chunk data (expires
+ * don't have any data).  Chunk data is a list of URI fragments whose
+ * encoding depends on the type of table (which is indicated by the end
+ * of the table name):
+ * a) tables ending with -exp are a zlib-compressed list of URI fragments
+ *    separated by newlines.
+ * b) tables ending with -sha128 have the form
+ *    [domain][N][frag0]...[fragN]
+ *       16    1   16        16
+ *    If N is 0, the domain is reused as a fragment.
+ * c) any other tables are assumed to be a plaintext list of URI fragments
+ *    separated by newlines.
+ *
+ * Update() can be fed partial data;  It will accumulate data until there is
+ * enough to act on.  Finish() should be called when there will be no more
+ * data.
+ */
 NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::UpdateStream(const nsACString& chunk)
 {
@@ -3042,7 +3042,7 @@ nsUrlClassifierDBServiceWorker::UpdateStream(const nsACString& chunk)
     return NS_ERROR_FAILURE;
   }
 
-  
+  // if something has gone wrong during this update, just throw it away
   if (NS_FAILED(mUpdateStatus)) {
     return mUpdateStatus;
   }
@@ -3100,8 +3100,8 @@ nsUrlClassifierDBServiceWorker::FinishStream()
     PRIntervalTime updateTime = PR_IntervalNow() - mUpdateStartTime;
     if (PR_IntervalToSeconds(updateTime) >=
         static_cast<PRUint32>(gWorkingTimeThreshold)) {
-      
-      
+      // We've spent long enough working that we should commit what we
+      // have and hold off for a bit.
       nsresult rv = ApplyUpdate();
       if (NS_FAILED(rv)) {
         if (rv == NS_ERROR_FILE_CORRUPTED) {
@@ -3185,15 +3185,15 @@ nsUrlClassifierDBServiceWorker::ApplyUpdate()
   }
 
   if (NS_SUCCEEDED(mUpdateStatus)) {
-    
+    // Reconstruct the prefix tree from the DB
     nsresult rv = ConstructPrefixSet();
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   if (mGrewCache) {
-    
-    
-    
+    // During the update we increased the page cache to bigger than we
+    // want to keep around.  At the moment, the only reliable way to make
+    // sure that the page cache is freed is to reopen the connection.
     LOG(("GrewCache true, reopening DB"));
     mGrewCache = false;
     CloseDb();
@@ -3215,8 +3215,8 @@ nsUrlClassifierDBServiceWorker::FinishUpdate()
   NS_ENSURE_STATE(!mInStream);
   NS_ENSURE_STATE(mUpdateObserver);
 
-  
-  
+  // We need to get the error code before ApplyUpdate, because it might
+  // close/open the connection.
   PRInt32 errcode = SQLITE_OK;
   if (mConnection)
     mConnection->GetLastError(&errcode);
@@ -3235,9 +3235,9 @@ nsUrlClassifierDBServiceWorker::FinishUpdate()
     mUpdateObserver->UpdateError(mUpdateStatus);
   }
 
-  
-  
-  
+  // It's important that we only reset the database on an update
+  // command if the update was successful, otherwise unauthenticated
+  // updates could cause a database reset.
   bool resetDB = (NS_SUCCEEDED(mUpdateStatus) && mResetRequested) ||
                     errcode == SQLITE_CORRUPT;
 
@@ -3309,10 +3309,10 @@ nsUrlClassifierDBServiceWorker::CancelUpdate()
   return NS_OK;
 }
 
-
-
-
-
+// Allows the main thread to delete the connection which may be in
+// a background thread.
+// XXX This could be turned into a single shutdown event so the logic
+// is simpler in nsUrlClassifierDBService::Shutdown.
 NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::CloseDb()
 {
@@ -3345,16 +3345,16 @@ nsUrlClassifierDBServiceWorker::CacheCompletions(nsTArray<nsUrlClassifierLookupR
 
   nsAutoPtr<nsTArray<nsUrlClassifierLookupResult> > resultsPtr(results);
 
-  
-  
-  
+  // Start a new transaction.  If a transaction is open for an update
+  // this will be a noop, and this cache will be included in the
+  // update's transaction.
   mozStorageTransaction trans(mConnection, true);
 
   for (PRUint32 i = 0; i < results->Length(); i++) {
     nsUrlClassifierLookupResult& result = results->ElementAt(i);
-    
-    
-    
+    // Failing to update here shouldn't be fatal (and might be common,
+    // if we're updating entries that were removed since they were
+    // returned after a lookup).
     mMainStore.UpdateEntry(result.mEntry);
   }
 
@@ -3364,7 +3364,7 @@ nsUrlClassifierDBServiceWorker::CacheCompletions(nsTArray<nsUrlClassifierLookupR
 nsresult
 nsUrlClassifierDBServiceWorker::OpenDb()
 {
-  
+  // Connection already open, don't do anything.
   if (mConnection) {
     return NS_OK;
   }
@@ -3372,7 +3372,7 @@ nsUrlClassifierDBServiceWorker::OpenDb()
   LOG(("Opening db\n"));
 
   nsresult rv;
-  
+  // open the connection
   nsCOMPtr<mozIStorageService> storageService =
     do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -3385,7 +3385,7 @@ nsUrlClassifierDBServiceWorker::OpenDb()
   nsCOMPtr<mozIStorageConnection> connection;
   rv = storageService->OpenDatabase(mDBFile, getter_AddRefs(connection));
   if (rv == NS_ERROR_FILE_CORRUPTED) {
-    
+    // delete the db and try opening again
     rv = mDBFile->Remove(false);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3433,7 +3433,7 @@ nsUrlClassifierDBServiceWorker::OpenDb()
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
+  // Create the table
   rv = MaybeCreateTables(connection);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3499,33 +3499,33 @@ nsUrlClassifierDBServiceWorker::OpenDb()
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// We have both a prefix and a domain. Drop the domain, but
+// hash the domain, the prefix and a random value together,
+// ensuring any collisions happens at a different points for
+// different users.
+// We need to calculate +- 500k hashes each update.
+// The extensive initialization and finalization of normal
+// cryptographic hashes, as well as fairly low speed, causes them
+// to be prohibitively slow here, hence we can't use them.
+// We use MurmurHash3 instead because it's reasonably well
+// researched, trusted inside some other big projects, extremely
+// fast and with a specific a 32-bit output version, and fairly
+// compact. Upon testing with the actual prefix data, it does
+// not appear to increase the number of collisions by any
+// meaningful amount.
 static nsresult KeyedHash(PRUint32 aPref, PRUint32 aDomain,
                           PRUint32 aKey, PRUint32 *aOut)
 {
-  
-  
-  
-  
+  // This is a reimplementation of MurmurHash3 32-bit
+  // based on the public domain C++ sources.
+  // http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp
+  // for nblocks = 2
   PRUint32 c1 = 0xCC9E2D51;
   PRUint32 c2 = 0x1B873593;
   PRUint32 c3 = 0xE6546B64;
   PRUint32 c4 = 0x85EBCA6B;
   PRUint32 c5 = 0xC2B2AE35;
-  PRUint32 h1 = aPref; 
+  PRUint32 h1 = aPref; // seed
   PRUint32 k1;
   PRUint32 karr[2];
 
@@ -3544,8 +3544,8 @@ static nsresult KeyedHash(PRUint32 aPref, PRUint32 aDomain,
     h1 += c3;
   }
 
-  h1 ^= 2; 
-  
+  h1 ^= 2; // len
+  // fmix
   h1 ^= h1 >> 16;
   h1 *= c4;
   h1 ^= h1 >> 13;
@@ -3573,8 +3573,8 @@ nsresult nsUrlClassifierStore::ReadPrefixes(FallibleTArray<PRUint32>& array,
   }
 #endif
 
-  
-  
+  // Make sure we allocate no more than we really need, so first
+  // check how much entries there are
   if (NS_SUCCEEDED(mAllPrefixCountStatement->ExecuteStep(&hasMoreData)) && hasMoreData) {
     PRUint32 count = mAllPrefixCountStatement->AsInt32(0);
     if (!array.SetCapacity(count)) {
@@ -3615,8 +3615,8 @@ nsresult nsUrlClassifierStore::ReadPrefixes(FallibleTArray<PRUint32>& array,
     PRUint32 *res = array.AppendElement(keyedVal);
     MOZ_ASSERT(res != nullptr);
     pcnt++;
-    
-    
+    // Normal DB size is about 500k entries. If we are getting 10x
+    // as much, the database must be corrupted.
     if (pcnt > 5000000) {
       return NS_ERROR_FILE_CORRUPTED;
     }
@@ -3673,34 +3673,34 @@ nsUrlClassifierDBServiceWorker::ConstructPrefixSet()
 #endif
 
   if (array.IsEmpty()) {
-    
+    // DB is empty, put a sentinel to show that we loaded it
     if (!array.AppendElement(0)) {
       goto error_bailout;
     }
   }
-  
+  // SetPrefixes requires sorted arrays
   array.Sort();
 
-  
+  // construct new prefixset
   rv = mPrefixSet->SetPrefixes(array.Elements(), array.Length());
   if (NS_FAILED(rv)) {
     goto error_bailout;
   }
 
-  
+  // store the new tree to disk
   rv = mPrefixSet->StoreToFile(mPSFile);
   NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "failed to store the prefixset");
 
-  
+  // re-enable prefixset usage if disabled earlier
   mPrefixSetEnabled = true;
 
   return NS_OK;
 
  error_bailout:
-  
+  // disable prefixset usage
   MutexAutoLock lock(mPrefixSetEnabledLock);
   mPrefixSetEnabled = false;
-  
+  // load an empty prefixset
   nsAutoTArray<PRUint32, 1> sentinel;
   sentinel.Clear();
   sentinel.AppendElement(0);
@@ -3821,12 +3821,12 @@ nsUrlClassifierDBServiceWorker::MaybeCreateTables(mozIStorageConnection* connect
   return rv;
 }
 
-
-
-
-
-
-
+// -------------------------------------------------------------------------
+// nsUrlClassifierLookupCallback
+//
+// This class takes the results of a lookup found on the worker thread
+// and handles any necessary partial hash expansions before calling
+// the client callback.
 
 class nsUrlClassifierLookupCallback MOZ_FINAL : public nsIUrlClassifierLookupCallback
                                               , public nsIUrlClassifierHashCompleterCallback
@@ -3850,7 +3850,7 @@ private:
   nsRefPtr<nsUrlClassifierDBService> mDBService;
   nsAutoPtr<nsTArray<nsUrlClassifierLookupResult> > mResults;
 
-  
+  // Completed results to send back to the worker for caching.
   nsAutoPtr<nsTArray<nsUrlClassifierLookupResult> > mCacheResults;
 
   PRUint32 mPendingCompletions;
@@ -3875,11 +3875,11 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<nsUrlClassifierLookupResu
   mResults = results;
   mResults->Sort();
 
-  
+  // Check the results entries that need to be completed.
   for (PRUint32 i = 0; i < results->Length(); i++) {
     nsUrlClassifierLookupResult& result = results->ElementAt(i);
 
-    
+    // We will complete partial matches and matches that are stale.
     if (!result.mConfirmed) {
       nsCOMPtr<nsIUrlClassifierHashCompleter> completer;
       if (mDBService->GetCompleter(result.mTableName,
@@ -3895,10 +3895,10 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<nsUrlClassifierLookupResu
           mPendingCompletions++;
         }
       } else {
-        
-        
-        
-        
+        // For tables with no hash completer, a complete hash match is
+        // good enough, it doesn't need to be fresh. (we need the
+        // mLookupFragment comparison to weed out noise entries, which
+        // should never be confirmed).
         if (result.mEntry.mHaveComplete
             && (result.mLookupFragment == result.mEntry.mCompleteHash)) {
           result.mConfirmed = true;
@@ -3910,7 +3910,7 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<nsUrlClassifierLookupResu
   }
 
   if (mPendingCompletions == 0) {
-    
+    // All results were complete, we're ready!
     HandleResults();
   }
 
@@ -3931,8 +3931,8 @@ nsUrlClassifierLookupCallback::CompletionFinished(nsresult status)
     HandleResults();
 
     if (mCacheResults) {
-      
-      
+      // This hands ownership of the cache results array back to the worker
+      // thread.
       mDBService->CacheCompletions(mCacheResults.forget());
     }
   }
@@ -3954,13 +3954,13 @@ nsUrlClassifierLookupCallback::Completion(const nsACString& completeHash,
   for (PRUint32 i = 0; i < mResults->Length(); i++) {
     nsUrlClassifierLookupResult& result = mResults->ElementAt(i);
 
-    
+    // First, see if this result can be used to update an entry.
     if (verified &&
         !result.mEntry.mHaveComplete &&
         hash.StartsWith(result.mEntry.mPartialHash) &&
         result.mTableName == tableName &&
         result.mEntry.mChunkId == chunkId) {
-      
+      // We have a completion for this entry.  Fill it in...
       result.mEntry.SetHash(hash);
 
       if (!mCacheResults) {
@@ -3972,21 +3972,21 @@ nsUrlClassifierLookupCallback::Completion(const nsACString& completeHash,
       mCacheResults->AppendElement(result);
     }
 
-    
+    // Now, see if it verifies a lookup
     if (result.mLookupFragment == hash) {
       result.mConfirmed = true;
 
       if (result.mTableName != tableName ||
           result.mEntry.mChunkId != chunkId) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // The hash we got for this completion matches the hash we
+        // looked up, but doesn't match the table/chunk id.  This could
+        // happen in rare cases where a given URL was moved between
+        // lists or added/removed/re-added to the list in the time since
+        // we've updated.
+        //
+        // Update the lookup result, but don't update the entry or try
+        // cache the results of this completion, as it might confuse
+        // things.
         result.mTableName = tableName;
         NS_WARNING("Accepting a gethash with an invalid table name or chunk id");
         LOG(("Tablename: %s ?= %s, ChunkId %d ?= %d",
@@ -4003,19 +4003,19 @@ nsresult
 nsUrlClassifierLookupCallback::HandleResults()
 {
   if (!mResults) {
-    
+    // No results, this URI is clean.
     return mCallback->HandleEvent(NS_LITERAL_CSTRING(""));
   }
 
-  
+  // Build a stringified list of result tables.
   mResults->Sort();
   PRUint32 lastTableId = 0;
   nsCAutoString tables;
   for (PRUint32 i = 0; i < mResults->Length(); i++) {
     nsUrlClassifierLookupResult& result = mResults->ElementAt(i);
-    
-    
-    
+    // Leave out results that weren't confirmed, as their existence on
+    // the list can't be verified.  Also leave out randomly-generated
+    // noise.
     if (!result.mConfirmed || result.mNoise)
       continue;
 
@@ -4033,9 +4033,9 @@ nsUrlClassifierLookupCallback::HandleResults()
 }
 
 
-
-
-
+// -------------------------------------------------------------------------
+// Helper class for nsIURIClassifier implementation, translates table names
+// to nsIURIClassifier enums.
 
 class nsUrlClassifierClassifyCallback MOZ_FINAL : public nsIUrlClassifierCallback
 {
@@ -4063,9 +4063,9 @@ NS_IMPL_THREADSAFE_ISUPPORTS1(nsUrlClassifierClassifyCallback,
 NS_IMETHODIMP
 nsUrlClassifierClassifyCallback::HandleEvent(const nsACString& tables)
 {
-  
-  
-  
+  // XXX: we should probably have the wardens tell the service which table
+  // names match with which classification.  For now the table names give
+  // enough information.
   nsresult response = NS_OK;
 
   nsACString::const_iterator begin, end;
@@ -4076,7 +4076,7 @@ nsUrlClassifierClassifyCallback::HandleEvent(const nsACString& tables)
       FindInReadable(NS_LITERAL_CSTRING("-malware-"), begin, end)) {
     response = NS_ERROR_MALWARE_URI;
   } else {
-    
+    // Reset begin before checking phishing table
     tables.BeginReading(begin);
 
     if (mCheckPhishing &&
@@ -4091,15 +4091,15 @@ nsUrlClassifierClassifyCallback::HandleEvent(const nsACString& tables)
 }
 
 
-
-
+// -------------------------------------------------------------------------
+// Proxy class implementation
 
 NS_IMPL_THREADSAFE_ISUPPORTS3(nsUrlClassifierDBService,
                               nsIUrlClassifierDBService,
                               nsIURIClassifier,
                               nsIObserver)
 
- nsUrlClassifierDBService*
+/* static */ nsUrlClassifierDBService*
 nsUrlClassifierDBService::GetInstance(nsresult *result)
 {
   *result = NS_OK;
@@ -4110,7 +4110,7 @@ nsUrlClassifierDBService::GetInstance(nsresult *result)
       return nullptr;
     }
 
-    NS_ADDREF(sUrlClassifierDBService);   
+    NS_ADDREF(sUrlClassifierDBService);   // addref the global
 
     *result = sUrlClassifierDBService->Init();
     if (NS_FAILED(*result)) {
@@ -4118,8 +4118,8 @@ nsUrlClassifierDBService::GetInstance(nsresult *result)
       return nullptr;
     }
   } else {
-    
-    NS_ADDREF(sUrlClassifierDBService);   
+    // Already exists, just add a ref
+    NS_ADDREF(sUrlClassifierDBService);   // addref the return result
   }
   return sUrlClassifierDBService;
 }
@@ -4145,20 +4145,20 @@ nsUrlClassifierDBService::Init()
     gUrlClassifierDbServiceLog = PR_NewLogModule("UrlClassifierDbService");
 #endif
 
-  
+  // Force the storage service to be created on the main thread.
   nsresult rv;
   nsCOMPtr<mozIStorageService> storageService =
     do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Force PSM to be loaded on the main thread.
   mHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mPrefixSet = new nsUrlClassifierPrefixSet();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Should we check document loads for malware URIs?
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
 
   PRInt32 gethashNoise = 0;
@@ -4206,7 +4206,7 @@ nsUrlClassifierDBService::Init()
                   NS_SUCCEEDED(rv) ? tmpint : UPDATE_DELAY_TIME_DEFAULT);
   }
 
-  
+  // Start the background thread.
   rv = NS_NewNamedThread("URL Classifier", &gDbBackgroundThread);
   if (NS_FAILED(rv))
     return rv;
@@ -4221,12 +4221,12 @@ nsUrlClassifierDBService::Init()
     return rv;
   }
 
-  
+  // Proxy for calling the worker on the background thread
   mWorkerProxy = new UrlClassifierDBServiceWorkerProxy(mWorker);
 
   mCompleters.Init();
 
-  
+  // Add an observer for shutdown
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
   if (!observerService)
@@ -4258,7 +4258,7 @@ nsUrlClassifierDBService::Classify(nsIPrincipal* aPrincipal,
   nsresult rv = LookupURI(aPrincipal, callback, false, result);
   if (rv == NS_ERROR_MALFORMED_URI) {
     *result = false;
-    
+    // The URI had no hostname, don't try to classify it.
     return NS_OK;
   }
   NS_ENSURE_SUCCESS(rv, rv);
@@ -4293,7 +4293,7 @@ nsUrlClassifierDBService::LookupURI(nsIPrincipal* aPrincipal,
   NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
 
   nsCAutoString key;
-  
+  // Canonicalize the url
   nsCOMPtr<nsIUrlClassifierUtils> utilsService =
     do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID);
   rv = utilsService->GetKeyForURI(uri, key);
@@ -4303,8 +4303,8 @@ nsUrlClassifierDBService::LookupURI(nsIPrincipal* aPrincipal,
   if (forceLookup) {
     *didLookup = true;
   } else {
-    
-    
+    // Check if the URI is clean.  If so, we don't need to
+    // bother queueing up a lookup, we can just return.;
     bool clean;
     rv = CheckClean(key, &clean);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -4329,9 +4329,9 @@ nsUrlClassifierDBService::LookupURI(nsIPrincipal* aPrincipal,
     }
   }
 
-  
-  
-  
+  // Create an nsUrlClassifierLookupCallback object.  This object will
+  // take care of confirming partial hash matches if necessary before
+  // calling the client's callback.
   nsCOMPtr<nsIUrlClassifierLookupCallback> callback =
     new nsUrlClassifierLookupCallback(this, c);
   if (!callback)
@@ -4340,8 +4340,8 @@ nsUrlClassifierDBService::LookupURI(nsIPrincipal* aPrincipal,
   nsCOMPtr<nsIUrlClassifierLookupCallback> proxyCallback =
     new UrlClassifierLookupCallbackProxy(callback);
 
-  
-  
+  // Queue this lookup and call the lookup function to flush the queue if
+  // necessary.
   rv = mWorker->QueueLookup(key, proxyCallback);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -4353,7 +4353,7 @@ nsUrlClassifierDBService::GetTables(nsIUrlClassifierCallback* c)
 {
   NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
 
-  
+  // The proxy callback uses the current thread.
   nsCOMPtr<nsIUrlClassifierCallback> proxyCallback =
     new UrlClassifierCallbackProxy(c);
 
@@ -4385,7 +4385,7 @@ nsUrlClassifierDBService::BeginUpdate(nsIUrlClassifierUpdateObserver *observer,
 
   mInUpdate = true;
 
-  
+  // The proxy observer uses the current thread
   nsCOMPtr<nsIUrlClassifierUpdateObserver> proxyObserver =
     new UrlClassifierUpdateObserverProxy(observer);
 
@@ -4525,7 +4525,7 @@ nsUrlClassifierDBService::Observe(nsISupports *aSubject, const char *aTopic,
   return NS_OK;
 }
 
-
+// Join the background thread if it exists.
 nsresult
 nsUrlClassifierDBService::Shutdown()
 {
@@ -4545,7 +4545,7 @@ nsUrlClassifierDBService::Shutdown()
   }
 
   nsresult rv;
-  
+  // First close the db connection.
   if (mWorker) {
     rv = mWorkerProxy->CancelUpdate();
     NS_ASSERTION(NS_SUCCEEDED(rv), "failed to post cancel update event");

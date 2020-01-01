@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <math.h>
 
@@ -61,17 +61,17 @@ nsHTMLEditor::AbsolutePositionSelection(bool aEnabled)
 {
   nsAutoEditBatch beginBatching(this);
   nsAutoRules beginRulesSniffing(this,
-                                 aEnabled ? kOpSetAbsolutePosition :
-                                            kOpRemoveAbsolutePosition,
+                                 aEnabled ? OperationID::setAbsolutePosition :
+                                            OperationID::removeAbsolutePosition,
                                  nsIEditor::eNext);
   
-  
-  
+  // the line below does not match the code; should it be removed?
+  // Find out if the selection is collapsed:
   nsRefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
-  nsTextRulesInfo ruleInfo(aEnabled ? kOpSetAbsolutePosition :
-                                      kOpRemoveAbsolutePosition);
+  nsTextRulesInfo ruleInfo(aEnabled ? OperationID::setAbsolutePosition :
+                                      OperationID::removeAbsolutePosition);
   bool cancel, handled;
   nsresult res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   if (NS_FAILED(res) || cancel)
@@ -139,7 +139,7 @@ nsHTMLEditor::RelativeChangeElementZIndex(nsIDOMElement * aElement,
 {
   NS_ENSURE_ARG_POINTER(aElement);
   NS_ENSURE_ARG_POINTER(aReturn);
-  if (!aChange) 
+  if (!aChange) // early way out, no change
     return NS_OK;
 
   PRInt32 zIndex;
@@ -174,16 +174,16 @@ nsHTMLEditor::RelativeChangeZIndex(PRInt32 aChange)
 {
   nsAutoEditBatch beginBatching(this);
   nsAutoRules beginRulesSniffing(this,
-                                 (aChange < 0) ? kOpDecreaseZIndex :
-                                                 kOpIncreaseZIndex,
+                                 (aChange < 0) ? OperationID::decreaseZIndex :
+                                                 OperationID::increaseZIndex,
                                  nsIEditor::eNext);
   
-  
-  
+  // brade: can we get rid of this comment?
+  // Find out if the selection is collapsed:
   nsRefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  nsTextRulesInfo ruleInfo(aChange < 0 ? kOpDecreaseZIndex :
-                                         kOpIncreaseZIndex);
+  nsTextRulesInfo ruleInfo(aChange < 0 ? OperationID::decreaseZIndex :
+                                         OperationID::increaseZIndex);
   bool cancel, handled;
   nsresult res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   if (cancel || NS_FAILED(res))
@@ -204,8 +204,8 @@ nsHTMLEditor::GetElementZIndex(nsIDOMElement * aElement,
                                                      zIndexStr);
   NS_ENSURE_SUCCESS(res, res);
   if (zIndexStr.EqualsLiteral("auto")) {
-    
-    
+    // we have to look at the positioned ancestors
+    // cf. CSS 2 spec section 9.9.1
     nsCOMPtr<nsIDOMNode> parentNode;
     res = aElement->GetParentNode(getter_AddRefs(parentNode));
     NS_ENSURE_SUCCESS(res, res);
@@ -219,8 +219,8 @@ nsHTMLEditor::GetElementZIndex(nsIDOMElement * aElement,
                                                positionStr);
       NS_ENSURE_SUCCESS(res, res);
       if (positionStr.EqualsLiteral("absolute")) {
-        
-        
+        // ah, we found one, what's its z-index ? If its z-index is auto,
+        // we have to continue climbing the document's tree
         res = mHTMLCSSUtils->GetComputedProperty(node,
                                                  nsEditProperty::cssZIndex,
                                                  zIndexStr);
@@ -243,7 +243,7 @@ nsHTMLEditor::GetElementZIndex(nsIDOMElement * aElement,
 nsresult
 nsHTMLEditor::CreateGrabber(nsIDOMNode * aParentNode, nsIDOMElement ** aReturn)
 {
-  
+  // let's create a grabber through the element factory
   nsresult res = CreateAnonymousElement(NS_LITERAL_STRING("span"),
                                         aParentNode,
                                         NS_LITERAL_STRING("mozGrabber"),
@@ -252,7 +252,7 @@ nsHTMLEditor::CreateGrabber(nsIDOMNode * aParentNode, nsIDOMElement ** aReturn)
 
   NS_ENSURE_TRUE(*aReturn, NS_ERROR_FAILURE);
 
-  
+  // add the mouse listener so we can detect a click on a resizer
   nsCOMPtr<nsIDOMEventTarget> evtTarget(do_QueryInterface(*aReturn));
   evtTarget->AddEventListener(NS_LITERAL_STRING("mousedown"),
                               mEventListener, false);
@@ -293,11 +293,11 @@ nsHTMLEditor::HideGrabber()
   mAbsolutelyPositionedObject = nullptr;
   NS_ENSURE_TRUE(mGrabber, NS_ERROR_NULL_POINTER);
 
-  
+  // get the presshell's document observer interface.
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
-  
-  
-  
+  // We allow the pres shell to be null; when it is, we presume there
+  // are no document observers to notify, but we still want to
+  // UnbindFromTree.
 
   nsCOMPtr<nsIDOMNode> parentNode;
   res = mGrabber->GetParentNode(getter_AddRefs(parentNode));
@@ -332,7 +332,7 @@ nsHTMLEditor::ShowGrabberOnElement(nsIDOMElement * aElement)
                                classValue);
   NS_ENSURE_SUCCESS(res, res);
 
-  
+  // first, let's keep track of that element...
   mAbsolutelyPositionedObject = aElement;
 
   nsCOMPtr<nsIDOMNode> parentNode;
@@ -342,7 +342,7 @@ nsHTMLEditor::ShowGrabberOnElement(nsIDOMElement * aElement)
   res = CreateGrabber(parentNode, getter_AddRefs(mGrabber));
   NS_ENSURE_SUCCESS(res, res);
 
-  
+  // and set its position
   return RefreshGrabber();
 }
 
@@ -353,7 +353,7 @@ nsHTMLEditor::StartMoving(nsIDOMElement *aHandle)
   nsresult res = mGrabber->GetParentNode(getter_AddRefs(parentNode));
   NS_ENSURE_SUCCESS(res, res);
 
-  
+  // now, let's create the resizing shadow
   res = CreateShadow(getter_AddRefs(mPositioningShadow),
                                  parentNode, mAbsolutelyPositionedObject);
   NS_ENSURE_SUCCESS(res,res);
@@ -361,10 +361,10 @@ nsHTMLEditor::StartMoving(nsIDOMElement *aHandle)
                              mPositionedObjectX, mPositionedObjectY);
   NS_ENSURE_SUCCESS(res,res);
 
-  
+  // make the shadow appear
   mPositioningShadow->RemoveAttribute(NS_LITERAL_STRING("class"));
 
-  
+  // position it
   mHTMLCSSUtils->SetCSSPropertyPixels(mPositioningShadow,
                                       NS_LITERAL_STRING("width"),
                                       mPositionedObjectWidth);
@@ -388,7 +388,7 @@ nsHTMLEditor::SnapToGrid(PRInt32 & newX, PRInt32 & newY)
 nsresult
 nsHTMLEditor::GrabberClicked()
 {
-  
+  // add a mouse move listener to the editor
   nsresult res = NS_OK;
   if (!mMouseMotionListenerP) {
     mMouseMotionListenerP = new ResizerMouseMotionListener(this);
@@ -453,9 +453,9 @@ nsHTMLEditor::SetFinalPosition(PRInt32 aX, PRInt32 aY)
   nsresult res = EndMoving();
   NS_ENSURE_SUCCESS(res, res);
 
-  
-  
-  
+  // we have now to set the new width and height of the resized object
+  // we don't set the x and y position because we don't control that in
+  // a normal HTML layout
   PRInt32 newX = mPositionedObjectX + aX - mOriginalX - (mPositionedObjectBorderLeft+mPositionedObjectMarginLeft);
   PRInt32 newY = mPositionedObjectY + aY - mOriginalY - (mPositionedObjectBorderTop+mPositionedObjectMarginTop);
 
@@ -465,7 +465,7 @@ nsHTMLEditor::SetFinalPosition(PRInt32 aX, PRInt32 aY)
   x.AppendInt(newX);
   y.AppendInt(newY);
 
-  
+  // we want one transaction only from a user's point of view
   nsAutoEditBatch batchIt(this);
 
   mHTMLCSSUtils->SetCSSPropertyPixels(mAbsolutelyPositionedObject,
@@ -476,7 +476,7 @@ nsHTMLEditor::SetFinalPosition(PRInt32 aX, PRInt32 aY)
                                       nsEditProperty::cssLeft,
                                       newX,
                                       false);
-  
+  // keep track of that size
   mPositionedObjectX  = newX;
   mPositionedObjectY  = newY;
 
@@ -486,7 +486,7 @@ nsHTMLEditor::SetFinalPosition(PRInt32 aX, PRInt32 aY)
 void
 nsHTMLEditor::AddPositioningOffset(PRInt32 & aX, PRInt32 & aY)
 {
-  
+  // Get the positioning offset
   PRInt32 positioningOffset =
     Preferences::GetInt("editor.positioning.offset", 0);
 
@@ -505,7 +505,7 @@ nsHTMLEditor::AbsolutelyPositionElement(nsIDOMElement * aElement,
                                      positionStr);
   bool isPositioned = (positionStr.EqualsLiteral("absolute"));
 
-  
+  // nothing to do if the element is already in the state we want
   if (isPositioned == aEnabled)
     return NS_OK;
 
@@ -524,8 +524,8 @@ nsHTMLEditor::AbsolutelyPositionElement(nsIDOMElement * aElement,
     SnapToGrid(x, y);
     SetElementPosition(aElement, x, y);
 
-    
-    
+    // we may need to create a br if the positioned element is alone in its
+    // container
     nsCOMPtr<nsINode> element = do_QueryInterface(aElement);
     NS_ENSURE_STATE(element);
 
@@ -600,7 +600,7 @@ nsHTMLEditor::GetGridSize(PRUint32 * aSize)
   return NS_OK;
 }
 
-
+// self-explanatory
 NS_IMETHODIMP
 nsHTMLEditor::SetElementPosition(nsIDOMElement *aElement, PRInt32 aX, PRInt32 aY)
 {
@@ -617,7 +617,7 @@ nsHTMLEditor::SetElementPosition(nsIDOMElement *aElement, PRInt32 aX, PRInt32 aY
   return NS_OK;
 }
 
-
+// self-explanatory
 NS_IMETHODIMP
 nsHTMLEditor::GetPositionedElement(nsIDOMElement ** aReturn)
 {
@@ -630,16 +630,16 @@ nsresult
 nsHTMLEditor::CheckPositionedElementBGandFG(nsIDOMElement * aElement,
                                             nsAString & aReturn)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // we are going to outline the positioned element and bring it to the
+  // front to overlap any other element intersecting with it. But
+  // first, let's see what's the background and foreground colors of the
+  // positioned element.
+  // if background-image computed value is 'none,
+  //   If the background color is 'auto' and R G B values of the foreground are
+  //       each above #d0, use a black background
+  //   If the background color is 'auto' and at least one of R G B values of
+  //       the foreground is below #d0, use a white background
+  // Otherwise don't change background/foreground
 
   aReturn.Truncate();
   
@@ -661,7 +661,7 @@ nsHTMLEditor::CheckPositionedElementBGandFG(nsIDOMElement * aElement,
         mHTMLCSSUtils->GetComputedStyle(aElement);
       NS_ENSURE_STATE(cssDecl);
 
-      
+      // from these declarations, get the one we want and that one only
       nsCOMPtr<nsIDOMCSSValue> colorCssValue;
       res = cssDecl->GetPropertyCSSValue(NS_LITERAL_STRING("color"), getter_AddRefs(colorCssValue));
       NS_ENSURE_SUCCESS(res, res);

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/ContentChild.h"
 
@@ -46,11 +46,11 @@
 
 namespace mozilla {
 
-
+// Definitions
 #define INITIAL_PREF_FILES 10
 static NS_DEFINE_CID(kZipReaderCID, NS_ZIPREADER_CID);
 
-
+// Prototypes
 static nsresult openPrefFile(nsIFile* aFile);
 static nsresult pref_InitInitialObjects(void);
 static nsresult pref_LoadPrefsInDirList(const char *listId);
@@ -159,7 +159,7 @@ static nsTArray<nsAutoPtr<CacheData> >* gCacheData = nullptr;
 static nsRefPtrHashtable<ValueObserverHashKey,
                          ValueObserver>* gObserverTable = nullptr;
 
-
+// static
 Preferences*
 Preferences::GetInstanceForService()
 {
@@ -179,7 +179,7 @@ Preferences::GetInstanceForService()
   NS_ADDREF(sPreferences);
 
   if (NS_FAILED(sPreferences->Init())) {
-    
+    // The singleton instance will delete sRootBranch and sDefaultRootBranch.
     NS_RELEASE(sPreferences);
     return nullptr;
   }
@@ -193,7 +193,7 @@ Preferences::GetInstanceForService()
   return sPreferences;
 }
 
-
+// static
 bool
 Preferences::InitStaticMembers()
 {
@@ -205,27 +205,27 @@ Preferences::InitStaticMembers()
   return sPreferences != nullptr;
 }
 
-
+// static
 void
 Preferences::Shutdown()
 {
   if (!sShutdown) {
-    sShutdown = true; 
+    sShutdown = true; // Don't create the singleton instance after here.
 
-    
-    
-    
+    // Don't set NULL to sPreferences here.  The instance may be grabbed by
+    // other modules.  The utility methods of Preferences should be available
+    // until the singleton instance actually released.
     if (sPreferences) {
       sPreferences->Release();
     }
   }
 }
 
+//-----------------------------------------------------------------------------
 
-
-
-
-
+/*
+ * Constructor/Destructor
+ */
 
 Preferences::Preferences()
 {
@@ -250,9 +250,9 @@ Preferences::~Preferences()
 }
 
 
-
-
-
+/*
+ * nsISupports Implementation
+ */
 
 NS_IMPL_THREADSAFE_ADDREF(Preferences)
 NS_IMPL_THREADSAFE_RELEASE(Preferences)
@@ -268,9 +268,9 @@ NS_INTERFACE_MAP_BEGIN(Preferences)
 NS_INTERFACE_MAP_END
 
 
-
-
-
+/*
+ * nsIPrefService Implementation
+ */
 
 nsresult
 Preferences::Init()
@@ -288,7 +288,7 @@ Preferences::Init()
     InfallibleTArray<PrefTuple> array;
     ContentChild::GetSingleton()->SendReadPrefsArray(&array);
 
-    
+    // Store the array
     nsTArray<PrefTuple>::size_type index = array.Length();
     while (index-- > 0) {
       pref_SetPrefTuple(array[index], true);
@@ -297,13 +297,13 @@ Preferences::Init()
   }
 
   nsXPIDLCString lockFileName;
-  
-
-
-
-
-
-
+  /*
+   * The following is a small hack which will allow us to only load the library
+   * which supports the netscape.cfg file if the preference is defined. We
+   * test for the existence of the pref, set in the all.js (mozilla) or
+   * all-ns.js (netscape 6), and if it exists we startup the pref config
+   * category which will do the rest.
+   */
 
   rv = PREF_CopyCharPref("general.config.filename", getter_Copies(lockFileName), false);
   if (NS_SUCCEEDED(rv))
@@ -323,7 +323,7 @@ Preferences::Init()
   return(rv);
 }
 
-
+// static
 nsresult
 Preferences::ResetAndReadUserPrefs()
 {
@@ -352,7 +352,7 @@ Preferences::Observe(nsISupports *aSubject, const char *aTopic,
   } else if (!strcmp(aTopic, "load-extension-defaults")) {
     pref_LoadPrefsInDirList(NS_EXT_PREFS_DEFAULTS_DIR_LIST);
   } else if (!nsCRT::strcmp(aTopic, "reload-default-prefs")) {
-    
+    // Reload the default prefs from file.
     pref_InitInitialObjects();
   }
   return rv;
@@ -371,8 +371,8 @@ Preferences::ReadUserPrefs(nsIFile *aFile)
 
   if (nullptr == aFile) {
     rv = UseDefaultPrefFile();
-    
-    
+    // A user pref file is optional.
+    // Ignore all errors related to it, so we retain 'rv' value :-|
     (void) UseUserPrefFile();
 
     NotifyServiceObservers(NS_PREFSERVICE_READ_TOPIC_ID);
@@ -505,14 +505,14 @@ Preferences::GetBranch(const char *aPrefRoot, nsIPrefBranch **_retval)
   nsresult rv;
 
   if ((nullptr != aPrefRoot) && (*aPrefRoot != '\0')) {
-    
+    // TODO: - cache this stuff and allow consumers to share branches (hold weak references I think)
     nsPrefBranch* prefBranch = new nsPrefBranch(aPrefRoot, false);
     if (!prefBranch)
       return NS_ERROR_OUT_OF_MEMORY;
 
     rv = CallQueryInterface(prefBranch, _retval);
   } else {
-    
+    // special case caching the default root
     rv = CallQueryInterface(sRootBranch, _retval);
   }
   return rv;
@@ -525,7 +525,7 @@ Preferences::GetDefaultBranch(const char *aPrefRoot, nsIPrefBranch **_retval)
     return CallQueryInterface(sDefaultRootBranch, _retval);
   }
 
-  
+  // TODO: - cache this stuff and allow consumers to share branches (hold weak references I think)
   nsPrefBranch* prefBranch = new nsPrefBranch(aPrefRoot, true);
   if (!prefBranch)
     return NS_ERROR_OUT_OF_MEMORY;
@@ -557,9 +557,9 @@ Preferences::UseDefaultPrefFile()
   rv = NS_GetSpecialDirectory(NS_APP_PREFS_50_FILE, getter_AddRefs(aFile));
   if (NS_SUCCEEDED(rv)) {
     rv = ReadAndOwnUserPrefFile(aFile);
-    
-    
-    
+    // Most likely cause of failure here is that the file didn't
+    // exist, so save a new one. mUserPrefReadFailed will be
+    // used to catch an error in actually reading the file.
     if (NS_FAILED(rv)) {
       if (NS_FAILED(SavePrefFileInternal(aFile)))
         NS_ERROR("Failed to save new shared pref file");
@@ -597,8 +597,8 @@ Preferences::UseUserPrefFile()
 nsresult
 Preferences::MakeBackupPrefFile(nsIFile *aFile)
 {
-  
-  
+  // Example: this copies "prefs.js" to "Invalidprefs.js" in the same directory.
+  // "Invalidprefs.js" is removed if it exists, prior to making the copy.
   nsAutoString newFilename;
   nsresult rv = aFile->GetLeafName(newFilename);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -634,9 +634,9 @@ Preferences::ReadAndOwnUserPrefFile(nsIFile *aFile)
   if (exists) {
     rv = openPrefFile(mCurrentFile);
     if (NS_FAILED(rv)) {
-      
-      
-      
+      // Save a backup copy of the current (invalid) prefs file, since all prefs
+      // from the error line to the end of the file will be lost (bug 361102).
+      // TODO we should notify the user about it (bug 523725).
       MakeBackupPrefFile(mCurrentFile);
     }
   } else {
@@ -650,12 +650,12 @@ nsresult
 Preferences::SavePrefFileInternal(nsIFile *aFile)
 {
   if (nullptr == aFile) {
-    
-    
+    // the gDirty flag tells us if we should write to mCurrentFile
+    // we only check this flag when the caller wants to write to the default
     if (!gDirty)
       return NS_OK;
     
-    
+    // It's possible that we never got a prefs file.
     nsresult rv = NS_OK;
     if (mCurrentFile)
       rv = WritePrefFile(mCurrentFile);
@@ -697,7 +697,7 @@ Preferences::WritePrefFile(nsIFile* aFile)
   if (!gHashTable.ops)
     return NS_ERROR_NOT_INITIALIZED;
 
-  
+  // execute a "safe" save by saving through a tempfile
   rv = NS_NewSafeLocalFileOutputStream(getter_AddRefs(outStreamSink),
                                        aFile,
                                        -1,
@@ -716,13 +716,13 @@ Preferences::WritePrefFile(nsIFile* aFile)
   saveArgs.prefArray = valueArray;
   saveArgs.saveTypes = SAVE_ALL;
   
-  
+  // get the lines that we're supposed to be writing to the file
   PL_DHashTableEnumerate(&gHashTable, pref_savePref, &saveArgs);
     
-  
+  /* Sort the preferences to make a readable file on disk */
   NS_QuickSort(valueArray, gHashTable.entryCount, sizeof(char *), pref_CompareStrings, NULL);
   
-  
+  // write out the file header
   outStream->Write(outHeader, sizeof(outHeader) - 1, &writeAmount);
 
   char** walker = valueArray;
@@ -735,8 +735,8 @@ Preferences::WritePrefFile(nsIFile* aFile)
   }
   PR_Free(valueArray);
 
-  
-  
+  // tell the safe output stream to overwrite the real prefs file
+  // (it'll abort if there were any errors during writing)
   nsCOMPtr<nsISafeOutputStream> safeStream = do_QueryInterface(outStream);
   NS_ASSERTION(safeStream, "expected a safe output stream!");
   if (safeStream) {
@@ -771,8 +771,8 @@ static nsresult openPrefFile(nsIFile* aFile)
   PrefParseState ps;
   PREF_InitParseState(&ps, PREF_ReaderCallback, NULL);
 
-  
-  
+  // Read is not guaranteed to return a buf the size of fileSize,
+  // but usually will.
   nsresult rv2 = NS_OK;
   for (;;) {
     PRUint32 amtRead = 0;
@@ -788,12 +788,12 @@ static nsresult openPrefFile(nsIFile* aFile)
   return NS_FAILED(rv) ? rv : rv2;
 }
 
-
-
-
+/*
+ * some stuff that gets called from Pref_Init()
+ */
 
 static int
-pref_CompareFileNames(nsIFile* aFile1, nsIFile* aFile2, void* )
+pref_CompareFileNames(nsIFile* aFile1, nsIFile* aFile2, void* /*unused*/)
 {
   nsCAutoString filename1, filename2;
   aFile1->GetNativeLeafName(filename1);
@@ -802,11 +802,11 @@ pref_CompareFileNames(nsIFile* aFile1, nsIFile* aFile2, void* )
   return Compare(filename2, filename1);
 }
 
-
-
-
-
-
+/**
+ * Load default pref files from a directory. The files in the
+ * directory are sorted reverse-alphabetically; a set of "special file
+ * names" may be specified which are loaded after all the others.
+ */
 static nsresult
 pref_LoadPrefsInDir(nsIFile* aDir, char const *const *aSpecialFiles, PRUint32 aSpecialFilesCount)
 {
@@ -815,11 +815,11 @@ pref_LoadPrefsInDir(nsIFile* aDir, char const *const *aSpecialFiles, PRUint32 aS
 
   nsCOMPtr<nsISimpleEnumerator> dirIterator;
 
-  
+  // this may fail in some normal cases, such as embedders who do not use a GRE
   rv = aDir->GetDirectoryEntries(getter_AddRefs(dirIterator));
   if (NS_FAILED(rv)) {
-    
-    
+    // If the directory doesn't exist, then we have no reason to complain.  We
+    // loaded everything (and nothing) successfully.
     if (rv == NS_ERROR_FILE_NOT_FOUND || rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST)
       rv = NS_OK;
     return rv;
@@ -843,16 +843,16 @@ pref_LoadPrefsInDir(nsIFile* aDir, char const *const *aSpecialFiles, PRUint32 aS
     prefFile->GetNativeLeafName(leafName);
     NS_ASSERTION(!leafName.IsEmpty(), "Failure in default prefs: directory enumerator returned empty file?");
 
-    
+    // Skip non-js files
     if (StringEndsWith(leafName, NS_LITERAL_CSTRING(".js"),
                        nsCaseInsensitiveCStringComparator())) {
       bool shouldParse = true;
-      
+      // separate out special files
       for (PRUint32 i = 0; i < aSpecialFilesCount; ++i) {
         if (leafName.Equals(nsDependentCString(aSpecialFiles[i]))) {
           shouldParse = false;
-          
-          
+          // special files should be process in order; we put them into
+          // the array by index; this can make the array sparse
           specialFiles.ReplaceObjectAt(prefFile, i);
         }
       }
@@ -887,7 +887,7 @@ pref_LoadPrefsInDir(nsIFile* aDir, char const *const *aSpecialFiles, PRUint32 aS
 
   arrayCount = specialFiles.Count();
   for (i = 0; i < arrayCount; ++i) {
-    
+    // this may be a sparse array; test before parsing
     nsIFile* file = specialFiles[i];
     if (file) {
       rv2 = openPrefFile(file);
@@ -929,7 +929,7 @@ static nsresult pref_LoadPrefsInDirList(const char *listId)
     nsCAutoString leaf;
     path->GetNativeLeafName(leaf);
 
-    
+    // Do we care if a file provided by this process fails to load?
     if (Substring(leaf, leaf.Length() - 4).Equals(NS_LITERAL_CSTRING(".xpi")))
       ReadExtensionPrefs(path);
     else
@@ -945,42 +945,42 @@ static nsresult pref_ReadPrefFromJar(nsZipArchive* jarReader, const char *name)
 
   PrefParseState ps;
   PREF_InitParseState(&ps, PREF_ReaderCallback, NULL);
-  nsresult rv = PREF_ParseBuf(&ps, manifest, manifest.Length());
+  PREF_ParseBuf(&ps, manifest, manifest.Length());
   PREF_FinalizeParseState(&ps);
 
-  return rv;
+  return NS_OK;
 }
 
-
-
-
-
+//----------------------------------------------------------------------------------------
+// Initialize default preference JavaScript buffers from
+// appropriate TEXT resources
+//----------------------------------------------------------------------------------------
 static nsresult pref_InitInitialObjects()
 {
   nsresult rv;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // In omni.jar case, we load the following prefs:
+  // - jar:$gre/omni.jar!/greprefs.js
+  // - jar:$gre/omni.jar!/defaults/pref/*.js
+  // In non omni.jar case, we load:
+  // - $gre/greprefs.js
+  //
+  // In both cases, we also load:
+  // - $gre/defaults/pref/*.js
+  // This is kept for bug 591866 (channel-prefs.js should not be in omni.jar)
+  // on $app == $gre case ; we load all files instead of channel-prefs.js only
+  // to have the same behaviour as $app != $gre, where this is required as
+  // a supported location for GRE preferences.
+  //
+  // When $app != $gre, we additionally load, in omni.jar case:
+  // - jar:$app/omni.jar!/defaults/preferences/*.js
+  // - $app/defaults/preferences/*.js
+  // and in non omni.jar case:
+  // - $app/defaults/preferences/*.js
+  // When $app == $gre, we additionally load, in omni.jar case:
+  // - jar:$gre/omni.jar!/defaults/preferences/*.js
+  // Thus, in omni.jar case, we always load app-specific default preferences
+  // from omni.jar, whether or not $app == $gre.
 
   nsZipFind *findPtr;
   nsAutoPtr<nsZipFind> find;
@@ -990,11 +990,11 @@ static nsresult pref_InitInitialObjects()
 
   nsRefPtr<nsZipArchive> jarReader = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
   if (jarReader) {
-    
+    // Load jar:$gre/omni.jar!/greprefs.js
     rv = pref_ReadPrefFromJar(jarReader, "greprefs.js");
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Load jar:$gre/omni.jar!/defaults/pref/*.js
     rv = jarReader->FindInit("defaults/pref/*.js$", &findPtr);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1010,7 +1010,7 @@ static nsresult pref_InitInitialObjects()
         NS_WARNING("Error parsing preferences.");
     }
   } else {
-    
+    // Load $gre/greprefs.js
     nsCOMPtr<nsIFile> greprefsFile;
     rv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greprefsFile));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1023,13 +1023,13 @@ static nsresult pref_InitInitialObjects()
       NS_WARNING("Error parsing GRE default preferences. Is this an old-style embedding app?");
   }
 
-  
+  // Load $gre/defaults/pref/*.js
   nsCOMPtr<nsIFile> defaultPrefDir;
 
   rv = NS_GetSpecialDirectory(NS_APP_PREF_DEFAULTS_50_DIR, getter_AddRefs(defaultPrefDir));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  /* these pref file names should not be used: we process them after all other application pref files for backwards compatibility */
   static const char* specialFiles[] = {
 #if defined(XP_MACOSX)
     "macprefs.js"
@@ -1053,11 +1053,11 @@ static nsresult pref_InitInitialObjects()
   if (NS_FAILED(rv))
     NS_WARNING("Error parsing application default preferences.");
 
-  
-  
+  // Load jar:$app/omni.jar!/defaults/preferences/*.js
+  // or jar:$gre/omni.jar!/defaults/preferences/*.js.
   nsRefPtr<nsZipArchive> appJarReader = mozilla::Omnijar::GetReader(mozilla::Omnijar::APP);
-  
-  
+  // GetReader(mozilla::Omnijar::APP) returns null when $app == $gre, in which
+  // case we look for app-specific default preferences in $gre.
   if (!appJarReader)
     appJarReader = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
   if (appJarReader) {
@@ -1093,13 +1093,13 @@ static nsresult pref_InitInitialObjects()
 }
 
 
+/******************************************************************************
+ *
+ * static utilities
+ *
+ ******************************************************************************/
 
-
-
-
-
-
-
+// static
 nsresult
 Preferences::GetBool(const char* aPref, bool* aResult)
 {
@@ -1108,7 +1108,7 @@ Preferences::GetBool(const char* aPref, bool* aResult)
   return PREF_GetBoolPref(aPref, aResult, false);
 }
 
-
+// static
 nsresult
 Preferences::GetInt(const char* aPref, PRInt32* aResult)
 {
@@ -1117,7 +1117,7 @@ Preferences::GetInt(const char* aPref, PRInt32* aResult)
   return PREF_GetIntPref(aPref, aResult, false);
 }
 
-
+// static
 nsAdoptingCString
 Preferences::GetCString(const char* aPref)
 {
@@ -1126,7 +1126,7 @@ Preferences::GetCString(const char* aPref)
   return result;
 }
 
-
+// static
 nsAdoptingString
 Preferences::GetString(const char* aPref)
 {
@@ -1135,7 +1135,7 @@ Preferences::GetString(const char* aPref)
   return result;
 }
 
-
+// static
 nsresult
 Preferences::GetCString(const char* aPref, nsACString* aResult)
 {
@@ -1149,7 +1149,7 @@ Preferences::GetCString(const char* aPref, nsACString* aResult)
   return rv;
 }
 
-
+// static
 nsresult
 Preferences::GetString(const char* aPref, nsAString* aResult)
 {
@@ -1163,7 +1163,7 @@ Preferences::GetString(const char* aPref, nsAString* aResult)
   return rv;
 }
 
-
+// static
 nsAdoptingCString
 Preferences::GetLocalizedCString(const char* aPref)
 {
@@ -1172,7 +1172,7 @@ Preferences::GetLocalizedCString(const char* aPref)
   return result;
 }
 
-
+// static
 nsAdoptingString
 Preferences::GetLocalizedString(const char* aPref)
 {
@@ -1181,7 +1181,7 @@ Preferences::GetLocalizedString(const char* aPref)
   return result;
 }
 
-
+// static
 nsresult
 Preferences::GetLocalizedCString(const char* aPref, nsACString* aResult)
 {
@@ -1194,7 +1194,7 @@ Preferences::GetLocalizedCString(const char* aPref, nsACString* aResult)
   return rv;
 }
 
-
+// static
 nsresult
 Preferences::GetLocalizedString(const char* aPref, nsAString* aResult)
 {
@@ -1211,7 +1211,7 @@ Preferences::GetLocalizedString(const char* aPref, nsAString* aResult)
   return rv;
 }
 
-
+// static
 nsresult
 Preferences::GetComplex(const char* aPref, const nsIID &aType, void** aResult)
 {
@@ -1219,7 +1219,7 @@ Preferences::GetComplex(const char* aPref, const nsIID &aType, void** aResult)
   return sRootBranch->GetComplexValue(aPref, aType, aResult);
 }
 
-
+// static
 nsresult
 Preferences::SetCString(const char* aPref, const char* aValue)
 {
@@ -1228,7 +1228,7 @@ Preferences::SetCString(const char* aPref, const char* aValue)
   return PREF_SetCharPref(aPref, aValue, false);
 }
 
-
+// static
 nsresult
 Preferences::SetCString(const char* aPref, const nsACString &aValue)
 {
@@ -1237,7 +1237,7 @@ Preferences::SetCString(const char* aPref, const nsACString &aValue)
   return PREF_SetCharPref(aPref, PromiseFlatCString(aValue).get(), false);
 }
 
-
+// static
 nsresult
 Preferences::SetString(const char* aPref, const PRUnichar* aValue)
 {
@@ -1246,7 +1246,7 @@ Preferences::SetString(const char* aPref, const PRUnichar* aValue)
   return PREF_SetCharPref(aPref, NS_ConvertUTF16toUTF8(aValue).get(), false);
 }
 
-
+// static
 nsresult
 Preferences::SetString(const char* aPref, const nsAString &aValue)
 {
@@ -1255,7 +1255,7 @@ Preferences::SetString(const char* aPref, const nsAString &aValue)
   return PREF_SetCharPref(aPref, NS_ConvertUTF16toUTF8(aValue).get(), false);
 }
 
-
+// static
 nsresult
 Preferences::SetBool(const char* aPref, bool aValue)
 {
@@ -1264,7 +1264,7 @@ Preferences::SetBool(const char* aPref, bool aValue)
   return PREF_SetBoolPref(aPref, aValue, false);
 }
 
-
+// static
 nsresult
 Preferences::SetInt(const char* aPref, PRInt32 aValue)
 {
@@ -1273,7 +1273,7 @@ Preferences::SetInt(const char* aPref, PRInt32 aValue)
   return PREF_SetIntPref(aPref, aValue, false);
 }
 
-
+// static
 nsresult
 Preferences::SetComplex(const char* aPref, const nsIID &aType,
                         nsISupports* aValue)
@@ -1282,7 +1282,7 @@ Preferences::SetComplex(const char* aPref, const nsIID &aType,
   return sRootBranch->SetComplexValue(aPref, aType, aValue);
 }
 
-
+// static
 nsresult
 Preferences::ClearUser(const char* aPref)
 {
@@ -1291,7 +1291,7 @@ Preferences::ClearUser(const char* aPref)
   return PREF_ClearUserPref(aPref);
 }
 
-
+// static
 bool
 Preferences::HasUserValue(const char* aPref)
 {
@@ -1299,7 +1299,7 @@ Preferences::HasUserValue(const char* aPref)
   return PREF_HasUserPref(aPref);
 }
 
-
+// static
 PRInt32
 Preferences::GetType(const char* aPref)
 {
@@ -1309,7 +1309,7 @@ Preferences::GetType(const char* aPref)
     result : nsIPrefBranch::PREF_INVALID;
 }
 
-
+// static
 nsresult
 Preferences::AddStrongObserver(nsIObserver* aObserver,
                                const char* aPref)
@@ -1318,7 +1318,7 @@ Preferences::AddStrongObserver(nsIObserver* aObserver,
   return sRootBranch->AddObserver(aPref, aObserver, false);
 }
 
-
+// static
 nsresult
 Preferences::AddWeakObserver(nsIObserver* aObserver,
                              const char* aPref)
@@ -1327,19 +1327,19 @@ Preferences::AddWeakObserver(nsIObserver* aObserver,
   return sRootBranch->AddObserver(aPref, aObserver, true);
 }
 
-
+// static
 nsresult
 Preferences::RemoveObserver(nsIObserver* aObserver,
                             const char* aPref)
 {
   if (!sPreferences && sShutdown) {
-    return NS_OK; 
+    return NS_OK; // Observers have been released automatically.
   }
   NS_ENSURE_TRUE(sPreferences, NS_ERROR_NOT_AVAILABLE);
   return sRootBranch->RemoveObserver(aPref, aObserver);
 }
 
-
+// static
 nsresult
 Preferences::AddStrongObservers(nsIObserver* aObserver,
                                 const char** aPrefs)
@@ -1351,7 +1351,7 @@ Preferences::AddStrongObservers(nsIObserver* aObserver,
   return NS_OK;
 }
 
-
+// static
 nsresult
 Preferences::AddWeakObservers(nsIObserver* aObserver,
                               const char** aPrefs)
@@ -1363,13 +1363,13 @@ Preferences::AddWeakObservers(nsIObserver* aObserver,
   return NS_OK;
 }
 
-
+// static
 nsresult
 Preferences::RemoveObservers(nsIObserver* aObserver,
                              const char** aPrefs)
 {
   if (!sPreferences && sShutdown) {
-    return NS_OK; 
+    return NS_OK; // Observers have been released automatically.
   }
   NS_ENSURE_TRUE(sPreferences, NS_ERROR_NOT_AVAILABLE);
 
@@ -1380,7 +1380,7 @@ Preferences::RemoveObservers(nsIObserver* aObserver,
   return NS_OK;
 }
 
-
+// static
 nsresult
 Preferences::RegisterCallback(PrefChangedFunc aCallback,
                               const char* aPref,
@@ -1404,14 +1404,14 @@ Preferences::RegisterCallback(PrefChangedFunc aCallback,
   return NS_OK;
 }
 
-
+// static
 nsresult
 Preferences::UnregisterCallback(PrefChangedFunc aCallback,
                                 const char* aPref,
                                 void* aClosure)
 {
   if (!sPreferences && sShutdown) {
-    return NS_OK; 
+    return NS_OK; // Observers have been released automatically.
   }
   NS_ENSURE_TRUE(sPreferences, NS_ERROR_NOT_AVAILABLE);
 
@@ -1424,7 +1424,7 @@ Preferences::UnregisterCallback(PrefChangedFunc aCallback,
 
   observer->RemoveClosure(aClosure);
   if (observer->HasNoClosures()) {
-    
+    // Delete the callback since its list of closures is empty.
     gObserverTable->Remove(observer);
   }
   return NS_OK;
@@ -1438,7 +1438,7 @@ static int BoolVarChanged(const char* aPref, void* aClosure)
   return 0;
 }
 
-
+// static
 nsresult
 Preferences::AddBoolVarCache(bool* aCache,
                              const char* aPref,
@@ -1461,7 +1461,7 @@ static int IntVarChanged(const char* aPref, void* aClosure)
   return 0;
 }
 
-
+// static
 nsresult
 Preferences::AddIntVarCache(PRInt32* aCache,
                             const char* aPref,
@@ -1484,7 +1484,7 @@ static int UintVarChanged(const char* aPref, void* aClosure)
   return 0;
 }
 
-
+// static
 nsresult
 Preferences::AddUintVarCache(PRUint32* aCache,
                              const char* aPref,
@@ -1499,7 +1499,7 @@ Preferences::AddUintVarCache(PRUint32* aCache,
   return RegisterCallback(UintVarChanged, aPref, data);
 }
 
-
+// static
 nsresult
 Preferences::GetDefaultBool(const char* aPref, bool* aResult)
 {
@@ -1508,7 +1508,7 @@ Preferences::GetDefaultBool(const char* aPref, bool* aResult)
   return PREF_GetBoolPref(aPref, aResult, true);
 }
 
-
+// static
 nsresult
 Preferences::GetDefaultInt(const char* aPref, PRInt32* aResult)
 {
@@ -1517,7 +1517,7 @@ Preferences::GetDefaultInt(const char* aPref, PRInt32* aResult)
   return PREF_GetIntPref(aPref, aResult, true);
 }
 
-
+// static
 nsresult
 Preferences::GetDefaultCString(const char* aPref, nsACString* aResult)
 {
@@ -1531,7 +1531,7 @@ Preferences::GetDefaultCString(const char* aPref, nsACString* aResult)
   return rv;
 }
 
-
+// static
 nsresult
 Preferences::GetDefaultString(const char* aPref, nsAString* aResult)
 {
@@ -1545,7 +1545,7 @@ Preferences::GetDefaultString(const char* aPref, nsAString* aResult)
   return rv;
 }
 
-
+// static
 nsresult
 Preferences::GetDefaultLocalizedCString(const char* aPref,
                                         nsACString* aResult)
@@ -1558,7 +1558,7 @@ Preferences::GetDefaultLocalizedCString(const char* aPref,
   return rv;
 }
 
-
+// static
 nsresult
 Preferences::GetDefaultLocalizedString(const char* aPref,
                                        nsAString* aResult)
@@ -1576,7 +1576,7 @@ Preferences::GetDefaultLocalizedString(const char* aPref,
   return rv;
 }
 
-
+// static
 nsAdoptingString
 Preferences::GetDefaultString(const char* aPref)
 {
@@ -1585,7 +1585,7 @@ Preferences::GetDefaultString(const char* aPref)
   return result;
 }
 
-
+// static
 nsAdoptingCString
 Preferences::GetDefaultCString(const char* aPref)
 {
@@ -1594,7 +1594,7 @@ Preferences::GetDefaultCString(const char* aPref)
   return result;
 }
 
-
+// static
 nsAdoptingString
 Preferences::GetDefaultLocalizedString(const char* aPref)
 {
@@ -1603,7 +1603,7 @@ Preferences::GetDefaultLocalizedString(const char* aPref)
   return result;
 }
 
-
+// static
 nsAdoptingCString
 Preferences::GetDefaultLocalizedCString(const char* aPref)
 {
@@ -1612,7 +1612,7 @@ Preferences::GetDefaultLocalizedCString(const char* aPref)
   return result;
 }
 
-
+// static
 nsresult
 Preferences::GetDefaultComplex(const char* aPref, const nsIID &aType,
                                void** aResult)
@@ -1621,7 +1621,7 @@ Preferences::GetDefaultComplex(const char* aPref, const nsIID &aType,
   return sDefaultRootBranch->GetComplexValue(aPref, aType, aResult);
 }
 
-
+// static
 PRInt32
 Preferences::GetDefaultType(const char* aPref)
 {
@@ -1631,4 +1631,4 @@ Preferences::GetDefaultType(const char* aPref)
     result : nsIPrefBranch::PREF_INVALID;
 }
 
-} 
+} // namespace mozilla

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jsatominlines_h___
 #define jsatominlines_h___
@@ -34,7 +34,7 @@ ToAtom(JSContext *cx, const js::Value &v)
         if (!str)
             return NULL;
         JS::Anchor<JSString *> anchor(str);
-        return js_AtomizeString(cx, str);
+        return AtomizeString(cx, str);
     }
 
     JSString *str = v.toString();
@@ -42,7 +42,7 @@ ToAtom(JSContext *cx, const js::Value &v)
         return &str->asAtom();
 
     JS::Anchor<JSString *> anchor(str);
-    return js_AtomizeString(cx, str);
+    return AtomizeString(cx, str);
 }
 
 inline bool
@@ -63,23 +63,23 @@ ValueToId(JSContext* cx, const Value &v, jsid *idp)
     return ValueToId(cx, NULL, v, idp);
 }
 
-
-
-
-
-
-
-
+/*
+ * Write out character representing |index| to the memory just before |end|.
+ * Thus |*end| is not touched, but |end[-1]| and earlier are modified as
+ * appropriate.  There must be at least js::UINT32_CHAR_BUFFER_LENGTH elements
+ * before |end| to avoid buffer underflow.  The start of the characters written
+ * is returned and is necessarily before |end|.
+ */
 template <typename T>
 inline mozilla::RangedPtr<T>
 BackfillIndexInCharBuffer(uint32_t index, mozilla::RangedPtr<T> end)
 {
 #ifdef DEBUG
-    
-
-
-
-
+    /*
+     * Assert that the buffer we're filling will hold as many characters as we
+     * could write out, by dereferencing the index that would hold the most
+     * significant digit.
+     */
     (void) *(end - UINT32_CHAR_BUFFER_LENGTH);
 #endif
 
@@ -150,6 +150,6 @@ AtomHasher::match(const AtomStateEntry &entry, const Lookup &lookup)
     return PodEqual(key->chars(), lookup.chars, lookup.length);
 }
 
-} 
+} // namespace js
 
-#endif 
+#endif /* jsatominlines_h___ */

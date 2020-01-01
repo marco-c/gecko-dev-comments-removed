@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsFileStreams_h__
 #define nsFileStreams_h__
@@ -21,7 +21,7 @@
 
 template<class CharType> class nsLineBuffer;
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsFileStreamBase : public nsISeekableStream
 {
@@ -48,14 +48,14 @@ protected:
 
     PRFileDesc* mFD;
 
-    
-
-
+    /**
+     * Flags describing our behavior.  See the IDL file for possible values.
+     */
     PRInt32 mBehaviorFlags;
 
-    
-
-
+    /**
+     * Whether we have a pending open (see DEFER_OPEN in the IDL file).
+     */
     bool mDeferredOpen;
 
     struct OpenParams {
@@ -64,40 +64,40 @@ protected:
         PRInt32 perm;
     };
 
-    
-
-
+    /**
+     * Data we need to do an open.
+     */
     OpenParams mOpenParams;
 
-    
-
-
-
-
+    /**
+     * Prepares the data we need to open the file, and either does the open now
+     * by calling DoOpen(), or leaves it to be opened later by a call to
+     * DoPendingOpen().
+     */
     nsresult MaybeOpen(nsIFile* aFile, PRInt32 aIoFlags, PRInt32 aPerm,
                        bool aDeferred);
 
-    
-
-
+    /**
+     * Cleans up data prepared in MaybeOpen.
+     */
     void CleanUpOpen();
 
-    
-
-
-
-
-
+    /**
+     * Open the file. This is called either from MaybeOpen (during Init)
+     * or from DoPendingOpen (if DEFER_OPEN is used when initializing this
+     * stream). The default behavior of DoOpen is to open the file and save the
+     * file descriptor.
+     */
     virtual nsresult DoOpen();
 
-    
-
-
-
+    /**
+     * If there is a pending open, do it now. It's important for this to be
+     * inline since we do it in almost every stream API call.
+     */
     inline nsresult DoPendingOpen();
 };
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsFileInputStream : public nsFileStreamBase,
                           public nsIFileInputStream,
@@ -127,7 +127,7 @@ public:
         return nsFileStreamBase::IsNonBlocking(_retval);
     } 
     
-    
+    // Overrided from nsFileStreamBase
     NS_IMETHOD Seek(PRInt32 aWhence, PRInt64 aOffset);
 
     nsFileInputStream()
@@ -145,37 +145,38 @@ public:
 protected:
     nsLineBuffer<char> *mLineBuffer;
 
-    
-
-
+    /**
+     * The file being opened.
+     */
     nsCOMPtr<nsIFile> mFile;
-    
-
-
+    /**
+     * The IO flags passed to Init() for the file open.
+     */
     PRInt32 mIOFlags;
-    
-
-
+    /**
+     * The permissions passed to Init() for the file open.
+     */
     PRInt32 mPerm;
 
 protected:
-    
-
-
-
+    /**
+     * Internal, called to open a file.  Parameters are the same as their
+     * Init() analogues.
+     */
     nsresult Open(nsIFile* file, PRInt32 ioFlags, PRInt32 perm);
-    
-
-
+    /**
+     * Reopen the file (for OPEN_ON_READ only!)
+     */
     nsresult Reopen() { return Open(mFile, mIOFlags, mPerm); }
 };
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsPartialFileInputStream : public nsFileInputStream,
                                  public nsIPartialFileInputStream
 {
 public:
+    using nsFileInputStream::Init;
     NS_DECL_ISUPPORTS_INHERITED
     NS_DECL_NSIPARTIALFILEINPUTSTREAM
     NS_DECL_NSIIPCSERIALIZABLE
@@ -198,7 +199,7 @@ private:
     PRUint64 mPosition;
 };
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsFileOutputStream : public nsFileStreamBase,
                            public nsIFileOutputStream
@@ -217,7 +218,7 @@ public:
     Create(nsISupports *aOuter, REFNSIID aIID, void **aResult);
 };
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsSafeFileOutputStream : public nsFileOutputStream,
                                public nsISafeOutputStream
@@ -246,10 +247,10 @@ protected:
     nsCOMPtr<nsIFile>         mTempFile;
 
     bool     mTargetFileExists;
-    nsresult mWriteResult; 
+    nsresult mWriteResult; // Internally set in Write()
 };
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsFileStream : public nsFileStreamBase,
                      public nsIInputStream,
@@ -263,8 +264,8 @@ public:
     NS_DECL_NSIFILEMETADATA
     NS_FORWARD_NSIINPUTSTREAM(nsFileStreamBase::)
 
-    
-    
+    // Can't use NS_FORWARD_NSIOUTPUTSTREAM due to overlapping methods
+    // Close() and IsNonBlocking() 
     NS_IMETHOD Flush()
     {
         return nsFileStreamBase::Flush();
@@ -291,6 +292,6 @@ public:
     }
 };
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-#endif 
+#endif // nsFileStreams_h__

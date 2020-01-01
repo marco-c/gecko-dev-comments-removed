@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim: set sw=4 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifdef MOZ_WIDGET_GTK
 #include <gtk/gtk.h>
@@ -73,6 +73,10 @@
 #include "APKOpen.h"
 #endif
 
+#if defined(MOZ_WIDGET_GONK)
+#include "nsVolume.h"
+#endif
+
 #ifdef XP_WIN
 #include <process.h>
 #define getpid _getpid
@@ -99,6 +103,9 @@ using namespace mozilla::ipc;
 using namespace mozilla::layers;
 using namespace mozilla::net;
 using namespace mozilla::places;
+#if defined(MOZ_WIDGET_GONK)
+using namespace mozilla::system;
+#endif
 
 namespace mozilla {
 namespace dom {
@@ -212,13 +219,14 @@ ConsoleListener::Observe(nsIConsoleMessage* aMessage)
 ContentChild* ContentChild::sSingleton;
 
 ContentChild::ContentChild()
- : mID(PRUint64(-1))
+ :
+   mID(PRUint64(-1))
 #ifdef ANDROID
- , mScreenSize(0, 0)
+   ,mScreenSize(0, 0)
 #endif
 {
-    
-    
+    // This process is a content process, so it's clearly running in
+    // multiprocess mode!
     nsDebugImpl::SetMultiprocessMode("Child");
 }
 
@@ -232,17 +240,17 @@ ContentChild::Init(MessageLoop* aIOLoop,
                    IPC::Channel* aChannel)
 {
 #ifdef MOZ_WIDGET_GTK
-    
+    // sigh
     gtk_init(NULL, NULL);
 #endif
 
 #ifdef MOZ_WIDGET_QT
-    
+    // sigh, seriously
     nsQAppInstance::AddRef();
 #endif
 
 #ifdef MOZ_X11
-    
+    // Do this after initializing GDK, or GDK will install its own handler.
     XRE_InstallX11ErrorHandler();
 #endif
 
@@ -294,8 +302,8 @@ ContentChild::AllocPMemoryReportRequest()
     return new MemoryReportRequestChild();
 }
 
-
-
+// This is just a wrapper for InfallibleTArray<MemoryReport> that implements
+// nsISupports, so it can be passed to nsIMemoryMultiReporter::CollectReports.
 class MemoryReportsWrapper MOZ_FINAL : public nsISupports {
 public:
     NS_DECL_ISUPPORTS
@@ -345,7 +353,7 @@ ContentChild::RecvPMemoryReportRequestConstructor(PMemoryReportRequestChild* chi
 
     nsPrintfCString process("Content (%d)", getpid());
 
-    
+    // First do the vanilla memory reporters.
     nsCOMPtr<nsISimpleEnumerator> e;
     mgr->EnumerateReporters(getter_AddRefs(e));
     bool more;
@@ -370,9 +378,9 @@ ContentChild::RecvPMemoryReportRequestConstructor(PMemoryReportRequestChild* chi
       }
     }
 
-    
-    
-    
+    // Then do the memory multi-reporters, by calling CollectReports on each
+    // one, whereupon the callback will turn each measurement into a
+    // MemoryReport.
     mgr->EnumerateMultiReporters(getter_AddRefs(e));
     nsRefPtr<MemoryReportsWrapper> wrappedReports =
         new MemoryReportsWrapper(&reports);
@@ -447,16 +455,16 @@ ContentChild::GetOrCreateActorForBlob(nsIDOMBlob* aBlob)
     return actor;
   }
 
-  
-  
-  
+  // XXX This is only safe so long as all blob implementations in our tree
+  //     inherit nsDOMFileBase. If that ever changes then this will need to grow
+  //     a real interface or something.
   const nsDOMFileBase* blob = static_cast<nsDOMFileBase*>(aBlob);
 
   BlobConstructorParams params;
 
   if (blob->IsSizeUnknown()) {
-    
-    
+    // We don't want to call GetSize yet since that may stat a file on the main
+    // thread here. Instead we'll learn the size lazily from the other process.
     params = MysteryBlobConstructorParams();
   }
   else {
@@ -694,9 +702,9 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
     }
 
 #ifndef DEBUG
-    
-    
-    
+    // In release builds, there's no point in the content process
+    // going through the full XPCOM shutdown path, because it doesn't
+    // keep persistent state.
     QuickExit();
 #endif
 
@@ -765,11 +773,11 @@ bool
 ContentChild::RecvNotifyAlertsObserver(const nsCString& aType, const nsString& aData)
 {
     for (PRUint32 i = 0; i < mAlertObservers.Length();
-         ) {
+         /*we mutate the array during the loop; ++i iff no mutation*/) {
         AlertObserver* observer = mAlertObservers[i];
         if (observer->Observes(aData) && observer->Notify(aType)) {
-            
-            
+            // if aType == alertfinished, this alert is done.  we can
+            // remove the observer.
             if (aType.Equals(nsDependentCString("alertfinished"))) {
                 mAlertObservers.RemoveElementAt(i);
                 continue;
@@ -877,8 +885,8 @@ bool
 ContentChild::RecvActivateA11y()
 {
 #ifdef ACCESSIBILITY
-    
-    
+    // Start accessibility in content process if it's running in chrome
+    // process.
     nsCOMPtr<nsIAccessibilityService> accService =
         do_GetService("@mozilla.org/accessibilityService;1");
 #endif
@@ -929,8 +937,8 @@ ContentChild::RecvLastPrivateDocShellDestroyed()
 bool
 ContentChild::RecvFilePathUpdate(const nsString& path, const nsCString& aReason)
 {
-    
-    
+    // data strings will have the format of
+    //  reason:path
     nsString data;
     CopyASCIItoUTF16(aReason, data);
     data.Append(NS_LITERAL_STRING(":"));
@@ -941,5 +949,18 @@ ContentChild::RecvFilePathUpdate(const nsString& path, const nsCString& aReason)
     return true;
 }
 
-} 
-} 
+bool
+ContentChild::RecvFileSystemUpdate(const nsString& aFsName, const nsString& aName, const PRInt32 &aState)
+{
+#ifdef MOZ_WIDGET_GONK
+    nsRefPtr<nsVolume> volume = new nsVolume(aFsName, aName, aState);
+
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    nsString stateStr(NS_ConvertUTF8toUTF16(volume->StateStr()));
+    obs->NotifyObservers(volume, NS_VOLUME_STATE_CHANGED, stateStr.get());
+#endif
+    return true;
+}
+
+} // namespace dom
+} // namespace mozilla

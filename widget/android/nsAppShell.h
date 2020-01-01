@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; tab-width: 40; indent-tabs-mode: nil; c-basic-offset: 4; -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsAppShell_h__
 #define nsAppShell_h__
@@ -70,6 +70,7 @@ protected:
     mozilla::AndroidGeckoEvent *mQueuedDrawEvent;
     mozilla::AndroidGeckoEvent *mQueuedViewportEvent;
     bool mAllowCoalescingNextDraw;
+    bool mAllowCoalescingTouches;
     nsTArray<mozilla::AndroidGeckoEvent *> mEventQueue;
     nsInterfaceHashtable<nsStringHashKey, nsIObserver> mObserversHash;
 
@@ -79,5 +80,5 @@ protected:
     nsCOMPtr<nsIAndroidBrowserApp> mBrowserApp;
 };
 
-#endif 
+#endif // nsAppShell_h__
 
