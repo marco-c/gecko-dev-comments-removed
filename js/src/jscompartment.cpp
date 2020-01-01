@@ -333,6 +333,9 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 
     vp->setObject(*wrapper);
 
+    if (wrapper->getProto() != proto && !SetProto(cx, wrapper, proto, false))
+        return false;
+
     if (!crossCompartmentWrappers.put(wrapper->getProxyPrivate(), *vp))
         return false;
 
@@ -419,7 +422,6 @@ JSCompartment::wrap(JSContext *cx, AutoIdVector &props)
 
 
 
-
 static inline bool
 ScriptPoolDestroyed(JSContext *cx, mjit::JITScript *jit,
                     uint32 releaseInterval, uint32 &counter)
@@ -445,33 +447,10 @@ static inline void
 ScriptTryDestroyCode(JSContext *cx, JSScript *script, bool normal,
                      uint32 releaseInterval, uint32 &counter)
 {
-    
-
-
-
-
-
-
     mjit::JITScript *jit = normal ? script->jitNormal : script->jitCtor;
-
-    if (!jit)
-        return;
-
-    if (ScriptPoolDestroyed(cx, jit, releaseInterval, counter)) {
+    if (jit && ScriptPoolDestroyed(cx, jit, releaseInterval, counter))
         mjit::ReleaseScriptCode(cx, script, normal);
-        return;
-    }
-
-    for (unsigned i = 0; i < jit->nInlineFrames; i++) {
-        JSScript *inner = jit->inlineFrames()[i].fun->script();
-        if (!inner->jitNormal ||  
-            ScriptPoolDestroyed(cx, inner->jitNormal, releaseInterval, counter)) {
-            mjit::ReleaseScriptCode(cx, script, true);
-            return;
-        }
-    }
 }
-
 #endif 
 
 
@@ -570,7 +549,6 @@ JSCompartment::sweep(JSContext *cx, uint32 releaseInterval)
 
     for (JSCList *cursor = scripts.next; cursor != &scripts; cursor = cursor->next) {
         JSScript *script = reinterpret_cast<JSScript *>(cursor);
-
         if (script->hasJITCode()) {
             mjit::ic::SweepCallICs(cx, script, discardScripts);
             if (discardScripts) {
