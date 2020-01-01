@@ -62,10 +62,6 @@ public:
 
   nsresult Init();
 
-  static nsAnnotationService* GetAnnotationServiceIfAvailable() {
-    return gAnnotationService;
-  }
-
   
 
 
@@ -169,4 +165,4 @@ public:
                                     nsTArray<nsCString>* _result);
 };
 
-#endif
+#endif 
