@@ -47,12 +47,8 @@
 #include "mozilla/css/Loader.h"
 #include "nsCSSStyleSheet.h"
 
-class nsIUnicharInputStream;
-
 
 #define CSS_REPORT_PARSE_ERRORS
-
-#define CSS_BUFFER_SIZE 256
 
 
 #include "nsXPIDLString.h"
@@ -141,9 +137,7 @@ class nsCSSScanner {
   
   
   
-  
-  void Init(nsIUnicharInputStream* aInput, 
-            const PRUnichar *aBuffer, PRUint32 aCount,
+  void Init(const nsAString& aBuffer,
             nsIURI* aURI, PRUint32 aLineNumber,
             nsCSSStyleSheet* aSheet, mozilla::css::Loader* aLoader);
   void Close();
@@ -153,8 +147,6 @@ class nsCSSScanner {
 
   
   void SetSVGMode(bool aSVGMode) {
-    NS_ASSERTION(aSVGMode == true || aSVGMode == false,
-                 "bad bool value");
     mSVGMode = aSVGMode;
   }
   bool IsSVGMode() const {
@@ -200,15 +192,7 @@ class nsCSSScanner {
   
   void Pushback(PRUnichar aChar);
 
-  
-  
-  nsresult GetLowLevelError();
-
-  
-  void SetLowLevelError(nsresult aErrorCode);
-  
 protected:
-  bool EnsureData();
   PRInt32 Read();
   PRInt32 Peek();
   bool LookAhead(PRUnichar aChar);
@@ -226,10 +210,6 @@ protected:
 
   bool GatherIdent(PRInt32 aChar, nsString& aIdent);
 
-  
-  nsCOMPtr<nsIUnicharInputStream> mInputStream;
-  PRUnichar mBuffer[CSS_BUFFER_SIZE];
-
   const PRUnichar *mReadPointer;
   PRUint32 mOffset;
   PRUint32 mCount;
@@ -237,7 +217,6 @@ protected:
   PRInt32 mPushbackCount;
   PRInt32 mPushbackSize;
   PRUnichar mLocalPushback[4];
-  nsresult mLowLevelError;
 
   PRUint32 mLineNumber;
   
