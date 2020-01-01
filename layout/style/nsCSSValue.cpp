@@ -1,42 +1,42 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* representation of simple property values within CSS declarations */
 
 #include "nsCSSValue.h"
 
@@ -85,8 +85,8 @@ nsCSSValue::nsCSSValue(const nsString& aValue, nsCSSUnit aUnit)
   if (UnitHasStringValue()) {
     mValue.mString = BufferFromString(aValue).get();
     if (NS_UNLIKELY(!mValue.mString)) {
-      
-      
+      // XXXbz not much we can do here; just make sure that our promise of a
+      // non-null mValue.mString holds for string units.
       mUnit = eCSSUnit_Null;
     }
   }
@@ -129,7 +129,7 @@ nsCSSValue::nsCSSValue(const nsCSSValue& aCopy)
   : mUnit(aCopy.mUnit)
 {
   if (mUnit <= eCSSUnit_DummyInherit) {
-    
+    // nothing to do, but put this important case first
   }
   else if (eCSSUnit_Percent <= mUnit) {
     mValue.mFloat = aCopy.mValue.mFloat;
@@ -371,8 +371,8 @@ void nsCSSValue::SetStringValue(const nsString& aValue,
   if (UnitHasStringValue()) {
     mValue.mString = BufferFromString(aValue).get();
     if (NS_UNLIKELY(!mValue.mString)) {
-      
-      
+      // XXXbz not much we can do here; just make sure that our promise of a
+      // non-null mValue.mString holds for string units.
       mUnit = eCSSUnit_Null;
     }
   } else
@@ -421,7 +421,7 @@ void nsCSSValue::SetGradientValue(nsCSSValueGradient* aValue)
 
 void nsCSSValue::SetPairValue(const nsCSSValuePair* aValue)
 {
-  
+  // pairs should not be used for null/inherit/initial values
   NS_ABORT_IF_FALSE(aValue &&
                     aValue->mXValue.GetUnit() != eCSSUnit_Null &&
                     aValue->mYValue.GetUnit() != eCSSUnit_Null &&
@@ -454,8 +454,8 @@ void nsCSSValue::SetPairValue(const nsCSSValue& xValue,
 
 void nsCSSValue::SetTripletValue(const nsCSSValueTriplet* aValue)
 {
-    
-    
+    // triplet should not be used for null/inherit/initial values
+    // Only allow Null for the z component
     NS_ABORT_IF_FALSE(aValue &&
                       aValue->mXValue.GetUnit() != eCSSUnit_Null &&
                       aValue->mYValue.GetUnit() != eCSSUnit_Null &&
@@ -476,7 +476,7 @@ void nsCSSValue::SetTripletValue(const nsCSSValue& xValue,
                                  const nsCSSValue& yValue,
                                  const nsCSSValue& zValue)
 {
-    
+    // Only allow Null for the z component
     NS_ABORT_IF_FALSE(xValue.GetUnit() != eCSSUnit_Null &&
                       yValue.GetUnit() != eCSSUnit_Null &&
                       xValue.GetUnit() != eCSSUnit_Inherit &&
@@ -608,9 +608,9 @@ void nsCSSValue::StartImageLoad(nsIDocument* aDocument) const
 
 bool nsCSSValue::IsNonTransparentColor() const
 {
-  
-  
-  
+  // We have the value in the form it was specified in at this point, so we
+  // have to look for both the keyword 'transparent' and its equivalent in
+  // rgba notation.
   nsDependentString buf;
   return
     (mUnit == eCSSUnit_Color && NS_GET_A(GetColorValue()) > 0) ||
@@ -645,7 +645,7 @@ nsCSSValue::EqualsFunction(nsCSSKeyword aFunctionId) const
   return thisFunctionId == aFunctionId;
 }
 
-
+// static
 already_AddRefed<nsStringBuffer>
 nsCSSValue::BufferFromString(const nsString& aValue)
 {
@@ -657,8 +657,8 @@ nsCSSValue::BufferFromString(const nsString& aValue)
 
   PRUnichar length = aValue.Length();
 
-  
-  
+  // NOTE: Alloc prouduces a new, already-addref'd (refcnt = 1) buffer.
+  // NOTE: String buffer allocation is currently fallible.
   buffer = nsStringBuffer::Alloc((length + 1) * sizeof(PRUnichar));
   if (NS_UNLIKELY(!buffer)) {
     NS_RUNTIMEABORT("out of memory");
@@ -666,7 +666,7 @@ nsCSSValue::BufferFromString(const nsString& aValue)
 
   PRUnichar* data = static_cast<PRUnichar*>(buffer->Data());
   nsCharTraits<PRUnichar>::copy(data, aValue.get(), length);
-  
+  // Null-terminate.
   data[length] = 0;
   return buffer;
 }
@@ -710,12 +710,12 @@ private:
   nsAString &mResult;
 };
 
-} 
+} // anonymous namespace
 
 void
 nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
 {
-  
+  // eCSSProperty_UNKNOWN gets used for some recursive calls below.
   NS_ABORT_IF_FALSE((0 <= aProperty &&
                      aProperty <= eCSSProperty_COUNT_no_shorthands) ||
                     aProperty == eCSSProperty_UNKNOWN,
@@ -735,7 +735,7 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
     if (unit == eCSSUnit_String) {
       nsStyleUtil::AppendEscapedCSSString(buffer, aResult);
     } else if (unit == eCSSUnit_Families) {
-      
+      // XXX We really need to do *some* escaping.
       aResult.Append(buffer);
     } else {
       nsStyleUtil::AppendEscapedCSSIdent(buffer, aResult);
@@ -789,18 +789,18 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
       aResult.AppendLiteral(")");
     }
   }
-  
-
-
+  /* Although Function is backed by an Array, we'll handle it separately
+   * because it's a bit quirky.
+   */
   else if (eCSSUnit_Function == unit) {
     const nsCSSValue::Array* array = GetArrayValue();
     NS_ABORT_IF_FALSE(array->Count() >= 1,
                       "Functions must have at least one element for the name.");
 
-    
+    /* Append the function name. */
     const nsCSSValue& functionName = array->Item(0);
     if (functionName.GetUnit() == eCSSUnit_Enumerated) {
-      
+      // We assume that the first argument is always of nsCSSKeyword type.
       const nsCSSKeyword functionId =
         static_cast<nsCSSKeyword>(functionName.GetIntValue());
       nsStyleUtil::AppendEscapedCSSIdent(
@@ -811,16 +811,16 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
     }
     aResult.AppendLiteral("(");
 
-    
+    /* Now, step through the function contents, writing each of them as we go. */
     for (size_t index = 1; index < array->Count(); ++index) {
       array->Item(index).AppendToString(aProperty, aResult);
 
-      
+      /* If we're not at the final element, append a comma. */
       if (index + 1 != array->Count())
         aResult.AppendLiteral(", ");
     }
 
-    
+    /* Finally, append the closing parenthesis. */
     aResult.AppendLiteral(")");
   }
   else if (IsCalcUnit()) {
@@ -838,8 +838,8 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
         AppendASCIItoUTF16(nsCSSProps::LookupPropertyValue(aProperty, intValue),
                            aResult);
       } else {
-        
-        
+        // Ignore the "override all" internal value.
+        // (It doesn't have a string representation.)
         intValue &= ~NS_STYLE_TEXT_DECORATION_LINE_OVERRIDE_ALL;
         nsStyleUtil::AppendBitmaskCSSValue(
           aProperty, intValue,
@@ -881,8 +881,8 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
     }
   }
   else if (eCSSUnit_EnumColor == unit) {
-    
-    
+    // we can lookup the property in the ColorTable and then
+    // get a string mapping the name
     nsCAutoString str;
     if (nsCSSProps::GetColorName(GetIntValue(), str)){
       AppendASCIItoUTF16(str, aResult);
@@ -893,8 +893,8 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
   else if (eCSSUnit_Color == unit) {
     nscolor color = GetColorValue();
     if (color == NS_RGBA(0, 0, 0, 0)) {
-      
-      
+      // Use the strictest match for 'transparent' so we do correct
+      // round-tripping of all other rgba() values.
       aResult.AppendLiteral("transparent");
     } else {
       PRUint8 a = NS_GET_A(color);
@@ -934,7 +934,7 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
   else if (eCSSUnit_Percent == unit) {
     aResult.AppendFloat(GetPercentValue() * 100.0f);
   }
-  else if (eCSSUnit_Percent < unit) {  
+  else if (eCSSUnit_Percent < unit) {  // length unit
     aResult.AppendFloat(GetFloatValue());
   }
   else if (eCSSUnit_Gradient == unit) {
@@ -1037,7 +1037,14 @@ nsCSSValue::AppendToString(nsCSSProperty aProperty, nsAString& aResult) const
   } else if (eCSSUnit_List == unit || eCSSUnit_ListDep == unit) {
     GetListValue()->AppendToString(aProperty, aResult);
   } else if (eCSSUnit_PairList == unit || eCSSUnit_PairListDep == unit) {
-    GetPairListValue()->AppendToString(aProperty, aResult);
+    switch (aProperty) {
+      case eCSSProperty_font_feature_settings:
+        nsStyleUtil::AppendFontFeatureSettings(*this, aResult);
+        break;
+      default:
+        GetPairListValue()->AppendToString(aProperty, aResult);
+        break;
+    }
   }
 
   switch (unit) {
@@ -1123,7 +1130,7 @@ nsCSSValue::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
   size_t n = 0;
 
   switch (GetUnit()) {
-    
+    // No value: nothing extra to measure.
     case eCSSUnit_Null:
     case eCSSUnit_Auto:
     case eCSSUnit_Inherit:
@@ -1136,7 +1143,7 @@ nsCSSValue::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
     case eCSSUnit_DummyInherit:
       break;
 
-    
+    // String
     case eCSSUnit_String:
     case eCSSUnit_Ident:
     case eCSSUnit_Families:
@@ -1147,7 +1154,7 @@ nsCSSValue::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
       n += mValue.mString->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
       break;
 
-    
+    // Array
     case eCSSUnit_Array:
     case eCSSUnit_Counter:
     case eCSSUnit_Counters:
@@ -1162,66 +1169,66 @@ nsCSSValue::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
     case eCSSUnit_Calc_Divided:
       break;
 
-    
+    // URL
     case eCSSUnit_URL:
       n += mValue.mURL->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
-    
+    // Image
     case eCSSUnit_Image:
-      
-      
+      // Not yet measured.  Measurement may be added later if DMD finds it
+      // worthwhile.
       break;
 
-    
+    // Gradient
     case eCSSUnit_Gradient:
       n += mValue.mGradient->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
-    
+    // Pair
     case eCSSUnit_Pair:
       n += mValue.mPair->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
-    
+    // Triplet
     case eCSSUnit_Triplet:
       n += mValue.mTriplet->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
-    
+    // Rect
     case eCSSUnit_Rect:
       n += mValue.mRect->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
-    
+    // List
     case eCSSUnit_List:
       n += mValue.mList->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
-    
+    // ListDep: not measured because it's non-owning.
     case eCSSUnit_ListDep:
       break;
 
-    
+    // PairList
     case eCSSUnit_PairList:
       n += mValue.mPairList->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
-    
+    // PairListDep: not measured because it's non-owning.
     case eCSSUnit_PairListDep:
       break;
 
-    
+    // Int: nothing extra to measure.
     case eCSSUnit_Integer:
     case eCSSUnit_Enumerated:
     case eCSSUnit_EnumColor:
       break;
 
-    
+    // Color: nothing extra to measure.
     case eCSSUnit_Color:
       break;
 
-    
+    // Float: nothing extra to measure.
     case eCSSUnit_Percent:
     case eCSSUnit_Number:
     case eCSSUnit_PhysicalMillimeter:
@@ -1253,7 +1260,7 @@ nsCSSValue::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
   return n;
 }
 
-
+// --- nsCSSValueList -----------------
 
 nsCSSValueList::~nsCSSValueList()
 {
@@ -1311,7 +1318,7 @@ nsCSSValueList::operator==(const nsCSSValueList& aOther) const
     if (p1->mValue != p2->mValue)
       return false;
   }
-  return !p1 && !p2; 
+  return !p1 && !p2; // true if same length, false otherwise
 }
 
 size_t
@@ -1336,7 +1343,7 @@ nsCSSValueList_heap::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
   return n;
 }
 
-
+// --- nsCSSRect -----------------
 
 nsCSSRect::nsCSSRect(void)
 {
@@ -1415,14 +1422,14 @@ MOZ_STATIC_ASSERT(NS_SIDE_TOP == 0 && NS_SIDE_RIGHT == 1 &&
                   NS_SIDE_BOTTOM == 2 && NS_SIDE_LEFT == 3,
                   "box side constants not top/right/bottom/left == 0/1/2/3");
 
- const nsCSSRect::side_type nsCSSRect::sides[4] = {
+/* static */ const nsCSSRect::side_type nsCSSRect::sides[4] = {
   &nsCSSRect::mTop,
   &nsCSSRect::mRight,
   &nsCSSRect::mBottom,
   &nsCSSRect::mLeft,
 };
 
-
+// --- nsCSSValuePair -----------------
 
 void
 nsCSSValuePair::AppendToString(nsCSSProperty aProperty,
@@ -1453,7 +1460,7 @@ nsCSSValuePair_heap::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
   return n;
 }
 
-
+// --- nsCSSValueTriplet -----------------
 
 void
 nsCSSValueTriplet::AppendToString(nsCSSProperty aProperty,
@@ -1480,7 +1487,7 @@ nsCSSValueTriplet_heap::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) con
   return n;
 }
 
-
+// --- nsCSSValuePairList -----------------
 
 nsCSSValuePairList::~nsCSSValuePairList()
 {
@@ -1540,7 +1547,7 @@ nsCSSValuePairList::operator==(const nsCSSValuePairList& aOther) const
         p1->mYValue != p2->mYValue)
       return false;
   }
-  return !p1 && !p2; 
+  return !p1 && !p2; // true if same length, false otherwise
 }
 
 size_t
@@ -1612,7 +1619,7 @@ nsCSSValue::URL::operator==(const URL& aOther) const
   bool eq;
   return NS_strcmp(GetBufferValue(mString),
                    GetBufferValue(aOther.mString)) == 0 &&
-          (GetURI() == aOther.GetURI() || 
+          (GetURI() == aOther.GetURI() || // handles null == null
            (mURI && aOther.mURI &&
             NS_SUCCEEDED(mURI->Equals(aOther.mURI, &eq)) &&
             eq)) &&
@@ -1627,10 +1634,10 @@ nsCSSValue::URL::URIEquals(const URL& aOther) const
   NS_ABORT_IF_FALSE(mURIResolved && aOther.mURIResolved,
                     "How do you know the URIs aren't null?");
   bool eq;
-  
-  
-  
-  
+  // Worth comparing GetURI() to aOther.GetURI() and mOriginPrincipal to
+  // aOther.mOriginPrincipal, because in the (probably common) case when this
+  // value was one of the ones that in fact did not change this will be our
+  // fast path to equality
   return (mURI == aOther.mURI ||
           (NS_SUCCEEDED(mURI->Equals(aOther.mURI, &eq)) && eq)) &&
          (mOriginPrincipal == aOther.mOriginPrincipal ||
@@ -1643,7 +1650,7 @@ nsCSSValue::URL::GetURI() const
 {
   if (!mURIResolved) {
     mURIResolved = true;
-    
+    // Be careful to not null out mURI before we've passed it as the base URI
     nsCOMPtr<nsIURI> newURI;
     NS_NewURI(getter_AddRefs(newURI),
               NS_ConvertUTF16toUTF8(GetBufferValue(mString)), nsnull, mURI);
@@ -1658,14 +1665,14 @@ nsCSSValue::URL::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
 
-  
+  // This string is unshared.
   n += mString->SizeOfIncludingThisMustBeUnshared(aMallocSizeOf);
 
-  
-  
-  
-  
-  
+  // Measurement of the following members may be added later if DMD finds it is
+  // worthwhile:
+  // - mURI
+  // - mReferrer
+  // - mOriginPrincipal
 
   return n;
 }
@@ -1747,7 +1754,7 @@ nsCSSValueGradient::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
   return n;
 }
 
-
+// --- nsCSSCornerSizes -----------------
 
 nsCSSCornerSizes::nsCSSCornerSizes(void)
 {
@@ -1780,7 +1787,7 @@ MOZ_STATIC_ASSERT(NS_CORNER_TOP_LEFT == 0 && NS_CORNER_TOP_RIGHT == 1 &&
                   NS_CORNER_BOTTOM_RIGHT == 2 && NS_CORNER_BOTTOM_LEFT == 3,
                   "box corner constants not tl/tr/br/bl == 0/1/2/3");
 
- const nsCSSCornerSizes::corner_type
+/* static */ const nsCSSCornerSizes::corner_type
 nsCSSCornerSizes::corners[4] = {
   &nsCSSCornerSizes::mTopLeft,
   &nsCSSCornerSizes::mTopRight,

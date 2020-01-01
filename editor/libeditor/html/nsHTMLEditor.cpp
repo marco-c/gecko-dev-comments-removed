@@ -136,10 +136,6 @@ nsHTMLEditor::~nsHTMLEditor()
   
   nsCOMPtr<nsIEditActionListener> mListener = do_QueryInterface(mRules);
   RemoveEditActionListener(mListener);
-  
-  
-  
-  HideAnonymousEditingUIs();
 
   
   
@@ -344,6 +340,10 @@ nsHTMLEditor::PreDestroy(bool aDestroyingFrames)
   {
     RemoveOverrideStyleSheet(mStyleSheetURLs[0]);
   }
+
+  
+  
+  HideAnonymousEditingUIs();
 
   return nsPlaintextEditor::PreDestroy(aDestroyingFrames);
 }
@@ -646,8 +646,8 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
         return NS_OK; 
       }
 
-      if (nativeKeyEvent->isControl || nativeKeyEvent->isAlt ||
-          nativeKeyEvent->isMeta) {
+      if (nativeKeyEvent->IsControl() || nativeKeyEvent->IsAlt() ||
+          nativeKeyEvent->IsMeta()) {
         return NS_OK;
       }
 
@@ -674,12 +674,12 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
 
       bool handled = false;
       if (nsHTMLEditUtils::IsTableElement(blockParent)) {
-        rv = TabInTable(nativeKeyEvent->isShift, &handled);
+        rv = TabInTable(nativeKeyEvent->IsShift(), &handled);
         if (handled) {
           ScrollSelectionIntoView(false);
         }
       } else if (nsHTMLEditUtils::IsListItem(blockParent)) {
-        rv = Indent(nativeKeyEvent->isShift ?
+        rv = Indent(nativeKeyEvent->IsShift() ?
                       NS_LITERAL_STRING("outdent") :
                       NS_LITERAL_STRING("indent"));
         handled = true;
@@ -688,7 +688,7 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
       if (handled) {
         return aKeyEvent->PreventDefault(); 
       }
-      if (nativeKeyEvent->isShift) {
+      if (nativeKeyEvent->IsShift()) {
         return NS_OK; 
       }
       aKeyEvent->PreventDefault();
@@ -696,12 +696,12 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
     }
     case nsIDOMKeyEvent::DOM_VK_RETURN:
     case nsIDOMKeyEvent::DOM_VK_ENTER:
-      if (nativeKeyEvent->isControl || nativeKeyEvent->isAlt ||
-          nativeKeyEvent->isMeta) {
+      if (nativeKeyEvent->IsControl() || nativeKeyEvent->IsAlt() ||
+          nativeKeyEvent->IsMeta()) {
         return NS_OK;
       }
       aKeyEvent->PreventDefault(); 
-      if (nativeKeyEvent->isShift && !IsPlaintextEditor()) {
+      if (nativeKeyEvent->IsShift() && !IsPlaintextEditor()) {
         
         return TypedText(EmptyString(), eTypedBR);
       }
@@ -711,8 +711,8 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
 
   
   
-  if (nativeKeyEvent->charCode == 0 || nativeKeyEvent->isControl ||
-      nativeKeyEvent->isAlt || nativeKeyEvent->isMeta) {
+  if (nativeKeyEvent->charCode == 0 || nativeKeyEvent->IsControl() ||
+      nativeKeyEvent->IsAlt() || nativeKeyEvent->IsMeta()) {
     
     return NS_OK;
   }
@@ -3506,14 +3506,14 @@ NS_IMETHODIMP nsHTMLEditor::InsertTextImpl(const nsAString& aStringToInsert,
 void
 nsHTMLEditor::ContentAppended(nsIDocument *aDocument, nsIContent* aContainer,
                               nsIContent* aFirstNewContent,
-                              PRInt32 )
+                              PRInt32 aIndexInContainer)
 {
-  ContentInserted(aDocument, aContainer, aFirstNewContent, 0);
+  ContentInserted(aDocument, aContainer, aFirstNewContent, aIndexInContainer);
 }
 
 void
 nsHTMLEditor::ContentInserted(nsIDocument *aDocument, nsIContent* aContainer,
-                              nsIContent* aChild, PRInt32 )
+                              nsIContent* aChild, PRInt32 aIndexInContainer)
 {
   if (!aChild) {
     return;
@@ -3531,6 +3531,16 @@ nsHTMLEditor::ContentInserted(nsIDocument *aDocument, nsIContent* aContainer,
       return;
     }
     mRules->DocumentModified();
+
+    
+    if (mInlineSpellChecker) {
+      nsRefPtr<nsRange> range = new nsRange();
+      nsresult res = range->Set(aContainer, aIndexInContainer,
+                                aContainer, aIndexInContainer + 1);
+      if (NS_SUCCEEDED(res)) {
+        mInlineSpellChecker->SpellCheckRange(range);
+      }
+    }
   }
 }
 

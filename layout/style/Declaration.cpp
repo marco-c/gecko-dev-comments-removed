@@ -1,48 +1,48 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Daniel Glazman <glazman@netscape.com>
+ *   Mats Palmgren <mats.palmgren@bredband.net>
+ *   Jonathon Jongsma <jonathon.jongsma@collabora.co.uk>, Collabora Ltd.
+ *   L. David Baron <dbaron@dbaron.org>, Mozilla Corporation
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * representation of a declaration block (or style attribute) in a CSS
+ * stylesheet
+ */
 
 #include "mozilla/Util.h"
 
@@ -52,8 +52,8 @@
 namespace mozilla {
 namespace css {
 
-
-
+// check that we can fit all the CSS properties into a PRUint8
+// for the mOrder array - if not, might need to use PRUint16!
 MOZ_STATIC_ASSERT(eCSSProperty_COUNT_no_shorthands - 1 <= PR_UINT8_MAX,
                   "CSS longhand property numbers no longer fit in a PRUint8");
 
@@ -85,7 +85,7 @@ Declaration::ValueAppended(nsCSSProperty aProperty)
                     "should only be called while expanded");
   NS_ABORT_IF_FALSE(!nsCSSProps::IsShorthand(aProperty),
                     "shorthands forbidden");
-  
+  // order IS important for CSS, so remove and add to the end
   mOrder.RemoveElement(aProperty);
   mOrder.AppendElement(aProperty);
 }
@@ -147,39 +147,39 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
 {
   aValue.Truncate(0);
 
-  
+  // simple properties are easy.
   if (!nsCSSProps::IsShorthand(aProperty)) {
     AppendValueToString(aProperty, aValue);
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // DOM Level 2 Style says (when describing CSS2Properties, although
+  // not CSSStyleDeclaration.getPropertyValue):
+  //   However, if there is no shorthand declaration that could be added
+  //   to the ruleset without changing in any way the rules already
+  //   declared in the ruleset (i.e., by adding longhand rules that were
+  //   previously not declared in the ruleset), then the empty string
+  //   should be returned for the shorthand property.
+  // This means we need to check a number of cases:
+  //   (1) Since a shorthand sets all sub-properties, if some of its
+  //       subproperties were not specified, we must return the empty
+  //       string.
+  //   (2) Since 'inherit' and 'initial' can only be specified as the
+  //       values for entire properties, we need to return the empty
+  //       string if some but not all of the subproperties have one of
+  //       those values.
+  //   (3) Since a single value only makes sense with or without
+  //       !important, we return the empty string if some values are
+  //       !important and some are not.
+  // Since we're doing this check for 'inherit' and 'initial' up front,
+  // we can also simplify the property serialization code by serializing
+  // those values up front as well.
   PRUint32 totalCount = 0, importantCount = 0,
            initialCount = 0, inheritCount = 0;
   CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aProperty) {
     if (*p == eCSSProperty__x_system_font ||
          nsCSSProps::PropHasFlags(*p, CSS_PROPERTY_DIRECTIONAL_SOURCE)) {
-      
+      // The system-font subproperty and the *-source properties don't count.
       continue;
     }
     ++totalCount;
@@ -191,7 +191,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       val = mImportantData->ValueFor(*p);
     }
     if (!val) {
-      
+      // Case (1) above: some subproperties not specified.
       return;
     }
     if (val->GetUnit() == eCSSUnit_Inherit) {
@@ -201,21 +201,21 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
     }
   }
   if (importantCount != 0 && importantCount != totalCount) {
-    
+    // Case (3), no consistent importance.
     return;
   }
   if (initialCount == totalCount) {
-    
+    // Simplify serialization below by serializing initial up-front.
     nsCSSValue(eCSSUnit_Initial).AppendToString(eCSSProperty_UNKNOWN, aValue);
     return;
   }
   if (inheritCount == totalCount) {
-    
+    // Simplify serialization below by serializing inherit up-front.
     nsCSSValue(eCSSUnit_Inherit).AppendToString(eCSSProperty_UNKNOWN, aValue);
     return;
   }
   if (initialCount != 0 || inheritCount != 0) {
-    
+    // Case (2): partially initial or inherit.
     return;
   }
 
@@ -272,8 +272,8 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
         data->ValueFor(subprops[3])
       };
 
-      
-      
+      // For compatibility, only write a slash and the y-values
+      // if they're not identical to the x-values.
       bool needY = false;
       for (int i = 0; i < 4; i++) {
         if (vals[i]->GetUnit() == eCSSUnit_Pair) {
@@ -321,8 +321,8 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       for (const nsCSSProperty** subprops = subproptables,
                **subprops_end = ArrayEnd(subproptables);
            subprops < subprops_end; ++subprops) {
-        
-        
+        // Check only the first four subprops in each table, since the
+        // others are extras for dimensional box properties.
         const nsCSSValue *firstSide = data->ValueFor((*subprops)[0]);
         for (PRInt32 side = 1; side < 4; ++side) {
           const nsCSSValue *otherSide =
@@ -332,10 +332,10 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
         }
       }
       if (!match) {
-        
+        // We can't express what we have in the border shorthand
         break;
       }
-      
+      // tweak aProperty and fall through
       aProperty = eCSSProperty_border_top;
     }
     case eCSSProperty_border_top:
@@ -360,7 +360,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       if (!AppendValueToString(subprops[0], aValue) ||
           !(aValue.Append(PRUnichar(' ')),
             AppendValueToString(subprops[1], aValue)) ||
-          
+          // Don't output a third value when it's -moz-use-text-color.
           !(isMozUseTextColor ||
             (aValue.Append(PRUnichar(' ')),
              AppendValueToString(subprops[2], aValue)))) {
@@ -396,13 +396,13 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       break;
     }
     case eCSSProperty_background: {
-      
-      
-      
-      
-      
-      
-      
+      // We know from above that all subproperties were specified.
+      // However, we still can't represent that in the shorthand unless
+      // they're all lists of the same length.  So if they're different
+      // lengths, we need to bail out.
+      // We also need to bail out if an item has background-clip and
+      // background-origin that are different and not the default
+      // values.  (We omit them if they're both default.)
       const nsCSSValueList *image =
         data->ValueFor(eCSSProperty_background_image)->
         GetListValue();
@@ -427,7 +427,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       for (;;) {
         if (size->mXValue.GetUnit() != eCSSUnit_Auto ||
             size->mYValue.GetUnit() != eCSSUnit_Auto) {
-          
+          // Non-default background-size, so can't be serialized as shorthand.
           aValue.Truncate();
           return;
         }
@@ -450,9 +450,9 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
 
         if (clip->mValue.GetIntValue() != NS_STYLE_BG_CLIP_BORDER ||
             origin->mValue.GetIntValue() != NS_STYLE_BG_ORIGIN_PADDING) {
-          
-          
-          
+          // The shorthand only has a single clip/origin value which sets
+          // both properties.  So if they're different (and non-default),
+          // we can't represent the state using the shorthand.
           MOZ_STATIC_ASSERT(NS_STYLE_BG_CLIP_BORDER ==
                             NS_STYLE_BG_ORIGIN_BORDER &&
                             NS_STYLE_BG_CLIP_PADDING ==
@@ -479,14 +479,14 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
 
         if (!image) {
           if (repeat || attachment || position || clip || origin || size) {
-            
+            // Uneven length lists, so can't be serialized as shorthand.
             aValue.Truncate();
             return;
           }
           break;
         }
         if (!repeat || !attachment || !position || !clip || !origin || !size) {
-          
+          // Uneven length lists, so can't be serialized as shorthand.
           aValue.Truncate();
           return;
         }
@@ -499,8 +499,8 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       break;
     }
     case eCSSProperty_font: {
-      
-      
+      // systemFont might not be present; the others are guaranteed to be
+      // based on the shorthand check at the beginning of the function
       const nsCSSValue *systemFont =
         data->ValueFor(eCSSProperty__x_system_font);
       const nsCSSValue &style =
@@ -537,15 +537,15 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
             sizeAdjust.GetUnit() != eCSSUnit_System_Font ||
             featureSettings.GetUnit() != eCSSUnit_System_Font ||
             languageOverride.GetUnit() != eCSSUnit_System_Font) {
-          
+          // This can't be represented as a shorthand.
           return;
         }
         systemFont->AppendToString(eCSSProperty__x_system_font, aValue);
       } else {
-        
-        
-        
-        
+        // The font-stretch, font-size-adjust,
+        // -moz-font-feature-settings, and -moz-font-language-override
+        // properties are reset by this shorthand property to their
+        // initial values, but can't be represented in its syntax.
         if (stretch.GetUnit() != eCSSUnit_Enumerated ||
             stretch.GetIntValue() != NS_STYLE_FONT_STRETCH_NORMAL ||
             sizeAdjust.GetUnit() != eCSSUnit_None ||
@@ -596,15 +596,15 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       break;
     }
     case eCSSProperty_text_decoration: {
-      
-      
+      // If text-decoration-color or text-decoration-style isn't initial value,
+      // we cannot serialize the text-decoration shorthand value.
       const nsCSSValue &decorationColor =
         *data->ValueFor(eCSSProperty_text_decoration_color);
       const nsCSSValue &decorationStyle =
         *data->ValueFor(eCSSProperty_text_decoration_style);
 
       NS_ABORT_IF_FALSE(decorationStyle.GetUnit() == eCSSUnit_Enumerated,
-                        nsPrintfCString(32, "bad text-decoration-style unit %d",
+                        nsPrintfCString("bad text-decoration-style unit %d",
                                         decorationStyle.GetUnit()).get());
 
       if (decorationColor.GetUnit() != eCSSUnit_Enumerated ||
@@ -620,10 +620,10 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
         *data->ValueFor(eCSSProperty_text_decoration_line);
 
       NS_ABORT_IF_FALSE(textBlink.GetUnit() == eCSSUnit_Enumerated,
-                        nsPrintfCString(32, "bad text-blink unit %d",
+                        nsPrintfCString("bad text-blink unit %d",
                                         textBlink.GetUnit()).get());
       NS_ABORT_IF_FALSE(decorationLine.GetUnit() == eCSSUnit_Enumerated,
-                        nsPrintfCString(32, "bad text-decoration-line unit %d",
+                        nsPrintfCString("bad text-decoration-line unit %d",
                                         decorationLine.GetUnit()).get());
 
       bool blinkNone = (textBlink.GetIntValue() == NS_STYLE_TEXT_BLINK_NONE);
@@ -657,15 +657,15 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
 
       NS_ABORT_IF_FALSE(transDuration.GetUnit() == eCSSUnit_List ||
                         transDuration.GetUnit() == eCSSUnit_ListDep,
-                        nsPrintfCString(32, "bad t-duration unit %d",
+                        nsPrintfCString("bad t-duration unit %d",
                                         transDuration.GetUnit()).get());
       NS_ABORT_IF_FALSE(transTiming.GetUnit() == eCSSUnit_List ||
                         transTiming.GetUnit() == eCSSUnit_ListDep,
-                        nsPrintfCString(32, "bad t-timing unit %d",
+                        nsPrintfCString("bad t-timing unit %d",
                                         transTiming.GetUnit()).get());
       NS_ABORT_IF_FALSE(transDelay.GetUnit() == eCSSUnit_List ||
                         transDelay.GetUnit() == eCSSUnit_ListDep,
-                        nsPrintfCString(32, "bad t-delay unit %d",
+                        nsPrintfCString("bad t-delay unit %d",
                                         transDelay.GetUnit()).get());
 
       const nsCSSValueList* dur = transDuration.GetListValue();
@@ -674,8 +674,8 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
 
       if (transProp.GetUnit() == eCSSUnit_None ||
           transProp.GetUnit() == eCSSUnit_All) {
-        
-        
+        // If any of the other three lists has more than one element,
+        // we can't use the shorthand.
         if (!dur->mNext && !tim->mNext && !del->mNext) {
           transProp.AppendToString(eCSSProperty_transition_property, aValue);
           aValue.Append(PRUnichar(' '));
@@ -692,7 +692,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       } else {
         NS_ABORT_IF_FALSE(transProp.GetUnit() == eCSSUnit_List ||
                           transProp.GetUnit() == eCSSUnit_ListDep,
-                          nsPrintfCString(32, "bad t-prop unit %d",
+                          nsPrintfCString("bad t-prop unit %d",
                                           transProp.GetUnit()).get());
         const nsCSSValueList* pro = transProp.GetListValue();
         for (;;) {
@@ -717,7 +717,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
           aValue.AppendLiteral(", ");
         }
         if (pro || dur || tim || del) {
-          
+          // Lists not all the same length, can't use shorthand.
           aValue.Truncate();
         }
       }
@@ -736,14 +736,14 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
         values[i] = data->ValueFor(subprops[i]);
         NS_ABORT_IF_FALSE(values[i]->GetUnit() == eCSSUnit_List ||
                           values[i]->GetUnit() == eCSSUnit_ListDep,
-                          nsPrintfCString(32, "bad a-duration unit %d",
+                          nsPrintfCString("bad a-duration unit %d",
                                           values[i]->GetUnit()).get());
         lists[i] = values[i]->GetListValue();
       }
 
       for (;;) {
-        
-        
+        // We must serialize 'animation-name' last in case it has
+        // a value that conflicts with one of the other keyword properties.
         NS_ABORT_IF_FALSE(subprops[numProps - 1] ==
                             eCSSProperty_animation_name,
                           "animation-name must be last");
@@ -766,7 +766,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       }
       for (PRUint32 i = 0; i < numProps; ++i) {
         if (lists[i]) {
-          
+          // Lists not all the same length, can't use shorthand.
           aValue.Truncate();
           break;
         }
@@ -785,7 +785,7 @@ Declaration::GetValue(nsCSSProperty aProperty, nsAString& aValue) const
       break;
     }
     case eCSSProperty__moz_columns: {
-      
+      // Two values, column-count and column-width, separated by a space.
       const nsCSSProperty* subprops =
         nsCSSProps::SubpropertyEntryFor(aProperty);
       AppendValueToString(subprops[0], aValue);
@@ -815,7 +815,7 @@ Declaration::GetValueIsImportant(nsCSSProperty aProperty) const
   if (!mImportantData)
     return false;
 
-  
+  // Calling ValueFor is inefficient, but we can assume '!important' is rare.
 
   if (!nsCSSProps::IsShorthand(aProperty)) {
     return mImportantData->ValueFor(aProperty) != nsnull;
@@ -823,7 +823,7 @@ Declaration::GetValueIsImportant(nsCSSProperty aProperty) const
 
   CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aProperty) {
     if (*p == eCSSProperty__x_system_font) {
-      
+      // The system_font subproperty doesn't count.
       continue;
     }
     if (!mImportantData->ValueFor(*p)) {
@@ -858,8 +858,8 @@ Declaration::AppendPropertyAndValueToString(nsCSSProperty aProperty,
 void
 Declaration::ToString(nsAString& aString) const
 {
-  
-  
+  // Someone cares about this declaration's contents, so don't let it
+  // change from under them.  See e.g. bug 338679.
   SetImmutable();
 
   nsCSSCompressedDataBlock *systemFontData =
@@ -878,7 +878,7 @@ Declaration::ToString(nsAString& aString) const
     nsCSSProperty property = OrderValueAt(index);
     bool doneProperty = false;
 
-    
+    // If we already used this property in a shorthand, skip it.
     if (shorthandsUsed.Length() > 0) {
       for (const nsCSSProperty *shorthands =
              nsCSSProps::ShorthandsContaining(property);
@@ -892,18 +892,18 @@ Declaration::ToString(nsAString& aString) const
         continue;
     }
 
-    
+    // Try to use this property in a shorthand.
     nsAutoString value;
     for (const nsCSSProperty *shorthands =
            nsCSSProps::ShorthandsContaining(property);
          *shorthands != eCSSProperty_UNKNOWN; ++shorthands) {
-      
-      
-      
+      // ShorthandsContaining returns the shorthands in order from those
+      // that contain the most subproperties to those that contain the
+      // least, which is exactly the order we want to test them.
       nsCSSProperty shorthand = *shorthands;
 
-      
-      
+      // If GetValue gives us a non-empty string back, we can use that
+      // value; otherwise it's not possible to use this shorthand.
       GetValue(shorthand, value);
       if (!value.IsEmpty()) {
         AppendPropertyAndValueToString(shorthand, value, aString);
@@ -917,21 +917,21 @@ Declaration::ToString(nsAString& aString) const
                         "font should always be the only containing shorthand");
       if (shorthand == eCSSProperty_font) {
         if (haveSystemFont && !didSystemFont) {
-          
-          
-          
+          // Output the shorthand font declaration that we will
+          // partially override later.  But don't add it to
+          // |shorthandsUsed|, since we will have to override it.
           systemFont->AppendToString(eCSSProperty__x_system_font, value);
           AppendPropertyAndValueToString(eCSSProperty_font, value, aString);
           value.Truncate();
           didSystemFont = true;
         }
 
-        
-        
-        
-        
-        
-        
+        // That we output the system font is enough for this property if:
+        //   (1) it's the hidden system font subproperty (which either
+        //       means we output it or we don't have it), or
+        //   (2) its value is the hidden system font value and it matches
+        //       the hidden system font subproperty in importance, and
+        //       we output the system font subproperty.
         const nsCSSValue *val = systemFontData->ValueFor(property);
         if (property == eCSSProperty__x_system_font ||
             (haveSystemFont && val && val->GetUnit() == eCSSUnit_System_Font)) {
@@ -946,8 +946,8 @@ Declaration::ToString(nsAString& aString) const
     AppendPropertyAndValueToString(property, value, aString);
   }
   if (! aString.IsEmpty()) {
-    
-    
+    // if the string is not empty, we have trailing whitespace we
+    // should remove
     aString.Truncate(aString.Length() - 1);
   }
 }
@@ -1006,5 +1006,5 @@ Declaration::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
   return n;
 }
 
-} 
-} 
+} // namespace mozilla::css
+} // namespace mozilla

@@ -1,46 +1,46 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Original Author: David W. Hyatt (hyatt@netscape.com)
+ *   L. David Baron <dbaron@dbaron.org>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * a node in the lexicographic tree of rules that match an element,
+ * responsible for converting the rules' information into computed style
+ */
 
 #ifndef nsRuleNode_h___
 #define nsRuleNode_h___
@@ -60,6 +60,7 @@ class nsCSSValue;
 struct nsCSSRect;
 
 class nsStyleCoord;
+class nsCSSValuePairList;
 
 template <nsStyleStructID MinIndex, nsStyleStructID Count>
 class FixedStyleStructArray
@@ -178,7 +179,7 @@ struct nsCachedStyleData
     return nsnull;
   }
 
-  
+  // Typesafe and faster versions of the above
   #define STYLE_STRUCT_INHERITED(name_, checkdata_cb_, ctor_args_)       \
     nsStyle##name_ * NS_FASTCALL GetStyle##name_ () {                    \
       return mInheritedData ? static_cast<nsStyle##name_*>(              \
@@ -206,87 +207,87 @@ struct nsCachedStyleData
   ~nsCachedStyleData() {}
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * nsRuleNode is a node in a lexicographic tree (the "rule tree")
+ * indexed by style rules (implementations of nsIStyleRule).
+ *
+ * The rule tree is owned by the nsStyleSet and is destroyed when the
+ * presentation of the document goes away.  It is garbage-collected
+ * (using mark-and-sweep garbage collection) during the lifetime of the
+ * document (when dynamic changes cause the destruction of enough style
+ * contexts).  Rule nodes are marked if they are pointed to by a style
+ * context or one of their descendants is.
+ *
+ * An nsStyleContext, which represents the computed style data for an
+ * element, points to an nsRuleNode.  The path from the root of the rule
+ * tree to the nsStyleContext's mRuleNode gives the list of the rules
+ * matched, from least important in the cascading order to most
+ * important in the cascading order.
+ *
+ * The reason for using a lexicographic tree is that it allows for
+ * sharing of style data, which saves both memory (for storing the
+ * computed style data) and time (for computing them).  This sharing
+ * depends on the computed style data being stored in structs (nsStyle*)
+ * that contain only properties that are inherited by default
+ * ("inherited structs") or structs that contain only properties that
+ * are not inherited by default ("reset structs").  The optimization
+ * depends on the normal case being that style rules specify relatively
+ * few properties and even that elements generally have relatively few
+ * properties specified.  This allows sharing in the following ways:
+ *   1. [mainly reset structs] When a style data struct will contain the
+ *      same computed value for any elements that match the same set of
+ *      rules (common for reset structs), it can be stored on the
+ *      nsRuleNode instead of on the nsStyleContext.
+ *   2. [only? reset structs] When (1) occurs, and an nsRuleNode doesn't
+ *      have any rules that change the values in the struct, the
+ *      nsRuleNode can share that struct with its parent nsRuleNode.
+ *   3. [mainly inherited structs] When an element doesn't match any
+ *      rules that change the value of a property (or, in the edge case,
+ *      when all the values specified are 'inherit'), the nsStyleContext
+ *      can use the same nsStyle* struct as its parent nsStyleContext.
+ *
+ * Since the data represented by an nsIStyleRule are immutable, the data
+ * represented by an nsRuleNode are also immutable.
+ */
 
 class nsRuleNode {
 public:
   enum RuleDetail {
-    eRuleNone, 
-    eRulePartialReset, 
-                       
-                       
-                       
-    eRulePartialMixed, 
-                       
-                       
-                       
-    eRulePartialInherited, 
-                           
-                           
-    eRuleFullReset, 
-                    
-    eRuleFullMixed, 
-                    
-    eRuleFullInherited  
-                        
+    eRuleNone, // No props have been specified at all.
+    eRulePartialReset, // At least one prop with a non-"inherit" value
+                       // has been specified.  No props have been
+                       // specified with an "inherit" value.  At least
+                       // one prop remains unspecified.
+    eRulePartialMixed, // At least one prop with a non-"inherit" value
+                       // has been specified.  Some props may also have
+                       // been specified with an "inherit" value.  At
+                       // least one prop remains unspecified.
+    eRulePartialInherited, // Only props with "inherit" values have
+                           // have been specified.  At least one prop
+                           // remains unspecified.
+    eRuleFullReset, // All props have been specified.  None has an
+                    // "inherit" value.
+    eRuleFullMixed, // All props have been specified.  At least one has
+                    // a non-"inherit" value.
+    eRuleFullInherited  // All props have been specified with "inherit"
+                        // values.
   };
 
 private:
-  nsPresContext* mPresContext; 
+  nsPresContext* mPresContext; // Our pres context.
 
-  nsRuleNode* mParent; 
-                       
-                       
-                       
-                       
-  nsIStyleRule* mRule; 
+  nsRuleNode* mParent; // A pointer to the parent node in the tree.
+                       // This enables us to walk backwards from the
+                       // most specific rule matched to the least
+                       // specific rule (which is the optimal order to
+                       // use for lookups of style properties.
+  nsIStyleRule* mRule; // [STRONG] A pointer to our specific rule.
 
-  nsRuleNode* mNextSibling; 
-                            
-                            
-                            
-                            
+  nsRuleNode* mNextSibling; // This value should be used only by the
+                            // parent, since the parent may store
+                            // children in a hash, which means this
+                            // pointer is not meaningful.  Order of
+                            // siblings is also not meaningful.
 
   struct Key {
     nsIStyleRule* mRule;
@@ -328,16 +329,16 @@ private:
     return Key(mRule, GetLevel(), IsImportantRule());
   }
 
-  
-  
-  
-  
+  // The children of this node are stored in either a hashtable or list
+  // that maps from rules to our nsRuleNode children.  When matching
+  // rules, we use this mapping to transition from node to node
+  // (constructing new nodes as needed to flesh out the tree).
 
   union {
     void* asVoid;
     nsRuleNode* asList;
     PLDHashTable* asHash;
-  } mChildren; 
+  } mChildren; // Accessed only through the methods below.
 
   enum {
     kTypeMask = 0x1,
@@ -345,8 +346,8 @@ private:
     kHashType = 0x1
   };
   enum {
-    
-    
+    // Maximum to have in a list before converting to a hashtable.
+    // XXX Need to optimize this.
     kMaxChildrenInList = 32
   };
 
@@ -377,51 +378,51 @@ private:
   }
   void ConvertChildrenToHash();
 
-  nsCachedStyleData mStyleData;   
+  nsCachedStyleData mStyleData;   // Any data we cached on the rule node.
 
-  PRUint32 mDependentBits; 
-                           
+  PRUint32 mDependentBits; // Used to cache the fact that we can look up
+                           // cached data under a parent rule.
 
-  PRUint32 mNoneBits; 
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
+  PRUint32 mNoneBits; // Used to cache the fact that the branch to this
+                      // node specifies no non-inherited data for a
+                      // given struct type.  (This usually implies that
+                      // the entire branch specifies no non-inherited
+                      // data, although not necessarily, if a
+                      // non-inherited value is overridden by an
+                      // explicit 'inherit' value.)  For example, if an
+                      // entire rule branch specifies no color
+                      // information, then a bit will be set along every
+                      // rule node on that branch, so that you can break
+                      // out of the rule tree early and just inherit
+                      // from the parent style context.  The presence of
+                      // this bit means we should just get inherited
+                      // data from the parent style context, and it is
+                      // never used for reset structs since their
+                      // Compute*Data functions don't initialize from
+                      // inherited data.
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Reference count.  This just counts the style contexts that reference this
+  // rulenode.  And children the rulenode has had.  When this goes to 0 or
+  // stops being 0, we notify the style set.
+  // Note, in particular, that when a child is removed mRefCnt is NOT
+  // decremented.  This is on purpose; the notifications to the style set are
+  // only used to determine when it's worth running GC on the ruletree, and
+  // this setup makes it so we only count unused ruletree leaves for purposes
+  // of deciding when to GC.  We could more accurately count unused rulenodes
+  // by releasing/addrefing our parent when our refcount transitions to or from
+  // 0, but it doesn't seem worth it to do that.
   PRUint32 mRefCnt;
 
 public:
-  
-  
+  // Overloaded new operator. Initializes the memory to 0 and relies on an arena
+  // (which comes from the presShell) to perform the allocation.
   void* operator new(size_t sz, nsPresContext* aContext) CPP_THROW_NEW;
   void Destroy() { DestroyInternal(nsnull); }
 
-  
+  // Implemented in nsStyleSet.h, since it needs to know about nsStyleSet.
   inline void AddRef();
 
-  
+  // Implemented in nsStyleSet.h, since it needs to know about nsStyleSet.
   inline void Release();
 
 protected:
@@ -597,7 +598,7 @@ protected:
                         RuleDetail aRuleDetail,
                         const bool aCanStoreInRuleTree);
 
-  
+  // helpers for |ComputeFontData| that need access to |mNoneBits|:
   static void SetFontSize(nsPresContext* aPresContext,
                           const nsRuleData* aRuleData,
                           const nsStyleFont* aFont,
@@ -656,13 +657,13 @@ private:
 public:
   static nsRuleNode* CreateRootNode(nsPresContext* aPresContext);
 
-  
+  // Transition never returns null; on out of memory it'll just return |this|.
   nsRuleNode* Transition(nsIStyleRule* aRule, PRUint8 aLevel,
                          bool aIsImportantRule);
   nsRuleNode* GetParent() const { return mParent; }
   bool IsRoot() const { return mParent == nsnull; }
 
-  
+  // These PRUint8s are really nsStyleSet::sheetType values.
   PRUint8 GetLevel() const {
     NS_ASSERTION(!IsRoot(), "can't call on root");
     return (mDependentBits & NS_RULE_NODE_LEVEL_MASK) >>
@@ -673,9 +674,9 @@ public:
     return (mDependentBits & NS_RULE_NODE_IS_IMPORTANT) != 0;
   }
 
-  
+  // NOTE:  Does not |AddRef|.
   nsIStyleRule* GetRule() const { return mRule; }
-  
+  // NOTE: Does not |AddRef|.
   nsPresContext* GetPresContext() const { return mPresContext; }
 
   const void* GetStyleData(nsStyleStructID aSID,
@@ -688,12 +689,12 @@ public:
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT
 
-  
-
-
-
-
-
+  /*
+   * Garbage collection.  Mark walks up the tree, marking any unmarked
+   * ancestors until it reaches a marked one.  Sweep recursively sweeps
+   * the children, destroys any that are unmarked, and clears marks,
+   * returning true if the node on which it was called was destroyed.
+   */
   void Mark();
   bool Sweep();
 
@@ -702,10 +703,10 @@ public:
                             PRUint32 ruleTypeMask,
                             bool aAuthorColorsAllowed);
 
-  
+  // Expose this so media queries can use it
   static nscoord CalcLengthWithInitialFont(nsPresContext* aPresContext,
                                            const nsCSSValue& aValue);
-  
+  // Expose this so nsTransformFunctions can use it.
   static nscoord CalcLength(const nsCSSValue& aValue,
                             nsStyleContext* aStyleContext,
                             nsPresContext* aPresContext,
@@ -724,21 +725,21 @@ public:
                               nsPresContext* aPresContext,
                               bool& aCanStoreInRuleTree);
 
-  
-  
-  
+  // Compute the value of an nsStyleCoord that IsCalcUnit().
+  // (Values that don't require aPercentageBasis should be handled
+  // inside nsRuleNode rather than through this API.)
   static nscoord ComputeComputedCalc(const nsStyleCoord& aCoord,
                                      nscoord aPercentageBasis);
 
-  
-  
+  // Compute the value of an nsStyleCoord that is either a coord, a
+  // percent, or a calc expression.
   static nscoord ComputeCoordPercentCalc(const nsStyleCoord& aCoord,
                                          nscoord aPercentageBasis);
 
-  
-  
-  
-  
+  // Return whether the rule tree for which this node is the root has
+  // cached data such that we need to do dynamic change handling for
+  // changes that change the results of media queries or require
+  // rebuilding all style data.
   bool TreeHasCachedData() const {
     NS_ASSERTION(IsRoot(), "should only be called on root of rule tree");
     return HaveChildren() || mStyleData.mInheritedData || mStyleData.mResetData;
@@ -747,6 +748,9 @@ public:
   bool NodeHasCachedData(const nsStyleStructID aSID) {
     return !!mStyleData.GetStyleData(aSID);
   }
+
+  static void ComputeFontFeatures(const nsCSSValuePairList *aFeaturesList,
+                                  nsTArray<gfxFontFeature>& aFeatureSettings);
 };
 
 #endif
