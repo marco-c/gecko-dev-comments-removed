@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <time.h>
 #include "cpr_types.h"
@@ -33,7 +33,6 @@
 #include "fim.h"
 #include "util_string.h"
 #include "platform_api.h"
-#include "vcm_util.h"
 
 #ifndef NO
 #define NO  (0)
@@ -51,19 +50,15 @@
 static cc_rcs_t lsm_stop_tone (lsm_lcb_t *lcb, cc_action_data_tone_t *data);
 
 extern cc_media_cap_table_t g_media_table;
-vcm_media_payload_type_t vcmRtpToMediaPayload (int32_t ptype,
-                                            int32_t dynamic_ptype_value,
-                                            uint16_t mode);
-
 
 static lsm_lcb_t *lsm_lcbs;
 static uint32_t lsm_call_perline[MAX_REG_LINES];
-boolean lsm_mnc_reached[MAX_REG_LINES]; 
-static boolean lsm_bt_reached[MAX_REG_LINES]; 
+boolean lsm_mnc_reached[MAX_REG_LINES]; // maxnumcalls reached
+static boolean lsm_bt_reached[MAX_REG_LINES]; //busy trigger reached
 
-
-
-
+/* This variable is used locally to reflect the CFA state (set/clear)
+ * when in CCM mode.
+ */
 static boolean cfwdall_state_in_ccm_mode[MAX_REG_LINES+1] ;
 
 static const char *lsm_state_names[LSM_S_MAX] = {
@@ -123,10 +118,10 @@ static const char *cc_action_names[] = {
     "PLAY_BLF_ALERT_TONE"
 };
 
-
+/* names are corresponds to vcm_ring_mode_t structure */
 static const char *vm_alert_names[] = {
     "NONE",
-
+//    "RINGER_OFF",
     "VCM_RING_OFF",
     "VCM_INSIDE_RING",
     "VCM_OUTSIDE_RING",
@@ -143,8 +138,8 @@ static const char *vm_alert_names[] = {
     "VCM_MAX_RING"
 };
 
-
-
+/* Enum just to make code read better */
+/* the following values must be in sync with the values listed in edcs-387610 */
 typedef enum {
     DISABLE = 1,
     FLASH_ONLY = 2,
@@ -161,11 +156,11 @@ static int callWaitingDelay;
 static int ringSettingIdle;
 static int ringSettingActive;
 
-
+/* Ring mode set by remote-cc app */
 static cc_rcc_ring_mode_e cc_line_ringer_mode[MAX_REG_LINES+1] =
     {CC_RING_DEFAULT};
-
-
+// Following data has to be non-stack b/c the way SIP stack uses it.
+// It is used by the lsm_is_phone_forwarded() function only.
 static char cfwdall_url[MAX_URL_LENGTH];
 
 static void lsm_update_inalert_status(line_t line, callid_t call_id,
@@ -245,32 +240,32 @@ lsm_ui_call_state (call_events event, line_t line, lsm_lcb_t *lcb, cc_causes_t c
     if (lcb->previous_call_event != event) {
         lcb->previous_call_event = event;
 
-        
-
-
-
-
+        /* For local conference case, the second call is hidden
+         * so do not show that when the call is held, resumed,
+         * or moved to other state. This should be done only
+         * when local bridge is active
+         */
         ui_call_state(event, line, lcb->ui_id, cause);
     }
     else if(event == evConnected) {
-	
-	
-	
+	//This is for Chaperone Conference case, if conference changed to a normal call,
+	//then need to update the call state to refresh the key's status. like re-enable
+	//Confrn key
         ui_call_state(event, line, lcb->ui_id, cause);
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function will control the display of the ringingin call based on the hide arg.
+ *
+ * @param[in] call_id -  call id
+ * @param[in] line - line on which call is ringing.
+ * @param[in] hide - whether to hide or not
+ *
+ * @return none
+ *
+ * @pre (call_id != CC_NO_CALL_ID) and (line != 0)
+ */
 void lsm_display_control_ringin_call (callid_t call_id, line_t line, boolean hide)
 {
     lsm_lcb_t *lcb;
@@ -281,14 +276,14 @@ void lsm_display_control_ringin_call (callid_t call_id, line_t line, boolean hid
     }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * This function will be invoked by DEF SM to set if it is a dusting call.
+ * @param[in] call_id - GSM call id.
+ *
+ * @return none
+ *
+ * @pre (call_id != CC_NO_CALL_ID)
+ */
 void lsm_set_lcb_dusting_call (callid_t call_id)
 {
     lsm_lcb_t *lcb;
@@ -299,15 +294,15 @@ void lsm_set_lcb_dusting_call (callid_t call_id)
     }
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * This function will be invoked by DEF SM to set call priority.
+ *
+ * @param[in] call_id - GSM call id.
+ *
+ * @return none
+ *
+ * @pre (call_id != CC_NO_CALL_ID)
+ */
 void lsm_set_lcb_call_priority (callid_t call_id)
 {
     lsm_lcb_t *lcb;
@@ -319,15 +314,15 @@ void lsm_set_lcb_call_priority (callid_t call_id)
 }
 
 
-
-
-
-
-
-
-
-
-
+/**
+ * This function sets the LSM_FLAGS_DIALED_STRING bit in lcb->flags
+ *
+ * @param[in] call_id - GSM call id.
+ *
+ * @return none
+ *
+ * @pre (call_id != CC_NO_CALL_ID)
+ */
 void lsm_set_lcb_dialed_str_flag (callid_t call_id)
 {
     lsm_lcb_t *lcb;
@@ -338,16 +333,16 @@ void lsm_set_lcb_dialed_str_flag (callid_t call_id)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function will be invoked by DEF SM to set gcid in lcb.
+ *
+ * @param[in] call_id - GSM call id.
+ * @param[in] gcid - GCID provided by CUCM.
+ *
+ * @return none
+ *
+ * @pre (call_id != CC_NO_CALL_ID)
+ */
 void lsm_update_gcid (callid_t call_id, char * gcid)
 {
     lsm_lcb_t *lcb;
@@ -361,17 +356,17 @@ void lsm_update_gcid (callid_t call_id, char * gcid)
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function will be invoked by DEF SM.
+ * it will check if there is a RINGIN call
+ * with the same GCID. If so, it will set a flag to prevent ringing.
+ *
+ * @param[in] call_id - GSM call id.
+ *
+ * @return none
+ *
+ * @pre (call_id != CC_NO_CALL_ID)
+ */
 void lsm_set_lcb_prevent_ringing (callid_t call_id)
 {
     lsm_lcb_t *lcb;
@@ -423,7 +418,7 @@ void lsm_remove_lcb_prevent_ringing (callid_t call_id)
     FSM_FOR_ALL_CBS(lcb, lsm_lcbs, LSM_MAX_LCBS) {
         if (lcb->state == LSM_S_RINGIN) {
             if ((lcb->gcid != NULL) && (strncmp(gcid, lcb->gcid, CC_GCID_LEN) == 0)) {
-                
+                //FSM_RESET_FLAGS(lcb->flags, LSM_FLAGS_ANSWER_PENDING);
                 lcb->flags = 0;
                 LSM_DEBUG(DEB_L_C_F_PREFIX"found ringing call, gcid=%d, lcb->flags=%d.\n",
                           DEB_L_C_F_PREFIX_ARGS(LSM, lcb->line, lcb->call_id, "lsm_remove_lcb_prevent_ringing"), gcid, lcb->flags);
@@ -433,15 +428,15 @@ void lsm_remove_lcb_prevent_ringing (callid_t call_id)
     }
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * This function finds if the call is a priority call.
+ *
+ * @param[in] call_id - GSM call id.
+ *
+ * @return none
+ *
+ * @pre (call_id != CC_NO_CALL_ID)
+ */
 boolean lsm_is_it_priority_call (callid_t call_id)
 {
     lsm_lcb_t *lcb;
@@ -456,25 +451,25 @@ boolean lsm_is_it_priority_call (callid_t call_id)
     return FALSE;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_internal_update_call_info
+ *
+ *  Parameters:
+ *     lcb - pointer to lsm_lcb_t.
+ *     dcb - pointer to fsmdef_dcb_t.
+ *
+ *  Description: This is an internal function of LSM for updating call
+ *               information to the UI that is not directly driven by the
+ *               the explicit CALL INFO event from call control.
+ *
+ *               It is a convenient function that used by some of the
+ *               LSM handling function that needs to update call information
+ *               to the UI during media changes.
+ *
+ *  Returns:
+ *     None.
+ *
+ */
 static void
 lsm_internal_update_call_info (lsm_lcb_t *lcb, fsmdef_dcb_t *dcb)
 {
@@ -490,12 +485,12 @@ lsm_internal_update_call_info (lsm_lcb_t *lcb, fsmdef_dcb_t *dcb)
         return;
     }
 
-    
-
-
-
-
-
+    /* For local conference, do not update the primary
+     * call bubbles call-info. Primary call is already
+     * displaying To conference in this case
+     * But dcb-> caller_id should be updated to
+     * refresh the UI when the call is dropped
+     */
     ccb = fsmcnf_get_ccb_by_call_id(lcb->call_id);
     if (ccb && (ccb->flags & LCL_CNF) && (ccb->active)
              && (ccb->cnf_call_id == lcb->call_id)) {
@@ -503,7 +498,7 @@ lsm_internal_update_call_info (lsm_lcb_t *lcb, fsmdef_dcb_t *dcb)
     }
     dcb->ui_update_required = FALSE;
 
-    
+    /* Derive orientation of the call */
     switch (dcb->orientation) {
     case CC_ORIENTATION_FROM:
         inbound = TRUE;
@@ -514,9 +509,9 @@ lsm_internal_update_call_info (lsm_lcb_t *lcb, fsmdef_dcb_t *dcb)
         break;
 
     default:
-        
-
-
+        /*
+         * No orientation available, use the direction when call was started
+         */
         inbound = dcb->inbound;
         break;
     }
@@ -551,24 +546,24 @@ lsm_internal_update_call_info (lsm_lcb_t *lcb, fsmdef_dcb_t *dcb)
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The function opens receive channel or allocates receive port. It depends
+ * on the "keep" member of the cc_action_data_open_rcv_t structure set
+ * up by the caller to whether opens a receive channel or just
+ * to allocate a receive port.
+ *
+ * @param[in] lcb       - pointer to the lsm_lcb_t.
+ * @param[in/out] data  - pointer to the cc_action_data_open_rcv_t.
+ *                        Upon a successful return, the port element
+ *                        of this structure will be filled with the actual
+ *                        receive port.
+ * @param[in]     media - pointer to the fsmdef_media_t if a specific
+ *                        media to be operated on.
+ *
+ * @return              CC_RC_ERROR or CC_RC_SUCCESS.
+ *
+ * @pre (lcb is_not NULL) and (data is_not NULL)
+ */
 static cc_rcs_t
 lsm_open_rx (lsm_lcb_t *lcb, cc_action_data_open_rcv_t *data,
              fsmdef_media_t *media)
@@ -584,14 +579,14 @@ lsm_open_rx (lsm_lcb_t *lcb, cc_action_data_open_rcv_t *data,
         return (rc);
     }
 
-    
-
-
-
-
-
+    /*
+     * P2: At this point, it is a guess that refid from media structure
+     *     may be needed. If it turns out to be not the case, then the
+     *     code below that looks up media should be removed including
+     *     the media parameter that is passed in.
+     */
     if (media == NULL) {
-        
+        /* no explicit media parameter specified, look up based on refID */
         if (data->media_refid != CC_NO_MEDIA_REF_ID) {
             media = gsmsdp_find_media_by_refid(dcb,
                                                data->media_refid);
@@ -613,11 +608,11 @@ lsm_open_rx (lsm_lcb_t *lcb, cc_action_data_open_rcv_t *data,
 
     if (data->keep == TRUE) {
       if (sdpmode && strlen(dcb->peerconnection)) {
-        
+        /* If we are doing ICE, don't try to re-open */
         port_allocated = data->port;
       }
       else {
-        
+        //Todo IPv6: Add interface call for IPv6
         (void) vcmRxOpen(media->cap_index, dcb->group_id, media->refid,
           lsm_get_ms_ui_call_handle(lcb->line, lcb->call_id, lcb->ui_id), data->port,
           media->is_multicast ? &media->dest_addr:&media->src_addr, data->is_multicast,
@@ -651,7 +646,7 @@ lsm_open_rx (lsm_lcb_t *lcb, cc_action_data_open_rcv_t *data,
             &default_addr, &port_allocated,
             &candidates, &candidate_ct);
 
-          
+          // Check that we got a valid address and port
           if (default_addr && (strlen(default_addr) > 0) && (port_allocated != -1)) {
             sstrncpy(dcb->ice_default_candidate_addr, default_addr, sizeof(dcb->ice_default_candidate_addr));
 
@@ -669,23 +664,23 @@ lsm_open_rx (lsm_lcb_t *lcb, cc_action_data_open_rcv_t *data,
 
     return (rc);
 }
-
-
-
-
-
+/*
+ * This function updates the dscp value based on whether video is enable or not
+ * and video is active or not.
+ * @param[in] dcb       - pointer to the fsmdef_dcb.
+ */
 
 void lsm_update_dscp_value(fsmdef_dcb_t   *dcb)
 {
     static const char fname[] = "lsm_update_dscp_value";
-    int dscp = 184;   
-    
+    int dscp = 184;   /* default 184 used for DSCP */
+    // depending upon video is enabled or disabled ,set the dscp value.
     if (dcb != NULL && dcb->cur_video_avail != SDP_DIRECTION_INACTIVE ) {
         config_get_value(CFGID_DSCP_VIDEO, (int *)&dscp, sizeof(dscp));
     } else {
         config_get_value(CFGID_DSCP_AUDIO, (int *)&dscp, sizeof(dscp));
     }
-    
+    // We would use DSCP for video for both audio and video streams if this is a video call
     if (dcb != NULL) {
         LSM_DEBUG(DEB_L_C_F_PREFIX"Setting dscp=%d for Rx group_id=%d \n",
             DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname), dscp,  dcb->group_id);
@@ -693,26 +688,26 @@ void lsm_update_dscp_value(fsmdef_dcb_t   *dcb)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The function closes receive channel for a given media entry.
+ * The receive channel may not be closed if the caller intents to
+ * fresh the channel i.e close if needed but otherwise leave it open.
+ * When the caller indicates refreshing, the receive channel
+ * will be closed only when there is a difference in current SDP and
+ * the previous SDP.
+ *
+ * @param[in] lcb       - pointer to the lsm_lcb_t.
+ * @param[in] refresh   - channel to be refreshed i.e. close if necessary.
+ * @param[in] media     - pointer to the fsmdef_media_t for the
+ *                        media entry to be refresh.
+ *
+ *                        If the value of media is NULL, it indicates that
+ *                        all current inused media entries.
+ *
+ * @return              None.
+ *
+ * @pre (lcb is_not NULL)
+ */
 static void
 lsm_close_rx (lsm_lcb_t *lcb, boolean refresh, fsmdef_media_t *media)
 {
@@ -731,23 +726,23 @@ lsm_close_rx (lsm_lcb_t *lcb, boolean refresh, fsmdef_media_t *media)
               DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname), refresh);
 
     if (media == NULL) {
-        
+        /* NULL value of the given media indicates for all media */
         start_media = GSMSDP_FIRST_MEDIA_ENTRY(dcb);
-        end_media   = NULL; 
+        end_media   = NULL; /* NULL means till the end of the list */
     } else {
-        
+        /* given media, uses the provided media */
         start_media = media;
         end_media   = media;
     }
 
-    
+    /* close receive port on the media(s) */
     GSMSDP_FOR_MEDIA_LIST(media, start_media, end_media, dcb) {
         if (media->rcv_chan) {
-            
-
-
-
-
+            /*
+             * If caller is releasing the port or if the caller is
+             * recycling the receive port and the codec has changed, close the
+             * receive port. Also stop bridging of media streams.
+             */
             if (!refresh ||
                 (refresh &&
                  gsmsdp_sdp_differs_from_previous_sdp(TRUE, media))) {
@@ -767,26 +762,26 @@ lsm_close_rx (lsm_lcb_t *lcb, boolean refresh, fsmdef_media_t *media)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The function closes transmit channel for a given media entry.
+ * The transmit channel may not be closed if the caller intents to
+ * fresh the port i.e close if needed but otherwise leave it open.
+ * When the caller indicates refreshing, the transmit channel
+ * will be closed only when there is a difference in current SDP and
+ * the previous SDP.
+ *
+ * @param[in] lcb       - pointer to the lsm_lcb_t.
+ * @param[in] refresh   - channel to be refreshed i.e. close if necessary.
+ * @param[in] media     - pointer to the fsmdef_media_t for the
+ *                        media entry to be refresh.
+ *
+ *                        If the value of media is NULL, it indicates that
+ *                        all current inused media entries.
+ *
+ * @return              None.
+ *
+ * @pre (lcb is_not NULL)
+ */
 static void
 lsm_close_tx (lsm_lcb_t *lcb, boolean refresh, fsmdef_media_t *media)
 {
@@ -806,19 +801,19 @@ lsm_close_tx (lsm_lcb_t *lcb, boolean refresh, fsmdef_media_t *media)
     config_get_value(CFGID_SDPMODE, &sdpmode, sizeof(sdpmode));
 
     if (media == NULL) {
-        
+        /* NULL value of the given media indicates for all media */
         start_media = GSMSDP_FIRST_MEDIA_ENTRY(dcb);
-        end_media   = NULL; 
+        end_media   = NULL; /* NULL means till the end of the list */
     } else {
-        
+        /* given media, uses the provided media */
         start_media = media;
         end_media   = media;
     }
 
-    
-
-
-
+    /*
+     * Close the RTP, but only if this call is using it and the capabilities
+     * have changed.
+     */
     GSMSDP_FOR_MEDIA_LIST(media, start_media, end_media, dcb) {
         if (media->xmit_chan == TRUE) {
 
@@ -845,23 +840,23 @@ lsm_close_tx (lsm_lcb_t *lcb, boolean refresh, fsmdef_media_t *media)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The function starts receive channel for a given media entry.
+ *
+ * @param[in] lcb       - pointer to the lsm_lcb_t.
+ * @param[in] fname     - pointer to to const. char for the name
+ *                        of the function that calls to this function.
+ *                        It is for debuging purpose.
+ * @param[in] media     - pointer to the fsmdef_media_t for the
+ *                        media entry to be refresh.
+ *
+ *                        If the value of media is NULL, it indicates that
+ *                        all current inused media entries.
+ *
+ * @return              None.
+ *
+ * @pre (lcb is_not NULL)
+ */
 static void
 lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
 {
@@ -889,36 +884,36 @@ lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
     }
     group_id = dcb->group_id;
     if (media == NULL) {
-        
+        /* NULL value of the given media indicates for all media */
         start_media = GSMSDP_FIRST_MEDIA_ENTRY(dcb);
-        end_media   = NULL; 
+        end_media   = NULL; /* NULL means till the end of the list */
     } else {
-        
+        /* given media, uses the provided media */
         start_media = media;
         end_media   = media;
     }
 
-    
+    /* Start receive channel for the media(s) */
     GSMSDP_FOR_MEDIA_LIST(media, start_media, end_media, dcb) {
         if (!GSMSDP_MEDIA_ENABLED(media)) {
-            
+            /* this entry is not enabled */
             continue;
         }
 
-        
-
-
-
-
+        /*
+         * Check to see if the receive port can be opened.
+         * For SRTP, the receive can not be opened if the remote's crypto
+         * parameters are not received yet.
+         */
         if (!gsmsdp_is_crypto_ready(media, TRUE)) {
             LSM_DEBUG(DEB_L_C_F_PREFIX"%s: Not ready to open receive port (%d)\n",
                       DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname1), fname, media->src_port);
             continue;
         }
 
-        
-
-
+        /*
+         * Open the RTP receive channel if it is not already open.
+         */
         LSM_DEBUG(get_debug_string(LSM_DBG_INT1), dcb->call_id, dcb->line,
                   fname1, "rcv chan", media->rcv_chan);
         if (media->rcv_chan == FALSE) {
@@ -952,8 +947,8 @@ lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
 
                     case MONITOR:
                     case LOCAL_CONF:
-                    	
-                    	
+                    	//AgentGreeting is MIX RXBOTH, SilentMonitoring is MIX TXBOTH
+                    	//so we have to use VCM_PARTY_BOTH for case MONITOR
                         mix_mode  = VCM_MIX;
                         mix_party = VCM_PARTY_BOTH;
                         break;
@@ -971,16 +966,16 @@ lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
                             dcb->line, dcb->call_id, fname1,
 							fname, media->src_port);
             } else {
-                
-                media->rcv_chan = TRUE; 
-                
+                /* successful open receive channel */
+                media->rcv_chan = TRUE; /* recevied channel is created */
+                /* save the source RX port */
                 if (media->is_multicast) {
                     media->multicast_port = open_rcv.port;
                 } else {
                     media->src_port = open_rcv.port;
                 }
 
-                
+                /* TODO(ekr@rtfm.com): Needs changing for when we have > 2 streams */
                 if ( media->cap_index == CC_VIDEO_1 ) {
                     attrs.video.opaque = media->video;
                     pc_stream_id = 1;
@@ -994,10 +989,6 @@ lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
                 }
                 pc_track_id = 0;
                 dcb->cur_video_avail &= ~CC_ATTRIB_CAST;
-                if (media->local_dynamic_payload_type_value == RTP_NONE) {
-                    media->local_dynamic_payload_type_value =
-                      media->num_payloads ? media->payloads[0] : RTP_NONE;
-                }
 
                 config_get_value(CFGID_SDPMODE, &sdpmode, sizeof(sdpmode));
                 if (dcb->peerconnection) {
@@ -1013,17 +1004,13 @@ lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
                     FSM_NEGOTIATED_CRYPTO_DIGEST(media),
                     &attrs);
                 } else if (!sdpmode) {
+                    if (media->payloads == NULL) {
+                        LSM_ERR_MSG(get_debug_string(DEBUG_INPUT_NULL), fname1);
+                        return;
+                    }
                     ret_val =  vcmRxStart(media->cap_index, group_id, media->refid,
                                           lsm_get_ms_ui_call_handle(dcb->line, call_id, CC_NO_CALL_ID),
-                                          
-
-
-
-
-
-
-
-                                          media->num_payloads ? media->payloads[0] : RTP_NONE,
+                                          media->payloads,
                                           media->is_multicast ? &media->dest_addr:&media->src_addr,
                                           port,
                                           FSM_NEGOTIATED_CRYPTO_ALGORITHM_ID(media),
@@ -1047,7 +1034,7 @@ lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
                     LSM_DEBUG(DEB_L_C_F_PREFIX"%s: Found play_tone_action: %d. Need to play tone.\n",
                               DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname), fname, dcb->play_tone_action);
 
-                    
+                    // reset to initialized values
                     dcb->play_tone_action = FSMDEF_PLAYTONE_NO_ACTION;
                     dcb->tone_direction = VCM_PLAY_TONE_TO_EAR;
 
@@ -1062,23 +1049,23 @@ lsm_rx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The function starts transmit channel for a given media entry.
+ *
+ * @param[in] lcb       - pointer to the lsm_lcb_t.
+ * @param[in] fname     - pointer to to const. char for the name
+ *                        of the function that calls to this function.
+ *                        It is for debuging purpose.
+ * @param[in] media     - pointer to the fsmdef_media_t for the
+ *                        media entry to be refresh.
+ *
+ *                        If the value of media is NULL, it indicates that
+ *                        all current inused media entries.
+ *
+ * @return              None.
+ *
+ * @pre (lcb is_not NULL)
+ */
 
 #define LSM_TMP_VAD_LEN 64
 
@@ -1086,7 +1073,7 @@ static void
 lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
 {
     static const char fname1[] = "lsm_tx_start";
-    int           dscp = 184;   
+    int           dscp = 184;   /* default 184 used for DSCP */
     char          tmp[LSM_TMP_VAD_LEN];
     fsmcnf_ccb_t *ccb = NULL;
     groupid_t         group_id;
@@ -1108,15 +1095,15 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
         LSM_ERR_MSG(get_debug_string(DEBUG_INPUT_NULL), fname1);
         return;
     }
-    
+    // Set the DSCP value for RTP stream.
     if ( media != NULL ){
-        
-        
+        // We would use DSCP for video for both audio and video streams if this
+        // is a video call
         if ( dcb->cur_video_avail != SDP_DIRECTION_INACTIVE ) {
             config_get_value(CFGID_DSCP_VIDEO, (int *)&dscp, sizeof(dscp));
         } else if ( CC_IS_AUDIO(media->cap_index)){
-            
-            
+            // audio stream for audio only call shall use the DSCP for audio
+            // value.
             config_get_value(CFGID_DSCP_AUDIO, (int *)&dscp, sizeof(dscp));
         }
     }
@@ -1124,26 +1111,26 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
     LSM_DEBUG(DEB_L_C_F_PREFIX"invoked\n", DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname1));
 
     if (media == NULL) {
-        
+        /* NULL value of the given media indicates for all media */
         start_media = GSMSDP_FIRST_MEDIA_ENTRY(dcb);
-        end_media   = NULL; 
+        end_media   = NULL; /* NULL means till the end of the list */
     } else {
-        
+        /* given media, uses the provided media */
         start_media = media;
         end_media   = media;
     }
 
-    
+    /* Start receive channel for the media(s) */
     GSMSDP_FOR_MEDIA_LIST(media, start_media, end_media, dcb) {
         if (!GSMSDP_MEDIA_ENABLED(media)) {
-            
+            /* this entry is not enabled */
             continue;
         }
-        
-
-
-
-
+        /*
+         * Check to see if the transmit port can be opened.
+         * For SRTP, the transmit port can not be opened if the remote's crypto
+         * parameters are not received yet.
+         */
         if (!gsmsdp_is_crypto_ready(media, FALSE)) {
             LSM_DEBUG(DEB_L_C_F_PREFIX"%s: Not ready to open transmit port\n",
                       DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname1), fname);
@@ -1152,7 +1139,7 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
         if (media->xmit_chan == FALSE && dcb->remote_sdp_present &&
             media->dest_addr.type != CPR_IP_ADDR_INVALID && media->dest_port) {
 
-            
+            /* evaluate the mode and group id once for all media entries */
             if (!has_checked_conference) {
                 switch(dcb->session)
                 {
@@ -1164,8 +1151,8 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
 
                     case MONITOR:
                     case LOCAL_CONF:
-                    	
-                    	
+                    	//AgentGreeting is MIX RXBOTH, SilentMonitoring is MIX TXBOTH
+                    	//so we have to use VCM_PARTY_BOTH for case MONITOR
                         mix_mode  = VCM_MIX;
                         mix_party = VCM_PARTY_BOTH;
                         break;
@@ -1178,10 +1165,10 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
                 has_checked_conference = TRUE;
             }
 
-            
-
-
-            
+            /*
+             *   Set the VAD value.
+             */
+            /* can't use vad on conference calls - the dsp can't handle it. */
             ccb = fsmcnf_get_ccb_by_call_id(lcb->call_id);
             if (ccb != NULL) {
                 media->vad = VCM_VAD_OFF;
@@ -1201,10 +1188,10 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
                 media->vad = (vcm_vad_t) strtol_result;
             }
 
-            
-
-
-
+            /*
+             * Open the transmit port and start sending, but only if we have
+             * the SDP for the remote end.
+             */
 
             sdpmode = 0;
         	config_get_value(CFGID_SDPMODE, &sdpmode, sizeof(sdpmode));
@@ -1238,11 +1225,15 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
 
             dcb->cur_video_avail &= ~CC_ATTRIB_CAST;
 
+            if (media->payloads == NULL) {
+                LSM_ERR_MSG(get_debug_string(DEBUG_INPUT_NULL), fname1);
+                return;
+            }
             if (!strlen(dcb->peerconnection)){
               if (vcmTxStart(media->cap_index, group_id,
                   media->refid,
                   lsm_get_ms_ui_call_handle(dcb->line, call_id, CC_NO_CALL_ID),
-                  media->num_payloads ? media->payloads[0] : RTP_NONE,
+                  media->payloads,
                   (short)dscp,
                   &media->src_addr,
                   media->src_port,
@@ -1262,13 +1253,13 @@ lsm_tx_start (lsm_lcb_t *lcb, const char *fname, fsmdef_media_t *media)
               if (vcmTxStartICE(media->cap_index, group_id,
                   media->refid,
                   media->level,
-                  
-
+                  /* TODO(emannion): his perhaps needs some error checking for validity.
+                     See gsmsdp_get_media_cap_entry_by_index. */
                   dcb->media_cap_tbl->cap[media->cap_index].pc_stream,
                   dcb->media_cap_tbl->cap[media->cap_index].pc_track,
                   lsm_get_ms_ui_call_handle(dcb->line, call_id, CC_NO_CALL_ID),
                   dcb->peerconnection,
-                  media->num_payloads ? media->payloads[0] : RTP_NONE,
+                  media->payloads,
                   (short)dscp,
                   FSM_NEGOTIATED_CRYPTO_DIGEST_ALGORITHM(media),
                   FSM_NEGOTIATED_CRYPTO_DIGEST(media),
@@ -1341,7 +1332,7 @@ lsm_start_tone (lsm_lcb_t *lcb, cc_action_data_tone_t *data)
     fsmdef_media_t *media;
 
     if (lcb->dcb == NULL) {
-        
+        /* No dcb to work with */
         return (CC_RC_ERROR);
     }
     media = gsmsdp_find_audio_media(lcb->dcb);
@@ -1356,10 +1347,10 @@ lsm_start_tone (lsm_lcb_t *lcb, cc_action_data_tone_t *data)
 static cc_rcs_t
 lsm_stop_tone (lsm_lcb_t *lcb, cc_action_data_tone_t *data)
 {
-    
-
-
-
+    /* NOTE: For now, ignore data input parameter that may contain the tone type.
+     *       We'll check active_tone in the dcb for the call_id and see if there
+     *       is a valid tone playing. If so, then and only then issue tone stop.
+     */
     static const char fname[] = "lsm_stop_tone";
     callid_t      call_id;
     fsmdef_dcb_t *dcb;
@@ -1376,20 +1367,20 @@ lsm_stop_tone (lsm_lcb_t *lcb, cc_action_data_tone_t *data)
         return (CC_RC_ERROR);
     }
 
-    
+    /* for tnp do call stop only if active_tone is other than VCM_NO_TONE */
     if (dcb->active_tone != VCM_NO_TONE) {
             fsmdef_media_t *media = gsmsdp_find_audio_media(lcb->dcb);
             vcmToneStop(dcb->active_tone, dcb->group_id,
                           ((media != NULL) ? media->refid : CC_NO_MEDIA_REF_ID),
                                   lsm_get_ms_ui_call_handle(lcb->line, lcb->call_id, lcb->ui_id));
-        
-
-
-
-
-
-
-
+        /*
+         * Both periodic tones, recording and monitoring, can be active at the
+         * same time. And because we only keep track of last tone, requested to
+         * play, through active_tone, so when the tone to be stopped is of
+         * periodic type, then it could be that both type of periodic tones
+         * could be playing and both should be stopped. If the second periodic
+         * tone is not playing then media server will ignore the stop request.
+         */
         if (dcb->active_tone == VCM_RECORDERWARNING_TONE ||
         dcb->active_tone == VCM_MONITORWARNING_TONE)
         {
@@ -1399,7 +1390,7 @@ lsm_stop_tone (lsm_lcb_t *lcb, cc_action_data_tone_t *data)
                 ((media != NULL) ? media->refid : CC_NO_MEDIA_REF_ID),
                 lsm_get_ms_ui_call_handle(lcb->line, lcb->call_id, lcb->ui_id));
 
-            
+            /* in case need to play back the tone again when tx channel active */
             switch (dcb->monrec_tone_action) {
                 case FSMDEF_MRTONE_PLAYED_MONITOR_TONE:
                     dcb->monrec_tone_action = FSMDEF_MRTONE_RESUME_MONITOR_TONE;
@@ -1430,17 +1421,17 @@ lsm_stop_tone (lsm_lcb_t *lcb, cc_action_data_tone_t *data)
     return (CC_RC_SUCCESS);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function
+ *
+ * @param[in] tone       - tone type
+ * @param[in] alert_info - alertinfo header
+ * @param[in] call_handle- call handle
+ * @param[in] direction  - network, speaker, both
+ * @param[in] duration   - length of time for tone to be played
+ *
+ * @return none
+ */
 void
 lsm_tone_start_with_duration (vcm_tones_t tone, short alert_info,
                               cc_call_handle_t call_handle, groupid_t group_id,
@@ -1454,9 +1445,9 @@ lsm_tone_start_with_duration (vcm_tones_t tone, short alert_info,
               DEB_L_C_F_PREFIX_ARGS(LSM, GET_LINE_ID(call_handle), GET_CALL_ID(call_handle), fname),
               tone, direction, duration);
 
-    
-
-
+    /*
+     * play the tone. audio path is always set by MSUI module.
+     */
     vcmToneStart (tone, alert_info, call_handle, group_id, stream_id, direction);
 
     lsm_update_active_tone (tone, GET_CALL_ID(call_handle));
@@ -1464,16 +1455,16 @@ lsm_tone_start_with_duration (vcm_tones_t tone, short alert_info,
     lsm_start_tone_duration_timer (tone, duration, call_handle);
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_get_used_instances_cnt
+ *
+ * @param line - line number
+ *
+ * Description: find the number of used instances for this particular line
+ *
+ * @return number of used instances
+ *
+ */
 int lsm_get_used_instances_cnt (line_t line)
 {
     static const char fname[] = "lsm_get_used_instances_cnt";
@@ -1486,9 +1477,9 @@ int lsm_get_used_instances_cnt (line_t line)
         return (-1);
     }
 
-    
-
-
+    /*
+     * Count home many instances are already in use for this particular line.
+     */
     FSM_FOR_ALL_CBS(lcb, lsm_lcbs, LSM_MAX_LCBS) {
         if ((lcb->call_id != CC_NO_CALL_ID) &&
             (lcb->line == line) &&
@@ -1500,22 +1491,22 @@ int lsm_get_used_instances_cnt (line_t line)
     return (used_instances);
 }
 
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_get_all_used_instances_cnt
+ *
+ * Description: find the number of used instances for all lines
+ *
+ * @return number of used instances for all lines
+ *
+ */
 int lsm_get_all_used_instances_cnt ()
 {
     int             used_instances = 0;
     lsm_lcb_t      *lcb;
 
-    
-
-
+    /*
+     * Count home many instances are already in use for all lines.
+     */
     FSM_FOR_ALL_CBS(lcb, lsm_lcbs, LSM_MAX_LCBS) {
         if ((lcb->call_id != CC_NO_CALL_ID) &&
             (lcb->state != LSM_S_IDLE)) {
@@ -1526,16 +1517,16 @@ int lsm_get_all_used_instances_cnt ()
     return (used_instances);
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_increment_call_chn_cnt
+ *
+ * @param line - line number
+ *
+ * Description:
+ *
+ * @return none
+ *
+ */
 void lsm_increment_call_chn_cnt (line_t line)
 {
     uint32_t  maxnumcalls = 0;
@@ -1565,16 +1556,16 @@ void lsm_increment_call_chn_cnt (line_t line)
         busy_trigger,(lsm_bt_reached[line-1] == TRUE) ? "TRUE" : "FALSE");
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_decrement_call_chn_cnt
+ *
+ * @param line - line number
+ *
+ * Description:
+ *
+ * @return none
+ *
+ */
 void lsm_decrement_call_chn_cnt (line_t line)
 {
     uint32_t  maxnumcalls = 0;
@@ -1608,19 +1599,19 @@ void lsm_decrement_call_chn_cnt (line_t line)
 #define ROLLOVER_ACROSS_SAME_DN 1
 #define ROLLOVER_NEXT_AVAILABLE_LINE 2
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_find_next_available_line
+ *
+ * @param line - line number
+ * @param same_dn - whether lines with same DN to be looked at.
+ * @param incoming - whether we are looking for an available line for an anticipated incoming call.
+ *
+ * Description:
+ *
+ *
+ * @return found line number
+ *
+ */
 line_t lsm_find_next_available_line (line_t line, boolean same_dn, boolean incoming)
 {
     char current_line_dn_name[MAX_LINE_NAME_SIZE];
@@ -1629,7 +1620,7 @@ line_t lsm_find_next_available_line (line_t line, boolean same_dn, boolean incom
     line_t  i, j;
     boolean *limit_reached;
 
-    
+    /* determine whether to use MNC or BT limit */
     if (incoming == TRUE) {
         limit_reached = lsm_bt_reached;
     }
@@ -1638,20 +1629,20 @@ line_t lsm_find_next_available_line (line_t line, boolean same_dn, boolean incom
     }
 
     config_get_line_string(CFGID_LINE_NAME, current_line_dn_name, line, sizeof(current_line_dn_name));
-    
-    
+    /* This line has exhausted its  limit, start rollover */
+    /* First, search the lines on top of the current one */
     for (i=line+1; i <= MAX_REG_LINES; i++) {
         config_get_line_value(CFGID_LINE_FEATURE, &line_feature, sizeof(line_feature), i);
 
-        
+        /* if it is not a DN, skip it */
         if (line_feature != cfgLineFeatureDN) {
             continue;
         }
-        
+        /* Does this line have room to take the call */
         if (limit_reached[i-1] == FALSE) {
             if (same_dn == TRUE) {
                 config_get_line_string(CFGID_LINE_NAME, dn_name, i, sizeof(dn_name));
-                
+                /* Does this line have the same DN */
                 if (cpr_strcasecmp(dn_name, current_line_dn_name) == 0) {
                     return (i);
                 }
@@ -1660,24 +1651,24 @@ line_t lsm_find_next_available_line (line_t line, boolean same_dn, boolean incom
             }
         }
     }
-    
-
-
-
-
+    /*
+     * We went up to the top and couldn't find an available line,
+     * start from line 1 and search up to the current line, thus
+     * we are treating the available lines as a circular pool
+     */
 
     for (j=1; j <= line; j++) {
         config_get_line_value(CFGID_LINE_FEATURE, &line_feature, sizeof(line_feature), j);
 
-        
+        /* if it is not a DN, skip it */
         if (line_feature != cfgLineFeatureDN) {
             continue;
         }
-        
+        /* Does this line have room to take the call */
         if (limit_reached[j-1] == FALSE) {
             if (same_dn == TRUE) {
                 config_get_line_string(CFGID_LINE_NAME, dn_name, j, sizeof(dn_name));
-                
+                /* Does this line have the same DN */
                 if (cpr_strcasecmp(dn_name, current_line_dn_name) == 0) {
                     return (j);
                 }
@@ -1689,17 +1680,17 @@ line_t lsm_find_next_available_line (line_t line, boolean same_dn, boolean incom
 
     return (NO_LINES_AVAILABLE);
 }
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_get_newcall_line
+ *
+ * @param line - line number
+ *
+ * Description: find out a line that has room to make a
+ *              new call based on the rollover settings
+ *
+ * @return found line number
+ *
+ */
 line_t lsm_get_newcall_line (line_t line)
 {
     static const char fname[] = "lsm_get_newcall_line";
@@ -1707,7 +1698,7 @@ line_t lsm_get_newcall_line (line_t line)
     line_t found_line;
 
     if (!lsm_mnc_reached[line-1]) {
-        
+        /* Still room for extra calls on this line */
         return (line);
     }
 
@@ -1720,19 +1711,19 @@ line_t lsm_get_newcall_line (line_t line)
 
 
     if (rollover == ROLLOVER_ACROSS_SAME_DN) {
-        
+        /* Look for a line with the same DN */
         return (lsm_find_next_available_line(line, TRUE, FALSE));
     }
 
     if (rollover == ROLLOVER_NEXT_AVAILABLE_LINE) {
-        
+        /* Look for a line with the same DN first */
         found_line = lsm_find_next_available_line(line, TRUE, FALSE);
 
         if (found_line == NO_LINES_AVAILABLE) {
-            
-
-
-
+            /*
+             * If nothing found, just look for any line, does
+             * not necessarily have to have the same DN
+             */
             return (lsm_find_next_available_line(line, FALSE, FALSE));
         } else {
             return (found_line);
@@ -1744,72 +1735,72 @@ line_t lsm_get_newcall_line (line_t line)
     return (NO_LINES_AVAILABLE);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_get_available_line
+ *
+ * @param incoming - whether we are looking for an available line for an anticipated incoming call.
+ *
+ * Description: find out a line that has room to make a
+ *              new call starting from the first line.
+ *
+ * @return found line number
+ *
+ */
 line_t lsm_get_available_line (boolean incoming)
 {
-    line_t line = 1; 
+    line_t line = 1; /* start with line 1 */
 
     if (incoming == FALSE) {
         if (!lsm_mnc_reached[line-1]) {
-            
+            /* Still room for extra calls on this line */
             return (line);
         }
     }
     else {
         if (!lsm_bt_reached[line-1]) {
-            
+            /* Still room for extra calls on this line */
             return (line);
         }
     }
     return (lsm_find_next_available_line(line, FALSE, incoming));
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Function: lsm_is_line_available_for_outgoing_call
+ *
+ * @param line
+ * @param incoming - whether we are looking for an available line for an anticipated incoming call.
+ *
+ * Description: find out if the line  has room to make a new call
+ *
+ * @return TRUE/FALSE
+ *
+ */
 boolean lsm_is_line_available (line_t line, boolean incoming)
 {
     if (incoming == FALSE) {
         if (!lsm_mnc_reached[line-1]) {
-            
+            /* Still room for extra calls on this line */
             return (TRUE);
         }
     }
     else {
         if (!lsm_bt_reached[line-1]) {
-            
+            /* Still room for incoming calls on this line */
             return (TRUE);
         }
     }
     return (FALSE);
 }
 
-
-
-
-
-
-
-
-
+/*
+ * lsm_get_instances_available_cnt
+ *
+ * return the number of available instances for this particular line
+ *
+ * NOTE: The function can return negative values, which the user should read
+ *       as no available lines.
+ */
 int
 lsm_get_instances_available_cnt (line_t line, boolean expline)
 {
@@ -1857,15 +1848,15 @@ lsm_init_lcb (lsm_lcb_t *lcb)
     lcb->flags    = 0;
     lcb->dcb      = NULL;
     lcb->gcid     = NULL;
-    lcb->vid_flags = 0; 
+    lcb->vid_flags = 0; //set to not visible
     lcb->ui_id    = CC_NO_CALL_ID;
 }
 
-
-
-
-
-
+/**
+ * Return the port back to Media service component
+ * @param [in] lcb - lsm control block
+ *
+ */
 static void lsm_release_port (lsm_lcb_t *lcb)
 {
     static const char fname[] = "lsm_release_port";
@@ -1886,7 +1877,7 @@ static void lsm_release_port (lsm_lcb_t *lcb)
               DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname));
 
     start_media = GSMSDP_FIRST_MEDIA_ENTRY(dcb);
-    end_media   = NULL; 
+    end_media   = NULL; /* NULL means till the end of the list */
 
     GSMSDP_FOR_MEDIA_LIST(media, start_media, end_media, dcb) {
         if (!sdpmode) {
@@ -1905,18 +1896,18 @@ lsm_free_lcb (lsm_lcb_t *lcb)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * lsm_get_free_lcb
+ * return a free instance of the given line
+ *
+ * @param[in]call_id - gsm call id to allocate the lcb instance with.
+ * @param[in]line    - line that the lcb instnce will be associated with
+ * @param[in]dcb     - fsmdef_dcb_t structure that the lcb instance will
+ *                     be associated with.
+ * @return pointer to lsm_lcb_t if there is an available lcb otherwise
+ *         returns NULL.
+ * @pre    (dcb not_eq NULL)
+ */
 static lsm_lcb_t *
 lsm_get_free_lcb (callid_t call_id, line_t line, fsmdef_dcb_t *dcb)
 {
@@ -1932,17 +1923,17 @@ lsm_get_free_lcb (callid_t call_id, line_t line, fsmdef_dcb_t *dcb)
     }
 
 
-    
-
-
-
+    /*
+     * Set mru (most recently used).
+     * Used to determine which call came in first.
+     */
     if (++mru < 0) {
         mru = 1;
     }
 
-    
-
-
+    /*
+     * Find a free lcb.
+     */
     FSM_FOR_ALL_CBS(lcb, lsm_lcbs, LSM_MAX_LCBS) {
         if ((lcb->call_id == CC_NO_CALL_ID) && (lcb->state == LSM_S_IDLE)) {
             lcb_found    = lcb;
@@ -1951,10 +1942,10 @@ lsm_get_free_lcb (callid_t call_id, line_t line, fsmdef_dcb_t *dcb)
             lcb->state   = LSM_S_PENDING;
             lcb->mru     = mru;
             lcb->dcb     = dcb;
-            
+            // start unmuted if txPref is true
             lcb->vid_mute = cc_media_getVideoAutoTxPref() ? FALSE : TRUE;
 
-            lcb->ui_id = call_id;   
+            lcb->ui_id = call_id;   /* default UI ID is the same as call_id */
             break;
         }
     }
@@ -1981,15 +1972,15 @@ lsm_get_lcb_by_call_id (callid_t call_id)
     return (lcb_found);
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * This function returns the LSM state for the given call_id.
+ *
+ * @param[in] call_id -  call id
+ *
+ * @return            lsm_states_t of the given call_id. If the
+ *                    there is no call associated with the given
+ *                    call ID it returns the LSM_S_NONE.
+ */
 lsm_states_t
 lsm_get_state (callid_t call_id)
 {
@@ -1998,7 +1989,7 @@ lsm_get_state (callid_t call_id)
     lcb = lsm_get_lcb_by_call_id(call_id);
 
     if (lcb == NULL) {
-        
+        /* there is no call for this call id */
         return (LSM_S_NONE);
     }
     return (lcb->state);
@@ -2039,21 +2030,21 @@ lsm_is_phone_idle (void)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_is_phone_inactive
+ *
+ *  Parameters: None.
+ *
+ *  Description: Determines if the phone is inactive. Inactive means the phone
+ *               as active at some point, but now it is not - there are still
+ *               calls on the phone but they are probably in a holding state.
+ *               This is different from idle, which means that there are not
+ *               any calls on the phone.
+ *
+ *  Returns:
+ *      inactive: FALSE: phone is not inactive
+ *                TRUE:  phone is inactive
+ */
 boolean
 lsm_is_phone_inactive (void)
 {
@@ -2076,20 +2067,20 @@ lsm_is_phone_inactive (void)
     return (inactive);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_callwaiting
+ *
+ *  Parameters: None.
+ *
+ *  Description: Determines if the phone is in a state that this
+ *               call will be handled by the callwaiting code. TNP
+ *               phones allow call-waiting when dialing digits while
+ *               the legacy phones do not.
+ *
+ *  Returns:
+ *      inactive: FALSE: Treat as a normal call on an idle phone
+ *                TRUE:  Display incoming call and play call waiting tone
+ */
 boolean
 lsm_callwaiting (void)
 {
@@ -2129,33 +2120,33 @@ lsm_find_state (lsm_states_t state)
     return (found_callid);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * lsm_get_facility_by_called_number
+ * return facility by the given called_number.
+ *
+ * @param[in]call_id            - gsm's call_id for a new call.
+ * @param[in]called_number      - pointer to the called number.
+ * @paran[in/out]free_line      - pointer to the line_t to store
+ *                                the result line number corresponding
+ *                                to the called number given.
+ * @param[in]expline            - boolean indicating extra instance
+ *                                is needed.
+ * @param[in]dcb                - pointer to void but it must be
+ *                                a pointer to fsmdef_dcb_t to bind with
+ *                                the new LCB. The reason to use a void
+ *                                pointer is the declaration of the function
+ *                                is in lsm.h. The lsm.h file is used by
+ *                                components outside gsm environment. Those
+ *                                modules would need to include the fsm.h
+ *                                which is not desirable. Using void pointer
+ *                                avoids this problem.
+ *
+ * @return cc_cause_t
+ *
+ * @pre    (called_number not_eq NULL)
+ * @pre    (free_line not_eq NULL)
+ * @pre    (dcb not_eq NULL)
+ */
 cc_causes_t
 lsm_get_facility_by_called_number (callid_t call_id,
                                    const char *called_number,
@@ -2171,25 +2162,25 @@ lsm_get_facility_by_called_number (callid_t call_id,
     lsm_debug_entry(call_id, 0, fname);
     LSM_DEBUG(DEB_F_PREFIX"called_number= %s\n", DEB_F_PREFIX_ARGS(LSM, fname), called_number);
 
-    
+    //line = sip_config_get_line_by_called_number(1, called_number);
     line = 1;
     if (line == 0) {
         return (CC_CAUSE_UNASSIGNED_NUM);
     }
     *free_line = line;
 
-    
+    /* check for a MADN line */
     madn_line = sip_config_get_line_by_called_number((line_t)(line + 1),
                                               called_number);
 
-    
-
-
+    /*
+     * Check to see if we even have any available instances.
+     */
     free_instances = lsm_get_instances_available_cnt(line, expline);
 
-    
-
-
+    /* if it is a MADN line and it already has a call, then go to next
+     * line with this MADN number.
+     */
     if ((madn_line) && (free_instances < 2)) {
         while (madn_line) {
             free_instances = lsm_get_instances_available_cnt(madn_line, expline);
@@ -2217,29 +2208,29 @@ lsm_get_facility_by_called_number (callid_t call_id,
     return (CC_CAUSE_OK);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * lsm_allocate_call_bandwidth
+ *
+ * @param[in] none.
+ *
+ * The wlan interface puts into unique situation where call control
+ * has to allocate the worst case bandwith before creating a
+ * inbound or outbound call. The function call will interface through
+ * media API into wlan to get the call bandwidth. The function
+ * return is asynchronous and will block till the return media
+ * callback signals to continue the execution.
+ *
+ * @return true if the bandwidth can be allocated else false.
+ * @pre    none
+ */
 
 cc_causes_t lsm_allocate_call_bandwidth (callid_t call_id, int sessions)
 {
-    
+    //get line for vcm
     line_t line = lsm_get_line_by_call_id(call_id);
-    
+    //cc_feature(CC_SRC_GSM, call_id, 0, CC_FEATURE_CAC_RESP_PASS, NULL);
 
-    
+    /* Activate the wlan before allocating bandwidth */
     vcmActivateWlan(TRUE);
 
     if (vcmAllocateBandwidth(lsm_get_ms_ui_call_handle(line, call_id, CC_NO_CALL_ID), sessions)) {
@@ -2249,27 +2240,27 @@ cc_causes_t lsm_allocate_call_bandwidth (callid_t call_id, int sessions)
     return(CC_CAUSE_CONGESTION);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * lsm_get_facility_by_line
+ * return facility by the given line
+ *
+ * @param[in]call_id  - gsm's call_id for a new call.
+ * @param[in]line     - line
+ * @param[in]expline  - boolean indicating extra instance
+ *                      is needed.
+ * @param[in]dcb      - pointer to void but it must be
+ *                      a pointer to fsmdef_dcb_t to bind with
+ *                      the new LCB. The reason to use a void
+ *                      pointer is the declaration of the function
+ *                      is in lsm.h. The lsm.h file is used by
+ *                      components outside gsm environment. Those
+ *                      modules would need to include the fsm.h
+ *                      which is not desirable. Using void pointer
+ *                      avoids this problem.
+ *
+ * @return cc_cause_t
+ * @pre    (dcb not_eq NULL)
+ */
 cc_causes_t
 lsm_get_facility_by_line (callid_t call_id, line_t line, boolean expline,
                           void *dcb)
@@ -2281,9 +2272,9 @@ lsm_get_facility_by_line (callid_t call_id, line_t line, boolean expline,
     LSM_DEBUG(get_debug_string(LSM_DBG_INT1), call_id, line, fname,
               "exp", expline);
 
-    
-
-
+    /*
+     * Check to see if we even have any available instances
+     */
     free_instances = lsm_get_instances_available_cnt(line, expline);
     if (free_instances <= 0) {
         return (CC_CAUSE_BUSY);
@@ -2299,12 +2290,12 @@ lsm_get_facility_by_line (callid_t call_id, line_t line, boolean expline,
 
 
 #ifdef _WIN32
-
-
-
-
-
-
+/* This function enumerates over the lcbs
+ * and attempts to terminate the call
+ * This is used by softphone when
+ * it exits and the softphone is
+ * still engaged in a call
+ */
 void
 terminate_active_calls (void)
 {
@@ -2315,10 +2306,10 @@ terminate_active_calls (void)
     FSM_FOR_ALL_CBS(lcb, lsm_lcbs, LSM_MAX_LCBS) {
         if (lcb->call_id != CC_NO_CALL_ID) {
             line = lsm_get_line_by_call_id(lcb->call_id);
-            
-
-
-            
+            /* Currently cc_feature does a better job of releasing the call
+             * compared to cc_onhook.
+             */
+            //cc_onhook(CC_SRC_UI, call_id, line);
             cc_feature(CC_SRC_UI, call_id, line, CC_FEATURE_END_CALL, NULL);
             call_id = lcb->call_id;
         }
@@ -2345,16 +2336,16 @@ lsm_get_line_by_call_id (callid_t call_id)
     return (line);
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * This is a callback function for those tones that are
+ * played in two parts (stutter and msgwaiting) or played
+ * every x seconds, but are not steady tones (call waiting).
+ *
+ * @param[in] data    The gsm ID (callid_t) of the call of the
+ *                    tones timer has timeout.
+ *
+ * @return            N/A
+ */
 void
 lsm_tmr_tones_callback (void *data)
 {
@@ -2367,17 +2358,17 @@ lsm_tmr_tones_callback (void *data)
 
     call_id = (callid_t)(long)data;
     if (call_id == CC_NO_CALL_ID) {
-        
+        /* Invalid call id */
         LSM_DEBUG(DEB_F_PREFIX"invalid call id\n", DEB_F_PREFIX_ARGS(LSM, fname));
         return;
     }
 
-    
-
-
-
-
-    
+    /*
+     * A call-waiting tone should be played if these conditions are met:
+     * 1. A line must be ringing for an incoming call
+     * 2. The phone must be in a state that we handle callwaiting
+     */
+    /* Retrieve dcb from call id */
     dcb = fsmdef_get_dcb_by_call_id(call_id);
     if (dcb == NULL) {
         LSM_DEBUG(DEB_F_PREFIX"no dcb found for call_id %d\n", DEB_F_PREFIX_ARGS(LSM, fname), call_id);
@@ -2388,12 +2379,12 @@ lsm_tmr_tones_callback (void *data)
 
     if ((lsm_find_state(LSM_S_RINGIN) > CC_NO_CALL_ID) && (lsm_callwaiting())) {
 
-            
+            /* Determine what tone/ringing pattern to play */
             switch (dcb->alert_info) {
 
             case ALERTING_RING:
 
-                
+                /* Need to map the alerting patterns to the call waiting patterns */
                 switch (dcb->alerting_ring) {
                 case VCM_BELLCORE_DR2:
                     lsm_util_start_tone(VCM_CALL_WAITING_2_TONE, NO, lsm_get_ms_ui_call_handle(dcb->line, dcb->call_id, CC_NO_CALL_ID), dcb->group_id,
@@ -2419,10 +2410,10 @@ lsm_tmr_tones_callback (void *data)
 
             case ALERTING_TONE:
 
-                
-
-
-
+                /* Busy verify is just 2 secs of dialtone followed by
+                 * a call waiting tone every 10 secs. The rest of the
+                 * tones are just played once.
+                 */
                 switch (dcb->alerting_tone) {
                 case VCM_BUSY_VERIFY_TONE:
                     lsm_util_start_tone(VCM_CALL_WAITING_TONE, NO, lsm_get_ms_ui_call_handle(dcb->line, dcb->call_id, CC_NO_CALL_ID), dcb->group_id,
@@ -2469,11 +2460,11 @@ lsm_tmr_tones_callback (void *data)
         switch (dcb->alert_info) {
 
         case ALERTING_TONE:
-            
-
-
-
-
+            /*
+             * Currently the only supported multi-part tones
+             * played via the dialplan are Message Waiting and
+             * Stutter dialtones.
+             */
             switch (dcb->alerting_tone) {
             case VCM_MSG_WAITING_TONE:
             case VCM_STUTTER_TONE:
@@ -2500,15 +2491,15 @@ lsm_tmr_tones_callback (void *data)
     }
 }
 
-
-
-
-
-
-
-
-
-
+/*
+ * Function   : lsm_start_multipart_tone_timer
+ * Parameters : Tone: 2nd part of tone to play
+ *              Delay: Time to delay between playing the 1st and 2nd parts of the tone
+ *              CallId: Used to retrieve the dcb for this call
+ * Purpose    : This function is used to set up the dcb to play the 2nd part of
+ *              the tone. A timer is started to allow the 1st tone to played to
+ *              completion before the 2nd part is started.
+ */
 void
 lsm_start_multipart_tone_timer (vcm_tones_t tone,
                                 uint32_t delay,
@@ -2517,7 +2508,7 @@ lsm_start_multipart_tone_timer (vcm_tones_t tone,
     static const char fname[] = "lsm_start_multipart_tone_timer";
     fsmdef_dcb_t *dcb;
 
-    
+    /* Set up dcb for timer callback function */
     dcb = fsmdef_get_dcb_by_call_id(callId);
     dcb->alert_info = ALERTING_TONE;
     dcb->alerting_tone = tone;
@@ -2534,14 +2525,14 @@ lsm_start_multipart_tone_timer (vcm_tones_t tone,
     }
 }
 
-
-
-
-
-
-
-
-
+/*
+ * Function   : lsm_stop_multipart_tone_timer
+ * Parameters : None
+ * Purpose    : Called from vcm_stop_tones. That function
+ *              will stop the 1st part of the tone, this
+ *              function cancels the timer so the 2nd part
+ *              will never be played.
+ */
 void
 lsm_stop_multipart_tone_timer (void)
 {
@@ -2553,14 +2544,14 @@ lsm_stop_multipart_tone_timer (void)
     }
 }
 
-
-
-
-
-
-
-
-
+/*
+ * Function   : lsm_start_continuous_tone_timer
+ * Parameters : Tone: tone to play
+ *              Delay: Time to delay between playing the tone
+ *              CallId: Used to retrieve the dcb for this call
+ * Purpose    : This function is used to set up the dcb to play a tone continuously.
+ *              An example being the tone on hold tone.
+ */
 void
 lsm_start_continuous_tone_timer (vcm_tones_t tone,
                                  uint32_t delay,
@@ -2569,7 +2560,7 @@ lsm_start_continuous_tone_timer (vcm_tones_t tone,
     static const char fname[] = "lsm_start_continuous_tone_timer";
     fsmdef_dcb_t *dcb;
 
-    
+    /* Set up dcb for timer callback function */
     dcb = fsmdef_get_dcb_by_call_id(callId);
     dcb->alert_info = ALERTING_TONE;
     dcb->alerting_tone = tone;
@@ -2586,14 +2577,14 @@ lsm_start_continuous_tone_timer (vcm_tones_t tone,
     }
 }
 
-
-
-
-
-
-
-
-
+/*
+ * Function   : lsm_stop_continuous_tone_timer
+ * Parameters : None
+ * Purpose    : Called from vcm_stop_tones. That function
+ *              will stop the the tone, this function cancels
+ *              the timer subsequent playing of the tone is not
+ *              performed
+ */
 void
 lsm_stop_continuous_tone_timer (void)
 {
@@ -2605,14 +2596,14 @@ lsm_stop_continuous_tone_timer (void)
     }
 }
 
-
-
-
-
-
-
-
-
+/*
+ * Function   : lsm_start_tone_duration_timer
+ * Parameters : Tone: tone type to play
+ *              Duration: length of time for tone to play
+ *              call_handle: Used to retrieve the dcb for this call
+ * Purpose    : This function is used to set up the dcb to play the tone for
+ *              a specified length of time.
+ */
 void
 lsm_start_tone_duration_timer (vcm_tones_t tone,
                                 uint32_t duration,
@@ -2621,7 +2612,7 @@ lsm_start_tone_duration_timer (vcm_tones_t tone,
     static const char fname[] = "lsm_start_tone_duration_timer";
     fsmdef_dcb_t *dcb;
 
-    
+    /* Set up dcb for timer callback function */
     dcb = fsmdef_get_dcb_by_call_id(GET_CALL_ID(call_handle));
 
     if (cprCancelTimer(lsm_tone_duration_tmr) == CPR_FAILURE) {
@@ -2635,12 +2626,12 @@ lsm_start_tone_duration_timer (vcm_tones_t tone,
     }
 }
 
-
-
-
-
-
-
+/*
+ * Function   : lsm_stop_tone_duration_timer
+ * Parameters : None
+ * Purpose    : Called from vcm_stop_tones. That function
+ *              will stop the tone.
+ */
 void
 lsm_stop_tone_duration_timer (void)
 {
@@ -2652,16 +2643,16 @@ lsm_stop_tone_duration_timer (void)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * This is a callback function for those tones that are
+ * played in two parts (stutter and msgwaiting) or played
+ * every x seconds, but are not steady tones (call waiting).
+ *
+ * @param[in] data    The gsm ID (callid_t) of the call of the
+ *                    tones timer has timeout.
+ *
+ * @return            N/A
+ */
 void
 lsm_tone_duration_tmr_callback (void *data)
 {
@@ -2674,12 +2665,12 @@ lsm_tone_duration_tmr_callback (void *data)
 
     call_id = (callid_t)(long)data;
     if (call_id == CC_NO_CALL_ID) {
-        
+        /* Invalid call id */
         LSM_DEBUG(DEB_F_PREFIX"invalid call id\n", DEB_F_PREFIX_ARGS(LSM, fname));
         return;
     }
 
-    
+    /* Retrieve dcb from call id */
     dcb = fsmdef_get_dcb_by_call_id(call_id);
     if (dcb == NULL) {
         LSM_DEBUG(DEB_F_PREFIX"no dcb found for call_id %d\n", DEB_F_PREFIX_ARGS(LSM, fname), call_id);
@@ -2692,20 +2683,20 @@ lsm_tone_duration_tmr_callback (void *data)
               ((media != NULL) ? media->refid : CC_NO_MEDIA_REF_ID),
               lsm_get_ms_ui_call_handle(dcb->line, dcb->call_id, CC_NO_CALL_ID));
 
-    
-    
-    
+    /* Up until this point, only sip core has started the call release procedure        */
+    /* since upon receipt of the BYE.  Now that tone is completed playing as requested  */
+    /* in the BYE, need to continue processing with call clearing.                      */
 
     cc_int_release(CC_SRC_GSM, CC_SRC_GSM, call_id, dcb->line, CC_CAUSE_NORMAL, NULL, NULL);
 }
 
-
-
-
-
-
-
-
+/*
+ * LSM internal function that checks if any calls are in a pending
+ * answer condition. Such a condition occurs when the GSM has delayed
+ * answering an incoming call while trying to clear other calls.
+ *
+ * @return              call_id if found, else CC_NO_CALL_ID.
+ */
 static callid_t
 lsm_answer_pending (void)
 {
@@ -2724,18 +2715,18 @@ lsm_answer_pending (void)
     return (found_callid);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ *
+ * Hold Reversion Alert - plays the ringer once.
+ *
+ * @param lsm_lcb_t     lcb for this call
+ * @param callid_t      gsm_id
+ * @param line_t        line
+ *
+ * @return  none
+ *
+ * @pre     (lcb not_eq NULL)
+ */
 static void
 lsm_reversion_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line)
 {
@@ -2780,26 +2771,26 @@ lsm_reversion_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line)
     }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * This function will set beep only settings.
+ *
+ * @param[in] dcb - DEF S/M control block
+ * @param[out] toneMode_p - pointer to tone mode
+ *
+ * @return none
+ */
 static void
 lsm_set_beep_only_settings (fsmdef_dcb_t *dcb, vcm_tones_t *toneMode_p)
 {
     switch (dcb->alert_info) {
-    
-
-
-
-
-
-
-
+    /*
+     * Map BTS requested ring pattern to corresponding call waiting
+     * pattern if phone is already offhook. All call waiting tones
+     * must be played every ten seconds and msg waiting and stutter
+     * dialtone are multi-part tones that play and then after
+     * 100 ms give steady dialtone. Set a timer to call the tone
+     * callback function for those tones.
+     */
     case ALERTING_RING:
         lsm_tmr_tones_ticks = callWaitingDelay;
         switch (dcb->alerting_ring) {
@@ -2820,17 +2811,17 @@ lsm_set_beep_only_settings (fsmdef_dcb_t *dcb, vcm_tones_t *toneMode_p)
         }
         break;
 
-    
+    /* BTS wishes to override call waiting tone */
     case ALERTING_TONE:
-        
-
-
-
-
-
-
-
-
+        /*
+         * In violation of the spec, BTS will send tones in the
+         * Alert-Info header and if the phone is offhook, wants
+         * the phone to play the tone specified in the Alert-Info
+         * header instead of the normal call waiting tone. If this
+         * line is connected to a call manager follow the spec and
+         * always play the call waiting tone regardless of what was
+         * received in the Alert-Info header.
+         */
         if (sip_regmgr_get_cc_mode(dcb->line) == REG_MODE_CCM) {
             dcb->alerting_tone = VCM_CALL_WAITING_TONE;
             LSM_DEBUG(DEB_F_PREFIX"%s - Overriding value in Alert-Info header as line %d is \
@@ -2868,19 +2859,19 @@ lsm_set_beep_only_settings (fsmdef_dcb_t *dcb, vcm_tones_t *toneMode_p)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ *
+ * Set ringer mode based on remote-cc input and configuration parameters. If there
+ * any other call pending then it should play call waiting tone.
+ *
+ * @param lsm_lcb_t     lcb for this call
+ * @param callid_t      gsm_id
+ * @param line_t        line
+ *
+ * @return  none
+ *
+ * @pre     (lcb not_eq NULL)
+ */
 static void
 lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
 {
@@ -2910,26 +2901,26 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
 
     config_get_value(CFGID_SDPMODE, &sdpmode, sizeof(sdpmode));
 
-    
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * The ringer (or call-waiting tone) should be on if these
+     * conditions are met:
+     * 1. A line is ringing for an incoming call and no calls
+     *    with a pending answer
+     * 2. A line is on hold
+     * and
+     * 3. No lines are connected
+     *
+     * Otherwise, turn on the call-waiting tones.
+     *
+     */
 
     if (priority_call_id == CC_NO_CALL_ID) {
-        
-
-
-
-
-
+        /* get the call_id of the line that triggers this if it is ringing and
+           pass down the correct line variable and its ring type and let the ring
+           manager decides. Originally we only find line first line in ringing state
+           which results in issue where Flash only line follows by audio ring line
+           ringing simultaneously, the phone does not ring audibly.
+        */
         if (lcb->state == LSM_S_RINGIN) {
             other_call_id = call_id;
         } else {
@@ -2939,30 +2930,30 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
 
     if (((priority_call_id != CC_NO_CALL_ID) || (other_call_id != CC_NO_CALL_ID)) &&
         (lsm_answer_pending() == CC_NO_CALL_ID)) {
-        
-
-
-
+        /*sam
+         * may need to add (ringout and rtp open) to this check.
+         * It is possible that inband alerting is active for an outgoing call.
+         */
         dcb = fsmdef_get_dcb_by_call_id((priority_call_id != CC_NO_CALL_ID) ?
                                         priority_call_id : other_call_id);
         lcb = lsm_get_lcb_by_call_id((priority_call_id != CC_NO_CALL_ID) ?
                                         priority_call_id : other_call_id);
         isDusting = ((lcb != NULL) && FSM_CHK_FLAGS(lcb->flags, LSM_FLAGS_DUSTING)) ? TRUE : FALSE;
 
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
+        /*
+         * TNP has line-based ringing so update the line parameter so
+         * if reflects what line is ringing, not which line had an action
+         * taken against it, i.e. if line 1 hangs up and line 2 is ringing,
+         * line will be equal to 1 (since that line hung-up), but it needs
+         * to be 2 since that is the line actually ringing. 40/60 can
+         * get away with this since it is device-based ringing. If there
+         * are multiple lines in the RINGIN state, the ringing will be
+         * based on the first line in the RINGIN state found. Could add
+         * the check if (other_call_id != callid) but line will equal
+         * dcb->line if the callids are the same so save a few CPU cycles
+         * by not having the check. No need to do a #ifdef TNP since
+         * it does matter which line we use on the 40/60 as it is device based.
+         */
         line = dcb->line;
 
         if (!lsm_callwaiting()) {
@@ -2975,25 +2966,25 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
             ringer_set = TRUE;
             lsm_tmr_tones_ticks = 0;
 
-            
-
-
-
-
-
+            /*
+             * CFGID_LINE_RING_SETTING_IDLE is a config parameter that
+             * tells the phone what action to take for an incoming
+             * call on a phone with no active calls.
+             *
+             */
 
             if (isDusting) {
                 ringSettingIdle = FLASH_ONLY;
             }
             else if (FSM_CHK_FLAGS(lcb->flags, LSM_FLAGS_PREVENT_RINGING)) {
-                
-
-
+                /*
+                 * If this phone is both calling and called device, do not play ring.
+                 */
                 ringSettingIdle = DISABLE;
             } else if (cc_line_ringer_mode[line] == CC_RING_DISABLE) {
-                
-
-
+                /*
+                 * Disable - no ring or flash
+                 */
                 ringSettingIdle = FLASH_ONLY;
             } else if (cc_line_ringer_mode[line] == CC_RING_ENABLE) {
                 ringSettingIdle = RING;
@@ -3005,34 +2996,34 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
             LSM_DEBUG(DEB_L_C_F_PREFIX"Ring set mode=%d.\n",
                       DEB_L_C_F_PREFIX_ARGS(LSM, line, call_id, fname), ringSettingIdle);
 
-            
-
-
+            /*
+             * Disable - no ring or flash
+             */
             if (ringSettingIdle == DISABLE) {
                 ringerMode = VCM_RING_OFF;
 
-                
-
-
+                /*
+                 * Flash Only - No ringing, just flash.
+                 */
             } else if (ringSettingIdle == FLASH_ONLY) {
                 ringerMode = VCM_FLASHONLY_RING;
 
-                
-
-
+                /*
+                 * Ring once - ring the phone once
+                 */
             } else if (ringSettingIdle == RING_ONCE) {
                 ringOnce = YES;
 
-                
-
-
-
+                /*
+                 * Ring - normal operation. Ring the phone until answered,
+                 * forwarded, or disconnected.
+                 */
             } else if (ringSettingIdle == RING) {
 
-                
+                /* Determine what tone/ringing pattern to play */
                 switch (dcb->alert_info) {
                 case ALERTING_NONE:
-                    
+                    /* This is the default case nothing to do */
                     break;
 
                 case ALERTING_RING:
@@ -3053,17 +3044,17 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
                                   ringSettingIdle,
                                   ringerMode);
 
-            
-
-
-
-
+            /*
+             * If an active call is being held while there is an incoming
+             * call AND ringSettingBusyStationPolicy is 0, this flag will
+             * be false.
+             */
             if (alerting) {
-                
-
-
-
-
+                /*
+                 * If the line is connected to a CCM, Bellcore-Dr1 means
+                 * play the defined ringer once.  Bellcore-dr2 means play
+                 * the defined ringer twice.
+                 */
                 if (sip_regmgr_get_cc_mode(line) == REG_MODE_CCM) {
                     if (ringerMode == VCM_BELLCORE_DR1) {
                         ringerMode = VCM_INSIDE_RING;
@@ -3098,7 +3089,7 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
             }
         } else {
 
-            
+            // Ring off all lines.
 	    FSM_FOR_ALL_CBS(lcb2, lsm_lcbs, LSM_MAX_LCBS) {
 		 if ((lcb2->call_id != CC_NO_CALL_ID) &&
 		     (lcb2->state == LSM_S_RINGIN) )
@@ -3112,11 +3103,11 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
             ringer_set = TRUE;
             lsm_tmr_tones_ticks = 0;
 
-            
-
-
-
-
+            /*
+             * ringSettingActive is a TNP only config parameter that
+             * tells the phone what action to take for an incoming
+             * call on a phone with an active call.
+             */
             if (isDusting) {
                 ringSettingActive = FLASH_ONLY;
             } else {
@@ -3125,42 +3116,42 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
                                       line);
             }
 
-            
-
-
+            /*
+             * Disable - no ring or flash
+             */
             if (ringSettingActive == DISABLE) {
                 ringerMode = VCM_RING_OFF;
 
-                
-
-
+                /*
+                 * Flash Only - No ringing, just flash.
+                 */
             } else if (ringSettingActive == FLASH_ONLY) {
                 ringerMode = VCM_FLASHONLY_RING;
 
-                
-
-
+                /*
+                 * Ring once - ring the phone once
+                 */
             } else if (ringSettingActive == RING_ONCE) {
                 ringOnce = YES;
 
-                
-
-
-
-
-
-
-
-
-
-
-
+                /*
+                 * Ring - Ring the phone until answered, forwarded or
+                 * disconnected.
+                 *
+                 * NOTE: This code is replicated above under checking
+                 * RING_SETTING_IDLE above. Putting this common code
+                 * in a function call saved a miniscule amount of memory
+                 * at the cost of an additional function call for every
+                 * call. It was decided it was not worth the cost, but
+                 * has been documented in case the phone gets very,
+                 * very low on memory in the future.
+                 */
             } else if (ringSettingActive == RING) {
 
-                
+                /* Determine what tone/ringing pattern to play */
                 switch (dcb->alert_info) {
                 case ALERTING_NONE:
-                    
+                    /* This is the default case nothing to do */
                     break;
 
                 case ALERTING_RING:
@@ -3172,25 +3163,25 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
                     alertInfo = YES;
                 }
 
-                
-
-
+                /*
+                 * BeepOnly - normal operation. Play call waiting tone.
+                 */
             } else if (ringSettingActive == BEEP_ONLY) {
                 lsm_set_beep_only_settings (dcb, &toneMode);
 
             }
 
-            
-
-
-
-
+            /*
+             * If an active call is being held while there is an incoming
+             * call AND ringSettingBusyStationPolicy is 0, this flag will
+             * be false.
+             */
             if (alerting) {
-                
-
-
-
-
+                /*
+                 * The code above has set the variables to play either the ringer
+                 * or a tone based on the ringSettingBusy. If the config variable
+                 * is beeponly then call start_tone else call control_ringer.
+                 */
                 if (ringSettingActive == BEEP_ONLY) {
                     media = gsmsdp_find_audio_media(dcb);
 
@@ -3208,9 +3199,9 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
                 }
             }
 
-            
-
-
+            /*
+             * Start a timer to play multiple part tones if needed.
+             */
             if (lsm_tmr_tones_ticks > 0) {
                 if (cprCancelTimer(lsm_tmr_tones) == CPR_FAILURE) {
                     LSM_DEBUG(get_debug_string(DEBUG_GENERAL_SYSTEMCALL_FAILED),
@@ -3224,11 +3215,11 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
             }
         }
     } else if (lcb->state == LSM_S_IDLE) {
-        
-
-
-
-
+        /*
+         * This line just hungup so let's check to see if call hold ringback
+         * is enabled and if we have any other holding lines. If so ring to
+         * alert the user that a line is still around.
+         */
         config_get_value(CFGID_CALL_HOLD_RINGBACK, &callHoldRingback,
                          sizeof(callHoldRingback));
         if (callHoldRingback & 0x1) {
@@ -3250,7 +3241,7 @@ lsm_set_ringer (lsm_lcb_t *lcb, callid_t call_id, line_t line, int alerting)
                             	  DEB_L_C_F_PREFIX_ARGS(LSM, line, dcb->call_id, fname));
                     vcmControlRinger(VCM_INSIDE_RING, YES, YES, line, call_id);
 
-                    
+                    /* Find the corresponding LCB to get to the UI ID */
                     ui_id = lsm_get_ui_id(dcb->call_id);
                     ui_set_call_status(platform_get_phrase_index_str(CALL_INITIATE_HOLD),
                         	                  dcb->line, ui_id);
@@ -3291,10 +3282,10 @@ lsm_offhook (lsm_lcb_t *lcb, cc_state_data_offhook_t *data)
 
     lsm_change_state(lcb, __LINE__, LSM_S_OFFHOOK);
 
-    
-
-
-
+    /*
+     * Disable the ringer since the user is going offhook. Only calls
+     * in the RINGIN state should have ringing enabled.
+     */
     FSM_FOR_ALL_CBS(lcb2, lsm_lcbs, LSM_MAX_LCBS) {
         if ((lcb2->call_id != CC_NO_CALL_ID) &&
             (lcb2->state == LSM_S_RINGIN)) {
@@ -3318,7 +3309,7 @@ lsm_offhook (lsm_lcb_t *lcb, cc_state_data_offhook_t *data)
         lcb2 = lsm_get_lcb_by_call_id(call_id2);
     }
 
-    
+    //vcmActivateWlan(TRUE);
 
     vcmEnableSidetone(YES);
 
@@ -3339,31 +3330,31 @@ lsm_dialing (lsm_lcb_t *lcb, cc_state_data_dialing_t *data)
         return (CC_RC_ERROR);
     }
 
-    
+    /* don't provide dial tone on transfer unless we are the transferor. */
     xcb = fsmxfr_get_xcb_by_call_id(lcb->call_id);
     if ((xcb != NULL) && (xcb->mode != FSMXFR_MODE_TRANSFEROR)) {
         return (CC_RC_SUCCESS);
     }
 
-    
-
-
+    /*
+     * Start dial tone if no digits have been entered
+     */
     if ((data->play_dt == TRUE)
         && (dp_check_for_plar_line(lcb->line) == FALSE)
         ) {
 
-        
+        /* get line based AMWI config */
         config_get_value(CFGID_LINE_MESSAGE_WAITING_AMWI + lcb->line - 1, &stutterMsgWaiting,
                          sizeof(stutterMsgWaiting));
         if ( stutterMsgWaiting != 1 && stutterMsgWaiting != 0) {
-          
+          /* AMWI is not configured. Fallback on config for stutter dial tone */
           config_get_value(CFGID_STUTTER_MSG_WAITING, &stutterMsgWaiting,
                          sizeof(stutterMsgWaiting));
-          stutterMsgWaiting &= 0x1; 
+          stutterMsgWaiting &= 0x1; /* LSB indicates on/off */
         }
 
         if ( (data->suppress_stutter == FALSE) &&
-             (ui_line_has_mwi_active(lcb->line)) && 
+             (ui_line_has_mwi_active(lcb->line)) && /* has msgs waiting */
 		      stutterMsgWaiting ) {
             lsm_util_start_tone(VCM_STUTTER_TONE, FALSE, lsm_get_ms_ui_call_handle(lcb->line, CC_NO_CALL_ID, lcb->ui_id),
                     dcb->group_id,
@@ -3377,11 +3368,11 @@ lsm_dialing (lsm_lcb_t *lcb, cc_state_data_dialing_t *data)
         }
     }
 
-    
-
-
-
-
+    /*
+     * For round table phone, post WAITINGFORDIGITS event,
+     * so that UI can pop up dialing screen.
+     * For TNP, this event gets ignored.
+     */
     ui_call_state(evWaitingForDigits, lcb->line, lcb->ui_id, CC_CAUSE_NORMAL);
 
 
@@ -3401,9 +3392,9 @@ lsm_dialing_completed (lsm_lcb_t *lcb, cc_state_data_dialing_completed_t *data)
 
     lsm_change_state(lcb, __LINE__, LSM_S_PROCEED);
 
-    
-
-
+    /* If KPML is enabled then do not change UI state to
+     * proceed, more digit to collect
+     */
     if (dp_get_kpml_state()) {
         return (CC_RC_SUCCESS);
     }
@@ -3451,14 +3442,14 @@ lsm_call_sent (lsm_lcb_t *lcb, cc_state_data_call_sent_t *data)
 
     (void) lsm_stop_tone(lcb, NULL);
 
-    
-
-
-
-
-
-
-
+    /*
+     * We go ahead and start a rx port if our local SDP indicates
+     * the need in an attempt to be 3264 compliant. Since we have
+     * not yet locked down the codec, we will use preferred codec if
+     * configured. If not, we use the first codec in our local
+     * list of supported codecs. The codec list was initialized
+     * in fsmdef_init_local_sdp.
+     */
     GSMSDP_FOR_ALL_MEDIA(media, dcb) {
          if (!GSMSDP_MEDIA_ENABLED(media)) {
              continue;
@@ -3482,9 +3473,9 @@ lsm_call_sent (lsm_lcb_t *lcb, cc_state_data_call_sent_t *data)
         }
     }
 
-    
-
-
+    /*
+     * cancel offhook to first digit timer.
+     */
     dp_int_cancel_offhook_timer(line, lcb->call_id);
 
     return (CC_RC_SUCCESS);
@@ -3503,9 +3494,9 @@ lsm_far_end_proceeding (lsm_lcb_t *lcb,
     if (!dp_get_kpml_state()) {
         ui_set_call_status(platform_get_phrase_index_str(CALL_PROCEEDING_IN),
                            line, lcb->ui_id);
-        
-
-
+        /*
+         * update placed call info in call history with dialed digits
+         */
         dcb = lcb->dcb;
         if (dcb != NULL && dcb->placed_call_update_required) {
             lsm_update_placed_callinfo(dcb);
@@ -3536,18 +3527,18 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
     boolean         is_session_progress = FALSE;
 
 
-    
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * Need to check if rcv_chan is already open and if we will be
+     * receiving inband ringing. The recv_chan should always be
+     * open since we always open a receive channel when initiating a
+     * call. If inband ringing will be sent by the far end, we
+     * will close the receive port and reopen it using the codec
+     * negotiated when we received the SDP in the far ends call
+     * proceeding message. We want to close the receive port well
+     * ahead of reopening it due to some issue in the dsp where
+     * a close followed immediately by an open causes a reset of
+     * the DSP.
+     */
     dcb = lcb->dcb;
     if (dcb == NULL) {
         return (CC_RC_ERROR);
@@ -3555,43 +3546,43 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
     audio_media =  gsmsdp_find_audio_media(dcb);
 
     if (dcb->inband) {
-        
+        /* close (with refresh) all media entries */
         lsm_close_rx(lcb, TRUE, NULL);
         lsm_close_tx(lcb, TRUE, NULL);
     }
 
-    
-
-
-
-
-
-
-
+    /*
+     * Check to see if we need to spoof ring out in connected or holding
+     * state.
+     *
+     * The LSM can be in holding state when the user is resuming
+     * currently held call that was early transferred to another party
+     * and the other party has not answered the call yet.
+     */
     if (dcb->spoof_ringout_requested &&
         ((lcb->state == LSM_S_CONNECTED) || (lcb->state == LSM_S_HOLDING))) {
-        
+        /* Spoof ring out is requested in the connected/holding state */
         spoof_ringout = TRUE;
     } else {
         spoof_ringout = FALSE;
     }
     lsm_change_state(lcb, __LINE__, LSM_S_RINGOUT);
 
-    
-
-
+    /* Don't send the dialplan update msg if CFWD_ALL. Otherwise the invalid
+     * redial numer is saved. (CSCsv08816)
+     */
     if (dcb->active_feature != CC_FEATURE_CFWD_ALL) {
         dp_int_update(line, call_id, data->caller_id.called_number);
     }
 
 
-    
-
-
-
-
-
-
+    /*
+     * Check for inband alerting or spoof ringout.
+     * If no inband alerting and this is not a spoof ringout case,
+     * just update the status line to show we are alerting. The local
+     * ringback tone will not be started until the ringback delay timer
+     * expires.
+     */
     if (dcb->inband != TRUE || spoof_ringout) {
         status = platform_get_phrase_index_str(CALL_ALERTING_LOCAL);
 
@@ -3599,10 +3590,10 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
 
             if (audio_media) {
 
-            
-
-
-
+            /*
+             * Ringback delay timer is not used for spoof ringout case
+             * so start local ringback tone now.
+             */
                 lsm_util_start_tone(VCM_ALERTING_TONE, FALSE, lsm_get_ms_ui_call_handle(line, call_id, CC_NO_CALL_ID),
                            dcb->group_id,audio_media->refid,
                            VCM_PLAY_TONE_TO_EAR);
@@ -3619,10 +3610,10 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
             status = tmp_str;
         }
 
-        
+        /* start receive and transmit for all media entries that are active */
         GSMSDP_FOR_ALL_MEDIA(media, dcb) {
             if (!GSMSDP_MEDIA_ENABLED(media)) {
-                
+                /* this entry is not active */
                 continue;
             }
             LSM_DEBUG(DEB_L_C_F_PREFIX"direction_set:%d direction:%d"
@@ -3651,14 +3642,14 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
         }
 
         if (!rcv_port_started) {
-            
-
-
-
-
-
-
-
+            /*
+             * Since we had SDP we thought inband ringback was in order but
+             * media attributes indicate the receive port is to remain
+             * closed. In this case, go ahead and apply local ringback tone
+             * or user will hear silence. We do not depend on ringback delay
+             * timer to start the local ringback tone so we have to start it
+             * here.
+             */
             status = platform_get_phrase_index_str(CALL_ALERTING_LOCAL);
             lsm_util_start_tone(VCM_ALERTING_TONE, FALSE, lsm_get_ms_ui_call_handle(line, call_id, CC_NO_CALL_ID), dcb->group_id,
                            ((audio_media != NULL) ? audio_media->refid :
@@ -3671,12 +3662,12 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
 
     ccb = fsmcnf_get_ccb_by_call_id(call_id);
 
-    
+    /* Update call information */
     lsm_internal_update_call_info(lcb, dcb);
 
-    
-
-
+    /* This is the case where remote end of the call has been early trasnfered
+     * to another endpoint.
+     */
 
     ccb = fsmcnf_get_ccb_by_call_id(lcb->call_id);
 
@@ -3687,20 +3678,20 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
         call_state = evRingOut;
     }
 
-    
-
-
-
-
-
-
-
-
+    /* If an invalid DN is dialed during CFA then CCM sends 183/Session Progress
+     * (a.k.a. far end alerting) so it can play the invalid DN announcement. In
+     * this case CCM sends 404 Not Found after playing the announcement. If we
+     * are here due to that situation then don't propagate call info or status
+     * to UI side as it will display "Session Progress" on the status line and
+     * will log the DN in Placed calls; and we don't want either. Just skip the
+     * update and following 404 Not Found will take care of playing/displaying
+     * Reorder. Note that this condition may occur only in TNP/CCM mode.
+     */
     if (dcb->active_feature != CC_FEATURE_CFWD_ALL) {
-    	if(!is_session_progress) {
-    		
-
-
+    	if(!is_session_progress) {//CSCtc18750
+    		/*
+    		 * update placed call info in call history with dialed digits
+    		 */
     		if (dcb->placed_call_update_required) {
     		    lsm_update_placed_callinfo(dcb);
     		    dcb->placed_call_update_required = FALSE;
@@ -3714,11 +3705,11 @@ lsm_far_end_alerting (lsm_lcb_t *lcb, cc_state_data_far_end_alerting_t *data)
         lsm_ui_call_state(call_state, line, lcb, CC_CAUSE_NORMAL);
 
     }
-    
-
-
-
-
+    /* For roundtable phones, UI will be in dial state, which is different from TNP UI,
+     * TNP UI does not have different dialing layer. In this case offhook dialing screen
+     * does not vanish untill GSM provides procced call status, hence all the softkeys are
+     * available during CFWD, which is not correct
+     */
     if (dcb->active_feature == CC_FEATURE_CFWD_ALL) {
         lsm_ui_call_state(evReorder, line, lcb, CC_CAUSE_NORMAL);
     }
@@ -3785,25 +3776,25 @@ lsm_answered (lsm_lcb_t *lcb, cc_state_data_answered_t *data)
 
     lsm_ui_call_state(evOffHook, line, lcb, CC_CAUSE_NORMAL);
 
-    
+    //vcmActivateWlan(TRUE);
 
     (void) lsm_stop_tone(lcb, NULL);
 
     return (CC_RC_SUCCESS);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ *
+ * Function updates media paths based on the negotated parameters.
+ *
+ * @param lcb          line control block
+ * @param caller_fname caller function name
+ *
+ * @return  none
+ *
+ * @pre     (dcb not_eq NULL)
+ * @pre     (fname not_eq NULL)
+ */
 static void
 lsm_update_media (lsm_lcb_t *lcb, const char *caller_fname)
 {
@@ -3824,20 +3815,20 @@ lsm_update_media (lsm_lcb_t *lcb, const char *caller_fname)
 
     addr_str[0] = '\0';
 
-    
-
-
-
-
-
-
-
-
-
+    /*
+     * Close rx and tx port for media change. Check media direction
+     * to see if port should be closed or remain open. If the port
+     * needs to be kept open, lsm_close_* functions will check to
+     * see if any media attributes have changed. If anything has
+     * changed, the port is closed, otherwise the port remains
+     * open. If media direction is not set, treat as if set to inactive.
+     * Also, if multicast leave rx_refresh and tx_refresh to FALSE to
+     * force a socket close.
+     */
     GSMSDP_FOR_ALL_MEDIA(media, dcb) {
         if (!GSMSDP_MEDIA_ENABLED(media) ||
             FSM_CHK_FLAGS(media->hold, FSM_HOLD_LCL)) {
-            
+            /* this entry is not active or locally held */
             continue;
         }
 
@@ -3859,7 +3850,7 @@ lsm_update_media (lsm_lcb_t *lcb, const char *caller_fname)
         lsm_close_tx(lcb, tx_refresh, media);
 
         if (LSMDebug) {
-            
+            /* debug is enabled, format the dest addr into string */
             ipaddr2dotted(addr_str, &media->dest_addr);
             for (i = 0; i < media->num_payloads; i++)
             {
@@ -3882,7 +3873,7 @@ lsm_update_media (lsm_lcb_t *lcb, const char *caller_fname)
         }
         if ( rx_refresh &&
               (media->cap_index == CC_VIDEO_1)) {
-             
+             // force an additional update so UI can refresh the remote view
              ui_update_video_avail(dcb->line, lcb->ui_id, dcb->cur_video_avail);
              LSM_DEBUG(DEB_L_C_F_PREFIX"Video Avail Called %d",
                   DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, lcb->ui_id, fname), dcb->cur_video_avail);
@@ -3890,19 +3881,19 @@ lsm_update_media (lsm_lcb_t *lcb, const char *caller_fname)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ *
+ * Function to set media attributes and set the ui state.
+ *
+ * @param lcb        line control block
+ * @param line       line
+ * @param fname      caller function name
+ *
+ * @return  none
+ *
+ * @pre     (dcb not_eq NULL)
+ * @pre     (fname not_eq NULL)
+ */
 static void
 lsm_call_state_media (lsm_lcb_t *lcb, line_t line, const char *fname)
 {
@@ -3920,11 +3911,11 @@ lsm_call_state_media (lsm_lcb_t *lcb, line_t line, const char *fname)
 
     ccb = fsmcnf_get_ccb_by_call_id(call_id);
 
-    
+    /* Update media parametes to the platform */
     lsm_update_media(lcb, fname);
 
     if ((ccb != NULL) && (ccb->active == TRUE)) {
-        
+        /* For joined call leg, do not change UI state to conf. */
         if ((ccb->flags & JOINED) ||
             (fname == cc_state_name(CC_STATE_RESUME))) {
             call_state = evConnected;
@@ -3935,16 +3926,16 @@ lsm_call_state_media (lsm_lcb_t *lcb, line_t line, const char *fname)
         call_state = evConnected;
     }
 
-    
-
-
-
-
-    
-    
+    /*
+     * Possible media changes, update call information and followed
+     * by the state update. This is important sequence for 7940/60
+     * SIP to force the BTXML update.
+     */
+    // Commenting out original code for CSCsv72370. Leaving here for reference.
+    // lsm_internal_update_call_info(lcb, dcb);
 
     lsm_ui_call_state(call_state, line, lcb, CC_CAUSE_NORMAL);
-    
+    // CSCsv72370 - Important sequence for TNP this follows state change
     lsm_internal_update_call_info(lcb, dcb);
 }
 
@@ -3970,10 +3961,10 @@ lsm_connected (lsm_lcb_t *lcb, cc_state_data_connected_t *data)
     }
 
     original_call_event = lcb->previous_call_event;
-    
-
-
-
+    /*
+     * If a held call is being resumed, check the
+     * policy to see if the phone should resume alerting.
+     */
     if (lcb->state == LSM_S_HOLDING) {
         config_get_value(CFGID_RING_SETTING_BUSY_POLICY,
                      &ringSettingBusyStationPolicy,
@@ -3982,17 +3973,17 @@ lsm_connected (lsm_lcb_t *lcb, cc_state_data_connected_t *data)
             alerting = NO;
         }
 
-		
-
-
-
+		/*
+		 * CSCtd31671: When agent phone resumes from a held call with
+	     * monitor warning tone, the tone should not be stopped.
+	     */
 		if(lcb->dcb->active_tone == VCM_MONITORWARNING_TONE || lcb->dcb->active_tone == VCM_RECORDERWARNING_TONE)
 			tone_stop_bool = FALSE;
     }
 
-    
-
-
+    /* Don't try to start ICE unless this is the first time connecting.
+     *  TODO(ekr@rtfm.com): Is this the right ICE start logic? What about restarts
+    */
     if (strlen(dcb->peerconnection) && lcb->state != LSM_S_CONNECTED)
       start_ice = TRUE;
 
@@ -4003,17 +3994,17 @@ lsm_connected (lsm_lcb_t *lcb, cc_state_data_connected_t *data)
             (void) lsm_stop_tone(lcb, NULL);
     }
 
-    
+    /* Start ICE */
     if (start_ice) {
       short res = vcmStartIceChecks(dcb->peerconnection);
-      
+      /* TODO(emannion): Set state to dead here. */
       if (res)
         return CC_RC_SUCCESS;
     }
 
-    
-
-
+    /*
+     * Open the RTP receive channel.
+     */
     lsm_call_state_media(lcb, line, cc_state_name(CC_STATE_CONNECTED));
 
 
@@ -4026,17 +4017,17 @@ lsm_connected (lsm_lcb_t *lcb, cc_state_data_connected_t *data)
     FSM_RESET_FLAGS(lcb->flags, LSM_FLAGS_ANSWER_PENDING);
     FSM_RESET_FLAGS(lcb->flags, LSM_FLAGS_DUSTING);
 
-    
-
-
+    /*
+     * update placed call info in call history with dialed digits
+     */
     if (dcb->placed_call_update_required) {
         lsm_update_placed_callinfo(dcb);
         dcb->placed_call_update_required = FALSE;
     }
 
-    
-
-
+    /*
+     * If UI state was changed, update status line.
+     */
     if (lcb->previous_call_event != original_call_event) {
         if (lcb->previous_call_event == evConference) {
         } else {
@@ -4049,17 +4040,17 @@ lsm_connected (lsm_lcb_t *lcb, cc_state_data_connected_t *data)
     return (CC_RC_SUCCESS);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Function: lsm_hold_reversion
+ * Perform Hold Reversion on the given call
+ * any other call pending then it should play call waiting tone.
+ *
+ * @param lsm_lcb_t     lcb for this call
+ *
+ * @return  cc_rcs_t   SUCCESS or FAILURE of the operation
+ *
+ * @pre     (lcb not_eq NULL)
+ */
 
 static cc_rcs_t
 lsm_hold_reversion (lsm_lcb_t *lcb)
@@ -4067,11 +4058,11 @@ lsm_hold_reversion (lsm_lcb_t *lcb)
     callid_t        call_id = lcb->call_id;
     line_t          line = lcb->line;
 
-    
+    // Update call state on the JAVA side
     lsm_ui_call_state(evHoldRevert, line, lcb, CC_CAUSE_NORMAL);
 
     if (lsm_find_state(LSM_S_RINGIN) > CC_NO_CALL_ID) {
-        
+        // No Reversion ringing if we have calls in ringing state
         return CC_RC_SUCCESS;
     }
     ui_set_notification(line, call_id,
@@ -4082,13 +4073,13 @@ lsm_hold_reversion (lsm_lcb_t *lcb)
     return (CC_RC_SUCCESS);
 }
 
-
-
-
-
-
-
-
+/*
+ * lsm_hold_local
+ *
+ * Move the phone into the Hold state.
+ *
+ * Function is used when the local side initiated the hold.
+ */
 static cc_rcs_t
 lsm_hold_local (lsm_lcb_t *lcb, cc_state_data_hold_t *data)
 {
@@ -4103,27 +4094,27 @@ lsm_hold_local (lsm_lcb_t *lcb, cc_state_data_hold_t *data)
         return (CC_RC_ERROR);
     }
 
-    
-
-
+    /*
+     * Stop ringer if spoofing ringout for CCM
+     */
     if (dcb->spoof_ringout_applied) {
         (void) lsm_stop_tone(lcb, NULL);
     }
 
-    
+    /* hard close receive and transmit channels for all media entries */
     lsm_close_rx(lcb, FALSE, NULL);
     lsm_close_tx(lcb, FALSE, NULL);
-    
-
-
-
-
+    /*
+     * Note that local hold does not have any newer UI information from the
+     * network. Note need to update the call information and the UI will
+     * be collapsed with "blocked" icon to indicate hold.
+     */
 
     lsm_change_state(lcb, __LINE__, LSM_S_HOLDING);
-    
-
-
-
+    /* Round table phones need cause for the transfer or conference
+     Do not set the cause if the conference or transfer is created by
+     remote-cc
+     */
     cause = CC_CAUSE_NORMAL;
     if (data->reason == CC_REASON_XFER) {
             cause = CC_CAUSE_XFER_LOCAL;
@@ -4142,16 +4133,16 @@ lsm_hold_local (lsm_lcb_t *lcb, cc_state_data_hold_t *data)
     if (ringSettingBusyStationPolicy) {
         lsm_set_ringer(lcb, call_id, line, YES);
     } else {
-        
-
-
-
-
-
-
-
-
-
+        /*
+         * If the hold reason is internal this means the phone logic is placing
+         * a call on hold, not the user. Thus don't update the alerting for the
+         * hold state as the user should not hear the alerting pattern change
+         * as they did not place the call on hold. The phone places calls on hold
+         * in cases such as the phone has an active call, another call comes in
+         * for that line and the new call is answered. Therefore the phone places the
+         * active call on hold before answering the incoming call.
+         *
+         */
         if (data->reason == CC_REASON_INTERNAL) {
             lsm_set_ringer(lcb, call_id, line, NO);
         } else {
@@ -4165,13 +4156,13 @@ lsm_hold_local (lsm_lcb_t *lcb, cc_state_data_hold_t *data)
 }
 
 
-
-
-
-
-
-
-
+/*
+ * lsm_hold_remote
+ *
+ * Move the phone into the Hold state.
+ *
+ * Function is used when the remote side initiated the hold.
+ */
 static cc_rcs_t
 lsm_hold_remote (lsm_lcb_t *lcb, cc_state_data_hold_t *data)
 {
@@ -4187,10 +4178,10 @@ lsm_hold_remote (lsm_lcb_t *lcb, cc_state_data_hold_t *data)
         return (CC_RC_ERROR);
     }
 
-    
+    /* close and re-open receive channel for all media entries */
     GSMSDP_FOR_ALL_MEDIA(media, dcb) {
         if (!GSMSDP_MEDIA_ENABLED(media)) {
-            
+            /* this entry is not active */
             continue;
         }
         if (media->direction_set &&
@@ -4200,12 +4191,12 @@ lsm_hold_remote (lsm_lcb_t *lcb, cc_state_data_hold_t *data)
             lsm_close_rx(lcb, TRUE, media);
         }
 
-        
+        /* reopen the receive channel if the direction is RECVONLY */
         if (media->direction_set &&
             media->direction == SDP_DIRECTION_RECVONLY) {
             lsm_rx_start(lcb, fname, media);
         }
-        
+        /* close tx if media is not inactive or receive only */
         if ((media->direction == SDP_DIRECTION_INACTIVE) ||
             (media->direction == SDP_DIRECTION_RECVONLY)) {
             lsm_close_tx(lcb, FALSE, media);
@@ -4354,7 +4345,7 @@ lsm_onhook (lsm_lcb_t *lcb, cc_state_data_onhook_t *data)
 
     dp_int_onhook(line, call_id);
 
-    
+    /* hard close receive and transmit channels for all media entries */
     lsm_close_rx(lcb, FALSE, NULL);
     lsm_close_tx(lcb, FALSE, NULL);
 
@@ -4410,11 +4401,11 @@ lsm_call_failed (lsm_lcb_t *lcb, cc_state_data_call_failed_t *data)
         return (CC_RC_ERROR);
     }
 
-    
-
-
+    /* For busy generated by UI-STATE in 183, do not manipulate the
+     * media port
+     */
    if (data->cause != CC_CAUSE_UI_STATE_BUSY) {
-       
+       /* hard close receive and transmit channels for all media entries */
        lsm_close_rx(lcb, FALSE, NULL);
        lsm_close_tx(lcb, FALSE, NULL);
    }
@@ -4447,8 +4438,8 @@ lsm_call_failed (lsm_lcb_t *lcb, cc_state_data_call_failed_t *data)
     case (CC_CAUSE_PAYLOAD_MISMATCH):
         dp_int_update(line, call_id, data->caller_id.called_number);
 
-        
-        
+        /* FALLTHROUGH */
+        /*sa_ignore FALL_THROUGH*/
     default:
         send_call_info = FALSE;
         line_state = LSM_S_CONGESTION;
@@ -4471,7 +4462,7 @@ lsm_call_failed (lsm_lcb_t *lcb, cc_state_data_call_failed_t *data)
         ui_log_disposition(dcb->call_id, CC_CALL_LOG_DISP_IGNORE);
     }
 
-    
+    /* Send call info only if not error */
     if (send_call_info == TRUE) {
         ui_call_info(data->caller_id.calling_name,
                  data->caller_id.calling_number,
@@ -4493,8 +4484,8 @@ lsm_call_failed (lsm_lcb_t *lcb, cc_state_data_call_failed_t *data)
 
     lsm_ui_call_state(state, line, lcb, CC_CAUSE_NORMAL);
 
-    
-
+    /* Tone played in remote-cc play tone request, so don't start tone again
+     */
     if ((data->cause != CC_CAUSE_UI_STATE_BUSY) && (data->cause != CC_CAUSE_REMOTE_DISCONN_REQ_PLAYTONE)) {
         fsmdef_media_t *audio_media = gsmsdp_find_audio_media(dcb);
 
@@ -4539,21 +4530,21 @@ lsm_mwi (lsm_lcb_t *lcb, callid_t call_id, line_t line,
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_update_ui
+ *
+ *  Parameters:
+ *      call_id:
+ *      line:
+ *      data:
+ *
+ *  Description: This function is used to hide the UI platform details from
+ *               the FSMs. This function is provided to allow the FSMs
+ *               to update the UI in certain cases.
+ *
+ *  Returns: rc
+ *
+ */
 cc_rcs_t
 lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
 {
@@ -4568,7 +4559,7 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
     cc_feature_data_call_info_t *call_info;
     call_events     original_call_event;
     lsm_lcb_t       *lcb_tmp;
-    const char      *conf_str;
+    const char      *conf_str;//[] = {(char)0x80, (char)0x34, (char)0x00};
 
     instance_state = lcb->state;
 
@@ -4616,18 +4607,18 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
                 call_state = evRingOut;
             }
             break;
-        }                       
+        }                       /* switch (instance_state) { */
 
         break;
 
     case CC_UPDATE_CALLER_INFO:
 
-        
-
-
-
-
-
+        /* For local conference, do not update the primary
+         * call bubbles call-info. Primary call is already
+         * displaying To conference in this case
+         * But dcb-> caller_id should be updated to
+         * refresh the UI when the call is dropped
+         */
         ccb = fsmcnf_get_ccb_by_call_id(call_id);
         if (ccb && (ccb->flags & LCL_CNF) &&
             (ccb->cnf_call_id == call_id)) {
@@ -4649,15 +4640,15 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
 
         if (call_info->feature_flag & CC_CALLER_ID) {
             update = TRUE;
-            
-
-
-
-
-
-
-
-
+            /*
+             * This "if" block, without the "&& inbound" condition, was put in by Serhad
+             * to fix CSCsm58054 and it results in CSCso98110. The "inbound" condition
+             * is added to narrow the scope of CSCsm58054's fix. Note that "inbound" here
+             * refers to the perceived orientation set in call info. So for example, in case
+             * of a 3-way conf, and phone is the last party to receive the call, is ringing
+             * and then be joined into a conference, direction would be outbound. The display
+             * would say "To Conference".
+             */
             if ( (instance_state == LSM_S_RINGIN) && inbound ) {
                 cc_state_data_alerting_t alerting_data;
 
@@ -4678,11 +4669,11 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
 	    update = TRUE;
 	}
 
-        
-
-
-
-
+        /*
+         * If we are going to spoof ring out, skip the explicit UI update.
+         * the far end alerting handling will update the UI. Do not
+         * update UI twice.
+         */
         if (dcb->spoof_ringout_requested &&
             !dcb->spoof_ringout_applied &&
             lcb->state == LSM_S_CONNECTED) {
@@ -4737,7 +4728,7 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
 
     case CC_UPDATE_SET_CALL_STATUS:
         {
-            
+            /* set call status line */
             cc_set_call_status_data_t *call_status_p =
                 &data->data.set_call_status_parms;
             ui_set_call_status(call_status_p->phrase_str_p, call_status_p->line,
@@ -4746,7 +4737,7 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
         }
     case CC_UPDATE_SET_NOTIFICATION:
         {
-            
+            /* set status line notification */
             cc_set_notification_data_t *call_notification_p =
                 &data->data.set_notification_parms;
             ui_set_notification(line, lcb->ui_id,
@@ -4756,12 +4747,12 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
             break;
         }
     case CC_UPDATE_CLEAR_NOTIFICATION:
-        
+        /* clear status line notification */
         ui_clear_notification();
         break;
 
     case CC_UPDATE_SECURITY_STATUS:
-        
+        /* update security status */
         break;
 
     case CC_UPDATE_XFER_PRIMARY:
@@ -4770,7 +4761,7 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
 
     case CC_UPDATE_CALL_PRESERVATION:
 
-        
+        /* Call is in preservation mode. Update UI so that only endcall softkey is available */
         ui_call_in_preservation(line, lcb->ui_id);
         break;
 
@@ -4790,11 +4781,11 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
             call_state = evRingOut;
         }
 
-        
-
-
-
-
+        /*
+         * If we are going to spoof ring out, skip the explicit UI update.
+         * the far end alerting handling will update the UI. Do not
+         * update UI twice.
+         */
         if (dcb->spoof_ringout_requested &&
             !dcb->spoof_ringout_applied &&
             lcb->state == LSM_S_CONNECTED) {
@@ -4846,7 +4837,7 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
 
         lsm_ui_call_state(call_state, line, lcb, CC_CAUSE_NORMAL);
         if (original_call_event != call_state) {
-            
+            /* Call state changed, take care of special event */
             switch (call_state) {
             case evConference:
                 break;
@@ -4868,18 +4859,18 @@ lsm_update_ui (lsm_lcb_t *lcb, cc_action_data_update_ui_t *data)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_update_placed_callinfo
+ *
+ *  Description: this helps log dialed digits (as opposed to RPID provided
+ *               value) into placed calls.  This also decides whether to
+ *               log called party name received in RPID.
+ *
+ *  Parameters: dcb - pointer to default SM control block
+ *
+ *  Returns: none
+ *
+ */
 #define CISCO_PLAR_STRING  "x-cisco-serviceuri-offhook"
 void
 lsm_update_placed_callinfo (void *data)
@@ -4908,22 +4899,22 @@ lsm_update_placed_callinfo (void *data)
     tmp_called_number = lsm_get_gdialed_digits();
 
 
-    
+    /* if tmp_called_number is NULL or empty, return */
     if (tmp_called_number == NULL || (*tmp_called_number) == NUL) {
         LSM_DEBUG(DEB_L_C_F_PREFIX"Exiting : dialed digits is empty\n",
                   DEB_L_C_F_PREFIX_ARGS(LSM, lcb->line, lcb->call_id, fname));
         return;
     }
 
-    
-
-
-
+    /*
+     * if tmp_called_number is same as what we receive in RPID,
+     * then get the called name from RPID if provided.
+     */
     if (has_called_number) {
         if (strcmp(tmp_called_number, CISCO_PLAR_STRING) == 0) {
             tmp_called_number = dcb->caller_id.called_number;
         }
-        
+        /* if RPID number matches, dialed digits, use RPID name */
         if (strcmp(dcb->caller_id.called_number, tmp_called_number) == 0) {
             called_name = dcb->caller_id.called_name;
         } else {
@@ -4965,13 +4956,13 @@ lsm_show_cmd (cc_int32_t argc, const char *arv[])
 void
 lsm_init_config (void)
 {
-    
-
-
-
-
-
-
+    /*
+     * The silent period between call waiting bursts is now configurable
+     * for TNP phones. Store away the value for the callwaiting code to use.
+     * The config is in seconds, but CPR expects the duration in milliseconds
+     * thus multiply the config value by 1000. Non-TNP phones default to
+     * 10 seconds.
+     */
     config_get_value(CFGID_CALL_WAITING_SILENT_PERIOD, &callWaitingDelay,
                      sizeof(callWaitingDelay));
     callWaitingDelay = callWaitingDelay * 1000;
@@ -4984,9 +4975,9 @@ lsm_init (void)
     lsm_lcb_t *lcb;
     int i;
 
-    
-
-
+    /*
+     * Init the lcbs.
+     */
     lsm_lcbs = (lsm_lcb_t *) cpr_calloc(LSM_MAX_LCBS, sizeof(lsm_lcb_t));
     if (lsm_lcbs == NULL) {
         LSM_ERR_MSG(LSM_F_PREFIX"lsm_lcbs cpr_calloc returned NULL\n", fname);
@@ -4997,10 +4988,10 @@ lsm_init (void)
         lsm_init_lcb(lcb);
     }
 
-    
-
-
-
+    /*
+     * Create tones and continous tone timer. The same call back function
+     * is utilized for each of these timers.
+     */
     lsm_tmr_tones = cprCreateTimer("lsm_tmr_tones",
                                    GSM_MULTIPART_TONES_TIMER,
                                    TIMER_EXPIRATION, gsm_msg_queue);
@@ -5032,15 +5023,15 @@ lsm_shutdown (void)
     cpr_free(lsm_lcbs);
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ *
+ * Peform reset for lsm, include all the variables that has to be reset
+ *
+ * @param none
+ *
+ * @return  none
+ *
+ */
 void
 lsm_reset (void)
 {
@@ -5066,14 +5057,14 @@ lsm_reset (void)
     }
 }
 
-
-
-
-
-
-
-
-
+/*
+ * cc_call_attribute
+ * This sets call attribute. During the conf or xfer consultation phase,
+ * far end of the 1st call may disconnect the call. In this case phone has to
+ * display the regular call softkey set instead of consultation softkey set.
+ * For this reason GSM will call cc_call_attribute to the remaining call,
+ * when original call is disconnected.
+ */
 void
 cc_call_attribute (callid_t call_id, line_t line, call_attr_t attribute)
 {
@@ -5087,11 +5078,11 @@ cc_call_attribute (callid_t call_id, line_t line, call_attr_t attribute)
 }
 
 
-
-
-
-
-
+/*
+ * lsm_call_state
+ * This routine is responsible for responding to requests from the CSM and
+ * doing whatever is required via platform specific routines.
+ */
 void
 cc_call_state (callid_t call_id, line_t line, cc_states_t state,
                cc_state_data_t *data)
@@ -5215,21 +5206,21 @@ lsm_media (lsm_lcb_t *lcb, callid_t call_id, line_t line)
     return (CC_RC_SUCCESS);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_stop_media
+ *
+ *  Parameters:
+ *     lcb     - pointer to lsm_lcb_t,
+ *     call_id - gsm call id for the call in used.
+ *     line    - line_t for the line number (dn line).
+ *     data    - action data.
+ *
+ *  Description:
+ *     The function simply stops media (close Rx and Tx) and set the
+ *  proper ringer.
+ *
+ *  Returns:   None.
+ */
 static void
 lsm_stop_media (lsm_lcb_t *lcb, callid_t call_id, line_t line,
                 cc_action_data_t *data)
@@ -5244,21 +5235,21 @@ lsm_stop_media (lsm_lcb_t *lcb, callid_t call_id, line_t line,
         return;
     }
 
-    
+    /* hard close receive and transmit channels */
     if ((data == NULL) ||
         (data->stop_media.media_refid == CC_NO_MEDIA_REF_ID)) {
-        
+        /* no data provided or no specific ref ID, defaul to all entries  */
         lsm_close_rx(lcb, FALSE, NULL);
         lsm_close_tx(lcb, FALSE, NULL);
     } else {
-        
+        /* look up the media entry for the given reference ID */
         media = gsmsdp_find_media_by_refid(dcb,
                                            data->stop_media.media_refid);
         if (media != NULL) {
             lsm_close_rx(lcb, FALSE, media);
             lsm_close_tx(lcb, FALSE, media);
         } else {
-            
+            /* no entry found */
             LSM_DEBUG(DEB_L_C_F_PREFIX"no media with reference ID %d found\n",
                       DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, dcb->call_id, fname),
 					  data->stop_media.media_refid);
@@ -5270,19 +5261,19 @@ lsm_stop_media (lsm_lcb_t *lcb, callid_t call_id, line_t line,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_add_remote_stream
+ *
+ * Description:
+ *    The function adds a remote stream to the media subsystem
+ *
+ * Parameters:
+ *   [in]  line - line
+ *   [in]  call_id - GSM call ID
+ *   [in]  media - media line to add as remote stream
+ *   [out] pc_stream_id
+ * Returns: None
+ */
 void lsm_add_remote_stream (line_t line, callid_t call_id, fsmdef_media_t *media, int *pc_stream_id)
 {
     static const char fname[] = "lsm_add_remote_stream";
@@ -5298,25 +5289,24 @@ void lsm_add_remote_stream (line_t line, callid_t call_id, fsmdef_media_t *media
         }
 
         vcmCreateRemoteStream(media->cap_index, dcb->peerconnection,
-                pc_stream_id,
-                media->num_payloads ? media->payloads[0] : RTP_NONE);
+                pc_stream_id);
 
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_data_channel_negotiated
+ *
+ * Description:
+ *    The function informs the API of a negotiated data channel m= line
+ *
+ * Parameters:
+ *   [in]  line - line
+ *   [in]  call_id - GSM call ID
+ *   [in]  media - media line to add as remote stream
+ *   [out] pc_stream_id
+ * Returns: None
+ */
 void lsm_data_channel_negotiated (line_t line, callid_t call_id, fsmdef_media_t *media, int *pc_stream_id)
 {
     static const char fname[] = "lsm_data_channel_negotiated";
@@ -5331,38 +5321,38 @@ void lsm_data_channel_negotiated (line_t line, callid_t call_id, fsmdef_media_t 
             return;
         }
 
-        
-
-
-
+        /*
+         * have access to media->streams, media->protocol, media->sctp_port
+         * vcmSetDataChannelParameters may need renaming TODO: jesup
+         */
 
         vcmSetDataChannelParameters(dcb->peerconnection, media->streams, media->sctp_port, media->protocol);
 
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ *
+ * Peform non call related action
+ *
+ * @param line_t     line
+ * @param callid_t      gsm_id
+ * @param action        type of action
+ * @param cc_action_data_t        line
+ *
+ * @return  true if the action has been peformed, else false
+ *
+ * @pre     (action == CC_ACTION_MWI_LAMP_ONLY || CC_ACTION_SET_LINE_RINGER ||
+                       CC_ACTION_PLAY_BLF_ALERTING_TONE)
+ */
 static boolean
 cc_call_non_call_action (callid_t call_id, line_t line,
                          cc_actions_t action, cc_action_data_t *data)
 {
-    
-
-
-
+    /* Certain requests are device based and does not contain any
+     * line number and call_id associated with it. So handle thoese
+     * requests here
+     */
     switch (action) {
 
     case CC_ACTION_MWI_LAMP_ONLY:
@@ -5390,27 +5380,27 @@ cc_call_non_call_action (callid_t call_id, line_t line,
     return(FALSE);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * LSM API supports various actions such as play tone, stop tone,
+ * direct media operation etc.
+ *
+ * @param[in] call_id   GSM call ID of an active call.
+ * @param[in] line      line number of the line_t type.
+ * @param[in] action    cc_actions_t for the desired action.
+ * @param[in] data      cc_action_data_t data or parameters that may be
+ *                      required for certain action.
+ *
+ * @return              cc_rcs_t status.
+ *
+ * @pre                 line not_eqs CC_NO_LINE
+ * @pre                 ((action equals CC_ACTION_PLAY_TONE) or
+ *                       (action equals CC_ACTION_STOP_TONE) or
+ *                       (action equals CC_ACTION_DIAL_MODE) or
+ *                       (action equals CC_ACTION_MWI) or
+ *                       (action equals CC_ACTION_OPEN_RCV) or
+ *                       (action equals CC_ACTION_UPDATE_UI) or
+ *                       (action equals CC_ACTION_RINGER))
+ */
 cc_rcs_t
 cc_call_action (callid_t call_id, line_t line, cc_actions_t action,
                cc_action_data_t *data)
@@ -5424,9 +5414,9 @@ cc_call_action (callid_t call_id, line_t line, cc_actions_t action,
     LSM_DEBUG(get_debug_string(LSM_DBG_ENTRY), call_id, line,
               cc_action_name(action));
 
-    
-
-
+    /* perform non call related actions. lcb is not required
+     * for these actions
+     */
     if (cc_call_non_call_action(call_id, line, action, data)) {
         return (result);
     }
@@ -5505,21 +5495,21 @@ cc_call_action (callid_t call_id, line_t line, cc_actions_t action,
         break;
 
     case CC_ACTION_START_RCV:
-        
+        /* start receiving */
         dcb = lcb->dcb;
         if (dcb == NULL) {
-            
+            /* No call ID */
             result = CC_RC_ERROR;
             break;
         }
 
         GSMSDP_FOR_ALL_MEDIA(media, dcb) {
             if (!GSMSDP_MEDIA_ENABLED(media)) {
-                
+                /* this entry is not active */
                 continue;
             }
 
-            
+            /* only support starting all receive channels for now */
             lsm_rx_start(lcb, fname, media);
         }
         break;
@@ -5545,9 +5535,9 @@ cc_call_action (callid_t call_id, line_t line, cc_actions_t action,
 void
 lsm_ui_display_notify (const char *notify_str, unsigned long timeout)
 {
-    
-
-
+    /*
+     * add 0 as (default) priority; it is don't care in legacy mode
+     */
     ui_set_notification(CC_NO_LINE, CC_NO_CALL_ID,
                         (char *)notify_str, (int)timeout, FALSE,
                         DEF_NOTIFY_PRI);
@@ -5559,7 +5549,7 @@ lsm_ui_display_status (const char *status_str, line_t line, callid_t call_id)
     lsm_lcb_t *lcb;
 
     if (call_id == CC_NO_CALL_ID) {
-        
+        /* Invalid call id */
         return;
     }
     lcb = lsm_get_lcb_by_call_id(call_id);
@@ -5570,13 +5560,13 @@ lsm_ui_display_status (const char *status_str, line_t line, callid_t call_id)
     ui_set_call_status((char *) status_str, line, lcb->ui_id);
 }
 
-
-
-
-
-
-
-
+/**
+ * This function will display notification status line.
+ *
+ * @param[in] str_index - index into phrase dictionary
+ *
+ * @return none
+ */
 void lsm_ui_display_notify_str_index (int str_index)
 {
     char tmp_str[STATUS_LINE_MAX_LEN];
@@ -5588,16 +5578,16 @@ void lsm_ui_display_notify_str_index (int str_index)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_parse_displaystr
+ *
+ *  Parameters:string to be parsed
+ *
+ *  Description:Wrapper function for parsing string to be displayed
+ *
+ *  Returns: Pointer to parsed number
+ *
+ */
 string_t
 lsm_parse_displaystr (string_t displaystr)
 {
@@ -5610,31 +5600,31 @@ lsm_speaker_mode (short mode)
     ui_set_speaker_mode((boolean)mode);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function:lsm_update_active_tone
+ *
+ *  Parameters:
+ *          tone       - tone type
+ *          call_id    - call identifier
+ *
+ *  Description: Update dcb->active_tone if starting infinite duration tone.
+ *
+ *  Returns:none
+ *
+ */
 void
 lsm_update_active_tone (vcm_tones_t tone, callid_t call_id)
 {
     static const char fname[] = "lsm_update_active_tone";
     fsmdef_dcb_t *dcb;
 
-    
-
-
-
-
+    /* if tone is any of following then set active_tone in dcb b/c these
+     * tones have infinite duration and need to be stopped. Other tones
+     * only play for a finite/short duration so no need to stop them as
+     * they will stop automatically.
+     */
     switch (tone) {
-    
+    /* for all tones with infinite playing duration */
     case VCM_INSIDE_DIAL_TONE:
     case VCM_LINE_BUSY_TONE:
     case VCM_ALERTING_TONE:
@@ -5647,18 +5637,18 @@ lsm_update_active_tone (vcm_tones_t tone, callid_t call_id)
         dcb = fsmdef_get_dcb_by_call_id(call_id);
 
         if (dcb == NULL) {
-            
-
-
+            /* Possibibly the ui_id was passed in and the dcb is no longer existed.
+             * Try to retrieve the corresponding dcb.
+             */
             dcb = fsmdef_get_dcb_by_call_id(lsm_get_callid_from_ui_id(call_id));
         }
 
         if (dcb != NULL) {
-            
-
-
-
-
+            /* Ideally a call should not make a infinite tone start request
+             * (without making a stop request) while there is already one playing.
+             * However, DSP will start playing the new request tone by overriding
+             * the current one. Technically its okay. So, just printing a log msg.
+             */
             if (dcb->active_tone != VCM_NO_TONE) {
                 LSM_DEBUG(DEB_L_C_F_PREFIX"Active Tone current = %d  new = %d\n",
                           DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, call_id, fname),
@@ -5669,21 +5659,21 @@ lsm_update_active_tone (vcm_tones_t tone, callid_t call_id)
         break;
 
     default:
-        
+        /* do nothing */
         break;
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_is_tx_channel_opened
+ *
+ *  Parameters: call_id
+ *
+ *  Description: check to see tx channel is openned
+ *
+ *  Returns:    TRUE or FALSE
+ *
+ */
 boolean
 lsm_is_tx_channel_opened(callid_t call_id)
 {
@@ -5694,13 +5684,13 @@ lsm_is_tx_channel_opened(callid_t call_id)
         return (FALSE);
     }
 
-    
-
-
-
+    /*
+     * search the all entries that has a valid media and matches
+     * SDP_MEDIA_AUDIO type.
+     */
     GSMSDP_FOR_ALL_MEDIA(media, dcb_p) {
         if (media->type == SDP_MEDIA_AUDIO) {
-            
+            /* found a match */
             if (media->xmit_chan)
                return (TRUE);
         }
@@ -5708,18 +5698,18 @@ lsm_is_tx_channel_opened(callid_t call_id)
     return (FALSE);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function:lsm_update_monrec_tone_action
+ *
+ *  Parameters:
+ *          tone       - tone type
+ *          call_id    - call identifier
+ *
+ *  Description: Update dcb->monrec_tone_action.
+ *
+ *  Returns:none
+ *
+ */
 void
 lsm_update_monrec_tone_action (vcm_tones_t tone, callid_t call_id, uint16_t direction)
 {
@@ -5793,27 +5783,27 @@ lsm_update_monrec_tone_action (vcm_tones_t tone, callid_t call_id, uint16_t dire
 
                 default:
                     break;
-        } 
+        } /* end of switch */
 
         LSM_DEBUG(DEB_L_C_F_PREFIX"Start request for tone: %d. Set monrec_tone_action: %d\n",
                   DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, call_id, fname),
 			      tone, dcb->monrec_tone_action);
 
-    } 
+    } /* end of if */
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function:lsm_downgrade_monrec_tone_action
+ *
+ *  Parameters:
+ *          tone       - tone type
+ *          call_id    - call identifier
+ *
+ *  Description: Update dcb->monrec_tone_action.
+ *
+ *  Returns:none
+ *
+ */
 void
 lsm_downgrade_monrec_tone_action (vcm_tones_t tone, callid_t call_id)
 {
@@ -5822,7 +5812,7 @@ lsm_downgrade_monrec_tone_action (vcm_tones_t tone, callid_t call_id)
 
     dcb = fsmdef_get_dcb_by_call_id(call_id);
 
-    
+    /* Need to downgrade the monrec_tone_action */
 
     if (dcb != NULL) {
         switch (tone){
@@ -5880,26 +5870,26 @@ lsm_downgrade_monrec_tone_action (vcm_tones_t tone, callid_t call_id)
 
             default:
                 break;
-        } 
+        } /* end of switch */
 
         LSM_DEBUG(DEB_L_C_F_PREFIX"Stop request for tone: %d Downgrade monrec_tone_action: %d \n",
                   DEB_L_C_F_PREFIX_ARGS(LSM, dcb->line, call_id, fname),
 			      tone, dcb->monrec_tone_action);
-    } 
+    } /* end of if */
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *  Function: lsm_set_hold_ringback_status
+ *
+ *  Parameters:
+ *         callid_t - callid of the lcb
+ *         ringback_status - status of call hold ringback
+ *
+ *  Description: Function used to set the ringback status
+ *
+ *  Returns:None
+ *
+ */
 void
 lsm_set_hold_ringback_status(callid_t call_id, boolean ringback_status)
 {
@@ -5922,7 +5912,7 @@ void lsm_play_tone (cc_features_t feature_id)
     switch (feature_id) {
     case CC_FEATURE_BLF_ALERT_TONE:
         if (lsm_find_state(LSM_S_RINGIN) > CC_NO_CALL_ID) {
-            
+            // No tone if we have calls in ringing state
             return;
         }
 
@@ -5950,22 +5940,22 @@ void lsm_play_tone (cc_features_t feature_id)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_update_inalert_status
+ *
+ * Description:
+ *
+ * TNP specific implementation of status line update for inalert state.
+ *
+ * Parameters:
+ *
+ * line_t line - Line facility of the call
+ * callid_t call_id - Call id of call whose state is being reported
+ * cc_state_data_alerting_t * data - alerting callinfo.
+ * boolean notify - whether the msg be displayed at notify level.
+ *
+ * Returns: None
+ */
 static void
 lsm_update_inalert_status (line_t line, callid_t call_id,
                            cc_state_data_alerting_t * data,
@@ -5974,7 +5964,7 @@ lsm_update_inalert_status (line_t line, callid_t call_id,
     static const char fname[] = "lsm_update_inalert_status";
     char disp_str[LSM_DISPLAY_STR_LEN];
 
-    
+    // get localized tag index for From and append one space character
     sstrncpy(disp_str, platform_get_phrase_index_str(UI_FROM),
              sizeof(disp_str));
 
@@ -5982,8 +5972,8 @@ lsm_update_inalert_status (line_t line, callid_t call_id,
 			  DEB_L_C_F_PREFIX_ARGS(LSM, line, call_id, fname),
               data->caller_id.calling_number);
 
-    
-    
+    // append calling number if present or localized tag for Unknown Number
+    // otherwise
     if ((data->caller_id.calling_number) &&
         (data->caller_id.calling_number[0] != '\0') &&
         data->caller_id.display_calling_number) {
@@ -5995,17 +5985,17 @@ lsm_update_inalert_status (line_t line, callid_t call_id,
                 sizeof(disp_str) - strlen(disp_str));
     }
 
-    
-    
-    
-    
-    
+    // we display (via notification) the "From ..." info for 10 seconds.
+    // Note that this will remain displayed for 10 sec even if the user
+    // answers the call or switches to another call. This happens because
+    // notification has higher priority than call status (e.g. connected).
+    // This is done to have parity with SCCP phone behavior.
     if (notify == TRUE) {
         ui_set_notification(line, call_id,
                             (char *)disp_str, (unsigned long)CALL_ALERT_TIMEOUT,
                             FALSE, FROM_NOTIFY_PRI);
     }
-    
+    // After the notification we wish to set the call status to From XXXX. Same as SCCP phone behavior
     lsm_ui_display_status((char *)disp_str, line, call_id);
 
     return;
@@ -6013,89 +6003,89 @@ lsm_update_inalert_status (line_t line, callid_t call_id,
 
 
 
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_set_cfwd_all_nonccm
+ * This function calls JNI API to set the CFA state and DN in non-ccm mode.
+ *
+ * @param[in] line - line on which to set the CFA
+ * @param[in] callfwd_dialstring: CFA DN (will be stored in flash)
+ *
+ * @return: None
+ */
 void
 lsm_set_cfwd_all_nonccm (line_t line, char *callfwd_dialstring)
 {
-    
+    // call Java API
     ui_cfwd_status(line, TRUE, callfwd_dialstring, TRUE);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_set_cfwd_all_ccm
+ *
+ * Description:
+ * This function calls JNI API to set the CFA state and DN in ccm mode.
+ *
+ * Parameters:
+ * char * callfwd_dialstring: CFA DN (will NOT be stored in flash)
+ *
+ * Returns: None
+ */
 void
 lsm_set_cfwd_all_ccm (line_t line, char *callfwd_dialstring)
 {
-    
+    // set locally maintained variable
     cfwdall_state_in_ccm_mode[line] = TRUE;
 
-    
+    // call Java API
     ui_cfwd_status((line_t)line, TRUE, callfwd_dialstring, FALSE);
 }
 
-
-
-
-
-
-
-
-
+/*
+ * lsm_clear_cfwd_all_nonccm
+ * This function calls JNI API to clear the CFA state and DN in non-ccm mode.
+ *
+ * @param[in] line - line on which to clear the CFA
+ *
+ * @return: None
+ */
 void
 lsm_clear_cfwd_all_nonccm (line_t line)
 {
-    
+    // call Java API
     ui_cfwd_status(line, FALSE, "", TRUE);
 }
 
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_clear_cfwd_all_ccm
+ *
+ * Description:
+ * This function calls JNI API to clear the CFA state and DN in ccm mode.
+ *
+ * Parameters: None
+ *
+ * Returns: None
+ */
 void
 lsm_clear_cfwd_all_ccm (line_t line)
 {
-    
+    // clear locally maintained variable
     cfwdall_state_in_ccm_mode[line] = FALSE;
 
-    
+    // call Java API
     ui_cfwd_status((line_t)line, FALSE, "", FALSE);
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_check_cfwd_all_nonccm
+ *
+ * Description:
+ * This function returns the CFA state in non-ccm mode.
+ *
+ * @param[in] line - line on which to check the CFA
+ *
+ * @return: TRUE (if CFA set) or FALSE (if CFA clear)
+ */
 int
 lsm_check_cfwd_all_nonccm (line_t line)
 {
@@ -6103,10 +6093,10 @@ lsm_check_cfwd_all_nonccm (line_t line)
 
     cfg_cfwd_url[0] = '\0';
 
-    
+    // get the callfwdall url value from the config/flash table
     config_get_string(CFGID_LINE_CFWDALL+line-1, cfg_cfwd_url, MAX_URL_LENGTH);
 
-    
+    // return appropriate value: TRUE if non-NULL and FALSE otherwise
     if (cfg_cfwd_url[0]) {
         return ((int) TRUE);
     } else {
@@ -6114,45 +6104,45 @@ lsm_check_cfwd_all_nonccm (line_t line)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_check_cfwd_all_ccm
+ *
+ * Description:
+ * This function returns the CFA state in ccm mode.
+ *
+ * Parameters: None
+ *
+ * Returns: TRUE or FALSE
+ */
 int
 lsm_check_cfwd_all_ccm (line_t line)
 {
     return ((int) cfwdall_state_in_ccm_mode[line]);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_is_phone_forwarded
+ *
+ * Description:
+ * This function is called from SIP stack to check if received INVITE
+ * should be responded with 302 or not. In the CCM mode this function
+ * will always return NULL... that is process the INVITE as normal and
+ * DO NOT 302 it. In the non-CCM mode, if the cfwdall_url is non-NULL
+ * then it will form a proper string to use in 302 response; otherwise
+ * a NULL will be returned and the INVITE will be processed as normal.
+ * NOTE: most all code is reused from the legacy phone code.
+ *
+ * Parameters: line - line for which to check the CFA status
+ *
+ * Returns: NULL if forwarding is not set;
+ *          string to use in 302 response if forwarding is set (non-CCM only)
+ */
 char *
 lsm_is_phone_forwarded (line_t line)
 {
     static const char fname[] = "lsm_is_phone_forwarded";
     char     proxy_ipaddr_str[MAX_IPADDR_STR_LEN];
-    int      port_number = 5060; 
+    int      port_number = 5060; // use this value only if none found
     char    *domain = NULL;
     char    *port = NULL;
     cpr_ip_addr_t proxy_ipaddr;
@@ -6160,17 +6150,17 @@ lsm_is_phone_forwarded (line_t line)
 
     LSM_DEBUG(DEB_F_PREFIX"called\n", DEB_F_PREFIX_ARGS(LSM, fname));
 
-    
-    
+    // check if running in CCM mode. if so, return NULL that is cfwdall
+    // not applicable
     if (sip_regmgr_get_cc_mode(TEL_CCB_START) == REG_MODE_CCM) {
         return (NULL);
     }
-    
+    // get stored callfwdall url value from the config/flash table
 
     config_get_string(CFGID_LINE_CFWDALL+line-1, cfwdall_url, sizeof(cfwdall_url));
 
     if (cfwdall_url[0]) {
-        
+        // find domain and port
         domain = strchr(cfwdall_url, '@');
         if (!domain) {
             (void) sipTransportGetServerAddress(&proxy_ipaddr,
@@ -6183,20 +6173,20 @@ lsm_is_phone_forwarded (line_t line)
             port = strchr(domain + 1, ':');
         }
 
-        
+        // handle 3 cases
         if (domain == NULL) {
-            
-
-
-
+            /* case (1): no domain or port present
+             * We have proxy's dotted ip address format. So, not FQDN check.
+             * Append domain/ip-addr and port.
+             */
             snprintf(cfwdall_url + strlen(cfwdall_url),
                      MAX_URL_LENGTH - strlen(cfwdall_url),
                      "@%s:%d", proxy_ipaddr_str, port_number);
         } else if (port == NULL) {
-            
-
-
-
+            /* case (2): domain present but no port
+             * Check if the domain is dotted IP address and add port
+             * only if dotted IP address is used
+             */
             if (!str2ip((const char *) domain + 1, &proxy_ipaddr)) {
                 port_number = sipTransportGetServerPort(1, TEL_CCB_START);
                 snprintf(cfwdall_url + strlen(cfwdall_url),
@@ -6204,10 +6194,10 @@ lsm_is_phone_forwarded (line_t line)
                          ":%d", port_number);
             }
         } else {
-            
-
-
-
+            /* case (3): both domain and port present
+             * Both domain and port exists, but strip the  port if the
+             * domain is FQDN
+             */
             memcpy(proxy_ipaddr_str, domain + 1, (port - domain - 1));
             *(proxy_ipaddr_str + (port - domain - 1)) = '\0';
             if (str2ip((const char *) proxy_ipaddr_str, &proxy_ipaddr) != 0) {
@@ -6220,17 +6210,17 @@ lsm_is_phone_forwarded (line_t line)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_get_callid_from_ui_id()
+ *
+ * Description:
+ *    The function gets the UI id from LSM's LCB for a given GSM call ID.
+ *
+ * Parameters:
+ *    ui_id   - UI ID.
+ *
+ * Returns: callid_t
+ */
 callid_t
 lsm_get_callid_from_ui_id (callid_t uid)
 {
@@ -6243,18 +6233,18 @@ lsm_get_callid_from_ui_id (callid_t uid)
     return (CC_NO_CALL_ID);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_get_ui_id
+ *
+ * Description:
+ *    The function gets the UI id from LSM's LCB for a given GSM call ID.
+ *
+ * Parameters:
+ *    call_id - GSM call ID
+ *    ui_id   - UI ID.
+ *
+ * Returns: None
+ */
 callid_t
 lsm_get_ui_id (callid_t call_id)
 {
@@ -6267,19 +6257,19 @@ lsm_get_ui_id (callid_t call_id)
     return (CC_NO_CALL_ID);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_get_ms_ui_id
+ *
+ * Description:
+ *    The function gets the UI id from LSM's LCB for a given GSM call ID. During
+ * certain features like barge ui_id is set to CC_NO_CALL_ID.
+ *
+ * Parameters:
+ *    call_id - GSM call ID
+ *    ui_id   - UI ID.
+ *
+ * Returns: None
+ */
 cc_call_handle_t
 lsm_get_ms_ui_call_handle (line_t line, callid_t call_id, callid_t ui_id)
 {
@@ -6289,7 +6279,7 @@ lsm_get_ms_ui_call_handle (line_t line, callid_t call_id, callid_t ui_id)
         return CREATE_CALL_HANDLE(line, ui_id);
     }
 
-    
+    /* If ui_id present use that */
     lsm_ui_id = lsm_get_ui_id(call_id);
 
     if (lsm_ui_id != CC_NO_CALL_ID) {
@@ -6298,18 +6288,18 @@ lsm_get_ms_ui_call_handle (line_t line, callid_t call_id, callid_t ui_id)
 
     return CREATE_CALL_HANDLE(line, call_id);
 }
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_set_ui_id
+ *
+ * Description:
+ *    The function sets the UI id to LSM's LCB for a given GSM call ID.
+ *
+ * Parameters:
+ *    call_id - GSM call ID
+ *    ui_id   - UI ID.
+ *
+ * Returns: None
+ */
 void
 lsm_set_ui_id (callid_t call_id, callid_t ui_id)
 {
@@ -6327,19 +6317,19 @@ lsm_get_gdialed_digits (void)
     return (dp_get_gdialed_digits());
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_update_video_avail
+ *
+ * Description:
+ *    The function updates session about the video availability
+ *
+ * Parameters:
+ *    line - line
+ *    call_id - GSM call ID
+ *    dir - video avail dir
+ *
+ * Returns: None
+ */
 void lsm_update_video_avail (line_t line, callid_t call_id, int dir)
 {
     static const char fname[] = "lsm_update_video_avail";
@@ -6363,19 +6353,19 @@ void lsm_update_video_avail (line_t line, callid_t call_id, int dir)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_update_video_offered
+ *
+ * Description:
+ *    The function updates session about the video availability
+ *
+ * Parameters:
+ *    line - line
+ *    call_id - GSM call ID
+ *    dir - video avail dir
+ *
+ * Returns: None
+ */
 void lsm_update_video_offered (line_t line, callid_t call_id, int dir)
 {
     lsm_lcb_t *lcb;
@@ -6386,23 +6376,23 @@ void lsm_update_video_offered (line_t line, callid_t call_id, int dir)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_set_video_mute
+ *
+ * Description:
+ *    The function sets the video mute state for the call
+ *
+ * Parameters:
+ *    line - line
+ *    call_id - This is the UI_ID coming from UI
+ *    mute - mute state
+ *
+ * Returns: None
+ */
 void lsm_set_video_mute (callid_t call_id, int mute)
 {
     lsm_lcb_t *lcb;
-    callid_t cid = lsm_get_callid_from_ui_id(call_id); 
+    callid_t cid = lsm_get_callid_from_ui_id(call_id); // get GSM_ID from UI_ID
 
     lcb = lsm_get_lcb_by_call_id(cid);
     if (lcb != NULL) {
@@ -6410,18 +6400,18 @@ void lsm_set_video_mute (callid_t call_id, int mute)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_get_video_mute
+ *
+ * Description:
+ *    The function gets the video mute state for the call
+ *
+ * Parameters:
+ *    line - line
+ *    call_id - GSM call ID
+ *
+ * Returns: t_video_mute
+ */
 int lsm_get_video_mute (callid_t call_id)
 {
     lsm_lcb_t *lcb;
@@ -6434,26 +6424,26 @@ int lsm_get_video_mute (callid_t call_id)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_set_video_window
+ *
+ * Description:
+ *    The function sets the video window state for the call
+ *
+ * Parameters:
+ *    call_id - This is the UI_ID coming from UI
+ *    flags - video window flags
+ *    x - video window x coordinate
+ *    y - video window y coordinate
+ *    h - video window height
+ *    w - video window width
+ *
+ * Returns: None
+ */
 void lsm_set_video_window (callid_t call_id, int flags, int x, int y, int h, int w)
 {
     lsm_lcb_t *lcb;
-    callid_t cid = lsm_get_callid_from_ui_id(call_id); 
+    callid_t cid = lsm_get_callid_from_ui_id(call_id); // get GSM_ID from UI_ID
 
     lcb = lsm_get_lcb_by_call_id(cid);
     if (lcb != NULL) {
@@ -6465,22 +6455,22 @@ void lsm_set_video_window (callid_t call_id, int flags, int x, int y, int h, int
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_get_video_window
+ *
+ * Description:
+ *    The function gets the video window for the call
+ *
+ * Parameters:
+ *    call_id - GSM call ID
+ *    *flags - video window flag
+ *    *x - video window x coordinate
+ *    *y - video window y coordinate
+ *    *h - video window height
+ *    *w - video window width
+ *
+ * Returns: void
+ */
 void lsm_get_video_window (callid_t call_id, int *flags, int *x, int *y, int *h, int *w)
 {
     lsm_lcb_t *lcb;
@@ -6495,17 +6485,17 @@ void lsm_get_video_window (callid_t call_id, int *flags, int *x, int *y, int *h,
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * lsm_is_kpml_subscribed
+ *
+ * Description:
+ *    check if kpml is subscribed for this call
+ *
+ * Parameters:
+ *    call_id - GSM call ID
+ *
+ * Returns: true/false
+ */
 boolean lsm_is_kpml_subscribed (callid_t call_id)
 {
     lsm_lcb_t *lcb;
@@ -6517,9 +6507,9 @@ boolean lsm_is_kpml_subscribed (callid_t call_id)
     return kpml_is_subscribed(call_id, lcb->line);
 }
 
-
-
-
+/**
+ * A helper method to start the tone.
+ */
 static void lsm_util_start_tone(vcm_tones_t tone, short alert_info,
         cc_call_handle_t call_handle, groupid_t group_id,
         streamid_t stream_id, uint16_t direction) {
@@ -6536,14 +6526,14 @@ static void lsm_util_start_tone(vcm_tones_t tone, short alert_info,
     if (!sdpmode) {
         vcmToneStart(tone, alert_info, call_handle, group_id, stream_id, direction);
 	}
-    
-
-
-
-
-
-
-
+    /*
+     * Set delay value for multi-part tones and repeated tones.
+     * Currently the only multi-part tones are stutter and message
+     * waiting tones. The only repeated tones are call waiting and
+     * tone on hold tones.  If the DSP ever supports stutter and
+     * message waiting tones, these tones can be removed from this
+     * switch statement.
+     */
     switch (tone) {
     case VCM_MSG_WAITING_TONE:
         lsm_start_multipart_tone_timer(tone, MSG_WAITING_DELAY, call_id);
@@ -6557,24 +6547,24 @@ static void lsm_util_start_tone(vcm_tones_t tone, short alert_info,
         break;
     }
 
-    
-
-
-
+    /*
+     * Update dcb->active_tone if start request
+     * is for an infinite duration tone.
+     */
     lsm_update_active_tone(tone, call_id);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Plays a short tone. uses the open audio path.
+ * If no audio path is open, plays on speaker.
+ *
+ * @param[in] tone       - tone type
+ * @param[in] alert_info - alertinfo header
+ * @param[in] call_id    - call identifier
+ * @param[in] direction  - network, speaker, both
+ *
+ * @return none
+ */
 void
 lsm_util_tone_start_with_speaker_as_backup (vcm_tones_t tone, short alert_info,
                                     cc_call_handle_t call_handle, groupid_t group_id,
@@ -6586,17 +6576,17 @@ lsm_util_tone_start_with_speaker_as_backup (vcm_tones_t tone, short alert_info,
               DEB_L_C_F_PREFIX_ARGS(MED_API, line, call_id, fname),
               tone, direction);
 
-    
+    //vcmToneStart
     vcmToneStart(tone, alert_info, call_handle, group_id, stream_id, direction);
 
-    
-
-
-
-
-
-
-
+    /*
+     * Set delay value for multi-part tones and repeated tones.
+     * Currently the only multi-part tones are stutter and message
+     * waiting tones. The only repeated tones are call waiting and
+     * tone on hold tones.  If the DSP ever supports stutter and
+     * message waiting tones, these tones can be removed from this
+     * switch statement.
+     */
     switch (tone) {
     case VCM_MSG_WAITING_TONE:
         lsm_start_multipart_tone_timer(tone, MSG_WAITING_DELAY, call_id);
@@ -6610,10 +6600,10 @@ lsm_util_tone_start_with_speaker_as_backup (vcm_tones_t tone, short alert_info,
         break;
     }
 
-    
-
-
-
+    /*
+     * Update dcb->active_tone if start request
+     * is for an infinite duration tone.
+     */
     lsm_update_active_tone(tone, call_id);
 
 }
