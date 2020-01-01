@@ -1158,6 +1158,9 @@ protected:
   
   void HideViewIfPopup(nsIView* aView);
 
+  
+  void RestoreRootScrollPosition();
+
   nsICSSStyleSheet*         mPrefStyleSheet; 
 #ifdef DEBUG
   PRUint32                  mUpdateCount;
@@ -2591,6 +2594,12 @@ PresShell::InitialReflow(nscoord aWidth, nscoord aHeight)
   DidCauseReflow();
   DidDoReflow();
 
+  
+  
+  if (!mDocumentLoading) {
+    RestoreRootScrollPosition();
+  }
+  
   mViewManager->EndUpdateViewBatch(NS_VMREFRESH_NO_SYNC);
 
   if (mViewManager && mCaret && !mViewEventListener) {
@@ -3153,22 +3162,11 @@ PresShell::EndUpdate(nsIDocument *aDocument, nsUpdateType aUpdateType)
 }
 
 void
-PresShell::BeginLoad(nsIDocument *aDocument)
-{  
-#ifdef MOZ_PERF_METRICS
-  
-  MOZ_TIMER_DEBUGLOG(("Reset: Style Resolution: PresShell::BeginLoad(), this=%p\n", (void*)this));
-#endif  
-  mDocumentLoading = PR_TRUE;
-}
-
-void
-PresShell::EndLoad(nsIDocument *aDocument)
+PresShell::RestoreRootScrollPosition()
 {
-
   
   nsCOMPtr<nsILayoutHistoryState> historyState =
-    aDocument->GetLayoutHistoryState();
+    mDocument->GetLayoutHistoryState();
   
   
   
@@ -3189,6 +3187,24 @@ PresShell::EndLoad(nsIDocument *aDocument)
   }
 
   --mChangeNestCount;
+}
+
+void
+PresShell::BeginLoad(nsIDocument *aDocument)
+{  
+#ifdef MOZ_PERF_METRICS
+  
+  MOZ_TIMER_DEBUGLOG(("Reset: Style Resolution: PresShell::BeginLoad(), this=%p\n", (void*)this));
+#endif  
+  mDocumentLoading = PR_TRUE;
+}
+
+void
+PresShell::EndLoad(nsIDocument *aDocument)
+{
+  NS_PRECONDITION(aDocument == mDocument, "Wrong document");
+  
+  RestoreRootScrollPosition();
   
 #ifdef MOZ_PERF_METRICS
   
