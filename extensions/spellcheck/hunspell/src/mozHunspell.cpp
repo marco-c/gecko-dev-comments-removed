@@ -99,10 +99,14 @@ NS_IMPL_CYCLE_COLLECTION_3(mozHunspell,
 static PRInt64 gHunspellAllocatedSize = 0;
 
 void HunspellReportMemoryAllocation(void* ptr) {
-  gHunspellAllocatedSize += moz_malloc_usable_size(ptr);
+  
+  gHunspellAllocatedSize +=
+    mozilla::MemoryReporterMallocSizeOfForCounterInc(ptr, 0);
 }
 void HunspellReportMemoryDeallocation(void* ptr) {
-  gHunspellAllocatedSize -= moz_malloc_usable_size(ptr);
+  
+  gHunspellAllocatedSize -=
+    mozilla::MemoryReporterMallocSizeOfForCounterDec(ptr, 0);
 }
 static PRInt64 HunspellGetCurrentAllocatedSize() {
   return gHunspellAllocatedSize;
