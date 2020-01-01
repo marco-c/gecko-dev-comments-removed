@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let testPort, sidebarPort, apiPort;
 
@@ -80,9 +80,9 @@ onconnect = function(e) {
         apiPort.postMessage({topic: "social.request-chat", data: event.data.data });
         break;
       case "social.initialize":
-        
-        
-        
+        // This is the workerAPI port, respond and set up a notification icon.
+        // For multiprovider tests, we support acting like different providers
+        // based on the domain we load from.
         apiPort = port;
         let profile;
         if (location.href.indexOf("https://test1.example.com") == 0) {
@@ -104,9 +104,9 @@ onconnect = function(e) {
           topic: "social.page-mark-config",
           data: {
             images: {
-              
+              // this one is relative to test we handle relative ones.
               marked: "/browser/browser/base/content/test/social/social_mark_image.png",
-              
+              // absolute to check we handle them too.
               unmarked: "https://example.com/browser/browser/base/content/test/social/social_mark_image.png"
             },
             messages: {
@@ -132,6 +132,10 @@ onconnect = function(e) {
         break;
       case "test-isVisible-response":
         testPort.postMessage({topic: "got-isVisible-response", result: event.data.result});
+        break;
+      case "share-data-message":
+        if (testPort)
+          testPort.postMessage({topic:"got-share-data-message", result: event.data.result});
         break;
     }
   }

@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 @import url("chrome://global/skin/");
@@ -20,11 +20,11 @@
 %define conditionalForwardWithUrlbarWidth_small 24
 
 #menubar-items {
-  -moz-box-orient: vertical; 
+  -moz-box-orient: vertical; /* for flex hack */
 }
 
 #main-menubar {
-  -moz-box-flex: 1; 
+  -moz-box-flex: 1; /* make menu items expand to fill toolbar height */
 }
 
 #navigator-toolbox {
@@ -63,7 +63,7 @@
 }
 
 #browser-bottombox {
-  
+  /* opaque for layers optimization */
   background-color: -moz-Dialog;
 }
 
@@ -72,7 +72,7 @@
   opacity: .85;
 }
 
-
+/* Places toolbar */
 toolbarbutton.bookmark-item {
   margin: 0;
   padding: 2px 3px;
@@ -91,7 +91,7 @@ toolbarbutton.bookmark-item[open="true"] {
   height: 16px;
 }
 
-
+/* Prevent [mode="icons"] from hiding the label */
 .bookmark-item > .toolbarbutton-text {
   display: -moz-box !important;
 }
@@ -100,7 +100,7 @@ toolbarbutton.bookmark-item[open="true"] {
   display: none;
 }
 
-
+/* Dropmarker for folder bookmarks */
 .bookmark-item[container] > .toolbarbutton-menu-dropmarker {
   display: -moz-box !important;
 }
@@ -114,7 +114,7 @@ toolbarbutton.bookmark-item[open="true"] {
   list-style-image: url("chrome://browser/skin/places/bookmarksToolbar.png") !important;
 }
 
-
+/* Bookmark menus */
 menu.bookmark-item,
 menuitem.bookmark-item {
   min-width: 0;
@@ -130,16 +130,16 @@ menuitem.bookmark-item {
   -moz-padding-start: 0px;
 }
 
-
+/* Bookmark drag and drop styles */
 .bookmark-item[dragover-into="true"] {
   background: Highlight !important;
   color: HighlightText !important;
 }
 
-
+/* rules for menupopup drop indicators */
 .menupopup-drop-indicator-bar {
   position: relative;
-  
+  /* these two margins must together compensate the indicator's height */
   margin-top: -1px;
   margin-bottom: -1px;
 }
@@ -151,12 +151,12 @@ menuitem.bookmark-item {
   background-color: Highlight;
 }
 
-
+/* Bookmarks toolbar */
 #PlacesToolbarDropIndicator {
   list-style-image: url(chrome://browser/skin/places/toolbarDropMarker.png);
 }
 
-
+/* Bookmark items */
 .bookmark-item {
   list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
 }
@@ -208,7 +208,7 @@ menuitem.bookmark-item {
   opacity: 0.7;
 }
 
-
+/* Stock icons for the menu bar items */
 menuitem:not([type]):not(.menuitem-tooltip):not(.menuitem-iconic-tooltip) {
   -moz-binding: url("chrome://global/content/bindings/menu.xml#menuitem-iconic");
 }
@@ -526,7 +526,7 @@ menuitem:not([type]):not(.menuitem-tooltip):not(.menuitem-iconic-tooltip) {
   list-style-image: url("chrome://global/skin/console/console.png");
 }
 
-
+/* Primary toolbar buttons */
 .toolbarbutton-1:not([type="menu-button"]) {
   -moz-box-orient: vertical;
   min-width: 0;
@@ -551,7 +551,7 @@ toolbar[mode="full"] .toolbarbutton-1 > .toolbarbutton-menubutton-button {
   padding: 5px !important;
 }
 
-
+/* 24px primary toolbar buttons */
 #back-button {
   list-style-image: url("moz-icon://stock/gtk-go-back-ltr?size=toolbar");
 }
@@ -613,7 +613,7 @@ toolbar[mode="full"] .toolbarbutton-1 > .toolbarbutton-menubutton-button {
   list-style-image: url("moz-icon://stock/gtk-home?size=toolbar&state=disabled");
 }
 
-
+/* tabview button */
 
 #tabview-button,
 #menu_tabview {
@@ -721,7 +721,7 @@ toolbar[mode="full"] .toolbarbutton-1 > .toolbarbutton-menubutton-button {
   -moz-image-region: rect(0px 192px 24px 168px);
 }
 
-
+/* 16px primary toolbar buttons */
 toolbar[iconsize="small"] .toolbarbutton-1:not([type="menu-button"]) {
   -moz-box-orient: vertical;
   min-width: 0;
@@ -801,7 +801,7 @@ toolbar[iconsize="small"] #downloads-button {
   -moz-image-region: rect(0px 16px 16px 0px);
 }
 
-toolbar[iconsize="small"] #webrtc-status-button ,
+toolbar[iconsize="small"] #webrtc-status-button /* temporary placeholder (bug 824825) */,
 toolbar[iconsize="small"] #history-button {
   -moz-image-region: rect(0px 32px 16px 16px);
 }
@@ -874,7 +874,7 @@ toolbar[iconsize="small"] #webrtc-status-button {
   -moz-image-region: rect(0px 128px 16px 112px);
 }
 
-
+/* Fullscreen window controls */
 #window-controls {
   -moz-box-align: start;
   -moz-margin-start: 10px;
@@ -890,7 +890,7 @@ toolbar[iconsize="small"] #webrtc-status-button {
   list-style-image: url("chrome://global/skin/icons/Close.gif");
 }
 
-
+/* Location bar */
 #urlbar {
   width: 7em;
   -moz-appearance: textfield;
@@ -984,7 +984,7 @@ toolbar[iconsize="small"] #webrtc-status-button {
   color: GrayText;
 }
 
-
+/* Favicon */
 #page-proxy-favicon {
   width: 16px;
   height: 16px;
@@ -1021,7 +1021,7 @@ toolbar[iconsize="small"] #webrtc-status-button {
   opacity: 0.3;
 }
 
-
+/* Identity indicator */
 #identity-box {
   padding: 1px;
   margin: -1px;
@@ -1066,7 +1066,7 @@ toolbar[iconsize="small"] #webrtc-status-button {
   background-position: left;
 }
 
-
+/* Identity popup icons */
 #identity-popup-icon {
   height: 64px;
   width: 64px;
@@ -1083,7 +1083,7 @@ toolbar[iconsize="small"] #webrtc-status-button {
   -moz-image-region: rect(128px, 64px, 192px, 0px);
 }
 
-
+/* Identity popup body text */
 .identity-popup-description {
   white-space: pre-wrap;
   -moz-padding-start: 15px;
@@ -1126,12 +1126,12 @@ toolbar[iconsize="small"] #webrtc-status-button {
   list-style-image: url("chrome://browser/skin/Secure.png");
 }
 
-
+/* Identity popup bounding box */
 #identity-popup-container {
   min-width: 280px;
 }
 
-
+/* Notification popup */
 #notification-popup {
   min-width: 280px;
 }
@@ -1220,7 +1220,7 @@ toolbar[iconsize="small"] #webrtc-status-button {
   list-style-image: url(chrome://browser/skin/pointerLock-64.png);
 }
 
-
+/* Notification icon box */
 #notification-popup-box {
   position: relative;
   background-color: #fff;
@@ -1296,8 +1296,8 @@ toolbar[iconsize="small"] #webrtc-status-button {
 }
 
 #notification-popup-box[hidden] {
-  
-
+  /* Override display:none to make the pluginBlockedNotification animation work
+     when showing the notification repeatedly. */
   display: -moz-box;
   visibility: collapse;
 }
@@ -1403,7 +1403,7 @@ richlistitem[type~="action"][actiontype="switchtab"] > .ac-url-box > .ac-action-
   border-top: 1px solid GrayText;
 }
 
-
+/* Combined go/reload/stop button in location bar */
 
 #go-button {
   padding-top: 2px;
@@ -1436,18 +1436,76 @@ richlistitem[type~="action"][actiontype="switchtab"] > .ac-url-box > .ac-action-
   list-style-image: url("moz-icon://stock/gtk-stop?size=menu");
 }
 
-
+/* Popup blocker button */
 #page-report-button {
   list-style-image: url("chrome://browser/skin/Info.png");
 }
 
 
+/* social share panel */
+
+.social-share-frame {
+  background: linear-gradient(to bottom, rgba(242,242,242,.99), rgba(242,242,242,.95));
+  border-left: 1px solid #f8f8f8;
+  width: 330px;
+  height: 150px;
+  /* we resize our panels dynamically, make it look nice */
+  transition: height 100ms ease-out, width 100ms ease-out;
+}
+
+#social-share-button {
+  list-style-image: url("chrome://browser/skin/social/share-button.png");
+}
+
+#social-share-button[open],
+#social-share-button:hover:active {
+  list-style-image: url("chrome://browser/skin/social/share-button-active.png");
+}
+
+.social-share-toolbar {
+  border-right: 1px solid #dedede;
+  background: linear-gradient(to bottom, rgba(247,247,247,.99), rgba(247,247,247,.95));
+}
+
+#social-share-provider-buttons {
+  border-right: 1px solid #fbfbfb;
+  padding: 6px;
+}
+
+#social-share-provider-buttons > .share-provider-button {
+  padding: 6px;
+  margin: 0;
+  border: none;
+  border-radius: 2px;
+}
+
+#social-share-provider-buttons > .share-provider-button[checked],
+#social-share-provider-buttons > .share-provider-button:active {
+  padding: 5px;
+  border: 1px solid #b5b5b8;
+  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+#social-share-provider-buttons > .share-provider-button[checked] {
+  background: linear-gradient(to bottom, #d9d9d9, #e3e3e3);
+}
+
+#social-share-provider-buttons > .share-provider-button > .toolbarbutton-text {
+  display: none;
+}
+#social-share-provider-buttons > .share-provider-button > .toolbarbutton-icon {
+  width: 16px;
+  min-height: 16px;
+  max-height: 16px;
+}
+
+/* social recommending panel */
 
 #social-mark-button {
   -moz-image-region: rect(0, 16px, 16px, 0);
 }
 
-
+/* bookmarks menu-button */
 
 #bookmarks-menu-button {
   list-style-image: url("chrome://browser/skin/Toolbar.png");
@@ -1477,7 +1535,7 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   opacity: .4;
 }
 
-
+/* Bookmarking panel */
 #editBookmarkPanelStarIcon {
   list-style-image: url("chrome://browser/skin/places/starred48.png");
   width: 48px;
@@ -1497,7 +1555,7 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   margin-bottom: .5em;
 }
 
-
+/* Implements editBookmarkPanel resizing on folderTree un-collapse. */
 #editBMPanel_folderTree {
   min-width: 27em;
 }
@@ -1526,12 +1584,12 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   margin: 0;
 }
 
-
+/* Content area */
 #sidebar {
   background-color: Window;
 }
 
-
+/* Throbber */
 #navigator-throbber {
   width: 16px;
   min-height: 16px;
@@ -1547,7 +1605,7 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   list-style-image: url("chrome://global/skin/icons/notloading_16.png");
 }
 
-
+/* Tabstrip */
 
 #TabsToolbar {
   min-height: 0;
@@ -1584,7 +1642,7 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   border-style: solid;
   border-image: url(tabbrowser/tab.png) 4 5 3 6 fill repeat stretch;
   border-radius: 10px 8px 0 0;
-  min-height: 25px; 
+  min-height: 25px; /* reserve space for the sometimes hidden close button */
 }
 
 .tabbrowser-tab:hover,
@@ -1638,7 +1696,7 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
 }
 
 #tabbrowser-tabs[positionpinnedtabs] > .tabbrowser-tab > .tab-stack > .tab-content[pinned] {
-  min-height: 18px; 
+  min-height: 18px; /* corresponds to the max. height of non-textual tab contents, i.e. the tab close button */
 }
 
 .tabbrowser-tab:focus > .tab-stack {
@@ -1688,16 +1746,16 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   list-style-image: url("moz-icon://stock/gtk-close?size=menu");
 }
 
-
+/* Tab drag and drop */
 .tab-drop-indicator {
   list-style-image: url(chrome://browser/skin/tabbrowser/tabDragIndicator.png);
   margin-bottom: -11px;
 }
 
-
+/* In-tab close button */
 .tab-close-button > .toolbarbutton-icon {
-  
-
+  /* XXX Buttons have padding in widget/ that we don't want here but can't override with good CSS, so we must
+     use evil CSS to give the impression of smaller content */
   margin: -4px;
 }
 
@@ -1709,7 +1767,7 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   -moz-margin-end: -1px;
 }
 
-
+/* Tabstrip new tab button */
 .tabs-newtab-button,
 #TabsToolbar > #new-tab-button ,
 #TabsToolbar > #wrapper-new-tab-button > #new-tab-button {
@@ -1717,18 +1775,18 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   -moz-image-region: auto;
 }
 
-
+/* Tabstrip close button */
 .tabs-closebutton {
   list-style-image: url("moz-icon://stock/gtk-close?size=menu");
 }
 
 .tabs-closebutton > .toolbarbutton-icon {
-  
-
+  /* XXX Buttons have padding in widget/ that we don't want here but can't override with good CSS, so we must
+     use evil CSS to give the impression of smaller content */
   margin: -2px;
 }
 
-
+/* Tabbrowser arrowscrollbox arrows */
 .tabbrowser-arrowscrollbox > .scrollbutton-up,
 .tabbrowser-arrowscrollbox > .scrollbutton-down {
   -moz-appearance: none;
@@ -1781,7 +1839,7 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
   display: none;
 }
 
-
+/* All tabs menupopup */
 .alltabs-item > .menu-iconic-left > .menu-iconic-icon {
   list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
 }
@@ -1795,11 +1853,11 @@ toolbar[iconsize="small"] #bookmarks-menu-button[starred],
 }
 
 .alltabs-item[tabIsVisible] {
-  
+  /* box-shadow instead of background-color to work around native styling */
   box-shadow: inset -5px 0 ThreeDShadow;
 }
 
-
+/* Sidebar */
 #sidebar-header > .tabs-closebutton {
   margin-bottom: 0px !important;
   padding: 0px 2px 0px 2px !important;
@@ -1828,10 +1886,10 @@ toolbarbutton.chevron > .toolbarbutton-icon {
 }
 
 toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
-  display: -moz-box; 
+  display: -moz-box; /* display chevron icon in text mode */
 }
 
-
+/* Ctrl-Tab */
 
 .ctrlTab-preview {
   -moz-appearance: toolbarbutton;
@@ -1868,7 +1926,7 @@ toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
   margin-top: 10px;
 }
 
-
+/* Application button menu */
 
 .splitmenu-menuitem {
   -moz-margin-end: 1px;
@@ -1906,7 +1964,7 @@ toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
   opacity: .3;
 }
 
-
+/* Add-on bar */
 
 #addon-bar {
   box-shadow: 0 1px 0 rgba(0,0,0,.15) inset;
@@ -1942,7 +2000,7 @@ toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
   margin-bottom: -2px;
 }
 
-
+/* Status panel */
 
 .statuspanel-label {
   margin: 0;
@@ -1994,7 +2052,7 @@ toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
   font-size: 120%;
 }
 
-
+/* Developer toolbar */
 
 #developer-toolbar {
   border-top: 1px solid hsla(210, 8%, 5%, .65);
@@ -2023,7 +2081,7 @@ toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
   background-color: hsl(210,11%,16%);
 }
 
-
+/* Web Console */
 
 .web-console-frame {
   border-bottom: 1px solid #aaa;
@@ -2033,7 +2091,7 @@ toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
   transition: height 100ms;
 }
 
-
+/* Developer Toolbar */
 
 #developer-toolbar-toolbox-button {
   min-width: 18px;
@@ -2083,7 +2141,7 @@ toolbar[mode="text"] toolbarbutton.chevron > .toolbarbutton-icon {
   -moz-image-region: rect(64px, 22px, 80px, 0);
 }
 
-
+/* Error counter */
 
 #developer-toolbar-toolbox-button[error-count]:before {
   color: #FDF3DE;
@@ -2113,7 +2171,7 @@ toolbar[iconsize="small"] .toolbarbutton-badge-container {
 }
 
 .toolbarbutton-badge[badge]:not([badge=""])::after {
-  
+  /* The |content| property is set in the content stylesheet. */
   font-size: 9px;
   font-weight: bold;
   padding: 0 1px;
@@ -2140,7 +2198,7 @@ toolbar[iconsize="small"] .toolbarbutton-badge-container {
 }
 #social-undoactivation-button,
 #servicesInstall-learnmore-link {
-  -moz-margin-start: 0; 
+  -moz-margin-start: 0; /* override default label margin to match description margin */
 }
 
 .social-activation-icon {
@@ -2158,7 +2216,7 @@ toolbar[iconsize="small"] .toolbarbutton-badge-container {
   margin: 0;
 }
 
-
+/* social toolbar provider menu */
 #social-statusarea-popup {
   margin-top: 0;
   margin-left: -12px;
