@@ -92,26 +92,26 @@ var testData = [
 ];
 
 function test() {
+  waitForExplicitFinish();
+
   setupKeywords();
 
-  for each (var item in testData) {
-    var [data, result] = item;
+  Task.spawn(function() {
+    for each (var item in testData) {
+      let [data, result] = item;
 
-    var postData = {};
-    var query = data.keyword;
-    if (data.searchWord)
-      query += " " + data.searchWord;
-    var mayInheritPrincipal = {};
-    var url = getShortcutOrURI(query, postData, mayInheritPrincipal);
-
-    
-    var expected = result.url || query;
-    is(url, expected, "got correct URL for " + data.keyword);
-    is(getPostDataString(postData.value), result.postData, "got correct postData for " + data.keyword);
-    is(mayInheritPrincipal.value, !result.isUnsafe, "got correct mayInheritPrincipal for " + data.keyword);
-  }
-
-  cleanupKeywords();
+      let query = data.keyword;
+      if (data.searchWord)
+        query += " " + data.searchWord;
+      let returnedData = yield getShortcutOrURIAndPostData(query);
+      
+      let expected = result.url || query;
+      is(returnedData.url, expected, "got correct URL for " + data.keyword);
+      is(getPostDataString(returnedData.postData), result.postData, "got correct postData for " + data.keyword);
+      is(returnedData.mayInheritPrincipal, !result.isUnsafe, "got correct mayInheritPrincipal for " + data.keyword);
+    }
+    cleanupKeywords();
+  }).then(finish);
 }
 
 var gBMFolder = null;
