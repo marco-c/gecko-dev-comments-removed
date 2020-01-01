@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Novell code.
- *
- * The Initial Developer of the Original Code is Novell Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2006
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   robert@ocallahan.org
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsTextRunTransformations.h"
 
@@ -59,8 +59,8 @@ nsTransformedTextRun::Create(const gfxTextRunFactory::Parameters* aParams,
   NS_ASSERTION(!(aFlags & gfxTextRunFactory::TEXT_IS_8BIT),
                "didn't expect text to be marked as 8-bit here");
 
-  // Note that AllocateStorage MAY modify the textPtr parameter,
-  // if the text is not persistent and therefore a private copy is created
+  
+  
   const void *textPtr = aString;
   CompressedGlyph *glyphStorage = AllocateStorage(textPtr, aLength, aFlags);
   if (!glyphStorage) {
@@ -103,12 +103,12 @@ size_t
 nsTransformedTextRun::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf)
 {
   size_t total = gfxTextRun::SizeOfExcludingThis(aMallocSizeOf);
-  total += mStyles.SizeOf();
-  total += mCapitalize.SizeOf();
+  total += mStyles.SizeOfExcludingThis(aMallocSizeOf);
+  total += mCapitalize.SizeOfExcludingThis(aMallocSizeOf);
   if (mOwnsFactory) {
-    // It's not worth the effort to get all the sub-class cases right for a
-    // small size in the fallback case.  So we use a |computedSize| of 0, which
-    // disables any usable vs. computedSize checking done by aMallocSizeOf.
+    
+    
+    
     total += aMallocSizeOf(mFactory, 0);
   }
   return total;
@@ -137,33 +137,33 @@ nsTransformingTextRunFactory::MakeTextRun(const PRUint8* aString, PRUint32 aLeng
                                           gfxFontGroup* aFontGroup, PRUint32 aFlags,
                                           nsStyleContext** aStyles, bool aOwnsFactory)
 {
-  // We'll only have a Unicode code path to minimize the amount of code needed
-  // for these rarely used features
+  
+  
   NS_ConvertASCIItoUTF16 unicodeString(reinterpret_cast<const char*>(aString), aLength);
   return MakeTextRun(unicodeString.get(), aLength, aParams, aFontGroup,
                      aFlags & ~(gfxFontGroup::TEXT_IS_PERSISTENT | gfxFontGroup::TEXT_IS_8BIT),
                      aStyles, aOwnsFactory);
 }
 
-/**
- * Copy a given textrun, but merge certain characters into a single logical
- * character. Glyphs for a character are added to the glyph list for the previous
- * character and then the merged character is eliminated. Visually the results
- * are identical.
- * 
- * This is used for text-transform:uppercase when we encounter a SZLIG,
- * whose uppercase form is "SS".
- * 
- * This function is unable to merge characters when they occur in different
- * glyph runs. It's hard to see how this could happen, but if it does, we just
- * discard the characters-to-merge.
- * 
- * For simplicity, this produces a textrun containing all DetailedGlyphs,
- * no simple glyphs. So don't call it unless you really have merging to do.
- * 
- * @param aCharsToMerge when aCharsToMerge[i] is true, this character is
- * merged into the previous character
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static void
 MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
                          bool* aCharsToMerge)
@@ -204,9 +204,9 @@ MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
         }
       }
 
-      // We could teach this method to handle merging of characters that aren't
-      // cluster starts or ligature group starts, but this is really only used
-      // to merge S's (uppercase &szlig;), so it's not worth it.
+      
+      
+      
 
       if (k + 1 < iter.GetStringEnd() && aCharsToMerge[k + 1]) {
         NS_ASSERTION(g.IsClusterStart() && g.IsLigatureGroupStart(),
@@ -218,11 +218,11 @@ MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
                    (g.IsClusterStart() && g.IsLigatureGroupStart()),
                    "Don't know how to merge this stuff");
 
-      // If the start of the merge run is actually a character that should
-      // have been merged with the previous character (this can happen
-      // if there's a font change in the middle of a szlig, for example),
-      // just discard the entire merge run. See comment at start of this
-      // function.
+      
+      
+      
+      
+      
       if (!aCharsToMerge[mergeRunStart]) {
         if (anyMissing) {
           g.SetMissing(glyphs.Length());
@@ -273,7 +273,7 @@ nsFontVariantTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
   PRUint32 length = aTextRun->GetLength();
   const PRUnichar* str = aTextRun->GetTextUnicode();
   nsRefPtr<nsStyleContext>* styles = aTextRun->mStyles.Elements();
-  // Create a textrun so we can check cluster-start properties
+  
   gfxTextRunCache::AutoTextRun inner(
       gfxTextRunCache::MakeTextRun(str, length, fontGroup, &innerParams, flags));
   if (!inner.get())
@@ -292,8 +292,8 @@ nsFontVariantTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
   for (i = 0; i <= length; ++i) {
     bool isLowercase = false;
     if (i < length) {
-      // Characters that aren't the start of a cluster are ignored here. They
-      // get added to whatever lowercase/non-lowercase run we're in.
+      
+      
       if (!inner->IsClusterStart(i)) {
         isLowercase = runIsLowercase;
       } else {
@@ -303,7 +303,7 @@ nsFontVariantTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
           ch2 = ToUpperCase(ch);
           isLowercase = ch != ch2 || ch == SZLIG;
         } else {
-          // Don't transform the character! I.e., pretend that it's not lowercase
+          
         }
       }
     }
@@ -325,8 +325,8 @@ nsFontVariantTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
       }
       if (!child)
         return;
-      // Copy potential linebreaks into child so they're preserved
-      // (and also child will be shaped appropriately)
+      
+      
       NS_ASSERTION(canBreakBeforeArray.Length() == i - runStart,
                    "lost some break-before values?");
       child->SetPotentialLineBreaks(0, canBreakBeforeArray.Length(),
@@ -434,8 +434,8 @@ nsCaseTransformTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
   }
   if (!child)
     return;
-  // Copy potential linebreaks into child so they're preserved
-  // (and also child will be shaped appropriately)
+  
+  
   NS_ASSERTION(convertedString.Length() == canBreakBeforeArray.Length(),
                "Dropped characters or break-before values somewhere!");
   child->SetPotentialLineBreaks(0, canBreakBeforeArray.Length(),
@@ -445,12 +445,12 @@ nsCaseTransformTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
   }
 
   if (extraCharsCount > 0) {
-    // Now merge multiple characters into one multi-glyph character as required
+    
     MergeCharactersInTextRun(aTextRun, child, charsToMergeArray.Elements());
   } else {
-    // No merging to do, so just copy; this produces a more optimized textrun.
-    // We can't steal the data because the child may be cached and stealing
-    // the data would break the cache.
+    
+    
+    
     aTextRun->ResetGlyphRuns();
     aTextRun->CopyGlyphDataFrom(child, 0, child->GetLength(), 0);
   }
