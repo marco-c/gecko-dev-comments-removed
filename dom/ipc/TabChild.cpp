@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 8; -*- */
+/* vim: set sw=2 sts=2 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/basictypes.h"
 
@@ -33,7 +33,6 @@
 #include "nsIDOMWindowUtils.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
-#include "nsIFrame.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIJSContextStack.h"
@@ -144,7 +143,7 @@ NS_IMPL_RELEASE(TabChild)
 NS_IMETHODIMP
 TabChild::SetStatus(PRUint32 aStatusType, const PRUnichar* aStatus)
 {
-  
+  // FIXME/bug 617804: should the platform support this?
   return NS_OK;
 }
 
@@ -223,7 +222,7 @@ TabChild::SetStatusWithContext(PRUint32 aStatusType,
                                     const nsAString& aStatusText,
                                     nsISupports* aStatusContext)
 {
-  
+  // FIXME/bug 617804: should the platform support this?
   return NS_OK;
 }
 
@@ -274,7 +273,7 @@ TabChild::GetVisibility(bool* aVisibility)
 NS_IMETHODIMP
 TabChild::SetVisibility(bool aVisibility)
 {
-  
+  // should the platform support this? Bug 666365
   return NS_OK;
 }
 
@@ -289,7 +288,7 @@ TabChild::GetTitle(PRUnichar** aTitle)
 NS_IMETHODIMP
 TabChild::SetTitle(const PRUnichar* aTitle)
 {
-  
+  // FIXME/bug 617804: should the platform support this?
   return NS_OK;
 }
 
@@ -326,8 +325,8 @@ TabChild::FocusPrevElement()
 NS_IMETHODIMP
 TabChild::GetInterface(const nsIID & aIID, void **aSink)
 {
-    
-    
+    // XXXbz should we restrict the set of interfaces we hand out here?
+    // See bug 537429
     return QueryInterface(aIID, aSink);
 }
 
@@ -341,9 +340,9 @@ TabChild::ProvideWindow(nsIDOMWindow* aParent, PRUint32 aChromeFlags,
 {
     *aReturn = nullptr;
 
-    
-    
-    
+    // If aParent is inside an <iframe mozbrowser> and this isn't a request to
+    // open a modal-type window, we're going to create a new <iframe mozbrowser>
+    // and return its window here.
     nsCOMPtr<nsIDocShell> docshell = do_GetInterface(aParent);
     bool isInContentBoundary = false;
     if (docshell) {
@@ -355,14 +354,14 @@ TabChild::ProvideWindow(nsIDOMWindow* aParent, PRUint32 aChromeFlags,
                           nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
                           nsIWebBrowserChrome::CHROME_OPENAS_CHROME))) {
 
-      
-      
-      
+      // Note that BrowserFrameProvideWindow may return NS_ERROR_ABORT if the
+      // open window call was canceled.  It's important that we pass this error
+      // code back to our caller.
       return BrowserFrameProvideWindow(aParent, aURI, aName, aFeatures,
                                        aWindowIsNew, aReturn);
     }
 
-    
+    // Otherwise, create a new top-level window.
     PBrowserChild* newChild;
     if (!CallCreateWindow(&newChild)) {
         return NS_ERROR_NOT_AVAILABLE;
@@ -387,7 +386,7 @@ TabChild::BrowserFrameProvideWindow(nsIDOMWindow* aOpener,
 
   nsRefPtr<TabChild> newChild =
     static_cast<TabChild*>(Manager()->SendPBrowserConstructor(
-       0, mIsBrowserElement, mAppId));
+      /* aChromeFlags = */ 0, mIsBrowserElement, mAppId));
 
   nsCAutoString spec;
   if (aURI) {
@@ -404,8 +403,8 @@ TabChild::BrowserFrameProvideWindow(nsIDOMWindow* aOpener,
     return NS_ERROR_ABORT;
   }
 
-  
-  
+  // Unfortunately we don't get a window unless we've shown the frame.  That's
+  // pretty bogus; see bug 763602.
   newChild->DoFakeShow();
 
   nsCOMPtr<nsIDOMWindow> win = do_GetInterface(newChild->mWebNav);
@@ -494,9 +493,9 @@ TabChild::DestroyWindow()
     if (baseWindow)
         baseWindow->Destroy();
 
-    
-    
-    
+    // NB: the order of mWidget->Destroy() and mRemoteFrame->Destroy()
+    // is important: we want to kill off remote layers before their
+    // frames
     if (mWidget) {
         mWidget->Destroy();
     }
@@ -517,8 +516,8 @@ void
 TabChild::ActorDestroy(ActorDestroyReason why)
 {
   if (mTabChildGlobal) {
-    
-    
+    // The messageManager relays messages via the TabChild which
+    // no longer exists.
     static_cast<nsFrameMessageManager*>
       (mTabChildGlobal->mMessageManager.get())->Disconnect();
     mTabChildGlobal->mMessageManager = nullptr;
@@ -582,10 +581,10 @@ TabChild::RecvShow(const nsIntSize& size)
     }
 
     if (!InitWidget(size)) {
-        
-        
-        
-        
+        // We can fail to initialize our widget if the <browser
+        // remote> has already been destroyed, and we couldn't hook
+        // into the parent-process's layer system.  That's not a fatal
+        // error.
         return true;
     }
 
@@ -605,8 +604,8 @@ TabChild::RecvShow(const nsIntSize& size)
 
     baseWindow->SetVisibility(true);
 
-    
-    
+    // IPC uses a WebBrowser object for which DNS prefetching is turned off
+    // by default. But here we really want it, so enable it explicitly
     nsCOMPtr<nsIWebBrowserSetup> webBrowserSetup = do_QueryInterface(baseWindow);
     if (webBrowserSetup) {
       webBrowserSetup->SetProperty(nsIWebBrowserSetup::SETUP_ALLOW_DNS_PREFETCH,
@@ -657,8 +656,8 @@ TabChild::RecvUpdateFrame(const nsIntRect& aDisplayPort,
     nsCString data;
     data += nsPrintfCString("{ \"x\" : %d", aScrollOffset.x);
     data += nsPrintfCString(", \"y\" : %d", aScrollOffset.y);
-    
-    
+    // We don't treat the x and y scales any differently for this
+    // semi-platform-specific code.
     data += nsPrintfCString(", \"zoom\" : %f", aResolution.width);
     data += nsPrintfCString(", \"displayPort\" : ");
         data += nsPrintfCString("{ \"left\" : %d", aDisplayPort.X());
@@ -687,8 +686,8 @@ TabChild::RecvUpdateFrame(const nsIntRect& aDisplayPort,
     }
 
     nsFrameScriptCx cx(static_cast<nsIWebBrowserChrome*>(this), this);
-    
-    
+    // Let the BrowserElementScrolling helper (if it exists) for this
+    // content manipulate the frame state.
     nsRefPtr<nsFrameMessageManager> mm =
       static_cast<nsFrameMessageManager*>(mTabChildGlobal->mMessageManager.get());
     mm->ReceiveMessage(static_cast<nsIDOMEventTarget*>(mTabChildGlobal),
@@ -754,7 +753,7 @@ TabChild::RecvRealTouchEvent(const nsTouchEvent& aEvent)
         return true;
     }
 
-    
+    // Synthesize a phony mouse event.
     PRUint32 msg;
     switch (aEvent.message) {
     case NS_TOUCH_START:
@@ -882,12 +881,12 @@ TabChild::RecvPDocumentRendererConstructor(PDocumentRendererChild* actor,
 
     nsCOMPtr<nsIWebBrowser> browser = do_QueryInterface(mWebNav);
     if (!browser)
-        return true; 
+        return true; // silently ignore
     nsCOMPtr<nsIDOMWindow> window;
     if (NS_FAILED(browser->GetContentDOMWindow(getter_AddRefs(window))) ||
         !window)
     {
-        return true; 
+        return true; // silently ignore
     }
 
     nsCString data;
@@ -897,7 +896,7 @@ TabChild::RecvPDocumentRendererConstructor(PDocumentRendererChild* actor,
                                       renderFlags, flushLayout,
                                       renderSize, data);
     if (!ret)
-        return true; 
+        return true; // silently ignore
 
     return PDocumentRendererChild::Send__delete__(actor, renderSize, data);
 }
@@ -933,7 +932,7 @@ TabChild::DeallocPContentPermissionRequest(PContentPermissionRequestChild* actor
         static_cast<PCOMContentPermissionRequestChild*>(actor);
 #ifdef DEBUG
     child->mIPCOpen = false;
-#endif 
+#endif /* DEBUG */
     child->IPDLRelease();
     return true;
 }
@@ -974,8 +973,8 @@ bool
 TabChild::RecvLoadRemoteScript(const nsString& aURL)
 {
   if (!mCx && !InitTabChildGlobal())
-    
-    
+    // This can happen if we're half-destroyed.  It's not a fatal
+    // error.
     return true;
 
   LoadFrameScriptInternal(aURL);
@@ -1048,13 +1047,13 @@ bool
 TabChild::RecvDestroy()
 {
   if (mTabChildGlobal) {
-    
+    // Let the frame scripts know the child is being closed
     nsContentUtils::AddScriptRunner(
       new UnloadScriptEvent(this, mTabChildGlobal)
     );
   }
 
-  
+  // XXX what other code in ~TabChild() should we be running here?
   DestroyWindow();
 
   return Send__delete__(this);
@@ -1104,7 +1103,7 @@ TabChild::InitTabChildGlobal()
   NS_ENSURE_TRUE(root, false);
   root->SetParentTarget(scope);
 
-  
+  // Initialize the child side of the browser element machinery, if appropriate.
   if (mIsBrowserElement || mAppId != nsIScriptSecurityManager::NO_APP_ID) {
     RecvLoadRemoteScript(
       NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js"));
@@ -1124,10 +1123,10 @@ TabChild::InitWidget(const nsIntSize& size)
         return false;
     }
     mWidget->Create(
-        nullptr, 0,              
+        nullptr, 0,              // no parents
         nsIntRect(nsIntPoint(0, 0), size),
-        nullptr,                 
-        nullptr                  
+        nullptr,                 // HandleWidgetEvent
+        nullptr                  // nsDeviceContext
         );
 
     LayersBackend be;
@@ -1143,20 +1142,20 @@ TabChild::InitWidget(const nsIntSize& size)
 
     PLayersChild* shadowManager = nullptr;
     if (id != 0) {
-        
-        
+        // Pushing layers transactions directly to a separate
+        // compositor context.
         shadowManager =
             CompositorChild::Get()->SendPLayersConstructor(be, id,
                                                            &be,
                                                            &maxTextureSize);
     } else {
-        
+        // Pushing transactions to the parent content.
         shadowManager = remoteFrame->SendPLayersConstructor();
     }
 
     if (!shadowManager) {
       NS_WARNING("failed to construct LayersChild");
-      
+      // This results in |remoteFrame| being deleted.
       PRenderFrameChild::Send__delete__(remoteFrame);
       return false;
     }
@@ -1185,15 +1184,15 @@ void
 TabChild::NotifyPainted()
 {
     if (UseDirectCompositor()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // FIXME/bug XXXXXX: in theory, we should only have to push a
+        // txn to our remote frame once, and the
+        // display-list/FrameLayerBuilder code there will manage the
+        // tree from there on.  But in practice, that doesn't work for
+        // some unknown reason.  So for now, always notify the content
+        // thread in the parent process.  It's wasteful but won't
+        // result in unnecessary repainting or even composites
+        // (usually, unless timing is unlucky), since they're
+        // throttled.
         mRemoteFrame->SendNotifyCompositorTransaction();
     }
 }
@@ -1216,7 +1215,7 @@ TabChild::GetMessageManager(nsIContentFrameMessageManager** aResult)
 }
 
 PIndexedDBChild*
-TabChild::AllocPIndexedDB(const nsCString& aASCIIOrigin, bool* )
+TabChild::AllocPIndexedDB(const nsCString& aASCIIOrigin, bool* /* aAllowed */)
 {
   NS_NOTREACHED("Should never get here!");
   return NULL;

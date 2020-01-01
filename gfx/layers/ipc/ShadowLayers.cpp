@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include <set>
 #include <vector>
@@ -103,7 +103,7 @@ public:
 private:
   bool mOpen;
 
-  // disabled
+  
   Transaction(const Transaction&);
   Transaction& operator=(const Transaction&);
 };
@@ -284,10 +284,10 @@ ShadowLayerForwarder::EndTransaction(InfallibleTArray<EditReply>* aReplies)
 
   MOZ_LAYERS_LOG(("[LayersForwarder] building transaction..."));
 
-  // We purposely add attribute-change ops to the final changeset
-  // before we add paint ops.  This allows layers to record the
-  // attribute changes before new pixels arrive, which can be useful
-  // for setting up back/front buffers.
+  
+  
+  
+  
   RenderTraceScope rendertrace2("Foward Transaction", "000092");
   for (ShadowableLayerSet::const_iterator it = mTxn->mMutants.begin();
        it != mTxn->mMutants.end(); ++it) {
@@ -298,8 +298,8 @@ ShadowLayerForwarder::EndTransaction(InfallibleTArray<EditReply>* aReplies)
     LayerAttributes attrs;
     CommonLayerAttributes& common = attrs.common();
     common.visibleRegion() = mutant->GetVisibleRegion();
-    common.xScale() = mutant->GetXScale();
-    common.yScale() = mutant->GetYScale();
+    common.postXScale() = mutant->GetPostXScale();
+    common.postYScale() = mutant->GetPostYScale();
     common.transform() = mutant->GetBaseTransform();
     common.contentFlags() = mutant->GetContentFlags();
     common.opacity() = mutant->GetOpacity();
@@ -329,8 +329,8 @@ ShadowLayerForwarder::EndTransaction(InfallibleTArray<EditReply>* aReplies)
   if (!mTxn->mCset.empty()) {
     cset.AppendElements(&mTxn->mCset.front(), mTxn->mCset.size());
   }
-  // Paints after non-paint ops, including attribute changes.  See
-  // above.
+  
+  
   if (!mTxn->mPaints.empty()) {
     cset.AppendElements(&mTxn->mPaints.front(), mTxn->mPaints.size());
   }
@@ -349,8 +349,8 @@ ShadowLayerForwarder::EndTransaction(InfallibleTArray<EditReply>* aReplies)
       return false;
     }
   } else {
-    // If we don't require a swap we can call SendUpdateNoSwap which
-    // assumes that aReplies is empty (DEBUG assertion)
+    
+    
     MOZ_LAYERS_LOG(("[LayersForwarder] sending no swap transaction..."));
     RenderTraceScope rendertrace3("Forward NoSwap Transaction", "000093");
     if (!mShadowManager->SendUpdateNoSwap(cset, targetConfig, mIsFirstPaint)) {
@@ -390,11 +390,11 @@ SharedMemory::SharedMemoryType
 OptimalShmemType()
 {
 #if defined(MOZ_PLATFORM_MAEMO) && defined(MOZ_HAVE_SHAREDMEMORYSYSV)
-  // Use SysV memory because maemo5 on the N900 only allots 64MB to
-  // /dev/shm, even though it has 1GB(!!) of system memory.  Sys V shm
-  // is allocated from a different pool.  We don't want an arbitrary
-  // cap that's much much lower than available memory on the memory we
-  // use for layers.
+  
+  
+  
+  
+  
   return SharedMemory::TYPE_SYSV;
 #else
   return SharedMemory::TYPE_BASIC;
@@ -453,7 +453,7 @@ ShadowLayerForwarder::AllocBufferWithCaps(const gfxIntSize& aSize,
   return true;
 }
 
-/*static*/ already_AddRefed<gfxASurface>
+ already_AddRefed<gfxASurface>
 ShadowLayerForwarder::OpenDescriptor(OpenMode aMode,
                                      const SurfaceDescriptor& aSurface)
 {
@@ -473,7 +473,7 @@ ShadowLayerForwarder::OpenDescriptor(OpenMode aMode,
   }
 }
 
-/*static*/ gfxContentType
+ gfxContentType
 ShadowLayerForwarder::GetDescriptorSurfaceContentType(
   const SurfaceDescriptor& aDescriptor, OpenMode aMode,
   gfxASurface** aSurface)
@@ -490,7 +490,7 @@ ShadowLayerForwarder::GetDescriptorSurfaceContentType(
   return content;
 }
 
-/*static*/ gfxIntSize
+ gfxIntSize
 ShadowLayerForwarder::GetDescriptorSurfaceSize(
   const SurfaceDescriptor& aDescriptor, OpenMode aMode,
   gfxASurface** aSurface)
@@ -506,14 +506,14 @@ ShadowLayerForwarder::GetDescriptorSurfaceSize(
   return size;
 }
 
-/*static*/ void
+ void
 ShadowLayerForwarder::CloseDescriptor(const SurfaceDescriptor& aDescriptor)
 {
   PlatformCloseDescriptor(aDescriptor);
-  // There's no "close" needed for Shmem surfaces.
+  
 }
 
-// Destroy the Shmem SurfaceDescriptor |aSurface|.
+
 template<class ShmemDeallocator>
 static void
 DestroySharedShmemSurface(SurfaceDescriptor* aSurface,
@@ -581,20 +581,20 @@ ShadowLayerForwarder::PlatformAllocBuffer(const gfxIntSize&,
   return false;
 }
 
-/*static*/ already_AddRefed<gfxASurface>
+ already_AddRefed<gfxASurface>
 ShadowLayerForwarder::PlatformOpenDescriptor(OpenMode,
                                              const SurfaceDescriptor&)
 {
   return nullptr;
 }
 
-/*static*/ bool
+ bool
 ShadowLayerForwarder::PlatformCloseDescriptor(const SurfaceDescriptor&)
 {
   return false;
 }
 
-/*static*/ bool
+ bool
 ShadowLayerForwarder::PlatformGetDescriptorSurfaceContentType(
   const SurfaceDescriptor&,
   OpenMode,
@@ -604,7 +604,7 @@ ShadowLayerForwarder::PlatformGetDescriptorSurfaceContentType(
   return false;
 }
 
-/*static*/ bool
+ bool
 ShadowLayerForwarder::PlatformGetDescriptorSurfaceSize(
   const SurfaceDescriptor&,
   OpenMode,
@@ -620,7 +620,7 @@ ShadowLayerForwarder::PlatformDestroySharedSurface(SurfaceDescriptor*)
   return false;
 }
 
-/*static*/ void
+ void
 ShadowLayerForwarder::PlatformSyncBeforeUpdate()
 {
 }
@@ -631,7 +631,7 @@ ShadowLayerManager::PlatformDestroySharedSurface(SurfaceDescriptor*)
   return false;
 }
 
-/*static*/ already_AddRefed<TextureImage>
+ already_AddRefed<TextureImage>
 ShadowLayerManager::OpenDescriptorForDirectTexturing(GLContext*,
                                                      const SurfaceDescriptor&,
                                                      GLenum)
@@ -639,12 +639,12 @@ ShadowLayerManager::OpenDescriptorForDirectTexturing(GLContext*,
   return nullptr;
 }
 
-/*static*/ void
+ void
 ShadowLayerManager::PlatformSyncBeforeReplyUpdate()
 {
 }
 
-#endif  // !defined(MOZ_HAVE_PLATFORM_SPECIFIC_LAYER_BUFFERS)
+#endif  
 
 bool
 IsSurfaceDescriptorValid(const SurfaceDescriptor& aSurface)
@@ -707,5 +707,5 @@ AutoOpenSurface::GetAsImage()
 }
 
 
-} // namespace layers
-} // namespace mozilla
+} 
+} 

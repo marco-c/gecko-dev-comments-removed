@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include <vector>
 
@@ -27,8 +27,8 @@ using mozilla::layout::RenderFrameParent;
 namespace mozilla {
 namespace layers {
 
-//--------------------------------------------------
-// Convenience accessors
+
+
 static ShadowLayerParent*
 cast(const PLayerParent* in)
 { 
@@ -87,8 +87,8 @@ ShadowChild(const OpRemoveChild& op)
   return cast(op.childLayerParent());
 }
 
-//--------------------------------------------------
-// ShadowLayersParent
+
+
 ShadowLayersParent::ShadowLayersParent(ShadowLayerManager* aManager,
                                        ShadowLayersManager* aLayersManager,
                                        uint64_t aId)
@@ -116,7 +116,7 @@ ShadowLayersParent::Destroy()
   }
 }
 
-/* virtual */
+
 bool
 ShadowLayersParent::RecvUpdateNoSwap(const InfallibleTArray<Edit>& cset,
                                      const TargetConfig& targetConfig,
@@ -152,7 +152,7 @@ ShadowLayersParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
     const Edit& edit = cset[i];
 
     switch (edit.type()) {
-      // Create* ops
+      
     case Edit::TOpCreateThebesLayer: {
       MOZ_LAYERS_LOG(("[ParentSide] CreateThebesLayer"));
 
@@ -203,7 +203,7 @@ ShadowLayersParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
       break;
     }
 
-      // Attributes
+      
     case Edit::TOpSetLayerAttributes: {
       MOZ_LAYERS_LOG(("[ParentSide] SetLayerAttributes"));
 
@@ -217,7 +217,7 @@ ShadowLayersParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
       layer->SetOpacity(common.opacity().value());
       layer->SetClipRect(common.useClipRect() ? &common.clipRect() : NULL);
       layer->SetBaseTransform(common.transform().value());
-      layer->SetScale(common.xScale(), common.yScale());
+      layer->SetPostScale(common.postXScale(), common.postYScale());
       static bool fixedPositionLayersEnabled = getenv("MOZ_ENABLE_FIXED_POSITION_LAYERS") != 0;
       if (fixedPositionLayersEnabled) {
         layer->SetIsFixedPosition(common.isFixedPosition());
@@ -248,13 +248,17 @@ ShadowLayersParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
 
         break;
       }
-      case Specific::TContainerLayerAttributes:
+      case Specific::TContainerLayerAttributes: {
         MOZ_LAYERS_LOG(("[ParentSide]   container layer"));
 
-        static_cast<ContainerLayer*>(layer)->SetFrameMetrics(
-          specific.get_ContainerLayerAttributes().metrics());
+        ContainerLayer* containerLayer =
+          static_cast<ContainerLayer*>(layer);
+        const ContainerLayerAttributes& attrs =
+          specific.get_ContainerLayerAttributes();
+        containerLayer->SetFrameMetrics(attrs.metrics());
+        containerLayer->SetPreScale(attrs.preXScale(), attrs.preYScale());
         break;
-
+      }
       case Specific::TColorLayerAttributes:
         MOZ_LAYERS_LOG(("[ParentSide]   color layer"));
 
@@ -291,7 +295,7 @@ ShadowLayersParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
       break;
     }
 
-      // Tree ops
+      
     case Edit::TOpSetRoot: {
       MOZ_LAYERS_LOG(("[ParentSide] SetRoot"));
 
@@ -416,9 +420,9 @@ ShadowLayersParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
     reply->AppendElements(&replyv.front(), replyv.size());
   }
 
-  // Ensure that any pending operations involving back and front
-  // buffers have completed, so that neither process stomps on the
-  // other's buffer contents.
+  
+  
+  
   ShadowLayerManager::PlatformSyncBeforeReplyUpdate();
 
   mShadowLayersManager->ShadowLayersUpdated(this, targetConfig, isFirstPaint);
@@ -507,5 +511,5 @@ ShadowLayersParent::DestroySharedSurface(SurfaceDescriptor* aSurface)
   layer_manager()->DestroySharedSurface(aSurface, this);
 }
 
-} // namespace layers
-} // namespace mozilla
+} 
+} 
