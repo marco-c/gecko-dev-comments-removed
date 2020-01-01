@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* Library-private header for Interface Info system. */
+
+
+
+
+
 
 #ifndef xptiprivate_h___
 #define xptiprivate_h___
@@ -12,8 +12,8 @@
 #include NEW_H
 #include "nsISupports.h"
 
-// this after nsISupports, to pick up IID
-// so that xpt stuff doesn't try to define it itself...
+
+
 #include "xpt_struct.h"
 #include "xpt_xdr.h"
 
@@ -53,7 +53,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-/***************************************************************************/
+
 
 #if 0 && defined(DEBUG_jband)
 #define LOG_RESOLVE(x) printf x
@@ -69,23 +69,22 @@
 #define SHOW_INFO_COUNT_STATS
 #endif
 
-/***************************************************************************/
+
 
 class xptiInterfaceInfo;
 class xptiInterfaceInfoManager;
 class xptiInterfaceEntry;
 class xptiTypelibGuts;
-class xptiWorkingSet;
 
 extern XPTArena* gXPTIStructArena;
 
-/***************************************************************************/
 
-/***************************************************************************/
 
-// No virtuals.
-// These are always constructed in the struct arena using placement new.
-// dtor need not be called.
+
+
+
+
+
 
 class xptiTypelibGuts
 {
@@ -111,55 +110,16 @@ private:
     ~xptiTypelibGuts();
 
 private:
-    XPTHeader*           mHeader;        // hold pointer into arena
-    xptiInterfaceEntry*  mEntryArray[1]; // Always last. Sized to fit.
+    XPTHeader*           mHeader;        
+    xptiInterfaceEntry*  mEntryArray[1]; 
 };
 
-/***************************************************************************/
 
-class xptiWorkingSet
-{
-public:
-    xptiWorkingSet();
-    ~xptiWorkingSet();
-    
-    bool IsValid() const;
 
-    void InvalidateInterfaceInfos();
-    void ClearHashTables();
 
-    // utility methods...
 
-    enum {NOT_FOUND = 0xffffffff};
 
-    // Directory stuff...
 
-    uint32_t GetDirectoryCount();
-    nsresult GetCloneOfDirectoryAt(uint32_t i, nsIFile** dir);
-    nsresult GetDirectoryAt(uint32_t i, nsIFile** dir);
-    bool     FindDirectory(nsIFile* dir, uint32_t* index);
-    bool     FindDirectoryOfFile(nsIFile* file, uint32_t* index);
-    bool     DirectoryAtMatchesPersistentDescriptor(uint32_t i, const char* desc);
-
-private:
-    uint32_t        mFileCount;
-    uint32_t        mMaxFileCount;
-
-public:
-    // XXX make these private with accessors
-    // mTableMonitor must be held across:
-    //  * any read from or write to mIIDTable or mNameTable
-    //  * any writing to the links between an xptiInterfaceEntry
-    //    and its xptiInterfaceInfo (mEntry/mInfo)
-    mozilla::ReentrantMonitor mTableReentrantMonitor;
-    nsDataHashtable<nsIDHashKey, xptiInterfaceEntry*> mIIDTable;
-    nsDataHashtable<nsDepCharHashKey, xptiInterfaceEntry*> mNameTable;
-};
-
-/***************************************************************************/
-
-// This class exists to help xptiInterfaceInfo store a 4-state (2 bit) value 
-// and a set of bitflags in one 8bit value. See below.
 
 class xptiInfoFlags
 {
@@ -196,11 +156,11 @@ private:
     uint8_t mData;    
 };
 
-/****************************************************/
 
-// No virtual methods.
-// We always create in the struct arena and construct using "placement new".
-// No members need dtor calls.
+
+
+
+
 
 class xptiInterfaceEntry
 {
@@ -216,7 +176,7 @@ public:
         RESOLVE_FAILED        = 3
     };
     
-    // Additional bit flags...
+    
     enum {SCRIPTABLE = 4, BUILTINCLASS = 8};
 
     uint8_t GetResolveState() const {return mFlags.GetState();}
@@ -253,8 +213,8 @@ public:
 
     const nsID& IID() const { return mIID; }
 
-    //////////////////////
-    // These non-virtual methods handle the delegated nsIInterfaceInfo methods.
+    
+    
 
     nsresult GetName(char * *aName);
     nsresult GetIID(nsIID * *aIID);
@@ -263,8 +223,8 @@ public:
         *_retval = GetBuiltinClassFlag();
         return NS_OK;
     }
-    // Except this one.
-    //nsresult GetParent(nsIInterfaceInfo * *aParent);
+    
+    
     nsresult GetMethodCount(uint16_t *aMethodCount);
     nsresult GetConstantCount(uint16_t *aConstantCount);
     nsresult GetMethodInfo(uint16_t index, const nsXPTMethodInfo * *info);
@@ -295,15 +255,15 @@ private:
 
     bool Resolve();
 
-    // We only call these "*Locked" variants after locking. This is done to 
-    // allow reentrace as files are loaded and various interfaces resolved 
-    // without having to worry about the locked state.
+    
+    
+    
 
     bool EnsureResolvedLocked()
         {return IsFullyResolved() ? true : ResolveLocked();}
     bool ResolveLocked();
 
-    // private helpers
+    
 
     nsresult GetEntryForParam(uint16_t methodIndex, 
                               const nsXPTParamInfo * param,
@@ -321,11 +281,11 @@ private:
     uint16_t mConstantBaseIndex;
     xptiTypelibGuts* mTypelib;
 
-    xptiInterfaceEntry*     mParent;      // Valid only when fully resolved
+    xptiInterfaceEntry*     mParent;      
 
-    xptiInterfaceInfo*      mInfo;        // May come and go.
+    xptiInterfaceInfo*      mInfo;        
     xptiInfoFlags           mFlags;
-    char                    mName[1];     // Always last. Sized to fit.
+    char                    mName[1];     
 };
 
 class xptiInterfaceInfo MOZ_FINAL : public nsIInterfaceInfo
@@ -333,12 +293,12 @@ class xptiInterfaceInfo MOZ_FINAL : public nsIInterfaceInfo
 public:
     NS_DECL_ISUPPORTS
 
-    // Use delegation to implement (most!) of nsIInterfaceInfo.
+    
     NS_IMETHOD GetName(char * *aName) { return !mEntry ? NS_ERROR_UNEXPECTED : mEntry->GetName(aName); }
     NS_IMETHOD GetInterfaceIID(nsIID * *aIID) { return !mEntry ? NS_ERROR_UNEXPECTED : mEntry->GetIID(aIID); }
     NS_IMETHOD IsScriptable(bool *_retval) { return !mEntry ? NS_ERROR_UNEXPECTED : mEntry->IsScriptable(_retval); }
     NS_IMETHOD IsBuiltinClass(bool *_retval) { return !mEntry ? NS_ERROR_UNEXPECTED : mEntry->IsBuiltinClass(_retval); }
-    // Except this one.
+    
     NS_IMETHOD GetParent(nsIInterfaceInfo * *aParent) 
     {
         if(!EnsureResolved() || !EnsureParent())
@@ -373,7 +333,7 @@ private:
 
     ~xptiInterfaceInfo();
 
-    // Note that mParent might still end up as nullptr if we don't have one.
+    
     bool EnsureParent()
     {
         NS_ASSERTION(mEntry && mEntry->IsFullyResolved(), "bad EnsureParent call");
@@ -387,59 +347,13 @@ private:
 
     bool BuildParent();
 
-    xptiInterfaceInfo();  // not implemented
+    xptiInterfaceInfo();  
 
 private:
     xptiInterfaceEntry* mEntry;
     xptiInterfaceInfo*  mParent;
 };
 
-/***************************************************************************/
 
-class xptiInterfaceInfoManager MOZ_FINAL
-    : public nsIInterfaceInfoManager
-{
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIINTERFACEINFOMANAGER
 
-    typedef mozilla::ReentrantMonitor ReentrantMonitor;
-    typedef mozilla::Mutex Mutex;
-
-public:
-    // GetSingleton() is infallible
-    static xptiInterfaceInfoManager* GetSingleton();
-    static void FreeInterfaceInfoManager();
-
-    void RegisterBuffer(char *buf, uint32_t length);
-
-    xptiWorkingSet*  GetWorkingSet() {return &mWorkingSet;}
-
-    static Mutex& GetResolveLock(xptiInterfaceInfoManager* self = nullptr) 
-    {
-        self = self ? self : GetSingleton();
-        return self->mResolveLock;
-    }
-
-    xptiInterfaceEntry* GetInterfaceEntryForIID(const nsIID *iid);
-
-    size_t SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf);
-
-    static int64_t GetXPTIWorkingSetSize();
-
-private:
-    xptiInterfaceInfoManager();
-    ~xptiInterfaceInfoManager();
-
-    void RegisterXPTHeader(XPTHeader* aHeader);
-                          
-    // idx is the index of this interface in the XPTHeader
-    void VerifyAndAddEntryIfNew(XPTInterfaceDirectoryEntry* iface,
-                                uint16_t idx,
-                                xptiTypelibGuts* typelib);
-
-private:
-    xptiWorkingSet               mWorkingSet;
-    Mutex                        mResolveLock;
-};
-
-#endif /* xptiprivate_h___ */
+#endif 
