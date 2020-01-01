@@ -1,17 +1,17 @@
-/* Copyright 2012 Mozilla Foundation and Mozilla contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 "use strict";
 
@@ -23,10 +23,10 @@ Cu.import("resource://gre/modules/Services.jsm");
 var RIL = {};
 Cu.import("resource://gre/modules/ril_consts.js", RIL);
 
-// set to true in ril_consts.js to see debug messages
+
 var DEBUG = RIL.DEBUG_RIL;
 
-// Read debug setting from pref
+
 let debugPref = false;
 try {
   debugPref = Services.prefs.getBoolPref("ril.debugging.enabled");
@@ -220,10 +220,10 @@ function convertRILSuppSvcNotification(notification) {
   }
 }
 
-/**
- * Fake nsIAudioManager implementation so that we can run the telephony
- * code in a non-Gonk build.
- */
+
+
+
+
 let FakeAudioManager = {
   microphoneMuted: false,
   masterVolume: 1.0,
@@ -243,7 +243,7 @@ XPCOMUtils.defineLazyGetter(this, "gAudioManager", function getAudioManager() {
     return Cc["@mozilla.org/telephony/audiomanager;1"]
              .getService(nsIAudioManager);
   } catch (ex) {
-    //TODO on the phone this should not fall back as silently.
+    
     if (DEBUG) debug("Using fake audio manager.");
     return FakeAudioManager;
   }
@@ -257,8 +257,8 @@ XPCOMUtils.defineLazyGetter(this, "gMessageManager", function () {
     ril: null,
 
     targetsByRequestId: {},
-    // Manage message targets in terms of topic. Only the authorized and
-    // registered contents can receive related messages.
+    
+    
     targetsByTopic: {},
     topics: [],
 
@@ -340,14 +340,14 @@ XPCOMUtils.defineLazyGetter(this, "gMessageManager", function () {
 
     _unregisterMessageTarget: function _unregisterMessageTarget(topic, target) {
       if (topic == null) {
-        // Unregister the target for every topic when no topic is specified.
+        
         for (let type of this.topics) {
           this._unregisterMessageTarget(type, target);
         }
         return;
       }
 
-      // Unregister the target for a specified topic.
+      
       let targets = this.targetsByTopic[topic];
       if (!targets) {
         return;
@@ -364,8 +364,8 @@ XPCOMUtils.defineLazyGetter(this, "gMessageManager", function () {
       let msg = { topic : topic,
                   message : message,
                   options : options };
-      // Remove previous queued message of same message type, only one message
-      // per message type is allowed in queue.
+      
+      
       let messageQueue = this.targetMessageQueue;
       for(let i = 0; i < messageQueue.length; i++) {
         if (messageQueue[i].message === message) {
@@ -396,28 +396,28 @@ XPCOMUtils.defineLazyGetter(this, "gMessageManager", function () {
     _resendQueuedTargetMessage: function _resendQueuedTargetMessage() {
       this.ready = true;
 
-      // Here uses this._sendTargetMessage() to resend message, which will
-      // enqueue message if listener is not ready.
-      // So only resend after listener is ready, or it will cause infinate loop and
-      // hang the system.
+      
+      
+      
+      
 
-      // Dequeue and resend messages.
+      
       for each (let msg in this.targetMessageQueue) {
         this._sendTargetMessage(msg.topic, msg.message, msg.options);
       }
       this.targetMessageQueue = null;
     },
 
-    /**
-     * nsIMessageListener interface methods.
-     */
+    
+
+
 
     receiveMessage: function receiveMessage(msg) {
       if (DEBUG) debug("Received '" + msg.name + "' message from content process");
       if (msg.name == "child-process-shutdown") {
-        // By the time we receive child-process-shutdown, the child process has
-        // already forgotten its permissions so we need to unregister the target
-        // for every permission.
+        
+        
+        
         this._unregisterMessageTarget(null, msg.target);
         return;
       }
@@ -495,9 +495,9 @@ XPCOMUtils.defineLazyGetter(this, "gMessageManager", function () {
       return radioInterface.receiveMessage(msg);
     },
 
-    /**
-     * nsIObserver interface methods.
-     */
+    
+
+
 
     observe: function observe(subject, topic, data) {
       switch (topic) {
@@ -549,7 +549,7 @@ XPCOMUtils.defineLazyGetter(this, "gMessageManager", function () {
     saveRequestTarget: function saveRequestTarget(msg) {
       let requestId = msg.json.data.requestId;
       if (!requestId) {
-        // The content is not interested in a response;
+        
         return;
       }
 
@@ -605,17 +605,17 @@ RadioInterfaceLayer.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIRadioInterfaceLayer,
                                          Ci.nsIObserver]),
 
-  /**
-   * nsIObserver interface methods.
-   */
+  
+
+
 
   observe: function observe(subject, topic, data) {
-    // Nothing to do now. Just for profile-after-change.
+    
   },
 
-  /**
-   * nsIRadioInterfaceLayer interface methods.
-   */
+  
+
+
 
   getRadioInterface: function getRadioInterface(clientId) {
     return this.radioInterfaces[clientId];
@@ -640,10 +640,10 @@ function RadioInterface(options) {
     roamingEnabled: false
   };
 
-  // apnSettings is used to keep all APN settings.
-  // byApn[] makes it easier to get the APN settings via APN, user
-  // name, and password.
-  // byType[] makes it easier to get the APN settings via APN types.
+  
+  
+  
+  
   this.apnSettings = {
       byType: {},
       byAPN: {}
@@ -654,7 +654,7 @@ function RadioInterface(options) {
   this.worker.onerror = this.onerror.bind(this);
   this.worker.onmessage = this.onmessage.bind(this);
 
-  // Pass initial options to ril_worker.
+  
   options.rilMessageType = "setInitialOptions";
   this.worker.postMessage(options);
 
@@ -665,10 +665,10 @@ function RadioInterface(options) {
     iccInfo:        null,
     imsi:           null,
 
-    // These objects implement the nsIDOMMozMobileConnectionInfo interface,
-    // although the actual implementation lives in the content process. So are
-    // the child attributes `network` and `cell`, which implement
-    // nsIDOMMozMobileNetworkInfo and nsIDOMMozMobileCellInfo respectively.
+    
+    
+    
+    
     voice:          {connected: false,
                      emergencyCallsOnly: false,
                      roaming: false,
@@ -694,28 +694,28 @@ function RadioInterface(options) {
 
   this.operatorInfo = {};
 
-  // Read the 'ril.radio.disabled' setting in order to start with a known
-  // value at boot time.
+  
+  
   let lock = gSettingsService.createLock();
   lock.get("ril.radio.disabled", this);
 
-  // Read preferred network type from the setting DB.
+  
   lock.get("ril.radio.preferredNetworkType", this);
 
-  // Read the APN data from the settings DB.
+  
   lock.get("ril.data.roaming_enabled", this);
   lock.get("ril.data.enabled", this);
   lock.get("ril.data.apnSettings", this);
 
-  // Read the 'time.nitz.automatic-update.enabled' setting to see if
-  // we need to adjust the system clock time and time zone by NITZ.
+  
+  
   lock.get(kTimeNitzAutomaticUpdateEnabled, this);
 
-  // Set "time.nitz.available" to false when starting up.
+  
   this.setNitzAvailable(false);
 
-  // Read the Cell Broadcast Search List setting, string of integers or integer
-  // ranges separated by comma, to set listening channels.
+  
+  
   lock.get(kCellBroadcastSearchList, this);
 
   Services.obs.addObserver(this, "xpcom-shutdown", false);
@@ -748,10 +748,10 @@ RadioInterface.prototype = {
     dump("-*- RadioInterface[" + this.clientId + "]: " + s + "\n");
   },
 
-  /**
-   * A utility function to copy objects. The srcInfo may contain
-   * 'rilMessageType', should ignore it.
-   */
+  
+
+
+
   updateInfo: function updateInfo(srcInfo, destInfo) {
     for (let key in srcInfo) {
       if (key === 'rilMessageType') {
@@ -761,26 +761,26 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-   * Process a message from the content process.
-   */
+  
+
+
   receiveMessage: function receiveMessage(msg) {
     switch (msg.name) {
       case "RIL:GetRilContext":
-        // This message is sync.
+        
         return this.rilContext;
       case "RIL:EnumerateCalls":
         gMessageManager.saveRequestTarget(msg);
         this.enumerateCalls(msg.json.data);
         break;
       case "RIL:GetMicrophoneMuted":
-        // This message is sync.
+        
         return this.microphoneMuted;
       case "RIL:SetMicrophoneMuted":
         this.microphoneMuted = msg.json.data;
         break;
       case "RIL:GetSpeakerEnabled":
-        // This message is sync.
+        
         return this.speakerEnabled;
       case "RIL:SetSpeakerEnabled":
         this.speakerEnabled = msg.json.data;
@@ -913,7 +913,7 @@ RadioInterface.prototype = {
         this.getCallingLineIdRestriction(msg.json.data);
         break;
       case "RIL:GetVoicemailInfo":
-        // This message is sync.
+        
         return this.voicemailInfo;
       case "RIL:SetRoamingPreference":
         gMessageManager.saveRequestTarget(msg);
@@ -934,13 +934,13 @@ RadioInterface.prototype = {
     event.preventDefault();
   },
 
-  /**
-   * Process the incoming message from the RIL worker. This roughly
-   * works as follows:
-   * (1) Update local state.
-   * (2) Update state in related systems such as the audio.
-   * (3) Multiplex the message to callbacks / listeners (typically the DOM).
-   */
+  
+
+
+
+
+
+
   onmessage: function onmessage(event) {
     let message = event.data;
     if (DEBUG) {
@@ -951,11 +951,11 @@ RadioInterface.prototype = {
         this.handleCallRing();
         break;
       case "callStateChange":
-        // This one will handle its own notifications.
+        
         this.handleCallStateChange(message.call);
         break;
       case "callDisconnected":
-        // This one will handle its own notifications.
+        
         this.handleCallDisconnected(message.call);
         break;
       case "cdmaCallWaiting":
@@ -963,7 +963,7 @@ RadioInterface.prototype = {
                                              this.clientId, message.number);
         break;
       case "enumerateCalls":
-        // This one will handle its own notifications.
+        
         this.handleEnumerateCalls(message);
         break;
       case "callError":
@@ -1142,8 +1142,8 @@ RadioInterface.prototype = {
     let iccInfo = this.rilContext.iccInfo;
     let number = iccInfo ? iccInfo.msisdn : null;
 
-    // Workaround an xpconnect issue with undefined string objects.
-    // See bug 808220
+    
+    
     if (number === undefined || number === "undefined") {
       return null;
     }
@@ -1156,7 +1156,7 @@ RadioInterface.prototype = {
     let operatorMessage = message[RIL.NETWORK_INFO_OPERATOR];
     let selectionMessage = message[RIL.NETWORK_INFO_NETWORK_SELECTION_MODE];
 
-    // Batch the *InfoChanged messages together
+    
     if (voiceMessage) {
       this.updateVoiceConnection(voiceMessage, true);
     }
@@ -1189,13 +1189,13 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-    * Fix the roaming. RIL can report roaming in some case it is not
-    * really the case. See bug 787967
-    *
-    * @param registration  The voiceMessage or dataMessage from which the
-    *                      roaming state will be changed (maybe, if needed).
-    */
+  
+
+
+
+
+
+
   checkRoamingBetweenOperators: function checkRoamingBetweenOperators(registration) {
     let iccInfo = this.rilContext.iccInfo;
     if (!iccInfo || !registration.connected) {
@@ -1215,13 +1215,13 @@ RadioInterface.prototype = {
                            !(equalsMcc && (equalsLongName || equalsShortName));
   },
 
-  /**
-   * Handle data connection changes.
-   *
-   * @param newInfo The new voice connection information.
-   * @param batch   When batch is true, the RIL:VoiceInfoChanged message will
-   *                not be sent.
-   */
+  
+
+
+
+
+
+
   updateVoiceConnection: function updateVoiceConnection(newInfo, batch) {
     let voiceInfo = this.rilContext.voice;
     voiceInfo.state = newInfo.state;
@@ -1230,8 +1230,8 @@ RadioInterface.prototype = {
     voiceInfo.emergencyCallsOnly = newInfo.emergencyCallsOnly;
     voiceInfo.type = newInfo.type;
 
-    // Make sure we also reset the operator and signal strength information
-    // if we drop off the network.
+    
+    
     if (newInfo.state !== RIL.GECKO_MOBILE_CONNECTION_STATE_REGISTERED) {
       voiceInfo.cell = null;
       voiceInfo.network = null;
@@ -1248,21 +1248,21 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-   * Handle the data connection's state has changed.
-   *
-   * @param newInfo The new data connection information.
-   * @param batch   When batch is true, the RIL:DataInfoChanged message will
-   *                not be sent.
-   */
+  
+
+
+
+
+
+
   updateDataConnection: function updateDataConnection(newInfo, batch) {
     let dataInfo = this.rilContext.data;
     dataInfo.state = newInfo.state;
     dataInfo.roaming = newInfo.roaming;
     dataInfo.emergencyCallsOnly = newInfo.emergencyCallsOnly;
     dataInfo.type = newInfo.type;
-    // For the data connection, the `connected` flag indicates whether
-    // there's an active data call.
+    
+    
     let apnSetting = this.apnSettings.byType.default;
     dataInfo.connected = false;
     if (apnSetting) {
@@ -1270,8 +1270,8 @@ RadioInterface.prototype = {
                             RIL.GECKO_NETWORK_STATE_CONNECTED);
     }
 
-    // Make sure we also reset the operator and signal strength information
-    // if we drop off the network.
+    
+    
     if (newInfo.state !== RIL.GECKO_MOBILE_CONNECTION_STATE_REGISTERED) {
       dataInfo.cell = null;
       dataInfo.network = null;
@@ -1289,11 +1289,11 @@ RadioInterface.prototype = {
     this.updateRILNetworkInterface();
   },
 
-  /**
-   * Handle data errors
-   */
+  
+
+
   handleDataCallError: function handleDataCallError(message) {
-    // Notify data call error only for data APN
+    
     if (this.apnSettings.byType.default) {
       let apnSetting = this.apnSettings.byType.default;
       if (message.apn == apnSetting.apn &&
@@ -1390,13 +1390,13 @@ RadioInterface.prototype = {
       destNetwork.mcc != srcNetwork.mcc;
   },
 
-  /**
-   * Handle operator information changes.
-   *
-   * @param message The new operator information.
-   * @param batch   When batch is true, the RIL:VoiceInfoChanged and
-   *                RIL:DataInfoChanged message will not be sent.
-   */
+  
+
+
+
+
+
+
   handleOperatorChange: function handleOperatorChange(message, batch) {
     let operatorInfo = this.operatorInfo;
     let voice = this.rilContext.voice;
@@ -1405,7 +1405,7 @@ RadioInterface.prototype = {
     if (this.networkChanged(message, operatorInfo)) {
       this.updateInfo(message, operatorInfo);
 
-      // Update lastKnownNetwork
+      
       if (message.mcc && message.mnc) {
         try {
           Services.prefs.setCharPref("ril.lastKnownNetwork",
@@ -1413,13 +1413,13 @@ RadioInterface.prototype = {
         } catch (e) {}
       }
 
-      // If the voice is unregistered, no need to send RIL:VoiceInfoChanged.
+      
       if (voice.network && !batch) {
         gMessageManager.sendMobileConnectionMessage("RIL:VoiceInfoChanged",
                                                     this.clientId, voice);
       }
 
-      // If the data is unregistered, no need to send RIL:DataInfoChanged.
+      
       if (data.network && !batch) {
         gMessageManager.sendMobileConnectionMessage("RIL:DataInfoChanged",
                                                     this.clientId, data);
@@ -1435,7 +1435,7 @@ RadioInterface.prototype = {
       return;
     }
     this.rilContext.radioState = newState;
-    //TODO Should we notify this change as a card state change?
+    
 
     this._ensureRadioState();
   },
@@ -1446,22 +1446,22 @@ RadioInterface.prototype = {
                  ", desired radio enabled state is " + this._radioEnabled);
     }
     if (this._radioEnabled == null) {
-      // We haven't read the initial value from the settings DB yet.
-      // Wait for that.
+      
+      
       return;
     }
     if (!this._sysMsgListenerReady) {
-      // The UI's system app isn't ready yet for us to receive any
-      // events (e.g. incoming SMS, etc.). Wait for that.
+      
+      
       return;
     }
     if (this.rilContext.radioState == RIL.GECKO_RADIOSTATE_UNKNOWN) {
-      // We haven't received a radio state notification from the RIL
-      // yet. Wait for that.
+      
+      
       return;
     }
     if (this._changingRadioPower) {
-      // We're changing the radio power currently, ignore any changes.
+      
       return;
     }
 
@@ -1475,18 +1475,18 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-   * This function will do the following steps:
-   * 1. Clear the old APN settings.
-   * 2. Combine APN, user name, and password as the key of byAPN{} and store
-   *    corresponding APN setting into byApn{}, which makes it easiler to get
-   *    the APN setting.
-   * 3. Use APN type as the index of byType{} and store the link of
-   *    corresponding APN setting into byType{}, which makes it easier to get
-   *    the APN setting via APN types.
-   */
+  
+
+
+
+
+
+
+
+
+
   updateApnSettings: function updateApnSettings(allApnSettings) {
-    // TODO: Support multi-SIM, bug 799023.
+    
     let simNumber = 1;
     for (let simId = 0; simId < simNumber; simId++) {
       let thisSimApnSettings = allApnSettings[simId];
@@ -1494,9 +1494,9 @@ RadioInterface.prototype = {
         return;
       }
 
-      // Clear old APN settings.
+      
       for each (let apnSetting in this.apnSettings.byAPN) {
-        // Clear all connections of this APN settings.
+        
         for each (let type in apnSetting.types) {
           if (this.getDataCallStateByType(type) ==
               RIL.GECKO_NETWORK_STATE_CONNECTED) {
@@ -1512,15 +1512,15 @@ RadioInterface.prototype = {
       this.apnSettings.byAPN = {};
       this.apnSettings.byType = {};
 
-      // Create new APN settings.
+      
       for (let apnIndex = 0; thisSimApnSettings[apnIndex]; apnIndex++) {
         let inputApnSetting = thisSimApnSettings[apnIndex];
         if (!this.validateApnSetting(inputApnSetting)) {
           continue;
         }
 
-        // Combine APN, user name, and password as the key of byAPN{} to get
-        // the corresponding APN setting.
+        
+        
         let apnKey = inputApnSetting.apn + (inputApnSetting.user || '') +
                      (inputApnSetting.password || '');
         if (!this.apnSettings.byAPN[apnKey]) {
@@ -1539,9 +1539,9 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-   * Check if we get all necessary APN data.
-   */
+  
+
+
   validateApnSetting: function validateApnSetting(apnSetting) {
     return (apnSetting &&
             apnSetting.apn &&
@@ -1558,8 +1558,8 @@ RadioInterface.prototype = {
       return;
     }
 
-    // This check avoids data call connection if the radio is not ready
-    // yet after toggling off airplane mode.
+    
+    
     if (this.rilContext.radioState != RIL.GECKO_RADIOSTATE_READY) {
       if (DEBUG) {
         this.debug("RIL is not ready for data connection: radio's not ready");
@@ -1567,11 +1567,11 @@ RadioInterface.prototype = {
       return;
     }
 
-    // We only watch at "ril.data.enabled" flag changes for connecting or
-    // disconnecting the data call. If the value of "ril.data.enabled" is
-    // true and any of the remaining flags change the setting application
-    // should turn this flag to false and then to true in order to reload
-    // the new values and reconnect the data call.
+    
+    
+    
+    
+    
     if (this.dataCallSettings.oldEnabled == this.dataCallSettings.enabled) {
       if (DEBUG) {
         this.debug("No changes for ril.data.enabled flag. Nothing to do.");
@@ -1635,7 +1635,7 @@ RadioInterface.prototype = {
       return;
     }
     if (this._changingRadioPower) {
-      // We're changing the radio power currently, ignore any changes.
+      
       return;
     }
 
@@ -1643,13 +1643,13 @@ RadioInterface.prototype = {
     this.setupDataCallByType("default");
   },
 
-  /**
-   * Track the active call and update the audio system as its state changes.
-   */
+  
+
+
   _activeCall: null,
   updateCallAudioState: function updateCallAudioState(call) {
     switch (call.state) {
-      case nsITelephonyProvider.CALL_STATE_DIALING: // Fall through...
+      case nsITelephonyProvider.CALL_STATE_DIALING: 
       case nsITelephonyProvider.CALL_STATE_ALERTING:
       case nsITelephonyProvider.CALL_STATE_CONNECTED:
         call.isActive = true;
@@ -1667,8 +1667,8 @@ RadioInterface.prototype = {
       case nsITelephonyProvider.CALL_STATE_INCOMING:
         call.isActive = false;
         if (!this._activeCall) {
-          // We can change the phone state into RINGTONE only when there's
-          // no active call.
+          
+          
           gAudioManager.phoneState = nsIAudioManager.PHONE_STATE_RINGTONE;
           if (DEBUG) {
             this.debug("Incoming call, put audio system into " +
@@ -1676,17 +1676,17 @@ RadioInterface.prototype = {
           }
         }
         break;
-      case nsITelephonyProvider.CALL_STATE_HELD: // Fall through...
+      case nsITelephonyProvider.CALL_STATE_HELD: 
       case nsITelephonyProvider.CALL_STATE_DISCONNECTED:
         call.isActive = false;
         if (this._activeCall &&
             this._activeCall.callIndex == call.callIndex) {
-          // Previously active call is not active now.
+          
           this._activeCall = null;
         }
 
         if (!this._activeCall) {
-          // No active call. Disable the audio.
+          
           gAudioManager.phoneState = nsIAudioManager.PHONE_STATE_NORMAL;
           if (DEBUG) {
             this.debug("No active call, put audio system into " +
@@ -1709,12 +1709,12 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-   * Handle an incoming call.
-   *
-   * Not much is known about this call at this point, but it's enough
-   * to start bringing up the Phone app already.
-   */
+  
+
+
+
+
+
   handleCallRing: function handleCallRing() {
     if (!this._callRingWakeLock) {
       this._callRingWakeLock = gPowerManagerService.newWakeLock("cpu");
@@ -1730,10 +1730,10 @@ RadioInterface.prototype = {
     gSystemMessenger.broadcastMessage("telephony-new-call", {});
   },
 
-  /**
-   * Handle call state changes by updating our current state and the audio
-   * system.
-   */
+  
+
+
+
   handleCallStateChange: function handleCallStateChange(call) {
     if (DEBUG) this.debug("handleCallStateChange: " + JSON.stringify(call));
     call.state = convertRILCallState(call.state);
@@ -1746,9 +1746,9 @@ RadioInterface.prototype = {
                                          this.clientId, call);
   },
 
-  /**
-   * Handle call disconnects by updating our current state and the audio system.
-   */
+  
+
+
   handleCallDisconnected: function handleCallDisconnected(call) {
     if (DEBUG) this.debug("handleCallDisconnected: " + JSON.stringify(call));
     call.state = nsITelephonyProvider.CALL_STATE_DISCONNECTED;
@@ -1765,9 +1765,9 @@ RadioInterface.prototype = {
                                          this.clientId, call);
   },
 
-  /**
-   * Handle calls delivered in response to a 'enumerateCalls' request.
-   */
+  
+
+
   handleEnumerateCalls: function handleEnumerateCalls(options) {
     if (DEBUG) this.debug("handleEnumerateCalls: " + JSON.stringify(options));
     for (let i in options.calls) {
@@ -1788,42 +1788,42 @@ RadioInterface.prototype = {
     gMessageManager.sendRequestResults("RIL:UpdateIccContact", message);
   },
 
-  /**
-   * Open Logical UICC channel (aid) for Secure Element access
-   */
+  
+
+
   handleIccOpenChannel: function handleIccOpenChannel(message) {
     if (DEBUG) this.debug("handleIccOpenChannel: " + JSON.stringify(message));
     gMessageManager.sendRequestResults("RIL:IccOpenChannel", message);
   },
 
-  /**
-   * Close Logical UICC channel
-   */
+  
+
+
   handleIccCloseChannel: function handleIccCloseChannel(message) {
     if (DEBUG) this.debug("handleIccCloseChannel: " + JSON.stringify(message));
     gMessageManager.sendRequestResults("RIL:IccCloseChannel", message);
   },
 
-  /**
-   * Exchange APDU data on an open Logical UICC channel
-   */
+  
+
+
   handleIccExchangeAPDU: function handleIccExchangeAPDU(message) {
     if (DEBUG) this.debug("handleIccExchangeAPDU: " + JSON.stringify(message));
     gMessageManager.sendRequestResults("RIL:IccExchangeAPDU", message);
   },
 
-  /**
-   * Handle available networks returned by the 'getAvailableNetworks' request.
-   */
+  
+
+
   handleGetAvailableNetworks: function handleGetAvailableNetworks(message) {
     if (DEBUG) this.debug("handleGetAvailableNetworks: " + JSON.stringify(message));
 
     gMessageManager.sendRequestResults("RIL:GetAvailableNetworks", message);
   },
 
-  /**
-   * Update network selection mode
-   */
+  
+
+
   updateNetworkSelectionMode: function updateNetworkSelectionMode(message) {
     if (DEBUG) this.debug("updateNetworkSelectionMode: " + JSON.stringify(message));
     this.rilContext.networkSelectionMode = message.mode;
@@ -1831,46 +1831,46 @@ RadioInterface.prototype = {
                                                 this.clientId, message);
   },
 
-  /**
-   * Handle "manual" network selection request.
-   */
+  
+
+
   handleSelectNetwork: function handleSelectNetwork(message) {
     if (DEBUG) this.debug("handleSelectNetwork: " + JSON.stringify(message));
     gMessageManager.sendRequestResults("RIL:SelectNetwork", message);
   },
 
-  /**
-   * Handle "automatic" network selection request.
-   */
+  
+
+
   handleSelectNetworkAuto: function handleSelectNetworkAuto(message) {
     if (DEBUG) this.debug("handleSelectNetworkAuto: " + JSON.stringify(message));
     gMessageManager.sendRequestResults("RIL:SelectNetworkAuto", message);
   },
 
-  /**
-   * Handle call error.
-   */
+  
+
+
   handleCallError: function handleCallError(message) {
     gMessageManager.sendTelephonyMessage("RIL:CallError",
                                          this.clientId, message);
   },
 
-  /**
-   * Handle supplementary service notification.
-   */
+  
+
+
   handleSuppSvcNotification: function handleSuppSvcNotification(message) {
     message.notification = convertRILSuppSvcNotification(message.notification);
     gMessageManager.sendTelephonyMessage("RIL:SuppSvcNotification",
                                          this.clientId, message);
   },
 
-  /**
-   * Handle WDP port push PDU. Constructor WDP bearer information and deliver
-   * to WapPushManager.
-   *
-   * @param message
-   *        A SMS message.
-   */
+  
+
+
+
+
+
+
   handleSmsWdpPortPush: function handleSmsWdpPortPush(message) {
     if (message.encoding != RIL.PDU_DCS_MSG_CODING_8BITS_ALPHABET) {
       if (DEBUG) {
@@ -1891,21 +1891,21 @@ RadioInterface.prototype = {
                                      0, options);
   },
 
-  /**
-   * A helper to broadcast the system message to launch registered apps
-   * like Costcontrol, Notification and Message app... etc.
-   *
-   * @param aName
-   *        The system message name.
-   * @param aDomMessage
-   *        The nsIDOMMozSmsMessage object.
-   */
+  
+
+
+
+
+
+
+
+
   broadcastSmsSystemMessage: function broadcastSmsSystemMessage(aName, aDomMessage) {
     if (DEBUG) this.debug("Broadcasting the SMS system message: " + aName);
 
-    // Sadly we cannot directly broadcast the aDomMessage object
-    // because the system message mechamism will rewrap the object
-    // based on the content window, which needs to know the properties.
+    
+    
+    
     gSystemMessenger.broadcastMessage(aName, {
       type:           aDomMessage.type,
       id:             aDomMessage.id,
@@ -1925,14 +1925,14 @@ RadioInterface.prototype = {
   handleSmsReceived: function handleSmsReceived(message) {
     if (DEBUG) this.debug("handleSmsReceived: " + JSON.stringify(message));
 
-    // FIXME: Bug 737202 - Typed arrays become normal arrays when sent to/from workers
+    
     if (message.encoding == RIL.PDU_DCS_MSG_CODING_8BITS_ALPHABET) {
       message.fullData = new Uint8Array(message.fullData);
     }
 
-    // Dispatch to registered handler if application port addressing is
-    // available. Note that the destination port can possibly be zero when
-    // representing a UDP/TCP port.
+    
+    
+    
     if (message.header && message.header.destinationPort != null) {
       let handler = this.portAddressedSmsApps[message.header.destinationPort];
       if (handler) {
@@ -1942,7 +1942,7 @@ RadioInterface.prototype = {
     }
 
     if (message.encoding == RIL.PDU_DCS_MSG_CODING_8BITS_ALPHABET) {
-      // Don't know how to handle binary data yet.
+      
       return true;
     }
 
@@ -1977,10 +1977,10 @@ RadioInterface.prototype = {
       return true;
     }
 
-    // TODO: Bug #768441
-    // For now we don't store indicators persistently. When the mwi.discard
-    // flag is false, we'll need to persist the indicator to EFmwis.
-    // See TS 23.040 9.2.3.24.2
+    
+    
+    
+    
 
     let mwi = message.mwi;
     if (mwi) {
@@ -1994,7 +1994,7 @@ RadioInterface.prototype = {
     let notifyReceived = function notifyReceived(rv, domMessage) {
       let success = Components.isSuccessCode(rv);
 
-      // Acknowledge the reception of the SMS.
+      
       message.rilMessageType = "ackSMS";
       if (!success) {
         message.result = RIL.PDU_FCS_MEMORY_CAPACITY_EXCEEDED;
@@ -2002,8 +2002,8 @@ RadioInterface.prototype = {
       this.worker.postMessage(message);
 
       if (!success) {
-        // At this point we could send a message to content to notify the user
-        // that storing an incoming SMS failed, most likely due to a full disk.
+        
+        
         if (DEBUG) {
           this.debug("Could not store SMS " + message.id + ", error code " + rv);
         }
@@ -2039,18 +2039,18 @@ RadioInterface.prototype = {
       notifyReceived(Cr.NS_OK, domMessage);
     }
 
-    // SMS ACK will be sent in notifyReceived. Return false here.
+    
     return false;
   },
 
-  /**
-   * Local storage for sent SMS messages.
-   */
+  
+
+
   _sentSmsEnvelopes: null,
   createSmsEnvelope: function createSmsEnvelope(options) {
     let i;
     for (i = 1; this._sentSmsEnvelopes[i]; i++) {
-      // Do nothing.
+      
     }
 
     if (DEBUG) this.debug("createSmsEnvelope: assigned " + i);
@@ -2067,9 +2067,9 @@ RadioInterface.prototype = {
     }
 
     if (options.silent) {
-      // There is no way to modify nsIDOMMozSmsMessage attributes as they are
-      // read only so we just create a new sms instance to send along with
-      // the notification.
+      
+      
+      
       let sms = options.sms;
       options.request.notifyMessageSent(
         gMobileMessageService.createSmsMessage(sms.id,
@@ -2092,11 +2092,11 @@ RadioInterface.prototype = {
                                      options.sms.deliveryStatus,
                                      null,
                                      function notifyResult(rv, domMessage) {
-      // TODO bug 832140 handle !Components.isSuccessCode(rv)
+      
       this.broadcastSmsSystemMessage("sms-sent", domMessage);
 
       if (!options.requestStatusReport) {
-        // No more used if STATUS-REPORT not requested.
+        
         delete this._sentSmsEnvelopes[message.envelopeId];
       } else {
         options.sms = domMessage;
@@ -2127,7 +2127,7 @@ RadioInterface.prototype = {
                                      message.deliveryStatus,
                                      null,
                                      function notifyResult(rv, domMessage) {
-      // TODO bug 832140 handle !Components.isSuccessCode(rv)
+      
       let topic = (message.deliveryStatus == RIL.GECKO_SMS_DELIVERY_STATUS_SUCCESS)
                   ? kSmsDeliverySuccessObserverTopic
                   : kSmsDeliveryErrorObserverTopic;
@@ -2163,15 +2163,15 @@ RadioInterface.prototype = {
                                      RIL.GECKO_SMS_DELIVERY_STATUS_ERROR,
                                      null,
                                      function notifyResult(rv, domMessage) {
-      // TODO bug 832140 handle !Components.isSuccessCode(rv)
+      
       options.request.notifySendMessageFailed(error);
       Services.obs.notifyObservers(domMessage, kSmsFailedObserverTopic, null);
     }.bind(this));
   },
 
-  /**
-   * Handle data call state changes.
-   */
+  
+
+
   handleDataCallState: function handleDataCallState(datacall) {
     let data = this.rilContext.data;
     let apnSetting = this.apnSettings.byType.default;
@@ -2196,37 +2196,37 @@ RadioInterface.prototype = {
                                   [datacall]);
   },
 
-  /**
-   * Handle data call list.
-   */
+  
+
+
   handleDataCallList: function handleDataCallList(message) {
     this._deliverDataCallCallback("receiveDataCallList",
                                   [message.datacalls, message.datacalls.length]);
   },
 
-  /**
-   * Set the setting value of "time.nitz.available".
-   */
+  
+
+
   setNitzAvailable: function setNitzAvailable(value) {
     gSettingsService.createLock().set(kTimeNitzAvailable, value, null,
                                       "fromInternalSetting");
   },
 
-  /**
-   * Set the NITZ message in our system time.
-   */
+  
+
+
   setNitzTime: function setNitzTime(message) {
-    // To set the system clock time. Note that there could be a time diff
-    // between when the NITZ was received and when the time is actually set.
+    
+    
     gTimeService.set(
       message.networkTimeInMS + (Date.now() - message.receiveTimeInMS));
 
-    // To set the sytem timezone. Note that we need to convert the time zone
-    // value to a UTC repesentation string in the format of "UTC(+/-)hh:mm".
-    // Ex, time zone -480 is "UTC-08:00"; time zone 630 is "UTC+10:30".
-    //
-    // We can unapply the DST correction if we want the raw time zone offset:
-    // message.networkTimeZoneInMinutes -= message.networkDSTInMinutes;
+    
+    
+    
+    
+    
+    
     if (message.networkTimeZoneInMinutes != (new Date()).getTimezoneOffset()) {
       let absTimeZoneInMinutes = Math.abs(message.networkTimeZoneInMinutes);
       let timeZoneStr = "UTC";
@@ -2238,17 +2238,17 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-   * Handle the NITZ message.
-   */
+  
+
+
   handleNitzTime: function handleNitzTime(message) {
-    // Got the NITZ info received from the ril_worker.
+    
     this.setNitzAvailable(true);
 
-    // Cache the latest NITZ message whenever receiving it.
+    
     this._lastNitzMessage = message;
 
-    // Set the received NITZ time if the setting is enabled.
+    
     if (this._nitzAutomaticUpdateEnabled) {
       this.setNitzTime(message);
     }
@@ -2279,12 +2279,12 @@ RadioInterface.prototype = {
     if (!iccInfoChanged) {
       return;
     }
-    // RIL:IccInfoChanged corresponds to a DOM event that gets fired only
-    // when the MCC or MNC codes have changed.
+    
+    
     gMessageManager.sendIccMessage("RIL:IccInfoChanged",
                                    this.clientId, message);
 
-    // Update lastKnownSimMcc.
+    
     if (message.mcc) {
       try {
         Services.prefs.setCharPref("ril.lastKnownSimMcc",
@@ -2292,7 +2292,7 @@ RadioInterface.prototype = {
       } catch (e) {}
     }
 
-    // Update lastKnownHomeNetwork.
+    
     if (message.mcc && message.mnc) {
       try {
         Services.prefs.setCharPref("ril.lastKnownHomeNetwork",
@@ -2300,7 +2300,7 @@ RadioInterface.prototype = {
       } catch (e) {}
     }
 
-    // If spn becomes available, we should check roaming again.
+    
     let oldSpn = oldIccInfo ? oldIccInfo.spn : null;
     if (!oldSpn && message.spn) {
       let voice = this.rilContext.voice;
@@ -2432,7 +2432,7 @@ RadioInterface.prototype = {
     gMessageManager.sendRequestResults("RIL:GetRoamingPreference", message);
   },
 
-  // nsIObserver
+  
 
   observe: function observe(subject, topic, data) {
     switch (topic) {
@@ -2458,9 +2458,9 @@ RadioInterface.prototype = {
         }
         break;
       case "xpcom-shutdown":
-        // Cancel the timer for the call-ring wake lock.
+        
         this._cancelCallRingWakeLockTimer();
-        // Shutdown all RIL network interfaces
+        
         for each (let apnSetting in this.apnSettings.byAPN) {
           if (apnSetting.iface) {
             apnSetting.iface.shutdown();
@@ -2483,51 +2483,51 @@ RadioInterface.prototype = {
     }
   },
 
-  // Flag to determine whether the UI's system app is ready to receive
-  // events yet.
+  
+  
   _sysMsgListenerReady: false,
 
-  // Flag to determine the radio state to start with when we boot up. It
-  // corresponds to the 'ril.radio.disabled' setting from the UI.
+  
+  
   _radioEnabled: null,
 
-  // Flag to ignore any radio power change requests during We're changing
-  // the radio power.
+  
+  
   _changingRadioPower: false,
 
-  // Data calls setting.
+  
   dataCallSettings: null,
 
   apnSettings: null,
 
-  // Flag to determine whether to use NITZ. It corresponds to the
-  // 'time.nitz.automatic-update.enabled' setting from the UI.
+  
+  
   _nitzAutomaticUpdateEnabled: null,
 
-  // Remember the last NITZ message so that we can set the time based on
-  // the network immediately when users enable network-based time.
+  
+  
   _lastNitzMessage: null,
 
-  // Cell Broadcast settings values.
+  
   _cellBroadcastSearchListStr: null,
 
   handleSettingsChange: function handleSettingsChange(aName, aResult, aMessage) {
-    // Don't allow any content processes to modify the setting
-    // "time.nitz.available" except for the chrome process.
+    
+    
     let isNitzAvailable = (this._lastNitzMessage !== null);
     if (aName === kTimeNitzAvailable && aMessage !== "fromInternalSetting" &&
         aResult !== isNitzAvailable) {
       if (DEBUG) {
         this.debug("Content processes cannot modify 'time.nitz.available'. Restore!");
       }
-      // Restore the setting to the current value.
+      
       this.setNitzAvailable(isNitzAvailable);
     }
 
     this.handle(aName, aResult);
   },
 
-  // nsISettingsServiceCallback
+  
   handle: function handle(aName, aResult) {
     switch(aName) {
       case "ril.radio.disabled":
@@ -2560,7 +2560,7 @@ RadioInterface.prototype = {
       case kTimeNitzAutomaticUpdateEnabled:
         this._nitzAutomaticUpdateEnabled = aResult;
 
-        // Set the latest cached NITZ time if the setting is enabled.
+        
         if (this._nitzAutomaticUpdateEnabled && this._lastNitzMessage) {
           this.setNitzTime(this._lastNitzMessage);
         }
@@ -2577,11 +2577,11 @@ RadioInterface.prototype = {
   handleError: function handleError(aErrorMessage) {
     if (DEBUG) this.debug("There was an error while reading RIL settings.");
 
-    // Default radio to on.
+    
     this._radioEnabled = true;
     this._ensureRadioState();
 
-    // Clean data call setting.
+    
     this.dataCallSettings.oldEnabled = false;
     this.dataCallSettings.enabled = false;
     this.dataCallSettings.roamingEnabled = false;
@@ -2591,11 +2591,11 @@ RadioInterface.prototype = {
     };
   },
 
-  // nsIRadioWorker
+  
 
   worker: null,
 
-  // nsIRadioInterface
+  
 
   setRadioEnabled: function setRadioEnabled(value) {
     if (DEBUG) this.debug("Setting radio power to " + value);
@@ -2605,7 +2605,7 @@ RadioInterface.prototype = {
 
   rilContext: null,
 
-  // Handle phone functions of nsIRILContentHelper
+  
 
   enumerateCalls: function enumerateCalls(message) {
     if (DEBUG) this.debug("Requesting enumeration of calls for callback");
@@ -2614,7 +2614,7 @@ RadioInterface.prototype = {
   },
 
   _validateNumber: function _validateNumber(number) {
-    // note: isPlainPhoneNumber also accepts USSD and SS numbers
+    
     if (PhoneNumberUtils.isPlainPhoneNumber(number)) {
       return true;
     }
@@ -2643,8 +2643,8 @@ RadioInterface.prototype = {
 
   dialEmergency: function dialEmergency(number) {
     if (DEBUG) this.debug("Dialing emergency " + number);
-    // we don't try to be too clever here, as the phone is probably in the
-    // locked state. Let's just check if it's a number without normalizing
+    
+    
     if (this._validateNumber(number)) {
       this.worker.postMessage({rilMessageType: "dial",
                               number: number,
@@ -2709,10 +2709,10 @@ RadioInterface.prototype = {
   },
 
   cancelMMI: function cancelMMI(message) {
-    // Some MMI codes trigger radio operations, but unfortunately the RIL only
-    // supports cancelling USSD requests so far. Despite that, in order to keep
-    // the API uniformity, we are wrapping the cancelUSSD function within the
-    // cancelMMI funcion.
+    
+    
+    
+    
     if (DEBUG) this.debug("Cancel pending USSD");
     message.rilMessageType = "cancelUSSD";
     this.worker.postMessage(message);
@@ -2864,53 +2864,53 @@ RadioInterface.prototype = {
     }
   },
 
-  /**
-   * List of tuples of national language identifier pairs.
-   *
-   * TODO: Support static/runtime settings, see bug 733331.
-   */
+  
+
+
+
+
   enabledGsmTableTuples: [
     [RIL.PDU_NL_IDENTIFIER_DEFAULT, RIL.PDU_NL_IDENTIFIER_DEFAULT],
   ],
 
-  /**
-   * Use 16-bit reference number for concatenated outgoint messages.
-   *
-   * TODO: Support static/runtime settings, see bug 733331.
-   */
+  
+
+
+
+
   segmentRef16Bit: false,
 
-  /**
-   * Get valid SMS concatenation reference number.
-   */
+  
+
+
   _segmentRef: 0,
   get nextSegmentRef() {
     let ref = this._segmentRef++;
 
     this._segmentRef %= (this.segmentRef16Bit ? 65535 : 255);
 
-    // 0 is not a valid SMS concatenation reference number.
+    
     return ref + 1;
   },
 
-  /**
-   * Calculate encoded length using specified locking/single shift table
-   *
-   * @param message
-   *        message string to be encoded.
-   * @param langTable
-   *        locking shift table string.
-   * @param langShiftTable
-   *        single shift table string.
-   * @param strict7BitEncoding
-   *        Optional. Enable Latin characters replacement with corresponding
-   *        ones in GSM SMS 7-bit default alphabet.
-   *
-   * @return encoded length in septets.
-   *
-   * @note that the algorithm used in this function must match exactly with
-   * GsmPDUHelper#writeStringAsSeptets.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _countGsm7BitSeptets: function _countGsm7BitSeptets(message, langTable, langShiftTable, strict7BitEncoding) {
     let length = 0;
     for (let msgIndex = 0; msgIndex < message.length; msgIndex++) {
@@ -2921,8 +2921,8 @@ RadioInterface.prototype = {
 
       let septet = langTable.indexOf(c);
 
-      // According to 3GPP TS 23.038, section 6.1.1 General notes, "The
-      // characters marked '1)' are not used but are displayed as a space."
+      
+      
       if (septet == RIL.PDU_NL_EXTENDED_ESCAPE) {
         continue;
       }
@@ -2938,55 +2938,55 @@ RadioInterface.prototype = {
           return -1;
         }
 
-        // Bug 816082, when strict7BitEncoding is enabled, we should replace
-        // characters that can't be encoded with GSM 7-Bit alphabets with '*'.
+        
+        
         c = '*';
         if (langTable.indexOf(c) >= 0) {
           length++;
         } else if (langShiftTable.indexOf(c) >= 0) {
           length += 2;
         } else {
-          // We can't even encode a '*' character with current configuration.
+          
           return -1;
         }
 
         continue;
       }
 
-      // According to 3GPP TS 23.038 B.2, "This code represents a control
-      // character and therefore must not be used for language specific
-      // characters."
+      
+      
+      
       if (septet == RIL.PDU_NL_RESERVED_CONTROL) {
         continue;
       }
 
-      // The character is not found in locking shfit table, but could be
-      // encoded as <escape><char> with single shift table. Note that it's
-      // still possible for septet to has the value of PDU_NL_EXTENDED_ESCAPE,
-      // but we can display it as a space in this case as said in previous
-      // comment.
+      
+      
+      
+      
+      
       length += 2;
     }
 
     return length;
   },
 
-  /**
-   * Calculate user data length of specified message string encoded in GSM 7Bit
-   * alphabets.
-   *
-   * @param message
-   *        a message string to be encoded.
-   * @param strict7BitEncoding
-   *        Optional. Enable Latin characters replacement with corresponding
-   *        ones in GSM SMS 7-bit default alphabet.
-   *
-   * @return null or an options object with attributes `dcs`,
-   *         `userDataHeaderLength`, `encodedFullBodyLength`, `langIndex`,
-   *         `langShiftIndex`, `segmentMaxSeq` set.
-   *
-   * @see #_calculateUserDataLength().
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _calculateUserDataLength7Bit: function _calculateUserDataLength7Bit(message, strict7BitEncoding) {
     let options = null;
     let minUserDataSeptets = Number.MAX_VALUE;
@@ -3006,13 +3006,13 @@ RadioInterface.prototype = {
 
       let headerLen = 0;
       if (langIndex != RIL.PDU_NL_IDENTIFIER_DEFAULT) {
-        headerLen += 3; // IEI + len + langIndex
+        headerLen += 3; 
       }
       if (langShiftIndex != RIL.PDU_NL_IDENTIFIER_DEFAULT) {
-        headerLen += 3; // IEI + len + langShiftIndex
+        headerLen += 3; 
       }
 
-      // Calculate full user data length, note the extra byte is for header len
+      
       let headerSeptets = Math.ceil((headerLen ? headerLen + 1 : 0) * 8 / 7);
       let segmentSeptets = RIL.PDU_MAX_USER_DATA_7BIT;
       if ((bodySeptets + headerSeptets) > segmentSeptets) {
@@ -3043,17 +3043,17 @@ RadioInterface.prototype = {
     return options;
   },
 
-  /**
-   * Calculate user data length of specified message string encoded in UCS2.
-   *
-   * @param message
-   *        a message string to be encoded.
-   *
-   * @return an options object with attributes `dcs`, `userDataHeaderLength`,
-   *         `encodedFullBodyLength`, `segmentMaxSeq` set.
-   *
-   * @see #_calculateUserDataLength().
-   */
+  
+
+
+
+
+
+
+
+
+
+
   _calculateUserDataLengthUCS2: function _calculateUserDataLengthUCS2(message) {
     let bodyChars = message.length;
     let headerLen = 0;
@@ -3076,35 +3076,35 @@ RadioInterface.prototype = {
     };
   },
 
-  /**
-   * Calculate user data length and its encoding.
-   *
-   * @param message
-   *        a message string to be encoded.
-   * @param strict7BitEncoding
-   *        Optional. Enable Latin characters replacement with corresponding
-   *        ones in GSM SMS 7-bit default alphabet.
-   *
-   * @return an options object with some or all of following attributes set:
-   *
-   * @param dcs
-   *        Data coding scheme. One of the PDU_DCS_MSG_CODING_*BITS_ALPHABET
-   *        constants.
-   * @param userDataHeaderLength
-   *        Length of embedded user data header, in bytes. The whole header
-   *        size will be userDataHeaderLength + 1; 0 for no header.
-   * @param encodedFullBodyLength
-   *        Length of the message body when encoded with the given DCS. For
-   *        UCS2, in bytes; for 7-bit, in septets.
-   * @param langIndex
-   *        Table index used for normal 7-bit encoded character lookup.
-   * @param langShiftIndex
-   *        Table index used for escaped 7-bit encoded character lookup.
-   * @param segmentMaxSeq
-   *        Max sequence number of a multi-part messages, or 1 for single one.
-   *        This number might not be accurate for a multi-part message until
-   *        it's processed by #_fragmentText() again.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _calculateUserDataLength: function _calculateUserDataLength(message, strict7BitEncoding) {
     let options = this._calculateUserDataLength7Bit(message, strict7BitEncoding);
     if (!options) {
@@ -3115,23 +3115,23 @@ RadioInterface.prototype = {
     return options;
   },
 
-  /**
-   * Fragment GSM 7-Bit encodable string for transmission.
-   *
-   * @param text
-   *        text string to be fragmented.
-   * @param langTable
-   *        locking shift table string.
-   * @param langShiftTable
-   *        single shift table string.
-   * @param segmentSeptets
-   *        Number of available spetets per segment.
-   * @param strict7BitEncoding
-   *        Optional. Enable Latin characters replacement with corresponding
-   *        ones in GSM SMS 7-bit default alphabet.
-   *
-   * @return an array of objects. See #_fragmentText() for detailed definition.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _fragmentText7Bit: function _fragmentText7Bit(text, langTable, langShiftTable, segmentSeptets, strict7BitEncoding) {
     let ret = [];
     let body = "", len = 0;
@@ -3160,8 +3160,8 @@ RadioInterface.prototype = {
             throw new Error("Given text cannot be encoded with GSM 7-bit Alphabet!");
           }
 
-          // Bug 816082, when strict7BitEncoding is enabled, we should replace
-          // characters that can't be encoded with GSM 7-Bit alphabets with '*'.
+          
+          
           c = '*';
           if (langTable.indexOf(c) >= 0) {
             inc = 1;
@@ -3192,16 +3192,16 @@ RadioInterface.prototype = {
     return ret;
   },
 
-  /**
-   * Fragment UCS2 encodable string for transmission.
-   *
-   * @param text
-   *        text string to be fragmented.
-   * @param segmentChars
-   *        Number of available characters per segment.
-   *
-   * @return an array of objects. See #_fragmentText() for detailed definition.
-   */
+  
+
+
+
+
+
+
+
+
+
   _fragmentTextUCS2: function _fragmentTextUCS2(text, segmentChars) {
     let ret = [];
     for (let offset = 0; offset < text.length; offset += segmentChars) {
@@ -3215,24 +3215,24 @@ RadioInterface.prototype = {
     return ret;
   },
 
-  /**
-   * Fragment string for transmission.
-   *
-   * Fragment input text string into an array of objects that contains
-   * attributes `body`, substring for this segment, `encodedBodyLength`,
-   * length of the encoded segment body in septets.
-   *
-   * @param text
-   *        Text string to be fragmented.
-   * @param options
-   *        Optional pre-calculated option object. The output array will be
-   *        stored at options.segments if there are multiple segments.
-   * @param strict7BitEncoding
-   *        Optional. Enable Latin characters replacement with corresponding
-   *        ones in GSM SMS 7-bit default alphabet.
-   *
-   * @return Populated options object.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _fragmentText: function _fragmentText(text, options, strict7BitEncoding) {
     if (!options) {
       options = this._calculateUserDataLength(text, strict7BitEncoding);
@@ -3250,7 +3250,7 @@ RadioInterface.prototype = {
                                                 options.segmentChars);
     }
 
-    // Re-sync options.segmentMaxSeq with actual length of returning array.
+    
     options.segmentMaxSeq = options.segments.length;
 
     return options;
@@ -3270,7 +3270,7 @@ RadioInterface.prototype = {
       let lastSegment = options.segments[options.segmentMaxSeq - 1];
       charsInLastSegment = lastSegment.encodedBodyLength;
       if (options.dcs == RIL.PDU_DCS_MSG_CODING_16BITS_ALPHABET) {
-        // In UCS2 encoding, encodedBodyLength is in octets.
+        
         charsInLastSegment /= 2;
       }
     } else {
@@ -3308,13 +3308,13 @@ RadioInterface.prototype = {
     }
 
     let notifyResult = (function notifyResult(rv, domMessage) {
-      // TODO bug 832140 handle !Components.isSuccessCode(rv)
+      
       if (!silent) {
         Services.obs.notifyObservers(domMessage, kSmsSendingObserverTopic, null);
       }
 
-      // If the radio is disabled or the SIM card is not ready, just directly
-      // return with the corresponding error code.
+      
+      
       let errorCode;
       if (!PhoneNumberUtils.isPlainPhoneNumber(options.number)) {
         if (DEBUG) this.debug("Error! Address is invalid when sending SMS: " +
@@ -3340,14 +3340,14 @@ RadioInterface.prototype = {
                                          RIL.GECKO_SMS_DELIVERY_STATUS_ERROR,
                                          null,
                                          function notifyResult(rv, domMessage) {
-          // TODO bug 832140 handle !Components.isSuccessCode(rv)
+          
           request.notifySendMessageFailed(errorCode);
           Services.obs.notifyObservers(domMessage, kSmsFailedObserverTopic, null);
         });
         return;
       }
 
-      // Keep current SMS message info for sent/delivered notifications
+      
       options.envelopeId = this.createSmsEnvelope({
         request: request,
         sms: domMessage,
@@ -3355,7 +3355,7 @@ RadioInterface.prototype = {
         silent: silent
       });
 
-      // This is the entry point starting to send SMS.
+      
       this.worker.postMessage(options);
     }).bind(this);
 
@@ -3372,14 +3372,14 @@ RadioInterface.prototype = {
       let deliveryStatus = RIL.GECKO_SMS_DELIVERY_STATUS_PENDING;
       let delivery = DOM_MOBILE_MESSAGE_DELIVERY_SENDING;
       let domMessage =
-        gMobileMessageService.createSmsMessage(-1, // id
-                                               0,  // threadId
+        gMobileMessageService.createSmsMessage(-1, 
+                                               0,  
                                                delivery,
                                                deliveryStatus,
                                                sendingMessage.sender,
                                                sendingMessage.receiver,
                                                sendingMessage.body,
-                                               "normal", // message class
+                                               "normal", 
                                                sendingMessage.timestamp,
                                                false);
       notifyResult(Cr.NS_OK, domMessage);
@@ -3414,12 +3414,12 @@ RadioInterface.prototype = {
   },
 
   _deliverDataCallCallback: function _deliverDataCallCallback(name, args) {
-    // We need to worry about callback registration state mutations during the
-    // callback firing. The behaviour we want is to *not* call any callbacks
-    // that are added during the firing and to *not* call any callbacks that are
-    // removed during the firing. To address this, we make a copy of the
-    // callback list before dispatching and then double-check that each callback
-    // is still registered before calling it.
+    
+    
+    
+    
+    
+    
     if (!this._datacall_callbacks) {
       return;
     }
@@ -3455,13 +3455,13 @@ RadioInterface.prototype = {
     }
 
     apnSetting.iface.connect(apntype);
-    // We just call connect() function, so this interface should be in
-    // connecting state. If this interface is already in connected state, we
-    // are sure that this interface have successfully established connection
-    // for other data call types before we call connect() function for current
-    // data call type. In this circumstance, we have to directly update the
-    // necessary data call and interface information to RILContentHelper
-    // and network manager for current data call type.
+    
+    
+    
+    
+    
+    
+    
     if (apnSetting.iface.connected) {
       if (apntype == "default" && !dataInfo.connected) {
         dataInfo.connected = true;
@@ -3469,8 +3469,8 @@ RadioInterface.prototype = {
                                                     this.clientId, dataInfo);
       }
 
-      // Update the interface status via-registration if the interface has
-      // already been registered in the network manager.
+      
+      
       if (apnSetting.iface.name in gNetworkManager.networkInterfaces) {
         gNetworkManager.unregisterNetworkInterface(apnSetting.iface);
       }
@@ -3489,12 +3489,12 @@ RadioInterface.prototype = {
     }
 
     apnSetting.iface.disconnect(apntype);
-    // We just call disconnect() function, so this interface should be in
-    // disconnecting state. If this interface is still in connected state, we
-    // are sure that other data call types still need this connection of this
-    // interface. In this circumstance, we have to directly update the
-    // necessary data call and interface information to RILContentHelper
-    // and network manager for current data call type.
+    
+    
+    
+    
+    
+    
     if (apnSetting.iface.connectedTypes.length && apnSetting.iface.connected) {
       let dataInfo = this.rilContext.data;
       if (apntype == "default" && dataInfo.connected) {
@@ -3503,8 +3503,8 @@ RadioInterface.prototype = {
                                                     this.clientId, dataInfo);
       }
 
-      // Update the interface status via-registration if the interface has
-      // already been registered in the network manager.
+      
+      
       if (apnSetting.iface.name in gNetworkManager.networkInterfaces) {
         gNetworkManager.unregisterNetworkInterface(apnSetting.iface);
       }
@@ -3541,10 +3541,6 @@ RadioInterface.prototype = {
     this.worker.postMessage({rilMessageType: "deactivateDataCall",
                              cid: cid,
                              reason: reason});
-  },
-
-  getDataCallList: function getDataCallList() {
-    this.worker.postMessage({rilMessageType: "getDataCallList"});
   },
 
   getCardLockState: function getCardLockState(message) {
@@ -3592,7 +3588,7 @@ RILNetworkInterface.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsINetworkInterface,
                                          Ci.nsIRILDataCallback]),
 
-  // nsINetworkInterface
+  
 
   NETWORK_STATE_UNKNOWN:       Ci.nsINetworkInterface.NETWORK_STATE_UNKNOWN,
   NETWORK_STATE_CONNECTING:    Ci.nsINetworkInterface.CONNECTING,
@@ -3606,20 +3602,20 @@ RILNetworkInterface.prototype = {
   NETWORK_TYPE_MOBILE:      Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE,
   NETWORK_TYPE_MOBILE_MMS:  Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE_MMS,
   NETWORK_TYPE_MOBILE_SUPL: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE_SUPL,
-  // The network manager should only need to add the host route for "other"
-  // types, which is the same handling method as the supl type. So let the
-  // definition of other types to be the same as the one of supl type.
+  
+  
+  
   NETWORK_TYPE_MOBILE_OTHERS: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE_SUPL,
 
-  /**
-   * Standard values for the APN connection retry process
-   * Retry funcion: time(secs) = A * numer_of_retries^2 + B
-   */
+  
+
+
+
   NETWORK_APNRETRY_FACTOR: 8,
   NETWORK_APNRETRY_ORIGIN: 3,
   NETWORK_APNRETRY_MAXRETRIES: 10,
 
-  // Event timer for connection retries
+  
   timer: null,
 
   get type() {
@@ -3662,7 +3658,7 @@ RILNetworkInterface.prototype = {
          this.type + "]: " + s + "\n");
   },
 
-  // nsIRILDataCallback
+  
 
   dataCallError: function dataCallError(message) {
     if (message.apn != this.apnSetting.apn) {
@@ -3674,13 +3670,13 @@ RILNetworkInterface.prototype = {
 
   dataCallStateChanged: function dataCallStateChanged(datacall) {
     if (this.cid && this.cid != datacall.cid) {
-    // If data call for this connection existed but cid mismatched,
-    // it means this datacall state change is not for us.
+    
+    
       return;
     }
-    // If data call for this connection does not exist, it could be state
-    // change for new data call.  We only update data call state change
-    // if APN name matched.
+    
+    
+    
     if (!this.cid && datacall.apn != this.apnSetting.apn) {
       return;
     }
@@ -3707,9 +3703,9 @@ RILNetworkInterface.prototype = {
         this.registeredAsNetworkInterface = true;
       }
     }
-    // In current design, we don't update status of secondary APN if it shares
-    // same APN name with the default APN.  In this condition, this.cid will
-    // not be set and we don't want to update its status.
+    
+    
+    
     if (this.cid == null) {
       return;
     }
@@ -3719,9 +3715,9 @@ RILNetworkInterface.prototype = {
 
     this.state = datacall.state;
 
-    // In case the data setting changed while the datacall was being started or
-    // ended, let's re-check the setting and potentially adjust the datacall
-    // state again.
+    
+    
+    
     if (this.radioInterface.apnSettings.byType.default &&
         (this.radioInterface.apnSettings.byType.default.apn ==
          this.apnSetting.apn)) {
@@ -3745,7 +3741,7 @@ RILNetworkInterface.prototype = {
   receiveDataCallList: function receiveDataCallList(dataCalls, length) {
   },
 
-  // Helpers
+  
 
   cid: null,
   registeredAsDataCallCallback: false,
@@ -3753,7 +3749,7 @@ RILNetworkInterface.prototype = {
   connecting: false,
   apnSetting: {},
 
-  // APN failed connections. Retry counter
+  
   apnRetryCounter: 0,
 
   connectedTypes: [],
@@ -3775,8 +3771,8 @@ RILNetworkInterface.prototype = {
       return;
     }
 
-    // When the retry mechanism is running in background and someone calls
-    // disconnect(), this.connectedTypes.length has chances to become 0.
+    
+    
     if (!this.connectedTypes.length) {
       return;
     }
@@ -3798,8 +3794,8 @@ RILNetworkInterface.prototype = {
     let radioTechType = this.radioInterface.rilContext.data.type;
     let radioTechnology = RIL.GECKO_RADIO_TECH.indexOf(radioTechType);
     let authType = RIL.RIL_DATACALL_AUTH_TO_GECKO.indexOf(this.apnSetting.authtype);
-    // Use the default authType if the value in database is invalid.
-    // For the case that user might not select the authentication type.
+    
+    
     if (authType == -1) {
       if (DEBUG) {
         this.debug("Invalid authType " + this.apnSetting.authtype);
@@ -3818,8 +3814,8 @@ RILNetworkInterface.prototype = {
   reset: function reset() {
     let apnRetryTimer;
     this.connecting = false;
-    // We will retry the connection in increasing times
-    // based on the function: time = A * numer_of_retries^2 + B
+    
+    
     if (this.apnRetryCounter >= this.NETWORK_APNRETRY_MAXRETRIES) {
       this.apnRetryCounter = 0;
       this.timer = null;
@@ -3838,7 +3834,7 @@ RILNetworkInterface.prototype = {
     }
 
     if (this.timer == null) {
-      // Event timer for connection retries
+      
       this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     }
     this.timer.initWithCallback(this, apnRetryTimer * 1000,
@@ -3865,7 +3861,7 @@ RILNetworkInterface.prototype = {
     this.radioInterface.deactivateDataCall(this.cid, reason);
   },
 
-  // Entry method for timer events. Used to reconnect to a failed APN
+  
   notify: function(timer) {
     this.connect();
   },
