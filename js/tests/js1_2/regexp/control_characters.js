@@ -36,6 +36,8 @@
 
 
 
+gTestfile = 'control_characters.js';
+
 
 
 
@@ -65,7 +67,7 @@ new TestCase ( SECTION, "string1 = " + string1 + " string1.match(string1)",
 
 string1 = "";
 for (var i = 0; i < 32; i++)
-    string1 += String.fromCharCode(i);
+  string1 += String.fromCharCode(i);
 new TestCase ( SECTION, "string1 = " + string1 + " string1.match(string1)",
 	       String([string1]), String(string1.match(string1)));
 

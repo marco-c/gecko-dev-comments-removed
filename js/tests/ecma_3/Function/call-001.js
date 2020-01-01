@@ -59,8 +59,11 @@
 
 
 
+
+
+var gTestfile = 'call-001.js';
 var UBound = 0;
-var bug = '(none)';
+var BUGNUMBER = '(none)';
 var summary = 'Applying Function.prototype.call to the Function object itself';
 var status = '';
 var statusitems = [];
@@ -138,7 +141,7 @@ function captureThis()
 function test()
 {
   enterFunc ('test');
-  printBugNumber (bug);
+  printBugNumber(BUGNUMBER);
   printStatus (summary);
 
   for (var i = 0; i < UBound; i++)

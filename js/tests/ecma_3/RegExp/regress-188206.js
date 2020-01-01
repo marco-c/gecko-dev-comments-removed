@@ -45,8 +45,11 @@
 
 
 
+
+
+var gTestfile = 'regress-188206.js';
 var UBound = 0;
-var bug = 188206;
+var BUGNUMBER = 188206;
 var summary = 'Invalid use of regexp quantifiers should generate SyntaxErrors';
 var TEST_PASSED = 'SyntaxError';
 var TEST_FAILED = 'Generated an error, but NOT a SyntaxError!';
@@ -97,22 +100,22 @@ testThis(' /a????/ ');
 
 
 status = inSection(7);
-testThis(' /*a/ ');
+testThis(' 
 
-status = inSection(8);
-testThis(' /**a/ ');
 
-status = inSection(9);
-testThis(' /+a/ ');
 
-status = inSection(10);
-testThis(' /++a/ ');
 
-status = inSection(11);
-testThis(' /?a/ ');
 
-status = inSection(12);
-testThis(' /??a/ ');
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -272,7 +275,7 @@ function checkThis(sAllowedSyntax)
 function test()
 {
   enterFunc('test');
-  printBugNumber(bug);
+  printBugNumber(BUGNUMBER);
   printStatus(summary);
 
   for (var i=0; i<UBound; i++)

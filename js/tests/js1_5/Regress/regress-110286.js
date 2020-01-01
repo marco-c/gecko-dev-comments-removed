@@ -42,19 +42,22 @@
 
 
 
+
+
+var gTestfile = 'regress-110286.js';
 var UBound = 0;
-var bug = 110286;
-var summary = 'Multiline comments containing "/*" should not be syntax errors';
-var status = '';
-var statusitems = [];
-var actual = '';
-var actualvalues = [];
-var expect= '';
-var expectedvalues = [];
+var BUGNUMBER = 110286;
+var summary = 'Multiline comments containing "
 
 
-status = inSection(1);
-actual = eval("/* /* */3");
+
+
+
+
+
+
+
+3");
 expect = 3;
 addThis();
 
@@ -141,9 +144,9 @@ function addThis()
 function test()
 {
   enterFunc ('test');
-  printBugNumber (bug);
+  printBugNumber(BUGNUMBER);
   printStatus (summary);
- 
+
   for (var i = 0; i < UBound; i++)
   {
     reportCompare(expectedvalues[i], actualvalues[i], statusitems[i]);

@@ -64,8 +64,11 @@
 
 
 
+
+
+var gTestfile = 'regress-58274.js';
 var UBound = 0;
-var bug = 58274;
+var BUGNUMBER = 58274;
 var summary = 'Testing functions with double-byte names';
 var ERR = 'UNEXPECTED ERROR! \n';
 var ERR_MALFORMED_NAME = ERR + 'Could not find function name in: \n\n';
@@ -161,7 +164,7 @@ function getFunctionName(f)
 {
   var s = condenseStr(f.toString());
   var re = /\s*function\s+(\S+)\s*\(/;
-  var arr = s.match(re);
+    var arr = s.match(re);
 
   if (!(arr && arr[1]))
     return ERR_MALFORMED_NAME + s;
@@ -194,8 +197,8 @@ function condenseStr(str)
 
 
 
-  str = str.replace(/[\r\n]/g, '') 
-  return eval("'" + str + "'");
+  str = str.replace(/[\r\n]/g, '')
+    return eval("'" + str + "'");
 }
 
 
@@ -211,7 +214,7 @@ function addThis()
 function test()
 {
   enterFunc('test');
-  printBugNumber(bug);
+  printBugNumber(BUGNUMBER);
   printStatus(summary);
 
   for (var i=0; i<UBound; i++)

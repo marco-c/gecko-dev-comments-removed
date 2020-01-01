@@ -64,8 +64,11 @@
 
 
 
+
+
+var gTestfile = 'uc-005.js';
 var UBound = 0;
-var bug = 58274;
+var BUGNUMBER = 58274;
 var summary = 'Testing identifiers with double-byte names';
 var status = '';
 var statusitems = [];
@@ -97,7 +100,7 @@ var s2 =  '\u02b2, b) {try { Z';
 var s3 =  '\u02b3 : var Z';
 var s4 =  '\u02b4 = Z';
 var s5 =  '\u02b1; } catch (Z'
-var s6 =  '\u02b5) { for (var Z';
+  var s6 =  '\u02b5) { for (var Z';
 var s7 =  '\u02b6 in Z';
 var s8 =  '\u02b5){for (1; 1<0; Z';
 var s9 =  '\u02b7++) {new Array()[Z';
@@ -244,9 +247,9 @@ function condenseStr(str)
 
 
 
-  str = str.replace(/[\r\n]/g, '') 
-  return eval("'" + str + "'")
-}
+  str = str.replace(/[\r\n]/g, '')
+    return eval("'" + str + "'")
+    }
 
 
 function addThis()
@@ -261,7 +264,7 @@ function addThis()
 function test()
 {
   enterFunc('test');
-  printBugNumber(bug);
+  printBugNumber(BUGNUMBER);
   printStatus(summary);
 
   for (var i=0; i<UBound; i++)
