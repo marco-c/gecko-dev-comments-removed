@@ -60,7 +60,7 @@
 #include "nsPropertyTable.h"
 #include "nsGkAtoms.h"
 #include "nsIDocument.h"
-#include "nsRefPtrHashtable.h"
+#include "nsInterfaceHashtable.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsChangeHint.h"
 
@@ -364,9 +364,32 @@ public:
 
 
 
-  NS_HIDDEN_(void) SetImageLoaders(nsIFrame* aTargetFrame,
-                                   nsImageLoader* aImageLoaders);
+  NS_HIDDEN_(imgIRequest*) LoadImage(imgIRequest* aImage,
+                                     nsIFrame* aTargetFrame);
+  
 
+
+
+
+  NS_HIDDEN_(imgIRequest*) LoadBorderImage(imgIRequest* aImage,
+                                           nsIFrame* aTargetFrame);
+
+private:
+  typedef nsInterfaceHashtable<nsVoidPtrHashKey, nsImageLoader> ImageLoaderTable;
+
+  NS_HIDDEN_(imgIRequest*) DoLoadImage(ImageLoaderTable& aTable,
+                                       imgIRequest* aImage,
+                                       nsIFrame* aTargetFrame,
+                                       PRBool aReflowOnLoad);
+
+  NS_HIDDEN_(void) DoStopImageFor(ImageLoaderTable& aTable,
+                                  nsIFrame* aTargetFrame);
+public:
+
+  NS_HIDDEN_(void) StopBackgroundImageFor(nsIFrame* aTargetFrame)
+  { DoStopImageFor(mImageLoaders, aTargetFrame); }
+  NS_HIDDEN_(void) StopBorderImageFor(nsIFrame* aTargetFrame)
+  { DoStopImageFor(mBorderImageLoaders, aTargetFrame); }
   
 
 
@@ -489,15 +512,15 @@ public:
 
   static nscoord CSSPixelsToAppUnits(float aPixels)
   { return NSFloatPixelsToAppUnits(aPixels,
-             float(nsIDeviceContext::AppUnitsPerCSSPixel())); }
+                                   nsIDeviceContext::AppUnitsPerCSSPixel()); }
 
   static PRInt32 AppUnitsToIntCSSPixels(nscoord aAppUnits)
   { return NSAppUnitsToIntPixels(aAppUnits,
-             float(nsIDeviceContext::AppUnitsPerCSSPixel())); }
+                                 nsIDeviceContext::AppUnitsPerCSSPixel()); }
 
   static float AppUnitsToFloatCSSPixels(nscoord aAppUnits)
   { return NSAppUnitsToFloatPixels(aAppUnits,
-             float(nsIDeviceContext::AppUnitsPerCSSPixel())); }
+                                   nsIDeviceContext::AppUnitsPerCSSPixel()); }
 
   nscoord DevPixelsToAppUnits(PRInt32 aPixels) const
   { return NSIntPixelsToAppUnits(aPixels,
@@ -505,7 +528,7 @@ public:
 
   PRInt32 AppUnitsToDevPixels(nscoord aAppUnits) const
   { return NSAppUnitsToIntPixels(aAppUnits,
-             float(mDeviceContext->AppUnitsPerDevPixel())); }
+                                 mDeviceContext->AppUnitsPerDevPixel()); }
 
   
   nscoord GfxUnitsToAppUnits(gfxFloat aGfxUnits) const
@@ -764,8 +787,8 @@ protected:
   nsILinkHandler*       mLinkHandler;   
   nsIAtom*              mLangGroup;     
 
-  nsRefPtrHashtable<nsVoidPtrHashKey, nsImageLoader> mImageLoaders;
-
+  ImageLoaderTable      mImageLoaders;
+  ImageLoaderTable      mBorderImageLoaders;
   nsWeakPtr             mContainer;
 
   float                 mTextZoom;      
@@ -889,6 +912,11 @@ public:
 #endif
 
 };
+
+
+#define NS_LOAD_IMAGE_STATUS_ERROR      0x1
+#define NS_LOAD_IMAGE_STATUS_SIZE       0x2
+#define NS_LOAD_IMAGE_STATUS_BITS       0x4
 
 #ifdef DEBUG
 
