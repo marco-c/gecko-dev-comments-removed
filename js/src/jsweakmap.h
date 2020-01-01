@@ -43,6 +43,7 @@
 #define jsweakmap_h___
 
 #include "jsapi.h"
+#include "jsfriendapi.h"
 #include "jscntxt.h"
 #include "jsobj.h"
 #include "jsgcmark.h"
@@ -103,9 +104,13 @@ template <class Type> class DefaultMarkPolicy;
 
 
 
+template <class Key, class Value> class DefaultTracePolicy;
+
+
+
 class WeakMapBase {
   public:
-    WeakMapBase() : next(NULL) { }
+    WeakMapBase(JSObject *memOf) : memberOf(memOf), next(NULL) { }
     virtual ~WeakMapBase() { }
 
     void trace(JSTracer *tracer) {
@@ -140,12 +145,19 @@ class WeakMapBase {
     
     static void sweepAll(JSTracer *tracer);
 
+    
+    static void traceAllMappings(WeakMapTracer *tracer);
+
   protected:
     
     
     virtual void nonMarkingTrace(JSTracer *tracer) = 0;
     virtual bool markIteratively(JSTracer *tracer) = 0;
     virtual void sweep(JSTracer *tracer) = 0;
+    virtual void traceMappings(WeakMapTracer *tracer) = 0;
+
+    
+    JSObject *memberOf;
 
   private:
     
@@ -156,7 +168,8 @@ class WeakMapBase {
 template <class Key, class Value,
           class HashPolicy = DefaultHasher<Key>,
           class KeyMarkPolicy = DefaultMarkPolicy<Key>,
-          class ValueMarkPolicy = DefaultMarkPolicy<Value> >
+          class ValueMarkPolicy = DefaultMarkPolicy<Value>,
+          class TracePolicy = DefaultTracePolicy<Key, Value> >
 class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, public WeakMapBase {
   private:
     typedef HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy> Base;
@@ -165,8 +178,8 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
   public:
     typedef typename Base::Range Range;
 
-    explicit WeakMap(JSRuntime *rt) : Base(rt) { }
-    explicit WeakMap(JSContext *cx) : Base(cx) { }
+    explicit WeakMap(JSRuntime *rt, JSObject *memOf=NULL) : Base(rt), WeakMapBase(memOf) { }
+    explicit WeakMap(JSContext *cx, JSObject *memOf=NULL) : Base(cx), WeakMapBase(memOf) { }
 
     
     Range nondeterministicAll() {
@@ -191,7 +204,6 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
             if (kp.isMarked(k)) {
                 markedAny |= vp.mark(v);
             } else if (kp.overrideKeyMarking(k)) {
-                
                 
                 
                 
@@ -224,6 +236,13 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
             JS_ASSERT(vp.isMarked(r.front().value));
         }
 #endif
+    }
+
+    
+    void traceMappings(WeakMapTracer *tracer) {
+        TracePolicy t(tracer);
+        for (Range r = Base::all(); !r.empty(); r.popFront())
+            t.traceMapping(memberOf, r.front().key, r.front().value);
     }
 };
 
@@ -287,6 +306,42 @@ class DefaultMarkPolicy<HeapPtrScript> {
         return true;
     }
     bool overrideKeyMarking(const HeapPtrScript &k) { return false; }
+};
+
+
+
+template <>
+class DefaultTracePolicy<HeapPtrObject, HeapValue> {
+  private:
+    WeakMapTracer *tracer;
+  public:
+    DefaultTracePolicy(WeakMapTracer *t) : tracer(t) { }
+    void traceMapping(JSObject *m, const HeapPtr<JSObject> &k, HeapValue &v) {
+        if (v.isMarkable())
+            tracer->callback(tracer, m, k.get(), JSTRACE_OBJECT, v.toGCThing(), v.gcKind());
+    }
+};
+
+template <>
+class DefaultTracePolicy<HeapPtrObject, HeapPtrObject> {
+  private:
+    WeakMapTracer *tracer;
+  public:
+    DefaultTracePolicy(WeakMapTracer *t) : tracer(t) { }
+    void traceMapping(JSObject *m, const HeapPtrObject &k, const HeapPtrObject &v) {
+        tracer->callback(tracer, m, k.get(), JSTRACE_OBJECT, v.get(), JSTRACE_OBJECT);
+    }
+};
+
+template <>
+class DefaultTracePolicy<HeapPtrScript, HeapPtrObject> {
+  private:
+    WeakMapTracer *tracer;
+  public:
+    DefaultTracePolicy(WeakMapTracer *t) : tracer(t) { }
+    void traceMapping(JSObject *m, const HeapPtrScript &k, const HeapPtrObject &v) {
+        tracer->callback(tracer, m, k.get(), JSTRACE_SCRIPT, v.get(), JSTRACE_OBJECT);
+    }
 };
 
 }
