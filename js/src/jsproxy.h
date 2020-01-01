@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsproxy_h___
-#define jsproxy_h___
+#ifndef jsproxy_h
+#define jsproxy_h
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
