@@ -3,6 +3,40 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "nsHTMLFormatConverter.h"
 
 #include "nsCRT.h"
@@ -15,9 +49,15 @@
 #include "nsITransferable.h" 
 
 
+#include "nsIParser.h"
+#include "nsIDTD.h"
+#include "nsParserCIID.h"
+#include "nsIContentSink.h"
 #include "nsPrimitiveHelpers.h"
 #include "nsIDocumentEncoder.h"
-#include "nsContentUtils.h"
+#include "nsIHTMLToTextSink.h"
+
+static NS_DEFINE_CID(kCParserCID, NS_PARSER_CID);
 
 nsHTMLFormatConverter::nsHTMLFormatConverter()
 {
@@ -160,18 +200,18 @@ nsHTMLFormatConverter::CanConvert(const char *aFromDataFlavor, const char *aToDa
 
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromData, uint32_t aDataLen, 
-                               const char *aToDataFlavor, nsISupports **aToData, uint32_t *aDataToLen)
+nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromData, PRUint32 aDataLen, 
+                               const char *aToDataFlavor, nsISupports **aToData, PRUint32 *aDataToLen)
 {
   if ( !aToData || !aDataToLen )
     return NS_ERROR_INVALID_ARG;
 
   nsresult rv = NS_OK;
-  *aToData = nullptr;
+  *aToData = nsnull;
   *aDataToLen = 0;
 
   if ( !nsCRT::strcmp(aFromDataFlavor, kHTMLMime) ) {
-    nsAutoCString toFlavor ( aToDataFlavor );
+    nsCAutoString toFlavor ( aToDataFlavor );
 
     
     
@@ -188,7 +228,7 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
     if ( toFlavor.Equals(kHTMLMime) || toFlavor.Equals(kUnicodeMime) ) {
       nsresult res;
       if (toFlavor.Equals(kHTMLMime)) {
-        int32_t dataLen = dataStr.Length() * 2;
+        PRInt32 dataLen = dataStr.Length() * 2;
         nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor.get(), (void*)dataStr.get(), dataLen, aToData );
         if ( *aToData )
           *aDataToLen = dataLen;
@@ -196,7 +236,7 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
         nsAutoString outStr;
         res = ConvertFromHTMLToUnicode(dataStr, outStr);
         if (NS_SUCCEEDED(res)) {
-          int32_t dataLen = outStr.Length() * 2;
+          PRInt32 dataLen = outStr.Length() * 2;
           nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor.get(), (void*)outStr.get(), dataLen, aToData );
           if ( *aToData ) 
             *aDataToLen = dataLen;
@@ -206,7 +246,7 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
     else if ( toFlavor.Equals(kAOLMailMime) ) {
       nsAutoString outStr;
       if ( NS_SUCCEEDED(ConvertFromHTMLToAOLMail(dataStr, outStr)) ) {
-        int32_t dataLen = outStr.Length() * 2;
+        PRInt32 dataLen = outStr.Length() * 2;
         nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor.get(), (void*)outStr.get(), dataLen, aToData );
         if ( *aToData ) 
           *aDataToLen = dataLen;
@@ -232,13 +272,36 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
 NS_IMETHODIMP
 nsHTMLFormatConverter::ConvertFromHTMLToUnicode(const nsAutoString & aFromStr, nsAutoString & aToStr)
 {
-  return nsContentUtils::ConvertToPlainText(aFromStr,
-    aToStr,
+  
+  aToStr.SetLength(0);
+  nsresult rv;
+  nsCOMPtr<nsIParser> parser = do_CreateInstance(kCParserCID, &rv);
+  if ( !parser )
+    return rv;
+
+  
+  nsCOMPtr<nsIContentSink> sink;
+
+  sink = do_CreateInstance(NS_PLAINTEXTSINK_CONTRACTID);
+  NS_ENSURE_TRUE(sink, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsIHTMLToTextSink> textSink(do_QueryInterface(sink));
+  NS_ENSURE_TRUE(textSink, NS_ERROR_FAILURE);
+
+  
+  
+  PRUint32 flags =
     nsIDocumentEncoder::OutputSelectionOnly |
     nsIDocumentEncoder::OutputAbsoluteLinks |
     nsIDocumentEncoder::OutputNoScriptContent |
-    nsIDocumentEncoder::OutputNoFramesContent,
-    0);
+    nsIDocumentEncoder::OutputNoFramesContent;
+  textSink->Initialize(&aToStr, flags, 0);
+
+  parser->SetContentSink(sink);
+
+  parser->Parse(aFromStr, 0, NS_LITERAL_CSTRING("text/html"), true, eDTDMode_fragment);
+  
+  return NS_OK;
 } 
 
 

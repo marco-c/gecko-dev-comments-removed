@@ -3,13 +3,46 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef nsChildView_h_
 #define nsChildView_h_
 
 
 #include "mozView.h"
 #ifdef ACCESSIBILITY
-#include "mozilla/a11y/Accessible.h"
+#include "nsAccessible.h"
 #include "mozAccessibleProtocol.h"
 #endif
 
@@ -86,10 +119,6 @@ namespace mozilla {
 namespace gl {
 class TextureImage;
 }
-
-namespace layers {
-class LayerManagerOGL;
-}
 }
 
 #ifndef NP_NO_CARBON
@@ -127,22 +156,15 @@ extern "C" long TSMProcessRawKeyEvent(EventRef carbonEvent);
 
 
 @interface NSEvent (DeviceDelta)
-
-- (CGFloat)deviceDeltaX;
-- (CGFloat)deviceDeltaY;
-
-- (CGFloat)scrollingDeltaX;
-- (CGFloat)scrollingDeltaY;
-- (BOOL)hasPreciseScrollingDeltas;
+  - (CGFloat)deviceDeltaX;
+  - (CGFloat)deviceDeltaY;
 @end
 
-#if !defined(MAC_OS_X_VERSION_10_6) || \
-MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6
-@interface NSEvent (SnowLeopardEventFeatures)
-+ (NSUInteger)pressedMouseButtons;
-+ (NSUInteger)modifierFlags;
+
+
+@interface NSEvent (ScrollPhase)
+- (long long)_scrollPhase;
 @end
-#endif
 
 
 
@@ -159,6 +181,7 @@ MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6
 
 
 #if !defined(MAC_OS_X_VERSION_10_7) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7
+#ifdef __LP64__
 enum {
   NSEventPhaseNone        = 0,
   NSEventPhaseBegan       = 0x1 << 0,
@@ -169,7 +192,6 @@ enum {
 };
 typedef NSUInteger NSEventPhase;
 
-#ifdef __LP64__
 enum {
   NSEventSwipeTrackingLockDirection = 0x1 << 0,
   NSEventSwipeTrackingClampGestureAmount = 0x1 << 1
@@ -196,15 +218,6 @@ typedef NSInteger NSEventGestureAxis;
 @end
 #endif 
 #endif 
-
-
-
-@interface NSEvent (ScrollPhase)
-
-- (long long)_scrollPhase;
-
-- (NSEventPhase)momentumPhase;
-@end
 
 @interface ChildView : NSView<
 #ifdef ACCESSIBILITY
@@ -282,9 +295,6 @@ typedef NSInteger NSEventGestureAxis;
 #ifdef __LP64__
   BOOL *mSwipeAnimationCancelled;
 #endif
-
-  
-  BOOL mUsingOMTCompositor;
 }
 
 
@@ -297,7 +307,7 @@ typedef NSInteger NSEventGestureAxis;
 
 - (void)delayedTearDown;
 
-- (void)sendFocusEvent:(uint32_t)eventType;
+- (void)sendFocusEvent:(PRUint32)eventType;
 
 - (void)handleMouseMoved:(NSEvent*)aEvent;
 
@@ -316,8 +326,6 @@ typedef NSInteger NSEventGestureAxis;
 
 
 - (BOOL)isInFailingLeftClickThrough;
-
-- (void)setGLContext:(NSOpenGLContext *)aGLContext;
 
 
 
@@ -338,10 +346,8 @@ typedef NSInteger NSEventGestureAxis;
 
 #ifdef __LP64__
 - (void)maybeTrackScrollEventAsSwipe:(NSEvent *)anEvent
-                      scrollOverflow:(double)overflow;
+                      scrollOverflow:(PRInt32)overflow;
 #endif
-
-- (void)setUsingOMTCompositor:(BOOL)aUseOMTC;
 @end
 
 class ChildViewMouseTracker {
@@ -388,32 +394,33 @@ public:
   NS_IMETHOD              Create(nsIWidget *aParent,
                                  nsNativeWidget aNativeParent,
                                  const nsIntRect &aRect,
+                                 EVENT_CALLBACK aHandleEventFunction,
                                  nsDeviceContext *aContext,
-                                 nsWidgetInitData *aInitData = nullptr);
+                                 nsWidgetInitData *aInitData = nsnull);
 
   NS_IMETHOD              Destroy();
 
   NS_IMETHOD              Show(bool aState);
-  virtual bool            IsVisible() const;
+  NS_IMETHOD              IsVisible(bool& outState);
 
   NS_IMETHOD              SetParent(nsIWidget* aNewParent);
   virtual nsIWidget*      GetParent(void);
   virtual float           GetDPI();
 
   NS_IMETHOD              ConstrainPosition(bool aAllowSlop,
-                                            int32_t *aX, int32_t *aY);
-  NS_IMETHOD              Move(int32_t aX, int32_t aY);
-  NS_IMETHOD              Resize(int32_t aWidth,int32_t aHeight, bool aRepaint);
-  NS_IMETHOD              Resize(int32_t aX, int32_t aY,int32_t aWidth,int32_t aHeight, bool aRepaint);
+                                            PRInt32 *aX, PRInt32 *aY);
+  NS_IMETHOD              Move(PRInt32 aX, PRInt32 aY);
+  NS_IMETHOD              Resize(PRInt32 aWidth,PRInt32 aHeight, bool aRepaint);
+  NS_IMETHOD              Resize(PRInt32 aX, PRInt32 aY,PRInt32 aWidth,PRInt32 aHeight, bool aRepaint);
 
   NS_IMETHOD              Enable(bool aState);
-  virtual bool            IsEnabled() const;
+  NS_IMETHOD              IsEnabled(bool *aState);
   NS_IMETHOD              SetFocus(bool aRaise);
   NS_IMETHOD              GetBounds(nsIntRect &aRect);
 
-  NS_IMETHOD              Invalidate(const nsIntRect &aRect);
+  NS_IMETHOD              Invalidate(const nsIntRect &aRect, bool aIsSynchronous);
 
-  virtual void*           GetNativeData(uint32_t aDataType);
+  virtual void*           GetNativeData(PRUint32 aDataType);
   virtual nsresult        ConfigureChildren(const nsTArray<Configuration>& aConfigurations);
   virtual nsIntPoint      WidgetToScreenOffset();
   virtual bool            ShowsResizeIndicator(nsIntRect* aResizerRect);
@@ -422,16 +429,16 @@ public:
                           { return aStatus == nsEventStatus_eConsumeNoDefault; }
   NS_IMETHOD              DispatchEvent(nsGUIEvent* event, nsEventStatus & aStatus);
 
+  NS_IMETHOD              Update();
   virtual bool            GetShouldAccelerate();
-  virtual bool            UseOffMainThreadCompositing();
 
   NS_IMETHOD        SetCursor(nsCursor aCursor);
-  NS_IMETHOD        SetCursor(imgIContainer* aCursor, uint32_t aHotspotX, uint32_t aHotspotY);
-
+  NS_IMETHOD        SetCursor(imgIContainer* aCursor, PRUint32 aHotspotX, PRUint32 aHotspotY);
+  
   NS_IMETHOD        CaptureRollupEvents(nsIRollupListener * aListener, bool aDoCapture, bool aConsumeRollupEvent);
   NS_IMETHOD        SetTitle(const nsAString& title);
 
-  NS_IMETHOD        GetAttention(int32_t aCycleCount);
+  NS_IMETHOD        GetAttention(PRInt32 aCycleCount);
 
   virtual bool HasPendingInputEvent();
 
@@ -443,7 +450,7 @@ public:
                                     const InputContextAction& aAction);
   NS_IMETHOD_(InputContext) GetInputContext();
   NS_IMETHOD        CancelIMEComposition();
-  NS_IMETHOD        GetToggledKeyState(uint32_t aKeyCode,
+  NS_IMETHOD        GetToggledKeyState(PRUint32 aKeyCode,
                                        bool* aLEDState);
   NS_IMETHOD        OnIMEFocusChange(bool aFocus);
 
@@ -462,32 +469,26 @@ public:
   virtual nsTransparencyMode GetTransparencyMode();
   virtual void                SetTransparencyMode(nsTransparencyMode aMode);
 
-  virtual nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
-                                            int32_t aNativeKeyCode,
-                                            uint32_t aModifierFlags,
+  virtual nsresult SynthesizeNativeKeyEvent(PRInt32 aNativeKeyboardLayout,
+                                            PRInt32 aNativeKeyCode,
+                                            PRUint32 aModifierFlags,
                                             const nsAString& aCharacters,
                                             const nsAString& aUnmodifiedCharacters);
 
   virtual nsresult SynthesizeNativeMouseEvent(nsIntPoint aPoint,
-                                              uint32_t aNativeMessage,
-                                              uint32_t aModifierFlags);
-
-  virtual nsresult SynthesizeNativeMouseMove(nsIntPoint aPoint)
-  { return SynthesizeNativeMouseEvent(aPoint, NSMouseMoved, 0); }
-
+                                              PRUint32 aNativeMessage,
+                                              PRUint32 aModifierFlags);
+  
   
   
   virtual bool      DispatchWindowEvent(nsGUIEvent& event);
-
-  bool PaintWindow(nsIntRegion aRegion);
-
+  
 #ifdef ACCESSIBILITY
-  already_AddRefed<Accessible> GetDocumentAccessible();
+  already_AddRefed<nsAccessible> GetDocumentAccessible();
 #endif
 
-  virtual void CreateCompositor();
   virtual gfxASurface* GetThebesSurface();
-  virtual void DrawWindowOverlay(LayerManager* aManager, nsIntRect aRect);
+  virtual void DrawOver(LayerManager* aManager, nsIntRect aRect);
 
   virtual void UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries);
 
@@ -500,12 +501,14 @@ public:
   void              ResetParent();
 
   static bool DoHasPendingInputEvent();
-  static uint32_t GetCurrentInputEventCount();
+  static PRUint32 GetCurrentInputEventCount();
   static void UpdateCurrentInputEventCount();
 
   NSView<mozView>* GetEditorView();
 
   bool IsPluginView() { return (mWindowType == eWindowType_plugin); }
+
+  void PaintQD();
 
   nsCocoaWindow*    GetXULWindowWidget();
 
@@ -518,8 +521,9 @@ public:
 
 protected:
 
-  void              ReportMoveEvent();
-  void              ReportSizeEvent();
+  bool              ReportDestroyEvent();
+  bool              ReportMoveEvent();
+  bool              ReportSizeEvent();
 
   
   
@@ -558,9 +562,12 @@ protected:
   bool                  mIsDispatchPaint; 
 
   NP_CGContext          mPluginCGContext;
+#ifndef NP_NO_QUICKDRAW
+  NP_Port               mPluginQDPort;
+#endif
   nsIPluginInstanceOwner* mPluginInstanceOwner; 
 
-  static uint32_t sLastInputEventCount;
+  static PRUint32 sLastInputEventCount;
 };
 
 void NS_InstallPluginKeyEventsHandler();

@@ -3,6 +3,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef __LookAndFeel
 #define __LookAndFeel
 
@@ -13,7 +45,8 @@
 #include "nsDebug.h"
 #include "nsColor.h"
 
-struct gfxFontStyle;
+
+struct nsSize;
 
 namespace mozilla {
 
@@ -186,8 +219,6 @@ public:
     eIntID_SubmenuDelay,
     
     eIntID_MenusCanOverlapOSBar,
-    
-    eIntID_ShowHideScrollbars,
     
     eIntID_SkipNavigatingDisabledMenuItem,
     
@@ -404,31 +435,6 @@ public:
   };
 
   
-  
-  enum FontID {
-    eFont_Caption = 1,     
-    eFont_Icon,
-    eFont_Menu,
-    eFont_MessageBox,
-    eFont_SmallCaption,
-    eFont_StatusBar,
-
-    eFont_Window,          
-    eFont_Document,
-    eFont_Workspace,
-    eFont_Desktop,
-    eFont_Info,
-    eFont_Dialog,
-    eFont_Button,
-    eFont_PullDownMenu,
-    eFont_List,
-    eFont_Field,
-
-    eFont_Tooltips,        
-    eFont_Widget
-  };
-
-  
 
 
 
@@ -453,7 +459,7 @@ public:
 
 
 
-  static nsresult GetInt(IntID aID, int32_t* aResult);
+  static nsresult GetInt(IntID aID, PRInt32* aResult);
   static nsresult GetFloat(FloatID aID, float* aResult);
 
   static nscolor GetColor(ColorID aID, nscolor aDefault = NS_RGB(0, 0, 0))
@@ -465,9 +471,9 @@ public:
     return result;
   }
 
-  static int32_t GetInt(IntID aID, int32_t aDefault = 0)
+  static PRInt32 GetInt(IntID aID, PRInt32 aDefault = 0)
   {
-    int32_t result;
+    PRInt32 result;
     if (NS_FAILED(GetInt(aID, &result))) {
       return aDefault;
     }
@@ -487,17 +493,6 @@ public:
 
 
 
-
-
-
-
-
-  static bool GetFont(FontID aID, nsString& aName, gfxFontStyle& aStyle);
-
-  
-
-
-
   static PRUnichar GetPasswordCharacter();
 
   
@@ -506,12 +501,6 @@ public:
 
 
   static bool GetEchoPassword();
-
-  
-
-
-
-  static uint32_t GetPasswordMaskDelay();
 
   
 

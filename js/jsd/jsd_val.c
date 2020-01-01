@@ -1,43 +1,43 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * JavaScript Debugging support - Value and Property support
+ */
 
 #include "jsd.h"
 #include "jsapi.h"
@@ -177,7 +177,7 @@ jsd_IsValueNative(JSDContext* jsdc, JSDValue* jsdval)
     return !JSVAL_IS_PRIMITIVE(jsdval->val);
 }
 
-
+/***************************************************************************/
 
 JSBool
 jsd_GetValueBoolean(JSDContext* jsdc, JSDValue* jsdval)
@@ -219,7 +219,7 @@ jsd_GetValueString(JSDContext* jsdc, JSDValue* jsdval)
     if(jsdval->string)
         return jsdval->string;
 
-    
+    /* Reuse the string without copying or re-rooting it */
     if(JSVAL_IS_STRING(jsdval->val)) {
         jsdval->string = JSVAL_TO_STRING(jsdval->val);
         return jsdval->string;
@@ -227,8 +227,8 @@ jsd_GetValueString(JSDContext* jsdc, JSDValue* jsdval)
 
     JS_BeginRequest(cx);
 
-    
-    scopeObj = JSVAL_IS_OBJECT(jsdval->val) ? JSVAL_TO_OBJECT(jsdval->val) : jsdc->glob;
+    /* Objects call JS_ValueToString in their own compartment. */
+    scopeObj = !JSVAL_IS_PRIMITIVE(jsdval->val) ? JSVAL_TO_OBJECT(jsdval->val) : jsdc->glob;
     call = JS_EnterCrossCompartmentCall(cx, scopeObj);
     if(!call) {
         JS_EndRequest(cx);
@@ -291,20 +291,20 @@ jsd_GetValueFunctionId(JSDContext* jsdc, JSDValue* jsdval)
             return NULL;
         jsdval->funName = JS_GetFunctionId(fun);
 
-        
+        /* For compatibility we return "anonymous", not an empty string here. */
         if (!jsdval->funName)
             jsdval->funName = JS_GetAnonymousString(jsdc->jsrt);
     }
     return jsdval->funName;
 }
 
+/***************************************************************************/
 
-
-
-
-
-
-
+/*
+ * Create a new JSD value referring to a jsval. Copy string values into the
+ * JSD compartment. Leave all other GCTHINGs in their native compartments
+ * and access them through cross-compartment calls.
+ */
 JSDValue*
 jsd_NewValue(JSDContext* jsdc, jsval val)
 {
@@ -499,7 +499,7 @@ jsd_RefreshValue(JSDContext* jsdc, JSDValue* jsdval)
 
     if(jsdval->string)
     {
-        
+        /* if the jsval is a string, then we didn't need to root the string */
         if(!JSVAL_IS_STRING(jsdval->val))
         {
             JS_BeginRequest(cx);
@@ -526,7 +526,7 @@ jsd_RefreshValue(JSDContext* jsdc, JSDValue* jsdval)
     jsdval->flags = 0;
 }
 
-
+/***************************************************************************/
 
 uintN
 jsd_GetCountOfProperties(JSDContext* jsdc, JSDValue* jsdval)
@@ -588,7 +588,7 @@ jsd_GetValueProperty(JSDContext* jsdc, JSDValue* jsdval, JSString* name)
     if(!jsd_IsValueObject(jsdc, jsdval))
         return NULL;
 
-    
+    /* If we already have the prop, then return it */
     while(NULL != (jsdprop = jsd_IterateProperties(jsdc, jsdval, &iter)))
     {
         JSString* propName = jsd_GetValueString(jsdc, jsdprop->name);
@@ -599,7 +599,7 @@ jsd_GetValueProperty(JSDContext* jsdc, JSDValue* jsdval, JSString* name)
         }
         JSD_DropProperty(jsdc, jsdprop);
     }
-    
+    /* Not found in property list, look it up explicitly */
 
     if(!(obj = JSVAL_TO_OBJECT(jsdval->val)))
         return NULL;
@@ -666,10 +666,10 @@ jsd_GetValueProperty(JSDContext* jsdc, JSDValue* jsdval, JSString* name)
     return _newProperty(jsdc, &pd, JSDPD_HINTED);
 }
 
-
-
-
-
+/*
+ * Retrieve a JSFunction* from a JSDValue*. This differs from
+ * JS_ValueToFunction by fully unwrapping the object first.
+ */
 JSFunction*
 jsd_GetValueFunction(JSDContext* jsdc, JSDValue* jsdval)
 {
@@ -867,8 +867,8 @@ jsd_GetScriptForValue(JSDContext* jsdc, JSDValue* jsdval)
 }
 
 
-
-
+/***************************************************************************/
+/***************************************************************************/
 
 JSDValue*
 jsd_GetPropertyName(JSDContext* jsdc, JSDProperty* jsdprop)

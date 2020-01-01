@@ -41,6 +41,7 @@
 
 
 
+
 */
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -81,6 +82,9 @@ const PREF_APP_UPDATE_SILENT              = "app.update.silent";
 const PREF_APP_UPDATE_URL                 = "app.update.url";
 const PREF_APP_UPDATE_URL_DETAILS         = "app.update.url.details";
 const PREF_APP_UPDATE_URL_OVERRIDE        = "app.update.url.override";
+const PREF_APP_UPDATE_SERVICE_ENABLED     = "app.update.service.enabled";
+const PREF_APP_UPDATE_SERVICE_ERRORS      = "app.update.service.errors";
+const PREF_APP_UPDATE_SERVICE_MAX_ERRORS  = "app.update.service.maxErrors";
 
 const PREF_PARTNER_BRANCH                 = "app.partner.";
 const PREF_APP_DISTRIBUTION               = "distribution.id";
@@ -129,6 +133,7 @@ const FILE_UPDATE_LOCALE  = "update.locale";
 const STATE_NONE            = "null";
 const STATE_DOWNLOADING     = "downloading";
 const STATE_PENDING         = "pending";
+const STATE_PENDING_SVC     = "pending-service";
 const STATE_APPLYING        = "applying";
 const STATE_SUCCEEDED       = "succeeded";
 const STATE_DOWNLOAD_FAILED = "download-failed";
@@ -138,6 +143,13 @@ const STATE_FAILED          = "failed";
 const WRITE_ERROR        = 7;
 const UNEXPECTED_ERROR   = 8;
 const ELEVATION_CANCELED = 9;
+const SERVICE_UPDATER_COULD_NOT_BE_STARTED = 16000;
+const SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS = 16001;
+const SERVICE_UPDATER_SIGN_ERROR           = 16002;
+const SERVICE_UPDATER_COMPARE_ERROR        = 16003;
+const SERVICE_UPDATER_IDENTITY_ERROR       = 16004;
+const SERVICE_STILL_APPLYING_ON_SUCCESS    = 16005;
+const SERVICE_STILL_APPLYING_ON_FAILURE    = 16006;
 
 const CERT_ATTR_CHECK_FAILED_NO_UPDATE  = 100;
 const CERT_ATTR_CHECK_FAILED_HAS_UPDATE = 101;
@@ -148,6 +160,10 @@ const DOWNLOAD_BACKGROUND_INTERVAL  = 600;
 const DOWNLOAD_FOREGROUND_INTERVAL  = 0;
 
 const UPDATE_WINDOW_NAME      = "Update:Wizard";
+
+
+
+const DEFAULT_SERVICE_MAX_ERRORS = 10;
 
 var gLocale     = null;
 
@@ -587,6 +603,22 @@ function writeStatusFile(dir, state) {
   var statusFile = dir.clone();
   statusFile.append(FILE_UPDATE_STATUS);
   writeStringToFile(statusFile, state);
+}
+
+
+
+
+
+
+
+
+function shouldUseService() {
+#ifdef MOZ_MAINTENANCE_SERVICE
+  return getPref("getBoolPref", 
+                 PREF_APP_UPDATE_SERVICE_ENABLED, false);
+#else
+  return false;
+#endif
 }
 
 
@@ -1399,7 +1431,37 @@ UpdateService.prototype = {
           writeStatusFile(getUpdatesDir(), update.state = STATE_PENDING);
           return;
         }
-        else if (update.errorCode == ELEVATION_CANCELED) {
+
+        if (update.errorCode == ELEVATION_CANCELED) {
+          writeStatusFile(getUpdatesDir(), update.state = STATE_PENDING);
+          return;
+        }
+
+        if (update.errorCode == SERVICE_UPDATER_COULD_NOT_BE_STARTED ||
+            update.errorCode == SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS ||
+            update.errorCode == SERVICE_UPDATER_SIGN_ERROR ||
+            update.errorCode == SERVICE_UPDATER_COMPARE_ERROR ||
+            update.errorCode == SERVICE_UPDATER_IDENTITY_ERROR ||
+            update.errorCode == SERVICE_STILL_APPLYING_ON_SUCCESS ||
+            update.errorCode == SERVICE_STILL_APPLYING_ON_FAILURE) {
+          var failCount = getPref("getIntPref", 
+                                  PREF_APP_UPDATE_SERVICE_ERRORS, 0);
+          var maxFail = getPref("getIntPref", 
+                                PREF_APP_UPDATE_SERVICE_MAX_ERRORS, 
+                                DEFAULT_SERVICE_MAX_ERRORS);
+
+          
+          
+          
+          if (failCount >= maxFail) {
+            Services.prefs.setBoolPref(PREF_APP_UPDATE_SERVICE_ENABLED, false);
+            Services.prefs.clearUserPref(PREF_APP_UPDATE_SERVICE_ERRORS);
+          } else {
+            failCount++;
+            Services.prefs.setIntPref(PREF_APP_UPDATE_SERVICE_ERRORS, 
+                                      failCount);
+          }
+
           writeStatusFile(getUpdatesDir(), update.state = STATE_PENDING);
           return;
         }
@@ -2195,7 +2257,7 @@ UpdateManager.prototype = {
       for (let i = updates.length - 1; i >= 0; --i) {
         let state = updates[i].state;
         if (state == STATE_NONE || state == STATE_DOWNLOADING ||
-            state == STATE_PENDING) {
+            state == STATE_PENDING || state == STATE_PENDING_SVC) {
           updates.splice(i, 1);
         }
       }
@@ -2530,7 +2592,8 @@ Downloader.prototype = {
 
 
   get patchIsStaged() {
-    return readStatusFile(getUpdatesDir()) == STATE_PENDING;
+    var readState = readStatusFile(getUpdatesDir()); 
+    return readState == STATE_PENDING || readState == STATE_PENDING_SVC;
   },
 
   
@@ -2620,6 +2683,7 @@ Downloader.prototype = {
       case STATE_DOWNLOADING:
         LOG("Downloader:_selectPatch - resuming download");
         return selectedPatch;
+      case STATE_PENDING_SVC:
       case STATE_PENDING:
         LOG("Downloader:_selectPatch - already downloaded and staged");
         return null;
@@ -2847,7 +2911,7 @@ Downloader.prototype = {
     var deleteActiveUpdate = false;
     if (Components.isSuccessCode(status)) {
       if (this._verifyDownload()) {
-        state = STATE_PENDING;
+        state = shouldUseService() ? STATE_PENDING_SVC : STATE_PENDING
 
         
         

@@ -4,6 +4,39 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef TextInputHandler_h_
 #define TextInputHandler_h_
 
@@ -28,17 +61,74 @@ namespace widget {
 
 enum
 {
-  kVK_RightCommand    = 0x36, 
+  kEscapeKeyCode      = 0x35,
+  kRCommandKeyCode    = 0x36, 
+  kCommandKeyCode     = 0x37,
+  kShiftKeyCode       = 0x38,
+  kCapsLockKeyCode    = 0x39,
+  kOptionkeyCode      = 0x3A,
+  kControlKeyCode     = 0x3B,
+  kRShiftKeyCode      = 0x3C, 
+  kROptionKeyCode     = 0x3D, 
+  kRControlKeyCode    = 0x3E, 
+  kClearKeyCode       = 0x47,
 
-  kVK_PC_PrintScreen     = kVK_F13,
-  kVK_PC_ScrollLock      = kVK_F14,
-  kVK_PC_Pause           = kVK_F15,
+  
+  kF1KeyCode          = 0x7A,
+  kF2KeyCode          = 0x78,
+  kF3KeyCode          = 0x63,
+  kF4KeyCode          = 0x76,
+  kF5KeyCode          = 0x60,
+  kF6KeyCode          = 0x61,
+  kF7KeyCode          = 0x62,
+  kF8KeyCode          = 0x64,
+  kF9KeyCode          = 0x65,
+  kF10KeyCode         = 0x6D,
+  kF11KeyCode         = 0x67,
+  kF12KeyCode         = 0x6F,
+  kF13KeyCode         = 0x69,
+  kF14KeyCode         = 0x6B,
+  kF15KeyCode         = 0x71,
 
-  kVK_PC_Insert          = kVK_Help,
-  kVK_PC_Backspace       = kVK_Delete,
-  kVK_PC_Delete          = kVK_ForwardDelete,
+  kPrintScreenKeyCode = kF13KeyCode,
+  kScrollLockKeyCode  = kF14KeyCode,
+  kPauseKeyCode       = kF15KeyCode,
 
-  kVK_Powerbook_KeypadEnter = 0x34  
+  
+  kKeypad0KeyCode     = 0x52,
+  kKeypad1KeyCode     = 0x53,
+  kKeypad2KeyCode     = 0x54,
+  kKeypad3KeyCode     = 0x55,
+  kKeypad4KeyCode     = 0x56,
+  kKeypad5KeyCode     = 0x57,
+  kKeypad6KeyCode     = 0x58,
+  kKeypad7KeyCode     = 0x59,
+  kKeypad8KeyCode     = 0x5B,
+  kKeypad9KeyCode     = 0x5C,
+
+  kKeypadMultiplyKeyCode  = 0x43,
+  kKeypadAddKeyCode       = 0x45,
+  kKeypadSubtractKeyCode  = 0x4E,
+  kKeypadDecimalKeyCode   = 0x41,
+  kKeypadDivideKeyCode    = 0x4B,
+  kKeypadEqualsKeyCode    = 0x51, 
+  kEnterKeyCode           = 0x4C,
+  kReturnKeyCode          = 0x24,
+  kPowerbookEnterKeyCode  = 0x34, 
+
+  kInsertKeyCode          = 0x72, 
+  kDeleteKeyCode          = 0x75, 
+  kTabKeyCode             = 0x30,
+  kTildeKeyCode           = 0x32,
+  kBackspaceKeyCode       = 0x33,
+  kHomeKeyCode            = 0x73, 
+  kEndKeyCode             = 0x77,
+  kPageUpKeyCode          = 0x74,
+  kPageDownKeyCode        = 0x79,
+  kLeftArrowKeyCode       = 0x7B,
+  kRightArrowKeyCode      = 0x7C,
+  kUpArrowKeyCode         = 0x7E,
+  kDownArrowKeyCode       = 0x7D
 };
 
 
@@ -56,25 +146,25 @@ public:
 
   TISInputSourceWrapper()
   {
-    mInputSourceList = nullptr;
+    mInputSourceList = nsnull;
     Clear();
   }
 
   TISInputSourceWrapper(const char* aID)
   {
-    mInputSourceList = nullptr;
+    mInputSourceList = nsnull;
     InitByInputSourceID(aID);
   }
 
   TISInputSourceWrapper(SInt32 aLayoutID)
   {
-    mInputSourceList = nullptr;
+    mInputSourceList = nsnull;
     InitByLayoutID(aLayoutID);
   }
 
   TISInputSourceWrapper(TISInputSourceRef aInputSource)
   {
-    mInputSourceList = nullptr;
+    mInputSourceList = nsnull;
     InitByTISInputSourceRef(aInputSource);
   }
 
@@ -84,6 +174,10 @@ public:
   void InitByInputSourceID(const nsAFlatString &aID);
   void InitByInputSourceID(const CFStringRef aID);
   
+
+
+
+
 
 
 
@@ -195,27 +289,7 @@ public:
 
 
 
-
-
-
-
-
-
-  void InitKeyEvent(NSEvent *aNativeKeyEvent, nsKeyEvent& aKeyEvent,
-                    const nsAString *aInsertString = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-  uint32_t ComputeGeckoKeyCode(UInt32 aNativeKeyCode, UInt32 aKbType,
-                               bool aCmdIsPressed);
+  void InitKeyEvent(NSEvent *aNativeKeyEvent, nsKeyEvent& aKeyEvent);
 
 protected:
   
@@ -247,7 +321,7 @@ protected:
 
 
 
-  uint32_t TranslateToChar(UInt32 aKeyCode, UInt32 aModifiers, UInt32 aKbType);
+  PRUint32 TranslateToChar(UInt32 aKeyCode, UInt32 aModifiers, UInt32 aKbdType);
 
   
 
@@ -259,14 +333,7 @@ protected:
 
 
 
-
-
-
-
-  void InitKeyPressEvent(NSEvent *aNativeKeyEvent,
-                         PRUnichar aInsertChar,
-                         nsKeyEvent& aKeyEvent,
-                         UInt32 aKbType);
+  void InitKeyPressEvent(NSEvent *aNativeKeyEvent, nsKeyEvent& aKeyEvent);
 
   bool GetBoolProperty(const CFStringRef aKey);
   bool GetStringProperty(const CFStringRef aKey, CFStringRef &aStr);
@@ -275,7 +342,7 @@ protected:
   TISInputSourceRef mInputSource;
   CFArrayRef mInputSourceList;
   const UCKeyboardLayout* mUCKeyboardLayout;
-  int8_t mIsRTL;
+  PRInt8 mIsRTL;
 
   bool mOverrideKeyboard;
 };
@@ -291,7 +358,7 @@ class TextInputHandlerBase
 public:
   nsrefcnt AddRef()
   {
-    NS_PRECONDITION(int32_t(mRefCnt) >= 0, "mRefCnt is negative");
+    NS_PRECONDITION(PRInt32(mRefCnt) >= 0, "mRefCnt is negative");
     ++mRefCnt;
     NS_LOG_ADDREF(this, mRefCnt, "TextInputHandlerBase", sizeof(*this));
     return mRefCnt;
@@ -326,25 +393,37 @@ public:
 
 
 
-
-
-
-
-
-
-  void InitKeyEvent(NSEvent *aNativeKeyEvent, nsKeyEvent& aKeyEvent,
-                    const nsAString *aInsertString = nullptr);
+  void InitKeyEvent(NSEvent *aNativeKeyEvent, nsKeyEvent& aKeyEvent);
 
   
 
 
 
 
-  nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
-                                    int32_t aNativeKeyCode,
-                                    uint32_t aModifierFlags,
+  nsresult SynthesizeNativeKeyEvent(PRInt32 aNativeKeyboardLayout,
+                                    PRInt32 aNativeKeyCode,
+                                    PRUint32 aModifierFlags,
                                     const nsAString& aCharacters,
                                     const nsAString& aUnmodifiedCharacters);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static PRUint32 ComputeGeckoKeyCode(UInt32 aNativeKeyCode,
+                                      NSString *aCharacters);
 
   
 
@@ -405,18 +484,18 @@ protected:
     
     bool mCausedOtherKeyEvents;
 
-    KeyEventState() : mKeyEvent(nullptr)
+    KeyEventState() : mKeyEvent(nsnull)
     {
       Clear();
     }    
 
-    KeyEventState(NSEvent* aNativeKeyEvent) : mKeyEvent(nullptr)
+    KeyEventState(NSEvent* aNativeKeyEvent) : mKeyEvent(nsnull)
     {
       Clear();
       Set(aNativeKeyEvent);
     }
 
-    KeyEventState(const KeyEventState &aOther) : mKeyEvent(nullptr)
+    KeyEventState(const KeyEventState &aOther) : mKeyEvent(nsnull)
     {
       Clear();
       if (aOther.mKeyEvent) {
@@ -444,7 +523,7 @@ protected:
     {
       if (mKeyEvent) {
         [mKeyEvent release];
-        mKeyEvent = nullptr;
+        mKeyEvent = nsnull;
       }
       mKeyDownHandled = false;
       mKeyPressDispatched = false;
@@ -495,14 +574,14 @@ protected:
 
   KeyEventState* PushKeyEvent(NSEvent* aNativeKeyEvent)
   {
-    uint32_t nestCount = mCurrentKeyEvents.Length();
-    for (uint32_t i = 0; i < nestCount; i++) {
+    PRUint32 nestCount = mCurrentKeyEvents.Length();
+    for (PRUint32 i = 0; i < nestCount; i++) {
       
       
       mCurrentKeyEvents[i]->mCausedOtherKeyEvents = true;
     }
 
-    KeyEventState* keyEvent = nullptr;
+    KeyEventState* keyEvent = nsnull;
     if (nestCount == 0) {
       mFirstKeyEvent.Set(aNativeKeyEvent);
       keyEvent = &mFirstKeyEvent;
@@ -535,7 +614,7 @@ protected:
   KeyEventState* GetCurrentKeyEvent()
   {
     if (mCurrentKeyEvents.Length() == 0) {
-      return nullptr;
+      return nsnull;
     }
     return mCurrentKeyEvents[mCurrentKeyEvents.Length() - 1];
   }
@@ -560,6 +639,16 @@ protected:
 
 
 
+
+  static PRUint32 ComputeGeckoKeyCodeFromChar(PRUnichar aChar);
+
+  
+
+
+
+
+
+
   static bool IsNormalCharInputtingEvent(const nsKeyEvent& aKeyEvent);
 
   
@@ -573,7 +662,7 @@ protected:
 
 private:
   struct KeyboardLayoutOverride {
-    int32_t mKeyboardLayout;
+    PRInt32 mKeyboardLayout;
     bool mOverrideEnabled;
 
     KeyboardLayoutOverride() :
@@ -916,7 +1005,7 @@ protected:
     kDiscardIMEComposition   = 2,
     kSyncASCIICapableOnly    = 4
   };
-  uint32_t mPendingMethods;
+  PRUint32 mPendingMethods;
 
   IMEInputHandler(nsChildView* aWidget, NSView<mozView> *aNativeView);
   virtual ~IMEInputHandler();
@@ -982,7 +1071,7 @@ private:
 
 
 
-  uint32_t ConvertToTextRangeType(uint32_t aUnderlineStyle,
+  PRUint32 ConvertToTextRangeType(PRUint32 aUnderlineStyle,
                                   NSRange& aSelectedRange);
 
   
@@ -994,7 +1083,7 @@ private:
 
 
 
-  uint32_t GetRangeCount(NSAttributedString *aString);
+  PRUint32 GetRangeCount(NSAttributedString *aString);
 
   
 

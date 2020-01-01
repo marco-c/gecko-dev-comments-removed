@@ -3,11 +3,44 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "mozilla/dom/ContentChild.h"
 #include "nsStyleConsts.h"
 #include "nsXULAppAPI.h"
 #include "nsLookAndFeel.h"
-#include "gfxFont.h"
 
 using namespace mozilla;
 using mozilla::dom::ContentChild;
@@ -17,8 +50,6 @@ AndroidSystemColors nsLookAndFeel::mSystemColors;
 
 bool nsLookAndFeel::mInitializedShowPassword = false;
 bool nsLookAndFeel::mShowPassword = true;
-
-static const PRUnichar UNICODE_BULLET = 0x2022;
 
 nsLookAndFeel::nsLookAndFeel()
     : nsXPLookAndFeel()
@@ -57,8 +88,8 @@ nsresult
 nsLookAndFeel::CallRemoteGetSystemColors()
 {
     
-    InfallibleTArray<uint32_t> colors;
-    uint32_t colorsCount = sizeof(AndroidSystemColors) / sizeof(nscolor);
+    InfallibleTArray<PRUint32> colors;
+    PRUint32 colorsCount = sizeof(AndroidSystemColors) / sizeof(nscolor);
 
     if (!ContentChild::GetSingleton()->SendGetSystemColors(colorsCount, &colors))
         return NS_ERROR_FAILURE;
@@ -343,7 +374,7 @@ nsLookAndFeel::NativeGetColor(ColorID aID, nscolor &aColor)
 
 
 nsresult
-nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
+nsLookAndFeel::GetIntImpl(IntID aID, PRInt32 &aResult)
 {
     nsresult rv = nsXPLookAndFeel::GetIntImpl(aID, aResult);
     if (NS_SUCCEEDED(rv))
@@ -391,11 +422,8 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
             aResult = eScrollThumbStyle_Proportional;
             break;
 
-        case eIntID_TouchEnabled:
-            aResult = 1;
-            break;
-
         case eIntID_WindowsDefaultTheme:
+        case eIntID_TouchEnabled:
         case eIntID_MaemoClassic:
         case eIntID_WindowsThemeIdentifier:
             aResult = 0;
@@ -445,20 +473,6 @@ nsLookAndFeel::GetFloatImpl(FloatID aID, float &aResult)
 
 
 bool
-nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
-                           gfxFontStyle& aFontStyle)
-{
-    aFontName.AssignLiteral("\"Droid Sans\"");
-    aFontStyle.style = NS_FONT_STYLE_NORMAL;
-    aFontStyle.weight = NS_FONT_WEIGHT_NORMAL;
-    aFontStyle.stretch = NS_FONT_STRETCH_NORMAL;
-    aFontStyle.size = 9.0 * 96.0f / 72.0f;
-    aFontStyle.systemFont = true;
-    return true;
-}
-
-
-bool
 nsLookAndFeel::GetEchoPasswordImpl()
 {
     if (!mInitializedShowPassword) {
@@ -466,26 +480,11 @@ nsLookAndFeel::GetEchoPasswordImpl()
             if (AndroidBridge::Bridge())
                 mShowPassword = AndroidBridge::Bridge()->GetShowPasswordSetting();
             else
-                NS_ASSERTION(AndroidBridge::Bridge() != nullptr, "AndroidBridge is not available!");
+                NS_ASSERTION(AndroidBridge::Bridge() != nsnull, "AndroidBridge is not available!");
         } else {
             ContentChild::GetSingleton()->SendGetShowPasswordSetting(&mShowPassword);
         }
         mInitializedShowPassword = true;
     }
     return mShowPassword;
-}
-
-uint32_t
-nsLookAndFeel::GetPasswordMaskDelayImpl()
-{
-  
-  return 1500;
-}
-
-
-PRUnichar
-nsLookAndFeel::GetPasswordCharacterImpl()
-{
-  
-  return UNICODE_BULLET;
 }

@@ -8,6 +8,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef nsAppShell_h_
 #define nsAppShell_h_
 
@@ -18,7 +50,7 @@ class nsCocoaWindow;
 
 typedef struct _nsCocoaAppModalWindowListItem {
   _nsCocoaAppModalWindowListItem(NSWindow *aWindow, NSModalSession aSession) :
-    mWindow(aWindow), mSession(aSession), mWidget(nullptr) {}
+    mWindow(aWindow), mSession(aSession), mWidget(nsnull) {}
   _nsCocoaAppModalWindowListItem(NSWindow *aWindow, nsCocoaWindow *aWidget) :
     mWindow(aWindow), mSession(nil), mWidget(aWidget) {}
   NSWindow *mWindow;       
@@ -46,14 +78,6 @@ private:
   nsTArray<nsCocoaAppModalWindowListItem> mList;
 };
 
-
-
-
-@interface GeckoNSApplication : NSApplication
-{
-}
-@end
-
 @class AppShellDelegate;
 
 class nsAppShell : public nsBaseAppShell
@@ -68,9 +92,9 @@ public:
   NS_IMETHOD Run(void);
   NS_IMETHOD Exit(void);
   NS_IMETHOD OnProcessNextEvent(nsIThreadInternal *aThread, bool aMayWait,
-                                uint32_t aRecursionDepth);
+                                PRUint32 aRecursionDepth);
   NS_IMETHOD AfterProcessNextEvent(nsIThreadInternal *aThread,
-                                   uint32_t aRecursionDepth);
+                                   PRUint32 aRecursionDepth);
 
   
   void WillTerminate();
@@ -100,18 +124,18 @@ protected:
 
   
   
-  uint32_t               mHadMoreEventsCount;
+  PRUint32               mHadMoreEventsCount;
   
   
   
   
   
-  static const uint32_t  kHadMoreEventsCountMax = 3;
+  static const PRUint32  kHadMoreEventsCountMax = 3;
 
-  int32_t            mRecursionDepth;
-  int32_t            mNativeEventCallbackDepth;
+  PRInt32            mRecursionDepth;
+  PRInt32            mNativeEventCallbackDepth;
   
-  int32_t            mNativeEventScheduledDepth;
+  PRInt32            mNativeEventScheduledDepth;
 };
 
 #endif 

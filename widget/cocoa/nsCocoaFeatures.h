@@ -3,6 +3,39 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef nsCocoaFeatures_h_
 #define nsCocoaFeatures_h_
 
@@ -10,12 +43,11 @@
 
 class nsCocoaFeatures {
 public:
-  static int32_t OSXVersion();
-  static bool OnSnowLeopardOrLater();
-  static bool OnLionOrLater();
-  static bool SupportCoreAnimationPlugins();
+  static PRInt32 OSXVersion();
 
+  static bool OnSnowLeopardOrLater();  
+  static bool OnLionOrLater();  
 private:
-  static int32_t mOSXVersion;
+  static PRInt32 mOSXVersion;
 };
 #endif 
