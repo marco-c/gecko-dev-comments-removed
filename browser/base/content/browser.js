@@ -1288,7 +1288,7 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
   }
 
   let NP = {};
-  Cu.import("resource://app/modules/NetworkPrioritizer.jsm", NP);
+  Cu.import("resource:///modules/NetworkPrioritizer.jsm", NP);
   NP.trackBrowserWindow(window);
 
   
