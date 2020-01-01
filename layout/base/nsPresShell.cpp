@@ -5084,23 +5084,34 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
   if (!range)
     return nsnull;
 
-  
-  nsINode* ancestor = nsContentUtils::GetCommonAncestor(range->GetStartParent(),
-                                                        range->GetEndParent());
-  NS_ASSERTION(!ancestor || ancestor->IsNodeOfType(nsINode::eCONTENT),
-               "common ancestor is not content");
-  if (!ancestor || !ancestor->IsNodeOfType(nsINode::eCONTENT))
-    return nsnull;
-
-  nsIContent* ancestorContent = NS_STATIC_CAST(nsIContent*, ancestor);
-
-  nsIFrame* ancestorFrame = GetPrimaryFrameFor(ancestorContent);
+  nsIFrame* ancestorFrame;
+  nsIFrame* rootFrame = GetRootFrame();
 
   
   
-  while (ancestorFrame &&
-         nsLayoutUtils::GetNextContinuationOrSpecialSibling(ancestorFrame))
-    ancestorFrame = ancestorFrame->GetParent();
+  
+  nsINode* startParent = range->GetStartParent();
+  nsINode* endParent = range->GetEndParent();
+  nsIDocument* doc = startParent->GetCurrentDoc();
+  if (startParent == doc || endParent == doc) {
+    ancestorFrame = rootFrame;
+  }
+  else {
+    nsINode* ancestor = nsContentUtils::GetCommonAncestor(startParent, endParent);
+    NS_ASSERTION(!ancestor || ancestor->IsNodeOfType(nsINode::eCONTENT),
+                 "common ancestor is not content");
+    if (!ancestor || !ancestor->IsNodeOfType(nsINode::eCONTENT))
+      return nsnull;
+
+    nsIContent* ancestorContent = NS_STATIC_CAST(nsIContent*, ancestor);
+    ancestorFrame = GetPrimaryFrameFor(ancestorContent);
+
+    
+    
+    while (ancestorFrame &&
+           nsLayoutUtils::GetNextContinuationOrSpecialSibling(ancestorFrame))
+      ancestorFrame = ancestorFrame->GetParent();
+  }
 
   if (!ancestorFrame)
     return nsnull;
@@ -5124,7 +5135,7 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
   
   
   
-  info->mRootOffset = ancestorFrame->GetOffsetTo(GetRootFrame());
+  info->mRootOffset = ancestorFrame->GetOffsetTo(rootFrame);
   rangeRect.MoveBy(info->mRootOffset);
   aSurfaceRect.UnionRect(aSurfaceRect, rangeRect);
 
