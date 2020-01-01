@@ -43,7 +43,6 @@
 
 #include "jscntxt.h"
 #include "nsScriptLoader.h"
-#include "nsIDOMCharacterData.h"
 #include "nsParserUtils.h"
 #include "nsICharsetConverterManager.h"
 #include "nsIUnicodeDecoder.h"
@@ -57,7 +56,6 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsIPrincipal.h"
 #include "nsContentPolicyUtils.h"
-#include "nsIDOMWindow.h"
 #include "nsIHttpChannel.h"
 #include "nsIScriptElement.h"
 #include "nsIDOMHTMLScriptElement.h"
@@ -191,14 +189,15 @@ NS_IMPL_ISUPPORTS1(nsScriptLoader, nsIStreamLoaderObserver)
 
 
 static bool
-IsScriptEventHandler(nsIScriptElement *aScriptElement)
+IsScriptEventHandler(nsIContent* aScriptElement)
 {
-  nsCOMPtr<nsIContent> contElement = do_QueryInterface(aScriptElement);
-  NS_ASSERTION(contElement, "nsIScriptElement isn't nsIContent");
+  if (!aScriptElement->IsHTML()) {
+    return false;
+  }
 
   nsAutoString forAttr, eventAttr;
-  if (!contElement->GetAttr(kNameSpaceID_None, nsGkAtoms::_for, forAttr) ||
-      !contElement->GetAttr(kNameSpaceID_None, nsGkAtoms::event, eventAttr)) {
+  if (!aScriptElement->GetAttr(kNameSpaceID_None, nsGkAtoms::_for, forAttr) ||
+      !aScriptElement->GetAttr(kNameSpaceID_None, nsGkAtoms::event, eventAttr)) {
     return false;
   }
 
@@ -368,22 +367,24 @@ public:
   }
 };
 
-nsresult
+bool
 nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
 {
   
-  NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(mDocument, false);
 
   
   if (!mEnabled || !mDocument->IsScriptEnabled()) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return false;
   }
 
   NS_ASSERTION(!aElement->IsMalformed(), "Executing malformed script");
 
+  nsCOMPtr<nsIContent> scriptContent = do_QueryInterface(aElement);
+
   
-  if (IsScriptEventHandler(aElement)) {
-    return NS_CONTENT_SCRIPT_IS_EVENTHANDLER;
+  if (IsScriptEventHandler(scriptContent)) {
+    return false;
   }
 
   
@@ -396,7 +397,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   
   nsIScriptGlobalObject *globalObject = mDocument->GetScriptGlobalObject();
   if (!globalObject) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return false;
   }
   
   nsIScriptContext *context = globalObject->GetScriptContext(
@@ -405,7 +406,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   
   
   if (!context || !context->GetScriptsEnabled()) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return false;
   }
 
   
@@ -426,7 +427,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
 
     nsAutoString mimeType;
     rv = parser.GetType(mimeType);
-    NS_ENSURE_SUCCESS(rv, rv);
+    NS_ENSURE_SUCCESS(rv, false);
 
     
     
@@ -468,13 +469,13 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       if (NS_FAILED(rv)) {
         
         if (rv != NS_ERROR_INVALID_ARG)
-          return rv;
+          return false;
       } else {
         nsCOMPtr<nsIScriptRuntime> runtime;
         rv = NS_GetScriptRuntimeByID(typeID, getter_AddRefs(runtime));
         if (NS_FAILED(rv)) {
           NS_ERROR("Failed to locate the language with this ID");
-          return rv;
+          return false;
         }
         rv = runtime->ParseVersion(versionName, &version);
         if (NS_FAILED(rv)) {
@@ -490,7 +491,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       rv = parser.GetParameter("e4x", value);
       if (NS_FAILED(rv)) {
         if (rv != NS_ERROR_INVALID_ARG)
-          return rv;
+          return false;
       } else {
         if (value.Length() == 1 && value[0] == '1')
           
@@ -504,10 +505,8 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     
     
     
-    nsCOMPtr<nsIDOMHTMLScriptElement> htmlScriptElement =
-      do_QueryInterface(aElement);
-    if (htmlScriptElement) {
-      htmlScriptElement->GetAttribute(NS_LITERAL_STRING("language"), language);
+    if (scriptContent->IsHTML()) {
+      scriptContent->GetAttr(kNameSpaceID_None, nsGkAtoms::language, language);
       if (!language.IsEmpty()) {
         if (nsParserUtils::IsJavaScriptLanguage(language, &version))
           typeID = nsIProgrammingLanguage::JAVASCRIPT;
@@ -528,7 +527,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
 
   
   if (typeID == nsIProgrammingLanguage::UNKNOWN) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return false;
   }
   
   
@@ -538,11 +537,10 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   if (typeID != nsIProgrammingLanguage::JAVASCRIPT &&
       !nsContentUtils::IsChromeDoc(mDocument)) {
     NS_WARNING("Untrusted language called from non-chrome - ignored");
-    return NS_ERROR_NOT_AVAILABLE;
+    return false;
   }
 
-  nsCOMPtr<nsIContent> eltContent(do_QueryInterface(aElement));
-  eltContent->SetScriptTypeID(typeID);
+  scriptContent->SetScriptTypeID(typeID);
 
   
 
@@ -551,7 +549,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     
     nsCOMPtr<nsIURI> scriptURI = aElement->GetScriptURI();
     if (!scriptURI) {
-      return NS_ERROR_NOT_AVAILABLE;
+      return false;
     }
     nsTArray<PreloadInfo>::index_type i =
       mPreloads.IndexOf(scriptURI.get(), 0, PreloadURIComparator());
@@ -569,7 +567,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       aElement->GetScriptCharset(elementCharset);
       if (elementCharset.Equals(preloadCharset)) {
         rv = CheckContentPolicy(mDocument, aElement, request->mURI, type);
-        NS_ENSURE_SUCCESS(rv, rv);
+        NS_ENSURE_SUCCESS(rv, false);
       } else {
         
         request = nsnull;
@@ -579,12 +577,11 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     if (!request) {
       
       request = new nsScriptLoadRequest(aElement, version);
-      NS_ENSURE_TRUE(request, NS_ERROR_OUT_OF_MEMORY);
       request->mURI = scriptURI;
       request->mIsInline = false;
       request->mLoading = true;
       rv = StartLoad(request, type);
-      NS_ENSURE_SUCCESS(rv, rv);
+      NS_ENSURE_SUCCESS(rv, false);
     }
 
     request->mJSVersion = version;
@@ -596,7 +593,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
         
         ProcessPendingRequestsAsync();
       }
-      return NS_OK;
+      return false;
     }
     if (!aElement->GetParserCreated()) {
       
@@ -608,7 +605,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
         
         ProcessPendingRequestsAsync();
       }
-      return NS_OK;
+      return false;
     }
     
     
@@ -623,7 +620,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
                    aElement->GetParserCreated() == FROM_PARSER_XSLT,
           "Non-XSLT Defer script on a document without an active parser; bug 592366.");
       mDeferRequests.AppendElement(request);
-      return NS_OK;
+      return false;
     }
 
     if (aElement->GetParserCreated() == FROM_PARSER_XSLT) {
@@ -636,14 +633,14 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
         
         ProcessPendingRequestsAsync();
       }
-      return NS_ERROR_HTMLPARSER_BLOCK;
+      return true;
     }
     if (!request->mLoading && ReadyToExecuteScripts()) {
       
       
       
       if (aElement->GetParserCreated() == FROM_PARSER_NETWORK) {
-        return ProcessRequest(request);
+        return ProcessRequest(request) == NS_ERROR_HTMLPARSER_BLOCK;
       }
       
       
@@ -654,7 +651,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
           "Parser-blocking scripts and XSLT scripts in the same doc!");
       mParserBlockingRequest = request;
       ProcessPendingRequestsAsync();
-      return NS_ERROR_HTMLPARSER_BLOCK;
+      return true;
     }
     
     
@@ -663,19 +660,19 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     NS_ASSERTION(mXSLTRequests.IsEmpty(),
         "Parser-blocking scripts and XSLT scripts in the same doc!");
     mParserBlockingRequest = request;
-    return NS_ERROR_HTMLPARSER_BLOCK;
+    return true;
   }
 
   
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   rv = mDocument->NodePrincipal()->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_SUCCESS(rv, false);
 
   if (csp) {
     PR_LOG(gCspPRLog, PR_LOG_DEBUG, ("New ScriptLoader i ****with CSP****"));
     bool inlineOK;
     rv = csp->GetAllowsInlineScript(&inlineOK);
-    NS_ENSURE_SUCCESS(rv, rv);
+    NS_ENSURE_SUCCESS(rv, false);
 
     if (!inlineOK) {
       PR_LOG(gCspPRLog, PR_LOG_DEBUG, ("CSP blocked inline scripts (2)"));
@@ -696,12 +693,11 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
                                NS_ConvertUTF8toUTF16(asciiSpec),
                                scriptText,
                                aElement->GetScriptLineNumber());
-      return NS_ERROR_FAILURE;
+      return false;
     }
   }
 
   request = new nsScriptLoadRequest(aElement, version);
-  NS_ENSURE_TRUE(request, NS_ERROR_OUT_OF_MEMORY);
   request->mJSVersion = version;
   request->mLoading = false;
   request->mIsInline = true;
@@ -714,14 +710,14 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     NS_ASSERTION(!mParserBlockingRequest,
         "Parser-blocking scripts and XSLT scripts in the same doc!");
     mXSLTRequests.AppendElement(request);
-    return NS_ERROR_HTMLPARSER_BLOCK;
+    return true;
   }
   if (aElement->GetParserCreated() == NOT_FROM_PARSER) {
     NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
         "A script-inserted script is inserted without an update batch?");
     nsContentUtils::AddScriptRunner(new nsScriptRequestProcessor(this,
                                                                  request));
-    return NS_OK;
+    return false;
   }
   if (aElement->GetParserCreated() == FROM_PARSER_NETWORK &&
       !ReadyToExecuteScripts()) {
@@ -730,7 +726,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     mParserBlockingRequest = request;
     NS_ASSERTION(mXSLTRequests.IsEmpty(),
         "Parser-blocking scripts and XSLT scripts in the same doc!");
-    return NS_ERROR_HTMLPARSER_BLOCK;
+    return true;
   }
   
   
@@ -742,7 +738,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
       "Not safe to run a parser-inserted script?");
-  return ProcessRequest(request);
+  return ProcessRequest(request) == NS_ERROR_HTMLPARSER_BLOCK;
 }
 
 nsresult
