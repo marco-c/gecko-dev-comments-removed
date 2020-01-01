@@ -205,11 +205,8 @@ static const char *kPluginRegistryVersion = "0.08";
 
 
 static NS_DEFINE_IID(kIPluginInstanceIID, NS_IPLUGININSTANCE_IID);
-static NS_DEFINE_IID(kIPluginInstancePeerIID, NS_IPLUGININSTANCEPEER_IID);
-static NS_DEFINE_IID(kIPluginStreamInfoIID, NS_IPLUGINSTREAMINFO_IID);
 static NS_DEFINE_CID(kPluginCID, NS_PLUGIN_CID);
 static NS_DEFINE_IID(kIPluginTagInfo2IID, NS_IPLUGINTAGINFO2_IID);
-static NS_DEFINE_IID(kISupportsIID, NS_ISUPPORTS_IID);
 static const char kDirectoryServiceContractID[] = "@mozilla.org/file/directory_service;1";
 
 static NS_DEFINE_CID(kCPluginManagerCID, NS_PLUGINMANAGER_CID); 
@@ -6165,6 +6162,10 @@ nsPluginHostImpl::AddHeadersToChannel(const char *aHeadersData,
 NS_IMETHODIMP
 nsPluginHostImpl::StopPluginInstance(nsIPluginInstance* aInstance)
 {
+  if (PluginDestructionGuard::DelayDestroy(aInstance)) {
+    return NS_OK;
+  }
+
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
   ("nsPluginHostImpl::StopPluginInstance called instance=%p\n",aInstance));
 
@@ -7182,4 +7183,125 @@ nsPluginStreamInfo::SetStreamComplete(const PRBool complete)
 
     SetRequest(nsnull);
   }
+}
+
+
+
+class nsPluginDestroyRunnable : public nsRunnable,
+                                public PRCList
+{
+public:
+  nsPluginDestroyRunnable(nsIPluginInstance *aInstance)
+    : mInstance(aInstance)
+  {
+    PR_INIT_CLIST(this);
+    PR_APPEND_LINK(this, &sRunnableListHead);
+  }
+
+  virtual ~nsPluginDestroyRunnable()
+  {
+    PR_REMOVE_LINK(this);
+  }
+
+  NS_IMETHOD Run()
+  {
+    nsCOMPtr<nsIPluginInstance> instance;
+
+    
+    
+    
+    instance.swap(mInstance);
+
+    if (PluginDestructionGuard::DelayDestroy(instance)) {
+      
+      
+
+      return NS_OK;
+    }
+
+    nsPluginDestroyRunnable *r =
+      static_cast<nsPluginDestroyRunnable*>(PR_NEXT_LINK(&sRunnableListHead));
+
+    while (r != &sRunnableListHead) {
+      if (r != this && r->mInstance == instance) {
+        
+        
+ 
+        return NS_OK;
+      }
+
+      r = static_cast<nsPluginDestroyRunnable*>
+        (PR_NEXT_LINK(&sRunnableListHead));
+    }
+
+    PLUGIN_LOG(PLUGIN_LOG_NORMAL,
+               ("Doing delayed destroy of instance %p\n", instance.get()));
+
+    instance->Stop();
+
+    nsRefPtr<nsPluginHostImpl> host = nsPluginHostImpl::GetInst();
+
+    if (host) {
+      host->StopPluginInstance(instance);
+    }
+
+    PLUGIN_LOG(PLUGIN_LOG_NORMAL,
+               ("Done with delayed destroy of instance %p\n", instance.get()));
+
+    return NS_OK;
+  }
+
+protected:
+  nsCOMPtr<nsIPluginInstance> mInstance;
+
+  static PRCList sRunnableListHead;
+};
+
+PRCList nsPluginDestroyRunnable::sRunnableListHead =
+  PR_INIT_STATIC_CLIST(&nsPluginDestroyRunnable::sRunnableListHead);
+
+PRCList PluginDestructionGuard::sListHead =
+  PR_INIT_STATIC_CLIST(&PluginDestructionGuard::sListHead);
+
+PluginDestructionGuard::~PluginDestructionGuard()
+{
+  NS_ASSERTION(NS_IsMainThread(), "Should be on the main thread");
+
+  PR_REMOVE_LINK(this);
+
+  if (mDelayedDestroy) {
+    
+    
+    
+    nsRefPtr<nsPluginDestroyRunnable> evt =
+      new nsPluginDestroyRunnable(mInstance);
+
+    NS_DispatchToMainThread(evt);
+  }
+}
+
+
+PRBool
+PluginDestructionGuard::DelayDestroy(nsIPluginInstance *aInstance)
+{
+  NS_ASSERTION(NS_IsMainThread(), "Should be on the main thread");
+  NS_ASSERTION(aInstance, "Uh, I need an instance!");
+
+  
+  
+
+  PluginDestructionGuard *g =
+    static_cast<PluginDestructionGuard*>(PR_LIST_HEAD(&sListHead));
+
+  while (g != &sListHead) {
+    if (g->mInstance == aInstance) {
+      g->mDelayedDestroy = PR_TRUE;
+
+      return PR_TRUE;
+    }
+
+    g = static_cast<PluginDestructionGuard*>(PR_NEXT_LINK(g));    
+  }
+
+  return PR_FALSE;
 }
