@@ -2895,6 +2895,8 @@ static JSFunctionSpec string_methods[] = {
     JS_FS_END
 };
 
+#ifdef JS_HAS_STATIC_STRINGS
+
 
 
 
@@ -3088,6 +3090,8 @@ const JSString::Data *const JSAtom::intStaticTable[] = { R8(0) };
 
 #undef R3
 #undef R7
+
+#endif
 
 JSBool
 js_String(JSContext *cx, uintN argc, Value *vp)

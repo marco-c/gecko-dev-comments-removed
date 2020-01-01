@@ -800,7 +800,14 @@ void ScriptAnalysis::breakTypeBarriers(JSContext *cx, uint32 offset, bool all)
     TypeBarrier **pbarrier = &getCode(offset).typeBarriers;
     while (*pbarrier) {
         TypeBarrier *barrier = *pbarrier;
-        if (all) {
+        if (barrier->target->hasType(barrier->type) ) {
+            
+
+
+
+
+            *pbarrier = barrier->next;
+        } else if (all) {
             
             barrier->target->addType(cx, barrier->type);
             *pbarrier = barrier->next;
@@ -2047,7 +2054,7 @@ TypeCompartment::nukeTypes(JSContext *cx)
     for (JSCList *cl = cx->runtime->contextList.next;
          cl != &cx->runtime->contextList;
          cl = cl->next) {
-        JSContext *cx = js_ContextFromLinkField(cl);
+        JSContext *cx = JSContext::fromLinkField(cl);
         cx->setCompartment(cx->compartment);
     }
 
