@@ -1,8 +1,8 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jsatominlines_h___
 #define jsatominlines_h___
@@ -63,23 +63,23 @@ ValueToId(JSContext* cx, const Value &v, jsid *idp)
     return ValueToId(cx, NULL, v, idp);
 }
 
-/*
- * Write out character representing |index| to the memory just before |end|.
- * Thus |*end| is not touched, but |end[-1]| and earlier are modified as
- * appropriate.  There must be at least js::UINT32_CHAR_BUFFER_LENGTH elements
- * before |end| to avoid buffer underflow.  The start of the characters written
- * is returned and is necessarily before |end|.
- */
+
+
+
+
+
+
+
 template <typename T>
 inline mozilla::RangedPtr<T>
 BackfillIndexInCharBuffer(uint32_t index, mozilla::RangedPtr<T> end)
 {
 #ifdef DEBUG
-    /*
-     * Assert that the buffer we're filling will hold as many characters as we
-     * could write out, by dereferencing the index that would hold the most
-     * significant digit.
-     */
+    
+
+
+
+
     (void) *(end - UINT32_CHAR_BUFFER_LENGTH);
 #endif
 
@@ -150,6 +150,33 @@ AtomHasher::match(const AtomStateEntry &entry, const Lookup &lookup)
     return PodEqual(key->chars(), lookup.chars, lookup.length);
 }
 
-} // namespace js
+inline PropertyName *
+TypeName(JSType type, JSRuntime *rt)
+{
+    JS_ASSERT(type < JSTYPE_LIMIT);
+    JS_STATIC_ASSERT(offsetof(JSAtomState, undefinedAtom) +
+                     JSTYPE_LIMIT * sizeof(PropertyName *) <=
+                     sizeof(JSAtomState));
+    JS_STATIC_ASSERT(JSTYPE_VOID == 0);
+    return (&rt->atomState.undefinedAtom)[type];
+}
 
-#endif /* jsatominlines_h___ */
+inline PropertyName *
+TypeName(JSType type, JSContext *cx)
+{
+    return TypeName(type, cx->runtime);
+}
+
+inline PropertyName *
+ClassName(JSProtoKey key, JSContext *cx)
+{
+    JS_ASSERT(key < JSProto_LIMIT);
+    JS_STATIC_ASSERT(offsetof(JSAtomState, NullAtom) + JSProto_LIMIT * sizeof(PropertyName *) <=
+                     sizeof(JSAtomState));
+    JS_STATIC_ASSERT(JSProto_Null == 0);
+    return (&cx->runtime->atomState.NullAtom)[key];
+}
+
+} 
+
+#endif 
