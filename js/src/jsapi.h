@@ -588,6 +588,11 @@ JS_StringToVersion(const char *string);
 
 #define JSOPTION_JIT            JS_BIT(11)      
 
+#define JSOPTION_NO_SCRIPT_RVAL JS_BIT(12)      
+
+
+
+
 extern JS_PUBLIC_API(uint32)
 JS_GetOptions(JSContext *cx);
 
