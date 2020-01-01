@@ -68,13 +68,11 @@ int RepList::near(const char * word) {
     int p2 = pos;
     while ((p2 - p1) > 1) {
       int m = (p1 + p2) / 2;
-
       int c = strcmp(word, dat[m]->pattern);
       if (c <= 0) {
         if (c < 0) p2 = m; else p1 = p2 = m;
       } else p1 = m;
     }
-
     return p1;
 }
 
@@ -89,6 +87,8 @@ int RepList::add(char * pat1, char * pat2) {
     if (r == NULL) return 1;
     r->pattern = mystrrep(pat1, "_", " ");
     r->pattern2 = mystrrep(pat2, "_", " ");
+    r->start = false;
+    r->end = false;
     dat[pos++] = r;
     for (int i = pos - 1; i > 0; i--) {
       r = dat[i];
@@ -103,7 +103,6 @@ int RepList::add(char * pat1, char * pat2) {
 int RepList::conv(const char * word, char * dest) {
     int stl = 0;
     int change = 0;
-
     for (size_t i = 0; i < strlen(word); i++) {
         int n = near(word + i);
         int l = match(word + i, n);
@@ -115,6 +114,5 @@ int RepList::conv(const char * word, char * dest) {
         } else dest[stl++] = word[i];
     }
     dest[stl] = '\0';
-
     return change;
 }
