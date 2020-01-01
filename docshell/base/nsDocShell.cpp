@@ -160,6 +160,8 @@
 #include "nsIWebBrowserChrome3.h"
 #include "nsITabChild.h"
 #include "nsIStrictTransportSecurityService.h"
+#include "nsStructuredCloneContainer.h"
+#include "nsIStructuredCloneContainer.h"
 
 
 #include "nsIEditingSession.h"
@@ -7741,21 +7743,17 @@ nsDocShell::SetupNewViewer(nsIContentViewer * aNewViewer)
 nsresult
 nsDocShell::SetDocCurrentStateObj(nsISHEntry *shEntry)
 {
-    nsresult rv;
-
     nsCOMPtr<nsIDocument> document = do_GetInterface(GetAsSupports(this));
     NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
 
-    nsAutoString stateData;
-    if (shEntry) {
-        rv = shEntry->GetStateData(stateData);
-        NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIStructuredCloneContainer> scContainer;
+    nsresult rv = shEntry->GetStateData(getter_AddRefs(scContainer));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-        
-        
-    }
+    
+    
+    document->SetStateObject(scContainer);
 
-    document->SetCurrentStateObject(stateData);
     return NS_OK;
 }
 
@@ -9413,66 +9411,6 @@ nsDocShell::SetReferrerURI(nsIURI * aURI)
 
 
 
-nsresult
-nsDocShell::StringifyJSValVariant(JSContext *aCx, nsIVariant *aData,
-                                  nsAString &aResult)
-{
-    nsresult rv;
-    aResult.Truncate();
-
-    
-    
-    jsval jsData;
-    rv = aData->GetAsJSVal(&jsData);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_UNEXPECTED);
-
-    nsCOMPtr<nsIJSContextStack> contextStack;
-    JSContext *cx = aCx;
-    if (!cx) {
-        
-        
-        nsCOMPtr<nsIDocument> document = do_GetInterface(GetAsSupports(this));
-        NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
-
-        
-        
-        nsIScriptGlobalObject *sgo = document->GetScopeObject();
-        NS_ENSURE_TRUE(sgo, NS_ERROR_FAILURE);
-
-        nsIScriptContext *scx = sgo->GetContext();
-        NS_ENSURE_TRUE(scx, NS_ERROR_FAILURE);
-
-        cx = (JSContext *)scx->GetNativeContext();
-
-        
-        
-        contextStack =
-            do_GetService("@mozilla.org/js/xpc/ContextStack;1", &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        contextStack->Push(cx);
-    }
-
-    nsCOMPtr<nsIJSON> json = do_GetService("@mozilla.org/dom/json;1");
-    if(json) {
-        
-        rv = json->EncodeFromJSVal(&jsData, cx, aResult);
-    }
-    else {
-        rv = NS_ERROR_FAILURE;
-    }
-
-    if (contextStack) {
-        if (NS_FAILED(rv)) {
-            JS_ClearPendingException(cx);
-        }
-
-        contextStack->Pop(&cx);
-    }
-
-    return rv;
-}
-
 NS_IMETHODIMP
 nsDocShell::AddState(nsIVariant *aData, const nsAString& aTitle,
                      const nsAString& aURL, PRBool aReplace, JSContext* aCx)
@@ -9514,13 +9452,16 @@ nsDocShell::AddState(nsIVariant *aData, const nsAString& aTitle,
 
     nsresult rv;
 
+    nsCOMPtr<nsIDocument> document = do_GetInterface(GetAsSupports(this));
+    NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
+
+    
+    nsCOMPtr<nsIStructuredCloneContainer> scContainer;
+
     
     
     
     
-    
-    
-    nsString dataStr;
     {
         nsCOMPtr<nsIDocument> origDocument =
             do_GetInterface(GetAsSupports(this));
@@ -9528,7 +9469,18 @@ nsDocShell::AddState(nsIVariant *aData, const nsAString& aTitle,
             return NS_ERROR_DOM_SECURITY_ERR;
         nsCOMPtr<nsIPrincipal> origPrincipal = origDocument->NodePrincipal();
 
-        rv = StringifyJSValVariant(aCx, aData, dataStr);
+        scContainer = new nsStructuredCloneContainer();
+        JSContext *cx = aCx;
+        if (!cx) {
+            cx = nsContentUtils::GetContextFromDocument(document);
+        }
+        rv = scContainer->InitFromVariant(aData, cx);
+
+        
+        
+        if (NS_FAILED(rv) && !aCx) {
+            JS_ClearPendingException(aCx);
+        }
         NS_ENSURE_SUCCESS(rv, rv);
 
         nsCOMPtr<nsIDocument> newDocument =
@@ -9552,11 +9504,13 @@ nsDocShell::AddState(nsIVariant *aData, const nsAString& aTitle,
     if (maxStateObjSize < 0) {
         maxStateObjSize = 0;
     }
-    NS_ENSURE_TRUE(dataStr.Length() <= (PRUint32)maxStateObjSize,
-                   NS_ERROR_ILLEGAL_VALUE);
 
-    nsCOMPtr<nsIDocument> document = do_GetInterface(GetAsSupports(this));
-    NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
+    PRUint64 scSize;
+    rv = scContainer->GetSerializedNBytes(&scSize);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    NS_ENSURE_TRUE(scSize <= (PRUint32)maxStateObjSize,
+                   NS_ERROR_ILLEGAL_VALUE);
 
     
     PRBool equalURIs = PR_TRUE;
@@ -9693,7 +9647,7 @@ nsDocShell::AddState(nsIVariant *aData, const nsAString& aTitle,
 
     
     
-    newSHEntry->SetStateData(dataStr);
+    newSHEntry->SetStateData(scContainer);
     newSHEntry->SetPostData(nsnull);
 
     
@@ -9731,7 +9685,7 @@ nsDocShell::AddState(nsIVariant *aData, const nsAString& aTitle,
     else {
         FireDummyOnLocationChange();
     }
-    document->SetCurrentStateObject(dataStr);
+    document->SetStateObject(scContainer);
 
     return NS_OK;
 }

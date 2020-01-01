@@ -68,8 +68,7 @@ function checkState(tab) {
     }
     else if (popStateCount == 1) {
       popStateCount++;
-      is(JSON.stringify(aEvent.state), JSON.stringify({obj3:3}),
-         "second popstate object.");
+      is(aEvent.state.obj3.toString(), '/^a$/', "second popstate object.");
 
       
       
@@ -125,7 +124,7 @@ function test() {
       let history = contentWindow.history;
       history.pushState({obj1:1}, "title-obj1");
       history.pushState({obj2:2}, "title-obj2", "page2");
-      history.replaceState({obj3:3}, "title-obj3");
+      history.replaceState({obj3:/^a$/}, "title-obj3");
 
       let state = ss.getTabState(tab);
       gBrowser.removeTab(tab);
