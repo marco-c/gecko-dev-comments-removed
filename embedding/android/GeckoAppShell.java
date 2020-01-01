@@ -1,39 +1,39 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Android code.
- *
- * The Initial Developer of the Original Code is Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Vladimir Vukicevic <vladimir@pobox.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 package org.mozilla.gecko;
 
@@ -65,7 +65,7 @@ class GeckoAppShell
         sGeckoRunning = false;
     }
 
-    // static members only
+    
     private GeckoAppShell() { }
 
     static boolean sGeckoRunning;
@@ -82,13 +82,13 @@ class GeckoAppShell
     static private final int NOTIFY_IME_CANCELCOMPOSITION = 2;
     static private final int NOTIFY_IME_FOCUSCHANGE = 3;
 
-    /* The Android-side API: API methods that Android calls */
+    
 
-    // Initialization methods
+    
     public static native void nativeInit();
     public static native void nativeRun(String args);
 
-    // helper methods
+    
     public static native void setSurfaceView(GeckoSurfaceView sv);
     public static native void putenv(String map);
     public static native void onResume();
@@ -97,11 +97,11 @@ class GeckoAppShell
     public static native void removeObserver(String observerKey);
     public static native void loadLibs(String apkName);
 
-    // java-side stuff
+    
     public static void loadGeckoLibs(String apkName) {
-        // The package data lib directory isn't placed in ld.so's
-        // search path, so we have to manually load libraries that
-        // libxul will depend on.  Not ideal.
+        
+        
+        
         System.loadLibrary("mozutils");
 
                 
@@ -130,19 +130,19 @@ class GeckoAppShell
     }
 
     public static void runGecko(String apkPath, String args, String url) {
-        // run gecko -- it will spawn its own thread
+        
         GeckoAppShell.nativeInit();
 
-        // Tell Gecko where the target surface view is for rendering
+        
         GeckoAppShell.setSurfaceView(GeckoApp.surfaceView);
 
-        // First argument is the .apk path
+        
         String combinedArgs = apkPath + " -omnijar " + apkPath;
         if (args != null)
             combinedArgs += " " + args;
         if (url != null)
             combinedArgs += " " + url;
-        // and go
+        
         GeckoAppShell.nativeRun(combinedArgs);
     }
 
@@ -161,14 +161,14 @@ class GeckoAppShell
         }
     }
 
-    // Tell the Gecko event loop that an event is available.
+    
     public static native void notifyGeckoOfEvent(GeckoEvent event);
 
-    /*
-     *  The Gecko-side API: API methods that Gecko calls
-     */
+    
+
+
     public static void scheduleRedraw() {
-        // Redraw everything
+        
         scheduleRedraw(0, -1, -1, -1, -1);
     }
 
@@ -186,7 +186,7 @@ class GeckoAppShell
         sendEventToGecko(e);
     }
 
-    /* Delay updating IME states (see bug 573800) */
+    
     private static final class IMEStateUpdater extends TimerTask
     {
         static private IMEStateUpdater instance;
@@ -241,7 +241,7 @@ class GeckoAppShell
         switch (type) {
         case NOTIFY_IME_RESETINPUTSTATE:
             IMEStateUpdater.resetIME();
-            // keep current enabled state
+            
             IMEStateUpdater.enableIME();
             break;
 
@@ -261,8 +261,8 @@ class GeckoAppShell
         if (GeckoApp.surfaceView == null)
             return;
 
-        /* When IME is 'disabled', IME processing is disabled.
-            In addition, the IME UI is hidden */
+        
+
         GeckoApp.surfaceView.mIMEState = state;
         GeckoApp.surfaceView.mIMETypeHint = typeHint;
         GeckoApp.surfaceView.mIMEActionHint = actionHint;
@@ -362,11 +362,11 @@ class GeckoAppShell
         gRestartScheduled = true;        
     }
  
-    // "Installs" an application by creating a shortcut
+    
     static void installWebApplication(String aURI, String aTitle, String aIconData) {
         Log.w("GeckoAppJava", "installWebApplication for " + aURI + " [" + aTitle + "]");
 
-        // the intent to be launched by the shortcut
+        
         Intent shortcutIntent = new Intent("org.mozilla.fennec.WEBAPP");
         shortcutIntent.setClassName(GeckoApp.mAppContext,
                                     "org.mozilla." + GeckoApp.mAppContext.getAppName() + ".App");
@@ -416,7 +416,7 @@ class GeckoAppShell
     }
 
     static Intent getIntentForActionString(String aAction) {
-        // Default to the view action if no other action as been specified.
+        
         if (aAction != null && aAction.length() > 0)
             return new Intent(aAction);
         else
@@ -499,7 +499,7 @@ class GeckoAppShell
             "- cookie = '" + aAlertCookie +"'\n" +
             "- name = '" + aAlertName + "'");
 
-        int icon = R.drawable.icon; // Just use the app icon by default
+        int icon = R.drawable.icon; 
 
         Uri imageUri = Uri.parse(aImageUrl);
         String scheme = imageUri.getScheme();
@@ -510,30 +510,30 @@ class GeckoAppShell
                 Class drawableClass = R.drawable.class;
                 Field f = drawableClass.getField(resource);
                 icon = f.getInt(null);
-            } catch (Exception e) {} // just means the resource doesn't exist
+            } catch (Exception e) {} 
         }
 
         int notificationID = aAlertName.hashCode();
 
-        // Remove the old notification with the same ID, if any
+        
         removeNotification(notificationID);
 
         AlertNotification notification = new AlertNotification(GeckoApp.mAppContext,
             notificationID, icon, aAlertTitle, System.currentTimeMillis());
 
-        // The intent to launch when the user clicks the expanded notification
+        
         Intent notificationIntent = new Intent(GeckoApp.ACTION_ALERT_CLICK);
         notificationIntent.setClassName(GeckoApp.mAppContext,
             "org.mozilla." + GeckoApp.mAppContext.getAppName() + ".NotificationHandler");
 
-        // Put the strings into the intent as an URI "alert:<name>#<cookie>"
+        
         Uri dataUri = Uri.fromParts("alert", aAlertName, aAlertCookie);
         notificationIntent.setData(dataUri);
 
         PendingIntent contentIntent = PendingIntent.getActivity(GeckoApp.mAppContext, 0, notificationIntent, 0);
         notification.setLatestEventInfo(GeckoApp.mAppContext, aAlertTitle, aAlertText, contentIntent);
 
-        // The intent to execute when the status entry is deleted by the user with the "Clear All Notifications" button
+        
         Intent clearNotificationIntent = new Intent(GeckoApp.ACTION_ALERT_CLEAR);
         clearNotificationIntent.setClassName(GeckoApp.mAppContext,
             "org.mozilla." + GeckoApp.mAppContext.getAppName() + ".NotificationHandler");
@@ -558,6 +558,12 @@ class GeckoAppShell
         AlertNotification notification = mAlertNotifications.get(notificationID);
         if (notification != null)
             notification.updateProgress(aAlertText, aProgress, aProgressMax);
+
+        if (aProgress == aProgressMax) {
+            
+            removeObserver(aAlertName);
+            removeNotification(notificationID);
+        }
     }
 
     public static void alertsProgressListener_OnCancel(String aAlertName) {
@@ -578,7 +584,7 @@ class GeckoAppShell
 
             AlertNotification notification = mAlertNotifications.get(notificationID);
             if (notification != null && notification.isProgressStyle()) {
-                // When clicked, keep the notification, if it displays a progress
+                
                 return;
             }
         }
@@ -607,7 +613,7 @@ class GeckoAppShell
     public static void setFullScreen(boolean fullscreen) {
         GeckoApp.mFullscreen = fullscreen;
 
-        // force a reconfiguration to hide/show the system bar
+        
         GeckoApp.mAppContext.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         GeckoApp.mAppContext.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         GeckoApp.mAppContext.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER);
