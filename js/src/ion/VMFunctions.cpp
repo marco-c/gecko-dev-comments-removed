@@ -73,7 +73,7 @@ InvokeFunction(JSContext *cx, HandleFunction fun0, uint32_t argc, Value *argv, V
         
         
         if (cx->methodJitEnabled && !fun->nonLazyScript()->canIonCompile()) {
-            UnrootedScript script = GetTopIonJSScript(cx);
+            RawScript script = GetTopIonJSScript(cx);
             if (script->hasIonScript() &&
                 ++script->ion->slowCallCount >= js_IonOptions.slowCallLimit)
             {
