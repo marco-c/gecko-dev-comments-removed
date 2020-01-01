@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
 #include "nsXMLPrettyPrinter.h"
 #include "nsContentUtils.h"
@@ -45,12 +45,12 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
 {
     *aDidPrettyPrint = false;
 
-    
+    // Check for iframe with display:none. Such iframes don't have presshells
     if (!aDocument->GetShell()) {
         return NS_OK;
     }
 
-    
+    // check if we're in an invisible iframe
     nsPIDOMWindow *internalWin = aDocument->GetWindow();
     nsCOMPtr<nsIDOMElement> frameElem;
     if (internalWin) {
@@ -82,16 +82,16 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
         }
     }
 
-    
+    // check the pref
     if (!Preferences::GetBool("layout.xml.prettyprint", true)) {
         return NS_OK;
     }
 
-    
+    // Ok, we should prettyprint. Let's do it!
     *aDidPrettyPrint = true;
     nsresult rv = NS_OK;
 
-    
+    // Load the XSLT
     nsCOMPtr<nsIURI> xslUri;
     rv = NS_NewURI(getter_AddRefs(xslUri),
                    NS_LITERAL_CSTRING("chrome://global/content/xml/XMLPrettyPrint.xsl"));
@@ -102,7 +102,7 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
                                          getter_AddRefs(xslDocument));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Transform the document
     nsCOMPtr<nsIXSLTProcessor> transformer =
         do_CreateInstance("@mozilla.org/document-transformer;1?type=xslt", &rv);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -116,42 +116,42 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
                                           getter_AddRefs(resultFragment));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
-    
-    
-    
-    
-    
+    //
+    // Apply the prettprint XBL binding.
+    //
+    // We take some shortcuts here. In particular, we don't bother invoking the
+    // contstructor (since the binding has no constructor), and we don't bother
+    // calling LoadBindingDocument because it's a chrome:// URI and thus will get
+    // sync loaded no matter what.
+    //
 
-    
+    // Grab the XBL service.
     nsXBLService* xblService = nsXBLService::GetInstance();
     NS_ENSURE_TRUE(xblService, NS_ERROR_NOT_AVAILABLE);
 
-    
+    // Compute the binding URI.
     nsCOMPtr<nsIURI> bindingUri;
     rv = NS_NewURI(getter_AddRefs(bindingUri),
         NS_LITERAL_STRING("chrome://global/content/xml/XMLPrettyPrint.xml#prettyprint"));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Compute the bound element.
     nsCOMPtr<nsIContent> rootCont = aDocument->GetRootElement();
     NS_ENSURE_TRUE(rootCont, NS_ERROR_UNEXPECTED);
 
-    
+    // Grab the system principal.
     nsCOMPtr<nsIPrincipal> sysPrincipal;
     nsContentUtils::GetSecurityManager()->
         GetSystemPrincipal(getter_AddRefs(sysPrincipal));
 
-    
+    // Load the bindings.
     nsRefPtr<nsXBLBinding> unused;
     bool ignored;
     rv = xblService->LoadBindings(rootCont, bindingUri, sysPrincipal,
                                   getter_AddRefs(unused), &ignored);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Hand the result document to the binding
     nsCOMPtr<nsIObserver> binding;
     aDocument->BindingManager()->GetBindingImplementation(rootCont,
                                               NS_GET_IID(nsIObserver),
@@ -163,7 +163,7 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
                           EmptyString().get());
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Observe the document so we know when to switch to "normal" view
     aDocument->AddObserver(this);
     mDocument = aDocument;
 
@@ -175,12 +175,12 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
 void
 nsXMLPrettyPrinter::MaybeUnhook(nsIContent* aContent)
 {
-    
-    
+    // If there either aContent is null (the document-node was modified) or
+    // there isn't a binding parent we know it's non-anonymous content.
     if ((!aContent || !aContent->GetBindingParent()) && !mUnhookPending) {
-        
-        
-        
+        // Can't blindly to mUnhookPending after AddScriptRunner,
+        // since AddScriptRunner _could_ in theory run us
+        // synchronously
         mUnhookPending = true;
         nsContentUtils::AddScriptRunner(
           NS_NewRunnableMethod(this, &nsXMLPrettyPrinter::Unhook));
@@ -251,7 +251,6 @@ nsXMLPrettyPrinter::NodeWillBeDestroyed(const nsINode* aNode)
 nsresult NS_NewXMLPrettyPrinter(nsXMLPrettyPrinter** aPrinter)
 {
     *aPrinter = new nsXMLPrettyPrinter;
-    NS_ENSURE_TRUE(*aPrinter, NS_ERROR_OUT_OF_MEMORY);
     NS_ADDREF(*aPrinter);
     return NS_OK;
 }

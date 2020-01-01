@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsCOMPtr.h"
 #include "nsXMLContentSink.h"
 #include "nsIFragmentContentSink.h"
@@ -40,12 +40,12 @@ public:
 
   NS_DECL_AND_IMPL_ZEROING_OPERATOR_NEW
 
-  
+  // nsISupports
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED_NO_UNLINK(nsXMLFragmentContentSink,
                                                      nsXMLContentSink)
 
-  
+  // nsIExpatSink
   NS_IMETHOD HandleDoctypeDecl(const nsAString & aSubset, 
                                const nsAString & aName, 
                                const nsAString & aSystemId, 
@@ -61,16 +61,16 @@ public:
                          nsIScriptError *aError,
                          bool *_retval);
 
-  
+  // nsIContentSink
   NS_IMETHOD WillBuildModel(nsDTDMode aDTDMode);
   NS_IMETHOD DidBuildModel(bool aTerminated);
   NS_IMETHOD SetDocumentCharset(nsACString& aCharset);
   virtual nsISupports *GetTarget();
   NS_IMETHOD DidProcessATokenImpl();
 
-  
+  // nsIXMLContentSink
 
-  
+  // nsIFragmentContentSink
   NS_IMETHOD FinishFragmentParsing(nsIDOMDocumentFragment** aFragment);
   NS_IMETHOD SetTargetDocument(nsIDocument* aDocument);
   NS_IMETHOD WillBuildContent();
@@ -90,7 +90,7 @@ protected:
 
   virtual void MaybeStartLayout(bool aIgnorePendingSheets);
 
-  
+  // nsContentSink overrides
   virtual nsresult ProcessStyleLink(nsIContent* aElement,
                                     const nsSubstring& aHref,
                                     bool aAlternate,
@@ -101,7 +101,7 @@ protected:
   void StartLayout();
 
   nsCOMPtr<nsIDocument> mTargetDocument;
-  
+  // the fragment
   nsCOMPtr<nsIContent>  mRoot;
   bool                  mParseError;
 };
@@ -110,9 +110,6 @@ static nsresult
 NewXMLFragmentContentSinkHelper(nsIFragmentContentSink** aResult)
 {
   nsXMLFragmentContentSink* it = new nsXMLFragmentContentSink();
-  if (!it) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
   
   NS_ADDREF(*aResult = it);
   
@@ -171,8 +168,8 @@ nsXMLFragmentContentSink::DidBuildModel(bool aTerminated)
 {
   nsRefPtr<nsParserBase> kungFuDeathGrip(mParser);
 
-  
-  
+  // Drop our reference to the parser to get rid of a circular
+  // reference.
   mParser = nullptr;
 
   return NS_OK;
@@ -191,14 +188,14 @@ nsXMLFragmentContentSink::GetTarget()
   return mTargetDocument;
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 bool
 nsXMLFragmentContentSink::SetDocElement(int32_t aNameSpaceID,
                                         nsIAtom* aTagName,
                                         nsIContent *aContent)
 {
-  
+  // this is a fragment, not a document
   return false;
 }
 
@@ -206,18 +203,18 @@ nsresult
 nsXMLFragmentContentSink::CreateElement(const PRUnichar** aAtts, uint32_t aAttsCount,
                                         nsINodeInfo* aNodeInfo, uint32_t aLineNumber,
                                         nsIContent** aResult, bool* aAppendContent,
-                                        FromParser )
+                                        FromParser /*aFromParser*/)
 {
-  
-  
+  // Claim to not be coming from parser, since we don't do any of the
+  // fancy CloseElement stuff.
   nsresult rv = nsXMLContentSink::CreateElement(aAtts, aAttsCount,
                                                 aNodeInfo, aLineNumber,
                                                 aResult, aAppendContent,
                                                 NOT_FROM_PARSER);
 
-  
-  
-  
+  // When we aren't grabbing all of the content we, never open a doc
+  // element, we run into trouble on the first element, so we don't append,
+  // and simply push this onto the content stack.
   if (mContentStack.Length() == 0) {
     *aAppendContent = false;
   }
@@ -228,7 +225,7 @@ nsXMLFragmentContentSink::CreateElement(const PRUnichar** aAtts, uint32_t aAttsC
 nsresult
 nsXMLFragmentContentSink::CloseElement(nsIContent* aContent)
 {
-  
+  // don't do fancy stuff in nsXMLContentSink
   if (mPreventScriptExecution && aContent->Tag() == nsGkAtoms::script &&
       (aContent->IsHTML() || aContent->IsSVG())) {
     nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(aContent);
@@ -244,7 +241,7 @@ nsXMLFragmentContentSink::MaybeStartLayout(bool aIgnorePendingSheets)
   return;
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 NS_IMETHODIMP
 nsXMLFragmentContentSink::HandleDoctypeDecl(const nsAString & aSubset, 
@@ -270,7 +267,7 @@ nsXMLFragmentContentSink::HandleProcessingInstruction(const PRUnichar *aTarget,
   nsRefPtr<ProcessingInstruction> node =
     NS_NewXMLProcessingInstruction(mNodeInfoManager, target, data);
 
-  
+  // no special processing here.  that should happen when the fragment moves into the document
   return AddContentAsLeaf(node);
 }
 
@@ -291,23 +288,23 @@ nsXMLFragmentContentSink::ReportError(const PRUnichar* aErrorText,
 {
   NS_PRECONDITION(aError && aSourceText && aErrorText, "Check arguments!!!");
 
-  
+  // The expat driver should report the error.
   *_retval = true;
 
   mParseError = true;
 
 #ifdef DEBUG
-  
+  // Report the error to stderr.
   fprintf(stderr,
           "\n%s\n%s\n\n",
           NS_LossyConvertUTF16toASCII(aErrorText).get(),
           NS_LossyConvertUTF16toASCII(aSourceText).get());
 #endif
 
-  
+  // The following code is similar to the cleanup in nsXMLContentSink::ReportError()
   mState = eXMLContentSinkState_InProlog;
 
-  
+  // Clear the current content
   nsCOMPtr<nsIDOMNode> node(do_QueryInterface(mRoot));
   if (node) {
     for (;;) {
@@ -319,9 +316,9 @@ nsXMLFragmentContentSink::ReportError(const PRUnichar* aErrorText,
     }
   }
 
-  
-  
-  
+  // Clear any buffered-up text we have.  It's enough to set the length to 0.
+  // The buffer itself is allocated when we're created and deleted in our
+  // destructor, so don't mess with it.
   mTextLength = 0;
 
   return NS_OK; 
@@ -335,7 +332,7 @@ nsXMLFragmentContentSink::ProcessStyleLink(nsIContent* aElement,
                                            const nsSubstring& aType,
                                            const nsSubstring& aMedia)
 {
-  
+  // don't process until moved to document
   return NS_OK;
 }
 
@@ -352,7 +349,7 @@ nsXMLFragmentContentSink::StartLayout()
   NS_NOTREACHED("fragments shouldn't layout");
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 NS_IMETHODIMP 
 nsXMLFragmentContentSink::FinishFragmentParsing(nsIDOMDocumentFragment** aFragment)
@@ -366,7 +363,7 @@ nsXMLFragmentContentSink::FinishFragmentParsing(nsIDOMDocumentFragment** aFragme
   mDocumentURI = nullptr;
   mDocShell = nullptr;
   if (mParseError) {
-    
+    //XXX PARSE_ERR from DOM3 Load and Save would be more appropriate
     mRoot = nullptr;
     mParseError = false;
     return NS_ERROR_DOM_SYNTAX_ERR;
@@ -401,8 +398,8 @@ nsXMLFragmentContentSink::WillBuildContent()
 NS_IMETHODIMP
 nsXMLFragmentContentSink::DidBuildContent()
 {
-  
-  
+  // Note: we need to FlushText() here because if we don't, we might not get
+  // an end element to do it for us, so make sure.
   if (!mParseError) {
     FlushText();
   }

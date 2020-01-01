@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/SVGDocument.h"
 #include "nsString.h"
@@ -16,11 +16,11 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace dom {
 
+//----------------------------------------------------------------------
+// Implementation
 
-
-
-
-
+//----------------------------------------------------------------------
+// nsISupports methods:
 
 void
 SVGDocument::GetDomain(nsAString& aDomain, ErrorResult& aRv)
@@ -62,7 +62,6 @@ SVGDocument::Clone(nsINodeInfo *aNodeInfo, nsINode **aResult) const
                "Can't import this document into another document!");
 
   nsRefPtr<SVGDocument> clone = new SVGDocument();
-  NS_ENSURE_TRUE(clone, NS_ERROR_OUT_OF_MEMORY);
   nsresult rv = CloneDocHelper(clone.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -75,11 +74,11 @@ SVGDocument::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aScope)
   return SVGDocumentBinding::Wrap(aCx, aScope, this);
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-
-
+////////////////////////////////////////////////////////////////////////
+// Exported creation functions
 
 nsresult
 NS_NewSVGDocument(nsIDocument** aInstancePtrResult)
