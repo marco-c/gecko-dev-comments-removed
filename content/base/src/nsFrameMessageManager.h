@@ -1,7 +1,7 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #ifndef nsFrameMessageManager_h__
 #define nsFrameMessageManager_h__
 
@@ -25,6 +25,7 @@
 namespace mozilla {
 namespace dom {
 class ContentParent;
+struct StructuredCloneData;
 }
 }
 
@@ -41,15 +42,16 @@ struct nsMessageListenerInfo
 typedef bool (*nsLoadScriptCallback)(void* aCallbackData, const nsAString& aURL);
 typedef bool (*nsSyncMessageCallback)(void* aCallbackData,
                                       const nsAString& aMessage,
-                                      const nsAString& aJSON,
+                                      const mozilla::dom::StructuredCloneData& aData,
                                       InfallibleTArray<nsString>* aJSONRetVal);
 typedef bool (*nsAsyncMessageCallback)(void* aCallbackData,
                                        const nsAString& aMessage,
-                                       const nsAString& aJSON);
+                                             const mozilla::dom::StructuredCloneData& aData);
 
 class nsFrameMessageManager MOZ_FINAL : public nsIContentFrameMessageManager,
                                         public nsIChromeFrameMessageManager
 {
+  typedef mozilla::dom::StructuredCloneData StructuredCloneData;
 public:
   nsFrameMessageManager(bool aChrome,
                         nsSyncMessageCallback aSyncCallback,
@@ -63,16 +65,17 @@ public:
   : mChrome(aChrome), mGlobal(aGlobal), mIsProcessManager(aProcessManager),
     mHandlingMessage(false), mDisconnected(false), mParentManager(aParentManager),
     mSyncCallback(aSyncCallback), mAsyncCallback(aAsyncCallback),
-    mLoadScriptCallback(aLoadScriptCallback), mCallbackData(aCallbackData),
+    mLoadScriptCallback(aLoadScriptCallback),
+    mCallbackData(aCallbackData),
     mContext(aContext)
   {
     NS_ASSERTION(mContext || (aChrome && !aParentManager) || aProcessManager,
                  "Should have mContext in non-global/non-process manager!");
     NS_ASSERTION(aChrome || !aParentManager, "Should not set parent manager!");
-    // This is a bit hackish. When parent manager is global, we want
-    // to attach the window message manager to it immediately.
-    // Is it just the frame message manager which waits until the
-    // content process is running.
+    
+    
+    
+    
     if (mParentManager && (mCallbackData || IsWindowLevel())) {
       mParentManager->AddChildManager(this);
     }
@@ -112,10 +115,11 @@ public:
   NewProcessMessageManager(mozilla::dom::ContentParent* aProcess);
 
   nsresult ReceiveMessage(nsISupports* aTarget, const nsAString& aMessage,
-                          bool aSync, const nsAString& aJSON,
+                          bool aSync, const StructuredCloneData* aCloneData,
                           JSObject* aObjectsArray,
                           InfallibleTArray<nsString>* aJSONRetVal,
                           JSContext* aContext = nullptr);
+
   void AddChildManager(nsFrameMessageManager* aManager,
                        bool aLoadScripts = true);
   void RemoveChildManager(nsFrameMessageManager* aManager)
@@ -126,11 +130,8 @@ public:
   void Disconnect(bool aRemoveFromParent = true);
   void SetCallbackData(void* aData, bool aLoadScripts = true);
   void* GetCallbackData() { return mCallbackData; }
-  void GetParamsForMessage(const jsval& aObject,
-                           JSContext* aCx,
-                           nsAString& aJSON);
   nsresult SendAsyncMessageInternal(const nsAString& aMessage,
-                                    const nsAString& aJSON);
+                                          const StructuredCloneData& aData);
   JSContext* GetJSContext() { return mContext; }
   void SetJSContext(JSContext* aCx) { mContext = aCx; }
   void RemoveFromParent();
@@ -203,7 +204,7 @@ protected:
   ~nsFrameScriptExecutor()
   { MOZ_COUNT_DTOR(nsFrameScriptExecutor); }
   void DidCreateCx();
-  // Call this when you want to destroy mCx.
+  
   void DestroyCx();
   void LoadFrameScriptInternal(const nsAString& aURL);
   bool InitTabChildGlobalInternal(nsISupports* aScope);
