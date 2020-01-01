@@ -4771,11 +4771,10 @@ PresShell::RenderDocument(const nsRect& aRect, PRBool aUntrusted,
     builder.LeavePresShell(rootFrame, rect);
 
     if (NS_SUCCEEDED(rv)) {
-      nscoord appUnitsPerDevPixel = mPresContext->AppUnitsPerDevPixel();
       
       aThebesContext->Save();
-      aThebesContext->Translate(gfxPoint(-NSAppUnitsToFloatPixels(rect.x,appUnitsPerDevPixel),
-                                         -NSAppUnitsToFloatPixels(rect.y,appUnitsPerDevPixel)));
+      aThebesContext->Translate(gfxPoint(-mPresContext->AppUnitsToGfxUnits(rect.x),
+                                         -mPresContext->AppUnitsToGfxUnits(rect.y)));
 
       nsIDeviceContext* devCtx = mPresContext->DeviceContext();
       nsCOMPtr<nsIRenderingContext> rc;
