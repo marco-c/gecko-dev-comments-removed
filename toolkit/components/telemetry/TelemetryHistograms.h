@@ -1,75 +1,75 @@
+/* -*-  Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2; -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation <http://www.mozilla.org/>.
+ * Portions created by the Initial Developer are Copyright (C) 2011
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *  Taras Glek <tglek@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
+/**
+ * This file lists Telemetry histograms collected by Mozilla. The format is
+ *
+ *    HISTOGRAM(id, minimum, maximum, bucket count, histogram kind,
+ *              human-readable description for about:telemetry)
+ *
+ * This file is the master list of telemetry histograms reported to Mozilla servers.
+ * The other data reported by telemetry is listed on https://wiki.mozilla.org/Privacy/Reviews/Telemetry/Measurements
+ *
+ * Please note that only BOOLEAN histograms are allowed to have a minimum value
+ * of zero, and that bucket counts should be >= 3.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Convenience macro for BOOLEAN histograms. */
 #define HISTOGRAM_BOOLEAN(id, message) HISTOGRAM(id, 0, 1, 2, BOOLEAN, message)
 
-
-
-
+/**
+ * a11y telemetry
+ */
 HISTOGRAM_BOOLEAN(A11Y_INSTANTIATED, "has accessibility support been instantiated")
 HISTOGRAM_BOOLEAN(ISIMPLE_DOM_USAGE, "have the ISimpleDOM* accessibility interfaces been used")
 HISTOGRAM_BOOLEAN(IACCESSIBLE_TABLE_USAGE, "has the IAccessibleTable accessibility interface been used")
 
-
-
-
+/**
+ * Cycle collector telemetry
+ */
 HISTOGRAM(CYCLE_COLLECTOR, 1, 10000, 50, EXPONENTIAL, "Time spent on one cycle collection (ms)")
 HISTOGRAM(CYCLE_COLLECTOR_VISITED_REF_COUNTED, 1, 300000, 50, EXPONENTIAL, "Number of ref counted objects visited by the cycle collector")
 HISTOGRAM(CYCLE_COLLECTOR_VISITED_GCED, 1, 300000, 50, EXPONENTIAL, "Number of JS objects visited by the cycle collector")
 HISTOGRAM(CYCLE_COLLECTOR_COLLECTED, 1, 100000, 50, EXPONENTIAL, "Number of objects collected by the cycle collector")
 
-
-
-
+/**
+ * GC telemetry
+ */
 HISTOGRAM(GC_REASON, 0, 20, 20, LINEAR, "Reason (enum value) for initiating a GC")
 HISTOGRAM_BOOLEAN(GC_IS_COMPARTMENTAL, "Is it a compartmental GC?")
 HISTOGRAM_BOOLEAN(GC_IS_SHAPE_REGEN, "Is it a shape regenerating GC?")
@@ -133,14 +133,16 @@ HISTOGRAM(IMAGE_DECODE_SPEED_PNG,  500, 50000000,  50, EXPONENTIAL, "PNG image d
 HISTOGRAM_BOOLEAN(CANVAS_2D_USED, "2D canvas used")
 HISTOGRAM_BOOLEAN(CANVAS_WEBGL_USED, "WebGL canvas used")
 
-
-
-
+/**
+ * Networking telemetry
+ */
 HISTOGRAM(TOTAL_CONTENT_PAGE_LOAD_TIME, 100, 30000, 100, EXPONENTIAL, "HTTP: Total page load time (ms)")
 HISTOGRAM(HTTP_SUBITEM_OPEN_LATENCY_TIME, 1, 30000, 50, EXPONENTIAL, "HTTP subitem: Page start -> subitem open() (ms)")
 HISTOGRAM(HTTP_SUBITEM_FIRST_BYTE_LATENCY_TIME, 1, 30000, 50, EXPONENTIAL, "HTTP subitem: Page start -> first byte received for subitem reply (ms)")
 HISTOGRAM(HTTP_REQUEST_PER_PAGE, 1, 1000, 50, EXPONENTIAL, "HTTP: Requests per page (count)")
 HISTOGRAM(HTTP_REQUEST_PER_PAGE_FROM_CACHE, 1, 101, 102, LINEAR, "HTTP: Requests serviced from cache (%)")
+HISTOGRAM(HTTP_REQUEST_PER_CONN, 1, 1000, 50, EXPONENTIAL, "HTTP: requests per connection")
+HISTOGRAM(HTTP_KBREAD_PER_CONN, 1, 3000, 50, EXPONENTIAL, "HTTP: KB read per connection")
 
 #define _HTTP_HIST(name, label) \
   HISTOGRAM(name, 1, 30000, 50, EXPONENTIAL, "HTTP " label) \
@@ -163,7 +165,7 @@ HTTP_HISTOGRAMS(PAGE, "page: ")
 HTTP_HISTOGRAMS(SUB, "subitem: ")
 
 HISTOGRAM(SPDY_PARALLEL_STREAMS, 1, 1000, 50, EXPONENTIAL, "SPDY: Streams concurrent active per connection")
-HISTOGRAM(SPDY_TOTAL_STREAMS, 1, 100000, 50, EXPONENTIAL,  "SPDY: Streams created per connection")
+HISTOGRAM(SPDY_REQUEST_PER_CONN, 1, 1000, 50, EXPONENTIAL,  "SPDY: Streams created per connection")
 HISTOGRAM(SPDY_SERVER_INITIATED_STREAMS, 1, 100000, 250, EXPONENTIAL,  "SPDY: Streams recevied per connection")
 HISTOGRAM(SPDY_CHUNK_RECVD, 1, 1000, 100, EXPONENTIAL,  "SPDY: Recvd Chunk Size (rounded to KB)")
 HISTOGRAM(SPDY_SYN_SIZE, 20, 20000, 50, EXPONENTIAL,  "SPDY: SYN Frame Header Size")
@@ -171,6 +173,8 @@ HISTOGRAM(SPDY_SYN_RATIO, 1, 99, 20, LINEAR,  "SPDY: SYN Frame Header Ratio (low
 HISTOGRAM(SPDY_SYN_REPLY_SIZE, 16, 20000, 50, EXPONENTIAL,  "SPDY: SYN Reply Header Size")
 HISTOGRAM(SPDY_SYN_REPLY_RATIO, 1, 99, 20, LINEAR,  "SPDY: SYN Reply Header Ratio (lower better)")
 HISTOGRAM(SPDY_NPN_CONNECT, 0, 1, 2, BOOLEAN,  "SPDY: NPN Negotiated")
+HISTOGRAM(SPDY_NPN_JOIN, 0, 1, 2, BOOLEAN,  "SPDY: Coalesce Succeeded")
+HISTOGRAM(SPDY_KBREAD_PER_CONN, 1, 3000, 50, EXPONENTIAL, "SPDY: KB read per connection")
 
 HISTOGRAM(SPDY_SETTINGS_UL_BW, 1, 10000, 100, EXPONENTIAL,  "SPDY: Settings Upload Bandwidth")
 HISTOGRAM(SPDY_SETTINGS_DL_BW, 1, 10000, 100, EXPONENTIAL,  "SPDY: Settings Download Bandwidth")
@@ -196,11 +200,11 @@ HISTOGRAM(HTTP_DISK_CACHE_OVERHEAD, 1, 32000000, 100, EXPONENTIAL, "HTTP Disk ca
 HISTOGRAM(FIND_PLUGINS, 1, 3000, 10, EXPONENTIAL, "Time spent scanning filesystem for plugins (ms)")
 HISTOGRAM(CHECK_JAVA_ENABLED, 1, 3000, 10, EXPONENTIAL, "Time spent checking if Java is enabled (ms)")
 
-
-
-
-
-
+/* Define 2 histograms: MOZ_SQLITE_(NAME)_MS and
+ * MOZ_SQLITE_(NAME)_MAIN_THREAD_MS. These are meant to be used by
+ * IOThreadAutoTimer which relies on _MAIN_THREAD_MS histogram being
+ * "+ 1" away from MOZ_SQLITE_(NAME)_MS.
+ */
 #define SQLITE_TIME_SPENT(NAME, DESC) \
   HISTOGRAM(MOZ_SQLITE_ ## NAME ## _MS, 1, 3000, 10, EXPONENTIAL, DESC) \
   HISTOGRAM(MOZ_SQLITE_ ## NAME ## _MAIN_THREAD_MS, 1, 3000, 10, EXPONENTIAL, DESC)
@@ -239,9 +243,9 @@ HISTOGRAM(NETWORK_DISK_CACHE_DELETEDIR_SHUTDOWN, 1, 10000, 10, EXPONENTIAL, "Tim
 HISTOGRAM(NETWORK_DISK_CACHE_SHUTDOWN, 1, 10000, 10, EXPONENTIAL, "Total Time spent (ms) during disk cache showdown")
 HISTOGRAM(NETWORK_DISK_CACHE_SHUTDOWN_CLEAR_PRIVATE, 1, 10000, 10, EXPONENTIAL, "Time spent (ms) during showdown deleting disk cache for 'clear private data' option")
 
-
-
-
+/**
+ * Url-Classifier telemetry
+ */
 #ifdef MOZ_URL_CLASSIFIER
 HISTOGRAM(URLCLASSIFIER_PS_FILELOAD_TIME, 1, 1000, 10, EXPONENTIAL, "Time spent loading PrefixSet from file (ms)")
 HISTOGRAM(URLCLASSIFIER_PS_FALLOCATE_TIME, 1, 1000, 10, EXPONENTIAL, "Time spent fallocating PrefixSet (ms)")
@@ -249,9 +253,9 @@ HISTOGRAM(URLCLASSIFIER_PS_CONSTRUCT_TIME, 1, 5000, 15, EXPONENTIAL, "Time spent
 HISTOGRAM(URLCLASSIFIER_PS_LOOKUP_TIME, 1, 500, 10, EXPONENTIAL, "Time spent per PrefixSet lookup (ms)")
 #endif
 
-
-
-
+/**
+ * Places telemetry.
+ */
 HISTOGRAM(PLACES_PAGES_COUNT, 1000, 150000, 20, EXPONENTIAL, "PLACES: Number of unique pages")
 HISTOGRAM(PLACES_BOOKMARKS_COUNT, 100, 8000, 15, EXPONENTIAL, "PLACES: Number of bookmarks")
 HISTOGRAM(PLACES_TAGS_COUNT, 1, 200, 10, EXPONENTIAL, "PLACES: Number of tags")
@@ -266,18 +270,18 @@ HISTOGRAM(PLACES_DATABASE_SIZE_PER_PAGE_B, 500, 10240, 20, EXPONENTIAL, "PLACES:
 HISTOGRAM(PLACES_EXPIRATION_STEPS_TO_CLEAN, 1, 10, 10, LINEAR, "PLACES: Expiration steps to cleanup the database")
 HISTOGRAM(PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS, 50, 500, 10, EXPONENTIAL, "PLACES: Time for first autocomplete result if > 50ms (ms)")
 
-
-
-
+/**
+ * Thunderbird-specific telemetry.
+ */
 #ifdef MOZ_THUNDERBIRD
 HISTOGRAM(THUNDERBIRD_GLODA_SIZE_MB, 1, 1000, 40, LINEAR, "Gloda: size of global-messages-db.sqlite (MB)")
 HISTOGRAM(THUNDERBIRD_CONVERSATIONS_TIME_TO_2ND_GLODA_QUERY_MS, 1, 10000, 30, EXPONENTIAL, "Conversations: time between the moment we click and the second gloda query returns (ms)")
 HISTOGRAM(THUNDERBIRD_INDEXING_RATE_MSG_PER_S, 1, 100, 20, LINEAR, "Gloda: indexing rate (message/s)")
 #endif
 
-
-
-
+/**
+ * Firefox-specific telemetry.
+ */
 #ifdef MOZ_PHOENIX
 HISTOGRAM(FX_CONTEXT_SEARCH_AND_TAB_SELECT, 0, 1, 2, BOOLEAN, "Firefox: Background tab was selected within 5 seconds of searching from the context menu")
 #endif
@@ -287,9 +291,9 @@ HISTOGRAM(XUL_REFLOW_MS, 1, 3000, 10, EXPONENTIAL, "xul reflows")
 HISTOGRAM(XUL_INITIAL_FRAME_CONSTRUCTION, 1, 3000, 10, EXPONENTIAL, "initial xul frame construction")
 HISTOGRAM_BOOLEAN(XMLHTTPREQUEST_ASYNC_OR_SYNC, "Type of XMLHttpRequest, async or sync")
 
-
-
-
+/**
+ * DOM Storage telemetry.
+ */
 #define DOMSTORAGE_HISTOGRAM(PREFIX, TYPE, TYPESTRING, DESCRIPTION) \
   HISTOGRAM(PREFIX ## DOMSTORAGE_ ## TYPE ## _SIZE_BYTES, \
             1024, 32768, 10, EXPONENTIAL, "DOM storage: size of " TYPESTRING "s stored in " DESCRIPTION "Storage")

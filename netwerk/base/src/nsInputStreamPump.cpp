@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim:set ts=4 sts=4 sw=4 et cin: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsIOService.h"
 #include "nsInputStreamPump.h"
@@ -47,20 +47,21 @@
 #include "nsThreadUtils.h"
 #include "nsCOMPtr.h"
 #include "prlog.h"
+#include "sampler.h"
 
 static NS_DEFINE_CID(kStreamTransportServiceCID, NS_STREAMTRANSPORTSERVICE_CID);
 
 #if defined(PR_LOGGING)
-
-
-
+//
+// NSPR_LOG_MODULES=nsStreamPump:5
+//
 static PRLogModuleInfo *gStreamPumpLog = nsnull;
 #endif
 #define LOG(args) PR_LOG(gStreamPumpLog, PR_LOG_DEBUG, args)
 
-
-
-
+//-----------------------------------------------------------------------------
+// nsInputStreamPump methods
+//-----------------------------------------------------------------------------
 
 nsInputStreamPump::nsInputStreamPump()
     : mState(STATE_IDLE)
@@ -131,7 +132,7 @@ nsInputStreamPump::PeekStream(PeekSegmentFun callback, void* closure)
 {
   NS_ASSERTION(mAsyncStream, "PeekStream called without stream");
 
-  
+  // See if the pipe is closed by checking the return of Available.
   PRUint32 dummy;
   nsresult rv = mAsyncStream->Available(&dummy);
   if (NS_FAILED(rv))
@@ -147,8 +148,8 @@ nsInputStreamPump::PeekStream(PeekSegmentFun callback, void* closure)
 nsresult
 nsInputStreamPump::EnsureWaiting()
 {
-    
-    
+    // no need to worry about multiple threads... an input stream pump lives
+    // on only one thread.
 
     if (!mWaiting) {
         nsresult rv = mAsyncStream->AsyncWait(this, 0, 0, mTargetThread);
@@ -161,21 +162,21 @@ nsInputStreamPump::EnsureWaiting()
     return NS_OK;
 }
 
+//-----------------------------------------------------------------------------
+// nsInputStreamPump::nsISupports
+//-----------------------------------------------------------------------------
 
-
-
-
-
-
-
+// although this class can only be accessed from one thread at a time, we do
+// allow its ownership to move from thread to thread, assuming the consumer
+// understands the limitations of this.
 NS_IMPL_THREADSAFE_ISUPPORTS3(nsInputStreamPump,
                               nsIRequest,
                               nsIInputStreamCallback,
                               nsIInputStreamPump)
 
-
-
-
+//-----------------------------------------------------------------------------
+// nsInputStreamPump::nsIRequest
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 nsInputStreamPump::GetName(nsACString &result)
@@ -212,15 +213,15 @@ nsInputStreamPump::Cancel(nsresult status)
     NS_ASSERTION(NS_FAILED(status), "cancel with non-failure status code");
     mStatus = status;
 
-    
+    // close input stream
     if (mAsyncStream) {
         mAsyncStream->CloseWithStatus(status);
         if (mSuspendCount == 0)
             EnsureWaiting();
-        
-        
-        
-        
+        // Otherwise, EnsureWaiting will be called by Resume().
+        // Note that while suspended, OnInputStreamReady will
+        // not do anything, and also note that calling asyncWait
+        // on a closed stream works and will dispatch an event immediately.
     }
     return NS_OK;
 }
@@ -274,9 +275,9 @@ nsInputStreamPump::SetLoadGroup(nsILoadGroup *aLoadGroup)
     return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// nsInputStreamPump::nsIInputStreamPump implementation
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 nsInputStreamPump::Init(nsIInputStream *stream,
@@ -303,12 +304,12 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
     NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
     NS_ENSURE_ARG_POINTER(listener);
 
-    
-    
-    
-    
-    
-    
+    //
+    // OK, we need to use the stream transport service if
+    //
+    // (1) the stream is blocking
+    // (2) the stream does not support nsIAsyncInputStream
+    //
 
     bool nonBlocking;
     nsresult rv = mStream->IsNonBlocking(&nonBlocking);
@@ -316,12 +317,12 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
 
     if (nonBlocking) {
         mAsyncStream = do_QueryInterface(mStream);
-        
-        
-        
-        
-        
-        
+        //
+        // if the stream supports nsIAsyncInputStream, and if we need to seek
+        // to a starting offset, then we must do so here.  in the non-async
+        // stream case, the stream transport service will take care of seeking
+        // for us.
+        // 
         if (mAsyncStream && (mStreamOffset != LL_MAXUINT)) {
             nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mStream);
             if (seekable)
@@ -330,7 +331,7 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
     }
 
     if (!mAsyncStream) {
-        
+        // ok, let's use the stream transport service to read this stream.
         nsCOMPtr<nsIStreamTransportService> sts =
             do_GetService(kStreamTransportServiceCID, &rv);
         if (NS_FAILED(rv)) return rv;
@@ -348,16 +349,16 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
         if (NS_FAILED(rv)) return rv;
     }
 
-    
-    
+    // release our reference to the original stream.  from this point forward,
+    // we only reference the "stream" via mAsyncStream.
     mStream = 0;
 
-    
-    
+    // mStreamOffset now holds the number of bytes currently read.  we use this
+    // to enforce the mStreamLength restriction.
     mStreamOffset = 0;
 
-    
-    
+    // grab event queue (we must do this here by contract, since all notifications
+    // must go to the thread which called AsyncRead)
     mTargetThread = do_GetCurrentThread();
     NS_ENSURE_STATE(mTargetThread);
 
@@ -373,17 +374,18 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
     return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// nsInputStreamPump::nsIInputStreamCallback implementation
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 nsInputStreamPump::OnInputStreamReady(nsIAsyncInputStream *stream)
 {
     LOG(("nsInputStreamPump::OnInputStreamReady [this=%x]\n", this));
 
-    
-    
+    SAMPLE_LABEL("Input", "OnInputStreamReady");
+    // this function has been called from a PLEvent, so we can safely call
+    // any listener or progress sink methods directly from here.
 
     for (;;) {
         if (mSuspendCount || mState == STATE_IDLE) {
@@ -428,9 +430,9 @@ nsInputStreamPump::OnStateStart()
 
     nsresult rv;
 
-    
-    
-    
+    // need to check the reason why the stream is ready.  this is required
+    // so our listener can check our status from OnStartRequest.
+    // XXX async streams should have a GetStatus method!
     if (NS_SUCCEEDED(mStatus)) {
         PRUint32 avail;
         rv = mAsyncStream->Available(&avail);
@@ -440,8 +442,8 @@ nsInputStreamPump::OnStateStart()
 
     rv = mListener->OnStartRequest(this, mListenerContext);
 
-    
-    
+    // an error returned from OnStartRequest should cause us to abort; however,
+    // we must not stomp on mStatus if already canceled.
     if (NS_FAILED(rv) && NS_SUCCEEDED(mStatus))
         mStatus = rv;
 
@@ -453,7 +455,7 @@ nsInputStreamPump::OnStateTransfer()
 {
     LOG(("  OnStateTransfer [this=%x]\n", this));
 
-    
+    // if canceled, go directly to STATE_STOP...
     if (NS_FAILED(mStatus))
         return STATE_STOP;
 
@@ -468,26 +470,26 @@ nsInputStreamPump::OnStateTransfer()
         avail = 0;
     }
     else if (NS_SUCCEEDED(rv) && avail) {
-        
+        // figure out how much data to report (XXX detect overflow??)
         if (PRUint64(avail) + mStreamOffset > mStreamLength)
             avail = PRUint32(mStreamLength - mStreamOffset);
 
         if (avail) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            // we used to limit avail to 16K - we were afraid some ODA handlers
+            // might assume they wouldn't get more than 16K at once
+            // we're removing that limit since it speeds up local file access.
+            // Now there's an implicit 64K limit of 4 16K segments
+            // NOTE: ok, so the story is as follows.  OnDataAvailable impls
+            //       are by contract supposed to consume exactly |avail| bytes.
+            //       however, many do not... mailnews... stream converters...
+            //       cough, cough.  the input stream pump is fairly tolerant
+            //       in this regard; however, if an ODA does not consume any
+            //       data from the stream, then we could potentially end up in
+            //       an infinite loop.  we do our best here to try to catch
+            //       such an error.  (see bug 189672)
 
-            
-            
+            // in most cases this QI will succeed (mAsyncStream is almost always
+            // a nsPipeInputStream, which implements nsISeekableStream::Tell).
             PRInt64 offsetBefore;
             nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mAsyncStream);
             if (seekable && NS_FAILED(seekable->Tell(&offsetBefore))) {
@@ -495,10 +497,10 @@ nsInputStreamPump::OnStateTransfer()
                 offsetBefore = 0;
             }
 
-            
-            
-            
-            
+            // report the current stream offset to our listener... if we've
+            // streamed more than PR_UINT32_MAX, then avoid overflowing the
+            // stream offset.  it's the best we can do without a 64-bit stream
+            // listener API.
             PRUint32 odaOffset =
                 mStreamOffset > PR_UINT32_MAX ?
                 PR_UINT32_MAX : PRUint32(mStreamOffset);
@@ -509,46 +511,46 @@ nsInputStreamPump::OnStateTransfer()
             rv = mListener->OnDataAvailable(this, mListenerContext, mAsyncStream,
                                             odaOffset, avail);
 
-            
+            // don't enter this code if ODA failed or called Cancel
             if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(mStatus)) {
-                
+                // test to see if this ODA failed to consume data
                 if (seekable) {
-                    
-                    
+                    // NOTE: if Tell fails, which can happen if the stream is
+                    // now closed, then we assume that everything was read.
                     PRInt64 offsetAfter;
                     if (NS_FAILED(seekable->Tell(&offsetAfter)))
                         offsetAfter = offsetBefore + avail;
                     if (offsetAfter > offsetBefore)
                         mStreamOffset += (offsetAfter - offsetBefore);
                     else if (mSuspendCount == 0) {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
+                        //
+                        // possible infinite loop if we continue pumping data!
+                        //
+                        // NOTE: although not allowed by nsIStreamListener, we
+                        // will allow the ODA impl to Suspend the pump.  IMAP
+                        // does this :-(
+                        //
                         NS_ERROR("OnDataAvailable implementation consumed no data");
                         mStatus = NS_ERROR_UNEXPECTED;
                     }
                 }
                 else
-                    mStreamOffset += avail; 
+                    mStreamOffset += avail; // assume ODA behaved well
             }
         }
     }
 
-    
-    
+    // an error returned from Available or OnDataAvailable should cause us to
+    // abort; however, we must not stomp on mStatus if already canceled.
 
     if (NS_SUCCEEDED(mStatus)) {
         if (NS_FAILED(rv))
             mStatus = rv;
         else if (avail) {
-            
-            
-            
-            
+            // if stream is now closed, advance to STATE_STOP right away.
+            // Available may return 0 bytes available at the moment; that
+            // would not mean that we are done.
+            // XXX async streams should have a GetStatus method!
             rv = mAsyncStream->Available(&avail);
             if (NS_SUCCEEDED(rv))
                 return STATE_TRANSFER;
@@ -562,9 +564,9 @@ nsInputStreamPump::OnStateStop()
 {
     LOG(("  OnStateStop [this=%x status=%x]\n", this, mStatus));
 
-    
-    
-    
+    // if an error occurred, we must be sure to pass the error onto the async
+    // stream.  in some cases, this is redundant, but since close is idempotent,
+    // this is OK.  otherwise, be sure to honor the "close-when-done" option.
 
     if (NS_FAILED(mStatus))
         mAsyncStream->CloseWithStatus(mStatus);
