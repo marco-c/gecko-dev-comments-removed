@@ -1,46 +1,46 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=78:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-/*
- * JS symbol tables.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <stdlib.h>
 #include <string.h>
 #include "jstypes.h"
@@ -49,7 +49,7 @@
 #include "jsbit.h"
 #include "jsclist.h"
 #include "jsdhash.h"
-#include "jsutil.h" /* Added by JSIFY */
+#include "jsutil.h" 
 #include "jsapi.h"
 #include "jsatom.h"
 #include "jscntxt.h"
@@ -70,12 +70,12 @@ js_GenerateShape(JSContext *cx, bool gcLocked)
     shape = JS_ATOMIC_INCREMENT(&rt->shapeGen);
     JS_ASSERT(shape != 0);
     if (shape >= SHAPE_OVERFLOW_BIT) {
-        /*
-         * FIXME bug 440834: The shape id space has overflowed. Currently we
-         * cope badly with this and schedule the GC on the every call. But
-         * first we make sure that increments from other threads would not
-         * have a chance to wrap around shapeGen to zero.
-         */
+        
+
+
+
+
+
         rt->shapeGen = SHAPE_OVERFLOW_BIT;
         js_TriggerGC(cx, gcLocked);
     }
@@ -94,10 +94,10 @@ js_GetMutableScope(JSContext *cx, JSObject *obj)
     if (scope->owned())
         return scope;
 
-    /*
-     * Compile-time block objects each have their own scope, created at
-     * birth, and runtime clone of a block objects are never mutated.
-     */
+    
+
+
+
     JS_ASSERT(STOBJ_GET_CLASS(obj) != &js_BlockClass);
     newscope = JSScope::create(cx, scope->map.ops, LOCKED_OBJ_GET_CLASS(obj), obj);
     if (!newscope)
@@ -121,11 +121,11 @@ js_GetMutableScope(JSContext *cx, JSObject *obj)
     return newscope;
 }
 
-/*
- * JSScope uses multiplicative hashing, _a la_ jsdhash.[ch], but specialized
- * to minimize footprint.  But if a scope has fewer than SCOPE_HASH_THRESHOLD
- * entries, we use linear search and avoid allocating scope->table.
- */
+
+
+
+
+
 #define SCOPE_HASH_THRESHOLD    6
 #define MIN_SCOPE_SIZE_LOG2     4
 #define MIN_SCOPE_SIZE          JS_BIT(MIN_SCOPE_SIZE_LOG2)
@@ -152,13 +152,13 @@ JSScope::createTable(JSContext *cx, bool report)
     JS_ASSERT(lastProp);
 
     if (entryCount > SCOPE_HASH_THRESHOLD) {
-        /*
-         * Either we're creating a table for a large scope that was populated
-         * via property cache hit logic under JSOP_INITPROP, JSOP_SETNAME, or
-         * JSOP_SETPROP; or else calloc failed at least once already. In any
-         * event, let's try to grow, overallocating to hold at least twice the
-         * current population.
-         */
+        
+
+
+
+
+
+
         sizeLog2 = JS_CeilingLog2(2 * entryCount);
         hashShift = JS_DHASH_BITS - sizeLog2;
     } else {
@@ -220,10 +220,10 @@ JSScope::createEmptyScope(JSContext *cx, JSClass *clasp)
     scope->map.ops = map.ops;
     scope->object = NULL;
 
-    /*
-     * This scope holds a reference to the new empty scope. Our only caller,
-     * getEmptyScope, also promises to incref on behalf of its caller.
-     */
+    
+
+
+
     scope->nrefs = 2;
     scope->freeslot = JSSLOT_FREE(clasp);
     scope->flags = OWN_SHAPE | cx->runtime->gcRegenShapesScopeFlag;
@@ -242,7 +242,7 @@ JSScope::createEmptyScope(JSContext *cx, JSClass *clasp)
 # include "jsprf.h"
 # define LIVE_SCOPE_METER(cx,expr) JS_LOCK_RUNTIME_VOID(cx->runtime,expr)
 #else
-# define LIVE_SCOPE_METER(cx,expr) /* nothing */
+# define LIVE_SCOPE_METER(cx,expr)
 #endif
 
 void
@@ -286,7 +286,7 @@ JS_FRIEND_DATA(JSScopeStats) js_scope_stats = {0};
 
 # define METER(x)       JS_ATOMIC_INCREMENT(&js_scope_stats.x)
 #else
-# define METER(x)       /* nothing */
+# define METER(x)
 #endif
 
 JS_STATIC_ASSERT(sizeof(JSHashNumber) == 4);
@@ -300,12 +300,12 @@ JS_STATIC_ASSERT(sizeof(jsid) == JS_BYTES_PER_WORD);
 # error "Unsupported configuration"
 #endif
 
-/*
- * Double hashing needs the second hash code to be relatively prime to table
- * size, so we simply make hash2 odd.  The inputs to multiplicative hash are
- * the golden ratio, expressed as a fixed-point 32 bit fraction, and the id
- * itself.
- */
+
+
+
+
+
+
 #define SCOPE_HASH0(id)                 (HASH_ID(id) * JS_GOLDEN_RATIO)
 #define SCOPE_HASH1(hash0,shift)        ((hash0) >> (shift))
 #define SCOPE_HASH2(hash0,log2,shift)   ((((hash0) << (log2)) >> (shift)) | 1)
@@ -320,32 +320,32 @@ JSScope::searchTable(jsid id, bool adding)
 
     JS_ASSERT(table);
 
-    /* Compute the primary hash address. */
+    
     METER(hashes);
     hash0 = SCOPE_HASH0(id);
     hash1 = SCOPE_HASH1(hash0, hashShift);
     spp = table + hash1;
 
-    /* Miss: return space for a new entry. */
+    
     stored = *spp;
     if (SPROP_IS_FREE(stored)) {
         METER(misses);
         return spp;
     }
 
-    /* Hit: return entry. */
+    
     sprop = SPROP_CLEAR_COLLISION(stored);
     if (sprop && sprop->id == id) {
         METER(hits);
         return spp;
     }
 
-    /* Collision: double hash. */
+    
     sizeLog2 = JS_DHASH_BITS - hashShift;
     hash2 = SCOPE_HASH2(hash0, sizeLog2, hashShift);
     sizeMask = JS_BITMASK(sizeLog2);
 
-    /* Save the first removed entry pointer so we can recycle it if adding. */
+    
     if (SPROP_IS_REMOVED(stored)) {
         firstRemoved = spp;
     } else {
@@ -381,7 +381,7 @@ JSScope::searchTable(jsid id, bool adding)
         }
     }
 
-    /* NOTREACHED */
+    
     return NULL;
 }
 
@@ -395,7 +395,7 @@ JSScope::changeTable(JSContext *cx, int change)
     if (!table)
         return createTable(cx, true);
 
-    /* Grow, shrink, or compress by changing this->table. */
+    
     oldlog2 = JS_DHASH_BITS - hashShift;
     newlog2 = oldlog2 + change;
     oldsize = JS_BIT(oldlog2);
@@ -405,16 +405,16 @@ JSScope::changeTable(JSContext *cx, int change)
     if (!newtable)
         return false;
 
-    /* Now that we have newtable allocated, update members. */
+    
     hashShift = JS_DHASH_BITS - newlog2;
     removedCount = 0;
     oldtable = table;
     table = newtable;
 
-    /* Treat the above calloc as a JS_malloc, to match CreateScopeTable. */
+    
     cx->runtime->gcMallocBytes += nbytes;
 
-    /* Copy only live entries, leaving removed and free ones behind. */
+    
     for (oldspp = oldtable; oldsize != 0; oldspp++) {
         sprop = SPROP_FETCH(oldspp);
         if (sprop) {
@@ -425,14 +425,14 @@ JSScope::changeTable(JSContext *cx, int change)
         oldsize--;
     }
 
-    /* Finally, free the old table storage. */
+    
     cx->free(oldtable);
     return true;
 }
 
-/*
- * Take care to exclude the mark bits in case we're called from the GC.
- */
+
+
+
 #define SPROP_FLAGS_NOT_MATCHED (SPROP_MARK | SPROP_FLAG_SHAPE_REGEN)
 
 static JSDHashNumber
@@ -442,7 +442,7 @@ js_HashScopeProperty(JSDHashTable *table, const void *key)
     JSDHashNumber hash;
     JSPropertyOp gsop;
 
-    /* Accumulate from least to most random so the low bits are most random. */
+    
     hash = 0;
     gsop = sprop->getter;
     if (gsop)
@@ -504,10 +504,10 @@ static const JSDHashTableOps PropertyTreeHashOps = {
     NULL
 };
 
-/*
- * A property tree node on rt->propertyFreeList overlays the following prefix
- * struct on JSScopeProperty.
- */
+
+
+
+
 typedef struct FreeNode {
     jsid                id;
     JSScopeProperty     *next;
@@ -532,7 +532,7 @@ typedef struct FreeNode {
             FREENODE(FREENODE(sprop)->next)->prevp = FREENODE(sprop)->prevp;  \
     JS_END_MACRO
 
-/* NB: Called with rt->gcLock held. */
+
 static JSScopeProperty *
 NewScopeProperty(JSRuntime *rt)
 {
@@ -593,7 +593,7 @@ DestroyPropTreeKidsChunk(JSRuntime *rt, PropTreeKidsChunk *chunk)
     js_free(chunk);
 }
 
-/* NB: Called with rt->gcLock held. */
+
 static bool
 InsertPropertyTreeChild(JSRuntime *rt, JSScopeProperty *parent,
                         JSScopeProperty *child, PropTreeKidsChunk *sweptChunk)
@@ -617,22 +617,22 @@ InsertPropertyTreeChild(JSRuntime *rt, JSScopeProperty *parent,
         if (!sprop) {
             *childp = child;
         } else {
-            /*
-             * A "Duplicate child" case.
-             *
-             * We can't do away with child, as at least one live scope entry
-             * still points at it.  What's more, that scope's lastProp chains
-             * through an ancestor line to reach child, and js_Enumerate and
-             * others count on this linkage.  We must leave child out of the
-             * hash table, and not require it to be there when we eventually
-             * GC it (see RemovePropertyTreeChild, below).
-             *
-             * It is necessary to leave the duplicate child out of the hash
-             * table to preserve entry uniqueness.  It is safe to leave the
-             * child out of the hash table (unlike the duplicate child cases
-             * below), because the child's parent link will be null, which
-             * can't dangle.
-             */
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             JS_ASSERT(sprop != child && SPROP_MATCH(sprop, child));
             JS_RUNTIME_METER(rt, duplicatePropTreeNodes);
         }
@@ -673,12 +673,12 @@ InsertPropertyTreeChild(JSRuntime *rt, JSScopeProperty *parent,
 
                         JS_ASSERT(sprop != child);
                         if (SPROP_MATCH(sprop, child)) {
-                            /*
-                             * Duplicate child, see comment above.  In this
-                             * case, we must let the duplicate be inserted at
-                             * this level in the tree, so we keep iterating,
-                             * looking for an empty slot in which to insert.
-                             */
+                            
+
+
+
+
+
                             JS_ASSERT(sprop != child);
                             JS_RUNTIME_METER(rt, duplicatePropTreeNodes);
                         }
@@ -700,12 +700,12 @@ InsertPropertyTreeChild(JSRuntime *rt, JSScopeProperty *parent,
                 sprop = kids;
                 JS_ASSERT(sprop != child);
                 if (SPROP_MATCH(sprop, child)) {
-                    /*
-                     * Duplicate child, see comment above.  Once again, we
-                     * must let duplicates created by deletion pile up in a
-                     * kids-chunk-list, in order to find them when sweeping
-                     * and thereby avoid dangling parent pointers.
-                     */
+                    
+
+
+
+
+
                     JS_RUNTIME_METER(rt, duplicatePropTreeNodes);
                 }
                 if (sweptChunk) {
@@ -728,7 +728,7 @@ InsertPropertyTreeChild(JSRuntime *rt, JSScopeProperty *parent,
     return true;
 }
 
-/* NB: Called with rt->gcLock held. */
+
 static PropTreeKidsChunk *
 RemovePropertyTreeChild(JSRuntime *rt, JSScopeProperty *child)
 {
@@ -742,11 +742,11 @@ RemovePropertyTreeChild(JSRuntime *rt, JSScopeProperty *child)
     freeChunk = NULL;
     parent = child->parent;
     if (!parent) {
-        /*
-         * Don't remove child if it is not in rt->propertyTreeHash, but only
-         * matches a root child in the table that has compatible members. See
-         * the "Duplicate child" comments in InsertPropertyTreeChild, above.
-         */
+        
+
+
+
+
         table = &rt->propertyTreeHash;
     } else {
         kids = parent->kids;
@@ -833,14 +833,14 @@ HashChunks(PropTreeKidsChunk *chunk, uintN n)
     return table;
 }
 
-/*
- * Called without cx->runtime->gcLock held. This function acquires that lock
- * only when inserting a new child.  Thus there may be races to find or add a
- * node that result in duplicates.  We expect such races to be rare!
- *
- * We use rt->gcLock, not rt->rtLock, to avoid nesting the former inside the
- * latter in js_GenerateShape below.
- */
+
+
+
+
+
+
+
+
 static JSScopeProperty *
 GetPropertyTreeChild(JSContext *cx, JSScopeProperty *parent,
                      JSScopeProperty *child)
@@ -866,19 +866,19 @@ GetPropertyTreeChild(JSContext *cx, JSScopeProperty *parent,
         if (sprop)
             goto out;
     } else {
-        /*
-         * Because chunks are appended at the end and never deleted except by
-         * the GC, we can search without taking the runtime's GC lock.  We may
-         * miss a matching sprop added by another thread, and make a duplicate
-         * one, but that is an unlikely, therefore small, cost.  The property
-         * tree has extremely low fan-out below its root in popular embeddings
-         * with real-world workloads.
-         *
-         * Patterns such as defining closures that capture a constructor's
-         * environment as getters or setters on the new object that is passed
-         * in as |this| can significantly increase fan-out below the property
-         * tree root -- see bug 335700 for details.
-         */
+        
+
+
+
+
+
+
+
+
+
+
+
+
         entry = NULL;
         sprop = parent->kids;
         if (sprop) {
@@ -1012,7 +1012,7 @@ CheckAncestorLine(JSScope *scope, bool sparse)
     JS_ASSERT(ancestorCount == scope->entryCount);
 }
 #else
-#define CHECK_ANCESTOR_LINE(scope, sparse) /* nothing */
+#define CHECK_ANCESTOR_LINE(scope, sparse)
 #endif
 
 void
@@ -1054,34 +1054,34 @@ JSScope::add(JSContext *cx, jsid id,
     JS_ASSERT(JS_IS_SCOPE_LOCKED(cx, this));
     CHECK_ANCESTOR_LINE(this, true);
 
-    /*
-     * You can't add properties to a sealed scope.  But note well that you can
-     * change property attributes in a sealed scope, even though that replaces
-     * a JSScopeProperty * in the scope's hash table -- but no id is added, so
-     * the scope remains sealed.
-     */
+    
+
+
+
+
+
     if (sealed()) {
         reportReadOnlyScope(cx);
         return NULL;
     }
 
-    /*
-     * Normalize stub getter and setter values for faster is-stub testing in
-     * the SPROP_CALL_[GS]ETTER macros.
-     */
+    
+
+
+
     if (getter == JS_PropertyStub)
         getter = NULL;
     if (setter == JS_PropertyStub)
         setter = NULL;
 
-    /*
-     * Search for id in order to claim its entry, allocating a property tree
-     * node if one doesn't already exist for our parameters.
-     */
+    
+
+
+
     spp = search(id, true);
     sprop = overwriting = SPROP_FETCH(spp);
     if (!sprop) {
-        /* Check whether we need to grow, if the load factor is >= .75. */
+        
         size = SCOPE_CAPACITY(this);
         if (entryCount + removedCount >= size - (size >> 2)) {
             if (removedCount >= size >> 2) {
@@ -1100,15 +1100,15 @@ JSScope::add(JSContext *cx, jsid id,
             JS_ASSERT(!SPROP_FETCH(spp));
         }
     } else {
-        /* Property exists: JSScope::search must have returned a valid *spp. */
+        
         JS_ASSERT(!SPROP_IS_REMOVED(*spp));
 
-        /*
-         * If all property members match, this is a redundant add and we can
-         * return early.  If the caller wants to allocate a slot, but doesn't
-         * care which slot, copy sprop->slot into slot so we can match sprop,
-         * if all other members match.
-         */
+        
+
+
+
+
+
         if (!(attrs & JSPROP_SHARED) &&
             slot == SPROP_INVALID_SLOT &&
             SPROP_HAS_VALID_SLOT(sprop, this)) {
@@ -1120,20 +1120,20 @@ JSScope::add(JSContext *cx, jsid id,
             return sprop;
         }
 
-        /*
-         * If we are clearing sprop to force the existing property that it
-         * describes to be overwritten, then we have to unlink sprop from the
-         * ancestor line at this->lastProp, lazily if sprop is not lastProp.
-         * And we must remove the entry at *spp, precisely so the lazy "middle
-         * delete" fixup code further below won't find sprop in this->table,
-         * in spite of sprop being on the ancestor line.
-         *
-         * When we finally succeed in finding or creating a new sprop
-         * and storing its pointer at *spp, we'll use the |overwriting|
-         * local saved when we first looked up id to decide whether we're
-         * indeed creating a new entry, or merely overwriting an existing
-         * property.
-         */
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
         if (sprop == SCOPE_LAST_PROP(this)) {
             do {
                 SCOPE_REMOVE_LAST_PROP(this);
@@ -1142,10 +1142,10 @@ JSScope::add(JSContext *cx, jsid id,
                 sprop = SCOPE_LAST_PROP(this);
             } while (sprop && !has(sprop));
         } else if (!hadMiddleDelete()) {
-            /*
-             * If we have no hash table yet, we need one now.  The middle
-             * delete code is simple-minded that way!
-             */
+            
+
+
+
             if (!table) {
                 if (!createTable(cx, true))
                     return NULL;
@@ -1155,13 +1155,13 @@ JSScope::add(JSContext *cx, jsid id,
             setMiddleDelete();
         }
 
-        /*
-         * If we fail later on trying to find or create a new sprop, we will
-         * goto fail_overwrite and restore *spp from |overwriting|.  Note that
-         * we don't bother to keep this->removedCount in sync, because we'll
-         * fix up *spp and this->entryCount shortly, no matter how control
-         * flow returns from this function.
-         */
+        
+
+
+
+
+
+
         if (table)
             SPROP_STORE_PRESERVING_COLLISION(spp, NULL);
         entryCount--;
@@ -1170,28 +1170,28 @@ JSScope::add(JSContext *cx, jsid id,
     }
 
     if (!sprop) {
-        /*
-         * If properties were deleted from the middle of the list starting at
-         * this->lastProp, we may need to fork the property tree and squeeze
-         * all deleted properties out of this scope's ancestor line. Otherwise
-         * we risk adding a node with the same id as a "middle" node, violating
-         * the rule that properties along an ancestor line have distinct ids.
-         */
+        
+
+
+
+
+
+
         if (hadMiddleDelete()) {
             JS_ASSERT(table);
             CHECK_ANCESTOR_LINE(this, true);
 
-            /*
-             * Our forking heuristic tries to balance the desire to avoid
-             * over-compacting (over-forking) against the desire to
-             * *periodically* fork anyways, in order to prevent paying scan
-             * penalties on each insert indefinitely, on a lineage with only
-             * a few old middle-deletions. So we fork if either:
-             *
-             *  - A quick scan finds a true conflict.
-             *  - We are passing through a doubling-threshold in size and
-             *    have accumulated a nonzero count of uncompacted deletions.
-             */
+            
+
+
+
+
+
+
+
+
+
+
 
             bool conflicts = false;
             uint32 count = 0;
@@ -1205,11 +1205,11 @@ JSScope::add(JSContext *cx, jsid id,
             }
 
             if (conflicts || count > threshold) {
-                /*
-                 * Enumerate live entries in this->table using a temporary
-                 * vector, by walking the (possibly sparse, due to deletions)
-                 * ancestor line from this->lastProp.
-                 */
+                
+
+
+
+
                 splen = entryCount;
                 JS_ASSERT(splen != 0);
                 spvec = (JSScopeProperty **)
@@ -1220,12 +1220,12 @@ JSScope::add(JSContext *cx, jsid id,
                 sprop = SCOPE_LAST_PROP(this);
                 JS_ASSERT(sprop);
                 do {
-                    /*
-                     * NB: use JSScope::lookup, not JSScope::has, as the latter
-                     * macro insists that sprop->id maps to sprop, while the
-                     * former simply tests whether sprop->id is bound in this
-                     * scope.
-                     */
+                    
+
+
+
+
+
                     if (!lookup(sprop->id))
                         continue;
 
@@ -1235,11 +1235,11 @@ JSScope::add(JSContext *cx, jsid id,
                 } while ((sprop = sprop->parent) != NULL);
                 JS_ASSERT(i == 0);
 
-                /*
-                 * Now loop forward through spvec, forking the property tree
-                 * whenever we see a "parent gap" due to deletions from this
-                 * scope. NB: sprop is null on first entry to the loop body.
-                 */
+                
+
+
+
+
                 do {
                     if (spvec[i]->parent == sprop) {
                         sprop = spvec[i];
@@ -1257,11 +1257,11 @@ JSScope::add(JSContext *cx, jsid id,
                 } while (++i < splen);
                 cx->free(spvec);
 
-                /*
-                 * Now sprop points to the last property in this scope, where
-                 * the ancestor line from sprop to the root is dense w.r.t.
-                 * this scope: it contains no nodes not mapped by this->table.
-                 */
+                
+
+
+
+
                 lastProp = sprop;
                 CHECK_ANCESTOR_LINE(this, false);
                 JS_RUNTIME_METER(cx->runtime, middleDeleteFixups);
@@ -1269,22 +1269,22 @@ JSScope::add(JSContext *cx, jsid id,
             }
         }
 
-        /*
-         * Aliases share another property's slot, passed in the |slot| param.
-         * Shared properties have no slot.  Unshared properties that do not
-         * alias another property's slot get one here, but may lose it due to
-         * a JS_ClearScope call.
-         */
+        
+
+
+
+
+
         if (!(flags & SPROP_IS_ALIAS)) {
             if (attrs & JSPROP_SHARED) {
                 slot = SPROP_INVALID_SLOT;
             } else {
-                /*
-                 * We may have set slot from a nearly-matching sprop, above.
-                 * If so, we're overwriting that nearly-matching sprop, so we
-                 * can reuse its slot -- we don't need to allocate a new one.
-                 * Similarly, we use a specific slot if provided by the caller.
-                 */
+                
+
+
+
+
+
                 if (slot == SPROP_INVALID_SLOT &&
                     !js_AllocSlot(cx, object, &slot)) {
                     goto fail_overwrite;
@@ -1292,11 +1292,11 @@ JSScope::add(JSContext *cx, jsid id,
             }
         }
 
-        /*
-         * Check for a watchpoint on a deleted property; if one exists, change
-         * setter to js_watch_set.
-         * XXXbe this could get expensive with lots of watchpoints...
-         */
+        
+
+
+
+
         if (!JS_CLIST_IS_EMPTY(&cx->runtime->watchPointList) &&
             js_FindWatchPoint(cx->runtime, this, id)) {
             if (overwriting)
@@ -1308,7 +1308,7 @@ JSScope::add(JSContext *cx, jsid id,
                 goto fail_overwrite;
         }
 
-        /* Find or create a property tree node labeled by our arguments. */
+        
         child.id = id;
         child.getter = getter;
         child.setter = setter;
@@ -1320,14 +1320,14 @@ JSScope::add(JSContext *cx, jsid id,
         if (!sprop)
             goto fail_overwrite;
 
-        /*
-         * This scope's shape defaults to its last property's shape, but may be
-         * regenerated later as this scope diverges (from the property cache
-         * point of view) from the structural type associated with sprop.
-         */
+        
+
+
+
+
         extend(cx, sprop);
 
-        /* Store the tree node pointer in the table entry for id. */
+        
         if (table)
             SPROP_STORE_PRESERVING_COLLISION(spp, sprop);
         CHECK_ANCESTOR_LINE(this, false);
@@ -1338,14 +1338,14 @@ JSScope::add(JSContext *cx, jsid id,
         }
 #endif
 
-        /*
-         * If we reach the hashing threshold, try to allocate this->table.
-         * If we can't (a rare event, preceded by swapping to death on most
-         * modern OSes), stick with linear search rather than whining about
-         * this little set-back.  Therefore we must test !this->table and
-         * this->entryCount >= SCOPE_HASH_THRESHOLD, not merely whether the
-         * entry count just reached the threshold.
-         */
+        
+
+
+
+
+
+
+
         if (!table && entryCount >= SCOPE_HASH_THRESHOLD)
             (void) createTable(cx, false);
     }
@@ -1359,14 +1359,14 @@ JSScope::add(JSContext *cx, jsid id,
 
 fail_overwrite:
     if (overwriting) {
-        /*
-         * We may or may not have forked overwriting out of this scope's
-         * ancestor line, so we must check (the alternative is to set a flag
-         * above, but that hurts the common, non-error case). If we did fork
-         * overwriting out, we'll add it back at scope->lastProp. This means
-         * enumeration order can change due to a failure to overwrite an id.
-         * XXXbe minor(?) incompatibility
-         */
+        
+
+
+
+
+
+
+
         for (sprop = SCOPE_LAST_PROP(this); ; sprop = sprop->parent) {
             if (!sprop) {
                 sprop = SCOPE_LAST_PROP(this);
@@ -1405,7 +1405,7 @@ JSScope::change(JSContext *cx, JSScopeProperty *sprop,
 
     CHECK_ANCESTOR_LINE(this, true);
 
-    /* Allow only shared (slot-less) => unshared (slot-full) transition. */
+    
     attrs |= sprop->attrs & mask;
     JS_ASSERT(!((attrs ^ sprop->attrs) & JSPROP_SHARED) ||
               !(attrs & JSPROP_SHARED));
@@ -1428,13 +1428,13 @@ JSScope::change(JSContext *cx, JSScopeProperty *sprop,
     child.shortid = sprop->shortid;
 
     if (SCOPE_LAST_PROP(this) == sprop) {
-        /*
-         * Optimize the case where the last property added to this scope is
-         * changed to have a different attrs, getter, or setter. In the last
-         * property case, we need not fork the property tree. But since we do
-         * not call JSScope::addProperty, we may need to allocate a new slot
-         * directly.
-         */
+        
+
+
+
+
+
+
         if ((sprop->attrs & JSPROP_SHARED) && !(attrs & JSPROP_SHARED)) {
             JS_ASSERT(child.slot == SPROP_INVALID_SLOT);
             if (!js_AllocSlot(cx, object, &child.slot))
@@ -1452,12 +1452,12 @@ JSScope::change(JSContext *cx, JSScopeProperty *sprop,
             CHECK_ANCESTOR_LINE(this, true);
         }
     } else {
-        /*
-         * Let JSScope::addProperty handle this |overwriting| case, including
-         * the conservation of sprop->slot (if it's valid). We must not call
-         * JSScope::remove here, because it will free a valid sprop->slot and
-         * JSScope::add won't re-allocate it.
-         */
+        
+
+
+
+
+
         newsprop = add(cx, child.id, child.getter, child.setter, child.slot,
                        child.attrs, child.flags, child.shortid);
     }
@@ -1495,7 +1495,7 @@ JSScope::remove(JSContext *cx, jsid id)
         return true;
     }
 
-    /* Convert from a list to a hash so we can handle "middle deletes". */
+    
     if (!table && sprop != lastProp) {
         if (!createTable(cx, true))
             return false;
@@ -1504,13 +1504,13 @@ JSScope::remove(JSContext *cx, jsid id)
         sprop = SPROP_CLEAR_COLLISION(stored);
     }
 
-    /* First, if sprop is unshared and not cleared, free its slot number. */
+    
     if (SPROP_HAS_VALID_SLOT(sprop, this)) {
         js_FreeSlot(cx, object, sprop->slot);
         JS_ATOMIC_INCREMENT(&cx->runtime->propertyRemovals);
     }
 
-    /* Next, remove id by setting its entry to a removed or free sentinel. */
+    
     if (SPROP_HAD_COLLISION(stored)) {
         JS_ASSERT(table);
         *spp = SPROP_REMOVED;
@@ -1523,7 +1523,7 @@ JSScope::remove(JSContext *cx, jsid id)
     entryCount--;
     LIVE_SCOPE_METER(cx, --cx->runtime->liveScopeProps);
 
-    /* Update this->lastProp directly, or set its deferred update flag. */
+    
     if (sprop == SCOPE_LAST_PROP(this)) {
         do {
             SCOPE_REMOVE_LAST_PROP(this);
@@ -1539,7 +1539,7 @@ JSScope::remove(JSContext *cx, jsid id)
     generateOwnShape(cx);
     CHECK_ANCESTOR_LINE(this, true);
 
-    /* Last, consider shrinking this->table if its load factor is <= .25. */
+    
     size = SCOPE_CAPACITY(this);
     if (size > MIN_SCOPE_SIZE && entryCount <= size >> 2) {
         METER(shrinks);
@@ -1649,7 +1649,7 @@ JSScopeProperty::trace(JSTracer *trc)
 {
     if (IS_GC_MARKING_TRACER(trc))
         flags |= SPROP_MARK;
-    TRACE_ID(trc, id);
+    js_TraceId(trc, id);
 
 #if JS_HAS_GETTER_SETTER
     if (attrs & (JSPROP_GETTER | JSPROP_SETTER)) {
@@ -1662,7 +1662,7 @@ JSScopeProperty::trace(JSTracer *trc)
             JS_CallTracer(trc, js_CastAsObject(setter), JSTRACE_OBJECT);
         }
     }
-#endif /* JS_HAS_GETTER_SETTER */
+#endif 
 }
 
 #ifdef JS_DUMP_PROPTREE_STATS
@@ -1767,7 +1767,7 @@ DumpSubtree(JSContext *cx, JSScopeProperty *sprop, int level, FILE *fp)
     }
 }
 
-#endif /* JS_DUMP_PROPTREE_STATS */
+#endif 
 
 void
 js_SweepScopeProperties(JSContext *cx)
@@ -1811,18 +1811,18 @@ js_SweepScopeProperties(JSContext *cx)
         limit = (JSScopeProperty *) a->avail;
         liveCount = 0;
         for (sprop = (JSScopeProperty *) a->base; sprop < limit; sprop++) {
-            /* If the id is null, sprop is already on the freelist. */
+            
             if (sprop->id == JSVAL_NULL)
                 continue;
 
-            /*
-             * If the mark bit is set, sprop is alive, so clear the mark bit
-             * and continue the while loop.
-             *
-             * Regenerate sprop->shape if it hasn't already been refreshed
-             * during the mark phase, when live scopes' lastProp members are
-             * followed to update both scope->shape and lastProp->shape.
-             */
+            
+
+
+
+
+
+
+
             if (sprop->flags & SPROP_MARK) {
                 sprop->flags &= ~SPROP_MARK;
                 if (rt->gcRegenShapes) {
@@ -1835,42 +1835,42 @@ js_SweepScopeProperties(JSContext *cx)
                 continue;
             }
 
-            /* Ok, sprop is garbage to collect: unlink it from its parent. */
+            
             freeChunk = RemovePropertyTreeChild(rt, sprop);
 
-            /*
-             * Take care to reparent all sprop's kids to their grandparent.
-             * InsertPropertyTreeChild can potentially fail for two reasons:
-             *
-             * 1. If parent is null, insertion into the root property hash
-             *    table may fail. We are forced to leave the kid out of the
-             *    table (as can already happen with duplicates) but ensure
-             *    that the kid's parent pointer is set to null.
-             *
-             * 2. If parent is non-null, allocation of a new KidsChunk can
-             *    fail. To prevent this from happening, we allow sprops's own
-             *    chunks to be reused by the grandparent, which removes the
-             *    need for InsertPropertyTreeChild to malloc a new KidsChunk.
-             *
-             *    If sprop does not have chunky kids, then we rely on the
-             *    RemovePropertyTreeChild call above (which removed sprop from
-             *    its parent) either leaving one free entry, or else returning
-             *    the now-unused chunk to us so we can reuse it.
-             *
-             * We also require the grandparent to have either no kids or else
-             * chunky kids. A single non-chunky kid would force a new chunk to
-             * be malloced in some cases (if sprop had a single non-chunky
-             * kid, or a multiple of MAX_KIDS_PER_CHUNK kids). Note that
-             * RemovePropertyTreeChild never converts a single-entry chunky
-             * kid back to a non-chunky kid, so we are assured of correct
-             * behaviour.
-             */
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             kids = sprop->kids;
             if (kids) {
                 sprop->kids = NULL;
                 parent = sprop->parent;
 
-                /* The grandparent must have either no kids or chunky kids. */
+                
                 JS_ASSERT(!parent || !parent->kids ||
                           KIDS_IS_CHUNKY(parent->kids));
                 if (KIDS_IS_CHUNKY(kids)) {
@@ -1884,32 +1884,32 @@ js_SweepScopeProperties(JSContext *cx)
                                 break;
                             JS_ASSERT(kid->parent == sprop);
 
-                            /*
-                             * Clear a space in the kids array for possible
-                             * re-use by InsertPropertyTreeChild.
-                             */
+                            
+
+
+
                             chunk->kids[i] = NULL;
                             if (!InsertPropertyTreeChild(rt, parent, kid, chunk)) {
-                                /*
-                                 * This can happen only if we failed to add an
-                                 * entry to the root property hash table.
-                                 */
+                                
+
+
+
                                 JS_ASSERT(!parent);
                                 kid->parent = NULL;
                             }
                         }
                         if (!chunk->kids[0]) {
-                            /* The chunk wasn't reused, so we must free it. */
+                            
                             DestroyPropTreeKidsChunk(rt, chunk);
                         }
                     } while ((chunk = nextChunk) != NULL);
                 } else {
                     kid = kids;
                     if (!InsertPropertyTreeChild(rt, parent, kid, freeChunk)) {
-                        /*
-                         * This can happen only if we failed to add an entry
-                         * to the root property hash table.
-                         */
+                        
+
+
+
                         JS_ASSERT(!parent);
                         kid->parent = NULL;
                     }
@@ -1917,17 +1917,17 @@ js_SweepScopeProperties(JSContext *cx)
             }
 
             if (freeChunk && !freeChunk->kids[0]) {
-                /* The chunk wasn't reused, so we must free it. */
+                
                 DestroyPropTreeKidsChunk(rt, freeChunk);
             }
 
-            /* Clear id so we know (above) that sprop is on the freelist. */
+            
             sprop->id = JSVAL_NULL;
             FREENODE_INSERT(rt->propertyFreeList, sprop);
             JS_RUNTIME_UNMETER(rt, livePropTreeNodes);
         }
 
-        /* If a contains no live properties, return it to the malloc heap. */
+        
         if (liveCount == 0) {
             for (sprop = (JSScopeProperty *) a->base; sprop < limit; sprop++)
                 FREENODE_REMOVE(sprop);
