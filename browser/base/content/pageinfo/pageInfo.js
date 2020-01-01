@@ -1,7 +1,6 @@
-# -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http:
+
+
+
 
 
 function pageInfoTreeView(treeid, copycol)
@@ -1272,6 +1271,6 @@ function selectImage()
 function checkProtocol(img)
 {
   var url = img[COL_IMAGE_ADDRESS];
-  return /^data:image\
+  return /^data:image\//i.test(url) ||
     /^(https?|ftp|file|about|chrome|resource):/.test(url);
 }
