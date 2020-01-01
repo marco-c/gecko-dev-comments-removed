@@ -632,6 +632,56 @@ static void _d2d_snapshot_detached(cairo_surface_t *surface)
     cairo_surface_destroy(surface);
 }
 
+static void
+_cairo_d2d_calculate_visible_rect(cairo_d2d_surface_t *d2dsurf, cairo_image_surface_t *srcSurf,
+				  cairo_matrix_t *mat,
+				  int *x, int *y, unsigned int *width, unsigned int *height)
+{
+    
+    UINT32 maxSize = d2dsurf->rt->GetMaximumBitmapSize() - 2;
+
+    
+    cairo_matrix_t invMat = *mat;
+    if (_cairo_matrix_is_invertible(mat)) {
+	
+	cairo_matrix_invert(&invMat);
+    }
+
+    RefPtr<IDXGISurface> surf;
+    d2dsurf->surface->QueryInterface(&surf);
+    DXGI_SURFACE_DESC desc;
+    surf->GetDesc(&desc);
+
+    double leftMost = 0;
+    double rightMost = desc.Width;
+    double topMost = 0;
+    double bottomMost = desc.Height;
+
+    _cairo_matrix_transform_bounding_box(&invMat, &leftMost, &topMost, &rightMost, &bottomMost, NULL);
+
+    leftMost -= 1;
+    topMost -= 1;
+    rightMost += 1;
+    bottomMost += 1;
+
+    
+    if ((UINT32)srcSurf->width > maxSize) {
+	*x = (int)MAX(0, floor(leftMost));
+	*width = (unsigned int)MIN(MAX(0, ceil(rightMost - *x)), srcSurf->width - *x);
+    } else {
+	*x = 0;
+	*width = srcSurf->width;
+    }
+
+    if ((UINT32)srcSurf->height > maxSize) {
+	*y = (int)MAX(0, floor(topMost));
+	*height = (unsigned int)MIN(MAX(0, ceil(bottomMost - *y)), srcSurf->height - *y);
+    } else {
+	*y = 0;
+	*height = srcSurf->height;
+    }
+}
+
 
 
 
@@ -777,8 +827,8 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 
 	RefPtr<ID2D1Bitmap> sourceBitmap;
 	bool partial = false;
-	unsigned int xoffset = 0;
-	unsigned int yoffset = 0;
+	int xoffset = 0;
+	int yoffset = 0;
 	unsigned int width;
 	unsigned int height;
 	unsigned char *data = NULL;
@@ -834,37 +884,9 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 	    if ((UINT32)srcSurf->width > maxSize || (UINT32)srcSurf->height > maxSize) {
 		
 		partial = true;
-		
-  
-		
-		cairo_matrix_t invMat = mat;
-                if (_cairo_matrix_is_invertible(&mat)) {
-                  
-		  cairo_matrix_invert(&invMat);
-                }
-
-		RefPtr<IDXGISurface> surf;
-		d2dsurf->surface->QueryInterface(&surf);
-		DXGI_SURFACE_DESC desc;
-		surf->GetDesc(&desc);
-
-                double leftMost = 0;
-                double rightMost = desc.Width;
-                double topMost = 0;
-                double bottomMost = desc.Height;
-
-                _cairo_matrix_transform_bounding_box(&invMat, &leftMost, &topMost, &rightMost, &bottomMost, NULL);
-
-                leftMost -= 1;
-                topMost -= 1;
-                rightMost += 1;
-                bottomMost += 1;
 
 		
-		xoffset = (unsigned int)MAX(0, floor(leftMost));
-		yoffset = (unsigned int)MAX(0, floor(topMost));
-		width = (unsigned int)MIN(MAX(0, ceil(rightMost - xoffset)), srcSurf->width - xoffset);
-		height = (unsigned int)MIN(MAX(0, ceil(bottomMost - yoffset)), srcSurf->height - yoffset);
+  		_cairo_d2d_calculate_visible_rect(d2dsurf, srcSurf, &mat, &xoffset, &yoffset, &width, &height);
 
 	        cairo_matrix_translate(&mat, xoffset, yoffset);
 
@@ -881,6 +903,11 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 
 
 
+
+		    RefPtr<IDXGISurface> surf;
+		    d2dsurf->surface->QueryInterface(&surf);
+		    DXGI_SURFACE_DESC desc;
+		    surf->GetDesc(&desc);
 
 		    unsigned int minSize = (unsigned int)ceil(sqrt(pow((float)desc.Width, 2) + pow((float)desc.Height, 2)));
 		    
