@@ -4,8 +4,8 @@
 
 
 
-#ifndef MapObject_h__
-#define MapObject_h__
+#ifndef builtin_MapObject_h
+#define builtin_MapObject_h
 
 #include "jsapi.h"
 #include "jscntxt.h"
@@ -164,4 +164,4 @@ js_InitMapClass(JSContext *cx, js::HandleObject obj);
 extern JSObject *
 js_InitSetClass(JSContext *cx, js::HandleObject obj);
 
-#endif  
+#endif 
