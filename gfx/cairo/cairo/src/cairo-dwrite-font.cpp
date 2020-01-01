@@ -371,10 +371,21 @@ _cairo_dwrite_glyph_run_from_glyphs(cairo_glyph_t *glyphs,
 	}
     } else {
 	*transformed = 1;
-
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const double EPSILON = 0.0001;
 	for (int i = 0; i < num_glyphs; i++) {
 	    indices[i] = (WORD) glyphs[i].index;
-	    double x = glyphs[i].x;
+	    double x = glyphs[i].x + EPSILON;
 	    double y = glyphs[i].y;
 	    cairo_matrix_transform_point(&scaled_font->mat_inverse, &x, &y);
 	    
@@ -1353,10 +1364,11 @@ _cairo_dwrite_show_glyphs_on_surface(void			*surface,
 	run.fontEmSize = (FLOAT)scaled_font->font_matrix.yy;
     } else {
 	transform = TRUE;
-
+        
+        const double EPSILON = 0.0001;
 	for (int i = 0; i < num_glyphs; i++) {
 	    indices[i] = (WORD) glyphs[i].index;
-	    double x = glyphs[i].x - fontArea.left;
+	    double x = glyphs[i].x - fontArea.left + EPSILON;
 	    double y = glyphs[i].y - fontArea.top;
 	    cairo_matrix_transform_point(&dwritesf->mat_inverse, &x, &y);
 	    
