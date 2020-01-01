@@ -1028,7 +1028,7 @@ js_InvokeOperationCallback(JSContext *cx)
 
 
 
-    JSOperationCallback cb = cx->operationCallback;
+    JSOperationCallback cb = cx->runtime()->operationCallback;
     return !cb || cb(cx);
 }
 
@@ -1072,7 +1072,6 @@ JSContext::JSContext(JSRuntime *rt)
     defaultCompartmentObject_(NULL),
     cycleDetectorSet(MOZ_THIS_IN_INITIALIZER_LIST()),
     errorReporter(NULL),
-    operationCallback(NULL),
     data(NULL),
     data2(NULL),
 #ifdef JS_THREADSAFE
