@@ -2924,7 +2924,7 @@ ContainsUnrechableGCThingImpl(JSContext *cx, TreeFragment *f)
     if (f->visiting)
         return false;
     f->visiting = true;
-    
+
     if (!f->code())
         return false;
 
@@ -2994,7 +2994,7 @@ TraceMonitor::sweep(JSContext *cx)
         recorderTree = recorder->getTree();
         shouldAbortRecording = HasUnreachableGCThings(cx, recorderTree);
     }
-        
+
     for (size_t i = 0; i < FRAGMENT_TABLE_SIZE; ++i) {
         TreeFragment** fragp = &vmfragments[i];
         while (TreeFragment* frag = *fragp) {
@@ -3008,7 +3008,7 @@ TraceMonitor::sweep(JSContext *cx)
                 fragp = &frag->next;
                 continue;
             }
-            
+
             debug_only_printf(LC_TMTracer,
                               "TreeFragment peer %p has dead gc thing."
                               "Disconnecting tree %p with ip %p\n",
@@ -4381,7 +4381,7 @@ TraceRecorder::snapshot(ExitType exitType)
     } else if (pendingSpecializedNative &&
                (pendingSpecializedNative->flags & JSTN_RETURN_NULLABLE_OBJ)) {
         typemap[stackSlots - 1] = JSVAL_TYPE_OBJORNULL;
-    } 
+    }
 
     
     if (resumeAfter) {
@@ -4862,7 +4862,7 @@ class SlotMap : public SlotVisitorBase
 
             LIns* ins = mRecorder.getFromTrackerImpl(info.vp);
             JS_ASSERT_IF(ins, IsPromotedInt32(ins));
-        } else 
+        } else
 #endif
         if (info.lastCheck == TypeCheck_Demote) {
             JS_ASSERT(info.type == JSVAL_TYPE_INT32 || info.type == JSVAL_TYPE_DOUBLE);
@@ -4918,7 +4918,7 @@ class DefaultSlotMap : public SlotMap
     DefaultSlotMap(TraceRecorder& tr) : SlotMap(tr)
     {
     }
-    
+
     virtual ~DefaultSlotMap()
     {
     }
@@ -6268,7 +6268,7 @@ IsEntryTypeCompatible(const Value &v, JSValueType type)
 
     } else if (v.isDouble()) {
         int32_t _;
-        ok = (type == JSVAL_TYPE_DOUBLE) || 
+        ok = (type == JSVAL_TYPE_DOUBLE) ||
              (type == JSVAL_TYPE_INT32 && JSDOUBLE_IS_INT32(v.toDouble(), &_));
 
     } else if (v.isObject()) {
@@ -6579,7 +6579,7 @@ TracerState::~TracerState()
         JS_ASSERT(JS_THREAD_DATA(cx)->onTraceCompartment == cx->compartment);
         JS_THREAD_DATA(cx)->onTraceCompartment = NULL;
     }
-    
+
     traceMonitor->tracerState = prev;
     traceMonitor->tracecx = NULL;
 }
@@ -6738,7 +6738,7 @@ ExecuteTree(JSContext* cx, TraceMonitor* tm, TreeFragment* f,
                       CurrentLine(cx),
                       js_CodeName[fp->hasImacropc() ? *fp->imacropc() : *cx->regs().pc]);
 #endif
-    
+
 #ifdef JS_METHODJIT
     if (cx->methodJitEnabled) {
         if (lr->exitType == LOOP_EXIT && f->iters < MIN_LOOP_ITERS
@@ -7331,7 +7331,7 @@ TraceRecorder::monitorRecording(JSOp op)
     JS_ASSERT(!addPropShapeBefore);
 
     JS_ASSERT(traceMonitor == cx->compartment->traceMonitor());
-    
+
     TraceMonitor &localtm = *traceMonitor;
     debug_only_stmt( JSContext *localcx = cx; )
     assertInsideLoop();
@@ -7927,7 +7927,7 @@ PurgeScriptFragments(TraceMonitor* tm, JSScript* script)
                       "Purging fragments for JSScript %p.\n", (void*)script);
 
     
-    JS_ASSERT_IF(tm->recorder, 
+    JS_ASSERT_IF(tm->recorder,
                  JS_UPTRDIFF(tm->recorder->getTree()->ip, script->code) >= script->length);
 
     for (LoopProfileMap::Enum e(*tm->loopProfiles); !e.empty(); e.popFront()) {
@@ -9733,7 +9733,7 @@ TraceRecorder::stobj_set_fslot(LIns *obj_ins, unsigned slot, const Value &v, LIn
 }
 
 void
-TraceRecorder::stobj_set_dslot(LIns *obj_ins, unsigned slot, LIns*& slots_ins, 
+TraceRecorder::stobj_set_dslot(LIns *obj_ins, unsigned slot, LIns*& slots_ins,
                                const Value &v, LIns* v_ins)
 {
     if (!slots_ins)
@@ -10116,7 +10116,7 @@ TraceRecorder::getThis(LIns*& this_ins)
         return RECORD_CONTINUE;
     }
 
-    JS_ASSERT(fp->callee().getGlobal() == globalObj);    
+    JS_ASSERT(fp->callee().getGlobal() == globalObj);
     Value& thisv = fp->thisValue();
 
     if (thisv.isObject() || fp->fun()->inStrictMode()) {
@@ -10359,7 +10359,7 @@ TraceRecorder::putActivationObjects()
         if (nslots) {
             slots_ins = w.allocp(sizeof(Value) * nslots);
             for (int i = 0; i < nslots; ++i) {
-                box_value_into(fp->slots()[i], get(&fp->slots()[i]), 
+                box_value_into(fp->slots()[i], get(&fp->slots()[i]),
                                AllocSlotsAddress(slots_ins, i));
             }
         } else {
@@ -12603,7 +12603,7 @@ GetPropertyByName(JSContext* cx, JSObject* obj, JSString** namep, Value* vp)
         SetBuiltinError(tm);
         return false;
     }
-    
+
     return WasBuiltinSuccessful(tm);
 }
 JS_DEFINE_CALLINFO_4(static, BOOL_FAIL, GetPropertyByName, CONTEXT, OBJECT, STRINGPTR, VALUEPTR,
@@ -13085,7 +13085,7 @@ SetPropertyByName(JSContext* cx, JSObject* obj, JSString** namep, Value* vp, JSB
     }
     return WasBuiltinSuccessful(tm);
 }
-JS_DEFINE_CALLINFO_5(static, BOOL_FAIL, SetPropertyByName, 
+JS_DEFINE_CALLINFO_5(static, BOOL_FAIL, SetPropertyByName,
                      CONTEXT, OBJECT, STRINGPTR, VALUEPTR, BOOL,
                      0, ACCSET_STORE_ANY)
 
@@ -13291,7 +13291,7 @@ TraceRecorder::setElem(int lval_spindex, int idx_spindex, int v_spindex)
             
             break;
           default:
-            JS_NOT_REACHED("Unknown typed array type in tracer");       
+            JS_NOT_REACHED("Unknown typed array type in tracer");
         }
 
         switch (js::TypedArray::getType(tarray)) {
@@ -13315,7 +13315,7 @@ TraceRecorder::setElem(int lval_spindex, int idx_spindex, int v_spindex)
             w.stdTypedArrayElement(typed_v_ins, data_ins, pidx_ins);
             break;
           default:
-            JS_NOT_REACHED("Unknown typed array type in tracer");       
+            JS_NOT_REACHED("Unknown typed array type in tracer");
         }
     } else if (idx.toInt32() < 0 || !obj->isDenseArray()) {
         CHECK_STATUS_A(initOrSetPropertyByIndex(obj_ins, idx_ins, &v,
@@ -13326,7 +13326,7 @@ TraceRecorder::setElem(int lval_spindex, int idx_spindex, int v_spindex)
         VMSideExit* mismatchExit = snapshot(MISMATCH_EXIT);
 
         
-        if (!obj->isDenseArray()) 
+        if (!obj->isDenseArray())
             return ARECORD_STOP;
         guardDenseArray(obj_ins, branchExit);
 
@@ -15456,24 +15456,24 @@ TraceRecorder::record_JSOP_LAMBDA()
 
 
 
-    if (fun->isNullClosure() && fun->getParent() == &cx->fp()->scopeChain()) {
-        jsbytecode *pc2 = AdvanceOverBlockchainOp(cx->regs().pc + JSOP_LAMBDA_LENGTH);
-        JSOp op2 = JSOp(*pc2);
+    if (fun->isNullClosure()) {
+        if (fun->joinable()) {
+            jsbytecode *pc2 = AdvanceOverBlockchainOp(cx->regs().pc + JSOP_LAMBDA_LENGTH);
+            JSOp op2 = JSOp(*pc2);
 
-        if (op2 == JSOP_INITMETHOD) {
-            stack(0, w.immpObjGC(fun));
-            return ARECORD_CONTINUE;
-        }
-
-        if (op2 == JSOP_SETMETHOD) {
-            Value lval = stackval(-1);
-
-            if (!lval.isPrimitive() && lval.toObject().canHaveMethodBarrier()) {
+            if (op2 == JSOP_INITMETHOD) {
                 stack(0, w.immpObjGC(fun));
                 return ARECORD_CONTINUE;
             }
-        } else if (fun->joinable()) {
-            if (op2 == JSOP_CALL) {
+
+            if (op2 == JSOP_SETMETHOD) {
+                Value lval = stackval(-1);
+
+                if (!lval.isPrimitive() && lval.toObject().canHaveMethodBarrier()) {
+                    stack(0, w.immpObjGC(fun));
+                    return ARECORD_CONTINUE;
+                }
+            } else if (op2 == JSOP_CALL) {
                 
 
 
@@ -16734,7 +16734,7 @@ RecordTracePoint(JSContext* cx, TraceMonitor* tm, bool* blacklist, bool execAllo
         return TPA_Error;
 
     JS_ASSERT(!cx->isExceptionPending());
-    
+
     return TPA_RanStuff;
 }
 
@@ -17094,7 +17094,7 @@ LoopProfile::profileOperation(JSContext* cx, JSOp op)
 
     if (op == JSOP_LOOKUPSWITCH)
         branchMultiplier *= GET_UINT16(pc + JUMP_OFFSET_LEN);
-    
+
     if (numAllOps >= MAX_PROFILE_OPS) {
         debug_only_print0(LC_TMProfiler, "Profiling complete (maxops)\n");
         tm->profile->decide(cx);
@@ -17165,7 +17165,7 @@ LoopProfile::profileOperation(JSContext* cx, JSOp op)
     } else {
         stackClear();
     }
-    
+
     return ProfContinue;
 }
 
@@ -17214,7 +17214,7 @@ LoopProfile::isCompilationUnprofitable(JSContext *cx, uintN goodOps)
 
     if (goodOps <= 22 && allOps[OP_FWDJUMP])
         return true;
-    
+
     
     for (uintN i=0; i<numInnerLoops; i++) {
         LoopProfile *prof = LookupLoopProfile(traceMonitor, innerLoops[i].top);
@@ -17231,7 +17231,7 @@ LoopProfile::decide(JSContext *cx)
 {
     bool wasUndecided = undecided;
     bool wasTraceOK = traceOK;
-    
+
     profiled = true;
     traceOK = false;
     undecided = false;
@@ -17364,7 +17364,7 @@ AbortProfiling(JSContext *cx)
 {
     JS_ASSERT(TRACE_PROFILER(cx));
     LoopProfile *prof = TRACE_PROFILER(cx);
-    
+
     debug_only_print0(LC_TMProfiler, "Profiling complete (aborted)\n");
     prof->profiled = true;
     prof->traceOK = false;
