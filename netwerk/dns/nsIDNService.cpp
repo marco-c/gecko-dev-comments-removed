@@ -752,7 +752,10 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
   int32_t lastScript = MOZ_SCRIPT_INVALID;
   uint32_t previousChar = 0;
   uint32_t savedNumberingSystem = 0;
+
+#if 0
   HanVariantType savedHanVariant = HVT_NotHan;
+#endif
 
   int32_t savedScript = -1;
 
@@ -808,6 +811,9 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
     }
 
     
+#if 0
+
+    
     HanVariantType hanVariant = GetHanVariant(ch);
     if (hanVariant == HVT_SimplifiedOnly || hanVariant == HVT_TraditionalOnly) {
       if (savedHanVariant == HVT_NotHan) {
@@ -816,6 +822,7 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
         return false;
       }
     }
+#endif
 
     previousChar = ch;
   }

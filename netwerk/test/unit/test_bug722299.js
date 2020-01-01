@@ -172,10 +172,10 @@ const testcases = [
     ["万城",     "xn--chq31v",                       false, true,  true],
 
     
-    ["万萬城",   "xn--chq31vsl1b",                   false, false, false],
+    ["万萬城",   "xn--chq31vsl1b",                   false, true,  true],
 
     
-    ["萬万城",   "xn--chq31vrl1b",                   false, false, false],
+    ["萬万城",   "xn--chq31vrl1b",                   false, true,  true],
 
     
     ["注音符号bopomofoㄅㄆㄇㄈ",
