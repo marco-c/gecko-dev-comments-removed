@@ -4018,13 +4018,10 @@ nsDocument::BeginLoad()
 void
 nsDocument::ReportEmptyGetElementByIdArg()
 {
-  nsContentUtils::ReportToConsole(nsContentUtils::eDOM_PROPERTIES,
-                                  "EmptyGetElementByIdParam",
-                                  nsnull, 0,
-                                  nsnull,
-                                  EmptyString(), 0, 0,
-                                  nsIScriptError::warningFlag,
-                                  "DOM", this);
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  "DOM", this,
+                                  nsContentUtils::eDOM_PROPERTIES,
+                                  "EmptyGetElementByIdParam");
 }
 
 Element*
@@ -5307,13 +5304,10 @@ nsDocument::GetBoxObjectFor(nsIDOMElement* aElement, nsIBoxObject** aResult)
 
   if (!mHasWarnedAboutBoxObjects && !content->IsXUL()) {
     mHasWarnedAboutBoxObjects = true;
-    nsContentUtils::ReportToConsole(nsContentUtils::eDOM_PROPERTIES,
-                                    "UseOfGetBoxObjectForWarning",
-                                    nsnull, 0,
-                                    nsnull,
-                                    EmptyString(), 0, 0,
-                                    nsIScriptError::warningFlag,
-                                    "BoxObjects", this);
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                    "BoxObjects", this,
+                                    nsContentUtils::eDOM_PROPERTIES,
+                                    "UseOfGetBoxObjectForWarning");
   }
 
   *aResult = nsnull;
@@ -6226,7 +6220,15 @@ nsDocument::CreateEvent(const nsAString& aEventType, nsIDOMEvent** aReturn)
 void
 nsDocument::FlushPendingNotifications(mozFlushType aType)
 {
-  if ((!IsHTML() || aType > Flush_ContentAndNotify) &&
+  
+  
+  
+  
+  
+  
+  if ((!IsHTML() ||
+       (aType > Flush_ContentAndNotify && mPresShell &&
+        !mPresShell->DidInitialReflow())) &&
       (mParser || mWeakSink)) {
     nsCOMPtr<nsIContentSink> sink;
     if (mParser) {
@@ -6267,9 +6269,28 @@ nsDocument::FlushPendingNotifications(mozFlushType aType)
     mParentDocument->FlushPendingNotifications(parentType);
   }
 
-  nsCOMPtr<nsIPresShell> shell = GetShell();
-  if (shell) {
-    shell->FlushPendingNotifications(aType);
+  
+  
+  
+  
+  
+  
+  if (mNeedStyleFlush ||
+      (mNeedLayoutFlush && aType >= Flush_InterruptibleLayout) ||
+      aType >= Flush_Display ||
+      mInFlush) {
+    nsCOMPtr<nsIPresShell> shell = GetShell();
+    if (shell) {
+      mNeedStyleFlush = false;
+      mNeedLayoutFlush = mNeedLayoutFlush && (aType < Flush_InterruptibleLayout);
+      
+      
+      
+      bool oldInFlush = mInFlush;
+      mInFlush = true;
+      shell->FlushPendingNotifications(aType);
+      mInFlush = oldInFlush;
+    }
   }
 }
 
@@ -6759,7 +6780,7 @@ nsDocument::CreateElem(const nsAString& aName, nsIAtom *aPrefix, PRInt32 aNamesp
 bool
 nsDocument::IsSafeToFlush() const
 {
-  nsCOMPtr<nsIPresShell> shell = GetShell();
+  nsIPresShell* shell = GetShell();
   if (!shell)
     return true;
 
@@ -8068,11 +8089,12 @@ void
 nsIDocument::CancelFrameRequestCallback(PRInt32 aHandle)
 {
   
-  mFrameRequestCallbacks.RemoveElementSorted(aHandle);
-
-  
-  
-  
+  if (mFrameRequestCallbacks.RemoveElementSorted(aHandle) &&
+      mFrameRequestCallbacks.IsEmpty() &&
+      mPresShell && IsEventHandlingEnabled()) {
+    mPresShell->GetPresContext()->RefreshDriver()->
+      RevokeFrameRequestCallbacks(this);
+  }
 }
 
 nsresult
@@ -8169,13 +8191,10 @@ nsIDocument::WarnOnceAbout(DeprecatedOperations aOperation)
     return;
   }
   mWarnedAbout |= (1 << aOperation);
-  nsContentUtils::ReportToConsole(nsContentUtils::eDOM_PROPERTIES,
-                                  kWarnings[aOperation],
-                                  nsnull, 0,
-                                  nsnull,
-                                  EmptyString(), 0, 0,
-                                  nsIScriptError::warningFlag,
-                                  "DOM Core", this);
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  "DOM Core", this,
+                                  nsContentUtils::eDOM_PROPERTIES,
+                                  kWarnings[aOperation]);
 }
 
 nsresult
@@ -8689,12 +8708,10 @@ LogFullScreenDenied(bool aLogFailure, const char* aMessage, nsIDocument* aDoc)
                      true,
                      false);
   e->PostDOMEvent();
-  nsContentUtils::ReportToConsole(nsContentUtils::eDOM_PROPERTIES,
-                                  aMessage,
-                                  nsnull, 0, nsnull,
-                                  EmptyString(), 0, 0,
-                                  nsIScriptError::warningFlag,
-                                  "DOM", aDoc);
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  "DOM", aDoc,
+                                  nsContentUtils::eDOM_PROPERTIES,
+                                  aMessage);
 }
 
 void

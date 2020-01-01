@@ -1,39 +1,39 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Extension Manager UI.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Blair McBride <bmcbride@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 "use strict";
 
@@ -54,6 +54,7 @@ const PREF_DISCOVERURL = "extensions.webservice.discoverURL";
 const PREF_MAXRESULTS = "extensions.getAddons.maxResults";
 const PREF_CHECK_COMPATIBILITY_BASE = "extensions.checkCompatibility";
 const PREF_CHECK_UPDATE_SECURITY = "extensions.checkUpdateSecurity";
+const PREF_UPDATE_ENABLED = "extensions.update.enabled";
 const PREF_AUTOUPDATE_DEFAULT = "extensions.update.autoUpdateDefault";
 const PREF_GETADDONS_CACHE_ENABLED = "extensions.getAddons.cache.enabled";
 const PREF_GETADDONS_CACHE_ID_ENABLED = "extensions.%ID%.getAddons.cache.enabled";
@@ -75,12 +76,12 @@ const LOADING_MSG_DELAY = 100;
 const SEARCH_SCORE_MULTIPLIER_NAME = 2;
 const SEARCH_SCORE_MULTIPLIER_DESCRIPTION = 2;
 
-// Use integers so search scores are sortable by nsIXULSortService
+
 const SEARCH_SCORE_MATCH_WHOLEWORD = 10;
 const SEARCH_SCORE_MATCH_WORDBOUNDRY = 6;
 const SEARCH_SCORE_MATCH_SUBSTRING = 3;
 
-const UPDATES_RECENT_TIMESPAN = 2 * 24 * 3600000; // 2 days (in milliseconds)
+const UPDATES_RECENT_TIMESPAN = 2 * 24 * 3600000; 
 const UPDATES_RELEASENOTES_TRANSFORMFILE = "chrome://mozapps/content/extensions/updateinfo.xsl";
 
 const XMLURI_PARSE_ERROR = "http://www.mozilla.org/newlayout/xml/parsererror.xml"
@@ -116,8 +117,8 @@ var gPendingInitializations = 1;
 __defineGetter__("gIsInitializing", function() gPendingInitializations > 0);
 
 function initialize(event) {
-  // XXXbz this listener gets _all_ load events for all nodes in the
-  // document... but relies on not being called "too early".
+  
+  
   if (event.target instanceof XMLStylesheetProcessingInstruction) {
     return;
   }
@@ -129,21 +130,21 @@ function initialize(event) {
   Services.obs.addObserver(sendEMPong, "EM-ping", false);
   Services.obs.notifyObservers(window, "EM-loaded", "");
 
-  // If the initial view has already been selected (by a call to loadView from
-  // the above notifications) then bail out now
+  
+  
   if (gViewController.initialViewSelected)
     return;
 
-  // If there is a history state to restore then use that
+  
   if (window.history.state) {
     gViewController.updateState(window.history.state);
     return;
   }
 
-  // Default to the last selected category
+  
   var view = gCategories.node.value;
 
-  // Allow passing in a view through the window arguments
+  
   if ("arguments" in window && window.arguments.length > 0 &&
       "view" in window.arguments[0]) {
     view = window.arguments[0].view;
@@ -176,11 +177,11 @@ function sendEMPong(aSubject, aTopic, aData) {
   Services.obs.notifyObservers(window, "EM-pong", "");
 }
 
-// Used by external callers to load a specific view into the manager
+
 function loadView(aViewId) {
   if (!gViewController.initialViewSelected) {
-    // The caller opened the window and immediately loaded the view so it
-    // should be the initial history entry
+    
+    
 
     gViewController.loadInitialView(aViewId);
   } else {
@@ -188,10 +189,10 @@ function loadView(aViewId) {
   }
 }
 
-/**
- * A wrapper around the HTML5 session history service that allows the browser
- * back/forward controls to work within the manager
- */
+
+
+
+
 var HTML5History = {
   get index() {
     return window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -234,9 +235,9 @@ var HTML5History = {
   popState: function() {
     function onStatePopped(aEvent) {
       window.removeEventListener("popstate", onStatePopped, true);
-      // TODO To ensure we can't go forward again we put an additional entry
-      // for the current state into the history. Ideally we would just strip
-      // the history but there doesn't seem to be a way to do that. Bug 590661
+      
+      
+      
       window.history.pushState(aEvent.state, document.title);
     }
     window.addEventListener("popstate", onStatePopped, true);
@@ -246,9 +247,9 @@ var HTML5History = {
   }
 };
 
-/**
- * A wrapper around a fake history service
- */
+
+
+
 var FakeHistory = {
   pos: 0,
   states: [null],
@@ -308,8 +309,8 @@ var FakeHistory = {
   }
 };
 
-// If the window has a session history then use the HTML5 History wrapper
-// otherwise use our fake history implementation
+
+
 if (window.QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIWebNavigation)
           .sessionHistory) {
@@ -366,7 +367,7 @@ var gEventManager = {
         }
       }
       
-      // with only one menu item, we hide the menu separator
+      
       menuSep.hidden = (countEnabledMenuCmds <= 1);
       
     }, false);
@@ -424,7 +425,7 @@ var gEventManager = {
       try {
         listener[aEvent].apply(listener, aParams);
       } catch(e) {
-        // this shouldn't be fatal
+        
         Cu.reportError(e);
       }
     }
@@ -432,8 +433,8 @@ var gEventManager = {
 
   delegateInstallEvent: function(aEvent, aParams) {
     var existingAddon = aEvent == "onExternalInstall" ? aParams[1] : aParams[0].existingAddon;
-    // If the install is an update then send the event to all listeners
-    // registered for the existing add-on
+    
+    
     if (existingAddon)
       this.delegateAddonEvent(aEvent, [existingAddon].concat(aParams));
 
@@ -444,7 +445,7 @@ var gEventManager = {
       try {
         listener[aEvent].apply(listener, aParams);
       } catch(e) {
-        // this shouldn't be fatal
+        
         Cu.reportError(e);
       }
     }
@@ -550,7 +551,7 @@ var gViewController = {
         try {
           view.shutdown();
         } catch(e) {
-          // this shouldn't be fatal
+          
           Cu.reportError(e);
         }
       }
@@ -565,7 +566,7 @@ var gViewController = {
       this.lastHistoryIndex = gHistory.index;
     }
     catch (e) {
-      // The attempt to load the view failed, try moving further along history
+      
       if (this.lastHistoryIndex > gHistory.index) {
         if (gHistory.canGoBack)
           gHistory.back();
@@ -613,8 +614,8 @@ var gViewController = {
     this.loadViewInternal(aViewId, this.currentViewId, state);
   },
 
-  // Replaces the existing view with a new one, rewriting the current history
-  // entry to match.
+  
+  
   replaceView: function(aViewId) {
     if (aViewId == this.currentViewId)
       return;
@@ -656,7 +657,7 @@ var gViewController = {
           return;
         this.viewPort.selectedPanel.removeAttribute("loading");
       } catch (e) {
-        // this shouldn't be fatal
+        
         Cu.reportError(e);
       }
     }
@@ -675,7 +676,7 @@ var gViewController = {
       this.currentViewObj.show(view.param, ++this.currentViewRequest, aState);
   },
 
-  // Moves back in the document history and removes the current history entry
+  
   popState: function(aCallback) {
     this.viewChangeCallback = aCallback;
     gHistory.popState();
@@ -721,7 +722,7 @@ var gViewController = {
         Services.obs.notifyObservers(cancelQuit, "quit-application-requested",
                                      "restart");
         if (cancelQuit.data)
-          return; // somebody canceled our quit request
+          return; 
 
         let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].
                          getService(Ci.nsIAppStartup);
@@ -757,7 +758,13 @@ var gViewController = {
         try {
           oldValue = Services.prefs.getBoolPref(PREF_AUTOUPDATE_DEFAULT);
         } catch(e) { }
-        Services.prefs.setBoolPref(PREF_AUTOUPDATE_DEFAULT, !oldValue);
+        var newValue = !oldValue; 
+        Services.prefs.setBoolPref(PREF_AUTOUPDATE_DEFAULT, newValue);
+
+        
+        
+        if (newValue) 
+          Services.prefs.setBoolPref(PREF_UPDATE_ENABLED, true);
       }
     },
 
@@ -971,7 +978,7 @@ var gViewController = {
 
     cmd_showItemAbout: {
       isEnabled: function(aAddon) {
-        // XXXunf This may be applicable to install items too. See bug 561260
+        
         return !!aAddon;
       },
       doCommand: function(aAddon) {
@@ -1109,7 +1116,7 @@ var gViewController = {
         function buildNextInstall() {
           if (!files.hasMoreElements()) {
             if (installs.length > 0) {
-              // Display the normal install confirmation for the installs
+              
               AddonManager.installAddonsFromWebpage("application/x-xpinstall",
                                                     window, null, installs);
             }
@@ -1172,7 +1179,7 @@ var gViewController = {
   },
 
   updateCommands: function() {
-    // wait until the view is initialized
+    
     if (!this.currentViewObj)
       return;
     var addon = this.currentViewObj.getSelectedAddon();
@@ -1254,7 +1261,7 @@ function shouldShowVersionNumber(aAddon) {
   if (!aAddon.version)
     return false;
 
-  // The version number is hidden for lightweight themes.
+  
   if (aAddon.type == "theme")
     return !/@personas\.mozilla\.org$/.test(aAddon.id);
 
@@ -1283,38 +1290,38 @@ function createItem(aObj, aIsInstall, aIsRemote) {
 
   item.setAttribute("status", "installed");
 
-  // set only attributes needed for sorting and XBL binding,
-  // the binding handles the rest
+  
+  
   item.setAttribute("value", aObj.id);
 
   return item;
 }
 
 function sortElements(aElements, aSortBy, aAscending) {
-  // aSortBy is an Array of attributes to sort by, in decending
-  // order of priority.
+  
+  
 
   const DATE_FIELDS = ["updateDate"];
   const NUMERIC_FIELDS = ["size", "relevancescore", "purchaseAmount"];
 
-  // We're going to group add-ons into the following buckets:
-  //
-  //  enabledInstalled
-  //    * Enabled
-  //    * Incompatible but enabled because compatibility checking is off
-  //    * Waiting to be installed
-  //    * Waiting to be enabled
-  //
-  //  pendingDisable
-  //    * Waiting to be disabled
-  //
-  //  pendingUninstall
-  //    * Waiting to be removed
-  //
-  //  disabledIncompatibleBlocked
-  //    * Disabled
-  //    * Incompatible
-  //    * Blocklisted
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   const UISTATE_ORDER = ["enabled", "pendingDisable", "pendingUninstall",
                          "disabled"];
@@ -1338,8 +1345,8 @@ function sortElements(aElements, aSortBy, aAscending) {
   }
 
   function uiStateCompare(a, b) {
-    // If we're in descending order, swap a and b, because
-    // we don't ever want to have descending uiStates
+    
+    
     if (!aAscending)
       [a, b] = [b, a];
 
@@ -1373,8 +1380,8 @@ function sortElements(aElements, aSortBy, aAscending) {
     return addon[aKey];
   }
 
-  // aSortFuncs will hold the sorting functions that we'll
-  // use per element, in the correct order.
+  
+  
   var aSortFuncs = [];
 
   for (let i = 0; i < aSortBy.length; i++) {
@@ -1414,8 +1421,8 @@ function sortElements(aElements, aSortBy, aAscending) {
       }
     }
 
-    // If we got here, then all values of a and b
-    // must have been equal.
+    
+    
     return 0;
 
   });
@@ -1444,7 +1451,7 @@ function getAddonsAndInstalls(aType, aCallback) {
   });
 
   AddonManager.getInstallsByTypes(types, function(aInstallsList) {
-    // skip over upgrade installs and non-active installs
+    
     installs = aInstallsList.filter(function(aInstall) {
       return !(aInstall.existingAddon ||
                aInstall.state == AddonManager.STATE_AVAILABLE);
@@ -1456,8 +1463,8 @@ function getAddonsAndInstalls(aType, aCallback) {
 }
 
 function doPendingUninstalls(aListBox) {
-  // Uninstalling add-ons can mutate the list so find the add-ons first then
-  // uninstall them
+  
+  
   var items = [];
   var listitem = aListBox.firstChild;
   while (listitem) {
@@ -1488,9 +1495,9 @@ var gCategories = {
       this.node.value = Services.prefs.getCharPref(PREF_UI_LASTCATEGORY);
     } catch (e) { }
 
-    // If there was no last view or no existing category matched the last view
-    // then the list will default to selecting the search category and we never
-    // want to show that as the first view so switch to the default category
+    
+    
+    
     if (!this.node.selectedItem || this.node.selectedItem == this._search)
       this.node.value = VIEW_DEFAULT;
 
@@ -1520,7 +1527,7 @@ var gCategories = {
   },
 
   _insertCategory: function(aId, aName, aView, aPriority, aStartHidden) {
-    // If this category already exists then don't re-add it
+    
     if (document.getElementById("category-" + aId))
       return;
 
@@ -1536,16 +1543,16 @@ var gCategories = {
     var node = this.node.firstChild;
     while (node = node.nextSibling) {
       var nodePriority = parseInt(node.getAttribute("priority"));
-      // If the new type's priority is higher than this one then this is the
-      // insertion point
+      
+      
       if (aPriority < nodePriority)
         break;
-      // If the new type's priority is lower than this one then this is isn't
-      // the insertion point
+      
+      
       if (aPriority > nodePriority)
         continue;
-      // If the priorities are equal and the new type's name is earlier
-      // alphabetically then this is the insertion point
+      
+      
       if (String.localeCompare(aName, node.getAttribute("name")) < 0)
         break;
     }
@@ -1558,7 +1565,7 @@ var gCategories = {
     if (!category)
       return;
 
-    // If this category is currently selected then switch to the default view
+    
     if (this.node.selectedItem == category)
       gViewController.replaceView(VIEW_DEFAULT);
 
@@ -1566,7 +1573,7 @@ var gCategories = {
   },
 
   onTypeAdded: function(aType) {
-    // Ignore types that we don't have a view object for
+    
     if (!(aType.viewType in gViewController.viewObjects))
       return;
 
@@ -1579,7 +1586,7 @@ var gCategories = {
         startHidden = Services.prefs.getBoolPref(prefName);
       }
       catch (e) {
-        // Default to hidden
+        
         startHidden = true;
       }
 
@@ -1589,7 +1596,7 @@ var gCategories = {
         var hidden = (aAddonsList.length == 0 && aInstallsList.length == 0);
         var item = self.get(aViewId);
 
-        // Don't load view that is becoming hidden
+        
         if (hidden && aViewId == gViewController.currentViewId)
           gViewController.loadView(VIEW_DEFAULT);
 
@@ -1740,7 +1747,7 @@ var gHeader = {
                              .getInterface(Ci.nsIWebNavigation)
                              .QueryInterface(Ci.nsIDocShellTreeItem);
 
-    // If there is no outer frame then make the buttons visible
+    
     if (docshellItem.rootTreeItem == docshellItem)
       return true;
 
@@ -1748,12 +1755,12 @@ var gHeader = {
                                             .getInterface(Ci.nsIDOMWindow);
     var outerDoc = outerWin.document;
     var node = outerDoc.getElementById("back-button");
-    // If the outer frame has no back-button then make the buttons visible
+    
     if (!node)
       return true;
 
-    // If the back-button or any of its parents are hidden then make the buttons
-    // visible
+    
+    
     while (node != outerDoc) {
       var style = outerWin.getComputedStyle(node, "");
       if (style.display == "none")
@@ -1779,8 +1786,8 @@ var gHeader = {
 var gDiscoverView = {
   node: null,
   enabled: true,
-  // Set to true after the view is first shown. If initialization completes
-  // after this then it must also load the discover homepage
+  
+  
   loaded: false,
   _browser: null,
   _loading: null,
@@ -1857,14 +1864,14 @@ var gDiscoverView = {
   show: function(aParam, aRequest, aState, aIsRefresh) {
     gViewController.updateCommands();
 
-    // If we're being told to load a specific URL then just do that
+    
     if (aState && "url" in aState) {
       this.loaded = true;
       this._loadURL(aState.url);
     }
 
-    // If the view has loaded before and still at the homepage (if refreshing),
-    // and the error page is not visible then there is nothing else to do
+    
+    
     if (this.loaded && this.node.selectedPanel != this._error &&
         (!aIsRefresh || (this._browser.currentURI &&
          this._browser.currentURI.spec == this._browser.homePage))) {
@@ -1874,8 +1881,8 @@ var gDiscoverView = {
 
     this.loaded = true;
 
-    // No homepage means initialization isn't complete, the browser will get
-    // loaded once initialization is complete
+    
+    
     if (!this.homepageURL) {
       this._loadListeners.push(gViewController.notifyViewChanged.bind(gViewController));
       return;
@@ -1920,13 +1927,13 @@ var gDiscoverView = {
   },
 
   onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {
-    // Ignore the about:blank load
+    
     if (aLocation.spec == "about:blank")
       return;
 
-    // When using the real session history the inner-frame will update the
-    // session history automatically, if using the fake history though it must
-    // be manually updated
+    
+    
+    
     if (gHistory == FakeHistory) {
       var docshell = aWebProgress.QueryInterface(Ci.nsIDocShell);
 
@@ -1945,57 +1952,58 @@ var gDiscoverView = {
 
     gViewController.updateCommands();
 
-    // If the hostname is the same as the new location's host and either the
-    // default scheme is insecure or the new location is secure then continue
-    // with the load
+    
+    
+    
     if (aLocation.host == this.homepageURL.host &&
         (!this.homepageURL.schemeIs("https") || aLocation.schemeIs("https")))
       return;
 
-    // Canceling the request will send an error to onStateChange which will show
-    // the error page
+    
+    
     aRequest.cancel(Components.results.NS_BINDING_ABORTED);
   },
 
   onSecurityChange: function(aWebProgress, aRequest, aState) {
-    // Don't care about security if the page is not https
+    
     if (!this.homepageURL.schemeIs("https"))
       return;
 
-    // If the request was secure then it is ok
+    
     if (aState & Ci.nsIWebProgressListener.STATE_IS_SECURE)
       return;
 
-    // Canceling the request will send an error to onStateChange which will show
-    // the error page
+    
+    
     aRequest.cancel(Components.results.NS_BINDING_ABORTED);
   },
 
   onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
-    // Only care about the network events
+    
     if (!(aStateFlags & (Ci.nsIWebProgressListener.STATE_IS_NETWORK)))
       return;
 
-    // If this is the start of network activity then show the loading page
+    
     if (aStateFlags & (Ci.nsIWebProgressListener.STATE_START))
       this.node.selectedPanel = this._loading;
 
-    // Ignore anything except stop events
+    
     if (!(aStateFlags & (Ci.nsIWebProgressListener.STATE_STOP)))
       return;
 
-    // Consider the successful load of about:blank as still loading
+    
     if (aRequest instanceof Ci.nsIChannel && aRequest.URI.spec == "about:blank")
       return;
 
-    // If there was an error loading the page or the new hostname is not the
-    // same as the default hostname or the default scheme is secure and the new
-    // scheme is insecure then show the error page
-    if (!Components.isSuccessCode(aStatus) ||
+    
+    
+    
+    const NS_ERROR_PARSED_DATA_CACHED = 0x805D0021;
+    if (!(Components.isSuccessCode(aStatus) || aStatus == NS_ERROR_PARSED_DATA_CACHED) ||
         (aRequest && aRequest instanceof Ci.nsIHttpChannel && !aRequest.requestSucceeded)) {
       this.showError();
     } else {
-      // Got a successful load, make sure the browser is visible
+      
       this.node.selectedPanel = this._browser;
       gViewController.updateCommands();
     }
@@ -2157,8 +2165,8 @@ var gSearchView = {
 
         self._lastRemoteTotal = 0;
 
-        // XXXunf Better handling of AMO search failure. See bug 579502
-        finishSearch(0); // Silently fail
+        
+        finishSearch(0); 
       },
 
       searchSucceeded: function(aAddonsList, aAddonCount, aTotalResults) {
@@ -2231,20 +2239,20 @@ var gSearchView = {
     for (let n = 0; n < needles.length; n++) {
       for (let h = 0; h < haystack.length; h++) {
         if (haystack[h] == needles[n]) {
-          // matching whole words is best
+          
           score += SEARCH_SCORE_MATCH_WHOLEWORD;
         } else {
           let i = haystack[h].indexOf(needles[n]);
-          if (i == 0) // matching on word boundries is also good
+          if (i == 0) 
             score += SEARCH_SCORE_MATCH_WORDBOUNDRY;
-          else if (i > 0) // substring matches not so good
+          else if (i > 0) 
             score += SEARCH_SCORE_MATCH_SUBSTRING;
         }
       }
     }
 
-    // give progressively higher score for longer queries, since longer queries
-    // are more likely to be unique and therefore more relevant.
+    
+    
     if (needles.length > 1 && aStr.indexOf(aQuery) != -1)
       score += needles.length;
 
@@ -2419,7 +2427,7 @@ var gListView = {
   },
 
   onExternalInstall: function(aAddon, aExistingAddon, aRequiresRestart) {
-    // The existing list item will take care of upgrade installs
+    
     if (aExistingAddon)
       return;
 
@@ -2443,8 +2451,8 @@ var gListView = {
   },
 
   onInstallEnded: function(aInstall) {
-    // Remove any install entries for upgrades, their status will appear against
-    // the existing item
+    
+    
     if (aInstall.existingAddon)
       this.removeItem(aInstall, true);
   },
@@ -2541,8 +2549,8 @@ var gDetailView = {
 
     this.node.setAttribute("type", aAddon.type);
 
-    // If the search category isn't selected then make sure to select the
-    // correct category
+    
+    
     if (gCategories.selected != "addons://search/")
       gCategories.select("addons://list/" + aAddon.type);
 
@@ -2619,8 +2627,8 @@ var gDetailView = {
       updateDateRow.value = null;
     }
 
-    // TODO if the add-on was downloaded from releases.mozilla.org link to the
-    // AMO profile (bug 590344)
+    
+    
     if (false) {
       document.getElementById("detail-repository-row").hidden = false;
       document.getElementById("detail-homepage-row").hidden = true;
@@ -2729,7 +2737,7 @@ var gDetailView = {
         return;
       }
 
-      // Look for an add-on pending install
+      
       AddonManager.getAllInstalls(function(aInstalls) {
         for (let i = 0; i < aInstalls.length; i++) {
           if (aInstalls[i].state == AddonManager.STATE_INSTALLED &&
@@ -2744,9 +2752,9 @@ var gDetailView = {
           return;
         }
 
-        // This might happen due to session restore restoring us back to an
-        // add-on that doesn't exist but otherwise shouldn't normally happen.
-        // Either way just revert to the default view.
+        
+        
+        
         gViewController.replaceView(VIEW_DEFAULT);
       });
     });
@@ -2849,9 +2857,9 @@ var gDetailView = {
     if (this._addon.optionsType != AddonManager.OPTIONS_TYPE_INLINE)
       return;
 
-    // This function removes and returns the text content of aNode without
-    // removing any child elements. Removing the text nodes ensures any XBL
-    // bindings apply properly.
+    
+    
+    
     function stripTextNodes(aNode) {
       var text = '';
       for (var i = 0; i < aNode.childNodes.length; i++) {
@@ -2874,10 +2882,11 @@ var gDetailView = {
     var xml = xhr.responseXML;
     var settings = xml.querySelectorAll(":root > setting");
 
-    for (var i = 0, first = true; i < settings.length; i++) {
+    var firstSetting = null;
+    for (var i = 0; i < settings.length; i++) {
       var setting = settings[i];
 
-      // Remove setting description, for replacement later
+      
       var desc = stripTextNodes(setting).trim();
       if (setting.hasAttribute("desc")) {
         desc = setting.getAttribute("desc").trim();
@@ -2890,12 +2899,12 @@ var gDetailView = {
 
       rows.appendChild(setting);
       var visible = window.getComputedStyle(setting, null).getPropertyValue("display") != "none";
-      if (first && visible) {
+      if (!firstSetting && visible) {
         setting.setAttribute("first-row", true);
-        first = false;
+        firstSetting = setting;
       }
 
-      // Add a new row containing the description
+      
       if (desc) {
         var row = document.createElement("row");
         if (!visible) {
@@ -2909,7 +2918,20 @@ var gDetailView = {
       }
     }
 
-    Services.obs.notifyObservers(document, "addon-options-displayed", this._addon.id);
+	
+	
+    if (gViewController.viewPort.selectedPanel.hasAttribute("loading")) {
+      gDetailView.node.addEventListener("ViewChanged", function viewChangedEventListener() {
+        gDetailView.node.removeEventListener("ViewChanged", viewChangedEventListener, false);
+        if (firstSetting)
+          firstSetting.clientTop;
+        Services.obs.notifyObservers(document, "addon-options-displayed", gDetailView._addon.id);
+      }, false);
+    } else {
+      if (firstSetting)
+        firstSetting.clientTop;
+      Services.obs.notifyObservers(document, "addon-options-displayed", this._addon.id);
+    }
   },
 
   getSelectedAddon: function() {
@@ -2955,7 +2977,7 @@ var gDetailView = {
   },
 
   onExternalInstall: function(aAddon, aExistingAddon, aNeedsRestart) {
-    // Only care about upgrades for the currently displayed add-on
+    
     if (!aExistingAddon || aExistingAddon.id != this._addon.id)
       return;
 
@@ -3054,9 +3076,9 @@ var gUpdatesView = {
   },
 
   _showAvailableUpdates: function(aIsRefresh, aRequest) {
-    /* Disable the Update Selected button so it can't get clicked
-       before everything is initialized asynchronously.
-       It will get re-enabled by maybeDisableUpdateSelected(). */
+    
+
+
     this._updateSelected.disabled = true;
 
     var self = this;
@@ -3096,7 +3118,7 @@ var gUpdatesView = {
         });
       }
 
-      // ensure badge count is in sync
+      
       self._categoryItem.badgeCount = self._listBox.itemCount;
 
       gViewController.notifyViewChanged();
@@ -3215,7 +3237,7 @@ var gDragDrop = {
     var dataTransfer = aEvent.dataTransfer;
     var urls = [];
 
-    // Convert every dropped item into a url
+    
     for (var i = 0; i < dataTransfer.mozItemCount; i++) {
       var url = dataTransfer.mozGetDataAt("text/uri-list", i);
       if (url) {
@@ -3242,7 +3264,7 @@ var gDragDrop = {
     function buildNextInstall() {
       if (pos == urls.length) {
         if (installs.length > 0) {
-          // Display the normal install confirmation for the installs
+          
           AddonManager.installAddonsFromWebpage("application/x-xpinstall", this,
                                                 null, installs);
         }

@@ -1,53 +1,53 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 tw=99 et:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-/*
- * PR assertion checker.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef jsutil_h___
 #define jsutil_h___
 
 #include "js/Utility.h"
 
-/* Forward declarations. */
+
 struct JSContext;
 
 #ifdef __cplusplus
@@ -145,7 +145,7 @@ Max(T t1, T t2)
     return t1 > t2 ? t1 : t2;
 }
 
-/* Allows a const variable to be initialized after its declaration. */
+
 template <class T>
 static T&
 InitConst(const T &t)
@@ -281,18 +281,25 @@ template <class T>
 JS_ALWAYS_INLINE static void
 PodZero(T *t, size_t nelem)
 {
-    memset(t, 0, nelem * sizeof(T));
+    
+
+
+
+
+
+    for (size_t i = 0; i < nelem; ++i, ++t)
+        memset(t, 0, sizeof(T));
 }
 
-/*
- * Arrays implicitly convert to pointers to their first element, which is
- * dangerous when combined with the above PodZero definitions. Adding an
- * overload for arrays is ambiguous, so we need another identifier. The
- * ambiguous overload is left to catch mistaken uses of PodZero; if you get a
- * compile error involving PodZero and array types, use PodArrayZero instead.
- */
-template <class T, size_t N> static void PodZero(T (&)[N]);          /* undefined */
-template <class T, size_t N> static void PodZero(T (&)[N], size_t);  /* undefined */
+
+
+
+
+
+
+
+template <class T, size_t N> static void PodZero(T (&)[N]);          
+template <class T, size_t N> static void PodZero(T (&)[N], size_t);  
 
 template <class T, size_t N>
 JS_ALWAYS_INLINE static void
@@ -305,7 +312,7 @@ template <class T>
 JS_ALWAYS_INLINE static void
 PodCopy(T *dst, const T *src, size_t nelem)
 {
-    /* Cannot find portable word-sized abs(). */
+    
     JS_ASSERT_IF(dst >= src, size_t(dst - src) >= nelem);
     JS_ASSERT_IF(src >= dst, size_t(src - dst) >= nelem);
 
@@ -361,29 +368,29 @@ UnsignedPtrDiff(const void *bigger, const void *smaller)
     return size_t(bigger) - size_t(smaller);
 }
 
-/*
- * Ordinarily, a function taking a JSContext* 'cx' paremter reports errors on
- * the context. In some cases, functions optionally report and indicate this by
- * taking a nullable 'maybecx' parameter. In some cases, though, a function
- * always needs a 'cx', but optionally reports. This option is presented by the
- * MaybeReportError.
- */
+
+
+
+
+
+
+
 enum MaybeReportError { REPORT_ERROR = true, DONT_REPORT_ERROR = false };
 
-}  /* namespace js */
-#endif  /* __cplusplus */
+}  
+#endif  
 
-/*
- * JS_ROTATE_LEFT32
- *
- * There is no rotate operation in the C Language so the construct (a << 4) |
- * (a >> 28) is used instead. Most compilers convert this to a rotate
- * instruction but some versions of MSVC don't without a little help.  To get
- * MSVC to generate a rotate instruction, we have to use the _rotl intrinsic
- * and use a pragma to make _rotl inline.
- *
- * MSVC in VS2005 will do an inline rotate instruction on the above construct.
- */
+
+
+
+
+
+
+
+
+
+
+
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_AMD64) || \
     defined(_M_X64))
 #include <stdlib.h>
@@ -393,12 +400,12 @@ enum MaybeReportError { REPORT_ERROR = true, DONT_REPORT_ERROR = false };
 #define JS_ROTATE_LEFT32(a, bits) (((a) << (bits)) | ((a) >> (32 - (bits))))
 #endif
 
-/* Static control-flow checks. */
+
 #ifdef NS_STATIC_CHECKING
-/* Trigger a control flow check to make sure that code flows through label */
+
 inline __attribute__ ((unused)) void MUST_FLOW_THROUGH(const char *label) {}
 
-/* Avoid unused goto-label warnings. */
+
 # define MUST_FLOW_LABEL(label) goto label; label:
 
 #else
@@ -406,7 +413,7 @@ inline __attribute__ ((unused)) void MUST_FLOW_THROUGH(const char *label) {}
 # define MUST_FLOW_LABEL(label)
 #endif
 
-/* Crash diagnostics */
+
 #ifdef DEBUG
 # define JS_CRASH_DIAGNOSTICS 1
 #endif
@@ -422,19 +429,19 @@ inline __attribute__ ((unused)) void MUST_FLOW_THROUGH(const char *label) {}
 # define JS_OPT_ASSERT_IF(cond, expr) ((void) 0)
 #endif
 
-/* Basic stats */
+
 #ifdef DEBUG
 # define JS_BASIC_STATS 1
 #endif
 #ifdef JS_BASIC_STATS
 # include <stdio.h>
 typedef struct JSBasicStats {
-    uint32      num;
-    uint32      max;
+    uint32_t    num;
+    uint32_t    max;
     double      sum;
     double      sqsum;
-    uint32      logscale;           /* logarithmic scale: 0 (linear), 2, 10 */
-    uint32      hist[11];
+    uint32_t    logscale;           
+    uint32_t    hist[11];
 } JSBasicStats;
 # define JS_INIT_STATIC_BASIC_STATS  {0,0,0,0,0,{0,0,0,0,0,0,0,0,0,0,0}}
 # define JS_BASIC_STATS_INIT(bs)     memset((bs), 0, sizeof(JSBasicStats))
@@ -443,9 +450,9 @@ typedef struct JSBasicStats {
 # define JS_MeanAndStdDevBS(bs,sigma)                                         \
     JS_MeanAndStdDev((bs)->num, (bs)->sum, (bs)->sqsum, sigma)
 extern void
-JS_BasicStatsAccum(JSBasicStats *bs, uint32 val);
+JS_BasicStatsAccum(JSBasicStats *bs, uint32_t val);
 extern double
-JS_MeanAndStdDev(uint32 num, double sum, double sqsum, double *sigma);
+JS_MeanAndStdDev(uint32_t num, double sum, double sqsum, double *sigma);
 extern void
 JS_DumpBasicStats(JSBasicStats *bs, const char *title, FILE *fp);
 extern void
@@ -454,7 +461,7 @@ JS_DumpHistogram(JSBasicStats *bs, FILE *fp);
 # define JS_BASIC_STATS_ACCUM(bs,val)
 #endif
 
-/* A jsbitmap_t is a long integer that can be used for bitmaps. */
+
 typedef size_t jsbitmap;
 #define JS_TEST_BIT(_map,_bit)  ((_map)[(_bit)>>JS_BITS_PER_WORD_LOG2] &      \
                                  ((jsbitmap)1<<((_bit)&(JS_BITS_PER_WORD-1))))
@@ -463,4 +470,28 @@ typedef size_t jsbitmap;
 #define JS_CLEAR_BIT(_map,_bit) ((_map)[(_bit)>>JS_BITS_PER_WORD_LOG2] &=     \
                                  ~((jsbitmap)1<<((_bit)&(JS_BITS_PER_WORD-1))))
 
-#endif /* jsutil_h___ */
+
+#if defined(__clang__)
+# define JS_SILENCE_UNUSED_VALUE_IN_EXPR(expr)                                \
+    JS_BEGIN_MACRO                                                            \
+        _Pragma("clang diagnostic push")                                      \
+        _Pragma("clang diagnostic ignored \"-Wunused-value\"")                \
+        expr;                                                                 \
+        _Pragma("clang diagnostic pop")                                       \
+    JS_END_MACRO
+#elif (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+# define JS_SILENCE_UNUSED_VALUE_IN_EXPR(expr)                                \
+    JS_BEGIN_MACRO                                                            \
+        _Pragma("GCC diagnostic push")                                        \
+        _Pragma("GCC diagnostic ignored \"-Wunused-but-set-variable\"")       \
+        expr;                                                                 \
+        _Pragma("GCC diagnostic pop")                                         \
+    JS_END_MACRO
+#else
+# define JS_SILENCE_UNUSED_VALUE_IN_EXPR(expr)                                \
+    JS_BEGIN_MACRO                                                            \
+        expr;                                                                 \
+    JS_END_MACRO
+#endif
+
+#endif 
