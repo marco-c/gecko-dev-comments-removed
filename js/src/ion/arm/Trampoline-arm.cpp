@@ -60,6 +60,7 @@ struct EnterJITStack
     
     
     CalleeToken token;
+    JSObject *evalScopeChain;
     Value *vp;
 };
 
@@ -71,7 +72,7 @@ struct EnterJITStack
 
 
 IonCode *
-IonRuntime::generateEnterJIT(JSContext *cx)
+IonRuntime::generateEnterJIT(JSContext *cx, EnterJitType type)
 {
 
     const Register reg_code  = r0;
@@ -81,6 +82,7 @@ IonRuntime::generateEnterJIT(JSContext *cx)
 
     const Address slot_token(sp, offsetof(EnterJITStack, token));
     const Address slot_vp(sp, offsetof(EnterJITStack, vp));
+    const Address slot_evalScopeChain(sp, offsetof(EnterJITStack, evalScopeChain));
 
     JS_ASSERT(OsrFrameReg == reg_frame);
 
@@ -111,6 +113,10 @@ IonRuntime::generateEnterJIT(JSContext *cx)
 
     
     masm.loadPtr(slot_token, r9);
+
+    
+    if (type == EnterJitBaseline)
+        masm.loadPtr(slot_evalScopeChain, r11);
 
     
     masm.loadPtr(slot_vp, r10);
@@ -164,6 +170,12 @@ IonRuntime::generateEnterJIT(JSContext *cx)
     masm.transferReg(r9);  
     masm.transferReg(r10); 
     masm.finishDataTransfer();
+
+    if (type == EnterJitBaseline) {
+        
+        JS_ASSERT(R1.scratchReg() != r0);
+        masm.ma_mov(r11, R1.scratchReg());
+    }
 
     
     masm.ma_callIonNoPush(r0);

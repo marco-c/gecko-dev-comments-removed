@@ -195,8 +195,12 @@ IonRuntime::initialize(JSContext *cx)
     if (!invalidator_)
         return false;
 
-    enterJIT_ = generateEnterJIT(cx);
+    enterJIT_ = generateEnterJIT(cx, EnterJitOptimized);
     if (!enterJIT_)
+        return false;
+
+    enterBaselineJIT_ = generateEnterJIT(cx, EnterJitBaseline);
+    if (!enterBaselineJIT_)
         return false;
 
     valuePreBarrier_ = generatePreBarrier(cx, MIRType_Value);
@@ -1617,7 +1621,7 @@ EnterIon(JSContext *cx, StackFrame *fp, void *jitcode)
         JSAutoResolveFlags rf(cx, RESOLVE_INFER);
         AutoFlushInhibitor afi(cx->compartment->ionCompartment());
         
-        enter(jitcode, maxArgc, maxArgv, fp, calleeToken, &result);
+        enter(jitcode, maxArgc, maxArgv, fp, calleeToken,  NULL, &result);
     }
 
     if (result.isMagic() && result.whyMagic() == JS_ION_BAILOUT) {
@@ -1750,7 +1754,8 @@ ion::FastInvoke(JSContext *cx, HandleFunction fun, CallArgsList &args)
 
     JSAutoResolveFlags rf(cx, RESOLVE_INFER);
     args.setActive();
-    enter(jitcode, args.length() + 1, args.array() - 1, fp, calleeToken, &result);
+    enter(jitcode, args.length() + 1, args.array() - 1, fp, calleeToken,
+           NULL, &result);
     args.setInactive();
 
     if (clearCallingIntoIon)
