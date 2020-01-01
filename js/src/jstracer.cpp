@@ -7539,29 +7539,29 @@ js_FinishJIT(JSTraceMonitor *tm)
 {
 #ifdef JS_JIT_SPEW
     if (jitstats.recorderStarted) {
-        char sep = ':';
-        debug_only_print0(LC_TMStats, "recorder");
-#define RECORDER_JITSTAT(_ident, _name)                             \
-        debug_only_printf(LC_TMStats, "%c " _name "(%llu)", sep,    \
-                          (unsigned long long int)jitstats._ident); \
-        sep = ',';
-#define JITSTAT(x)
-#include "jitstats.tbl"
-#undef JITSTAT
-#undef RECORDER_JITSTAT
-        debug_only_print0(LC_TMStats, "\n");
-
-        sep = ':';
-        debug_only_print0(LC_TMStats, "monitor");
-#define MONITOR_JITSTAT(_ident, _name)                              \
-        debug_only_printf(LC_TMStats, "%c " _name "(%llu)", sep,    \
-                          (unsigned long long int)jitstats._ident); \
-        sep = ',';
-#define JITSTAT(x)
-#include "jitstats.tbl"
-#undef JITSTAT
-#undef MONITOR_JITSTAT
-        debug_only_print0(LC_TMStats, "\n");
+        debug_only_printf(LC_TMStats,
+                          "recorder: started(%llu), aborted(%llu), completed(%llu), different header(%llu), "
+                          "trees trashed(%llu), slot promoted(%llu), unstable loop variable(%llu), "
+                          "breaks(%llu), returns(%llu), unstableInnerCalls(%llu), blacklisted(%llu)\n",
+                           (unsigned long long int)jitstats.recorderStarted,
+                           (unsigned long long int)jitstats.recorderAborted,
+                           (unsigned long long int)jitstats.traceCompleted,
+                           (unsigned long long int)jitstats.returnToDifferentLoopHeader,
+                           (unsigned long long int)jitstats.treesTrashed,
+                           (unsigned long long int)jitstats.slotPromoted,
+                           (unsigned long long int)jitstats.unstableLoopVariable,
+                           (unsigned long long int)jitstats.breakLoopExits,
+                           (unsigned long long int)jitstats.returnLoopExits,
+                           (unsigned long long int)jitstats.noCompatInnerTrees,
+                           (unsigned long long int)jitstats.blacklisted);
+        debug_only_printf(LC_TMStats,
+                          "monitor: triggered(%llu), exits(%llu), type mismatch(%llu), "
+                          "global mismatch(%llu), flushed(%llu)\n",
+                           (unsigned long long int)jitstats.traceTriggered,
+                           (unsigned long long int)jitstats.sideExitIntoInterpreter,
+                           (unsigned long long int)jitstats.typeMapMismatchAtEntry,
+                           (unsigned long long int)jitstats.globalShapeMismatchAtEntry,
+                           (unsigned long long int)jitstats.cacheFlushed);
     }
 #endif
     JS_ASSERT(tm->reservedDoublePool);
@@ -11142,23 +11142,6 @@ TraceRecorder::setProp(jsval &l, JSPropCacheEntry* entry, JSScopeProperty* sprop
         return setCallProp(obj, obj_ins, sprop, v_ins, v);
 
     
-
-
-
-
-
-    if (scope->branded() && VALUE_IS_FUNCTION(cx, v) && entry->directHit()) {
-        if (obj == globalObj)
-            RETURN_STOP("can't trace function-valued property set in branded global scope");
-
-        enterDeepBailCall();
-        LIns* args[] = { v_ins, INS_CONSTSPROP(sprop), obj_ins, cx_ins };
-        LIns* ok_ins = lir->insCall(&MethodWriteBarrier_ci, args);
-        guard(false, lir->ins_eq0(ok_ins), OOM_EXIT);
-        leaveDeepBailCall();
-    }
-
-    
     JSObject* obj2 = obj;
     for (jsuword i = PCVCAP_TAG(entry->vcap) >> PCVCAP_PROTOBITS; i; i--)
         obj2 = OBJ_GET_PARENT(cx, obj2);
@@ -11175,6 +11158,23 @@ TraceRecorder::setProp(jsval &l, JSPropCacheEntry* entry, JSScopeProperty* sprop
     JS_ASSERT(scope->object == obj2);
     JS_ASSERT(scope->has(sprop));
     JS_ASSERT_IF(obj2 != obj, sprop->attrs & JSPROP_SHARED);
+
+    
+
+
+
+
+
+    if (scope->branded() && VALUE_IS_FUNCTION(cx, v) && entry->directHit()) {
+        if (obj == globalObj)
+            RETURN_STOP("can't trace function-valued property set in branded global scope");
+
+        enterDeepBailCall();
+        LIns* args[] = { v_ins, INS_CONSTSPROP(sprop), obj_ins, cx_ins };
+        LIns* ok_ins = lir->insCall(&MethodWriteBarrier_ci, args);
+        guard(false, lir->ins_eq0(ok_ins), OOM_EXIT);
+        leaveDeepBailCall();
+    }
 
     
     if (entry->adding()) {
