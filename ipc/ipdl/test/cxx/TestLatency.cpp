@@ -1,16 +1,16 @@
 #include "TestLatency.h"
 
-#include "IPDLUnitTests.h"      
+#include "IPDLUnitTests.h"      // fail etc.
 
-
-
-static const double kTimingResolutionCutoff = 0.00001; 
+// A ping/pong trial takes O(100us) or more, so if we don't have 10us
+// resolution or better, the results will not be terribly useful
+static const double kTimingResolutionCutoff = 0.00001; // 10us
 
 namespace mozilla {
 namespace _ipdltest {
 
-
-
+//-----------------------------------------------------------------------------
+// parent
 
 TestLatencyParent::TestLatencyParent() :
     mStart(),
@@ -60,7 +60,7 @@ void
 TestLatencyParent::Ping5Pong5Trial()
 {
     mStart = TimeStamp::Now();
-    
+    // HACK
     mPongsToGo = 5;
 
     if (!SendPing5() ||
@@ -97,7 +97,7 @@ TestLatencyParent::RecvPong()
 bool
 TestLatencyParent::RecvPong5()
 {
-    
+    // HACK
     if (0 < --mPongsToGo)
         return true;
 
@@ -136,8 +136,8 @@ TestLatencyParent::RpcTrials()
     Exit();
 }
 
-
-
+//-----------------------------------------------------------------------------
+// child
 
 TestLatencyChild::TestLatencyChild()
 {
@@ -169,5 +169,5 @@ TestLatencyChild::AnswerRpc()
     return true;
 }
 
-} 
-} 
+} // namespace _ipdltest
+} // namespace mozilla
