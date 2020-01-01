@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JS boolean implementation.
- */
+
+
+
+
+
+
+
+
 
 #include "mozilla/FloatingPoint.h"
 
@@ -26,6 +26,7 @@
 #include "vm/GlobalObject.h"
 #include "vm/StringBuffer.h"
 
+#include "jsboolinlines.h"
 #include "jsinferinlines.h"
 #include "jsobjinlines.h"
 
@@ -37,10 +38,10 @@ using namespace js::types;
 
 Class js::BooleanClass = {
     "Boolean",
-    JSCLASS_HAS_RESERVED_SLOTS(1) | JSCLASS_HAS_CACHED_PROTO(JSProto_Boolean),    JS_PropertyStub,         /* addProperty */
-    JS_PropertyStub,         /* delProperty */
-    JS_PropertyStub,         /* getProperty */
-    JS_StrictPropertyStub,   /* setProperty */
+    JSCLASS_HAS_RESERVED_SLOTS(1) | JSCLASS_HAS_CACHED_PROTO(JSProto_Boolean),    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_PropertyStub,         
+    JS_StrictPropertyStub,   
     JS_EnumerateStub,
     JS_ResolveStub,
     JS_ConvertStub
@@ -192,17 +193,15 @@ js_BooleanToString(JSContext *cx, JSBool b)
     return b ? cx->runtime->atomState.true_ : cx->runtime->atomState.false_;
 }
 
-namespace js {
-
 JS_PUBLIC_API(bool)
-ToBooleanSlow(const Value &v)
+js::ToBooleanSlow(const Value &v)
 {
     JS_ASSERT(v.isString());
     return v.toString()->length() != 0;
 }
 
 bool
-BooleanGetPrimitiveValueSlow(JSContext *cx, JSObject &obj, Value *vp)
+js::BooleanGetPrimitiveValueSlow(JSContext *cx, JSObject &obj, Value *vp)
 {
     InvokeArgsGuard ag;
     if (!cx->stack.pushInvokeArgs(cx, 0, &ag))
@@ -214,7 +213,3 @@ BooleanGetPrimitiveValueSlow(JSContext *cx, JSObject &obj, Value *vp)
     *vp = ag.rval();
     return true;
 }
-
-}  /* namespace js */
-
-
