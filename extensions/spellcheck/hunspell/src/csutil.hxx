@@ -59,28 +59,54 @@
 
 
 
+#include "w_char.hxx"
+
+
 #define NOCAP   0
 #define INITCAP 1
 #define ALLCAP  2
 #define HUHCAP  3
 #define HUHINITCAP  4
 
-#define FIELD_STEM  "st:"
-#define FIELD_POS   "po:"
-#define FIELD_SUFF  "su:"
-#define FIELD_PREF  "pr:"
-#define FIELD_FREQ  "fr:"
-#define FIELD_PHON  "ph:"
-#define FIELD_HYPH  "hy:"
-#define FIELD_COMP  "co:"
+
+#define SPELL_ENCODING  "ISO8859-1"
+#define SPELL_KEYSTRING "qwertyuiop|asdfghjkl|zxcvbnm" 
 
 
-#define ONLYUPCASEFLAG 65535
+#define MORPH_STEM        "st:"
+#define MORPH_ALLOMORPH   "al:"
+#define MORPH_POS         "po:"
+#define MORPH_DERI_PFX    "dp:"
+#define MORPH_INFL_PFX    "ip:"
+#define MORPH_TERM_PFX    "tp:"
+#define MORPH_DERI_SFX    "ds:"
+#define MORPH_INFL_SFX    "is:"
+#define MORPH_TERM_SFX    "ts:"
+#define MORPH_SURF_PFX    "sp:"
+#define MORPH_FREQ        "fr:"
+#define MORPH_PHON        "ph:"
+#define MORPH_HYPH        "hy:"
+#define MORPH_PART        "pa:"
+#define MORPH_FLAG        "fl:"
+#define MORPH_HENTRY      "_H:"
+#define MORPH_TAG_LEN     strlen(MORPH_STEM)
 
-typedef struct {
-    unsigned char l;
-    unsigned char h;
-} w_char;
+#define MSEP_FLD ' '
+#define MSEP_REC '\n'
+#define MSEP_ALT '\v'
+
+
+#define DEFAULTFLAGS   65510
+#define FORBIDDENWORD  65510
+#define ONLYUPCASEFLAG 65511
+
+
+#define HENTRY_DATA(h) (h->var ? ((h->var & H_OPT_ALIASM) ? \
+    get_stored_pointer(&(h->word) + h->blen + 1) : &(h->word) + h->blen + 1) : NULL)
+
+#define HENTRY_DATA2(h) (h->var ? ((h->var & H_OPT_ALIASM) ? \
+    get_stored_pointer(&(h->word) + h->blen + 1) : &(h->word) + h->blen + 1) : "")
+#define HENTRY_FIND(h,p) (HENTRY_DATA(h) ? strstr(HENTRY_DATA(h), p) : NULL)
 
 #define w_char_eq(a,b) (((a).l == (b).l) && ((a).h == (b).h))
 
@@ -103,6 +129,9 @@ void   mychomp(char * s);
 char * mystrdup(const char * s);
 
 
+char * mystrcat(char * dest, const char * st, int max);
+
+
 char * myrevstrdup(const char * s);
 
 
@@ -117,16 +146,14 @@ char * mystrrep(char *, const char *, const char *);
 void strlinecat(char * lines, const char * s);
 
 
-   int line_tok(const char * text, char *** lines);
+   int line_tok(const char * text, char *** lines, char breakchar);
 
 
-   char * line_uniq(char * text);
+   char * line_uniq(char * text, char breakchar);
+   char * line_uniq_app(char ** text, char breakchar);
 
 
-   char * line_join(char * text, char c);
-
-
-   char * delete_zeros(char * morphout);
+   char * tr(char * text, char oldc, char newc);
 
 
    int reverseword(char *);
@@ -135,16 +162,16 @@ void strlinecat(char * lines, const char * s);
    int reverseword_utf(char *);
 
 
+ int uniqlist(char ** list, int n);
+
+
+   void freelist(char *** list, int n);
+
+
 struct cs_info {
   unsigned char ccase;
   unsigned char clower;
   unsigned char cupper;
-};
-
-
-struct replentry {
-  char * pattern;
-  char * pattern2;
 };
 
 
@@ -225,9 +252,22 @@ void remove_ignored_chars_utf(char * word, unsigned short ignored_chars[], int i
 
 void remove_ignored_chars(char * word, char * ignored_chars);
 
-int parse_string(char * line, char ** out, const char * name);
+int parse_string(char * line, char ** out, int ln);
 
-int parse_array(char * line, char ** out,
-        unsigned short ** out_utf16, int * out_utf16_len, const char * name, int utf8);
+int parse_array(char * line, char ** out, unsigned short ** out_utf16,
+    int * out_utf16_len, int utf8, int ln);
+
+int fieldlen(const char * r);
+char * copy_field(char * dest, const char * morph, const char * var);
+
+int morphcmp(const char * s, const char * t);
+
+int get_sfxcount(const char * morph);
+
+
+void store_pointer(char * dest, char * source);
+
+
+char * get_stored_pointer(char * s);
 
 #endif

@@ -54,11 +54,10 @@
 
 
 
-#include "hashmgr.hxx"
 #include "affixmgr.hxx"
-#include "suggestmgr.hxx"
-#include "csutil.hxx"
+#include "hashmgr.hxx"
 #include "langnum.hxx"
+#include "suggestmgr.hxx"
 
 #define  SPELL_COMPOUND  (1 << 0)
 #define  SPELL_FORBIDDEN (1 << 1)
@@ -66,6 +65,9 @@
 #define  SPELL_NOCAP     (1 << 3)
 #define  SPELL_INITCAP   (1 << 4)
 
+#define  SPELL_XML "<?xml?>"
+
+#define MAXDIC 20
 #define MAXSUGGESTION 15
 #define MAXSHARPS 5
 
@@ -89,8 +91,10 @@ class Hunspell
 #endif
 {
   AffixMgr*       pAMgr;
-  HashMgr*        pHMgr;
+  HashMgr*        pHMgr[MAXDIC];
+  int             maxdic;
   SuggestMgr*     pSMgr;
+  char *          affixpath;
   char *          encoding;
   struct cs_info * csconv;
   int             langnum;
@@ -103,10 +107,12 @@ public:
   
 
 
-  
-  Hunspell(const char * affpath, const char * dpath);
 
+  Hunspell(const char * affpath, const char * dpath, const char * key = NULL);
   ~Hunspell();
+
+  
+  int add_dic(const char * dpath, const char * key = NULL);
 
   
 
@@ -129,17 +135,62 @@ public:
 
 
   int suggest(char*** slst, const char * word);
+
+  
+
+  void free_list(char *** slst, int n);
+
   char * get_dic_encoding();
 
+ 
+
+ 
+ 
+  int analyze(char*** slst, const char * word);
+
+ 
+  
+  int stem(char*** slst, const char * word);
+  
+ 
+
+
+
+
+
+ 
+  int stem(char*** slst, char ** morph, int n);
+
+ 
+
+  int generate(char*** slst, const char * word, const char * word2);
+
+ 
+
+
+
+
+
+
+
+  int generate(char*** slst, const char * word, char ** desc, int n);
+
+  
+
   
   
-  int put_word(const char * word);
+  int add(const char * word);
 
   
 
 
+
   
-  int put_word_pattern(const char * word, const char * pattern);
+  int add_with_affix(const char * word, const char * example);
+
+  
+
+  int remove(const char * word);
 
   
 
@@ -149,24 +200,13 @@ public:
 
   struct cs_info * get_csconv();
   const char * get_version();
-
+  
   
 
 #ifdef HUNSPELL_EXPERIMENTAL
-  
-  
+    
   int put_word_suffix(const char * word, const char * suffix);
-  
-  
-  
-  char * morph(const char * word);
-  int analyze(char*** out, const char *word);
-
   char * morph_with_correction(const char * word);
-
-  
-  
-  int stem(char*** slst, const char * word);
 
   
   int suggest_auto(char*** slst, const char * word);
@@ -189,6 +229,13 @@ private:
    hentry * spellsharps(char * base, char *, int, int, char * tmp, int * info, char **root);
    int    is_keepcase(const hentry * rv);
    int    insert_sug(char ***slst, char * word, int ns);
+   void   cat_result(char * result, char * st);
+   char * stem_description(const char * desc);
+   int    spellml(char*** slst, const char * word);
+   int    get_xml_par(char * dest, const char * par, int maxl);
+   const char * get_xml_pos(const char * s, const char * attr);
+   int    get_xml_list(char ***slst, char * list, const char * tag);
+   int    check_xml_par(const char * q, const char * attr, const char * value);
 
 };
 

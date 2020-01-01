@@ -63,24 +63,90 @@ extern "C" {
 
 typedef struct Hunhandle Hunhandle;
 
-Hunhandle *Hunspell_create(const char * affpath, const char * dpath);
-void Hunspell_destroy(Hunhandle *pHunspell);
+#ifdef _MSC_VER
+#define DLL __declspec ( dllexport )
+#else
+#define DLL 
+#endif
+
+DLL Hunhandle *Hunspell_create(const char * affpath, const char * dpath);
+
+DLL Hunhandle *Hunspell_create_key(const char * affpath, const char * dpath,
+    const char * key);
+
+DLL void Hunspell_destroy(Hunhandle *pHunspell);
 
 
 
 
-int Hunspell_spell(Hunhandle *pHunspell, const char *);
+DLL int Hunspell_spell(Hunhandle *pHunspell, const char *);
 
-char *Hunspell_get_dic_encoding(Hunhandle *pHunspell);
-
-
+DLL char *Hunspell_get_dic_encoding(Hunhandle *pHunspell);
 
 
 
 
 
 
-int Hunspell_suggest(Hunhandle *pHunspell, char*** slst, const char * word);
+
+
+DLL int Hunspell_suggest(Hunhandle *pHunspell, char*** slst, const char * word);
+
+ 
+
+ 
+
+DLL int Hunspell_analyze(Hunhandle *pHunspell, char*** slst, const char * word);
+
+ 
+
+DLL int Hunspell_stem(Hunhandle *pHunspell, char*** slst, const char * word);
+
+ 
+
+
+
+
+
+
+DLL int Hunspell_stem2(Hunhandle *pHunspell, char*** slst, char** desc, int n);
+
+ 
+
+DLL int Hunspell_generate(Hunhandle *pHunspell, char*** slst, const char * word,
+    const char * word2);
+
+ 
+
+
+
+
+
+
+
+DLL int Hunspell_generate2(Hunhandle *pHunspell, char*** slst, const char * word,
+    char** desc, int n);
+
+  
+
+  
+  
+DLL int Hunspell_add(Hunhandle *pHunspell, const char * word);
+
+  
+
+
+
+  
+DLL int Hunspell_add_with_affix(Hunhandle *pHunspell, const char * word, const char * example);
+
+  
+
+DLL int Hunspell_remove(Hunhandle *pHunspell, const char * word);
+
+  
+
+DLL void Hunspell_free_list(Hunhandle *pHunspell, char *** slst, int n);
 
 #ifdef __cplusplus
 }

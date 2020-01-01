@@ -62,7 +62,7 @@ void init_phonet_hash(phonetable & parms)
   {
     int i, k;
 
-    for (i = 0; i < parms.hash_size; i++) {
+    for (i = 0; i < HASHSIZE; i++) {
       parms.hash[i] = -1;
     }
 
@@ -83,6 +83,11 @@ void init_phonet_hash(phonetable & parms)
       *dest++ = *src++;
     *dest = '\0';
   }
+
+int myisalpha(char ch) {
+  if ((unsigned char) ch < 128) return isalpha(ch);
+  return 1;
+}
 
 
 
@@ -124,13 +129,13 @@ int phonet (const char * inword, char * target,
           s++;     
           
           while (*s != '\0'  &&  word[i+k] == *s
-                 &&  !isdigit (*s)  &&  strchr ("(-<^$", *s) == NULL) {
+                 &&  !isdigit ((unsigned char) *s)  &&  strchr ("(-<^$", *s) == NULL) {
             k++;
             s++;
           }
           if (*s == '(') {
             
-            if (isalpha(word[i+k])  
+            if (myisalpha(word[i+k])  
                 && strchr(s+1, word[i+k]) != NULL) {
               k++;
               while (*s != ')')
@@ -146,7 +151,7 @@ int phonet (const char * inword, char * target,
           }
           if (*s == '<')
             s++;
-          if (isdigit (*s)) {
+          if (isdigit ((unsigned char) *s)) {
             
             p = *s - '0';
             s++;
@@ -156,12 +161,12 @@ int phonet (const char * inword, char * target,
 
           if (*s == '\0'
               || (*s == '^'  
-                  && (i == 0  ||  ! isalpha(word[i-1]))
+                  && (i == 0  ||  ! myisalpha(word[i-1]))
                   && (*(s+1) != '$'
-                      || (! isalpha(word[i+k0]) )))
+                      || (! myisalpha(word[i+k0]) )))
               || (*s == '$'  &&  i > 0  
-                  &&  isalpha(word[i-1])
-                  && (! isalpha(word[i+k0]) ))) 
+                  &&  myisalpha(word[i-1])
+                  && (! myisalpha(word[i+k0]) ))) 
           {
             
             
@@ -180,13 +185,13 @@ int phonet (const char * inword, char * target,
                 s = parms.rules[n0];
                 s++;
                 while (*s != '\0'  &&  word[i+k0] == *s
-                       && ! isdigit(*s)  &&  strchr("(-<^$",*s) == NULL) {
+                       && ! isdigit((unsigned char) *s)  &&  strchr("(-<^$",*s) == NULL) {
                   k0++;
                   s++;
                 }
                 if (*s == '(') {
                   
-                  if (isalpha(word[i+k0])
+                  if (myisalpha(word[i+k0])
                       &&  strchr (s+1, word[i+k0]) != NULL) {
                     k0++;
                     while (*s != ')'  &&  *s != '\0')
@@ -202,14 +207,14 @@ int phonet (const char * inword, char * target,
                 }
                 if (*s == '<')
                   s++;
-                if (isdigit (*s)) {
+                if (isdigit ((unsigned char) *s)) {
                   p0 = *s - '0';
                   s++;
                 }
 
                 if (*s == '\0'
                     
-                    || (*s == '$'  &&  ! isalpha(word[i+k0]))) 
+                    || (*s == '$'  &&  ! myisalpha(word[i+k0]))) 
                 {
                   if (k0 == k) {
                     
