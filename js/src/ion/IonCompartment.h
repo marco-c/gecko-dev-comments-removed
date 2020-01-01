@@ -46,6 +46,7 @@ class IonRuntime
     
     
     IonCode *argumentsRectifier_;
+    void *argumentsRectifierReturnAddr_;
 
     
     IonCode *invalidator_;
@@ -63,7 +64,7 @@ class IonRuntime
 
   private:
     IonCode *generateEnterJIT(JSContext *cx);
-    IonCode *generateArgumentsRectifier(JSContext *cx);
+    IonCode *generateArgumentsRectifier(JSContext *cx, void **returnAddrOut);
     IonCode *generateBailoutTable(JSContext *cx, uint32_t frameClass);
     IonCode *generateBailoutHandler(JSContext *cx);
     IonCode *generateInvalidator(JSContext *cx);
@@ -109,6 +110,10 @@ class IonCompartment
     typedef WeakValueCache<uint32_t, ReadBarriered<IonCode> > ICStubCodeMap;
     ICStubCodeMap *stubCodes_;
 
+    
+    
+    void *baselineCallReturnAddr_;
+
   public:
     IonCode *getVMWrapper(const VMFunction &f);
 
@@ -129,6 +134,14 @@ class IonCompartment
         JS_ASSERT(!stubCodes_->has(key));
         ICStubCodeMap::AddPtr p = stubCodes_->lookupForAdd(key);
         return stubCodes_->add(p, key, stubCode.get());
+    }
+    void initBaselineCallReturnAddr(void *addr) {
+        JS_ASSERT(baselineCallReturnAddr_ == NULL);
+        baselineCallReturnAddr_ = addr;
+    }
+    void *baselineCallReturnAddr() {
+        JS_ASSERT(baselineCallReturnAddr_ != NULL);
+        return baselineCallReturnAddr_;
     }
 
     void toggleBaselineStubBarriers(bool enabled);
@@ -154,6 +167,10 @@ class IonCompartment
 
     IonCode *getArgumentsRectifier() {
         return rt->argumentsRectifier_;
+    }
+
+    void *getArgumentsRectifierReturnAddr() {
+        return rt->argumentsRectifierReturnAddr_;
     }
 
     IonCode *getInvalidationThunk() {
@@ -183,7 +200,6 @@ class IonCompartment
         if (!flusher_ || !fl)
             flusher_ = fl;
     }
-
 };
 
 class BailoutClosure;
