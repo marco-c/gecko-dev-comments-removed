@@ -48,6 +48,7 @@
 #include "nsIAccessibleRole.h"
 #include "nsIAccessibleStates.h"
 
+#include "nsARIAMap.h"
 #include "nsStringGlue.h"
 #include "nsTArray.h"
 #include "nsRefPtrHashtable.h"
@@ -145,7 +146,25 @@ public:
   
 
 
-  virtual PRUint32 Role();
+  inline PRUint32 Role()
+  {
+    if (!mRoleMapEntry || mRoleMapEntry->roleRule != kUseMapRole)
+      return NativeRole();
+
+    return ARIARoleInternal();
+  }
+
+  
+
+
+
+  inline PRUint32 ARIARole()
+  {
+    if (!mRoleMapEntry || mRoleMapEntry->roleRule != kUseMapRole)
+      return nsIAccessibleRole::ROLE_NOTHING;
+
+    return ARIARoleInternal();
+  }
 
   
 
@@ -205,7 +224,6 @@ public:
 
 
   virtual void SetRoleMapEntry(nsRoleMapEntry *aRoleMapEntry);
-  const nsRoleMapEntry* GetRoleMapEntry() const { return mRoleMapEntry; }
 
   
 
@@ -441,6 +459,11 @@ protected:
 
   
   
+
+  
+
+
+  PRUint32 ARIARoleInternal();
 
   virtual nsIFrame* GetBoundsFrame();
   virtual void GetBoundsRect(nsRect& aRect, nsIFrame** aRelativeFrame);
