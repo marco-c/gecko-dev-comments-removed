@@ -67,9 +67,11 @@ using mozilla::gfx::SharedDIBSurface;
 #include "gfxUtils.h"
 #include "gfxAlphaRecovery.h"
 
+#include "mozilla/Util.h"
 #include "mozilla/ipc/SyncChannel.h"
 #include "mozilla/AutoRestore.h"
 
+using namespace mozilla;
 using mozilla::ipc::ProcessChild;
 using namespace mozilla::plugins;
 
@@ -1540,7 +1542,7 @@ PluginInstanceChild::TrackPopupHookProc(HMENU hMenu,
   
   
   PRUnichar szClass[21];
-  bool haveClass = GetClassNameW(hWnd, szClass, NS_ARRAY_LENGTH(szClass));
+  bool haveClass = GetClassNameW(hWnd, szClass, ArrayLength(szClass));
   if (!haveClass || 
       (wcscmp(szClass, L"MozillaWindowClass") &&
        wcscmp(szClass, L"SWFlash_Placeholder"))) {
