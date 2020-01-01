@@ -50,7 +50,7 @@
 #include <stdio.h>
 
 #include "npapi.h"
-#include "npupp.h"
+#include "npfunctions.h"
 
 #define XP_HFILE HFILE
 
@@ -75,7 +75,7 @@
 #include <sys/stat.h>
 
 #include "npapi.h"
-#include "npupp.h"
+#include "npfunctions.h"
 
 #define XP_HFILE FILE*
 
@@ -97,7 +97,7 @@
 #include <ctype.h>        
 
 #include "npapi.h"
-#include "npupp.h"
+#include "npfunctions.h"
 
 #define XP_HFILE FILE*
 
@@ -144,7 +144,7 @@
 #endif
 #endif
 
-#include "npupp.h"
+#include "npfunctions.h"
 
 #ifdef __MWERKS__
 #ifndef powerc
