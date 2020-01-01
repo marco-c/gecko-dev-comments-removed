@@ -309,17 +309,29 @@ mozHunspell::LoadDictionaryList()
   nsCOMPtr<nsIFile> dictDir;
   rv = dirSvc->Get(DICTIONARY_SEARCH_DIRECTORY,
                    NS_GET_IID(nsIFile), getter_AddRefs(dictDir));
-  if (NS_FAILED(rv)) {
-    
-    rv = dirSvc->Get(NS_XPCOM_CURRENT_PROCESS_DIR,
-                     NS_GET_IID(nsIFile), getter_AddRefs(dictDir));
-    if (NS_FAILED(rv))
-      return;
-
-    dictDir->AppendNative(NS_LITERAL_CSTRING("dictionaries"));
+  if (NS_SUCCEEDED(rv)) {
+    LoadDictionariesFromDir(dictDir);
   }
+  else {
+    
+    nsCOMPtr<nsIFile> greDir;
+    rv = dirSvc->Get(NS_GRE_DIR,
+                     NS_GET_IID(nsIFile), getter_AddRefs(greDir));
+    if (NS_SUCCEEDED(rv)) {
+      greDir->AppendNative(NS_LITERAL_CSTRING("dictionaries"));
+      LoadDictionariesFromDir(greDir);
+    }
 
-  LoadDictionariesFromDir(dictDir);
+    
+    nsCOMPtr<nsIFile> appDir;
+    rv = dirSvc->Get(NS_XPCOM_CURRENT_PROCESS_DIR,
+                     NS_GET_IID(nsIFile), getter_AddRefs(appDir));
+    PRBool equals;
+    if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(appDir->Equals(greDir, &equals)) && !equals) {
+      appDir->AppendNative(NS_LITERAL_CSTRING("dictionaries"));
+      LoadDictionariesFromDir(appDir);
+    }
+  }
 
   nsCOMPtr<nsISimpleEnumerator> dictDirs;
   rv = dirSvc->Get(DICTIONARY_SEARCH_DIRECTORY_LIST,
@@ -402,7 +414,7 @@ nsresult mozHunspell::ConvertCharset(const PRUnichar* aStr, char ** aDst)
 
   rv = mEncoder->Convert(aStr, &inLength, *aDst, &outLength);
   if (NS_SUCCEEDED(rv))
-    (*aDst)[outLength] = '\0'; 
+    (*aDst)[outLength] = '\0';
 
   return rv;
 }
@@ -421,9 +433,9 @@ NS_IMETHODIMP mozHunspell::Check(const PRUnichar *aWord, PRBool *aResult)
   *aResult = !!mHunspell->spell(charsetWord);
 
 
-  if (!*aResult && mPersonalDictionary) 
+  if (!*aResult && mPersonalDictionary)
     rv = mPersonalDictionary->Check(aWord, mLanguage.get(), aResult);
-  
+
   return rv;
 }
 
@@ -436,7 +448,7 @@ NS_IMETHODIMP mozHunspell::Suggest(const PRUnichar *aWord, PRUnichar ***aSuggest
 
   nsresult rv;
   *aSuggestionCount = 0;
-  
+
   nsXPIDLCString charsetWord;
   rv = ConvertCharset(aWord, getter_Copies(charsetWord));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -444,8 +456,8 @@ NS_IMETHODIMP mozHunspell::Suggest(const PRUnichar *aWord, PRUnichar ***aSuggest
   char ** wlst;
   *aSuggestionCount = mHunspell->suggest(&wlst, charsetWord);
 
-  if (*aSuggestionCount) {    
-    *aSuggestions  = (PRUnichar **)nsMemory::Alloc(*aSuggestionCount * sizeof(PRUnichar *));    
+  if (*aSuggestionCount) {
+    *aSuggestions  = (PRUnichar **)nsMemory::Alloc(*aSuggestionCount * sizeof(PRUnichar *));
     if (*aSuggestions) {
       PRUint32 index = 0;
       for (index = 0; index < *aSuggestionCount && NS_SUCCEEDED(rv); ++index) {
@@ -461,7 +473,7 @@ NS_IMETHODIMP mozHunspell::Suggest(const PRUnichar *aWord, PRUnichar ***aSuggest
             rv = mDecoder->Convert(wlst[index], &inLength, (*aSuggestions)[index], &outLength);
             if (NS_SUCCEEDED(rv))
               (*aSuggestions)[index][outLength] = 0;
-          } 
+          }
           else
             rv = NS_ERROR_OUT_OF_MEMORY;
         }
@@ -473,7 +485,7 @@ NS_IMETHODIMP mozHunspell::Suggest(const PRUnichar *aWord, PRUnichar ***aSuggest
     else 
       rv = NS_ERROR_OUT_OF_MEMORY;
   }
-  
+
   NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(*aSuggestionCount, wlst);
   return rv;
 }
