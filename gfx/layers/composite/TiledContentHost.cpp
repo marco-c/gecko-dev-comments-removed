@@ -284,7 +284,7 @@ TiledTexture::Validate(gfxReusableSurfaceWrapper* aReusableSurface, Compositor* 
     
     mTextureHost = TextureHost::CreateTextureHost(SurfaceDescriptor::Tnull_t,
                                                   TEXTURE_HOST_TILED,
-                                                  0);
+                                                  flags);
     mTextureHost->SetCompositor(aCompositor);
     flags |= NewTile;
   }

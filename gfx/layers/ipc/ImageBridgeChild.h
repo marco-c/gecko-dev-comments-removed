@@ -165,7 +165,7 @@ public:
 
   MessageLoop * GetMessageLoop() const;
 
-  PCompositableChild* AllocPCompositable(const CompositableType& aType, uint64_t* aID) MOZ_OVERRIDE;
+  PCompositableChild* AllocPCompositable(const TextureInfo& aInfo, uint64_t* aID) MOZ_OVERRIDE;
   bool DeallocPCompositable(PCompositableChild* aActor) MOZ_OVERRIDE;
 
   
@@ -234,8 +234,9 @@ public:
 
 
 
-  virtual void UpdateTexture(TextureClient* aTexture,
-                             const SurfaceDescriptor& aImage) MOZ_OVERRIDE;
+  virtual void UpdateTexture(CompositableClient* aCompositable,
+                             TextureIdentifier aTextureId,
+                             SurfaceDescriptor* aDescriptor) MOZ_OVERRIDE;
 
   
 
@@ -247,12 +248,14 @@ public:
   
   
   virtual void CreatedSingleBuffer(CompositableClient* aCompositable,
-                                   TextureClient* aBuffer) MOZ_OVERRIDE {
+                                   const SurfaceDescriptor& aDescriptor,
+                                   const TextureInfo& aTextureInfo) MOZ_OVERRIDE {
     NS_RUNTIMEABORT("should not be called");
   }
   virtual void CreatedDoubleBuffer(CompositableClient* aCompositable,
-                                   TextureClient* aFront,
-                                   TextureClient* aBack) MOZ_OVERRIDE {
+                                   const SurfaceDescriptor& aFrontDescriptor,
+                                   const SurfaceDescriptor& aBackDescriptor,
+                                   const TextureInfo& aTextureInfo) MOZ_OVERRIDE {
     NS_RUNTIMEABORT("should not be called");
   }
   virtual void DestroyThebesBuffer(CompositableClient* aCompositable) MOZ_OVERRIDE {
