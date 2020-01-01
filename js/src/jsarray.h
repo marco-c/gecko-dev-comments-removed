@@ -47,7 +47,6 @@
 #include "jspubtd.h"
 #include "jsatom.h"
 #include "jsobj.h"
-#include "jsstr.h"
 
 
 const uintN MIN_SPARSE_INDEX = 256;
@@ -165,9 +164,6 @@ js_GetLengthProperty(JSContext *cx, JSObject *obj, jsuint *lengthp);
 extern JSBool
 js_SetLengthProperty(JSContext *cx, JSObject *obj, jsdouble length);
 
-extern JSBool
-js_HasLengthProperty(JSContext *cx, JSObject *obj, jsuint *lengthp);
-
 namespace js {
 
 extern JSBool
@@ -230,28 +226,15 @@ extern JSBool
 js_ArrayInfo(JSContext *cx, uintN argc, jsval *vp);
 #endif
 
+
+
+
+
+
+
+
 extern JSBool
-js_ArrayCompPush(JSContext *cx, JSObject *obj, const js::Value &vp);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JS_FRIEND_API(JSBool)
-js_CoerceArrayToCanvasImageData(JSObject *obj, jsuint offset, jsuint count,
-                                JSUint8 *dest);
+js_NewbornArrayPush(JSContext *cx, JSObject *obj, const js::Value &v);
 
 JSBool
 js_PrototypeHasIndexedProperties(JSContext *cx, JSObject *obj);
@@ -266,26 +249,6 @@ js_GetDenseArrayElementValue(JSContext *cx, JSObject *obj, jsid id,
 
 JSBool
 js_Array(JSContext *cx, uintN argc, js::Value *vp);
-
-
-
-
-
-
-
-
-
-
-
-JS_FRIEND_API(JSBool)
-js_CloneDensePrimitiveArray(JSContext *cx, JSObject *obj, JSObject **clone);
-
-
-
-
-
-JS_FRIEND_API(JSBool)
-js_IsDensePrimitiveArray(JSObject *obj);
 
 extern JSBool JS_FASTCALL
 js_EnsureDenseArrayCapacity(JSContext *cx, JSObject *obj, jsint i);
