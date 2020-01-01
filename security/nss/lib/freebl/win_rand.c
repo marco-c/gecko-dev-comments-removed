@@ -151,6 +151,7 @@ EnumSystemFilesInFolder(Handler func, PRUnichar* szSysDir, int maxDepth)
     	return;
     
     _snwprintf(szFileName, _MAX_PATH, L"%s\\*.*", szSysDir);
+    szFileName[_MAX_PATH - 1] = L'\0';
 
     lFindHandle = FindFirstFileW(szFileName, &fdData);
     if (lFindHandle == INVALID_HANDLE_VALUE)
@@ -164,6 +165,7 @@ EnumSystemFilesInFolder(Handler func, PRUnichar* szSysDir, int maxDepth)
 	    
 	    _snwprintf(szFileName, _MAX_PATH, L"%s\\%s", szSysDir, 
 		       fdData.cFileName);
+	    szFileName[_MAX_PATH - 1] = L'\0';
 	    if (fdData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		if (++uFolders <= MAX_FOLDERS)
 		    EnumSystemFilesInFolder(func, szFileName, maxDepth - 1);
