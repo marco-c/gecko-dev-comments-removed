@@ -1,11 +1,11 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JavaScript Debugging support - Value and Property support
- */
+
+
+
+
+
+
+
 
 #include "jsd.h"
 #include "jsapi.h"
@@ -139,7 +139,7 @@ jsd_IsValueNative(JSDContext* jsdc, JSDValue* jsdval)
     return !JSVAL_IS_PRIMITIVE(jsdval->val);
 }
 
-/***************************************************************************/
+
 
 JSBool
 jsd_GetValueBoolean(JSDContext* jsdc, JSDValue* jsdval)
@@ -180,7 +180,7 @@ jsd_GetValueString(JSDContext* jsdc, JSDValue* jsdval)
     if(jsdval->string)
         return jsdval->string;
 
-    /* Reuse the string without copying or re-rooting it */
+    
     if(JSVAL_IS_STRING(jsdval->val)) {
         jsdval->string = JSVAL_TO_STRING(jsdval->val);
         return jsdval->string;
@@ -188,7 +188,7 @@ jsd_GetValueString(JSDContext* jsdc, JSDValue* jsdval)
 
     JS_BeginRequest(cx);
 
-    /* Objects call JS_ValueToString in their own compartment. */
+    
     scopeObj = !JSVAL_IS_PRIMITIVE(jsdval->val) ? JSVAL_TO_OBJECT(jsdval->val) : jsdc->glob;
     oldCompartment = JS_EnterCompartment(cx, scopeObj);
     exceptionState = JS_SaveExceptionState(cx);
@@ -242,20 +242,20 @@ jsd_GetValueFunctionId(JSDContext* jsdc, JSDValue* jsdval)
             return NULL;
         jsdval->funName = JS_GetFunctionId(fun);
 
-        /* For compatibility we return "anonymous", not an empty string here. */
+        
         if (!jsdval->funName)
             jsdval->funName = JS_GetAnonymousString(jsdc->jsrt);
     }
     return jsdval->funName;
 }
 
-/***************************************************************************/
 
-/*
- * Create a new JSD value referring to a jsval. Copy string values into the
- * JSD compartment. Leave all other GCTHINGs in their native compartments
- * and access them through cross-compartment calls.
- */
+
+
+
+
+
+
 JSDValue*
 jsd_NewValue(JSDContext* jsdc, jsval val)
 {
@@ -433,7 +433,7 @@ jsd_RefreshValue(JSDContext* jsdc, JSDValue* jsdval)
 
     if(jsdval->string)
     {
-        /* if the jsval is a string, then we didn't need to root the string */
+        
         if(!JSVAL_IS_STRING(jsdval->val))
         {
             JS_BeginRequest(cx);
@@ -454,7 +454,7 @@ jsd_RefreshValue(JSDContext* jsdc, JSDValue* jsdval)
     jsdval->flags = 0;
 }
 
-/***************************************************************************/
+
 
 unsigned
 jsd_GetCountOfProperties(JSDContext* jsdc, JSDValue* jsdval)
@@ -516,7 +516,7 @@ jsd_GetValueProperty(JSDContext* jsdc, JSDValue* jsdval, JSString* name)
     if(!jsd_IsValueObject(jsdc, jsdval))
         return NULL;
 
-    /* If we already have the prop, then return it */
+    
     while(NULL != (jsdprop = jsd_IterateProperties(jsdc, jsdval, &iter)))
     {
         JSString* propName = jsd_GetValueString(jsdc, jsdprop->name);
@@ -527,7 +527,7 @@ jsd_GetValueProperty(JSDContext* jsdc, JSDValue* jsdval, JSString* name)
         }
         JSD_DropProperty(jsdc, jsdprop);
     }
-    /* Not found in property list, look it up explicitly */
+    
 
     if(!(obj = JSVAL_TO_OBJECT(jsdval->val)))
         return NULL;
@@ -589,10 +589,10 @@ jsd_GetValueProperty(JSDContext* jsdc, JSDValue* jsdval, JSString* name)
     return _newProperty(jsdc, &pd, JSDPD_HINTED);
 }
 
-/*
- * Retrieve a JSFunction* from a JSDValue*. This differs from
- * JS_ValueToFunction by fully unwrapping the object first.
- */
+
+
+
+
 JSFunction*
 jsd_GetValueFunction(JSDContext* jsdc, JSDValue* jsdval)
 {
@@ -614,6 +614,7 @@ jsd_GetValueFunction(JSDContext* jsdc, JSDValue* jsdval)
 JSDValue*
 jsd_GetValuePrototype(JSDContext* jsdc, JSDValue* jsdval)
 {
+    JSContext* cx = jsdc->dumbContext;
     if(!(CHECK_BIT_FLAG(jsdval->flags, GOT_PROTO)))
     {
         JSObject* obj;
@@ -623,7 +624,8 @@ jsd_GetValuePrototype(JSDContext* jsdc, JSDValue* jsdval)
         if(JSVAL_IS_PRIMITIVE(jsdval->val))
             return NULL;
         obj = JSVAL_TO_OBJECT(jsdval->val);
-        proto = JS_GetPrototype(obj);
+        if(!JS_GetPrototype(cx, obj, &proto))
+            return NULL;
         if(!proto)
             return NULL;
         jsdval->proto = jsd_NewValue(jsdc, OBJECT_TO_JSVAL(proto));
@@ -665,6 +667,7 @@ JSDValue*
 jsd_GetValueConstructor(JSDContext* jsdc, JSDValue* jsdval)
 {
     JSCompartment* oldCompartment = NULL;
+    JSContext* cx = jsdc->dumbContext;
 
     if(!(CHECK_BIT_FLAG(jsdval->flags, GOT_CTOR)))
     {
@@ -676,7 +679,8 @@ jsd_GetValueConstructor(JSDContext* jsdc, JSDValue* jsdval)
         if(JSVAL_IS_PRIMITIVE(jsdval->val))
             return NULL;
         obj = JSVAL_TO_OBJECT(jsdval->val);
-        proto = JS_GetPrototype(obj);
+        if(!JS_GetPrototype(cx, obj, &proto))
+            return NULL;
         if(!proto)
             return NULL;
         JS_BeginRequest(jsdc->dumbContext);
@@ -745,8 +749,8 @@ jsd_GetScriptForValue(JSDContext* jsdc, JSDValue* jsdval)
 }
 
 
-/***************************************************************************/
-/***************************************************************************/
+
+
 
 JSDValue*
 jsd_GetPropertyName(JSDContext* jsdc, JSDProperty* jsdprop)
