@@ -74,6 +74,14 @@ var testData = [
   
   [new bmKeywordData("bmget-escaping2", "http://bmget/?esc=%s&raw=%S&mozcharset=ISO-8859-1", null, "foé"),
    new keywordResult("http://bmget/?esc=fo%E9&raw=foé", null)],
+
+  
+  
+  [new bmKeywordData("bmget-escaping", "http://bmget/?esc=%s&raw=%S", null, "+/@"),
+   new keywordResult("http://bmget/?esc=%2B%2F%40&raw=+/@", null)],
+  
+  [new bmKeywordData("bmget-escaping2", "http://bmget/?esc=%s&raw=%S&mozcharset=ISO-8859-1", null, "+/@"),
+   new keywordResult("http://bmget/?esc=%2B%2F%40&raw=+/@", null)],
 ];
 
 function test() {
