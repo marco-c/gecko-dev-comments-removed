@@ -259,14 +259,7 @@ this.DownloadIntegration = {
         directory = this._getDirectory("DfltDwnld");
       }
 #elifdef XP_UNIX
-#ifdef MOZ_PLATFORM_MAEMO
-      
-      
-      
-      
-      
-      directory = this._getDirectory("XDGDocs");
-#elifdef ANDROID
+#ifdef ANDROID
       
       
       let directoryPath = gEnvironment.get("DOWNLOADS_DIRECTORY");
@@ -276,8 +269,8 @@ this.DownloadIntegration = {
       }
       directory = new FileUtils.File(directoryPath);
 #else
-
-
+      
+      
       try {
         directory = this._getDirectory("DfltDwnld");
       } catch(e) {
