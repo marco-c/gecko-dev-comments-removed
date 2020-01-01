@@ -1154,6 +1154,12 @@ NS_IMETHODIMP nsExternalAppHandler::GetTimeDownloadStarted(PRTime* aTime)
   return NS_OK;
 }
 
+NS_IMETHODIMP nsExternalAppHandler::GetContentLength(PRInt64 *aContentLength)
+{
+  *aContentLength = mContentLength;
+  return NS_OK;
+}
+
 NS_IMETHODIMP nsExternalAppHandler::CloseProgressWindow()
 {
   
@@ -1306,8 +1312,8 @@ nsresult nsExternalAppHandler::SetUpTempFile(nsIChannel * aChannel)
   dummyFile->Remove(PR_FALSE);
 #endif
 
-  
-  
+
+
   tempLeafName.Append(NS_LITERAL_CSTRING(".part"));
 
   rv = mTempFile->Append(NS_ConvertUTF8toUTF16(tempLeafName));
