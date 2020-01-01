@@ -3588,7 +3588,7 @@ js_CloneDensePrimitiveArray(JSContext *cx, JSObject *obj, JSObject **clone)
 
 
 
-    jsuint jsvalCount = JS_MIN(js_DenseArrayCapacity(obj), length);
+    jsuint jsvalCount = JS_MIN(obj->getDenseArrayCapacity(), length);
 
     js::AutoValueVector vector(cx);
     if (!vector.reserve(jsvalCount))
