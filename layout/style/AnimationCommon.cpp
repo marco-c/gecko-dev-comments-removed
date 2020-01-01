@@ -1,7 +1,7 @@
-/* vim: set shiftwidth=2 tabstop=8 autoindent cindent expandtab: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "AnimationCommon.h"
 #include "nsRuleData.h"
@@ -28,7 +28,7 @@ CommonAnimationManager::~CommonAnimationManager()
 void
 CommonAnimationManager::Disconnect()
 {
-  // Content nodes might outlive the transition or animation manager.
+  
   RemoveAllElementData();
 
   mPresContext = nullptr;
@@ -38,7 +38,7 @@ void
 CommonAnimationManager::AddElementData(CommonElementAnimationData* aData)
 {
   if (PR_CLIST_IS_EMPTY(&mElementData)) {
-    // We need to observe the refresh driver.
+    
     nsRefreshDriver *rd = mPresContext->RefreshDriver();
     rd->AddRefreshObserver(this, Flush_Style);
   }
@@ -49,8 +49,8 @@ CommonAnimationManager::AddElementData(CommonElementAnimationData* aData)
 void
 CommonAnimationManager::ElementDataRemoved()
 {
-  // If we have no transitions or animations left, remove ourselves from
-  // the refresh driver.
+  
+  
   if (PR_CLIST_IS_EMPTY(&mElementData)) {
     mPresContext->RefreshDriver()->RemoveRefreshObserver(this, Flush_Style);
   }
@@ -66,9 +66,9 @@ CommonAnimationManager::RemoveAllElementData()
   }
 }
 
-/*
- * nsISupports implementation
- */
+
+
+
 
 NS_IMPL_ISUPPORTS1(CommonAnimationManager, nsIStyleRuleProcessor)
 
@@ -90,32 +90,32 @@ CommonAnimationManager::HasAttributeDependentStyle(AttributeRuleProcessorData* a
   return nsRestyleHint(0);
 }
 
-/* virtual */ bool
+ bool
 CommonAnimationManager::MediumFeaturesChanged(nsPresContext* aPresContext)
 {
   return false;
 }
 
-/* virtual */ size_t
+ size_t
 CommonAnimationManager::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
 {
-  // Measurement of the following members may be added later if DMD finds it is
-  // worthwhile:
-  // - mElementData
-  //
-  // The following members are not measured
-  // - mPresContext, because it's non-owning
+  
+  
+  
+  
+  
+  
 
   return 0;
 }
 
-/* virtual */ size_t
+ size_t
 CommonAnimationManager::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
 {
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
-/* static */ bool
+ bool
 CommonAnimationManager::ExtractComputedValueForTransition(
                           nsCSSProperty aProperty,
                           nsStyleContext* aStyleContext,
@@ -136,14 +136,14 @@ CommonAnimationManager::ExtractComputedValueForTransition(
 
 NS_IMPL_ISUPPORTS1(AnimValuesStyleRule, nsIStyleRule)
 
-/* virtual */ void
+ void
 AnimValuesStyleRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   nsStyleContext *contextParent = aRuleData->mStyleContext->GetParent();
   if (contextParent && contextParent->HasPseudoElementData()) {
-    // Don't apply transitions or animations to things inside of
-    // pseudo-elements.
-    // FIXME (Bug 522599): Add tests for this.
+    
+    
+    
     return;
   }
 
@@ -167,10 +167,10 @@ AnimValuesStyleRule::MapRuleInfoInto(nsRuleData* aRuleData)
 }
 
 #ifdef DEBUG
-/* virtual */ void
+ void
 AnimValuesStyleRule::List(FILE* out, PRInt32 aIndent) const
 {
-  // WRITE ME?
+  
 }
 #endif
 
@@ -190,7 +190,7 @@ static inline double
 StepEnd(PRUint32 aSteps, double aPortion)
 {
   NS_ABORT_IF_FALSE(0.0 <= aPortion && aPortion <= 1.0, "out of range");
-  PRUint32 step = PRUint32(aPortion * aSteps); // floor
+  PRUint32 step = PRUint32(aPortion * aSteps); 
   return double(step) / double(aSteps);
 }
 
@@ -201,16 +201,16 @@ ComputedTimingFunction::GetValue(double aPortion) const
     case nsTimingFunction::Function:
       return mTimingFunction.GetSplineValue(aPortion);
     case nsTimingFunction::StepStart:
-      // There are diagrams in the spec that seem to suggest this check
-      // and the bounds point should not be symmetric with StepEnd, but
-      // should actually step up at rather than immediately after the
-      // fraction points.  However, we rely on rounding negative values
-      // up to zero, so we can't do that.  And it's not clear the spec
-      // really meant it.
+      
+      
+      
+      
+      
+      
       return 1.0 - StepEnd(mSteps, 1.0 - aPortion);
     default:
       NS_ABORT_IF_FALSE(false, "bad type");
-      // fall through
+      
     case nsTimingFunction::StepEnd:
       return StepEnd(mSteps, aPortion);
   }
@@ -220,17 +220,47 @@ bool
 CommonElementAnimationData::CanAnimatePropertyOnCompositor(const dom::Element *aElement,
                                                            nsCSSProperty aProperty)
 {
+  static bool sShouldLog;
+  static bool sShouldLogPrefCached;
+
+  if (!sShouldLogPrefCached) {
+    sShouldLogPrefCached = true;
+    Preferences::AddBoolVarCache(&sShouldLog,
+                                 "layers.offmainthreadcomposition.log-animations");
+  }
+
   nsIFrame* frame = aElement->GetPrimaryFrame();
   if (aProperty == eCSSProperty_opacity) {
-    return nsLayoutUtils::AreOpacityAnimationsEnabled();
+    bool enabled = nsLayoutUtils::AreOpacityAnimationsEnabled();
+    if (!enabled && sShouldLog) {
+      printf_stderr("Performance warning: Async animation of 'opacity' is disabled\n");
+    }
+    return enabled;
   }
-  if (aProperty == eCSSProperty_transform && !(frame &&
-      frame->Preserves3D() &&
-      frame->Preserves3DChildren())) {
-    if (frame && frame->IsSVGTransformed()) {
+  if (aProperty == eCSSProperty_transform) {
+    if (frame &&
+        frame->Preserves3D() &&
+        frame->Preserves3DChildren()) {
+      if (sShouldLog) {
+        printf_stderr("Gecko bug: Async animation of 'preserve-3d' transforms is not supported.  See bug 779598\n");
+      }
       return false;
     }
-    return nsLayoutUtils::AreTransformAnimationsEnabled();
+    if (frame && frame->IsSVGTransformed()) {
+      if (sShouldLog) {
+        printf_stderr("Gecko bug: Async 'transform' animations of frames with SVG transforms is not supported.  See bug 779599\n");
+      }
+      return false;
+    }
+    bool enabled = nsLayoutUtils::AreTransformAnimationsEnabled();
+    if (!enabled && sShouldLog) {
+      printf_stderr("Performance warning: Async animation of 'transform' is disabled\n");
+    }
+    return enabled;
+  }
+  if (sShouldLog) {
+    const nsAFlatCString propName = nsCSSProps::GetStringValue(aProperty);
+    printf_stderr("Performance warning: Async animation cancelled because of unsupported property '%s'\n", propName.get());
   }
   return false;
 }

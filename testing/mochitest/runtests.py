@@ -1,7 +1,7 @@
-
-
-
-
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """
 Runs the Mochitest test harness.
@@ -28,9 +28,9 @@ import tempfile
 
 VMWARE_RECORDING_HELPER_BASENAME = "vmwarerecordinghelper"
 
-
-
-
+#######################
+# COMMANDLINE OPTIONS #
+#######################
 
 class MochitestOptions(optparse.OptionParser):
   """Parses Mochitest commandline options."""
@@ -39,7 +39,7 @@ class MochitestOptions(optparse.OptionParser):
     optparse.OptionParser.__init__(self, **kwargs)
     defaults = {}
 
-    
+    # we want to pass down everything from self._automation.__all__
     addCommonOptions(self, defaults=dict(zip(self._automation.__all__, 
              [getattr(self._automation, x) for x in self._automation.__all__])))
     self._automation.addCommonOptions(self)
@@ -240,7 +240,7 @@ class MochitestOptions(optparse.OptionParser):
                     help = "Filename of the output file where we can store a .json list of failures to be run in the future with --run-only-tests.")
     defaults["failureFile"] = None
 
-    
+    # -h, --help are automatically handled by OptionParser
 
     self.set_defaults(**defaults)
 
@@ -263,15 +263,15 @@ See <http://mochikit.com/doc/html/MochiKit/Logging.html> for details on the logg
         self.error("thisChunk must be between 1 and totalChunks")
 
     if options.xrePath is None:
-      
-      
+      # default xrePath to the app path if not provided
+      # but only if an app path was explicitly provided
       if options.app != self.defaults['app']:
         options.xrePath = os.path.dirname(options.app)
       else:
-        
+        # otherwise default to dist/bin
         options.xrePath = self._automation.DIST_BIN
 
-    
+    # allow relative paths
     options.xrePath = mochitest.getFullPath(options.xrePath)
 
     options.profilePath = mochitest.getFullPath(options.profilePath)
@@ -327,9 +327,9 @@ See <http://mochikit.com/doc/html/MochiKit/Logging.html> for details on the logg
     return options
 
 
-
-
-
+#######################
+# HTTP SERVER SUPPORT #
+#######################
 
 class MochitestServer:
   "Web server used to serve Mochitests, for closer fidelity to the real web."
@@ -405,14 +405,14 @@ class WebSocketServer(object):
     self.debuggerInfo = debuggerInfo
 
   def start(self):
-    
-    
-    
-    
-    
-    
-    
-    
+    # Invoke pywebsocket through a wrapper which adds special SIGINT handling.
+    #
+    # If we're in an interactive debugger, the wrapper causes the server to
+    # ignore SIGINT so the server doesn't capture a ctrl+c meant for the
+    # debugger.
+    #
+    # If we're not in an interactive debugger, the wrapper causes the server to
+    # die silently upon receiving a SIGINT.
     scriptPath = 'pywebsocket_wrapper.py'
     script = os.path.join(self._scriptdir, scriptPath)
 
@@ -434,7 +434,7 @@ class WebSocketServer(object):
     self._process.kill()
 
 class Mochitest(object):
-  
+  # Path to the test script on the server
   TEST_PATH = "tests"
   CHROME_PATH = "redirect.html"
   PLAIN_LOOP_PATH = "plain-loop.html"
@@ -447,9 +447,9 @@ class Mochitest(object):
   def __init__(self, automation):
     self.automation = automation
 
-    
-    
-    
+    # Max time in seconds to wait for server startup before tests will fail -- if
+    # this seems big, it's mostly for debug machines where cold startup
+    # (particularly after a build) takes forever.
     if self.automation.IS_DEBUG_BUILD:
       self.SERVER_STARTUP_TIMEOUT = 180
     else:
@@ -499,10 +499,10 @@ class Mochitest(object):
     self.server = MochitestServer(self.automation, options)
     self.server.start()
 
-    
-    
-    
-    
+    # If we're lucky, the server has fully started by now, and all paths are
+    # ready, etc.  However, xpcshell cold start times suck, at least for debug
+    # builds.  We'll try to connect to the server for awhile, and if we fail,
+    # we'll try to kill the server and exit with an error.
     self.server.ensureReady(self.SERVER_STARTUP_TIMEOUT)
 
   def stopWebServer(self, options):
@@ -532,8 +532,8 @@ class Mochitest(object):
     """ build the environment variables for the specific test and operating system """
     browserEnv = self.automation.environment(xrePath = options.xrePath)
 
-    
-    
+    # These variables are necessary for correct application startup; change
+    # via the commandline at your own risk.
     browserEnv["XPCOM_DEBUG_BREAK"] = "stack"
 
     for v in options.environment:
@@ -565,7 +565,7 @@ class Mochitest(object):
         repeat -- How many times to repeat the test, ie: repeat=1 will run the test twice.
     """
   
-    
+    # allow relative paths for logFile
     if options.logFile:
       options.logFile = self.getLogFilePath(options.logFile)
     if options.browserChrome or options.chrome or options.a11y or options.webapprtChrome:
@@ -666,26 +666,18 @@ class Mochitest(object):
       options.browserArgs.extend(('-test-mode', testURL))
       testURL = None
 
-    
-    
+    # Remove the leak detection file so it can't "leak" to the tests run.
+    # The file is not there if leak logging was not enabled in the application build.
     if os.path.exists(self.leak_report_file):
       os.remove(self.leak_report_file)
 
-    
+    # then again to actually run mochitest
     if options.timeout:
       timeout = options.timeout + 30
     elif not options.autorun:
       timeout = None
     else:
-      timeout = 330.0 
-
-    
-    
-    
-    if Automation.IS_DEBUG_BUILD and not options.webapprtChrome:
-      logger = ShutdownLeakLogger(self.automation.log)
-    else:
-      logger = None
+      timeout = 330.0 # default JS harness timeout is 300 seconds
 
     if options.vmwareRecording:
       self.startVMwareRecording(options);
@@ -700,7 +692,6 @@ class Mochitest(object):
                                   certPath=options.certPath,
                                   debuggerInfo=debuggerInfo,
                                   symbolsPath=options.symbolsPath,
-                                  logger = logger,
                                   timeout = timeout)
     except KeyboardInterrupt:
       self.automation.log.info("INFO | runtests.py | Received keyboard interrupt.\n");
@@ -715,9 +706,6 @@ class Mochitest(object):
     self.stopWebServer(options)
     self.stopWebSocketServer(options)
     processLeakLog(self.leak_report_file, options.leakThreshold)
-
-    if logger:
-      logger.parse()
 
     self.automation.log.info("\nINFO | runtests.py | Running tests: end.")
 
@@ -766,7 +754,7 @@ class Mochitest(object):
     if "MOZ_HIDE_RESULTS_TABLE" in os.environ and os.environ["MOZ_HIDE_RESULTS_TABLE"] == "1":
       options.hideResultsTable = True
 
-    
+    #TODO: when we upgrade to python 2.6, just use json.dumps(options.__dict__)
     content = "{"
     content += '"testRoot": "%s", ' % (testRoot) 
     first = True
@@ -787,11 +775,11 @@ class Mochitest(object):
   def addChromeToProfile(self, options):
     "Adds MochiKit chrome tests to the profile."
 
-    
+    # Create (empty) chrome directory.
     chromedir = os.path.join(options.profilePath, "chrome")
     os.mkdir(chromedir)
 
-    
+    # Write userChrome.css.
     chrome = """
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"); /* set default namespace to XUL */
 toolbar,
@@ -805,27 +793,27 @@ toolbar#nav-bar {
     with open(os.path.join(options.profilePath, "userChrome.css"), "a") as chromeFile:
       chromeFile.write(chrome)
 
-    
+    # Call copyTestsJarToProfile(), Write tests.manifest.
     manifest = os.path.join(options.profilePath, "tests.manifest")
     with open(manifest, "w") as manifestFile:
       if self.copyTestsJarToProfile(options):
-        
+        # Register tests.jar.
         manifestFile.write("content mochitests jar:tests.jar!/content/\n");
       else:
-        
+        # Register chrome directory.
         chrometestDir = os.path.abspath(".") + "/"
         if self.automation.IS_WIN32:
           chrometestDir = "file:///" + chrometestDir.replace("\\", "/")
         manifestFile.write("content mochitests %s contentaccessible=yes\n" % chrometestDir)
 
-    
+    # Call installChromeJar().
     jarDir = "mochijar"
     if not os.path.isdir(os.path.join(self.SCRIPT_DIRECTORY, jarDir)):
       self.automation.log.warning("TEST-UNEXPECTED-FAIL | invalid setup: missing mochikit extension")
       return None
 
-    
-    
+    # Support Firefox (browser), B2G (shell), SeaMonkey (navigator), and Webapp
+    # Runtime (webapp).
     chrome = ""
     if options.browserChrome or options.chrome or options.a11y or options.webapprtChrome:
       chrome += """
@@ -845,7 +833,7 @@ overlay chrome://webapprt/content/webapp.xul chrome://mochikit/content/browser-t
     self.automation.installExtension(os.path.join(self.SCRIPT_DIRECTORY, jarDirName), \
                                      options.profilePath, "mochikit@mozilla.org")
 
-    
+    # Write chrome.manifest.
     with open(os.path.join(options.profilePath, "extensions", "staged", "mochikit@mozilla.org", "chrome.manifest"), "a") as mfile:
       mfile.write(chrome)
 
@@ -882,9 +870,9 @@ overlay chrome://webapprt/content/webapp.xul chrome://mochikit/content/browser-t
   def installExtensionsToProfile(self, options):
     "Install special testing extensions, application distributed extensions, and specified on the command line ones to testing profile."
     extensionDirs = [
-      
+      # Extensions distributed with the test harness.
       os.path.normpath(os.path.join(self.SCRIPT_DIRECTORY, "extensions")),
-      
+      # Extensions distributed with the application.
       os.path.join(options.app[ : options.app.rfind(os.sep)], "distribution", "extensions")
     ]
 
@@ -896,7 +884,7 @@ overlay chrome://webapprt/content/webapp.xul chrome://mochikit/content/browser-t
             if os.path.isdir(path) or (os.path.isfile(path) and path.endswith(".xpi")):
               self.installExtensionFromPath(options, path)
 
-    
+    # Install custom extensions passed on the command line.
     for path in options.extensionsToInstall:
       self.installExtensionFromPath(options, path)
 
