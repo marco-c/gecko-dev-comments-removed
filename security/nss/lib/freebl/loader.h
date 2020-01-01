@@ -6,45 +6,12 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _LOADER_H_
 #define _LOADER_H_ 1
 
 #include "blapi.h"
 
-#define FREEBL_VERSION 0x030D
+#define FREEBL_VERSION 0x030E
 
 struct FREEBLVectorStr {
 
@@ -596,6 +563,12 @@ struct FREEBLVectorStr {
 
   
 
+ SECStatus (* p_PQG_ParamGenV2)( unsigned int L, unsigned int N,
+                                unsigned int seedBytes, 
+                                PQGParams **pParams, PQGVerify **pVfy); 
+ SECStatus (*p_PRNGTEST_RunHealthTests)(void);
+
+  
 };
 
 typedef struct FREEBLVectorStr FREEBLVector;

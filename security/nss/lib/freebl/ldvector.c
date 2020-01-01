@@ -6,39 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef FREEBL_NO_DEPEND
 extern int FREEBL_InitStubs(void);
 #endif
@@ -286,7 +253,12 @@ static const struct FREEBLVectorStr vector =
     SHA224_Flatten,
     SHA224_Resurrect,
     SHA224_Clone,
-    BLAPI_SHVerifyFile
+    BLAPI_SHVerifyFile,
+
+    
+
+    PQG_ParamGenV2,
+    PRNGTEST_RunHealthTests
 
     
 };

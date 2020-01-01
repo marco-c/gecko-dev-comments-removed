@@ -14,41 +14,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef XP_UNIX
 #include <unistd.h>
 #define BL_MAXSYMLINKS 20

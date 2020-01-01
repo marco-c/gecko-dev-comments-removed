@@ -3,39 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void intel_aes_encrypt_init_128(const unsigned char *key, PRUint32 *expanded);
 void intel_aes_encrypt_init_192(const unsigned char *key, PRUint32 *expanded);
 void intel_aes_encrypt_init_256(const unsigned char *key, PRUint32 *expanded);
