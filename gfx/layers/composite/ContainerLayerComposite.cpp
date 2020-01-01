@@ -1,18 +1,43 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "ContainerLayerComposite.h"
-#include "gfxUtils.h"
-#include "mozilla/layers/Compositor.h"
-#include "mozilla/layers/LayersTypes.h"
-#include "gfx2DGlue.h"
+#include <algorithm>                    
+#include "mozilla-config.h"             
+#include "FrameMetrics.h"               
+#include "Units.h"                      
+#include "gfx2DGlue.h"                  
+#include "gfx3DMatrix.h"                
+#include "gfxImageSurface.h"            
+#include "gfxMatrix.h"                  
+#include "gfxPlatform.h"                
+#include "gfxUtils.h"                   
+#include "mozilla/Assertions.h"         
+#include "mozilla/RefPtr.h"             
+#include "mozilla/gfx/BaseRect.h"       
+#include "mozilla/gfx/Matrix.h"         
+#include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/Rect.h"           
+#include "mozilla/layers/Compositor.h"  
+#include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/Effects.h"     
+#include "mozilla/layers/TextureHost.h"  
+#include "mozilla/mozalloc.h"           
+#include "nsAutoPtr.h"                  
+#include "nsDebug.h"                    
+#include "nsISupportsUtils.h"           
+#include "nsPoint.h"                    
+#include "nsRect.h"                     
+#include "nsRegion.h"                   
+#include "nsTArray.h"                   
+#include "nsTraceRefcnt.h"              
 
 namespace mozilla {
 namespace layers {
 
-// HasOpaqueAncestorLayer and ContainerRender are shared between RefLayer and ContainerLayer
+
 static bool
 HasOpaqueAncestorLayer(Layer* aLayer)
 {
@@ -29,9 +54,9 @@ ContainerRender(ContainerT* aContainer,
                 LayerManagerComposite* aManager,
                 const nsIntRect& aClipRect)
 {
-  /**
-   * Setup our temporary surface for rendering the contents of this container.
-   */
+  
+
+
   RefPtr<CompositingRenderTarget> surface;
 
   Compositor* compositor = aManager->GetCompositor();
@@ -51,28 +76,28 @@ ContainerRender(ContainerT* aContainer,
     bool surfaceCopyNeeded = false;
     gfx::IntRect surfaceRect = gfx::IntRect(visibleRect.x, visibleRect.y,
                                             visibleRect.width, visibleRect.height);
-    // we're about to create a framebuffer backed by textures to use as an intermediate
-    // surface. What to do if its size (as given by framebufferRect) would exceed the
-    // maximum texture size supported by the GL? The present code chooses the compromise
-    // of just clamping the framebuffer's size to the max supported size.
-    // This gives us a lower resolution rendering of the intermediate surface (children layers).
-    // See bug 827170 for a discussion.
+    
+    
+    
+    
+    
+    
     int32_t maxTextureSize = compositor->GetMaxTextureSize();
     surfaceRect.width = std::min(maxTextureSize, surfaceRect.width);
     surfaceRect.height = std::min(maxTextureSize, surfaceRect.height);
     if (aContainer->GetEffectiveVisibleRegion().GetNumRects() == 1 &&
         (aContainer->GetContentFlags() & Layer::CONTENT_OPAQUE))
     {
-      // don't need a background, we're going to paint all opaque stuff
+      
       aContainer->mSupportsComponentAlphaChildren = true;
       mode = INIT_MODE_NONE;
     } else {
       const gfx3DMatrix& transform3D = aContainer->GetEffectiveTransform();
       gfxMatrix transform;
-      // If we have an opaque ancestor layer, then we can be sure that
-      // all the pixels we draw into are either opaque already or will be
-      // covered by something opaque. Otherwise copying up the background is
-      // not safe.
+      
+      
+      
+      
       if (HasOpaqueAncestorLayer(aContainer) &&
           transform3D.Is2D(&transform) && !transform.HasNonIntegerTranslation()) {
         mode = gfxPlatform::ComponentAlphaEnabled() ?
@@ -103,9 +128,9 @@ ContainerRender(ContainerT* aContainer,
   nsAutoTArray<Layer*, 12> children;
   aContainer->SortChildrenBy3DZOrder(children);
 
-  /**
-   * Render this container's contents.
-   */
+  
+
+
   for (uint32_t i = 0; i < children.Length(); i++) {
     LayerComposite* layerToRender = static_cast<LayerComposite*>(children.ElementAt(i)->ImplData());
 
@@ -121,12 +146,12 @@ ContainerRender(ContainerT* aContainer,
     }
 
     layerToRender->RenderLayer(childOffset, clipRect);
-    // invariant: our GL context should be current here, I don't think we can
-    // assert it though
+    
+    
   }
 
   if (needsSurface) {
-    // Unbind the current surface and rebind the previous one.
+    
 #ifdef MOZ_DUMP_PAINTING
     if (gfxUtils::sDumpPainting) {
       nsRefPtr<gfxImageSurface> surf = surface->Dump(aManager->GetCompositor());
@@ -179,15 +204,15 @@ ContainerLayerComposite::~ContainerLayerComposite()
 {
   MOZ_COUNT_DTOR(ContainerLayerComposite);
 
-  // We don't Destroy() on destruction here because this destructor
-  // can be called after remote content has crashed, and it may not be
-  // safe to free the IPC resources of our children.  Those resources
-  // are automatically cleaned up by IPDL-generated code.
-  //
-  // In the common case of normal shutdown, either
-  // LayerManagerComposite::Destroy(), a parent
-  // *ContainerLayerComposite::Destroy(), or Disconnect() will trigger
-  // cleanup of our resources.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   while (mFirstChild) {
     RemoveChild(mFirstChild);
   }
@@ -298,7 +323,7 @@ ContainerLayerComposite::RepositionChild(Layer* aChild, Layer* aAfter)
   Layer* prev = aChild->GetPrevSibling();
   Layer* next = aChild->GetNextSibling();
   if (prev == aAfter) {
-    // aChild is already in the correct position, nothing to do.
+    
     return;
   }
   if (prev) {
@@ -384,5 +409,5 @@ RefLayerComposite::CleanupResources()
 {
 }
 
-} /* layers */
-} /* mozilla */
+} 
+} 

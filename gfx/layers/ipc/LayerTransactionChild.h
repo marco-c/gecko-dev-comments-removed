@@ -1,13 +1,17 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #ifndef MOZILLA_LAYERS_LAYERTRANSACTIONCHILD_H
 #define MOZILLA_LAYERS_LAYERTRANSACTIONCHILD_H
 
+#include <stdint.h>                     
+#include "gfxPoint.h"                   
+#include "mozilla/Attributes.h"         
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 
 namespace mozilla {
@@ -19,13 +23,13 @@ public:
   LayerTransactionChild() { }
   ~LayerTransactionChild() { }
 
-  /**
-   * Clean this up, finishing with Send__delete__().
-   *
-   * It is expected (checked with an assert) that all shadow layers
-   * created by this have already been destroyed and
-   * Send__delete__()d by the time this method is called.
-   */
+  
+
+
+
+
+
+
   void Destroy();
 
 protected:
@@ -44,7 +48,7 @@ protected:
   virtual void ActorDestroy(ActorDestroyReason why) MOZ_OVERRIDE;
 };
 
-} // namespace layers
-} // namespace mozilla
+} 
+} 
 
-#endif // MOZILLA_LAYERS_LAYERTRANSACTIONCHILD_H
+#endif 
