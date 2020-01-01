@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Original Author: David W. Hyatt (hyatt@netscape.com)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsBoxObject.h"
 #include "nsCOMPtr.h"
@@ -59,16 +59,16 @@
 #include "prtypes.h"
 #include "nsSupportsPrimitives.h"
 
-
+// Static IIDs/CIDs. Try to minimize these.
 static NS_DEFINE_CID(kLookAndFeelCID, NS_LOOKANDFEEL_CID);
 
+// Implementation /////////////////////////////////////////////////////////////////
 
+// Static member variable initialization
 
+// Implement our nsISupports methods
 
-
-
-
-
+// QueryInterface implementation for nsBoxObject
 NS_INTERFACE_MAP_BEGIN(nsBoxObject)
   NS_INTERFACE_MAP_ENTRY(nsIBoxObject)
   NS_INTERFACE_MAP_ENTRY(nsPIBoxObject)
@@ -81,7 +81,7 @@ NS_IMPL_ADDREF(nsBoxObject)
 NS_IMPL_RELEASE(nsBoxObject)
 
 
-
+// Constructors/Destructors
 nsBoxObject::nsBoxObject(void)
   :mContent(nsnull)
 {
@@ -102,7 +102,7 @@ nsBoxObject::GetElement(nsIDOMElement** aResult)
   return NS_OK;
 }
 
-
+// nsPIBoxObject //////////////////////////////////////////////////////////////////////////
 
 nsresult
 nsBoxObject::Init(nsIContent* aContent)
@@ -131,10 +131,10 @@ nsBoxObject::GetFrame(PRBool aFlushLayout)
     return nsnull;
 
   if (!aFlushLayout) {
-    
-    
-    
-    
+    // If we didn't flush layout when getting the presshell, we should at least
+    // flush to make sure our frame model is up to date.
+    // XXXbz should flush on document, no?  Except people call this from
+    // frame code, maybe?
     shell->FlushPendingNotifications(Flush_Frames);
   }
 
@@ -157,7 +157,7 @@ nsBoxObject::GetPresShell(PRBool aFlushLayout)
     doc->FlushPendingNotifications(Flush_Layout);
   }
 
-  return doc->GetShellAt(0);
+  return doc->GetPrimaryShell();
 }
 
 nsresult 
@@ -169,20 +169,20 @@ nsBoxObject::GetOffsetRect(nsRect& aRect)
   if (!mContent)
     return NS_ERROR_NOT_INITIALIZED;
 
-  
+  // Get the Frame for our content
   nsIFrame* frame = GetFrame(PR_TRUE);
   if (frame) {
-    
+    // Get its origin
     nsPoint origin = frame->GetPositionIgnoringScrolling();
 
-    
+    // Get the union of all rectangles in this and continuation frames
     nsRect rcFrame = nsLayoutUtils::GetAllInFlowBoundingRect(frame);
         
-    
+    // Find the frame parent whose content is the document element.
     nsIContent *docElement = mContent->GetCurrentDoc()->GetRootContent();
     nsIFrame* parent = frame->GetParent();
     for (;;) {
-      
+      // If we've hit the document element, break here
       if (parent->GetContent() == docElement) {
         break;
       }
@@ -194,18 +194,18 @@ nsBoxObject::GetOffsetRect(nsRect& aRect)
         break;
       }
 
-      
-      
+      // Add the parent's origin to our own to get to the
+      // right coordinate system
       origin += next->GetPositionOfChildIgnoringScrolling(parent);
       parent = next;
     }
   
-    
+    // For the origin, add in the border for the frame
     const nsStyleBorder* border = frame->GetStyleBorder();
     origin.x += border->GetBorderWidth(NS_SIDE_LEFT);
     origin.y += border->GetBorderWidth(NS_SIDE_TOP);
 
-    
+    // And subtract out the border for the parent
     const nsStyleBorder* parentBorder = parent->GetStyleBorder();
     origin.x -= parentBorder->GetBorderWidth(NS_SIDE_LEFT);
     origin.y -= parentBorder->GetBorderWidth(NS_SIDE_TOP);
@@ -345,7 +345,7 @@ nsBoxObject::GetPropertyAsSupports(const PRUnichar* aPropertyName, nsISupports**
     return NS_OK;
   }
   nsDependentString propertyName(aPropertyName);
-  mPropertyTable->Get(propertyName, aResult); 
+  mPropertyTable->Get(propertyName, aResult); // Addref here.
   return NS_OK;
 }
 
@@ -456,7 +456,7 @@ nsBoxObject::GetFirstChild(nsIDOMElement * *aFirstVisibleChild)
   if (!frame) return NS_OK;
   nsIFrame* firstFrame = frame->GetFirstChild(nsnull);
   if (!firstFrame) return NS_OK;
-  
+  // get the content for the box and query to a dom element
   nsCOMPtr<nsIDOMElement> el = do_QueryInterface(firstFrame->GetContent());
   el.swap(*aFirstVisibleChild);
   return NS_OK;
@@ -479,7 +479,7 @@ nsBoxObject::GetNextSibling(nsIDOMElement **aNextOrdinalSibling)
   if (!frame) return NS_OK;
   nsIFrame* nextFrame = frame->GetNextSibling();
   if (!nextFrame) return NS_OK;
-  
+  // get the content for the box and query to a dom element
   nsCOMPtr<nsIDOMElement> el = do_QueryInterface(nextFrame->GetContent());
   el.swap(*aNextOrdinalSibling);
   return NS_OK;
@@ -511,13 +511,13 @@ nsBoxObject::GetPreviousSibling(nsIFrame* aParentFrame, nsIFrame* aFrame,
   }
    
   if (!prevFrame) return NS_OK;
-  
+  // get the content for the box and query to a dom element
   nsCOMPtr<nsIDOMElement> el = do_QueryInterface(prevFrame->GetContent());
   el.swap(*aResult);
   return NS_OK;
 }
 
-
+// Creation Routine ///////////////////////////////////////////////////////////////////////
 
 nsresult
 NS_NewBoxObject(nsIBoxObject** aResult)
