@@ -68,6 +68,16 @@ public:
 
     static GLContext*
     GetGlobalContext(ContextFlags flags = GLContext::ContextFlagsNone);
+    
+    
+
+
+
+
+
+    static SharedTextureHandle CreateSharedHandle(GLContext::SharedTextureShareType shareType,
+                                                  void* buffer,
+                                                  GLContext::SharedTextureBufferType bufferType);
 
     
 
