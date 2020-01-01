@@ -44,6 +44,30 @@ enum AsmJSMathBuiltin
 
 
 
+struct AsmJSStaticLinkData
+{
+    struct RelativeLink
+    {
+        uint32_t patchAtOffset;
+        uint32_t targetOffset;
+    };
+
+    typedef Vector<RelativeLink> RelativeLinkVector;
+
+    size_t operationCallbackExitOffset;
+    RelativeLinkVector relativeLinks;
+
+    AsmJSStaticLinkData(ExclusiveContext *cx)
+      : relativeLinks(cx)
+    {}
+};
+
+
+
+
+
+
+
 
 
 
@@ -568,11 +592,13 @@ class AsmJSModule
     
     
     
-    uint8_t *globalData() const {
+    size_t offsetOfGlobalData() const {
         JS_ASSERT(code_);
-        return code_ + pod.codeBytes_;
+        return pod.codeBytes_;
     }
-
+    uint8_t *globalData() const {
+        return code_ + offsetOfGlobalData();
+    }
     size_t globalDataBytes() const {
         return sizeof(void*) +
                pod.numGlobalVars_ * sizeof(uint64_t) +
@@ -614,8 +640,7 @@ class AsmJSModule
         return pod.functionBytes_;
     }
     bool containsPC(void *pc) const {
-        uint8_t *code = functionCode();
-        return pc >= code && pc < (code + functionBytes());
+        return pc >= code_ && pc < (code_ + functionBytes());
     }
 
     bool addHeapAccesses(const jit::AsmJSHeapAccessVector &accesses) {
@@ -640,17 +665,15 @@ class AsmJSModule
         return minHeapLength_;
     }
 
-    uint8_t *allocateCodeAndGlobalSegment(ExclusiveContext *cx, size_t bytesNeeded);
+    bool allocateAndCopyCode(ExclusiveContext *cx, jit::MacroAssembler &masm);
+    void staticallyLink(const AsmJSStaticLinkData &linkData);
 
-    uint8_t *functionCode() const {
+    uint8_t *codeBase() const {
         JS_ASSERT(code_);
         JS_ASSERT(uintptr_t(code_) % AsmJSPageSize == 0);
         return code_;
     }
 
-    void setOperationCallbackExit(uint8_t *ptr) {
-        operationCallbackExit_ = ptr;
-    }
     uint8_t *operationCallbackExit() const {
         return operationCallbackExit_;
     }
