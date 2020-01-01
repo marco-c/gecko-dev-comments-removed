@@ -781,6 +781,10 @@ pref("network.http.connection-retry-timeout", 250);
 
 
 
+pref("network.http.fast-fallback-to-IPv4", false);
+
+
+
 
 
 pref("network.ftp.data.qos", 0);
