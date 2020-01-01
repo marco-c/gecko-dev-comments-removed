@@ -621,7 +621,7 @@ struct JSObject : js::gc::Cell {
 
      unsigned finalizeKind() const;
 
-    uint32 numSlots() const { return capacity; }
+    uint32 numSlots() const { return uint32(capacity); }
 
     inline size_t structSize() const;
     inline size_t slotsAndStructSize() const;

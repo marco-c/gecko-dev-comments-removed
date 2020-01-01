@@ -967,9 +967,6 @@ static JS_ALWAYS_INLINE JSScript *
 EvalCacheLookup(JSContext *cx, JSLinearString *str, StackFrame *caller, uintN staticLevel,
                 JSPrincipals *principals, JSObject &scopeobj, JSScript **bucket)
 {
-    if (!principals)
-        return NULL;
-
     
 
 
@@ -997,7 +994,7 @@ EvalCacheLookup(JSContext *cx, JSLinearString *str, StackFrame *caller, uintN st
             script->getVersion() == version &&
             !script->hasSingletons &&
             (script->principals == principals ||
-             (script->principals &&
+             (principals && script->principals &&
               principals->subsume(principals, script->principals) &&
               script->principals->subsume(script->principals, principals)))) {
             
@@ -4018,6 +4015,14 @@ DefineConstructorAndPrototype(JSContext *cx, JSObject *obj, JSProtoKey key, JSAt
 
 
 
+
+    
+
+
+
+
+
+
     JSObject *proto = NewObject<WithProto::Class>(cx, clasp, protoProto, obj);
     if (!proto)
         return NULL;
@@ -4028,13 +4033,13 @@ DefineConstructorAndPrototype(JSContext *cx, JSObject *obj, JSProtoKey key, JSAt
     if (clasp == &js_ArrayClass && !proto->makeDenseArraySlow(cx))
         return NULL;
 
+    TypeObject *type = proto->getNewType(cx);
+    if (!type || !type->getEmptyShape(cx, proto->clasp, FINALIZE_OBJECT0))
+        return NULL;
+
     proto->syncSpecialEquality();
 
     
-    AutoObjectRooter tvr(cx, proto);
-
-    TypeObject *type;
-
     JSObject *ctor;
     bool named = false;
     bool cached = false;
@@ -4112,26 +4117,6 @@ DefineConstructorAndPrototype(JSContext *cx, JSObject *obj, JSProtoKey key, JSAt
     {
         goto bad;
     }
-
-    type = proto->getNewType(cx);
-    if (!type)
-        goto bad;
-
-    
-
-
-
-
-
-
-
-
-
-
-    JS_ASSERT_IF(proto->clasp != clasp,
-                 clasp == &js_ArrayClass && proto->clasp == &js_SlowArrayClass);
-    if (!type->getEmptyShape(cx, proto->clasp, FINALIZE_OBJECT0))
-        goto bad;
 
     if (clasp->flags & (JSCLASS_FREEZE_PROTO|JSCLASS_FREEZE_CTOR)) {
         JS_ASSERT_IF(ctor == proto, !(clasp->flags & JSCLASS_FREEZE_CTOR));
