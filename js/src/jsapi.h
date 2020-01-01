@@ -823,6 +823,15 @@ JS_GetScopeChain(JSContext *cx);
 extern JS_PUBLIC_API(JSObject *)
 JS_GetGlobalForObject(JSContext *cx, JSObject *obj);
 
+#ifdef JS_HAS_CTYPES
+
+
+
+
+extern JS_PUBLIC_API(JSBool)
+JS_InitCTypesClass(JSContext *cx, JSObject *global);
+#endif
+
 
 
 
@@ -2843,4 +2852,4 @@ JS_SetGCZeal(JSContext *cx, uint8 zeal);
 
 JS_END_EXTERN_C
 
-#endif 
+#endif
