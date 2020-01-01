@@ -46,6 +46,7 @@
 #include "jsgc.h"
 #include "jsgcstats.h"
 #include "jsobj.h"
+#include "vm/GlobalObject.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -286,6 +287,7 @@ struct TraceMonitor {
     JS_FRIEND_API(void) getCodeAllocStats(size_t &total, size_t &frag_size, size_t &free_size) const;
     JS_FRIEND_API(size_t) getVMAllocatorsMainSize() const;
     JS_FRIEND_API(size_t) getVMAllocatorsReserveSize() const;
+    JS_FRIEND_API(size_t) getTraceMonitorSize() const;
 };
 
 namespace mjit {
@@ -393,7 +395,6 @@ typedef HashSet<ScriptFilenameEntry *,
 struct JS_FRIEND_API(JSCompartment) {
     JSRuntime                    *rt;
     JSPrincipals                 *principals;
-    js::gc::Chunk                *chunk;
 
     js::gc::ArenaList            arenas[js::gc::FINALIZE_LIMIT];
     js::gc::FreeLists            freeLists;
@@ -432,6 +433,7 @@ struct JS_FRIEND_API(JSCompartment) {
 
     void                         *data;
     bool                         active;  
+    bool                         hasDebugModeCodeToDrop;
     js::WrapperMap               crossCompartmentWrappers;
 
 #ifdef JS_METHODJIT
@@ -502,8 +504,13 @@ struct JS_FRIEND_API(JSCompartment) {
     const js::Shape              *initialRegExpShape;
     const js::Shape              *initialStringShape;
 
-    bool                         debugMode;  
-    JSCList                      scripts;    
+  private:
+    enum { DebugFromC = 1, DebugFromJS = 2 };
+
+    uintN                        debugModeBits;  
+
+  public:
+    JSCList                      scripts;        
 
     js::NativeIterCache          nativeIterCache;
 
@@ -557,7 +564,18 @@ struct JS_FRIEND_API(JSCompartment) {
 
     BackEdgeMap                  backEdgeTable;
 
+    
+
+
+
+    js::GlobalObjectSet              debuggees;
+
+  public:
+    js::BreakpointSiteMap            breakpointSites;
+
+  private:
     JSCompartment *thisForCtor() { return this; }
+
   public:
     js::MathCache *getMathCache(JSContext *cx) {
         return mathCache ? mathCache : allocMathCache(cx);
@@ -579,6 +597,44 @@ struct JS_FRIEND_API(JSCompartment) {
     size_t backEdgeCount(jsbytecode *pc) const;
     size_t incBackEdgeCount(jsbytecode *pc);
 
+    
+
+
+
+
+
+
+    bool debugMode() const { return !!debugModeBits; }
+
+    
+
+
+
+
+    bool hasScriptsOnStack(JSContext *cx);
+
+  private:
+    
+    void updateForDebugMode(JSContext *cx);
+
+  public:
+    js::GlobalObjectSet &getDebuggees() { return debuggees; }
+    bool addDebuggee(JSContext *cx, js::GlobalObject *global);
+    void removeDebuggee(JSContext *cx, js::GlobalObject *global,
+                        js::GlobalObjectSet::Enum *debuggeesEnum = NULL);
+    bool setDebugModeFromC(JSContext *cx, bool b);
+
+    js::BreakpointSite *getBreakpointSite(jsbytecode *pc);
+    js::BreakpointSite *getOrCreateBreakpointSite(JSContext *cx, JSScript *script, jsbytecode *pc,
+                                                  JSObject *scriptObject);
+    void clearBreakpointsIn(JSContext *cx, js::Debugger *dbg, JSScript *script, JSObject *handler);
+    void clearTraps(JSContext *cx, JSScript *script);
+    bool markTrapClosuresIteratively(JSTracer *trc);
+
+  private:
+    void sweepBreakpoints(JSContext *cx);
+
+  public:
     js::WatchpointMap *watchpointMap;
 	
 #ifdef JS_ION
