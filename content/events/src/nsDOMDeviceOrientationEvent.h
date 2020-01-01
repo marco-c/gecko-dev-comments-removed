@@ -34,18 +34,18 @@
 
 
 
-#ifndef nsDOMOrientationEvent_h__
-#define nsDOMOrientationEvent_h__
+#ifndef nsDOMDeviceOrientationEvent_h__
+#define nsDOMDeviceOrientationEvent_h__
 
 #include "nsIDOMDeviceOrientationEvent.h"
 #include "nsDOMEvent.h"
 
-class nsDOMOrientationEvent : public nsDOMEvent,
-                              public nsIDOMDeviceOrientationEvent
+class nsDOMDeviceOrientationEvent : public nsDOMEvent,
+                                    public nsIDOMDeviceOrientationEvent
 {
 public:
 
-  nsDOMOrientationEvent(nsPresContext* aPresContext, nsEvent* aEvent)
+  nsDOMDeviceOrientationEvent(nsPresContext* aPresContext, nsEvent* aEvent)
   : nsDOMEvent(aPresContext, aEvent),
     mAlpha(0),
     mBeta(0),

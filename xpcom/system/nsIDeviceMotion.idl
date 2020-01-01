@@ -38,25 +38,30 @@
 
 interface nsIDOMWindow;
 
-[scriptable, uuid(0ec7ed95-dc9e-4d20-a5e2-8fc6a03bce67)]
-interface nsIAcceleration : nsISupports
+[scriptable, uuid(1B406E32-CF42-471E-A470-6FD600BF4C7B)]
+interface nsIDeviceMotionData : nsISupports
 {
-  readonly attribute double alpha;
-  readonly attribute double beta;
-  readonly attribute double gamma;
+  const unsigned long TYPE_ACCELERATION = 0;
+  const unsigned long TYPE_ORIENTATION = 1;
+
+  readonly attribute unsigned long type;
+
+  readonly attribute double x;
+  readonly attribute double y;
+  readonly attribute double z;
 };
 
-[scriptable, uuid(3386BED8-7393-4704-8FFC-1EB2C35432FF)]
-interface nsIAccelerationListener : nsISupports
+[scriptable, uuid(f01774a2-3b7e-4630-954b-196dc178221f)]
+interface nsIDeviceMotionListener : nsISupports
 {
-  void onAccelerationChange(in nsIAcceleration aAcceleration);
+  void onMotionChange(in nsIDeviceMotionData aMotionData);
 };
 
 [scriptable, uuid(4B04E228-0B33-43FC-971F-AF60CEDB1C21)]
-interface nsIAccelerometer : nsISupports
+interface nsIDeviceMotion : nsISupports
 {
-  void addListener(in nsIAccelerationListener aListener);
-  void removeListener(in nsIAccelerationListener aListener);
+  void addListener(in nsIDeviceMotionListener aListener);
+  void removeListener(in nsIDeviceMotionListener aListener);
 
   void addWindowListener(in nsIDOMWindow aWindow);
   void removeWindowListener(in nsIDOMWindow aWindow);
@@ -64,11 +69,11 @@ interface nsIAccelerometer : nsISupports
 };
 
 /* for use by IPC system to notify non-chrome processes of 
- * accelerometer events
+ * device motion events
  */
-[uuid(22dd1d8a-51bf-406f-8b6d-d1919f8f1c7d)]
-interface nsIAccelerometerUpdate : nsIAccelerometer
+[uuid(d3a56f08-b7b1-46bb-9dc1-fc3665a3631a)]
+interface nsIDeviceMotionUpdate : nsIDeviceMotion
 {
   /* must be called on the main thread or else */
-  void accelerationChanged(in double alpha, in double beta, in double gamma);
+  void deviceMotionChanged(in unsigned long type, in double x, in double y, in double z);
 };
