@@ -592,9 +592,6 @@ JSRuntime::init(uint32 maxbytes)
     debuggerLock = JS_NEW_LOCK();
     if (!debuggerLock)
         return false;
-    deallocatorThread = new JSBackgroundThread();
-    if (!deallocatorThread || !deallocatorThread->init())
-        return false;
 #endif
     return propertyTree.init() && js_InitThreads(this);
 }
@@ -643,10 +640,6 @@ JSRuntime::~JSRuntime()
         JS_DESTROY_CONDVAR(titleSharingDone);
     if (debuggerLock)
         JS_DESTROY_LOCK(debuggerLock);
-    if (deallocatorThread) {
-        deallocatorThread->cancel();
-        delete deallocatorThread;
-    }
 #endif
     propertyTree.finish();
 }
@@ -1352,7 +1345,6 @@ static JSStdName standard_class_names[] = {
 static JSStdName object_prototype_names[] = {
     
     {js_InitObjectClass,        EAGER_ATOM(proto), NULL},
-    {js_InitObjectClass,        EAGER_ATOM(parent), NULL},
 #if JS_HAS_TOSOURCE
     {js_InitObjectClass,        EAGER_ATOM(toSource), NULL},
 #endif
@@ -4244,11 +4236,10 @@ js_generic_fast_native_method_dispatcher(JSContext *cx, uintN argc, jsval *vp)
     fs = (JSFunctionSpec *) JSVAL_TO_PRIVATE(fsv);
     JS_ASSERT((~fs->flags & (JSFUN_FAST_NATIVE | JSFUN_GENERIC_NATIVE)) == 0);
 
-    
-
-
-
-
+    if (argc < 1) {
+        js_ReportMissingArg(cx, vp, 0);
+        return JS_FALSE;
+    }
 
     if (JSVAL_IS_PRIMITIVE(vp[2])) {
         
@@ -4274,15 +4265,9 @@ js_generic_fast_native_method_dispatcher(JSContext *cx, uintN argc, jsval *vp)
 
     if (!js_ComputeThis(cx, vp + 2))
         return JS_FALSE;
+
     
-
-
-
-
-    if (argc != 0) {
-        
-        vp[2 + --argc] = JSVAL_VOID;
-    }
+    vp[2 + --argc] = JSVAL_VOID;
 
     native =
 #ifdef JS_TRACER
@@ -4308,11 +4293,10 @@ js_generic_native_method_dispatcher(JSContext *cx, JSObject *obj,
     JS_ASSERT((fs->flags & (JSFUN_FAST_NATIVE | JSFUN_GENERIC_NATIVE)) ==
               JSFUN_GENERIC_NATIVE);
 
-    
-
-
-
-
+    if (argc < 1) {
+        js_ReportMissingArg(cx, argv - 2, 0);
+        return JS_FALSE;
+    }
 
     if (JSVAL_IS_PRIMITIVE(argv[0])) {
         
@@ -4342,14 +4326,7 @@ js_generic_native_method_dispatcher(JSContext *cx, JSObject *obj,
     JS_ASSERT(cx->fp->argv == argv);
 
     
-
-
-
-
-    if (argc != 0) {
-        
-        argv[--argc] = JSVAL_VOID;
-    }
+    argv[--argc] = JSVAL_VOID;
 
     return fs->call(cx, JSVAL_TO_OBJECT(argv[-1]), argc, argv, rval);
 }
@@ -5514,39 +5491,23 @@ JS_SetRegExpInput(JSContext *cx, JSString *input, JSBool multiline)
     CHECK_REQUEST(cx);
     
     res = &cx->regExpStatics;
+    res->clearRoots();
     res->input = input;
     res->multiline = multiline;
-    cx->runtime->gcPoke = JS_TRUE;
 }
 
 JS_PUBLIC_API(void)
 JS_ClearRegExpStatics(JSContext *cx)
 {
-    JSRegExpStatics *res;
-
     
-    res = &cx->regExpStatics;
-    res->input = NULL;
-    res->multiline = JS_FALSE;
-    res->parenCount = 0;
-    res->lastMatch = res->lastParen = js_EmptySubString;
-    res->leftContext = res->rightContext = js_EmptySubString;
-    if (res->moreParens) {
-      cx->free(res->moreParens);
-      res->moreParens = NULL;
-    }
-    cx->runtime->gcPoke = JS_TRUE;
+    cx->regExpStatics.clear();
 }
 
 JS_PUBLIC_API(void)
 JS_ClearRegExpRoots(JSContext *cx)
 {
-    JSRegExpStatics *res;
-
     
-    res = &cx->regExpStatics;
-    res->input = NULL;
-    cx->runtime->gcPoke = JS_TRUE;
+    cx->regExpStatics.clearRoots();
 }
 
 
