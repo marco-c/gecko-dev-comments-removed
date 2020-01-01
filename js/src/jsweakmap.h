@@ -99,40 +99,7 @@ namespace js {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class Key, class Value> class DefaultMarkPolicy;
+template <class Type> class DefaultMarkPolicy;
 
 
 
@@ -188,7 +155,8 @@ class WeakMapBase {
 
 template <class Key, class Value,
           class HashPolicy = DefaultHasher<Key>,
-          class MarkPolicy = DefaultMarkPolicy<Key, Value> >
+          class KeyMarkPolicy = DefaultMarkPolicy<Key>,
+          class ValueMarkPolicy = DefaultMarkPolicy<Value> >
 class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, public WeakMapBase {
   private:
     typedef HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy> Base;
@@ -206,126 +174,120 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
     }
 
   private:
-    void nonMarkingTrace(JSTracer *tracer) {
-        MarkPolicy t(tracer);
+    void nonMarkingTrace(JSTracer *trc) {
+        ValueMarkPolicy vp(trc);
         for (Range r = Base::all(); !r.empty(); r.popFront())
-            t.markEntry(r.front().value);
+            vp.mark(r.front().value);
     }
 
-    bool markIteratively(JSTracer *tracer) {
-        MarkPolicy t(tracer);
+    bool markIteratively(JSTracer *trc) {
+        KeyMarkPolicy kp(trc);
+        ValueMarkPolicy vp(trc);
         bool markedAny = false;
         for (Range r = Base::all(); !r.empty(); r.popFront()) {
+            const Key &k = r.front().key;
+            const Value &v = r.front().value;
             
-            if (t.markEntryIfLive(r.front().key, r.front().value)) {
+            if (kp.isMarked(k)) {
+                markedAny |= vp.mark(v);
+            } else if (kp.overrideKeyMarking(k)) {
                 
+                
+                
+                
+                kp.mark(k);
+                vp.mark(v);
                 markedAny = true;
             }
-            JS_ASSERT_IF(t.keyMarked(r.front().key), t.valueMarked(r.front().value));
+            JS_ASSERT_IF(kp.isMarked(k), vp.isMarked(v));
         }
         return markedAny;
     }
 
-    void sweep(JSTracer *tracer) {
-        MarkPolicy t(tracer);
+    void sweep(JSTracer *trc) {
+        KeyMarkPolicy kp(trc);
 
         
         for (Enum e(*this); !e.empty(); e.popFront()) {
-            if (!t.keyMarked(e.front().key))
+            if (!kp.isMarked(e.front().key))
                 e.removeFront();
         }
 
 #if DEBUG
+        ValueMarkPolicy vp(trc);
         
 
 
 
         for (Range r = Base::all(); !r.empty(); r.popFront()) {
-            JS_ASSERT(t.keyMarked(r.front().key));
-            JS_ASSERT(t.valueMarked(r.front().value));
+            JS_ASSERT(kp.isMarked(r.front().key));
+            JS_ASSERT(vp.isMarked(r.front().value));
         }
 #endif
     }
 };
 
-
-
-
-
-
-
 template <>
-class DefaultMarkPolicy<JSObject *, Value> {
+class DefaultMarkPolicy<HeapValue> {
   private:
     JSTracer *tracer;
   public:
     DefaultMarkPolicy(JSTracer *t) : tracer(t) { }
-    bool keyMarked(JSObject *k) { return !IsAboutToBeFinalized(tracer->context, k); }
-    bool valueMarked(const Value &v) {
-        if (v.isMarkable())
-            return !IsAboutToBeFinalized(tracer->context, v.toGCThing());
+    bool isMarked(const HeapValue &x) {
+        if (x.isMarkable())
+            return !IsAboutToBeFinalized(tracer->context, x);
         return true;
     }
-  private:
-    bool markUnmarkedValue(const Value &v) {
-        if (valueMarked(v))
+    bool mark(const HeapValue &x) {
+        if (isMarked(x))
             return false;
-        js::gc::MarkValue(tracer, v, "WeakMap entry value");
+        js::gc::MarkValue(tracer, x, "WeakMap entry");
         return true;
     }
+    bool overrideKeyMarking(const HeapValue &k) { return false; }
+};
 
-    
-    
-    bool overrideKeyMarking(JSObject *k) {
+template <>
+class DefaultMarkPolicy<HeapPtrObject> {
+  private:
+    JSTracer *tracer;
+  public:
+    DefaultMarkPolicy(JSTracer *t) : tracer(t) { }
+    bool isMarked(const HeapPtrObject &x) {
+        return !IsAboutToBeFinalized(tracer->context, x);
+    }
+    bool mark(const HeapPtrObject &x) {
+        if (isMarked(x))
+            return false;
+        js::gc::MarkObject(tracer, x, "WeakMap entry");
+        return true;
+    }
+    bool overrideKeyMarking(const HeapPtrObject &k) {
         
         
         if (!IS_GC_MARKING_TRACER(tracer))
             return false;
         return k->getClass()->ext.isWrappedNative;
     }
-  public:
-    bool markEntryIfLive(JSObject *k, const Value &v) {
-        if (keyMarked(k))
-            return markUnmarkedValue(v);
-        if (!overrideKeyMarking(k))
-            return false;
-        js::gc::MarkObject(tracer, *k, "WeakMap entry wrapper key");
-        markUnmarkedValue(v);
-        return true;
-    }
-    void markEntry(const Value &v) {
-        js::gc::MarkValue(tracer, v, "WeakMap entry value");
-    }
 };
 
 template <>
-class DefaultMarkPolicy<gc::Cell *, JSObject *> {
-  protected:
+class DefaultMarkPolicy<HeapPtrScript> {
+  private:
     JSTracer *tracer;
   public:
     DefaultMarkPolicy(JSTracer *t) : tracer(t) { }
-    bool keyMarked(gc::Cell *k)   { return !IsAboutToBeFinalized(tracer->context, k); }
-    bool valueMarked(JSObject *v) { return !IsAboutToBeFinalized(tracer->context, v); }
-    bool markEntryIfLive(gc::Cell *k, JSObject *v) {
-        if (keyMarked(k) && !valueMarked(v)) {
-            js::gc::MarkObject(tracer, *v, "WeakMap entry value");
-            return true;
-        }
-        return false;
+    bool isMarked(const HeapPtrScript &x) {
+        return !IsAboutToBeFinalized(tracer->context, x);
     }
-    void markEntry(JSObject *v) {
-        js::gc::MarkObject(tracer, *v, "WeakMap entry value");
+    bool mark(const HeapPtrScript &x) {
+        if (isMarked(x))
+            return false;
+        js::gc::MarkScript(tracer, x, "WeakMap entry");
+        return true;
     }
+    bool overrideKeyMarking(const HeapPtrScript &k) { return false; }
 };
-
-
-
-
-
-
-
-
-typedef DefaultMarkPolicy<gc::Cell *, JSObject *> CrossCompartmentMarkPolicy;
 
 }
 
