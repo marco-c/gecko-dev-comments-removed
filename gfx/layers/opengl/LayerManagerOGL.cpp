@@ -52,8 +52,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Preferences.h"
 
-#include "LayerManagerOGLShaders.h"
-
 #include "gfxContext.h"
 #include "gfxUtils.h"
 #include "gfxPlatform.h"
@@ -80,7 +78,7 @@ using namespace mozilla::gfx;
 using namespace mozilla::gl;
 
 #ifdef CHECK_CURRENT_PROGRAM
-int LayerManagerOGLProgram::sCurrentProgramKey = 0;
+int ShaderProgramOGL::sCurrentProgramKey = 0;
 #endif
 
 
@@ -136,8 +134,11 @@ LayerManagerOGL::CleanupResources()
 
   ctx->MakeCurrent();
 
-  for (unsigned int i = 0; i < mPrograms.Length(); ++i)
-    delete mPrograms[i];
+  for (PRUint32 i = 0; i < mPrograms.Length(); ++i) {
+    for (PRUint32 type = MaskNone; type < NumMaskTypes; ++type) {
+      delete mPrograms[i].mVariations[type];
+    }
+  }
   mPrograms.Clear();
 
   ctx->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, 0);
@@ -181,13 +182,26 @@ LayerManagerOGL::CreateContext()
   return context.forget();
 }
 
+void
+LayerManagerOGL::AddPrograms(ShaderProgramType aType)
+{
+  for (PRUint32 maskType = MaskNone; maskType < NumMaskTypes; ++maskType) {
+    if (ProgramProfileOGL::ProgramExists(aType, static_cast<MaskType>(maskType))) {
+      mPrograms[aType].mVariations[maskType] = new ShaderProgramOGL(this->gl(),
+        ProgramProfileOGL::GetProfileFor(aType, static_cast<MaskType>(maskType)));
+    } else {
+      mPrograms[aType].mVariations[maskType] = nsnull;
+    }
+  }
+}
+
 bool
 LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext, bool force)
 {
   ScopedGfxFeatureReporter reporter("GL Layers", force);
 
   
-  NS_ABORT_IF_FALSE(mGLContext == nsnull, "Don't reiniailize layer managers");
+  NS_ABORT_IF_FALSE(mGLContext == nsnull, "Don't reinitialize layer managers");
 
   if (!aContext)
     return false;
@@ -205,55 +219,16 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext, bool force)
                                  LOCAL_GL_ONE, LOCAL_GL_ONE);
   mGLContext->fEnable(LOCAL_GL_BLEND);
 
-  
-  
-  
-#define SHADER_PROGRAM(penum, ptype, vsstr, fsstr) do {                           \
-    NS_ASSERTION(programIndex++ == penum, "out of order shader initialization!"); \
-    ptype *p = new ptype(mGLContext);                                             \
-    if (!p->Initialize(vsstr, fsstr)) {                                           \
-      delete p;                                                                   \
-      return false;                                                            \
-    }                                                                             \
-    mPrograms.AppendElement(p);                                                   \
-  } while (0)
-
+  mPrograms.AppendElements(NumProgramTypes);
+  for (int type = 0; type < NumProgramTypes; ++type) {
+    AddPrograms(static_cast<ShaderProgramType>(type));
+  }
 
   
-  
-#ifdef DEBUG
-  GLint programIndex = 0;
-#endif
+  if (!mPrograms[gl::RGBALayerProgramType].mVariations[MaskNone]->Initialize()) {
+    return false;
+  }
 
-  
-  SHADER_PROGRAM(RGBALayerProgramType, ColorTextureLayerProgram,
-                 sLayerVS, sRGBATextureLayerFS);
-  SHADER_PROGRAM(BGRALayerProgramType, ColorTextureLayerProgram,
-                 sLayerVS, sBGRATextureLayerFS);
-  SHADER_PROGRAM(RGBXLayerProgramType, ColorTextureLayerProgram,
-                 sLayerVS, sRGBXTextureLayerFS);
-  SHADER_PROGRAM(BGRXLayerProgramType, ColorTextureLayerProgram,
-                 sLayerVS, sBGRXTextureLayerFS);
-  SHADER_PROGRAM(RGBARectLayerProgramType, ColorTextureLayerProgram,
-                 sLayerVS, sRGBARectTextureLayerFS);
-  SHADER_PROGRAM(ColorLayerProgramType, SolidColorLayerProgram,
-                 sLayerVS, sSolidColorLayerFS);
-  SHADER_PROGRAM(YCbCrLayerProgramType, YCbCrTextureLayerProgram,
-                 sLayerVS, sYCbCrTextureLayerFS);
-  SHADER_PROGRAM(ComponentAlphaPass1ProgramType, ComponentAlphaTextureLayerProgram,
-                 sLayerVS, sComponentPass1FS);
-  SHADER_PROGRAM(ComponentAlphaPass2ProgramType, ComponentAlphaTextureLayerProgram,
-                 sLayerVS, sComponentPass2FS);
-  
-  SHADER_PROGRAM(Copy2DProgramType, CopyProgram,
-                 sCopyVS, sCopy2DFS);
-  SHADER_PROGRAM(Copy2DRectProgramType, CopyProgram,
-                 sCopyVS, sCopy2DRectFS);
-
-#undef SHADER_PROGRAM
-
-  NS_ASSERTION(programIndex == NumProgramTypes,
-               "not all programs were initialized!");
 
   mGLContext->fGenFramebuffers(1, &mBackBufferFBO);
 
@@ -555,7 +530,7 @@ bool LayerManagerOGL::sDrawFPS = false;
 
 
 void
-LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
+LayerManagerOGL::FPSState::DrawFPS(GLContext* context, ShaderProgramOGL* copyprog)
 {
   fcount++;
 
@@ -666,8 +641,8 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
 
   
   
-  GLint vcattr = copyprog->AttribLocation(CopyProgram::VertexCoordAttrib);
-  GLint tcattr = copyprog->AttribLocation(CopyProgram::TexCoordAttrib);
+  GLint vcattr = copyprog->AttribLocation(ShaderProgramOGL::VertexCoordAttrib);
+  GLint tcattr = copyprog->AttribLocation(ShaderProgramOGL::TexCoordAttrib);
 
   context->fEnableVertexAttribArray(vcattr);
   context->fEnableVertexAttribArray(tcattr);
@@ -693,16 +668,17 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
 
 
 void 
-LayerManagerOGL::BindAndDrawQuadWithTextureRect(LayerProgram *aProg,
+LayerManagerOGL::BindAndDrawQuadWithTextureRect(ShaderProgramOGL *aProg,
                                                 const nsIntRect& aTexCoordRect,
                                                 const nsIntSize& aTexSize,
                                                 GLenum aWrapMode ,
                                                 bool aFlipped )
 {
+  NS_ASSERTION(aProg->HasInitialized(), "Shader program not correctly initialized");
   GLuint vertAttribIndex =
-    aProg->AttribLocation(LayerProgram::VertexAttrib);
+    aProg->AttribLocation(ShaderProgramOGL::VertexCoordAttrib);
   GLuint texCoordAttribIndex =
-    aProg->AttribLocation(LayerProgram::TexCoordAttrib);
+    aProg->AttribLocation(ShaderProgramOGL::TexCoordAttrib);
   NS_ASSERTION(texCoordAttribIndex != GLuint(-1), "no texture coords?");
 
   
@@ -858,7 +834,7 @@ LayerManagerOGL::Render()
   }
 
   if (sDrawFPS) {
-    mFPS.DrawFPS(mGLContext, GetCopy2DProgram());
+    mFPS.DrawFPS(mGLContext, GetProgram(Copy2DProgramType));
   }
 
   if (mGLContext->IsDoubleBuffered()) {
@@ -872,10 +848,10 @@ LayerManagerOGL::Render()
 
   mGLContext->fActiveTexture(LOCAL_GL_TEXTURE0);
 
-  CopyProgram *copyprog = GetCopy2DProgram();
+  ShaderProgramOGL *copyprog = GetProgram(Copy2DProgramType);
 
   if (mFBOTextureTarget == LOCAL_GL_TEXTURE_RECTANGLE_ARB) {
-    copyprog = GetCopy2DRectProgram();
+    copyprog = GetProgram(Copy2DRectProgramType);
   }
 
   mGLContext->fBindTexture(mFBOTextureTarget, mBackBufferTexture);
@@ -884,9 +860,7 @@ LayerManagerOGL::Render()
   copyprog->SetTextureUnit(0);
 
   if (copyprog->GetTexCoordMultiplierUniformLocation() != -1) {
-    float f[] = { float(width), float(height) };
-    copyprog->SetUniform(copyprog->GetTexCoordMultiplierUniformLocation(),
-                         2, f);
+    copyprog->SetTexCoordMultiplier(width, height);
   }
 
   
@@ -898,8 +872,8 @@ LayerManagerOGL::Render()
 
   
   
-  GLint vcattr = copyprog->AttribLocation(CopyProgram::VertexCoordAttrib);
-  GLint tcattr = copyprog->AttribLocation(CopyProgram::TexCoordAttrib);
+  GLint vcattr = copyprog->AttribLocation(ShaderProgramOGL::VertexCoordAttrib);
+  GLint tcattr = copyprog->AttribLocation(ShaderProgramOGL::TexCoordAttrib);
 
   mGLContext->fEnableVertexAttribArray(vcattr);
   mGLContext->fEnableVertexAttribArray(tcattr);
@@ -1111,38 +1085,16 @@ LayerManagerOGL::CopyToTarget(gfxContext *aTarget)
   aTarget->Paint();
 }
 
-LayerManagerOGL::ProgramType LayerManagerOGL::sLayerProgramTypes[] = {
-  gl::RGBALayerProgramType,
-  gl::BGRALayerProgramType,
-  gl::RGBXLayerProgramType,
-  gl::BGRXLayerProgramType,
-  gl::RGBARectLayerProgramType,
-  gl::ColorLayerProgramType,
-  gl::YCbCrLayerProgramType,
-  gl::ComponentAlphaPass1ProgramType,
-  gl::ComponentAlphaPass2ProgramType
-};
-
-#define FOR_EACH_LAYER_PROGRAM(vname)                       \
-  for (size_t lpindex = 0;                                  \
-       lpindex < ArrayLength(sLayerProgramTypes);           \
-       ++lpindex)                                           \
-  {                                                         \
-    LayerProgram *vname = static_cast<LayerProgram*>        \
-      (mPrograms[sLayerProgramTypes[lpindex]]);             \
-    do
-
-#define FOR_EACH_LAYER_PROGRAM_END              \
-    while (0);                                  \
-  }                                             \
-
 void
 LayerManagerOGL::SetLayerProgramProjectionMatrix(const gfx3DMatrix& aMatrix)
 {
-  FOR_EACH_LAYER_PROGRAM(lp) {
-    lp->Activate();
-    lp->SetProjectionMatrix(aMatrix);
-  } FOR_EACH_LAYER_PROGRAM_END
+  for (unsigned int i = 0; i < mPrograms.Length(); ++i) {
+    for (PRUint32 mask = MaskNone; mask < NumMaskTypes; ++mask) {
+      if (mPrograms[i].mVariations[mask]) {
+        mPrograms[i].mVariations[mask]->CheckAndSetProjectionMatrix(aMatrix);
+      }
+    }
+  }
 }
 
 static GLenum
@@ -1316,7 +1268,6 @@ LayerManagerOGL::CreateShadowCanvasLayer()
   }
   return nsRefPtr<ShadowCanvasLayerOGL>(new ShadowCanvasLayerOGL(this)).forget();
 }
-
 
 } 
 } 

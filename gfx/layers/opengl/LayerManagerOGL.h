@@ -41,6 +41,7 @@
 #define GFX_LAYERMANAGEROGL_H
 
 #include "Layers.h"
+#include "LayerManagerOGLProgram.h"
 
 #include "mozilla/layers/ShadowLayers.h"
 
@@ -66,8 +67,6 @@ typedef int GLsizei;
 #include "gfx3DMatrix.h"
 #include "nsIWidget.h"
 #include "GLContext.h"
-
-#include "LayerManagerOGLProgram.h"
 
 namespace mozilla {
 namespace layers {
@@ -183,61 +182,40 @@ public:
     mGLContext->MakeCurrent(aForce);
   }
 
-  ColorTextureLayerProgram *GetColorTextureLayerProgram(ProgramType type){
-    return static_cast<ColorTextureLayerProgram*>(mPrograms[type]);
-  }
-
-  ColorTextureLayerProgram *GetRGBALayerProgram() {
-    return static_cast<ColorTextureLayerProgram*>(mPrograms[gl::RGBALayerProgramType]);
-  }
-  ColorTextureLayerProgram *GetBGRALayerProgram() {
-    return static_cast<ColorTextureLayerProgram*>(mPrograms[gl::BGRALayerProgramType]);
-  }
-  ColorTextureLayerProgram *GetRGBXLayerProgram() {
-    return static_cast<ColorTextureLayerProgram*>(mPrograms[gl::RGBXLayerProgramType]);
-  }
-  ColorTextureLayerProgram *GetBGRXLayerProgram() {
-    return static_cast<ColorTextureLayerProgram*>(mPrograms[gl::BGRXLayerProgramType]);
-  }
-  ColorTextureLayerProgram *GetBasicLayerProgram(bool aOpaque, bool aIsRGB)
+  ShaderProgramOGL* GetBasicLayerProgram(bool aOpaque, bool aIsRGB,
+                                         MaskType aMask = MaskNone)
   {
+    gl::ShaderProgramType format = gl::BGRALayerProgramType;
     if (aIsRGB) {
-      return aOpaque
-        ? GetRGBXLayerProgram()
-        : GetRGBALayerProgram();
+      if (aOpaque) {
+        format = gl::RGBXLayerProgramType;
+      } else {
+        format = gl::RGBALayerProgramType;
+      }
     } else {
-      return aOpaque
-        ? GetBGRXLayerProgram()
-        : GetBGRALayerProgram();
+      if (aOpaque) {
+        format = gl::BGRXLayerProgramType;
+      }
     }
+    return GetProgram(format, aMask);
   }
 
-  ColorTextureLayerProgram *GetRGBARectLayerProgram() {
-    return static_cast<ColorTextureLayerProgram*>(mPrograms[gl::RGBARectLayerProgramType]);
-  }
-  SolidColorLayerProgram *GetColorLayerProgram() {
-    return static_cast<SolidColorLayerProgram*>(mPrograms[gl::ColorLayerProgramType]);
-  }
-  YCbCrTextureLayerProgram *GetYCbCrLayerProgram() {
-    return static_cast<YCbCrTextureLayerProgram*>(mPrograms[gl::YCbCrLayerProgramType]);
-  }
-  ComponentAlphaTextureLayerProgram *GetComponentAlphaPass1LayerProgram() {
-    return static_cast<ComponentAlphaTextureLayerProgram*>
-             (mPrograms[gl::ComponentAlphaPass1ProgramType]);
-  }
-  ComponentAlphaTextureLayerProgram *GetComponentAlphaPass2LayerProgram() {
-    return static_cast<ComponentAlphaTextureLayerProgram*>
-             (mPrograms[gl::ComponentAlphaPass2ProgramType]);
-  }
-  CopyProgram *GetCopy2DProgram() {
-    return static_cast<CopyProgram*>(mPrograms[gl::Copy2DProgramType]);
-  }
-  CopyProgram *GetCopy2DRectProgram() {
-    return static_cast<CopyProgram*>(mPrograms[gl::Copy2DRectProgramType]);
+  ShaderProgramOGL* GetProgram(gl::ShaderProgramType aType,
+                               Layer* aMaskLayer) {
+    if (aMaskLayer)
+      return GetProgram(aType, Mask2d);
+    return GetProgram(aType, MaskNone);
   }
 
-  ColorTextureLayerProgram *GetFBOLayerProgram() {
-    return static_cast<ColorTextureLayerProgram*>(mPrograms[GetFBOLayerProgramType()]);
+  ShaderProgramOGL* GetProgram(gl::ShaderProgramType aType,
+                               MaskType aMask = MaskNone) {
+    NS_ASSERTION(ProgramProfileOGL::ProgramExists(aType, aMask),
+                 "Invalid program type.");
+    return mPrograms[aType].mVariations[aMask];
+  }
+
+  ShaderProgramOGL* GetFBOLayerProgram(MaskType aMask = MaskNone) {
+    return GetProgram(GetFBOLayerProgramType(), aMask);
   }
 
   gl::ShaderProgramType GetFBOLayerProgramType() {
@@ -246,7 +224,7 @@ public:
     return gl::RGBALayerProgramType;
   }
 
-  GLContext *gl() const { return mGLContext; }
+  GLContext* gl() const { return mGLContext; }
 
   DrawThebesLayerCallback GetThebesLayerCallback() const
   { return mThebesLayerCallback; }
@@ -350,20 +328,23 @@ public:
     }
   }
 
-  void BindAndDrawQuad(LayerProgram *aProg,
+  void BindAndDrawQuad(ShaderProgramOGL *aProg,
                        bool aFlipped = false)
   {
-    BindAndDrawQuad(aProg->AttribLocation(LayerProgram::VertexAttrib),
-                    aProg->AttribLocation(LayerProgram::TexCoordAttrib),
+    NS_ASSERTION(aProg->HasInitialized(), "Shader program not correctly initialized");
+    BindAndDrawQuad(aProg->AttribLocation(ShaderProgramOGL::VertexCoordAttrib),
+                    aProg->AttribLocation(ShaderProgramOGL::TexCoordAttrib),
                     aFlipped);
   }
 
-  void BindAndDrawQuadWithTextureRect(LayerProgram *aProg,
+  void BindAndDrawQuadWithTextureRect(ShaderProgramOGL *aProg,
                                       const nsIntRect& aTexCoordRect,
                                       const nsIntSize& aTexSize,
                                       GLenum aWrapMode = LOCAL_GL_REPEAT,
                                       bool aFlipped = false);
 
+  virtual gfxASurface::gfxImageFormat MaskImageFormat() 
+  { return gfxASurface::ImageFormatARGB32; }
 
 #ifdef MOZ_LAYERS_HAVE_LOG
   virtual const char* Name() const { return "OGL"; }
@@ -415,15 +396,16 @@ private:
 
   already_AddRefed<mozilla::gl::GLContext> CreateContext();
 
-  static ProgramType sLayerProgramTypes[];
-
   
   GLuint mBackBufferFBO;
   GLuint mBackBufferTexture;
   nsIntSize mBackBufferSize;
 
   
-  nsTArray<LayerManagerOGLProgram*> mPrograms;
+  struct ShaderProgramVariations {
+    ShaderProgramOGL* mVariations[NumMaskTypes];
+  };
+  nsTArray<ShaderProgramVariations> mPrograms;
 
   
   GLenum mFBOTextureTarget;
@@ -467,14 +449,13 @@ private:
   
 
 
-
-
-
-
-
-
-
   void SetLayerProgramProjectionMatrix(const gfx3DMatrix& aMatrix);
+
+  
+
+
+
+  void AddPrograms(gl::ShaderProgramType aType);
 
   
 
@@ -498,7 +479,7 @@ private:
       {
         last = TimeStamp::Now();
       }
-      void DrawFPS(GLContext*, CopyProgram*);
+      void DrawFPS(GLContext*, ShaderProgramOGL*);
   } mFPS;
 
   static bool sDrawFPS;
@@ -535,6 +516,22 @@ public:
   LayerManagerOGL* OGLManager() const { return mOGLManager; }
   GLContext *gl() const { return mOGLManager->gl(); }
   virtual void CleanupResources() = 0;
+
+  
+
+
+
+
+
+
+
+
+
+  virtual bool LoadAsTexture(GLuint aTextureUnit, gfxIntSize* aSize)
+  {
+    NS_WARNING("LoadAsTexture called without being overriden");
+    return false;
+  }
 
 protected:
   LayerManagerOGL *mOGLManager;

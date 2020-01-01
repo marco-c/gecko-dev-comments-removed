@@ -1368,7 +1368,6 @@ nsDocShell::LoadURI(nsIURI * aURI,
                         shEntry = nsnull;
                     }
                     else if ((parentLoadType == LOAD_BYPASS_HISTORY) ||
-                             (parentLoadType == LOAD_ERROR_PAGE) ||
                               (shEntry && 
                                ((parentLoadType & LOAD_CMD_HISTORY) || 
                                 (parentLoadType == LOAD_RELOAD_NORMAL) || 
@@ -1378,6 +1377,12 @@ nsDocShell::LoadURI(nsIURI * aURI,
                         
                         
                         loadType = parentLoadType;
+                    }
+                    else if (parentLoadType == LOAD_ERROR_PAGE) {
+                        
+                        
+                        
+                        loadType = LOAD_BYPASS_HISTORY;
                     }
                 }
                 else {
@@ -7535,14 +7540,14 @@ nsDocShell::CreateContentViewer(const char *aContentType,
 
         
         if (failedURI) {
-#ifdef DEBUG
             bool errorOnLocationChangeNeeded =
-#endif
-            OnNewURI(failedURI, failedChannel, nsnull, mLoadType, true, false,
-                     false);
+                OnNewURI(failedURI, failedChannel, nsnull, mLoadType, false,
+                         false, false);
 
-            MOZ_ASSERT(!errorOnLocationChangeNeeded,
-                       "We have to fire onLocationChange again.");
+            if (errorOnLocationChangeNeeded) {
+                FireOnLocationChange(this, failedChannel, failedURI,
+                                     LOCATION_CHANGE_ERROR_PAGE);
+            }
         }
 
         
