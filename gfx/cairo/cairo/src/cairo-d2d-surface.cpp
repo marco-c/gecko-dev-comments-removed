@@ -846,15 +846,15 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 		    D2DSurfFactory::Instance()->CreateRectangleGeometry(D2D1::RectF(0, 0, (float)width, (float)height),
 									&clipRect);
 
-		    if (!d2dsurf->tilingLayer) {
-			d2dsurf->rt->CreateLayer(&d2dsurf->tilingLayer);
+		    if (!d2dsurf->helperLayer) {
+			d2dsurf->rt->CreateLayer(&d2dsurf->helperLayer);
 		    }
 		    
 		    d2dsurf->rt->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(),
 								 clipRect,
 								 D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
 								 _cairo_d2d_matrix_from_matrix(&mat)),
-					   d2dsurf->tilingLayer);
+					   d2dsurf->helperLayer);
 		    *pushed_clip = true;
 		    clipRect->Release();
 		}
@@ -1138,6 +1138,27 @@ _cairo_d2d_create_path_geometry_for_path(cairo_path_fixed_t *path,
 }
 
 
+
+
+
+
+
+
+static void _cairo_d2d_clear_geometry(cairo_d2d_surface_t *d2dsurf,
+				      ID2D1Geometry *geometry)
+{
+    if (!d2dsurf->helperLayer) {
+	d2dsurf->rt->CreateLayer(&d2dsurf->helperLayer);
+    }
+
+    d2dsurf->rt->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(),
+						 geometry),
+			   d2dsurf->helperLayer);
+    d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
+    d2dsurf->rt->PopLayer();
+}
+
+
 static cairo_surface_t*
 _cairo_d2d_create_similar(void			*surface,
 			  cairo_content_t	 content,
@@ -1289,8 +1310,8 @@ _cairo_d2d_finish(void	    *surface)
     if (d2dsurf->surface) {
 	d2dsurf->surface->Release();
     }
-    if (d2dsurf->tilingLayer) {
-	d2dsurf->tilingLayer->Release();
+    if (d2dsurf->helperLayer) {
+	d2dsurf->helperLayer->Release();
     }
     if (d2dsurf->bufferTexture) {
 	d2dsurf->bufferTexture->Release();
@@ -1610,10 +1631,7 @@ _cairo_d2d_paint(void			*surface,
     cairo_d2d_surface_t *d2dsurf = static_cast<cairo_d2d_surface_t*>(surface);
     _begin_draw_state(d2dsurf);
     if (op == CAIRO_OPERATOR_CLEAR) {
-	cairo_solid_pattern_t *sourcePattern =
-	    (cairo_solid_pattern_t*)source;
-	d2dsurf->rt->Clear(
-	    _cairo_d2d_color_from_cairo_color(sourcePattern->color));
+	d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
 	return CAIRO_INT_STATUS_SUCCESS;
     }
 
@@ -1755,10 +1773,10 @@ _cairo_d2d_stroke(void			*surface,
 {
     cairo_d2d_surface_t *d2dsurf = static_cast<cairo_d2d_surface_t*>(surface);
     _begin_draw_state(d2dsurf);
-    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_SOURCE &&
-	op != CAIRO_OPERATOR_ADD) {
-	    
 
+    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_ADD &&
+	op != CAIRO_OPERATOR_CLEAR) {
+	
 
 
 
@@ -1779,6 +1797,29 @@ _cairo_d2d_stroke(void			*surface,
     D2D1::Matrix3x2F mat = _cairo_d2d_matrix_from_matrix(ctm);
 
     _cairo_path_fixed_transform(path, ctm_inverse);
+
+    if (op == CAIRO_OPERATOR_CLEAR) {
+	ID2D1Geometry *d2dpath = _cairo_d2d_create_path_geometry_for_path(path,
+									  CAIRO_FILL_RULE_WINDING,
+									  D2D1_FIGURE_BEGIN_FILLED);
+
+        ID2D1PathGeometry *strokeGeometry;
+	D2DSurfFactory::Instance()->CreatePathGeometry(&strokeGeometry);
+
+	ID2D1GeometrySink *sink;
+	strokeGeometry->Open(&sink);
+	d2dpath->Widen((FLOAT)style->line_width, strokeStyle, mat, (FLOAT)tolerance, sink);
+	sink->Close();
+	sink->Release();
+
+	_cairo_d2d_clear_geometry(d2dsurf, strokeGeometry);
+
+	strokeGeometry->Release();
+	d2dpath->Release();
+
+        return CAIRO_INT_STATUS_SUCCESS;
+    }
+
     d2dsurf->rt->SetTransform(mat);
 
     unsigned int runs_remaining = 1;
@@ -1862,10 +1903,9 @@ _cairo_d2d_fill(void			*surface,
     cairo_d2d_surface_t *d2dsurf = static_cast<cairo_d2d_surface_t*>(surface);
     _begin_draw_state(d2dsurf);
 
-    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_SOURCE &&
-	op != CAIRO_OPERATOR_ADD) {
+    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_ADD &&
+	op != CAIRO_OPERATOR_CLEAR) {
 	
-
 
 
 
@@ -1882,6 +1922,16 @@ _cairo_d2d_fill(void			*surface,
     unsigned int runs_remaining = 1;
     unsigned int last_run = 0;
     bool pushed_clip = false;
+
+    if (op == CAIRO_OPERATOR_CLEAR) {
+	ID2D1Geometry *d2dpath = _cairo_d2d_create_path_geometry_for_path(path,
+									  fill_rule,
+									  D2D1_FIGURE_BEGIN_FILLED);
+	_cairo_d2d_clear_geometry(d2dsurf, d2dpath);
+	
+	d2dpath->Release();
+	return CAIRO_INT_STATUS_SUCCESS;
+    }
 
     cairo_box_t box;
     if (_cairo_path_fixed_is_box(path, &box)) {

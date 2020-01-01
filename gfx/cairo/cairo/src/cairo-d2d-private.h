@@ -77,7 +77,10 @@ struct _cairo_d2d_surface {
     
     ID2D1Layer *maskLayer;
     
-    ID2D1Layer *tilingLayer;
+
+
+
+    ID2D1Layer *helperLayer;
     
     bool clipping;
     
