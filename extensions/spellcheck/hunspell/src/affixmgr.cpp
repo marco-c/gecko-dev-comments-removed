@@ -68,6 +68,10 @@
 
 #include "csutil.hxx"
 
+#ifdef MOZILLA_CLIENT
+#include "nscore.h" 
+#endif
+
 AffixMgr::AffixMgr(const char * affpath, HashMgr** ptr, int * md, const char * key) 
 {
   
