@@ -2590,7 +2590,7 @@ ExplicitConvert(JSContext* cx, HandleValue val, HandleObject targetType, void* b
   
   
   RootedValue ex(cx);
-  if (!JS_GetPendingException(cx, ex.address()))
+  if (!JS_GetPendingException(cx, &ex))
     return false;
 
   
