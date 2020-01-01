@@ -2541,6 +2541,8 @@ PresShell::sPaintSuppressionCallback(nsITimer *aTimer, void* aPresShell)
 NS_IMETHODIMP
 PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
 {
+  NS_PRECONDITION(!mIsReflowing, "Shouldn't be in reflow here!");
+  
   
   
   
@@ -2569,10 +2571,11 @@ PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
   {
     
     AUTO_LAYOUT_PHASE_ENTRY_POINT(GetPresContext(), Reflow);
-    
+    mIsReflowing = PR_TRUE;
 
     mDirtyRoots.RemoveElement(rootFrame);
     DoReflow(rootFrame);
+    mIsReflowing = PR_FALSE;
   }
 
   DidCauseReflow();
@@ -2648,7 +2651,12 @@ PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
   if (!mIgnoreFrameDestruction) {
     mFrameConstructor->NotifyDestroyingFrame(aFrame);
 
-    mDirtyRoots.RemoveElement(aFrame);
+    for (PRInt32 idx = mDirtyRoots.Count(); idx; ) {
+      --idx;
+      if (mDirtyRoots[idx] == aFrame) {
+        mDirtyRoots.RemoveElementAt(idx);
+      }
+    }
 
     
     FrameManager()->NotifyDestroyingFrame(aFrame);
@@ -3135,8 +3143,7 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
                   aBitToAdd == NS_FRAME_HAS_DIRTY_CHILDREN,
                   "Unexpected bits being added");
 
-  
-  
+  NS_ASSERTION(!mIsReflowing, "can't mark frame dirty during reflow");
 
   
   
@@ -3218,11 +3225,6 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
     if (FRAME_IS_REFLOW_ROOT(f) || !f->GetParent()) {
       
       if (!wasDirty) {
-        
-        
-        while (NS_UNLIKELY(mDirtyRoots.RemoveElement(f))) {
-          NS_ERROR("wasDirty lied");
-        }
         mDirtyRoots.AppendElement(f);
       }
 #ifdef DEBUG
