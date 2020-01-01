@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef RegExpObject_inl_h___
 #define RegExpObject_inl_h___
@@ -14,13 +14,6 @@
 #include "jsstrinlines.h"
 
 #include "String-inl.h"
-
-inline js::RegExpObject &
-JSObject::asRegExp()
-{
-    JS_ASSERT(isRegExp());
-    return *static_cast<js::RegExpObject *>(this);
-}
 
 namespace js {
 
@@ -96,7 +89,7 @@ RegExpObject::setSticky(bool enabled)
     setSlot(STICKY_FLAG_SLOT, BooleanValue(enabled));
 }
 
-
+/* This function should be deleted once bad Android platforms phase out. See bug 604774. */
 inline bool
 RegExpShared::isJITRuntimeEnabled(JSContext *cx)
 {
@@ -114,8 +107,8 @@ RegExpShared::isJITRuntimeEnabled(JSContext *cx)
 inline bool
 RegExpToShared(JSContext *cx, HandleObject obj, RegExpGuard *g)
 {
-    if (obj->isRegExp())
-        return obj->asRegExp().getShared(cx, g);
+    if (obj->is<RegExpObject>())
+        return obj->as<RegExpObject>().getShared(cx, g);
     return Proxy::regexp_toShared(cx, obj, g);
 }
 
@@ -174,6 +167,6 @@ MatchPairs::checkAgainst(size_t inputLength)
 #endif
 }
 
-} 
+} /* namespace js */
 
 #endif
