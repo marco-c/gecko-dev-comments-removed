@@ -1434,8 +1434,8 @@ protected:
 
 
         lhs.asBits = rhs.asBits;
-#endif
     }
+#endif
 };
 
 }  
@@ -1904,7 +1904,7 @@ struct JSClass {
                                                    parameter */
 #define JSCLASS_CONSTRUCT_PROTOTYPE     (1<<6)  
 
-#define JSCLASS_DOCUMENT_OBSERVER       (1<<7)  
+#define JSCLASS_DOCUMENT_OBSERVER       (1<<7)  /* DOM document observer */
 
 
 
