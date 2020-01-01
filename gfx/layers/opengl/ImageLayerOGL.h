@@ -3,6 +3,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef GFX_IMAGELAYEROGL_H
 #define GFX_IMAGELAYEROGL_H
 
@@ -11,15 +43,11 @@
 
 #include "LayerManagerOGL.h"
 #include "ImageLayers.h"
-#include "ImageContainer.h"
 #include "yuv_convert.h"
 #include "mozilla/Mutex.h"
 
 namespace mozilla {
 namespace layers {
-
-class CairoImage;
-class PlanarYCbCrImage;
 
 
 
@@ -54,8 +82,8 @@ public:
   GLuint GetTextureID() { return mTexture; }
   GLContext *GetGLContext() { return mContext; }
 
-  void Release();
 private:
+  void Release();
 
   nsRefPtr<GLContext> mContext;
   GLuint mTexture;
@@ -68,13 +96,17 @@ private:
 
 
 
-class TextureRecycleBin {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureRecycleBin)
+class RecycleBin {
+  THEBES_INLINE_DECL_THREADSAFE_REFCOUNTING(RecycleBin)
 
   typedef mozilla::gl::GLContext GLContext;
 
 public:
-  TextureRecycleBin();
+  RecycleBin();
+
+  void RecycleBuffer(PRUint8* aBuffer, PRUint32 aSize);
+  
+  PRUint8* GetBuffer(PRUint32 aSize);
 
   enum TextureType {
     TEXTURE_Y,
@@ -93,63 +125,122 @@ private:
   
   Mutex mLock;
 
+  
+  
+  nsTArray<nsAutoArrayPtr<PRUint8> > mRecycledBuffers;
+  
+  PRUint32 mRecycledBufferSize;
+
   nsTArray<GLTexture> mRecycledTextures[2];
   gfxIntSize mRecycledTextureSizes[2];
+};
+
+class THEBES_API ImageContainerOGL : public ImageContainer
+{
+public:
+  ImageContainerOGL(LayerManagerOGL *aManager);
+  virtual ~ImageContainerOGL();
+
+  virtual already_AddRefed<Image> CreateImage(const Image::Format* aFormats,
+                                              PRUint32 aNumFormats);
+
+  virtual void SetCurrentImage(Image* aImage);
+
+  virtual already_AddRefed<Image> GetCurrentImage();
+
+  virtual already_AddRefed<gfxASurface> GetCurrentAsSurface(gfxIntSize* aSize);
+
+  virtual gfxIntSize GetCurrentSize();
+
+  virtual bool SetLayerManager(LayerManager *aManager);
+
+  virtual LayerManager::LayersBackend GetBackendType() { return LayerManager::LAYERS_OPENGL; }
+
+private:
+
+  nsRefPtr<RecycleBin> mRecycleBin;
+  nsRefPtr<Image> mActiveImage;
 };
 
 class THEBES_API ImageLayerOGL : public ImageLayer,
                                  public LayerOGL
 {
 public:
-  ImageLayerOGL(LayerManagerOGL *aManager);
+  ImageLayerOGL(LayerManagerOGL *aManager)
+    : ImageLayer(aManager, NULL)
+    , LayerOGL(aManager)
+  { 
+    mImplData = static_cast<LayerOGL*>(this);
+  }
   ~ImageLayerOGL() { Destroy(); }
 
   
-  virtual void Destroy() { mDestroyed = true; }
+  virtual void Destroy() { mDestroyed = PR_TRUE; }
   virtual Layer* GetLayer();
-  virtual bool LoadAsTexture(GLuint aTextureUnit, gfxIntSize* aSize);
 
   virtual void RenderLayer(int aPreviousFrameBuffer,
                            const nsIntPoint& aOffset);
-  virtual void CleanupResources() {}
-
-
-  void AllocateTexturesYCbCr(PlanarYCbCrImage *aImage);
-  void AllocateTexturesCairo(CairoImage *aImage);
-
-protected:
-  nsRefPtr<TextureRecycleBin> mTextureRecycleBin;
 };
 
-struct THEBES_API PlanarYCbCrOGLBackendData : public ImageBackendData
+class THEBES_API PlanarYCbCrImageOGL : public PlanarYCbCrImage
 {
-  ~PlanarYCbCrOGLBackendData()
-  {
-    if (HasTextures()) {
-      mTextureRecycleBin->RecycleTexture(&mTextures[0], TextureRecycleBin::TEXTURE_Y, mYSize);
-      mTextureRecycleBin->RecycleTexture(&mTextures[1], TextureRecycleBin::TEXTURE_C, mCbCrSize);
-      mTextureRecycleBin->RecycleTexture(&mTextures[2], TextureRecycleBin::TEXTURE_C, mCbCrSize);
-    }
-  }
+  typedef mozilla::gl::GLContext GLContext;
 
+public:
+  PlanarYCbCrImageOGL(LayerManagerOGL *aManager,
+                      RecycleBin *aRecycleBin);
+  ~PlanarYCbCrImageOGL();
+
+  virtual void SetData(const Data &aData);
+
+  
+
+
+
+  void AllocateTextures(GLContext *gl);
+  void UpdateTextures(GLContext *gl);
+
+  bool HasData() { return mHasData; }
   bool HasTextures()
   {
     return mTextures[0].IsAllocated() && mTextures[1].IsAllocated() &&
            mTextures[2].IsAllocated();
   }
 
+  PRUint8* AllocateBuffer(PRUint32 aSize) {
+    return mRecycleBin->GetBuffer(aSize);
+  }
+
+  PRUint32 GetDataSize() { return mBuffer ? mBufferSize : 0; }
+
+  nsAutoArrayPtr<PRUint8> mBuffer;
+  PRUint32 mBufferSize;
+  nsRefPtr<RecycleBin> mRecycleBin;
   GLTexture mTextures[3];
-  gfxIntSize mYSize, mCbCrSize;
-  nsRefPtr<TextureRecycleBin> mTextureRecycleBin;
+  Data mData;
+  gfxIntSize mSize;
+  bool mHasData;
 };
 
 
-struct CairoOGLBackendData : public ImageBackendData
+class THEBES_API CairoImageOGL : public CairoImage
 {
-  CairoOGLBackendData() : mLayerProgram(gl::RGBALayerProgramType) {}
+  typedef mozilla::gl::GLContext GLContext;
+
+public:
+  CairoImageOGL(LayerManagerOGL *aManager);
+
+  void SetData(const Data &aData);
+
   GLTexture mTexture;
+  gfxIntSize mSize;
   gl::ShaderProgramType mLayerProgram;
-  gfxIntSize mTextureSize;
+#if defined(MOZ_WIDGET_GTK2) && !defined(MOZ_PLATFORM_MAEMO)
+  nsRefPtr<gfxASurface> mSurface;
+#endif
+  void SetTiling(bool aTiling);
+private:
+  bool mTiling;
 };
 
 class ShadowImageLayerOGL : public ShadowImageLayer,
@@ -169,33 +260,16 @@ public:
 
   
   virtual void Destroy();
-  virtual bool LoadAsTexture(GLuint aTextureUnit, gfxIntSize* aSize);
 
   virtual Layer* GetLayer();
 
   virtual void RenderLayer(int aPreviousFrameBuffer,
                            const nsIntPoint& aOffset);
 
-  virtual void CleanupResources();
-
 private:
   bool Init(const SharedImage& aFront);
-  void UploadSharedYUVToTexture(const YUVImage& yuv);
-
 
   nsRefPtr<TextureImage> mTexImage;
-
-  
-  gl::SharedTextureHandle mSharedHandle;
-  gl::TextureImage::TextureShareType mShareType;
-  bool mInverted;
-  GLuint mTexture;
-
-  
-  
-  
-  GLTexture mExternalBufferTexture;
-
   GLTexture mYUVTexture[3];
   gfxIntSize mSize;
   gfxIntSize mCbCrSize;
