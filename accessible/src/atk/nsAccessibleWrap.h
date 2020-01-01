@@ -127,6 +127,20 @@ protected:
     AtkObject *mAtkObject;
 
 private:
+
+  
+
+
+
+
+  enum EAvailableAtkSignals {
+    eUnknown,
+    eHaveNewAtkTextSignals,
+    eNoNewAtkSignals
+  };
+
+  static EAvailableAtkSignals gAvailableAtkSignals;
+
     PRUint16 CreateMaiInterfaces(void);
 };
 
