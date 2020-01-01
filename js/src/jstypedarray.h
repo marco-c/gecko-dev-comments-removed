@@ -27,6 +27,22 @@ typedef Vector<ArrayBufferObject *, 0, SystemAllocPolicy> ArrayBufferVector;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ArrayBufferObject : public JSObject
 {
     static bool byteLengthGetterImpl(JSContext *cx, CallArgs args);
@@ -177,7 +193,8 @@ class ArrayBufferObject : public JSObject
 
 
 
-struct BufferView {
+class BufferView : public JSObject {
+  public:
     
     static const size_t BYTEOFFSET_SLOT  = 0;
 
@@ -340,7 +357,7 @@ TypedArrayShift(ArrayBufferView::ViewType viewType)
     MOZ_ASSUME_UNREACHABLE("Unexpected array type");
 }
 
-class DataViewObject : public JSObject, public BufferView
+class DataViewObject : public BufferView
 {
 public:
     static Class class_;
