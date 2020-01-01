@@ -1,12 +1,15 @@
-
-
-
-
+/* vim: set shiftwidth=2 tabstop=8 autoindent cindent expandtab: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AnimationCommon.h"
 #include "nsRuleData.h"
 #include "nsCSSValue.h"
 #include "nsStyleContext.h"
+#include "nsIFrame.h"
+#include "nsAnimationManager.h"
+#include "nsLayoutUtils.h"
 
 namespace mozilla {
 namespace css {
@@ -25,7 +28,7 @@ CommonAnimationManager::~CommonAnimationManager()
 void
 CommonAnimationManager::Disconnect()
 {
-  
+  // Content nodes might outlive the transition or animation manager.
   RemoveAllElementData();
 
   mPresContext = nullptr;
@@ -35,7 +38,7 @@ void
 CommonAnimationManager::AddElementData(CommonElementAnimationData* aData)
 {
   if (PR_CLIST_IS_EMPTY(&mElementData)) {
-    
+    // We need to observe the refresh driver.
     nsRefreshDriver *rd = mPresContext->RefreshDriver();
     rd->AddRefreshObserver(this, Flush_Style);
   }
@@ -46,8 +49,8 @@ CommonAnimationManager::AddElementData(CommonElementAnimationData* aData)
 void
 CommonAnimationManager::ElementDataRemoved()
 {
-  
-  
+  // If we have no transitions or animations left, remove ourselves from
+  // the refresh driver.
   if (PR_CLIST_IS_EMPTY(&mElementData)) {
     mPresContext->RefreshDriver()->RemoveRefreshObserver(this, Flush_Style);
   }
@@ -63,9 +66,9 @@ CommonAnimationManager::RemoveAllElementData()
   }
 }
 
-
-
-
+/*
+ * nsISupports implementation
+ */
 
 NS_IMPL_ISUPPORTS1(CommonAnimationManager, nsIStyleRuleProcessor)
 
@@ -87,32 +90,32 @@ CommonAnimationManager::HasAttributeDependentStyle(AttributeRuleProcessorData* a
   return nsRestyleHint(0);
 }
 
- bool
+/* virtual */ bool
 CommonAnimationManager::MediumFeaturesChanged(nsPresContext* aPresContext)
 {
   return false;
 }
 
- size_t
+/* virtual */ size_t
 CommonAnimationManager::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
 {
-  
-  
-  
-  
-  
-  
+  // Measurement of the following members may be added later if DMD finds it is
+  // worthwhile:
+  // - mElementData
+  //
+  // The following members are not measured
+  // - mPresContext, because it's non-owning
 
   return 0;
 }
 
- size_t
+/* virtual */ size_t
 CommonAnimationManager::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
 {
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
- bool
+/* static */ bool
 CommonAnimationManager::ExtractComputedValueForTransition(
                           nsCSSProperty aProperty,
                           nsStyleContext* aStyleContext,
@@ -133,14 +136,14 @@ CommonAnimationManager::ExtractComputedValueForTransition(
 
 NS_IMPL_ISUPPORTS1(AnimValuesStyleRule, nsIStyleRule)
 
- void
+/* virtual */ void
 AnimValuesStyleRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   nsStyleContext *contextParent = aRuleData->mStyleContext->GetParent();
   if (contextParent && contextParent->HasPseudoElementData()) {
-    
-    
-    
+    // Don't apply transitions or animations to things inside of
+    // pseudo-elements.
+    // FIXME (Bug 522599): Add tests for this.
     return;
   }
 
@@ -164,10 +167,10 @@ AnimValuesStyleRule::MapRuleInfoInto(nsRuleData* aRuleData)
 }
 
 #ifdef DEBUG
- void
+/* virtual */ void
 AnimValuesStyleRule::List(FILE* out, PRInt32 aIndent) const
 {
-  
+  // WRITE ME?
 }
 #endif
 
@@ -187,7 +190,7 @@ static inline double
 StepEnd(PRUint32 aSteps, double aPortion)
 {
   NS_ABORT_IF_FALSE(0.0 <= aPortion && aPortion <= 1.0, "out of range");
-  PRUint32 step = PRUint32(aPortion * aSteps); 
+  PRUint32 step = PRUint32(aPortion * aSteps); // floor
   return double(step) / double(aSteps);
 }
 
@@ -198,20 +201,41 @@ ComputedTimingFunction::GetValue(double aPortion) const
     case nsTimingFunction::Function:
       return mTimingFunction.GetSplineValue(aPortion);
     case nsTimingFunction::StepStart:
-      
-      
-      
-      
-      
-      
+      // There are diagrams in the spec that seem to suggest this check
+      // and the bounds point should not be symmetric with StepEnd, but
+      // should actually step up at rather than immediately after the
+      // fraction points.  However, we rely on rounding negative values
+      // up to zero, so we can't do that.  And it's not clear the spec
+      // really meant it.
       return 1.0 - StepEnd(mSteps, 1.0 - aPortion);
     default:
       NS_ABORT_IF_FALSE(false, "bad type");
-      
+      // fall through
     case nsTimingFunction::StepEnd:
       return StepEnd(mSteps, aPortion);
   }
 }
+
+bool
+CommonElementAnimationData::CanAnimatePropertyOnCompositor(const dom::Element *aElement,
+                                                           nsCSSProperty aProperty)
+{
+  nsIFrame* frame = aElement->GetPrimaryFrame();
+  if (aProperty == eCSSProperty_opacity) {
+    return nsLayoutUtils::AreOpacityAnimationsEnabled();
+  }
+  if (aProperty == eCSSProperty_transform && !(frame &&
+      frame->Preserves3D() &&
+      frame->Preserves3DChildren())) {
+    if (frame && frame->IsSVGTransformed()) {
+      return false;
+    }
+    return nsLayoutUtils::AreTransformAnimationsEnabled();
+  }
+  return false;
+}
+
+
 
 }
 }

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifdef MOZ_WIDGET_GTK
 #include <gdk/gdk.h>
@@ -40,10 +40,10 @@ namespace mozilla {
 namespace gl {
 
 static bool gIsATI = false;
-static bool gIsChromium = false;
+static bool gClientIsMesa = false;
 static int gGLXMajorVersion = 0, gGLXMinorVersion = 0;
 
-
+// Check that we have at least version aMajor.aMinor .
 static inline bool
 GLXVersionCheck(int aMajor, int aMinor)
 {
@@ -65,19 +65,19 @@ GLXLibrary::EnsureInitialized()
         return true;
     }
 
-    
+    // Don't repeatedly try to initialize.
     if (mTriedInitializing) {
         return false;
     }
     mTriedInitializing = true;
 
-    
+    // Force enabling s3 texture compression (http://dri.freedesktop.org/wiki/S3TC)
     PR_SetEnv("force_s3tc_enable=true");
 
     if (!mOGLLibrary) {
-        
-        
-        
+        // see e.g. bug 608526: it is intrinsically interesting to know whether we have dynamically linked to libGL.so.1
+        // because at least the NVIDIA implementation requires an executable stack, which causes mprotect calls,
+        // which trigger glibc bug http://sourceware.org/bugzilla/show_bug.cgi?id=12225
 #ifdef __OpenBSD__
         const char *libGLfilename = "libGL.so";
 #else
@@ -97,7 +97,7 @@ GLXLibrary::EnsureInitialized()
     }
 
     GLLibraryLoader::SymLoadStruct symbols[] = {
-        
+        /* functions that were in GLX 1.0 */
         { (PRFuncPtr*) &xDestroyContextInternal, { "glXDestroyContext", NULL } },
         { (PRFuncPtr*) &xMakeCurrentInternal, { "glXMakeCurrent", NULL } },
         { (PRFuncPtr*) &xSwapBuffersInternal, { "glXSwapBuffers", NULL } },
@@ -105,7 +105,7 @@ GLXLibrary::EnsureInitialized()
         { (PRFuncPtr*) &xGetCurrentContextInternal, { "glXGetCurrentContext", NULL } },
         { (PRFuncPtr*) &xWaitGLInternal, { "glXWaitGL", NULL } },
         { (PRFuncPtr*) &xWaitXInternal, { "glXWaitX", NULL } },
-        
+        /* functions introduced in GLX 1.1 */
         { (PRFuncPtr*) &xQueryExtensionsStringInternal, { "glXQueryExtensionsString", NULL } },
         { (PRFuncPtr*) &xGetClientStringInternal, { "glXGetClientString", NULL } },
         { (PRFuncPtr*) &xQueryServerStringInternal, { "glXQueryServerString", NULL } },
@@ -113,13 +113,13 @@ GLXLibrary::EnsureInitialized()
     };
 
     GLLibraryLoader::SymLoadStruct symbols13[] = {
-        
+        /* functions introduced in GLX 1.3 */
         { (PRFuncPtr*) &xChooseFBConfigInternal, { "glXChooseFBConfig", NULL } },
         { (PRFuncPtr*) &xGetFBConfigAttribInternal, { "glXGetFBConfigAttrib", NULL } },
-        
+        // WARNING: xGetFBConfigs not set in symbols13_ext
         { (PRFuncPtr*) &xGetFBConfigsInternal, { "glXGetFBConfigs", NULL } },
         { (PRFuncPtr*) &xGetVisualFromFBConfigInternal, { "glXGetVisualFromFBConfig", NULL } },
-        
+        // WARNING: symbols13_ext sets xCreateGLXPixmapWithConfig instead
         { (PRFuncPtr*) &xCreatePixmapInternal, { "glXCreatePixmap", NULL } },
         { (PRFuncPtr*) &xDestroyPixmapInternal, { "glXDestroyPixmap", NULL } },
         { (PRFuncPtr*) &xCreateNewContextInternal, { "glXCreateNewContext", NULL } },
@@ -127,28 +127,28 @@ GLXLibrary::EnsureInitialized()
     };
 
     GLLibraryLoader::SymLoadStruct symbols13_ext[] = {
-        
-        
+        /* extension equivalents for functions introduced in GLX 1.3 */
+        // GLX_SGIX_fbconfig extension
         { (PRFuncPtr*) &xChooseFBConfigInternal, { "glXChooseFBConfigSGIX", NULL } },
         { (PRFuncPtr*) &xGetFBConfigAttribInternal, { "glXGetFBConfigAttribSGIX", NULL } },
-        
+        // WARNING: no xGetFBConfigs equivalent in extensions
         { (PRFuncPtr*) &xGetVisualFromFBConfigInternal, { "glXGetVisualFromFBConfig", NULL } },
-        
+        // WARNING: different from symbols13:
         { (PRFuncPtr*) &xCreateGLXPixmapWithConfigInternal, { "glXCreateGLXPixmapWithConfigSGIX", NULL } },
-        { (PRFuncPtr*) &xDestroyPixmapInternal, { "glXDestroyGLXPixmap", NULL } }, 
+        { (PRFuncPtr*) &xDestroyPixmapInternal, { "glXDestroyGLXPixmap", NULL } }, // not from ext
         { (PRFuncPtr*) &xCreateNewContextInternal, { "glXCreateContextWithConfigSGIX", NULL } },
         { NULL, { NULL } }
     };
 
     GLLibraryLoader::SymLoadStruct symbols14[] = {
-        
+        /* functions introduced in GLX 1.4 */
         { (PRFuncPtr*) &xGetProcAddressInternal, { "glXGetProcAddress", NULL } },
         { NULL, { NULL } }
     };
 
     GLLibraryLoader::SymLoadStruct symbols14_ext[] = {
-        
-        
+        /* extension equivalents for functions introduced in GLX 1.4 */
+        // GLX_ARB_get_proc_address extension
         { (PRFuncPtr*) &xGetProcAddressInternal, { "glXGetProcAddressARB", NULL } },
         { NULL, { NULL } }
     };
@@ -170,11 +170,7 @@ GLXLibrary::EnsureInitialized()
     }
 
     Display *display = DefaultXDisplay();
-
     int screen = DefaultScreen(display);
-    const char *serverVendor = NULL;
-    const char *serverVersionStr = NULL;
-    const char *extensionsStr = NULL;
 
     if (!xQueryVersion(display, &gGLXMajorVersion, &gGLXMinorVersion)) {
         gGLXMajorVersion = 0;
@@ -182,19 +178,18 @@ GLXLibrary::EnsureInitialized()
         return false;
     }
 
-    serverVendor = xQueryServerString(display, screen, GLX_VENDOR);
-    serverVersionStr = xQueryServerString(display, screen, GLX_VERSION);
-
     if (!GLXVersionCheck(1, 1))
-        
+        // Not possible to query for extensions.
         return false;
 
-    extensionsStr = xQueryExtensionsString(display, screen);
+    const char *clientVendor = xGetClientString(display, GLX_VENDOR);
+    const char *serverVendor = xQueryServerString(display, screen, GLX_VENDOR);
+    const char *extensionsStr = xQueryExtensionsString(display, screen);
 
     GLLibraryLoader::SymLoadStruct *sym13;
     if (!GLXVersionCheck(1, 3)) {
-        
-        
+        // Even if we don't have 1.3, we might have equivalent extensions
+        // (as on the Intel X server).
         if (!HasExtension(extensionsStr, "GLX_SGIX_fbconfig")) {
             return false;
         }
@@ -209,8 +204,8 @@ GLXLibrary::EnsureInitialized()
 
     GLLibraryLoader::SymLoadStruct *sym14;
     if (!GLXVersionCheck(1, 4)) {
-        
-        
+        // Even if we don't have 1.4, we might have equivalent extensions
+        // (as on the Intel X server).
         if (!HasExtension(extensionsStr, "GLX_ARB_get_proc_address")) {
             return false;
         }
@@ -243,10 +238,7 @@ GLXLibrary::EnsureInitialized()
     }
 
     gIsATI = serverVendor && DoesStringMatch(serverVendor, "ATI");
-    gIsChromium = (serverVendor &&
-                   DoesStringMatch(serverVendor, "Chromium")) ||
-        (serverVersionStr &&
-         DoesStringMatch(serverVersionStr, "Chromium"));
+    gClientIsMesa = clientVendor && DoesStringMatch(clientVendor, "Mesa");
 
     mInitialized = true;
     return true;
@@ -270,36 +262,77 @@ GLXPixmap
 GLXLibrary::CreatePixmap(gfxASurface* aSurface)
 {
     if (!SupportsTextureFromPixmap(aSurface)) {
-        return 0;
+        return None;
     }
+
+    gfxXlibSurface *xs = static_cast<gfxXlibSurface*>(aSurface);
+    const XRenderPictFormat *format = xs->XRenderFormat();
+    if (!format || format->type != PictTypeDirect) {
+        return None;
+    }
+
+    bool withAlpha =
+        aSurface->GetContentType() == gfxASurface::CONTENT_COLOR_ALPHA;
 
     int attribs[] = { GLX_DOUBLEBUFFER, False,
                       GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
-                      GLX_BIND_TO_TEXTURE_RGBA_EXT, True,
+                      (withAlpha ? GLX_BIND_TO_TEXTURE_RGBA_EXT
+                       : GLX_BIND_TO_TEXTURE_RGB_EXT), True,
                       None };
 
-    int numFormats;
-    Display *display = DefaultXDisplay();
+    int numConfigs = 0;
+    Display *display = xs->XDisplay();
     int xscreen = DefaultScreen(display);
 
-    ScopedXFree<GLXFBConfig> cfg(xChooseFBConfig(display,
-                                                 xscreen,
-                                                 attribs,
-                                                 &numFormats));
-    if (!cfg) {
-        return 0;
-    }
-    NS_ABORT_IF_FALSE(numFormats > 0,
-                 "glXChooseFBConfig() failed to match our requested format and violated its spec (!)");
+    ScopedXFree<GLXFBConfig> cfgs(xChooseFBConfig(display,
+                                                  xscreen,
+                                                  attribs,
+                                                  &numConfigs));
 
-    gfxXlibSurface *xs = static_cast<gfxXlibSurface*>(aSurface);
+    int matchIndex = -1;
+    const XRenderDirectFormat& direct = format->direct;
+    unsigned long redMask =
+        static_cast<unsigned long>(direct.redMask) << direct.red;
+    unsigned long greenMask =
+        static_cast<unsigned long>(direct.greenMask) << direct.green;
+    unsigned long blueMask =
+        static_cast<unsigned long>(direct.blueMask) << direct.blue;
+    ScopedXFree<XVisualInfo> vinfo;
+
+    for (int i = 0; i < numConfigs; i++) {
+        int size;
+        // The visual depth won't necessarily match as it may not include the
+        // alpha buffer, so check buffer size.
+        if (sGLXLibrary.xGetFBConfigAttrib(display, cfgs[i],
+                                           GLX_BUFFER_SIZE, &size) != Success ||
+            size != format->depth) {
+            continue;
+        }
+
+        vinfo = sGLXLibrary.xGetVisualFromFBConfig(display, cfgs[i]);
+        if (!vinfo ||
+            vinfo->c_class != TrueColor ||
+            vinfo->red_mask != redMask ||
+            vinfo->green_mask != greenMask ||
+            vinfo->blue_mask != blueMask ) {
+            continue;
+        }
+
+        matchIndex = i;
+    }
+    if (matchIndex == -1) {
+        NS_WARNING("[GLX] Couldn't find a FBConfig matching Pixmap format");
+        return None;
+    }
 
     int pixmapAttribs[] = { GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
-                            GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
+                            GLX_TEXTURE_FORMAT_EXT,
+                            (withAlpha ? GLX_TEXTURE_FORMAT_RGBA_EXT
+                             : GLX_TEXTURE_FORMAT_RGB_EXT),
                             None};
 
     GLXPixmap glxpixmap = xCreatePixmap(display,
-                                        cfg[0],
+                                        cfgs[matchIndex],
                                         xs->XDrawable(),
                                         pixmapAttribs);
 
@@ -325,8 +358,15 @@ GLXLibrary::BindTexImage(GLXPixmap aPixmap)
     }
 
     Display *display = DefaultXDisplay();
-    
-    xWaitX();
+    // Make sure all X drawing to the surface has finished before binding to a texture.
+    if (gClientIsMesa) {
+        // Using XSync instead of Mesa's glXWaitX, because its glxWaitX is a
+        // noop when direct rendering unless the current drawable is a
+        // single-buffer window.
+        FinishX(display);
+    } else {
+        xWaitX();
+    }
     xBindTexImage(display, aPixmap, GLX_FRONT_LEFT_EXT, NULL);
 }
 
@@ -365,7 +405,7 @@ void
 GLXLibrary::AfterGLXCall()
 {
     if (mDebug) {
-        XSync(DefaultXDisplay(), False);
+        FinishX(DefaultXDisplay());
         if (sErrorEvent.mError.error_code) {
             char buffer[2048];
             XGetErrorText(DefaultXDisplay(), sErrorEvent.mError.error_code, buffer, sizeof(buffer));
@@ -424,7 +464,7 @@ GLXLibrary::xGetCurrentContext()
     return result;
 }
 
- void* 
+/* static */ void* 
 GLXLibrary::xGetProcAddress(const char *procName)
 {
     BEFORE_GLX_CALL;
@@ -721,8 +761,8 @@ TRY_AGAIN_NO_SHARING:
             }
 
             NS_WARNING("Failed to create GLXContext!");
-            glContext = nullptr; 
-                                
+            glContext = nullptr; // note: this must be done while the graceful X error handler is set,
+                                // because glxMakeCurrent can give a GLXBadDrawable error
         }
 
         return glContext.forget();
@@ -732,7 +772,7 @@ TRY_AGAIN_NO_SHARING:
     {
         MarkDestroyed();
 
-        
+        // see bug 659842 comment 76
 #ifdef DEBUG
         bool success =
 #endif
@@ -771,12 +811,12 @@ TRY_AGAIN_NO_SHARING:
     {
         bool succeeded = true;
 
-        
-        
-        
-        
-        
-        
+        // With the ATI FGLRX driver, glxMakeCurrent is very slow even when the context doesn't change.
+        // (This is not the case with other drivers such as NVIDIA).
+        // So avoid calling it more than necessary. Since GLX documentation says that:
+        //     "glXGetCurrentContext returns client-side information.
+        //      It does not make a round trip to the server."
+        // I assume that it's not worth using our own TLS slot here.
         if (aForce || sGLXLibrary.xGetCurrentContext() != mContext) {
             succeeded = sGLXLibrary.xMakeCurrent(mDisplay, mDrawable, mContext);
             NS_ASSERTION(succeeded, "Failed to make GL context current!");
@@ -1055,12 +1095,12 @@ GLContextProviderGLX::CreateForWindow(nsIWidget *aWidget)
         return nullptr;
     }
 
-    
-    
-    
-    
-    
-    
+    // Currently, we take whatever Visual the window already has, and
+    // try to create an fbconfig for that visual.  This isn't
+    // necessarily what we want in the long run; an fbconfig may not
+    // be available for the existing visual, or if it is, the GL
+    // performance might be suboptimal.  But using the existing visual
+    // is a relatively safe intermediate step.
 
     Display *display = (Display*)aWidget->GetNativeData(NS_NATIVE_DISPLAY); 
     int xscreen = DefaultScreen(display);
@@ -1089,9 +1129,9 @@ GLContextProviderGLX::CreateForWindow(nsIWidget *aWidget)
     }
     NS_ASSERTION(numConfigs > 0, "No FBConfigs found!");
 
-    
-    
-    
+    // XXX the visual ID is almost certainly the GLX_FBCONFIG_ID, so
+    // we could probably do this first and replace the glXGetFBConfigs
+    // with glXChooseConfigs.  Docs are sparklingly clear as always.
     XWindowAttributes widgetAttrs;
     if (!XGetWindowAttributes(display, window, &widgetAttrs)) {
         NS_WARNING("[GLX] XGetWindowAttributes() failed");
@@ -1233,9 +1273,9 @@ CreateOffscreenPixmapContext(const gfxIntSize& aSize,
         goto DONE_CREATING_PIXMAP;
     }
 
-    
-    
-    
+    // Handle slightly different signature between glXCreatePixmap and
+    // its pre-GLX-1.3 extension equivalent (though given the ABI, we
+    // might not need to).
     if (GLXVersionCheck(1, 3)) {
         glxpixmap = sGLXLibrary.xCreatePixmap(display,
                                               cfgs[chosenIndex],
@@ -1256,7 +1296,7 @@ DONE_CREATING_PIXMAP:
     nsRefPtr<GLContextGLX> glContext;
     bool serverError = xErrorHandler.SyncAndGetError(display);
 
-    if (!error && 
+    if (!error && // earlier recorded error
         !serverError)
     {
         glContext = GLContextGLX::CreateGLContext(
@@ -1286,14 +1326,14 @@ GLContextProviderGLX::CreateOffscreen(const gfxIntSize& aSize,
     }
 
     if (!glContext->GetSharedContext()) {
-        
-        
+        // no point in returning anything if sharing failed, we can't
+        // render from this
         return nullptr;
     }
 
     if (!glContext->ResizeOffscreenFBOs(aSize, true)) {
-        
-        
+        // we weren't able to create the initial
+        // offscreen FBO, so this is dead
         return nullptr;
     }
 
@@ -1324,6 +1364,6 @@ GLContextProviderGLX::Shutdown()
     gGlobalContext = nullptr;
 }
 
-} 
-} 
+} /* namespace gl */
+} /* namespace mozilla */
 

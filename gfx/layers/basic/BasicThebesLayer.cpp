@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BasicThebesLayer.h"
 
@@ -60,7 +60,7 @@ SetAntialiasingFlags(Layer* aLayer, gfxContext* aTarget)
     }
 
     const nsIntRect& bounds = aLayer->GetVisibleRegion().GetBounds();
-    Rect transformedBounds = dt->GetTransform().TransformBounds(Rect(Float(bounds.x), Float(bounds.y),
+    gfx::Rect transformedBounds = dt->GetTransform().TransformBounds(gfx::Rect(Float(bounds.x), Float(bounds.y),
                                                                      Float(bounds.width), Float(bounds.height)));
     transformedBounds.RoundOut();
     IntRect intTransformedBounds;
@@ -70,7 +70,7 @@ SetAntialiasingFlags(Layer* aLayer, gfxContext* aTarget)
   } else {
     nsRefPtr<gfxASurface> surface = aTarget->CurrentSurface();
     if (surface->GetContentType() != gfxASurface::CONTENT_COLOR_ALPHA) {
-      
+      // Destination doesn't have alpha channel; no need to set any special flags
       return;
     }
 
@@ -173,10 +173,10 @@ BasicThebesLayer::PaintThebes(gfxContext* aContext,
     mValidRegion.Sub(mValidRegion, state.mRegionToInvalidate);
 
     if (state.mContext) {
-      
-      
-      
-      
+      // The area that became invalid and is visible needs to be repainted
+      // (this could be the whole visible area if our buffer switched
+      // from RGB to RGBA, because we might need to repaint with
+      // subpixel AA)
       state.mRegionToInvalidate.And(state.mRegionToInvalidate,
                                     GetEffectiveVisibleRegion());
       nsIntRegion extendedDrawRegion = state.mRegionToDraw;
@@ -192,9 +192,9 @@ BasicThebesLayer::PaintThebes(gfxContext* aContext,
 
       RenderTraceInvalidateEnd(this, "FFFF00");
     } else {
-      
-      
-      
+      // It's possible that state.mRegionToInvalidate is nonempty here,
+      // if we are shrinking the valid region to nothing. So use mRegionToDraw
+      // instead.
       NS_WARN_IF_FALSE(state.mRegionToDraw.IsEmpty(),
                        "No context when we have something to draw; resource exhaustion?");
     }
@@ -225,22 +225,22 @@ BasicThebesLayer::PaintThebes(gfxContext* aContext,
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * AutoOpenBuffer is a helper that builds on top of AutoOpenSurface,
+ * which we need to get a gfxASurface from a SurfaceDescriptor.  For
+ * other layer types, simple lexical scoping of AutoOpenSurface is
+ * easy.  For ThebesLayers, the lifetime of buffer mappings doesn't
+ * exactly match simple lexical scopes, so naively putting
+ * AutoOpenSurfaces on the stack doesn't always work.  We use this
+ * helper to track openings instead.
+ *
+ * Any surface that's opened while painting this ThebesLayer will
+ * notify this helper and register itself for unmapping.
+ *
+ * We ignore buffer destruction here because the shadow layers
+ * protocol already ensures that destroyed buffers stay alive until
+ * end-of-transaction.
+ */
 struct NS_STACK_CLASS AutoBufferTracker {
   AutoBufferTracker(BasicShadowableThebesLayer* aLayer)
     : mLayer(aLayer)
@@ -257,8 +257,8 @@ struct NS_STACK_CLASS AutoBufferTracker {
   ~AutoBufferTracker() {
     mLayer->mBufferTracker = nullptr;
     mLayer->mBuffer.UnmapBuffer();
-    
-    
+    // mInitialBuffer and mNewBuffer will clean up after themselves if
+    // they were constructed.
   }
 
   gfxASurface*
@@ -317,9 +317,9 @@ BasicShadowableThebesLayer::SetBackBufferAndAttrs(const OptionalThebesBuffer& aB
   mFrontUpdatedRegion = aFrontUpdatedRegion;
   mFrontValidRegion = aValidRegion;
   if (OptionalThebesBuffer::Tnull_t == mROFrontBuffer.type()) {
-    
-    
-    
+    // For null readonly front, we have single buffer mode
+    // so we can do sync right now, because it does not create new buffer and
+    // don't do any graphic operations
     SyncFrontBufferToBackBuffer();
   }
 }
@@ -348,10 +348,10 @@ BasicShadowableThebesLayer::SyncFrontBufferToBackBuffer()
   }
 
   if (OptionalThebesBuffer::Tnull_t == mROFrontBuffer.type()) {
-    
-    
-    
-    
+    // We didn't get back a read-only ref to our old back buffer (the
+    // parent's new front buffer).  If the parent is pushing updates
+    // to a texture it owns, then we probably got back the same buffer
+    // we pushed in the update and all is well.  If not, ...
     mValidRegion = mFrontValidRegion;
     mBuffer.SetBackingBuffer(backBuffer, mBackBufferRect, mBackBufferRectRotation);
     return;
@@ -371,9 +371,9 @@ BasicShadowableThebesLayer::SyncFrontBufferToBackBuffer()
     autoROFront.Get(), roFront.rect(), roFront.rotation(),
     mFrontUpdatedRegion);
   mIsNewBuffer = false;
-  
-  
-  
+  // Now the new back buffer has the same (interesting) pixels as the
+  // new front buffer, and mValidRegion et al. are correct wrt the new
+  // back buffer (i.e. as they were for the old back buffer)
 }
 
 void
@@ -395,13 +395,13 @@ BasicShadowableThebesLayer::PaintBuffer(gfxContext* aContext,
 
   nsIntRegion updatedRegion;
   if (mIsNewBuffer || aDidSelfCopy) {
-    
-    
-    
-    
-    
-    
-    
+    // A buffer reallocation clears both buffers. The front buffer has all the
+    // content by now, but the back buffer is still clear. Here, in effect, we
+    // are saying to copy all of the pixels of the front buffer to the back.
+    // Also when we self-copied in the buffer, the buffer space
+    // changes and some changed buffer content isn't reflected in the
+    // draw or invalidate region (on purpose!).  When this happens, we
+    // need to read back the entire buffer too.
     updatedRegion = mVisibleRegion;
     mIsNewBuffer = false;
   } else {
@@ -423,7 +423,7 @@ void
 BasicShadowableThebesLayer::AllocBackBuffer(Buffer::ContentType aType,
                                             const nsIntSize& aSize)
 {
-  
+  // This function may *not* open the buffer it allocates.
   if (!BasicManager()->AllocBuffer(gfxIntSize(aSize.width, aSize.height),
                                    aType,
                                    &mBackBuffer)) {
@@ -482,9 +482,9 @@ public:
   }
   virtual ~BasicShadowThebesLayer()
   {
-    
-    
-    
+    // If Disconnect() wasn't called on us, then we assume that the
+    // remote side shut down and IPC is disconnected, so we let IPDL
+    // clean up our front surface Shmem.
     MOZ_COUNT_DTOR(BasicShadowThebesLayer);
   }
 
@@ -529,12 +529,12 @@ private:
   }
 
   ShadowThebesLayerBuffer mFrontBuffer;
-  
+  // Describes the gfxASurface we hand out to |mFrontBuffer|.
   SurfaceDescriptor mFrontBufferDescriptor;
-  
-  
-  
-  
+  // When we receive an update from our remote partner, we stow away
+  // our previous parameters that described our previous front buffer.
+  // Then when we Swap() back/front buffers, we can return these
+  // parameters to our partner (adjusted as needed).
   nsIntRegion mOldValidRegion;
 };
 
@@ -550,19 +550,19 @@ BasicShadowThebesLayer::Swap(const ThebesBuffer& aNewFront,
     AutoOpenSurface autoNewFrontBuffer(OPEN_READ_ONLY, aNewFront.buffer());
     AutoOpenSurface autoCurrentFront(OPEN_READ_ONLY, mFrontBufferDescriptor);
     if (autoCurrentFront.Size() != autoNewFrontBuffer.Size()) {
-      
+      // Current front buffer is obsolete
       DestroyFrontBuffer();
     }
   }
-  
+  // This code relies on Swap() arriving *after* attribute mutations.
   if (IsSurfaceDescriptorValid(mFrontBufferDescriptor)) {
     *aNewBack = ThebesBuffer();
     aNewBack->get_ThebesBuffer().buffer() = mFrontBufferDescriptor;
   } else {
     *aNewBack = null_t();
   }
-  
-  
+  // We have to invalidate the pixels painted into the new buffer.
+  // They might overlap with our old pixels.
   aNewBackValidRegion->Sub(mOldValidRegion, aUpdatedRegion);
 
   nsIntRect backRect;
