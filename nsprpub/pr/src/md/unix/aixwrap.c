@@ -13,38 +13,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef AIX_RENAME_SELECT
 #error aixwrap.c should only be used on AIX 3.2 or 4.1
 #else
