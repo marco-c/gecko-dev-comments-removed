@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim: set sw=4 ts=8 et tw=80 : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_ContentParent_h
 #define mozilla_dom_ContentParent_h
@@ -26,6 +26,7 @@
 #include "nsInterfaceHashtable.h"
 #include "nsHashKeys.h"
 
+class mozIApplication;
 class nsFrameMessageManager;
 class nsIDOMBlob;
 
@@ -59,14 +60,17 @@ private:
 public:
     static ContentParent* GetNewOrUsed();
 
-    /**
-     * Get or create a content process for the given app.  A given app
-     * (identified by its manifest URL) gets one process all to itself.
-     *
-     * If the given manifest is the empty string, then this method is equivalent
-     * to GetNewOrUsed().
-     */
-    static ContentParent* GetForApp(const nsAString& aManifestURL);
+    
+
+
+
+
+
+
+
+    static TabParent* CreateBrowser(mozIApplication* aApp,
+                                    bool aIsBrowserFrame);
+
     static void GetAll(nsTArray<ContentParent*>& aArray);
 
     NS_DECL_ISUPPORTS
@@ -74,15 +78,7 @@ public:
     NS_DECL_NSITHREADOBSERVER
     NS_DECL_NSIDOMGEOPOSITIONCALLBACK
 
-    /**
-     * Create a new tab.
-     *
-     * |aIsBrowserElement| indicates whether this tab is part of an
-     * <iframe mozbrowser>.
-     * |aAppId| indicates which app the tab belongs to.
-     */
-    TabParent* CreateTab(PRUint32 aChromeFlags, bool aIsBrowserElement, PRUint32 aAppId);
-    /** Notify that a tab was destroyed during normal operation. */
+    
     void NotifyTabDestroyed(PBrowserParent* aTab);
 
     TestShellParent* CreateTestShell();
@@ -116,8 +112,8 @@ private:
     static nsTArray<ContentParent*>* gNonAppContentParents;
     static nsTArray<ContentParent*>* gPrivateContent;
 
-    // Hide the raw constructor methods since we don't want client code
-    // using them.
+    
+    
     using PContentParent::SendPBrowserConstructor;
     using PContentParent::SendPTestShellConstructor;
 
@@ -126,24 +122,26 @@ private:
 
     void Init();
 
-    /**
-     * Mark this ContentParent as dead for the purposes of Get*().
-     * This method is idempotent.
-     */
+    
+
+
+
     void MarkAsDead();
 
-    /**
-     * Exit the subprocess and vamoose.  After this call IsAlive()
-     * will return false and this ContentParent will not be returned
-     * by the Get*() funtions.  However, the shutdown sequence itself
-     * may be asynchronous.
-     */
+    
+
+
+
+
+
     void ShutDown();
 
     PCompositorParent* AllocPCompositor(mozilla::ipc::Transport* aTransport,
                                         base::ProcessId aOtherProcess) MOZ_OVERRIDE;
 
-    virtual PBrowserParent* AllocPBrowser(const PRUint32& aChromeFlags, const bool& aIsBrowserElement, const PRUint32& aAppId);
+    virtual PBrowserParent* AllocPBrowser(const PRUint32& aChromeFlags,
+                                          const bool& aIsBrowserElement,
+                                          const AppId& aApp);
     virtual bool DeallocPBrowser(PBrowserParent* frame);
 
     virtual PDeviceStorageRequestParent* AllocPDeviceStorageRequest(const DeviceStorageParams&);
@@ -262,16 +260,18 @@ private:
     virtual bool RecvAddFileWatch(const nsString& root);
     virtual bool RecvRemoveFileWatch(const nsString& root);
 
+    virtual void ProcessingError(Result what) MOZ_OVERRIDE;
+
     GeckoChildProcessHost* mSubprocess;
 
     PRInt32 mGeolocationWatchID;
     int mRunToCompletionDepth;
     bool mShouldCallUnblockChild;
 
-    // This is a cache of all of the memory reporters
-    // registered in the child process.  To update this, one
-    // can broadcast the topic "child-memory-reporter-request" using
-    // the nsIObserverService.
+    
+    
+    
+    
     nsCOMArray<nsIMemoryReporter> mMemoryReporters;
 
     bool mIsAlive;
@@ -305,13 +305,13 @@ private:
         nsCOMPtr<nsIFile> mFile;
     };
 
-    // This is a cache of all of the registered file watchers.
+    
     nsInterfaceHashtable<nsStringHashKey, WatchedFile> mFileWatchers;
 
     friend class CrashReporterParent;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 #endif
