@@ -1,45 +1,45 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-/*
- * PR assertion checker.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef jsutil_h___
 #define jsutil_h___
@@ -51,10 +51,10 @@
 
 JS_BEGIN_EXTERN_C
 
-/*
- * JS_Assert is present even in release builds, for the benefit of applications
- * that build DEBUG and link against a non-DEBUG SpiderMonkey library.
- */
+
+
+
+
 extern JS_PUBLIC_API(void)
 JS_Assert(const char *s, const char *file, JSIntn ln);
 
@@ -98,22 +98,22 @@ JS_Assert(const char *s, const char *file, JSIntn ln);
 #define JS_ALWAYS_FALSE(expr)    ((void) (expr))
 #define JS_THREADSAFE_ASSERT(expr) ((void) 0)
 
-#endif /* defined(DEBUG) */
+#endif 
 
-/*
- * Compile-time assert. "cond" must be a constant expression.
- * The macro can be used only in places where an "extern" declaration is
- * allowed.
- */
+
+
+
+
+
 
 #ifdef __SUNPRO_CC
-/*
- * Sun Studio C++ compiler has a bug
- * "sizeof expression not accepted as size of array parameter"
- * It happens when js_static_assert() function is declared inside functions.
- * The bug number is 6688515. It is not public yet.
- * Therefore, for Sun Studio, declare js_static_assert as an array instead.
- */
+
+
+
+
+
+
+
 #define JS_STATIC_ASSERT(cond) extern char js_static_assert[(cond) ? 1 : -1]
 #else
 #ifdef __COUNTER__
@@ -128,11 +128,11 @@ JS_Assert(const char *s, const char *file, JSIntn ln);
 
 #define JS_STATIC_ASSERT_IF(cond, expr) JS_STATIC_ASSERT(!(cond) || (expr))
 
-/*
- * Abort the process in a non-graceful manner. This will cause a core file,
- * call to the debugger or other moral equivalent as well as causing the
- * entire process to stop.
- */
+
+
+
+
+
 extern JS_PUBLIC_API(void) JS_Abort(void);
 
 #ifdef DEBUG
@@ -152,7 +152,7 @@ typedef struct JSBasicStats {
     uint32      max;
     double      sum;
     double      sqsum;
-    uint32      logscale;           /* logarithmic scale: 0 (linear), 2, 10 */
+    uint32      logscale;           
     uint32      hist[11];
 } JSBasicStats;
 
@@ -179,9 +179,9 @@ JS_DumpHistogram(JSBasicStats *bs, FILE *fp);
 
 #else
 
-#define JS_BASIC_STATS_ACCUM(bs,val) /* nothing */
+#define JS_BASIC_STATS_ACCUM(bs,val)
 
-#endif /* JS_BASIC_STATS */
+#endif 
 
 
 #if defined(DEBUG_notme) && defined(XP_UNIX)
@@ -213,12 +213,12 @@ JS_DumpBacktrace(JSCallsite *trace);
 #else
 
 #ifdef DEBUG
-/*
- * In order to test OOM conditions, when the shell command-line option
- * |-A NUM| is passed, we fail continuously after the NUM'th allocation.
- */
-extern JS_PUBLIC_DATA(JSUint32) OOM_maxAllocations; /* set from shell/js.cpp */
-extern JS_PUBLIC_DATA(JSUint32) OOM_counter; /* data race, who cares. */
+
+
+
+
+extern JS_PUBLIC_DATA(JSUint32) OOM_maxAllocations; 
+extern JS_PUBLIC_DATA(JSUint32) OOM_counter; 
 #define JS_OOM_POSSIBLY_FAIL() \
     do \
     { \
@@ -231,11 +231,11 @@ extern JS_PUBLIC_DATA(JSUint32) OOM_counter; /* data race, who cares. */
 #define JS_OOM_POSSIBLY_FAIL() do {} while(0)
 #endif
 
-/*
- * SpiderMonkey code should not be calling these allocation functions directly.
- * Instead, all calls should go through JSRuntime, JSContext or OffTheBooks.
- * However, js_free() can be called directly.
- */
+
+
+
+
+
 static JS_INLINE void* js_malloc(size_t bytes) {
     JS_OOM_POSSIBLY_FAIL();
     return malloc(bytes);
@@ -254,7 +254,7 @@ static JS_INLINE void* js_realloc(void* p, size_t bytes) {
 static JS_INLINE void js_free(void* p) {
     free(p);
 }
-#endif/* JS_USE_CUSTOM_ALLOCATOR */
+#endif
 
 JS_END_EXTERN_C
 
@@ -262,98 +262,98 @@ JS_END_EXTERN_C
 
 #ifdef __cplusplus
 
-/* 
- * User guide to memory management within SpiderMonkey:
- *
- * Quick tips:
- *
- *   Allocation:
- *   - Prefer to allocate using JSContext:
- *       cx->{malloc_,realloc_,calloc_,new_,new_array}
- *
- *   - If no JSContext is available, use a JSRuntime:
- *       rt->{malloc_,realloc_,calloc_,new_,new_array}
- *
- *   - As a last resort, use unaccounted allocation ("OffTheBooks"):
- *       js::OffTheBooks::{malloc_,realloc_,calloc_,new_,new_array}
- *
- *   Deallocation:
- *   - When the deallocation occurs on a slow path, use:
- *       Foreground::{free_,delete_,array_delete}
- *
- *   - Otherwise deallocate on a background thread using a JSContext:
- *       cx->{free_,delete_,array_delete}
- *  
- *   - If no JSContext is available, use a JSRuntime:
- *       rt->{free_,delete_,array_delete}
- *
- *   - As a last resort, use UnwantedForeground deallocation:
- *       js::UnwantedForeground::{free_,delete_,array_delete}
- *
- * General tips:
- *
- *   - Mixing and matching these allocators is allowed (you may free memory
- *     allocated by any allocator, with any deallocator).
- * 
- *   - Never, ever use normal C/C++ memory management:
- *       malloc, free, new, new[], delete, operator new, etc.
- *
- *   - Never, ever use low-level SpiderMonkey allocators:
- *       js_malloc(), js_free(), js_calloc(), js_realloc()
- *     Their use is reserved for the other memory managers.
- *
- *   - Classes which have private constructors or destructors should have
- *     JS_DECLARE_ALLOCATION_FRIENDS_FOR_PRIVATE_CONSTRUCTOR added to their
- *     declaration.
- * 
- * Details:
- *
- *   Using vanilla new/new[] is unsafe in SpiderMonkey because they throw on
- *   failure instead of returning NULL, which is what SpiderMonkey expects.
- *   (Even overriding them is unsafe, as the system's C++ runtime library may
- *   throw, which we do not support. We also can't just use the 'nothrow'
- *   variant of new/new[], because we want to mediate *all* allocations
- *   within SpiderMonkey, to satisfy any embedders using
- *   JS_USE_CUSTOM_ALLOCATOR.)
- *
- *   JSContexts and JSRuntimes keep track of memory allocated, and use this
- *   accounting to schedule GC. OffTheBooks does not. We'd like to remove
- *   OffTheBooks allocations as much as possible (bug 636558).
- *
- *   On allocation failure, a JSContext correctly reports an error, which a
- *   JSRuntime and OffTheBooks does not.
- *
- *   A JSContext deallocates in a background thread. A JSRuntime might
- *   deallocate in the background in the future, but does not now. Foreground
- *   deallocation is preferable on slow paths. UnwantedForeground deallocations
- *   occur where we have no JSContext or JSRuntime, and the deallocation is not
- *   on a slow path. We want to remove UnwantedForeground deallocations (bug
- *   636561).
- *
- *   JS_DECLARE_ALLOCATION_FRIENDS_FOR_PRIVATE_CONSTRUCTOR makes the allocation
- *   classes friends with your class, giving them access to private
- *   constructors and destructors.
- *
- *   |make check| does a source level check on the number of uses OffTheBooks,
- *   UnwantedForeground, js_malloc, js_free etc, to prevent regressions. If you
- *   really must add one, update Makefile.in, and run |make check|.
- *
- *   |make check| also statically prevents the use of vanilla new/new[].
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define JS_NEW_BODY(allocator, t, parms)                                       \
     void *memory = allocator(sizeof(t));                                       \
     return memory ? new(memory) t parms : NULL;
 
-/*
- * Given a class which should provide new_() methods, add
- * JS_DECLARE_NEW_METHODS (see JSContext for a usage example). This
- * adds new_()s with up to 12 parameters. Add more versions of new_ below if
- * you need more than 12 parameters.  
- *
- * Note: Do not add a ; at the end of a use of JS_DECLARE_NEW_METHODS,
- * or the build will break.
- */
+
+
+
+
+
+
+
+
+
 #define JS_DECLARE_NEW_METHODS(ALLOCATOR, QUALIFIERS)\
     template <class T>\
     QUALIFIERS T *new_() {\
@@ -375,8 +375,18 @@ JS_END_EXTERN_C
         JS_NEW_BODY(ALLOCATOR, T, (p1, p2, p3))\
     }\
 \
+    template <class T, class P1, class P2, class P3>\
+    QUALIFIERS T *new_(P1 &p1, const P2 &p2, const P3 &p3) {\
+        JS_NEW_BODY(ALLOCATOR, T, (p1, p2, p3))\
+    }\
+\
     template <class T, class P1, class P2, class P3, class P4>\
     QUALIFIERS T *new_(P1 p1, P2 p2, P3 p3, P4 p4) {\
+        JS_NEW_BODY(ALLOCATOR, T, (p1, p2, p3, p4))\
+    }\
+\
+    template <class T, class P1, class P2, class P3, class P4>\
+    QUALIFIERS T *new_(const P1 &p1, const P2 &p2, P3 &p3, const P4 &p4) {\
         JS_NEW_BODY(ALLOCATOR, T, (p1, p2, p3, p4))\
     }\
 \
@@ -459,14 +469,14 @@ JS_END_EXTERN_C
     }
 
 
-/*
- * In general, all allocations should go through a JSContext or JSRuntime, so
- * that the garbage collector knows how much memory has been allocated. In
- * cases where it is difficult to use a JSContext or JSRuntime, OffTheBooks can
- * be used, though this is undesirable.
- */
+
+
+
+
+
+
 namespace js {
-/* Import common mfbt declarations into "js". */
+
 using namespace mozilla;
 
 class OffTheBooks {
@@ -486,13 +496,13 @@ public:
     }
 };
 
-/*
- * We generally prefer deallocating using JSContext because it can happen in
- * the background. On slow paths, we may prefer foreground allocation.
- */
+
+
+
+
 class Foreground {
 public:
-    /* See parentheses comment above. */
+    
     static JS_ALWAYS_INLINE void free_(void* p) {
         ::js_free(p);
     }
@@ -503,12 +513,12 @@ public:
 class UnwantedForeground : public Foreground {
 };
 
-} /* namespace js */
+} 
 
-/*
- * Note lack of ; in JSRuntime below. This is intentional so "calling" this
- * looks "normal".
- */
+
+
+
+
 #define JS_DECLARE_ALLOCATION_FRIENDS_FOR_PRIVATE_CONSTRUCTOR \
     friend class js::OffTheBooks;\
     friend class js::Foreground;\
@@ -517,40 +527,40 @@ class UnwantedForeground : public Foreground {
     friend struct ::JSRuntime
 
 
-/**
- * The following classes are designed to cause assertions to detect
- * inadvertent use of guard objects as temporaries.  In other words,
- * when we have a guard object whose only purpose is its constructor and
- * destructor (and is never otherwise referenced), the intended use
- * might be:
- *     JSAutoTempValueRooter tvr(cx, 1, &val);
- * but is is easy to accidentally write:
- *     JSAutoTempValueRooter(cx, 1, &val);
- * which compiles just fine, but runs the destructor well before the
- * intended time.
- *
- * They work by adding (#ifdef DEBUG) an additional parameter to the
- * guard object's constructor, with a default value, so that users of
- * the guard object's API do not need to do anything.  The default value
- * of this parameter is a temporary object.  C++ (ISO/IEC 14882:1998),
- * section 12.2 [class.temporary], clauses 4 and 5 seem to assume a
- * guarantee that temporaries are destroyed in the reverse of their
- * construction order, but I actually can't find a statement that that
- * is true in the general case (beyond the two specific cases mentioned
- * there).  However, it seems to be true.
- *
- * These classes are intended to be used only via the macros immediately
- * below them:
- *   JS_DECL_USE_GUARD_OBJECT_NOTIFIER declares (ifdef DEBUG) a member
- *     variable, and should be put where a declaration of a private
- *     member variable would be placed.
- *   JS_GUARD_OBJECT_NOTIFIER_PARAM should be placed at the end of the
- *     parameters to each constructor of the guard object; it declares
- *     (ifdef DEBUG) an additional parameter.
- *   JS_GUARD_OBJECT_NOTIFIER_INIT is a statement that belongs in each
- *     constructor.  It uses the parameter declared by
- *     JS_GUARD_OBJECT_NOTIFIER_PARAM.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef DEBUG
 class JSGuardObjectNotifier
 {
@@ -576,20 +586,20 @@ public:
     JSGuardObjectNotificationReceiver() : mStatementDone(false) {}
 
     ~JSGuardObjectNotificationReceiver() {
-        /*
-         * Assert that the guard object was not used as a temporary.
-         * (Note that this assert might also fire if Init is not called
-         * because the guard object's implementation is not using the
-         * above macros correctly.)
-         */
+        
+
+
+
+
+
         JS_ASSERT(mStatementDone);
     }
 
     void Init(const JSGuardObjectNotifier &aNotifier) {
-        /*
-         * aNotifier is passed as a const reference so that we can pass a
-         * temporary, but we really intend it as non-const
-         */
+        
+
+
+
         const_cast<JSGuardObjectNotifier&>(aNotifier).
             setStatementDone(&mStatementDone);
     }
@@ -606,7 +616,7 @@ public:
 #define JS_GUARD_OBJECT_NOTIFIER_INIT \
     JS_BEGIN_MACRO _mCheckNotUsedAsTemporary.Init(_notifier); JS_END_MACRO
 
-#else /* defined(DEBUG) */
+#else 
 
 #define JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 #define JS_GUARD_OBJECT_NOTIFIER_PARAM
@@ -614,7 +624,7 @@ public:
 #define JS_GUARD_OBJECT_NOTIFIER_PARAM0
 #define JS_GUARD_OBJECT_NOTIFIER_INIT JS_BEGIN_MACRO JS_END_MACRO
 
-#endif /* !defined(DEBUG) */
+#endif 
 
 namespace js {
 
@@ -632,15 +642,15 @@ PodZero(T *t, size_t nelem)
     memset(t, 0, nelem * sizeof(T));
 }
 
-/*
- * Arrays implicitly convert to pointers to their first element, which is
- * dangerous when combined with the above PodZero definitions. Adding an
- * overload for arrays is ambiguous, so we need another identifier. The
- * ambiguous overload is left to catch mistaken uses of PodZero; if you get a
- * compile error involving PodZero and array types, use PodArrayZero instead.
- */
-template <class T, size_t N> static void PodZero(T (&)[N]);          /* undefined */
-template <class T, size_t N> static void PodZero(T (&)[N], size_t);  /* undefined */
+
+
+
+
+
+
+
+template <class T, size_t N> static void PodZero(T (&)[N]);          
+template <class T, size_t N> static void PodZero(T (&)[N], size_t);  
 
 template <class T, size_t N>
 JS_ALWAYS_INLINE static void
@@ -653,7 +663,7 @@ template <class T>
 JS_ALWAYS_INLINE static void
 PodCopy(T *dst, const T *src, size_t nelem)
 {
-    /* Cannot find portable word-sized abs(). */
+    
     JS_ASSERT_IF(dst >= src, size_t(dst - src) >= nelem);
     JS_ASSERT_IF(src >= dst, size_t(src - dst) >= nelem);
 
@@ -681,8 +691,8 @@ PodEqual(T *one, T *two, size_t len)
     return !memcmp(one, two, len * sizeof(T));
 }
 
-} /* namespace js */
+} 
 
-#endif /* defined(__cplusplus) */
+#endif 
 
-#endif /* jsutil_h___ */
+#endif 
