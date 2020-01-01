@@ -139,7 +139,7 @@ struct GSNCache {
 
     void purge();
 };
- 
+
 inline GSNCache *
 GetGSNCache(JSContext *cx);
 
@@ -213,7 +213,7 @@ struct ThreadData {
     ~ThreadData();
 
     bool init();
-    
+
     void mark(JSTracer *trc) {
         stackSpace.mark(trc);
     }
@@ -264,7 +264,7 @@ struct JSThread {
         suspendCount(0)
 # ifdef DEBUG
       , checkRequestDepth(0)
-# endif        
+# endif
     {
         JS_INIT_CLIST(&contextList);
     }
@@ -328,7 +328,8 @@ typedef js::Vector<JSCompartment *, 0, js::SystemAllocPolicy> CompartmentVector;
 
 }
 
-struct JSRuntime {
+struct JSRuntime
+{
     
     JSCompartment       *atomsCompartment;
 #ifdef JS_THREADSAFE
@@ -340,6 +341,20 @@ struct JSRuntime {
 
     
     JSRuntimeState      state;
+
+    
+#ifdef JS_THREADSAFE
+  public:
+    void clearOwnerThread();
+    void setOwnerThread();
+    JS_FRIEND_API(bool) onOwnerThread() const;
+  private:
+    void                *ownerThread_;
+  public:
+#else
+  public:
+    bool onOwnerThread() const { return true; }
+#endif
 
     
     JSContextCallback   cxCallback;
@@ -376,8 +391,31 @@ struct JSRuntime {
     uint32              protoHazardShape;
 
     
-    js::GCChunkSet      gcUserChunkSet;
-    js::GCChunkSet      gcSystemChunkSet;
+
+    
+
+
+
+
+    js::GCChunkSet      gcChunkSet;
+
+    
+
+
+
+
+
+
+    js::gc::Chunk       *gcSystemAvailableChunkListHead;
+    js::gc::Chunk       *gcUserAvailableChunkListHead;
+
+    
+
+
+
+
+    js::gc::Chunk       *gcEmptyChunkListHead;
+    size_t              gcEmptyChunkCount;
 
     js::RootedValueMap  gcRootsHash;
     js::GCLocks         gcLocksHash;
@@ -387,7 +425,6 @@ struct JSRuntime {
     size_t              gcLastBytes;
     size_t              gcMaxBytes;
     size_t              gcMaxMallocBytes;
-    size_t              gcChunksWaitingToExpire;
     uint32              gcEmptyArenaPoolLifespan;
     uint32              gcNumber;
     js::GCMarker        *gcMarkingTracer;
@@ -508,9 +545,7 @@ struct JSRuntime {
     JSDebugHooks        globalDebugHooks;
 
     
-
-
-    JSBool              debugMode;
+    bool                debugMode;
 
     
     JSBool              hadOutOfMemory;
@@ -524,7 +559,10 @@ struct JSRuntime {
 #endif
 
     
-    JSCList             trapList;
+
+
+
+    JSCList             debuggerList;
 
     
     void                *data;
@@ -553,10 +591,10 @@ struct JSRuntime {
 
 
 
-    PRLock              *debuggerLock;
 
     JSThread::Map       threads;
 #endif 
+
     uint32              debuggerMutations;
 
     
@@ -1344,11 +1382,11 @@ class AutoCheckRequestDepth {
 # define CHECK_REQUEST(cx)                                                    \
     JS_ASSERT((cx)->thread());                                                \
     JS_ASSERT((cx)->thread()->data.requestDepth || (cx)->thread() == (cx)->runtime->gcThread); \
+    JS_ASSERT(cx->runtime->onOwnerThread());                                  \
     AutoCheckRequestDepth _autoCheckRequestDepth(cx);
 
 #else
 # define CHECK_REQUEST(cx)          ((void) 0)
-# define CHECK_REQUEST_THREAD(cx)   ((void) 0)
 #endif
 
 static inline JSAtom **
