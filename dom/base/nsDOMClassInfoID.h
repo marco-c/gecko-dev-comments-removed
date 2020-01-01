@@ -1,12 +1,12 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/**
+ * This file defines enum values for all of the DOM objects which have
+ * an entry in nsDOMClassInfo.
+ */
 
 #ifndef nsDOMClassInfoID_h__
 #define nsDOMClassInfoID_h__
@@ -20,28 +20,28 @@ enum nsDOMClassInfoID {
 
 #include "nsDOMClassInfoClasses.h"
 
-  
+  // This one better be the last one in this list
   eDOMClassInfoIDCount
 };
 
 #undef DOMCI_CLASS
 
+/**
+ * nsIClassInfo helper macros
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * DOMCI_CASTABLE_INTERFACES contains the list of interfaces that we have a bit
+ * for in nsDOMClassInfo's mInterfacesBitmap. To use it you need to define
+ * DOMCI_CASTABLE_INTERFACE(interface, bit, extra) and then call
+ * DOMCI_CASTABLE_INTERFACES(extra). For every interface there will be one
+ * call to DOMCI_CASTABLE_INTERFACE with the bit that it corresponds to and
+ * the extra argument that was passed in to DOMCI_CASTABLE_INTERFACES.
+ *
+ * WARNING: Be very careful when adding interfaces to this list. Every object
+ *          that implements one of these interfaces must be directly castable
+ *          to that interface from the *canonical* nsISupports!
+ */
 #undef DOMCI_CASTABLE_INTERFACE
 #define DOMCI_CASTABLE_INTERFACES(_extra)                                     \
 DOMCI_CASTABLE_INTERFACE(nsINode, nsINode, 0, _extra)                         \
@@ -59,13 +59,24 @@ DOMCI_CASTABLE_INTERFACE(nsIDOMWebGLRenderingContext,                         \
                          nsIDOMWebGLRenderingContext, 10, _extra)             \
 DOMCI_CASTABLE_INTERFACE(nsIWebGLUniformLocation,                             \
                          nsIWebGLUniformLocation, 11, _extra)                 \
-DOMCI_CASTABLE_INTERFACE(nsIDOMImageData, nsIDOMImageData, 12, _extra)
+DOMCI_CASTABLE_INTERFACE(nsIDOMImageData, nsIDOMImageData, 12, _extra)        \
+DOMCI_CASTABLE_NAMESPACED_INTERFACE(mozilla, WebGLUniformLocation,            \
+                                    nsIWebGLUniformLocation, 13, _extra)
  
-
-
+// Make sure all classes mentioned in DOMCI_CASTABLE_INTERFACES
+// have been declared.
+#undef DOMCI_CASTABLE_NAMESPACED_INTERFACE
 #define DOMCI_CASTABLE_INTERFACE(_interface, _u1, _u2, _u3) class _interface;
+#define DOMCI_CASTABLE_NAMESPACED_INTERFACE(ns, className, interface, bit, _extra) \
+  namespace ns {                                                        \
+  class className;                                                      \
+  }
 DOMCI_CASTABLE_INTERFACES(unused)
 #undef DOMCI_CASTABLE_INTERFACE
+#undef DOMCI_CASTABLE_NAMESPACED_INTERFACE
+
+#define DOMCI_CASTABLE_NAMESPACED_INTERFACE(ns, className, interface, bit, _extra) \
+  DOMCI_CASTABLE_INTERFACE(ns::className, interface, bit, _extra)
 
 #ifdef _IMPL_NS_LAYOUT
 
@@ -76,28 +87,28 @@ DOMCI_CASTABLE_INTERFACES(unused)
 
 #undef DOMCI_CLASS
 
-
-
-
-
-
+/**
+ * Provide a general "does class C implement interface I" predicate.
+ * This is not as sophisticated as e.g. boost's is_base_of template,
+ * but it does the job adequately for our purposes.
+ */
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 2) || \
     _MSC_FULL_VER >= 140050215
 
-
+/* Use a compiler intrinsic if one is available. */
 
 #define DOMCI_CASTABLE_TO(_interface, _class) __is_base_of(_interface, _class)
 
 #else
 
-
-
-
-
-
-
-
+/* The generic version of this predicate relies on the overload resolution
+ * rules.  If |_class| inherits from |_interface|, the |_interface*|
+ * overload of DOMCI_CastableTo<_interface>::p() will be chosen, otherwise
+ * the |void*| overload will be chosen.  There is no definition of these
+ * functions; we determine which overload was selected by inspecting the
+ * size of the return type.
+ */
 
 template <typename Interface> struct DOMCI_CastableTo {
   struct false_type { int x[1]; };
@@ -112,9 +123,9 @@ template <typename Interface> struct DOMCI_CastableTo {
 
 #endif
 
-
-
-
+/**
+ * Here we calculate the bitmap for a given class.
+ */
 #define DOMCI_CASTABLE_INTERFACE(_interface, _base, _bit, _class)             \
   (DOMCI_CASTABLE_TO(_interface, _class) ? 1 << _bit : 0) +
 
@@ -152,8 +163,8 @@ NS_GetDOMClassInfoInstance(nsDOMClassInfoID aID);
 
 #else
 
+// See nsIDOMClassInfo.h
 
+#endif // _IMPL_NS_LAYOUT
 
-#endif 
-
-#endif 
+#endif // nsDOMClassInfoID_h__
