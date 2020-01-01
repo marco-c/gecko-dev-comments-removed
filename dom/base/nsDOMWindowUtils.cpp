@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsIDocShell.h"
 #include "nsPresContext.h"
@@ -325,14 +325,14 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
   nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
   if (rootScrollFrame) {
     if (content == rootScrollFrame->GetContent()) {
-      // We are setting a root displayport for a document.
-      // The pres shell needs a special flag set.
+      
+      
       presShell->SetIgnoreViewportScrolling(true);
 
-      // The root document currently has a widget, but we might end up
-      // painting content inside the displayport but outside the widget
-      // bounds. This ensures the document's view honors invalidations
-      // within the displayport.
+      
+      
+      
+      
       nsPresContext* presContext = GetPresContext();
       if (presContext && presContext->IsRoot()) {
         nsIFrame* rootFrame = presShell->GetRootFrame();
@@ -356,7 +356,7 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
         usingDisplayport ? rootDisplayport : rootFrame->GetVisualOverflowRect(),
         nsIFrame::INVALIDATE_NO_THEBES_LAYERS);
 
-      // Send empty paint transaction in order to release retained layers
+      
       if (displayport.IsEmpty()) {
         nsCOMPtr<nsIWidget> widget = GetWidget();
         if (widget) {
@@ -428,7 +428,7 @@ nsDOMWindowUtils::SendMouseEventCommon(const nsAString& aType,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   if (!widget)
@@ -510,7 +510,7 @@ nsDOMWindowUtils::SendMouseScrollEvent(const nsAString& aType,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   if (!widget)
@@ -571,7 +571,7 @@ nsDOMWindowUtils::SendTouchEvent(const nsAString& aType,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   if (!widget) {
@@ -637,7 +637,7 @@ nsDOMWindowUtils::SendKeyEvent(const nsAString& aType,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget)
     return NS_ERROR_FAILURE;
@@ -687,7 +687,7 @@ nsDOMWindowUtils::SendNativeKeyEvent(PRInt32 aNativeKeyboardLayout,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget)
     return NS_ERROR_FAILURE;
@@ -707,7 +707,7 @@ nsDOMWindowUtils::SendNativeMouseEvent(PRInt32 aScreenX,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidgetForElement(aElement);
   if (!widget)
     return NS_ERROR_FAILURE;
@@ -723,7 +723,7 @@ nsDOMWindowUtils::ActivateNativeMenuItemAt(const nsAString& indexString)
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget)
     return NS_ERROR_FAILURE;
@@ -738,7 +738,7 @@ nsDOMWindowUtils::ForceUpdateNativeMenuAt(const nsAString& indexString)
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget)
     return NS_ERROR_FAILURE;
@@ -810,14 +810,14 @@ nsDOMWindowUtils::GarbageCollect(nsICycleCollectorListener *aListener,
                                  PRInt32 aExtraForgetSkippableCalls)
 {
   SAMPLE_LABEL("GC", "GarbageCollect");
-  // Always permit this in debug builds.
+  
 #ifndef DEBUG
   if (!IsUniversalXPConnectCapable()) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 #endif
 
-  nsJSContext::GarbageCollectNow(js::gcreason::DOM_UTILS);
+  nsJSContext::GarbageCollectNow(js::gcreason::DOM_UTILS, nsGCNormal, true);
   nsJSContext::CycleCollectNow(aListener, aExtraForgetSkippableCalls);
 
   return NS_OK;
@@ -827,7 +827,7 @@ NS_IMETHODIMP
 nsDOMWindowUtils::CycleCollect(nsICycleCollectorListener *aListener,
                                PRInt32 aExtraForgetSkippableCalls)
 {
-  // Always permit this in debug builds.
+  
 #ifndef DEBUG
   if (!IsUniversalXPConnectCapable()) {
     return NS_ERROR_DOM_SECURITY_ERR;
@@ -850,7 +850,7 @@ nsDOMWindowUtils::SendSimpleGestureEvent(const nsAString& aType,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   if (!widget)
@@ -977,7 +977,7 @@ nsDOMWindowUtils::CompareCanvases(nsIDOMHTMLCanvasElement *aCanvas1,
   gfxIntSize size = img1->GetSize();
   PRUint32 stride = img1->Stride();
 
-  // we can optimize for the common all-pass case
+  
   if (stride == (PRUint32) size.width * 4) {
     v = memcmp(img1->Data(), img2->Data(), size.width * size.height * 4);
     if (v == 0) {
@@ -1112,7 +1112,7 @@ nsDOMWindowUtils::GetIMEIsOpen(bool *aState)
   if (!widget)
     return NS_ERROR_FAILURE;
 
-  // Open state should not be available when IME is not enabled.
+  
   InputContext context = widget->GetInputContext();
   if (context.mIMEState.mEnabled != IMEState::ENABLED) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -1241,7 +1241,7 @@ nsDOMWindowUtils::SendCompositionEvent(const nsAString& aType,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -1308,7 +1308,7 @@ nsDOMWindowUtils::SendTextEvent(const nsAString& aCompositionString,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -1372,7 +1372,7 @@ nsDOMWindowUtils::SendQueryContentEvent(PRUint32 aType,
   nsPresContext* presContext = presShell->GetPresContext();
   NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -1391,7 +1391,7 @@ nsDOMWindowUtils::SendQueryContentEvent(PRUint32 aType,
   nsIntPoint pt(aX, aY);
 
   if (aType == QUERY_CHARACTER_AT_POINT) {
-    // Looking for the widget at the point.
+    
     nsQueryContentEvent dummyEvent(true, NS_QUERY_CONTENT_STATE, widget);
     InitEvent(dummyEvent, &pt);
     nsIFrame* popupFrame =
@@ -1402,12 +1402,12 @@ nsDOMWindowUtils::SendQueryContentEvent(PRUint32 aType,
     NS_ENSURE_SUCCESS(rv, rv);
     widgetBounds.MoveTo(0, 0);
 
-    // There is no popup frame at the point and the point isn't in our widget,
-    // we cannot process this request.
+    
+    
     NS_ENSURE_TRUE(popupFrame || widgetBounds.Contains(pt),
                    NS_ERROR_FAILURE);
 
-    // Fire the event on the widget at the point
+    
     if (popupFrame) {
       targetWidget = popupFrame->GetNearestWidget();
     }
@@ -1453,7 +1453,7 @@ nsDOMWindowUtils::SendSelectionSetEvent(PRUint32 aOffset,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -1482,7 +1482,7 @@ nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget)
     return NS_ERROR_FAILURE;
@@ -1521,7 +1521,7 @@ nsDOMWindowUtils::GetClassName(const JS::Value& aObject, JSContext* aCx, char** 
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // Our argument must be a non-null object.
+  
   if (JSVAL_IS_PRIMITIVE(aObject)) {
     return NS_ERROR_XPC_BAD_CONVERT_JS;
   }
@@ -1596,12 +1596,12 @@ nsDOMWindowUtils::GetParent(const JS::Value& aObject,
                             JSContext* aCx,
                             JS::Value* aParent)
 {
-  // This wasn't privileged in the past, but better to expose less than more.
+  
   if (!IsUniversalXPConnectCapable()) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // First argument must be an object.
+  
   if (JSVAL_IS_PRIMITIVE(aObject)) {
     return NS_ERROR_XPC_BAD_CONVERT_JS;
   }
@@ -1609,7 +1609,7 @@ nsDOMWindowUtils::GetParent(const JS::Value& aObject,
   JSObject* parent = JS_GetParent(aCx, JSVAL_TO_OBJECT(aObject));
   *aParent = OBJECT_TO_JSVAL(parent);
 
-  // Outerize if necessary.
+  
   if (parent) {
     if (JSObjectOp outerize = js::GetObjectClass(parent)->ext.outerObject) {
       *aParent = OBJECT_TO_JSVAL(outerize(aCx, parent));
@@ -1719,7 +1719,7 @@ nsDOMWindowUtils::StopFrameTimeRecording(PRUint32 *frameCount NS_OUTPARAM, float
     if (!*frames)
       return NS_ERROR_OUT_OF_MEMORY;
 
-    /* copy over the frame times into the array we just allocated */
+    
     for (PRUint32 i = 0; i < *frameCount; i++) {
       (*frames)[i] = frameTimes[i];
     }
@@ -1740,7 +1740,7 @@ ComputeAnimationValue(nsCSSProperty aProperty,
     return false;
   }
 
-  // This matches TransExtractComputedValue in nsTransitionManager.cpp.
+  
   if (aProperty == eCSSProperty_visibility) {
     NS_ABORT_IF_FALSE(aOutput.GetUnit() == nsStyleAnimation::eUnit_Enumerated,
                       "unexpected unit");
@@ -1790,8 +1790,8 @@ nsDOMWindowUtils::ComputeAnimationDistance(nsIDOMElement* aElement,
   nsCOMPtr<nsIContent> content = do_QueryInterface(aElement, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Convert direction-dependent properties as appropriate, e.g.,
-  // border-left to border-left-value.
+  
+  
   nsCSSProperty property = nsCSSProps::LookupProperty(aProperty);
   if (property != eCSSProperty_UNKNOWN && nsCSSProps::IsShorthand(property)) {
     nsCSSProperty subprop0 = *nsCSSProps::SubpropertyEntryFor(property);
@@ -1827,21 +1827,21 @@ nsDOMWindowUtils::RenderDocument(const nsRect& aRect,
                                  nscolor aBackgroundColor,
                                  gfxContext* aThebesContext)
 {
-    // Get DOM Document
+    
     nsresult rv;
     nsCOMPtr<nsIDOMDocument> ddoc;
     rv = mWindow->GetDocument(getter_AddRefs(ddoc));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Get Document
+    
     nsCOMPtr<nsIDocument> doc = do_QueryInterface(ddoc, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Get Primary Shell
+    
     nsCOMPtr<nsIPresShell> presShell = doc->GetShell();
     NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
-    // Render Document
+    
     return presShell->RenderDocument(aRect, aFlags, aBackgroundColor, aThebesContext);
 }
 
@@ -1871,7 +1871,7 @@ nsDOMWindowUtils::GetCursorType(PRInt16 *aCursor)
   if (!widget)
     return NS_ERROR_FAILURE;
 
-  // fetch cursor value from window's widget
+  
   *aCursor = widget->GetCursor();
 
   return NS_OK;
@@ -1880,8 +1880,8 @@ nsDOMWindowUtils::GetCursorType(PRInt16 *aCursor)
 NS_IMETHODIMP
 nsDOMWindowUtils::GoOnline()
 {
-  // This is only allowed from about:neterror, which is unprivileged, so it
-  // can't access the io-service itself.
+  
+  
   NS_ENSURE_TRUE(mWindow, NS_ERROR_FAILURE);
   nsCOMPtr<nsIDocument> doc(do_QueryInterface(mWindow->GetExtantDocument()));
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
@@ -1895,7 +1895,7 @@ nsDOMWindowUtils::GoOnline()
 
   nsCOMPtr<nsIIOService> ios = do_GetService("@mozilla.org/network/io-service;1");
   if (ios) {
-    ios->SetOffline(false); // !offline
+    ios->SetOffline(false); 
     return NS_OK;
   }
   return NS_ERROR_NOT_AVAILABLE;
@@ -2076,7 +2076,7 @@ nsDOMWindowUtils::GetFileReferences(const nsAString& aDatabaseName,
         fileInfo->GetReferences(aRefCnt, aDBRefCnt, aSliceRefCnt);
 
         if (*aRefCnt != -1) {
-          // We added an extra temp ref, so account for that accordingly.
+          
           (*aRefCnt)--;
         }
 
