@@ -1,43 +1,43 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=79:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Communicator client code, released
- * March 31, 1998.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   David Anderson <dvander@alliedmods.net>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "Ion.h"
 #include "IonFrames.h"
@@ -161,8 +161,8 @@ IonFrameIterator::checkInvalidation(IonScript **ionScriptOut) const
 {
     uint8 *returnAddr = returnAddressToFp();
     JSScript *script = this->script();
-    // N.B. the current IonScript is not the same as the frame's
-    // IonScript if the frame has since been invalidated.
+    
+    
     IonScript *currentIonScript = script->ion;
     bool invalidated = !script->hasIonScript() ||
         !currentIonScript->containsReturnAddress(returnAddr);
@@ -219,9 +219,9 @@ IonFrameIterator::prevFp() const
     JS_ASSERT(type_ != IonFrame_Entry);
 
     size_t currentSize = SizeOfFramePrefix(type_);
-    // This quick fix must be removed as soon as bug 717297 land.  This is
-    // needed because the descriptor size of JS-to-JS frame which is just after
-    // a Rectifier frame should not change. (cf EnsureExitFrame function)
+    
+    
+    
     if (prevType() == IonFrame_Bailed_Rectifier) {
         JS_ASSERT(type_ == IonFrame_Exit);
         currentSize = SizeOfFramePrefix(IonFrame_JS);
@@ -238,15 +238,15 @@ IonFrameIterator::operator++()
     frameSize_ = prevFrameLocalSize();
     cachedSafepointIndex_ = NULL;
 
-    // If the next frame is the entry frame, just exit. Don't update current_,
-    // since the entry and first frames overlap.
+    
+    
     if (current()->prevType() == IonFrame_Entry) {
         type_ = IonFrame_Entry;
         return *this;
     }
 
-    // Note: prevFp() needs the current type, so set it after computing the
-    // next frame.
+    
+    
     uint8 *prev = prevFp();
     type_ = current()->prevType();
     returnAddressToFp_ = current()->returnAddress();
@@ -262,10 +262,10 @@ IonFrameIterator::machineState() const
     GeneralRegisterSet gcRegs = reader.gcSpills();
     GeneralRegisterSet allRegs = reader.allSpills();
 
-    // Get the base address to where safepoint registers are spilled.
-    // Out-of-line calls do not unwind the extra padding space used to
-    // aggregate bailout tables, so we use frameSize instead of frameLocals,
-    // which would only account for local stack slots.
+    
+    
+    
+    
     uintptr_t *spillBase = reinterpret_cast<uintptr_t *>(fp()) + ionScript()->frameSize();
 
     MachineState machine;
@@ -284,7 +284,7 @@ CloseLiveIterator(JSContext *cx, const InlineFrameIterator &frame, uint32 localS
 {
     SnapshotIterator si = frame.snapshotIterator();
 
-    // Skip stack slots until we reach the iterator object.
+    
     uint32 base = CountArgSlots(frame.maybeCallee()) + frame.script()->nfixed;
     uint32 skipSlots = base + localSlot - 1;
 
@@ -339,8 +339,8 @@ ion::HandleException(ResumeFromException *rfe)
     IonFrameIterator iter(cx->runtime->ionTop);
     while (!iter.isEntry()) {
         if (iter.isScripted()) {
-            // Search each inlined frame for live iterator objects, and close
-            // them.
+            
+            
             InlineFrameIterator frames(&iter);
             for (;;) {
                 CloseLiveIterators(cx, frames);
@@ -357,10 +357,10 @@ ion::HandleException(ResumeFromException *rfe)
         ++iter;
     }
 
-    // Clear any Ion return override that's been set.
-    // This may happen if a callVM function causes an invalidation (setting the
-    // override), and then fails, bypassing the bailout handlers that would
-    // otherwise clear the return override.
+    
+    
+    
+    
     if (cx->runtime->hasIonReturnOverride())
         cx->runtime->takeIonReturnOverride();
 
@@ -426,14 +426,14 @@ MarkIonJSFrame(JSTracer *trc, const IonFrameIterator &frame)
 
     IonScript *ionScript;
     if (frame.checkInvalidation(&ionScript)) {
-        // This frame has been invalidated, meaning that its IonScript is no
-        // longer reachable through the callee token (JSFunction/JSScript->ion
-        // is now NULL or recompiled). Manually trace it here.
+        
+        
+        
         IonScript::Trace(trc, ionScript);
     } else if (CalleeTokenIsFunction(layout->calleeToken())) {
         JSFunction *fun = CalleeTokenToFunction(layout->calleeToken());
 
-        // Trace function arguments.
+        
         Value *argv = layout->argv();
         for (size_t i = 0; i < fun->nargs; i++)
             gc::MarkValueRoot(trc, &argv[i], "ion-argv");
@@ -447,12 +447,12 @@ MarkIonJSFrame(JSTracer *trc, const IonFrameIterator &frame)
 
     SafepointReader safepoint(ionScript, si);
 
-    // Not yet implemented.
+    
     JS_ASSERT(safepoint.gcSpills().empty());
     JS_ASSERT(safepoint.allSpills().empty());
 
-    // Scan through slots which contain pointers (or on punboxing systems,
-    // actual values).
+    
+    
     uint32 slot;
     while (safepoint.getGcSlot(&slot)) {
         uintptr_t *ref = layout->slotRef(slot);
@@ -466,20 +466,22 @@ MarkIonJSFrame(JSTracer *trc, const IonFrameIterator &frame)
 }
 
 static void
-MarkIonActivation(JSTracer *trc, uint8 *top)
+MarkIonActivation(JSTracer *trc, uint8 *top, IonActivation *activation)
 {
+    IonCode **tmp;
     for (IonFrameIterator frames(top); !frames.done(); ++frames) {
         switch (frames.type()) {
           case IonFrame_Exit:
-            // The exit frame gets ignored.
+            
+            tmp = frames.exitFrame()->ionCodePointer();
+            if (*tmp != NULL)
+                MarkIonCodeRoot(trc, tmp, "Exit Code");
             break;
           case IonFrame_JS:
             MarkIonJSFrame(trc, frames);
             break;
           case IonFrame_Rectifier:
-            // We don't bother marking rectifier frames; its data is duplicated
-            // in the callee, and upon returning from the call, the rectifier's
-            // local storage is immediately removed.
+            MarkIonCodeRoot(trc, activation->compartment()->ionCompartment()->getArgumentsRectifierAddr(), "Arguments Rectifier");
             break;
           default:
             JS_NOT_REACHED("unexpected frame type");
@@ -492,14 +494,14 @@ void
 ion::MarkIonActivations(JSRuntime *rt, JSTracer *trc)
 {
     for (IonActivationIterator activations(rt); activations.more(); ++activations)
-        MarkIonActivation(trc, activations.top());
+        MarkIonActivation(trc, activations.top(), activations.activation());
 }
 
 void
 ion::GetPcScript(JSContext *cx, JSScript **scriptRes, jsbytecode **pcRes)
 {
 #ifdef DEBUG
-    // Suppress bailout spew from SnapshotReader::readFrameHeader().
+    
     bool enableBailoutSpew = false;
     if (IonSpewEnabled(IonSpew_Bailouts)) {
         enableBailoutSpew = true;
@@ -510,12 +512,12 @@ ion::GetPcScript(JSContext *cx, JSScript **scriptRes, jsbytecode **pcRes)
     JS_ASSERT(cx->fp()->runningInIon());
     IonSpew(IonSpew_Snapshots, "Recover PC & Script from the last frame.");
 
-    // Recover the innermost inlined frame.
+    
     IonFrameIterator it(cx->runtime->ionTop);
     ++it;
     InlineFrameIterator ifi(&it);
 
-    // Set the result.
+    
     *scriptRes = ifi.script();
     if (pcRes)
         *pcRes = ifi.pc();
@@ -535,9 +537,9 @@ OsiIndex::fixUpOffset(MacroAssembler &masm)
 uint32
 OsiIndex::returnPointDisplacement() const
 {
-    // In general, pointer arithmetic on code is bad, but in this case,
-    // getting the return address from a call instruction, stepping over pools
-    // would be wrong.
+    
+    
+    
     return callPointDisplacement_ + Assembler::patchWrite_NearCallSize();
 }
 
@@ -715,25 +717,25 @@ InlineFrameIterator::findNextFrame()
 
     si_ = start_;
 
-    // Read the initial frame.
+    
     callee_ = frame_->maybeCallee();
     script_ = frame_->script();
     pc_ = script_->code + si_.pcOffset();
 
-    // This unfortunately is O(n*m), because we must skip over outer frames
-    // before reading inner ones.
+    
+    
     unsigned remaining = start_.frameCount() - framesRead_ - 1;
     for (unsigned i = 0; i < remaining; i++) {
         JS_ASSERT(js_CodeSpec[*pc_].format & JOF_INVOKE);
 
-        // Skip over non-argument slots, as well as |this|.
+        
         unsigned skipCount = (si_.slots() - 1) - GET_ARGC(pc_) - 1;
         for (unsigned j = 0; j < skipCount; j++)
             si_.skip();
 
         Value funval = si_.read();
 
-        // Skip extra slots.
+        
         while (si_.moreSlots())
             si_.skip();
 
@@ -778,12 +780,12 @@ MachineState::FromBailout(uintptr_t regs[Registers::Total],
 bool
 InlineFrameIterator::isConstructing() const
 {
-    // Skip the current frame and look at the caller's.
+    
     if (more()) {
         InlineFrameIterator parent(*this);
         ++parent;
 
-        // In the case of a JS frame, look up the pc from the snapshot.
+        
         JS_ASSERT(js_CodeSpec[*parent.pc()].format & JOF_INVOKE);
 
         return (JSOp)*parent.pc() == JSOP_NEW;
@@ -797,13 +799,13 @@ IonFrameIterator::isConstructing() const
 {
     IonFrameIterator parent(*this);
 
-    // Skip the current frame and look at the caller's.
+    
     do {
         ++parent;
     } while (!parent.done() && !parent.isScripted());
 
     if (parent.isScripted()) {
-        // In the case of a JS frame, look up the pc from the snapshot.
+        
         InlineFrameIterator inlinedParent(&parent);
         JS_ASSERT(js_CodeSpec[*inlinedParent.pc()].format & JOF_INVOKE);
 
@@ -817,14 +819,14 @@ IonFrameIterator::isConstructing() const
 JSObject *
 InlineFrameIterator::thisObject() const
 {
-    // JS_ASSERT(isConstructing(...));
+    
     SnapshotIterator s(si_);
 
-    // scopeChain
+    
     s.skip();
 
-    // In strict modes, |this| may not be an object and thus may not be
-    // readable which can either segv in read or trigger the assertion.
+    
+    
     Value v = s.read();
     JS_ASSERT(v.isObject());
     return &v.toObject();
@@ -833,12 +835,12 @@ InlineFrameIterator::thisObject() const
 unsigned
 InlineFrameIterator::numActualArgs() const
 {
-    // Skip the current frame and look at the caller's.
+    
     if (more()) {
         InlineFrameIterator parent(*this);
         ++parent;
 
-        // In the case of a JS frame, look up the pc from the snapshot.
+        
         JS_ASSERT(js_CodeSpec[*parent.pc()].format & JOF_INVOKE);
 
         return GET_ARGC(parent.pc());
@@ -852,13 +854,13 @@ IonFrameIterator::numActualArgs() const
 {
     IonFrameIterator parent(*this);
 
-    // Skip the current frame and look at the caller's.
+    
     do {
         ++parent;
     } while (!parent.done() && !parent.isScripted());
 
     if (parent.isScripted()) {
-        // In the case of a JS frame, look up the pc from the snapshot.
+        
         InlineFrameIterator inlinedParent(&parent);
         JS_ASSERT(js_CodeSpec[*inlinedParent.pc()].format & JOF_INVOKE);
 
