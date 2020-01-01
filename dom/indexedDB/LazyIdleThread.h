@@ -72,11 +72,17 @@ public:
   NS_DECL_NSITHREADOBSERVER
   NS_DECL_NSIOBSERVER
 
+  enum ShutdownMethod {
+    AutomaticShutdown = 0,
+    ManualShutdown
+  };
+
   
 
 
 
   LazyIdleThread(PRUint32 aIdleTimeoutMS,
+                 ShutdownMethod aShutdownMethod = AutomaticShutdown,
                  nsIObserver* aIdleObserver = nsnull);
 
   
@@ -190,6 +196,13 @@ private:
 
 
   PRUint32 mIdleNotificationCount;
+
+  
+
+
+
+
+  ShutdownMethod mShutdownMethod;
 
   
 
