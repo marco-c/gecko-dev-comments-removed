@@ -1,46 +1,46 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla Mobile Browser.
- *
- * The Initial Developer of the Original Code is
- * Mozilla Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2008
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Mark Finkle <mfinkle@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
-/* global skin ------------------------------------------------------------- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @import url(chrome://global/skin/);
 
-/* general stuff ------------------------------------------------------------ */
 
-/* Override any OS inverse themes */
+
+
 richlistbox,
 textbox {
   color: black;
@@ -51,13 +51,18 @@ textbox[isempty="true"] {
   color: gray;
 }
 
-/* panels ------------------------------------------------------------------ */
+
 .panel-dark {
   color: white;
   background-color: #36373b;
 }
 
-/* dialog popups ----------------------------------------------------------- */
+
+.sidebar-spacer {
+  background-color: #36373b;
+}
+
+
 .dialog-dark {
   color: #fff;
   background-color: #36373b;
@@ -66,7 +71,7 @@ textbox[isempty="true"] {
   -moz-box-shadow: black 0 0.25mm 0.25mm;
 }
 
-/* buttons ----------------------------------------------------------------- */
+
 .button-text,
 .toolbarbutton-text {
   font-weight: bold !important;
@@ -74,8 +79,8 @@ textbox[isempty="true"] {
 }
 
 button {
-  min-width: 6mm !important; /* button size */
-  min-height: 6mm !important; /* button size */
+  min-width: 6mm !important; 
+  min-height: 6mm !important; 
   color: #000;
   padding: 0.25mm 0.5mm;
   -moz-appearance: none !important;
@@ -85,7 +90,7 @@ button[disabled="true"] {
   color: #aaa !important;
 }
 
-/* hi-res screens */
+
 @media all and (min-device-width: 401px) {
   button {
     border-width: 8px !important;
@@ -98,7 +103,7 @@ button[disabled="true"] {
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   button {
     border-width: 4px !important;
@@ -111,11 +116,11 @@ button[disabled="true"] {
   }
 }
 
-/* dark buttons ------------------------------------------------------------ */
-/*
-  we set notification buttons here as well, since the style can't be set in
-  scoped CSS file, like notification.css, when the buttons are added later
-*/
+
+
+
+
+
 
 button.button-dark,
 notification button {
@@ -127,7 +132,7 @@ button.button-dark[disabled="true"] {
   color: #ddd !important;
 }
 
-/* high-res screens */
+
 @media all and (min-device-width: 401px) {
   button.button-dark,
   notification button {
@@ -141,7 +146,7 @@ button.button-dark[disabled="true"] {
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   button.button-dark,
   notification button {
@@ -155,7 +160,7 @@ button.button-dark[disabled="true"] {
   }
 }
 
-/* toolbar buttons --------------------------------------------------------- */
+
 toolbarbutton {
   -moz-appearance: none !important;
   margin: 0;
@@ -178,23 +183,23 @@ toolbarbutton[open="true"] {
   border-color: transparent;
 }
 
-/* high-res screens */
+
 @media all and (min-device-width: 401px) {
   toolbarbutton {
-    min-width: 64px !important; /* primary button size (match image pixels)*/
-    min-height: 64px !important; /* primary button size (match image pixels) */
+    min-width: 64px !important; 
+    min-height: 64px !important; 
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   toolbarbutton {
-    min-width: 36px !important; /* primary button size (match image pixels) */
-    min-height: 36px !important; /* primary button size (match image pixels) */
+    min-width: 36px !important; 
+    min-height: 36px !important; 
   }
 }
 
-/* dark buttons ------------------------------------------------------------ */
+
 toolbarbutton.button-dark {
   color: #fff;
   padding: 0.25mm 0.5mm;
@@ -205,13 +210,13 @@ toolbarbutton.button-dark[disabled="true"] {
 }
 
 toolbarbutton.button-dark[type="checkbox"][checked="true"] {
-  /* checked overrides */
+  
   color: #fff !important;
   background: none !important;
   padding: 0.25mm 0.5mm !important;
 }
 
-/* high-res screens */
+
 @media all and (min-device-width: 401px) {
   toolbarbutton.button-dark {
     border-width: 10px;
@@ -228,7 +233,7 @@ toolbarbutton.button-dark[type="checkbox"][checked="true"] {
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   toolbarbutton.button-dark {
     border-width: 6px;
@@ -245,14 +250,14 @@ toolbarbutton.button-dark[type="checkbox"][checked="true"] {
   }
 }
 
-/* image buttons ----------------------------------------------------------- */
+
 .button-image {
   padding: 0 !important;
   background: #36373b !important;
   border: none !important;
 }
 
-/* radio buttons ----------------------------------------------------------- */
+
 radiogroup {
   -moz-box-orient: horizontal;
 }
@@ -264,8 +269,8 @@ radiogroup {
 
 radio {
   color: #36373b;
-  min-width: 6mm !important; /* button size */
-  min-height: 6mm !important; /* button size */
+  min-width: 6mm !important; 
+  min-height: 6mm !important; 
   padding: 0.5mm 1.1mm 0.1mm 0.5mm !important;
   margin: 0;
   -moz-box-align: center;
@@ -280,7 +285,7 @@ radio[selected] {
   color: #000;
 }
 
-/* high-res screens */
+
 @media all and (min-device-width: 401px) {
   radio {
     border-width: 8px;
@@ -308,7 +313,7 @@ radio[selected] {
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   radio {
     border-width: 4px;
@@ -336,9 +341,9 @@ radio[selected] {
   }
 }
 
-/* checkbox radios --------------------------------------------------------- */
+
 checkbox {
-  margin: 1px 5px 2px 5px; /* match platform style for buttons */
+  margin: 1px 5px 2px 5px; 
 }
 
 radio.checkbox-radio-on[selected] {
@@ -350,7 +355,7 @@ radio.checkbox-radio-off:not([selected]) .radio-label-box {
   visibility: hidden;
 }
 
-/* high-res screens */
+
 @media all and (min-device-width: 401px) {
   radio.checkbox-radio-on {
     -moz-border-image: url("chrome://browser/skin/images/toggleon-inactive-64.png") 8 repeat repeat;
@@ -369,7 +374,7 @@ radio.checkbox-radio-off:not([selected]) .radio-label-box {
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   radio.checkbox-radio-on {
     -moz-border-image: url("chrome://browser/skin/images/toggleon-inactive-36.png") 4 repeat repeat;
@@ -388,12 +393,12 @@ radio.checkbox-radio-off:not([selected]) .radio-label-box {
   }
 }
 
-/* dark radios ------------------------------------------------------------- */
+
 .toggle-dark radio {
   color: #fff;
 }
 
-/* high-res screens */
+
 @media all and (min-device-width: 401px) {
   .toggle-dark radio {
     -moz-border-image: url("chrome://browser/skin/images/toggledarkmiddle-inactive-64.png") 8 repeat repeat;
@@ -423,7 +428,7 @@ radio.checkbox-radio-off:not([selected]) .radio-label-box {
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   .toggle-dark radio {
     -moz-border-image: url("chrome://browser/skin/images/toggledarkmiddle-inactive-36.png") 4 repeat repeat;
@@ -453,13 +458,13 @@ radio.checkbox-radio-off:not([selected]) .radio-label-box {
   }
 }
 
-/* richlistbox ------------------------------------------------------------- */
+
 richlistbox {
   margin: 0;
 }
 
 richlistitem {
-  min-height: 7.2mm; /* row size */
+  min-height: 7.2mm; 
   padding: 5px;
   border-bottom: 1px solid rgb(207,207,207);
 }
@@ -515,7 +520,7 @@ richlistitem[typeName="message"] {
   border-bottom: 0px;
 }
 
-/* colorpicker ------------------------------------------------------------- */
+
 colorpicker > panel {
   background-color: #36373b;
 }
@@ -524,9 +529,9 @@ colorpicker > vbox {
   background-color: #36373b;
 }
 
-/* textbox ----------------------------------------------------------------- */
 
-/* high-res screens */
+
+
 @media all and (min-device-width: 401px) {
   .textbox-search-icon {
     list-style-image: url("chrome://browser/skin/images/search-glass-30.png");
@@ -537,7 +542,7 @@ colorpicker > vbox {
   }
 }
 
-/* low-res screens */
+
 @media all and (max-device-width: 400px) {
   .textbox-search-icon {
     list-style-image: url("chrome://browser/skin/images/search-glass-16.png");
