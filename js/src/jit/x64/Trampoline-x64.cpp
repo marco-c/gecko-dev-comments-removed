@@ -4,8 +4,6 @@
 
 
 
-#include "jscompartment.h"
-
 #include "assembler/assembler/MacroAssembler.h"
 #include "jit/Bailouts.h"
 #include "jit/ExecutionModeInlines.h"

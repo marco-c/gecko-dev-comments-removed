@@ -10,10 +10,9 @@
 
 
 
+
 #include "jsobj.h"
 #include "jsscript.h"
-
-#include "gc/Barrier.h"
 
 namespace js {
 class FunctionExtended;
