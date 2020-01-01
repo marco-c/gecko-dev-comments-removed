@@ -4842,7 +4842,6 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
           if (hilightStart < hilightEnd) {
             
             nsPoint startPoint, endPoint;
-            nsPresContext* presContext = GetPresContext();
             frame->GetPointFromOffset(hilightStart, &startPoint);
             frame->GetPointFromOffset(hilightEnd, &endPoint);
 
