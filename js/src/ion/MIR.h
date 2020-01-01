@@ -349,6 +349,11 @@ class MDefinition : public MNode
         return trackedPc_;
     }
 
+    
+    
+    
+    
+    
     Range *range() const {
         return range_;
     }
@@ -371,8 +376,11 @@ class MDefinition : public MNode
     bool earlyAbortCheck();
 
     
-    
     virtual void computeRange() {
+    }
+
+    
+    virtual void collectRangeInfo() {
     }
 
     MNode::Kind kind() const {
@@ -3473,10 +3481,12 @@ class MDiv : public MBinaryArithInstruction
 class MMod : public MBinaryArithInstruction
 {
     bool unsigned_;
+    bool canBeNegativeDividend_;
 
     MMod(MDefinition *left, MDefinition *right, MIRType type)
       : MBinaryArithInstruction(left, right),
-        unsigned_(false)
+        unsigned_(false),
+        canBeNegativeDividend_(true)
     {
         if (type != MIRType_Value)
             specialization_ = type;
@@ -3501,7 +3511,10 @@ class MMod : public MBinaryArithInstruction
         MOZ_ASSUME_UNREACHABLE("not used");
     }
 
-    bool canBeNegativeDividend() const;
+    bool canBeNegativeDividend() const {
+        JS_ASSERT(specialization_ == MIRType_Int32);
+        return canBeNegativeDividend_;
+    }
     bool canBeDivideByZero() const;
     bool canBePowerOfTwoDivisor() const;
 
@@ -3513,6 +3526,7 @@ class MMod : public MBinaryArithInstruction
 
     void computeRange();
     bool truncate();
+    void collectRangeInfo();
 };
 
 class MConcat
@@ -7102,12 +7116,14 @@ class MInArray
     public ObjectPolicy<3>
 {
     bool needsHoleCheck_;
+    bool needsNegativeIntCheck_;
 
     MInArray(MDefinition *elements, MDefinition *index,
              MDefinition *initLength, MDefinition *object,
              bool needsHoleCheck)
       : MQuaternaryInstruction(elements, index, initLength, object),
-        needsHoleCheck_(needsHoleCheck)
+        needsHoleCheck_(needsHoleCheck),
+        needsNegativeIntCheck_(true)
     {
         setResultType(MIRType_Boolean);
         setMovable();
@@ -7141,13 +7157,17 @@ class MInArray
     bool needsHoleCheck() const {
         return needsHoleCheck_;
     }
-    bool needsNegativeIntCheck() const;
+    bool needsNegativeIntCheck() const {
+        return needsNegativeIntCheck_;
+    }
+    void collectRangeInfo();
     AliasSet getAliasSet() const {
         return AliasSet::Load(AliasSet::Element);
     }
     TypePolicy *typePolicy() {
         return this;
     }
+
 };
 
 
