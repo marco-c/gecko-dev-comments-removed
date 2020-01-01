@@ -37,6 +37,7 @@
 #include <D2d1.h>
 
 
+
 typedef HRESULT (WINAPI*DWriteCreateFactoryFunc)(
   __in   DWRITE_FACTORY_TYPE factoryType,
   __in   REFIID iid,
@@ -51,7 +52,7 @@ struct _cairo_dwrite_scaled_font {
     cairo_antialias_t antialias_mode;
     DWRITE_MEASURING_MODE measuring_mode;
     cairo_bool_t manual_show_glyphs_allowed;
-    cairo_d2d_surface_t::TextRenderingState rendering_mode;
+    cairo_bool_t force_GDI_classic;
 };
 typedef struct _cairo_dwrite_scaled_font cairo_dwrite_scaled_font_t;
 
@@ -102,22 +103,13 @@ public:
 	return family;
     }
 
-    static IDWriteRenderingParams *RenderingParams(cairo_d2d_surface_t::TextRenderingState mode)
+    static IDWriteRenderingParams *RenderingParams(cairo_bool_t forceGDIClassic)
     {
-	if (!mDefaultRenderingParams ||
-            !mForceGDIClassicRenderingParams ||
-            !mCustomClearTypeRenderingParams)
-        {
+	if (!mRenderingParams || !mForceGDIClassicRenderingParams) {
 	    CreateRenderingParams();
 	}
-	IDWriteRenderingParams *params;
-        if (mode == cairo_d2d_surface_t::TEXT_RENDERING_NO_CLEARTYPE) {
-            params = mDefaultRenderingParams;
-        } else if (mode == cairo_d2d_surface_t::TEXT_RENDERING_GDI_CLASSIC && mRenderingMode < 0) {
-            params = mForceGDIClassicRenderingParams;
-        } else {
-            params = mCustomClearTypeRenderingParams;
-        }
+	IDWriteRenderingParams *params =
+	    forceGDIClassic ? mForceGDIClassicRenderingParams : mRenderingParams;
 	if (params) {
 	    params->AddRef();
 	}
@@ -136,22 +128,14 @@ public:
         mPixelGeometry = aPixelGeometry;
         mRenderingMode = aRenderingMode;
 	
-	if (mCustomClearTypeRenderingParams) {
-	    mCustomClearTypeRenderingParams->Release();
-	    mCustomClearTypeRenderingParams = NULL;
+	if (mRenderingParams) {
+	    mRenderingParams->Release();
+	    mRenderingParams = NULL;
 	}
 	if (mForceGDIClassicRenderingParams) {
 	    mForceGDIClassicRenderingParams->Release();
 	    mForceGDIClassicRenderingParams = NULL;
 	}
-	if (mDefaultRenderingParams) {
-	    mDefaultRenderingParams->Release();
-	    mDefaultRenderingParams = NULL;
-	}
-    }
-
-    static int GetClearTypeRenderingMode() {
-        return mRenderingMode;
     }
 
 private:
@@ -159,8 +143,7 @@ private:
 
     static IDWriteFactory *mFactoryInstance;
     static IDWriteFontCollection *mSystemCollection;
-    static IDWriteRenderingParams *mDefaultRenderingParams;
-    static IDWriteRenderingParams *mCustomClearTypeRenderingParams;
+    static IDWriteRenderingParams *mRenderingParams;
     static IDWriteRenderingParams *mForceGDIClassicRenderingParams;
     static FLOAT mGamma;
     static FLOAT mEnhancedContrast;
