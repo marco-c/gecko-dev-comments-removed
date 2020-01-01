@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jsobjinlines_h___
 #define jsobjinlines_h___
@@ -54,15 +54,15 @@ inline jsval
 JSObject::getSlotMT(JSContext *cx, uintN slot)
 {
 #ifdef JS_THREADSAFE
-    
-
-
-
-
-
-
-
-
+    /*
+     * If thread-safe, define a getSlotMT() that bypasses, for a native
+     * object, the lock-free "fast path" test of
+     * (obj->scope()->ownercx == cx), to avoid needlessly switching from
+     * lock-free to lock-full scope when doing GC on a different context
+     * from the last one to own the scope.  The caller in this case is
+     * probably a JSClass.mark function, e.g., fun_mark, or maybe a
+     * finalizer.
+     */
     OBJ_CHECK_SLOT(this, slot);
     return (scope()->title.ownercx == cx)
            ? this->lockedGetSlot(slot)
@@ -76,7 +76,7 @@ inline void
 JSObject::setSlotMT(JSContext *cx, uintN slot, jsval value)
 {
 #ifdef JS_THREADSAFE
-    
+    /* Thread-safe way to set a slot. */
     OBJ_CHECK_SLOT(this, slot);
     if (scope()->title.ownercx == cx)
         this->lockedSetSlot(slot, value);
@@ -121,9 +121,9 @@ JSObject::isDenseArrayMinLenCapOk(bool strictAboutLength) const
     uint32 capacity = uncheckedGetDenseArrayCapacity();
     uint32 minLenCap = uint32(fslots[JSSLOT_DENSE_ARRAY_MINLENCAP]);
 
-    
-    
-    
+    // This function can be called while the LENGTH and MINLENCAP slots are
+    // still set to JSVAL_VOID and there are no dslots (ie. the capacity is
+    // zero).  If 'strictAboutLength' is false we allow this.
     return minLenCap == JS_MIN(length, capacity) ||
            (!strictAboutLength && minLenCap == uint32(JSVAL_VOID) &&
             length == uint32(JSVAL_VOID) && capacity == 0);
@@ -197,7 +197,7 @@ inline uint32
 JSObject::getDenseArrayCapacity() const
 {
     JS_ASSERT(isDenseArray());
-    JS_ASSERT(isDenseArrayMinLenCapOk(false));
+    JS_ASSERT(isDenseArrayMinLenCapOk(/* strictAboutLength = */false));
     return uncheckedGetDenseArrayCapacity();
 }
 
@@ -391,6 +391,18 @@ JSObject::zeroRegExpLastIndex()
     fslots[JSSLOT_REGEXP_LAST_INDEX] = JSVAL_ZERO;
 }
 
+inline NativeIterator *
+JSObject::getNativeIterator() const
+{
+    return (NativeIterator *) getPrivate();
+}
+
+inline void
+JSObject::setNativeIterator(NativeIterator *ni)
+{
+    setPrivate(ni);
+}
+
 inline void
 JSObject::initSharingEmptyScope(JSClass *clasp, JSObject *proto, JSObject *parent,
                                 jsval privateSlotValue)
@@ -464,7 +476,7 @@ InitScopeForObject(JSContext* cx, JSObject* obj, JSClass *clasp, JSObject* proto
     JS_ASSERT(ops->isNative());
     JS_ASSERT(proto == obj->getProto());
 
-    
+    /* Share proto's emptyScope only if obj is similar to proto. */
     JSScope *scope = NULL;
 
     if (proto && proto->isNative()) {
@@ -487,7 +499,7 @@ InitScopeForObject(JSContext* cx, JSObject* obj, JSClass *clasp, JSObject* proto
         if (!scope)
             goto bad;
 
-        
+        /* Let JSScope::create set freeslot so as to reserve slots. */
         JS_ASSERT(scope->freeslot >= JSSLOT_PRIVATE);
         if (scope->freeslot > JS_INITIAL_NSLOTS &&
             !obj->allocSlots(cx, scope->freeslot)) {
@@ -500,7 +512,7 @@ InitScopeForObject(JSContext* cx, JSObject* obj, JSClass *clasp, JSObject* proto
     return true;
 
   bad:
-    
+    /* The GC nulls map initially. It should still be null on error. */
     JS_ASSERT(!obj->map);
     return false;
 }
@@ -511,20 +523,16 @@ NewObjectWithGivenProto(JSContext *cx, JSClass *clasp, JSObject *proto,
 {
     DTrace::ObjectCreationScope objectCreationScope(cx, cx->fp, clasp);
 
-    
-    JS_ASSERT_IF(clasp->flags & JSCLASS_IS_EXTENDED,
-                 ((JSExtendedClass *)clasp)->equality);
-
-    
+    /* Always call the class's getObjectOps hook if it has one. */
     JSObjectOps *ops = clasp->getObjectOps
                        ? clasp->getObjectOps(cx, clasp)
                        : &js_ObjectOps;
 
-    
-
-
-
-
+    /*
+     * Allocate an object from the GC heap and initialize all its fields before
+     * doing any operation that can potentially trigger GC. Functions have a
+     * larger non-standard allocation size.
+     */
     JSObject* obj;
     if (clasp == &js_FunctionClass && !objectSize) {
         obj = (JSObject*) js_NewGCFunction(cx);
@@ -536,17 +544,15 @@ NewObjectWithGivenProto(JSContext *cx, JSClass *clasp, JSObject *proto,
 #endif
     } else {
         JS_ASSERT(!objectSize || objectSize == sizeof(JSObject));
-        obj = (clasp == &js_IteratorClass)
-            ? js_NewGCIter(cx)
-            : js_NewGCObject(cx);
+        obj = js_NewGCObject(cx);
     }
     if (!obj)
         goto out;
 
-    
-
-
-
+    /*
+     * Default parent to the parent of the prototype, which was set from
+     * the parent of the prototype's constructor.
+     */
     obj->init(clasp,
               proto,
               (!parent && proto) ? proto->getParent() : parent,
@@ -562,10 +568,10 @@ NewObjectWithGivenProto(JSContext *cx, JSClass *clasp, JSObject *proto,
         obj->map = const_cast<JSObjectMap *>(ops->objectMap);
     }
 
-    
-
-
-
+    /*
+     * Do not call debug hooks on trace, because we might be in a non-_FAIL
+     * builtin. See bug 481444.
+     */
     if (cx->debugHooks->objectHook && !JS_ON_TRACE(cx)) {
         AutoValueRooter tvr(cx, obj);
         AutoKeepAtoms keep(cx->runtime);
@@ -594,7 +600,7 @@ static inline JSObject *
 NewObject(JSContext *cx, JSClass *clasp, JSObject *proto,
           JSObject *parent, size_t objectSize = 0)
 {
-    
+    /* Bootstrap the ur-object, and make it the default prototype object. */
     if (!proto) {
         JSProtoKey protoKey = GetClassProtoKey(clasp);
         if (!js_GetClassPrototype(cx, parent, protoKey, &proto, clasp))
@@ -610,4 +616,4 @@ NewObject(JSContext *cx, JSClass *clasp, JSObject *proto,
 
 }
 
-#endif 
+#endif /* jsobjinlines_h___ */
