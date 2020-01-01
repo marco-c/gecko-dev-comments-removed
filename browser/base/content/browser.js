@@ -1147,6 +1147,17 @@ function delayedStartup()
   Cc["@mozilla.org/microsummary/service;1"].getService(Ci.nsIMicrosummaryService);
 
   
+  
+  
+  try {
+    ContentPrefSink.init();
+    TextZoom.init();
+  }
+  catch(ex) {
+    Components.utils.reportError(ex);
+  }
+
+  
   if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
     try {
       var ss = Cc["@mozilla.org/browser/sessionstore;1"].
@@ -1170,6 +1181,14 @@ function delayedStartup()
 
 function BrowserShutdown()
 {
+  try {
+    TextZoom.destroy();
+    ContentPrefSink.destroy();
+  }
+  catch(ex) {
+    Components.utils.reportError(ex);
+  }
+
   var os = Components.classes["@mozilla.org/observer-service;1"]
     .getService(Components.interfaces.nsIObserverService);
   os.removeObserver(gSessionHistoryObserver, "browser:purge-session-history");
@@ -5668,6 +5687,9 @@ var FeedHandler = {
 #ifdef MOZ_PLACES
 #include browser-places.js
 #endif
+
+#include browser-contentPrefSink.js
+#include browser-textZoom.js
 
 
 
