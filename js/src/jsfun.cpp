@@ -1605,7 +1605,7 @@ fun_getProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp)
 
 
         if (fun->isInterpreted())
-            cx->markTypeFunctionUninlineable(fun->getType());
+            cx->markTypeObjectFlags(fun->getType(), OBJECT_FLAG_UNINLINEABLE);
     }
 
     
@@ -1623,7 +1623,7 @@ fun_getProperty(JSContext *cx, JSObject *obj, jsid id, Value *vp)
         fp->prev()->pc(cx, fp, &inlined);
         if (inlined) {
             JSFunction *fun = fp->prev()->jit()->inlineFrames()[inlined->inlineIndex].fun;
-            cx->markTypeFunctionUninlineable(fun->getType());
+            cx->markTypeObjectFlags(fun->getType(), OBJECT_FLAG_UNINLINEABLE);
         }
     }
 #endif
