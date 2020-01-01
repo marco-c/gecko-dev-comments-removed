@@ -375,12 +375,6 @@ protected:
     virtual void DoNotifyListenerCleanup();
 
 private: 
-    enum {
-        kCacheHit = 1,
-        kCacheHitViaReval = 2,
-        kCacheMissedViaReval = 3,
-        kCacheMissed = 4
-    };
     bool mDidReval;
 };
 
