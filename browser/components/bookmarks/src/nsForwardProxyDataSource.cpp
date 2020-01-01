@@ -137,55 +137,26 @@ nsForwardProxyDataSource::GetRealSource(nsIRDFResource *aSource, nsIRDFResource 
 
 
 
-NS_IMPL_ADDREF(nsForwardProxyDataSource)
+NS_IMPL_CYCLE_COLLECTION_CLASS(nsForwardProxyDataSource)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsForwardProxyDataSource)
+    NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMARRAY(mObservers)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsForwardProxyDataSource)
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE_NSCOMPTR(mDS)
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE_NSCOMARRAY(mObservers)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-
-
-
-
-NS_IMETHODIMP_(nsrefcnt)
-nsForwardProxyDataSource::Release()
-{
-    NS_PRECONDITION(PRInt32(mRefCnt) > 0, "duplicate release");
-    nsrefcnt count = --mRefCnt;
-
-    if (count == 0) {
-        NS_LOG_RELEASE(this, count, "nsForwardProxyDataSource");
-        mRefCnt = 1;
-        NS_DELETEXPCOM(this);
-        return 0;
-    }
-    else if (mDS && (PRInt32(count) == 1)) {
-        
-        
-
-        
-        
-        ++mRefCnt;
-
-        mDS->RemoveObserver(this);
-        mDS = nsnull;
-
-        
-        
-        
-        
-        
-        
-        NS_ASSERTION(mRefCnt >= 1, "bad mRefCnt");
-        return Release();
-    }
-    else {
-        NS_LOG_RELEASE(this, count, "nsForwardProxyDataSource");
-        return count;
-    }
-}
+NS_IMPL_CYCLE_COLLECTING_ADDREF_AMBIGUOUS(nsForwardProxyDataSource,
+                                          nsIRDFInferDataSource)
+NS_IMPL_CYCLE_COLLECTING_RELEASE_AMBIGUOUS(nsForwardProxyDataSource,
+                                           nsIRDFInferDataSource)
 
 NS_INTERFACE_MAP_BEGIN(nsForwardProxyDataSource)
     NS_INTERFACE_MAP_ENTRY(nsIRDFInferDataSource)
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsIRDFDataSource, nsIRDFInferDataSource)
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIRDFInferDataSource)
     NS_INTERFACE_MAP_ENTRY(nsIRDFObserver)
+    NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(nsForwardProxyDataSource)
 NS_INTERFACE_MAP_END
 
 
