@@ -4377,7 +4377,11 @@ PresShell::FlushPendingNotifications(mozFlushType aType)
   IsSafeToFlush(isSafeToFlush);
 
   NS_ASSERTION(!isSafeToFlush || mViewManager, "Must have view manager");
-  if (isSafeToFlush && mViewManager) {
+  
+  
+  
+  nsCOMPtr<nsIViewManager> viewManager = mViewManager;
+  if (isSafeToFlush && viewManager) {
     
     
     nsCOMPtr<nsIPresShell> kungFuDeathGrip(this);
@@ -4385,27 +4389,15 @@ PresShell::FlushPendingNotifications(mozFlushType aType)
     
     
     
-    mViewManager->BeginUpdateViewBatch();
+    viewManager->BeginUpdateViewBatch();
 
     if (aType & Flush_StyleReresolves) {
       mFrameConstructor->ProcessPendingRestyles();
-      if (mIsDestroying) {
-        
-        
-        
-        return NS_OK;
-      }
     }
 
-    if (aType & Flush_OnlyReflow) {
+    if (aType & Flush_OnlyReflow && !mIsDestroying) {
       mFrameConstructor->RecalcQuotesAndCounters();
       ProcessReflowCommands(PR_FALSE);
-      if (mIsDestroying) {
-        
-        
-        
-        return NS_OK;
-      }
     }
 
     PRUint32 updateFlags = NS_VMREFRESH_NO_SYNC;
@@ -4420,7 +4412,7 @@ PresShell::FlushPendingNotifications(mozFlushType aType)
       
       updateFlags = NS_VMREFRESH_DEFERRED;
     }
-    mViewManager->EndUpdateViewBatch(updateFlags);
+    viewManager->EndUpdateViewBatch(updateFlags);
   }
 
   return NS_OK;
