@@ -580,9 +580,9 @@ static const JSC::MacroAssembler::RegisterID JSParamReg_Argc   = JSC::ARMRegiste
     }
 
 
-#define STUB_CALL_TYPE(type)                                                \
-    Call callWithVMFrame(type stub, jsbytecode *pc, uint32 fd) {            \
-        return fallibleVMCall(JS_FUNC_TO_DATA_PTR(void *, stub), pc, fd);   \
+#define STUB_CALL_TYPE(type)                                                             \
+    Call callWithVMFrame(type stub, jsbytecode *pc, DataLabelPtr *pinlined, uint32 fd) { \
+        return fallibleVMCall(JS_FUNC_TO_DATA_PTR(void *, stub), pc, pinlined, fd);      \
     }
 
     STUB_CALL_TYPE(JSObjStub);
@@ -610,15 +610,20 @@ static const JSC::MacroAssembler::RegisterID JSParamReg_Argc   = JSC::ARMRegiste
         move(MacroAssembler::stackPointerRegister, Registers::ArgReg0);
     }
 
-    void setupFallibleVMFrame(jsbytecode *pc, int32 frameDepth) {
+    void setupFallibleVMFrame(jsbytecode *pc, DataLabelPtr *pinlined, int32 frameDepth) {
         setupInfallibleVMFrame(frameDepth);
 
         
         storePtr(JSFrameReg, FrameAddress(offsetof(VMFrame, regs.fp)));
 
         
-        storePtr(ImmPtr(pc),
-                 FrameAddress(offsetof(VMFrame, regs) + offsetof(JSFrameRegs, pc)));
+        storePtr(ImmPtr(pc), FrameAddress(offsetof(VMFrame, regs.pc)));
+
+        
+        DataLabelPtr ptr = storePtrWithPatch(ImmPtr(NULL),
+                                             FrameAddress(offsetof(VMFrame, regs.inlined)));
+        if (pinlined)
+            *pinlined = ptr;
     }
 
     
@@ -632,9 +637,15 @@ static const JSC::MacroAssembler::RegisterID JSParamReg_Argc   = JSC::ARMRegiste
     
     
     
-    Call fallibleVMCall(void *ptr, jsbytecode *pc, int32 frameDepth) {
-        setupFallibleVMFrame(pc, frameDepth);
-        return wrapVMCall(ptr);
+    Call fallibleVMCall(void *ptr, jsbytecode *pc, DataLabelPtr *pinlined, int32 frameDepth) {
+        setupFallibleVMFrame(pc, pinlined, frameDepth);
+        Call call = wrapVMCall(ptr);
+
+        
+        
+        loadPtr(FrameAddress(offsetof(VMFrame, regs.fp)), JSFrameReg);
+
+        return call;
     }
 
     Call wrapVMCall(void *ptr) {
