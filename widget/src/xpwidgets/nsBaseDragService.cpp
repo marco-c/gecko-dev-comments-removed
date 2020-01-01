@@ -1,40 +1,40 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Mats Palmgren <mats.palmgren@bredband.net>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsBaseDragService.h"
 #include "nsITransferable.h"
@@ -69,6 +69,7 @@
 #include "nsIViewObserver.h"
 #include "nsRegion.h"
 #include "nsGUIEvent.h"
+#include "nsIPrefService.h"
 
 #ifdef MOZ_CAIRO_GFX
 #include "gfxContext.h"
@@ -76,16 +77,18 @@
 
 #endif
 
+#define DRAGIMAGES_PREF "nglayout.enable_drag_images"
+
 NS_IMPL_ADDREF(nsBaseDragService)
 NS_IMPL_RELEASE(nsBaseDragService)
 NS_IMPL_QUERY_INTERFACE2(nsBaseDragService, nsIDragService, nsIDragSession)
 
 
-//-------------------------------------------------------------------------
-//
-// DragService constructor
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 nsBaseDragService::nsBaseDragService()
   : mCanDrop(PR_FALSE), mDoingDrag(PR_FALSE), mHasImage(PR_FALSE),
     mDragAction(DRAGDROP_ACTION_NONE), mTargetSize(0,0),
@@ -93,17 +96,17 @@ nsBaseDragService::nsBaseDragService()
 {
 }
 
-//-------------------------------------------------------------------------
-//
-// DragService destructor
-//
-//-------------------------------------------------------------------------
+
+
+
+
+
 nsBaseDragService::~nsBaseDragService()
 {
 }
 
 
-//---------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::SetCanDrop(PRBool aCanDrop)
 {
@@ -111,7 +114,7 @@ nsBaseDragService::SetCanDrop(PRBool aCanDrop)
   return NS_OK;
 }
 
-//---------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::GetCanDrop(PRBool * aCanDrop)
 {
@@ -119,7 +122,7 @@ nsBaseDragService::GetCanDrop(PRBool * aCanDrop)
   return NS_OK;
 }
 
-//---------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::SetDragAction(PRUint32 anAction)
 {
@@ -127,7 +130,7 @@ nsBaseDragService::SetDragAction(PRUint32 anAction)
   return NS_OK;
 }
 
-//---------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::GetDragAction(PRUint32 * anAction)
 {
@@ -135,7 +138,7 @@ nsBaseDragService::GetDragAction(PRUint32 * anAction)
   return NS_OK;
 }
 
-//---------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::SetTargetSize(nsSize aDragTargetSize)
 {
@@ -143,7 +146,7 @@ nsBaseDragService::SetTargetSize(nsSize aDragTargetSize)
   return NS_OK;
 }
 
-//---------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::GetTargetSize(nsSize * aDragTargetSize)
 {
@@ -151,7 +154,7 @@ nsBaseDragService::GetTargetSize(nsSize * aDragTargetSize)
   return NS_OK;
 }
 
-//-------------------------------------------------------------------------
+
 
 NS_IMETHODIMP
 nsBaseDragService::GetNumDropItems(PRUint32 * aNumItems)
@@ -161,12 +164,12 @@ nsBaseDragService::GetNumDropItems(PRUint32 * aNumItems)
 }
 
 
-//
-// GetSourceDocument
-//
-// Returns the DOM document where the drag was initiated. This will be
-// nsnull if the drag began outside of our application.
-//
+
+
+
+
+
+
 NS_IMETHODIMP
 nsBaseDragService::GetSourceDocument(nsIDOMDocument** aSourceDocument)
 {
@@ -176,12 +179,12 @@ nsBaseDragService::GetSourceDocument(nsIDOMDocument** aSourceDocument)
   return NS_OK;
 }
 
-//
-// GetSourceNode
-//
-// Returns the DOM node where the drag was initiated. This will be
-// nsnull if the drag began outside of our application.
-//
+
+
+
+
+
+
 NS_IMETHODIMP
 nsBaseDragService::GetSourceNode(nsIDOMNode** aSourceNode)
 {
@@ -192,7 +195,7 @@ nsBaseDragService::GetSourceNode(nsIDOMNode** aSourceNode)
 }
 
 
-//-------------------------------------------------------------------------
+
 
 NS_IMETHODIMP
 nsBaseDragService::GetData(nsITransferable * aTransferable,
@@ -201,7 +204,7 @@ nsBaseDragService::GetData(nsITransferable * aTransferable,
   return NS_ERROR_FAILURE;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::IsDataFlavorSupported(const char *aDataFlavor,
                                          PRBool *_retval)
@@ -209,7 +212,7 @@ nsBaseDragService::IsDataFlavorSupported(const char *aDataFlavor,
   return NS_ERROR_FAILURE;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
                                      nsISupportsArray* aTransferableArray,
@@ -218,15 +221,15 @@ nsBaseDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
 {
   NS_ENSURE_TRUE(aDOMNode, NS_ERROR_INVALID_ARG);
 
-  // stash the document of the dom node
+  
   aDOMNode->GetOwnerDocument(getter_AddRefs(mSourceDocument));
   mSourceNode = aDOMNode;
 
-  // When the mouse goes down, the selection code starts a mouse
-  // capture. However, this gets in the way of determining drag
-  // feedback for things like trees because the event coordinates
-  // are in the wrong coord system. Turn off mouse capture in
-  // the associated view manager.
+  
+  
+  
+  
+  
   nsCOMPtr<nsIContent> contentNode = do_QueryInterface(aDOMNode);
   if (contentNode) {
     nsIDocument* doc = contentNode->GetCurrentDoc();
@@ -286,25 +289,25 @@ nsBaseDragService::InvokeDragSessionWithSelection(nsISelection* aSelection,
   aDragEvent->GetScreenX(&mScreenX);
   aDragEvent->GetScreenY(&mScreenY);
 
-  // just get the focused node from the selection
+  
   nsCOMPtr<nsIDOMNode> node;
   aSelection->GetFocusNode(getter_AddRefs(node));
 
   return InvokeDragSession(node, aTransferableArray, nsnull, aActionType);
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::GetCurrentSession(nsIDragSession ** aSession)
 {
   if (!aSession)
     return NS_ERROR_INVALID_ARG;
 
-  // "this" also implements a drag session, so say we are one but only
-  // if there is currently a drag going on.
+  
+  
   if (mDoingDrag) {
     *aSession = this;
-    NS_ADDREF(*aSession);      // addRef because we're a "getter"
+    NS_ADDREF(*aSession);      
   }
   else
     *aSession = nsnull;
@@ -312,7 +315,7 @@ nsBaseDragService::GetCurrentSession(nsIDragSession ** aSession)
   return NS_OK;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::StartDragSession()
 {
@@ -323,7 +326,7 @@ nsBaseDragService::StartDragSession()
   return NS_OK;
 }
 
-//-------------------------------------------------------------------------
+
 NS_IMETHODIMP
 nsBaseDragService::EndDragSession(PRBool aDoneDrag)
 {
@@ -336,7 +339,7 @@ nsBaseDragService::EndDragSession(PRBool aDoneDrag)
 
   mDoingDrag = PR_FALSE;
 
-  // release the source we've been holding on to.
+  
   mSourceDocument = nsnull;
   mSourceNode = nsnull;
   mSelection = nsnull;
@@ -395,29 +398,35 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
 {
   *aSurface = nsnull;
 
-  // use a default size, in case of an error.
+  
   aScreenDragRect->x = aScreenX - mImageX;
   aScreenDragRect->y = aScreenY - mImageY;
   aScreenDragRect->width = 20;
   aScreenDragRect->height = 20;
 
-  // if a drag image was specified, use that, otherwise, use the source node
+  
   nsCOMPtr<nsIDOMNode> dragNode = mImage ? mImage.get() : aDOMNode;
 
-  // get the presshell for the node being dragged. If the drag image is not in
-  // a document or has no frame, get the presshell from the source drag node
+  
+  
   nsIPresShell* presShell = GetPresShellForContent(dragNode);
   if (!presShell && mImage)
     presShell = GetPresShellForContent(aDOMNode);
   if (!presShell)
     return NS_ERROR_FAILURE;
 
-  // didn't want an image, so just set the screen rectangle to the frame size
-  if (!mHasImage) {
-    // if a region was specified, set the screen rectangle to the area that
-    // the region occupies
+  
+  PRBool enableDragImages = PR_TRUE;
+  nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID));
+  if (prefs)
+    prefs->GetBoolPref(DRAGIMAGES_PREF, &enableDragImages);
+
+  
+  if (!enableDragImages || !mHasImage) {
+    
+    
     if (aRegion) {
-      // the region's coordinates are relative to the root frame
+      
       nsPresContext* pc = presShell->GetPresContext();
       nsIFrame* rootFrame = presShell->GetRootFrame();
       if (rootFrame && pc) {
@@ -432,8 +441,8 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
       }
     }
     else {
-      // otherwise, there was no region so just set the rectangle to
-      // the size of the primary frame of the content.
+      
+      
       nsCOMPtr<nsIContent> content = do_QueryInterface(dragNode);
       nsIFrame* frame = presShell->GetPrimaryFrameFor(content);
       if (frame) {
@@ -446,7 +455,7 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
     return NS_OK;
   }
 
-  // draw the image for selections
+  
   if (mSelection) {
     nsPoint pnt(aScreenDragRect->x, aScreenDragRect->y);
     nsRefPtr<gfxASurface> surface = presShell->RenderSelection(mSelection, pnt, aScreenDragRect);
@@ -455,12 +464,12 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
     return NS_OK;
   }
 
-  // if an custom image was specified, check if it is an image node and draw
-  // using the source rather than the displayed image. But if mImage isn't
-  // an image, fall through to RenderNode below.
+  
+  
+  
   if (mImage) {
     nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(dragNode);
-    // for image nodes, create the drag image from the actual image data
+    
     if (imageLoader) {
       nsPresContext* pc = presShell->GetPresContext();
       if (!pc)
@@ -471,7 +480,7 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
     }
   }
 
-  // otherwise, just draw the node
+  
   nsCOMPtr<nsIRegion> clipRegion;
   if (aRegion)
     aRegion->GetRegion(getter_AddRefs(clipRegion));
@@ -480,8 +489,8 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
   nsRefPtr<gfxASurface> surface = presShell->RenderNode(dragNode, clipRegion,
                                                         pnt, aScreenDragRect);
 
-  // if an image was specified, reposition the drag rectangle to
-  // the supplied offset in mImageX and mImageY.
+  
+  
   if (mImage) {
     aScreenDragRect->x = aScreenX - mImageX;
     aScreenDragRect->y = aScreenY - mImageY;
@@ -522,7 +531,7 @@ nsBaseDragService::DrawDragForImage(nsPresContext* aPresContext,
   if (!img)
     return NS_ERROR_FAILURE;
 
-  // use the size of the image as the size of the drag image
+  
   imgContainer->GetWidth(&aScreenDragRect->width);
   imgContainer->GetHeight(&aScreenDragRect->height);
 
@@ -533,8 +542,8 @@ nsBaseDragService::DrawDragForImage(nsPresContext* aPresContext,
   if (destRect.width == 0 || destRect.height == 0)
     return NS_ERROR_FAILURE;
 
-  // if the image is larger than half the screen size, scale it down. This
-  // scaling algorithm is the same as is used in nsPresShell::PaintRangePaintInfo
+  
+  
   nsIDeviceContext* deviceContext = aPresContext->DeviceContext();
   nsRect maxSize;
   deviceContext->GetClientRect(maxSize);
@@ -569,7 +578,7 @@ nsBaseDragService::DrawDragForImage(nsPresContext* aPresContext,
   deviceContext->CreateRenderingContextInstance(*getter_AddRefs(rc));
   rc->Init(deviceContext, surface);
 
-  // clear the image before drawing
+  
   gfxContext context(surface);
   context.SetOperator(gfxContext::OPERATOR_CLEAR);
   context.Rectangle(gfxRect(0, 0, destRect.width, destRect.height));
