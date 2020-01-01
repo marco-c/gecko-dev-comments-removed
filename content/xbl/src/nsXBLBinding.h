@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsXBLBinding_h_
 #define nsXBLBinding_h_
@@ -26,8 +26,8 @@ typedef nsTArray<nsRefPtr<nsXBLInsertionPoint> > nsInsertionPointList;
 struct JSContext;
 struct JSObject;
 
-
-
+// *********************************************************************/
+// The XBLBinding class
 
 class nsXBLBinding
 {
@@ -35,15 +35,15 @@ public:
   nsXBLBinding(nsXBLPrototypeBinding* aProtoBinding);
   ~nsXBLBinding();
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * XBLBindings are refcounted.  They are held onto in 3 ways:
+   * 1. The binding manager's binding table holds onto all bindings that are
+   *    currently attached to a content node.
+   * 2. Bindings hold onto their base binding.  This is important since
+   *    the base binding itself may not be attached to anything.
+   * 3. The binding manager holds an additional reference to bindings
+   *    which are queued to fire their constructors.
+   */
 
   NS_INLINE_DECL_REFCOUNTING(nsXBLBinding)
 
@@ -83,19 +83,19 @@ public:
   nsXBLBinding* RootBinding();
   nsXBLBinding* GetFirstStyleBinding();
 
-  
-  
+  // Resolve all the fields for this binding and all ancestor bindings on the
+  // object |obj|.  False return means a JS exception was set.
   bool ResolveAllFields(JSContext *cx, JSObject *obj) const;
 
-  
-  
-  nsresult GetInsertionPointsFor(nsIContent* aParent,
-                                 nsInsertionPointList** aResult);
+  // Get the list of insertion points for aParent. The nsInsertionPointList
+  // is owned by the binding, you should not delete it.
+  void GetInsertionPointsFor(nsIContent* aParent,
+                             nsInsertionPointList** aResult);
 
   nsInsertionPointList* GetExistingInsertionPointsFor(nsIContent* aParent);
 
-  
-  
+  // XXXbz this aIndex has nothing to do with an index into the child
+  // list of the insertion parent or anything.
   nsIContent* GetInsertionPoint(const nsIContent* aChild, PRUint32* aIndex);
 
   nsIContent* GetSingleInsertionPoint(PRUint32* aIndex,
@@ -115,25 +115,25 @@ public:
                                 nsXBLPrototypeBinding* aProtoBinding,
                                 JSObject** aClassObject);
 
-  bool AllowScripts();  
+  bool AllowScripts();  // XXX make const
 
   void RemoveInsertionParent(nsIContent* aParent);
   bool HasInsertionParent(nsIContent* aParent);
 
-
+// MEMBER VARIABLES
 protected:
 
   bool mIsStyleBinding;
   bool mMarkedForDeath;
 
-  nsXBLPrototypeBinding* mPrototypeBinding; 
-  nsCOMPtr<nsIContent> mContent; 
-  nsRefPtr<nsXBLBinding> mNextBinding; 
+  nsXBLPrototypeBinding* mPrototypeBinding; // Weak, but we're holding a ref to the docinfo
+  nsCOMPtr<nsIContent> mContent; // Strong. Our anonymous content stays around with us.
+  nsRefPtr<nsXBLBinding> mNextBinding; // Strong. The derived binding owns the base class bindings.
   
-  nsIContent* mBoundElement; 
+  nsIContent* mBoundElement; // [WEAK] We have a reference, but we don't own it.
   
-  
+  // A hash from nsIContent* -> (a sorted array of nsXBLInsertionPoint)
   nsClassHashtable<nsISupportsHashKey, nsInsertionPointList>* mInsertionPointTable;
 };
 
-#endif 
+#endif // nsXBLBinding_h_

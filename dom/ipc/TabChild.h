@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 2; -*- */
+/* vim: set sw=4 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_TabChild_h
 #define mozilla_dom_TabChild_h
@@ -14,7 +14,7 @@
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsIWebBrowserChrome2.h"
-#include "nsIEmbeddingSiteWindow2.h"
+#include "nsIEmbeddingSiteWindow.h"
 #include "nsIWebBrowserChromeFocus.h"
 #include "nsIWidget.h"
 #include "nsIDOMEventListener.h"
@@ -92,7 +92,7 @@ public:
                               nsIDOMEventListener* aListener,
                               bool aUseCapture)
   {
-    
+    // By default add listeners only for trusted events!
     return nsDOMEventTargetHelper::AddEventListener(aType, aListener,
                                                     aUseCapture, false, 2);
   }
@@ -128,7 +128,7 @@ protected:
 class TabChild : public PBrowserChild,
                  public nsFrameScriptExecutor,
                  public nsIWebBrowserChrome2,
-                 public nsIEmbeddingSiteWindow2,
+                 public nsIEmbeddingSiteWindow,
                  public nsIWebBrowserChromeFocus,
                  public nsIInterfaceRequestor,
                  public nsIWindowProvider,
@@ -147,7 +147,6 @@ public:
     NS_DECL_NSIWEBBROWSERCHROME
     NS_DECL_NSIWEBBROWSERCHROME2
     NS_DECL_NSIEMBEDDINGSITEWINDOW
-    NS_DECL_NSIEMBEDDINGSITEWINDOW2
     NS_DECL_NSIWEBBROWSERCHROMEFOCUS
     NS_DECL_NSIINTERFACEREQUESTOR
     NS_DECL_NSIWINDOWPROVIDER
@@ -236,7 +235,7 @@ protected:
     bool DispatchWidgetEvent(nsGUIEvent& event);
 
     virtual PIndexedDBChild* AllocPIndexedDB(const nsCString& aASCIIOrigin,
-                                             bool* );
+                                             bool* /* aAllowed */);
 
     virtual bool DeallocPIndexedDB(PIndexedDBChild* actor);
 
@@ -288,4 +287,4 @@ GetTabChildFrom(nsIDOMWindow* aWindow)
 }
 }
 
-#endif 
+#endif // mozilla_dom_TabChild_h

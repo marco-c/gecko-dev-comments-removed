@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Hal.h"
 #include "mozilla/HalSensor.h"
@@ -14,7 +14,6 @@
 #include "nsIDOMDocument.h"
 #include "nsIDOMEventTarget.h"
 #include "nsIServiceManager.h"
-#include "nsIPrivateDOMEvent.h"
 #include "nsIServiceManager.h"
 
 #include "mozilla/Preferences.h"
@@ -24,7 +23,7 @@ using namespace hal;
 
 #undef near
 
-
+// also see sDefaultSensorHint in mobile/android/base/GeckoAppShell.java
 #define DEFAULT_SENSOR_POLL 100
 
 static const nsTArray<nsIDOMWindow*>::index_type NoIndex =
@@ -118,6 +117,17 @@ nsDeviceSensors::~nsDeviceSensors()
   }
 }
 
+NS_IMETHODIMP nsDeviceSensors::ListenerCount(PRUint32 aType, PRInt32 *aRetVal)
+{
+  if (!mEnabled) {
+    *aRetVal = 0;
+    return NS_OK;
+  }
+
+  *aRetVal = mWindowListeners[aType]->Length();
+  return NS_OK;
+}
+
 NS_IMETHODIMP nsDeviceSensors::AddWindowListener(PRUint32 aType, nsIDOMWindow *aWindow)
 {
   if (!mEnabled)
@@ -174,8 +184,8 @@ nsDeviceSensors::Notify(const mozilla::hal::SensorData& aSensorData)
   for (PRUint32 i = windowListeners.Count(); i > 0 ; ) {
     --i;
 
-    
-    
+    // check to see if this window is in the background.  if
+    // it is, don't send any device motion to it.
     nsCOMPtr<nsPIDOMWindow> pwindow = do_QueryInterface(windowListeners[i]);
     if (!pwindow ||
         !pwindow->GetOuterWindow() ||
@@ -215,10 +225,7 @@ nsDeviceSensors::FireDOMLightEvent(nsIDOMEventTarget *aTarget,
                           false,
                           aValue);
 
-  nsCOMPtr<nsIPrivateDOMEvent> privateEvent = do_QueryInterface(event);
-  if (privateEvent) {
-    privateEvent->SetTrusted(true);
-  }
+  event->SetTrusted(true);
 
   bool defaultActionEnabled;
   aTarget->DispatchEvent(event, &defaultActionEnabled);
@@ -241,17 +248,15 @@ nsDeviceSensors::FireDOMProximityEvent(nsIDOMEventTarget *aTarget,
                                aMin,
                                aMax);
 
-  nsCOMPtr<nsIPrivateDOMEvent> privateEvent = do_QueryInterface(event);
-  if (privateEvent) {
-    privateEvent->SetTrusted(true);
-  }
+  event->SetTrusted(true);
+
   bool defaultActionEnabled;
   aTarget->DispatchEvent(event, &defaultActionEnabled);
 
-  
-  
-  
-  
+  // Some proximity sensors only support a binary near or
+  // far measurement. In this case, the sensor should report
+  // its maximum range value in the far state and a lesser
+  // value in the near state.
 
   bool near = (aValue < aMax);
   if (mIsUserProximityNear != near) {
@@ -272,10 +277,8 @@ nsDeviceSensors::FireDOMUserProximityEvent(nsIDOMEventTarget *aTarget, bool aNea
                              false,
                              aNear);
 
-  nsCOMPtr<nsIPrivateDOMEvent> privateEvent = do_QueryInterface(event);
-  if (privateEvent) {
-    privateEvent->SetTrusted(true);
-  }
+  event->SetTrusted(true);
+
   bool defaultActionEnabled;
   aTarget->DispatchEvent(event, &defaultActionEnabled);
 }
@@ -305,9 +308,7 @@ nsDeviceSensors::FireDOMOrientationEvent(nsIDOMDocument *domdoc,
                                  gamma,
                                  true);
 
-  nsCOMPtr<nsIPrivateDOMEvent> privateEvent = do_QueryInterface(event);
-  if (privateEvent)
-    privateEvent->SetTrusted(true);
+  event->SetTrusted(true);
   
   target->DispatchEvent(event, &defaultActionEnabled);
 }
@@ -320,7 +321,7 @@ nsDeviceSensors::FireDOMMotionEvent(nsIDOMDocument *domdoc,
                                    double x,
                                    double y,
                                    double z) {
-  
+  // Attempt to coalesce events
   bool fireEvent = TimeStamp::Now() > mLastDOMMotionEventTime + TimeDuration::FromMilliseconds(DEFAULT_SENSOR_POLL);
 
   switch (type) {
@@ -355,9 +356,7 @@ nsDeviceSensors::FireDOMMotionEvent(nsIDOMDocument *domdoc,
                             mLastRotationRate,
                             DEFAULT_SENSOR_POLL);
 
-  nsCOMPtr<nsIPrivateDOMEvent> privateEvent = do_QueryInterface(event);
-  if (privateEvent)
-    privateEvent->SetTrusted(true);
+  event->SetTrusted(true);
 
   bool defaultActionEnabled = true;
   target->DispatchEvent(event, &defaultActionEnabled);

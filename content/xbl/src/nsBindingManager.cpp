@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=79: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsCOMPtr.h"
 #include "nsXBLService.h"
@@ -46,9 +46,9 @@
 #include "nsThreadUtils.h"
 #include "dombindings.h"
 
-
-
-
+// ==================================================================
+// = nsAnonymousContentList 
+// ==================================================================
 
 #define NS_ANONYMOUS_CONTENT_LIST_IID \
   { 0xbfb5d8e7, 0xf718, 0x4a46, \
@@ -62,10 +62,10 @@ public:
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsAnonymousContentList)
-  
+  // nsIDOMNodeList interface
   NS_DECL_NSIDOMNODELIST
 
-  
+  // nsINodeList interface
   virtual PRInt32 IndexOf(nsIContent* aContent);
   virtual nsINode *GetParentObject()
   {
@@ -100,8 +100,8 @@ nsAnonymousContentList::nsAnonymousContentList(nsIContent *aContent,
 {
   MOZ_COUNT_CTOR(nsAnonymousContentList);
 
-  
-  
+  // We don't reference count our Anonymous reference (to avoid circular
+  // references). We'll be told when the Anonymous goes away.
   SetIsDOMBinding();
 }
 
@@ -212,21 +212,21 @@ nsAnonymousContentList::IndexOf(nsIContent* aContent)
     lengthSoFar += point->ChildCount();
   }
 
-  
+  // Didn't find it anywhere
   return -1;
 }
 
-
-
-
-
-
+//
+// Generic pldhash table stuff for mapping one nsISupports to another
+//
+// These values are never null - a null value implies that this
+// whole key should be removed (See SetOrRemoveObject)
 class ObjectEntry : public PLDHashEntryHdr
 {
 public:
 
-  
-  
+  // note that these are allocated within the PLDHashTable, but we
+  // want to keep track of them anyway
   ObjectEntry() { MOZ_COUNT_CTOR(ObjectEntry); }
   ~ObjectEntry() { MOZ_COUNT_DTOR(ObjectEntry); }
   
@@ -267,7 +267,7 @@ static PLDHashTableOps ObjectTableOps = {
   InitObjectEntry
 };
 
-
+// helper routine for adding a new entry
 static nsresult
 AddObjectEntry(PLDHashTable& table, nsISupports* aKey, nsISupports* aValue)
 {
@@ -281,19 +281,19 @@ AddObjectEntry(PLDHashTable& table, nsISupports* aKey, nsISupports* aValue)
   if (!entry)
     return NS_ERROR_OUT_OF_MEMORY;
 
-  
+  // only add the key if the entry is new
   if (!entry->GetKey())
     entry->SetKey(aKey);
 
-  
-  
+  // now attach the new entry - note that entry->mValue could possibly
+  // have a value already, this will release that.
   entry->SetValue(aValue);
   
   return NS_OK;
 }
 
-
-
+// helper routine for looking up an existing entry. Note that the
+// return result is NOT addreffed
 static nsISupports*
 LookupObject(PLDHashTable& table, nsIContent* aKey)
 {
@@ -319,7 +319,7 @@ static nsresult
 SetOrRemoveObject(PLDHashTable& table, nsIContent* aKey, nsISupports* aValue)
 {
   if (aValue) {
-    
+    // lazily create the table, but only when adding elements
     if (!table.ops &&
         !PL_DHashTableInit(&table, &ObjectTableOps, nsnull,
                            sizeof(ObjectEntry), 16)) {
@@ -330,13 +330,13 @@ SetOrRemoveObject(PLDHashTable& table, nsIContent* aKey, nsISupports* aValue)
     return AddObjectEntry(table, aKey, aValue);
   }
 
-  
+  // no value, so remove the key from the table
   if (table.ops) {
     ObjectEntry* entry =
       static_cast<ObjectEntry*>
         (PL_DHashTableOperate(&table, aKey, PL_DHASH_LOOKUP));
     if (entry && PL_DHASH_ENTRY_IS_BUSY(entry)) {
-      
+      // Keep key and value alive while removing the entry.
       nsCOMPtr<nsISupports> key = entry->GetKey();
       nsCOMPtr<nsISupports> value = entry->GetValue();
       RemoveObjectEntry(table, aKey);
@@ -345,11 +345,11 @@ SetOrRemoveObject(PLDHashTable& table, nsIContent* aKey, nsISupports* aValue)
   return NS_OK;
 }
 
+// Implementation /////////////////////////////////////////////////////////////////
 
+// Static member variable initialization
 
-
-
-
+// Implement our nsISupports methods
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsBindingManager)
   tmp->mDestroyed = true;
@@ -412,15 +412,15 @@ LoadingDocHashtableTraverser(nsIURI* key,
 }
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsBindingManager)
-  
+  // The hashes keyed on nsIContent are traversed from the nsIContent itself.
   if (tmp->mDocumentTable.IsInitialized())
       tmp->mDocumentTable.EnumerateRead(&DocumentInfoHashtableTraverser, &cb);
   if (tmp->mLoadingDocTable.IsInitialized())
       tmp->mLoadingDocTable.EnumerateRead(&LoadingDocHashtableTraverser, &cb);
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE_NSTARRAY_MEMBER(mAttachedStack,
                                                     nsXBLBinding)
-  
-  
+  // No need to traverse mProcessAttachedQueueEvent, since it'll just
+  // fire at some point or become revoke and drop its ref to us.
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsBindingManager)
@@ -433,7 +433,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsBindingManager)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsBindingManager)
 
-
+// Constructors/Destructors
 nsBindingManager::nsBindingManager(nsIDocument* aDocument)
   : mProcessingAttachedStack(false),
     mDestroyed(false),
@@ -523,26 +523,26 @@ nsBindingManager::SetBinding(nsIContent* aContent, nsXBLBinding* aBinding)
     mBindingTable.Init();
   }
 
-  
-  
-  
-  
-  
-  
+  // After this point, aBinding will be the most-derived binding for aContent.
+  // If we already have a binding for aContent in our table, make sure to
+  // remove it from the attached stack.  Otherwise we might end up firing its
+  // constructor twice (if aBinding inherits from it) or firing its constructor
+  // after aContent has been deleted (if aBinding is null and the content node
+  // dies before we process mAttachedStack).
   nsRefPtr<nsXBLBinding> oldBinding = GetBinding(aContent);
   if (oldBinding) {
     if (aContent->HasFlag(NODE_IS_INSERTION_PARENT)) {
       nsRefPtr<nsXBLBinding> parentBinding =
         GetBinding(aContent->GetBindingParent());
-      
-      
+      // Clear insertion parent only if we don't have a parent binding which
+      // marked content to be an insertion parent. See also ChangeDocumentFor().
       if (!parentBinding || !parentBinding->HasInsertionParent(aContent)) {
         RemoveInsertionParent(aContent);
         aContent->UnsetFlags(NODE_IS_INSERTION_PARENT);
       }
     }
-    
-    
+    // Don't remove items here as that could mess up an executing
+    // ProcessAttachedQueue
     PRUint32 index = mAttachedStack.IndexOf(oldBinding);
     if (index != mAttachedStack.NoIndex) {
       mAttachedStack[index] = nsnull;
@@ -555,9 +555,9 @@ nsBindingManager::SetBinding(nsIContent* aContent, nsXBLBinding* aBinding)
   } else {
     mBindingTable.Remove(aContent);
 
-    
-    
-    
+    // The death of the bindings means the death of the JS wrapper,
+    // and the flushing of our explicit and anonymous insertion point
+    // lists.
     SetWrappedJS(aContent, nsnull);
     SetContentListFor(aContent, nsnull);
     SetAnonymousNodesFor(aContent, nsnull);
@@ -615,22 +615,23 @@ nsBindingManager::SetWrappedJS(nsIContent* aContent, nsIXPConnectWrappedJS* aWra
 
 void
 nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
-                                              nsIDocument* aOldDocument)
+                                              nsIDocument* aOldDocument,
+                                              nsIContent* aContentBindingParent)
 {
   NS_PRECONDITION(aOldDocument != nsnull, "no old document");
 
   if (mDestroyed)
     return;
 
-  
-  
+  // Hold a ref to the binding so it won't die when we remove it from our
+  // table.
   nsRefPtr<nsXBLBinding> binding = GetBinding(aContent);
   if (aContent->HasFlag(NODE_IS_INSERTION_PARENT)) {
-    nsRefPtr<nsXBLBinding> parentBinding = GetBinding(aContent->GetBindingParent());
+    nsRefPtr<nsXBLBinding> parentBinding = GetBinding(aContentBindingParent);
     if (parentBinding) {
       parentBinding->RemoveInsertionParent(aContent);
-      
-      
+      // Clear insertion parent only if we don't have a binding which
+      // marked content to be an insertion parent. See also SetBinding().
       if (!binding || !binding->HasInsertionParent(aContent)) {
         RemoveInsertionParent(aContent);
         aContent->UnsetFlags(NODE_IS_INSERTION_PARENT);
@@ -644,7 +645,7 @@ nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
     SetBinding(aContent, nsnull);
   }
 
-  
+  // Clear out insertion parents and content lists.
   SetInsertionParent(aContent, nsnull);
   SetContentListFor(aContent, nsnull);
   SetAnonymousNodesFor(aContent, nsnull);
@@ -781,7 +782,7 @@ nsBindingManager::GetXBLChildNodesInternal(nsIContent* aContent,
 {
   PRUint32 length;
 
-  
+  // Retrieve the anonymous content that we should build.
   nsINodeList* result = GetAnonymousNodesInternal(aContent,
                                                   aIsAnonymousContentList);
   if (result) {
@@ -790,9 +791,9 @@ nsBindingManager::GetXBLChildNodesInternal(nsIContent* aContent,
       result = nsnull;
   }
     
-  
-  
-  
+  // We may have an altered list of children from XBL insertion points.
+  // If we don't have any anonymous kids, we next check to see if we have 
+  // insertion points.
   if (!result) {
     if (mContentListTable.ops) {
       result = static_cast<nsAnonymousContentList*>
@@ -844,12 +845,12 @@ nsresult
 nsBindingManager::AddLayeredBinding(nsIContent* aContent, nsIURI* aURL,
                                     nsIPrincipal* aOriginPrincipal)
 {
-  
+  // First we need to load our binding.
   nsXBLService* xblService = nsXBLService::GetInstance();
   if (!xblService)
     return NS_ERROR_FAILURE;
 
-  
+  // Load the bindings.
   nsRefPtr<nsXBLBinding> binding;
   bool dummy;
   xblService->LoadBindings(aContent, aURL, aOriginPrincipal, true,
@@ -865,45 +866,45 @@ nsBindingManager::AddLayeredBinding(nsIContent* aContent, nsIURI* aURL,
 nsresult
 nsBindingManager::RemoveLayeredBinding(nsIContent* aContent, nsIURI* aURL)
 {
-  
+  // Hold a ref to the binding so it won't die when we remove it from our table
   nsRefPtr<nsXBLBinding> binding = GetBinding(aContent);
   
   if (!binding) {
     return NS_OK;
   }
 
-  
+  // For now we can only handle removing a binding if it's the only one
   NS_ENSURE_FALSE(binding->GetBaseBinding(), NS_ERROR_FAILURE);
 
-  
+  // Make sure that the binding has the URI that is requested to be removed
   if (!binding->PrototypeBinding()->CompareBindingURI(aURL)) {
     return NS_OK;
   }
 
-  
+  // Make sure it isn't a style binding
   if (binding->IsStyleBinding()) {
     return NS_OK;
   }
 
-  
-  
-  
-  
-  
+  // Hold strong ref in case removing the binding tries to close the
+  // window or something.
+  // XXXbz should that be ownerdoc?  Wouldn't we need a ref to the
+  // currentdoc too?  What's the one that should be passed to
+  // ChangeDocument?
   nsCOMPtr<nsIDocument> doc = aContent->OwnerDoc();
   
-  
-  
-  
+  // Finally remove the binding...
+  // XXXbz this doesn't remove the implementation!  Should fix!  Until
+  // then we need the explicit UnhookEventHandlers here.
   binding->UnhookEventHandlers();
   binding->ChangeDocument(doc, nsnull);
   SetBinding(aContent, nsnull);
   binding->MarkForDeath();
   
-  
-  
-  
-  
+  // ...and recreate its frames. We need to do this since the frames may have
+  // been removed and style may have changed due to the removal of the
+  // anonymous children.
+  // XXXbz this should be using the current doc (if any), not the owner doc.
   nsIPresShell *presShell = doc->GetShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
@@ -917,12 +918,12 @@ nsBindingManager::LoadBindingDocument(nsIDocument* aBoundDoc,
 {
   NS_PRECONDITION(aURL, "Must have a URI to load!");
   
-  
+  // First we need to load our binding.
   nsXBLService* xblService = nsXBLService::GetInstance();
   if (!xblService)
     return NS_ERROR_FAILURE;
 
-  
+  // Load the binding doc.
   nsRefPtr<nsXBLDocumentInfo> info;
   xblService->LoadBindingDocumentInfo(nsnull, aBoundDoc, aURL,
                                       aOriginPrincipal, true,
@@ -939,13 +940,13 @@ nsBindingManager::AddToAttachedQueue(nsXBLBinding* aBinding)
   if (!mAttachedStack.AppendElement(aBinding))
     return NS_ERROR_OUT_OF_MEMORY;
 
-  
-  
+  // If we're in the middle of processing our queue already, don't
+  // bother posting the event.
   if (!mProcessingAttachedStack && !mProcessAttachedQueueEvent) {
     PostProcessAttachedQueueEvent();
   }
 
-  
+  // Make sure that flushes will flush out the new items as needed.
   mDocument->SetNeedStyleFlush();
 
   return NS_OK;
@@ -974,16 +975,16 @@ nsBindingManager::DoProcessAttachedQueue()
   
     mProcessAttachedQueueEvent = nsnull;
   } else {
-    
-    
-    
+    // Someone's doing event processing from inside a constructor.
+    // They're evil, but we'll fight back!  Just poll on them being
+    // done and repost the attached queue event.
     PostProcessAttachedQueueEvent();
   }
 
-  
+  // No matter what, unblock onload for the event that's fired.
   if (mDocument) {
-    
-    
+    // Hold a strong reference while calling UnblockOnload since that might
+    // run script.
     nsCOMPtr<nsIDocument> doc = mDocument;
     doc->UnblockOnload(true);
   }
@@ -999,7 +1000,7 @@ nsBindingManager::ProcessAttachedQueue(PRUint32 aSkipSize)
 
   mProcessingAttachedStack = true;
 
-  
+  // Excute constructors. Do this from high index to low
   while (mAttachedStack.Length() > aSkipSize) {
     PRUint32 lastItem = mAttachedStack.Length() - 1;
     nsRefPtr<nsXBLBinding> binding = mAttachedStack.ElementAt(lastItem);
@@ -1009,8 +1010,8 @@ nsBindingManager::ProcessAttachedQueue(PRUint32 aSkipSize)
     }
   }
 
-  
-  
+  // If NodeWillBeDestroyed has run we don't want to clobber
+  // mProcessingAttachedStack set there.
   if (mDocument) {
     mProcessingAttachedStack = false;
   }
@@ -1020,7 +1021,7 @@ nsBindingManager::ProcessAttachedQueue(PRUint32 aSkipSize)
   mAttachedStack.Compact();
 }
 
-
+// Keep bindings and bound elements alive while executing detached handlers.
 struct BindingTableReadClosure
 {
   nsCOMArray<nsIContent> mBoundElements;
@@ -1044,7 +1045,7 @@ AccumulateBindingsToDetach(nsISupports *aKey, nsXBLBinding *aBinding,
 void
 nsBindingManager::ExecuteDetachedHandlers()
 {
-  
+  // Walk our hashtable of bindings.
   if (mBindingTable.IsInitialized()) {
     BindingTableReadClosure closure;
     mBindingTable.EnumerateRead(AccumulateBindingsToDetach, &closure);
@@ -1120,7 +1121,7 @@ static PLDHashOperator
 MarkForDeath(nsISupports *aKey, nsXBLBinding *aBinding, void* aClosure)
 {
   if (aBinding->MarkedForDeath())
-    return PL_DHASH_NEXT; 
+    return PL_DHASH_NEXT; // Already marked for death.
 
   nsCAutoString path;
   aBinding->PrototypeBinding()->DocURI()->GetPath(path);
@@ -1138,7 +1139,7 @@ nsBindingManager::FlushSkinBindings()
     mBindingTable.EnumerateRead(MarkForDeath, nsnull);
 }
 
-
+// Used below to protect from recurring in QI calls through XPConnect.
 struct AntiRecursionData {
   nsIContent* element; 
   REFNSIID iid; 
@@ -1157,29 +1158,29 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
   *aResult = nsnull;
   nsXBLBinding *binding = GetBinding(aContent);
   if (binding) {
-    
+    // The binding should not be asked for nsISupports
     NS_ASSERTION(!aIID.Equals(NS_GET_IID(nsISupports)), "Asking a binding for nsISupports");
     if (binding->ImplementsInterface(aIID)) {
       nsCOMPtr<nsIXPConnectWrappedJS> wrappedJS = GetWrappedJS(aContent);
 
       if (wrappedJS) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Protect from recurring in QI calls through XPConnect. 
+        // This can happen when a second binding is being resolved.
+        // At that point a wrappedJS exists, but it doesn't yet know about
+        // the iid we are asking for. So, without this protection, 
+        // AggregatedQueryInterface would end up recurring back into itself
+        // through this code. 
+        //
+        // With this protection, when we detect the recursion we return 
+        // NS_NOINTERFACE in the inner call. The outer call will then fall 
+        // through (see below) and build a new chained wrappedJS for the iid.
+        //
+        // We're careful to not assume that only one direct nesting can occur
+        // because there is a call into JS in the middle and we can't assume 
+        // that this code won't be reached by some more complex nesting path.
+        //
+        // NOTE: We *assume* this is single threaded, so we can use a
+        // static linked list to do the check.
 
         static AntiRecursionData* list = nsnull;
 
@@ -1200,12 +1201,12 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
         if (*aResult)
           return rv;
         
-        
-        
+        // No result was found, so this must be another XBL interface.
+        // Fall through to create a new wrapper.
       }
 
-      
-      
+      // We have never made a wrapper for this implementation.
+      // Create an XPC wrapper for the script object and hand it back.
 
       nsIDocument* doc = aContent->OwnerDoc();
 
@@ -1241,9 +1242,9 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
       if (NS_FAILED(rv))
         return rv;
 
-      
-      
-      
+      // We successfully created a wrapper.  We will own this wrapper for as long as the binding remains
+      // alive.  At the time the binding is cleared out of the bindingManager, we will remove the wrapper
+      // from the bindingManager as well.
       nsISupports* supp = static_cast<nsISupports*>(*aResult);
       wrappedJS = do_QueryInterface(supp);
       SetWrappedJS(aContent, wrappedJS);
@@ -1265,8 +1266,8 @@ nsBindingManager::WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
   
   NS_ASSERTION(aData->mElement, "How did that happen?");
 
-  
-  
+  // Walk the binding scope chain, starting with the binding attached to our
+  // content, up till we run out of scopes or we get cut off.
   nsIContent *content = aData->mElement;
   
   do {
@@ -1274,28 +1275,28 @@ nsBindingManager::WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
     if (binding) {
       aData->mTreeMatchContext.mScopedRoot = content;
       binding->WalkRules(aFunc, aData);
-      
-      
+      // If we're not looking at our original content, allow the binding to cut
+      // off style inheritance
       if (content != aData->mElement) {
         if (!binding->InheritsStyle()) {
-          
+          // Go no further; we're not inheriting style from anything above here
           break;
         }
       }
     }
 
     if (content->IsRootOfNativeAnonymousSubtree()) {
-      break; 
+      break; // Deliberately cut off style inheritance here.
     }
 
     content = content->GetBindingParent();
   } while (content);
 
-  
-  
+  // If "content" is non-null that means we cut off inheritance at some point
+  // in the loop.
   *aCutOffInheritance = (content != nsnull);
 
-  
+  // Null out the scoped root that we set repeatedly
   aData->mTreeMatchContext.mScopedRoot = nsnull;
 
   return NS_OK;
@@ -1401,8 +1402,8 @@ EnumAppendAllSheets(nsISupports *aKey, nsXBLBinding *aBinding, void* aClosure)
     nsXBLPrototypeResources::sheet_array_type* sheets =
       binding->PrototypeBinding()->GetStyleSheets();
     if (sheets) {
-      
-      
+      // Copy from nsTArray<nsRefPtr<nsCSSStyleSheet> > to
+      // nsTArray<nsCSSStyleSheet*>.
       array->AppendElements(*sheets);
     }
   }
@@ -1422,15 +1423,15 @@ nsIContent*
 nsBindingManager::GetNestedInsertionPoint(nsIContent* aParent,
                                           const nsIContent* aChild)
 {
-  
+  // Check to see if the content is anonymous.
   if (aChild->GetBindingParent() == aParent)
-    return nsnull; 
-                   
+    return nsnull; // It is anonymous. Don't use the insertion point, since that's only
+                   // for the explicit kids.
 
   PRUint32 index;
   nsIContent *insertionElement = GetInsertionPoint(aParent, aChild, &index);
   if (insertionElement && insertionElement != aParent) {
-    
+    // See if we nest even further in.
     nsIContent* nestedPoint = GetNestedInsertionPoint(insertionElement, aChild);
     if (nestedPoint)
       insertionElement = nestedPoint;
@@ -1452,7 +1453,7 @@ nsBindingManager::GetNestedSingleInsertionPoint(nsIContent* aParent,
     return nsnull;
   }
   if (insertionElement && insertionElement != aParent) {
-    
+    // See if we nest even further in.
     nsIContent* nestedPoint =
       GetNestedSingleInsertionPoint(insertionElement,
                                     aMultipleInsertionPoints);
@@ -1477,10 +1478,10 @@ nsBindingManager::FindInsertionPointAndIndex(nsIContent* aContainer,
     return nsnull;
   }
 
-  
-  
-  
-  
+  // Find a non-pseudo-insertion point and just jam ourselves in.  This is
+  // not 100% correct, since there might be multiple insertion points under
+  // this insertion parent, and we should really be using the one that
+  // matches our content...  Hack city, baby.
   nsAnonymousContentList* contentList =
     static_cast<nsAnonymousContentList*>(nodeList);
 
@@ -1488,13 +1489,13 @@ nsBindingManager::FindInsertionPointAndIndex(nsIContent* aContainer,
   for (PRInt32 i = 0; i < count; i++) {
     nsXBLInsertionPoint* point = contentList->GetInsertionPointAt(i);
     if (point->GetInsertionIndex() != -1) {
-      
+      // We're real. Jam the kid in.
 
-      
-      
-      
-      
-      
+      // Find the right insertion spot.  Can't just insert in the insertion
+      // point at aIndexInContainer since the point may contain anonymous
+      // content, not all of aContainer's kids, etc.  So find the last
+      // child of aContainer that comes before aIndexInContainer and is in
+      // the insertion point and insert right after it.
       PRInt32 pointSize = point->ChildCount();
       for (PRInt32 parentIndex = aIndexInContainer - 1; parentIndex >= 0;
            --parentIndex) {
@@ -1508,15 +1509,15 @@ nsBindingManager::FindInsertionPointAndIndex(nsIContent* aContainer,
         }
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // None of our previous siblings are in here... just stick
+      // ourselves in at the end of the insertion point if we're
+      // appending, and at the beginning otherwise.            
+      // XXXbz if we ever start doing the filter thing right, this may be no
+      // good, since we may _still_ have anonymous kids in there and may need
+      // to get the ordering with those right.  In fact, this is even wrong
+      // without the filter thing for nested insertion points, since they might
+      // contain anonymous content that needs to come after all explicit
+      // kids... but we have no way to know that here easily.
       if (aAppend) {
         *aInsertionIndex = pointSize;
       } else {
@@ -1537,14 +1538,14 @@ nsBindingManager::ContentAppended(nsIDocument* aDocument,
 {
   if (aNewIndexInContainer != -1 &&
       (mContentListTable.ops || mAnonymousNodesTable.ops)) {
-    
+    // It's not anonymous.
     NS_ASSERTION(aNewIndexInContainer >= 0, "Bogus index");
 
     bool multiple;
     nsIContent* ins = GetNestedSingleInsertionPoint(aContainer, &multiple);
 
     if (multiple) {
-      
+      // Do each kid individually
       PRInt32 childCount = aContainer->GetChildCount();
       for (PRInt32 idx = aNewIndexInContainer; idx < childCount; ++idx) {
         HandleChildInsertion(aContainer, aContainer->GetChildAt(idx),
@@ -1577,7 +1578,7 @@ nsBindingManager::ContentInserted(nsIDocument* aDocument,
 {
   if (aIndexInContainer != -1 &&
       (mContentListTable.ops || mAnonymousNodesTable.ops)) {
-    
+    // It's not anonymous.
     NS_ASSERTION(aIndexInContainer >= 0, "Bogus index");
     HandleChildInsertion(aContainer, aChild, aIndexInContainer, false);
   }
@@ -1588,16 +1589,16 @@ RemoveChildFromInsertionPoint(nsAnonymousContentList* aInsertionPointList,
                               nsIContent* aChild,
                               bool aRemoveFromPseudoPoints)
 {
-  
-  
-  
-  
-  
+  // We need to find the insertion point that contains aChild and remove it
+  // from that insertion point.  Sadly, we don't know which point it is, or
+  // when we've hit it, but just trying to remove from all the pseudo or
+  // non-pseudo insertion points, depending on the value of
+  // aRemoveFromPseudoPoints, should work.
 
-  
-  
-  
-  
+  // XXXbz nsXBLInsertionPoint::RemoveChild could return whether it
+  // removed something.  Wouldn't that let us short-circuit the walk?
+  // Or can a child be in multiple insertion points?  I wouldn't think
+  // so...
   PRInt32 count = aInsertionPointList->GetInsertionPointCount();
   for (PRInt32 i = 0; i < count; i++) {
     nsXBLInsertionPoint* point =
@@ -1617,7 +1618,7 @@ nsBindingManager::ContentRemoved(nsIDocument* aDocument,
 {
   if (aContainer && aIndexInContainer != -1 &&
       (mContentListTable.ops || mAnonymousNodesTable.ops)) {
-    
+    // It's not anonymous
     nsCOMPtr<nsIContent> point = GetNestedInsertionPoint(aContainer, aChild);
 
     if (point) {
@@ -1626,7 +1627,7 @@ nsBindingManager::ContentRemoved(nsIDocument* aDocument,
         GetXBLChildNodesInternal(point, &isAnonymousContentList);
       
       if (nodeList && isAnonymousContentList) {
-        
+        // Find a non-pseudo-insertion point and remove ourselves.
         RemoveChildFromInsertionPoint(static_cast<nsAnonymousContentList*>
                                         (static_cast<nsIDOMNodeList*>
                                                     (nodeList)),
@@ -1635,13 +1636,13 @@ nsBindingManager::ContentRemoved(nsIDocument* aDocument,
         SetInsertionParent(aChild, nsnull);
       }
 
-      
+      // Also remove from the list in mContentListTable, if any.
       if (mContentListTable.ops) {
         nsCOMPtr<nsIDOMNodeList> otherNodeList =
           static_cast<nsAnonymousContentList*>
                      (LookupObject(mContentListTable, point));
         if (otherNodeList && otherNodeList != nodeList) {
-          
+          // otherNodeList is always anonymous
           RemoveChildFromInsertionPoint(static_cast<nsAnonymousContentList*>
                                         (static_cast<nsIDOMNodeList*>
                                                     (otherNodeList)),
@@ -1651,9 +1652,9 @@ nsBindingManager::ContentRemoved(nsIDocument* aDocument,
       }
     }
 
-    
-    
-    
+    // Whether the child has a nested insertion point or not, aContainer might
+    // have insertion points under it.  If that's the case, we need to remove
+    // aChild from the pseudo insertion point it's in.
     if (mContentListTable.ops) {
       nsAnonymousContentList* insertionPointList =
         static_cast<nsAnonymousContentList*>(LookupObject(mContentListTable,
@@ -1670,7 +1671,7 @@ nsBindingManager::DropDocumentReference()
 {
   mDestroyed = true;
 
-  
+  // Make sure to not run any more XBL constructors
   mProcessingAttachedStack = true;
   if (mProcessAttachedQueueEvent) {
     mProcessAttachedQueueEvent->Revoke();
@@ -1711,7 +1712,7 @@ nsBindingManager::Traverse(nsIContent *aContent,
     cb.NoteXPCOMChild(value);
   }
 
-  
+  // XXXbz how exactly would NODE_MAY_BE_IN_BINDING_MNGR end up on non-elements?
   if (!aContent->IsElement()) {
     return;
   }

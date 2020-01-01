@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/basictypes.h"
 
@@ -31,14 +31,13 @@
 #include "IndexedDatabaseInlines.h"
 
 USING_INDEXEDDB_NAMESPACE
+using namespace mozilla::dom::indexedDB::ipc;
 
 namespace {
 
 class IndexHelper : public AsyncConnectionHelper
 {
 public:
-  typedef ipc::IndexRequestParams IndexRequestParams;
-
   IndexHelper(IDBTransaction* aTransaction,
               IDBRequest* aRequest,
               IDBIndex* aIndex)
@@ -96,10 +95,10 @@ public:
                                   MOZ_OVERRIDE;
 
 protected:
-  
+  // In-params.
   nsRefPtr<IDBKeyRange> mKeyRange;
 
-  
+  // Out-params.
   Key mKey;
 };
 
@@ -252,18 +251,18 @@ public:
 protected:
   virtual nsresult EnsureCursor();
 
-  
+  // In-params.
   nsRefPtr<IDBKeyRange> mKeyRange;
   const IDBCursor::Direction mDirection;
 
-  
+  // Out-params.
   Key mKey;
   Key mObjectKey;
   nsCString mContinueQuery;
   nsCString mContinueToQuery;
   Key mRangeKey;
 
-  
+  // Only used in the parent process.
   nsRefPtr<IDBCursor> mCursor;
 };
 
@@ -299,7 +298,7 @@ private:
 
   StructuredCloneReadInfo mCloneReadInfo;
 
-  
+  // Only used in the parent process.
   SerializedStructuredCloneReadInfo mSerializedCloneReadInfo;
 };
 
@@ -346,9 +345,9 @@ GenerateRequest(IDBIndex* aIndex)
   return IDBRequest::Create(aIndex, database, transaction);
 }
 
-} 
+} // anonymous namespace
 
-
+// static
 already_AddRefed<IDBIndex>
 IDBIndex::Create(IDBObjectStore* aObjectStore,
                  const IndexInfo* aIndexInfo,
@@ -374,15 +373,15 @@ IDBIndex::Create(IDBObjectStore* aObjectStore,
 
     nsAutoPtr<IndexedDBIndexChild> actor(new IndexedDBIndexChild(index));
 
-    ipc::IndexConstructorParams params;
+    IndexConstructorParams params;
 
     if (aCreating) {
-      ipc::CreateIndexParams createParams;
+      CreateIndexParams createParams;
       createParams.info() = *aIndexInfo;
       params = createParams;
     }
     else {
-      ipc::GetIndexParams getParams;
+      GetIndexParams getParams;
       getParams.name() = aIndexInfo->name;
       params = getParams;
     }
@@ -656,7 +655,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IDBIndex)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IDBIndex)
-  
+  // Don't unlink mObjectStore!
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IDBIndex)
@@ -768,7 +767,7 @@ IDBIndex::Get(const jsval& aKey,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!keyRange) {
-    
+    // Must specify a key or keyRange for get().
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
 
@@ -797,7 +796,7 @@ IDBIndex::GetKey(const jsval& aKey,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!keyRange) {
-    
+    // Must specify a key or keyRange for get().
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
 
@@ -1015,7 +1014,7 @@ IndexHelper::Dispatch(nsIEventTarget* aDatabaseThread)
 }
 
 nsresult
-GetKeyHelper::DoDatabaseWork(mozIStorageConnection* )
+GetKeyHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
 {
   NS_ASSERTION(mKeyRange, "Must have a key range here!");
 
@@ -1081,7 +1080,7 @@ GetKeyHelper::PackArgumentsForParentProcess(IndexRequestParams& aParams)
 {
   NS_ASSERTION(mKeyRange, "This should never be null!");
 
-  ipc::GetKeyParams params;
+  GetKeyParams params;
 
   mKeyRange->ToSerializedKeyRange(params.keyRange());
 
@@ -1100,12 +1099,12 @@ GetKeyHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
     return Success_NotSent;
   }
 
-  ipc::ResponseValue response;
+  ResponseValue response;
   if (NS_FAILED(aResultCode)) {
     response = aResultCode;
   }
   else {
-    ipc::GetKeyResponse getKeyResponse;
+    GetKeyResponse getKeyResponse;
     getKeyResponse.key() = mKey;
     response = getKeyResponse;
   }
@@ -1129,7 +1128,7 @@ GetKeyHelper::UnpackResponseFromParentProcess(
 }
 
 nsresult
-GetHelper::DoDatabaseWork(mozIStorageConnection* )
+GetHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
 {
   NS_ASSERTION(mKeyRange, "Must have a key range here!");
 
@@ -1203,7 +1202,7 @@ GetHelper::PackArgumentsForParentProcess(IndexRequestParams& aParams)
 {
   NS_ASSERTION(mKeyRange, "This should never be null!");
 
-  ipc::FIXME_Bug_521898_index::GetParams params;
+  FIXME_Bug_521898_index::GetParams params;
 
   mKeyRange->ToSerializedKeyRange(params.keyRange());
 
@@ -1227,14 +1226,14 @@ GetHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
     return Error;
   }
 
-  ipc::ResponseValue response;
+  ResponseValue response;
   if (NS_FAILED(aResultCode)) {
     response = aResultCode;
   }
   else {
     SerializedStructuredCloneReadInfo readInfo;
     readInfo = mCloneReadInfo;
-    ipc::GetResponse getResponse = readInfo;
+    GetResponse getResponse = readInfo;
     response = getResponse;
   }
 
@@ -1267,7 +1266,7 @@ GetHelper::UnpackResponseFromParentProcess(const ResponseValue& aResponseValue)
 }
 
 nsresult
-GetAllKeysHelper::DoDatabaseWork(mozIStorageConnection* )
+GetAllKeysHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
 {
   nsCString tableName;
   if (mIndex->IsUnique()) {
@@ -1377,10 +1376,10 @@ GetAllKeysHelper::GetSuccessResult(JSContext* aCx,
 nsresult
 GetAllKeysHelper::PackArgumentsForParentProcess(IndexRequestParams& aParams)
 {
-  ipc::GetAllKeysParams params;
+  GetAllKeysParams params;
 
   if (mKeyRange) {
-    ipc::FIXME_Bug_521898_index::KeyRange keyRange;
+    FIXME_Bug_521898_index::KeyRange keyRange;
     mKeyRange->ToSerializedKeyRange(keyRange);
     params.optionalKeyRange() = keyRange;
   }
@@ -1405,12 +1404,12 @@ GetAllKeysHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
     return Success_NotSent;
   }
 
-  ipc::ResponseValue response;
+  ResponseValue response;
   if (NS_FAILED(aResultCode)) {
     response = aResultCode;
   }
   else {
-    ipc::GetAllKeysResponse getAllKeysResponse;
+    GetAllKeysResponse getAllKeysResponse;
     getAllKeysResponse.keys().AppendElements(mKeys);
     response = getAllKeysResponse;
   }
@@ -1434,7 +1433,7 @@ GetAllKeysHelper::UnpackResponseFromParentProcess(
 }
 
 nsresult
-GetAllHelper::DoDatabaseWork(mozIStorageConnection* )
+GetAllHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
 {
   nsCString indexTable;
   if (mIndex->IsUnique()) {
@@ -1525,10 +1524,10 @@ GetAllHelper::ReleaseMainThreadObjects()
 nsresult
 GetAllHelper::PackArgumentsForParentProcess(IndexRequestParams& aParams)
 {
-  ipc::FIXME_Bug_521898_index::GetAllParams params;
+  FIXME_Bug_521898_index::GetAllParams params;
 
   if (mKeyRange) {
-    ipc::FIXME_Bug_521898_index::KeyRange keyRange;
+    FIXME_Bug_521898_index::KeyRange keyRange;
     mKeyRange->ToSerializedKeyRange(keyRange);
     params.optionalKeyRange() = keyRange;
   }
@@ -1560,12 +1559,12 @@ GetAllHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
     }
   }
 
-  ipc::ResponseValue response;
+  ResponseValue response;
   if (NS_FAILED(aResultCode)) {
     response = aResultCode;
   }
   else {
-    ipc::GetAllResponse getAllResponse;
+    GetAllResponse getAllResponse;
 
     InfallibleTArray<SerializedStructuredCloneReadInfo>& infos =
       getAllResponse.cloneInfos();
@@ -1686,7 +1685,7 @@ OpenKeyCursorHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
   rv = mObjectKey.SetFromStatement(stmt, 1);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Now we need to make the query to get the next match.
   nsCAutoString queryStart = NS_LITERAL_CSTRING("SELECT value, object_data_key"
                                                 " FROM ") + table +
                              NS_LITERAL_CSTRING(" WHERE index_id = :id");
@@ -1821,10 +1820,10 @@ OpenKeyCursorHelper::ReleaseMainThreadObjects()
 nsresult
 OpenKeyCursorHelper::PackArgumentsForParentProcess(IndexRequestParams& aParams)
 {
-  ipc::OpenKeyCursorParams params;
+  OpenKeyCursorParams params;
 
   if (mKeyRange) {
-    ipc::FIXME_Bug_521898_index::KeyRange keyRange;
+    FIXME_Bug_521898_index::KeyRange keyRange;
     mKeyRange->ToSerializedKeyRange(keyRange);
     params.optionalKeyRange() = keyRange;
   }
@@ -1859,12 +1858,12 @@ OpenKeyCursorHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
     }
   }
 
-  ipc::ResponseValue response;
+  ResponseValue response;
   if (NS_FAILED(aResultCode)) {
     response = aResultCode;
   }
   else {
-    ipc::OpenCursorResponse openCursorResponse;
+    OpenCursorResponse openCursorResponse;
 
     if (!mCursor) {
       openCursorResponse = mozilla::void_t();
@@ -1876,7 +1875,7 @@ OpenKeyCursorHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
       IndexedDBRequestParentBase* requestActor = mRequest->GetActorParent();
       NS_ASSERTION(requestActor, "Must have an actor here!");
 
-      ipc::IndexCursorConstructorParams params;
+      IndexCursorConstructorParams params;
       params.requestParent() = requestActor;
       params.direction() = mDirection;
       params.key() = mKey;
@@ -1909,20 +1908,20 @@ OpenKeyCursorHelper::UnpackResponseFromParentProcess(
   NS_ASSERTION(aResponseValue.type() == ResponseValue::TOpenCursorResponse,
                "Bad response type!");
   NS_ASSERTION(aResponseValue.get_OpenCursorResponse().type() ==
-               ipc::OpenCursorResponse::Tvoid_t ||
+               OpenCursorResponse::Tvoid_t ||
                aResponseValue.get_OpenCursorResponse().type() ==
-               ipc::OpenCursorResponse::TPIndexedDBCursorChild,
+               OpenCursorResponse::TPIndexedDBCursorChild,
                "Bad response union type!");
   NS_ASSERTION(!mCursor, "Shouldn't have this yet!");
 
-  const ipc::OpenCursorResponse& response =
+  const OpenCursorResponse& response =
     aResponseValue.get_OpenCursorResponse();
 
   switch (response.type()) {
-    case ipc::OpenCursorResponse::Tvoid_t:
+    case OpenCursorResponse::Tvoid_t:
       break;
 
-    case ipc::OpenCursorResponse::TPIndexedDBCursorChild: {
+    case OpenCursorResponse::TPIndexedDBCursorChild: {
       IndexedDBCursorChild* actor =
         static_cast<IndexedDBCursorChild*>(
           response.get_PIndexedDBCursorChild());
@@ -2026,7 +2025,7 @@ OpenCursorHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
     mDatabase, mCloneReadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Now we need to make the query to get the next match.
   nsCAutoString queryStart =
     NS_LITERAL_CSTRING("SELECT index_table.value, "
                        "index_table.object_data_key, object_data.data, "
@@ -2146,8 +2145,8 @@ OpenCursorHelper::ReleaseMainThreadObjects()
 {
   IDBObjectStore::ClearStructuredCloneBuffer(mCloneReadInfo.mCloneBuffer);
 
-  
-  
+  // These don't need to be released on the main thread but they're only valid
+  // as long as mCursor is set.
   mSerializedCloneReadInfo.data = nsnull;
   mSerializedCloneReadInfo.dataLength = 0;
 
@@ -2157,10 +2156,10 @@ OpenCursorHelper::ReleaseMainThreadObjects()
 nsresult
 OpenCursorHelper::PackArgumentsForParentProcess(IndexRequestParams& aParams)
 {
-  ipc::FIXME_Bug_521898_index::OpenCursorParams params;
+  FIXME_Bug_521898_index::OpenCursorParams params;
 
   if (mKeyRange) {
-    ipc::FIXME_Bug_521898_index::KeyRange keyRange;
+    FIXME_Bug_521898_index::KeyRange keyRange;
     mKeyRange->ToSerializedKeyRange(keyRange);
     params.optionalKeyRange() = keyRange;
   }
@@ -2200,12 +2199,12 @@ OpenCursorHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
     }
   }
 
-  ipc::ResponseValue response;
+  ResponseValue response;
   if (NS_FAILED(aResultCode)) {
     response = aResultCode;
   }
   else {
-    ipc::OpenCursorResponse openCursorResponse;
+    OpenCursorResponse openCursorResponse;
 
     if (!mCursor) {
       openCursorResponse = mozilla::void_t();
@@ -2221,7 +2220,7 @@ OpenCursorHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
                    mSerializedCloneReadInfo.dataLength,
                    "Shouldn't be possible!");
 
-      ipc::IndexCursorConstructorParams params;
+      IndexCursorConstructorParams params;
       params.requestParent() = requestActor;
       params.direction() = mDirection;
       params.key() = mKey;
@@ -2328,10 +2327,10 @@ CountHelper::ReleaseMainThreadObjects()
 nsresult
 CountHelper::PackArgumentsForParentProcess(IndexRequestParams& aParams)
 {
-  ipc::FIXME_Bug_521898_index::CountParams params;
+  FIXME_Bug_521898_index::CountParams params;
 
   if (mKeyRange) {
-    ipc::FIXME_Bug_521898_index::KeyRange keyRange;
+    FIXME_Bug_521898_index::KeyRange keyRange;
     mKeyRange->ToSerializedKeyRange(keyRange);
     params.optionalKeyRange() = keyRange;
   }
@@ -2354,12 +2353,12 @@ CountHelper::MaybeSendResponseToChildProcess(nsresult aResultCode)
     return Success_NotSent;
   }
 
-  ipc::ResponseValue response;
+  ResponseValue response;
   if (NS_FAILED(aResultCode)) {
     response = aResultCode;
   }
   else {
-    ipc::CountResponse countResponse = mCount;
+    CountResponse countResponse = mCount;
     response = countResponse;
   }
 
