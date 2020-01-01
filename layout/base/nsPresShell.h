@@ -1,60 +1,60 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=2 sw=2 et tw=78:
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Steve Clark <buster@netscape.com>
- *   Håkan Waara <hwaara@chello.se>
- *   Dan Rosen <dr@netscape.com>
- *   Daniel Glazman <glazman@netscape.com>
- *   Mats Palmgren <matspal@gmail.com>
- *   Mihai Sucan <mihai.sucan@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK *****
- *
- * This Original Code has been modified by IBM Corporation.
- * Modifications made by IBM described herein are
- * Copyright (c) International Business Machines
- * Corporation, 2000
- *
- * Modifications to Mozilla code or documentation
- * identified per MPL Section 3.3
- *
- * Date         Modified by     Description of modification
- * 05/03/2000   IBM Corp.       Observer events for reflow states
- */
 
-/* a presentation of a document, part 2 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef nsPresShell_h_
 #define nsPresShell_h_
@@ -85,43 +85,43 @@ class ReflowCountMgr;
 #endif
 
 #define STACK_ARENA_MARK_INCREMENT 50
-/* a bit under 4096, for malloc overhead */
+
 #define STACK_ARENA_BLOCK_INCREMENT 4044
 
-/**A block of memory that the stack will 
- * chop up and hand out
- */
+
+
+
 struct StackBlock {
    
-   // a block of memory.  Note that this must be first so that it will
-   // be aligned.
+   
+   
    char mBlock[STACK_ARENA_BLOCK_INCREMENT];
 
-   // another block of memory that would only be created
-   // if our stack overflowed. Yes we have the ability
-   // to grow on a stack overflow
+   
+   
+   
    StackBlock* mNext;
 
    StackBlock() : mNext(nsnull) { }
    ~StackBlock() { }
 };
 
-/* we hold an array of marks. A push pushes a mark on the stack
- * a pop pops it off.
- */
+
+
+
 struct StackMark {
-   // the block of memory we are currently handing out chunks of
+   
    StackBlock* mBlock;
    
-   // our current position in the memory
+   
    size_t mPos;
 };
 
 
-/* A stack arena allows a stack based interface to a block of memory.
- * It should be used when you need to allocate some temporary memory that
- * you will immediately return.
- */
+
+
+
+
 class StackArena {
 public:
   StackArena();
@@ -129,39 +129,40 @@ public:
 
   nsresult Init() { return mBlocks ? NS_OK : NS_ERROR_OUT_OF_MEMORY; }
 
-  // Memory management functions
+  
   void* Allocate(size_t aSize);
   void Push();
   void Pop();
 
-  PRUint32 Size() {
-    PRUint32 result = 0;
+  size_t SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const {
+    size_t n = 0;
     StackBlock *block = mBlocks;
     while (block) {
-      result += sizeof(StackBlock);
+      n += aMallocSizeOf(block, sizeof(StackBlock));
       block = block->mNext;
     }
-    return result;
+    n += aMallocSizeOf(mMarks, mMarkLength * sizeof(StackMark));
+    return n;
   }
 
 private:
-  // our current position in memory
+  
   size_t mPos;
 
-  // a list of memory block. Usually there is only one
-  // but if we overrun our stack size we can get more memory.
+  
+  
   StackBlock* mBlocks;
 
-  // the current block of memory we are passing our chucks of
+  
   StackBlock* mCurBlock;
 
-  // our stack of mark where push has been called
+  
   StackMark* mMarks;
 
-  // the current top of the mark list
+  
   PRUint32 mStackTop;
 
-  // the size of the mark array
+  
   PRUint32 mMarkLength;
 };
 
@@ -178,10 +179,10 @@ public:
 
   NS_DECL_AND_IMPL_ZEROING_OPERATOR_NEW
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS
 
-  // nsIPresShell
+  
   virtual NS_HIDDEN_(nsresult) Init(nsIDocument* aDocument,
                                    nsPresContext* aPresContext,
                                    nsIViewManager* aViewManager,
@@ -197,7 +198,7 @@ public:
   virtual NS_HIDDEN_(void*) AllocateMisc(size_t aSize);
   virtual NS_HIDDEN_(void)  FreeMisc(size_t aSize, void* aChunk);
 
-  // Dynamic stack memory allocation
+  
   virtual NS_HIDDEN_(void) PushStackMemory();
   virtual NS_HIDDEN_(void) PopStackMemory();
   virtual NS_HIDDEN_(void*) AllocateStackMemory(size_t aSize);
@@ -230,14 +231,14 @@ public:
   virtual NS_HIDDEN_(bool) IsSafeToFlush() const;
   virtual NS_HIDDEN_(void) FlushPendingNotifications(mozFlushType aType);
 
-  /**
-   * Recreates the frames for a node
-   */
+  
+
+
   virtual NS_HIDDEN_(nsresult) RecreateFramesFor(nsIContent* aContent);
 
-  /**
-   * Post a callback that should be handled after reflow has finished.
-   */
+  
+
+
   virtual NS_HIDDEN_(nsresult) PostReflowCallback(nsIReflowCallback* aCallback);
   virtual NS_HIDDEN_(void) CancelReflowCallback(nsIReflowCallback* aCallback);
 
@@ -311,7 +312,7 @@ public:
 
   virtual nsresult SetResolution(float aXResolution, float aYResolution);
 
-  //nsIViewObserver interface
+  
 
   virtual void Paint(nsIView* aViewToPaint, nsIWidget* aWidget,
                      const nsRegion& aDirtyRegion, const nsIntRegion& aIntDirtyRegion,
@@ -333,7 +334,7 @@ public:
   virtual void ClearMouseCaptureOnView(nsIView* aView);
   virtual bool IsVisible();
 
-  // caret handling
+  
   virtual NS_HIDDEN_(already_AddRefed<nsCaret>) GetCaret() const;
   virtual NS_HIDDEN_(void) MaybeInvalidateCaretPosition();
   NS_IMETHOD SetCaretEnabled(bool aInEnable);
@@ -347,7 +348,7 @@ public:
   NS_IMETHOD SetSelectionFlags(PRInt16 aInEnable);
   NS_IMETHOD GetSelectionFlags(PRInt16 *aOutEnable);
 
-  // nsISelectionController
+  
 
   NS_IMETHOD CharacterMove(bool aForward, bool aExtend);
   NS_IMETHOD CharacterExtendForDelete();
@@ -365,7 +366,7 @@ public:
   NS_IMETHOD SelectAll();
   NS_IMETHOD CheckVisibility(nsIDOMNode *node, PRInt16 startOffset, PRInt16 EndOffset, bool *_retval);
 
-  // nsIDocumentObserver
+  
   NS_DECL_NSIDOCUMENTOBSERVER_BEGINUPDATE
   NS_DECL_NSIDOCUMENTOBSERVER_ENDUPDATE
   NS_DECL_NSIDOCUMENTOBSERVER_BEGINLOAD
@@ -379,7 +380,7 @@ public:
   NS_DECL_NSIDOCUMENTOBSERVER_STYLERULEADDED
   NS_DECL_NSIDOCUMENTOBSERVER_STYLERULEREMOVED
 
-  // nsIMutationObserver
+  
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTEWILLCHANGE
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -459,29 +460,29 @@ protected:
 
   void     WillDoReflow();
   void     DidDoReflow(bool aInterruptible);
-  // ProcessReflowCommands returns whether we processed all our dirty roots
-  // without interruptions.
+  
+  
   bool     ProcessReflowCommands(bool aInterruptible);
-  // MaybeScheduleReflow checks if posting a reflow is needed, then checks if
-  // the last reflow was interrupted. In the interrupted case ScheduleReflow is
-  // called off a timer, otherwise it is called directly.
+  
+  
+  
   void     MaybeScheduleReflow();
-  // Actually schedules a reflow.  This should only be called by
-  // MaybeScheduleReflow and the reflow timer ScheduleReflowOffTimer
-  // sets up.
+  
+  
+  
   void     ScheduleReflow();
 
-  // Reflow regardless of whether the override bit has been set.
+  
   nsresult ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight);
 
-  // DoReflow returns whether the reflow finished without interruption
+  
   bool DoReflow(nsIFrame* aFrame, bool aInterruptible);
 #ifdef DEBUG
   void DoVerifyReflow();
   void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
 #endif
 
-  // Helper for ScrollContentIntoView
+  
   void DoScrollContentIntoView(nsIContent* aContent,
                                PRIntn      aVPercent,
                                PRIntn      aHPercent,
@@ -530,10 +531,10 @@ protected:
   void ShowEventTargetDebug();
 #endif
 
-    /**
-    * methods that manage rules that are used to implement the associated preferences
-    *  - initially created for bugs 31816, 20760, 22963
-    */
+    
+
+
+
   nsresult ClearPreferenceStyleRules(void);
   nsresult CreatePreferenceStyleSheet(void);
   nsresult SetPrefLinkRules(void);
@@ -541,30 +542,30 @@ protected:
   nsresult SetPrefNoScriptRule();
   nsresult SetPrefNoFramesRule(void);
 
-  // methods for painting a range to an offscreen buffer
+  
 
-  // given a display list, clip the items within the list to
-  // the range
+  
+  
   nsRect ClipListToRange(nsDisplayListBuilder *aBuilder,
                          nsDisplayList* aList,
                          nsIRange* aRange);
 
-  // create a RangePaintInfo for the range aRange containing the
-  // display list needed to paint the range to a surface
+  
+  
   RangePaintInfo* CreateRangePaintInfo(nsIDOMRange* aRange,
                                        nsRect& aSurfaceRect,
                                        bool aForPrimarySelection);
 
-  /*
-   * Paint the items to a new surface and return it.
-   *
-   * aSelection - selection being painted, if any
-   * aRegion - clip region, if any
-   * aArea - area that the surface occupies, relative to the root frame
-   * aPoint - reference point, typically the mouse position
-   * aScreenRect - [out] set to the area of the screen the painted area should
-   *               be displayed at
-   */
+  
+
+
+
+
+
+
+
+
+
   already_AddRefed<gfxASurface>
   PaintRangePaintInfo(nsTArray<nsAutoPtr<RangePaintInfo> >* aItems,
                       nsISelection* aSelection,
@@ -573,18 +574,18 @@ protected:
                       nsIntPoint& aPoint,
                       nsIntRect* aScreenRect);
 
-  /**
-   * Methods to handle changes to user and UA sheet lists that we get
-   * notified about.
-   */
+  
+
+
+
   void AddUserSheet(nsISupports* aSheet);
   void AddAgentSheet(nsISupports* aSheet);
   void RemoveSheet(nsStyleSet::sheetType aType, nsISupports* aSheet);
 
-  // Hide a view if it is a popup
+  
   void HideViewIfPopup(nsIView* aView);
 
-  // Utility method to restore the root scrollframe state
+  
   void RestoreRootScrollPosition();
 
   void MaybeReleaseCapturingContent()
@@ -611,12 +612,12 @@ protected:
     return rv;
   }
 
-  nsRefPtr<nsCSSStyleSheet> mPrefStyleSheet; // mStyleSet owns it but we
-                                             // maintain a ref, may be null
+  nsRefPtr<nsCSSStyleSheet> mPrefStyleSheet; 
+                                             
 #ifdef DEBUG
   PRUint32                  mUpdateCount;
 #endif
-  // reflow roots that need to be reflowed, as both a queue and a hashtable
+  
   nsTArray<nsIFrame*> mDirtyRoots;
 
   bool mDocumentLoading;
@@ -628,9 +629,9 @@ protected:
 
   bool mLastRootReflowHadUnconstrainedHeight;
 
-  // This is used to protect ourselves from triggering reflow while in the
-  // middle of frame construction and the like... it really shouldn't be
-  // needed, one hopes, but it is for now.
+  
+  
+  
   PRUint32  mChangeNestCount;
   
   nsIFrame*   mCurrentEventFrame;
@@ -647,20 +648,20 @@ protected:
   nsCOMPtr<nsIDragService>      mDragService;
   
 #ifdef DEBUG
-  // The reflow root under which we're currently reflowing.  Null when
-  // not in reflow.
+  
+  
   nsIFrame* mCurrentReflowRoot;
 #endif
 
-  // Set of frames that we should mark with NS_FRAME_HAS_DIRTY_CHILDREN after
-  // we finish reflowing mCurrentReflowRoot.
+  
+  
   nsTHashtable< nsPtrHashKey<nsIFrame> > mFramesToDirty;
 
-  // Information needed to properly handle scrolling content into view if the
-  // pre-scroll reflow flush can be interrupted.  mContentToScrollTo is
-  // non-null between the initial scroll attempt and the first time we finish
-  // processing all our dirty roots.  mContentScrollVPosition and
-  // mContentScrollHPosition are only used when it's non-null.
+  
+  
+  
+  
+  
   nsCOMPtr<nsIContent> mContentToScrollTo;
   PRIntn mContentScrollVPosition;
   PRIntn mContentScrollHPosition;
@@ -751,25 +752,25 @@ protected:
   nsCallbackEventRequest* mFirstCallbackEventRequest;
   nsCallbackEventRequest* mLastCallbackEventRequest;
 
-  bool              mIsDocumentGone;      // We've been disconnected from the document.
-                                          // We will refuse to paint the document until either
-                                          // (a) our timer fires or (b) all frames are constructed.
-  bool              mShouldUnsuppressPainting;  // Indicates that it is safe to unlock painting once all pending
-                                                // reflows have been processed.
-  nsCOMPtr<nsITimer> mPaintSuppressionTimer; // This timer controls painting suppression.  Until it fires
-                                             // or all frames are constructed, we won't paint anything but
-                                             // our <body> background and scrollbars.
+  bool              mIsDocumentGone;      
+                                          
+                                          
+  bool              mShouldUnsuppressPainting;  
+                                                
+  nsCOMPtr<nsITimer> mPaintSuppressionTimer; 
+                                             
+                                             
 #define PAINTLOCK_EVENT_DELAY 250 // 250ms.  This is actually
-                                  // pref-controlled, but we use this
-                                  // value if we fail to get the pref
-                                  // for any reason.
+                                  
+                                  
+                                  
 
-  static void sPaintSuppressionCallback(nsITimer* aTimer, void* aPresShell); // A callback for the timer.
+  static void sPaintSuppressionCallback(nsITimer* aTimer, void* aPresShell); 
 
-  // At least on Win32 and Mac after interupting a reflow we need to post
-  // the resume reflow event off a timer to avoid event starvation because
-  // posted messages are processed before other messages when the modal
-  // moving/sizing loop is running, see bug 491700 for details.
+  
+  
+  
+  
   nsCOMPtr<nsITimer> mReflowContinueTimer;
   static void sReflowContinueCallback(nsITimer* aTimer, void* aPresShell);
   bool ScheduleReflowOffTimer();
@@ -787,9 +788,9 @@ private:
   nsresult RetargetEventToParent(nsGUIEvent* aEvent,
                                  nsEventStatus*  aEventStatus);
 
-  //helper funcs for event handling
+  
 protected:
-  //protected because nsPresShellEventCB needs this.
+  
   nsIFrame* GetCurrentEventFrame();
 private:
   void PushCurrentEventInfo(nsIFrame* aFrame, nsIContent* aContent);
@@ -798,32 +799,32 @@ private:
   nsresult HandlePositionedEvent(nsIFrame*      aTargetFrame,
                                  nsGUIEvent*    aEvent,
                                  nsEventStatus* aEventStatus);
-  // This returns the focused DOM window under our top level window.
-  //  I.e., when we are deactive, this returns the *last* focused DOM window.
+  
+  
   already_AddRefed<nsPIDOMWindow> GetFocusedDOMWindowInOurWindow();
 
-  /*
-   * This and the next two helper methods are used to target and position the
-   * context menu when the keyboard shortcut is used to open it.
-   *
-   * If another menu is open, the context menu is opened relative to the
-   * active menuitem within the menu, or the menu itself if no item is active.
-   * Otherwise, if the caret is visible, the menu is opened near the caret.
-   * Otherwise, if a selectable list such as a listbox is focused, the
-   * current item within the menu is opened relative to this item.
-   * Otherwise, the context menu is opened at the topleft corner of the
-   * view.
-   *
-   * Returns true if the context menu event should fire and false if it should
-   * not.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   bool AdjustContextMenuKeyEvent(nsMouseEvent* aEvent);
 
-  // 
+  
   bool PrepareToUseCaretPosition(nsIWidget* aEventWidget, nsIntPoint& aTargetPt);
 
-  // Get the selected item and coordinates in device pixels relative to root
-  // document's root view for element, first ensuring the element is onscreen
+  
+  
   void GetCurrentItemAndPositionForElement(nsIDOMElement *aCurrentEl,
                                            nsIContent **aTargetToUse,
                                            nsIntPoint& aTargetPt,
@@ -839,17 +840,17 @@ private:
 
   virtual void SynthesizeMouseMove(bool aFromScroll);
 
-  // Check if aEvent is a mouse event and record the mouse location for later
-  // synth mouse moves.
+  
+  
   void RecordMouseLocation(nsGUIEvent* aEvent);
-  // This is used for synthetic mouse events that are sent when what is under
-  // the mouse pointer may have changed without the mouse moving (eg scrolling,
-  // change to the document contents).
-  // It is set only on a presshell for a root document, this value represents
-  // the last observed location of the mouse relative to that root document. It
-  // is set to (NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE) if the mouse isn't
-  // over our window or there is no last observed mouse location for some
-  // reason.
+  
+  
+  
+  
+  
+  
+  
+  
   nsPoint mMouseLocation;
   class nsSynthMouseMoveEvent : public nsRunnable {
   public:
@@ -874,20 +875,20 @@ private:
 
 private:
 #ifdef DEBUG
-  // Ensure that every allocation from the PresArena is eventually freed.
+  
   PRUint32 mPresArenaAllocCount;
 #endif
 
 public:
 
-  PRUint32 EstimateMemoryUsed() {
-    PRUint32 result = 0;
+  size_t SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const {
+    size_t n = 0;
 
-    result += sizeof(PresShell);
-    result += mStackArena.Size();
-    result += mFrameArena.Size();
+    n += aMallocSizeOf(this, sizeof(PresShell));
+    n += mStackArena.SizeOfExcludingThis(aMallocSizeOf);
+    n += mFrameArena.SizeOfExcludingThis(aMallocSizeOf);
 
-    return result;
+    return n;
   }
 
   size_t SizeOfTextRuns(nsMallocSizeOfFun aMallocSizeOf);
@@ -909,4 +910,4 @@ private:
   nscolor GetDefaultBackgroundColorToDraw();
 };
 
-#endif /* !defined(nsPresShell_h_) */
+#endif 
