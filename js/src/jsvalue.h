@@ -1,93 +1,93 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=99 ft=cpp:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * June 30, 2010
+ *
+ * The Initial Developer of the Original Code is
+ *   the Mozilla Corporation.
+ *
+ * Contributor(s):
+ *   Luke Wagner <lw@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jsvalue_h__
 #define jsvalue_h__
-
-
-
+/*
+ * Private value interface.
+ */
 #include "jsprvtd.h"
 #include "jsstdint.h"
 
+/*
+ * js::Value is a C++-ified version of jsval that provides more information and
+ * helper functions than the basic jsval interface exposed by jsapi.h. A few
+ * general notes on js::Value:
+ *
+ * - Since js::Value and jsval have the same representation, values of these
+ *   types, function pointer types differing only in these types, and structs
+ *   differing only in these types can be converted back and forth at no cost
+ *   using the Jsvalify() and Valueify(). See Jsvalify comment below.
+ *
+ * - js::Value has setX() and isX() members for X in
+ *
+ *     { Int32, Double, String, Boolean, Undefined, Null, Object, Magic }
+ *
+ *   js::Value also contains toX() for each of the non-singleton types.
+ *
+ * - Magic is a singleton type whose payload contains a JSWhyMagic "reason" for
+ *   the magic value. By providing JSWhyMagic values when creating and checking
+ *   for magic values, it is possible to assert, at runtime, that only magic
+ *   values with the expected reason flow through a particular value. For
+ *   example, if cx->exception has a magic value, the reason must be
+ *   JS_GENERATOR_CLOSING.
+ *
+ * - A key difference between jsval and js::Value is that js::Value gives null
+ *   a separate type. Thus
+ *
+ *           JSVAL_IS_OBJECT(v) === v.isObjectOrNull()
+ *       !JSVAL_IS_PRIMITIVE(v) === v.isObject()
+ *
+ *   To help prevent mistakenly boxing a nullable JSObject* as an object,
+ *   Value::setObject takes a JSObject&. (Conversely, Value::asObject returns a
+ *   JSObject&. A convenience member Value::setObjectOrNull is provided.
+ *
+ * - JSVAL_VOID is the same as the singleton value of the Undefined type.
+ *
+ * - Note that js::Value is always 64-bit. Thus, on 32-bit user code should
+ *   avoid copying jsval/js::Value as much as possible, preferring to pass by
+ *   const Value &.
+ */
 
+/******************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* To avoid a circular dependency, pull in the necessary pieces of jsnum.h. */
 
 #include <math.h>
 #if defined(XP_WIN) || defined(XP_OS2)
@@ -117,9 +117,9 @@ JSDOUBLE_IS_INT32(jsdouble d, int32_t* pi)
     return d == (*pi = int32_t(d));
 }
 
+/******************************************************************************/
 
-
-
+/* Additional value operations used in js::Value but not in jsapi.h. */
 
 #if JS_BITS_PER_WORD == 32
 
@@ -288,7 +288,7 @@ JS_STATIC_ASSERT((JSVAL_TYPE_FUNOBJ & 0xF) == JSVAL_TYPE_OBJECT);
 static JS_ALWAYS_INLINE jsval_layout
 BOX_NON_DOUBLE_JSVAL(JSValueType type, uint64 *slot)
 {
-    
+    /* N.B. for 32-bit payloads, the high 32 bits of the slot are trash. */
     jsval_layout l;
     JS_ASSERT(type > JSVAL_TYPE_DOUBLE && type <= JSVAL_UPPER_INCL_TYPE_OF_BOXABLE_SET);
     uint32 isI32 = (uint32)(type < JSVAL_LOWER_INCL_TYPE_OF_GCTHING_SET);
@@ -308,19 +308,19 @@ UNBOX_NON_DOUBLE_JSVAL(jsval_layout l, uint64 *out)
 
 #endif
 
-
+/******************************************************************************/
 
 namespace js {
 
 class Value
 {
   public:
-    
+    /*
+     * N.B. the default constructor leaves Value unitialized. Adding a default
+     * constructor prevents Value from being stored in a union.
+     */
 
-
-
-
-    
+    /*** Mutatators ***/
 
     void setNull() {
         data.asBits = JSVAL_BITS(JSVAL_NULL);
@@ -404,7 +404,7 @@ class Value
         data.asBits = tmp;
     }
 
-    
+    /*** Value type queries ***/
 
     bool isUndefined() const {
         return JSVAL_IS_UNDEFINED_IMPL(data);
@@ -491,7 +491,7 @@ class Value
     }
 #endif
 
-    
+    /*** Comparison ***/
 
     bool operator==(const Value &rhs) const {
         return data.asBits == rhs.data.asBits;
@@ -505,7 +505,7 @@ class Value
         return JSVAL_SAME_TYPE_IMPL(lhs.data, rhs.data);
     }
 
-    
+    /*** Extract the value's typed payload ***/
 
     int32 toInt32() const {
         JS_ASSERT(isInt32());
@@ -556,12 +556,12 @@ class Value
         return data.asBits;
     }
 
-    
-
-
-
-
-
+    /*
+     * In the extract/box/unbox functions below, "NonDouble" means this
+     * functions must not be called on a value that is a double. This allows
+     * these operations to be implemented more efficiently, since doubles
+     * generally already require special handling by the caller.
+     */
     JSValueType extractNonDoubleType() const {
         return JSVAL_EXTRACT_NON_DOUBLE_TYPE_IMPL(data);
     }
@@ -578,11 +578,11 @@ class Value
         data = BOX_NON_DOUBLE_JSVAL(type, out);
     }
 
-    
-
-
-
-
+    /*
+     * The trace-jit specializes JSVAL_TYPE_OBJECT into JSVAL_TYPE_FUNOBJ and
+     * JSVAL_TYPE_NONFUNOBJ. Since these two operations just return the type of
+     * a value, the caller must handle JSVAL_TYPE_OBJECT separately.
+     */
     JSValueType extractNonDoubleObjectTraceType() const {
         JS_ASSERT(!isObject());
         return JSVAL_EXTRACT_NON_DOUBLE_TYPE_IMPL(data);
@@ -593,14 +593,14 @@ class Value
         return JSVAL_EXTRACT_NON_DOUBLE_TAG_IMPL(data);
     }
 
-    
-
-
-
-
-
-
-
+    /*
+     * Private API
+     *
+     * Private setters/getters allow the caller to read/write arbitrary types
+     * that fit in the 64-bit payload. It is the caller's responsibility, after
+     * storing to a value with setPrivateX to read only using getPrivateX.
+     * Privates values are given a type type which ensures they are not marked.
+     */
 
     void setPrivate(void *ptr) {
         data = PRIVATE_PTR_TO_JSVAL_IMPL(ptr);
@@ -725,31 +725,31 @@ PrivateValue(void *ptr)
     return v;
 }
 
+/******************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * As asserted above, js::Value and jsval are layout equivalent. This means:
+ *  - an instance of jsval may be reinterpreted as a js::Value and vice versa;
+ *  - a pointer to a function taking jsval arguments may be reinterpreted as a
+ *    function taking the same arguments, s/jsval/js::Value/, and vice versa;
+ *  - a struct containing jsval members may be reinterpreted as a struct with
+ *    the same members, s/jsval/js::Value/, and vice versa.
+ *
+ * To prevent widespread conversion using casts, which would effectively
+ * disable the C++ typesystem in places where we want it, a set of safe
+ * conversions between known-equivalent types is provided below. Given a type
+ * JsvalT expressedin terms of jsval and an equivalent type ValueT expressed in
+ * terms of js::Value, instances may be converted back and forth using:
+ *
+ *   JsvalT *x = ...
+ *   ValueT *y = js::Valueify(x);
+ *   JsvalT *z = js::Jsvalify(y);
+ *   assert(x == z);
+ *
+ * Conversions between references is also provided for some types. If it seems
+ * like a cast is needed to convert between jsval/js::Value, consider adding a
+ * new safe overload to Jsvalify/Valueify.
+ */
 
 static inline jsval *        Jsvalify(Value *v)        { return (jsval *)v; }
 static inline const jsval *  Jsvalify(const Value *v)  { return (const jsval *)v; }
@@ -779,8 +779,6 @@ typedef JSBool
 typedef JSBool
 (* CheckAccessOp)(JSContext *cx, JSObject *obj, jsid id, JSAccessMode mode,
                   Value *vp);
-typedef JSObjectOps *
-(* GetObjectOps)(JSContext *cx, Class *clasp);
 typedef JSBool
 (* EqualityOp)(JSContext *cx, JSObject *obj, const Value *v, JSBool *bp);
 typedef JSBool
@@ -805,16 +803,14 @@ static inline HasInstanceOp     Valueify(JSHasInstanceOp f)   { return (HasInsta
 static inline JSHasInstanceOp   Jsvalify(HasInstanceOp f)     { return (JSHasInstanceOp)f; }
 static inline CheckAccessOp     Valueify(JSCheckAccessOp f)   { return (CheckAccessOp)f; }
 static inline JSCheckAccessOp   Jsvalify(CheckAccessOp f)     { return (JSCheckAccessOp)f; }
-static inline GetObjectOps      Valueify(JSGetObjectOps f)    { return (GetObjectOps)f; }
-static inline JSGetObjectOps    Jsvalify(GetObjectOps f)      { return (JSGetObjectOps)f; }
-static inline EqualityOp        Valueify(JSEqualityOp f);     
-static inline JSEqualityOp      Jsvalify(EqualityOp f);       
+static inline EqualityOp        Valueify(JSEqualityOp f);     /* Same type as JSHasInstanceOp */
+static inline JSEqualityOp      Jsvalify(EqualityOp f);       /* Same type as HasInstanceOp */
 static inline DefinePropOp      Valueify(JSDefinePropOp f)    { return (DefinePropOp)f; }
 static inline JSDefinePropOp    Jsvalify(DefinePropOp f)      { return (JSDefinePropOp)f; }
-static inline PropertyIdOp      Valueify(JSPropertyIdOp f);   
-static inline JSPropertyIdOp    Jsvalify(PropertyIdOp f);     
-static inline CallOp            Valueify(JSCallOp f);         
-static inline JSCallOp          Jsvalify(CallOp f);           
+static inline PropertyIdOp      Valueify(JSPropertyIdOp f);   /* Same type as JSPropertyOp */
+static inline JSPropertyIdOp    Jsvalify(PropertyIdOp f);     /* Same type as PropertyOp */
+static inline CallOp            Valueify(JSCallOp f);         /* Same type as JSFastNative */
+static inline JSCallOp          Jsvalify(CallOp f);           /* Same type as FastNative */
 
 static const PropertyOp    PropertyStub  = (PropertyOp)JS_PropertyStub;
 static const JSEnumerateOp EnumerateStub = JS_EnumerateStub;
@@ -822,30 +818,91 @@ static const JSResolveOp   ResolveStub   = JS_ResolveStub;
 static const ConvertOp     ConvertStub   = (ConvertOp)JS_ConvertStub;
 static const JSFinalizeOp  FinalizeStub  = JS_FinalizeStub;
 
-struct Class {
-    const char          *name;
-    uint32              flags;
+#define JS_CLASS_MEMBERS                                                      \
+    const char          *name;                                                \
+    uint32              flags;                                                \
+                                                                              \
+    /* Mandatory non-null function pointer members. */                        \
+    PropertyOp          addProperty;                                          \
+    PropertyOp          delProperty;                                          \
+    PropertyOp          getProperty;                                          \
+    PropertyOp          setProperty;                                          \
+    JSEnumerateOp       enumerate;                                            \
+    JSResolveOp         resolve;                                              \
+    ConvertOp           convert;                                              \
+    JSFinalizeOp        finalize;                                             \
+                                                                              \
+    /* Optionally non-null members start here. */                             \
+    JSClassInternal     reserved0;                                            \
+    CheckAccessOp       checkAccess;                                          \
+    Native              call;                                                 \
+    Native              construct;                                            \
+    JSXDRObjectOp       xdrObject;                                            \
+    HasInstanceOp       hasInstance;                                          \
+    JSMarkOp            mark
 
-    
-    PropertyOp          addProperty;
-    PropertyOp          delProperty;
-    PropertyOp          getProperty;
-    PropertyOp          setProperty;
-    JSEnumerateOp       enumerate;
-    JSResolveOp         resolve;
-    ConvertOp           convert;
-    JSFinalizeOp        finalize;
 
-    
-    GetObjectOps        getObjectOps;
-    CheckAccessOp       checkAccess;
-    Native              call;
-    Native              construct;
-    JSXDRObjectOp       xdrObject;
-    HasInstanceOp       hasInstance;
-    JSMarkOp            mark;
-    void                (*reserved0)(void);
+/*
+ * The helper struct to measure the size of JS_CLASS_MEMBERS to know how much
+ * we have to padd js::Class to match the size of JSClass;
+ */
+struct ClassSizeMeasurement {
+    JS_CLASS_MEMBERS;
 };
+
+struct ClassExtension {
+    EqualityOp          equality;
+    JSObjectOp          outerObject;
+    JSObjectOp          innerObject;
+    JSIteratorOp        iteratorObject;
+    JSObjectOp          wrappedObject;  /* NB: infallible, null returns are
+                                           treated as the original object */
+};
+
+#define JS_NULL_CLASS_EXT   {NULL,NULL,NULL,NULL,NULL}
+
+struct ObjectOps {
+    JSLookupPropOp      lookupProperty;
+    js::DefinePropOp    defineProperty;
+    js::PropertyIdOp    getProperty;
+    js::PropertyIdOp    setProperty;
+    JSAttributesOp      getAttributes;
+    JSAttributesOp      setAttributes;
+    js::PropertyIdOp    deleteProperty;
+    js::NewEnumerateOp  enumerate;
+    JSTypeOfOp          typeOf;
+    JSTraceOp           trace;
+    JSObjectOp          thisObject;
+    JSFinalizeOp        clear;
+};
+
+#define JS_NULL_OBJECT_OPS  {NULL,NULL,NULL,NULL,NULL,NULL, NULL,NULL,NULL,NULL,NULL,NULL}
+
+struct Class {
+    JS_CLASS_MEMBERS;
+    ClassExtension      ext;
+    ObjectOps           ops;
+    uint8               pad[sizeof(JSClass) - sizeof(ClassSizeMeasurement) -
+                            sizeof(ClassExtension) - sizeof(ObjectOps)];
+
+    /* Flag indicating that Class::call is a fast native. */
+    static const uint32 CALL_IS_FAST = JSCLASS_INTERNAL_FLAG1;
+
+    /* Class is not native and its map is not a scope. */
+    static const uint32 NON_NATIVE = JSCLASS_INTERNAL_FLAG2;
+
+    bool isNative() const {
+        return !(flags & NON_NATIVE);
+    }
+};
+
+/* Helper to initialize Class::call when Class::CALL_IS_FAST. */
+inline Native
+CastCallOpAsNative(CallOp op)
+{
+    return reinterpret_cast<Native>(op);
+}
+
 JS_STATIC_ASSERT(offsetof(JSClass, name) == offsetof(Class, name));
 JS_STATIC_ASSERT(offsetof(JSClass, flags) == offsetof(Class, flags));
 JS_STATIC_ASSERT(offsetof(JSClass, addProperty) == offsetof(Class, addProperty));
@@ -856,39 +913,14 @@ JS_STATIC_ASSERT(offsetof(JSClass, enumerate) == offsetof(Class, enumerate));
 JS_STATIC_ASSERT(offsetof(JSClass, resolve) == offsetof(Class, resolve));
 JS_STATIC_ASSERT(offsetof(JSClass, convert) == offsetof(Class, convert));
 JS_STATIC_ASSERT(offsetof(JSClass, finalize) == offsetof(Class, finalize));
-JS_STATIC_ASSERT(offsetof(JSClass, getObjectOps) == offsetof(Class, getObjectOps));
+JS_STATIC_ASSERT(offsetof(JSClass, reserved0) == offsetof(Class, reserved0));
 JS_STATIC_ASSERT(offsetof(JSClass, checkAccess) == offsetof(Class, checkAccess));
 JS_STATIC_ASSERT(offsetof(JSClass, call) == offsetof(Class, call));
 JS_STATIC_ASSERT(offsetof(JSClass, construct) == offsetof(Class, construct));
 JS_STATIC_ASSERT(offsetof(JSClass, xdrObject) == offsetof(Class, xdrObject));
 JS_STATIC_ASSERT(offsetof(JSClass, hasInstance) == offsetof(Class, hasInstance));
 JS_STATIC_ASSERT(offsetof(JSClass, mark) == offsetof(Class, mark));
-JS_STATIC_ASSERT(offsetof(JSClass, reserved0) == offsetof(Class, reserved0));
 JS_STATIC_ASSERT(sizeof(JSClass) == sizeof(Class));
-
-struct ExtendedClass {
-    Class               base;
-    EqualityOp          equality;
-    JSObjectOp          outerObject;
-    JSObjectOp          innerObject;
-    JSIteratorOp        iteratorObject;
-    JSObjectOp          wrappedObject;          
-
-
-    void                (*reserved0)(void);
-    void                (*reserved1)(void);
-    void                (*reserved2)(void);
-};
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, base) == offsetof(ExtendedClass, base));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, equality) == offsetof(ExtendedClass, equality));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, outerObject) == offsetof(ExtendedClass, outerObject));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, innerObject) == offsetof(ExtendedClass, innerObject));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, iteratorObject) == offsetof(ExtendedClass, iteratorObject));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, wrappedObject) == offsetof(ExtendedClass, wrappedObject));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, reserved0) == offsetof(ExtendedClass, reserved0));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, reserved1) == offsetof(ExtendedClass, reserved1));
-JS_STATIC_ASSERT(offsetof(JSExtendedClass, reserved2) == offsetof(ExtendedClass, reserved2));
-JS_STATIC_ASSERT(sizeof(JSExtendedClass) == sizeof(ExtendedClass));
 
 struct PropertyDescriptor {
     JSObject     *obj;
@@ -908,19 +940,17 @@ JS_STATIC_ASSERT(sizeof(JSPropertyDescriptor) == sizeof(PropertyDescriptor));
 
 static JS_ALWAYS_INLINE JSClass *              Jsvalify(Class *c)                { return (JSClass *)c; }
 static JS_ALWAYS_INLINE Class *                Valueify(JSClass *c)              { return (Class *)c; }
-static JS_ALWAYS_INLINE JSExtendedClass *      Jsvalify(ExtendedClass *c)        { return (JSExtendedClass *)c; }
-static JS_ALWAYS_INLINE ExtendedClass *        Valueify(JSExtendedClass *c)      { return (ExtendedClass *)c; }
 static JS_ALWAYS_INLINE JSPropertyDescriptor * Jsvalify(PropertyDescriptor *p) { return (JSPropertyDescriptor *) p; }
 static JS_ALWAYS_INLINE PropertyDescriptor *   Valueify(JSPropertyDescriptor *p) { return (PropertyDescriptor *) p; }
 
+/******************************************************************************/
 
-
-
-
-
-
-
-
+/*
+ * In some cases (quickstubs) we want to take a value in whatever manner is
+ * appropriate for the architecture and normalize to a const js::Value &. On
+ * x64, passing a js::Value may cause the to unnecessarily be passed through
+ * memory instead of registers, so jsval, which is a builtin uint64 is used.
+ */
 #if JS_BITS_PER_WORD == 32
 typedef const js::Value *ValueArgType;
 
@@ -940,5 +970,5 @@ ValueArgToConstRef(const Value &v)
 }
 #endif
 
-}      
-#endif 
+}      /* namespace js */
+#endif /* jsvalue_h__ */

@@ -1,43 +1,43 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
- * May 28, 2008.
- *
- * The Initial Developer of the Original Code is
- *   Mozilla Foundation
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Andreas Gal <gal@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <string.h>
 #include "jsapi.h"
@@ -140,7 +140,7 @@ JSProxyHandler::set(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id,
     AutoPropertyDescriptorRooter desc(cx);
     if (!getOwnPropertyDescriptor(cx, proxy, id, &desc))
         return false;
-    /* The control-flow here differs from ::get() because of the fall-through case below. */
+    
     if (desc.obj) {
         if (desc.setter) {
             if (desc.attrs & JSPROP_SETTER) {
@@ -170,7 +170,7 @@ JSProxyHandler::set(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id,
         }
         if (desc.attrs & JSPROP_READONLY)
             return true;
-        /* fall through */
+        
     }
     desc.obj = proxy;
     desc.value = *vp;
@@ -190,7 +190,7 @@ JSProxyHandler::enumerateOwn(JSContext *cx, JSObject *proxy, AutoIdVector &props
     if (!getOwnPropertyNames(cx, proxy, props))
         return false;
 
-    /* Select only the enumerable properties through in-place iteration. */
+    
     AutoPropertyDescriptorRooter desc(cx);
     size_t i = 0;
     for (size_t j = 0, len = props.length(); j < len; j++) {
@@ -271,10 +271,10 @@ JSProxyHandler::construct(JSContext *cx, JSObject *proxy,
         return true;
     }
 
-    /*
-     * FIXME: The Proxy proposal says to pass undefined as the this argument,
-     * but primitive this is not supported yet. See bug 576644.
-     */
+    
+
+
+
     JS_ASSERT(fval.isObject());
     JSObject *thisobj = fval.toObject().getGlobal();
     return InternalCall(cx, thisobj, fval, argc, argv, rval);
@@ -422,13 +422,13 @@ ArrayToIdVector(JSContext *cx, const Value &array, AutoIdVector &props)
     return true;
 }
 
-/* Derived class for all scripted proxy handlers. */
+
 class JSScriptedProxyHandler : public JSProxyHandler {
   public:
     JSScriptedProxyHandler();
     virtual ~JSScriptedProxyHandler();
 
-    /* ES5 Harmony fundamental proxy traps. */
+    
     virtual bool getPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id,
                                        PropertyDescriptor *desc);
     virtual bool getOwnPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id,
@@ -440,7 +440,7 @@ class JSScriptedProxyHandler : public JSProxyHandler {
     virtual bool enumerate(JSContext *cx, JSObject *proxy, AutoIdVector &props);
     virtual bool fix(JSContext *cx, JSObject *proxy, Value *vp);
 
-    /* ES5 Harmony derived proxy traps. */
+    
     virtual bool has(JSContext *cx, JSObject *proxy, jsid id, bool *bp);
     virtual bool hasOwn(JSContext *cx, JSObject *proxy, jsid id, bool *bp);
     virtual bool get(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id, Value *vp);
@@ -862,7 +862,7 @@ proxy_GetAttributes(JSContext *cx, JSObject *obj, jsid id, uintN *attrsp)
 static JSBool
 proxy_SetAttributes(JSContext *cx, JSObject *obj, jsid id, uintN *attrsp)
 {
-    /* Lookup the current property descriptor so we have setter/getter/value. */
+    
     AutoPropertyDescriptorRooter desc(cx);
     if (!JSProxy::getOwnPropertyDescriptor(cx, obj, id, &desc))
         return false;
@@ -888,27 +888,12 @@ proxy_TraceObject(JSTracer *trc, JSObject *obj)
     if (!JS_CLIST_IS_EMPTY(&cx->runtime->watchPointList))
         js_TraceWatchPoints(trc, obj);
 
-    Class *clasp = obj->getClass();
-    if (clasp->mark) {
-        if (clasp->flags & JSCLASS_MARK_IS_TRACE)
-            ((JSTraceOp) clasp->mark)(trc, obj);
-        else if (IS_GC_MARKING_TRACER(trc))
-            (void) clasp->mark(cx, obj, trc);
-    }
-
-    obj->traceProtoAndParent(trc);
     obj->getProxyHandler()->trace(trc, obj);
     MarkValue(trc, obj->getProxyPrivate(), "private");
     if (obj->isFunctionProxy()) {
         MarkValue(trc, GetCall(obj), "call");
         MarkValue(trc, GetConstruct(obj), "construct");
     }
-}
-
-static JSType
-proxy_TypeOf_obj(JSContext *cx, JSObject *obj)
-{
-    return JSTYPE_OBJECT;
 }
 
 void
@@ -919,51 +904,39 @@ proxy_Finalize(JSContext *cx, JSObject *obj)
         obj->getProxyHandler()->finalize(cx, obj);
 }
 
-extern JSObjectOps js_ObjectProxyObjectOps;
-
-static const JSObjectMap SharedObjectProxyMap(&js_ObjectProxyObjectOps, JSObjectMap::SHAPELESS);
-
-JSObjectOps js_ObjectProxyObjectOps = {
-    &SharedObjectProxyMap,
-    proxy_LookupProperty,
-    proxy_DefineProperty,
-    proxy_GetProperty,
-    proxy_SetProperty,
-    proxy_GetAttributes,
-    proxy_SetAttributes,
-    proxy_DeleteProperty,
-    js_Enumerate,
-    proxy_TypeOf_obj,
-    proxy_TraceObject,
-    NULL,   /* thisObject */
-    proxy_Finalize
-};
-
-static JSObjectOps *
-obj_proxy_getObjectOps(JSContext *cx, Class *clasp)
-{
-    return &js_ObjectProxyObjectOps;
-}
-
 JS_FRIEND_API(Class) ObjectProxyClass = {
     "Proxy",
-    JSCLASS_HAS_RESERVED_SLOTS(2),
-    PropertyStub,
-    PropertyStub,
-    PropertyStub,
-    PropertyStub,
+    Class::NON_NATIVE | JSCLASS_HAS_RESERVED_SLOTS(2),
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
     EnumerateStub,
     ResolveStub,
     ConvertStub,
-    NULL,
-    obj_proxy_getObjectOps,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
+    NULL,           
+    JS_NULL_CLASS_EXT,
+    {
+        proxy_LookupProperty,
+        proxy_DefineProperty,
+        proxy_GetProperty,
+        proxy_SetProperty,
+        proxy_GetAttributes,
+        proxy_SetAttributes,
+        proxy_DeleteProperty,
+        NULL,       
+        NULL,       
+        proxy_TraceObject,
+        NULL,       
+        proxy_Finalize, 
+    }
 };
 
 JSBool
@@ -975,7 +948,7 @@ proxy_Call(JSContext *cx, uintN argc, Value *vp)
 }
 
 JSBool
-proxy_Construct(JSContext *cx, JSObject * /*obj*/, uintN argc, Value *argv, Value *rval)
+proxy_Construct(JSContext *cx, JSObject * , uintN argc, Value *argv, Value *rval)
 {
     JSObject *proxy = &argv[-2].toObject();
     JS_ASSERT(proxy->isProxy());
@@ -988,53 +961,41 @@ proxy_TypeOf_fun(JSContext *cx, JSObject *obj)
     return JSTYPE_FUNCTION;
 }
 
-extern JSObjectOps js_FunctionProxyObjectOps;
-
-static const JSObjectMap SharedFunctionProxyMap(&js_FunctionProxyObjectOps, JSObjectMap::SHAPELESS);
-
 #define proxy_HasInstance js_FunctionClass.hasInstance
-
-JSObjectOps js_FunctionProxyObjectOps = {
-    &SharedFunctionProxyMap,
-    proxy_LookupProperty,
-    proxy_DefineProperty,
-    proxy_GetProperty,
-    proxy_SetProperty,
-    proxy_GetAttributes,
-    proxy_SetAttributes,
-    proxy_DeleteProperty,
-    js_Enumerate,
-    proxy_TypeOf_fun,
-    proxy_TraceObject,
-    NULL, /* thisObject */
-    NULL  /* clear */
-};
-
-static JSObjectOps *
-fun_proxy_getObjectOps(JSContext *cx, Class *clasp)
-{
-    return &js_FunctionProxyObjectOps;
-}
 
 JS_FRIEND_API(Class) FunctionProxyClass = {
     "Proxy",
-    JSCLASS_HAS_RESERVED_SLOTS(4) | CLASS_CALL_IS_FAST,
-    PropertyStub,
-    PropertyStub,
-    PropertyStub,
-    PropertyStub,
+    Class::NON_NATIVE | JSCLASS_HAS_RESERVED_SLOTS(4) | Class::CALL_IS_FAST,
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
     EnumerateStub,
     ResolveStub,
     ConvertStub,
-    NULL,
-    fun_proxy_getObjectOps,
-    NULL,
+    NULL,           
+    NULL,           
+    NULL,           
     CastCallOpAsNative(proxy_Call),
     proxy_Construct,
-    NULL,
+    NULL,           
     proxy_HasInstance,
-    NULL,
-    NULL
+    NULL,           
+    JS_NULL_CLASS_EXT,
+    {
+        proxy_LookupProperty,
+        proxy_DefineProperty,
+        proxy_GetProperty,
+        proxy_SetProperty,
+        proxy_GetAttributes,
+        proxy_SetAttributes,
+        proxy_DeleteProperty,
+        NULL,       
+        proxy_TypeOf_fun,
+        proxy_TraceObject,
+        NULL,       
+        NULL,       
+    }
 };
 
 JS_FRIEND_API(JSObject *)
@@ -1205,11 +1166,11 @@ callable_Construct(JSContext *cx, JSObject *obj, uintN argc, Value *argv, Value 
     JS_ASSERT(callable->getClass() == &CallableObjectClass);
     Value fval = callable->fslots[JSSLOT_CALLABLE_CONSTRUCT];
     if (fval.isUndefined()) {
-        /* We don't have an explicit constructor so allocate a new object and use the call. */
+        
         fval = callable->fslots[JSSLOT_CALLABLE_CALL];
         JS_ASSERT(fval.isObject());
 
-        /* callable is the constructor, so get callable.prototype is the proto of the new object. */
+        
         if (!callable->getProperty(cx, ATOM_TO_JSID(ATOM(classPrototype)), rval))
             return false;
 
@@ -1227,7 +1188,7 @@ callable_Construct(JSContext *cx, JSObject *obj, uintN argc, Value *argv, Value 
 
         rval->setObject(*newobj);
 
-        /* If the call returns an object, return that, otherwise the original newobj. */
+        
         if (!InternalCall(cx, newobj, callable->fslots[JSSLOT_CALLABLE_CALL],
                           argc, argv, rval)) {
             return false;
@@ -1243,10 +1204,18 @@ callable_Construct(JSContext *cx, JSObject *obj, uintN argc, Value *argv, Value 
 Class CallableObjectClass = {
     "Function",
     JSCLASS_HAS_RESERVED_SLOTS(2),
-    PropertyStub,           PropertyStub,    PropertyStub,    PropertyStub,
-    EnumerateStub,          ResolveStub,     ConvertStub,     NULL,
-    NULL,                   NULL,            callable_Call,   callable_Construct,
-    NULL,                   NULL,            NULL,            NULL
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    EnumerateStub,
+    ResolveStub,
+    ConvertStub,
+    NULL,           
+    NULL,           
+    NULL,           
+    callable_Call,
+    callable_Construct,
 };
 
 JS_FRIEND_API(JSBool)
@@ -1273,7 +1242,7 @@ FixProxy(JSContext *cx, JSObject *proxy, JSBool *bp)
     JSObject *parent = proxy->getParent();
     Class *clasp = proxy->isFunctionProxy() ? &CallableObjectClass : &js_ObjectClass;
 
-    /* Make a blank object from the recipe fix provided to us. */
+    
     JSObject *newborn = NewObjectWithGivenProto(cx, clasp, proto, parent);
     if (!newborn)
         return NULL;
@@ -1290,10 +1259,10 @@ FixProxy(JSContext *cx, JSObject *proxy, JSBool *bp)
             return false;
     }
 
-    /* Trade spaces between the newborn object and the proxy. */
+    
     proxy->swap(newborn);
 
-    /* The GC will dispose of the proxy object. */
+    
 
     *bp = true;
     return true;
@@ -1304,9 +1273,13 @@ FixProxy(JSContext *cx, JSObject *proxy, JSBool *bp)
 Class js_ProxyClass = {
     "Proxy",
     JSCLASS_HAS_CACHED_PROTO(JSProto_Proxy),
-    PropertyStub,           PropertyStub,    PropertyStub,    PropertyStub,
-    EnumerateStub,          ResolveStub,     ConvertStub,     NULL,
-    JSCLASS_NO_OPTIONAL_MEMBERS
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    EnumerateStub,
+    ResolveStub,
+    ConvertStub
 };
 
 JS_FRIEND_API(JSObject *)

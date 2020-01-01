@@ -1,43 +1,43 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sw=4 et tw=99:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is SpiderMonkey JSON.
- *
- * The Initial Developer of the Original Code is
- * Mozilla Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1998-1999
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Robert Sayre <sayrer@gmail.com>
- *   Dave Camp <dcamp@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <string.h>
 #include "jsapi.h"
@@ -80,7 +80,7 @@ struct JSONParser
        objectKey(cx), buffer(cx)
     {}
 
-    /* Used while handling \uNNNN in strings */
+    
     jschar hexChar;
     uint8 numHex;
 
@@ -99,9 +99,13 @@ struct JSONParser
 Class js_JSONClass = {
     js_JSON_str,
     JSCLASS_HAS_CACHED_PROTO(JSProto_JSON),
-    PropertyStub,  PropertyStub,  PropertyStub,  PropertyStub,
-    EnumerateStub, ResolveStub,   ConvertStub,   NULL,
-    JSCLASS_NO_OPTIONAL_MEMBERS
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    PropertyStub,   
+    EnumerateStub,
+    ResolveStub,
+    ConvertStub
 };
 
 JSBool
@@ -134,7 +138,7 @@ js_json_stringify(JSContext *cx, uintN argc, Value *vp)
     AutoValueRooter space(cx);
     AutoObjectRooter replacer(cx);
 
-    // Must throw an Error if there isn't a first arg
+    
     if (!JS_ConvertArguments(cx, argc, Jsvalify(argv), "v / o v", vp, replacer.addr(), space.addr()))
         return JS_FALSE;
 
@@ -143,9 +147,9 @@ js_json_stringify(JSContext *cx, uintN argc, Value *vp)
     if (!js_Stringify(cx, vp, replacer.object(), space.value(), cb))
         return JS_FALSE;
 
-    // XXX This can never happen to nsJSON.cpp, but the JSON object
-    // needs to support returning undefined. So this is a little awkward
-    // for the API, because we want to support streaming writers.
+    
+    
+    
     if (!cb.empty()) {
         JSString *str = js_NewStringFromCharBuffer(cx, cb);
         if (!str)
@@ -161,7 +165,7 @@ js_json_stringify(JSContext *cx, uintN argc, Value *vp)
 JSBool
 js_TryJSON(JSContext *cx, Value *vp)
 {
-    // Checks whether the return value implements toJSON()
+    
     JSBool ok = JS_TRUE;
 
     if (vp->isObject()) {
@@ -334,7 +338,7 @@ JO(JSContext *cx, Value *vp, StringifyContext *scx)
     Value *keySource = vp;
     bool usingWhitelist = false;
 
-    // if the replacer is an array, we use the keys from it
+    
     if (scx->replacer && JS_IsArrayObject(cx, scx->replacer)) {
         usingWhitelist = true;
         vec[2].setObject(*scx->replacer);
@@ -353,7 +357,7 @@ JO(JSContext *cx, Value *vp, StringifyContext *scx)
             if (!js_ValueToStringId(cx, IdToValue(ida[i]), &id))
                 return JS_FALSE;
         } else {
-            // skip non-index properties
+            
             jsuint index = 0;
             if (!js_IdIsIndex(ida[i], &index))
                 continue;
@@ -365,9 +369,9 @@ JO(JSContext *cx, Value *vp, StringifyContext *scx)
                 return JS_FALSE;
         }
 
-        // We should have a string id by this point. Either from 
-        // JS_Enumerate's id array, or by converting an element
-        // of the whitelist.
+        
+        
+        
         JS_ASSERT(JSID_IS_ATOM(id));
 
         if (!JS_GetPropertyById(cx, obj, id, Jsvalify(&outputValue)))
@@ -376,18 +380,18 @@ JO(JSContext *cx, Value *vp, StringifyContext *scx)
         if (outputValue.isObjectOrNull() && !js_TryJSON(cx, &outputValue))
             return JS_FALSE;
 
-        // call this here, so we don't write out keys if the replacer function
-        // wants to elide the value.
+        
+        
         if (!CallReplacerFunction(cx, id, obj, scx, &outputValue))
             return JS_FALSE;
 
         JSType type = JS_TypeOfValue(cx, Jsvalify(outputValue));
 
-        // elide undefined values and functions and XML
+        
         if (outputValue.isUndefined() || type == JSTYPE_FUNCTION || type == JSTYPE_XML)
             continue;
 
-        // output a comma unless this is the first member to write
+        
         if (memberWritten && !scx->cb.append(','))
             return JS_FALSE;
         memberWritten = JS_TRUE;
@@ -395,7 +399,7 @@ JO(JSContext *cx, Value *vp, StringifyContext *scx)
         if (!WriteIndent(cx, scx, scx->depth))
             return JS_FALSE;
 
-        // Be careful below, this string is weakly rooted
+        
         JSString *s = js_ValueToString(cx, IdToValue(id));
         if (!s)
             return JS_FALSE;
@@ -492,7 +496,7 @@ Str(JSContext *cx, jsid id, JSObject *holder, StringifyContext *scx, Value *vp, 
     if (callReplacer && !CallReplacerFunction(cx, id, holder, scx, vp))
         return JS_FALSE;
 
-    // catches string and number objects with no toJSON
+    
     if (vp->isObject()) {
         JSObject *obj = &vp->toObject();
         Class *clasp = obj->getClass();
@@ -575,7 +579,7 @@ js_Stringify(JSContext *cx, Value *vp, JSObject *replacer, const Value &space,
     return Str(cx, ATOM_TO_JSID(cx->runtime->atomState.emptyAtom), obj, &scx, vp);
 }
 
-// helper to determine whether a character could be part of a number
+
 static JSBool IsNumChar(jschar c)
 {
     return ((c <= '9' && c >= '0') || c == '.' || c == '-' || c == '+' || c == 'e' || c == 'E');
@@ -635,7 +639,7 @@ Walk(JSContext *cx, jsid id, JSObject *holder, const Value &reviver, Value *vp)
         }
     }
 
-    // return reviver.call(holder, key, value);
+    
     const Value &value = *vp;
     JSString *key = js_ValueToString(cx, IdToValue(id));
     if (!key)
@@ -706,8 +710,8 @@ js_FinishJSONParse(JSContext *cx, JSONParser *jp, const Value &reviver)
 
     JSBool early_ok = JS_TRUE;
 
-    // Check for unprocessed primitives at the root. This doesn't happen for
-    // strings because a closing quote triggers value processing.
+    
+    
     if ((jp->statep - jp->stateStack) == 1) {
         if (*jp->statep == JSON_PARSE_STATE_KEYWORD) {
             early_ok = HandleData(cx, jp, JSON_DATA_KEYWORD);
@@ -720,7 +724,7 @@ js_FinishJSONParse(JSContext *cx, JSONParser *jp, const Value &reviver)
         }
     }
 
-    /* This internal API is infallible, in spite of its JSBool return type. */
+    
     js_RemoveRoot(cx->runtime, &jp->objectStack);
 
     bool ok = *jp->statep == JSON_PARSE_STATE_FINISHED;
@@ -746,14 +750,14 @@ static JSBool
 PushState(JSContext *cx, JSONParser *jp, JSONParserState state)
 {
     if (*jp->statep == JSON_PARSE_STATE_FINISHED) {
-        // extra input
+        
         JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_JSON_BAD_PARSE);
         return JS_FALSE;
     }
 
     jp->statep++;
     if ((uint32)(jp->statep - jp->stateStack) >= JS_ARRAY_LENGTH(jp->stateStack)) {
-        // too deep
+        
         JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_JSON_BAD_PARSE);
         return JS_FALSE;
     }
@@ -816,10 +820,10 @@ PushObject(JSContext *cx, JSONParser *jp, JSObject *obj)
     AutoObjectRooter tvr(cx, obj);
     Value v = ObjectOrNullValue(obj);
 
-    // Check if this is the root object
+    
     if (len == 0) {
         *jp->rootVal = v;
-        // This property must be enumerable to keep the array dense
+        
         if (!jp->objectStack->defineProperty(cx, INT_TO_JSID(0), *jp->rootVal,
                                              NULL, NULL, JSPROP_ENUMERATE)) {
             return JS_FALSE;
@@ -835,7 +839,7 @@ PushObject(JSContext *cx, JSONParser *jp, JSObject *obj)
     if (!PushValue(cx, jp, parent, v))
         return JS_FALSE;
 
-    // This property must be enumerable to keep the array dense
+    
     if (!jp->objectStack->defineProperty(cx, INT_TO_JSID(len), v,
                                          NULL, NULL, JSPROP_ENUMERATE)) {
         return JS_FALSE;
@@ -857,7 +861,7 @@ OpenObject(JSContext *cx, JSONParser *jp)
 static JSBool
 OpenArray(JSContext *cx, JSONParser *jp)
 {
-    // Add an array to an existing array or object
+    
     JSObject *arr = js_NewArrayObject(cx, 0, NULL);
     if (!arr)
         return JS_FALSE;
@@ -900,7 +904,7 @@ PushPrimitive(JSContext *cx, JSONParser *jp, const Value &value)
         return PushValue(cx, jp, &o.toObject(), value);
     }
 
-    // root value must be primitive
+    
     *jp->rootVal = value;
     return JS_TRUE;
 }
@@ -913,7 +917,7 @@ HandleNumber(JSContext *cx, JSONParser *jp, const jschar *buf, uint32 len)
     if (!js_strtod(cx, buf, buf + len, &ep, &val))
         return JS_FALSE;
     if (ep != buf + len) {
-        // bad number input
+        
         JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_JSON_BAD_PARSE);
         return JS_FALSE;
     }
@@ -937,7 +941,7 @@ HandleKeyword(JSContext *cx, JSONParser *jp, const jschar *buf, uint32 len)
     Value keyword;
     TokenKind tt = js_CheckKeyword(buf, len);
     if (tt != TOK_PRIMARY) {
-        // bad keyword
+        
         JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_JSON_BAD_PARSE);
         return JS_FALSE;
     }
@@ -999,7 +1003,7 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
         switch (*jp->statep) {
           case JSON_PARSE_STATE_VALUE:
             if (c == ']') {
-                // empty array
+                
                 if (!PopState(cx, jp))
                     return JS_FALSE;
 
@@ -1015,7 +1019,7 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
             }
 
             if (c == '}') {
-                // we should only find these in OBJECT_KEY state
+                
                 JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_JSON_BAD_PARSE);
                 return JS_FALSE;
             }
@@ -1039,7 +1043,7 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
                 break;
             }
 
-          // fall through in case the value is an object or array
+          
           case JSON_PARSE_STATE_OBJECT_VALUE:
             if (c == '{') {
                 *jp->statep = JSON_PARSE_STATE_OBJECT;
@@ -1083,12 +1087,12 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
 
           case JSON_PARSE_STATE_OBJECT_PAIR :
             if (c == '"') {
-                // we want to be waiting for a : when the string has been read
+                
                 *jp->statep = JSON_PARSE_STATE_OBJECT_IN_PAIR;
                 if (!PushState(cx, jp, JSON_PARSE_STATE_STRING))
                     return JS_FALSE;
             } else if (c == '}') {
-                // pop off the object pair state and the object state
+                
                 if (!CloseObject(cx, jp) || !PopState(cx, jp) || !PopState(cx, jp))
                     return JS_FALSE;
             } else if (c == ']' || !JS_ISXMLSPACE(c)) {
@@ -1121,8 +1125,8 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
             } else if (c == '\\') {
                 *jp->statep = JSON_PARSE_STATE_STRING_ESCAPE;
             } else if (c < 31) {
-                // The JSON lexical grammer does not allow a JSONStringCharacter to be
-                // any of the Unicode characters U+0000 thru U+001F (control characters).
+                
+                
                 JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_JSON_BAD_PARSE);
                 return JS_FALSE;
             } else {
@@ -1185,7 +1189,7 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
                 if (!jp->buffer.append(c))
                     return JS_FALSE;
             } else {
-                // this character isn't part of the keyword, process it again
+                
                 i--;
                 if (!PopState(cx, jp))
                     return JS_FALSE;
@@ -1200,7 +1204,7 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
                 if (!jp->buffer.append(c))
                     return JS_FALSE;
             } else {
-                // this character isn't part of the number, process it again
+                
                 i--;
                 if (!PopState(cx, jp))
                     return JS_FALSE;
@@ -1211,7 +1215,7 @@ js_ConsumeJSONText(JSContext *cx, JSONParser *jp, const jschar *data, uint32 len
 
           case JSON_PARSE_STATE_FINISHED:
             if (!JS_ISXMLSPACE(c)) {
-                // extra input
+                
                 JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_JSON_BAD_PARSE);
                 return JS_FALSE;
             }

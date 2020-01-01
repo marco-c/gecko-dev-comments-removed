@@ -1,43 +1,43 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Mozilla Foundation
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Andreas Gal <gal@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "jsapi.h"
 #include "jscntxt.h"
@@ -275,7 +275,7 @@ JSWrapper::New(JSContext *cx, JSObject *obj, JSObject *proto, JSObject *parent,
                           obj->isCallable() ? obj : NULL, NULL);
 }
 
-
+/* Compartments. */
 
 namespace js {
 
@@ -312,24 +312,24 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 
     JS_CHECK_RECURSION(cx, return false);
 
-    
+    /* Only GC things have to be wrapped or copied. */
     if (!vp->isMarkable())
         return true;
 
-    
+    /* Static strings do not have to be wrapped. */
     if (vp->isString() && JSString::isStatic(vp->toString()))
         return true;
 
-    
+    /* Unwrap incoming objects. */
     if (vp->isObject()) {
         JSObject *obj = vp->toObject().unwrap(&flags);
         vp->setObject(*obj);
-        
+        /* If the wrapped object is already in this compartment, we are done. */
         if (obj->getCompartment(cx) == this)
             return true;
     }
 
-    
+    /* If we already have a wrapper for this value, use it. */
     if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(*vp)) {
         *vp = p->value;
         return true;
@@ -347,25 +347,25 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 
     JSObject *obj = &vp->toObject();
 
-    
-
-
-
-
-
-
-
-
-
+    /*
+     * Recurse to wrap the prototype. Long prototype chains will run out of
+     * stack, causing an error in CHECK_RECURSE.
+     *
+     * Wrapping the proto before creating the new wrapper and adding it to the
+     * cache helps avoid leaving a bad entry in the cache on OOM. But note that
+     * if we wrapped both proto and parent, we would get infinite recursion
+     * here (since Object.prototype->parent->proto leads to Object.prototype
+     * itself).
+     */
     JSObject *proto = obj->getProto();
     if (!wrap(cx, &proto))
         return false;
 
-    
-
-
-
-
+    /*
+     * We hand in the original wrapped object into the wrap hook to allow
+     * the wrap hook to reason over what wrappers are currently applied
+     * to the object.
+     */
     JSObject *wrapper = cx->runtime->wrapObjectCallback(cx, obj, proto, flags);
     if (!wrapper)
         return false;
@@ -374,13 +374,13 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
     if (!crossCompartmentWrappers.put(wrapper->getProxyPrivate(), *vp))
         return false;
 
-    
-
-
-
-
-
-
+    /*
+     * Wrappers should really be parented to the wrapped parent of the wrapped
+     * object, but in that case a wrapped global object would have a NULL
+     * parent without being a proper global object (JSCLASS_IS_GLOBAL). Instead,
+     * we parent all wrappers to the global object in their home compartment.
+     * This loses us some transparency, and is generally very cheesy.
+     */
     JSObject *global = cx->fp ? cx->fp->scopeChain->getGlobal() : cx->globalObject;
     wrapper->setParent(global);
     return true;
@@ -467,7 +467,7 @@ JSCompartment::wrapException(JSContext *cx) {
 void
 JSCompartment::sweep(JSContext *cx)
 {
-    
+    /* Remove dead wrappers from the table. */
     for (WrapperMap::Enum e(crossCompartmentWrappers); !e.empty(); e.popFront()) {
         if (js_IsAboutToBeFinalized(e.front().value.asGCThing()))
             e.removeFront();
@@ -484,10 +484,10 @@ SetupFakeFrame(JSContext *cx, ExecuteFrameGuard &frame, JSFrameRegs &regs, JSObj
 
     Value *vp = frame.getvp();
     vp[0].setUndefined();
-    vp[1].setNull();  
+    vp[1].setNull();  // satisfy LeaveTree assert
 
     JSStackFrame *fp = frame.getFrame();
-    PodZero(fp);  
+    PodZero(fp);  // fp->fun and fp->script are both NULL
     fp->argv = vp + 2;
     fp->scopeChain = obj->getGlobal();
 
@@ -546,7 +546,7 @@ AutoCompartment::leave()
     entered = false;
 }
 
-
+/* Cross compartment wrappers. */
 
 JSCrossCompartmentWrapper::JSCrossCompartmentWrapper(uintN flags) : JSWrapper(flags)
 {
@@ -675,16 +675,16 @@ JSCrossCompartmentWrapper::enumerateOwn(JSContext *cx, JSObject *wrapper, AutoId
            call.origin->wrap(cx, props));
 }
 
-
-
-
-
+/*
+ * We can reify non-escaping iterator objects instead of having to wrap them. This
+ * allows fast iteration over objects across a compartment boundary.
+ */
 static bool
 CanReify(Value *vp)
 {
     JSObject *obj;
     return vp->isObject() &&
-           (obj = &vp->toObject())->getClass() == &js_IteratorClass.base &&
+           (obj = &vp->toObject())->getClass() == &js_IteratorClass &&
            (obj->getNativeIterator()->flags & JSITER_ENUMERATE);
 }
 
@@ -694,16 +694,16 @@ Reify(JSContext *cx, JSCompartment *origin, Value *vp)
     JSObject *iterObj = &vp->toObject();
     NativeIterator *ni = iterObj->getNativeIterator();
 
-    
+    /* Wrap the iteratee. */
     JSObject *obj = ni->obj;
     if (!origin->wrap(cx, &obj))
         return false;
 
-    
-
-
-
-
+    /*
+     * Wrap the elements in the iterator's snapshot.
+     * N.B. the order of closing/creating iterators is important due to the
+     * implicit cx->enumerators state.
+     */
 
     if (ni->isKeyIter()) {
         size_t length = ni->numKeys();

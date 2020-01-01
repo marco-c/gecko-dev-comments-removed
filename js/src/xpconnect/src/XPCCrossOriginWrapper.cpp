@@ -1,52 +1,52 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=78: */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Blake Kaplan <mrbkap@gmail.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "xpcprivate.h"
 #include "nsDOMError.h"
 #include "jsdbgapi.h"
-#include "jscntxt.h"  
+#include "jscntxt.h"  // For js::AutoValueRooter.
 #include "XPCWrapper.h"
 #include "nsIDOMWindow.h"
 #include "nsIDOMWindowCollection.h"
 
-
-
+// This file implements a wrapper around objects that allows them to be
+// accessed safely from across origins.
 
 static JSBool
 XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp);
@@ -96,21 +96,21 @@ XPC_XOW_Iterator(JSContext *cx, JSObject *obj, JSBool keysonly);
 static JSObject *
 XPC_XOW_WrappedObject(JSContext *cx, JSObject *obj);
 
-
-
-
-
-
-
-
-
-
+// The slot that we stick our scope into.
+// This is used in the finalizer to see if we actually need to remove
+// ourselves from our scope's map. Because we cannot outlive our scope
+// (the parent link ensures this), we know that, when we're being
+// finalized, either our scope is still alive (i.e. we became garbage
+// due to no more references) or it is being garbage collected right now.
+// Therefore, we can look in gDyingScopes, and if our scope is there,
+// then the map is about to be destroyed anyway, so we don't need to
+// do anything.
 static const int XPC_XOW_ScopeSlot = XPCWrapper::sNumSlots;
 static const int sUXPCObjectSlot = XPCWrapper::sNumSlots + 1;
 
 using namespace XPCWrapper;
 
-
+// Throws an exception on context |cx|.
 static inline
 JSBool
 ThrowException(nsresult ex, JSContext *cx)
@@ -120,12 +120,12 @@ ThrowException(nsresult ex, JSContext *cx)
   return JS_FALSE;
 }
 
-
+// Get the (possibly nonexistent) XOW off of an object
 static inline
 JSObject *
 GetWrapper(JSObject *obj)
 {
-  while (obj->getJSClass() != &XPCCrossOriginWrapper::XOWClass.base) {
+  while (obj->getClass() != &XPCCrossOriginWrapper::XOWClass) {
     obj = obj->getProto();
     if (!obj) {
       break;
@@ -146,38 +146,44 @@ static JSBool
 XPC_XOW_FunctionWrapper(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
                         jsval *rval);
 
-
-
+// This flag is set on objects that were created for UniversalXPConnect-
+// enabled code.
 static const PRUint32 FLAG_IS_UXPC_OBJECT = XPCWrapper::LAST_FLAG << 1;
 
-
-
+// This flag is set on objects that have to clear their wrapped native's XOW
+// cache when they get finalized.
 static const PRUint32 FLAG_IS_CACHED = XPCWrapper::LAST_FLAG << 2;
 
 namespace XPCCrossOriginWrapper {
 
-JSExtendedClass XOWClass = {
-  
-  { "XPCCrossOriginWrapper",
-    JSCLASS_NEW_RESOLVE | JSCLASS_IS_EXTENDED |
+js::Class XOWClass = {
+    "XPCCrossOriginWrapper",
+    JSCLASS_NEW_RESOLVE |
     JSCLASS_HAS_RESERVED_SLOTS(XPCWrapper::sNumSlots + 2),
-    XPC_XOW_AddProperty, XPC_XOW_DelProperty,
-    XPC_XOW_GetProperty, XPC_XOW_SetProperty,
-    XPC_XOW_Enumerate,   (JSResolveOp)XPC_XOW_NewResolve,
-    XPC_XOW_Convert,     XPC_XOW_Finalize,
-    nsnull,              XPC_XOW_CheckAccess,
-    XPC_XOW_Call,        XPC_XOW_Construct,
-    nsnull,              XPC_XOW_HasInstance,
-    nsnull,              nsnull
-  },
+    js::Valueify(XPC_XOW_AddProperty),
+    js::Valueify(XPC_XOW_DelProperty),
+    js::Valueify(XPC_XOW_GetProperty),
+    js::Valueify(XPC_XOW_SetProperty),
+    XPC_XOW_Enumerate,
+    (JSResolveOp)XPC_XOW_NewResolve,
+    js::Valueify(XPC_XOW_Convert),
+    XPC_XOW_Finalize,
+    nsnull,   // reserved0 
+    js::Valueify(XPC_XOW_CheckAccess),
+    js::Valueify(XPC_XOW_Call),
+    js::Valueify(XPC_XOW_Construct),
+    nsnull,   // xdrObject
+    js::Valueify(XPC_XOW_HasInstance),
+    nsnull,   // mark
 
-  
-  XPC_XOW_Equality,
-  nsnull,             
-  nsnull,             
-  XPC_XOW_Iterator,
-  XPC_XOW_WrappedObject,
-  JSCLASS_NO_RESERVED_MEMBERS
+    // ClassExtension
+    {
+      js::Valueify(XPC_XOW_Equality),
+      nsnull, // outerObject
+      nsnull, // innerObject
+      XPC_XOW_Iterator,
+      XPC_XOW_WrappedObject
+    }
 };
 
 JSBool
@@ -189,19 +195,19 @@ WrapperMoved(JSContext *cx, XPCWrappedNative *innerObj,
   WrappedNative2WrapperMap *map = innerObj->GetScope()->GetWrapperMap();
   Link *link;
 
-  { 
+  { // Scoped lock
     XPCAutoLock al(rt->GetMapLock());
     link = map->FindLink(innerObj->GetFlatJSObject());
   }
 
   if (!link) {
-    
+    // No link here means that there were no XOWs for this object.
     return JS_TRUE;
   }
 
   JSObject *xow = link->obj;
 
-  { 
+  { // Scoped lock.
     XPCAutoLock al(rt->GetMapLock());
     if (!newScope->GetWrapperMap()->AddLink(innerObj->GetFlatJSObject(), link))
       return JS_FALSE;
@@ -209,7 +215,7 @@ WrapperMoved(JSContext *cx, XPCWrappedNative *innerObj,
   }
 
   if (!xow) {
-    
+    // Nothing else to do.
     return JS_TRUE;
   }
 
@@ -223,7 +229,7 @@ WindowNavigated(JSContext *cx, XPCWrappedNative *innerObj)
 {
   NS_ABORT_IF_FALSE(innerObj->NeedsXOW(), "About to write to unowned memory");
 
-  
+  // First, disconnect the old XOW from the XOW cache.
   XPCWrappedNativeWithXOW *wnxow =
     static_cast<XPCWrappedNativeWithXOW *>(innerObj);
   JSObject *oldXOW = wnxow->GetXOW();
@@ -238,19 +244,19 @@ WindowNavigated(JSContext *cx, XPCWrappedNative *innerObj)
   }
 }
 
-
-
-
-
-
-
+// Returns whether the currently executing code is allowed to access
+// the wrapper.  Uses nsIPrincipal::Subsumes.
+// |cx| must be the top context on the context stack.
+// If the subject is allowed to access the object returns NS_OK. If not,
+// returns NS_ERROR_DOM_PROP_ACCESS_DENIED, returns another error code on
+// failure.
 nsresult
 CanAccessWrapper(JSContext *cx, JSObject *outerObj, JSObject *wrappedObj,
                  JSBool *privilegeEnabled)
 {
-  
-  
-  
+  // Fast path: If the wrapper and the wrapped object have the same global
+  // object (or if the wrapped object is a outer for the same inner that
+  // the wrapper is parented to), then we don't need to do any more work.
 
   if (privilegeEnabled) {
     *privilegeEnabled = JS_FALSE;
@@ -274,8 +280,8 @@ CanAccessWrapper(JSContext *cx, JSObject *outerObj, JSObject *wrappedObj,
     }
   }
 
-  
-  
+  // TODO bug 508928: Refactor this with the XOW security checking code.
+  // Get the subject principal from the execution stack.
   nsIScriptSecurityManager *ssm = XPCWrapper::GetSecurityManager();
   if (!ssm) {
     ThrowException(NS_ERROR_NOT_INITIALIZED, cx);
@@ -305,17 +311,17 @@ CanAccessWrapper(JSContext *cx, JSObject *outerObj, JSObject *wrappedObj,
   }
   NS_ASSERTION(objectPrin, "Object didn't have principals?");
 
-  
+  // Micro-optimization: don't call into caps if we know the answer.
   if (subjectPrin == objectPrin) {
     return NS_OK;
   }
 
-  
+  // Now, we have our two principals, compare them!
   PRBool subsumes;
   rv = subjectPrin->Subsumes(objectPrin, &subsumes);
   if (NS_SUCCEEDED(rv) && !subsumes) {
-    
-    
+    // We're about to fail, but make a last effort to see if
+    // UniversalXPConnect was enabled anywhere else on the stack.
     rv = ssm->IsCapabilityEnabled("UniversalXPConnect", &isSystem);
     if (NS_SUCCEEDED(rv) && isSystem) {
       rv = NS_OK;
@@ -364,7 +370,7 @@ WrapFunction(JSContext *cx, JSObject *outerObj, JSObject *funobj, jsval *rval)
 JSBool
 RewrapIfNeeded(JSContext *cx, JSObject *outerObj, jsval *vp)
 {
-  
+  // Don't need to wrap primitive values.
   if (JSVAL_IS_PRIMITIVE(*vp)) {
     return JS_TRUE;
   }
@@ -376,7 +382,7 @@ RewrapIfNeeded(JSContext *cx, JSObject *outerObj, jsval *vp)
   }
 
   XPCWrappedNative *wn = nsnull;
-  if (obj->getJSClass() == &XOWClass.base &&
+  if (obj->getClass() == &XOWClass &&
       outerObj->getParent() != obj->getParent()) {
     *vp = OBJECT_TO_JSVAL(GetWrappedObject(cx, obj));
   } else if (!(wn = XPCWrappedNative::GetAndMorphWrappedNativeOfJSObject(cx, obj))) {
@@ -392,12 +398,12 @@ WrapObject(JSContext *cx, JSObject *parent, jsval *vp, XPCWrappedNative* wn)
   NS_ASSERTION(XPCPerThreadData::IsMainThread(cx),
                "Can't do this off the main thread!");
 
-  
-  
+  // Our argument should be a wrapped native object, but the caller may have
+  // passed it in as an optimization.
   JSObject *wrappedObj;
   if (JSVAL_IS_PRIMITIVE(*vp) ||
       !(wrappedObj = JSVAL_TO_OBJECT(*vp)) ||
-      wrappedObj->getJSClass() == &XOWClass.base) {
+      wrappedObj->getClass() == &XOWClass) {
     return JS_TRUE;
   }
 
@@ -406,7 +412,7 @@ WrapObject(JSContext *cx, JSObject *parent, jsval *vp, XPCWrappedNative* wn)
     return JS_TRUE;
   }
 
-  
+  // The parent must be the inner global object for its scope.
   parent = JS_GetGlobalForObject(cx, parent);
   OBJ_TO_INNER_OBJECT(cx, parent);
   if (!parent) {
@@ -445,12 +451,12 @@ WrapObject(JSContext *cx, JSObject *parent, jsval *vp, XPCWrappedNative* wn)
 
   outerObj = map->Find(wrappedObj);
   if (outerObj) {
-    NS_ASSERTION(outerObj->getJSClass() == &XOWClass.base,
+    NS_ASSERTION(outerObj->getClass() == &XOWClass,
                  "What crazy object are we getting here?");
     *vp = OBJECT_TO_JSVAL(outerObj);
 
     if (wnxow) {
-      
+      // NB: wnxow->GetXOW() must have returned false.
       SetFlags(cx, outerObj, AddFlags(GetFlags(cx, outerObj), FLAG_IS_CACHED));
       wnxow->SetXOW(outerObj);
     }
@@ -458,7 +464,7 @@ WrapObject(JSContext *cx, JSObject *parent, jsval *vp, XPCWrappedNative* wn)
     return JS_TRUE;
   }
 
-  outerObj = JS_NewObjectWithGivenProto(cx, &XOWClass.base, nsnull,
+  outerObj = JS_NewObjectWithGivenProto(cx, js::Jsvalify(&XOWClass), nsnull,
                                         parent);
   if (!outerObj) {
     return JS_FALSE;
@@ -482,7 +488,7 @@ WrapObject(JSContext *cx, JSObject *parent, jsval *vp, XPCWrappedNative* wn)
   return JS_TRUE;
 }
 
-} 
+} // namespace XPCCrossOriginWrapper
 
 using namespace XPCCrossOriginWrapper;
 
@@ -493,7 +499,7 @@ XPC_XOW_toString(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 static JSBool
 IsValFrame(JSObject *obj, jsid id, XPCWrappedNative *wn)
 {
-  
+  // Fast path for the common case.
   if (obj->getClass()->name[0] != 'W') {
     return JS_FALSE;
   }
@@ -529,9 +535,9 @@ XPC_XOW_FunctionWrapper(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 {
   JSObject *wrappedObj, *outerObj = obj;
 
-  
-  
-  
+  // Allow 'this' to be either an XOW, in which case we unwrap it.
+  // We disallow invalid XOWs that have no wrapped object. Otherwise,
+  // if it isn't an XOW, then pass it through as-is.
 
   outerObj = wrappedObj = GetWrapper(obj);
   if (wrappedObj) {
@@ -583,21 +589,21 @@ XPC_XOW_FunctionWrapper(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 static JSBool
 WrapSameOriginProp(JSContext *cx, JSObject *outerObj, jsval *vp)
 {
-  
-  
+  // Don't call RewrapIfNeeded for same origin properties. We only
+  // need to wrap window, document and location.
   if (JSVAL_IS_PRIMITIVE(*vp)) {
     return JS_TRUE;
   }
 
   JSObject *wrappedObj = JSVAL_TO_OBJECT(*vp);
-  JSClass *clasp = wrappedObj->getJSClass();
+  js::Class *clasp = wrappedObj->getClass();
   if (ClassNeedsXOW(clasp->name)) {
     return WrapObject(cx, JS_GetGlobalForObject(cx, outerObj), vp);
   }
 
-  
-  
-  if (clasp == &XOWClass.base &&
+  // Check if wrappedObj is an XOW. If so, verify that it's from the
+  // right scope.
+  if (clasp == &XOWClass &&
       wrappedObj->getParent() != outerObj->getParent()) {
     *vp = OBJECT_TO_JSVAL(GetWrappedObject(cx, wrappedObj));
     return WrapObject(cx, outerObj->getParent(), vp);
@@ -609,8 +615,8 @@ WrapSameOriginProp(JSContext *cx, JSObject *outerObj, jsval *vp)
 static JSBool
 XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 {
-  
-  
+  // All AddProperty needs to do is pass on addProperty requests to
+  // same-origin objects, and throw for all else.
 
   obj = GetWrapper(obj);
   jsval resolving;
@@ -620,7 +626,7 @@ XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 
   if (!JSVAL_IS_PRIMITIVE(*vp)) {
     JSObject *addedObj = JSVAL_TO_OBJECT(*vp);
-    if (addedObj->getJSClass() == &XOWClass.base &&
+    if (addedObj->getClass() == &XOWClass &&
         addedObj->getParent() != obj->getParent()) {
       *vp = OBJECT_TO_JSVAL(GetWrappedObject(cx, addedObj));
       if (!WrapObject(cx, obj->getParent(), vp, nsnull)) {
@@ -630,7 +636,7 @@ XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
   }
 
   if (HAS_FLAGS(resolving, FLAG_RESOLVING)) {
-    
+    // Allow us to define a property on ourselves.
     return JS_TRUE;
   }
 
@@ -643,13 +649,13 @@ XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
   nsresult rv = CanAccessWrapper(cx, obj, wrappedObj, &privilegeEnabled);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
-      
+      // Can't override properties on foreign objects.
       return ThrowException(rv, cx);
     }
     return JS_FALSE;
   }
 
-  
+  // Same origin, pass this request along.
   return AddProperty(cx, obj, JS_TRUE, wrappedObj, id, vp);
 }
 
@@ -664,13 +670,13 @@ XPC_XOW_DelProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
   nsresult rv = CanAccessWrapper(cx, obj, wrappedObj, nsnull);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
-      
+      // Can't delete properties on foreign objects.
       return ThrowException(rv, cx);
     }
     return JS_FALSE;
   }
 
-  
+  // Same origin, pass this request along.
   return DelProperty(cx, wrappedObj, id, vp);
 }
 
@@ -682,9 +688,9 @@ XPC_XOW_GetOrSetProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
     return JS_TRUE;
   }
 
-  
-  
-  
+  // Don't do anything if we already resolved to a wrapped function in
+  // NewResolve. In practice, this means that this is a wrapped eval
+  // function.
   jsval v = *vp;
   if (!JSVAL_IS_PRIMITIVE(v) &&
       JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(v)) &&
@@ -718,10 +724,10 @@ XPC_XOW_GetOrSetProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
       return ThrowException(NS_ERROR_FAILURE, cx);
     }
 
-    
-    
-    
-    
+    // This is a request to get a property across origins. We need to
+    // determine if this property is allAccess. If it is, then we need to
+    // actually get the property. If not, we simply need to throw an
+    // exception.
 
     XPCWrappedNative *wn =
       XPCWrappedNative::GetWrappedNativeOfJSObject(cx, wrappedObj);
@@ -736,7 +742,7 @@ XPC_XOW_GetOrSetProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
                                     id, isSet ? sSecMgrSetProp
                                               : sSecMgrGetProp);
       if (NS_FAILED(rv)) {
-        
+        // The security manager threw an exception for us.
         return JS_FALSE;
       }
     }
@@ -744,7 +750,7 @@ XPC_XOW_GetOrSetProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
     return GetOrSetNativeProperty(cx, obj, wn, id, vp, isSet, JS_FALSE);
   }
 
-  JSObject *proto = nsnull; 
+  JSObject *proto = nsnull; // Initialize this to quiet GCC.
   JSBool checkProto =
     (isSet && id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_PROTO));
   if (checkProto) {
@@ -761,24 +767,24 @@ XPC_XOW_GetOrSetProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
   if (checkProto) {
     JSObject *newProto = wrappedObj->getProto();
 
-    
-    
-    
-    
-    
-    
+    // If code is trying to set obj.__proto__ and we're on obj's
+    // prototype chain, then the JS_GetPropertyById above will do the
+    // wrong thing if wrappedObj still delegates to Object.prototype.
+    // However, it's hard to figure out if wrappedObj still does
+    // delegate to Object.prototype so check to see if proto changed as a
+    // result of setting __proto__.
 
     if (origObj != obj) {
-      
+      // Undo the damage.
       if (!JS_SetPrototype(cx, wrappedObj, proto) ||
           !JS_SetPrototype(cx, origObj, newProto)) {
         return JS_FALSE;
       }
     } else if (newProto) {
-      
-      
-      
-      
+      // __proto__ setting is a bad hack, people shouldn't do it. In
+      // this case we're setting the direct prototype of a XOW object,
+      // in the interests of sanity only allow it to be set to null in
+      // this case.
 
       JS_SetPrototype(cx, wrappedObj, proto);
       JS_ReportError(cx, "invalid __proto__ value (can only be set to null)");
@@ -807,14 +813,14 @@ XPC_XOW_Enumerate(JSContext *cx, JSObject *obj)
   obj = GetWrapper(obj);
   JSObject *wrappedObj = GetWrappedObject(cx, obj);
   if (!wrappedObj) {
-    
+    // Nothing to enumerate.
     return JS_TRUE;
   }
 
   nsresult rv = CanAccessWrapper(cx, obj, wrappedObj, nsnull);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
-      
+      // Can't enumerate on foreign objects.
       return ThrowException(rv, cx);
     }
 
@@ -824,25 +830,25 @@ XPC_XOW_Enumerate(JSContext *cx, JSObject *obj)
   return Enumerate(cx, obj, wrappedObj);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Because of the drastically different ways that same- and cross-origin XOWs
+// work, we have to call JS_ClearScope when a XOW changes from being same-
+// origin to cross-origin. Normally, there are defined places in Gecko where
+// this happens and they notify us. However, UniversalXPConnect causes the
+// same transition without any notifications. We could try to detect when this
+// happens, but doing so would require calling JS_ClearScope from random
+// hooks, which is bad.
+//
+// The compromise is the UXPCObject. When resolving a property on a XOW as
+// same-origin because of UniversalXPConnect, we actually resolve it on the
+// UXPCObject (which is just a XOW for the same object). This causes the JS
+// engine to do all of its work on another object, not polluting the main
+// object. However, if the get results in calling a setter, the engine still
+// uses the regular object as 'this', ensuring that the UXPCObject doesn't
+// leak to script.
 static JSObject *
 GetUXPCObject(JSContext *cx, JSObject *obj)
 {
-  NS_ASSERTION(obj->getJSClass() == &XOWClass.base, "wrong object");
+  NS_ASSERTION(obj->getClass() == &XOWClass, "wrong object");
 
   jsval v;
   if (!JS_GetReservedSlot(cx, obj, sFlagsSlot, &v)) {
@@ -862,7 +868,8 @@ GetUXPCObject(JSContext *cx, JSObject *obj)
   }
 
   JSObject *uxpco =
-    JS_NewObjectWithGivenProto(cx, &XOWClass.base, nsnull, obj->getParent());
+    JS_NewObjectWithGivenProto(cx, js::Jsvalify(&XOWClass), nsnull,
+                               obj->getParent());
   if (!uxpco) {
     return nsnull;
   }
@@ -897,7 +904,7 @@ XPC_XOW_NewResolve(JSContext *cx, JSObject *obj, jsid id, uintN flags,
 
   JSObject *wrappedObj = GetWrappedObject(cx, obj);
   if (!wrappedObj) {
-    
+    // No wrappedObj means that this is probably the prototype.
     *objp = nsnull;
     return JS_TRUE;
   }
@@ -914,10 +921,10 @@ XPC_XOW_NewResolve(JSContext *cx, JSObject *obj, jsid id, uintN flags,
       return ThrowException(NS_ERROR_FAILURE, cx);
     }
 
-    
-    
-    
-    
+    // We're dealing with a cross-origin lookup. Ensure that we're allowed to
+    // resolve this property and resolve it if so. Otherwise, we deny access
+    // and throw a security error. Note that this code does not actually check
+    // to see if the property exists, that's dealt with below.
 
     XPCWrappedNative *wn =
       XPCWrappedNative::GetWrappedNativeOfJSObject(cx, wrappedObj);
@@ -935,12 +942,12 @@ XPC_XOW_NewResolve(JSContext *cx, JSObject *obj, jsid id, uintN flags,
                                     wrappedObj->getClass()->name,
                                     id, action);
       if (NS_FAILED(rv)) {
-        
+        // The security manager threw an exception for us.
         return JS_FALSE;
       }
     }
 
-    
+    // We're out! We're allowed to resolve this property.
     return ResolveNativeProperty(cx, obj, wrappedObj, wn, id,
                                  flags, objp, JS_FALSE);
 
@@ -977,7 +984,7 @@ XPC_XOW_NewResolve(JSContext *cx, JSObject *obj, jsid id, uintN flags,
 static JSBool
 XPC_XOW_Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
 {
-  
+  // Don't do any work to convert to object.
   if (type == JSTYPE_OBJECT) {
     *vp = OBJECT_TO_JSVAL(obj);
     return JS_TRUE;
@@ -985,7 +992,7 @@ XPC_XOW_Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
 
   JSObject *wrappedObj = GetWrappedObject(cx, obj);
   if (!wrappedObj) {
-    
+    // Converting the prototype to something.
 
     if (type == JSTYPE_STRING || type == JSTYPE_VOID) {
       return XPC_XOW_toString(cx, obj, 0, nsnull, vp);
@@ -1000,12 +1007,12 @@ XPC_XOW_Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
     return ThrowException(NS_ERROR_FAILURE, cx);
   }
 
-  
+  // Note: JSTYPE_VOID and JSTYPE_STRING are equivalent.
   nsresult rv = CanAccessWrapper(cx, obj, wrappedObj, nsnull);
   if (NS_FAILED(rv) &&
       (rv != NS_ERROR_DOM_PROP_ACCESS_DENIED ||
        (type != JSTYPE_STRING && type != JSTYPE_VOID))) {
-    
+    // Ensure that we report some kind of error.
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
       ThrowException(rv, cx);
     }
@@ -1031,7 +1038,7 @@ XPC_XOW_Finalize(JSContext *cx, JSObject *obj)
 
   jsval flags = GetFlags(cx, obj);
   if (HAS_FLAGS(flags, FLAG_IS_CACHED)) {
-    
+    // We know that it's safe to access our wrapped object.
     XPCWrappedNativeWithXOW *wnxow =
       static_cast<XPCWrappedNativeWithXOW *>(xpc_GetJSPrivate(wrappedObj));
     wnxow->SetXOW(nsnull);
@@ -1040,22 +1047,22 @@ XPC_XOW_Finalize(JSContext *cx, JSObject *obj)
     SetFlags(cx, obj, RemoveFlags(flags, FLAG_IS_CACHED));
   }
 
-  
+  // Get our scope.
   jsval scopeVal;
   if (!JS_GetReservedSlot(cx, obj, XPC_XOW_ScopeSlot, &scopeVal)) {
     return;
   }
 
-  
-  
-  
+  // Now that we have our scope, see if it's going away. If it is,
+  // then our work here is going to be done when we destroy the scope
+  // entirely. Scope can be null if we're an enumerating XOW.
   XPCWrappedNativeScope *scope = reinterpret_cast<XPCWrappedNativeScope *>
                                                  (JSVAL_TO_PRIVATE(scopeVal));
   if (!scope) {
     return;
   }
 
-  
+  // Remove ourselves from the map.
   scope->GetWrapperMap()->Remove(wrappedObj);
 }
 
@@ -1063,8 +1070,8 @@ static JSBool
 XPC_XOW_CheckAccess(JSContext *cx, JSObject *obj, jsid id, JSAccessMode mode,
                     jsval *vp)
 {
-  
-  
+  // Simply forward checkAccess to our wrapped object. It's already expecting
+  // untrusted things to ask it about accesses.
 
   uintN junk;
   return JS_CheckAccess(cx, GetWrappedObject(cx, obj), id, mode, vp, &junk);
@@ -1075,14 +1082,14 @@ XPC_XOW_Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
   JSObject *wrappedObj = GetWrappedObject(cx, obj);
   if (!wrappedObj) {
-    
+    // Nothing to call.
     return JS_TRUE;
   }
 
   nsresult rv = CanAccessWrapper(cx, obj, wrappedObj, nsnull);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
-      
+      // Can't call.
       return ThrowException(rv, cx);
     }
 
@@ -1107,14 +1114,14 @@ XPC_XOW_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
   JSObject *realObj = GetWrapper(JSVAL_TO_OBJECT(argv[-2]));
   JSObject *wrappedObj = GetWrappedObject(cx, realObj);
   if (!wrappedObj) {
-    
+    // Nothing to construct.
     return JS_TRUE;
   }
 
   nsresult rv = CanAccessWrapper(cx, realObj, wrappedObj, nsnull);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
-      
+      // Can't construct.
       return ThrowException(rv, cx);
     }
     return JS_FALSE;
@@ -1141,7 +1148,7 @@ XPC_XOW_HasInstance(JSContext *cx, JSObject *obj, const jsval *valp, JSBool *bp)
   nsresult rv = CanAccessWrapper(cx, obj, iface, nsnull);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
-      
+      // Don't do this test across origins.
       return ThrowException(rv, cx);
     }
     return JS_FALSE;
@@ -1154,12 +1161,12 @@ XPC_XOW_HasInstance(JSContext *cx, JSObject *obj, const jsval *valp, JSBool *bp)
     return JS_TRUE;
   }
 
-  
+  // Prematurely unwrap the left hand side.
   jsval v = *valp;
   if (!JSVAL_IS_PRIMITIVE(*valp)) {
     JSObject *test = JSVAL_TO_OBJECT(v);
 
-    
+    // GetWrappedObject does an instanceof check.
     test = GetWrappedObject(cx, test);
     if (test) {
       v = OBJECT_TO_JSVAL(test);
@@ -1174,14 +1181,14 @@ XPC_XOW_Equality(JSContext *cx, JSObject *obj, const jsval *valp, JSBool *bp)
 {
   jsval v = *valp;
 
-  
+  // Convert both sides to XPCWrappedNative and see if they match.
   if (JSVAL_IS_PRIMITIVE(v)) {
     *bp = JS_FALSE;
     return JS_TRUE;
   }
 
   JSObject *test = JSVAL_TO_OBJECT(v);
-  if (test->getJSClass() == &XOWClass.base) {
+  if (test->getClass() == &XOWClass) {
     if (!JS_GetReservedSlot(cx, test, sWrappedObjSlot, &v)) {
       return JS_FALSE;
     }
@@ -1209,8 +1216,7 @@ XPC_XOW_Equality(JSContext *cx, JSObject *obj, const jsval *valp, JSBool *bp)
   obj = me->GetFlatJSObject();
   test = other->GetFlatJSObject();
   jsval testVal = OBJECT_TO_JSVAL(test);
-  return ((JSExtendedClass *)obj->getJSClass())->
-    equality(cx, obj, &testVal, bp);
+  return js::Jsvalify(obj->getClass()->ext.equality)(cx, obj, &testVal, bp);
 }
 
 static JSObject *
@@ -1231,7 +1237,7 @@ XPC_XOW_Iterator(JSContext *cx, JSObject *obj, JSBool keysonly)
   nsresult rv = CanAccessWrapper(cx, obj, wrappedObj, nsnull);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_DOM_PROP_ACCESS_DENIED) {
-      
+      // Can't create iterators for foreign objects.
       ThrowException(rv, cx);
       return nsnull;
     }
@@ -1240,7 +1246,7 @@ XPC_XOW_Iterator(JSContext *cx, JSObject *obj, JSBool keysonly)
     return nsnull;
   }
 
-  JSObject *wrapperIter = JS_NewObject(cx, &XOWClass.base, nsnull,
+  JSObject *wrapperIter = JS_NewObject(cx, js::Jsvalify(&XOWClass), nsnull,
                                        JS_GetGlobalForObject(cx, obj));
   if (!wrapperIter) {
     return nsnull;
@@ -1248,7 +1254,7 @@ XPC_XOW_Iterator(JSContext *cx, JSObject *obj, JSBool keysonly)
 
   js::AutoObjectRooter tvr(cx, wrapperIter);
 
-  
+  // Initialize our XOW.
   jsval v = OBJECT_TO_JSVAL(wrappedObj);
   if (!JS_SetReservedSlot(cx, wrapperIter, sWrappedObjSlot, v) ||
       !JS_SetReservedSlot(cx, wrapperIter, sFlagsSlot, JSVAL_ZERO) ||
@@ -1277,7 +1283,7 @@ XPC_XOW_toString(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 
   JSObject *wrappedObj = GetWrappedObject(cx, obj);
   if (!wrappedObj) {
-    
+    // Someone's calling toString on our prototype.
     NS_NAMED_LITERAL_CSTRING(protoString, "[object XPCCrossOriginWrapper]");
     JSString *str =
       JS_NewStringCopyN(cx, protoString.get(), protoString.Length());
