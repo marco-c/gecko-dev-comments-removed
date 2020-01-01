@@ -116,3 +116,13 @@ struct _cairo_dwrite_scaled_font {
 typedef struct _cairo_dwrite_scaled_font cairo_dwrite_scaled_font_t;
 
 DWRITE_MATRIX _cairo_dwrite_matrix_from_matrix(const cairo_matrix_t *matrix);
+
+
+
+
+void
+_cairo_dwrite_glyph_run_from_glyphs(cairo_glyph_t *glyphs,
+				    int num_glyphs,
+				    cairo_dwrite_scaled_font_t *scaled_font,
+				    DWRITE_GLYPH_RUN *run,
+				    cairo_bool_t *transformed);
