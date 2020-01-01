@@ -1,31 +1,31 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ *
+ * Date: 10 October 2001
+ * SUMMARY: Regression test for Bugzilla bug 104077
+ * See http://bugzilla.mozilla.org/show_bug.cgi?id=104077
+ * "JS crash: with/finally/return"
+ *
+ * Also http://bugzilla.mozilla.org/show_bug.cgi?id=120571
+ * "JS crash: try/catch/continue."
+ *
+ * SpiderMonkey crashed on this code - it shouldn't.
+ *
+ * NOTE: the finally-blocks below should execute even if their try-blocks
+ * have return or throw statements in them:
+ *
+ * ------- Additional Comment #76 From Mike Shaver 2001-12-07 01:21 -------
+ * finally trumps return, and all other control-flow constructs that cause
+ * program execution to jump out of the try block: throw, break, etc.  Once you
+ * enter a try block, you will execute the finally block after leaving the try,
+ * regardless of what happens to make you leave the try.
+ *
+ */
+//-----------------------------------------------------------------------------
 var UBound = 0;
 var BUGNUMBER = 104077;
 var summary = "Just testing that we don't crash on with/finally/return -";
@@ -59,7 +59,6 @@ function addValues_3(obj)
           catch (e)
           {
             sum += 1;
-            print(e);
           }
         }
       }
@@ -122,7 +121,6 @@ function addValues_4(obj)
           catch (e)
           {
             sum += 1;
-            print(e);
           }
         }
       }
@@ -168,9 +166,9 @@ captureThis();
 
 
 
-
+//-----------------------------------------------------------------------------
 test();
-
+//-----------------------------------------------------------------------------
 
 
 
