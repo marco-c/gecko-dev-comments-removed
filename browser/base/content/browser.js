@@ -1341,13 +1341,6 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
 
     
     DownloadMonitorPanel.init();
-
-    if (Win7Features) {
-      let tempScope = {};
-      Cu.import("resource://gre/modules/DownloadTaskbarProgress.jsm",
-                tempScope);
-      tempScope.DownloadTaskbarProgress.onBrowserWindowLoad(window);
-    }
   }, 10000);
 
   
