@@ -42,7 +42,6 @@
 extern "C" {
 #include "cairo-win32.h"
 #include "cairo-analysis-surface-private.h"
-#include "cairo-surface-clipper-private.h"
 }
 
 
@@ -254,13 +253,6 @@ _cairo_d2d_getextents(void		       *surface,
 		      cairo_rectangle_int_t    *extents);
 
 
-static cairo_status_t
-_cairo_d2d_surface_clipper_intersect_clip_path(cairo_surface_clipper_t *clipper,
-					       cairo_path_fixed_t	*path,
-					       cairo_fill_rule_t	fill_rule,
-					       double			tolerance,
-					       cairo_antialias_t	antialias);
-
 
 
 
@@ -426,64 +418,213 @@ void cairo_d2d_present_backbuffer(cairo_surface_t *surface)
     }
 }
 
+struct d2d_clip
+{
+    enum clip_type {LAYER, AXIS_ALIGNED_CLIP};
+    d2d_clip * const prev;
+    const enum clip_type type;
+    d2d_clip(d2d_clip *prev, clip_type type) : prev(prev), type(type) { }
+};
+
+static RefPtr<ID2D1PathGeometry>
+_cairo_d2d_create_path_geometry_for_path(cairo_path_fixed_t *path,
+					 cairo_fill_rule_t fill_rule,
+					 D2D1_FIGURE_BEGIN type);
 
 
+static cairo_bool_t
+box_is_integer (cairo_box_t *box)
+{
+    return _cairo_fixed_is_integer(box->p1.x) &&
+	_cairo_fixed_is_integer(box->p1.y) &&
+	_cairo_fixed_is_integer(box->p2.x) &&
+	_cairo_fixed_is_integer(box->p2.y);
+}
 
+static cairo_status_t
+push_clip (cairo_d2d_surface_t *d2dsurf, cairo_clip_path_t *clip_path)
+{
+    cairo_box_t box;
+    if (_cairo_path_fixed_is_box(&clip_path->path, &box)) {
 
+	assert(box.p1.y < box.p2.y);
 
+	D2D1_ANTIALIAS_MODE mode;
+	if (box_is_integer (&box)) {
+	    mode = D2D1_ANTIALIAS_MODE_ALIASED;
+	} else {
+	    mode = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;
+	}
+	d2dsurf->rt->PushAxisAlignedClip (
+		D2D1::RectF(
+		    _cairo_fixed_to_float(box.p1.x),
+		    _cairo_fixed_to_float(box.p1.y),
+		    _cairo_fixed_to_float(box.p2.x),
+		    _cairo_fixed_to_float(box.p2.y)),
+		mode);
 
+	d2dsurf->d2d_clip = new d2d_clip (d2dsurf->d2d_clip, d2d_clip::AXIS_ALIGNED_CLIP);
+    } else {
+	HRESULT hr;
+	RefPtr<ID2D1PathGeometry> geom = _cairo_d2d_create_path_geometry_for_path (&clip_path->path,
+							clip_path->fill_rule,
+							D2D1_FIGURE_BEGIN_FILLED);
+	RefPtr<ID2D1Layer> layer;
+
+	hr = d2dsurf->rt->CreateLayer (&layer);
+
+	D2D1_LAYER_OPTIONS options = D2D1_LAYER_OPTIONS_NONE;
+	if (d2dsurf->base.content == CAIRO_CONTENT_COLOR) {
+	    options = D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE;
+	}
+
+	d2dsurf->rt->PushLayer(D2D1::LayerParameters(
+		    D2D1::InfiniteRect(),
+		    geom,
+		    D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+		    D2D1::IdentityMatrix(),
+		    1.0,
+		    0,
+		    options),
+		layer);
+
+	d2dsurf->d2d_clip = new d2d_clip(d2dsurf->d2d_clip, d2d_clip::LAYER);
+   }
+    if (!d2dsurf->d2d_clip)
+	return _cairo_error(CAIRO_STATUS_NO_MEMORY);
+    return CAIRO_STATUS_SUCCESS;
+}
 
 static void
-_cairo_d2d_surface_push_clip(cairo_d2d_surface_t *d2dsurf)
+pop_clip (cairo_d2d_surface_t *d2dsurf)
 {
-    if (d2dsurf->isDrawing) {
-	if (d2dsurf->clipMask) {
-	    if (!d2dsurf->clipLayer) {
-		d2dsurf->rt->CreateLayer(&d2dsurf->clipLayer);
-	    }
-	    D2D1_RECT_F bounds;
-	    d2dsurf->clipMask->GetBounds(D2D1::IdentityMatrix(), &bounds);
-            D2D1_LAYER_OPTIONS options = D2D1_LAYER_OPTIONS_NONE;
-	    if (d2dsurf->base.content == CAIRO_CONTENT_COLOR) {
-		options = D2D1_LAYER_OPTIONS_INITIALIZE_FOR_CLEARTYPE;
-	    }
-	    d2dsurf->rt->PushLayer(D2D1::LayerParameters(bounds,
-							 d2dsurf->clipMask,
-							 D2D1_ANTIALIAS_MODE_ALIASED,
-							 D2D1::IdentityMatrix(),
-							 1.0,
-							 0,
-							 options),
-				   d2dsurf->clipLayer);
-	}
-	if (d2dsurf->clipRect) {
-	    d2dsurf->rt->PushAxisAlignedClip(d2dsurf->clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-	}
-	d2dsurf->clipping = true;
+    d2d_clip *current_clip = d2dsurf->d2d_clip;
+
+    
+    if (current_clip->type == d2d_clip::LAYER) {
+	d2dsurf->rt->PopLayer();
+    } else if (current_clip->type == d2d_clip::AXIS_ALIGNED_CLIP) {
+	d2dsurf->rt->PopAxisAlignedClip();
     }
+
+    
+    d2dsurf->d2d_clip = current_clip->prev;
+    delete current_clip;
 }
 
 
+static cairo_status_t
+clipper_intersect_clip_path_recursive (cairo_d2d_surface_t *d2dsurf,
+	cairo_clip_path_t *head,
+	cairo_clip_path_t *clip_path)
+{
+    cairo_status_t status;
 
+    if (clip_path->prev != head) {
+	status =
+	    clipper_intersect_clip_path_recursive (d2dsurf,
+		    head,
+		    clip_path->prev);
+	if (unlikely (status))
+	    return status;
+    }
+    return push_clip(d2dsurf, clip_path);
 
-
-
+}
 
 
 static void
-_cairo_d2d_surface_pop_clip(cairo_d2d_surface_t *d2dsurf)
+reset_clip (cairo_d2d_surface_t *d2dsurf)
 {
-    if (d2dsurf->isDrawing) {
-	if (d2dsurf->clipping) {
-	    if (d2dsurf->clipMask) {
-		d2dsurf->rt->PopLayer();
-	    }
-	    if (d2dsurf->clipRect) {
-		d2dsurf->rt->PopAxisAlignedClip();
-	    }
-	    d2dsurf->clipping = false;
-	}
+    cairo_clip_path_t *current_clip_path = d2dsurf->clip.path;
+    while (current_clip_path != NULL) {
+	pop_clip (d2dsurf);
+	current_clip_path = current_clip_path->prev;
     }
+
+    _cairo_clip_reset (&d2dsurf->clip);
+}
+
+
+static cairo_clip_path_t *
+find_common_ancestor(cairo_clip_path_t *a, cairo_clip_path_t *b)
+{
+    int a_depth = 0, b_depth = 0;
+
+    cairo_clip_path_t *x;
+
+    
+    x = a;
+    while (x) {
+	a_depth++;
+	x = x->prev;
+    }
+
+    x = b;
+    while (x) {
+	b_depth++;
+	x = x->prev;
+    }
+
+    
+    while (b_depth < a_depth && a) {
+	a = a->prev;
+	a_depth--;
+    }
+
+    while (a_depth < b_depth && b) {
+	b = b->prev;
+	b_depth--;
+    }
+
+    
+
+    
+
+    while (a) {
+	if (a == b)
+	    return a;
+
+	a = a->prev;
+	b = b->prev;
+    }
+
+    
+    return a;
+}
+
+cairo_status_t
+_cairo_d2d_set_clip (cairo_d2d_surface_t *d2dsurf, cairo_clip_t *clip)
+{
+    if (clip == NULL) {
+	reset_clip (d2dsurf);
+	return CAIRO_STATUS_SUCCESS;
+    }
+
+    if (clip != NULL && clip->path == d2dsurf->clip.path)
+	return CAIRO_STATUS_SUCCESS;
+
+    cairo_clip_path_t *current_clip_path = d2dsurf->clip.path;
+    cairo_clip_path_t *new_clip_path = clip->path;
+    cairo_clip_path_t *ancestor = find_common_ancestor (current_clip_path, new_clip_path);
+
+    
+    while (current_clip_path != ancestor) {
+	pop_clip (d2dsurf);
+	current_clip_path = current_clip_path->prev;
+    }
+
+    
+
+    
+    _cairo_clip_reset (&d2dsurf->clip);
+    _cairo_clip_init_copy (&d2dsurf->clip, clip);
+
+    
+    if (current_clip_path != clip->path)
+	return clipper_intersect_clip_path_recursive (d2dsurf, current_clip_path, clip->path);
+    else
+	return CAIRO_STATUS_SUCCESS;
 }
 
 
@@ -497,9 +638,6 @@ static void _begin_draw_state(cairo_d2d_surface_t* surface)
     if (!surface->isDrawing) {
 	surface->rt->BeginDraw();
 	surface->isDrawing = true;
-    }
-    if (!surface->clipping) {
-	_cairo_d2d_surface_push_clip(surface);
     }
 }
 
@@ -1289,104 +1427,95 @@ _cairo_d2d_create_path_geometry_for_path(cairo_path_fixed_t *path,
     return d2dpath;
 }
 
-
-
-
-
-
-
-
-static void _cairo_d2d_clear_geometry(cairo_d2d_surface_t *d2dsurf,
-				      ID2D1Geometry *pathGeometry)
+static cairo_bool_t
+clip_contains_only_boxes (cairo_clip_t *clip)
 {
-    if (!d2dsurf->helperLayer) {
-	d2dsurf->rt->CreateLayer(&d2dsurf->helperLayer);
+    cairo_bool_t is_boxes = TRUE;
+
+    if (clip) {
+	cairo_box_t clip_box;
+	cairo_clip_path_t *path = clip->path;
+
+	while (path) {
+	    is_boxes &= _cairo_path_fixed_is_box(&path->path, &clip_box);
+	    path = path->prev;
+	}
     }
+    return is_boxes;
+}
 
-    if (!d2dsurf->clipMask && !pathGeometry) {
+static cairo_int_status_t
+_cairo_d2d_clear_box (cairo_d2d_surface_t *d2dsurf,
+		 cairo_clip_t *clip,
+		 cairo_box_t *box)
+{
+    if (clip_contains_only_boxes (clip)) {
 	
-
-
-
+	d2dsurf->rt->PushAxisAlignedClip(D2D1::RectF(_cairo_fixed_to_float(box->p1.x),
+		    _cairo_fixed_to_float(box->p1.y),
+		    _cairo_fixed_to_float(box->p2.x),
+		    _cairo_fixed_to_float(box->p2.y)),
+		D2D1_ANTIALIAS_MODE_ALIASED);
 	d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
-	return;
+	d2dsurf->rt->PopAxisAlignedClip();
+
+	return CAIRO_INT_STATUS_SUCCESS;
     }
 
-    RefPtr<IDXGISurface> dxgiSurface;
-    RefPtr<ID2D1Bitmap> bitmp;
+    return CAIRO_INT_STATUS_UNSUPPORTED;
+}
 
-    
-    _cairo_d2d_flush(d2dsurf);
+static cairo_int_status_t
+_cairo_d2d_clear (cairo_d2d_surface_t *d2dsurf,
+		 cairo_clip_t *clip)
+{
+    cairo_region_t *region;
+    cairo_int_status_t status;
 
-    
-    RefPtr<ID3D10Texture2D> bufTexture = _cairo_d2d_get_buffer_texture(d2dsurf);
-
-    
-    D3D10Factory::Device()->CopyResource(bufTexture, d2dsurf->surface);
-
-    
-    bufTexture->QueryInterface(&dxgiSurface);
-    D2D1_BITMAP_PROPERTIES props = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,
-									    D2D1_ALPHA_MODE_PREMULTIPLIED));
-    HRESULT hr = d2dsurf->rt->CreateSharedBitmap(IID_IDXGISurface,
-						 dxgiSurface,
-						 &props,
-						 &bitmp);
-
-    
-    d2dsurf->rt->BeginDraw();
-
-    
-    d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
-
-    DXGI_SURFACE_DESC desc;
-    dxgiSurface->GetDesc(&desc);
-
-    RefPtr<ID2D1RectangleGeometry> rectGeom;
-    RefPtr<ID2D1PathGeometry> inverse;
-    RefPtr<ID2D1Geometry> clearGeometry;
-    RefPtr<ID2D1GeometrySink> sink;
-
-    if (!d2dsurf->clipMask) {
+    if (!clip) {
 	
-	clearGeometry = pathGeometry;
-    } else if (!pathGeometry) {
-	
-	clearGeometry = d2dsurf->clipMask;
-    } else {
-	
+	_begin_draw_state(d2dsurf);
+	reset_clip(d2dsurf);
+	d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
 
-
-
-	RefPtr<ID2D1PathGeometry> clipPathUnion;
-	D2DSurfFactory::Instance()->CreatePathGeometry(&clipPathUnion);
-	clipPathUnion->Open(&sink);
-	pathGeometry->CombineWithGeometry(d2dsurf->clipMask,
-					  D2D1_COMBINE_MODE_INTERSECT,
-					  D2D1::IdentityMatrix(),
-					  sink);
-	sink->Close();
-	clearGeometry = clipPathUnion;
+	return CAIRO_INT_STATUS_SUCCESS;
     }
 
-    
-
-
-
-    D2DSurfFactory::Instance()->CreatePathGeometry(&inverse);
-    inverse->Open(&sink);
-    D2DSurfFactory::Instance()->CreateRectangleGeometry(D2D1::RectF(0, 0, (FLOAT)desc.Width, (FLOAT)desc.Height), &rectGeom);
-    rectGeom->CombineWithGeometry(clearGeometry, D2D1_COMBINE_MODE_EXCLUDE, D2D1::IdentityMatrix(), sink);
-    sink->Close();
+    status = _cairo_clip_get_region (clip, &region);
+    if (status)
+	return status;
 
     
-    d2dsurf->rt->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), inverse),
-			   d2dsurf->helperLayer);
-    d2dsurf->rt->DrawBitmap(bitmp);
-    d2dsurf->rt->PopLayer();
+    _begin_draw_state(d2dsurf);
 
-    
-    d2dsurf->rt->EndDraw();
+    reset_clip(d2dsurf);
+
+    if (region) {
+	int num_rects;
+	int i;
+
+	num_rects = cairo_region_num_rectangles (region);
+
+	for (i = 0; i < num_rects; i++) {
+	    cairo_rectangle_int_t rect;
+
+	    cairo_region_get_rectangle (region, i, &rect);
+
+	    d2dsurf->rt->PushAxisAlignedClip(
+		    D2D1::RectF((FLOAT)rect.x,
+			        (FLOAT)rect.y,
+				(FLOAT)rect.x + rect.width,
+				(FLOAT)rect.y + rect.height),
+		    D2D1_ANTIALIAS_MODE_ALIASED);
+
+	    d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
+
+	    d2dsurf->rt->PopAxisAlignedClip();
+	}
+
+    }
+
+    return CAIRO_INT_STATUS_SUCCESS;
 }
 
 static cairo_operator_t _cairo_d2d_simplify_operator(cairo_operator_t op,
@@ -1423,7 +1552,6 @@ _cairo_d2d_create_similar(void			*surface,
     
     new (newSurf) cairo_d2d_surface_t();
     _cairo_surface_init(&newSurf->base, &cairo_d2d_surface_backend, content);
-    _cairo_surface_clipper_init(&newSurf->clipper, _cairo_d2d_surface_clipper_intersect_clip_path);
 
 
     D2D1_SIZE_U sizePixels;
@@ -1534,7 +1662,7 @@ _cairo_d2d_finish(void	    *surface)
 {
     cairo_d2d_surface_t *d2dsurf = static_cast<cairo_d2d_surface_t*>(surface);
 
-    _cairo_surface_clipper_reset (&d2dsurf->clipper);
+    reset_clip(d2dsurf);
 
     d2dsurf->~cairo_d2d_surface_t();
     return CAIRO_STATUS_SUCCESS;
@@ -1584,7 +1712,7 @@ _cairo_d2d_acquire_source_image(void                    *abstract_surface,
     }
     *image_out = 
 	(cairo_image_surface_t*)_cairo_image_surface_create_for_data_with_content((unsigned char*)data.pData,
-										  CAIRO_CONTENT_COLOR_ALPHA,
+										  d2dsurf->base.content,
 										  size.width,
 										  size.height,
 										  data.RowPitch);
@@ -1691,132 +1819,6 @@ _cairo_d2d_release_dest_image(void                    *abstract_surface,
     softTexture->Release();
 }
 
-static cairo_status_t
-_cairo_d2d_surface_clipper_intersect_clip_path(cairo_surface_clipper_t *clipper,
-					       cairo_path_fixed_t      *path,
-					       cairo_fill_rule_t	fill_rule,
-					       double			tolerance,
-					       cairo_antialias_t	antialias)
-{
-    cairo_d2d_surface_t *d2dsurf = cairo_container_of (clipper, cairo_d2d_surface_t, clipper);
-
-    _cairo_d2d_surface_pop_clip(d2dsurf);
-    if (!path) {
-	if (d2dsurf->clipMask) {
-	    d2dsurf->clipMask = NULL;
-	}
-	if (d2dsurf->clipRect) {
-	    delete d2dsurf->clipRect;
-	    d2dsurf->clipRect = NULL;
-	}
-	return CAIRO_STATUS_SUCCESS;
-    }
-    cairo_box_t box;
-
-    if (_cairo_path_fixed_is_box(path, &box) && box.p1.y < box.p2.y) {
-	
-
-
-
-	if (!d2dsurf->clipRect && !d2dsurf->clipMask) {
-	    
-	    
-	    d2dsurf->clipRect = new D2D1_RECT_F(D2D1::RectF(_cairo_fixed_to_float(box.p1.x),
-							    _cairo_fixed_to_float(box.p1.y),
-							    _cairo_fixed_to_float(box.p2.x),
-							    _cairo_fixed_to_float(box.p2.y)));
-	    return CAIRO_STATUS_SUCCESS;
-	} else if (!d2dsurf->clipMask) {
-	    
-	    d2dsurf->clipRect->top = max(_cairo_fixed_to_float(box.p1.y), d2dsurf->clipRect->top);
-	    d2dsurf->clipRect->left = max(d2dsurf->clipRect->left, _cairo_fixed_to_float(box.p1.x));
-	    d2dsurf->clipRect->bottom = min(d2dsurf->clipRect->bottom, _cairo_fixed_to_float(box.p2.y));
-	    d2dsurf->clipRect->right = min(d2dsurf->clipRect->right, _cairo_fixed_to_float(box.p2.x));
-	    if (d2dsurf->clipRect->top > d2dsurf->clipRect->bottom) {
-		d2dsurf->clipRect->top = d2dsurf->clipRect->bottom;
-	    }
-	    if (d2dsurf->clipRect->left > d2dsurf->clipRect->right) {
-		d2dsurf->clipRect->left = d2dsurf->clipRect->right;
-	    }
-	    return CAIRO_STATUS_SUCCESS;
-	} else {
-	    
-
-
-
-	    RefPtr<ID2D1RectangleGeometry> newMask;
-	    D2DSurfFactory::Instance()->CreateRectangleGeometry(D2D1::RectF(_cairo_fixed_to_float(box.p1.x),
-									    _cairo_fixed_to_float(box.p1.y),
-									    _cairo_fixed_to_float(box.p2.x),
-									    _cairo_fixed_to_float(box.p2.y)), 
-								&newMask);
-	    D2D1_GEOMETRY_RELATION relation;
-	    d2dsurf->clipMask->CompareWithGeometry(newMask, D2D1::Matrix3x2F::Identity(), &relation);
-	    if (relation == D2D1_GEOMETRY_RELATION_CONTAINS) {
-		d2dsurf->clipMask = NULL;
-		
-	        d2dsurf->clipRect = new D2D1_RECT_F(D2D1::RectF(_cairo_fixed_to_float(box.p1.x),
-								_cairo_fixed_to_float(box.p1.y),
-								_cairo_fixed_to_float(box.p2.x),
-								_cairo_fixed_to_float(box.p2.y)));
-		return CAIRO_STATUS_SUCCESS;
-		
-	    }
-	}
-    }
-    
-    if (!d2dsurf->clipRect && !d2dsurf->clipMask) {
-	
-	d2dsurf->clipMask = _cairo_d2d_create_path_geometry_for_path(path, fill_rule, D2D1_FIGURE_BEGIN_FILLED);
-    } else if (d2dsurf->clipMask) {
-	
-	RefPtr<ID2D1Geometry> newMask = _cairo_d2d_create_path_geometry_for_path(path, fill_rule, D2D1_FIGURE_BEGIN_FILLED);
-	RefPtr<ID2D1PathGeometry> finalMask;
-	D2DSurfFactory::Instance()->CreatePathGeometry(&finalMask);
-	RefPtr<ID2D1GeometrySink> sink;
-	finalMask->Open(&sink);
-	newMask->CombineWithGeometry(d2dsurf->clipMask,
-				     D2D1_COMBINE_MODE_INTERSECT,
-				     D2D1::Matrix3x2F::Identity(),
-				     sink);
-	sink->Close();
-	d2dsurf->clipMask = finalMask;
-    } else if (d2dsurf->clipRect) {
-	
-
-
-
-
-	RefPtr<ID2D1RectangleGeometry> currentMask;
-	D2DSurfFactory::Instance()->CreateRectangleGeometry(d2dsurf->clipRect, &currentMask);
-	RefPtr<ID2D1Geometry> newMask = _cairo_d2d_create_path_geometry_for_path(path, fill_rule, D2D1_FIGURE_BEGIN_FILLED);
-        D2D1_GEOMETRY_RELATION relation;
-	newMask->CompareWithGeometry(currentMask, D2D1::Matrix3x2F::Identity(), &relation);
-	if (relation == D2D1_GEOMETRY_RELATION_CONTAINS) {
-	    return CAIRO_STATUS_SUCCESS;
-	} else if (relation == D2D1_GEOMETRY_RELATION_IS_CONTAINED) {
-	    d2dsurf->clipMask = newMask;
-	} else {
-	    RefPtr<ID2D1PathGeometry> finalMask;
-	    D2DSurfFactory::Instance()->CreatePathGeometry(&finalMask);
-	    RefPtr<ID2D1GeometrySink> sink;
-	    finalMask->Open(&sink);
-	    newMask->CombineWithGeometry(currentMask,
-					 D2D1_COMBINE_MODE_INTERSECT,
-					 D2D1::Matrix3x2F::Identity(),
-					 sink);
-	    sink->Close();
-	    d2dsurf->clipMask = finalMask;
-	}
-    }
-
-    if (d2dsurf->clipRect) {
-	delete d2dsurf->clipRect;
-	d2dsurf->clipRect = NULL;
-    }
-  
-    return CAIRO_STATUS_SUCCESS;
-}
 
 static cairo_status_t
 _cairo_d2d_flush(void                  *surface)
@@ -1824,13 +1826,15 @@ _cairo_d2d_flush(void                  *surface)
     cairo_d2d_surface_t *d2dsurf = static_cast<cairo_d2d_surface_t*>(surface);
 
     if (d2dsurf->isDrawing) {
-	_cairo_d2d_surface_pop_clip(d2dsurf);
+	reset_clip(d2dsurf);
 	HRESULT hr = d2dsurf->rt->EndDraw();
 	d2dsurf->isDrawing = false;
     }
 
     return CAIRO_STATUS_SUCCESS;
 }
+
+
 
 static cairo_int_status_t
 _cairo_d2d_paint(void			*surface,
@@ -1841,18 +1845,18 @@ _cairo_d2d_paint(void			*surface,
     cairo_d2d_surface_t *d2dsurf = static_cast<cairo_d2d_surface_t*>(surface);
     cairo_int_status_t status;
 
-    status = (cairo_int_status_t)_cairo_surface_clipper_set_clip (&d2dsurf->clipper, clip);
-    if (unlikely(status))
-	return status;
-
-    _begin_draw_state(d2dsurf);
-
     op = _cairo_d2d_simplify_operator(op, source);
 
     if (op == CAIRO_OPERATOR_CLEAR) {
-	_cairo_d2d_clear_geometry(d2dsurf, NULL);
-	return CAIRO_INT_STATUS_SUCCESS;
+	return _cairo_d2d_clear(d2dsurf, clip);
     }
+
+
+    _begin_draw_state(d2dsurf);
+    status = (cairo_int_status_t)_cairo_d2d_set_clip (d2dsurf, clip);
+
+    if (unlikely(status))
+	return status;
 
     d2dsurf->rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
@@ -1896,11 +1900,12 @@ _cairo_d2d_mask(void			*surface,
 
     cairo_int_status_t status;
 
-    status = (cairo_int_status_t)_cairo_surface_clipper_set_clip (&d2dsurf->clipper, clip);
+    _begin_draw_state(d2dsurf);
+    status = (cairo_int_status_t)_cairo_d2d_set_clip (d2dsurf, clip);
+
     if (unlikely (status))
 	return status;
 
-    _begin_draw_state(d2dsurf);
 
     status = (cairo_int_status_t)_cairo_surface_mask_extents (&d2dsurf->base,
 		    op, source,
@@ -1978,8 +1983,7 @@ _cairo_d2d_stroke(void			*surface,
 
     op = _cairo_d2d_simplify_operator(op, source);
 
-    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_ADD &&
-	op != CAIRO_OPERATOR_CLEAR) {
+    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_ADD) {
 	
 
 
@@ -1988,11 +1992,13 @@ _cairo_d2d_stroke(void			*surface,
 	return CAIRO_INT_STATUS_UNSUPPORTED;
     }
 
-    status = (cairo_int_status_t)_cairo_surface_clipper_set_clip (&d2dsurf->clipper, clip);
+    _begin_draw_state(d2dsurf);
+
+    status = (cairo_int_status_t)_cairo_d2d_set_clip (d2dsurf, clip);
+
     if (unlikely (status))
 	return status;
 
-    _begin_draw_state(d2dsurf);
 
     if (antialias == CAIRO_ANTIALIAS_NONE) {
 	d2dsurf->rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -2007,24 +2013,6 @@ _cairo_d2d_stroke(void			*surface,
     D2D1::Matrix3x2F mat = _cairo_d2d_matrix_from_matrix(ctm);
 
     _cairo_path_fixed_transform(path, ctm_inverse);
-
-    if (op == CAIRO_OPERATOR_CLEAR) {
-	RefPtr<ID2D1Geometry> d2dpath = _cairo_d2d_create_path_geometry_for_path(path,
-										 CAIRO_FILL_RULE_WINDING,
-										 D2D1_FIGURE_BEGIN_FILLED);
-
-        ID2D1PathGeometry *strokeGeometry;
-	D2DSurfFactory::Instance()->CreatePathGeometry(&strokeGeometry);
-
-	RefPtr<ID2D1GeometrySink> sink;
-	strokeGeometry->Open(&sink);
-	d2dpath->Widen((FLOAT)style->line_width, strokeStyle, mat, (FLOAT)tolerance, sink);
-	sink->Close();
-
-	_cairo_d2d_clear_geometry(d2dsurf, strokeGeometry);
-
-	return CAIRO_INT_STATUS_SUCCESS;
-    }
 
     d2dsurf->rt->SetTransform(mat);
 
@@ -2078,8 +2066,7 @@ _cairo_d2d_fill(void			*surface,
 
     op = _cairo_d2d_simplify_operator(op, source);
 
-    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_ADD &&
-	op != CAIRO_OPERATOR_CLEAR) {
+    if (op != CAIRO_OPERATOR_OVER && op != CAIRO_OPERATOR_ADD) {
 	
 
 
@@ -2088,11 +2075,12 @@ _cairo_d2d_fill(void			*surface,
 	return CAIRO_INT_STATUS_UNSUPPORTED;
     }
 
-    status = (cairo_int_status_t)_cairo_surface_clipper_set_clip (&d2dsurf->clipper, clip);
+    _begin_draw_state(d2dsurf);
+    status = (cairo_int_status_t)_cairo_d2d_set_clip (d2dsurf, clip);
+
     if (unlikely(status))
 	return status;
 
-    _begin_draw_state(d2dsurf);
 
     if (antialias == CAIRO_ANTIALIAS_NONE) {
 	d2dsurf->rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -2103,23 +2091,11 @@ _cairo_d2d_fill(void			*surface,
     cairo_box_t box;
 
     if (op == CAIRO_OPERATOR_CLEAR) {
-	if (_cairo_path_fixed_is_box(path, &box) && !d2dsurf->clipMask) {
-	    
-	    d2dsurf->rt->PushAxisAlignedClip(D2D1::RectF(_cairo_fixed_to_float(box.p1.x),
-							 _cairo_fixed_to_float(box.p1.y),
-							 _cairo_fixed_to_float(box.p2.x),
-							 _cairo_fixed_to_float(box.p2.y)),
-					     D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-	    d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
-	    d2dsurf->rt->PopAxisAlignedClip();
-	    return CAIRO_INT_STATUS_SUCCESS;
+	if (_cairo_path_fixed_is_box(path, &box)) {
+	    return _cairo_d2d_clear_box (d2dsurf, clip, &box);
+	} else {
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
 	}
-	RefPtr<ID2D1Geometry> d2dpath = _cairo_d2d_create_path_geometry_for_path(path,
-										 fill_rule,
-										 D2D1_FIGURE_BEGIN_FILLED);
-	_cairo_d2d_clear_geometry(d2dsurf, d2dpath);
-	
-	return CAIRO_INT_STATUS_SUCCESS;
     }
 
     if (_cairo_path_fixed_is_box(path, &box)) {
@@ -2214,7 +2190,6 @@ cairo_d2d_surface_create_for_hwnd(HWND wnd,
     new (newSurf) cairo_d2d_surface_t();
 
     _cairo_surface_init(&newSurf->base, &cairo_d2d_surface_backend, content);
-    _cairo_surface_clipper_init(&newSurf->clipper, _cairo_d2d_surface_clipper_intersect_clip_path);
 
     RECT rc;
     HRESULT hr;
@@ -2351,7 +2326,6 @@ cairo_d2d_surface_create(cairo_format_t format,
 	dxgiformat = DXGI_FORMAT_A8_UNORM;
     }
 
-    _cairo_surface_clipper_init(&newSurf->clipper, _cairo_d2d_surface_clipper_intersect_clip_path);
 
     newSurf->format = format;
 
@@ -2518,7 +2492,7 @@ cairo_d2d_get_dc(cairo_surface_t *surface, cairo_bool_t retain_contents)
 
 
     
-    _cairo_d2d_surface_pop_clip(d2dsurf);
+    reset_clip(d2dsurf);
 
     if (!d2dsurf->isDrawing) {
       

@@ -50,13 +50,14 @@ extern "C" {
 
 #include "cairo-win32-refptr.h"
 
+
+struct d2d_clip;
+
 struct _cairo_d2d_surface {
-    _cairo_d2d_surface() : clipRect(NULL), clipping(false), isDrawing(false),
+    _cairo_d2d_surface() : d2d_clip(NULL), clipping(false), isDrawing(false),
 	textRenderingInit(true)
-    { }
-    ~_cairo_d2d_surface()
     {
-	delete clipRect;
+	_cairo_clip_init (&this->clip);
     }
 
     cairo_surface_t base;
@@ -79,12 +80,11 @@ struct _cairo_d2d_surface {
     HWND hwnd;
     
     cairo_format_t format;
-    
-    RefPtr<ID2D1Geometry> clipMask;
-    
-    D2D1_RECT_F *clipRect;
-    
-    RefPtr<ID2D1Layer> clipLayer;
+
+    cairo_clip_t clip;
+    d2d_clip *d2d_clip;
+
+
     
     RefPtr<ID2D1Layer> maskLayer;
     
@@ -103,7 +103,7 @@ struct _cairo_d2d_surface {
     
     bool textRenderingInit;
 
-    cairo_surface_clipper_t clipper;
+    
 };
 typedef struct _cairo_d2d_surface cairo_d2d_surface_t;
 
@@ -229,6 +229,8 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 				    bool unique = false);
 void
 _cairo_d2d_begin_draw_state(cairo_d2d_surface_t *d2dsurf);
+cairo_status_t
+_cairo_d2d_set_clip(cairo_d2d_surface_t *d2dsurf, cairo_clip_t *clip);
 
 #endif 
 #endif 
