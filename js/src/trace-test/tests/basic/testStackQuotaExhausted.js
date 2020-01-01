@@ -27,7 +27,9 @@ try {
     exception = true;
 }
 assertEq(exception, true);
-checkStats({traceCompleted:1});
+
+
+checkStats({traceCompleted:0});
 
 
 trace = false;

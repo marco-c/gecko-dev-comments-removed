@@ -195,7 +195,7 @@ struct TracerState
     void*          rpAtLastTreeCall;    
     VMSideExit*    outermostTreeExitGuard; 
     TreeFragment*  outermostTree;       
-    uintN*         inlineCallCountp;    
+    uintptr_t*     inlineCallCountp;    
     VMSideExit**   innermostNestedGuardp;
     VMSideExit*    innermost;
     uint64         startTime;
@@ -1770,7 +1770,7 @@ struct JSContext
 
   public:
     friend class js::StackSpace;
-    friend bool js::Interpret(JSContext *);
+    friend bool js::Interpret(JSContext *, JSStackFrame *, uintptr_t);
 
     
     void setCurrentFrame(JSStackFrame *fp) {
