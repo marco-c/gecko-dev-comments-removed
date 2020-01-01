@@ -63,7 +63,7 @@ public:
   
   
 
-  void Constructor(NPP instance, NPMIMEType type, uint16 mode, int16 argc, char* argn[], char* argv[]);
+  void Constructor(NPP instance, NPMIMEType type, uint16_t mode, int16_t argc, char* argn[], char* argv[]);
   void Destructor();
 
   void SetWindow(NPWindow* window);
@@ -78,7 +78,7 @@ protected:
   Boolean FocusDraw();
   void RestoreDraw();
       
-  void DetermineURL(int16 argc, char* argn[], char* argv[]);
+  void DetermineURL(int16_t argc, char* argn[], char* argv[]);
   char* MakeDefaultURL(void);
   void AddMimeTypeToList(StringPtr cTypeString);
   Boolean CheckMimeTypes();
@@ -88,7 +88,7 @@ protected:
   Ptr New(UInt32 size);
   void Delete(Ptr ptr);
 
-  Boolean IsPluginHidden(int16 argc, char* argn[], char* argv[]);
+  Boolean IsPluginHidden(int16_t argc, char* argn[], char* argv[]);
 
 private:
   static CIconHandle sIconHandle;
@@ -101,7 +101,7 @@ private:
 
   NPP fInstance;
   NPWindow* fWindow;
-  uint16 fMode;
+  uint16_t fMode;
   NPMIMEType fType;
   char* fPageURL;
   char* fFileURL;
@@ -160,7 +160,7 @@ void NPP_Shutdown(void)
 }
 
 
-NPError NPP_New(NPMIMEType type, NPP instance, uint16 mode, int16 argc, char* argn[], char* argv[], NPSavedData*)
+NPError NPP_New(NPMIMEType type, NPP instance, uint16_t mode, int16_t argc, char* argn[], char* argv[], NPSavedData*)
 {
   if (!instance)
     return NPERR_INVALID_INSTANCE_ERROR;
@@ -212,7 +212,7 @@ NPP_NewStream(NPP instance,
               NPMIMEType ,
               NPStream* , 
               NPBool ,
-              uint16* )
+              uint16_t* )
 {
   if (!instance)
     return NPERR_INVALID_INSTANCE_ERROR;
@@ -221,20 +221,20 @@ NPP_NewStream(NPP instance,
 }
 
 
-int32 STREAMBUFSIZE = 0X0FFFFFFF;   
+int32_t STREAMBUFSIZE = 0X0FFFFFFF;   
                                     
                                     
 
 
-int32 NP_LOADDS
+int32_t NP_LOADDS
 NPP_WriteReady(NPP , NPStream* )
 {
   return STREAMBUFSIZE; 
 }
 
 
-int32 NP_LOADDS
-NPP_Write(NPP , NPStream* , int32 , int32 len, void* )
+int32_t NP_LOADDS
+NPP_Write(NPP , NPStream* , int32_t , int32_t len, void* )
 {
   return len; 
 }
@@ -276,7 +276,7 @@ NPP_Print(NPP instance, NPPrint* printInfo)
 
 
 
-int16 NPP_HandleEvent(NPP instance, void* event)
+int16_t NPP_HandleEvent(NPP instance, void* event)
 {
   if (instance) {
     CPlugin* This = (CPlugin*) instance->pdata;
@@ -403,7 +403,7 @@ void CPlugin::Shutdown()
 }
 
 
-void CPlugin::Constructor(NPP instance, NPMIMEType type, uint16 mode, int16 argc, char* argn[], char* argv[])
+void CPlugin::Constructor(NPP instance, NPMIMEType type, uint16_t mode, int16_t argc, char* argn[], char* argv[])
 {
   fWindow = NULL;
   fPageURL = NULL;
@@ -657,7 +657,7 @@ void CPlugin::RestoreDraw()
 
 
 
-void CPlugin::DetermineURL(int16 argc, char* argn[], char* argv[])
+void CPlugin::DetermineURL(int16_t argc, char* argn[], char* argv[])
 {
   char* url;
   SInt32 additionalLength = 0;
@@ -921,7 +921,7 @@ void CPlugin::DrawString(const unsigned char* text, short width, short height, s
 }
 
 
-Boolean CPlugin::IsPluginHidden(int16 argc, char* argn[], char* argv[])
+Boolean CPlugin::IsPluginHidden(int16_t argc, char* argn[], char* argv[])
 {
   for (int i = 0; i < argc; i++) {
     if (!strcasecmp(argn[i], "HIDDEN")) {
