@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is gfx thebes code.
- *
- * The Initial Developer of the Original Code is Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2008
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Eric Butler <zantifon@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "gfxBlur.h"
 
@@ -69,8 +69,8 @@ gfxAlphaBoxBlur::Init(const gfxRect& aRect,
         return nsnull;
 
     if (aDirtyRect) {
-        // If we get passed a dirty rect from layout, we can minimize the
-        // shadow size and make painting faster.
+        
+        
         mHasDirtyRect = PR_TRUE;
         mDirtyRect = *aDirtyRect;
         gfxRect requiredBlurArea = mDirtyRect.Intersect(rect);
@@ -82,9 +82,9 @@ gfxAlphaBoxBlur::Init(const gfxRect& aRect,
     }
 
     if (aSkipRect) {
-        // If we get passed a skip rect, we can lower the amount of
-        // blurring we need to do. We convert it to nsIntRect to avoid
-        // expensive int<->float conversions if we were to use gfxRect instead.
+        
+        
+        
         gfxRect skipRect = *aSkipRect;
         skipRect.RoundIn();
         mSkipRect = gfxThebesUtils::GfxRectToIntRect(skipRect);
@@ -100,16 +100,16 @@ gfxAlphaBoxBlur::Init(const gfxRect& aRect,
         mSkipRect = nsIntRect(0, 0, 0, 0);
     }
 
-    // Make an alpha-only surface to draw on. We will play with the data after
-    // everything is drawn to create a blur effect.
+    
+    
     mImageSurface = new gfxImageSurface(gfxIntSize(static_cast<PRInt32>(rect.Width()), static_cast<PRInt32>(rect.Height())),
                                         gfxASurface::ImageFormatA8);
     if (!mImageSurface || mImageSurface->CairoStatus())
         return nsnull;
 
-    // Use a device offset so callers don't need to worry about translating
-    // coordinates, they can draw as if this was part of the destination context
-    // at the coordinates of rect.
+    
+    
+    
     mImageSurface->SetDeviceOffset(-rect.TopLeft());
 
     mContext = new gfxContext(mImageSurface);
@@ -130,17 +130,17 @@ gfxAlphaBoxBlur::PremultiplyAlpha(gfxFloat alpha)
         data[i] = static_cast<unsigned char>(data[i] * alpha);
 }
 
-/**
- * Box blur involves looking at one pixel, and setting its value to the average
- * of its neighbouring pixels.
- * @param aInput The input buffer.
- * @param aOutput The output buffer.
- * @param aLeftLobe The number of pixels to blend on the left.
- * @param aRightLobe The number of pixels to blend on the right.
- * @param aWidth The number of columns in the buffers.
- * @param aRows The number of rows in the buffers.
- * @param aSkipRect An area to skip blurring in.
- */
+
+
+
+
+
+
+
+
+
+
+
 static void
 BoxBlurHorizontal(unsigned char* aInput,
                   unsigned char* aOutput,
@@ -155,9 +155,9 @@ BoxBlurHorizontal(unsigned char* aInput,
                                     aWidth - 1 <= aSkipRect.XMost();
 
     for (PRInt32 y = 0; y < aRows; y++) {
-        // Check whether the skip rect intersects this row. If the skip
-        // rect covers the whole surface in this row, we can avoid
-        // this row entirely (and any others along the skip rect).
+        
+        
+        
         PRBool inSkipRectY = y >= aSkipRect.y &&
                              y < aSkipRect.YMost();
         if (inSkipRectY && skipRectCoversWholeRow) {
@@ -173,16 +173,16 @@ BoxBlurHorizontal(unsigned char* aInput,
             alphaSum += aInput[aWidth * y + pos];
         }
         for (PRInt32 x = 0; x < aWidth; x++) {
-            // Check whether we are within the skip rect. If so, go
-            // to the next point outside the skip rect.
+            
+            
             if (inSkipRectY && x >= aSkipRect.x &&
                 x < aSkipRect.XMost()) {
                 x = aSkipRect.XMost();
                 if (x >= aWidth)
                     break;
 
-                // Recalculate the neighbouring alpha values for
-                // our new point on the surface.
+                
+                
                 alphaSum = 0;
                 for (PRInt32 i = 0; i < boxSize; i++) {
                     PRInt32 pos = x + i - aLeftLobe;
@@ -203,10 +203,10 @@ BoxBlurHorizontal(unsigned char* aInput,
     }
 }
 
-/**
- * Identical to BoxBlurHorizontal, except it blurs top and bottom instead of
- * left and right.
- */
+
+
+
+
 static void
 BoxBlurVertical(unsigned char* aInput,
                 unsigned char* aOutput,
@@ -266,29 +266,29 @@ static void ComputeLobes(PRInt32 aRadius, PRInt32 aLobes[3][2])
 {
     PRInt32 major, minor, final;
 
-    /* See http://www.w3.org/TR/SVG/filters.html#feGaussianBlur for
-     * some notes about approximating the Gaussian blur with box-blurs.
-     * The comments below are in the terminology of that page.
-     */
+    
+
+
+
     PRInt32 z = aRadius/3;
     switch (aRadius % 3) {
     case 0:
-        // aRadius = z*3; choose d = 2*z + 1
+        
         major = minor = final = z;
         break;
     case 1:
-        // aRadius = z*3 + 1
-        // This is a tricky case since there is no value of d which will
-        // yield a radius of exactly aRadius. If d is odd, i.e. d=2*k + 1
-        // for some integer k, then the radius will be 3*k. If d is even,
-        // i.e. d=2*k, then the radius will be 3*k - 1.
-        // So we have to choose values that don't match the standard
-        // algorithm.
+        
+        
+        
+        
+        
+        
+        
         major = z + 1;
         minor = final = z;
         break;
     case 2:
-        // aRadius = z*3 + 2; choose d = 2*z + 2
+        
         major = final = z + 1;
         minor = z;
         break;
@@ -312,13 +312,20 @@ gfxAlphaBoxBlur::Paint(gfxContext* aDestinationCtx, const gfxPoint& offset)
 
     unsigned char* boxData = mImageSurface->Data();
 
-    // no need to do all this if not blurring
+    
     if (mBlurRadius.width != 0 || mBlurRadius.height != 0) {
         nsTArray<unsigned char> tempAlphaDataBuf;
-        if (!tempAlphaDataBuf.SetLength(mImageSurface->GetDataSize()))
-            return; // OOM
+        PRSize szB = mImageSurface->GetDataSize();
+        if (!tempAlphaDataBuf.SetLength(szB))
+           return; 
 
         unsigned char* tmpData = tempAlphaDataBuf.Elements();
+        
+        
+        
+        
+        memset(tmpData, 0, szB);
+
         PRInt32 stride = mImageSurface->Stride();
         PRInt32 rows = mImageSurface->Height();
 
@@ -339,8 +346,8 @@ gfxAlphaBoxBlur::Paint(gfxContext* aDestinationCtx, const gfxPoint& offset)
         }
     }
 
-    // Avoid a semi-expensive clip operation if we can, otherwise
-    // clip to the dirty rect
+    
+    
     if (mHasDirtyRect) {
       aDestinationCtx->Save();
       aDestinationCtx->NewPath();
@@ -353,7 +360,7 @@ gfxAlphaBoxBlur::Paint(gfxContext* aDestinationCtx, const gfxPoint& offset)
     }
 }
 
-// Blur radius is approximately 3/2 times the box-blur size
+
 static const gfxFloat GAUSSIAN_SCALE_FACTOR = (3 * sqrt(2 * M_PI) / 4) * (3/2);
 
 gfxIntSize gfxAlphaBoxBlur::CalculateBlurRadius(const gfxPoint& aStd)
