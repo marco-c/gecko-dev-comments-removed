@@ -209,6 +209,10 @@ struct ThreadData {
 
     ConservativeGCThreadData conservativeGC;
 
+#ifdef DEBUG
+    size_t              noGCOrAllocationCheck;
+#endif
+
     ThreadData();
     ~ThreadData();
 
@@ -1396,7 +1400,7 @@ FrameAtomBase(JSContext *cx, js::StackFrame *fp)
 {
     return fp->hasImacropc()
            ? cx->runtime->atomState.commonAtomsStart()
-           : fp->script()->atomMap.vector;
+           : fp->script()->atoms;
 }
 
 struct AutoResolving {
@@ -1479,9 +1483,9 @@ class AutoGCRooter {
 
     enum {
         JSVAL =        -1, 
-        SHAPE =        -2, 
+        VALARRAY =     -2, 
         PARSER =       -3, 
-        SCRIPT =       -4, 
+        SHAPEVECTOR =  -4, 
         ENUMERATOR =   -5, 
         IDARRAY =      -6, 
         DESCRIPTORS =  -7, 
@@ -1493,12 +1497,9 @@ class AutoGCRooter {
         DESCRIPTOR =  -13, 
         STRING =      -14, 
         IDVECTOR =    -15, 
-        BINDINGS =    -16, 
-        SHAPEVECTOR = -17, 
-        OBJVECTOR =   -18, 
-        TYPE =        -19, 
-        VALARRAY =    -20, 
-        IONMASM =     -21  
+        OBJVECTOR =   -16, 
+        TYPE =        -17, 
+        IONMASM =     -18  
     };
 
     private:
@@ -1669,43 +1670,6 @@ class AutoArrayRooter : private AutoGCRooter {
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-class AutoShapeRooter : private AutoGCRooter {
-  public:
-    AutoShapeRooter(JSContext *cx, const js::Shape *shape
-                    JS_GUARD_OBJECT_NOTIFIER_PARAM)
-      : AutoGCRooter(cx, SHAPE), shape(shape)
-    {
-        JS_GUARD_OBJECT_NOTIFIER_INIT;
-    }
-
-    friend void AutoGCRooter::trace(JSTracer *trc);
-    friend void MarkRuntime(JSTracer *trc);
-
-  private:
-    const js::Shape * const shape;
-    JS_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
-
-class AutoScriptRooter : private AutoGCRooter {
-  public:
-    AutoScriptRooter(JSContext *cx, JSScript *script
-                     JS_GUARD_OBJECT_NOTIFIER_PARAM)
-      : AutoGCRooter(cx, SCRIPT), script(script)
-    {
-        JS_GUARD_OBJECT_NOTIFIER_INIT;
-    }
-
-    void setScript(JSScript *script) {
-        this->script = script;
-    }
-
-    friend void AutoGCRooter::trace(JSTracer *trc);
-
-  private:
-    JSScript *script;
-    JS_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
-
 class AutoIdRooter : private AutoGCRooter
 {
   public:
@@ -1829,22 +1793,6 @@ class AutoXMLRooter : private AutoGCRooter {
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 #endif 
-
-class AutoBindingsRooter : private AutoGCRooter {
-  public:
-    AutoBindingsRooter(JSContext *cx, Bindings &bindings
-                       JS_GUARD_OBJECT_NOTIFIER_PARAM)
-      : AutoGCRooter(cx, BINDINGS), bindings(bindings)
-    {
-        JS_GUARD_OBJECT_NOTIFIER_INIT;
-    }
-
-    friend void AutoGCRooter::trace(JSTracer *trc);
-
-  private:
-    Bindings &bindings;
-    JS_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
 
 class AutoLockGC {
   public:
