@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is SpiderMonkey code.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jsgcinlines_h___
 #define jsgcinlines_h___
@@ -58,7 +58,7 @@ JSAtom::isUnitString(const void *ptr)
     if (delta >= UNIT_STATIC_LIMIT * sizeof(JSString))
         return false;
 
-    
+    /* If ptr points inside the static array, it must be well-aligned. */
     JS_ASSERT(delta % sizeof(JSString) == 0);
     return true;
 #else
@@ -75,7 +75,7 @@ JSAtom::isLength2String(const void *ptr)
     if (delta >= NUM_SMALL_CHARS * NUM_SMALL_CHARS * sizeof(JSString))
         return false;
 
-    
+    /* If ptr points inside the static array, it must be well-aligned. */
     JS_ASSERT(delta % sizeof(JSString) == 0);
     return true;
 #else
@@ -92,7 +92,7 @@ JSAtom::isHundredString(const void *ptr)
     if (delta >= NUM_HUNDRED_STATICS * sizeof(JSString))
         return false;
 
-    
+    /* If ptr points inside the static array, it must be well-aligned. */
     JS_ASSERT(delta % sizeof(JSString) == 0);
     return true;
 #else
@@ -119,64 +119,63 @@ GetGCThingTraceKind(const void *thing)
     if (JSAtom::isStatic(thing))
         return JSTRACE_STRING;
     const Cell *cell = reinterpret_cast<const Cell *>(thing);
-    return GetFinalizableTraceKind(cell->arenaHeader()->getThingKind());
+    return MapAllocToTraceKind(cell->getAllocKind());
 }
 
-
+/* Capacity for slotsToThingKind */
 const size_t SLOTS_TO_THING_KIND_LIMIT = 17;
 
-
-static inline FinalizeKind
+/* Get the best kind to use when making an object with the given slot count. */
+static inline AllocKind
 GetGCObjectKind(size_t numSlots, bool isArray = false)
 {
-    extern FinalizeKind slotsToThingKind[];
+    extern AllocKind slotsToThingKind[];
 
     if (numSlots >= SLOTS_TO_THING_KIND_LIMIT) {
-        
-
-
-
-
-
+        /*
+         * If the object will definitely want more than the maximum number of
+         * fixed slots, use zero fixed slots for arrays and the maximum for
+         * other objects. Arrays do not use their fixed slots anymore when
+         * they have a slots array, while other objects will continue to do so.
+         */
         return isArray ? FINALIZE_OBJECT0 : FINALIZE_OBJECT16;
     }
     return slotsToThingKind[numSlots];
 }
 
 static inline bool
-IsBackgroundFinalizeKind(FinalizeKind kind)
+IsBackgroundAllocKind(AllocKind kind)
 {
     JS_ASSERT(kind <= FINALIZE_OBJECT_LAST);
     return kind % 2 == 1;
 }
 
-static inline FinalizeKind
-GetBackgroundFinalizeKind(FinalizeKind kind)
+static inline AllocKind
+GetBackgroundAllocKind(AllocKind kind)
 {
-    JS_ASSERT(!IsBackgroundFinalizeKind(kind));
-    return (FinalizeKind) (kind + 1);
+    JS_ASSERT(!IsBackgroundAllocKind(kind));
+    return (AllocKind) (kind + 1);
 }
 
+/*
+ * Try to get the next larger size for an object, keeping BACKGROUND
+ * consistent.
+ */
 static inline bool
-CanBumpFinalizeKind(FinalizeKind kind)
+TryIncrementAllocKind(AllocKind *kindp)
 {
-    JS_ASSERT(kind <= FINALIZE_OBJECT_LAST);
-    return (kind + 2) <= FINALIZE_OBJECT_LAST;
+    size_t next = size_t(*kindp) + 2;
+    if (next > size_t(FINALIZE_OBJECT_LAST))
+        return false;
+    *kindp = AllocKind(next);
+    return true;
 }
 
-
-static inline FinalizeKind
-BumpFinalizeKind(FinalizeKind kind)
-{
-    JS_ASSERT(CanBumpFinalizeKind(kind));
-    return (FinalizeKind) (kind + 2);
-}
-
-
+/* Get the number of fixed slots and initial capacity associated with a kind. */
 static inline size_t
-GetGCKindSlots(FinalizeKind thingKind)
+GetGCKindSlots(AllocKind thingKind)
 {
-    
+    /* Using a switch in hopes that thingKind will usually be a compile-time constant. */
     switch (thingKind) {
       case FINALIZE_OBJECT0:
       case FINALIZE_OBJECT0_BACKGROUND:
@@ -205,11 +204,11 @@ GetGCKindSlots(FinalizeKind thingKind)
 static inline void
 GCPoke(JSContext *cx, Value oldval)
 {
-    
-
-
-
-
+    /*
+     * Since we're forcing a GC from JS_GC anyway, don't bother wasting cycles
+     * loading oldval.  XXX remove implied force, fix jsinterp.c's "second arg
+     * ignored", etc.
+     */
 #if 1
     cx->runtime->gcPoke = JS_TRUE;
 #else
@@ -217,23 +216,23 @@ GCPoke(JSContext *cx, Value oldval)
 #endif
 
 #ifdef JS_GC_ZEAL
-    
+    /* Schedule a GC to happen "soon" after a GC poke. */
     if (cx->runtime->gcZeal())
         cx->runtime->gcNextScheduled = 1;
 #endif
 }
 
-
-
-
-
+/*
+ * Invoke ArenaOp and CellOp on every arena and cell in a compartment which
+ * have the specified thing kind.
+ */
 template <class ArenaOp, class CellOp>
 void
-ForEachArenaAndCell(JSCompartment *compartment, FinalizeKind thingKind,
+ForEachArenaAndCell(JSCompartment *compartment, AllocKind thingKind,
                     ArenaOp arenaOp, CellOp cellOp)
 {
-    size_t thingSize = GCThingSizeMap[thingKind];
-    ArenaHeader *aheader = compartment->arenas[thingKind].getHead();
+    size_t thingSize = Arena::thingSize(thingKind);
+    ArenaHeader *aheader = compartment->arenas.getFirstArena(thingKind);
 
     for (; aheader; aheader = aheader->next) {
         Arena *arena = aheader->getArena();
@@ -241,7 +240,7 @@ ForEachArenaAndCell(JSCompartment *compartment, FinalizeKind thingKind,
         FreeSpan firstSpan(aheader->getFirstFreeSpan());
         const FreeSpan *span = &firstSpan;
 
-        for (uintptr_t thing = arena->thingsStart(thingSize); ; thing += thingSize) {
+        for (uintptr_t thing = arena->thingsStart(thingKind); ; thing += thingSize) {
             JS_ASSERT(thing <= arena->thingsEnd());
             if (thing == span->first) {
                 if (!span->hasNext())
@@ -258,6 +257,7 @@ ForEachArenaAndCell(JSCompartment *compartment, FinalizeKind thingKind,
 
 class CellIterImpl
 {
+    size_t firstThingOffset;
     size_t thingSize;
     ArenaHeader *aheader;
     FreeSpan firstSpan;
@@ -269,9 +269,10 @@ class CellIterImpl
     CellIterImpl() {
     }
 
-    void init(JSCompartment *comp, FinalizeKind thingKind) {
-        thingSize = GCThingSizeMap[thingKind];
-        aheader = comp->arenas[thingKind].getHead();
+    void init(JSCompartment *comp, AllocKind kind) {
+        firstThingOffset = Arena::firstThingOffset(kind);
+        thingSize = Arena::thingSize(kind);
+        aheader = comp->arenas.getFirstArena(kind);
         firstSpan.initAsEmpty();
         span = &firstSpan;
         thing = span->first;
@@ -308,7 +309,7 @@ class CellIterImpl
             }
             firstSpan = aheader->getFirstFreeSpan();
             span = &firstSpan;
-            thing = aheader->getArena()->thingsStart(thingSize);
+            thing = aheader->arenaAddress() | firstThingOffset;
             aheader = aheader->next;
         }
         cell = reinterpret_cast<Cell *>(thing);
@@ -319,43 +320,43 @@ class CellIterImpl
 class CellIterUnderGC : public CellIterImpl {
 
   public:
-    CellIterUnderGC(JSCompartment *comp, FinalizeKind thingKind) {
+    CellIterUnderGC(JSCompartment *comp, AllocKind kind) {
         JS_ASSERT(comp->rt->gcRunning);
-        JS_ASSERT(comp->freeLists.lists[thingKind].isEmpty());
-        init(comp, thingKind);
+        comp->arenas.checkEmptyFreeList(kind);
+        init(comp, kind);
     }
 };
 
-
-
-
-
-
+/*
+ * When using the iterator outside the GC the caller must ensure that no GC or
+ * allocations of GC things are possible and that the background finalization
+ * for the given thing kind is not enabled or is done.
+ */
 class CellIter: public CellIterImpl
 {
-    FreeLists *lists;
-    FinalizeKind thingKind;
+    ArenaLists *lists;
+    AllocKind kind;
 #ifdef DEBUG
     size_t *counter;
 #endif
   public:
-    CellIter(JSContext *cx, JSCompartment *comp, FinalizeKind thingKind)
-      : lists(&comp->freeLists),
-        thingKind(thingKind) {
+    CellIter(JSContext *cx, JSCompartment *comp, AllocKind kind)
+      : lists(&comp->arenas),
+        kind(kind) {
 #ifdef JS_THREADSAFE
-        JS_ASSERT(comp->arenas[thingKind].doneBackgroundFinalize());
+        JS_ASSERT(comp->arenas.doneBackgroundFinalize(kind));
 #endif
-        if (lists->isSynchronizedWithArena(thingKind)) {
+        if (lists->isSynchronizedFreeList(kind)) {
             lists = NULL;
         } else {
             JS_ASSERT(!comp->rt->gcRunning);
-            lists->copyToArena(thingKind);
+            lists->copyFreeListToArena(kind);
         }
 #ifdef DEBUG
         counter = &JS_THREAD_DATA(cx)->noGCOrAllocationCheck;
         ++*counter;
 #endif
-        init(comp, thingKind);
+        init(comp, kind);
     }
 
     ~CellIter() {
@@ -364,35 +365,33 @@ class CellIter: public CellIterImpl
         --*counter;
 #endif
         if (lists)
-            lists->clearInArena(thingKind);
+            lists->clearFreeListInArena(kind);
     }
 };
 
-
+/* Signatures for ArenaOp and CellOp above. */
 
 inline void EmptyArenaOp(Arena *arena) {}
 inline void EmptyCellOp(Cell *t) {}
 
-} 
-} 
+} /* namespace gc */
+} /* namespace js */
 
-
-
-
-
-
-
+/*
+ * Allocates a new GC thing. After a successful allocation the caller must
+ * fully initialize the thing before calling any function that can potentially
+ * trigger GC. This will ensure that GC tracing never sees junk values stored
+ * in the partially initialized thing.
+ */
 
 template <typename T>
 inline T *
-NewGCThing(JSContext *cx, unsigned thingKind, size_t thingSize)
+NewGCThing(JSContext *cx, js::gc::AllocKind kind, size_t thingSize)
 {
-    JS_ASSERT(thingKind < js::gc::FINALIZE_LIMIT);
-    JS_ASSERT(thingSize == js::gc::GCThingSizeMap[thingKind]);
+    JS_ASSERT(thingSize == js::gc::Arena::thingSize(kind));
 #ifdef JS_THREADSAFE
     JS_ASSERT_IF((cx->compartment == cx->runtime->atomsCompartment),
-                 (thingKind == js::gc::FINALIZE_STRING) ||
-                 (thingKind == js::gc::FINALIZE_SHORT_STRING));
+                 kind == js::gc::FINALIZE_STRING || kind == js::gc::FINALIZE_SHORT_STRING);
 #endif
     JS_ASSERT(!cx->runtime->gcRunning);
     JS_ASSERT(!JS_THREAD_DATA(cx)->noGCOrAllocationCheck);
@@ -402,15 +401,15 @@ NewGCThing(JSContext *cx, unsigned thingKind, size_t thingSize)
         js::gc::RunDebugGC(cx);
 #endif
 
-    void *t = cx->compartment->freeLists.getNext(thingKind, thingSize);
-    return static_cast<T *>(t ? t : js::gc::RefillFinalizableFreeList(cx, thingKind));
+    void *t = cx->compartment->arenas.allocateFromFreeList(kind, thingSize);
+    return static_cast<T *>(t ? t : js::gc::ArenaLists::refillFreeList(cx, kind));
 }
 
 inline JSObject *
-js_NewGCObject(JSContext *cx, js::gc::FinalizeKind kind)
+js_NewGCObject(JSContext *cx, js::gc::AllocKind kind)
 {
     JS_ASSERT(kind >= js::gc::FINALIZE_OBJECT0 && kind <= js::gc::FINALIZE_OBJECT_LAST);
-    JSObject *obj = NewGCThing<JSObject>(cx, kind, js::gc::GCThingSizeMap[kind]);
+    JSObject *obj = NewGCThing<JSObject>(cx, kind, js::gc::Arena::thingSize(kind));
     if (obj)
         obj->earlyInit(js::gc::GetGCKindSlots(kind));
     return obj;
@@ -441,7 +440,7 @@ js_NewGCFunction(JSContext *cx)
     JSFunction *fun = NewGCThing<JSFunction>(cx, js::gc::FINALIZE_FUNCTION, sizeof(JSFunction));
     if (fun) {
         fun->capacity = JSObject::FUN_CLASS_RESERVED_SLOTS;
-        fun->lastProp = NULL; 
+        fun->lastProp = NULL; /* Stops fun from being scanned until initializated. */
     }
     return fun;
 }
@@ -463,4 +462,4 @@ extern JSXML *
 js_NewGCXML(JSContext *cx);
 #endif
 
-#endif 
+#endif /* jsgcinlines_h___ */

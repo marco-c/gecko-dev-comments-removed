@@ -146,13 +146,6 @@ using namespace js;
 using namespace js::gc;
 using namespace js::types;
 
-static inline bool
-ENSURE_SLOW_ARRAY(JSContext *cx, JSObject *obj)
-{
-    return obj->getClass() == &js_SlowArrayClass ||
-           obj->makeDenseArraySlow(cx);
-}
-
 JSBool
 js_GetLengthProperty(JSContext *cx, JSObject *obj, jsuint *lengthp)
 {
@@ -246,14 +239,11 @@ static JSBool
 BigIndexToId(JSContext *cx, JSObject *obj, jsuint index, JSBool createAtom,
              jsid *idp)
 {
-    jschar buf[10], *start;
-    Class *clasp;
-    JSAtom *atom;
     JS_STATIC_ASSERT((jsuint)-1 == 4294967295U);
-
     JS_ASSERT(index > JSID_INT_MAX);
 
-    start = JS_ARRAY_END(buf);
+    jschar buf[10];
+    jschar *start = JS_ARRAY_END(buf);
     do {
         --start;
         *start = (jschar)('0' + index % 10);
@@ -267,11 +257,8 @@ BigIndexToId(JSContext *cx, JSObject *obj, jsuint index, JSBool createAtom,
 
 
 
-
-    if (!createAtom &&
-        ((clasp = obj->getClass()) == &js_SlowArrayClass ||
-         obj->isArguments() ||
-         clasp == &js_ObjectClass)) {
+    JSAtom *atom;
+    if (!createAtom && (obj->isSlowArray() || obj->isArguments() || obj->isObject())) {
         atom = js_GetExistingStringAtom(cx, start, JS_ARRAY_END(buf) - start);
         if (!atom) {
             *idp = JSID_VOID;
@@ -501,13 +488,13 @@ JSBool JS_FASTCALL
 js_EnsureDenseArrayCapacity(JSContext *cx, JSObject *obj, jsint i)
 {
 #ifdef DEBUG
-    Class *origObjClasp = obj->clasp;
+    Class *origObjClasp = obj->getClass();
 #endif
     jsuint u = jsuint(i);
     JSBool ret = (obj->ensureDenseArrayElements(cx, u, 1) == JSObject::ED_OK);
 
     
-    JS_ASSERT(obj->clasp == origObjClasp);
+    JS_ASSERT(obj->getClass() == origObjClasp);
     return ret;
 }
 
@@ -989,7 +976,7 @@ array_fix(JSContext *cx, JSObject *obj, bool *success, AutoIdVector *props)
     return true;
 }
 
-Class js_ArrayClass = {
+Class js::ArrayClass = {
     "Array",
     Class::NON_NATIVE | JSCLASS_HAS_PRIVATE | JSCLASS_HAS_CACHED_PROTO(JSProto_Array),
     PropertyStub,         
@@ -1024,7 +1011,7 @@ Class js_ArrayClass = {
     }
 };
 
-Class js_SlowArrayClass = {
+Class js::SlowArrayClass = {
     "Array",
     JSCLASS_HAS_PRIVATE |
     JSCLASS_HAS_CACHED_PROTO(JSProto_Array),
@@ -1068,8 +1055,8 @@ JSObject::makeDenseArraySlow(JSContext *cx)
     js::Shape *oldMap = lastProp;
 
     
-    js::gc::FinalizeKind kind = js::gc::FinalizeKind(arenaHeader()->getThingKind());
-    if (!InitScopeForObject(cx, this, &js_SlowArrayClass, getProto()->getNewType(cx), kind))
+    gc::AllocKind kind = getAllocKind();
+    if (!InitScopeForObject(cx, this, &SlowArrayClass, getProto()->getNewType(cx), kind))
         return false;
 
     backfillDenseArrayHoles(cx);
@@ -1090,7 +1077,7 @@ JSObject::makeDenseArraySlow(JSContext *cx)
         JS_ASSERT(!denseArrayHasInlineSlots());
     }
     capacity = numFixedSlots() + arrayCapacity;
-    clasp = &js_SlowArrayClass;
+    clasp = &SlowArrayClass;
 
     
 
@@ -1110,7 +1097,7 @@ JSObject::makeDenseArraySlow(JSContext *cx)
         setMap(oldMap);
         capacity = arrayCapacity;
         initializedLength = arrayInitialized;
-        clasp = &js_ArrayClass;
+        clasp = &ArrayClass;
         return false;
     }
 
@@ -1133,7 +1120,7 @@ JSObject::makeDenseArraySlow(JSContext *cx)
             setMap(oldMap);
             capacity = arrayCapacity;
             initializedLength = arrayInitialized;
-            clasp = &js_ArrayClass;
+            clasp = &ArrayClass;
             return false;
         }
 
@@ -1211,7 +1198,7 @@ array_toSource(JSContext *cx, uintN argc, Value *vp)
     if (!obj)
         return false;
     if (!obj->isArray()) {
-        ReportIncompatibleMethod(cx, vp, &js_ArrayClass);
+        ReportIncompatibleMethod(cx, vp, &ArrayClass);
         return false;
     }
 
@@ -1540,7 +1527,7 @@ InitArrayElements(JSContext *cx, JSObject *obj, jsuint start, jsuint count, Valu
         return JS_TRUE;
 
     
-    if (obj->isDenseArray() && !ENSURE_SLOW_ARRAY(cx, obj))
+    if (obj->isDenseArray() && !obj->makeDenseArraySlow(cx))
         return JS_FALSE;
 
     JS_ASSERT(start == MAX_ARRAY_INDEX + 1);
@@ -3217,12 +3204,12 @@ js_InitArrayClass(JSContext *cx, JSObject *obj)
 
     GlobalObject *global = obj->asGlobal();
 
-    JSObject *arrayProto = global->createBlankPrototype(cx, &js_SlowArrayClass);
+    JSObject *arrayProto = global->createBlankPrototype(cx, &SlowArrayClass);
     if (!arrayProto || !AddLengthProperty(cx, arrayProto))
         return NULL;
     arrayProto->setArrayLength(cx, 0);
 
-    JSFunction *ctor = global->createConstructor(cx, js_Array, &js_ArrayClass,
+    JSFunction *ctor = global->createConstructor(cx, js_Array, &ArrayClass,
                                                  CLASS_ATOM(cx, Array), 1);
     if (!ctor)
         return NULL;
@@ -3256,8 +3243,8 @@ NewArray(JSContext *cx, jsuint length, JSObject *proto)
 {
     JS_ASSERT_IF(proto, proto->isArray());
 
-    gc::FinalizeKind kind = GuessObjectGCKind(length, true);
-    JSObject *obj = detail::NewObject<WithProto::Class, false>(cx, &js_ArrayClass, proto, NULL, kind);
+    gc::AllocKind kind = GuessObjectGCKind(length, true);
+    JSObject *obj = detail::NewObject<WithProto::Class, false>(cx, &ArrayClass, proto, NULL, kind);
     if (!obj)
         return NULL;
 
@@ -3346,7 +3333,7 @@ JS_DEFINE_CALLINFO_3(extern, OBJECT, NewDenseUnallocatedArray, CONTEXT, UINT32, 
 JSObject *
 NewSlowEmptyArray(JSContext *cx)
 {
-    JSObject *obj = NewNonFunction<WithProto::Class>(cx, &js_SlowArrayClass, NULL, NULL);
+    JSObject *obj = NewNonFunction<WithProto::Class>(cx, &SlowArrayClass, NULL, NULL);
     if (!obj || !AddLengthProperty(cx, obj))
         return NULL;
 
