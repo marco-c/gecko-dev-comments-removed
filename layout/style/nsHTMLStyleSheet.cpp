@@ -1,53 +1,53 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK *****
+ *
+ * This Original Code has been modified by IBM Corporation. Modifications made by IBM 
+ * described herein are Copyright (c) International Business Machines Corporation, 2000.
+ * Modifications to Mozilla code or documentation identified per MPL Section 3.3
+ *
+ * Date             Modified by     Description of modification
+ * 04/20/2000       IBM Corp.      OS/2 VisualAge build.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * style sheet and style rule processor representing data from presentational
+ * HTML attributes
+ */
 
 #include "nsHTMLStyleSheet.h"
 #include "nsINameSpaceManager.h"
@@ -98,7 +98,7 @@ NS_IMPL_ISUPPORTS1(nsHTMLStyleSheet::GenericTableRule, nsIStyleRule)
 NS_IMETHODIMP
 nsHTMLStyleSheet::GenericTableRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
-  
+  // Nothing to do.
   return NS_OK;
 }
 
@@ -123,7 +123,7 @@ nsHTMLStyleSheet::TableTHRule::MapRuleInfoInto(nsRuleData* aRuleData)
   return NS_OK;
 }
 
-
+// -----------------------------------------------------------
 
 struct MappedAttrTableEntry : public PLDHashEntryHdr {
   nsMappedAttributes *mAttributes;
@@ -170,7 +170,7 @@ static PLDHashTableOps MappedAttrTable_Ops = {
   NULL
 };
 
-
+// -----------------------------------------------------------
 
 nsHTMLStyleSheet::nsHTMLStyleSheet(void)
   : mURL(nsnull),
@@ -235,7 +235,7 @@ nsHTMLStyleSheet::RulesMatching(ElementRuleProcessorData* aData)
     if (aData->mIsHTMLContent) {
       nsIAtom* tag = aData->mContentTag;
 
-      
+      // if we have anchor colors, check if this is an anchor with an href
       if (tag == nsGkAtoms::a) {
         if (mLinkRule || mVisitedRule || mActiveRule) {
           PRUint32 state = aData->ContentState();
@@ -246,14 +246,14 @@ nsHTMLStyleSheet::RulesMatching(ElementRuleProcessorData* aData)
             ruleWalker->Forward(mVisitedRule);
           }
 
-          
+          // No need to add to the active rule if it's not a link
           if (mActiveRule && aData->IsLink() &&
               (state & NS_EVENT_STATE_ACTIVE)) {
             ruleWalker->Forward(mActiveRule);
           }
-        } 
-      } 
-      
+        } // end link/visited/active rules
+      } // end A tag
+      // add the rule to handle text-align for a <th>
       else if (tag == nsGkAtoms::th) {
         ruleWalker->Forward(mTableTHRule);
       }
@@ -276,16 +276,16 @@ nsHTMLStyleSheet::RulesMatching(ElementRuleProcessorData* aData)
             ruleWalker->Forward(mDocumentColorRule);
         }
       }
-    } 
+    } // end html element
 
-    
+    // just get the style rules from the content
     content->WalkContentStyleRules(ruleWalker);
   }
 
   return NS_OK;
 }
 
-
+// Test if style is dependent on content state
 nsReStyleHint
 nsHTMLStyleSheet::HasStateDependentStyle(StateRuleProcessorData* aData)
 {
@@ -301,25 +301,19 @@ nsHTMLStyleSheet::HasStateDependentStyle(StateRuleProcessorData* aData)
   return nsReStyleHint(0);
 }
 
-PRBool
-nsHTMLStyleSheet::HasDocumentStateDependentStyle(StateRuleProcessorData* aData)
-{
-  return PR_FALSE;
-}
-
 nsReStyleHint
 nsHTMLStyleSheet::HasAttributeDependentStyle(AttributeRuleProcessorData* aData)
 {
-  
+  // Do nothing on before-change checks
   if (!aData->mAttrHasChanged) {
     return nsReStyleHint(0);
   }
 
-  
-  
-  
+  // Note: no need to worry about whether some states changed with this
+  // attribute here, because we handle that under HasStateDependentStyle() as
+  // needed.
 
-  
+  // Result is true for |href| changes on HTML links if we have link rules.
   nsIContent *content = aData->mContent;
   if (aData->mAttribute == nsGkAtoms::href &&
       (mLinkRule || mVisitedRule || mActiveRule) &&
@@ -329,10 +323,10 @@ nsHTMLStyleSheet::HasAttributeDependentStyle(AttributeRuleProcessorData* aData)
     return eReStyle_Self;
   }
 
-  
-  
+  // Don't worry about the mDocumentColorRule since it only applies
+  // to descendants of body, when we're already reresolving.
 
-  
+  // Handle the content style rules.
   if (content && content->IsAttributeMapped(aData->mAttribute)) {
     return eReStyle_Self;
   }
@@ -369,7 +363,7 @@ nsHTMLStyleSheet::RulesMatching(XULTreeRuleProcessorData* aData)
 }
 #endif
 
-  
+  // nsIStyleSheet api
 NS_IMETHODIMP
 nsHTMLStyleSheet::GetSheetURI(nsIURI** aSheetURI) const
 {
@@ -403,7 +397,7 @@ nsHTMLStyleSheet::GetType(nsString& aType) const
 NS_IMETHODIMP_(PRBool)
 nsHTMLStyleSheet::HasRules() const
 {
-  return PR_TRUE; 
+  return PR_TRUE; // We have rules at all reasonable times
 }
 
 NS_IMETHODIMP
@@ -415,7 +409,7 @@ nsHTMLStyleSheet::GetApplicable(PRBool& aApplicable) const
 
 NS_IMETHODIMP
 nsHTMLStyleSheet::SetEnabled(PRBool aEnabled)
-{ 
+{ // these can't be disabled
   return NS_OK;
 }
 
@@ -450,7 +444,7 @@ nsHTMLStyleSheet::GetOwningDocument(nsIDocument*& aDocument) const
 NS_IMETHODIMP
 nsHTMLStyleSheet::SetOwningDocument(nsIDocument* aDocument)
 {
-  mDocument = aDocument; 
+  mDocument = aDocument; // not refcounted
   return NS_OK;
 }
 
@@ -464,7 +458,7 @@ nsHTMLStyleSheet::Init(nsIURI* aURL, nsIDocument* aDocument)
   if (mURL || mDocument)
     return NS_ERROR_ALREADY_INITIALIZED;
 
-  mDocument = aDocument; 
+  mDocument = aDocument; // not refcounted!
   mURL = aURL;
   NS_ADDREF(mURL);
   return NS_OK;
@@ -597,17 +591,17 @@ nsHTMLStyleSheet::UniqueMappedAttributes(nsMappedAttributes* aMapped)
   if (!entry)
     return nsnull;
   if (!entry->mAttributes) {
-    
+    // We added a new entry to the hashtable, so we have a new unique set.
     entry->mAttributes = aMapped;
   }
-  NS_ADDREF(entry->mAttributes); 
+  NS_ADDREF(entry->mAttributes); // for caller
   return entry->mAttributes;
 }
 
 void
 nsHTMLStyleSheet::DropMappedAttributes(nsMappedAttributes* aMapped)
 {
-  NS_ENSURE_TRUE(aMapped, );
+  NS_ENSURE_TRUE(aMapped, /**/);
 
   NS_ASSERTION(mMappedAttrTable.ops, "table uninitialized");
 #ifdef DEBUG
@@ -622,7 +616,7 @@ nsHTMLStyleSheet::DropMappedAttributes(nsMappedAttributes* aMapped)
 #ifdef DEBUG
 void nsHTMLStyleSheet::List(FILE* out, PRInt32 aIndent) const
 {
-  
+  // Indent
   for (PRInt32 index = aIndent; --index >= 0; ) fputs("  ", out);
 
   fputs("HTML Style Sheet: ", out);
@@ -635,7 +629,7 @@ void nsHTMLStyleSheet::List(FILE* out, PRInt32 aIndent) const
 }
 #endif
 
-
+// XXX For convenience and backwards compatibility
 nsresult
 NS_NewHTMLStyleSheet(nsHTMLStyleSheet** aInstancePtrResult, nsIURI* aURL, 
                      nsIDocument* aDocument)
@@ -671,6 +665,6 @@ NS_NewHTMLStyleSheet(nsHTMLStyleSheet** aInstancePtrResult)
   if (NS_FAILED(rv))
     NS_RELEASE(it);
 
-  *aInstancePtrResult = it; 
+  *aInstancePtrResult = it; // NS_ADDREF above, or set to null by NS_RELEASE
   return rv;
 }
