@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWifiMonitor.h"
 #include "nsIWifiAccessPoint.h"
@@ -29,12 +29,12 @@ public:
   void setSignal(int signal)
   {
     mSignal = signal;
-  };
+  }
 
   void setMac(const unsigned char mac_as_int[6])
   {
-    
-    
+    // mac_as_int is big-endian. Write in byte chunks.
+    // Format is XX-XX-XX-XX-XX-XX.
 
     const unsigned char holder[6] = {0};
     if (!mac_as_int) {
@@ -48,7 +48,7 @@ public:
             mac_as_int[3], mac_as_int[4], mac_as_int[5]);
 
     mMac[17] = 0;
-  };
+  }
 
   void setSSID(const char* aSSID, unsigned long len) {
     if (aSSID && (len < sizeof(mSsid))) {
@@ -61,12 +61,12 @@ public:
       mSsid[0] = 0;
       mSsidLen = 0;
     }
-  };
+  }
 };
 
 
 
-
+// Helper functions
 
 bool AccessPointsEqual(nsCOMArray<nsWifiAccessPoint>& a, nsCOMArray<nsWifiAccessPoint>& b);
 void ReplaceArray(nsCOMArray<nsWifiAccessPoint>& a, nsCOMArray<nsWifiAccessPoint>& b);

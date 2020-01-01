@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_net_WebSocketChannel_h
 #define mozilla_net_WebSocketChannel_h
@@ -42,12 +42,12 @@ class CallOnStop;
 class CallOnServerClose;
 class CallAcknowledge;
 
-
+// Used to enforce "1 connecting websocket per host" rule, and reconnect delays
 enum wsConnectingState {
-  NOT_CONNECTING = 0,     
-  CONNECTING_QUEUED,      
-  CONNECTING_DELAYED,     
-  CONNECTING_IN_PROGRESS  
+  NOT_CONNECTING = 0,     // Not yet (or no longer) trying to open connection
+  CONNECTING_QUEUED,      // Waiting for other ws to same host to finish opening
+  CONNECTING_DELAYED,     // Delayed by "reconnect after failure" algorithm
+  CONNECTING_IN_PROGRESS  // Started connection: waiting for result
 };
 
 class WebSocketChannel : public BaseWebSocketChannel,
@@ -72,8 +72,8 @@ public:
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSICHANNELEVENTSINK
 
-  
-  
+  // nsIWebSocketChannel methods BaseWebSocketChannel didn't implement for us
+  //
   NS_IMETHOD AsyncOpen(nsIURI *aURI,
                        const nsACString &aOrigin,
                        nsIWebSocketListener *aListener,
@@ -88,12 +88,12 @@ public:
   static void Shutdown();
 
   enum {
-    
+    // Non Control Frames
     kContinuation = 0x0,
     kText =         0x1,
     kBinary =       0x2,
 
-    
+    // Control Frames
     kClose =        0x8,
     kPing =         0x9,
     kPong =         0xA
@@ -115,7 +115,7 @@ private:
   friend class CallOnServerClose;
   friend class CallAcknowledge;
 
-  
+  // Common send code for binary + text msgs
   nsresult SendMsgCommon(const nsACString *aMsg, bool isBinary,
                          PRUint32 length, nsIInputStream *aStream = NULL);
 
@@ -126,7 +126,7 @@ private:
   void GeneratePong(PRUint8 *payload, PRUint32 len);
   void GeneratePing();
 
-  bool     BeginOpen();
+  void     BeginOpen();
   nsresult HandleExtensions();
   nsresult SetupRequest();
   nsresult ApplyForAdmission();
@@ -159,26 +159,26 @@ private:
 
   nsCString                       mHashedSecret;
 
-  
-  
+  // Used as key for connection managment: Initially set to hostname from URI,
+  // then to IP address (unless we're leaving DNS resolution to a proxy server)
   nsCString                       mAddress;
-  PRInt32                         mPort;          
+  PRInt32                         mPort;          // WS server port
 
   nsCOMPtr<nsISocketTransport>    mTransport;
   nsCOMPtr<nsIAsyncInputStream>   mSocketIn;
   nsCOMPtr<nsIAsyncOutputStream>  mSocketOut;
 
   nsCOMPtr<nsITimer>              mCloseTimer;
-  PRUint32                        mCloseTimeout;  
+  PRUint32                        mCloseTimeout;  /* milliseconds */
 
   nsCOMPtr<nsITimer>              mOpenTimer;
-  PRUint32                        mOpenTimeout;  
-  wsConnectingState               mConnecting;   
+  PRUint32                        mOpenTimeout;  /* milliseconds */
+  wsConnectingState               mConnecting;   /* 0 if not connecting */
   nsCOMPtr<nsITimer>              mReconnectDelayTimer;
 
   nsCOMPtr<nsITimer>              mPingTimer;
-  PRUint32                        mPingTimeout;  
-  PRUint32                        mPingResponseTimeout;  
+  PRUint32                        mPingTimeout;  /* milliseconds */
+  PRUint32                        mPingResponseTimeout;  /* milliseconds */
 
   nsCOMPtr<nsITimer>              mLingeringCloseTimer;
   const static PRInt32            kLingeringCloseTimeout =   1000;
@@ -198,7 +198,8 @@ private:
   PRUint32                        mAutoFollowRedirects       : 1;
   PRUint32                        mReleaseOnTransmit         : 1;
   PRUint32                        mTCPClosed                 : 1;
-  PRUint32                        mChannelWasOpened          : 1;
+  PRUint32                        mWasOpened                 : 1;
+  PRUint32                        mOpenedHttpChannel         : 1;
   PRUint32                        mDataStarted               : 1;
   PRUint32                        mIncrementedSessionCount   : 1;
   PRUint32                        mDecrementedSessionCount   : 1;
@@ -210,11 +211,11 @@ private:
   PRUint16                        mScriptCloseCode;
   nsCString                       mScriptCloseReason;
 
-  
+  // These are for the read buffers
   const static PRUint32 kIncomingBufferInitialSize = 16 * 1024;
-  
-  
-  
+  // We're ok with keeping a buffer this size or smaller around for the life of
+  // the websocket.  If a particular message needs bigger than this we'll
+  // increase the buffer temporarily, then drop back down to this size.
   const static PRUint32 kIncomingBufferStableSize = 128 * 1024;
 
   PRUint8                        *mFramePtr;
@@ -226,7 +227,7 @@ private:
   nsCOMPtr<nsIStreamListener>     mInflateReader;
   nsCOMPtr<nsIStringInputStream>  mInflateStream;
 
-  
+  // These are for the send buffers
   const static PRInt32 kCopyBreak = 1000;
 
   OutboundMessage                *mCurrentOut;
@@ -250,6 +251,6 @@ protected:
     virtual ~WebSocketSSLChannel() {}
 };
 
-}} 
+}} // namespace mozilla::net
 
-#endif 
+#endif // mozilla_net_WebSocketChannel_h

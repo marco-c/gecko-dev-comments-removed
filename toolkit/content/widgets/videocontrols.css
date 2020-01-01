@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -23,7 +23,7 @@
 
 .mediaControlsFrame {
   direction: ltr;
-  
+  /* Prevent unwanted style inheritance. See bug 554717. */
   text-align: left;
   list-style-image: none !important;
   font: normal normal normal 100%/normal sans-serif !important;
@@ -34,37 +34,37 @@
   cursor: none;
 }
 
-
-
-
-
-
-
+/* CSS Transitions
+ *
+ * These are overriden by the default theme; the rules here just 
+ * provide a fallback to drive the required transitionend event
+ * (in case a 3rd party theme does not provide transitions).
+ */
 .controlBar:not([immediate]) {
-  -moz-transition-property: opacity;
-  -moz-transition-duration: 1ms;
+  transition-property: opacity;
+  transition-duration: 1ms;
 }
 .controlBar[fadeout] {
   opacity: 0;
 }
 .volumeStack:not([immediate]) {
-  -moz-transition-property: opacity, margin-top;
-  -moz-transition-duration: 1ms, 1ms;
+  transition-property: opacity, margin-top;
+  transition-duration: 1ms, 1ms;
 }
 .volumeStack[fadeout] {
   opacity: 0;
   margin-top: 0;
 }
 .statusOverlay:not([immediate]) {
-  -moz-transition-property: opacity;
-  -moz-transition-duration: 1ms;
-  -moz-transition-delay: 750ms;
+  transition-property: opacity;
+  transition-duration: 1ms;
+  transition-delay: 750ms;
 }
 .statusOverlay[fadeout] {
   opacity: 0;
 }
 
-
+/* Statistics formatting */
 html|td.statLabel {
   font-weight: bold;
   max-width: 20%;
@@ -104,7 +104,7 @@ html|span.statActivity[seeking] > html|span.statActivitySeeking {
   visibility: hidden;
 }
 
-
+/* Error description formatting */
 .errorLabel {
   display: none;
 }

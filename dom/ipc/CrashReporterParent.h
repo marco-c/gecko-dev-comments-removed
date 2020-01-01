@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set sw=4 ts=8 et tw=80 : 
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 #include "mozilla/dom/PCrashReporterParent.h"
 #include "mozilla/dom/TabMessageUtils.h"
 #include "nsXULAppAPI.h"
@@ -26,54 +26,54 @@ public:
   virtual ~CrashReporterParent();
 
 #ifdef MOZ_CRASHREPORTER
-  /* Attempt to generate a parent/child pair of minidumps from the given
-     toplevel actor in the event of a hang. Returns true if successful,
-     false otherwise.
-  */
+  
+
+
+
   template<class Toplevel>
   bool
   GeneratePairedMinidump(Toplevel* t);
 
-  /* Attempt to create a bare-bones crash report for a hang, along with extra
-     process-specific annotations present in the given AnnotationTable. Returns
-     true if successful, false otherwise.
-  */
+  
+
+
+
   bool
   GenerateHangCrashReport(const AnnotationTable* processNotes);
 
-  /* Attempt to create a bare-bones crash report, along with extra process-
-     specific annotations present in the given AnnotationTable. Returns true if
-     successful, false otherwise.
-  */
+  
+
+
+
   template<class Toplevel>
   bool
   GenerateCrashReport(Toplevel* t, const AnnotationTable* processNotes);
 
-  /* Instantiate a new crash reporter actor from a given parent that manages
-     the protocol.
-  */
+  
+
+
   template<class Toplevel>
   static bool CreateCrashReporter(Toplevel* actor);
 #endif
-  /* Initialize this reporter with data from the child process */
+  
   void
     SetChildData(const NativeThreadId& id, const PRUint32& processType);
 
-  /* Returns the shared hang ID of a parent/child paired minidump.
-     GeneratePairedMinidump must be called first.
-  */
+  
+
+
   const nsString& HangID() {
     return mHangID;
   }
-  /* Returns the ID of the parent minidump.
-     GeneratePairedMinidump must be called first.
-  */
+  
+
+
   const nsString& ParentDumpID() {
     return mParentDumpID;
   }
-  /* Returns the ID of the child minidump.
-     GeneratePairedMinidump or GenerateCrashReport must be called first.
-  */
+  
+
+
   const nsString& ChildDumpID() {
     return mChildDumpID;
   }
@@ -143,7 +143,7 @@ CrashReporterParent::GenerateCrashReport(Toplevel* t,
 }
 
 template<class Toplevel>
-/* static */ bool
+ bool
 CrashReporterParent::CreateCrashReporter(Toplevel* actor)
 {
 #ifdef MOZ_CRASHREPORTER
@@ -163,5 +163,5 @@ CrashReporterParent::CreateCrashReporter(Toplevel* actor)
 
 #endif
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

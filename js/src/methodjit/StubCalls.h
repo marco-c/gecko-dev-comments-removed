@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #if !defined jslogic_h__ && defined JS_METHODJIT
 #define jslogic_h__
@@ -44,21 +44,21 @@ void JS_FASTCALL ScriptDebugEpilogue(VMFrame &f);
 void JS_FASTCALL ScriptProbeOnlyPrologue(VMFrame &f);
 void JS_FASTCALL ScriptProbeOnlyEpilogue(VMFrame &f);
 
-/*
- * Result struct for UncachedXHelper.
- *
- * These functions can have one of two results:
- *
- *   (1) The function was executed in the interpreter. Then all fields
- *       are NULL except unjittable.
- *
- *   (2) The function was not executed, and the function has been compiled
- *       to JM native code. Then all fields are non-NULL.
- */
+
+
+
+
+
+
+
+
+
+
+
 struct UncachedCallResult {
-    JSFunction *fun;          // callee function
-    void       *codeAddr;     // code address of compiled callee function
-    bool       unjittable;    // did we try to JIT and fail?
+    JSFunction *fun;          
+    void       *codeAddr;     
+    bool       unjittable;    
 
     void init() {
         fun = NULL;
@@ -67,11 +67,11 @@ struct UncachedCallResult {
     }
 };
 
-/*
- * Helper functions for stubs and IC functions for calling functions.
- * These functions either execute the function, return a native code
- * pointer that can be used to call the function, or throw.
- */
+
+
+
+
+
 void UncachedCallHelper(VMFrame &f, uint32_t argc, bool lowered, UncachedCallResult *ucr);
 void UncachedNewHelper(VMFrame &f, uint32_t argc, UncachedCallResult *ucr);
 
@@ -143,10 +143,10 @@ JSString * JS_FASTCALL TypeOf(VMFrame &f);
 JSBool JS_FASTCALL InstanceOf(VMFrame &f);
 void JS_FASTCALL FastInstanceOf(VMFrame &f);
 
-/*
- * Helper for triggering recompilation should a name read miss a type barrier,
- * produce undefined or -0.
- */
+
+
+
+
 void JS_FASTCALL TypeBarrierHelper(VMFrame &f, uint32_t which);
 void JS_FASTCALL TypeBarrierReturn(VMFrame &f, Value *vp);
 void JS_FASTCALL NegZeroHelper(VMFrame &f);
@@ -186,20 +186,20 @@ void JS_FASTCALL GCThingWriteBarrier(VMFrame &f, Value *addr);
 
 void JS_FASTCALL CrossChunkShim(VMFrame &f, void *edge);
 
-} /* namespace stubs */
+} 
 
-/*
- * If COND is true, return A; otherwise, return B. This allows us to choose between
- * function template instantiations without running afoul of C++'s overload resolution
- * rules. (Try simplifying, and you'll either see the problem --- or have found a
- * better solution!)
- */
+
+
+
+
+
+
 template<typename FuncPtr>
 inline FuncPtr FunctionTemplateConditional(bool cond, FuncPtr a, FuncPtr b) {
     return cond ? a : b;
 }
 
-}} /* namespace stubs,mjit,js */
+}} 
 
 extern "C" void *
 js_InternalThrow(js::VMFrame &f);
@@ -207,5 +207,5 @@ js_InternalThrow(js::VMFrame &f);
 extern "C" void *
 js_InternalInterpret(void *returnData, void *returnType, void *returnReg, js::VMFrame &f);
 
-#endif /* jslogic_h__ */
+#endif 
 

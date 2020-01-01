@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #if !defined jsjaeger_h__ && defined JS_METHODJIT
 #define jsjaeger_h__
@@ -72,7 +72,7 @@ struct VMFrame
     void *reserve_1;
 
 #elif defined(JS_CPU_MIPS)
-    /* Reserved 16 bytes for a0-a3 space in MIPS O32 ABI */
+    
     void         *unused0;
     void         *unused1;
     void         *unused2;
@@ -109,10 +109,10 @@ struct VMFrame
     Value        *stackLimit;
     StackFrame   *entryfp;
     FrameRegs    *oldregs;
-    FrameRejoinState stubRejoin;  /* How to rejoin if inside a call from an IC stub. */
+    FrameRejoinState stubRejoin;  
 
 #if defined(JS_CPU_X86)
-    void         *unused0, *unused1;  /* For 16 byte alignment */
+    void         *unused0, *unused1;  
 #endif
 
 #if defined(JS_CPU_X86)
@@ -132,7 +132,7 @@ struct VMFrame
     }
 # endif
 
-    /* The gap between ebp and esp in JaegerTrampoline frames on X86 platforms. */
+    
     static const uint32_t STACK_BASE_DIFFERENCE = 0x38;
 
 #elif defined(JS_CPU_X64)
@@ -190,7 +190,7 @@ struct VMFrame
     void *savedS7;
     void *savedGP;
     void *savedRA;
-    void *unused4;  // For alignment.
+    void *unused4;  
 
     inline void** returnAddressLocation() {
         return reinterpret_cast<void**>(this) - 1;
@@ -201,19 +201,19 @@ struct VMFrame
 
     JSRuntime *runtime() { return cx->runtime; }
 
-    /*
-     * Get the current frame and JIT. Note that these are NOT stable in case
-     * of recompilations; all code which expects these to be stable should
-     * check that cx->recompilations() has not changed across a call that could
-     * trigger recompilation (pretty much any time the VM is called into).
-     */
+    
+
+
+
+
+
     StackFrame *fp() { return regs.fp(); }
     mjit::JITScript *jit() { return fp()->jit(); }
 
     inline mjit::JITChunk *chunk();
     inline unsigned chunkIndex();
 
-    /* Get the inner script/PC in case of inlining. */
+    
     inline JSScript *script();
     inline jsbytecode *pc();
 
@@ -235,135 +235,135 @@ struct VMFrame
 };
 
 #if defined(JS_CPU_ARM) || defined(JS_CPU_SPARC) || defined(JS_CPU_MIPS)
-// WARNING: Do not call this function directly from C(++) code because it is not ABI-compliant.
+
 extern "C" void JaegerStubVeneer(void);
 #endif
 
 namespace mjit {
 
-/*
- * For a C++ or scripted call made from JIT code, indicates properties of the
- * register and stack state after the call finishes, which js_InternalInterpret
- * must use to construct a coherent state for rejoining into the interpreter.
- */
+
+
+
+
+
 enum RejoinState {
-    /*
-     * Return value of call at this bytecode is held in ReturnReg_{Data,Type}
-     * and needs to be restored before starting the next bytecode. f.regs.pc
-     * is *not* intact when rejoining from a scripted call (unlike all other
-     * rejoin states). The pc's offset into the script is stored in the upper
-     * 31 bits of the rejoin state, and the remaining values for RejoinState
-     * are shifted left by one in stack frames to leave the lower bit set only
-     * for scripted calls.
-     */
+    
+
+
+
+
+
+
+
+
     REJOIN_SCRIPTED = 1,
 
-    /* Recompilations and frame expansion are impossible for this call. */
+    
     REJOIN_NONE,
 
-    /* State is coherent for the start of the current bytecode. */
+    
     REJOIN_RESUME,
 
-    /*
-     * State is coherent for the start of the current bytecode, which is a TRAP
-     * that has already been invoked and should not be invoked again.
-     */
+    
+
+
+
     REJOIN_TRAP,
 
-    /* State is coherent for the start of the next (fallthrough) bytecode. */
+    
     REJOIN_FALLTHROUGH,
 
-    /*
-     * As for REJOIN_FALLTHROUGH, but holds a reference on the compartment's
-     * orphaned native pools which needs to be reclaimed by InternalInterpret.
-     * The return value needs to be adjusted if REJOIN_NATIVE_LOWERED, and
-     * REJOIN_NATIVE_GETTER is for ABI calls made for property accesses.
-     */
+    
+
+
+
+
+
     REJOIN_NATIVE,
     REJOIN_NATIVE_LOWERED,
     REJOIN_NATIVE_GETTER,
 
-    /*
-     * Dummy rejoin stored in VMFrames to indicate they return into a native
-     * stub (and their FASTCALL return address should not be observed) but
-     * that they have already been patched and can be ignored.
-     */
+    
+
+
+
+
     REJOIN_NATIVE_PATCHED,
 
-    /* Call returns a payload, which should be pushed before starting next bytecode. */
+    
     REJOIN_PUSH_BOOLEAN,
     REJOIN_PUSH_OBJECT,
 
-    /*
-     * During the prologue of constructing scripts, after the function's
-     * .prototype property has been fetched.
-     */
+    
+
+
+
     REJOIN_THIS_PROTOTYPE,
 
-    /*
-     * Type check on arguments failed during prologue, need stack check and
-     * the rest of the JIT prologue before the script can execute.
-     */
+    
+
+
+
     REJOIN_CHECK_ARGUMENTS,
 
-    /*
-     * The script's jitcode was discarded during one of the following steps of
-     * a frame's prologue.
-     */
+    
+
+
+
     REJOIN_EVAL_PROLOGUE,
     REJOIN_FUNCTION_PROLOGUE,
 
-    /*
-     * State after calling a stub which returns a JIT code pointer for a call
-     * or NULL for an already-completed call.
-     */
+    
+
+
+
     REJOIN_CALL_PROLOGUE,
     REJOIN_CALL_PROLOGUE_LOWERED_CALL,
     REJOIN_CALL_PROLOGUE_LOWERED_APPLY,
 
-    /* Triggered a recompilation while placing the arguments to an apply on the stack. */
+    
     REJOIN_CALL_SPLAT,
 
-    /* FALLTHROUGH ops which can be implemented as part of an IncOp. */
+    
     REJOIN_GETTER,
     REJOIN_POS,
     REJOIN_BINARY,
 
-    /*
-     * For an opcode fused with IFEQ/IFNE, call returns a boolean indicating
-     * the result of the comparison and whether to take or not take the branch.
-     */
+    
+
+
+
     REJOIN_BRANCH
 };
 
-/* Get the rejoin state for a StackFrame after returning from a scripted call. */
+
 static inline FrameRejoinState
 ScriptedRejoin(uint32_t pcOffset)
 {
     return REJOIN_SCRIPTED | (pcOffset << 1);
 }
 
-/* Get the rejoin state for a StackFrame after returning from a stub call. */
+
 static inline FrameRejoinState
 StubRejoin(RejoinState rejoin)
 {
     return rejoin << 1;
 }
 
-/* Helper to watch for recompilation and frame expansion activity on a compartment. */
+
 struct RecompilationMonitor
 {
     JSContext *cx;
 
-    /*
-     * If either inline frame expansion or recompilation occurs, then ICs and
-     * stubs should not depend on the frame or JITs being intact. The two are
-     * separated for logging.
-     */
+    
+
+
+
+
     unsigned recompilations;
     unsigned frameExpansions;
 
-    /* If a GC occurs it may discard jit code on the stack. */
+    
     uint64_t gcNumber;
 
     RecompilationMonitor(JSContext *cx)
@@ -380,10 +380,10 @@ struct RecompilationMonitor
     }
 };
 
-/*
- * Trampolines to force returns from jit code.
- * See also TrampolineCompiler::generateForceReturn(Fast).
- */
+
+
+
+
 struct Trampolines {
     typedef void (*TrampolinePtr)();
 
@@ -396,32 +396,32 @@ struct Trampolines {
 #endif
 };
 
-/* Result status of executing mjit code on a frame. */
+
 enum JaegerStatus
 {
-    /* Entry frame finished, and is throwing an exception. */
+    
     Jaeger_Throwing = 0,
 
-    /* Entry frame finished, and is returning. */
+    
     Jaeger_Returned = 1,
 
-    /*
-     * Entry frame did not finish. cx->regs reflects where to resume execution.
-     * This result is only possible if 'partial' is passed as true below.
-     */
+    
+
+
+
     Jaeger_Unfinished = 2,
 
-    /*
-     * As for Unfinished, but stopped after a TRAP triggered recompilation.
-     * The trap has been reinstalled, but should not execute again when
-     * resuming execution.
-     */
+    
+
+
+
+
     Jaeger_UnfinishedAtTrap = 3,
 
-    /*
-     * An exception was thrown before entering jit code, so the caller should
-     * 'goto error'.
-     */
+    
+
+
+
     Jaeger_ThrowBeforeEnter = 4
 };
 
@@ -433,13 +433,13 @@ JaegerStatusToSuccess(JaegerStatus status)
     return status == Jaeger_Returned;
 }
 
-/* Method JIT data associated with the JSRuntime. */
+
 class JaegerRuntime
 {
-    Trampolines              trampolines;    // force-return trampolines
-    VMFrame                  *activeFrame_;  // current active VMFrame
-    JaegerStatus             lastUnfinished_;// result status of last VM frame,
-                                             // if unfinished
+    Trampolines              trampolines;    
+    VMFrame                  *activeFrame_;  
+    JaegerStatus             lastUnfinished_;
+                                             
 
     void finish();
 
@@ -476,21 +476,21 @@ class JaegerRuntime
         return result;
     }
 
-    /*
-     * To force the top StackFrame in a VMFrame to return, when that VMFrame
-     * has called an extern "C" function (say, js_InternalThrow or
-     * js_InternalInterpret), change the extern "C" function's return address
-     * to the value this method returns.
-     */
+    
+
+
+
+
+
     void *forceReturnFromExternC() const {
         return JS_FUNC_TO_DATA_PTR(void *, trampolines.forceReturn);
     }
 
-    /*
-     * To force the top StackFrame in a VMFrame to return, when that VMFrame has
-     * called a fastcall function (say, most stubs:: functions), change the
-     * fastcall function's return address to the value this method returns.
-     */
+    
+
+
+
+
     void *forceReturnFromFastCall() const {
 #if (defined(JS_NO_FASTCALL) && defined(JS_CPU_X86)) || defined(_WIN64)
         return JS_FUNC_TO_DATA_PTR(void *, trampolines.forceReturnFast);
@@ -499,22 +499,22 @@ class JaegerRuntime
 #endif
     }
 
-    /*
-     * References held on pools created for native ICs, where the IC was
-     * destroyed and we are waiting for the pool to finish use and jump
-     * into the interpoline.
-     */
+    
+
+
+
+
     Vector<StackFrame *, 8, SystemAllocPolicy> orphanedNativeFrames;
     Vector<JSC::ExecutablePool *, 8, SystemAllocPolicy> orphanedNativePools;
 };
 
-/*
- * Allocation policy for compiler jstl objects. The goal is to free the
- * compiler from having to check and propagate OOM after every time we
- * append to a vector. We do this by reporting OOM to the engine and
- * setting a flag on the compiler when OOM occurs. The compiler is required
- * to check for OOM only before trying to use the contents of the list.
- */
+
+
+
+
+
+
+
 class CompilerAllocPolicy : public TempAllocPolicy
 {
     bool *oomFlag;
@@ -589,33 +589,33 @@ struct InlineFrame;
 struct CallSite;
 
 struct NativeMapEntry {
-    size_t          bcOff;  /* bytecode offset in script */
-    void            *ncode; /* pointer to native code */
+    size_t          bcOff;  
+    void            *ncode; 
 };
 
-/* Per-op counts of performance metrics. */
+
 struct PCLengthEntry {
-    double          codeLength; /* amount of inline code generated */
-    double          picsLength; /* amount of PIC stub code generated */
+    double          codeLength; 
+    double          picsLength; 
 };
 
-/*
- * Pools and patch locations for managing stubs for non-FASTCALL C++ calls made
- * from native call and PropertyOp stubs. Ownership of these may be transferred
- * into the orphanedNativePools for the compartment.
- */
+
+
+
+
+
 struct NativeCallStub {
-    /* PC for the stub. Native call stubs cannot be added for inline frames. */
+    
     jsbytecode *pc;
 
-    /* Pool for the stub, NULL if it has been removed from the script. */
+    
     JSC::ExecutablePool *pool;
 
-    /*
-     * Fallthrough jump returning to jitcode which may be patched during
-     * recompilation. On x64 this is an indirect jump to avoid issues with far
-     * jumps on relative branches.
-     */
+    
+
+
+
+
 #ifdef JS_CPU_X64
     JSC::CodeLocationDataLabelPtr jump;
 #else
@@ -626,20 +626,20 @@ struct NativeCallStub {
 struct JITChunk
 {
     typedef JSC::MacroAssemblerCodeRef CodeRef;
-    CodeRef         code;       /* pool & code addresses */
+    CodeRef         code;       
 
-    PCLengthEntry   *pcLengths;         /* lengths for outer and inline frames */
+    PCLengthEntry   *pcLengths;         
 
-    /*
-     * This struct has several variable-length sections that are allocated on
-     * the end:  nmaps, MICs, callICs, etc.  To save space -- worthwhile
-     * because JITScripts are common -- we only record their lengths.  We can
-     * find any of the sections from the lengths because we know their order.
-     * Therefore, do not change the section ordering in finishThisUp() without
-     * changing nMICs() et al as well.
-     */
-    uint32_t        nNmapPairs : 31;    /* The NativeMapEntrys are sorted by .bcOff.
-                                           .ncode values may not be NULL. */
+    
+
+
+
+
+
+
+
+    uint32_t        nNmapPairs : 31;    
+
     uint32_t        nInlineFrames;
     uint32_t        nCallSites;
     uint32_t        nRootedTemplates;
@@ -657,12 +657,12 @@ struct JITChunk
 #endif
 
 #ifdef JS_MONOIC
-    // Additional ExecutablePools that IC stubs were generated into.
+    
     typedef Vector<JSC::ExecutablePool *, 0, SystemAllocPolicy> ExecPoolVector;
     ExecPoolVector execPools;
 #endif
 
-    // Additional ExecutablePools for native call and getter stubs.
+    
     Vector<NativeCallStub, 0, SystemAllocPolicy> nativeCallStubs;
 
     NativeMapEntry *nmap() const;
@@ -697,7 +697,7 @@ struct JITChunk
     void purgeCaches();
 
   private:
-    /* Helpers used to navigate the variable-length sections. */
+    
     char *commonSectionLimit() const;
     char *monoICSectionsLimit() const;
     char *polyICSectionsLimit() const;
@@ -706,53 +706,53 @@ struct JITChunk
 void
 SetChunkLimit(uint32_t limit);
 
-/* Information about a compilation chunk within a script. */
+
 struct ChunkDescriptor
 {
-    /* Bytecode range of the chunk: [begin,end) */
+    
     uint32_t begin;
     uint32_t end;
 
-    /* Use counter for the chunk. */
+    
     uint32_t counter;
 
-    /* Optional compiled code for the chunk. */
+    
     JITChunk *chunk;
 
     ChunkDescriptor() { PodZero(this); }
 };
 
-/* Jump or fallthrough edge in the bytecode which crosses a chunk boundary. */
+
 struct CrossChunkEdge
 {
-    /* Bytecode offsets of the source and target of the edge. */
+    
     uint32_t source;
     uint32_t target;
 
-    /* Locations of the jump(s) for the source, NULL if not compiled. */
+    
     void *sourceJump1;
     void *sourceJump2;
 
 #ifdef JS_CPU_X64
-    /*
-     * Location of a trampoline for the edge to perform an indirect jump if
-     * out of range, NULL if the source is not compiled.
-     */
+    
+
+
+
     void *sourceTrampoline;
 #endif
 
-    /* Any jump table entries along this edge. */
+    
     typedef Vector<void**,4,SystemAllocPolicy> JumpTableEntryVector;
     JumpTableEntryVector *jumpTableEntries;
 
-    /* Location of the label for the target, NULL if not compiled. */
+    
     void *targetLabel;
 
-    /*
-     * Location of a shim which will transfer control to the interpreter at the
-     * target bytecode. The source jumps are patched to jump to this label if
-     * the source is compiled but not the target.
-     */
+    
+
+
+
+
     void *shimLabel;
 
     CrossChunkEdge() { PodZero(this); }
@@ -762,25 +762,25 @@ struct JITScript
 {
     JSScript        *script;
 
-    void            *invokeEntry;       /* invoke address */
-    void            *fastEntry;         /* cached entry, fastest */
-    void            *arityCheckEntry;   /* arity check address */
-    void            *argsCheckEntry;    /* arguments check address */
+    void            *invokeEntry;       
+    void            *fastEntry;         
+    void            *arityCheckEntry;   
+    void            *argsCheckEntry;    
 
-    /* List of inline caches jumping to the fastEntry. */
+    
     JSCList         callers;
 
     uint32_t        nchunks;
     uint32_t        nedges;
 
-    /*
-     * Pool for shims which transfer control to the interpreter on cross chunk
-     * edges to chunks which do not have compiled code.
-     */
+    
+
+
+
     JSC::ExecutablePool *shimPool;
 
 #ifdef JS_MONOIC
-    /* Inline cache at function entry for checking this/argument types. */
+    
     JSC::CodeLocationLabel argsCheckStub;
     JSC::CodeLocationLabel argsCheckFallthrough;
     JSC::CodeLocationJump  argsCheckJump;
@@ -817,7 +817,7 @@ struct JITScript
         return (CrossChunkEdge *) (&chunkDescriptor(0) + nchunks);
     }
 
-    /* Patch any compiled sources in edge to jump to label. */
+    
     void patchEdge(const CrossChunkEdge &edge, void *label);
 
     jsbytecode *nativeToPC(void *returnAddress, CallSite **pinline);
@@ -831,26 +831,26 @@ struct JITScript
     void purgeCaches();
 };
 
-/*
- * Execute the given mjit code. This is a low-level call and callers must
- * provide the same guarantees as JaegerShot/CheckStackAndEnterMethodJIT.
- */
+
+
+
+
 JaegerStatus EnterMethodJIT(JSContext *cx, StackFrame *fp, void *code, Value *stackLimit,
                             bool partial);
 
-/* Execute a method that has been JIT compiled. */
+
 JaegerStatus JaegerShot(JSContext *cx, bool partial);
 
-/* Drop into the middle of a method at an arbitrary point, and execute. */
+
 JaegerStatus JaegerShotAtSafePoint(JSContext *cx, void *safePoint, bool partial);
 
 enum CompileStatus
 {
     Compile_Okay,
-    Compile_Abort,        // abort compilation
-    Compile_InlineAbort,  // inlining attempt failed, continue compilation
-    Compile_Retry,        // static overflow or failed inline, try to recompile
-    Compile_Error,        // OOM
+    Compile_Abort,        
+    Compile_InlineAbort,  
+    Compile_Retry,        
+    Compile_Error,        
     Compile_Skipped
 };
 
@@ -865,7 +865,7 @@ enum CompileRequest
 
 CompileStatus
 CanMethodJIT(JSContext *cx, JSScript *script, jsbytecode *pc,
-             bool construct, CompileRequest request);
+             bool construct, CompileRequest request, StackFrame *sp);
 
 inline void
 ReleaseScriptCode(FreeOp *fop, JSScript *script)
@@ -884,24 +884,24 @@ ReleaseScriptCode(FreeOp *fop, JSScript *script)
     script->destroyJITInfo(fop);
 }
 
-// Expand all stack frames inlined by the JIT within a compartment.
+
 void
 ExpandInlineFrames(JSCompartment *compartment);
 
-// Return all VMFrames in a compartment to the interpreter. This must be
-// followed by destroying all JIT code in the compartment.
+
+
 void
 ClearAllFrames(JSCompartment *compartment);
 
-// Information about a frame inlined during compilation.
+
 struct InlineFrame
 {
     InlineFrame *parent;
     jsbytecode *parentpc;
     HeapPtrFunction fun;
 
-    // Total distance between the start of the outer JSStackFrame and the start
-    // of this frame, in multiples of sizeof(Value).
+    
+    
     uint32_t depth;
 };
 
@@ -932,9 +932,9 @@ inline void * bsearch_nmap(NativeMapEntry *nmap, size_t nPairs, size_t bcOff)
 {
     size_t lo = 1, hi = nPairs;
     while (1) {
-        /* current unsearched space is from lo-1 to hi-1, inclusive. */
+        
         if (lo > hi)
-            return NULL; /* not found */
+            return NULL; 
         size_t mid       = (lo + hi) / 2;
         size_t bcOff_mid = nmap[mid-1].bcOff;
         if (bcOff < bcOff_mid) {
@@ -960,7 +960,7 @@ IsLowerableFunCallOrApply(jsbytecode *pc)
 #endif
 }
 
-} /* namespace mjit */
+} 
 
 inline mjit::JITChunk *
 VMFrame::chunk()
@@ -990,7 +990,7 @@ VMFrame::pc()
     return regs.pc;
 }
 
-} /* namespace js */
+} 
 
 inline void *
 JSScript::nativeCodeForPC(bool constructing, jsbytecode *pc)
@@ -1018,5 +1018,5 @@ extern "C" void JaegerThrowpoline();
 extern "C" void JaegerInterpolinePatched();
 #endif
 
-#endif /* jsjaeger_h__ */
+#endif 
 
