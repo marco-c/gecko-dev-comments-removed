@@ -41,8 +41,6 @@
 
 
 
-#include "mozilla/Util.h"
-
 #ifdef MOZ_LOGGING
 
 #define FORCE_PR_LOG 1
@@ -10755,7 +10753,7 @@ nsDocShell::ConfirmRepost(bool * aRepost)
     
     const PRUnichar *formatStrings[] = { brandName.get() };
     rv = appBundle->FormatStringFromName(NS_LITERAL_STRING("confirmRepostPrompt").get(),
-                                         formatStrings, ArrayLength(formatStrings),
+                                         formatStrings, NS_ARRAY_LENGTH(formatStrings),
                                          getter_Copies(msgString));
   }
   if (NS_FAILED(rv)) return rv;
