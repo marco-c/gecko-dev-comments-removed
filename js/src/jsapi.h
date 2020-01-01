@@ -595,6 +595,9 @@ JS_StringToVersion(const char *string);
 
 
 
+#define JSOPTION_UNROOTED_GLOBAL JS_BIT(13)     
+
+
 
 extern JS_PUBLIC_API(uint32)
 JS_GetOptions(JSContext *cx);
