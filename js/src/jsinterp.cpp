@@ -4390,7 +4390,7 @@ BEGIN_CASE(JSOP_SETMETHOD)
 
 
 
-                    js_PurgeScopeChain(cx, obj, shape->id);
+                    js_PurgeScopeChain(cx, obj, shape->propid);
                     break;
                 }
             }
@@ -5929,11 +5929,11 @@ BEGIN_CASE(JSOP_INITMETHOD)
             JS_ASSERT(slot == shape->slot);
         }
 
-        cx->typeMonitorAssign(obj, shape->id, rval);
+        cx->typeMonitorAssign(obj, shape->propid, rval);
 
         
         JS_ASSERT(!obj->lastProperty() ||
-                  obj->shape() == obj->lastProperty()->shape);
+                  obj->shape() == obj->lastProperty()->shapeid);
         obj->extend(cx, shape);
 
         

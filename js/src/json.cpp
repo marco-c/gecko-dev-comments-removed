@@ -115,39 +115,43 @@ Class js_JSONClass = {
     ConvertStub
 };
 
+
 JSBool
 js_json_parse(JSContext *cx, uintN argc, Value *vp)
 {
-    JSString *s = NULL;
-    Value *argv = vp + 2;
-    Value reviver = UndefinedValue();
+    
+    JSLinearString *linear;
+    if (argc >= 1) {
+        JSString *str = js_ValueToString(cx, vp[2]);
+        if (!str)
+            return false;
+        linear = str->ensureLinear(cx);
+        if (!linear)
+            return false;
+    } else {
+        linear = cx->runtime->atomState.typeAtoms[JSTYPE_VOID];
+    }
+    JS::Anchor<JSString *> anchor(linear);
 
-    if (!JS_ConvertArguments(cx, argc, Jsvalify(argv), "S / v", &s, &reviver))
-        return JS_FALSE;
+    Value reviver = (argc >= 2) ? vp[3] : UndefinedValue();
 
-    JSLinearString *linearStr = s->ensureLinear(cx);
-    if (!linearStr)
-        return JS_FALSE;
-    JS::Anchor<JSString *> anchor(linearStr);
-
-    return ParseJSONWithReviver(cx, linearStr->chars(), linearStr->length(), reviver, vp);
+    
+    return ParseJSONWithReviver(cx, linear->chars(), linear->length(), reviver, vp);
 }
+
 
 JSBool
 js_json_stringify(JSContext *cx, uintN argc, Value *vp)
 {
-    Value *argv = vp + 2;
-    AutoValueRooter space(cx);
-    AutoObjectRooter replacer(cx);
-
-    
-    if (!JS_ConvertArguments(cx, argc, Jsvalify(argv), "v / o v", vp, replacer.addr(), space.addr()))
-        return JS_FALSE;
+    *vp = (argc >= 1) ? vp[2] : UndefinedValue();
+    JSObject *replacer = (argc >= 2 && vp[3].isObject())
+                         ? &vp[3].toObject()
+                         : NULL;
+    Value space = (argc >= 3) ? vp[4] : UndefinedValue();
 
     StringBuffer sb(cx);
-
-    if (!js_Stringify(cx, vp, replacer.object(), space.value(), sb))
-        return JS_FALSE;
+    if (!js_Stringify(cx, vp, replacer, space, sb))
+        return false;
 
     
     
@@ -155,14 +159,14 @@ js_json_stringify(JSContext *cx, uintN argc, Value *vp)
     if (!sb.empty()) {
         JSString *str = sb.finishString();
         if (!str)
-            return JS_FALSE;
+            return false;
         vp->setString(str);
     } else {
         cx->markTypeCallerUnexpected(types::TYPE_UNDEFINED);
         vp->setUndefined();
     }
 
-    return JS_TRUE;
+    return true;
 }
 
 JSBool
@@ -257,38 +261,18 @@ Quote(JSContext *cx, StringBuffer &sb, JSString *str)
 
 class StringifyContext
 {
-public:
-    StringifyContext(JSContext *cx, StringBuffer &sb, JSObject *replacer)
-    : sb(sb), gap(cx), replacer(replacer), depth(0), objectStack(cx)
+  public:
+    StringifyContext(JSContext *cx, StringBuffer &sb, const StringBuffer &gap,
+                     JSObject *replacer, const AutoIdVector &propertyList)
+      : sb(sb),
+        gap(gap),
+        replacer(replacer),
+        propertyList(propertyList),
+        depth(0),
+        objectStack(cx)
     {}
 
-    bool initializeGap(JSContext *cx, const Value &space) {
-        AutoValueRooter gapValue(cx, space);
-
-        if (space.isObject()) {
-            JSObject &obj = space.toObject();
-            Class *clasp = obj.getClass();
-            if (clasp == &js_NumberClass || clasp == &js_StringClass)
-                *gapValue.addr() = obj.getPrimitiveThis();
-        }
-
-        if (gapValue.value().isString()) {
-            if (!gap.append(gapValue.value().toString()))
-                return false;
-            if (gap.length() > 10)
-                gap.resize(10);
-        } else if (gapValue.value().isNumber()) {
-            jsdouble d;
-            JS_ALWAYS_TRUE(ToInteger(cx, gapValue.value(), &d));
-            d = JS_MIN(10, d);
-            if (d >= 1 && !gap.appendN(' ', uint32(d)))
-                return false;
-        }
-
-        return true;
-    }
-
-    bool initializeStack() {
+    bool init() {
         return objectStack.init(16);
     }
 
@@ -297,8 +281,9 @@ public:
 #endif
 
     StringBuffer &sb;
-    StringBuffer gap;
-    JSObject *replacer;
+    const StringBuffer &gap;
+    JSObject * const replacer;
+    const AutoIdVector &propertyList;
     uint32 depth;
     HashSet<JSObject *> objectStack;
 };
@@ -462,44 +447,26 @@ JO(JSContext *cx, JSObject *obj, StringifyContext *scx)
     if (!scx->sb.append('{'))
         return JS_FALSE;
 
-    AutoIdRooter idr(cx);
-    jsid& id = *idr.addr();
-
     
-    
-    Value keySource = ObjectValue(*obj);
-    bool usingWhitelist = false;
-
-    
-    if (scx->replacer && JS_IsArrayObject(cx, scx->replacer)) {
-        usingWhitelist = true;
-        keySource.setObject(*scx->replacer);
+    Maybe<AutoIdVector> ids;
+    const AutoIdVector *props;
+    if (scx->replacer && !scx->replacer->isCallable()) {
+        JS_ASSERT(JS_IsArrayObject(cx, scx->replacer));
+        props = &scx->propertyList;
+    } else {
+        JS_ASSERT_IF(scx->replacer, scx->propertyList.length() == 0);
+        ids.construct(cx);
+        if (!GetPropertyNames(cx, obj, JSITER_OWNONLY, ids.addr()))
+            return false;
+        props = ids.addr();
     }
 
-    bool wroteMember = false;
-    AutoIdVector props(cx);
-    if (!GetPropertyNames(cx, &keySource.toObject(), JSITER_OWNONLY, &props))
-        return JS_FALSE;
+    
+    const AutoIdVector &propertyList = *props;
 
     
-    for (size_t i = 0, len = props.length(); i < len; i++) {
-        if (!usingWhitelist) {
-            if (!js_ValueToStringId(cx, IdToValue(props[i]), &id))
-                return JS_FALSE;
-        } else {
-            
-            jsuint index = 0;
-            if (!js_IdIsIndex(props[i], &index))
-                continue;
-
-            Value whitelistElement;
-            if (!scx->replacer->getProperty(cx, props[i], &whitelistElement))
-                return JS_FALSE;
-
-            if (!js_ValueToStringId(cx, whitelistElement, &id))
-                return JS_FALSE;
-        }
-
+    bool wroteMember = false;
+    for (size_t i = 0, len = propertyList.length(); i < len; i++) {
         
 
 
@@ -507,36 +474,38 @@ JO(JSContext *cx, JSObject *obj, StringifyContext *scx)
 
 
 
+        const jsid &id = propertyList[i];
         Value outputValue;
         if (!obj->getProperty(cx, id, &outputValue))
-            return JS_FALSE;
+            return false;
         if (!PreprocessValue(cx, obj, id, &outputValue, scx))
-            return JS_FALSE;
+            return false;
         if (IsFilteredValue(outputValue))
             continue;
 
         
         if (wroteMember && !scx->sb.append(','))
-            return JS_FALSE;
+            return false;
         wroteMember = true;
 
         if (!WriteIndent(cx, scx, scx->depth))
-            return JS_FALSE;
+            return false;
 
         JSString *s = IdToString(cx, id);
         if (!s)
-            return JS_FALSE;
+            return false;
 
         if (!Quote(cx, scx->sb, s) ||
             !scx->sb.append(':') ||
             !(scx->gap.empty() || scx->sb.append(' ')) ||
-            !Str(cx, outputValue, scx)) {
-            return JS_FALSE;
+            !Str(cx, outputValue, scx))
+        {
+            return false;
         }
     }
 
     if (wroteMember && !WriteIndent(cx, scx, scx->depth - 1))
-        return JS_FALSE;
+        return false;
 
     return scx->sb.append('}');
 }
@@ -672,27 +641,161 @@ Str(JSContext *cx, const Value &v, StringifyContext *scx)
     return ok;
 }
 
+
 JSBool
-js_Stringify(JSContext *cx, Value *vp, JSObject *replacer, const Value &space,
-             StringBuffer &sb)
+js_Stringify(JSContext *cx, Value *vp, JSObject *replacer, Value space, StringBuffer &sb)
 {
-    StringifyContext scx(cx, sb, replacer);
-    if (!scx.initializeGap(cx, space) || !scx.initializeStack())
-        return JS_FALSE;
+    
+    AutoIdVector propertyList(cx);
+    if (replacer) {
+        if (replacer->isCallable()) {
+            
+        } else if (JS_IsArrayObject(cx, replacer)) {
+            
 
-    JSObject *obj = NewBuiltinClassInstance(cx, &js_ObjectClass);
-    if (!obj)
-        return JS_FALSE;
 
-    AutoObjectRooter tvr(cx, obj);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+            jsuint len;
+            JS_ALWAYS_TRUE(js_GetLengthProperty(cx, replacer, &len));
+            if (replacer->isDenseArray())
+                len = JS_MIN(len, replacer->getDenseArrayCapacity());
+
+            HashSet<jsid> idSet(cx);
+            if (!idSet.init(len))
+                return false;
+
+            
+            jsuint i = 0;
+
+            
+            for (; i < len; i++) {
+                
+                Value v;
+                if (!replacer->getProperty(cx, INT_TO_JSID(i), &v))
+                    return false;
+
+                jsid id;
+                if (v.isNumber()) {
+                    
+                    int32_t n;
+                    if (v.isNumber() && ValueFitsInInt32(v, &n) && INT_FITS_IN_JSID(n)) {
+                        id = INT_TO_JSID(n);
+                    } else {
+                        if (!js_ValueToStringId(cx, v, &id))
+                            return false;
+                        id = js_CheckForStringIndex(id);
+                    }
+                } else if (v.isString() ||
+                           (v.isObject() && (v.toObject().isString() || v.toObject().isNumber())))
+                {
+                    
+                    if (!js_ValueToStringId(cx, v, &id))
+                        return false;
+                    id = js_CheckForStringIndex(id);
+                } else {
+                    continue;
+                }
+
+                
+                HashSet<jsid>::AddPtr p = idSet.lookupForAdd(id);
+                if (!p) {
+                    
+                    if (!idSet.add(p, id) || !propertyList.append(id))
+                        return false;
+                }
+            }
+        } else {
+            replacer = NULL;
+        }
+    }
+
+    
+    if (space.isObject()) {
+        JSObject &spaceObj = space.toObject();
+        if (spaceObj.isNumber()) {
+            jsdouble d;
+            if (!ValueToNumber(cx, space, &d))
+                return false;
+            space = NumberValue(d);
+        } else if (spaceObj.isString()) {
+            JSString *str = js_ValueToString(cx, space);
+            if (!str)
+                return false;
+            space = StringValue(str);
+        }
+    }
+
+    StringBuffer gap(cx);
+
+    if (space.isNumber()) {
+        
+        jsdouble d;
+        JS_ALWAYS_TRUE(ToInteger(cx, space, &d));
+        d = JS_MIN(10, d);
+        if (d >= 1 && !gap.appendN(' ', uint32(d)))
+            return false;
+    } else if (space.isString()) {
+        
+        JSLinearString *str = space.toString()->ensureLinear(cx);
+        if (!str)
+            return false;
+        JS::Anchor<JSString *> anchor(str);
+        size_t len = JS_MIN(10, space.toString()->length());
+        if (!gap.append(str->chars(), len))
+            return false;
+    } else {
+        
+        JS_ASSERT(gap.empty());
+    }
+
+    
+    JSObject *wrapper = NewBuiltinClassInstance(cx, &js_ObjectClass);
+    if (!wrapper)
+        return false;
+
+    
     jsid emptyId = ATOM_TO_JSID(cx->runtime->atomState.emptyAtom);
-    if (!obj->defineProperty(cx, emptyId, *vp, NULL, NULL, JSPROP_ENUMERATE))
-        return JS_FALSE;
+    if (!js_DefineNativeProperty(cx, wrapper, emptyId, *vp, PropertyStub, StrictPropertyStub,
+                                 JSPROP_ENUMERATE, 0, 0, NULL))
+    {
+        return false;
+    }
 
-    if (!PreprocessValue(cx, obj, emptyId, vp, &scx))
-        return JS_FALSE;
+    
+    StringifyContext scx(cx, sb, gap, replacer, propertyList);
+    if (!scx.init())
+        return false;
+
+    if (!PreprocessValue(cx, wrapper, emptyId, vp, &scx))
+        return false;
     if (IsFilteredValue(*vp))
-        return JS_TRUE;
+        return true;
+
     return Str(cx, *vp, &scx);
 }
 
@@ -728,7 +831,7 @@ Walk(JSContext *cx, jsid id, JSObject *holder, const Value &reviver, Value *vp)
 
             for (jsuint i = 0; i < length; i++) {
                 jsid index;
-                if (!js_IndexToId(cx, i, &index))
+                if (!IndexToId(cx, i, &index))
                     return false;
 
                 if (!Walk(cx, index, obj, reviver, propValue.addr()))
@@ -885,12 +988,15 @@ ParseJSONWithReviver(JSContext *cx, const jschar *chars, size_t length, const Va
     ok &= !!js_FinishJSONParse(cx, jp, reviver);
     return ok;
 #else
+    
     JSONSourceParser parser(cx, chars, length,
                             decodingMode == STRICT
                             ? JSONSourceParser::StrictJSON
                             : JSONSourceParser::LegacyJSON);
     if (!parser.parse(vp))
         return false;
+
+    
     if (js_IsCallable(reviver))
         return Revive(cx, reviver, vp);
     return true;
@@ -942,7 +1048,7 @@ PushValue(JSContext *cx, JSONParser *jp, JSObject *parent, const Value &value)
         ok = js_GetLengthProperty(cx, parent, &len);
         if (ok) {
             jsid index;
-            if (!js_IndexToId(cx, len, &index))
+            if (!IndexToId(cx, len, &index))
                 return JS_FALSE;
             ok = parent->defineProperty(cx, index, value, NULL, NULL, JSPROP_ENUMERATE);
         }

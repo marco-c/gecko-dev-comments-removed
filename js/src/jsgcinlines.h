@@ -114,7 +114,7 @@ GetGCThingTraceKind(const void *thing)
     if (JSAtom::isStatic(thing))
         return JSTRACE_STRING;
     const Cell *cell = reinterpret_cast<const Cell *>(thing);
-    return GetFinalizableTraceKind(cell->arena()->header()->thingKind);
+    return GetFinalizableTraceKind(cell->arenaHeader()->getThingKind());
 }
 
 
@@ -186,7 +186,7 @@ NewFinalizableGCThing(JSContext *cx, unsigned thingKind)
                  (thingKind == js::gc::FINALIZE_SHORT_STRING));
 #endif
 
-    METER(cx->compartment->compartmentStats[thingKind].alloc++);
+    METER(cx->compartment->arenas[thingKind].stats.alloc++);
     do {
         js::gc::FreeCell *cell = cx->compartment->freeLists.getNext(thingKind);
         if (cell) {

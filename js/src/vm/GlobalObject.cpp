@@ -42,7 +42,6 @@
 
 #include "jscntxt.h"
 #include "jsexn.h"
-#include "jsmath.h"
 #include "json.h"
 
 #include "jsobjinlines.h"
@@ -92,9 +91,14 @@ js_InitFunctionAndObjectClasses(JSContext *cx, JSObject *obj)
         return NULL;
 
     
-    fun_proto->setProto(obj_proto);
-    if (!obj->getProto())
-        obj->setProto(obj_proto);
+
+
+
+
+    if (!fun_proto->getProto() && fun_proto->getType() != cx->getTypeEmpty())
+        fun_proto->getType()->splicePrototype(cx, obj_proto);
+    if (!obj->getProto() && obj->getType() != cx->getTypeEmpty())
+        obj->getType()->splicePrototype(cx, obj_proto);
 
     return fun_proto;
 }
@@ -110,8 +114,15 @@ GlobalObject::create(JSContext *cx, Class *clasp)
     if (!obj)
         return NULL;
 
+    types::TypeObject *type = cx->newTypeObject("Global", NULL);
+    if (!type || !obj->setTypeAndUniqueShape(cx, type))
+        return NULL;
+    if (clasp->ext.equality)
+        cx->markTypeObjectHasSpecialEquality(type);
+    type->singleton = obj;
+
     GlobalObject *globalObj = obj->asGlobal();
-    globalObj->makeVarObj();
+
     globalObj->syncSpecialEquality();
 
     
@@ -120,6 +131,8 @@ GlobalObject::create(JSContext *cx, Class *clasp)
         return NULL;
     globalObj->setSlot(REGEXP_STATICS, ObjectValue(*res));
     globalObj->setFlags(0);
+
+    cx->addTypeProperty(type, js_undefined_str, UndefinedValue());
     return globalObj;
 }
 
@@ -174,7 +187,7 @@ GlobalObject::clear(JSContext *cx)
     RegExpStatics::extractFrom(this)->clear();
 
     
-    setSlot(RUNTIME_CODEGEN_ENABLED, UndefinedValue());
+    setSlot(EVAL_ALLOWED, UndefinedValue());
 
     
 
@@ -186,9 +199,9 @@ GlobalObject::clear(JSContext *cx)
 }
 
 bool
-GlobalObject::isRuntimeCodeGenEnabled(JSContext *cx)
+GlobalObject::isEvalAllowed(JSContext *cx)
 {
-    Value &v = getSlotRef(RUNTIME_CODEGEN_ENABLED);
+    Value &v = getSlotRef(EVAL_ALLOWED);
     if (v.isUndefined()) {
         JSSecurityCallbacks *callbacks = JS_GetSecurityCallbacks(cx);
 
@@ -200,68 +213,6 @@ GlobalObject::isRuntimeCodeGenEnabled(JSContext *cx)
                      callbacks->contentSecurityPolicyAllows(cx));
     }
     return !v.isFalse();
-}
-
-void
-GlobalDebuggees_finalize(JSContext *cx, JSObject *obj)
-{
-    cx->delete_((GlobalObject::DebuggerVector *) obj->getPrivate());
-}
-
-static Class
-GlobalDebuggees_class = {
-    "GlobalDebuggee", JSCLASS_HAS_PRIVATE,
-    PropertyStub, PropertyStub, PropertyStub, StrictPropertyStub,
-    EnumerateStub, ResolveStub, ConvertStub, GlobalDebuggees_finalize
-};
-
-GlobalObject::DebuggerVector *
-GlobalObject::getDebuggers()
-{
-    Value debuggers = getReservedSlot(DEBUGGERS);
-    if (debuggers.isUndefined())
-        return NULL;
-    JS_ASSERT(debuggers.toObject().clasp == &GlobalDebuggees_class);
-    return (DebuggerVector *) debuggers.toObject().getPrivate();
-}
-
-GlobalObject::DebuggerVector *
-GlobalObject::getOrCreateDebuggers(JSContext *cx)
-{
-    assertSameCompartment(cx, this);
-    DebuggerVector *vec = getDebuggers();
-    if (vec)
-        return vec;
-
-    JSObject *obj = NewNonFunction<WithProto::Given>(cx, &GlobalDebuggees_class, NULL, NULL);
-    if (!obj)
-        return NULL;
-    vec = cx->new_<DebuggerVector>();
-    if (!vec)
-        return NULL;
-    obj->setPrivate(vec);
-    if (!js_SetReservedSlot(cx, this, DEBUGGERS, ObjectValue(*obj)))
-        return NULL;
-    return vec;
-}
-
-bool
-GlobalObject::addDebugger(JSContext *cx, Debugger *dbg)
-{
-    DebuggerVector *vec = getOrCreateDebuggers(cx);
-    if (!vec)
-        return false;
-#ifdef DEBUG
-    for (Debugger **p = vec->begin(); p != vec->end(); p++)
-        JS_ASSERT(*p != dbg);
-#endif
-    if (vec->empty() && !compartment()->addDebuggee(cx, this))
-        return false;
-    if (!vec->append(dbg)) {
-        compartment()->removeDebuggee(cx, this);
-        return false;
-    }
-    return true;
 }
 
 } 
