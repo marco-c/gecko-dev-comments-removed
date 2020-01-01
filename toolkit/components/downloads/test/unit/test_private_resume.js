@@ -7,6 +7,9 @@
 
 
 function run_test() {
+  
+  Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
+
   do_test_pending();
   let httpserv = new HttpServer();
 
