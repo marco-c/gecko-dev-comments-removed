@@ -40,6 +40,7 @@
 #   Pamela Greene <pamg.bugs@gmail.com>
 #   Michael Ventnor <m.ventnor@gmail.com>
 #   Simon Bünzli <zeniko@gmail.com>
+#   Johnathan Nightingale <johnath@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -1163,6 +1164,10 @@ function delayedStartup()
 
   
   gBookmarkAllTabsHandler = new BookmarkAllTabsHandler();
+  
+  
+  
+  checkForChromelessWindow();
 }
 
 function BrowserShutdown()
@@ -5912,3 +5917,84 @@ BookmarkAllTabsHandler.prototype = {
     this._updateCommandState(aEvent.type == "TabClose");
   }
 };
+
+
+
+
+
+
+
+
+function checkForChromelessWindow() {
+
+  var prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                        .getService(Components.interfaces.nsIPrefBranch);
+  
+  
+  if (!prefs.getBoolPref("browser.warn_chromeless_window.infobar"))
+    return;
+
+  if (document.documentElement.getAttribute("chromehidden").indexOf("toolbar") != -1 ||
+      document.documentElement.getAttribute("chromehidden").indexOf("location") != -1) {
+    
+    var bundle_browser = document.getElementById("bundle_browser");
+    
+    
+    
+    
+    try {
+      var messageString = bundle_browser.getFormattedString("chromelessWindow.warningMessage",
+                                                            [window.content.opener.location.host]);
+    } catch (ex) {
+        
+      
+      
+      Components.utils.reportError(ex);
+      messageString = bundle_browser.getString("chromelessWindow.warningNoLocation");
+      
+    }
+
+    var notificationBox = gBrowser.getNotificationBox();
+    var notificationName = "chromeless-info";
+    if (notificationBox.getNotificationWithValue(notificationName)) {
+      Components.utils.reportError("Already have a chromeless-info notification!")
+      return;
+    }
+    
+    var buttons = [{
+      label: bundle_browser.getString("chromelessWindow.showToolbarsButton"),
+      accessKey: bundle_browser.getString("chromelessWindow.accessKey"),
+      popup: null,
+      callback: function() { return showToolbars(); }
+    }];
+
+    notificationBox.appendNotification(messageString,
+                                       notificationName,
+                                       "chrome://browser/skin/Info.png",
+                                       notificationBox.PRIORITY_INFO_HIGH,
+                                       buttons);
+  }
+}
+
+
+
+
+
+
+function showToolbars() {
+
+  
+  document.documentElement.removeAttribute("chromehidden");
+  
+  
+  if (gURLBar) {
+    gURLBar.removeAttribute("readonly");
+    gURLBar.setAttribute("enablehistory", "true");
+  }
+  
+  var goButtonStack = document.getElementById("go-button-stack");
+  if (goButtonStack)
+    goButtonStack.removeAttribute("hidden");
+  
+  return false; 
+}
