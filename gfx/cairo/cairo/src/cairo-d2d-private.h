@@ -47,46 +47,56 @@ extern "C" {
 #include "cairoint.h"
 }
 
+#include "cairo-win32-refptr.h"
+
 struct _cairo_d2d_surface {
+    _cairo_d2d_surface() : clipRect(NULL), clipping(false), isDrawing(false),
+	textRenderingInit(true)
+    { }
+    ~_cairo_d2d_surface()
+    {
+	delete clipRect;
+    }
+
     cairo_surface_t base;
     
-    ID2D1RenderTarget *rt;
+    RefPtr<ID2D1RenderTarget> rt;
     
-    ID3D10Resource *surface;
+    RefPtr<ID3D10Resource> surface;
     
 
 
 
-    ID3D10Texture2D *bufferTexture;
+    RefPtr<ID3D10Texture2D> bufferTexture;
     
-    IDXGISurface *backBuf;
+    RefPtr<IDXGISurface> backBuf;
     
-    ID2D1Bitmap *surfaceBitmap;
+    RefPtr<ID2D1Bitmap> surfaceBitmap;
     
-    IDXGISwapChain *dxgiChain;
+    RefPtr<IDXGISwapChain> dxgiChain;
     
     HWND hwnd;
     
     cairo_format_t format;
     
-    ID2D1Geometry *clipMask;
+    RefPtr<ID2D1Geometry> clipMask;
     
     D2D1_RECT_F *clipRect;
     
-    ID2D1Layer *clipLayer;
+    RefPtr<ID2D1Layer> clipLayer;
     
-    ID2D1Layer *maskLayer;
+    RefPtr<ID2D1Layer> maskLayer;
     
 
 
 
-    ID2D1Layer *helperLayer;
+    RefPtr<ID2D1Layer> helperLayer;
     
     bool clipping;
     
-    ID2D1BitmapBrush *bitmapBrush;
+    RefPtr<ID2D1BitmapBrush> bitmapBrush;
     
-    ID2D1SolidColorBrush *solidColorBrush;
+    RefPtr<ID2D1SolidColorBrush> solidColorBrush;
     
     bool isDrawing;
     
@@ -210,7 +220,7 @@ private:
 };
 
 
-ID2D1Brush*
+RefPtr<ID2D1Brush>
 _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf, 
 			            const cairo_pattern_t *pattern,
 				    unsigned int lastrun,
