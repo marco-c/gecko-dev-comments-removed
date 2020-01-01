@@ -39,6 +39,9 @@
 
 #include "prcpucfg.h"
 
+
+#undef cairo_public
+
 #if defined(MOZ_ENABLE_LIBXUL)
 
 #ifdef HAVE_VISIBILITY_HIDDEN_ATTRIBUTE
