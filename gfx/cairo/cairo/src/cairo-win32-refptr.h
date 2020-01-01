@@ -36,55 +36,68 @@
 #ifndef CAIRO_WIN32_REFPTR_H
 #define CAIRO_WIN32_REFPTR_H
 
-template<class T>
+template<typename T> class TemporaryRef;
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
 class RefPtr
 {
-public:
-    RefPtr() : mPtr(NULL)
-    { }
-
-    RefPtr(T *aPtr) : mPtr(aPtr)
-    {
-	if (mPtr) {
-	    mPtr->AddRef();
-	}
-    }
-
-    RefPtr(const RefPtr<T> &aRefPtr)
-    {
-	mPtr = aRefPtr.mPtr;
-	if (mPtr) {
-	    mPtr->AddRef();
-	}
-    }
-
-    template <class newType>
-    explicit RefPtr(const RefPtr<newType> &aRefPtr)
-    {
-	mPtr = aRefPtr.get();
-	if (mPtr) {
-	    mPtr->AddRef();
-	}
-    }
-
-    ~RefPtr()
-    {
-	if (mPtr) {
-	    mPtr->Release();
-	}
-    }
-
-    RefPtr<T> &operator =(const RefPtr<T> aPtr)
-    {
-	assignPtr(aPtr.mPtr);
-	return *this;
-    }
     
-    RefPtr<T> &operator =(T* aPtr)
-    {
-	assignPtr(aPtr);
-	return *this;
+    friend class TemporaryRef<T>;
+
+    struct dontRef {};
+
+public:
+    RefPtr() : ptr(0) { }
+    RefPtr(const RefPtr& o) : ptr(ref(o.ptr)) {}
+    RefPtr(const TemporaryRef<T>& o) : ptr(o.drop()) {}
+    RefPtr(T* t) : ptr(ref(t)) {}
+
+    template<typename U>
+    RefPtr(const RefPtr<U>& o) : ptr(ref(o.get())) {}
+
+    ~RefPtr() { unref(ptr); }
+
+    RefPtr& operator=(const RefPtr& o) {
+        assign(ref(o.ptr));
+        return *this;
     }
+    RefPtr& operator=(const TemporaryRef<T>& o) {
+        assign(o.drop());
+        return *this;
+    }
+    RefPtr& operator=(T* t) {
+        assign(ref(t));
+        return *this;
+    }
+
+    template<typename U>
+    RefPtr& operator=(const RefPtr<U>& o) {
+        assign(ref(o.get()));
+        return *this;
+    }
+
+    TemporaryRef<T> forget() {
+        T* tmp = ptr;
+        ptr = 0;
+        return TemporaryRef<T>(tmp, dontRef());
+    }
+
+    T* get() const { return ptr; }
+    operator T*() const { return ptr; }
+    T* operator->() const { return ptr; }
+    T& operator*() const { return *ptr; }
+    template<typename U>
+    operator TemporaryRef<U>() { return TemporaryRef<U>(ptr); }
 
     
 
@@ -95,67 +108,71 @@ public:
 
     T** operator&()
     {
-	if (mPtr) {
-	    mPtr->Release();
-	    mPtr = NULL;
-	}
-	return &mPtr;
-    }
-
-    T* operator->()
-    {
-	return mPtr;
-    }
-
-    T* operator->() const
-    {
-	return mPtr;
-    }
-
-    operator bool()
-    {
-	return (mPtr ? true : false);
-    }
-
-    operator T*()
-    {
-	return mPtr;
-    }
-
-    template <class newType>
-    operator RefPtr<newType>()
-    {
-	RefPtr<newType> newPtr;
-	newPtr = mPtr;
-	return newPtr;
-    }
-
-    T* get() const
-    {
-	return mPtr;
-    }
-
-    T* forget()
-    {
-	T* ptr = mPtr;
-	mPtr = NULL;
-	return ptr;
+       if (ptr) {
+           ptr->Release();
+           ptr = NULL;
+       }
+       return &ptr;
     }
 
 private:
-    void assignPtr(T* aPtr)
-    {
-	T *oldPtr = mPtr;
-	mPtr = aPtr;
-	if (mPtr) {
-	    mPtr->AddRef();
-	}
-	if (oldPtr) {
-	    oldPtr->Release();
-	}
+    void assign(T* t) {
+        unref(ptr);
+        ptr = t;
     }
 
-    T *mPtr;
+    T* ptr;
+
+    static inline T* ref(T* t) {
+        if (t) {
+            t->AddRef();
+        }
+        return t;
+    }
+
+    static inline void unref(T* t) {
+        if (t) {
+            t->Release();
+        }
+    }
+};
+
+
+
+
+
+
+
+template<typename T>
+class TemporaryRef
+{
+    
+    friend class RefPtr<T>;
+
+    typedef typename RefPtr<T>::dontRef dontRef;
+
+public:
+    TemporaryRef(T* t) : ptr(RefPtr<T>::ref(t)) {}
+    TemporaryRef(const TemporaryRef& o) : ptr(o.drop()) {}
+
+    template<typename U>
+    TemporaryRef(const TemporaryRef<U>& o) : ptr(o.drop()) {}
+
+    ~TemporaryRef() { RefPtr<T>::unref(ptr); }
+
+    T* drop() const {
+        T* tmp = ptr;
+        ptr = 0;
+        return tmp;
+    }
+
+private:
+    TemporaryRef(T* t, const dontRef&) : ptr(t) {}
+
+    mutable T* ptr;
+
+    TemporaryRef();
+    TemporaryRef& operator=(const TemporaryRef&);
 };
 
 #endif
