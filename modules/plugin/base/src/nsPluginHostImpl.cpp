@@ -3954,41 +3954,56 @@ nsPluginHostImpl::TrySetUpPluginInstance(const char *aMimeType,
   NS_ASSERTION(pluginTag, "Must have plugin tag here!");
   PRBool isJavaPlugin = pluginTag->mIsJavaPlugin;
 
-#if defined(OJI) && ((defined(XP_UNIX) && !defined(XP_MACOSX)) || defined(XP_OS2))
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   if (isJavaPlugin && !pluginTag->mIsNPRuntimeEnabledJavaPlugin) {
     
+    nsCOMPtr<nsIDocument> document;
+    aOwner->GetDocument(getter_AddRefs(document));
+    if (document) {
+      nsCOMPtr<nsPIDOMWindow> window =
+        do_QueryInterface(document->GetScriptGlobalObject());
+
+      if (window) {
+        window->InitJavaProperties();
+      }
+    }
+
+#if defined(OJI) && ((defined(XP_UNIX) && !defined(XP_MACOSX)) || defined(XP_OS2))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
     nsCOMPtr<nsIJVMManager> jvmManager = do_GetService(nsIJVMManager::GetCID(),
-                                                     &result);
+                                                       &result);
     if (NS_SUCCEEDED(result)) {
       JNIEnv* proxyEnv;
       
       jvmManager->GetProxyJNI(&proxyEnv);
     }
-  }
 #endif
+  }
 
   nsCAutoString contractID(
           NS_LITERAL_CSTRING(NS_INLINE_PLUGIN_CONTRACTID_PREFIX) +
