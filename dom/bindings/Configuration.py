@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from WebIDL import IDLInterface, IDLExternalInterface
 
@@ -13,30 +13,30 @@ class Configuration:
     """
     def __init__(self, filename, parseData):
 
-        
+        # Read the configuration file.
         glbl = {}
         execfile(filename, glbl)
         config = glbl['DOMInterfaces']
 
-        
-        
-        
+        # Build descriptors for all the interfaces we have in the parse data.
+        # This allows callers to specify a subset of interfaces by filtering
+        # |parseData|.
         self.descriptors = []
         self.interfaces = {}
         self.maxProtoChainLength = 0;
         for thing in parseData:
-            
-            
-            
+            # Some toplevel things are sadly types, and those have an
+            # isInterface that doesn't mean the same thing as IDLObject's
+            # isInterface()...
             if (not isinstance(thing, IDLInterface) and
                 not isinstance(thing, IDLExternalInterface)):
                 continue
             iface = thing
             self.interfaces[iface.identifier.name] = iface
             if iface.identifier.name not in config:
-                
-                
-                
+                # Completely skip consequential interfaces with no descriptor
+                # because chances are we don't need to do anything interesting
+                # with them.
                 if iface.isConsequential():
                     continue
                 entry = {}
@@ -46,14 +46,14 @@ class Configuration:
                 assert isinstance(entry, dict)
                 entry = [entry]
             elif len(entry) == 1 and entry[0].get("workers", False):
-                
-                
-                
+                # List with only a workers descriptor means we should
+                # infer a mainthread descriptor.  If you want only
+                # workers bindings, don't use a list here.
                 entry.append({})
             self.descriptors.extend([Descriptor(self, iface, x) for x in entry])
 
-        
-        
+        # Mark the descriptors for which only a single nativeType implements
+        # an interface.
         for descriptor in self.descriptors:
             intefaceName = descriptor.interface.identifier.name
             otherDescriptors = [d for d in self.descriptors
@@ -63,7 +63,7 @@ class Configuration:
         self.enums = [e for e in parseData if e.isEnum()]
         self.dictionaries = [d for d in parseData if d.isDictionary()]
 
-        
+        # Keep the descriptor list sorted for determinism.
         self.descriptors.sort(lambda x,y: cmp(x.name, y.name))
 
     def getInterface(self, ifname):
@@ -102,10 +102,10 @@ class Configuration:
         iface = self.getInterface(interfaceName)
         descriptors = self.getDescriptors(interface=iface)
 
-        
+        # The only filter we currently have is workers vs non-workers.
         matches = filter(lambda x: x.workers is workers, descriptors)
 
-        
+        # After filtering, we should have exactly one result.
         if len(matches) is not 1:
             raise NoSuchDescriptorError("For " + interfaceName + " found " +
                                         str(len(matches)) + " matches");
@@ -145,7 +145,7 @@ class Descriptor(DescriptorProvider):
         DescriptorProvider.__init__(self, config, desc.get('workers', False))
         self.interface = interface
 
-        
+        # Read the desc, and fill in the relevant defaults.
         ifaceName = self.interface.identifier.name
         if self.interface.isExternal() or self.interface.isCallback():
             if self.workers:
@@ -161,7 +161,7 @@ class Descriptor(DescriptorProvider):
         self.nativeType = desc.get('nativeType', nativeTypeDefault)
         self.hasInstanceInterface = desc.get('hasInstanceInterface', None)
 
-        
+        # Do something sane for JSObject
         if self.nativeType == "JSObject":
             headerDefault = "jsapi.h"
         else:
@@ -185,8 +185,8 @@ class Descriptor(DescriptorProvider):
 
         self.hasXPConnectImpls = desc.get('hasXPConnectImpls', False)
 
-        
-        
+        # If we're concrete, we need to crawl our ancestor interfaces and mark
+        # them as having a concrete descendant.
         self.concrete = (not self.interface.isExternal() and
                          not self.interface.isCallback() and
                          desc.get('concrete', True))
@@ -207,8 +207,8 @@ class Descriptor(DescriptorProvider):
             def addOperation(operation, m):
                 if not operations[operation]:
                     operations[operation] = m
-            
-            
+            # Since stringifiers go on the prototype, we only need to worry
+            # about our own stringifier, not those of our ancestor interfaces.
             for m in iface.members:
                 if m.isMethod() and m.isStringifier():
                     addOperation('Stringifier', m)
@@ -234,9 +234,6 @@ class Descriptor(DescriptorProvider):
                         addIndexedOrNamedOperation('Creator', m)
                     if m.isDeleter():
                         addIndexedOrNamedOperation('Deleter', m)
-                        raise TypeError("deleter specified on %s but we "
-                                        "don't support deleters yet" %
-                                        self.interface.identifier.name)
 
                 iface.setUserData('hasConcreteDescendant', True)
                 iface = iface.parent
@@ -280,9 +277,9 @@ class Descriptor(DescriptorProvider):
             return name + "_workers" if self.workers else name
         self.name = make_name(interface.identifier.name)
 
-        
-        
-        
+        # self.extendedAttributes is a dict of dicts, keyed on
+        # all/getterOnly/setterOnly and then on member name. Values are an
+        # array of extended attributes.
         self.extendedAttributes = { 'all': {}, 'getterOnly': {}, 'setterOnly': {} }
 
         def addExtendedAttribute(attribute, config):
@@ -310,7 +307,7 @@ class Descriptor(DescriptorProvider):
 
         self.binaryNames = desc.get('binaryNames', {})
 
-        
+        # Build the prototype chain.
         self.prototypeChain = []
         parent = interface
         while parent:
@@ -321,9 +318,9 @@ class Descriptor(DescriptorProvider):
 
     def hasInterfaceOrInterfacePrototypeObject(self):
 
-        
-        
-        
+        # Forward-declared interfaces don't need either interface object or
+        # interface prototype object as they're going to use QI (on main thread)
+        # or be passed as a JSObject (on worker threads).
         if self.interface.isExternal():
             return False
 
