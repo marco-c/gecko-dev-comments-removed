@@ -230,6 +230,12 @@ public:
 
   virtual void Connect(CompositableClient* aCompositable) MOZ_OVERRIDE;
 
+  virtual void PaintedTiledLayerBuffer(CompositableClient* aCompositable,
+                                       BasicTiledLayerBuffer* aTiledLayerBuffer) MOZ_OVERRIDE
+  {
+    NS_RUNTIMEABORT("should not be called");
+  }
+
   
 
 
