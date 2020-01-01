@@ -1123,46 +1123,12 @@ ic::NativeNew(VMFrame &f, CallICInfo *ic)
     return NULL;
 }
 
-static const unsigned MANY_ARGS = 1024;
-
-static bool
-BumpStackFull(VMFrame &f, uintN inc)
-{
-    
-    if (inc < MANY_ARGS) {
-        if (f.regs.sp + inc < f.stackLimit)
-            return true;
-        StackSpace &space = f.cx->stack.space();
-        return space.bumpLimitWithinQuota(f.cx, f.entryfp, f.regs.sp, inc, &f.stackLimit);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    StackSpace &space = f.cx->stack.space();
-    if (!space.bumpLimit(f.cx, f.entryfp, f.regs.sp, inc, &f.stackLimit)) {
-        js_ReportOutOfScriptQuota(f.cx);
-        return false;
-    }
-    return true;
-}
-
 static JS_ALWAYS_INLINE bool
 BumpStack(VMFrame &f, uintN inc)
 {
-    
-    if (inc < MANY_ARGS && f.regs.sp + inc < f.stackLimit)
+    if (f.regs.sp + inc < f.stackLimit)
         return true;
-    return BumpStackFull(f, inc);
+    return f.cx->stack.space().tryBumpLimit(f.cx, f.regs.sp, inc, &f.stackLimit);
 }
 
 

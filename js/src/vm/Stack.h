@@ -457,7 +457,21 @@ class StackFrame
 
 
 
-    jsbytecode *pc(JSContext *cx, StackFrame *next = NULL, JSInlinedSite **pinlined = NULL);
+
+
+
+
+
+
+
+
+
+
+
+
+
+    jsbytecode *pcQuadratic(JSContext *cx, StackFrame *next = NULL,
+                            JSInlinedSite **pinlined = NULL);
 
     jsbytecode *prevpc(JSInlinedSite **pinlined) {
         if (flags_ & HAS_PREVPC) {
@@ -1112,10 +1126,8 @@ struct StackOverride
 class StackSpace
 {
     Value         *base_;
-#ifdef XP_WIN
     mutable Value *commitEnd_;
-#endif
-    Value *end_;
+    Value         *end_;
     StackSegment  *seg_;
     StackOverride override_;
 
@@ -1178,22 +1190,6 @@ class StackSpace
 
 
 
-    static const size_t MAX_INLINE_CALLS = 3000;
-
-    
-
-
-
-
-
-
-
-    static const size_t STACK_QUOTA = MAX_INLINE_CALLS * (VALUES_PER_STACK_FRAME + 18);
-
-    
-
-
-
 
     static const size_t STACK_JIT_EXTRA = (VALUES_PER_STACK_FRAME + 18) * 10;
 
@@ -1210,26 +1206,15 @@ class StackSpace
 
 
 
+
     inline Value *getStackLimit(JSContext *cx);
-
-    
-
-
-
-
-
-
-
-    bool bumpLimitWithinQuota(JSContext *maybecx, StackFrame *base, Value *from, uintN nvals, Value **limit) const;
-
-    
-
-
-
-    bool bumpLimit(JSContext *cx, StackFrame *base, Value *from, uintN nvals, Value **limit) const;
+    bool tryBumpLimit(JSContext *maybecx, Value *from, uintN nvals, Value **limit);
 
     
     void mark(JSTracer *trc);
+
+    
+    JS_FRIEND_API(size_t) committedSize();
 };
 
 
@@ -1406,7 +1391,7 @@ class ContextStack
     inline StackFrame *
     getInlineFrameWithinLimit(JSContext *cx, Value *sp, uintN nactual,
                               JSFunction *fun, JSScript *script, uint32 *flags,
-                              StackFrame *base, Value **limit, void *topncode) const;
+                              Value **limit, void *topncode) const;
     inline void pushInlineFrame(JSScript *script, StackFrame *fp, FrameRegs &regs);
     inline void popInlineFrame();
 
@@ -1493,6 +1478,13 @@ class GeneratorFrameGuard : public FrameGuard
 
 
 
+enum FrameExpandKind {
+    FRAME_EXPAND_NONE,
+    FRAME_EXPAND_TOP,
+    FRAME_EXPAND_ALL
+};
+
+
 
 
 
@@ -1504,24 +1496,28 @@ class GeneratorFrameGuard : public FrameGuard
 
 class FrameRegsIter
 {
-    JSContext    *cx_;
-    StackSegment *seg_;
-    StackFrame   *fp_;
-    Value        *sp_;
-    jsbytecode   *pc_;
+    JSContext     *cx_;
+    StackSegment  *seg_;
+    StackFrame    *fp_;
+    Value         *sp_;
+    jsbytecode    *pc_;
+    JSInlinedSite *inlined_;
 
     void initSlow();
     void incSlow(StackFrame *oldfp);
 
   public:
-    inline FrameRegsIter(JSContext *cx);
+    FrameRegsIter(JSContext *cx, FrameExpandKind expand);
 
     bool done() const { return fp_ == NULL; }
-    inline FrameRegsIter &operator++();
+    FrameRegsIter &operator++();
+    bool operator==(const FrameRegsIter &rhs) const;
+    bool operator!=(const FrameRegsIter &rhs) const { return !(*this == rhs); }
 
     StackFrame *fp() const { return fp_; }
     Value *sp() const { return sp_; }
     jsbytecode *pc() const { return pc_; }
+    JSInlinedSite *inlined() const { return inlined_; }
 };
 
 
