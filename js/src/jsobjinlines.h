@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jsobjinlines_h___
 #define jsobjinlines_h___
@@ -86,11 +86,11 @@ JSObject::hasPrivate() const
 inline void *&
 JSObject::privateRef(uint32_t nfixed) const
 {
-    
-
-
-
-
+    /*
+     * The private pointer of an object can hold any word sized value.
+     * Private pointers are stored immediately after the last fixed slot of
+     * the object.
+     */
     JS_ASSERT(nfixed == numFixedSlots());
     JS_ASSERT(hasPrivate());
     js::HeapValue *end = &fixedSlots()[nfixed];
@@ -268,11 +268,11 @@ JSObject::finalize(JSContext *cx, bool background)
     js::Probes::finalizeObject(this);
 
     if (!background) {
-        
-
-
-
-
+        /*
+         * Finalize obj first, in case it needs map and slots. Objects with
+         * finalize hooks are not finalized in the background, as the class is
+         * stored in the object's shape, which may have already been destroyed.
+         */
         js::Class *clasp = getClass();
         if (clasp->finalize)
             clasp->finalize(cx, this);
@@ -293,10 +293,10 @@ JSObject::enclosingScope()
     return isScope() ? &asScope().enclosingScope() : getParent();
 }
 
-
-
-
-
+/*
+ * Property read barrier for deferred cloning of compiler-created function
+ * objects optimized as typically non-escaping, ad-hoc methods in obj.
+ */
 inline js::Shape *
 JSObject::methodReadBarrier(JSContext *cx, const js::Shape &shape, js::Value *vp)
 {
@@ -304,7 +304,7 @@ JSObject::methodReadBarrier(JSContext *cx, const js::Shape &shape, js::Value *vp
     JS_ASSERT(shape.isMethod());
     JS_ASSERT(shape.hasSlot());
     JS_ASSERT(shape.hasDefaultSetter());
-    JS_ASSERT(!isGlobal());  
+    JS_ASSERT(!isGlobal());  /* i.e. we are not changing the global shape */
 
     JSFunction *fun = vp->toObject().toFunction();
     JS_ASSERT(!fun->isClonedMethod());
@@ -315,11 +315,11 @@ JSObject::methodReadBarrier(JSContext *cx, const js::Shape &shape, js::Value *vp
         return NULL;
     fun->setMethodObj(*this);
 
-    
-
-
-
-
+    /*
+     * Replace the method property with an ordinary data property. This is
+     * equivalent to this->setProperty(cx, shape.id, vp) except that any
+     * watchpoint on the property is not triggered.
+     */
     uint32_t slot = shape.slot();
     js::Shape *newshape = methodShapeChange(cx, shape);
     if (!newshape)
@@ -351,7 +351,7 @@ JSObject::dynamicSlotIndex(size_t slot)
     return slot - numFixedSlots();
 }
 
- inline size_t
+/*static*/ inline size_t
 JSObject::dynamicSlotsCount(size_t nfixed, size_t span)
 {
     if (span <= nfixed)
@@ -393,13 +393,13 @@ JSObject::removeLastProperty(JSContext *cx)
 inline bool
 JSObject::canRemoveLastProperty()
 {
-    
-
-
-
-
-
-
+    /*
+     * Check that the information about the object stored in the last
+     * property's base shape is consistent with that stored in the previous
+     * shape. If not consistent, then the last property cannot be removed as it
+     * will induce a change in the object itself, and the object must be
+     * converted to dictionary mode instead. See BaseShape comment in jsscope.h
+     */
     JS_ASSERT(!inDictionaryMode());
     const js::Shape *previous = lastProperty()->previous();
     return previous->getObjectParent() == lastProperty()->getObjectParent()
@@ -451,10 +451,10 @@ JSObject::setPrimitiveThis(const js::Value &pthis)
 inline bool
 JSObject::hasContiguousSlots(size_t start, size_t count) const
 {
-    
-
-
-
+    /*
+     * Check that the range [start, start+count) is either all inline or all
+     * out of line.
+     */
     JS_ASSERT(slotInRange(start + count, SENTINEL_ALLOWED));
     return (start + count <= numFixedSlots()) || (start >= numFixedSlots());
 }
@@ -488,10 +488,10 @@ JSObject::setArrayLength(JSContext *cx, uint32_t length)
     JS_ASSERT(isArray());
 
     if (length > INT32_MAX) {
-        
-
-
-
+        /*
+         * Mark the type of this object as possibly not a dense array, per the
+         * requirements of OBJECT_FLAG_NON_DENSE_ARRAY.
+         */
         js::types::MarkTypeObjectFlags(cx, this,
                                        js::types::OBJECT_FLAG_NON_PACKED_ARRAY |
                                        js::types::OBJECT_FLAG_NON_DENSE_ARRAY);
@@ -506,7 +506,7 @@ JSObject::setArrayLength(JSContext *cx, uint32_t length)
 inline void
 JSObject::setDenseArrayLength(uint32_t length)
 {
-    
+    /* Variant of setArrayLength for use on dense arrays where the length cannot overflow int32. */
     JS_ASSERT(isDenseArray());
     JS_ASSERT(length <= INT32_MAX);
     getElementsHeader()->length = length;
@@ -609,10 +609,10 @@ JSObject::moveDenseArrayElements(uintN dstStart, uintN srcStart, uintN count)
     JS_ASSERT(dstStart + count <= getDenseArrayCapacity());
     JS_ASSERT(srcStart + count <= getDenseArrayInitializedLength());
 
-    
-
-
-
+    /*
+     * Use a custom write barrier here since it's performance sensitive. We
+     * only want to barrier the elements that are being overwritten.
+     */
     uintN markStart, markEnd;
     if (dstStart > srcStart) {
         markStart = js::Max(srcStart + count, dstStart);
@@ -659,17 +659,17 @@ ValueToObjectOrPrototype(JSContext *cx, const Value &v)
     return NULL;
 }
 
-
-
-
-
+/*
+ * Any name atom for a function which will be added as a DeclEnv object to the
+ * scope chain above call objects for fun.
+ */
 static inline JSAtom *
 CallObjectLambdaName(JSFunction *fun)
 {
     return (fun->flags & JSFUN_LAMBDA) ? fun->atom : NULL;
 }
 
-} 
+} /* namespace js */
 
 inline const js::Value &
 JSObject::getDateUTCTime() const
@@ -979,10 +979,10 @@ JSObject::isQName() const
 inline void
 JSObject::initializeSlotRange(size_t start, size_t length)
 {
-    
-
-
-
+    /*
+     * No bounds check, as this is used when the object's shape does not
+     * reflect its allocated slots (updateSlotsForSpan).
+     */
     JS_ASSERT(!isDenseArray());
     size_t fixed = numFixedSlots();
     if (start < fixed) {
@@ -998,15 +998,15 @@ JSObject::initializeSlotRange(size_t start, size_t length)
     }
 }
 
- inline JSObject *
+/* static */ inline JSObject *
 JSObject::create(JSContext *cx, js::gc::AllocKind kind,
                  js::HandleShape shape, js::HandleTypeObject type, js::HeapValue *slots)
 {
-    
-
-
-
-
+    /*
+     * Callers must use dynamicSlotsCount to size the initial slot array of the
+     * object. We can't check the allocated capacity of the dynamic slots, but
+     * make sure their presence is consistent with the shape.
+     */
     JS_ASSERT(shape && type);
     JS_ASSERT(!!dynamicSlotsCount(shape->numFixedSlots(), shape->slotSpan()) == !!slots);
     JS_ASSERT(js::gc::GetGCKindSlots(kind, shape->getObjectClass()) == shape->numFixedSlots());
@@ -1029,7 +1029,7 @@ JSObject::create(JSContext *cx, js::gc::AllocKind kind,
     return obj;
 }
 
- inline JSObject *
+/* static */ inline JSObject *
 JSObject::createDenseArray(JSContext *cx, js::gc::AllocKind kind,
                            js::HandleShape shape, js::HandleTypeObject type,
                            uint32_t length)
@@ -1037,16 +1037,16 @@ JSObject::createDenseArray(JSContext *cx, js::gc::AllocKind kind,
     JS_ASSERT(shape && type);
     JS_ASSERT(shape->getObjectClass() == &js::ArrayClass);
 
-    
-
-
-
+    /*
+     * Dense arrays are non-native, and never have properties to store.
+     * The number of fixed slots in the shape of such objects is zero.
+     */
     JS_ASSERT(shape->numFixedSlots() == 0);
 
-    
-
-
-
+    /*
+     * The array initially stores its elements inline, there must be enough
+     * space for an elements header.
+     */
     JS_ASSERT(js::gc::GetGCKindSlots(kind) >= js::ObjectElements::VALUES_PER_HEADER);
 
     uint32_t capacity = js::gc::GetGCKindSlots(kind) - js::ObjectElements::VALUES_PER_HEADER;
@@ -1127,10 +1127,10 @@ JSObject::nativeGetSlot(uintN slot) const
 inline JSFunction *
 JSObject::nativeGetMethod(const js::Shape *shape) const
 {
-    
-
-
-
+    /*
+     * For method shapes, this object must have an uncloned function object in
+     * the shape's slot.
+     */
     JS_ASSERT(shape->isMethod());
 #ifdef DEBUG
     JSObject *obj = &nativeGetSlot(shape->slot()).toObject();
@@ -1247,9 +1247,9 @@ JSObject::lookupProperty(JSContext *cx, js::PropertyName *name, JSObject **objp,
 
 inline JSBool
 JSObject::defineGeneric(JSContext *cx, jsid id, const js::Value &value,
-                        JSPropertyOp getter ,
-                        JSStrictPropertyOp setter ,
-                        uintN attrs )
+                        JSPropertyOp getter /* = JS_PropertyStub */,
+                        JSStrictPropertyOp setter /* = JS_StrictPropertyStub */,
+                        uintN attrs /* = JSPROP_ENUMERATE */)
 {
     js::DefineGenericOp op = getOps()->defineGeneric;
     return (op ? op : js_DefineProperty)(cx, this, id, &value, getter, setter, attrs);
@@ -1257,18 +1257,18 @@ JSObject::defineGeneric(JSContext *cx, jsid id, const js::Value &value,
 
 inline JSBool
 JSObject::defineProperty(JSContext *cx, js::PropertyName *name, const js::Value &value,
-                        JSPropertyOp getter ,
-                        JSStrictPropertyOp setter ,
-                        uintN attrs )
+                        JSPropertyOp getter /* = JS_PropertyStub */,
+                        JSStrictPropertyOp setter /* = JS_StrictPropertyStub */,
+                        uintN attrs /* = JSPROP_ENUMERATE */)
 {
     return defineGeneric(cx, ATOM_TO_JSID(name), value, getter, setter, attrs);
 }
 
 inline JSBool
 JSObject::defineElement(JSContext *cx, uint32_t index, const js::Value &value,
-                        JSPropertyOp getter ,
-                        JSStrictPropertyOp setter ,
-                        uintN attrs )
+                        JSPropertyOp getter /* = JS_PropertyStub */,
+                        JSStrictPropertyOp setter /* = JS_StrictPropertyStub */,
+                        uintN attrs /* = JSPROP_ENUMERATE */)
 {
     js::DefineElementOp op = getOps()->defineElement;
     return (op ? op : js_DefineElement)(cx, this, index, &value, getter, setter, attrs);
@@ -1276,9 +1276,9 @@ JSObject::defineElement(JSContext *cx, uint32_t index, const js::Value &value,
 
 inline JSBool
 JSObject::defineSpecial(JSContext *cx, js::SpecialId sid, const js::Value &value,
-                        JSPropertyOp getter ,
-                        JSStrictPropertyOp setter ,
-                        uintN attrs )
+                        JSPropertyOp getter /* = JS_PropertyStub */,
+                        JSStrictPropertyOp setter /* = JS_StrictPropertyStub */,
+                        uintN attrs /* = JSPROP_ENUMERATE */)
 {
     return defineGeneric(cx, SPECIALID_TO_JSID(sid), value, getter, setter, attrs);
 }
@@ -1323,10 +1323,10 @@ JSObject::getElementIfPresent(JSContext *cx, JSObject *receiver, uint32_t index,
     if (op)
         return op(cx, this, receiver, index, vp, present);
 
-    
-
-
-
+    /* For now, do the index-to-id conversion just once, then use
+     * lookupGeneric/getGeneric.  Once lookupElement and getElement stop both
+     * doing index-to-id conversions, we can use those here.
+     */
     jsid id;
     if (!js::IndexToId(cx, index, &id))
         return false;
@@ -1429,9 +1429,9 @@ OBJ_TO_OUTER_OBJECT(JSContext *cx, JSObject *&obj)
         obj = op(cx, obj);
 }
 
-
-
-
+/*
+ * Methods to test whether an object or a value is of type "xml" (per typeof).
+ */
 
 #define VALUE_IS_XML(v)      (!JSVAL_IS_PRIMITIVE(v) && JSVAL_TO_OBJECT(v)->isXML())
 
@@ -1447,7 +1447,7 @@ IsStopIteration(const js::Value &v)
     return v.isObject() && v.toObject().isStopIteration();
 }
 
-
+/* ES5 9.1 ToPrimitive(input). */
 static JS_ALWAYS_INLINE bool
 ToPrimitive(JSContext *cx, Value *vp)
 {
@@ -1456,21 +1456,21 @@ ToPrimitive(JSContext *cx, Value *vp)
     return vp->toObject().defaultValue(cx, JSTYPE_VOID, vp);
 }
 
-
+/* ES5 9.1 ToPrimitive(input, PreferredType). */
 static JS_ALWAYS_INLINE bool
 ToPrimitive(JSContext *cx, JSType preferredType, Value *vp)
 {
-    JS_ASSERT(preferredType != JSTYPE_VOID); 
+    JS_ASSERT(preferredType != JSTYPE_VOID); /* Use the other ToPrimitive! */
     if (vp->isPrimitive())
         return true;
     return vp->toObject().defaultValue(cx, preferredType, vp);
 }
 
-
-
-
-
-
+/*
+ * Return true if this is a compiler-created internal function accessed by
+ * its own object. Such a function object must not be accessible to script
+ * or embedding code.
+ */
 inline bool
 IsInternalFunctionObject(JSObject *funobj)
 {
@@ -1534,7 +1534,7 @@ NewObjectCache::lookup(Class *clasp, gc::Cell *key, gc::AllocKind kind, EntryInd
 
     Entry *entry = &entries[*pentry];
 
-    
+    /* N.B. Lookups with the same clasp/key but different kinds map to different entries. */
     return (entry->clasp == clasp && entry->key == key);
 }
 
@@ -1584,7 +1584,7 @@ NewObjectCache::fillProto(EntryIndex entry, Class *clasp, JSObject *proto, gc::A
 inline void
 NewObjectCache::fillGlobal(EntryIndex entry, Class *clasp, js::GlobalObject *global, gc::AllocKind kind, JSObject *obj)
 {
-    
+    //JS_ASSERT(global == obj->getGlobal());
     return fill(entry, clasp, global, kind, obj);
 }
 
@@ -1608,7 +1608,7 @@ NewObjectCache::newObjectFromHit(JSContext *cx, EntryIndex entry_)
         return obj;
     }
 
-    
+    /* Copy the entry to the stack first in case it is purged by a GC. */
     size_t nbytes = entry->nbytes;
     char stackObject[sizeof(JSObject_Slots16)];
     JS_ASSERT(nbytes <= sizeof(stackObject));
@@ -1633,23 +1633,23 @@ CanBeFinalizedInBackground(gc::AllocKind kind, Class *clasp)
 {
 #ifdef JS_THREADSAFE
     JS_ASSERT(kind <= gc::FINALIZE_OBJECT_LAST);
-    
-
-
-
-
-
-
+    /* If the class has no finalizer or a finalizer that is safe to call on
+     * a different thread, we change the finalize kind. For example,
+     * FINALIZE_OBJECT0 calls the finalizer on the main thread,
+     * FINALIZE_OBJECT0_BACKGROUND calls the finalizer on the gcHelperThread.
+     * IsBackgroundAllocKind is called to prevent recursively incrementing
+     * the finalize kind; kind may already be a background finalize kind.
+     */
     if (!gc::IsBackgroundAllocKind(kind) && !clasp->finalize)
         return true;
 #endif
     return false;
 }
 
-
-
-
-
+/*
+ * Make an object with the specified prototype. If parent is null, it will
+ * default to the prototype's global if the prototype is non-null.
+ */
 JSObject *
 NewObjectWithGivenProto(JSContext *cx, js::Class *clasp, JSObject *proto, JSObject *parent,
                         gc::AllocKind kind);
@@ -1683,23 +1683,23 @@ FindProto(JSContext *cx, js::Class *clasp, HandleObject parent, JSObject **proto
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Make an object with the prototype set according to the specified prototype or class:
+ *
+ * if proto is non-null:
+ *   use the specified proto
+ * for a built-in class:
+ *   use the memoized original value of the class constructor .prototype
+ *   property object
+ * else if available
+ *   the current value of .prototype
+ * else
+ *   Object.prototype.
+ *
+ * The class prototype will be fetched from the parent's global. If global is
+ * null, the context's active global will be used, and the resulting object's
+ * parent will be that global.
+ */
 JSObject *
 NewObjectWithClassProto(JSContext *cx, js::Class *clasp, JSObject *proto, JSObject *parent,
                         gc::AllocKind kind);
@@ -1711,10 +1711,10 @@ NewObjectWithClassProto(JSContext *cx, js::Class *clasp, JSObject *proto, JSObje
     return NewObjectWithClassProto(cx, clasp, proto, parent, kind);
 }
 
-
-
-
-
+/*
+ * Create a native instance of the given class with parent and proto set
+ * according to the context's active global.
+ */
 inline JSObject *
 NewBuiltinClassInstance(JSContext *cx, Class *clasp, gc::AllocKind kind)
 {
@@ -1739,14 +1739,14 @@ bool
 FindClassPrototype(JSContext *cx, JSObject *scope, JSProtoKey protoKey, JSObject **protop,
                    Class *clasp);
 
-
-
-
-
+/*
+ * Create a plain object with the specified type. This bypasses getNewType to
+ * avoid losing creation site information for objects made by scripted 'new'.
+ */
 JSObject *
 NewObjectWithType(JSContext *cx, types::TypeObject *type, JSObject *parent, gc::AllocKind kind);
 
-
+/* Make an object with pregenerated shape from a NEWOBJECT bytecode. */
 static inline JSObject *
 CopyInitializerObject(JSContext *cx, JSObject *baseobj, types::TypeObject *type)
 {
@@ -1775,11 +1775,11 @@ JSObject *
 NewReshapedObject(JSContext *cx, js::types::TypeObject *type, JSObject *parent,
                   gc::AllocKind kind, const Shape *shape);
 
-
-
-
-
-
+/*
+ * As for gc::GetGCObjectKind, where numSlots is a guess at the final size of
+ * the object, zero if the final size is unknown. This should only be used for
+ * objects that do not require any fixed slots.
+ */
 static inline gc::AllocKind
 GuessObjectGCKind(size_t numSlots)
 {
@@ -1796,10 +1796,10 @@ GuessArrayGCKind(size_t numSlots)
     return gc::FINALIZE_OBJECT8;
 }
 
-
-
-
-
+/*
+ * Get the GC kind to use for scripted 'new' on the given class.
+ * FIXME bug 547327: estimate the size from the allocation site.
+ */
 static inline gc::AllocKind
 NewObjectGCKind(JSContext *cx, js::Class *clasp)
 {
@@ -1810,10 +1810,10 @@ NewObjectGCKind(JSContext *cx, js::Class *clasp)
     return gc::FINALIZE_OBJECT4;
 }
 
-
-
-
-
+/*
+ * Fill slots with the initial slot array to use for a newborn object which
+ * may or may not need dynamic slots.
+ */
 inline bool
 PreallocateObjectDynamicSlots(JSContext *cx, Shape *shape, HeapValue **slots)
 {
@@ -1832,14 +1832,14 @@ inline bool
 DefineConstructorAndPrototype(JSContext *cx, GlobalObject *global,
                               JSProtoKey key, JSObject *ctor, JSObject *proto)
 {
-    JS_ASSERT(!global->nativeEmpty()); 
+    JS_ASSERT(!global->nativeEmpty()); /* reserved slots already allocated */
     JS_ASSERT(ctor);
     JS_ASSERT(proto);
 
     jsid id = ATOM_TO_JSID(cx->runtime->atomState.classAtoms[key]);
     JS_ASSERT(!global->nativeLookup(cx, id));
 
-    
+    /* Set these first in case AddTypePropertyId looks for this class. */
     global->setSlot(key, ObjectValue(*ctor));
     global->setSlot(key + JSProto_LIMIT, ObjectValue(*proto));
     global->setSlot(key + JSProto_LIMIT * 2, ObjectValue(*ctor));
@@ -1905,7 +1905,7 @@ class PrimitiveBehavior<double> {
     static inline Class *getClass() { return &NumberClass; }
 };
 
-} 
+} /* namespace detail */
 
 inline JSObject *
 NonGenericMethodGuard(JSContext *cx, CallArgs args, Native native, Class *clasp, bool *ok)
@@ -1914,7 +1914,7 @@ NonGenericMethodGuard(JSContext *cx, CallArgs args, Native native, Class *clasp,
     if (thisv.isObject()) {
         JSObject &obj = thisv.toObject();
         if (obj.getClass() == clasp) {
-            *ok = true;  
+            *ok = true;  /* quell gcc overwarning */
             return &obj;
         }
     }
@@ -1953,9 +1953,18 @@ ObjectClassIs(JSObject &obj, ESClassValue classValue, JSContext *cx)
       case ESClass_Number: return obj.isNumber();
       case ESClass_String: return obj.isString();
       case ESClass_Boolean: return obj.isBoolean();
+      case ESClass_RegExp: return obj.isRegExp();
     }
     JS_NOT_REACHED("bad classValue");
     return false;
+}
+
+inline bool
+IsObjectWithClass(const Value &v, ESClassValue classValue, JSContext *cx)
+{
+    if (!v.isObject())
+        return false;
+    return ObjectClassIs(v.toObject(), classValue, cx);
 }
 
 static JS_ALWAYS_INLINE bool
@@ -1990,7 +1999,7 @@ DefineConstructorAndPrototype(JSContext *cx, HandleObject obj, JSProtoKey key, H
                               JSObject **ctorp = NULL,
                               gc::AllocKind ctorKind = JSFunction::FinalizeKind);
 
-} 
+} /* namespace js */
 
 extern JSObject *
 js_InitClass(JSContext *cx, js::HandleObject obj, JSObject *parent_proto,
@@ -2006,12 +2015,12 @@ js_GetProtoIfDenseArray(JSObject *obj)
     return obj->isDenseArray() ? obj->getProto() : obj;
 }
 
-
-
-
-
-
-
+/*
+ * js_PurgeScopeChain does nothing if obj is not itself a prototype or parent
+ * scope, else it reshapes the scope and prototype chains it links. It calls
+ * js_PurgeScopeChainHelper, which asserts that obj is flagged as a delegate
+ * (i.e., obj has ever been on a prototype or parent chain).
+ */
 extern bool
 js_PurgeScopeChainHelper(JSContext *cx, JSObject *obj, jsid id);
 
@@ -2079,10 +2088,10 @@ inline void
 JSObject::writeBarrierPre(JSObject *obj)
 {
 #ifdef JSGC_INCREMENTAL
-    
-
-
-
+    /*
+     * This would normally be a null test, but TypeScript::global uses 0x1 as a
+     * special value.
+     */
     if (uintptr_t(obj) < 32)
         return;
 
@@ -2099,4 +2108,4 @@ JSObject::writeBarrierPost(JSObject *obj, void *addr)
 {
 }
 
-#endif 
+#endif /* jsobjinlines_h___ */

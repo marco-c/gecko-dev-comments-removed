@@ -1,41 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ *
+ * The Original Code is SpiderMonkey code.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #ifndef jsfriendapi_h___
 #define jsfriendapi_h___
@@ -87,11 +87,11 @@ JS_GetCustomIteratorCount(JSContext *cx);
 extern JS_FRIEND_API(JSBool)
 JS_NondeterministicGetWeakMapKeys(JSContext *cx, JSObject *obj, JSObject **ret);
 
-
-
-
-
-
+/*
+ * Used by the cycle collector to trace through the shape and all
+ * shapes it reaches, marking all non-shape children found in the
+ * process. Uses bounded stack space.
+ */
 extern JS_FRIEND_API(void)
 JS_TraceShapeCycleCollectorChildren(JSTracer *trc, void *shape);
 
@@ -118,11 +118,11 @@ JS_SetGCFinishedCallback(JSRuntime *rt, JSGCFinishedCallback callback);
 extern JS_FRIEND_API(JSPrincipals *)
 JS_GetCompartmentPrincipals(JSCompartment *compartment);
 
-
+/* Safe to call with input obj == NULL. Returns non-NULL iff obj != NULL. */
 extern JS_FRIEND_API(JSObject *)
 JS_ObjectToInnerObject(JSContext *cx, JSObject *obj);
 
-
+/* Requires obj != NULL. */
 extern JS_FRIEND_API(JSObject *)
 JS_ObjectToOuterObject(JSContext *cx, JSObject *obj);
 
@@ -137,11 +137,11 @@ js_ReportOverRecursed(JSContext *maybecx);
 
 #ifdef DEBUG
 
-
-
-
-
-
+/*
+ * Routines to print out values during debugging.  These are FRIEND_API to help
+ * the debugger find them and to support temporarily hacking js_Dump* calls
+ * into other code.
+ */
 
 extern JS_FRIEND_API(void)
 js_DumpString(JSString *str);
@@ -189,13 +189,13 @@ struct ContextFriendFields {
 };
 
 struct RuntimeFriendFields {
-    
-
-
-
+    /*
+     * If non-zero, we were been asked to call the operation callback as soon
+     * as possible.
+     */
     volatile int32_t    interrupt;
 
-    
+    /* Limit pointer for checking native stack consumption. */
     uintptr_t           nativeStackLimit;
 
     RuntimeFriendFields()
@@ -217,10 +217,10 @@ typedef bool
 (* PreserveWrapperCallback)(JSContext *cx, JSObject *obj);
 
 #ifdef DEBUG
- 
-
-
-
+ /*
+  * DEBUG-only method to dump the complete object graph of heap-allocated things.
+  * fp is the file for the dump output.
+  */
 extern JS_FRIEND_API(void)
 DumpHeapComplete(JSContext *cx, FILE *fp);
 
@@ -259,23 +259,23 @@ IsSystemCompartment(const JSCompartment *compartment);
 extern JS_FRIEND_API(bool)
 IsAtomsCompartmentFor(const JSContext *cx, const JSCompartment *c);
 
-
-
-
-
-
-
+/*
+ * Check whether it is OK to assign an undeclared property with name
+ * propname of the global object in the current script on cx.  Reports
+ * an error if one needs to be reported (in particular in all cases
+ * when it returns false).
+ */
 extern JS_FRIEND_API(bool)
 CheckUndeclaredVarAssignment(JSContext *cx, JSString *propname);
 
 struct WeakMapTracer;
 
-
-
-
-
-
-
+/*
+ * Weak map tracer callback, called once for every binding of every
+ * weak map that was live at the time of the last garbage collection.
+ *
+ * m will be NULL if the weak map is not contained in a JS Object.
+ */
 typedef void
 (* WeakMapTraceCallback)(WeakMapTracer *trc, JSObject *m,
                          void *k, JSGCTraceKind kkind,
@@ -292,12 +292,12 @@ struct WeakMapTracer {
 extern JS_FRIEND_API(void)
 TraceWeakMaps(WeakMapTracer *trc);
 
-
-
-
-
-
-
+/*
+ * Shadow declarations of JS internal structures, for access by inline access
+ * functions below. Do not use these structures in any other way. When adding
+ * new fields for access by inline methods, make sure to add static asserts to
+ * the original header file to ensure that offsets are consistent.
+ */
 namespace shadow {
 
 struct TypeObject {
@@ -336,7 +336,12 @@ struct Object {
     }
 };
 
-} 
+struct Atom {
+    size_t _;
+    const jschar *chars;
+};
+
+} /* namespace shadow */
 
 extern JS_FRIEND_DATA(js::Class) AnyNameClass;
 extern JS_FRIEND_DATA(js::Class) AttributeNameClass;
@@ -420,10 +425,10 @@ GetObjectPrivate(JSObject *obj)
     return *addr;
 }
 
-
-
-
-
+/*
+ * Get a slot that is both reserved for object's clasp *and* is fixed (fits
+ * within the maximum capacity for the object's fixed slots).
+ */
 inline const Value &
 GetReservedSlot(const JSObject *obj, size_t slot)
 {
@@ -462,6 +467,18 @@ GetObjectShape(JSObject *obj)
     return reinterpret_cast<Shape *>(shape);
 }
 
+inline const jschar *
+GetAtomChars(JSAtom *atom)
+{
+    return reinterpret_cast<shadow::Atom *>(atom)->chars;
+}
+
+inline JSLinearString *
+AtomToLinearString(JSAtom *atom)
+{
+    return reinterpret_cast<JSLinearString *>(atom);
+}
+
 static inline js::PropertyOp
 CastAsJSPropertyOp(JSObject *object)
 {
@@ -486,11 +503,11 @@ SetPreserveWrapperCallback(JSRuntime *rt, PreserveWrapperCallback callback);
 JS_FRIEND_API(bool)
 IsObjectInContextCompartment(const JSObject *obj, const JSContext *cx);
 
-
-
-
-
-
+/*
+ * NB: these flag bits are encoded into the bytecode stream in the immediate
+ * operand of JSOP_ITER, so don't change them without advancing jsxdrapi.h's
+ * JSXDR_BYTECODE_VERSION.
+ */
 #define JSITER_ENUMERATE  0x1   /* for-in compatible hidden default iterator */
 #define JSITER_FOREACH    0x2   /* return [key, value] pair rather than key */
 #define JSITER_KEYVALUE   0x4   /* destructuring for-in wants [key, value] */
@@ -561,12 +578,12 @@ HasUnrootedGlobal(const JSContext *cx);
 typedef void
 (* ActivityCallback)(void *arg, JSBool active);
 
-
-
-
-
-
-
+/*
+ * Sets a callback that is run whenever the runtime goes idle - the
+ * last active request ceases - and begins activity - when it was
+ * idle and a request begins. Note: The callback is called under the
+ * GC lock.
+ */
 JS_FRIEND_API(void)
 SetActivityCallback(JSRuntime *rt, ActivityCallback cb, void *arg);
 
@@ -616,7 +633,7 @@ CallContextDebugHandler(JSContext *cx, JSScript *script, jsbytecode *bc, Value *
 extern JS_FRIEND_API(bool)
 IsContextRunningJS(JSContext *cx);
 
-
+/* Must be called with GC lock taken. */
 extern JS_FRIEND_API(void)
 TriggerOperationCallback(JSRuntime *rt);
 
@@ -628,8 +645,8 @@ GetRuntimeCompartments(JSRuntime *rt);
 extern JS_FRIEND_API(size_t)
 SizeOfJSContext();
 
-#define GCREASONS(D)
-     \
+#define GCREASONS(D)                            \
+    /* Reasons internal to the JS engine */     \
     D(API)                                      \
     D(MAYBEGC)                                  \
     D(LAST_CONTEXT)                             \
@@ -662,7 +679,7 @@ SizeOfJSContext();
 
 namespace gcreason {
 
-
+/* GCReasons will end up looking like JSGC_MAYBEGC */
 enum Reason {
 #define MAKE_REASON(name) name,
     GCREASONS(MAKE_REASON)
@@ -671,7 +688,7 @@ enum Reason {
     NUM_REASONS
 };
 
-} 
+} /* namespace gcreason */
 
 extern JS_FRIEND_API(void)
 GCForReason(JSContext *cx, gcreason::Reason reason);
@@ -703,7 +720,7 @@ class ObjectPtr
 
     ObjectPtr(JSObject *obj) : value(obj) {}
 
-    
+    /* Always call finalize before the destructor. */
     ~ObjectPtr() { JS_ASSERT(!value); }
 
     void finalize(JSRuntime *rt) {
@@ -732,36 +749,36 @@ class ObjectPtr
     operator JSObject *() const { return value; }
 };
 
-} 
+} /* namespace js */
 
-
-
-
-
+/*
+ * If protoKey is not JSProto_Null, then clasp is ignored. If protoKey is
+ * JSProto_Null, clasp must non-null.
+ */
 extern JS_FRIEND_API(JSBool)
 js_GetClassPrototype(JSContext *cx, JSObject *scope, JSProtoKey protoKey,
                      JSObject **protop, js::Class *clasp = NULL);
 
 #endif
 
+/* Implemented in jsdate.cpp. */
 
-
-
-
-
-
+/*
+ * Detect whether the internal date value is NaN.  (Because failure is
+ * out-of-band for js_DateGet*)
+ */
 extern JS_FRIEND_API(JSBool)
 js_DateIsValid(JSContext *cx, JSObject* obj);
 
 extern JS_FRIEND_API(double)
 js_DateGetMsecSinceEpoch(JSContext *cx, JSObject *obj);
 
+/* Implemented in jscntxt.cpp. */
 
-
-
-
-
-
+/*
+ * Report an exception, which is currently realized as a printf-style format
+ * string and its arguments.
+ */
 typedef enum JSErrNum {
 #define MSG_DEF(name, number, count, exception, format) \
     name = number,
@@ -773,9 +790,9 @@ typedef enum JSErrNum {
 extern JS_FRIEND_API(const JSErrorFormatString *)
 js_GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber);
 
-
+/* Implemented in jsclone.cpp. */
 
 extern JS_FRIEND_API(uint64_t)
 js_GetSCOffset(JSStructuredCloneWriter* writer);
 
-#endif 
+#endif /* jsfriendapi_h___ */
