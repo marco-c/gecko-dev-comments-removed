@@ -70,6 +70,7 @@
 #include "jsonparser.h"
 #include "jsopcode.h"
 #include "jsparse.h"
+#include "jsprobes.h"
 #include "jsproxy.h"
 #include "jsscope.h"
 #include "jsscript.h"
@@ -100,7 +101,6 @@
 #include "jsxdrapi.h"
 #endif
 
-#include "jsprobes.h"
 #include "jsatominlines.h"
 #include "jsobjinlines.h"
 #include "jsscriptinlines.h"
@@ -129,6 +129,17 @@ js_ObjectToOuterObject(JSContext *cx, JSObject *obj)
 {
     OBJ_TO_OUTER_OBJECT(cx, obj);
     return obj;
+}
+
+JS_FRIEND_API(bool)
+NULLABLE_OBJ_TO_INNER_OBJECT(JSContext *cx, JSObject *&obj)
+{
+    if (!obj) {
+        JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_INACTIVE);
+        return false;
+    }
+    OBJ_TO_INNER_OBJECT(cx, obj);
+    return !!obj;
 }
 
 #if JS_HAS_OBJ_PROTO_PROP
@@ -966,6 +977,9 @@ static JS_ALWAYS_INLINE JSScript *
 EvalCacheLookup(JSContext *cx, JSLinearString *str, StackFrame *caller, uintN staticLevel,
                 JSPrincipals *principals, JSObject &scopeobj, JSScript **bucket)
 {
+    if (!principals)
+        return NULL;
+
     
 
 
@@ -993,7 +1007,8 @@ EvalCacheLookup(JSContext *cx, JSLinearString *str, StackFrame *caller, uintN st
             script->getVersion() == version &&
             !script->hasSingletons &&
             (script->principals == principals ||
-             (principals->subsume(principals, script->principals) &&
+             (script->principals &&
+              principals->subsume(principals, script->principals) &&
               script->principals->subsume(script->principals, principals)))) {
             
 
@@ -3865,20 +3880,21 @@ DefineConstructorAndPrototype(JSContext *cx, JSObject *obj, JSProtoKey key, JSAt
 
         ctor = proto;
     } else {
-        JSFunction *fun = js_NewFunction(cx, NULL, constructor, nargs, JSFUN_CONSTRUCTOR, obj, atom);
-        if (!fun)
-            goto bad;
-
-        AutoValueRooter tvr2(cx, ObjectValue(*fun));
-        if (!DefineStandardSlot(cx, obj, key, atom, tvr2.value(), 0, named))
-            goto bad;
-
         
 
 
 
 
+
+        JSFunction *fun =
+            js_NewFunction(cx, NULL, constructor, nargs, JSFUN_CONSTRUCTOR, obj, atom);
+        if (!fun)
+            goto bad;
         FUN_CLASP(fun) = clasp;
+
+        AutoValueRooter tvr2(cx, ObjectValue(*fun));
+        if (!DefineStandardSlot(cx, obj, key, atom, tvr2.value(), 0, named))
+            goto bad;
 
         
 
@@ -3897,33 +3913,19 @@ DefineConstructorAndPrototype(JSContext *cx, JSObject *obj, JSProtoKey key, JSAt
                 proto = &rval.toObject();
         }
 
-        
-        if (!js_SetClassPrototype(cx, ctor, proto,
-                                  JSPROP_READONLY | JSPROP_PERMANENT)) {
+        if (!LinkConstructorAndPrototype(cx, ctor, proto))
             goto bad;
-        }
 
         
         if (ctor->getClass() == clasp)
             ctor->setProto(proto);
     }
 
-    
-    if ((ps && !JS_DefineProperties(cx, proto, ps)) ||
-        (fs && !JS_DefineFunctions(cx, proto, fs)) ||
-        (static_ps && !JS_DefineProperties(cx, ctor, static_ps)) ||
-        (static_fs && !JS_DefineFunctions(cx, ctor, static_fs))) {
+    if (!DefinePropertiesAndBrand(cx, proto, ps, fs) ||
+        (ctor != proto && !DefinePropertiesAndBrand(cx, ctor, static_ps, static_fs)))
+    {
         goto bad;
     }
-
-    
-
-
-
-    if (fs)
-        proto->brand(cx);
-    if (ctor != proto && static_fs)
-        ctor->brand(cx);
 
     
 
@@ -4036,6 +4038,7 @@ bool
 JSObject::allocSlots(JSContext *cx, size_t newcap)
 {
     uint32 oldcap = numSlots();
+    size_t oldSize = slotsAndStructSize();
 
     JS_ASSERT(newcap >= oldcap && !hasSlotsArray());
 
@@ -4054,6 +4057,8 @@ JSObject::allocSlots(JSContext *cx, size_t newcap)
     
     memcpy(slots, fixedSlots(), oldcap * sizeof(Value));
     ClearValueRange(slots + oldcap, newcap - oldcap, isDenseArray());
+    Probes::resizeObject(cx, this, oldSize, slotsAndStructSize());
+
     return true;
 }
 
@@ -4096,11 +4101,14 @@ JSObject::growSlots(JSContext *cx, size_t newcap)
     Value *tmpslots = (Value*) cx->realloc_(slots, oldcap * sizeof(Value), actualCapacity * sizeof(Value));
     if (!tmpslots)
         return false;    
+    size_t oldSize = slotsAndStructSize();
     slots = tmpslots;
     capacity = actualCapacity;
 
     
     ClearValueRange(slots + oldcap, actualCapacity - oldcap, isDenseArray());
+    Probes::resizeObject(cx, this, oldSize, slotsAndStructSize());
+
     return true;
 }
 
@@ -4126,6 +4134,7 @@ JSObject::shrinkSlots(JSContext *cx, size_t newcap)
     Value *tmpslots = (Value*) cx->realloc_(slots, newcap * sizeof(Value));
     if (!tmpslots)
         return;  
+    size_t oldSize = slotsAndStructSize();
     slots = tmpslots;
     capacity = newcap;
 
@@ -4133,6 +4142,8 @@ JSObject::shrinkSlots(JSContext *cx, size_t newcap)
         
         ClearValueRange(slots + fill, newcap - fill, isDenseArray());
     }
+
+    Probes::resizeObject(cx, this, oldSize, slotsAndStructSize());
 }
 
 bool
@@ -6166,28 +6177,6 @@ js_GetClassPrototype(JSContext *cx, JSObject *scopeobj, JSProtoKey protoKey,
     }
 
     return FindClassPrototype(cx, scopeobj, protoKey, protop, clasp);
-}
-
-JSBool
-js_SetClassPrototype(JSContext *cx, JSObject *ctor, JSObject *proto, uintN attrs)
-{
-    
-
-
-
-
-
-    if (!ctor->defineProperty(cx, ATOM_TO_JSID(cx->runtime->atomState.classPrototypeAtom),
-                              ObjectOrNullValue(proto), PropertyStub, StrictPropertyStub, attrs)) {
-        return JS_FALSE;
-    }
-
-    
-
-
-
-    return proto->defineProperty(cx, ATOM_TO_JSID(cx->runtime->atomState.constructorAtom),
-                                 ObjectOrNullValue(ctor), PropertyStub, StrictPropertyStub, 0);
 }
 
 JSObject *
