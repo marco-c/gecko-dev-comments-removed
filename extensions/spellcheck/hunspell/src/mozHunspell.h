@@ -93,6 +93,7 @@ public:
   nsresult Init();
 
   void LoadDictionaryList();
+  void LoadDictionariesFromDir(nsIFile* aDir);
 
   
   nsresult ConvertCharset(const PRUnichar* aStr, char ** aDst);
