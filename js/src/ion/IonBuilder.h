@@ -310,6 +310,11 @@ class IonBuilder : public MIRGenerator
     bool jsop_this();
 
     
+    
+    void discardCallArgs(uint32 argc, MDefinition **argv);
+    bool optimizeNativeCall(uint32 argc);
+
+    
 
     enum InliningStatus
     {
