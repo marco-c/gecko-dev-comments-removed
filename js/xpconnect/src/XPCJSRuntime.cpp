@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* Per JSRuntime object */
+
+
+
+
+
+
 
 #include "mozilla/Util.h"
 
@@ -42,34 +42,34 @@
 using namespace mozilla;
 using namespace xpc;
 
-/***************************************************************************/
+
 
 const char* XPCJSRuntime::mStrings[] = {
-    "constructor",          // IDX_CONSTRUCTOR
-    "toString",             // IDX_TO_STRING
-    "toSource",             // IDX_TO_SOURCE
-    "lastResult",           // IDX_LAST_RESULT
-    "returnCode",           // IDX_RETURN_CODE
-    "value",                // IDX_VALUE
-    "QueryInterface",       // IDX_QUERY_INTERFACE
-    "Components",           // IDX_COMPONENTS
-    "wrappedJSObject",      // IDX_WRAPPED_JSOBJECT
-    "Object",               // IDX_OBJECT
-    "Function",             // IDX_FUNCTION
-    "prototype",            // IDX_PROTOTYPE
-    "createInstance",       // IDX_CREATE_INSTANCE
-    "item",                 // IDX_ITEM
-    "__proto__",            // IDX_PROTO
-    "__iterator__",         // IDX_ITERATOR
-    "__exposedProps__",     // IDX_EXPOSEDPROPS
-    "__scriptOnly__",       // IDX_SCRIPTONLY
-    "baseURIObject",        // IDX_BASEURIOBJECT
-    "nodePrincipal",        // IDX_NODEPRINCIPAL
-    "documentURIObject",    // IDX_DOCUMENTURIOBJECT
-    "mozMatchesSelector"    // IDX_MOZMATCHESSELECTOR
+    "constructor",          
+    "toString",             
+    "toSource",             
+    "lastResult",           
+    "returnCode",           
+    "value",                
+    "QueryInterface",       
+    "Components",           
+    "wrappedJSObject",      
+    "Object",               
+    "Function",             
+    "prototype",            
+    "createInstance",       
+    "item",                 
+    "__proto__",            
+    "__iterator__",         
+    "__exposedProps__",     
+    "__scriptOnly__",       
+    "baseURIObject",        
+    "nodePrincipal",        
+    "documentURIObject",    
+    "mozMatchesSelector"    
 };
 
-/***************************************************************************/
+
 
 struct CX_AND_XPCRT_Data
 {
@@ -103,10 +103,10 @@ NativeInterfaceSweeper(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_REMOVE;
 }
 
-// *Some* NativeSets are referenced from mClassInfo2NativeSetMap.
-// *All* NativeSets are referenced from mNativeSetMap.
-// So, in mClassInfo2NativeSetMap we just clear references to the unmarked.
-// In mNativeSetMap we clear the references to the unmarked *and* delete them.
+
+
+
+
 
 static JSDHashOperator
 NativeUnMarkedSetRemover(JSDHashTable *table, JSDHashEntryHdr *hdr,
@@ -196,7 +196,7 @@ DetachedWrappedNativeProtoMarker(JSDHashTable *table, JSDHashEntryHdr *hdr,
     return JS_DHASH_NEXT;
 }
 
-// GCCallback calls are chained
+
 static JSBool
 ContextCallback(JSContext *cx, unsigned operation)
 {
@@ -225,21 +225,21 @@ CompartmentDestroyedCallback(JSFreeOp *fop, JSCompartment *compartment)
         return;
     XPCCompartmentSet &set = self->GetCompartmentSet();
 
-    // Get the current compartment private into an AutoPtr (which will do the
-    // cleanup for us), and null out the private (which may already be null).
+    
+    
     nsAutoPtr<CompartmentPrivate> priv(GetCompartmentPrivate(compartment));
     JS_SetCompartmentPrivate(compartment, nullptr);
 
-    // JSD creates compartments in our runtime without going through our creation
-    // code. This means that those compartments aren't in our set, and don't have
-    // compartment privates. JSD is on the way out, so let's just handle that
-    // case for now.
+    
+    
+    
+    
     if (!priv) {
         MOZ_ASSERT(!set.has(compartment));
         return;
     }
 
-    // Remove the compartment from the set.
+    
     MOZ_ASSERT(set.has(compartment));
     set.remove(compartment);
     return;
@@ -292,15 +292,15 @@ XPCJSRuntime::TestJSHolder(void* aHolder, bool* aRetval)
     return NS_OK;
 }
 
-// static
+
 void XPCJSRuntime::TraceBlackJS(JSTracer* trc, void* data)
 {
     XPCJSRuntime* self = (XPCJSRuntime*)data;
 
-    // Skip this part if XPConnect is shutting down. We get into
-    // bad locking problems with the thread iteration otherwise.
+    
+    
     if (!self->GetXPConnect()->IsShuttingDown()) {
-        // Trace those AutoMarkingPtr lists!
+        
         if (AutoMarkingPtr *roots = Get()->mAutoRoots)
             roots->TraceJSAll(trc);
     }
@@ -308,8 +308,8 @@ void XPCJSRuntime::TraceBlackJS(JSTracer* trc, void* data)
     {
         XPCAutoLock lock(self->mMapLock);
 
-        // XPCJSObjectHolders don't participate in cycle collection, so always
-        // trace them here.
+        
+        
         XPCRootSetElem *e;
         for (e = self->mObjectHolderRoots; e; e = e->GetNextRoot())
             static_cast<XPCJSObjectHolder*>(e)->TraceJS(trc);
@@ -319,12 +319,12 @@ void XPCJSRuntime::TraceBlackJS(JSTracer* trc, void* data)
 
 }
 
-// static
+
 void XPCJSRuntime::TraceGrayJS(JSTracer* trc, void* data)
 {
     XPCJSRuntime* self = (XPCJSRuntime*)data;
 
-    // Mark these roots as gray so the CC can walk them later.
+    
     self->TraceXPConnectRoots(trc);
 }
 
@@ -358,7 +358,7 @@ void XPCJSRuntime::TraceXPConnectRoots(JSTracer *trc)
 {
     JSContext *iter = nullptr;
     while (JSContext *acx = JS_ContextIterator(GetJSRuntime(), &iter)) {
-        JS_ASSERT(js::HasUnrootedGlobal(acx));
+        MOZ_ASSERT(js::HasUnrootedGlobal(acx));
         if (JSObject *global = JS_GetGlobalObject(acx))
             JS_CALL_OBJECT_TRACER(trc, global, "XPC global object");
     }
@@ -376,7 +376,7 @@ void XPCJSRuntime::TraceXPConnectRoots(JSTracer *trc)
     if (mJSHolders.ops)
         JS_DHashTableEnumerate(&mJSHolders, TraceJSHolder, trc);
 
-    // Trace compartments.
+    
     XPCCompartmentSet &set = GetCompartmentSet();
     for (XPCCompartmentRange r = set.all(); !r.empty(); r.popFront()) {
         CompartmentPrivate *priv = GetCompartmentPrivate(r.front());
@@ -424,7 +424,7 @@ NoteJSHolder(JSDHashTable *table, JSDHashEntryHdr *hdr, uint32_t number,
     return JS_DHASH_NEXT;
 }
 
-// static
+
 void
 XPCJSRuntime::SuspectWrappedNative(XPCWrappedNative *wrapper,
                                    nsCycleCollectionTraversalCallback &cb)
@@ -435,8 +435,8 @@ XPCJSRuntime::SuspectWrappedNative(XPCWrappedNative *wrapper,
     NS_ASSERTION(NS_IsMainThread() || NS_IsCycleCollectorThread(),
                  "Suspecting wrapped natives from non-CC thread");
 
-    // Only record objects that might be part of a cycle as roots, unless
-    // the callback wants all traces (a debug feature).
+    
+    
     JSObject* obj = wrapper->GetFlatJSObjectPreserveColor();
     if (xpc_IsGrayGCThing(obj) || cb.WantAllTraces())
         cb.NoteJSRoot(obj);
@@ -464,13 +464,13 @@ SuspectDOMExpandos(nsPtrHashKey<JSObject> *key, void *arg)
 void
 XPCJSRuntime::AddXPConnectRoots(nsCycleCollectionTraversalCallback &cb)
 {
-    // For all JS objects that are held by native objects but aren't held
-    // through rooting or locking, we need to add all the native objects that
-    // hold them so that the JS objects are colored correctly in the cycle
-    // collector. This includes JSContexts that don't have outstanding requests,
-    // because their global object wasn't marked by the JS GC. All other JS
-    // roots were marked by the JS GC and will be colored correctly in the cycle
-    // collector.
+    
+    
+    
+    
+    
+    
+    
 
     JSContext *iter = nullptr, *acx;
     while ((acx = JS_ContextIterator(GetJSRuntime(), &iter))) {
@@ -495,9 +495,9 @@ XPCJSRuntime::AddXPConnectRoots(nsCycleCollectionTraversalCallback &cb)
     for (XPCRootSetElem *e = mWrappedJSRoots; e ; e = e->GetNextRoot()) {
         nsXPCWrappedJS *wrappedJS = static_cast<nsXPCWrappedJS*>(e);
         JSObject *obj = wrappedJS->GetJSObjectPreserveColor();
-        // If traversing wrappedJS wouldn't release it, nor
-        // cause any other objects to be added to the graph, no
-        // need to add it to the graph at all.
+        
+        
+        
         if (nsCCUncollectableMarker::sGeneration &&
             !cb.WantAllTraces() && (!obj || !xpc_IsGrayGCThing(obj)) &&
             !wrappedJS->IsSubjectToFinalization() &&
@@ -514,7 +514,7 @@ XPCJSRuntime::AddXPConnectRoots(nsCycleCollectionTraversalCallback &cb)
         JS_DHashTableEnumerate(&mJSHolders, NoteJSHolder, &closure);
     }
 
-    // Suspect objects with expando objects.
+    
     XPCCompartmentSet &set = GetCompartmentSet();
     for (XPCCompartmentRange r = set.all(); !r.empty(); r.popFront()) {
         CompartmentPrivate *priv = GetCompartmentPrivate(r.front());
@@ -570,7 +570,7 @@ class XPCIncrementalReleaseRunnable : public nsRunnable
     XPCJSRuntime *runtime;
     nsTArray<nsISupports *> items;
 
-    static const PRTime SliceMillis = 10; /* ms */
+    static const PRTime SliceMillis = 10; 
 
   public:
     XPCIncrementalReleaseRunnable(XPCJSRuntime *rt, nsTArray<nsISupports *> &items);
@@ -613,7 +613,7 @@ XPCIncrementalReleaseRunnable::ReleaseNow(bool limited)
         NS_RELEASE(wrapper);
 
         if (limited) {
-            /* We don't want to read the clock too often. */
+            
             counter++;
             if (counter == 100) {
                 counter = 0;
@@ -635,7 +635,7 @@ NS_IMETHODIMP
 XPCIncrementalReleaseRunnable::Run()
 {
     if (runtime->mReleaseRunnable != this) {
-        /* These items were already processed synchronously in JSGC_BEGIN. */
+        
         MOZ_ASSERT(!items.Length());
         return NS_OK;
     }
@@ -662,7 +662,7 @@ XPCJSRuntime::ReleaseIncrementally(nsTArray<nsISupports *> &array)
         mReleaseRunnable->ReleaseNow(false);
 }
 
-/* static */ void
+ void
 XPCJSRuntime::GCSliceCallback(JSRuntime *rt,
                               js::GCProgress progress,
                               const js::GCDescription &desc)
@@ -680,7 +680,7 @@ XPCJSRuntime::GCSliceCallback(JSRuntime *rt,
         (*self->mPrevGCSliceCallback)(rt, progress, desc);
 }
 
-/* static */ void
+ void
 XPCJSRuntime::GCCallback(JSRuntime *rt, JSGCStatus status)
 {
     XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
@@ -690,8 +690,8 @@ XPCJSRuntime::GCCallback(JSRuntime *rt, JSGCStatus status)
     switch (status) {
         case JSGC_BEGIN:
         {
-            // We seem to sometime lose the unrooted global flag. Restore it
-            // here. FIXME: bug 584495.
+            
+            
             JSContext *iter = nullptr;
             while (JSContext *acx = JS_ContextIterator(rt, &iter)) {
                 if (!js::HasUnrootedGlobal(acx))
@@ -701,17 +701,17 @@ XPCJSRuntime::GCCallback(JSRuntime *rt, JSGCStatus status)
         }
         case JSGC_END:
         {
-            /*
-             * If the previous GC created a runnable to release objects
-             * incrementally, and if it hasn't finished yet, finish it now. We
-             * don't want these to build up. We also don't want to allow any
-             * existing incremental release runnables to run after a
-             * non-incremental GC, since they are often used to detect leaks.
-             */
+            
+
+
+
+
+
+
             if (self->mReleaseRunnable)
                 self->mReleaseRunnable->ReleaseNow(false);
 
-            // Do any deferred releases of native objects.
+            
             if (js::WasIncrementalGC(rt))
                 self->ReleaseIncrementally(self->mNativesToReleaseArray);
             else
@@ -727,7 +727,7 @@ XPCJSRuntime::GCCallback(JSRuntime *rt, JSGCStatus status)
         callbacks[i](rt, status);
 }
 
-/* static */ void
+ void
 XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool isCompartmentGC)
 {
     XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
@@ -739,8 +739,8 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
         {
             NS_ASSERTION(!self->mDoingFinalization, "bad state");
 
-            // mThreadRunningGC indicates that GC is running
-            { // scoped lock
+            
+            { 
                 XPCAutoLock lock(self->GetMapLock());
                 NS_ASSERTION(!self->mThreadRunningGC, "bad state");
                 self->mThreadRunningGC = PR_GetCurrentThread();
@@ -749,18 +749,18 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
             nsTArray<nsXPCWrappedJS*>* dyingWrappedJSArray =
                 &self->mWrappedJSToReleaseArray;
 
-            // Add any wrappers whose JSObjects are to be finalized to
-            // this array. Note that we do not want to be changing the
-            // refcount of these wrappers.
-            // We add them to the array now and Release the array members
-            // later to avoid the posibility of doing any JS GCThing
-            // allocations during the gc cycle.
+            
+            
+            
+            
+            
+            
             self->mWrappedJSMap->FindDyingJSObjects(dyingWrappedJSArray);
 
-            // Find dying scopes.
+            
             XPCWrappedNativeScope::StartFinalizationPhaseOfGC(fop, self);
 
-            // Sweep compartments.
+            
             XPCCompartmentSet &set = self->GetCompartmentSet();
             for (XPCCompartmentRange r = set.all(); !r.empty(); r.popFront()) {
                 CompartmentPrivate *priv = GetCompartmentPrivate(r.front());
@@ -776,8 +776,8 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
             NS_ASSERTION(self->mDoingFinalization, "bad state");
             self->mDoingFinalization = false;
 
-            // Release all the members whose JSObjects are now known
-            // to be dead.
+            
+            
             DoDeferredRelease(self->mWrappedJSToReleaseArray);
 
 #ifdef XPC_REPORT_NATIVE_INTERFACE_AND_SET_FLUSHING
@@ -786,10 +786,10 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
             int ifacesBefore = (int) self->mIID2NativeInterfaceMap->Count();
 #endif
 
-            // We use this occasion to mark and sweep NativeInterfaces,
-            // NativeSets, and the WrappedNativeJSClasses...
+            
+            
 
-            // Do the marking...
+            
             XPCWrappedNativeScope::MarkAllWrappedNativesAndProtos();
 
             self->mDetachedWrappedNativeProtoMap->
@@ -797,27 +797,27 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
 
             DOM_MarkInterfaces();
 
-            // Mark the sets used in the call contexts. There is a small
-            // chance that a wrapper's set will change *while* a call is
-            // happening which uses that wrapper's old interfface set. So,
-            // we need to do this marking to avoid collecting those sets
-            // that might no longer be otherwise reachable from the wrappers
-            // or the wrapperprotos.
+            
+            
+            
+            
+            
+            
 
-            // Skip this part if XPConnect is shutting down. We get into
-            // bad locking problems with the thread iteration otherwise.
+            
+            
             if (!self->GetXPConnect()->IsShuttingDown()) {
 
-                // Mark those AutoMarkingPtr lists!
+                
                 if (AutoMarkingPtr *roots = Get()->mAutoRoots)
                     roots->MarkAfterJSFinalizeAll();
 
                 XPCCallContext* ccxp = XPCJSRuntime::Get()->GetCallContext();
                 while (ccxp) {
-                    // Deal with the strictness of callcontext that
-                    // complains if you ask for a set when
-                    // it is in a state where the set could not
-                    // possibly be valid.
+                    
+                    
+                    
+                    
                     if (ccxp->CanGetSet()) {
                         XPCNativeSet* set = ccxp->GetSet();
                         if (set)
@@ -832,22 +832,22 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
                 }
             }
 
-            // Do the sweeping. During a compartment GC, only
-            // WrappedNativeProtos in collected compartments will be
-            // marked. Therefore, some reachable NativeInterfaces will not be
-            // marked, so it is not safe to sweep them. We still need to unmark
-            // them, since the ones pointed to by WrappedNativeProtos in a
-            // compartment being collected will be marked.
-            //
-            // Ideally, if NativeInterfaces from different compartments were
-            // kept separate, we could sweep only the ones belonging to
-            // compartments being collected. Currently, though, NativeInterfaces
-            // are shared between compartments. This ought to be fixed.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             void *sweepArg = isCompartmentGC ? UNMARK_ONLY : UNMARK_AND_SWEEP;
 
-            // We don't want to sweep the JSClasses at shutdown time.
-            // At this point there may be JSObjects using them that have
-            // been removed from the other maps.
+            
+            
+            
             if (!self->GetXPConnect()->IsShuttingDown()) {
                 self->mNativeScriptableSharedMap->
                     Enumerate(JSClassSweeper, sweepArg);
@@ -880,32 +880,32 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
             printf("--------------------------------------------------------------\n");
 #endif
 
-            // Sweep scopes needing cleanup
+            
             XPCWrappedNativeScope::FinishedFinalizationPhaseOfGC();
 
-            // Now we are going to recycle any unused WrappedNativeTearoffs.
-            // We do this by iterating all the live callcontexts
-            // and marking the tearoffs in use. And then we
-            // iterate over all the WrappedNative wrappers and sweep their
-            // tearoffs.
-            //
-            // This allows us to perhaps minimize the growth of the
-            // tearoffs. And also makes us not hold references to interfaces
-            // on our wrapped natives that we are not actually using.
-            //
-            // XXX We may decide to not do this on *every* gc cycle.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
 
-            // Skip this part if XPConnect is shutting down. We get into
-            // bad locking problems with the thread iteration otherwise.
+            
+            
             if (!self->GetXPConnect()->IsShuttingDown()) {
-                // Do the marking...
+                
 
                 XPCCallContext* ccxp = XPCJSRuntime::Get()->GetCallContext();
                 while (ccxp) {
-                    // Deal with the strictness of callcontext that
-                    // complains if you ask for a tearoff when
-                    // it is in a state where the tearoff could not
-                    // possibly be valid.
+                    
+                    
+                    
+                    
                     if (ccxp->CanGetTearOff()) {
                         XPCWrappedNativeTearOff* to =
                             ccxp->GetTearOff();
@@ -915,31 +915,31 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp *fop, JSFinalizeStatus status, JSBool is
                     ccxp = ccxp->GetPrevCallContext();
                 }
 
-                // Do the sweeping...
+                
                 XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs();
             }
 
-            // Now we need to kill the 'Dying' XPCWrappedNativeProtos.
-            // We transfered these native objects to this table when their
-            // JSObject's were finalized. We did not destroy them immediately
-            // at that point because the ordering of JS finalization is not
-            // deterministic and we did not yet know if any wrappers that
-            // might still be referencing the protos where still yet to be
-            // finalized and destroyed. We *do* know that the protos'
-            // JSObjects would not have been finalized if there were any
-            // wrappers that referenced the proto but where not themselves
-            // slated for finalization in this gc cycle. So... at this point
-            // we know that any and all wrappers that might have been
-            // referencing the protos in the dying list are themselves dead.
-            // So, we can safely delete all the protos in the list.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
 
             self->mDyingWrappedNativeProtoMap->
                 Enumerate(DyingProtoKiller, nullptr);
 
 
-            // mThreadRunningGC indicates that GC is running.
-            // Clear it and notify waiters.
-            { // scoped lock
+            
+            
+            { 
                 XPCAutoLock lock(self->GetMapLock());
                 NS_ASSERTION(self->mThreadRunningGC == PR_GetCurrentThread(), "bad state");
                 self->mThreadRunningGC = nullptr;
@@ -965,7 +965,7 @@ class AutoLockWatchdog {
     }
 };
 
-//static
+
 void
 XPCJSRuntime::WatchdogMain(void *arg)
 {
@@ -973,12 +973,12 @@ XPCJSRuntime::WatchdogMain(void *arg)
 
     XPCJSRuntime* self = static_cast<XPCJSRuntime*>(arg);
 
-    // Lock lasts until we return
+    
     AutoLockWatchdog lock(self);
 
     PRIntervalTime sleepInterval;
     while (self->mWatchdogThread) {
-        // Sleep only 1 second if recently (or currently) active; otherwise, hibernate
+        
         if (self->mLastActiveTime == -1 || PR_Now() - self->mLastActiveTime <= PRTime(2*PR_USEC_PER_SEC))
             sleepInterval = PR_TicksPerSecond();
         else {
@@ -989,11 +989,11 @@ XPCJSRuntime::WatchdogMain(void *arg)
         JS_TriggerOperationCallback(self->mJSRuntime);
     }
 
-    /* Wake up the main thread waiting for the watchdog to terminate. */
+    
     PR_NotifyCondVar(self->mWatchdogWakeup);
 }
 
-//static
+
 void
 XPCJSRuntime::ActivityCallback(void *arg, JSBool active)
 {
@@ -1022,18 +1022,18 @@ XPCJSRuntime::SizeOfIncludingThis(nsMallocSizeOfFun mallocSizeOf)
     n += mClassInfo2NativeSetMap->ShallowSizeOfIncludingThis(mallocSizeOf);
     n += mNativeSetMap->SizeOfIncludingThis(mallocSizeOf);
 
-    // NULL for the second arg;  we're not measuring anything hanging off the
-    // entries in mJSHolders.
+    
+    
     n += JS_DHashTableSizeOfExcludingThis(&mJSHolders, NULL, mallocSizeOf);
 
-    // There are other XPCJSRuntime members that could be measured; the above
-    // ones have been seen by DMD to be worth measuring.  More stuff may be
-    // added later.
+    
+    
+    
 
     return n;
 }
 
-/***************************************************************************/
+
 
 #ifdef XPC_CHECK_WRAPPERS_AT_SHUTDOWN
 static JSDHashOperator
@@ -1091,10 +1091,10 @@ XPCJSRuntime::~XPCJSRuntime()
     js::SetGCSliceCallback(mJSRuntime, mPrevGCSliceCallback);
 
     if (mWatchdogWakeup) {
-        // If the watchdog thread is running, tell it to terminate waking it
-        // up if necessary and wait until it signals that it finished. As we
-        // must release the lock before calling PR_DestroyCondVar, we use an
-        // extra block here.
+        
+        
+        
+        
         {
             AutoLockWatchdog lock(this);
             if (mWatchdogThread) {
@@ -1116,7 +1116,7 @@ XPCJSRuntime::~XPCJSRuntime()
 
 #ifdef XPC_DUMP_AT_SHUTDOWN
     {
-    // count the total JSContexts in use
+    
     JSContext* iter = nullptr;
     int count = 0;
     while (JS_ContextIterator(mJSRuntime, &iter))
@@ -1126,7 +1126,7 @@ XPCJSRuntime::~XPCJSRuntime()
     }
 #endif
 
-    // clean up and destroy maps...
+    
     if (mWrappedJSMap) {
 #ifdef XPC_DUMP_AT_SHUTDOWN
         uint32_t count = mWrappedJSMap->Count();
@@ -1245,10 +1245,10 @@ GetCompartmentName(JSCompartment *c, nsCString &name, bool replaceSlashes)
     } else if (JSPrincipals *principals = JS_GetCompartmentPrincipals(c)) {
         nsJSPrincipals::get(principals)->GetScriptLocation(name);
 
-        // If the compartment's location (name) differs from the principal's
-        // script location, append the compartment's location to allow
-        // differentiation of multiple compartments owned by the same principal
-        // (e.g. components owned by the system or null principal).
+        
+        
+        
+        
         CompartmentPrivate *compartmentPrivate = GetCompartmentPrivate(c);
         if (compartmentPrivate) {
             const nsACString& location = compartmentPrivate->GetLocation();
@@ -1258,9 +1258,9 @@ GetCompartmentName(JSCompartment *c, nsCString &name, bool replaceSlashes)
             }
         }
 
-        // A hack: replace forward slashes with '\\' so they aren't
-        // treated as path separators.  Users of the reporters
-        // (such as about:memory) have to undo this change.
+        
+        
+        
         if (replaceSlashes)
             name.ReplaceChar('/', '\\');
     } else {
@@ -1275,9 +1275,9 @@ GetGCChunkTotalBytes()
     return int64_t(JS_GetGCParameter(rt, JSGC_TOTAL_CHUNKS)) * js::gc::ChunkSize;
 }
 
-// Telemetry relies on this memory reporter being a single-reporter (rather
-// than part of the "js" multi-reporter, which is too slow to run during a
-// telemetry ping).
+
+
+
 NS_MEMORY_REPORTER_IMPLEMENT(XPConnectJSGCHeap,
                              "js-gc-heap",
                              KIND_OTHER,
@@ -1296,13 +1296,13 @@ GetJSUserCompartmentCount()
     return JS::UserCompartmentCount(nsXPConnect::GetRuntimeInstance()->GetJSRuntime());
 }
 
-// Nb: js-system-compartment-count + js-user-compartment-count could be
-// different to the number of compartments reported by
-// JSMemoryMultiReporter if a garbage collection occurred
-// between them being consulted.  We could move these reporters into
-// XPConnectJSCompartmentCount to avoid that problem, but then we couldn't
-// easily report them via telemetry, so we live with the small risk of
-// inconsistencies.
+
+
+
+
+
+
+
 NS_MEMORY_REPORTER_IMPLEMENT(XPConnectJSSystemCompartmentCount,
     "js-compartments/system",
     KIND_OTHER,
@@ -1323,9 +1323,9 @@ NS_MEMORY_REPORTER_IMPLEMENT(XPConnectJSUserCompartmentCount,
     "listed under 'js' if a garbage collection occurs at an inopportune time, "
     "but such cases should be rare.")
 
-// The REPORT* macros do an unconditional report.  The CREPORT* macros are for
-// compartments;  they aggregate any entries smaller than SUNDRIES_THRESHOLD
-// into "gc-heap/sundries" and "other-sundries" entries for the compartment.
+
+
+
 
 static const size_t SUNDRIES_THRESHOLD = 8192;
 
@@ -1352,8 +1352,8 @@ static const size_t SUNDRIES_THRESHOLD = 8192;
         gcTotal += amount;                                                    \
     } while (0)
 
-// Nb: all non-GC compartment reports are currently KIND_HEAP, and this macro
-// relies on that.
+
+
 #define CREPORT_BYTES(_path, _amount, _desc)                                  \
     do {                                                                      \
         size_t amount = _amount;  /* evaluate _amount only once */            \
@@ -1494,9 +1494,9 @@ ReportCompartmentStats(const JS::CompartmentStats &cStats,
                   "Memory allocated for various small, miscellaneous "
                   "structures that hang off certain kinds of objects.");
 
-    // Note that we use cDOMPathPrefix here.  This is because we measure orphan
-    // DOM nodes in the JS multi-reporter, but we want to report them in a
-    // "dom" sub-tree rather than a "js" sub-tree.
+    
+    
+    
     CREPORT_BYTES(cDOMPathPrefix + NS_LITERAL_CSTRING("orphan-nodes"),
                   cStats.objectPrivate,
                   "Memory used by orphan DOM nodes that are only reachable "
@@ -1567,7 +1567,7 @@ ReportCompartmentStats(const JS::CompartmentStats &cStats,
                   "transient analysis information.  Cleared on GC.");
 
     if (gcHeapSundries > 0) {
-        // We deliberately don't use CREPORT_GC_BYTES here.
+        
         REPORT_GC_BYTES(cJSPathPrefix + NS_LITERAL_CSTRING("gc-heap/sundries"),
                         gcHeapSundries,
                         "The sum of all the gc-heap "
@@ -1576,7 +1576,7 @@ ReportCompartmentStats(const JS::CompartmentStats &cStats,
     }
 
     if (otherSundries > 0) {
-        // We deliberately don't use CREPORT_BYTES here.
+        
         REPORT_BYTES(cJSPathPrefix + NS_LITERAL_CSTRING("other-sundries"),
                      nsIMemoryReporter::KIND_HEAP, otherSundries,
                      "The sum of all the non-gc-heap "
@@ -1599,7 +1599,7 @@ ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats &rtStats,
 {
     nsresult rv;
 
-    // Report each compartment's numbers.
+    
 
     size_t gcTotal = 0;
     for (size_t i = 0; i < rtStats.compartmentStatsVector.length(); i++) {
@@ -1611,8 +1611,8 @@ ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats &rtStats,
         NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    // Report the rtStats.runtime numbers under "runtime/", and compute their
-    // total for later.
+    
+    
 
     size_t rtTotal = 0;
 
@@ -1685,7 +1685,7 @@ ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats &rtStats,
         *rtTotalOut = rtTotal;
     }
 
-    // Report GC numbers that don't belong to a compartment.
+    
 
     REPORT_GC_BYTES(rtPath + NS_LITERAL_CSTRING("gc-heap/unused-arenas"),
                     rtStats.gcHeapUnusedArenas,
@@ -1711,14 +1711,14 @@ ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats &rtStats,
                     "chunks, that is used to hold internal bookkeeping "
                     "information.");
 
-    // gcTotal is the sum of everything we've reported for the GC heap.  It
-    // should equal rtStats.gcHeapChunkTotal.
-    JS_ASSERT(gcTotal == rtStats.gcHeapChunkTotal);
+    
+    
+    MOZ_ASSERT(gcTotal == rtStats.gcHeapChunkTotal);
 
     return NS_OK;
 }
 
-} // namespace xpc
+} 
 
 class JSCompartmentsMultiReporter MOZ_FINAL : public nsIMemoryMultiReporter
 {
@@ -1735,7 +1735,7 @@ class JSCompartmentsMultiReporter MOZ_FINAL : public nsIMemoryMultiReporter
 
     static void CompartmentCallback(JSRuntime *rt, void* data, JSCompartment *c)
     {
-        // silently ignore OOM errors
+        
         Paths *paths = static_cast<Paths *>(data);
         nsCString path;
         GetCompartmentName(c, path, true);
@@ -1749,19 +1749,19 @@ class JSCompartmentsMultiReporter MOZ_FINAL : public nsIMemoryMultiReporter
     NS_IMETHOD CollectReports(nsIMemoryMultiReporterCallback *cb,
                               nsISupports *closure)
     {
-        // First we collect the compartment paths.  Then we report them.  Doing
-        // the two steps interleaved is a bad idea, because calling |cb|
-        // from within CompartmentCallback() leads to all manner of assertions.
+        
+        
+        
 
-        // Collect.
+        
  
         Paths paths; 
         JS_IterateCompartments(nsXPConnect::GetRuntimeInstance()->GetJSRuntime(),
                                &paths, CompartmentCallback);
  
-        // Report.
+        
         for (size_t i = 0; i < paths.length(); i++)
-            // These ones don't need a description, hence the "".
+            
             REPORT(nsCString(paths[i]),
                    nsIMemoryReporter::KIND_OTHER,
                    nsIMemoryReporter::UNITS_COUNT,
@@ -1773,7 +1773,7 @@ class JSCompartmentsMultiReporter MOZ_FINAL : public nsIMemoryMultiReporter
     NS_IMETHOD
     GetExplicitNonHeap(int64_t *n)
     {
-        // This reporter does neither "explicit" nor NONHEAP measurements.
+        
         *n = 0;
         return NS_OK;
     }
@@ -1809,15 +1809,15 @@ public:
     {
         size_t n = 0;
         nsCOMPtr<nsINode> node = do_QueryInterface(static_cast<nsISupports*>(aSupports));
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=773533#c11 explains
-        // that we have to skip XBL elements because they violate certain
-        // assumptions.  Yuk.
+        
+        
+        
         if (node && !node->IsInDoc() &&
             !(node->IsElement() && node->AsElement()->IsInNamespace(kNameSpaceID_XBL)))
         {
-            // This is an orphan node.  If we haven't already handled the
-            // sub-tree that this node belongs to, measure the sub-tree's size
-            // and then record its root so we don't measure it again.
+            
+            
+            
             nsCOMPtr<nsINode> orphanTree = node->SubtreeRoot();
             if (!mAlreadyMeasuredOrphanTrees.Contains(orphanTree)) {
                 n += SizeOfTreeIncludingThis(orphanTree);
@@ -1853,17 +1853,17 @@ class XPCJSRuntimeStats : public JS::RuntimeStats
         nsCString cName;
         GetCompartmentName(c, cName, true);
 
-        // Get the compartment's global.
+        
         nsXPConnect *xpc = nsXPConnect::GetXPConnect();
         JSContext *cx = xpc->GetSafeJSContext();
         if (JSObject *global = JS_GetGlobalForCompartmentOrNull(cx, c)) {
-            // Need to enter the compartment, otherwise GetNativeOfWrapper()
-            // might crash.
+            
+            
             JSAutoCompartment ac(cx, global);
             nsISupports *native = xpc->GetNativeOfWrapper(cx, global);
             if (nsCOMPtr<nsPIDOMWindow> piwindow = do_QueryInterface(native)) {
-                // The global is a |window| object.  Use the path prefix that
-                // we should have already created for it.
+                
+                
                 if (mWindowPaths->Get(piwindow->WindowID(), &cJSPathPrefix)) {
                     cDOMPathPrefix.Assign(cJSPathPrefix);
                     cDOMPathPrefix.AppendLiteral("/dom/");
@@ -1883,16 +1883,16 @@ class XPCJSRuntimeStats : public JS::RuntimeStats
 
         cJSPathPrefix += NS_LITERAL_CSTRING("compartment(") + cName + NS_LITERAL_CSTRING(")/");
 
-        // cJSPathPrefix is used for almost all the compartment-specific
-        // reports.  At this point it has the form
-        // "<something>/compartment/(<cname>)/".
-        //
-        // cDOMPathPrefix is used for DOM orphan nodes, which are counted by
-        // the JS multi-reporter but reported as part of the DOM measurements.
-        // At this point it has the form "<something>/dom/" if this compartment
-        // belongs to an nsGlobalWindow, and "explicit/dom/?!/" otherwise (in
-        // which case it shouldn't be used, because non-nsGlobalWindow
-        // compartments shouldn't have orphan DOM nodes).
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         cstats->extra1 = strdup(cJSPathPrefix.get());
         cstats->extra2 = strdup(cDOMPathPrefix.get());
@@ -1906,11 +1906,11 @@ JSMemoryMultiReporter::CollectReports(WindowPaths *windowPaths,
 {
     XPCJSRuntime *xpcrt = nsXPConnect::GetRuntimeInstance();
 
-    // In the first step we get all the stats and stash them in a local
-    // data structure.  In the second step we pass all the stashed stats to
-    // the callback.  Separating these steps is important because the
-    // callback may be a JS function, and executing JS while getting these
-    // stats seems like a bad idea.
+    
+    
+    
+    
+    
 
     XPCJSRuntimeStats rtStats(windowPaths);
     OrphanReporter orphanReporter;
@@ -1921,8 +1921,8 @@ JSMemoryMultiReporter::CollectReports(WindowPaths *windowPaths,
         xpcrt->SizeOfIncludingThis(JsMallocSizeOf) +
         XPCWrappedNativeScope::SizeOfAllScopesIncludingThis(JsMallocSizeOf);
 
-    // This is the second step (see above).  First we report stuff in the
-    // "explicit" tree, then we report other stuff.
+    
+    
 
     nsresult rv;
     size_t rtTotal = 0;
@@ -1931,19 +1931,19 @@ JSMemoryMultiReporter::CollectReports(WindowPaths *windowPaths,
                                                cb, closure, &rtTotal);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Report the sums of the compartment numbers.
+    
     rv = ReportCompartmentStats(rtStats.totals,
                                 NS_LITERAL_CSTRING("js-main-runtime/compartments/"),
                                 NS_LITERAL_CSTRING("window-objects/dom/"),
                                 cb, closure);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Report the sum of the runtime/ numbers.
+    
     REPORT_BYTES(NS_LITERAL_CSTRING("js-main-runtime/runtime"),
                  nsIMemoryReporter::KIND_OTHER, rtTotal,
                  "The sum of all measurements under 'explicit/js-non-window/runtime/'.");
 
-    // Report the numbers for memory outside of compartments.
+    
 
     REPORT_BYTES(NS_LITERAL_CSTRING("js-main-runtime/gc-heap/decommitted-arenas"),
                  nsIMemoryReporter::KIND_OTHER,
@@ -1965,7 +1965,7 @@ JSMemoryMultiReporter::CollectReports(WindowPaths *windowPaths,
                  rtStats.gcHeapChunkAdmin,
                  "The same as 'explicit/js-non-window/gc-heap/chunk-admin'.");
 
-    // Report a breakdown of the committed GC space.
+    
 
     REPORT_BYTES(NS_LITERAL_CSTRING("js-main-runtime-gc-heap-committed/unused/chunks"),
                  nsIMemoryReporter::KIND_OTHER,
@@ -1998,7 +1998,7 @@ JSMemoryMultiReporter::CollectReports(WindowPaths *windowPaths,
                  "Memory on the garbage-collected JavaScript heap that holds GC things such "
                  "as objects, strings, scripts, etc.")
 
-    // Report xpconnect.
+    
 
     REPORT_BYTES(NS_LITERAL_CSTRING("explicit/xpconnect"),
                  nsIMemoryReporter::KIND_HEAP, xpconnect,
@@ -2015,7 +2015,7 @@ JSMemoryMultiReporter::GetExplicitNonHeap(int64_t *n)
     return NS_OK;
 }
 
-} // namespace xpc
+} 
 
 #ifdef MOZ_CRASHREPORTER
 static JSBool
@@ -2093,7 +2093,7 @@ bool XPCJSRuntime::gExperimentalBindingsEnabled;
 
 bool PreserveWrapper(JSContext *cx, JSObject *obj)
 {
-    JS_ASSERT(IS_WRAPPER_CLASS(js::GetObjectClass(obj)));
+    MOZ_ASSERT(IS_WRAPPER_CLASS(js::GetObjectClass(obj)));
     nsISupports *native = nsXPConnect::GetXPConnect()->GetNativeOfWrapper(cx, obj);
     if (!native)
         return false;
@@ -2154,22 +2154,22 @@ XPCJSRuntime::XPCJSRuntime(nsXPConnect* aXPConnect)
                                  false);
 
 
-    // these jsids filled in later when we have a JSContext to work with.
+    
     mStrIDs[0] = JSID_VOID;
 
-    mJSRuntime = JS_NewRuntime(32L * 1024L * 1024L); // pref ?
+    mJSRuntime = JS_NewRuntime(32L * 1024L * 1024L); 
     if (!mJSRuntime)
         NS_RUNTIMEABORT("JS_NewRuntime failed.");
 
-    // Unconstrain the runtime's threshold on nominal heap size, to avoid
-    // triggering GC too often if operating continuously near an arbitrary
-    // finite threshold (0xffffffff is infinity for uint32_t parameters).
-    // This leaves the maximum-JS_malloc-bytes threshold still in effect
-    // to cause period, and we hope hygienic, last-ditch GCs from within
-    // the GC's allocator.
+    
+    
+    
+    
+    
+    
     JS_SetGCParameter(mJSRuntime, JSGC_MAX_BYTES, 0xffffffff);
 #ifdef MOZ_ASAN
-    // ASan requires more stack space due to redzones
+    
     JS_SetNativeStackQuota(mJSRuntime, 2 * 128 * sizeof(size_t) * 1024);
 #else  
     JS_SetNativeStackQuota(mJSRuntime, 128 * sizeof(size_t) * 1024);
@@ -2208,7 +2208,7 @@ XPCJSRuntime::XPCJSRuntime(nsXPConnect* aXPConnect)
 
     mCompartmentSet.init();
 
-    // Install a JavaScript 'debugger' keyword handler in debug builds only
+    
 #ifdef DEBUG
     if (!JS_GetGlobalDebugHooks(mJSRuntime)->debuggerHandler)
         xpc_InstallJSDebuggerKeywordHandler(mJSRuntime);
@@ -2232,7 +2232,7 @@ XPCJSRuntime::XPCJSRuntime(nsXPConnect* aXPConnect)
     }
 }
 
-// static
+
 XPCJSRuntime*
 XPCJSRuntime::newXPCJSRuntime(nsXPConnect* aXPConnect)
 {
@@ -2262,7 +2262,7 @@ XPCJSRuntime::newXPCJSRuntime(nsXPConnect* aXPConnect)
     return nullptr;
 }
 
-// InternStaticDictionaryJSVals is automatically generated.
+
 bool InternStaticDictionaryJSVals(JSContext* aCx);
 
 JSBool
@@ -2270,13 +2270,13 @@ XPCJSRuntime::OnJSContextNew(JSContext *cx)
 {
     NS_TIME_FUNCTION;
 
-    // if it is our first context then we need to generate our string ids
+    
     JSBool ok = true;
     if (JSID_IS_VOID(mStrIDs[0])) {
         JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
         {
-            // Scope the JSAutoRequest so it goes out of scope before calling
-            // mozilla::dom::binding::DefineStaticJSVals.
+            
+            
             JSAutoRequest ar(cx);
             for (unsigned i = 0; i < IDX_TOTAL_COUNT; i++) {
                 JSString* str = JS_InternString(cx, mStrings[i]);
@@ -2303,7 +2303,7 @@ XPCJSRuntime::OnJSContextNew(JSContext *cx)
     if (!xpc)
         return false;
 
-    // we want to mark the global object ourselves since we use a different color
+    
     JS_ToggleOptions(cx, JSOPTION_UNROOTED_GLOBAL);
 
     return true;
@@ -2315,15 +2315,15 @@ XPCJSRuntime::DeferredRelease(nsISupports* obj)
     NS_ASSERTION(obj, "bad param");
 
     if (mNativesToReleaseArray.IsEmpty()) {
-        // This array sometimes has 1000's
-        // of entries, and usually has 50-200 entries. Avoid lots
-        // of incremental grows.  We compact it down when we're done.
+        
+        
+        
         mNativesToReleaseArray.SetCapacity(256);
     }
     return mNativesToReleaseArray.AppendElement(obj) != nullptr;
 }
 
-/***************************************************************************/
+
 
 #ifdef DEBUG
 static JSDHashOperator
@@ -2374,7 +2374,7 @@ XPCJSRuntime::DebugDump(int16_t depth)
         XPC_LOG_ALWAYS(("mWrappedJSClassMap @ %x with %d wrapperclasses(s)",  \
                         mWrappedJSClassMap, mWrappedJSClassMap ?              \
                         mWrappedJSClassMap->Count() : 0));
-        // iterate wrappersclasses...
+        
         if (depth && mWrappedJSClassMap && mWrappedJSClassMap->Count()) {
             XPC_LOG_INDENT();
             mWrappedJSClassMap->Enumerate(WrappedJSClassMapDumpEnumerator, &depth);
@@ -2383,7 +2383,7 @@ XPCJSRuntime::DebugDump(int16_t depth)
         XPC_LOG_ALWAYS(("mWrappedJSMap @ %x with %d wrappers(s)",             \
                         mWrappedJSMap, mWrappedJSMap ?                        \
                         mWrappedJSMap->Count() : 0));
-        // iterate wrappers...
+        
         if (depth && mWrappedJSMap && mWrappedJSMap->Count()) {
             XPC_LOG_INDENT();
             mWrappedJSMap->Dump(depth);
@@ -2406,7 +2406,7 @@ XPCJSRuntime::DebugDump(int16_t depth)
                         mNativeSetMap, mNativeSetMap ?                        \
                         mNativeSetMap->Count() : 0));
 
-        // iterate sets...
+        
         if (depth && mNativeSetMap && mNativeSetMap->Count()) {
             XPC_LOG_INDENT();
             mNativeSetMap->Enumerate(NativeSetDumpEnumerator, &depth);
@@ -2417,7 +2417,7 @@ XPCJSRuntime::DebugDump(int16_t depth)
 #endif
 }
 
-/***************************************************************************/
+
 
 void
 XPCRootSetElem::AddToRootSet(XPCLock *lock, XPCRootSetElem **listHead)
