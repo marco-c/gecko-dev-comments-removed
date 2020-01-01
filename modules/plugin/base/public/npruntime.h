@@ -115,8 +115,8 @@ typedef struct NPClass NPClass;
 
 typedef char NPUTF8;
 typedef struct _NPString {
-    const NPUTF8 *UTF8Characters;
-    uint32_t UTF8Length;
+    const NPUTF8 *utf8characters;
+    uint32_t utf8length;
 } NPString;
 
 typedef enum {
@@ -240,8 +240,6 @@ NP_END_MACRO
 
 
 typedef void *NPIdentifier;
-
-
 
 
 
