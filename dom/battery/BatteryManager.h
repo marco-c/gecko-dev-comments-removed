@@ -71,11 +71,6 @@ private:
 
 
   double mRemainingTime;
-
-  NS_DECL_EVENT_HANDLER(levelchange)
-  NS_DECL_EVENT_HANDLER(chargingchange)
-  NS_DECL_EVENT_HANDLER(chargingtimechange)
-  NS_DECL_EVENT_HANDLER(dischargingtimechange)
 };
 
 } 
