@@ -1167,7 +1167,7 @@ nsGlobalWindow::FreeInnerObjects()
   JSObject* obj = FastGetGlobalJSObject();
   if (obj) {
     if (!cx) {
-      nsContentUtils::ThreadJSContextStack()->GetSafeJSContext(&cx);
+      cx = nsContentUtils::ThreadJSContextStack()->GetSafeJSContext();
     }
 
     JSAutoRequest ar(cx);
@@ -1391,43 +1391,13 @@ nsGlobalWindow::UnmarkGrayTimers()
 
 
 nsresult
-nsGlobalWindow::SetScriptContext(nsIScriptContext *aScriptContext)
-{
-  NS_ASSERTION(IsOuterWindow(), "Uh, SetScriptContext() called on inner window!");
-
-  NS_ASSERTION(!aScriptContext || !mContext, "Bad call to SetContext()!");
-
-  if (aScriptContext) {
-    
-    aScriptContext->WillInitializeContext();
-
-    
-    
-    aScriptContext->SetGlobalObject(this);
-
-    nsresult rv = aScriptContext->InitContext();
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (IsFrame()) {
-      
-      
-      
-
-      aScriptContext->SetGCOnDestruction(false);
-    }
-  }
-
-  mContext = aScriptContext;
-  return NS_OK;
-}
-
-nsresult
 nsGlobalWindow::EnsureScriptEnvironment()
 {
   FORWARD_TO_OUTER(EnsureScriptEnvironment, (), NS_ERROR_NOT_INITIALIZED);
 
-  if (mJSObject)
-      return NS_OK;
+  if (mJSObject) {
+    return NS_OK;
+  }
 
   NS_ASSERTION(!GetCurrentInnerWindowInternal(),
                "mJSObject is null, but we have an inner window?");
@@ -1437,7 +1407,29 @@ nsGlobalWindow::EnsureScriptEnvironment()
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIScriptContext> context = scriptRuntime->CreateContext();
-  return SetScriptContext(context);
+
+  NS_ASSERTION(!mContext, "Will overwrite mContext!");
+
+  
+  context->WillInitializeContext();
+
+  
+  
+  context->SetGlobalObject(this);
+
+  rv = context->InitContext();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (IsFrame()) {
+    
+    
+    
+
+    context->SetGCOnDestruction(false);
+  }
+
+  mContext = context;
+  return NS_OK;
 }
 
 nsIScriptContext *
@@ -2244,8 +2236,8 @@ nsGlobalWindow::SetDocShell(nsIDocShell* aDocShell)
     if (currentInner) {
       JSObject* obj = currentInner->FastGetGlobalJSObject();
       if (obj) {
-        JSContext* cx;
-        nsContentUtils::ThreadJSContextStack()->GetSafeJSContext(&cx);
+        JSContext* cx =
+          nsContentUtils::ThreadJSContextStack()->GetSafeJSContext();
 
         JSAutoRequest ar(cx);
 
@@ -5981,7 +5973,7 @@ PostMessageEvent::Run()
     
     nsIThreadJSContextStack* cxStack = nsContentUtils::ThreadJSContextStack();
     if (cxStack) {
-      cxStack->GetSafeJSContext(&cx);
+      cx = cxStack->GetSafeJSContext();
     }
 
     if (!cx) {
@@ -9708,7 +9700,7 @@ nsGlobalWindow::SuspendTimeouts(PRUint32 aIncrease,
   if (!suspended) {
     nsCOMPtr<nsIDeviceSensors> ac = do_GetService(NS_DEVICE_SENSORS_CONTRACTID);
     if (ac) {
-      for (int i = 0; i < mEnabledSensors.Length(); i++)
+      for (PRUint32 i = 0; i < mEnabledSensors.Length(); i++)
         ac->RemoveWindowListener(mEnabledSensors[i], this);
     }
 
@@ -9788,7 +9780,7 @@ nsGlobalWindow::ResumeTimeouts(bool aThawChildren)
   if (shouldResume) {
     nsCOMPtr<nsIDeviceSensors> ac = do_GetService(NS_DEVICE_SENSORS_CONTRACTID);
     if (ac) {
-      for (int i = 0; i < mEnabledSensors.Length(); i++)
+      for (PRUint32 i = 0; i < mEnabledSensors.Length(); i++)
         ac->AddWindowListener(mEnabledSensors[i], this);
     }
 
@@ -9896,7 +9888,7 @@ void
 nsGlobalWindow::EnableDeviceSensor(PRUint32 aType)
 {
   bool alreadyEnabled = false;
-  for (int i = 0; i < mEnabledSensors.Length(); i++) {
+  for (PRUint32 i = 0; i < mEnabledSensors.Length(); i++) {
     if (mEnabledSensors[i] == aType) {
       alreadyEnabled = true;
       break;
@@ -9916,8 +9908,8 @@ nsGlobalWindow::EnableDeviceSensor(PRUint32 aType)
 void
 nsGlobalWindow::DisableDeviceSensor(PRUint32 aType)
 {
-  PRUint32 doomedElement = -1;
-  for (int i = 0; i < mEnabledSensors.Length(); i++) {
+  PRInt32 doomedElement = -1;
+  for (PRUint32 i = 0; i < mEnabledSensors.Length(); i++) {
     if (mEnabledSensors[i] == aType) {
       doomedElement = i;
       break;

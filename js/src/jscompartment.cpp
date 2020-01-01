@@ -1,42 +1,42 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
+ * May 28, 2008.
+ *
+ * The Initial Developer of the Original Code is
+ *   Mozilla Foundation
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "jscntxt.h"
 #include "jscompartment.h"
@@ -135,7 +135,7 @@ JSCompartment::ensureIonCompartmentExists(JSContext *cx)
     if (ionCompartment_)
         return true;
 
-    
+    // Set the compartment early, so linking works.
     ionCompartment_ = cx->new_<IonCompartment>();
 
     if (!ionCompartment_ || !ionCompartment_->initialize(cx)) {
@@ -158,31 +158,31 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 
     JS_CHECK_RECURSION(cx, return false);
 
-    
+    /* Only GC things have to be wrapped or copied. */
     if (!vp->isMarkable())
         return true;
 
     if (vp->isString()) {
         JSString *str = vp->toString();
 
-        
+        /* If the string is already in this compartment, we are done. */
         if (str->compartment() == this)
             return true;
 
-        
+        /* If the string is an atom, we don't have to copy. */
         if (str->isAtom()) {
             JS_ASSERT(str->compartment() == cx->runtime->atomsCompartment);
             return true;
         }
     }
 
-    
-
-
-
-
-
-
+    /*
+     * Wrappers should really be parented to the wrapped parent of the wrapped
+     * object, but in that case a wrapped global object would have a NULL
+     * parent without being a proper global object (JSCLASS_IS_GLOBAL). Instead,
+     * we parent all wrappers to the global object in their home compartment.
+     * This loses us some transparency, and is generally very cheesy.
+     */
     RootedVarObject global(cx);
     if (cx->hasfp()) {
         global = &cx->fp()->global();
@@ -192,19 +192,19 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
             return false;
     }
 
-    
+    /* Unwrap incoming objects. */
     if (vp->isObject()) {
         JSObject *obj = &vp->toObject();
 
-        
+        /* If the object is already in this compartment, we are done. */
         if (obj->compartment() == this)
             return true;
 
-        
+        /* Translate StopIteration singleton. */
         if (obj->isStopIteration())
             return js_FindClassObject(cx, NULL, JSProto_StopIteration, vp);
 
-        
+        /* Don't unwrap an outer window proxy. */
         if (!obj->getClass()->ext.innerObject) {
             obj = UnwrapObject(&vp->toObject(), true, &flags);
             vp->setObject(*obj);
@@ -240,7 +240,7 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 #endif
     }
 
-    
+    /* If we already have a wrapper for this value, use it. */
     if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(*vp)) {
         *vp = p->value;
         if (vp->isObject()) {
@@ -272,25 +272,25 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 
     RootedVarObject obj(cx, &vp->toObject());
 
-    
-
-
-
-
-
-
-
-
-
+    /*
+     * Recurse to wrap the prototype. Long prototype chains will run out of
+     * stack, causing an error in CHECK_RECURSE.
+     *
+     * Wrapping the proto before creating the new wrapper and adding it to the
+     * cache helps avoid leaving a bad entry in the cache on OOM. But note that
+     * if we wrapped both proto and parent, we would get infinite recursion
+     * here (since Object.prototype->parent->proto leads to Object.prototype
+     * itself).
+     */
     RootedVarObject proto(cx, obj->getProto());
     if (!wrap(cx, proto.address()))
         return false;
 
-    
-
-
-
-
+    /*
+     * We hand in the original wrapped object into the wrap hook to allow
+     * the wrap hook to reason over what wrappers are currently applied
+     * to the object.
+     */
     RootedVarObject wrapper(cx, cx->runtime->wrapObjectCallback(cx, obj, proto, global, flags));
     if (!wrapper)
         return false;
@@ -392,11 +392,11 @@ JSCompartment::wrap(JSContext *cx, AutoIdVector &props)
     return true;
 }
 
-
-
-
-
-
+/*
+ * This method marks pointers that cross compartment boundaries. It should be
+ * called only for per-compartment GCs, since full GCs naturally follow pointers
+ * across compartments.
+ */
 void
 JSCompartment::markCrossCompartmentWrappers(JSTracer *trc)
 {
@@ -421,11 +421,11 @@ JSCompartment::mark(JSTracer *trc)
 void
 JSCompartment::markTypes(JSTracer *trc)
 {
-    
-
-
-
-
+    /*
+     * Mark all scripts, type objects and singleton JS objects in the
+     * compartment. These can be referred to directly by type sets, which we
+     * cannot modify while code which depends on these type sets is active.
+     */
     JS_ASSERT(activeAnalysis);
 
     for (CellIterUnderGC i(this, FINALIZE_SCRIPT); !i.done(); i.next()) {
@@ -462,7 +462,7 @@ JSCompartment::discardJitCode(FreeOp *fop)
 void
 JSCompartment::sweep(FreeOp *fop, bool releaseTypes)
 {
-    
+    /* Remove dead wrappers from the table. */
     for (WrapperMap::Enum e(crossCompartmentWrappers); !e.empty(); e.popFront()) {
         JS_ASSERT_IF(IsAboutToBeFinalized(e.front().key) &&
                      !IsAboutToBeFinalized(e.front().value),
@@ -473,7 +473,7 @@ JSCompartment::sweep(FreeOp *fop, bool releaseTypes)
         }
     }
 
-    
+    /* Remove dead references held weakly by the compartment. */
 
     regExps.sweep(rt);
 
@@ -501,25 +501,25 @@ JSCompartment::sweep(FreeOp *fop, bool releaseTypes)
     if (!activeAnalysis) {
         gcstats::AutoPhase ap(rt->gcStats, gcstats::PHASE_DISCARD_ANALYSIS);
 
-        
-
-
-
+        /*
+         * Clear the analysis pool, but don't release its data yet. While
+         * sweeping types any live data will be allocated into the pool.
+         */
         LifoAlloc oldAlloc(typeLifoAlloc.defaultChunkSize());
         oldAlloc.steal(&typeLifoAlloc);
 
-        
-
-
-
+        /*
+         * Periodically release observed types for all scripts. This is safe to
+         * do when there are no frames for the compartment on the stack.
+         */
         if (active)
             releaseTypes = false;
 
-        
-
-
-
-
+        /*
+         * Sweep analysis information and everything depending on it from the
+         * compartment, including all remaining mjit code if inference is
+         * enabled in the compartment.
+         */
         if (types.inferenceEnabled) {
             gcstats::AutoPhase ap2(rt->gcStats, gcstats::PHASE_DISCARD_TI);
 
@@ -569,10 +569,10 @@ JSCompartment::resetGCMallocBytes()
 void
 JSCompartment::setGCMaxMallocBytes(size_t value)
 {
-    
-
-
-
+    /*
+     * For compatibility treat any value that exceeds PTRDIFF_T_MAX to
+     * mean that value.
+     */
     gcMaxMallocBytes = (ptrdiff_t(value) >= 0) ? value : size_t(-1) >> 1;
     resetGCMallocBytes();
 }
@@ -601,16 +601,16 @@ JSCompartment::setDebugModeFromC(JSContext *cx, bool b)
     bool enabledBefore = debugMode();
     bool enabledAfter = (debugModeBits & ~unsigned(DebugFromC)) || b;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Debug mode can be enabled only when no scripts from the target
+    // compartment are on the stack. It would even be incorrect to discard just
+    // the non-live scripts' JITScripts because they might share ICs with live
+    // scripts (bug 632343).
+    //
+    // We do allow disabling debug mode while scripts are on the stack.  In
+    // that case the debug-mode code for those scripts remains, so subsequently
+    // hooks may be called erroneously, even though debug mode is supposedly
+    // off, and we have to live with it.
+    //
     bool onStack = false;
     if (enabledBefore != enabledAfter) {
         onStack = hasScriptsOnStack();
@@ -643,17 +643,19 @@ JSCompartment::updateForDebugMode(FreeOp *fop)
     else if (hasScriptsOnStack())
         return;
 
-    
-
-
-
     for (gc::CellIter i(this, gc::FINALIZE_SCRIPT); !i.done(); i.next()) {
         JSScript *script = i.get<JSScript>();
-        if (script->debugMode != enabled) {
-            mjit::ReleaseScriptCode(fop, script);
-            script->clearAnalysis();
-            script->debugMode = enabled;
-        }
+        mjit::ReleaseScriptCode(fop, script);
+        script->debugMode = enabled;
+    }
+
+    // Discard JIT code and bytecode analysis for all scripts in this
+    // compartment. Because !hasScriptsOnStack(), it suffices to do a garbage
+    // collection cycle or to finish the ongoing GC cycle. The necessary
+    // cleanup happens in JSCompartment::sweep.
+    if (!rt->gcRunning) {
+        PrepareCompartmentForGC(this);
+        GC(rt, GC_NORMAL, gcreason::DEBUG_MODE_GC);
     }
 #endif
 }
@@ -726,8 +728,8 @@ JSCompartment::sweepBreakpoints(FreeOp *fop)
             BreakpointSite *site = script->getBreakpointSite(script->code + i);
             if (!site)
                 continue;
-            
-            
+            // nextbp is necessary here to avoid possibly reading *bp after
+            // destroying it.
             Breakpoint *nextbp;
             for (Breakpoint *bp = site->firstBreakpoint(); bp; bp = nextbp) {
                 nextbp = bp->nextInSite();

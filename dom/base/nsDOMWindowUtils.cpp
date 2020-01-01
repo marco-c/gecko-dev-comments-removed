@@ -78,6 +78,9 @@
 #include "nsDOMFile.h"
 #include "BasicLayers.h"
 #include "nsTArrayHelpers.h"
+#include "nsIDocShell.h"
+#include "nsIContentViewer.h"
+#include "nsIMarkupDocumentViewer.h"
 
 #if defined(MOZ_X11) && defined(MOZ_WIDGET_GTK2)
 #include <gdk/gdk.h>
@@ -283,6 +286,43 @@ static void DestroyNsRect(void* aObject, nsIAtom* aPropertyName,
   delete rect;
 }
 
+static void
+MaybeReflowForInflationScreenWidthChange(nsPresContext *aPresContext)
+{
+  if (aPresContext &&
+      nsLayoutUtils::FontSizeInflationEnabled(aPresContext) &&
+      nsLayoutUtils::FontSizeInflationMinTwips() != 0) {
+    bool changed;
+    aPresContext->ScreenWidthInchesForFontInflation(&changed);
+    if (changed) {
+      nsCOMPtr<nsISupports> container = aPresContext->GetContainer();
+      nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(container);
+      if (docShell) {
+        nsCOMPtr<nsIContentViewer> cv;
+        docShell->GetContentViewer(getter_AddRefs(cv));
+        nsCOMPtr<nsIMarkupDocumentViewer> mudv = do_QueryInterface(cv);
+        if (mudv) {
+          nsTArray<nsCOMPtr<nsIMarkupDocumentViewer> > array;
+          mudv->AppendSubtree(array);
+          for (PRUint32 i = 0, iEnd = array.Length(); i < iEnd; ++i) {
+            nsCOMPtr<nsIPresShell> shell;
+            nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(array[i]);
+            cv->GetPresShell(getter_AddRefs(shell));
+            nsFrameManager *fm = shell->FrameManager();
+            if (fm) {
+              nsIFrame *rootFrame = fm->GetRootFrame();
+              if (rootFrame) {
+                shell->FrameNeedsReflow(rootFrame, nsIPresShell::eResize,
+                                        NS_FRAME_IS_DIRTY);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 NS_IMETHODIMP
 nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
                                            float aWidthPx, float aHeightPx,
@@ -295,7 +335,7 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
   nsIPresShell* presShell = GetPresShell();
   if (!presShell) {
     return NS_ERROR_FAILURE;
-  } 
+  }
 
   nsRect displayport(nsPresContext::CSSPixelsToAppUnits(aXPx),
                      nsPresContext::CSSPixelsToAppUnits(aYPx),
@@ -331,36 +371,42 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
       
       
       presShell->SetIgnoreViewportScrolling(true);
+
+      
+      
+      
+      
+      
+      nsPresContext* presContext = GetPresContext();
+      MaybeReflowForInflationScreenWidthChange(presContext);
     }
   }
 
-  if (presShell) {
-    nsIFrame* rootFrame = presShell->FrameManager()->GetRootFrame();
-    if (rootFrame) {
-      nsIContent* rootContent =
-        rootScrollFrame ? rootScrollFrame->GetContent() : nsnull;
-      nsRect rootDisplayport;
-      bool usingDisplayport = rootContent &&
-        nsLayoutUtils::GetDisplayPort(rootContent, &rootDisplayport);
-      rootFrame->InvalidateWithFlags(
-        usingDisplayport ? rootDisplayport : rootFrame->GetVisualOverflowRect(),
-        nsIFrame::INVALIDATE_NO_THEBES_LAYERS);
+  nsIFrame* rootFrame = presShell->FrameManager()->GetRootFrame();
+  if (rootFrame) {
+    nsIContent* rootContent =
+      rootScrollFrame ? rootScrollFrame->GetContent() : nsnull;
+    nsRect rootDisplayport;
+    bool usingDisplayport = rootContent &&
+      nsLayoutUtils::GetDisplayPort(rootContent, &rootDisplayport);
+    rootFrame->InvalidateWithFlags(
+      usingDisplayport ? rootDisplayport : rootFrame->GetVisualOverflowRect(),
+      nsIFrame::INVALIDATE_NO_THEBES_LAYERS);
 
-      
-      
-      
-      if (displayport.IsEmpty() &&
-          rootFrame == nsLayoutUtils::GetDisplayRootFrame(rootFrame)) {
-        nsCOMPtr<nsIWidget> widget = GetWidget();
-        if (widget) {
-          bool isRetainingManager;
-          LayerManager* manager = widget->GetLayerManager(&isRetainingManager);
-          if (isRetainingManager) {
-            manager->BeginTransaction();
-            nsLayoutUtils::PaintFrame(nsnull, rootFrame, nsRegion(), NS_RGB(255, 255, 255),
-                                      nsLayoutUtils::PAINT_WIDGET_LAYERS |
-                                      nsLayoutUtils::PAINT_EXISTING_TRANSACTION);
-          }
+    
+    
+    
+    if (displayport.IsEmpty() &&
+        rootFrame == nsLayoutUtils::GetDisplayRootFrame(rootFrame)) {
+      nsCOMPtr<nsIWidget> widget = GetWidget();
+      if (widget) {
+        bool isRetainingManager;
+        LayerManager* manager = widget->GetLayerManager(&isRetainingManager);
+        if (isRetainingManager) {
+          manager->BeginTransaction();
+          nsLayoutUtils::PaintFrame(nsnull, rootFrame, nsRegion(), NS_RGB(255, 255, 255),
+                                    nsLayoutUtils::PAINT_WIDGET_LAYERS |
+                                    nsLayoutUtils::PAINT_EXISTING_TRANSACTION);
         }
       }
     }

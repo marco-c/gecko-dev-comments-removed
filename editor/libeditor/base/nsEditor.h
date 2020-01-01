@@ -129,12 +129,34 @@ public:
     kOpDeleteNode,
     kOpSplitNode,
     kOpJoinNode,
-    kOpDeleteSelection,
+    kOpDeleteText = 1003,
+
     
-    kOpInsertBreak    = 1000,
-    kOpInsertText     = 1001,
-    kOpInsertIMEText  = 1002,
-    kOpDeleteText     = 1003
+    kOpInsertText         = 2000,
+    kOpInsertIMEText      = 2001,
+    kOpDeleteSelection    = 2002,
+    kOpSetTextProperty    = 2003,
+    kOpRemoveTextProperty = 2004,
+    kOpOutputText         = 2005,
+
+    
+    kOpInsertBreak         = 3000,
+    kOpMakeList            = 3001,
+    kOpIndent              = 3002,
+    kOpOutdent             = 3003,
+    kOpAlign               = 3004,
+    kOpMakeBasicBlock      = 3005,
+    kOpRemoveList          = 3006,
+    kOpMakeDefListItem     = 3007,
+    kOpInsertElement       = 3008,
+    kOpInsertQuotation     = 3009,
+    kOpHTMLPaste           = 3012,
+    kOpLoadHTML            = 3013,
+    kOpResetTextProperties = 3014,
+    kOpSetAbsolutePosition = 3015,
+    kOpRemoveAbsolutePosition = 3016,
+    kOpDecreaseZIndex      = 3017,
+    kOpIncreaseZIndex      = 3018
   };
 
   
@@ -351,8 +373,7 @@ protected:
   
   nsIContent* FindNextLeafNode(nsINode  *aCurrentNode,
                                bool      aGoForward,
-                               bool      bNoBlockCrossing,
-                               nsIContent *aActiveEditorRoot);
+                               bool      bNoBlockCrossing);
 
   
   nsresult GetWidget(nsIWidget **aWidget);
@@ -384,7 +405,8 @@ public:
 
   
 
-  NS_IMETHOD StartOperation(PRInt32 opID, nsIEditor::EDirection aDirection);
+  NS_IMETHOD StartOperation(OperationID opID,
+                            nsIEditor::EDirection aDirection);
 
   
 
@@ -455,21 +477,25 @@ public:
 
 
 
-
   nsresult GetPriorNode(nsIDOMNode  *aCurrentNode, 
                         bool         aEditableNode,
                         nsCOMPtr<nsIDOMNode> *aResultNode,
-                        bool         bNoBlockCrossing = false,
-                        nsIContent  *aActiveEditorRoot = nsnull);
+                        bool         bNoBlockCrossing = false);
+  nsIContent* GetPriorNode(nsINode* aCurrentNode, bool aEditableNode,
+                           bool aNoBlockCrossing = false);
 
   
   nsresult GetPriorNode(nsIDOMNode  *aParentNode, 
                         PRInt32      aOffset, 
                         bool         aEditableNode, 
                         nsCOMPtr<nsIDOMNode> *aResultNode,
-                        bool         bNoBlockCrossing = false,
-                        nsIContent  *aActiveEditorRoot = nsnull);
-                       
+                        bool         bNoBlockCrossing = false);
+  nsIContent* GetPriorNode(nsINode* aParentNode,
+                           PRInt32 aOffset,
+                           bool aEditableNode,
+                           bool aNoBlockCrossing = false);
+
+
   
 
 
@@ -480,27 +506,27 @@ public:
   nsresult GetNextNode(nsIDOMNode  *aCurrentNode, 
                        bool         aEditableNode,
                        nsCOMPtr<nsIDOMNode> *aResultNode,
-                       bool         bNoBlockCrossing = false,
-                       nsIContent  *aActiveEditorRoot = nsnull);
+                       bool         bNoBlockCrossing = false);
   nsIContent* GetNextNode(nsINode* aCurrentNode,
                           bool aEditableNode,
-                          bool bNoBlockCrossing = false,
-                          nsIContent* aActiveEditorRoot = nsnull);
+                          bool bNoBlockCrossing = false);
 
   
   nsresult GetNextNode(nsIDOMNode  *aParentNode, 
                        PRInt32      aOffset, 
                        bool         aEditableNode, 
                        nsCOMPtr<nsIDOMNode> *aResultNode,
-                       bool         bNoBlockCrossing = false,
-                       nsIContent  *aActiveEditorRoot = nsnull);
+                       bool         bNoBlockCrossing = false);
+  nsIContent* GetNextNode(nsINode* aParentNode,
+                          PRInt32 aOffset,
+                          bool aEditableNode,
+                          bool aNoBlockCrossing = false);
 
   
   nsIContent* FindNode(nsINode *aCurrentNode,
                        bool     aGoForward,
                        bool     aEditableNode,
-                       bool     bNoBlockCrossing,
-                       nsIContent *aActiveEditorRoot);
+                       bool     bNoBlockCrossing);
   
 
 
@@ -540,12 +566,15 @@ public:
   virtual bool TagCanContainTag(nsIAtom* aParentTag, nsIAtom* aChildTag);
 
   
-  bool IsRootNode(nsIDOMNode *inNode);
-  bool IsRootNode(nsINode *inNode);
+  bool IsRoot(nsIDOMNode* inNode);
+  bool IsRoot(nsINode* inNode);
+  bool IsEditorRoot(nsINode* aNode);
 
   
-  bool IsDescendantOfBody(nsIDOMNode *inNode);
-  bool IsDescendantOfBody(nsINode *inNode);
+  bool IsDescendantOfRoot(nsIDOMNode* inNode);
+  bool IsDescendantOfRoot(nsINode* inNode);
+  bool IsDescendantOfEditorRoot(nsIDOMNode* aNode);
+  bool IsDescendantOfEditorRoot(nsINode* aNode);
 
   
   virtual bool IsContainer(nsIDOMNode *aNode);
@@ -553,6 +582,9 @@ public:
   
   bool IsEditable(nsIDOMNode *aNode);
   bool IsEditable(nsIContent *aNode);
+
+  
+
 
   virtual bool IsTextInDirtyFrameVisible(nsIContent *aNode);
 
@@ -618,7 +650,7 @@ public:
 
   virtual nsresult HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent);
 
-  nsresult HandleInlineSpellCheck(PRInt32 action,
+  nsresult HandleInlineSpellCheck(OperationID action,
                                     nsISelection *aSelection,
                                     nsIDOMNode *previousSelectedNode,
                                     PRInt32 previousSelectedOffset,
@@ -631,6 +663,10 @@ public:
 
   
   mozilla::dom::Element *GetRoot();
+
+  
+  
+  virtual mozilla::dom::Element* GetEditorRoot();
 
   
   bool IsPlaintextEditor() const
@@ -829,7 +865,7 @@ protected:
   PRInt32           mUpdateCount;
 
   PRInt32           mPlaceHolderBatch;   
-  PRInt32           mAction;             
+  OperationID       mAction;             
   PRUint32          mHandlingActionCount;
 
   PRUint32          mIMETextOffset;    

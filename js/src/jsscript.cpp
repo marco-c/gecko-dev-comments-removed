@@ -92,7 +92,7 @@ Bindings::lookup(JSContext *cx, JSAtom *name, unsigned *indexp) const
         return NONE;
 
     Shape **spp;
-    Shape *shape = Shape::search(cx, lastBinding, ATOM_TO_JSID(name), &spp);
+    Shape *shape = Shape::search(cx, lastBinding, AtomToId(name), &spp);
     if (!shape)
         return NONE;
 
@@ -153,7 +153,7 @@ Bindings::add(JSContext *cx, HandleAtom name, BindingKind kind)
         JS_ASSERT(kind == ARGUMENT); 
         id = INT_TO_JSID(nargs);
     } else {
-        id = ATOM_TO_JSID(name);
+        id = AtomToId(name);
     }
 
     StackBaseShape base(&CallClass, NULL, BaseShape::VAROBJ);
@@ -982,7 +982,7 @@ js::SaveScriptFilename(JSContext *cx, const char *filename)
 
 
 
-    if (cx->compartment->needsBarrier() && rt->gcIsFull)
+    if (rt->gcIncrementalState == MARK && rt->gcIsFull)
         sfe->marked = true;
 #endif
 
@@ -1014,6 +1014,7 @@ js::FreeScriptFilenames(JSRuntime *rt)
 
     table.clear();
 }
+
 
 
 
@@ -1100,21 +1101,6 @@ JS_STATIC_ASSERT(NO_PADDING_BETWEEN_ENTRIES(uint32_t, uint32_t));
 JS_STATIC_ASSERT(NO_PADDING_BETWEEN_ENTRIES(uint32_t, jsbytecode));
 JS_STATIC_ASSERT(NO_PADDING_BETWEEN_ENTRIES(jsbytecode, jssrcnote));
 
-
-
-
-
-
-
-JS_STATIC_ASSERT(sizeof(ConstArray) +
-                 sizeof(ObjectArray) +
-                 sizeof(ObjectArray) +
-                 sizeof(TryNoteArray) +
-                 sizeof(GlobalSlotArray) +
-                 sizeof(ClosedSlotArray)
-                 < JSScript::INVALID_OFFSET);
-JS_STATIC_ASSERT(JSScript::INVALID_OFFSET <= 255);
-
 static inline size_t
 ScriptDataSize(JSContext *cx, uint32_t length, uint32_t nsrcnotes, uint32_t natoms,
                uint32_t nobjects, uint32_t nregexps, uint32_t ntrynotes, uint32_t nconsts,
@@ -1181,47 +1167,32 @@ JSScript::NewScript(JSContext *cx, uint32_t length, uint32_t nsrcnotes, uint32_t
 
     uint8_t *cursor = data;
     if (nconsts != 0) {
-        script->constsOffset = uint8_t(cursor - data);
+        script->setHasArray(CONSTS);
         cursor += sizeof(ConstArray);
-    } else {
-        script->constsOffset = JSScript::INVALID_OFFSET;
     }
     if (nobjects != 0) {
-        script->objectsOffset = uint8_t(cursor - data);
+        script->setHasArray(OBJECTS);
         cursor += sizeof(ObjectArray);
-    } else {
-        script->objectsOffset = JSScript::INVALID_OFFSET;
     }
     if (nregexps != 0) {
-        script->regexpsOffset = uint8_t(cursor - data);
+        script->setHasArray(REGEXPS);
         cursor += sizeof(ObjectArray);
-    } else {
-        script->regexpsOffset = JSScript::INVALID_OFFSET;
     }
     if (ntrynotes != 0) {
-        script->trynotesOffset = uint8_t(cursor - data);
+        script->setHasArray(TRYNOTES);
         cursor += sizeof(TryNoteArray);
-    } else {
-        script->trynotesOffset = JSScript::INVALID_OFFSET;
     }
     if (nglobals != 0) {
-        script->globalsOffset = uint8_t(cursor - data);
+        script->setHasArray(GLOBALS);
         cursor += sizeof(GlobalSlotArray);
-    } else {
-        script->globalsOffset = JSScript::INVALID_OFFSET;
     }
     if (nClosedArgs != 0) {
-        script->closedArgsOffset = uint8_t(cursor - data);
+        script->setHasArray(CLOSED_ARGS);
         cursor += sizeof(ClosedSlotArray);
-    } else {
-        script->closedArgsOffset = JSScript::INVALID_OFFSET;
     }
-    JS_ASSERT(cursor - data < 0xFF);
     if (nClosedVars != 0) {
-        script->closedVarsOffset = uint8_t(cursor - data);
+        script->setHasArray(CLOSED_VARS);
         cursor += sizeof(ClosedSlotArray);
-    } else {
-        script->closedVarsOffset = JSScript::INVALID_OFFSET;
     }
 
     if (nconsts != 0) {
@@ -1770,13 +1741,13 @@ js::CloneScript(JSContext *cx, JSScript *src)
 {
     
 
-    uint32_t nconsts = JSScript::isValidOffset(src->constsOffset) ? src->consts()->length : 0;
-    uint32_t nobjects = JSScript::isValidOffset(src->objectsOffset) ? src->objects()->length : 0;
-    uint32_t nregexps = JSScript::isValidOffset(src->regexpsOffset) ? src->regexps()->length : 0;
-    uint32_t ntrynotes = JSScript::isValidOffset(src->trynotesOffset) ? src->trynotes()->length : 0;
+    uint32_t nconsts   = src->hasConsts()   ? src->consts()->length   : 0;
+    uint32_t nobjects  = src->hasObjects()  ? src->objects()->length  : 0;
+    uint32_t nregexps  = src->hasRegexps()  ? src->regexps()->length  : 0;
+    uint32_t ntrynotes = src->hasTrynotes() ? src->trynotes()->length : 0;
     uint32_t nClosedArgs = src->numClosedArgs();
     uint32_t nClosedVars = src->numClosedVars();
-    JS_ASSERT(!JSScript::isValidOffset(src->globalsOffset));
+    JS_ASSERT(!src->hasGlobals());
     uint32_t nglobals = 0;
 
     
@@ -1888,13 +1859,7 @@ js::CloneScript(JSContext *cx, JSScript *src)
         if (src->analyzedArgsUsage())
             dst->setNeedsArgsObj(src->needsArgsObj());
     }
-    dst->constsOffset = src->constsOffset;
-    dst->objectsOffset = src->objectsOffset;
-    dst->regexpsOffset = src->regexpsOffset;
-    dst->trynotesOffset = src->trynotesOffset;
-    dst->globalsOffset = src->globalsOffset;
-    dst->closedArgsOffset = src->closedArgsOffset;
-    dst->closedVarsOffset = src->closedVarsOffset;
+    dst->cloneHasArray(src);
     dst->noScriptRval = src->noScriptRval;
     dst->savedCallerFun = src->savedCallerFun;
     dst->strictModeCode = src->strictModeCode;

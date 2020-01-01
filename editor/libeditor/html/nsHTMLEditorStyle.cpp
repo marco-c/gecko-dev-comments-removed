@@ -133,9 +133,8 @@ nsHTMLEditor::SetInlineProperty(nsIAtom *aProperty,
   if (isCollapsed) {
     
     
-    nsString tAttr(aAttribute);
-    nsString tVal(aValue);
-    return mTypeInState->SetProp(aProperty, tAttr, tVal);
+    mTypeInState->SetProp(aProperty, aAttribute, aValue);
+    return NS_OK;
   }
 
   nsAutoEditBatch batchIt(this);
@@ -144,7 +143,7 @@ nsHTMLEditor::SetInlineProperty(nsIAtom *aProperty,
   nsAutoTxnsConserveSelection dontSpazMySelection(this);
 
   bool cancel, handled;
-  nsTextRulesInfo ruleInfo(nsTextEditRules::kSetTextProperty);
+  nsTextRulesInfo ruleInfo(kOpSetTextProperty);
   res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(res, res);
   if (!cancel && !handled) {
@@ -273,6 +272,7 @@ nsHTMLEditor::SetInlinePropertyOnTextNode( nsIDOMCharacterData *aTextNode,
                                             const nsAString *aAttribute,
                                             const nsAString *aValue)
 {
+  MOZ_ASSERT(aValue);
   NS_ENSURE_TRUE(aTextNode, NS_ERROR_NULL_POINTER);
   nsCOMPtr<nsIDOMNode> parent;
   nsresult res = aTextNode->GetParentNode(getter_AddRefs(parent));
@@ -285,7 +285,7 @@ nsHTMLEditor::SetInlinePropertyOnTextNode( nsIDOMCharacterData *aTextNode,
   
   if (aStartOffset == aEndOffset) return NS_OK;
   
-  nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aTextNode);
+  nsCOMPtr<nsIDOMNode> node = aTextNode;
   
   
   bool bHasProp;
@@ -294,14 +294,11 @@ nsHTMLEditor::SetInlinePropertyOnTextNode( nsIDOMCharacterData *aTextNode,
                                            aAttribute, aValue)) {
     
     
-    nsAutoString value;
-    if (aValue) value.Assign(*aValue);
+    nsAutoString value(*aValue);
     mHTMLCSSUtils->IsCSSEquivalentToHTMLInlineStyleSet(node, aProperty, aAttribute,
                                                        bHasProp, value,
                                                        COMPUTED_STYLE_TYPE);
-  }
-  else
-  {
+  } else {
     IsTextPropertySetByContent(node, aProperty, aAttribute, aValue, bHasProp);
   }
 
@@ -310,42 +307,41 @@ nsHTMLEditor::SetInlinePropertyOnTextNode( nsIDOMCharacterData *aTextNode,
   
   PRUint32 textLen;
   aTextNode->GetLength(&textLen);
-  
-  nsCOMPtr<nsIDOMNode> tmp;
-  if ( (PRUint32)aEndOffset != textLen )
-  {
+
+  if (PRUint32(aEndOffset) != textLen) {
     
+    nsCOMPtr<nsIDOMNode> tmp;
     res = SplitNode(node, aEndOffset, getter_AddRefs(tmp));
     NS_ENSURE_SUCCESS(res, res);
     node = tmp;  
   }
-  if ( aStartOffset )
-  {
+
+  if (aStartOffset) {
     
+    nsCOMPtr<nsIDOMNode> tmp;
     res = SplitNode(node, aStartOffset, getter_AddRefs(tmp));
     NS_ENSURE_SUCCESS(res, res);
   }
-  
-  
-  nsCOMPtr<nsIDOMNode> sibling;
-  GetPriorHTMLSibling(node, address_of(sibling));
-  if (sibling && NodeIsType(sibling, aProperty) &&         
-      HasAttrVal(sibling, aAttribute, aValue) &&
-      IsOnlyAttribute(sibling, aAttribute) )
-  {
+
+  nsCOMPtr<nsIContent> content = do_QueryInterface(node);
+  NS_ENSURE_STATE(content);
+
+  if (aAttribute) {
     
-    res = MoveNode(node, sibling, -1);
-    return res;
-  }
-  sibling = nsnull;
-  GetNextHTMLSibling(node, address_of(sibling));
-  if (sibling && NodeIsType(sibling, aProperty) &&         
-      HasAttrVal(sibling, aAttribute, aValue) &&
-      IsOnlyAttribute(sibling, aAttribute) )
-  {
-    
-    res = MoveNode(node, sibling, 0);
-    return res;
+    nsIContent* sibling = GetPriorHTMLSibling(content);
+    if (sibling && sibling->Tag() == aProperty &&
+        HasAttrVal(sibling, aAttribute, *aValue) &&
+        IsOnlyAttribute(sibling, *aAttribute)) {
+      
+      return MoveNode(node, sibling->AsDOMNode(), -1);
+    }
+    sibling = GetNextHTMLSibling(content);
+    if (sibling && sibling->Tag() == aProperty &&
+        HasAttrVal(sibling, aAttribute, *aValue) &&
+        IsOnlyAttribute(sibling, *aAttribute)) {
+      
+      return MoveNode(node, sibling->AsDOMNode(), 0);
+    }
   }
   
   
@@ -354,48 +350,39 @@ nsHTMLEditor::SetInlinePropertyOnTextNode( nsIDOMCharacterData *aTextNode,
 
 
 nsresult
-nsHTMLEditor::SetInlinePropertyOnNodeImpl(nsIDOMNode *aNode,
-                                          nsIAtom *aProperty,
-                                          const nsAString *aAttribute,
-                                          const nsAString *aValue)
+nsHTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent* aNode,
+                                          nsIAtom* aProperty,
+                                          const nsAString* aAttribute,
+                                          const nsAString* aValue)
 {
   MOZ_ASSERT(aNode && aProperty);
+  MOZ_ASSERT(aValue);
 
-  nsresult res;
-  nsCOMPtr<nsIDOMNode> tmp;
   nsAutoString tag;
   aProperty->ToString(tag);
   ToLowerCase(tag);
 
   
   
-  if (!TagCanContain(nsGkAtoms::span, aNode)) {
-    nsCOMPtr<nsIDOMNodeList> childNodes;
-    res = aNode->GetChildNodes(getter_AddRefs(childNodes));
-    NS_ENSURE_SUCCESS(res, res);
-    if (childNodes) {
-      PRInt32 j;
-      PRUint32 childCount;
-      childNodes->GetLength(&childCount);
-      if (childCount) {
-        nsCOMArray<nsIDOMNode> arrayOfNodes;
+  if (!TagCanContain(nsGkAtoms::span, aNode->AsDOMNode())) {
+    if (aNode->HasChildren()) {
+      nsCOMArray<nsIContent> arrayOfNodes;
 
-        
-        for (j = 0; j < (PRInt32)childCount; j++) {
-          nsCOMPtr<nsIDOMNode> childNode;
-          res = childNodes->Item(j, getter_AddRefs(childNode));
-          if (NS_SUCCEEDED(res) && childNode && IsEditable(childNode)) {
-            arrayOfNodes.AppendObject(childNode);
-          }
+      
+      for (nsIContent* child = aNode->GetFirstChild();
+           child;
+           child = child->GetNextSibling()) {
+        if (IsEditable(child)) {
+          arrayOfNodes.AppendObject(child);
         }
+      }
 
-        
-        PRInt32 listCount = arrayOfNodes.Count();
-        for (j = 0; j < listCount; j++) {
-          res = SetInlinePropertyOnNode(arrayOfNodes[j], aProperty,
-                                        aAttribute, aValue);
-          NS_ENSURE_SUCCESS(res, res);
-        }
+      
+      PRInt32 listCount = arrayOfNodes.Count();
+      for (PRInt32 j = 0; j < listCount; ++j) {
+        nsresult rv = SetInlinePropertyOnNode(arrayOfNodes[j], aProperty,
+                                              aAttribute, aValue);
+        NS_ENSURE_SUCCESS(rv, rv);
       }
     }
     return NS_OK;
@@ -407,14 +394,14 @@ nsHTMLEditor::SetInlinePropertyOnNodeImpl(nsIDOMNode *aNode,
                 
                 aAttribute->EqualsLiteral("bgcolor");
 
+  nsresult res;
   if (useCSS) {
-    tmp = aNode;
+    nsCOMPtr<nsIDOMNode> tmp = aNode->AsDOMNode();
     
     
-    nsCOMPtr<dom::Element> element = do_QueryInterface(tmp);
-    if (!element || !element->IsHTML(nsGkAtoms::span) ||
-        element->GetAttrCount()) {
-      res = InsertContainerAbove(aNode, address_of(tmp),
+    if (!aNode->IsElement() || !aNode->AsElement()->IsHTML(nsGkAtoms::span) ||
+        aNode->AsElement()->GetAttrCount()) {
+      res = InsertContainerAbove(aNode->AsDOMNode(), address_of(tmp),
                                  NS_LITERAL_STRING("span"),
                                  nsnull, nsnull);
       NS_ENSURE_SUCCESS(res, res);
@@ -450,34 +437,36 @@ nsHTMLEditor::SetInlinePropertyOnNodeImpl(nsIDOMNode *aNode,
   }
 
   
-  if (NodeIsType(aNode, aProperty)) {
+  if (aNode->Tag() == aProperty) {
     
     nsCOMPtr<nsIDOMElement> elem = do_QueryInterface(aNode);
     return SetAttribute(elem, *aAttribute, *aValue);
   }
 
   
-
-  nsCOMPtr<nsIDOMNode> priorNode, nextNode;
   
-  GetPriorHTMLSibling(aNode, address_of(priorNode));
-  GetNextHTMLSibling(aNode, address_of(nextNode));
-  if (priorNode && NodeIsType(priorNode, aProperty) &&
-      HasAttrVal(priorNode, aAttribute, aValue) &&
-      IsOnlyAttribute(priorNode, aAttribute)) {
-    
-    return MoveNode(aNode, priorNode, -1);
+  if (aAttribute) {
+    nsIContent* priorNode = GetPriorHTMLSibling(aNode);
+    if (priorNode && priorNode->Tag() == aProperty &&
+        HasAttrVal(priorNode, aAttribute, *aValue) &&
+        IsOnlyAttribute(priorNode, *aAttribute)) {
+      
+      return MoveNode(aNode->AsDOMNode(), priorNode->AsDOMNode(), -1);
+    }
+
+    nsIContent* nextNode = GetNextHTMLSibling(aNode);
+    if (nextNode && nextNode->Tag() == aProperty &&
+        HasAttrVal(nextNode, aAttribute, *aValue) &&
+        IsOnlyAttribute(nextNode, *aAttribute)) {
+      
+      return MoveNode(aNode->AsDOMNode(), nextNode->AsDOMNode(), 0);
+    }
   }
 
-  if (nextNode && NodeIsType(nextNode, aProperty) &&
-      HasAttrVal(nextNode, aAttribute, aValue) &&
-      IsOnlyAttribute(priorNode, aAttribute)) {
-    
-    return MoveNode(aNode, nextNode, 0);
-  }
-
   
-  return InsertContainerAbove(aNode, address_of(tmp), tag, aAttribute, aValue);
+  nsCOMPtr<nsIDOMNode> tmp;
+  return InsertContainerAbove(aNode->AsDOMNode(), address_of(tmp), tag,
+                              aAttribute, aValue);
 }
 
 
@@ -496,15 +485,28 @@ nsHTMLEditor::SetInlinePropertyOnNode(nsIDOMNode *aNode,
 
   nsCOMPtr<nsIContent> node = do_QueryInterface(aNode);
   NS_ENSURE_STATE(node);
-  nsCOMPtr<nsIContent> previousSibling = node->GetPreviousSibling(),
-                       nextSibling = node->GetNextSibling();
-  nsCOMPtr<nsINode> parent = node->GetNodeParent();
+
+  return SetInlinePropertyOnNode(node, aProperty, aAttribute, aValue);
+}
+
+nsresult
+nsHTMLEditor::SetInlinePropertyOnNode(nsIContent* aNode,
+                                      nsIAtom* aProperty,
+                                      const nsAString* aAttribute,
+                                      const nsAString* aValue)
+{
+  MOZ_ASSERT(aNode);
+  MOZ_ASSERT(aProperty);
+
+  nsCOMPtr<nsIContent> previousSibling = aNode->GetPreviousSibling(),
+                       nextSibling = aNode->GetNextSibling();
+  nsCOMPtr<nsINode> parent = aNode->GetNodeParent();
   NS_ENSURE_STATE(parent);
 
-  nsresult res = RemoveStyleInside(aNode, aProperty, aAttribute);
+  nsresult res = RemoveStyleInside(aNode->AsDOMNode(), aProperty, aAttribute);
   NS_ENSURE_SUCCESS(res, res);
 
-  if (node->GetNodeParent()) {
+  if (aNode->GetNodeParent()) {
     
     return SetInlinePropertyOnNodeImpl(aNode, aProperty,
                                        aAttribute, aValue);
@@ -529,8 +531,7 @@ nsHTMLEditor::SetInlinePropertyOnNode(nsIDOMNode *aNode,
 
   PRInt32 nodesToSetCount = nodesToSet.Count();
   for (PRInt32 k = 0; k < nodesToSetCount; k++) {
-    nsCOMPtr<nsIDOMNode> nodeToSet = do_QueryInterface(nodesToSet[k]);
-    res = SetInlinePropertyOnNodeImpl(nodeToSet, aProperty,
+    res = SetInlinePropertyOnNodeImpl(nodesToSet[k], aProperty,
                                       aAttribute, aValue);
     NS_ENSURE_SUCCESS(res, res);
   }
@@ -763,20 +764,31 @@ bool nsHTMLEditor::IsOnlyAttribute(nsIDOMNode *aNode,
                                      const nsAString *aAttribute)
 {
   NS_ENSURE_TRUE(aNode && aAttribute, false);  
+
   nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
   NS_ENSURE_TRUE(content, false);  
-  
-  PRUint32 i, attrCount = content->GetAttrCount();
-  for (i = 0; i < attrCount; ++i) {
-    nsAutoString attrString;
-    const nsAttrName* name = content->GetAttrNameAt(i);
+
+  return IsOnlyAttribute(content, *aAttribute);
+}
+
+bool
+nsHTMLEditor::IsOnlyAttribute(const nsIContent* aContent,
+                              const nsAString& aAttribute)
+{
+  MOZ_ASSERT(aContent);
+
+  PRUint32 attrCount = aContent->GetAttrCount();
+  for (PRUint32 i = 0; i < attrCount; ++i) {
+    const nsAttrName* name = aContent->GetAttrNameAt(i);
     if (!name->NamespaceEquals(kNameSpaceID_None)) {
       return false;
     }
+
+    nsAutoString attrString;
     name->LocalName()->ToString(attrString);
     
     
-    if (!attrString.Equals(*aAttribute, nsCaseInsensitiveStringComparator()) &&
+    if (!attrString.Equals(aAttribute, nsCaseInsensitiveStringComparator()) &&
         !StringBeginsWith(attrString, NS_LITERAL_STRING("_moz"))) {
       return false;
     }
@@ -806,24 +818,21 @@ bool nsHTMLEditor::HasAttr(nsIDOMNode* aNode,
 }
 
 
-bool nsHTMLEditor::HasAttrVal(nsIDOMNode* aNode,
+bool nsHTMLEditor::HasAttrVal(const nsIContent* aNode,
                               const nsAString* aAttribute,
-                              const nsAString* aValue)
+                              const nsAString& aValue)
 {
-  NS_ENSURE_TRUE(aNode, false);
+  MOZ_ASSERT(aNode);
+
   if (!aAttribute || aAttribute->IsEmpty()) {
     
     return true;
   }
 
-  
-  nsCOMPtr<dom::Element> element = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(element, false);
-
   nsCOMPtr<nsIAtom> atom = do_GetAtom(*aAttribute);
   NS_ENSURE_TRUE(atom, false);
 
-  return element->AttrValueIs(kNameSpaceID_None, atom, *aValue, eIgnoreCase);
+  return aNode->AttrValueIs(kNameSpaceID_None, atom, aValue, eIgnoreCase);
 }
 
 nsresult nsHTMLEditor::PromoteRangeIfStartsOrEndsInNamedAnchor(nsIDOMRange *inRange)
@@ -1239,6 +1248,7 @@ NS_IMETHODIMP nsHTMLEditor::RemoveInlineProperty(nsIAtom *aProperty, const nsASt
 
 nsresult nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom *aProperty, const nsAString *aAttribute)
 {
+  MOZ_ASSERT_IF(aProperty, aAttribute);
   NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
   ForceCompositionEnd();
 
@@ -1253,8 +1263,7 @@ nsresult nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom *aProperty, const nsAStr
   selection->GetIsCollapsed(&isCollapsed);
 
   bool useCSS = IsCSSEnabled();
-  if (isCollapsed)
-  {
+  if (isCollapsed) {
     
 
     
@@ -1262,16 +1271,21 @@ nsresult nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom *aProperty, const nsAStr
         aProperty == nsEditProperty::name)
       aProperty = nsEditProperty::a;
 
-    if (aProperty) return mTypeInState->ClearProp(aProperty, nsAutoString(*aAttribute));
-    else return mTypeInState->ClearAllProps();
+    if (aProperty) {
+      mTypeInState->ClearProp(aProperty, *aAttribute);
+    } else {
+      mTypeInState->ClearAllProps();
+    }
+    return NS_OK;
   }
+
   nsAutoEditBatch batchIt(this);
   nsAutoRules beginRulesSniffing(this, kOpRemoveTextProperty, nsIEditor::eNext);
   nsAutoSelectionReset selectionResetter(selection, this);
   nsAutoTxnsConserveSelection dontSpazMySelection(this);
   
   bool cancel, handled;
-  nsTextRulesInfo ruleInfo(nsTextEditRules::kRemoveTextProperty);
+  nsTextRulesInfo ruleInfo(kOpRemoveTextProperty);
   res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(res, res);
   if (!cancel && !handled)
@@ -1468,7 +1482,8 @@ nsHTMLEditor::RelativeFontChange( PRInt32 aSizeChange)
     }
 
     
-    return mTypeInState->SetProp(atom, EmptyString(), EmptyString());
+    mTypeInState->SetProp(atom, EmptyString(), EmptyString());
+    return NS_OK;
   }
   
   

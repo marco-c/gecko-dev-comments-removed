@@ -13,7 +13,8 @@ BEGIN_TEST(testConservativeGC)
     jsval v3;
     EVAL("String(Math.PI);", &v3);
     CHECK(JSVAL_IS_STRING(v3));
-    JSString strCopy = *JSVAL_TO_STRING(v3);
+    char strCopy[sizeof(JSString)];
+    js_memcpy(&strCopy, JSVAL_TO_STRING(v3), sizeof(JSString));
 
     jsval tmp;
     EVAL("({foo2: 'bar2'});", &tmp);
@@ -25,7 +26,8 @@ BEGIN_TEST(testConservativeGC)
     EVAL("String(Math.sqrt(3));", &tmp);
     CHECK(JSVAL_IS_STRING(tmp));
     JSString *str2 = JSVAL_TO_STRING(tmp);
-    JSString str2Copy = *str2;
+    char str2Copy[sizeof(JSString)];
+    js_memcpy(&str2Copy, str2, sizeof(JSString));
 
     tmp = JSVAL_NULL;
 
@@ -39,17 +41,17 @@ BEGIN_TEST(testConservativeGC)
     JS_GC(rt);
 
     checkObjectFields((JSObject *)objCopy, JSVAL_TO_OBJECT(v2));
-    CHECK(!memcmp(&strCopy, JSVAL_TO_STRING(v3), sizeof(strCopy)));
+    CHECK(!memcmp(strCopy, JSVAL_TO_STRING(v3), sizeof(strCopy)));
 
     checkObjectFields((JSObject *)obj2Copy, obj2);
-    CHECK(!memcmp(&str2Copy, str2, sizeof(str2Copy)));
+    CHECK(!memcmp(str2Copy, str2, sizeof(str2Copy)));
 
     return true;
 }
 
 bool checkObjectFields(JSObject *savedCopy, JSObject *obj)
 {
-    
+    /* Ignore fields which are unstable across GCs. */
     CHECK(savedCopy->lastProperty() == obj->lastProperty());
     CHECK(savedCopy->getProto() == obj->getProto());
     return true;
@@ -65,7 +67,7 @@ BEGIN_TEST(testDerivedValues)
   const jschar *ch = JS_GetStringCharsZ(cx, str);
   str = NULL;
 
-  
+  /* Do a lot of allocation and collection. */
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 1000; j++)
       JS_NewStringCopyZ(cx, "as I pondered weak and weary");
