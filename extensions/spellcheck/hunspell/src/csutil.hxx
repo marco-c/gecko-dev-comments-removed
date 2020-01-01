@@ -54,12 +54,17 @@
 
 
 
+
 #ifndef __CSUTILHXX__
 #define __CSUTILHXX__
 
+#include "hunvisapi.h"
 
 
+
+#include <string.h>
 #include "w_char.hxx"
+#include "htypes.hxx"
 
 
 #define NOCAP   0
@@ -101,71 +106,61 @@
 #define ONLYUPCASEFLAG 65511
 
 
-#define HENTRY_DATA(h) (h->var ? ((h->var & H_OPT_ALIASM) ? \
-    get_stored_pointer(&(h->word) + h->blen + 1) : &(h->word) + h->blen + 1) : NULL)
-
-#define HENTRY_DATA2(h) (h->var ? ((h->var & H_OPT_ALIASM) ? \
-    get_stored_pointer(&(h->word) + h->blen + 1) : &(h->word) + h->blen + 1) : "")
-#define HENTRY_FIND(h,p) (HENTRY_DATA(h) ? strstr(HENTRY_DATA(h), p) : NULL)
-
-#define w_char_eq(a,b) (((a).l == (b).l) && ((a).h == (b).h))
+LIBHUNSPELL_DLL_EXPORTED char * u16_u8(char * dest, int size, const w_char * src, int srclen);
 
 
-char * u16_u8(char * dest, int size, const w_char * src, int srclen);
+LIBHUNSPELL_DLL_EXPORTED int u8_u16(w_char * dest, int size, const char * src);
 
 
-int u8_u16(w_char * dest, int size, const char * src);
+LIBHUNSPELL_DLL_EXPORTED void flag_qsort(unsigned short flags[], int begin, int end);
 
 
-void flag_qsort(unsigned short flags[], int begin, int end);
+LIBHUNSPELL_DLL_EXPORTED int flag_bsearch(unsigned short flags[], unsigned short flag, int right);
 
 
-int flag_bsearch(unsigned short flags[], unsigned short flag, int right);
+LIBHUNSPELL_DLL_EXPORTED void mychomp(char * s);
 
 
-void   mychomp(char * s);
+LIBHUNSPELL_DLL_EXPORTED char * mystrdup(const char * s);
 
 
-char * mystrdup(const char * s);
+LIBHUNSPELL_DLL_EXPORTED char * mystrcat(char * dest, const char * st, int max);
 
 
-char * mystrcat(char * dest, const char * st, int max);
+LIBHUNSPELL_DLL_EXPORTED char * myrevstrdup(const char * s);
 
 
-char * myrevstrdup(const char * s);
+LIBHUNSPELL_DLL_EXPORTED char * mystrsep(char ** sptr, const char delim);
+
+LIBHUNSPELL_DLL_EXPORTED char * mystrsep2(char ** sptr, const char delim);
 
 
-char * mystrsep(char ** sptr, const char delim);
-
-char * mystrsep2(char ** sptr, const char delim);
+LIBHUNSPELL_DLL_EXPORTED char * mystrrep(char *, const char *, const char *);
 
 
-char * mystrrep(char *, const char *, const char *);
+LIBHUNSPELL_DLL_EXPORTED void strlinecat(char * lines, const char * s);
 
 
-void strlinecat(char * lines, const char * s);
+LIBHUNSPELL_DLL_EXPORTED int line_tok(const char * text, char *** lines, char breakchar);
 
 
-   int line_tok(const char * text, char *** lines, char breakchar);
+LIBHUNSPELL_DLL_EXPORTED char * line_uniq(char * text, char breakchar);
+LIBHUNSPELL_DLL_EXPORTED char * line_uniq_app(char ** text, char breakchar);
 
 
-   char * line_uniq(char * text, char breakchar);
-   char * line_uniq_app(char ** text, char breakchar);
+LIBHUNSPELL_DLL_EXPORTED char * tr(char * text, char oldc, char newc);
 
 
-   char * tr(char * text, char oldc, char newc);
+LIBHUNSPELL_DLL_EXPORTED int reverseword(char *);
 
 
-   int reverseword(char *);
+LIBHUNSPELL_DLL_EXPORTED int reverseword_utf(char *);
 
 
-   int reverseword_utf(char *);
+LIBHUNSPELL_DLL_EXPORTED int uniqlist(char ** list, int n);
 
 
- int uniqlist(char ** list, int n);
-
-
-   void freelist(char *** list, int n);
+LIBHUNSPELL_DLL_EXPORTED void freelist(char *** list, int n);
 
 
 struct cs_info {
@@ -187,11 +182,11 @@ struct unicode_info2 {
   unsigned short clower;
 };
 
-int initialize_utf_tbl();
-void free_utf_tbl();
-unsigned short unicodetoupper(unsigned short c, int langnum);
-unsigned short unicodetolower(unsigned short c, int langnum);
-int unicodeisalpha(unsigned short c);
+LIBHUNSPELL_DLL_EXPORTED int initialize_utf_tbl();
+LIBHUNSPELL_DLL_EXPORTED void free_utf_tbl();
+LIBHUNSPELL_DLL_EXPORTED unsigned short unicodetoupper(unsigned short c, int langnum);
+LIBHUNSPELL_DLL_EXPORTED unsigned short unicodetolower(unsigned short c, int langnum);
+LIBHUNSPELL_DLL_EXPORTED int unicodeisalpha(unsigned short c);
 
 struct enc_entry {
   const char * enc_name;
@@ -206,68 +201,101 @@ struct lang_map {
   int num;
 };
 
-struct cs_info * get_current_cs(const char * es);
+LIBHUNSPELL_DLL_EXPORTED struct cs_info * get_current_cs(const char * es);
 
-const char * get_default_enc(const char * lang);
-
-
-int get_lang_num(const char * lang);
+LIBHUNSPELL_DLL_EXPORTED const char * get_default_enc(const char * lang);
 
 
-char * get_casechars(const char * enc);
+LIBHUNSPELL_DLL_EXPORTED int get_lang_num(const char * lang);
 
 
-void enmkallcap(char * d, const char * p, const char * encoding);
+LIBHUNSPELL_DLL_EXPORTED char * get_casechars(const char * enc);
 
 
-void enmkallsmall(char * d, const char * p, const char * encoding);
+LIBHUNSPELL_DLL_EXPORTED void enmkallcap(char * d, const char * p, const char * encoding);
 
 
-void enmkinitcap(char * d, const char * p, const char * encoding);
+LIBHUNSPELL_DLL_EXPORTED void enmkallsmall(char * d, const char * p, const char * encoding);
 
 
-void mkallcap(char * p, const struct cs_info * csconv);
+LIBHUNSPELL_DLL_EXPORTED void enmkinitcap(char * d, const char * p, const char * encoding);
 
 
-void mkallsmall(char * p, const struct cs_info * csconv);
+LIBHUNSPELL_DLL_EXPORTED void mkallcap(char * p, const struct cs_info * csconv);
 
 
-void mkinitcap(char * p, const struct cs_info * csconv);
+LIBHUNSPELL_DLL_EXPORTED void mkallsmall(char * p, const struct cs_info * csconv);
 
 
-void mkallsmall_utf(w_char * u, int nc, int langnum);
+LIBHUNSPELL_DLL_EXPORTED void mkinitcap(char * p, const struct cs_info * csconv);
 
 
-void mkallcap_utf(w_char * u, int nc, int langnum);
+LIBHUNSPELL_DLL_EXPORTED void mkallsmall_utf(w_char * u, int nc, int langnum);
 
 
-int get_captype(char * q, int nl, cs_info *);
+LIBHUNSPELL_DLL_EXPORTED void mkallcap_utf(w_char * u, int nc, int langnum);
 
 
-int get_captype_utf8(w_char * q, int nl, int langnum);
+LIBHUNSPELL_DLL_EXPORTED int get_captype(char * q, int nl, cs_info *);
 
 
-void remove_ignored_chars_utf(char * word, unsigned short ignored_chars[], int ignored_len);
+LIBHUNSPELL_DLL_EXPORTED int get_captype_utf8(w_char * q, int nl, int langnum);
 
 
-void remove_ignored_chars(char * word, char * ignored_chars);
+LIBHUNSPELL_DLL_EXPORTED void remove_ignored_chars_utf(char * word, unsigned short ignored_chars[], int ignored_len);
 
-int parse_string(char * line, char ** out, int ln);
 
-int parse_array(char * line, char ** out, unsigned short ** out_utf16,
+LIBHUNSPELL_DLL_EXPORTED void remove_ignored_chars(char * word, char * ignored_chars);
+
+LIBHUNSPELL_DLL_EXPORTED int parse_string(char * line, char ** out, int ln);
+
+LIBHUNSPELL_DLL_EXPORTED int parse_array(char * line, char ** out, unsigned short ** out_utf16,
     int * out_utf16_len, int utf8, int ln);
 
-int fieldlen(const char * r);
-char * copy_field(char * dest, const char * morph, const char * var);
+LIBHUNSPELL_DLL_EXPORTED int fieldlen(const char * r);
+LIBHUNSPELL_DLL_EXPORTED char * copy_field(char * dest, const char * morph, const char * var);
 
-int morphcmp(const char * s, const char * t);
+LIBHUNSPELL_DLL_EXPORTED int morphcmp(const char * s, const char * t);
 
-int get_sfxcount(const char * morph);
-
-
-void store_pointer(char * dest, char * source);
+LIBHUNSPELL_DLL_EXPORTED int get_sfxcount(const char * morph);
 
 
-char * get_stored_pointer(char * s);
+LIBHUNSPELL_DLL_EXPORTED void store_pointer(char * dest, char * source);
+
+
+LIBHUNSPELL_DLL_EXPORTED char * get_stored_pointer(const char * s);
+
+
+LIBHUNSPELL_DLL_EXPORTED inline char* HENTRY_DATA(struct hentry *h)
+{
+    char *ret;
+    if (!h->var)
+        ret = NULL;
+    else if (h->var & H_OPT_ALIASM)
+        ret = get_stored_pointer(&(h->word[0]) + h->blen + 1);
+    else 
+        ret = &(h->word[0]) + h->blen + 1;
+    return ret;
+}
+
+
+LIBHUNSPELL_DLL_EXPORTED inline const char* HENTRY_DATA2(const struct hentry *h)
+{
+    const char *ret;
+    if (!h->var)
+        ret = "";
+    else if (h->var & H_OPT_ALIASM)
+        ret = get_stored_pointer(&(h->word[0]) + h->blen + 1);
+    else
+        ret = &(h->word[0]) + h->blen + 1;
+    return ret;
+}
+
+LIBHUNSPELL_DLL_EXPORTED inline char* HENTRY_FIND(struct hentry *h, const char *p)
+{
+    return (HENTRY_DATA(h) ? strstr(HENTRY_DATA(h), p) : NULL);
+}
+
+#define w_char_eq(a,b) (((a).l == (b).l) && ((a).h == (b).h))
 
 #endif

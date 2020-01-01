@@ -31,8 +31,13 @@
 
 
 
+
 #ifndef _HUNZIP_HXX_
 #define _HUNZIP_HXX_
+
+#include "hunvisapi.h"
+
+#include <stdio.h>
 
 #define BUFSIZE  65536
 #define HZIP_EXTENSION ".hz"
@@ -47,7 +52,7 @@ struct bit {
     int v[2];
 };
 
-class Hunzip
+class LIBHUNSPELL_DLL_EXPORTED Hunzip
 {
 
 protected:

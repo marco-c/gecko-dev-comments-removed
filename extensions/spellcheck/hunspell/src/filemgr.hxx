@@ -31,12 +31,16 @@
 
 
 
+
 #ifndef _FILEMGR_HXX_
 #define _FILEMGR_HXX_
 
-#include "hunzip.hxx"
+#include "hunvisapi.h"
 
-class FileMgr
+#include "hunzip.hxx"
+#include <stdio.h>
+
+class LIBHUNSPELL_DLL_EXPORTED FileMgr
 {
 protected:
     FILE * fin;

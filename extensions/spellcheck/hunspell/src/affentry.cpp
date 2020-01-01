@@ -54,27 +54,14 @@
 
 
 
-#ifndef MOZILLA_CLIENT
-#include <cstdlib>
-#include <cstring>
-#include <cctype>
-#include <cstdio>
-#else
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
-#endif
 
 #include "affentry.hxx"
 #include "csutil.hxx"
-
-#ifndef MOZILLA_CLIENT
-#ifndef W32
-using namespace std;
-#endif
-#endif
-
 
 PfxEntry::PfxEntry(AffixMgr* pmgr, affentry* dp)
 {
@@ -266,7 +253,7 @@ struct hentry * PfxEntry::checkword(const char * word, int len, char in_compound
 
                 
                 if ((opts & aeXPRODUCT)) {
-                   he = pmyMgr->suffix_check(tmpword, tmpl, aeXPRODUCT, (AffEntry *)this, NULL,
+                   he = pmyMgr->suffix_check(tmpword, tmpl, aeXPRODUCT, this, NULL,
                         0, NULL, FLAG_NULL, needflag, in_compound);
                    if (he) return he;
                 }
@@ -315,7 +302,7 @@ struct hentry * PfxEntry::check_twosfx(const char * word, int len,
                 
 
                 if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
-                   he = pmyMgr->suffix_check_twosfx(tmpword, tmpl, aeXPRODUCT, (AffEntry *)this, needflag);
+                   he = pmyMgr->suffix_check_twosfx(tmpword, tmpl, aeXPRODUCT, this, needflag);
                    if (he) return he;
                 }
             }
@@ -363,7 +350,7 @@ char * PfxEntry::check_twosfx_morph(const char * word, int len,
 
                 if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
                     return pmyMgr->suffix_check_twosfx_morph(tmpword, tmpl,
-                             aeXPRODUCT, (AffEntry *)this, needflag);
+                             aeXPRODUCT, this, needflag);
                 }
             }
      }
@@ -447,7 +434,7 @@ char * PfxEntry::check_morph(const char * word, int len, char in_compound, const
                 
 
                 if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
-                   st = pmyMgr->suffix_check_morph(tmpword, tmpl, aeXPRODUCT, (AffEntry *)this,
+                   st = pmyMgr->suffix_check_morph(tmpword, tmpl, aeXPRODUCT, this,
                      FLAG_NULL, needflag);
                    if (st) {
                         mystrcat(result, st, MAXLNLEN);
@@ -628,14 +615,14 @@ inline int SfxEntry::test_condition(const char * st, const char * beg)
 
 
 struct hentry * SfxEntry::checkword(const char * word, int len, int optflags,
-    AffEntry* ppfx, char ** wlst, int maxSug, int * ns, const FLAG cclass, const FLAG needflag,
+    PfxEntry* ppfx, char ** wlst, int maxSug, int * ns, const FLAG cclass, const FLAG needflag,
     const FLAG badflag)
 {
     int                 tmpl;            
     struct hentry *     he;              
     unsigned char *     cp;
     char                tmpword[MAXWORDUTF8LEN + 4];
-    PfxEntry* ep = (PfxEntry *) ppfx;
+    PfxEntry* ep = ppfx;
 
     
     
@@ -686,9 +673,9 @@ struct hentry * SfxEntry::checkword(const char * word, int len, int optflags,
                         if ((TESTAFF(he->astr, aflag, he->alen) || (ep && ep->getCont() &&
                                     TESTAFF(ep->getCont(), aflag, ep->getContLen()))) &&
                             (((optflags & aeXPRODUCT) == 0) ||
-                            TESTAFF(he->astr, ep->getFlag(), he->alen) ||
+                            (ep && TESTAFF(he->astr, ep->getFlag(), he->alen)) ||
                              
-                            ((contclass) && TESTAFF(contclass, ep->getFlag(), contclasslen))
+                            ((contclass) && (ep && TESTAFF(contclass, ep->getFlag(), contclasslen)))
                             ) &&
                             
                             ((!cclass) ||
@@ -730,13 +717,13 @@ struct hentry * SfxEntry::checkword(const char * word, int len, int optflags,
 
 
 struct hentry * SfxEntry::check_twosfx(const char * word, int len, int optflags,
-    AffEntry* ppfx, const FLAG needflag)
+    PfxEntry* ppfx, const FLAG needflag)
 {
     int                 tmpl;            
     struct hentry *     he;              
     unsigned char *     cp;
     char                tmpword[MAXWORDUTF8LEN + 4];
-    PfxEntry* ep = (PfxEntry *) ppfx;
+    PfxEntry* ep = ppfx;
 
 
     
@@ -792,12 +779,12 @@ struct hentry * SfxEntry::check_twosfx(const char * word, int len, int optflags,
 
 
 char * SfxEntry::check_twosfx_morph(const char * word, int len, int optflags,
-    AffEntry* ppfx, const FLAG needflag)
+    PfxEntry* ppfx, const FLAG needflag)
 {
     int                 tmpl;            
     unsigned char *     cp;
     char                tmpword[MAXWORDUTF8LEN + 4];
-    PfxEntry* ep = (PfxEntry *) ppfx;
+    PfxEntry* ep = ppfx;
     char * st;
 
     char result[MAXLNLEN];
@@ -845,8 +832,8 @@ char * SfxEntry::check_twosfx_morph(const char * word, int len, int optflags,
                     if ((contclass) && TESTAFF(contclass, ep->getFlag(), contclasslen)) {
                         st = pmyMgr->suffix_check_morph(tmpword, tmpl, 0, NULL, aflag, needflag);
                         if (st) {
-                            if (((PfxEntry *) ppfx)->getMorph()) {
-                                mystrcat(result, ((PfxEntry *) ppfx)->getMorph(), MAXLNLEN);
+                            if (ppfx->getMorph()) {
+                                mystrcat(result, ppfx->getMorph(), MAXLNLEN);
                                 mystrcat(result, " ", MAXLNLEN);
                             }
                             mystrcat(result,st, MAXLNLEN);
@@ -876,10 +863,10 @@ char * SfxEntry::check_twosfx_morph(const char * word, int len, int optflags,
 }
 
 
-struct hentry * SfxEntry::get_next_homonym(struct hentry * he, int optflags, AffEntry* ppfx,
+struct hentry * SfxEntry::get_next_homonym(struct hentry * he, int optflags, PfxEntry* ppfx,
     const FLAG cclass, const FLAG needflag)
 {
-    PfxEntry* ep = (PfxEntry *) ppfx;
+    PfxEntry* ep = ppfx;
     FLAG eFlag = ep ? ep->getFlag() : FLAG_NULL;
 
     while (he->next_homonym) {
@@ -1026,3 +1013,4 @@ first two affentries for the suffix D described earlier.
 
 
 #endif
+

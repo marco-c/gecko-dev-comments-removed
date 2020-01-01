@@ -31,38 +31,23 @@
 
 
 
-#ifndef MOZILLA_CLIENT
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
-#include <cctype>
-#else
-#include <stdlib.h> 
+
+#include <stdlib.h>
 #include <string.h>
-#include <stdio.h> 
 #include <ctype.h>
-#endif
+#include <stdio.h>
 
 #include "dictmgr.hxx"
 
-#ifndef MOZILLA_CLIENT
-#ifndef W32
-using namespace std;
-#endif
-#endif
-
-DictMgr::DictMgr(const char * dictpath, const char * etype) 
+DictMgr::DictMgr(const char * dictpath, const char * etype) : numdict(0)
 {
   
-  numdict = 0;
   pdentry = (dictentry *)malloc(MAXDICTIONARIES*sizeof(struct dictentry));
   if (pdentry) {
      if (parse_file(dictpath, etype)) {
         numdict = 0;
         
      }
-  } else {
-     numdict = 0;
   }
 }
 
@@ -144,6 +129,16 @@ int  DictMgr::parse_file(const char * dictpath, const char * etype)
                  numdict++;
                  pdict++;
              } else {
+                 switch (i) {
+                    case 3:
+                       free(pdict->region);
+                       pdict->region=NULL;
+                    case 2: 
+                       free(pdict->lang);
+                       pdict->lang=NULL;
+                    default:
+                        break;
+                 }
                  fprintf(stderr,"dictionary list corruption in line \"%s\"\n",line);
                  fflush(stderr);
              }
@@ -181,7 +176,6 @@ char * DictMgr::mystrsep(char ** stringp, const char delim)
         if (rv) {
            memcpy(rv,mp,nc);
            *(rv+nc) = '\0';
-           return rv;
         }
      } else {
        rv = (char *) malloc(n+1);
@@ -189,11 +183,10 @@ char * DictMgr::mystrsep(char ** stringp, const char delim)
           memcpy(rv, mp, n);
           *(rv+n) = '\0';
           *stringp = mp + n;
-          return rv;
        }
      }
   }
-  return NULL;
+  return rv;
 }
 
 
@@ -202,9 +195,9 @@ char * DictMgr::mystrdup(const char * s)
 {
   char * d = NULL;
   if (s) {
-     int sl = strlen(s);
-     d = (char *) malloc(((sl+1) * sizeof(char)));
-     if (d) memcpy(d,s,((sl+1)*sizeof(char)));
+     int sl = strlen(s)+1;
+     d = (char *) malloc(sl);
+     if (d) memcpy(d,s,sl);
   }
   return d;
 }
@@ -217,3 +210,4 @@ void DictMgr:: mychomp(char * s)
   if ((k > 0) && ((*(s+k-1)=='\r') || (*(s+k-1)=='\n'))) *(s+k-1) = '\0';
   if ((k > 1) && (*(s+k-2) == '\r')) *(s+k-2) = '\0';
 }
+

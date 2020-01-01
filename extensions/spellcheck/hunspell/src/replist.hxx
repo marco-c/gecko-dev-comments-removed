@@ -32,11 +32,15 @@
 
 
 
+
 #ifndef _REPLIST_HXX_
 #define _REPLIST_HXX_
+
+#include "hunvisapi.h"
+
 #include "w_char.hxx"
 
-class RepList
+class LIBHUNSPELL_DLL_EXPORTED RepList
 {
 protected:
     replentry ** dat;

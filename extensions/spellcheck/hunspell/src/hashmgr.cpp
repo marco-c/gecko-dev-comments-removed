@@ -54,31 +54,15 @@
 
 
 
-#ifndef MOZILLA_CLIENT
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
-#include <cctype>
-#else
+
 #include <stdlib.h> 
 #include <string.h>
 #include <stdio.h> 
 #include <ctype.h>
-#endif
 
-#include "atypes.hxx"
-#include "csutil.hxx"
 #include "hashmgr.hxx"
-
-#ifdef MOZILLA_CLIENT
-#ifdef __SUNPRO_CC 
-using namespace std;
-#endif
-#else
-#ifndef W32
-using namespace std;
-#endif
-#endif
+#include "csutil.hxx"
+#include "atypes.hxx"
 
 
 
@@ -160,6 +144,10 @@ HashMgr::~HashMgr()
   
   if (ignorechars) free(ignorechars);
   if (ignorechars_utf16) free(ignorechars_utf16);
+
+#ifdef MOZILLA_CLIENT
+    delete [] csconv;
+#endif
 }
 
 
@@ -171,7 +159,7 @@ struct hentry * HashMgr::lookup(const char *word) const
        dp = tableptr[hash(word)];
        if (!dp) return NULL;
        for (  ;  dp != NULL;  dp = dp->next) {
-          if (strcmp(word,&(dp->word)) == 0) return dp;
+          if (strcmp(word, dp->word) == 0) return dp;
        }
     }
     return NULL;
@@ -187,7 +175,7 @@ int HashMgr::add_word(const char * word, int wbl, int wcl, unsigned short * aff,
     struct hentry* hp = 
 	(struct hentry *) malloc (sizeof(struct hentry) + wbl + descl);
     if (!hp) return 1;
-    char * hpw = &(hp->word);
+    char * hpw = hp->word;
     strcpy(hpw, word);
     if (ignorechars != NULL) {
       if (utf8) {
@@ -231,7 +219,7 @@ int HashMgr::add_word(const char * word, int wbl, int wcl, unsigned short * aff,
          return 0;
        }
        while (dp->next != NULL) {
-         if ((!dp->next_homonym) && (strcmp(&(hp->word), &(dp->word)) == 0)) {
+         if ((!dp->next_homonym) && (strcmp(hp->word, dp->word) == 0)) {
     	    
             if (!onlyupcase) {
 		if ((dp->astr) && TESTAFF(dp->astr, ONLYUPCASEFLAG, dp->alen)) {
@@ -249,7 +237,7 @@ int HashMgr::add_word(const char * word, int wbl, int wcl, unsigned short * aff,
          }
          dp=dp->next;
        }
-       if (strcmp(&(hp->word), &(dp->word)) == 0) {
+       if (strcmp(hp->word, dp->word) == 0) {
     	    
             if (!onlyupcase) {
 		if ((dp->astr) && TESTAFF(dp->astr, ONLYUPCASEFLAG, dp->alen)) {
@@ -326,7 +314,7 @@ int HashMgr::remove(const char * word)
     while (dp) {
         if (dp->alen == 0 || !TESTAFF(dp->astr, forbiddenword, dp->alen)) {
             unsigned short * flags =
-                (unsigned short *) malloc(sizeof(short *) * (dp->alen + 1));
+                (unsigned short *) malloc(sizeof(short) * (dp->alen + 1));
             if (!flags) return 1;
             for (int i = 0; i < dp->alen; i++) flags[i] = dp->astr[i];
             flags[dp->alen] = forbiddenword;
@@ -348,7 +336,7 @@ int HashMgr::remove_forbidden_flag(const char * word) {
             if (dp->alen == 1) dp->alen = 0; 
             else {
                 unsigned short * flags2 =
-                    (unsigned short *) malloc(sizeof(short *) * (dp->alen - 1));
+                    (unsigned short *) malloc(sizeof(short) * (dp->alen - 1));
                 if (!flags2) return 1;
                 int i, j = 0;
                 for (i = 0; i < dp->alen; i++) {
@@ -439,7 +427,7 @@ int HashMgr::load_tables(const char * tpath, const char * key)
   
   if (strncmp(ts,"\xEF\xBB\xBF",3) == 0) {
     memmove(ts, ts+3, strlen(ts+3)+1);
-    HUNSPELL_WARNING(stderr, "warning: dic file begins with byte order mark: possible incompatibility with old Hunspell versions\n");
+    
   }
 
   tablesize = atoi(ts);
@@ -512,6 +500,10 @@ int HashMgr::load_tables(const char * tpath, const char * key)
         }
       } else {
         al = decode_flags(&flags, ap + 1, dict);
+        if (al == -1) {
+            HUNSPELL_WARNING(stderr, "Can't allocate memory.\n");
+            return 6;
+        }
         flag_qsort(flags, 0, al);
       }
     } else {
@@ -552,6 +544,11 @@ int HashMgr::hash(const char * word) const
 
 int HashMgr::decode_flags(unsigned short ** result, char * flags, FileMgr * af) {
     int len;
+    if (*flags == '\0') {
+        HUNSPELL_WARNING(stderr, "error: line %d: bad flagvector\n", af->getlinenum());
+        *result = NULL;
+        return 0;
+    }
     switch (flag_mode) {
       case FLAG_LONG: { 
         len = strlen(flags);

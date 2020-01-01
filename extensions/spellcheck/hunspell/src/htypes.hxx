@@ -54,6 +54,7 @@
 
 
 
+
 #ifndef _HTYPES_HXX_
 #define _HTYPES_HXX_
 
@@ -68,7 +69,7 @@
 #define H_OPT_PHON   (1 << 2)
 
 
-#define HENTRY_WORD(h) &(h->word)
+#define HENTRY_WORD(h) (h->word)
 
 
 #define USERWORD 1000
@@ -82,7 +83,7 @@ struct hentry
   struct   hentry * next; 
   struct   hentry * next_homonym; 
   char     var;       
-  char     word;      
+  char     word[1];   
 };
 
 #endif
