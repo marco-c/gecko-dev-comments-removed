@@ -11,15 +11,15 @@
 # for the specific language governing rights and limitations under the
 # License.
 #
-# The Original Code is the Mozilla toolkit.
+# The Original Code is Url Classifier code
 #
 # The Initial Developer of the Original Code is
-# Benjamin Smedberg <benjamin@smedbergs.us>.
-#
-# Portions created by the Initial Developer are Copyright (C) 2004
+# Google Inc.
+# Portions created by the Initial Developer are Copyright (C) 2006
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#   Tony Chang <tony@ponderer.org>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,21 +35,35 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH     = ../../../..
-topsrcdir = @top_srcdir@
-srcdir    = @srcdir@
-VPATH     = @srcdir@
 
-include $(DEPTH)/config/autoconf.mk
 
-MODULE       = toolkitcomps
-XPIDL_MODULE = commandlines
 
-XPIDLSRCS = \
-	nsICommandLine.idl \
-	nsICommandLineRunner.idl \
-	nsICommandLineHandler.idl \
-	nsICommandLineValidator.idl \
-	$(NULL)
 
-include $(topsrcdir)/config/rules.mk
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const G_GDEBUG = false;
+
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+#include ./content/moz/lang.js
+#include ./content/moz/preferences.js
+#include ./content/moz/debug.js
+#include ./content/moz/alarm.js
+#include ./content/moz/cryptohasher.js
+#include ./content/moz/observer.js
+#include ./content/moz/protocol4.js
+
+#include ./content/request-backoff.js
+#include ./content/url-crypto-key-manager.js
+#include ./content/xml-fetcher.js
+
+
+var lib = this;
+
+function UrlClassifierLib() {
+  this.wrappedJSObject = lib;
+}
+UrlClassifierLib.prototype.classID = Components.ID("{26a4a019-2827-4a89-a85c-5931a678823a}");
+UrlClassifierLib.prototype.QueryInterface = XPCOMUtils.generateQI([]);
+
+var NSGetFactory = XPCOMUtils.generateNSGetFactory([UrlClassifierLib]);
