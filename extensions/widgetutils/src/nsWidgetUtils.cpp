@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 tw=80 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsCURILoader.h"
 #include "nsICategoryManager.h"
@@ -33,6 +33,7 @@
 #include "nsIDOMCompositionListener.h"
 #include "nsIDOMTextListener.h"
 #include "nsIDOMMouseEvent.h"
+#include "nsIDOMWheelEvent.h"
 #include "nsIView.h"
 #include "nsGUIEvent.h"
 #include "nsIViewManager.h"
@@ -40,6 +41,8 @@
 #include "nsIDocShellTreeItem.h"
 #include "nsIContent.h"
 #include "nsITimer.h"
+
+using namespace mozilla;
 
 const int MIN_INT =((int) (1 << (sizeof(int) * 8 - 1)));
 
@@ -56,7 +59,7 @@ static bool g_is_scrollable = false;
 #define BEHAVIOR_NOFOREIGN 3
 #define NUMBER_OF_TYPES 13
 
-// TODO auto reload nsWidgetUtils in C.
+
 class nsWidgetUtils : public nsIObserver,
                       public nsIDOMEventListener,
                       public nsIContentPolicy,
@@ -153,7 +156,7 @@ nsWidgetUtils::UpdateFromEvent(nsIDOMEvent *aDOMEvent)
   mWindow->GetDocument(getter_AddRefs(domDoc));
   doc = do_QueryInterface(domDoc);
   if (!doc) return NS_OK;
-  // the only case where there could be more shells in printpreview
+  
   nsIPresShell *shell = doc->GetShell();
   NS_ENSURE_TRUE(shell, NS_ERROR_FAILURE);
   mViewManager = shell->GetViewManager();
@@ -167,7 +170,7 @@ nsresult
 nsWidgetUtils::MouseDown(nsIDOMEvent* aDOMEvent)
 {
   g_is_scrollable = false;
-  // Return TRUE from your signal handler to mark the event as consumed.
+  
   if (NS_FAILED(UpdateFromEvent(aDOMEvent)))
     return NS_OK;
   g_is_scrollable = true;
@@ -178,7 +181,7 @@ nsWidgetUtils::MouseDown(nsIDOMEvent* aDOMEvent)
   return NS_OK;
 }
 
-/* static */ void
+ void
 nsWidgetUtils::StopPanningCallback(nsITimer *timer, void *closure)
 {
   g_panning = false;
@@ -191,7 +194,7 @@ nsWidgetUtils::MouseUp(nsIDOMEvent* aDOMEvent)
   mouseEvent = do_QueryInterface(aDOMEvent);
   if (!mouseEvent)
     return NS_OK;
-  // Return TRUE from your signal handler to mark the event as consumed.
+  
   g_lastX = MIN_INT;
   g_lastY = MIN_INT;
   g_is_scrollable = false;
@@ -232,27 +235,20 @@ nsWidgetUtils::MouseMove(nsIDOMEvent* aDOMEvent)
     if (NS_FAILED(UpdateFromEvent(aDOMEvent)))
       return NS_OK;
 
-  nsEventStatus statusX;
-  nsMouseScrollEvent scrollEventX(true, NS_MOUSE_SCROLL, mWidget);
-  scrollEventX.delta = dx;
-  scrollEventX.scrollFlags = nsMouseScrollEvent::kIsHorizontal | nsMouseScrollEvent::kHasPixels;
-  mViewManager->DispatchEvent(&scrollEventX, aView, &statusX);
-  if(statusX != nsEventStatus_eIgnore ){
-    if (dx > 5)
+  nsEventStatus status;
+  widget::WheelEvent wheelEvent(true, NS_WHEEL_WHEEL, mWidget);
+  wheelEvent.deltaMode = nsIDOMWheelEvent::DOM_DELTA_LINE;
+  wheelEvent.deltaX = wheelEvent.lineOrPageDeltaX = dx;
+  wheelEvent.deltaY = wheelEvent.lineOrPageDeltaY = dy;
+  mViewManager->DispatchEvent(&wheelEvent, aView, &status);
+  if (status != nsEventStatus_eIgnore) {
+    if (dx > 5 || dy > 5) {
       g_panning = true;
+    }
     g_lastX = x;
-  }
-
-  nsEventStatus statusY;
-  nsMouseScrollEvent scrollEventY(true, NS_MOUSE_SCROLL, mWidget);
-  scrollEventY.delta = dy;
-  scrollEventY.scrollFlags = nsMouseScrollEvent::kIsVertical | nsMouseScrollEvent::kHasPixels;
-  mViewManager->DispatchEvent(&scrollEventY, aView, &statusY);
-  if(statusY != nsEventStatus_eIgnore ){
-    if (dy > 5)
-      g_panning = true;
     g_lastY = y;
   }
+
   if (g_panning) {
      aDOMEvent->StopPropagation();
      aDOMEvent->PreventDefault();
@@ -261,7 +257,7 @@ nsWidgetUtils::MouseMove(nsIDOMEvent* aDOMEvent)
   return NS_OK;
 }
 
-// nsIContentPolicy Implementation
+
 NS_IMETHODIMP
 nsWidgetUtils::ShouldLoad(PRUint32          aContentType,
                           nsIURI           *aContentLocation,
@@ -277,7 +273,7 @@ nsWidgetUtils::ShouldLoad(PRUint32          aContentType,
     if (aContentType != nsIContentPolicy::TYPE_DOCUMENT)
         return NS_OK;
 
-    // we can't do anything without this
+    
     if (!aContentLocation)
         return NS_OK;
 
@@ -343,11 +339,11 @@ nsWidgetUtils::IsXULNode(nsIDOMNode *aNode, PRUint32 *aType)
   if (sorigNode.EqualsLiteral("xul:thumb")
       || sorigNode.EqualsLiteral("xul:vbox")
       || sorigNode.EqualsLiteral("xul:spacer"))
-    *aType = false; // Magic
+    *aType = false; 
   else if (sorigNode.EqualsLiteral("xul:slider"))
-    *aType = 2; // Magic
+    *aType = 2; 
   else if (sorigNode.EqualsLiteral("xul:scrollbarbutton"))
-    *aType = 3; // Magic
+    *aType = 3; 
 
   return retval;
 }
@@ -391,9 +387,9 @@ nsWidgetUtils::RemoveWindowListeners(nsIDOMWindow *aDOMWin)
         return;
     }
 
-    // Use capturing, otherwise the normal find next will get activated when ours should
+    
 
-    // Remove DOM Text listener for IME text events
+    
     chromeEventHandler->RemoveEventListener(NS_LITERAL_STRING("mousedown"),
                                             this, false);
     chromeEventHandler->RemoveEventListener(NS_LITERAL_STRING("mouseup"),
@@ -412,9 +408,9 @@ nsWidgetUtils::AttachWindowListeners(nsIDOMWindow *aDOMWin)
         return;
     }
 
-    // Use capturing, otherwise the normal find next will get activated when ours should
+    
 
-    // Attach menu listeners, this will help us ignore keystrokes meant for menus
+    
     chromeEventHandler->AddEventListener(NS_LITERAL_STRING("mousedown"), this,
                                          false, false);
     chromeEventHandler->AddEventListener(NS_LITERAL_STRING("mouseup"), this,
@@ -455,9 +451,9 @@ nsWidgetUtils::Observe(nsISupports *aSubject, const char *aTopic, const PRUnicha
   return NS_OK;
 }
 
-//------------------------------------------------------------------------------
-//  XPCOM REGISTRATION BELOW
-//------------------------------------------------------------------------------
+
+
+
 
 #define WidgetUtils_CID \
 {  0x0ced17b6, 0x96ed, 0x4030, \

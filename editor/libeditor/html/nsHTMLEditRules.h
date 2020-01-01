@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef nsHTMLEditRules_h__
 #define nsHTMLEditRules_h__
@@ -38,8 +38,8 @@ namespace mozilla {
 class Selection;
 namespace dom {
 class Element;
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 struct DOMPoint;
 template <class E> class nsCOMArray;
 
@@ -74,12 +74,12 @@ public:
   virtual   ~nsHTMLEditRules();
 
 
-  // nsIEditRules methods
+  
   NS_IMETHOD Init(nsPlaintextEditor *aEditor);
   NS_IMETHOD DetachEditor();
-  NS_IMETHOD BeforeEdit(OperationID action,
+  NS_IMETHOD BeforeEdit(EditAction action,
                         nsIEditor::EDirection aDirection);
-  NS_IMETHOD AfterEdit(OperationID action,
+  NS_IMETHOD AfterEdit(EditAction action,
                        nsIEditor::EDirection aDirection);
   NS_IMETHOD WillDoAction(mozilla::Selection* aSelection, nsRulesInfo* aInfo,
                           bool* aCancel, bool* aHandled);
@@ -93,7 +93,7 @@ public:
   nsresult GetParagraphState(bool *aMixed, nsAString &outFormat);
   nsresult MakeSureElemStartsOrEndsOnCR(nsIDOMNode *aNode);
 
-  // nsIEditActionListener methods
+  
   
   NS_IMETHOD WillCreateNode(const nsAString& aTag, nsIDOMNode *aParent, PRInt32 aPosition);
   NS_IMETHOD DidCreateNode(const nsAString& aTag, nsIDOMNode *aNode, nsIDOMNode *aParent, PRInt32 aPosition, nsresult aResult);
@@ -126,9 +126,9 @@ protected:
     kBlockEnd
   };
 
-  // nsHTMLEditRules implementation methods
+  
   nsresult WillInsert(nsISelection *aSelection, bool *aCancel);
-  nsresult WillInsertText(  OperationID aAction,
+  nsresult WillInsertText(  EditAction aAction,
                             mozilla::Selection* aSelection,
                             bool            *aCancel,
                             bool            *aHandled,
@@ -208,7 +208,7 @@ protected:
                           nsCOMPtr<nsIDOMNode> *aSelNode, 
                           PRInt32 *aOffset);
   nsresult ReturnInListItem(nsISelection *aSelection, nsIDOMNode *aHeader, nsIDOMNode *aTextNode, PRInt32 aOffset);
-  nsresult AfterEditInner(OperationID action,
+  nsresult AfterEditInner(EditAction action,
                           nsIEditor::EDirection aDirection);
   nsresult RemovePartOfBlock(nsIDOMNode *aBlock, 
                              nsIDOMNode *aStartChild, 
@@ -253,25 +253,25 @@ protected:
   bool IsLastNode(nsIDOMNode *aNode);
   nsresult NormalizeSelection(nsISelection *inSelection);
   void GetPromotedPoint(RulesEndpoint aWhere, nsIDOMNode* aNode,
-                        PRInt32 aOffset, OperationID actionID,
+                        PRInt32 aOffset, EditAction actionID,
                         nsCOMPtr<nsIDOMNode>* outNode, PRInt32* outOffset);
   nsresult GetPromotedRanges(nsISelection *inSelection, 
                              nsCOMArray<nsIDOMRange> &outArrayOfRanges, 
-                             OperationID inOperationType);
+                             EditAction inOperationType);
   nsresult PromoteRange(nsIDOMRange *inRange,
-                        OperationID inOperationType);
+                        EditAction inOperationType);
   nsresult GetNodesForOperation(nsCOMArray<nsIDOMRange>& inArrayOfRanges, 
                                 nsCOMArray<nsIDOMNode>& outArrayOfNodes, 
-                                OperationID inOperationType,
+                                EditAction inOperationType,
                                 bool aDontTouchContent=false);
   nsresult GetChildNodesForOperation(nsIDOMNode *inNode, 
                                      nsCOMArray<nsIDOMNode>& outArrayOfNodes);
   nsresult GetNodesFromPoint(DOMPoint point,
-                             OperationID operation,
+                             EditAction operation,
                              nsCOMArray<nsIDOMNode>& arrayOfNodes,
                              bool dontTouchContent);
   nsresult GetNodesFromSelection(nsISelection *selection,
-                                 OperationID operation,
+                                 EditAction operation,
                                  nsCOMArray<nsIDOMNode>& arrayOfNodes,
                                  bool aDontTouchContent=false);
   nsresult GetListActionNodes(nsCOMArray<nsIDOMNode> &outArrayOfNodes, bool aEntireList, bool aDontTouchContent=false);
@@ -308,13 +308,13 @@ protected:
                                   PRInt32 aSelOffset, 
                                   nsIEditor::EDirection &aDirection,
                                   nsCOMPtr<nsIDOMNode> *outSelectableNode);
-  /**
-   * Returns true if aNode1 or aNode2 or both is the descendant of some type of
-   * table element, but their nearest table element ancestors differ.  "Table
-   * element" here includes not just <table> but also <td>, <tbody>, <tr>, etc.
-   * The nodes count as being their own descendants for this purpose, so a
-   * table element is its own nearest table element ancestor.
-   */
+  
+
+
+
+
+
+
   bool     InDifferentTableElements(nsIDOMNode* aNode1, nsIDOMNode* aNode2);
   bool     InDifferentTableElements(nsINode* aNode1, nsINode* aNode2);
   nsresult RemoveEmptyNodes();
@@ -330,7 +330,7 @@ protected:
   nsresult RelativeChangeIndentationOfElementNode(nsIDOMNode *aNode, PRInt8 aRelativeChange);
   void DocumentModifiedWorker();
 
-// data members
+
 protected:
   nsHTMLEditor           *mHTMLEditor;
   nsRefPtr<nsRange>       mDocChangeRange;
@@ -340,11 +340,11 @@ protected:
   bool                    mDidRangedDelete;
   bool                    mRestoreContentEditableCount;
   nsRefPtr<nsRange>       mUtilRange;
-  PRUint32                mJoinOffset;  // need to remember an int across willJoin/didJoin...
+  PRUint32                mJoinOffset;  
   nsCOMPtr<nsIDOMNode>    mNewBlock;
   nsRefPtr<nsRangeStore>  mRangeItem;
   StyleCache              mCachedStyles[SIZE_STYLE_TABLE];
 };
 
-#endif //nsHTMLEditRules_h__
+#endif 
 

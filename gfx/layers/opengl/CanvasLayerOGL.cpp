@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "ipc/AutoOpenSurface.h"
 #include "mozilla/layers/PLayers.h"
@@ -111,14 +111,14 @@ CanvasLayerOGL::Initialize(const Data& aData)
 
   mBounds.SetRect(0, 0, aData.mSize.width, aData.mSize.height);
       
-  // Check the maximum texture size supported by GL. glTexImage2D supports
-  // images of up to 2 + GL_MAX_TEXTURE_SIZE
+  
+  
   GLint texSize = gl()->GetMaxTextureSize();
   if (mBounds.width > (2 + texSize) || mBounds.height > (2 + texSize)) {
     mDelayedUpdates = true;
     MakeTextureIfNeeded(gl(), mTexture);
-    // This should only ever occur with 2d canvas, WebGL can't already have a texture
-    // of this size can it?
+    
+    
     NS_ABORT_IF_FALSE(mCanvasSurface || mDrawTarget, 
                       "Invalid texture size when WebGL surface already exists at that size?");
   }
@@ -161,10 +161,10 @@ MakeIOSurfaceTexture(void* aCGIOSurfaceContext, mozilla::gl::GLContext* aGL)
 }
 #endif
 
-/**
- * Following UpdateSurface(), mTexture on context this->gl() should contain the data we want,
- * unless mDelayedUpdates is true because of a too-large surface.
- */
+
+
+
+
 void
 CanvasLayerOGL::UpdateSurface()
 {
@@ -187,7 +187,7 @@ CanvasLayerOGL::UpdateSurface()
   {
     DiscardTempSurface();
 
-    // Can texture share, just make sure it's resolved first
+    
     mCanvasGLContext->MakeCurrent();
     mCanvasGLContext->GuaranteeResolve();
 
@@ -229,13 +229,16 @@ CanvasLayerOGL::RenderLayer(int aPreviousDestination,
                             const nsIntPoint& aOffset)
 {
   UpdateSurface();
+  if (mOGLManager->CompositingDisabled()) {
+    return;
+  }
   FireDidTransactionCallback();
 
   mOGLManager->MakeCurrent();
 
-  // XXX We're going to need a different program depending on if
-  // mGLBufferIsPremultiplied is TRUE or not.  The RGBLayerProgram
-  // assumes that it's true.
+  
+  
+  
 
   gl()->fActiveTexture(LOCAL_GL_TEXTURE0);
 
@@ -282,7 +285,7 @@ CanvasLayerOGL::RenderLayer(int aPreviousDestination,
 
   program->Activate();
   if (mLayerProgram == gl::RGBARectLayerProgramType) {
-    // This is used by IOSurface that use 0,0...w,h coordinate rather then 0,0..1,1.
+    
     program->SetTexCoordMultiplier(mDrawTarget->GetSize().width, mDrawTarget->GetSize().height);
   }
   program->SetLayerQuadRect(drawRect);
@@ -365,7 +368,23 @@ ShadowCanvasLayerOGL::Swap(const CanvasSurface& aNewFront,
     return;
   }
 
-  if (IsValidSharedTexDescriptor(aNewFront)) {
+  if (nsRefPtr<TextureImage> texImage =
+      ShadowLayerManager::OpenDescriptorForDirectTexturing(
+        gl(), aNewFront.get_SurfaceDescriptor(), LOCAL_GL_CLAMP_TO_EDGE)) {
+
+    if (mTexImage &&
+        (mTexImage->GetSize() != texImage->GetSize() ||
+         mTexImage->GetContentType() != texImage->GetContentType())) {
+      mTexImage = nullptr;
+      DestroyFrontBuffer();
+    }
+
+    mTexImage = texImage;
+    *aNewBack = IsSurfaceDescriptorValid(mFrontBufferDescriptor) ?
+                CanvasSurface(mFrontBufferDescriptor) : CanvasSurface(null_t());
+    mFrontBufferDescriptor = aNewFront;
+    mNeedsYFlip = needYFlip;
+  } else if (IsValidSharedTexDescriptor(aNewFront)) {
     MakeTextureIfNeeded(gl(), mTexture);
     if (!IsValidSharedTexDescriptor(mFrontBufferDescriptor)) {
       mFrontBufferDescriptor = SharedTextureDescriptor(TextureImage::ThreadShared, 0, nsIntSize(0, 0), false);
@@ -430,14 +449,17 @@ ShadowCanvasLayerOGL::RenderLayer(int aPreviousFrameBuffer,
     return;
   }
 
+  if (mOGLManager->CompositingDisabled()) {
+    return;
+  }
   mOGLManager->MakeCurrent();
 
   gfx3DMatrix effectiveTransform = GetEffectiveTransform();
   gfxPattern::GraphicsFilter filter = mFilter;
 #ifdef ANDROID
-  // Bug 691354
-  // Using the LINEAR filter we get unexplained artifacts.
-  // Use NEAREST when no scaling is required.
+  
+  
+  
   gfxMatrix matrix;
   bool is2D = GetEffectiveTransform().Is2D(&matrix);
   if (is2D && !matrix.HasNonTranslationOrFlip()) {
@@ -463,7 +485,7 @@ ShadowCanvasLayerOGL::RenderLayer(int aPreviousFrameBuffer,
   program->LoadMask(GetMaskLayer());
 
   if (IsValidSharedTexDescriptor(mFrontBufferDescriptor)) {
-    // Shared texture handle rendering path, single texture rendering
+    
     SharedTextureDescriptor texDescriptor = mFrontBufferDescriptor.get_SharedTextureDescriptor();
     gl()->fActiveTexture(LOCAL_GL_TEXTURE0);
     gl()->fBindTexture(LOCAL_GL_TEXTURE_2D, mTexture);
@@ -477,24 +499,24 @@ ShadowCanvasLayerOGL::RenderLayer(int aPreviousFrameBuffer,
     gl()->DetachSharedHandle(texDescriptor.shareType(), texDescriptor.handle());
     gl()->fBindTexture(LOCAL_GL_TEXTURE_2D, 0);
   } else {
-    // Tiled texture image rendering path
+    
     mTexImage->SetFilter(filter);
     mTexImage->BeginTileIteration();
     if (gl()->CanUploadNonPowerOfTwo()) {
       do {
         TextureImage::ScopedBindTextureAndApplyFilter texBind(mTexImage, LOCAL_GL_TEXTURE0);
         program->SetLayerQuadRect(mTexImage->GetTileRect());
-        mOGLManager->BindAndDrawQuad(program, mNeedsYFlip); // FIXME flip order of tiles?
+        mOGLManager->BindAndDrawQuad(program, mNeedsYFlip); 
       } while (mTexImage->NextTile());
     } else {
       do {
         TextureImage::ScopedBindTextureAndApplyFilter texBind(mTexImage, LOCAL_GL_TEXTURE0);
         program->SetLayerQuadRect(mTexImage->GetTileRect());
-        // We can't use BindAndDrawQuad because that always uploads the whole texture from 0.0f -> 1.0f
-        // in x and y. We use BindAndDrawQuadWithTextureRect to actually draw a subrect of the texture
-        // We need to reset the origin to 0,0 from the tile rect because the tile originates at 0,0 in the
-        // actual texture, even though its origin in the composed (tiled) texture is not 0,0
-        // FIXME: we need to handle mNeedsYFlip, Bug #728625
+        
+        
+        
+        
+        
         mOGLManager->BindAndDrawQuadWithTextureRect(program,
                                                     nsIntRect(0, 0, mTexImage->GetTileRect().width,
                                                                     mTexImage->GetTileRect().height),
