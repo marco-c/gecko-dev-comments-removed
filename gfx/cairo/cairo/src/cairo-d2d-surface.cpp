@@ -1152,6 +1152,9 @@ struct cached_bitmap {
     }
 
     
+
+    cairo_d2d_device_t *device;
+    
     RefPtr<ID2D1Bitmap> bitmap;
     
     bool dirty;
@@ -1717,6 +1720,13 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 
 		return NULL;
 	    }
+            if (srcSurf->device != d2dsurf->device) {
+		
+
+
+
+		return NULL;
+	    }
 
 	    _cairo_d2d_update_surface_bitmap(srcSurf);
 	    _cairo_d2d_flush(srcSurf);
@@ -1857,6 +1867,9 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 		    (cached_bitmap*)cairo_surface_get_user_data(
 		    surfacePattern->surface,
 		    key);
+		if (cachebitmap && cachebitmap->device != d2dsurf->device) {
+		    cachebitmap = NULL;
+		}
 	    }
 
 	    if (cachebitmap) {
@@ -1926,6 +1939,7 @@ _cairo_d2d_create_brush_for_pattern(cairo_d2d_surface_t *d2dsurf,
 		    
 		    cachebitmap->dirty = false;
 		    cachebitmap->bitmap = sourceBitmap;
+		    cachebitmap->device = d2dsurf->device;
                     
 
 
