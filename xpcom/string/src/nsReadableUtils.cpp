@@ -1,40 +1,40 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2000
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Scott Collins <scc@mozilla.org> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "nsReadableUtils.h"
 #include "nsMemory.h"
@@ -101,10 +101,10 @@ CopyUTF8toUTF16( const char* aSource, nsAString& aDest )
     AppendUTF8toUTF16(aSource, aDest);
   }
 
-
-
-
-
+// Like GetMutableData, but returns false if it can't
+// allocate enough memory (e.g. due to OOM) rather than
+// returning zero (which could have other meanings) and
+// throws away the out-param pointer.
 bool
 SetLengthForWriting(nsAString& aDest, PRUint32 aDesiredLength)
   {
@@ -136,7 +136,7 @@ LossyAppendUTF16toASCII( const nsAString& aSource, nsACString& aDest )
 
     dest.advance(old_dest_length);
 
-    
+    // right now, this won't work on multi-fragment destinations
     LossyConvertEncoding16to8 converter(dest.get());
 
     copy_string(aSource.BeginReading(fromBegin), aSource.EndReading(fromEnd), converter);
@@ -156,7 +156,7 @@ AppendASCIItoUTF16( const nsACString& aSource, nsAString& aDest )
 
     dest.advance(old_dest_length);
 
-      
+      // right now, this won't work on multi-fragment destinations
     LossyConvertEncoding8to16 converter(dest.get());
 
     copy_string(aSource.BeginReading(fromBegin), aSource.EndReading(fromEnd), converter);
@@ -192,11 +192,11 @@ AppendUTF16toUTF8( const nsAString& aSource, nsACString& aDest )
       {
         PRUint32 old_dest_length = aDest.Length();
 
-        
+        // Grow the buffer if we need to.
         if(!SetLengthForWritingC(aDest, old_dest_length + count))
             return;
 
-        
+        // All ready? Time to convert
 
         ConvertUTF16toUTF8 converter(aDest.BeginWriting() + old_dest_length);
         copy_string(aSource.BeginReading(source_start),
@@ -218,16 +218,16 @@ AppendUTF8toUTF16( const nsACString& aSource, nsAString& aDest )
 
     PRUint32 count = calculator.Length();
 
-    
+    // Avoid making the string mutable if we're appending an empty string
     if (count)
       {
         PRUint32 old_dest_length = aDest.Length();
 
-        
+        // Grow the buffer if we need to.
         if(!SetLengthForWriting(aDest, old_dest_length + count))
           return;
 
-        
+        // All ready? Time to convert
 
         ConvertUTF8toUTF16 converter(aDest.BeginWriting() + old_dest_length);
         copy_string(aSource.BeginReading(source_start),
@@ -262,13 +262,13 @@ AppendUTF8toUTF16( const char* aSource, nsAString& aDest )
   }
 
 
-  
-
-
-
-
-
-
+  /**
+   * A helper function that allocates a buffer of the desired character type big enough to hold a copy of the supplied string (plus a zero terminator).
+   *
+   * @param aSource an string you will eventually be making a copy of
+   * @return a new buffer (of the type specified by the second parameter) which you must free with |nsMemory::Free|.
+   *
+   */
 template <class FromStringT, class ToCharT>
 inline
 ToCharT*
@@ -318,7 +318,7 @@ ToNewUTF8String( const nsAString& aSource, PRUint32 *aUTF8Count )
 char*
 ToNewCString( const nsACString& aSource )
   {
-    
+    // no conversion needed, just allocate a buffer of the correct length and copy into it
 
     char* result = AllocateStringCopy(aSource, (char*)0);
     if (!result)
@@ -333,7 +333,7 @@ ToNewCString( const nsACString& aSource )
 PRUnichar*
 ToNewUnicode( const nsAString& aSource )
   {
-    
+    // no conversion needed, just allocate a buffer of the correct length and copy into it
 
     PRUnichar* result = AllocateStringCopy(aSource, (PRUnichar*)0);
     if (!result)
@@ -428,7 +428,7 @@ IsASCII( const nsAString& aString )
     static const PRUnichar NOT_ASCII = PRUnichar(~0x007F);
 
 
-    
+    // Don't want to use |copy_string| for this task, since we can stop at the first non-ASCII character
 
     nsAString::const_iterator iter, done_reading;
     aString.BeginReading(iter);
@@ -452,7 +452,7 @@ IsASCII( const nsACString& aString )
     static const char NOT_ASCII = char(~0x7F);
 
 
-    
+    // Don't want to use |copy_string| for this task, since we can stop at the first non-ASCII character
 
     nsACString::const_iterator iter, done_reading;
     aString.BeginReading(iter);
@@ -480,8 +480,8 @@ IsUTF8( const nsACString& aString, bool aRejectNonChar )
     bool overlong = false;
     bool surrogate = false;
     bool nonchar = false;
-    PRUint16 olupper = 0; 
-    PRUint16 slower = 0;  
+    PRUint16 olupper = 0; // overlong byte upper bound.
+    PRUint16 slower = 0;  // surrogate byte lower bound.
 
     nsReadingIterator<char> iter;
     aString.BeginReading(iter);
@@ -499,44 +499,44 @@ IsUTF8( const nsACString& aString, bool aRejectNonChar )
             if ( UTF8traits::isASCII(c) ) 
               continue;
 
-            if ( c <= 0xC1 ) 
+            if ( c <= 0xC1 ) // [80-BF] where not expected, [C0-C1] for overlong.
               return false;
             else if ( UTF8traits::is2byte(c) ) 
                 state = 1;
             else if ( UTF8traits::is3byte(c) ) 
               {
                 state = 2;
-                if ( c == 0xE0 ) 
+                if ( c == 0xE0 ) // to exclude E0[80-9F][80-BF] 
                   {
                     overlong = true;
                     olupper = 0x9F;
                   }
-                else if ( c == 0xED ) 
+                else if ( c == 0xED ) // ED[A0-BF][80-BF] : surrogate codepoint
                   {
                     surrogate = true;
                     slower = 0xA0;
                   }
-                else if ( c == 0xEF ) 
+                else if ( c == 0xEF ) // EF BF [BE-BF] : non-character
                   nonchar = true;
               }
-            else if ( c <= 0xF4 ) 
+            else if ( c <= 0xF4 ) // XXX replace /w UTF8traits::is4byte when it's updated to exclude [F5-F7].(bug 199090)
               {
                 state = 3;
                 nonchar = true;
-                if ( c == 0xF0 ) 
+                if ( c == 0xF0 ) // to exclude F0[80-8F][80-BF]{2}
                   {
                     overlong = true;
                     olupper = 0x8F;
                   }
-                else if ( c == 0xF4 ) 
+                else if ( c == 0xF4 ) // to exclude F4[90-BF][80-BF] 
                   {
-                    
+                    // actually not surrogates but codepoints beyond 0x10FFFF
                     surrogate = true;
                     slower = 0x90;
                   }
               }
             else
-              return false; 
+              return false; // Not UTF-8 string
           }
           
         if (nonchar && !aRejectNonChar)
@@ -547,7 +547,7 @@ IsUTF8( const nsACString& aString, bool aRejectNonChar )
             c = *ptr++;
             --state;
 
-            
+            // non-character : EF BF [BE-BF] or F[0-7] [89AB]F BF [BE-BF]
             if ( nonchar &&  
                  ( ( !state && c < 0xBE ) ||
                    ( state == 1 && c != 0xBF )  ||
@@ -556,17 +556,17 @@ IsUTF8( const nsACString& aString, bool aRejectNonChar )
 
             if ( !UTF8traits::isInSeq(c) || ( overlong && c <= olupper ) || 
                  ( surrogate && slower <= c ) || ( nonchar && !state ))
-              return false; 
+              return false; // Not UTF-8 string
 
             overlong = surrogate = false;
           }
         }
-    return !state; 
+    return !state; // state != 0 at the end indicates an invalid UTF-8 seq. 
   }
 
-  
-
-
+  /**
+   * A character sink for in-place case conversion.
+   */
 class ConvertToUpperCase
   {
     public:
@@ -595,9 +595,9 @@ ToUpperCase( nsCSubstring& aCString )
     converter.write(aCString.BeginWriting(start), aCString.Length());
   }
 
-  
-
-
+  /**
+   * A character sink for copying with case conversion.
+   */
 class CopyToUpperCase
   {
     public:
@@ -643,9 +643,9 @@ ToUpperCase( const nsACString& aSource, nsACString& aDest )
     copy_string(aSource.BeginReading(fromBegin), aSource.EndReading(fromEnd), converter);
   }
 
-  
-
-
+  /**
+   * A character sink for case conversion.
+   */
 class ConvertToLowerCase
   {
     public:
@@ -674,9 +674,9 @@ ToLowerCase( nsCSubstring& aCString )
     converter.write(aCString.BeginWriting(start), aCString.Length());
   }
 
-  
-
-
+  /**
+   * A character sink for copying with case conversion.
+   */
 class CopyToLowerCase
   {
     public:
@@ -762,55 +762,55 @@ FindInReadable_Impl( const StringT& aPattern, IteratorT& aSearchStart, IteratorT
   {
     bool found_it = false;
 
-      
+      // only bother searching at all if we're given a non-empty range to search
     if ( aSearchStart != aSearchEnd )
       {
         IteratorT aPatternStart, aPatternEnd;
         aPattern.BeginReading(aPatternStart);
         aPattern.EndReading(aPatternEnd);
 
-          
+          // outer loop keeps searching till we find it or run out of string to search
         while ( !found_it )
           {
-              
+              // fast inner loop (that's what it's called, not what it is) looks for a potential match
             while ( aSearchStart != aSearchEnd &&
                     compare(aPatternStart.get(), aSearchStart.get(), 1, 1) )
               ++aSearchStart;
 
-              
+              // if we broke out of the `fast' loop because we're out of string ... we're done: no match
             if ( aSearchStart == aSearchEnd )
               break;
 
-              
+              // otherwise, we're at a potential match, let's see if we really hit one
             IteratorT testPattern(aPatternStart);
             IteratorT testSearch(aSearchStart);
 
-              
+              // slow inner loop verifies the potential match (found by the `fast' loop) at the current position
             for(;;)
               {
-                  
-                  
+                  // we already compared the first character in the outer loop,
+                  //  so we'll advance before the next comparison
                 ++testPattern;
                 ++testSearch;
 
-                  
+                  // if we verified all the way to the end of the pattern, then we found it!
                 if ( testPattern == aPatternEnd )
                   {
                     found_it = true;
-                    aSearchEnd = testSearch; 
+                    aSearchEnd = testSearch; // return the exact found range through the parameters
                     break;
                   }
 
-                  
-                  
+                  // if we got to end of the string we're searching before we hit the end of the
+                  //  pattern, we'll never find what we're looking for
                 if ( testSearch == aSearchEnd )
                   {
                     aSearchStart = aSearchEnd;
                     break;
                   }
 
-                  
-                  
+                  // else if we mismatched ... it's time to advance to the next search position
+                  //  and get back into the `fast' loop
                 if ( compare(testPattern.get(), testSearch.get(), 1, 1) )
                   {
                     ++aSearchStart;
@@ -823,9 +823,9 @@ FindInReadable_Impl( const StringT& aPattern, IteratorT& aSearchStart, IteratorT
     return found_it;
   }
 
-  
-
-
+  /**
+   * This searches the entire string from right to left, and returns the first match found, if any.
+   */
 template <class StringT, class IteratorT, class Comparator>
 bool
 RFindInReadable_Impl( const StringT& aPattern, IteratorT& aSearchStart, IteratorT& aSearchEnd, const Comparator& compare )
@@ -834,41 +834,41 @@ RFindInReadable_Impl( const StringT& aPattern, IteratorT& aSearchStart, Iterator
     aPattern.BeginReading(patternStart);
     aPattern.EndReading(patternEnd);
 
-      
+      // Point to the last character in the pattern
     --patternEnd;
-      
+      // outer loop keeps searching till we run out of string to search
     while ( aSearchStart != searchEnd )
       {
-          
+          // Point to the end position of the next possible match
         --searchEnd;
     
-          
+          // Check last character, if a match, explore further from here
         if ( compare(patternEnd.get(), searchEnd.get(), 1, 1) == 0 )
           {  
-              
+              // We're at a potential match, let's see if we really hit one
             IteratorT testPattern(patternEnd);
             IteratorT testSearch(searchEnd);
 
-              
+              // inner loop verifies the potential match at the current position
             do
               {
-                  
+                  // if we verified all the way to the end of the pattern, then we found it!
                 if ( testPattern == patternStart )
                   {
-                    aSearchStart = testSearch;  
-                    aSearchEnd = ++searchEnd;   
+                    aSearchStart = testSearch;  // point to start of match
+                    aSearchEnd = ++searchEnd;   // point to end of match
                     return true;
                   }
     
-                  
-                  
+                  // if we got to end of the string we're searching before we hit the end of the
+                  //  pattern, we'll never find what we're looking for
                 if ( testSearch == aSearchStart )
                   {
                     aSearchStart = aSearchEnd;
                     return false;
                   }
     
-                  
+                  // test previous character for a match
                 --testPattern;
                 --testSearch;
               }
@@ -1046,6 +1046,22 @@ EmptyCString()
     return sEmpty;
   }
 
+const nsAFlatString&
+NullString()
+  {
+    static const nsXPIDLString sNull;
+
+    return sNull;
+  }
+
+const nsAFlatCString&
+NullCString()
+  {
+    static const nsXPIDLCString sNull;
+
+    return sNull;
+  }
+
 PRInt32
 CompareUTF8toUTF16(const nsASingleFragmentCString& aUTF8String,
                    const nsASingleFragmentString& aUTF16String)
@@ -1062,8 +1078,8 @@ CompareUTF8toUTF16(const nsASingleFragmentCString& aUTF8String,
 
     while (u8 != u8end && u16 != u16end)
       {
-        
-        
+        // Cast away the signedness of *u8 to prevent signextension when
+        // converting to PRUint32
         PRUint32 c8_32 = (PRUint8)*u8;
 
         if (c8_32 & NOT_ASCII)
@@ -1074,18 +1090,18 @@ CompareUTF8toUTF16(const nsASingleFragmentCString& aUTF8String,
               return PR_INT32_MIN;
 
             PRUint32 c16_32 = UTF16CharEnumerator::NextChar(&u16, u16end);
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            // The above UTF16CharEnumerator::NextChar() calls can
+            // fail, but if it does for anything other than no data to
+            // look at (which can't happen here), it returns the
+            // Unicode replacement character 0xFFFD for the invalid
+            // data they were fed. Ignore that error and treat invalid
+            // UTF16 as 0xFFFD.
+            //
+            // This matches what our UTF16 to UTF8 conversion code
+            // does, and thus a UTF8 string that came from an invalid
+            // UTF16 string will compare equal to the invalid UTF16
+            // string it came from. Same is true for any other UTF16
+            // string differs only in the invalid part of the string.
             
             if (c8_32 != c16_32)
               return c8_32 < c16_32 ? -1 : 1;
@@ -1102,23 +1118,23 @@ CompareUTF8toUTF16(const nsASingleFragmentCString& aUTF8String,
 
     if (u8 != u8end)
       {
-        
-        
-        
+        // We get to the end of the UTF16 string, but no to the end of
+        // the UTF8 string. The UTF8 string is longer than the UTF16
+        // string
 
         return 1;
       }
 
     if (u16 != u16end)
       {
-        
-        
-        
+        // We get to the end of the UTF8 string, but no to the end of
+        // the UTF16 string. The UTF16 string is longer than the UTF8
+        // string
 
         return -1;
       }
 
-    
+    // The two strings match.
 
     return 0;
   }
