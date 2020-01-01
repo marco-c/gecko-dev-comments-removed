@@ -20,6 +20,8 @@ namespace ion {
 #define IONSPEW_CHANNEL_LIST(_)
     \
     _(Abort)                                \
+    /* Information about compiled scripts */\
+    _(Scripts)                              \
     /* Information during MIR building */   \
     _(MIR)                                  \
     /* Information during alias analysis */ \
