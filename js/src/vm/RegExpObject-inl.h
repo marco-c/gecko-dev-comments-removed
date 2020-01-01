@@ -1,11 +1,11 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef RegExpObject_inl_h___
-#define RegExpObject_inl_h___
+
+
+
+
+
+#ifndef vm_RegExpObject_inl_h
+#define vm_RegExpObject_inl_h
 
 #include "mozilla/Util.h"
 
@@ -89,7 +89,7 @@ RegExpObject::setSticky(bool enabled)
     setSlot(STICKY_FLAG_SLOT, BooleanValue(enabled));
 }
 
-/* This function should be deleted once bad Android platforms phase out. See bug 604774. */
+
 inline bool
 RegExpShared::isJITRuntimeEnabled(JSContext *cx)
 {
@@ -167,6 +167,6 @@ MatchPairs::checkAgainst(size_t inputLength)
 #endif
 }
 
-} /* namespace js */
+} 
 
-#endif
+#endif 
