@@ -133,7 +133,7 @@ Open()
 bool
 GetSize(nsIntSize *aScreenSize) {
     
-    if (0 <= sFd || sScreenSize) {
+    if (sScreenSize) {
         *aScreenSize = *sScreenSize;
         return true;
     }
