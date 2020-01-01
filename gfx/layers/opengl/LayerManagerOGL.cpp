@@ -1,45 +1,45 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Corporation code.
+ *
+ * The Initial Developer of the Original Code is Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Bas Schouten <bschouten@mozilla.org>
+ *   Frederic Plourde <frederic.plourde@collabora.co.uk>
+ *   Vladimir Vukicevic <vladimir@pobox.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include "mozilla/layers/PLayers.h"
 
-
+/* This must occur *after* layers/PLayers.h to avoid typedefs conflicts. */
 #include "mozilla/Util.h"
 
 #include "LayerManagerOGL.h"
@@ -73,9 +73,9 @@ using namespace mozilla::gl;
 int LayerManagerOGLProgram::sCurrentProgramKey = 0;
 #endif
 
-
-
-
+/**
+ * LayerManagerOGL
+ */
 LayerManagerOGL::LayerManagerOGL(nsIWidget *aWidget)
   : mWidget(aWidget)
   , mWidgetSize(-1, -1)
@@ -100,8 +100,8 @@ LayerManagerOGL::Destroy()
     }
     mRoot = nsnull;
 
-    
-    
+    // Make a copy, since SetLayerManager will cause mImageContainers
+    // to get mutated.
     nsTArray<ImageContainer*> imageContainers(mImageContainers);
     for (PRUint32 i = 0; i < imageContainers.Length(); ++i) {
       ImageContainer *c = imageContainers[i];
@@ -177,7 +177,7 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext)
 {
   ScopedGfxFeatureReporter reporter("GL Layers");
 
-  
+  // Do not allow double intiailization
   NS_ABORT_IF_FALSE(mGLContext == nsnull, "Don't reiniailize layer managers");
 
   if (!aContext)
@@ -196,9 +196,9 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext)
                                  LOCAL_GL_ONE, LOCAL_GL_ONE);
   mGLContext->fEnable(LOCAL_GL_BLEND);
 
-  
-  
-  
+  // We unfortunately can't do generic initialization here, since the
+  // concrete type actually matters.  This macro generates the
+  // initialization using a concrete type and index.
 #define SHADER_PROGRAM(penum, ptype, vsstr, fsstr) do {                           \
     NS_ASSERTION(programIndex++ == penum, "out of order shader initialization!"); \
     ptype *p = new ptype(mGLContext);                                             \
@@ -210,13 +210,13 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext)
   } while (0)
 
 
-  
-  
+  // NOTE: Order matters here, and should be in the same order as the
+  // ProgramType enum!
 #ifdef DEBUG
   GLint programIndex = 0;
 #endif
 
-  
+  /* Layer programs */
   SHADER_PROGRAM(RGBALayerProgramType, ColorTextureLayerProgram,
                  sLayerVS, sRGBATextureLayerFS);
   SHADER_PROGRAM(BGRALayerProgramType, ColorTextureLayerProgram,
@@ -235,7 +235,7 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext)
                  sLayerVS, sComponentPass1FS);
   SHADER_PROGRAM(ComponentAlphaPass2ProgramType, ComponentAlphaTextureLayerProgram,
                  sLayerVS, sComponentPass2FS);
-  
+  /* Copy programs (used for final framebuffer blit) */
   SHADER_PROGRAM(Copy2DProgramType, CopyProgram,
                  sCopyVS, sCopy2DFS);
   SHADER_PROGRAM(Copy2DRectProgramType, CopyProgram,
@@ -246,10 +246,10 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext)
   NS_ASSERTION(programIndex == NumProgramTypes,
                "not all programs were initialized!");
 
-  
-
-
-
+  /**
+   * We'll test the ability here to bind NPOT textures to a framebuffer, if
+   * this fails we'll try ARB_texture_rectangle.
+   */
   mGLContext->fGenFramebuffers(1, &mBackBufferFBO);
 
   GLenum textureTargets[] = {
@@ -274,13 +274,13 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext)
     mGLContext->fTexImage2D(target,
                             0,
                             LOCAL_GL_RGBA,
-                            5, 3, 
+                            5, 3, /* sufficiently NPOT */
                             0,
                             LOCAL_GL_RGBA,
                             LOCAL_GL_UNSIGNED_BYTE,
                             NULL);
 
-    
+    // unbind this texture, in preparation for binding it to the FBO
     mGLContext->fBindTexture(target, 0);
 
     mGLContext->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, mBackBufferFBO);
@@ -297,42 +297,42 @@ LayerManagerOGL::Initialize(nsRefPtr<GLContext> aContext)
       break;
     }
 
-    
-    
+    // We weren't succesful with this texture, so we don't need it
+    // any more.
     mGLContext->fDeleteTextures(1, &mBackBufferTexture);
   }
 
   if (mFBOTextureTarget == LOCAL_GL_NONE) {
-    
+    /* Unable to find a texture target that works with FBOs and NPOT textures */
     return false;
   }
 
   mGLContext->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, 0);
 
   if (mFBOTextureTarget == LOCAL_GL_TEXTURE_RECTANGLE_ARB) {
-    
-
-
-
-
+    /* If we're using TEXTURE_RECTANGLE, then we must have the ARB
+     * extension -- the EXT variant does not provide support for
+     * texture rectangle access inside GLSL (sampler2DRect,
+     * texture2DRect).
+     */
     if (!mGLContext->IsExtensionSupported(gl::GLContext::ARB_texture_rectangle))
       return false;
   }
 
-  
+  // back to default framebuffer, to avoid confusion
   mGLContext->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, 0);
 
-  
+  /* Create a simple quad VBO */
 
   mGLContext->fGenBuffers(1, &mQuadVBO);
   mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, mQuadVBO);
 
   GLfloat vertices[] = {
-    
+    /* First quad vertices */
     0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-    
+    /* Then quad texcoords */
     0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-    
+    /* Then flipped quad texcoords */
     0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
   };
   mGLContext->fBufferData(LOCAL_GL_ARRAY_BUFFER, sizeof(vertices), vertices, LOCAL_GL_STATIC_DRAW);
@@ -420,8 +420,8 @@ LayerManagerOGL::EndTransaction(DrawThebesLayerCallback aCallback,
   }
 
   if (mRoot && !(aFlags & END_NO_IMMEDIATE_REDRAW)) {
-    
-    
+    // The results of our drawing always go directly into a pixel buffer,
+    // so we don't need to pass any global transform here.
     mRoot->ComputeEffectiveTransforms(gfx3DMatrix());
 
     mThebesLayerCallback = aCallback;
@@ -547,8 +547,8 @@ LayerManagerOGL::RootLayer() const
 
 bool LayerManagerOGL::sDrawFPS = false;
 
-
-
+/* This function tries to stick to portable C89 as much as possible
+ * so that it can be easily copied into other applications */
 void
 LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
 {
@@ -568,7 +568,7 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
 
   static GLuint texture;
   if (!initialized) {
-    
+    // Bind the number of textures we need, in this case one.
     context->fGenTextures(1, &texture);
     context->fBindTexture(LOCAL_GL_TEXTURE_2D, texture);
     context->fTexParameteri(LOCAL_GL_TEXTURE_2D,LOCAL_GL_TEXTURE_MIN_FILTER,LOCAL_GL_NEAREST);
@@ -584,8 +584,8 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     };
 
-    
-    
+    // convert from 8 bit to 32 bit so that don't have to write the text above out in 32 bit format
+    // we rely on int being 32 bits
     unsigned int* buf = (unsigned int*)malloc(64 * 8 * 4);
     for (int i = 0; i < 7; i++) {
       for (int j = 0; j < 41; j++) {
@@ -623,8 +623,8 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
   int v10  = (fps % 100) / 10;
   int v100 = (fps % 1000) / 100;
 
-  
-  
+  // Feel free to comment these texture coordinates out and use one
+  // of the ones below instead, or play around with your own values.
   const GLfloat texCoords[] = {
     (v100 * 4.f) / 64, 7.f / 8,
     (v100 * 4.f) / 64, 0.0f,
@@ -642,7 +642,7 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
     (v1 * 4.f + 4) / 64, 0.0f,
   };
 
-  
+  // Turn necessary features on
   context->fEnable(LOCAL_GL_BLEND);
   context->fBlendFunc(LOCAL_GL_ONE, LOCAL_GL_SRC_COLOR);
 
@@ -652,15 +652,15 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
   copyprog->Activate();
   copyprog->SetTextureUnit(0);
 
-  
+  // we're going to use client-side vertex arrays for this.
   context->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
 
-  
+  // "COPY"
   context->fBlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ZERO,
                               LOCAL_GL_ONE, LOCAL_GL_ZERO);
 
-  
-  
+  // enable our vertex attribs; we'll call glVertexPointer below
+  // to fill with the correct data.
   GLint vcattr = copyprog->AttribLocation(CopyProgram::VertexCoordAttrib);
   GLint tcattr = copyprog->AttribLocation(CopyProgram::TexCoordAttrib);
 
@@ -680,13 +680,13 @@ LayerManagerOGL::FPSState::DrawFPS(GLContext* context, CopyProgram* copyprog)
   context->fDrawArrays(LOCAL_GL_TRIANGLE_STRIP, 0, 12);
 }
 
-
-
-
-
-
-
-
+// |aTexCoordRect| is the rectangle from the texture that we want to
+// draw using the given program.  The program already has a necessary
+// offset and scale, so the geometry that needs to be drawn is a unit
+// square from 0,0 to 1,1.
+//
+// |aTexSize| is the actual size of the texture, as it can be larger
+// than the rectangle given by |aTexCoordRect|.
 void 
 LayerManagerOGL::BindAndDrawQuadWithTextureRect(LayerProgram *aProg,
                                                 const nsIntRect& aTexCoordRect,
@@ -699,23 +699,23 @@ LayerManagerOGL::BindAndDrawQuadWithTextureRect(LayerProgram *aProg,
     aProg->AttribLocation(LayerProgram::TexCoordAttrib);
   NS_ASSERTION(texCoordAttribIndex != GLuint(-1), "no texture coords?");
 
-  
-  
+  // clear any bound VBO so that glVertexAttribPointer() goes back to
+  // "pointer mode"
   mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
 
-  
-  
-  
-  
-  
-  
+  // Given what we know about these textures and coordinates, we can
+  // compute fmod(t, 1.0f) to get the same texture coordinate out.  If
+  // the texCoordRect dimension is < 0 or > width/height, then we have
+  // wraparound that we need to deal with by drawing multiple quads,
+  // because we can't rely on full non-power-of-two texture support
+  // (which is required for the REPEAT wrap mode).
 
   GLContext::RectTriangles rects;
 
   if (aWrapMode == LOCAL_GL_REPEAT) {
-    rects.addRect(
+    rects.addRect(/* dest rectangle */
                   0.0f, 0.0f, 1.0f, 1.0f,
-                  
+                  /* tex coords */
                   aTexCoordRect.x / GLfloat(aTexSize.width),
                   aTexCoordRect.y / GLfloat(aTexSize.height),
                   aTexCoordRect.XMost() / GLfloat(aTexSize.width),
@@ -760,13 +760,13 @@ LayerManagerOGL::Render()
   GLint width = rect.width;
   GLint height = rect.height;
 
-  
-  
+  // We can't draw anything to something with no area
+  // so just return
   if (width == 0 || height == 0)
     return;
 
-  
-  
+  // If the widget size changed, we have to force a MakeCurrent
+  // to make sure that GL sees the updated widget size.
   if (mWidgetSize.width != width ||
       mWidgetSize.height != height)
   {
@@ -781,7 +781,7 @@ LayerManagerOGL::Render()
   SetupBackBuffer(width, height);
   SetupPipeline(width, height, ApplyWorldTransform);
 
-  
+  // Default blend function implements "OVER"
   mGLContext->fBlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA,
                                  LOCAL_GL_ONE, LOCAL_GL_ONE);
   mGLContext->fEnable(LOCAL_GL_BLEND);
@@ -801,7 +801,7 @@ LayerManagerOGL::Render()
   mGLContext->fClearColor(0.0, 0.0, 0.0, 0.0);
   mGLContext->fClear(LOCAL_GL_COLOR_BUFFER_BIT | LOCAL_GL_DEPTH_BUFFER_BIT);
 
-  
+  // Render our layers.
   RootLayer()->RenderLayer(mGLContext->IsDoubleBuffered() ? 0 : mBackBufferFBO,
                            nsIntPoint(0, 0));
                            
@@ -844,15 +844,15 @@ LayerManagerOGL::Render()
                          2, f);
   }
 
-  
+  // we're going to use client-side vertex arrays for this.
   mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
 
-  
+  // "COPY"
   mGLContext->fBlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ZERO,
                                  LOCAL_GL_ONE, LOCAL_GL_ZERO);
 
-  
-  
+  // enable our vertex attribs; we'll call glVertexPointer below
+  // to fill with the correct data.
   GLint vcattr = copyprog->AttribLocation(CopyProgram::VertexCoordAttrib);
   GLint tcattr = copyprog->AttribLocation(CopyProgram::TexCoordAttrib);
 
@@ -879,9 +879,9 @@ LayerManagerOGL::Render()
                          right * 2.0f - 1.0f,
                          -(bottom * 2.0f - 1.0f) };
 
-    
-    
-    
+    // Use flipped texture coordinates since our
+    // projection matrix also has a flip and we
+    // need to cancel that out.
     float coords[] = { left, bottom,
                        right, bottom,
                        left, top,
@@ -935,20 +935,20 @@ LayerManagerOGL::WorldTransformRect(nsIntRect& aRect)
 void
 LayerManagerOGL::SetupPipeline(int aWidth, int aHeight, WorldTransforPolicy aTransformPolicy)
 {
-  
+  // Set the viewport correctly. 
   mGLContext->fViewport(0, 0, aWidth, aHeight);
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // We flip the view matrix around so that everything is right-side up; we're
+  // drawing directly into the window's back buffer, so this keeps things
+  // looking correct.
+  //
+  // XXX: We keep track of whether the window size changed, so we could skip
+  // this update if it hadn't changed since the last call. We will need to
+  // track changes to aTransformPolicy and mWorldMatrix for this to work
+  // though.
 
-  
-  
+  // Matrix to transform (0, 0, aWidth, aHeight) to viewport space (-1.0, 1.0,
+  // 2, 2) and flip the contents.
   gfxMatrix viewMatrix; 
   viewMatrix.Translate(-gfxPoint(1.0, -1.0));
   viewMatrix.Scale(2.0f / float(aWidth), 2.0f / float(aHeight));
@@ -972,7 +972,7 @@ LayerManagerOGL::SetupBackBuffer(int aWidth, int aHeight)
     return;
   }
 
-  
+  // Do we have a FBO of the right size already?
   if (mBackBufferSize.width == aWidth &&
       mBackBufferSize.height == aHeight)
   {
@@ -980,7 +980,7 @@ LayerManagerOGL::SetupBackBuffer(int aWidth, int aHeight)
     return;
   }
 
-  
+  // we already have a FBO, but we need to resize its texture.
   mGLContext->fActiveTexture(LOCAL_GL_TEXTURE0);
   mGLContext->fBindTexture(mFBOTextureTarget, mBackBufferTexture);
   mGLContext->fTexImage2D(mFBOTextureTarget,
@@ -1000,9 +1000,12 @@ LayerManagerOGL::SetupBackBuffer(int aWidth, int aHeight)
                                     mBackBufferTexture,
                                     0);
 
-  if (mGLContext->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER) !=
-      LOCAL_GL_FRAMEBUFFER_COMPLETE) {
-    NS_RUNTIMEABORT("Error setting up framebuffer --- framebuffer not complete");
+  GLenum result = mGLContext->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
+  if (result != LOCAL_GL_FRAMEBUFFER_COMPLETE) {
+    nsCAutoString msg;
+    msg.Append("Framebuffer not complete -- error 0x");
+    msg.AppendInt(result, 16);
+    NS_RUNTIMEABORT(msg.get());
   }
 
   mBackBufferSize.width = aWidth;
@@ -1030,8 +1033,8 @@ LayerManagerOGL::CopyToTarget()
                                mGLContext->IsDoubleBuffered() ? 0 : mBackBufferFBO);
 
 #ifndef USE_GLES2
-  
-  
+  // GLES2 promises that binding to any custom FBO will attach
+  // to GL_COLOR_ATTACHMENT0 attachment point.
   if (mGLContext->IsDoubleBuffered()) {
     mGLContext->fReadBuffer(LOCAL_GL_BACK);
   }
@@ -1064,7 +1067,7 @@ LayerManagerOGL::CopyToTarget()
   }
 
   if (!mHasBGRA) {
-    
+    // need to swap B and R bytes
     for (int j = 0; j < height; ++j) {
       PRUint32 *row = (PRUint32*) (imageSurface->Data() + imageSurface->Stride() * j);
       for (int i = 0; i < width; ++i) {
@@ -1159,11 +1162,14 @@ LayerManagerOGL::CreateFBOWithTexture(const nsIntRect& aRect, InitMode aInit,
                                     tex,
                                     0);
 
-  
-  
-  if (mGLContext->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER) !=
-      LOCAL_GL_FRAMEBUFFER_COMPLETE) {
-    NS_RUNTIMEABORT("Error setting up framebuffer --- framebuffer not complete");
+  // Making this call to fCheckFramebufferStatus prevents a crash on
+  // PowerVR. See bug 695246.
+  GLenum result = mGLContext->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
+  if (result != LOCAL_GL_FRAMEBUFFER_COMPLETE) {
+    nsCAutoString msg;
+    msg.Append("Framebuffer not complete -- error 0x");
+    msg.AppendInt(result, 16);
+    NS_RUNTIMEABORT(msg.get());
   }
 
   SetupPipeline(aRect.width, aRect.height, DontApplyWorldTransform);
@@ -1229,5 +1235,5 @@ LayerManagerOGL::CreateShadowCanvasLayer()
 }
 
 
-} 
-} 
+} /* layers */
+} /* mozilla */

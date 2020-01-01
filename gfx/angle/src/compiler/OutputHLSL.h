@@ -1,8 +1,8 @@
-
-
-
-
-
+//
+// Copyright (c) 2002-2011 The ANGLE Project Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
 
 #ifndef COMPILER_OUTPUTHLSL_H_
 #define COMPILER_OUTPUTHLSL_H_
@@ -31,13 +31,13 @@ class OutputHLSL : public TIntermTraverser
     static TString qualifierString(TQualifier qualifier);
     static TString arrayString(const TType &type);
     static TString initializer(const TType &type);
-    static TString decorate(const TString &string);                      
+    static TString decorate(const TString &string);                      // Prepends an underscore to avoid naming clashes
     static TString decorateUniform(const TString &string, bool array);
 
   protected:
     void header();
 
-    
+    // Visit AST nodes and output their code to the body stream
     void visitSymbol(TIntermSymbol*);
     void visitConstantUnion(TIntermConstantUnion*);
     bool visitBinary(Visit visit, TIntermBinary*);
@@ -65,7 +65,7 @@ class OutputHLSL : public TIntermTraverser
     UnfoldSelect *mUnfoldSelect;
     bool mInsideFunction;
 
-    
+    // Output streams
     TInfoSinkBase mHeader;
     TInfoSinkBase mBody;
     TInfoSinkBase mFooter;
@@ -74,7 +74,7 @@ class OutputHLSL : public TIntermTraverser
     std::set<std::string> mReferencedAttributes;
     std::set<std::string> mReferencedVaryings;
 
-    
+    // Parameters determining what goes in the header output
     bool mUsesTexture2D;
     bool mUsesTexture2D_bias;
     bool mUsesTexture2DLod;
@@ -91,9 +91,12 @@ class OutputHLSL : public TIntermTraverser
     bool mUsesPointSize;
     bool mUsesXor;
     bool mUsesMod1;
-    bool mUsesMod2;
-    bool mUsesMod3;
-    bool mUsesMod4;
+    bool mUsesMod2v;
+    bool mUsesMod2f;
+    bool mUsesMod3v;
+    bool mUsesMod3f;
+    bool mUsesMod4v;
+    bool mUsesMod4f;
     bool mUsesFaceforward1;
     bool mUsesFaceforward2;
     bool mUsesFaceforward3;
@@ -125,8 +128,8 @@ class OutputHLSL : public TIntermTraverser
     ScopeBracket mScopeBracket;
     unsigned int mScopeDepth;
 
-    int mUniqueIndex;   
+    int mUniqueIndex;   // For creating unique names
 };
 }
 
-#endif   
+#endif   // COMPILER_OUTPUTHLSL_H_

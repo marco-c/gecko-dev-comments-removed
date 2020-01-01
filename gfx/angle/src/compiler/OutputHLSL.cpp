@@ -1,8 +1,8 @@
-
-
-
-
-
+//
+// Copyright (c) 2002-2011 The ANGLE Project Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
 
 #include "compiler/OutputHLSL.h"
 
@@ -16,7 +16,7 @@
 
 namespace sh
 {
-
+// Integer to TString conversion
 TString str(int i)
 {
     char buffer[20];
@@ -45,9 +45,12 @@ OutputHLSL::OutputHLSL(TParseContext &context) : TIntermTraverser(true, true, tr
     mUsesPointSize = false;
     mUsesXor = false;
     mUsesMod1 = false;
-    mUsesMod2 = false;
-    mUsesMod3 = false;
-    mUsesMod4 = false;
+    mUsesMod2v = false;
+    mUsesMod2f = false;
+    mUsesMod3v = false;
+    mUsesMod3f = false;
+    mUsesMod4v = false;
+    mUsesMod4f = false;
     mUsesFaceforward1 = false;
     mUsesFaceforward2 = false;
     mUsesFaceforward3 = false;
@@ -78,7 +81,7 @@ OutputHLSL::~OutputHLSL()
 
 void OutputHLSL::output()
 {
-    mContext.treeRoot->traverse(this);   
+    mContext.treeRoot->traverse(this);   // Output the body first to determine what has to go in the header
     header();
 
     mContext.infoSink.obj << mHeader.c_str();
@@ -143,7 +146,7 @@ void OutputHLSL::header()
                 {
                     if (mReferencedVaryings.find(name.c_str()) != mReferencedVaryings.end())
                     {
-                        
+                        // Program linking depends on this exact format
                         varyings += "static " + typeString(type) + " " + decorate(name) + arrayString(type) + " = " + initializer(type) + ";\n";
 
                         semanticIndex += type.isArray() ? type.getArraySize() : 1;
@@ -151,11 +154,11 @@ void OutputHLSL::header()
                 }
                 else if (qualifier == EvqGlobal || qualifier == EvqTemporary)
                 {
-                    
+                    // Globals are declared and intialized as an aggregate node
                 }
                 else if (qualifier == EvqConst)
                 {
-                    
+                    // Constants are repeated as literals where used
                 }
                 else UNREACHABLE();
             }
@@ -199,19 +202,19 @@ void OutputHLSL::header()
         out <<  uniforms;
         out << "\n";
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // The texture fetch functions "flip" the Y coordinate in one way or another. This is because textures are stored
+        // according to the OpenGL convention, i.e. (0, 0) is "bottom left", rather than the D3D convention where (0, 0)
+        // is "top left". Since the HLSL texture fetch functions expect textures to be stored according to the D3D
+        // convention, the Y coordinate passed to these functions is adjusted to compensate.
+        //
+        // The simplest case is texture2D where the mapping is Y -> 1-Y, which maps [0, 1] -> [1, 0].
+        //
+        // The texture2DProj functions are more complicated because the projection divides by either Z or W. For the vec3
+        // case, the mapping is Y -> Z-Y or Y/Z -> 1-Y/Z, which again maps [0, 1] -> [1, 0].
+        //
+        // For cube textures the mapping is Y -> -Y, which maps [-1, 1] -> [1, -1]. This is not sufficient on its own for the
+        // +Y and -Y faces, which are now on the "wrong sides" of the cube. This is compensated for by exchanging the
+        // +Y and -Y faces everywhere else throughout the code.
         
         if (mUsesTexture2D)
         {
@@ -277,7 +280,7 @@ void OutputHLSL::header()
                    "\n";
         }
     }
-    else   
+    else   // Vertex shader
     {
         TString uniforms;
         TString attributes;
@@ -314,17 +317,17 @@ void OutputHLSL::header()
                 {
                     if (mReferencedVaryings.find(name.c_str()) != mReferencedVaryings.end())
                     {
-                        
+                        // Program linking depends on this exact format
                         varyings += "static " + typeString(type) + " " + decorate(name) + arrayString(type) + " = " + initializer(type) + ";\n";
                     }
                 }
                 else if (qualifier == EvqGlobal || qualifier == EvqTemporary)
                 {
-                    
+                    // Globals are declared and intialized as an aggregate node
                 }
                 else if (qualifier == EvqConst)
                 {
-                    
+                    // Constants are repeated as literals where used
                 }
                 else UNREACHABLE();
             }
@@ -349,19 +352,19 @@ void OutputHLSL::header()
         out <<  uniforms;
         out << "\n";
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // The texture fetch functions "flip" the Y coordinate in one way or another. This is because textures are stored
+        // according to the OpenGL convention, i.e. (0, 0) is "bottom left", rather than the D3D convention where (0, 0)
+        // is "top left". Since the HLSL texture fetch functions expect textures to be stored according to the D3D
+        // convention, the Y coordinate passed to these functions is adjusted to compensate.
+        //
+        // The simplest case is texture2D where the mapping is Y -> 1-Y, which maps [0, 1] -> [1, 0].
+        //
+        // The texture2DProj functions are more complicated because the projection divides by either Z or W. For the vec3
+        // case, the mapping is Y -> Z-Y or Y/Z -> 1-Y/Z, which again maps [0, 1] -> [1, 0].
+        //
+        // For cube textures the mapping is Y -> -Y, which maps [-1, 1] -> [1, -1]. This is not sufficient on its own for the
+        // +Y and -Y faces, which are now on the "wrong sides" of the cube. This is compensated for by exchanging the
+        // +Y and -Y faces everywhere else throughout the code.
         
         if (mUsesTexture2D)
         {
@@ -479,8 +482,17 @@ void OutputHLSL::header()
                "}\n"
                "\n";
     }
-    
-    if (mUsesMod2)
+
+    if (mUsesMod2v)
+    {
+        out << "float2 mod(float2 x, float2 y)\n"
+               "{\n"
+               "    return x - y * floor(x / y);\n"
+               "}\n"
+               "\n";
+    }
+
+    if (mUsesMod2f)
     {
         out << "float2 mod(float2 x, float y)\n"
                "{\n"
@@ -489,7 +501,16 @@ void OutputHLSL::header()
                "\n";
     }
     
-    if (mUsesMod3)
+    if (mUsesMod3v)
+    {
+        out << "float3 mod(float3 x, float3 y)\n"
+               "{\n"
+               "    return x - y * floor(x / y);\n"
+               "}\n"
+               "\n";
+    }
+
+    if (mUsesMod3f)
     {
         out << "float3 mod(float3 x, float y)\n"
                "{\n"
@@ -498,7 +519,16 @@ void OutputHLSL::header()
                "\n";
     }
 
-    if (mUsesMod4)
+    if (mUsesMod4v)
+    {
+        out << "float4 mod(float4 x, float4 y)\n"
+               "{\n"
+               "    return x - y * floor(x / y);\n"
+               "}\n"
+               "\n";
+    }
+
+    if (mUsesMod4f)
     {
         out << "float4 mod(float4 x, float y)\n"
                "{\n"
@@ -677,7 +707,7 @@ void OutputHLSL::header()
     {
         out << "float atanyx(float y, float x)\n"
                "{\n"
-               "    if(x == 0 && y == 0) x = 1;\n"   
+               "    if(x == 0 && y == 0) x = 1;\n"   // Avoid producing a NaN
                "    return atan2(y, x);\n"
                "}\n";
     }
@@ -758,10 +788,10 @@ bool OutputHLSL::visitBinary(Visit visit, TIntermBinary *node)
       case EOpInitialize:
         if (visit == PreVisit)
         {
-            
-            
-            
-            
+            // GLSL allows to write things like "float x = x;" where a new variable x is defined
+            // and the value of an existing variable x is assigned. HLSL uses C semantics (the
+            // new variable is created before the assignment is evaluated), so we need to convert
+            // this to "float t = x, x = t;".
 
             TIntermSymbol *symbolNode = node->getLeft()->getAsSymbolNode();
             TIntermTyped *expression = node->getRight();
@@ -772,7 +802,7 @@ bool OutputHLSL::visitBinary(Visit visit, TIntermBinary *node)
 
             if (sameSymbol)
             {
-                
+                // Type already printed
                 out << "t" + str(mUniqueIndex) + " = ";
                 expression->traverse(this);
                 out << ", ";
@@ -869,7 +899,7 @@ bool OutputHLSL::visitBinary(Visit visit, TIntermBinary *node)
             }
             else UNREACHABLE();
 
-            return false;   
+            return false;   // Fully processed
         }
         break;
       case EOpAdd:               outputTriplet(visit, "(", " + ", ")"); break;
@@ -1096,11 +1126,11 @@ bool OutputHLSL::visitAggregate(Visit visit, TIntermAggregate *node)
 
                 if (mScopeBracket.size() < mScopeDepth)
                 {
-                    mScopeBracket.push_back(0);   
+                    mScopeBracket.push_back(0);   // New scope level
                 }
                 else
                 {
-                    mScopeBracket[mScopeDepth - 1]++;   
+                    mScopeBracket[mScopeDepth - 1]++;   // New scope at existing level
                 }
             }
 
@@ -1142,7 +1172,7 @@ bool OutputHLSL::visitAggregate(Visit visit, TIntermAggregate *node)
                     addConstructor(variable->getType(), scopedStruct(variable->getType().getTypeName()), NULL);
                 }
 
-                if (!variable->getAsSymbolNode() || variable->getAsSymbolNode()->getSymbol() != "")   
+                if (!variable->getAsSymbolNode() || variable->getAsSymbolNode()->getSymbol() != "")   // Variable declaration
                 {
                     if (!mInsideFunction)
                     {
@@ -1180,9 +1210,9 @@ bool OutputHLSL::visitAggregate(Visit visit, TIntermAggregate *node)
                         this->visitAggregate(PostVisit, node);
                     }
                 }
-                else if (variable->getAsSymbolNode() && variable->getAsSymbolNode()->getSymbol() == "")   
+                else if (variable->getAsSymbolNode() && variable->getAsSymbolNode()->getSymbol() == "")   // Type (struct) declaration
                 {
-                    
+                    // Already added to constructor map
                 }
                 else UNREACHABLE();
             }
@@ -1447,12 +1477,17 @@ bool OutputHLSL::visitAggregate(Visit visit, TIntermAggregate *node)
       case EOpVectorNotEqual:   outputTriplet(visit, "(", " != ", ")");                break;
       case EOpMod:
         {
-            switch (node->getSequence()[0]->getAsTyped()->getNominalSize())   
+            // We need to look at the number of components in both arguments
+            switch (node->getSequence()[0]->getAsTyped()->getNominalSize() * 10
+                     + node->getSequence()[1]->getAsTyped()->getNominalSize())
             {
-              case 1: mUsesMod1 = true; break;
-              case 2: mUsesMod2 = true; break;
-              case 3: mUsesMod3 = true; break;
-              case 4: mUsesMod4 = true; break;
+              case 11: mUsesMod1 = true; break;
+              case 22: mUsesMod2v = true; break;
+              case 21: mUsesMod2f = true; break;
+              case 33: mUsesMod3v = true; break;
+              case 31: mUsesMod3f = true; break;
+              case 44: mUsesMod4v = true; break;
+              case 41: mUsesMod4f = true; break;
               default: UNREACHABLE();
             }
 
@@ -1461,7 +1496,7 @@ bool OutputHLSL::visitAggregate(Visit visit, TIntermAggregate *node)
         break;
       case EOpPow:              outputTriplet(visit, "pow(", ", ", ")");               break;
       case EOpAtan:
-        ASSERT(node->getSequence().size() == 2);   
+        ASSERT(node->getSequence().size() == 2);   // atan(x) is a unary operator
         mUsesAtan2 = true;
         outputTriplet(visit, "atanyx(", ", ", ")");
         break;
@@ -1476,7 +1511,7 @@ bool OutputHLSL::visitAggregate(Visit visit, TIntermAggregate *node)
       case EOpCross:         outputTriplet(visit, "cross(", ", ", ")");         break;
       case EOpFaceForward:
         {
-            switch (node->getSequence()[0]->getAsTyped()->getNominalSize())   
+            switch (node->getSequence()[0]->getAsTyped()->getNominalSize())   // Number of components in the first argument
             {
             case 1: mUsesFaceforward1 = true; break;
             case 2: mUsesFaceforward2 = true; break;
@@ -1505,7 +1540,7 @@ bool OutputHLSL::visitSelection(Visit visit, TIntermSelection *node)
     {
         out << "s" << mUnfoldSelect->getNextTemporaryIndex();
     }
-    else  
+    else  // if/else statement
     {
         mUnfoldSelect->traverse(node->getCondition());
 
@@ -1679,20 +1714,20 @@ bool OutputHLSL::isSingleStatement(TIntermNode *node)
     return true;
 }
 
-
+// Handle loops with more than 255 iterations (unsupported by D3D9) by splitting them
 bool OutputHLSL::handleExcessiveLoop(TIntermLoop *node)
 {
     TInfoSinkBase &out = mBody;
 
-    
-    
+    // Parse loops of the form:
+    // for(int index = initial; index [comparator] limit; index += increment)
     TIntermSymbol *index = NULL;
     TOperator comparator = EOpNull;
     int initial = 0;
     int limit = 0;
     int increment = 0;
 
-    
+    // Parse index name and intial value
     if (node->getInit())
     {
         TIntermAggregate *init = node->getInit()->getAsAggregate();
@@ -1724,7 +1759,7 @@ bool OutputHLSL::handleExcessiveLoop(TIntermLoop *node)
         }
     }
 
-    
+    // Parse comparator and limit value
     if (index != NULL && node->getCondition())
     {
         TIntermBinary *test = node->getCondition()->getAsBinaryNode();
@@ -1744,7 +1779,7 @@ bool OutputHLSL::handleExcessiveLoop(TIntermLoop *node)
         }
     }
 
-    
+    // Parse increment
     if (index != NULL && comparator != EOpNull && node->getExpression())
     {
         TIntermBinary *binaryTerminal = node->getExpression()->getAsBinaryNode();
@@ -1799,7 +1834,7 @@ bool OutputHLSL::handleExcessiveLoop(TIntermLoop *node)
 
             if (iterations <= 255)
             {
-                return false;   
+                return false;   // Not an excessive loop
             }
 
             while (iterations > 0)
@@ -1807,7 +1842,7 @@ bool OutputHLSL::handleExcessiveLoop(TIntermLoop *node)
                 int remainder = (limit - initial) % increment;
                 int clampedLimit = initial + increment * std::min(255, iterations);
 
-                
+                // for(int index = initial; index < clampedLimit; index += increment)
 
                 out << "for(int ";
                 index->traverse(this);
@@ -1845,7 +1880,7 @@ bool OutputHLSL::handleExcessiveLoop(TIntermLoop *node)
         else UNIMPLEMENTED();
     }
 
-    return false;   
+    return false;   // Not handled as an excessive loop
 }
 
 void OutputHLSL::outputTriplet(Visit visit, const TString &preString, const TString &inString, const TString &postString)
@@ -1888,7 +1923,7 @@ TString OutputHLSL::argumentString(const TIntermSymbol *symbol)
     const TType &type = symbol->getType();
     TString name = symbol->getSymbol();
 
-    if (name.empty())   
+    if (name.empty())   // HLSL demands named arguments, also for prototypes
     {
         name = "x" + str(mUniqueIndex++);
     }
@@ -1922,7 +1957,7 @@ TString OutputHLSL::typeString(const TType &type)
         {
             return structLookup(type.getTypeName());
         }
-        else   
+        else   // Nameless structure, define in place
         {
             const TTypeList &fields = *type.getStruct();
 
@@ -1987,7 +2022,7 @@ TString OutputHLSL::typeString(const TType &type)
         }
     }
 
-    UNIMPLEMENTED();   
+    UNIMPLEMENTED();   // FIXME
     return "<unknown type>";
 }
 
@@ -2022,7 +2057,7 @@ void OutputHLSL::addConstructor(const TType &type, const TString &name, const TI
 {
     if (name == "")
     {
-        return;   
+        return;   // Nameless structures don't have constructors
     }
 
     TType ctorType = type;
@@ -2079,7 +2114,7 @@ void OutputHLSL::addConstructor(const TType &type, const TString &name, const TI
     {
         constructor += ctorName + " " + ctorName + "_ctor(";
     }
-    else   
+    else   // Built-in type
     {
         constructor += typeString(ctorType) + " " + ctorName + "(";
     }
@@ -2320,7 +2355,7 @@ TString OutputHLSL::structLookup(const TString &typeName)
         }
     }
 
-    UNREACHABLE();   
+    UNREACHABLE();   // Should have found a matching constructor
 
     return typeName;
 }
@@ -2339,7 +2374,7 @@ TString OutputHLSL::decorateUniform(const TString &string, bool array)
 {
     if (array)
     {
-        return "ar_" + string;   
+        return "ar_" + string;   // Allows identifying arrays of size 1
     }
     
     return decorate(string);

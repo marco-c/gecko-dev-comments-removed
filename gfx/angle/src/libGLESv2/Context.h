@@ -1,11 +1,11 @@
+//
+// Copyright (c) 2002-2011 The ANGLE Project Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
 
-
-
-
-
-
-
-
+// Context.h: Defines the gl::Context class, managing all GL state and performing
+// rendering operations. It is the GLES2 specific implementation of EGLContext.
 
 #ifndef LIBGLESV2_CONTEXT_H_
 #define LIBGLESV2_CONTEXT_H_
@@ -59,13 +59,13 @@ class Fence;
 enum
 {
     MAX_VERTEX_ATTRIBS = 16,
-    MAX_VERTEX_UNIFORM_VECTORS = 256 - 2,   
+    MAX_VERTEX_UNIFORM_VECTORS = 256 - 2,   // 256 is the minimum for SM2, and in practice the maximum for DX9. Reserve space for dx_HalfPixelSize and dx_DepthRange.
     MAX_VARYING_VECTORS_SM2 = 8,
     MAX_VARYING_VECTORS_SM3 = 10,
     MAX_TEXTURE_IMAGE_UNITS = 16,
-    MAX_VERTEX_TEXTURE_IMAGE_UNITS_VTF = 4,   
+    MAX_VERTEX_TEXTURE_IMAGE_UNITS_VTF = 4,   // For devices supporting vertex texture fetch
     MAX_COMBINED_TEXTURE_IMAGE_UNITS_VTF = MAX_TEXTURE_IMAGE_UNITS + MAX_VERTEX_TEXTURE_IMAGE_UNITS_VTF,    
-    MAX_FRAGMENT_UNIFORM_VECTORS_SM2 = 32 - 3,    
+    MAX_FRAGMENT_UNIFORM_VECTORS_SM2 = 32 - 3,    // Reserve space for dx_Viewport, dx_Depth, and dx_DepthRange. dx_PointOrLines and dx_FrontCCW use separate bool registers.
     MAX_FRAGMENT_UNIFORM_VECTORS_SM3 = 224 - 3,
     MAX_DRAW_BUFFERS = 1,
 
@@ -87,7 +87,7 @@ struct Color
     float alpha;
 };
 
-
+// Helper structure describing a single vertex attribute
 class VertexAttribute
 {
   public:
@@ -118,11 +118,11 @@ class VertexAttribute
         return mStride ? mStride : typeSize();
     }
 
-    
+    // From glVertexAttribPointer
     GLenum mType;
     GLint mSize;
     bool mNormalized;
-    GLsizei mStride;   
+    GLsizei mStride;   // 0 means natural stride
 
     union
     {
@@ -130,15 +130,15 @@ class VertexAttribute
         intptr_t mOffset;
     };
 
-    BindingPointer<Buffer> mBoundBuffer;   
+    BindingPointer<Buffer> mBoundBuffer;   // Captured when glVertexAttribPointer is called.
 
-    bool mArrayEnabled;   
-    float mCurrentValue[4];   
+    bool mArrayEnabled;   // From glEnable/DisableVertexAttribArray
+    float mCurrentValue[4];   // From glVertexAttrib
 };
 
 typedef VertexAttribute VertexAttributeArray[MAX_VERTEX_ATTRIBS];
 
-
+// Helper structure to store all raw state
 struct State
 {
     Color colorClearValue;
@@ -206,7 +206,7 @@ struct State
     bool colorMaskAlpha;
     bool depthMask;
 
-    unsigned int activeSampler;   
+    unsigned int activeSampler;   // Active texture unit selector - GL_TEXTURE0
     BindingPointer<Buffer> arrayBuffer;
     BindingPointer<Buffer> elementArrayBuffer;
     GLuint readFramebuffer;
@@ -219,9 +219,10 @@ struct State
 
     GLint unpackAlignment;
     GLint packAlignment;
+    bool packReverseRowOrder;
 };
 
-
+// Helper class to construct and cache vertex declarations
 class VertexDeclarationCache
 {
   public:
@@ -269,7 +270,7 @@ class Context
     virtual void markContextLost();
     bool isContextLost();
 
-    
+    // State manipulation
     void setClearColor(float red, float green, float blue, float alpha);
 
     void setClearDepth(float depth);
@@ -360,8 +361,11 @@ class Context
     void setPackAlignment(GLint alignment);
     GLint getPackAlignment() const;
 
-    
-    
+    void setPackReverseRowOrder(bool reverseRowOrder);
+    bool getPackReverseRowOrder() const;
+
+    // These create  and destroy methods are merely pass-throughs to 
+    // ResourceManager, which owns these object types
     GLuint createBuffer();
     GLuint createShader(GLenum type);
     GLuint createProgram();
@@ -374,11 +378,11 @@ class Context
     void deleteTexture(GLuint texture);
     void deleteRenderbuffer(GLuint renderbuffer);
 
-    
+    // Framebuffers are owned by the Context, so these methods do not pass through
     GLuint createFramebuffer();
     void deleteFramebuffer(GLuint framebuffer);
 
-    
+    // Fences are owned by the Context.
     GLuint createFence();
     void deleteFence(GLuint fence);
 
@@ -424,11 +428,11 @@ class Context
     void clear(GLbitfield mask);
     void drawArrays(GLenum mode, GLint first, GLsizei count);
     void drawElements(GLenum mode, GLsizei count, GLenum type, const void *indices);
-    void sync(bool block);   
+    void sync(bool block);   // flush/finish
 
-	
-    void drawClosingLine(unsigned int first, unsigned int last);
-    void drawClosingLine(GLsizei count, GLenum type, const void *indices);
+	// Draw the last segment of a line loop
+    void drawClosingLine(unsigned int first, unsigned int last, int minIndex);
+    void drawClosingLine(GLsizei count, GLenum type, const void *indices, int minIndex);
 
     void recordInvalidEnum();
     void recordInvalidValue();
@@ -529,14 +533,14 @@ class Context
     
     BindingPointer<Texture> mIncompleteTextures[TEXTURE_TYPE_COUNT];
 
-    
+    // Recorded errors
     bool mInvalidEnum;
     bool mInvalidValue;
     bool mInvalidOperation;
     bool mOutOfMemory;
     bool mInvalidFramebufferOperation;
 
-    
+    // Current/lost context flags
     bool mHasBeenCurrent;
     bool mContextLost;
     GLenum mResetStatus;
@@ -583,7 +587,7 @@ class Context
     bool mSupports32bitIndices;
     int mNumCompressedTextureFormats;
 
-    
+    // state caching flags
     bool mClearStateDirty;
     bool mCullStateDirty;
     bool mDepthStateDirty;
@@ -609,7 +613,7 @@ class Context
 
 extern "C"
 {
-
+// Exported functions for use by EGL
 gl::Context *glCreateContext(const egl::Config *config, const gl::Context *shareContext, bool notifyResets, bool robustAccess);
 void glDestroyContext(gl::Context *context);
 void glMakeCurrent(gl::Context *context, egl::Display *display, egl::Surface *surface);
@@ -618,4 +622,4 @@ __eglMustCastToProperFunctionPointerType __stdcall glGetProcAddress(const char *
 bool __stdcall glBindTexImage(egl::Surface *surface);
 }
 
-#endif   
+#endif   // INCLUDE_CONTEXT_H_
