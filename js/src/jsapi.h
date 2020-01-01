@@ -599,6 +599,8 @@ JS_StringToVersion(const char *string);
 
 
 
+
+
 extern JS_PUBLIC_API(uint32)
 JS_GetOptions(JSContext *cx);
 
