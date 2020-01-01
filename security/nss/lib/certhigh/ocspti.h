@@ -189,14 +189,18 @@ struct CERTOCSPCertIDStr {
 
 
 typedef enum {
-    ocspResponse_other = -1,		
+    ocspResponse_min = 0,
     ocspResponse_successful = 0,
     ocspResponse_malformedRequest = 1,
     ocspResponse_internalError = 2,
     ocspResponse_tryLater = 3,
     ocspResponse_unused = 4,
     ocspResponse_sigRequired = 5,
-    ocspResponse_unauthorized = 6
+    ocspResponse_unauthorized = 6,
+    ocspResponse_max = 6 
+
+
+
 } ocspResponseStatus;
 
 

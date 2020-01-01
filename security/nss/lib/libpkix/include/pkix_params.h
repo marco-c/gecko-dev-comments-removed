@@ -655,10 +655,77 @@ PKIX_ProcessingParams_GetTrustAnchors(
 
 
 
+
+
 PKIX_Error *
 PKIX_ProcessingParams_SetTrustAnchors(
         PKIX_ProcessingParams *params,
         PKIX_List *pAnchors,  
+        void *plContext);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PKIX_Error *
+PKIX_ProcessingParams_GetUseOnlyTrustAnchors(
+        PKIX_ProcessingParams *params,
+        PKIX_Boolean *pUseOnlyTrustAnchors,
+        void *plContext);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PKIX_Error *
+PKIX_ProcessingParams_SetUseOnlyTrustAnchors(
+        PKIX_ProcessingParams *params,
+        PKIX_Boolean useOnlyTrustAnchors,
         void *plContext);
 
 

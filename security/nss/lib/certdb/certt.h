@@ -956,11 +956,23 @@ typedef enum {
 
 
 
+
+
    cert_pi_useAIACertFetch = 12, 
 
 
    cert_pi_chainVerifyCallback = 13,
                                 
+
+
+   cert_pi_useOnlyTrustAnchors = 14,
+
+
+
+
+
+
+
 
 
    cert_pi_max                  
