@@ -17,7 +17,7 @@ namespace JS {
      \
     D(API)                                      \
     D(MAYBEGC)                                  \
-    D(LAST_CONTEXT)                             \
+    D(DESTROY_RUNTIME)                          \
     D(DESTROY_CONTEXT)                          \
     D(LAST_DITCH)                               \
     D(TOO_MUCH_MALLOC)                          \
