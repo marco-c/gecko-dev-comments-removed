@@ -82,6 +82,12 @@ public:
   void LoadNextByteRange();
 
   
+  void CancelByteRangeLoad();
+
+  
+  bool IsSubsegmentCached(int32_t aSubsegmentIdx);
+
+  
   void SetReader(WebMReader* aReader);
 
   
@@ -122,6 +128,11 @@ public:
   
   
   
+  void DoNotifyDownloadEnded();
+
+  
+  
+  
   
   void NotifySuspendedStatusChanged();
 
@@ -156,6 +167,9 @@ public:
   
   void Shutdown() {
     NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
+    
+    
+    mDecoderStateMachine = nullptr;
     
     MediaDecoder::Shutdown();
     NS_ENSURE_TRUE(mShuttingDown, );

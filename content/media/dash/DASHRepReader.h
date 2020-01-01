@@ -42,6 +42,9 @@ public:
   virtual void SetIndexByteRange(MediaByteRange &aByteRange) = 0;
 
   
+  virtual int64_t GetSubsegmentForSeekTime(int64_t aSeekToTime) = 0;
+
+  
   virtual nsresult GetSubsegmentByteRanges(nsTArray<MediaByteRange>& aByteRanges) = 0;
 
   

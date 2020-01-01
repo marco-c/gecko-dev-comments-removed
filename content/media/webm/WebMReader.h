@@ -182,6 +182,9 @@ public:
   }
 
   
+  int64_t GetSubsegmentForSeekTime(int64_t aSeekToTime) MOZ_OVERRIDE;
+
+  
   nsresult GetSubsegmentByteRanges(nsTArray<MediaByteRange>& aByteRanges)
                                                                   MOZ_OVERRIDE;
 
@@ -304,7 +307,7 @@ private:
   MediaByteRange mCuesByteRange;
 
   
-  nsTArray<MediaByteRange> mClusterByteRanges;
+  nsTArray<TimestampedMediaByteRange> mClusterByteRanges;
 
   
   DASHReader* mMainReader;
