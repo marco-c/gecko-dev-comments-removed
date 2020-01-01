@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsXULTemplateQueryProcessorStorage_h__
 #define nsXULTemplateQueryProcessorStorage_h__
@@ -16,10 +16,11 @@
 #include "mozIStorageValueArray.h"
 #include "mozIStorageStatement.h"
 #include "mozIStorageConnection.h"
+#include "mozilla/Attributes.h"
 
 class nsXULTemplateQueryProcessorStorage;
 
-class nsXULTemplateResultSetStorage : public nsISimpleEnumerator
+class nsXULTemplateResultSetStorage MOZ_FINAL : public nsISimpleEnumerator
 {
 private:
 
@@ -29,10 +30,10 @@ private:
 
 public:
 
-    
+    // nsISupports interface
     NS_DECL_ISUPPORTS
 
-    
+    // nsISimpleEnumerator interface
     NS_DECL_NSISIMPLEENUMERATOR
 
     nsXULTemplateResultSetStorage(mozIStorageStatement* aStatement);
@@ -43,16 +44,16 @@ public:
 
 };
 
-class nsXULTemplateQueryProcessorStorage : public nsIXULTemplateQueryProcessor
+class nsXULTemplateQueryProcessorStorage MOZ_FINAL : public nsIXULTemplateQueryProcessor
 {
 public:
 
     nsXULTemplateQueryProcessorStorage();
 
-    
+    // nsISupports interface
     NS_DECL_ISUPPORTS
 
-    
+    // nsIXULTemplateQueryProcessor interface
     NS_DECL_NSIXULTEMPLATEQUERYPROCESSOR
 
 private:
@@ -61,4 +62,4 @@ private:
     bool mGenerationStarted;
 };
 
-#endif 
+#endif // nsXULTemplateQueryProcessorStorage_h__

@@ -1,9 +1,9 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=79 ft=cpp:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #ifndef Stack_inl_h__
 #define Stack_inl_h__
@@ -23,11 +23,11 @@
 
 namespace js {
 
-/*
- * We cache name lookup results only for the global object or for native
- * non-global objects without prototype or with prototype that never mutates,
- * see bug 462734 and bug 487039.
- */
+
+
+
+
+
 static inline bool
 IsCacheableNonGlobalScope(JSObject *obj)
 {
@@ -108,10 +108,10 @@ StackFrame::resetGeneratorPrev(JSContext *cx)
 inline void
 StackFrame::initInlineFrame(JSFunction *fun, StackFrame *prevfp, jsbytecode *prevpc)
 {
-    /*
-     * Note: no need to ensure the scopeChain is instantiated for inline
-     * frames. Functions which use the scope chain are never inlined.
-     */
+    
+
+
+
     flags_ = StackFrame::FUNCTION;
     exec.fun = fun;
     resetInlinePrev(prevfp, prevpc);
@@ -137,7 +137,7 @@ StackFrame::initCallFrame(JSContext *cx, JSFunction &callee,
                             UNDERFLOW_ARGS)) == 0);
     JS_ASSERT(script == callee.script());
 
-    /* Initialize stack frame members. */
+    
     flags_ = FUNCTION | HAS_PREVPC | HAS_SCOPECHAIN | HAS_BLOCKCHAIN | flagsArg;
     exec.fun = &callee;
     u.nactual = nactual;
@@ -152,10 +152,10 @@ StackFrame::initCallFrame(JSContext *cx, JSFunction &callee,
     initVarsToUndefined();
 }
 
-/*
- * Reinitialize the StackFrame fields that have been initialized up to the
- * point of FixupArity in the function prologue.
- */
+
+
+
+
 inline void
 StackFrame::initFixupFrame(StackFrame *prev, StackFrame::Flags flags, void *ncode, unsigned nactual)
 {
@@ -305,14 +305,14 @@ StackFrame::numFormalArgs() const
 inline unsigned
 StackFrame::numActualArgs() const
 {
-    /*
-     * u.nactual is always coherent, except for method JIT frames where the
-     * callee does not access its arguments and the number of actual arguments
-     * matches the number of formal arguments. The JIT requires that all frames
-     * which do not have an arguments object and use their arguments have a
-     * coherent u.nactual (even though the below code may not use it), as
-     * JIT code may access the field directly.
-     */
+    
+
+
+
+
+
+
+
     JS_ASSERT(hasArgs());
     if (JS_UNLIKELY(flags_ & (OVERFLOW_ARGS | UNDERFLOW_ARGS)))
         return u.nactual;
@@ -371,7 +371,7 @@ StackFrame::callObj() const
     return pobj->asCall();
 }
 
-/*****************************************************************************/
+
 
 STATIC_POSTCONDITION(!return || ubound(from) >= nvals)
 JS_ALWAYS_INLINE bool
@@ -398,7 +398,7 @@ StackSpace::getStackLimit(JSContext *cx, MaybeReportError report)
            : NULL;
 }
 
-/*****************************************************************************/
+
 
 JS_ALWAYS_INLINE StackFrame *
 ContextStack::getCallFrame(JSContext *cx, MaybeReportError report, const CallArgs &args,
@@ -410,10 +410,10 @@ ContextStack::getCallFrame(JSContext *cx, MaybeReportError report, const CallArg
     Value *firstUnused = args.end();
     JS_ASSERT(firstUnused == space().firstUnused());
 
-    /* Include extra space to satisfy the method-jit stackLimit invariant. */
+    
     unsigned nvals = VALUES_PER_STACK_FRAME + script->nslots + StackSpace::STACK_JIT_EXTRA;
 
-    /* Maintain layout invariant: &formals[0] == ((Value *)fp) - nformal. */
+    
 
     if (args.length() == nformal) {
         if (!space().ensureSpace(cx, report, firstUnused, nvals))
@@ -447,7 +447,7 @@ ContextStack::pushInlineFrame(JSContext *cx, FrameRegs &regs, const CallArgs &ar
 {
     JS_ASSERT(onTop());
     JS_ASSERT(regs.sp == args.end());
-    /* Cannot assert callee == args.callee() since this is called from LeaveTree. */
+    
     JS_ASSERT(script == callee.script());
 
     StackFrame::Flags flags = ToFrameFlags(initial);
@@ -455,13 +455,13 @@ ContextStack::pushInlineFrame(JSContext *cx, FrameRegs &regs, const CallArgs &ar
     if (!fp)
         return false;
 
-    /* Initialize frame, locals, regs. */
+    
     fp->initCallFrame(cx, callee, script, args.length(), flags);
 
-    /*
-     * N.B. regs may differ from the active registers, if the parent is about
-     * to repoint the active registers to regs. See UncachedInlineCall.
-     */
+    
+
+
+
     regs.prepareToRun(*fp, script);
     return true;
 }
@@ -491,7 +491,7 @@ ContextStack::getFixupFrame(JSContext *cx, MaybeReportError report,
     if (!fp)
         return NULL;
 
-    /* Do not init late prologue or regs; this is done by jit code. */
+    
     fp->initFixupFrame(cx->fp(), flags, ncode, args.length());
 
     *stackLimit = space().conservativeEnd_;
@@ -515,7 +515,7 @@ ContextStack::popInlineFrame(FrameRegs &regs)
 inline void
 ContextStack::popFrameAfterOverflow()
 {
-    /* Restore the regs to what they were on entry to JSOP_CALL. */
+    
     FrameRegs &regs = seg_->regs();
     StackFrame *fp = regs.fp();
     regs.popFrame(fp->actuals() + fp->numActualArgs());
@@ -613,7 +613,7 @@ ContextStack::currentScriptedScopeChain() const
 
 template <class Op>
 inline bool
-StackIter::forEachCanonicalActualArg(Op op, unsigned start /* = 0 */, unsigned count /* = unsigned(-1) */)
+StackIter::forEachCanonicalActualArg(Op op, unsigned start , unsigned count )
 {
     switch (state_) {
       case DONE:
@@ -632,5 +632,5 @@ StackIter::forEachCanonicalActualArg(Op op, unsigned start /* = 0 */, unsigned c
     return false;
 }
 
-} /* namespace js */
-#endif /* Stack_inl_h__ */
+} 
+#endif 

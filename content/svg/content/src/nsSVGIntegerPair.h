@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef __NS_SVGINTEGERPAIR_H__
 #define __NS_SVGINTEGERPAIR_H__
@@ -12,6 +12,7 @@
 #include "nsIDOMSVGAnimatedInteger.h"
 #include "nsISMILAttr.h"
 #include "nsSVGElement.h"
+#include "mozilla/Attributes.h"
 
 class nsISMILAnimationElement;
 class nsSMILValue;
@@ -45,30 +46,30 @@ public:
   PRInt32 GetAnimValue(PairIndex aIndex) const
     { return mAnimVal[aIndex == eFirst ? 0 : 1]; }
 
-  
-  
-  
-  
-  
+  // Returns true if the animated value of this integer has been explicitly
+  // set (either by animation, or by taking on the base value which has been
+  // explicitly set by markup or a DOM call), false otherwise.
+  // If this returns false, the animated value is still valid, that is,
+  // useable, and represents the default base value of the attribute.
   bool IsExplicitlySet() const
     { return mIsAnimated || mIsBaseSet; }
 
   nsresult ToDOMAnimatedInteger(nsIDOMSVGAnimatedInteger **aResult,
                                 PairIndex aIndex,
                                 nsSVGElement* aSVGElement);
-  
+  // Returns a new nsISMILAttr object that the caller must delete
   nsISMILAttr* ToSMILAttr(nsSVGElement* aSVGElement);
 
 private:
 
   PRInt32 mAnimVal[2];
   PRInt32 mBaseVal[2];
-  PRUint8 mAttrEnum; 
+  PRUint8 mAttrEnum; // element specified tracking for attribute
   bool mIsAnimated;
   bool mIsBaseSet;
 
 public:
-  struct DOMAnimatedInteger : public nsIDOMSVGAnimatedInteger
+  struct DOMAnimatedInteger MOZ_FINAL : public nsIDOMSVGAnimatedInteger
   {
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
     NS_DECL_CYCLE_COLLECTION_CLASS(DOMAnimatedInteger)
@@ -76,9 +77,9 @@ public:
     DOMAnimatedInteger(nsSVGIntegerPair* aVal, PairIndex aIndex, nsSVGElement *aSVGElement)
       : mVal(aVal), mSVGElement(aSVGElement), mIndex(aIndex) {}
 
-    nsSVGIntegerPair* mVal; 
+    nsSVGIntegerPair* mVal; // kept alive because it belongs to content
     nsRefPtr<nsSVGElement> mSVGElement;
-    PairIndex mIndex; 
+    PairIndex mIndex; // are we the first or second integer
 
     NS_IMETHOD GetBaseVal(PRInt32* aResult)
       { *aResult = mVal->GetBaseValue(mIndex); return NS_OK; }
@@ -88,8 +89,8 @@ public:
         return NS_OK;
       }
 
-    
-    
+    // Script may have modified animation parameters or timeline -- DOM getters
+    // need to flush any resample requests to reflect these modifications.
     NS_IMETHOD GetAnimVal(PRInt32* aResult)
     {
       mSVGElement->FlushAnimations();
@@ -104,13 +105,13 @@ public:
     SMILIntegerPair(nsSVGIntegerPair* aVal, nsSVGElement* aSVGElement)
       : mVal(aVal), mSVGElement(aSVGElement) {}
 
-    
-    
-    
+    // These will stay alive because a nsISMILAttr only lives as long
+    // as the Compositing step, and DOM elements don't get a chance to
+    // die during that.
     nsSVGIntegerPair* mVal;
     nsSVGElement* mSVGElement;
 
-    
+    // nsISMILAttr methods
     virtual nsresult ValueFromString(const nsAString& aStr,
                                      const nsISMILAnimationElement* aSrcElement,
                                      nsSMILValue& aValue,
@@ -121,4 +122,4 @@ public:
   };
 };
 
-#endif 
+#endif //__NS_SVGINTEGERPAIR_H__
