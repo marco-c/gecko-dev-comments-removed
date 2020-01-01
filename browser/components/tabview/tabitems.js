@@ -239,7 +239,7 @@ TabItem.prototype = Utils.extend(new Item(), new Subscribable(), {
   
   save: function TabItem_save() {
     try {
-      if (!this.tab || this.tab.parentNode == null || !this._reconnected) 
+      if (!this.tab || !Utils.isValidXULTab(this.tab) || !this._reconnected) 
         return;
 
       let data = this.getStorageData();
@@ -571,7 +571,7 @@ TabItem.prototype = Utils.extend(new Item(), new Subscribable(), {
 
     Utils.assert(Utils.isRect(this.bounds), 'TabItem.setBounds: this.bounds is not a real rectangle!');
 
-    if (!this.parent && this.tab.parentNode != null)
+    if (!this.parent && Utils.isValidXULTab(this.tab))
       this.setTrenches(rect);
 
     this.save();
@@ -1010,7 +1010,7 @@ let TabItems = {
 
       
       
-      UI.getFavIconUrlForTab(tab, function TabItems__update_getFavIconUrlCallback(iconUrl) {
+      FavIcons.getFavIconUrlForTab(tab, function TabItems__update_getFavIconUrlCallback(iconUrl) {
         let favImage = tabItem.$favImage[0];
         let fav = tabItem.$fav;
         if (iconUrl) {
