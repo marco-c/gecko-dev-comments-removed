@@ -1,11 +1,11 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+/*
+ * JavaScript Debugging support - Call stack support
+ */
 
 #include "jsd.h"
 #include "jsfriendapi.h"
@@ -64,7 +64,7 @@ _addNewFrame(JSDContext*        jsdc,
 static void
 _destroyFrame(JSDStackFrameInfo* jsdframe)
 {
-    
+    /* kill any alloc'd objects in frame here... */
 
     if( jsdframe )
         free(jsdframe);
@@ -87,17 +87,17 @@ jsd_NewThreadState(JSDContext* jsdc, JSContext *cx )
     jsdthreadstate->stackDepth = 0;
 
     JS_BeginRequest(jsdthreadstate->context);
-    while( NULL != (fp = JS_FrameIterator(cx, &iter)) )
+    while( NULL != (fp = JS_BrokenFrameIterator(cx, &iter)) )
     {
         JSScript* script = JS_GetFrameScript(cx, fp);
         uintptr_t  pc = (uintptr_t) JS_GetFramePC(cx, fp);
         jsval dummyThis;
 
-        
-
-
-
-
+        /*
+         * don't construct a JSDStackFrame for dummy frames (those without a
+         * |this| object, or native frames, if JSD_INCLUDE_NATIVE_FRAMES
+         * isn't set.
+         */
         if (JS_GetFrameThis(cx, fp, &dummyThis))
         {
             JSDStackFrameInfo *frame;
@@ -108,10 +108,10 @@ jsd_NewThreadState(JSDContext* jsdc, JSContext *cx )
                 (jsdthreadstate->stackDepth == 1 && frame &&
                  frame->jsdscript && !JSD_IS_DEBUG_ENABLED(jsdc, frame->jsdscript)))
             {
-                
-
-
-
+                /*
+                 * if we failed to create the first frame, or the top frame
+                 * is not enabled for debugging, fail the entire thread state.
+                 */
                 JS_INIT_CLIST(&jsdthreadstate->links);
                 JS_EndRequest(jsdthreadstate->context);
                 jsd_DestroyThreadState(jsdc, jsdthreadstate);
@@ -336,10 +336,10 @@ jsd_GetIdForStackFrame(JSDContext* jsdc,
         {
             rv = JS_GetFunctionId (fun);
 
-            
-
-
-
+            /*
+             * For compatibility we return "anonymous", not an empty string
+             * here.
+             */
             if( !rv )
                 rv = JS_GetAnonymousString(jsdc->jsrt);
         }

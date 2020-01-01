@@ -18,6 +18,7 @@
 #include "nsPermission.h"
 #include "nsHashKeys.h"
 #include "nsAutoPtr.h"
+#include "nsCOMArray.h"
 
 class nsIPermission;
 class nsIIDNService;
@@ -76,7 +77,7 @@ public:
     }
 
     PLDHashNumber GetHashCode() const {
-      nsCAutoString str;
+      nsAutoCString str;
       str.Assign(mHost);
       str.AppendInt(mAppId);
       str.AppendInt(static_cast<int32_t>(mIsInBrowserElement));
@@ -190,6 +191,14 @@ public:
                        NotifyOperationType aNotifyOperation,
                        DBOperationType aDBOperation);
 
+  
+
+
+
+
+
+  static void AppUninstallObserverInit();
+
 private:
   int32_t GetTypeIndex(const char *aTypeString,
                        bool        aAdd);
@@ -236,6 +245,28 @@ private:
                        int64_t               aExpireTime,
                        uint32_t              aAppId,
                        bool                  aIsInBrowserElement);
+
+  
+
+
+
+
+  struct GetPermissionsForAppStruct {
+    uint32_t                  appId;
+    nsCOMArray<nsIPermission> permissions;
+
+    GetPermissionsForAppStruct() MOZ_DELETE;
+    GetPermissionsForAppStruct(uint32_t aAppId)
+      : appId(aAppId)
+    {}
+  };
+
+  
+
+
+
+
+  static PLDHashOperator GetPermissionsForApp(nsPermissionManager::PermissionHashKey* entry, void* arg);
 
   nsCOMPtr<nsIObserverService> mObserverService;
   nsCOMPtr<nsIIDNService>      mIDNService;

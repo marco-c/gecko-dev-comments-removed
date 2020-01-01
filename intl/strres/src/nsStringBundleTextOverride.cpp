@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
 #include "nsStringBundleTextOverride.h"
@@ -14,8 +14,8 @@
 static NS_DEFINE_CID(kPersistentPropertiesCID, NS_IPERSISTENTPROPERTIES_CID);
 
 
-
-
+// first we need a simple class which wraps a nsIPropertyElement and
+// cuts out the leading URL from the key
 class URLPropertyElement : public nsIPropertyElement
 {
 public:
@@ -35,34 +35,34 @@ private:
 
 NS_IMPL_ISUPPORTS1(URLPropertyElement, nsIPropertyElement)
 
-
+// we'll tweak the key on the way through, and remove the url prefix
 NS_IMETHODIMP
 URLPropertyElement::GetKey(nsACString& aKey)
 {
     nsresult rv =  mRealElement->GetKey(aKey);
     if (NS_FAILED(rv)) return rv;
 
-    
+    // chop off the url
     aKey.Cut(0, mURLLength);
     
     return NS_OK;
 }
 
-
+// values are unaffected
 NS_IMETHODIMP
 URLPropertyElement::GetValue(nsAString& aValue)
 {
     return mRealElement->GetValue(aValue);
 }
 
-
+// setters are kind of strange, hopefully we'll never be called
 NS_IMETHODIMP
 URLPropertyElement::SetKey(const nsACString& aKey)
 {
-    
-    
-    
-    
+    // this is just wrong - ideally you'd take the key, append it to
+    // the url, and set that as the key. However, that would require
+    // us to hold onto a copy of the string, and that's a waste,
+    // considering nobody should ever be calling this.
     NS_ERROR("This makes no sense!");
     return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -74,8 +74,8 @@ URLPropertyElement::SetValue(const nsAString& aValue)
 }
 
 
-
-
+// this is a special enumerator which returns only the elements which
+// are prefixed with a particular url
 class nsPropertyEnumeratorByURL : public nsISimpleEnumerator
 {
 public:
@@ -84,11 +84,11 @@ public:
         mOuter(aOuter),
         mURL(aURL)
     {
-        
-        
-        
+        // prepare the url once so we can use its value later
+        // persistent properties uses ":" as a delimiter, so escape
+        // that character
         mURL.ReplaceSubstring(":", "%3A");
-        
+        // there is always a # between the url and the real key
         mURL.Append('#');
     }
 
@@ -98,19 +98,19 @@ public:
     virtual ~nsPropertyEnumeratorByURL() {}
 private:
 
-    
+    // actual enumerator of all strings from nsIProperties
     nsCOMPtr<nsISimpleEnumerator> mOuter;
 
-    
+    // the current element that is valid for this url
     nsCOMPtr<nsIPropertyElement> mCurrent;
 
-    
+    // the url in question, pre-escaped and with the # already in it
     nsCString mURL;
 };
 
-
-
-
+//
+// nsStringBundleTextOverride implementation
+//
 NS_IMPL_ISUPPORTS1(nsStringBundleTextOverride,
                    nsIStringBundleOverride)
 
@@ -119,7 +119,7 @@ nsStringBundleTextOverride::Init()
 {
     nsresult rv;
 
-    
+    // check for existence of custom-strings.txt
 
     nsCOMPtr<nsIFile> customStringsFile;
     rv = NS_GetSpecialDirectory(NS_APP_CHROME_DIR,
@@ -127,8 +127,8 @@ nsStringBundleTextOverride::Init()
 
     if (NS_FAILED(rv)) return rv;
 
-    
-    
+    // bail if not found - this will cause the service creation to
+    // bail as well, and cause this object to go away
 
     customStringsFile->AppendNative(NS_LITERAL_CSTRING("custom-strings.txt"));
 
@@ -138,10 +138,10 @@ nsStringBundleTextOverride::Init()
         return NS_ERROR_FAILURE;
 
     NS_WARNING("Using custom-strings.txt to override string bundles.");
-    
-    
+    // read in the custom bundle. Keys are in the form
+    // chrome://package/locale/foo.properties:keyname
 
-    nsCAutoString customStringsURLSpec;
+    nsAutoCString customStringsURLSpec;
     rv = NS_GetURLSpecFromFile(customStringsFile, customStringsURLSpec);
     if (NS_FAILED(rv)) return rv;
     
@@ -158,7 +158,7 @@ nsStringBundleTextOverride::Init()
 
     rv = mValues->Load(in);
 
-    
+    // turn this on to see the contents of custom-strings.txt
 #ifdef DEBUG_alecf
     nsCOMPtr<nsISimpleEnumerator> enumerator;
     mValues->Enumerate(getter_AddRefs(enumerator));
@@ -175,7 +175,7 @@ nsStringBundleTextOverride::Init()
 
         nsCOMPtr<nsIPropertyElement> prop = do_QueryInterface(sup);
 
-        nsCAutoString key;
+        nsAutoCString key;
         nsAutoString value;
         prop->GetKey(key);
         prop->GetValue(value);
@@ -194,10 +194,10 @@ nsStringBundleTextOverride::GetStringFromName(const nsACString& aURL,
                                               const nsACString& key,
                                               nsAString& aResult)
 {
-    
-    nsCAutoString combinedURL(aURL + NS_LITERAL_CSTRING("#") + key);
+    // concatenate url#key to get the key to read
+    nsAutoCString combinedURL(aURL + NS_LITERAL_CSTRING("#") + key);
 
-    
+    // persistent properties uses ":" as a delimiter, so escape that character
     combinedURL.ReplaceSubstring(":", "%3A");
 
     return mValues->GetStringProperty(combinedURL, aResult);
@@ -207,11 +207,11 @@ NS_IMETHODIMP
 nsStringBundleTextOverride::EnumerateKeysInBundle(const nsACString& aURL,
                                                   nsISimpleEnumerator** aResult)
 {
-    
+    // enumerate all strings, and let the enumerator know
     nsCOMPtr<nsISimpleEnumerator> enumerator;
     mValues->Enumerate(getter_AddRefs(enumerator));
 
-    
+    // make the enumerator wrapper and pass it off
     nsPropertyEnumeratorByURL* propEnum =
         new nsPropertyEnumeratorByURL(aURL, enumerator);
 
@@ -223,9 +223,9 @@ nsStringBundleTextOverride::EnumerateKeysInBundle(const nsACString& aURL,
 }
 
 
-
-
-
+//
+// nsPropertyEnumeratorByURL implementation
+//
 
 
 NS_IMPL_ISUPPORTS1(nsPropertyEnumeratorByURL, nsISimpleEnumerator)
@@ -235,11 +235,11 @@ nsPropertyEnumeratorByURL::GetNext(nsISupports **aResult)
 {
     if (!mCurrent) return NS_ERROR_UNEXPECTED;
 
-    
+    // wrap mCurrent instead of returning it
     *aResult = new URLPropertyElement(mCurrent, mURL.Length());
     NS_ADDREF(*aResult);
 
-    
+    // release it so we don't return it twice
     mCurrent = nullptr;
     
     return NS_OK;
@@ -258,7 +258,7 @@ nsPropertyEnumeratorByURL::HasMoreElements(bool * aResult)
         mCurrent = do_QueryInterface(supports);
 
         if (mCurrent) {
-            nsCAutoString curKey;
+            nsAutoCString curKey;
             mCurrent->GetKey(curKey);
         
             if (StringBeginsWith(curKey, mURL))

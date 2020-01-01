@@ -171,7 +171,7 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
   *aDataToLen = 0;
 
   if ( !nsCRT::strcmp(aFromDataFlavor, kHTMLMime) ) {
-    nsCAutoString toFlavor ( aToDataFlavor );
+    nsAutoCString toFlavor ( aToDataFlavor );
 
     
     

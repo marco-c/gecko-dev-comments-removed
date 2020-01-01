@@ -1,7 +1,7 @@
-
-
-
-
+/* vim:set expandtab ts=4 sw=4 sts=4 cin: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
@@ -24,7 +24,7 @@ nsConverterOutputStream::~nsConverterOutputStream()
 NS_IMETHODIMP
 nsConverterOutputStream::Init(nsIOutputStream* aOutStream,
                               const char*      aCharset,
-                              uint32_t         aBufferSize ,
+                              uint32_t         aBufferSize /* ignored */,
                               PRUnichar        aReplacementChar)
 {
     NS_PRECONDITION(aOutStream, "Null output stream!");
@@ -67,7 +67,7 @@ nsConverterOutputStream::Write(uint32_t aCount, const PRUnichar* aChars,
     nsresult rv = mConverter->GetMaxLength(aChars, inLen, &maxLen);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCAutoString buf;
+    nsAutoCString buf;
     buf.SetLength(maxLen);
     if (buf.Length() != (uint32_t) maxLen)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -77,7 +77,7 @@ nsConverterOutputStream::Write(uint32_t aCount, const PRUnichar* aChars,
     if (NS_FAILED(rv))
         return rv;
     if (rv == NS_ERROR_UENC_NOMAPPING) {
-        
+        // Yes, NS_ERROR_UENC_NOMAPPING is a success code
         return NS_ERROR_LOSS_OF_SIGNIFICANT_DATA;
     }
     NS_ASSERTION((uint32_t) inLen == aCount,
@@ -103,7 +103,7 @@ NS_IMETHODIMP
 nsConverterOutputStream::Flush()
 {
     if (!mOutStream)
-        return NS_OK; 
+        return NS_OK; // Already closed.
 
     char buf[1024];
     int32_t size = sizeof(buf);
@@ -132,7 +132,7 @@ NS_IMETHODIMP
 nsConverterOutputStream::Close()
 {
     if (!mOutStream)
-        return NS_OK; 
+        return NS_OK; // Already closed.
 
     nsresult rv1 = Flush();
 

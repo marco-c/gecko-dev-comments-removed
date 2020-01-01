@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=4 sw=4 et tw=99 ft=cpp:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsnum.h"
 #include "jsscript.h"
@@ -31,12 +31,12 @@ SPSProfiler::~SPSProfiler()
 {
     if (strings.initialized()) {
         for (ProfileStringMap::Enum e(strings); !e.empty(); e.popFront())
-            rt->array_delete(e.front().value);
+            js_free(const_cast<char *>(e.front().value));
     }
 #ifdef JS_METHODJIT
     if (jminfo.initialized()) {
         for (JITInfoMap::Enum e(jminfo); !e.empty(); e.popFront())
-            rt->delete_(e.front().value);
+            js_delete(e.front().value);
     }
 #endif
 }
@@ -57,14 +57,14 @@ SPSProfiler::enable(bool enabled)
 {
     JS_ASSERT(installed());
     enabled_ = enabled;
-    
-
-
-
+    /*
+     * Ensure all future generated code will be instrumented, or that all
+     * currently instrumented code is discarded
+     */
     ReleaseAllJITCode(rt->defaultFreeOp());
 }
 
-
+/* Lookup the string for the function/script, creating one if necessary */
 const char*
 SPSProfiler::profileString(JSContext *cx, JSScript *script, JSFunction *maybeFun)
 {
@@ -76,7 +76,7 @@ SPSProfiler::profileString(JSContext *cx, JSScript *script, JSFunction *maybeFun
     if (str == NULL)
         return NULL;
     if (!strings.add(s, script, str)) {
-        rt->array_delete(str);
+        js_free(const_cast<char *>(str));
         return NULL;
     }
     return str;
@@ -85,19 +85,19 @@ SPSProfiler::profileString(JSContext *cx, JSScript *script, JSFunction *maybeFun
 void
 SPSProfiler::onScriptFinalized(JSScript *script)
 {
-    
-
-
-
-
-
-
+    /*
+     * This function is called whenever a script is destroyed, regardless of
+     * whether profiling has been turned on, so don't invoke a function on an
+     * invalid hash set. Also, even if profiling was enabled but then turned
+     * off, we still want to remove the string, so no check of enabled() is
+     * done.
+     */
     if (!strings.initialized())
         return;
     if (ProfileStringMap::Ptr entry = strings.lookup(script)) {
         const char *tofree = entry->value;
         strings.remove(entry);
-        rt->array_delete(tofree);
+        js_free(const_cast<char *>(tofree));
     }
 }
 
@@ -120,10 +120,10 @@ SPSProfiler::exit(JSContext *cx, JSScript *script, JSFunction *maybeFun)
     pop();
 
 #ifdef DEBUG
-    
+    /* Sanity check to make sure push/pop balanced */
     if (*size_ < max_) {
         const char *str = profileString(cx, script, maybeFun);
-        
+        /* Can't fail lookup because we should already be in the set */
         JS_ASSERT(str != NULL);
         JS_ASSERT(stack_[*size_].js());
         JS_ASSERT(stack_[*size_].script() == script);
@@ -137,7 +137,7 @@ SPSProfiler::exit(JSContext *cx, JSScript *script, JSFunction *maybeFun)
 void
 SPSProfiler::push(const char *string, void *sp, JSScript *script, jsbytecode *pc)
 {
-    
+    /* these operations cannot be re-ordered, so volatile-ize operations */
     volatile ProfileEntry *stack = stack_;
     volatile uint32_t *size = size_;
     uint32_t current = *size;
@@ -160,12 +160,12 @@ SPSProfiler::pop()
     JS_ASSERT(*(int*)size_ >= 0);
 }
 
-
-
-
-
-
-
+/*
+ * Serializes the script/function pair into a "descriptive string" which is
+ * allowed to fail. This function cannot trigger a GC because it could finalize
+ * some scripts, resize the hash table of profile strings, and invalidate the
+ * AddPtr held while invoking allocProfileString.
+ */
 const char*
 SPSProfiler::allocProfileString(JSContext *cx, JSScript *script, JSFunction *maybeFun)
 {
@@ -192,7 +192,7 @@ SPSProfiler::allocProfileString(JSContext *cx, JSScript *script, JSFunction *may
         return NULL;
 
     size_t len = buf.length();
-    char *cstr = rt->array_new<char>(len + 1);
+    char *cstr = js_pod_malloc<char>(len + 1);
     if (cstr == NULL)
         return NULL;
 
@@ -228,14 +228,14 @@ SPSProfiler::ipToPC(JSScript *script, size_t ip)
         return NULL;
     JMScriptInfo *info = ptr->value;
 
-    
+    /* First check if this ip is in any of the ICs compiled for the script */
     for (unsigned i = 0; i < info->ics.length(); i++) {
         ICInfo &ic = info->ics[i];
         if (ic.base <= ip && ip < ic.base + ic.size)
             return ic.pc;
     }
 
-    
+    /* Otherwise if it's not in any of the chunks, then we can't find it */
     for (unsigned i = 0; i < info->chunks.length(); i++) {
         jsbytecode *pc = info->chunks[i].convert(script, ip);
         if (pc != NULL)
@@ -285,27 +285,27 @@ SPSProfiler::registerMJITCode(mjit::JITChunk *chunk,
     if (!info)
         return false;
 
-    
-
-
-
-
-
-
-
-
-
+    /*
+     * The pcLengths array has entries for both the outerFrame's script and also
+     * all of the inlineFrames' scripts. The layout is something like:
+     *
+     *    [ outerFrame info ] [ inline frame 1 ] [ inline frame 2 ] ...
+     *
+     * This local pcLengths pointer tracks the position of each inline frame's
+     * pcLengths array. Each section of the array has length script->length for
+     * the corresponding script for that frame.
+     */
     mjit::PCLengthEntry *pcLengths = chunk->pcLengths + outerFrame->script->length;
     for (unsigned i = 0; i < chunk->nInlineFrames; i++) {
         JMChunkInfo *child = registerScript(inlineFrames[i], pcLengths, chunk);
         if (!child)
             return false;
-        
-
-
-
-
-
+        /*
+         * When JM tells us about new code, each inline ActiveFrame only has the
+         * start/end listed relative to the start of the main instruction
+         * streams. This is corrected here so the addresses listed on the
+         * JMChunkInfo structure are absolute and can be tested directly.
+         */
         child->mainStart += info->mainStart;
         child->mainEnd   += info->mainStart;
         child->stubStart += info->stubStart;
@@ -322,11 +322,11 @@ SPSProfiler::registerScript(mjit::JSActiveFrame *frame,
                             mjit::PCLengthEntry *entries,
                             mjit::JITChunk *chunk)
 {
-    
-
-
-
-
+    /*
+     * An inlined script could possibly be compiled elsewhere as not having been
+     * inlined, so each JSScript* must be associated with a list of chunks
+     * instead of just one. Also, our script may already be in the map.
+     */
     JITInfoMap::AddPtr ptr = jminfo.lookupForAdd(frame->script);
     JMScriptInfo *info;
     if (ptr) {
@@ -380,7 +380,7 @@ SPSProfiler::unregisterScript(JSScript *script, mjit::JITChunk *chunk)
     }
     if (info->chunks.length() == 0) {
         jminfo.remove(ptr);
-        rt->delete_(info);
+        js_delete(info);
     }
 }
 #endif

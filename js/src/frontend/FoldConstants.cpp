@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=99:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/FloatingPoint.h"
 
@@ -45,10 +45,10 @@ ContainsVarOrConst(ParseNode *pn)
             return pnt;
         return ContainsVarOrConst(pn->pn_kid3);
       case PN_BINARY:
-        
-
-
-
+        /*
+         * Limit recursion if pn is a binary expression, which can't contain a
+         * var statement.
+         */
         if (!pn->isOp(JSOP_NOP))
             return NULL;
         if (ParseNode *pnt = ContainsVarOrConst(pn->pn_left))
@@ -65,10 +65,10 @@ ContainsVarOrConst(ParseNode *pn)
     return NULL;
 }
 
-
-
-
-
+/*
+ * Fold from one constant type to another.
+ * XXX handles only strings and numbers for now
+ */
 static bool
 FoldType(JSContext *cx, ParseNode *pn, ParseNodeKind kind)
 {
@@ -104,11 +104,11 @@ FoldType(JSContext *cx, ParseNode *pn, ParseNodeKind kind)
     return true;
 }
 
-
-
-
-
-
+/*
+ * Fold two numeric constants.  Beware that pn1 and pn2 are recycled, unless
+ * one of them aliases pn, so you can't safely fetch pn2->pn_next, e.g., after
+ * a successful call to this function.
+ */
 static bool
 FoldBinaryNumeric(JSContext *cx, JSOp op, ParseNode *pn1, ParseNode *pn2,
                   ParseNode *pn, Parser *parser)
@@ -149,7 +149,7 @@ FoldBinaryNumeric(JSContext *cx, JSOp op, ParseNode *pn1, ParseNode *pn2,
       case JSOP_DIV:
         if (d2 == 0) {
 #if defined(XP_WIN)
-            
+            /* XXX MSVC miscompiles such that (NaN == 0) */
             if (MOZ_DOUBLE_IS_NaN(d2))
                 d = js_NaN;
             else
@@ -176,7 +176,7 @@ FoldBinaryNumeric(JSContext *cx, JSOp op, ParseNode *pn1, ParseNode *pn2,
       default:;
     }
 
-    
+    /* Take care to allow pn1 or pn2 to alias pn. */
     if (pn1 != pn)
         parser->freeTree(pn1);
     if (pn2 != pn)
@@ -206,23 +206,23 @@ FoldXMLConstants(JSContext *cx, ParseNode *pn, Parser *parser)
             accum = cx->runtime->atomState.stagoAtom;
     }
 
-    
-
-
-
-
-
-
+    /*
+     * GC Rooting here is tricky: for most of the loop, |accum| is safe via
+     * the newborn string root. However, when |pn2->getKind()| is PNK_XMLCDATA,
+     * PNK_XMLCOMMENT, or PNK_XMLPI it is knocked out of the newborn root.
+     * Therefore, we have to add additonal protection from GC nesting under
+     * js_ConcatStrings.
+     */
     ParseNode *pn2;
     uint32_t i, j;
     for (pn2 = pn1, i = j = 0; pn2; pn2 = pn2->pn_next, i++) {
-        
+        /* The parser already rejected end-tags with attributes. */
         JS_ASSERT(kind != PNK_XMLETAGO || i == 0);
         switch (pn2->getKind()) {
           case PNK_XMLATTR:
             if (!accum)
                 goto cantfold;
-            
+            /* FALL THROUGH */
           case PNK_XMLNAME:
           case PNK_XMLSPACE:
           case PNK_XMLTEXT:
@@ -333,13 +333,13 @@ FoldXMLConstants(JSContext *cx, ParseNode *pn, Parser *parser)
     }
 
     if (pn1 && pn->pn_count == 1) {
-        
-
-
-
-
-
-
+        /*
+         * Only one node under pn, and it has been folded: move pn1 onto pn
+         * unless pn is an XML root (in which case we need it to tell the code
+         * generator to emit a JSOP_TOXML or JSOP_TOXMLLIST op).  If pn is an
+         * XML root *and* it's a point-tag, rewrite it to PNK_XMLELEM to avoid
+         * extra "<" and "/>" bracketing at runtime.
+         */
         if (!(pn->pn_xflags & PNX_XMLROOT)) {
             pn->become(pn1);
         } else if (kind == PNK_XMLPTAGC) {
@@ -350,7 +350,7 @@ FoldXMLConstants(JSContext *cx, ParseNode *pn, Parser *parser)
     return true;
 }
 
-#endif 
+#endif /* JS_HAS_XML_SUPPORT */
 
 enum Truthiness { Truthy, Falsy, Unknown };
 
@@ -367,11 +367,11 @@ Boolish(ParseNode *pn)
 #if JS_HAS_GENERATOR_EXPRS
       case JSOP_CALL:
       {
-        
-
-
-
-
+        /*
+         * A generator expression as an if or loop condition has no effects, it
+         * simply results in a truthy object reference. This condition folding
+         * is needed for the decompiler. See bug 442342 and bug 443074.
+         */
         if (pn->pn_count != 1)
             return Unknown;
         ParseNode *pn2 = pn->pn_head;
@@ -413,15 +413,15 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
 
       case PN_LIST:
       {
-        
+        /* Propagate inCond through logical connectives. */
         bool cond = inCond && (pn->isKind(PNK_OR) || pn->isKind(PNK_AND));
 
-        
+        /* Don't fold a parenthesized call expression. See bug 537673. */
         pn1 = pn2 = pn->pn_head;
         if ((pn->isKind(PNK_LP) || pn->isKind(PNK_NEW)) && pn2->isInParens())
             pn2 = pn2->pn_next;
 
-        
+        /* Save the list head in pn1 for later use. */
         for (; pn2; pn2 = pn2->pn_next) {
             if (!FoldConstants(cx, pn2, parser, inGenexpLambda, cond))
                 return false;
@@ -430,7 +430,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
       }
 
       case PN_TERNARY:
-        
+        /* Any kid may be null (e.g. for (;;)). */
         pn1 = pn->pn_kid1;
         pn2 = pn->pn_kid2;
         pn3 = pn->pn_kid3;
@@ -452,7 +452,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
         pn1 = pn->pn_left;
         pn2 = pn->pn_right;
 
-        
+        /* Propagate inCond through logical connectives. */
         if (pn->isKind(PNK_OR) || pn->isKind(PNK_AND)) {
             if (!FoldConstants(cx, pn1, parser, inGenexpLambda, inCond))
                 return false;
@@ -461,7 +461,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
             break;
         }
 
-        
+        /* First kid may be null (for default case in switch). */
         if (pn1 && !FoldConstants(cx, pn1, parser, inGenexpLambda, pn->isKind(PNK_WHILE)))
             return false;
         if (!FoldConstants(cx, pn2, parser, inGenexpLambda, pn->isKind(PNK_DOWHILE)))
@@ -471,15 +471,15 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
       case PN_UNARY:
         pn1 = pn->pn_kid;
 
-        
-
-
-
-
-
-
-
-
+        /*
+         * Kludge to deal with typeof expressions: because constant folding
+         * can turn an expression into a name node, we have to check here,
+         * before folding, to see if we should throw undefined name errors.
+         *
+         * NB: We know that if pn->pn_op is JSOP_TYPEOF, pn1 will not be
+         * null. This assumption does not hold true for other unary
+         * expressions.
+         */
         if (pn->isOp(JSOP_TYPEOF) && !pn1->isKind(PNK_NAME))
             pn->setOp(JSOP_TYPEOFEXPR);
 
@@ -488,12 +488,12 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
         break;
 
       case PN_NAME:
-        
-
-
-
-
-
+        /*
+         * Skip pn1 down along a chain of dotted member expressions to avoid
+         * excessive recursion.  Our only goal here is to fold constants (if
+         * any) in the primary expression operand to the left of the first
+         * dot in the chain.
+         */
         if (!pn->isUsed()) {
             pn1 = pn->pn_expr;
             while (pn1 && pn1->isArity(PN_NAME) && !pn1->isUsed())
@@ -511,10 +511,10 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
       case PNK_IF:
         if (ContainsVarOrConst(pn2) || ContainsVarOrConst(pn3))
             break;
-        
+        /* FALL THROUGH */
 
       case PNK_CONDITIONAL:
-        
+        /* Reduce 'if (C) T; else E' into T for true C, E for false. */
         switch (pn1->getKind()) {
           case PNK_NUMBER:
             if (pn1->pn_dval == 0 || MOZ_DOUBLE_IS_NaN(pn1->pn_dval))
@@ -531,12 +531,12 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
             pn2 = pn3;
             break;
           default:
-            
+            /* Early return to dodge common code that copies pn2 to pn. */
             return true;
         }
 
 #if JS_HAS_GENERATOR_EXPRS
-        
+        /* Don't fold a trailing |if (0)| in a generator expression. */
         if (!pn2 && inGenexpLambda)
             break;
 #endif
@@ -544,13 +544,13 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
         if (pn2 && !pn2->isDefn())
             pn->become(pn2);
         if (!pn2 || (pn->isKind(PNK_SEMI) && !pn->pn_kid)) {
-            
-
-
-
-
-
-
+            /*
+             * False condition and no else, or an empty then-statement was
+             * moved up over pn.  Either way, make pn an empty block (not an
+             * empty statement, which does not decompile, even when labeled).
+             * NB: pn must be a PNK_IF as PNK_CONDITIONAL can never have a null
+             * kid or an empty statement for a child.
+             */
             pn->setKind(PNK_STATEMENTLIST);
             pn->setArity(PN_LIST);
             pn->makeEmpty();
@@ -590,7 +590,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
                     --pn->pn_count;
                 } while ((pn1 = *pnp) != NULL);
 
-                
+                // We may have to change arity from LIST to BINARY.
                 pn1 = pn->pn_head;
                 if (pn->pn_count == 2) {
                     pn2 = pn1->pn_next;
@@ -603,7 +603,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
                     pn->become(pn1);
                     parser->freeTree(pn1);
                 } else if (orig != pn->pn_count) {
-                    
+                    // Adjust list tail.
                     pn2 = pn1->pn_next;
                     for (; pn1; pn2 = pn1, pn1 = pn1->pn_next)
                         ;
@@ -635,54 +635,54 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
       case PNK_MULASSIGN:
       case PNK_DIVASSIGN:
       case PNK_MODASSIGN:
-        
-
-
-
-
-
-
+        /*
+         * Compound operators such as *= should be subject to folding, in case
+         * the left-hand side is constant, and so that the decompiler produces
+         * the same string that you get from decompiling a script or function
+         * compiled from that same string.  += is special and so must be
+         * handled below.
+         */
         goto do_binary_op;
 
       case PNK_ADDASSIGN:
         JS_ASSERT(pn->isOp(JSOP_ADD));
-        
+        /* FALL THROUGH */
       case PNK_ADD:
         if (pn->isArity(PN_LIST)) {
-            
-
-
-
-
+            /*
+             * Any string literal term with all others number or string means
+             * this is a concatenation.  If any term is not a string or number
+             * literal, we can't fold.
+             */
             JS_ASSERT(pn->pn_count > 2);
             if (pn->pn_xflags & PNX_CANTFOLD)
                 return true;
             if (pn->pn_xflags != PNX_STRCAT)
                 goto do_binary_op;
 
-            
+            /* Ok, we're concatenating: convert non-string constant operands. */
             size_t length = 0;
             for (pn2 = pn1; pn2; pn2 = pn2->pn_next) {
                 if (!FoldType(cx, pn2, PNK_STRING))
                     return false;
-                
+                /* XXX fold only if all operands convert to string */
                 if (!pn2->isKind(PNK_STRING))
                     return true;
                 length += pn2->pn_atom->length();
             }
 
-            
-            jschar *chars = (jschar *) cx->malloc_((length + 1) * sizeof(jschar));
+            /* Allocate a new buffer and string descriptor for the result. */
+            jschar *chars = cx->pod_malloc<jschar>(length + 1);
             if (!chars)
                 return false;
             chars[length] = 0;
             JSString *str = js_NewString(cx, chars, length);
             if (!str) {
-                cx->free_(chars);
+                js_free(chars);
                 return false;
             }
 
-            
+            /* Fill the buffer, advancing chars and recycling kids as we go. */
             for (pn2 = pn1; pn2; pn2 = parser->freeTree(pn2)) {
                 JSAtom *atom = pn2->pn_atom;
                 size_t length2 = atom->length();
@@ -691,7 +691,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
             }
             JS_ASSERT(*chars == 0);
 
-            
+            /* Atomize the result string and mutate pn to refer to it. */
             pn->pn_atom = AtomizeString(cx, str);
             if (!pn->pn_atom)
                 return false;
@@ -701,7 +701,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
             break;
         }
 
-        
+        /* Handle a binary string concatenation. */
         JS_ASSERT(pn->isArity(PN_BINARY));
         if (pn1->isKind(PNK_STRING) || pn2->isKind(PNK_STRING)) {
             if (!FoldType(cx, !pn1->isKind(PNK_STRING) ? pn1 : pn2, PNK_STRING))
@@ -724,7 +724,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
             break;
         }
 
-        
+        /* Can't concatenate string literals, let's try numbers. */
         goto do_binary_op;
 
       case PNK_SUB:
@@ -742,7 +742,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
                     return false;
             }
             for (pn2 = pn1; pn2; pn2 = pn2->pn_next) {
-                
+                /* XXX fold only if all operands convert to number */
                 if (!pn2->isKind(PNK_NUMBER))
                     break;
             }
@@ -781,7 +781,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
         if (pn1->isKind(PNK_NUMBER)) {
             double d;
 
-            
+            /* Operate on one numeric constant. */
             d = pn1->pn_dval;
             switch (pn->getOp()) {
               case JSOP_BITNOT:
@@ -804,10 +804,10 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
                     pn->setOp(JSOP_FALSE);
                 }
                 pn->setArity(PN_NULLARY);
-                
+                /* FALL THROUGH */
 
               default:
-                
+                /* Return early to dodge the common PNK_NUMBER code. */
                 return true;
             }
             pn->setKind(PNK_NUMBER);
@@ -862,7 +862,7 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
             parser->freeTree(pn1);
         }
         break;
-#endif 
+#endif /* JS_HAS_XML_SUPPORT */
 
       default:;
     }
@@ -870,12 +870,12 @@ frontend::FoldConstants(JSContext *cx, ParseNode *pn, Parser *parser, bool inGen
     if (inCond) {
         Truthiness t = Boolish(pn);
         if (t != Unknown) {
-            
-
-
-
-
-
+            /*
+             * We can turn function nodes into constant nodes here, but mutating function
+             * nodes is tricky --- in particular, mutating a function node that appears on
+             * a method list corrupts the method list. However, methods are M's in
+             * statements of the form 'this.foo = M;', which we never fold, so we're okay.
+             */
             parser->allocator.prepareNodeForMutation(pn);
             if (t == Truthy) {
                 pn->setKind(PNK_TRUE);

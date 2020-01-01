@@ -1,11 +1,11 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=78:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+/* JS execution context. */
 
 #ifndef jscntxt_h___
 #define jscntxt_h___
@@ -43,26 +43,44 @@ JS_BEGIN_EXTERN_C
 struct DtoaState;
 JS_END_EXTERN_C
 
-struct JSSharpInfo {
-    bool hasGen;
-    bool isSharp;
+extern void
+js_ReportOutOfMemory(JSContext *cx);
 
-    JSSharpInfo() : hasGen(false), isSharp(false) {}
-};
-
-typedef js::HashMap<JSObject *, JSSharpInfo> JSSharpTable;
-
-struct JSSharpObjectMap {
-    unsigned     depth;
-    uint32_t     sharpgen;
-    JSSharpTable table;
-
-    JSSharpObjectMap(JSContext *cx) : depth(0), sharpgen(0), table(js::TempAllocPolicy(cx)) {
-        table.init();
-    }
-};
+extern void
+js_ReportAllocationOverflow(JSContext *cx);
 
 namespace js {
+
+typedef HashSet<JSObject *> ObjectSet;
+
+/* Detects cycles when traversing an object graph. */
+class AutoCycleDetector
+{
+    JSContext *cx;
+    JSObject *obj;
+    bool cyclic;
+    uint32_t hashsetGenerationAtInit;
+    ObjectSet::AddPtr hashsetAddPointer;
+    JS_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+  public:
+    AutoCycleDetector(JSContext *cx, JSObject *obj
+                      JS_GUARD_OBJECT_NOTIFIER_PARAM)
+      : cx(cx), obj(obj), cyclic(true)
+    {
+        JS_GUARD_OBJECT_NOTIFIER_INIT;
+    }
+
+    ~AutoCycleDetector();
+
+    bool init();
+
+    bool foundCycle() { return cyclic; }
+};
+
+/* Updates references in the cycle detection set if the GC moves them. */
+extern void
+TraceCycleDetectionSet(JSTracer *trc, ObjectSet &set);
 
 namespace mjit {
 class JaegerRuntime;
@@ -79,12 +97,12 @@ class InterpreterFrames;
 class DebugScopes;
 class WorkerThreadState;
 
-
-
-
-
-
-
+/*
+ * GetSrcNote cache to avoid O(n^2) growth in finding a source note for a
+ * given pc in a script. We use the script->code pointer to tag the cache,
+ * instead of the script address itself, so that source notes are always found
+ * by offset from the bytecode with which they were generated.
+ */
 struct GSNCache {
     typedef HashMap<jsbytecode *,
                     jssrcnote *,
@@ -102,32 +120,26 @@ struct GSNCache {
 inline GSNCache *
 GetGSNCache(JSContext *cx);
 
-struct PendingProxyOperation {
-    PendingProxyOperation   *next;
-    RootedObject            object;
-    PendingProxyOperation(JSContext *cx, JSObject *object) : next(NULL), object(cx, object) {}
-};
-
 typedef Vector<ScriptAndCounts, 0, SystemAllocPolicy> ScriptAndCountsVector;
 
 struct ConservativeGCData
 {
-    
-
-
-
+    /*
+     * The GC scans conservatively between ThreadData::nativeStackBase and
+     * nativeStackTop unless the latter is NULL.
+     */
     uintptr_t           *nativeStackTop;
 
 #if defined(JSGC_ROOT_ANALYSIS) && (JS_STACK_GROWTH_DIRECTION < 0)
-    
-
-
-
-
-
+    /*
+     * Record old contents of the native stack from the last time there was a
+     * scan, to reduce the overhead involved in repeatedly rescanning the
+     * native stack during root analysis. oldStackData stores words in reverse
+     * order starting at oldStackEnd.
+     */
     uintptr_t           *oldStackMin, *oldStackEnd;
     uintptr_t           *oldStackData;
-    size_t              oldStackCapacity; 
+    size_t              oldStackCapacity; // in sizeof(uintptr_t)
 #endif
 
     union {
@@ -141,10 +153,10 @@ struct ConservativeGCData
 
     ~ConservativeGCData() {
 #ifdef JS_THREADSAFE
-        
-
-
-
+        /*
+         * The conservative GC scanner should be disabled when the thread leaves
+         * the last request.
+         */
         JS_ASSERT(!hasStackToScan());
 #endif
     }
@@ -202,7 +214,7 @@ class NativeIterCache
 {
     static const size_t SIZE = size_t(1) << 8;
 
-    
+    /* Cached native iterators. */
     PropertyIteratorObject *data[SIZE];
 
     static size_t getIndex(uint32_t key) {
@@ -210,7 +222,7 @@ class NativeIterCache
     }
 
   public:
-    
+    /* Native iterator most recently started. */
     PropertyIteratorObject *last;
 
     NativeIterCache()
@@ -232,51 +244,51 @@ class NativeIterCache
     }
 };
 
-
-
-
-
-
+/*
+ * Cache for speeding up repetitive creation of objects in the VM.
+ * When an object is created which matches the criteria in the 'key' section
+ * below, an entry is filled with the resulting object.
+ */
 class NewObjectCache
 {
-    
+    /* Statically asserted to be equal to sizeof(JSObject_Slots16) */
     static const unsigned MAX_OBJ_SIZE = 4 * sizeof(void*) + 16 * sizeof(Value);
     static inline void staticAsserts();
 
     struct Entry
     {
-        
+        /* Class of the constructed object. */
         Class *clasp;
 
-        
-
-
-
-
-
-
-
-
-
-
-
-
+        /*
+         * Key with one of three possible values:
+         *
+         * - Global for the object. The object must have a standard class for
+         *   which the global's prototype can be determined, and the object's
+         *   parent will be the global.
+         *
+         * - Prototype for the object (cannot be global). The object's parent
+         *   will be the prototype's parent.
+         *
+         * - Type for the object. The object's parent will be the type's
+         *   prototype's parent.
+         */
         gc::Cell *key;
 
-        
+        /* Allocation kind for the constructed object. */
         gc::AllocKind kind;
 
-        
+        /* Number of bytes to copy from the template object. */
         uint32_t nbytes;
 
-        
-
-
-
+        /*
+         * Template object to copy from, with the initial values of fields,
+         * fixed slots (undefined) and private data (NULL).
+         */
         char templateObject[MAX_OBJ_SIZE];
     };
 
-    Entry entries[41];  
+    Entry entries[41];  // TODO: reconsider size
 
   public:
 
@@ -285,27 +297,27 @@ class NewObjectCache
     NewObjectCache() { PodZero(this); }
     void purge() { PodZero(this); }
 
-    
-
-
-
+    /*
+     * Get the entry index for the given lookup, return whether there was a hit
+     * on an existing entry.
+     */
     inline bool lookupProto(Class *clasp, JSObject *proto, gc::AllocKind kind, EntryIndex *pentry);
     inline bool lookupGlobal(Class *clasp, js::GlobalObject *global, gc::AllocKind kind, EntryIndex *pentry);
     inline bool lookupType(Class *clasp, js::types::TypeObject *type, gc::AllocKind kind, EntryIndex *pentry);
 
-    
-
-
-
-
+    /*
+     * Return a new object from a cache hit produced by a lookup method, or
+     * NULL if returning the object could possibly trigger GC (does not
+     * indicate failure).
+     */
     inline JSObject *newObjectFromHit(JSContext *cx, EntryIndex entry);
 
-    
+    /* Fill an entry after a cache miss. */
     inline void fillProto(EntryIndex entry, Class *clasp, JSObject *proto, gc::AllocKind kind, JSObject *obj);
     inline void fillGlobal(EntryIndex entry, Class *clasp, js::GlobalObject *global, gc::AllocKind kind, JSObject *obj);
     inline void fillType(EntryIndex entry, Class *clasp, js::types::TypeObject *type, gc::AllocKind kind, JSObject *obj);
 
-    
+    /* Invalidate any entries which might produce an object with shape/proto. */
     void invalidateEntriesForShape(JSContext *cx, Shape *shape, JSObject *proto);
 
   private:
@@ -314,13 +326,13 @@ class NewObjectCache
     static inline void copyCachedToObject(JSObject *dst, JSObject *src);
 };
 
-
-
-
-
-
-
-
+/*
+ * A FreeOp can do one thing: free memory. For convenience, it has delete_
+ * convenience methods that also call destructors.
+ *
+ * FreeOp is passed to finalizers and other sweep-phase hooks so that we do not
+ * need to pass a JSContext to those hooks.
+ */
 class FreeOp : public JSFreeOp {
     bool        shouldFreeLater_;
 
@@ -341,20 +353,26 @@ class FreeOp : public JSFreeOp {
 
     inline void free_(void* p);
 
-    JS_DECLARE_DELETE_METHODS(free_, inline)
+    template <class T>
+    inline void delete_(T *p) {
+        if (p) {
+            p->~T();
+            free_(p);
+        }
+    }
 
     static void staticAsserts() {
-        
-
-
-
-
-
+        /*
+         * Check that JSFreeOp is the first base class for FreeOp and we can
+         * reinterpret a pointer to JSFreeOp as a pointer to FreeOp without
+         * any offset adjustments. JSClass::finalize <-> Class::finalize depends
+         * on this.
+         */
         JS_STATIC_ASSERT(offsetof(FreeOp, shouldFreeLater_) == sizeof(JSFreeOp));
     }
 };
 
-} 
+} /* namespace js */
 
 namespace JS {
 struct RuntimeSizes;
@@ -362,45 +380,47 @@ struct RuntimeSizes;
 
 struct JSRuntime : js::RuntimeFriendFields
 {
-    
+    /* Default compartment. */
     JSCompartment       *atomsCompartment;
 
-    
+    /* List of compartments (protected by the GC lock). */
     js::CompartmentVector compartments;
 
-    
+    /* See comment for JS_AbortIfWrongThread in jsapi.h. */
 #ifdef JS_THREADSAFE
   public:
     void *ownerThread() const { return ownerThread_; }
     void clearOwnerThread();
     void setOwnerThread();
-    JS_FRIEND_API(bool) onOwnerThread() const;
+    JS_FRIEND_API(void) abortIfWrongThread() const;
+    JS_FRIEND_API(void) assertValidThread() const;
   private:
     void                *ownerThread_;
   public:
 #else
   public:
-    bool onOwnerThread() const { return true; }
+    void abortIfWrongThread() const {}
+    void assertValidThread() const {}
 #endif
 
-    
+    /* Keeper of the contiguous stack used by all contexts in this thread. */
     js::StackSpace stackSpace;
 
-    
+    /* Temporary arena pool used while compiling and decompiling. */
     static const size_t TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;
     js::LifoAlloc tempLifoAlloc;
 
-    
-
-
-
+    /*
+     * Free LIFO blocks are transferred to this allocator before being freed on
+     * the background GC thread.
+     */
     js::LifoAlloc freeLifoAlloc;
 
   private:
-    
-
-
-
+    /*
+     * Both of these allocators are used for regular expression code which is shared at the
+     * thread-data level.
+     */
     JSC::ExecutableAllocator *execAlloc_;
     WTF::BumpPointerAllocator *bumpAlloc_;
 #ifdef JS_METHODJIT
@@ -442,35 +462,35 @@ struct JSRuntime : js::RuntimeFriendFields
     JSFunction *getSelfHostedFunction(JSContext *cx, const char *name);
     bool cloneSelfHostedValueById(JSContext *cx, jsid id, js::HandleObject holder, js::Value *vp);
 
-    
+    /* Base address of the native stack for the current thread. */
     uintptr_t           nativeStackBase;
 
-    
+    /* The native stack size limit that runtime should not exceed. */
     size_t              nativeStackQuota;
 
-    
-
-
-
+    /*
+     * Frames currently running in js::Interpret. See InterpreterFrames for
+     * details.
+     */
     js::InterpreterFrames *interpreterFrames;
 
-    
+    /* Context create/destroy callback. */
     JSContextCallback   cxCallback;
 
-    
+    /* Compartment destroy callback. */
     JSDestroyCompartmentCallback destroyCompartmentCallback;
 
-    
+    /* Call this to get the name of a compartment. */
     JSCompartmentNameCallback compartmentNameCallback;
 
     js::ActivityCallback  activityCallback;
     void                 *activityCallbackArg;
 
 #ifdef JS_THREADSAFE
-    
+    /* Number of JS_SuspendRequest calls withot JS_ResumeRequest. */
     unsigned            suspendCount;
 
-    
+    /* The request depth for this thread. */
     unsigned            requestDepth;
 
 # ifdef DEBUG
@@ -478,22 +498,22 @@ struct JSRuntime : js::RuntimeFriendFields
 # endif
 #endif
 
-    
+    /* Garbage collector state, used by jsgc.c. */
 
-    
-
-
-
-
+    /*
+     * Set of all GC chunks with at least one allocated thing. The
+     * conservative GC uses it to quickly check if a possible GC thing points
+     * into an allocated chunk.
+     */
     js::GCChunkSet      gcChunkSet;
 
-    
-
-
-
-
-
-
+    /*
+     * Doubly-linked lists of chunks from user and system compartments. The GC
+     * allocates its arenas from the corresponding list and when all arenas
+     * in the list head are taken, then the chunk is removed from the list.
+     * During the GC when all arenas in a chunk become free, that chunk is
+     * removed from the list and scheduled for release.
+     */
     js::gc::Chunk       *gcSystemAvailableChunkListHead;
     js::gc::Chunk       *gcUserAvailableChunkListHead;
     js::gc::ChunkPool   gcChunkPool;
@@ -505,11 +525,11 @@ struct JSRuntime : js::RuntimeFriendFields
     size_t              gcMaxBytes;
     size_t              gcMaxMallocBytes;
 
-    
-
-
-
-
+    /*
+     * Number of the committed arenas in all GC chunks including empty chunks.
+     * The counter is volatile as it is read without the GC lock, see comments
+     * in MaybeGC.
+     */
     volatile uint32_t   gcNumArenasFreeCommitted;
     js::GCMarker        gcMarker;
     void                *gcVerifyPreData;
@@ -529,104 +549,104 @@ struct JSRuntime : js::RuntimeFriendFields
     bool                gcDynamicHeapGrowth;
     bool                gcDynamicMarkSlice;
 
-    
+    /* During shutdown, the GC needs to clean up every possible object. */
     bool                gcShouldCleanUpEverything;
 
-    
-
-
-
-
+    /*
+     * These flags must be kept separate so that a thread requesting a
+     * compartment GC doesn't cancel another thread's concurrent request for a
+     * full GC.
+     */
     volatile uintptr_t  gcIsNeeded;
 
     js::WeakMapBase     *gcWeakMapList;
     js::gcstats::Statistics gcStats;
 
-    
+    /* Incremented on every GC slice. */
     uint64_t            gcNumber;
 
-    
+    /* The gcNumber at the time of the most recent GC's first slice. */
     uint64_t            gcStartNumber;
 
-    
+    /* Whether the currently running GC can finish in multiple slices. */
     int                 gcIsIncremental;
 
-    
+    /* Whether all compartments are being collected in first GC slice. */
     bool                gcIsFull;
 
-    
+    /* The reason that an interrupt-triggered GC should be called. */
     js::gcreason::Reason gcTriggerReason;
 
-    
-
-
-
+    /*
+     * If this is true, all marked objects must belong to a compartment being
+     * GCed. This is used to look for compartment bugs.
+     */
     bool                gcStrictCompartmentChecking;
 
-    
-
-
-
-
-
+    /*
+     * If this is 0, all cross-compartment proxies must be registered in the
+     * wrapper map. This checking must be disabled temporarily while creating
+     * new wrappers. When non-zero, this records the recursion depth of wrapper
+     * creation.
+     */
     uintptr_t           gcDisableStrictProxyCheckingCount;
 
-    
-
-
-
+    /*
+     * The current incremental GC phase. This is also used internally in
+     * non-incremental GC.
+     */
     js::gc::State       gcIncrementalState;
 
-    
+    /* Indicates that the last incremental slice exhausted the mark stack. */
     bool                gcLastMarkSlice;
 
-    
+    /* Whether any sweeping will take place in the separate GC helper thread. */
     bool                gcSweepOnBackgroundThread;
 
-    
+    /* List head of compartments being swept. */
     JSCompartment       *gcSweepingCompartments;
 
-    
-
-
+    /*
+     * Incremental sweep state.
+     */
     int                 gcSweepPhase;
     ptrdiff_t           gcSweepCompartmentIndex;
     int                 gcSweepKindIndex;
 
-    
-
-
+    /*
+     * List head of arenas allocated during the sweep phase.
+     */
     js::gc::ArenaHeader *gcArenasAllocatedDuringSweep;
 
-    
-
-
-
-
+    /*
+     * Indicates that a GC slice has taken place in the middle of an animation
+     * frame, rather than at the beginning. In this case, the next slice will be
+     * delayed so that we don't get back-to-back slices.
+     */
     volatile uintptr_t  gcInterFrameGC;
 
-    
+    /* Default budget for incremental GC slice. See SliceBudget in jsgc.h. */
     int64_t             gcSliceBudget;
 
-    
-
-
-
+    /*
+     * We disable incremental GC if we encounter a js::Class with a trace hook
+     * that does not implement write barriers.
+     */
     bool                gcIncrementalEnabled;
 
-    
-
-
-
-
+    /*
+     * Whether exact stack scanning is enabled for this runtime. This is
+     * currently only used for dynamic root analysis. Exact scanning starts out
+     * enabled, and is disabled if e4x has been used.
+     */
     bool                gcExactScanningEnabled;
 
-    
-
-
-
-
-
+    /*
+     * We save all conservative scanned roots in this vector so that
+     * conservative scanning can be "replayed" deterministically. In DEBUG mode,
+     * this allows us to run a non-incremental GC after every incremental GC to
+     * ensure that no objects were missed.
+     */
 #ifdef DEBUG
     struct SavedGCRoot {
         void *thing;
@@ -644,9 +664,9 @@ struct JSRuntime : js::RuntimeFriendFields
 #endif
 
     enum HeapState {
-        Idle,       
-        Tracing,    
-        Collecting  
+        Idle,       // doing nothing with the GC heap
+        Tracing,    // tracing the GC heap without collecting, e.g. IterateCompartments()
+        Collecting  // doing a GC of the heap
     };
 
     HeapState           heapState;
@@ -655,30 +675,30 @@ struct JSRuntime : js::RuntimeFriendFields
 
     bool isHeapCollecting() { return heapState == Collecting; }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * These options control the zealousness of the GC. The fundamental values
+     * are gcNextScheduled and gcDebugCompartmentGC. At every allocation,
+     * gcNextScheduled is decremented. When it reaches zero, we do either a
+     * full or a compartmental GC, based on gcDebugCompartmentGC.
+     *
+     * At this point, if gcZeal_ is one of the types that trigger periodic
+     * collection, then gcNextScheduled is reset to the value of
+     * gcZealFrequency. Otherwise, no additional GCs take place.
+     *
+     * You can control these values in several ways:
+     *   - Pass the -Z flag to the shell (see the usage info for details)
+     *   - Call gczeal() or schedulegc() from inside shell-executed JS code
+     *     (see the help for details)
+     *
+     * If gzZeal_ == 1 then we perform GCs in select places (during MaybeGC and
+     * whenever a GC poke happens). This option is mainly useful to embedders.
+     *
+     * We use gcZeal_ == 4 to enable write barrier verification. See the comment
+     * in jsgc.cpp for more information about this.
+     *
+     * gcZeal_ values from 8 to 10 periodically run different types of
+     * incremental GC.
+     */
 #ifdef JS_GC_ZEAL
     int                 gcZeal_;
     int                 gcZealFrequency;
@@ -718,38 +738,38 @@ struct JSRuntime : js::RuntimeFriendFields
     uint64_t            analysisPurgeTriggerBytes;
 
   private:
-    
-
-
-
+    /*
+     * Malloc counter to measure memory pressure for GC scheduling. It runs
+     * from gcMaxMallocBytes down to zero.
+     */
     volatile ptrdiff_t  gcMallocBytes;
 
   public:
-    
-
-
-
-
-
+    /*
+     * The trace operations to trace embedding-specific GC roots. One is for
+     * tracing through black roots and the other is for tracing through gray
+     * roots. The black/gray distinction is only relevant to the cycle
+     * collector.
+     */
     JSTraceDataOp       gcBlackRootsTraceOp;
     void                *gcBlackRootsData;
     JSTraceDataOp       gcGrayRootsTraceOp;
     void                *gcGrayRootsData;
 
-    
+    /* Stack of thread-stack-allocated GC roots. */
     js::AutoGCRooter   *autoGCRooters;
 
-    
+    /* Strong references on scripts held for PCCount profiling API. */
     js::ScriptAndCountsVector *scriptAndCountsVector;
 
-    
+    /* Well-known numbers held for use by this runtime's contexts. */
     js::Value           NaNValue;
     js::Value           negativeInfinityValue;
     js::Value           positiveInfinityValue;
 
     JSAtom              *emptyString;
 
-    
+    /* List of active contexts sharing this runtime. */
     JSCList             contextList;
 
     bool hasContexts() const {
@@ -758,37 +778,37 @@ struct JSRuntime : js::RuntimeFriendFields
 
     JS_SourceHook       sourceHook;
 
-    
+    /* Per runtime debug hooks -- see jsprvtd.h and jsdbgapi.h. */
     JSDebugHooks        debugHooks;
 
-    
+    /* If true, new compartments are initially in debug mode. */
     bool                debugMode;
 
-    
+    /* SPS profiling metadata */
     js::SPSProfiler     spsProfiler;
 
-    
+    /* If true, new scripts must be created with PC counter information. */
     bool                profilingScripts;
 
-    
+    /* Always preserve JIT code during GCs, for testing. */
     bool                alwaysPreserveCode;
 
-    
+    /* Had an out-of-memory error which did not populate an exception. */
     JSBool              hadOutOfMemory;
 
-    
-
-
-
+    /*
+     * Linked list of all js::Debugger objects. This may be accessed by the GC
+     * thread, if any, or a thread that is in a request and holds gcLock.
+     */
     JSCList             debuggerList;
 
-    
+    /* Bookkeeping information for debug scope objects. */
     js::DebugScopes     *debugScopes;
 
-    
+    /* Client opaque pointers */
     void                *data;
 
-    
+    /* These combine to interlock the GC and new requests. */
     PRLock              *gcLock;
 
     js::GCHelperThread  gcHelperThread;
@@ -813,28 +833,28 @@ struct JSRuntime : js::RuntimeFriendFields
     const js::DOMCallbacks *DOMcallbacks;
     JSDestroyPrincipalsOp destroyPrincipals;
 
-    
+    /* Structured data callbacks are runtime-wide. */
     const JSStructuredCloneCallbacks *structuredCloneCallbacks;
 
-    
+    /* Call this to accumulate telemetry data. */
     JSAccumulateTelemetryDataCallback telemetryCallback;
 
-    
-
-
-
-
+    /*
+     * The propertyRemovals counter is incremented for every JSObject::clear,
+     * and for each JSObject::remove method call that frees a slot in the given
+     * object. See js_NativeGet and js_NativeSet in jsobj.cpp.
+     */
     int32_t             propertyRemovals;
 
-    
+    /* Number localization, used by jsnum.c */
     const char          *thousandsSeparator;
     const char          *decimalSeparator;
     const char          *numGrouping;
 
-    
-
-
-
+    /*
+     * Flag indicating that we are waiving any soft limits on the GC heap
+     * because we want allocations to be infallible (except when we hit OOM).
+     */
     bool                waiveGCQuota;
 
   private:
@@ -852,11 +872,8 @@ struct JSRuntime : js::RuntimeFriendFields
     js::SourceDataCache sourceDataCache;
     js::EvalCache       evalCache;
 
-    
+    /* State used by jsdtoa.cpp. */
     DtoaState           *dtoaState;
-
-    
-    js::PendingProxyOperation *pendingProxyOperation;
 
     js::ConservativeGCData conservativeGC;
 
@@ -866,10 +883,10 @@ struct JSRuntime : js::RuntimeFriendFields
     void setTrustedPrincipals(JSPrincipals *p) { trustedPrincipals_ = p; }
     JSPrincipals *trustedPrincipals() const { return trustedPrincipals_; }
 
-    
+    /* Literal table maintained by jsatom.c functions. */
     JSAtomState         atomState;
 
-    
+    /* Tables of strings that are pre-allocated in the atomsCompartment. */
     js::StaticStrings   staticStrings;
 
     JSWrapObjectCallback                   wrapObjectCallback;
@@ -883,17 +900,17 @@ struct JSRuntime : js::RuntimeFriendFields
     size_t              noGCOrAllocationCheck;
 #endif
 
-    
-
-
-
-
+    /*
+     * To ensure that cx->malloc does not cause a GC, we set this flag during
+     * OOM reporting (in js_ReportOutOfMemory). If a GC is requested while
+     * reporting the OOM, we ignore it.
+     */
     int32_t             inOOMReport;
 
     bool                jitHardening;
 
-    
-    
+    // If Ion code is on the stack, and has called into C++, this will be
+    // aligned to an Ion exit frame.
     uint8_t             *ionTop;
     JSContext           *ionJSContext;
     uintptr_t            ionStackLimit;
@@ -902,22 +919,22 @@ struct JSRuntime : js::RuntimeFriendFields
         ionStackLimit = nativeStackLimit;
     }
 
-    
+    // This points to the most recent Ion activation running on the thread.
     js::ion::IonActivation  *ionActivation;
 
   private:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // In certain cases, we want to optimize certain opcodes to typed instructions,
+    // to avoid carrying an extra register to feed into an unbox. Unfortunately,
+    // that's not always possible. For example, a GetPropertyCacheT could return a
+    // typed double, but if it takes its out-of-line path, it could return an
+    // object, and trigger invalidation. The invalidation bailout will consider the
+    // return value to be a double, and create a garbage Value.
+    //
+    // To allow the GetPropertyCacheT optimization, we allow the ability for
+    // GetPropertyCache to override the return value at the top of the stack - the
+    // value that will be temporarily corrupt. This special override value is set
+    // only in callVM() targets that are about to return *and* have invalidated
+    // their callee.
     js::Value            ionReturnOverride_;
 
   public:
@@ -941,83 +958,105 @@ struct JSRuntime : js::RuntimeFriendFields
 
     JSRuntime *thisFromCtor() { return this; }
 
-    
-
-
-
+    /*
+     * Call the system malloc while checking for GC memory pressure and
+     * reporting OOM error when cx is not null. We will not GC from here.
+     */
     void* malloc_(size_t bytes, JSContext *cx = NULL) {
         updateMallocCounter(cx, bytes);
-        void *p = ::js_malloc(bytes);
+        void *p = js_malloc(bytes);
         return JS_LIKELY(!!p) ? p : onOutOfMemory(NULL, bytes, cx);
     }
 
-    
-
-
-
+    /*
+     * Call the system calloc while checking for GC memory pressure and
+     * reporting OOM error when cx is not null. We will not GC from here.
+     */
     void* calloc_(size_t bytes, JSContext *cx = NULL) {
         updateMallocCounter(cx, bytes);
-        void *p = ::js_calloc(bytes);
+        void *p = js_calloc(bytes);
         return JS_LIKELY(!!p) ? p : onOutOfMemory(reinterpret_cast<void *>(1), bytes, cx);
     }
 
     void* realloc_(void* p, size_t oldBytes, size_t newBytes, JSContext *cx = NULL) {
         JS_ASSERT(oldBytes < newBytes);
         updateMallocCounter(cx, newBytes - oldBytes);
-        void *p2 = ::js_realloc(p, newBytes);
+        void *p2 = js_realloc(p, newBytes);
         return JS_LIKELY(!!p2) ? p2 : onOutOfMemory(p, newBytes, cx);
     }
 
     void* realloc_(void* p, size_t bytes, JSContext *cx = NULL) {
-        
-
-
-
+        /*
+         * For compatibility we do not account for realloc that increases
+         * previously allocated memory.
+         */
         if (!p)
             updateMallocCounter(cx, bytes);
-        void *p2 = ::js_realloc(p, bytes);
+        void *p2 = js_realloc(p, bytes);
         return JS_LIKELY(!!p2) ? p2 : onOutOfMemory(p, bytes, cx);
     }
 
-    inline void free_(void* p) {
-        
-        js::Foreground::free_(p);
+    template <class T>
+    T *pod_malloc(JSContext *cx = NULL) {
+        return (T *)malloc_(sizeof(T), cx);
     }
 
-    JS_DECLARE_NEW_METHODS(malloc_, JS_ALWAYS_INLINE)
-    JS_DECLARE_DELETE_METHODS(free_, JS_ALWAYS_INLINE)
+    template <class T>
+    T *pod_calloc(JSContext *cx = NULL) {
+        return (T *)calloc_(sizeof(T), cx);
+    }
+
+    template <class T>
+    T *pod_malloc(size_t numElems, JSContext *cx = NULL) {
+        if (numElems & js::tl::MulOverflowMask<sizeof(T)>::result) {
+            js_ReportAllocationOverflow(cx);
+            return NULL;
+        }
+        return (T *)malloc_(numElems * sizeof(T), cx);
+    }
+
+    template <class T>
+    T *pod_calloc(size_t numElems, JSContext *cx = NULL) {
+        if (numElems & js::tl::MulOverflowMask<sizeof(T)>::result) {
+            js_ReportAllocationOverflow(cx);
+            return NULL;
+        }
+        return (T *)calloc_(numElems * sizeof(T), cx);
+    }
+
+    JS_DECLARE_NEW_METHODS(new_, malloc_, JS_ALWAYS_INLINE)
 
     void setGCMaxMallocBytes(size_t value);
 
     void resetGCMallocBytes() { gcMallocBytes = ptrdiff_t(gcMaxMallocBytes); }
 
-    
-
-
-
-
-
-
-
+    /*
+     * Call this after allocating memory held by GC things, to update memory
+     * pressure counters or report the OOM error if necessary. If oomError and
+     * cx is not null the function also reports OOM error.
+     *
+     * The function must be called outside the GC lock and in case of OOM error
+     * the caller must ensure that no deadlock possible during OOM reporting.
+     */
     void updateMallocCounter(JSContext *cx, size_t nbytes);
 
     bool isTooMuchMalloc() const {
         return gcMallocBytes <= 0;
     }
 
-    
-
-
+    /*
+     * The function must be called outside the GC lock.
+     */
     JS_FRIEND_API(void) onTooMuchMalloc();
 
-    
-
-
-
-
-
-
-
+    /*
+     * This should be called after system malloc/realloc returns NULL to try
+     * to recove some memory or to report an error. Failures in malloc and
+     * calloc are signaled by p == null and p == reinterpret_cast<void *>(1).
+     * Other values of p mean a realloc failure.
+     *
+     * The function must be called outside the GC lock.
+     */
     JS_FRIEND_API(void *) onOutOfMemory(void *p, size_t nbytes, JSContext *cx);
 
     void triggerOperationCallback();
@@ -1031,18 +1070,18 @@ struct JSRuntime : js::RuntimeFriendFields
     size_t sizeOfExplicitNonHeap();
 };
 
-
+/* Common macros to access thread-local caches in JSRuntime. */
 #define JS_PROPERTY_CACHE(cx)   (cx->runtime->propertyCache)
 
 #define JS_KEEP_ATOMS(rt)   (rt)->gcKeepAtoms++;
 #define JS_UNKEEP_ATOMS(rt) (rt)->gcKeepAtoms--;
 
 #ifdef JS_ARGUMENT_FORMATTER_DEFINED
-
-
-
-
-
+/*
+ * Linked list mapping format strings for JS_{Convert,Push}Arguments{,VA} to
+ * formatter functions.  Elements are sorted in non-increasing format string
+ * length order.
+ */
 struct JSArgumentFormatMap {
     const char          *format;
     size_t              length;
@@ -1074,20 +1113,20 @@ OptionsSameVersionFlags(uint32_t self, uint32_t other)
     return !((self & mask) ^ (other & mask));
 }
 
-
-
-
-
-
-
-
-
+/*
+ * Flags accompany script version data so that a) dynamically created scripts
+ * can inherit their caller's compile-time properties and b) scripts can be
+ * appropriately compared in the eval cache across global option changes. An
+ * example of the latter is enabling the top-level-anonymous-function-is-error
+ * option: subsequent evals of the same, previously-valid script text may have
+ * become invalid.
+ */
 namespace VersionFlags {
-static const unsigned MASK      = 0x0FFF; 
-static const unsigned ALLOW_XML = 0x1000; 
-static const unsigned MOAR_XML  = 0x2000; 
+static const unsigned MASK      = 0x0FFF; /* see JSVersion in jspubtd.h */
+static const unsigned ALLOW_XML = 0x1000; /* flag induced by JSOPTION_ALLOW_XML */
+static const unsigned MOAR_XML  = 0x2000; /* flag induced by JSOPTION_MOAR_XML */
 static const unsigned FULL_MASK = 0x3FFF;
-} 
+} /* namespace VersionFlags */
 
 static inline JSVersion
 VersionNumber(JSVersion version)
@@ -1107,7 +1146,7 @@ VersionHasMoarXML(JSVersion version)
     return !!(version & VersionFlags::MOAR_XML);
 }
 
-
+/* @warning This is a distinct condition from having the XML flag set. */
 static inline bool
 VersionShouldParseXML(JSVersion version)
 {
@@ -1159,20 +1198,16 @@ VersionIsKnown(JSVersion version)
     return VersionNumber(version) != JSVERSION_UNKNOWN;
 }
 
-typedef HashSet<JSObject *,
-                DefaultHasher<JSObject *>,
-                SystemAllocPolicy> BusyArraysSet;
-
 inline void
 FreeOp::free_(void* p) {
     if (shouldFreeLater()) {
         runtime()->gcHelperThread.freeLater(p);
         return;
     }
-    runtime()->free_(p);
+    js_free(p);
 }
 
-} 
+} /* namespace js */
 
 struct JSContext : js::ContextFriendFields
 {
@@ -1180,57 +1215,57 @@ struct JSContext : js::ContextFriendFields
     JSContext *thisDuringConstruction() { return this; }
     ~JSContext();
 
-    
+    /* JSRuntime contextList linkage. */
     JSCList             link;
 
   private:
-    
-    JSVersion           defaultVersion;      
-    JSVersion           versionOverride;     
+    /* See JSContext::findVersion. */
+    JSVersion           defaultVersion;      /* script compilation version */
+    JSVersion           versionOverride;     /* supercedes defaultVersion when valid */
     bool                hasVersionOverride;
 
-    
-    JSBool              throwing;            
-    js::Value           exception;           
+    /* Exception state -- the exception member is a GC root by definition. */
+    JSBool              throwing;            /* is there a pending exception? */
+    js::Value           exception;           /* most-recently-thrown exception */
 
-    
-    unsigned            runOptions;          
+    /* Per-context run options. */
+    unsigned            runOptions;          /* see jsapi.h for JSOPTION_* */
 
   public:
-    int32_t             reportGranularity;  
+    int32_t             reportGranularity;  /* see jsprobes.h */
 
-    
+    /* Locale specific callbacks for string conversion. */
     JSLocaleCallbacks   *localeCallbacks;
 
     js::AutoResolving   *resolvingList;
 
-    
+    /* True if generating an error, to prevent runaway recursion. */
     bool                generatingError;
 
 #ifdef DEBUG
     bool                rootingUnnecessary;
 #endif
 
-    
+    /* The current compartment. */
     JSCompartment       *compartment;
 
     inline void setCompartment(JSCompartment *c) { compartment = c; }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * "Entering" a compartment changes cx->compartment (which changes
+     * cx->global). Note that this does not push any StackFrame which means
+     * that it is possible for cx->fp()->compartment() != cx->compartment.
+     * This is not a problem since, in general, most places in the VM cannot
+     * know that they were called from script (e.g., they may have been called
+     * through the JSAPI via JS_CallFunction) and thus cannot expect fp.
+     *
+     * Compartments should be entered/left in a LIFO fasion. The depth of this
+     * enter/leave stack is maintained by enterCompartmentDepth_ and queried by
+     * hasEnteredCompartment.
+     *
+     * To enter a compartment, code should prefer using AutoCompartment over
+     * manually calling cx->enterCompartment/leaveCompartment.
+     */
   private:
     unsigned            enterCompartmentDepth_;
   public:
@@ -1238,7 +1273,7 @@ struct JSContext : js::ContextFriendFields
     inline void enterCompartment(JSCompartment *c);
     inline void leaveCompartment(JSCompartment *c);
 
-    
+    /* See JS_SaveFrameChain/JS_RestoreFrameChain. */
   private:
     struct SavedFrameChain {
         SavedFrameChain(JSCompartment *comp, unsigned count)
@@ -1252,11 +1287,11 @@ struct JSContext : js::ContextFriendFields
     bool saveFrameChain();
     void restoreFrameChain();
 
-    
-
-
-
-
+    /*
+     * When no compartments have been explicitly entered, the context's
+     * compartment will be set to the compartment of the "default compartment
+     * object".
+     */
   private:
     JSObject *defaultCompartmentObject_;
   public:
@@ -1264,44 +1299,43 @@ struct JSContext : js::ContextFriendFields
     inline void setDefaultCompartmentObjectIfUnset(JSObject *obj);
     JSObject *maybeDefaultCompartmentObject() const { return defaultCompartmentObject_; }
 
-    
+    /* Current execution stack. */
     js::ContextStack    stack;
 
-    
+    /* Current global. */
     inline js::Handle<js::GlobalObject*> global() const;
 
-    
+    /* ContextStack convenience functions */
     inline bool hasfp() const               { return stack.hasfp(); }
     inline js::StackFrame* fp() const       { return stack.fp(); }
     inline js::StackFrame* maybefp() const  { return stack.maybefp(); }
     inline js::FrameRegs& regs() const      { return stack.regs(); }
     inline js::FrameRegs* maybeRegs() const { return stack.maybeRegs(); }
 
-    
+    /* Wrap cx->exception for the current compartment. */
     void wrapPendingException();
 
   private:
-    
+    /* Lazily initialized pool of maps used during parse/emit. */
     js::frontend::ParseMapPool *parseMapPool_;
 
   public:
-    
-    JSSharpObjectMap    sharpObjectMap;
-    js::BusyArraysSet   busyArrays;
+    /* State for object and array toSource conversion. */
+    js::ObjectSet       cycleDetectorSet;
 
-    
+    /* Argument formatter support for JS_{Convert,Push}Arguments{,VA}. */
     JSArgumentFormatMap *argumentFormatMap;
 
-    
+    /* Last message string and log file for debugging. */
     char                *lastMessage;
 
-    
+    /* Per-context optional error reporter. */
     JSErrorReporter     errorReporter;
 
-    
+    /* Branch callback. */
     JSOperationCallback operationCallback;
 
-    
+    /* Client opaque pointers. */
     void                *data;
     void                *data2;
 
@@ -1315,16 +1349,16 @@ struct JSContext : js::ContextFriendFields
 
     inline bool ensureParseMapPool();
 
-    
-
-
-
+    /*
+     * The default script compilation version can be set iff there is no code running.
+     * This typically occurs via the JSAPI right after a context is constructed.
+     */
     inline bool canSetDefaultVersion() const;
 
-    
+    /* Force a version for future script compilation. */
     inline void overrideVersion(JSVersion newVersion);
 
-    
+    /* Set the default script compilation version. */
     void setDefaultVersion(JSVersion version) {
         defaultVersion = version;
     }
@@ -1338,16 +1372,16 @@ struct JSContext : js::ContextFriendFields
         return versionOverride;
     }
 
-    
-
-
-
+    /*
+     * Set the default version if possible; otherwise, force the version.
+     * Return whether an override occurred.
+     */
     inline bool maybeOverrideVersion(JSVersion newVersion);
 
-    
-
-
-
+    /*
+     * If there is no code on the stack, turn the override version into the
+     * default version.
+     */
     void maybeMigrateVersionOverride() {
         JS_ASSERT(stack.empty());
         if (JS_UNLIKELY(isVersionOverridden())) {
@@ -1356,14 +1390,14 @@ struct JSContext : js::ContextFriendFields
         }
     }
 
-    
-
-
-
-
-
-
-
+    /*
+     * Return:
+     * - The override version, if there is an override version.
+     * - The newest scripted frame's version, if there is such a frame.
+     * - The default version.
+     *
+     * Note: if this ever shows up in a profile, just add caching!
+     */
     inline JSVersion findVersion() const;
 
     void setRunOptions(unsigned ropts) {
@@ -1371,7 +1405,7 @@ struct JSContext : js::ContextFriendFields
         runOptions = ropts;
     }
 
-    
+    /* Note: may override the version. */
     inline void setCompileOptions(unsigned newcopts);
 
     unsigned getRunOptions() const { return runOptions; }
@@ -1394,18 +1428,18 @@ struct JSContext : js::ContextFriendFields
     inline js::PropertyTree &propertyTree();
 
 #ifdef JS_THREADSAFE
-    unsigned            outstandingRequests;
-
-
+    unsigned            outstandingRequests;/* number of JS_BeginRequest calls
+                                               without the corresponding
+                                               JS_EndRequest. */
 #endif
 
-    
+    /* Stored here to avoid passing it around as a parameter. */
     unsigned               resolveFlags;
 
-    
+    /* Random number generator state, used by jsmath.cpp. */
     int64_t             rngSeed;
 
-    
+    /* Location to stash the iteration value between JSOP_MOREITER and JSOP_ITERNEXT. */
     js::Value           iterValue;
 
 #ifdef JS_METHODJIT
@@ -1416,11 +1450,11 @@ struct JSContext : js::ContextFriendFields
 
     inline bool typeInferenceEnabled() const;
 
-    
+    /* Caller must be holding runtime->gcLock. */
     void updateJITEnabled();
 
 #ifdef MOZ_TRACE_JSCALLS
-    
+    /* Function entry/exit debugging callback. */
     JSFunctionCallback    functionCallback;
 
     void doFunctionCallback(const JSFunction *fun,
@@ -1434,11 +1468,11 @@ struct JSContext : js::ContextFriendFields
 
     DSTOffsetCache dstOffsetCache;
 
-    
+    /* List of currently active non-escaping enumerators (for-in). */
     js::PropertyIteratorObject *enumerators;
 
   private:
-    
+    /* Innermost-executing generator or null if no generator are executing. */
     JSGenerator *innermostGenerator_;
   public:
     JSGenerator *innermostGenerator() const { return innermostGenerator_; }
@@ -1447,11 +1481,6 @@ struct JSContext : js::ContextFriendFields
 
     inline void* malloc_(size_t bytes) {
         return runtime->malloc_(bytes, this);
-    }
-
-    inline void* mallocNoReport(size_t bytes) {
-        JS_ASSERT(bytes != 0);
-        return runtime->malloc_(bytes, NULL);
     }
 
     inline void* calloc_(size_t bytes) {
@@ -1466,12 +1495,24 @@ struct JSContext : js::ContextFriendFields
         return runtime->realloc_(p, oldBytes, newBytes, this);
     }
 
-    inline void free_(void* p) {
-        runtime->free_(p);
+    template <class T> T *pod_malloc() {
+        return runtime->pod_malloc<T>(this);
     }
 
-    JS_DECLARE_NEW_METHODS(malloc_, inline)
-    JS_DECLARE_DELETE_METHODS(free_, inline)
+    template <class T> T *pod_calloc() {
+        return runtime->pod_calloc<T>(this);
+    }
+
+    template <class T> T *pod_malloc(size_t numElems) {
+        return runtime->pod_malloc<T>(numElems, this);
+    }
+
+    template <class T>
+    T *pod_calloc(size_t numElems) {
+        return runtime->pod_calloc<T>(numElems, this);
+    }
+
+    JS_DECLARE_NEW_METHODS(new_, malloc_, JS_ALWAYS_INLINE)
 
     void purge();
 
@@ -1492,24 +1533,24 @@ struct JSContext : js::ContextFriendFields
     }
 
 #ifdef DEBUG
-    
-
-
-
+    /*
+     * Controls whether a quadratic-complexity assertion is performed during
+     * stack iteration; defaults to true.
+     */
     bool stackIterAssertionEnabled;
 #endif
 
-    
-
-
-
-
+    /*
+     * Count of currently active compilations.
+     * When there are compilations active for the context, the GC must not
+     * purge the ParseMapPool.
+     */
     unsigned activeCompilations;
 
-    
-
-
-
+    /*
+     * See JS_SetTrustedPrincipals in jsapi.h.
+     * Note: !cx->compartment is treated as trusted.
+     */
     bool runningWithTrustedPrincipals() const;
 
     JS_FRIEND_API(size_t) sizeOfIncludingThis(JSMallocSizeOfFun mallocSizeOf) const;
@@ -1522,14 +1563,14 @@ struct JSContext : js::ContextFriendFields
     void mark(JSTracer *trc);
 
   private:
-    
-
-
-
-
-
+    /*
+     * The allocation code calls the function to indicate either OOM failure
+     * when p is null or that a memory pressure counter has reached some
+     * threshold when p is not null. The function takes the pointer and not
+     * a boolean flag to minimize the amount of code in its inlined callers.
+     */
     JS_FRIEND_API(void) checkMallocGCPressure(void *p);
-}; 
+}; /* struct JSContext */
 
 namespace js {
 
@@ -1586,7 +1627,7 @@ class AutoXMLRooter : private AutoGCRooter {
     JSXML * const xml;
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
-#endif 
+#endif /* JS_HAS_XML_SUPPORT */
 
 #ifdef JS_THREADSAFE
 # define JS_LOCK_GC(rt)    PR_Lock((rt)->gcLock)
@@ -1604,7 +1645,7 @@ class AutoLockGC
       : runtime(rt)
     {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-        
+        // Avoid MSVC warning C4390 for non-threadsafe builds.
         if (rt)
             JS_LOCK_GC(rt);
     }
@@ -1667,7 +1708,6 @@ class AutoKeepAtoms {
 };
 
 class AutoReleasePtr {
-    JSContext   *cx;
     void        *ptr;
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 
@@ -1675,20 +1715,20 @@ class AutoReleasePtr {
     AutoReleasePtr operator=(const AutoReleasePtr &other) MOZ_DELETE;
 
   public:
-    explicit AutoReleasePtr(JSContext *cx, void *ptr
+    explicit AutoReleasePtr(void *ptr
                             JS_GUARD_OBJECT_NOTIFIER_PARAM)
-      : cx(cx), ptr(ptr)
+      : ptr(ptr)
     {
         JS_GUARD_OBJECT_NOTIFIER_INIT;
     }
-    ~AutoReleasePtr() { cx->free_(ptr); }
+    void forget() { ptr = NULL; }
+    ~AutoReleasePtr() { js_free(ptr); }
 };
 
-
-
-
+/*
+ * FIXME: bug 602774: cleaner API for AutoReleaseNullablePtr
+ */
 class AutoReleaseNullablePtr {
-    JSContext   *cx;
     void        *ptr;
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 
@@ -1696,21 +1736,21 @@ class AutoReleaseNullablePtr {
     AutoReleaseNullablePtr operator=(const AutoReleaseNullablePtr &other) MOZ_DELETE;
 
   public:
-    explicit AutoReleaseNullablePtr(JSContext *cx, void *ptr
+    explicit AutoReleaseNullablePtr(void *ptr
                                     JS_GUARD_OBJECT_NOTIFIER_PARAM)
-      : cx(cx), ptr(ptr)
+      : ptr(ptr)
     {
         JS_GUARD_OBJECT_NOTIFIER_INIT;
     }
     void reset(void *ptr2) {
         if (ptr)
-            cx->free_(ptr);
+            js_free(ptr);
         ptr = ptr2;
     }
-    ~AutoReleaseNullablePtr() { if (ptr) cx->free_(ptr); }
+    ~AutoReleaseNullablePtr() { if (ptr) js_free(ptr); }
 };
 
-} 
+} /* namespace js */
 
 class JSAutoResolveFlags
 {
@@ -1733,9 +1773,9 @@ class JSAutoResolveFlags
 
 namespace js {
 
-
-
-
+/*
+ * Enumerate all contexts in a runtime.
+ */
 class ContextIter {
     JSCList *begin;
     JSCList *end;
@@ -1769,10 +1809,10 @@ public:
     }
 };
 
-
-
-
-
+/*
+ * Create and destroy functions for JSContext, which is manually allocated
+ * and exclusively owned.
+ */
 extern JSContext *
 NewContext(JSRuntime *rt, size_t stackChunkSize);
 
@@ -1785,7 +1825,7 @@ enum DestroyContextMode {
 extern void
 DestroyContext(JSContext *cx, DestroyContextMode mode);
 
-} 
+} /* namespace js */
 
 #ifdef va_start
 extern JSBool
@@ -1805,31 +1845,34 @@ js_ExpandErrorArguments(JSContext *cx, JSErrorCallback callback,
 
 namespace js {
 
-
+/* |callee| requires a usage string provided by JS_DefineFunctionsWithHelp. */
 extern void
 ReportUsageError(JSContext *cx, HandleObject callee, const char *msg);
 
-} 
+/*
+ * Prints a full report and returns true if the given report is non-NULL and
+ * the report doesn't have the JSREPORT_WARNING flag set or reportWarnings is
+ * true.
+ * Returns false otherwise, printing just the message if the report is NULL.
+ */
+extern bool
+PrintError(JSContext *cx, FILE *file, const char *message, JSErrorReport *report,
+           bool reportWarnings);
+} /* namespace js */
 
-extern void
-js_ReportOutOfMemory(JSContext *cx);
-
-extern JS_FRIEND_API(void)
-js_ReportAllocationOverflow(JSContext *cx);
-
-
-
-
-
+/*
+ * Report an exception using a previously composed JSErrorReport.
+ * XXXbe remove from "friend" API
+ */
 extern JS_FRIEND_API(void)
 js_ReportErrorAgain(JSContext *cx, const char *message, JSErrorReport *report);
 
 extern void
 js_ReportIsNotDefined(JSContext *cx, const char *name);
 
-
-
-
+/*
+ * Report an attempt to access the property of a null or undefined value (v).
+ */
 extern JSBool
 js_ReportIsNullOrUndefined(JSContext *cx, int spindex, js::HandleValue v,
                            js::HandleString fallback);
@@ -1837,11 +1880,11 @@ js_ReportIsNullOrUndefined(JSContext *cx, int spindex, js::HandleValue v,
 extern void
 js_ReportMissingArg(JSContext *cx, js::HandleValue v, unsigned arg);
 
-
-
-
-
-
+/*
+ * Report error using js_DecompileValueGenerator(cx, spindex, v, fallback) as
+ * the first argument for the error message. If the error message has less
+ * then 3 arguments, use null for arg1 or arg2.
+ */
 extern JSBool
 js_ReportValueErrorFlags(JSContext *cx, unsigned flags, const unsigned errorNumber,
                          int spindex, js::HandleValue v, js::HandleString fallback,
@@ -1867,10 +1910,10 @@ extern JSErrorFormatString js_ErrorFormatString[JSErr_Limit];
 # define JS_ASSERT_REQUEST_DEPTH(cx)  ((void) 0)
 #endif
 
-
-
-
-
+/*
+ * Invoke the operation callback and return false if the current execution
+ * is to be terminated.
+ */
 extern JSBool
 js_InvokeOperationCallback(JSContext *cx);
 
@@ -1880,11 +1923,11 @@ js_HandleExecutionInterrupt(JSContext *cx);
 extern jsbytecode*
 js_GetCurrentBytecodePC(JSContext* cx);
 
-
-
-
-
-
+/*
+ * If the operation callback flag was set, call the operation callback.
+ * This macro can run the full GC. Return true if it is OK to continue and
+ * false otherwise.
+ */
 static MOZ_ALWAYS_INLINE bool
 JS_CHECK_OPERATION_LIMIT(JSContext *cx)
 {
@@ -1900,9 +1943,9 @@ namespace mjit {
 }
 #endif
 
-} 
+} /* namespace js */
 
-
+/* How much expansion of inlined frames to do when inspecting the stack. */
 enum FrameExpandKind {
     FRAME_EXPAND_NONE = 0,
     FRAME_EXPAND_ALL = 1
@@ -1910,7 +1953,7 @@ enum FrameExpandKind {
 
 namespace js {
 
-
+/************************************************************************/
 
 static JS_ALWAYS_INLINE void
 MakeRangeGCSafe(Value *vec, size_t len)
@@ -2034,17 +2077,17 @@ class AutoValueArray : public AutoGCRooter
     JS_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Allocation policy that uses JSRuntime::malloc_ and friends, so that
+ * memory pressure is properly accounted for. This is suitable for
+ * long-lived objects owned by the JSRuntime.
+ *
+ * Since it doesn't hold a JSContext (those may not live long enough), it
+ * can't report out-of-memory conditions itself; the caller must check for
+ * OOM and take the appropriate action.
+ *
+ * FIXME bug 647103 - replace these *AllocPolicy names.
+ */
 class RuntimeAllocPolicy
 {
     JSRuntime *const runtime;
@@ -2054,13 +2097,13 @@ class RuntimeAllocPolicy
     RuntimeAllocPolicy(JSContext *cx) : runtime(cx->runtime) {}
     void *malloc_(size_t bytes) { return runtime->malloc_(bytes); }
     void *realloc_(void *p, size_t bytes) { return runtime->realloc_(p, bytes); }
-    void free_(void *p) { runtime->free_(p); }
+    void free_(void *p) { js_free(p); }
     void reportAllocOverflow() const {}
 };
 
-
-
-
+/*
+ * FIXME bug 647103 - replace these *AllocPolicy names.
+ */
 class ContextAllocPolicy
 {
     JSContext *const cx;
@@ -2070,15 +2113,15 @@ class ContextAllocPolicy
     JSContext *context() const { return cx; }
     void *malloc_(size_t bytes) { return cx->malloc_(bytes); }
     void *realloc_(void *p, size_t oldBytes, size_t bytes) { return cx->realloc_(p, oldBytes, bytes); }
-    void free_(void *p) { cx->free_(p); }
+    void free_(void *p) { js_free(p); }
     void reportAllocOverflow() const { js_ReportAllocationOverflow(cx); }
 };
 
-} 
+} /* namespace js */
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #pragma warning(pop)
 #endif
 
-#endif 
+#endif /* jscntxt_h___ */

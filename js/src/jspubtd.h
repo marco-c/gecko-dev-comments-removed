@@ -1,40 +1,40 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jspubtd_h___
 #define jspubtd_h___
 
-
-
-
+/*
+ * JS public API typedefs.
+ */
 #include "jstypes.h"
 
-
-
-
-
+/*
+ * Allow headers to reference JS::Value without #including the whole jsapi.h.
+ * Unfortunately, typedefs (hence jsval) cannot be declared.
+ */
 #ifdef __cplusplus
 namespace JS { class Value; }
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * In release builds, jsid is defined to be an integral type. This
+ * prevents many bugs from being caught at compile time. E.g.:
+ *
+ *  jsid id = ...
+ *  if (id == JS_TRUE)  // error
+ *    ...
+ *
+ *  size_t n = id;      // error
+ *
+ * To catch more errors, jsid is given a struct type in C++ debug builds.
+ * Struct assignment and (in C++) operator== allow correct code to be mostly
+ * oblivious to the change. This feature can be explicitly disabled in debug
+ * builds by defining JS_NO_JSVAL_JSID_STRUCT_TYPES.
+ */
 #ifdef __cplusplus
 
 # if defined(DEBUG) && !defined(JS_NO_JSVAL_JSID_STRUCT_TYPES)
@@ -49,11 +49,11 @@ struct jsid
     bool operator!=(jsid rhs) const { return asBits != rhs.asBits; }
 };
 #  define JSID_BITS(id) (id.asBits)
-# else  
+# else  /* defined(JS_USE_JSID_STRUCT_TYPES) */
 typedef ptrdiff_t jsid;
 #  define JSID_BITS(id) (id)
-# endif  
-#else  
+# endif  /* defined(JS_USE_JSID_STRUCT_TYPES) */
+#else  /* defined(__cplusplus) */
 typedef ptrdiff_t jsid;
 # define JSID_BITS(id) (id)
 #endif
@@ -66,11 +66,11 @@ typedef wchar_t   jschar;
 typedef uint16_t  jschar;
 #endif
 
-
-
-
-
-
+/*
+ * Run-time version enumeration.  See jsversion.h for compile-time counterparts
+ * to these values that may be selected by the JS_VERSION macro, and tested by
+ * #if expressions.
+ */
 typedef enum JSVersion {
     JSVERSION_1_0     = 100,
     JSVERSION_1_1     = 110,
@@ -91,20 +91,20 @@ typedef enum JSVersion {
 #define JSVERSION_IS_ECMA(version) \
     ((version) == JSVERSION_DEFAULT || (version) >= JSVERSION_1_3)
 
-
+/* Result of typeof operator enumeration. */
 typedef enum JSType {
-    JSTYPE_VOID,                
-    JSTYPE_OBJECT,              
-    JSTYPE_FUNCTION,            
-    JSTYPE_STRING,              
-    JSTYPE_NUMBER,              
-    JSTYPE_BOOLEAN,             
-    JSTYPE_NULL,                
-    JSTYPE_XML,                 
+    JSTYPE_VOID,                /* undefined */
+    JSTYPE_OBJECT,              /* object */
+    JSTYPE_FUNCTION,            /* function */
+    JSTYPE_STRING,              /* string */
+    JSTYPE_NUMBER,              /* number */
+    JSTYPE_BOOLEAN,             /* boolean */
+    JSTYPE_NULL,                /* null */
+    JSTYPE_XML,                 /* xml object */
     JSTYPE_LIMIT
 } JSType;
 
-
+/* Dense index into cached prototypes and class atoms for standard objects. */
 typedef enum JSProtoKey {
 #define JS_PROTO(name,code,init) JSProto_##name = code,
 #include "jsproto.tbl"
@@ -112,56 +112,56 @@ typedef enum JSProtoKey {
     JSProto_LIMIT
 } JSProtoKey;
 
-
+/* js_CheckAccess mode enumeration. */
 typedef enum JSAccessMode {
-    JSACC_PROTO  = 0,           
+    JSACC_PROTO  = 0,           /* XXXbe redundant w.r.t. id */
 
-                                
+                                /*
+                                 * enum value #1 formerly called JSACC_PARENT,
+                                 * gap preserved for ABI compatibility.
+                                 */
 
+                                /*
+                                 * enum value #2 formerly called JSACC_IMPORT,
+                                 * gap preserved for ABI compatibility.
+                                 */
 
-
-
-                                
-
-
-
-
-    JSACC_WATCH  = 3,           
-    JSACC_READ   = 4,           
-    JSACC_WRITE  = 8,           
+    JSACC_WATCH  = 3,           /* a watchpoint on object foo for id 'bar' */
+    JSACC_READ   = 4,           /* a "get" of foo.bar */
+    JSACC_WRITE  = 8,           /* a "set" of foo.bar = baz */
     JSACC_LIMIT
 } JSAccessMode;
 
 #define JSACC_TYPEMASK          (JSACC_WRITE - 1)
 
-
-
-
-
+/*
+ * This enum type is used to control the behavior of a JSObject property
+ * iterator function that has type JSNewEnumerate.
+ */
 typedef enum JSIterateOp {
-    
+    /* Create new iterator state over enumerable properties. */
     JSENUMERATE_INIT,
 
-    
+    /* Create new iterator state over all properties. */
     JSENUMERATE_INIT_ALL,
 
-    
+    /* Iterate once. */
     JSENUMERATE_NEXT,
 
-    
+    /* Destroy iterator state. */
     JSENUMERATE_DESTROY
 } JSIterateOp;
 
-
+/* See JSVAL_TRACE_KIND and JSTraceCallback in jsapi.h. */
 typedef enum {
     JSTRACE_OBJECT,
     JSTRACE_STRING,
     JSTRACE_SCRIPT,
 
-    
-
-
-
+    /*
+     * Trace kinds internal to the engine. The embedding can only them if it
+     * implements JSTraceCallback.
+     */
     JSTRACE_IONCODE,
 #if JS_HAS_XML_SUPPORT
     JSTRACE_XML,
@@ -172,7 +172,7 @@ typedef enum {
     JSTRACE_LAST = JSTRACE_TYPE_OBJECT
 } JSGCTraceKind;
 
-
+/* Struct typedefs. */
 typedef struct JSClass                      JSClass;
 typedef struct JSCompartment                JSCompartment;
 typedef struct JSConstDoubleSpec            JSConstDoubleSpec;
@@ -205,7 +205,7 @@ class                                       JSString;
 #else
 typedef struct JSFlatString                 JSFlatString;
 typedef struct JSString                     JSString;
-#endif 
+#endif /* !__cplusplus */
 
 #ifdef JS_THREADSAFE
 typedef struct PRCallOnceType    JSCallOnceType;
@@ -244,11 +244,11 @@ enum ThingRootKind
 template <typename T>
 struct RootKind;
 
-
-
-
-
-
+/*
+ * Specifically mark the ThingRootKind of externally visible types, so that
+ * JSAPI users may use JSRooted... types without having the class definition
+ * available.
+ */
 template <> struct RootKind<JSObject *> { static ThingRootKind rootKind() { return THING_ROOT_OBJECT; }; };
 template <> struct RootKind<JSFunction *> { static ThingRootKind rootKind() { return THING_ROOT_OBJECT; }; };
 template <> struct RootKind<JSString *> { static ThingRootKind rootKind() { return THING_ROOT_STRING; }; };
@@ -271,28 +271,55 @@ struct ContextFriendFields {
     }
 
 #if defined(JSGC_ROOT_ANALYSIS) || defined(JSGC_USE_EXACT_ROOTING)
-    
-
-
-
+    /*
+     * Stack allocated GC roots for stack GC heap pointers, which may be
+     * overwritten if moved during a GC.
+     */
     Rooted<void*> *thingGCRooters[THING_ROOT_LIMIT];
 #endif
 
 #if defined(DEBUG) && defined(JS_GC_ZEAL) && defined(JSGC_ROOT_ANALYSIS) && !defined(JS_THREADSAFE)
-    
-
-
-
-
-
-
-
+    /*
+     * Stack allocated list of stack locations which hold non-relocatable
+     * GC heap pointers (where the target is rooted somewhere else) or integer
+     * values which may be confused for GC heap pointers. These are used to
+     * suppress false positives which occur when a rooting analysis treats the
+     * location as holding a relocatable pointer, but have no other effect on
+     * GC behavior.
+     */
     SkipRoot *skipGCRooters;
 #endif
 };
 
-} 
+struct RuntimeFriendFields {
+    /*
+     * If non-zero, we were been asked to call the operation callback as soon
+     * as possible.
+     */
+    volatile int32_t    interrupt;
 
-#endif 
+    /* Limit pointer for checking native stack consumption. */
+    uintptr_t           nativeStackLimit;
 
-#endif 
+#if defined(JSGC_ROOT_ANALYSIS) || defined(JSGC_USE_EXACT_ROOTING)
+    /*
+     * Stack allocated GC roots for stack GC heap pointers, which may be
+     * overwritten if moved during a GC.
+     */
+    Rooted<void*> *thingGCRooters[THING_ROOT_LIMIT];
+#endif
+
+    RuntimeFriendFields()
+      : interrupt(0),
+        nativeStackLimit(0) { }
+
+    static const RuntimeFriendFields *get(const JSRuntime *rt) {
+        return reinterpret_cast<const RuntimeFriendFields *>(rt);
+    }
+};
+
+} /* namespace JS */
+
+#endif /* __cplusplus */
+
+#endif /* jspubtd_h___ */

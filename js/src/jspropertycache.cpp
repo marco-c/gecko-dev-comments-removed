@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=98:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jspropertycache.h"
 #include "jscntxt.h"
@@ -20,20 +20,20 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, JSObject *pobj, Shape *shape)
     JS_ASSERT(this == &JS_PROPERTY_CACHE(cx));
     JS_ASSERT(!cx->runtime->isHeapBusy());
 
-    
-
-
-
-
-
+    /*
+     * Check for overdeep scope and prototype chain. Because resolve, getter,
+     * and setter hooks can change the prototype chain using JS_SetPrototype
+     * after LookupPropertyWithFlags has returned, we calculate the protoIndex
+     * here and not in LookupPropertyWithFlags.
+     */
 
     JSObject *tmp = obj;
     unsigned protoIndex = 0;
     while (tmp != pobj) {
-        
-
-
-
+        /*
+         * Don't cache entries across prototype lookups which can mutate in
+         * arbitrary ways without a shape change.
+         */
         if (tmp->hasUncacheableProto()) {
             PCMETER(noprotos++);
             return JS_NO_PROP_CACHE_FILL;
@@ -41,11 +41,11 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, JSObject *pobj, Shape *shape)
 
         tmp = tmp->getProto();
 
-        
-
-
-
-
+        /*
+         * We cannot cache properties coming from native objects behind
+         * non-native ones on the prototype chain. The non-natives can
+         * mutate in arbitrary way without changing any shapes.
+         */
         if (!tmp || !tmp->isNative()) {
             PCMETER(noprotos++);
             return JS_NO_PROP_CACHE_FILL;
@@ -59,10 +59,10 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, JSObject *pobj, Shape *shape)
         return JS_NO_PROP_CACHE_FILL;
     }
 
-    
-
-
-
+    /*
+     * Optimize the cached vword based on our parameters and the current pc's
+     * opcode format flags.
+     */
     jsbytecode *pc;
     (void) cx->stack.currentScript(&pc);
     JSOp op = JSOp(*pc);
@@ -78,10 +78,10 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, JSObject *pobj, Shape *shape)
         JS_ASSERT((protoIndex == 1) == (obj->getProto() == pobj));
 
         if (protoIndex != 1) {
-            
-
-
-
+            /*
+             * Make sure that a later shadowing assignment will enter
+             * PurgeProtoChain and invalidate this entry, bug 479198.
+             */
             if (!obj->isDelegate())
                 return JS_NO_PROP_CACHE_FILL;
         }
@@ -94,10 +94,10 @@ PropertyCache::fill(JSContext *cx, JSObject *obj, JSObject *pobj, Shape *shape)
     empty = false;
     PCMETER(fills++);
 
-    
-
-
-
+    /*
+     * The modfills counter is not exact. It increases if a getter or setter
+     * recurse into the interpreter.
+     */
     PCMETER(entry == pctestentry || modfills++);
     PCMETER(pctestentry = NULL);
     return entry;
@@ -146,10 +146,10 @@ PropertyCache::fullTest(JSContext *cx, jsbytecode *pc, JSObject **objp, JSObject
         return GetNameFromBytecode(cx, script, pc, op);
     }
 
-    
-
-
-
+    /*
+     * PropertyCache::test handles only the direct and immediate-prototype hit
+     * cases. All others go here.
+     */
     pobj = obj;
 
     uint8_t protoIndex = entry->protoIndex;
@@ -163,8 +163,8 @@ PropertyCache::fullTest(JSContext *cx, jsbytecode *pc, JSObject **objp, JSObject
 
     if (pobj->lastProperty() == entry->pshape) {
 #ifdef DEBUG
-        PropertyName *name = GetNameFromBytecode(cx, script, pc, op);
-        JS_ASSERT(pobj->nativeContainsNoAllocation(NameToId(name)));
+        Rooted<PropertyName*> name(cx, GetNameFromBytecode(cx, script, pc, op));
+        JS_ASSERT(pobj->nativeContainsNoAllocation(name));
 #endif
         *pobjp = pobj;
         return NULL;
