@@ -655,6 +655,14 @@ CodeGeneratorX86::postAsmJSCall(LAsmJSCall *lir)
 }
 
 void
+DispatchIonCache::initializeAddCacheState(LInstruction *ins, AddCacheState *addState)
+{
+    
+    
+    MOZ_ASSUME_UNREACHABLE("x86 needs manual assignment of dispatchScratch");
+}
+
+void
 ParallelGetPropertyIC::initializeAddCacheState(LInstruction *ins, AddCacheState *addState)
 {
     

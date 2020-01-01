@@ -527,10 +527,9 @@ CodeGeneratorX64::visitAsmJSLoadFFIFunc(LAsmJSLoadFFIFunc *ins)
 }
 
 void
-ParallelGetPropertyIC::initializeAddCacheState(LInstruction *ins, AddCacheState *addState)
+DispatchIonCache::initializeAddCacheState(LInstruction *ins, AddCacheState *addState)
 {
     
-    JS_ASSERT(ins->isGetPropertyCacheV() || ins->isGetPropertyCacheT());
     addState->dispatchScratch = ScratchReg;
 }
 
