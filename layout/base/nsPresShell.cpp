@@ -189,7 +189,7 @@
 #include "nsStyleChangeList.h"
 #include "nsCSSFrameConstructor.h"
 #ifdef MOZ_XUL
-#include "nsIMenuFrame.h"
+#include "nsMenuFrame.h"
 #include "nsITreeBoxObject.h"
 #endif
 #include "nsIMenuParent.h"
@@ -886,8 +886,6 @@ public:
   virtual already_AddRefed<gfxASurface> RenderSelection(nsISelection* aSelection,
                                                         nsPoint& aPoint,
                                                         nsRect* aScreenRect);
-
-  virtual void HidePopups();
 
   
 
@@ -5839,18 +5837,6 @@ PresShell::Thaw()
   UnsuppressPainting();
 }
 
-void
-PresShell::HidePopups()
-{
-  nsIViewManager *vm = GetViewManager();
-  if (vm) {
-    nsIView *rootView = nsnull;
-    vm->GetRootView(rootView);
-    if (rootView)
-      HideViewIfPopup(rootView);
-  }
-}
-
 
 
 
@@ -6185,11 +6171,8 @@ ReResolveMenusAndTrees(nsIFrame *aFrame, void *aClosure)
   
   
   
-  nsCOMPtr<nsIMenuFrame> menuFrame(do_QueryInterface(aFrame));
-  if (menuFrame) {
-    menuFrame->UngenerateMenu();  
-    menuFrame->OpenMenu(PR_FALSE);
-  }
+  if (aFrame && aFrame->GetType() == nsGkAtoms::menuFrame)
+    (NS_STATIC_CAST(nsMenuFrame *, aFrame))->CloseMenu(PR_TRUE);
   return PR_TRUE;
 }
 
@@ -6324,27 +6307,6 @@ PresShell::EnumeratePlugins(nsIDOMDocument *aDocument,
     nsCOMPtr<nsIContent> content = do_QueryInterface(node);
     if (content)
       aCallback(this, content);
-  }
-}
-
-void
-PresShell::HideViewIfPopup(nsIView* aView)
-{
-  nsIFrame* frame = NS_STATIC_CAST(nsIFrame*, aView->GetClientData());
-  if (frame) {
-    nsIMenuParent* parent;
-    CallQueryInterface(frame, &parent);
-    if (parent) {
-      parent->HideChain();
-      
-      mViewManager->SetViewVisibility(aView, nsViewVisibility_kHide);
-    }
-  }
-
-  nsIView* child = aView->GetFirstChild();
-  while (child) {
-    HideViewIfPopup(child);
-    child = child->GetNextSibling();
   }
 }
 

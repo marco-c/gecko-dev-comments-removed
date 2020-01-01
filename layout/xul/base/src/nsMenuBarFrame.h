@@ -1,46 +1,46 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is mozilla.org code.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Original Author: David W. Hyatt (hyatt@netscape.com)
+ *   Dean Tessman <dean_tessman@hotmail.com>
+ *   Dan Rosen <dr@netscape.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//
+// nsMenuBarFrame
+//
 
 #ifndef nsMenuBarFrame_h__
 #define nsMenuBarFrame_h__
@@ -49,13 +49,12 @@
 #include "nsIAtom.h"
 #include "nsCOMPtr.h"
 #include "nsBoxFrame.h"
+#include "nsMenuFrame.h"
 #include "nsMenuBarListener.h"
-#include "nsMenuListener.h"
 #include "nsIMenuParent.h"
 #include "nsIWidget.h"
 
 class nsIContent;
-class nsIMenuFrame;
 
 nsIFrame* NS_NewMenuBarFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
@@ -63,47 +62,25 @@ class nsMenuBarFrame : public nsBoxFrame, public nsIMenuParent
 {
 public:
   nsMenuBarFrame(nsIPresShell* aShell, nsStyleContext* aContext);
-  virtual ~nsMenuBarFrame();
 
-  NS_DECL_ISUPPORTS
+  // nsIMenuParentInterface
+  virtual nsMenuFrame* GetCurrentMenuItem();
+  NS_IMETHOD SetCurrentMenuItem(nsMenuFrame* aMenuItem);
+  virtual void CurrentMenuIsBeingDestroyed();
+  NS_IMETHOD ChangeMenuItem(nsMenuFrame* aMenuItem, PRBool aSelectFirstItem);
 
-  
-  virtual nsIMenuFrame* GetCurrentMenuItem();
-  NS_IMETHOD SetCurrentMenuItem(nsIMenuFrame* aMenuItem);
-  virtual nsIMenuFrame* GetNextMenuItem(nsIMenuFrame* aStart);
-  virtual nsIMenuFrame* GetPreviousMenuItem(nsIMenuFrame* aStart);
   NS_IMETHOD SetActive(PRBool aActiveFlag); 
-  NS_IMETHOD GetIsActive(PRBool& isActive) { isActive = IsActive(); return NS_OK; }
-  NS_IMETHOD IsMenuBar(PRBool& isMenuBar) { isMenuBar = PR_TRUE; return NS_OK; }
-  NS_IMETHOD ConsumeOutsideClicks(PRBool& aConsumeOutsideClicks) \
-    {aConsumeOutsideClicks = PR_FALSE; return NS_OK;}
-  NS_IMETHOD ClearRecentlyRolledUp();
-  NS_IMETHOD RecentlyRolledUp(nsIMenuFrame *aMenuFrame, PRBool *aJustRolledUp);
 
-  NS_IMETHOD SetIsContextMenu(PRBool aIsContextMenu) { return NS_OK; }
-  NS_IMETHOD GetIsContextMenu(PRBool& aIsContextMenu) { aIsContextMenu = PR_FALSE; return NS_OK; }
+  virtual PRBool IsMenuBar() { return PR_TRUE; }
+  virtual PRBool IsContextMenu() { return PR_FALSE; }
+  virtual PRBool IsActive() { return mIsActive; }
+  virtual PRBool IsMenu() { return PR_FALSE; }
+  virtual PRBool IsOpen() { return PR_TRUE; } // menubars are considered always open
 
-  NS_IMETHOD GetParentPopup(nsIMenuParent** aResult) { *aResult = nsnull;
-                                                       return NS_OK;}
+  PRBool IsMenuOpen() { return mCurrentMenu && mCurrentMenu->IsOpen(); }
 
-  NS_IMETHOD IsActive() { return mIsActive; }
-
-  NS_IMETHOD IsOpen();
-  NS_IMETHOD KillPendingTimers();
-  NS_IMETHOD CancelPendingTimers() { return NS_OK; }
-
-  
-  NS_IMETHOD DismissChain();
-
-  
-  NS_IMETHOD HideChain();
-
-  NS_IMETHOD InstallKeyboardNavigator();
-  NS_IMETHOD RemoveKeyboardNavigator();
-
-  NS_IMETHOD GetWidget(nsIWidget **aWidget);
-  
-  NS_IMETHOD AttachedDismissalListener() { return NS_OK; }
+  void InstallKeyboardNavigator();
+  void RemoveKeyboardNavigator();
 
   NS_IMETHOD Init(nsIContent*      aContent,
                   nsIFrame*        aParent,
@@ -111,28 +88,28 @@ public:
 
   virtual void Destroy();
 
+  virtual nsIAtom* GetType() const { return nsGkAtoms::menuBarFrame; }
 
+// Non-interface helpers
 
-  
-  void ToggleMenuActiveState();
-  
-  
-  NS_IMETHOD KeyboardNavigation(PRUint32 aKeyCode, PRBool& aHandledFlag);
-  NS_IMETHOD ShortcutNavigation(nsIDOMKeyEvent* aKeyEvent, PRBool& aHandledFlag);
-  
-  NS_IMETHOD Escape(PRBool& aHandledFlag);
-  
-  NS_IMETHOD Enter();
+  // Called when a menu on the menu bar is clicked on. Returns a menu if one
+  // needs to be closed.
+  nsMenuFrame* ToggleMenuActiveState();
 
-  
-  nsIMenuFrame* FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent);
+  // indicate that a menu on the menubar was closed. Returns true if the caller
+  // may deselect the menuitem.
+  virtual PRBool MenuClosed();
 
-  PRBool IsValidItem(nsIContent* aContent);
-  PRBool IsDisabled(nsIContent* aContent);
+  // Called when Enter is pressed while the menubar is focused. If the current
+  // menu is open, let the child handle the key.
+  nsMenuFrame* Enter();
+
+  // Used to handle ALT+key combos
+  nsMenuFrame* FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent);
 
   virtual PRBool IsFrameOfType(PRUint32 aFlags) const
   {
-    
+    // Override bogus IsFrameOfType in nsBoxFrame.
     if (aFlags & (nsIFrame::eReplacedContainsBlock | nsIFrame::eReplaced))
       return PR_FALSE;
     return nsBoxFrame::IsFrameOfType(aFlags);
@@ -146,21 +123,18 @@ public:
 #endif
 
 protected:
-  nsMenuBarListener* mMenuBarListener; 
-  nsMenuListener* mKeyboardNavigator;
+  nsMenuBarListener* mMenuBarListener; // The listener that tells us about key and mouse events.
 
-  PRBool mIsActive; 
-  nsIMenuFrame* mCurrentMenu; 
-
-  
-  
-  nsIMenuFrame* mRecentRollupMenu; 
+  PRBool mIsActive; // Whether or not the menu bar is active (a menu item is highlighted or shown).
+  // The current menu that is active (highlighted), which may not be open. This will
+  // be null if no menu is active.
+  nsMenuFrame* mCurrentMenu;
 
   nsIDOMEventTarget* mTarget;
 
 private:
   PRBool mCaretWasVisible;
 
-}; 
+}; // class nsMenuBarFrame
 
 #endif
