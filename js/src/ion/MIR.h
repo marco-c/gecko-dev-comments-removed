@@ -7379,28 +7379,6 @@ class MGuardThreadLocalObject
     }
 };
 
-class MDumpPar
-  : public MUnaryInstruction,
-    public BoxPolicy<0>
-{
-  public:
-    INSTRUCTION_HEADER(DumpPar);
-
-    MDumpPar(MDefinition *v)
-      : MUnaryInstruction(v)
-    {
-        setResultType(MIRType_None);
-    }
-
-    MDefinition *value() const {
-        return getOperand(0);
-    }
-
-    TypePolicy *typePolicy() {
-        return this;
-    }
-};
-
 
 
 class MTypeBarrier

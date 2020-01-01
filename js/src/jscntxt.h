@@ -994,10 +994,6 @@ JSBool intrinsic_HaveSameClass(JSContext *cx, unsigned argc, Value *vp);
 JSBool intrinsic_ShouldForceSequential(JSContext *cx, unsigned argc, Value *vp);
 JSBool intrinsic_NewParallelArray(JSContext *cx, unsigned argc, Value *vp);
 
-#ifdef DEBUG
-JSBool intrinsic_Dump(JSContext *cx, unsigned argc, Value *vp);
-#endif
-
 } 
 
 #ifdef _MSC_VER

@@ -20,8 +20,6 @@ bool IsThreadLocalObject(ForkJoinSlice *context, JSObject *object);
 bool CheckOverRecursedPar(ForkJoinSlice *slice);
 bool CheckInterruptPar(ForkJoinSlice *context);
 
-void DumpValuePar(Value *v);
-
 
 
 
