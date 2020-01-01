@@ -1,21 +1,21 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * This Original Code has been modified by IBM Corporation. Modifications made by IBM 
+ * described herein are Copyright (c) International Business Machines Corporation, 2000.
+ * Modifications to Mozilla code or documentation identified per MPL Section 3.3
+ *
+ * Date             Modified by     Description of modification
+ * 04/20/2000       IBM Corp.      OS/2 VisualAge build.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * style sheet and style rule processor representing data from presentational
+ * HTML attributes
+ */
 
 #include "nsHTMLStyleSheet.h"
 #include "nsINameSpaceManager.h"
@@ -44,7 +44,7 @@ using namespace mozilla::dom;
 
 NS_IMPL_ISUPPORTS1(nsHTMLStyleSheet::HTMLColorRule, nsIStyleRule)
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::HTMLColorRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   if (aRuleData->mSIDs & NS_STYLE_INHERIT_BIT(Color)) {
@@ -56,7 +56,7 @@ nsHTMLStyleSheet::HTMLColorRule::MapRuleInfoInto(nsRuleData* aRuleData)
 }
 
 #ifdef DEBUG
- void
+/* virtual */ void
 nsHTMLStyleSheet::HTMLColorRule::List(FILE* out, PRInt32 aIndent) const
 {
 }
@@ -66,13 +66,13 @@ nsHTMLStyleSheet::HTMLColorRule::List(FILE* out, PRInt32 aIndent) const
 NS_IMPL_ISUPPORTS1(nsHTMLStyleSheet::GenericTableRule, nsIStyleRule)
 
 #ifdef DEBUG
- void
+/* virtual */ void
 nsHTMLStyleSheet::GenericTableRule::List(FILE* out, PRInt32 aIndent) const
 {
 }
 #endif
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::TableTHRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   if (aRuleData->mSIDs & NS_STYLE_INHERIT_BIT(Text)) {
@@ -84,20 +84,20 @@ nsHTMLStyleSheet::TableTHRule::MapRuleInfoInto(nsRuleData* aRuleData)
   }
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::TableQuirkColorRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   if (aRuleData->mSIDs & NS_STYLE_INHERIT_BIT(Color)) {
     nsCSSValue* color = aRuleData->ValueForColor();
-    
-    
+    // We do not check UseDocumentColors() here, because we want to
+    // use the body color no matter what.
     if (color->GetUnit() == eCSSUnit_Null)
       color->SetIntValue(NS_STYLE_COLOR_INHERIT_FROM_BODY,
                          eCSSUnit_Enumerated);
   }
 }
 
-
+// -----------------------------------------------------------
 
 struct MappedAttrTableEntry : public PLDHashEntryHdr {
   nsMappedAttributes *mAttributes;
@@ -144,17 +144,20 @@ static PLDHashTableOps MappedAttrTable_Ops = {
   NULL
 };
 
+// -----------------------------------------------------------
 
-
-nsHTMLStyleSheet::nsHTMLStyleSheet(nsIURI* aURL, nsIDocument* aDocument)
-  : mURL(aURL)
-  , mDocument(aDocument)
-  , mTableQuirkColorRule(new TableQuirkColorRule())
-  , mTableTHRule(new TableTHRule())
+nsHTMLStyleSheet::nsHTMLStyleSheet(void)
+  : mDocument(nullptr)
 {
-  MOZ_ASSERT(aURL);
-  MOZ_ASSERT(aDocument);
   mMappedAttrTable.ops = nullptr;
+}
+
+nsresult
+nsHTMLStyleSheet::Init()
+{
+  mTableTHRule = new TableTHRule();
+  mTableQuirkColorRule = new TableQuirkColorRule();
+  return NS_OK;
 }
 
 nsHTMLStyleSheet::~nsHTMLStyleSheet()
@@ -165,22 +168,22 @@ nsHTMLStyleSheet::~nsHTMLStyleSheet()
 
 NS_IMPL_ISUPPORTS2(nsHTMLStyleSheet, nsIStyleSheet, nsIStyleRuleProcessor)
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::RulesMatching(ElementRuleProcessorData* aData)
 {
   nsRuleWalker *ruleWalker = aData->mRuleWalker;
   if (aData->mElement->IsHTML()) {
     nsIAtom* tag = aData->mElement->Tag();
 
-    
+    // if we have anchor colors, check if this is an anchor with an href
     if (tag == nsGkAtoms::a) {
       if (mLinkRule || mVisitedRule || mActiveRule) {
         nsEventStates state = nsCSSRuleProcessor::GetContentStateForVisitedHandling(
                                   aData->mElement,
                                   aData->mTreeMatchContext,
                                   aData->mTreeMatchContext.VisitedHandling(),
-                                  
-                                  
+                                  // If the node being matched is a link,
+                                  // it's the relevant link.
                                   nsCSSRuleProcessor::IsLink(aData->mElement));
         if (mLinkRule && state.HasState(NS_EVENT_STATE_UNVISITED)) {
           ruleWalker->Forward(mLinkRule);
@@ -191,14 +194,14 @@ nsHTMLStyleSheet::RulesMatching(ElementRuleProcessorData* aData)
           aData->mTreeMatchContext.SetHaveRelevantLink();
         }
 
-        
+        // No need to add to the active rule if it's not a link
         if (mActiveRule && nsCSSRuleProcessor::IsLink(aData->mElement) &&
             state.HasState(NS_EVENT_STATE_ACTIVE)) {
           ruleWalker->Forward(mActiveRule);
         }
-      } 
-    } 
-    
+      } // end link/visited/active rules
+    } // end A tag
+    // add the rule to handle text-align for a <th>
     else if (tag == nsGkAtoms::th) {
       ruleWalker->Forward(mTableTHRule);
     }
@@ -207,14 +210,14 @@ nsHTMLStyleSheet::RulesMatching(ElementRuleProcessorData* aData)
         ruleWalker->Forward(mTableQuirkColorRule);
       }
     }
-  } 
+  } // end html element
 
-    
+    // just get the style rules from the content
   aData->mElement->WalkContentStyleRules(ruleWalker);
 }
 
-
- nsRestyleHint
+// Test if style is dependent on content state
+/* virtual */ nsRestyleHint
 nsHTMLStyleSheet::HasStateDependentStyle(StateRuleProcessorData* aData)
 {
   if (aData->mElement->IsHTML(nsGkAtoms::a) &&
@@ -228,25 +231,25 @@ nsHTMLStyleSheet::HasStateDependentStyle(StateRuleProcessorData* aData)
   return nsRestyleHint(0);
 }
 
- bool
+/* virtual */ bool
 nsHTMLStyleSheet::HasDocumentStateDependentStyle(StateRuleProcessorData* aData)
 {
   return false;
 }
 
- nsRestyleHint
+/* virtual */ nsRestyleHint
 nsHTMLStyleSheet::HasAttributeDependentStyle(AttributeRuleProcessorData* aData)
 {
-  
+  // Do nothing on before-change checks
   if (!aData->mAttrHasChanged) {
     return nsRestyleHint(0);
   }
 
-  
-  
-  
+  // Note: no need to worry about whether some states changed with this
+  // attribute here, because we handle that under HasStateDependentStyle() as
+  // needed.
 
-  
+  // Result is true for |href| changes on HTML links if we have link rules.
   Element *element = aData->mElement;
   if (aData->mAttribute == nsGkAtoms::href &&
       (mLinkRule || mVisitedRule || mActiveRule) &&
@@ -254,13 +257,13 @@ nsHTMLStyleSheet::HasAttributeDependentStyle(AttributeRuleProcessorData* aData)
     return eRestyle_Self;
   }
 
-  
-  
+  // Don't worry about the mDocumentColorRule since it only applies
+  // to descendants of body, when we're already reresolving.
 
-  
+  // Handle the content style rules.
   if (element->IsAttributeMapped(aData->mAttribute)) {
-    
-    
+    // cellpadding on tables is special and requires reresolving all
+    // the cells in the table
     if (aData->mAttribute == nsGkAtoms::cellpadding &&
         element->IsHTML(nsGkAtoms::table)) {
       return eRestyle_Subtree;
@@ -271,110 +274,125 @@ nsHTMLStyleSheet::HasAttributeDependentStyle(AttributeRuleProcessorData* aData)
   return nsRestyleHint(0);
 }
 
- bool
+/* virtual */ bool
 nsHTMLStyleSheet::MediumFeaturesChanged(nsPresContext* aPresContext)
 {
   return false;
 }
 
- size_t
+/* virtual */ size_t
 nsHTMLStyleSheet::SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const
 {
-  return 0; 
+  return 0; // nsHTMLStyleSheets are charged to the DOM, not layout
 }
 
- size_t
+/* virtual */ size_t
 nsHTMLStyleSheet::SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
 {
-  return 0; 
+  return 0; // nsHTMLStyleSheets are charged to the DOM, not layout
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::RulesMatching(PseudoElementRuleProcessorData* aData)
 {
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::RulesMatching(AnonBoxRuleProcessorData* aData)
 {
 }
 
 #ifdef MOZ_XUL
- void
+/* virtual */ void
 nsHTMLStyleSheet::RulesMatching(XULTreeRuleProcessorData* aData)
 {
 }
 #endif
 
-  
- nsIURI*
+  // nsIStyleSheet api
+/* virtual */ nsIURI*
 nsHTMLStyleSheet::GetSheetURI() const
 {
   return mURL;
 }
 
- nsIURI*
+/* virtual */ nsIURI*
 nsHTMLStyleSheet::GetBaseURI() const
 {
   return mURL;
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::GetTitle(nsString& aTitle) const
 {
   aTitle.Truncate();
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::GetType(nsString& aType) const
 {
   aType.AssignLiteral("text/html");
 }
 
- bool
+/* virtual */ bool
 nsHTMLStyleSheet::HasRules() const
 {
-  return true; 
+  return true; // We have rules at all reasonable times
 }
 
- bool
+/* virtual */ bool
 nsHTMLStyleSheet::IsApplicable() const
 {
   return true;
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::SetEnabled(bool aEnabled)
-{ 
+{ // these can't be disabled
 }
 
- bool
+/* virtual */ bool
 nsHTMLStyleSheet::IsComplete() const
 {
   return true;
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::SetComplete()
 {
 }
 
- nsIStyleSheet*
+/* virtual */ nsIStyleSheet*
 nsHTMLStyleSheet::GetParentSheet() const
 {
   return nullptr;
 }
 
- nsIDocument*
+/* virtual */ nsIDocument*
 nsHTMLStyleSheet::GetOwningDocument() const
 {
   return mDocument;
 }
 
- void
+/* virtual */ void
 nsHTMLStyleSheet::SetOwningDocument(nsIDocument* aDocument)
 {
-  mDocument = aDocument; 
+  mDocument = aDocument; // not refcounted
+}
+
+nsresult
+nsHTMLStyleSheet::Init(nsIURI* aURL, nsIDocument* aDocument)
+{
+  NS_PRECONDITION(aURL && aDocument, "null ptr");
+  if (! aURL || ! aDocument)
+    return NS_ERROR_NULL_POINTER;
+
+  if (mURL || mDocument)
+    return NS_ERROR_ALREADY_INITIALIZED;
+
+  mDocument = aDocument; // not refcounted!
+  mURL = aURL;
+  return NS_OK;
 }
 
 void
@@ -404,8 +422,8 @@ nsHTMLStyleSheet::ImplLinkColorSetter(nsRefPtr<HTMLColorRule>& aRule, nscolor aC
     return NS_ERROR_OUT_OF_MEMORY;
 
   aRule->mColor = aColor;
-  
-  
+  // Now make sure we restyle any links that might need it.  This
+  // shouldn't happen often, so just rebuilding everything is ok.
   if (mDocument && mDocument->GetShell()) {
     Element* root = mDocument->GetRootElement();
     if (root) {
@@ -451,17 +469,17 @@ nsHTMLStyleSheet::UniqueMappedAttributes(nsMappedAttributes* aMapped)
   if (!entry)
     return nullptr;
   if (!entry->mAttributes) {
-    
+    // We added a new entry to the hashtable, so we have a new unique set.
     entry->mAttributes = aMapped;
   }
-  NS_ADDREF(entry->mAttributes); 
+  NS_ADDREF(entry->mAttributes); // for caller
   return entry->mAttributes;
 }
 
 void
 nsHTMLStyleSheet::DropMappedAttributes(nsMappedAttributes* aMapped)
 {
-  NS_ENSURE_TRUE(aMapped, );
+  NS_ENSURE_TRUE(aMapped, /**/);
 
   NS_ASSERTION(mMappedAttrTable.ops, "table uninitialized");
 #ifdef DEBUG
@@ -474,10 +492,10 @@ nsHTMLStyleSheet::DropMappedAttributes(nsMappedAttributes* aMapped)
 }
 
 #ifdef DEBUG
- void
+/* virtual */ void
 nsHTMLStyleSheet::List(FILE* out, PRInt32 aIndent) const
 {
-  
+  // Indent
   for (PRInt32 index = aIndent; --index >= 0; ) fputs("  ", out);
 
   fputs("HTML Style Sheet: ", out);
@@ -513,17 +531,58 @@ nsHTMLStyleSheet::DOMSizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const
                                           aMallocSizeOf);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Measurement of the following members may be added later if DMD finds it is
+  // worthwhile:
+  // - mURL
+  // - mLinkRule
+  // - mVisitedRule
+  // - mActiveRule
+  // - mTableQuirkColorRule
+  // - mTableTHRule
+  //
+  // The following members are not measured:
+  // - mDocument, because it's non-owning
 
   return n;
 }
+
+// XXX For convenience and backwards compatibility
+nsresult
+NS_NewHTMLStyleSheet(nsHTMLStyleSheet** aInstancePtrResult, nsIURI* aURL, 
+                     nsIDocument* aDocument)
+{
+  nsresult rv;
+  nsHTMLStyleSheet* sheet;
+  if (NS_FAILED(rv = NS_NewHTMLStyleSheet(&sheet)))
+    return rv;
+
+  if (NS_FAILED(rv = sheet->Init(aURL, aDocument))) {
+    NS_RELEASE(sheet);
+    return rv;
+  }
+
+  *aInstancePtrResult = sheet;
+  return NS_OK;
+}
+
+
+nsresult
+NS_NewHTMLStyleSheet(nsHTMLStyleSheet** aInstancePtrResult)
+{
+  NS_ASSERTION(aInstancePtrResult, "null out param");
+
+  nsHTMLStyleSheet *it = new nsHTMLStyleSheet();
+  if (!it) {
+    *aInstancePtrResult = nullptr;
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  NS_ADDREF(it);
+  nsresult rv = it->Init();
+  if (NS_FAILED(rv))
+    NS_RELEASE(it);
+
+  *aInstancePtrResult = it; // NS_ADDREF above, or set to null by NS_RELEASE
+  return rv;
+}
+

@@ -1,14 +1,14 @@
+// -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; js2-basic-offset: 2; js2-skip-preprocessor-directives: t; -*-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+// -----------------------------------------------------------
+// General util/convenience tools
+//
 
 let Util = {
-  
+  /** printf-like dump function */
   dumpf: function dumpf(str) {
     let args = arguments;
     let i = 1;
@@ -20,7 +20,7 @@ let Util = {
     }));
   },
 
-  
+  /** Like dump, but each arg is handled and there's an automatic newline */
   dumpLn: function dumpLn() {
     for (let i = 0; i < arguments.length; i++)
       dump(arguments[i] + " ");
@@ -31,7 +31,7 @@ let Util = {
     return aWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
   },
 
-  
+  /** Executes aFunc after other events have been processed. */
   executeSoon: function executeSoon(aFunc) {
     Services.tm.mainThread.dispatch({
       run: function() {
@@ -41,9 +41,9 @@ let Util = {
   },
 
   getHrefForElement: function getHrefForElement(target) {
-    
-    
-    
+    // XXX: This is kind of a hack to work around a Gecko bug (see bug 266932)
+    // We're going to walk up the DOM looking for a parent link node.
+    // This shouldn't be necessary, but we're matching the existing behaviour for left click
 
     let link = null;
     while (target) {
@@ -67,7 +67,7 @@ let Util = {
   },
 
   makeURLAbsolute: function makeURLAbsolute(base, url) {
-    
+    // Note:  makeURI() will throw if url is not a valid URI
     return this.makeURI(url, null, this.makeURI(base)).spec;
   },
 
@@ -89,12 +89,12 @@ let Util = {
     return Math.max(min, Math.min(max, num));
   },
 
-  
+  /** Don't display anything in the urlbar for these special URIs. */
   isURLEmpty: function isURLEmpty(aURL) {
     return (!aURL || aURL == "about:blank" || aURL == "about:empty" || aURL == "about:home");
   },
 
-  
+  /** Recursively find all documents, including root document. */
   getAllDocuments: function getAllDocuments(doc, resultSoFar) {
     resultSoFar = resultSoFar || [doc];
     if (!doc.defaultView)
@@ -114,8 +114,8 @@ let Util = {
     return resultSoFar;
   },
 
-  
-  
+  // Put the Mozilla networking code into a state that will kick the auto-connection
+  // process.
   forceOnline: function forceOnline() {
     Services.io.offline = false;
   },
@@ -133,8 +133,8 @@ let Util = {
 
     let tabletPref = Services.prefs.getIntPref("browser.ui.layout.tablet");
 
-    
-    
+    // Act according to user prefs if tablet mode has been
+    // explicitly disabled or enabled.
     if (tabletPref == 0)
       return this._isTablet = false;
     else if (tabletPref == 1)
@@ -146,15 +146,15 @@ let Util = {
     let matches = shellVersion.match(/\((\d+)\)$/);
     if (matches) {
       let sdkVersion = parseInt(matches[1]);
-      
+      // Disable tablet mode on pre-honeycomb devices because of theme bugs (bug 705026)
       if (sdkVersion < 11)
         return this._isTablet = false;
 
-      
+      // Always enable tablet mode on honeycomb devices.
       if (sdkVersion < 14)
         return this._isTablet = true;
     }
-    
+    // On Ice Cream Sandwich devices, switch modes based on screen size.
     return this._isTablet = sysInfo.get("tablet");
 #endif
 
@@ -162,7 +162,7 @@ let Util = {
     if (dpi <= 96)
       return this._isTablet = (window.innerWidth > 1024);
 
-    
+    // See the tablet_panel_minwidth from mobile/themes/core/defines.inc
     let tablet_panel_minwidth = 124;
     let dpmm = 25.4 * window.innerWidth / dpi;
     return this._isTablet = (dpmm >= tablet_panel_minwidth);
@@ -179,10 +179,10 @@ let Util = {
   },
 
   modifierMaskFromEvent: function modifierMaskFromEvent(aEvent) {
-    return (aEvent.altKey   ? Ci.nsIDOMEvent.ALT_MASK     : 0) |
-           (aEvent.ctrlKey  ? Ci.nsIDOMEvent.CONTROL_MASK : 0) |
-           (aEvent.shiftKey ? Ci.nsIDOMEvent.SHIFT_MASK   : 0) |
-           (aEvent.metaKey  ? Ci.nsIDOMEvent.META_MASK    : 0);
+    return (aEvent.altKey   ? Ci.nsIDOMNSEvent.ALT_MASK     : 0) |
+           (aEvent.ctrlKey  ? Ci.nsIDOMNSEvent.CONTROL_MASK : 0) |
+           (aEvent.shiftKey ? Ci.nsIDOMNSEvent.SHIFT_MASK   : 0) |
+           (aEvent.metaKey  ? Ci.nsIDOMNSEvent.META_MASK    : 0);
   },
 
   get displayDPI() {
@@ -193,19 +193,19 @@ let Util = {
   LOCALE_DIR_RTL: -1,
   LOCALE_DIR_LTR: 1,
   get localeDir() {
-    
+    // determine browser dir first to know which direction to snap to
     let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIXULChromeRegistry);
     return chromeReg.isLocaleRTL("global") ? this.LOCALE_DIR_RTL : this.LOCALE_DIR_LTR;
   },
 
   createShortcut: function Util_createShortcut(aTitle, aURL, aIconURL, aType) {
-    
-    
+    // The background images are 72px, but Android will resize as needed.
+    // Bigger is better than too small.
     const kIconSize = 72;
     const kOverlaySize = 32;
     const kOffset = 20;
 
-    
+    // We have to fallback to something
     aTitle = aTitle || aURL;
 
     let canvas = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
@@ -222,18 +222,18 @@ let Util = {
       }
     }
 
-    
+    // Load the main background image first
     let image = new Image();
     image.onload = function() {
       canvas.width = canvas.height = kIconSize;
       let ctx = canvas.getContext("2d");
       ctx.drawImage(image, 0, 0, kIconSize, kIconSize);
 
-      
+      // If we have a favicon, lets draw it next
       if (aIconURL) {
         let favicon = new Image();
         favicon.onload = function() {
-          
+          // Center the favicon and overlay it on the background
           ctx.drawImage(favicon, kOffset, kOffset, kOverlaySize, kOverlaySize);
           _createShortcut();
         }
@@ -252,17 +252,17 @@ let Util = {
       Cu.reportError("CreateShortcut: background image load error");
     }
 
-    
+    // Pick the right background
     image.src = aIconURL ? "chrome://browser/skin/images/homescreen-blank-hdpi.png"
                          : "chrome://browser/skin/images/homescreen-default-hdpi.png";
   },
 };
 
 
-
-
-
-
+/**
+ * Helper class to nsITimer that adds a little more pizazz.  Callback can be an
+ * object with a notify method or a function.
+ */
 Util.Timeout = function(aCallback) {
   this._callback = aCallback;
   this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -270,7 +270,7 @@ Util.Timeout = function(aCallback) {
 };
 
 Util.Timeout.prototype = {
-  
+  /** Timer callback. Don't call this manually. */
   notify: function notify() {
     if (this._type == this._timer.TYPE_ONE_SHOT)
       this._type = null;
@@ -281,7 +281,7 @@ Util.Timeout.prototype = {
       this._callback.apply(null);
   },
 
-  
+  /** Helper function for once and interval. */
   _start: function _start(aDelay, aType, aCallback) {
     if (aCallback)
       this._callback = aCallback;
@@ -291,17 +291,17 @@ Util.Timeout.prototype = {
     return this;
   },
 
-  
+  /** Do the callback once.  Cancels other timeouts on this object. */
   once: function once(aDelay, aCallback) {
     return this._start(aDelay, this._timer.TYPE_ONE_SHOT, aCallback);
   },
 
-  
+  /** Do the callback every aDelay msecs. Cancels other timeouts on this object. */
   interval: function interval(aDelay, aCallback) {
     return this._start(aDelay, this._timer.TYPE_REPEATING_SLACK, aCallback);
   },
 
-  
+  /** Clear any pending timeouts. */
   clear: function clear() {
     if (this.isPending()) {
       this._timer.cancel();
@@ -310,7 +310,7 @@ Util.Timeout.prototype = {
     return this;
   },
 
-  
+  /** If there is a pending timeout, call it and cancel the timeout. */
   flush: function flush() {
     if (this.isPending()) {
       this.notify();
@@ -319,7 +319,7 @@ Util.Timeout.prototype = {
     return this;
   },
 
-  
+  /** Return true iff we are waiting for a callback. */
   isPending: function isPending() {
     return this._type !== null;
   }

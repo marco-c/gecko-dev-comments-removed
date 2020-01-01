@@ -1,9 +1,9 @@
+// -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; js2-basic-offset: 2; js2-skip-preprocessor-directives: t; -*-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+// This stays here because otherwise it's hard to tell if there's a parsing error
 dump("###################################### content loaded\n");
 
 let Cc = Components.classes;
@@ -41,7 +41,7 @@ let HTMLFrameSetElement = Ci.nsIDOMHTMLFrameSetElement;
 let HTMLSelectElement = Ci.nsIDOMHTMLSelectElement;
 let HTMLOptionElement = Ci.nsIDOMHTMLOptionElement;
 
-
+// Blindly copied from Safari documentation for now.
 const kViewportMinScale  = 0;
 const kViewportMaxScale  = 10;
 const kViewportMinWidth  = 200;
@@ -49,11 +49,11 @@ const kViewportMaxWidth  = 10000;
 const kViewportMinHeight = 223;
 const kViewportMaxHeight = 10000;
 
-const kReferenceDpi = 240; 
+const kReferenceDpi = 240; // standard "pixel" size used in some preferences
 
-const kStateActive = 0x00000001; 
+const kStateActive = 0x00000001; // :active pseudoclass for elements
 
-
+/** Watches for mouse click in content and redirect them to the best found target **/
 const ElementTouchHelper = {
   get radius() {
     let prefs = Services.prefs;
@@ -71,7 +71,7 @@ const ElementTouchHelper = {
                          };
   },
 
-  
+  /* Retrieve the closest element to a point by looking at borders position */
   getClosest: function getClosest(aWindowUtils, aX, aY) {
     if (!this.dpiRatio)
       this.dpiRatio = aWindowUtils.displayDPI / kReferenceDpi;
@@ -79,10 +79,10 @@ const ElementTouchHelper = {
     let dpiRatio = this.dpiRatio;
 
     let target = aWindowUtils.elementFromPoint(aX, aY,
-                                               true,   
-                                               false); 
+                                               true,   /* ignore root scroll frame*/
+                                               false); /* don't flush layout */
 
-    
+    // return early if the click is just over a clickable element
     if (this._isElementClickable(target))
       return target;
 
@@ -100,7 +100,7 @@ const ElementTouchHelper = {
       let rect = current.getBoundingClientRect();
       let distance = this._computeDistanceFromRect(aX, aY, rect);
 
-      
+      // increase a little bit the weight for already visited items
       if (current && current.mozMatchesSelector("*:visited"))
         distance *= (this.weight.visited / 100);
 
@@ -129,8 +129,8 @@ const ElementTouchHelper = {
     let xmost = aRect.left + aRect.width;
     let ymost = aRect.top + aRect.height;
 
-    
-    
+    // compute horizontal distance from left/right border depending if X is
+    // before/inside/after the element's rectangle
     if (aRect.left < aX && aX < xmost)
       x = Math.min(xmost - aX, aX - aRect.left);
     else if (aX < aRect.left)
@@ -138,8 +138,8 @@ const ElementTouchHelper = {
     else if (aX > xmost)
       x = aX - xmost;
 
-    
-    
+    // compute vertical distance from top/bottom border depending if Y is
+    // above/inside/below the element's rectangle
     if (aRect.top < aY && aY < ymost)
       y = Math.min(ymost - aY, aY - aRect.top);
     else if (aY < aRect.top)
@@ -164,22 +164,22 @@ const ElementTouchHelper = {
 };
 
 
-
-
-
-
+/**
+ * @param x,y Browser coordinates
+ * @return Element at position, null if no active browser or no element found
+ */
 function elementFromPoint(x, y) {
-  
-  
+  // browser's elementFromPoint expect browser-relative client coordinates.
+  // subtract browser's scroll values to adjust
   let cwu = Util.getWindowUtils(content);
   let scroll = ContentScroll.getScrollOffset(content);
   x = x - scroll.x;
   y = y - scroll.y;
   let elem = ElementTouchHelper.getClosest(cwu, x, y);
 
-  
+  // step through layers of IFRAMEs and FRAMES to find innermost element
   while (elem && (elem instanceof HTMLIFrameElement || elem instanceof HTMLFrameElement)) {
-    
+    // adjust client coordinates' origin to be top left of iframe viewport
     let rect = elem.getBoundingClientRect();
     x -= rect.left;
     y -= rect.top;
@@ -203,9 +203,9 @@ function getBoundingContentRect(aElement) {
 
   let r = aElement.getBoundingClientRect();
 
-  
+  // step out of iframes and frames, offsetting scroll values
   for (let frame = aElement.ownerDocument.defaultView; frame != content; frame = frame.parent) {
-    
+    // adjust client coordinates' origin to be top left of iframe viewport
     let rect = frame.frameElement.getBoundingClientRect();
     let left = frame.getComputedStyle(frame.frameElement, "").borderLeftWidth;
     let top = frame.getComputedStyle(frame.frameElement, "").borderTopWidth;
@@ -218,7 +218,7 @@ function getBoundingContentRect(aElement) {
 function getOverflowContentBoundingRect(aElement) {
   let r = getBoundingContentRect(aElement);
 
-  
+  // If the overflow is hidden don't bother calculating it
   let computedStyle = aElement.ownerDocument.defaultView.getComputedStyle(aElement);
   let blockDisplays = ["block", "inline-block", "list-item"];
   if ((blockDisplays.indexOf(computedStyle.getPropertyValue("display")) != -1 && computedStyle.getPropertyValue("overflow") == "hidden") || aElement instanceof HTMLSelectElement)
@@ -235,9 +235,9 @@ function getContentClientRects(aElement) {
   offset = new Point(offset.x, offset.y);
 
   let nativeRects = aElement.getClientRects();
-  
+  // step out of iframes and frames, offsetting scroll values
   for (let frame = aElement.ownerDocument.defaultView; frame != content; frame = frame.parent) {
-    
+    // adjust client coordinates' origin to be top left of iframe viewport
     let rect = frame.frameElement.getBoundingClientRect();
     let left = frame.getComputedStyle(frame.frameElement, "").borderLeftWidth;
     let top = frame.getComputedStyle(frame.frameElement, "").borderTopWidth;
@@ -288,10 +288,10 @@ let Content = {
     addEventListener("pagehide", this, false);
     addEventListener("keypress", this, false, false);
 
-    
-    
-    
-    
+    // Attach a listener to watch for "click" events bubbling up from error
+    // pages and other similar page. This lets us fix bugs like 401575 which
+    // require error page UI to do privileged things, without letting error
+    // pages have any privilege themselves.
     addEventListener("click", this, false);
 
     docShell.QueryInterface(Ci.nsIDocShellHistory).useGlobalHistory = true;
@@ -299,8 +299,8 @@ let Content = {
 
   handleEvent: function handleEvent(aEvent) {
     switch (aEvent.type) {
-      
-      
+      // If the keypress is a trusted event and has not been consume by content
+      // let's send it back to the chrome process to have it handle shortcuts
       case "keypress":
         let timer = new Util.Timeout(function() {
           let eventData = {
@@ -318,7 +318,7 @@ let Content = {
         break;
 
       case "DOMActivate": {
-        
+        // In a local tab, open remote links in new tabs.
         let target = aEvent.originalTarget;
         let href = Util.getHrefForElement(target);
         if (/^http(s?):/.test(href)) {
@@ -341,15 +341,15 @@ let Content = {
       }
 
       case "click": {
-        
+        // Don't trust synthetic events
         if (!aEvent.isTrusted)
           return;
 
         let ot = aEvent.originalTarget;
         let errorDoc = ot.ownerDocument;
 
-        
-        
+        // If the event came from an ssl error page, it is probably either the "Add
+        // Exception…" or "Get me out of here!" button
         if (/^about:certerror\?e=nssBadCert/.test(errorDoc.documentURI)) {
           let perm = errorDoc.getElementById("permanentExceptionButton");
           let temp = errorDoc.getElementById("temporaryExceptionButton");
@@ -360,29 +360,29 @@ let Content = {
             sendAsyncMessage("Browser:CertException", { url: errorDoc.location.href, action: "leave" });
           }
         } else if (/^about:blocked/.test(errorDoc.documentURI)) {
-          
-          
-          
+          // The event came from a button on a malware/phishing block page
+          // First check whether it's malware or phishing, so that we can
+          // use the right strings/links
           let isMalware = /e=malwareBlocked/.test(errorDoc.documentURI);
     
           if (ot == errorDoc.getElementById("getMeOutButton")) {
             sendAsyncMessage("Browser:BlockedSite", { url: errorDoc.location.href, action: "leave" });
           } else if (ot == errorDoc.getElementById("reportButton")) {
-            
-            
-            
+            // This is the "Why is this site blocked" button.  For malware,
+            // we can fetch a site-specific report, for phishing, we redirect
+            // to the generic page describing phishing protection.
             let action = isMalware ? "report-malware" : "report-phising";
             sendAsyncMessage("Browser:BlockedSite", { url: errorDoc.location.href, action: action });
           } else if (ot == errorDoc.getElementById("ignoreWarningButton")) {
-            
-            
-            
+            // Allow users to override and continue through to the site,
+            // but add a notify bar as a reminder, so that they don't lose
+            // track after, e.g., tab switching.
             let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
             webNav.loadURI(content.location, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER, null, null, null);
             
-            
-            
-            
+            // TODO: We'll need to impl notifications in the parent process and use the preference code found here:
+            //       http://hg.mozilla.org/mozilla-central/file/855e5cd3c884/browser/base/content/browser.js#l2672
+            //       http://hg.mozilla.org/mozilla-central/file/855e5cd3c884/browser/components/safebrowsing/content/globalstore.js
           }
         }
         break;
@@ -439,7 +439,7 @@ let Content = {
         if (!element)
           return;
 
-        
+        // Sending a mousemove force the dispatching of mouseover/mouseout
         this._sendMouseEvent("mousemove", element, x, y);
         break;
       }
@@ -449,12 +449,12 @@ let Content = {
         if (!element)
           return;
 
-        
+        // There is no need to have a feedback for disabled element
         let isDisabled = element instanceof HTMLOptionElement ? (element.disabled || element.parentNode.disabled) : element.disabled;
         if (isDisabled)
           return;
 
-        
+        // Calculate the rect of the active area
         this._doTapHighlight(element);
         break;
       }
@@ -471,8 +471,8 @@ let Content = {
 
 #ifdef MOZ_PLATFORM_MAEMO
         if (element instanceof Ci.nsIDOMHTMLEmbedElement) {
-          
-          
+          // Generate a right click mouse event to make possible to show
+          // context menu for plugins:
           this._sendMouseEvent("mousedown", element, x, y, 2);
           this._sendMouseEvent("mouseup", element, x, y, 2);
           break;
@@ -494,7 +494,7 @@ let Content = {
       case "Browser:MouseClick": {
         this.formAssistant.focusSync = true;
         let element = elementFromPoint(x, y);
-        if (modifiers == Ci.nsIDOMEvent.CONTROL_MASK) {
+        if (modifiers == Ci.nsIDOMNSEvent.CONTROL_MASK) {
           let uri = Util.getHrefForElement(element);
           if (uri)
             sendAsyncMessage("Browser:OpenURI", { uri: uri,
@@ -505,7 +505,7 @@ let Content = {
         if (!this.formAssistant.open(element, x, y))
           sendAsyncMessage("FindAssist:Hide", { });
 
-        
+        // don't fire mouse events on selects, see bug 685197
         if (this._highlightElement && !(element instanceof HTMLSelectElement)) {
           this._sendMouseEvent("mousemove", this._highlightElement, x, y);
           this._sendMouseEvent("mousedown", this._highlightElement, x, y);
@@ -533,7 +533,7 @@ let Content = {
         printSettings.printFrameType = Ci.nsIPrintSettings.kFramesAsIs;
         printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
 
-        
+        //XXX we probably need a preference here, the header can be useful
         printSettings.footerStrCenter = "";
         printSettings.footerStrLeft   = "";
         printSettings.footerStrRight  = "";
@@ -550,7 +550,7 @@ let Content = {
           },
           onProgressChange : function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
 
-          
+          // stubs for the nsIWebProgressListener interfaces which nsIWebBrowserPrint doesn't use.
           onLocationChange : function() { throw "Unexpected onLocationChange"; },
           onStatusChange   : function() { throw "Unexpected onStatusChange";   },
           onSecurityChange : function() { throw "Unexpected onSecurityChange"; }
@@ -617,9 +617,9 @@ let Content = {
   },
 
   _maybeNotifyErroPage: function _maybeNotifyErroPage() {
-    
-    
-    
+    // Notify browser that an error page is being shown instead
+    // of the target location. Necessary to get proper thumbnail
+    // updates on chrome for error pages.
     if (content.location.href !== content.document.documentURI)
       sendAsyncMessage("Browser:ErrorPage", null);
   },
@@ -642,15 +642,15 @@ let Content = {
   },
 
   _sendMouseEvent: function _sendMouseEvent(aName, aElement, aX, aY, aButton) {
-    
-    
+    // the element can be out of the aX/aY point because of the touch radius
+    // if outside, we gracefully move the touch point to the center of the element
     if (!(aElement instanceof HTMLHtmlElement)) {
       let isTouchClick = true;
       let rects = getContentClientRects(aElement);
       for (let i = 0; i < rects.length; i++) {
         let rect = rects[i];
-        
-        
+        // We might be able to deal with fractional pixels, but mouse events won't.
+        // Deflate the bounds in by 1 pixel to deal with any fractional scroll offset issues.
         let inBounds = 
           (aX > rect.left + 1 && aX < (rect.left + rect.width - 1)) &&
           (aY > rect.top + 1 && aY < (rect.top + rect.height - 1));
@@ -725,17 +725,17 @@ let ViewportHandler = {
     sendAsyncMessage("Browser:ViewportMetadata", this.getViewportMetadata());
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns an object with the page's preferred viewport properties:
+   *   defaultZoom (optional float): The initial scale when the page is loaded.
+   *   minZoom (optional float): The minimum zoom level.
+   *   maxZoom (optional float): The maximum zoom level.
+   *   width (optional int): The CSS viewport width in px.
+   *   height (optional int): The CSS viewport height in px.
+   *   autoSize (boolean): Resize the CSS viewport when the window resizes.
+   *   allowZoom (boolean): Let the user zoom in or out.
+   *   autoScale (boolean): Adjust the viewport properties to account for display density.
+   */
   getViewportMetadata: function getViewportMetadata() {
     let doctype = content.document.doctype;
     if (doctype && /(WAP|WML|Mobile)/.test(doctype.publicId))
@@ -749,22 +749,22 @@ let ViewportHandler = {
     if (content.document instanceof XULDocument)
       return { defaultZoom: 1, autoSize: true, allowZoom: false, autoScale: false };
 
-    
-    
+    // HACK: Since we can't set the scale in local tabs (bug 597081), we force
+    // them to device-width and scale=1 so they will lay out reasonably.
     if (Util.isParentProcess())
       return { defaultZoom: 1, autoSize: true, allowZoom: false, autoScale: false };
 
-    
-    
+    // HACK: Since we can't set the scale correctly in frameset pages yet (bug 645756), we force
+    // them to device-width and scale=1 so they will lay out reasonably.
     if (content.frames.length > 0 && (content.document.body instanceof HTMLFrameSetElement))
       return { defaultZoom: 1, autoSize: true, allowZoom: false, autoScale: false };
 
-    
-    
-    
+    // viewport details found here
+    // http://developer.apple.com/safari/library/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html
+    // http://developer.apple.com/safari/library/documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html
 
-    
-    
+    // Note: These values will be NaN if parseFloat or parseInt doesn't find a number.
+    // Remember that NaN is contagious: Math.max(1, NaN) == Math.min(1, NaN) == NaN.
     let scale = parseFloat(windowUtils.getDocumentMetadata("viewport-initial-scale"));
     let minScale = parseFloat(windowUtils.getDocumentMetadata("viewport-minimum-scale"));
     let maxScale = parseFloat(windowUtils.getDocumentMetadata("viewport-maximum-scale"));
@@ -775,13 +775,13 @@ let ViewportHandler = {
     let height = Util.clamp(parseInt(heightStr), kViewportMinHeight, kViewportMaxHeight);
 
     let allowZoomStr = windowUtils.getDocumentMetadata("viewport-user-scalable");
-    let allowZoom = !/^(0|no|false)$/.test(allowZoomStr); 
+    let allowZoom = !/^(0|no|false)$/.test(allowZoomStr); // WebKit allows 0, "no", or "false"
 
     scale = Util.clamp(scale, kViewportMinScale, kViewportMaxScale);
     minScale = Util.clamp(minScale, kViewportMinScale, kViewportMaxScale);
     maxScale = Util.clamp(maxScale, kViewportMinScale, kViewportMaxScale);
 
-    
+    // If initial scale is 1.0 and width is not set, assume width=device-width
     let autoSize = (widthStr == "device-width" ||
                     (!widthStr && (heightStr == "device-height" || scale == 1.0)));
 
@@ -813,8 +813,8 @@ var ContextHandler = {
 
     href = aLink.getAttributeNS(kXLinkNamespace, "href");
     if (!href || !href.match(/\S/)) {
-      
-      
+      // Without this we try to save as the current doc,
+      // for example, HTML case also throws if empty
       throw "Empty href";
     }
 
@@ -874,15 +874,15 @@ var ContextHandler = {
 
     let popupNode = this.popupNode = aEvent.originalTarget;
 
-    
+    // Do checks for nodes that never have children.
     if (popupNode.nodeType == Ci.nsIDOMNode.ELEMENT_NODE) {
-      
+      // See if the user clicked on an image.
       if (popupNode instanceof Ci.nsIImageLoadingContent && popupNode.currentURI) {
         state.types.push("image");
         state.label = state.mediaURL = popupNode.currentURI.spec;
 
-        
-        
+        // Retrieve the type of image from the cache since the url can fail to
+        // provide valuable informations
         try {
           let imageCache = Cc["@mozilla.org/image/cache;1"].getService(Ci.imgICache);
           let props = imageCache.findEntryProperties(popupNode.currentURI, content.document.characterSet);
@@ -891,7 +891,7 @@ var ContextHandler = {
             state.contentDisposition = String(props.get("content-disposition", Ci.nsISupportsCString));
           }
         } catch (e) {
-          
+          // Failure to get type and content-disposition off the image is non-fatal
         }
 
       } else if (popupNode instanceof Ci.nsIDOMHTMLMediaElement) {
@@ -906,13 +906,13 @@ var ContextHandler = {
     let isText = false;
     while (elem) {
       if (elem.nodeType == Ci.nsIDOMNode.ELEMENT_NODE) {
-        
+        // Link?
         if ((elem instanceof Ci.nsIDOMHTMLAnchorElement && elem.href) ||
             (elem instanceof Ci.nsIDOMHTMLAreaElement && elem.href) ||
             elem instanceof Ci.nsIDOMHTMLLinkElement ||
             elem.getAttributeNS(kXLinkNamespace, "type") == "simple") {
 
-          
+          // Target is a link or a descendant of a link.
           state.types.push("link");
           state.label = state.linkURL = this._getLinkURL(elem);
           state.linkTitle = popupNode.textContent || popupNode.title;
@@ -925,7 +925,7 @@ var ContextHandler = {
 
           state.types.push("input-text");
 
-          
+          // Don't include "copy" for password fields.
           if (!(elem instanceof Ci.nsIDOMHTMLInputElement) || elem.mozIsTextField(true)) {
             if (selectionStart != selectionEnd) {
               state.types.push("copy");
@@ -993,19 +993,19 @@ var ContextHandler = {
     }
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * For add-ons to add new types and data to the ContextMenu message.
+   *
+   * @param aName A string to identify the new type.
+   * @param aHandler A function that takes a state object and a target element.
+   *    If aHandler returns true, then aName will be added to the list of types.
+   *    The function may also modify the state object.
+   */
   registerType: function registerType(aName, aHandler) {
     this._types.push({name: aName, handler: aHandler});
   },
 
-  
+  /** Remove all handlers registered for a given type. */
   unregisterType: function unregisterType(aName) {
     this._types = this._types.filter(function(type) type.name != aName);
   }
@@ -1065,7 +1065,7 @@ var FormSubmitObserver = {
     if (!isRootDocument)
       return;
 
-    
+    // Reset invalid submit state on each pageshow
     if (aEvent.type == "pageshow")
       Content.formAssistant.invalidSubmit = false;
   },
@@ -1083,9 +1083,9 @@ var FormSubmitObserver = {
   },
 
   notify: function notify(aFormElement, aWindow, aActionURI, aCancelSubmit) {
-    
+    // Do not notify unless this is the window where the submit occurred
     if (aWindow == content)
-      
+      // We don't need to send any data along
       sendAsyncMessage("Browser:FormSubmit", {});
   },
 
@@ -1154,7 +1154,7 @@ var FindHandler = {
 
     let selection = this._fastFind.currentWindow.getSelection();
     if (!selection.rangeCount || selection.isCollapsed) {
-      
+      // The selection can be into an input or a textarea element
       let nodes = content.document.querySelectorAll("input[type='text'], textarea");
       for (let i = 0; i < nodes.length; i++) {
         let node = nodes[i];
@@ -1177,7 +1177,7 @@ var FindHandler = {
     let rangeRect = selection.getRangeAt(0).getBoundingClientRect();
     let rect = new Rect(scroll.x + rangeRect.left, scroll.y + rangeRect.top, rangeRect.width, rangeRect.height);
 
-    
+    // Ensure the potential "scroll" event fired during a search as already fired
     let timer = new Util.Timeout(function() {
       sendAsyncMessage("FindAssist:Show", { rect: rect.isEmpty() ? null: rect , result: findResult });
     });
@@ -1277,16 +1277,16 @@ var ConsoleAPIObserver = {
   },
 
   abbreviateSourceURL: function abbreviateSourceURL(aSourceURL) {
-    
+    // Remove any query parameters.
     let hookIndex = aSourceURL.indexOf("?");
     if (hookIndex > -1)
       aSourceURL = aSourceURL.substring(0, hookIndex);
 
-    
+    // Remove a trailing "/".
     if (aSourceURL[aSourceURL.length - 1] == "/")
       aSourceURL = aSourceURL.substring(0, aSourceURL.length - 1);
 
-    
+    // Remove all but the last path component.
     let slashIndex = aSourceURL.lastIndexOf("/");
     if (slashIndex > -1)
       aSourceURL = aSourceURL.substring(slashIndex + 1);
@@ -1353,9 +1353,9 @@ var TouchEventHandler = {
                                                   contentMightCaptureMouse: true,
                                                   click: cancelled && aMessage.name == "Browser:MouseDown",
                                                   panning: cancelled });
-      
-      
-      
+      // Panning can be cancelled only during the "touchstart" event and the
+      // first "touchmove" event.  After it's cancelled, it stays cancelled
+      // until the next touchstart event.
       if (cancelled || aMessage.name == "Browser:MouseMove")
         this.isCancellable = false;
     }
@@ -1398,7 +1398,7 @@ var SelectionHandler = {
     let utils = Util.getWindowUtils(content);
     let elem = utils.elementFromPoint(x, y, true, false);
     while (elem && (elem instanceof HTMLIFrameElement || elem instanceof HTMLFrameElement)) {
-      
+      // adjust client coordinates' origin to be top left of iframe viewport
       let rect = elem.getBoundingClientRect();
       scrollOffset = ContentScroll.getScrollOffset(elem.ownerDocument.defaultView);
       offset.x += rect.left;
@@ -1422,10 +1422,10 @@ var SelectionHandler = {
 
     switch (aMessage.name) {
       case "Browser:SelectionStart": {
-        
+        // Clear out the text cache
         this.selectedText = "";
 
-        
+        // if this is an iframe, dig down to find the document that was clicked
         let x = json.x - scrollOffset.x;
         let y = json.y - scrollOffset.y;
         let { contentWindow: contentWindow, offset: offset } = this.getCurrentWindowAndOffset(x, y, scrollOffset);
@@ -1434,27 +1434,27 @@ var SelectionHandler = {
 
         let currentDocShell = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation).QueryInterface(Ci.nsIDocShell);
 
-        
-        
+        // Remove any previous selected or created ranges. Tapping anywhere on a
+        // page will create an empty range.
         let selection = contentWindow.getSelection();
         selection.removeAllRanges();
 
-          
+          // Position the caret using a fake mouse click
           utils.sendMouseEventToWindow("mousedown", x, y, 0, 1, 0, true);
           utils.sendMouseEventToWindow("mouseup", x, y, 0, 1, 0, true);
 
         try {
           let selcon = currentDocShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsISelectionDisplay).QueryInterface(Ci.nsISelectionController);
 
-          
+          // Select the word nearest the caret
           selcon.wordMove(false, false);
           selcon.wordMove(true, true);
         } catch(e) {
-          
+          // If we couldn't select the word at the given point, bail
           return;
         }
 
-        
+        // Find the selected text rect and send it back so the handles can position correctly
         if (selection.rangeCount == 0)
           return;
 
@@ -1462,10 +1462,10 @@ var SelectionHandler = {
         if (!range)
           return;
 
-        
+        // Cache the selected text since the selection might be gone by the time we get the "end" message
         this.selectedText = selection.toString().trim();
 
-        
+        // If the range didn't have any text, let's bail
         if (!this.selectedText.length) {
           selection.collapseToStart();
           return;
@@ -1483,7 +1483,7 @@ var SelectionHandler = {
         pointInSelection = (tap.x > this.cache.rect.left && tap.x < this.cache.rect.right) && (tap.y > this.cache.rect.top && tap.y < this.cache.rect.bottom);
 
         try {
-          
+          // The selection might already be gone
           if (this.contentWindow)
             this.contentWindow.getSelection().removeAllRanges();
           this.contentWindow = null;
@@ -1505,23 +1505,23 @@ var SelectionHandler = {
         if (!this.contentWindow)
           return;
 
-        
+        // Hack to avoid setting focus in a textbox [Bugs 654352 & 667243]
         let elemUnder = elementFromPoint(json.x - scrollOffset.x, json.y - scrollOffset.y);
         if (elemUnder && elemUnder instanceof Ci.nsIDOMHTMLInputElement || elemUnder instanceof Ci.nsIDOMHTMLTextAreaElement)
 
-        
+        // Limit the selection to the initial content window (don't leave or enter iframes)
         if (elemUnder && elemUnder.ownerDocument.defaultView != this.contentWindow)
           return;
         
-        
+        // Use fake mouse events to update the selection
         if (json.type == "end") {
-          
+          // Keep the cache in "client" coordinates, but translate for the mouse event
           this.cache.end = { x: json.x, y: json.y };
           let end = { x: this.cache.end.x - scrollOffset.x, y: this.cache.end.y - scrollOffset.y };
-          utils.sendMouseEventToWindow("mousedown", end.x, end.y, 0, 1, Ci.nsIDOMEvent.SHIFT_MASK, true);
-          utils.sendMouseEventToWindow("mouseup", end.x, end.y, 0, 1, Ci.nsIDOMEvent.SHIFT_MASK, true);
+          utils.sendMouseEventToWindow("mousedown", end.x, end.y, 0, 1, Ci.nsIDOMNSEvent.SHIFT_MASK, true);
+          utils.sendMouseEventToWindow("mouseup", end.x, end.y, 0, 1, Ci.nsIDOMNSEvent.SHIFT_MASK, true);
         } else {
-          
+          // Keep the cache in "client" coordinates, but translate for the mouse event
           this.cache.start = { x: json.x, y: json.y };
           let start = { x: this.cache.start.x - scrollOffset.x, y: this.cache.start.y - scrollOffset.y };
           let end = { x: this.cache.end.x - scrollOffset.x, y: this.cache.end.y - scrollOffset.y };
@@ -1529,15 +1529,15 @@ var SelectionHandler = {
           utils.sendMouseEventToWindow("mousedown", start.x, start.y, 0, 0, 0, true);
           utils.sendMouseEventToWindow("mouseup", start.x, start.y, 0, 0, 0, true);
         
-          utils.sendMouseEventToWindow("mousedown", end.x, end.y, 0, 1, Ci.nsIDOMEvent.SHIFT_MASK, true);
-          utils.sendMouseEventToWindow("mouseup", end.x, end.y, 0, 1, Ci.nsIDOMEvent.SHIFT_MASK, true);
+          utils.sendMouseEventToWindow("mousedown", end.x, end.y, 0, 1, Ci.nsIDOMNSEvent.SHIFT_MASK, true);
+          utils.sendMouseEventToWindow("mouseup", end.x, end.y, 0, 1, Ci.nsIDOMNSEvent.SHIFT_MASK, true);
         }
 
-        
+        // Cache the selected text since the selection might be gone by the time we get the "end" message
         let selection = this.contentWindow.getSelection()
         this.selectedText = selection.toString().trim();
 
-        
+        // Update the rect we use to test when finishing the clipboard operation
         let range = selection.getRangeAt(0)
         this.cache.rect = this._extractFromRange(range, this.cache.offset).rect;
         break;
@@ -1557,7 +1557,7 @@ var SelectionHandler = {
       cache.end.y = rects[i].bottom + aOffset.y;
     }
 
-    
+    // Keep the handles from being positioned completely out of the selection range
     const HANDLE_VERTICAL_MARGIN = 4;
     cache.start.y -= HANDLE_VERTICAL_MARGIN;
     cache.end.y -= HANDLE_VERTICAL_MARGIN;
@@ -1581,8 +1581,8 @@ var PluginHandler = {
     addEventListener("PluginClickToPlay", this, false);
   },
 
-  addLinkClickCallback: function (linkNode, callbackName ) {
-     
+  addLinkClickCallback: function (linkNode, callbackName /*callbackArgs...*/) {
+     // XXX just doing (callback)(arg) was giving a same-origin error. bug?
      let self = this;
      let callbackArgs = Array.prototype.slice.call(arguments).slice(2);
      linkNode.addEventListener("click",
