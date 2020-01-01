@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
- * May 28, 2008.
- *
- * The Initial Developer of the Original Code is
- *   Mozilla Foundation
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "jscntxt.h"
 #include "jscompartment.h"
@@ -140,7 +140,7 @@ JSCompartment::init(JSContext *cx)
     activeAnalysis = activeInference = false;
     types.init(cx);
 
-    /* Duplicated from jscntxt.cpp. :XXX: bug 675150 fix hack. */
+    
     static const size_t ARENA_HEADER_SIZE_HACK = 40;
 
     JS_InitArenaPool(&pool, "analysis", 4096 - ARENA_HEADER_SIZE_HACK, 8);
@@ -169,7 +169,7 @@ JSCompartment::ensureIonCompartmentExists(JSContext *cx)
     if (ionCompartment_)
         return true;
 
-    // Set the compartment early, so linking works.
+    
     ionCompartment_ = cx->new_<IonCompartment>();
 
     if (!ionCompartment_ || !ionCompartment_->initialize(cx)) {
@@ -230,35 +230,35 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 
     JS_CHECK_RECURSION(cx, return false);
 
-    /* Only GC things have to be wrapped or copied. */
+    
     if (!vp->isMarkable())
         return true;
 
     if (vp->isString()) {
         JSString *str = vp->toString();
 
-        /* Static atoms do not have to be wrapped. */
+        
         if (str->isStaticAtom())
             return true;
 
-        /* If the string is already in this compartment, we are done. */
+        
         if (str->compartment() == this)
             return true;
 
-        /* If the string is an atom, we don't have to copy. */
+        
         if (str->isAtom()) {
             JS_ASSERT(str->compartment() == cx->runtime->atomsCompartment);
             return true;
         }
     }
 
-    /*
-     * Wrappers should really be parented to the wrapped parent of the wrapped
-     * object, but in that case a wrapped global object would have a NULL
-     * parent without being a proper global object (JSCLASS_IS_GLOBAL). Instead,
-     * we parent all wrappers to the global object in their home compartment.
-     * This loses us some transparency, and is generally very cheesy.
-     */
+    
+
+
+
+
+
+
     JSObject *global;
     if (cx->hasfp()) {
         global = cx->fp()->scopeChain().getGlobal();
@@ -268,19 +268,19 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
             return false;
     }
 
-    /* Unwrap incoming objects. */
+    
     if (vp->isObject()) {
         JSObject *obj = &vp->toObject();
 
-        /* If the object is already in this compartment, we are done. */
+        
         if (obj->compartment() == this)
             return true;
 
-        /* Translate StopIteration singleton. */
+        
         if (obj->isStopIteration())
             return js_FindClassObject(cx, NULL, JSProto_StopIteration, vp);
 
-        /* Don't unwrap an outer window proxy. */
+        
         if (!obj->getClass()->ext.innerObject) {
             obj = vp->toObject().unwrap(&flags);
             vp->setObject(*obj);
@@ -316,7 +316,7 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 #endif
     }
 
-    /* If we already have a wrapper for this value, use it. */
+    
     if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(*vp)) {
         *vp = p->value;
         if (vp->isObject()) {
@@ -347,25 +347,25 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
 
     JSObject *obj = &vp->toObject();
 
-    /*
-     * Recurse to wrap the prototype. Long prototype chains will run out of
-     * stack, causing an error in CHECK_RECURSE.
-     *
-     * Wrapping the proto before creating the new wrapper and adding it to the
-     * cache helps avoid leaving a bad entry in the cache on OOM. But note that
-     * if we wrapped both proto and parent, we would get infinite recursion
-     * here (since Object.prototype->parent->proto leads to Object.prototype
-     * itself).
-     */
+    
+
+
+
+
+
+
+
+
+
     JSObject *proto = obj->getProto();
     if (!wrap(cx, &proto))
         return false;
 
-    /*
-     * We hand in the original wrapped object into the wrap hook to allow
-     * the wrap hook to reason over what wrappers are currently applied
-     * to the object.
-     */
+    
+
+
+
+
     JSObject *wrapper = cx->runtime->wrapObjectCallback(cx, obj, proto, global, flags);
     if (!wrapper)
         return false;
@@ -457,21 +457,21 @@ JSCompartment::wrap(JSContext *cx, AutoIdVector &props)
 }
 
 #if defined JS_METHODJIT && defined JS_MONOIC
-/*
- * Check if the pool containing the code for jit should be destroyed, per the
- * heuristics in JSCompartment::sweep.
- */
+
+
+
+
 static inline bool
 ScriptPoolDestroyed(JSContext *cx, mjit::JITScript *jit,
                     uint32 releaseInterval, uint32 &counter)
 {
     JSC::ExecutablePool *pool = jit->code.m_executablePool;
     if (pool->m_gcNumber != cx->runtime->gcNumber) {
-        /*
-         * The m_destroy flag may have been set in a previous GC for a pool which had
-         * references we did not remove (e.g. from the compartment's ExecutableAllocator)
-         * and is still around. Forget we tried to destroy it in such cases.
-         */
+        
+
+
+
+
         pool->m_destroy = false;
         pool->m_gcNumber = cx->runtime->gcNumber;
         if (--counter == 0) {
@@ -490,13 +490,13 @@ ScriptTryDestroyCode(JSContext *cx, JSScript *script, bool normal,
     if (jit && ScriptPoolDestroyed(cx, jit, releaseInterval, counter))
         mjit::ReleaseScriptCode(cx, script, !normal);
 }
-#endif // JS_METHODJIT && JS_MONOIC
+#endif 
 
-/*
- * This method marks pointers that cross compartment boundaries. It should be
- * called only for per-compartment GCs, since full GCs naturally follow pointers
- * across compartments.
- */
+
+
+
+
+
 void
 JSCompartment::markCrossCompartmentWrappers(JSTracer *trc)
 {
@@ -518,11 +518,11 @@ JSCompartment::mark(JSTracer *trc)
 void
 JSCompartment::markTypes(JSTracer *trc)
 {
-    /*
-     * Mark all scripts, type objects and singleton JS objects in the
-     * compartment. These can be referred to directly by type sets, which we
-     * cannot modify while code which depends on these type sets is active.
-     */
+    
+
+
+
+
     JS_ASSERT(activeAnalysis);
 
     for (CellIterUnderGC i(this, FINALIZE_SCRIPT); !i.done(); i.next()) {
@@ -547,7 +547,7 @@ JSCompartment::markTypes(JSTracer *trc)
 void
 JSCompartment::sweep(JSContext *cx, uint32 releaseInterval)
 {
-    /* Remove dead wrappers from the table. */
+    
     for (WrapperMap::Enum e(crossCompartmentWrappers); !e.empty(); e.popFront()) {
         JS_ASSERT_IF(IsAboutToBeFinalized(cx, e.front().key.toGCThing()) &&
                      !IsAboutToBeFinalized(cx, e.front().value.toGCThing()),
@@ -558,7 +558,7 @@ JSCompartment::sweep(JSContext *cx, uint32 releaseInterval)
         }
     }
 
-    /* Remove dead empty shapes. */
+    
     if (emptyArgumentsShape && IsAboutToBeFinalized(cx, emptyArgumentsShape))
         emptyArgumentsShape = NULL;
     if (emptyBlockShape && IsAboutToBeFinalized(cx, emptyBlockShape))
@@ -588,10 +588,10 @@ JSCompartment::sweep(JSContext *cx, uint32 releaseInterval)
 #endif
 
 # if defined JS_METHODJIT && defined JS_POLYIC
-    /*
-     * Purge all PICs in the compartment. These can reference type data and
-     * need to know which types are pending collection.
-     */
+    
+
+
+
     for (CellIterUnderGC i(this, FINALIZE_SCRIPT); !i.done(); i.next()) {
         JSScript *script = i.get<JSScript>();
         if (script->hasJITCode())
@@ -603,13 +603,13 @@ JSCompartment::sweep(JSContext *cx, uint32 releaseInterval)
 
 #if defined JS_METHODJIT && defined JS_MONOIC
 
-    /*
-     * The release interval is the frequency with which we should try to destroy
-     * executable pools by releasing all JIT code in them, zero to never destroy pools.
-     * Initialize counter so that the first pool will be destroyed, and eventually drive
-     * the amount of JIT code in never-used compartments to zero. Don't discard anything
-     * for compartments which currently have active stack frames.
-     */
+    
+
+
+
+
+
+
     uint32 counter = 1;
     if (discardScripts)
         hasDebugModeCodeToDrop = false;
@@ -627,36 +627,53 @@ JSCompartment::sweep(JSContext *cx, uint32 releaseInterval)
 
 #endif
 
-    if (!activeAnalysis) {
-        /*
-         * Clear the analysis pool, but don't releas its data yet. While
-         * sweeping types any live data will be allocated into the pool.
-         */
+#ifdef JS_METHODJIT
+    if (types.inferenceEnabled)
+        mjit::ClearAllFrames(this);
+#endif
+
+    if (activeAnalysis) {
+        
+
+
+
+
+#ifdef JS_METHODJIT
+        if (types.inferenceEnabled) {
+            for (CellIterUnderGC i(this, FINALIZE_SCRIPT); !i.done(); i.next()) {
+                JSScript *script = i.get<JSScript>();
+                mjit::ReleaseScriptCode(cx, script);
+            }
+        }
+#endif
+    } else {
+        
+
+
+
         JSArenaPool oldPool;
         MoveArenaPool(&pool, &oldPool);
 
-        /*
-         * Sweep analysis information and everything depending on it from the
-         * compartment, including all remaining mjit code if inference is
-         * enabled in the compartment.
-         */
+        
+
+
+
+
         if (types.inferenceEnabled) {
-#ifdef JS_METHODJIT
-            mjit::ClearAllFrames(this);
-#endif
             for (CellIterUnderGC i(this, FINALIZE_SCRIPT); !i.done(); i.next()) {
                 JSScript *script = i.get<JSScript>();
                 if (script->types) {
                     types::TypeScript::Sweep(cx, script);
 
-                    /*
-                     * On each 1/8 lifetime, release observed types for all scripts.
-                     * This is always safe to do when there are no frames for the
-                     * compartment on the stack.
-                     */
+                    
+
+
+
+
                     if (discardScripts) {
                         script->types->destroy();
                         script->types = NULL;
+                        script->typesPurged = true;
                     }
                 }
             }
@@ -666,11 +683,10 @@ JSCompartment::sweep(JSContext *cx, uint32 releaseInterval)
 
         for (CellIterUnderGC i(this, FINALIZE_SCRIPT); !i.done(); i.next()) {
             JSScript *script = i.get<JSScript>();
-            if (script->types)
-                script->types->analysis = NULL;
+            script->clearAnalysis();
         }
 
-        /* Reset the analysis pool, releasing all analysis and intermediate type data. */
+        
         JS_FinishArenaPool(&oldPool);
     }
 
@@ -683,12 +699,12 @@ JSCompartment::purge(JSContext *cx)
     arenas.purge();
     dtoaCache.purge();
 
-    /*
-     * Clear the hash and reset all evalHashLink to null before the GC. This
-     * way MarkChildren(trc, JSScript *) can assume that JSScript::u.object is
-     * not null when we have script owned by an object and not from the eval
-     * cache.
-     */
+    
+
+
+
+
+
     for (size_t i = 0; i != JS_ARRAY_LENGTH(evalCache); ++i) {
         for (JSScript **listHeadp = &evalCache[i]; *listHeadp; ) {
             JSScript *script = *listHeadp;
@@ -702,20 +718,20 @@ JSCompartment::purge(JSContext *cx)
     toSourceCache.destroyIfConstructed();
 
 #ifdef JS_TRACER
-    /*
-     * If we are about to regenerate shapes, we have to flush the JIT cache,
-     * which will eventually abort any current recording.
-     */
+    
+
+
+
     if (cx->runtime->gcRegenShapes)
         if (hasTraceMonitor())
             traceMonitor()->needFlush = JS_TRUE;
 #endif
 
 #if defined JS_METHODJIT && defined JS_MONOIC
-    /*
-     * MICs do not refer to data which can be GC'ed and do not generate stubs
-     * which might need to be discarded, but are sensitive to shape regeneration.
-     */
+    
+
+
+
     if (cx->runtime->gcRegenShapes) {
         for (CellIterUnderGC i(this, FINALIZE_SCRIPT); !i.done(); i.next()) {
             JSScript *script = i.get<JSScript>();
@@ -766,7 +782,7 @@ JSCompartment::incBackEdgeCount(jsbytecode *pc)
 {
     if (BackEdgeMap::Ptr p = backEdgeTable.lookupWithDefault(pc, 0))
         return ++p->value;
-    return 1;  /* oom not reported by backEdgeTable, so ignore. */
+    return 1;  
 }
 
 bool
@@ -786,16 +802,16 @@ JSCompartment::setDebugModeFromC(JSContext *cx, bool b)
     bool enabledBefore = debugMode();
     bool enabledAfter = (debugModeBits & ~uintN(DebugFromC)) || b;
 
-    // Debug mode can be enabled only when no scripts from the target
-    // compartment are on the stack. It would even be incorrect to discard just
-    // the non-live scripts' JITScripts because they might share ICs with live
-    // scripts (bug 632343).
-    //
-    // We do allow disabling debug mode while scripts are on the stack.  In
-    // that case the debug-mode code for those scripts remains, so subsequently
-    // hooks may be called erroneously, even though debug mode is supposedly
-    // off, and we have to live with it.
-    //
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     bool onStack = false;
     if (enabledBefore != enabledAfter) {
         onStack = hasScriptsOnStack(cx);
@@ -831,10 +847,10 @@ JSCompartment::updateForDebugMode(JSContext *cx)
         return;
     }
 
-    /*
-     * Discard JIT code for any scripts that change debugMode. This assumes
-     * that 'comp' is in the same thread as 'cx'.
-     */
+    
+
+
+
     for (gc::CellIter i(cx, this, gc::FINALIZE_SCRIPT); !i.done(); i.next()) {
         JSScript *script = i.get<JSScript>();
         if (script->debugMode != enabled) {
@@ -951,8 +967,8 @@ JSCompartment::markTrapClosuresIteratively(JSTracer *trc)
     for (BreakpointSiteMap::Range r = breakpointSites.all(); !r.empty(); r.popFront()) {
         BreakpointSite *site = r.front().value;
 
-        // Mark jsdbgapi state if any. But if we know the scriptObject, put off
-        // marking trap state until we know the scriptObject is live.
+        
+        
         if (site->trapHandler &&
             (!site->scriptObject || !IsAboutToBeFinalized(cx, site->scriptObject)))
         {
@@ -973,8 +989,8 @@ JSCompartment::sweepBreakpoints(JSContext *cx)
     for (BreakpointSiteMap::Enum e(breakpointSites); !e.empty(); e.popFront()) {
         BreakpointSite *site = e.front().value;
         if (site->scriptObject) {
-            // clearTrap and nextbp are necessary here to avoid possibly
-            // reading *site or *bp after destroying it.
+            
+            
             bool scriptGone = IsAboutToBeFinalized(cx, site->scriptObject);
             bool clearTrap = scriptGone && site->hasTrap();
 
