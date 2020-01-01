@@ -148,7 +148,7 @@ LookupExpandoObject(JSContext *cx, JSObject *target, nsIPrincipal *origin,
     }
 
     
-    return nullptr;
+    return nsnull;
 }
 
 
@@ -158,7 +158,7 @@ LookupExpandoObject(JSContext *cx, JSObject *target, JSObject *consumer)
     JSObject *consumerGlobal = js::GetGlobalForObjectCrossCompartment(consumer);
     bool isSandbox = !strcmp(js::GetObjectJSClass(consumerGlobal)->name, "Sandbox");
     return LookupExpandoObject(cx, target, ObjectPrincipal(consumer),
-                               isSandbox ? consumerGlobal : nullptr);
+                               isSandbox ? consumerGlobal : nsnull);
 }
 
 JSObject *
@@ -177,9 +177,9 @@ AttachExpandoObject(JSContext *cx, JSObject *target, nsIPrincipal *origin,
 
     
     JSObject *expandoObject = JS_NewObjectWithGivenProto(cx, &ExpandoObjectClass,
-                                                         nullptr, target);
+                                                         nsnull, target);
     if (!expandoObject)
-        return nullptr;
+        return nsnull;
 
     
     NS_ADDREF(origin);
@@ -215,7 +215,7 @@ EnsureExpandoObject(JSContext *cx, JSObject *wrapper, JSObject *target)
     
     JSAutoEnterCompartment ac;
     if (!ac.enter(cx, target))
-        return nullptr;
+        return nsnull;
 
     JSObject *expandoObject = LookupExpandoObject(cx, target, wrapper);
     if (!expandoObject) {
@@ -229,7 +229,7 @@ EnsureExpandoObject(JSContext *cx, JSObject *wrapper, JSObject *target)
         if (!JS_WrapObject(cx, &consumerGlobal))
             return NULL;
         expandoObject = AttachExpandoObject(cx, target, ObjectPrincipal(wrapper),
-                                            isSandbox ? consumerGlobal : nullptr);
+                                            isSandbox ? consumerGlobal : nsnull);
     }
     return expandoObject;
 }
@@ -238,7 +238,7 @@ bool
 CloneExpandoChain(JSContext *cx, JSObject *dst, JSObject *src)
 {
     MOZ_ASSERT(js::IsObjectInContextCompartment(dst, cx));
-    MOZ_ASSERT(GetExpandoChain(dst) == nullptr);
+    MOZ_ASSERT(GetExpandoChain(dst) == nsnull);
 
     JSObject *oldHead = GetExpandoChain(src);
     while (oldHead) {
@@ -259,9 +259,9 @@ CloneExpandoChain(JSContext *cx, JSObject *dst, JSObject *src)
 JSObject *
 createHolder(JSContext *cx, JSObject *wrappedNative, JSObject *parent)
 {
-    JSObject *holder = JS_NewObjectWithGivenProto(cx, &HolderClass, nullptr, parent);
+    JSObject *holder = JS_NewObjectWithGivenProto(cx, &HolderClass, nsnull, parent);
     if (!holder)
-        return nullptr;
+        return nsnull;
 
     JSObject *inner = JS_ObjectToInnerObject(cx, wrappedNative);
     XPCWrappedNative *wn = GetWrappedNative(inner);
@@ -372,7 +372,7 @@ private:
             return &js::GetProxyExtra(wrapper, 0).toObject();
 
         if (!createHolder)
-            return nullptr;
+            return nsnull;
 
         return createHolderObject(cx, wrapper);
     }
@@ -421,7 +421,7 @@ private:
             return &js::GetProxyExtra(wrapper, 0).toObject();
 
         if (!createHolder)
-            return nullptr;
+            return nsnull;
 
         return createHolderObject(cx, wrapper);
     }
@@ -508,7 +508,7 @@ XPCWrappedNativeXrayTraits::isResolving(JSContext *cx, JSObject *holder,
 
 
 JSBool
-holder_get(JSContext *cx, JSHandleObject wrapper_, JSHandleId id, jsval *vp)
+holder_get(JSContext *cx, JSHandleObject wrapper_, JSHandleId id, JSMutableHandleValue vp)
 {
     JSObject *wrapper = FindWrapper(wrapper_);
 
@@ -521,7 +521,7 @@ holder_get(JSContext *cx, JSHandleObject wrapper_, JSHandleId id, jsval *vp)
             return false;
         bool retval = true;
         nsresult rv = wn->GetScriptableCallback()->GetProperty(wn, cx, wrapper,
-                                                               id, vp, &retval);
+                                                               id, vp.address(), &retval);
         if (NS_FAILED(rv) || !retval) {
             if (retval)
                 XPCThrower::Throw(rv, cx);
@@ -532,7 +532,7 @@ holder_get(JSContext *cx, JSHandleObject wrapper_, JSHandleId id, jsval *vp)
 }
 
 JSBool
-holder_set(JSContext *cx, JSHandleObject wrapper_, JSHandleId id, JSBool strict, jsval *vp)
+holder_set(JSContext *cx, JSHandleObject wrapper_, JSHandleId id, JSBool strict, JSMutableHandleValue vp)
 {
     JSObject *wrapper = FindWrapper(wrapper_);
 
@@ -548,7 +548,7 @@ holder_set(JSContext *cx, JSHandleObject wrapper_, JSHandleId id, JSBool strict,
             return false;
         bool retval = true;
         nsresult rv = wn->GetScriptableCallback()->SetProperty(wn, cx, wrapper,
-                                                               id, vp, &retval);
+                                                               id, vp.address(), &retval);
         if (NS_FAILED(rv) || !retval) {
             if (retval)
                 XPCThrower::Throw(rv, cx);
@@ -570,7 +570,7 @@ XPCWrappedNativeXrayTraits::resolveNativeProperty(JSContext *cx, JSObject *wrapp
     XPCWrappedNative *wn = GetWrappedNative(wnObject);
 
     
-    XPCCallContext ccx(JS_CALLER, cx, wnObject, nullptr, id);
+    XPCCallContext ccx(JS_CALLER, cx, wnObject, nsnull, id);
 
     
     
@@ -645,16 +645,16 @@ XPCWrappedNativeXrayTraits::resolveNativeProperty(JSContext *cx, JSObject *wrapp
 }
 
 static JSBool
-wrappedJSObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, jsval *vp)
+wrappedJSObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, JSMutableHandleValue vp)
 {
     if (!IsWrapper(wrapper) || !WrapperFactory::IsXrayWrapper(wrapper)) {
         JS_ReportError(cx, "Unexpected object");
         return false;
     }
 
-    *vp = OBJECT_TO_JSVAL(wrapper);
+    vp.set(OBJECT_TO_JSVAL(wrapper));
 
-    return WrapperFactory::WaiveXrayAndWrap(cx, vp);
+    return WrapperFactory::WaiveXrayAndWrap(cx, vp.address());
 }
 
 template <typename T>
@@ -672,9 +672,9 @@ WrapURI(JSContext *cx, nsIURI *uri, jsval *vp)
 {
     JSObject *scope = JS_GetGlobalForScopeChain(cx);
     nsresult rv =
-        nsXPConnect::FastGetXPConnect()->WrapNativeToJSVal(cx, scope, uri, nullptr,
+        nsXPConnect::FastGetXPConnect()->WrapNativeToJSVal(cx, scope, uri, nsnull,
                                                            &NS_GET_IID(nsIURI), true,
-                                                           vp, nullptr);
+                                                           vp, nsnull);
     if (NS_FAILED(rv)) {
         XPCThrower::Throw(rv, cx);
         return false;
@@ -683,7 +683,7 @@ WrapURI(JSContext *cx, nsIURI *uri, jsval *vp)
 }
 
 static JSBool
-documentURIObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, jsval *vp)
+documentURIObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, JSMutableHandleValue vp)
 {
     if (!IsWrapper(wrapper) || !WrapperFactory::IsXrayWrapper(wrapper)) {
         JS_ReportError(cx, "Unexpected object");
@@ -704,11 +704,11 @@ documentURIObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, j
         return false;
     }
 
-    return WrapURI(cx, uri, vp);
+    return WrapURI(cx, uri, vp.address());
 }
 
 static JSBool
-baseURIObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, jsval *vp)
+baseURIObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, JSMutableHandleValue vp)
 {
     if (!IsWrapper(wrapper) || !WrapperFactory::IsXrayWrapper(wrapper)) {
         JS_ReportError(cx, "Unexpected object");
@@ -728,11 +728,11 @@ baseURIObject_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, jsval
         return false;
     }
 
-    return WrapURI(cx, uri, vp);
+    return WrapURI(cx, uri, vp.address());
 }
 
 static JSBool
-nodePrincipal_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, jsval *vp)
+nodePrincipal_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, JSMutableHandleValue vp)
 {
     if (!IsWrapper(wrapper) || !WrapperFactory::IsXrayWrapper(wrapper)) {
         JS_ReportError(cx, "Unexpected object");
@@ -749,9 +749,9 @@ nodePrincipal_getter(JSContext *cx, JSHandleObject wrapper, JSHandleId id, jsval
 
     JSObject *scope = JS_GetGlobalForScopeChain(cx);
     nsresult rv =
-        nsXPConnect::FastGetXPConnect()->WrapNativeToJSVal(cx, scope, node->NodePrincipal(), nullptr,
+        nsXPConnect::FastGetXPConnect()->WrapNativeToJSVal(cx, scope, node->NodePrincipal(), nsnull,
                                                            &NS_GET_IID(nsIPrincipal), true,
-                                                           vp, nullptr);
+                                                           vp.address(), nsnull);
     if (NS_FAILED(rv)) {
         XPCThrower::Throw(rv, cx);
         return false;
@@ -1043,10 +1043,10 @@ ProxyXrayTraits::enumerateNames(JSContext *cx, JSObject *wrapper, unsigned flags
 JSObject*
 ProxyXrayTraits::createHolderObject(JSContext *cx, JSObject *wrapper)
 {
-    JSObject *obj = JS_NewObjectWithGivenProto(cx, nullptr, nullptr,
+    JSObject *obj = JS_NewObjectWithGivenProto(cx, nsnull, nsnull,
                                                JS_GetGlobalForObject(cx, wrapper));
     if (!obj)
-        return nullptr;
+        return nsnull;
     js::SetProxyExtra(wrapper, 0, ObjectValue(*obj));
     return obj;
 }
@@ -1122,10 +1122,10 @@ DOMXrayTraits::enumerateNames(JSContext *cx, JSObject *wrapper, unsigned flags,
 JSObject*
 DOMXrayTraits::createHolderObject(JSContext *cx, JSObject *wrapper)
 {
-    JSObject *obj = JS_NewObjectWithGivenProto(cx, nullptr, nullptr,
+    JSObject *obj = JS_NewObjectWithGivenProto(cx, nsnull, nsnull,
                                                JS_GetGlobalForObject(cx, wrapper));
     if (!obj)
-        return nullptr;
+        return nsnull;
     js::SetProxyExtra(wrapper, 0, ObjectValue(*obj));
     return obj;
 }
@@ -1361,7 +1361,7 @@ XrayWrapper<Base, Traits>::getOwnPropertyDescriptor(JSContext *cx, JSObject *wra
             }
         }
 
-        desc->obj = (desc->obj == obj) ? wrapper : nullptr;
+        desc->obj = (desc->obj == obj) ? wrapper : nsnull;
         return JS_WrapPropertyDescriptor(cx, desc);
     }
 
@@ -1549,7 +1549,7 @@ XrayWrapper<Base, Traits>::call(JSContext *cx, JSObject *wrapper, unsigned argc,
 
     
     if (NATIVE_HAS_FLAG(wn, WantCall)) {
-        XPCCallContext ccx(JS_CALLER, cx, wrapper, nullptr, JSID_VOID, argc,
+        XPCCallContext ccx(JS_CALLER, cx, wrapper, nsnull, JSID_VOID, argc,
                            vp + 2, vp);
         if (!ccx.IsValid())
             return false;
@@ -1576,7 +1576,7 @@ XrayWrapper<Base, Traits>::construct(JSContext *cx, JSObject *wrapper, unsigned 
 
     
     if (NATIVE_HAS_FLAG(wn, WantConstruct)) {
-        XPCCallContext ccx(JS_CALLER, cx, wrapper, nullptr, JSID_VOID, argc, argv, rval);
+        XPCCallContext ccx(JS_CALLER, cx, wrapper, nsnull, JSID_VOID, argc, argv, rval);
         if (!ccx.IsValid())
             return false;
         bool ok = true;
