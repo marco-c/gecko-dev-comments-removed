@@ -1,8 +1,8 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-// Tests that source URLs are abbreviated properly for display on the right-
-// hand side of the Web Console.
+
+
+
+
 
 function test() {
   testAbbreviation("http://example.com/x.js", "x.js");
@@ -15,7 +15,7 @@ function test() {
 }
 
 function testAbbreviation(aFullURL, aAbbreviatedURL) {
-  is(ConsoleUtils.abbreviateSourceURL(aFullURL), aAbbreviatedURL, aFullURL +
+  is(WebConsoleUtils.abbreviateSourceURL(aFullURL), aAbbreviatedURL, aFullURL +
      " is abbreviated to " + aAbbreviatedURL);
 }
 
