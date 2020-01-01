@@ -531,7 +531,9 @@ PRBool nsActivePluginList::remove(nsActivePlugin * plugin)
 
 
 
-void nsActivePluginList::stopRunning(nsISupportsArray* aReloadDocs)
+
+void nsActivePluginList::stopRunning(nsISupportsArray* aReloadDocs,
+                                     nsPluginTag* aPluginTag)
 {
   if(mFirst == nsnull)
     return;
@@ -540,7 +542,8 @@ void nsActivePluginList::stopRunning(nsISupportsArray* aReloadDocs)
 
   for(nsActivePlugin * p = mFirst; p != nsnull; p = p->mNext)
   {
-    if(!p->mStopped && p->mInstance)
+    if(!p->mStopped && p->mInstance &&
+       (!aPluginTag || aPluginTag == p->mPluginTag))
     {
       
       
@@ -989,13 +992,36 @@ nsPluginTag::SetDisabled(PRBool aDisabled)
   if (HasFlag(NS_PLUGIN_FLAG_ENABLED) == !aDisabled)
     return NS_OK;
 
-  
   if (aDisabled)
     UnMark(NS_PLUGIN_FLAG_ENABLED);
   else
     Mark(NS_PLUGIN_FLAG_ENABLED);
 
-  mPluginHost->UpdatePluginInfo();
+  mPluginHost->UpdatePluginInfo(this);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginTag::GetBlocklisted(PRBool* aBlocklisted)
+{
+  *aBlocklisted = HasFlag(NS_PLUGIN_FLAG_BLOCKLISTED);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginTag::SetBlocklisted(PRBool aBlocklisted)
+{
+  if (HasFlag(NS_PLUGIN_FLAG_BLOCKLISTED) == aBlocklisted)
+    return NS_OK;
+
+  if (aBlocklisted) {
+    Mark(NS_PLUGIN_FLAG_BLOCKLISTED);
+    if (HasFlag(NS_PLUGIN_FLAG_ENABLED))
+      UnMark(NS_PLUGIN_FLAG_ENABLED);
+  } else
+    UnMark(NS_PLUGIN_FLAG_BLOCKLISTED);
+
+  mPluginHost->UpdatePluginInfo(nsnull);
   return NS_OK;
 }
 
@@ -2753,7 +2779,7 @@ nsresult nsPluginHostImpl::ReloadPlugins(PRBool reloadPages)
 
     
     
-    mActivePluginList.stopRunning(instsToReload);
+    mActivePluginList.stopRunning(instsToReload, nsnull);
   }
 
   
@@ -3250,7 +3276,7 @@ NS_IMETHODIMP nsPluginHostImpl::Destroy(void)
 
   
   
-  mActivePluginList.stopRunning(nsnull);
+  mActivePluginList.stopRunning(nsnull, nsnull);
 
   
   mActivePluginList.shut();
@@ -4107,12 +4133,6 @@ nsPluginHostImpl::SetUpDefaultPluginInstance(const char *aMimeType,
 NS_IMETHODIMP
 nsPluginHostImpl::IsPluginEnabledForType(const char* aMimeType)
 {
-  if (!mJavaEnabled && IsJavaMIMEType(aMimeType)) {
-    
-    
-    return NS_ERROR_PLUGIN_DISABLED;
-  }
-
   
   
   nsPluginTag *plugin = FindPluginForType(aMimeType, PR_FALSE);
@@ -4120,8 +4140,17 @@ nsPluginHostImpl::IsPluginEnabledForType(const char* aMimeType)
     return NS_ERROR_FAILURE;
   }
 
-  if (!plugin->HasFlag(NS_PLUGIN_FLAG_ENABLED)) {
+  if (!mJavaEnabled && IsJavaMIMEType(aMimeType)) {
+    
+    
     return NS_ERROR_PLUGIN_DISABLED;
+  }
+
+  if (!plugin->HasFlag(NS_PLUGIN_FLAG_ENABLED)) {
+    if (plugin->HasFlag(NS_PLUGIN_FLAG_BLOCKLISTED))
+      return NS_ERROR_PLUGIN_BLOCKLISTED;
+    else
+      return NS_ERROR_PLUGIN_DISABLED;
   }
 
   return NS_OK;
@@ -5035,12 +5064,13 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
     RemoveCachedPluginsInfo(NS_ConvertUTF16toUTF8(pfd->mFilename).get(),
                             getter_AddRefs(pluginTag));
 
-    PRBool pluginEnabled = PR_TRUE;
+    PRUint32 oldFlags = NS_PLUGIN_FLAG_ENABLED;
     if (pluginTag) {
       
       if (LL_NE(fileModTime, pluginTag->mLastModifiedTime)) {
         
-        pluginEnabled = pluginTag->HasFlag(NS_PLUGIN_FLAG_ENABLED);
+        oldFlags = pluginTag->Flags() &
+                   (NS_PLUGIN_FLAG_ENABLED | NS_PLUGIN_FLAG_BLOCKLISTED);
         pluginTag = nsnull;
 
         
@@ -5117,8 +5147,12 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
 
       pluginTag->mLibrary = pluginLibrary;
       pluginTag->mLastModifiedTime = fileModTime;
-      if (!pluginEnabled || (IsJavaPluginTag(pluginTag) && !mJavaEnabled))
+      if (!(oldFlags & NS_PLUGIN_FLAG_ENABLED) ||
+          (IsJavaPluginTag(pluginTag) && !mJavaEnabled))
         pluginTag->UnMark(NS_PLUGIN_FLAG_ENABLED);
+
+      if (oldFlags & NS_PLUGIN_FLAG_BLOCKLISTED)
+        pluginTag->Mark(NS_PLUGIN_FLAG_BLOCKLISTED);
 
       
       
@@ -5223,6 +5257,11 @@ NS_IMETHODIMP nsPluginHostImpl::LoadPlugins()
 
     if (iim)
       iim->AutoRegisterInterfaces();
+
+    nsCOMPtr<nsIObserverService>
+      obsService(do_GetService("@mozilla.org/observer-service;1"));
+    if (obsService)
+      obsService->NotifyObservers(nsnull, "plugins-list-updated", nsnull);
   }
 
   return NS_OK;
@@ -5284,7 +5323,7 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
     
     
     if (!aCreatePluginList && *aPluginsChanged) {
-      ClearCachedPluginInfoList();
+      mCachedPlugins = nsnull;
       return NS_OK;
     }
   }
@@ -5311,7 +5350,7 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
       
       
       if (!aCreatePluginList && *aPluginsChanged) {
-        ClearCachedPluginInfoList();
+        mCachedPlugins = nsnull;
         return NS_OK;
       }
     }
@@ -5359,7 +5398,7 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
       
       
       if (!aCreatePluginList && *aPluginsChanged) {
-        ClearCachedPluginInfoList();
+        mCachedPlugins = nsnull;
         return NS_OK;
       }
     }
@@ -5387,7 +5426,7 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
 
   
   if (!aCreatePluginList) {
-    ClearCachedPluginInfoList();
+    mCachedPlugins = nsnull;
     return NS_OK;
   }
 
@@ -5397,7 +5436,7 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
     WritePluginInfo();
 
   
-  ClearCachedPluginInfoList();
+  mCachedPlugins = nsnull;
 
   
 
@@ -5425,11 +5464,6 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
   return NS_OK;
 }
 
-void nsPluginHostImpl::ClearCachedPluginInfoList()
-{
-  mCachedPlugins = nsnull;
-}
-
 
 nsresult
 nsPluginHostImpl::LoadXPCOMPlugins(nsIComponentManager* aComponentManager)
@@ -5449,11 +5483,28 @@ nsPluginHostImpl::LoadXPCOMPlugins(nsIComponentManager* aComponentManager)
 }
 
 nsresult
-nsPluginHostImpl::UpdatePluginInfo()
+nsPluginHostImpl::UpdatePluginInfo(nsPluginTag* aPluginTag)
 {
   ReadPluginInfo();
   WritePluginInfo();
-  ClearCachedPluginInfoList();
+  mCachedPlugins = nsnull;
+
+  if (!aPluginTag || aPluginTag->HasFlag(NS_PLUGIN_FLAG_ENABLED))
+    return NS_OK;
+
+  nsCOMPtr<nsISupportsArray> instsToReload;
+  NS_NewISupportsArray(getter_AddRefs(instsToReload));
+  mActivePluginList.stopRunning(instsToReload, aPluginTag);
+  mActivePluginList.removeAllStopped();
+  
+  PRUint32 c;
+  if (instsToReload &&
+      NS_SUCCEEDED(instsToReload->Count(&c)) &&
+      c > 0) {
+    nsCOMPtr<nsIRunnable> ev = new nsPluginDocReframeEvent(instsToReload);
+    if (ev)
+      NS_DispatchToCurrentThread(ev);
+  }
 
   return NS_OK;
 }
@@ -6378,18 +6429,9 @@ NS_IMETHODIMP nsPluginHostImpl::Observe(nsISupports *aSubject,
       
       
       for (nsPluginTag* cur = mPlugins; cur; cur = cur->mNext) {
-        if (IsJavaPluginTag(cur)) {
-          if (mJavaEnabled) {
-            cur->Mark(NS_PLUGIN_FLAG_ENABLED);
-          } else {
-            cur->UnMark(NS_PLUGIN_FLAG_ENABLED);
-          }
-        }
+        if (IsJavaPluginTag(cur))
+          cur->SetDisabled(!mJavaEnabled);
       }            
-      
-      
-      
-      return ReloadPlugins(PR_TRUE);
     }
   }
   return NS_OK;
