@@ -109,6 +109,11 @@ class THEBES_API LayerManager {
   THEBES_INLINE_DECL_REFCOUNTING(LayerManager)  
 
 public:
+  enum LayersBackend {
+    LAYERS_BASIC = 0,
+    LAYERS_OPENGL
+  };
+
   virtual ~LayerManager() {}
 
   
@@ -162,6 +167,13 @@ public:
 
 
   virtual already_AddRefed<ImageContainer> CreateImageContainer() = 0;
+
+  
+
+
+
+
+  virtual LayersBackend GetBackendType() = 0;
 };
 
 
