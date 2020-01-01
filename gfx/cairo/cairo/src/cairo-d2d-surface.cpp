@@ -1176,6 +1176,9 @@ static void _cairo_d2d_clear_geometry(cairo_d2d_surface_t *d2dsurf,
     RefPtr<ID2D1Bitmap> bitmp;
 
     
+    _cairo_d2d_flush(d2dsurf);
+
+    
     RefPtr<ID3D10Texture2D> bufTexture = _cairo_d2d_get_buffer_texture(d2dsurf);
 
     
@@ -1189,6 +1192,9 @@ static void _cairo_d2d_clear_geometry(cairo_d2d_surface_t *d2dsurf,
 						 dxgiSurface,
 						 &props,
 						 &bitmp);
+
+    
+    d2dsurf->rt->BeginDraw();
 
     
     d2dsurf->rt->Clear(D2D1::ColorF(0, 0));
@@ -1223,11 +1229,6 @@ static void _cairo_d2d_clear_geometry(cairo_d2d_surface_t *d2dsurf,
 	clearGeometry = clipPathUnion;
     }
 
-    if (d2dsurf->clipMask) {
-	
-	_cairo_d2d_surface_pop_clip(d2dsurf);
-    }
-
     
 
 
@@ -1244,10 +1245,8 @@ static void _cairo_d2d_clear_geometry(cairo_d2d_surface_t *d2dsurf,
     d2dsurf->rt->DrawBitmap(bitmp);
     d2dsurf->rt->PopLayer();
 
-    if (d2dsurf->clipMask) {
-	
-	_cairo_d2d_surface_push_clip(d2dsurf);
-    }
+    
+    d2dsurf->rt->EndDraw();
 }
 
 static cairo_operator_t _cairo_d2d_simplify_operator(cairo_operator_t op,
