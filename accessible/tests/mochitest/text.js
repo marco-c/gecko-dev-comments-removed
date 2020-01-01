@@ -11,6 +11,21 @@ const BOUNDARY_ATTRIBUTE_RANGE = nsIAccessibleText.BOUNDARY_ATTRIBUTE_RANGE;
 const kTodo = 1;
 const kOk = 2;
 
+
+
+
+
+
+
+function testCharacterCount(aIDs, aCount)
+{
+  for (var i = 1; i < aIDs.length; i++) {
+    var textacc = getAccessible(aIDs[i], [nsIAccessibleText]);
+    is(textacc.characterCount, aCount,
+       "Wrong character count for " + prettyName(aIDs[i]));
+  }
+}
+
 function testText(aIDs, aStartOffset, aEndOffset, aText)
 {
   for (var i = 0; i < aIDs.length; i++)
