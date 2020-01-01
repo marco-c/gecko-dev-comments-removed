@@ -37,6 +37,8 @@
 
 #include "nsIDOMHTMLCanvasElement.h"
 #include "nsGenericHTMLElement.h"
+#include "nsPresContext.h"
+#include "nsIPresShell.h"
 #include "nsGkAtoms.h"
 #include "nsSize.h"
 #include "nsIFrame.h"
@@ -124,7 +126,7 @@ protected:
   nsresult ToDataURLImpl(const nsAString& aMimeType,
                          const nsAString& aEncoderOptions,
                          nsAString& aDataURL);
-  nsresult GetContextHelper(const nsAString& aContextId,
+  nsresult GetContextHelper(const nsAString &aContextId,
                             nsICanvasRenderingContextInternal **aContext);
 
   nsString mCurrentContextId;
@@ -160,8 +162,6 @@ nsHTMLCanvasElement::~nsHTMLCanvasElement()
 
 NS_IMPL_ADDREF_INHERITED(nsHTMLCanvasElement, nsGenericElement)
 NS_IMPL_RELEASE_INHERITED(nsHTMLCanvasElement, nsGenericElement)
-
-DOMCI_DATA(HTMLCanvasElement, nsHTMLCanvasElement)
 
 NS_INTERFACE_TABLE_HEAD(nsHTMLCanvasElement)
   NS_HTML_CONTENT_INTERFACE_TABLE2(nsHTMLCanvasElement,
@@ -415,7 +415,7 @@ nsHTMLCanvasElement::ToDataURLImpl(const nsAString& aMimeType,
 }
 
 nsresult
-nsHTMLCanvasElement::GetContextHelper(const nsAString& aContextId,
+nsHTMLCanvasElement::GetContextHelper(const nsAString &aContextId,
                                       nsICanvasRenderingContextInternal **aContext)
 {
   NS_ENSURE_ARG(aContext);
@@ -494,7 +494,6 @@ NS_IMETHODIMP
 nsHTMLCanvasElement::MozGetShmemContext(const nsAString& aContextId,
                                         nsISupports **aContext)
 {
-#ifdef MOZ_IPC
   if(!nsContentUtils::IsCallerTrustedForRead()) {
     
     return NS_ERROR_DOM_SECURITY_ERR;
@@ -527,9 +526,6 @@ nsHTMLCanvasElement::MozGetShmemContext(const nsAString& aContextId,
 
   NS_ADDREF (*aContext = mCurrentContext);
   return NS_OK;
-#else
-  return NS_ERROR_NOT_IMPLEMENTED;
-#endif
 }
 
 nsresult
