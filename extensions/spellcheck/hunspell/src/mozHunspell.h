@@ -56,7 +56,6 @@
 
 
 
-
 #ifndef mozHunspell_h__
 #define mozHunspell_h__
 
@@ -65,7 +64,6 @@
 #include "mozIPersonalDictionary.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
-#include "nsCOMArray.h"
 #include "nsIObserver.h"
 #include "nsIUnicodeEncoder.h"
 #include "nsIUnicodeDecoder.h"
@@ -111,10 +109,6 @@ protected:
   nsInterfaceHashtable<nsStringHashKey, nsIFile> mDictionaries;
   nsString  mDictionary;
   nsString  mLanguage;
-  nsCString mAffixFileName;
-
-  
-  nsCOMArray<nsIFile> mDynamicDirectories;
 
   Hunspell  *mHunspell;
 
