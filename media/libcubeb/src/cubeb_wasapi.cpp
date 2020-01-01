@@ -289,6 +289,11 @@ wasapi_stream_render_loop(LPVOID stream)
     switch (waitResult) {
     case WAIT_OBJECT_0: { 
       is_playing = false;
+      
+
+      if (stm->draining) {
+        stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_DRAINED);
+      }
       continue;
     }
     case WAIT_OBJECT_0 + 1: { 
