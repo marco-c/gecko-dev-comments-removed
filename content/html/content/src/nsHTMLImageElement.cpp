@@ -45,7 +45,6 @@
 #include "nsIJSNativeInitializer.h"
 #include "nsSize.h"
 #include "nsIDocument.h"
-#include "nsIDOMWindowInternal.h"
 #include "nsIDOMDocument.h"
 #include "nsIScriptContext.h"
 #include "nsIURL.h"
@@ -237,7 +236,7 @@ static const nsAttrValue::EnumTable kCrossOriginTable[] = {
 
 static const nsAttrValue::EnumTable* kCrossOriginDefault = &kCrossOriginTable[0];
 
-NS_IMPL_ENUM_ATTR_DEFAULT_VALUE(nsHTMLImageElement, CrossOrigin, crossOrigin, kCrossOriginDefault->tag)
+NS_IMPL_ENUM_ATTR_DEFAULT_VALUE(nsHTMLImageElement, CrossOrigin, crossorigin, kCrossOriginDefault->tag)
 
 NS_IMETHODIMP
 nsHTMLImageElement::GetDraggable(PRBool* aDraggable)
@@ -352,7 +351,7 @@ nsHTMLImageElement::ParseAttribute(PRInt32 aNamespaceID,
     if (aAttribute == nsGkAtoms::align) {
       return ParseAlignValue(aValue, aResult);
     }
-    if (aAttribute == nsGkAtoms::crossOrigin) {
+    if (aAttribute == nsGkAtoms::crossorigin) {
       return aResult.ParseEnumValue(aValue, kCrossOriginTable, PR_FALSE);
     }
     if (ParseImageAttribute(aAttribute, aValue, aResult)) {
@@ -656,7 +655,7 @@ nsHTMLImageElement::GetCORSMode()
 {
   nsImageLoadingContent::CORSMode ret = nsImageLoadingContent::CORS_NONE;
 
-  const nsAttrValue* value = GetParsedAttr(nsGkAtoms::crossOrigin);
+  const nsAttrValue* value = GetParsedAttr(nsGkAtoms::crossorigin);
   if (value && value->Type() == nsAttrValue::eEnum) {
     ret = (nsImageLoadingContent::CORSMode) value->GetEnumValue();
   }
