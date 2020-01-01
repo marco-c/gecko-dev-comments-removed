@@ -54,7 +54,9 @@ namespace ion {
     \
     _(Abort)                                \
     /* Information during MIR building */   \
-    _(MIR)
+    _(MIR)                                  \
+    /* Information during LICM */           \
+    _(LICM)
 
 enum IonSpewChannel {
 #define IONSPEW_CHANNEL(name) IonSpew_##name,
