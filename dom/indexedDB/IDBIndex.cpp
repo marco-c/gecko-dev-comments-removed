@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Indexed Database.
- *
- * The Initial Developer of the Original Code is
- * The Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Shawn Wilsher <me@shawnwilsher.com>
- *   Ben Turner <bent.mozilla@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #include "IDBIndex.h"
@@ -48,8 +48,7 @@
 #include "nsEventDispatcher.h"
 #include "nsThreadUtils.h"
 #include "mozilla/storage.h"
-#include "xpcprivate.h"
-#include "XPCQuickStubs.h"
+#include "xpcpublic.h"
 
 #include "AsyncConnectionHelper.h"
 #include "IDBCursor.h"
@@ -86,11 +85,11 @@ public:
   }
 
 protected:
-  // In-params.
+  
   nsRefPtr<IDBIndex> mIndex;
   nsRefPtr<IDBKeyRange> mKeyRange;
 
-  // Out-params.
+  
   Key mKey;
 };
 
@@ -204,12 +203,12 @@ public:
   }
 
 private:
-  // In-params.
+  
   nsRefPtr<IDBIndex> mIndex;
   nsRefPtr<IDBKeyRange> mKeyRange;
   const PRUint16 mDirection;
 
-  // Out-params.
+  
   Key mKey;
   Key mObjectKey;
   nsCString mContinueQuery;
@@ -246,12 +245,12 @@ public:
   }
 
 private:
-  // In-params.
+  
   nsRefPtr<IDBIndex> mIndex;
   nsRefPtr<IDBKeyRange> mKeyRange;
   const PRUint16 mDirection;
 
-  // Out-params.
+  
   Key mKey;
   Key mObjectKey;
   StructuredCloneReadInfo mCloneReadInfo;
@@ -299,9 +298,9 @@ GenerateRequest(IDBIndex* aIndex)
                             database->Owner(), transaction);
 }
 
-} // anonymous namespace
+} 
 
-// static
+
 already_AddRefed<IDBIndex>
 IDBIndex::Create(IDBObjectStore* aObjectStore,
                  const IndexInfo* aIndexInfo)
@@ -349,7 +348,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IDBIndex)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IDBIndex)
-  // Don't unlink mObjectStore!
+  
   NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mOwner)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mScriptContext)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -398,7 +397,7 @@ IDBIndex::GetKeyPath(JSContext* aCx,
     for (PRUint32 i = 0; i < mKeyPathArray.Length(); ++i) {
       jsval val;
       nsString tmp(mKeyPathArray[i]);
-      if (!xpc_qsStringToJsval(aCx, tmp, &val)) {
+      if (!xpc::StringToJsval(aCx, tmp, &val)) {
         return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
       }
 
@@ -411,7 +410,7 @@ IDBIndex::GetKeyPath(JSContext* aCx,
   }
   else {
     nsString tmp(mKeyPath);
-    if (!xpc_qsStringToJsval(aCx, tmp, aVal)) {
+    if (!xpc::StringToJsval(aCx, tmp, aVal)) {
       return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
     }
   }
@@ -463,7 +462,7 @@ IDBIndex::Get(const jsval& aKey,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!keyRange) {
-    // Must specify a key or keyRange for get().
+    
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
 
@@ -496,7 +495,7 @@ IDBIndex::GetKey(const jsval& aKey,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!keyRange) {
-    // Must specify a key or keyRange for get().
+    
     return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
   }
 
@@ -717,7 +716,7 @@ IDBIndex::Count(const jsval& aKey,
 }
 
 nsresult
-GetKeyHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
+GetKeyHelper::DoDatabaseWork(mozIStorageConnection* )
 {
   NS_ASSERTION(mKeyRange, "Must have a key range here!");
 
@@ -772,7 +771,7 @@ GetKeyHelper::GetSuccessResult(JSContext* aCx,
 }
 
 nsresult
-GetHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
+GetHelper::DoDatabaseWork(mozIStorageConnection* )
 {
   NS_ASSERTION(mKeyRange, "Must have a key range here!");
 
@@ -835,7 +834,7 @@ GetHelper::GetSuccessResult(JSContext* aCx,
 }
 
 nsresult
-GetAllKeysHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
+GetAllKeysHelper::DoDatabaseWork(mozIStorageConnection* )
 {
   nsCString tableName;
   if (mIndex->IsUnique()) {
@@ -943,7 +942,7 @@ GetAllKeysHelper::GetSuccessResult(JSContext* aCx,
 }
 
 nsresult
-GetAllHelper::DoDatabaseWork(mozIStorageConnection* /* aConnection */)
+GetAllHelper::DoDatabaseWork(mozIStorageConnection* )
 {
   nsCString indexTable;
   if (mIndex->IsUnique()) {
@@ -1095,7 +1094,7 @@ OpenKeyCursorHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
   rv = mObjectKey.SetFromStatement(stmt, 1);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Now we need to make the query to get the next match.
+  
   nsCAutoString queryStart = NS_LITERAL_CSTRING("SELECT value, object_data_key"
                                                 " FROM ") + table +
                              NS_LITERAL_CSTRING(" WHERE index_id = :id");
@@ -1288,7 +1287,7 @@ OpenCursorHelper::DoDatabaseWork(mozIStorageConnection* aConnection)
     mDatabase->Manager(), mCloneReadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Now we need to make the query to get the next match.
+  
   nsCAutoString queryStart =
     NS_LITERAL_CSTRING("SELECT index_table.value, "
                        "index_table.object_data_key, object_data.data, "

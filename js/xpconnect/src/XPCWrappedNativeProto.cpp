@@ -1,44 +1,44 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   John Bandhauer <jband@netscape.com> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Possibly shared proto object for XPCWrappedNative. */
 
 #include "xpcprivate.h"
 
@@ -60,8 +60,8 @@ XPCWrappedNativeProto::XPCWrappedNativeProto(XPCWrappedNativeScope* Scope,
       mScriptableInfo(nsnull),
       mOffsets(offsets)
 {
-    
-    
+    // This native object lives as long as its associated JSObject - killed
+    // by finalization of the JSObject (or explicitly if Init fails).
 
     MOZ_COUNT_CTOR(XPCWrappedNativeProto);
 
@@ -80,7 +80,7 @@ XPCWrappedNativeProto::~XPCWrappedNativeProto()
     PR_ATOMIC_DECREMENT(&gDEBUG_LiveProtoCount);
 #endif
 
-    
+    // Note that our weak ref to mScope is not to be trusted at this point.
 
     XPCNativeSet::ClearCacheEntryForClassInfo(mClassInfo);
 
@@ -123,10 +123,22 @@ XPCWrappedNativeProto::Init(XPCCallContext& ccx,
 
     JSObject *parent = mScope->GetGlobalJSObject();
 
+    JSObject *protoProto = nsnull;
+    if (callback) {
+        nsresult rv = callback->PreCreatePrototype(ccx, parent, &protoProto);
+        if (NS_FAILED(rv)) {
+            mJSProtoObject = nsnull;
+            XPCThrower::Throw(rv, ccx);
+            return false;
+        }
+    }
+    if (!protoProto) {
+        protoProto = mScope->GetPrototypeJSObject();
+    }
+
     mJSProtoObject =
         xpc_NewSystemInheritingJSObject(ccx, js::Jsvalify(jsclazz),
-                                        mScope->GetPrototypeJSObject(),
-                                        true, parent);
+                                        protoProto, true, parent);
 
     JSBool ok = mJSProtoObject && JS_SetPrivate(ccx, mJSProtoObject, this);
 
@@ -150,10 +162,10 @@ XPCWrappedNativeProto::JSProtoObjectFinalized(JSContext *cx, JSObject *obj)
 {
     NS_ASSERTION(obj == mJSProtoObject, "huh?");
 
-    
+    // Map locking is not necessary since we are running gc.
 
     if (IsShared()) {
-        
+        // Only remove this proto from the map if it is the one in the map.
         ClassInfo2WrappedNativeProtoMap* map =
             GetScope()->GetWrappedNativeProtoMap(ClassIsMainThreadOnly());
         if (map->Find(mClassInfo) == this)
@@ -169,8 +181,8 @@ XPCWrappedNativeProto::JSProtoObjectFinalized(JSContext *cx, JSObject *obj)
 void
 XPCWrappedNativeProto::SystemIsBeingShutDown(JSContext* cx)
 {
-    
-    
+    // Note that the instance might receive this call multiple times
+    // as we walk to here from various places.
 
 #ifdef XPC_TRACK_PROTO_STATS
     static bool DEBUG_DumpedStats = false;
@@ -182,13 +194,13 @@ XPCWrappedNativeProto::SystemIsBeingShutDown(JSContext* cx)
 #endif
 
     if (mJSProtoObject) {
-        
+        // short circuit future finalization
         JS_SetPrivate(cx, mJSProtoObject, nsnull);
         mJSProtoObject = nsnull;
     }
 }
 
-
+// static
 XPCWrappedNativeProto*
 XPCWrappedNativeProto::GetNewOrUsed(XPCCallContext& ccx,
                                     XPCWrappedNativeScope* Scope,
@@ -228,7 +240,7 @@ XPCWrappedNativeProto::GetNewOrUsed(XPCCallContext& ccx,
         JSBool mainThreadOnly = !!(ciFlags & nsIClassInfo::MAIN_THREAD_ONLY);
         map = Scope->GetWrappedNativeProtoMap(mainThreadOnly);
         lock = mainThreadOnly ? nsnull : Scope->GetRuntime()->GetMapLock();
-        {   
+        {   // scoped lock
             XPCAutoLock al(lock);
             proto = map->Find(ClassInfo);
             if (proto)
@@ -249,7 +261,7 @@ XPCWrappedNativeProto::GetNewOrUsed(XPCCallContext& ccx,
     }
 
     if (shared)
-    {   
+    {   // scoped lock
         XPCAutoLock al(lock);
         map->Add(ClassInfo, proto);
     }
