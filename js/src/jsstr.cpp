@@ -124,7 +124,7 @@ Untag(JSString *str)
     return (JSRope *)(size_t(str) & ~size_t(1));
 }
 
-JS_ALWAYS_INLINE void
+void
 JSLinearString::mark(JSTracer *)
 {
     JSLinearString *str = this;
@@ -132,7 +132,7 @@ JSLinearString::mark(JSTracer *)
         str = str->asDependent().base();
 }
 
-JS_ALWAYS_INLINE void
+void
 JSString::mark(JSTracer *trc)
 {
     if (isLinear()) {
@@ -188,12 +188,6 @@ JSString::mark(JSTracer *trc)
         parent = nextParent;
         goto finish_node;
     }
-}
-
-void
-js::gc::TypedMarker(JSTracer *trc, JSString *str)
-{
-    str->mark(trc);
 }
 
 static JS_ALWAYS_INLINE size_t
