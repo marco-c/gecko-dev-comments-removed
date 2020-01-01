@@ -2286,7 +2286,7 @@ PresShell::RepaintSelection(SelectionType aType)
 NS_IMETHODIMP
 PresShell::BeginObservingDocument()
 {
-  if (mDocument) {
+  if (mDocument && !mIsDestroying) {
     mDocument->AddObserver(this);
     if (mIsDocumentGone) {
       NS_WARNING("Adding a presshell that was disconnected from the document "
@@ -2460,6 +2460,24 @@ PresShell::InitialReflow(nscoord aWidth, nscoord aHeight)
     
     
     NS_ENSURE_STATE(!mHaveShutDown);
+
+    
+    mDocument->BindingManager()->ProcessAttachedQueue();
+
+    
+    NS_ENSURE_STATE(!mHaveShutDown);
+
+    
+    
+    mFrameConstructor->ProcessPendingRestyles();
+
+    
+    NS_ENSURE_STATE(!mHaveShutDown);
+
+    
+    
+    
+    rootFrame = FrameManager()->GetRootFrame();
   }
 
   if (rootFrame) {
@@ -2508,9 +2526,6 @@ PresShell::InitialReflow(nscoord aWidth, nscoord aHeight)
                                                    nsITimer::TYPE_ONE_SHOT);
     }
   }
-
-  
-  mDocument->BindingManager()->ProcessAttachedQueue();
 
   return NS_OK; 
 }
