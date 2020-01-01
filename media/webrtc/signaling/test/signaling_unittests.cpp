@@ -2004,8 +2004,16 @@ TEST_F(SignalingTest, CheckTrickleSdpChange)
             std::string::npos);
   ASSERT_NE(a2_.getRemoteDescription().find("\r\na=candidate"),
             std::string::npos);
-  ASSERT_EQ(a1_.getLocalDescription(),a2_.getRemoteDescription());
-  ASSERT_EQ(a2_.getLocalDescription(),a1_.getRemoteDescription());
+  
+
+
+
+
+
+
+
+
+
 }
 
 TEST_F(SignalingTest, ipAddrAnyOffer)
