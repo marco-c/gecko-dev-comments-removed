@@ -17,79 +17,32 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 this.EXPORTED_SYMBOLS = [ 'helpers' ];
+var helpers = {};
+this.helpers = helpers;
+let require = (Cu.import("resource://gre/modules/devtools/Require.jsm", {})).require;
+Components.utils.import("resource:///modules/devtools/gcli.jsm", {});
 
-var test = { };
+let console = (Cu.import("resource://gre/modules/devtools/Console.jsm", {})).console;
+let TargetFactory = (Cu.import("resource:///modules/devtools/Target.jsm", {})).TargetFactory;
 
+let Promise = (Cu.import("resource://gre/modules/commonjs/sdk/core/promise.js", {})).Promise;
+let assert = { ok: ok, is: is, log: info };
 
+var util = require('util/util');
 
 
 
 
 
-let DeveloperToolbarTest = { };
 
 
 
 
-DeveloperToolbarTest.show = function DTT_show(aCallback) {
-  if (DeveloperToolbar.visible) {
-    ok(false, "DeveloperToolbar.visible at start of openDeveloperToolbar");
-  }
-  else {
-    DeveloperToolbar.show(true, aCallback);
-  }
-};
 
 
 
 
-DeveloperToolbarTest.hide = function DTT_hide() {
-  if (!DeveloperToolbar.visible) {
-    ok(false, "!DeveloperToolbar.visible at start of closeDeveloperToolbar");
-  }
-  else {
-    DeveloperToolbar.display.inputter.setInput("");
-    DeveloperToolbar.hide();
-  }
-};
 
 
 
@@ -104,568 +57,464 @@ DeveloperToolbarTest.hide = function DTT_hide() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-DeveloperToolbarTest.checkInputStatus = function DTT_checkInputStatus(checks) {
-  if (!checks.emptyParameters) {
-    checks.emptyParameters = [];
-  }
-  if (!checks.directTabText) {
-    checks.directTabText = '';
-  }
-  if (!checks.arrowTabText) {
-    checks.arrowTabText = '';
-  }
-
-  var display = DeveloperToolbar.display;
-
-  if (checks.typed) {
-    info('Starting tests for ' + checks.typed);
-    display.inputter.setInput(checks.typed);
-  }
-  else {
-    ok(false, "Missing typed for " + JSON.stringify(checks));
-    return;
-  }
-
-  if (checks.cursor) {
-    display.inputter.setCursor(checks.cursor)
-  }
-
-  var cursor = checks.cursor ? checks.cursor.start : checks.typed.length;
-
-  var requisition = display.requisition;
-  var completer = display.completer;
-  var actual = completer._getCompleterTemplateData();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (checks.status) {
-    is(requisition.getStatus().toString(),
-            checks.status,
-            'status');
-  }
-
-  if (checks.markup) {
-    var statusMarkup = requisition.getInputStatusMarkup(cursor);
-    var actualMarkup = statusMarkup.map(function(s) {
-      return Array(s.string.length + 1).join(s.status.toString()[0]);
-    }).join('');
-
-    is(checks.markup,
-            actualMarkup,
-            'markup');
-  }
-
-  if (checks.emptyParameters) {
-    var actualParams = actual.emptyParameters;
-    is(actualParams.length,
-            checks.emptyParameters.length,
-            'emptyParameters.length');
-
-    if (actualParams.length === checks.emptyParameters.length) {
-      for (var i = 0; i < actualParams.length; i++) {
-        is(actualParams[i].replace(/\u00a0/g, ' '),
-                checks.emptyParameters[i],
-                'emptyParameters[' + i + ']');
-      }
-    }
-    else {
-      info('Expected: [ \"' + actualParams.join('", "') + '" ]');
-    }
-  }
-
-  if (checks.directTabText) {
-    is(actual.directTabText,
-            checks.directTabText,
-            'directTabText');
-  }
-
-  if (checks.arrowTabText) {
-    is(actual.arrowTabText,
-            ' \u00a0\u21E5 ' + checks.arrowTabText,
-            'arrowTabText');
-  }
-
-  if (checks.args) {
-    Object.keys(checks.args).forEach(function(paramName) {
-      var check = checks.args[paramName];
-
-      var assignment;
-      if (paramName === 'command') {
-        assignment = requisition.commandAssignment;
-      }
-      else {
-        assignment = requisition.getAssignment(paramName);
-      }
-
-      if (assignment == null) {
-        ok(false, 'Unknown parameter: ' + paramName);
-        return;
-      }
-
-      if (check.value) {
-        is(assignment.value,
-                check.value,
-                'checkStatus value for ' + paramName);
-      }
-
-      if (check.name) {
-        is(assignment.value.name,
-                check.name,
-                'checkStatus name for ' + paramName);
-      }
-
-      if (check.type) {
-        is(assignment.arg.type,
-                check.type,
-                'checkStatus type for ' + paramName);
-      }
-
-      if (check.arg) {
-        is(assignment.arg.toString(),
-                check.arg,
-                'checkStatus arg for ' + paramName);
-      }
-
-      if (check.status) {
-        is(assignment.getStatus().toString(),
-                check.status,
-                'checkStatus status for ' + paramName);
-      }
-
-      if (check.message) {
-        is(assignment.getMessage(),
-                check.message,
-                'checkStatus message for ' + paramName);
-      }
-    });
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DeveloperToolbarTest.exec = function DTT_exec(tests) {
-  tests = tests || {};
-
-  if (tests.typed) {
-    DeveloperToolbar.display.inputter.setInput(tests.typed);
-  }
-
-  let typed = DeveloperToolbar.display.inputter.getInputState().typed;
-  let output = DeveloperToolbar.display.requisition.exec();
-
-  is(typed, output.typed, 'output.command for: ' + typed);
-
-  if (tests.completed !== false) {
-    ok(output.completed, 'output.completed false for: ' + typed);
-  }
-  else {
-    
-    
-    
-  }
-
-  if (tests.args != null) {
-    is(Object.keys(tests.args).length, Object.keys(output.args).length,
-       'arg count for ' + typed);
-
-    Object.keys(output.args).forEach(function(arg) {
-      let expectedArg = tests.args[arg];
-      let actualArg = output.args[arg];
-
-      if (typeof expectedArg === 'function') {
-        ok(expectedArg(actualArg), 'failed test func. ' + typed + '/' + arg);
-      }
-      else {
-        if (Array.isArray(expectedArg)) {
-          if (!Array.isArray(actualArg)) {
-            ok(false, 'actual is not an array. ' + typed + '/' + arg);
-            return;
-          }
-
-          is(expectedArg.length, actualArg.length,
-                  'array length: ' + typed + '/' + arg);
-          for (let i = 0; i < expectedArg.length; i++) {
-            is(expectedArg[i], actualArg[i],
-                    'member: "' + typed + '/' + arg + '/' + i);
-          }
-        }
-        else {
-          is(expectedArg, actualArg, 'typed: "' + typed + '" arg: ' + arg);
-        }
-      }
-    });
-  }
-
-  let displayed = DeveloperToolbar.outputPanel._div.textContent;
-
-  if (tests.outputMatch) {
-    var doTest = function(match, against) {
-      if (!match.test(against)) {
-        ok(false, "html output for " + typed + " against " + match.source +
-                " (textContent sent to info)");
-        info("Actual textContent");
-        info(against);
-      }
-    }
-    if (Array.isArray(tests.outputMatch)) {
-      tests.outputMatch.forEach(function(match) {
-        doTest(match, displayed);
-      });
-    }
-    else {
-      doTest(tests.outputMatch, displayed);
-    }
-  }
-
-  if (tests.blankOutput != null) {
-    if (!/^$/.test(displayed)) {
-      ok(false, "html output for " + typed + " (textContent sent to info)");
-      info("Actual textContent");
-      info(displayed);
-    }
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DeveloperToolbarTest.test = function DTT_test(uri, target) {
-  let menuItem = document.getElementById("menu_devToolbar");
-  let command = document.getElementById("Tools:DevToolbar");
-  let appMenuItem = document.getElementById("appmenu_devToolbar");
-
-  registerCleanupFunction(function() {
-    DeveloperToolbarTest.hide();
-
-    
-    if (menuItem) {
-      menuItem.hidden = true;
-    }
-    if (command) {
-      command.setAttribute("disabled", "true");
-    }
-    if (appMenuItem) {
-      appMenuItem.hidden = true;
-    }
-
-    
-  });
-
-  
-  if (menuItem) {
-    menuItem.hidden = false;
-  }
-  if (command) {
-    command.removeAttribute("disabled");
-  }
-  if (appMenuItem) {
-    appMenuItem.hidden = false;
-  }
+helpers.addTab = function(url, callback, options) {
+  var deferred = Promise.defer();
 
   waitForExplicitFinish();
 
-  gBrowser.selectedTab = gBrowser.addTab();
-  content.location = uri;
+  options = options || {};
+  options.chromeWindow = options.chromeWindow || window;
+  options.isFirefox = true;
 
-  let tab = gBrowser.selectedTab;
-  let browser = gBrowser.getBrowserForTab(tab);
+  var tabbrowser = options.chromeWindow.gBrowser;
+  options.tab = tabbrowser.addTab();
+  tabbrowser.selectedTab = options.tab;
+  options.browser = tabbrowser.getBrowserForTab(options.tab);
+  options.target = TargetFactory.forTab(options.tab);
 
-  var onTabLoad = function() {
-    browser.removeEventListener("load", onTabLoad, true);
+  var onPageLoad = function() {
+    options.browser.removeEventListener("load", onPageLoad, true);
+    options.document = options.browser.contentDocument;
+    options.window = options.document.defaultView;
 
-    DeveloperToolbarTest.show(function() {
-      if (helpers) {
-        helpers.setup({ display: DeveloperToolbar.display });
-      }
+    var cleanUp = function() {
+      tabbrowser.removeTab(options.tab);
 
-      if (Array.isArray(target)) {
-        try {
-          target.forEach(function(func) {
-            func(browser, tab);
-          })
-        }
-        finally {
-          DeveloperToolbarTest._checkFinish();
-        }
-      }
-      else {
-        try {
-          target(browser, tab);
-        }
-        catch (ex) {
-          ok(false, "" + ex);
-          DeveloperToolbarTest._finish();
-          throw ex;
-        }
-      }
+      delete options.window;
+      delete options.document;
+
+      delete options.target;
+      delete options.browser;
+      delete options.tab;
+
+      delete options.chromeWindow;
+      delete options.isFirefox;
+
+      deferred.resolve();
+    };
+
+    var reply = callback(options);
+    Promise.resolve(reply).then(cleanUp, function(error) {
+      ok(false, error);
+      cleanUp();
     });
-  }
+  };
 
-  browser.addEventListener("load", onTabLoad, true);
+  options.browser.contentWindow.location = url;
+  options.browser.addEventListener("load", onPageLoad, true);
+
+  return deferred.promise;
 };
 
-DeveloperToolbarTest._outstanding = [];
 
-DeveloperToolbarTest._checkFinish = function() {
-  info('_checkFinish. ' + DeveloperToolbarTest._outstanding.length + ' outstanding');
-  if (DeveloperToolbarTest._outstanding.length == 0) {
-    DeveloperToolbarTest._finish();
+
+
+
+
+
+
+helpers.addTabWithToolbar = function(url, callback, options) {
+  return helpers.addTab(url, function(innerOptions) {
+    var win = innerOptions.chromeWindow;
+    var deferred = Promise.defer();
+
+    win.DeveloperToolbar.show(true, function() {
+      innerOptions.display = win.DeveloperToolbar.display;
+
+      var cleanUp = function() {
+        win.DeveloperToolbar.hide();
+        delete innerOptions.display;
+        deferred.resolve();
+      };
+
+      var reply = callback(innerOptions);
+      Promise.resolve(reply).then(cleanUp, function(error) {
+        ok(false, error);
+        cleanUp();
+      });
+    });
+    return deferred.promise;
+  }, options);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+helpers.runTests = function(options, tests) {
+  var testNames = Object.keys(tests).filter(function(test) {
+    return test != "setup" && test != "shutdown";
+  });
+
+  var recover = function(error) {
+    console.error(error);
+  };
+
+  info("SETUP");
+  var setupDone = (tests.setup != null) ?
+      Promise.resolve(tests.setup(options)) :
+      Promise.resolve();
+
+  var testDone = setupDone.then(function() {
+    return util.promiseEach(testNames, function(testName) {
+      info(testName);
+      var action = tests[testName];
+
+      if (typeof action === "function") {
+        var reply = action.call(tests, options);
+        return Promise.resolve(reply);
+      }
+      else if (Array.isArray(action)) {
+        return helpers.audit(options, action);
+      }
+
+      return Promise.reject("test action '" + testName +
+                            "' is not a function or helpers.audit() object");
+    });
+  }, recover);
+
+  return testDone.then(function() {
+    info("SHUTDOWN");
+    return (tests.shutdown != null) ?
+        Promise.resolve(tests.shutdown(options)) :
+        Promise.resolve();
+  }, recover);
+};
+
+
+
+function checkOptions(options) {
+  if (options == null) {
+    console.trace();
+    throw new Error('Missing options object');
+  }
+  if (options.display == null) {
+    console.trace();
+    throw new Error('options object does not contain a display property');
+  }
+  if (options.display.requisition == null) {
+    console.trace();
+    throw new Error('display object does not contain a requisition');
   }
 }
-
-DeveloperToolbarTest._finish = function() {
-  info('Finish');
-  DeveloperToolbarTest.closeAllTabs();
-  finish();
-}
-
-DeveloperToolbarTest.checkCalled = function(aFunc, aScope) {
-  var todo = function() {
-    var reply = aFunc.apply(aScope, arguments);
-    DeveloperToolbarTest._outstanding = DeveloperToolbarTest._outstanding.filter(function(aJob) {
-      return aJob != todo;
-    });
-    DeveloperToolbarTest._checkFinish();
-    return reply;
-  }
-  DeveloperToolbarTest._outstanding.push(todo);
-  return todo;
-};
-
-DeveloperToolbarTest.checkNotCalled = function(aMsg, aFunc, aScope) {
-  return function() {
-    ok(false, aMsg);
-    return aFunc.apply(aScope, arguments);
-  }
-};
-
-
-
-
-DeveloperToolbarTest.closeAllTabs = function() {
-  while (gBrowser.tabs.length > 1) {
-    gBrowser.removeCurrentTab();
-  }
-};
-
-
-
-this.helpers = {};
-
-helpers._display = undefined;
-
-helpers.setup = function(options) {
-  helpers._display = options.display;
-  if (typeof ok !== 'undefined') {
-    test.ok = ok;
-    test.is = is;
-    test.log = info;
-  }
-};
-
-helpers.shutdown = function(options) {
-  helpers._display = undefined;
-};
 
 
 
 
 helpers._actual = {
-  input: function() {
-    return helpers._display.inputter.element.value;
+  input: function(options) {
+    return options.display.inputter.element.value;
   },
 
-  hints: function() {
-    var templateData = helpers._display.completer._getCompleterTemplateData();
-    var actualHints = templateData.directTabText +
-                      templateData.emptyParameters.join('') +
-                      templateData.arrowTabText;
-    return actualHints.replace(/\u00a0/g, ' ')
-                      .replace(/\u21E5/, '->')
-                      .replace(/ $/, '');
+  hints: function(options) {
+    var templateData = options.display.completer._getCompleterTemplateData();
+    var join = function(directTabText, emptyParameters, arrowTabText) {
+      return (directTabText + emptyParameters.join('') + arrowTabText)
+                .replace(/\u00a0/g, ' ')
+                .replace(/\u21E5/, '->')
+                .replace(/ $/, '');
+    };
+
+    var promisedJoin = util.promised(join);
+    return promisedJoin(templateData.directTabText,
+                        templateData.emptyParameters,
+                        templateData.arrowTabText);
   },
 
-  markup: function() {
-    var cursor = helpers._display.inputter.element.selectionStart;
-    var statusMarkup = helpers._display.requisition.getInputStatusMarkup(cursor);
+  markup: function(options) {
+    var cursor = options.display.inputter.element.selectionStart;
+    var statusMarkup = options.display.requisition.getInputStatusMarkup(cursor);
     return statusMarkup.map(function(s) {
       return Array(s.string.length + 1).join(s.status.toString()[0]);
     }).join('');
   },
 
-  cursor: function() {
-    return helpers._display.inputter.element.selectionStart;
+  cursor: function(options) {
+    return options.display.inputter.element.selectionStart;
   },
 
-  current: function() {
-    return helpers._display.requisition.getAssignmentAt(helpers._actual.cursor()).param.name;
+  current: function(options) {
+    return options.display.requisition.getAssignmentAt(helpers._actual.cursor(options)).param.name;
   },
 
-  status: function() {
-    return helpers._display.requisition.getStatus().toString();
+  status: function(options) {
+    return options.display.requisition.getStatus().toString();
   },
 
-  outputState: function() {
-    var outputData = helpers._display.focusManager._shouldShowOutput();
+  predictions: function(options) {
+    var cursor = options.display.inputter.element.selectionStart;
+    var assignment = options.display.requisition.getAssignmentAt(cursor);
+    return assignment.getPredictions().then(function(predictions) {
+      return predictions.map(function(prediction) {
+        return prediction.name;
+      });
+    });
+  },
+
+  unassigned: function(options) {
+    return options.display.requisition._unassigned.map(function(assignment) {
+      return assignment.arg.toString();
+    }.bind(this));
+  },
+
+  outputState: function(options) {
+    var outputData = options.display.focusManager._shouldShowOutput();
     return outputData.visible + ':' + outputData.reason;
   },
 
-  tooltipState: function() {
-    var tooltipData = helpers._display.focusManager._shouldShowTooltip();
+  tooltipState: function(options) {
+    var tooltipData = options.display.focusManager._shouldShowTooltip();
     return tooltipData.visible + ':' + tooltipData.reason;
+  },
+
+  options: function(options) {
+    if (options.display.tooltip.field.menu == null) {
+      return [];
+    }
+    return options.display.tooltip.field.menu.items.map(function(item) {
+      return item.name.textContent ? item.name.textContent : item.name;
+    });
+  },
+
+  message: function(options) {
+    return options.display.tooltip.errorEle.textContent;
   }
 };
 
-helpers._directToString = [ 'boolean', 'undefined', 'number' ];
+function shouldOutputUnquoted(value) {
+  var type = typeof value;
+  return value == null || type === 'boolean' || type === 'number';
+}
 
-helpers._createDebugCheck = function() {
-  var requisition = helpers._display.requisition;
+function outputArray(array) {
+  return (array.length === 0) ?
+      '[ ]' :
+      '[ \'' + array.join('\', \'') + '\' ]';
+}
+
+helpers._createDebugCheck = function(options) {
+  checkOptions(options);
+  var requisition = options.display.requisition;
   var command = requisition.commandAssignment.value;
-  var input = helpers._actual.input();
+  var cursor = helpers._actual.cursor(options);
+  var input = helpers._actual.input(options);
   var padding = Array(input.length + 1).join(' ');
 
-  var output = '';
-  output += 'helpers.setInput(\'' + input + '\');\n';
-  output += 'helpers.check({\n';
-  output += '  input:  \'' + input + '\',\n';
-  output += '  hints:  ' + padding + '\'' + helpers._actual.hints() + '\',\n';
-  output += '  markup: \'' + helpers._actual.markup() + '\',\n';
-  output += '  cursor: ' + helpers._actual.cursor() + ',\n';
-  output += '  current: \'' + helpers._actual.current() + '\',\n';
-  output += '  status: \'' + helpers._actual.status() + '\',\n';
-  output += '  outputState: \'' + helpers._actual.outputState() + '\',\n';
+  var hintsPromise = helpers._actual.hints(options);
+  var predictionsPromise = helpers._actual.predictions(options);
 
-  if (command) {
-    output += '  tooltipState: \'' + helpers._actual.tooltipState() + '\',\n';
-    output += '  args: {\n';
-    output += '    command: { name: \'' + command.name + '\' },\n';
+  return util.all(hintsPromise, predictionsPromise).then(function(values) {
+    var hints = values[0];
+    var predictions = values[1];
+    var output = '';
 
-    requisition.getAssignments().forEach(function(assignment) {
-      output += '    ' + assignment.param.name + ': { ';
+    output += 'helpers.audit(options, [\n';
+    output += '  {\n';
 
-      if (typeof assignment.value === 'string') {
-        output += 'value: \'' + assignment.value + '\', ';
-      }
-      else if (helpers._directToString.indexOf(typeof assignment.value) !== -1) {
-        output += 'value: ' + assignment.value + ', ';
-      }
-      else if (assignment.value === null) {
-        output += 'value: ' + assignment.value + ', ';
-      }
-      else {
-        output += '/*value:' + assignment.value + ',*/ ';
-      }
+    if (cursor === input.length) {
+      output += '    setup:    \'' + input + '\',\n';
+    }
+    else {
+      output += '    name: \'' + input + ' (cursor=' + cursor + ')\',\n';
+      output += '    setup: function() {\n';
+      output += '      return helpers.setInput(options, \'' + input + '\', ' + cursor + ');\n';
+      output += '    },\n';
+    }
 
-      output += 'arg: \'' + assignment.arg + '\', ';
-      output += 'status: \'' + assignment.getStatus().toString() + '\', ';
-      output += 'message: \'' + assignment.getMessage() + '\'';
-      output += ' },\n';
-    });
+    output += '    check: {\n';
 
+    output += '      input:  \'' + input + '\',\n';
+    output += '      hints:  ' + padding + '\'' + hints + '\',\n';
+    output += '      markup: \'' + helpers._actual.markup(options) + '\',\n';
+    output += '      cursor: ' + cursor + ',\n';
+    output += '      current: \'' + helpers._actual.current(options) + '\',\n';
+    output += '      status: \'' + helpers._actual.status(options) + '\',\n';
+    output += '      options: ' + outputArray(helpers._actual.options(options)) + ',\n';
+    output += '      error: \'' + helpers._actual.message(options) + '\',\n';
+    output += '      predictions: ' + outputArray(predictions) + ',\n';
+    output += '      unassigned: ' + outputArray(requisition._unassigned) + ',\n';
+    output += '      outputState: \'' + helpers._actual.outputState(options) + '\',\n';
+    output += '      tooltipState: \'' + helpers._actual.tooltipState(options) + '\'' +
+              (command ? ',' : '') +'\n';
+
+    if (command) {
+      output += '      args: {\n';
+      output += '        command: { name: \'' + command.name + '\' },\n';
+
+      requisition.getAssignments().forEach(function(assignment) {
+        output += '        ' + assignment.param.name + ': { ';
+
+        if (typeof assignment.value === 'string') {
+          output += 'value: \'' + assignment.value + '\', ';
+        }
+        else if (shouldOutputUnquoted(assignment.value)) {
+          output += 'value: ' + assignment.value + ', ';
+        }
+        else {
+          output += '/*value:' + assignment.value + ',*/ ';
+        }
+
+        output += 'arg: \'' + assignment.arg + '\', ';
+        output += 'status: \'' + assignment.getStatus().toString() + '\', ';
+        output += 'message: \'' + assignment.getMessage() + '\'';
+        output += ' },\n';
+      });
+
+      output += '      }\n';
+    }
+
+    output += '    },\n';
+    output += '    exec: {\n';
+    output += '      output: \'\',\n';
+    output += '      completed: true,\n';
+    output += '    }\n';
     output += '  }\n';
-  }
-  else {
-    output += '  tooltipState: \'' + helpers._actual.tooltipState() + '\'\n';
-  }
-  output += '});';
+    output += ']);';
 
-  return output;
+    return output;
+  }.bind(this), console.error);
 };
 
 
 
 
-
-helpers.setInput = function(typed, cursor) {
-  helpers._display.inputter.setInput(typed);
-
-  if (cursor) {
-    helpers._display.inputter.setCursor({ start: cursor, end: cursor });
-  }
-
-  helpers._display.focusManager.onInputChange();
-
-  test.log('setInput("' + typed + '"' + (cursor == null ? '' : ', ' + cursor) + ')');
+helpers.focusInput = function(options) {
+  checkOptions(options);
+  options.display.inputter.focus();
 };
 
 
 
 
-helpers.focusInput = function() {
-  helpers._display.inputter.focus();
+helpers.pressTab = function(options) {
+  checkOptions(options);
+  return helpers.pressKey(options, 9 );
 };
 
 
 
 
-helpers.pressTab = function() {
-  helpers.pressKey(9 );
+helpers.pressReturn = function(options) {
+  checkOptions(options);
+  return helpers.pressKey(options, 13 );
 };
 
 
 
 
-helpers.pressReturn = function() {
-  helpers.pressKey(13 );
-};
-
-
-
-
-helpers.pressKey = function(keyCode) {
+helpers.pressKey = function(options, keyCode) {
+  checkOptions(options);
   var fakeEvent = {
     keyCode: keyCode,
     preventDefault: function() { },
     timeStamp: new Date().getTime()
   };
-  helpers._display.inputter.onKeyDown(fakeEvent);
-  helpers._display.inputter.onKeyUp(fakeEvent);
+  options.display.inputter.onKeyDown(fakeEvent);
+  return options.display.inputter.handleKeyUp(fakeEvent);
+};
+
+
+
+
+
+var ACTIONS = {
+  '<TAB>': function(options) {
+    return helpers.pressTab(options);
+  },
+  '<RETURN>': function(options) {
+    return helpers.pressReturn(options);
+  },
+  '<UP>': function(options) {
+    return helpers.pressKey(options, 38 );
+  },
+  '<DOWN>': function(options) {
+    return helpers.pressKey(options, 40 );
+  }
+};
+
+
+
+
+
+
+var CHUNKER = /([^<]*)(<[A-Z]+>)/;
+
+
+
+
+
+
+helpers.setInput = function(options, typed, cursor) {
+  checkOptions(options);
+  var promise = undefined;
+  var inputter = options.display.inputter;
+  
+  
+  var chunkLen = 1;
+
+  
+  if (typed.indexOf('<') === -1) {
+    promise = inputter.setInput(typed);
+  }
+  else {
+    
+    
+    var chunks = typed.split(CHUNKER).filter(function(s) {
+      return s != '';
+    });
+    chunkLen = chunks.length + 1;
+
+    
+    promise = inputter.setInput('').then(function() {
+      return util.promiseEach(chunks, function(chunk) {
+        if (chunk.charAt(0) === '<') {
+          var action = ACTIONS[chunk];
+          if (typeof action !== 'function') {
+            console.error('Known actions: ' + Object.keys(ACTIONS).join());
+            throw new Error('Key action not found "' + chunk + '"');
+          }
+          return action(options);
+        }
+        else {
+          return inputter.setInput(inputter.element.value + chunk);
+        }
+      });
+    });
+  }
+
+  return promise.then(function() {
+    if (cursor != null) {
+      options.display.inputter.setCursor({ start: cursor, end: cursor });
+    }
+    else {
+      
+      
+      if (options.isJsdom) {
+        options.display.inputter.setCursor({
+          start: typed.length,
+          end: typed.length
+        });
+      }
+    }
+
+    options.display.focusManager.onInputChange();
+
+    
+    if (options.isFirefox) {
+      var cursorStr = (cursor == null ? '' : ', ' + cursor);
+      log('setInput("' + typed + '"' + cursorStr + ')');
+    }
+
+    return chunkLen;
+  });
 };
 
 
@@ -675,56 +524,101 @@ helpers.pressKey = function(keyCode) {
 
 
 
+helpers._check = function(options, name, checks) {
+  if (checks == null) {
+    return Promise.resolve();
+  }
 
+  var outstanding = [];
+  var suffix = name ? ' (for \'' + name + '\')' : '';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-helpers.check = function(checks) {
   if ('input' in checks) {
-    test.is(helpers._actual.input(), checks.input, 'input');
+    assert.is(helpers._actual.input(options), checks.input, 'input' + suffix);
   }
 
   if ('cursor' in checks) {
-    test.is(helpers._actual.cursor(), checks.cursor, 'cursor');
+    assert.is(helpers._actual.cursor(options), checks.cursor, 'cursor' + suffix);
   }
 
   if ('current' in checks) {
-    test.is(helpers._actual.current(), checks.current, 'current');
+    assert.is(helpers._actual.current(options), checks.current, 'current' + suffix);
   }
 
   if ('status' in checks) {
-    test.is(helpers._actual.status(), checks.status, 'status');
+    assert.is(helpers._actual.status(options), checks.status, 'status' + suffix);
   }
 
   if ('markup' in checks) {
-    test.is(helpers._actual.markup(), checks.markup, 'markup');
+    assert.is(helpers._actual.markup(options), checks.markup, 'markup' + suffix);
   }
 
   if ('hints' in checks) {
-    test.is(helpers._actual.hints(), checks.hints, 'hints');
+    var hintCheck = function(actualHints) {
+      assert.is(actualHints, checks.hints, 'hints' + suffix);
+    };
+    outstanding.push(helpers._actual.hints(options).then(hintCheck));
+  }
+
+  if ('predictions' in checks) {
+    var predictionsCheck = function(actualPredictions) {
+      helpers._arrayIs(actualPredictions,
+                       checks.predictions,
+                       'predictions' + suffix);
+    };
+    outstanding.push(helpers._actual.predictions(options).then(predictionsCheck));
+  }
+
+  if ('predictionsContains' in checks) {
+    var containsCheck = function(actualPredictions) {
+      checks.predictionsContains.forEach(function(prediction) {
+        var index = actualPredictions.indexOf(prediction);
+        assert.ok(index !== -1,
+                  'predictionsContains:' + prediction + suffix);
+      });
+    };
+    outstanding.push(helpers._actual.predictions(options).then(containsCheck));
+  }
+
+  if ('unassigned' in checks) {
+    helpers._arrayIs(helpers._actual.unassigned(options),
+                     checks.unassigned,
+                     'unassigned' + suffix);
   }
 
   if ('tooltipState' in checks) {
-    test.is(helpers._actual.tooltipState(), checks.tooltipState, 'tooltipState');
+    if (options.isJsdom) {
+      assert.log('Skipped ' + name + '/tooltipState due to jsdom');
+    }
+    else {
+      assert.is(helpers._actual.tooltipState(options),
+                checks.tooltipState,
+                'tooltipState' + suffix);
+    }
   }
 
   if ('outputState' in checks) {
-    test.is(helpers._actual.outputState(), checks.outputState, 'outputState');
+    if (options.isJsdom) {
+      assert.log('Skipped ' + name + '/outputState due to jsdom');
+    }
+    else {
+      assert.is(helpers._actual.outputState(options),
+                checks.outputState,
+                'outputState' + suffix);
+    }
+  }
+
+  if ('options' in checks) {
+    helpers._arrayIs(helpers._actual.options(options),
+                     checks.options,
+                     'options' + suffix);
+  }
+
+  if ('error' in checks) {
+    assert.is(helpers._actual.message(options), checks.error, 'error' + suffix);
   }
 
   if (checks.args != null) {
-    var requisition = helpers._display.requisition;
+    var requisition = options.display.requisition;
     Object.keys(checks.args).forEach(function(paramName) {
       var check = checks.args[paramName];
 
@@ -737,47 +631,63 @@ helpers.check = function(checks) {
       }
 
       if (assignment == null) {
-        test.ok(false, 'Unknown arg: ' + paramName);
+        assert.ok(false, 'Unknown arg: ' + paramName + suffix);
         return;
       }
 
       if ('value' in check) {
-        test.is(assignment.value,
-                check.value,
-                'arg.' + paramName + '.value');
+        assert.is(assignment.value,
+                  check.value,
+                  'arg.' + paramName + '.value' + suffix);
       }
 
       if ('name' in check) {
-        test.is(assignment.value.name,
-                check.name,
-                'arg.' + paramName + '.name');
+        if (options.isJsdom) {
+          assert.log('Skipped arg.' + paramName + '.name due to jsdom');
+        }
+        else {
+          assert.is(assignment.value.name,
+                    check.name,
+                    'arg.' + paramName + '.name' + suffix);
+        }
       }
 
       if ('type' in check) {
-        test.is(assignment.arg.type,
-                check.type,
-                'arg.' + paramName + '.type');
+        assert.is(assignment.arg.type,
+                  check.type,
+                  'arg.' + paramName + '.type' + suffix);
       }
 
       if ('arg' in check) {
-        test.is(assignment.arg.toString(),
-                check.arg,
-                'arg.' + paramName + '.arg');
+        assert.is(assignment.arg.toString(),
+                  check.arg,
+                  'arg.' + paramName + '.arg' + suffix);
       }
 
       if ('status' in check) {
-        test.is(assignment.getStatus().toString(),
-                check.status,
-                'arg.' + paramName + '.status');
+        assert.is(assignment.getStatus().toString(),
+                  check.status,
+                  'arg.' + paramName + '.status' + suffix);
       }
 
       if ('message' in check) {
-        test.is(assignment.getMessage(),
-                check.message,
-                'arg.' + paramName + '.message');
+        if (typeof check.message.test === 'function') {
+          assert.ok(check.message.test(assignment.getMessage()),
+                    'arg.' + paramName + '.message' + suffix);
+        }
+        else {
+          assert.is(assignment.getMessage(),
+                    check.message,
+                    'arg.' + paramName + '.message' + suffix);
+        }
       }
     });
   }
+
+  return util.all(outstanding).then(function() {
+    
+    return undefined;
+  });
 };
 
 
@@ -787,95 +697,296 @@ helpers.check = function(checks) {
 
 
 
-
-
-
-
-
-
-helpers.exec = function(tests) {
-  var requisition = helpers._display.requisition;
-  var inputter = helpers._display.inputter;
-
-  tests = tests || {};
-
-  if (tests.typed) {
-    inputter.setInput(tests.typed);
+helpers._exec = function(options, name, expected) {
+  if (expected == null) {
+    return Promise.resolve();
   }
 
-  var typed = inputter.getInputState().typed;
-  var output = requisition.exec({ hidden: true });
+  var output = options.display.requisition.exec({ hidden: true });
 
-  test.is(typed, output.typed, 'output.command for: ' + typed);
-
-  if (tests.completed !== false) {
-    test.ok(output.completed, 'output.completed false for: ' + typed);
-  }
-  else {
-    
-    
-    
-  }
-
-  if (tests.args != null) {
-    test.is(Object.keys(tests.args).length, Object.keys(output.args).length,
-            'arg count for ' + typed);
-
-    Object.keys(output.args).forEach(function(arg) {
-      var expectedArg = tests.args[arg];
-      var actualArg = output.args[arg];
-
-      if (Array.isArray(expectedArg)) {
-        if (!Array.isArray(actualArg)) {
-          test.ok(false, 'actual is not an array. ' + typed + '/' + arg);
-          return;
-        }
-
-        test.is(expectedArg.length, actualArg.length,
-                'array length: ' + typed + '/' + arg);
-        for (var i = 0; i < expectedArg.length; i++) {
-          test.is(expectedArg[i], actualArg[i],
-                  'member: "' + typed + '/' + arg + '/' + i);
-        }
-      }
-      else {
-        test.is(expectedArg, actualArg, 'typed: "' + typed + '" arg: ' + arg);
-      }
-    });
+  if ('completed' in expected) {
+    assert.is(output.completed,
+              expected.completed,
+              'output.completed false for: ' + name);
   }
 
   if (!options.window.document.createElement) {
-    test.log('skipping output tests (missing doc.createElement) for ' + typed);
-    return;
+    assert.log('skipping output tests (missing doc.createElement) for ' + name);
+    return Promise.resolve();
   }
 
-  var div = options.window.document.createElement('div');
-  output.toDom(div);
-  var displayed = div.textContent.trim();
+  if (!('output' in expected)) {
+    return Promise.resolve();
+  }
 
-  if (tests.outputMatch) {
+  var deferred = Promise.defer();
+
+  var checkOutput = function() {
+    var div = options.window.document.createElement('div');
+    output.toDom(div);
+    var actualOutput = div.textContent.trim();
+
     var doTest = function(match, against) {
       if (!match.test(against)) {
-        test.ok(false, "html output for " + typed + " against " + match.source);
-        console.log("Actual textContent");
-        console.log(against);
+        assert.ok(false, 'html output for ' + name + ' against ' + match.source);
+        log('Actual textContent');
+        log(against);
       }
+    };
+
+    if (typeof expected.output === 'string') {
+      assert.is(actualOutput,
+                expected.output,
+                'html output for ' + name);
     }
-    if (Array.isArray(tests.outputMatch)) {
-      tests.outputMatch.forEach(function(match) {
-        doTest(match, displayed);
+    else if (Array.isArray(expected.output)) {
+      expected.output.forEach(function(match) {
+        doTest(match, actualOutput);
       });
     }
     else {
-      doTest(tests.outputMatch, displayed);
+      doTest(expected.output, actualOutput);
     }
+
+    deferred.resolve();
+  };
+
+  if (output.completed !== false) {
+    checkOutput();
+  }
+  else {
+    var changed = function() {
+      if (output.completed !== false) {
+        checkOutput();
+        output.onChange.remove(changed);
+      }
+    };
+    output.onChange.add(changed);
   }
 
-  if (tests.blankOutput != null) {
-    if (!/^$/.test(displayed)) {
-      test.ok(false, "html for " + typed + " (textContent sent to info)");
-      console.log("Actual textContent");
-      console.log(displayed);
+  return deferred.promise;
+};
+
+
+
+
+helpers._setup = function(options, name, action) {
+  if (typeof action === 'string') {
+    return helpers.setInput(options, action);
+  }
+
+  if (typeof action === 'function') {
+    return Promise.resolve(action());
+  }
+
+  return Promise.reject('setup must be a string or a function');
+};
+
+
+
+
+helpers._post = function(name, action) {
+  if (typeof action === 'function') {
+    return Promise.resolve(action());
+  }
+  return Promise.resolve(action);
+};
+
+
+
+
+var totalResponseTime = 0;
+var averageOver = 0;
+var maxResponseTime = 0;
+var maxResponseCulprit = undefined;
+
+
+
+
+helpers.resetResponseTimes = function() {
+  totalResponseTime = 0;
+  averageOver = 0;
+  maxResponseTime = 0;
+  maxResponseCulprit = undefined;
+};
+
+
+
+
+Object.defineProperty(helpers, 'averageResponseTime', {
+  get: function() {
+    return averageOver === 0 ?
+        undefined :
+        Math.round(100 * totalResponseTime / averageOver) / 100;
+  },
+  enumerable: true
+});
+
+
+
+
+Object.defineProperty(helpers, 'maxResponseTime', {
+  get: function() { return Math.round(maxResponseTime * 100) / 100; },
+  enumerable: true
+});
+
+
+
+
+Object.defineProperty(helpers, 'maxResponseCulprit', {
+  get: function() { return maxResponseCulprit; },
+  enumerable: true
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+helpers.audit = function(options, audits) {
+  checkOptions(options);
+  var skipReason = null;
+  return util.promiseEach(audits, function(audit) {
+    var name = audit.name;
+    if (name == null && typeof audit.setup === 'string') {
+      name = audit.setup;
     }
+
+    if (assert.testLogging) {
+      log('- START \'' + name + '\' in ' + assert.currentTest);
+    }
+
+    if (audit.skipIf) {
+      var skip = (typeof audit.skipIf === 'function') ?
+          audit.skipIf(options) :
+          !!audit.skipIf;
+      if (skip) {
+        var reason = audit.skipIf.name ? 'due to ' + audit.skipIf.name : '';
+        assert.log('Skipped ' + name + ' ' + reason);
+        return Promise.resolve(undefined);
+      }
+    }
+
+    if (audit.skipRemainingIf) {
+      var skipRemainingIf = (typeof audit.skipRemainingIf === 'function') ?
+          audit.skipRemainingIf(options) :
+          !!audit.skipRemainingIf;
+      if (skipRemainingIf) {
+        skipReason = audit.skipRemainingIf.name ?
+            'due to ' + audit.skipRemainingIf.name :
+            '';
+        assert.log('Skipped ' + name + ' ' + skipReason);
+        return Promise.resolve(undefined);
+      }
+    }
+
+    if (skipReason != null) {
+      assert.log('Skipped ' + name + ' ' + skipReason);
+      return Promise.resolve(undefined);
+    }
+
+    var start = new Date().getTime();
+
+    var setupDone = helpers._setup(options, name, audit.setup);
+    return setupDone.then(function(chunkLen) {
+
+      if (typeof chunkLen !== 'number') {
+        chunkLen = 1;
+      }
+      var responseTime = (new Date().getTime() - start) / chunkLen;
+      totalResponseTime += responseTime;
+      if (responseTime > maxResponseTime) {
+        maxResponseTime = responseTime;
+        maxResponseCulprit = assert.currentTest + '/' + name;
+      }
+      averageOver++;
+
+      var checkDone = helpers._check(options, name, audit.check);
+      return checkDone.then(function() {
+        var execDone = helpers._exec(options, name, audit.exec);
+        return execDone.then(function() {
+          return helpers._post(name, audit.post).then(function() {
+            if (assert.testLogging) {
+              log('- END \'' + name + '\' in ' + assert.currentTest);
+            }
+          });
+        });
+      });
+    });
+  }).then(null, function(ex) {
+    console.error(ex.stack);
+    throw(ex);
+  });
+};
+
+
+
+
+helpers._arrayIs = function(actual, expected, message) {
+  assert.ok(Array.isArray(actual), 'actual is not an array: ' + message);
+  assert.ok(Array.isArray(expected), 'expected is not an array: ' + message);
+
+  if (!Array.isArray(actual) || !Array.isArray(expected)) {
+    return;
+  }
+
+  assert.is(actual.length, expected.length, 'array length: ' + message);
+
+  for (var i = 0; i < actual.length && i < expected.length; i++) {
+    assert.is(actual[i], expected[i], 'member[' + i + ']: ' + message);
   }
 };
+
+
+
+
+function log(message) {
+  if (typeof info === 'function') {
+    info(message);
+  }
+  else {
+    console.log(message);
+  }
+}
+
+

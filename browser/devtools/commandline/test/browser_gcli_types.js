@@ -26,47 +26,37 @@ var exports = {};
 const TEST_URI = "data:text/html;charset=utf-8,<p id='gcli-input'>gcli-testTypes.js</p>";
 
 function test() {
-  var tests = Object.keys(exports);
-  
-  tests.sort(function(t1, t2) {
-    if (t1 == "setup" || t2 == "shutdown") return -1;
-    if (t2 == "setup" || t1 == "shutdown") return 1;
-    return 0;
-  });
-  info("Running tests: " + tests.join(", "))
-  tests = tests.map(function(test) { return exports[test]; });
-  DeveloperToolbarTest.test(TEST_URI, tests, true);
+  helpers.addTabWithToolbar(TEST_URI, function(options) {
+    return helpers.runTests(options, exports);
+  }).then(finish);
 }
 
 
 
+'use strict';
+
 
 var types = require('gcli/types');
 
-exports.setup = function() {
-};
-
-exports.shutdown = function() {
-};
-
-function forEachType(options, callback) {
+function forEachType(options, typeSpec, callback) {
   types.getTypeNames().forEach(function(name) {
-    options.name = name;
+    typeSpec.name = name;
+    typeSpec.requisition = options.display.requisition;
 
     
     if (name === 'selection') {
-      options.data = [ 'a', 'b' ];
+      typeSpec.data = [ 'a', 'b' ];
     }
-    else if (name === 'deferred') {
-      options.defer = function() {
+    else if (name === 'delegate') {
+      typeSpec.delegateType = function() {
         return types.getType('string');
       };
     }
     else if (name === 'array') {
-      options.subtype = 'string';
+      typeSpec.subtype = 'string';
     }
 
-    var type = types.getType(options);
+    var type = types.getType(typeSpec);
     callback(type);
   });
 }
@@ -77,7 +67,7 @@ exports.testDefault = function(options) {
     return;
   }
 
-  forEachType({}, function(type) {
+  forEachType(options, {}, function(type) {
     var blank = type.getBlank().value;
 
     
@@ -99,9 +89,10 @@ exports.testDefault = function(options) {
 };
 
 exports.testNullDefault = function(options) {
-  forEachType({ defaultValue: null }, function(type) {
+  forEachType(options, { defaultValue: null }, function(type) {
     assert.is(type.stringify(null), '', 'stringify(null) for ' + type.name);
   });
 };
+
 
 
