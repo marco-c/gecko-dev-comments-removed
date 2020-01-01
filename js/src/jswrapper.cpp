@@ -1,43 +1,43 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=99:
- *
- * ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla SpiderMonkey JavaScript 1.9 code, released
- * May 28, 2008.
- *
- * The Initial Developer of the Original Code is
- *   Mozilla Foundation
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Andreas Gal <gal@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "jsapi.h"
 #include "jscntxt.h"
@@ -210,7 +210,7 @@ JSWrapper::get(JSContext *cx, JSObject *wrapper, JSObject *receiver, jsid id, Va
 bool
 JSWrapper::set(JSContext *cx, JSObject *wrapper, JSObject *receiver, jsid id, Value *vp)
 {
-    // FIXME (bug 596351): Need deal with strict mode.
+    
     SET(wrappedObject(wrapper)->setProperty(cx, id, vp, false));
 }
 
@@ -310,7 +310,7 @@ JSWrapper::New(JSContext *cx, JSObject *obj, JSObject *proto, JSObject *parent,
                           obj->isCallable() ? obj : NULL, NULL);
 }
 
-/* Compartments. */
+
 
 namespace js {
 
@@ -318,7 +318,7 @@ extern JSObject *
 TransparentObjectWrapper(JSContext *cx, JSObject *obj, JSObject *wrappedProto, JSObject *parent,
                          uintN flags)
 {
-    // Allow wrapping outer window proxies.
+    
     JS_ASSERT(!obj->isWrapper() || obj->getClass()->ext.innerObject);
     return JSWrapper::New(cx, obj, wrappedProto, parent, &JSCrossCompartmentWrapper::singleton);
 }
@@ -381,9 +381,10 @@ AutoCompartment::leave()
     entered = false;
 }
 
-/* Cross compartment wrappers. */
 
-JSCrossCompartmentWrapper::JSCrossCompartmentWrapper(uintN flags) : JSWrapper(flags)
+
+JSCrossCompartmentWrapper::JSCrossCompartmentWrapper(uintN flags)
+  : JSWrapper(CROSS_COMPARTMENT | flags)
 {
 }
 
@@ -512,10 +513,10 @@ JSCrossCompartmentWrapper::enumerateOwn(JSContext *cx, JSObject *wrapper, AutoId
            call.origin->wrap(cx, props));
 }
 
-/*
- * We can reify non-escaping iterator objects instead of having to wrap them. This
- * allows fast iteration over objects across a compartment boundary.
- */
+
+
+
+
 static bool
 CanReify(Value *vp)
 {
@@ -531,16 +532,16 @@ Reify(JSContext *cx, JSCompartment *origin, Value *vp)
     JSObject *iterObj = &vp->toObject();
     NativeIterator *ni = iterObj->getNativeIterator();
 
-    /* Wrap the iteratee. */
+    
     JSObject *obj = ni->obj;
     if (!origin->wrap(cx, &obj))
         return false;
 
-    /*
-     * Wrap the elements in the iterator's snapshot.
-     * N.B. the order of closing/creating iterators is important due to the
-     * implicit cx->enumerators state.
-     */
+    
+
+
+
+
 
     if (ni->isKeyIter()) {
         size_t length = ni->numKeys();
