@@ -1,47 +1,48 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Indexed Database.
- *
- * The Initial Developer of the Original Code is
- * The Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Ben Turner <bent.mozilla@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "IDBTransaction.h"
 
 #include "nsIScriptContext.h"
 
 #include "mozilla/storage.h"
+#include "nsContentUtils.h"
 #include "nsDOMClassInfoID.h"
 #include "nsDOMLists.h"
 #include "nsEventDispatcher.h"
@@ -74,8 +75,8 @@ DoomCachedStatements(const nsACString& aQuery,
   return PL_DHASH_REMOVE;
 }
 
-// This runnable doesn't actually do anything beyond "prime the pump" and get
-// transactions in the right order on the transaction thread pool.
+
+
 class StartTransactionRunnable : public nsIRunnable
 {
 public:
@@ -83,12 +84,12 @@ public:
 
   NS_IMETHOD Run()
   {
-    // NOP
+    
     return NS_OK;
   }
 };
 
-// Could really use those NS_REFCOUNTING_HAHA_YEAH_RIGHT macros here.
+
 NS_IMETHODIMP_(nsrefcnt) StartTransactionRunnable::AddRef()
 {
   return 2;
@@ -103,9 +104,9 @@ NS_IMPL_QUERY_INTERFACE1(StartTransactionRunnable, nsIRunnable)
 
 StartTransactionRunnable gStartTransactionRunnable;
 
-} // anonymous namespace
+} 
 
-// static
+
 already_AddRefed<IDBTransaction>
 IDBTransaction::Create(IDBDatabase* aDatabase,
                        nsTArray<nsString>& aObjectStoreNames,
@@ -116,8 +117,9 @@ IDBTransaction::Create(IDBDatabase* aDatabase,
 
   nsRefPtr<IDBTransaction> transaction = new IDBTransaction();
 
-  transaction->mScriptContext = aDatabase->ScriptContext();
-  transaction->mOwner = aDatabase->Owner();
+  transaction->mScriptContext = aDatabase->GetScriptContext();
+  transaction->mOwner = aDatabase->GetOwner();
+  transaction->mScriptOwner = aDatabase->GetScriptOwner();
 
   transaction->mDatabase = aDatabase;
   transaction->mMode = aMode;
@@ -139,7 +141,7 @@ IDBTransaction::Create(IDBDatabase* aDatabase,
       do_QueryInterface(NS_GetCurrentThread());
     NS_ENSURE_TRUE(thread, nsnull);
 
-    // We need the current recursion depth first.
+    
     PRUint32 depth;
     nsresult rv = thread->GetRecursionDepth(&depth);
     NS_ENSURE_SUCCESS(rv, nsnull);
@@ -184,6 +186,8 @@ IDBTransaction::~IDBTransaction()
   NS_ASSERTION(!mConnection, "Should have called CommitOrRollback!");
   NS_ASSERTION(!mCreating, "Should have been cleared already!");
   NS_ASSERTION(mFiredCompleteOrAbort, "Should have fired event!");
+
+  nsContentUtils::ReleaseWrapper(static_cast<nsIDOMEventTarget*>(this), this);
 }
 
 void
@@ -410,18 +414,18 @@ IDBTransaction::IsOpen() const
 {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 
-  // If we haven't started anything then we're open.
+  
   if (mReadyState == nsIIDBTransaction::INITIAL) {
     NS_ASSERTION(AsyncConnectionHelper::GetCurrentTransaction() != this,
                  "This should be some other transaction (or null)!");
     return true;
   }
 
-  // If we've already started then we need to check to see if we still have the
-  // mCreating flag set. If we do (i.e. we haven't returned to the event loop
-  // from the time we were created) then we are open. Otherwise check the
-  // currently running transaction to see if it's the same. We only allow other
-  // requests to be made if this transaction is currently running.
+  
+  
+  
+  
+  
   if (mReadyState == nsIIDBTransaction::LOADING) {
     if (mCreating) {
       return true;
@@ -474,27 +478,25 @@ IDBTransaction::ClearCreatedFileInfos()
 NS_IMPL_CYCLE_COLLECTION_CLASS(IDBTransaction)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(IDBTransaction,
-                                                  nsDOMEventTargetHelper)
+                                                  IDBWrapperCache)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE_NSCOMPTR_AMBIGUOUS(mDatabase,
                                                        nsIDOMEventTarget)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_NSCOMPTR(mOnErrorListener)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_NSCOMPTR(mOnCompleteListener)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_NSCOMPTR(mOnAbortListener)
+  NS_CYCLE_COLLECTION_TRAVERSE_EVENT_HANDLER(error)
+  NS_CYCLE_COLLECTION_TRAVERSE_EVENT_HANDLER(complete)
+  NS_CYCLE_COLLECTION_TRAVERSE_EVENT_HANDLER(abort)
 
   for (PRUint32 i = 0; i < tmp->mCreatedObjectStores.Length(); i++) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mCreatedObjectStores[i]");
     cb.NoteXPCOMChild(static_cast<nsIIDBObjectStore*>(
                       tmp->mCreatedObjectStores[i].get()));
   }
-
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(IDBTransaction,
-                                                nsDOMEventTargetHelper)
-  // Don't unlink mDatabase!
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mOnErrorListener)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mOnCompleteListener)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_NSCOMPTR(mOnAbortListener)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(IDBTransaction, IDBWrapperCache)
+  
+  NS_CYCLE_COLLECTION_UNLINK_EVENT_HANDLER(error)
+  NS_CYCLE_COLLECTION_UNLINK_EVENT_HANDLER(complete)
+  NS_CYCLE_COLLECTION_UNLINK_EVENT_HANDLER(abort)
 
   tmp->mCreatedObjectStores.Clear();
 
@@ -504,12 +506,16 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(IDBTransaction)
   NS_INTERFACE_MAP_ENTRY(nsIIDBTransaction)
   NS_INTERFACE_MAP_ENTRY(nsIThreadObserver)
   NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(IDBTransaction)
-NS_INTERFACE_MAP_END_INHERITING(nsDOMEventTargetHelper)
+NS_INTERFACE_MAP_END_INHERITING(IDBWrapperCache)
 
-NS_IMPL_ADDREF_INHERITED(IDBTransaction, nsDOMEventTargetHelper)
-NS_IMPL_RELEASE_INHERITED(IDBTransaction, nsDOMEventTargetHelper)
+NS_IMPL_ADDREF_INHERITED(IDBTransaction, IDBWrapperCache)
+NS_IMPL_RELEASE_INHERITED(IDBTransaction, IDBWrapperCache)
 
 DOMCI_DATA(IDBTransaction, IDBTransaction)
+
+NS_IMPL_EVENT_HANDLER(IDBTransaction, error);
+NS_IMPL_EVENT_HANDLER(IDBTransaction, complete);
+NS_IMPL_EVENT_HANDLER(IDBTransaction, abort);
 
 NS_IMETHODIMP
 IDBTransaction::GetDb(nsIIDBDatabase** aDB)
@@ -600,8 +606,8 @@ IDBTransaction::Abort()
 {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 
-  // We can't use IsOpen here since we need it to be possible to call Abort()
-  // even from outside of transaction callbacks.
+  
+  
   if (mReadyState != IDBTransaction::INITIAL &&
       mReadyState != IDBTransaction::LOADING) {
     return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
@@ -613,64 +619,17 @@ IDBTransaction::Abort()
   mReadyState = nsIIDBTransaction::DONE;
 
   if (Mode() == nsIIDBTransaction::VERSION_CHANGE) {
-    // If a version change transaction is aborted, the db must be closed
+    
     mDatabase->Close();
   }
 
-  // Fire the abort event if there are no outstanding requests. Otherwise the
-  // abort event will be fired when all outstanding requests finish.
+  
+  
   if (needToCommitOrRollback) {
     return CommitOrRollback();
   }
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-IDBTransaction::SetOnerror(nsIDOMEventListener* aErrorListener)
-{
-  return RemoveAddEventListener(NS_LITERAL_STRING(ERROR_EVT_STR),
-                                mOnErrorListener, aErrorListener);
-}
-
-NS_IMETHODIMP
-IDBTransaction::GetOnerror(nsIDOMEventListener** aErrorListener)
-{
-  return GetInnerEventListener(mOnErrorListener, aErrorListener);
-}
-
-NS_IMETHODIMP
-IDBTransaction::GetOncomplete(nsIDOMEventListener** aOncomplete)
-{
-  NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-
-  return GetInnerEventListener(mOnCompleteListener, aOncomplete);
-}
-
-NS_IMETHODIMP
-IDBTransaction::SetOncomplete(nsIDOMEventListener* aOncomplete)
-{
-  NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-
-  return RemoveAddEventListener(NS_LITERAL_STRING(COMPLETE_EVT_STR),
-                                mOnCompleteListener, aOncomplete);
-}
-
-NS_IMETHODIMP
-IDBTransaction::GetOnabort(nsIDOMEventListener** aOnabort)
-{
-  NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-
-  return GetInnerEventListener(mOnAbortListener, aOnabort);
-}
-
-NS_IMETHODIMP
-IDBTransaction::SetOnabort(nsIDOMEventListener* aOnabort)
-{
-  NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-
-  return RemoveAddEventListener(NS_LITERAL_STRING(ABORT_EVT_STR),
-                                mOnAbortListener, aOnabort);
 }
 
 nsresult
@@ -681,7 +640,7 @@ IDBTransaction::PreHandleEvent(nsEventChainPreVisitor& aVisitor)
   return NS_OK;
 }
 
-// XXX Once nsIThreadObserver gets split this method will disappear.
+
 NS_IMETHODIMP
 IDBTransaction::OnDispatchedEvent(nsIThreadInternal* aThread)
 {
@@ -712,10 +671,10 @@ IDBTransaction::AfterProcessNextEvent(nsIThreadInternal* aThread,
   NS_ASSERTION(mCreating, "Should be true!");
 
   if (aRecursionDepth == mCreatedRecursionDepth) {
-    // We're back at the event loop, no longer newborn.
+    
     mCreating = false;
 
-    // Maybe set the readyState to DONE if there were no requests generated.
+    
     if (mReadyState == nsIIDBTransaction::INITIAL) {
       mReadyState = nsIIDBTransaction::DONE;
 
@@ -724,7 +683,7 @@ IDBTransaction::AfterProcessNextEvent(nsIThreadInternal* aThread,
       }
     }
 
-    // No longer need to observe thread events.
+    
     if(NS_FAILED(aThread->RemoveObserver(this))) {
       NS_ERROR("Failed to remove observer!");
     }
@@ -766,8 +725,8 @@ CommitHelper::Run()
 
     mTransaction->mReadyState = nsIIDBTransaction::DONE;
 
-    // Release file infos on the main thread, so they will eventually get
-    // destroyed on correct thread.
+    
+    
     mTransaction->ClearCreatedFileInfos();
     if (mUpdateFileRefcountFunction) {
       mUpdateFileRefcountFunction->ClearFileInfoEntries();
@@ -777,9 +736,9 @@ CommitHelper::Run()
     nsCOMPtr<nsIDOMEvent> event;
     if (mAborted) {
       if (mTransaction->Mode() == nsIIDBTransaction::VERSION_CHANGE) {
-        // This will make the database take a snapshot of it's DatabaseInfo
+        
         mTransaction->Database()->Close();
-        // Then remove the info from the hash as it contains invalid data.
+        
         DatabaseInfo::Remove(mTransaction->Database()->Id());
       }
 
@@ -801,7 +760,7 @@ CommitHelper::Run()
     mTransaction->mFiredCompleteOrAbort = true;
 #endif
 
-    // Tell the listener (if we have one) that we're done
+    
     if (mListener) {
       mListener->NotifyTransactionComplete(mTransaction);
     }
@@ -817,7 +776,7 @@ CommitHelper::Run()
   }
 
   if (mConnection) {
-    IndexedDatabaseManager::SetCurrentWindow(database->Owner());
+    IndexedDatabaseManager::SetCurrentWindow(database->GetOwner());
 
     if (!mAborted && mUpdateFileRefcountFunction &&
         NS_FAILED(mUpdateFileRefcountFunction->UpdateDatabase(mConnection))) {
