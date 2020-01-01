@@ -1,39 +1,39 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is mozilla.org code.
-#
-# The Initial Developer of the Original Code is Joel Maher.
-#
-# Portions created by the Initial Developer are Copyright (C) 2010
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-# Joel Maher <joel.maher@gmail.com> (Original Developer)
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -152,18 +152,18 @@ class RemoteOptions(MochitestOptions):
         if (options.remoteLogFile.count('/') < 1):
             options.remoteLogFile = options.remoteTestRoot + '/' + options.remoteLogFile
 
-        # remoteAppPath or app must be specified to find the product to launch
+        
         if (options.remoteAppPath and options.app):
             print "ERROR: You cannot specify both the remoteAppPath and the app setting"
             return None
         elif (options.remoteAppPath):
             options.app = options.remoteTestRoot + "/" + options.remoteAppPath
         elif (options.app == None):
-            # Neither remoteAppPath nor app are set -- error
+            
             print "ERROR: You must specify either appPath or app"
             return None
 
-        # Only reset the xrePath if it wasn't provided
+        
         if (options.xrePath == None):
             if (automation._product == "fennec"):
                 options.xrePath = productRoot + "/xulrunner"
@@ -175,7 +175,7 @@ class RemoteOptions(MochitestOptions):
             f.write("%s" % os.getpid())
             f.close()
 
-        # Robocop specific options
+        
         if options.robocop != "":
             if not os.path.exists(options.robocop):
                 print "ERROR: Unable to find specified manifest '%s'" % options.robocop
@@ -191,7 +191,7 @@ class RemoteOptions(MochitestOptions):
         return options
 
     def verifyOptions(self, options, mochitest):
-        # since we are reusing verifyOptions, it will exit if App is not found
+        
         temp = options.app
         options.app = sys.argv[0]
         tempPort = options.httpPort
@@ -224,6 +224,7 @@ class MochiRemote(Mochitest):
         self._dm.getFile(self.remoteLog, self.localLog)
         self._dm.removeFile(self.remoteLog)
         self._dm.removeDir(self.remoteProfile)
+
         if (options.pidFile != ""):
             try:
                 os.remove(options.pidFile)
@@ -313,7 +314,7 @@ class MochiRemote(Mochitest):
         options.logFile = self.remoteLog
         options.profilePath = self.localProfile
         retVal = Mochitest.buildURLOptions(self, options, env)
-        #we really need testConfig.js (for browser chrome)
+        
         if self._dm.pushDir(options.profilePath, self.remoteProfile) == None:
             raise devicemanager.FileError("Unable to copy profile to device.")
 
@@ -376,7 +377,7 @@ def main():
     
     if options.robocop != "":
         mp = manifestparser.TestManifest(strict=False)
-        # TODO: pull this in dynamically
+        
         mp.read(options.robocop)
         robocop_tests = mp.active_tests(exists=False)
 
@@ -386,9 +387,14 @@ def main():
         fHandle.close()
         deviceRoot = dm.getDeviceRoot()
       
-        # Note, we are pushing to /sdcard since we have this location hard coded in robocop
+        
+        dm.removeFile("/sdcard/fennec_ids.txt")
+        dm.removeFile("/sdcard/robotium.config")
         dm.pushFile("robotium.config", "/sdcard/robotium.config")
-        dm.pushFile(os.path.abspath(options.robocop + "/fennec_ids.txt"), "/sdcard/fennec_ids.txt")
+        fennec_ids = os.path.abspath("fennec_ids.txt")
+        if not os.path.exists(fennec_ids) and options.robocopPath:
+            fennec_ids = os.path.abspath(os.path.join(options.robocopPath, "fennec_ids.txt"))
+        dm.pushFile(fennec_ids, "/sdcard/fennec_ids.txt")
         options.extraPrefs.append('robocop.logfile="%s/robocop.log"' % deviceRoot)
 
         if (options.dm_trans == 'adb' and options.robocopPath):
@@ -410,14 +416,22 @@ def main():
                 print "TEST-UNEXPECTED-ERROR | %s | Exception caught while running robocop tests." % sys.exc_info()[1]
                 mochitest.stopWebServer(options)
                 mochitest.stopWebSocketServer(options)
+                try:
+                    self.cleanup(None, options)
+                except:
+                    pass
                 sys.exit(1)
     else:
       try:
         retVal = mochitest.runTests(options)
       except:
-        print "TEST-UNEXPECTED-ERROR | | Exception caught while running tests."
+        print "TEST-UNEXPECTED-ERROR | %s | Exception caught while running tests." % sys.exc_info()[1]
         mochitest.stopWebServer(options)
         mochitest.stopWebSocketServer(options)
+        try:
+            self.cleanup(None, options)
+        except:
+            pass
         sys.exit(1)
 
     sys.exit(retVal)
