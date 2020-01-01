@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: sw=4 ts=4 et :
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef dom_plugins_PluginInstanceParent_h
 #define dom_plugins_PluginInstanceParent_h 1
@@ -89,10 +89,6 @@ public:
     DeallocPPluginStream(PPluginStreamParent* stream);
 
     virtual bool
-    AnswerNPN_GetValue_NPNVjavascriptEnabledBool(bool* value, NPError* result);
-    virtual bool
-    AnswerNPN_GetValue_NPNVisOfflineBool(bool* value, NPError* result);
-    virtual bool
     AnswerNPN_GetValue_NPNVnetscapeWindow(NativeWindowHandle* value,
                                           NPError* result);
     virtual bool
@@ -158,7 +154,7 @@ public:
     virtual bool
     RecvNPN_InvalidateRect(const NPRect& rect);
 
-    // Async rendering
+    
     virtual bool
     RecvShow(const NPRect& updatedRect,
              const SurfaceDescriptor& newSurface,
@@ -288,11 +284,11 @@ public:
     void DidComposite() { unused << SendNPP_DidComposite(); }
 
 private:
-    // Create an appropriate platform surface for a background of size
-    // |aSize|.  Return true if successful.
+    
+    
     bool CreateBackground(const nsIntSize& aSize);
     void DestroyBackground();
-    SurfaceDescriptor BackgroundDescriptor() /*const*/;
+    SurfaceDescriptor BackgroundDescriptor() ;
 
     typedef mozilla::layers::ImageContainer ImageContainer;
     ImageContainer *GetImageContainer();
@@ -323,12 +319,12 @@ private:
 
 #if defined(OS_WIN)
 private:
-    // Used in rendering windowless plugins in other processes.
+    
     bool SharedSurfaceSetWindow(const NPWindow* aWindow, NPRemoteWindow& aRemoteWindow);
     void SharedSurfaceBeforePaint(RECT &rect, NPRemoteEvent& npremoteevent);
     void SharedSurfaceAfterPaint(NPEvent* npevent);
     void SharedSurfaceRelease();
-    // Used in handling parent/child forwarding of events.
+    
     static LRESULT CALLBACK PluginWindowHookProc(HWND hWnd, UINT message,
                                                  WPARAM wParam, LPARAM lParam);
     void SubclassPluginWindow(HWND aWnd);
@@ -342,9 +338,9 @@ private:
     WNDPROC            mPluginWndProc;
     bool               mNestedEventState;
 
-    // This will automatically release the textures when this object goes away.
+    
     nsRefPtrHashtable<nsPtrHashKey<void>, ID3D10Texture2D> mTextureMap;
-#endif // defined(XP_WIN)
+#endif 
 #if defined(MOZ_WIDGET_COCOA)
 private:
     Shmem                  mShSurface; 
@@ -353,26 +349,26 @@ private:
     CGColorSpaceRef        mShColorSpace;
     RefPtr<MacIOSurface> mIOSurface;
     RefPtr<MacIOSurface> mFrontIOSurface;
-#endif // definied(MOZ_WIDGET_COCOA)
+#endif 
 
-    // ObjectFrame layer wrapper
+    
     nsRefPtr<gfxASurface>    mFrontSurface;
-    // For windowless+transparent instances, this surface contains a
-    // "pretty recent" copy of the pixels under its <object> frame.
-    // On the plugin side, we use this surface to avoid doing alpha
-    // recovery when possible.  This surface is created and owned by
-    // the browser, but a "read-only" reference is sent to the plugin.
-    //
-    // We have explicitly chosen not to provide any guarantees about
-    // the consistency of the pixels in |mBackground|.  A plugin may
-    // be able to observe partial updates to the background.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     nsRefPtr<gfxASurface>    mBackground;
 
     nsRefPtr<ImageContainer> mImageContainer;
 };
 
 
-} // namespace plugins
-} // namespace mozilla
+} 
+} 
 
-#endif // ifndef dom_plugins_PluginInstanceParent_h
+#endif 
