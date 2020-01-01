@@ -221,6 +221,28 @@ struct TITLEBARINFOEX
 };
 #endif
 
+namespace mozilla {
+namespace widget {
+
+struct MSGResult
+{
+  
+  LRESULT& mResult;
+  
+  bool mConsumed;
+
+  MSGResult(LRESULT* aResult = nullptr) :
+    mResult(aResult ? *aResult : mDefaultResult), mConsumed(false)
+  {
+  }
+
+private:
+  LRESULT mDefaultResult;
+};
+
+} 
+} 
+
 
 
 
