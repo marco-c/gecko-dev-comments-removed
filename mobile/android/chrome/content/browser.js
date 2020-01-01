@@ -1610,10 +1610,26 @@ var SelectionHandler = {
     }
   },
 
+  _ignoreCollapsedSelection: false,
+
   notifySelectionChanged: function sh_notifySelectionChanged(aDoc, aSel, aReason) {
-    
-    if (aSel == "" && aReason == Ci.nsISelectionListener.NO_REASON)
+    if (aSel.isCollapsed) {
+      
+      if (this._ignoreCollapsedSelection)
+        return;
+
+      
+      
+      if (aReason & Ci.nsISelectionListener.MOUSEDOWN_REASON) {
+        this._ignoreCollapsedSelection = true;
+        return;
+      }
+
+      
       this.endSelection();
+    }
+
+    this._ignoreCollapsedSelection = false;
   },
 
   
@@ -1770,12 +1786,16 @@ var SelectionHandler = {
     this.hideHandles();
 
     let selectedText = "";
+    let pointInSelection = false;
     if (this._view) {
       let selection = this._view.getSelection();
       if (selection) {
         
+        selectedText = selection.toString().trim();
+
+        
         if (arguments.length == 2 && this._pointInSelection(aX, aY))
-          selectedText = selection.toString().trim();
+          pointInSelection = true;
 
         selection.removeAllRanges();
         selection.QueryInterface(Ci.nsISelectionPrivate).removeSelectionListener(this);
@@ -1783,7 +1803,7 @@ var SelectionHandler = {
     }
 
     
-    if (selectedText.length) {
+    if (pointInSelection && selectedText.length) {
       let element = ElementTouchHelper.anyElementFromPoint(BrowserApp.selectedBrowser.contentWindow, aX, aY);
       
       if (element.ownerDocument.defaultView == this._view) {
