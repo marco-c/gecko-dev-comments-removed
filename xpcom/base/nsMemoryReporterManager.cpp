@@ -1,41 +1,41 @@
-/* -*- Mode: C++; tab-width: 50; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is mozilla.org code.
- *
- * The Initial Developer of the Original Code is
- * mozilla.org
- * Portions created by the Initial Developer are Copyright (C) 2008
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Vladimir Vukicevic <vladimir@pobox.com> (original author)
- *   Nicholas Nethercote <nnethercote@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsAtomTable.h"
 #include "nsAutoPtr.h"
@@ -68,16 +68,16 @@ static PRInt64 GetExplicit()
 #  elif defined(XP_LINUX)
 #    define HAVE_JEMALLOC_STATS 1
 #    include "jemalloc_types.h"
-// jemalloc is directly linked into firefox-bin; libxul doesn't link
-// with it.  So if we tried to use jemalloc_stats directly here, it
-// wouldn't be defined.  Instead, we don't include the jemalloc header
-// and weakly link against jemalloc_stats.
+
+
+
+
 extern "C" {
 extern void jemalloc_stats(jemalloc_stats_t* stats)
   NS_VISIBILITY_DEFAULT __attribute__((weak));
 }
-#  endif  // XP_LINUX
-#endif  // MOZ_MEMORY
+#  endif  
+#endif  
 
 #if defined(XP_LINUX) || defined(XP_MACOSX) || defined(SOLARIS)
 
@@ -113,8 +113,8 @@ static PRInt64 GetSoftPageFaults()
 #include <unistd.h>
 static PRInt64 GetProcSelfStatmField(int n)
 {
-    // There are more than two fields, but we're only interested in the first
-    // two.
+    
+    
     static const int MAX_FIELD = 2;
     size_t fields[MAX_FIELD];
     NS_ASSERTION(n < MAX_FIELD, "bad field number");
@@ -154,13 +154,13 @@ static void XMappingIter(PRInt64& Vsize, PRInt64& Resident)
         if (!fstat(mapfd, &st)) {
             int nmap = st.st_size / sizeof(prxmap_t);
             while (1) {
-                // stat(2) on /proc/<pid>/xmap returns an incorrect value,
-                // prior to the release of Solaris 11.
-                // Here is a workaround for it.
+                
+                
+                
                 nmap *= 2;
                 prmapp = (prxmap_t*)malloc((nmap + 1) * sizeof(prxmap_t));
                 if (!prmapp) {
-                    // out of memory
+                    
                     break;
                 }
                 int n = pread(mapfd, prmapp, (nmap + 1) * sizeof(prxmap_t), 0);
@@ -211,9 +211,9 @@ static bool GetTaskBasicInfo(struct task_basic_info *ti)
     return kr == KERN_SUCCESS;
 }
 
-// The VSIZE figure on Mac includes huge amounts of shared memory and is always
-// absurdly high, eg. 2GB+ even at start-up.  But both 'top' and 'ps' report
-// it, so we might as well too.
+
+
+
 static PRInt64 GetVsize()
 {
     task_basic_info ti;
@@ -223,13 +223,13 @@ static PRInt64 GetVsize()
 static PRInt64 GetResident()
 {
 #ifdef HAVE_JEMALLOC_STATS
-    // If we're using jemalloc on Mac, we need to instruct jemalloc to purge
-    // the pages it has madvise(MADV_FREE)'d before we read our RSS.  The OS
-    // will take away MADV_FREE'd pages when there's memory pressure, so they
-    // shouldn't count against our RSS.
-    //
-    // Purging these pages shouldn't take more than 10ms or so, but we want to
-    // keep an eye on it since GetResident() is called on each Telemetry ping.
+    
+    
+    
+    
+    
+    
+    
     {
       Telemetry::AutoTimer<Telemetry::MEMORY_FREE_PURGED_PAGES_MS> timer;
       jemalloc_purge_freed_pages();
@@ -367,11 +367,11 @@ NS_MEMORY_REPORTER_IMPLEMENT(Resident,
     "kernel and so is best used for comparing the memory usage of a single "
     "process at different points in time.")
 
-/**
- ** memory reporter implementation for jemalloc and OSX malloc,
- ** to obtain info on total memory in use (that we know about,
- ** at least -- on OSX, there are sometimes other zones in use).
- **/
+
+
+
+
+
 
 #if HAVE_JEMALLOC_STATS
 
@@ -460,9 +460,9 @@ static PRInt64 GetHeapAllocated()
 static PRInt64 GetHeapZone0Committed()
 {
 #ifdef MOZ_DMD
-    // malloc_zone_statistics() crashes when run under DMD because Valgrind
-    // doesn't intercept it.  This measurement isn't important for DMD, so
-    // don't even try.
+    
+    
+    
     return (PRInt64) -1;
 #else
     malloc_statistics_t stats;
@@ -474,7 +474,7 @@ static PRInt64 GetHeapZone0Committed()
 static PRInt64 GetHeapZone0Used()
 {
 #ifdef MOZ_DMD
-    // See comment in GetHeapZone0Committed above.
+    
     return (PRInt64) -1;
 #else
     malloc_statistics_t stats;
@@ -538,11 +538,11 @@ static PRInt64 GetAtomTableSize() {
   return NS_SizeOfAtomTableIncludingThis(AtomTableMallocSizeOf);
 }
 
-// Why is this here?  At first glance, you'd think it could be defined and
-// registered with nsMemoryReporterManager entirely within nsAtomTable.cpp.
-// However, the obvious time to register it is when the table is initialized,
-// and that happens before XPCOM components are initialized, which means the
-// NS_RegisterMemoryReporter call fails.  So instead we do it here.
+
+
+
+
+
 NS_MEMORY_REPORTER_IMPLEMENT(AtomTable,
     "explicit/atom-table",
     KIND_HEAP,
@@ -550,9 +550,9 @@ NS_MEMORY_REPORTER_IMPLEMENT(AtomTable,
     GetAtomTableSize,
     "Memory used by the atoms table.")
 
-/**
- ** nsMemoryReporterManager implementation
- **/
+
+
+
 
 NS_IMPL_THREADSAFE_ISUPPORTS1(nsMemoryReporterManager, nsIMemoryReporterManager)
 
@@ -694,8 +694,8 @@ struct MemoryReport {
 };
 
 #ifdef DEBUG
-// This is just a wrapper for PRInt64 that implements nsISupports, so it can be
-// passed to nsIMemoryMultiReporter::CollectReports.
+
+
 class PRInt64Wrapper : public nsISupports {
 public:
     NS_DECL_ISUPPORTS
@@ -740,8 +740,8 @@ nsMemoryReporterManager::GetExplicit(PRInt64 *aExplicit)
     nsresult rv;
     bool more;
 
-    // Get "heap-allocated" and all the KIND_NONHEAP measurements from normal
-    // (i.e. non-multi) "explicit" reporters.
+    
+    
     PRInt64 heapAllocated = PRInt64(-1);
     PRInt64 explicitNonHeapNormalSize = 0;
     nsCOMPtr<nsISimpleEnumerator> e;
@@ -758,8 +758,8 @@ nsMemoryReporterManager::GetExplicit(PRInt64 *aExplicit)
         rv = r->GetPath(path);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        // We're only interested in NONHEAP explicit reporters and
-        // the 'heap-allocated' reporter.
+        
+        
         if (kind == nsIMemoryReporter::KIND_NONHEAP &&
             path.Find("explicit") == 0)
         {
@@ -767,8 +767,8 @@ nsMemoryReporterManager::GetExplicit(PRInt64 *aExplicit)
             rv = r->GetAmount(&amount);
             NS_ENSURE_SUCCESS(rv, rv);
 
-            // Just skip any NONHEAP reporters that fail, because
-            // "heap-allocated" is the most important one.
+            
+            
             if (amount != PRInt64(-1)) {
                 explicitNonHeapNormalSize += amount;
             }
@@ -776,8 +776,8 @@ nsMemoryReporterManager::GetExplicit(PRInt64 *aExplicit)
             rv = r->GetAmount(&heapAllocated);
             NS_ENSURE_SUCCESS(rv, rv);
 
-            // If we don't have "heap-allocated", give up, because the result would be
-            // horribly inaccurate.
+            
+            
             if (heapAllocated == PRInt64(-1)) {
                 *aExplicit = PRInt64(-1);
                 return NS_OK;
@@ -785,15 +785,15 @@ nsMemoryReporterManager::GetExplicit(PRInt64 *aExplicit)
         }
     }
 
-    // For each multi-reporter we could call CollectReports and filter out the
-    // non-explicit, non-NONHEAP measurements.  But that's lots of wasted work,
-    // so we instead use GetExplicitNonHeap() which exists purely for this
-    // purpose.
-    //
-    // (Actually, in debug builds we also do it the slow way and compare the
-    // result to the result obtained from GetExplicitNonHeap().  This
-    // guarantees the two measurement paths are equivalent.  This is wise
-    // because it's easy for memory reporters to have bugs.)
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     PRInt64 explicitNonHeapMultiSize = 0;
     nsCOMPtr<nsISimpleEnumerator> e2;
@@ -821,9 +821,17 @@ nsMemoryReporterManager::GetExplicit(PRInt64 *aExplicit)
     }
     PRInt64 explicitNonHeapMultiSize2 = wrappedExplicitNonHeapMultiSize2->mValue;
 
-    // Check the two measurements give the same result.
-    NS_ASSERTION(explicitNonHeapMultiSize == explicitNonHeapMultiSize2,
-                 "The two measurements of 'explicit' memory usage don't match");
+    
+    
+    
+    if (explicitNonHeapMultiSize != explicitNonHeapMultiSize2) {
+        char *msg = PR_smprintf("The two measurements of 'explicit' memory "
+                                "usage don't match (%lld vs %lld)",
+                                explicitNonHeapMultiSize,
+                                explicitNonHeapMultiSize2);
+        NS_WARNING(msg);
+        PR_smprintf_free(msg);
+    }
 #endif
 
     *aExplicit = heapAllocated + explicitNonHeapNormalSize + explicitNonHeapMultiSize;
@@ -950,7 +958,7 @@ public:
                         const nsACString &aDescription,
                         nsISupports *aData)
     {
-        // Do nothing;  the reporter has already reported to DMD.
+        
         return NS_OK;
     }
 };
@@ -965,7 +973,7 @@ DMDCheckAndDump()
     nsCOMPtr<nsIMemoryReporterManager> mgr =
         do_GetService("@mozilla.org/memory-reporter-manager;1");
 
-    // Do vanilla reporters.
+    
     nsCOMPtr<nsISimpleEnumerator> e;
     mgr->EnumerateReporters(getter_AddRefs(e));
     bool more;
@@ -973,12 +981,12 @@ DMDCheckAndDump()
         nsCOMPtr<nsIMemoryReporter> r;
         e->GetNext(getter_AddRefs(r));
 
-        // Just getting the amount is enough for the reporter to report to DMD.
+        
         PRInt64 amount;
         (void)r->GetAmount(&amount);
     }
 
-    // Do multi-reporters.
+    
     nsCOMPtr<nsISimpleEnumerator> e2;
     mgr->EnumerateMultiReporters(getter_AddRefs(e2));
     nsRefPtr<NullMultiReporterCallback> cb = new NullMultiReporterCallback();
@@ -991,6 +999,6 @@ DMDCheckAndDump()
     VALGRIND_DMD_CHECK_REPORTING;
 }
 
-#endif  /* defined(MOZ_DMD) */
+#endif  
 
 }
