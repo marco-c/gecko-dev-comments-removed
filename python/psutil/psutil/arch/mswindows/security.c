@@ -7,8 +7,6 @@
 
 
 
-
-
 #include <windows.h>
 #include <Python.h>
 
@@ -68,10 +66,8 @@ int HasSystemPrivilege(HANDLE hProcess) {
     
     
     pBuffer = (BYTE *) malloc(dwSize);
-
     if (pBuffer == NULL) {
-        PyErr_SetFromWindowsErr(0);
-        free(pBuffer);
+        PyErr_NoMemory();
         return -1;
     }
 
@@ -237,4 +233,3 @@ int UnsetSeDebug()
     CloseHandle(hToken);
     return 1;
 }
-
