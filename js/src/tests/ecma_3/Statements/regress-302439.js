@@ -650,9 +650,9 @@ function productList(catID,famID) {
     switch(parseInt(famID)) {
 
     case 259 :                     
-      try { addBoxItem(document.Support_Form.Product_ID, 'DVD±RW Dual 8X', '9599'); } catch(e) {addBoxItem(document.Support_Form.Product_ID, '1', '2');  } 
+      try { addBoxItem(document.Support_Form.Product_ID, 'DVDÂ±RW Dual 8X', '9599'); } catch(e) {addBoxItem(document.Support_Form.Product_ID, '1', '2');  } 
 
-      try { addBoxItem(document.Support_Form.Product_ID, 'DVD±RW Dual 8x8', '10305'); } catch(e) {addBoxItem(document.Support_Form.Product_ID, '1', '2');  } 
+      try { addBoxItem(document.Support_Form.Product_ID, 'DVDÂ±RW Dual 8x8', '10305'); } catch(e) {addBoxItem(document.Support_Form.Product_ID, '1', '2');  } 
 
       try { addBoxItem(document.Support_Form.Product_ID, 'DVD+RW Dual External 8x8', '10583'); } catch(e) {addBoxItem(document.Support_Form.Product_ID, '1', '2');  } 
 

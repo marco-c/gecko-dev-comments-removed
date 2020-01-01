@@ -56,11 +56,11 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 
 
-new TestCase ( SECTION, "'àOĞ ê:i¢Ø'.match(new RegExp('.+'))",
-	       String(['àOĞ ê:i¢Ø']), String('àOĞ ê:i¢Ø'.match(new RegExp('.+'))));
+new TestCase ( SECTION, "'Ã OÃ Ãª:iÂ¢Ã˜'.match(new RegExp('.+'))",
+	       String(['Ã OÃ Ãª:iÂ¢Ã˜']), String('Ã OÃ Ãª:iÂ¢Ã˜'.match(new RegExp('.+'))));
 
 
-var string1 = 'àOĞ ê:i¢Ø';
+var string1 = 'Ã OÃ Ãª:iÂ¢Ã˜';
 new TestCase ( SECTION, "string1 = " + string1 + " string1.match(string1)",
 	       String([string1]), String(string1.match(string1)));
 
