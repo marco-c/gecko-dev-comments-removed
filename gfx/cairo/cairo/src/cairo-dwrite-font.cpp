@@ -468,7 +468,7 @@ _cairo_dwrite_font_face_scaled_font_create (void			*abstract_face,
     
     
     
-    switch (_cairo_win32_get_system_text_quality()) {
+    switch (cairo_win32_get_system_text_quality()) {
 	case CLEARTYPE_QUALITY:
 	    default_quality = CAIRO_ANTIALIAS_SUBPIXEL;
 	    break;
