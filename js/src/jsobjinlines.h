@@ -311,16 +311,28 @@ JSObject::getArrayLength() const
     return (uint32)(size_t) getPrivate();
 }
 
-inline void
+inline bool
 JSObject::setArrayLength(JSContext *cx, uint32 length)
 {
     JS_ASSERT(isArray());
-    setPrivate((void*) length);
 
-    if (length > INT32_MAX) {
-        cx->addTypePropertyId(getType(), ATOM_TO_JSID(cx->runtime->atomState.lengthAtom),
-                              js::types::TYPE_DOUBLE);
+    if (length > INT32_MAX &&
+        !cx->addTypePropertyId(getType(), ATOM_TO_JSID(cx->runtime->atomState.lengthAtom),
+                               js::types::TYPE_DOUBLE)) {
+        return false;
     }
+
+    setPrivate((void*) length);
+    return true;
+}
+
+inline void
+JSObject::setDenseArrayLength(uint32 length)
+{
+    
+    JS_ASSERT(isDenseArray());
+    JS_ASSERT(length <= INT32_MAX);
+    setPrivate((void*) length);
 }
 
 inline uint32
