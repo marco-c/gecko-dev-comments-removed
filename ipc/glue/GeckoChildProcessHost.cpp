@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "GeckoChildProcessHost.h"
 
@@ -45,15 +45,15 @@ using mozilla::MonitorAutoLock;
 using mozilla::ipc::GeckoChildProcessHost;
 
 #ifdef ANDROID
-// Like its predecessor in nsExceptionHandler.cpp, this is
-// the magic number of a file descriptor remapping we must
-// preserve for the child process.
+
+
+
 static const int kMagicAndroidSystemPropFd = 5;
 #endif
 
 static const bool kLowRightsSubprocesses =
-  // We currently only attempt to drop privileges on gonk, because we
-  // have no plugins or extensions to worry about breaking.
+  
+  
 #ifdef MOZ_WIDGET_GONK
   true
 #else
@@ -76,7 +76,7 @@ struct RunnableMethodTraits<GeckoChildProcessHost>
 
 GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
                                              ChildPrivileges aPrivileges)
-  : ChildProcessHost(RENDER_PROCESS), // FIXME/cjones: we should own this enum
+  : ChildProcessHost(RENDER_PROCESS), 
     mProcessType(aProcessType),
     mPrivileges(aPrivileges),
     mMonitor("mozilla.ipc.GeckChildProcessHost.mMonitor"),
@@ -105,7 +105,7 @@ GeckoChildProcessHost::~GeckoChildProcessHost()
   if (mChildProcessHandle > 0)
     ProcessWatcher::EnsureProcessTerminated(mChildProcessHandle
 #if defined(NS_BUILD_REFCNT_LOGGING)
-                                            , false // don't "force"
+                                            , false 
 #endif
     );
 
@@ -133,8 +133,8 @@ void GetPathToBinary(FilePath& exePath)
 #endif
         exePath = FilePath(path.get());
 #ifdef MOZ_WIDGET_COCOA
-        // We need to use an App Bundle on OS X so that we can hide
-        // the dock icon. See Bug 557225.
+        
+        
         exePath = exePath.AppendASCII(MOZ_CHILD_PROCESS_BUNDLE);
 #endif
       }
@@ -169,7 +169,7 @@ private:
 };
 #endif
 
-nsresult GeckoChildProcessHost::GetArchitecturesForBinary(const char *path, uint32 *result)
+nsresult GeckoChildProcessHost::GetArchitecturesForBinary(const char *path, uint32_t *result)
 {
   *result = 0;
 
@@ -217,12 +217,12 @@ nsresult GeckoChildProcessHost::GetArchitecturesForBinary(const char *path, uint
 #endif
 }
 
-uint32 GeckoChildProcessHost::GetSupportedArchitecturesForProcessType(GeckoProcessType type)
+uint32_t GeckoChildProcessHost::GetSupportedArchitecturesForProcessType(GeckoProcessType type)
 {
 #ifdef MOZ_WIDGET_COCOA
   if (type == GeckoProcessType_Plugin) {
-    // Cache this, it shouldn't ever change.
-    static uint32 pluginContainerArchs = 0;
+    
+    static uint32_t pluginContainerArchs = 0;
     if (pluginContainerArchs == 0) {
       FilePath exePath;
       GetPathToBinary(exePath);
@@ -256,9 +256,9 @@ GeckoChildProcessHost::PrepareLaunch()
 #ifdef XP_WIN
 void GeckoChildProcessHost::InitWindowsGroupID()
 {
-  // On Win7+, pass the application user model to the child, so it can
-  // register with it. This insures windows created by the container
-  // properly group with the parent app on the Win7 taskbar.
+  
+  
+  
   nsCOMPtr<nsIWinTaskbar> taskbarInfo =
     do_GetService(NS_TASKBAR_CONTRACTID);
   if (taskbarInfo) {
@@ -288,14 +288,14 @@ GeckoChildProcessHost::SyncLaunch(std::vector<std::string> aExtraOpts, int aTime
                    NewRunnableMethod(this,
                                      &GeckoChildProcessHost::PerformAsyncLaunch,
                                      aExtraOpts, arch));
-  // NB: this uses a different mechanism than the chromium parent
-  // class.
+  
+  
   MonitorAutoLock lock(mMonitor);
   PRIntervalTime waitStart = PR_IntervalNow();
   PRIntervalTime current;
 
-  // We'll receive several notifications, we need to exit when we
-  // have either successfully launched or have timed out.
+  
+  
   while (mProcessState < PROCESS_CONNECTED) {
     lock.Wait(timeoutTicks);
 
@@ -324,8 +324,8 @@ GeckoChildProcessHost::AsyncLaunch(std::vector<std::string> aExtraOpts)
                                      &GeckoChildProcessHost::PerformAsyncLaunch,
                                      aExtraOpts, base::GetCurrentProcessArchitecture()));
 
-  // This may look like the sync launch wait, but we only delay as
-  // long as it takes to create the channel.
+  
+  
   MonitorAutoLock lock(mMonitor);
   while (mProcessState < CHANNEL_INITIALIZED) {
     lock.Wait();
@@ -366,13 +366,13 @@ GeckoChildProcessHost::InitializeChannel()
 
 int32_t GeckoChildProcessHost::mChildCounter = 0;
 
-//
-// Wrapper function for handling GECKO_SEPARATE_NSPR_LOGS
-//
+
+
+
 bool
 GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, base::ProcessArchitecture arch)
 {
-  // If separate NSPR log files are not requested, we're done.
+  
   const char* origLogName = PR_GetEnv("NSPR_LOG_FILE");
   const char* separateLogs = PR_GetEnv("GECKO_SEPARATE_NSPR_LOGS");
   if (!origLogName || !separateLogs || !*separateLogs ||
@@ -380,31 +380,31 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, b
     return PerformAsyncLaunchInternal(aExtraOpts, arch);
   }
 
-  // We currently have no portable way to launch child with environment
-  // different than parent.  So temporarily change NSPR_LOG_FILE so child
-  // inherits value we want it to have. (NSPR only looks at NSPR_LOG_FILE at
-  // startup, so it's 'safe' to play with the parent's environment this way.)
+  
+  
+  
+  
   nsAutoCString setChildLogName("NSPR_LOG_FILE=");
   setChildLogName.Append(origLogName);
 
-  // remember original value so we can restore it.
-  // - buffer needs to be permanently allocated for PR_SetEnv()
-  // - Note: this code is not called re-entrantly, nor are restoreOrigLogName
-  //   or mChildCounter touched by any other thread, so this is safe.
+  
+  
+  
+  
   static char* restoreOrigLogName = 0;
   if (!restoreOrigLogName)
     restoreOrigLogName = strdup(setChildLogName.get());
 
-  // Append child-specific postfix to name
+  
   setChildLogName.AppendLiteral(".child-");
   setChildLogName.AppendInt(++mChildCounter);
 
-  // Passing temporary to PR_SetEnv is ok here because env gets copied
-  // by exec, etc., to permanent storage in child when process launched.
+  
+  
   PR_SetEnv(setChildLogName.get());
   bool retval = PerformAsyncLaunchInternal(aExtraOpts, arch);
 
-  // Revert to original value
+  
   PR_SetEnv(restoreOrigLogName);
 
   return retval;
@@ -413,16 +413,16 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, b
 bool
 GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExtraOpts, base::ProcessArchitecture arch)
 {
-  // We rely on the fact that InitializeChannel() has already been processed
-  // on the IO thread before this point is reached.
+  
+  
   if (!GetChannel()) {
     return false;
   }
 
   base::ProcessHandle process;
 
-  // send the child the PID so that it can open a ProcessHandle back to us.
-  // probably don't want to do this in the long run
+  
+  
   char pidstring[32];
   PR_snprintf(pidstring, sizeof(pidstring) - 1,
 	      "%ld", base::Process::Current().pid());
@@ -430,13 +430,13 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   const char* const childProcessType =
       XRE_ChildProcessTypeToString(mProcessType);
 
-//--------------------------------------------------
+
 #if defined(OS_POSIX)
-  // For POSIX, we have to be extremely anal about *not* using
-  // std::wstring in code compiled with Mozilla's -fshort-wchar
-  // configuration, because chromium is compiled with -fno-short-wchar
-  // and passing wstrings from one config to the other is unsafe.  So
-  // we split the logic here.
+  
+  
+  
+  
+  
 
 #if defined(OS_LINUX) || defined(OS_MACOSX) || defined(OS_BSD)
   base::environment_map newEnvVars;
@@ -445,10 +445,10 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     privs = kLowRightsSubprocesses ?
             base::PRIVILEGES_UNPRIVILEGED : base::PRIVILEGES_INHERIT;
   }
-  // XPCOM may not be initialized in some subprocesses.  We don't want
-  // to initialize XPCOM just for the directory service, especially
-  // since LD_LIBRARY_PATH is already set correctly in subprocesses
-  // (meaning that we don't need to set that up in the environment).
+  
+  
+  
+  
   if (ShouldHaveDirectoryService()) {
     nsCOMPtr<nsIProperties> directoryService(do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
     NS_ASSERTION(directoryService, "Expected XPCOM to be available");
@@ -461,7 +461,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 # if defined(OS_LINUX) || defined(OS_BSD)
 #  if defined(MOZ_WIDGET_ANDROID) || defined(OS_BSD)
         path += "/lib";
-#  endif  // MOZ_WIDGET_ANDROID
+#  endif  
         const char *ld_library_path = PR_GetEnv("LD_LIBRARY_PATH");
         nsCString new_ld_lib_path;
         if (ld_library_path && *ld_library_path) {
@@ -474,16 +474,16 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         }
 # elif OS_MACOSX
         newEnvVars["DYLD_LIBRARY_PATH"] = path.get();
-        // XXX DYLD_INSERT_LIBRARIES should only be set when launching a plugin
-        //     process, and has no effect on other subprocesses (the hooks in
-        //     libplugin_child_interpose.dylib become noops).  But currently it
-        //     gets set when launching any kind of subprocess.
-        //
-        // Trigger "dyld interposing" for the dylib that contains
-        // plugin_child_interpose.mm.  This allows us to hook OS calls in the
-        // plugin process (ones that don't work correctly in a background
-        // process).  Don't break any other "dyld interposing" that has already
-        // been set up by whatever may have launched the browser.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         const char* prevInterpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
         nsCString interpose;
         if (prevInterpose) {
@@ -493,17 +493,17 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         interpose.Append(path.get());
         interpose.AppendLiteral("/libplugin_child_interpose.dylib");
         newEnvVars["DYLD_INSERT_LIBRARIES"] = interpose.get();
-# endif  // OS_LINUX
+# endif  
       }
     }
   }
-#endif  // OS_LINUX || OS_MACOSX
+#endif  
 
   FilePath exePath;
   GetPathToBinary(exePath);
 
 #ifdef MOZ_WIDGET_ANDROID
-  // The java wrapper unpacks this for us but can't make it executable
+  
   chmod(exePath.value().c_str(), 0700);
   int cacheCount = 0;
   const struct lib_cache_info * cache = getLibraryCache();
@@ -516,15 +516,15 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     cacheStr.AppendPrintf(":%d;", cache->fd);
     cache++;
   }
-  // fill the last arg with something if there's no cache
+  
   if (cacheStr.IsEmpty())
     cacheStr.AppendLiteral("-");
-#endif  // MOZ_WIDGET_ANDROID
+#endif  
 
 #ifdef ANDROID
-  // Remap the Android property workspace to a well-known int,
-  // and update the environment to reflect the new value for the
-  // child process.
+  
+  
+  
   const char *apws = getenv("ANDROID_PROPERTY_WORKSPACE");
   if (apws) {
     int fd = atoi(apws);
@@ -536,22 +536,22 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     snprintf(buf, sizeof(buf), "%d%s", kMagicAndroidSystemPropFd, szptr);
     newEnvVars["ANDROID_PROPERTY_WORKSPACE"] = buf;
   }
-#endif  // ANDROID
+#endif  
 
 #ifdef MOZ_WIDGET_GONK
   if (const char *ldPreloadPath = getenv("LD_PRELOAD")) {
     newEnvVars["LD_PRELOAD"] = ldPreloadPath;
   }
-#endif // MOZ_WIDGET_GONK
+#endif 
 
-  // remap the IPC socket fd to a well-known int, as the OS does for
-  // STDOUT_FILENO, for example
+  
+  
   int srcChannelFd, dstChannelFd;
   channel().GetClientFileDescriptorMapping(&srcChannelFd, &dstChannelFd);
   mFileMap.push_back(std::pair<int,int>(srcChannelFd, dstChannelFd));
 
-  // no need for kProcessChannelID, the child process inherits the
-  // other end of the socketpair() from us
+  
+  
 
   std::vector<std::string> childArgv;
 
@@ -560,8 +560,8 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   childArgv.insert(childArgv.end(), aExtraOpts.begin(), aExtraOpts.end());
 
   if (Omnijar::IsInitialized()) {
-    // Make sure that child processes can find the omnijar
-    // See XRE_InitCommandLine in nsAppRunner.cpp
+    
+    
     nsAutoCString path;
     nsCOMPtr<nsIFile> file = Omnijar::GetPath(Omnijar::GRE);
     if (file && NS_SUCCEEDED(file->GetNativePath(path))) {
@@ -585,24 +585,24 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     return false;
   if (0 <= childCrashFd) {
     mFileMap.push_back(std::pair<int,int>(childCrashFd, childCrashRemapFd));
-    // "true" == crash reporting enabled
+    
     childArgv.push_back("true");
   }
   else {
-    // "false" == crash reporting disabled
+    
     childArgv.push_back("false");
   }
 #  elif defined(MOZ_WIDGET_COCOA)
   childArgv.push_back(CrashReporter::GetChildNotificationPipe());
-#  endif  // OS_LINUX
+#  endif  
 #endif
 
 #ifdef MOZ_WIDGET_COCOA
-  // Add a mach port to the command line so the child can communicate its
-  // 'task_t' back to the parent.
-  //
-  // Put a random number into the channel name, so that a compromised renderer
-  // can't pretend being the child that's forked off.
+  
+  
+  
+  
+  
   std::string mach_connection_name = StringPrintf("org.mozilla.machname.%d",
                                                   base::RandInt(0, std::numeric_limits<int>::max()));
   childArgv.push_back(mach_connection_name.c_str());
@@ -621,7 +621,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
                   false, &process, arch);
 
 #ifdef MOZ_WIDGET_COCOA
-  // Wait for the child process to send us its 'task_t' data.
+  
   const int kTimeoutMs = 10000;
 
   MachReceiveMessage child_message;
@@ -645,7 +645,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   }
   MachPortSender parent_sender(child_message.GetTranslatedPort(1));
 
-  MachSendMessage parent_message(/* id= */0);
+  MachSendMessage parent_message(0);
   if (!parent_message.AddDescriptor(bootstrap_port)) {
     LOG(ERROR) << "parent AddDescriptor(" << bootstrap_port << ") failed.";
     return false;
@@ -659,7 +659,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   }
 #endif
 
-//--------------------------------------------------
+
 #elif defined(OS_WIN)
 
   FilePath exePath;
@@ -677,8 +677,8 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   cmdLine.AppendLooseValue(std::wstring(mGroupId.get()));
 
   if (Omnijar::IsInitialized()) {
-    // Make sure the child process can find the omnijar
-    // See XRE_InitCommandLine in nsAppRunner.cpp
+    
+    
     nsAutoString path;
     nsCOMPtr<nsIFile> file = Omnijar::GetPath(Omnijar::GRE);
     if (file && NS_SUCCEEDED(file->GetPath(path))) {
@@ -713,9 +713,9 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     lock.Notify();
     return false;
   }
-  // NB: on OS X, we block much longer than we need to in order to
-  // reach this call, waiting for the child process's task_t.  The
-  // best way to fix that is to refactor this file, hard.
+  
+  
+  
   SetHandle(process);
 #if defined(MOZ_WIDGET_COCOA)
   mChildTask = child_task;
@@ -744,7 +744,7 @@ GeckoChildProcessHost::OpenPrivilegedHandle(base::ProcessId aPid)
 }
 
 void
-GeckoChildProcessHost::OnChannelConnected(int32 peer_pid)
+GeckoChildProcessHost::OnChannelConnected(int32_t peer_pid)
 {
   OpenPrivilegedHandle(peer_pid);
   {
@@ -757,24 +757,24 @@ GeckoChildProcessHost::OnChannelConnected(int32 peer_pid)
 void
 GeckoChildProcessHost::OnMessageReceived(const IPC::Message& aMsg)
 {
-  // We never process messages ourself, just save them up for the next
-  // listener.
+  
+  
   mQueue.push(aMsg);
 }
 
 void
 GeckoChildProcessHost::OnChannelError()
 {
-  // FIXME/bug 773925: save up this error for the next listener.
+  
 }
 
 void
 GeckoChildProcessHost::GetQueuedMessages(std::queue<IPC::Message>& queue)
 {
-  // If this is called off the IO thread, bad things will happen.
+  
   DCHECK(MessageLoopForIO::current());
   swap(queue, mQueue);
-  // We expect the next listener to take over processing of our queue.
+  
 }
 
 void
