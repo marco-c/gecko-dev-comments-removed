@@ -1,7 +1,7 @@
-/* -*- Mode: c++; tab-width: 40; indent-tabs-mode: nil; c-basic-offset: 4; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef nsAppShell_h__
 #define nsAppShell_h__
@@ -49,7 +49,6 @@ public:
     nsresult AddObserver(const nsAString &aObserverKey, nsIObserver *aObserver);
     void CallObserver(const nsAString &aObserverKey, const nsAString &aTopic, const nsAString &aData);
     void RemoveObserver(const nsAString &aObserverKey);
-    void NotifyObservers(nsISupports *aSupports, const char *aTopic, const PRUnichar *aData);
     void ResendLastResizeEvent(nsWindow* aDest);
 
     void SetBrowserApp(nsIAndroidBrowserApp* aBrowserApp) {
@@ -80,5 +79,5 @@ protected:
     nsCOMPtr<nsIAndroidBrowserApp> mBrowserApp;
 };
 
-#endif // nsAppShell_h__
+#endif 
 
