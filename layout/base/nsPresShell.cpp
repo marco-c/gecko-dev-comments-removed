@@ -4591,13 +4591,14 @@ PresShell::FlushPendingNotifications(mozFlushType aType)
   if (isSafeToFlush && mViewManager) {
     
     
+    nsCOMPtr<nsIPresShell> kungFuDeathGrip(this);
+
+    
+    
     
     mViewManager->BeginUpdateViewBatch();
 
     if (aType & Flush_StyleReresolves) {
-      
-      
-      nsCOMPtr<nsIPresShell> kungFuDeathGrip(this);
       mFrameConstructor->ProcessPendingRestyles();
       if (mIsDestroying) {
         
@@ -4610,6 +4611,12 @@ PresShell::FlushPendingNotifications(mozFlushType aType)
     if (aType & Flush_OnlyReflow) {
       mFrameConstructor->RecalcQuotesAndCounters();
       ProcessReflowCommands(PR_FALSE);
+      if (mIsDestroying) {
+        
+        
+        
+        return NS_OK;
+      }
     }
 
     PRUint32 updateFlags = NS_VMREFRESH_NO_SYNC;
