@@ -2934,10 +2934,6 @@ void nsGfxScrollFrameInner::CurPosAttributeChanged(nsIContent* aContent)
                (mVScrollbarBox && mVScrollbarBox->GetContent() == aContent),
                "unexpected child");
 
-  if (mScrollbarActivity) {
-    mScrollbarActivity->ActivityOccurred();
-  }
-
   
   
   
@@ -2968,6 +2964,10 @@ void nsGfxScrollFrameInner::CurPosAttributeChanged(nsIContent* aContent)
   
   if (allowedRange.ClampPoint(current) == current) {
     return;
+  }
+
+  if (mScrollbarActivity) {
+    mScrollbarActivity->ActivityOccurred();
   }
 
   bool isSmooth = aContent->HasAttr(kNameSpaceID_None, nsGkAtoms::smooth);
