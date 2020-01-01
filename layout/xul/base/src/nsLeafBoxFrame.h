@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #ifndef nsLeafBoxFrame_h___
 #define nsLeafBoxFrame_h___
 
@@ -27,8 +27,8 @@ public:
   virtual nsIAtom* GetType() const MOZ_OVERRIDE;
   virtual bool IsFrameOfType(uint32_t aFlags) const MOZ_OVERRIDE
   {
-    // This is bogus, but it's what we've always done.
-    // Note that nsLeafFrame is also eReplacedContainsBlock.
+    
+    
     return nsLeafFrame::IsFrameOfType(aFlags &
       ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock | nsIFrame::eXULBox));
   }
@@ -37,13 +37,13 @@ public:
   NS_IMETHOD GetFrameName(nsAString& aResult) const MOZ_OVERRIDE;
 #endif
 
-  // nsIHTMLReflow overrides
+  
 
   virtual void MarkIntrinsicWidthsDirty() MOZ_OVERRIDE;
   virtual nscoord GetMinWidth(nsRenderingContext *aRenderingContext) MOZ_OVERRIDE;
   virtual nscoord GetPrefWidth(nsRenderingContext *aRenderingContext) MOZ_OVERRIDE;
 
-  // Our auto size is that provided by nsFrame, not nsLeafFrame
+  
   virtual nsSize ComputeAutoSize(nsRenderingContext *aRenderingContext,
                                  nsSize aCBSize, nscoord aAvailableWidth,
                                  nsSize aMargin, nsSize aBorder,
@@ -61,9 +61,9 @@ public:
                nsIFrame*        aParent,
                nsIFrame*        asPrevInFlow) MOZ_OVERRIDE;
 
-  NS_IMETHOD BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                              const nsRect&           aDirtyRect,
-                              const nsDisplayListSet& aLists) MOZ_OVERRIDE;
+  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                const nsRect&           aDirtyRect,
+                                const nsDisplayListSet& aLists) MOZ_OVERRIDE;
 
   NS_IMETHOD AttributeChanged(int32_t aNameSpaceID,
                               nsIAtom* aAttribute,
@@ -88,6 +88,6 @@ private:
  void UpdateMouseThrough();
 
 
-}; // class nsLeafBoxFrame
+}; 
 
-#endif /* nsLeafBoxFrame_h___ */
+#endif 
