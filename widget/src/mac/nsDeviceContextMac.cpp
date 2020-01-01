@@ -373,7 +373,7 @@ NS_IMETHODIMP nsDeviceContextMac::GetDepth(PRUint32& aDepth)
    
   PRInt32 depth;
   mPrimaryScreen->GetPixelDepth ( &depth );
-  aDepth = NS_STATIC_CAST ( PRUint32, depth );
+  aDepth = static_cast<PRUint32>(depth);
     
   return NS_OK;
 }
@@ -467,8 +467,8 @@ NS_IMETHODIMP nsDeviceContextMac::GetDeviceSurfaceDimensions(PRInt32 & outWidth,
 
 	if( mSpec ) {
 	  
-		outWidth = NS_STATIC_CAST(PRInt32, (mPageRect.right-mPageRect.left)*mDevUnitsToAppUnits);
-		outHeight = NS_STATIC_CAST(PRInt32, (mPageRect.bottom-mPageRect.top)*mDevUnitsToAppUnits);
+		outWidth = static_cast<PRInt32>((mPageRect.right-mPageRect.left)*mDevUnitsToAppUnits);
+		outHeight = static_cast<PRInt32>((mPageRect.bottom-mPageRect.top)*mDevUnitsToAppUnits);
 	}
 	else {
     
@@ -503,8 +503,8 @@ nsDeviceContextMac::GetRect(nsRect &aRect)
 	  
 	  aRect.x = 0;
 	  aRect.y = 0;
-		aRect.width = NS_STATIC_CAST(nscoord, (mPageRect.right-mPageRect.left)*mDevUnitsToAppUnits);
-		aRect.height = NS_STATIC_CAST(nscoord, (mPageRect.bottom-mPageRect.top)*mDevUnitsToAppUnits);
+		aRect.width = static_cast<nscoord>((mPageRect.right-mPageRect.left)*mDevUnitsToAppUnits);
+		aRect.height = static_cast<nscoord>((mPageRect.bottom-mPageRect.top)*mDevUnitsToAppUnits);
 	}
 	else {
     
@@ -539,8 +539,8 @@ NS_IMETHODIMP nsDeviceContextMac::GetClientRect(nsRect &aRect)
 	if( mSpec ) {
 	  
 	  aRect.x = aRect.y = 0;
-		aRect.width = NS_STATIC_CAST(nscoord, (mPageRect.right-mPageRect.left)*mDevUnitsToAppUnits);
-		aRect.height = NS_STATIC_CAST(nscoord, (mPageRect.bottom-mPageRect.top)*mDevUnitsToAppUnits);
+		aRect.width = static_cast<nscoord>((mPageRect.right-mPageRect.left)*mDevUnitsToAppUnits);
+		aRect.height = static_cast<nscoord>((mPageRect.bottom-mPageRect.top)*mDevUnitsToAppUnits);
 	}
 	else {
     

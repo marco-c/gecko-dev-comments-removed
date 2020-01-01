@@ -233,7 +233,7 @@ void nsMacEventDispatchHandler::SetDeactivated(nsWindow *aDeactivatedWidget)
     
 
     if (mActiveWidget) {
-      nsCOMPtr<nsIWidget> curWin = do_QueryInterface(NS_STATIC_CAST(nsIWidget*, mActiveWidget));
+      nsCOMPtr<nsIWidget> curWin = do_QueryInterface(static_cast<nsIWidget*>(mActiveWidget));
       for (;;) {
         nsIWidget* parent = curWin->GetParent();
         if (!parent)
@@ -241,7 +241,7 @@ void nsMacEventDispatchHandler::SetDeactivated(nsWindow *aDeactivatedWidget)
         curWin = parent;
       }
 
-      if (NS_STATIC_CAST(nsWindow*, NS_STATIC_CAST(nsIWidget*, curWin)) == aDeactivatedWidget) {
+      if (static_cast<nsWindow*>(static_cast<nsIWidget*>(curWin)) == aDeactivatedWidget) {
         
         mActiveWidget->RemoveDeleteObserver(this);
         mActiveWidget = nsnull;
@@ -532,7 +532,7 @@ PRBool nsMacEventHandler::DragEvent(unsigned int aMessage,
   
   Point hitPointLocal = aMouseGlobal;
   WindowRef wind =
-   NS_STATIC_CAST(WindowRef, mTopLevelWidget->GetNativeData(NS_NATIVE_DISPLAY));
+   static_cast<WindowRef>(mTopLevelWidget->GetNativeData(NS_NATIVE_DISPLAY));
   nsGraphicsUtils::SafeSetPortWindowPort(wind);
   {
     StOriginSetter  originSetter(wind);
@@ -1005,7 +1005,7 @@ PRUint32 nsMacEventHandler::ConvertKeyEventToUnicode(EventRecord& aOSEvent)
 									kUnicodeLooseMappingsMask,
 									0,NULL,NULL,NULL,
 									sizeof(PRUnichar)*UNICODE_BUFFER_SIZE_FOR_KEY,&source_read,
-									&result_size,NS_REINTERPRET_CAST(PRUint16*, unicharResult));
+									&result_size,reinterpret_cast<PRUint16*>(unicharResult));
 	::DisposeTextToUnicodeInfo(&textToUnicodeInfo);
 	NS_ASSERTION(err == noErr, "nsMacEventHandler::ConvertKeyEventToUnicode: ConverFromTextToUnicode failed.");
 	
@@ -1174,8 +1174,8 @@ void nsMacEventHandler::HandleActivateEvent(EventRef aEvent)
 	if (isActive && sLastActive != this)
 	{
 		if (sLastActive) {
-			WindowRef oldWindow = NS_STATIC_CAST(WindowRef,
-			 sLastActive->mTopLevelWidget->GetNativeData(NS_NATIVE_DISPLAY));
+			WindowRef oldWindow = static_cast<WindowRef>
+                                    (sLastActive->mTopLevelWidget->GetNativeData(NS_NATIVE_DISPLAY));
 			
 			
 			
@@ -1322,8 +1322,8 @@ nsMacEventHandler::ScrollAxis(nsMouseScrollEvent::nsMouseScrollFlags aAxis,
                               PRUint32 aModifiers)
 {
   
-  WindowRef windowRef = NS_STATIC_CAST(WindowRef,
-                         mTopLevelWidget->GetNativeData(NS_NATIVE_DISPLAY));
+  WindowRef windowRef = static_cast<WindowRef>
+                                   (mTopLevelWidget->GetNativeData(NS_NATIVE_DISPLAY));
   nsWindowType windowType;
   mTopLevelWidget->GetWindowType(windowType);
   if (!::IsWindowActive(windowRef) && windowType != eWindowType_popup)
@@ -1447,7 +1447,7 @@ PRBool nsMacEventHandler::HandleMouseDownEvent(EventRecord&	aOSEvent)
             widgetChain->GetElementAt ( i, getter_AddRefs(genericWidget) );
             nsCOMPtr<nsIWidget> widget ( do_QueryInterface(genericWidget) );
             if ( widget ) {
-              if ( NS_REINTERPRET_CAST(WindowPtr,widget->GetNativeData(NS_NATIVE_DISPLAY)) == whichWindow )
+              if ( reinterpret_cast<WindowPtr>(widget->GetNativeData(NS_NATIVE_DISPLAY)) == whichWindow )
                  rollup = PR_FALSE;
             }         
           } 
@@ -1518,7 +1518,7 @@ PRBool nsMacEventHandler::HandleMouseDownEvent(EventRecord&	aOSEvent)
 			ConvertOSEventToMouseEvent(aOSEvent, mouseEvent);
 
 			nsCOMPtr<nsIWidget> kungFuDeathGrip ( mouseEvent.widget );            
-			nsWindow* widgetHit = NS_STATIC_CAST(nsWindow*, mouseEvent.widget);   
+			nsWindow* widgetHit = static_cast<nsWindow*>(mouseEvent.widget);   
 			if (widgetHit)
 			{        
 				

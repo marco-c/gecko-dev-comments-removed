@@ -2455,7 +2455,7 @@ PresShell::InitialReflow(nscoord aWidth, nscoord aHeight)
 void
 PresShell::sPaintSuppressionCallback(nsITimer *aTimer, void* aPresShell)
 {
-  PresShell* self = NS_STATIC_CAST(PresShell*, aPresShell);
+  PresShell* self = static_cast<PresShell*>(aPresShell);
   if (self)
     self->UnsuppressPainting();
 }
@@ -2538,7 +2538,7 @@ PresShell::KillResizeEventTimer()
 void
 PresShell::sResizeEventCallback(nsITimer *aTimer, void* aPresShell)
 {
-  PresShell* self = NS_STATIC_CAST(PresShell*, aPresShell);
+  PresShell* self = static_cast<PresShell*>(aPresShell);
   if (self) {
     self->FireResizeEvent();  
   }
@@ -3130,7 +3130,7 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
 
     while (stack.Count() != 0) {
       nsIFrame *f =
-        NS_STATIC_CAST(nsIFrame*, stack.FastElementAt(stack.Count() - 1));
+        static_cast<nsIFrame*>(stack.FastElementAt(stack.Count() - 1));
       stack.RemoveElementAt(stack.Count() - 1);
 
       PRInt32 childListIndex = 0;
@@ -4633,8 +4633,8 @@ PresShell::ComputeRepaintRegionForCopy(nsIView*      aRootView,
                                        nsRegion*     aRepaintRegion)
 {
   return nsLayoutUtils::ComputeRepaintRegionForCopy(
-      NS_STATIC_CAST(nsIFrame*, aRootView->GetClientData()),
-      NS_STATIC_CAST(nsIFrame*, aMovingView->GetClientData()),
+      static_cast<nsIFrame*>(aRootView->GetClientData()),
+      static_cast<nsIFrame*>(aMovingView->GetClientData()),
       aDelta, aCopyRect, aRepaintRegion);
 }
 
@@ -4842,7 +4842,7 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
     if (!ancestor || !ancestor->IsNodeOfType(nsINode::eCONTENT))
       return nsnull;
 
-    nsIContent* ancestorContent = NS_STATIC_CAST(nsIContent*, ancestor);
+    nsIContent* ancestorContent = static_cast<nsIContent*>(ancestor);
     ancestorFrame = GetPrimaryFrameFor(ancestorContent);
 
     
@@ -5101,7 +5101,7 @@ PresShell::Paint(nsIView*             aView,
 
   NS_ASSERTION(!(nsnull == aView), "null view");
 
-  frame = NS_STATIC_CAST(nsIFrame*, aView->GetClientData());
+  frame = static_cast<nsIFrame*>(aView->GetClientData());
   nscolor backgroundColor;
   mViewManager->GetDefaultBackgroundColor(&backgroundColor);
   for (nsIView *view = aView; view; view = view->GetParent()) {
@@ -5290,7 +5290,7 @@ PresShell::HandleEvent(nsIView         *aView,
     return NS_OK;
   }
   
-  nsIFrame* frame = NS_STATIC_CAST(nsIFrame*, aView->GetClientData());
+  nsIFrame* frame = static_cast<nsIFrame*>(aView->GetClientData());
 
   PRBool dispatchUsingCoordinates =
       !NS_IS_KEY_EVENT(aEvent) && !NS_IS_IME_EVENT(aEvent) &&
@@ -5308,7 +5308,7 @@ PresShell::HandleEvent(nsIView         *aView,
     
     if (targetView) {
       aView = targetView;
-      frame = NS_STATIC_CAST(nsIFrame*, aView->GetClientData());
+      frame = static_cast<nsIFrame*>(aView->GetClientData());
     }
   }
 
@@ -5345,7 +5345,7 @@ PresShell::HandleEvent(nsIView         *aView,
     nsIFrame* targetFrame = nsLayoutUtils::GetFrameForPoint(frame, eventPoint);
     if (targetFrame) {
       PresShell* shell =
-          NS_STATIC_CAST(PresShell*, targetFrame->PresContext()->PresShell());
+          static_cast<PresShell*>(targetFrame->PresContext()->PresShell());
       if (shell != this) {
         
         
@@ -5547,7 +5547,7 @@ inline PRBool
 IsSynthesizedMouseMove(nsEvent* aEvent)
 {
   return aEvent->eventStructType == NS_MOUSE_EVENT &&
-         NS_STATIC_CAST(nsMouseEvent*, aEvent)->reason != nsMouseEvent::eReal;
+         static_cast<nsMouseEvent*>(aEvent)->reason != nsMouseEvent::eReal;
 }
 
 nsresult
@@ -5557,7 +5557,7 @@ PresShell::HandleEventInternal(nsEvent* aEvent, nsIView *aView,
 #ifdef ACCESSIBILITY
   if (aEvent->eventStructType == NS_ACCESSIBLE_EVENT)
   {
-    NS_STATIC_CAST(nsAccessibleEvent*, aEvent)->accessible = nsnull;
+    static_cast<nsAccessibleEvent*>(aEvent)->accessible = nsnull;
     nsCOMPtr<nsIAccessibilityService> accService = 
       do_GetService("@mozilla.org/accessibilityService;1");
     if (accService) {
@@ -5574,7 +5574,7 @@ PresShell::HandleEventInternal(nsEvent* aEvent, nsIView *aView,
       
       
       
-      NS_STATIC_CAST(nsAccessibleEvent*, aEvent)->accessible = acc;
+      static_cast<nsAccessibleEvent*>(aEvent)->accessible = acc;
       
       
       gIsAccessibilityActive = PR_TRUE;
@@ -6087,7 +6087,7 @@ PresShell::ProcessReflowCommands(PRBool aInterruptible)
       do {
         
         PRInt32 idx = mDirtyRoots.Count() - 1;
-        nsIFrame *target = NS_STATIC_CAST(nsIFrame*, mDirtyRoots[idx]);
+        nsIFrame *target = static_cast<nsIFrame*>(mDirtyRoots[idx]);
         mDirtyRoots.RemoveElementAt(idx);
 
         if (!NS_SUBTREE_DIRTY(target)) {
@@ -6173,14 +6173,14 @@ ReResolveMenusAndTrees(nsIFrame *aFrame, void *aClosure)
   
   
   if (aFrame && aFrame->GetType() == nsGkAtoms::menuFrame)
-    (NS_STATIC_CAST(nsMenuFrame *, aFrame))->CloseMenu(PR_TRUE);
+    (static_cast<nsMenuFrame *>(aFrame))->CloseMenu(PR_TRUE);
   return PR_TRUE;
 }
 
 PR_STATIC_CALLBACK(PRBool)
 ReframeImageBoxes(nsIFrame *aFrame, void *aClosure)
 {
-  nsStyleChangeList *list = NS_STATIC_CAST(nsStyleChangeList*, aClosure);
+  nsStyleChangeList *list = static_cast<nsStyleChangeList*>(aClosure);
   if (aFrame->GetType() == nsGkAtoms::imageBoxFrame) {
     list->AppendChange(aFrame, aFrame->GetContent(),
                        NS_STYLE_HINT_FRAMECHANGE);
@@ -6478,12 +6478,12 @@ CompareTrees(nsPresContext* aFirstPresContext, nsIFrame* aFirstFrame,
 
         
         
-        nsSpaceManager *sm1 = NS_STATIC_CAST(nsSpaceManager*,
-                         k1->GetProperty(nsGkAtoms::spaceManagerProperty));
+        nsSpaceManager *sm1 = static_cast<nsSpaceManager*>
+                                         (k1->GetProperty(nsGkAtoms::spaceManagerProperty));
 
         
-        nsSpaceManager *sm2 = NS_STATIC_CAST(nsSpaceManager*,
-                         k2->GetProperty(nsGkAtoms::spaceManagerProperty));
+        nsSpaceManager *sm2 = static_cast<nsSpaceManager*>
+                                         (k2->GetProperty(nsGkAtoms::spaceManagerProperty));
 
         
         if (((nsnull == sm1) && (nsnull != sm2)) ||
