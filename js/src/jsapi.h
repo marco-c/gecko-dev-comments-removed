@@ -573,6 +573,9 @@ JS_StringToVersion(const char *string);
 
 
 
+#define JSOPTION_ANONFUNFIX     JS_BIT(10)      
+
+
 
 extern JS_PUBLIC_API(uint32)
 JS_GetOptions(JSContext *cx);
