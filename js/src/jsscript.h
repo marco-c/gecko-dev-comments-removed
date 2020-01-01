@@ -493,6 +493,7 @@ struct JSScript {
 
 
     bool            hasSingletons:1;  
+    bool            hasFunction:1;    
     bool            isActiveEval:1;   
     bool            isCachedEval:1;   
     bool            isUncachedEval:1; 
@@ -551,8 +552,18 @@ struct JSScript {
 
   public:
 
-    
-    JSFunction *fun;
+    union {
+        
+        JSFunction *fun;
+
+        
+        js::GlobalObject *global;
+    } where;
+
+    inline JSFunction *function() const {
+        JS_ASSERT(hasFunction);
+        return where.fun;
+    }
 
     
 
@@ -560,8 +571,6 @@ struct JSScript {
 
     bool typeSetFunction(JSContext *cx, JSFunction *fun, bool singleton = false);
 
-    
-    js::GlobalObject *global_;
     inline bool hasGlobal() const;
     inline js::GlobalObject *global() const;
 
@@ -579,30 +588,23 @@ struct JSScript {
 #endif
 
     
-
-
-
-  private:
-    js::analyze::ScriptAnalysis *analysis_;
-    void makeAnalysis(JSContext *cx);
-  public:
-
-    bool hasAnalysis() { return analysis_ != NULL; }
-    void clearAnalysis() { analysis_ = NULL; }
-
-    js::analyze::ScriptAnalysis *analysis(JSContext *cx) {
-        if (!analysis_)
-            makeAnalysis(cx);
-        return analysis_;
-    }
+    js::types::TypeScript *types;
 
     
+    inline bool ensureHasTypes(JSContext *cx);
+    inline bool ensureRanBytecode(JSContext *cx);
     inline bool ensureRanInference(JSContext *cx);
 
     
-    js::types::TypeScript types;
+    inline bool hasAnalysis();
+    inline js::analyze::ScriptAnalysis *analysis();
 
     inline bool isAboutToBeFinalized(JSContext *cx);
+
+  private:
+    bool makeTypes(JSContext *cx);
+    bool makeAnalysis(JSContext *cx);
+  public:
 
 #ifdef JS_METHODJIT
     
