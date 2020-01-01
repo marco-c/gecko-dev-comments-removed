@@ -721,16 +721,6 @@ else
     AC_MSG_RESULT([yes])
 fi
 
-MOZ_ARG_WITH_BOOL(system-ply,
-[  --with-system-ply       Use system installed python ply library],
-    [if $PYTHON -c 'import ply' 2>&5; then
-         MOZ_SYSTEM_PLY=1
-     else
-         AC_MSG_ERROR([python ply library is not found but --with-system-ply was requested])
-     fi])
-
-AC_SUBST(MOZ_SYSTEM_PLY)
-
 if test -z "$COMPILE_ENVIRONMENT"; then
     NSINSTALL_BIN='$(PYTHON) $(topsrcdir)/config/nsinstall.py'
 fi
@@ -3165,7 +3155,7 @@ dnl Checks for library functions.
 dnl ========================================================
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS(random strerror lchown fchmod snprintf memmove rint stat64 lstat64 truncate64 setbuf isatty)
+AC_CHECK_FUNCS(random strerror lchown fchmod snprintf memmove stat64 lstat64 truncate64 setbuf isatty)
 AC_CHECK_FUNCS(statvfs64 statvfs statfs64 statfs)
 AC_CHECK_FUNCS(flockfile getpagesize)
 AC_CHECK_FUNCS(localtime_r strtok_r)
