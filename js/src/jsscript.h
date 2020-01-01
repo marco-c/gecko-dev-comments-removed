@@ -403,9 +403,12 @@ struct JSScript {
     bool            warnedAboutTwoArgumentEval:1; 
 
 
-    bool            dynamicScoping:1; 
-
     bool            hasSingletons:1;  
+    bool            isCachedEval:1;   
+    bool            isUncachedEval:1; 
+#ifdef JS_TYPE_INFERENCE
+    bool            analyzed:1;       
+#endif
 #ifdef JS_METHODJIT
     bool            debugMode:1;      
     bool            singleStepMode:1; 
@@ -468,10 +471,13 @@ struct JSScript {
     JSObject *global;
 
     
+    js::types::TypeSet *varTypes;
 
+    
+    js::types::TypeObject *typeObjects;
 
-
-    JSScript *parent;
+    
+    js::types::TypeResult *typeResults;
 
     
     js::types::TypeScript *types;
@@ -480,7 +486,20 @@ struct JSScript {
     inline js::types::TypeObject *getGlobalType();
 
     
-    bool isGlobal() { return !parent || (!fun && !parent->parent); }
+
+
+
+    inline bool ensureVarTypes(JSContext *cx);
+
+    inline js::types::TypeSet *returnTypes();
+    inline js::types::TypeSet *thisTypes();
+    inline js::types::TypeSet *argTypes(unsigned i);
+    inline js::types::TypeSet *localTypes(unsigned i);
+    inline js::types::TypeSet *upvarTypes(unsigned i);
+
+  private:
+    bool makeVarTypes(JSContext *cx);
+  public:
 
     
     void typeCheckBytecode(JSContext *cx, const jsbytecode *pc, const js::Value *sp);
@@ -489,26 +508,19 @@ struct JSScript {
     inline js::types::TypeObject *getTypeNewObject(JSContext *cx, JSProtoKey key);
 #endif
 
-    
-    inline void setTypeNesting(JSScript *parent, const jsbytecode *pc);
-
-    
-
-
-
-    inline void nukeUpvarTypes(JSContext *cx);
+    void condenseTypes(JSContext *cx);
+    void sweepTypes(JSContext *cx);
 
     
     inline js::types::TypeObject *
     getTypeInitObject(JSContext *cx, const jsbytecode *pc, bool isArray);
 
     
-    inline void typeMonitorResult(JSContext *cx, const jsbytecode *pc, unsigned index,
-                                  js::types::jstype type);
-    inline void typeMonitorResult(JSContext *cx, const jsbytecode *pc, unsigned index,
-                                  const js::Value &rval);
-    inline void typeMonitorOverflow(JSContext *cx, const jsbytecode *pc, unsigned index);
-    inline void typeMonitorUndefined(JSContext *cx, const jsbytecode *pc, unsigned index);
+    inline void typeMonitorResult(JSContext *cx, const jsbytecode *pc, js::types::jstype type);
+    inline void typeMonitorResult(JSContext *cx, const jsbytecode *pc, const js::Value &val);
+    inline void typeMonitorUndefined(JSContext *cx, const jsbytecode *pc);
+    inline void typeMonitorOverflow(JSContext *cx, const jsbytecode *pc);
+    inline void typeMonitorUnknown(JSContext *cx, const jsbytecode *pc);
 
     
     inline void typeMonitorAssign(JSContext *cx, const jsbytecode *pc,
@@ -516,6 +528,9 @@ struct JSScript {
 
     
     inline void typeSetArgument(JSContext *cx, unsigned arg, const js::Value &value);
+
+    
+    inline void typeSetUpvar(JSContext *cx, unsigned upvar, const js::Value &value);
 
 #ifdef JS_METHODJIT
     

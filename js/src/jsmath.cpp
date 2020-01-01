@@ -526,7 +526,7 @@ math_pow(JSContext *cx, uintN argc, Value *vp)
         z = pow(x, y);
 
     vp->setNumber(z);
-    if (vp->isDouble() && (!vp[2].isDouble() || !vp[3].isDouble()))
+    if (vp->isDouble() && !(vp[2].isDouble() || vp[3].isDouble()))
         cx->markTypeCallerOverflow();
 
     return JS_TRUE;
@@ -865,7 +865,7 @@ static void math_TypeArith(JSContext *cx, JSTypeFunction *jsfun, JSTypeCallsite 
 
     
     for (size_t ind = 0; ind < site->argumentCount; ind++)
-        site->argumentTypes[ind]->addArith(cx, site->pool(), site->returnTypes);
+        site->argumentTypes[ind]->addArith(cx, site->script, site->returnTypes);
 #endif
 }
 
