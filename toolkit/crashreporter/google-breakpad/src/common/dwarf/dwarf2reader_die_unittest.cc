@@ -1,35 +1,35 @@
+// Copyright (c) 2012, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// Original author: Jim Blandy <jimb@mozilla.com> <jimb@red-bean.com>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// dwarf2reader_die_unittest.cc: Unit tests for dwarf2reader::CompilationUnit
 
 #include <stdlib.h>
 
@@ -107,11 +107,11 @@ class MockDwarf2Handler: public Dwarf2Handler {
 struct DIEFixture {
 
   DIEFixture() {
-    
+    // Fix the initial offset of the .debug_info and .debug_abbrev sections.
     info.start() = 0;
     abbrevs.start() = 0;
 
-    
+    // Default expectations for the data handler.
     EXPECT_CALL(handler, StartCompilationUnit(_, _, _, _, _)).Times(0);
     EXPECT_CALL(handler, StartDIE(_, _)).Times(0);
     EXPECT_CALL(handler, ProcessAttributeUnsigned(_, _, _, _)).Times(0);
@@ -122,13 +122,13 @@ struct DIEFixture {
     EXPECT_CALL(handler, EndDIE(_)).Times(0);
   }
 
-  
-  
-  
-  
+  // Return a reference to a section map whose .debug_info section refers
+  // to |info|, and whose .debug_abbrev section refers to |abbrevs|. This
+  // function returns a reference to the same SectionMap each time; new
+  // calls wipe out maps established by earlier calls.
   const SectionMap &MakeSectionMap() {
-    
-    
+    // Copy the sections' contents into strings that will live as long as
+    // the map itself.
     assert(info.GetContents(&info_contents));
     assert(abbrevs.GetContents(&abbrevs_contents));
     section_map.clear();
@@ -152,7 +152,7 @@ struct DwarfHeaderParams {
       : endianness(endianness), format_size(format_size),
         version(version), address_size(address_size) { }
   Endianness endianness;
-  size_t format_size;                   
+  size_t format_size;                   // 4-byte or 8-byte DWARF offsets
   int version;
   size_t address_size;
 };
@@ -172,9 +172,9 @@ TEST_P(DwarfHeader, Header) {
   info.set_endianness(GetParam().endianness);
 
   info.Header(GetParam().version, abbrev_table, GetParam().address_size)
-      .ULEB128(1)                     
-      .AppendCString("sam")           
-      .D8(0);                         
+      .ULEB128(1)                     // DW_TAG_compile_unit, with children
+      .AppendCString("sam")           // DW_AT_name, DW_FORM_string
+      .D8(0);                         // end of children
   info.Finish();
 
   {
@@ -228,30 +228,30 @@ INSTANTIATE_TEST_CASE_P(
                       DwarfHeaderParams(kBigEndian,    8, 4, 8)));
 
 struct DwarfFormsFixture: public DIEFixture {
-  
-  
-  
-  
+  // Start a compilation unit, as directed by |params|, containing one
+  // childless DIE of the given tag, with one attribute of the given name
+  // and form. The 'info' fixture member is left just after the abbrev
+  // code, waiting for the attribute value to be appended.
   void StartSingleAttributeDIE(const DwarfHeaderParams &params,
                                DwarfTag tag, DwarfAttribute name,
                                DwarfForm form) {
-    
+    // Create the abbreviation table.
     Label abbrev_table = abbrevs.Here();
     abbrevs.Abbrev(1, tag, dwarf2reader::DW_children_no)
         .Attribute(name, form)
         .EndAbbrev()
         .EndTable();
 
-    
+    // Create the compilation unit, up to the attribute value.
     info.set_format_size(params.format_size);
     info.set_endianness(params.endianness);
     info.Header(params.version, abbrev_table, params.address_size)
-        .ULEB128(1);                    
+        .ULEB128(1);                    // abbrev code
   }
 
-  
-  
-  
+  // Set up handler to expect a compilation unit matching |params|,
+  // containing one childless DIE of the given tag, in the sequence s. Stop
+  // just before the expectations.
   void ExpectBeginCompilationUnit(const DwarfHeaderParams &params,
                                   DwarfTag tag, uint64 offset=0) {
     EXPECT_CALL(handler,
@@ -278,7 +278,7 @@ struct DwarfFormsFixture: public DIEFixture {
     EXPECT_EQ(offset + parser.Start(), info_contents.size());
   }
 
-  
+  // The sequence to which the fixture's methods append expectations.
   Sequence s;
 };
 
@@ -289,7 +289,7 @@ TEST_P(DwarfForms, addr) {
   StartSingleAttributeDIE(GetParam(), dwarf2reader::DW_TAG_compile_unit,
                           dwarf2reader::DW_AT_low_pc,
                           dwarf2reader::DW_FORM_addr);
-  u_int64_t value;
+  uint64_t value;
   if (GetParam().address_size == 4) {
     value = 0xc8e9ffcc;
     info.D32(value);
@@ -353,7 +353,7 @@ TEST_P(DwarfForms, flag_present) {
   StartSingleAttributeDIE(GetParam(), (DwarfTag) 0x3e449ac2,
                           (DwarfAttribute) 0x359d1972,
                           dwarf2reader::DW_FORM_flag_present);
-  
+  // DW_FORM_flag_present occupies no space in the DIE.
   info.Finish();
 
   ExpectBeginCompilationUnit(GetParam(), (DwarfTag) 0x3e449ac2);
@@ -372,7 +372,7 @@ TEST_P(DwarfForms, sec_offset) {
   StartSingleAttributeDIE(GetParam(), (DwarfTag) 0x1d971689,
                           (DwarfAttribute) 0xa060bfd1,
                           dwarf2reader::DW_FORM_sec_offset);
-  u_int64_t value;
+  uint64_t value;
   if (GetParam().format_size == 4) {
     value = 0xacc9c388;
     info.D32(value);
@@ -430,11 +430,11 @@ TEST_P(DwarfForms, ref_sig8) {
   ParseCompilationUnit(GetParam());
 }
 
-
-
-
-
-
+// A value passed to ProcessAttributeSignature is just an absolute number,
+// not an offset within the compilation unit as most of the other
+// DW_FORM_ref forms are. Check that the reader doesn't try to apply any
+// offset to the signature, by reading it from a compilation unit that does
+// not start at the beginning of the section.
 TEST_P(DwarfForms, ref_sig8_not_first) {
   info.Append(98, '*');
   StartSingleAttributeDIE(GetParam(), (DwarfTag) 0x253e7b2b,
@@ -454,7 +454,7 @@ TEST_P(DwarfForms, ref_sig8_not_first) {
   ParseCompilationUnit(GetParam(), 98);
 }
 
-
+// Tests for the other attribute forms could go here.
 
 INSTANTIATE_TEST_CASE_P(
     HeaderVariants, DwarfForms,

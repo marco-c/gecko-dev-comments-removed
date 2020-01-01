@@ -1,35 +1,35 @@
+// Copyright (c) 2006, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// minidump_file_writer.cc: Minidump file writer implementation.
+//
+// See minidump_file_writer.h for documentation.
 
 #include <fcntl.h>
 #include <limits.h>
@@ -99,28 +99,28 @@ bool MinidumpFileWriter::CopyStringToMDString(const wchar_t *str,
                                               unsigned int length,
                                               TypedMDRVA<MDString> *mdstring) {
   bool result = true;
-  if (sizeof(wchar_t) == sizeof(u_int16_t)) {
-    
+  if (sizeof(wchar_t) == sizeof(uint16_t)) {
+    // Shortcut if wchar_t is the same size as MDString's buffer
     result = mdstring->Copy(str, mdstring->get()->length);
   } else {
-    u_int16_t out[2];
+    uint16_t out[2];
     int out_idx = 0;
 
-    
+    // Copy the string character by character
     while (length && result) {
       UTF32ToUTF16Char(*str, out);
       if (!out[0])
         return false;
 
-      
+      // Process one character at a time
       --length;
       ++str;
 
-      
-      
-      
+      // Append the one or two UTF-16 characters.  The first one will be non-
+      // zero, but the second one may be zero, depending on the conversion from
+      // UTF-32.
       int out_count = out[1] ? 2 : 1;
-      size_t out_size = sizeof(u_int16_t) * out_count;
+      size_t out_size = sizeof(uint16_t) * out_count;
       result = mdstring->CopyIndexAfterObject(out_idx, out, out_size);
       out_idx += out_count;
     }
@@ -132,22 +132,22 @@ bool MinidumpFileWriter::CopyStringToMDString(const char *str,
                                               unsigned int length,
                                               TypedMDRVA<MDString> *mdstring) {
   bool result = true;
-  u_int16_t out[2];
+  uint16_t out[2];
   int out_idx = 0;
 
-  
+  // Copy the string character by character
   while (length && result) {
     int conversion_count = UTF8ToUTF16Char(str, length, out);
     if (!conversion_count)
       return false;
 
-    
+    // Move the pointer along based on the nubmer of converted characters
     length -= conversion_count;
     str += conversion_count;
 
-    
+    // Append the one or two UTF-16 characters
     int out_count = out[1] ? 2 : 1;
-    size_t out_size = sizeof(u_int16_t) * out_count;
+    size_t out_size = sizeof(uint16_t) * out_count;
     result = mdstring->CopyIndexAfterObject(out_idx, out, out_size);
     out_idx += out_count;
   }
@@ -160,27 +160,27 @@ bool MinidumpFileWriter::WriteStringCore(const CharType *str,
                                          MDLocationDescriptor *location) {
   assert(str);
   assert(location);
-  
-  
+  // Calculate the mdstring length by either limiting to |length| as passed in
+  // or by finding the location of the NULL character.
   unsigned int mdstring_length = 0;
   if (!length)
     length = INT_MAX;
   for (; mdstring_length < length && str[mdstring_length]; ++mdstring_length)
     ;
 
-  
+  // Allocate the string buffer
   TypedMDRVA<MDString> mdstring(this);
-  if (!mdstring.AllocateObjectAndArray(mdstring_length + 1, sizeof(u_int16_t)))
+  if (!mdstring.AllocateObjectAndArray(mdstring_length + 1, sizeof(uint16_t)))
     return false;
 
-  
+  // Set length excluding the NULL and copy the string
   mdstring.get()->length =
-      static_cast<u_int32_t>(mdstring_length * sizeof(u_int16_t));
+      static_cast<uint32_t>(mdstring_length * sizeof(uint16_t));
   bool result = CopyStringToMDString(str, mdstring_length, &mdstring);
 
-  
+  // NULL terminate
   if (result) {
-    u_int16_t ch = 0;
+    uint16_t ch = 0;
     result = mdstring.CopyIndexAfterObject(mdstring_length, &ch, sizeof(ch));
 
     if (result)
@@ -211,7 +211,7 @@ bool MinidumpFileWriter::WriteMemory(const void *src, size_t size,
   if (!mem.Copy(src, mem.size()))
     return false;
 
-  output->start_of_memory_range = reinterpret_cast<u_int64_t>(src);
+  output->start_of_memory_range = reinterpret_cast<uint64_t>(src);
   output->memory = mem.location();
 
   return true;
@@ -220,13 +220,13 @@ bool MinidumpFileWriter::WriteMemory(const void *src, size_t size,
 MDRVA MinidumpFileWriter::Allocate(size_t size) {
   assert(size);
   assert(file_ != -1);
-  size_t aligned_size = (size + 7) & ~7;  
+  size_t aligned_size = (size + 7) & ~7;  // 64-bit alignment
 
   if (position_ + aligned_size > size_) {
     size_t growth = aligned_size;
     size_t minimal_growth = getpagesize();
 
-    
+    // Ensure that the file grows by at least the size of a memory page
     if (growth < minimal_growth)
       growth = minimal_growth;
 
@@ -248,11 +248,11 @@ bool MinidumpFileWriter::Copy(MDRVA position, const void *src, ssize_t size) {
   assert(size);
   assert(file_ != -1);
 
-  
+  // Ensure that the data will fit in the allocated space
   if (static_cast<size_t>(size + position) > size_)
     return false;
 
-  
+  // Seek and write the data
 #if __linux__
   if (sys_lseek(file_, position, SEEK_SET) == static_cast<off_t>(position)) {
     if (sys_write(file_, src, size) == size) {
@@ -281,4 +281,4 @@ bool UntypedMDRVA::Copy(MDRVA pos, const void *src, size_t size) {
   return writer_->Copy(pos, src, size);
 }
 
-}  
+}  // namespace google_breakpad

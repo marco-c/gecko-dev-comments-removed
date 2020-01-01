@@ -1,34 +1,34 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Copyright (c) 2010, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// crash_generation_server_test.cc
+// Unit tests for CrashGenerationServer
 
 #include <dirent.h>
 #include <glob.h>
@@ -48,9 +48,9 @@
 #include "google_breakpad/processor/minidump.h"
 
 namespace google_breakpad {
-
-
-
+// This acts as the log sink for INFO logging from the processor
+// logging code. The logging output confuses XCode and makes it think
+// there are unit test failures. testlogging.h handles the overriding.
 std::ostringstream info_log;
 }
 
@@ -74,15 +74,15 @@ using namespace google_breakpad_test;
 
 class CrashGenerationServerTest : public Test {
 public:
-  
+  // The port name to receive messages on
   char mach_port_name[128];
-  
+  // Filename of the last dump that was generated
   string last_dump_name;
-  
+  // PID of the child process
   pid_t child_pid;
-  
+  // A temp dir
   AutoTempDir temp_dir;
-  
+  // Counter just to ensure that we don't hit the same port again
   static int i;
   bool filter_callback_called;
 
@@ -96,33 +96,33 @@ public:
 };
 int CrashGenerationServerTest::i = 0;
 
-
+// Test that starting and stopping a server works
 TEST_F(CrashGenerationServerTest, testStartStopServer) {
   CrashGenerationServer server(mach_port_name,
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               false, 
-                               ""); 
+                               NULL,  // filter callback
+                               NULL,  // filter context
+                               NULL,  // dump callback
+                               NULL,  // dump context
+                               NULL,  // exit callback
+                               NULL,  // exit context
+                               false, // generate dumps
+                               ""); // dump path
   ASSERT_TRUE(server.Start());
   ASSERT_TRUE(server.Stop());
 }
 
-
-
+// Test that requesting a dump via CrashGenerationClient works
+// Test without actually dumping
 TEST_F(CrashGenerationServerTest, testRequestDumpNoDump) {
   CrashGenerationServer server(mach_port_name,
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               NULL,  
-                               false, 
-                               temp_dir.path()); 
+                               NULL,  // filter callback
+                               NULL,  // filter context
+                               NULL,  // dump callback
+                               NULL,  // dump context
+                               NULL,  // exit callback
+                               NULL,  // exit context
+                               false, // don't generate dumps
+                               temp_dir.path()); // dump path
   ASSERT_TRUE(server.Start());
 
   pid_t pid = fork();
@@ -138,7 +138,7 @@ TEST_F(CrashGenerationServerTest, testRequestDumpNoDump) {
   EXPECT_TRUE(WIFEXITED(ret));
   EXPECT_EQ(0, WEXITSTATUS(ret));
   EXPECT_TRUE(server.Stop());
-  
+  // check that no minidump was written
   string pattern = temp_dir.path() + "/*";
   glob_t dirContents;
   ret = glob(pattern.c_str(), GLOB_NOSORT, NULL, &dirContents);
@@ -164,25 +164,25 @@ void *RequestDump(void *context) {
   return (void*)(result ? 0 : 1);
 }
 
-
+// Test that actually writing a minidump works
 TEST_F(CrashGenerationServerTest, testRequestDump) {
   CrashGenerationServer server(mach_port_name,
-                               NULL,  
-                               NULL,  
-                               dumpCallback,  
-                               this,  
-                               NULL,  
-                               NULL,  
-                               true, 
-                               temp_dir.path()); 
+                               NULL,  // filter callback
+                               NULL,  // filter context
+                               dumpCallback,  // dump callback
+                               this,  // dump context
+                               NULL,  // exit callback
+                               NULL,  // exit context
+                               true, //  generate dumps
+                               temp_dir.path()); // dump path
   ASSERT_TRUE(server.Start());
 
   pid_t pid = fork();
   ASSERT_NE(-1, pid);
   if (pid == 0) {
-    
-    
-    
+    // Have to spawn off a separate thread to request the dump,
+    // because MinidumpGenerator assumes the handler thread is not
+    // the only thread
     pthread_t thread;
     if (pthread_create(&thread, NULL, RequestDump, (void*)mach_port_name) != 0)
       exit(1);
@@ -196,12 +196,12 @@ TEST_F(CrashGenerationServerTest, testRequestDump) {
   EXPECT_TRUE(WIFEXITED(ret));
   EXPECT_EQ(0, WEXITSTATUS(ret));
   EXPECT_TRUE(server.Stop());
-  
+  // check that minidump was written
   ASSERT_FALSE(last_dump_name.empty());
   struct stat st;
   EXPECT_EQ(0, stat(last_dump_name.c_str(), &st));
   EXPECT_LT(0, st.st_size);
-  
+  // check client's PID
   ASSERT_EQ(pid, child_pid);
 }
 
@@ -212,28 +212,28 @@ static void Crasher() {
   fprintf(stdout, "A = %d", *a);
 }
 
-
-
-
+// Test that crashing a child process with an OOP ExceptionHandler installed
+// results in a minidump being written by the CrashGenerationServer in
+// the parent.
 TEST_F(CrashGenerationServerTest, testChildProcessCrash) {
   CrashGenerationServer server(mach_port_name,
-                               NULL,  
-                               NULL,  
-                               dumpCallback,  
-                               this,  
-                               NULL,  
-                               NULL,  
-                               true, 
-                               temp_dir.path()); 
+                               NULL,  // filter callback
+                               NULL,  // filter context
+                               dumpCallback,  // dump callback
+                               this,  // dump context
+                               NULL,  // exit callback
+                               NULL,  // exit context
+                               true, //  generate dumps
+                               temp_dir.path()); // dump path
   ASSERT_TRUE(server.Start());
 
   pid_t pid = fork();
   ASSERT_NE(-1, pid);
   if (pid == 0) {
-    
+    // Instantiate an OOP exception handler.
     ExceptionHandler eh("", NULL, NULL, NULL, true, mach_port_name);
     Crasher();
-    
+    // not reached
     exit(0);
   }
 
@@ -241,13 +241,13 @@ TEST_F(CrashGenerationServerTest, testChildProcessCrash) {
   ASSERT_EQ(pid, waitpid(pid, &ret, 0));
   EXPECT_FALSE(WIFEXITED(ret));
   EXPECT_TRUE(server.Stop());
-  
+  // check that minidump was written
   ASSERT_FALSE(last_dump_name.empty());
   struct stat st;
   EXPECT_EQ(0, stat(last_dump_name.c_str(), &st));
   EXPECT_LT(0, st.st_size);
 
-  
+  // Read the minidump, sanity check some data.
   Minidump minidump(last_dump_name.c_str());
   ASSERT_TRUE(minidump.Read());
 
@@ -276,21 +276,21 @@ TEST_F(CrashGenerationServerTest, testChildProcessCrash) {
 
 #if (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6) && \
   (defined(__x86_64__) || defined(__i386__))
-
-
+// Test that crashing a child process of a different architecture
+// produces a valid minidump.
 TEST_F(CrashGenerationServerTest, testChildProcessCrashCrossArchitecture) {
   CrashGenerationServer server(mach_port_name,
-                               NULL,  
-                               NULL,  
-                               dumpCallback,  
-                               this,  
-                               NULL,  
-                               NULL,  
-                               true, 
-                               temp_dir.path()); 
+                               NULL,  // filter callback
+                               NULL,  // filter context
+                               dumpCallback,  // dump callback
+                               this,  // dump context
+                               NULL,  // exit callback
+                               NULL,  // exit context
+                               true, //  generate dumps
+                               temp_dir.path()); // dump path
   ASSERT_TRUE(server.Start());
 
-  
+  // Spawn a child process
   string helper_path = GetHelperPath();
   const char* argv[] = {
     helper_path.c_str(),
@@ -305,7 +305,7 @@ TEST_F(CrashGenerationServerTest, testChildProcessCrashCrossArchitecture) {
   ASSERT_EQ(pid, waitpid(pid, &ret, 0));
   EXPECT_FALSE(WIFEXITED(ret));
   EXPECT_TRUE(server.Stop());
-  
+  // check that minidump was written
   ASSERT_FALSE(last_dump_name.empty());
   struct stat st;
   EXPECT_EQ(0, stat(last_dump_name.c_str(), &st));
@@ -318,7 +318,7 @@ const MDCPUArchitecture kExpectedArchitecture =
   MD_CPU_ARCHITECTURE_AMD64
 #endif
   ;
-const u_int32_t kExpectedContext =
+const uint32_t kExpectedContext =
 #if defined(__i386__)
   MD_CONTEXT_AMD64
 #elif defined(__x86_64__)
@@ -326,7 +326,7 @@ const u_int32_t kExpectedContext =
 #endif
   ;
 
-  
+  // Read the minidump, sanity check some data.
   Minidump minidump(last_dump_name.c_str());
   ASSERT_TRUE(minidump.Read());
 
@@ -358,30 +358,30 @@ bool filter_callback(void* context) {
   CrashGenerationServerTest* self =
     reinterpret_cast<CrashGenerationServerTest*>(context);
   self->filter_callback_called = true;
-  
+  // veto dump generation
   return false;
 }
 
-
+// Test that a filter callback can veto minidump writing.
 TEST_F(CrashGenerationServerTest, testFilter) {
   CrashGenerationServer server(mach_port_name,
-                               filter_callback,  
-                               this,            
-                               dumpCallback,  
-                               this,  
-                               NULL,  
-                               NULL,  
-                               true, 
-                               temp_dir.path()); 
+                               filter_callback,  // filter callback
+                               this,            // filter context
+                               dumpCallback,  // dump callback
+                               this,  // dump context
+                               NULL,  // exit callback
+                               NULL,  // exit context
+                               true, //  generate dumps
+                               temp_dir.path()); // dump path
   ASSERT_TRUE(server.Start());
 
   pid_t pid = fork();
   ASSERT_NE(-1, pid);
   if (pid == 0) {
-    
+    // Instantiate an OOP exception handler.
     ExceptionHandler eh("", NULL, NULL, NULL, true, mach_port_name);
     Crasher();
-    
+    // not reached
     exit(0);
   }
 
@@ -390,9 +390,9 @@ TEST_F(CrashGenerationServerTest, testFilter) {
   EXPECT_FALSE(WIFEXITED(ret));
   EXPECT_TRUE(server.Stop());
 
-  
+  // check that no minidump was written
   EXPECT_TRUE(last_dump_name.empty());
   EXPECT_TRUE(filter_callback_called);
 }
 
-}  
+}  // namespace

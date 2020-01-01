@@ -1,34 +1,34 @@
+// Copyright (c) 2010, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Utility functions for spawning a helper process using a different
+// CPU architecture.
 
 #ifndef GOOGLE_BREAKPAD_CLIENT_MAC_TESTS_SPAWN_CHILD_PROCESS
 #define GOOGLE_BREAKPAD_CLIENT_MAC_TESTS_SPAWN_CHILD_PROCESS
@@ -65,7 +65,7 @@ const MDCPUArchitecture kNativeArchitecture =
 #endif
   ;
 
-const u_int32_t kNativeContext =
+const uint32_t kNativeContext =
 #if defined(__i386__)
   MD_CONTEXT_X86
 #elif defined(__x86_64__)
@@ -112,7 +112,7 @@ pid_t spawn_child_process(const char** argv) {
     CPU_TYPE_ANY
   };
 
-  
+  // Set spawn attributes.
   size_t attr_count = sizeof(pref_cpu_types) / sizeof(pref_cpu_types[0]);
   size_t attr_ocount = 0;
   if (posix_spawnattr_setbinpref_np(&spawnattr,
@@ -124,7 +124,7 @@ pid_t spawn_child_process(const char** argv) {
     return (pid_t)-1;
   }
 
-  
+  // Create an argv array.
   vector<char*> argv_v;
   while (*argv) {
     argv_v.push_back(strdup(*argv));
@@ -144,6 +144,6 @@ pid_t spawn_child_process(const char** argv) {
 }
 #endif
 
-}  
+}  // namespace google_breakpad_test
 
-#endif  
+#endif  // GOOGLE_BREAKPAD_CLIENT_MAC_TESTS_SPAWN_CHILD_PROCESS
