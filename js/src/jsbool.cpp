@@ -1,12 +1,12 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+ * JS boolean implementation.
+ */
 
 #include "mozilla/FloatingPoint.h"
 
@@ -37,10 +37,10 @@ using namespace js::types;
 
 Class js::BooleanClass = {
     "Boolean",
-    JSCLASS_HAS_RESERVED_SLOTS(1) | JSCLASS_HAS_CACHED_PROTO(JSProto_Boolean),    JS_PropertyStub,         
-    JS_PropertyStub,         
-    JS_PropertyStub,         
-    JS_StrictPropertyStub,   
+    JSCLASS_HAS_RESERVED_SLOTS(1) | JSCLASS_HAS_CACHED_PROTO(JSProto_Boolean),    JS_PropertyStub,         /* addProperty */
+    JS_PropertyStub,         /* delProperty */
+    JS_PropertyStub,         /* getProperty */
+    JS_StrictPropertyStub,   /* setProperty */
     JS_EnumerateStub,
     JS_ResolveStub,
     JS_ConvertStub
@@ -166,9 +166,11 @@ js_InitBooleanClass(JSContext *cx, HandleObject obj)
 
     Handle<PropertyName*> valueOfName = cx->names().valueOf;
     RootedFunction
-        valueOf(cx, js_NewFunction(cx, NullPtr(), bool_valueOf, 0, 0, global, valueOfName));
+        valueOf(cx, js_NewFunction(cx, NullPtr(), bool_valueOf, 0, JSFunction::NATIVE_FUN,
+                                   global, valueOfName));
     if (!valueOf)
         return NULL;
+
     RootedValue value(cx, ObjectValue(*valueOf));
     if (!JSObject::defineProperty(cx, booleanProto, valueOfName, value,
                                   JS_PropertyStub, JS_StrictPropertyStub, 0))
@@ -213,6 +215,6 @@ BooleanGetPrimitiveValueSlow(JSContext *cx, JSObject &obj, Value *vp)
     return true;
 }
 
-}  
+}  /* namespace js */
 
 
