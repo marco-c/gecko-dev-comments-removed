@@ -85,28 +85,13 @@ js::ScopeCoordinateToFrameVar(JSScript *script, jsbytecode *pc, unsigned *index)
 
 
 
-
-
 CallObject *
-CallObject::create(JSContext *cx, JSScript *script, HandleObject enclosing, HandleFunction callee)
+CallObject::create(JSContext *cx, HandleShape shape, HandleTypeObject type, HeapSlot *slots,
+                   HandleObject global)
 {
-    RootedShape shape(cx);
-    shape = script->bindings.callObjectShape(cx);
-    if (shape == NULL)
-        return NULL;
-
     gc::AllocKind kind = gc::GetGCObjectKind(shape->numFixedSlots());
     JS_ASSERT(CanBeFinalizedInBackground(kind, &CallClass));
     kind = gc::GetBackgroundAllocKind(kind);
-
-    RootedTypeObject type(cx);
-    type = cx->compartment->getEmptyType(cx);
-    if (!type)
-        return NULL;
-
-    HeapSlot *slots;
-    if (!PreallocateObjectDynamicSlots(cx, shape, &slots))
-        return NULL;
 
     RootedObject obj(cx, JSObject::create(cx, kind, shape, type, slots));
     if (!obj)
@@ -117,15 +102,11 @@ CallObject::create(JSContext *cx, JSScript *script, HandleObject enclosing, Hand
 
 
 
-    if (&enclosing->global() != obj->getParent()) {
+    if (global != obj->getParent()) {
         JS_ASSERT(obj->getParent() == NULL);
-        Rooted<GlobalObject*> global(cx, &enclosing->global());
         if (!JSObject::setParent(cx, obj, global))
             return NULL;
     }
-
-    obj->asScope().setEnclosingScope(enclosing);
-    obj->initFixedSlot(CALLEE_SLOT, ObjectOrNullValue(callee));
 
     
 
@@ -137,6 +118,40 @@ CallObject::create(JSContext *cx, JSScript *script, HandleObject enclosing, Hand
     }
 
     JS_ASSERT(obj->isDelegate());
+
+    return &obj->asCall();
+}
+
+
+
+
+
+
+
+CallObject *
+CallObject::create(JSContext *cx, JSScript *script, HandleObject enclosing, HandleFunction callee)
+{
+    RootedShape shape(cx);
+    shape = script->bindings.callObjectShape(cx);
+    if (shape == NULL)
+        return NULL;
+
+    RootedTypeObject type(cx);
+    type = cx->compartment->getEmptyType(cx);
+    if (!type)
+        return NULL;
+
+    HeapSlot *slots;
+    if (!PreallocateObjectDynamicSlots(cx, shape, &slots))
+        return NULL;
+
+    RootedObject global(cx, &enclosing->global());
+    RootedObject obj(cx, CallObject::create(cx, shape, type, slots, global));
+    if (!obj)
+        return NULL;
+
+    obj->asScope().setEnclosingScope(enclosing);
+    obj->initFixedSlot(CALLEE_SLOT, ObjectOrNullValue(callee));
 
     return &obj->asCall();
 }
