@@ -1,24 +1,12 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/TiledContentClient.h"
-#include <math.h>                       
-#include "ClientTiledThebesLayer.h"     
-#include "GeckoProfilerImpl.h"          
-#include "ClientLayerManager.h"         
-#include "gfxContext.h"                 
-#include "gfxPlatform.h"                
-#include "gfxRect.h"                    
-#include "mozilla/MathAlgorithms.h"     
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/layers/CompositableForwarder.h"
-#include "mozilla/layers/ShadowLayers.h"  
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsSize.h"                     
+#include "mozilla/gfx/2D.h"
+#include "mozilla/MathAlgorithms.h"
+#include "ClientTiledThebesLayer.h"
 
 #ifdef GFX_TILEDLAYER_DEBUG_OVERLAY
 #include "cairo.h"
@@ -28,17 +16,17 @@ static void DrawDebugOverlay(gfxASurface* imgSurf, int x, int y)
 {
   gfxContext c(imgSurf);
 
-  
+  // Draw border
   c.NewPath();
   c.SetDeviceColor(gfxRGBA(0.0, 0.0, 0.0, 1.0));
   c.Rectangle(gfxRect(gfxPoint(0,0),imgSurf->GetSize()));
   c.Stroke();
 
-  
+  // Build tile description
   std::stringstream ss;
   ss << x << ", " << y;
 
-  
+  // Draw text using cairo toy text API
   cairo_t* cr = c.GetCairo();
   cairo_set_font_size(cr, 25);
   cairo_text_extents_t extents;
@@ -85,10 +73,10 @@ TiledContentClient::TiledContentClient(ClientTiledThebesLayer* aThebesLayer,
 void
 TiledContentClient::LockCopyAndWrite(TiledBufferType aType)
 {
-  
-  
-  
-  
+  // Create a heap copy owned and released by the compositor. This is needed
+  // since we're sending this over an async message and content needs to be
+  // be able to modify the tiled buffer in the next transaction.
+  // TODO: Remove me once Bug 747811 lands.
   BasicTiledLayerBuffer* buffer = aType == LOW_PRECISION_TILED_BUFFER
     ? &mLowPrecisionTiledBuffer
     : &mTiledBuffer;
@@ -138,22 +126,22 @@ BasicTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
   long start = PR_IntervalNow();
 #endif
 
-  
+  // If this region is empty XMost() - 1 will give us a negative value.
   NS_ASSERTION(!aPaintRegion.GetBounds().IsEmpty(), "Empty paint region\n");
 
   bool useSinglePaintBuffer = UseSinglePaintBuffer();
-  
-  
-
-
-
-
-
-
-
-
-
-
+  // XXX The single-tile case doesn't work at the moment, see bug 850396
+  /*
+  if (useSinglePaintBuffer) {
+    // Check if the paint only spans a single tile. If that's
+    // the case there's no point in using a single paint buffer.
+    nsIntRect paintBounds = aPaintRegion.GetBounds();
+    useSinglePaintBuffer = GetTileStart(paintBounds.x) !=
+                           GetTileStart(paintBounds.XMost() - 1) ||
+                           GetTileStart(paintBounds.y) !=
+                           GetTileStart(paintBounds.YMost() - 1);
+  }
+  */
 
   if (useSinglePaintBuffer) {
     const nsIntRect bounds = aPaintRegion.GetBounds();
@@ -223,7 +211,7 @@ BasicTiledLayerBuffer::ValidateTileInternal(BasicTiledLayerTile aTile,
   }
   aTile.mDeprecatedTextureClient->EnsureAllocated(gfx::IntSize(GetTileLength(), GetTileLength()), GetContentType());
   gfxASurface* writableSurface = aTile.mDeprecatedTextureClient->LockImageSurface();
-  
+  // Bug 742100, this gfxContext really should live on the stack.
   nsRefPtr<gfxContext> ctxt = new gfxContext(writableSurface);
 
   if (mSinglePaintBuffer) {
@@ -313,18 +301,18 @@ BasicTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& aInvali
 {
   aRegionToPaint = aInvalidRegion;
 
-  
-  
-  
+  // If this is a low precision buffer, we force progressive updates. The
+  // assumption is that the contents is less important, so visual coherency
+  // is lower priority than speed.
   bool drawingLowPrecision = IsLowPrecision();
 
-  
+  // Find out if we have any non-stale content to update.
   nsIntRegion staleRegion;
   staleRegion.And(aInvalidRegion, aOldValidRegion);
 
-  
-  
-  
+  // Find out the current view transform to determine which tiles to draw
+  // first, and see if we should just abort this paint. Aborting is usually
+  // caused by there being an incoming, more relevant paint.
   gfx::Rect viewport;
   float scaleX, scaleY;
   if (mManager->ProgressiveUpdateCallback(!staleRegion.Contains(aInvalidRegion),
@@ -335,15 +323,15 @@ BasicTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& aInvali
     return aIsRepeated;
   }
 
-  
+  // Transform the screen coordinates into local layer coordinates.
   nsIntRect roundedTransformedViewport =
     RoundedTransformViewportBounds(viewport, aPaintData->mScrollOffset, aPaintData->mResolution,
                                    scaleX, scaleY, aPaintData->mTransformScreenToLayer);
 
-  
-  
-  
-  
+  // Paint tiles that have stale content or that intersected with the screen
+  // at the time of issuing the draw command in a single transaction first.
+  // This is to avoid rendering glitches on animated page content, and when
+  // layers change size/shape.
   nsIntRect criticalViewportRect = roundedTransformedViewport.Intersect(aPaintData->mCompositionBounds);
   aRegionToPaint.And(aInvalidRegion, criticalViewportRect);
   aRegionToPaint.Or(aRegionToPaint, staleRegion);
@@ -352,19 +340,19 @@ BasicTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& aInvali
     aRegionToPaint = aInvalidRegion;
   }
 
-  
+  // Prioritise tiles that are currently visible on the screen.
   bool paintVisible = false;
   if (aRegionToPaint.Intersects(roundedTransformedViewport)) {
     aRegionToPaint.And(aRegionToPaint, roundedTransformedViewport);
     paintVisible = true;
   }
 
-  
-  
+  // Paint area that's visible and overlaps previously valid content to avoid
+  // visible glitches in animated elements, such as gifs.
   bool paintInSingleTransaction = paintVisible && (drawingStale || aPaintData->mFirstPaint);
 
-  
-  
+  // The following code decides what order to draw tiles in, based on the
+  // current scroll direction of the primary scrollable layer.
   NS_ASSERTION(!aRegionToPaint.IsEmpty(), "Unexpectedly empty paint region!");
   nsIntRect paintBounds = aRegionToPaint.GetBounds();
 
@@ -386,13 +374,13 @@ BasicTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& aInvali
     incY = -tileLength;
   }
 
-  
+  // Find a tile to draw.
   nsIntRect tileBounds(startX, startY, tileLength, tileLength);
   int32_t scrollDiffX = aPaintData->mScrollOffset.x - aPaintData->mLastScrollOffset.x;
   int32_t scrollDiffY = aPaintData->mScrollOffset.y - aPaintData->mLastScrollOffset.y;
-  
-  
-  
+  // This loop will always terminate, as there is at least one tile area
+  // along the first/last row/column intersecting with regionToPaint, or its
+  // bounds would have been smaller.
   while (true) {
     aRegionToPaint.And(aInvalidRegion, tileBounds);
     if (!aRegionToPaint.IsEmpty()) {
@@ -406,14 +394,14 @@ BasicTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& aInvali
   }
 
   if (!aRegionToPaint.Contains(aInvalidRegion)) {
-    
-    
+    // The region needed to paint is larger then our progressive chunk size
+    // therefore update what we want to paint and ask for a new paint transaction.
 
-    
-    
-    
-    
-    
+    // If we need to draw more than one tile to maintain coherency, make
+    // sure it happens in the same transaction by requesting this work be
+    // repeated immediately.
+    // If this is unnecessary, the remaining work will be done tile-by-tile in
+    // subsequent transactions.
     if (!drawingLowPrecision && paintInSingleTransaction) {
       return true;
     }
@@ -422,9 +410,9 @@ BasicTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& aInvali
     return false;
   }
 
-  
-  
-  
+  // We're not repeating painting and we've not requested a repeat transaction,
+  // so the paint is finished. If there's still a separate low precision
+  // paint to do, it will get marked as unfinished later.
   aPaintData->mPaintFinished = true;
   return false;
 }
@@ -440,8 +428,8 @@ BasicTiledLayerBuffer::ProgressiveUpdate(nsIntRegion& aValidRegion,
   bool repeat = false;
   bool isBufferChanged = false;
   do {
-    
-    
+    // Compute the region that should be updated. Repeat as many times as
+    // is required.
     nsIntRegion regionToPaint;
     repeat = ComputeProgressiveUpdateRegion(aInvalidRegion,
                                             aOldValidRegion,
@@ -449,29 +437,29 @@ BasicTiledLayerBuffer::ProgressiveUpdate(nsIntRegion& aValidRegion,
                                             aPaintData,
                                             repeat);
 
-    
+    // There's no further work to be done.
     if (regionToPaint.IsEmpty()) {
       break;
     }
 
     isBufferChanged = true;
 
-    
+    // Keep track of what we're about to refresh.
     aValidRegion.Or(aValidRegion, regionToPaint);
 
-    
-    
-    
+    // aValidRegion may have been altered by InvalidateRegion, but we still
+    // want to display stale content until it gets progressively updated.
+    // Create a region that includes stale content.
     nsIntRegion validOrStale;
     validOrStale.Or(aValidRegion, aOldValidRegion);
 
-    
+    // Paint the computed region and subtract it from the invalid region.
     PaintThebes(validOrStale, regionToPaint, aCallback, aCallbackData);
     aInvalidRegion.Sub(aInvalidRegion, regionToPaint);
   } while (repeat);
 
-  
-  
+  // Return false if nothing has been drawn, or give what has been drawn
+  // to the shadow layer to upload.
   return isBufferChanged;
 }
 

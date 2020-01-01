@@ -1,30 +1,22 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=8 et :
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_layers_ShadowLayerUtilsX11_h
 #define mozilla_layers_ShadowLayerUtilsX11_h
 
-#include <X11/X.h>                      
+#include <X11/extensions/Xrender.h>
+#include <X11/Xlib.h>
+
 #include "ipc/IPCMessageUtils.h"
-#include "gfxPoint.h"                   
-#include "nsCOMPtr.h"                   
-
-
-
-
 
 #define MOZ_HAVE_SURFACEDESCRIPTORX11
 #define MOZ_HAVE_PLATFORM_SPECIFIC_LAYER_BUFFERS
 
 class gfxXlibSurface;
-
-namespace IPC {
-class Message;
-}
 
 namespace mozilla {
 namespace layers {
@@ -38,26 +30,26 @@ struct SurfaceDescriptorX11 {
   SurfaceDescriptorX11(Drawable aDrawable, XID aFormatID,
                        const gfxIntSize& aSize);
 
-  
+  // Default copy ctor and operator= are OK
 
   bool operator==(const SurfaceDescriptorX11& aOther) const {
-    
-    
-    
-    
-    
+    // Define == as two descriptors having the same XID for now,
+    // ignoring size and render format.  If the two indeed refer to
+    // the same valid XID, then size/format are "actually" the same
+    // anyway, regardless of the values of the fields in
+    // SurfaceDescriptorX11.
     return mId == aOther.mId;
   }
 
   already_AddRefed<gfxXlibSurface> OpenForeign() const;
 
   Drawable mId;
-  XID mFormat; 
+  XID mFormat; // either a PictFormat or VisualID
   gfxIntSize mSize;
 };
 
-} 
-} 
+} // namespace layers
+} // namespace mozilla
 
 namespace IPC {
 
@@ -78,6 +70,6 @@ struct ParamTraits<mozilla::layers::SurfaceDescriptorX11> {
   }
 };
 
-} 
+} // namespace IPC
 
-#endif  
+#endif  // mozilla_layers_ShadowLayerUtilsX11_h

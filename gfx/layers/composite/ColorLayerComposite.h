@@ -1,24 +1,19 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef GFX_ColorLayerComposite_H
 #define GFX_ColorLayerComposite_H
 
-#include "Layers.h"                     
-#include "mozilla/Attributes.h"         
-#include "mozilla/layers/LayerManagerComposite.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "nsTraceRefcnt.h"              
+#include "mozilla/layers/PLayerTransaction.h"
+#include "mozilla/layers/ShadowLayers.h"
 
-struct nsIntPoint;
-struct nsIntRect;
+#include "mozilla/layers/LayerManagerComposite.h"
 
 namespace mozilla {
 namespace layers {
 
-class CompositableHost;
 
 class ColorLayerComposite : public ColorLayer,
                             public LayerComposite
@@ -37,7 +32,7 @@ public:
     Destroy();
   }
 
-  
+  // LayerComposite Implementation
   virtual Layer* GetLayer() MOZ_OVERRIDE { return this; }
 
   virtual void Destroy() MOZ_OVERRIDE { mDestroyed = true; }
@@ -55,6 +50,6 @@ public:
 #endif
 };
 
-} 
-} 
-#endif 
+} /* layers */
+} /* mozilla */
+#endif /* GFX_ColorLayerComposite_H */

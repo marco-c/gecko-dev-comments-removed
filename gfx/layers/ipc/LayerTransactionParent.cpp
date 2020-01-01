@@ -1,43 +1,32 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=8 et :
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <vector>
 
-
-
-
-
-
+#include "AutoOpenSurface.h"
+#include "CompositorParent.h"
+#include "gfxSharedImageSurface.h"
+#include "ImageLayers.h"
+#include "mozilla/layout/RenderFrameParent.h"
+#include "mozilla/unused.h"
+#include "RenderTrace.h"
+#include "ShadowLayerParent.h"
 #include "LayerTransactionParent.h"
-#include <vector>                       
-#include "CompositableHost.h"           
-#include "ImageLayers.h"                
-#include "Layers.h"                     
-#include "ShadowLayerParent.h"          
-#include "gfx3DMatrix.h"                
-#include "gfxPoint3D.h"                 
-#include "CompositableTransactionParent.h"  
-#include "ShadowLayersManager.h"        
-#include "mozilla/Assertions.h"         
-#include "mozilla/gfx/BasePoint3D.h"    
-#include "mozilla/layers/CanvasLayerComposite.h"
-#include "mozilla/layers/ColorLayerComposite.h"
-#include "mozilla/layers/Compositor.h"  
-#include "mozilla/layers/ContainerLayerComposite.h"
-#include "mozilla/layers/ImageLayerComposite.h"
-#include "mozilla/layers/LayerManagerComposite.h"
-#include "mozilla/layers/LayerTransaction.h"  
-#include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "mozilla/layers/PCompositableParent.h"
-#include "mozilla/layers/PLayerParent.h"  
+#include "ShadowLayers.h"
+#include "ShadowLayerUtils.h"
+#include "TiledLayerBuffer.h"
+#include "gfxPlatform.h"
+#include "CompositableHost.h"
 #include "mozilla/layers/ThebesLayerComposite.h"
-#include "mozilla/mozalloc.h"           
-#include "nsCoord.h"                    
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsLayoutUtils.h"              
-#include "nsMathUtils.h"                
-#include "nsPoint.h"                    
-#include "nsTArray.h"                   
-#include "nsTraceRefcnt.h"              
+#include "mozilla/layers/ImageLayerComposite.h"
+#include "mozilla/layers/ColorLayerComposite.h"
+#include "mozilla/layers/ContainerLayerComposite.h"
+#include "mozilla/layers/CanvasLayerComposite.h"
+#include "mozilla/layers/PLayerTransaction.h"
 
 typedef std::vector<mozilla::layers::EditReply> EditReplyVector;
 
@@ -46,10 +35,8 @@ using mozilla::layout::RenderFrameParent;
 namespace mozilla {
 namespace layers {
 
-class PGrallocBufferParent;
-
-
-
+//--------------------------------------------------
+// Convenience accessors
 static ShadowLayerParent*
 cast(const PLayerParent* in)
 {
@@ -142,8 +129,8 @@ ShadowChild(const OpRaiseToTopChild& op)
   return cast(op.childLayerParent());
 }
 
-
-
+//--------------------------------------------------
+// LayerTransactionParent
 LayerTransactionParent::LayerTransactionParent(LayerManagerComposite* aManager,
                                                ShadowLayersManager* aLayersManager,
                                                uint64_t aId)
@@ -171,7 +158,7 @@ LayerTransactionParent::Destroy()
   }
 }
 
-
+/* virtual */
 bool
 LayerTransactionParent::RecvUpdateNoSwap(const InfallibleTArray<Edit>& cset,
                                          const TargetConfig& targetConfig,
@@ -204,7 +191,7 @@ LayerTransactionParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
     const Edit& edit = cset[i];
 
     switch (edit.type()) {
-    
+    // Create* ops
     case Edit::TOpCreateThebesLayer: {
       MOZ_LAYERS_LOG(("[ParentSide] CreateThebesLayer"));
 
@@ -252,7 +239,7 @@ LayerTransactionParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
       break;
     }
 
-    
+    // Attributes
     case Edit::TOpSetLayerAttributes: {
       MOZ_LAYERS_LOG(("[ParentSide] SetLayerAttributes"));
 
@@ -351,7 +338,7 @@ LayerTransactionParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
         edit.get_OpSetDiagnosticTypes().diagnostics());
       break;
     }
-    
+    // Tree ops
     case Edit::TOpSetRoot: {
       MOZ_LAYERS_LOG(("[ParentSide] SetRoot"));
 
@@ -432,9 +419,9 @@ LayerTransactionParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
     }
   }
 
-  
-  
-  
+  // Ensure that any pending operations involving back and front
+  // buffers have completed, so that neither process stomps on the
+  // other's buffer contents.
   LayerManagerComposite::PlatformSyncBeforeReplyUpdate();
 
   mShadowLayersManager->ShadowLayersUpdated(this, targetConfig, isFirstPaint);
@@ -469,9 +456,9 @@ LayerTransactionParent::RecvGetTransform(PLayerParent* aParent,
     return false;
   }
 
-  
-  
-  
+  // The following code recovers the untranslated transform
+  // from the shadow transform by undoing the translations in
+  // AsyncCompositionManager::SampleValue.
   Layer* layer = cast(aParent)->AsLayer();
   *aTransform = layer->AsLayerComposite()->GetShadowTransform();
   if (ContainerLayer* c = layer->AsContainerLayer()) {
@@ -519,9 +506,9 @@ bool
 LayerTransactionParent::RecvClearCachedResources()
 {
   if (mRoot) {
-    
-    
-    
+    // NB: |mRoot| here is the *child* context's root.  In this parent
+    // context, it's just a subtree root.  We need to scope the clear
+    // of resources to exactly that subtree, so we specify it here.
     mLayerManager->ClearCachedResources(mRoot);
   }
   return true;
@@ -579,5 +566,5 @@ LayerTransactionParent::DeallocPCompositableParent(PCompositableParent* actor)
   return true;
 }
 
-} 
-} 
+} // namespace layers
+} // namespace mozilla
