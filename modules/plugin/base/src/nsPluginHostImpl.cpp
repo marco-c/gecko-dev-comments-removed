@@ -942,9 +942,61 @@ nsPluginTag::~nsPluginTag()
 
 }
 
+NS_IMPL_ISUPPORTS1(nsPluginTag, nsIPluginTag)
+
 void nsPluginTag::SetHost(nsPluginHostImpl * aHost)
 {
   mPluginHost = aHost;
+}
+
+NS_IMETHODIMP
+nsPluginTag::GetDescription(nsACString& aDescription)
+{
+  aDescription.Truncate();
+  if (mDescription)
+    aDescription.Assign(nsDependentCString(mDescription));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginTag::GetFilename(nsACString& aFileName)
+{
+  aFileName.Truncate();
+  if (mFileName)
+    aFileName.Assign(nsDependentCString(mFileName));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginTag::GetName(nsACString& aName)
+{
+  aName.Truncate();
+  if (mName)
+    aName.Assign(nsDependentCString(mName));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginTag::GetDisabled(PRBool* aDisabled)
+{
+  *aDisabled = !HasFlag(NS_PLUGIN_FLAG_ENABLED);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginTag::SetDisabled(PRBool aDisabled)
+{
+  if (HasFlag(NS_PLUGIN_FLAG_ENABLED) == !aDisabled)
+    return NS_OK;
+
+  
+  if (aDisabled)
+    UnMark(NS_PLUGIN_FLAG_ENABLED);
+  else
+    Mark(NS_PLUGIN_FLAG_ENABLED);
+
+  mPluginHost->UpdatePluginInfo();
+  return NS_OK;
 }
 
 
@@ -2711,10 +2763,10 @@ nsresult nsPluginHostImpl::ReloadPlugins(PRBool reloadPages)
   mActivePluginList.removeAllStopped();
 
   
-  nsPluginTag * prev = nsnull;
-  nsPluginTag * next = nsnull;
+  nsRefPtr<nsPluginTag> prev;
+  nsRefPtr<nsPluginTag> next;
 
-  for(nsPluginTag * p = mPlugins; p != nsnull;) {
+  for(nsRefPtr<nsPluginTag> p = mPlugins; p != nsnull;) {
     next = p->mNext;
 
     
@@ -2728,7 +2780,7 @@ nsresult nsPluginHostImpl::ReloadPlugins(PRBool reloadPages)
       else
         prev->mNext = next;
 
-      delete p;
+      p->mNext = nsnull;
       p = next;
       continue;
     }
@@ -3214,7 +3266,7 @@ NS_IMETHODIMP nsPluginHostImpl::Destroy(void)
 
   while (nsnull != mPlugins)
   {
-    nsPluginTag *temp = mPlugins->mNext;
+    nsRefPtr<nsPluginTag> temp = mPlugins->mNext;
 
     
     
@@ -3222,17 +3274,12 @@ NS_IMETHODIMP nsPluginHostImpl::Destroy(void)
     
     
 
-    delete mPlugins;
+    mPlugins->mNext = nsnull;
     mPlugins = temp;
   }
 
   
-  while (mCachedPlugins)
-  {
-    nsPluginTag *next = mCachedPlugins->mNext;
-    delete mCachedPlugins;
-    mCachedPlugins = next;
-  }
+  mCachedPlugins = nsnull;
 
   
   if (sPluginTempDir) {
@@ -4367,6 +4414,36 @@ nsPluginHostImpl::GetPlugins(PRUint32 aPluginCount, nsIDOMPlugin** aPluginArray)
 }
 
 
+NS_IMETHODIMP
+nsPluginHostImpl::GetPluginTags(PRUint32* aPluginCount, nsIPluginTag*** aResults)
+{
+  LoadPlugins();
+
+  PRUint32 count = 0;
+  nsRefPtr<nsPluginTag> plugin = mPlugins;
+  while (plugin != nsnull) {
+    count++;
+    plugin = plugin->mNext;
+  }
+
+  *aResults = NS_STATIC_CAST(nsIPluginTag**,
+                             nsMemory::Alloc(count * sizeof(**aResults)));
+  if (!*aResults)
+    return NS_ERROR_OUT_OF_MEMORY;
+
+  *aPluginCount = count;
+
+  plugin = mPlugins;
+  PRUint32 i;
+  for (i = 0; i < count; i++) {
+    (*aResults)[i] = plugin;
+    NS_ADDREF((*aResults)[i]);
+    plugin = plugin->mNext;
+  }
+
+  return NS_OK;
+}
+
 
 nsPluginTag*
 nsPluginHostImpl::FindPluginForType(const char* aMimeType,
@@ -4726,15 +4803,6 @@ static PRBool isUnwantedPlugin(nsPluginTag * tag)
 }
 
 
-PRBool nsPluginHostImpl::IsUnwantedJavaPlugin(nsPluginTag * tag)
-{
-  PRBool javaUnwanted = !mJavaEnabled;
-#ifndef OJI
-  javaUnwanted = PR_TRUE;
-#endif 
-  return javaUnwanted && IsJavaPluginTag(tag);
-}
-
 PRBool nsPluginHostImpl::IsJavaPluginTag(nsPluginTag * tag)
 {
   for (PRInt32 i = 0; i < tag->mVariants; ++i) {
@@ -4958,13 +5026,16 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
     PRInt64 fileModTime = pfd->mModTime;
 
     
-    nsPluginTag *pluginTag = RemoveCachedPluginsInfo(NS_ConvertUTF16toUTF8(pfd->mFilename).get());
+    nsRefPtr<nsPluginTag> pluginTag;
+    RemoveCachedPluginsInfo(NS_ConvertUTF16toUTF8(pfd->mFilename).get(),
+                            getter_AddRefs(pluginTag));
 
+    PRBool pluginEnabled = PR_TRUE;
     if (pluginTag) {
       
       if (LL_NE(fileModTime, pluginTag->mLastModifiedTime)) {
         
-        delete pluginTag;
+        pluginEnabled = pluginTag->HasFlag(NS_PLUGIN_FLAG_ENABLED);
         pluginTag = nsnull;
 
         
@@ -4974,8 +5045,7 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
         
         
         if((checkForUnwantedPlugins && isUnwantedPlugin(pluginTag)) ||
-           IsDuplicatePlugin(pluginTag) ||
-           IsUnwantedJavaPlugin(pluginTag)) {
+           IsDuplicatePlugin(pluginTag)) {
           if (!pluginTag->HasFlag(NS_PLUGIN_FLAG_UNWANTED)) {
             
             *aPluginsChanged = PR_TRUE;
@@ -5041,6 +5111,8 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
 
       pluginTag->mLibrary = pluginLibrary;
       pluginTag->mLastModifiedTime = fileModTime;
+      if (!pluginEnabled || (IsJavaPluginTag(pluginTag) && !mJavaEnabled))
+        pluginTag->UnMark(NS_PLUGIN_FLAG_ENABLED);
 
       
       
@@ -5048,8 +5120,7 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
       NS_ASSERTION(!pluginTag->HasFlag(NS_PLUGIN_FLAG_UNWANTED),
                    "Brand-new tags should not be unwanted");
       if((checkForUnwantedPlugins && isUnwantedPlugin(pluginTag)) ||
-         IsDuplicatePlugin(pluginTag) ||
-         IsUnwantedJavaPlugin(pluginTag)) {
+         IsDuplicatePlugin(pluginTag)) {
         pluginTag->Mark(NS_PLUGIN_FLAG_UNWANTED);
         pluginTag->mNext = mCachedPlugins;
         mCachedPlugins = pluginTag;
@@ -5061,8 +5132,7 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
     PRBool bAddIt = PR_TRUE;
 
     
-    if((checkForUnwantedPlugins && isUnwantedPlugin(pluginTag)) ||
-       IsUnwantedJavaPlugin(pluginTag))
+    if(checkForUnwantedPlugins && isUnwantedPlugin(pluginTag))
       bAddIt = PR_FALSE;
 
     
@@ -5089,7 +5159,7 @@ nsresult nsPluginHostImpl::ScanPluginsDirectory(nsIFile * pluginsDir,
       
       
       
-      delete pluginTag;
+      pluginTag = nsnull;
     }
   }
   return NS_OK;
@@ -5331,8 +5401,9 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
     ScanForRealInComponentsFolder(compManager);
 
   
-  nsPluginTag *next,*prev = nsnull;
-  for (nsPluginTag *cur = mPlugins; cur; cur = next) {
+  nsRefPtr<nsPluginTag> next;
+  nsRefPtr<nsPluginTag> prev;
+  for (nsRefPtr<nsPluginTag> cur = mPlugins; cur; cur = next) {
     next = cur->mNext;
     cur->mNext = prev;
     prev = cur;
@@ -5348,11 +5419,7 @@ nsresult nsPluginHostImpl::FindPlugins(PRBool aCreatePluginList, PRBool * aPlugi
 
 void nsPluginHostImpl::ClearCachedPluginInfoList()
 {
-  while (mCachedPlugins) {
-    nsPluginTag *next = mCachedPlugins->mNext;
-    delete mCachedPlugins;
-    mCachedPlugins = next;
-  }
+  mCachedPlugins = nsnull;
 }
 
 
@@ -5369,6 +5436,16 @@ nsPluginHostImpl::LoadXPCOMPlugins(nsIComponentManager* aComponentManager)
   
   
   
+
+  return NS_OK;
+}
+
+nsresult
+nsPluginHostImpl::UpdatePluginInfo()
+{
+  ReadPluginInfo();
+  WritePluginInfo();
+  ClearCachedPluginInfoList();
 
   return NS_OK;
 }
@@ -5634,7 +5711,7 @@ nsPluginHostImpl::ReadPluginInfo()
       return rv;
     }
 
-    nsPluginTag* tag = new nsPluginTag(name,
+    nsRefPtr<nsPluginTag> tag = new nsPluginTag(name,
       description,
       filename,
       (*fullpath ? fullpath : 0), 
@@ -5652,6 +5729,12 @@ nsPluginHostImpl::ReadPluginInfo()
 
     
     tag->Mark(tagflag | NS_PLUGIN_FLAG_FROMCACHE);
+    if (IsJavaPluginTag(tag)) {
+      if (mJavaEnabled)
+        tag->Mark(NS_PLUGIN_FLAG_ENABLED);
+      else
+        tag->UnMark(NS_PLUGIN_FLAG_ENABLED);
+    }
     PR_LOG(nsPluginLogging::gPluginLog, PLUGIN_LOG_BASIC,
       ("LoadCachedPluginsInfo : Loading Cached plugininfo for %s\n", tag->mFileName));
     tag->mNext = mCachedPlugins;
@@ -5661,11 +5744,12 @@ nsPluginHostImpl::ReadPluginInfo()
   return NS_OK;
 }
 
-nsPluginTag *
-nsPluginHostImpl::RemoveCachedPluginsInfo(const char *filename)
+void
+nsPluginHostImpl::RemoveCachedPluginsInfo(const char *filename, nsPluginTag **result)
 {
-  nsPluginTag **link = &mCachedPlugins;
-  for (nsPluginTag *tag = *link; tag; link = &tag->mNext, tag = *link)
+  nsRefPtr<nsPluginTag> prev;
+  nsRefPtr<nsPluginTag> tag = mCachedPlugins;
+  while (tag)
   {
     
     
@@ -5675,11 +5759,18 @@ nsPluginHostImpl::RemoveCachedPluginsInfo(const char *filename)
         (tag->mFullPath && !PL_strcmp(tag->mFullPath, filename)))
     {
       
-      *link = tag->mNext;
-      return tag;
+      if (prev)
+        prev->mNext = tag->mNext;
+      else
+        mCachedPlugins = tag->mNext;
+      tag->mNext = nsnull;
+      *result = tag;
+      NS_ADDREF(*result);
+      break;
     }
+    prev = tag;
+    tag = tag->mNext;
   }
-  return nsnull;
 }
 
 nsresult
@@ -6736,10 +6827,10 @@ nsPluginHostImpl::ScanForRealInComponentsFolder(nsIComponentManager * aCompManag
 
   
   if (info.fMimeTypeArray) {
-    nsPluginTag *pluginTag = new nsPluginTag(&info);
+    nsRefPtr<nsPluginTag> pluginTag = new nsPluginTag(&info);
     if (pluginTag) {
-      NS_ASSERTION(!IsUnwantedJavaPlugin(pluginTag),
-                   "RealPlayer plugin is unwanted Java plugin?");
+      NS_ASSERTION(!IsJavaPluginTag(pluginTag),
+                   "RealPlayer plugin is Java plugin?");
       pluginTag->SetHost(this);
       pluginTag->mNext = mPlugins;
       mPlugins = pluginTag;
