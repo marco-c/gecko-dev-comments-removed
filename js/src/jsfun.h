@@ -1,14 +1,14 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jsfun_h___
 #define jsfun_h___
-/*
- * JS function definitions.
- */
+
+
+
 #include "jsprvtd.h"
 #include "jspubtd.h"
 #include "jsobj.h"
@@ -18,22 +18,22 @@
 
 #include "gc/Barrier.h"
 
-/*
- * The high two bits of JSFunction.flags encode whether the function is native
- * or interpreted, and if interpreted, what kind of optimized closure form (if
- * any) it might be.
- *
- *   00   not interpreted
- *   01   interpreted, not null closure
- *   11   interpreted, null closure
- *
- * NB: JSFUN_EXPR_CLOSURE reuses JSFUN_STUB_GSOPS, which is an API request flag
- * bit only, never stored in fun->flags.
- *
- * If we need more bits in the future, all flags for interpreted functions can
- * move to u.i.script->flags. For now we use function flag bits to minimize
- * pointer-chasing.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define JSFUN_PROTOTYPE     0x0800  /* function is Function.prototype for some
                                        global object */
 
@@ -45,20 +45,20 @@ namespace js { class FunctionExtended; }
 
 struct JSFunction : public JSObject
 {
-    uint16_t        nargs;        /* maximum number of specified arguments,
-                                     reflected as f.length/f.arity */
-    uint16_t        flags;        /* flags, see JSFUN_* below and in jsapi.h */
+    uint16_t        nargs;        
+
+    uint16_t        flags;        
     union U {
-        js::Native  native;       /* native method pointer or null */
+        js::Native  native;       
         struct Scripted {
-            JSScript    *script_; /* interpreted bytecode descriptor or null;
-                                     use the accessor! */
-            JSObject    *env_;    /* environment for new activations;
-                                     use the accessor! */
+            JSScript    *script_; 
+
+            JSObject    *env_;    
+
         } i;
         void            *nativeOrScript;
     } u;
-    js::HeapPtrAtom  atom;        /* name for diagnostics and decompiling */
+    js::HeapPtrAtom  atom;        
 
     bool hasDefaults()       const { return flags & JSFUN_HAS_DEFAULTS; }
     bool hasRest()           const { return flags & JSFUN_HAS_REST; }
@@ -70,7 +70,7 @@ struct JSFunction : public JSObject
     bool isInterpretedConstructor() const { return isInterpreted() && !isFunctionPrototype(); }
     bool isNamedLambda()     const { return (flags & JSFUN_LAMBDA) && atom; }
 
-    /* Returns the strictness of this function, which must be interpreted. */
+    
     inline bool inStrictMode() const;
 
     void setArgCount(uint16_t nargs) {
@@ -88,13 +88,13 @@ struct JSFunction : public JSObject
         this->flags |= JSFUN_HAS_DEFAULTS;
     }
 
-    /* uint16_t representation bounds number of call object dynamic slots. */
+    
     enum { MAX_ARGS_AND_VARS = 2 * ((1U << 16) - 1) };
 
-    /*
-     * For an interpreted function, accessors for the initial scope object of
-     * activations (stack frames) of the function.
-     */
+    
+
+
+
     inline JSObject *environment() const;
     inline void setEnvironment(JSObject *obj);
     inline void initEnvironment(JSObject *obj);
@@ -143,7 +143,7 @@ struct JSFunction : public JSObject
 
     inline void trace(JSTracer *trc);
 
-    /* Bound function accessors. */
+    
 
     inline bool initBoundFunction(JSContext *cx, js::HandleValue thisArg,
                                   const js::Value *args, unsigned argslen);
@@ -152,8 +152,6 @@ struct JSFunction : public JSObject
     inline const js::Value &getBoundFunctionThis() const;
     inline const js::Value &getBoundFunctionArgument(unsigned which) const;
     inline size_t getBoundFunctionArgumentCount() const;
-
-    JSString *toString(JSContext *cx, bool bodyOnly, bool pretty);
 
   private:
     inline js::FunctionExtended *toExtended();
@@ -166,19 +164,19 @@ struct JSFunction : public JSObject
     }
 
   public:
-    /* Accessors for data stored in extended functions. */
+    
     inline void initializeExtended();
     inline void setExtendedSlot(size_t which, const js::Value &val);
     inline const js::Value &getExtendedSlot(size_t which) const;
 
-    /* Constructs a new type for the function if necessary. */
+    
     bool setTypeForScriptedFunction(JSContext *cx, bool singleton = false);
 
   private:
-    /*
-     * These member functions are inherited from JSObject, but should never be applied to
-     * a value statically known to be a JSFunction.
-     */
+    
+
+
+
     inline JSFunction *toFunction() MOZ_DELETE;
     inline const JSFunction *toFunction() const MOZ_DELETE;
 };
@@ -217,20 +215,20 @@ js_DefineFunction(JSContext *cx, js::HandleObject obj, js::HandleId id, JSNative
 
 namespace js {
 
-/*
- * Function extended with reserved slots for use by various kinds of functions.
- * Most functions do not have these extensions, but enough are that efficient
- * storage is required (no malloc'ed reserved slots).
- */
+
+
+
+
+
 class FunctionExtended : public JSFunction
 {
     friend struct JSFunction;
 
-    /* Reserved slots available for storage by particular native functions. */
+    
     HeapValue extendedSlots[2];
 };
 
-} // namespace js
+} 
 
 inline js::FunctionExtended *
 JSFunction::toExtended()
@@ -248,6 +246,8 @@ JSFunction::toExtended() const
 
 namespace js {
 
+JSString *FunctionToString(JSContext *cx, HandleFunction fun, bool bodyOnly, bool lambdaParen);
+
 template<XDRMode mode>
 bool
 XDRInterpretedFunction(XDRState<mode> *xdr, HandleObject enclosingScope,
@@ -256,22 +256,22 @@ XDRInterpretedFunction(XDRState<mode> *xdr, HandleObject enclosingScope,
 extern JSObject *
 CloneInterpretedFunction(JSContext *cx, HandleObject enclosingScope, HandleFunction fun);
 
-/*
- * Report an error that call.thisv is not compatible with the specified class,
- * assuming that the method (clasp->name).prototype.<name of callee function>
- * is what was called.
- */
+
+
+
+
+
 extern void
 ReportIncompatibleMethod(JSContext *cx, CallReceiver call, Class *clasp);
 
-/*
- * Report an error that call.thisv is not an acceptable this for the callee
- * function.
- */
+
+
+
+
 extern void
 ReportIncompatible(JSContext *cx, CallReceiver call);
 
-} /* namespace js */
+} 
 
 extern JSBool
 js_fun_apply(JSContext *cx, unsigned argc, js::Value *vp);
@@ -283,4 +283,4 @@ extern JSObject*
 js_fun_bind(JSContext *cx, js::HandleObject target, js::HandleValue thisArg,
             js::Value *boundArgs, unsigned argslen);
 
-#endif /* jsfun_h___ */
+#endif 
