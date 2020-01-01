@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jsatom_h___
 #define jsatom_h___
@@ -25,7 +25,7 @@
 
 struct JSIdArray {
     int length;
-    js::HeapId vector[1];    
+    js::HeapId vector[1];    /* actually, length jsid words */
 };
 
 namespace js {
@@ -50,18 +50,18 @@ struct DefaultHasher<jsid>
     }
 };
 
-} 
+} /* namespace js */
 
-
-
-
-
+/*
+ * Return a printable, lossless char[] representation of a string-type atom.
+ * The lifetime of the result matches the lifetime of bytes.
+ */
 extern const char *
 js_AtomToPrintableString(JSContext *cx, JSAtom *atom, JSAutoByteString *bytes);
 
 namespace js {
 
-
+/* Compute a hash function from chars/length. */
 inline uint32_t
 HashChars(const jschar *chars, size_t length)
 {
@@ -90,10 +90,10 @@ class AtomStateEntry
         return bits & 0x1;
     }
 
-    
-
-
-
+    /*
+     * Non-branching code sequence. Note that the const_cast is safe because
+     * the hash function doesn't consider the tag to be a portion of the key.
+     */
     void setTagged(bool enabled) const {
         const_cast<AtomStateEntry *>(this)->bits |= uintptr_t(enabled);
     }
@@ -107,7 +107,7 @@ struct AtomHasher
     {
         const jschar    *chars;
         size_t          length;
-        const JSAtom    *atom; 
+        const JSAtom    *atom; /* Optional. */
 
         Lookup(const jschar *chars, size_t length) : chars(chars), length(length), atom(NULL) {}
         inline Lookup(const JSAtom *atom);
@@ -119,37 +119,14 @@ struct AtomHasher
 
 typedef HashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy> AtomSet;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum FlationCoding
-{
-    NormalEncoding,
-    CESU8Encoding
-};
-
 class PropertyName;
 
-}  
+}  /* namespace js */
 
 extern bool
 AtomIsInterned(JSContext *cx, JSAtom *atom);
 
-
+/* Well-known predefined C strings. */
 #define DECLARE_PROTO_STR(name,code,init) extern const char js_##name##_str[];
 JS_FOR_EACH_PROTOTYPE(DECLARE_PROTO_STR)
 #undef DECLARE_PROTO_STR
@@ -158,7 +135,7 @@ JS_FOR_EACH_PROTOTYPE(DECLARE_PROTO_STR)
 FOR_EACH_COMMON_PROPERTYNAME(DECLARE_CONST_CHAR_STR)
 #undef DECLARE_CONST_CHAR_STR
 
-
+/* Constant strings that are not atomized. */
 extern const char js_break_str[];
 extern const char js_case_str[];
 extern const char js_catch_str[];
@@ -207,24 +184,24 @@ namespace js {
 
 extern const char * TypeStrings[];
 
-
-
-
-
-
+/*
+ * Initialize atom state. Return true on success, false on failure to allocate
+ * memory. The caller must zero rt->atomState before calling this function and
+ * only call it after js_InitGC successfully returns.
+ */
 extern JSBool
 InitAtoms(JSRuntime *rt);
 
-
-
-
-
+/*
+ * Free and clear atom state including any interned string atoms. This
+ * function must be called before js_FinishGC.
+ */
 extern void
 FinishAtoms(JSRuntime *rt);
 
-
-
-
+/*
+ * Atom tracing and garbage collection hooks.
+ */
 extern void
 MarkAtoms(JSTracer *trc);
 
@@ -237,7 +214,7 @@ InitCommonNames(JSContext *cx);
 extern void
 FinishCommonNames(JSRuntime *rt);
 
-
+/* N.B. must correspond to boolean tagging behavior. */
 enum InternBehavior
 {
     DoNotInternAtom = false,
@@ -246,8 +223,7 @@ enum InternBehavior
 
 extern JSAtom *
 Atomize(JSContext *cx, const char *bytes, size_t length,
-        js::InternBehavior ib = js::DoNotInternAtom,
-        js::FlationCoding fc = js::NormalEncoding);
+        js::InternBehavior ib = js::DoNotInternAtom);
 
 extern JSAtom *
 AtomizeChars(JSContext *cx, const jschar *chars, size_t length,
@@ -274,6 +250,6 @@ template<XDRMode mode>
 bool
 XDRAtom(XDRState<mode> *xdr, js::MutableHandleAtom atomp);
 
-} 
+} /* namespace js */
 
-#endif 
+#endif /* jsatom_h___ */
