@@ -1,44 +1,44 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is nsCSSDataBlock.cpp.
+ *
+ * The Initial Developer of the Original Code is L. David Baron.
+ * Portions created by the Initial Developer are Copyright (C) 2003
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   L. David Baron <dbaron@dbaron.org> (original author)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * compact representation of the property-value pairs within a CSS
+ * declaration, and the code for expanding and compacting it
+ */
 
 #include "nsCSSDataBlock.h"
 #include "nsCSSProps.h"
@@ -46,22 +46,22 @@
 #include "nsRuleNode.h"
 #include "nsStyleSet.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * nsCSSCompressedDataBlock holds property-value pairs corresponding to
+ * CSS declaration blocks.  The value is stored in one of the five CSS
+ * data types: nsCSSValue, nsCSSRect, nsCSSValueList, nsCSSValuePair,
+ * and nsCSSValuePairList, which each correspond to a value of the
+ * nsCSSType enumeration.
+ *
+ * The storage strategy uses the CDB*Storage structs below to help
+ * ensure that all the types remain properly aligned.  nsCSSValue's
+ * alignment requirements cannot be weaker than any others, since it
+ * contains a pointer and an enumeration.
+ *
+ * The simple types, nsCSSValue and nsCSSRect have the nsCSSValue or
+ * nsCSSRect objects stored in the block.  The list types have only a
+ * pointer to the first element in the list stored in the block.
+ */
 
 struct CDBValueStorage {
     nsCSSProperty property;
@@ -88,19 +88,19 @@ enum {
     CDBValueStorage_advance = sizeof(CDBValueStorage),
     CDBRectStorage_advance = sizeof(CDBRectStorage),
     CDBValuePairStorage_advance = sizeof(CDBValuePairStorage),
-    
-    
+    // round up using the closest estimate we can get of the alignment
+    // requirements of nsCSSValue:
     CDBPointerStorage_advance = PR_ROUNDUP(sizeof(CDBPointerStorage),
                                 sizeof(CDBValueStorage) - sizeof(nsCSSValue))
 };
 
-
-
-
-
-
-
-
+/*
+ * Define a bunch of utility functions for getting the property or any
+ * of the value types when the cursor is at the beginning of the storage
+ * for the property-value pair.  The versions taking a non-const cursor
+ * argument return a reference so that the caller can assign into the
+ * result.
+ */
 
 inline nsCSSProperty& PropertyAtCursor(char *aCursor) {
     return *reinterpret_cast<nsCSSProperty*>(aCursor);
@@ -173,10 +173,10 @@ ShouldIgnoreColors(nsRuleData *aRuleData)
 nsresult
 nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
 {
-    
-    
-    
-    
+    // If we have no data for these structs, then return immediately.
+    // This optimization should make us return most of the time, so we
+    // have to worry much less (although still some) about the speed of
+    // the rest of the function.
     if (!(aRuleData->mSIDs & mStyleBits))
         return NS_OK;
 
@@ -213,7 +213,7 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
                         }
                         *target = *val;
                         if (iProp == eCSSProperty_font_family) {
-                            
+                            // XXX Are there other things like this?
                             aRuleData->mFontData->mFamilyFromHTML = PR_FALSE;
                         }
                         else if (iProp == eCSSProperty_color ||
@@ -231,8 +231,8 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
                                  iProp == eCSSProperty_outline_color) {
                             if (ShouldIgnoreColors(aRuleData)) {
                                 if (iProp == eCSSProperty_background_color) {
-                                    
-                                    
+                                    // Force non-'transparent' background
+                                    // colors to the user's default.
                                     nsCSSUnit u = target->GetUnit();
                                     if (u != eCSSUnit_Enumerated &&
                                         u != eCSSUnit_Inherit &&
@@ -242,8 +242,8 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
                                             DefaultBackgroundColor());
                                     }
                                 } else {
-                                    
-                                    
+                                    // Ignore 'color', 'border-*-color', and
+                                    // 'background-image'
                                     *target = nsCSSValue();
                                 }
                             }
@@ -290,8 +290,8 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
                         for (nsCSSValueList* l = ValueListAtCursor(cursor);
                              l; l = l->mNext)
                             if (l->mValue.GetUnit() == eCSSUnit_Array) {
-                                
-                                
+                                // Don't try to restart loads we've already
+                                // started
                                 nsCSSValue& val =
                                     l->mValue.GetArrayValue()->Item(0);
                                 if (val.GetUnit() == eCSSUnit_URL)
@@ -299,7 +299,7 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
                                       aRuleData->mPresContext->Document());
                             }
                     }
-                
+                // fall through
                 case eCSSType_ValuePairList: {
                     void** target = static_cast<void**>(prop);
                     if (!*target) {
@@ -348,10 +348,10 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
 const void*
 nsCSSCompressedDataBlock::StorageFor(nsCSSProperty aProperty) const
 {
-    
-    
-    
-    
+    // If we have no data for this struct, then return immediately.
+    // This optimization should make us return most of the time, so we
+    // have to worry much less (although still some) about the speed of
+    // the rest of the function.
     if (!(nsCachedStyleData::GetBitForSID(nsCSSProps::kSIDTable[aProperty]) &
           mStyleBits))
         return nsnull;
@@ -457,8 +457,8 @@ nsCSSCompressedDataBlock::Clone() const
                 switch (nsCSSProps::kTypeTable[iProp]) {
                     default:
                         NS_NOTREACHED("unreachable");
-                        
-                        
+                        // fall through to keep gcc's uninitialized
+                        // variable warning quiet
                     case eCSSType_ValueList:
                         copy = new nsCSSValueList(*ValueListAtCursor(cursor));
                         break;
@@ -537,7 +537,7 @@ nsCSSCompressedDataBlock::Destroy()
     delete this;
 }
 
- nsCSSCompressedDataBlock*
+/* static */ nsCSSCompressedDataBlock*
 nsCSSCompressedDataBlock::CreateEmptyBlock()
 {
     nsCSSCompressedDataBlock *result = new(0) nsCSSCompressedDataBlock();
@@ -547,7 +547,7 @@ nsCSSCompressedDataBlock::CreateEmptyBlock()
     return result;
 }
 
-
+/*****************************************************************************/
 
 nsCSSExpandedDataBlock::nsCSSExpandedDataBlock()
 {
@@ -581,12 +581,12 @@ nsCSSExpandedDataBlock::DoExpand(nsCSSCompressedDataBlock *aBlock,
 {
     NS_PRECONDITION(aBlock, "unexpected null block");
 
-    
-
-
-
-
-
+    /*
+     * Save needless copying and allocation by copying the memory
+     * corresponding to the stored data in the compressed block, and
+     * then, to avoid destructors, deleting the compressed block by
+     * calling |delete| instead of using its |Destroy| method.
+     */
     const char* cursor = aBlock->Block();
     const char* cursor_end = aBlock->BlockEnd();
     while (cursor < cursor_end) {
@@ -687,7 +687,9 @@ nsCSSExpandedDataBlock::ComputeSize()
                 nsCSSProperty(iHigh * kPropertiesSetChunkSize + iLow);
             NS_ASSERTION(0 <= iProp && iProp < eCSSProperty_COUNT_no_shorthands,
                          "out of range");
+#ifdef DEBUG
             void *prop = PropertyAt(iProp);
+#endif
             PRUint32 increment = 0;
             switch (nsCSSProps::kTypeTable[iProp]) {
                 case eCSSType_Value: {
@@ -766,11 +768,11 @@ nsCSSExpandedDataBlock::Compress(nsCSSCompressedDataBlock **aNormalBlock,
         result_important = nsnull;
     }
 
-    
-
-
-
-
+    /*
+     * Save needless copying and allocation by copying the memory
+     * corresponding to the stored data in the expanded block, and then
+     * clearing the data in the expanded block.
+     */
     for (PRUint32 iHigh = 0; iHigh < NS_ARRAY_LENGTH(mPropertiesSet); ++iHigh) {
         if (mPropertiesSet[iHigh] == 0)
             continue;
