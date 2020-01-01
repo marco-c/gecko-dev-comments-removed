@@ -1,28 +1,28 @@
-/*
- * Copyright © 2012  Google, Inc.
- *
- *  This is part of HarfBuzz, a text shaping library.
- *
- * Permission is hereby granted, without written agreement and without
- * license or royalty fees, to use, copy, modify, and distribute this
- * software and its documentation for any purpose, provided that the
- * above copyright notice and the following two paragraphs appear in
- * all copies of this software.
- *
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
- * DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
- * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
- * IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
- * DAMAGE.
- *
- * THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
- * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
- * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
- * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
- *
- * Google Author(s): Behdad Esfahbod
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef HB_OT_SHAPE_COMPLEX_INDIC_PRIVATE_HH
 #define HB_OT_SHAPE_COMPLEX_INDIC_PRIVATE_HH
@@ -31,21 +31,21 @@
 
 
 #include "hb-ot-shape-complex-private.hh"
-#include "hb-ot-shape-private.hh" /* XXX Remove */
+#include "hb-ot-shape-private.hh" 
 
 
-/* buffer var allocations */
+
 #define indic_category() complex_var_u8_0() /* indic_category_t */
 #define indic_position() complex_var_u8_1() /* indic_matra_category_t */
 
 
-#define INDIC_TABLE_ELEMENT_TYPE uint8_t
+#define INDIC_TABLE_ELEMENT_TYPE uint16_t
 
-/* Cateories used in the OpenType spec:
- * https://www.microsoft.com/typography/otfntdev/devanot/shaping.aspx
- */
-/* Note: This enum is duplicated in the -machine.rl source file.
- * Not sure how to avoid duplication. */
+
+
+
+
+
 enum indic_category_t {
   OT_X = 0,
   OT_C,
@@ -59,14 +59,15 @@ enum indic_category_t {
   OT_VD,
   OT_A,
   OT_NBSP,
-  OT_DOTTEDCIRCLE, /* Not in the spec, but special in Uniscribe. /Very very/ special! */
-  OT_RS, /* Register Shifter, used in Khmer OT spec */
+  OT_DOTTEDCIRCLE, 
+  OT_RS, 
   OT_Coeng,
   OT_Repha,
-  OT_Ra /* Not explicitly listed in the OT spec, but used in the grammar. */
+  OT_Ra, 
+  OT_CM
 };
 
-/* Visual positions in a syllable from left to right. */
+
 enum indic_position_t {
   POS_START,
 
@@ -93,7 +94,7 @@ enum indic_position_t {
   POS_END
 };
 
-/* Categories used in IndicSyllabicCategory.txt from UCD. */
+
 enum indic_syllabic_category_t {
   INDIC_SYLLABIC_CATEGORY_OTHER			= OT_X,
 
@@ -103,7 +104,7 @@ enum indic_syllabic_category_t {
   INDIC_SYLLABIC_CATEGORY_CONSONANT_DEAD	= OT_C,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_FINAL	= OT_C,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_HEAD_LETTER	= OT_C,
-  INDIC_SYLLABIC_CATEGORY_CONSONANT_MEDIAL	= OT_C,
+  INDIC_SYLLABIC_CATEGORY_CONSONANT_MEDIAL	= OT_CM,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_PLACEHOLDER	= OT_NBSP,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_SUBJOINED	= OT_C,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_REPHA	= OT_Repha,
@@ -111,7 +112,7 @@ enum indic_syllabic_category_t {
   INDIC_SYLLABIC_CATEGORY_NUKTA			= OT_N,
   INDIC_SYLLABIC_CATEGORY_REGISTER_SHIFTER	= OT_RS,
   INDIC_SYLLABIC_CATEGORY_TONE_LETTER		= OT_X,
-  INDIC_SYLLABIC_CATEGORY_TONE_MARK		= OT_X,
+  INDIC_SYLLABIC_CATEGORY_TONE_MARK		= OT_N,
   INDIC_SYLLABIC_CATEGORY_VIRAMA		= OT_H,
   INDIC_SYLLABIC_CATEGORY_VISARGA		= OT_SM,
   INDIC_SYLLABIC_CATEGORY_VOWEL			= OT_V,
@@ -119,7 +120,7 @@ enum indic_syllabic_category_t {
   INDIC_SYLLABIC_CATEGORY_VOWEL_INDEPENDENT	= OT_V
 };
 
-/* Categories used in IndicSMatraCategory.txt from UCD */
+
 enum indic_matra_category_t {
   INDIC_MATRA_CATEGORY_NOT_APPLICABLE		= POS_END,
 
@@ -128,7 +129,7 @@ enum indic_matra_category_t {
   INDIC_MATRA_CATEGORY_BOTTOM			= POS_BELOW_C,
   INDIC_MATRA_CATEGORY_RIGHT			= POS_POST_C,
 
-  /* These should resolve to the position of the last part of the split sequence. */
+  
   INDIC_MATRA_CATEGORY_BOTTOM_AND_RIGHT		= INDIC_MATRA_CATEGORY_RIGHT,
   INDIC_MATRA_CATEGORY_LEFT_AND_RIGHT		= INDIC_MATRA_CATEGORY_RIGHT,
   INDIC_MATRA_CATEGORY_TOP_AND_BOTTOM		= INDIC_MATRA_CATEGORY_BOTTOM,
@@ -138,16 +139,16 @@ enum indic_matra_category_t {
   INDIC_MATRA_CATEGORY_TOP_AND_RIGHT		= INDIC_MATRA_CATEGORY_RIGHT,
 
   INDIC_MATRA_CATEGORY_INVISIBLE		= INDIC_MATRA_CATEGORY_NOT_APPLICABLE,
-  INDIC_MATRA_CATEGORY_OVERSTRUCK		= INDIC_MATRA_CATEGORY_NOT_APPLICABLE,
-  INDIC_MATRA_CATEGORY_VISUAL_ORDER_LEFT	= INDIC_MATRA_CATEGORY_NOT_APPLICABLE
+  INDIC_MATRA_CATEGORY_OVERSTRUCK		= POS_AFTER_MAIN,
+  INDIC_MATRA_CATEGORY_VISUAL_ORDER_LEFT	= POS_PRE_M
 };
 
-/* Note: We use ASSERT_STATIC_EXPR_ZERO() instead of ASSERT_STATIC_EXPR() and the comma operation
- * because gcc fails to optimize the latter and fills the table in at runtime. */
+
+
 #define INDIC_COMBINE_CATEGORIES(S,M) \
   (ASSERT_STATIC_EXPR_ZERO (M == INDIC_MATRA_CATEGORY_NOT_APPLICABLE || (S == INDIC_SYLLABIC_CATEGORY_VIRAMA || S == INDIC_SYLLABIC_CATEGORY_VOWEL_DEPENDENT)) + \
-   ASSERT_STATIC_EXPR_ZERO (S < 16 && M < 16) + \
-   ((M << 4) | S))
+   ASSERT_STATIC_EXPR_ZERO (S < 255 && M < 255) + \
+   ((M << 8) | S))
 
 
 #include "hb-ot-shape-complex-indic-table.hh"
@@ -221,38 +222,38 @@ matra_position (hb_codepoint_t u, indic_position_t side)
     case POS_ABOVE_C:	return MATRA_POS_TOP (u);
     case POS_BELOW_C:	return MATRA_POS_BOTTOM (u);
   };
-  abort ();
+  return side;
 }
 
 
 
-/* XXX
- * This is a hack for now.  We should move this data into the main Indic table.
- * Or completely remove it and just check in the tables.
- */
+
+
+
+
 static const hb_codepoint_t ra_chars[] = {
-  0x0930, /* Devanagari */
-  0x09B0, /* Bengali */
-  0x09F0, /* Bengali */
-  0x0A30, /* Gurmukhi */	/* No Reph */
-  0x0AB0, /* Gujarati */
-  0x0B30, /* Oriya */
-  0x0BB0, /* Tamil */		/* No Reph */
-  0x0C30, /* Telugu */		/* Reph formed only with ZWJ */
-  0x0CB0, /* Kannada */
-  0x0D30, /* Malayalam */	/* No Reph, Logical Repha */
+  0x0930, 
+  0x09B0, 
+  0x09F0, 
+  0x0A30, 	
+  0x0AB0, 
+  0x0B30, 
+  0x0BB0, 		
+  0x0C30, 		
+  0x0CB0, 
+  0x0D30, 	
 
-  0x0DBB, /* Sinhala */		/* Reph formed only with ZWJ */
+  0x0DBB, 		
 
-  0x179A, /* Khmer */		/* No Reph, Visual Repha */
+  0x179A, 		
 };
 
 static inline indic_position_t
 consonant_position (hb_codepoint_t  u)
 {
   if ((u & ~0x007F) == 0x1780)
-    return POS_BELOW_C; /* In Khmer coeng model, post and below forms should not be reordered. */
-  return POS_BASE_C; /* Will recategorize later based on font lookups. */
+    return POS_BELOW_C; 
+  return POS_BASE_C; 
 }
 
 static inline bool
@@ -268,7 +269,7 @@ is_ra (hb_codepoint_t u)
 static inline bool
 is_one_of (const hb_glyph_info_t &info, unsigned int flags)
 {
-  /* If it ligated, all bets are off. */
+  
   if (is_a_ligature (info)) return false;
   return !!(FLAG (info.indic_category()) & flags);
 }
@@ -280,12 +281,12 @@ is_joiner (const hb_glyph_info_t &info)
   return is_one_of (info, JOINER_FLAGS);
 }
 
-/* Note:
- *
- * We treat Vowels and placeholders as if they were consonants.  This is safe because Vowels
- * cannot happen in a consonant syllable.  The plus side however is, we can call the
- * consonant syllable logic from the vowel syllable function and get it all right! */
-#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_Ra) | FLAG (OT_V) | FLAG (OT_NBSP) | FLAG (OT_DOTTEDCIRCLE))
+
+
+
+
+
+#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_CM) | FLAG (OT_Ra) | FLAG (OT_V) | FLAG (OT_NBSP) | FLAG (OT_DOTTEDCIRCLE))
 static inline bool
 is_consonant (const hb_glyph_info_t &info)
 {
@@ -304,60 +305,60 @@ set_indic_properties (hb_glyph_info_t &info)
 {
   hb_codepoint_t u = info.codepoint;
   unsigned int type = get_indic_categories (u);
-  indic_category_t cat = (indic_category_t) (type & 0x0F);
-  indic_position_t pos = (indic_position_t) (type >> 4);
+  indic_category_t cat = (indic_category_t) (type & 0x7F);
+  indic_position_t pos = (indic_position_t) (type >> 8);
 
 
-  /*
-   * Re-assign category
-   */
+  
 
 
-  /* The spec says U+0952 is OT_A.  However, testing shows that Uniscribe
-   * treats U+0951..U+0952 all as OT_VD.
-   * TESTS:
-   * U+092E,U+0947,U+0952
-   * U+092E,U+0952,U+0947
-   * U+092E,U+0947,U+0951
-   * U+092E,U+0951,U+0947
-   * */
+
+
+  
+
+
+
+
+
+
+
   if (unlikely (hb_in_range<hb_codepoint_t> (u, 0x0951, 0x0954)))
     cat = OT_VD;
 
   if (unlikely (u == 0x17D1))
     cat = OT_X;
   if (cat == OT_X &&
-      unlikely (hb_in_range<hb_codepoint_t> (u, 0x17CB, 0x17D3))) /* Khmer Various signs */
+      unlikely (hb_in_range<hb_codepoint_t> (u, 0x17CB, 0x17D3))) 
   {
-    /* These are like Top Matras. */
+    
     cat = OT_M;
     pos = POS_ABOVE_C;
   }
-  if (u == 0x17C6) /* Khmer Bindu doesn't like to be repositioned. */
+  if (u == 0x17C6) 
     cat = OT_N;
 
-  if (unlikely (u == 0x17D2)) cat = OT_Coeng; /* Khmer coeng */
+  if (unlikely (u == 0x17D2)) cat = OT_Coeng; 
   else if (unlikely (u == 0x200C)) cat = OT_ZWNJ;
   else if (unlikely (u == 0x200D)) cat = OT_ZWJ;
   else if (unlikely (u == 0x25CC)) cat = OT_DOTTEDCIRCLE;
-  else if (unlikely (u == 0x0A71)) cat = OT_SM; /* GURMUKHI ADDAK.  More like consonant medial. like 0A75. */
+  else if (unlikely (u == 0x0A71)) cat = OT_SM; 
 
   if (cat == OT_Repha) {
-    /* There are two kinds of characters marked as Repha:
-     * - The ones that are GenCat=Mn are already positioned visually, ie. after base. (eg. Khmer)
-     * - The ones that are GenCat=Lo is encoded logically, ie. beginning of syllable. (eg. Malayalam)
-     *
-     * We recategorize the first kind to look like a Nukta and attached to the base directly.
-     */
+    
+
+
+
+
+
     if (_hb_glyph_info_get_general_category (&info) == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK)
       cat = OT_N;
   }
 
 
 
-  /*
-   * Re-assign position.
-   */
+  
+
+
 
   if ((FLAG (cat) & CONSONANT_FLAGS))
   {
@@ -374,7 +375,7 @@ set_indic_properties (hb_glyph_info_t &info)
     pos = POS_SMVD;
   }
 
-  if (unlikely (u == 0x0B01)) pos = POS_BEFORE_SUB; /* Oriya Bindu is BeforeSub in the spec. */
+  if (unlikely (u == 0x0B01)) pos = POS_BEFORE_SUB; 
 
 
 
@@ -384,4 +385,4 @@ set_indic_properties (hb_glyph_info_t &info)
 
 
 
-#endif /* HB_OT_SHAPE_COMPLEX_INDIC_PRIVATE_HH */
+#endif 
