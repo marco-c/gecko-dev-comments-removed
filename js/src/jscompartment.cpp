@@ -163,6 +163,19 @@ JSCompartment::ensureIonCompartmentExists(JSContext *cx)
 }
 #endif
 
+static bool
+WrapForSameCompartment(JSContext *cx, JSObject *obj, Value *vp)
+{
+    JS_ASSERT(cx->compartment == obj->compartment());
+    if (cx->runtime->sameCompartmentWrapObjectCallback) {
+        obj = cx->runtime->sameCompartmentWrapObjectCallback(cx, obj);
+        if (!obj)
+            return false;
+    }
+    vp->setObject(*obj);
+    return true;
+}
+
 bool
 JSCompartment::wrap(JSContext *cx, Value *vp)
 {
@@ -210,40 +223,28 @@ JSCompartment::wrap(JSContext *cx, Value *vp)
     if (vp->isObject()) {
         JSObject *obj = &vp->toObject();
 
-        
         if (obj->compartment() == this)
-            return true;
+            return WrapForSameCompartment(cx, obj, vp);
 
         
         if (obj->isStopIteration())
             return js_FindClassObject(cx, NULL, JSProto_StopIteration, vp);
 
         
-        if (!obj->getClass()->ext.innerObject) {
-            obj = UnwrapObject(&vp->toObject(), true, &flags);
-            vp->setObject(*obj);
-            if (obj->compartment() == this)
-                return true;
+        obj = UnwrapObject(&vp->toObject(),  true, &flags);
 
-            if (cx->runtime->preWrapObjectCallback) {
-                obj = cx->runtime->preWrapObjectCallback(cx, global, obj, flags);
-                if (!obj)
-                    return false;
-            }
+        if (obj->compartment() == this)
+            return WrapForSameCompartment(cx, obj, vp);
 
-            vp->setObject(*obj);
-            if (obj->compartment() == this)
-                return true;
-        } else {
-            if (cx->runtime->preWrapObjectCallback) {
-                obj = cx->runtime->preWrapObjectCallback(cx, global, obj, flags);
-                if (!obj)
-                    return false;
-            }
-
-            JS_ASSERT(!obj->isWrapper() || obj->getClass()->ext.innerObject);
-            vp->setObject(*obj);
+        if (cx->runtime->preWrapObjectCallback) {
+            obj = cx->runtime->preWrapObjectCallback(cx, global, obj, flags);
+            if (!obj)
+                return false;
         }
+
+        if (obj->compartment() == this)
+            return WrapForSameCompartment(cx, obj, vp);
+        vp->setObject(*obj);
 
 #ifdef DEBUG
         {

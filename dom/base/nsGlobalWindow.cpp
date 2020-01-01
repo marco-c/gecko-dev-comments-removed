@@ -1830,10 +1830,8 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
     
     
     
-    
-    
     xpc_UnmarkGrayObject(mJSObject);
-    if (!JS_TransplantObject(cx, mJSObject, mJSObject)) {
+    if (!JS_RefreshCrossCompartmentWrappers(cx, mJSObject)) {
       return NS_ERROR_FAILURE;
     }
   } else {
@@ -5330,12 +5328,7 @@ nsGlobalWindow::ScrollTo(PRInt32 aXScroll, PRInt32 aYScroll)
     if (aYScroll > maxpx) {
       aYScroll = maxpx;
     }
-    nsPoint pt(nsPresContext::CSSPixelsToAppUnits(aXScroll),
-               nsPresContext::CSSPixelsToAppUnits(aYScroll));
-    nscoord halfPixel = nsPresContext::CSSPixelsToAppUnits(0.5f);
-    
-    nsRect range(pt.x - halfPixel, pt.y - halfPixel, halfPixel*2 - 1, halfPixel*2 - 1);
-    sf->ScrollTo(pt, nsIScrollableFrame::INSTANT, &range);
+    sf->ScrollToCSSPixels(nsIntPoint(aXScroll, aYScroll));
   }
 
   return NS_OK;

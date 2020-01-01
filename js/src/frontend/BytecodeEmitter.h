@@ -103,8 +103,12 @@ struct GlobalScope {
     RootedVarObject globalObj;
 };
 
-struct BytecodeEmitter : public TreeContext
+struct BytecodeEmitter
 {
+    SharedContext   *sc;            
+
+    BytecodeEmitter *parent;        
+
     struct {
         jsbytecode  *base;          
         jsbytecode  *limit;         
@@ -150,15 +154,16 @@ struct BytecodeEmitter : public TreeContext
 
     uint16_t        typesetCount;   
 
-    BytecodeEmitter(Parser *parser, unsigned lineno);
-    bool init(JSContext *cx, TreeContext::InitBehavior ib = USED_AS_CODE_GENERATOR);
+    
+    const bool      noScriptRval:1;     
+    const bool      needScriptGlobal:1; 
 
-    
-    
-    
-    BytecodeEmitter *parentBCE() {
-        return static_cast<BytecodeEmitter *>(parent);
-    }
+
+    bool            hasSingletons:1;    
+
+    BytecodeEmitter(Parser *parser, SharedContext *sc, unsigned lineno,
+                    bool noScriptRval, bool needScriptGlobal);
+    bool init();
 
     
 
@@ -168,7 +173,6 @@ struct BytecodeEmitter : public TreeContext
 
     ~BytecodeEmitter();
 
-    bool compilingForEval() const { return !!(flags & TCF_COMPILE_FOR_EVAL); }
     JSVersion version() const { return parser->versionWithFlags(); }
 
     bool isAliasedName(ParseNode *pn);
@@ -193,13 +197,13 @@ struct BytecodeEmitter : public TreeContext
     }
 
     bool checkSingletonContext() {
-        if (!compileAndGo() || inFunction())
+        if (!parser->compileAndGo || sc->inFunction)
             return false;
-        for (StmtInfo *stmt = topStmt; stmt; stmt = stmt->down) {
+        for (StmtInfo *stmt = sc->topStmt; stmt; stmt = stmt->down) {
             if (STMT_IS_LOOP(stmt))
                 return false;
         }
-        flags |= TCF_HAS_SINGLETONS;
+        hasSingletons = true;
         return true;
     }
 

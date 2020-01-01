@@ -79,6 +79,7 @@ nsHttpConnection::nsHttpConnection()
     , mCurrentBytesRead(0)
     , mMaxBytesRead(0)
     , mTotalBytesRead(0)
+    , mTotalBytesWritten(0)
     , mKeepAlive(true) 
     , mKeepAliveMask(true)
     , mSupportsPipelining(false) 
@@ -869,6 +870,7 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
                     LOG(("ProxyStartSSL failed [rv=%x]\n", rv));
             }
             mCompletedProxyConnect = true;
+            mProxyConnectInProgress = false;
             rv = mSocketOut->AsyncWait(this, 0, 0, nsnull);
             
             NS_ASSERTION(NS_SUCCEEDED(rv), "mSocketOut->AsyncWait failed");
@@ -1194,8 +1196,11 @@ nsHttpConnection::OnReadSegment(const char *buf,
         mSocketOutCondition = rv;
     else if (*countRead == 0)
         mSocketOutCondition = NS_BASE_STREAM_CLOSED;
-    else
+    else {
         mSocketOutCondition = NS_OK; 
+        if (!mProxyConnectInProgress)
+            mTotalBytesWritten += *countRead;
+    }
 
     return mSocketOutCondition;
 }

@@ -1694,6 +1694,19 @@ typedef JSObject *
 typedef JSObject *
 (* JSPreWrapCallback)(JSContext *cx, JSObject *scope, JSObject *obj, unsigned flags);
 
+
+
+
+
+
+
+
+
+
+
+typedef JSObject *
+(* JSSameCompartmentWrapObjectCallback)(JSContext *cx, JSObject *obj);
+
 typedef void
 (* JSDestroyCompartmentCallback)(JSFreeOp *fop, JSCompartment *compartment);
 
@@ -2786,6 +2799,7 @@ JS_SetDestroyCompartmentCallback(JSRuntime *rt, JSDestroyCompartmentCallback cal
 extern JS_PUBLIC_API(JSWrapObjectCallback)
 JS_SetWrapObjectCallbacks(JSRuntime *rt,
                           JSWrapObjectCallback callback,
+                          JSSameCompartmentWrapObjectCallback sccallback,
                           JSPreWrapCallback precallback);
 
 extern JS_PUBLIC_API(JSCrossCompartmentCall *)
@@ -2816,12 +2830,8 @@ js_TransplantObjectWithWrapper(JSContext *cx,
                                JSObject *targetobj,
                                JSObject *targetwrapper);
 
-extern JS_FRIEND_API(JSObject *)
-js_TransplantObjectWithWrapper(JSContext *cx,
-                               JSObject *origobj,
-                               JSObject *origwrapper,
-                               JSObject *targetobj,
-                               JSObject *targetwrapper);
+extern JS_PUBLIC_API(JSBool)
+JS_RefreshCrossCompartmentWrappers(JSContext *cx, JSObject *ob);
 
 #ifdef __cplusplus
 JS_END_EXTERN_C
