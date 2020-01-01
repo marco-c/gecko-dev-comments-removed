@@ -1,46 +1,46 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sw=4 et tw=78:
+ *
+ * ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Mozilla Communicator client code, released
+ * March 31, 1998.
+ *
+ * The Initial Developer of the Original Code is
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * JavaScript API.
+ */
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -116,14 +116,14 @@ using namespace js;
 using namespace js::gc;
 using namespace js::types;
 
-
-
-
-
-
-
-
-
+/*
+ * This class is a version-establising barrier at the head of a VM entry or
+ * re-entry. It ensures that:
+ *
+ * - |newVersion| is the starting (default) version used for the context.
+ * - The starting version state is not an override.
+ * - Overrides in the VM session are not propagated to the caller.
+ */
 class AutoVersionAPI
 {
     JSContext   * const cx;
@@ -159,7 +159,7 @@ class AutoVersionAPI
         JS_ASSERT(oldCompileOptions == cx->getCompileOptions());
     }
 
-    
+    /* The version that this scoped-entity establishes. */
     JSVersion version() const { return newVersion; }
 };
 
@@ -182,7 +182,7 @@ const jsval JSVAL_FALSE = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   JS_FALS
 const jsval JSVAL_TRUE  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   JS_TRUE));
 const jsval JSVAL_VOID  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_UNDEFINED, 0));
 
-
+/* Make sure that jschar is two bytes unsigned integer */
 JS_STATIC_ASSERT((jschar)-1 > 0);
 JS_STATIC_ASSERT(sizeof(jschar) == 2);
 
@@ -240,11 +240,35 @@ TryArgumentFormatter(JSContext *cx, const char **formatp, JSBool fromJS, jsval *
     return JS_FALSE;
 }
 
+static void
+AssertNoGC(JSRuntime *rt)
+{
+    JS_ASSERT(!rt->gcRunning);
+}
+
+static void
+AssertNoGC(JSContext *cx)
+{
+    AssertNoGC(cx->runtime);
+}
+
+static void
+AssertNoGCOrFlatString(JSContext *cx, JSString *str)
+{
+    /*
+     * We allow some functions to be called during a GC as long as the argument
+     * is a flat string, since that will not cause allocation.
+     */
+    JS_ASSERT_IF(cx->runtime->gcRunning, str->isFlat());
+}
+
 JS_PUBLIC_API(JSBool)
 JS_ConvertArguments(JSContext *cx, uintN argc, jsval *argv, const char *format, ...)
 {
     va_list ap;
     JSBool ok;
+
+    AssertNoGC(cx);
 
     va_start(ap, format);
     ok = JS_ConvertArgumentsVA(cx, argc, argv, format, ap);
@@ -263,6 +287,7 @@ JS_ConvertArgumentsVA(JSContext *cx, uintN argc, jsval *argv, const char *format
     JSString *str;
     JSObject *obj;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, JSValueArray(argv - 2, argc + 2));
     sp = argv;
@@ -358,7 +383,7 @@ JS_ConvertArgumentsVA(JSContext *cx, uintN argc, jsval *argv, const char *format
                                       JS_ADDRESSOF_VA_LIST(ap))) {
                 return JS_FALSE;
             }
-            
+            /* NB: the formatter already updated sp, so we continue here. */
             continue;
         }
         sp++;
@@ -375,7 +400,7 @@ JS_AddArgumentFormatter(JSContext *cx, const char *format, JSArgumentFormatter f
     length = strlen(format);
     mpp = &cx->argumentFormatMap;
     while ((map = *mpp) != NULL) {
-        
+        /* Insert before any shorter string to match before prefixes. */
         if (map->length < length)
             break;
         if (map->length == length && !strcmp(map->format, format))
@@ -420,6 +445,7 @@ JS_ConvertValue(JSContext *cx, jsval v, JSType type, jsval *vp)
     JSString *str;
     jsdouble d;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     switch (type) {
@@ -465,6 +491,7 @@ JS_ConvertValue(JSContext *cx, jsval v, JSType type, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_ValueToObject(JSContext *cx, jsval v, JSObject **objp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return js_ValueToObjectOrNull(cx, v, objp);
@@ -473,6 +500,7 @@ JS_ValueToObject(JSContext *cx, jsval v, JSObject **objp)
 JS_PUBLIC_API(JSFunction *)
 JS_ValueToFunction(JSContext *cx, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return js_ValueToFunction(cx, &v, JSV2F_SEARCH_STACK);
@@ -481,6 +509,7 @@ JS_ValueToFunction(JSContext *cx, jsval v)
 JS_PUBLIC_API(JSFunction *)
 JS_ValueToConstructor(JSContext *cx, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return js_ValueToFunction(cx, &v, JSV2F_SEARCH_STACK);
@@ -489,6 +518,7 @@ JS_ValueToConstructor(JSContext *cx, jsval v)
 JS_PUBLIC_API(JSString *)
 JS_ValueToString(JSContext *cx, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return ToString(cx, v);
@@ -497,6 +527,7 @@ JS_ValueToString(JSContext *cx, jsval v)
 JS_PUBLIC_API(JSString *)
 JS_ValueToSource(JSContext *cx, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return js_ValueToSource(cx, v);
@@ -505,6 +536,7 @@ JS_ValueToSource(JSContext *cx, jsval v)
 JS_PUBLIC_API(JSBool)
 JS_ValueToNumber(JSContext *cx, jsval v, jsdouble *dp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
 
@@ -533,6 +565,7 @@ JS_DoubleToUint32(jsdouble d)
 JS_PUBLIC_API(JSBool)
 JS_ValueToECMAInt32(JSContext *cx, jsval v, int32_t *ip)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
 
@@ -543,6 +576,7 @@ JS_ValueToECMAInt32(JSContext *cx, jsval v, int32_t *ip)
 JS_PUBLIC_API(JSBool)
 JS_ValueToECMAUint32(JSContext *cx, jsval v, uint32_t *ip)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
 
@@ -553,6 +587,7 @@ JS_ValueToECMAUint32(JSContext *cx, jsval v, uint32_t *ip)
 JS_PUBLIC_API(JSBool)
 JS_ValueToInt32(JSContext *cx, jsval v, int32_t *ip)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
 
@@ -563,6 +598,7 @@ JS_ValueToInt32(JSContext *cx, jsval v, int32_t *ip)
 JS_PUBLIC_API(JSBool)
 JS_ValueToUint16(JSContext *cx, jsval v, uint16_t *ip)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
 
@@ -573,6 +609,7 @@ JS_ValueToUint16(JSContext *cx, jsval v, uint16_t *ip)
 JS_PUBLIC_API(JSBool)
 JS_ValueToBoolean(JSContext *cx, jsval v, JSBool *bp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     *bp = js_ValueToBoolean(v);
@@ -582,6 +619,7 @@ JS_ValueToBoolean(JSContext *cx, jsval v, JSBool *bp)
 JS_PUBLIC_API(JSType)
 JS_TypeOfValue(JSContext *cx, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return TypeOfValue(cx, v);
@@ -598,6 +636,7 @@ JS_GetTypeName(JSContext *cx, JSType type)
 JS_PUBLIC_API(JSBool)
 JS_StrictlyEqual(JSContext *cx, jsval v1, jsval v2, JSBool *equal)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v1, v2);
     return StrictlyEqual(cx, v1, v2, equal);
@@ -606,6 +645,7 @@ JS_StrictlyEqual(JSContext *cx, jsval v1, jsval v2, JSBool *equal)
 JS_PUBLIC_API(JSBool)
 JS_LooselyEqual(JSContext *cx, jsval v1, jsval v2, JSBool *equal)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v1, v2);
     return LooselyEqual(cx, v1, v2, equal);
@@ -614,6 +654,7 @@ JS_LooselyEqual(JSContext *cx, jsval v1, jsval v2, JSBool *equal)
 JS_PUBLIC_API(JSBool)
 JS_SameValue(JSContext *cx, jsval v1, jsval v2, JSBool *same)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v1, v2);
     return SameValue(cx, v1, v2, same);
@@ -631,13 +672,13 @@ JS_IsBuiltinFunctionConstructor(JSFunction *fun)
     return IsBuiltinFunctionConstructor(fun);
 }
 
+/************************************************************************/
 
-
-
-
-
-
-
+/*
+ * Has a new runtime ever been created?  This flag is used to detect unsafe
+ * changes to js_CStringsAreUTF8 after a runtime has been created, and to
+ * control things that should happen only once across all runtimes.
+ */
 static JSBool js_NewRuntimeWasCalled = JS_FALSE;
 
 JSRuntime::JSRuntime()
@@ -733,7 +774,7 @@ JSRuntime::JSRuntime()
     preserveWrapperCallback(NULL),
     inOOMReport(0)
 {
-    
+    /* Initialize infallibly first, so we can goto bad and JS_DestroyRuntime. */
     JS_INIT_CLIST(&contextList);
     JS_INIT_CLIST(&debuggerList);
 
@@ -771,7 +812,7 @@ JSRuntime::init(uint32_t maxbytes)
     wrapObjectCallback = js::TransparentObjectWrapper;
 
 #ifdef JS_THREADSAFE
-    
+    /* this is asymmetric with JS_ShutDown: */
     if (!js_SetupLocks(8, 16))
         return false;
     rtLock = JS_NEW_LOCK();
@@ -794,7 +835,7 @@ JSRuntime::init(uint32_t maxbytes)
 JSRuntime::~JSRuntime()
 {
 #ifdef DEBUG
-    
+    /* Don't hurt everyone in leaky ol' Mozilla with a fatal JS_ASSERT! */
     if (!JS_CLIST_IS_EMPTY(&contextList)) {
         JSContext *cx, *iter = NULL;
         uintN cxcount = 0;
@@ -856,12 +897,12 @@ JS_NewRuntime(uint32_t maxbytes)
 {
     if (!js_NewRuntimeWasCalled) {
 #ifdef DEBUG
-        
-
-
-
-
-
+        /*
+         * This code asserts that the numbers associated with the error names
+         * in jsmsg.def are monotonically increasing.  It uses values for the
+         * error names enumerated in jscntxt.c.  It's not a compile-time check
+         * but it's better than nothing.
+         */
         int errorNumber = 0;
 #define MSG_DEF(name, number, count, exception, format)                       \
     JS_ASSERT(name == errorNumber++);
@@ -880,7 +921,7 @@ JS_NewRuntime(uint32_t maxbytes)
     JS_END_MACRO;
 #include "js.msg"
 #undef MSG_DEF
-#endif 
+#endif /* DEBUG */
 
         js_NewRuntimeWasCalled = JS_TRUE;
     }
@@ -970,20 +1011,20 @@ StartRequest(JSContext *cx)
         JSRuntime *rt = cx->runtime;
         AutoLockGC lock(rt);
 
-        
+        /* Wait until the GC is finished. */
         if (rt->gcThread != cx->thread()) {
             while (rt->gcThread)
                 JS_AWAIT_GC_DONE(rt);
         }
 
-        
+        /* Indicate that a request is running. */
         rt->requestCount++;
         t->data.requestDepth = 1;
 
-        
-
-
-
+        /*
+         * Adjust rt->interruptCounter to reflect any interrupts added while the
+         * thread was suspended.
+         */
         if (t->data.interruptFlags)
             JS_ATOMIC_INCREMENT(&rt->interruptCounter);
 
@@ -1003,20 +1044,20 @@ StopRequest(JSContext *cx)
     } else {
         t->data.conservativeGC.updateForRequestEnd(t->suspendCount);
 
-        
+        /* Lock before clearing to interlock with ClaimScope, in jslock.c. */
         JSRuntime *rt = cx->runtime;
         AutoLockGC lock(rt);
 
         t->data.requestDepth = 0;
 
-        
-
-
-
+        /*
+         * Adjust rt->interruptCounter to reflect any interrupts added while the
+         * thread still had active requests.
+         */
         if (t->data.interruptFlags)
             JS_ATOMIC_DECREMENT(&rt->interruptCounter);
 
-        
+        /* Give the GC a chance to run if this was the last request running. */
         JS_ASSERT(rt->requestCount > 0);
         rt->requestCount--;
         if (rt->requestCount == 0) {
@@ -1026,7 +1067,7 @@ StopRequest(JSContext *cx)
         }
     }
 }
-#endif 
+#endif /* JS_THREADSAFE */
 
 JS_PUBLIC_API(void)
 JS_BeginRequest(JSContext *cx)
@@ -1047,7 +1088,7 @@ JS_EndRequest(JSContext *cx)
 #endif
 }
 
-
+/* Yield to pending GC operations, regardless of request depth */
 JS_PUBLIC_API(void)
 JS_YieldRequest(JSContext *cx)
 {
@@ -1200,9 +1241,9 @@ JS_SetVersion(JSContext *cx, JSVersion newVersion)
     JSVersion oldVersion = cx->findVersion();
     JSVersion oldVersionNumber = VersionNumber(oldVersion);
     if (oldVersionNumber == newVersionNumber)
-        return oldVersionNumber; 
+        return oldVersionNumber; /* No override actually occurs! */
 
-    
+    /* We no longer support 1.4 or below. */
     if (newVersionNumber != JSVERSION_DEFAULT && newVersionNumber <= JSVERSION_1_4)
         return oldVersionNumber;
 
@@ -1228,7 +1269,7 @@ static struct v2smap {
     {JSVERSION_1_8,     "1.8"},
     {JSVERSION_ECMA_5,  "ECMAv5"},
     {JSVERSION_DEFAULT, js_default_str},
-    {JSVERSION_UNKNOWN, NULL},          
+    {JSVERSION_UNKNOWN, NULL},          /* must be last, NULL is sentinel */
 };
 
 JS_PUBLIC_API(const char *)
@@ -1256,11 +1297,11 @@ JS_StringToVersion(const char *string)
 JS_PUBLIC_API(uint32_t)
 JS_GetOptions(JSContext *cx)
 {
-    
-
-
-
-
+    /*
+     * Can't check option/version synchronization here.
+     * We may have been synchronized with a script version that was formerly on
+     * the stack, but has now been popped.
+     */
     return cx->allOptions();
 }
 
@@ -1321,6 +1362,7 @@ JS_SetWrapObjectCallbacks(JSRuntime *rt,
 JS_PUBLIC_API(JSCrossCompartmentCall *)
 JS_EnterCrossCompartmentCall(JSContext *cx, JSObject *target)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     JS_ASSERT(target);
@@ -1336,7 +1378,7 @@ JS_EnterCrossCompartmentCall(JSContext *cx, JSObject *target)
 
 namespace js {
 
-
+// Declared in jscompartment.h
 Class dummy_class = {
     "jdummy",
     JSCLASS_GLOBAL_FLAGS,
@@ -1346,11 +1388,12 @@ Class dummy_class = {
     JS_ConvertStub
 };
 
-} 
+} /*namespace js */
 
 JS_PUBLIC_API(JSCrossCompartmentCall *)
 JS_EnterCrossCompartmentCallScript(JSContext *cx, JSScript *target)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JS_ASSERT(!target->isCachedEval);
     GlobalObject *global = target->globalObject;
@@ -1366,6 +1409,7 @@ JS_EnterCrossCompartmentCallScript(JSContext *cx, JSScript *target)
 JS_PUBLIC_API(JSCrossCompartmentCall *)
 JS_EnterCrossCompartmentCallStackFrame(JSContext *cx, JSStackFrame *target)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return JS_EnterCrossCompartmentCall(cx, Valueify(target)->scopeChain().getGlobal());
@@ -1375,6 +1419,7 @@ JS_PUBLIC_API(void)
 JS_LeaveCrossCompartmentCall(JSCrossCompartmentCall *call)
 {
     AutoCompartment *realcall = reinterpret_cast<AutoCompartment *>(call);
+    AssertNoGC(realcall->context);
     CHECK_REQUEST(realcall->context);
     realcall->leave();
     Foreground::delete_(realcall);
@@ -1383,6 +1428,7 @@ JS_LeaveCrossCompartmentCall(JSCrossCompartmentCall *call)
 bool
 JSAutoEnterCompartment::enter(JSContext *cx, JSObject *target)
 {
+    AssertNoGC(cx);
     JS_ASSERT(state == STATE_UNENTERED);
     if (cx->compartment == target->compartment()) {
         state = STATE_SAME_COMPARTMENT;
@@ -1440,7 +1486,7 @@ AutoEnterFrameCompartment::enter(JSContext *cx, JSStackFrame *target)
     return call != NULL;
 }
 
-} 
+} /* namespace JS */
 
 JS_PUBLIC_API(void *)
 JS_SetCompartmentPrivate(JSContext *cx, JSCompartment *compartment, void *data)
@@ -1461,6 +1507,7 @@ JS_GetCompartmentPrivate(JSContext *cx, JSCompartment *compartment)
 JS_PUBLIC_API(JSBool)
 JS_WrapObject(JSContext *cx, JSObject **objp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return cx->compartment->wrap(cx, objp);
 }
@@ -1468,6 +1515,7 @@ JS_WrapObject(JSContext *cx, JSObject **objp)
 JS_PUBLIC_API(JSBool)
 JS_WrapValue(JSContext *cx, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return cx->compartment->wrap(cx, vp);
 }
@@ -1475,47 +1523,49 @@ JS_WrapValue(JSContext *cx, jsval *vp)
 JS_PUBLIC_API(JSObject *)
 JS_TransplantObject(JSContext *cx, JSObject *origobj, JSObject *target)
 {
-     
-     
-     
+    AssertNoGC(cx);
+
+     // This function is called when an object moves between two
+     // different compartments. In that case, we need to "move" the
+     // window from origobj's compartment to target's compartment.
     JSCompartment *destination = target->compartment();
     WrapperMap &map = destination->crossCompartmentWrappers;
     Value origv = ObjectValue(*origobj);
     JSObject *obj;
 
     if (origobj->compartment() == destination) {
-        
-        
-        
-        
-        
-        
-        
-        
+        // If the original object is in the same compartment as the
+        // destination, then we know that we won't find wrapper in the
+        // destination's cross compartment map and that the same
+        // object will continue to work.  Note the rare case where
+        // |origobj == target|. In that case, we can just treat this
+        // as a same compartment navigation. The effect is to clear
+        // all of the wrappers and their holders if they have
+        // them. This would be cleaner as a separate API.
         if (origobj != target && !origobj->swap(cx, target))
             return NULL;
         obj = origobj;
     } else if (WrapperMap::Ptr p = map.lookup(origv)) {
-        
-        
-        
-        
-        
+        // There might already be a wrapper for the original object in
+        // the new compartment. If there is, make it the primary outer
+        // window proxy around the inner (accomplished by swapping
+        // target's innards with the old, possibly security wrapper,
+        // innards).
         obj = &p->value.toObject();
         map.remove(p);
         if (!obj->swap(cx, target))
             return NULL;
     } else {
-        
-        
+        // Otherwise, this is going to be our outer window proxy in
+        // the new compartment.
         obj = target;
     }
 
-    
-    
-    
-    
-    
+    // Now, iterate through other scopes looking for references to the
+    // old outer window. They need to be updated to point at the new
+    // outer window.  They also might transition between different
+    // types of security wrappers based on whether the new compartment
+    // is same origin with them.
     Value targetv = ObjectValue(*obj);
     CompartmentVector &vector = cx->runtime->compartments;
     AutoValueVector toTransplant(cx);
@@ -1525,7 +1575,7 @@ JS_TransplantObject(JSContext *cx, JSObject *origobj, JSObject *target)
     for (JSCompartment **p = vector.begin(), **end = vector.end(); p != end; ++p) {
         WrapperMap &pmap = (*p)->crossCompartmentWrappers;
         if (WrapperMap::Ptr wp = pmap.lookup(origv)) {
-            
+            // We found a wrapper. Remember and root it.
             toTransplant.infallibleAppend(wp->value);
         }
     }
@@ -1537,24 +1587,24 @@ JS_TransplantObject(JSContext *cx, JSObject *origobj, JSObject *target)
         JS_ASSERT(pmap.lookup(origv));
         pmap.remove(origv);
 
-        
-        
+        // First, we wrap it in the new compartment. This will return
+        // a new wrapper.
         AutoCompartment ac(cx, wobj);
         JSObject *tobj = obj;
         if (!ac.enter() || !wcompartment->wrap(cx, &tobj))
             return NULL;
 
-        
-        
-        
-        
+        // Now, because we need to maintain object identity, we do a
+        // brain transplant on the old object. At the same time, we
+        // update the entry in the compartment's wrapper map to point
+        // to the old wrapper.
         JS_ASSERT(tobj != wobj);
         if (!wobj->swap(cx, tobj))
             return NULL;
         pmap.put(targetv, ObjectValue(*wobj));
     }
 
-    
+    // Lastly, update the original object to point to the new one.
     if (origobj->compartment() != destination) {
         AutoCompartment ac(cx, origobj);
         JSObject *tobj = obj;
@@ -1568,14 +1618,14 @@ JS_TransplantObject(JSContext *cx, JSObject *origobj, JSObject *target)
     return obj;
 }
 
-
-
-
-
-
-
-
-
+/*
+ * The location object is special. There is the location object itself and
+ * then the location object wrapper. Because there are no direct references to
+ * the location object itself, we don't want the old obj (|origobj| here) to
+ * become the new wrapper but the wrapper itself instead. This leads to very
+ * subtle differences between js_TransplantObjectWithWrapper and
+ * JS_TransplantObject.
+ */
 JS_FRIEND_API(JSObject *)
 js_TransplantObjectWithWrapper(JSContext *cx,
                                JSObject *origobj,
@@ -1583,33 +1633,35 @@ js_TransplantObjectWithWrapper(JSContext *cx,
                                JSObject *targetobj,
                                JSObject *targetwrapper)
 {
+    AssertNoGC(cx);
+
     JSObject *obj;
     JSCompartment *destination = targetobj->compartment();
     WrapperMap &map = destination->crossCompartmentWrappers;
 
-    
-    
+    // |origv| is the map entry we're looking up. The map entries are going to
+    // be for the location object itself.
     Value origv = ObjectValue(*origobj);
 
-    
-    
+    // There might already be a wrapper for the original object in the new
+    // compartment.
     if (WrapperMap::Ptr p = map.lookup(origv)) {
-        
-        
+        // There is. Make the existing wrapper a same compartment location
+        // wrapper (swapping it with the given new wrapper).
         obj = &p->value.toObject();
         map.remove(p);
         if (!obj->swap(cx, targetwrapper))
             return NULL;
     } else {
-        
-        
+        // Otherwise, use the passed-in wrapper as the same compartment
+        // location wrapper.
         obj = targetwrapper;
     }
 
-    
-    
-    
-    
+    // Now, iterate through other scopes looking for references to the old
+    // location object. Note that the entries in the maps are for |origobj|
+    // and not |origwrapper|. They need to be updated to point at the new
+    // location object.
     Value targetv = ObjectValue(*targetobj);
     CompartmentVector &vector = cx->runtime->compartments;
     AutoValueVector toTransplant(cx);
@@ -1619,7 +1671,7 @@ js_TransplantObjectWithWrapper(JSContext *cx,
     for (JSCompartment **p = vector.begin(), **end = vector.end(); p != end; ++p) {
         WrapperMap &pmap = (*p)->crossCompartmentWrappers;
         if (WrapperMap::Ptr wp = pmap.lookup(origv)) {
-            
+            // We found a wrapper. Remember and root it.
             toTransplant.infallibleAppend(wp->value);
         }
     }
@@ -1631,27 +1683,27 @@ js_TransplantObjectWithWrapper(JSContext *cx,
         JS_ASSERT(pmap.lookup(origv));
         pmap.remove(origv);
 
-        
-        
+        // First, we wrap it in the new compartment. This will return a
+        // new wrapper.
         AutoCompartment ac(cx, wobj);
 
         JSObject *tobj = targetobj;
         if (!ac.enter() || !wcompartment->wrap(cx, &tobj))
             return NULL;
 
-        
-        
-        
-        
+        // Now, because we need to maintain object identity, we do a brain
+        // transplant on the old object. At the same time, we update the
+        // entry in the compartment's wrapper map to point to the old
+        // wrapper.
         JS_ASSERT(tobj != wobj);
         if (!wobj->swap(cx, tobj))
             return NULL;
         pmap.put(targetv, ObjectValue(*wobj));
     }
 
-    
-    
-    
+    // Lastly, update the original object to point to the new one. However, as
+    // mentioned above, we do the transplant on the wrapper, not the object
+    // itself, since all of the references are to the object itself.
     {
         AutoCompartment ac(cx, origobj);
         JSObject *tobj = obj;
@@ -1675,6 +1727,7 @@ JS_GetGlobalObject(JSContext *cx)
 JS_PUBLIC_API(void)
 JS_SetGlobalObject(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     cx->globalObject = obj;
@@ -1686,13 +1739,14 @@ JS_PUBLIC_API(JSBool)
 JS_InitStandardClasses(JSContext *cx, JSObject *obj)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
-    
-
-
-
-
+    /*
+     * JS_SetGlobalObject might or might not change cx's compartment, so call
+     * it before assertSameCompartment. (The API contract is that *after* this,
+     * cx and obj must be in the same compartment.)
+     */
     if (!cx->globalObject)
         JS_SetGlobalObject(cx, obj);
 
@@ -1710,8 +1764,8 @@ JS_InitStandardClasses(JSContext *cx, JSObject *obj)
 
 typedef struct JSStdName {
     JSObjectOp  init;
-    size_t      atomOffset;     
-    const char  *name;          
+    size_t      atomOffset;     /* offset of atom pointer in JSAtomState */
+    const char  *name;          /* null if atom is pre-pinned, else name */
     Class       *clasp;
 } JSStdName;
 
@@ -1734,10 +1788,10 @@ StdNameToAtom(JSContext *cx, JSStdName *stdn)
     return atom;
 }
 
-
-
-
-
+/*
+ * Table of class initializers and their atom offsets in rt->atomState.
+ * If you add a "standard" class, remember to update this table.
+ */
 static JSStdName standard_class_atoms[] = {
     {js_InitFunctionClass,              EAGER_ATOM_AND_CLASP(Function)},
     {js_InitObjectClass,                EAGER_ATOM_AND_CLASP(Object)},
@@ -1763,15 +1817,15 @@ static JSStdName standard_class_atoms[] = {
     {NULL,                              0, NULL, NULL}
 };
 
-
-
-
-
-
+/*
+ * Table of top-level function and constant names and their init functions.
+ * If you add a "standard" global function or property, remember to update
+ * this table.
+ */
 static JSStdName standard_class_names[] = {
     {js_InitObjectClass,        EAGER_ATOM(eval), CLASP(Object)},
 
-    
+    /* Global properties and functions defined by the Number class. */
     {js_InitNumberClass,        EAGER_ATOM(NaN), CLASP(Number)},
     {js_InitNumberClass,        EAGER_ATOM(Infinity), CLASP(Number)},
     {js_InitNumberClass,        LAZY_ATOM(isNaN), CLASP(Number)},
@@ -1779,7 +1833,7 @@ static JSStdName standard_class_names[] = {
     {js_InitNumberClass,        LAZY_ATOM(parseFloat), CLASP(Number)},
     {js_InitNumberClass,        LAZY_ATOM(parseInt), CLASP(Number)},
 
-    
+    /* String global functions. */
     {js_InitStringClass,        LAZY_ATOM(escape), CLASP(String)},
     {js_InitStringClass,        LAZY_ATOM(unescape), CLASP(String)},
     {js_InitStringClass,        LAZY_ATOM(decodeURI), CLASP(String)},
@@ -1790,7 +1844,7 @@ static JSStdName standard_class_names[] = {
     {js_InitStringClass,        LAZY_ATOM(uneval), CLASP(String)},
 #endif
 
-    
+    /* Exception constructors. */
     {js_InitExceptionClasses,   EAGER_CLASS_ATOM(Error), CLASP(Error)},
     {js_InitExceptionClasses,   EAGER_CLASS_ATOM(InternalError), CLASP(Error)},
     {js_InitExceptionClasses,   EAGER_CLASS_ATOM(EvalError), CLASP(Error)},
@@ -1809,7 +1863,7 @@ static JSStdName standard_class_names[] = {
     {js_InitIteratorClasses,    EAGER_ATOM_AND_CLASP(Iterator)},
 #endif
 
-    
+    /* Typed Arrays */
     {js_InitTypedArrayClasses,  EAGER_CLASS_ATOM(ArrayBuffer),  &ArrayBufferClass},
     {js_InitTypedArrayClasses,  EAGER_CLASS_ATOM(Int8Array),    TYPED_ARRAY_CLASP(TYPE_INT8)},
     {js_InitTypedArrayClasses,  EAGER_CLASS_ATOM(Uint8Array),   TYPED_ARRAY_CLASP(TYPE_UINT8)},
@@ -1828,7 +1882,7 @@ static JSStdName standard_class_names[] = {
 };
 
 static JSStdName object_prototype_names[] = {
-    
+    /* Object.prototype properties (global delegates to Object.prototype). */
     {js_InitObjectClass,        EAGER_ATOM(proto), CLASP(Object)},
 #if JS_HAS_TOSOURCE
     {js_InitObjectClass,        EAGER_ATOM(toSource), CLASP(Object)},
@@ -1862,6 +1916,9 @@ JS_ResolveStandardClass(JSContext *cx, JSObject *obj, jsid id, JSBool *resolved)
     JSStdName *stdnm;
     uintN i;
 
+    RootObject objRoot(cx, &obj);
+
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
     *resolved = JS_FALSE;
@@ -1873,7 +1930,7 @@ JS_ResolveStandardClass(JSContext *cx, JSObject *obj, jsid id, JSBool *resolved)
 
     idstr = JSID_TO_STRING(id);
 
-    
+    /* Check whether we're resolving 'undefined', and define it if so. */
     atom = rt->atomState.typeAtoms[JSTYPE_VOID];
     if (idstr == atom) {
         *resolved = JS_TRUE;
@@ -1882,7 +1939,7 @@ JS_ResolveStandardClass(JSContext *cx, JSObject *obj, jsid id, JSBool *resolved)
                                    JSPROP_PERMANENT | JSPROP_READONLY);
     }
 
-    
+    /* Try for class constructors/prototypes named by well-known atoms. */
     stdnm = NULL;
     for (i = 0; standard_class_atoms[i].init; i++) {
         JS_ASSERT(standard_class_atoms[i].clasp);
@@ -1894,7 +1951,7 @@ JS_ResolveStandardClass(JSContext *cx, JSObject *obj, jsid id, JSBool *resolved)
     }
 
     if (!stdnm) {
-        
+        /* Try less frequently used top-level functions and constants. */
         for (i = 0; standard_class_names[i].init; i++) {
             JS_ASSERT(standard_class_names[i].clasp);
             atom = StdNameToAtom(cx, &standard_class_names[i]);
@@ -1907,11 +1964,11 @@ JS_ResolveStandardClass(JSContext *cx, JSObject *obj, jsid id, JSBool *resolved)
         }
 
         if (!stdnm && !obj->getProto()) {
-            
-
-
-
-
+            /*
+             * Try even less frequently used names delegated from the global
+             * object to Object.prototype, but only if the Object class hasn't
+             * yet been initialized.
+             */
             for (i = 0; object_prototype_names[i].init; i++) {
                 JS_ASSERT(object_prototype_names[i].clasp);
                 atom = StdNameToAtom(cx, &object_prototype_names[i]);
@@ -1926,10 +1983,10 @@ JS_ResolveStandardClass(JSContext *cx, JSObject *obj, jsid id, JSBool *resolved)
     }
 
     if (stdnm) {
-        
-
-
-
+        /*
+         * If this standard class is anonymous, then we don't want to resolve
+         * by name.
+         */
         JS_ASSERT(obj->isGlobal());
         if (stdnm->clasp->flags & JSCLASS_IS_ANONYMOUS)
             return JS_TRUE;
@@ -1950,14 +2007,15 @@ JS_EnumerateStandardClasses(JSContext *cx, JSObject *obj)
     JSRuntime *rt;
     uintN i;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     rt = cx->runtime;
 
-    
-
-
-
+    /*
+     * Check whether we need to bind 'undefined' and define it if so.
+     * Since ES5 15.1.1.3 undefined can't be deleted.
+     */
     PropertyName *name = rt->atomState.typeAtoms[JSTYPE_VOID];
     if (!obj->nativeContains(cx, ATOM_TO_JSID(name)) &&
         !obj->defineProperty(cx, name, UndefinedValue(),
@@ -1966,7 +2024,7 @@ JS_EnumerateStandardClasses(JSContext *cx, JSObject *obj)
         return JS_FALSE;
     }
 
-    
+    /* Initialize any classes that have not been initialized yet. */
     for (i = 0; standard_class_atoms[i].init; i++) {
         if (!js::IsStandardClassResolved(obj, standard_class_atoms[i].clasp) &&
             !standard_class_atoms[i].init(cx, obj))
@@ -1990,9 +2048,9 @@ NewIdArray(JSContext *cx, jsint length)
     return ida;
 }
 
-
-
-
+/*
+ * Unlike realloc(3), this function frees ida on failure.
+ */
 static JSIdArray *
 SetIdArrayLength(JSContext *cx, JSIdArray *ida, jsint length)
 {
@@ -2046,6 +2104,7 @@ JS_EnumerateResolvedStandardClasses(JSContext *cx, JSObject *obj, JSIdArray *ida
     JSBool found;
     JSObjectOp init;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, ida);
     rt = cx->runtime;
@@ -2058,13 +2117,13 @@ JS_EnumerateResolvedStandardClasses(JSContext *cx, JSObject *obj, JSIdArray *ida
         i = 0;
     }
 
-    
+    /* Check whether 'undefined' has been resolved and enumerate it if so. */
     atom = rt->atomState.typeAtoms[JSTYPE_VOID];
     ida = EnumerateIfResolved(cx, obj, atom, ida, &i, &found);
     if (!ida)
         return NULL;
 
-    
+    /* Enumerate only classes that *have* been resolved. */
     for (j = 0; standard_class_atoms[j].init; j++) {
         atom = OFFSET_TO_ATOM(rt, standard_class_atoms[j].atomOffset);
         ida = EnumerateIfResolved(cx, obj, atom, ida, &i, &found);
@@ -2094,7 +2153,7 @@ JS_EnumerateResolvedStandardClasses(JSContext *cx, JSObject *obj, JSIdArray *ida
         }
     }
 
-    
+    /* Trim to exact length. */
     return SetIdArrayLength(cx, ida, i);
 }
 
@@ -2107,6 +2166,7 @@ JS_EnumerateResolvedStandardClasses(JSContext *cx, JSObject *obj, JSIdArray *ida
 JS_PUBLIC_API(JSBool)
 JS_GetClassObject(JSContext *cx, JSObject *obj, JSProtoKey key, JSObject **objp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     return js_GetClassObject(cx, obj, key, objp);
@@ -2115,6 +2175,7 @@ JS_GetClassObject(JSContext *cx, JSObject *obj, JSProtoKey key, JSObject **objp)
 JS_PUBLIC_API(JSObject *)
 JS_GetGlobalForObject(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     assertSameCompartment(cx, obj);
     return obj->getGlobal();
 }
@@ -2122,6 +2183,7 @@ JS_GetGlobalForObject(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSObject *)
 JS_GetGlobalForScopeChain(JSContext *cx)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return GetGlobalForScopeChain(cx);
 }
@@ -2129,6 +2191,7 @@ JS_GetGlobalForScopeChain(JSContext *cx)
 JS_PUBLIC_API(jsval)
 JS_ComputeThis(JSContext *cx, jsval *vp)
 {
+    AssertNoGC(cx);
     assertSameCompartment(cx, JSValueArray(vp, 2));
     CallReceiver call = CallReceiverFromVp(vp);
     if (!BoxNonStrictThis(cx, call))
@@ -2139,6 +2202,7 @@ JS_ComputeThis(JSContext *cx, jsval *vp)
 JS_PUBLIC_API(void *)
 JS_malloc(JSContext *cx, size_t nbytes)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return cx->malloc_(nbytes);
 }
@@ -2146,6 +2210,7 @@ JS_malloc(JSContext *cx, size_t nbytes)
 JS_PUBLIC_API(void *)
 JS_realloc(JSContext *cx, void *p, size_t nbytes)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return cx->realloc_(p, nbytes);
 }
@@ -2168,6 +2233,7 @@ JS_strdup(JSContext *cx, const char *s)
     size_t n;
     void *p;
 
+    AssertNoGC(cx);
     n = strlen(s) + 1;
     p = cx->malloc_(n);
     if (!p)
@@ -2178,6 +2244,7 @@ JS_strdup(JSContext *cx, const char *s)
 JS_PUBLIC_API(JSBool)
 JS_NewNumberValue(JSContext *cx, jsdouble d, jsval *rval)
 {
+    AssertNoGC(cx);
     d = JS_CANONICALIZE_NAN(d);
     rval->setNumber(d);
     return JS_TRUE;
@@ -2188,6 +2255,7 @@ JS_NewNumberValue(JSContext *cx, jsdouble d, jsval *rval)
 JS_PUBLIC_API(JSBool)
 JS_AddValueRoot(JSContext *cx, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddRoot(cx, vp, NULL);
 }
@@ -2195,6 +2263,7 @@ JS_AddValueRoot(JSContext *cx, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_AddStringRoot(JSContext *cx, JSString **rp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddGCThingRoot(cx, (void **)rp, NULL);
 }
@@ -2202,6 +2271,7 @@ JS_AddStringRoot(JSContext *cx, JSString **rp)
 JS_PUBLIC_API(JSBool)
 JS_AddObjectRoot(JSContext *cx, JSObject **rp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddGCThingRoot(cx, (void **)rp, NULL);
 }
@@ -2209,6 +2279,7 @@ JS_AddObjectRoot(JSContext *cx, JSObject **rp)
 JS_PUBLIC_API(JSBool)
 JS_AddGCThingRoot(JSContext *cx, void **rp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddGCThingRoot(cx, (void **)rp, NULL);
 }
@@ -2216,6 +2287,7 @@ JS_AddGCThingRoot(JSContext *cx, void **rp)
 JS_PUBLIC_API(JSBool)
 JS_AddNamedValueRoot(JSContext *cx, jsval *vp, const char *name)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddRoot(cx, vp, name);
 }
@@ -2223,6 +2295,7 @@ JS_AddNamedValueRoot(JSContext *cx, jsval *vp, const char *name)
 JS_PUBLIC_API(JSBool)
 JS_AddNamedStringRoot(JSContext *cx, JSString **rp, const char *name)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddGCThingRoot(cx, (void **)rp, name);
 }
@@ -2230,6 +2303,7 @@ JS_AddNamedStringRoot(JSContext *cx, JSString **rp, const char *name)
 JS_PUBLIC_API(JSBool)
 JS_AddNamedObjectRoot(JSContext *cx, JSObject **rp, const char *name)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddGCThingRoot(cx, (void **)rp, name);
 }
@@ -2237,6 +2311,7 @@ JS_AddNamedObjectRoot(JSContext *cx, JSObject **rp, const char *name)
 JS_PUBLIC_API(JSBool)
 JS_AddNamedScriptRoot(JSContext *cx, JSScript **rp, const char *name)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddGCThingRoot(cx, (void **)rp, name);
 }
@@ -2244,9 +2319,12 @@ JS_AddNamedScriptRoot(JSContext *cx, JSScript **rp, const char *name)
 JS_PUBLIC_API(JSBool)
 JS_AddNamedGCThingRoot(JSContext *cx, void **rp, const char *name)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_AddGCThingRoot(cx, (void **)rp, name);
 }
+
+/* We allow unrooting from finalizers within the GC */
 
 JS_PUBLIC_API(JSBool)
 JS_RemoveValueRoot(JSContext *cx, jsval *vp)
@@ -2298,7 +2376,7 @@ JS_DumpNamedRoots(JSRuntime *rt,
     js_DumpNamedRoots(rt, dump, data);
 }
 
-#endif 
+#endif /* DEBUG */
 
 JS_PUBLIC_API(uint32_t)
 JS_MapGCRoots(JSRuntime *rt, JSGCRootMapFun map, void *data)
@@ -2311,6 +2389,7 @@ JS_LockGCThing(JSContext *cx, void *thing)
 {
     JSBool ok;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     ok = js_LockGCThingRT(cx->runtime, thing);
     if (!ok)
@@ -2327,6 +2406,7 @@ JS_LockGCThingRT(JSRuntime *rt, void *thing)
 JS_PUBLIC_API(JSBool)
 JS_UnlockGCThing(JSContext *cx, void *thing)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     js_UnlockGCThingRT(cx->runtime, thing);
     return true;
@@ -2342,6 +2422,7 @@ JS_UnlockGCThingRT(JSRuntime *rt, void *thing)
 JS_PUBLIC_API(void)
 JS_SetExtraGCRootsTracer(JSRuntime *rt, JSTraceDataOp traceOp, void *data)
 {
+    AssertNoGC(rt);
     rt->gcBlackRootsTraceOp = traceOp;
     rt->gcBlackRootsData = data;
 }
@@ -2349,6 +2430,7 @@ JS_SetExtraGCRootsTracer(JSRuntime *rt, JSTraceDataOp traceOp, void *data)
 JS_PUBLIC_API(void)
 JS_TraceRuntime(JSTracer *trc)
 {
+    AssertNoGC(trc->runtime);
     TraceRuntime(trc);
 }
 
@@ -2374,7 +2456,7 @@ JS_PUBLIC_API(void)
 JS_PrintTraceThingInfo(char *buf, size_t bufsize, JSTracer *trc, void *thing,
                        JSGCTraceKind kind, JSBool details)
 {
-    const char *name = NULL; 
+    const char *name = NULL; /* silence uninitialized warning */
     size_t n;
 
     if (bufsize == 0)
@@ -2526,11 +2608,11 @@ typedef struct JSHeapDumpNode JSHeapDumpNode;
 struct JSHeapDumpNode {
     void            *thing;
     JSGCTraceKind   kind;
-    JSHeapDumpNode  *next;          
-    JSHeapDumpNode  *parent;        
-
-    char            edgeName[1];    
-
+    JSHeapDumpNode  *next;          /* next sibling */
+    JSHeapDumpNode  *parent;        /* node with the thing that refer to thing
+                                       from this node */
+    char            edgeName[1];    /* name of the edge from parent->thing
+                                       into thing */
 };
 
 typedef struct JSDumpingTracer {
@@ -2563,21 +2645,21 @@ DumpNotify(JSTracer *trc, void *thing, JSGCTraceKind kind)
 
     cx = trc->context;
 
-    
-
-
-
-
-
-
-
-
-
+    /*
+     * Check if we have already seen thing unless it is thingToFind to include
+     * it to the graph each time we reach it and print all live things that
+     * refer to thingToFind.
+     *
+     * This does not print all possible paths leading to thingToFind since
+     * when a thing A refers directly or indirectly to thingToFind and A is
+     * present several times in the graph, we will print only the first path
+     * leading to A and thingToFind, other ways to reach A will be ignored.
+     */
     if (dtrc->thingToFind != thing) {
-        
-
-
-
+        /*
+         * The startThing check allows to avoid putting startThing into the
+         * hash table before tracing startThing in JS_DumpHeap.
+         */
         if (thing == dtrc->startThing)
             return;
         entry = (JSDHashEntryStub *)
@@ -2612,7 +2694,7 @@ DumpNotify(JSTracer *trc, void *thing, JSGCTraceKind kind)
     dtrc->lastNodep = &node->next;
 }
 
-
+/* Dump node and the chain that leads to thing it contains. */
 static JSBool
 DumpNode(JSDumpingTracer *dtrc, FILE* fp, JSHeapDumpNode *node)
 {
@@ -2626,12 +2708,12 @@ DumpNode(JSDumpingTracer *dtrc, FILE* fp, JSHeapDumpNode *node)
     if (fprintf(fp, "%p %-22s via ", node->thing, dtrc->buffer) < 0)
         return JS_FALSE;
 
-    
-
-
-
-
-
+    /*
+     * We need to print the parent chain in the reverse order. To do it in
+     * O(N) time where N is the chain length we first reverse the chain while
+     * searching for the top and then print each node while restoring the
+     * chain order.
+     */
     chainLimit = MAX_PARENTS_TO_PRINT;
     prev = NULL;
     for (;;) {
@@ -2653,10 +2735,10 @@ DumpNode(JSDumpingTracer *dtrc, FILE* fp, JSHeapDumpNode *node)
     prev = following;
     ok = JS_TRUE;
     do {
-        
+        /* Loop must continue even when !ok to restore the parent chain. */
         if (ok) {
             if (!prev) {
-                
+                /* Print edge from some runtime root or startThing. */
                 if (fputs(node->edgeName, fp) < 0)
                     ok = JS_FALSE;
             } else {
@@ -2717,15 +2799,15 @@ JS_DumpHeap(JSContext *cx, FILE *fp, void* startThing, JSGCTraceKind startKind,
 
     thingToFindWasTraced = thingToFind && thingToFind == startThing;
     for (;;) {
-        
-
-
-
+        /*
+         * Loop must continue even when !dtrc.ok to free all nodes allocated
+         * so far.
+         */
         if (dtrc.ok) {
             if (thingToFind == NULL || thingToFind == node->thing)
                 dtrc.ok = DumpNode(&dtrc, fp, node);
 
-            
+            /* Descend into children. */
             if (dtrc.ok &&
                 depth < maxDepth &&
                 (thingToFind != node->thing || !thingToFindWasTraced)) {
@@ -2743,7 +2825,7 @@ JS_DumpHeap(JSContext *cx, FILE *fp, void* startThing, JSGCTraceKind startKind,
             }
         }
 
-        
+        /* Move to next or parents next and free the node. */
         for (;;) {
             next = node->next;
             parent = node->parent;
@@ -2765,7 +2847,7 @@ JS_DumpHeap(JSContext *cx, FILE *fp, void* startThing, JSGCTraceKind startKind,
     return dtrc.ok;
 }
 
-#endif 
+#endif /* DEBUG */
 
 extern JS_PUBLIC_API(JSBool)
 JS_IsGCMarkingTracer(JSTracer *trc)
@@ -2776,7 +2858,9 @@ JS_IsGCMarkingTracer(JSTracer *trc)
 JS_PUBLIC_API(void)
 JS_CompartmentGC(JSContext *cx, JSCompartment *comp)
 {
-    
+    AssertNoGC(cx);
+
+    /* We cannot GC the atoms compartment alone; use a full GC instead. */
     JS_ASSERT(comp != cx->runtime->atomsCompartment);
 
     js::gc::VerifyBarriers(cx, true);
@@ -2798,6 +2882,7 @@ JS_MaybeGC(JSContext *cx)
 JS_PUBLIC_API(JSGCCallback)
 JS_SetGCCallback(JSContext *cx, JSGCCallback cb)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return JS_SetGCCallbackRT(cx->runtime, cb);
 }
@@ -2807,6 +2892,7 @@ JS_SetGCCallbackRT(JSRuntime *rt, JSGCCallback cb)
 {
     JSGCCallback oldcb;
 
+    AssertNoGC(rt);
     oldcb = rt->gcCallback;
     rt->gcCallback = cb;
     return oldcb;
@@ -2899,6 +2985,7 @@ JS_RemoveExternalStringFinalizer(JSStringFinalizeOp finalizer)
 JS_PUBLIC_API(JSString *)
 JS_NewExternalString(JSContext *cx, const jschar *chars, size_t length, intN type)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JSString *s = JSExternalString::new_(cx, chars, length, type, NULL);
     Probes::createString(cx, s, length);
@@ -2909,6 +2996,7 @@ extern JS_PUBLIC_API(JSString *)
 JS_NewExternalStringWithClosure(JSContext *cx, const jschar *chars, size_t length,
                                 intN type, void *closure)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return JSExternalString::new_(cx, chars, length, type, closure);
 }
@@ -2916,6 +3004,7 @@ JS_NewExternalStringWithClosure(JSContext *cx, const jschar *chars, size_t lengt
 extern JS_PUBLIC_API(JSBool)
 JS_IsExternalString(JSContext *cx, JSString *str)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return str->isExternal();
 }
@@ -2923,6 +3012,7 @@ JS_IsExternalString(JSContext *cx, JSString *str)
 extern JS_PUBLIC_API(void *)
 JS_GetExternalStringClosure(JSContext *cx, JSString *str)
 {
+    AssertNoGCOrFlatString(cx, str);
     CHECK_REQUEST(cx);
     return str->asExternal().externalClosure();
 }
@@ -2963,7 +3053,7 @@ JS_SetNativeStackQuota(JSContext *cx, size_t stackSize)
 #endif
 }
 
-
+/************************************************************************/
 
 JS_PUBLIC_API(jsint)
 JS_IdArrayLength(JSContext *cx, JSIdArray *ida)
@@ -2987,6 +3077,7 @@ JS_DestroyIdArray(JSContext *cx, JSIdArray *ida)
 JS_PUBLIC_API(JSBool)
 JS_ValueToId(JSContext *cx, jsval v, jsid *idp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return ValueToId(cx, v, idp);
@@ -2995,6 +3086,7 @@ JS_ValueToId(JSContext *cx, jsval v, jsid *idp)
 JS_PUBLIC_API(JSBool)
 JS_IdToValue(JSContext *cx, jsid id, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     *vp = IdToJsval(id);
     assertSameCompartment(cx, *vp);
@@ -3004,6 +3096,7 @@ JS_IdToValue(JSContext *cx, jsid id, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_DefaultValue(JSContext *cx, JSObject *obj, JSType hint, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JS_ASSERT(obj != NULL);
     JS_ASSERT(hint == JSTYPE_VOID || hint == JSTYPE_STRING || hint == JSTYPE_NUMBER);
@@ -3052,9 +3145,11 @@ JS_InitClass(JSContext *cx, JSObject *obj, JSObject *parent_proto,
              JSPropertySpec *ps, JSFunctionSpec *fs,
              JSPropertySpec *static_ps, JSFunctionSpec *static_fs)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, parent_proto);
-    return js_InitClass(cx, obj, parent_proto, Valueify(clasp), constructor,
+    RootObject objRoot(cx, &obj);
+    return js_InitClass(cx, objRoot, parent_proto, Valueify(clasp), constructor,
                         nargs, ps, fs, static_ps, static_fs);
 }
 
@@ -3075,6 +3170,7 @@ JS_GetClass(JSObject *obj)
 JS_PUBLIC_API(JSBool)
 JS_InstanceOf(JSContext *cx, JSObject *obj, JSClass *clasp, jsval *argv)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 #ifdef DEBUG
     if (argv) {
@@ -3093,6 +3189,7 @@ JS_InstanceOf(JSContext *cx, JSObject *obj, JSClass *clasp, jsval *argv)
 JS_PUBLIC_API(JSBool)
 JS_HasInstance(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
 {
+    AssertNoGC(cx);
     assertSameCompartment(cx, obj, v);
     return HasInstance(cx, obj, &v, bp);
 }
@@ -3100,12 +3197,14 @@ JS_HasInstance(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
 JS_PUBLIC_API(void *)
 JS_GetPrivate(JSContext *cx, JSObject *obj)
 {
+    /* This function can be called by a finalizer. */
     return obj->getPrivate();
 }
 
 JS_PUBLIC_API(JSBool)
 JS_SetPrivate(JSContext *cx, JSObject *obj, void *data)
 {
+    /* This function can be called by a finalizer. */
     obj->setPrivate(data);
     return true;
 }
@@ -3129,6 +3228,7 @@ JS_GetPrototype(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSBool)
 JS_SetPrototype(JSContext *cx, JSObject *obj, JSObject *proto)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, proto);
     return SetProto(cx, obj, proto, JS_FALSE);
@@ -3145,6 +3245,7 @@ JS_GetParent(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSBool)
 JS_SetParent(JSContext *cx, JSObject *obj, JSObject *parent)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JS_ASSERT(!obj->isInternalScope());
     JS_ASSERT(parent || !obj->getParent());
@@ -3157,6 +3258,7 @@ JS_GetConstructor(JSContext *cx, JSObject *proto)
 {
     Value cval;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, proto);
     {
@@ -3176,6 +3278,7 @@ JS_GetConstructor(JSContext *cx, JSObject *proto)
 JS_PUBLIC_API(JSBool)
 JS_GetObjectId(JSContext *cx, JSObject *obj, jsid *idp)
 {
+    AssertNoGC(cx);
     assertSameCompartment(cx, obj);
     *idp = OBJECT_TO_JSID(obj);
     return JS_TRUE;
@@ -3185,6 +3288,7 @@ JS_PUBLIC_API(JSObject *)
 JS_NewGlobalObject(JSContext *cx, JSClass *clasp)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return GlobalObject::create(cx, Valueify(clasp));
@@ -3210,6 +3314,7 @@ class AutoHoldCompartment {
 JS_PUBLIC_API(JSObject *)
 JS_NewCompartmentAndGlobalObject(JSContext *cx, JSClass *clasp, JSPrincipals *principals)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JSCompartment *compartment = NewCompartment(cx, principals);
     if (!compartment)
@@ -3229,12 +3334,13 @@ JS_PUBLIC_API(JSObject *)
 JS_NewObject(JSContext *cx, JSClass *jsclasp, JSObject *proto, JSObject *parent)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, proto, parent);
 
     Class *clasp = Valueify(jsclasp);
     if (!clasp)
-        clasp = &ObjectClass;    
+        clasp = &ObjectClass;    /* default class is Object */
 
     JS_ASSERT(clasp != &FunctionClass);
     JS_ASSERT(!(clasp->flags & JSCLASS_IS_GLOBAL));
@@ -3257,12 +3363,13 @@ JS_PUBLIC_API(JSObject *)
 JS_NewObjectWithGivenProto(JSContext *cx, JSClass *jsclasp, JSObject *proto, JSObject *parent)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, proto, parent);
 
     Class *clasp = Valueify(jsclasp);
     if (!clasp)
-        clasp = &ObjectClass;    
+        clasp = &ObjectClass;    /* default class is Object */
 
     JS_ASSERT(clasp != &FunctionClass);
     JS_ASSERT(!(clasp->flags & JSCLASS_IS_GLOBAL));
@@ -3276,6 +3383,7 @@ JS_NewObjectWithGivenProto(JSContext *cx, JSClass *jsclasp, JSObject *proto, JSO
 JS_PUBLIC_API(JSObject *)
 JS_NewObjectForConstructor(JSContext *cx, const jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, *vp);
 
@@ -3297,6 +3405,7 @@ JS_IsNative(JSObject *obj)
 JS_PUBLIC_API(JSBool)
 JS_FreezeObject(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
 
@@ -3306,17 +3415,18 @@ JS_FreezeObject(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSBool)
 JS_DeepFreezeObject(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
 
-    
+    /* Assume that non-extensible objects are already deep-frozen, to avoid divergence. */
     if (!obj->isExtensible())
         return true;
 
     if (!obj->freeze(cx))
         return false;
 
-    
+    /* Walk slots in obj and if any value is a non-null object, seal it. */
     for (uint32_t i = 0, n = obj->slotSpan(); i < n; ++i) {
         const Value &v = obj->getSlot(i);
         if (v.isPrimitive())
@@ -3331,11 +3441,12 @@ JS_DeepFreezeObject(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSObject *)
 JS_ConstructObject(JSContext *cx, JSClass *jsclasp, JSObject *proto, JSObject *parent)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, proto, parent);
     Class *clasp = Valueify(jsclasp);
     if (!clasp)
-        clasp = &ObjectClass;    
+        clasp = &ObjectClass;    /* default class is Object */
     return js_ConstructObject(cx, clasp, proto, parent, 0, NULL);
 }
 
@@ -3343,11 +3454,12 @@ JS_PUBLIC_API(JSObject *)
 JS_ConstructObjectWithArguments(JSContext *cx, JSClass *jsclasp, JSObject *proto,
                                 JSObject *parent, uintN argc, jsval *argv)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, proto, parent, JSValueArray(argv, argc));
     Class *clasp = Valueify(jsclasp);
     if (!clasp)
-        clasp = &ObjectClass;    
+        clasp = &ObjectClass;    /* default class is Object */
     return js_ConstructObject(cx, clasp, proto, parent, argc, argv);
 }
 
@@ -3355,6 +3467,7 @@ static JSBool
 LookupPropertyById(JSContext *cx, JSObject *obj, jsid id, uintN flags,
                    JSObject **objp, JSProperty **propp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
 
@@ -3370,7 +3483,7 @@ LookupResult(JSContext *cx, JSObject *obj, JSObject *obj2, jsid id,
              JSProperty *prop, Value *vp)
 {
     if (!prop) {
-        
+        /* XXX bad API: no way to tell "not defined" from "void value" */
         vp->setUndefined();
         return JS_TRUE;
     }
@@ -3383,7 +3496,7 @@ LookupResult(JSContext *cx, JSObject *obj, JSObject *obj2, jsid id,
             return !!obj2->methodReadBarrier(cx, *shape, vp);
         }
 
-        
+        /* Peek at the native property's slot value, without doing a Get. */
         if (shape->hasSlot()) {
             *vp = obj2->nativeGetSlot(shape->slot());
             return true;
@@ -3402,7 +3515,7 @@ LookupResult(JSContext *cx, JSObject *obj, JSObject *obj2, jsid id,
         }
     }
 
-    
+    /* XXX bad API: no way to return "defined but value unknown" */
     vp->setBoolean(true);
     return true;
 }
@@ -3447,6 +3560,7 @@ JS_LookupPropertyWithFlagsById(JSContext *cx, JSObject *obj, jsid id, uintN flag
     JSBool ok;
     JSProperty *prop;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
     ok = obj->isNative()
@@ -3477,6 +3591,7 @@ JS_HasPropertyById(JSContext *cx, JSObject *obj, jsid id, JSBool *foundp)
 JS_PUBLIC_API(JSBool)
 JS_HasElement(JSContext *cx, JSObject *obj, uint32_t index, JSBool *foundp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     jsid id;
     if (!IndexToId(cx, index, &id))
@@ -3501,6 +3616,7 @@ JS_HasUCProperty(JSContext *cx, JSObject *obj, const jschar *name, size_t namele
 JS_PUBLIC_API(JSBool)
 JS_AlreadyHasOwnPropertyById(JSContext *cx, JSObject *obj, jsid id, JSBool *foundp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
 
@@ -3523,6 +3639,7 @@ JS_AlreadyHasOwnPropertyById(JSContext *cx, JSObject *obj, jsid id, JSBool *foun
 JS_PUBLIC_API(JSBool)
 JS_AlreadyHasOwnElement(JSContext *cx, JSObject *obj, uint32_t index, JSBool *foundp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     jsid id;
     if (!IndexToId(cx, index, &id))
@@ -3550,15 +3667,16 @@ DefinePropertyById(JSContext *cx, JSObject *obj, jsid id, const Value &value,
                    PropertyOp getter, StrictPropertyOp setter, uintN attrs,
                    uintN flags, intN tinyid)
 {
-    
-
-
-
-
-
+    /*
+     * JSPROP_READONLY has no meaning when accessors are involved. Ideally we'd
+     * throw if this happens, but we've accepted it for long enough that it's
+     * not worth trying to make callers change their ways. Just flip it off on
+     * its way through the API layer so that we can enforce this internally.
+     */
     if (attrs & (JSPROP_GETTER | JSPROP_SETTER))
         attrs &= ~JSPROP_READONLY;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id, value,
                             (attrs & JSPROP_GETTER)
@@ -3587,6 +3705,7 @@ JS_PUBLIC_API(JSBool)
 JS_DefineElement(JSContext *cx, JSObject *obj, uint32_t index, jsval value,
                  JSPropertyOp getter, JSStrictPropertyOp setter, uintN attrs)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     jsid id;
     if (!IndexToId(cx, index, &id))
@@ -3602,6 +3721,9 @@ DefineProperty(JSContext *cx, JSObject *obj, const char *name, const Value &valu
     jsid id;
     JSAtom *atom;
 
+    RootObject objRoot(cx, &obj);
+    RootValue valueRoot(cx, &value);
+
     if (attrs & JSPROP_INDEX) {
         id = INT_TO_JSID(intptr_t(name));
         atom = NULL;
@@ -3614,6 +3736,8 @@ DefineProperty(JSContext *cx, JSObject *obj, const char *name, const Value &valu
     }
 
     if (attrs & JSPROP_NATIVE_ACCESSORS) {
+        RootId idRoot(cx, &id);
+
         JS_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
         attrs &= ~JSPROP_NATIVE_ACCESSORS;
         if (getter) {
@@ -3631,6 +3755,7 @@ DefineProperty(JSContext *cx, JSObject *obj, const char *name, const Value &valu
             attrs |= JSPROP_SETTER;
         }
     }
+
     return DefinePropertyById(cx, obj, id, value, getter, setter, attrs, flags, tinyid);
 }
 
@@ -3677,6 +3802,7 @@ JS_DefineUCPropertyWithTinyId(JSContext *cx, JSObject *obj, const jschar *name, 
 JS_PUBLIC_API(JSBool)
 JS_DefineOwnProperty(JSContext *cx, JSObject *obj, jsid id, jsval descriptor, JSBool *bp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id, descriptor);
     return js_DefineOwnProperty(cx, obj, id, descriptor, bp);
@@ -3686,14 +3812,18 @@ JS_PUBLIC_API(JSObject *)
 JS_DefineObject(JSContext *cx, JSObject *obj, const char *name, JSClass *jsclasp,
                 JSObject *proto, uintN attrs)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, proto);
 
     Class *clasp = Valueify(jsclasp);
     if (!clasp)
-        clasp = &ObjectClass;    
+        clasp = &ObjectClass;    /* default class is Object */
 
-    JSObject *nobj = NewObjectWithClassProto(cx, clasp, proto, obj);
+    RootObject root(cx, &obj);
+    RootedVarObject nobj(cx);
+
+    nobj = NewObjectWithClassProto(cx, clasp, proto, obj);
     if (!nobj)
         return NULL;
 
@@ -3709,6 +3839,7 @@ JS_DefineConstDoubles(JSContext *cx, JSObject *obj, JSConstDoubleSpec *cds)
     JSBool ok;
     uintN attrs;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     for (ok = JS_TRUE; cds->name; cds++) {
         Value value = DoubleValue(cds->dval);
@@ -3726,6 +3857,7 @@ JS_PUBLIC_API(JSBool)
 JS_DefineProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps)
 {
     JSBool ok;
+    RootObject root(cx, &obj);
 
     for (ok = true; ps->name; ps++) {
         ok = DefineProperty(cx, obj, ps->name, UndefinedValue(), ps->getter, ps->setter,
@@ -3855,6 +3987,7 @@ JS_GetUCPropertyAttrsGetterAndSetter(JSContext *cx, JSObject *obj,
 JS_PUBLIC_API(JSBool)
 JS_GetOwnPropertyDescriptor(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return GetOwnPropertyDescriptor(cx, obj, id, vp);
 }
@@ -3904,6 +4037,7 @@ JS_GetPropertyById(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_ForwardGetPropertyTo(JSContext *cx, JSObject *obj, jsid id, JSObject *onBehalfOf, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
     assertSameCompartment(cx, onBehalfOf);
@@ -3926,6 +4060,7 @@ JS_GetElement(JSContext *cx, JSObject *obj, uint32_t index, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_ForwardGetElementTo(JSContext *cx, JSObject *obj, uint32_t index, JSObject *onBehalfOf, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     JSAutoResolveFlags rf(cx, JSRESOLVE_QUALIFIED);
@@ -3935,6 +4070,7 @@ JS_ForwardGetElementTo(JSContext *cx, JSObject *obj, uint32_t index, JSObject *o
 JS_PUBLIC_API(JSBool)
 JS_GetElementIfPresent(JSContext *cx, JSObject *obj, uint32_t index, JSObject *onBehalfOf, jsval *vp, JSBool* present)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     JSAutoResolveFlags rf(cx, JSRESOLVE_QUALIFIED);
@@ -3969,6 +4105,7 @@ JS_GetUCProperty(JSContext *cx, JSObject *obj, const jschar *name, size_t namele
 JS_PUBLIC_API(JSBool)
 JS_GetMethodById(JSContext *cx, JSObject *obj, jsid id, JSObject **objp, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
     if (!js_GetMethod(cx, obj, id, JSGET_METHOD_BARRIER, vp))
@@ -3988,6 +4125,7 @@ JS_GetMethod(JSContext *cx, JSObject *obj, const char *name, JSObject **objp, js
 JS_PUBLIC_API(JSBool)
 JS_SetPropertyById(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
     JSAutoResolveFlags rf(cx, JSRESOLVE_QUALIFIED | JSRESOLVE_ASSIGNING);
@@ -3997,6 +4135,7 @@ JS_SetPropertyById(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_SetElement(JSContext *cx, JSObject *obj, uint32_t index, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     JSAutoResolveFlags rf(cx, JSRESOLVE_QUALIFIED | JSRESOLVE_ASSIGNING);
@@ -4020,6 +4159,7 @@ JS_SetUCProperty(JSContext *cx, JSObject *obj, const jschar *name, size_t namele
 JS_PUBLIC_API(JSBool)
 JS_DeletePropertyById2(JSContext *cx, JSObject *obj, jsid id, jsval *rval)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
     JSAutoResolveFlags rf(cx, JSRESOLVE_QUALIFIED);
@@ -4029,6 +4169,7 @@ JS_DeletePropertyById2(JSContext *cx, JSObject *obj, jsid id, jsval *rval)
 JS_PUBLIC_API(JSBool)
 JS_DeleteElement2(JSContext *cx, JSObject *obj, uint32_t index, jsval *rval)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     jsid id;
     if (!IndexToId(cx, index, &id))
@@ -4074,6 +4215,7 @@ JS_DeleteProperty(JSContext *cx, JSObject *obj, const char *name)
 JS_PUBLIC_API(void)
 JS_ClearScope(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
 
@@ -4084,7 +4226,7 @@ JS_ClearScope(JSContext *cx, JSObject *obj)
     if (obj->isNative())
         js_ClearNative(cx, obj);
 
-    
+    /* Clear cached class objects on the global object. */
     if (obj->isGlobal())
         obj->asGlobal()->clear(cx);
 
@@ -4094,6 +4236,7 @@ JS_ClearScope(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSIdArray *)
 JS_Enumerate(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
 
@@ -4106,13 +4249,13 @@ JS_Enumerate(JSContext *cx, JSObject *obj)
     return ida;
 }
 
-
-
-
-
-
-
-
+/*
+ * XXX reverse iterator for properties, unreverse and meld with jsinterp.c's
+ *     prop_iterator_class somehow...
+ * + preserve the obj->enumerate API while optimizing the native object case
+ * + native case here uses a Shape *, but that iterates in reverse!
+ * + so we make non-native match, by reverse-iterating after JS_Enumerating
+ */
 const uint32_t JSSLOT_ITER_INDEX = 0;
 
 static void
@@ -4123,7 +4266,7 @@ prop_iter_finalize(JSContext *cx, JSObject *obj)
         return;
 
     if (obj->getSlot(JSSLOT_ITER_INDEX).toInt32() >= 0) {
-        
+        /* Non-native case: destroy the ida enumerated when obj was created. */
         JSIdArray *ida = (JSIdArray *) pdata;
         JS_DestroyIdArray(cx, ida);
     }
@@ -4137,14 +4280,14 @@ prop_iter_trace(JSTracer *trc, JSObject *obj)
         return;
 
     if (obj->getSlot(JSSLOT_ITER_INDEX).toInt32() < 0) {
-        
-
-
-
-
+        /*
+         * Native case: just mark the next property to visit. We don't need a
+         * barrier here because the pointer is updated via setPrivate, which
+         * always takes a barrier.
+         */
         MarkShapeUnbarriered(trc, (Shape *)pdata, "prop iter shape");
     } else {
-        
+        /* Non-native case: mark each id in the JSIdArray private. */
         JSIdArray *ida = (JSIdArray *) pdata;
         MarkIdRange(trc, ida->vector, ida->vector + ida->length, "prop iter");
     }
@@ -4153,20 +4296,20 @@ prop_iter_trace(JSTracer *trc, JSObject *obj)
 static Class prop_iter_class = {
     "PropertyIterator",
     JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
-    JS_PropertyStub,         
-    JS_PropertyStub,         
-    JS_PropertyStub,         
-    JS_StrictPropertyStub,   
+    JS_PropertyStub,         /* addProperty */
+    JS_PropertyStub,         /* delProperty */
+    JS_PropertyStub,         /* getProperty */
+    JS_StrictPropertyStub,   /* setProperty */
     JS_EnumerateStub,
     JS_ResolveStub,
     JS_ConvertStub,
     prop_iter_finalize,
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
-    NULL,           
+    NULL,           /* reserved0   */
+    NULL,           /* checkAccess */
+    NULL,           /* call        */
+    NULL,           /* construct   */
+    NULL,           /* xdrObject   */
+    NULL,           /* hasInstance */
     prop_iter_trace
 };
 
@@ -4178,6 +4321,7 @@ JS_NewPropertyIterator(JSContext *cx, JSObject *obj)
     jsint index;
     JSIdArray *ida;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     iterobj = NewObjectWithClassProto(cx, &prop_iter_class, NULL, obj);
@@ -4185,17 +4329,16 @@ JS_NewPropertyIterator(JSContext *cx, JSObject *obj)
         return NULL;
 
     if (obj->isNative()) {
-        
+        /* Native case: start with the last property in obj. */
         pdata = (void *)obj->lastProperty();
         index = -1;
     } else {
-        
-
-
-
-
-
-        AutoObjectRooter tvr(cx, iterobj);
+        /*
+         * Non-native case: enumerate a JSIdArray and keep it via private.
+         *
+         * Note: we have to make sure that we root obj around the call to
+         * JS_Enumerate to protect against multiple allocations under it.
+         */
         ida = JS_Enumerate(cx, obj);
         if (!ida)
             return NULL;
@@ -4203,7 +4346,7 @@ JS_NewPropertyIterator(JSContext *cx, JSObject *obj)
         index = ida->length;
     }
 
-    
+    /* iterobj cannot escape to other threads here. */
     iterobj->setPrivate(pdata);
     iterobj->setSlot(JSSLOT_ITER_INDEX, Int32Value(index));
     return iterobj;
@@ -4216,11 +4359,12 @@ JS_NextProperty(JSContext *cx, JSObject *iterobj, jsid *idp)
     const Shape *shape;
     JSIdArray *ida;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, iterobj);
     i = iterobj->getSlot(JSSLOT_ITER_INDEX).toInt32();
     if (i < 0) {
-        
+        /* Native case: private data is a property tree node pointer. */
         JS_ASSERT(iterobj->getParent()->isNative());
         shape = (Shape *) iterobj->getPrivate();
 
@@ -4235,7 +4379,7 @@ JS_NextProperty(JSContext *cx, JSObject *iterobj, jsid *idp)
             *idp = shape->propid();
         }
     } else {
-        
+        /* Non-native case: use the ida enumerated when iterobj was created. */
         ida = (JSIdArray *) iterobj->getPrivate();
         JS_ASSERT(i <= ida->length);
         STATIC_ASSUME(i <= ida->length);
@@ -4252,6 +4396,7 @@ JS_NextProperty(JSContext *cx, JSObject *iterobj, jsid *idp)
 JS_PUBLIC_API(JSBool)
 JS_GetReservedSlot(JSContext *cx, JSObject *obj, uint32_t index, jsval *vp)
 {
+    /* This function can be called by a finalizer. */
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     return js_GetReservedSlot(cx, obj, index, vp);
@@ -4260,6 +4405,7 @@ JS_GetReservedSlot(JSContext *cx, JSObject *obj, uint32_t index, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_SetReservedSlot(JSContext *cx, JSObject *obj, uint32_t index, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, v);
     return js_SetReservedSlot(cx, obj, index, v);
@@ -4269,8 +4415,9 @@ JS_PUBLIC_API(JSObject *)
 JS_NewArrayObject(JSContext *cx, jsint length, jsval *vector)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
-    
+    /* NB: jsuint cast does ToUint32. */
     assertSameCompartment(cx, JSValueArray(vector, vector ? (jsuint)length : 0));
     return NewDenseCopiedArray(cx, (jsuint)length, vector);
 }
@@ -4285,6 +4432,7 @@ JS_IsArrayObject(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSBool)
 JS_GetArrayLength(JSContext *cx, JSObject *obj, jsuint *lengthp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     return js_GetLengthProperty(cx, obj, lengthp);
@@ -4293,6 +4441,7 @@ JS_GetArrayLength(JSContext *cx, JSObject *obj, jsuint *lengthp)
 JS_PUBLIC_API(JSBool)
 JS_SetArrayLength(JSContext *cx, JSObject *obj, jsuint length)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     return js_SetLengthProperty(cx, obj, length);
@@ -4302,6 +4451,7 @@ JS_PUBLIC_API(JSBool)
 JS_CheckAccess(JSContext *cx, JSObject *obj, jsid id, JSAccessMode mode,
                jsval *vp, uintN *attrsp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, id);
     return CheckAccess(cx, obj, id, mode, vp, attrsp);
@@ -4371,6 +4521,7 @@ JS_NewFunction(JSContext *cx, JSNative native, uintN nargs, uintN flags,
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
     JSAtom *atom;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, parent);
 
@@ -4381,7 +4532,9 @@ JS_NewFunction(JSContext *cx, JSNative native, uintN nargs, uintN flags,
         if (!atom)
             return NULL;
     }
-    return js_NewFunction(cx, NULL, native, nargs, flags, parent, atom);
+
+    RootObject parentRoot(cx, &parent);
+    return js_NewFunction(cx, NULL, native, nargs, flags, parentRoot, atom);
 }
 
 JS_PUBLIC_API(JSFunction *)
@@ -4390,17 +4543,20 @@ JS_NewFunctionById(JSContext *cx, JSNative native, uintN nargs, uintN flags, JSO
 {
     JS_ASSERT(JSID_IS_STRING(id));
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, parent);
 
-    return js_NewFunction(cx, NULL, native, nargs, flags, parent, JSID_TO_ATOM(id));
+    RootObject parentRoot(cx, &parent);
+    return js_NewFunction(cx, NULL, native, nargs, flags, parentRoot, JSID_TO_ATOM(id));
 }
 
 JS_PUBLIC_API(JSObject *)
 JS_CloneFunctionObject(JSContext *cx, JSObject *funobj, JSObject *parent)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
-    assertSameCompartment(cx, parent);  
+    assertSameCompartment(cx, parent);  // XXX no funobj for now
     if (!parent) {
         if (cx->hasfp())
             parent = &cx->fp()->scopeChain();
@@ -4410,10 +4566,10 @@ JS_CloneFunctionObject(JSContext *cx, JSObject *funobj, JSObject *parent)
     }
 
     if (!funobj->isFunction()) {
-        
-
-
-
+        /*
+         * We cannot clone this object, so fail (we used to return funobj, bad
+         * idea, but we changed incompatibly to teach any abusers a lesson!).
+         */
         Value v = ObjectValue(*funobj);
         js_ReportIsNotFunction(cx, &v, 0);
         return NULL;
@@ -4432,18 +4588,18 @@ JS_CloneFunctionObject(JSContext *cx, JSObject *funobj, JSObject *parent)
     if (!fun->isFlatClosure())
         return CloneFunctionObject(cx, fun, parent, fun->getAllocKind());
 
-    
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * A flat closure carries its own environment, so why clone it? In case
+     * someone wants to mutate its fixed slots or add ad-hoc properties. API
+     * compatibility suggests we not return funobj and let callers mutate the
+     * returned object at will.
+     *
+     * But it's worse than that: API compatibility according to the test for
+     * bug 300079 requires we get "upvars" from parent and its ancestors! So
+     * we do that (grudgingly!). The scope chain ancestors are searched as if
+     * they were activations, respecting the skip field in each upvar's cookie
+     * but looking up the property by name instead of frame slot.
+     */
     JSObject *clone = js_AllocFlatClosure(cx, fun, parent);
     if (!clone)
         return NULL;
@@ -4530,15 +4686,15 @@ js_generic_native_method_dispatcher(JSContext *cx, uintN argc, Value *vp)
         return JS_FALSE;
     }
 
-    
-
-
-
-
-
+    /*
+     * Copy all actual (argc) arguments down over our |this| parameter, vp[1],
+     * which is almost always the class constructor object, e.g. Array.  Then
+     * call the corresponding prototype native method with our first argument
+     * passed as |this|.
+     */
     memmove(vp + 1, vp + 2, argc * sizeof(jsval));
 
-    
+    /* Clear the last parameter in case too few arguments were passed. */
     vp[2 + --argc].setUndefined();
 
     return fs->call(cx, argc, vp);
@@ -4547,14 +4703,16 @@ js_generic_native_method_dispatcher(JSContext *cx, uintN argc, Value *vp)
 JS_PUBLIC_API(JSBool)
 JS_DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs)
 {
+    RootObject objRoot(cx, &obj);
+
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
     uintN flags;
-    JSObject *ctor;
+    RootedVarObject ctor(cx);
     JSFunction *fun;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
-    ctor = NULL;
     for (; fs->name; fs++) {
         flags = fs->flags;
 
@@ -4562,11 +4720,13 @@ JS_DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs)
         if (!atom)
             return JS_FALSE;
 
-        
-
-
-
+        /*
+         * Define a generic arity N+1 static method for the arity N prototype
+         * method if flags contains JSFUN_GENERIC_NATIVE.
+         */
         if (flags & JSFUN_GENERIC_NATIVE) {
+            RootAtom root(cx, &atom);
+
             if (!ctor) {
                 ctor = JS_GetConstructor(cx, obj);
                 if (!ctor)
@@ -4582,14 +4742,15 @@ JS_DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs)
             if (!fun)
                 return JS_FALSE;
 
-            
-
-
-
+            /*
+             * As jsapi.h notes, fs must point to storage that lives as long
+             * as fun->object lives.
+             */
             fun->setExtendedSlot(0, PrivateValue(fs));
         }
 
-        fun = js_DefineFunction(cx, obj, ATOM_TO_JSID(atom), fs->call, fs->nargs, flags);
+        fun = js_DefineFunction(cx, objRoot,
+                                ATOM_TO_JSID(atom), fs->call, fs->nargs, flags);
         if (!fun)
             return JS_FALSE;
     }
@@ -4600,13 +4761,16 @@ JS_PUBLIC_API(JSFunction *)
 JS_DefineFunction(JSContext *cx, JSObject *obj, const char *name, JSNative call,
                   uintN nargs, uintN attrs)
 {
+    RootObject objRoot(cx, &obj);
+
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     JSAtom *atom = js_Atomize(cx, name, strlen(name));
     if (!atom)
         return NULL;
-    return js_DefineFunction(cx, obj, ATOM_TO_JSID(atom), call, nargs, attrs);
+    return js_DefineFunction(cx, objRoot, ATOM_TO_JSID(atom), call, nargs, attrs);
 }
 
 JS_PUBLIC_API(JSFunction *)
@@ -4614,23 +4778,29 @@ JS_DefineUCFunction(JSContext *cx, JSObject *obj,
                     const jschar *name, size_t namelen, JSNative call,
                     uintN nargs, uintN attrs)
 {
+    RootObject objRoot(cx, &obj);
+
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     JSAtom *atom = js_AtomizeChars(cx, name, AUTO_NAMELEN(name, namelen));
     if (!atom)
         return NULL;
-    return js_DefineFunction(cx, obj, ATOM_TO_JSID(atom), call, nargs, attrs);
+    return js_DefineFunction(cx, objRoot, ATOM_TO_JSID(atom), call, nargs, attrs);
 }
 
 extern JS_PUBLIC_API(JSFunction *)
 JS_DefineFunctionById(JSContext *cx, JSObject *obj, jsid id, JSNative call,
                     uintN nargs, uintN attrs)
 {
+    RootObject objRoot(cx, &obj);
+
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
-    return js_DefineFunction(cx, obj, id, call, nargs, attrs);
+    return js_DefineFunction(cx, objRoot, id, call, nargs, attrs);
 }
 
 struct AutoLastFrameCheck {
@@ -4666,6 +4836,7 @@ CompileUCScriptForPrincipalsCommon(JSContext *cx, JSObject *obj, JSPrincipals *p
                                    const char *filename, uintN lineno, JSVersion version)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, principals);
     AutoLastFrameCheck lfc(cx);
@@ -4722,6 +4893,7 @@ JS_CompileScriptForPrincipals(JSContext *cx, JSObject *obj,
                               const char *filename, uintN lineno)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     jschar *chars = InflateString(cx, bytes, &length);
@@ -4749,6 +4921,7 @@ JS_BufferIsCompilableUnit(JSContext *cx, JSBool bytes_are_utf8, JSObject *obj, c
     JSExceptionState *exnState;
     JSErrorReporter older;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     if (bytes_are_utf8)
@@ -4758,10 +4931,10 @@ JS_BufferIsCompilableUnit(JSContext *cx, JSBool bytes_are_utf8, JSObject *obj, c
     if (!chars)
         return JS_TRUE;
 
-    
-
-
-
+    /*
+     * Return true on any out-of-memory error, so our caller doesn't try to
+     * collect more buffered source.
+     */
     result = JS_TRUE;
     exnState = JS_SaveExceptionState(cx);
     {
@@ -4770,11 +4943,11 @@ JS_BufferIsCompilableUnit(JSContext *cx, JSBool bytes_are_utf8, JSObject *obj, c
             older = JS_SetErrorReporter(cx, NULL);
             if (!parser.parse(obj) &&
                 parser.tokenStream.isUnexpectedEOF()) {
-                
-
-
-
-
+                /*
+                 * We ran into an error. If it was because we ran out of
+                 * source, we return false so our caller knows to try to
+                 * collect more buffered source.
+                 */
                 result = JS_FALSE;
             }
             JS_SetErrorReporter(cx, older);
@@ -4785,7 +4958,7 @@ JS_BufferIsCompilableUnit(JSContext *cx, JSBool bytes_are_utf8, JSObject *obj, c
     return result;
 }
 
-
+/* Use the fastest available getc. */
 #if defined(HAVE_GETC_UNLOCKED)
 # define fast_getc getc_unlocked
 #elif defined(HAVE__GETC_NOLOCK)
@@ -4808,10 +4981,10 @@ CompileUTF8FileHelper(JSContext *cx, JSObject *obj, JSPrincipals *principals,
     size_t i = 0;
     JSScript *script;
 
-    
+    /* Read in the whole file, then compile it. */
     if (fp == stdin) {
         if (len == 0)
-            len = 8;  
+            len = 8;  /* start with a small buffer, expand as necessary */
 
         int c;
         bool hitEOF = false;
@@ -4839,8 +5012,8 @@ CompileUTF8FileHelper(JSContext *cx, JSObject *obj, JSPrincipals *principals,
             return NULL;
 
         int c;
-        
-        
+        // The |i < len| is necessary for files that lie about their length,
+        // e.g. /dev/zero and /dev/random.  See bug 669434.
         while (i < len && (c = fast_getc(fp)) != EOF)
             buf[i++] = c;
     }
@@ -4866,6 +5039,7 @@ JS_PUBLIC_API(JSScript *)
 JS_CompileUTF8File(JSContext *cx, JSObject *obj, const char *filename)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj);
     AutoLastFrameCheck lfc(cx);
@@ -4893,6 +5067,7 @@ JS_CompileUTF8FileHandleForPrincipals(JSContext *cx, JSObject *obj, const char *
                                       FILE *file, JSPrincipals *principals)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, principals);
     AutoLastFrameCheck lfc(cx);
@@ -4931,7 +5106,10 @@ CompileUCFunctionForPrincipalsCommon(JSContext *cx, JSObject *obj,
                                      const jschar *chars, size_t length,
                                      const char *filename, uintN lineno, JSVersion version)
 {
+    RootObject objRoot(cx, &obj);
+
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, principals);
     AutoLastFrameCheck lfc(cx);
@@ -4953,7 +5131,7 @@ CompileUCFunctionForPrincipalsCommon(JSContext *cx, JSObject *obj,
             return NULL;
     }
 
-    JSFunction *fun = js_NewFunction(cx, NULL, NULL, 0, JSFUN_INTERPRETED, obj, funAtom);
+    JSFunction *fun = js_NewFunction(cx, NULL, NULL, 0, JSFUN_INTERPRETED, objRoot, funAtom);
     if (!fun)
         return NULL;
 
@@ -5044,6 +5222,7 @@ JS_DecompileScript(JSContext *cx, JSScript *script, const char *name, uintN inde
     JSPrinter *jp;
     JSString *str;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 #ifdef DEBUG
     if (cx->compartment != script->compartment())
@@ -5067,6 +5246,7 @@ JS_PUBLIC_API(JSString *)
 JS_DecompileFunction(JSContext *cx, JSFunction *fun, uintN indent)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, fun);
     return js_DecompileToString(cx, "JS_DecompileFunction", fun,
@@ -5079,6 +5259,7 @@ JS_PUBLIC_API(JSString *)
 JS_DecompileFunctionBody(JSContext *cx, JSFunction *fun, uintN indent)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, fun);
     return js_DecompileToString(cx, "JS_DecompileFunctionBody", fun,
@@ -5091,6 +5272,7 @@ JS_PUBLIC_API(JSBool)
 JS_ExecuteScript(JSContext *cx, JSObject *obj, JSScript *script, jsval *rval)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, script);
     AutoLastFrameCheck lfc(cx);
@@ -5177,7 +5359,7 @@ JS_EvaluateUCScript(JSContext *cx, JSObject *obj, const jschar *chars, uintN len
     return JS_EvaluateUCScriptForPrincipals(cx, obj, NULL, chars, length, filename, lineno, rval);
 }
 
-
+/* Ancient uintN nbytes is part of API/ABI, so use size_t length local. */
 JS_PUBLIC_API(JSBool)
 JS_EvaluateScriptForPrincipals(JSContext *cx, JSObject *obj, JSPrincipals *principals,
                                const char *bytes, uintN nbytes,
@@ -5217,6 +5399,7 @@ JS_CallFunction(JSContext *cx, JSObject *obj, JSFunction *fun, uintN argc, jsval
                 jsval *rval)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, fun, JSValueArray(argv, argc));
     AutoLastFrameCheck lfc(cx);
@@ -5229,6 +5412,7 @@ JS_CallFunctionName(JSContext *cx, JSObject *obj, const char *name, uintN argc, 
                     jsval *rval)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, JSValueArray(argv, argc));
     AutoLastFrameCheck lfc(cx);
@@ -5245,6 +5429,7 @@ JS_CallFunctionValue(JSContext *cx, JSObject *obj, jsval fval, uintN argc, jsval
                      jsval *rval)
 {
     JS_THREADSAFE_ASSERT(cx->compartment != cx->runtime->atomsCompartment);
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, obj, fval, JSValueArray(argv, argc));
     AutoLastFrameCheck lfc(cx);
@@ -5257,6 +5442,7 @@ namespace JS {
 JS_PUBLIC_API(bool)
 Call(JSContext *cx, jsval thisv, jsval fval, uintN argc, jsval *argv, jsval *rval)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, thisv, fval, JSValueArray(argv, argc));
     AutoLastFrameCheck lfc(cx);
@@ -5264,19 +5450,20 @@ Call(JSContext *cx, jsval thisv, jsval fval, uintN argc, jsval *argv, jsval *rva
     return Invoke(cx, thisv, fval, argc, argv, rval);
 }
 
-} 
+} // namespace JS
 
 JS_PUBLIC_API(JSObject *)
 JS_New(JSContext *cx, JSObject *ctor, uintN argc, jsval *argv)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, ctor, JSValueArray(argv, argc));
     AutoLastFrameCheck lfc(cx);
 
-    
-    
-    
-    
+    // This is not a simple variation of JS_CallFunctionValue because JSOP_NEW
+    // is not a simple variation of JSOP_CALL. We have to determine what class
+    // of object to create, create it, and clamp the return value to an object,
+    // among other details. InvokeConstructor does the hard work.
     InvokeArgsGuard args;
     if (!cx->stack.pushInvokeArgs(cx, argc, &args))
         return NULL;
@@ -5289,10 +5476,10 @@ JS_New(JSContext *cx, JSObject *ctor, uintN argc, jsval *argv)
         return NULL;
 
     if (!args.rval().isObject()) {
-        
-
-
-
+        /*
+         * Although constructors may return primitives (via proxies), this
+         * API is asking for an object, so we report an error.
+         */
         JSAutoByteString bytes;
         if (js_ValueToPrintable(cx, args.rval(), &bytes)) {
             JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSMSG_BAD_NEW_RESULT,
@@ -5356,6 +5543,7 @@ JS_IsRunning(JSContext *cx)
 JS_PUBLIC_API(JSBool)
 JS_SaveFrameChain(JSContext *cx)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return cx->stack.saveFrameChain();
 }
@@ -5363,6 +5551,7 @@ JS_SaveFrameChain(JSContext *cx)
 JS_PUBLIC_API(void)
 JS_RestoreFrameChain(JSContext *cx)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     cx->stack.restoreFrameChain();
 }
@@ -5381,10 +5570,11 @@ JS_GetFunctionCallback(JSContext *cx)
 }
 #endif
 
-
+/************************************************************************/
 JS_PUBLIC_API(JSString *)
 JS_NewStringCopyN(JSContext *cx, const char *s, size_t n)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_NewStringCopyN(cx, s, n);
 }
@@ -5396,6 +5586,7 @@ JS_NewStringCopyZ(JSContext *cx, const char *s)
     jschar *js;
     JSString *str;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     if (!s)
         return cx->runtime->emptyString;
@@ -5412,6 +5603,7 @@ JS_NewStringCopyZ(JSContext *cx, const char *s)
 JS_PUBLIC_API(JSBool)
 JS_StringHasBeenInterned(JSContext *cx, JSString *str)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     if (!str->isAtom())
@@ -5423,6 +5615,7 @@ JS_StringHasBeenInterned(JSContext *cx, JSString *str)
 JS_PUBLIC_API(JSString *)
 JS_InternJSString(JSContext *cx, JSString *str)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JSAtom *atom = js_AtomizeString(cx, str, InternAtom);
     JS_ASSERT_IF(atom, JS_StringHasBeenInterned(cx, atom));
@@ -5432,6 +5625,7 @@ JS_InternJSString(JSContext *cx, JSString *str)
 JS_PUBLIC_API(JSString *)
 JS_InternString(JSContext *cx, const char *s)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JSAtom *atom = js_Atomize(cx, s, strlen(s), InternAtom);
     JS_ASSERT_IF(atom, JS_StringHasBeenInterned(cx, atom));
@@ -5441,6 +5635,7 @@ JS_InternString(JSContext *cx, const char *s)
 JS_PUBLIC_API(JSString *)
 JS_NewUCString(JSContext *cx, jschar *chars, size_t length)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_NewString(cx, chars, length);
 }
@@ -5448,6 +5643,7 @@ JS_NewUCString(JSContext *cx, jschar *chars, size_t length)
 JS_PUBLIC_API(JSString *)
 JS_NewUCStringCopyN(JSContext *cx, const jschar *s, size_t n)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_NewStringCopyN(cx, s, n);
 }
@@ -5455,6 +5651,7 @@ JS_NewUCStringCopyN(JSContext *cx, const jschar *s, size_t n)
 JS_PUBLIC_API(JSString *)
 JS_NewUCStringCopyZ(JSContext *cx, const jschar *s)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     if (!s)
         return cx->runtime->emptyString;
@@ -5464,6 +5661,7 @@ JS_NewUCStringCopyZ(JSContext *cx, const jschar *s)
 JS_PUBLIC_API(JSString *)
 JS_InternUCStringN(JSContext *cx, const jschar *s, size_t length)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JSAtom *atom = js_AtomizeChars(cx, s, length, InternAtom);
     JS_ASSERT_IF(atom, JS_StringHasBeenInterned(cx, atom));
@@ -5485,6 +5683,7 @@ JS_GetStringLength(JSString *str)
 JS_PUBLIC_API(const jschar *)
 JS_GetStringCharsZ(JSContext *cx, JSString *str)
 {
+    AssertNoGCOrFlatString(cx, str);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, str);
     return str->getCharsZ(cx);
@@ -5493,6 +5692,7 @@ JS_GetStringCharsZ(JSContext *cx, JSString *str)
 JS_PUBLIC_API(const jschar *)
 JS_GetStringCharsZAndLength(JSContext *cx, JSString *str, size_t *plength)
 {
+    AssertNoGCOrFlatString(cx, str);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, str);
     *plength = str->length();
@@ -5502,6 +5702,7 @@ JS_GetStringCharsZAndLength(JSContext *cx, JSString *str, size_t *plength)
 JS_PUBLIC_API(const jschar *)
 JS_GetStringCharsAndLength(JSContext *cx, JSString *str, size_t *plength)
 {
+    AssertNoGCOrFlatString(cx, str);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, str);
     *plength = str->length();
@@ -5525,6 +5726,7 @@ JS_GetInternedStringCharsAndLength(JSString *str, size_t *plength)
 extern JS_PUBLIC_API(JSFlatString *)
 JS_FlattenString(JSContext *cx, JSString *str)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, str);
     return str->getCharsZ(cx) ? (JSFlatString *)str : NULL;
@@ -5539,6 +5741,7 @@ JS_GetFlatStringChars(JSFlatString *str)
 JS_PUBLIC_API(JSBool)
 JS_CompareStrings(JSContext *cx, JSString *str1, JSString *str2, int32_t *result)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return CompareStrings(cx, str1, str2, result);
@@ -5547,6 +5750,7 @@ JS_CompareStrings(JSContext *cx, JSString *str1, JSString *str2, int32_t *result
 JS_PUBLIC_API(JSBool)
 JS_StringEqualsAscii(JSContext *cx, JSString *str, const char *asciiBytes, JSBool *match)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     JSLinearString *linearStr = str->ensureLinear(cx);
@@ -5571,6 +5775,7 @@ JS_PutEscapedFlatString(char *buffer, size_t size, JSFlatString *str, char quote
 JS_PUBLIC_API(size_t)
 JS_PutEscapedString(JSContext *cx, char *buffer, size_t size, JSString *str, char quote)
 {
+    AssertNoGC(cx);
     JSLinearString *linearStr = str->ensureLinear(cx);
     if (!linearStr)
         return size_t(-1);
@@ -5587,6 +5792,7 @@ JS_FileEscapedString(FILE *fp, JSString *str, char quote)
 JS_PUBLIC_API(JSString *)
 JS_NewGrowableString(JSContext *cx, jschar *chars, size_t length)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_NewString(cx, chars, length);
 }
@@ -5594,6 +5800,7 @@ JS_NewGrowableString(JSContext *cx, jschar *chars, size_t length)
 JS_PUBLIC_API(JSString *)
 JS_NewDependentString(JSContext *cx, JSString *str, size_t start, size_t length)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_NewDependentString(cx, str, start, length);
 }
@@ -5601,6 +5808,7 @@ JS_NewDependentString(JSContext *cx, JSString *str, size_t start, size_t length)
 JS_PUBLIC_API(JSString *)
 JS_ConcatStrings(JSContext *cx, JSString *left, JSString *right)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_ConcatStrings(cx, left, right);
 }
@@ -5608,6 +5816,7 @@ JS_ConcatStrings(JSContext *cx, JSString *left, JSString *right)
 JS_PUBLIC_API(const jschar *)
 JS_UndependString(JSContext *cx, JSString *str)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return str->getCharsZ(cx);
 }
@@ -5615,6 +5824,7 @@ JS_UndependString(JSContext *cx, JSString *str)
 JS_PUBLIC_API(JSBool)
 JS_MakeStringImmutable(JSContext *cx, JSString *str)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return !!str->ensureFixed(cx);
 }
@@ -5622,6 +5832,9 @@ JS_MakeStringImmutable(JSContext *cx, JSString *str)
 JS_PUBLIC_API(JSBool)
 JS_EncodeCharacters(JSContext *cx, const jschar *src, size_t srclen, char *dst, size_t *dstlenp)
 {
+    AssertNoGC(cx);
+    CHECK_REQUEST(cx);
+
     size_t n;
     if (!dst) {
         n = GetDeflatedStringLength(cx, src, srclen);
@@ -5639,6 +5852,8 @@ JS_EncodeCharacters(JSContext *cx, const jschar *src, size_t srclen, char *dst, 
 JS_PUBLIC_API(JSBool)
 JS_DecodeBytes(JSContext *cx, const char *src, size_t srclen, jschar *dst, size_t *dstlenp)
 {
+    AssertNoGC(cx);
+    CHECK_REQUEST(cx);
     return InflateStringToBuffer(cx, src, srclen, dst, dstlenp);
 }
 
@@ -5646,12 +5861,17 @@ JS_PUBLIC_API(JSBool)
 JS_DecodeUTF8(JSContext *cx, const char *src, size_t srclen, jschar *dst,
               size_t *dstlenp)
 {
+    AssertNoGC(cx);
+    CHECK_REQUEST(cx);
     return InflateUTF8StringToBuffer(cx, src, srclen, dst, dstlenp);
 }
 
 JS_PUBLIC_API(char *)
 JS_EncodeString(JSContext *cx, JSString *str)
 {
+    AssertNoGC(cx);
+    CHECK_REQUEST(cx);
+
     const jschar *chars = str->getChars(cx);
     if (!chars)
         return NULL;
@@ -5661,6 +5881,12 @@ JS_EncodeString(JSContext *cx, JSString *str)
 JS_PUBLIC_API(size_t)
 JS_GetStringEncodingLength(JSContext *cx, JSString *str)
 {
+    /* jsd calls us with a NULL cx. Ugh. */
+    if (cx) {
+        AssertNoGC(cx);
+        CHECK_REQUEST(cx);
+    }
+
     const jschar *chars = str->getChars(cx);
     if (!chars)
         return size_t(-1);
@@ -5670,11 +5896,11 @@ JS_GetStringEncodingLength(JSContext *cx, JSString *str)
 JS_PUBLIC_API(size_t)
 JS_EncodeStringToBuffer(JSString *str, char *buffer, size_t length)
 {
-    
-
-
-
-
+    /*
+     * FIXME bug 612141 - fix DeflateStringToBuffer interface so the result
+     * would allow to distinguish between insufficient buffer and encoding
+     * error.
+     */
     size_t writtenLength = length;
     const jschar *chars = str->getChars(NULL);
     if (!chars)
@@ -5688,7 +5914,7 @@ JS_EncodeStringToBuffer(JSString *str, char *buffer, size_t length)
     if (necessaryLength == size_t(-1))
         return size_t(-1);
     if (writtenLength != length) {
-        
+        /* Make sure that the buffer contains only valid UTF-8 sequences. */
         JS_ASSERT(js_CStringsAreUTF8);
         PodZero(buffer + writtenLength, length - writtenLength);
     }
@@ -5699,6 +5925,7 @@ JS_PUBLIC_API(JSBool)
 JS_Stringify(JSContext *cx, jsval *vp, JSObject *replacer, jsval space,
              JSONWriteCallback callback, void *data)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, replacer, space);
     StringBuffer sb(cx);
@@ -5714,6 +5941,7 @@ JS_Stringify(JSContext *cx, jsval *vp, JSObject *replacer, jsval space,
 JS_PUBLIC_API(JSBool)
 JS_ParseJSON(JSContext *cx, const jschar *chars, uint32_t len, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return ParseJSONWithReviver(cx, chars, len, NullValue(), vp);
@@ -5722,6 +5950,7 @@ JS_ParseJSON(JSContext *cx, const jschar *chars, uint32_t len, jsval *vp)
 JS_PUBLIC_API(JSBool)
 JS_ParseJSONWithReviver(JSContext *cx, const jschar *chars, uint32_t len, jsval reviver, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return ParseJSONWithReviver(cx, chars, len, reviver, vp);
@@ -5733,6 +5962,7 @@ JS_ReadStructuredClone(JSContext *cx, const uint64_t *buf, size_t nbytes,
                        const JSStructuredCloneCallbacks *optionalCallbacks,
                        void *closure)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     if (version > JS_STRUCTURED_CLONE_VERSION) {
@@ -5751,6 +5981,7 @@ JS_WriteStructuredClone(JSContext *cx, jsval v, uint64_t **bufp, size_t *nbytesp
                         const JSStructuredCloneCallbacks *optionalCallbacks,
                         void *closure)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     const JSStructuredCloneCallbacks *callbacks =
@@ -5765,6 +5996,7 @@ JS_StructuredClone(JSContext *cx, jsval v, jsval *vp,
                    const JSStructuredCloneCallbacks *optionalCallbacks,
                    void *closure)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     const JSStructuredCloneCallbacks *callbacks =
@@ -5897,11 +6129,11 @@ JS_WriteBytes(JSStructuredCloneWriter *w, const void *p, size_t len)
     return w->output().writeBytes(p, len);
 }
 
-
-
-
-
-
+/*
+ * The following determines whether C Strings are to be treated as UTF-8
+ * or ISO-8859-1.  For correct operation, it must be set prior to the
+ * first call to JS_NewRuntime.
+ */
 #ifndef JS_C_STRINGS_ARE_UTF8
 JSBool js_CStringsAreUTF8 = JS_FALSE;
 #endif
@@ -5922,13 +6154,14 @@ JS_SetCStringsAreUTF8()
 #endif
 }
 
-
+/************************************************************************/
 
 JS_PUBLIC_API(void)
 JS_ReportError(JSContext *cx, const char *format, ...)
 {
     va_list ap;
 
+    AssertNoGC(cx);
     va_start(ap, format);
     js_ReportErrorVA(cx, JSREPORT_ERROR, format, ap);
     va_end(ap);
@@ -5940,6 +6173,7 @@ JS_ReportErrorNumber(JSContext *cx, JSErrorCallback errorCallback,
 {
     va_list ap;
 
+    AssertNoGC(cx);
     va_start(ap, errorNumber);
     js_ReportErrorNumberVA(cx, JSREPORT_ERROR, errorCallback, userRef,
                            errorNumber, JS_TRUE, ap);
@@ -5952,6 +6186,7 @@ JS_ReportErrorNumberUC(JSContext *cx, JSErrorCallback errorCallback,
 {
     va_list ap;
 
+    AssertNoGC(cx);
     va_start(ap, errorNumber);
     js_ReportErrorNumberVA(cx, JSREPORT_ERROR, errorCallback, userRef,
                            errorNumber, JS_FALSE, ap);
@@ -5964,6 +6199,7 @@ JS_ReportWarning(JSContext *cx, const char *format, ...)
     va_list ap;
     JSBool ok;
 
+    AssertNoGC(cx);
     va_start(ap, format);
     ok = js_ReportErrorVA(cx, JSREPORT_WARNING, format, ap);
     va_end(ap);
@@ -5978,6 +6214,7 @@ JS_ReportErrorFlagsAndNumber(JSContext *cx, uintN flags,
     va_list ap;
     JSBool ok;
 
+    AssertNoGC(cx);
     va_start(ap, errorNumber);
     ok = js_ReportErrorNumberVA(cx, flags, errorCallback, userRef,
                                 errorNumber, JS_TRUE, ap);
@@ -5993,6 +6230,7 @@ JS_ReportErrorFlagsAndNumberUC(JSContext *cx, uintN flags,
     va_list ap;
     JSBool ok;
 
+    AssertNoGC(cx);
     va_start(ap, errorNumber);
     ok = js_ReportErrorNumberVA(cx, flags, errorCallback, userRef,
                                 errorNumber, JS_FALSE, ap);
@@ -6022,14 +6260,15 @@ JS_SetErrorReporter(JSContext *cx, JSErrorReporter er)
     return older;
 }
 
+/************************************************************************/
 
-
-
-
-
+/*
+ * Dates.
+ */
 JS_PUBLIC_API(JSObject *)
 JS_NewDateObject(JSContext *cx, int year, int mon, int mday, int hour, int min, int sec)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_NewDateObject(cx, year, mon, mday, hour, min, sec);
 }
@@ -6037,6 +6276,7 @@ JS_NewDateObject(JSContext *cx, int year, int mon, int mday, int hour, int min, 
 JS_PUBLIC_API(JSObject *)
 JS_NewDateObjectMsec(JSContext *cx, jsdouble msec)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return js_NewDateObjectMsec(cx, msec);
 }
@@ -6044,18 +6284,20 @@ JS_NewDateObjectMsec(JSContext *cx, jsdouble msec)
 JS_PUBLIC_API(JSBool)
 JS_ObjectIsDate(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     JS_ASSERT(obj);
     return obj->isDate();
 }
 
+/************************************************************************/
 
-
-
-
-
+/*
+ * Regular Expressions.
+ */
 JS_PUBLIC_API(JSObject *)
 JS_NewRegExpObject(JSContext *cx, JSObject *obj, char *bytes, size_t length, uintN flags)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     jschar *chars = InflateString(cx, bytes, &length);
     if (!chars)
@@ -6070,6 +6312,7 @@ JS_NewRegExpObject(JSContext *cx, JSObject *obj, char *bytes, size_t length, uin
 JS_PUBLIC_API(JSObject *)
 JS_NewUCRegExpObject(JSContext *cx, JSObject *obj, jschar *chars, size_t length, uintN flags)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     RegExpStatics *res = obj->asGlobal()->getRegExpStatics();
     return RegExpObject::create(cx, res, chars, length, RegExpFlag(flags), NULL);
@@ -6078,6 +6321,7 @@ JS_NewUCRegExpObject(JSContext *cx, JSObject *obj, jschar *chars, size_t length,
 JS_PUBLIC_API(void)
 JS_SetRegExpInput(JSContext *cx, JSObject *obj, JSString *input, JSBool multiline)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, input);
 
@@ -6087,6 +6331,7 @@ JS_SetRegExpInput(JSContext *cx, JSObject *obj, JSString *input, JSBool multilin
 JS_PUBLIC_API(void)
 JS_ClearRegExpStatics(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     JS_ASSERT(obj);
 
@@ -6097,6 +6342,7 @@ JS_PUBLIC_API(JSBool)
 JS_ExecuteRegExp(JSContext *cx, JSObject *obj, JSObject *reobj, jschar *chars, size_t length,
                  size_t *indexp, JSBool test, jsval *rval)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     RegExpStatics *res = obj->asGlobal()->getRegExpStatics();
@@ -6107,6 +6353,7 @@ JS_ExecuteRegExp(JSContext *cx, JSObject *obj, JSObject *reobj, jschar *chars, s
 JS_PUBLIC_API(JSObject *)
 JS_NewRegExpObjectNoStatics(JSContext *cx, char *bytes, size_t length, uintN flags)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     jschar *chars = InflateString(cx, bytes, &length);
     if (!chars)
@@ -6119,6 +6366,7 @@ JS_NewRegExpObjectNoStatics(JSContext *cx, char *bytes, size_t length, uintN fla
 JS_PUBLIC_API(JSObject *)
 JS_NewUCRegExpObjectNoStatics(JSContext *cx, jschar *chars, size_t length, uintN flags)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     return RegExpObject::createNoStatics(cx, chars, length, RegExpFlag(flags), NULL);
 }
@@ -6127,6 +6375,7 @@ JS_PUBLIC_API(JSBool)
 JS_ExecuteRegExpNoStatics(JSContext *cx, JSObject *obj, jschar *chars, size_t length,
                           size_t *indexp, JSBool test, jsval *rval)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return ExecuteRegExp(cx, NULL, obj->asRegExp(), NULL, chars, length, indexp,
@@ -6136,6 +6385,7 @@ JS_ExecuteRegExpNoStatics(JSContext *cx, JSObject *obj, jschar *chars, size_t le
 JS_PUBLIC_API(JSBool)
 JS_ObjectIsRegExp(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     JS_ASSERT(obj);
     return obj->isRegExp();
 }
@@ -6143,6 +6393,7 @@ JS_ObjectIsRegExp(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(uintN)
 JS_GetRegExpFlags(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return obj->asRegExp()->getFlags();
@@ -6151,36 +6402,41 @@ JS_GetRegExpFlags(JSContext *cx, JSObject *obj)
 JS_PUBLIC_API(JSString *)
 JS_GetRegExpSource(JSContext *cx, JSObject *obj)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
     return obj->asRegExp()->getSource();
 }
 
-
+/************************************************************************/
 
 JS_PUBLIC_API(void)
 JS_SetLocaleCallbacks(JSContext *cx, JSLocaleCallbacks *callbacks)
 {
+    AssertNoGC(cx);
     cx->localeCallbacks = callbacks;
 }
 
 JS_PUBLIC_API(JSLocaleCallbacks *)
 JS_GetLocaleCallbacks(JSContext *cx)
 {
+    /* This function can be called by a finalizer. */
     return cx->localeCallbacks;
 }
 
-
+/************************************************************************/
 
 JS_PUBLIC_API(JSBool)
 JS_IsExceptionPending(JSContext *cx)
 {
+    /* This function can be called by a finalizer. */
     return (JSBool) cx->isExceptionPending();
 }
 
 JS_PUBLIC_API(JSBool)
 JS_GetPendingException(JSContext *cx, jsval *vp)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     if (!cx->isExceptionPending())
         return JS_FALSE;
@@ -6192,6 +6448,7 @@ JS_GetPendingException(JSContext *cx, jsval *vp)
 JS_PUBLIC_API(void)
 JS_SetPendingException(JSContext *cx, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     cx->setPendingException(v);
@@ -6200,6 +6457,7 @@ JS_SetPendingException(JSContext *cx, jsval v)
 JS_PUBLIC_API(void)
 JS_ClearPendingException(JSContext *cx)
 {
+    AssertNoGC(cx);
     cx->clearPendingException();
 }
 
@@ -6209,14 +6467,15 @@ JS_ReportPendingException(JSContext *cx)
     JSBool ok;
     JSPackedBool save;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
 
-    
-
-
-
-
-
+    /*
+     * Set cx->generatingError to suppress the standard error-to-exception
+     * conversion done by all {js,JS}_Report* functions except for OOM.  The
+     * cx->generatingError flag was added to suppress recursive divergence
+     * under js_ErrorToException, but it serves for our purposes here too.
+     */
     save = cx->generatingError;
     cx->generatingError = JS_TRUE;
     ok = js_ReportUncaughtException(cx);
@@ -6234,6 +6493,7 @@ JS_SaveExceptionState(JSContext *cx)
 {
     JSExceptionState *state;
 
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     state = (JSExceptionState *) cx->malloc_(sizeof(JSExceptionState));
     if (state) {
@@ -6247,6 +6507,7 @@ JS_SaveExceptionState(JSContext *cx)
 JS_PUBLIC_API(void)
 JS_RestoreExceptionState(JSContext *cx, JSExceptionState *state)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     if (state) {
         if (state->throwing)
@@ -6260,6 +6521,7 @@ JS_RestoreExceptionState(JSContext *cx, JSExceptionState *state)
 JS_PUBLIC_API(void)
 JS_DropExceptionState(JSContext *cx, JSExceptionState *state)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     if (state) {
         if (state->throwing && JSVAL_IS_GCTHING(state->exception)) {
@@ -6273,6 +6535,7 @@ JS_DropExceptionState(JSContext *cx, JSExceptionState *state)
 JS_PUBLIC_API(JSErrorReport *)
 JS_ErrorFromException(JSContext *cx, jsval v)
 {
+    AssertNoGC(cx);
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, v);
     return js_ErrorFromException(cx, v);
@@ -6282,6 +6545,7 @@ JS_PUBLIC_API(JSBool)
 JS_ThrowReportedError(JSContext *cx, const char *message,
                       JSErrorReport *reportp)
 {
+    AssertNoGC(cx);
     return JS_IsRunning(cx) &&
            js_ErrorToException(cx, message, reportp, NULL, NULL);
 }
@@ -6289,13 +6553,14 @@ JS_ThrowReportedError(JSContext *cx, const char *message,
 JS_PUBLIC_API(JSBool)
 JS_ThrowStopIteration(JSContext *cx)
 {
+    AssertNoGC(cx);
     return js_ThrowStopIteration(cx);
 }
 
-
-
-
-
+/*
+ * Get the owning thread id of a context. Returns 0 if the context is not
+ * owned by any thread.
+ */
 JS_PUBLIC_API(jsword)
 JS_GetContextThread(JSContext *cx)
 {
@@ -6306,13 +6571,14 @@ JS_GetContextThread(JSContext *cx)
 #endif
 }
 
-
-
-
-
+/*
+ * Set the current thread as the owning thread of a context. Returns the
+ * old owning thread id, or -1 if the operation failed.
+ */
 JS_PUBLIC_API(jsword)
 JS_SetContextThread(JSContext *cx)
 {
+    /* This function can be called by a finalizer. */
     JS_AbortIfWrongThread(cx->runtime);
 
 #ifdef JS_THREADSAFE
@@ -6335,6 +6601,7 @@ JS_SetContextThread(JSContext *cx)
 extern JS_PUBLIC_API(void)
 JS_ClearRuntimeThread(JSRuntime *rt)
 {
+    AssertNoGC(rt);
 #ifdef JS_THREADSAFE
     rt->clearOwnerThread();
 #endif
@@ -6343,6 +6610,7 @@ JS_ClearRuntimeThread(JSRuntime *rt)
 extern JS_PUBLIC_API(void)
 JS_SetRuntimeThread(JSRuntime *rt)
 {
+    AssertNoGC(rt);
 #ifdef JS_THREADSAFE
     rt->setOwnerThread();
 #endif
@@ -6361,33 +6629,34 @@ JS_PUBLIC_API(jsword)
 JS_ClearContextThread(JSContext *cx)
 {
     JS_AbortIfWrongThread(cx->runtime);
+    AssertNoGC(cx);
 
 #ifdef JS_THREADSAFE
-    
-
-
-
-
+    /*
+     * cx must have exited all requests it entered and, if cx is associated
+     * with a thread, this must be called only from that thread.  If not, this
+     * is a harmless no-op.
+     */
     JS_ASSERT(cx->outstandingRequests == 0);
     JSThread *t = cx->thread();
     if (!t)
         return 0;
     JS_ASSERT(CURRENT_THREAD_IS_ME(t));
 
-    
-
-
-
+    /*
+     * We must not race with a GC that accesses cx->thread for all threads,
+     * see bug 476934.
+     */
     JSRuntime *rt = cx->runtime;
     AutoLockGC lock(rt);
     js_WaitForGC(rt);
     js_ClearContextThread(cx);
     JS_ASSERT_IF(JS_CLIST_IS_EMPTY(&t->contextList), !t->data.requestDepth);
 
-    
-
-
-
+    /*
+     * We can access t->id as long as the GC lock is held and we cannot race
+     * with the GC that may delete t.
+     */
     return reinterpret_cast<jsword>(t->id);
 #else
     return 0;
@@ -6419,7 +6688,7 @@ js_GetCompartmentPrivate(JSCompartment *compartment)
     return compartment->data;
 }
 
-
+/************************************************************************/
 
 JS_PUBLIC_API(void)
 JS_RegisterReference(void **ref)
@@ -6429,8 +6698,8 @@ JS_RegisterReference(void **ref)
 JS_PUBLIC_API(void)
 JS_ModifyReference(void **ref, void *newval)
 {
-    
-    
+    // XPConnect uses the lower bits of its JSObject refs for evil purposes,
+    // so we need to fix this.
     void *thing = *ref;
     *ref = newval;
     thing = (void *)((uintptr_t)thing & ~7);
@@ -6449,14 +6718,14 @@ JS_ModifyReference(void **ref, void *newval)
 JS_PUBLIC_API(void)
 JS_UnregisterReference(void **ref)
 {
-    
+    // For now we just want to trigger a write barrier.
     JS_ModifyReference(ref, NULL);
 }
 
 JS_PUBLIC_API(void)
 JS_UnregisterReferenceRT(JSRuntime *rt, void **ref)
 {
-    
+    // For now we just want to trigger a write barrier.
     if (!rt->gcRunning)
         JS_ModifyReference(ref, NULL);
 }
@@ -6492,15 +6761,15 @@ JS_GetIncrementalGCTracer(JSRuntime *rt)
     return rt->gcIncrementalTracer;
 }
 
-
+/************************************************************************/
 
 #if !defined(STATIC_EXPORTABLE_JS_API) && !defined(STATIC_JS_API) && defined(XP_WIN)
 
 #include "jswin.h"
 
-
-
-
+/*
+ * Initialization routine for the JS DLL.
+ */
 BOOL WINAPI DllMain (HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 {
     return TRUE;
