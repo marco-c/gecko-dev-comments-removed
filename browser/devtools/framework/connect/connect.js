@@ -7,7 +7,7 @@
 "use strict";
 
 const Cu = Components.utils;
-Cu.import('resource:
+Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/devtools/dbg-client.jsm");
 let {gDevTools} = Cu.import("resource:///modules/devtools/gDevTools.jsm", {});
@@ -17,7 +17,7 @@ let gClient;
 let gConnectionTimeout;
 
 XPCOMUtils.defineLazyGetter(window, 'l10n', function () {
-  return Services.strings.createBundle('chrome:
+  return Services.strings.createBundle('chrome://browser/locale/devtools/connection-screen.properties');
 });
 
 
