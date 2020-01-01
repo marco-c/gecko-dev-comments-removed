@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifdef FREEBL_NO_DEPEND
 #include "stubs.h"
 #endif
@@ -18,7 +16,7 @@
 
 
 
-#if defined(SOLARIS) || defined(HPUX) || defined(i386) || defined(IRIX) || \
+#if defined(SOLARIS) || defined(HPUX) || defined(NSS_X86) || \
     defined(_WIN64)
 
 #define CONVERT_TO_WORDS
@@ -119,7 +117,7 @@ RC4_InitContext(RC4Context *cx, const unsigned char *key, unsigned int len,
 	        const unsigned char * unused1, int unused2, 
 		unsigned int unused3, unsigned int unused4)
 {
-	int i;
+	unsigned int i;
 	PRUint8 j, tmp;
 	PRUint8 K[256];
 	PRUint8 *L;
@@ -127,7 +125,7 @@ RC4_InitContext(RC4Context *cx, const unsigned char *key, unsigned int len,
 	
 	PORT_Assert(len > 0 && len < ARCFOUR_STATE_SIZE);
 	if (len == 0 || len >= ARCFOUR_STATE_SIZE) {
-		PORT_SetError(SEC_ERROR_INVALID_ARGS);
+		PORT_SetError(SEC_ERROR_BAD_KEY);
 		return SECFailure;
 	}
 	if (cx == NULL) {
@@ -215,7 +213,7 @@ rc4_no_opt(RC4Context *cx, unsigned char *output,
 	unsigned int index;
 	PORT_Assert(maxOutputLen >= inputLen);
 	if (maxOutputLen < inputLen) {
-		PORT_SetError(SEC_ERROR_INVALID_ARGS);
+		PORT_SetError(SEC_ERROR_OUTPUT_LEN);
 		return SECFailure;
 	}
 	for (index=0; index < inputLen; index++) {
@@ -248,7 +246,7 @@ rc4_unrolled(RC4Context *cx, unsigned char *output,
 	int index;
 	PORT_Assert(maxOutputLen >= inputLen);
 	if (maxOutputLen < inputLen) {
-		PORT_SetError(SEC_ERROR_INVALID_ARGS);
+		PORT_SetError(SEC_ERROR_OUTPUT_LEN);
 		return SECFailure;
 	}
 	for (index = inputLen / 8; index-- > 0; input += 8, output += 8) {
@@ -349,40 +347,26 @@ rc4_unrolled(RC4Context *cx, unsigned char *output,
 #define LSH <<
 #endif
 
+#ifdef IS_LITTLE_ENDIAN
+#define LEFTMOST_BYTE_SHIFT 0
+#define NEXT_BYTE_SHIFT(shift) shift + 8
+#else
+#define LEFTMOST_BYTE_SHIFT 8*(WORDSIZE - 1)
+#define NEXT_BYTE_SHIFT(shift) shift - 8
+#endif
+
 #ifdef CONVERT_TO_WORDS
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 static SECStatus 
 rc4_wordconv(RC4Context *cx, unsigned char *output,
              unsigned int *outputLen, unsigned int maxOutputLen,
              const unsigned char *input, unsigned int inputLen)
 {
-	ptrdiff_t inOffset = (ptrdiff_t)input % WORDSIZE;
-	ptrdiff_t outOffset = (ptrdiff_t)output % WORDSIZE;
-	register WORD streamWord, mask;
-	register WORD *pInWord, *pOutWord;
+	PR_STATIC_ASSERT(sizeof(PRUword) == sizeof(ptrdiff_t));
+	unsigned int inOffset = (PRUword)input % WORDSIZE;
+	unsigned int outOffset = (PRUword)output % WORDSIZE;
+	register WORD streamWord;
+	register const WORD *pInWord;
+	register WORD *pOutWord;
 	register WORD inWord, nextInWord;
 	PRUint8 t;
 	register Stype tmpSi, tmpSj;
@@ -390,11 +374,13 @@ rc4_wordconv(RC4Context *cx, unsigned char *output,
 	register PRUint8 tmpj = cx->j;
 	unsigned int byteCount;
 	unsigned int bufShift, invBufShift;
-	int i;
+	unsigned int i;
+	const unsigned char *finalIn;
+	unsigned char *finalOut;
 
 	PORT_Assert(maxOutputLen >= inputLen);
 	if (maxOutputLen < inputLen) {
-		PORT_SetError(SEC_ERROR_INVALID_ARGS);
+		PORT_SetError(SEC_ERROR_OUTPUT_LEN);
 		return SECFailure;
 	}
 	if (inputLen < 2*WORDSIZE) {
@@ -402,7 +388,8 @@ rc4_wordconv(RC4Context *cx, unsigned char *output,
 		return rc4_no_opt(cx, output, outputLen, maxOutputLen, input, inputLen);
 	}
 	*outputLen = inputLen;
-	pInWord = (WORD *)(input - inOffset);
+	pInWord = (const WORD *)(input - inOffset);
+	pOutWord = (WORD *)(output - outOffset);
 	if (inOffset < outOffset) {
 		bufShift = 8*(outOffset - inOffset);
 		invBufShift = 8*WORDSIZE - bufShift;
@@ -419,52 +406,42 @@ rc4_wordconv(RC4Context *cx, unsigned char *output,
 	
 	
 	if (outOffset) {
-		
-
-
 		byteCount = WORDSIZE - outOffset; 
-		pOutWord = (WORD *)(output - outOffset);
-		mask = streamWord = 0;
-#ifdef IS_LITTLE_ENDIAN
-		for (i = WORDSIZE - byteCount; i < WORDSIZE; i++) {
-#else
-		for (i = byteCount - 1; i >= 0; --i) {
-#endif
+		for (i = 0; i < byteCount; i++) {
 			ARCFOUR_NEXT_BYTE();
-			streamWord |= (WORD)(cx->S[t]) << 8*i;
-			mask |= MASK1BYTE << 8*i;
-		} 
-		inWord = *pInWord++; 
+			output[i] = cx->S[t] ^ input[i];
+		}
+		
+		inputLen -= byteCount;
+		pInWord++;
+
+		
+		pOutWord++;
+
 		
 
 
-		nextInWord = 0;
 		if (inOffset < outOffset) {
 			
-			nextInWord = inWord LSH 8*(inOffset + byteCount);
-			inWord = inWord RSH bufShift;
+
+
+			unsigned int shift = LEFTMOST_BYTE_SHIFT;
+			inWord = 0;
+			for (i = 0; i < outOffset - inOffset; i++) {
+				inWord |= (WORD)input[byteCount + i] << shift;
+				shift = NEXT_BYTE_SHIFT(shift);
+			}
 		} else if (inOffset > outOffset) {
 			
 
 
-			nextInWord = *pInWord++;
-			inWord = (inWord LSH invBufShift) | 
-			         (nextInWord RSH bufShift);
-			nextInWord = nextInWord LSH invBufShift;
+			inWord = *pInWord++;
+			inWord = inWord LSH invBufShift;
+		} else {
+			inWord = 0;
 		}
-		
-		*pOutWord = (*pOutWord & ~mask) | ((inWord ^ streamWord) & mask);
-		
-
-		
-		inputLen -= byteCount;
-		
-		pOutWord++;
-		
-		inWord = nextInWord;
 	} else {
 		
-		pOutWord = (WORD *)output;
 		if (inOffset) {
 			
 
@@ -474,8 +451,13 @@ rc4_wordconv(RC4Context *cx, unsigned char *output,
 
 
 
-			inWord = *pInWord++; 
-			inWord = inWord LSH invBufShift;
+			unsigned int shift = LEFTMOST_BYTE_SHIFT;
+			inWord = 0;
+			for (i = 0; i < WORDSIZE - inOffset; i++) {
+				inWord |= (WORD)input[i] << shift;
+				shift = NEXT_BYTE_SHIFT(shift);
+			}
+			pInWord++;
 		} else {
 			
 
@@ -510,12 +492,7 @@ rc4_wordconv(RC4Context *cx, unsigned char *output,
 			cx->j = tmpj;
 			return SECSuccess;
 		}
-		
-
-
-
-		if (inputLen > WORDSIZE - inOffset)
-			inWord |= *pInWord RSH bufShift; 
+		finalIn = (const unsigned char *)pInWord - WORDSIZE + inOffset;
 	} else {
 		for (; inputLen >= WORDSIZE; inputLen -= WORDSIZE) {
 			inWord = *pInWord++;
@@ -527,37 +504,24 @@ rc4_wordconv(RC4Context *cx, unsigned char *output,
 			cx->i = tmpi;
 			cx->j = tmpj;
 			return SECSuccess;
-		} else {
-			
-
-
-			inWord = *pInWord; 
 		}
+		finalIn = (const unsigned char *)pInWord;
 	}
 	
 	
 	
 	
-	
-	
-	mask = streamWord = 0;
-#ifdef IS_LITTLE_ENDIAN
-	for (i = 0; i < inputLen; ++i) {
-#else
-	for (i = WORDSIZE - 1; i >= WORDSIZE - inputLen; --i) {
-#endif
+	finalOut = (unsigned char *)pOutWord;
+	for (i = 0; i < inputLen; i++) {
 		ARCFOUR_NEXT_BYTE();
-		streamWord |= (WORD)(cx->S[t]) << 8*i;
-		mask |= MASK1BYTE << 8*i;
-	} 
-	
-	*pOutWord = (*pOutWord & ~mask) | ((inWord ^ streamWord) & mask);
+		finalOut[i] = cx->S[t] ^ finalIn[i];
+	}
 	cx->i = tmpi;
 	cx->j = tmpj;
 	return SECSuccess;
 }
 #endif
-#endif
+#endif 
 
 SECStatus 
 RC4_Encrypt(RC4Context *cx, unsigned char *output,
@@ -566,7 +530,7 @@ RC4_Encrypt(RC4Context *cx, unsigned char *output,
 {
 	PORT_Assert(maxOutputLen >= inputLen);
 	if (maxOutputLen < inputLen) {
-		PORT_SetError(SEC_ERROR_INVALID_ARGS);
+		PORT_SetError(SEC_ERROR_OUTPUT_LEN);
 		return SECFailure;
 	}
 #if defined(NSS_BEVAND_ARCFOUR)
@@ -588,7 +552,7 @@ SECStatus RC4_Decrypt(RC4Context *cx, unsigned char *output,
 {
 	PORT_Assert(maxOutputLen >= inputLen);
 	if (maxOutputLen < inputLen) {
-		PORT_SetError(SEC_ERROR_INVALID_ARGS);
+		PORT_SetError(SEC_ERROR_OUTPUT_LEN);
 		return SECFailure;
 	}
 	
