@@ -700,24 +700,19 @@ let gGestureSupport = {
 
 
 
-
   handleEvent: function GS_handleEvent(aEvent) {
     aEvent.stopPropagation();
-
-    
-    let def = function(aThreshold, aLatched)
-      ({ threshold: aThreshold, latched: !!aLatched });
 
     switch (aEvent.type) {
       case "MozSwipeGesture":
         return this.onSwipe(aEvent);
       case "MozMagnifyGestureStart":
-        return this._setupGesture(aEvent, "pinch", def(150, 1), "out", "in");
       case "MozRotateGestureStart":
-        return this._setupGesture(aEvent, "twist", def(25, 0), "right", "left");
+        return this.onStart(aEvent);
       case "MozMagnifyGestureUpdate":
+        return this._handleUpdate(aEvent, 100, "pinch.out", "pinch.in");
       case "MozRotateGestureUpdate":
-        return this._doUpdate(aEvent);
+        return this._handleUpdate(aEvent, 22.5, "twist.right", "twist.left");
     }
   },
 
@@ -731,46 +726,13 @@ let gGestureSupport = {
 
 
 
-
-
-
-
-
-  _setupGesture: function GS__setupGesture(aEvent, aGesture, aPref, aInc, aDec) {
+  _getCommand: function GS__getCommand(aGestureKeys) {
+    const gestureBranch = "browser.gesture."
+    try {
+      return gPrefService.getCharPref(gestureBranch + aGestureKeys.join("."));
+    }
     
-    for (let [pref, def] in Iterator(aPref))
-      aPref[pref] = this._getPref(aGesture + "." + pref, def);
-
-    
-    let offset = 0;
-    let latchDir = aEvent.delta > 0 ? 1 : -1;
-    let isLatched = false;
-
-    
-    this._doUpdate = function GS__doUpdate(aEvent) {
-      
-      offset += aEvent.delta;
-
-      
-      if (Math.abs(offset) > aPref["threshold"]) {
-        
-        
-        
-        let sameDir = (latchDir ^ offset) >= 0;
-        if (!aPref["latched"] || (isLatched ^ sameDir)) {
-          this._doAction(aEvent, [aGesture, offset > 0 ? aInc : aDec]);
-
-          
-          isLatched = !isLatched;
-        }
-
-        
-        offset = 0;
-      }
-    };
-
-    
-    this._doUpdate(aEvent);
+    catch (e) {}
   },
 
   
@@ -802,8 +764,6 @@ let gGestureSupport = {
 
 
 
-
-
   _doAction: function GS__doAction(aEvent, aGesture) {
     
     let fakeEvent = { shiftKey: aEvent.shiftKey, ctrlKey: aEvent.ctrlKey,
@@ -815,32 +775,25 @@ let gGestureSupport = {
     let keyCombos = [];
     const keys = ["shift", "alt", "ctrl", "meta"];
     for each (let key in keys)
-      if (aEvent[key + "Key"])
+      if (aEvent[key + "Key"]) 
         keyCombos.push(key);
 
     try {
       
       for (let subCombo in this._power(keyCombos)) {
-        
-        
-        
-        let command = this._getPref(aGesture.concat(subCombo).join("."));
-
+        let command = this._getCommand([aGesture].concat(subCombo));
         
         if (command) {
           let node = document.getElementById(command);
           
-          if (node && node.hasAttribute("oncommand")) {
+          if (node && node.hasAttribute("oncommand"))
             
-            if (node.getAttribute("disabled") != "true")
+            return node.getAttribute("disabled") == "true" ? true :
               new Function("event", node.getAttribute("oncommand")).
-                call(node, fakeEvent);
-          }
-          
-          else
-            goDoCommand(command);
+              call(node, fakeEvent);
 
-          return command;
+          
+          return goDoCommand(command);
         }
       }
     }
@@ -854,9 +807,21 @@ let gGestureSupport = {
 
 
 
+  onSwipe: function GS_onSwipe(aEvent) {
+    switch (aEvent.direction) {
+      case SimpleGestureEvent.DIRECTION_LEFT:
+        return this._doAction(aEvent, "swipe.left");
+      case SimpleGestureEvent.DIRECTION_RIGHT:
+        return this._doAction(aEvent, "swipe.right");
+      case SimpleGestureEvent.DIRECTION_UP:
+        return this._doAction(aEvent, "swipe.up");
+      case SimpleGestureEvent.DIRECTION_DOWN:
+        return this._doAction(aEvent, "swipe.down");
+    }
+  },
 
-
-  _doUpdate: function(aEvent) {},
+  
+  _lastOffset: 0,
 
   
 
@@ -864,11 +829,8 @@ let gGestureSupport = {
 
 
 
-  onSwipe: function GS_onSwipe(aEvent) {
-    
-    for each (let dir in ["UP", "RIGHT", "DOWN", "LEFT"])
-      if (aEvent.direction == aEvent["DIRECTION_" + dir])
-        return this._doAction(aEvent, ["swipe", dir.toLowerCase()]);
+  onStart: function GS_onStart(aEvent) {
+    this._lastOffset = 0;
   },
 
   
@@ -879,19 +841,20 @@ let gGestureSupport = {
 
 
 
-  _getPref: function GS__getPref(aPref, aDef) {
-    
-    const branch = "browser.gesture.";
 
-    try {
-      
-      let type = typeof aDef;
-      let getFunc = "get" + (type == "boolean" ? "Bool" : 
-                             type == "number" ? "Int" : "Char") + "Pref";
-      return gPrefService[getFunc](branch + aPref);
-    }
-    catch (e) {
-      return aDef;
+
+
+
+
+
+  _handleUpdate: function GS__handleUpdate(aEvent, aThreshold, aInc, aDec) {
+    
+    this._lastOffset += aEvent.delta;
+
+    
+    if (Math.abs(this._lastOffset) > aThreshold) {
+      this._doAction(aEvent, this._lastOffset > 0 ? aInc : aDec);
+      this.onStart(aEvent);
     }
   },
 };
@@ -1312,9 +1275,7 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
   gBrowser.addEventListener("command", BrowserOnCommand, false);
 
   tabPreviews.init();
-#ifdef USE_TAB_PREVIEWS
   ctrlTab.init();
-#endif
 
   
   
@@ -1361,9 +1322,8 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
 function BrowserShutdown()
 {
   tabPreviews.uninit();
-#ifdef USE_TAB_PREVIEWS
   ctrlTab.uninit();
-#endif
+
   gGestureSupport.init(false);
 
   try {
@@ -3899,8 +3859,6 @@ var XULBrowserWindow = {
         if (aWebProgress.DOMWindow == content) {
           if (aRequest)
             this.endDocumentLoad(aRequest, aStatus);
-          if (!gBrowser.mTabbedMode && !gBrowser.mCurrentBrowser.mIconURL)
-            gBrowser.useDefaultIcon(gBrowser.mCurrentTab);
 
           if (Components.isSuccessCode(aStatus) &&
               content.document.documentElement.getAttribute("manifest"))
@@ -4036,9 +3994,6 @@ var XULBrowserWindow = {
       } else {
         this.reloadCommand.removeAttribute("disabled");
       }
-
-      if (!gBrowser.mTabbedMode && aWebProgress.isLoadingDocument)
-        gBrowser.setIcon(gBrowser.mCurrentTab, null);
 
       if (gURLBar) {
         
