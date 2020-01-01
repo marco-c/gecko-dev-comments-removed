@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_GFX_DRAWTARGETD2D_H_
 #define MOZILLA_GFX_DRAWTARGETD2D_H_
@@ -153,8 +153,8 @@ private:
   bool InitD2DRenderTarget();
   void PrepareForDrawing(ID2D1RenderTarget *aRT);
 
-  
-  
+  // This function will mark the surface as changing, and make sure any
+  // copy-on-write snapshots are notified.
   void MarkChanged();
   void FlushTransformToRT() {
     if (mTransformDirty) {
@@ -171,8 +171,8 @@ private:
   void PushClipsToRT(ID2D1RenderTarget *aRT);
   void PopClipsFromRT(ID2D1RenderTarget *aRT);
 
-  
-  
+  // This function ensures mCurrentClipMaskTexture contains a texture containing
+  // a mask corresponding with the current DrawTarget clip.
   void EnsureClipMaskTexture();
 
   bool FillGlyphsManual(ScaledFontDWrite *aFont,
@@ -182,7 +182,6 @@ private:
                         const DrawOptions &aOptions = DrawOptions());
 
   TemporaryRef<ID2D1RenderTarget> CreateRTForTexture(ID3D10Texture2D *aTexture, SurfaceFormat aFormat);
-  TemporaryRef<ID2D1Geometry> ConvertRectToGeometry(const D2D1_RECT_F& aRect);
   TemporaryRef<ID2D1Geometry> GetClippedGeometry();
 
   TemporaryRef<ID2D1Brush> CreateBrushForPattern(const Pattern &aPattern, Float aAlpha = 1.0f);
@@ -190,9 +189,9 @@ private:
   TemporaryRef<ID3D10Texture2D> CreateGradientTexture(const GradientStopsD2D *aStops);
   TemporaryRef<ID3D10Texture2D> CreateTextureForAnalysis(IDWriteGlyphRunAnalysis *aAnalysis, const IntRect &aBounds);
 
-  
-  
-  
+  // This creates a (partially) uploaded bitmap for a DataSourceSurface. It
+  // uploads the minimum requirement and possibly downscales. It adjusts the
+  // input Matrix to compensate.
   TemporaryRef<ID2D1Bitmap> CreatePartialBitmapForSurface(DataSourceSurface *aSurface, Matrix &aMatrix,
                                                           ExtendMode aExtendMode);
 
@@ -206,20 +205,20 @@ private:
   RefPtr<ID3D10Device1> mDevice;
   RefPtr<ID3D10Texture2D> mTexture;
   RefPtr<ID3D10Texture2D> mCurrentClipMaskTexture;
-  RefPtr<ID2D1Geometry> mCurrentClippedGeometry;
+  RefPtr<ID2D1PathGeometry> mCurrentClippedGeometry;
   mutable RefPtr<ID2D1RenderTarget> mRT;
 
-  
+  // We store this to prevent excessive SetTextRenderingParams calls.
   RefPtr<IDWriteRenderingParams> mTextRenderingParams;
 
-  
+  // Temporary texture and render target used for supporting alternative operators.
   RefPtr<ID3D10Texture2D> mTempTexture;
   RefPtr<ID3D10RenderTargetView> mRTView;
   RefPtr<ID3D10ShaderResourceView> mSRView;
   RefPtr<ID2D1RenderTarget> mTempRT;
   RefPtr<ID3D10RenderTargetView> mTempRTView;
 
-  
+  // List of pushed clips.
   struct PushedClip
   {
     RefPtr<ID2D1Layer> mLayer;
@@ -229,22 +228,22 @@ private:
   };
   std::vector<PushedClip> mPushedClips;
 
-  
-  
-  
-  
+  // We cache ID2D1Layer objects as it causes D2D to keep around textures that
+  // serve as the temporary surfaces for these operations. As texture creation
+  // is quite expensive this considerably improved performance.
+  // Careful here, RAII will not ensure destruction of the RefPtrs.
   RefPtr<ID2D1Layer> mCachedLayers[kLayerCacheSize];
   uint32_t mCurrentCachedLayer;
   
-  
-  
+  // The latest snapshot of this surface. This needs to be told when this
+  // target is modified. We keep it alive as a cache.
   RefPtr<SourceSurfaceD2DTarget> mSnapshot;
-  
+  // A list of targets we need to flush when we're modified.
   TargetSet mDependentTargets;
-  
+  // A list of targets which have this object in their mDependentTargets set
   TargetSet mDependingOnTargets;
 
-  
+  // True of the current clip stack is pushed to the main RT.
   bool mClipsArePushed;
   PrivateD3D10DataD2D *mPrivateData;
   static ID2D1Factory *mFactory;
@@ -254,4 +253,4 @@ private:
 }
 }
 
-#endif 
+#endif /* MOZILLA_GFX_DRAWTARGETD2D_H_ */
