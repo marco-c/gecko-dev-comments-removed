@@ -1794,11 +1794,10 @@ PresShell::SetPreferenceStyleRules(PRBool aForceReflow)
     }
 #ifdef DEBUG_attinasi
     printf( "Preference Style Rules set: error=%ld\n", (long)result);
-#endif    
+#endif
 
-    if (aForceReflow){
-      mPresContext->ClearStyleDataAndReflow();
-    }
+    
+    
 
     return result;
   }
