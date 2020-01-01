@@ -1314,6 +1314,10 @@ int SuggestMgr::ngsuggest(char** wlst, char * w, int ns, HashMgr** pHMgr, int md
             break;
         }
         
+
+        re = ngram(2, word, gl, NGRAM_ANY_MISMATCH + low + NGRAM_WEIGHTED) +
+             ngram(2, gl, word, NGRAM_ANY_MISMATCH + low + NGRAM_WEIGHTED);
+ 
         gscore[i] =
           
           2 * _lcs - abs((int) (n - len)) +
@@ -1326,9 +1330,8 @@ int SuggestMgr::ngsuggest(char** wlst, char * w, int ns, HashMgr** pHMgr, int md
           
           ngram(4, word, gl, NGRAM_ANY_MISMATCH + low) +
           
-          (re = ngram(2, word, gl, NGRAM_ANY_MISMATCH + low + NGRAM_WEIGHTED)) +
-          (re += ngram(2, gl, word, NGRAM_ANY_MISMATCH + low + NGRAM_WEIGHTED)) +
-          
+	  re +
+         
           (ph ? (re < len * fact ? -1000 : 0) : (re < (n + len)*fact? -1000 : 0));
       }
   }
