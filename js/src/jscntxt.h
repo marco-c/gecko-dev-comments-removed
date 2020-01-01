@@ -605,11 +605,16 @@ struct JSRuntime : js::RuntimeFriendFields
 
 
 
+
+
+
+
 #ifdef JS_GC_ZEAL
     int                 gcZeal_;
     int                 gcZealFrequency;
     int                 gcNextScheduled;
     bool                gcDeterministicOnly;
+    int                 gcIncrementalLimit;
 
     js::Vector<JSObject *, 0, js::SystemAllocPolicy> gcSelectedForMarking;
 
@@ -617,8 +622,12 @@ struct JSRuntime : js::RuntimeFriendFields
 
     bool needZealousGC() {
         if (gcNextScheduled > 0 && --gcNextScheduled == 0) {
-            if (gcZeal() == js::gc::ZealAllocValue)
+            if (gcZeal() == js::gc::ZealAllocValue ||
+                (gcZeal() >= js::gc::ZealIncrementalRootsThenFinish &&
+                 gcZeal() <= js::gc::ZealIncrementalMultipleSlices))
+            {
                 gcNextScheduled = gcZealFrequency;
+            }
             return true;
         }
         return false;
