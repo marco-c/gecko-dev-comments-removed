@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdio.h>
 
@@ -81,9 +81,9 @@ class ParallelArrayVisitor : public MInstructionVisitor
 
     bool visitSpecializedInstruction(MInstruction *ins, MIRType spec, uint32_t flags);
 
-    
-    
-    
+    // Intended for use in a visitXyz() instruction like "return
+    // markUnsafe()".  Sets the unsafe flag and returns true (since
+    // this does not indicate an unrecoverable compilation failure).
     bool markUnsafe() {
         JS_ASSERT(!unsafe_);
         unsafe_ = true;
@@ -108,8 +108,8 @@ class ParallelArrayVisitor : public MInstructionVisitor
 
     bool convertToBailout(MBasicBlock *block, MInstruction *ins);
 
-    
-    
+    // I am taking the policy of blacklisting everything that's not
+    // obviously safe for now.  We can loosen as we need.
 
     SAFE_OP(Constant)
     SAFE_OP(Parameter)
@@ -163,7 +163,7 @@ class ParallelArrayVisitor : public MInstructionVisitor
     UNSAFE_OP(FromCharCode)
     SAFE_OP(Return)
     CUSTOM_OP(Throw)
-    SAFE_OP(Box)     
+    SAFE_OP(Box)     // Boxing just creates a JSVal, doesn't alloc.
     SAFE_OP(Unbox)
     SAFE_OP(GuardObject)
     SAFE_OP(ToDouble)
@@ -188,9 +188,9 @@ class ParallelArrayVisitor : public MInstructionVisitor
     SAFE_OP(ConstantElements)
     SAFE_OP(LoadSlot)
     WRITE_GUARDED_OP(StoreSlot, slots)
-    SAFE_OP(FunctionEnvironment) 
-    SAFE_OP(TypeBarrier) 
-    SAFE_OP(MonitorTypes) 
+    SAFE_OP(FunctionEnvironment) // just a load of func env ptr
+    SAFE_OP(TypeBarrier) // causes a bailout if the type is not found: a-ok with us
+    SAFE_OP(MonitorTypes) // causes a bailout if the type is not found: a-ok with us
     UNSAFE_OP(PostWriteBarrier)
     SAFE_OP(GetPropertyCache)
     SAFE_OP(GetPropertyPolymorphic)
@@ -295,33 +295,33 @@ class ParallelArrayVisitor : public MInstructionVisitor
     UNSAFE_OP(AsmJSCall)
     UNSAFE_OP(AsmJSCheckOverRecursed)
 
-    
+    // It looks like this could easily be made safe:
     UNSAFE_OP(ConvertElementsToDoubles)
 };
 
 bool
 ParallelArrayAnalysis::analyze()
 {
-    
-    
-    
-    
-    
-    
-    
+    // Walk the basic blocks in a DFS.  When we encounter a block with an
+    // unsafe instruction, then we know that this block will bailout when
+    // executed.  Therefore, we replace the block.
+    //
+    // We don't need a worklist, though, because the graph is sorted
+    // in RPO.  Therefore, we just use the marked flags to tell us
+    // when we visited some predecessor of the current block.
     JSContext *cx = GetIonContext()->cx;
     ParallelArrayVisitor visitor(cx, graph_);
-    graph_.entryBlock()->mark();  
+    graph_.entryBlock()->mark();  // Note: in par. exec., we never enter from OSR.
     uint32_t marked = 0;
     for (ReversePostorderIterator block(graph_.rpoBegin()); block != graph_.rpoEnd(); block++) {
         if (mir_->shouldCancel("ParallelArrayAnalysis"))
             return false;
 
         if (block->isMarked()) {
-            
-            
-            
-            
+            // Iterate through and transform the instructions.  Stop
+            // if we encounter an inherently unsafe operation, in
+            // which case we will transform this block into a bailout
+            // block.
             MInstruction *instr = NULL;
             for (MInstructionIterator ins(block->begin());
                  ins != block->end() && !visitor.unsafe();)
@@ -329,10 +329,10 @@ ParallelArrayAnalysis::analyze()
                 if (mir_->shouldCancel("ParallelArrayAnalysis"))
                     return false;
 
-                
-                
-                
-                
+                // We may be removing or replacing the current
+                // instruction, so advance `ins` now.  Remember the
+                // last instr. we looked at for use later if it should
+                // prove unsafe.
                 instr = *ins++;
 
                 if (!instr->accept(&visitor)) {
@@ -342,25 +342,25 @@ ParallelArrayAnalysis::analyze()
             }
 
             if (!visitor.unsafe()) {
-                
+                // Count the number of reachable blocks.
                 marked++;
 
-                
+                // Block consists of only safe instructions.  Visit its successors.
                 for (uint32_t i = 0; i < block->numSuccessors(); i++)
                     block->getSuccessor(i)->mark();
             } else {
-                
-                
+                // Block contains an unsafe instruction.  That means that once
+                // we enter this block, we are guaranteed to bailout.
 
-                
-                
-                
+                // If this is the entry block, then there is no point
+                // in even trying to execute this function as it will
+                // always bailout.
                 if (*block == graph_.entryBlock()) {
                     Spew(SpewCompile, "Entry block contains unsafe MIR");
                     return false;
                 }
 
-                
+                // Otherwise, create a replacement that will.
                 if (!visitor.convertToBailout(*block, instr))
                     return false;
 
@@ -394,23 +394,23 @@ ParallelArrayAnalysis::analyze()
 bool
 ParallelArrayAnalysis::removeResumePointOperands()
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // In parallel exec mode, nothing is effectful, therefore we do
+    // not need to reconstruct interpreter state and can simply
+    // bailout by returning a special code.  Ideally we'd either
+    // remove the unused resume points or else never generate them in
+    // the first place, but I encountered various assertions and
+    // crashes attempting to do that, so for the time being I simply
+    // replace their operands with undefined.  This prevents them from
+    // interfering with DCE and other optimizations.  It is also *necessary*
+    // to handle cases like this:
+    //
+    //     foo(a, b, c.bar())
+    //
+    // where `foo` was deemed to be an unsafe function to call.  This
+    // is because without neutering the ResumePoints, they would still
+    // refer to the MPassArg nodes generated for the call to foo().
+    // But the call to foo() is dead and has been removed, leading to
+    // an inconsistent IR and assertions at codegen time.
 
     MConstant *udef = NULL;
     for (ReversePostorderIterator block(graph_.rpoBegin()); block != graph_.rpoEnd(); block++) {
@@ -448,48 +448,48 @@ ParallelArrayVisitor::visitTest(MTest *)
 bool
 ParallelArrayVisitor::convertToBailout(MBasicBlock *block, MInstruction *ins)
 {
-    JS_ASSERT(unsafe()); 
-    JS_ASSERT(block->isMarked()); 
+    JS_ASSERT(unsafe()); // `block` must have contained unsafe items
+    JS_ASSERT(block->isMarked()); // `block` must have been reachable to get here
 
-    
+    // Clear the unsafe flag for subsequent blocks.
     clearUnsafe();
 
-    
+    // This block is no longer reachable.
     block->unmark();
 
-    
-    
-    
-    
-    
-    
-    
+    // Create a bailout block for each predecessor.  In principle, we
+    // only need one bailout block--in fact, only one per graph! But I
+    // found this approach easier to implement given the design of the
+    // MIR Graph construction routines.  Besides, most often `block`
+    // has only one predecessor.  Also, using multiple blocks helps to
+    // keep the PC information more accurate (though replacing `block`
+    // with exactly one bailout would be just as good).
     for (size_t i = 0; i < block->numPredecessors(); i++) {
         MBasicBlock *pred = block->getPredecessor(i);
 
-        
+        // We only care about incoming edges from reachable predecessors.
         if (!pred->isMarked())
             continue;
 
-        
+        // create bailout block to insert on this edge
         MBasicBlock *bailBlock = MBasicBlock::NewParBailout(graph_, block->info(), pred,
                                                             block->pc(), block->entryResumePoint());
         if (!bailBlock)
             return false;
 
-        
+        // if `block` had phis, we are replacing it with `bailBlock` which does not
         if (pred->successorWithPhis() == block)
             pred->setSuccessorWithPhis(NULL, 0);
 
-        
+        // redirect the predecessor to the bailout block
         uint32_t succIdx = pred->getSuccessorIndex(block);
         pred->replaceSuccessor(succIdx, bailBlock);
 
-        
-        
-        
-        
-        
+        // Insert the bailout block after `block` in the execution
+        // order.  This should satisfy the RPO requirements and
+        // moreover ensures that we will visit this block in our outer
+        // walk, thus allowing us to keep the count of marked blocks
+        // accurate.
         graph_.insertBlockAfter(block, bailBlock);
         bailBlock->mark();
     }
@@ -497,13 +497,13 @@ ParallelArrayVisitor::convertToBailout(MBasicBlock *block, MInstruction *ins)
     return true;
 }
 
-
-
-
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// Memory allocation
+//
+// Simple memory allocation opcodes---those which ultimately compile
+// down to a (possibly inlined) invocation of NewGCThing()---are
+// replaced with MParNew, which is supplied with the thread context.
+// These allocations will take place using per-helper-thread arenas.
 
 bool
 ParallelArrayVisitor::visitNewParallelArray(MNewParallelArray *ins)
@@ -516,7 +516,7 @@ ParallelArrayVisitor::visitNewParallelArray(MNewParallelArray *ins)
 bool
 ParallelArrayVisitor::visitNewCallObject(MNewCallObject *ins)
 {
-    
+    // fast path: replace with ParNewCallObject op
     MParNewCallObject *parNewCallObjectInstruction =
         MParNewCallObject::New(parSlice(), ins);
     replace(ins, parNewCallObjectInstruction);
@@ -529,11 +529,11 @@ ParallelArrayVisitor::visitLambda(MLambda *ins)
     if (ins->fun()->hasSingletonType() ||
         types::UseNewTypeForClone(ins->fun()))
     {
-        
+        // slow path: bail on parallel execution.
         return markUnsafe();
     }
 
-    
+    // fast path: replace with ParLambda op
     MParLambda *parLambdaInstruction = MParLambda::New(parSlice(), ins);
     replace(ins, parLambdaInstruction);
     return true;
@@ -566,17 +566,7 @@ ParallelArrayVisitor::visitNewArray(MNewArray *newInstruction)
 bool
 ParallelArrayVisitor::visitRest(MRest *ins)
 {
-    
-    
-    
-    
-    
-    JSObject *templateObj = NewDenseUnallocatedArray(cx_, 0, NULL, TenuredObject);
-    if (!templateObj)
-        return false;
-
-    return replace(ins, MParRest::New(parSlice(), ins->numActuals(),
-                                      ins->numFormals(), templateObj));
+    return replace(ins, MParRest::New(parSlice(), ins));
 }
 
 bool
@@ -599,23 +589,23 @@ ParallelArrayVisitor::replace(MInstruction *oldInstruction,
     return true;
 }
 
-
-
-
-
-
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// Write Guards
+//
+// We only want to permit writes to locally guarded objects.
+// Furthermore, we want to avoid PICs and other non-thread-safe things
+// (though perhaps we should support PICs at some point).  If we
+// cannot determine the origin of an object, we can insert a write
+// guard which will check whether the object was allocated from the
+// per-thread-arena or not.
 
 bool
 ParallelArrayVisitor::insertWriteGuard(MInstruction *writeInstruction,
                                        MDefinition *valueBeingWritten)
 {
-    
-    
-    
+    // Many of the write operations do not take the JS object
+    // but rather something derived from it, such as the elements.
+    // So we need to identify the JS object:
     MDefinition *object;
     switch (valueBeingWritten->type()) {
       case MIRType_Object:
@@ -629,8 +619,8 @@ ParallelArrayVisitor::insertWriteGuard(MInstruction *writeInstruction,
             break;
 
           case MDefinition::Op_NewSlots:
-            
-            
+            // Values produced by new slots will ALWAYS be
+            // thread-local.
             return true;
 
           default:
@@ -668,7 +658,7 @@ ParallelArrayVisitor::insertWriteGuard(MInstruction *writeInstruction,
 
     switch (object->op()) {
       case MDefinition::Op_ParNew:
-        
+        // MParNew will always be creating something thread-local, omit the guard
         SpewMIR(writeInstruction, "write to ParNew prop does not require guard");
         return true;
       default:
@@ -682,16 +672,16 @@ ParallelArrayVisitor::insertWriteGuard(MInstruction *writeInstruction,
     return true;
 }
 
-
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// Calls
+//
+// We only support calls to interpreted functions that that have already been
+// Ion compiled. If a function has no IonScript, we bail out.
 
 bool
 ParallelArrayVisitor::visitCall(MCall *ins)
 {
-    
+    // DOM? Scary.
     if (ins->isDOMFunction()) {
         SpewMIR(ins, "call to dom function");
         return markUnsafe();
@@ -699,7 +689,7 @@ ParallelArrayVisitor::visitCall(MCall *ins)
 
     RootedFunction target(cx_, ins->getSingleTarget());
     if (target) {
-        
+        // Native? Scary.
         if (target->isNative()) {
             SpewMIR(ins, "call to native function");
             return markUnsafe();
@@ -715,13 +705,13 @@ ParallelArrayVisitor::visitCall(MCall *ins)
     return true;
 }
 
-
-
-
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// Stack limit, interrupts
+//
+// In sequential Ion code, the stack limit is stored in the JSRuntime.
+// We store it in the thread context.  We therefore need a separate
+// instruction to access it, one parameterized by the thread context.
+// Similar considerations apply to checking for interrupts.
 
 bool
 ParallelArrayVisitor::visitCheckOverRecursed(MCheckOverRecursed *ins)
@@ -737,14 +727,14 @@ ParallelArrayVisitor::visitInterruptCheck(MInterruptCheck *ins)
     return replace(ins, replacement);
 }
 
-
-
-
-
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// Specialized ops
+//
+// Some ops, like +, can be specialized to ints/doubles.  Anything
+// else is terrifying.
+//
+// TODO---Eventually, we should probably permit arbitrary + but bail
+// if the operands are not both integers/floats.
 
 bool
 ParallelArrayVisitor::visitSpecializedInstruction(MInstruction *ins, MIRType spec,
@@ -758,8 +748,8 @@ ParallelArrayVisitor::visitSpecializedInstruction(MInstruction *ins, MIRType spe
     return markUnsafe();
 }
 
-
-
+/////////////////////////////////////////////////////////////////////////////
+// Throw
 
 bool
 ParallelArrayVisitor::visitThrow(MThrow *thr)
@@ -774,10 +764,10 @@ ParallelArrayVisitor::visitThrow(MThrow *thr)
     return true;
 }
 
-
-
-
-
+///////////////////////////////////////////////////////////////////////////
+// Callee extraction
+//
+// See comments in header file.
 
 static bool
 GetPossibleCallees(JSContext *cx,
@@ -868,7 +858,7 @@ GetPossibleCallees(JSContext *cx,
             rootedScript = rootedFun->nonLazyScript();
         }
 
-        
+        // check if this call target is already known
         if (!AddCallTarget(rootedScript, targets))
             return false;
     }
