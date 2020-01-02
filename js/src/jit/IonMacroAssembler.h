@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_IonMacroAssembler_h
 #define jit_IonMacroAssembler_h
@@ -31,9 +31,9 @@
 namespace js {
 namespace jit {
 
-
-
-
+// The public entrypoint for emitting assembly. Note that a MacroAssembler can
+// use cx->lifoAlloc, so take care not to interleave masm use with other
+// lifoAlloc use if one will be destroyed before the other.
 class MacroAssembler : public MacroAssemblerSpecific
 {
     MacroAssembler *thisFromCtor() {
@@ -56,9 +56,9 @@ class MacroAssembler : public MacroAssemblerSpecific
         }
     };
 
-    
-
-
+    /*
+     * Base class for creating a branch.
+     */
     class Branch
     {
         bool init_;
@@ -71,7 +71,7 @@ class MacroAssembler : public MacroAssemblerSpecific
           : init_(false),
             cond_(Equal),
             jump_(nullptr),
-            reg_(Register::FromCode(0))      
+            reg_(Register::FromCode(0))      // Quell compiler warnings.
         { }
 
         Branch(Condition cond, Register reg, Label *jump)
@@ -108,10 +108,10 @@ class MacroAssembler : public MacroAssemblerSpecific
         virtual void emit(MacroAssembler &masm) = 0;
     };
 
-    
-
-
-
+    /*
+     * Creates a branch based on a specific types::Type.
+     * Note: emits number test (int/double) for types::Type::DoubleType()
+     */
     class BranchType : public Branch
     {
         types::Type type_;
@@ -150,9 +150,9 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     };
 
-    
-
-
+    /*
+     * Creates a branch based on a GCPtr.
+     */
     class BranchGCPtr : public Branch
     {
         ImmGCPtr ptr_;
@@ -180,26 +180,26 @@ class MacroAssembler : public MacroAssemblerSpecific
     bool enoughMemory_;
     bool embedsNurseryPointers_;
 
-    
+    // SPS instrumentation, only used for Ion caches.
     mozilla::Maybe<IonInstrumentation> spsInstrumentation_;
     jsbytecode *spsPc_;
 
   private:
-    
-    
-    
-    
-    
+    // This field is used to manage profiling instrumentation output. If
+    // provided and enabled, then instrumentation will be emitted around call
+    // sites. The IonInstrumentation instance is hosted inside of
+    // CodeGeneratorShared and is the manager of when instrumentation is
+    // actually emitted or not. If nullptr, then no instrumentation is emitted.
     IonInstrumentation *sps_;
 
-    
+    // Labels for handling exceptions and failures.
     NonAssertingLabel sequentialFailureLabel_;
     NonAssertingLabel parallelFailureLabel_;
 
   public:
-    
-    
-    
+    // If instrumentation should be emitted, then the sps parameter should be
+    // provided, but otherwise it can be safely omitted to prevent all
+    // instrumentation from being emitted.
     MacroAssembler()
       : enoughMemory_(true),
         embedsNurseryPointers_(false),
@@ -222,8 +222,8 @@ class MacroAssembler : public MacroAssemblerSpecific
 #endif
     }
 
-    
-    
+    // This constructor should only be used when there is no IonContext active
+    // (for example, Trampoline-$(ARCH).cpp and IonCaches.cpp).
     MacroAssembler(JSContext *cx, IonScript *ion = nullptr,
                    JSScript *script = nullptr, jsbytecode *pc = nullptr)
       : enoughMemory_(true),
@@ -241,8 +241,8 @@ class MacroAssembler : public MacroAssemblerSpecific
         if (ion) {
             setFramePushed(ion->frameSize());
             if (pc && cx->runtime()->spsProfiler.enabled()) {
-                
-                
+                // We have to update the SPS pc when this IC stub calls into
+                // the VM.
                 spsPc_ = pc;
                 spsInstrumentation_.construct(&cx->runtime()->spsProfiler, &spsPc_);
                 sps_ = spsInstrumentation_.addr();
@@ -251,7 +251,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         }
     }
 
-    
+    // asm.js compilation handles its own IonContet-pushing
     struct AsmJSToken {};
     MacroAssembler(AsmJSToken)
       : enoughMemory_(true),
@@ -297,8 +297,8 @@ class MacroAssembler : public MacroAssemblerSpecific
         return embedsNurseryPointers_;
     }
 
-    
-    
+    // Emits a test of a value against all types in a TypeSet. A scratch
+    // register is required.
     template <typename Source, typename TypeSet>
     void guardTypeSet(const Source &address, const TypeSet *types, BarrierKind kind, Register scratch, Label *miss);
     template <typename TypeSet>
@@ -347,7 +347,7 @@ class MacroAssembler : public MacroAssemblerSpecific
           case MIRType_String:    return branchTestString(cond, val, label);
           case MIRType_Object:    return branchTestObject(cond, val, label);
           case MIRType_Double:    return branchTestDouble(cond, val, label);
-          case MIRType_MagicOptimizedArguments: 
+          case MIRType_MagicOptimizedArguments: // Fall through.
           case MIRType_MagicIsConstructing:
           case MIRType_MagicHole: return branchTestMagic(cond, val, label);
           default:
@@ -355,15 +355,15 @@ class MacroAssembler : public MacroAssemblerSpecific
         }
     }
 
-    
+    // Branches to |label| if |reg| is false. |reg| should be a C++ bool.
     void branchIfFalseBool(Register reg, Label *label) {
-        
+        // Note that C++ bool is only 1 byte, so ignore the higher-order bits.
         branchTest32(Assembler::Zero, reg, Imm32(0xFF), label);
     }
 
-    
+    // Branches to |label| if |reg| is true. |reg| should be a C++ bool.
     void branchIfTrueBool(Register reg, Label *label) {
-        
+        // Note that C++ bool is only 1 byte, so ignore the higher-order bits.
         branchTest32(Assembler::NonZero, reg, Imm32(0xFF), label);
     }
 
@@ -377,8 +377,14 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 
     void loadStringLength(Register str, Register dest) {
-        loadPtr(Address(str, JSString::offsetOfLengthAndFlags()), dest);
-        rshiftPtr(Imm32(JSString::LENGTH_SHIFT), dest);
+        load32(Address(str, JSString::offsetOfLength()), dest);
+    }
+
+    void loadStringChars(Register str, Register dest);
+
+    void branchIfRope(Register str, Label *label) {
+        Address flags(str, JSString::offsetOfFlags());
+        branch32(Assembler::Equal, flags, Imm32(JSString::ROPE_FLAGS), label);
     }
 
     void loadSliceBounds(Register worker, Register dest) {
@@ -460,14 +466,14 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     void storeCallResultValue(ValueOperand dest) {
 #if defined(JS_NUNBOX32)
-        
-        
-        
-        
-        
+        // reshuffle the return registers used for a call result to store into
+        // dest, using ReturnReg as a scratch register if necessary. This must
+        // only be called after returning from a call, at a point when the
+        // return register is not live. XXX would be better to allow wrappers
+        // to store the return value to different places.
         if (dest.typeReg() == JSReturnReg_Data) {
             if (dest.payloadReg() == JSReturnReg_Type) {
-                
+                // swap the two registers.
                 mov(JSReturnReg_Type, ReturnReg);
                 mov(JSReturnReg_Data, JSReturnReg_Type);
                 mov(ReturnReg, JSReturnReg_Data);
@@ -512,8 +518,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     void PopRegsInMaskIgnore(RegisterSet set, RegisterSet ignore);
 
     void branchIfFunctionHasNoScript(Register fun, Label *label) {
-        
-        
+        // 16-bit loads are slow and unaligned 32-bit loads may be too so
+        // perform an aligned 32-bit load and adjust the bitmask accordingly.
         JS_ASSERT(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0);
         JS_ASSERT(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2);
         JS_STATIC_ASSERT(IS_LITTLE_ENDIAN);
@@ -522,8 +528,8 @@ class MacroAssembler : public MacroAssemblerSpecific
         branchTest32(Assembler::Zero, address, Imm32(bit), label);
     }
     void branchIfInterpreted(Register fun, Label *label) {
-        
-        
+        // 16-bit loads are slow and unaligned 32-bit loads may be too so
+        // perform an aligned 32-bit load and adjust the bitmask accordingly.
         JS_ASSERT(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0);
         JS_ASSERT(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2);
         JS_STATIC_ASSERT(IS_LITTLE_ENDIAN);
@@ -539,13 +545,13 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     void Push(jsid id, Register scratchReg) {
         if (JSID_IS_GCTHING(id)) {
-            
-            
-            
-            
+            // If we're pushing a gcthing, then we can't just push the tagged jsid
+            // value since the GC won't have any idea that the push instruction
+            // carries a reference to a gcthing.  Need to unpack the pointer,
+            // push it using ImmGCPtr, and then rematerialize the id at runtime.
 
-            
-            
+            // double-checking this here to ensure we don't lose sync
+            // with implementation of JSID_IS_GCTHING.
             if (JSID_IS_OBJECT(id)) {
                 JSObject *obj = JSID_TO_OBJECT(id);
                 movePtr(ImmGCPtr(obj), scratchReg);
@@ -680,8 +686,8 @@ class MacroAssembler : public MacroAssemblerSpecific
 
         Label done;
 
-        
-        
+        // All barriers are off by default.
+        // They are enabled if necessary at the end of CodeGenerator::generate().
         CodeOffsetLabel nopJump = toggledJump(&done);
         writePrebarrierOffset(nopJump);
 
@@ -764,8 +770,8 @@ class MacroAssembler : public MacroAssemblerSpecific
         return reg.typedReg().gpr();
     }
 
-    
-    
+    // Inline version of js_TypedArray_uint8_clamp_double.
+    // This function clobbers the input register.
     void clampDoubleToUint8(FloatRegister input, Register output);
 
     using MacroAssemblerSpecific::ensureDouble;
@@ -785,11 +791,11 @@ class MacroAssembler : public MacroAssemblerSpecific
         bind(&done);
     }
 
-    
-    
+    // Emit type case branch on tag matching if the type tag in the definition
+    // might actually be that type.
     void branchEqualTypeIfNeeded(MIRType type, MDefinition *maybeDef, Register tag, Label *label);
 
-    
+    // Inline allocation.
   private:
     void checkAllocatorState(Label *fail);
     bool shouldNurseryAllocate(gc::AllocKind allocKind, gc::InitialHeap initialHeap);
@@ -828,32 +834,32 @@ class MacroAssembler : public MacroAssemblerSpecific
                                  Label *fail);
 
 
-    
-    
+    // Compares two strings for equality based on the JSOP.
+    // This checks for identical pointers, atoms and length and fails for everything else.
     void compareStrings(JSOp op, Register left, Register right, Register result,
-                        Register temp, Label *fail);
+                        Label *fail);
 
-    
-    
+    // Checks the flags that signal that parallel code may need to interrupt or
+    // abort.  Branches to fail in that case.
     void checkInterruptFlagPar(Register tempReg, Label *fail);
 
-    
-    
-    
+    // If the JitCode that created this assembler needs to transition into the VM,
+    // we want to store the JitCode on the stack in order to mark it during a GC.
+    // This is a reference to a patch location where the JitCode* will be written.
   private:
     CodeOffsetLabel exitCodePatch_;
 
   public:
     void enterExitFrame(const VMFunction *f = nullptr) {
         linkExitFrame();
-        
+        // Push the ioncode. (Bailout or VM wrapper)
         exitCodePatch_ = PushWithPatch(ImmWord(-1));
-        
+        // Push VMFunction pointer, to mark arguments.
         Push(ImmPtr(f));
     }
 
-    
-    
+    // The JitCode * argument here is one of the tokens defined in the various
+    // exit frame layout classes, e.g. IonNativeExitFrameLayout::Token().
     void enterFakeExitFrame(JitCode *codeVal) {
         linkExitFrame();
         Push(ImmPtr(codeVal));
@@ -861,8 +867,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 
     void loadThreadPool(Register pool) {
-        
-        
+        // JitRuntimes are tied to JSRuntimes and there is one ThreadPool per
+        // JSRuntime, so we can hardcode the ThreadPool address here.
         movePtr(ImmPtr(GetIonContext()->runtime->addressOfThreadPool()), pool);
     }
 
@@ -890,9 +896,9 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     void link(JitCode *code) {
         JS_ASSERT(!oom());
-        
-        
-        
+        // If this code can transition to C++ code and witness a GC, then we need to store
+        // the JitCode onto the stack in order to GC it correctly.  exitCodePatch should
+        // be unset if the code never needed to push its JitCode*.
         if (hasEnteredExitFrame()) {
             patchDataWithValueCheck(CodeLocationLabel(code, exitCodePatch_),
                                     ImmPtr(code),
@@ -901,15 +907,15 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     }
 
-    
+    // Generates code used to complete a bailout.
     void generateBailoutTail(Register scratch, Register bailoutInfo);
 
-    
-    
-    
-    
-    
-    
+    // These functions exist as small wrappers around sites where execution can
+    // leave the currently running stream of instructions. They exist so that
+    // instrumentation may be put in place around them if necessary and the
+    // instrumentation is enabled. For the functions that return a uint32_t,
+    // they are returning the offset of the assembler just after the call has
+    // been made so that a safepoint can be made at that location.
 
     template <typename T>
     void callWithABINoProfiling(const T &fun, MoveOp::Type result = MoveOp::GENERAL) {
@@ -923,7 +929,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         reenterSPSFrame();
     }
 
-    
+    // see above comment for what is returned
     uint32_t callIon(Register callee) {
         leaveSPSFrame();
         MacroAssemblerSpecific::callIon(callee);
@@ -932,7 +938,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         return ret;
     }
 
-    
+    // see above comment for what is returned
     uint32_t callWithExitFrame(JitCode *target) {
         leaveSPSFrame();
         MacroAssemblerSpecific::callWithExitFrame(target);
@@ -941,7 +947,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         return ret;
     }
 
-    
+    // see above comment for what is returned
     uint32_t callWithExitFrame(JitCode *target, Register dynStack) {
         leaveSPSFrame();
         MacroAssemblerSpecific::callWithExitFrame(target, dynStack);
@@ -953,9 +959,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     void branchTestObjectTruthy(bool truthy, Register objReg, Register scratch,
                                 Label *slowCheck, Label *checked)
     {
-        
-        
-        
+        // The branches to out-of-line code here implement a conservative version
+        // of the JSObject::isWrapper test performed in EmulatesUndefined.  If none
+        // of the branches are taken, we can check class flags directly.
         loadObjClass(objReg, scratch);
         Address flags(scratch, Class::offsetOfFlags());
 
@@ -966,14 +972,14 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 
   private:
-    
-    
-    
+    // These two functions are helpers used around call sites throughout the
+    // assembler. They are called from the above call wrappers to emit the
+    // necessary instrumentation.
     void leaveSPSFrame() {
         if (!sps_ || !sps_->enabled())
             return;
-        
-        
+        // No registers are guaranteed to be available, so push/pop a register
+        // so we can use one
         push(CallTempReg0);
         sps_->leave(*this, CallTempReg0);
         pop(CallTempReg0);
@@ -982,9 +988,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     void reenterSPSFrame() {
         if (!sps_ || !sps_->enabled())
             return;
-        
-        
-        
+        // Attempt to use a now-free register within a given set, but if the
+        // architecture being built doesn't have an available register, resort
+        // to push/pop
         GeneralRegisterSet regs(Registers::TempMask & ~Registers::JSCallMask &
                                                       ~Registers::CallMask);
         if (regs.empty()) {
@@ -1005,33 +1011,33 @@ class MacroAssembler : public MacroAssemblerSpecific
             add32(Imm32(offset), temp);
         branch32(Assembler::GreaterThanOrEqual, temp, Imm32(p->maxSize()), full);
 
-        
+        // 4 * sizeof(void*) * idx = idx << (2 + log(sizeof(void*)))
         JS_STATIC_ASSERT(sizeof(ProfileEntry) == 4 * sizeof(void*));
         lshiftPtr(Imm32(2 + (sizeof(void*) == 4 ? 2 : 3)), temp);
         addPtr(ImmPtr(p->stack()), temp);
     }
 
-    
-    
-    
-    
-    
-    
+    // The safe version of the above method refrains from assuming that the fields
+    // of the SPSProfiler class are going to stay the same across different runs of
+    // the jitcode.  Ion can use the more efficient unsafe version because ion jitcode
+    // will not survive changes to to the profiler settings.  Baseline jitcode, however,
+    // can span these changes, so any hardcoded field values will be incorrect afterwards.
+    // All the sps-related methods used by baseline call |spsProfileEntryAddressSafe|.
     void spsProfileEntryAddressSafe(SPSProfiler *p, int offset, Register temp,
                                     Label *full)
     {
-        
+        // Load size pointer
         loadPtr(AbsoluteAddress(p->addressOfSizePointer()), temp);
 
-        
+        // Load size
         load32(Address(temp, 0), temp);
         if (offset != 0)
             add32(Imm32(offset), temp);
 
-        
+        // Test against max size.
         branch32(Assembler::LessThanOrEqual, AbsoluteAddress(p->addressOfMaxSize()), temp, full);
 
-        
+        // 4 * sizeof(void*) * idx = idx << (2 + log(sizeof(void*)))
         JS_STATIC_ASSERT(sizeof(ProfileEntry) == 4 * sizeof(void*));
         lshiftPtr(Imm32(2 + (sizeof(void*) == 4 ? 2 : 3)), temp);
         push(temp);
@@ -1041,9 +1047,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 
   public:
-    
-    
-    
+    // These functions are needed by the IonInstrumentation interface defined in
+    // vm/SPSProfiler.h.  They will modify the pseudostack provided to SPS to
+    // perform the actual instrumentation.
 
     void spsUpdatePCIdx(SPSProfiler *p, int32_t idx, Register temp) {
         Label stackFull;
@@ -1059,7 +1065,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         bind(&stackFull);
     }
 
-    
+    // spsPushFrame variant for Ion-optimized scripts.
     void spsPushFrame(SPSProfiler *p, const char *str, JSScript *s, Register temp) {
         Label stackFull;
         spsProfileEntryAddress(p, 0, temp, &stackFull);
@@ -1070,13 +1076,13 @@ class MacroAssembler : public MacroAssemblerSpecific
                  Address(temp, ProfileEntry::offsetOfStackAddress()));
         store32(Imm32(ProfileEntry::NullPCIndex), Address(temp, ProfileEntry::offsetOfPCIdx()));
 
-        
+        /* Always increment the stack size, whether or not we actually pushed. */
         bind(&stackFull);
         movePtr(ImmPtr(p->sizePointer()), temp);
         add32(Imm32(1), Address(temp, 0));
     }
 
-    
+    // spsPushFrame variant for Baseline-optimized scripts.
     void spsPushFrame(SPSProfiler *p, const Address &str, const Address &script,
                       Register temp, Register temp2)
     {
@@ -1091,12 +1097,12 @@ class MacroAssembler : public MacroAssemblerSpecific
 
         storePtr(ImmPtr(nullptr), Address(temp, ProfileEntry::offsetOfStackAddress()));
 
-        
-        
-        
+        // Store 0 for PCIdx because that's what interpreter does.
+        // (See probes::EnterScript, which calls spsProfiler.enter, which pushes an entry
+        //  with 0 pcIdx).
         store32(Imm32(0), Address(temp, ProfileEntry::offsetOfPCIdx()));
 
-        
+        /* Always increment the stack size, whether or not we actually pushed. */
         bind(&stackFull);
         movePtr(ImmPtr(p->addressOfSizePointer()), temp);
         loadPtr(Address(temp, 0), temp);
@@ -1108,7 +1114,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         add32(Imm32(-1), Address(temp, 0));
     }
 
-    
+    // spsPropFrameSafe does not assume |profiler->sizePointer()| will stay constant.
     void spsPopFrameSafe(SPSProfiler *p, Register temp) {
         loadPtr(AbsoluteAddress(p->addressOfSizePointer()), temp);
         add32(Imm32(-1), Address(temp, 0));
@@ -1133,7 +1139,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 
   public:
     Label *exceptionLabel() {
-        
+        // Exceptions are currently handled the same way as sequential failures.
         return &sequentialFailureLabel_;
     }
 
@@ -1235,16 +1241,16 @@ class MacroAssembler : public MacroAssemblerSpecific
         IntConversion_Any
     };
 
-    
-    
-    
+    //
+    // Functions for converting values to int.
+    //
     void convertDoubleToInt(FloatRegister src, Register output, FloatRegister temp,
                             Label *truncateFail, Label *fail, IntConversionBehavior behavior);
 
-    
-    
-    
-    
+    // Strings may be handled by providing labels to jump to when the behavior
+    // is truncation or clamping. The subroutine, usually an OOL call, is
+    // passed the unboxed string in |stringReg| and should convert it to a
+    // double store into |temp|.
     void convertValueToInt(ValueOperand value, MDefinition *input,
                            Label *handleStringEntry, Label *handleStringRejoin,
                            Label *truncateDoubleSlow,
@@ -1264,9 +1270,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     void convertTypedOrValueToInt(TypedOrValueRegister src, FloatRegister temp, Register output,
                                   Label *fail, IntConversionBehavior behavior);
 
-    
-    
-    
+    //
+    // Convenience functions for converting values to int32.
+    //
     void convertValueToInt32(ValueOperand value, FloatRegister temp, Register output, Label *fail,
                              bool negativeZeroCheck)
     {
@@ -1306,9 +1312,9 @@ class MacroAssembler : public MacroAssemblerSpecific
                                  : IntConversion_Normal);
     }
 
-    
-    
-    
+    //
+    // Convenience functions for truncating values to int32.
+    //
     void truncateValueToInt32(ValueOperand value, FloatRegister temp, Register output, Label *fail) {
         convertValueToInt(value, temp, output, fail, IntConversion_Truncate);
     }
@@ -1340,7 +1346,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         convertTypedOrValueToInt(src, temp, output, fail, IntConversion_Truncate);
     }
 
-    
+    // Convenience functions for clamping values to uint8.
     void clampValueToUint8(ValueOperand value, FloatRegister temp, Register output, Label *fail) {
         convertValueToInt(value, temp, output, fail, IntConversion_ClampToUint8);
     }
@@ -1425,9 +1431,9 @@ JSOpToDoubleCondition(JSOp op)
     }
 }
 
-
-
-
+// Note: the op may have been inverted during lowering (to put constants in a
+// position where they can be immediates), so it is important to use the
+// lir->jsop() instead of the mir->jsop() when it is present.
 static inline Assembler::Condition
 JSOpToCondition(JSOp op, bool isSigned)
 {
@@ -1472,9 +1478,9 @@ JSOpToCondition(JSOp op, bool isSigned)
     }
 }
 
-} 
-} 
+} // namespace jit
+} // namespace js
 
-#endif 
+#endif // JS_ION
 
-#endif 
+#endif /* jit_IonMacroAssembler_h */
