@@ -76,6 +76,10 @@ HELPER_SHEET += ":-moz-devtools-highlighted { outline: 2px dashed #F06!important
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/devtools/LayoutHelpers.jsm");
 
+loader.lazyGetter(this, "DOMParser", function() {
+ return Cc["@mozilla.org/xmlextras/domparser;1"].createInstance(Ci.nsIDOMParser);
+});
+
 exports.register = function(handle) {
   handle.addTabActor(InspectorActor, "inspectorActor");
 };
@@ -143,6 +147,11 @@ var NodeActor = protocol.ActorClass({
 
   get conn() this.walker.conn,
 
+  isDocumentElement: function() {
+    return this.rawNode.ownerDocument &&
+        this.rawNode.ownerDocument.documentElement === this.rawNode;
+  },
+
   
   form: function(detail) {
     if (detail === "actorid") {
@@ -177,8 +186,7 @@ var NodeActor = protocol.ActorClass({
       pseudoClassLocks: this.writePseudoClassLocks(),
     };
 
-    if (this.rawNode.ownerDocument &&
-        this.rawNode.ownerDocument.documentElement === this.rawNode) {
+    if (this.isDocumentElement()) {
       form.isDocumentElement = true;
     }
 
@@ -1544,6 +1552,62 @@ var WalkerActor = protocol.ActorClass({
     },
     response: {
       value: RetVal("longstring")
+    }
+  }),
+
+  
+
+
+  setOuterHTML: method(function(node, value) {
+    let parsedDOM = DOMParser.parseFromString(value, "text/html");
+    let rawNode = node.rawNode;
+    let parentNode = rawNode.parentNode;
+
+    
+    
+    
+    
+    if (rawNode.tagName === "BODY") {
+      if (parsedDOM.head.innerHTML === "") {
+        parentNode.replaceChild(parsedDOM.body, rawNode);
+      } else {
+        rawNode.outerHTML = value;
+      }
+    } else if (rawNode.tagName === "HEAD") {
+      if (parsedDOM.body.innerHTML === "") {
+        parentNode.replaceChild(parsedDOM.head, rawNode);
+      } else {
+        rawNode.outerHTML = value;
+      }
+    } else if (node.isDocumentElement()) {
+      
+      
+      let finalAttributeModifications = [];
+      let attributeModifications = {};
+      for (let attribute of rawNode.attributes) {
+        attributeModifications[attribute.name] = null;
+      }
+      for (let attribute of parsedDOM.documentElement.attributes) {
+        attributeModifications[attribute.name] = attribute.value;
+      }
+      for (let key in attributeModifications) {
+        finalAttributeModifications.push({
+          attributeName: key,
+          newValue: attributeModifications[key]
+        });
+      }
+      node.modifyAttributes(finalAttributeModifications);
+      rawNode.replaceChild(parsedDOM.head, rawNode.querySelector("head"));
+      rawNode.replaceChild(parsedDOM.body, rawNode.querySelector("body"));
+    } else {
+      rawNode.outerHTML = value;
+    }
+  }, {
+    request: {
+      node: Arg(0, "domnode"),
+      value: Arg(1),
+    },
+    response: {
     }
   }),
 
