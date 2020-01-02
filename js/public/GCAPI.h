@@ -325,6 +325,22 @@ extern JS_FRIEND_API(void)
 EnableGenerationalGC(JSRuntime *rt);
 
 
+class JS_FRIEND_API(AutoDisableGenerationalGC)
+{
+    JSRuntime *runtime;
+
+  public:
+    AutoDisableGenerationalGC(JSRuntime *rt)
+      : runtime(rt)
+    {
+        DisableGenerationalGC(rt);
+    }
+    ~AutoDisableGenerationalGC() {
+        EnableGenerationalGC(runtime);
+    }
+};
+
+
 
 
 
