@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "CompositorD3D11.h"
 
@@ -31,10 +31,10 @@ struct Vertex
     float position[2];
 };
 
-// {1E4D7BEB-D8EC-4A0B-BF0A-63E6DE129425}
+
 static const GUID sDeviceAttachmentsD3D11 =
 { 0x1e4d7beb, 0xd8ec, 0x4a0b, { 0xbf, 0xa, 0x63, 0xe6, 0xde, 0x12, 0x94, 0x25 } };
-// {88041664-C835-4AA8-ACB8-7EC832357ED8}
+
 static const GUID sLayerManagerCount =
 { 0x88041664, 0xc835, 0x4aa8, { 0xac, 0xb8, 0x7e, 0xc8, 0x32, 0x35, 0x7e, 0xd8 } };
 
@@ -86,8 +86,8 @@ CompositorD3D11::~CompositorD3D11()
       DeviceAttachmentsD3D11 *attachments;
       size = sizeof(attachments);
       mDevice->GetPrivateData(sDeviceAttachmentsD3D11, &size, &attachments);
-      // No LayerManagers left for this device. Clear out interfaces stored
-      // which hold a reference to the device.
+      
+      
       mDevice->SetPrivateData(sDeviceAttachmentsD3D11, 0, nullptr);
 
       delete attachments;
@@ -118,7 +118,7 @@ CompositorD3D11::Initialize()
 
   int referenceCount = 0;
   UINT size = sizeof(referenceCount);
-  // If this isn't there yet it'll fail, count will remain 0, which is correct.
+  
   mDevice->GetPrivateData(sLayerManagerCount, &size, &referenceCount);
   referenceCount++;
   mDevice->SetPrivateData(sLayerManagerCount,
@@ -273,28 +273,28 @@ CompositorD3D11::Initialize()
     mWidget->GetClientBounds(rect);
 
     DXGI_SWAP_CHAIN_DESC1 swapDesc = { 0 };
-    // Automatically detect the width and the height from the winrt CoreWindow
+    
     swapDesc.Width = rect.width;
     swapDesc.Height = rect.height;
-    // This is the most common swapchain format
+    
     swapDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     swapDesc.Stereo = false;
-    // Don't use multi-sampling
+    
     swapDesc.SampleDesc.Count = 1;
     swapDesc.SampleDesc.Quality = 0;
     swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    // Use double buffering to enable flip
+    
     swapDesc.BufferCount = 2;
     swapDesc.Scaling = DXGI_SCALING_NONE;
-    // All Metro style apps must use this SwapEffect
+    
     swapDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     swapDesc.Flags = 0;
 
-    /**
-     * Create a swap chain, this swap chain will contain the backbuffer for
-     * the window we draw to. The front buffer is the full screen front
-     * buffer.
-    */
+    
+
+
+
+
     nsRefPtr<IDXGISwapChain1> swapChain1;
     hr = dxgiFactory->CreateSwapChainForCoreWindow(
            dxgiDevice, (IUnknown *)mWidget->GetNativeData(NS_NATIVE_ICOREWINDOW),
@@ -322,29 +322,29 @@ CompositorD3D11::Initialize()
     swapDesc.BufferCount = 1;
     swapDesc.OutputWindow = mHwnd;
     swapDesc.Windowed = TRUE;
-    // We don't really need this flag, however it seems on some NVidia hardware
-    // smaller area windows do not present properly without this flag. This flag
-    // should have no negative consequences by itself. See bug 613790. This flag
-    // is broken on optimus devices. As a temporary solution we don't set it
-    // there, the only way of reliably detecting we're on optimus is looking for
-    // the DLL. See Bug 623807.
+    
+    
+    
+    
+    
+    
     if (gfxWindowsPlatform::IsOptimus()) {
       swapDesc.Flags = 0;
     } else {
       swapDesc.Flags = DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE;
     }
 
-    /**
-     * Create a swap chain, this swap chain will contain the backbuffer for
-     * the window we draw to. The front buffer is the full screen front
-     * buffer.
-     */
+    
+
+
+
+
     hr = dxgiFactory->CreateSwapChain(dxgiDevice, &swapDesc, byRef(mSwapChain));
     if (FAILED(hr)) {
      return false;
     }
 
-    // We need this because we don't want DXGI to respond to Alt+Enter.
+    
     dxgiFactory->MakeWindowAssociation(swapDesc.OutputWindow,
                                        DXGI_MWA_NO_WINDOW_CHANGES);
   }
@@ -478,21 +478,21 @@ void
 CompositorD3D11::SetPSForEffect(Effect* aEffect, MaskType aMaskType, gfx::SurfaceFormat aFormat)
 {
   switch (aEffect->mType) {
-  case EffectTypes::SOLID_COLOR:
+  case EFFECT_SOLID_COLOR:
     mContext->PSSetShader(mAttachments->mSolidColorShader[aMaskType], nullptr, 0);
     return;
-  case EffectTypes::RENDER_TARGET:
+  case EFFECT_RENDER_TARGET:
     mContext->PSSetShader(mAttachments->mRGBAShader[aMaskType], nullptr, 0);
     return;
-  case EffectTypes::RGB:
+  case EFFECT_RGB:
     mContext->PSSetShader((aFormat == SurfaceFormat::B8G8R8A8 || aFormat == SurfaceFormat::R8G8B8A8)
                           ? mAttachments->mRGBAShader[aMaskType]
                           : mAttachments->mRGBShader[aMaskType], nullptr, 0);
     return;
-  case EffectTypes::YCBCR:
+  case EFFECT_YCBCR:
     mContext->PSSetShader(mAttachments->mYCbCrShader[aMaskType], nullptr, 0);
     return;
-  case EffectTypes::COMPONENT_ALPHA:
+  case EFFECT_COMPONENT_ALPHA:
     mContext->PSSetShader(mAttachments->mComponentAlphaShader[aMaskType], nullptr, 0);
     return;
   default:
@@ -521,9 +521,9 @@ CompositorD3D11::ClearRect(const gfx::Rect& aRect)
   scissor.bottom = aRect.YMost();
   mContext->RSSetScissorRects(1, &scissor);
   mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-  mContext->VSSetShader(mAttachments->mVSQuadShader[MaskType::MaskNone], nullptr, 0);
+  mContext->VSSetShader(mAttachments->mVSQuadShader[MaskNone], nullptr, 0);
 
-  mContext->PSSetShader(mAttachments->mSolidColorShader[MaskType::MaskNone], nullptr, 0);
+  mContext->PSSetShader(mAttachments->mSolidColorShader[MaskNone], nullptr, 0);
   mPSConstants.layerColor[0] = 0;
   mPSConstants.layerColor[1] = 0;
   mPSConstants.layerColor[2] = 0;
@@ -554,18 +554,18 @@ CompositorD3D11::DrawQuad(const gfx::Rect& aRect,
 
   bool restoreBlendMode = false;
 
-  MaskType maskType = MaskType::MaskNone;
+  MaskType maskType = MaskNone;
 
-  if (aEffectChain.mSecondaryEffects[EffectTypes::MASK]) {
+  if (aEffectChain.mSecondaryEffects[EFFECT_MASK]) {
     if (aTransform.Is2D()) {
-      maskType = MaskType::Mask2d;
+      maskType = Mask2d;
     } else {
-      MOZ_ASSERT(aEffectChain.mPrimaryEffect->mType == EffectTypes::RGB);
-      maskType = MaskType::Mask3d;
+      MOZ_ASSERT(aEffectChain.mPrimaryEffect->mType == EFFECT_RGB);
+      maskType = Mask3d;
     }
 
     EffectMask* maskEffect =
-      static_cast<EffectMask*>(aEffectChain.mSecondaryEffects[EffectTypes::MASK].get());
+      static_cast<EffectMask*>(aEffectChain.mSecondaryEffects[EFFECT_MASK].get());
     TextureSourceD3D11* source = maskEffect->mMaskTexture->AsSourceD3D11();
 
     if (!source) {
@@ -598,7 +598,7 @@ CompositorD3D11::DrawQuad(const gfx::Rect& aRect,
 
 
   switch (aEffectChain.mPrimaryEffect->mType) {
-  case EffectTypes::SOLID_COLOR: {
+  case EFFECT_SOLID_COLOR: {
       SetPSForEffect(aEffectChain.mPrimaryEffect, maskType, SurfaceFormat::UNKNOWN);
 
       Color color =
@@ -609,8 +609,8 @@ CompositorD3D11::DrawQuad(const gfx::Rect& aRect,
       mPSConstants.layerColor[3] = color.a * aOpacity;
     }
     break;
-  case EffectTypes::RGB:
-  case EffectTypes::RENDER_TARGET:
+  case EFFECT_RGB:
+  case EFFECT_RENDER_TARGET:
     {
       TexturedEffect* texturedEffect =
         static_cast<TexturedEffect*>(aEffectChain.mPrimaryEffect.get());
@@ -640,7 +640,7 @@ CompositorD3D11::DrawQuad(const gfx::Rect& aRect,
       SetSamplerForFilter(texturedEffect->mFilter);
     }
     break;
-  case EffectTypes::YCBCR: {
+  case EFFECT_YCBCR: {
       EffectYCbCr* ycbcrEffect =
         static_cast<EffectYCbCr*>(aEffectChain.mPrimaryEffect.get());
 
@@ -659,8 +659,8 @@ CompositorD3D11::DrawQuad(const gfx::Rect& aRect,
       SetPSForEffect(aEffectChain.mPrimaryEffect, maskType, ycbcrEffect->mTexture->GetFormat());
 
       if (!source->GetSubSource(Y) || !source->GetSubSource(Cb) || !source->GetSubSource(Cr)) {
-        // This can happen if we failed to upload the textures, most likely
-        // because of unsupported dimensions (we don't tile YCbCr textures).
+        
+        
         return;
       }
 
@@ -680,7 +680,7 @@ CompositorD3D11::DrawQuad(const gfx::Rect& aRect,
       mContext->PSSetShaderResources(0, 3, srViews);
     }
     break;
-  case EffectTypes::COMPONENT_ALPHA:
+  case EFFECT_COMPONENT_ALPHA:
     {
       MOZ_ASSERT(gfxPrefs::ComponentAlphaEnabled());
       MOZ_ASSERT(mAttachments->mComponentBlendState);
@@ -731,9 +731,9 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
                             Rect* aClipRectOut,
                             Rect* aRenderBoundsOut)
 {
-  // Don't composite if we are minimised. Other than for the sake of efficency,
-  // this is important because resizing our buffers when mimised will fail and
-  // cause a crash when we're restored.
+  
+  
+  
   NS_ASSERTION(mHwnd, "Couldn't find an HWND when initialising?");
   if (::IsIconic(mHwnd)) {
     *aRenderBoundsOut = Rect();
@@ -742,7 +742,7 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
 
   UpdateRenderTarget();
 
-  // Failed to create a render target or the view.
+  
   if (!mDefaultRT || !mDefaultRT->mRTView ||
       mSize.width == 0 || mSize.height == 0) {
     *aRenderBoundsOut = Rect();
@@ -900,7 +900,7 @@ CompositorD3D11::CreateShaders()
   hr = mDevice->CreateVertexShader(LayerQuadVS,
                                    sizeof(LayerQuadVS),
                                    nullptr,
-                                   byRef(mAttachments->mVSQuadShader[MaskType::MaskNone]));
+                                   byRef(mAttachments->mVSQuadShader[MaskNone]));
   if (FAILED(hr)) {
     return false;
   }
@@ -908,7 +908,7 @@ CompositorD3D11::CreateShaders()
   hr = mDevice->CreateVertexShader(LayerQuadMaskVS,
                                    sizeof(LayerQuadMaskVS),
                                    nullptr,
-                                   byRef(mAttachments->mVSQuadShader[MaskType::Mask2d]));
+                                   byRef(mAttachments->mVSQuadShader[Mask2d]));
   if (FAILED(hr)) {
     return false;
   }
@@ -916,16 +916,16 @@ CompositorD3D11::CreateShaders()
   hr = mDevice->CreateVertexShader(LayerQuadMask3DVS,
                                    sizeof(LayerQuadMask3DVS),
                                    nullptr,
-                                   byRef(mAttachments->mVSQuadShader[MaskType::Mask3d]));
+                                   byRef(mAttachments->mVSQuadShader[Mask3d]));
   if (FAILED(hr)) {
     return false;
   }
 
-#define LOAD_PIXEL_SHADER(x) hr = mDevice->CreatePixelShader(x, sizeof(x), nullptr, byRef(mAttachments->m##x[MaskType::MaskNone])); \
+#define LOAD_PIXEL_SHADER(x) hr = mDevice->CreatePixelShader(x, sizeof(x), nullptr, byRef(mAttachments->m##x[MaskNone])); \
   if (FAILED(hr)) { \
     return false; \
   } \
-  hr = mDevice->CreatePixelShader(x##Mask, sizeof(x##Mask), nullptr, byRef(mAttachments->m##x[MaskType::Mask2d])); \
+  hr = mDevice->CreatePixelShader(x##Mask, sizeof(x##Mask), nullptr, byRef(mAttachments->m##x[Mask2d])); \
   if (FAILED(hr)) { \
     return false; \
   }
@@ -943,7 +943,7 @@ CompositorD3D11::CreateShaders()
   hr = mDevice->CreatePixelShader(RGBAShaderMask3D,
                                   sizeof(RGBAShaderMask3D),
                                   nullptr,
-                                  byRef(mAttachments->mRGBAShader[MaskType::Mask3d]));
+                                  byRef(mAttachments->mRGBAShader[Mask3d]));
   if (FAILED(hr)) {
     return false;
   }
