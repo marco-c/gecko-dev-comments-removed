@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #include "nsSelectsAreaFrame.h"
 #include "nsIContent.h"
 #include "nsListControlFrame.h"
@@ -12,8 +12,8 @@ NS_NewSelectsAreaFrame(nsIPresShell* aShell, nsStyleContext* aContext, nsFrameSt
 {
   nsSelectsAreaFrame* it = new (aShell) nsSelectsAreaFrame(aContext);
 
-  // We need NS_BLOCK_FLOAT_MGR to ensure that the options inside the select
-  // aren't expanded by right floats outside the select.
+  
+  
   it->SetFlags(aFlags | NS_BLOCK_FLOAT_MGR);
 
   return it;
@@ -21,12 +21,12 @@ NS_NewSelectsAreaFrame(nsIPresShell* aShell, nsStyleContext* aContext, nsFrameSt
 
 NS_IMPL_FRAMEARENA_HELPERS(nsSelectsAreaFrame)
 
-//---------------------------------------------------------
-/**
- * This wrapper class lets us redirect mouse hits from the child frame of
- * an option element to the element's own frame.
- * REVIEW: This is what nsSelectsAreaFrame::GetFrameForPoint used to do
- */
+
+
+
+
+
+
 class nsDisplayOptionEventGrabber : public nsDisplayWrapList {
 public:
   nsDisplayOptionEventGrabber(nsDisplayListBuilder* aBuilder,
@@ -56,7 +56,7 @@ void nsDisplayOptionEventGrabber::HitTest(nsDisplayListBuilder* aBuilder,
     if (selectedFrame) {
       aOutFrames->AppendElement(selectedFrame);
     } else {
-      // keep the original result, which could be this frame
+      
       aOutFrames->AppendElement(outFrames.ElementAt(i));
     }
   }
@@ -102,8 +102,8 @@ public:
 
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) {
     *aSnap = false;
-    // override bounds because the list item focus ring may extend outside
-    // the nsSelectsAreaFrame
+    
+    
     nsListControlFrame* listFrame = GetEnclosingListFrame(Frame());
     return listFrame->GetVisualOverflowRectRelativeToSelf() +
            listFrame->GetOffsetToCrossDoc(ReferenceFrame());
@@ -111,7 +111,7 @@ public:
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      nsRenderingContext* aCtx) {
     nsListControlFrame* listFrame = GetEnclosingListFrame(Frame());
-    // listFrame must be non-null or we wouldn't get called.
+    
     listFrame->PaintFocus(*aCtx, aBuilder->ToReferenceFrame(listFrame));
   }
   NS_DISPLAY_DECL_NAME("ListFocus", TYPE_LIST_FOCUS)
@@ -143,15 +143,15 @@ nsSelectsAreaFrame::BuildDisplayListInternal(nsDisplayListBuilder*   aBuilder,
 
   nsListControlFrame* listFrame = GetEnclosingListFrame(this);
   if (listFrame && listFrame->IsFocused()) {
-    // we can't just associate the display item with the list frame,
-    // because then the list's scrollframe won't clip it (the scrollframe
-    // only clips contained descendants).
+    
+    
+    
     aLists.Outlines()->AppendNewToTop(new (aBuilder)
       nsDisplayListFocus(aBuilder, this));
   }
 }
 
-NS_IMETHODIMP 
+nsresult 
 nsSelectsAreaFrame::Reflow(nsPresContext*           aPresContext, 
                            nsHTMLReflowMetrics&     aDesiredSize,
                            const nsHTMLReflowState& aReflowState, 
@@ -164,12 +164,12 @@ nsSelectsAreaFrame::Reflow(nsPresContext*           aPresContext,
   
   bool isInDropdownMode = list->IsInDropDownMode();
   
-  // See similar logic in nsListControlFrame::Reflow and
-  // nsListControlFrame::ReflowAsDropdown.  We need to match it here.
+  
+  
   nscoord oldHeight;
   if (isInDropdownMode) {
-    // Store the height now in case it changes during
-    // nsBlockFrame::Reflow for some odd reason.
+    
+    
     if (!(GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
       oldHeight = GetSize().height;
     } else {
@@ -181,13 +181,13 @@ nsSelectsAreaFrame::Reflow(nsPresContext*           aPresContext,
                                     aReflowState, aStatus);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Check whether we need to suppress scrollbar updates.  We want to do that if
-  // we're in a possible first pass and our height of a row has changed.
+  
+  
   if (list->MightNeedSecondPass()) {
     nscoord newHeightOfARow = list->CalcHeightOfARow();
-    // We'll need a second pass if our height of a row changed.  For
-    // comboboxes, we'll also need it if our height changed.  If we're going
-    // to do a second pass, suppress scrollbar updates for this pass.
+    
+    
+    
     if (newHeightOfARow != mHeightOfARow ||
         (isInDropdownMode && (oldHeight != aDesiredSize.Height() ||
                               oldHeight != GetSize().height))) {
