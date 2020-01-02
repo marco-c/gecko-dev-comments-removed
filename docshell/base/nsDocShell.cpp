@@ -21,6 +21,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/unused.h"
 #include "mozilla/VisualEventTracer.h"
+#include "URIUtils.h"
 
 #ifdef MOZ_LOGGING
 
@@ -368,9 +369,9 @@ ForEachPing(nsIContent *content, ForEachPingCallback callback, void *closure)
   nsIDocument *doc = content->OwnerDoc();
 
   
-  const PRUnichar *start = value.BeginReading();
-  const PRUnichar *end   = value.EndReading();
-  const PRUnichar *iter  = start;
+  const char16_t *start = value.BeginReading();
+  const char16_t *end   = value.EndReading();
+  const char16_t *iter  = start;
   for (;;) {
     if (iter < end && *iter != ' ') {
       ++iter;
@@ -2841,7 +2842,7 @@ nsDocShell::SetName(const nsAString& aName)
 }
 
 NS_IMETHODIMP
-nsDocShell::NameEquals(const PRUnichar *aName, bool *_retval)
+nsDocShell::NameEquals(const char16_t *aName, bool *_retval)
 {
     NS_ENSURE_ARG_POINTER(aName);
     NS_ENSURE_ARG_POINTER(_retval);
@@ -3228,7 +3229,7 @@ ItemIsActive(nsIDocShellTreeItem *aItem)
 }
 
 NS_IMETHODIMP
-nsDocShell::FindItemWithName(const PRUnichar * aName,
+nsDocShell::FindItemWithName(const char16_t * aName,
                              nsISupports * aRequestor,
                              nsIDocShellTreeItem * aOriginalRequestor,
                              nsIDocShellTreeItem ** _retval)
@@ -3326,7 +3327,7 @@ nsDocShell::FindItemWithName(const PRUnichar * aName,
 }
 
 nsresult
-nsDocShell::DoFindItemWithName(const PRUnichar* aName,
+nsDocShell::DoFindItemWithName(const char16_t* aName,
                                nsISupports* aRequestor,
                                nsIDocShellTreeItem* aOriginalRequestor,
                                nsIDocShellTreeItem** _retval)
@@ -3769,7 +3770,7 @@ nsDocShell::GetChildAt(int32_t aIndex, nsIDocShellTreeItem ** aChild)
 }
 
 NS_IMETHODIMP
-nsDocShell::FindChildWithName(const PRUnichar * aName,
+nsDocShell::FindChildWithName(const char16_t * aName,
                               bool aRecurse, bool aSameType,
                               nsIDocShellTreeItem * aRequestor,
                               nsIDocShellTreeItem * aOriginalRequestor,
@@ -4237,7 +4238,7 @@ NS_IMETHODIMP nsDocShell::GotoIndex(int32_t aIndex)
 }
 
 NS_IMETHODIMP
-nsDocShell::LoadURI(const PRUnichar * aURI,
+nsDocShell::LoadURI(const char16_t * aURI,
                     uint32_t aLoadFlags,
                     nsIURI * aReferringURI,
                     nsIInputStream * aPostStream,
@@ -4344,7 +4345,7 @@ nsDocShell::LoadURI(const PRUnichar * aURI,
 
 NS_IMETHODIMP
 nsDocShell::DisplayLoadError(nsresult aError, nsIURI *aURI,
-                             const PRUnichar *aURL,
+                             const char16_t *aURL,
                              nsIChannel* aFailedChannel)
 {
     
@@ -4447,16 +4448,24 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI *aURI,
 
                 
                 
-                nsCOMPtr<nsISiteSecurityService> sss =
-                          do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
-                NS_ENSURE_SUCCESS(rv, rv);
-                uint32_t flags =
-                  mInPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
-                
+                uint32_t type = nsISiteSecurityService::HEADER_HSTS;
+                uint32_t flags = mInPrivateBrowsing
+                                 ? nsISocketProvider::NO_PERMANENT_STORAGE
+                                 : 0;
                 bool isStsHost = false;
-                rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS,
-                                      aURI, flags, &isStsHost);
-                NS_ENSURE_SUCCESS(rv, rv);
+                if (XRE_GetProcessType() == GeckoProcessType_Default) {
+                  nsCOMPtr<nsISiteSecurityService> sss =
+                            do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
+                  NS_ENSURE_SUCCESS(rv, rv);
+                  rv = sss->IsSecureURI(type, aURI, flags, &isStsHost);
+                  NS_ENSURE_SUCCESS(rv, rv);
+                } else {
+                  mozilla::dom::ContentChild* cc =
+                    mozilla::dom::ContentChild::GetSingleton();
+                  mozilla::ipc::URIParams uri;
+                  SerializeURI(aURI, uri);
+                  cc->SendIsSecureURI(type, uri, flags, &isStsHost);
+                }
 
                 uint32_t bucketId;
                 if (isStsHost) {
@@ -4651,7 +4660,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI *aURI,
         rv = NS_OK;
         ++formatStrCount;
 
-        const PRUnichar *strs[kMaxFormatStrArgs];
+        const char16_t *strs[kMaxFormatStrArgs];
         for (uint32_t i = 0; i < formatStrCount; i++) {
             strs[i] = formatStrs[i].get();
         }
@@ -4689,10 +4698,10 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI *aURI,
 
 
 NS_IMETHODIMP
-nsDocShell::LoadErrorPage(nsIURI *aURI, const PRUnichar *aURL,
+nsDocShell::LoadErrorPage(nsIURI *aURI, const char16_t *aURL,
                           const char *aErrorPage,
-                          const PRUnichar *aErrorType,
-                          const PRUnichar *aDescription,
+                          const char16_t *aErrorType,
+                          const char16_t *aDescription,
                           const char *aCSSClass,
                           nsIChannel* aFailedChannel)
 {
@@ -5749,7 +5758,7 @@ nsDocShell::GetMainWidget(nsIWidget ** aMainWidget)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetTitle(PRUnichar ** aTitle)
+nsDocShell::GetTitle(char16_t ** aTitle)
 {
     NS_ENSURE_ARG_POINTER(aTitle);
 
@@ -5758,7 +5767,7 @@ nsDocShell::GetTitle(PRUnichar ** aTitle)
 }
 
 NS_IMETHODIMP
-nsDocShell::SetTitle(const PRUnichar * aTitle)
+nsDocShell::SetTitle(const char16_t * aTitle)
 {
     
     mTitle = aTitle;
@@ -6791,7 +6800,7 @@ nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
 NS_IMETHODIMP
 nsDocShell::OnStatusChange(nsIWebProgress * aWebProgress,
                            nsIRequest * aRequest,
-                           nsresult aStatus, const PRUnichar * aMessage)
+                           nsresult aStatus, const char16_t * aMessage)
 {
     NS_NOTREACHED("notification excluded in AddProgressListener(...)");
     return NS_OK;
@@ -8732,7 +8741,7 @@ nsDocShell::InternalLoad(nsIURI * aURI,
                          nsIURI * aReferrer,
                          nsISupports * aOwner,
                          uint32_t aFlags,
-                         const PRUnichar *aWindowTarget,
+                         const char16_t *aWindowTarget,
                          const char* aTypeHint,
                          const nsAString& aFileName,
                          nsIInputStream * aPostData,
@@ -11683,7 +11692,7 @@ nsDocShell::ConfirmRepost(bool * aRepost)
   else {
     
     
-    const PRUnichar *formatStrings[] = { brandName.get() };
+    const char16_t *formatStrings[] = { brandName.get() };
     rv = appBundle->FormatStringFromName(MOZ_UTF16("confirmRepostPrompt"),
                                          formatStrings, ArrayLength(formatStrings),
                                          getter_Copies(msgString));
@@ -12295,7 +12304,7 @@ class OnLinkClickEvent : public nsRunnable {
 public:
   OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
                    nsIURI* aURI,
-                   const PRUnichar* aTargetSpec,
+                   const char16_t* aTargetSpec,
                    const nsAString& aFileName,
                    nsIInputStream* aPostDataStream,
                    nsIInputStream* aHeadersDataStream,
@@ -12329,7 +12338,7 @@ private:
 OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler,
                                    nsIContent *aContent,
                                    nsIURI* aURI,
-                                   const PRUnichar* aTargetSpec,
+                                   const char16_t* aTargetSpec,
                                    const nsAString& aFileName,
                                    nsIInputStream* aPostDataStream,
                                    nsIInputStream* aHeadersDataStream,
@@ -12351,7 +12360,7 @@ OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler,
 NS_IMETHODIMP
 nsDocShell::OnLinkClick(nsIContent* aContent,
                         nsIURI* aURI,
-                        const PRUnichar* aTargetSpec,
+                        const char16_t* aTargetSpec,
                         const nsAString& aFileName,
                         nsIInputStream* aPostDataStream,
                         nsIInputStream* aHeadersDataStream,
@@ -12400,7 +12409,7 @@ nsDocShell::OnLinkClick(nsIContent* aContent,
 NS_IMETHODIMP
 nsDocShell::OnLinkClickSync(nsIContent *aContent,
                             nsIURI* aURI,
-                            const PRUnichar* aTargetSpec,
+                            const char16_t* aTargetSpec,
                             const nsAString& aFileName,
                             nsIInputStream* aPostDataStream,
                             nsIInputStream* aHeadersDataStream,
@@ -12520,7 +12529,7 @@ nsDocShell::OnLinkClickSync(nsIContent *aContent,
 NS_IMETHODIMP
 nsDocShell::OnOverLink(nsIContent* aContent,
                        nsIURI* aURI,
-                       const PRUnichar* aTargetSpec)
+                       const char16_t* aTargetSpec)
 {
   if (aContent->IsEditable()) {
     return NS_OK;
