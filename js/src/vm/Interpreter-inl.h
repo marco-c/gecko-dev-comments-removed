@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_Interpreter_inl_h
 #define vm_Interpreter_inl_h
@@ -37,15 +37,15 @@ ComputeThis(JSContext *cx, AbstractFramePtr frame)
     if (frame.isFunctionFrame()) {
         if (frame.fun()->strict() || frame.fun()->isSelfHostedBuiltin())
             return true;
-        
-
-
-
-
-
-
-
-
+        /*
+         * Eval function frames have their own |this| slot, which is a copy of the function's
+         * |this| slot. If we lazily wrap a primitive |this| in an eval function frame, the
+         * eval's frame will get the wrapper, but the function's frame will not. To prevent
+         * this, we always wrap a function's |this| before pushing an eval frame, and should
+         * thus never see an unwrapped primitive in a non-strict eval function frame. Null
+         * and undefined |this| values will unwrap to the same object in the function and
+         * eval frames, so are not required to be wrapped.
+         */
         JS_ASSERT_IF(frame.isEvalFrame(), thisv.isUndefined() || thisv.isNull());
     }
 
@@ -57,16 +57,16 @@ ComputeThis(JSContext *cx, AbstractFramePtr frame)
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * Every possible consumer of MagicValue(JS_OPTIMIZED_ARGUMENTS) (as determined
+ * by ScriptAnalysis::needsArgsObj) must check for these magic values and, when
+ * one is received, act as if the value were the function's ArgumentsObject.
+ * Additionally, it is possible that, after 'arguments' was copied into a
+ * temporary, the arguments object has been created a some other failed guard
+ * that called JSScript::argumentsOptimizationFailed. In this case, it is
+ * always valid (and necessary) to replace JS_OPTIMIZED_ARGUMENTS with the real
+ * arguments object.
+ */
 static inline bool
 IsOptimizedArguments(AbstractFramePtr frame, Value *vp)
 {
@@ -75,11 +75,11 @@ IsOptimizedArguments(AbstractFramePtr frame, Value *vp)
     return vp->isMagic(JS_OPTIMIZED_ARGUMENTS);
 }
 
-
-
-
-
-
+/*
+ * One optimized consumer of MagicValue(JS_OPTIMIZED_ARGUMENTS) is f.apply.
+ * However, this speculation must be guarded before calling 'apply' in case it
+ * is not the builtin Function.prototype.apply.
+ */
 static inline bool
 GuardFunApplyArgumentsOptimization(JSContext *cx, AbstractFramePtr frame, HandleValue callee,
                                    Value *args, uint32_t argc)
@@ -96,17 +96,17 @@ GuardFunApplyArgumentsOptimization(JSContext *cx, AbstractFramePtr frame, Handle
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Return an object on which we should look for the properties of |value|.
+ * This helps us implement the custom [[Get]] method that ES5's GetValue
+ * algorithm uses for primitive values, without actually constructing the
+ * temporary object that the specification does.
+ *
+ * For objects, return the object itself. For string, boolean, and number
+ * primitive values, return the appropriate constructor's prototype. For
+ * undefined and null, throw an error and return nullptr, attributing the
+ * problem to the value at |spindex| on the stack.
+ */
 JS_ALWAYS_INLINE JSObject *
 ValuePropertyBearer(JSContext *cx, StackFrame *fp, HandleValue v, int spindex)
 {
@@ -130,7 +130,7 @@ ValuePropertyBearer(JSContext *cx, StackFrame *fp, HandleValue v, int spindex)
 inline bool
 GetLengthProperty(const Value &lval, MutableHandleValue vp)
 {
-    
+    /* Optimize length accesses on strings, arrays, and arguments. */
     if (lval.isString()) {
         vp.setInt32(lval.toString()->length());
         return true;
@@ -176,7 +176,7 @@ FetchName(JSContext *cx, HandleObject obj, HandleObject obj2, HandlePropertyName
         return false;
     }
 
-    
+    /* Take the slow path if shape was not found in a native object. */
     if (!obj->isNative() || !obj2->isNative()) {
         Rooted<jsid> id(cx, NameToId(name));
         if (!JSObject::getGeneric(cx, obj, obj, id, vp))
@@ -186,7 +186,7 @@ FetchName(JSContext *cx, HandleObject obj, HandleObject obj2, HandlePropertyName
         if (normalized->getClass() == &WithObject::class_ && !shape->hasDefaultGetter())
             normalized = &normalized->as<WithObject>().object();
         if (shape->isDataDescriptor() && shape->hasDefaultGetter()) {
-            
+            /* Fast path for Object instance properties. */
             JS_ASSERT(shape->hasSlot());
             vp.set(obj2->nativeGetSlot(shape->slot()));
         } else if (!NativeGet(cx, normalized, obj2, shape, vp)) {
@@ -231,11 +231,11 @@ SetNameOperation(JSContext *cx, JSScript *script, jsbytecode *pc, HandleObject s
     RootedPropertyName name(cx, script->getName(pc));
     RootedValue valCopy(cx, val);
 
-    
-
-
-
-
+    /*
+     * In strict-mode, we need to trigger an error when trying to assign to an
+     * undeclared global variable. To do this, we call SetPropertyHelper
+     * directly and pass DNP_UNQUALIFIED.
+     */
     if (scope->is<GlobalObject>()) {
         JS_ASSERT(!scope->getOps()->setProperty);
         RootedId id(cx, NameToId(name));
@@ -256,7 +256,7 @@ DefVarOrConstOperation(JSContext *cx, HandleObject varobj, HandlePropertyName dn
     if (!JSObject::lookupProperty(cx, varobj, dn, &obj2, &prop))
         return false;
 
-    
+    /* Steps 8c, 8d. */
     if (!prop || (obj2 != varobj && varobj->is<GlobalObject>())) {
         RootedValue value(cx, UndefinedValue());
         if (!JSObject::defineProperty(cx, varobj, dn, value, JS_PropertyStub,
@@ -264,10 +264,10 @@ DefVarOrConstOperation(JSContext *cx, HandleObject varobj, HandlePropertyName dn
             return false;
         }
     } else if (attrs & JSPROP_READONLY) {
-        
-
-
-
+        /*
+         * Extension: ordinarily we'd be done here -- but for |const|.  If we
+         * see a redeclaration that's |const|, we consider it a conflict.
+         */
         unsigned oldAttrs;
         RootedId id(cx, NameToId(dn));
         if (!JSObject::getGenericAttributes(cx, varobj, id, &oldAttrs))
@@ -293,11 +293,11 @@ static JS_ALWAYS_INLINE bool
 NegOperation(JSContext *cx, HandleScript script, jsbytecode *pc, HandleValue val,
              MutableHandleValue res)
 {
-    
-
-
-
-
+    /*
+     * When the operand is int jsval, INT32_FITS_IN_JSVAL(i) implies
+     * INT32_FITS_IN_JSVAL(-i) unless i is 0 or INT32_MIN when the
+     * results, -0.0 or INT32_MAX + 1, are double values.
+     */
     int32_t i;
     if (val.isInt32() && (i = val.toInt32()) != 0 && i != INT32_MIN) {
         res.setInt32(-i);
@@ -459,14 +459,14 @@ static JS_ALWAYS_INLINE JSString *
 TypeOfOperation(const Value &v, JSRuntime *rt)
 {
     JSType type = js::TypeOfValue(v);
-    return TypeName(type, rt);
+    return TypeName(type, rt->atomState);
 }
 
 static inline JSString *
 TypeOfObjectOperation(JSObject *obj, JSRuntime *rt)
 {
     JSType type = js::TypeOfObject(obj);
-    return TypeName(type, rt);
+    return TypeName(type, rt->atomState);
 }
 
 static JS_ALWAYS_INLINE bool
@@ -489,11 +489,11 @@ InitArrayElemOperation(JSContext *cx, jsbytecode *pc, HandleObject obj, uint32_t
 
     JS_ASSERT(obj->is<ArrayObject>());
 
-    
-
-
-
-
+    /*
+     * If val is a hole, do not call JSObject::defineElement. In this case,
+     * if the current op is the last element initialiser, set the array length
+     * to one greater than id.
+     */
     if (val.isMagic(JS_ELEMENTS_HOLE)) {
         JSOp next = JSOp(*GetNextPc(pc));
 
@@ -646,20 +646,20 @@ ReportIfNotFunction(JSContext *cx, const Value &v, MaybeConstruct construct = NO
     return nullptr;
 }
 
-
-
-
-
-
-
+/*
+ * FastInvokeGuard is used to optimize calls to JS functions from natives written
+ * in C++, for instance Array.map. If the callee is not Ion-compiled, this will
+ * just call Invoke. If the callee has a valid IonScript, however, it will enter
+ * Ion directly.
+ */
 class FastInvokeGuard
 {
     InvokeArgs args_;
     RootedFunction fun_;
     RootedScript script_;
 #ifdef JS_ION
-    
-    
+    // Constructing an IonContext is pretty expensive due to the TLS access,
+    // so only do this if we have to.
     mozilla::Maybe<jit::IonContext> ictx_;
     bool useIon_;
 #endif
@@ -716,8 +716,8 @@ class FastInvokeGuard
             JS_ASSERT(status == jit::Method_Skipped);
 
             if (script_->canIonCompile()) {
-                
-                
+                // This script is not yet hot. Since calling into Ion is much
+                // faster here, bump the use count a bit to account for this.
                 script_->incUseCount(5);
             }
         }
@@ -731,6 +731,6 @@ class FastInvokeGuard
     const FastInvokeGuard& operator=(const FastInvokeGuard& other) MOZ_DELETE;
 };
 
-}  
+}  /* namespace js */
 
-#endif 
+#endif /* vm_Interpreter_inl_h */

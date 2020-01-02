@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsworkers.h"
 
@@ -27,8 +27,8 @@ using mozilla::DebugOnly;
 bool
 js::EnsureWorkerThreadsInitialized(ExclusiveContext *cx)
 {
-    
-    
+    // If 'cx' is not a JSContext, we are already off the main thread and the
+    // worker threads would have already been initialized.
     if (!cx->isJSContext()) {
         JS_ASSERT(cx->workerThreadState() != nullptr);
         return true;
@@ -54,7 +54,7 @@ js::EnsureWorkerThreadsInitialized(ExclusiveContext *cx)
 bool
 js::StartOffThreadAsmJSCompile(ExclusiveContext *cx, AsmJSParallelTask *asmData)
 {
-    
+    // Threads already initialized by the AsmJS compiler.
     JS_ASSERT(cx->workerThreadState() != nullptr);
     JS_ASSERT(asmData->mir);
     JS_ASSERT(asmData->lir == nullptr);
@@ -64,7 +64,7 @@ js::StartOffThreadAsmJSCompile(ExclusiveContext *cx, AsmJSParallelTask *asmData)
 
     AutoLockWorkerThreadState lock(state);
 
-    
+    // Don't append this task if another failed.
     if (state.asmJSWorkerFailed())
         return false;
 
@@ -93,11 +93,11 @@ js::StartOffThreadIonCompile(JSContext *cx, jit::IonBuilder *builder)
     return true;
 }
 
-
-
-
-
-
+/*
+ * Move an IonBuilder for which compilation has either finished, failed, or
+ * been cancelled into the Ion compartment's finished compilations list.
+ * All off thread compilations which are started must eventually be finished.
+ */
 static void
 FinishOffThreadIonCompile(jit::IonBuilder *builder)
 {
@@ -132,7 +132,7 @@ js::CancelOffThreadIonCompile(JSCompartment *compartment, JSScript *script)
 
     AutoLockWorkerThreadState lock(state);
 
-    
+    /* Cancel any pending entries for which processing hasn't started. */
     for (size_t i = 0; i < state.ionWorklist.length(); i++) {
         jit::IonBuilder *builder = state.ionWorklist[i];
         if (CompiledScriptMatches(compartment, script, builder->script())) {
@@ -142,7 +142,7 @@ js::CancelOffThreadIonCompile(JSCompartment *compartment, JSScript *script)
         }
     }
 
-    
+    /* Wait for in progress entries to finish up. */
     for (size_t i = 0; i < state.numThreads; i++) {
         const WorkerThread &helper = state.threads[i];
         while (helper.ionBuilder &&
@@ -155,7 +155,7 @@ js::CancelOffThreadIonCompile(JSCompartment *compartment, JSScript *script)
 
     jit::OffThreadCompilationVector &compilations = jitComp->finishedOffThreadCompilations();
 
-    
+    /* Cancel code generation for any completed entries. */
     for (size_t i = 0; i < compilations.length(); i++) {
         jit::IonBuilder *builder = compilations[i];
         if (CompiledScriptMatches(compartment, script, builder->script())) {
@@ -199,7 +199,7 @@ ParseTask::~ParseTask()
 
     JS_RemoveObjectRootRT(rt, &scopeChain);
 
-    
+    // ParseTask takes over ownership of its input exclusive context.
     js_delete(cx);
 
     for (size_t i = 0; i < errors.length(); i++)
@@ -211,8 +211,8 @@ js::StartOffThreadParseScript(JSContext *cx, const ReadOnlyCompileOptions &optio
                               const jschar *chars, size_t length, HandleObject scopeChain,
                               JS::OffThreadCompileCallback callback, void *callbackData)
 {
-    
-    
+    // Suppress GC so that calls below do not trigger a new incremental GC
+    // which could require barriers on the atoms compartment.
     gc::AutoSuppressGC suppress(cx);
 
     frontend::MaybeCallSourceHandler(cx, options, chars, length);
@@ -233,9 +233,9 @@ js::StartOffThreadParseScript(JSContext *cx, const ReadOnlyCompileOptions &optio
 
     RootedObject obj(cx);
 
-    
-    
-    
+    // Initialize all classes needed for parsing while we are still on the main
+    // thread. Do this for both the target and the new global so that prototype
+    // pointers can be changed infallibly after parsing finishes.
     if (!js_GetClassObject(cx, cx->global(), JSProto_Function, &obj) ||
         !js_GetClassObject(cx, cx->global(), JSProto_Array, &obj) ||
         !js_GetClassObject(cx, cx->global(), JSProto_RegExp, &obj) ||
@@ -361,10 +361,10 @@ WorkerThreadState::init()
 void
 WorkerThreadState::cleanup()
 {
-    
-    
+    // Do preparatory work for shutdown before the final GC has destroyed most
+    // of the GC heap.
 
-    
+    // Join created threads, to ensure there is no in progress work.
     if (threads) {
         for (size_t i = 0; i < numThreads; i++)
             threads[i].destroy();
@@ -373,9 +373,9 @@ WorkerThreadState::cleanup()
         numThreads = 0;
     }
 
-    
+    // Clean up any parse tasks which haven't been finished yet.
     while (!parseFinishedList.empty())
-        finishParseTask( nullptr, runtime, parseFinishedList[0]);
+        finishParseTask(/* maybecx = */ nullptr, runtime, parseFinishedList[0]);
 }
 
 WorkerThreadState::~WorkerThreadState()
@@ -447,7 +447,7 @@ WorkerThreadState::notifyAll(CondVar which)
 bool
 WorkerThreadState::canStartAsmJSCompile()
 {
-    
+    // Don't execute an AsmJS job if an earlier one failed.
     JS_ASSERT(isLocked());
     return (!asmJSWorklist.empty() && !numAsmJSFailedJobs);
 }
@@ -455,10 +455,10 @@ WorkerThreadState::canStartAsmJSCompile()
 bool
 WorkerThreadState::canStartIonCompile()
 {
-    
-    
-    
-    
+    // A worker thread can begin an Ion compilation if (a) there is some script
+    // which is waiting to be compiled, and (b) no other worker thread is
+    // currently compiling a script. The latter condition ensures that two
+    // compilations cannot simultaneously occur.
     if (ionWorklist.empty())
         return false;
     for (size_t i = 0; i < numThreads; i++) {
@@ -471,10 +471,10 @@ WorkerThreadState::canStartIonCompile()
 bool
 WorkerThreadState::canStartParseTask()
 {
-    
-    
-    
-    
+    // Don't allow simultaneous off thread parses, to reduce contention on the
+    // atoms table. Note that asm.js compilation depends on this to avoid
+    // stalling the worker thread, as off thread parse tasks can trigger and
+    // block on other off thread asm.js compilation tasks.
     JS_ASSERT(isLocked());
     if (parseWorklist.empty())
         return false;
@@ -494,11 +494,11 @@ WorkerThreadState::canStartCompressionTask()
 static void
 CallNewScriptHookForAllScripts(JSContext *cx, HandleScript script)
 {
-    
-    
+    // We should never hit this, since nested scripts are also constructed via
+    // BytecodeEmitter instances on the stack.
     JS_CHECK_RECURSION(cx, return);
 
-    
+    // Recurse to any nested scripts.
     if (script->hasObjects()) {
         ObjectArray *objects = script->objects();
         for (size_t i = 0; i < objects->length; i++) {
@@ -513,7 +513,7 @@ CallNewScriptHookForAllScripts(JSContext *cx, HandleScript script)
         }
     }
 
-    
+    // The global new script hook is called on every script that was compiled.
     RootedFunction function(cx, script->function());
     CallNewScriptHook(cx, script, function);
 }
@@ -523,8 +523,8 @@ WorkerThreadState::finishParseTask(JSContext *maybecx, JSRuntime *rt, void *toke
 {
     ParseTask *parseTask = nullptr;
 
-    
-    
+    // The token is a ParseTask* which should be in the finished list.
+    // Find and remove its entry.
     {
         AutoLockWorkerThreadState lock(*rt->workerThreadState);
         for (size_t i = 0; i < parseFinishedList.length(); i++) {
@@ -538,14 +538,14 @@ WorkerThreadState::finishParseTask(JSContext *maybecx, JSRuntime *rt, void *toke
     }
     JS_ASSERT(parseTask);
 
-    
-    
+    // Mark the zone as no longer in use by an ExclusiveContext, and available
+    // to be collected by the GC.
     rt->clearUsedByExclusiveThread(parseTask->cx->zone());
 
-    
-    
-    
-    
+    // Point the prototypes of any objects in the script's compartment to refer
+    // to the corresponding prototype in the new compartment. This will briefly
+    // create cross compartment pointers, which will be fixed by the
+    // MergeCompartments call below.
     for (gc::CellIter iter(parseTask->cx->zone(), gc::FINALIZE_TYPE_OBJECT);
          !iter.done();
          iter.next())
@@ -565,26 +565,26 @@ WorkerThreadState::finishParseTask(JSContext *maybecx, JSRuntime *rt, void *toke
         object->proto = newProto;
     }
 
-    
+    // Move the parsed script and all its contents into the desired compartment.
     gc::MergeCompartments(parseTask->cx->compartment(), parseTask->scopeChain->compartment());
 
     RootedScript script(rt, parseTask->script);
 
-    
-    
+    // If we have a context, report any error or warnings generated during the
+    // parse, and inform the debugger about the compiled scripts.
     if (maybecx) {
         AutoCompartment ac(maybecx, parseTask->scopeChain);
         for (size_t i = 0; i < parseTask->errors.length(); i++)
             parseTask->errors[i]->throwError(maybecx);
 
         if (script) {
-            
+            // The Debugger only needs to be told about the topmost script that was compiled.
             GlobalObject *compileAndGoGlobal = nullptr;
             if (script->compileAndGo)
                 compileAndGoGlobal = &script->global();
             Debugger::onNewScript(maybecx, script, compileAndGoGlobal);
 
-            
+            // The NewScript hook needs to be called for all compiled scripts.
             CallNewScriptHookForAllScripts(maybecx, script);
         }
     }
@@ -603,7 +603,7 @@ WorkerThread::destroy()
             AutoLockWorkerThreadState lock(state);
             terminate = true;
 
-            
+            /* Notify all workers, to ensure that this thread wakes up. */
             state.notifyAll(WorkerThreadState::PRODUCER);
         }
 
@@ -616,7 +616,7 @@ WorkerThread::destroy()
     }
 }
 
-
+/* static */
 void
 WorkerThread::ThreadMain(void *arg)
 {
@@ -636,7 +636,7 @@ WorkerThread::handleAsmJSWorkload(WorkerThreadState &state)
 
     state.unlock();
     do {
-        jit::IonContext icx(runtime, asmData->mir->compartment, &asmData->mir->alloc());
+        jit::IonContext icx(jit::CompileRuntime::get(runtime), asmData->mir->compartment, &asmData->mir->alloc());
 
         int64_t before = PRMJ_Now();
 
@@ -654,7 +654,7 @@ WorkerThread::handleAsmJSWorkload(WorkerThreadState &state)
     } while(0);
     state.lock();
 
-    
+    // On failure, signal parent for harvesting in CancelOutstandingJobs().
     if (!success) {
         state.noteAsmJSFailure(asmData->func);
         state.notifyAll(WorkerThreadState::CONSUMER);
@@ -662,11 +662,11 @@ WorkerThread::handleAsmJSWorkload(WorkerThreadState &state)
         return;
     }
 
-    
+    // On success, move work to the finished list.
     state.asmJSFinishedList.append(asmData);
     asmData = nullptr;
 
-    
+    // Notify the main thread in case it's blocked waiting for a LifoAlloc.
     state.notifyAll(WorkerThreadState::CONSUMER);
 }
 
@@ -691,7 +691,9 @@ WorkerThread::handleIonWorkload(WorkerThreadState &state)
 
     state.unlock();
     {
-        jit::IonContext ictx(runtime, ionBuilder->script()->compartment(), &ionBuilder->alloc());
+        jit::IonContext ictx(jit::CompileRuntime::get(runtime),
+                             jit::CompileCompartment::get(ionBuilder->script()->compartment()),
+                             &ionBuilder->alloc());
         ionBuilder->setBackgroundCodegen(jit::CompileBackEnd(ionBuilder));
     }
     state.lock();
@@ -699,13 +701,13 @@ WorkerThread::handleIonWorkload(WorkerThreadState &state)
     FinishOffThreadIonCompile(ionBuilder);
     ionBuilder = nullptr;
 
-    
+    // Notify the main thread in case it is waiting for the compilation to finish.
     state.notifyAll(WorkerThreadState::CONSUMER);
 
-    
-    
-    
-    
+    // Ping the main thread so that the compiled code can be incorporated
+    // at the next operation callback. Don't interrupt Ion code for this, as
+    // this incorporation can be delayed indefinitely without affecting
+    // performance as long as the main thread is actually executing Ion code.
     runtime->triggerOperationCallback(JSRuntime::TriggerCallbackAnyThreadDontStopIon);
 }
 
@@ -745,16 +747,16 @@ WorkerThread::handleParseWorkload(WorkerThreadState &state)
                                                     parseTask->chars, parseTask->length);
     }
 
-    
+    // The callback is invoked while we are still off the main thread.
     parseTask->callback(parseTask, parseTask->callbackData);
 
-    
-    
+    // FinishOffThreadScript will need to be called on the script to
+    // migrate it into the correct compartment.
     state.parseFinishedList.append(parseTask);
 
     parseTask = nullptr;
 
-    
+    // Notify the main thread in case it is waiting for the parse/emit to finish.
     state.notifyAll(WorkerThreadState::CONSUMER);
 }
 
@@ -777,7 +779,7 @@ WorkerThread::handleCompressionWorkload(WorkerThreadState &state)
     compressionTask->workerThread = nullptr;
     compressionTask = nullptr;
 
-    
+    // Notify the main thread in case it is waiting for the compression to finish.
     state.notifyAll(WorkerThreadState::CONSUMER);
 }
 
@@ -825,7 +827,7 @@ SourceCompressionTask::complete()
 
         ss->ready_ = true;
 
-        
+        // Update memory accounting.
         if (!oom)
             cx->updateMallocCounter(ss->computedSizeOfData());
 
@@ -859,23 +861,23 @@ WorkerThreadState::compressionTaskForSource(ScriptSource *ss)
 const jschar *
 ScriptSource::getOffThreadCompressionChars(ExclusiveContext *cx)
 {
-    
+    // If this is being compressed off thread, return its uncompressed chars.
 
     if (ready()) {
-        
+        // Compression has already finished on the source.
         return nullptr;
     }
 
     WorkerThreadState &state = *cx->workerThreadState();
     AutoLockWorkerThreadState lock(state);
 
-    
-    
+    // Look for a token that hasn't finished compressing and whose source is
+    // the given ScriptSource.
     if (SourceCompressionTask *task = state.compressionTaskForSource(this))
         return task->uncompressedChars();
 
-    
-    
+    // Compressing has finished, so this ScriptSource is ready. Avoid future
+    // queries on the worker thread state when getting the chars.
     ready_ = true;
 
     return nullptr;
@@ -892,7 +894,7 @@ WorkerThread::threadLoop()
     while (true) {
         JS_ASSERT(!ionBuilder && !asmData);
 
-        
+        // Block until a task is available.
         while (true) {
             if (terminate)
                 return;
@@ -906,7 +908,7 @@ WorkerThread::threadLoop()
             state.wait(WorkerThreadState::PRODUCER);
         }
 
-        
+        // Dispatch tasks, prioritizing AsmJS work.
         if (state.canStartAsmJSCompile())
             handleAsmJSWorkload(state);
         else if (state.canStartIonCompile())
@@ -920,7 +922,7 @@ WorkerThread::threadLoop()
     }
 }
 
-#else 
+#else /* JS_WORKER_THREADS */
 
 using namespace js;
 
@@ -980,4 +982,4 @@ ExclusiveContext::addPendingCompileError()
     MOZ_ASSUME_UNREACHABLE("Off thread compilation not available.");
 }
 
-#endif 
+#endif /* JS_WORKER_THREADS */
