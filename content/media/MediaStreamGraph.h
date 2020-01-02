@@ -661,9 +661,6 @@ protected:
   bool mNotifiedHasCurrentData;
 
   
-  bool mHasBeenOrdered;
-  bool mIsOnOrderingStack;
-  
   
   bool mIsConsumed;
   
@@ -1019,7 +1016,7 @@ private:
 class ProcessedMediaStream : public MediaStream {
 public:
   ProcessedMediaStream(DOMMediaStream* aWrapper)
-    : MediaStream(aWrapper), mAutofinish(false), mInCycle(false)
+    : MediaStream(aWrapper), mAutofinish(false)
   {}
 
   
@@ -1088,7 +1085,10 @@ public:
 
   virtual void ForwardTrackEnabled(TrackID aOutputID, bool aEnabled) {};
 
-  bool InCycle() const { return mInCycle; }
+  
+  
+  
+  bool InMutedCycle() const { return mCycleMarker; }
 
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const MOZ_OVERRIDE
   {
@@ -1112,7 +1112,8 @@ protected:
   bool mAutofinish;
   
   
-  bool mInCycle;
+  
+  uint32_t mCycleMarker;
 };
 
 
