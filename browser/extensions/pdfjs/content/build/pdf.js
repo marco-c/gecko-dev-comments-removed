@@ -1,51 +1,51 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/*jshint globalstrict: false */
 
-// Initializing PDFJS global object (if still undefined)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.0.248';
-PDFJS.build = '6f39d78';
+PDFJS.version = '1.0.266';
+PDFJS.build = '5b16323';
 
 (function pdfjsWrapper() {
-  // Use strict in our context only - users might not want it
+  
   'use strict';
 
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL,
-           Promise */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 'use strict';
 
@@ -74,9 +74,9 @@ var ImageKind = {
   RGBA_32BPP: 3
 };
 
-// The global PDFJS object exposes the API
-// In production, it will be declared outside a global wrapper
-// In development, it will be declared here
+
+
+
 if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
@@ -89,10 +89,10 @@ PDFJS.VERBOSITY_LEVELS = {
   infos: 5
 };
 
-// All the possible operations for an operator list.
+
 var OPS = PDFJS.OPS = {
-  // Intentionally start from 1 so it is easy to spot bad operators that will be
-  // 0's.
+  
+  
   dependency: 1,
   setLineWidth: 2,
   setLineCap: 3,
@@ -186,31 +186,31 @@ var OPS = PDFJS.OPS = {
   constructPath: 91
 };
 
-// A notice for devs. These are good for things that are helpful to devs, such
-// as warning that Workers were disabled, which is important to devs but not
-// end users.
+
+
+
 function info(msg) {
   if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.infos) {
     console.log('Info: ' + msg);
   }
 }
 
-// Non-fatal warnings.
+
 function warn(msg) {
   if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.warnings) {
     console.log('Warning: ' + msg);
   }
 }
 
-// Fatal errors that should trigger the fallback UI and halt execution by
-// throwing an exception.
+
+
 function error(msg) {
-  // If multiple arguments were passed, pass them all to the log function.
+  
   if (arguments.length > 1) {
     var logArguments = ['Error:'];
     logArguments.push.apply(logArguments, arguments);
     console.log.apply(console, logArguments);
-    // Join the arguments into a single string for the lines below.
+    
     msg = [].join.call(arguments, ' ');
   } else {
     console.log('Error: ' + msg);
@@ -259,8 +259,8 @@ var UnsupportedManager = PDFJS.UnsupportedManager =
   };
 })();
 
-// Combines two URLs. The baseUrl shall be absolute URL. If the url is an
-// absolute URL, it will be returned as is.
+
+
 function combineUrl(baseUrl, url) {
   if (!url) {
     return baseUrl;
@@ -270,7 +270,7 @@ function combineUrl(baseUrl, url) {
   }
   var i;
   if (url.charAt(0) == '/') {
-    // absolute path
+    
     i = baseUrl.indexOf('://');
     if (url.charAt(1) === '/') {
       ++i;
@@ -279,7 +279,7 @@ function combineUrl(baseUrl, url) {
     }
     return baseUrl.substring(0, i) + url;
   } else {
-    // relative path
+    
     var pathLength = baseUrl.length;
     i = baseUrl.lastIndexOf('#');
     pathLength = i >= 0 ? i : pathLength;
@@ -290,13 +290,13 @@ function combineUrl(baseUrl, url) {
   }
 }
 
-// Validates if URL is safe and allowed, e.g. to avoid XSS.
+
 function isValidUrl(url, allowRelative) {
   if (!url) {
     return false;
   }
-  // RFC 3986 (http://tools.ietf.org/html/rfc3986#section-3.1)
-  // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+  
+  
   var protocol = /^[a-z][a-z0-9+\-.]*(?=:)/i.exec(url);
   if (!protocol) {
     return allowRelative;
@@ -476,8 +476,8 @@ function readUint32(data, offset) {
          (data[offset + 2] << 8) | data[offset + 3]) >>> 0;
 }
 
-// Lazy test the endianness of the platform
-// NOTE: This will be 'true' for simulated TypedArrays
+
+
 function isLittleEndian() {
   var buffer8 = new Uint8Array(2);
   buffer8[0] = 1;
@@ -503,7 +503,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
   };
 
-  // Concatenates two transformation matrices together and returns the result.
+  
   Util.transform = function Util_transform(m1, m2) {
     return [
       m1[0] * m2[0] + m1[2] * m2[1],
@@ -515,7 +515,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     ];
   };
 
-  // For 2d affine transforms
+  
   Util.applyTransform = function Util_applyTransform(p, m) {
     var xt = p[0] * m[0] + p[1] * m[2] + m[4];
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
@@ -529,8 +529,8 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return [xt, yt];
   };
 
-  // Applies the transform to the rectangle and finds the minimum axially
-  // aligned bounding box.
+  
+  
   Util.getAxialAlignedBoundingBox =
     function Util_getAxialAlignedBoundingBox(r, m) {
 
@@ -552,12 +552,12 @@ var Util = PDFJS.Util = (function UtilClosure() {
       (m[2] * m[5] - m[4] * m[3]) / d, (m[4] * m[1] - m[5] * m[0]) / d];
   };
 
-  // Apply a generic 3d matrix M on a 3-vector v:
-  //   | a b c |   | X |
-  //   | d e f | x | Y |
-  //   | g h i |   | Z |
-  // M is assumed to be serialized as [a,b,c,d,e,f,g,h,i],
-  // with v as [X,Y,Z]
+  
+  
+  
+  
+  
+  
   Util.apply3dTransform = function Util_apply3dTransform(m, v) {
     return [
       m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
@@ -566,36 +566,36 @@ var Util = PDFJS.Util = (function UtilClosure() {
     ];
   };
 
-  // This calculation uses Singular Value Decomposition.
-  // The SVD can be represented with formula A = USV. We are interested in the
-  // matrix S here because it represents the scale values.
+  
+  
+  
   Util.singularValueDecompose2dScale =
     function Util_singularValueDecompose2dScale(m) {
 
     var transpose = [m[0], m[2], m[1], m[3]];
 
-    // Multiply matrix m with its transpose.
+    
     var a = m[0] * transpose[0] + m[1] * transpose[2];
     var b = m[0] * transpose[1] + m[1] * transpose[3];
     var c = m[2] * transpose[0] + m[3] * transpose[2];
     var d = m[2] * transpose[1] + m[3] * transpose[3];
 
-    // Solve the second degree polynomial to get roots.
+    
     var first = (a + d) / 2;
     var second = Math.sqrt((a + d) * (a + d) - 4 * (a * d - c * b)) / 2;
     var sx = first + second || 1;
     var sy = first - second || 1;
 
-    // Scale values are the square roots of the eigenvalues.
+    
     return [Math.sqrt(sx), Math.sqrt(sy)];
   };
 
-  // Normalize rectangle rect=[x1, y1, x2, y2] so that (x1,y1) < (x2,y2)
-  // For coordinate systems whose origin lies in the bottom-left, this
-  // means normalization to (BL,TR) ordering. For systems with origin in the
-  // top-left, this means (TL,BR) ordering.
+  
+  
+  
+  
   Util.normalizeRect = function Util_normalizeRect(rect) {
-    var r = rect.slice(0); // clone rect
+    var r = rect.slice(0); 
     if (rect[0] > rect[2]) {
       r[0] = rect[2];
       r[2] = rect[0];
@@ -607,15 +607,15 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return r;
   };
 
-  // Returns a rectangle [x1, y1, x2, y2] corresponding to the
-  // intersection of rect1 and rect2. If no intersection, returns 'false'
-  // The rectangle coordinates of rect1, rect2 should be [x1, y1, x2, y2]
+  
+  
+  
   Util.intersect = function Util_intersect(rect1, rect2) {
     function compare(a, b) {
       return a - b;
     }
 
-    // Order points along the axes
+    
     var orderedX = [rect1[0], rect1[2], rect2[0], rect2[2]].sort(compare),
         orderedY = [rect1[1], rect1[3], rect2[1], rect2[3]].sort(compare),
         result = [];
@@ -623,20 +623,20 @@ var Util = PDFJS.Util = (function UtilClosure() {
     rect1 = Util.normalizeRect(rect1);
     rect2 = Util.normalizeRect(rect2);
 
-    // X: first and second points belong to different rectangles?
+    
     if ((orderedX[0] === rect1[0] && orderedX[1] === rect2[0]) ||
         (orderedX[0] === rect2[0] && orderedX[1] === rect1[0])) {
-      // Intersection must be between second and third points
+      
       result[0] = orderedX[1];
       result[2] = orderedX[2];
     } else {
       return false;
     }
 
-    // Y: first and second points belong to different rectangles?
+    
     if ((orderedY[0] === rect1[1] && orderedY[1] === rect2[1]) ||
         (orderedY[0] === rect2[1] && orderedY[1] === rect1[1])) {
-      // Intersection must be between second and third points
+      
       result[1] = orderedY[1];
       result[3] = orderedY[2];
     } else {
@@ -650,7 +650,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return num < 0 ? -1 : 1;
   };
 
-  // TODO(mack): Rename appendToArray
+  
   Util.concatenateToArray = function concatenateToArray(arr1, arr2) {
     Array.prototype.push.apply(arr1, arr2);
   };
@@ -702,22 +702,22 @@ var Util = PDFJS.Util = (function UtilClosure() {
   return Util;
 })();
 
-/**
- * PDF page viewport created based on scale, rotation and offset.
- * @class
- * @alias PDFJS.PageViewport
- */
+
+
+
+
+
 var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
-  /**
-   * @constructor
-   * @private
-   * @param viewBox {Array} xMin, yMin, xMax and yMax coordinates.
-   * @param scale {number} scale of the viewport.
-   * @param rotation {number} rotations of the viewport in degrees.
-   * @param offsetX {number} offset X
-   * @param offsetY {number} offset Y
-   * @param dontFlip {boolean} if true, axis Y will not be flipped.
-   */
+  
+
+
+
+
+
+
+
+
+
   function PageViewport(viewBox, scale, rotation, offsetX, offsetY, dontFlip) {
     this.viewBox = viewBox;
     this.scale = scale;
@@ -725,8 +725,8 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     this.offsetX = offsetX;
     this.offsetY = offsetY;
 
-    // creating transform to convert pdf coordinate system to the normal
-    // canvas like coordinates taking in account scale and rotation
+    
+    
     var centerX = (viewBox[2] + viewBox[0]) / 2;
     var centerY = (viewBox[3] + viewBox[1]) / 2;
     var rotateA, rotateB, rotateC, rotateD;
@@ -742,7 +742,7 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       case 270:
         rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
         break;
-      //case 0:
+      
       default:
         rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
         break;
@@ -765,9 +765,9 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       width = Math.abs(viewBox[2] - viewBox[0]) * scale;
       height = Math.abs(viewBox[3] - viewBox[1]) * scale;
     }
-    // creating transform for the following operations:
-    // translate(-centerX, -centerY), rotate and flip vertically,
-    // scale, and translate(offsetCanvasX, offsetCanvasY)
+    
+    
+    
     this.transform = [
       rotateA * scale,
       rotateB * scale,
@@ -781,14 +781,14 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     this.height = height;
     this.fontScale = scale;
   }
-  PageViewport.prototype = /** @lends PDFJS.PageViewport.prototype */ {
-    /**
-     * Clones viewport with additional properties.
-     * @param args {Object} (optional) If specified, may contain the 'scale' or
-     * 'rotation' properties to override the corresponding properties in
-     * the cloned viewport.
-     * @returns {PDFJS.PageViewport} Cloned viewport.
-     */
+  PageViewport.prototype =  {
+    
+
+
+
+
+
+
     clone: function PageViewPort_clone(args) {
       args = args || {};
       var scale = 'scale' in args ? args.scale : this.scale;
@@ -796,41 +796,41 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       return new PageViewport(this.viewBox.slice(), scale, rotation,
                               this.offsetX, this.offsetY, args.dontFlip);
     },
-    /**
-     * Converts PDF point to the viewport coordinates. For examples, useful for
-     * converting PDF location into canvas pixel coordinates.
-     * @param x {number} X coordinate.
-     * @param y {number} Y coordinate.
-     * @returns {Object} Object that contains 'x' and 'y' properties of the
-     * point in the viewport coordinate space.
-     * @see {@link convertToPdfPoint}
-     * @see {@link convertToViewportRectangle}
-     */
+    
+
+
+
+
+
+
+
+
+
     convertToViewportPoint: function PageViewport_convertToViewportPoint(x, y) {
       return Util.applyTransform([x, y], this.transform);
     },
-    /**
-     * Converts PDF rectangle to the viewport coordinates.
-     * @param rect {Array} xMin, yMin, xMax and yMax coordinates.
-     * @returns {Array} Contains corresponding coordinates of the rectangle
-     * in the viewport coordinate space.
-     * @see {@link convertToViewportPoint}
-     */
+    
+
+
+
+
+
+
     convertToViewportRectangle:
       function PageViewport_convertToViewportRectangle(rect) {
       var tl = Util.applyTransform([rect[0], rect[1]], this.transform);
       var br = Util.applyTransform([rect[2], rect[3]], this.transform);
       return [tl[0], tl[1], br[0], br[1]];
     },
-    /**
-     * Converts viewport coordinates to the PDF location. For examples, useful
-     * for converting canvas pixel location into PDF one.
-     * @param x {number} X coordinate.
-     * @param y {number} Y coordinate.
-     * @returns {Object} Object that contains 'x' and 'y' properties of the
-     * point in the PDF coordinate space.
-     * @see {@link convertToViewportPoint}
-     */
+    
+
+
+
+
+
+
+
+
     convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
       return Util.applyInverseTransform([x, y], this.transform);
     }
@@ -853,7 +853,7 @@ var PDFStringTranslateTable = [
 function stringToPDFString(str) {
   var i, n = str.length, strBuf = [];
   if (str[0] === '\xFE' && str[1] === '\xFF') {
-    // UTF16BE BOM
+    
     for (i = 2; i < n; i += 2) {
       strBuf.push(String.fromCharCode(
         (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1)));
@@ -935,22 +935,22 @@ function isRef(v) {
   return v instanceof Ref;
 }
 
-/**
- * Promise Capability object.
- *
- * @typedef {Object} PromiseCapability
- * @property {Promise} promise - A promise object.
- * @property {function} resolve - Fullfills the promise.
- * @property {function} reject - Rejects the promise.
- */
 
-/**
- * Creates a promise capability object.
- * @alias PDFJS.createPromiseCapability
- *
- * @return {PromiseCapability} A capability object contains:
- * - a Promise, resolve and reject methods.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function createPromiseCapability() {
   var capability = {};
   capability.promise = new Promise(function (resolve, reject) {
@@ -962,19 +962,19 @@ function createPromiseCapability() {
 
 PDFJS.createPromiseCapability = createPromiseCapability;
 
-/**
- * Polyfill for Promises:
- * The following promise implementation tries to generally implement the
- * Promise/A+ spec. Some notable differences from other promise libaries are:
- * - There currently isn't a seperate deferred and promise object.
- * - Unhandled rejections eventually show an error if they aren't handled.
- *
- * Based off of the work in:
- * https://bugzilla.mozilla.org/show_bug.cgi?id=810490
- */
+
+
+
+
+
+
+
+
+
+
 (function PromiseClosure() {
   if (globalScope.Promise) {
-    // Promises existing in the DOM/Worker, checking presence of all/resolve
+    
     if (typeof globalScope.Promise.all !== 'function') {
       globalScope.Promise.all = function (iterable) {
         var count = 0, results = [], resolve, reject;
@@ -1054,14 +1054,14 @@ var StatTimer = (function StatTimerClosure() {
         'start': this.started[name],
         'end': Date.now()
       });
-      // Remove timer from started so it can be called again.
+      
       delete this.started[name];
     },
     toString: function StatTimer_toString() {
       var i, ii;
       var times = this.times;
       var out = '';
-      // Find the longest name for padding purposes.
+      
       var longest = 0;
       for (i = 0, ii = times.length; i < ii; ++i) {
         var name = times[i]['name'];
@@ -1084,14 +1084,14 @@ PDFJS.createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
     return new Blob([data], { type: contentType });
   }
-  // Blob builder is deprecated in FF14 and removed in FF18.
+  
   var bb = new MozBlobBuilder();
   bb.append(data);
   return bb.getBlob(contentType);
 };
 
 PDFJS.createObjectURL = (function createObjectURLClosure() {
-  // Blob/createObjectURL is not available, falling back to data schema.
+  
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
@@ -1184,12 +1184,12 @@ MessageHandler.prototype = {
     }
     ah[actionName] = [handler, scope];
   },
-  /**
-   * Sends a message to the comObj to invoke the action with the supplied data.
-   * @param {String} actionName Action to call.
-   * @param {JSON} data JSON data to send.
-   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers
-   */
+  
+
+
+
+
+
   send: function messageHandlerSend(actionName, data, transfers) {
     var message = {
       action: actionName,
@@ -1197,14 +1197,14 @@ MessageHandler.prototype = {
     };
     this.postMessage(message, transfers);
   },
-  /**
-   * Sends a message to the comObj to invoke the action with the supplied data.
-   * Expects that other side will callback with the response.
-   * @param {String} actionName Action to call.
-   * @param {JSON} data JSON data to send.
-   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers.
-   * @returns {Promise} Promise to be resolved with response data.
-   */
+  
+
+
+
+
+
+
+
   sendWithPromise:
     function messageHandlerSendWithPromise(actionName, data, transfers) {
     var callbackId = this.callbackIndex++;
@@ -1222,12 +1222,12 @@ MessageHandler.prototype = {
     }
     return capability.promise;
   },
-  /**
-   * Sends raw message to the comObj.
-   * @private
-   * @param message {Object} Raw message.
-   * @param transfers List of transfers/ArrayBuffers, or undefined.
-   */
+  
+
+
+
+
+
   postMessage: function (message, transfers) {
     if (transfers && this.postMessageTransfers) {
       this.comObj.postMessage(message, transfers);
@@ -1246,12 +1246,12 @@ function loadJpegStream(id, imageUrl, objs) {
 }
 
 
-var DEFAULT_ICON_SIZE = 22; // px
-var HIGHLIGHT_OFFSET = 4; // px
+var DEFAULT_ICON_SIZE = 22; 
+var HIGHLIGHT_OFFSET = 4; 
 var SUPPORTED_TYPES = ['Link', 'Text', 'Widget'];
 
 var Annotation = (function AnnotationClosure() {
-  // 12.5.5: Algorithm: Appearance streams
+  
   function getTransformMatrix(rect, bbox, matrix) {
     var bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
     var minX = bounds[0];
@@ -1260,8 +1260,8 @@ var Annotation = (function AnnotationClosure() {
     var maxY = bounds[3];
 
     if (minX === maxX || minY === maxY) {
-      // From real-life file, bbox was [0, 0, 0, 0]. In this case,
-      // just apply the transform for rect
+      
+      
       return [1, 0, 0, 1, rect[0], rect[1]];
     }
 
@@ -1312,15 +1312,15 @@ var Annotation = (function AnnotationClosure() {
 
     var color = dict.get('C');
     if (isArray(color) && color.length === 3) {
-      // TODO(mack): currently only supporting rgb; need support different
-      // colorspaces
+      
+      
       data.color = color;
     } else {
       data.color = [0, 0, 0];
     }
 
-    // Some types of annotations have border style dict which has more
-    // info than the border array
+    
+    
     if (dict.has('BS')) {
       var borderStyle = dict.get('BS');
       data.borderWidth = borderStyle.has('W') ? borderStyle.get('W') : 1;
@@ -1328,18 +1328,18 @@ var Annotation = (function AnnotationClosure() {
       var borderArray = dict.get('Border') || [0, 0, 1];
       data.borderWidth = borderArray[2] || 0;
 
-      // TODO: implement proper support for annotations with line dash patterns.
+      
       var dashArray = borderArray[3];
       if (data.borderWidth > 0 && dashArray) {
         if (!isArray(dashArray)) {
-          // Ignore the border if dashArray is not actually an array,
-          // this is consistent with the behaviour in Adobe Reader. 
+          
+          
           data.borderWidth = 0;
         } else {
           var dashArrayLength = dashArray.length;
           if (dashArrayLength > 0) {
-            // According to the PDF specification: the elements in a dashArray
-            // shall be numbers that are nonnegative and not all equal to zero.
+            
+            
             var isInvalid = false;
             var numPositive = 0;
             for (var i = 0; i < dashArrayLength; i++) {
@@ -1379,7 +1379,7 @@ var Annotation = (function AnnotationClosure() {
         'getHtmlElement() should be implemented in subclass');
     },
 
-    // TODO(mack): Remove this, it's not really that helpful.
+    
     getEmptyContainer: function Annotation_getEmptyContainer(tagName, rect,
                                                              borderWidth) {
       assert(!isWorker,
@@ -1403,8 +1403,8 @@ var Annotation = (function AnnotationClosure() {
         return false;
       } else {
         return !!(data &&
-                  data.annotationFlags &&            // Default: not invisible
-                  data.annotationFlags & 0x1);       // Invisible
+                  data.annotationFlags &&            
+                  data.annotationFlags & 0x1);       
       }
     },
 
@@ -1413,17 +1413,17 @@ var Annotation = (function AnnotationClosure() {
       return !!(!this.isInvisible() &&
                 data &&
                 (!data.annotationFlags ||
-                 !(data.annotationFlags & 0x22)) &&  // Hidden or NoView
-                data.rect);                          // rectangle is nessessary
+                 !(data.annotationFlags & 0x22)) &&  
+                data.rect);                          
     },
 
     isPrintable: function Annotation_isPrintable() {
       var data = this.data;
       return !!(!this.isInvisible() &&
                 data &&
-                data.annotationFlags &&              // Default: not printable
-                data.annotationFlags & 0x4 &&        // Print
-                data.rect);                          // rectangle is nessessary
+                data.annotationFlags &&              
+                data.annotationFlags & 0x4 &&        
+                data.rect);                          
     },
 
     loadResources: function Annotation_loadResources(keys) {
@@ -1459,8 +1459,8 @@ var Annotation = (function AnnotationClosure() {
         'Shading',
         'XObject',
         'Font'
-        // ProcSet
-        // Properties
+        
+        
       ]);
       var bbox = appearanceDict.get('BBox') || [0, 0, 1, 1];
       var matrix = appearanceDict.get('Matrix') || [1, 0, 0, 1, 0 ,0];
@@ -1487,7 +1487,7 @@ var Annotation = (function AnnotationClosure() {
       return;
     }
 
-    // TODO(mack): Implement FreeText annotations
+    
     if (subtype === 'Link') {
       return LinkAnnotation;
     } else if (subtype === 'Text') {
@@ -1507,7 +1507,7 @@ var Annotation = (function AnnotationClosure() {
     }
   };
 
-  // TODO(mack): Support loading annotation from data
+  
   Annotation.fromData = function Annotation_fromData(data) {
     var subtype = data.subtype;
     var fieldType = data.fieldType;
@@ -1608,8 +1608,8 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     data.fieldFlags = Util.getInheritableProperty(dict, 'Ff') || 0;
     this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
 
-    // Building the full field name by collecting the field and
-    // its ancestors 'T' data and joining them using '.'.
+    
+    
     var fieldName = [];
     var namedItem = dict;
     var ref = params.ref;
@@ -1620,11 +1620,11 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
       if (name) {
         fieldName.unshift(stringToPDFString(name));
       } else {
-        // The field name is absent, that means more than one field
-        // with the same name may exist. Replacing the empty name
-        // with the '`' plus index in the parent's 'Kids' array.
-        // This is not in the PDF spec but necessary to id the
-        // the input controls.
+        
+        
+        
+        
+        
         var kids = parent.get('Kids');
         var j, jj;
         for (j = 0, jj = kids.length; j < jj; j++) {
@@ -1667,7 +1667,7 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     this.data.textAlignment = Util.getInheritableProperty(params.dict, 'Q');
   }
 
-  // TODO(mack): This dupes some of the logic in CanvasGraphics.setFont()
+  
   function setTextStyles(element, item, fontObj) {
 
     var style = element.style;
@@ -1685,7 +1685,7 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 
     var fontName = fontObj.loadedName;
     var fontFamily = fontName ? '"' + fontName + '", ' : '';
-    // Use a reasonable default font if the font doesn't specify a fallback
+    
     var fallbackName = fontObj.fallbackName || 'Helvetica, sans-serif';
     style.fontFamily = fontFamily + fallbackName;
   }
@@ -1728,8 +1728,8 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
       var opList = new OperatorList();
       var data = this.data;
 
-      // Even if there is an appearance stream, ignore it. This is the
-      // behaviour used by Adobe Reader.
+      
+      
       if (!data.defaultAppearance) {
         return Promise.resolve(opList);
       }
@@ -1839,12 +1839,12 @@ var TextAnnotation = (function TextAnnotationClosure() {
       var item = this.data;
       var rect = item.rect;
 
-      // sanity check because of OOo-generated PDFs
+      
       if ((rect[3] - rect[1]) < ANNOT_MIN_SIZE) {
         rect[3] = rect[1] + ANNOT_MIN_SIZE;
       }
       if ((rect[2] - rect[0]) < ANNOT_MIN_SIZE) {
-        rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
+        rect[2] = rect[0] + (rect[3] - rect[1]); 
       }
 
       var container = this.initContainer();
@@ -1874,7 +1874,7 @@ var TextAnnotation = (function TextAnnotationClosure() {
         var color = item.color;
         var rgb = [];
         for (i = 0; i < 3; ++i) {
-          // Enlighten the color (70%)
+          
           var c = Math.round(color[i] * 255);
           rgb[i] = Math.round((255 - c) * 0.7) + c;
         }
@@ -1974,13 +1974,13 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       if (linkType === 'URI') {
         var url = action.get('URI');
         if (isName(url)) {
-          // Some bad PDFs do not put parentheses around relative URLs.
+          
           url = '/' + url.name;
         } else if (url) {
           url = addDefaultProtocolToUrl(url);
         }
-        // TODO: pdf spec mentions urls can be relative to a Base
-        // entry in the dictionary.
+        
+        
         if (!isValidUrl(url, false)) {
           url = '';
         }
@@ -1990,13 +1990,13 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       } else if (linkType === 'GoToR') {
         var urlDict = action.get('F');
         if (isDict(urlDict)) {
-          // We assume that the 'url' is a Filspec dictionary
-          // and fetch the url without checking any further
+          
+          
           url = urlDict.get('F') || '';
         }
 
-        // TODO: pdf reference says that GoToR
-        // can also have 'NewWindow' attribute
+        
+        
         if (!isValidUrl(url, false)) {
           url = '';
         }
@@ -2008,13 +2008,13 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         warn('unrecognized link type: ' + linkType);
       }
     } else if (dict.has('Dest')) {
-      // simple destination link
+      
       var dest = dict.get('Dest');
       data.dest = isName(dest) ? dest.name : dest;
     }
   }
 
-  // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
+  
   function addDefaultProtocolToUrl(url) {
     if (url && url.indexOf('www.') === 0) {
       return ('http://' + url);
@@ -2050,155 +2050,155 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
 })();
 
 
-/**
- * The maximum allowed image size in total pixels e.g. width * height. Images
- * above this value will not be drawn. Use -1 for no limit.
- * @var {number}
- */
+
+
+
+
+
 PDFJS.maxImageSize = (PDFJS.maxImageSize === undefined ?
                       -1 : PDFJS.maxImageSize);
 
-/**
- * The url of where the predefined Adobe CMaps are located. Include trailing
- * slash.
- * @var {string}
- */
+
+
+
+
+
 PDFJS.cMapUrl = (PDFJS.cMapUrl === undefined ? null : PDFJS.cMapUrl);
 
-/**
- * Specifies if CMaps are binary packed.
- * @var {boolean}
- */
+
+
+
+
 PDFJS.cMapPacked = PDFJS.cMapPacked === undefined ? false : PDFJS.cMapPacked;
 
-/*
- * By default fonts are converted to OpenType fonts and loaded via font face
- * rules. If disabled, the font will be rendered using a built in font renderer
- * that constructs the glyphs with primitive path commands.
- * @var {boolean}
- */
+
+
+
+
+
+
 PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
                          false : PDFJS.disableFontFace);
 
-/**
- * Path for image resources, mainly for annotation icons. Include trailing
- * slash.
- * @var {string}
- */
+
+
+
+
+
 PDFJS.imageResourcesPath = (PDFJS.imageResourcesPath === undefined ?
                             '' : PDFJS.imageResourcesPath);
 
-/**
- * Disable the web worker and run all code on the main thread. This will happen
- * automatically if the browser doesn't support workers or sending typed arrays
- * to workers.
- * @var {boolean}
- */
+
+
+
+
+
+
 PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
                        false : PDFJS.disableWorker);
 
-/**
- * Path and filename of the worker file. Required when the worker is enabled in
- * development mode. If unspecified in the production build, the worker will be
- * loaded based on the location of the pdf.js file.
- * @var {string}
- */
+
+
+
+
+
+
 PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 
-/**
- * Disable range request loading of PDF files. When enabled and if the server
- * supports partial content requests then the PDF will be fetched in chunks.
- * Enabled (false) by default.
- * @var {boolean}
- */
+
+
+
+
+
+
 PDFJS.disableRange = (PDFJS.disableRange === undefined ?
                       false : PDFJS.disableRange);
 
-/**
- * Disable pre-fetching of PDF file data. When range requests are enabled PDF.js
- * will automatically keep fetching more data even if it isn't needed to display
- * the current page. This default behavior can be disabled.
- * @var {boolean}
- */
+
+
+
+
+
+
 PDFJS.disableAutoFetch = (PDFJS.disableAutoFetch === undefined ?
                           false : PDFJS.disableAutoFetch);
 
-/**
- * Enables special hooks for debugging PDF.js.
- * @var {boolean}
- */
+
+
+
+
 PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
 
-/**
- * Enables transfer usage in postMessage for ArrayBuffers.
- * @var {boolean}
- */
+
+
+
+
 PDFJS.postMessageTransfers = (PDFJS.postMessageTransfers === undefined ?
                               true : PDFJS.postMessageTransfers);
 
-/**
- * Disables URL.createObjectURL usage.
- * @var {boolean}
- */
+
+
+
+
 PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
                                 false : PDFJS.disableCreateObjectURL);
 
-/**
- * Disables WebGL usage.
- * @var {boolean}
- */
+
+
+
+
 PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
                       true : PDFJS.disableWebGL);
 
-/**
- * Controls the logging level.
- * The constants from PDFJS.VERBOSITY_LEVELS should be used:
- * - errors
- * - warnings [default]
- * - infos
- * @var {number}
- */
+
+
+
+
+
+
+
+
 PDFJS.verbosity = (PDFJS.verbosity === undefined ?
                    PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity);
 
-/**
- * Document initialization / loading parameters object.
- *
- * @typedef {Object} DocumentInitParameters
- * @property {string}     url   - The URL of the PDF.
- * @property {TypedArray} data  - A typed array with PDF data.
- * @property {Object}     httpHeaders - Basic authentication headers.
- * @property {boolean}    withCredentials - Indicates whether or not cross-site
- *   Access-Control requests should be made using credentials such as cookies
- *   or authorization headers. The default is false.
- * @property {string}     password - For decrypting password-protected PDFs.
- * @property {TypedArray} initialData - A typed array with the first portion or
- *   all of the pdf data. Used by the extension since some data is already
- *   loaded before the switch to range requests.
- */
 
-/**
- * This is the main entry point for loading a PDF and interacting with it.
- * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
- * is used, which means it must follow the same origin rules that any XHR does
- * e.g. No cross domain requests without CORS.
- *
- * @param {string|TypedArray|DocumentInitParameters} source Can be a url to
- * where a PDF is located, a typed array (Uint8Array) already populated with
- * data or parameter object.
- *
- * @param {Object} pdfDataRangeTransport is optional. It is used if you want
- * to manually serve range requests for data in the PDF. See viewer.js for
- * an example of pdfDataRangeTransport's interface.
- *
- * @param {function} passwordCallback is optional. It is used to request a
- * password if wrong or no password was provided. The callback receives two
- * parameters: function that needs to be called with new password and reason
- * (see {PasswordResponses}).
- *
- * @return {Promise} A promise that is resolved with {@link PDFDocumentProxy}
- *   object.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 PDFJS.getDocument = function getDocument(source,
                                          pdfDataRangeTransport,
                                          passwordCallback,
@@ -2218,7 +2218,7 @@ PDFJS.getDocument = function getDocument(source,
     error('Invalid parameter array, need either .data or .url');
   }
 
-  // copy/use all keys as is except 'url' -- full path is required
+  
   var params = {};
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
@@ -2240,119 +2240,119 @@ PDFJS.getDocument = function getDocument(source,
   return workerReadyCapability.promise;
 };
 
-/**
- * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
- * properties that can be read synchronously.
- * @class
- */
+
+
+
+
+
 var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   function PDFDocumentProxy(pdfInfo, transport) {
     this.pdfInfo = pdfInfo;
     this.transport = transport;
   }
-  PDFDocumentProxy.prototype = /** @lends PDFDocumentProxy.prototype */ {
-    /**
-     * @return {number} Total number of pages the PDF contains.
-     */
+  PDFDocumentProxy.prototype =  {
+    
+
+
     get numPages() {
       return this.pdfInfo.numPages;
     },
-    /**
-     * @return {string} A unique ID to identify a PDF. Not guaranteed to be
-     * unique.
-     */
+    
+
+
+
     get fingerprint() {
       return this.pdfInfo.fingerprint;
     },
-    /**
-     * @param {number} pageNumber The page number to get. The first page is 1.
-     * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
-     * object.
-     */
+    
+
+
+
+
     getPage: function PDFDocumentProxy_getPage(pageNumber) {
       return this.transport.getPage(pageNumber);
     },
-    /**
-     * @param {{num: number, gen: number}} ref The page reference. Must have
-     *   the 'num' and 'gen' properties.
-     * @return {Promise} A promise that is resolved with the page index that is
-     * associated with the reference.
-     */
+    
+
+
+
+
+
     getPageIndex: function PDFDocumentProxy_getPageIndex(ref) {
       return this.transport.getPageIndex(ref);
     },
-    /**
-     * @return {Promise} A promise that is resolved with a lookup table for
-     * mapping named destinations to reference numbers.
-     */
+    
+
+
+
     getDestinations: function PDFDocumentProxy_getDestinations() {
       return this.transport.getDestinations();
     },
-    /**
-     * @return {Promise} A promise that is resolved with a lookup table for
-     * mapping named attachments to their content.
-     */
+    
+
+
+
     getAttachments: function PDFDocumentProxy_getAttachments() {
       return this.transport.getAttachments();
     },
-    /**
-     * @return {Promise} A promise that is resolved with an array of all the
-     * JavaScript strings in the name tree.
-     */
+    
+
+
+
     getJavaScript: function PDFDocumentProxy_getJavaScript() {
       return this.transport.getJavaScript();
     },
-    /**
-     * @return {Promise} A promise that is resolved with an {Array} that is a
-     * tree outline (if it has one) of the PDF. The tree is in the format of:
-     * [
-     *  {
-     *   title: string,
-     *   bold: boolean,
-     *   italic: boolean,
-     *   color: rgb array,
-     *   dest: dest obj,
-     *   items: array of more items like this
-     *  },
-     *  ...
-     * ].
-     */
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     getOutline: function PDFDocumentProxy_getOutline() {
       return this.transport.getOutline();
     },
-    /**
-     * @return {Promise} A promise that is resolved with an {Object} that has
-     * info and metadata properties.  Info is an {Object} filled with anything
-     * available in the information dictionary and similarly metadata is a
-     * {Metadata} object with information from the metadata section of the PDF.
-     */
+    
+
+
+
+
+
     getMetadata: function PDFDocumentProxy_getMetadata() {
       return this.transport.getMetadata();
     },
-    /**
-     * @return {Promise} A promise that is resolved with a TypedArray that has
-     * the raw data from the PDF.
-     */
+    
+
+
+
     getData: function PDFDocumentProxy_getData() {
       return this.transport.getData();
     },
-    /**
-     * @return {Promise} A promise that is resolved when the document's data
-     * is loaded. It is resolved with an {Object} that contains the length
-     * property that indicates size of the PDF data in bytes.
-     */
+    
+
+
+
+
     getDownloadInfo: function PDFDocumentProxy_getDownloadInfo() {
       return this.transport.downloadInfoCapability.promise;
     },
-    /**
-     * Cleans up resources allocated by the document, e.g. created @font-face.
-     */
+    
+
+
     cleanup: function PDFDocumentProxy_cleanup() {
       this.transport.startCleanup();
     },
-    /**
-     * Destroys current document instance and terminates worker.
-     */
+    
+
+
     destroy: function PDFDocumentProxy_destroy() {
       this.transport.destroy();
     }
@@ -2360,58 +2360,58 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   return PDFDocumentProxy;
 })();
 
-/**
- * Page text content.
- *
- * @typedef {Object} TextContent
- * @property {array} items - array of {@link TextItem}
- * @property {Object} styles - {@link TextStyles} objects, indexed by font
- *                    name.
- */
 
-/**
- * Page text content part.
- *
- * @typedef {Object} TextItem
- * @property {string} str - text content.
- * @property {string} dir - text direction: 'ttb', 'ltr' or 'rtl'.
- * @property {array} transform - transformation matrix.
- * @property {number} width - width in device space.
- * @property {number} height - height in device space.
- * @property {string} fontName - font name used by pdf.js for converted font.
- */
 
-/**
- * Text style.
- *
- * @typedef {Object} TextStyle
- * @property {number} ascent - font ascent.
- * @property {number} descent - font descent.
- * @property {boolean} vertical - text is in vertical mode.
- * @property {string} fontFamily - possible font family
- */
 
-/**
- * Page render parameters.
- *
- * @typedef {Object} RenderParameters
- * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
- * @property {PDFJS.PageViewport} viewport - Rendering viewport obtained by
- *                                calling of PDFPage.getViewport method.
- * @property {string} intent - Rendering intent, can be 'display' or 'print'
- *                    (default value is 'display').
- * @property {Object} imageLayer - (optional) An object that has beginLayout,
- *                    endLayout and appendImage functions.
- * @property {function} continueCallback - (optional) A function that will be
- *                      called each time the rendering is paused.  To continue
- *                      rendering call the function that is the first argument
- *                      to the callback.
- */
 
-/**
- * Proxy to a PDFPage in the worker thread.
- * @class
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var PDFPageProxy = (function PDFPageProxyClosure() {
   function PDFPageProxy(pageIndex, pageInfo, transport) {
     this.pageIndex = pageIndex;
@@ -2425,50 +2425,50 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pendingDestroy = false;
     this.intentStates = {};
   }
-  PDFPageProxy.prototype = /** @lends PDFPageProxy.prototype */ {
-    /**
-     * @return {number} Page number of the page. First page is 1.
-     */
+  PDFPageProxy.prototype =  {
+    
+
+
     get pageNumber() {
       return this.pageIndex + 1;
     },
-    /**
-     * @return {number} The number of degrees the page is rotated clockwise.
-     */
+    
+
+
     get rotate() {
       return this.pageInfo.rotate;
     },
-    /**
-     * @return {Object} The reference that points to this page. It has 'num' and
-     * 'gen' properties.
-     */
+    
+
+
+
     get ref() {
       return this.pageInfo.ref;
     },
-    /**
-     * @return {Array} An array of the visible portion of the PDF page in the
-     * user space units - [x1, y1, x2, y2].
-     */
+    
+
+
+
     get view() {
       return this.pageInfo.view;
     },
-    /**
-     * @param {number} scale The desired scale of the viewport.
-     * @param {number} rotate Degrees to rotate the viewport. If omitted this
-     * defaults to the page rotation.
-     * @return {PDFJS.PageViewport} Contains 'width' and 'height' properties
-     * along with transforms required for rendering.
-     */
+    
+
+
+
+
+
+
     getViewport: function PDFPageProxy_getViewport(scale, rotate) {
       if (arguments.length < 2) {
         rotate = this.rotate;
       }
       return new PDFJS.PageViewport(this.view, scale, rotate, 0, 0);
     },
-    /**
-     * @return {Promise} A promise that is resolved with an {Array} of the
-     * annotation objects.
-     */
+    
+
+
+
     getAnnotations: function PDFPageProxy_getAnnotations() {
       if (this.annotationsPromise) {
         return this.annotationsPromise;
@@ -2478,18 +2478,18 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.annotationsPromise = promise;
       return promise;
     },
-    /**
-     * Begins the process of rendering a page to the desired context.
-     * @param {RenderParameters} params Page render parameters.
-     * @return {RenderTask} An object that contains the promise, which
-     *                      is resolved when the page finishes rendering.
-     */
+    
+
+
+
+
+
     render: function PDFPageProxy_render(params) {
       var stats = this.stats;
       stats.time('Overall');
 
-      // If there was a pending destroy cancel it so no cleanup happens during
-      // this call to render.
+      
+      
       this.pendingDestroy = false;
 
       var renderingIntent = ('intent' in params ?
@@ -2500,8 +2500,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }
       var intentState = this.intentStates[renderingIntent];
 
-      // If there's no displayReadyCapability yet, then the operatorList
-      // was never requested before. Make the request and create the promise.
+      
+      
       if (!intentState.displayReadyCapability) {
         intentState.receivingOperatorList = true;
         intentState.displayReadyCapability = createPromiseCapability();
@@ -2567,27 +2567,27 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       return renderTask;
     },
-    /**
-     * @return {Promise} That is resolved a {@link TextContent}
-     * object that represent the page text content.
-     */
+    
+
+
+
     getTextContent: function PDFPageProxy_getTextContent() {
       return this.transport.messageHandler.sendWithPromise('GetTextContent', {
         pageIndex: this.pageNumber - 1
       });
     },
-    /**
-     * Destroys resources allocated by the page.
-     */
+    
+
+
     destroy: function PDFPageProxy_destroy() {
       this.pendingDestroy = true;
       this._tryDestroy();
     },
-    /**
-     * For internal use only. Attempts to clean up if rendering is in a state
-     * where that's possible.
-     * @ignore
-     */
+    
+
+
+
+
     _tryDestroy: function PDFPageProxy__destroy() {
       if (!this.pendingDestroy ||
           Object.keys(this.intentStates).some(function(intent) {
@@ -2605,24 +2605,24 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.annotationsPromise = null;
       this.pendingDestroy = false;
     },
-    /**
-     * For internal use only.
-     * @ignore
-     */
+    
+
+
+
     _startRenderPage: function PDFPageProxy_startRenderPage(transparency,
                                                             intent) {
       var intentState = this.intentStates[intent];
       intentState.displayReadyCapability.resolve(transparency);
     },
-    /**
-     * For internal use only.
-     * @ignore
-     */
+    
+
+
+
     _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk,
                                                             intent) {
       var intentState = this.intentStates[intent];
       var i, ii;
-      // Add the new chunk to the current operator list.
+      
       for (i = 0, ii = operatorListChunk.length; i < ii; i++) {
         intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
         intentState.operatorList.argsArray.push(
@@ -2630,7 +2630,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }
       intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
 
-      // Notify all the rendering tasks there are more operators to be consumed.
+      
       for (i = 0; i < intentState.renderTasks.length; i++) {
         intentState.renderTasks[i].operatorListChanged();
       }
@@ -2644,10 +2644,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
   return PDFPageProxy;
 })();
 
-/**
- * For internal use only.
- * @ignore
- */
+
+
+
+
 var WorkerTransport = (function WorkerTransportClosure() {
   function WorkerTransport(workerInitializedCapability, workerReadyCapability,
                            pdfDataRangeTransport, progressCallback) {
@@ -2662,11 +2662,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.downloadInfoCapability = createPromiseCapability();
     this.passwordCallback = null;
 
-    // If worker support isn't disabled explicit and the browser has worker
-    // support, create a new web worker and test if it/the browser fullfills
-    // all requirements to run parts of pdf.js in a web worker.
-    // Right now, the requirement is, that an Uint8Array is still an Uint8Array
-    // as it arrives on the worker. Chrome added this with version 15.
+    
+    
+    
+    
+    
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (!workerSrc) {
@@ -2674,8 +2674,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }
 
       try {
-        // Some versions of FF can't create a worker on localhost, see:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+        
+        
         var worker = new Worker(workerSrc);
         var messageHandler = new MessageHandler('main', worker);
         this.messageHandler = messageHandler;
@@ -2699,8 +2699,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }.bind(this));
 
         var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
-        // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
-        // typed array. Also, checking if we can use transfers.
+        
+        
         try {
           messageHandler.send('test', testObj, [testObj.buffer]);
         } catch (ex) {
@@ -2713,8 +2713,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         info('The worker has been disabled.');
       }
     }
-    // Either workers are disabled, not supported or have thrown an exception.
-    // Thus, we fallback to a faked worker.
+    
+    
     globalScope.PDFJS.disableWorker = true;
     this.loadFakeWorkerFiles().then(function() {
       this.setupFakeWorker();
@@ -2737,9 +2737,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
     loadFakeWorkerFiles: function WorkerTransport_loadFakeWorkerFiles() {
       if (!PDFJS.fakeWorkerFilesLoadedCapability) {
         PDFJS.fakeWorkerFilesLoadedCapability = createPromiseCapability();
-        // In the developer build load worker_loader which in turn loads all the
-        // other files and resolves the promise. In production only the
-        // pdf.worker.js file is needed.
+        
+        
+        
         Util.loadScript(PDFJS.workerSrc, function() {
           PDFJS.fakeWorkerFilesLoadedCapability.resolve();
         });
@@ -2749,7 +2749,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       warn('Setting up fake worker.');
-      // If we don't use a worker, just post/sendMessage to the main thread.
+      
       var fakeWorker = {
         postMessage: function WorkerTransport_postMessage(obj) {
           fakeWorker.onmessage({data: obj});
@@ -2760,8 +2760,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var messageHandler = new MessageHandler('main', fakeWorker);
       this.setupMessageHandler(messageHandler);
 
-      // If the main thread is our worker, setup the handling for the messages
-      // the main thread sends to it self.
+      
+      
       PDFJS.WorkerMessageHandler.setup(messageHandler);
     },
 
@@ -2906,7 +2906,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             imageData = data[3];
             pageProxy.objs.resolve(id, imageData);
 
-            // heuristics that will allow not to store large data
+            
             var MAX_IMAGE_SIZE_TO_STORE = 8000000;
             if (imageData && 'data' in imageData &&
                 imageData.data.length > MAX_IMAGE_SIZE_TO_STORE) {
@@ -3077,23 +3077,23 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
 })();
 
-/**
- * A PDF document and page is built of many objects. E.g. there are objects
- * for fonts, images, rendering code and such. These objects might get processed
- * inside of a worker. The `PDFObjects` implements some basic functions to
- * manage these objects.
- * @ignore
- */
+
+
+
+
+
+
+
 var PDFObjects = (function PDFObjectsClosure() {
   function PDFObjects() {
     this.objs = {};
   }
 
   PDFObjects.prototype = {
-    /**
-     * Internal function.
-     * Ensures there is an object defined for `objId`.
-     */
+    
+
+
+
     ensureObj: function PDFObjects_ensureObj(objId) {
       if (this.objs[objId]) {
         return this.objs[objId];
@@ -3109,29 +3109,29 @@ var PDFObjects = (function PDFObjectsClosure() {
       return obj;
     },
 
-    /**
-     * If called *without* callback, this returns the data of `objId` but the
-     * object needs to be resolved. If it isn't, this function throws.
-     *
-     * If called *with* a callback, the callback is called with the data of the
-     * object once the object is resolved. That means, if you call this
-     * function and the object is already resolved, the callback gets called
-     * right away.
-     */
+    
+
+
+
+
+
+
+
+
     get: function PDFObjects_get(objId, callback) {
-      // If there is a callback, then the get can be async and the object is
-      // not required to be resolved right now
+      
+      
       if (callback) {
         this.ensureObj(objId).capability.promise.then(callback);
         return null;
       }
 
-      // If there isn't a callback, the user expects to get the resolved data
-      // directly.
+      
+      
       var obj = this.objs[objId];
 
-      // If there isn't an object yet or the object isn't resolved, then the
-      // data isn't ready yet!
+      
+      
       if (!obj || !obj.resolved) {
         error('Requesting object that isn\'t resolved yet ' + objId);
       }
@@ -3139,9 +3139,9 @@ var PDFObjects = (function PDFObjectsClosure() {
       return obj.data;
     },
 
-    /**
-     * Resolves the object `objId` with optional `data`.
-     */
+    
+
+
     resolve: function PDFObjects_resolve(objId, data) {
       var obj = this.ensureObj(objId);
 
@@ -3164,9 +3164,9 @@ var PDFObjects = (function PDFObjectsClosure() {
       return this.isResolved(objId);
     },
 
-    /**
-     * Returns the data of `objId` if object exists, null otherwise.
-     */
+    
+
+
     getData: function PDFObjects_getData(objId) {
       var objs = this.objs;
       if (!objs[objId] || !objs[objId].resolved) {
@@ -3183,38 +3183,38 @@ var PDFObjects = (function PDFObjectsClosure() {
   return PDFObjects;
 })();
 
-/**
- * Allows controlling of the rendering tasks.
- * @class
- */
+
+
+
+
 var RenderTask = (function RenderTaskClosure() {
   function RenderTask(internalRenderTask) {
     this.internalRenderTask = internalRenderTask;
-    /**
-     * Promise for rendering task completion.
-     * @type {Promise}
-     */
+    
+
+
+
     this.promise = this.internalRenderTask.capability.promise;
   }
 
-  RenderTask.prototype = /** @lends RenderTask.prototype */ {
-    /**
-     * Cancels the rendering task. If the task is currently rendering it will
-     * not be cancelled until graphics pauses with a timeout. The promise that
-     * this object extends will resolved when cancelled.
-     */
+  RenderTask.prototype =  {
+    
+
+
+
+
     cancel: function RenderTask_cancel() {
       this.internalRenderTask.cancel();
     },
 
-    /**
-     * Registers callback to indicate the rendering task completion.
-     *
-     * @param {function} onFulfilled The callback for the rendering completion.
-     * @param {function} onRejected The callback for the rendering failure.
-     * @return {Promise} A promise that is resolved after the onFulfilled or
-     *                   onRejected callback.
-     */
+    
+
+
+
+
+
+
+
     then: function RenderTask_then(onFulfilled, onRejected) {
       return this.promise.then(onFulfilled, onRejected);
     }
@@ -3223,10 +3223,10 @@ var RenderTask = (function RenderTaskClosure() {
   return RenderTask;
 })();
 
-/**
- * For internal use only.
- * @ignore
- */
+
+
+
+
 var InternalRenderTask = (function InternalRenderTaskClosure() {
 
   function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
@@ -3243,7 +3243,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     this.graphicsReady = false;
     this.cancelled = false;
     this.capability = createPromiseCapability();
-    // caching this-bound methods
+    
     this._continueBound = this._continue.bind(this);
     this._scheduleNextBound = this._scheduleNext.bind(this);
     this._nextBound = this._next.bind(this);
@@ -3359,7 +3359,7 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
 
   function Metadata(meta) {
     if (typeof meta === 'string') {
-      // Ghostscript produces invalid metadata
+      
       meta = fixMetadata(meta);
 
       var parser = new DOMParser();
@@ -3378,7 +3378,7 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
       var doc = this.metaDocument;
       var rdf = doc.documentElement;
 
-      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
+      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { 
         rdf = rdf.firstChild;
         while (rdf && rdf.nodeName.toLowerCase() !== 'rdf:rdf') {
           rdf = rdf.nextSibling;
@@ -3420,10 +3420,10 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
 })();
 
 
-// <canvas> contexts store most of the state we need natively.
-// However, PDF needs a bit more state, which we store here.
 
-// Minimal font size that would be used during canvas fillText operations.
+
+
+
 var MIN_FONT_SIZE = 16;
 var MAX_GROUP_SIZE = 4096;
 
@@ -3437,9 +3437,9 @@ function createScratchCanvas(width, height) {
 }
 
 function addContextCurrentTransform(ctx) {
-  // If the context doesn't expose a `mozCurrentTransform`, add a JS based on.
+  
   if (!ctx.mozCurrentTransform) {
-    // Store the original context
+    
     ctx._scaleX = ctx._scaleX || 1.0;
     ctx._scaleY = ctx._scaleY || 1.0;
     ctx._originalSave = ctx.save;
@@ -3461,9 +3461,9 @@ function addContextCurrentTransform(ctx) {
 
     Object.defineProperty(ctx, 'mozCurrentTransformInverse', {
       get: function getCurrentTransformInverse() {
-        // Calculation done using WolframAlpha:
-        // http://www.wolframalpha.com/input/?
-        //   i=Inverse+{{a%2C+c%2C+e}%2C+{b%2C+d%2C+f}%2C+{0%2C+0%2C+1}}
+        
+        
+        
 
         var m = this._transformMatrix;
         var a = m[0], b = m[1], c = m[2], d = m[3], e = m[4], f = m[5];
@@ -3565,7 +3565,7 @@ var CachedCanvases = (function CachedCanvasesClosure() {
         canvasEntry = cache[id];
         canvasEntry.canvas.width = width;
         canvasEntry.canvas.height = height;
-        // reset canvas transform for emulated mozCurrentTransform, if needed
+        
         canvasEntry.context.setTransform(1, 0, 0, 1, 0, 0);
       } else {
         var canvas = createScratchCanvas(width, height);
@@ -3592,7 +3592,7 @@ function compileType3Glyph(imgData) {
   var POINT_TYPES =
       new Uint8Array([0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0]);
 
-  // decodes bit-packed mask data
+  
   var lineSize = (width + 7) & ~7, data0 = imgData.data;
   var data = new Uint8Array(lineSize * height), pos = 0, ii;
   for (i = 0, ii = data0.length; i < ii; i++) {
@@ -3603,16 +3603,16 @@ function compileType3Glyph(imgData) {
     }
   }
 
-  // finding iteresting points: every point is located between mask pixels,
-  // so there will be points of the (width + 1)x(height + 1) grid. Every point
-  // will have flags assigned based on neighboring mask pixels:
-  //   4 | 8
-  //   --P--
-  //   2 | 1
-  // We are interested only in points with the flags:
-  //   - outside corners: 1, 2, 4, 8;
-  //   - inside corners: 7, 11, 13, 14;
-  //   - and, intersections: 5, 10.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   var count = 0;
   pos = 0;
   if (data[pos] !== 0) {
@@ -3637,8 +3637,8 @@ function compileType3Glyph(imgData) {
       points[j0] = data[pos] ? 1 : 8;
       ++count;
     }
-    // 'sum' is the position of the current pixel configuration in the 'TYPES'
-    // array (in order 8-1-2-4, so we can use '>>2' to shift the column).
+    
+    
     var sum = (data[pos] ? 4 : 0) + (data[pos - lineSize] ? 8 : 0);
     for (j = 1; j < width; j++) {
       sum = (sum >> 2) + (data[pos + 1] ? 4 : 0) +
@@ -3680,7 +3680,7 @@ function compileType3Glyph(imgData) {
     return null;
   }
 
-  // building outlines
+  
   var steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
   var outlines = [];
   for (i = 0; count && i <= height; i++) {
@@ -3703,14 +3703,14 @@ function compileType3Glyph(imgData) {
 
       pp = points[p];
       if (pp !== 5 && pp !== 10) {
-        // set new direction
+        
         type = pp;
-        // delete mark
+        
         points[p] = 0;
-      } else { // type is 5 or 10, ie, a crossing
-        // set new direction
+      } else { 
+        
         type = pp & ((0x33 * type) >> 4);
-        // set new type for "future hit"
+        
         points[p] &= (type >> 2 | type << 2);
       }
 
@@ -3724,7 +3724,7 @@ function compileType3Glyph(imgData) {
 
   var drawOutline = function(c) {
     c.save();
-    // the path shall be painted in [0..1]x[0..1] space
+    
     c.scale(1 / width, -1 / height);
     c.translate(0, -height);
     c.beginPath();
@@ -3745,33 +3745,33 @@ function compileType3Glyph(imgData) {
 
 var CanvasExtraState = (function CanvasExtraStateClosure() {
   function CanvasExtraState(old) {
-    // Are soft masks and alpha values shapes or opacities?
+    
     this.alphaIsShape = false;
     this.fontSize = 0;
     this.fontSizeScale = 1;
     this.textMatrix = IDENTITY_MATRIX;
     this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
-    // Current point (in user coordinates)
+    
     this.x = 0;
     this.y = 0;
-    // Start of text line (in text coordinates)
+    
     this.lineX = 0;
     this.lineY = 0;
-    // Character and word spacing
+    
     this.charSpacing = 0;
     this.wordSpacing = 0;
     this.textHScale = 1;
     this.textRenderingMode = TextRenderingMode.FILL;
     this.textRise = 0;
-    // Default fore and background colors
+    
     this.fillColor = '#000000';
     this.strokeColor = '#000000';
-    // Note: fill alpha applies to all non-stroking operations
+    
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
     this.lineWidth = 1;
-    this.activeSMask = null; // nonclonable field (see the save method below)
+    this.activeSMask = null; 
 
     this.old = old;
   }
@@ -3789,8 +3789,8 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
 })();
 
 var CanvasGraphics = (function CanvasGraphicsClosure() {
-  // Defines the time the executeOperatorList is going to be executing
-  // before it stops and shedules a continue of execution.
+  
+  
   var EXECUTION_TIME = 15;
 
   function CanvasGraphics(canvasCtx, commonObjs, objs, imageLayer) {
@@ -3806,8 +3806,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.imageLayer = imageLayer;
     this.groupStack = [];
     this.processingType3 = null;
-    // Patterns are painted relative to the initial page/form transform, see pdf
-    // spec 8.7.2 NOTE 1.
+    
+    
     this.baseTransform = null;
     this.baseTransformStack = [];
     this.groupLevel = 0;
@@ -3825,16 +3825,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return;
     }
 
-    // Put the image data to the canvas in chunks, rather than putting the
-    // whole image at once.  This saves JS memory, because the ImageData object
-    // is smaller. It also possibly saves C++ memory within the implementation
-    // of putImageData(). (E.g. in Firefox we make two short-lived copies of
-    // the data passed to putImageData()). |n| shouldn't be too small, however,
-    // because too many putImageData() calls will slow things down.
-    //
-    // Note: as written, if the last chunk is partial, the putImageData() call
-    // will (conceptually) put pixels past the bounds of the canvas.  But
-    // that's ok; any such pixels are ignored.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     var height = imgData.height, width = imgData.width;
     var fullChunkHeight = 16;
@@ -3849,10 +3849,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     var dest = chunkImgData.data;
     var i, j, thisChunkHeight, elemsInThisChunk;
 
-    // There are multiple forms in which the pixel data can be passed, and
-    // imgData.kind tells us which one this is.
+    
+    
     if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
-      // Grayscale, 1 bit per pixel (i.e. black-and-white).
+      
       var srcLength = src.byteLength;
       var dest32 = PDFJS.hasCanvasTypedArrays ? new Uint32Array(dest.buffer) :
         new Uint32ArrayView(dest);
@@ -3893,7 +3893,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             mask >>= 1;
           }
         }
-        // We ran out of input. Make all remaining pixels transparent.
+        
         while (destPos < dest32DataLength) {
           dest32[destPos++] = 0;
         }
@@ -3901,7 +3901,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
     } else if (imgData.kind === ImageKind.RGBA_32BPP) {
-      // RGBA, 32-bits per pixel.
+      
 
       j = 0;
       elemsInThisChunk = width * fullChunkHeight * 4;
@@ -3919,7 +3919,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
     } else if (imgData.kind === ImageKind.RGB_24BPP) {
-      // RGB, 24-bits per pixel.
+      
       thisChunkHeight = fullChunkHeight;
       elemsInThisChunk = width * thisChunkHeight;
       for (i = 0; i < totalChunks; i++) {
@@ -3959,9 +3959,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var thisChunkHeight =
         (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
 
-      // Expand the mask so it can be used by the canvas.  Any required
-      // inversion has already been handled.
-      var destPos = 3; // alpha component offset
+      
+      
+      var destPos = 3; 
       for (var j = 0; j < thisChunkHeight; j++) {
         var mask = 0;
         for (var k = 0; k < width; k++) {
@@ -4026,9 +4026,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       composeFn = function (maskDataBytes, layerDataBytes) {
         var length = maskDataBytes.length;
         for (var i = 3; i < length; i += 4) {
-          var y = ((maskDataBytes[i - 3] * 77) +     // * 0.3 / 255 * 0x10000
-                   (maskDataBytes[i - 2] * 152) +    // * 0.59 ....
-                   (maskDataBytes[i - 1] * 28)) | 0; // * 0.11 ....
+          var y = ((maskDataBytes[i - 3] * 77) +     
+                   (maskDataBytes[i - 2] * 152) +    
+                   (maskDataBytes[i - 1] * 28)) | 0; 
           layerDataBytes[i] = (layerDataBytes[i] * y) >> 16;
         }
       };
@@ -4042,7 +4042,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       };
     }
 
-    // processing image in chunks to save memory
+    
     var PIXELS_TO_PROCESS = 65536;
     var chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
     for (var row = 0; row < height; row += chunkSize) {
@@ -4085,11 +4085,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   CanvasGraphics.prototype = {
 
     beginDrawing: function CanvasGraphics_beginDrawing(viewport, transparency) {
-      // For pdfs that use blend modes we have to clear the canvas else certain
-      // blend modes can look wrong since we'd be blending with a white
-      // backdrop. The problem with a transparent backdrop though is we then
-      // don't get sub pixel anti aliasing on text, so we fill with white if
-      // we can.
+      
+      
+      
+      
+      
       var width = this.ctx.canvas.width;
       var height = this.ctx.canvas.height;
       if (transparency) {
@@ -4123,7 +4123,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var i = executionStartIdx || 0;
       var argsArrayLen = argsArray.length;
 
-      // Sometimes the OperatorList to execute is empty.
+      
       if (argsArrayLen == i) {
         return i;
       }
@@ -4150,8 +4150,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             var depObjId = deps[n];
             var common = depObjId.substring(0, 2) == 'g_';
 
-            // If the promise isn't resolved yet, add the continueCallback
-            // to the promise and bail out.
+            
+            
             if (!common && !objs.isResolved(depObjId)) {
               objs.get(depObjId, continueCallback);
               return i;
@@ -4165,20 +4165,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         i++;
 
-        // If the entire operatorList was executed, stop as were done.
+        
         if (i == argsArrayLen) {
           return i;
         }
 
-        // If the execution took longer then a certain amount of time and
-        // `continueCallback` is specified, interrupt the execution.
+        
+        
         if (continueCallback && Date.now() > endTime) {
           continueCallback();
           return i;
         }
 
-        // If the operatorList isn't executed completely yet OR the execution
-        // time was short enough, do another execution round.
+        
+        
       }
     },
 
@@ -4192,7 +4192,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
 
-    // Graphics state
+    
     setLineWidth: function CanvasGraphics_setLineWidth(width) {
       this.current.lineWidth = width;
       this.ctx.lineWidth = width;
@@ -4217,13 +4217,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
     setRenderingIntent: function CanvasGraphics_setRenderingIntent(intent) {
-      // Maybe if we one day fully support color spaces this will be important
-      // for now we can ignore.
-      // TODO set rendering intent?
+      
+      
+      
     },
     setFlatness: function CanvasGraphics_setFlatness(flatness) {
-      // There's no way to control this with canvas, but we can safely ignore.
-      // TODO set flatness?
+      
+      
     },
     setGState: function CanvasGraphics_setGState(states) {
       for (var i = 0, ii = states.length; i < ii; i++) {
@@ -4352,7 +4352,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.transform(a, b, c, d, e, f);
     },
 
-    // Path
+    
     constructPath: function CanvasGraphics_constructPath(ops, args) {
       var ctx = this.ctx;
       var current = this.current;
@@ -4416,13 +4416,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (this.current.lineWidth === 0) {
         ctx.lineWidth = this.getSinglePixelWidth();
       }
-      // For stroke we want to temporarily change the global alpha to the
-      // stroking alpha.
+      
+      
       ctx.globalAlpha = this.current.strokeAlpha;
       if (strokeColor && strokeColor.hasOwnProperty('type') &&
           strokeColor.type === 'Pattern') {
-        // for patterns, we transform to pattern space, calculate
-        // the pattern, call stroke, and restore to user space
+        
+        
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx, this);
         ctx.stroke();
@@ -4433,7 +4433,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (consumePath) {
         this.consumePath();
       }
-      // Restore the global alpha to the fill alpha
+      
       ctx.globalAlpha = this.current.fillAlpha;
     },
     closeStroke: function CanvasGraphics_closeStroke() {
@@ -4462,7 +4462,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           try {
             ctx.fill('evenodd');
           } catch (ex) {
-            // shouldn't really happen, but browsers might think differently
+            
             ctx.fill();
           }
         }
@@ -4505,7 +4505,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.consumePath();
     },
 
-    // Clipping
+    
     clip: function CanvasGraphics_clip() {
       this.pendingClip = NORMAL_CLIP;
     },
@@ -4513,7 +4513,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.pendingClip = EO_CLIP;
     },
 
-    // Text
+    
     beginText: function CanvasGraphics_beginText() {
       this.current.textMatrix = IDENTITY_MATRIX;
       this.current.x = this.current.lineX = 0;
@@ -4563,15 +4563,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       current.fontMatrix = (fontObj.fontMatrix ?
                             fontObj.fontMatrix : FONT_IDENTITY_MATRIX);
 
-      // A valid matrix needs all main diagonal elements to be non-zero
-      // This also ensures we bypass FF bugzilla bug #719844.
+      
+      
       if (current.fontMatrix[0] === 0 ||
           current.fontMatrix[3] === 0) {
         warn('Invalid font matrix for font ' + fontRefName);
       }
 
-      // The spec for Tf (setFont) says that 'size' specifies the font 'scale',
-      // and in some docs this can be negative (inverted x-y axes).
+      
+      
       if (size < 0) {
         size = -size;
         current.fontDirection = -1;
@@ -4583,7 +4583,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.fontSize = size;
 
       if (fontObj.isType3Font) {
-        return; // we don't need ctx.font for Type3 fonts
+        return; 
       }
 
       var name = fontObj.loadedName || 'sans-serif';
@@ -4593,10 +4593,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var italic = fontObj.italic ? 'italic' : 'normal';
       var typeface = '"' + name + '", ' + fontObj.fallbackName;
 
-      // Some font backends cannot handle fonts below certain size.
-      // Keeping the font at minimal size and using the fontSizeScale to change
-      // the current transformation matrix before the fillText/strokeText.
-      // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
+      
+      
+      
+      
       var browserFontSize = size >= MIN_FONT_SIZE ? size : MIN_FONT_SIZE;
       this.current.fontSizeScale = browserFontSize != MIN_FONT_SIZE ? 1.0 :
                                    size / MIN_FONT_SIZE;
@@ -4693,8 +4693,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     get isFontSubpixelAAEnabled() {
-      // Checks if anti-aliasing is enabled when scaled text is painted.
-      // On Windows GDI scaled fonts looks bad.
+      
+      
       var ctx = document.createElement('canvas').getContext('2d');
       ctx.scale(1.5, 1);
       ctx.fillText('I', 0, 10);
@@ -4728,7 +4728,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
       }
 
-      // Type3 fonts - each glyph is a "mini-PDF"
+      
       if (font.isType3Font) {
         ctx.save();
         ctx.transform.apply(ctx, current.textMatrix);
@@ -4739,7 +4739,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         for (i = 0; i < glyphsLength; ++i) {
           glyph = glyphs[i];
           if (glyph === null) {
-            // word break
+            
             this.ctx.translate(wordSpacing, 0);
             current.x += wordSpacing * textHScale;
             continue;
@@ -4786,7 +4786,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         for (i = 0; i < glyphsLength; ++i) {
           glyph = glyphs[i];
           if (glyph === null) {
-            // word break
+            
             x += current.fontDirection * wordSpacing;
             continue;
           }
@@ -4815,8 +4815,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
 
           if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
-            // some standard fonts may not have the exact width, trying to
-            // rescale per character
+            
+            
             var measuredWidth = ctx.measureText(character).width * 1000 /
               current.fontSize * current.fontSizeScale;
             var characterScaleX = width / measuredWidth;
@@ -4854,7 +4854,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var current = this.current;
       var font = current.font;
       var fontSize = current.fontSize;
-      // TJ array's number is independent from fontMatrix
+      
       var textHScale = current.textHScale * 0.001 * current.fontDirection;
       var arrLength = arr.length;
       var vertical = font.vertical;
@@ -4887,10 +4887,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.nextLineShowText(text);
     },
 
-    // Type3 fonts
+    
     setCharWidth: function CanvasGraphics_setCharWidth(xWidth, yWidth) {
-      // We can safely ignore this since the width should be the same
-      // as the width in the Widths array.
+      
+      
     },
     setCharWidthAndBounds: function CanvasGraphics_setCharWidthAndBounds(xWidth,
                                                                         yWidth,
@@ -4898,14 +4898,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                                         lly,
                                                                         urx,
                                                                         ury) {
-      // TODO According to the spec we're also suppose to ignore any operators
-      // that set color or include images while processing this type3 font.
+      
+      
       this.rectangle(llx, lly, urx - llx, ury - lly);
       this.clip();
       this.endPath();
     },
 
-    // Color
+    
     getColorN_Pattern: function CanvasGraphics_getColorN_Pattern(IR) {
       var pattern;
       if (IR[0] == 'TilingPattern') {
@@ -4917,10 +4917,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       return pattern;
     },
-    setStrokeColorN: function CanvasGraphics_setStrokeColorN(/*...*/) {
+    setStrokeColorN: function CanvasGraphics_setStrokeColorN() {
       this.current.strokeColor = this.getColorN_Pattern(arguments);
     },
-    setFillColorN: function CanvasGraphics_setFillColorN(/*...*/) {
+    setFillColorN: function CanvasGraphics_setFillColorN() {
       this.current.fillColor = this.getColorN_Pattern(arguments);
     },
     setStrokeRGBColor: function CanvasGraphics_setStrokeRGBColor(r, g, b) {
@@ -4959,11 +4959,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       } else {
-        // HACK to draw the gradient onto an infinite rectangle.
-        // PDF gradients are drawn across the entire image while
-        // Canvas only allows gradients to be drawn in a rectangle
-        // The following bug should allow us to remove this.
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
+        
+        
+        
+        
+        
 
         this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
       }
@@ -4971,7 +4971,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     },
 
-    // Images
+    
     beginInlineImage: function CanvasGraphics_beginInlineImage() {
       error('Should not call beginInlineImage');
     },
@@ -5007,25 +5007,25 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     beginGroup: function CanvasGraphics_beginGroup(group) {
       this.save();
       var currentCtx = this.ctx;
-      // TODO non-isolated groups - according to Rik at adobe non-isolated
-      // group results aren't usually that different and they even have tools
-      // that ignore this setting. Notes from Rik on implmenting:
-      // - When you encounter an transparency group, create a new canvas with
-      // the dimensions of the bbox
-      // - copy the content from the previous canvas to the new canvas
-      // - draw as usual
-      // - remove the backdrop alpha:
-      // alphaNew = 1 - (1 - alpha)/(1 - alphaBackdrop) with 'alpha' the alpha
-      // value of your transparency group and 'alphaBackdrop' the alpha of the
-      // backdrop
-      // - remove background color:
-      // colorNew = color - alphaNew *colorBackdrop /(1 - alphaNew)
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       if (!group.isolated) {
         info('TODO: Support non-isolated groups.');
       }
 
-      // TODO knockout - supposedly possible with the clever use of compositing
-      // modes.
+      
+      
       if (group.knockout) {
         warn('Knockout groups not supported.');
       }
@@ -5036,19 +5036,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       assert(group.bbox, 'Bounding box is required.');
 
-      // Based on the current transform figure out how big the bounding box
-      // will actually be.
+      
+      
       var bounds = Util.getAxialAlignedBoundingBox(
                     group.bbox,
                     currentCtx.mozCurrentTransform);
-      // Clip the bounding box to the current canvas.
+      
       var canvasBounds = [0,
                           0,
                           currentCtx.canvas.width,
                           currentCtx.canvas.height];
       bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
-      // Use ceil in case we're between sizes so we don't create canvas that is
-      // too small and make the canvas at least 1x1 pixels.
+      
+      
       var offsetX = Math.floor(bounds[0]);
       var offsetY = Math.floor(bounds[1]);
       var drawnWidth = Math.max(Math.ceil(bounds[2]) - offsetX, 1);
@@ -5065,21 +5065,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var cacheId = 'groupAt' + this.groupLevel;
       if (group.smask) {
-        // Using two cache entries is case if masks are used one after another.
+        
         cacheId +=  '_smask_' + ((this.smaskCounter++) % 2);
       }
       var scratchCanvas = CachedCanvases.getCanvas(
         cacheId, drawnWidth, drawnHeight, true);
       var groupCtx = scratchCanvas.context;
 
-      // Since we created a new canvas that is just the size of the bounding box
-      // we have to translate the group ctx.
+      
+      
       groupCtx.scale(1 / scaleX, 1 / scaleY);
       groupCtx.translate(-offsetX, -offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
 
       if (group.smask) {
-        // Saving state and cached mask to be used in setGState.
+        
         this.smaskStack.push({
           canvas: scratchCanvas.canvas,
           context: groupCtx,
@@ -5091,14 +5091,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           backdrop: group.smask.backdrop
         });
       } else {
-        // Setup the current ctx so when the group is popped we draw it at the
-        // right location.
+        
+        
         currentCtx.setTransform(1, 0, 0, 1, 0, 0);
         currentCtx.translate(offsetX, offsetY);
         currentCtx.scale(scaleX, scaleY);
       }
-      // The transparency group inherits all off the current graphics state
-      // except the blend mode, soft mask, and alpha constants.
+      
+      
       copyCtxState(currentCtx, groupCtx);
       this.ctx = groupCtx;
       this.setGState([
@@ -5114,8 +5114,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.groupLevel--;
       var groupCtx = this.ctx;
       this.ctx = this.groupStack.pop();
-      // Turn off image smoothing to avoid sub pixel interpolation which can
-      // look kind of blurry for some pdfs.
+      
+      
       if (this.ctx.imageSmoothingEnabled !== undefined) {
         this.ctx.imageSmoothingEnabled = false;
       } else {
@@ -5168,7 +5168,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.save();
 
       var ctx = this.ctx;
-      // scale the image to the unit square
+      
       ctx.scale(1 / w, -1 / h);
 
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
@@ -5329,7 +5329,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
 
       this.save();
-      // scale the image to the unit square
+      
       ctx.scale(1 / width, -1 / height);
 
       var currentTransform = ctx.mozCurrentTransformInverse;
@@ -5339,7 +5339,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
 
       var imgToPaint, tmpCanvas;
-      // instanceof HTMLElement does not work in jsdom node.js module
+      
       if (imgData instanceof HTMLElement || !imgData.data) {
         imgToPaint = imgData;
       } else {
@@ -5351,9 +5351,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var paintWidth = width, paintHeight = height;
       var tmpCanvasId = 'prescale1';
-      // Vertial or horizontal scaling shall not be more than 2 to not loose the
-      // pixels during drawImage operation, painting on the temporary canvas(es)
-      // that are twice smaller in size
+      
+      
+      
       while ((widthScale > 2 && paintWidth > 1) ||
              (heightScale > 2 && paintHeight > 1)) {
         var newWidth = paintWidth, newHeight = paintHeight;
@@ -5427,35 +5427,35 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         this.ctx.fillRect(0, 0, 1, 1);
     },
 
-    // Marked content
+    
 
     markPoint: function CanvasGraphics_markPoint(tag) {
-      // TODO Marked content.
+      
     },
     markPointProps: function CanvasGraphics_markPointProps(tag, properties) {
-      // TODO Marked content.
+      
     },
     beginMarkedContent: function CanvasGraphics_beginMarkedContent(tag) {
-      // TODO Marked content.
+      
     },
     beginMarkedContentProps: function CanvasGraphics_beginMarkedContentProps(
                                         tag, properties) {
-      // TODO Marked content.
+      
     },
     endMarkedContent: function CanvasGraphics_endMarkedContent() {
-      // TODO Marked content.
+      
     },
 
-    // Compatibility
+    
 
     beginCompat: function CanvasGraphics_beginCompat() {
-      // TODO ignore undefined operators (should we do that anyway?)
+      
     },
     endCompat: function CanvasGraphics_endCompat() {
-      // TODO stop ignoring undefined operators
+      
     },
 
-    // Helper functions
+    
 
     consumePath: function CanvasGraphics_consumePath() {
       var ctx = this.ctx;
@@ -5469,7 +5469,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             try {
               ctx.clip('evenodd');
             } catch (ex) {
-              // shouldn't really happen, but browsers might think differently
+              
               ctx.clip();
             }
           }
@@ -5482,7 +5482,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {
       var inverse = this.ctx.mozCurrentTransformInverse;
-      // max of the current horizontal and vertical scale
+      
       return Math.sqrt(Math.max(
         (inverse[0] * inverse[0] + inverse[1] * inverse[1]),
         (inverse[2] * inverse[2] + inverse[3] * inverse[3])));
@@ -5541,13 +5541,13 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    // Set the parameters so we can render any size image.
+    
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    // Upload the image into the texture.
+    
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
     return texture;
   }
@@ -5617,7 +5617,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl = currentGL;
     currentGL = null;
 
-    // setup a GLSL program
+    
     var vertexShader = createVertexShader(gl, smaskVertexShaderCode);
     var fragmentShader = createFragmentShader(gl, smaskFragmentShaderCode);
     var program = createProgram(gl, [vertexShader, fragmentShader]);
@@ -5635,7 +5635,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var texLayerLocation = gl.getUniformLocation(program, 'u_image');
     var texMaskLocation = gl.getUniformLocation(program, 'u_mask');
 
-    // provide texture coordinates for the rectangle.
+    
     var texCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -5675,13 +5675,13 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl.uniform1i(cache.subtypeLocation,
                  properties.subtype === 'Luminosity' ? 1 : 0);
 
-    // Create a textures
+    
     var texture = createTexture(gl, layer, gl.TEXTURE0);
     var maskTexture = createTexture(gl, mask, gl.TEXTURE1);
 
 
-    // Create a buffer and put a single clipspace rectangle in
-    // it (2 triangles)
+    
+    
     var buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -5694,7 +5694,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl.enableVertexAttribArray(cache.positionLocation);
     gl.vertexAttribPointer(cache.positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // draw
+    
     gl.clearColor(0, 0, 0, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -5749,7 +5749,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl = currentGL;
     currentGL = null;
 
-    // setup a GLSL program
+    
     var vertexShader = createVertexShader(gl, figuresVertexShaderCode);
     var fragmentShader = createFragmentShader(gl, figuresFragmentShaderCode);
     var program = createProgram(gl, [vertexShader, fragmentShader]);
@@ -5778,7 +5778,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform2f(cache.resolutionLocation, width, height);
 
-    // count triangle points
+    
     var count = 0;
     var i, ii, rows;
     for (i = 0, ii = figures.length; i < ii; i++) {
@@ -5792,7 +5792,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
           break;
       }
     }
-    // transfer data
+    
     var coords = new Float32Array(count * 2);
     var colors = new Uint8Array(count * 3);
     var coordsMap = context.coords, colorsMap = context.colors;
@@ -5856,7 +5856,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
       }
     }
 
-    // draw
+    
     if (backgroundColor) {
       gl.clearColor(backgroundColor[0] / 255, backgroundColor[1] / 255,
                     backgroundColor[2] / 255, 1.0);
@@ -5947,7 +5947,7 @@ ShadingIRs.RadialAxial = {
 
 var createMeshCanvas = (function createMeshCanvasClosure() {
   function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
-    // Very basic Gouraud-shaded triangle rasterization algorithm.
+    
     var coords = context.coords, colors = context.colors;
     var bytes = data.data, rowSize = data.width * 4;
     var tmp;
@@ -6046,11 +6046,11 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
 
   function createMeshCanvas(bounds, combinesScale, coords, colors, figures,
                             backgroundColor) {
-    // we will increase scale on some weird factor to let antialiasing take
-    // care of "rough" edges
+    
+    
     var EXPECTED_SCALE = 1.1;
-    // MAX_PATTERN_SIZE is used to avoid OOM situation.
-    var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
+    
+    var MAX_PATTERN_SIZE = 3000; 
 
     var offsetX = Math.floor(bounds[0]);
     var offsetY = Math.floor(bounds[1]);
@@ -6078,7 +6078,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       canvas = WebGLUtils.drawFigures(width, height, backgroundColor,
                                       figures, context);
 
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
+      
       tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
       tmpCanvas.context.drawImage(canvas, 0, 0);
       canvas = tmpCanvas.canvas;
@@ -6111,19 +6111,19 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
 
 ShadingIRs.Mesh = {
   fromIR: function Mesh_fromIR(raw) {
-    //var type = raw[1];
+    
     var coords = raw[2];
     var colors = raw[3];
     var figures = raw[4];
     var bounds = raw[5];
     var matrix = raw[6];
-    //var bbox = raw[7];
+    
     var background = raw[8];
     return {
       type: 'Pattern',
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
         var combinedScale;
-        // Obtain scale from matrix and current transformation matrix.
+        
         if (shadingFill) {
           combinedScale = Util.singularValueDecompose2dScale(
             ctx.mozCurrentTransform);
@@ -6136,8 +6136,8 @@ ShadingIRs.Mesh = {
         }
 
 
-        // Rasterizing on the main thread since sending/queue large canvases
-        // might cause OOM.
+        
+        
         var temporaryPatternCanvas = createMeshCanvas(bounds, combinedScale,
           coords, colors, figures, shadingFill ? null : background);
 
@@ -6184,7 +6184,7 @@ var TilingPattern = (function TilingPatternClosure() {
     UNCOLORED: 2
   };
 
-  var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
+  var MAX_PATTERN_SIZE = 3000; 
 
   function TilingPattern(IR, color, ctx, objs, commonObjs, baseTransform) {
     this.operatorList = IR[2];
@@ -6219,23 +6219,23 @@ var TilingPattern = (function TilingPatternClosure() {
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
 
       var topLeft = [x0, y0];
-      // we want the canvas to be as large as the step size
+      
       var botRight = [x0 + xstep, y0 + ystep];
 
       var width = botRight[0] - topLeft[0];
       var height = botRight[1] - topLeft[1];
 
-      // Obtain scale from matrix and current transformation matrix.
+      
       var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
       var curMatrixScale = Util.singularValueDecompose2dScale(
         this.baseTransform);
       var combinedScale = [matrixScale[0] * curMatrixScale[0],
         matrixScale[1] * curMatrixScale[1]];
 
-      // MAX_PATTERN_SIZE is used to avoid OOM situation.
-      // Use width and height values that are as close as possible to the end
-      // result when the pattern is used. Too low value makes the pattern look
-      // blurry. Too large value makes it look too crispy.
+      
+      
+      
+      
       width = Math.min(Math.ceil(Math.abs(width * combinedScale[0])),
         MAX_PATTERN_SIZE);
 
@@ -6252,7 +6252,7 @@ var TilingPattern = (function TilingPatternClosure() {
       this.setScale(width, height, xstep, ystep);
       this.transformToScale(graphics);
 
-      // transform coordinates to pattern space
+      
       var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
       graphics.transform.apply(graphics, tmpTranslate);
 
@@ -6364,7 +6364,7 @@ var FontFace = (function FontFaceClosure() {
   function FontFace(name, file, properties) {
     this.compiledGlyphs = {};
     if (arguments.length === 1) {
-      // importing translated data
+      
       var data = arguments[0];
       for (var i in data) {
         this[i] = data[i];
@@ -6386,7 +6386,7 @@ var FontFace = (function FontFaceClosure() {
       var data = bytesToString(new Uint8Array(this.data));
       var fontName = this.loadedName;
 
-      // Add the font-face rule to the document
+      
       var url = ('url(data:' + this.mimetype + ';base64,' +
                  window.btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
@@ -6403,7 +6403,7 @@ var FontFace = (function FontFaceClosure() {
     getPathGenerator: function (objs, character) {
       if (!(character in this.compiledGlyphs)) {
         var js = objs.get(this.loadedName + '_path_' + character);
-        /*jshint -W054 */
+        
         this.compiledGlyphs[character] = new Function('c', 'size', js);
       }
       return this.compiledGlyphs[character];
