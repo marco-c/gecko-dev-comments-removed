@@ -23,7 +23,7 @@ void nsAuthSASL::Reset()
 }
 
 
-NS_IMPL_ISUPPORTS1(nsAuthSASL, nsIAuthModule)
+NS_IMPL_ISUPPORTS(nsAuthSASL, nsIAuthModule)
 
 NS_IMETHODIMP
 nsAuthSASL::Init(const char *serviceName,
