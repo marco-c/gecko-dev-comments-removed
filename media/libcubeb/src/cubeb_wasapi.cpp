@@ -641,6 +641,7 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
   }
 
   
+  WAVEFORMATEX hw_mixformat = **mix_format;
 
   
 
@@ -690,6 +691,7 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
     
 
 
+    **mix_format = hw_mixformat;
   } else if (hr == S_OK) {
     LOG("Requested format accepted by WASAPI.");
   }
