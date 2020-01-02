@@ -83,6 +83,7 @@
 
 #include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/dom/FallbackEncoding.h"
+#include "mozilla/LoadInfo.h"
 #include "nsIEditingSession.h"
 #include "nsIEditor.h"
 #include "nsNodeInfoManager.h"
@@ -1525,7 +1526,10 @@ nsHTMLDocument::Open(JSContext* cx,
 
   
   
-  rv = channel->SetOwner(callerPrincipal);
+  nsCOMPtr<nsILoadInfo> loadInfo =
+    new LoadInfo(callerPrincipal, LoadInfo::eInheritPrincipal,
+                 LoadInfo::eNotSandboxed);
+  rv = channel->SetLoadInfo(loadInfo);
   if (rv.Failed()) {
     return nullptr;
   }
@@ -2388,7 +2392,10 @@ nsHTMLDocument::CreateAndAddWyciwygChannel(void)
                                        GetDocumentCharacterSet());
 
   
-  channel->SetOwner(NodePrincipal());
+  nsCOMPtr<nsILoadInfo> loadInfo =
+    new LoadInfo(NodePrincipal(), LoadInfo::eInheritPrincipal,
+                 LoadInfo::eNotSandboxed);
+  channel->SetLoadInfo(loadInfo);
 
   
   channel->SetLoadFlags(mLoadFlags);
