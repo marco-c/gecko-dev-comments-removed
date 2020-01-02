@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et ft=cpp : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/PreallocatedProcessManager.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -11,14 +11,15 @@
 #include "nsIPropertyBag2.h"
 #include "ProcessPriorityManager.h"
 #include "nsServiceManagerUtils.h"
+#include "nsCxPusher.h"
 
 #ifdef MOZ_NUWA_PROCESS
 #include "ipc/Nuwa.h"
 #endif
 
-
-
-
+// This number is fairly arbitrary ... the intention is to put off
+// launching another app process until the last one has finished
+// loading its content, to reduce CPU/memory/IO contention.
 #define DEFAULT_ALLOCATE_DELAY 1000
 #define NUWA_FORK_WAIT_DURATION_MS 2000 // 2 seconds.
 
@@ -28,10 +29,10 @@ using namespace mozilla::dom;
 
 namespace {
 
-
-
-
-
+/**
+ * This singleton class implements the static methods on
+ * PreallocatedProcessManager.
+ */
 class PreallocatedProcessManagerImpl MOZ_FINAL
   : public nsIObserver
 {
@@ -41,7 +42,7 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  
+  // See comments on PreallocatedProcessManager for these methods.
   void AllocateAfterDelay();
   void AllocateOnIdle();
   void AllocateNow();
@@ -62,16 +63,16 @@ public:
 private:
   void NuwaFork();
 
-  
+  // initialization off the critical path of app startup.
   CancelableTask* mPreallocateAppProcessTask;
 
-  
-  
+  // The array containing the preallocated processes. 4 as the inline storage size
+  // should be enough so we don't need to grow the nsAutoTArray.
   nsAutoTArray<nsRefPtr<ContentParent>, 4> mSpareProcesses;
 
   nsTArray<nsCOMPtr<nsIRunnable> > mDelayedContentParentRequests;
 
-  
+  // Nuwa process is ready for creating new process.
   bool mIsNuwaReady;
 #endif
 
@@ -95,10 +96,10 @@ private:
   nsRefPtr<ContentParent> mPreallocatedAppProcess;
 };
 
- StaticRefPtr<PreallocatedProcessManagerImpl>
+/* static */ StaticRefPtr<PreallocatedProcessManagerImpl>
 PreallocatedProcessManagerImpl::sSingleton;
 
- PreallocatedProcessManagerImpl*
+/* static */ PreallocatedProcessManagerImpl*
 PreallocatedProcessManagerImpl::Singleton()
 {
   if (!sSingleton) {
@@ -128,9 +129,9 @@ PreallocatedProcessManagerImpl::Init()
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (os) {
     os->AddObserver(this, "ipc:content-shutdown",
-                     false);
+                    /* weakRef = */ false);
     os->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID,
-                     false);
+                    /* weakRef = */ false);
   }
   RereadPrefs();
 }
@@ -143,7 +144,7 @@ PreallocatedProcessManagerImpl::Observe(nsISupports* aSubject,
   if (!strcmp("ipc:content-shutdown", aTopic)) {
     ObserveProcessShutdown(aSubject);
   } else if (!strcmp("nsPref:changed", aTopic)) {
-    
+    // The only other observer we registered was for our prefs.
     RereadPrefs();
   } else if (!strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic)) {
     mShutdown = true;
@@ -229,7 +230,7 @@ PreallocatedProcessManagerImpl::RunAfterPreallocatedProcessReady(nsIRunnable* aR
   MOZ_ASSERT(NS_IsMainThread());
   mDelayedContentParentRequests.AppendElement(aRequest);
 
-  
+  // This is an urgent NuwaFork() request. Request to fork at once.
   DelayedNuwaFork();
 }
 
@@ -239,7 +240,7 @@ PreallocatedProcessManagerImpl::ScheduleDelayedNuwaFork()
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mPreallocateAppProcessTask) {
-    
+    // Make sure there is only one request running.
     return;
   }
 
@@ -262,15 +263,15 @@ PreallocatedProcessManagerImpl::DelayedNuwaFork()
     if (!mPreallocatedAppProcess && !mShutdown && mEnabled) {
       mPreallocatedAppProcess = ContentParent::RunNuwaProcess();
     }
-    
+    // else mPreallocatedAppProcess is starting. It will NuwaFork() when ready.
   } else if (mSpareProcesses.IsEmpty()) {
     NuwaFork();
   }
 }
 
-
-
-
+/**
+ * Get a spare ContentParent from mSpareProcesses list.
+ */
 already_AddRefed<ContentParent>
 PreallocatedProcessManagerImpl::GetSpareProcess()
 {
@@ -292,9 +293,9 @@ PreallocatedProcessManagerImpl::GetSpareProcess()
   return process.forget();
 }
 
-
-
-
+/**
+ * Publish a ContentParent to spare process list.
+ */
 void
 PreallocatedProcessManagerImpl::PublishSpareProcess(ContentParent* aContent)
 {
@@ -325,7 +326,7 @@ PreallocatedProcessManagerImpl::MaybeForgetSpare(ContentParent* aContent)
 
   if (!mDelayedContentParentRequests.IsEmpty()) {
     if (!mPreallocateAppProcessTask) {
-      
+      // This NuwaFork request is urgent. Don't delay it.
       DelayedNuwaFork();
     }
   }
@@ -394,7 +395,7 @@ PreallocatedProcessManagerImpl::Disable()
   mEnabled = false;
 
 #ifdef MOZ_NUWA_PROCESS
-  
+  // Cancel pending fork.
   if (mPreallocateAppProcessTask) {
     mPreallocateAppProcessTask->Cancel();
     mPreallocateAppProcessTask = nullptr;
@@ -439,11 +440,11 @@ inline PreallocatedProcessManagerImpl* GetPPMImpl()
   return PreallocatedProcessManagerImpl::Singleton();
 }
 
-} 
+} // anonymous namespace
 
 namespace mozilla {
 
- void
+/* static */ void
 PreallocatedProcessManager::AllocateAfterDelay()
 {
 #ifdef MOZ_NUWA_PROCESS
@@ -453,19 +454,19 @@ PreallocatedProcessManager::AllocateAfterDelay()
 #endif
 }
 
- void
+/* static */ void
 PreallocatedProcessManager::AllocateOnIdle()
 {
   GetPPMImpl()->AllocateOnIdle();
 }
 
- void
+/* static */ void
 PreallocatedProcessManager::AllocateNow()
 {
   GetPPMImpl()->AllocateNow();
 }
 
- already_AddRefed<ContentParent>
+/* static */ already_AddRefed<ContentParent>
 PreallocatedProcessManager::Take()
 {
 #ifdef MOZ_NUWA_PROCESS
@@ -476,37 +477,37 @@ PreallocatedProcessManager::Take()
 }
 
 #ifdef MOZ_NUWA_PROCESS
- void
+/* static */ void
 PreallocatedProcessManager::PublishSpareProcess(ContentParent* aContent)
 {
   GetPPMImpl()->PublishSpareProcess(aContent);
 }
 
- void
+/* static */ void
 PreallocatedProcessManager::MaybeForgetSpare(ContentParent* aContent)
 {
   GetPPMImpl()->MaybeForgetSpare(aContent);
 }
 
- void
+/* static */ void
 PreallocatedProcessManager::OnNuwaReady()
 {
   GetPPMImpl()->OnNuwaReady();
 }
 
- bool
+/* static */ bool
 PreallocatedProcessManager::IsNuwaReady()
 {
   return GetPPMImpl()->IsNuwaReady();
 }
 
- bool
+/*static */ bool
 PreallocatedProcessManager::PreallocatedProcessReady()
 {
   return GetPPMImpl()->PreallocatedProcessReady();
 }
 
- void
+/* static */ void
 PreallocatedProcessManager::RunAfterPreallocatedProcessReady(nsIRunnable* aRequest)
 {
   GetPPMImpl()->RunAfterPreallocatedProcessReady(aRequest);
@@ -514,4 +515,4 @@ PreallocatedProcessManager::RunAfterPreallocatedProcessReady(nsIRunnable* aReque
 
 #endif
 
-} 
+} // namespace mozilla

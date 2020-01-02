@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "NfcService.h"
 #include <binder/Parcel.h>
@@ -9,6 +9,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "nsAutoPtr.h"
+#include "nsCxPusher.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
 #include "NfcOptions.h"
@@ -49,7 +50,7 @@ assertIsNfcServiceThread()
   MOZ_ASSERT(thread == gNfcService->GetThread());
 }
 
-
+// Runnable used to call Marshall on the NFC thread.
 class NfcCommandRunnable : public nsRunnable
 {
 public:
@@ -64,7 +65,7 @@ public:
     assertIsNfcServiceThread();
 
     Parcel parcel;
-    parcel.writeInt32(0); 
+    parcel.writeInt32(0); // Parcel Size.
     mHandler->Marshall(parcel, mOptions);
     parcel.setDataPosition(0);
     uint32_t sizeBE = htonl(parcel.dataSize() - sizeof(int));
@@ -79,7 +80,7 @@ private:
    CommandOptions mOptions;
 };
 
-
+// Runnable used dispatch the NfcEventOptions on the main thread.
 class NfcEventDispatcher : public nsRunnable
 {
 public:
@@ -96,7 +97,7 @@ public:
     mozilla::AutoSafeJSContext cx;
     RootedDictionary<NfcEventOptions> event(cx);
 
-    
+    // the copy constructor is private.
 #define COPY_FIELD(prop) event.prop = mEvent.prop;
 
 #define COPY_OPT_FIELD(prop, defaultValue)           \
@@ -173,7 +174,7 @@ private:
   EventOptions mEvent;
 };
 
-
+// Runnable used to call Unmarshall on the NFC thread.
 class NfcEventRunnable : public nsRunnable
 {
 public:
@@ -294,7 +295,7 @@ NfcService::SendCommand(JS::HandleValue aOptions, JSContext* aCx)
     return NS_ERROR_FAILURE;
   }
 
-  
+  // Dispatch the command to the NFC thread.
   CommandOptions commandOptions(options);
   nsCOMPtr<nsIRunnable> runnable = new NfcCommandRunnable(mHandler, mConsumer, commandOptions);
   mThread->Dispatch(runnable, nsIEventTarget::DISPATCH_NORMAL);
@@ -346,6 +347,6 @@ static const mozilla::Module kNfcServiceModule = {
   nullptr
 };
 
-} 
+} // namespace mozilla
 
 NSMODULE_DEFN(NfcServiceModule) = &mozilla::kNfcServiceModule;

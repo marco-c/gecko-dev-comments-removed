@@ -1,14 +1,15 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=2 et :
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PluginScriptableObjectParent.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/plugins/PluginIdentifierParent.h"
 #include "mozilla/unused.h"
+#include "nsCxPusher.h"
 #include "nsNPAPIPlugin.h"
 #include "PluginScriptableObjectUtils.h"
 
@@ -27,9 +28,9 @@ ReleaseVariant(NPVariant& aVariant,
   }
 }
 
-} 
+} // anonymous namespace
 
-
+// static
 NPObject*
 PluginScriptableObjectParent::ScriptableAllocate(NPP aInstance,
                                                  NPClass* aClass)
@@ -42,7 +43,7 @@ PluginScriptableObjectParent::ScriptableAllocate(NPP aInstance,
   return new ParentNPObject();
 }
 
-
+// static
 void
 PluginScriptableObjectParent::ScriptableInvalidate(NPObject* aObject)
 {
@@ -53,19 +54,19 @@ PluginScriptableObjectParent::ScriptableInvalidate(NPObject* aObject)
 
   ParentNPObject* object = reinterpret_cast<ParentNPObject*>(aObject);
   if (object->invalidated) {
-    
+    // This can happen more than once, and is just fine.
     return;
   }
 
   object->invalidated = true;
 
-  
+  // |object->parent| may be null already if the instance has gone away.
   if (object->parent && !object->parent->CallInvalidate()) {
     NS_ERROR("Failed to send message!");
   }
 }
 
-
+// static
 void
 PluginScriptableObjectParent::ScriptableDeallocate(NPObject* aObject)
 {
@@ -84,7 +85,7 @@ PluginScriptableObjectParent::ScriptableDeallocate(NPObject* aObject)
   delete object;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableHasMethod(NPObject* aObject,
                                                   NPIdentifier aName)
@@ -121,7 +122,7 @@ PluginScriptableObjectParent::ScriptableHasMethod(NPObject* aObject,
   return result;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableInvoke(NPObject* aObject,
                                                NPIdentifier aName,
@@ -177,7 +178,7 @@ PluginScriptableObjectParent::ScriptableInvoke(NPObject* aObject,
   return true;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableInvokeDefault(NPObject* aObject,
                                                       const NPVariant* aArgs,
@@ -226,7 +227,7 @@ PluginScriptableObjectParent::ScriptableInvokeDefault(NPObject* aObject,
   return true;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableHasProperty(NPObject* aObject,
                                                     NPIdentifier aName)
@@ -263,18 +264,18 @@ PluginScriptableObjectParent::ScriptableHasProperty(NPObject* aObject,
   return result;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableGetProperty(NPObject* aObject,
                                                     NPIdentifier aName,
                                                     NPVariant* aResult)
 {
-  
+  // See GetPropertyHelper below.
   NS_NOTREACHED("Shouldn't ever call this directly!");
   return false;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableSetProperty(NPObject* aObject,
                                                     NPIdentifier aName,
@@ -318,7 +319,7 @@ PluginScriptableObjectParent::ScriptableSetProperty(NPObject* aObject,
   return success;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableRemoveProperty(NPObject* aObject,
                                                        NPIdentifier aName)
@@ -355,7 +356,7 @@ PluginScriptableObjectParent::ScriptableRemoveProperty(NPObject* aObject,
   return success;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableEnumerate(NPObject* aObject,
                                                   NPIdentifier** aIdentifiers,
@@ -416,7 +417,7 @@ PluginScriptableObjectParent::ScriptableEnumerate(NPObject* aObject,
   return true;
 }
 
-
+// static
 bool
 PluginScriptableObjectParent::ScriptableConstruct(NPObject* aObject,
                                                   const NPVariant* aArgs,
@@ -562,9 +563,9 @@ PluginScriptableObjectParent::CreateProxyObject()
   NS_ASSERTION(!object->invalidated, "Bad object!");
   NS_ASSERTION(!object->parent, "Bad object!");
 
-  
-  
-  
+  // We don't want to have the actor own this object but rather let the object
+  // own this actor. Set the reference count to 0 here so that when the object
+  // dies we will send the destructor message to the child.
   object->referenceCount = 0;
   NS_LOG_RELEASE(object, 0, "BrowserNPObject");
 
@@ -631,8 +632,8 @@ PluginScriptableObjectParent::DropNPObject()
   NS_ASSERTION(mObject->_class == GetClass(), "Wrong type of object!");
   NS_ASSERTION(mType == Proxy, "Shouldn't call this for non-proxy object!");
 
-  
-  
+  // We think we're about to be deleted, but we could be racing with the other
+  // process.
   PluginInstanceParent* instance = GetInstance();
   NS_ASSERTION(instance, "Must have an instance!");
 
@@ -645,7 +646,7 @@ PluginScriptableObjectParent::DropNPObject()
 void
 PluginScriptableObjectParent::ActorDestroy(ActorDestroyReason aWhy)
 {
-  
+  // Implement me! Bug 1005163
 }
 
 bool
@@ -723,7 +724,7 @@ PluginScriptableObjectParent::AnswerInvoke(PPluginIdentifierParent* aId,
 
   for (uint32_t index = 0; index < argCount; index++) {
     if (!ConvertToVariant(aArgs[index], convertedArgs[index], instance)) {
-      
+      // Don't leak things we've already converted!
       while (index-- > 0) {
         ReleaseVariant(convertedArgs[index], instance);
       }
@@ -806,7 +807,7 @@ PluginScriptableObjectParent::AnswerInvokeDefault(const InfallibleTArray<Variant
 
   for (uint32_t index = 0; index < argCount; index++) {
     if (!ConvertToVariant(aArgs[index], convertedArgs[index], instance)) {
-      
+      // Don't leak things we've already converted!
       while (index-- > 0) {
         ReleaseVariant(convertedArgs[index], instance);
       }
@@ -1046,8 +1047,8 @@ PluginScriptableObjectParent::AnswerEnumerate(InfallibleTArray<PPluginIdentifier
 
   mozilla::AutoSafeJSContext cx;
   for (uint32_t index = 0; index < idCount; index++) {
-    
-    
+    // Because of GC hazards, all identifiers returned from enumerate
+    // must be made permanent.
     if (_identifierisstring(ids[index])) {
       JS::Rooted<JSString*> str(cx, NPIdentifierToString(ids[index]));
       if (!JS_StringHasBeenInterned(cx, str)) {
@@ -1108,7 +1109,7 @@ PluginScriptableObjectParent::AnswerConstruct(const InfallibleTArray<Variant>& a
 
   for (uint32_t index = 0; index < argCount; index++) {
     if (!ConvertToVariant(aArgs[index], convertedArgs[index], instance)) {
-      
+      // Don't leak things we've already converted!
       while (index-- > 0) {
         ReleaseVariant(convertedArgs[index], instance);
       }

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/ContentChild.h"
 #include "SmsIPCService.h"
@@ -10,6 +10,7 @@
 #include "SmsMessage.h"
 #include "SmsFilter.h"
 #include "nsJSUtils.h"
+#include "nsCxPusher.h"
 #include "mozilla/dom/MozMobileMessageManagerBinding.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/Preferences.h"
@@ -29,7 +30,7 @@ const char* kObservedPrefs[] = {
   nullptr
 };
 
-
+// TODO: Bug 767082 - WebSMS: sSmsChild leaks at shutdown
 PSmsChild* gSmsChild;
 
 PSmsChild*
@@ -71,8 +72,8 @@ SendCursorRequest(const IPCMobileMessageCursor& aRequest,
   nsRefPtr<MobileMessageCursorChild> actor =
     new MobileMessageCursorChild(aRequestReply);
 
-  
-  
+  // Add an extra ref for IPDL. Will be released in
+  // SmsChild::DeallocPMobileMessageCursor().
   actor->AddRef();
 
   smsChild->SendPMobileMessageCursorConstructor(actor, aRequest);
@@ -94,7 +95,7 @@ getDefaultServiceId(const char* aPrefKey)
   return id;
 }
 
-} 
+} // anonymous namespace
 
 NS_IMPL_ISUPPORTS(SmsIPCService,
                   nsISmsService,
@@ -109,9 +110,9 @@ SmsIPCService::SmsIPCService()
   mSmsDefaultServiceId = getDefaultServiceId(kPrefSmsDefaultServiceId);
 }
 
-
-
-
+/*
+ * Implementation of nsIObserver.
+ */
 
 NS_IMETHODIMP
 SmsIPCService::Observe(nsISupports* aSubject,
@@ -132,9 +133,9 @@ SmsIPCService::Observe(nsISupports* aSubject,
   return NS_ERROR_UNEXPECTED;
 }
 
-
-
-
+/*
+ * Implementation of nsISmsService.
+ */
 
 NS_IMETHODIMP
 SmsIPCService::GetSmsDefaultServiceId(uint32_t* aServiceId)
@@ -200,9 +201,9 @@ SmsIPCService::RemoveSilentNumber(const nsAString& aNumber)
   return NS_OK;
 }
 
-
-
-
+/*
+ * Implementation of nsIMobileMessageDatabaseService.
+ */
 NS_IMETHODIMP
 SmsIPCService::GetMessageMoz(int32_t aMessageId,
                              nsIMobileMessageCallback* aRequest)
@@ -264,13 +265,13 @@ GetSendMmsMessageRequestFromParams(uint32_t aServiceId,
     return false;
   }
 
-  
+  // SendMobileMessageRequest.receivers
   if (!params.mReceivers.WasPassed()) {
     return false;
   }
   request.receivers().AppendElements(params.mReceivers.Value());
 
-  
+  // SendMobileMessageRequest.attachments
   mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
 
   if (!params.mAttachments.WasPassed()) {
@@ -292,15 +293,15 @@ GetSendMmsMessageRequestFromParams(uint32_t aServiceId,
   request.smil() = params.mSmil;
   request.subject() = params.mSubject;
 
-  
+  // Set service ID.
   request.serviceId() = aServiceId;
 
   return true;
 }
 
-
-
-
+/*
+ * Implementation of nsIMmsService.
+ */
 
 NS_IMETHODIMP
 SmsIPCService::GetMmsDefaultServiceId(uint32_t* aServiceId)

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "EventListenerService.h"
 #include "mozilla/BasicEvents.h"
@@ -10,6 +10,7 @@
 #include "mozilla/JSEventHandler.h"
 #include "mozilla/Maybe.h"
 #include "nsCOMArray.h"
+#include "nsCxPusher.h"
 #include "nsDOMClassInfoID.h"
 #include "nsIXPConnect.h"
 #include "nsJSUtils.h"
@@ -20,9 +21,9 @@ namespace mozilla {
 
 using namespace dom;
 
-
-
-
+/******************************************************************************
+ * mozilla::EventListenerInfo
+ ******************************************************************************/
 
 NS_IMPL_CYCLE_COLLECTION(EventListenerInfo, mListener)
 
@@ -71,9 +72,9 @@ EventListenerInfo::GetListenerObject(JSContext* aCx,
   return NS_OK;
 }
 
-
-
-
+/******************************************************************************
+ * mozilla::EventListenerService
+ ******************************************************************************/
 
 NS_IMPL_ISUPPORTS(EventListenerService, nsIEventListenerService)
 
@@ -288,7 +289,7 @@ EventListenerService::RemoveListenerForAllEvents(nsIDOMEventTarget* aTarget,
   return NS_OK;
 }
 
-} 
+} // namespace mozilla
 
 nsresult
 NS_NewEventListenerService(nsIEventListenerService** aResult)

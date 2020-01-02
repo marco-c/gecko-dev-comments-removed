@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IDBFactory.h"
 
@@ -26,6 +26,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
+#include "nsCxPusher.h"
 #include "nsDOMClassInfoID.h"
 #include "nsGlobalWindow.h"
 #include "nsHashKeys.h"
@@ -73,7 +74,7 @@ struct ObjectStoreInfoMap
   ObjectStoreInfo* info;
 };
 
-} 
+} // anonymous namespace
 
 IDBFactory::IDBFactory()
 : mPrivilege(Content), mDefaultPersistenceType(PERSISTENCE_TYPE_TEMPORARY),
@@ -97,7 +98,7 @@ IDBFactory::~IDBFactory()
   }
 }
 
-
+// static
 nsresult
 IDBFactory::Create(nsPIDOMWindow* aWindow,
                    const nsACString& aGroup,
@@ -116,8 +117,8 @@ IDBFactory::Create(nsPIDOMWindow* aWindow,
     IDB_ENSURE_TRUE(aWindow, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
 
-  
-  
+  // Make sure that the manager is up before we do anything here since lots of
+  // decisions depend on which process we're running in.
   indexedDB::IndexedDatabaseManager* mgr =
     indexedDB::IndexedDatabaseManager::GetOrCreate();
   IDB_ENSURE_TRUE(mgr, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
@@ -139,7 +140,7 @@ IDBFactory::Create(nsPIDOMWindow* aWindow,
                                          &defaultPersistenceType);
   }
   if (NS_FAILED(rv)) {
-    
+    // Not allowed.
     *aFactory = nullptr;
     return NS_OK;
   }
@@ -174,7 +175,7 @@ IDBFactory::Create(nsPIDOMWindow* aWindow,
   return NS_OK;
 }
 
-
+// static
 nsresult
 IDBFactory::Create(JSContext* aCx,
                    JS::Handle<JSObject*> aOwningObject,
@@ -188,8 +189,8 @@ IDBFactory::Create(JSContext* aCx,
                "Not a global object!");
   NS_ASSERTION(nsContentUtils::IsCallerChrome(), "Only for chrome!");
 
-  
-  
+  // Make sure that the manager is up before we do anything here since lots of
+  // decisions depend on which process we're running in.
   IndexedDatabaseManager* mgr = IndexedDatabaseManager::GetOrCreate();
   IDB_ENSURE_TRUE(mgr, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
@@ -226,7 +227,7 @@ IDBFactory::Create(JSContext* aCx,
   return NS_OK;
 }
 
-
+// static
 nsresult
 IDBFactory::Create(nsIContentParent* aContentParent,
                    IDBFactory** aFactory)
@@ -235,8 +236,8 @@ IDBFactory::Create(nsIContentParent* aContentParent,
   NS_ASSERTION(IndexedDatabaseManager::IsMainProcess(), "Wrong process!");
   NS_ASSERTION(nsContentUtils::IsCallerChrome(), "Only for chrome!");
 
-  
-  
+  // We need to get this information before we push a null principal to avoid
+  // IsCallerChrome() assertion in quota manager.
   nsCString group;
   nsCString origin;
   StoragePrivilege privilege;
@@ -260,8 +261,8 @@ IDBFactory::Create(nsIContentParent* aContentParent,
   JS::Rooted<JSObject*> global(cx, globalHolder->GetJSObject());
   NS_ENSURE_STATE(global);
 
-  
-  
+  // The CreateSandbox call returns a proxy to the actual sandbox object. We
+  // don't need a proxy here.
   global = js::UncheckedUnwrap(global);
 
   JSAutoCompartment ac(cx, global);
@@ -281,7 +282,7 @@ IDBFactory::Create(nsIContentParent* aContentParent,
   return NS_OK;
 }
 
-
+// static
 already_AddRefed<nsIFileURL>
 IDBFactory::GetDatabaseFileURL(nsIFile* aDatabaseFile,
                                PersistenceType aPersistenceType,
@@ -306,7 +307,7 @@ IDBFactory::GetDatabaseFileURL(nsIFile* aDatabaseFile,
   return fileUrl.forget();
 }
 
-
+// static
 already_AddRefed<mozIStorageConnection>
 IDBFactory::GetConnection(const nsAString& aDatabaseFilePath,
                           PersistenceType aPersistenceType,
@@ -346,7 +347,7 @@ IDBFactory::GetConnection(const nsAString& aDatabaseFilePath,
   return connection.forget();
 }
 
-
+// static
 nsresult
 IDBFactory::SetDefaultPragmas(mozIStorageConnection* aConnection)
 {
@@ -354,18 +355,18 @@ IDBFactory::SetDefaultPragmas(mozIStorageConnection* aConnection)
 
   static const char query[] =
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
-    
-    
-    
+    // Switch the journaling mode to TRUNCATE to avoid changing the directory
+    // structure at the conclusion of every transaction for devices with slower
+    // file systems.
     "PRAGMA journal_mode = TRUNCATE; "
 #endif
-    
+    // We use foreign keys in lots of places.
     "PRAGMA foreign_keys = ON; "
-    
-    
-    
-    
-    
+    // The "INSERT OR REPLACE" statement doesn't fire the update trigger,
+    // instead it fires only the insert trigger. This confuses the update
+    // refcount function. This behavior changes with enabled recursive triggers,
+    // so the statement fires the delete trigger first and then the insert
+    // trigger.
     "PRAGMA recursive_triggers = ON;";
 
   nsresult rv = aConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING(query));
@@ -381,7 +382,7 @@ IgnoreWhitespace(char16_t c)
   return false;
 }
 
-
+// static
 nsresult
 IDBFactory::LoadDatabaseInformation(mozIStorageConnection* aConnection,
                                     const nsACString& aDatabaseId,
@@ -393,7 +394,7 @@ IDBFactory::LoadDatabaseInformation(mozIStorageConnection* aConnection,
 
   aObjectStores.Clear();
 
-   
+   // Load object store names and ids.
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = aConnection->CreateStatement(NS_LITERAL_CSTRING(
     "SELECT name, id, key_path, auto_increment "
@@ -419,8 +420,8 @@ IDBFactory::LoadDatabaseInformation(mozIStorageConnection* aConnection,
     nsresult rv = stmt->GetTypeOfIndex(2, &columnType);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
+    // NB: We don't have to handle the NULL case, since that is the default
+    // for a new KeyPath.
     if (columnType != mozIStorageStatement::VALUE_TYPE_NULL) {
       NS_ASSERTION(columnType == mozIStorageStatement::VALUE_TYPE_TEXT,
                    "Should be a string");
@@ -444,7 +445,7 @@ IDBFactory::LoadDatabaseInformation(mozIStorageConnection* aConnection,
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Load index information
   rv = aConnection->CreateStatement(NS_LITERAL_CSTRING(
     "SELECT object_store_id, id, name, key_path, unique_index, multientry "
     "FROM object_store_index"
@@ -479,14 +480,14 @@ IDBFactory::LoadDatabaseInformation(mozIStorageConnection* aConnection,
     rv = stmt->GetString(3, keyPathSerialization);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // XXX bent wants to assert here
     indexInfo->keyPath = KeyPath::DeserializeFromString(keyPathSerialization);
     indexInfo->unique = !!stmt->AsInt32(4);
     indexInfo->multiEntry = !!stmt->AsInt32(5);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Load version information.
   rv = aConnection->CreateStatement(NS_LITERAL_CSTRING(
     "SELECT version "
     "FROM database"
@@ -509,7 +510,7 @@ IDBFactory::LoadDatabaseInformation(mozIStorageConnection* aConnection,
   return rv;
 }
 
-
+// static
 nsresult
 IDBFactory::SetDatabaseMetadata(DatabaseInfo* aDatabaseInfo,
                                 uint64_t aVersion,
@@ -602,7 +603,7 @@ IDBFactory::OpenInternal(const nsAString& aName,
   }
 
   if (aPrivilege == Chrome) {
-    
+    // Chrome privilege, ignore the persistence type parameter.
     aPersistenceType = PERSISTENCE_TYPE_PERSISTENT;
   }
 
@@ -640,7 +641,7 @@ IDBFactory::OpenInternal(const nsAString& aName,
                              openHelper->Id(), permissionHelper);
       }
       else {
-        
+        // Chrome and temporary storage doesn't need to check the permission.
         rv = openHelper->WaitForOpenAllowed();
       }
     }
@@ -742,7 +743,7 @@ already_AddRefed<IDBOpenDBRequest>
 IDBFactory::OpenForPrincipal(nsIPrincipal* aPrincipal, const nsAString& aName,
                              uint64_t aVersion, ErrorResult& aRv)
 {
-  
+  // Just to be on the extra-safe side
   if (!nsContentUtils::IsCallerChrome()) {
     MOZ_CRASH();
   }
@@ -755,7 +756,7 @@ already_AddRefed<IDBOpenDBRequest>
 IDBFactory::OpenForPrincipal(nsIPrincipal* aPrincipal, const nsAString& aName,
                              const IDBOpenDBOptions& aOptions, ErrorResult& aRv)
 {
-  
+  // Just to be on the extra-safe side
   if (!nsContentUtils::IsCallerChrome()) {
     MOZ_CRASH();
   }
@@ -769,7 +770,7 @@ IDBFactory::DeleteForPrincipal(nsIPrincipal* aPrincipal, const nsAString& aName,
                                const IDBOpenDBOptions& aOptions,
                                ErrorResult& aRv)
 {
-  
+  // Just to be on the extra-safe side
   if (!nsContentUtils::IsCallerChrome()) {
     MOZ_CRASH();
   }

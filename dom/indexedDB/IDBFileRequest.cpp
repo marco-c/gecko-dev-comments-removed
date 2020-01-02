@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IDBFileRequest.h"
 
@@ -16,6 +16,7 @@
 #include "mozilla/dom/ProgressEvent.h"
 #include "mozilla/EventDispatcher.h"
 #include "nsCOMPtr.h"
+#include "nsCxPusher.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsIDOMEvent.h"
@@ -35,7 +36,7 @@ IDBFileRequest::~IDBFileRequest()
 {
 }
 
-
+// static
 already_AddRefed<IDBFileRequest>
 IDBFileRequest::Create(nsPIDOMWindow* aOwner, IDBFileHandle* aFileHandle,
                        bool aWrapAsDOMRequest)
@@ -72,13 +73,13 @@ IDBFileRequest::NotifyHelperCompleted(FileHelper* aFileHelper)
 
   nsresult rv = aFileHelper->ResultCode();
 
-  
+  // If the request failed then fire error event and return.
   if (NS_FAILED(rv)) {
     FireError(rv);
     return NS_OK;
   }
 
-  
+  // Otherwise we need to get the result from the helper.
   nsIScriptContext* sc = GetContextForEventHandlers(&rv);
   NS_ENSURE_STATE(sc);
 
@@ -115,7 +116,7 @@ NS_INTERFACE_MAP_END_INHERITING(DOMRequest)
 NS_IMPL_ADDREF_INHERITED(IDBFileRequest, DOMRequest)
 NS_IMPL_RELEASE_INHERITED(IDBFileRequest, DOMRequest)
 
-
+// virtual
 JSObject*
 IDBFileRequest::WrapObject(JSContext* aCx)
 {
@@ -153,6 +154,6 @@ IDBFileRequest::FireProgressEvent(uint64_t aLoaded, uint64_t aTotal)
   DispatchTrustedEvent(event);
 }
 
-} 
-} 
-} 
+} // namespace indexedDB
+} // namespace dom
+} // namespace mozilla

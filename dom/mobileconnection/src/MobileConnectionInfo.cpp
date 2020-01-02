@@ -1,14 +1,13 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MobileConnectionInfo.h"
 
-#include "mozilla/dom/ScriptSettings.h"
-
 #include "jsapi.h"
+#include "nsCxPusher.h"
 
 #define CONVERT_STRING_TO_NULLABLE_ENUM(_string, _enumType, _enum)      \
 {                                                                       \
@@ -57,17 +56,17 @@ MobileConnectionInfo::Update(nsIMobileConnectionInfo* aInfo)
   aInfo->GetEmergencyCallsOnly(&mEmergencyCallsOnly);
   aInfo->GetRoaming(&mRoaming);
 
-  
+  // Update mState
   nsAutoString state;
   aInfo->GetState(state);
   CONVERT_STRING_TO_NULLABLE_ENUM(state, MobileConnectionState, mState);
 
-  
+  // Update mType
   nsAutoString type;
   aInfo->GetType(type);
   CONVERT_STRING_TO_NULLABLE_ENUM(type, MobileConnectionType, mType);
 
-  
+  // Update mSignalStrength
   AutoSafeJSContext cx;
   JS::Rooted<JS::Value> signalStrength(cx, JSVAL_VOID);
   aInfo->GetSignalStrength(&signalStrength);
@@ -77,7 +76,7 @@ MobileConnectionInfo::Update(nsIMobileConnectionInfo* aInfo)
     mSignalStrength.SetNull();
   }
 
-  
+  // Update mRelSignalStrength
   JS::Rooted<JS::Value> relSignalStrength(cx, JSVAL_VOID);
   aInfo->GetRelSignalStrength(&relSignalStrength);
   if (relSignalStrength.isNumber()) {
@@ -86,7 +85,7 @@ MobileConnectionInfo::Update(nsIMobileConnectionInfo* aInfo)
     mRelSignalStrength.SetNull();
   }
 
-  
+  // Update mNetworkInfo
   nsCOMPtr<nsIMobileNetworkInfo> networkInfo;
   aInfo->GetNetwork(getter_AddRefs(networkInfo));
   if (networkInfo) {
@@ -98,7 +97,7 @@ MobileConnectionInfo::Update(nsIMobileConnectionInfo* aInfo)
     mNetworkInfo = nullptr;
   }
 
-  
+  // Update mCellInfo
   nsCOMPtr<nsIMobileCellInfo> cellInfo;
   aInfo->GetCell(getter_AddRefs(cellInfo));
   if (cellInfo) {

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsNPAPIPlugin_h_
 #define nsNPAPIPlugin_h_
@@ -10,7 +10,8 @@
 #include "npfunctions.h"
 #include "nsPluginHost.h"
 
-#include "mozilla/dom/ScriptSettings.h"
+#include "nsCxPusher.h"
+
 #include "mozilla/PluginLibrary.h"
 
 #if defined(XP_WIN)
@@ -34,22 +35,22 @@ public:
 
   NS_DECL_ISUPPORTS
 
-  
-  
+  // Constructs and initializes an nsNPAPIPlugin object. A nullptr file path
+  // will prevent this from calling NP_Initialize.
   static nsresult CreatePlugin(nsPluginTag *aPluginTag, nsNPAPIPlugin** aResult);
 
   PluginLibrary* GetLibrary();
-  
+  // PluginFuncs() can't fail but results are only valid if GetLibrary() succeeds
   NPPluginFuncs* PluginFuncs();
 
 #if defined(XP_MACOSX) && !defined(__LP64__)
   void SetPluginRefNum(short aRefNum);
 #endif
 
-  
-  
-  
-  
+  // The IPC mechanism notifies the nsNPAPIPlugin if the plugin
+  // crashes and is no longer usable. pluginDumpID/browserDumpID are
+  // the IDs of respective minidumps that were written, or empty if no
+  // minidump was written.
   void PluginCrashed(const nsAString& pluginDumpID,
                      const nsAString& browserDumpID);
   
@@ -319,19 +320,19 @@ _useragent(NPP npp);
 void*
 _memalloc (uint32_t size);
 
-
-void* 
+// Deprecated entry points for the old Java plugin.
+void* /* OJI type: JRIEnv* */
 _getJavaEnv();
 
-void* 
+void* /* OJI type: jref */
 _getJavaPeer(NPP npp);
 
 void
 _urlredirectresponse(NPP instance, void* notifyData, NPBool allow);
 
-} 
-} 
-} 
+} /* namespace parent */
+} /* namespace plugins */
+} /* namespace mozilla */
 
 const char *
 PeekException();
@@ -345,10 +346,10 @@ OnPluginDestroy(NPP instance);
 void
 OnShutdown();
 
-
-
-
-
+/**
+ * within a lexical scope, locks and unlocks the mutex used to
+ * serialize modifications to plugin async callback state.
+ */
 struct MOZ_STACK_CLASS AsyncCallbackAutoLock
 {
   AsyncCallbackAutoLock();
@@ -367,14 +368,14 @@ protected:
   static NPP sCurrentNPP;
 };
 
-
-
-
-
-
-
-
-
+// XXXjst: The NPPAutoPusher stack is a bit redundant now that
+// PluginDestructionGuard exists, and could thus be replaced by code
+// that uses the PluginDestructionGuard list of plugins on the
+// stack. But they're not identical, and to minimize code changes
+// we're keeping both for the moment, and making NPPAutoPusher inherit
+// the PluginDestructionGuard class to avoid having to keep two
+// separate objects on the stack since we always want a
+// PluginDestructionGuard where we use an NPPAutoPusher.
 
 class MOZ_STACK_CLASS NPPAutoPusher : public NPPStack,
                                       protected PluginDestructionGuard
@@ -408,4 +409,4 @@ protected:
   char *mOldException;
 };
 
-#endif 
+#endif // nsNPAPIPlugin_h_
