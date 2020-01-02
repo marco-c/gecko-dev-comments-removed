@@ -135,6 +135,8 @@ public:
   virtual nsresult GetBuffered(dom::TimeRanges* aBuffered, int64_t aStartTime);
   virtual void NotifyDataArrived(const char* aBuffer, uint32_t aLength, int64_t aOffset);
 
+  virtual bool IsMediaSeekable() MOZ_OVERRIDE;
+
 protected:
   
   

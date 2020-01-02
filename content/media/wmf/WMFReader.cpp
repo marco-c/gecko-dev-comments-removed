@@ -541,14 +541,6 @@ WMFReader::ReadMetadata(MediaInfo* aInfo,
     ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
     mDecoder->SetMediaEndTime(duration);
   }
-  
-  
-  bool canSeek = false;
-  if (FAILED(hr) ||
-      FAILED(GetSourceReaderCanSeek(mSourceReader, canSeek)) ||
-      !canSeek) {
-    mDecoder->SetMediaSeekable(false);
-  }
 
   *aInfo = mInfo;
   *aTags = nullptr;
@@ -556,6 +548,22 @@ WMFReader::ReadMetadata(MediaInfo* aInfo,
   
 
   return NS_OK;
+}
+
+bool
+WMFReader::IsMediaSeekable()
+{
+  
+  int64_t duration = 0;
+  HRESULT hr = GetSourceReaderDuration(mSourceReader, duration);
+  
+  
+  bool canSeek = false;
+  if (FAILED(hr) || FAILED(GetSourceReaderCanSeek(mSourceReader, canSeek)) ||
+      !canSeek) {
+    return false;
+  }
+  return true;
 }
 
 bool
