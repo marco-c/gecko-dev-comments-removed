@@ -1,12 +1,10 @@
-
-
-load(libdir + "iteration.js");
+// An iterator keeps its data alive.
 
 load(libdir + "referencesVia.js");
 var key = {};
 
 function test(obj, edgeName) {
-    var iter = obj[std_iterator]();
+    var iter = obj.iterator();
     referencesVia(iter, "**UNKNOWN SLOT 0**", obj);
     referencesVia(obj, edgeName, key);
 }
