@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef nsXBLEventHandler_h__
 #define nsXBLEventHandler_h__
@@ -19,13 +19,13 @@ class nsXBLEventHandler : public nsIDOMEventListener
 {
 public:
   nsXBLEventHandler(nsXBLPrototypeHandler* aHandler);
-  virtual ~nsXBLEventHandler();
 
   NS_DECL_ISUPPORTS
 
   NS_DECL_NSIDOMEVENTLISTENER
 
 protected:
+  virtual ~nsXBLEventHandler();
   nsXBLPrototypeHandler* mProtoHandler;
 
 private:
@@ -50,7 +50,6 @@ class nsXBLKeyEventHandler : public nsIDOMEventListener
 {
 public:
   nsXBLKeyEventHandler(nsIAtom* aEventType, uint8_t aPhase, uint8_t aType);
-  virtual ~nsXBLKeyEventHandler();
 
   NS_DECL_ISUPPORTS
 
@@ -93,6 +92,8 @@ public:
 
 private:
   nsXBLKeyEventHandler();
+  virtual ~nsXBLKeyEventHandler();
+
   bool ExecuteMatchedHandlers(nsIDOMKeyEvent* aEvent, uint32_t aCharCode,
                                 bool aIgnoreShiftKey);
 
