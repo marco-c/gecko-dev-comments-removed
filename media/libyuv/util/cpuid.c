@@ -1,12 +1,12 @@
-/*
- *  Copyright 2012 The LibYuv Project Authors. All rights reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS. All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,30 +26,30 @@ int main(int argc, const char* argv[]) {
     defined(_M_IX86) || defined(_M_X64)
   if (has_x86) {
     uint32 family, model, cpu_info[4];
-    // Vendor ID:
-    // AuthenticAMD AMD processor
-    // CentaurHauls Centaur processor
-    // CyrixInstead Cyrix processor
-    // GenuineIntel Intel processor
-    // GenuineTMx86 Transmeta processor
-    // Geode by NSC National Semiconductor processor
-    // NexGenDriven NexGen processor
-    // RiseRiseRise Rise Technology processor
-    // SiS SiS SiS  SiS processor
-    // UMC UMC UMC  UMC processor
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     CpuId(0, 0, &cpu_info[0]);
-    cpu_info[0] = cpu_info[1];  // Reorder output
+    cpu_info[0] = cpu_info[1];  
     cpu_info[1] = cpu_info[3];
     cpu_info[3] = 0;
     printf("Cpu Vendor: %s\n", (char*)(&cpu_info[0]));
 
-    // CPU Family and Model
-    // 3:0 - Stepping
-    // 7:4 - Model
-    // 11:8 - Family
-    // 13:12 - Processor Type
-    // 19:16 - Extended Model
-    // 27:20 - Extended Family
+    
+    
+    
+    
+    
+    
+    
     CpuId(1, 0, &cpu_info[0]);
     family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
     model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);

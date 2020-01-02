@@ -1,12 +1,12 @@
-/*
- *  Copyright 2011 The LibYuv Project Authors. All rights reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS. All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include <stdlib.h>
 #include <time.h>
@@ -28,7 +28,7 @@
 
 #if defined(_MSC_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
-#else  // __GNUC__
+#else  
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 #endif
 
@@ -496,7 +496,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
         YALIGN, benchmark_width_, DIFF, _Opt, +, 0, FMT_C, BPP_C)
 
-// TODO(fbarchard): Make vertical alignment unnecessary on bayer.
+
 TESTPLANARTOB(I420, 2, 2, ARGB, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I420, 2, 2, BGRA, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I420, 2, 2, ABGR, 4, 4, 1, 2, ARGB, 4)
@@ -724,7 +724,7 @@ TESTATOPLANAR(RGBA, 4, 1, I420, 2, 2, 4)
 TESTATOPLANAR(RAW, 3, 1, I420, 2, 2, 4)
 TESTATOPLANAR(RGB24, 3, 1, I420, 2, 2, 4)
 TESTATOPLANAR(RGB565, 2, 1, I420, 2, 2, 5)
-// TODO(fbarchard): Make 1555 neon work same as C code, reduce to diff 9.
+
 TESTATOPLANAR(ARGB1555, 2, 1, I420, 2, 2, 15)
 TESTATOPLANAR(ARGB4444, 2, 1, I420, 2, 2, 17)
 TESTATOPLANAR(ARGB, 4, 1, I411, 4, 1, 4)
@@ -986,14 +986,14 @@ TEST_F(libyuvTest, ValidateJpeg) {
   const int kSize = kImageSize + kOff;
   align_buffer_64(orig_pixels, kSize);
 
-  // No SOI or EOI. Expect fail.
+  
   memset(orig_pixels, 0, kSize);
 
-  // EOI, SOI. Expect pass.
+  
   orig_pixels[0] = 0xff;
-  orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[1] = 0xd8;  
   orig_pixels[kSize - kOff + 0] = 0xff;
-  orig_pixels[kSize - kOff + 1] = 0xd9;  // EOI.
+  orig_pixels[kSize - kOff + 1] = 0xd9;  
   for (int times = 0; times < benchmark_iterations_; ++times) {
     EXPECT_TRUE(ValidateJpeg(orig_pixels, kSize));
   }
@@ -1008,21 +1008,21 @@ TEST_F(libyuvTest, InvalidateJpeg) {
   const int kSize = kImageSize + kOff;
   align_buffer_64(orig_pixels, kSize);
 
-  // No SOI or EOI. Expect fail.
+  
   memset(orig_pixels, 0, kSize);
   EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
 
-  // SOI but no EOI. Expect fail.
+  
   orig_pixels[0] = 0xff;
-  orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[1] = 0xd8;  
   for (int times = 0; times < benchmark_iterations_; ++times) {
     EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
   }
-  // EOI but no SOI. Expect fail.
+  
   orig_pixels[0] = 0;
   orig_pixels[1] = 0;
   orig_pixels[kSize - kOff + 0] = 0xff;
-  orig_pixels[kSize - kOff + 1] = 0xd9;  // EOI.
+  orig_pixels[kSize - kOff + 1] = 0xd9;  
   EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
 
   free_aligned_buffer_page_end(orig_pixels);
@@ -1030,4 +1030,4 @@ TEST_F(libyuvTest, InvalidateJpeg) {
 
 #endif
 
-}  // namespace libyuv
+}  

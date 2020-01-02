@@ -1,14 +1,14 @@
-/*
- *  Copyright 2013 The LibYuv Project Authors. All rights reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS. All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
 
-#include "../util/ssim.h"  // NOLINT
+
+
+
+
+
+
+
+
+
+#include "../util/ssim.h"  
 
 #include <math.h>
 #include <string.h>
@@ -17,8 +17,8 @@
 extern "C" {
 #endif
 
-typedef unsigned int uint32;     // NOLINT
-typedef unsigned short uint16;   // NOLINT
+typedef unsigned int uint32;     
+typedef unsigned short uint16;   
 
 #if !defined(LIBYUV_DISABLE_X86) && !defined(__SSE2__) && \
   (defined(_M_X64) || (defined(_M_IX86_FP) && (_M_IX86_FP >= 2)))
@@ -32,21 +32,21 @@ typedef unsigned short uint16;   // NOLINT
 #include <omp.h>
 #endif
 
-// SSIM
+
 enum { KERNEL = 3, KERNEL_SIZE = 2 * KERNEL + 1 };
 
-// Symmetric Gaussian kernel:  K[i] = ~11 * exp(-0.3 * i * i)
-// The maximum value (11 x 11) must be less than 128 to avoid sign
-// problems during the calls to _mm_mullo_epi16().
+
+
+
 static const int K[KERNEL_SIZE] = {
-  1, 3, 7, 11, 7, 3, 1    // ~11 * exp(-0.3 * i * i)
+  1, 3, 7, 11, 7, 3, 1    
 };
 static const double kiW[KERNEL + 1 + 1] = {
-  1. / 1089.,   // 1 / sum(i:0..6, j..6) K[i]*K[j]
-  1. / 1089.,   // 1 / sum(i:0..6, j..6) K[i]*K[j]
-  1. / 1056.,   // 1 / sum(i:0..5, j..6) K[i]*K[j]
-  1. / 957.,    // 1 / sum(i:0..4, j..6) K[i]*K[j]
-  1. / 726.,    // 1 / sum(i:0..3, j..6) K[i]*K[j]
+  1. / 1089.,   
+  1. / 1089.,   
+  1. / 1056.,   
+  1. / 957.,    
+  1. / 726.,    
 };
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(__SSE2__)
@@ -56,8 +56,8 @@ static const double kiW[KERNEL + 1 + 1] = {
   { { { PWEIGHT(L, 0), PWEIGHT(L, 1), PWEIGHT(L, 2), PWEIGHT(L, 3),  \
         PWEIGHT(L, 4), PWEIGHT(L, 5), PWEIGHT(L, 6), 0 } } }
 
-// We need this union trick to be able to initialize constant static __m128i
-// values. We can't call _mm_set_epi16() for static compile-time initialization.
+
+
 static const struct {
   union {
     uint16 i16_[8];
@@ -67,19 +67,19 @@ static const struct {
   W1 = MAKE_WEIGHT(1),
   W2 = MAKE_WEIGHT(2),
   W3 = MAKE_WEIGHT(3);
-  // ... the rest is symmetric.
+  
 #undef MAKE_WEIGHT
 #undef PWEIGHT
 #endif
 
-// Common final expression for SSIM, once the weighted sums are known.
+
 static double FinalizeSSIM(double iw, double xm, double ym,
                            double xxm, double xym, double yym) {
   const double iwx = xm * iw;
   const double iwy = ym * iw;
   double sxx = xxm * iw - iwx * iwx;
   double syy = yym * iw - iwy * iwy;
-  // small errors are possible, due to rounding. Clamp to zero.
+  
   if (sxx < 0.) sxx = 0.;
   if (syy < 0.) syy = 0.;
   const double sxsy = sqrt(sxx * syy);
@@ -93,12 +93,12 @@ static double FinalizeSSIM(double iw, double xm, double ym,
   return l * c * s;
 }
 
-// GetSSIM() does clipping.  GetSSIMFullKernel() does not
 
-// TODO(skal): use summed tables?
-// Note: worst case of accumulation is a weight of 33 = 11 + 2 * (7 + 3 + 1)
-// with a diff of 255, squared. The maximum error is thus 0x4388241,
-// which fits into 32 bits integers.
+
+
+
+
+
 double GetSSIM(const uint8 *org, const uint8 *rec,
                int xo, int yo, int W, int H, int stride) {
   uint32 ws = 0, xm = 0, ym = 0, xxm = 0, xym = 0, yym = 0;
@@ -141,16 +141,16 @@ double GetSSIMFullKernel(const uint8 *org, const uint8 *rec,
     const int Wy = K[KERNEL + y];
 
     for (int x = 1; x <= KERNEL; x++) {
-      // Compute the contributions of upper-left (ul), upper-right (ur)
-      // lower-left (ll) and lower-right (lr) points (see the diagram below).
-      // Symmetric Kernel will have same weight on those points.
-      //       -  -  -  -  -  -  -
-      //       -  ul -  -  -  ur -
-      //       -  -  -  -  -  -  -
-      //       -  -  -  0  -  -  -
-      //       -  -  -  -  -  -  -
-      //       -  ll -  -  -  lr -
-      //       -  -  -  -  -  -  -
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       const int Wxy = Wy * K[KERNEL + x];
       const int ul1 = org[-dy1 - x];
       const int ur1 = org[-dy1 + x];
@@ -169,16 +169,16 @@ double GetSSIMFullKernel(const uint8 *org, const uint8 *rec,
       yym += Wxy * (ul2 * ul2 + ur2 * ur2 + ll2 * ll2 + lr2 * lr2);
     }
 
-    // Compute the contributions of up (u), down (d), left (l) and right (r)
-    // points across the main axes (see the diagram below).
-    // Symmetric Kernel will have same weight on those points.
-    //       -  -  -  -  -  -  -
-    //       -  -  -  u  -  -  -
-    //       -  -  -  -  -  -  -
-    //       -  l  -  0  -  r  -
-    //       -  -  -  -  -  -  -
-    //       -  -  -  d  -  -  -
-    //       -  -  -  -  -  -  -
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const int Wxy = Wy * K[KERNEL];
     const int u1 = org[-dy1];
     const int d1 = org[dy1];
@@ -197,7 +197,7 @@ double GetSSIMFullKernel(const uint8 *org, const uint8 *rec,
     yym += Wxy * (u2 * u2 + d2 * d2 + l2 * l2 + r2 * r2);
   }
 
-  // Lastly the contribution of (x0, y0) point.
+  
   const int Wxy = K[KERNEL] * K[KERNEL];
   const int s1 = org[0];
   const int s2 = rec[0];
@@ -208,7 +208,7 @@ double GetSSIMFullKernel(const uint8 *org, const uint8 *rec,
   xym += Wxy * s1 * s2;
   yym += Wxy * s2 * s2;
 
-#else   // __SSE2__
+#else   
 
   org += (yo - KERNEL) * stride + (xo - KERNEL);
   rec += (yo - KERNEL) * stride + (xo - KERNEL);
@@ -220,8 +220,8 @@ double GetSSIMFullKernel(const uint8 *org, const uint8 *rec,
   __m128i xy = zero;
   __m128i yy = zero;
 
-// Read 8 pixels at line #L, and convert to 16bit, perform weighting
-// and acccumulate.
+
+
 #define LOAD_LINE_PAIR(L, WEIGHT) do {                                       \
   const __m128i v0 =                                                         \
       _mm_loadl_epi64(reinterpret_cast<const __m128i*>(org + (L) * stride)); \
@@ -295,12 +295,12 @@ double CalcSSIM(const uint8 *org, const uint8 *rec,
       SSIM += GetSSIMFullKernel(org, rec, i, j, stride, kiW[0]);
     }
     if (start_x < image_width) {
-      // GetSSIMFullKernel() needs to be able to read 8 pixels (in SSE2). So we
-      // copy the 8 rightmost pixels on a cache area, and pad this area with
-      // zeros which won't contribute to the overall SSIM value (but we need
-      // to pass the correct normalizing constant!). By using this cache, we can
-      // still call GetSSIMFullKernel() instead of the slower GetSSIM().
-      // NOTE: we could use similar method for the left-most pixels too.
+      
+      
+      
+      
+      
+      
       const int kScratchWidth = 8;
       const int kScratchStride = kScratchWidth + KERNEL + 1;
       uint8 scratch_org[KERNEL_SIZE * kScratchStride] = { 0 };
@@ -332,6 +332,6 @@ double CalcLSSIM(double ssim) {
 }
 
 #ifdef __cplusplus
-}  // extern "C"
+}  
 #endif
 

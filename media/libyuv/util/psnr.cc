@@ -1,14 +1,14 @@
-/*
- *  Copyright 2013 The LibYuv Project Authors. All rights reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS. All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
 
-#include "./psnr.h"  // NOLINT
+
+
+
+
+
+
+
+
+
+#include "./psnr.h"  
 
 #include <math.h>
 
@@ -16,29 +16,29 @@
 #include <omp.h>
 #endif
 #ifdef _MSC_VER
-#include <intrin.h>  // For __cpuid()
+#include <intrin.h>  
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef unsigned int uint32;  // NOLINT
+typedef unsigned int uint32;  
 #ifdef _MSC_VER
 typedef unsigned __int64 uint64;
-#else  // COMPILER_MSVC
+#else  
 #if defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
-typedef unsigned long uint64;  // NOLINT
-#else  // defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
-typedef unsigned long long uint64;  // NOLINT
-#endif  // __LP64__
-#endif  // _MSC_VER
+typedef unsigned long uint64;  
+#else  
+typedef unsigned long long uint64;  
+#endif  
+#endif  
 
-// PSNR formula: psnr = 10 * log10 (Peak Signal^2 * size / sse)
+
 double ComputePSNR(double sse, double size) {
   const double kMINSSE = 255.0 * 255.0 * size / pow(10., kMaxPSNR / 10.);
   if (sse <= kMINSSE)
-    sse = kMINSSE;  // Produces max PSNR of 128
+    sse = kMINSSE;  
   return 10.0 * log10(65025.0 * size / sse);
 }
 
@@ -47,7 +47,7 @@ double ComputePSNR(double sse, double size) {
 static uint32 SumSquareError_NEON(const uint8* src_a,
                                   const uint8* src_b, int count) {
   volatile uint32 sse;
-  asm volatile (  // NOLINT
+  asm volatile (  
     "vmov.u8    q7, #0                         \n"
     "vmov.u8    q9, #0                         \n"
     "vmov.u8    q8, #0                         \n"
@@ -82,12 +82,12 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
 #elif !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_SUMSQUAREERROR_SSE2
 __declspec(naked)
-static uint32 SumSquareError_SSE2(const uint8* /*src_a*/,
-                                  const uint8* /*src_b*/, int /*count*/) {
+static uint32 SumSquareError_SSE2(const uint8* ,
+                                  const uint8* , int ) {
   __asm {
-    mov        eax, [esp + 4]    // src_a
-    mov        edx, [esp + 8]    // src_b
-    mov        ecx, [esp + 12]   // count
+    mov        eax, [esp + 4]    
+    mov        edx, [esp + 8]    
+    mov        ecx, [esp + 12]   
     pxor       xmm0, xmm0
     pxor       xmm5, xmm5
     sub        edx, eax
@@ -123,7 +123,7 @@ static uint32 SumSquareError_SSE2(const uint8* /*src_a*/,
 static uint32 SumSquareError_SSE2(const uint8* src_a,
                                   const uint8* src_b, int count) {
   uint32 sse;
-  asm volatile (  // NOLINT
+  asm volatile (  
     "pxor      %%xmm0,%%xmm0                   \n"
     "pxor      %%xmm5,%%xmm5                   \n"
     "sub       %0,%1                           \n"
@@ -161,15 +161,15 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
-  );  // NOLINT
+  );  
   return sse;
 }
-#endif  // LIBYUV_DISABLE_X86 etc
+#endif  
 
 #if defined(HAS_SUMSQUAREERROR_SSE2)
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (  // NOLINT
+  asm volatile (  
     "mov %%ebx, %%edi                          \n"
     "cpuid                                     \n"
     "xchg %%edi, %%ebx                         \n"
@@ -178,7 +178,7 @@ static __inline void __cpuid(int cpu_info[4], int info_type) {
 }
 #elif defined(__i386__) || defined(__x86_64__)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (  // NOLINT
+  asm volatile (  
     "cpuid                                     \n"
     : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type));
@@ -195,7 +195,7 @@ static int CpuHasSSE2() {
 #endif
   return 0;
 }
-#endif  // HAS_SUMSQUAREERROR_SSE2
+#endif  
 
 static uint32 SumSquareError_C(const uint8* src_a,
                                const uint8* src_b, int count) {
@@ -243,5 +243,5 @@ double ComputeSumSquareError(const uint8* src_a,
 }
 
 #ifdef __cplusplus
-}  // extern "C"
+}  
 #endif
