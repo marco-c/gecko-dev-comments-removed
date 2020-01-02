@@ -1,9 +1,9 @@
-#!/usr/bin/env python
-# header.py - Generate C++ header files from IDL.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
+
 
 import sys, os, xpidl, makeutils
 
@@ -19,8 +19,8 @@ def strip_end(text, suffix):
 
 def findIDL(includePath, interfaceFileName):
     for d in includePath:
-        # Not os.path.join: we need a forward slash even on Windows because
-        # this filename ends up in makedepend output.
+        
+        
         path = d + '/' + interfaceFileName
         if os.path.exists(path):
             return path
@@ -236,8 +236,6 @@ def init_value(attribute):
             return ""
         if realtype.count("nsACString"):
             return ""
-        if realtype.count("JS::Value"):
-            return "JSVAL_VOID"
         return "0"
     else:
         if realtype.count("double") and attribute.defvalue == "Infinity":
@@ -279,9 +277,7 @@ def write_getter(a, iface, fd):
     realtype = a.realtype.nativeType('in')
     fd.write("    NS_ENSURE_STATE(JS_GetPropertyById(aCx, aObj, %s, &v));\n"
              % get_jsid(a.name))
-    if realtype.count("JS::Value"):
-        fd.write("    aDict.%s = v;\n" % a.name)
-    elif realtype.count("bool"):
+    if realtype.count("bool"):
         fd.write("    aDict.%s = JS::ToBoolean(v);\n" % a.name)
     elif realtype.count("uint16_t"):
         fd.write("    uint32_t u;\n")
@@ -322,7 +318,7 @@ def write_getter(a, iface, fd):
         fd.write("    nsresult rv = xpc_qsUnwrapArg<%s>(aCx, v, &d, &ref.ptr, &v);\n" % realtype.strip('* '))
         fd.write("    NS_ENSURE_SUCCESS(rv, rv);\n")
         fd.write("    aDict.%s = d;\n" % a.name)
-    elif not realtype.count("JS::Value"):
+    else:
         raise BaseException("Unsupported type %s found in dictionary %s" % (realtype, iface.name))
 
 def write_cpp(iface, fd):
@@ -335,7 +331,7 @@ def write_cpp(iface, fd):
 
     if iface.base is not None or len(attributes) > 0:
         fd.write(" :\n")
-    
+
     if iface.base is not None:
         fd.write("  %s()" % iface.base)
         if len(attributes) > 0:
@@ -426,7 +422,7 @@ if __name__ == '__main__':
             os.mkdir(options.cachedir)
         sys.path.append(options.cachedir)
 
-    # Instantiate the parser.
+    
     p = xpidl.IDLParser(outputdir=options.cachedir)
 
     conf = readConfigFile(filename)
