@@ -193,26 +193,6 @@ nsFrame::GetLogModuleInfo()
   return gLogModule;
 }
 
-void
-nsIFrame::DumpFrameTree()
-{
-  RootFrameList(PresContext(), stdout, 0);
-}
-
-void
-nsIFrame::RootFrameList(nsPresContext* aPresContext, FILE* out, int32_t aIndent)
-{
-  if (!aPresContext || !out)
-    return;
-
-  nsIPresShell *shell = aPresContext->GetPresShell();
-  if (shell) {
-    nsIFrame* frame = shell->FrameManager()->GetRootFrame();
-    if(frame) {
-      frame->List(out, aIndent);
-    }
-  }
-}
 #endif
 
 static void
@@ -5253,7 +5233,7 @@ nsIFrame::GetContainingBlock() const
   return GetNearestBlockContainer(GetParent());
 }
 
-#ifdef DEBUG
+#ifdef DEBUG_FRAME_DUMP
 
 int32_t nsFrame::ContentIndexInContainer(const nsIFrame* aFrame)
 {
@@ -5368,23 +5348,6 @@ nsFrame::GetFrameName(nsAString& aResult) const
   return MakeFrameName(NS_LITERAL_STRING("Frame"), aResult);
 }
 
-NS_IMETHODIMP_(nsFrameState)
-nsFrame::GetDebugStateBits() const
-{
-  
-  
-  
-  
-  
-  
-  
-#define IRRELEVANT_FRAME_STATE_FLAGS NS_FRAME_EXTERNAL_REFERENCE
-
-#define FRAME_STATE_MASK (~(IRRELEVANT_FRAME_STATE_FLAGS))
-
-  return GetStateBits() & FRAME_STATE_MASK;
-}
-
 nsresult
 nsFrame::MakeFrameName(const nsAString& aType, nsAString& aResult) const
 {
@@ -5406,11 +5369,51 @@ nsFrame::MakeFrameName(const nsAString& aType, nsAString& aResult) const
 }
 
 void
+nsIFrame::DumpFrameTree()
+{
+  RootFrameList(PresContext(), stdout, 0);
+}
+
+void
+nsIFrame::RootFrameList(nsPresContext* aPresContext, FILE* out, int32_t aIndent)
+{
+  if (!aPresContext || !out)
+    return;
+
+  nsIPresShell *shell = aPresContext->GetPresShell();
+  if (shell) {
+    nsIFrame* frame = shell->FrameManager()->GetRootFrame();
+    if(frame) {
+      frame->List(out, aIndent);
+    }
+  }
+}
+#endif
+
+#ifdef DEBUG
+NS_IMETHODIMP_(nsFrameState)
+nsFrame::GetDebugStateBits() const
+{
+  
+  
+  
+  
+  
+  
+  
+#define IRRELEVANT_FRAME_STATE_FLAGS NS_FRAME_EXTERNAL_REFERENCE
+
+#define FRAME_STATE_MASK (~(IRRELEVANT_FRAME_STATE_FLAGS))
+
+  return GetStateBits() & FRAME_STATE_MASK;
+}
+
+void
 nsFrame::XMLQuote(nsString& aString)
 {
   int32_t i, len = aString.Length();
   for (i = 0; i < len; i++) {
-    PRUnichar ch = aString.CharAt(i);
+    char16_t ch = aString.CharAt(i);
     if (ch == '<') {
       nsAutoString tmp(NS_LITERAL_STRING("&lt;"));
       aString.Cut(i, 1);
