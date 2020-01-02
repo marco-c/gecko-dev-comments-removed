@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsXBLBinding_h_
 #define nsXBLBinding_h_
@@ -29,13 +29,13 @@ namespace dom {
 class ShadowRoot;
 class XBLChildrenElement;
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 class nsAnonymousContentList;
 
-
-
+// *********************************************************************/
+// The XBLBinding class
 
 class nsXBLBinding MOZ_FINAL
 {
@@ -44,15 +44,15 @@ public:
   nsXBLBinding(mozilla::dom::ShadowRoot* aShadowRoot, nsXBLPrototypeBinding* aProtoBinding);
   ~nsXBLBinding();
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * XBLBindings are refcounted.  They are held onto in 3 ways:
+   * 1. The binding manager's binding table holds onto all bindings that are
+   *    currently attached to a content node.
+   * 2. Bindings hold onto their base binding.  This is important since
+   *    the base binding itself may not be attached to anything.
+   * 3. The binding manager holds an additional reference to bindings
+   *    which are queued to fire their constructors.
+   */
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(nsXBLBinding)
 
@@ -68,27 +68,27 @@ public:
   nsIContent* GetBoundElement() { return mBoundElement; }
   void SetBoundElement(nsIContent *aElement);
 
-  
-
-
-
-
-
-
-
+  /*
+   * Does a lookup for a method or attribute provided by one of the bindings'
+   * prototype implementation. If found, |desc| will be set up appropriately,
+   * and wrapped into cx->compartment.
+   *
+   * May only be called when XBL code is being run in a separate scope, because
+   * otherwise we don't have untainted data with which to do a proper lookup.
+   */
   bool LookupMember(JSContext* aCx, JS::Handle<jsid> aId,
                     JS::MutableHandle<JSPropertyDescriptor> aDesc);
 
-  
-
-
+  /*
+   * Determines whether the binding has a field with the given name.
+   */
   bool HasField(nsString& aName);
 
 protected:
 
-  
-
-
+  /*
+   * Internal version. Requires that aCx is in appropriate xbl scope.
+   */
   bool LookupMemberInternal(JSContext* aCx, nsString& aName,
                             JS::Handle<jsid> aNameAsId,
                             JS::MutableHandle<JSPropertyDescriptor> aDesc,
@@ -118,8 +118,8 @@ public:
   nsIAtom* GetBaseTag(int32_t* aNameSpaceID);
   nsXBLBinding* RootBinding();
 
-  
-  
+  // Resolve all the fields for this binding and all ancestor bindings on the
+  // object |obj|.  False return means a JS exception was set.
   bool ResolveAllFields(JSContext *cx, JS::Handle<JSObject*> obj) const;
 
   void AttributeChanged(nsIAtom* aAttribute, int32_t aNameSpaceID,
@@ -149,31 +149,31 @@ public:
     return mDefaultInsertionPoint;
   }
 
-  
+  // Removes all inserted node from <xbl:children> insertion points under us.
   void ClearInsertionPoints();
 
-  
-  
+  // Returns a live node list that iterates over the anonymous nodes generated
+  // by this binding.
   nsAnonymousContentList* GetAnonymousNodeList();
 
-
+// MEMBER VARIABLES
 protected:
 
   bool mMarkedForDeath;
-  bool mUsingXBLScope;
+  bool mUsingContentXBLScope;
 
-  nsXBLPrototypeBinding* mPrototypeBinding; 
-  nsCOMPtr<nsIContent> mContent; 
-  nsRefPtr<nsXBLBinding> mNextBinding; 
+  nsXBLPrototypeBinding* mPrototypeBinding; // Weak, but we're holding a ref to the docinfo
+  nsCOMPtr<nsIContent> mContent; // Strong. Our anonymous content stays around with us.
+  nsRefPtr<nsXBLBinding> mNextBinding; // Strong. The derived binding owns the base class bindings.
 
-  nsIContent* mBoundElement; 
+  nsIContent* mBoundElement; // [WEAK] We have a reference, but we don't own it.
 
-  
-  
-  
-  
-  
-  
+  // The <xbl:children> elements that we found in our <xbl:content> when we
+  // processed this binding. The default insertion point has no includes
+  // attribute and all other insertion points must have at least one includes
+  // attribute. These points must be up-to-date with respect to their parent's
+  // children, even if their parent has another binding attached to it,
+  // preventing us from rendering their contents directly.
   nsRefPtr<mozilla::dom::XBLChildrenElement> mDefaultInsertionPoint;
   nsTArray<nsRefPtr<mozilla::dom::XBLChildrenElement> > mInsertionPoints;
   nsRefPtr<nsAnonymousContentList> mAnonymousContentList;
@@ -181,4 +181,4 @@ protected:
   mozilla::dom::XBLChildrenElement* FindInsertionPointForInternal(nsIContent* aChild);
 };
 
-#endif 
+#endif // nsXBLBinding_h_

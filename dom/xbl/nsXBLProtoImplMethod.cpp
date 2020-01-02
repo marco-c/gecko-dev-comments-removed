@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIAtom.h"
 #include "nsString.h"
@@ -104,7 +104,7 @@ nsXBLProtoImplMethod::InstallMember(JSContext* aCx,
   MOZ_ASSERT(js::IsObjectInContextCompartment(aTargetClassObject, aCx));
 
   JS::Rooted<JSObject*> globalObject(aCx, JS_GetGlobalForObject(aCx, aTargetClassObject));
-  MOZ_ASSERT(xpc::IsInXBLScope(globalObject) ||
+  MOZ_ASSERT(xpc::IsInContentXBLScope(globalObject) ||
              globalObject == xpc::GetXBLScope(aCx, globalObject));
 
   JS::Rooted<JSObject*> jsMethodObject(aCx, GetCompiledMethod());
@@ -136,26 +136,26 @@ nsXBLProtoImplMethod::CompileMember(const nsCString& aClassStr,
 
   nsXBLUncompiledMethod* uncompiledMethod = GetUncompiledMethod();
 
-  
+  // No parameters or body was supplied, so don't install method.
   if (!uncompiledMethod) {
-    
+    // Early return after which we consider ourselves compiled.
     SetCompiledMethod(nullptr);
 
     return NS_OK;
   }
 
-  
+  // Don't install method if no name was supplied.
   if (!mName) {
     delete uncompiledMethod;
 
-    
+    // Early return after which we consider ourselves compiled.
     SetCompiledMethod(nullptr);
 
     return NS_OK;
   }
 
-  
-  
+  // We have a method.
+  // Allocate an array for our arguments.
   int32_t paramCount = uncompiledMethod->GetParameterCount();
   char** args = nullptr;
   if (paramCount > 0) {
@@ -163,7 +163,7 @@ nsXBLProtoImplMethod::CompileMember(const nsCString& aClassStr,
     if (!args)
       return NS_ERROR_OUT_OF_MEMORY;
 
-    
+    // Add our parameters to our args array.
     int32_t argPos = 0;
     for (nsXBLParameter* curr = uncompiledMethod->mParameters;
          curr;
@@ -173,14 +173,14 @@ nsXBLProtoImplMethod::CompileMember(const nsCString& aClassStr,
     }
   }
 
-  
+  // Get the body
   nsDependentString body;
   char16_t *bodyText = uncompiledMethod->mBodyText.GetText();
   if (bodyText)
     body.Rebind(bodyText);
 
-  
-  
+  // Now that we have a body and args, compile the function
+  // and then define it.
   NS_ConvertUTF16toUTF8 cname(mName);
   nsAutoCString functionUri(aClassStr);
   int32_t hash = functionUri.RFindChar('#');
@@ -200,7 +200,7 @@ nsXBLProtoImplMethod::CompileMember(const nsCString& aClassStr,
                                            const_cast<const char**>(args),
                                            body, methodObject.address());
 
-  
+  // Destroy our uncompiled method and delete our arg list.
   delete uncompiledMethod;
   delete [] args;
   if (NS_FAILED(rv)) {
@@ -252,9 +252,9 @@ nsXBLProtoImplMethod::Write(nsIObjectOutputStream* aStream)
     rv = aStream->WriteWStringZ(mName);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
+    // Calling fromMarkedLocation() is safe because mMethod is traced by the
+    // Trace() method above, and because its value is never changed after it has
+    // been set to a compiled method.
     JS::Handle<JSObject*> method =
       JS::Handle<JSObject*>::fromMarkedLocation(mMethod.AsHeapObject().address());
     return XBL_SerializeFunction(aStream, method);
@@ -269,12 +269,12 @@ nsXBLProtoImplAnonymousMethod::Execute(nsIContent* aBoundElement)
   NS_PRECONDITION(IsCompiled(), "Can't execute uncompiled method");
 
   if (!GetCompiledMethod()) {
-    
+    // Nothing to do here
     return NS_OK;
   }
 
-  
-  
+  // Get the script context the same way
+  // nsXBLProtoImpl::InstallImplementation does.
   nsIDocument* document = aBoundElement->OwnerDoc();
 
   nsCOMPtr<nsIScriptGlobalObject> global =
@@ -298,10 +298,10 @@ nsXBLProtoImplAnonymousMethod::Execute(nsIContent* aBoundElement)
   nsresult rv = nsContentUtils::WrapNative(cx, aBoundElement, &v);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
+  // Use nsCxPusher to make sure we call ScriptEvaluated when we're done.
+  //
+  // Make sure to do this before entering the compartment, since pushing Push()
+  // may call JS_SaveFrameChain(), which puts us back in an unentered state.
   nsCxPusher pusher;
   if (!pusher.Push(aBoundElement))
     return NS_ERROR_UNEXPECTED;
@@ -315,17 +315,17 @@ nsXBLProtoImplAnonymousMethod::Execute(nsIContent* aBoundElement)
   if (!JS_WrapObject(cx, &thisObject))
       return NS_ERROR_OUT_OF_MEMORY;
 
-  
-  
-  
+  // Clone the function object, using thisObject as the parent so "this" is in
+  // the scope chain of the resulting function (for backwards compat to the
+  // days when this was an event handler).
   JS::Rooted<JSObject*> jsMethodObject(cx, GetCompiledMethod());
   JS::Rooted<JSObject*> method(cx, ::JS_CloneFunctionObject(cx, jsMethodObject, thisObject));
   if (!method)
     return NS_ERROR_OUT_OF_MEMORY;
 
-  
+  // Now call the method
 
-  
+  // Check whether script is enabled.
   bool scriptAllowed = nsContentUtils::GetSecurityManager()->
                          ScriptAllowed(js::GetGlobalForObjectCrossCompartment(method));
 
@@ -337,10 +337,10 @@ nsXBLProtoImplAnonymousMethod::Execute(nsIContent* aBoundElement)
   }
 
   if (!ok) {
-    
-    
-    
-    
+    // If a constructor or destructor threw an exception, it doesn't stop
+    // anything else.  We just report it.  Note that we need to set aside the
+    // frame chain here, since the constructor invocation is not related to
+    // whatever is on the stack right now, really.
     nsJSUtils::ReportPendingException(cx);
     return NS_ERROR_FAILURE;
   }
@@ -361,9 +361,9 @@ nsXBLProtoImplAnonymousMethod::Write(nsIObjectOutputStream* aStream,
     rv = aStream->WriteWStringZ(mName);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
+    // Calling fromMarkedLocation() is safe because mMethod is traced by the
+    // Trace() method above, and because its value is never changed after it has
+    // been set to a compiled method.
     JS::Handle<JSObject*> method =
       JS::Handle<JSObject*>::fromMarkedLocation(mMethod.AsHeapObject().address());
     rv = XBL_SerializeFunction(aStream, method);

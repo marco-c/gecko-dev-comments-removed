@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIAtom.h"
 #include "nsString.h"
@@ -129,7 +129,7 @@ nsXBLProtoImplProperty::InstallMember(JSContext *aCx,
   MOZ_ASSERT(mGetter.IsCompiled() && mSetter.IsCompiled());
   MOZ_ASSERT(js::IsObjectInContextCompartment(aTargetClassObject, aCx));
   JS::Rooted<JSObject*> globalObject(aCx, JS_GetGlobalForObject(aCx, aTargetClassObject));
-  MOZ_ASSERT(xpc::IsInXBLScope(globalObject) ||
+  MOZ_ASSERT(xpc::IsInContentXBLScope(globalObject) ||
              globalObject == xpc::GetXBLScope(aCx, globalObject));
 
   JS::Rooted<JSObject*> getter(aCx, mGetter.GetJSFunction());
@@ -168,9 +168,9 @@ nsXBLProtoImplProperty::CompileMember(const nsCString& aClassStr,
   MOZ_ASSERT(!mGetter.IsCompiled() && !mSetter.IsCompiled());
 
   if (!mName)
-    return NS_ERROR_FAILURE; 
+    return NS_ERROR_FAILURE; // Without a valid name, we can't install the member.
 
-  
+  // We have a property.
   nsresult rv = NS_OK;
 
   nsAutoCString functionUri;
@@ -208,23 +208,23 @@ nsXBLProtoImplProperty::CompileMember(const nsCString& aClassStr,
       if (NS_FAILED(rv)) {
         mGetter.SetJSFunction(nullptr);
         mJSAttributes &= ~JSPROP_GETTER;
-        
+        /*chaining to return failure*/
       }
     }
-  } 
+  } // if getter is not empty
 
-  if (!deletedGetter) {  
+  if (!deletedGetter) {  // Empty getter
     delete getterText;
     mGetter.SetJSFunction(nullptr);
   }
   
   if (NS_FAILED(rv)) {
-    
-    
-    
-    
-    
-    
+    // We failed to compile our getter.  So either we've set it to null, or
+    // it's still set to the text object.  In either case, it's safe to return
+    // the error here, since then we'll be cleaned up as uncompiled and that
+    // will be ok.  Going on and compiling the setter and _then_ returning an
+    // error, on the other hand, will try to clean up a compiled setter as
+    // uncompiled and crash.
     return rv;
   }
 
@@ -254,12 +254,12 @@ nsXBLProtoImplProperty::CompileMember(const nsCString& aClassStr,
       if (NS_FAILED(rv)) {
         mSetter.SetJSFunction(nullptr);
         mJSAttributes &= ~JSPROP_SETTER;
-        
+        /*chaining to return failure*/
       }
     }
-  } 
+  } // if setter wasn't empty....
 
-  if (!deletedSetter) {  
+  if (!deletedSetter) {  // Empty setter
     delete setterText;
     mSetter.SetJSFunction(nullptr);
   }
@@ -343,9 +343,9 @@ nsXBLProtoImplProperty::Write(nsIObjectOutputStream* aStream)
   rv = aStream->WriteWStringZ(mName);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
+  // The calls to fromMarkedLocation() below are safe because mSetter and
+  // mGetter are traced by the Trace() method above, and because their values
+  // are never changed after they have been set to a compiled function.
   MOZ_ASSERT_IF(mJSAttributes & (JSPROP_GETTER | JSPROP_SETTER), mIsCompiled);
 
   if (mJSAttributes & JSPROP_GETTER) {
