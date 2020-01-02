@@ -6,6 +6,7 @@
 #pragma once
 
 
+#include "APZController.h"
 #include "keyboardlayout.h"   
 #include "nsBaseHashtable.h"  
 #include "nsHashKeys.h"       
@@ -68,7 +69,8 @@ namespace mozilla {
 namespace widget {
 namespace winrt {
 
-class MetroInput : public Microsoft::WRL::RuntimeClass<IInspectable>
+class MetroInput : public Microsoft::WRL::RuntimeClass<IInspectable>,
+                   public APZPendingResponseFlusher
 {
   InspectableClass(L"MetroInput", BaseTrust);
 
@@ -147,6 +149,9 @@ public:
 
   void HandleTap(const Point& aPoint, unsigned int aTapCount);
   void HandleLongTap(const Point& aPoint);
+
+  
+  void FlushPendingContentResponse();
 
   static bool IsInputModeImprecise();
 
