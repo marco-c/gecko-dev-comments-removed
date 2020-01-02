@@ -1,9 +1,9 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function test() {
-  
+  /** Test for Bug 345898 **/
 
   function test(aLambda) {
     try {
@@ -15,7 +15,7 @@ function test() {
     }
   }
 
-  
+  // all of the following calls with illegal arguments should throw NS_ERROR_ILLEGAL_VALUE
   ok(test(function() ss.getWindowState({})),
      "Invalid window for getWindowState throws");
   ok(test(function() ss.setWindowState({}, "", false)),
@@ -40,8 +40,4 @@ function test() {
      "Invalid window for getWindowValue throws");
   ok(test(function() ss.setWindowValue({}, "", "")),
      "Invalid window for setWindowValue throws");
-  ok(test(function() ss.getNumberOfTabsClosedLast({})),
-     "Invalid window for getNumberOfTabsClosedLast  throws");
-  ok(test(function() ss.setNumberOfTabsClosedLast({}, 1)),
-     "Invalid window for setNumberOfTabsClosedLast throws");
 }

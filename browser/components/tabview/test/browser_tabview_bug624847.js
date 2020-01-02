@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 function test() {
   let cw;
@@ -64,7 +64,7 @@ function test() {
 
         createBlankTab();
         afterAllTabsLoaded(testUndoCloseWithSelectedBlankPinnedTab);
-      }, 0);
+      });
     });
   }
 
@@ -94,7 +94,7 @@ function test() {
         gBrowser.removeTab(gBrowser.tabs[0]);
 
         afterAllTabsLoaded(finishTest);
-      }, 0);
+      });
     });
   }
 
