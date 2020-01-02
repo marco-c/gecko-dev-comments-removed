@@ -22,7 +22,7 @@ namespace js {
 
 
 class HashableValue {
-    EncapsulatedValue value;
+    PreBarrieredValue value;
 
   public:
     struct Hasher {
