@@ -1,14 +1,14 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxXlibSurface.h"
 
 #include "cairo.h"
 #include "cairo-xlib.h"
 #include "cairo-xlib-xrender.h"
-#include <X11/Xlibint.h>	
+#include <X11/Xlibint.h>	/* For XESetCloseDisplay */
 #undef max // Xlibint.h defines this and it breaks std::max
 #undef min // Xlibint.h defines this and it breaks std::min
 
@@ -21,9 +21,9 @@
 
 using namespace mozilla;
 
-
-
-
+// Although the dimension parameters in the xCreatePixmapReq wire protocol are
+// 16-bit unsigned integers, the server's CreatePixmap returns BadAlloc if
+// either dimension cannot be represented by a 16-bit *signed* integer.
 #define XLIB_IMAGE_SIDE_SIZE_LIMIT 0x7fff
 
 gfxXlibSurface::gfxXlibSurface(Display *dpy, Drawable drawable, Visual *visual)
@@ -90,7 +90,7 @@ gfxXlibSurface::~gfxXlibSurface()
         gl::sGLXLibrary.DestroyPixmap(mDisplay, mGLXPixmap);
     }
 #endif
-    
+    // gfxASurface's destructor calls RecordMemoryFreed().
     if (mPixmapTaken) {
         XFreePixmap (mDisplay, mDrawable);
     }
@@ -107,8 +107,8 @@ CreatePixmap(Screen *screen, const gfxIntSize& size, unsigned int depth,
         relatedDrawable = RootWindowOfScreen(screen);
     }
     Display *dpy = DisplayOfScreen(screen);
-    
-    
+    // X gives us a fatal error if we try to create a pixmap of width
+    // or height 0
     return XCreatePixmap(dpy, relatedDrawable,
                          std::max(1, size.width), std::max(1, size.height),
                          depth);
@@ -120,19 +120,19 @@ gfxXlibSurface::TakePixmap()
     NS_ASSERTION(!mPixmapTaken, "I already own the Pixmap!");
     mPixmapTaken = true;
 
-    
-    
+    // The bit depth returned from Cairo is technically int, but this is
+    // the last place we'd be worried about that scenario.
     unsigned int bitDepth = cairo_xlib_surface_get_depth(CairoSurface());
     MOZ_ASSERT((bitDepth % 8) == 0, "Memory used not recorded correctly");    
 
-    
-    
+    // Divide by 8 because surface_get_depth gives us the number of *bits* per
+    // pixel.
     gfxIntSize size = GetSize();
     CheckedInt32 totalBytes = CheckedInt32(size.width) * CheckedInt32(size.height) * (bitDepth/8);
 
-    
-    
-    
+    // Don't do anything in the "else" case.  We could add INT32_MAX, but that
+    // would overflow the memory used counter.  It would also mean we tried for
+    // a 2G image.  For now, we'll just assert,
     MOZ_ASSERT(totalBytes.isValid(),"Did not expect to exceed 2Gb image");
     if (totalBytes.isValid()) {
         RecordMemoryUsed(totalBytes.value());
@@ -163,7 +163,7 @@ DestroyPixmap(void *data)
     delete closure;
 }
 
-
+/* static */
 cairo_surface_t *
 gfxXlibSurface::CreateCairoSurface(Screen *screen, Visual *visual,
                                    const gfxIntSize& size, Drawable relatedDrawable)
@@ -189,7 +189,7 @@ gfxXlibSurface::CreateCairoSurface(Screen *screen, Visual *visual,
     return surface;
 }
 
-
+/* static */
 already_AddRefed<gfxXlibSurface>
 gfxXlibSurface::Create(Screen *screen, Visual *visual,
                        const gfxIntSize& size, Drawable relatedDrawable)
@@ -210,7 +210,7 @@ gfxXlibSurface::Create(Screen *screen, Visual *visual,
     return result.forget();
 }
 
-
+/* static */
 already_AddRefed<gfxXlibSurface>
 gfxXlibSurface::Create(Screen *screen, XRenderPictFormat *format,
                        const gfxIntSize& size, Drawable relatedDrawable)
@@ -244,20 +244,20 @@ gfxXlibSurface::CreateSimilarSurface(gfxContentType aContent,
     }
 
     if (aContent == gfxContentType::COLOR) {
-        
-        
-        
+        // cairo_surface_create_similar will use a matching visual if it can.
+        // However, systems with 16-bit or indexed default visuals may benefit
+        // from rendering with 24-bit formats.
         static bool force24bpp = GetForce24bppPref();
         if (force24bpp
             && cairo_xlib_surface_get_depth(CairoSurface()) != 24) {
             XRenderPictFormat* format =
                 XRenderFindStandardFormat(mDisplay, PictStandardRGB24);
             if (format) {
-                
-                
-                
-                
-                
+                // Cairo only performs simple self-copies as desired if it
+                // knows that this is a Pixmap surface.  It only knows that
+                // surfaces are pixmap surfaces if it creates the Pixmap
+                // itself, so we use cairo_surface_create_similar with a
+                // temporary reference surface to indicate the format.
                 Screen* screen = cairo_xlib_surface_get_screen(CairoSurface());
                 nsRefPtr<gfxXlibSurface> depth24reference =
                     gfxXlibSurface::Create(screen, format,
@@ -297,7 +297,7 @@ gfxXlibSurface::GetSize() const
 const gfxIntSize
 gfxXlibSurface::DoSizeQuery()
 {
-    
+    // figure out width/height/depth
     Window root_ignore;
     int x_ignore, y_ignore;
     unsigned int bwidth_ignore, width, height, depth;
@@ -321,9 +321,9 @@ public:
 private:
     struct ColormapEntry {
         XRenderPictFormat* mFormat;
-        
-        
-        
+        // The Screen is needed here because colormaps (and their visuals) may
+        // only be used on one Screen, but XRenderPictFormats are not unique
+        // to any one Screen.
         Screen* mScreen;
         Visual* mVisual;
         Colormap mColormap;
@@ -336,7 +336,7 @@ private:
         nsTArray<ColormapEntry> mColormapEntries;
     };
 
-    
+    // Comparator for finding the DisplayInfo
     class FindDisplay {
     public:
         bool Equals(const DisplayInfo& info, const Display *display) const
@@ -353,30 +353,30 @@ private:
 
 DisplayTable* DisplayTable::sDisplayTable;
 
+// Pixmaps don't have a particular associated visual but the pixel values are
+// interpreted according to a visual/colormap pairs.
+//
+// cairo is designed for surfaces with either TrueColor visuals or the
+// default visual (which may not be true color).  TrueColor visuals don't
+// really need a colormap because the visual indicates the pixel format,
+// and cairo uses the default visual with the default colormap, so cairo
+// surfaces don't need an explicit colormap.
+//
+// However, some toolkits (e.g. GDK) need a colormap even with TrueColor
+// visuals.  We can create a colormap for these visuals, but it will use about
+// 20kB of memory in the server, so we use the default colormap when
+// suitable and share colormaps between surfaces.  Another reason for
+// minimizing colormap turnover is that the plugin process must leak resources
+// for each new colormap id when using older GDK libraries (bug 569775).
+//
+// Only the format of the pixels is important for rendering to Pixmaps, so if
+// the format of a visual matches that of the surface, then that visual can be
+// used for rendering to the surface.  Multiple visuals can match the same
+// format (but have different GLX properties), so the visual returned may
+// differ from the visual passed in.  Colormaps are tied to a visual, so
+// should only be used with their visual.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- bool
+/* static */ bool
 DisplayTable::GetColormapAndVisual(Screen* aScreen, XRenderPictFormat* aFormat,
                                    Visual* aVisual, Colormap* aColormap,
                                    Visual** aVisualForColormap)
@@ -384,7 +384,7 @@ DisplayTable::GetColormapAndVisual(Screen* aScreen, XRenderPictFormat* aFormat,
 {
     Display* display = DisplayOfScreen(aScreen);
 
-    
+    // Use the default colormap if the default visual matches.
     Visual *defaultVisual = DefaultVisualOfScreen(aScreen);
     if (aVisual == defaultVisual
         || (aFormat
@@ -395,7 +395,7 @@ DisplayTable::GetColormapAndVisual(Screen* aScreen, XRenderPictFormat* aFormat,
         return true;
     }
 
-    
+    // Only supporting TrueColor non-default visuals
     if (!aVisual || aVisual->c_class != TrueColor)
         return false;
 
@@ -404,31 +404,31 @@ DisplayTable::GetColormapAndVisual(Screen* aScreen, XRenderPictFormat* aFormat,
     }
 
     nsTArray<DisplayInfo>* displays = &sDisplayTable->mDisplays;
-    uint32_t d = displays->IndexOf(display, 0, FindDisplay());
+    size_t d = displays->IndexOf(display, 0, FindDisplay());
 
     if (d == displays->NoIndex) {
         d = displays->Length();
-        
-        
+        // Register for notification of display closing, when this info
+        // becomes invalid.
         XExtCodes *codes = XAddExtension(display);
         if (!codes)
             return false;
 
         XESetCloseDisplay(display, codes->extension, DisplayClosing);
-        
+        // Add a new DisplayInfo.
         displays->AppendElement(display);
     }
 
     nsTArray<ColormapEntry>* entries =
         &displays->ElementAt(d).mColormapEntries;
 
-    
-    
+    // Only a small number of formats are expected to be used, so just do a
+    // simple linear search.
     for (uint32_t i = 0; i < entries->Length(); ++i) {
         const ColormapEntry& entry = entries->ElementAt(i);
-        
-        
-        
+        // Only the format and screen need to match.  (The visual may differ.)
+        // If there is no format (e.g. no RENDER extension) then just compare
+        // the visual.
         if ((aFormat && entry.mFormat == aFormat && entry.mScreen == aScreen)
             || aVisual == entry.mVisual) {
             *aColormap = entry.mColormap;
@@ -437,7 +437,7 @@ DisplayTable::GetColormapAndVisual(Screen* aScreen, XRenderPictFormat* aFormat,
         }
     }
 
-    
+    // No existing entry.  Create a colormap and add an entry.
     Colormap colormap = XCreateColormap(display, RootWindowOfScreen(aScreen),
                                         aVisual, AllocNone);
     ColormapEntry* newEntry = entries->AppendElement();
@@ -451,11 +451,11 @@ DisplayTable::GetColormapAndVisual(Screen* aScreen, XRenderPictFormat* aFormat,
     return true;
 }
 
- int
+/* static */ int
 DisplayTable::DisplayClosing(Display *display, XExtCodes* codes)
 {
-    
-    
+    // No need to free the colormaps explicitly as they will be released when
+    // the connection is closed.
     sDisplayTable->mDisplays.RemoveElement(display, FindDisplay());
     if (sDisplayTable->mDisplays.Length() == 0) {
         delete sDisplayTable;
@@ -464,7 +464,7 @@ DisplayTable::DisplayClosing(Display *display, XExtCodes* codes)
     return 0;
 }
 
-
+/* static */
 bool
 gfxXlibSurface::GetColormapAndVisual(cairo_surface_t* aXlibSurface,
                                      Colormap* aColormap, Visual** aVisual)
@@ -487,7 +487,7 @@ gfxXlibSurface::GetColormapAndVisual(Colormap* aColormap, Visual** aVisual)
     return GetColormapAndVisual(CairoSurface(), aColormap, aVisual);
 }
 
-
+/* static */
 int
 gfxXlibSurface::DepthOfVisual(const Screen* screen, const Visual* visual)
 {
@@ -502,7 +502,7 @@ gfxXlibSurface::DepthOfVisual(const Screen* screen, const Visual* visual)
     return 0;
 }
     
-
+/* static */
 Visual*
 gfxXlibSurface::FindVisual(Screen *screen, gfxImageFormat format)
 {
@@ -552,7 +552,7 @@ gfxXlibSurface::FindVisual(Screen *screen, gfxImageFormat format)
     return nullptr;
 }
 
-
+/* static */
 XRenderPictFormat*
 gfxXlibSurface::FindRenderFormat(Display *dpy, gfxImageFormat format)
 {
@@ -562,9 +562,9 @@ gfxXlibSurface::FindRenderFormat(Display *dpy, gfxImageFormat format)
         case gfxImageFormat::RGB24:
             return XRenderFindStandardFormat (dpy, PictStandardRGB24);
         case gfxImageFormat::RGB16_565: {
-            
-            
-            
+            // PictStandardRGB16_565 is not standard Xrender format
+            // we should try to find related visual
+            // and find xrender format by visual
             Visual *visual = FindVisual(DefaultScreenOfDisplay(dpy), format);
             if (!visual)
                 return nullptr;
@@ -599,9 +599,9 @@ gfxXlibSurface::GetGLXPixmap()
 {
     if (!mGLXPixmap) {
 #ifdef DEBUG
-        
-        
-        
+        // cairo_surface_has_show_text_glyphs is used solely for the
+        // side-effect of setting the error on surface if
+        // cairo_surface_finish() has been called.
         cairo_surface_has_show_text_glyphs(CairoSurface());
         NS_ASSERTION(CairoStatus() != CAIRO_STATUS_SURFACE_FINISHED,
             "GetGLXPixmap called after surface finished");

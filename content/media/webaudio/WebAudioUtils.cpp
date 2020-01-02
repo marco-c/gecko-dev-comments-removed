@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebAudioUtils.h"
 #include "AudioNodeStream.h"
@@ -14,9 +14,9 @@ namespace mozilla {
 
 namespace dom {
 
-
-
-const uint32_t WebAudioUtils::MaxChannelCount = 32;
+// 32 is the minimum required by the spec and matches what is used by blink.
+// The limit protects against large memory allocations.
+const size_t WebAudioUtils::MaxChannelCount = 32;
 
 struct ConvertTimeToTickHelper
 {

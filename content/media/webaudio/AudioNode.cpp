@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AudioNode.h"
 #include "mozilla/ErrorResult.h"
@@ -39,8 +39,8 @@ NS_IMETHODIMP_(MozExternalRefCountType)
 AudioNode::Release()
 {
   if (mRefCnt.get() == 1) {
-    
-    
+    // We are about to be deleted, disconnect the object from the graph before
+    // the derived type is destroyed.
     DisconnectFromGraph();
   }
   nsrefcnt r = DOMEventTargetHelper::Release();
@@ -80,9 +80,9 @@ AudioNode::~AudioNode()
 size_t
 AudioNode::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
-  
-  
-  
+  // Not owned:
+  // - mContext
+  // - mStream
   size_t amount = 0;
 
   amount += mInputNodes.SizeOfExcludingThis(aMallocSizeOf);
@@ -90,8 +90,8 @@ AudioNode::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
     amount += mInputNodes[i].SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  
-  
+  // Just measure the array. The entire audio node graph is measured via the
+  // MediaStreamGraph's streams, so we don't want to double-count the elements.
   amount += mOutputNodes.SizeOfExcludingThis(aMallocSizeOf);
 
   amount += mOutputParams.SizeOfExcludingThis(aMallocSizeOf);
@@ -109,10 +109,10 @@ AudioNode::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 }
 
 template <class InputNode>
-static uint32_t
+static size_t
 FindIndexOfNode(const nsTArray<InputNode>& aInputNodes, const AudioNode* aNode)
 {
-  for (uint32_t i = 0; i < aInputNodes.Length(); ++i) {
+  for (size_t i = 0; i < aInputNodes.Length(); ++i) {
     if (aInputNodes[i].mInputNode == aNode) {
       return i;
     }
@@ -121,11 +121,11 @@ FindIndexOfNode(const nsTArray<InputNode>& aInputNodes, const AudioNode* aNode)
 }
 
 template <class InputNode>
-static uint32_t
+static size_t
 FindIndexOfNodeWithPorts(const nsTArray<InputNode>& aInputNodes, const AudioNode* aNode,
                          uint32_t aInputPort, uint32_t aOutputPort)
 {
-  for (uint32_t i = 0; i < aInputNodes.Length(); ++i) {
+  for (size_t i = 0; i < aInputNodes.Length(); ++i) {
     if (aInputNodes[i].mInputNode == aNode &&
         aInputNodes[i].mInputPort == aInputPort &&
         aInputNodes[i].mOutputPort == aOutputPort) {
@@ -138,38 +138,38 @@ FindIndexOfNodeWithPorts(const nsTArray<InputNode>& aInputNodes, const AudioNode
 void
 AudioNode::DisconnectFromGraph()
 {
-  
-  
+  // Addref this temporarily so the refcount bumping below doesn't destroy us
+  // prematurely
   nsRefPtr<AudioNode> kungFuDeathGrip = this;
 
-  
-  
+  // The idea here is that we remove connections one by one, and at each step
+  // the graph is in a valid state.
 
-  
+  // Disconnect inputs. We don't need them anymore.
   while (!mInputNodes.IsEmpty()) {
-    uint32_t i = mInputNodes.Length() - 1;
+    size_t i = mInputNodes.Length() - 1;
     nsRefPtr<AudioNode> input = mInputNodes[i].mInputNode;
     mInputNodes.RemoveElementAt(i);
     input->mOutputNodes.RemoveElement(this);
   }
 
   while (!mOutputNodes.IsEmpty()) {
-    uint32_t i = mOutputNodes.Length() - 1;
+    size_t i = mOutputNodes.Length() - 1;
     nsRefPtr<AudioNode> output = mOutputNodes[i].forget();
     mOutputNodes.RemoveElementAt(i);
-    uint32_t inputIndex = FindIndexOfNode(output->mInputNodes, this);
-    
-    
+    size_t inputIndex = FindIndexOfNode(output->mInputNodes, this);
+    // It doesn't matter which one we remove, since we're going to remove all
+    // entries for this node anyway.
     output->mInputNodes.RemoveElementAt(inputIndex);
   }
 
   while (!mOutputParams.IsEmpty()) {
-    uint32_t i = mOutputParams.Length() - 1;
+    size_t i = mOutputParams.Length() - 1;
     nsRefPtr<AudioParam> output = mOutputParams[i].forget();
     mOutputParams.RemoveElementAt(i);
-    uint32_t inputIndex = FindIndexOfNode(output->InputNodes(), this);
-    
-    
+    size_t inputIndex = FindIndexOfNode(output->InputNodes(), this);
+    // It doesn't matter which one we remove, since we're going to remove all
+    // entries for this node anyway.
     output->RemoveInputNode(inputIndex);
   }
 
@@ -193,12 +193,12 @@ AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
 
   if (FindIndexOfNodeWithPorts(aDestination.mInputNodes, this, aInput, aOutput) !=
       nsTArray<AudioNode::InputNode>::NoIndex) {
-    
+    // connection already exists.
     return;
   }
 
-  
-  
+  // The MediaStreamGraph will handle cycle detection. We don't need to do it
+  // here.
 
   mOutputNodes.AppendElement(&aDestination);
   InputNode* input = aDestination.mInputNodes.AppendElement();
@@ -206,7 +206,7 @@ AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
   input->mInputPort = aInput;
   input->mOutputPort = aOutput;
   if (aDestination.mStream) {
-    
+    // Connect streams in the MediaStreamGraph
     MOZ_ASSERT(aDestination.mStream->AsProcessedStream());
     ProcessedMediaStream* ps =
       static_cast<ProcessedMediaStream*>(aDestination.mStream.get());
@@ -218,7 +218,7 @@ AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
                             static_cast<uint16_t>(aOutput));
   }
 
-  
+  // This connection may have connected a panner and a source.
   Context()->UpdatePannerSource();
 }
 
@@ -238,7 +238,7 @@ AudioNode::Connect(AudioParam& aDestination, uint32_t aOutput,
 
   if (FindIndexOfNodeWithPorts(aDestination.InputNodes(), this, INVALID_PORT, aOutput) !=
       nsTArray<AudioNode::InputNode>::NoIndex) {
-    
+    // connection already exists.
     return;
   }
 
@@ -252,7 +252,7 @@ AudioNode::Connect(AudioParam& aDestination, uint32_t aOutput,
   MOZ_ASSERT(stream->AsProcessedStream());
   ProcessedMediaStream* ps = static_cast<ProcessedMediaStream*>(stream);
 
-  
+  // Setup our stream as an input to the AudioParam's stream
   MOZ_ASSERT(aOutput <= UINT16_MAX, "Unexpected large output port number");
   input->mStreamPort = ps->AllocateInputPort(mStream, MediaInputPort::FLAG_BLOCK_INPUT,
                                              0, static_cast<uint16_t>(aOutput));
@@ -308,11 +308,11 @@ AudioNode::Disconnect(uint32_t aOutput, ErrorResult& aRv)
     return;
   }
 
-  
-  
-  
-  
-  
+  // An upstream node may be starting to play on the graph thread, and the
+  // engine for a downstream node may be sending a PlayingRefChangeHandler
+  // ADDREF message to this (main) thread.  Wait for a round trip before
+  // releasing nodes, to give engines receiving sound now time to keep their
+  // nodes alive.
   class RunnableRelease : public nsRunnable {
   public:
     explicit RunnableRelease(already_AddRefed<AudioNode> aNode)
@@ -332,13 +332,13 @@ AudioNode::Disconnect(uint32_t aOutput, ErrorResult& aRv)
     for (int32_t j = dest->mInputNodes.Length() - 1; j >= 0; --j) {
       InputNode& input = dest->mInputNodes[j];
       if (input.mInputNode == this && input.mOutputPort == aOutput) {
-        
-        
-        
+        // Destroying the InputNode here sends a message to the graph thread
+        // to disconnect the streams, which should be sent before the
+        // RunAfterPendingUpdates() call below.
         dest->mInputNodes.RemoveElementAt(j);
-        
-        
-        
+        // Remove one instance of 'dest' from mOutputNodes. There could be
+        // others, and it's not correct to remove them all since some of them
+        // could be for different output ports.
         nsRefPtr<nsIRunnable> runnable =
           new RunnableRelease(mOutputNodes[i].forget());
         mOutputNodes.RemoveElementAt(i);
@@ -354,16 +354,16 @@ AudioNode::Disconnect(uint32_t aOutput, ErrorResult& aRv)
       const InputNode& input = dest->InputNodes()[j];
       if (input.mInputNode == this && input.mOutputPort == aOutput) {
         dest->RemoveInputNode(j);
-        
-        
-        
+        // Remove one instance of 'dest' from mOutputParams. There could be
+        // others, and it's not correct to remove them all since some of them
+        // could be for different output ports.
         mOutputParams.RemoveElementAt(i);
         break;
       }
     }
   }
 
-  
+  // This disconnection may have disconnected a panner and a source.
   Context()->UpdatePannerSource();
 }
 
@@ -372,10 +372,10 @@ AudioNode::DestroyMediaStream()
 {
   if (mStream) {
     {
-      
-      
-      
-      
+      // Remove the node reference on the engine, and take care to not
+      // hold the lock when the stream gets destroyed, because that will
+      // cause the engine to be destroyed as well, and we don't want to
+      // be holding the lock as we're trying to destroy it!
       AudioNodeStream* ns = static_cast<AudioNodeStream*>(mStream.get());
       MutexAutoLock lock(ns->Engine()->NodeMutex());
       MOZ_ASSERT(ns, "How come we don't have a stream here?");

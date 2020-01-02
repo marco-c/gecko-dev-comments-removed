@@ -1,11 +1,11 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+/*
+ * A class for keeping track of prefix-to-namespace-id mappings
+ */
 
 #include "nsXMLNameSpaceMap.h"
 #include "nsContentUtils.h"
@@ -29,7 +29,7 @@ class nsDefaultComparator <nsNameSpaceEntry, int32_t> {
 };
 
 
- nsXMLNameSpaceMap*
+/* static */ nsXMLNameSpaceMap*
 nsXMLNameSpaceMap::Create(bool aForXML)
 {
   nsXMLNameSpaceMap *map = new nsXMLNameSpaceMap();
@@ -79,13 +79,13 @@ nsXMLNameSpaceMap::AddPrefix(nsIAtom *aPrefix, nsString &aURI)
 int32_t
 nsXMLNameSpaceMap::FindNameSpaceID(nsIAtom *aPrefix) const
 {
-  uint32_t index = mNameSpaces.IndexOf(aPrefix);
+  size_t index = mNameSpaces.IndexOf(aPrefix);
   if (index != mNameSpaces.NoIndex) {
     return mNameSpaces[index].nameSpaceID;
   }
 
-  
-  
+  // The default mapping for no prefix is no namespace.  If a non-null prefix
+  // was specified and we didn't find it, we return an error.
 
   return aPrefix ? kNameSpaceID_Unknown : kNameSpaceID_None;
 }
@@ -93,7 +93,7 @@ nsXMLNameSpaceMap::FindNameSpaceID(nsIAtom *aPrefix) const
 nsIAtom*
 nsXMLNameSpaceMap::FindPrefix(int32_t aNameSpaceID) const
 {
-  uint32_t index = mNameSpaces.IndexOf(aNameSpaceID);
+  size_t index = mNameSpaces.IndexOf(aNameSpaceID);
   if (index != mNameSpaces.NoIndex) {
     return mNameSpaces[index].prefix;
   }

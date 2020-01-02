@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=79: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsBindingManager.h"
 
@@ -53,7 +53,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-
+// Implement our nsISupports methods
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsBindingManager)
 
@@ -107,14 +107,14 @@ LoadingDocHashtableTraverser(nsIURI* key,
 }
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsBindingManager)
-  
+  // The hashes keyed on nsIContent are traversed from the nsIContent itself.
   if (tmp->mDocumentTable)
       tmp->mDocumentTable->EnumerateRead(&DocumentInfoHashtableTraverser, &cb);
   if (tmp->mLoadingDocTable)
       tmp->mLoadingDocTable->EnumerateRead(&LoadingDocHashtableTraverser, &cb);
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAttachedStack)
-  
-  
+  // No need to traverse mProcessAttachedQueueEvent, since it'll just
+  // fire at some point or become revoke and drop its ref to us.
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsBindingManager)
@@ -125,7 +125,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsBindingManager)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsBindingManager)
 
-
+// Constructors/Destructors
 nsBindingManager::nsBindingManager(nsIDocument* aDocument)
   : mProcessingAttachedStack(false),
     mDestroyed(false),
@@ -162,7 +162,7 @@ nsBindingManager::RemoveBoundContent(nsIContent* aContent)
     mBoundContentSet->RemoveEntry(aContent);
   }
 
-  
+  // The death of the bindings means the death of the JS wrapper.
   SetWrappedJS(aContent, nullptr);
 }
 
@@ -188,7 +188,7 @@ nsBindingManager::SetWrappedJS(nsIContent* aContent, nsIXPConnectWrappedJS* aWra
   }
 
   if (aWrappedJS) {
-    
+    // lazily create the table, but only when adding elements
     if (!mWrapperTable) {
       mWrapperTable = new WrapperHashtable();
     }
@@ -202,7 +202,7 @@ nsBindingManager::SetWrappedJS(nsIContent* aContent, nsIXPConnectWrappedJS* aWra
     return NS_OK;
   }
 
-  
+  // no value, so remove the key from the table
   if (mWrapperTable) {
     mWrapperTable->Remove(aContent);
   }
@@ -218,11 +218,11 @@ nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
 
   nsRefPtr<nsXBLBinding> binding = aContent->GetXBLBinding();
   if (binding) {
-    
-    
-    
-    
-    
+    // The binding manager may have been destroyed before a runnable
+    // has had a chance to reach this point. If so, we bail out on calling
+    // BindingDetached (which may invoke a XBL destructor) and
+    // ChangeDocument, but we still want to clear out the binding
+    // and insertion parent that may hold references.
     if (!mDestroyed) {
       binding->PrototypeBinding()->BindingDetached(binding->GetBoundElement());
       binding->ChangeDocument(aOldDocument, nullptr);
@@ -231,7 +231,7 @@ nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
     aContent->SetXBLBinding(nullptr, this);
   }
 
-  
+  // Clear out insertion parent and content lists.
   aContent->SetXBLInsertionParent(nullptr);
 }
 
@@ -270,7 +270,7 @@ nsBindingManager::GetAnonymousNodesFor(nsIContent* aContent)
 nsresult
 nsBindingManager::ClearBinding(nsIContent* aContent)
 {
-  
+  // Hold a ref to the binding so it won't die when we remove it from our table
   nsRefPtr<nsXBLBinding> binding =
     aContent ? aContent->GetXBLBinding() : nullptr;
 
@@ -278,28 +278,28 @@ nsBindingManager::ClearBinding(nsIContent* aContent)
     return NS_OK;
   }
 
-  
+  // For now we can only handle removing a binding if it's the only one
   NS_ENSURE_FALSE(binding->GetBaseBinding(), NS_ERROR_FAILURE);
 
-  
-  
-  
-  
-  
+  // Hold strong ref in case removing the binding tries to close the
+  // window or something.
+  // XXXbz should that be ownerdoc?  Wouldn't we need a ref to the
+  // currentdoc too?  What's the one that should be passed to
+  // ChangeDocument?
   nsCOMPtr<nsIDocument> doc = aContent->OwnerDoc();
 
-  
-  
-  
+  // Finally remove the binding...
+  // XXXbz this doesn't remove the implementation!  Should fix!  Until
+  // then we need the explicit UnhookEventHandlers here.
   binding->UnhookEventHandlers();
   binding->ChangeDocument(doc, nullptr);
   aContent->SetXBLBinding(nullptr, this);
   binding->MarkForDeath();
 
-  
-  
-  
-  
+  // ...and recreate its frames. We need to do this since the frames may have
+  // been removed and style may have changed due to the removal of the
+  // anonymous children.
+  // XXXbz this should be using the current doc (if any), not the owner doc.
   nsIPresShell *presShell = doc->GetShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
@@ -313,12 +313,12 @@ nsBindingManager::LoadBindingDocument(nsIDocument* aBoundDoc,
 {
   NS_PRECONDITION(aURL, "Must have a URI to load!");
 
-  
+  // First we need to load our binding.
   nsXBLService* xblService = nsXBLService::GetInstance();
   if (!xblService)
     return NS_ERROR_FAILURE;
 
-  
+  // Load the binding doc.
   nsRefPtr<nsXBLDocumentInfo> info;
   xblService->LoadBindingDocumentInfo(nullptr, aBoundDoc, aURL,
                                       aOriginPrincipal, true,
@@ -332,9 +332,9 @@ nsBindingManager::LoadBindingDocument(nsIDocument* aBoundDoc,
 void
 nsBindingManager::RemoveFromAttachedQueue(nsXBLBinding* aBinding)
 {
-  
-  
-  uint32_t index = mAttachedStack.IndexOf(aBinding);
+  // Don't remove items here as that could mess up an executing
+  // ProcessAttachedQueue. Instead, null the entry in the queue.
+  size_t index = mAttachedStack.IndexOf(aBinding);
   if (index != mAttachedStack.NoIndex) {
     mAttachedStack[index] = nullptr;
   }
@@ -346,13 +346,13 @@ nsBindingManager::AddToAttachedQueue(nsXBLBinding* aBinding)
   if (!mAttachedStack.AppendElement(aBinding))
     return NS_ERROR_OUT_OF_MEMORY;
 
-  
-  
+  // If we're in the middle of processing our queue already, don't
+  // bother posting the event.
   if (!mProcessingAttachedStack && !mProcessAttachedQueueEvent) {
     PostProcessAttachedQueueEvent();
   }
 
-  
+  // Make sure that flushes will flush out the new items as needed.
   mDocument->SetNeedStyleFlush();
 
   return NS_OK;
@@ -381,16 +381,16 @@ nsBindingManager::DoProcessAttachedQueue()
 
     mProcessAttachedQueueEvent = nullptr;
   } else {
-    
-    
-    
+    // Someone's doing event processing from inside a constructor.
+    // They're evil, but we'll fight back!  Just poll on them being
+    // done and repost the attached queue event.
     PostProcessAttachedQueueEvent();
   }
 
-  
+  // No matter what, unblock onload for the event that's fired.
   if (mDocument) {
-    
-    
+    // Hold a strong reference while calling UnblockOnload since that might
+    // run script.
     nsCOMPtr<nsIDocument> doc = mDocument;
     doc->UnblockOnload(true);
   }
@@ -404,7 +404,7 @@ nsBindingManager::ProcessAttachedQueue(uint32_t aSkipSize)
 
   mProcessingAttachedStack = true;
 
-  
+  // Excute constructors. Do this from high index to low
   while (mAttachedStack.Length() > aSkipSize) {
     uint32_t lastItem = mAttachedStack.Length() - 1;
     nsRefPtr<nsXBLBinding> binding = mAttachedStack.ElementAt(lastItem);
@@ -414,8 +414,8 @@ nsBindingManager::ProcessAttachedQueue(uint32_t aSkipSize)
     }
   }
 
-  
-  
+  // If NodeWillBeDestroyed has run we don't want to clobber
+  // mProcessingAttachedStack set there.
   if (mDocument) {
     mProcessingAttachedStack = false;
   }
@@ -425,7 +425,7 @@ nsBindingManager::ProcessAttachedQueue(uint32_t aSkipSize)
   mAttachedStack.Compact();
 }
 
-
+// Keep bindings and bound elements alive while executing detached handlers.
 struct BindingTableReadClosure
 {
   nsCOMArray<nsIContent> mBoundElements;
@@ -450,7 +450,7 @@ AccumulateBindingsToDetach(nsRefPtrHashKey<nsIContent> *aKey,
 void
 nsBindingManager::ExecuteDetachedHandlers()
 {
-  
+  // Walk our hashtable of bindings.
   if (mBoundContentSet) {
     BindingTableReadClosure closure;
     mBoundContentSet->EnumerateEntries(AccumulateBindingsToDetach, &closure);
@@ -528,7 +528,7 @@ MarkForDeath(nsRefPtrHashKey<nsIContent> *aKey, void* aClosure)
   nsXBLBinding *binding = aKey->GetKey()->GetXBLBinding();
 
   if (binding->MarkedForDeath())
-    return PL_DHASH_NEXT; 
+    return PL_DHASH_NEXT; // Already marked for death.
 
   nsAutoCString path;
   binding->PrototypeBinding()->DocURI()->GetPath(path);
@@ -547,7 +547,7 @@ nsBindingManager::FlushSkinBindings()
   }
 }
 
-
+// Used below to protect from recurring in QI calls through XPConnect.
 struct AntiRecursionData {
   nsIContent* element;
   REFNSIID iid;
@@ -566,29 +566,29 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
   *aResult = nullptr;
   nsXBLBinding *binding = aContent ? aContent->GetXBLBinding() : nullptr;
   if (binding) {
-    
+    // The binding should not be asked for nsISupports
     NS_ASSERTION(!aIID.Equals(NS_GET_IID(nsISupports)), "Asking a binding for nsISupports");
     if (binding->ImplementsInterface(aIID)) {
       nsCOMPtr<nsIXPConnectWrappedJS> wrappedJS = GetWrappedJS(aContent);
 
       if (wrappedJS) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Protect from recurring in QI calls through XPConnect.
+        // This can happen when a second binding is being resolved.
+        // At that point a wrappedJS exists, but it doesn't yet know about
+        // the iid we are asking for. So, without this protection,
+        // AggregatedQueryInterface would end up recurring back into itself
+        // through this code.
+        //
+        // With this protection, when we detect the recursion we return
+        // NS_NOINTERFACE in the inner call. The outer call will then fall
+        // through (see below) and build a new chained wrappedJS for the iid.
+        //
+        // We're careful to not assume that only one direct nesting can occur
+        // because there is a call into JS in the middle and we can't assume
+        // that this code won't be reached by some more complex nesting path.
+        //
+        // NOTE: We *assume* this is single threaded, so we can use a
+        // static linked list to do the check.
 
         static AntiRecursionData* list = nullptr;
 
@@ -609,12 +609,12 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
         if (*aResult)
           return rv;
 
-        
-        
+        // No result was found, so this must be another XBL interface.
+        // Fall through to create a new wrapper.
       }
 
-      
-      
+      // We have never made a wrapper for this implementation.
+      // Create an XPC wrapper for the script object and hand it back.
 
       nsIDocument* doc = aContent->OwnerDoc();
 
@@ -636,14 +636,14 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
       JS::Rooted<JSObject*> jsobj(cx, aContent->GetWrapper());
       NS_ENSURE_TRUE(jsobj, NS_NOINTERFACE);
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // If we're using an XBL scope, we need to use the Xray view to the bound
+      // content in order to view the full array of methods defined in the
+      // binding, some of which may not be exposed on the prototype of
+      // untrusted content.
+      //
+      // If there's no separate XBL scope, or if the reflector itself lives in
+      // the XBL scope, we'll end up with the global of the reflector, and this
+      // will all be a no-op.
       JS::Rooted<JSObject*> xblScope(cx, xpc::GetXBLScopeOrGlobal(cx, jsobj));
       JSAutoCompartment ac(cx, xblScope);
       bool ok = JS_WrapObject(cx, &jsobj);
@@ -655,9 +655,9 @@ nsBindingManager::GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
       if (NS_FAILED(rv))
         return rv;
 
-      
-      
-      
+      // We successfully created a wrapper.  We will own this wrapper for as long as the binding remains
+      // alive.  At the time the binding is cleared out of the bindingManager, we will remove the wrapper
+      // from the bindingManager as well.
       nsISupports* supp = static_cast<nsISupports*>(*aResult);
       wrappedJS = do_QueryInterface(supp);
       SetWrappedJS(aContent, wrappedJS);
@@ -679,8 +679,8 @@ nsBindingManager::WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
 
   NS_ASSERTION(aData->mElement, "How did that happen?");
 
-  
-  
+  // Walk the binding scope chain, starting with the binding attached to our
+  // content, up till we run out of scopes or we get cut off.
   nsIContent *content = aData->mElement;
 
   do {
@@ -688,28 +688,28 @@ nsBindingManager::WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
     if (binding) {
       aData->mTreeMatchContext.mScopedRoot = content;
       binding->WalkRules(aFunc, aData);
-      
-      
+      // If we're not looking at our original content, allow the binding to cut
+      // off style inheritance
       if (content != aData->mElement) {
         if (!binding->InheritsStyle()) {
-          
+          // Go no further; we're not inheriting style from anything above here
           break;
         }
       }
     }
 
     if (content->IsRootOfNativeAnonymousSubtree()) {
-      break; 
+      break; // Deliberately cut off style inheritance here.
     }
 
     content = content->GetBindingParent();
   } while (content);
 
-  
-  
+  // If "content" is non-null that means we cut off inheritance at some point
+  // in the loop.
   *aCutOffInheritance = (content != nullptr);
 
-  
+  // Null out the scoped root that we set repeatedly
   aData->mTreeMatchContext.mScopedRoot = nullptr;
 
   return NS_OK;
@@ -820,8 +820,8 @@ EnumAppendAllSheets(nsRefPtrHashKey<nsIContent> *aKey, void* aClosure)
     nsXBLPrototypeResources::sheet_array_type* sheets =
       binding->PrototypeBinding()->GetStyleSheets();
     if (sheets) {
-      
-      
+      // Copy from nsTArray<nsRefPtr<nsCSSStyleSheet> > to
+      // nsTArray<nsCSSStyleSheet*>.
       array->AppendElements(*sheets);
     }
   }
@@ -840,23 +840,23 @@ static void
 InsertAppendedContent(XBLChildrenElement* aPoint,
                       nsIContent* aFirstNewContent)
 {
-  uint32_t insertionIndex;
+  size_t insertionIndex;
   if (nsIContent* prevSibling = aFirstNewContent->GetPreviousSibling()) {
-    
-    
+    // If we have a previous sibling, then it must already be in aPoint. Find
+    // it and insert after it.
     insertionIndex = aPoint->IndexOfInsertedChild(prevSibling);
     MOZ_ASSERT(insertionIndex != aPoint->NoIndex);
 
-    
+    // Our insertion index is one after our previous sibling's index.
     ++insertionIndex;
   } else {
-    
-    
-    
+    // Otherwise, we append.
+    // TODO This is wrong for nested insertion points. In that case, we need to
+    // keep track of the right index to insert into.
     insertionIndex = aPoint->mInsertedChildren.Length();
   }
 
-  
+  // Do the inserting.
   for (nsIContent* currentChild = aFirstNewContent;
        currentChild;
        currentChild = currentChild->GetNextSibling()) {
@@ -874,7 +874,7 @@ nsBindingManager::ContentAppended(nsIDocument* aDocument,
     return;
   }
 
-  
+  // Try to find insertion points for all the new kids.
   XBLChildrenElement* point = nullptr;
   nsIContent* parent = aContainer;
   bool first = true;
@@ -885,11 +885,11 @@ nsBindingManager::ContentAppended(nsIDocument* aDocument,
     }
 
     if (binding->HasFilteredInsertionPoints()) {
-      
-      
-      
-      
-      
+      // There are filtered insertion points involved, handle each child
+      // separately.
+      // We could optimize this in the case when we've nested a few levels
+      // deep already, without hitting bindings that have filtered insertion
+      // points.
       int32_t currentIndex = aNewIndexInContainer;
       for (nsIContent* currentChild = aFirstNewContent; currentChild;
            currentChild = currentChild->GetNextSibling()) {
@@ -905,9 +905,9 @@ nsBindingManager::ContentAppended(nsIDocument* aDocument,
       break;
     }
 
-    
-    
-    
+    // Even though we're in ContentAppended, nested insertion points force us
+    // to deal with this append as an insertion except in the outermost
+    // binding.
     if (first) {
       first = false;
       for (nsIContent* child = aFirstNewContent; child;
@@ -953,13 +953,13 @@ nsBindingManager::ContentRemoved(nsIDocument* aDocument,
   do {
     nsXBLBinding* binding = GetBindingWithContent(parent);
     if (!binding) {
-      
-      
-      
-      
-      
-      
-      
+      // If aChild is XBL content, it might have <xbl:children> elements
+      // somewhere under it. We need to inform those elements that they're no
+      // longer in the tree so they can tell their distributed children that
+      // they're no longer distributed under them.
+      // XXX This is wrong. We need to do far more work to update the parent
+      // binding's list of insertion points and to get the new insertion parent
+      // for the newly-distributed children correct.
       if (aChild->GetBindingParent()) {
         ClearInsertionPointsRecursively(aChild);
       }
@@ -999,7 +999,7 @@ nsBindingManager::DropDocumentReference()
 {
   mDestroyed = true;
 
-  
+  // Make sure to not run any more XBL constructors
   mProcessingAttachedStack = true;
   if (mProcessAttachedQueueEvent) {
     mProcessAttachedQueueEvent->Revoke();
@@ -1018,11 +1018,11 @@ nsBindingManager::Traverse(nsIContent *aContent,
 {
   if (!aContent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
       !aContent->IsElement()) {
-    
-    
-    
-    
-    
+    // Don't traverse if content is not in this binding manager.
+    // We also don't traverse non-elements because there should not
+    // be bindings (checking the flag alone is not sufficient because
+    // the flag is also set on children of insertion points that may be
+    // non-elements).
     return;
   }
 
@@ -1079,18 +1079,18 @@ nsBindingManager::HandleChildInsertion(nsIContent* aContainer,
       break;
     }
 
-    
-    
-    
-    
-    uint32_t index = aAppend ? point->mInsertedChildren.Length() : 0;
+    // Insert the child into the proper insertion point.
+    // TODO If there were multiple insertion points, this approximation can be
+    // wrong. We need to re-run the distribution algorithm. In the meantime,
+    // this should work well enough.
+    size_t index = aAppend ? point->mInsertedChildren.Length() : 0;
     for (nsIContent* currentSibling = aChild->GetPreviousSibling();
          currentSibling;
          currentSibling = currentSibling->GetPreviousSibling()) {
-      
-      
-      
-      uint32_t pointIndex = point->IndexOfInsertedChild(currentSibling);
+      // If we find one of our previous siblings in the insertion point, the
+      // index following it is the correct insertion point. Otherwise, we guess
+      // based on whether we're appending or inserting.
+      size_t pointIndex = point->IndexOfInsertedChild(currentSibling);
       if (pointIndex != point->NoIndex) {
         index = pointIndex + 1;
         break;

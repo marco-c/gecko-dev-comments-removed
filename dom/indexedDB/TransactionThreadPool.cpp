@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TransactionThreadPool.h"
 
@@ -42,9 +42,9 @@ private:
   { }
 };
 
-#endif 
+#endif // MOZ_ENABLE_PROFILER_SPS
 
-} 
+} // anonymous namespace
 
 BEGIN_INDEXEDDB_NAMESPACE
 
@@ -77,7 +77,7 @@ TransactionThreadPool::~TransactionThreadPool()
   gThreadPool = nullptr;
 }
 
-
+// static
 TransactionThreadPool*
 TransactionThreadPool::GetOrCreate()
 {
@@ -93,14 +93,14 @@ TransactionThreadPool::GetOrCreate()
   return gThreadPool;
 }
 
-
+// static
 TransactionThreadPool*
 TransactionThreadPool::Get()
 {
   return gThreadPool;
 }
 
-
+// static
 void
 TransactionThreadPool::Shutdown()
 {
@@ -159,19 +159,19 @@ TransactionThreadPool::Cleanup()
   nsresult rv = mThreadPool->Shutdown();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
+  // Make sure the pool is still accessible while any callbacks generated from
+  // the other threads are processed.
   rv = NS_ProcessPendingEvents(nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!mCompleteCallbacks.IsEmpty()) {
-    
+    // Run all callbacks manually now.
     for (uint32_t index = 0; index < mCompleteCallbacks.Length(); index++) {
       mCompleteCallbacks[index].mCallback->Run();
     }
     mCompleteCallbacks.Clear();
 
-    
+    // And make sure they get processed.
     rv = NS_ProcessPendingEvents(nullptr);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -179,7 +179,7 @@ TransactionThreadPool::Cleanup()
   return NS_OK;
 }
 
-
+// static
 PLDHashOperator
 TransactionThreadPool::MaybeUnblockTransaction(nsPtrHashKey<TransactionInfo>* aKey,
                                                void* aUserArg)
@@ -193,7 +193,7 @@ TransactionThreadPool::MaybeUnblockTransaction(nsPtrHashKey<TransactionInfo>* aK
                "Huh?");
   maybeUnblockedInfo->blockedOn.RemoveEntry(finishedInfo);
   if (!maybeUnblockedInfo->blockedOn.Count()) {
-    
+    // Let this transaction run.
     maybeUnblockedInfo->queue->Unblock();
   }
 
@@ -209,7 +209,7 @@ TransactionThreadPool::FinishTransaction(IDBTransaction* aTransaction)
   PROFILER_MAIN_THREAD_LABEL("IndexedDB",
                              "TransactionThreadPool::FinishTransaction");
 
-  
+  // AddRef here because removing from the hash will call Release.
   nsRefPtr<IDBTransaction> transaction(aTransaction);
 
   const nsACString& databaseId = aTransaction->mDatabase->Id();
@@ -241,7 +241,7 @@ TransactionThreadPool::FinishTransaction(IDBTransaction* aTransaction)
 #endif
     mTransactionsInProgress.Remove(databaseId);
 
-    
+    // See if we need to fire any complete callbacks.
     uint32_t index = 0;
     while (index < mCompleteCallbacks.Length()) {
       if (MaybeFireCallback(mCompleteCallbacks[index])) {
@@ -258,7 +258,7 @@ TransactionThreadPool::FinishTransaction(IDBTransaction* aTransaction)
   NS_ASSERTION(info, "We've never heard of this transaction?!?");
 
   const nsTArray<nsString>& objectStoreNames = aTransaction->mObjectStoreNames;
-  for (uint32_t index = 0, count = objectStoreNames.Length(); index < count;
+  for (size_t index = 0, count = objectStoreNames.Length(); index < count;
        index++) {
     TransactionInfoPair* blockInfo =
       dbTransactionInfo->blockingTransactions.Get(objectStoreNames[index]);
@@ -269,7 +269,7 @@ TransactionThreadPool::FinishTransaction(IDBTransaction* aTransaction)
       blockInfo->lastBlockingReads = nullptr;
     }
 
-    uint32_t i = blockInfo->lastBlockingWrites.IndexOf(info);
+    size_t i = blockInfo->lastBlockingWrites.IndexOf(info);
     if (i != blockInfo->lastBlockingWrites.NoIndex) {
       blockInfo->lastBlockingWrites.RemoveElementAt(i);
     }
@@ -291,10 +291,10 @@ TransactionThreadPool::GetQueueForTransaction(IDBTransaction* aTransaction)
   const nsTArray<nsString>& objectStoreNames = aTransaction->mObjectStoreNames;
   const uint16_t mode = aTransaction->mMode;
 
-  
+  // See if we can run this transaction now.
   DatabaseTransactionInfo* dbTransactionInfo;
   if (!mTransactionsInProgress.Get(databaseId, &dbTransactionInfo)) {
-    
+    // First transaction for this database.
     dbTransactionInfo = new DatabaseTransactionInfo();
     mTransactionsInProgress.Put(databaseId, dbTransactionInfo);
   }
@@ -303,7 +303,7 @@ TransactionThreadPool::GetQueueForTransaction(IDBTransaction* aTransaction)
     dbTransactionInfo->transactions;
   TransactionInfo* info = transactionsInProgress.Get(aTransaction);
   if (info) {
-    
+    // We recognize this one.
     return *info->queue;
   }
 
@@ -322,7 +322,7 @@ TransactionThreadPool::GetQueueForTransaction(IDBTransaction* aTransaction)
                                                   blockInfo);
     }
 
-    
+    // Mark what we are blocking on.
     if (blockInfo->lastBlockingReads) {
       TransactionInfo* blockingInfo = blockInfo->lastBlockingReads;
       transactionInfo->blockedOn.PutEntry(blockingInfo);
@@ -398,7 +398,7 @@ TransactionThreadPool::WaitForDatabasesToComplete(
   }
 }
 
-
+// static
 PLDHashOperator
 TransactionThreadPool::CollectTransactions(IDBTransaction* aKey,
                                            TransactionInfo* aValue,
@@ -421,14 +421,14 @@ TransactionThreadPool::AbortTransactionsForDatabase(IDBDatabase* aDatabase)
                              "TransactionThreadPool::"
                              "AbortTransactionsForDatabase");
 
-  
+  // Get list of transactions for this database id
   DatabaseTransactionInfo* dbTransactionInfo;
   if (!mTransactionsInProgress.Get(aDatabase->Id(), &dbTransactionInfo)) {
-    
+    // If there are no transactions, we're done.
     return;
   }
 
-  
+  // Collect any running transactions
   DatabaseTransactionInfo::TransactionHashtable& transactionsInProgress =
     dbTransactionInfo->transactions;
 
@@ -437,16 +437,16 @@ TransactionThreadPool::AbortTransactionsForDatabase(IDBDatabase* aDatabase)
   nsAutoTArray<nsRefPtr<IDBTransaction>, 50> transactions;
   transactionsInProgress.EnumerateRead(CollectTransactions, &transactions);
 
-  
-  
+  // Abort transactions. Do this after collecting the transactions in case
+  // calling Abort() modifies the data structures we're iterating above.
   for (uint32_t index = 0; index < transactions.Length(); index++) {
     if (transactions[index]->Database() != aDatabase) {
       continue;
     }
 
-    
-    
-    
+    // This can fail, for example if the transaction is in the process of
+    // being comitted. That is expected and fine, so we ignore any returned
+    // errors.
     ErrorResult rv;
     transactions[index]->Abort(rv);
   }
@@ -463,7 +463,7 @@ struct MOZ_STACK_CLASS TransactionSearchInfo
   bool found;
 };
 
-
+// static
 PLDHashOperator
 TransactionThreadPool::FindTransaction(IDBTransaction* aKey,
                                        TransactionInfo* aValue,
@@ -534,7 +534,7 @@ TransactionThreadPool::TransactionQueue::Unblock()
 {
   MonitorAutoLock lock(mMonitor);
 
-  
+  // NB: Finish may be called before Unblock.
 
   TransactionThreadPool::Get()->mThreadPool->
     Dispatch(this, NS_DISPATCH_NORMAL);
@@ -682,4 +682,4 @@ TransactionThreadPoolListener::OnThreadShuttingDown()
   return NS_OK;
 }
 
-#endif 
+#endif // MOZ_ENABLE_PROFILER_SPS
