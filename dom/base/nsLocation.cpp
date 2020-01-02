@@ -237,6 +237,13 @@ nsLocation::SetURI(nsIURI* aURI, bool aReplace)
       loadInfo->SetLoadType(nsIDocShellLoadInfo::loadStopContent);
     }
 
+    
+    nsCOMPtr<nsPIDOMWindow> sourceWindow =
+      do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
+    if (sourceWindow) {
+      loadInfo->SetSourceDocShell(sourceWindow->GetDocShell());
+    }
+
     return docShell->LoadURI(aURI, loadInfo,
                              nsIWebNavigation::LOAD_FLAGS_NONE, true);
   }
@@ -282,7 +289,7 @@ nsLocation::GetHash(nsAString& aHash)
   }
 
   if (NS_SUCCEEDED(rv) && !unicodeRef.IsEmpty()) {
-    aHash.Assign(PRUnichar('#'));
+    aHash.Assign(char16_t('#'));
     aHash.Append(unicodeRef);
   }
 
@@ -308,8 +315,8 @@ nsLocation::SetHash(const nsAString& aHash)
   }
 
   NS_ConvertUTF16toUTF8 hash(aHash);
-  if (hash.IsEmpty() || hash.First() != PRUnichar('#')) {
-    hash.Insert(PRUnichar('#'), 0);
+  if (hash.IsEmpty() || hash.First() != char16_t('#')) {
+    hash.Insert(char16_t('#'), 0);
   }
   rv = uri->SetRef(hash);
   if (NS_SUCCEEDED(rv)) {
@@ -675,7 +682,7 @@ nsLocation::GetProtocol(nsAString& aProtocol)
 
     if (NS_SUCCEEDED(result)) {
       CopyASCIItoUTF16(protocol, aProtocol);
-      aProtocol.Append(PRUnichar(':'));
+      aProtocol.Append(char16_t(':'));
     }
   }
 
@@ -722,7 +729,7 @@ nsLocation::GetSearch(nsAString& aSearch)
     result = url->GetQuery(search);
 
     if (NS_SUCCEEDED(result) && !search.IsEmpty()) {
-      aSearch.Assign(PRUnichar('?'));
+      aSearch.Assign(char16_t('?'));
       AppendUTF8toUTF16(search, aSearch);
     }
   }
