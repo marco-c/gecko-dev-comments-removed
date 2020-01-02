@@ -21,6 +21,7 @@
 #include "mozilla/LinkedList.h"
 
 using namespace mozilla;
+using namespace mozilla::css;
 using namespace mozilla::layout;
 
 
@@ -74,7 +75,7 @@ enum AxisEdgeType {
 
 
 
-static const mozilla::Side
+static const Side
 kAxisOrientationToSidesMap[eNumAxisOrientationTypes][eNumAxisEdges] = {
   { eSideLeft,   eSideRight  },  
   { eSideRight,  eSideLeft   },  
@@ -154,7 +155,7 @@ PhysicalPosFromLogicalPos(nscoord aLogicalPosn,
 }
 
 static nscoord
-MarginComponentForSide(const nsMargin& aMargin, mozilla::Side aSide)
+MarginComponentForSide(const nsMargin& aMargin, Side aSide)
 {
   switch (aSide) {
     case eSideLeft:
@@ -173,7 +174,7 @@ MarginComponentForSide(const nsMargin& aMargin, mozilla::Side aSide)
 }
 
 static nscoord&
-MarginComponentForSide(nsMargin& aMargin, mozilla::Side aSide)
+MarginComponentForSide(nsMargin& aMargin, Side aSide)
 {
   switch (aSide) {
     case eSideLeft:
@@ -415,14 +416,14 @@ public:
   const nsMargin& GetMargin() const { return mMargin; }
 
   
-  nscoord GetMarginComponentForSide(mozilla::Side aSide) const
+  nscoord GetMarginComponentForSide(Side aSide) const
   { return MarginComponentForSide(mMargin, aSide); }
 
   
   nscoord GetMarginSizeInAxis(AxisOrientationType aAxis) const
   {
-    mozilla::Side startSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_Start];
-    mozilla::Side endSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_End];
+    Side startSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_Start];
+    Side endSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_End];
     return GetMarginComponentForSide(startSide) +
       GetMarginComponentForSide(endSide);
   }
@@ -432,15 +433,15 @@ public:
   const nsMargin& GetBorderPadding() const { return mBorderPadding; }
 
   
-  nscoord GetBorderPaddingComponentForSide(mozilla::Side aSide) const
+  nscoord GetBorderPaddingComponentForSide(Side aSide) const
   { return MarginComponentForSide(mBorderPadding, aSide); }
 
   
   
   nscoord GetBorderPaddingSizeInAxis(AxisOrientationType aAxis) const
   {
-    mozilla::Side startSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_Start];
-    mozilla::Side endSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_End];
+    Side startSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_Start];
+    Side endSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_End];
     return GetBorderPaddingComponentForSide(startSide) +
       GetBorderPaddingComponentForSide(endSide);
   }
@@ -550,7 +551,7 @@ public:
   }
 
   
-  void SetMarginComponentForSide(mozilla::Side aSide, nscoord aLength)
+  void SetMarginComponentForSide(Side aSide, nscoord aLength)
   {
     MOZ_ASSERT(mIsFrozen, "main size should be resolved before this");
     MarginComponentForSide(mMargin, aSide) = aLength;
@@ -1272,7 +1273,7 @@ FlexItem::GetBaselineOffsetFromOuterCrossEdge(AxisOrientationType aCrossAxis,
              "Only expecting to be doing baseline computations when the "
              "cross axis is vertical");
 
-  mozilla::Side sideToMeasureFrom = kAxisOrientationToSidesMap[aCrossAxis][aEdge];
+  Side sideToMeasureFrom = kAxisOrientationToSidesMap[aCrossAxis][aEdge];
 
   nscoord marginTopToBaseline = mAscent + mMargin.top;
 
@@ -1298,7 +1299,7 @@ FlexItem::GetNumAutoMarginsInAxis(AxisOrientationType aAxis) const
   uint32_t numAutoMargins = 0;
   const nsStyleSides& styleMargin = mFrame->StyleMargin()->mMargin;
   for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-    mozilla::Side side = kAxisOrientationToSidesMap[aAxis][i];
+    Side side = kAxisOrientationToSidesMap[aAxis][i];
     if (styleMargin.GetUnit(side) == eStyleUnit_Auto) {
       numAutoMargins++;
     }
@@ -1326,7 +1327,7 @@ public:
   
   void EnterMargin(const nsMargin& aMargin)
   {
-    mozilla::Side side = kAxisOrientationToSidesMap[mAxis][eAxisEdge_Start];
+    Side side = kAxisOrientationToSidesMap[mAxis][eAxisEdge_Start];
     mPosition += MarginComponentForSide(aMargin, side);
   }
 
@@ -1334,7 +1335,7 @@ public:
   
   void ExitMargin(const nsMargin& aMargin)
   {
-    mozilla::Side side = kAxisOrientationToSidesMap[mAxis][eAxisEdge_End];
+    Side side = kAxisOrientationToSidesMap[mAxis][eAxisEdge_End];
     mPosition += MarginComponentForSide(aMargin, side);
   }
 
@@ -2092,7 +2093,7 @@ MainAxisPositionTracker::ResolveAutoMarginsInMainAxis(FlexItem& aItem)
   if (mNumAutoMarginsInMainAxis) {
     const nsStyleSides& styleMargin = aItem.Frame()->StyleMargin()->mMargin;
     for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-      mozilla::Side side = kAxisOrientationToSidesMap[mAxis][i];
+      Side side = kAxisOrientationToSidesMap[mAxis][i];
       if (styleMargin.GetUnit(side) == eStyleUnit_Auto) {
         
         
@@ -2428,7 +2429,7 @@ SingleLineCrossAxisPositionTracker::
   
   const nsStyleSides& styleMargin = aItem.Frame()->StyleMargin()->mMargin;
   for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-    mozilla::Side side = kAxisOrientationToSidesMap[mAxis][i];
+    Side side = kAxisOrientationToSidesMap[mAxis][i];
     if (styleMargin.GetUnit(side) == eStyleUnit_Auto) {
       MOZ_ASSERT(aItem.GetMarginComponentForSide(side) == 0,
                  "Expecting auto margins to have value '0' before we "
@@ -3112,7 +3113,7 @@ nsFlexContainerFrame::Reflow(nsPresContext*           aPresContext,
   
   nscoord availableHeightForContent = aReflowState.AvailableHeight();
   if (availableHeightForContent != NS_UNCONSTRAINEDSIZE &&
-      !GetSkipSides().Top()) {
+      !(GetSkipSides() & (1 << NS_SIDE_TOP))) {
     availableHeightForContent -= aReflowState.ComputedPhysicalBorderPadding().top;
     
     availableHeightForContent = std::max(availableHeightForContent, 0);
