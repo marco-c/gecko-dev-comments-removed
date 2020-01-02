@@ -102,6 +102,8 @@ public:
   }
 
 protected:
+  ~MouseEvent() {}
+
   nsresult InitMouseEvent(const nsAString& aType,
                           bool aCanBubble,
                           bool aCancelable,
@@ -123,4 +125,4 @@ protected:
   NS_FORWARD_NSIDOMMOUSEEVENT(MouseEvent::) \
   NS_FORWARD_TO_UIEVENT
 
-#endif
+#endif 
