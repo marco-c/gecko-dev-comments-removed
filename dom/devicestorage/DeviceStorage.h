@@ -14,7 +14,7 @@
 #include "nsDOMEventTargetHelper.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
-#include "DOMRequest.h"
+#include "mozilla/dom/DOMRequest.h"
 
 #define DEVICESTORAGE_PICTURES   "pictures"
 #define DEVICESTORAGE_VIDEOS     "videos"
@@ -23,6 +23,7 @@
 #define DEVICESTORAGE_SDCARD     "sdcard"
 #define DEVICESTORAGE_CRASHES    "crashes"
 
+class DeviceStorageFile;
 class nsIInputStream;
 
 namespace mozilla {
@@ -31,6 +32,9 @@ class DeviceStorageEnumerationParameters;
 class DOMCursor;
 class DOMRequest;
 } 
+namespace ipc {
+class FileDescriptor;
+}
 } 
 
 class DeviceStorageFile MOZ_FINAL
@@ -95,6 +99,7 @@ public:
 
   void GetDiskFreeSpace(int64_t* aSoFar);
   void GetStatus(nsAString& aStatus);
+  void GetStorageStatus(nsAString& aStatus);
   void DoFormat(nsAString& aStatus);
   static void GetRootDirectoryForType(const nsAString& aStorageType,
                                       const nsAString& aStorageName,
@@ -102,6 +107,7 @@ public:
 
   nsresult CalculateSizeAndModifiedDate();
   nsresult CalculateMimeType();
+  nsresult CreateFileDescriptor(mozilla::ipc::FileDescriptor& aFileDescriptor);
 
 private:
   void Init();
@@ -239,6 +245,7 @@ public:
   already_AddRefed<DOMRequest> UsedSpace(ErrorResult& aRv);
   already_AddRefed<DOMRequest> Available(ErrorResult& aRv);
   already_AddRefed<DOMRequest> Format(ErrorResult& aRv);
+  already_AddRefed<DOMRequest> StorageStatus(ErrorResult& aRv);
 
   bool Default();
 
