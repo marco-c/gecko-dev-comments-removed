@@ -1,9 +1,9 @@
-
-
-
-
-
-
+#!/usr/bin/env python
+# header.py - Generate C++ header files from IDL.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import sys, os, xpidl, makeutils
 
@@ -19,8 +19,8 @@ def strip_end(text, suffix):
 
 def findIDL(includePath, interfaceFileName):
     for d in includePath:
-        
-        
+        # Not os.path.join: we need a forward slash even on Windows because
+        # this filename ends up in makedepend output.
         path = d + '/' + interfaceFileName
         if os.path.exists(path):
             return path
@@ -282,9 +282,7 @@ def write_getter(a, iface, fd):
     if realtype.count("JS::Value"):
         fd.write("    aDict.%s = v;\n" % a.name)
     elif realtype.count("bool"):
-        fd.write("    bool b;\n")
-        fd.write("    MOZ_ALWAYS_TRUE(JS_ValueToBoolean(aCx, v, &b));\n")
-        fd.write("    aDict.%s = b;\n" % a.name)
+        fd.write("    aDict.%s = JS::ToBoolean(v);\n" % a.name)
     elif realtype.count("uint16_t"):
         fd.write("    uint32_t u;\n")
         fd.write("    NS_ENSURE_STATE(JS::ToUint32(aCx, v, &u));\n")
@@ -428,7 +426,7 @@ if __name__ == '__main__':
             os.mkdir(options.cachedir)
         sys.path.append(options.cachedir)
 
-    
+    # Instantiate the parser.
     p = xpidl.IDLParser(outputdir=options.cachedir)
 
     conf = readConfigFile(filename)
