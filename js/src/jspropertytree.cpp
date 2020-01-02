@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jspropertytree.h"
 
@@ -17,6 +17,7 @@
 #include "vm/Shape-inl.h"
 
 using namespace js;
+using namespace js::gc;
 
 inline HashNumber
 ShapeHasher::hash(const Lookup &l)
@@ -110,16 +111,16 @@ Shape::removeChild(Shape *child)
     }
 
     KidsHash *hash = kidp->toHash();
-    JS_ASSERT(hash->count() >= 2);      
+    JS_ASSERT(hash->count() >= 2);      /* otherwise kidp->isShape() should be true */
 
     hash->remove(StackShape(child));
     child->parent = nullptr;
 
     if (hash->count() == 1) {
-        
+        /* Convert from HASH form back to SHAPE form. */
         KidsHash::Range r = hash->all();
         Shape *otherChild = r.front();
-        JS_ASSERT((r.popFront(), r.empty()));    
+        JS_ASSERT((r.popFront(), r.empty()));    /* No more elements! */
         kidp->setShape(otherChild);
         js_delete(hash);
     }
@@ -133,14 +134,14 @@ PropertyTree::getChild(ExclusiveContext *cx, Shape *parentArg, StackShape &unroo
 
     Shape *existingShape = nullptr;
 
-    
-
-
-
-
-
-
-
+    /*
+     * The property tree has extremely low fan-out below its root in
+     * popular embeddings with real-world workloads. Patterns such as
+     * defining closures that capture a constructor's environment as
+     * getters or setters on the new object that is passed in as
+     * |this| can significantly increase fan-out below the property
+     * tree root -- see bug 335700 for details.
+     */
     KidsPointer *kidp = &parent->kids;
     if (kidp->isShape()) {
         Shape *kid = kidp->toShape();
@@ -150,27 +151,27 @@ PropertyTree::getChild(ExclusiveContext *cx, Shape *parentArg, StackShape &unroo
         if (KidsHash::Ptr p = kidp->toHash()->lookup(unrootedChild))
             existingShape = *p;
     } else {
-        
+        /* If kidp->isNull(), we always insert. */
     }
 
 #ifdef JSGC_INCREMENTAL
     if (existingShape) {
         JS::Zone *zone = existingShape->zone();
         if (zone->needsIncrementalBarrier()) {
-            
-
-
-
+            /*
+             * We need a read barrier for the shape tree, since these are weak
+             * pointers.
+             */
             Shape *tmp = existingShape;
             MarkShapeUnbarriered(zone->barrierTracer(), &tmp, "read barrier");
             JS_ASSERT(tmp == existingShape);
         } else if (zone->isGCSweeping() && !existingShape->isMarked() &&
                    !existingShape->arenaHeader()->allocatedDuringIncremental)
         {
-            
-
-
-
+            /*
+             * The shape we've found is unreachable and due to be finalized, so
+             * remove our weak reference to it and don't use it.
+             */
             JS_ASSERT(parent->isMarked());
             parent->removeChild(existingShape);
             existingShape = nullptr;
@@ -200,7 +201,7 @@ PropertyTree::getChild(ExclusiveContext *cx, Shape *parentArg, StackShape &unroo
 Shape *
 PropertyTree::lookupChild(ThreadSafeContext *cx, Shape *parent, const StackShape &child)
 {
-    
+    /* Keep this in sync with the logic of getChild above. */
     Shape *shape = nullptr;
 
     JS_ASSERT(parent);
@@ -235,28 +236,28 @@ Shape::sweep()
     if (inDictionary())
         return;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /*
+     * We detach the child from the parent if the parent is reachable.
+     *
+     * Note that due to incremental sweeping, the parent pointer may point
+     * to the original reachable parent, or it may point to a new live
+     * object allocated in the same cell that used to hold the parent.
+     *
+     * There are three cases:
+     *
+     * Case 1: parent is not marked - parent is unreachable, may have been
+     *         finalized, and the cell may subsequently have been
+     *         reallocated to a compartment that is not being marked (cells
+     *         are marked when allocated in a compartment that is currenly
+     *         being marked by the collector).
+     *
+     * Case 2: parent is marked and is in a different compartment - parent
+     *         has been freed and reallocated to compartment that was being
+     *         marked.
+     *
+     * Case 3: parent is marked and is in the same compartment - parent is
+     *         stil reachable and we need to detach from it.
+     */
     if (parent && parent->isMarked() && parent->compartment() == compartment())
         parent->removeChild(this);
 }
@@ -267,6 +268,76 @@ Shape::finalize(FreeOp *fop)
     if (!inDictionary() && kids.isHash())
         fop->delete_(kids.toHash());
 }
+
+#ifdef JSGC_COMPACTING
+
+void
+Shape::fixupDictionaryShapeAfterMovingGC()
+{
+    if (!listp)
+        return;
+
+    JS_ASSERT(!IsInsideNursery(reinterpret_cast<Cell *>(listp)));
+    AllocKind kind = reinterpret_cast<Cell *>(listp)->tenuredGetAllocKind();
+    JS_ASSERT(kind == FINALIZE_SHAPE || kind <= FINALIZE_OBJECT_LAST);
+    if (kind == FINALIZE_SHAPE) {
+        // listp points to the parent field of the next shape.
+        Shape *next = reinterpret_cast<Shape *>(uintptr_t(listp) -
+                                                offsetof(Shape, parent));
+        listp = &gc::MaybeForwarded(next)->parent;
+    } else {
+        // listp points to the shape_ field of an object.
+        JSObject *last = reinterpret_cast<JSObject *>(uintptr_t(listp) -
+                                                      offsetof(JSObject, shape_));
+        listp = &gc::MaybeForwarded(last)->shape_;
+    }
+}
+
+void
+Shape::fixupShapeTreeAfterMovingGC()
+{
+    if (kids.isNull())
+        return;
+
+    if (kids.isShape()) {
+        if (gc::IsForwarded(kids.toShape()))
+            kids.setShape(gc::Forwarded(kids.toShape()));
+        return;
+    }
+
+    JS_ASSERT(kids.isHash());
+    KidsHash *kh = kids.toHash();
+    for (KidsHash::Enum e(*kh); !e.empty(); e.popFront()) {
+        Shape *key = e.front();
+        if (!IsForwarded(key))
+            continue;
+
+        key = Forwarded(key);
+        BaseShape *base = key->base();
+        if (IsForwarded(base))
+            base = Forwarded(base);
+        UnownedBaseShape *unowned = base->unowned();
+        if (IsForwarded(unowned))
+            unowned = Forwarded(unowned);
+        StackShape lookup(unowned,
+                          const_cast<Shape *>(key)->propidRef(),
+                          key->slotInfo & Shape::SLOT_MASK,
+                          key->attrs,
+                          key->flags);
+        e.rekeyFront(lookup, key);
+    }
+}
+
+void
+Shape::fixupAfterMovingGC()
+{
+    if (inDictionary())
+        fixupDictionaryShapeAfterMovingGC();
+    else
+        fixupShapeTreeAfterMovingGC();
+}
+
+#endif // JSGC_COMPACTING
 
 #ifdef DEBUG
 
@@ -286,7 +357,7 @@ KidsPointer::checkConsistency(Shape *aKid) const
 void
 Shape::dump(JSContext *cx, FILE *fp) const
 {
-    
+    /* This is only used from gdb, so allowing GC here would just be confusing. */
     gc::AutoSuppressGC suppress(cx);
 
     jsid propid = this->propid();

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jspropertytree_h
 #define jspropertytree_h
@@ -17,7 +17,7 @@ namespace js {
 class Shape;
 struct StackShape;
 
-struct ShapeHasher {
+struct ShapeHasher : public DefaultHasher<Shape *> {
     typedef Shape *Key;
     typedef StackShape Lookup;
 
@@ -79,11 +79,11 @@ class PropertyTree
     PropertyTree();
 
   public:
-    
-
-
-
-
+    /*
+     * Use a lower limit for objects that are accessed using SETELEM (o[x] = y).
+     * These objects are likely used as hashmaps and dictionary mode is more
+     * efficient in this case.
+     */
     enum {
         MAX_HEIGHT = 512,
         MAX_HEIGHT_WITH_ELEMENTS_ACCESS = 128
@@ -101,6 +101,6 @@ class PropertyTree
     Shape *lookupChild(ThreadSafeContext *cx, Shape *parent, const StackShape &child);
 };
 
-} 
+} /* namespace js */
 
-#endif 
+#endif /* jspropertytree_h */
