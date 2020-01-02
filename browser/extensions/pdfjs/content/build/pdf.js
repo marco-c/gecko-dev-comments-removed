@@ -1,51 +1,51 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/*jshint globalstrict: false */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.0.162';
-PDFJS.build = 'abc924b';
+PDFJS.version = '1.0.248';
+PDFJS.build = '6f39d78';
 
 (function pdfjsWrapper() {
-  
+  // Use strict in our context only - users might not want it
   'use strict';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL,
+           Promise */
 
 'use strict';
 
@@ -74,9 +74,9 @@ var ImageKind = {
   RGBA_32BPP: 3
 };
 
-
-
-
+// The global PDFJS object exposes the API
+// In production, it will be declared outside a global wrapper
+// In development, it will be declared here
 if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
@@ -89,10 +89,10 @@ PDFJS.VERBOSITY_LEVELS = {
   infos: 5
 };
 
-
+// All the possible operations for an operator list.
 var OPS = PDFJS.OPS = {
-  
-  
+  // Intentionally start from 1 so it is easy to spot bad operators that will be
+  // 0's.
   dependency: 1,
   setLineWidth: 2,
   setLineCap: 3,
@@ -182,34 +182,35 @@ var OPS = PDFJS.OPS = {
   paintInlineImageXObjectGroup: 87,
   paintImageXObjectRepeat: 88,
   paintImageMaskXObjectRepeat: 89,
-  paintSolidColorImageMask: 90
+  paintSolidColorImageMask: 90,
+  constructPath: 91
 };
 
-
-
-
+// A notice for devs. These are good for things that are helpful to devs, such
+// as warning that Workers were disabled, which is important to devs but not
+// end users.
 function info(msg) {
   if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.infos) {
     console.log('Info: ' + msg);
   }
 }
 
-
+// Non-fatal warnings.
 function warn(msg) {
   if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.warnings) {
     console.log('Warning: ' + msg);
   }
 }
 
-
-
+// Fatal errors that should trigger the fallback UI and halt execution by
+// throwing an exception.
 function error(msg) {
-  
+  // If multiple arguments were passed, pass them all to the log function.
   if (arguments.length > 1) {
     var logArguments = ['Error:'];
     logArguments.push.apply(logArguments, arguments);
     console.log.apply(console, logArguments);
-    
+    // Join the arguments into a single string for the lines below.
     msg = [].join.call(arguments, ' ');
   } else {
     console.log('Error: ' + msg);
@@ -258,8 +259,8 @@ var UnsupportedManager = PDFJS.UnsupportedManager =
   };
 })();
 
-
-
+// Combines two URLs. The baseUrl shall be absolute URL. If the url is an
+// absolute URL, it will be returned as is.
 function combineUrl(baseUrl, url) {
   if (!url) {
     return baseUrl;
@@ -269,7 +270,7 @@ function combineUrl(baseUrl, url) {
   }
   var i;
   if (url.charAt(0) == '/') {
-    
+    // absolute path
     i = baseUrl.indexOf('://');
     if (url.charAt(1) === '/') {
       ++i;
@@ -278,7 +279,7 @@ function combineUrl(baseUrl, url) {
     }
     return baseUrl.substring(0, i) + url;
   } else {
-    
+    // relative path
     var pathLength = baseUrl.length;
     i = baseUrl.lastIndexOf('#');
     pathLength = i >= 0 ? i : pathLength;
@@ -289,13 +290,13 @@ function combineUrl(baseUrl, url) {
   }
 }
 
-
+// Validates if URL is safe and allowed, e.g. to avoid XSS.
 function isValidUrl(url, allowRelative) {
   if (!url) {
     return false;
   }
-  
-  
+  // RFC 3986 (http://tools.ietf.org/html/rfc3986#section-3.1)
+  // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
   var protocol = /^[a-z][a-z0-9+\-.]*(?=:)/i.exec(url);
   if (!protocol) {
     return allowRelative;
@@ -475,8 +476,8 @@ function readUint32(data, offset) {
          (data[offset + 2] << 8) | data[offset + 3]) >>> 0;
 }
 
-
-
+// Lazy test the endianness of the platform
+// NOTE: This will be 'true' for simulated TypedArrays
 function isLittleEndian() {
   var buffer8 = new Uint8Array(2);
   buffer8[0] = 1;
@@ -502,12 +503,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
   };
 
-  Util.makeCssCmyk = function Util_makeCssCmyk(cmyk) {
-    var rgb = ColorSpace.singletons.cmyk.getRgb(cmyk, 0);
-    return Util.makeCssRgb(rgb);
-  };
-
-  
+  // Concatenates two transformation matrices together and returns the result.
   Util.transform = function Util_transform(m1, m2) {
     return [
       m1[0] * m2[0] + m1[2] * m2[1],
@@ -519,7 +515,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     ];
   };
 
-  
+  // For 2d affine transforms
   Util.applyTransform = function Util_applyTransform(p, m) {
     var xt = p[0] * m[0] + p[1] * m[2] + m[4];
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
@@ -533,8 +529,8 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return [xt, yt];
   };
 
-  
-  
+  // Applies the transform to the rectangle and finds the minimum axially
+  // aligned bounding box.
   Util.getAxialAlignedBoundingBox =
     function Util_getAxialAlignedBoundingBox(r, m) {
 
@@ -556,12 +552,12 @@ var Util = PDFJS.Util = (function UtilClosure() {
       (m[2] * m[5] - m[4] * m[3]) / d, (m[4] * m[1] - m[5] * m[0]) / d];
   };
 
-  
-  
-  
-  
-  
-  
+  // Apply a generic 3d matrix M on a 3-vector v:
+  //   | a b c |   | X |
+  //   | d e f | x | Y |
+  //   | g h i |   | Z |
+  // M is assumed to be serialized as [a,b,c,d,e,f,g,h,i],
+  // with v as [X,Y,Z]
   Util.apply3dTransform = function Util_apply3dTransform(m, v) {
     return [
       m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
@@ -570,36 +566,36 @@ var Util = PDFJS.Util = (function UtilClosure() {
     ];
   };
 
-  
-  
-  
+  // This calculation uses Singular Value Decomposition.
+  // The SVD can be represented with formula A = USV. We are interested in the
+  // matrix S here because it represents the scale values.
   Util.singularValueDecompose2dScale =
     function Util_singularValueDecompose2dScale(m) {
 
     var transpose = [m[0], m[2], m[1], m[3]];
 
-    
+    // Multiply matrix m with its transpose.
     var a = m[0] * transpose[0] + m[1] * transpose[2];
     var b = m[0] * transpose[1] + m[1] * transpose[3];
     var c = m[2] * transpose[0] + m[3] * transpose[2];
     var d = m[2] * transpose[1] + m[3] * transpose[3];
 
-    
+    // Solve the second degree polynomial to get roots.
     var first = (a + d) / 2;
     var second = Math.sqrt((a + d) * (a + d) - 4 * (a * d - c * b)) / 2;
     var sx = first + second || 1;
     var sy = first - second || 1;
 
-    
+    // Scale values are the square roots of the eigenvalues.
     return [Math.sqrt(sx), Math.sqrt(sy)];
   };
 
-  
-  
-  
-  
+  // Normalize rectangle rect=[x1, y1, x2, y2] so that (x1,y1) < (x2,y2)
+  // For coordinate systems whose origin lies in the bottom-left, this
+  // means normalization to (BL,TR) ordering. For systems with origin in the
+  // top-left, this means (TL,BR) ordering.
   Util.normalizeRect = function Util_normalizeRect(rect) {
-    var r = rect.slice(0); 
+    var r = rect.slice(0); // clone rect
     if (rect[0] > rect[2]) {
       r[0] = rect[2];
       r[2] = rect[0];
@@ -611,15 +607,15 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return r;
   };
 
-  
-  
-  
+  // Returns a rectangle [x1, y1, x2, y2] corresponding to the
+  // intersection of rect1 and rect2. If no intersection, returns 'false'
+  // The rectangle coordinates of rect1, rect2 should be [x1, y1, x2, y2]
   Util.intersect = function Util_intersect(rect1, rect2) {
     function compare(a, b) {
       return a - b;
     }
 
-    
+    // Order points along the axes
     var orderedX = [rect1[0], rect1[2], rect2[0], rect2[2]].sort(compare),
         orderedY = [rect1[1], rect1[3], rect2[1], rect2[3]].sort(compare),
         result = [];
@@ -627,20 +623,20 @@ var Util = PDFJS.Util = (function UtilClosure() {
     rect1 = Util.normalizeRect(rect1);
     rect2 = Util.normalizeRect(rect2);
 
-    
+    // X: first and second points belong to different rectangles?
     if ((orderedX[0] === rect1[0] && orderedX[1] === rect2[0]) ||
         (orderedX[0] === rect2[0] && orderedX[1] === rect1[0])) {
-      
+      // Intersection must be between second and third points
       result[0] = orderedX[1];
       result[2] = orderedX[2];
     } else {
       return false;
     }
 
-    
+    // Y: first and second points belong to different rectangles?
     if ((orderedY[0] === rect1[1] && orderedY[1] === rect2[1]) ||
         (orderedY[0] === rect2[1] && orderedY[1] === rect1[1])) {
-      
+      // Intersection must be between second and third points
       result[1] = orderedY[1];
       result[3] = orderedY[2];
     } else {
@@ -654,7 +650,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return num < 0 ? -1 : 1;
   };
 
-  
+  // TODO(mack): Rename appendToArray
   Util.concatenateToArray = function concatenateToArray(arr1, arr2) {
     Array.prototype.push.apply(arr1, arr2);
   };
@@ -706,7 +702,22 @@ var Util = PDFJS.Util = (function UtilClosure() {
   return Util;
 })();
 
+/**
+ * PDF page viewport created based on scale, rotation and offset.
+ * @class
+ * @alias PDFJS.PageViewport
+ */
 var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
+  /**
+   * @constructor
+   * @private
+   * @param viewBox {Array} xMin, yMin, xMax and yMax coordinates.
+   * @param scale {number} scale of the viewport.
+   * @param rotation {number} rotations of the viewport in degrees.
+   * @param offsetX {number} offset X
+   * @param offsetY {number} offset Y
+   * @param dontFlip {boolean} if true, axis Y will not be flipped.
+   */
   function PageViewport(viewBox, scale, rotation, offsetX, offsetY, dontFlip) {
     this.viewBox = viewBox;
     this.scale = scale;
@@ -714,8 +725,8 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     this.offsetX = offsetX;
     this.offsetY = offsetY;
 
-    
-    
+    // creating transform to convert pdf coordinate system to the normal
+    // canvas like coordinates taking in account scale and rotation
     var centerX = (viewBox[2] + viewBox[0]) / 2;
     var centerY = (viewBox[3] + viewBox[1]) / 2;
     var rotateA, rotateB, rotateC, rotateD;
@@ -731,7 +742,7 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       case 270:
         rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
         break;
-      
+      //case 0:
       default:
         rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
         break;
@@ -754,9 +765,9 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       width = Math.abs(viewBox[2] - viewBox[0]) * scale;
       height = Math.abs(viewBox[3] - viewBox[1]) * scale;
     }
-    
-    
-    
+    // creating transform for the following operations:
+    // translate(-centerX, -centerY), rotate and flip vertically,
+    // scale, and translate(offsetCanvasX, offsetCanvasY)
     this.transform = [
       rotateA * scale,
       rotateB * scale,
@@ -770,7 +781,14 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     this.height = height;
     this.fontScale = scale;
   }
-  PageViewport.prototype = {
+  PageViewport.prototype = /** @lends PDFJS.PageViewport.prototype */ {
+    /**
+     * Clones viewport with additional properties.
+     * @param args {Object} (optional) If specified, may contain the 'scale' or
+     * 'rotation' properties to override the corresponding properties in
+     * the cloned viewport.
+     * @returns {PDFJS.PageViewport} Cloned viewport.
+     */
     clone: function PageViewPort_clone(args) {
       args = args || {};
       var scale = 'scale' in args ? args.scale : this.scale;
@@ -778,15 +796,41 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       return new PageViewport(this.viewBox.slice(), scale, rotation,
                               this.offsetX, this.offsetY, args.dontFlip);
     },
+    /**
+     * Converts PDF point to the viewport coordinates. For examples, useful for
+     * converting PDF location into canvas pixel coordinates.
+     * @param x {number} X coordinate.
+     * @param y {number} Y coordinate.
+     * @returns {Object} Object that contains 'x' and 'y' properties of the
+     * point in the viewport coordinate space.
+     * @see {@link convertToPdfPoint}
+     * @see {@link convertToViewportRectangle}
+     */
     convertToViewportPoint: function PageViewport_convertToViewportPoint(x, y) {
       return Util.applyTransform([x, y], this.transform);
     },
+    /**
+     * Converts PDF rectangle to the viewport coordinates.
+     * @param rect {Array} xMin, yMin, xMax and yMax coordinates.
+     * @returns {Array} Contains corresponding coordinates of the rectangle
+     * in the viewport coordinate space.
+     * @see {@link convertToViewportPoint}
+     */
     convertToViewportRectangle:
       function PageViewport_convertToViewportRectangle(rect) {
       var tl = Util.applyTransform([rect[0], rect[1]], this.transform);
       var br = Util.applyTransform([rect[2], rect[3]], this.transform);
       return [tl[0], tl[1], br[0], br[1]];
     },
+    /**
+     * Converts viewport coordinates to the PDF location. For examples, useful
+     * for converting canvas pixel location into PDF one.
+     * @param x {number} X coordinate.
+     * @param y {number} Y coordinate.
+     * @returns {Object} Object that contains 'x' and 'y' properties of the
+     * point in the PDF coordinate space.
+     * @see {@link convertToViewportPoint}
+     */
     convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
       return Util.applyInverseTransform([x, y], this.transform);
     }
@@ -809,7 +853,7 @@ var PDFStringTranslateTable = [
 function stringToPDFString(str) {
   var i, n = str.length, strBuf = [];
   if (str[0] === '\xFE' && str[1] === '\xFF') {
-    
+    // UTF16BE BOM
     for (i = 2; i < n; i += 2) {
       strBuf.push(String.fromCharCode(
         (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1)));
@@ -891,34 +935,22 @@ function isRef(v) {
   return v instanceof Ref;
 }
 
-function isPDFFunction(v) {
-  var fnDict;
-  if (typeof v != 'object') {
-    return false;
-  } else if (isDict(v)) {
-    fnDict = v;
-  } else if (isStream(v)) {
-    fnDict = v.dict;
-  } else {
-    return false;
-  }
-  return fnDict.has('FunctionType');
-}
+/**
+ * Promise Capability object.
+ *
+ * @typedef {Object} PromiseCapability
+ * @property {Promise} promise - A promise object.
+ * @property {function} resolve - Fullfills the promise.
+ * @property {function} reject - Rejects the promise.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Creates a promise capability object.
+ * @alias PDFJS.createPromiseCapability
+ *
+ * @return {PromiseCapability} A capability object contains:
+ * - a Promise, resolve and reject methods.
+ */
 function createPromiseCapability() {
   var capability = {};
   capability.promise = new Promise(function (resolve, reject) {
@@ -930,19 +962,19 @@ function createPromiseCapability() {
 
 PDFJS.createPromiseCapability = createPromiseCapability;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Polyfill for Promises:
+ * The following promise implementation tries to generally implement the
+ * Promise/A+ spec. Some notable differences from other promise libaries are:
+ * - There currently isn't a seperate deferred and promise object.
+ * - Unhandled rejections eventually show an error if they aren't handled.
+ *
+ * Based off of the work in:
+ * https://bugzilla.mozilla.org/show_bug.cgi?id=810490
+ */
 (function PromiseClosure() {
   if (globalScope.Promise) {
-    
+    // Promises existing in the DOM/Worker, checking presence of all/resolve
     if (typeof globalScope.Promise.all !== 'function') {
       globalScope.Promise.all = function (iterable) {
         var count = 0, results = [], resolve, reject;
@@ -976,6 +1008,11 @@ PDFJS.createPromiseCapability = createPromiseCapability;
         return new globalScope.Promise(function (resolve, reject) {
           reject(reason);
         });
+      };
+    }
+    if (typeof globalScope.Promise.prototype.catch !== 'function') {
+      globalScope.Promise.prototype.catch = function (onReject) {
+        return globalScope.Promise.prototype.then(undefined, onReject);
       };
     }
     return;
@@ -1017,14 +1054,14 @@ var StatTimer = (function StatTimerClosure() {
         'start': this.started[name],
         'end': Date.now()
       });
-      
+      // Remove timer from started so it can be called again.
       delete this.started[name];
     },
     toString: function StatTimer_toString() {
       var i, ii;
       var times = this.times;
       var out = '';
-      
+      // Find the longest name for padding purposes.
       var longest = 0;
       for (i = 0, ii = times.length; i < ii; ++i) {
         var name = times[i]['name'];
@@ -1047,14 +1084,14 @@ PDFJS.createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
     return new Blob([data], { type: contentType });
   }
-  
+  // Blob builder is deprecated in FF14 and removed in FF18.
   var bb = new MozBlobBuilder();
   bb.append(data);
   return bb.getBlob(contentType);
 };
 
 PDFJS.createObjectURL = (function createObjectURLClosure() {
-  
+  // Blob/createObjectURL is not available, falling back to data schema.
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
@@ -1084,7 +1121,7 @@ function MessageHandler(name, comObj) {
   this.comObj = comObj;
   this.callbackIndex = 1;
   this.postMessageTransfers = true;
-  var callbacks = this.callbacks = {};
+  var callbacksCapabilities = this.callbacksCapabilities = {};
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
@@ -1101,35 +1138,40 @@ function MessageHandler(name, comObj) {
     var data = event.data;
     if (data.isReply) {
       var callbackId = data.callbackId;
-      if (data.callbackId in callbacks) {
-        var callback = callbacks[callbackId];
-        delete callbacks[callbackId];
-        callback(data.data);
+      if (data.callbackId in callbacksCapabilities) {
+        var callback = callbacksCapabilities[callbackId];
+        delete callbacksCapabilities[callbackId];
+        if ('error' in data) {
+          callback.reject(data.error);
+        } else {
+          callback.resolve(data.data);
+        }
       } else {
         error('Cannot resolve callback ' + callbackId);
       }
     } else if (data.action in ah) {
       var action = ah[data.action];
       if (data.callbackId) {
-        var deferred = {};
-        var promise = new Promise(function (resolve, reject) {
-          deferred.resolve = resolve;
-          deferred.reject = reject;
-        });
-        deferred.promise = promise;
-        promise.then(function(resolvedData) {
+        Promise.resolve().then(function () {
+          return action[0].call(action[1], data.data);
+        }).then(function (result) {
           comObj.postMessage({
             isReply: true,
             callbackId: data.callbackId,
-            data: resolvedData
+            data: result
+          });
+        }, function (reason) {
+          comObj.postMessage({
+            isReply: true,
+            callbackId: data.callbackId,
+            error: reason
           });
         });
-        action[0].call(action[1], data.data, deferred);
       } else {
         action[0].call(action[1], data.data);
       }
     } else {
-      error('Unkown action from worker: ' + data.action);
+      error('Unknown action from worker: ' + data.action);
     }
   };
 }
@@ -1142,23 +1184,51 @@ MessageHandler.prototype = {
     }
     ah[actionName] = [handler, scope];
   },
-  
-
-
-
-
-
-
-  send: function messageHandlerSend(actionName, data, callback, transfers) {
+  /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * @param {String} actionName Action to call.
+   * @param {JSON} data JSON data to send.
+   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers
+   */
+  send: function messageHandlerSend(actionName, data, transfers) {
     var message = {
       action: actionName,
       data: data
     };
-    if (callback) {
-      var callbackId = this.callbackIndex++;
-      this.callbacks[callbackId] = callback;
-      message.callbackId = callbackId;
+    this.postMessage(message, transfers);
+  },
+  /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * Expects that other side will callback with the response.
+   * @param {String} actionName Action to call.
+   * @param {JSON} data JSON data to send.
+   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers.
+   * @returns {Promise} Promise to be resolved with response data.
+   */
+  sendWithPromise:
+    function messageHandlerSendWithPromise(actionName, data, transfers) {
+    var callbackId = this.callbackIndex++;
+    var message = {
+      action: actionName,
+      data: data,
+      callbackId: callbackId
+    };
+    var capability = createPromiseCapability();
+    this.callbacksCapabilities[callbackId] = capability;
+    try {
+      this.postMessage(message, transfers);
+    } catch (e) {
+      capability.reject(e);
     }
+    return capability.promise;
+  },
+  /**
+   * Sends raw message to the comObj.
+   * @private
+   * @param message {Object} Raw message.
+   * @param transfers List of transfers/ArrayBuffers, or undefined.
+   */
+  postMessage: function (message, transfers) {
     if (transfers && this.postMessageTransfers) {
       this.comObj.postMessage(message, transfers);
     } else {
@@ -1176,1638 +1246,12 @@ function loadJpegStream(id, imageUrl, objs) {
 }
 
 
-var ColorSpace = (function ColorSpaceClosure() {
-  
-  function ColorSpace() {
-    error('should not call ColorSpace constructor');
-  }
-
-  ColorSpace.prototype = {
-    
-
-
-
-
-    getRgb: function ColorSpace_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      this.getRgbItem(src, srcOffset, rgb, 0);
-      return rgb;
-    },
-    
-
-
-
-    getRgbItem: function ColorSpace_getRgbItem(src, srcOffset,
-                                               dest, destOffset) {
-      error('Should not call ColorSpace.getRgbItem');
-    },
-    
-
-
-
-
-
-
-
-
-    getRgbBuffer: function ColorSpace_getRgbBuffer(src, srcOffset, count,
-                                                   dest, destOffset, bits,
-                                                   alpha01) {
-      error('Should not call ColorSpace.getRgbBuffer');
-    },
-    
-
-
-
-
-    getOutputLength: function ColorSpace_getOutputLength(inputLength,
-                                                         alpha01) {
-      error('Should not call ColorSpace.getOutputLength');
-    },
-    
-
-
-    isPassthrough: function ColorSpace_isPassthrough(bits) {
-      return false;
-    },
-    
-
-
-
-
-    fillRgb: function ColorSpace_fillRgb(dest, originalWidth,
-                                         originalHeight, width, height,
-                                         actualHeight, bpc, comps, alpha01) {
-      var count = originalWidth * originalHeight;
-      var rgbBuf = null;
-      var numComponentColors = 1 << bpc;
-      var needsResizing = originalHeight != height || originalWidth != width;
-      var i, ii;
-
-      if (this.isPassthrough(bpc)) {
-        rgbBuf = comps;
-      } else if (this.numComps === 1 && count > numComponentColors &&
-          this.name !== 'DeviceGray' && this.name !== 'DeviceRGB') {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        var allColors = bpc <= 8 ? new Uint8Array(numComponentColors) :
-                                   new Uint16Array(numComponentColors);
-        var key;
-        for (i = 0; i < numComponentColors; i++) {
-          allColors[i] = i;
-        }
-        var colorMap = new Uint8Array(numComponentColors * 3);
-        this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc,
-                           0);
-
-        var destPos, rgbPos;
-        if (!needsResizing) {
-          
-          destPos = 0;
-          for (i = 0; i < count; ++i) {
-            key = comps[i] * 3;
-            dest[destPos++] = colorMap[key];
-            dest[destPos++] = colorMap[key + 1];
-            dest[destPos++] = colorMap[key + 2];
-            destPos += alpha01;
-          }
-        } else {
-          rgbBuf = new Uint8Array(count * 3);
-          rgbPos = 0;
-          for (i = 0; i < count; ++i) {
-            key = comps[i] * 3;
-            rgbBuf[rgbPos++] = colorMap[key];
-            rgbBuf[rgbPos++] = colorMap[key + 1];
-            rgbBuf[rgbPos++] = colorMap[key + 2];
-          }
-        }
-      } else {
-        if (!needsResizing) {
-          
-          this.getRgbBuffer(comps, 0, width * actualHeight, dest, 0, bpc,
-                            alpha01);
-        } else {
-          rgbBuf = new Uint8Array(count * 3);
-          this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc,
-                             0);
-        }
-      }
-
-      if (rgbBuf) {
-        if (needsResizing) {
-          PDFImage.resize(rgbBuf, bpc, 3, originalWidth, originalHeight, width,
-                          height, dest, alpha01);
-        } else {
-          rgbPos = 0;
-          destPos = 0;
-          for (i = 0, ii = width * actualHeight; i < ii; i++) {
-            dest[destPos++] = rgbBuf[rgbPos++];
-            dest[destPos++] = rgbBuf[rgbPos++];
-            dest[destPos++] = rgbBuf[rgbPos++];
-            destPos += alpha01;
-          }
-        }
-      }
-    },
-    
-
-
-
-
-    usesZeroToOneRange: true
-  };
-
-  ColorSpace.parse = function ColorSpace_parse(cs, xref, res) {
-    var IR = ColorSpace.parseToIR(cs, xref, res);
-    if (IR instanceof AlternateCS) {
-      return IR;
-    }
-    return ColorSpace.fromIR(IR);
-  };
-
-  ColorSpace.fromIR = function ColorSpace_fromIR(IR) {
-    var name = isArray(IR) ? IR[0] : IR;
-    var whitePoint, blackPoint;
-
-    switch (name) {
-      case 'DeviceGrayCS':
-        return this.singletons.gray;
-      case 'DeviceRgbCS':
-        return this.singletons.rgb;
-      case 'DeviceCmykCS':
-        return this.singletons.cmyk;
-      case 'CalGrayCS':
-        whitePoint = IR[1].WhitePoint;
-        blackPoint = IR[1].BlackPoint;
-        var gamma = IR[1].Gamma;
-        return new CalGrayCS(whitePoint, blackPoint, gamma);
-      case 'PatternCS':
-        var basePatternCS = IR[1];
-        if (basePatternCS) {
-          basePatternCS = ColorSpace.fromIR(basePatternCS);
-        }
-        return new PatternCS(basePatternCS);
-      case 'IndexedCS':
-        var baseIndexedCS = IR[1];
-        var hiVal = IR[2];
-        var lookup = IR[3];
-        return new IndexedCS(ColorSpace.fromIR(baseIndexedCS), hiVal, lookup);
-      case 'AlternateCS':
-        var numComps = IR[1];
-        var alt = IR[2];
-        var tintFnIR = IR[3];
-
-        return new AlternateCS(numComps, ColorSpace.fromIR(alt),
-                                PDFFunction.fromIR(tintFnIR));
-      case 'LabCS':
-        whitePoint = IR[1].WhitePoint;
-        blackPoint = IR[1].BlackPoint;
-        var range = IR[1].Range;
-        return new LabCS(whitePoint, blackPoint, range);
-      default:
-        error('Unkown name ' + name);
-    }
-    return null;
-  };
-
-  ColorSpace.parseToIR = function ColorSpace_parseToIR(cs, xref, res) {
-    if (isName(cs)) {
-      var colorSpaces = res.get('ColorSpace');
-      if (isDict(colorSpaces)) {
-        var refcs = colorSpaces.get(cs.name);
-        if (refcs) {
-          cs = refcs;
-        }
-      }
-    }
-
-    cs = xref.fetchIfRef(cs);
-    var mode;
-
-    if (isName(cs)) {
-      mode = cs.name;
-      this.mode = mode;
-
-      switch (mode) {
-        case 'DeviceGray':
-        case 'G':
-          return 'DeviceGrayCS';
-        case 'DeviceRGB':
-        case 'RGB':
-          return 'DeviceRgbCS';
-        case 'DeviceCMYK':
-        case 'CMYK':
-          return 'DeviceCmykCS';
-        case 'Pattern':
-          return ['PatternCS', null];
-        default:
-          error('unrecognized colorspace ' + mode);
-      }
-    } else if (isArray(cs)) {
-      mode = cs[0].name;
-      this.mode = mode;
-      var numComps, params;
-
-      switch (mode) {
-        case 'DeviceGray':
-        case 'G':
-          return 'DeviceGrayCS';
-        case 'DeviceRGB':
-        case 'RGB':
-          return 'DeviceRgbCS';
-        case 'DeviceCMYK':
-        case 'CMYK':
-          return 'DeviceCmykCS';
-        case 'CalGray':
-          params = cs[1].getAll();
-          return ['CalGrayCS', params];
-        case 'CalRGB':
-          return 'DeviceRgbCS';
-        case 'ICCBased':
-          var stream = xref.fetchIfRef(cs[1]);
-          var dict = stream.dict;
-          numComps = dict.get('N');
-          if (numComps == 1) {
-            return 'DeviceGrayCS';
-          } else if (numComps == 3) {
-            return 'DeviceRgbCS';
-          } else if (numComps == 4) {
-            return 'DeviceCmykCS';
-          }
-          break;
-        case 'Pattern':
-          var basePatternCS = cs[1];
-          if (basePatternCS) {
-            basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res);
-          }
-          return ['PatternCS', basePatternCS];
-        case 'Indexed':
-        case 'I':
-          var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res);
-          var hiVal = cs[2] + 1;
-          var lookup = xref.fetchIfRef(cs[3]);
-          if (isStream(lookup)) {
-            lookup = lookup.getBytes();
-          }
-          return ['IndexedCS', baseIndexedCS, hiVal, lookup];
-        case 'Separation':
-        case 'DeviceN':
-          var name = cs[1];
-          numComps = 1;
-          if (isName(name)) {
-            numComps = 1;
-          } else if (isArray(name)) {
-            numComps = name.length;
-          }
-          var alt = ColorSpace.parseToIR(cs[2], xref, res);
-          var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
-          return ['AlternateCS', numComps, alt, tintFnIR];
-        case 'Lab':
-          params = cs[1].getAll();
-          return ['LabCS', params];
-        default:
-          error('unimplemented color space object "' + mode + '"');
-      }
-    } else {
-      error('unrecognized color space object: "' + cs + '"');
-    }
-    return null;
-  };
-  
-
-
-
-
-
-
-
-
-  ColorSpace.isDefaultDecode = function ColorSpace_isDefaultDecode(decode, n) {
-    if (!decode) {
-      return true;
-    }
-
-    if (n * 2 !== decode.length) {
-      warn('The decode map is not the correct length');
-      return true;
-    }
-    for (var i = 0, ii = decode.length; i < ii; i += 2) {
-      if (decode[i] !== 0 || decode[i + 1] != 1) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  ColorSpace.singletons = {
-    get gray() {
-      return shadow(this, 'gray', new DeviceGrayCS());
-    },
-    get rgb() {
-      return shadow(this, 'rgb', new DeviceRgbCS());
-    },
-    get cmyk() {
-      return shadow(this, 'cmyk', new DeviceCmykCS());
-    }
-  };
-
-  return ColorSpace;
-})();
-
-
-
-
-
-
-
-var AlternateCS = (function AlternateCSClosure() {
-  function AlternateCS(numComps, base, tintFn) {
-    this.name = 'Alternate';
-    this.numComps = numComps;
-    this.defaultColor = new Float32Array(numComps);
-    for (var i = 0; i < numComps; ++i) {
-      this.defaultColor[i] = 1;
-    }
-    this.base = base;
-    this.tintFn = tintFn;
-  }
-
-  AlternateCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
-    getRgbItem: function AlternateCS_getRgbItem(src, srcOffset,
-                                                dest, destOffset) {
-      var baseNumComps = this.base.numComps;
-      var input = 'subarray' in src ?
-        src.subarray(srcOffset, srcOffset + this.numComps) :
-        Array.prototype.slice.call(src, srcOffset, srcOffset + this.numComps);
-      var tinted = this.tintFn(input);
-      this.base.getRgbItem(tinted, 0, dest, destOffset);
-    },
-    getRgbBuffer: function AlternateCS_getRgbBuffer(src, srcOffset, count,
-                                                    dest, destOffset, bits,
-                                                    alpha01) {
-      var tintFn = this.tintFn;
-      var base = this.base;
-      var scale = 1 / ((1 << bits) - 1);
-      var baseNumComps = base.numComps;
-      var usesZeroToOneRange = base.usesZeroToOneRange;
-      var isPassthrough = (base.isPassthrough(8) || !usesZeroToOneRange) &&
-                          alpha01 === 0;
-      var pos = isPassthrough ? destOffset : 0;
-      var baseBuf = isPassthrough ? dest : new Uint8Array(baseNumComps * count);
-      var numComps = this.numComps;
-
-      var scaled = new Float32Array(numComps);
-      var i, j;
-      for (i = 0; i < count; i++) {
-        for (j = 0; j < numComps; j++) {
-          scaled[j] = src[srcOffset++] * scale;
-        }
-        var tinted = tintFn(scaled);
-        if (usesZeroToOneRange) {
-          for (j = 0; j < baseNumComps; j++) {
-            baseBuf[pos++] = tinted[j] * 255;
-          }
-        } else {
-          base.getRgbItem(tinted, 0, baseBuf, pos);
-          pos += baseNumComps;
-        }
-      }
-      if (!isPassthrough) {
-        base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
-      }
-    },
-    getOutputLength: function AlternateCS_getOutputLength(inputLength,
-                                                          alpha01) {
-      return this.base.getOutputLength(inputLength *
-                                       this.base.numComps / this.numComps,
-                                       alpha01);
-    },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
-    isDefaultDecode: function AlternateCS_isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    },
-    usesZeroToOneRange: true
-  };
-
-  return AlternateCS;
-})();
-
-var PatternCS = (function PatternCSClosure() {
-  function PatternCS(baseCS) {
-    this.name = 'Pattern';
-    this.base = baseCS;
-  }
-  PatternCS.prototype = {};
-
-  return PatternCS;
-})();
-
-var IndexedCS = (function IndexedCSClosure() {
-  function IndexedCS(base, highVal, lookup) {
-    this.name = 'Indexed';
-    this.numComps = 1;
-    this.defaultColor = new Uint8Array([0]);
-    this.base = base;
-    this.highVal = highVal;
-
-    var baseNumComps = base.numComps;
-    var length = baseNumComps * highVal;
-    var lookupArray;
-
-    if (isStream(lookup)) {
-      lookupArray = new Uint8Array(length);
-      var bytes = lookup.getBytes(length);
-      lookupArray.set(bytes);
-    } else if (isString(lookup)) {
-      lookupArray = new Uint8Array(length);
-      for (var i = 0; i < length; ++i) {
-        lookupArray[i] = lookup.charCodeAt(i);
-      }
-    } else if (lookup instanceof Uint8Array || lookup instanceof Array) {
-      lookupArray = lookup;
-    } else {
-      error('Unrecognized lookup table: ' + lookup);
-    }
-    this.lookup = lookupArray;
-  }
-
-  IndexedCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
-    getRgbItem: function IndexedCS_getRgbItem(src, srcOffset,
-                                              dest, destOffset) {
-      var numComps = this.base.numComps;
-      var start = src[srcOffset] * numComps;
-      this.base.getRgbItem(this.lookup, start, dest, destOffset);
-    },
-    getRgbBuffer: function IndexedCS_getRgbBuffer(src, srcOffset, count,
-                                                  dest, destOffset, bits,
-                                                  alpha01) {
-      var base = this.base;
-      var numComps = base.numComps;
-      var outputDelta = base.getOutputLength(numComps, alpha01);
-      var lookup = this.lookup;
-
-      for (var i = 0; i < count; ++i) {
-        var lookupPos = src[srcOffset++] * numComps;
-        base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
-        destOffset += outputDelta;
-      }
-    },
-    getOutputLength: function IndexedCS_getOutputLength(inputLength, alpha01) {
-      return this.base.getOutputLength(inputLength * this.base.numComps,
-                                       alpha01);
-    },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
-    isDefaultDecode: function IndexedCS_isDefaultDecode(decodeMap) {
-      
-      return true;
-    },
-    usesZeroToOneRange: true
-  };
-  return IndexedCS;
-})();
-
-var DeviceGrayCS = (function DeviceGrayCSClosure() {
-  function DeviceGrayCS() {
-    this.name = 'DeviceGray';
-    this.numComps = 1;
-    this.defaultColor = new Float32Array([0]);
-  }
-
-  DeviceGrayCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
-    getRgbItem: function DeviceGrayCS_getRgbItem(src, srcOffset,
-                                                 dest, destOffset) {
-      var c = (src[srcOffset] * 255) | 0;
-      c = c < 0 ? 0 : c > 255 ? 255 : c;
-      dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
-    },
-    getRgbBuffer: function DeviceGrayCS_getRgbBuffer(src, srcOffset, count,
-                                                     dest, destOffset, bits,
-                                                     alpha01) {
-      var scale = 255 / ((1 << bits) - 1);
-      var j = srcOffset, q = destOffset;
-      for (var i = 0; i < count; ++i) {
-        var c = (scale * src[j++]) | 0;
-        dest[q++] = c;
-        dest[q++] = c;
-        dest[q++] = c;
-        q += alpha01;
-      }
-    },
-    getOutputLength: function DeviceGrayCS_getOutputLength(inputLength,
-                                                           alpha01) {
-      return inputLength * (3 + alpha01);
-    },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
-    isDefaultDecode: function DeviceGrayCS_isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    },
-    usesZeroToOneRange: true
-  };
-  return DeviceGrayCS;
-})();
-
-var DeviceRgbCS = (function DeviceRgbCSClosure() {
-  function DeviceRgbCS() {
-    this.name = 'DeviceRGB';
-    this.numComps = 3;
-    this.defaultColor = new Float32Array([0, 0, 0]);
-  }
-  DeviceRgbCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
-    getRgbItem: function DeviceRgbCS_getRgbItem(src, srcOffset,
-                                                dest, destOffset) {
-      var r = (src[srcOffset] * 255) | 0;
-      var g = (src[srcOffset + 1] * 255) | 0;
-      var b = (src[srcOffset + 2] * 255) | 0;
-      dest[destOffset] = r < 0 ? 0 : r > 255 ? 255 : r;
-      dest[destOffset + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
-      dest[destOffset + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
-    },
-    getRgbBuffer: function DeviceRgbCS_getRgbBuffer(src, srcOffset, count,
-                                                    dest, destOffset, bits,
-                                                    alpha01) {
-      if (bits === 8 && alpha01 === 0) {
-        dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
-        return;
-      }
-      var scale = 255 / ((1 << bits) - 1);
-      var j = srcOffset, q = destOffset;
-      for (var i = 0; i < count; ++i) {
-        dest[q++] = (scale * src[j++]) | 0;
-        dest[q++] = (scale * src[j++]) | 0;
-        dest[q++] = (scale * src[j++]) | 0;
-        q += alpha01;
-      }
-    },
-    getOutputLength: function DeviceRgbCS_getOutputLength(inputLength,
-                                                          alpha01) {
-      return (inputLength * (3 + alpha01) / 3) | 0;
-    },
-    isPassthrough: function DeviceRgbCS_isPassthrough(bits) {
-      return bits == 8;
-    },
-    fillRgb: ColorSpace.prototype.fillRgb,
-    isDefaultDecode: function DeviceRgbCS_isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    },
-    usesZeroToOneRange: true
-  };
-  return DeviceRgbCS;
-})();
-
-var DeviceCmykCS = (function DeviceCmykCSClosure() {
-  
-  
-  
-  
-  
-  
-  function convertToRgb(src, srcOffset, srcScale, dest, destOffset) {
-    var c = src[srcOffset + 0] * srcScale;
-    var m = src[srcOffset + 1] * srcScale;
-    var y = src[srcOffset + 2] * srcScale;
-    var k = src[srcOffset + 3] * srcScale;
-
-    var r =
-      (c * (-4.387332384609988 * c + 54.48615194189176 * m +
-            18.82290502165302 * y + 212.25662451639585 * k +
-            -285.2331026137004) +
-       m * (1.7149763477362134 * m - 5.6096736904047315 * y +
-            -17.873870861415444 * k - 5.497006427196366) +
-       y * (-2.5217340131683033 * y - 21.248923337353073 * k +
-            17.5119270841813) +
-       k * (-21.86122147463605 * k - 189.48180835922747) + 255) | 0;
-    var g =
-      (c * (8.841041422036149 * c + 60.118027045597366 * m +
-            6.871425592049007 * y + 31.159100130055922 * k +
-            -79.2970844816548) +
-       m * (-15.310361306967817 * m + 17.575251261109482 * y +
-            131.35250912493976 * k - 190.9453302588951) +
-       y * (4.444339102852739 * y + 9.8632861493405 * k - 24.86741582555878) +
-       k * (-20.737325471181034 * k - 187.80453709719578) + 255) | 0;
-    var b =
-      (c * (0.8842522430003296 * c + 8.078677503112928 * m +
-            30.89978309703729 * y - 0.23883238689178934 * k +
-            -14.183576799673286) +
-       m * (10.49593273432072 * m + 63.02378494754052 * y +
-            50.606957656360734 * k - 112.23884253719248) +
-       y * (0.03296041114873217 * y + 115.60384449646641 * k +
-            -193.58209356861505) +
-       k * (-22.33816807309886 * k - 180.12613974708367) + 255) | 0;
-
-    dest[destOffset] = r > 255 ? 255 : r < 0 ? 0 : r;
-    dest[destOffset + 1] = g > 255 ? 255 : g < 0 ? 0 : g;
-    dest[destOffset + 2] = b > 255 ? 255 : b < 0 ? 0 : b;
-  }
-
-  function DeviceCmykCS() {
-    this.name = 'DeviceCMYK';
-    this.numComps = 4;
-    this.defaultColor = new Float32Array([0, 0, 0, 1]);
-  }
-  DeviceCmykCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
-    getRgbItem: function DeviceCmykCS_getRgbItem(src, srcOffset,
-                                                 dest, destOffset) {
-      convertToRgb(src, srcOffset, 1, dest, destOffset);
-    },
-    getRgbBuffer: function DeviceCmykCS_getRgbBuffer(src, srcOffset, count,
-                                                     dest, destOffset, bits,
-                                                     alpha01) {
-      var scale = 1 / ((1 << bits) - 1);
-      for (var i = 0; i < count; i++) {
-        convertToRgb(src, srcOffset, scale, dest, destOffset);
-        srcOffset += 4;
-        destOffset += 3 + alpha01;
-      }
-    },
-    getOutputLength: function DeviceCmykCS_getOutputLength(inputLength,
-                                                           alpha01) {
-      return (inputLength / 4 * (3 + alpha01)) | 0;
-    },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
-    isDefaultDecode: function DeviceCmykCS_isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    },
-    usesZeroToOneRange: true
-  };
-
-  return DeviceCmykCS;
-})();
-
-
-
-
-var CalGrayCS = (function CalGrayCSClosure() {
-  function CalGrayCS(whitePoint, blackPoint, gamma) {
-    this.name = 'CalGray';
-    this.numComps = 1;
-    this.defaultColor = new Float32Array([0]);
-
-    if (!whitePoint) {
-      error('WhitePoint missing - required for color space CalGray');
-    }
-    blackPoint = blackPoint || [0, 0, 0];
-    gamma = gamma || 1;
-
-    
-    this.XW = whitePoint[0];
-    this.YW = whitePoint[1];
-    this.ZW = whitePoint[2];
-
-    this.XB = blackPoint[0];
-    this.YB = blackPoint[1];
-    this.ZB = blackPoint[2];
-
-    this.G = gamma;
-
-    
-    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
-      error('Invalid WhitePoint components for ' + this.name +
-            ', no fallback available');
-    }
-
-    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
-      info('Invalid BlackPoint for ' + this.name + ', falling back to default');
-      this.XB = this.YB = this.ZB = 0;
-    }
-
-    if (this.XB !== 0 || this.YB !== 0 || this.ZB !== 0) {
-      warn(this.name + ', BlackPoint: XB: ' + this.XB + ', YB: ' + this.YB +
-           ', ZB: ' + this.ZB + ', only default values are supported.');
-    }
-
-    if (this.G < 1) {
-      info('Invalid Gamma: ' + this.G + ' for ' + this.name +
-           ', falling back to default');
-      this.G = 1;
-    }
-  }
-
-  function convertToRgb(cs, src, srcOffset, dest, destOffset, scale) {
-    
-    
-    var A = src[srcOffset] * scale;
-    var AG = Math.pow(A, cs.G);
-
-    
-    
-    var L = cs.YW * AG;
-    
-    
-    var val = Math.max(295.8 * Math.pow(L, 0.333333333333333333) - 40.8, 0) | 0;
-    dest[destOffset] = val;
-    dest[destOffset + 1] = val;
-    dest[destOffset + 2] = val;
-  }
-
-  CalGrayCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
-    getRgbItem: function CalGrayCS_getRgbItem(src, srcOffset,
-                                              dest, destOffset) {
-      convertToRgb(this, src, srcOffset, dest, destOffset, 1);
-    },
-    getRgbBuffer: function CalGrayCS_getRgbBuffer(src, srcOffset, count,
-                                                  dest, destOffset, bits,
-                                                  alpha01) {
-      var scale = 1 / ((1 << bits) - 1);
-
-      for (var i = 0; i < count; ++i) {
-        convertToRgb(this, src, srcOffset, dest, destOffset, scale);
-        srcOffset += 1;
-        destOffset += 3 + alpha01;
-      }
-    },
-    getOutputLength: function CalGrayCS_getOutputLength(inputLength, alpha01) {
-      return inputLength * (3 + alpha01);
-    },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
-    isDefaultDecode: function CalGrayCS_isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    },
-    usesZeroToOneRange: true
-  };
-  return CalGrayCS;
-})();
-
-
-
-
-var LabCS = (function LabCSClosure() {
-  function LabCS(whitePoint, blackPoint, range) {
-    this.name = 'Lab';
-    this.numComps = 3;
-    this.defaultColor = new Float32Array([0, 0, 0]);
-
-    if (!whitePoint) {
-      error('WhitePoint missing - required for color space Lab');
-    }
-    blackPoint = blackPoint || [0, 0, 0];
-    range = range || [-100, 100, -100, 100];
-
-    
-    this.XW = whitePoint[0];
-    this.YW = whitePoint[1];
-    this.ZW = whitePoint[2];
-    this.amin = range[0];
-    this.amax = range[1];
-    this.bmin = range[2];
-    this.bmax = range[3];
-
-    
-    
-    this.XB = blackPoint[0];
-    this.YB = blackPoint[1];
-    this.ZB = blackPoint[2];
-
-    
-    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
-      error('Invalid WhitePoint components, no fallback available');
-    }
-
-    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
-      info('Invalid BlackPoint, falling back to default');
-      this.XB = this.YB = this.ZB = 0;
-    }
-
-    if (this.amin > this.amax || this.bmin > this.bmax) {
-      info('Invalid Range, falling back to defaults');
-      this.amin = -100;
-      this.amax = 100;
-      this.bmin = -100;
-      this.bmax = 100;
-    }
-  }
-
-  
-  function fn_g(x) {
-    if (x >= 6 / 29) {
-      return x * x * x;
-    } else {
-      return (108 / 841) * (x - 4 / 29);
-    }
-  }
-
-  function decode(value, high1, low2, high2) {
-    return low2 + (value) * (high2 - low2) / (high1);
-  }
-
-  
-  function convertToRgb(cs, src, srcOffset, maxVal, dest, destOffset) {
-    
-    
-    
-    
-    
-    
-    var Ls = src[srcOffset];
-    var as = src[srcOffset + 1];
-    var bs = src[srcOffset + 2];
-    if (maxVal !== false) {
-      Ls = decode(Ls, maxVal, 0, 100);
-      as = decode(as, maxVal, cs.amin, cs.amax);
-      bs = decode(bs, maxVal, cs.bmin, cs.bmax);
-    }
-
-    
-    as = as > cs.amax ? cs.amax : as < cs.amin ? cs.amin : as;
-    bs = bs > cs.bmax ? cs.bmax : bs < cs.bmin ? cs.bmin : bs;
-
-    
-    var M = (Ls + 16) / 116;
-    var L = M + (as / 500);
-    var N = M - (bs / 200);
-
-    var X = cs.XW * fn_g(L);
-    var Y = cs.YW * fn_g(M);
-    var Z = cs.ZW * fn_g(N);
-
-    var r, g, b;
-    
-    
-    if (cs.ZW < 1) {
-      
-      r = X * 3.1339 + Y * -1.6170 + Z * -0.4906;
-      g = X * -0.9785 + Y * 1.9160 + Z * 0.0333;
-      b = X * 0.0720 + Y * -0.2290 + Z * 1.4057;
-    } else {
-      
-      r = X * 3.2406 + Y * -1.5372 + Z * -0.4986;
-      g = X * -0.9689 + Y * 1.8758 + Z * 0.0415;
-      b = X * 0.0557 + Y * -0.2040 + Z * 1.0570;
-    }
-    
-    dest[destOffset] = r <= 0 ? 0 : r >= 1 ? 255 : Math.sqrt(r) * 255 | 0;
-    dest[destOffset + 1] = g <= 0 ? 0 : g >= 1 ? 255 : Math.sqrt(g) * 255 | 0;
-    dest[destOffset + 2] = b <= 0 ? 0 : b >= 1 ? 255 : Math.sqrt(b) * 255 | 0;
-  }
-
-  LabCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
-    getRgbItem: function LabCS_getRgbItem(src, srcOffset, dest, destOffset) {
-      convertToRgb(this, src, srcOffset, false, dest, destOffset);
-    },
-    getRgbBuffer: function LabCS_getRgbBuffer(src, srcOffset, count,
-                                              dest, destOffset, bits,
-                                              alpha01) {
-      var maxVal = (1 << bits) - 1;
-      for (var i = 0; i < count; i++) {
-        convertToRgb(this, src, srcOffset, maxVal, dest, destOffset);
-        srcOffset += 3;
-        destOffset += 3 + alpha01;
-      }
-    },
-    getOutputLength: function LabCS_getOutputLength(inputLength, alpha01) {
-      return (inputLength * (3 + alpha01) / 3) | 0;
-    },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    isDefaultDecode: function LabCS_isDefaultDecode(decodeMap) {
-      
-      
-      return true;
-    },
-    usesZeroToOneRange: false
-  };
-  return LabCS;
-})();
-
-
-
-var PDFFunction = (function PDFFunctionClosure() {
-  var CONSTRUCT_SAMPLED = 0;
-  var CONSTRUCT_INTERPOLATED = 2;
-  var CONSTRUCT_STICHED = 3;
-  var CONSTRUCT_POSTSCRIPT = 4;
-
-  return {
-    getSampleArray: function PDFFunction_getSampleArray(size, outputSize, bps,
-                                                       str) {
-      var i, ii;
-      var length = 1;
-      for (i = 0, ii = size.length; i < ii; i++) {
-        length *= size[i];
-      }
-      length *= outputSize;
-
-      var array = [];
-      var codeSize = 0;
-      var codeBuf = 0;
-      
-      var sampleMul = 1.0 / (Math.pow(2.0, bps) - 1);
-
-      var strBytes = str.getBytes((length * bps + 7) / 8);
-      var strIdx = 0;
-      for (i = 0; i < length; i++) {
-        while (codeSize < bps) {
-          codeBuf <<= 8;
-          codeBuf |= strBytes[strIdx++];
-          codeSize += 8;
-        }
-        codeSize -= bps;
-        array.push((codeBuf >> codeSize) * sampleMul);
-        codeBuf &= (1 << codeSize) - 1;
-      }
-      return array;
-    },
-
-    getIR: function PDFFunction_getIR(xref, fn) {
-      var dict = fn.dict;
-      if (!dict) {
-        dict = fn;
-      }
-
-      var types = [this.constructSampled,
-                   null,
-                   this.constructInterpolated,
-                   this.constructStiched,
-                   this.constructPostScript];
-
-      var typeNum = dict.get('FunctionType');
-      var typeFn = types[typeNum];
-      if (!typeFn) {
-        error('Unknown type of function');
-      }
-
-      return typeFn.call(this, fn, dict, xref);
-    },
-
-    fromIR: function PDFFunction_fromIR(IR) {
-      var type = IR[0];
-      switch (type) {
-        case CONSTRUCT_SAMPLED:
-          return this.constructSampledFromIR(IR);
-        case CONSTRUCT_INTERPOLATED:
-          return this.constructInterpolatedFromIR(IR);
-        case CONSTRUCT_STICHED:
-          return this.constructStichedFromIR(IR);
-        
-        default:
-          return this.constructPostScriptFromIR(IR);
-      }
-    },
-
-    parse: function PDFFunction_parse(xref, fn) {
-      var IR = this.getIR(xref, fn);
-      return this.fromIR(IR);
-    },
-
-    constructSampled: function PDFFunction_constructSampled(str, dict) {
-      function toMultiArray(arr) {
-        var inputLength = arr.length;
-        var out = [];
-        var index = 0;
-        for (var i = 0; i < inputLength; i += 2) {
-          out[index] = [arr[i], arr[i + 1]];
-          ++index;
-        }
-        return out;
-      }
-      var domain = dict.get('Domain');
-      var range = dict.get('Range');
-
-      if (!domain || !range) {
-        error('No domain or range');
-      }
-
-      var inputSize = domain.length / 2;
-      var outputSize = range.length / 2;
-
-      domain = toMultiArray(domain);
-      range = toMultiArray(range);
-
-      var size = dict.get('Size');
-      var bps = dict.get('BitsPerSample');
-      var order = dict.get('Order') || 1;
-      if (order !== 1) {
-        
-        
-        info('No support for cubic spline interpolation: ' + order);
-      }
-
-      var encode = dict.get('Encode');
-      if (!encode) {
-        encode = [];
-        for (var i = 0; i < inputSize; ++i) {
-          encode.push(0);
-          encode.push(size[i] - 1);
-        }
-      }
-      encode = toMultiArray(encode);
-
-      var decode = dict.get('Decode');
-      if (!decode) {
-        decode = range;
-      } else {
-        decode = toMultiArray(decode);
-      }
-
-      var samples = this.getSampleArray(size, outputSize, bps, str);
-
-      return [
-        CONSTRUCT_SAMPLED, inputSize, domain, encode, decode, samples, size,
-        outputSize, Math.pow(2, bps) - 1, range
-      ];
-    },
-
-    constructSampledFromIR: function PDFFunction_constructSampledFromIR(IR) {
-      
-      function interpolate(x, xmin, xmax, ymin, ymax) {
-        return ymin + ((x - xmin) * ((ymax - ymin) / (xmax - xmin)));
-      }
-
-      return function constructSampledFromIRResult(args) {
-        
-        var m = IR[1];
-        var domain = IR[2];
-        var encode = IR[3];
-        var decode = IR[4];
-        var samples = IR[5];
-        var size = IR[6];
-        var n = IR[7];
-        
-        var range = IR[9];
-
-        if (m != args.length) {
-          error('Incorrect number of arguments: ' + m + ' != ' +
-                args.length);
-        }
-
-        var x = args;
-
-        
-        
-        var cubeVertices = 1 << m;
-        var cubeN = new Float64Array(cubeVertices);
-        var cubeVertex = new Uint32Array(cubeVertices);
-        var i, j;
-        for (j = 0; j < cubeVertices; j++) {
-          cubeN[j] = 1;
-        }
-
-        var k = n, pos = 1;
-        
-        for (i = 0; i < m; ++i) {
-          
-          var domain_2i = domain[i][0];
-          var domain_2i_1 = domain[i][1];
-          var xi = Math.min(Math.max(x[i], domain_2i), domain_2i_1);
-
-          
-          
-          var e = interpolate(xi, domain_2i, domain_2i_1,
-                              encode[i][0], encode[i][1]);
-
-          
-          var size_i = size[i];
-          e = Math.min(Math.max(e, 0), size_i - 1);
-
-          
-          var e0 = e < size_i - 1 ? Math.floor(e) : e - 1; 
-          var n0 = e0 + 1 - e; 
-          var n1 = e - e0; 
-          var offset0 = e0 * k;
-          var offset1 = offset0 + k; 
-          for (j = 0; j < cubeVertices; j++) {
-            if (j & pos) {
-              cubeN[j] *= n1;
-              cubeVertex[j] += offset1;
-            } else {
-              cubeN[j] *= n0;
-              cubeVertex[j] += offset0;
-            }
-          }
-
-          k *= size_i;
-          pos <<= 1;
-        }
-
-        var y = new Float64Array(n);
-        for (j = 0; j < n; ++j) {
-          
-          var rj = 0;
-          for (i = 0; i < cubeVertices; i++) {
-            rj += samples[cubeVertex[i] + j] * cubeN[i];
-          }
-
-          
-          
-          rj = interpolate(rj, 0, 1, decode[j][0], decode[j][1]);
-
-          
-          y[j] = Math.min(Math.max(rj, range[j][0]), range[j][1]);
-        }
-
-        return y;
-      };
-    },
-
-    constructInterpolated: function PDFFunction_constructInterpolated(str,
-                                                                      dict) {
-      var c0 = dict.get('C0') || [0];
-      var c1 = dict.get('C1') || [1];
-      var n = dict.get('N');
-
-      if (!isArray(c0) || !isArray(c1)) {
-        error('Illegal dictionary for interpolated function');
-      }
-
-      var length = c0.length;
-      var diff = [];
-      for (var i = 0; i < length; ++i) {
-        diff.push(c1[i] - c0[i]);
-      }
-
-      return [CONSTRUCT_INTERPOLATED, c0, diff, n];
-    },
-
-    constructInterpolatedFromIR:
-      function PDFFunction_constructInterpolatedFromIR(IR) {
-      var c0 = IR[1];
-      var diff = IR[2];
-      var n = IR[3];
-
-      var length = diff.length;
-
-      return function constructInterpolatedFromIRResult(args) {
-        var x = n == 1 ? args[0] : Math.pow(args[0], n);
-
-        var out = [];
-        for (var j = 0; j < length; ++j) {
-          out.push(c0[j] + (x * diff[j]));
-        }
-
-        return out;
-
-      };
-    },
-
-    constructStiched: function PDFFunction_constructStiched(fn, dict, xref) {
-      var domain = dict.get('Domain');
-
-      if (!domain) {
-        error('No domain');
-      }
-
-      var inputSize = domain.length / 2;
-      if (inputSize != 1) {
-        error('Bad domain for stiched function');
-      }
-
-      var fnRefs = dict.get('Functions');
-      var fns = [];
-      for (var i = 0, ii = fnRefs.length; i < ii; ++i) {
-        fns.push(PDFFunction.getIR(xref, xref.fetchIfRef(fnRefs[i])));
-      }
-
-      var bounds = dict.get('Bounds');
-      var encode = dict.get('Encode');
-
-      return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
-    },
-
-    constructStichedFromIR: function PDFFunction_constructStichedFromIR(IR) {
-      var domain = IR[1];
-      var bounds = IR[2];
-      var encode = IR[3];
-      var fnsIR = IR[4];
-      var fns = [];
-
-      for (var i = 0, ii = fnsIR.length; i < ii; i++) {
-        fns.push(PDFFunction.fromIR(fnsIR[i]));
-      }
-
-      return function constructStichedFromIRResult(args) {
-        var clip = function constructStichedFromIRClip(v, min, max) {
-          if (v > max) {
-            v = max;
-          } else if (v < min) {
-            v = min;
-          }
-          return v;
-        };
-
-        
-        var v = clip(args[0], domain[0], domain[1]);
-        
-        for (var i = 0, ii = bounds.length; i < ii; ++i) {
-          if (v < bounds[i]) {
-            break;
-          }
-        }
-
-        
-        var dmin = domain[0];
-        if (i > 0) {
-          dmin = bounds[i - 1];
-        }
-        var dmax = domain[1];
-        if (i < bounds.length) {
-          dmax = bounds[i];
-        }
-
-        var rmin = encode[2 * i];
-        var rmax = encode[2 * i + 1];
-
-        var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
-
-        
-        return fns[i]([v2]);
-      };
-    },
-
-    constructPostScript: function PDFFunction_constructPostScript(fn, dict,
-                                                                  xref) {
-      var domain = dict.get('Domain');
-      var range = dict.get('Range');
-
-      if (!domain) {
-        error('No domain.');
-      }
-
-      if (!range) {
-        error('No range.');
-      }
-
-      var lexer = new PostScriptLexer(fn);
-      var parser = new PostScriptParser(lexer);
-      var code = parser.parse();
-
-      return [CONSTRUCT_POSTSCRIPT, domain, range, code];
-    },
-
-    constructPostScriptFromIR: function PDFFunction_constructPostScriptFromIR(
-                                          IR) {
-      var domain = IR[1];
-      var range = IR[2];
-      var code = IR[3];
-      var numOutputs = range.length / 2;
-      var evaluator = new PostScriptEvaluator(code);
-      
-      
-      var cache = new FunctionCache();
-      return function constructPostScriptFromIRResult(args) {
-        var initialStack = [];
-        for (var i = 0, ii = (domain.length / 2); i < ii; ++i) {
-          initialStack.push(args[i]);
-        }
-
-        var key = initialStack.join('_');
-        if (cache.has(key)) {
-          return cache.get(key);
-        }
-
-        var stack = evaluator.execute(initialStack);
-        var transformed = [];
-        for (i = numOutputs - 1; i >= 0; --i) {
-          var out = stack.pop();
-          var rangeIndex = 2 * i;
-          if (out < range[rangeIndex]) {
-            out = range[rangeIndex];
-          } else if (out > range[rangeIndex + 1]) {
-            out = range[rangeIndex + 1];
-          }
-          transformed[i] = out;
-        }
-        cache.set(key, transformed);
-        return transformed;
-      };
-    }
-  };
-})();
-
-var FunctionCache = (function FunctionCacheClosure() {
-  
-  
-  var MAX_CACHE_SIZE = 1024;
-  function FunctionCache() {
-    this.cache = {};
-    this.total = 0;
-  }
-  FunctionCache.prototype = {
-    has: function FunctionCache_has(key) {
-      return key in this.cache;
-    },
-    get: function FunctionCache_get(key) {
-      return this.cache[key];
-    },
-    set: function FunctionCache_set(key, value) {
-      if (this.total < MAX_CACHE_SIZE) {
-        this.cache[key] = value;
-        this.total++;
-      }
-    }
-  };
-  return FunctionCache;
-})();
-
-var PostScriptStack = (function PostScriptStackClosure() {
-  var MAX_STACK_SIZE = 100;
-  function PostScriptStack(initialStack) {
-    this.stack = initialStack || [];
-  }
-
-  PostScriptStack.prototype = {
-    push: function PostScriptStack_push(value) {
-      if (this.stack.length >= MAX_STACK_SIZE) {
-        error('PostScript function stack overflow.');
-      }
-      this.stack.push(value);
-    },
-    pop: function PostScriptStack_pop() {
-      if (this.stack.length <= 0) {
-        error('PostScript function stack underflow.');
-      }
-      return this.stack.pop();
-    },
-    copy: function PostScriptStack_copy(n) {
-      if (this.stack.length + n >= MAX_STACK_SIZE) {
-        error('PostScript function stack overflow.');
-      }
-      var stack = this.stack;
-      for (var i = stack.length - n, j = n - 1; j >= 0; j--, i++) {
-        stack.push(stack[i]);
-      }
-    },
-    index: function PostScriptStack_index(n) {
-      this.push(this.stack[this.stack.length - n - 1]);
-    },
-    
-    roll: function PostScriptStack_roll(n, p) {
-      var stack = this.stack;
-      var l = stack.length - n;
-      var r = stack.length - 1, c = l + (p - Math.floor(p / n) * n), i, j, t;
-      for (i = l, j = r; i < j; i++, j--) {
-        t = stack[i]; stack[i] = stack[j]; stack[j] = t;
-      }
-      for (i = l, j = c - 1; i < j; i++, j--) {
-        t = stack[i]; stack[i] = stack[j]; stack[j] = t;
-      }
-      for (i = c, j = r; i < j; i++, j--) {
-        t = stack[i]; stack[i] = stack[j]; stack[j] = t;
-      }
-    }
-  };
-  return PostScriptStack;
-})();
-var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
-  function PostScriptEvaluator(operators) {
-    this.operators = operators;
-  }
-  PostScriptEvaluator.prototype = {
-    execute: function PostScriptEvaluator_execute(initialStack) {
-      var stack = new PostScriptStack(initialStack);
-      var counter = 0;
-      var operators = this.operators;
-      var length = operators.length;
-      var operator, a, b;
-      while (counter < length) {
-        operator = operators[counter++];
-        if (typeof operator == 'number') {
-          
-          stack.push(operator);
-          continue;
-        }
-        switch (operator) {
-          
-          case 'jz': 
-            b = stack.pop();
-            a = stack.pop();
-            if (!a) {
-              counter = b;
-            }
-            break;
-          case 'j': 
-            a = stack.pop();
-            counter = a;
-            break;
-
-          
-          case 'abs':
-            a = stack.pop();
-            stack.push(Math.abs(a));
-            break;
-          case 'add':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a + b);
-            break;
-          case 'and':
-            b = stack.pop();
-            a = stack.pop();
-            if (isBool(a) && isBool(b)) {
-              stack.push(a && b);
-            } else {
-              stack.push(a & b);
-            }
-            break;
-          case 'atan':
-            a = stack.pop();
-            stack.push(Math.atan(a));
-            break;
-          case 'bitshift':
-            b = stack.pop();
-            a = stack.pop();
-            if (a > 0) {
-              stack.push(a << b);
-            } else {
-              stack.push(a >> b);
-            }
-            break;
-          case 'ceiling':
-            a = stack.pop();
-            stack.push(Math.ceil(a));
-            break;
-          case 'copy':
-            a = stack.pop();
-            stack.copy(a);
-            break;
-          case 'cos':
-            a = stack.pop();
-            stack.push(Math.cos(a));
-            break;
-          case 'cvi':
-            a = stack.pop() | 0;
-            stack.push(a);
-            break;
-          case 'cvr':
-            
-            break;
-          case 'div':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a / b);
-            break;
-          case 'dup':
-            stack.copy(1);
-            break;
-          case 'eq':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a == b);
-            break;
-          case 'exch':
-            stack.roll(2, 1);
-            break;
-          case 'exp':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(Math.pow(a, b));
-            break;
-          case 'false':
-            stack.push(false);
-            break;
-          case 'floor':
-            a = stack.pop();
-            stack.push(Math.floor(a));
-            break;
-          case 'ge':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a >= b);
-            break;
-          case 'gt':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a > b);
-            break;
-          case 'idiv':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push((a / b) | 0);
-            break;
-          case 'index':
-            a = stack.pop();
-            stack.index(a);
-            break;
-          case 'le':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a <= b);
-            break;
-          case 'ln':
-            a = stack.pop();
-            stack.push(Math.log(a));
-            break;
-          case 'log':
-            a = stack.pop();
-            stack.push(Math.log(a) / Math.LN10);
-            break;
-          case 'lt':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a < b);
-            break;
-          case 'mod':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a % b);
-            break;
-          case 'mul':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a * b);
-            break;
-          case 'ne':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a != b);
-            break;
-          case 'neg':
-            a = stack.pop();
-            stack.push(-a);
-            break;
-          case 'not':
-            a = stack.pop();
-            if (isBool(a)) {
-              stack.push(!a);
-            } else {
-              stack.push(~a);
-            }
-            break;
-          case 'or':
-            b = stack.pop();
-            a = stack.pop();
-            if (isBool(a) && isBool(b)) {
-              stack.push(a || b);
-            } else {
-              stack.push(a | b);
-            }
-            break;
-          case 'pop':
-            stack.pop();
-            break;
-          case 'roll':
-            b = stack.pop();
-            a = stack.pop();
-            stack.roll(a, b);
-            break;
-          case 'round':
-            a = stack.pop();
-            stack.push(Math.round(a));
-            break;
-          case 'sin':
-            a = stack.pop();
-            stack.push(Math.sin(a));
-            break;
-          case 'sqrt':
-            a = stack.pop();
-            stack.push(Math.sqrt(a));
-            break;
-          case 'sub':
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a - b);
-            break;
-          case 'true':
-            stack.push(true);
-            break;
-          case 'truncate':
-            a = stack.pop();
-            a = a < 0 ? Math.ceil(a) : Math.floor(a);
-            stack.push(a);
-            break;
-          case 'xor':
-            b = stack.pop();
-            a = stack.pop();
-            if (isBool(a) && isBool(b)) {
-              stack.push(a != b);
-            } else {
-              stack.push(a ^ b);
-            }
-            break;
-          default:
-            error('Unknown operator ' + operator);
-            break;
-        }
-      }
-      return stack.stack;
-    }
-  };
-  return PostScriptEvaluator;
-})();
-
-
-var DEFAULT_ICON_SIZE = 22; 
-var HIGHLIGHT_OFFSET = 4; 
+var DEFAULT_ICON_SIZE = 22; // px
+var HIGHLIGHT_OFFSET = 4; // px
 var SUPPORTED_TYPES = ['Link', 'Text', 'Widget'];
 
 var Annotation = (function AnnotationClosure() {
-  
+  // 12.5.5: Algorithm: Appearance streams
   function getTransformMatrix(rect, bbox, matrix) {
     var bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
     var minX = bounds[0];
@@ -2816,8 +1260,8 @@ var Annotation = (function AnnotationClosure() {
     var maxY = bounds[3];
 
     if (minX === maxX || minY === maxY) {
-      
-      
+      // From real-life file, bbox was [0, 0, 0, 0]. In this case,
+      // just apply the transform for rect
       return [1, 0, 0, 1, rect[0], rect[1]];
     }
 
@@ -2868,15 +1312,15 @@ var Annotation = (function AnnotationClosure() {
 
     var color = dict.get('C');
     if (isArray(color) && color.length === 3) {
-      
-      
+      // TODO(mack): currently only supporting rgb; need support different
+      // colorspaces
       data.color = color;
     } else {
       data.color = [0, 0, 0];
     }
 
-    
-    
+    // Some types of annotations have border style dict which has more
+    // info than the border array
     if (dict.has('BS')) {
       var borderStyle = dict.get('BS');
       data.borderWidth = borderStyle.has('W') ? borderStyle.get('W') : 1;
@@ -2884,26 +1328,32 @@ var Annotation = (function AnnotationClosure() {
       var borderArray = dict.get('Border') || [0, 0, 1];
       data.borderWidth = borderArray[2] || 0;
 
-      
+      // TODO: implement proper support for annotations with line dash patterns.
       var dashArray = borderArray[3];
-      if (data.borderWidth > 0 && dashArray && isArray(dashArray)) {
-        var dashArrayLength = dashArray.length;
-        if (dashArrayLength > 0) {
-          
-          
-          var isInvalid = false;
-          var numPositive = 0;
-          for (var i = 0; i < dashArrayLength; i++) {
-            var validNumber = (+dashArray[i] >= 0);
-            if (!validNumber) {
-              isInvalid = true;
-              break;
-            } else if (dashArray[i] > 0) {
-              numPositive++;
+      if (data.borderWidth > 0 && dashArray) {
+        if (!isArray(dashArray)) {
+          // Ignore the border if dashArray is not actually an array,
+          // this is consistent with the behaviour in Adobe Reader. 
+          data.borderWidth = 0;
+        } else {
+          var dashArrayLength = dashArray.length;
+          if (dashArrayLength > 0) {
+            // According to the PDF specification: the elements in a dashArray
+            // shall be numbers that are nonnegative and not all equal to zero.
+            var isInvalid = false;
+            var numPositive = 0;
+            for (var i = 0; i < dashArrayLength; i++) {
+              var validNumber = (+dashArray[i] >= 0);
+              if (!validNumber) {
+                isInvalid = true;
+                break;
+              } else if (dashArray[i] > 0) {
+                numPositive++;
+              }
             }
-          }
-          if (isInvalid || numPositive === 0) {
-            data.borderWidth = 0;
+            if (isInvalid || numPositive === 0) {
+              data.borderWidth = 0;
+            }
           }
         }
       }
@@ -2929,7 +1379,7 @@ var Annotation = (function AnnotationClosure() {
         'getHtmlElement() should be implemented in subclass');
     },
 
-    
+    // TODO(mack): Remove this, it's not really that helpful.
     getEmptyContainer: function Annotation_getEmptyContainer(tagName, rect,
                                                              borderWidth) {
       assert(!isWorker,
@@ -2953,8 +1403,8 @@ var Annotation = (function AnnotationClosure() {
         return false;
       } else {
         return !!(data &&
-                  data.annotationFlags &&            
-                  data.annotationFlags & 0x1);       
+                  data.annotationFlags &&            // Default: not invisible
+                  data.annotationFlags & 0x1);       // Invisible
       }
     },
 
@@ -2963,17 +1413,17 @@ var Annotation = (function AnnotationClosure() {
       return !!(!this.isInvisible() &&
                 data &&
                 (!data.annotationFlags ||
-                 !(data.annotationFlags & 0x22)) &&  
-                data.rect);                          
+                 !(data.annotationFlags & 0x22)) &&  // Hidden or NoView
+                data.rect);                          // rectangle is nessessary
     },
 
     isPrintable: function Annotation_isPrintable() {
       var data = this.data;
       return !!(!this.isInvisible() &&
                 data &&
-                data.annotationFlags &&              
-                data.annotationFlags & 0x4 &&        
-                data.rect);                          
+                data.annotationFlags &&              // Default: not printable
+                data.annotationFlags & 0x4 &&        // Print
+                data.rect);                          // rectangle is nessessary
     },
 
     loadResources: function Annotation_loadResources(keys) {
@@ -2994,11 +1444,9 @@ var Annotation = (function AnnotationClosure() {
     },
 
     getOperatorList: function Annotation_getOperatorList(evaluator) {
-      var capability = createPromiseCapability();
 
       if (!this.appearance) {
-        capability.resolve(new OperatorList());
-        return capability.promise;
+        return Promise.resolve(new OperatorList());
       }
 
       var data = this.data;
@@ -3011,24 +1459,24 @@ var Annotation = (function AnnotationClosure() {
         'Shading',
         'XObject',
         'Font'
-        
-        
+        // ProcSet
+        // Properties
       ]);
       var bbox = appearanceDict.get('BBox') || [0, 0, 1, 1];
       var matrix = appearanceDict.get('Matrix') || [1, 0, 0, 1, 0 ,0];
       var transform = getTransformMatrix(data.rect, bbox, matrix);
+      var self = this;
 
-      resourcesPromise.then(function(resources) {
-        var opList = new OperatorList();
-        opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-        evaluator.getOperatorList(this.appearance, resources, opList);
-        opList.addOp(OPS.endAnnotation, []);
-        capability.resolve(opList);
-
-        this.appearance.reset();
-      }.bind(this), capability.reject);
-
-      return capability.promise;
+      return resourcesPromise.then(function(resources) {
+          var opList = new OperatorList();
+          opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+          return evaluator.getOperatorList(self.appearance, resources, opList).
+            then(function () {
+              opList.addOp(OPS.endAnnotation, []);
+              self.appearance.reset();
+              return opList;
+            });
+        });
     }
   };
 
@@ -3039,7 +1487,7 @@ var Annotation = (function AnnotationClosure() {
       return;
     }
 
-    
+    // TODO(mack): Implement FreeText annotations
     if (subtype === 'Link') {
       return LinkAnnotation;
     } else if (subtype === 'Text') {
@@ -3059,7 +1507,7 @@ var Annotation = (function AnnotationClosure() {
     }
   };
 
-  
+  // TODO(mack): Support loading annotation from data
   Annotation.fromData = function Annotation_fromData(data) {
     var subtype = data.subtype;
     var fieldType = data.fieldType;
@@ -3160,8 +1608,8 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     data.fieldFlags = Util.getInheritableProperty(dict, 'Ff') || 0;
     this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
 
-    
-    
+    // Building the full field name by collecting the field and
+    // its ancestors 'T' data and joining them using '.'.
     var fieldName = [];
     var namedItem = dict;
     var ref = params.ref;
@@ -3172,11 +1620,11 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
       if (name) {
         fieldName.unshift(stringToPDFString(name));
       } else {
-        
-        
-        
-        
-        
+        // The field name is absent, that means more than one field
+        // with the same name may exist. Replacing the empty name
+        // with the '`' plus index in the parent's 'Kids' array.
+        // This is not in the PDF spec but necessary to id the
+        // the input controls.
         var kids = parent.get('Kids');
         var j, jj;
         for (j = 0, jj = kids.length; j < jj; j++) {
@@ -3219,7 +1667,7 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     this.data.textAlignment = Util.getInheritableProperty(params.dict, 'Q');
   }
 
-  
+  // TODO(mack): This dupes some of the logic in CanvasGraphics.setFont()
   function setTextStyles(element, item, fontObj) {
 
     var style = element.style;
@@ -3237,7 +1685,7 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 
     var fontName = fontObj.loadedName;
     var fontFamily = fontName ? '"' + fontName + '", ' : '';
-    
+    // Use a reasonable default font if the font doesn't specify a fallback
     var fallbackName = fontObj.fallbackName || 'Helvetica, sans-serif';
     style.fontFamily = fontFamily + fallbackName;
   }
@@ -3280,47 +1728,17 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
       var opList = new OperatorList();
       var data = this.data;
 
-      
-      
-
-      var defaultAppearance = data.defaultAppearance;
-      if (!defaultAppearance) {
+      // Even if there is an appearance stream, ignore it. This is the
+      // behaviour used by Adobe Reader.
+      if (!data.defaultAppearance) {
         return Promise.resolve(opList);
       }
 
-      
-
-      var stream = new Stream(stringToBytes(defaultAppearance));
-      evaluator.getOperatorList(stream, this.fieldResources, opList);
-      var appearanceFnArray = opList.fnArray;
-      var appearanceArgsArray = opList.argsArray;
-      var fnArray = [];
-
-      
-      data.rgb = [0, 0, 0];
-      
-      for (var i = 0, n = fnArray.length; i < n; ++i) {
-        var fnId = appearanceFnArray[i];
-        var args = appearanceArgsArray[i];
-
-        if (fnId === OPS.setFont) {
-          data.fontRefName = args[0];
-          var size = args[1];
-          if (size < 0) {
-            data.fontDirection = -1;
-            data.fontSize = -size;
-          } else {
-            data.fontDirection = 1;
-            data.fontSize = size;
-          }
-        } else if (fnId === OPS.setFillRGBColor) {
-          data.rgb = args;
-        } else if (fnId === OPS.setFillGray) {
-          var rgbValue = args[0] * 255;
-          data.rgb = [rgbValue, rgbValue, rgbValue];
-        }
-      }
-      return Promise.resolve(opList);
+      var stream = new Stream(stringToBytes(data.defaultAppearance));
+      return evaluator.getOperatorList(stream, this.fieldResources, opList).
+        then(function () {
+          return opList;
+        });
     }
   });
 
@@ -3421,12 +1839,12 @@ var TextAnnotation = (function TextAnnotationClosure() {
       var item = this.data;
       var rect = item.rect;
 
-      
+      // sanity check because of OOo-generated PDFs
       if ((rect[3] - rect[1]) < ANNOT_MIN_SIZE) {
         rect[3] = rect[1] + ANNOT_MIN_SIZE;
       }
       if ((rect[2] - rect[0]) < ANNOT_MIN_SIZE) {
-        rect[2] = rect[0] + (rect[3] - rect[1]); 
+        rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
       }
 
       var container = this.initContainer();
@@ -3456,7 +1874,7 @@ var TextAnnotation = (function TextAnnotationClosure() {
         var color = item.color;
         var rgb = [];
         for (i = 0; i < 3; ++i) {
-          
+          // Enlighten the color (70%)
           var c = Math.round(color[i] * 255);
           rgb[i] = Math.round((255 - c) * 0.7) + c;
         }
@@ -3556,13 +1974,13 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       if (linkType === 'URI') {
         var url = action.get('URI');
         if (isName(url)) {
-          
+          // Some bad PDFs do not put parentheses around relative URLs.
           url = '/' + url.name;
         } else if (url) {
           url = addDefaultProtocolToUrl(url);
         }
-        
-        
+        // TODO: pdf spec mentions urls can be relative to a Base
+        // entry in the dictionary.
         if (!isValidUrl(url, false)) {
           url = '';
         }
@@ -3572,13 +1990,13 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       } else if (linkType === 'GoToR') {
         var urlDict = action.get('F');
         if (isDict(urlDict)) {
-          
-          
+          // We assume that the 'url' is a Filspec dictionary
+          // and fetch the url without checking any further
           url = urlDict.get('F') || '';
         }
 
-        
-        
+        // TODO: pdf reference says that GoToR
+        // can also have 'NewWindow' attribute
         if (!isValidUrl(url, false)) {
           url = '';
         }
@@ -3590,13 +2008,13 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         warn('unrecognized link type: ' + linkType);
       }
     } else if (dict.has('Dest')) {
-      
+      // simple destination link
       var dest = dict.get('Dest');
       data.dest = isName(dest) ? dest.name : dest;
     }
   }
 
-  
+  // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
   function addDefaultProtocolToUrl(url) {
     if (url && url.indexOf('www.') === 0) {
       return ('http://' + url);
@@ -3632,155 +2050,155 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
 })();
 
 
-
-
-
-
-
+/**
+ * The maximum allowed image size in total pixels e.g. width * height. Images
+ * above this value will not be drawn. Use -1 for no limit.
+ * @var {number}
+ */
 PDFJS.maxImageSize = (PDFJS.maxImageSize === undefined ?
                       -1 : PDFJS.maxImageSize);
 
-
-
-
-
-
+/**
+ * The url of where the predefined Adobe CMaps are located. Include trailing
+ * slash.
+ * @var {string}
+ */
 PDFJS.cMapUrl = (PDFJS.cMapUrl === undefined ? null : PDFJS.cMapUrl);
 
-
-
-
-
+/**
+ * Specifies if CMaps are binary packed.
+ * @var {boolean}
+ */
 PDFJS.cMapPacked = PDFJS.cMapPacked === undefined ? false : PDFJS.cMapPacked;
 
-
-
-
-
-
-
+/*
+ * By default fonts are converted to OpenType fonts and loaded via font face
+ * rules. If disabled, the font will be rendered using a built in font renderer
+ * that constructs the glyphs with primitive path commands.
+ * @var {boolean}
+ */
 PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
                          false : PDFJS.disableFontFace);
 
-
-
-
-
-
+/**
+ * Path for image resources, mainly for annotation icons. Include trailing
+ * slash.
+ * @var {string}
+ */
 PDFJS.imageResourcesPath = (PDFJS.imageResourcesPath === undefined ?
                             '' : PDFJS.imageResourcesPath);
 
-
-
-
-
-
-
+/**
+ * Disable the web worker and run all code on the main thread. This will happen
+ * automatically if the browser doesn't support workers or sending typed arrays
+ * to workers.
+ * @var {boolean}
+ */
 PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
                        false : PDFJS.disableWorker);
 
-
-
-
-
-
-
+/**
+ * Path and filename of the worker file. Required when the worker is enabled in
+ * development mode. If unspecified in the production build, the worker will be
+ * loaded based on the location of the pdf.js file.
+ * @var {string}
+ */
 PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 
-
-
-
-
-
-
+/**
+ * Disable range request loading of PDF files. When enabled and if the server
+ * supports partial content requests then the PDF will be fetched in chunks.
+ * Enabled (false) by default.
+ * @var {boolean}
+ */
 PDFJS.disableRange = (PDFJS.disableRange === undefined ?
                       false : PDFJS.disableRange);
 
-
-
-
-
-
-
+/**
+ * Disable pre-fetching of PDF file data. When range requests are enabled PDF.js
+ * will automatically keep fetching more data even if it isn't needed to display
+ * the current page. This default behavior can be disabled.
+ * @var {boolean}
+ */
 PDFJS.disableAutoFetch = (PDFJS.disableAutoFetch === undefined ?
                           false : PDFJS.disableAutoFetch);
 
-
-
-
-
+/**
+ * Enables special hooks for debugging PDF.js.
+ * @var {boolean}
+ */
 PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
 
-
-
-
-
+/**
+ * Enables transfer usage in postMessage for ArrayBuffers.
+ * @var {boolean}
+ */
 PDFJS.postMessageTransfers = (PDFJS.postMessageTransfers === undefined ?
                               true : PDFJS.postMessageTransfers);
 
-
-
-
-
+/**
+ * Disables URL.createObjectURL usage.
+ * @var {boolean}
+ */
 PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
                                 false : PDFJS.disableCreateObjectURL);
 
-
-
-
-
+/**
+ * Disables WebGL usage.
+ * @var {boolean}
+ */
 PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
                       true : PDFJS.disableWebGL);
 
-
-
-
-
-
-
-
-
+/**
+ * Controls the logging level.
+ * The constants from PDFJS.VERBOSITY_LEVELS should be used:
+ * - errors
+ * - warnings [default]
+ * - infos
+ * @var {number}
+ */
 PDFJS.verbosity = (PDFJS.verbosity === undefined ?
                    PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity);
 
+/**
+ * Document initialization / loading parameters object.
+ *
+ * @typedef {Object} DocumentInitParameters
+ * @property {string}     url   - The URL of the PDF.
+ * @property {TypedArray} data  - A typed array with PDF data.
+ * @property {Object}     httpHeaders - Basic authentication headers.
+ * @property {boolean}    withCredentials - Indicates whether or not cross-site
+ *   Access-Control requests should be made using credentials such as cookies
+ *   or authorization headers. The default is false.
+ * @property {string}     password - For decrypting password-protected PDFs.
+ * @property {TypedArray} initialData - A typed array with the first portion or
+ *   all of the pdf data. Used by the extension since some data is already
+ *   loaded before the switch to range requests.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This is the main entry point for loading a PDF and interacting with it.
+ * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
+ * is used, which means it must follow the same origin rules that any XHR does
+ * e.g. No cross domain requests without CORS.
+ *
+ * @param {string|TypedArray|DocumentInitParameters} source Can be a url to
+ * where a PDF is located, a typed array (Uint8Array) already populated with
+ * data or parameter object.
+ *
+ * @param {Object} pdfDataRangeTransport is optional. It is used if you want
+ * to manually serve range requests for data in the PDF. See viewer.js for
+ * an example of pdfDataRangeTransport's interface.
+ *
+ * @param {function} passwordCallback is optional. It is used to request a
+ * password if wrong or no password was provided. The callback receives two
+ * parameters: function that needs to be called with new password and reason
+ * (see {PasswordResponses}).
+ *
+ * @return {Promise} A promise that is resolved with {@link PDFDocumentProxy}
+ *   object.
+ */
 PDFJS.getDocument = function getDocument(source,
                                          pdfDataRangeTransport,
                                          passwordCallback,
@@ -3800,7 +2218,7 @@ PDFJS.getDocument = function getDocument(source,
     error('Invalid parameter array, need either .data or .url');
   }
 
-  
+  // copy/use all keys as is except 'url' -- full path is required
   var params = {};
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
@@ -3822,121 +2240,119 @@ PDFJS.getDocument = function getDocument(source,
   return workerReadyCapability.promise;
 };
 
-
-
-
-
-
+/**
+ * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
+ * properties that can be read synchronously.
+ * @class
+ */
 var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   function PDFDocumentProxy(pdfInfo, transport) {
     this.pdfInfo = pdfInfo;
     this.transport = transport;
   }
-  PDFDocumentProxy.prototype =  {
-    
-
-
+  PDFDocumentProxy.prototype = /** @lends PDFDocumentProxy.prototype */ {
+    /**
+     * @return {number} Total number of pages the PDF contains.
+     */
     get numPages() {
       return this.pdfInfo.numPages;
     },
-    
-
-
-
+    /**
+     * @return {string} A unique ID to identify a PDF. Not guaranteed to be
+     * unique.
+     */
     get fingerprint() {
       return this.pdfInfo.fingerprint;
     },
-    
-
-
-
-
+    /**
+     * @param {number} pageNumber The page number to get. The first page is 1.
+     * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
+     * object.
+     */
     getPage: function PDFDocumentProxy_getPage(pageNumber) {
       return this.transport.getPage(pageNumber);
     },
-    
-
-
-
-
-
+    /**
+     * @param {{num: number, gen: number}} ref The page reference. Must have
+     *   the 'num' and 'gen' properties.
+     * @return {Promise} A promise that is resolved with the page index that is
+     * associated with the reference.
+     */
     getPageIndex: function PDFDocumentProxy_getPageIndex(ref) {
       return this.transport.getPageIndex(ref);
     },
-    
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved with a lookup table for
+     * mapping named destinations to reference numbers.
+     */
     getDestinations: function PDFDocumentProxy_getDestinations() {
       return this.transport.getDestinations();
     },
-    
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved with a lookup table for
+     * mapping named attachments to their content.
+     */
     getAttachments: function PDFDocumentProxy_getAttachments() {
       return this.transport.getAttachments();
     },
-    
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved with an array of all the
+     * JavaScript strings in the name tree.
+     */
     getJavaScript: function PDFDocumentProxy_getJavaScript() {
       return this.transport.getJavaScript();
     },
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved with an {Array} that is a
+     * tree outline (if it has one) of the PDF. The tree is in the format of:
+     * [
+     *  {
+     *   title: string,
+     *   bold: boolean,
+     *   italic: boolean,
+     *   color: rgb array,
+     *   dest: dest obj,
+     *   items: array of more items like this
+     *  },
+     *  ...
+     * ].
+     */
     getOutline: function PDFDocumentProxy_getOutline() {
       return this.transport.getOutline();
     },
-    
-
-
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved with an {Object} that has
+     * info and metadata properties.  Info is an {Object} filled with anything
+     * available in the information dictionary and similarly metadata is a
+     * {Metadata} object with information from the metadata section of the PDF.
+     */
     getMetadata: function PDFDocumentProxy_getMetadata() {
       return this.transport.getMetadata();
     },
-    
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved with a TypedArray that has
+     * the raw data from the PDF.
+     */
     getData: function PDFDocumentProxy_getData() {
-      var capability = createPromiseCapability();
-      this.transport.getData(capability);
-      return capability.promise;
+      return this.transport.getData();
     },
-    
-
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved when the document's data
+     * is loaded. It is resolved with an {Object} that contains the length
+     * property that indicates size of the PDF data in bytes.
+     */
     getDownloadInfo: function PDFDocumentProxy_getDownloadInfo() {
       return this.transport.downloadInfoCapability.promise;
     },
-    
-
-
+    /**
+     * Cleans up resources allocated by the document, e.g. created @font-face.
+     */
     cleanup: function PDFDocumentProxy_cleanup() {
       this.transport.startCleanup();
     },
-    
-
-
+    /**
+     * Destroys current document instance and terminates worker.
+     */
     destroy: function PDFDocumentProxy_destroy() {
       this.transport.destroy();
     }
@@ -3944,60 +2360,61 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   return PDFDocumentProxy;
 })();
 
+/**
+ * Page text content.
+ *
+ * @typedef {Object} TextContent
+ * @property {array} items - array of {@link TextItem}
+ * @property {Object} styles - {@link TextStyles} objects, indexed by font
+ *                    name.
+ */
 
+/**
+ * Page text content part.
+ *
+ * @typedef {Object} TextItem
+ * @property {string} str - text content.
+ * @property {string} dir - text direction: 'ttb', 'ltr' or 'rtl'.
+ * @property {array} transform - transformation matrix.
+ * @property {number} width - width in device space.
+ * @property {number} height - height in device space.
+ * @property {string} fontName - font name used by pdf.js for converted font.
+ */
 
+/**
+ * Text style.
+ *
+ * @typedef {Object} TextStyle
+ * @property {number} ascent - font ascent.
+ * @property {number} descent - font descent.
+ * @property {boolean} vertical - text is in vertical mode.
+ * @property {string} fontFamily - possible font family
+ */
 
+/**
+ * Page render parameters.
+ *
+ * @typedef {Object} RenderParameters
+ * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
+ * @property {PDFJS.PageViewport} viewport - Rendering viewport obtained by
+ *                                calling of PDFPage.getViewport method.
+ * @property {string} intent - Rendering intent, can be 'display' or 'print'
+ *                    (default value is 'display').
+ * @property {Object} imageLayer - (optional) An object that has beginLayout,
+ *                    endLayout and appendImage functions.
+ * @property {function} continueCallback - (optional) A function that will be
+ *                      called each time the rendering is paused.  To continue
+ *                      rendering call the function that is the first argument
+ *                      to the callback.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Proxy to a PDFPage in the worker thread.
+ * @class
+ */
 var PDFPageProxy = (function PDFPageProxyClosure() {
-  function PDFPageProxy(pageInfo, transport) {
+  function PDFPageProxy(pageIndex, pageInfo, transport) {
+    this.pageIndex = pageIndex;
     this.pageInfo = pageInfo;
     this.transport = transport;
     this.stats = new StatTimer();
@@ -4008,72 +2425,71 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pendingDestroy = false;
     this.intentStates = {};
   }
-  PDFPageProxy.prototype =  {
-    
-
-
+  PDFPageProxy.prototype = /** @lends PDFPageProxy.prototype */ {
+    /**
+     * @return {number} Page number of the page. First page is 1.
+     */
     get pageNumber() {
-      return this.pageInfo.pageIndex + 1;
+      return this.pageIndex + 1;
     },
-    
-
-
+    /**
+     * @return {number} The number of degrees the page is rotated clockwise.
+     */
     get rotate() {
       return this.pageInfo.rotate;
     },
-    
-
-
-
+    /**
+     * @return {Object} The reference that points to this page. It has 'num' and
+     * 'gen' properties.
+     */
     get ref() {
       return this.pageInfo.ref;
     },
-    
-
-
-
+    /**
+     * @return {Array} An array of the visible portion of the PDF page in the
+     * user space units - [x1, y1, x2, y2].
+     */
     get view() {
       return this.pageInfo.view;
     },
-    
-
-
-
-
-
-
+    /**
+     * @param {number} scale The desired scale of the viewport.
+     * @param {number} rotate Degrees to rotate the viewport. If omitted this
+     * defaults to the page rotation.
+     * @return {PDFJS.PageViewport} Contains 'width' and 'height' properties
+     * along with transforms required for rendering.
+     */
     getViewport: function PDFPageProxy_getViewport(scale, rotate) {
       if (arguments.length < 2) {
         rotate = this.rotate;
       }
       return new PDFJS.PageViewport(this.view, scale, rotate, 0, 0);
     },
-    
-
-
-
+    /**
+     * @return {Promise} A promise that is resolved with an {Array} of the
+     * annotation objects.
+     */
     getAnnotations: function PDFPageProxy_getAnnotations() {
-      if (this.annotationsCapability) {
-        return this.annotationsCapability.promise;
+      if (this.annotationsPromise) {
+        return this.annotationsPromise;
       }
 
-      var capability = createPromiseCapability();
-      this.annotationsCapability = capability;
-      this.transport.getAnnotations(this.pageInfo.pageIndex);
-      return capability.promise;
+      var promise = this.transport.getAnnotations(this.pageIndex);
+      this.annotationsPromise = promise;
+      return promise;
     },
-    
-
-
-
-
-
+    /**
+     * Begins the process of rendering a page to the desired context.
+     * @param {RenderParameters} params Page render parameters.
+     * @return {RenderTask} An object that contains the promise, which
+     *                      is resolved when the page finishes rendering.
+     */
     render: function PDFPageProxy_render(params) {
       var stats = this.stats;
       stats.time('Overall');
 
-      
-      
+      // If there was a pending destroy cancel it so no cleanup happens during
+      // this call to render.
       this.pendingDestroy = false;
 
       var renderingIntent = ('intent' in params ?
@@ -4084,8 +2500,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }
       var intentState = this.intentStates[renderingIntent];
 
-      
-      
+      // If there's no displayReadyCapability yet, then the operatorList
+      // was never requested before. Make the request and create the promise.
       if (!intentState.displayReadyCapability) {
         intentState.receivingOperatorList = true;
         intentState.displayReadyCapability = createPromiseCapability();
@@ -4151,33 +2567,27 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       return renderTask;
     },
-    
-
-
-
+    /**
+     * @return {Promise} That is resolved a {@link TextContent}
+     * object that represent the page text content.
+     */
     getTextContent: function PDFPageProxy_getTextContent() {
-      return new Promise(function (resolve) {
-        this.transport.messageHandler.send('GetTextContent', {
-            pageIndex: this.pageNumber - 1
-          },
-          function textContentCallback(textContent) {
-            resolve(textContent);
-          }
-        );
-      }.bind(this));
+      return this.transport.messageHandler.sendWithPromise('GetTextContent', {
+        pageIndex: this.pageNumber - 1
+      });
     },
-    
-
-
+    /**
+     * Destroys resources allocated by the page.
+     */
     destroy: function PDFPageProxy_destroy() {
       this.pendingDestroy = true;
       this._tryDestroy();
     },
-    
-
-
-
-
+    /**
+     * For internal use only. Attempts to clean up if rendering is in a state
+     * where that's possible.
+     * @ignore
+     */
     _tryDestroy: function PDFPageProxy__destroy() {
       if (!this.pendingDestroy ||
           Object.keys(this.intentStates).some(function(intent) {
@@ -4192,26 +2602,27 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         delete this.intentStates[intent];
       }, this);
       this.objs.clear();
+      this.annotationsPromise = null;
       this.pendingDestroy = false;
     },
-    
-
-
-
+    /**
+     * For internal use only.
+     * @ignore
+     */
     _startRenderPage: function PDFPageProxy_startRenderPage(transparency,
                                                             intent) {
       var intentState = this.intentStates[intent];
       intentState.displayReadyCapability.resolve(transparency);
     },
-    
-
-
-
+    /**
+     * For internal use only.
+     * @ignore
+     */
     _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk,
                                                             intent) {
       var intentState = this.intentStates[intent];
       var i, ii;
-      
+      // Add the new chunk to the current operator list.
       for (i = 0, ii = operatorListChunk.length; i < ii; i++) {
         intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
         intentState.operatorList.argsArray.push(
@@ -4219,7 +2630,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }
       intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
 
-      
+      // Notify all the rendering tasks there are more operators to be consumed.
       for (i = 0; i < intentState.renderTasks.length; i++) {
         intentState.renderTasks[i].operatorListChanged();
       }
@@ -4233,10 +2644,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
   return PDFPageProxy;
 })();
 
-
-
-
-
+/**
+ * For internal use only.
+ * @ignore
+ */
 var WorkerTransport = (function WorkerTransportClosure() {
   function WorkerTransport(workerInitializedCapability, workerReadyCapability,
                            pdfDataRangeTransport, progressCallback) {
@@ -4247,15 +2658,15 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.commonObjs = new PDFObjects();
 
     this.pageCache = [];
-    this.pageCapabilities = [];
+    this.pagePromises = [];
     this.downloadInfoCapability = createPromiseCapability();
     this.passwordCallback = null;
 
-    
-    
-    
-    
-    
+    // If worker support isn't disabled explicit and the browser has worker
+    // support, create a new web worker and test if it/the browser fullfills
+    // all requirements to run parts of pdf.js in a web worker.
+    // Right now, the requirement is, that an Uint8Array is still an Uint8Array
+    // as it arrives on the worker. Chrome added this with version 15.
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (!workerSrc) {
@@ -4263,8 +2674,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }
 
       try {
-        
-        
+        // Some versions of FF can't create a worker on localhost, see:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
         var worker = new Worker(workerSrc);
         var messageHandler = new MessageHandler('main', worker);
         this.messageHandler = messageHandler;
@@ -4288,10 +2699,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }.bind(this));
 
         var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
-        
-        
+        // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
+        // typed array. Also, checking if we can use transfers.
         try {
-          messageHandler.send('test', testObj, null, [testObj.buffer]);
+          messageHandler.send('test', testObj, [testObj.buffer]);
         } catch (ex) {
           info('Cannot use postMessage transfers');
           testObj[0] = 0;
@@ -4302,8 +2713,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         info('The worker has been disabled.');
       }
     }
-    
-    
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
     globalScope.PDFJS.disableWorker = true;
     this.loadFakeWorkerFiles().then(function() {
       this.setupFakeWorker();
@@ -4313,9 +2724,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
       this.pageCache = [];
-      this.pageCapabilities = [];
+      this.pagePromises = [];
       var self = this;
-      this.messageHandler.send('Terminate', null, function () {
+      this.messageHandler.sendWithPromise('Terminate', null).then(function () {
         FontLoader.clear();
         if (self.worker) {
           self.worker.terminate();
@@ -4326,9 +2737,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
     loadFakeWorkerFiles: function WorkerTransport_loadFakeWorkerFiles() {
       if (!PDFJS.fakeWorkerFilesLoadedCapability) {
         PDFJS.fakeWorkerFilesLoadedCapability = createPromiseCapability();
-        
-        
-        
+        // In the developer build load worker_loader which in turn loads all the
+        // other files and resolves the promise. In production only the
+        // pdf.worker.js file is needed.
         Util.loadScript(PDFJS.workerSrc, function() {
           PDFJS.fakeWorkerFilesLoadedCapability.resolve();
         });
@@ -4338,7 +2749,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       warn('Setting up fake worker.');
-      
+      // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
         postMessage: function WorkerTransport_postMessage(obj) {
           fakeWorker.onmessage({data: obj});
@@ -4349,8 +2760,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var messageHandler = new MessageHandler('main', fakeWorker);
       this.setupMessageHandler(messageHandler);
 
-      
-      
+      // If the main thread is our worker, setup the handling for the messages
+      // the main thread sends to it self.
       PDFJS.WorkerMessageHandler.setup(messageHandler);
     },
 
@@ -4427,20 +2838,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.downloadInfoCapability.resolve(data);
       }, this);
 
-      messageHandler.on('GetPage', function transportPage(data) {
-        var pageInfo = data.pageInfo;
-        var page = new PDFPageProxy(pageInfo, this);
-        this.pageCache[pageInfo.pageIndex] = page;
-        var promise = this.pageCapabilities[pageInfo.pageIndex];
-        promise.resolve(page);
-      }, this);
-
-      messageHandler.on('GetAnnotations', function transportAnnotations(data) {
-        var annotations = data.annotations;
-        var promise = this.pageCache[data.pageIndex].annotationsCapability;
-        promise.resolve(annotations);
-      }, this);
-
       messageHandler.on('StartRenderPage', function transportRender(data) {
         var page = this.pageCache[data.pageIndex];
 
@@ -4509,7 +2906,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             imageData = data[3];
             pageProxy.objs.resolve(id, imageData);
 
-            
+            // heuristics that will allow not to store large data
             var MAX_IMAGE_SIZE_TO_STORE = 8000000;
             if (imageData && 'data' in imageData &&
                 imageData.data.length > MAX_IMAGE_SIZE_TO_STORE) {
@@ -4534,9 +2931,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyCapability.reject(data);
       }, this);
 
-      messageHandler.on('PageError', function transportError(data, intent) {
+      messageHandler.on('PageError', function transportError(data) {
         var page = this.pageCache[data.pageNum - 1];
-        var intentState = page.intentStates[intent];
+        var intentState = page.intentStates[data.intent];
         if (intentState.displayReadyCapability.promise) {
           intentState.displayReadyCapability.reject(data.error);
         } else {
@@ -4544,40 +2941,46 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('JpegDecode', function(data, deferred) {
+      messageHandler.on('JpegDecode', function(data) {
         var imageUrl = data[0];
         var components = data[1];
         if (components != 3 && components != 1) {
-          error('Only 3 component or 1 component can be returned');
+          return Promise.reject(
+            new Error('Only 3 components or 1 component can be returned'));
         }
 
-        var img = new Image();
-        img.onload = (function messageHandler_onloadClosure() {
-          var width = img.width;
-          var height = img.height;
-          var size = width * height;
-          var rgbaLength = size * 4;
-          var buf = new Uint8Array(size * components);
-          var tmpCanvas = createScratchCanvas(width, height);
-          var tmpCtx = tmpCanvas.getContext('2d');
-          tmpCtx.drawImage(img, 0, 0);
-          var data = tmpCtx.getImageData(0, 0, width, height).data;
-          var i, j;
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.onload = function () {
+            var width = img.width;
+            var height = img.height;
+            var size = width * height;
+            var rgbaLength = size * 4;
+            var buf = new Uint8Array(size * components);
+            var tmpCanvas = createScratchCanvas(width, height);
+            var tmpCtx = tmpCanvas.getContext('2d');
+            tmpCtx.drawImage(img, 0, 0);
+            var data = tmpCtx.getImageData(0, 0, width, height).data;
+            var i, j;
 
-          if (components == 3) {
-            for (i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
-              buf[j] = data[i];
-              buf[j + 1] = data[i + 1];
-              buf[j + 2] = data[i + 2];
+            if (components == 3) {
+              for (i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
+                buf[j] = data[i];
+                buf[j + 1] = data[i + 1];
+                buf[j + 2] = data[i + 2];
+              }
+            } else if (components == 1) {
+              for (i = 0, j = 0; i < rgbaLength; i += 4, j++) {
+                buf[j] = data[i];
+              }
             }
-          } else if (components == 1) {
-            for (i = 0, j = 0; i < rgbaLength; i += 4, j++) {
-              buf[j] = data[i];
-            }
-          }
-          deferred.resolve({ data: buf, width: width, height: height});
-        }).bind(this);
-        img.src = imageUrl;
+            resolve({ data: buf, width: width, height: height});
+          };
+          img.onerror = function () {
+            reject(new Error('JpegDecode failed to load image'));
+          };
+          img.src = imageUrl;
+        });
       });
     },
 
@@ -4596,132 +2999,101 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    getData: function WorkerTransport_getData(capability) {
-      this.messageHandler.send('GetData', null, function(data) {
-        capability.resolve(data);
-      });
+    getData: function WorkerTransport_getData() {
+      return this.messageHandler.sendWithPromise('GetData', null);
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, capability) {
       if (pageNumber <= 0 || pageNumber > this.numPages ||
           (pageNumber|0) !== pageNumber) {
-        return new Promise.reject(new Error('Invalid page request'));
+        return Promise.reject(new Error('Invalid page request'));
       }
 
       var pageIndex = pageNumber - 1;
-      if (pageIndex in this.pageCapabilities) {
-        return this.pageCapabilities[pageIndex].promise;
+      if (pageIndex in this.pagePromises) {
+        return this.pagePromises[pageIndex];
       }
-      capability = createPromiseCapability();
-      this.pageCapabilities[pageIndex] = capability;
-      this.messageHandler.send('GetPageRequest', { pageIndex: pageIndex });
-      return capability.promise;
+      var promise = this.messageHandler.sendWithPromise('GetPage', {
+        pageIndex: pageIndex
+      }).then(function (pageInfo) {
+        var page = new PDFPageProxy(pageIndex, pageInfo, this);
+        this.pageCache[pageIndex] = page;
+        return page;
+      }.bind(this));
+      this.pagePromises[pageIndex] = promise;
+      return promise;
     },
 
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetPageIndex', { ref: ref },
-          function (pageIndex) {
-            resolve(pageIndex);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetPageIndex', { ref: ref });
     },
 
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex) {
-      this.messageHandler.send('GetAnnotationsRequest',
+      return this.messageHandler.sendWithPromise('GetAnnotations',
         { pageIndex: pageIndex });
     },
 
     getDestinations: function WorkerTransport_getDestinations() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetDestinations', null,
-          function transportDestinations(destinations) {
-            resolve(destinations);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetDestinations', null);
     },
 
     getAttachments: function WorkerTransport_getAttachments() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetAttachments', null,
-          function transportAttachments(attachments) {
-            resolve(attachments);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetAttachments', null);
     },
 
     getJavaScript: function WorkerTransport_getJavaScript() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetJavaScript', null,
-          function transportJavaScript(js) {
-            resolve(js);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetJavaScript', null);
     },
 
     getOutline: function WorkerTransport_getOutline() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetOutline', null,
-          function transportOutline(outline) {
-            resolve(outline);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetOutline', null);
     },
 
     getMetadata: function WorkerTransport_getMetadata() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetMetadata', null,
-          function transportMetadata(results) {
-            resolve({
-              info: results[0],
-              metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
-            });
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetMetadata', null).
+        then(function transportMetadata(results) {
+        return {
+          info: results[0],
+          metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
+        };
+      });
     },
 
     startCleanup: function WorkerTransport_startCleanup() {
-      this.messageHandler.send('Cleanup', null,
-        function endCleanup() {
-          for (var i = 0, ii = this.pageCache.length; i < ii; i++) {
-            var page = this.pageCache[i];
-            if (page) {
-              page.destroy();
-            }
+      this.messageHandler.sendWithPromise('Cleanup', null).
+        then(function endCleanup() {
+        for (var i = 0, ii = this.pageCache.length; i < ii; i++) {
+          var page = this.pageCache[i];
+          if (page) {
+            page.destroy();
           }
-          this.commonObjs.clear();
-          FontLoader.clear();
-        }.bind(this)
-      );
+        }
+        this.commonObjs.clear();
+        FontLoader.clear();
+      }.bind(this));
     }
   };
   return WorkerTransport;
 
 })();
 
-
-
-
-
-
-
-
+/**
+ * A PDF document and page is built of many objects. E.g. there are objects
+ * for fonts, images, rendering code and such. These objects might get processed
+ * inside of a worker. The `PDFObjects` implements some basic functions to
+ * manage these objects.
+ * @ignore
+ */
 var PDFObjects = (function PDFObjectsClosure() {
   function PDFObjects() {
     this.objs = {};
   }
 
   PDFObjects.prototype = {
-    
-
-
-
+    /**
+     * Internal function.
+     * Ensures there is an object defined for `objId`.
+     */
     ensureObj: function PDFObjects_ensureObj(objId) {
       if (this.objs[objId]) {
         return this.objs[objId];
@@ -4737,29 +3109,29 @@ var PDFObjects = (function PDFObjectsClosure() {
       return obj;
     },
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * If called *without* callback, this returns the data of `objId` but the
+     * object needs to be resolved. If it isn't, this function throws.
+     *
+     * If called *with* a callback, the callback is called with the data of the
+     * object once the object is resolved. That means, if you call this
+     * function and the object is already resolved, the callback gets called
+     * right away.
+     */
     get: function PDFObjects_get(objId, callback) {
-      
-      
+      // If there is a callback, then the get can be async and the object is
+      // not required to be resolved right now
       if (callback) {
         this.ensureObj(objId).capability.promise.then(callback);
         return null;
       }
 
-      
-      
+      // If there isn't a callback, the user expects to get the resolved data
+      // directly.
       var obj = this.objs[objId];
 
-      
-      
+      // If there isn't an object yet or the object isn't resolved, then the
+      // data isn't ready yet!
       if (!obj || !obj.resolved) {
         error('Requesting object that isn\'t resolved yet ' + objId);
       }
@@ -4767,9 +3139,9 @@ var PDFObjects = (function PDFObjectsClosure() {
       return obj.data;
     },
 
-    
-
-
+    /**
+     * Resolves the object `objId` with optional `data`.
+     */
     resolve: function PDFObjects_resolve(objId, data) {
       var obj = this.ensureObj(objId);
 
@@ -4792,9 +3164,9 @@ var PDFObjects = (function PDFObjectsClosure() {
       return this.isResolved(objId);
     },
 
-    
-
-
+    /**
+     * Returns the data of `objId` if object exists, null otherwise.
+     */
     getData: function PDFObjects_getData(objId) {
       var objs = this.objs;
       if (!objs[objId] || !objs[objId].resolved) {
@@ -4811,38 +3183,38 @@ var PDFObjects = (function PDFObjectsClosure() {
   return PDFObjects;
 })();
 
-
-
-
-
+/**
+ * Allows controlling of the rendering tasks.
+ * @class
+ */
 var RenderTask = (function RenderTaskClosure() {
   function RenderTask(internalRenderTask) {
     this.internalRenderTask = internalRenderTask;
-    
-
-
-
+    /**
+     * Promise for rendering task completion.
+     * @type {Promise}
+     */
     this.promise = this.internalRenderTask.capability.promise;
   }
 
-  RenderTask.prototype =  {
-    
-
-
-
-
+  RenderTask.prototype = /** @lends RenderTask.prototype */ {
+    /**
+     * Cancels the rendering task. If the task is currently rendering it will
+     * not be cancelled until graphics pauses with a timeout. The promise that
+     * this object extends will resolved when cancelled.
+     */
     cancel: function RenderTask_cancel() {
       this.internalRenderTask.cancel();
     },
 
-    
-
-
-
-
-
-
-
+    /**
+     * Registers callback to indicate the rendering task completion.
+     *
+     * @param {function} onFulfilled The callback for the rendering completion.
+     * @param {function} onRejected The callback for the rendering failure.
+     * @return {Promise} A promise that is resolved after the onFulfilled or
+     *                   onRejected callback.
+     */
     then: function RenderTask_then(onFulfilled, onRejected) {
       return this.promise.then(onFulfilled, onRejected);
     }
@@ -4851,10 +3223,10 @@ var RenderTask = (function RenderTaskClosure() {
   return RenderTask;
 })();
 
-
-
-
-
+/**
+ * For internal use only.
+ * @ignore
+ */
 var InternalRenderTask = (function InternalRenderTaskClosure() {
 
   function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
@@ -4871,6 +3243,10 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     this.graphicsReady = false;
     this.cancelled = false;
     this.capability = createPromiseCapability();
+    // caching this-bound methods
+    this._continueBound = this._continue.bind(this);
+    this._scheduleNextBound = this._scheduleNext.bind(this);
+    this._nextBound = this._next.bind(this);
   }
 
   InternalRenderTask.prototype = {
@@ -4909,7 +3285,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     operatorListChanged: function InternalRenderTask_operatorListChanged() {
       if (!this.graphicsReady) {
         if (!this.graphicsReadyCallback) {
-          this.graphicsReadyCallback = this._continue.bind(this);
+          this.graphicsReadyCallback = this._continueBound;
         }
         return;
       }
@@ -4930,10 +3306,14 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
         return;
       }
       if (this.params.continueCallback) {
-        this.params.continueCallback(this._next.bind(this));
+        this.params.continueCallback(this._scheduleNextBound);
       } else {
-        this._next();
+        this._scheduleNext();
       }
+    },
+
+    _scheduleNext: function InternalRenderTask__scheduleNext() {
+      window.requestAnimationFrame(this._nextBound);
     },
 
     _next: function InternalRenderTask__next() {
@@ -4942,7 +3322,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       }
       this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
                                         this.operatorListIdx,
-                                        this._continue.bind(this),
+                                        this._continueBound,
                                         this.stepper);
       if (this.operatorListIdx === this.operatorList.argsArray.length) {
         this.running = false;
@@ -4979,7 +3359,7 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
 
   function Metadata(meta) {
     if (typeof meta === 'string') {
-      
+      // Ghostscript produces invalid metadata
       meta = fixMetadata(meta);
 
       var parser = new DOMParser();
@@ -4998,7 +3378,7 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
       var doc = this.metaDocument;
       var rdf = doc.documentElement;
 
-      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { 
+      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
         rdf = rdf.firstChild;
         while (rdf && rdf.nodeName.toLowerCase() !== 'rdf:rdf') {
           rdf = rdf.nextSibling;
@@ -5040,10 +3420,10 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
 })();
 
 
+// <canvas> contexts store most of the state we need natively.
+// However, PDF needs a bit more state, which we store here.
 
-
-
-
+// Minimal font size that would be used during canvas fillText operations.
 var MIN_FONT_SIZE = 16;
 var MAX_GROUP_SIZE = 4096;
 
@@ -5057,9 +3437,9 @@ function createScratchCanvas(width, height) {
 }
 
 function addContextCurrentTransform(ctx) {
-  
+  // If the context doesn't expose a `mozCurrentTransform`, add a JS based on.
   if (!ctx.mozCurrentTransform) {
-    
+    // Store the original context
     ctx._scaleX = ctx._scaleX || 1.0;
     ctx._scaleY = ctx._scaleY || 1.0;
     ctx._originalSave = ctx.save;
@@ -5081,9 +3461,9 @@ function addContextCurrentTransform(ctx) {
 
     Object.defineProperty(ctx, 'mozCurrentTransformInverse', {
       get: function getCurrentTransformInverse() {
-        
-        
-        
+        // Calculation done using WolframAlpha:
+        // http://www.wolframalpha.com/input/?
+        //   i=Inverse+{{a%2C+c%2C+e}%2C+{b%2C+d%2C+f}%2C+{0%2C+0%2C+1}}
 
         var m = this._transformMatrix;
         var a = m[0], b = m[1], c = m[2], d = m[3], e = m[4], f = m[5];
@@ -5185,7 +3565,7 @@ var CachedCanvases = (function CachedCanvasesClosure() {
         canvasEntry = cache[id];
         canvasEntry.canvas.width = width;
         canvasEntry.canvas.height = height;
-        
+        // reset canvas transform for emulated mozCurrentTransform, if needed
         canvasEntry.context.setTransform(1, 0, 0, 1, 0, 0);
       } else {
         var canvas = createScratchCanvas(width, height);
@@ -5212,7 +3592,7 @@ function compileType3Glyph(imgData) {
   var POINT_TYPES =
       new Uint8Array([0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0]);
 
-  
+  // decodes bit-packed mask data
   var lineSize = (width + 7) & ~7, data0 = imgData.data;
   var data = new Uint8Array(lineSize * height), pos = 0, ii;
   for (i = 0, ii = data0.length; i < ii; i++) {
@@ -5223,16 +3603,16 @@ function compileType3Glyph(imgData) {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // finding iteresting points: every point is located between mask pixels,
+  // so there will be points of the (width + 1)x(height + 1) grid. Every point
+  // will have flags assigned based on neighboring mask pixels:
+  //   4 | 8
+  //   --P--
+  //   2 | 1
+  // We are interested only in points with the flags:
+  //   - outside corners: 1, 2, 4, 8;
+  //   - inside corners: 7, 11, 13, 14;
+  //   - and, intersections: 5, 10.
   var count = 0;
   pos = 0;
   if (data[pos] !== 0) {
@@ -5257,8 +3637,8 @@ function compileType3Glyph(imgData) {
       points[j0] = data[pos] ? 1 : 8;
       ++count;
     }
-    
-    
+    // 'sum' is the position of the current pixel configuration in the 'TYPES'
+    // array (in order 8-1-2-4, so we can use '>>2' to shift the column).
     var sum = (data[pos] ? 4 : 0) + (data[pos - lineSize] ? 8 : 0);
     for (j = 1; j < width; j++) {
       sum = (sum >> 2) + (data[pos + 1] ? 4 : 0) +
@@ -5300,7 +3680,7 @@ function compileType3Glyph(imgData) {
     return null;
   }
 
-  
+  // building outlines
   var steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
   var outlines = [];
   for (i = 0; count && i <= height; i++) {
@@ -5323,14 +3703,14 @@ function compileType3Glyph(imgData) {
 
       pp = points[p];
       if (pp !== 5 && pp !== 10) {
-        
+        // set new direction
         type = pp;
-        
+        // delete mark
         points[p] = 0;
-      } else { 
-        
+      } else { // type is 5 or 10, ie, a crossing
+        // set new direction
         type = pp & ((0x33 * type) >> 4);
-        
+        // set new type for "future hit"
         points[p] &= (type >> 2 | type << 2);
       }
 
@@ -5344,7 +3724,7 @@ function compileType3Glyph(imgData) {
 
   var drawOutline = function(c) {
     c.save();
-    
+    // the path shall be painted in [0..1]x[0..1] space
     c.scale(1 / width, -1 / height);
     c.translate(0, -height);
     c.beginPath();
@@ -5365,40 +3745,33 @@ function compileType3Glyph(imgData) {
 
 var CanvasExtraState = (function CanvasExtraStateClosure() {
   function CanvasExtraState(old) {
-    
+    // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
     this.fontSizeScale = 1;
     this.textMatrix = IDENTITY_MATRIX;
     this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
-    
+    // Current point (in user coordinates)
     this.x = 0;
     this.y = 0;
-    
+    // Start of text line (in text coordinates)
     this.lineX = 0;
     this.lineY = 0;
-    
+    // Character and word spacing
     this.charSpacing = 0;
     this.wordSpacing = 0;
     this.textHScale = 1;
     this.textRenderingMode = TextRenderingMode.FILL;
     this.textRise = 0;
-    
-    this.fillColorSpace = ColorSpace.singletons.gray;
-    this.fillColorSpaceObj = null;
-    this.strokeColorSpace = ColorSpace.singletons.gray;
-    this.strokeColorSpaceObj = null;
-    this.fillColorObj = null;
-    this.strokeColorObj = null;
-    
+    // Default fore and background colors
     this.fillColor = '#000000';
     this.strokeColor = '#000000';
-    
+    // Note: fill alpha applies to all non-stroking operations
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
     this.lineWidth = 1;
-    this.activeSMask = null; 
+    this.activeSMask = null; // nonclonable field (see the save method below)
 
     this.old = old;
   }
@@ -5416,8 +3789,8 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
 })();
 
 var CanvasGraphics = (function CanvasGraphicsClosure() {
-  
-  
+  // Defines the time the executeOperatorList is going to be executing
+  // before it stops and shedules a continue of execution.
   var EXECUTION_TIME = 15;
 
   function CanvasGraphics(canvasCtx, commonObjs, objs, imageLayer) {
@@ -5433,8 +3806,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.imageLayer = imageLayer;
     this.groupStack = [];
     this.processingType3 = null;
-    
-    
+    // Patterns are painted relative to the initial page/form transform, see pdf
+    // spec 8.7.2 NOTE 1.
     this.baseTransform = null;
     this.baseTransformStack = [];
     this.groupLevel = 0;
@@ -5452,16 +3825,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Put the image data to the canvas in chunks, rather than putting the
+    // whole image at once.  This saves JS memory, because the ImageData object
+    // is smaller. It also possibly saves C++ memory within the implementation
+    // of putImageData(). (E.g. in Firefox we make two short-lived copies of
+    // the data passed to putImageData()). |n| shouldn't be too small, however,
+    // because too many putImageData() calls will slow things down.
+    //
+    // Note: as written, if the last chunk is partial, the putImageData() call
+    // will (conceptually) put pixels past the bounds of the canvas.  But
+    // that's ok; any such pixels are ignored.
 
     var height = imgData.height, width = imgData.width;
     var fullChunkHeight = 16;
@@ -5476,10 +3849,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     var dest = chunkImgData.data;
     var i, j, thisChunkHeight, elemsInThisChunk;
 
-    
-    
+    // There are multiple forms in which the pixel data can be passed, and
+    // imgData.kind tells us which one this is.
     if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
-      
+      // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var srcLength = src.byteLength;
       var dest32 = PDFJS.hasCanvasTypedArrays ? new Uint32Array(dest.buffer) :
         new Uint32ArrayView(dest);
@@ -5520,7 +3893,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             mask >>= 1;
           }
         }
-        
+        // We ran out of input. Make all remaining pixels transparent.
         while (destPos < dest32DataLength) {
           dest32[destPos++] = 0;
         }
@@ -5528,7 +3901,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
     } else if (imgData.kind === ImageKind.RGBA_32BPP) {
-      
+      // RGBA, 32-bits per pixel.
 
       j = 0;
       elemsInThisChunk = width * fullChunkHeight * 4;
@@ -5546,7 +3919,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
     } else if (imgData.kind === ImageKind.RGB_24BPP) {
-      
+      // RGB, 24-bits per pixel.
       thisChunkHeight = fullChunkHeight;
       elemsInThisChunk = width * thisChunkHeight;
       for (i = 0; i < totalChunks; i++) {
@@ -5586,9 +3959,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var thisChunkHeight =
         (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
 
-      
-      
-      var destPos = 3; 
+      // Expand the mask so it can be used by the canvas.  Any required
+      // inversion has already been handled.
+      var destPos = 3; // alpha component offset
       for (var j = 0; j < thisChunkHeight; j++) {
         var mask = 0;
         for (var k = 0; k < width; k++) {
@@ -5653,9 +4026,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       composeFn = function (maskDataBytes, layerDataBytes) {
         var length = maskDataBytes.length;
         for (var i = 3; i < length; i += 4) {
-          var y = ((maskDataBytes[i - 3] * 77) +     
-                   (maskDataBytes[i - 2] * 152) +    
-                   (maskDataBytes[i - 1] * 28)) | 0; 
+          var y = ((maskDataBytes[i - 3] * 77) +     // * 0.3 / 255 * 0x10000
+                   (maskDataBytes[i - 2] * 152) +    // * 0.59 ....
+                   (maskDataBytes[i - 1] * 28)) | 0; // * 0.11 ....
           layerDataBytes[i] = (layerDataBytes[i] * y) >> 16;
         }
       };
@@ -5669,7 +4042,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       };
     }
 
-    
+    // processing image in chunks to save memory
     var PIXELS_TO_PROCESS = 65536;
     var chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
     for (var row = 0; row < height; row += chunkSize) {
@@ -5691,11 +4064,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     ctx.setTransform(smask.scaleX, 0, 0, smask.scaleY,
                      smask.offsetX, smask.offsetY);
 
-    var backdrop;
-    if (smask.backdrop) {
-      var cs = smask.colorSpace || ColorSpace.singletons.rgb;
-      backdrop = cs.getRgb(smask.backdrop, 0);
-    }
+    var backdrop = smask.backdrop || null;
     if (WebGLUtils.isEnabled) {
       var composed = WebGLUtils.composeSMask(layerCtx.canvas, mask,
         {subtype: smask.subtype, backdrop: backdrop});
@@ -5716,11 +4085,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   CanvasGraphics.prototype = {
 
     beginDrawing: function CanvasGraphics_beginDrawing(viewport, transparency) {
-      
-      
-      
-      
-      
+      // For pdfs that use blend modes we have to clear the canvas else certain
+      // blend modes can look wrong since we'd be blending with a white
+      // backdrop. The problem with a transparent backdrop though is we then
+      // don't get sub pixel anti aliasing on text, so we fill with white if
+      // we can.
       var width = this.ctx.canvas.width;
       var height = this.ctx.canvas.height;
       if (transparency) {
@@ -5754,7 +4123,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var i = executionStartIdx || 0;
       var argsArrayLen = argsArray.length;
 
-      
+      // Sometimes the OperatorList to execute is empty.
       if (argsArrayLen == i) {
         return i;
       }
@@ -5764,7 +4133,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var commonObjs = this.commonObjs;
       var objs = this.objs;
       var fnId;
-      var deferred = Promise.resolve();
 
       while (true) {
         if (stepper && i === stepper.nextBreakPoint) {
@@ -5782,8 +4150,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             var depObjId = deps[n];
             var common = depObjId.substring(0, 2) == 'g_';
 
-            
-            
+            // If the promise isn't resolved yet, add the continueCallback
+            // to the promise and bail out.
             if (!common && !objs.isResolved(depObjId)) {
               objs.get(depObjId, continueCallback);
               return i;
@@ -5797,21 +4165,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         i++;
 
-        
+        // If the entire operatorList was executed, stop as were done.
         if (i == argsArrayLen) {
           return i;
         }
 
-        
-        
-        
+        // If the execution took longer then a certain amount of time and
+        // `continueCallback` is specified, interrupt the execution.
         if (continueCallback && Date.now() > endTime) {
-          deferred.then(continueCallback);
+          continueCallback();
           return i;
         }
 
-        
-        
+        // If the operatorList isn't executed completely yet OR the execution
+        // time was short enough, do another execution round.
       }
     },
 
@@ -5825,7 +4192,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
 
-    
+    // Graphics state
     setLineWidth: function CanvasGraphics_setLineWidth(width) {
       this.current.lineWidth = width;
       this.ctx.lineWidth = width;
@@ -5850,13 +4217,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
     setRenderingIntent: function CanvasGraphics_setRenderingIntent(intent) {
-      
-      
-      
+      // Maybe if we one day fully support color spaces this will be important
+      // for now we can ignore.
+      // TODO set rendering intent?
     },
     setFlatness: function CanvasGraphics_setFlatness(flatness) {
-      
-      
+      // There's no way to control this with canvas, but we can safely ignore.
+      // TODO set flatness?
     },
     setGState: function CanvasGraphics_setGState(states) {
       for (var i = 0, ii = states.length; i < ii; i++) {
@@ -5985,27 +4352,49 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.transform(a, b, c, d, e, f);
     },
 
-    
-    moveTo: function CanvasGraphics_moveTo(x, y) {
-      this.ctx.moveTo(x, y);
-      this.current.setCurrentPoint(x, y);
-    },
-    lineTo: function CanvasGraphics_lineTo(x, y) {
-      this.ctx.lineTo(x, y);
-      this.current.setCurrentPoint(x, y);
-    },
-    curveTo: function CanvasGraphics_curveTo(x1, y1, x2, y2, x3, y3) {
-      this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
-      this.current.setCurrentPoint(x3, y3);
-    },
-    curveTo2: function CanvasGraphics_curveTo2(x2, y2, x3, y3) {
+    // Path
+    constructPath: function CanvasGraphics_constructPath(ops, args) {
+      var ctx = this.ctx;
       var current = this.current;
-      this.ctx.bezierCurveTo(current.x, current.y, x2, y2, x3, y3);
-      current.setCurrentPoint(x3, y3);
-    },
-    curveTo3: function CanvasGraphics_curveTo3(x1, y1, x3, y3) {
-      this.curveTo(x1, y1, x3, y3, x3, y3);
-      this.current.setCurrentPoint(x3, y3);
+      var x = current.x, y = current.y;
+      for (var i = 0, j = 0, ii = ops.length; i < ii; i++) {
+        switch (ops[i] | 0) {
+          case OPS.moveTo:
+            x = args[j++];
+            y = args[j++];
+            ctx.moveTo(x, y);
+            break;
+          case OPS.lineTo:
+            x = args[j++];
+            y = args[j++];
+            ctx.lineTo(x, y);
+            break;
+          case OPS.curveTo:
+            x = args[j + 4];
+            y = args[j + 5];
+            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
+                              x, y);
+            j += 6;
+            break;
+          case OPS.curveTo2:
+            ctx.bezierCurveTo(x, y, args[j], args[j + 1],
+                              args[j + 2], args[j + 3]);
+            x = args[j + 2];
+            y = args[j + 3];
+            j += 4;
+            break;
+          case OPS.curveTo3:
+            x = args[j + 2];
+            y = args[j + 3];
+            ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
+            j += 4;
+            break;
+          case OPS.closePath:
+            ctx.closePath();
+            break;
+        }
+      }
+      current.setCurrentPoint(x, y);
     },
     closePath: function CanvasGraphics_closePath() {
       this.ctx.closePath();
@@ -6027,13 +4416,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (this.current.lineWidth === 0) {
         ctx.lineWidth = this.getSinglePixelWidth();
       }
-      
-      
+      // For stroke we want to temporarily change the global alpha to the
+      // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
       if (strokeColor && strokeColor.hasOwnProperty('type') &&
           strokeColor.type === 'Pattern') {
-        
-        
+        // for patterns, we transform to pattern space, calculate
+        // the pattern, call stroke, and restore to user space
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx, this);
         ctx.stroke();
@@ -6044,7 +4433,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (consumePath) {
         this.consumePath();
       }
-      
+      // Restore the global alpha to the fill alpha
       ctx.globalAlpha = this.current.fillAlpha;
     },
     closeStroke: function CanvasGraphics_closeStroke() {
@@ -6065,21 +4454,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (this.pendingEOFill) {
-        if ('mozFillRule' in this.ctx) {
-          this.ctx.mozFillRule = 'evenodd';
-          this.ctx.fill();
-          this.ctx.mozFillRule = 'nonzero';
+        if (ctx.mozFillRule !== undefined) {
+          ctx.mozFillRule = 'evenodd';
+          ctx.fill();
+          ctx.mozFillRule = 'nonzero';
         } else {
           try {
-            this.ctx.fill('evenodd');
+            ctx.fill('evenodd');
           } catch (ex) {
-            
-            this.ctx.fill();
+            // shouldn't really happen, but browsers might think differently
+            ctx.fill();
           }
         }
         this.pendingEOFill = false;
       } else {
-        this.ctx.fill();
+        ctx.fill();
       }
 
       if (needRestore) {
@@ -6116,7 +4505,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.consumePath();
     },
 
-    
+    // Clipping
     clip: function CanvasGraphics_clip() {
       this.pendingClip = NORMAL_CLIP;
     },
@@ -6124,19 +4513,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.pendingClip = EO_CLIP;
     },
 
-    
+    // Text
     beginText: function CanvasGraphics_beginText() {
       this.current.textMatrix = IDENTITY_MATRIX;
       this.current.x = this.current.lineX = 0;
       this.current.y = this.current.lineY = 0;
     },
     endText: function CanvasGraphics_endText() {
-      if (!('pendingTextPaths' in this)) {
-        this.ctx.beginPath();
-        return;
-      }
       var paths = this.pendingTextPaths;
       var ctx = this.ctx;
+      if (paths === undefined) {
+        ctx.beginPath();
+        return;
+      }
 
       ctx.save();
       ctx.beginPath();
@@ -6174,15 +4563,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       current.fontMatrix = (fontObj.fontMatrix ?
                             fontObj.fontMatrix : FONT_IDENTITY_MATRIX);
 
-      
-      
+      // A valid matrix needs all main diagonal elements to be non-zero
+      // This also ensures we bypass FF bugzilla bug #719844.
       if (current.fontMatrix[0] === 0 ||
           current.fontMatrix[3] === 0) {
         warn('Invalid font matrix for font ' + fontRefName);
       }
 
-      
-      
+      // The spec for Tf (setFont) says that 'size' specifies the font 'scale',
+      // and in some docs this can be negative (inverted x-y axes).
       if (size < 0) {
         size = -size;
         current.fontDirection = -1;
@@ -6193,8 +4582,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.font = fontObj;
       this.current.fontSize = size;
 
-      if (fontObj.coded) {
-        return; 
+      if (fontObj.isType3Font) {
+        return; // we don't need ctx.font for Type3 fonts
       }
 
       var name = fontObj.loadedName || 'sans-serif';
@@ -6204,10 +4593,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var italic = fontObj.italic ? 'italic' : 'normal';
       var typeface = '"' + name + '", ' + fontObj.fallbackName;
 
-      
-      
-      
-      
+      // Some font backends cannot handle fonts below certain size.
+      // Keeping the font at minimal size and using the fontSizeScale to change
+      // the current transformation matrix before the fillText/strokeText.
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
       var browserFontSize = size >= MIN_FONT_SIZE ? size : MIN_FONT_SIZE;
       this.current.fontSizeScale = browserFontSize != MIN_FONT_SIZE ? 1.0 :
                                    size / MIN_FONT_SIZE;
@@ -6250,7 +4639,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
 
-    paintChar: function (character, x, y) {
+    paintChar: function CanvasGraphics_paintChar(character, x, y) {
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
@@ -6304,8 +4693,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     get isFontSubpixelAAEnabled() {
-      
-      
+      // Checks if anti-aliasing is enabled when scaled text is painted.
+      // On Windows GDI scaled fonts looks bad.
       var ctx = document.createElement('canvas').getContext('2d');
       ctx.scale(1.5, 1);
       ctx.fillText('I', 0, 10);
@@ -6339,8 +4728,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
       }
 
-      
-      if (font.coded) {
+      // Type3 fonts - each glyph is a "mini-PDF"
+      if (font.isType3Font) {
         ctx.save();
         ctx.transform.apply(ctx, current.textMatrix);
         ctx.translate(current.x, current.y);
@@ -6350,7 +4739,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         for (i = 0; i < glyphsLength; ++i) {
           glyph = glyphs[i];
           if (glyph === null) {
-            
+            // word break
             this.ctx.translate(wordSpacing, 0);
             current.x += wordSpacing * textHScale;
             continue;
@@ -6360,7 +4749,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           this.save();
           ctx.scale(fontSize, fontSize);
           ctx.transform.apply(ctx, fontMatrix);
-          this.executeOperatorList(glyph.operatorList);
+          var operatorList = font.charProcOperatorList[glyph.operatorListId];
+          this.executeOperatorList(operatorList);
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
@@ -6396,7 +4786,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         for (i = 0; i < glyphsLength; ++i) {
           glyph = glyphs[i];
           if (glyph === null) {
-            
+            // word break
             x += current.fontDirection * wordSpacing;
             continue;
           }
@@ -6425,8 +4815,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
 
           if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
-            
-            
+            // some standard fonts may not have the exact width, trying to
+            // rescale per character
             var measuredWidth = ctx.measureText(character).width * 1000 /
               current.fontSize * current.fontSizeScale;
             var characterScaleX = width / measuredWidth;
@@ -6464,7 +4854,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var current = this.current;
       var font = current.font;
       var fontSize = current.fontSize;
-      
+      // TJ array's number is independent from fontMatrix
       var textHScale = current.textHScale * 0.001 * current.fontDirection;
       var arrLength = arr.length;
       var vertical = font.vertical;
@@ -6497,10 +4887,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.nextLineShowText(text);
     },
 
-    
+    // Type3 fonts
     setCharWidth: function CanvasGraphics_setCharWidth(xWidth, yWidth) {
-      
-      
+      // We can safely ignore this since the width should be the same
+      // as the width in the Widths array.
     },
     setCharWidthAndBounds: function CanvasGraphics_setCharWidthAndBounds(xWidth,
                                                                         yWidth,
@@ -6508,36 +4898,18 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                                         lly,
                                                                         urx,
                                                                         ury) {
-      
-      
+      // TODO According to the spec we're also suppose to ignore any operators
+      // that set color or include images while processing this type3 font.
       this.rectangle(llx, lly, urx - llx, ury - lly);
       this.clip();
       this.endPath();
     },
 
-    
-    setStrokeColorSpace: function CanvasGraphics_setStrokeColorSpace(raw) {
-      this.current.strokeColorSpace = ColorSpace.fromIR(raw);
-    },
-    setFillColorSpace: function CanvasGraphics_setFillColorSpace(raw) {
-      this.current.fillColorSpace = ColorSpace.fromIR(raw);
-    },
-    setStrokeColor: function CanvasGraphics_setStrokeColor() {
-      var cs = this.current.strokeColorSpace;
-      var rgbColor = cs.getRgb(arguments, 0);
-      var color = Util.makeCssRgb(rgbColor);
-      this.ctx.strokeStyle = color;
-      this.current.strokeColor = color;
-    },
-    getColorN_Pattern: function CanvasGraphics_getColorN_Pattern(IR, cs) {
+    // Color
+    getColorN_Pattern: function CanvasGraphics_getColorN_Pattern(IR) {
       var pattern;
       if (IR[0] == 'TilingPattern') {
-        var args = IR[1];
-        var base = cs.base;
-        var color;
-        if (base) {
-          color = base.getRgb(args, 0);
-        }
+        var color = IR[1];
         pattern = new TilingPattern(IR, color, this.ctx, this.objs,
                                     this.commonObjs, this.baseTransform);
       } else {
@@ -6545,74 +4917,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       return pattern;
     },
-    setStrokeColorN: function CanvasGraphics_setStrokeColorN() {
-      var cs = this.current.strokeColorSpace;
-
-      if (cs.name == 'Pattern') {
-        this.current.strokeColor = this.getColorN_Pattern(arguments, cs);
-      } else {
-        this.setStrokeColor.apply(this, arguments);
-      }
+    setStrokeColorN: function CanvasGraphics_setStrokeColorN(/*...*/) {
+      this.current.strokeColor = this.getColorN_Pattern(arguments);
     },
-    setFillColor: function CanvasGraphics_setFillColor() {
-      var cs = this.current.fillColorSpace;
-      var rgbColor = cs.getRgb(arguments, 0);
-      var color = Util.makeCssRgb(rgbColor);
-      this.ctx.fillStyle = color;
-      this.current.fillColor = color;
-    },
-    setFillColorN: function CanvasGraphics_setFillColorN() {
-      var cs = this.current.fillColorSpace;
-
-      if (cs.name == 'Pattern') {
-        this.current.fillColor = this.getColorN_Pattern(arguments, cs);
-      } else {
-        this.setFillColor.apply(this, arguments);
-      }
-    },
-    setStrokeGray: function CanvasGraphics_setStrokeGray(gray) {
-      this.current.strokeColorSpace = ColorSpace.singletons.gray;
-
-      var rgbColor = this.current.strokeColorSpace.getRgb(arguments, 0);
-      var color = Util.makeCssRgb(rgbColor);
-      this.ctx.strokeStyle = color;
-      this.current.strokeColor = color;
-    },
-    setFillGray: function CanvasGraphics_setFillGray(gray) {
-      this.current.fillColorSpace = ColorSpace.singletons.gray;
-
-      var rgbColor = this.current.fillColorSpace.getRgb(arguments, 0);
-      var color = Util.makeCssRgb(rgbColor);
-      this.ctx.fillStyle = color;
-      this.current.fillColor = color;
+    setFillColorN: function CanvasGraphics_setFillColorN(/*...*/) {
+      this.current.fillColor = this.getColorN_Pattern(arguments);
     },
     setStrokeRGBColor: function CanvasGraphics_setStrokeRGBColor(r, g, b) {
-      this.current.strokeColorSpace = ColorSpace.singletons.rgb;
-
-      var rgbColor = this.current.strokeColorSpace.getRgb(arguments, 0);
-      var color = Util.makeCssRgb(rgbColor);
+      var color = Util.makeCssRgb(arguments);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillRGBColor: function CanvasGraphics_setFillRGBColor(r, g, b) {
-      this.current.fillColorSpace = ColorSpace.singletons.rgb;
-
-      var rgbColor = this.current.fillColorSpace.getRgb(arguments, 0);
-      var color = Util.makeCssRgb(rgbColor);
-      this.ctx.fillStyle = color;
-      this.current.fillColor = color;
-    },
-    setStrokeCMYKColor: function CanvasGraphics_setStrokeCMYKColor(c, m, y, k) {
-      this.current.strokeColorSpace = ColorSpace.singletons.cmyk;
-
-      var color = Util.makeCssCmyk(arguments);
-      this.ctx.strokeStyle = color;
-      this.current.strokeColor = color;
-    },
-    setFillCMYKColor: function CanvasGraphics_setFillCMYKColor(c, m, y, k) {
-      this.current.fillColorSpace = ColorSpace.singletons.cmyk;
-
-      var color = Util.makeCssCmyk(arguments);
+      var color = Util.makeCssRgb(arguments);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
     },
@@ -6642,11 +4959,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       } else {
-        
-        
-        
-        
-        
+        // HACK to draw the gradient onto an infinite rectangle.
+        // PDF gradients are drawn across the entire image while
+        // Canvas only allows gradients to be drawn in a rectangle
+        // The following bug should allow us to remove this.
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
 
         this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
       }
@@ -6654,7 +4971,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     },
 
-    
+    // Images
     beginInlineImage: function CanvasGraphics_beginInlineImage() {
       error('Should not call beginInlineImage');
     },
@@ -6690,25 +5007,25 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     beginGroup: function CanvasGraphics_beginGroup(group) {
       this.save();
       var currentCtx = this.ctx;
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // TODO non-isolated groups - according to Rik at adobe non-isolated
+      // group results aren't usually that different and they even have tools
+      // that ignore this setting. Notes from Rik on implmenting:
+      // - When you encounter an transparency group, create a new canvas with
+      // the dimensions of the bbox
+      // - copy the content from the previous canvas to the new canvas
+      // - draw as usual
+      // - remove the backdrop alpha:
+      // alphaNew = 1 - (1 - alpha)/(1 - alphaBackdrop) with 'alpha' the alpha
+      // value of your transparency group and 'alphaBackdrop' the alpha of the
+      // backdrop
+      // - remove background color:
+      // colorNew = color - alphaNew *colorBackdrop /(1 - alphaNew)
       if (!group.isolated) {
         info('TODO: Support non-isolated groups.');
       }
 
-      
-      
+      // TODO knockout - supposedly possible with the clever use of compositing
+      // modes.
       if (group.knockout) {
         warn('Knockout groups not supported.');
       }
@@ -6719,19 +5036,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       assert(group.bbox, 'Bounding box is required.');
 
-      
-      
+      // Based on the current transform figure out how big the bounding box
+      // will actually be.
       var bounds = Util.getAxialAlignedBoundingBox(
                     group.bbox,
                     currentCtx.mozCurrentTransform);
-      
+      // Clip the bounding box to the current canvas.
       var canvasBounds = [0,
                           0,
                           currentCtx.canvas.width,
                           currentCtx.canvas.height];
       bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
-      
-      
+      // Use ceil in case we're between sizes so we don't create canvas that is
+      // too small and make the canvas at least 1x1 pixels.
       var offsetX = Math.floor(bounds[0]);
       var offsetY = Math.floor(bounds[1]);
       var drawnWidth = Math.max(Math.ceil(bounds[2]) - offsetX, 1);
@@ -6748,21 +5065,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var cacheId = 'groupAt' + this.groupLevel;
       if (group.smask) {
-        
+        // Using two cache entries is case if masks are used one after another.
         cacheId +=  '_smask_' + ((this.smaskCounter++) % 2);
       }
       var scratchCanvas = CachedCanvases.getCanvas(
         cacheId, drawnWidth, drawnHeight, true);
       var groupCtx = scratchCanvas.context;
 
-      
-      
+      // Since we created a new canvas that is just the size of the bounding box
+      // we have to translate the group ctx.
       groupCtx.scale(1 / scaleX, 1 / scaleY);
       groupCtx.translate(-offsetX, -offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
 
       if (group.smask) {
-        
+        // Saving state and cached mask to be used in setGState.
         this.smaskStack.push({
           canvas: scratchCanvas.canvas,
           context: groupCtx,
@@ -6771,18 +5088,17 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           scaleX: scaleX,
           scaleY: scaleY,
           subtype: group.smask.subtype,
-          backdrop: group.smask.backdrop,
-          colorSpace: group.colorSpace && ColorSpace.fromIR(group.colorSpace)
+          backdrop: group.smask.backdrop
         });
       } else {
-        
-        
+        // Setup the current ctx so when the group is popped we draw it at the
+        // right location.
         currentCtx.setTransform(1, 0, 0, 1, 0, 0);
         currentCtx.translate(offsetX, offsetY);
         currentCtx.scale(scaleX, scaleY);
       }
-      
-      
+      // The transparency group inherits all off the current graphics state
+      // except the blend mode, soft mask, and alpha constants.
       copyCtxState(currentCtx, groupCtx);
       this.ctx = groupCtx;
       this.setGState([
@@ -6798,9 +5114,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.groupLevel--;
       var groupCtx = this.ctx;
       this.ctx = this.groupStack.pop();
-      
-      
-      if ('imageSmoothingEnabled' in this.ctx) {
+      // Turn off image smoothing to avoid sub pixel interpolation which can
+      // look kind of blurry for some pdfs.
+      if (this.ctx.imageSmoothingEnabled !== undefined) {
         this.ctx.imageSmoothingEnabled = false;
       } else {
         this.ctx.mozImageSmoothingEnabled = false;
@@ -6852,7 +5168,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.save();
 
       var ctx = this.ctx;
-      
+      // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
@@ -7013,7 +5329,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
 
       this.save();
-      
+      // scale the image to the unit square
       ctx.scale(1 / width, -1 / height);
 
       var currentTransform = ctx.mozCurrentTransformInverse;
@@ -7023,7 +5339,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
 
       var imgToPaint, tmpCanvas;
-      
+      // instanceof HTMLElement does not work in jsdom node.js module
       if (imgData instanceof HTMLElement || !imgData.data) {
         imgToPaint = imgData;
       } else {
@@ -7035,9 +5351,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var paintWidth = width, paintHeight = height;
       var tmpCanvasId = 'prescale1';
-      
-      
-      
+      // Vertial or horizontal scaling shall not be more than 2 to not loose the
+      // pixels during drawImage operation, painting on the temporary canvas(es)
+      // that are twice smaller in size
       while ((widthScale > 2 && paintWidth > 1) ||
              (heightScale > 2 && paintHeight > 1)) {
         var newWidth = paintWidth, newHeight = paintHeight;
@@ -7111,61 +5427,62 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         this.ctx.fillRect(0, 0, 1, 1);
     },
 
-    
+    // Marked content
 
     markPoint: function CanvasGraphics_markPoint(tag) {
-      
+      // TODO Marked content.
     },
     markPointProps: function CanvasGraphics_markPointProps(tag, properties) {
-      
+      // TODO Marked content.
     },
     beginMarkedContent: function CanvasGraphics_beginMarkedContent(tag) {
-      
+      // TODO Marked content.
     },
     beginMarkedContentProps: function CanvasGraphics_beginMarkedContentProps(
                                         tag, properties) {
-      
+      // TODO Marked content.
     },
     endMarkedContent: function CanvasGraphics_endMarkedContent() {
-      
+      // TODO Marked content.
     },
 
-    
+    // Compatibility
 
     beginCompat: function CanvasGraphics_beginCompat() {
-      
+      // TODO ignore undefined operators (should we do that anyway?)
     },
     endCompat: function CanvasGraphics_endCompat() {
-      
+      // TODO stop ignoring undefined operators
     },
 
-    
+    // Helper functions
 
     consumePath: function CanvasGraphics_consumePath() {
+      var ctx = this.ctx;
       if (this.pendingClip) {
         if (this.pendingClip == EO_CLIP) {
-          if ('mozFillRule' in this.ctx) {
-            this.ctx.mozFillRule = 'evenodd';
-            this.ctx.clip();
-            this.ctx.mozFillRule = 'nonzero';
+          if (ctx.mozFillRule !== undefined) {
+            ctx.mozFillRule = 'evenodd';
+            ctx.clip();
+            ctx.mozFillRule = 'nonzero';
           } else {
             try {
-              this.ctx.clip('evenodd');
+              ctx.clip('evenodd');
             } catch (ex) {
-              
-              this.ctx.clip();
+              // shouldn't really happen, but browsers might think differently
+              ctx.clip();
             }
           }
         } else {
-          this.ctx.clip();
+          ctx.clip();
         }
         this.pendingClip = null;
       }
-      this.ctx.beginPath();
+      ctx.beginPath();
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {
       var inverse = this.ctx.mozCurrentTransformInverse;
-      
+      // max of the current horizontal and vertical scale
       return Math.sqrt(Math.max(
         (inverse[0] * inverse[0] + inverse[1] * inverse[1]),
         (inverse[2] * inverse[2] + inverse[3] * inverse[3])));
@@ -7224,13 +5541,13 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    
+    // Set the parameters so we can render any size image.
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    
+    // Upload the image into the texture.
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
     return texture;
   }
@@ -7300,7 +5617,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl = currentGL;
     currentGL = null;
 
-    
+    // setup a GLSL program
     var vertexShader = createVertexShader(gl, smaskVertexShaderCode);
     var fragmentShader = createFragmentShader(gl, smaskFragmentShaderCode);
     var program = createProgram(gl, [vertexShader, fragmentShader]);
@@ -7318,7 +5635,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var texLayerLocation = gl.getUniformLocation(program, 'u_image');
     var texMaskLocation = gl.getUniformLocation(program, 'u_mask');
 
-    
+    // provide texture coordinates for the rectangle.
     var texCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -7358,13 +5675,13 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl.uniform1i(cache.subtypeLocation,
                  properties.subtype === 'Luminosity' ? 1 : 0);
 
-    
+    // Create a textures
     var texture = createTexture(gl, layer, gl.TEXTURE0);
     var maskTexture = createTexture(gl, mask, gl.TEXTURE1);
 
 
-    
-    
+    // Create a buffer and put a single clipspace rectangle in
+    // it (2 triangles)
     var buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -7377,7 +5694,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl.enableVertexAttribArray(cache.positionLocation);
     gl.vertexAttribPointer(cache.positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    
+    // draw
     gl.clearColor(0, 0, 0, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -7432,7 +5749,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl = currentGL;
     currentGL = null;
 
-    
+    // setup a GLSL program
     var vertexShader = createVertexShader(gl, figuresVertexShaderCode);
     var fragmentShader = createFragmentShader(gl, figuresFragmentShaderCode);
     var program = createProgram(gl, [vertexShader, fragmentShader]);
@@ -7461,7 +5778,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform2f(cache.resolutionLocation, width, height);
 
-    
+    // count triangle points
     var count = 0;
     var i, ii, rows;
     for (i = 0, ii = figures.length; i < ii; i++) {
@@ -7475,7 +5792,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
           break;
       }
     }
-    
+    // transfer data
     var coords = new Float32Array(count * 2);
     var colors = new Uint8Array(count * 3);
     var coordsMap = context.coords, colorsMap = context.colors;
@@ -7539,7 +5856,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
       }
     }
 
-    
+    // draw
     if (backgroundColor) {
       gl.clearColor(backgroundColor[0] / 255, backgroundColor[1] / 255,
                     backgroundColor[2] / 255, 1.0);
@@ -7630,7 +5947,7 @@ ShadingIRs.RadialAxial = {
 
 var createMeshCanvas = (function createMeshCanvasClosure() {
   function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
-    
+    // Very basic Gouraud-shaded triangle rasterization algorithm.
     var coords = context.coords, colors = context.colors;
     var bytes = data.data, rowSize = data.width * 4;
     var tmp;
@@ -7729,11 +6046,11 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
 
   function createMeshCanvas(bounds, combinesScale, coords, colors, figures,
                             backgroundColor) {
-    
-    
+    // we will increase scale on some weird factor to let antialiasing take
+    // care of "rough" edges
     var EXPECTED_SCALE = 1.1;
-    
-    var MAX_PATTERN_SIZE = 3000; 
+    // MAX_PATTERN_SIZE is used to avoid OOM situation.
+    var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
     var offsetX = Math.floor(bounds[0]);
     var offsetY = Math.floor(bounds[1]);
@@ -7761,7 +6078,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       canvas = WebGLUtils.drawFigures(width, height, backgroundColor,
                                       figures, context);
 
-      
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
       tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
       tmpCanvas.context.drawImage(canvas, 0, 0);
       canvas = tmpCanvas.canvas;
@@ -7794,19 +6111,19 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
 
 ShadingIRs.Mesh = {
   fromIR: function Mesh_fromIR(raw) {
-    
+    //var type = raw[1];
     var coords = raw[2];
     var colors = raw[3];
     var figures = raw[4];
     var bounds = raw[5];
     var matrix = raw[6];
-    
+    //var bbox = raw[7];
     var background = raw[8];
     return {
       type: 'Pattern',
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
         var combinedScale;
-        
+        // Obtain scale from matrix and current transformation matrix.
         if (shadingFill) {
           combinedScale = Util.singularValueDecompose2dScale(
             ctx.mozCurrentTransform);
@@ -7819,8 +6136,8 @@ ShadingIRs.Mesh = {
         }
 
 
-        
-        
+        // Rasterizing on the main thread since sending/queue large canvases
+        // might cause OOM.
         var temporaryPatternCanvas = createMeshCanvas(bounds, combinedScale,
           coords, colors, figures, shadingFill ? null : background);
 
@@ -7867,10 +6184,9 @@ var TilingPattern = (function TilingPatternClosure() {
     UNCOLORED: 2
   };
 
-  var MAX_PATTERN_SIZE = 3000; 
+  var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
   function TilingPattern(IR, color, ctx, objs, commonObjs, baseTransform) {
-    this.name = IR[1][0].name;
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
     this.bbox = IR[4];
@@ -7903,23 +6219,23 @@ var TilingPattern = (function TilingPatternClosure() {
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
 
       var topLeft = [x0, y0];
-      
+      // we want the canvas to be as large as the step size
       var botRight = [x0 + xstep, y0 + ystep];
 
       var width = botRight[0] - topLeft[0];
       var height = botRight[1] - topLeft[1];
 
-      
+      // Obtain scale from matrix and current transformation matrix.
       var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
       var curMatrixScale = Util.singularValueDecompose2dScale(
         this.baseTransform);
       var combinedScale = [matrixScale[0] * curMatrixScale[0],
         matrixScale[1] * curMatrixScale[1]];
 
-      
-      
-      
-      
+      // MAX_PATTERN_SIZE is used to avoid OOM situation.
+      // Use width and height values that are as close as possible to the end
+      // result when the pattern is used. Too low value makes the pattern look
+      // blurry. Too large value makes it look too crispy.
       width = Math.min(Math.ceil(Math.abs(width * combinedScale[0])),
         MAX_PATTERN_SIZE);
 
@@ -7936,7 +6252,7 @@ var TilingPattern = (function TilingPatternClosure() {
       this.setScale(width, height, xstep, ystep);
       this.transformToScale(graphics);
 
-      
+      // transform coordinates to pattern space
       var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
       graphics.transform.apply(graphics, tmpTranslate);
 
@@ -7980,8 +6296,7 @@ var TilingPattern = (function TilingPatternClosure() {
             context.strokeStyle = ctx.strokeStyle;
             break;
           case PaintType.UNCOLORED:
-            var rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
-            var cssColor = Util.makeCssRgb(rgbColor);
+            var cssColor = Util.makeCssRgb(color);
             context.fillStyle = cssColor;
             context.strokeStyle = cssColor;
             break;
@@ -8049,7 +6364,7 @@ var FontFace = (function FontFaceClosure() {
   function FontFace(name, file, properties) {
     this.compiledGlyphs = {};
     if (arguments.length === 1) {
-      
+      // importing translated data
       var data = arguments[0];
       for (var i in data) {
         this[i] = data[i];
@@ -8071,7 +6386,7 @@ var FontFace = (function FontFaceClosure() {
       var data = bytesToString(new Uint8Array(this.data));
       var fontName = this.loadedName;
 
-      
+      // Add the font-face rule to the document
       var url = ('url(data:' + this.mimetype + ';base64,' +
                  window.btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
@@ -8088,7 +6403,7 @@ var FontFace = (function FontFaceClosure() {
     getPathGenerator: function (objs, character) {
       if (!(character in this.compiledGlyphs)) {
         var js = objs.get(this.loadedName + '_path_' + character);
-        
+        /*jshint -W054 */
         this.compiledGlyphs[character] = new Function('c', 'size', js);
       }
       return this.compiledGlyphs[character];
