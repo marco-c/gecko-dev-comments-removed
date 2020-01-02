@@ -271,6 +271,15 @@ protected:
 
   static int32_t GetAccessModifierMaskFor(nsISupports* aDocShell);
 
+  
+
+
+
+
+
+
+  void ClearCachedWidgetCursor(nsIFrame* aTargetFrame);
+
   void UpdateCursor(nsPresContext* aPresContext,
                     WidgetEvent* aEvent,
                     nsIFrame* aTargetFrame,
