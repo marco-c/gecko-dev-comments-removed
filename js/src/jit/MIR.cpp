@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/MIR.h"
 
@@ -124,8 +124,8 @@ EvaluateConstantOperands(TempAllocator &alloc, MBinaryInstruction *ins, bool *pt
         MOZ_ASSUME_UNREACHABLE("NYI");
     }
 
-    // setNumber eagerly transforms a number to int32.
-    // Transform back to double, if the output type is double.
+    
+    
     if (ins->type() == MIRType_Double && ret.isInt32())
         ret.setDouble(ret.toNumber());
 
@@ -185,7 +185,7 @@ MDefinition::congruentIfOperandsEqual(MDefinition *ins) const
 MDefinition *
 MDefinition::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 {
-    // In the default case, there are no constants to fold.
+    
     return this;
 }
 
@@ -307,11 +307,11 @@ MDefinition::hasOneDefUse() const
         if (!(*i)->consumer()->isDefinition())
             continue;
 
-        // We already have a definition use. So 1+
+        
         if (hasOneDefUse)
             return false;
 
-        // We saw one definition. Loop to test if there is another.
+        
         hasOneDefUse = true;
     }
 
@@ -385,7 +385,7 @@ MNode::discardOperand(size_t index)
     use->producer()->removeUse(use);
 
 #ifdef DEBUG
-    // Causes any producer/consumer lookups to trip asserts.
+    
     use->set(nullptr, nullptr, index);
 #endif
 }
@@ -429,10 +429,10 @@ MConstant::NewAsmJS(TempAllocator &alloc, const Value &v, MIRType type)
 types::TemporaryTypeSet *
 jit::MakeSingletonTypeSet(types::CompilerConstraintList *constraints, JSObject *obj)
 {
-    // Invalidate when this object's TypeObject gets unknown properties. This
-    // happens for instance when we mutate an object's __proto__, in this case
-    // we want to invalidate and mark this TypeSet as containing AnyObject
-    // (because mutating __proto__ will change an object's TypeObject).
+    
+    
+    
+    
     JS_ASSERT(constraints);
     types::TypeObjectKey *objType = types::TypeObjectKey::get(obj);
     objType->hasFlags(constraints, types::OBJECT_FLAG_UNKNOWN_PROPERTIES);
@@ -445,8 +445,8 @@ MConstant::MConstant(const js::Value &vp, types::CompilerConstraintList *constra
 {
     setResultType(MIRTypeFromValue(vp));
     if (vp.isObject()) {
-        // Create a singleton type set for the object. This isn't necessary for
-        // other types as the result type encodes all needed information.
+        
+        
         setResultTypeSet(MakeSingletonTypeSet(constraints, &vp.toObject()));
     }
 
@@ -456,8 +456,8 @@ MConstant::MConstant(const js::Value &vp, types::CompilerConstraintList *constra
 HashNumber
 MConstant::valueHash() const
 {
-    // This disregards some state, since values are 64 bits. But for a hash,
-    // it's completely acceptable.
+    
+    
     return (HashNumber)JSVAL_TO_IMPL(value_).asBits;
 }
 bool
@@ -634,7 +634,7 @@ MParameter::printOpcode(FILE *fp) const
 HashNumber
 MParameter::valueHash() const
 {
-    return index_; // Why not?
+    return index_; 
 }
 
 bool
@@ -672,9 +672,9 @@ MCallDOMNative::getAliasSet() const
     JS_ASSERT(jitInfo);
 
     JS_ASSERT(jitInfo->aliasSet() != JSJitInfo::AliasNone);
-    // If we don't know anything about the types of our arguments, we have to
-    // assume that type-coercions can have side-effects, so we need to alias
-    // everything.
+    
+    
+    
     if (jitInfo->aliasSet() != JSJitInfo::AliasDOMSets || !jitInfo->isTypedMethodJitInfo())
         return AliasSet::Store(AliasSet::Any);
 
@@ -686,19 +686,19 @@ MCallDOMNative::getAliasSet() const
          ++argType, ++argIndex)
     {
         if (argIndex >= numActualArgs()) {
-            // Passing through undefined can't have side-effects
+            
             continue;
         }
-        // getArg(0) is "this", so skip it
+        
         MDefinition *arg = getArg(argIndex+1);
         MIRType actualType = arg->type();
-        // The only way to reliably avoid side-effects given the informtion we
-        // have here is if we're passing in a known primitive value to an
-        // argument that expects a primitive value.  XXXbz maybe we need to
-        // communicate better information.  For example, a sequence argument
-        // will sort of unavoidably have side effects, while a typed array
-        // argument won't have any, but both are claimed to be
-        // JSJitInfo::Object.
+        
+        
+        
+        
+        
+        
+        
         if ((actualType == MIRType_Value || actualType == MIRType_Object) ||
             (*argType & JSJitInfo::Object))
          {
@@ -706,17 +706,17 @@ MCallDOMNative::getAliasSet() const
          }
     }
 
-    // We checked all the args, and they check out.  So we only
-    // alias DOM mutations.
+    
+    
     return AliasSet::Load(AliasSet::DOMProperty);
 }
 
 void
 MCallDOMNative::computeMovable()
 {
-    // We are movable if the jitinfo says we can be and if we're also not
-    // effectful.  The jitinfo can't check for the latter, since it depends on
-    // the types of our arguments.
+    
+    
+    
     JS_ASSERT(getSingleTarget() && getSingleTarget()->isNative());
 
     const JSJitInfo *jitInfo = getSingleTarget()->jitInfo();
@@ -758,7 +758,7 @@ MCallDOMNative::congruentTo(MDefinition *ins) const
     if (!congruentIfOperandsEqual(call))
         return false;
 
-    // The other call had better be movable at this point!
+    
     JS_ASSERT(call->isMovable());
 
     return true;
@@ -788,7 +788,7 @@ MStringLength::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 void
 MFloor::trySpecializeFloat32(TempAllocator &alloc)
 {
-    // No need to look at the output, as it's an integer (see IonBuilder::inlineMathFloor)
+    
     if (!input()->canProduceFloat32()) {
         if (input()->type() == MIRType_Float32)
             ConvertDefinitionToDouble<0>(alloc, input(), this);
@@ -884,12 +884,12 @@ MPhi::removeOperand(size_t index)
     JS_ASSERT(use->producer() == getOperand(index));
     JS_ASSERT(use->consumer() == this);
 
-    // Remove use from producer's use chain.
+    
     use->producer()->removeUse(use);
 
-    // If we have phi(..., a, b, c, d, ..., z) and we plan
-    // on removing a, then first shift downward so that we have
-    // phi(..., b, c, d, ..., z, z):
+    
+    
+    
     size_t length = inputs_.length();
     for (size_t i = index; i < length - 1; i++) {
         MUse *next = MPhi::getUseFor(i + 1);
@@ -897,7 +897,7 @@ MPhi::removeOperand(size_t index)
         MPhi::setOperand(i, next->producer());
     }
 
-    // truncate the inputs_ list:
+    
     inputs_.shrinkBy(1);
 }
 
@@ -909,8 +909,8 @@ MPhi::foldsTo(TempAllocator &alloc, bool useValueNumbers)
     MDefinition *first = getOperand(0);
 
     for (size_t i = 1; i < inputs_.length(); i++) {
-        // Phis need dominator information to fold based on value numbers. For
-        // simplicity, we only compare SSA names right now (bug 714727).
+        
+        
         if (!EqualValues(false, getOperand(i), first))
             return this;
     }
@@ -923,9 +923,9 @@ MPhi::congruentTo(MDefinition *ins) const
 {
     if (!ins->isPhi())
         return false;
-    // Since we do not know which predecessor we are merging from, we must
-    // assume that phi instructions in different blocks are not equal.
-    // (Bug 674656)
+    
+    
+    
     if (ins->block()->id() != block()->id())
         return false;
 
@@ -935,9 +935,9 @@ MPhi::congruentTo(MDefinition *ins) const
 bool
 MPhi::reserveLength(size_t length)
 {
-    // Initializes a new MPhi to have an Operand vector of at least the given
-    // capacity. This permits use of addInput() instead of addInputSlow(), the
-    // latter of which may call realloc_().
+    
+    
+    
     JS_ASSERT(numOperands() == 0);
 #if DEBUG
     capacity_ = length;
@@ -997,8 +997,8 @@ MPhi::specializeType()
 
     size_t start;
     if (hasBackedgeType_) {
-        // The type of this phi has already been populated with potential types
-        // that could come in via loop backedges.
+        
+        
         start = 0;
     } else {
         setResultType(getOperand(0)->type());
@@ -1053,7 +1053,7 @@ MPhi::typeIncludes(MDefinition *def)
     }
 
     if (def->type() == MIRType_Value) {
-        // This phi must be able to be any value.
+        
         return this->type() == MIRType_Value
             && (!this->resultTypeSet() || this->resultTypeSet()->unknown());
     }
@@ -1064,8 +1064,8 @@ MPhi::typeIncludes(MDefinition *def)
 void
 MPhi::addInput(MDefinition *ins)
 {
-    // This can only been done if the length was reserved through reserveLength,
-    // else the slower addInputSlow need to get called.
+    
+    
     JS_ASSERT(inputs_.length() < capacity_);
 
     uint32_t index = inputs_.length();
@@ -1076,16 +1076,16 @@ MPhi::addInput(MDefinition *ins)
 bool
 MPhi::addInputSlow(MDefinition *ins, bool *ptypeChange)
 {
-    // The list of inputs to an MPhi is given as a vector of MUse nodes,
-    // each of which is in the list of the producer MDefinition.
-    // Because appending to a vector may reallocate the vector, it is possible
-    // that this operation may cause the producers' linked lists to reference
-    // invalid memory. Therefore, in the event of moving reallocation, each
-    // MUse must be removed and reinserted from/into its producer's use chain.
+    
+    
+    
+    
+    
+    
     uint32_t index = inputs_.length();
     bool performingRealloc = !inputs_.canAppendWithoutRealloc(1);
 
-    // Remove all MUses from all use lists, in case realloc_() moves.
+    
     if (performingRealloc) {
         for (uint32_t i = 0; i < index; i++) {
             MUse *use = &inputs_[i];
@@ -1093,7 +1093,7 @@ MPhi::addInputSlow(MDefinition *ins, bool *ptypeChange)
         }
     }
 
-    // Insert the new input.
+    
     if (!inputs_.append(MUse()))
         return false;
 
@@ -1112,7 +1112,7 @@ MPhi::addInputSlow(MDefinition *ins, bool *ptypeChange)
         }
     }
 
-    // Add all previously-removed MUses back.
+    
     if (performingRealloc) {
         for (uint32_t i = 0; i < index; i++) {
             MUse *use = &inputs_[i];
@@ -1126,8 +1126,8 @@ MPhi::addInputSlow(MDefinition *ins, bool *ptypeChange)
 void
 MCall::addArg(size_t argnum, MDefinition *arg)
 {
-    // The operand vector is initialized in reverse order by the IonBuilder.
-    // It cannot be checked for consistency until all arguments are added.
+    
+    
     setOperand(argnum + NumNonArgumentOperands, arg);
 }
 
@@ -1167,8 +1167,8 @@ MBinaryBitwiseInstruction::foldUnnecessaryBitop()
     if (specialization_ != MIRType_Int32)
         return this;
 
-    // Eliminate bitwise operations that are no-ops when used on integer
-    // inputs, such as (x | 0).
+    
+    
 
     MDefinition *lhs = getOperand(0);
     MDefinition *rhs = getOperand(1);
@@ -1241,7 +1241,7 @@ MUrsh::infer(BaselineInspector *inspector, jsbytecode *pc)
 static inline bool
 NeedNegativeZeroCheck(MDefinition *def)
 {
-    // Test if all uses have the same semantics for -0 and 0
+    
     for (MUseIterator use = def->usesBegin(); use != def->usesEnd(); use++) {
         if (use->consumer()->isResumePoint())
             continue;
@@ -1249,15 +1249,15 @@ NeedNegativeZeroCheck(MDefinition *def)
         MDefinition *use_def = use->consumer()->toDefinition();
         switch (use_def->op()) {
           case MDefinition::Op_Add: {
-            // If add is truncating -0 and 0 are observed as the same.
+            
             if (use_def->toAdd()->isTruncated())
                 break;
 
-            // x + y gives -0, when both x and y are -0
+            
 
-            // Figure out the order in which the addition's operands will
-            // execute. EdgeCaseAnalysis::analyzeLate has renumbered the MIR
-            // definitions for us so that this just requires comparing ids.
+            
+            
+            
             MDefinition *first = use_def->toAdd()->getOperand(0);
             MDefinition *second = use_def->toAdd()->getOperand(1);
             if (first->id() > second->id()) {
@@ -1267,17 +1267,17 @@ NeedNegativeZeroCheck(MDefinition *def)
             }
 
             if (def == first) {
-                // Negative zero checks can be removed on the first executed
-                // operand only if it is guaranteed the second executed operand
-                // will produce a value other than -0. While the second is
-                // typed as an int32, a bailout taken between execution of the
-                // operands may change that type and cause a -0 to flow to the
-                // second.
-                //
-                // There is no way to test whether there are any bailouts
-                // between execution of the operands, so remove negative
-                // zero checks from the first only if the second's type is
-                // independent from type changes that may occur after bailing.
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 switch (second->op()) {
                   case MDefinition::Op_Constant:
                   case MDefinition::Op_BitAnd:
@@ -1292,16 +1292,16 @@ NeedNegativeZeroCheck(MDefinition *def)
                 }
             }
 
-            // The negative zero check can always be removed on the second
-            // executed operand; by the time this executes the first will have
-            // been evaluated as int32 and the addition's result cannot be -0.
+            
+            
+            
             break;
           }
           case MDefinition::Op_Sub:
-            // If sub is truncating -0 and 0 are observed as the same
+            
             if (use_def->toSub()->isTruncated())
                 break;
-            /* Fall through...  */
+            
           case MDefinition::Op_StoreElement:
           case MDefinition::Op_StoreElementHole:
           case MDefinition::Op_LoadElement:
@@ -1310,7 +1310,7 @@ NeedNegativeZeroCheck(MDefinition *def)
           case MDefinition::Op_LoadTypedArrayElementHole:
           case MDefinition::Op_CharCodeAt:
           case MDefinition::Op_Mod:
-            // Only allowed to remove check when definition is the second operand
+            
             if (use_def->getOperand(0) == def)
                 return true;
             for (size_t i = 2, e = use_def->numOperands(); i < e; i++) {
@@ -1319,7 +1319,7 @@ NeedNegativeZeroCheck(MDefinition *def)
             }
             break;
           case MDefinition::Op_BoundsCheck:
-            // Only allowed to remove check when definition is the first operand
+            
             if (use_def->toBoundsCheck()->getOperand(1) == def)
                 return true;
             break;
@@ -1332,7 +1332,7 @@ NeedNegativeZeroCheck(MDefinition *def)
           case MDefinition::Op_BitXor:
           case MDefinition::Op_Abs:
           case MDefinition::Op_TruncateToInt32:
-            // Always allowed to remove check. No matter which operand.
+            
             break;
           default:
             return true;
@@ -1352,19 +1352,19 @@ MBinaryArithInstruction::foldsTo(TempAllocator &alloc, bool useValueNumbers)
     if (MDefinition *folded = EvaluateConstantOperands(alloc, this))
         return folded;
 
-    // 0 + -0 = 0. So we can't remove addition
+    
     if (isAdd() && specialization_ != MIRType_Int32)
         return this;
 
     if (IsConstant(rhs, getIdentity()))
         return lhs;
 
-    // subtraction isn't commutative. So we can't remove subtraction when lhs equals 0
+    
     if (isSub())
         return this;
 
     if (IsConstant(lhs, getIdentity()))
-        return rhs; // x op id => x
+        return rhs; 
 
     return this;
 }
@@ -1423,28 +1423,28 @@ MDiv::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 void
 MDiv::analyzeEdgeCasesForward()
 {
-    // This is only meaningful when doing integer division.
+    
     if (specialization_ != MIRType_Int32)
         return;
 
-    // Try removing divide by zero check
+    
     if (rhs()->isConstant() && !rhs()->toConstant()->value().isInt32(0))
         canBeDivideByZero_ = false;
 
-    // If lhs is a constant int != INT32_MIN, then
-    // negative overflow check can be skipped.
+    
+    
     if (lhs()->isConstant() && !lhs()->toConstant()->value().isInt32(INT32_MIN))
         canBeNegativeOverflow_ = false;
 
-    // If rhs is a constant int != -1, likewise.
+    
     if (rhs()->isConstant() && !rhs()->toConstant()->value().isInt32(-1))
         canBeNegativeOverflow_ = false;
 
-    // If lhs is != 0, then negative zero check can be skipped.
+    
     if (lhs()->isConstant() && !lhs()->toConstant()->value().isInt32(0))
         setCanBeNegativeZero(false);
 
-    // If rhs is >= 0, likewise.
+    
     if (rhs()->isConstant()) {
         const js::Value &val = rhs()->toConstant()->value();
         if (val.isInt32() && val.toInt32() >= 0)
@@ -1522,8 +1522,8 @@ MMathFunction::trySpecializeFloat32(TempAllocator &alloc)
 bool
 MAdd::fallible() const
 {
-    // the add is fallible if range analysis does not say that it is finite, AND
-    // either the truncation analysis shows that there are non-truncated uses.
+    
+    
     if (isTruncated())
         return false;
     if (range() && range()->hasInt32Bounds())
@@ -1534,7 +1534,7 @@ MAdd::fallible() const
 bool
 MSub::fallible() const
 {
-    // see comment in MAdd::fallible()
+    
     if (isTruncated())
         return false;
     if (range() && range()->hasInt32Bounds())
@@ -1561,19 +1561,19 @@ MMul::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 void
 MMul::analyzeEdgeCasesForward()
 {
-    // Try to remove the check for negative zero
-    // This only makes sense when using the integer multiplication
+    
+    
     if (specialization() != MIRType_Int32)
         return;
 
-    // If lhs is > 0, no need for negative zero check.
+    
     if (lhs()->isConstant()) {
         const js::Value &val = lhs()->toConstant()->value();
         if (val.isInt32() && val.toInt32() > 0)
             setCanBeNegativeZero(false);
     }
 
-    // If rhs is > 0, likewise.
+    
     if (rhs()->isConstant()) {
         const js::Value &val = rhs()->toConstant()->value();
         if (val.isInt32() && val.toInt32() > 0)
@@ -1594,7 +1594,7 @@ MMul::updateForReplacement(MDefinition *ins_)
     MMul *ins = ins_->toMul();
     bool negativeZero = canBeNegativeZero() || ins->canBeNegativeZero();
     setCanBeNegativeZero(negativeZero);
-    // Remove the imul annotation when merging imul and normal multiplication.
+    
     if (mode_ == Integer && ins->mode() != Integer)
         mode_ = Normal;
     return true;
@@ -1631,38 +1631,38 @@ MBinaryArithInstruction::infer(TempAllocator &alloc, BaselineInspector *inspecto
 
     specialization_ = MIRType_None;
 
-    // Don't specialize if one operand could be an object. If we specialize
-    // as int32 or double based on baseline feedback, we could DCE this
-    // instruction and fail to invoke any valueOf methods.
+    
+    
+    
     if (getOperand(0)->mightBeType(MIRType_Object) || getOperand(1)->mightBeType(MIRType_Object))
         return;
 
-    // Anything complex - strings and objects - are not specialized
-    // unless baseline type hints suggest it might be profitable
+    
+    
     if (!KnownNonStringPrimitive(getOperand(0)) || !KnownNonStringPrimitive(getOperand(1)))
         return inferFallback(inspector, pc);
 
-    // Retrieve type information of lhs and rhs.
+    
     MIRType lhs = getOperand(0)->type();
     MIRType rhs = getOperand(1)->type();
 
-    // Guess a result type based on the inputs.
-    // Don't specialize for neither-integer-nor-double results.
+    
+    
     if (lhs == MIRType_Int32 && rhs == MIRType_Int32)
         setResultType(MIRType_Int32);
-    // Double operations are prioritary over float32 operations (i.e. if any operand needs
-    // a double as an input, convert all operands to doubles)
+    
+    
     else if (IsFloatingPointType(lhs) || IsFloatingPointType(rhs))
         setResultType(MIRType_Double);
     else
         return inferFallback(inspector, pc);
 
-    // If the operation has ever overflowed, use a double specialization.
+    
     if (inspector->hasSeenDoubleResult(pc))
         setResultType(MIRType_Double);
 
-    // If the operation will always overflow on its constant operands, use a
-    // double specialization so that it can be constant folded later.
+    
+    
     if ((isMul() || isDiv()) && lhs == MIRType_Int32 && rhs == MIRType_Int32) {
         bool typeChange = false;
         EvaluateConstantOperands(alloc, this, &typeChange);
@@ -1675,7 +1675,7 @@ MBinaryArithInstruction::infer(TempAllocator &alloc, BaselineInspector *inspecto
 
     MIRType rval = this->type();
 
-    // Don't specialize values when result isn't double
+    
     if (lhs == MIRType_Value || rhs == MIRType_Value) {
         if (!IsFloatingPointType(rval)) {
             specialization_ = MIRType_None;
@@ -1683,8 +1683,8 @@ MBinaryArithInstruction::infer(TempAllocator &alloc, BaselineInspector *inspecto
         }
     }
 
-    // Don't specialize as int32 if one of the operands is undefined,
-    // since ToNumber(undefined) is NaN.
+    
+    
     if (rval == MIRType_Int32 && (lhs == MIRType_Undefined || rhs == MIRType_Undefined)) {
         specialization_ = MIRType_None;
         return;
@@ -1701,27 +1701,27 @@ void
 MBinaryArithInstruction::inferFallback(BaselineInspector *inspector,
                                        jsbytecode *pc)
 {
-    // Try to specialize based on what baseline observed in practice.
+    
     specialization_ = inspector->expectedBinaryArithSpecialization(pc);
     if (specialization_ != MIRType_None) {
         setResultType(specialization_);
         return;
     }
 
-    // In parallel execution, for now anyhow, we *only* support adding
-    // and manipulating numbers (not strings or objects).  So no
-    // matter what we can specialize to double...if the result ought
-    // to have been something else, we'll fail in the various type
-    // guards that get inserted later.
+    
+    
+    
+    
+    
     if (block()->info().executionMode() == ParallelExecution) {
         specialization_ = MIRType_Double;
         setResultType(MIRType_Double);
         return;
     }
 
-    // If we can't specialize because we have no type information at all for
-    // the lhs or rhs, mark the binary instruction as having no possible types
-    // either to avoid degrading subsequent analysis.
+    
+    
+    
     if (getOperand(0)->emptyResultTypeSet() || getOperand(1)->emptyResultTypeSet()) {
         LifoAlloc *alloc = GetIonContext()->temp->lifoAlloc();
         types::TemporaryTypeSet *types = alloc->new_<types::TemporaryTypeSet>();
@@ -1733,15 +1733,15 @@ MBinaryArithInstruction::inferFallback(BaselineInspector *inspector,
 static bool
 SafelyCoercesToDouble(MDefinition *op)
 {
-    // Strings are unhandled -- visitToDouble() doesn't support them yet.
-    // Null is unhandled -- ToDouble(null) == 0, but (0 == null) is false.
+    
+    
     return KnownNonStringPrimitive(op) && !op->mightBeType(MIRType_Null);
 }
 
 static bool
 ObjectOrSimplePrimitive(MDefinition *op)
 {
-    // Return true if op is either undefined/null/bolean/int32 or an object.
+    
     return !op->mightBeType(MIRType_String)
         && !op->mightBeType(MIRType_Double)
         && !op->mightBeType(MIRType_Magic);
@@ -1750,37 +1750,37 @@ ObjectOrSimplePrimitive(MDefinition *op)
 static bool
 CanDoValueBitwiseCmp(MDefinition *lhs, MDefinition *rhs, bool looseEq)
 {
-    // Only primitive (not double/string) or objects are supported.
-    // I.e. Undefined/Null/Boolean/Int32 and Object
+    
+    
     if (!ObjectOrSimplePrimitive(lhs) || !ObjectOrSimplePrimitive(rhs))
         return false;
 
-    // Objects that emulate undefined are not supported.
+    
     if (MaybeEmulatesUndefined(lhs) || MaybeEmulatesUndefined(rhs))
         return false;
 
-    // In the loose comparison more values could be the same,
-    // but value comparison reporting otherwise.
+    
+    
     if (looseEq) {
 
-        // Undefined compared loosy to Null is not supported,
-        // because tag is different, but value can be the same (undefined == null).
+        
+        
         if ((lhs->mightBeType(MIRType_Undefined) && rhs->mightBeType(MIRType_Null)) ||
             (lhs->mightBeType(MIRType_Null) && rhs->mightBeType(MIRType_Undefined)))
         {
             return false;
         }
 
-        // Int32 compared loosy to Boolean is not supported,
-        // because tag is different, but value can be the same (1 == true).
+        
+        
         if ((lhs->mightBeType(MIRType_Int32) && rhs->mightBeType(MIRType_Boolean)) ||
             (lhs->mightBeType(MIRType_Boolean) && rhs->mightBeType(MIRType_Int32)))
         {
             return false;
         }
 
-        // For loosy comparison of an object with a Boolean/Number/String
-        // the valueOf the object is taken. Therefore not supported.
+        
+        
         bool simpleLHS = lhs->mightBeType(MIRType_Boolean) || lhs->mightBeType(MIRType_Int32);
         bool simpleRHS = rhs->mightBeType(MIRType_Boolean) || rhs->mightBeType(MIRType_Int32);
         if ((lhs->mightBeType(MIRType_Object) && simpleRHS) ||
@@ -1884,13 +1884,13 @@ MCompare::infer(BaselineInspector *inspector, jsbytecode *pc)
     bool strictEq = jsop() == JSOP_STRICTEQ || jsop() == JSOP_STRICTNE;
     bool relationalEq = !(looseEq || strictEq);
 
-    // Comparisons on unsigned integers may be treated as UInt32.
+    
     if (tryUseUnsignedOperands()) {
         compareType_ = Compare_UInt32;
         return;
     }
 
-    // Integer to integer or boolean to boolean comparisons may be treated as Int32.
+    
     if ((lhs == MIRType_Int32 && rhs == MIRType_Int32) ||
         (lhs == MIRType_Boolean && rhs == MIRType_Boolean))
     {
@@ -1898,7 +1898,7 @@ MCompare::infer(BaselineInspector *inspector, jsbytecode *pc)
         return;
     }
 
-    // Loose/relational cross-integer/boolean comparisons may be treated as Int32.
+    
     if (!strictEq &&
         (lhs == MIRType_Int32 || lhs == MIRType_Boolean) &&
         (rhs == MIRType_Int32 || rhs == MIRType_Boolean))
@@ -1907,36 +1907,36 @@ MCompare::infer(BaselineInspector *inspector, jsbytecode *pc)
         return;
     }
 
-    // Numeric comparisons against a double coerce to double.
+    
     if (IsNumberType(lhs) && IsNumberType(rhs)) {
         compareType_ = Compare_Double;
         return;
     }
 
-    // Any comparison is allowed except strict eq.
-    if (!strictEq && lhs == MIRType_Double && SafelyCoercesToDouble(getOperand(1))) {
+    
+    if (!strictEq && IsFloatingPointType(lhs) && SafelyCoercesToDouble(getOperand(1))) {
         compareType_ = Compare_DoubleMaybeCoerceRHS;
         return;
     }
-    if (!strictEq && rhs == MIRType_Double && SafelyCoercesToDouble(getOperand(0))) {
+    if (!strictEq && IsFloatingPointType(rhs) && SafelyCoercesToDouble(getOperand(0))) {
         compareType_ = Compare_DoubleMaybeCoerceLHS;
         return;
     }
 
-    // Handle object comparison.
+    
     if (!relationalEq && lhs == MIRType_Object && rhs == MIRType_Object) {
         compareType_ = Compare_Object;
         return;
     }
 
-    // Handle string comparisons. (Relational string compares are still unsupported).
+    
     if (!relationalEq && lhs == MIRType_String && rhs == MIRType_String) {
         compareType_ = Compare_String;
         return;
     }
 
     if (strictEq && lhs == MIRType_String) {
-        // Lowering expects the rhs to be definitly string.
+        
         compareType_ = Compare_StrictString;
         swapOperands();
         return;
@@ -1947,30 +1947,30 @@ MCompare::infer(BaselineInspector *inspector, jsbytecode *pc)
         return;
     }
 
-    // Handle compare with lhs being Undefined or Null.
+    
     if (!relationalEq && IsNullOrUndefined(lhs)) {
-        // Lowering expects the rhs to be null/undefined, so we have to
-        // swap the operands. This is necessary since we may not know which
-        // operand was null/undefined during lowering (both operands may have
-        // MIRType_Value).
+        
+        
+        
+        
         compareType_ = (lhs == MIRType_Null) ? Compare_Null : Compare_Undefined;
         swapOperands();
         return;
     }
 
-    // Handle compare with rhs being Undefined or Null.
+    
     if (!relationalEq && IsNullOrUndefined(rhs)) {
         compareType_ = (rhs == MIRType_Null) ? Compare_Null : Compare_Undefined;
         return;
     }
 
-    // Handle strict comparison with lhs/rhs being typed Boolean.
+    
     if (strictEq && (lhs == MIRType_Boolean || rhs == MIRType_Boolean)) {
-        // bool/bool case got an int32 specialization earlier.
+        
         JS_ASSERT(!(lhs == MIRType_Boolean && rhs == MIRType_Boolean));
 
-        // Ensure the boolean is on the right so that the type policy knows
-        // which side to unbox.
+        
+        
         if (lhs == MIRType_Boolean)
              swapOperands();
 
@@ -1978,17 +1978,17 @@ MCompare::infer(BaselineInspector *inspector, jsbytecode *pc)
         return;
     }
 
-    // Determine if we can do the compare based on a quick value check.
+    
     if (!relationalEq && CanDoValueBitwiseCmp(getOperand(0), getOperand(1), looseEq)) {
         compareType_ = Compare_Value;
         return;
     }
 
-    // Type information is not good enough to pick out a particular type of
-    // comparison we can do here. Try to specialize based on any baseline
-    // caches that have been generated for the opcode. These will cause the
-    // instruction's type policy to insert fallible unboxes to the appropriate
-    // input types.
+    
+    
+    
+    
+    
 
     if (!strictEq)
         compareType_ = inspector->expectedCompareType(pc);
@@ -2024,7 +2024,7 @@ MBitNot::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 
     if (input->isBitNot() && input->toBitNot()->specialization_ == MIRType_Int32) {
         JS_ASSERT(input->toBitNot()->getOperand(0)->type() == MIRType_Int32);
-        return input->toBitNot()->getOperand(0); // ~~x => x
+        return input->toBitNot()->getOperand(0); 
     }
 
     return this;
@@ -2033,8 +2033,8 @@ MBitNot::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 MDefinition *
 MTypeOf::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 {
-    // Note: we can't use input->type() here, type analysis has
-    // boxed the input.
+    
+    
     JS_ASSERT(input()->type() == MIRType_Value);
 
     JSType type;
@@ -2058,12 +2058,12 @@ MTypeOf::foldsTo(TempAllocator &alloc, bool useValueNumbers)
         break;
       case MIRType_Object:
         if (!inputMaybeCallableOrEmulatesUndefined()) {
-            // Object is not callable and does not emulate undefined, so it's
-            // safe to fold to "object".
+            
+            
             type = JSTYPE_OBJECT;
             break;
         }
-        // FALL THROUGH
+        
       default:
         return this;
     }
@@ -2162,11 +2162,11 @@ MUrsh::NewAsmJS(TempAllocator &alloc, MDefinition *left, MDefinition *right)
     MUrsh *ins = new(alloc) MUrsh(left, right);
     ins->specializeForAsmJS();
 
-    // Since Ion has no UInt32 type, we use Int32 and we have a special
-    // exception to the type rules: we can return values in
-    // (INT32_MIN,UINT32_MAX] and still claim that we have an Int32 type
-    // without bailing out. This is necessary because Ion has no UInt32
-    // type and we can't have bailouts in asm.js code.
+    
+    
+    
+    
+    
     ins->bailoutsDisabled_ = true;
 
     return ins;
@@ -2251,7 +2251,7 @@ MToDouble::foldsTo(TempAllocator &alloc, bool useValueNumbers)
         }
     }
 
-    // Fold unnecessary numeric conversions.
+    
     if (input()->isToInt32()) {
         replaceOperand(0, input()->getOperand(0));
         conversion_ = NonStringPrimitives;
@@ -2266,7 +2266,7 @@ MToFloat32::foldsTo(TempAllocator &alloc, bool useValueNumbers)
     if (input()->type() == MIRType_Float32)
         return input();
 
-    // If x is a Float32, Float32(Double(x)) == x
+    
     if (input()->isToDouble() && input()->toToDouble()->input()->type() == MIRType_Float32)
         return input()->toToDouble()->input();
 
@@ -2317,25 +2317,25 @@ MCompare::tryFold(bool *result)
         JS_ASSERT(op == JSOP_EQ || op == JSOP_STRICTEQ ||
                   op == JSOP_NE || op == JSOP_STRICTNE);
 
-        // The LHS is the value we want to test against null or undefined.
+        
         switch (lhs()->type()) {
           case MIRType_Value:
             return false;
           case MIRType_Undefined:
           case MIRType_Null:
             if (lhs()->type() == inputType()) {
-                // Both sides have the same type, null or undefined.
+                
                 *result = (op == JSOP_EQ || op == JSOP_STRICTEQ);
             } else {
-                // One side is null, the other side is undefined. The result is only
-                // true for loose equality.
+                
+                
                 *result = (op == JSOP_EQ || op == JSOP_STRICTNE);
             }
             return true;
           case MIRType_Object:
             if ((op == JSOP_EQ || op == JSOP_NE) && operandMightEmulateUndefined())
                 return false;
-            /* FALL THROUGH */
+            
           case MIRType_Int32:
           case MIRType_Double:
           case MIRType_Float32:
@@ -2365,7 +2365,7 @@ MCompare::tryFold(bool *result)
             *result = (op == JSOP_STRICTNE);
             return true;
           case MIRType_Boolean:
-            // Int32 specialization should handle this.
+            
             MOZ_ASSUME_UNREACHABLE("Wrong specialization");
           default:
             MOZ_ASSUME_UNREACHABLE("Unexpected type");
@@ -2389,7 +2389,7 @@ MCompare::tryFold(bool *result)
             *result = (op == JSOP_STRICTNE);
             return true;
           case MIRType_String:
-            // Compare_String specialization should handle this.
+            
             MOZ_ASSUME_UNREACHABLE("Wrong specialization");
           default:
             MOZ_ASSUME_UNREACHABLE("Unexpected type");
@@ -2414,9 +2414,9 @@ MCompare::evaluateConstantOperands(bool *result)
     Value lhs = left->toConstant()->value();
     Value rhs = right->toConstant()->value();
 
-    // Fold away some String equality comparisons.
+    
     if (lhs.isString() && rhs.isString()) {
-        int32_t comp = 0; // Default to equal.
+        int32_t comp = 0; 
         if (left != right)
             comp = CompareAtoms(&lhs.toString()->asAtom(), &rhs.toString()->asAtom());
         
@@ -2433,11 +2433,11 @@ MCompare::evaluateConstantOperands(bool *result)
           case JSOP_GE:
             *result = (comp >= 0);
             break;
-          case JSOP_STRICTEQ: // Fall through.
+          case JSOP_STRICTEQ: 
           case JSOP_EQ:
             *result = (comp == 0);
             break;
-          case JSOP_STRICTNE: // Fall through.
+          case JSOP_STRICTNE: 
           case JSOP_NE:
             *result = (comp != 0);
             break;
@@ -2531,9 +2531,6 @@ MCompare::trySpecializeFloat32(TempAllocator &alloc)
     MDefinition *lhs = getOperand(0);
     MDefinition *rhs = getOperand(1);
 
-    if (compareType_ == Compare_Float32)
-        return;
-
     if (lhs->canProduceFloat32() && rhs->canProduceFloat32() && compareType_ == Compare_Double) {
         compareType_ = Compare_Float32;
     } else {
@@ -2556,21 +2553,21 @@ MNot::infer()
 MDefinition *
 MNot::foldsTo(TempAllocator &alloc, bool useValueNumbers)
 {
-    // Fold if the input is constant
+    
     if (operand()->isConstant()) {
         bool result = operand()->toConstant()->valueToBoolean();
         if (type() == MIRType_Int32)
             return MConstant::New(alloc, Int32Value(!result));
 
-        // ToBoolean can't cause side effects, so this is safe.
+        
         return MConstant::New(alloc, BooleanValue(!result));
     }
 
-    // NOT of an undefined or null value is always true
+    
     if (operand()->type() == MIRType_Undefined || operand()->type() == MIRType_Null)
         return MConstant::New(alloc, BooleanValue(true));
 
-    // NOT of an object that can't emulate undefined is always false.
+    
     if (operand()->type() == MIRType_Object && !operandMightEmulateUndefined())
         return MConstant::New(alloc, BooleanValue(false));
 
@@ -2612,9 +2609,9 @@ MNewArray::shouldUseVM() const
     size_t arraySlots =
         gc::GetGCKindSlots(templateObject()->tenuredGetAllocKind()) - ObjectElements::VALUES_PER_HEADER;
 
-    // Allocate space using the VMCall
-    // when mir hints it needs to get allocated immediately,
-    // but only when data doesn't fit the available array slots.
+    
+    
+    
     bool allocating = isAllocating() && count() > arraySlots;
 
     return templateObject()->hasSingletonType() || allocating;
@@ -2684,13 +2681,13 @@ void
 InlinePropertyTable::trimTo(ObjectVector &targets, BoolVector &choiceSet)
 {
     for (size_t i = 0; i < targets.length(); i++) {
-        // If the target was inlined, don't erase the entry.
+        
         if (choiceSet[i])
             continue;
 
         JSFunction *target = &targets[i]->as<JSFunction>();
 
-        // Eliminate all entries containing the vetoed function from the map.
+        
         size_t j = 0;
         while (j < numEntries()) {
             if (entries_[j]->func == target)
@@ -2788,8 +2785,8 @@ MStoreTypedArrayElementStatic::length() const
 bool
 MGetPropertyPolymorphic::mightAlias(MDefinition *store)
 {
-    // Allow hoisting this instruction if the store does not write to a
-    // slot read by this instruction.
+    
+    
 
     if (!store->isStoreFixedSlot() && !store->isStoreSlot())
         return true;
@@ -2797,14 +2794,14 @@ MGetPropertyPolymorphic::mightAlias(MDefinition *store)
     for (size_t i = 0; i < numShapes(); i++) {
         Shape *shape = this->shape(i);
         if (shape->slot() < shape->numFixedSlots()) {
-            // Fixed slot.
+            
             uint32_t slot = shape->slot();
             if (store->isStoreFixedSlot() && store->toStoreFixedSlot()->slot() != slot)
                 continue;
             if (store->isStoreSlot())
                 continue;
         } else {
-            // Dynamic slot.
+            
             uint32_t slot = shape->slot() - shape->numFixedSlots();
             if (store->isStoreSlot() && store->toStoreSlot()->slot() != slot)
                 continue;
@@ -2822,7 +2819,7 @@ void
 MGetPropertyCache::setBlock(MBasicBlock *block)
 {
     MDefinition::setBlock(block);
-    // Track where we started.
+    
     if (!location_.pc) {
         location_.pc = block->trackedPc();
         location_.script = block->info().script();
@@ -2988,11 +2985,11 @@ PropertyReadNeedsTypeBarrier(types::CompilerConstraintList *constraints,
                              types::TypeObjectKey *object, PropertyName *name,
                              types::TypeSet *observed)
 {
-    // If the object being read from has types for the property which haven't
-    // been observed at this access site, the read could produce a new type and
-    // a barrier is needed. Note that this only covers reads from properties
-    // which are accounted for by type information, i.e. native data properties
-    // and elements.
+    
+    
+    
+    
+    
 
     if (object->unknownProperties() || observed->empty())
         return true;
@@ -3002,10 +2999,10 @@ PropertyReadNeedsTypeBarrier(types::CompilerConstraintList *constraints,
     if (property.maybeTypes() && !TypeSetIncludes(observed, MIRType_Value, property.maybeTypes()))
         return true;
 
-    // Type information for global objects is not required to reflect the
-    // initial 'undefined' value for properties, in particular global
-    // variables declared with 'var'. Until the property is assigned a value
-    // other than undefined, a barrier is required.
+    
+    
+    
+    
     if (JSObject *obj = object->singleton()) {
         if (name && types::CanHaveEmptyPropertyTypesForOwnProperty(obj) &&
             (!property.maybeTypes() || property.maybeTypes()->empty()))
@@ -3024,8 +3021,8 @@ jit::PropertyReadNeedsTypeBarrier(JSContext *propertycx,
                                   types::TypeObjectKey *object, PropertyName *name,
                                   types::TemporaryTypeSet *observed, bool updateObserved)
 {
-    // If this access has never executed, try to add types to the observed set
-    // according to any property which exists on the object or its prototype.
+    
+    
     if (updateObserved && observed->empty() && name) {
         JSObject *obj;
         if (object->singleton())
@@ -3050,7 +3047,7 @@ jit::PropertyReadNeedsTypeBarrier(JSContext *propertycx,
                     if (!property.maybeTypes()->enumerateTypes(&types))
                         break;
                     if (types.length()) {
-                        // Note: the return value here is ignored.
+                        
                         observed->addType(types[0], GetIonContext()->temp->lifoAlloc());
                         break;
                     }
@@ -3128,7 +3125,7 @@ bool
 jit::PropertyReadIsIdempotent(types::CompilerConstraintList *constraints,
                               MDefinition *obj, PropertyName *name)
 {
-    // Determine if reading a property from obj is likely to be idempotent.
+    
 
     types::TypeSet *types = obj->resultTypeSet();
     if (!types || types->unknownObject())
@@ -3140,7 +3137,7 @@ jit::PropertyReadIsIdempotent(types::CompilerConstraintList *constraints,
             if (object->unknownProperties())
                 return false;
 
-            // Check if the property has been reconfigured or is a getter.
+            
             types::HeapTypeSetKey property = object->property(NameToId(name));
             if (property.nonData(constraints))
                 return false;
@@ -3154,8 +3151,8 @@ bool
 jit::AddObjectsForPropertyRead(MDefinition *obj, PropertyName *name,
                                types::TemporaryTypeSet *observed)
 {
-    // Add objects to observed which *could* be observed by reading name from obj,
-    // to hopefully avoid unnecessary type barriers and code invalidations.
+    
+    
 
     LifoAlloc *alloc = GetIonContext()->temp->lifoAlloc();
 
@@ -3195,13 +3192,13 @@ TryAddTypeBarrierForWrite(TempAllocator &alloc, types::CompilerConstraintList *c
                           MBasicBlock *current, types::TemporaryTypeSet *objTypes,
                           PropertyName *name, MDefinition **pvalue)
 {
-    // Return whether pvalue was modified to include a type barrier ensuring
-    // that writing the value to objTypes/id will not require changing type
-    // information.
+    
+    
+    
 
-    // All objects in the set must have the same types for name. Otherwise, we
-    // could bail out without subsequently triggering a type change that
-    // invalidates the compiled code.
+    
+    
+    
     Maybe<types::HeapTypeSetKey> aggregateProperty;
 
     for (size_t i = 0; i < objTypes->getObjectCount(); i++) {
@@ -3220,9 +3217,9 @@ TryAddTypeBarrierForWrite(TempAllocator &alloc, types::CompilerConstraintList *c
         if (TypeSetIncludes(property.maybeTypes(), (*pvalue)->type(), (*pvalue)->resultTypeSet()))
             return false;
 
-        // This freeze is not required for correctness, but ensures that we
-        // will recompile if the property types change and the barrier can
-        // potentially be removed.
+        
+        
+        
         property.freeze(constraints);
 
         if (aggregateProperty.empty()) {
@@ -3244,11 +3241,11 @@ TryAddTypeBarrierForWrite(TempAllocator &alloc, types::CompilerConstraintList *c
       case MIRType_Int32:
       case MIRType_Double:
       case MIRType_String: {
-        // The property is a particular primitive type, guard by unboxing the
-        // value before the write.
+        
+        
         if ((*pvalue)->type() != MIRType_Value) {
-            // The value is a different primitive, just do a VM call as it will
-            // always trigger invalidation of the compiled code.
+            
+            
             JS_ASSERT((*pvalue)->type() != propertyType);
             return false;
         }
@@ -3285,7 +3282,7 @@ AddTypeGuard(TempAllocator &alloc, MBasicBlock *current, MDefinition *obj,
 
     current->add(guard);
 
-    // For now, never move type object guards.
+    
     guard->setNotMovable();
 
     return guard;
@@ -3296,20 +3293,20 @@ jit::PropertyWriteNeedsTypeBarrier(TempAllocator &alloc, types::CompilerConstrai
                                    MBasicBlock *current, MDefinition **pobj,
                                    PropertyName *name, MDefinition **pvalue, bool canModify)
 {
-    // If any value being written is not reflected in the type information for
-    // objects which obj could represent, a type barrier is needed when writing
-    // the value. As for propertyReadNeedsTypeBarrier, this only applies for
-    // properties that are accounted for by type information, i.e. normal data
-    // properties and elements.
+    
+    
+    
+    
+    
 
     types::TemporaryTypeSet *types = (*pobj)->resultTypeSet();
     if (!types || types->unknownObject())
         return true;
 
-    // If all of the objects being written to have property types which already
-    // reflect the value, no barrier at all is needed. Additionally, if all
-    // objects being written to have the same types for the property, and those
-    // types do *not* reflect the value, add a type barrier for the value.
+    
+    
+    
+    
 
     bool success = true;
     for (size_t i = 0; i < types->getObjectCount(); i++) {
@@ -3317,18 +3314,18 @@ jit::PropertyWriteNeedsTypeBarrier(TempAllocator &alloc, types::CompilerConstrai
         if (!object || object->unknownProperties())
             continue;
 
-        // TI doesn't track TypedArray objects and should never insert a type
-        // barrier for them.
+        
+        
         if (IsTypedArrayClass(object->clasp()))
             continue;
 
         jsid id = name ? NameToId(name) : JSID_VOID;
         types::HeapTypeSetKey property = object->property(id);
         if (!TypeSetIncludes(property.maybeTypes(), (*pvalue)->type(), (*pvalue)->resultTypeSet())) {
-            // Either pobj or pvalue needs to be modified to filter out the
-            // types which the value could have but are not in the property,
-            // or a VM call is required. A VM call is always required if pobj
-            // and pvalue cannot be modified.
+            
+            
+            
+            
             if (!canModify)
                 return true;
             success = TryAddTypeBarrierForWrite(alloc, constraints, current, types, name, pvalue);
@@ -3339,9 +3336,9 @@ jit::PropertyWriteNeedsTypeBarrier(TempAllocator &alloc, types::CompilerConstrai
     if (success)
         return false;
 
-    // If all of the objects except one have property types which reflect the
-    // value, and the remaining object has no types at all for the property,
-    // add a guard that the object does not have that remaining object's type.
+    
+    
+    
 
     if (types->getObjectCount() <= 1)
         return true;
@@ -3366,6 +3363,6 @@ jit::PropertyWriteNeedsTypeBarrier(TempAllocator &alloc, types::CompilerConstrai
 
     JS_ASSERT(excluded);
 
-    *pobj = AddTypeGuard(alloc, current, *pobj, excluded, /* bailOnEquality = */ true);
+    *pobj = AddTypeGuard(alloc, current, *pobj, excluded,  true);
     return false;
 }
