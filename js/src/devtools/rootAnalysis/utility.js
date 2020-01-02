@@ -2,6 +2,10 @@
 
 "use strict";
 
+
+
+var internalMarker = " *INTERNAL* ";
+
 function assert(x, msg)
 {
     if (x)

@@ -276,6 +276,22 @@ for (var nameIndex = minStream; nameIndex <= maxStream; nameIndex++) {
     for (var body of functionBodies)
         processBody(functionName, body);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    var markerPos = functionName.indexOf(internalMarker);
+    if (markerPos > 0) {
+        var inChargeXTor = functionName.substr(0, markerPos) + functionName.substr(markerPos + internalMarker.length);
+        print("D " + memo(inChargeXTor) + " " + memo(functionName));
+    }
+
     xdb.free_string(name);
     xdb.free_string(data);
 }
