@@ -1,11 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifdef MOZ_WIDGET_GONK
 #include "GonkPermission.h"
 #include "mozilla/dom/ContentParent.h"
-#endif // MOZ_WIDGET_GONK
+#endif 
 #include "nsCOMPtr.h"
 #include "nsIDOMElement.h"
 #include "nsIPrincipal.h"
@@ -23,7 +23,7 @@
 #include "nsJSUtils.h"
 #include "nsISupportsPrimitives.h"
 
-using mozilla::unused;          // <snicker>
+using mozilla::unused;          
 using namespace mozilla::dom;
 using namespace mozilla;
 
@@ -88,8 +88,8 @@ ContentPermissionRequestParent::ActorDestroy(ActorDestroyReason why)
 bool
 ContentPermissionRequestParent::IsBeingDestroyed()
 {
-  // When TabParent::Destroy() is called, we are being destroyed. It's unsafe
-  // to send out any message now.
+  
+  
   TabParent* tabParent = static_cast<TabParent*>(Manager());
   return tabParent->IsDestroyed();
 }
@@ -135,7 +135,7 @@ ContentPermissionType::GetOptions(nsIArray** aOptions)
     do_CreateInstance(NS_ARRAY_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // copy options into JS array
+  
   for (uint32_t i = 0; i < mOptions.Length(); ++i) {
     nsCOMPtr<nsISupportsString> isupportsString =
       do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID, &rv);
@@ -191,8 +191,8 @@ CreateContentPermissionRequestParent(const nsTArray<PermissionRequest>& aRequest
   return new ContentPermissionRequestParent(aRequests, element, principal);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 nsContentPermissionRequestProxy::nsContentPermissionRequestProxy()
 {
@@ -244,7 +244,7 @@ NS_IMETHODIMP
 nsContentPermissionRequestProxy::GetWindow(nsIDOMWindow * *aRequestingWindow)
 {
   NS_ENSURE_ARG_POINTER(aRequestingWindow);
-  *aRequestingWindow = nullptr; // ipc doesn't have a window
+  *aRequestingWindow = nullptr; 
   return NS_OK;
 }
 
@@ -280,8 +280,8 @@ nsContentPermissionRequestProxy::Cancel()
     return NS_ERROR_FAILURE;
   }
 
-  // Don't send out the delete message when the managing protocol (PBrowser) is
-  // being destroyed and PContentPermissionRequest will soon be.
+  
+  
   if (mParent->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
@@ -300,8 +300,8 @@ nsContentPermissionRequestProxy::Allow(JS::HandleValue aChoices)
     return NS_ERROR_FAILURE;
   }
 
-  // Don't send out the delete message when the managing protocol (PBrowser) is
-  // being destroyed and PContentPermissionRequest will soon be.
+  
+  
   if (mParent->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
@@ -312,21 +312,23 @@ nsContentPermissionRequestProxy::Allow(JS::HandleValue aChoices)
     if (mPermissionRequests[i].type().EqualsLiteral("audio-capture")) {
       GonkPermissionService::GetInstance()->addGrantInfo(
         "android.permission.RECORD_AUDIO",
-        static_cast<TabParent*>(mParent->Manager())->Manager()->Pid());
+        static_cast<TabParent*>(
+          mParent->Manager())->Manager()->AsContentParent()->Pid());
     }
     if (mPermissionRequests[i].type().EqualsLiteral("video-capture")) {
       GonkPermissionService::GetInstance()->addGrantInfo(
         "android.permission.CAMERA",
-        static_cast<TabParent*>(mParent->Manager())->Manager()->Pid());
+        static_cast<TabParent*>(
+          mParent->Manager())->Manager()->AsContentParent()->Pid());
     }
   }
 #endif
 
   nsTArray<PermissionChoice> choices;
   if (aChoices.isNullOrUndefined()) {
-    // No choice is specified.
+    
   } else if (aChoices.isObject()) {
-    // Iterate through all permission types.
+    
     for (uint32_t i = 0; i < mPermissionRequests.Length(); ++i) {
       nsCString type = mPermissionRequests[i].type();
 
@@ -338,7 +340,7 @@ nsContentPermissionRequestProxy::Allow(JS::HandleValue aChoices)
 
       if (!JS_GetProperty(cx, obj, type.BeginReading(), &val) ||
           !val.isString()) {
-        // no setting for the permission type, skip it
+        
       } else {
         nsDependentJSString choice;
         if (!choice.init(cx, val)) {
