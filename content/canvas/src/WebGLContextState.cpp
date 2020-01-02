@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "WebGLContext.h"
 #include "WebGLContextUtils.h"
@@ -80,10 +80,10 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
 
     if (MinCapabilityMode()) {
         switch(pname) {
-            ////////////////////////////
-            // Single-value params
+            
+            
 
-            // int
+            
             case LOCAL_GL_MAX_VERTEX_ATTRIBS:
                 return JS::Int32Value(MINVALUE_GL_MAX_VERTEX_ATTRIBS);
 
@@ -112,7 +112,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
                 return JS::Int32Value(MINVALUE_GL_MAX_RENDERBUFFER_SIZE);
 
             default:
-                // Return the real value; we're not overriding this one
+                
                 break;
         }
     }
@@ -155,9 +155,9 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
     }
 
     switch (pname) {
-        //
-        // String params
-        //
+        
+        
+        
         case LOCAL_GL_VENDOR:
             return StringValue(cx, "Mozilla", rv);
         case LOCAL_GL_RENDERER:
@@ -177,11 +177,11 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         case LOCAL_GL_SHADING_LANGUAGE_VERSION:
             return StringValue(cx, "WebGL GLSL ES 1.0", rv);
 
-            // Privileged string params exposed by WEBGL_debug_renderer_info:
+            
         case UNMASKED_VENDOR_WEBGL:
         case UNMASKED_RENDERER_WEBGL: {
-            // The privilege check is done in WebGLContext::IsExtensionSupported.
-            // So here we just have to check that the extension is enabled.
+            
+            
             if (!IsExtensionEnabled(WebGLExtensionID::WEBGL_debug_renderer_info)) {
                 break;
             }
@@ -195,10 +195,10 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return StringValue(cx, string, rv);
         }
 
-        ////////////////////////////////
-        // Single-value params
+        
+        
 
-        // unsigned int
+        
         case LOCAL_GL_CULL_FACE_MODE:
         case LOCAL_GL_FRONT_FACE:
         case LOCAL_GL_ACTIVE_TEXTURE:
@@ -222,7 +222,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             gl->fGetIntegerv(pname, &i);
             return JS::NumberValue(uint32_t(i));
         }
-        // int
+        
         case LOCAL_GL_STENCIL_CLEAR_VALUE:
         case LOCAL_GL_STENCIL_REF:
         case LOCAL_GL_STENCIL_BACK_REF:
@@ -289,20 +289,20 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::Int32Value(mGLMaxTransformFeedbackSeparateAttribs);
         }
 
-        // unsigned int. here we may have to return very large values like 2^32-1 that can't be represented as
-        // javascript integer values. We just return them as doubles and javascript doesn't care.
+        
+        
         case LOCAL_GL_STENCIL_BACK_VALUE_MASK:
         case LOCAL_GL_STENCIL_BACK_WRITEMASK:
         case LOCAL_GL_STENCIL_VALUE_MASK:
         case LOCAL_GL_STENCIL_WRITEMASK: {
-            GLint i = 0; // the GL api (glGetIntegerv) only does signed ints
+            GLint i = 0; 
             gl->fGetIntegerv(pname, &i);
-            GLuint i_unsigned(i); // this is where -1 becomes 2^32-1
-            double i_double(i_unsigned); // pass as FP value to allow large values such as 2^32-1.
+            GLuint i_unsigned(i); 
+            double i_double(i_unsigned); 
             return JS::DoubleValue(i_double);
         }
 
-        // float
+        
         case LOCAL_GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT: {
             if (IsExtensionEnabled(WebGLExtensionID::EXT_texture_filter_anisotropic)) {
                 GLfloat f = 0.f;
@@ -322,7 +322,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::DoubleValue(f);
         }
 
-        // bool
+        
         case LOCAL_GL_BLEND:
         case LOCAL_GL_DEPTH_TEST:
         case LOCAL_GL_STENCIL_TEST:
@@ -337,20 +337,20 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::BooleanValue(bool(b));
         }
 
-        // bool, WebGL-specific
+        
         case UNPACK_FLIP_Y_WEBGL:
             return JS::BooleanValue(mPixelStoreFlipY);
         case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
             return JS::BooleanValue(mPixelStorePremultiplyAlpha);
 
-        // uint, WebGL-specific
+        
         case UNPACK_COLORSPACE_CONVERSION_WEBGL:
             return JS::NumberValue(uint32_t(mPixelStoreColorspaceConversion));
 
-        ////////////////////////////////
-        // Complex values
+        
+        
 
-        // 2 floats
+        
         case LOCAL_GL_DEPTH_RANGE:
         case LOCAL_GL_ALIASED_POINT_SIZE_RANGE:
         case LOCAL_GL_ALIASED_LINE_WIDTH_RANGE: {
@@ -363,7 +363,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        // 4 floats
+        
         case LOCAL_GL_COLOR_CLEAR_VALUE:
         case LOCAL_GL_BLEND_COLOR: {
             GLfloat fv[4] = { 0 };
@@ -375,7 +375,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        // 2 ints
+        
         case LOCAL_GL_MAX_VIEWPORT_DIMS: {
             GLint iv[2] = { 0 };
             gl->fGetIntegerv(pname, iv);
@@ -386,7 +386,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        // 4 ints
+        
         case LOCAL_GL_SCISSOR_BOX:
         case LOCAL_GL_VIEWPORT: {
             GLint iv[4] = { 0 };
@@ -398,7 +398,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
             return JS::ObjectOrNullValue(obj);
         }
 
-        // 4 bools
+        
         case LOCAL_GL_COLOR_WRITEMASK: {
             realGLboolean gl_bv[4] = { 0 };
             gl->fGetBooleanv(pname, gl_bv);
@@ -423,7 +423,7 @@ WebGLContext::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
         }
 
         case LOCAL_GL_ELEMENT_ARRAY_BUFFER_BINDING: {
-            return WebGLObjectAsJSValue(cx, mBoundVertexArray->mBoundElementArrayBuffer.get(), rv);
+            return WebGLObjectAsJSValue(cx, mBoundVertexArray->mElementArrayBuffer.get(), rv);
         }
 
         case LOCAL_GL_RENDERBUFFER_BINDING: {
@@ -469,7 +469,7 @@ WebGLContext::GetParameterIndexed(JSContext* cx, GLenum pname, GLuint index)
                 ErrorInvalidValue("getParameterIndexed: index should be less than MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS", index);
                 return JS::NullValue();
             }
-            return JS::NullValue(); // See bug 903594
+            return JS::NullValue(); 
         }
 
         default:
