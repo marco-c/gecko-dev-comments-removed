@@ -122,6 +122,30 @@ gssInit()
             lib = PR_LoadLibrary("gssapi32");
             PR_FreeLibraryName(libName);
         }
+#elif defined(__OpenBSD__)
+        
+
+
+
+
+
+        const char *const verLibNames[] = {
+            "libasn1.so",
+            "libcrypto.so",
+            "libroken.so",
+            "libheimbase.so",
+            "libcom_err.so",
+            "libkrb5.so",
+            "libgssapi.so"
+        };
+
+        PRLibSpec libSpec;
+        for (size_t i = 0; i < ArrayLength(verLibNames); ++i) {
+            libSpec.type = PR_LibSpec_Pathname;
+            libSpec.value.pathname = verLibNames[i];
+            lib = PR_LoadLibraryWithFlags(libSpec, PR_LD_GLOBAL);
+        };
+
 #else
         
         const char *const libNames[] = {
@@ -133,8 +157,7 @@ gssInit()
         const char *const verLibNames[] = {
             "libgssapi_krb5.so.2", 
             "libgssapi.so.4",      
-            "libgssapi.so.1",      
-            "libgssapi.so"         
+            "libgssapi.so.1"       
         };
 
         for (size_t i = 0; i < ArrayLength(verLibNames) && !lib; ++i) {
