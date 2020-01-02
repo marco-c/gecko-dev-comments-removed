@@ -484,7 +484,7 @@ public:
 
 
   virtual nsresult  SetInitialChildList(ChildListID     aListID,
-                                  nsFrameList&    aChildList) = 0;
+                                        nsFrameList&    aChildList) = 0;
 
   
 
@@ -502,7 +502,7 @@ public:
 
 
   virtual nsresult AppendFrames(ChildListID     aListID,
-                          nsFrameList&    aFrameList) = 0;
+                                nsFrameList&    aFrameList) = 0;
 
   
 
@@ -521,8 +521,8 @@ public:
 
 
   virtual nsresult InsertFrames(ChildListID     aListID,
-                          nsIFrame*       aPrevFrame,
-                          nsFrameList&    aFrameList) = 0;
+                                nsIFrame*       aPrevFrame,
+                                nsFrameList&    aFrameList) = 0;
 
   
 
@@ -540,7 +540,7 @@ public:
 
 
   virtual nsresult RemoveFrame(ChildListID     aListID,
-                         nsIFrame*       aOldFrame) = 0;
+                               nsIFrame*       aOldFrame) = 0;
 
   
 
@@ -1207,11 +1207,11 @@ public:
 
 
   virtual nsresult  HandleEvent(nsPresContext* aPresContext,
-                          mozilla::WidgetGUIEvent* aEvent,
-                          nsEventStatus* aEventStatus) = 0;
+                                mozilla::WidgetGUIEvent* aEvent,
+                                nsEventStatus* aEventStatus) = 0;
 
   virtual nsresult  GetContentForEvent(mozilla::WidgetEvent* aEvent,
-                                 nsIContent** aContent) = 0;
+                                       nsIContent** aContent) = 0;
 
   
   
@@ -1279,7 +1279,7 @@ public:
 
 
   virtual nsresult  GetCursor(const nsPoint&  aPoint,
-                        Cursor&         aCursor) = 0;
+                              Cursor&         aCursor) = 0;
 
   
 
@@ -1287,7 +1287,7 @@ public:
 
 
   virtual nsresult  GetPointFromOffset(int32_t                  inOffset,
-                                 nsPoint*                 outPoint) = 0;
+                                       nsPoint*                 outPoint) = 0;
   
   
 
@@ -1297,10 +1297,10 @@ public:
 
 
 
-  virtual nsresult  GetChildFrameContainingOffset(int32_t       inContentOffset,
-                                 bool                     inHint,
-                                 int32_t*                 outFrameContentOffset,
-                                 nsIFrame*                *outChildFrame) = 0;
+  virtual nsresult GetChildFrameContainingOffset(int32_t    inContentOffset,
+                                                 bool       inHint,
+                                                 int32_t*   outFrameContentOffset,
+                                                 nsIFrame** outChildFrame) = 0;
 
  
 
@@ -1342,8 +1342,8 @@ public:
 
 
   virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
-                               nsIAtom*        aAttribute,
-                               int32_t         aModType) = 0;
+                                     nsIAtom*        aAttribute,
+                                     int32_t         aModType) = 0;
 
   
 
@@ -1744,9 +1744,9 @@ public:
 
 
   virtual nsresult Reflow(nsPresContext*          aPresContext,
-                    nsHTMLReflowMetrics&     aReflowMetrics,
-                    const nsHTMLReflowState& aReflowState,
-                    nsReflowStatus&          aStatus) = 0;
+                          nsHTMLReflowMetrics&     aReflowMetrics,
+                          const nsHTMLReflowState& aReflowState,
+                          nsReflowStatus&          aStatus) = 0;
 
   
 
@@ -1764,8 +1764,8 @@ public:
 
 
   virtual nsresult  DidReflow(nsPresContext*           aPresContext,
-                        const nsHTMLReflowState*  aReflowState,
-                        nsDidReflowStatus         aStatus) = 0;
+                              const nsHTMLReflowState*  aReflowState,
+                              nsDidReflowStatus         aStatus) = 0;
 
   
 
@@ -3084,7 +3084,7 @@ public:
 public:
   virtual nsFrameState  GetDebugStateBits() const = 0;
   virtual nsresult  DumpRegressionData(nsPresContext* aPresContext,
-                                 FILE* out, int32_t aIndent) = 0;
+                                       FILE* out, int32_t aIndent) = 0;
 #endif
 };
 
