@@ -40,6 +40,12 @@ ms_to_hns(uint32_t ms)
   return ms * 10000;
 }
 
+uint32_t
+hns_to_ms(uint32_t hns)
+{
+  return hns / 10000;
+}
+
 double
 hns_to_s(uint32_t hns)
 {
@@ -530,6 +536,34 @@ wasapi_get_max_channel_count(cubeb * ctx, uint32_t * max_channels)
   return CUBEB_OK;
 }
 
+int
+wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * latency_ms)
+{
+  HRESULT hr;
+  IAudioClient * client;
+  REFERENCE_TIME default_period;
+
+  hr = ctx->device->Activate(__uuidof(IAudioClient),
+                             CLSCTX_INPROC_SERVER,
+                             NULL, (void **)&client);
+
+  if (FAILED(hr)) {
+    return CUBEB_ERROR;
+  }
+
+  
+  hr= client->GetDevicePeriod(&default_period, NULL);
+
+  
+
+
+  *latency_ms = hns_to_ms(default_period);
+
+  SafeRelease(client);
+
+  return CUBEB_OK;
+}
+
 
 void wasapi_stream_destroy(cubeb_stream * stm);
 
@@ -893,6 +927,7 @@ cubeb_ops const wasapi_ops = {
    wasapi_init,
    wasapi_get_backend_id,
    wasapi_get_max_channel_count,
+   wasapi_get_min_latency,
    wasapi_destroy,
    wasapi_stream_init,
    wasapi_stream_destroy,
