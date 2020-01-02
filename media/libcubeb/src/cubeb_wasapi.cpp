@@ -688,7 +688,8 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
     *mix_format = closest;
   } else if (hr == AUDCLNT_E_UNSUPPORTED_FORMAT) {
     
-    assert(false && "Format not supported, and no suggestion from WASAPI.");
+
+
   } else if (hr == S_OK) {
     LOG("Requested format accepted by WASAPI.");
   }
