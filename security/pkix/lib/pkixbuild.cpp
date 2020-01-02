@@ -38,8 +38,7 @@ static Result BuildForward(TrustDomain& trustDomain,
                            KeyPurposeId requiredEKUIfPresent,
                            const CertPolicyId& requiredPolicy,
                             const SECItem* stapledOCSPResponse,
-                           unsigned int subCACount,
-                            ScopedCERTCertList& results);
+                           unsigned int subCACount);
 
 TrustDomain::IssuerChecker::IssuerChecker() { }
 TrustDomain::IssuerChecker::~IssuerChecker() { }
@@ -54,8 +53,7 @@ public:
                    KeyPurposeId requiredEKUIfPresent,
                    const CertPolicyId& requiredPolicy,
                     const SECItem* stapledOCSPResponse,
-                   unsigned int subCACount,
-                    ScopedCERTCertList& results)
+                   unsigned int subCACount)
     : trustDomain(trustDomain)
     , subject(subject)
     , time(time)
@@ -64,7 +62,6 @@ public:
     , requiredPolicy(requiredPolicy)
     , stapledOCSPResponse(stapledOCSPResponse)
     , subCACount(subCACount)
-    , results(results)
     , result(SEC_ERROR_LIBRARY_FAILURE)
     , resultWasSet(false)
   {
@@ -84,7 +81,6 @@ private:
   const CertPolicyId& requiredPolicy;
    SECItem const* const stapledOCSPResponse;
   const unsigned int subCACount;
-   ScopedCERTCertList& results;
 
   SECStatus RecordResult(PRErrorCode currentResult,  bool& keepGoing);
   PRErrorCode result;
@@ -175,7 +171,7 @@ PathBuildingStep::Check(const SECItem& potentialIssuerDER,
   
   rv = BuildForward(trustDomain, potentialIssuer, time, EndEntityOrCA::MustBeCA,
                     KeyUsage::keyCertSign, requiredEKUIfPresent,
-                    requiredPolicy, nullptr, subCACount, results);
+                    requiredPolicy, nullptr, subCACount);
   if (rv != Success) {
     return RecordResult(PR_GetError(), keepGoing);
   }
@@ -214,8 +210,7 @@ BuildForward(TrustDomain& trustDomain,
              KeyPurposeId requiredEKUIfPresent,
              const CertPolicyId& requiredPolicy,
               const SECItem* stapledOCSPResponse,
-             unsigned int subCACount,
-              ScopedCERTCertList& results)
+             unsigned int subCACount)
 {
   Result rv;
 
@@ -241,25 +236,18 @@ BuildForward(TrustDomain& trustDomain,
   if (trustLevel == TrustLevel::TrustAnchor) {
     
 
-    
-    results = CERT_NewCertList();
-    if (!results) {
-      return MapSECStatus(SECFailure);
-    }
+    NonOwningDERArray chain;
     for (const BackCert* cert = &subject; cert; cert = cert->childCert) {
-      ScopedPtr<CERTCertificate, CERT_DestroyCertificate>
-        nssCert(CERT_NewTempCertificate(CERT_GetDefaultCertDB(),
-                                        const_cast<SECItem*>(&cert->GetDER()),
-                                        nullptr, false, true));
-      if (CERT_AddCertToListHead(results.get(), nssCert.get()) != SECSuccess) {
-        return MapSECStatus(SECFailure);
+      Result rv = chain.Append(cert->GetDER());
+      if (rv != Success) {
+        PR_NOT_REACHED("NonOwningDERArray::SetItem failed.");
+        return rv;
       }
-      nssCert.release(); 
     }
 
     
     
-    SECStatus srv = trustDomain.IsChainValid(results.get());
+    SECStatus srv = trustDomain.IsChainValid(chain);
     if (srv != SECSuccess) {
       return MapSECStatus(srv);
     }
@@ -271,6 +259,9 @@ BuildForward(TrustDomain& trustDomain,
     
     
     static const unsigned int MAX_SUBCA_COUNT = 6;
+    static_assert(1 + MAX_SUBCA_COUNT + 1 ==
+                  NonOwningDERArray::MAX_LENGTH,
+                  "MAX_SUBCA_COUNT and NonOwningDERArray::MAX_LENGTH mismatch.");
     if (subCACount >= MAX_SUBCA_COUNT) {
       return Fail(RecoverableError, SEC_ERROR_UNKNOWN_ISSUER);
     }
@@ -283,7 +274,7 @@ BuildForward(TrustDomain& trustDomain,
 
   PathBuildingStep pathBuilder(trustDomain, subject, time, endEntityOrCA,
                                requiredEKUIfPresent, requiredPolicy,
-                               stapledOCSPResponse, subCACount, results);
+                               stapledOCSPResponse, subCACount);
 
   
   if (trustDomain.FindIssuer(subject.GetIssuer(), pathBuilder, time)
@@ -295,9 +286,6 @@ BuildForward(TrustDomain& trustDomain,
   if (rv != Success) {
     return rv;
   }
-
-  
-  
 
   
   
@@ -315,8 +303,7 @@ BuildCertChain(TrustDomain& trustDomain, const SECItem& certDER,
                KeyUsage requiredKeyUsageIfPresent,
                KeyPurposeId requiredEKUIfPresent,
                const CertPolicyId& requiredPolicy,
-                const SECItem* stapledOCSPResponse,
-                ScopedCERTCertList& results)
+                const SECItem* stapledOCSPResponse)
 {
   
   
@@ -334,9 +321,8 @@ BuildCertChain(TrustDomain& trustDomain, const SECItem& certDER,
 
   rv = BuildForward(trustDomain, cert, time, endEntityOrCA,
                     requiredKeyUsageIfPresent, requiredEKUIfPresent,
-                    requiredPolicy, stapledOCSPResponse, 0, results);
+                    requiredPolicy, stapledOCSPResponse, 0);
   if (rv != Success) {
-    results = nullptr;
     return SECFailure;
   }
 
