@@ -1,7 +1,7 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_workerscope_h__
 #define mozilla_dom_workerscope_h__
@@ -14,8 +14,8 @@ namespace dom {
 
 class Function;
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 BEGIN_WORKERS_NAMESPACE
 
@@ -88,7 +88,8 @@ public:
   SetTimeout(JSContext* aCx, Function& aHandler, const int32_t aTimeout,
              const Sequence<JS::Value>& aArguments, ErrorResult& aRv);
   int32_t
-  SetTimeout(const nsAString& aHandler, const int32_t aTimeout,
+  SetTimeout(JSContext* , const nsAString& aHandler,
+             const int32_t aTimeout, const Sequence<JS::Value>& ,
              ErrorResult& aRv);
   void
   ClearTimeout(int32_t aHandle, ErrorResult& aRv);
@@ -97,8 +98,9 @@ public:
               const Optional<int32_t>& aTimeout,
               const Sequence<JS::Value>& aArguments, ErrorResult& aRv);
   int32_t
-  SetInterval(const nsAString& aHandler, const Optional<int32_t>& aTimeout,
-              ErrorResult& aRv);
+  SetInterval(JSContext* , const nsAString& aHandler,
+              const Optional<int32_t>& aTimeout,
+              const Sequence<JS::Value>& , ErrorResult& aRv);
   void
   ClearInterval(int32_t aHandle, ErrorResult& aRv);
 
@@ -164,4 +166,4 @@ CreateGlobalScope(JSContext* aCx);
 
 END_WORKERS_NAMESPACE
 
-#endif /* mozilla_dom_workerscope_h__ */
+#endif 
