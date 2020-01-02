@@ -111,6 +111,7 @@ public:
     CONSUMED,
     NOT_CONSUMED
   };
+
   
 
 
@@ -157,16 +158,17 @@ public:
 
   virtual void NotifyOutput(MediaStreamGraph* aGraph, GraphTime aCurrentTime) {}
 
+  enum MediaStreamGraphEvent {
+    EVENT_FINISHED,
+    EVENT_REMOVED,
+    EVENT_HAS_DIRECT_LISTENERS, 
+    EVENT_HAS_NO_DIRECT_LISTENERS,  
+  };
+
   
 
 
-  virtual void NotifyFinished(MediaStreamGraph* aGraph) {}
-
-  
-
-
-
-  virtual void NotifyRemoved(MediaStreamGraph* aGraph) {}
+  virtual void NotifyEvent(MediaStreamGraph* aGraph, MediaStreamGraphEvent aEvent) {}
 
   enum {
     TRACK_EVENT_CREATED = 0x01,
