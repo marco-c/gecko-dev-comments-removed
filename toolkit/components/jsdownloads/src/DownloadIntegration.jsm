@@ -611,11 +611,11 @@ this.DownloadIntegration = {
       }
 #endif
 
-
-
-
-
-
+      
+      
+      
+      
+      
       try {
         yield OS.File.setPermissions(aDownload.target.path);
       } catch (ex) {

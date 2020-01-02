@@ -18,13 +18,13 @@ gTests.push({
     this.ColorUtils.init();
 
     
-    ColorUtils.iconColorCache.set('http:
+    ColorUtils.iconColorCache.set('http://test.old/favicon.ico', {
       "foreground":"rgb(255,255,255)",
       "background":"rgb(78,78,84)",
       "timestamp":Date.now() - (2*dayMs)
     });
     
-    ColorUtils.iconColorCache.set('http:
+    ColorUtils.iconColorCache.set('http://test.new/favicon.ico', {
       "foreground":"rgb(255,255,255)",
       "background":"rgb(78,78,84)",
       "timestamp":Date.now()
@@ -40,10 +40,10 @@ gTests.push({
     is(cachePurgeSpy.callCount, 1);
     cachePurgeSpy.restore();
 
-    ok(ColorUtils.iconColorCache.has('http:
+    ok(ColorUtils.iconColorCache.has('http://test.new/favicon.ico'),
        "fresh cache entry was not removed in the purge");
 
-    ok(!ColorUtils.iconColorCache.has('http:
+    ok(!ColorUtils.iconColorCache.has('http://test.old/favicon.ico'),
        "stale cache entry was removed in the purge");
   }
 });

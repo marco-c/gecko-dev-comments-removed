@@ -153,7 +153,7 @@ function onProfilesDblClick(aEvent)
 
 function CreateProfileWizard()
 {
-  window.openDialog('chrome:
+  window.openDialog('chrome://mozapps/content/profile/createProfileWizard.xul',
                     '', 'centerscreen,chrome,modal,titlebar', gProfileService);
 }
 

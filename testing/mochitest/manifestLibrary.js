@@ -101,11 +101,11 @@ function filterTests(filter, testList, runOnly) {
   if (Object.keys(runtests).length) {
     for (var i = 0; i < testList.length; i++) {
       var testpath = testList[i];
-      var tmppath = testpath.replace(/^\
+      var tmppath = testpath.replace(/^\//, '');
       for (var f in runtests) {
         
-        file = f.replace(/^\
-        file = file.replace(/^tests\
+        file = f.replace(/^\//, '')
+        file = file.replace(/^tests\//, '')
 
         
         if (tmppath.match(testRoot + "/" + file) != null) {
@@ -128,11 +128,11 @@ function filterTests(filter, testList, runOnly) {
   for (var i = 0; i < filteredTests.length; i++) {
     var found = false;
     var testpath = filteredTests[i];
-    var tmppath = testpath.replace(/^\
+    var tmppath = testpath.replace(/^\//, '');
     for (var f in excludetests) {
       
-      file = f.replace(/^\
-      file = file.replace(/^tests\
+      file = f.replace(/^\//, '')
+      file = file.replace(/^tests\//, '')
 
       
       if (tmppath.match(testRoot + "/" + file) != null) {

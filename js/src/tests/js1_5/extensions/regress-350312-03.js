@@ -1,18 +1,18 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//-----------------------------------------------------------------------------
+
+
+
+
+
 var BUGNUMBER = 350312;
 var summary = 'Accessing wrong stack slot with nested catch/finally';
 var actual = '';
 var expect = '';
 
 
-//-----------------------------------------------------------------------------
+
 test();
-//-----------------------------------------------------------------------------
+
 
 function test()
 {
@@ -86,9 +86,9 @@ function test()
     print("\n=== " + i + ": " + src[i]);
     var f = eval(src[i]);
     var exp = eval(expsrc[i]);
-    // dis(f);
+    
     print('decompiling: ' + f);
-    //print('decompiling exp: ' + exp);
+    
 
     actual = '';
     try { expect = exp(41); f(41) } catch (e) { print('tried f(41), caught ' + e) }

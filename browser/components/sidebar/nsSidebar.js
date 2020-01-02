@@ -26,7 +26,7 @@ function (engineURL, iconURL)
   try
   {
     
-    var isWeb = /^(https?|ftp):\/\
+    var isWeb = /^(https?|ftp):\/\//i;
 
     if (!isWeb.test(engineURL))
       throw "Unsupported search engine URL";

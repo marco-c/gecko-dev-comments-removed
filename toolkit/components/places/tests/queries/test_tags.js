@@ -648,7 +648,7 @@ function task_doWithVisit(aTags, aCallback) {
 
 function encodeTag(aTag) {
   return encodeURIComponent(aTag).
-         replace(/[-_.!~*'()]/g, //'
+         replace(/[-_.!~*'()]/g, 
                  function (s) "%" + s.charCodeAt(0).toString(16));
 }
 

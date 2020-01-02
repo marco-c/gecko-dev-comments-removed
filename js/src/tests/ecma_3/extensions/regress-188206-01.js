@@ -22,14 +22,14 @@ var expectedvalues = [];
 
 
 status = inSection(7);
-testThis(' 
+testThis(' /*a/ ');
+
+status = inSection(8);
+testThis(' /**a/ ');
 
 
 
-
-
-
-
+test();
 
 
 

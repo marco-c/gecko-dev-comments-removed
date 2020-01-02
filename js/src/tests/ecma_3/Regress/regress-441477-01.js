@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/*
- * Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/licenses/publicdomain/
- * Contributor: Jason Orendorff
- */
 
-//-----------------------------------------------------------------------------
+
+
+
+
+
+
+
 var BUGNUMBER = 441477-01;
 var summary = '';
 var actual = 'No Exception';
 var expect = 'No Exception';
 
 
-//-----------------------------------------------------------------------------
+
 test();
-//-----------------------------------------------------------------------------
+
 
 function test()
 {

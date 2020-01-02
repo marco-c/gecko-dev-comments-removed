@@ -1,9 +1,9 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+//-----------------------------------------------------------------------------
 var BUGNUMBER = 280769;
 var summary = 'Do not crash on overflow of 64K boundary in number of classes in regexp';
 var actual = 'No Crash';
@@ -22,7 +22,7 @@ for (var i = 0; i != N; ++i) {
   a[i] = i;
 }
 
-var str = '['+a.join('][')+']'; 
+var str = '['+a.join('][')+']'; // str is [0][1][2]...[<PRINTED N-1>]
 
 try
 {

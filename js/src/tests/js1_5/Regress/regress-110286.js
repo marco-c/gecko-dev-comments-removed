@@ -13,17 +13,17 @@
 
 var UBound = 0;
 var BUGNUMBER = 110286;
-var summary = 'Multiline comments containing "
+var summary = 'Multiline comments containing "/*" should not be syntax errors';
+var status = '';
+var statusitems = [];
+var actual = '';
+var actualvalues = [];
+var expect= '';
+var expectedvalues = [];
 
 
-
-
-
-
-
-
-
-3");
+status = inSection(1);
+actual = eval("/* /* */3");
 expect = 3;
 addThis();
 

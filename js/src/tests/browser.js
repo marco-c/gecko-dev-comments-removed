@@ -555,7 +555,7 @@ function closeDialog()
   while ( (subject = gDialogCloserSubjects.pop()) != null)
   {
     if (subject.document instanceof XULDocument &&
-        subject.document.documentURI == 'chrome:
+        subject.document.documentURI == 'chrome://global/content/commonDialog.xul')
     {
       subject.close();
     }

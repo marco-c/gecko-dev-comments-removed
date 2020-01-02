@@ -41,7 +41,7 @@ const DownloadsButton = {
 
 
   get kIndicatorOverlay()
-      "chrome://browser/content/downloads/indicatorOverlay.xul",
+      "chrome:
 
   
 

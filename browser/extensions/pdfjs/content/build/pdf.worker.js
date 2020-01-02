@@ -4655,7 +4655,7 @@ var FileSpec = (function FileSpecClosure() {
         var filename = pickPlatformItem(this.root) || 'unnamed';
         this._filename = stringToPDFString(filename).
           replace(/\\\\/g, '\\').
-          replace(/\\\
+          replace(/\\\//g, '/').
           replace(/\\/g, '/');
       }
       return this._filename;
@@ -22392,7 +22392,7 @@ var Font = (function FontClosure() {
       proto[0][3] || 'uniqueID',          
       proto[0][4] || name,                
       proto[0][5] || 'Version 0.11',      
-      proto[0][6] || '',                  // 6.Postscript name
+      proto[0][6] || '',                  
       proto[0][7] || 'Unknown',           
       proto[0][8] || 'Unknown',           
       proto[0][9] || 'Unknown'            

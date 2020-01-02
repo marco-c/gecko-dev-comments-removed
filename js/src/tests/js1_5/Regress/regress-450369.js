@@ -118,7 +118,7 @@ if (!this.emulatedJSON) {
                 k,          
                 l,          
                 r = /["\\\x00-\x1f\x7f-\x9f]/g,
-                v;          // The member value.
+                v;          
 
             switch (typeof value) {
             case 'string':

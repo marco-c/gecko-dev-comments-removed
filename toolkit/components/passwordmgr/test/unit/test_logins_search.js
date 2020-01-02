@@ -132,12 +132,12 @@ add_task(function test_search_all_basic()
   checkAllSearches({ hostname: "http://www.example.com" }, 1);
   checkAllSearches({ hostname: "https://www.example.com" }, 1);
   checkAllSearches({ hostname: "https://example.com" }, 1);
-  checkAllSearches({ hostname: "http:
+  checkAllSearches({ hostname: "http://www3.example.com" }, 3);
 
   
   checkAllSearches({ formSubmitURL: "http://www.example.com" }, 2);
   checkAllSearches({ formSubmitURL: "https://www.example.com" }, 2);
-  checkAllSearches({ formSubmitURL: "http:
+  checkAllSearches({ formSubmitURL: "http://example.com" }, 1);
 
   
   checkAllSearches({ hostname: "http://www3.example.com",
@@ -145,7 +145,7 @@ add_task(function test_search_all_basic()
   checkAllSearches({ hostname: "http://www3.example.com",
                      formSubmitURL: "https://www.example.com" }, 1);
   checkAllSearches({ hostname: "http://www3.example.com",
-                     formSubmitURL: "http:
+                     formSubmitURL: "http://example.com" }, 1);
 
   
   checkAllSearches({ httpRealm: "The HTTP Realm" }, 3);
@@ -158,7 +158,7 @@ add_task(function test_search_all_basic()
   checkAllSearches({ hostname: "http://example.net",
                      httpRealm: "The HTTP Realm Other" }, 1);
   checkAllSearches({ hostname: "ftp://example.net",
-                     httpRealm: "ftp:
+                     httpRealm: "ftp://example.net" }, 1);
 });
 
 
@@ -197,9 +197,9 @@ add_task(function test_searchLogins_invalid()
 
 add_task(function test_search_all_full_case_sensitive()
 {
-  checkAllSearches({ hostname: "http:
-  checkAllSearches({ hostname: "http:
-  checkAllSearches({ hostname: "http:
+  checkAllSearches({ hostname: "http://www.example.com" }, 1);
+  checkAllSearches({ hostname: "http://www.example.com/" }, 0);
+  checkAllSearches({ hostname: "http://" }, 0);
   checkAllSearches({ hostname: "example.com" }, 0);
 
   checkAllSearches({ formSubmitURL: "http://www.example.com" }, 2);
@@ -219,8 +219,8 @@ add_task(function test_search_all_full_case_sensitive()
 
 add_task(function test_search_all_empty()
 {
-  checkAllSearches({ hostname: "http:
-  checkAllSearches({ formSubmitURL: "http:
+  checkAllSearches({ hostname: "http://nonexistent.example.com" }, 0);
+  checkAllSearches({ formSubmitURL: "http://www.example.com",
                      httpRealm: "The HTTP Realm" }, 0);
 
   checkSearchLogins({ hostname: "" }, 0);

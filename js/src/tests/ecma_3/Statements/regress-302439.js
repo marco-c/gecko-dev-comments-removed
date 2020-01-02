@@ -726,7 +726,7 @@ function productList(catID,famID) {
     switch(parseInt(famID)) {
 
     case 53 :                     
-      try { addBoxItem(document.Support_Form.Product_ID, '17" TFT LCD Monitor With DVI', '9980'); } catch(e) {addBoxItem(document.Support_Form.Product_ID, '1', '2');  } //
+      try { addBoxItem(document.Support_Form.Product_ID, '17" TFT LCD Monitor With DVI', '9980'); } catch(e) {addBoxItem(document.Support_Form.Product_ID, '1', '2');  } 
 
       break;
 

@@ -39,7 +39,7 @@ function test()
   s = 're = /[/]/';
   tryThis(s);
 
-  s = 're = /[
+  s = 're = /[//]/';
   tryThis(s);
 
   reportCompare('No Crash', 'No Crash', '');

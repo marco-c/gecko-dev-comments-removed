@@ -11,7 +11,7 @@ var expect = '';
 
 printBugNumber(BUGNUMBER);
 printStatus (summary);
-printStatus ('See https:
+printStatus ('See https://bugzilla.mozilla.org/show_bug.cgi?id=304828');
  
 expect = ['a', 'b', 'c'].toString();
 actual = String.split(new String('abc'), '').toString();

@@ -833,7 +833,7 @@ function dateParse(aDateString) {
   return null;
 } 
 
-const XHTML_NS = "http:
+const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 function XHTMLHandler(processor, isAtom) {

@@ -25,12 +25,12 @@ function test()
     return 'evildone';
   }
 
-  expect = 'a%E2%80%8D,+doevil()%5D)
+  expect = 'a%E2%80%8D,+doevil()%5D)//';
   actual += eval("(['a\\\u200d', '+doevil()])//'])");
   actual = encodeURI(actual);
   reportCompare(expect, actual, summary);
 
-  expect = 'a%EF%BF%BE,+doevil()%5D)
+  expect = 'a%EF%BF%BE,+doevil()%5D)//';
   actual = eval("(['a\\\ufffe', '+doevil()])//'])"); 
   actual = encodeURI(actual);
   reportCompare(expect, actual, summary);

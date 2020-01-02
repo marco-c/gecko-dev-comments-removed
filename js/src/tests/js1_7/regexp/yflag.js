@@ -9,7 +9,7 @@ var summary = 'ES4 Regular Expression /y flag';
 var actual = '';
 var expect = '';
 
-print('See http:
+print('See http://developer.mozilla.org/es4/proposals/extend_regexps.html#y_flag');
 
 
 test();

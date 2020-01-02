@@ -187,7 +187,7 @@ s += '<script language="JavaScript1.1">';
 s += '<!--';
 s += 'adSetTarget("_top");';
 s += 'htmlAdWH( (new Array(93103287,93103287,93103300,93103300))[document.adoffset||0] , 468, 60);';
-s += '
+s += '//-->';
 					       s += '</script>';
 					       s += '<noscript><a href="http://ar.atwola.com/link/93103287/aol" target="_top"><img src="http://ar.atwola.com/image/93103287/aol" alt="Click Here" width="468" height="60" border="0"></a></noscript> ';
 					       s += '';
@@ -286,7 +286,7 @@ s += '
 					       s += '<!--';
 					       s += 'adSetTarget("_top");';
 					       s += 'htmlAdWH( (new Array(93166917,93166917,93170132,93170132))[document.adoffset||0] , 120, 90);';
-					       s += '
+					       s += '//-->';
 					       s += '</script><noscript><a href="http://ar.atwola.com/link/93166917/aol" target="_top"><img src="http://ar.atwola.com/image/93166917/aol" alt="Click here for our advertiser" width="120" height="90" border="0"></a></noscript></td></tr>';
 					       s += '	<tr bgcolor="#999999" class="cnnNavGroupRow">';
 					       s += '		<td colspan="2" class="cnnNavGroup"><div class="cnnNavText">SERVICES</div></td></tr>';
@@ -428,7 +428,7 @@ s += '
 					       s += '<!-- CNNRadio cell -->';
 					       s += '        <td width="114"><div class="cnn6pxPad">';
 					       s += '        <span class="cnnBigPrint" style="color:#C00;font-weight:bold;">CNN</span><span class="cnnBigPrint" style="color:#000;font-weight:bold;">RADIO</span>';
-					       s += '<div class="cnnMainNewT2"><a href="javascript:CNN_openPopup("/audio/radio/preferences.html","radioplayer","toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=200,height=124")">Listen to latest updates</a><img src="http:
+					       s += '<div class="cnnMainNewT2"><a href="javascript:CNN_openPopup("/audio/radio/preferences.html","radioplayer","toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=200,height=124")">Listen to latest updates</a><img src="http://i.a.cnn.net/cnn/.element/img/1.0/misc/audio.gif" alt="" width="10" height="10" vspace="0" hspace="2" align="absmiddle">';
 					       s += '<div><img src="http://i.a.cnn.net/cnn/images/1.gif" alt="" width="1" height="5" hspace="0" vspace="0"></div>';
 					       s += '<!--';
 					       s += '[[span class="cnnFinePrint"]]sponsored by:[[/span]][[br]][[center]]';
@@ -457,7 +457,7 @@ s += '
 					       s += '  </td>';
 					       s += '<td width="3"><img src="http://i.a.cnn.net/cnn/images/1.gif" alt="" width="3" height="1" hspace="0" vspace="0"></td>  ';
 					       s += '  <td width="65" align="right">';
-					       s += '    <a href="javascript:LaunchVideo("/offbeat/2003/06/12/ms.casanova.col.ap.","300k");"><img src="http:
+					       s += '    <a href="javascript:LaunchVideo("/offbeat/2003/06/12/ms.casanova.col.ap.","300k");"><img src="http://i.cnn.net/cnn/video/offbeat/2003/06/12/ms.casanova.col.vs.kndu.jpg" alt="" width="65" height="49" border="0" vspace="2" hspace="0"></a>';
 					       s += '  </td></tr>';
 					       s += '</table>';
 					       s += ' <!-- /video box -->        ';
@@ -868,7 +868,7 @@ s += '
 					       s += '          <td><input class="cnnNavButton" type="submit" value="PERSONALIZE"></td>';
 					       s += '        </tr>';
 					       s += '        <tr>';
-					       s += '          <td class="cnnBodyText" colspan="2">Or <a href="javascript:CNN_openPopup("http:
+					       s += '          <td class="cnnBodyText" colspan="2">Or <a href="javascript:CNN_openPopup("http://weather.cnn.com/weather/select.popup/content2.jsp?mode=hplwp", "weather", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=260,height=250")"><b>select location from a list</b></a></td>';
 					       s += '        </tr>';
 					       s += '    </table></td>';
 					       s += '  </tr>';
@@ -1013,7 +1013,7 @@ s += '
 					       s += '<!--';
 					       s += 'adSetTarget("_top");';
 					       s += 'htmlAdWH( (new Array(93103308,93103308,93103308,93103308))[document.adoffset||0] , 88, 31);';
-					       s += '
+					       s += '//-->';
 					       s += '</script><noscript><a href="http://ar.atwola.com/link/93103308/aol" target="_top"><img src="http://ar.atwola.com/image/93103308/aol" alt="Click here for our advertiser" width="88" height="31" border="0"></a></noscript>';
 					       s += '</td>';
 					       s += '				</tr>';
@@ -1046,7 +1046,7 @@ s += '
 					       s += '	}';
 					       s += '	adSetPopupWH("93162673", "720", "300", document.adPopupFile, document.adPopunderInterval, 20, 50, -1);';
 					       s += '}';
-					       s += '
+					       s += '// -->';
 					       s += '</script>';
 					       s += '	';
 					       s += '<!-- home/bottom.eyeblaster -->';
@@ -1058,7 +1058,7 @@ s += '
 					       s += 'htmlAdWH( (new Array(93137910,93137910,93137910,93137910))[document.adoffset||0], 101, 1);';
 					       s += 'adSetType("");';
 					       s += '}';
-					       s += '
+					       s += '// -->';
 					       s += '</script>';
 					       s += '';
 					       s += '<script language="JavaScript1.1" src="http://ar.atwola.com/file/adsEnd.js"></script>';

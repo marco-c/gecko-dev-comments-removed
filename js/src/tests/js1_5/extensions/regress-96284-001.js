@@ -111,7 +111,7 @@ expect = obj1.toSource();
 addThis();
 
 status = inSection(12);
-obj1 = /ad;(lf)kj(2309\/\/)\/\
+obj1 = /ad;(lf)kj(2309\/\/)\/\//;
 obj2 = eval(obj1.toSource());
 actual = obj2.toSource();
 expect = obj1.toSource();

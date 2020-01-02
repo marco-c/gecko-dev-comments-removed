@@ -2537,7 +2537,7 @@ pref("font.name.monospace.x-tamil", "Latha");
 pref("font.name-list.serif.x-tamil", "Latha, Code2000");
 pref("font.name-list.monospace.x-tamil", "Latha, Code2000");
 
-# http:
+# http://www.alanwood.net/unicode/fonts.html
 
 pref("font.name.serif.x-armn", "Sylfaen");
 pref("font.name.sans-serif.x-armn", "Arial AMU");

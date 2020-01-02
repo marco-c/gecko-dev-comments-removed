@@ -1,9 +1,9 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+//-----------------------------------------------------------------------------
 var BUGNUMBER = 290575;
 var summary = 'Do not crash calling function with more than 32768 arguments';
 var actual = 'No Crash';
@@ -16,8 +16,8 @@ function crashMe(n) {
 
   nasty = [];
   while (n--)
-    nasty.push("a"+n);   
-  nasty.push("void 0");  
+    nasty.push("a"+n);   // Function arguments
+  nasty.push("void 0");  // Function body
   fn = Function.apply(null, nasty);
   fn.toString();
 }

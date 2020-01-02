@@ -31,8 +31,8 @@ const AUDIO_FILTERS = ['audio/basic', 'audio/L24', 'audio/mp4',
                        'audio/vnd.rn-realaudio', 'audio/vnd.wave',
                        'audio/webm'];
 
-Cu.import('resource:
-Cu.import("resource:
+Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+Cu.import("resource://gre/modules/osfile.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, 'cpmm',
                                    '@mozilla.org/childprocessmessagemanager;1',

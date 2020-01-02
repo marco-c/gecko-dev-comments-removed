@@ -4878,7 +4878,7 @@ function MTMTrackExpand(thisMenu) {
   var foundNumber = false;
   for(i = 0; i < thisMenu.items.length; i++) {
     if(thisMenu.items[i].url != "" && MTMTrackTarget(thisMenu.items[i].target)) {
-      targetPath = parent.frames[thisMenu.items[i].target].location.protocol + '
+      targetPath = parent.frames[thisMenu.items[i].target].location.protocol + '//' + parent.frames[thisMenu.items[i].target].location.host + parent.frames[thisMenu.items[i].target].location.pathname;
 
       if(targetPath.lastIndexOf(thisMenu.items[i].url) != -1 && (targetPath.lastIndexOf(thisMenu.items[i].url) + thisMenu.items[i].url.length) == targetPath.length) {
         return(thisMenu.items[i].number);

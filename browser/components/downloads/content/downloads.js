@@ -112,7 +112,7 @@ const DownloadsPanel = {
 
 
   get kDownloadsOverlay()
-      "chrome://browser/content/downloads/downloadsOverlay.xul",
+      "chrome:
 
   
 
