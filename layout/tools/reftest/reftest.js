@@ -271,7 +271,7 @@ this.OnRefTestLoad = function OnRefTestLoad(win)
     gBrowser.setAttribute("mozasyncpanzoom", "true");
     
     
-    gBrowser.setAttribute("style", "min-width: 800px; min-height: 1000px; max-width: 800px; max-height: 1000px");
+    gBrowser.setAttribute("style", "padding: 0px; margin: 0px; border:none; min-width: 800px; min-height: 1000px; max-width: 800px; max-height: 1000px");
 
 #ifdef BOOTSTRAP
 #ifdef REFTEST_B2G
@@ -1192,7 +1192,7 @@ function Focus()
         dock.activateApplication(true);
     } catch(ex) {
     }
-#endif // XP_MACOSX
+#endif 
     return true;
 }
 
