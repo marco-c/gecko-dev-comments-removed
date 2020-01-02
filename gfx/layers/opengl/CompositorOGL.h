@@ -85,7 +85,7 @@ public:
 class PerUnitTexturePoolOGL : public CompositorTexturePoolOGL
 {
 public:
-  PerUnitTexturePoolOGL(gl::GLContext* aGL)
+  explicit PerUnitTexturePoolOGL(gl::GLContext* aGL)
   : mTextureTarget(0) 
   , mGL(aGL)
   {}
@@ -124,7 +124,7 @@ protected:
 class PerFrameTexturePoolOGL : public CompositorTexturePoolOGL
 {
 public:
-  PerFrameTexturePoolOGL(gl::GLContext* aGL)
+  explicit PerFrameTexturePoolOGL(gl::GLContext* aGL)
   : mTextureTarget(0) 
   , mGL(aGL)
   {}
@@ -162,8 +162,8 @@ class CompositorOGL MOZ_FINAL : public Compositor
 
   std::map<ShaderConfigOGL, ShaderProgramOGL*> mPrograms;
 public:
-  CompositorOGL(nsIWidget *aWidget, int aSurfaceWidth = -1, int aSurfaceHeight = -1,
-                bool aUseExternalSurfaceSize = false);
+  explicit CompositorOGL(nsIWidget *aWidget, int aSurfaceWidth = -1, int aSurfaceHeight = -1,
+                         bool aUseExternalSurfaceSize = false);
 
 protected:
   virtual ~CompositorOGL();
@@ -241,7 +241,7 @@ public:
 
 #ifdef MOZ_DUMP_PAINTING
   virtual const char* Name() const MOZ_OVERRIDE { return "OGL"; }
-#endif 
+#endif // MOZ_DUMP_PAINTING
 
   virtual LayersBackend GetBackendType() const MOZ_OVERRIDE {
     return LayersBackend::LAYERS_OPENGL;
