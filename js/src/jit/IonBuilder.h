@@ -1,16 +1,16 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_IonBuilder_h
 #define jit_IonBuilder_h
 
 #ifdef JS_ION
 
-
-
+// This file declares the data structures for building a MIRGraph from a
+// JSScript.
 
 #include "jit/BytecodeAnalysis.h"
 #include "jit/IonOptimizationLevels.h"
@@ -27,8 +27,8 @@ class CallInfo;
 class BaselineInspector;
 class BaselineFrameInspector;
 
-
-
+// Records information about a baseline frame for compilation that is stable
+// when later used off thread.
 BaselineFrameInspector *
 NewBaselineFrameInspector(TempAllocator *temp, BaselineFrame *frame, CompileInfo *info);
 
@@ -37,19 +37,19 @@ class IonBuilder : public MIRGenerator
     enum ControlStatus {
         ControlStatus_Error,
         ControlStatus_Abort,
-        ControlStatus_Ended,        
-        ControlStatus_Joined,       
-        ControlStatus_Jumped,       
-        ControlStatus_None          
+        ControlStatus_Ended,        // There is no continuation/join point.
+        ControlStatus_Joined,       // Created a join node.
+        ControlStatus_Jumped,       // Parsing another branch at the same level.
+        ControlStatus_None          // No control flow.
     };
 
     enum SetElemSafety {
-        
+        // Normal write like a[b] = c.
         SetElem_Normal,
 
-        
-        
-        
+        // Write due to UnsafePutElements:
+        // - assumed to be in bounds,
+        // - not checked for data races
         SetElem_Unsafe,
     };
 
@@ -64,10 +64,10 @@ class IonBuilder : public MIRGenerator
     };
 
     struct ControlFlowInfo {
-        
+        // Entry in the cfgStack.
         uint32_t cfgEntry;
 
-        
+        // Label that continues go to.
         jsbytecode *continuepc;
 
         ControlFlowInfo(uint32_t cfgEntry, jsbytecode *continuepc)
@@ -76,104 +76,104 @@ class IonBuilder : public MIRGenerator
         { }
     };
 
-    
-    
-    
-    
+    // To avoid recursion, the bytecode analyzer uses a stack where each entry
+    // is a small state machine. As we encounter branches or jumps in the
+    // bytecode, we push information about the edges on the stack so that the
+    // CFG can be built in a tree-like fashion.
     struct CFGState {
         enum State {
-            IF_TRUE,            
-            IF_TRUE_EMPTY_ELSE, 
-            IF_ELSE_TRUE,       
-            IF_ELSE_FALSE,      
-            DO_WHILE_LOOP_BODY, 
-            DO_WHILE_LOOP_COND, 
-            WHILE_LOOP_COND,    
-            WHILE_LOOP_BODY,    
-            FOR_LOOP_COND,      
-            FOR_LOOP_BODY,      
-            FOR_LOOP_UPDATE,    
-            TABLE_SWITCH,       
-            COND_SWITCH_CASE,   
-            COND_SWITCH_BODY,   
-            AND_OR,             
-            LABEL,              
-            TRY                 
+            IF_TRUE,            // if() { }, no else.
+            IF_TRUE_EMPTY_ELSE, // if() { }, empty else
+            IF_ELSE_TRUE,       // if() { X } else { }
+            IF_ELSE_FALSE,      // if() { } else { X }
+            DO_WHILE_LOOP_BODY, // do { x } while ()
+            DO_WHILE_LOOP_COND, // do { } while (x)
+            WHILE_LOOP_COND,    // while (x) { }
+            WHILE_LOOP_BODY,    // while () { x }
+            FOR_LOOP_COND,      // for (; x;) { }
+            FOR_LOOP_BODY,      // for (; ;) { x }
+            FOR_LOOP_UPDATE,    // for (; ; x) { }
+            TABLE_SWITCH,       // switch() { x }
+            COND_SWITCH_CASE,   // switch() { case X: ... }
+            COND_SWITCH_BODY,   // switch() { case ...: X }
+            AND_OR,             // && x, || x
+            LABEL,              // label: x
+            TRY                 // try { x } catch(e) { }
         };
 
-        State state;            
-        jsbytecode *stopAt;     
+        State state;            // Current state of this control structure.
+        jsbytecode *stopAt;     // Bytecode at which to stop the processing loop.
 
-        
+        // For if structures, this contains branch information.
         union {
             struct {
                 MBasicBlock *ifFalse;
                 jsbytecode *falseEnd;
-                MBasicBlock *ifTrue;    
+                MBasicBlock *ifTrue;    // Set when the end of the true path is reached.
             } branch;
             struct {
-                
+                // Common entry point.
                 MBasicBlock *entry;
 
-                
+                // Whether OSR is being performed for this loop.
                 bool osr;
 
-                
+                // Position of where the loop body starts and ends.
                 jsbytecode *bodyStart;
                 jsbytecode *bodyEnd;
 
-                
+                // pc immediately after the loop exits.
                 jsbytecode *exitpc;
 
-                
+                // pc for 'continue' jumps.
                 jsbytecode *continuepc;
 
-                
+                // Common exit point. Created lazily, so it may be nullptr.
                 MBasicBlock *successor;
 
-                
+                // Deferred break and continue targets.
                 DeferredEdge *breaks;
                 DeferredEdge *continues;
 
-                
+                // Initial state, in case loop processing is restarted.
                 State initialState;
                 jsbytecode *initialPc;
                 jsbytecode *initialStopAt;
                 jsbytecode *loopHead;
 
-                
+                // For-loops only.
                 jsbytecode *condpc;
                 jsbytecode *updatepc;
                 jsbytecode *updateEnd;
             } loop;
             struct {
-                
+                // pc immediately after the switch.
                 jsbytecode *exitpc;
 
-                
+                // Deferred break and continue targets.
                 DeferredEdge *breaks;
 
-                
+                // MIR instruction
                 MTableSwitch *ins;
 
-                
+                // The number of current successor that get mapped into a block. 
                 uint32_t currentBlock;
 
             } tableswitch;
             struct {
-                
+                // Vector of body blocks to process after the cases.
                 FixedList<MBasicBlock *> *bodies;
 
-                
-                
-                
+                // When processing case statements, this counter points at the
+                // last uninitialized body.  When processing bodies, this
+                // counter targets the next body to process.
                 uint32_t currentIdx;
 
-                
+                // Remember the block index of the default case.
                 jsbytecode *defaultTarget;
                 uint32_t defaultIdx;
 
-                
+                // Block immediately after the switch.
                 jsbytecode *exitpc;
                 DeferredEdge *breaks;
             } condswitch;
@@ -287,26 +287,26 @@ class IonBuilder : public MIRGenerator
         return newBlockAfter(at, nullptr, pc);
     }
 
-    
-    
+    // Given a list of pending breaks, creates a new block and inserts a Goto
+    // linking each break to the new block.
     MBasicBlock *createBreakCatchBlock(DeferredEdge *edge, jsbytecode *pc);
 
-    
-    
+    // Finishes loops that do not actually loop, containing only breaks and
+    // returns or a do while loop with a condition that is constant false.
     ControlStatus processBrokenLoop(CFGState &state);
 
-    
-    
+    // Computes loop phis, places them in all successors of a loop, then
+    // handles any pending breaks.
     ControlStatus finishLoop(CFGState &state, MBasicBlock *successor);
 
-    
-    
+    // Incorporates a type/typeSet into an OSR value for a loop, after the loop
+    // body has been processed.
     bool addOsrValueTypeBarrier(uint32_t slot, MInstruction **def,
                                 MIRType type, types::TemporaryTypeSet *typeSet);
     bool maybeAddOsrTypeBarriers();
 
-    
-    
+    // Restarts processing of a loop if the type information at its header was
+    // incomplete.
     ControlStatus restartLoop(CFGState state);
 
     void assertValidLoopHeadOp(jsbytecode *pc);
@@ -317,8 +317,8 @@ class IonBuilder : public MIRGenerator
     ControlStatus tableSwitch(JSOp op, jssrcnote *sn);
     ControlStatus condSwitch(JSOp op, jssrcnote *sn);
 
-    
-    
+    // Please see the Big Honkin' Comment about how resume points work in
+    // IonBuilder.cpp, near the definition for this function.
     bool resume(MInstruction *ins, jsbytecode *pc, MResumePoint::Mode mode);
     bool resumeAt(MInstruction *ins, jsbytecode *pc);
     bool resumeAfter(MInstruction *ins);
@@ -336,19 +336,19 @@ class IonBuilder : public MIRGenerator
     MConstant *constant(const Value &v);
     MConstant *constantInt(int32_t i);
 
-    
-    
+    // Add a guard which ensure that the set of type which goes through this
+    // generated code correspond to the observed types for the bytecode.
     bool pushTypeBarrier(MDefinition *def, types::TemporaryTypeSet *observed, bool needBarrier);
 
-    
-    
-    
+    // As pushTypeBarrier, but will compute the needBarrier boolean itself based
+    // on observed and the JSFunction that we're planning to call. The
+    // JSFunction must be a DOM method or getter.
     bool pushDOMTypeBarrier(MInstruction *ins, types::TemporaryTypeSet *observed, JSFunction* func);
 
-    
-    
-    
-    
+    // If definiteType is not known or def already has the right type, just
+    // returns def.  Otherwise, returns an MInstruction that has that definite
+    // type, infallibly unboxing ins as needed.  The new instruction will be
+    // added to |current| in this case.
     MDefinition *ensureDefiniteType(MDefinition* def, JSValueType definiteType);
 
     JSObject *getSingletonPrototype(JSFunction *target);
@@ -381,7 +381,7 @@ class IonBuilder : public MIRGenerator
     bool storeSlot(MDefinition *obj, Shape *shape, MDefinition *value, bool needsBarrier,
                    MIRType slotType = MIRType_None);
 
-    
+    // jsop_getprop() helpers.
     bool getPropTryArgumentsLength(bool *emitted);
     bool getPropTryConstant(bool *emitted, PropertyName *name,
                             types::TemporaryTypeSet *types);
@@ -406,7 +406,7 @@ class IonBuilder : public MIRGenerator
                          bool barrier, types::TemporaryTypeSet *types);
     bool needsToMonitorMissingProperties(types::TemporaryTypeSet *types);
 
-    
+    // jsop_setprop() helpers.
     bool setPropTryCommonSetter(bool *emitted, MDefinition *obj,
                                 PropertyName *name, MDefinition *value);
     bool setPropTryCommonDOMSetter(bool *emitted, MDefinition *obj,
@@ -429,7 +429,7 @@ class IonBuilder : public MIRGenerator
                          PropertyName *name, MDefinition *value,
                          bool barrier, types::TemporaryTypeSet *objTypes);
 
-    
+    // binary data lookup helpers.
     bool lookupTypeDescrSet(MDefinition *typedObj,
                                      TypeDescrSet *out);
     bool typeSetToTypeDescrSet(types::TemporaryTypeSet *types,
@@ -478,7 +478,7 @@ class IonBuilder : public MIRGenerator
                                        bool canBeNeutered);
     MDefinition *neuterCheck(MDefinition *obj);
 
-    
+    // jsop_setelem() helpers.
     bool setElemTryTypedArray(bool *emitted, MDefinition *object,
                          MDefinition *index, MDefinition *value);
     bool setElemTryTypedObject(bool *emitted, MDefinition *obj,
@@ -499,7 +499,7 @@ class IonBuilder : public MIRGenerator
                                            TypeDescrSet elemTypeReprs,
                                            size_t elemSize);
 
-    
+    // jsop_getelem() helpers.
     bool getElemTryDense(bool *emitted, MDefinition *obj, MDefinition *index);
     bool getElemTryTypedStatic(bool *emitted, MDefinition *obj, MDefinition *index);
     bool getElemTryTypedArray(bool *emitted, MDefinition *obj, MDefinition *index);
@@ -521,7 +521,7 @@ class IonBuilder : public MIRGenerator
                                             TypeDescrSet elemTypeReprs,
                                             size_t elemSize);
 
-    
+    // Typed array helpers.
     MInstruction *getTypedArrayLength(MDefinition *obj);
     MInstruction *getTypedArrayElements(MDefinition *obj);
 
@@ -600,7 +600,7 @@ class IonBuilder : public MIRGenerator
     bool jsop_getaliasedvar(ScopeCoordinate sc);
     bool jsop_setaliasedvar(ScopeCoordinate sc);
 
-    
+    /* Inlining. */
 
     enum InliningStatus
     {
@@ -618,23 +618,23 @@ class IonBuilder : public MIRGenerator
 
     static InliningDecision DontInline(JSScript *targetScript, const char *reason);
 
-    
+    // Oracles.
     InliningDecision canInlineTarget(JSFunction *target, CallInfo &callInfo);
     InliningDecision makeInliningDecision(JSFunction *target, CallInfo &callInfo);
     bool selectInliningTargets(ObjectVector &targets, CallInfo &callInfo,
                                BoolVector &choiceSet, uint32_t *numInlineable);
 
-    
+    // Native inlining helpers.
     types::TemporaryTypeSet *getInlineReturnTypeSet();
     MIRType getInlineReturnType();
 
-    
+    // Array natives.
     InliningStatus inlineArray(CallInfo &callInfo);
     InliningStatus inlineArrayPopShift(CallInfo &callInfo, MArrayPopShift::Mode mode);
     InliningStatus inlineArrayPush(CallInfo &callInfo);
     InliningStatus inlineArrayConcat(CallInfo &callInfo);
 
-    
+    // Math natives.
     InliningStatus inlineMathAbs(CallInfo &callInfo);
     InliningStatus inlineMathFloor(CallInfo &callInfo);
     InliningStatus inlineMathCeil(CallInfo &callInfo);
@@ -649,7 +649,7 @@ class IonBuilder : public MIRGenerator
     InliningStatus inlineMathFRound(CallInfo &callInfo);
     InliningStatus inlineMathFunction(CallInfo &callInfo, MMathFunction::Function function);
 
-    
+    // String natives.
     InliningStatus inlineStringObject(CallInfo &callInfo);
     InliningStatus inlineStringSplit(CallInfo &callInfo);
     InliningStatus inlineStrCharCodeAt(CallInfo &callInfo);
@@ -657,11 +657,11 @@ class IonBuilder : public MIRGenerator
     InliningStatus inlineStrCharAt(CallInfo &callInfo);
     InliningStatus inlineStrReplace(CallInfo &callInfo);
 
-    
+    // RegExp natives.
     InliningStatus inlineRegExpExec(CallInfo &callInfo);
     InliningStatus inlineRegExpTest(CallInfo &callInfo);
 
-    
+    // Array intrinsics.
     InliningStatus inlineUnsafePutElements(CallInfo &callInfo);
     bool inlineUnsafeSetDenseArrayElement(CallInfo &callInfo, uint32_t base);
     bool inlineUnsafeSetTypedArrayElement(CallInfo &callInfo, uint32_t base,
@@ -670,33 +670,34 @@ class IonBuilder : public MIRGenerator
     InliningStatus inlineNewDenseArrayForSequentialExecution(CallInfo &callInfo);
     InliningStatus inlineNewDenseArrayForParallelExecution(CallInfo &callInfo);
 
-    
+    // Slot intrinsics.
     InliningStatus inlineUnsafeSetReservedSlot(CallInfo &callInfo);
     InliningStatus inlineUnsafeGetReservedSlot(CallInfo &callInfo);
 
-    
+    // Utility intrinsics.
     InliningStatus inlineIsCallable(CallInfo &callInfo);
     InliningStatus inlineHaveSameClass(CallInfo &callInfo);
     InliningStatus inlineToObject(CallInfo &callInfo);
     InliningStatus inlineDump(CallInfo &callInfo);
+    InliningStatus inlineHasClass(CallInfo &callInfo, const Class *clasp);
 
-    
+    // Testing functions.
     InliningStatus inlineForceSequentialOrInParallelSection(CallInfo &callInfo);
     InliningStatus inlineBailout(CallInfo &callInfo);
     InliningStatus inlineAssertFloat32(CallInfo &callInfo);
 
-    
+    // Main inlining functions
     InliningStatus inlineNativeCall(CallInfo &callInfo, JSNative native);
     bool inlineScriptedCall(CallInfo &callInfo, JSFunction *target);
     InliningStatus inlineSingleCall(CallInfo &callInfo, JSFunction *target);
 
-    
+    // Call functions
     InliningStatus inlineCallsite(ObjectVector &targets, ObjectVector &originals,
                                   bool lambda, CallInfo &callInfo);
     bool inlineCalls(CallInfo &callInfo, ObjectVector &targets, ObjectVector &originals,
                      BoolVector &choiceSet, MGetPropertyCache *maybeCache);
 
-    
+    // Inlining helpers.
     bool inlineGenericFallback(JSFunction *target, CallInfo &callInfo, MBasicBlock *dispatchBlock,
                                bool clonedAtCallsite);
     bool inlineTypeObjectFallback(CallInfo &callInfo, MBasicBlock *dispatchBlock,
@@ -738,9 +739,9 @@ class IonBuilder : public MIRGenerator
 
     types::TemporaryTypeSet *bytecodeTypes(jsbytecode *pc);
 
-    
-    
-    
+    // Use one of the below methods for updating the current block, rather than
+    // updating |current| directly. setCurrent() should only be used in cases
+    // where the block cannot have phis whose type needs to be computed.
 
     void setCurrentAndSpecializePhis(MBasicBlock *block) {
         if (block)
@@ -752,13 +753,13 @@ class IonBuilder : public MIRGenerator
         current = block;
     }
 
-    
+    // A builder is inextricably tied to a particular script.
     JSScript *script_;
 
-    
-    
-    
-    
+    // If off thread compilation is successful, the final code generator is
+    // attached here. Code has been generated, but not linked (there is not yet
+    // an IonScript). This is heap allocated, and must be explicitly destroyed,
+    // performed by FinishOffThreadBuilder().
     CodeGenerator *backgroundCodegen_;
 
   public:
@@ -771,7 +772,7 @@ class IonBuilder : public MIRGenerator
 
     AbortReason abortReason() { return abortReason_; }
 
-    TypeDescrSetHash *getOrCreateDescrSetHash(); 
+    TypeDescrSetHash *getOrCreateDescrSetHash(); // fallible
 
     types::CompilerConstraintList *constraints() {
         return constraints_;
@@ -791,10 +792,10 @@ class IonBuilder : public MIRGenerator
     AbortReason abortReason_;
     TypeDescrSetHash *descrSetHash_;
 
-    
+    // Constraints for recording dependencies on type information.
     types::CompilerConstraintList *constraints_;
 
-    
+    // Basic analysis information about the script.
     BytecodeAnalysis analysis_;
     BytecodeAnalysis &analysis() {
         return analysis_;
@@ -810,7 +811,7 @@ class IonBuilder : public MIRGenerator
     MBasicBlock *current;
     uint32_t loopDepth_;
 
-    
+    /* Information used for inline-call builders. */
     MResumePoint *callerResumePoint_;
     jsbytecode *callerPC() {
         return callerResumePoint_ ? callerResumePoint_->pc() : nullptr;
@@ -836,27 +837,27 @@ class IonBuilder : public MIRGenerator
 
     size_t inliningDepth_;
 
-    
-    
+    // Cutoff to disable compilation if excessive time is spent reanalyzing
+    // loop bodies to compute a fixpoint of the types for loop variables.
     static const size_t MAX_LOOP_RESTARTS = 40;
     size_t numLoopRestarts_;
 
-    
-    
+    // True if script->failedBoundsCheck is set for the current script or
+    // an outer script.
     bool failedBoundsCheck_;
 
-    
-    
+    // True if script->failedShapeGuard is set for the current script or
+    // an outer script.
     bool failedShapeGuard_;
 
-    
+    // Has an iterator other than 'for in'.
     bool nonStringIteration_;
 
-    
-    
+    // If this script can use a lazy arguments object, it will be pre-created
+    // here.
     MInstruction *lazyArguments_;
 
-    
+    // If this is an inline builder, the call info for the builder.
     const CallInfo *inlineCallInfo_;
 };
 
@@ -893,14 +894,14 @@ class CallInfo
     bool init(MBasicBlock *current, uint32_t argc) {
         JS_ASSERT(args_.empty());
 
-        
+        // Get the arguments in the right order
         if (!args_.reserve(argc))
             return false;
         for (int32_t i = argc; i > 0; i--)
             args_.infallibleAppend(current->peek(-i));
         current->popn(argc);
 
-        
+        // Get |this| and |fun|
         setThis(current->pop());
         setFun(current->pop());
 
@@ -990,9 +991,9 @@ bool TypeSetIncludes(types::TypeSet *types, MIRType input, types::TypeSet *input
 
 bool NeedsPostBarrier(CompileInfo &info, MDefinition *value);
 
-} 
-} 
+} // namespace jit
+} // namespace js
 
-#endif 
+#endif // JS_ION
 
-#endif 
+#endif /* jit_IonBuilder_h */
