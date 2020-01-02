@@ -1,16 +1,17 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * A class for keeping track of prefix-to-namespace-id mappings
- */
+
+
+
+
+
+
+
 
 #include "nsXMLNameSpaceMap.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsNameSpaceManager.h"
+#include "mozilla/dom/NameSpaceConstants.h"
 
 template <>
 class nsDefaultComparator <nsNameSpaceEntry, nsIAtom*> {
@@ -29,7 +30,7 @@ class nsDefaultComparator <nsNameSpaceEntry, int32_t> {
 };
 
 
-/* static */ nsXMLNameSpaceMap*
+ nsXMLNameSpaceMap*
 nsXMLNameSpaceMap::Create(bool aForXML)
 {
   nsXMLNameSpaceMap *map = new nsXMLNameSpaceMap();
@@ -84,8 +85,8 @@ nsXMLNameSpaceMap::FindNameSpaceID(nsIAtom *aPrefix) const
     return mNameSpaces[index].nameSpaceID;
   }
 
-  // The default mapping for no prefix is no namespace.  If a non-null prefix
-  // was specified and we didn't find it, we return an error.
+  
+  
 
   return aPrefix ? kNameSpaceID_Unknown : kNameSpaceID_None;
 }
