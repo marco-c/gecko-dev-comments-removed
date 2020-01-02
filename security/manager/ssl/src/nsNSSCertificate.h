@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef _NS_NSSCERTIFICATE_H_
 #define _NS_NSSCERTIFICATE_H_
@@ -42,7 +42,6 @@ public:
 
   nsNSSCertificate(CERTCertificate* cert, SECOidTag* evOidPolicy = nullptr);
   nsNSSCertificate();
-  virtual ~nsNSSCertificate();
   nsresult FormatUIStrings(const nsAutoString& nickname,
                            nsAutoString& nickWithSerial,
                            nsAutoString& details);
@@ -51,6 +50,8 @@ public:
   static nsNSSCertificate* ConstructFromDER(char* certDER, int derLen);
 
 private:
+  virtual ~nsNSSCertificate();
+
   mozilla::ScopedCERTCertificate mCert;
   bool             mPermDelete;
   uint32_t         mCertType;
@@ -60,7 +61,7 @@ private:
   nsresult GetSortableDate(PRTime aTime, nsAString& _aSortableDate);
   virtual void virtualDestroyNSSReference();
   void destructorSafeDestroyNSSReference();
-  bool InitFromDER(char* certDER, int derLen);  // return false on failure
+  bool InitFromDER(char* certDER, int derLen);  
 
   nsresult GetCertificateHash(nsAString& aFingerprint, SECOidTag aHashAlg);
 
@@ -74,17 +75,11 @@ private:
 
 namespace mozilla {
 
-template<>
-struct HasDangerousPublicDestructor<nsNSSCertificate>
-{
-  static const bool value = true;
-};
-
 SECStatus ConstructCERTCertListFromReversedDERArray(
             const mozilla::pkix::DERArray& certArray,
-            /*out*/ mozilla::ScopedCERTCertList& certList);
+             mozilla::ScopedCERTCertList& certList);
 
-} // namespcae mozilla
+} 
 
 class nsNSSCertList: public nsIX509CertList,
                      public nsNSSShutDownObject
@@ -93,7 +88,7 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIX509CERTLIST
 
-  // certList is adopted
+  
   nsNSSCertList(mozilla::ScopedCERTCertList& certList,
                 const nsNSSShutDownPreventionLock& proofOfLock);
 
@@ -151,4 +146,4 @@ private:
     { 0xbb, 0x20, 0x89, 0x85, 0xa6, 0x32, 0xdf, 0x05 }                 \
   }
 
-#endif // _NS_NSSCERTIFICATE_H_
+#endif 
