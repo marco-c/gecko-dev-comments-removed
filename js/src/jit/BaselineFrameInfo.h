@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_BaselineFrameInfo_h
 #define jit_BaselineFrameInfo_h
@@ -21,32 +21,32 @@ namespace jit {
 
 struct BytecodeInfo;
 
-// FrameInfo overview.
-//
-// FrameInfo is used by the compiler to track values stored in the frame. This
-// includes locals, arguments and stack values. Locals and arguments are always
-// fully synced. Stack values can either be synced, stored as constant, stored in
-// a Value register or refer to a local slot. Syncing a StackValue ensures it's
-// stored on the stack, e.g. kind == Stack.
-//
-// To see how this works, consider the following statement:
-//
-//    var y = x + 9;
-//
-// Here two values are pushed: StackValue(LocalSlot(0)) and StackValue(Int32Value(9)).
-// Only when we reach the ADD op, code is generated to load the operands directly
-// into the right operand registers and sync all other stack values.
-//
-// For stack values, the following invariants hold (and are checked between ops):
-//
-// (1) If a value is synced (kind == Stack), all values below it must also be synced.
-//     In other words, values with kind other than Stack can only appear on top of the
-//     abstract stack.
-//
-// (2) When we call a stub or IC, all values still on the stack must be synced.
 
-// Represents a value pushed on the stack. Note that StackValue is not used for
-// locals or arguments since these are always fully synced.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StackValue
 {
   public:
@@ -58,7 +58,7 @@ class StackValue
         ArgSlot,
         ThisSlot
 #ifdef DEBUG
-        // In debug builds, assert Kind is initialized.
+        
         , Uninitialized
 #endif
     };
@@ -221,7 +221,7 @@ class FrameInfo
         if (adjust == AdjustStack && popped->kind() == StackValue::Stack)
             masm.addPtr(Imm32(sizeof(Value)), BaselineStackReg);
 
-        // Assert when anything uses this value.
+        
         popped->reset();
     }
     inline void popn(uint32_t n, StackAdjustment adjust = AdjustStack) {
@@ -243,6 +243,7 @@ class FrameInfo
         sv->setRegister(val, knownType);
     }
     inline void pushLocal(uint32_t local) {
+        JS_ASSERT(local < nlocals());
         StackValue *sv = rawPush();
         sv->setLocalSlot(local);
     }
@@ -260,15 +261,7 @@ class FrameInfo
         sv->setStack();
     }
     inline Address addressOfLocal(size_t local) const {
-#ifdef DEBUG
-        if (local >= nlocals()) {
-            // GETLOCAL and SETLOCAL can be used to access stack values. This is
-            // fine, as long as they are synced.
-            size_t slot = local - nlocals();
-            JS_ASSERT(slot < stackDepth());
-            JS_ASSERT(stack[slot].kind() == StackValue::Stack);
-        }
-#endif
+        JS_ASSERT(local < nlocals());
         return Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfLocal(local));
     }
     Address addressOfArg(size_t arg) const {
@@ -315,16 +308,16 @@ class FrameInfo
     }
 
 #ifdef DEBUG
-    // Assert the state is valid before excuting "pc".
+    
     void assertValidState(const BytecodeInfo &info);
 #else
     inline void assertValidState(const BytecodeInfo &info) {}
 #endif
 };
 
-} // namespace jit
-} // namespace js
+} 
+} 
 
-#endif // JS_ION
+#endif 
 
-#endif /* jit_BaselineFrameInfo_h */
+#endif 

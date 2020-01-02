@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_BaselineFrame_h
 #define jit_BaselineFrame_h
@@ -15,71 +15,71 @@
 namespace js {
 namespace jit {
 
-// The stack looks like this, fp is the frame pointer:
-//
-// fp+y   arguments
-// fp+x   IonJSFrameLayout (frame header)
-// fp  => saved frame pointer
-// fp-x   BaselineFrame
-//        locals
-//        stack values
 
-// Eval frames
-//
-// Like js::StackFrame, every BaselineFrame is either a global frame
-// or a function frame. Both global and function frames can optionally
-// be "eval frames". The callee token for eval function frames is the
-// enclosing function. BaselineFrame::evalScript_ stores the eval script
-// itself.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BaselineFrame
 {
   public:
     enum Flags {
-        // The frame has a valid return value. See also StackFrame::HAS_RVAL.
+        
         HAS_RVAL         = 1 << 0,
 
-        // A call object has been pushed on the scope chain.
+        
         HAS_CALL_OBJ     = 1 << 2,
 
-        // Frame has an arguments object, argsObj_.
+        
         HAS_ARGS_OBJ     = 1 << 4,
 
-        // See StackFrame::PREV_UP_TO_DATE.
+        
         PREV_UP_TO_DATE  = 1 << 5,
 
-        // Eval frame, see the "eval frames" comment.
+        
         EVAL             = 1 << 6,
 
-        // Frame has hookData_ set.
+        
         HAS_HOOK_DATA    = 1 << 7,
 
-        // Frame has profiler entry pushed.
+        
         HAS_PUSHED_SPS_FRAME = 1 << 8,
 
-        // Frame has over-recursed on an early check.
+        
         OVER_RECURSED    = 1 << 9
     };
 
-  protected: // Silence Clang warning about unused private fields.
-    // We need to split the Value into 2 fields of 32 bits, otherwise the C++
-    // compiler may add some padding between the fields.
+  protected: 
+    
+    
     uint32_t loScratchValue_;
     uint32_t hiScratchValue_;
-    uint32_t loReturnValue_;        // If HAS_RVAL, the frame's return value.
+    uint32_t loReturnValue_;        
     uint32_t hiReturnValue_;
     uint32_t frameSize_;
-    JSObject *scopeChain_;          // Scope chain (always initialized).
-    JSScript *evalScript_;          // If isEvalFrame(), the current eval script.
-    ArgumentsObject *argsObj_;      // If HAS_ARGS_OBJ, the arguments object.
-    void *hookData_;                // If HAS_HOOK_DATA, debugger call hook data.
+    JSObject *scopeChain_;          
+    JSScript *evalScript_;          
+    ArgumentsObject *argsObj_;      
+    void *hookData_;                
     uint32_t flags_;
 #if JS_BITS_PER_WORD == 32
-    uint32_t padding_;              // Pad to 8-byte alignment.
+    uint32_t padding_;              
 #endif
 
   public:
-    // Distance between the frame pointer and the frame header (return address).
-    // This is the old frame pointer saved in the prologue.
+    
+    
     static const uint32_t FramePointerOffset = sizeof(void *);
 
     bool initForOsr(StackFrame *fp, uint32_t numStackValues);
@@ -152,8 +152,8 @@ class BaselineFrame
     }
 
     Value &unaliasedVar(uint32_t i, MaybeCheckAliasing checkAliasing = CHECK_ALIASING) const {
+        JS_ASSERT(i < script()->nfixedvars());
         JS_ASSERT_IF(checkAliasing, !script()->varIsAliased(i));
-        JS_ASSERT(i < script()->nfixed());
         return *valueSlot(i);
     }
 
@@ -172,6 +172,7 @@ class BaselineFrame
     }
 
     Value &unaliasedLocal(uint32_t i, MaybeCheckAliasing checkAliasing = CHECK_ALIASING) const {
+        JS_ASSERT(i < script()->nfixed());
 #ifdef DEBUG
         CheckLocalUnaliased(checkAliasing, script(), i);
 #endif
@@ -295,7 +296,7 @@ class BaselineFrame
         flags_ |= OVER_RECURSED;
     }
 
-    void trace(JSTracer *trc);
+    void trace(JSTracer *trc, IonFrameIterator &frame);
 
     bool isFunctionFrame() const {
         return CalleeTokenIsFunction(calleeToken());
@@ -333,7 +334,7 @@ class BaselineFrame
         return (IonJSFrameLayout *)fp;
     }
 
-    // Methods below are used by the compiler.
+    
     static size_t offsetOfCalleeToken() {
         return FramePointerOffset + js::jit::IonJSFrameLayout::offsetOfCalleeToken();
     }
@@ -350,9 +351,9 @@ class BaselineFrame
         return sizeof(BaselineFrame);
     }
 
-    // The reverseOffsetOf methods below compute the offset relative to the
-    // frame's base pointer. Since the stack grows down, these offsets are
-    // negative.
+    
+    
+    
     static int reverseOffsetOfFrameSize() {
         return -int(Size()) + offsetof(BaselineFrame, frameSize_);
     }
@@ -379,12 +380,12 @@ class BaselineFrame
     }
 };
 
-// Ensure the frame is 8-byte aligned (required on ARM).
+
 JS_STATIC_ASSERT(((sizeof(BaselineFrame) + BaselineFrame::FramePointerOffset) % 8) == 0);
 
-} // namespace jit
-} // namespace js
+} 
+} 
 
-#endif // JS_ION
+#endif 
 
-#endif /* jit_BaselineFrame_h */
+#endif 
