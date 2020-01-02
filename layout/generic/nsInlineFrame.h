@@ -1,9 +1,9 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/* rendering object for CSS display:inline objects */
 
 #ifndef nsInlineFrame_h___
 #define nsInlineFrame_h___
@@ -13,25 +13,14 @@
 
 class nsLineLayout;
 
-
-
-
-
-
-#define NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET     NS_FRAME_STATE_BIT(21)
-
-#define NS_INLINE_FRAME_BIDI_VISUAL_IS_LEFT_MOST     NS_FRAME_STATE_BIT(22)
-
-#define NS_INLINE_FRAME_BIDI_VISUAL_IS_RIGHT_MOST    NS_FRAME_STATE_BIT(23)
-
 typedef nsContainerFrame nsInlineFrameBase;
 
-
-
-
-
-
-
+/**
+ * Inline frame class.
+ *
+ * This class manages a list of child frames that are inline frames. Working with
+ * nsLineLayout, the class will reflow and place inline frames on a line.
+ */
 class nsInlineFrame : public nsInlineFrameBase
 {
 public:
@@ -41,7 +30,7 @@ public:
 
   friend nsIFrame* NS_NewInlineFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-  
+  // nsIFrame overrides
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) MOZ_OVERRIDE;
@@ -73,7 +62,7 @@ public:
   virtual bool PeekOffsetCharacter(bool aForward, int32_t* aOffset,
                                      bool aRespectClusters = true) MOZ_OVERRIDE;
   
-  
+  // nsIHTMLReflow overrides
   virtual void AddInlineMinWidth(nsRenderingContext *aRenderingContext,
                                  InlineMinWidthData *aData) MOZ_OVERRIDE;
   virtual void AddInlinePrefWidth(nsRenderingContext *aRenderingContext,
@@ -94,37 +83,37 @@ public:
   virtual nscoord GetBaseline() const MOZ_OVERRIDE;
   virtual bool DrainSelfOverflowList() MOZ_OVERRIDE;
 
-  
-
-
+  /**
+   * Return true if the frame is leftmost frame or continuation.
+   */
   bool IsLeftMost() const {
-    
-    
+    // If the frame's bidi visual state is set, return is-leftmost state
+    // else return true if it's the first continuation.
     return (GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET)
              ? !!(GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_IS_LEFT_MOST)
              : (!GetPrevInFlow());
   }
 
-  
-
-
+  /**
+   * Return true if the frame is rightmost frame or continuation.
+   */
   bool IsRightMost() const {
-    
-    
+    // If the frame's bidi visual state is set, return is-rightmost state
+    // else return true if it's the last continuation.
     return (GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET)
              ? !!(GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_IS_RIGHT_MOST)
              : (!GetNextInFlow());
   }
 
 protected:
-  
+  // Additional reflow state used during our reflow methods
   struct InlineReflowState {
     nsIFrame* mPrevFrame;
     nsInlineFrame* mNextInFlow;
     nsIFrame*      mLineContainer;
     nsLineLayout*  mLineLayout;
-    bool mSetParentPointer;  
-                                     
+    bool mSetParentPointer;  // when reflowing child frame first set its
+                                     // parent frame pointer
 
     InlineReflowState()  {
       mPrevFrame = nullptr;
@@ -151,12 +140,12 @@ protected:
                              nsIFrame* aFrame,
                              nsReflowStatus& aStatus);
 
-  
-
-
-
-
-
+  /**
+   * Reparent floats whose placeholders are inline descendants of aFrame from
+   * whatever block they're currently parented by to aOurBlock.
+   * @param aReparentSiblings if this is true, we follow aFrame's
+   * GetNextSibling chain reparenting them all
+   */
   void ReparentFloatsForInlineChild(nsIFrame* aOurBlock, nsIFrame* aFrame,
                                     bool aReparentSiblings);
 
@@ -170,30 +159,30 @@ protected:
                           InlineReflowState& aState);
 
 private:
-  
-  
+  // Helper method for DrainSelfOverflowList() to deal with lazy parenting
+  // (which we only do for nsInlineFrame, not nsFirstLineFrame).
   enum DrainFlags {
-    eDontReparentFrames = 1, 
-    eInFirstLine = 2, 
+    eDontReparentFrames = 1, // skip reparenting the overflow list frames
+    eInFirstLine = 2, // the request is for an inline descendant of a nsFirstLineFrame
   };
-  
-
-
-
-
-
+  /**
+   * Move any frames on our overflow list to the end of our principal list.
+   * @param aFlags one or more of the above DrainFlags
+   * @param aLineContainer the nearest line container ancestor
+   * @return true if there were any overflow frames
+   */
   bool DrainSelfOverflowListInternal(DrainFlags aFlags,
                                      nsIFrame* aLineContainer);
 protected:
   nscoord mBaseline;
 };
 
+//----------------------------------------------------------------------
 
-
-
-
-
-
+/**
+ * Variation on inline-frame used to manage lines for line layout in
+ * special situations (:first-line style in particular).
+ */
 class nsFirstLineFrame MOZ_FINAL : public nsInlineFrame {
 public:
   NS_DECL_FRAMEARENA_HELPERS
@@ -222,4 +211,4 @@ protected:
                                  bool* aIsComplete) MOZ_OVERRIDE;
 };
 
-#endif 
+#endif /* nsInlineFrame_h___ */
