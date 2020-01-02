@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/AnalyserNode.h"
 #include "mozilla/dom/AnalyserNodeBinding.h"
@@ -32,10 +32,10 @@ class AnalyserNodeEngine : public AudioNodeEngine
     {
       nsRefPtr<AnalyserNode> node;
       {
-        // No need to keep holding the lock for the whole duration of this
-        // function, since we're holding a strong reference to it, so if
-        // we can obtain the reference, we will hold the node alive in
-        // this function.
+        
+        
+        
+        
         MutexAutoLock lock(mStream->Engine()->NodeMutex());
         node = static_cast<AnalyserNode*>(mStream->Engine()->Node());
       }
@@ -120,7 +120,7 @@ AnalyserNode::WrapObject(JSContext* aCx)
 void
 AnalyserNode::SetFftSize(uint32_t aValue, ErrorResult& aRv)
 {
-  // Disallow values that are not a power of 2 and outside the [32,2048] range
+  
   if (aValue < 32 ||
       aValue > 2048 ||
       (aValue & (aValue - 1)) != 0) {
@@ -167,9 +167,11 @@ void
 AnalyserNode::GetFloatFrequencyData(const Float32Array& aArray)
 {
   if (!FFTAnalysis()) {
-    // Might fail to allocate memory
+    
     return;
   }
+
+  aArray.ComputeLengthAndData();
 
   float* buffer = aArray.Data();
   size_t length = std::min(size_t(aArray.Length()), mOutputBuffer.Length());
@@ -183,18 +185,20 @@ void
 AnalyserNode::GetByteFrequencyData(const Uint8Array& aArray)
 {
   if (!FFTAnalysis()) {
-    // Might fail to allocate memory
+    
     return;
   }
 
   const double rangeScaleFactor = 1.0 / (mMaxDecibels - mMinDecibels);
+
+  aArray.ComputeLengthAndData();
 
   unsigned char* buffer = aArray.Data();
   size_t length = std::min(size_t(aArray.Length()), mOutputBuffer.Length());
 
   for (size_t i = 0; i < length; ++i) {
     const double decibels = WebAudioUtils::ConvertLinearToDecibels(mOutputBuffer[i], mMinDecibels);
-    // scale down the value to the range of [0, UCHAR_MAX]
+    
     const double scaled = std::max(0.0, std::min(double(UCHAR_MAX),
                                                  UCHAR_MAX * (decibels - mMinDecibels) * rangeScaleFactor));
     buffer[i] = static_cast<unsigned char>(scaled);
@@ -204,6 +208,8 @@ AnalyserNode::GetByteFrequencyData(const Uint8Array& aArray)
 void
 AnalyserNode::GetFloatTimeDomainData(const Float32Array& aArray)
 {
+  aArray.ComputeLengthAndData();
+
   float* buffer = aArray.Data();
   size_t length = std::min(size_t(aArray.Length()), mBuffer.Length());
 
@@ -215,12 +221,14 @@ AnalyserNode::GetFloatTimeDomainData(const Float32Array& aArray)
 void
 AnalyserNode::GetByteTimeDomainData(const Uint8Array& aArray)
 {
+  aArray.ComputeLengthAndData();
+
   unsigned char* buffer = aArray.Data();
   size_t length = std::min(size_t(aArray.Length()), mBuffer.Length());
 
   for (size_t i = 0; i < length; ++i) {
     const float value = mBuffer[(i + mWriteIndex) % mBuffer.Length()];
-    // scale the value to the range of [0, UCHAR_MAX]
+    
     const float scaled = std::max(0.0f, std::min(float(UCHAR_MAX),
                                                  128.0f * (value + 1.0f)));
     buffer[i] = static_cast<unsigned char>(scaled);
@@ -248,7 +256,7 @@ AnalyserNode::FFTAnalysis()
 
   mAnalysisBlock.PerformFFT(inputBuffer);
 
-  // Normalize so than an input sine wave at 0dBfs registers as 0dBfs (undo FFT scaling factor).
+  
   const double magnitudeScale = 1.0 / FftSize();
 
   for (uint32_t i = 0; i < mOutputBuffer.Length(); ++i) {
@@ -305,12 +313,12 @@ AnalyserNode::AppendChunk(const AudioChunk& aChunk)
   const uint32_t bufferSize = mBuffer.Length();
   const uint32_t channelCount = aChunk.mChannelData.Length();
   uint32_t chunkDuration = aChunk.mDuration;
-  MOZ_ASSERT((bufferSize & (bufferSize - 1)) == 0); // Must be a power of two!
+  MOZ_ASSERT((bufferSize & (bufferSize - 1)) == 0); 
   MOZ_ASSERT(channelCount > 0);
   MOZ_ASSERT(chunkDuration == WEBAUDIO_BLOCK_SIZE);
 
   if (chunkDuration > bufferSize) {
-    // Copy a maximum bufferSize samples.
+    
     chunkDuration = bufferSize;
   }
 
