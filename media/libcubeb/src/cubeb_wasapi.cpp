@@ -21,7 +21,7 @@
 #include "cubeb_resampler.h"
 #include <stdio.h>
 
-#if 0
+#if 1
 #  define LOG(...) do {         \
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n");        \
@@ -940,6 +940,7 @@ cubeb_ops const wasapi_ops = {
    wasapi_stream_get_latency,
    wasapi_stream_set_volume,
    wasapi_stream_set_panning,
+   NULL,
    NULL,
    NULL
  };
