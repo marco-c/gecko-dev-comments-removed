@@ -1,9 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 function test() {
-  /** Test for Bug 345898 **/
+  
 
   function test(aLambda) {
     try {
@@ -11,11 +11,12 @@ function test() {
       return false;
     }
     catch (ex) {
-      return ex.name == "NS_ERROR_ILLEGAL_VALUE";
+      return ex.name == "NS_ERROR_ILLEGAL_VALUE" ||
+             ex.name == "NS_ERROR_FAILURE";
     }
   }
 
-  // all of the following calls with illegal arguments should throw NS_ERROR_ILLEGAL_VALUE
+  
   ok(test(function() ss.getWindowState({})),
      "Invalid window for getWindowState throws");
   ok(test(function() ss.setWindowState({}, "", false)),
