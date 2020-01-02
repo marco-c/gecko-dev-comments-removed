@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workers_runtimeservice_h__
 #define mozilla_dom_workers_runtimeservice_h__
@@ -37,11 +37,11 @@ private:
   {
     WorkerPrivate* mWorkerPrivate;
     nsCString mScriptSpec;
-    nsString mName;
+    nsCString mName;
 
     SharedWorkerInfo(WorkerPrivate* aWorkerPrivate,
                      const nsACString& aScriptSpec,
-                     const nsAString& aName)
+                     const nsACString& aName)
     : mWorkerPrivate(aWorkerPrivate), mScriptSpec(aScriptSpec), mName(aName)
     { }
   };
@@ -83,17 +83,17 @@ private:
 
   mozilla::Mutex mMutex;
 
-  
+  // Protected by mMutex.
   nsClassHashtable<nsCStringHashKey, WorkerDomainInfo> mDomainMap;
 
-  
+  // Protected by mMutex.
   nsTArray<IdleThreadInfo> mIdleThreadArray;
 
-  
+  // *Not* protected by mMutex.
   nsClassHashtable<nsPtrHashKey<nsPIDOMWindow>,
                    nsTArray<WorkerPrivate*> > mWindowMap;
 
-  
+  // Only used on the main thread.
   nsCOMPtr<nsITimer> mIdleThreadTimer;
 
   static JSSettings sDefaultJSSettings;
@@ -111,7 +111,7 @@ public:
 private:
   NavigatorProperties mNavigatorProperties;
 
-  
+  // True when the observer service holds a reference to this object.
   bool mObserved;
   bool mShuttingDown;
   bool mNavigatorPropertiesLoaded;
@@ -144,7 +144,7 @@ public:
   nsresult
   CreateSharedWorker(const GlobalObject& aGlobal,
                      const nsAString& aScriptURL,
-                     const nsAString& aName,
+                     const nsACString& aName,
                      SharedWorker** aSharedWorker);
 
   void
@@ -279,4 +279,4 @@ private:
 
 END_WORKERS_NAMESPACE
 
-#endif 
+#endif /* mozilla_dom_workers_runtimeservice_h__ */

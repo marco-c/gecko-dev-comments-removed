@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workerscope_h__
 #define mozilla_dom_workerscope_h__
@@ -14,8 +14,8 @@ namespace dom {
 
 class Function;
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 BEGIN_WORKERS_NAMESPACE
 
@@ -138,12 +138,13 @@ public:
 
 class SharedWorkerGlobalScope MOZ_FINAL : public WorkerGlobalScope
 {
-  const nsString mName;
+  const nsCString mName;
 
   ~SharedWorkerGlobalScope() { }
 
 public:
-  SharedWorkerGlobalScope(WorkerPrivate* aWorkerPrivate, const nsString& aName);
+  SharedWorkerGlobalScope(WorkerPrivate* aWorkerPrivate,
+                          const nsCString& aName);
 
   static bool
   Visible(JSContext* aCx, JSObject* aObj);
@@ -152,7 +153,7 @@ public:
   WrapGlobalObject(JSContext* aCx) MOZ_OVERRIDE;
 
   void GetName(DOMString& aName) const {
-    aName.AsAString() = mName;
+    aName.AsAString() = NS_ConvertUTF8toUTF16(mName);
   }
 
   IMPL_EVENT_HANDLER(connect)
@@ -163,4 +164,4 @@ CreateGlobalScope(JSContext* aCx);
 
 END_WORKERS_NAMESPACE
 
-#endif 
+#endif /* mozilla_dom_workerscope_h__ */
