@@ -4,6 +4,7 @@
 
 
 
+#undef NDEBUG
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -138,8 +139,6 @@ struct cubeb_stream
 
   float * mix_buffer;
   
-  uint8_t bytes_per_frame;
-  
   bool draining;
 };
 
@@ -161,7 +160,7 @@ void
 mono_to_stereo(T * in, long insamples, T * out)
 {
   int j = 0;
-  for (int i = 0; i < insamples; i++, j+=2) {
+  for (int i = 0; i < insamples; ++i, j += 2) {
     out[j] = out[j + 1] = in[i];
   }
 }
@@ -170,6 +169,7 @@ template<typename T>
 void
 upmix(T * in, long inframes, T * out, int32_t in_channels, int32_t out_channels)
 {
+  assert(out_channels >= in_channels);
   
   if (in_channels == 1 && out_channels == 2) {
     mono_to_stereo(in, inframes, out);
@@ -177,14 +177,11 @@ upmix(T * in, long inframes, T * out, int32_t in_channels, int32_t out_channels)
   }
   
   long out_index = 0;
-  for (long i = 0; i < inframes * in_channels; i+=in_channels) {
-    for (int j = 0; j < in_channels; j++) {
+  for (long i = 0; i < inframes * in_channels; i += in_channels) {
+    for (int j = 0; j < in_channels; ++j) {
       out[out_index + j] = in[i + j];
-      if (in_channels == 1) {
-        out[out_index + j + 1] = in[i + j];
-      }
     }
-    for (int j = in_channels; j < out_channels; j++) {
+    for (int j = in_channels; j < out_channels; ++j) {
       out[out_index + j] = 0.0;
     }
     out_index += out_channels;
@@ -193,21 +190,25 @@ upmix(T * in, long inframes, T * out, int32_t in_channels, int32_t out_channels)
 
 template<typename T>
 void
-downmix_to_stereo(T * in, long inframes, T * out, int32_t in_channels)
+downmix(T * in, long inframes, T * out, int32_t in_channels, int32_t out_channels)
 {
+  assert(in_channels >= out_channels);
   
 
 
-  for (int32_t i = 0; i < inframes; i++) {
-    out[i * 2] = in[i * in_channels];
-    out[i * 2 + 1] = in[i * in_channels + 1];
+  long out_index = 0;
+  for (long i = 0; i < inframes * in_channels; i += in_channels) {
+    for (int j = 0; j < out_channels; ++j) {
+      out[out_index + j] = in[i + j];
+    }
+    out_index += out_channels;
   }
 }
 
 
 
 static size_t
-frame_to_bytes_before_mix(cubeb_stream * stm, size_t frames)
+frames_to_bytes_before_mix(cubeb_stream * stm, size_t frames)
 {
   size_t stream_frame_size = stm->stream_params.channels * sizeof(float);
   return stream_frame_size * frames;
@@ -227,7 +228,7 @@ refill_with_resampling(cubeb_stream * stm, float * data, long frames_needed)
   long frame_requested = before_resampling - stm->leftover_frame_count;
 
   size_t leftover_bytes =
-    frame_to_bytes_before_mix(stm, stm->leftover_frame_count);
+    frames_to_bytes_before_mix(stm, stm->leftover_frame_count);
 
   
   memcpy(stm->resampling_src_buffer, stm->leftover_frames_buffer, leftover_bytes);
@@ -261,11 +262,11 @@ refill_with_resampling(cubeb_stream * stm, float * data, long frames_needed)
   
   stm->leftover_frame_count = before_resampling - in_frames;
   size_t unresampled_bytes =
-    frame_to_bytes_before_mix(stm, stm->leftover_frame_count);
+    frames_to_bytes_before_mix(stm, stm->leftover_frame_count);
 
   uint8_t * leftover_frames_start =
     reinterpret_cast<uint8_t *>(stm->resampling_src_buffer);
-  leftover_frames_start += frame_to_bytes_before_mix(stm, in_frames);
+  leftover_frames_start += frames_to_bytes_before_mix(stm, in_frames);
 
   assert(stm->leftover_frame_count <= stm->leftover_frame_size);
   memcpy(stm->leftover_frames_buffer, leftover_frames_start, unresampled_bytes);
@@ -278,8 +279,8 @@ refill_with_resampling(cubeb_stream * stm, float * data, long frames_needed)
     upmix(resample_dest, out_frames, data,
           stm->stream_params.channels, stm->mix_params.channels);
   } else if (should_downmix(stm)) {
-    downmix_to_stereo(resample_dest, out_frames, data,
-                      stm->stream_params.channels);
+    downmix(resample_dest, out_frames, data,
+            stm->stream_params.channels, stm->mix_params.channels);
   }
 }
 
@@ -296,7 +297,7 @@ refill(cubeb_stream * stm, float * data, long frames_needed)
   }
 
   long got = stm->data_callback(stm, stm->user_ptr, dest, frames_needed);
-
+  assert(got <= frames_needed);
   if (got != frames_needed) {
     LOG("draining.");
     stm->draining = true;
@@ -305,8 +306,9 @@ refill(cubeb_stream * stm, float * data, long frames_needed)
   if (should_upmix(stm)) {
     upmix(dest, got, data,
           stm->stream_params.channels, stm->mix_params.channels);
-  } else {
-    downmix_to_stereo(dest, got, data, stm->stream_params.channels);
+  } else if (should_downmix(stm)) {
+    downmix(dest, got, data,
+            stm->stream_params.channels, stm->mix_params.channels);
   }
 }
 
@@ -363,6 +365,7 @@ wasapi_stream_render_loop(LPVOID stream)
         is_playing = false;
         continue;
       }
+      assert(padding <= stm->buffer_frame_count);
 
       if (stm->draining) {
         if (padding == 0) {
@@ -603,7 +606,7 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
 {
   
 
-  if ((*mix_format)->nChannels == 2) {
+  if ((*mix_format)->nChannels <= 2) {
     return;
   }
 
@@ -649,6 +652,8 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
     
 
     LOG("Using WASAPI suggested format: channels: %d", closest->nChannels);
+    WAVEFORMATEXTENSIBLE * closest_pcm = reinterpret_cast<WAVEFORMATEXTENSIBLE *>(closest);
+    assert(closest_pcm->SubFormat == format_pcm->SubFormat);
     CoTaskMemFree(*mix_format);
     *mix_format = closest;
   } else if (hr == AUDCLNT_E_UNSUPPORTED_FORMAT) {
@@ -721,9 +726,6 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
 
   stm->client->GetMixFormat(&mix_format);
 
-  
-  stm->bytes_per_frame = static_cast<uint8_t>(mix_format->nBlockAlign);
-
   handle_channel_layout(stm, &mix_format, &stream_params);
 
   
@@ -757,7 +759,7 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
 
 
     stm->leftover_frame_size = static_cast<uint32_t>(ceilf(1 / resampling_rate * 2) + 1);
-    stm->leftover_frames_buffer = (float *)malloc(frame_to_bytes_before_mix(stm, stm->leftover_frame_size));
+    stm->leftover_frames_buffer = (float *)malloc(frames_to_bytes_before_mix(stm, stm->leftover_frame_size));
 
     stm->refill_function = &refill_with_resampling;
   } else {
@@ -787,10 +789,8 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
     return CUBEB_ERROR;
   }
 
-  assert(stm->mix_params.channels >= 2);
-
   if (should_upmix(stm) || should_downmix(stm)) {
-    stm->mix_buffer = (float *) malloc(frame_to_bytes_before_mix(stm, stm->buffer_frame_count));
+    stm->mix_buffer = (float *) malloc(frames_to_bytes_before_mix(stm, stm->buffer_frame_count));
   }
 
   
@@ -799,7 +799,7 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
 
   if (stm->resampler) {
     size_t frames_needed = static_cast<size_t>(frame_count_at_rate(stm->buffer_frame_count, resampling_rate));
-    stm->resampling_src_buffer = (float *)malloc(frame_to_bytes_before_mix(stm, frames_needed));
+    stm->resampling_src_buffer = (float *)malloc(frames_to_bytes_before_mix(stm, frames_needed));
   }
 
   hr = stm->client->SetEventHandle(stm->refill_event);
