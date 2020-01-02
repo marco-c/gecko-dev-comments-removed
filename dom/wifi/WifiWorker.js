@@ -1957,10 +1957,10 @@ function WifiWorker() {
         net.phase1 = quote(net.phase1);
 
       if (hasValidProperty("phase2")) {
-        if (net.eap === "PEAP") {
-          net.phase2 = quote("auth=" + net.phase2);
-        } else {  
+        if (net.phase2 === "TLS") {
           net.phase2 = quote("autheap=" + net.phase2);
+        } else { 
+          net.phase2 = quote("auth=" + net.phase2);
         }
       }
 
