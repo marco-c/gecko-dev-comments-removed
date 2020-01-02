@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "OCSPCommon.h"
 
@@ -13,6 +13,7 @@
 
 using namespace mozilla;
 using namespace mozilla::test;
+using namespace mozilla::pkix::test;
 
 
 SECItemArray *
@@ -38,7 +39,7 @@ GetOCSPResponseForType(OCSPResponseType aORT, CERTCertificate *aCert,
   PRTime oneDay = 60*60*24 * (PRTime)PR_USEC_PER_SEC;
   PRTime oldNow = now - (8 * oneDay);
 
-  insanity::test::OCSPResponseContext context(aArena, aCert, now);
+  OCSPResponseContext context(aArena, aCert, now);
 
   if (aORT == ORTGoodOtherCert) {
     context.cert = PK11_FindCertFromNickname(aAdditionalCertName, nullptr);
@@ -47,7 +48,7 @@ GetOCSPResponseForType(OCSPResponseType aORT, CERTCertificate *aCert,
       return nullptr;
     }
   }
-  
+  // XXX CERT_FindCertIssuer uses the old, deprecated path-building logic
   context.issuerCert = CERT_FindCertIssuer(aCert, now, certUsageSSLCA);
   if (!context.issuerCert) {
     PrintPRError("CERT_FindCertIssuer failed");
@@ -78,8 +79,8 @@ GetOCSPResponseForType(OCSPResponseType aORT, CERTCertificate *aCert,
       context.responseStatus = 6;
       break;
     default:
-      
-      
+      // context.responseStatus is 0 in all other cases, and it has
+      // already been initialized in the constructor.
       break;
   }
   if (aORT == ORTSkipResponseBytes) {
@@ -103,7 +104,7 @@ GetOCSPResponseForType(OCSPResponseType aORT, CERTCertificate *aCert,
     context.signerCert = CERT_DupCertificate(context.issuerCert.get());
   }
 
-  SECItem* response = insanity::test::CreateEncodedOCSPResponse(context);
+  SECItem* response = CreateEncodedOCSPResponse(context);
   if (!response) {
     PrintPRError("CreateEncodedOCSPResponse failed");
     return nullptr;

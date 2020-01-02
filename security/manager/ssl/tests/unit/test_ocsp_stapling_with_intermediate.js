@@ -1,12 +1,12 @@
-
-
-
-
+// -*- Mode: javascript; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 "use strict";
 
-
-
-
+// In which we connect to a server that staples an OCSP response for a
+// certificate signed by an intermediate that has an OCSP AIA to ensure
+// that an OCSP request is not made for the intermediate.
 
 let gOCSPRequestCount = 0;
 
@@ -44,10 +44,10 @@ function run_test() {
   run_next_test();
 }
 
-function add_tests_in_mode(useInsanity) {
+function add_tests_in_mode(useMozillaPKIX) {
   add_test(function () {
-    Services.prefs.setBoolPref("security.use_insanity_verification",
-                               useInsanity);
+    Services.prefs.setBoolPref("security.use_mozillapkix_verification",
+                               useMozillaPKIX);
     run_next_test();
   });
 
