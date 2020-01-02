@@ -154,7 +154,9 @@ protected:
   nsTArray<GLuint> mUnusedTextures;
 };
 
-class CompositorOGL : public Compositor
+
+
+class CompositorOGL MOZ_FINAL : public Compositor
 {
   typedef mozilla::gl::GLContext GLContext;
 
@@ -251,7 +253,7 @@ public:
 
 #ifdef MOZ_DUMP_PAINTING
   virtual const char* Name() const MOZ_OVERRIDE { return "OGL"; }
-#endif 
+#endif // MOZ_DUMP_PAINTING
 
   virtual LayersBackend GetBackendType() const MOZ_OVERRIDE {
     return LayersBackend::LAYERS_OPENGL;
