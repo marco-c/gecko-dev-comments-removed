@@ -351,7 +351,7 @@ FindInflectionApproximationRange(BezierControlPoints aControlPoints,
 
 
 
-static inline bool
+static inline void
 FindInflectionPoints(const BezierControlPoints &aControlPoints,
                      Float *aT1, Float *aT2, uint32_t *aCount)
 {
@@ -370,11 +370,16 @@ FindInflectionPoints(const BezierControlPoints &aControlPoints,
     
     if (b == 0) {
       
-      return false;
+      
+      
+      
+      
+      *aCount = 0;
+      return;
     }
     *aT1 = -c / b;
     *aCount = 1;
-    return true;
+    return;
   } else {
     Float discriminant = b * b - 4 * a * c;
 
@@ -408,7 +413,7 @@ FindInflectionPoints(const BezierControlPoints &aControlPoints,
     }
   }
 
-  return true;
+  return;
 }
 
 void
@@ -419,10 +424,7 @@ FlattenBezier(const BezierControlPoints &aControlPoints,
   Float t2;
   uint32_t count;
 
-  if (!FindInflectionPoints(aControlPoints, &t1, &t2, &count)) {
-    aSink->LineTo(aControlPoints.mCP4);
-    return;
-  }
+  FindInflectionPoints(aControlPoints, &t1, &t2, &count);
 
   
   if (count == 0 || ((t1 < 0 || t1 > 1.0) && ((t2 < 0 || t2 > 1.0) || count == 1)) ) {
