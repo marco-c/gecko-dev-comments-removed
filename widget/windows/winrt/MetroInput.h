@@ -193,8 +193,6 @@ private:
   void GetAllowedTouchBehavior(WidgetTouchEvent* aTransformedEvent, nsTArray<TouchBehaviorFlags>& aOutBehaviors);
 
   
-  bool IsTouchBehaviorForbidden(const nsTArray<TouchBehaviorFlags>& aTouchBehaviors);
-
   
   
   
@@ -210,20 +208,9 @@ private:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mContentConsumingTouch;
   bool mApzConsumingTouch;
   bool mCancelable;
   bool mRecognizerWantsEvents;
-
-  nsTArray<uint32_t> mCanceledIds;
 
   
   
@@ -289,12 +276,13 @@ private:
   void DeliverNextQueuedEventIgnoreStatus();
   void DeliverNextQueuedTouchEvent();
 
-  void HandleFirstTouchStartEvent(WidgetTouchEvent* aEvent);
+  void HandleTouchStartEvent(WidgetTouchEvent* aEvent);
   void HandleFirstTouchMoveEvent(WidgetTouchEvent* aEvent);
+  void SendPendingResponseToApz();
+  void CancelGesture();
 
   
   void DispatchEventIgnoreStatus(WidgetGUIEvent* aEvent);
-  void DispatchTouchCancel(WidgetTouchEvent* aEvent);
 
   nsDeque mInputEventQueue;
   mozilla::layers::ScrollableLayerGuid mTargetAPZCGuid;
