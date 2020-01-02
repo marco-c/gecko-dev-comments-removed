@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsIServiceManager.h"
 #include "nsICharsetConverterManager.h"
@@ -10,8 +10,8 @@
 #include "nsIStringEnumerator.h"
 #include "nsTArray.h"
 
-//----------------------------------------------------------------------------
-// Global functions and data [declaration]
+
+
 
 #define ARRAY_SIZE(_array)  (sizeof(_array) / sizeof(_array[0]))
 #define SMALL_BUFFER_SIZE   512
@@ -20,20 +20,20 @@
 
 static NS_DEFINE_CID(kCharsetConverterManagerCID, NS_ICHARSETCONVERTERMANAGER_CID);
 
-//----------------------------------------------------------------------------
-// Class nsTestLog [declaration]
 
-/**
- * A Logging class for test programs.
- *
- * This simple test program will not trigger a component registration. So 
- * Mozilla has to be run once before running this, so that the necessary 
- * components will be registered. Also, please observe that the ContractID's are 
- * case sensitive now!
- *
- * @created         28/Mar/2000
- * @author  Catalin Rotaru [CATA]
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 class nsTestLog
 {
 private:
@@ -50,72 +50,72 @@ public:
   void PrintError(const char * aCall, const char * aMessage);
 };
   
-//----------------------------------------------------------------------------
-// Class nsTestUConv [declaration]
 
-/**
- * The main class of the program.
- *
- * XXX Create a very general set of "bug and regression" test cases and the 
- * one in TestTempBug()
- * XXX Apply the new argument style (pointers) to the converters interfaces
- *
- * @created         28/Mar/2000
- * @author  Catalin Rotaru [CATA]
- */
+
+
+
+
+
+
+
+
+
+
+
+
 class nsTestUConv
 {
 private:
 
   nsTestLog mLog;
 
-  /**
-   * Run the built-in set of self tests for encoders.
-   */
+  
+
+
   nsresult TestEncoders();
 
-  /**
-   * Run the built-in set of self tests for decoders.
-   */
+  
+
+
   nsresult TestDecoders();
 
-  /**
-   * Run the built-in set of self tests for the CharsetManager.
-   */
+  
+
+
   nsresult TestCharsetManager();
 
-  /**
-   * Display charset detectors and their attributes.
-   */
+  
+
+
   nsresult DisplayDetectors();
 
-  /**
-   * Display charsets and their attributes.
-   */
+  
+
+
   nsresult DisplayCharsets();
 
-  /**
-   * Run a temporary debug test. This method is ment as a placeholder when some
-   * quick debugging is needed.
-   */
+  
+
+
+
   nsresult TestTempBug();
 
-  nsresult Encode(PRUnichar ** aSrc, PRUnichar * aSrcEnd, char ** aDest, 
+  nsresult Encode(char16_t ** aSrc, char16_t * aSrcEnd, char ** aDest, 
     char * aDestEnd, const nsAFlatCString& aCharset);
 
-  /**
-   * Bridge methods between the new argument style (poiters) and the old one 
-   * (lengths). To be removed when the converter interfaces will switch to the
-   * new style.
-   *
-   * This wraps an encoder Convert() call.
-   */
-  nsresult ConvertEncode(PRUnichar ** aSrc, PRUnichar * aSrcEnd, char ** aDest, 
+  
+
+
+
+
+
+
+  nsresult ConvertEncode(char16_t ** aSrc, char16_t * aSrcEnd, char ** aDest, 
     char * aDestEnd, nsIUnicodeEncoder * aEncoder);
 
-  /**
-   * This wraps an encoder Finish() call.
-   */
+  
+
+
   nsresult FinishEncode(char ** aDest, char * aDestEnd, 
     nsIUnicodeEncoder * aEncoder);
 
@@ -123,14 +123,14 @@ private:
 
 public:
 
-  /**
-   * Main method of the program.
-   */
+  
+
+
   nsresult Main(int aArgC, char ** aArgV);
 };
   
-//----------------------------------------------------------------------------
-// Global functions and data [implementation]
+
+
 
 int main(int argc, char ** argv)
 {
@@ -141,8 +141,8 @@ int main(int argc, char ** argv)
   return (NS_FAILED(res));
 }
 
-//----------------------------------------------------------------------------
-// Class nsTestLog [implementation]
+
+
 
 const char * nsTestLog::kTraceDelimiter = ".";
 
@@ -169,8 +169,8 @@ void nsTestLog::PrintError(const char * aCall, const char * aMessage)
   printf("ERROR at %s%s reason: %s.\n", trace, aCall, aMessage);
 }
 
-//----------------------------------------------------------------------------
-// Class nsTestUConv [implementation]
+
+
 
 nsresult nsTestUConv::TestEncoders()
 {
@@ -206,7 +206,7 @@ nsresult nsTestUConv::TestDecoders()
   mLog.AddTrace(trace);
   nsresult res = NS_OK;
 
-  // XXX write me
+  
 
   mLog.DelTrace(trace);
   return res;
@@ -244,7 +244,7 @@ nsresult nsTestUConv::DisplayDetectors()
     return res;
   }
 
-  // charset detectors
+  
   nsCOMPtr<nsIUTF8StringEnumerator> detectors;
 
   res = ccMan->GetCharsetDetectorList(getter_AddRefs(detectors));
@@ -266,7 +266,7 @@ nsresult nsTestUConv::DisplayDetectors()
     }
 
     printf("%s", detectorName.get());
-    PrintSpaces(36 - detectorName.Length()); // align to hard coded column number
+    PrintSpaces(36 - detectorName.Length()); 
 
     nsAutoString title;
     res = ccMan->GetCharsetTitle(detectorName.get(), title);
@@ -333,7 +333,7 @@ nsresult nsTestUConv::DisplayCharsets()
 
     const nsCString& charset = allCharsets[i];
     printf("%s", charset.get());
-    PrintSpaces(24 - charset.Length());  // align to hard coded column number
+    PrintSpaces(24 - charset.Length());  
 
 
     nsCOMPtr<nsIUnicodeDecoder> dec;
@@ -344,7 +344,7 @@ nsresult nsTestUConv::DisplayCharsets()
       decCount++;
     }
 #ifdef DEBUG
-    // show the "basic" decoder classes
+    
     if (dec) {
       nsCOMPtr<nsIBasicDecoder> isBasic = do_QueryInterface(dec);
       if (isBasic) {
@@ -421,13 +421,13 @@ nsresult nsTestUConv::TestTempBug()
   nsresult res = NS_OK;
 
   NS_NAMED_LITERAL_CSTRING(charset, "ISO-2022-JP");
-  PRUnichar src[] = {0x0043, 0x004e, 0x0045, 0x0054, 0x0020, 0x004A, 0x0061, 
+  char16_t src[] = {0x0043, 0x004e, 0x0045, 0x0054, 0x0020, 0x004A, 0x0061, 
     0x0070, 0x0061, 0x006E, 0x0020, 0x7DE8, 0x96C6, 0x5C40};
-  PRUnichar * srcEnd = src + ARRAY_SIZE(src);
+  char16_t * srcEnd = src + ARRAY_SIZE(src);
   char dest[BIG_BUFFER_SIZE];
   char * destEnd = dest + BIG_BUFFER_SIZE;
 
-  PRUnichar * p = src;
+  char16_t * p = src;
   char * q = dest;
   res = Encode(&p, srcEnd, &q, destEnd, charset);
 
@@ -435,7 +435,7 @@ nsresult nsTestUConv::TestTempBug()
   return res;
 }
 
-nsresult nsTestUConv::Encode(PRUnichar ** aSrc, PRUnichar * aSrcEnd, 
+nsresult nsTestUConv::Encode(char16_t ** aSrc, char16_t * aSrcEnd, 
                              char ** aDest, char * aDestEnd, 
                              const nsAFlatCString& aCharset)
 {
@@ -473,11 +473,11 @@ nsresult nsTestUConv::Encode(PRUnichar ** aSrc, PRUnichar * aSrcEnd,
   return res;
 }
 
-nsresult nsTestUConv::ConvertEncode(PRUnichar ** aSrc, PRUnichar * aSrcEnd, 
+nsresult nsTestUConv::ConvertEncode(char16_t ** aSrc, char16_t * aSrcEnd, 
                                     char ** aDest, char * aDestEnd, 
                                     nsIUnicodeEncoder * aEncoder)
 {
-  PRUnichar * src = (*aSrc);
+  char16_t * src = (*aSrc);
   char * dest = (*aDest);
   int32_t srcLen = aSrcEnd - src;
   int32_t destLen = aDestEnd - dest;
@@ -513,15 +513,15 @@ nsresult nsTestUConv::Main(int aArgC, char ** aArgV)
   nsresult res = NS_OK;
 
   if (aArgC < 2) {
-    // no arguments were passed to the program, so we just run the self tests
+    
     res = TestCharsetManager();
     if (NS_SUCCEEDED(res)) res = TestEncoders();
     if (NS_SUCCEEDED(res)) res = TestDecoders();
   } else if (!strcmp(aArgV[1], "-tempbug")) {
-    // we are testing a temporary bug
+    
     res = TestTempBug();
   } else if (!strcmp(aArgV[1], "-display")) {
-    // display all the available data
+    
     res = DisplayDetectors();
     if (NS_SUCCEEDED(res)) res = DisplayCharsets();
   }
