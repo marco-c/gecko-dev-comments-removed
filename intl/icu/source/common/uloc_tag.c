@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/*
+**********************************************************************
+*   Copyright (C) 2009-2012, International Business Machines
+*   Corporation and others.  All Rights Reserved.
+**********************************************************************
+*/
 
 #include "unicode/utypes.h"
 #include "unicode/ures.h"
@@ -19,19 +19,19 @@
 
 #define LENGTHOF(array) (int32_t)(sizeof(array)/sizeof((array)[0]))
 
-
+/* struct holding a single variant */
 typedef struct VariantListEntry {
     const char              *variant;
     struct VariantListEntry *next;
 } VariantListEntry;
 
-
+/* struct holding a single attribute value */
 typedef struct AttributeListEntry {
     const char              *attribute;
     struct AttributeListEntry *next;
 } AttributeListEntry;
 
-
+/* struct holding a single extension */
 typedef struct ExtensionListEntry {
     const char                  *key;
     const char                  *value;
@@ -40,7 +40,7 @@ typedef struct ExtensionListEntry {
 
 #define MAXEXTLANG 3
 typedef struct ULanguageTag {
-    char                *buf;   
+    char                *buf;   /* holding parsed subtags */
     const char          *language;
     const char          *extlang[MAXEXTLANG];
     const char          *script;
@@ -77,7 +77,7 @@ static const char LOCALE_TYPE_YES[] = "yes";
 #define LANG_UND_LEN 3
 
 static const char* const GRANDFATHERED[] = {
-
+/*  grandfathered   preferred */
     "art-lojban",   "jbo",
     "cel-gaulish",  "xtg-x-cel-gaulish",
     "en-GB-oed",    "en-GB-x-oed",
@@ -108,19 +108,19 @@ static const char* const GRANDFATHERED[] = {
 };
 
 static const char DEPRECATEDLANGS[][4] = {
-
+/*  deprecated  new */
     "iw",       "he",
     "ji",       "yi",
     "in",       "id"
 };
 
-
-
-
-
-
-
-
+/*
+* -------------------------------------------------
+*
+* These ultag_ functions may be exposed as APIs later
+*
+* -------------------------------------------------
+*/
 
 static ULanguageTag*
 ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* status);
@@ -171,13 +171,13 @@ static const char*
 ultag_getGrandfathered(const ULanguageTag* langtag);
 #endif
 
-
-
-
-
-
-
-
+/*
+* -------------------------------------------------
+*
+* Language subtag syntax validation functions
+*
+* -------------------------------------------------
+*/
 
 static UBool
 _isAlphaString(const char* s, int32_t len) {
@@ -214,13 +214,13 @@ _isAlphaNumericString(const char* s, int32_t len) {
 
 static UBool
 _isLanguageSubtag(const char* s, int32_t len) {
-    
-
-
-
-
-
-
+    /*
+     * language      = 2*3ALPHA            ; shortest ISO 639 code
+     *                 ["-" extlang]       ; sometimes followed by
+     *                                     ;   extended language subtags
+     *               / 4ALPHA              ; or reserved for future use
+     *               / 5*8ALPHA            ; or registered language subtag
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -232,10 +232,10 @@ _isLanguageSubtag(const char* s, int32_t len) {
 
 static UBool
 _isExtlangSubtag(const char* s, int32_t len) {
-    
-
-
-
+    /*
+     * extlang       = 3ALPHA              ; selected ISO 639 codes
+     *                 *2("-" 3ALPHA)      ; permanently reserved
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -247,9 +247,9 @@ _isExtlangSubtag(const char* s, int32_t len) {
 
 static UBool
 _isScriptSubtag(const char* s, int32_t len) {
-    
-
-
+    /*
+     * script        = 4ALPHA              ; ISO 15924 code
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -261,10 +261,10 @@ _isScriptSubtag(const char* s, int32_t len) {
 
 static UBool
 _isRegionSubtag(const char* s, int32_t len) {
-    
-
-
-
+    /*
+     * region        = 2ALPHA              ; ISO 3166-1 code
+     *               / 3DIGIT              ; UN M.49 code
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -279,10 +279,10 @@ _isRegionSubtag(const char* s, int32_t len) {
 
 static UBool
 _isVariantSubtag(const char* s, int32_t len) {
-    
-
-
-
+    /*
+     * variant       = 5*8alphanum         ; registered variants
+     *               / (DIGIT 3alphanum)
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -297,10 +297,10 @@ _isVariantSubtag(const char* s, int32_t len) {
 
 static UBool
 _isPrivateuseVariantSubtag(const char* s, int32_t len) {
-    
-
-
-
+    /*
+     * variant       = 1*8alphanum         ; registered variants
+     *               / (DIGIT 3alphanum)
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -312,9 +312,9 @@ _isPrivateuseVariantSubtag(const char* s, int32_t len) {
 
 static UBool
 _isExtensionSingleton(const char* s, int32_t len) {
-    
-
-
+    /*
+     * extension     = singleton 1*("-" (2*8alphanum))
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -326,9 +326,9 @@ _isExtensionSingleton(const char* s, int32_t len) {
 
 static UBool
 _isExtensionSubtag(const char* s, int32_t len) {
-    
-
-
+    /*
+     * extension     = singleton 1*("-" (2*8alphanum))
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -369,9 +369,9 @@ _isExtensionSubtags(const char* s, int32_t len) {
 
 static UBool
 _isPrivateuseValueSubtag(const char* s, int32_t len) {
-    
-
-
+    /*
+     * privateuse    = "x" 1*("-" (1*8alphanum))
+     */
     if (len < 0) {
         len = (int32_t)uprv_strlen(s);
     }
@@ -432,13 +432,13 @@ _isLDMLType(const char* s, int32_t len) {
     return FALSE;
 }
 
-
-
-
-
-
-
-
+/*
+* -------------------------------------------------
+*
+* Helper functions
+*
+* -------------------------------------------------
+*/
 
 static UBool
 _addVariantToList(VariantListEntry **first, VariantListEntry *var) {
@@ -451,7 +451,7 @@ _addVariantToList(VariantListEntry **first, VariantListEntry *var) {
         VariantListEntry *prev, *cur;
         int32_t cmp;
 
-        
+        /* variants order should be preserved */
         prev = NULL;
         cur = *first;
         while (TRUE) {
@@ -461,10 +461,10 @@ _addVariantToList(VariantListEntry **first, VariantListEntry *var) {
                 break;
             }
 
-            
+            /* Checking for duplicate variant */
             cmp = uprv_compareInvCharsAsAscii(var->variant, cur->variant);
             if (cmp == 0) {
-                
+                /* duplicated variant */
                 bAdded = FALSE;
                 break;
             }
@@ -487,7 +487,7 @@ _addAttributeToList(AttributeListEntry **first, AttributeListEntry *attr) {
         AttributeListEntry *prev, *cur;
         int32_t cmp;
 
-        
+        /* reorder variants in alphabetical order */
         prev = NULL;
         cur = *first;
         while (TRUE) {
@@ -507,7 +507,7 @@ _addAttributeToList(AttributeListEntry **first, AttributeListEntry *attr) {
                 break;
             }
             if (cmp == 0) {
-                
+                /* duplicated variant */
                 bAdded = FALSE;
                 break;
             }
@@ -531,7 +531,7 @@ _addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, UBool l
         ExtensionListEntry *prev, *cur;
         int32_t cmp;
 
-        
+        /* reorder variants in alphabetical order */
         prev = NULL;
         cur = *first;
         while (TRUE) {
@@ -541,7 +541,7 @@ _addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, UBool l
                 break;
             }
             if (localeToBCP) {
-                
+                /* special handling for locale to bcp conversion */
                 int32_t len, curlen;
 
                 len = (int32_t)uprv_strlen(ext->key);
@@ -577,7 +577,7 @@ _addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, UBool l
                 break;
             }
             if (cmp == 0) {
-                
+                /* duplicated extension key */
                 bAdded = FALSE;
                 break;
             }
@@ -636,7 +636,7 @@ _ldmlKeyToBCP47(const char* key, int32_t keyLen,
     }
 
     if (keyLen >= sizeof(keyBuf)) {
-        
+        /* no known valid LDML key exceeding 21 */
         *status = U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
     }
@@ -644,7 +644,7 @@ _ldmlKeyToBCP47(const char* key, int32_t keyLen,
     uprv_memcpy(keyBuf, key, keyLen);
     keyBuf[keyLen] = 0;
 
-    
+    /* to lower case */
     for (i = 0; i < keyLen; i++) {
         keyBuf[i] = uprv_tolower(keyBuf[i]);
     }
@@ -668,7 +668,7 @@ _ldmlKeyToBCP47(const char* key, int32_t keyLen,
             bcpKeyBuf[keyLen] = 0;
             resultLen = keyLen;
         } else {
-            
+            /* mapping not availabe */
             *status = U_ILLEGAL_ARGUMENT_ERROR;
         }
     }
@@ -705,7 +705,7 @@ _bcp47ToLDMLKey(const char* bcpKey, int32_t bcpKeyLen,
     uprv_memcpy(bcpKeyBuf, bcpKey, bcpKeyLen);
     bcpKeyBuf[bcpKeyLen] = 0;
 
-    
+    /* to lower case */
     for (i = 0; i < bcpKeyLen; i++) {
         bcpKeyBuf[i] = uprv_tolower(bcpKeyBuf[i]);
     }
@@ -730,7 +730,7 @@ _bcp47ToLDMLKey(const char* bcpKey, int32_t bcpKeyLen,
         u_UCharsToChars(uBcpKey, tmpBcpKeyBuf, tmpBcpKeyLen);
         tmpBcpKeyBuf[tmpBcpKeyLen] = 0;
         if (uprv_compareInvCharsAsAscii(bcpKeyBuf, tmpBcpKeyBuf) == 0) {
-            
+            /* found a matching BCP47 key */
             resKey = ures_getKey(mapData);
             resultLen = (int32_t)uprv_strlen(resKey);
             break;
@@ -776,14 +776,14 @@ _ldmlTypeToBCP47(const char* key, int32_t keyLen,
         keyLen = (int32_t)uprv_strlen(key);
     }
     if (keyLen >= sizeof(keyBuf)) {
-        
+        /* no known valid LDML key exceeding 21 */
         *status = U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
     }
     uprv_memcpy(keyBuf, key, keyLen);
     keyBuf[keyLen] = 0;
 
-    
+    /* to lower case */
     for (i = 0; i < keyLen; i++) {
         keyBuf[i] = uprv_tolower(keyBuf[i]);
     }
@@ -800,7 +800,7 @@ _ldmlTypeToBCP47(const char* key, int32_t keyLen,
     }
 
     if (isTimezone) {
-        
+        /* replace '/' with ':' */
         for (i = 0; i < typeLen; i++) {
             if (*(type + i) == '/') {
                 typeBuf[i] = ':';
@@ -826,7 +826,7 @@ _ldmlTypeToBCP47(const char* key, int32_t keyLen,
         u_UCharsToChars(uBcpType, bcpTypeBuf, bcpTypeLen);
         resultLen = bcpTypeLen;
     } else if (tmpStatus == U_MISSING_RESOURCE_ERROR) {
-        
+        /* is this type alias? */
         tmpStatus = U_ZERO_ERROR;
         ures_getByKey(keyTypeData, TYPEALIAS, rb, &tmpStatus);
         ures_getByKey(rb, keyBuf, rb, &tmpStatus);
@@ -834,7 +834,7 @@ _ldmlTypeToBCP47(const char* key, int32_t keyLen,
         if (U_SUCCESS(tmpStatus)) {
             u_UCharsToChars(uCanonicalType, typeBuf, canonicalTypeLen);
             if (isTimezone) {
-                
+                /* replace '/' with ':' */
                 for (i = 0; i < canonicalTypeLen; i++) {
                     if (typeBuf[i] == '/') {
                         typeBuf[i] = ':';
@@ -843,7 +843,7 @@ _ldmlTypeToBCP47(const char* key, int32_t keyLen,
             }
             typeBuf[canonicalTypeLen] = 0;
 
-            
+            /* look up the canonical type */
             uBcpType = ures_getStringByKey(typeMapForKey, typeBuf, &bcpTypeLen, &tmpStatus);
             if (U_SUCCESS(tmpStatus)) {
                 u_UCharsToChars(uBcpType, bcpTypeBuf, bcpTypeLen);
@@ -855,7 +855,7 @@ _ldmlTypeToBCP47(const char* key, int32_t keyLen,
                 uprv_memcpy(bcpTypeBuf, type, typeLen);
                 resultLen = typeLen;
             } else {
-                
+                /* mapping not availabe */
                 *status = U_ILLEGAL_ARGUMENT_ERROR;
             }
         }
@@ -881,7 +881,7 @@ _bcp47ToLDMLType(const char* key, int32_t keyLen,
                  UErrorCode *status) {
     UResourceBundle *rb;
     char keyBuf[MAX_LDML_KEY_LEN];
-    char bcpTypeBuf[ULOC_KEYWORDS_CAPACITY]; 
+    char bcpTypeBuf[ULOC_KEYWORDS_CAPACITY]; /* ensure buffter is large enough for multiple values (e.g. buddhist-greg) */
     int32_t resultLen = 0;
     int32_t i, typeSize;
     const char *resType = NULL;
@@ -894,14 +894,14 @@ _bcp47ToLDMLType(const char* key, int32_t keyLen,
     }
 
     if (keyLen >= sizeof(keyBuf)) {
-        
+        /* no known valid LDML key exceeding 21 */
         *status = U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
     }
     uprv_memcpy(keyBuf, key, keyLen);
     keyBuf[keyLen] = 0;
 
-    
+    /* to lower case */
     for (i = 0; i < keyLen; i++) {
         keyBuf[i] = uprv_tolower(keyBuf[i]);
     }
@@ -927,7 +927,7 @@ _bcp47ToLDMLType(const char* key, int32_t keyLen,
     uprv_memcpy(bcpTypeBuf, bcpType, bcpTypeLen);
     bcpTypeBuf[bcpTypeLen] = 0;
 
-    
+    /* to lower case */
     for (i = 0; i < bcpTypeLen; i++) {
         bcpTypeBuf[i] = uprv_tolower(bcpTypeBuf[i]);
     }
@@ -953,7 +953,7 @@ _bcp47ToLDMLType(const char* key, int32_t keyLen,
         u_UCharsToChars(uBcpType, tmpBcpTypeBuf, tmpBcpTypeLen);
         tmpBcpTypeBuf[tmpBcpTypeLen] = 0;
         if (uprv_compareInvCharsAsAscii(bcpTypeBuf, tmpBcpTypeBuf) == 0) {
-            
+            /* found a matching BCP47 type */
             resType = ures_getKey(mapData);
             resultLen = (int32_t)uprv_strlen(resType);
             break;
@@ -1010,7 +1010,7 @@ _appendLanguageToLanguageTag(const char* localeID, char* appendAt, int32_t capac
         len = 0;
     }
 
-    
+    /* Note: returned language code is in lower case letters */
 
     if (len == 0) {
         if (reslen < capacity) {
@@ -1018,7 +1018,7 @@ _appendLanguageToLanguageTag(const char* localeID, char* appendAt, int32_t capac
         }
         reslen += LANG_UND_LEN;
     } else if (!_isLanguageSubtag(buf, len)) {
-            
+            /* invalid language code */
         if (strict) {
             *status = U_ILLEGAL_ARGUMENT_ERROR;
             return 0;
@@ -1028,7 +1028,7 @@ _appendLanguageToLanguageTag(const char* localeID, char* appendAt, int32_t capac
         }
         reslen += LANG_UND_LEN;
     } else {
-        
+        /* resolve deprecated */
         for (i = 0; i < LENGTHOF(DEPRECATEDLANGS); i += 2) {
             if (uprv_compareInvCharsAsAscii(buf, DEPRECATEDLANGS[i]) == 0) {
                 uprv_strcpy(buf, DEPRECATEDLANGS[i + 1]);
@@ -1066,7 +1066,7 @@ _appendScriptToLanguageTag(const char* localeID, char* appendAt, int32_t capacit
 
     if (len > 0) {
         if (!_isScriptSubtag(buf, len)) {
-            
+            /* invalid script code */
             if (strict) {
                 *status = U_ILLEGAL_ARGUMENT_ERROR;
             }
@@ -1108,7 +1108,7 @@ _appendRegionToLanguageTag(const char* localeID, char* appendAt, int32_t capacit
 
     if (len > 0) {
         if (!_isRegionSubtag(buf, len)) {
-            
+            /* invalid region code */
             if (strict) {
                 *status = U_ILLEGAL_ARGUMENT_ERROR;
             }
@@ -1161,25 +1161,25 @@ _appendVariantsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                 if (*p == 0) {
                     bNext = FALSE;
                 } else {
-                    *p = 0; 
+                    *p = 0; /* terminate */
                 }
                 if (pVar == NULL) {
                     if (strict) {
                         *status = U_ILLEGAL_ARGUMENT_ERROR;
                         break;
                     }
-                    
+                    /* ignore empty variant */
                 } else {
-                    
-
+                    /* ICU uses upper case letters for variants, but
+                       the canonical format is lowercase in BCP47 */
                     for (i = 0; *(pVar + i) != 0; i++) {
                         *(pVar + i) = uprv_tolower(*(pVar + i));
                     }
 
-                    
+                    /* validate */
                     if (_isVariantSubtag(pVar, -1)) {
                         if (uprv_strcmp(pVar,POSIX_VALUE) || len != uprv_strlen(POSIX_VALUE)) {
-                            
+                            /* emit the variant to the list */
                             var = (VariantListEntry*)uprv_malloc(sizeof(VariantListEntry));
                             if (var == NULL) {
                                 *status = U_MEMORY_ALLOCATION_ERROR;
@@ -1187,7 +1187,7 @@ _appendVariantsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                             }
                             var->variant = pVar;
                             if (!_addVariantToList(&varFirst, var)) {
-                                
+                                /* duplicated variant */
                                 uprv_free(var);
                                 if (strict) {
                                     *status = U_ILLEGAL_ARGUMENT_ERROR;
@@ -1195,19 +1195,19 @@ _appendVariantsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                                 }
                             }
                         } else {
-                            
-                            
+                            /* Special handling for POSIX variant, need to remember that we had it and then */
+                            /* treat it like an extension later. */
                             *hadPosix = TRUE;
                         }
                     } else if (strict) {
                         *status = U_ILLEGAL_ARGUMENT_ERROR;
                         break;
                     } else if (_isPrivateuseValueSubtag(pVar, -1)) {
-                        
+                        /* Handle private use subtags separately */
                         break;
                     }
                 }
-                
+                /* reset variant starting position */
                 pVar = NULL;
             } else if (pVar == NULL) {
                 pVar = p;
@@ -1219,7 +1219,7 @@ _appendVariantsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             if (varFirst != NULL) {
                 int32_t varLen;
 
-                
+                /* write out validated/normalized variants to the target */
                 var = varFirst;
                 while (var != NULL) {
                     if (reslen < capacity) {
@@ -1236,7 +1236,7 @@ _appendVariantsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             }
         }
 
-        
+        /* clean up */
         var = varFirst;
         while (var != NULL) {
             VariantListEntry *tmpVar = var->next;
@@ -1268,7 +1268,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
         return 0;
     }
     if (keywordEnum != NULL || hadPosix) {
-        
+        /* reorder extensions */
         int32_t len;
         const char *key;
         ExtensionListEntry *firstExt = NULL;
@@ -1296,7 +1296,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                     *status = U_ILLEGAL_ARGUMENT_ERROR;
                     break;
                 }
-                
+                /* ignore this keyword */
                 tmpStatus = U_ZERO_ERROR;
                 continue;
             }
@@ -1304,7 +1304,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             keylen = (int32_t)uprv_strlen(key);
             isLDMLKeyword = (keylen > 1);
 
-            
+            /* special keyword used for representing Unicode locale attributes */
             if (uprv_strcmp(key, LOCALE_ATTRIBUTE_KEY) == 0) {
                 isAttribute = TRUE;
                 if (len > 0) {
@@ -1326,7 +1326,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                             break;
                         }
 
-                        
+                        /* create AttributeListEntry */
                         attr = (AttributeListEntry*)uprv_malloc(sizeof(AttributeListEntry));
                         if (attr == NULL) {
                             *status = U_MEMORY_ALLOCATION_ERROR;
@@ -1353,7 +1353,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             } else if (isLDMLKeyword) {
                 int32_t modKeyLen;
 
-                
+                /* transform key and value to bcp47 style */
                 modKeyLen = _ldmlKeyToBCP47(key, keylen, pExtBuf, extBufCapacity, &tmpStatus);
                 if (U_FAILURE(tmpStatus) || tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
                     if (strict) {
@@ -1416,7 +1416,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             }
 
             if (!isAttribute) {
-                
+                /* create ExtensionListEntry */
                 ext = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
                 if (ext == NULL) {
                     *status = U_MEMORY_ALLOCATION_ERROR;
@@ -1435,9 +1435,9 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             }
         }
 
-        
+        /* Special handling for POSIX variant - add the keywords for POSIX */
         if (hadPosix) {
-            
+            /* create ExtensionListEntry for POSIX */
             ext = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
             if (ext == NULL) {
                 *status = U_MEMORY_ALLOCATION_ERROR;
@@ -1458,7 +1458,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             ext = firstExt;
             do {
                 if (!startLDMLExtension && (ext && uprv_strlen(ext->key) > 1)) {
-                   
+                   /* write LDML singleton extension */
                    if (reslen < capacity) {
                        *(appendAt + reslen) = SEP;
                    }
@@ -1471,7 +1471,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                    startLDMLExtension = TRUE;
                 }
 
-                
+                /* write out the sorted BCP47 attributes, extensions and private use */
                 if (ext && (uprv_strlen(ext->key) == 1 || attr == NULL)) {
                     if (reslen < capacity) {
                         *(appendAt + reslen) = SEP;
@@ -1494,7 +1494,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
 
                     ext = ext->next;
                 } else if (attr) {
-                    
+                    /* write the value for the attributes */
                     if (reslen < capacity) {
                         *(appendAt + reslen) = SEP;
                     }
@@ -1510,7 +1510,7 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
             } while (attr != NULL || ext != NULL);
         }
 cleanup:
-        
+        /* clean up */
         ext = firstExt;
         while (ext != NULL) {
             ExtensionListEntry *tmpExt = ext->next;
@@ -1537,21 +1537,21 @@ cleanup:
     return u_terminateChars(appendAt, capacity, reslen, status);
 }
 
-
-
-
-
-
+/**
+ * Append keywords parsed from LDML extension value
+ * e.g. "u-ca-gregory-co-trad" -> {calendar = gregorian} {collation = traditional}
+ * Note: char* buf is used for storing keywords
+ */
 static void
 _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendTo, char* buf, int32_t bufSize, UBool *posixVariant, UErrorCode *status) {
-    const char *pTag;   
-    const char *pKwds;  
+    const char *pTag;   /* beginning of current subtag */
+    const char *pKwds;  /* beginning of key-type pairs */
     UBool variantExists = *posixVariant;
 
-    ExtensionListEntry *kwdFirst = NULL;    
+    ExtensionListEntry *kwdFirst = NULL;    /* first LDML keyword */
     ExtensionListEntry *kwd, *nextKwd;
 
-    AttributeListEntry *attrFirst = NULL;   
+    AttributeListEntry *attrFirst = NULL;   /* first attribute */
     AttributeListEntry *attr, *nextAttr;
 
     int32_t len;
@@ -1560,15 +1560,15 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
     char attrBuf[ULOC_KEYWORD_AND_VALUES_CAPACITY];
     int32_t attrBufIdx = 0;
 
-    
+    /* Reset the posixVariant value */
     *posixVariant = FALSE;
 
     pTag = ldmlext;
     pKwds = NULL;
 
-    
+    /* Iterate through u extension attributes */
     while (*pTag) {
-        
+        /* locate next separator char */
         for (len = 0; *(pTag + len) && *(pTag + len) != SEP; len++);
 
         if (_isLDMLKey(pTag, len)) {
@@ -1576,7 +1576,7 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
             break;
         }
 
-        
+        /* add this attribute to the list */
         attr = (AttributeListEntry*)uprv_malloc(sizeof(AttributeListEntry));
         if (attr == NULL) {
             *status = U_MEMORY_ALLOCATION_ERROR;
@@ -1599,19 +1599,19 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
             goto cleanup;
         }
 
-        
+        /* next tag */
         pTag += len;
         if (*pTag) {
-            
+            /* next to the separator */
             pTag++;
         }
     }
 
     if (attrFirst) {
-        
+        /* emit attributes as an LDML keyword, e.g. attribute=attr1-attr2 */
 
         if (attrBufIdx > bufSize) {
-            
+            /* attrBufIdx == <total length of attribute subtag> + 1 */
             *status = U_ILLEGAL_ARGUMENT_ERROR;
             goto cleanup;
         }
@@ -1625,12 +1625,12 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
         kwd->key = LOCALE_ATTRIBUTE_KEY;
         kwd->value = buf;
 
-        
+        /* attribute subtags sorted in alphabetical order as type */
         attr = attrFirst;
         while (attr != NULL) {
             nextAttr = attr->next;
 
-            
+            /* buffer size check is done above */
             if (attr != attrFirst) {
                 *(buf + bufIdx) = SEP;
                 bufIdx++;
@@ -1651,7 +1651,7 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
             goto cleanup;
         }
 
-        
+        /* once keyword entry is created, delete the attribute list */
         attr = attrFirst;
         while (attr != NULL) {
             nextAttr = attr->next;
@@ -1662,21 +1662,21 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
     }
 
     if (pKwds) {
-        const char *pBcpKey = NULL;     
-        const char *pBcpType = NULL;    
+        const char *pBcpKey = NULL;     /* u extenstion key subtag */
+        const char *pBcpType = NULL;    /* beginning of u extension type subtag(s) */
         int32_t bcpKeyLen = 0;
         int32_t bcpTypeLen = 0;
         UBool isDone = FALSE;
 
         pTag = pKwds;
-        
+        /* BCP47 representation of LDML key/type pairs */
         while (!isDone) {
             const char *pNextBcpKey = NULL;
             int32_t nextBcpKeyLen;
             UBool emitKeyword = FALSE;
 
             if (*pTag) {
-                
+                /* locate next separator char */
                 for (len = 0; *(pTag + len) && *(pTag + len) != SEP; len++);
 
                 if (_isLDMLKey(pTag, len)) {
@@ -1690,7 +1690,7 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
                     }
                 } else {
                     U_ASSERT(pBcpKey != NULL);
-                    
+                    /* within LDML type subtags */
                     if (pBcpType) {
                         bcpTypeLen += (len + 1);
                     } else {
@@ -1699,25 +1699,25 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
                     }
                 }
 
-                
+                /* next tag */
                 pTag += len;
                 if (*pTag) {
-                    
+                    /* next to the separator */
                     pTag++;
                 }
             } else {
-                
+                /* processing last one */
                 emitKeyword = TRUE;
                 isDone = TRUE;
             }
 
             if (emitKeyword) {
-                const char *pKey = NULL;    
-                const char *pType = NULL;   
+                const char *pKey = NULL;    /* LDML key */
+                const char *pType = NULL;   /* LDML type */
 
                 U_ASSERT(pBcpKey != NULL);
 
-                
+                /* u extension key to LDML key */
                 len = _bcp47ToLDMLKey(pBcpKey, bcpKeyLen, buf + bufIdx, bufSize - bufIdx - 1, status);
                 if (U_FAILURE(*status)) {
                     goto cleanup;
@@ -1728,7 +1728,7 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
                 bufIdx++;
 
                 if (pBcpType) {
-                    
+                    /* BCP type to locale type */
                     len = _bcp47ToLDMLType(pKey, -1, pBcpType, bcpTypeLen, buf + bufIdx, bufSize - bufIdx - 1, status);
                     if (U_FAILURE(*status)) {
                         goto cleanup;
@@ -1738,16 +1738,16 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
                     *(buf + bufIdx) = 0;
                     bufIdx++;
                 } else {
-                    
+                    /* typeless - default type value is "yes" */
                     pType = LOCALE_TYPE_YES;
                 }
 
-                
-
+                /* Special handling for u-va-posix, since we want to treat this as a variant, 
+                   not as a keyword */
                 if (!variantExists && !uprv_strcmp(pKey, POSIX_KEY) && !uprv_strcmp(pType, POSIX_VALUE) ) {
                     *posixVariant = TRUE;
                 } else {
-                    
+                    /* create an ExtensionListEntry for this keyword */
                     kwd = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
                     if (kwd == NULL) {
                         *status = U_MEMORY_ALLOCATION_ERROR;
@@ -1820,14 +1820,14 @@ _appendKeywords(ULanguageTag* langtag, char* appendAt, int32_t capacity, UErrorC
         return 0;
     }
 
-    
+    /* Determine if variants already exists */
     if (ultag_getVariantsSize(langtag)) {
         posixVariant = TRUE;
     }
 
     n = ultag_getExtensionsSize(langtag);
 
-    
+    /* resolve locale keywords and reordering keys */
     for (i = 0; i < n; i++) {
         key = ultag_getExtensionKey(langtag, i);
         type = ultag_getExtensionValue(langtag, i);
@@ -1855,7 +1855,7 @@ _appendKeywords(ULanguageTag* langtag, char* appendAt, int32_t capacity, UErrorC
     if (U_SUCCESS(*status)) {
         type = ultag_getPrivateUse(langtag);
         if ((int32_t)uprv_strlen(type) > 0) {
-            
+            /* add private use as a keyword */
             kwd = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
             if (kwd == NULL) {
                 *status = U_MEMORY_ALLOCATION_ERROR;
@@ -1870,7 +1870,7 @@ _appendKeywords(ULanguageTag* langtag, char* appendAt, int32_t capacity, UErrorC
         }
     }
 
-    
+    /* If a POSIX variant was in the extensions, write it out before writing the keywords. */
 
     if (U_SUCCESS(*status) && posixVariant) {
         len = (int32_t) uprv_strlen(_POSIX);
@@ -1881,36 +1881,36 @@ _appendKeywords(ULanguageTag* langtag, char* appendAt, int32_t capacity, UErrorC
     }
 
     if (U_SUCCESS(*status) && kwdFirst != NULL) {
-        
+        /* write out the sorted keywords */
         UBool firstValue = TRUE;
         kwd = kwdFirst;
         do {
             if (reslen < capacity) {
                 if (firstValue) {
-                    
+                    /* '@' */
                     *(appendAt + reslen) = LOCALE_EXT_SEP;
                     firstValue = FALSE;
                 } else {
-                    
+                    /* ';' */
                     *(appendAt + reslen) = LOCALE_KEYWORD_SEP;
                 }
             }
             reslen++;
 
-            
+            /* key */
             len = (int32_t)uprv_strlen(kwd->key);
             if (reslen < capacity) {
                 uprv_memcpy(appendAt + reslen, kwd->key, uprv_min(len, capacity - reslen));
             }
             reslen += len;
 
-            
+            /* '=' */
             if (reslen < capacity) {
                 *(appendAt + reslen) = LOCALE_KEY_TYPE_SEP;
             }
             reslen++;
 
-            
+            /* type */
             len = (int32_t)uprv_strlen(kwd->value);
             if (reslen < capacity) {
                 uprv_memcpy(appendAt + reslen, kwd->value, uprv_min(len, capacity - reslen));
@@ -1921,7 +1921,7 @@ _appendKeywords(ULanguageTag* langtag, char* appendAt, int32_t capacity, UErrorC
         } while (kwd);
     }
 
-    
+    /* clean up */
     kwd = kwdFirst;
     while (kwd != NULL) {
         ExtensionListEntry *tmpKwd = kwd->next;
@@ -1972,15 +1972,15 @@ _appendPrivateuseToLanguageTag(const char* localeID, char* appendAt, int32_t cap
                 if (*p == 0) {
                     bNext = FALSE;
                 } else {
-                    *p = 0; 
+                    *p = 0; /* terminate */
                 }
                 if (pPriv != NULL) {
-                    
+                    /* Private use in the canonical format is lowercase in BCP47 */
                     for (i = 0; *(pPriv + i) != 0; i++) {
                         *(pPriv + i) = uprv_tolower(*(pPriv + i));
                     }
 
-                    
+                    /* validate */
                     if (_isPrivateuseValueSubtag(pPriv, -1)) {
                         if (firstValue) {
                             if (!_isVariantSubtag(pPriv, -1)) {
@@ -2030,7 +2030,7 @@ _appendPrivateuseToLanguageTag(const char* localeID, char* appendAt, int32_t cap
                         reslen += len;
                     }
                 }
-                
+                /* reset private use starting position */
                 pPriv = NULL;
             } else if (pPriv == NULL) {
                 pPriv = p;
@@ -2055,15 +2055,15 @@ _appendPrivateuseToLanguageTag(const char* localeID, char* appendAt, int32_t cap
     return reslen;
 }
 
+/*
+* -------------------------------------------------
+*
+* ultag_ functions
+*
+* -------------------------------------------------
+*/
 
-
-
-
-
-
-
-
-
+/* Bit flags used by the parser */
 #define LANG 0x0001
 #define EXTL 0x0002
 #define SCRT 0x0004
@@ -2082,9 +2082,10 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
     int32_t subtagLen;
     int32_t extlangIdx;
     ExtensionListEntry *pExtension;
+    AttributeListEntry *pAttribute;
     char *pExtValueSubtag, *pExtValueSubtagEnd;
     int32_t i;
-    UBool privateuseVar = FALSE;
+    UBool isLDMLExtension, privateuseVar = FALSE;
     int32_t grandfatheredLen = 0;
 
     if (parsedLen != NULL) {
@@ -2099,7 +2100,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         tagLen = (int32_t)uprv_strlen(tag);
     }
 
-    
+    /* copy the entire string */
     tagBuf = (char*)uprv_malloc(tagLen + 1);
     if (tagBuf == NULL) {
         *status = U_MEMORY_ALLOCATION_ERROR;
@@ -2108,7 +2109,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
     uprv_memcpy(tagBuf, tag, tagLen);
     *(tagBuf + tagLen) = 0;
 
-    
+    /* create a ULanguageTag */
     t = (ULanguageTag*)uprv_malloc(sizeof(ULanguageTag));
     if (t == NULL) {
         uprv_free(tagBuf);
@@ -2119,16 +2120,16 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
     t->buf = tagBuf;
 
     if (tagLen < MINLEN) {
-        
+        /* the input tag is too short - return empty ULanguageTag */
         return t;
     }
 
-    
+    /* check if the tag is grandfathered */
     for (i = 0; GRANDFATHERED[i] != NULL; i += 2) {
         if (uprv_stricmp(GRANDFATHERED[i], tagBuf) == 0) {
             int32_t newTagLength;
 
-            grandfatheredLen = tagLen;  
+            grandfatheredLen = tagLen;  /* back up for output parsedLen */
             newTagLength = uprv_strlen(GRANDFATHERED[i+1]);
             if (tagLen < newTagLength) {
                 uprv_free(tagBuf);
@@ -2145,14 +2146,14 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         }
     }
 
-    
-
-
-
-
-
-
-
+    /*
+     * langtag      =   language
+     *                  ["-" script]
+     *                  ["-" region]
+     *                  *("-" variant)
+     *                  *("-" extension)
+     *                  ["-" privateuse]
+     */
 
     next = LANG | PRIV;
     pNext = pLastGoodPosition = tagBuf;
@@ -2160,13 +2161,15 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
     pExtension = NULL;
     pExtValueSubtag = NULL;
     pExtValueSubtagEnd = NULL;
+    pAttribute = NULL;
+    isLDMLExtension = FALSE;
 
     while (pNext) {
         char *pSep;
 
         pSubtag = pNext;
 
-        
+        /* locate next separator char */
         pSep = pSubtag;
         while (*pSep) {
             if (*pSep == SEP) {
@@ -2175,7 +2178,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
             pSep++;
         }
         if (*pSep == 0) {
-            
+            /* last subtag */
             pNext = NULL;
         } else {
             pNext = pSep + 1;
@@ -2184,7 +2187,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
 
         if (next & LANG) {
             if (_isLanguageSubtag(pSubtag, subtagLen)) {
-                *pSep = 0;  
+                *pSep = 0;  /* terminate */
                 t->language = T_CString_toLowerCase(pSubtag);
 
                 pLastGoodPosition = pSep;
@@ -2212,7 +2215,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
 
                 *pSep = 0;
 
-                
+                /* to title case */
                 *p = uprv_toupper(*p);
                 p++;
                 for (; *p; p++) {
@@ -2251,7 +2254,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                 var->variant = T_CString_toUpperCase(pSubtag);
                 isAdded = _addVariantToList(&(t->variants), var);
                 if (!isAdded) {
-                    
+                    /* duplicated variant entry */
                     uprv_free(var);
                     break;
                 }
@@ -2264,28 +2267,30 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
             if (_isExtensionSingleton(pSubtag, subtagLen)) {
                 if (pExtension != NULL) {
                     if (pExtValueSubtag == NULL || pExtValueSubtagEnd == NULL) {
-                        
+                        /* the previous extension is incomplete */
                         uprv_free(pExtension);
                         pExtension = NULL;
                         break;
                     }
 
-                    
+                    /* terminate the previous extension value */
                     *pExtValueSubtagEnd = 0;
                     pExtension->value = T_CString_toLowerCase(pExtValueSubtag);
 
-                    
+                    /* insert the extension to the list */
                     if (_addExtensionToList(&(t->extensions), pExtension, FALSE)) {
                         pLastGoodPosition = pExtValueSubtagEnd;
                     } else {
-                        
+                        /* stop parsing here */
                         uprv_free(pExtension);
                         pExtension = NULL;
                         break;
                     }
                 }
 
-                
+                isLDMLExtension = (uprv_tolower(*pSubtag) == LDMLEXT);
+
+                /* create a new extension */
                 pExtension = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
                 if (pExtension == NULL) {
                     *status = U_MEMORY_ALLOCATION_ERROR;
@@ -2293,12 +2298,12 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                 }
                 *pSep = 0;
                 pExtension->key = T_CString_toLowerCase(pSubtag);
-                pExtension->value = NULL;   
+                pExtension->value = NULL;   /* will be set later */
 
-                
-
-
-
+                /*
+                 * reset the start and the end location of extension value
+                 * subtags for this extension
+                 */
                 pExtValueSubtag = NULL;
                 pExtValueSubtagEnd = NULL;
 
@@ -2309,12 +2314,12 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         if (next & EXTV) {
             if (_isExtensionSubtag(pSubtag, subtagLen)) {
                 if (pExtValueSubtag == NULL) {
-                    
-
+                    /* if the start postion of this extension's value is not yet,
+                        this one is the first value subtag */
                     pExtValueSubtag = pSubtag;
                 }
 
-                
+                /* Mark the end of this subtag */
                 pExtValueSubtagEnd = pSep;
                 next = EXTS | EXTV | PRIV;
 
@@ -2326,23 +2331,23 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                 char *pPrivuseVal;
 
                 if (pExtension != NULL) {
-                    
+                    /* Process the last extension */
                     if (pExtValueSubtag == NULL || pExtValueSubtagEnd == NULL) {
-                        
+                        /* the previous extension is incomplete */
                         uprv_free(pExtension);
                         pExtension = NULL;
                         break;
                     } else {
-                        
+                        /* terminate the previous extension value */
                         *pExtValueSubtagEnd = 0;
                         pExtension->value = T_CString_toLowerCase(pExtValueSubtag);
 
-                        
+                        /* insert the extension to the list */
                         if (_addExtensionToList(&(t->extensions), pExtension, FALSE)) {
                             pLastGoodPosition = pExtValueSubtagEnd;
                             pExtension = NULL;
                         } else {
-                        
+                        /* stop parsing here */
                             uprv_free(pExtension);
                             pExtension = NULL;
                             break;
@@ -2350,15 +2355,15 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                     }
                 }
 
-                
+                /* The rest of part will be private use value subtags */
                 if (pNext == NULL) {
-                    
+                    /* empty private use subtag */
                     break;
                 }
-                
+                /* back up the private use value start position */
                 pPrivuseVal = pNext;
 
-                
+                /* validate private use value subtags */
                 while (pNext) {
                     pSubtag = pNext;
                     pSep = pSubtag;
@@ -2369,7 +2374,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                         pSep++;
                     }
                     if (*pSep == 0) {
-                        
+                        /* last subtag */
                         pNext = NULL;
                     } else {
                         pNext = pSep + 1;
@@ -2396,26 +2401,26 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                     *pLastGoodPosition = 0;
                     t->privateuse = T_CString_toLowerCase(pPrivuseVal);
                 }
-                
+                /* No more subtags, exiting the parse loop */
                 break;
             }
             break;
         }
 
-        
+        /* If we fell through here, it means this subtag is illegal - quit parsing */
         break;
     }
 
     if (pExtension != NULL) {
-        
+        /* Process the last extension */
         if (pExtValueSubtag == NULL || pExtValueSubtagEnd == NULL) {
-            
+            /* the previous extension is incomplete */
             uprv_free(pExtension);
         } else {
-            
+            /* terminate the previous extension value */
             *pExtValueSubtagEnd = 0;
             pExtension->value = T_CString_toLowerCase(pExtValueSubtag);
-            
+            /* insert the extension to the list */
             if (_addExtensionToList(&(t->extensions), pExtension, FALSE)) {
                 pLastGoodPosition = pExtValueSubtagEnd;
             } else {
@@ -2602,27 +2607,27 @@ ultag_getGrandfathered(const ULanguageTag* langtag) {
 #endif
 
 
-
-
-
-
-
-
-
+/*
+* -------------------------------------------------
+*
+* Locale/BCP47 conversion APIs, exposed as uloc_*
+*
+* -------------------------------------------------
+*/
 U_CAPI int32_t U_EXPORT2
 uloc_toLanguageTag(const char* localeID,
                    char* langtag,
                    int32_t langtagCapacity,
                    UBool strict,
                    UErrorCode* status) {
-     
+    /* char canonical[ULOC_FULLNAME_CAPACITY]; */ /* See #6822 */
     char canonical[256];
     int32_t reslen = 0;
     UErrorCode tmpStatus = U_ZERO_ERROR;
     UBool hadPosix = FALSE;
     const char* pKeywordStart;
 
-    
+    /* Note: uloc_canonicalize returns "en_US_POSIX" for input locale ID "".  See #6835 */
     canonical[0] = 0;
     if (uprv_strlen(localeID) > 0) {
         uloc_canonicalize(localeID, canonical, sizeof(canonical), &tmpStatus);
@@ -2632,7 +2637,7 @@ uloc_toLanguageTag(const char* localeID,
         }
     }
 
-    
+    /* For handling special case - private use only tag */
     pKeywordStart = locale_getKeywordsStart(canonical);
     if (pKeywordStart == canonical) {
         UEnumeration *kwdEnum;
@@ -2654,7 +2659,7 @@ uloc_toLanguageTag(const char* localeID,
                     len = uloc_getKeywordValue(localeID, key, &buf[2], sizeof(buf) - 2, &tmpStatus);
                     if (U_SUCCESS(tmpStatus)) {
                         if (_isPrivateuseValueSubtags(&buf[2], len)) {
-                            
+                            /* return private use only tag */
                             reslen = len + 2;
                             uprv_memcpy(langtag, buf, uprv_min(reslen, langtagCapacity));
                             u_terminateChars(langtag, langtagCapacity, reslen, status);
@@ -2663,7 +2668,7 @@ uloc_toLanguageTag(const char* localeID,
                             *status = U_ILLEGAL_ARGUMENT_ERROR;
                             done = TRUE;
                         }
-                        
+                        /* if not strict mode, then "und" will be returned */
                     } else {
                         *status = U_ILLEGAL_ARGUMENT_ERROR;
                         done = TRUE;
@@ -2706,7 +2711,7 @@ uloc_forLanguageTag(const char* langtag,
         return 0;
     }
 
-    
+    /* language */
     subtag = ultag_getExtlangSize(lt) > 0 ? ultag_getExtlang(lt, 0) : ultag_getLanguage(lt);
     if (uprv_compareInvCharsAsAscii(subtag, LANG_UND) != 0) {
         len = (int32_t)uprv_strlen(subtag);
@@ -2718,7 +2723,7 @@ uloc_forLanguageTag(const char* langtag,
         }
     }
 
-    
+    /* script */
     subtag = ultag_getScript(lt);
     len = (int32_t)uprv_strlen(subtag);
     if (len > 0) {
@@ -2727,7 +2732,7 @@ uloc_forLanguageTag(const char* langtag,
         }
         reslen++;
 
-        
+        /* write out the script in title case */
         p = subtag;
         while (*p) {
             if (reslen < localeIDCapacity) {
@@ -2742,7 +2747,7 @@ uloc_forLanguageTag(const char* langtag,
         }
     }
 
-    
+    /* region */
     subtag = ultag_getRegion(lt);
     len = (int32_t)uprv_strlen(subtag);
     if (len > 0) {
@@ -2750,7 +2755,7 @@ uloc_forLanguageTag(const char* langtag,
             *(localeID + reslen) = LOCALE_SEP;
         }
         reslen++;
-        
+        /* write out the retion in upper case */
         p = subtag;
         while (*p) {
             if (reslen < localeIDCapacity) {
@@ -2762,7 +2767,7 @@ uloc_forLanguageTag(const char* langtag,
         noRegion = FALSE;
     }
 
-    
+    /* variants */
     n = ultag_getVariantsSize(lt);
     if (n > 0) {
         if (noRegion) {
@@ -2778,7 +2783,7 @@ uloc_forLanguageTag(const char* langtag,
                 *(localeID + reslen) = LOCALE_SEP;
             }
             reslen++;
-            
+            /* write out the variant in upper case */
             p = subtag;
             while (*p) {
                 if (reslen < localeIDCapacity) {
@@ -2790,12 +2795,12 @@ uloc_forLanguageTag(const char* langtag,
         }
     }
 
-    
+    /* keywords */
     n = ultag_getExtensionsSize(lt);
     subtag = ultag_getPrivateUse(lt);
     if (n > 0 || uprv_strlen(subtag) > 0) {
         if (reslen == 0 && n > 0) {
-            
+            /* need a language */
             if (reslen < localeIDCapacity) {
                 uprv_memcpy(localeID + reslen, LANG_UND, uprv_min(LANG_UND_LEN, localeIDCapacity - reslen));
             }
