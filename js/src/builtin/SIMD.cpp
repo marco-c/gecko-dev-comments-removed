@@ -1,15 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JS SIMD pseudo-module.
- * Specification matches polyfill:
- * https://github.com/johnmccutchan/ecmascript_simd/blob/master/src/ecmascript_simd.js
- * The objects float32x4 and int32x4 are installed on the SIMD pseudo-module.
- */
+
+
+
+
+
+
+
+
+
+
+
 
 #include "builtin/SIMD.h"
 
@@ -32,8 +32,8 @@ extern const JSFunctionSpec Float32x4Methods[];
 extern const JSFunctionSpec Int32x4Methods[];
 }
 
-///////////////////////////////////////////////////////////////////////////
-// X4
+
+
 
 static const char *laneNames[] = {"lane 0", "lane 1", "lane 2", "lane3"};
 
@@ -123,21 +123,21 @@ static bool type##SignMask(JSContext *cx, unsigned argc, Value *vp) { \
 const Class X4TypeDescr::class_ = {
     "X4",
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS),
-    JS_PropertyStub,         /* addProperty */
-    JS_DeletePropertyStub,   /* delProperty */
-    JS_PropertyStub,         /* getProperty */
-    JS_StrictPropertyStub,   /* setProperty */
+    JS_PropertyStub,         
+    JS_DeletePropertyStub,   
+    JS_PropertyStub,         
+    JS_StrictPropertyStub,   
     JS_EnumerateStub,
     JS_ResolveStub,
     JS_ConvertStub,
-    nullptr,             /* finalize    */
-    call,                /* call        */
-    nullptr,             /* hasInstance */
-    nullptr,             /* construct   */
+    nullptr,             
+    call,                
+    nullptr,             
+    nullptr,             
     nullptr
 };
 
-// These classes just exist to group together various properties and so on.
+
 namespace js {
 class Int32x4Defn {
   public:
@@ -153,7 +153,7 @@ class Float32x4Defn {
     static const JSPropertySpec TypedObjectProperties[];
     static const JSFunctionSpec TypedObjectMethods[];
 };
-} // namespace js
+} 
 
 const JSFunctionSpec js::Float32x4Defn::TypeDescriptorMethods[] = {
     JS_SELF_HOSTED_FN("toSource", "DescrToSource", 0, 0),
@@ -209,7 +209,7 @@ CreateX4Class(JSContext *cx,
     if (!funcProto)
         return nullptr;
 
-    // Create type constructor itself and initialize its reserved slots.
+    
 
     Rooted<X4TypeDescr*> x4(cx);
     x4 = NewObjectWithProto<X4TypeDescr>(cx, funcProto, global, TenuredObject);
@@ -226,7 +226,7 @@ CreateX4Class(JSContext *cx,
     if (!CreateUserSizeAndAlignmentProperties(cx, x4))
         return nullptr;
 
-    // Create prototype property, which inherits from Object.prototype.
+    
 
     RootedObject objProto(cx, global->getOrCreateObjectPrototype(cx));
     if (!objProto)
@@ -238,14 +238,14 @@ CreateX4Class(JSContext *cx,
     proto->initTypeDescrSlot(*x4);
     x4->initReservedSlot(JS_DESCR_SLOT_TYPROTO, ObjectValue(*proto));
 
-    // Link constructor to prototype and install properties.
+    
 
     if (!JS_DefineFunctions(cx, x4, T::TypeDescriptorMethods))
         return nullptr;
 
     if (!LinkConstructorAndPrototype(cx, x4, proto) ||
-        !DefinePropertiesAndBrand(cx, proto, T::TypedObjectProperties,
-                                  T::TypedObjectMethods))
+        !DefinePropertiesAndFunctions(cx, proto, T::TypedObjectProperties,
+                                      T::TypedObjectMethods))
     {
         return nullptr;
     }
@@ -293,38 +293,38 @@ X4TypeDescr::call(JSContext *cx, unsigned argc, Value *vp)
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////////
-// SIMD class
+
+
 
 const Class SIMDObject::class_ = {
         "SIMD",
         JSCLASS_HAS_CACHED_PROTO(JSProto_SIMD),
-        JS_PropertyStub,         /* addProperty */
-        JS_DeletePropertyStub,   /* delProperty */
-        JS_PropertyStub,         /* getProperty */
-        JS_StrictPropertyStub,   /* setProperty */
+        JS_PropertyStub,         
+        JS_DeletePropertyStub,   
+        JS_PropertyStub,         
+        JS_StrictPropertyStub,   
         JS_EnumerateStub,
         JS_ResolveStub,
         JS_ConvertStub,
-        nullptr,             /* finalize    */
-        nullptr,             /* call        */
-        nullptr,             /* hasInstance */
-        nullptr,             /* construct   */
+        nullptr,             
+        nullptr,             
+        nullptr,             
+        nullptr,             
         nullptr
 };
 
 JSObject *
 SIMDObject::initClass(JSContext *cx, Handle<GlobalObject *> global)
 {
-    // SIMD relies on having the TypedObject module initialized.
-    // In particular, the self-hosted code for array() wants
-    // to be able to call GetTypedObjectModule(). It is NOT necessary
-    // to install the TypedObjectModule global, but at the moment
-    // those two things are not separable.
+    
+    
+    
+    
+    
     if (!global->getOrCreateTypedObjectModule(cx))
         return nullptr;
 
-    // Create SIMD Object.
+    
     RootedObject objProto(cx, global->getOrCreateObjectPrototype(cx));
     if (!objProto)
         return nullptr;
@@ -333,14 +333,14 @@ SIMDObject::initClass(JSContext *cx, Handle<GlobalObject *> global)
     if (!SIMD)
         return nullptr;
 
-    // float32x4
+    
     RootedObject float32x4Object(cx);
     float32x4Object = CreateX4Class<Float32x4Defn>(cx, global,
                                                    cx->names().float32x4);
     if (!float32x4Object)
         return nullptr;
 
-    // Define float32x4 functions and install as a property of the SIMD object.
+    
     RootedValue float32x4Value(cx, ObjectValue(*float32x4Object));
     if (!JS_DefineFunctions(cx, float32x4Object, Float32x4Methods) ||
         !JSObject::defineProperty(cx, SIMD, cx->names().float32x4,
@@ -350,14 +350,14 @@ SIMDObject::initClass(JSContext *cx, Handle<GlobalObject *> global)
         return nullptr;
     }
 
-    // int32x4
+    
     RootedObject int32x4Object(cx);
     int32x4Object = CreateX4Class<Int32x4Defn>(cx, global,
                                                cx->names().int32x4);
     if (!int32x4Object)
         return nullptr;
 
-    // Define int32x4 functions and install as a property of the SIMD object.
+    
     RootedValue int32x4Value(cx, ObjectValue(*int32x4Object));
     if (!JS_DefineFunctions(cx, int32x4Object, Int32x4Methods) ||
         !JSObject::defineProperty(cx, SIMD, cx->names().int32x4,
@@ -369,7 +369,7 @@ SIMDObject::initClass(JSContext *cx, Handle<GlobalObject *> global)
 
     RootedValue SIMDValue(cx, ObjectValue(*SIMD));
 
-    // Everything is set up, install SIMD on the global object.
+    
     if (!JSObject::defineProperty(cx, global, cx->names().SIMD, SIMDValue, nullptr, nullptr, 0))
         return nullptr;
 
@@ -578,8 +578,8 @@ ErrorBadArgs(JSContext *cx)
     return false;
 }
 
-// Coerces the inputs of type In to the type Coercion, apply the operator Op
-// and converts the result to the type Out.
+
+
 template<typename In, typename Coercion, typename Op, typename Out>
 static bool
 CoercedFunc(JSContext *cx, unsigned argc, Value *vp)
@@ -619,7 +619,7 @@ CoercedFunc(JSContext *cx, unsigned argc, Value *vp)
     return true;
 }
 
-// Same as above, with Coercion == Out
+
 template<typename In, typename Op, typename Out>
 static bool
 Func(JSContext *cx, unsigned argc, Value *vp)
