@@ -96,15 +96,7 @@ NS_IMPL_CYCLE_COLLECTION_3(mozHunspell,
                            mEncoder,
                            mDecoder)
 
-int64_t mozHunspell::sAmount = 0;
-
-
-void HunspellReportMemoryAllocation(void* ptr) {
-  mozHunspell::OnAlloc(ptr);
-}
-void HunspellReportMemoryDeallocation(void* ptr) {
-  mozHunspell::OnFree(ptr);
-}
+template<> mozilla::Atomic<size_t> mozilla::CountingAllocatorBase<HunspellAllocator>::sAmount(0);
 
 mozHunspell::mozHunspell()
   : mHunspell(nullptr)
