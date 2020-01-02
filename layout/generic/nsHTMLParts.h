@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* factory functions for rendering object classes */
+
+
+
+
+
 
 #ifndef nsHTMLParts_h___
 #define nsHTMLParts_h___
@@ -26,9 +26,9 @@ class nsIPresShell;
 class nsIChannel;
 class nsTableColFrame;
 
-// These are all the block specific frame bits, they are copied from
-// the prev-in-flow to a newly created next-in-flow, except for the
-// NS_BLOCK_FLAGS_NON_INHERITED_MASK bits below.
+
+
+
 #define NS_BLOCK_FLAGS_MASK (NS_BLOCK_MARGIN_ROOT              | \
                              NS_BLOCK_FLOAT_MGR                | \
                              NS_BLOCK_CLIP_PAGINATED_OVERFLOW  | \
@@ -37,37 +37,38 @@ class nsTableColFrame;
                              NS_BLOCK_HAS_FIRST_LETTER_CHILD   | \
                              NS_BLOCK_FRAME_HAS_INSIDE_BULLET)
 
-// This is the subset of NS_BLOCK_FLAGS_MASK that is NOT inherited
-// by default.  They should only be set on the first-in-flow.
-// See nsBlockFrame::Init.
+
+
+
 #define NS_BLOCK_FLAGS_NON_INHERITED_MASK                        \
                             (NS_BLOCK_FRAME_HAS_OUTSIDE_BULLET | \
                              NS_BLOCK_HAS_FIRST_LETTER_CHILD   | \
                              NS_BLOCK_FRAME_HAS_INSIDE_BULLET)
 
-// Factory methods for creating html layout objects
 
-// Create a frame that supports "display: block" layout behavior
-nsIFrame*
+
+
+class nsBlockFrame;
+nsBlockFrame*
 NS_NewBlockFrame(nsIPresShell* aPresShell, nsStyleContext* aContext, nsFrameState aFlags = nsFrameState(0));
 
-// Special Generated Content Node. It contains text taken from an
-// attribute of its *grandparent* content node. 
+
+
 nsresult
 NS_NewAttributeContent(nsNodeInfoManager *aNodeInfoManager,
                        int32_t aNameSpaceID, nsIAtom* aAttrName,
                        nsIContent** aResult);
 
-// Create a basic area frame but the GetFrameForPoint is overridden to always
-// return the option frame 
-// By default, area frames will extend
-// their height to cover any children that "stick out".
+
+
+
+
 nsIFrame*
 NS_NewSelectsAreaFrame(nsIPresShell* aPresShell, nsStyleContext* aContext, nsFrameState aFlags);
 
-// Create a block formatting context blockframe
-inline nsIFrame* NS_NewBlockFormattingContext(nsIPresShell* aPresShell,
-                                              nsStyleContext* aStyleContext)
+
+inline nsBlockFrame* NS_NewBlockFormattingContext(nsIPresShell* aPresShell,
+                                                  nsStyleContext* aStyleContext)
 {
   return NS_NewBlockFrame(aPresShell, aStyleContext,
                           NS_BLOCK_FLOAT_MGR | NS_BLOCK_MARGIN_ROOT);
@@ -79,10 +80,10 @@ NS_NewBRFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 nsIFrame*
 NS_NewCommentFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-// <frame> and <iframe> 
+
 nsIFrame*
 NS_NewSubDocumentFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
-// <frameset>
+
 nsIFrame*
 NS_NewHTMLFramesetFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
@@ -120,10 +121,11 @@ nsIFrame*
 NS_NewPageBreakFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 nsIFrame*
 NS_NewFirstLetterFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
-nsIFrame*
+class nsFirstLineFrame;
+nsFirstLineFrame*
 NS_NewFirstLineFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-// forms
+
 nsIFrame*
 NS_NewGfxButtonControlFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 nsIFrame*
@@ -169,7 +171,7 @@ NS_NewRangeFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 nsIFrame*
 NS_NewNumberControlFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-// Table frame factories
+
 nsIFrame*
 NS_NewTableOuterFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 nsIFrame*
@@ -190,11 +192,11 @@ NS_NewTableCellFrame(nsIPresShell* aPresShell, nsStyleContext* aContext, bool aI
 nsresult
 NS_NewHTMLContentSink(nsIHTMLContentSink** aInstancePtrResult,
                       nsIDocument* aDoc, nsIURI* aURL,
-                      nsISupports* aContainer, // e.g. docshell
+                      nsISupports* aContainer, 
                       nsIChannel* aChannel);
 nsresult
 NS_NewHTMLFragmentContentSink(nsIFragmentContentSink** aInstancePtrResult);
 nsresult
 NS_NewHTMLFragmentContentSink2(nsIFragmentContentSink** aInstancePtrResult);
 
-#endif /* nsHTMLParts_h___ */
+#endif 
