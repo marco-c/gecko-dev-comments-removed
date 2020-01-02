@@ -1,32 +1,32 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "ThebesLayerComposite.h"
-#include "CompositableHost.h"           // for TiledLayerProperties, etc
-#include "FrameMetrics.h"               // for FrameMetrics
-#include "Units.h"                      // for CSSRect, LayerPixel, etc
-#include "gfx2DGlue.h"                  // for ToMatrix4x4
-#include "gfx3DMatrix.h"                // for gfx3DMatrix
-#include "gfxUtils.h"                   // for gfxUtils, etc
-#include "mozilla/Assertions.h"         // for MOZ_ASSERT, etc
-#include "mozilla/gfx/Matrix.h"         // for Matrix4x4
-#include "mozilla/gfx/Point.h"          // for Point
-#include "mozilla/gfx/Rect.h"           // for RoundedToInt, Rect
-#include "mozilla/gfx/Types.h"          // for Filter::FILTER_LINEAR
-#include "mozilla/layers/Compositor.h"  // for Compositor
-#include "mozilla/layers/ContentHost.h"  // for ContentHost
-#include "mozilla/layers/Effects.h"     // for EffectChain
-#include "mozilla/mozalloc.h"           // for operator delete
+#include "CompositableHost.h"           
+#include "FrameMetrics.h"               
+#include "Units.h"                      
+#include "gfx2DGlue.h"                  
+#include "gfx3DMatrix.h"                
+#include "gfxUtils.h"                   
+#include "mozilla/Assertions.h"         
+#include "mozilla/gfx/Matrix.h"         
+#include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/Rect.h"           
+#include "mozilla/gfx/Types.h"          
+#include "mozilla/layers/Compositor.h"  
+#include "mozilla/layers/ContentHost.h"  
+#include "mozilla/layers/Effects.h"     
+#include "mozilla/mozalloc.h"           
 #include "nsAString.h"
-#include "nsAutoPtr.h"                  // for nsRefPtr
-#include "nsMathUtils.h"                // for NS_lround
-#include "nsPoint.h"                    // for nsIntPoint
-#include "nsRect.h"                     // for nsIntRect
-#include "nsSize.h"                     // for nsIntSize
-#include "nsString.h"                   // for nsAutoCString
-#include "nsTraceRefcnt.h"              // for MOZ_COUNT_CTOR, etc
+#include "nsAutoPtr.h"                  
+#include "nsMathUtils.h"                
+#include "nsPoint.h"                    
+#include "nsRect.h"                     
+#include "nsSize.h"                     
+#include "nsString.h"                   
+#include "nsTraceRefcnt.h"              
 #include "GeckoProfiler.h"
 
 namespace mozilla {
@@ -138,7 +138,6 @@ ThebesLayerComposite::RenderLayer(const nsIntRect& aClipRect)
 
   mBuffer->SetPaintWillResample(MayResample());
 
-  mBuffer->SetCompositor(mCompositeManager->GetCompositor());
   mBuffer->Composite(effectChain,
                      GetEffectiveOpacity(),
                      transform,
@@ -201,5 +200,5 @@ ThebesLayerComposite::PrintInfo(nsACString& aTo, const char* aPrefix)
   return aTo;
 }
 
-} /* layers */
-} /* mozilla */
+} 
+} 
