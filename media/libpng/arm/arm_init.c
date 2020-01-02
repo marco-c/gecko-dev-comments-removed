@@ -16,6 +16,7 @@
 
 #include "../pngpriv.h"
 
+#ifdef PNG_READ_SUPPORTED
 #if PNG_ARM_NEON_OPT > 0
 #ifdef PNG_ARM_NEON_CHECK_SUPPORTED 
 #include <signal.h> 
@@ -217,3 +218,4 @@ png_init_filter_functions_neon(png_structp pp, unsigned int bpp)
    }
 }
 #endif 
+#endif
