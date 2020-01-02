@@ -1,17 +1,17 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 var EXPORTED_SYMBOLS = ["PdfJs"];
 
@@ -34,8 +34,8 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
-Cu.import('resource://pdf.js.components/PdfStreamConverter.js');
-Cu.import('resource://pdf.js.components/PdfRedirector.js');
+Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
+Cu.import('resource://pdf.js/PdfRedirector.jsm');
 
 let Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
@@ -61,39 +61,25 @@ function getIntPref(aPref, aDefaultValue) {
   }
 }
 
-
+// Register/unregister a constructor as a factory.
 function Factory() {}
-
 Factory.prototype = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory]),
-  _targetConstructor: null,
-
   register: function register(targetConstructor) {
-    this._targetConstructor = targetConstructor;
     var proto = targetConstructor.prototype;
+    this._classID = proto.classID;
+
+    var factory = XPCOMUtils._getFactory(targetConstructor);
+    this._factory = factory;
+
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.registerFactory(proto.classID, proto.classDescription,
-                              proto.contractID, this);
+                              proto.contractID, factory);
   },
 
   unregister: function unregister() {
-    var proto = this._targetConstructor.prototype;
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
-    registrar.unregisterFactory(proto.classID, this);
-    this._targetConstructor = null;
-  },
-
-  
-  createInstance: function createInstance(aOuter, iid) {
-    if (aOuter !== null)
-      throw Cr.NS_ERROR_NO_AGGREGATION;
-    return (new (this._targetConstructor)).QueryInterface(iid);
-  },
-
-  
-  lockFactory: function lockFactory(lock) { 
-    
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    registrar.unregisterFactory(this._classID, this._factory);
+    this._factory = null;
   }
 };
 
@@ -111,8 +97,8 @@ let PdfJs = {
     else
       this._ensureUnregistered();
 
-    
-    
+    // Listen for when pdf.js is completely disabled or a different pdf handler
+    // is chosen.
     Services.prefs.addObserver(PREF_DISABLED, this, false);
     Services.prefs.addObserver(PREF_DISABLED_PLUGIN_TYPES, this, false);
     Services.obs.addObserver(this, TOPIC_PDFJS_HANDLER_CHANGED, false);
@@ -126,7 +112,7 @@ let PdfJs = {
     if (currentVersion >= VERSION) {
       return;
     }
-    
+    // Make pdf.js the default pdf viewer on the first migration.
     if (currentVersion < 2) {
       this._becomeHandler();
     }
@@ -138,9 +124,9 @@ let PdfJs = {
     let prefs = Services.prefs;
     if (handlerInfo.preferredAction !== Ci.nsIHandlerInfo.handleInternally &&
         handlerInfo.preferredAction !== false) {
-      
-      
-      
+      // Store the previous settings of preferredAction and
+      // alwaysAskBeforeHandling in case we need to revert them in a hotfix that
+      // would turn pdf.js off.
       prefs.setIntPref(PREF_PREVIOUS_ACTION, handlerInfo.preferredAction);
       prefs.setBoolPref(PREF_PREVIOUS_ASK, handlerInfo.alwaysAskBeforeHandling);
     }
@@ -148,12 +134,12 @@ let PdfJs = {
     let handlerService = Cc['@mozilla.org/uriloader/handler-service;1'].
                          getService(Ci.nsIHandlerService);
 
-    
+    // Change and save mime handler settings.
     handlerInfo.alwaysAskBeforeHandling = false;
     handlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
     handlerService.store(handlerInfo);
 
-    
+    // Also disable any plugins for pdfs.
     var stringTypes = '';
     var types = [];
     if (prefs.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES)) {
@@ -168,7 +154,7 @@ let PdfJs = {
     }
     prefs.setCharPref(PREF_DISABLED_PLUGIN_TYPES, types.join(','));
 
-    
+    // Update the category manager in case the plugins are already loaded.
     let categoryManager = Cc["@mozilla.org/categorymanager;1"];
     categoryManager.getService(Ci.nsICategoryManager).
                     deleteCategoryEntry("Gecko-Content-Viewers",
@@ -176,7 +162,7 @@ let PdfJs = {
                                         false);
   },
 
-  
+  // nsIObserver
   observe: function observe(aSubject, aTopic, aData) {
     if (this.enabled)
       this._ensureRegistered();
@@ -184,18 +170,18 @@ let PdfJs = {
       this._ensureUnregistered();
   },
   
-  
-
-
-
-
+  /**
+   * pdf.js is only enabled if it is both selected as the pdf viewer and if the 
+   * global switch enabling it is true.
+   * @return {boolean} Wether or not it's enabled.
+   */
   get enabled() {
     var disabled = getBoolPref(PREF_DISABLED, true);
     if (disabled) {
       return false;
     }
 
-    
+    // the 'application/pdf' handler is selected as internal?
     var handlerInfo = Svc.mime
                          .getFromTypeAndExtension(PDF_CONTENT_TYPE, 'pdf');
     if (handlerInfo.alwaysAskBeforeHandling ||
@@ -203,7 +189,7 @@ let PdfJs = {
       return false;
     }
 
-    
+    // Check if we have disabled plugin handling of 'application/pdf' in prefs
     if (Services.prefs.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES)) {
       let disabledPluginTypes =
         Services.prefs.getCharPref(PREF_DISABLED_PLUGIN_TYPES).split(',');
@@ -212,9 +198,9 @@ let PdfJs = {
       }
     }
 
-    
-    
-    
+    // Check if there is an enabled pdf plugin.
+    // Note: this check is performed last because getPluginTags() triggers costly
+    // plugin list initialization (bug 881575)
     let tags = Cc["@mozilla.org/plugin/host;1"].
                   getService(Ci.nsIPluginHost).
                   getPluginTags();
@@ -228,7 +214,7 @@ let PdfJs = {
       });
     });
 
-    
+    // Use pdf.js if pdf plugin is not present or disabled
     return !enabledPluginFound;
   },
 
