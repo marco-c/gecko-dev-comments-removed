@@ -1,8 +1,8 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_workers_runtimeservice_h__
 #define mozilla_dom_workers_runtimeservice_h__
@@ -83,17 +83,17 @@ private:
 
   mozilla::Mutex mMutex;
 
-  // Protected by mMutex.
+  
   nsClassHashtable<nsCStringHashKey, WorkerDomainInfo> mDomainMap;
 
-  // Protected by mMutex.
+  
   nsTArray<IdleThreadInfo> mIdleThreadArray;
 
-  // *Not* protected by mMutex.
+  
   nsClassHashtable<nsPtrHashKey<nsPIDOMWindow>,
                    nsTArray<WorkerPrivate*> > mWindowMap;
 
-  // Only used on the main thread.
+  
   nsCOMPtr<nsITimer> mIdleThreadTimer;
 
   static JSSettings sDefaultJSSettings;
@@ -111,7 +111,7 @@ public:
 private:
   NavigatorProperties mNavigatorProperties;
 
-  // True when the observer service holds a reference to this object.
+  
   bool mObserved;
   bool mShuttingDown;
   bool mNavigatorPropertiesLoaded;
@@ -174,16 +174,19 @@ public:
   }
 
   static void
-  SetDefaultJSContextOptions(const JS::ContextOptions& aContentOptions,
-                             const JS::ContextOptions& aChromeOptions)
+  SetDefaultRuntimeAndContextOptions(
+                                    const JS::RuntimeOptions& aRuntimeOptions,
+                                    const JS::ContextOptions& aContentCxOptions,
+                                    const JS::ContextOptions& aChromeCxOptions)
   {
     AssertIsOnMainThread();
-    sDefaultJSSettings.content.contextOptions = aContentOptions;
-    sDefaultJSSettings.chrome.contextOptions = aChromeOptions;
+    sDefaultJSSettings.runtimeOptions = aRuntimeOptions;
+    sDefaultJSSettings.content.contextOptions = aContentCxOptions;
+    sDefaultJSSettings.chrome.contextOptions = aChromeCxOptions;
   }
 
   void
-  UpdateAllWorkerJSContextOptions();
+  UpdateAllWorkerRuntimeAndContextOptions();
 
   void
   UpdateAllWorkerPreference(WorkerPreference aPref, bool aValue);
@@ -279,4 +282,4 @@ private:
 
 END_WORKERS_NAMESPACE
 
-#endif /* mozilla_dom_workers_runtimeservice_h__ */
+#endif 
