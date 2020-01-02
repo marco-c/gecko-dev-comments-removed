@@ -378,6 +378,12 @@ DOMStorageDBParent::NewCache(const nsACString& aScope)
   return new CacheParentBridge(this, aScope);
 }
 
+void
+DOMStorageDBParent::ActorDestroy(ActorDestroyReason aWhy)
+{
+  
+}
+
 bool
 DOMStorageDBParent::RecvAsyncPreload(const nsCString& aScope, const bool& aPriority)
 {

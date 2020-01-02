@@ -175,6 +175,12 @@ LayerTransactionParent::GetCompositorBackendType() const
 }
 
 
+void
+LayerTransactionParent::ActorDestroy(ActorDestroyReason aWhy)
+{
+  
+}
+
 bool
 LayerTransactionParent::RecvUpdateNoSwap(const InfallibleTArray<Edit>& cset,
                                          const TargetConfig& targetConfig,

@@ -18,6 +18,12 @@ using mozilla::ipc::TestShellCommandParent;
 using mozilla::ipc::PTestShellCommandParent;
 using mozilla::dom::ContentParent;
 
+void
+TestShellParent::ActorDestroy(ActorDestroyReason aWhy)
+{
+  
+}
+
 PTestShellCommandParent*
 TestShellParent::AllocPTestShellCommandParent(const nsString& aCommand)
 {

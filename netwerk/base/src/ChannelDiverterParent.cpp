@@ -61,5 +61,11 @@ ChannelDiverterParent::DivertTo(nsIStreamListener* newListener)
   mDivertableChannelParent->DivertTo(newListener);
 }
 
+void
+ChannelDiverterParent::ActorDestroy(ActorDestroyReason aWhy)
+{
+  
+}
+
 } 
 } 
