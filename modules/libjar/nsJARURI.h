@@ -52,7 +52,6 @@ public:
 
     
     nsJARURI();
-    virtual ~nsJARURI();
    
     nsresult Init(const char *charsetHint);
     nsresult FormatSpec(const nsACString &entryPath, nsACString &result,
@@ -63,6 +62,8 @@ public:
     nsresult SetSpecWithBase(const nsACString& aSpec, nsIURI* aBaseURL);
 
 protected:
+    virtual ~nsJARURI();
+
     
     enum RefHandlingEnum {
         eIgnoreRef,
