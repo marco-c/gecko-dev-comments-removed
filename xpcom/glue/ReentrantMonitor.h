@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_ReentrantMonitor_h
 #define mozilla_ReentrantMonitor_h
@@ -11,37 +11,37 @@
 
 #ifdef MOZILLA_INTERNAL_API
 #include "GeckoProfiler.h"
-#endif 
+#endif //MOZILLA_INTERNAL_API
 
 #include "mozilla/BlockingResourceBase.h"
 
-
-
-
-
-
-
-
-
-
-
+//
+// Provides:
+//
+//  - ReentrantMonitor, a Java-like monitor
+//  - ReentrantMonitorAutoEnter, an RAII class for ensuring that
+//    ReentrantMonitors are properly entered and exited
+//
+// Using ReentrantMonitorAutoEnter is MUCH preferred to making bare calls to
+// ReentrantMonitor.Enter and Exit.
+//
 namespace mozilla {
 
 
-
-
-
-
-
-
+/**
+ * ReentrantMonitor
+ * Java-like monitor.
+ * When possible, use ReentrantMonitorAutoEnter to hold this monitor within a
+ * scope, instead of calling Enter/Exit directly.
+ **/
 class NS_COM_GLUE ReentrantMonitor : BlockingResourceBase
 {
 public:
-  
-
-
-
-  ReentrantMonitor(const char* aName)
+  /**
+   * ReentrantMonitor
+   * @param aName A name which can reference this monitor
+   */
+  explicit ReentrantMonitor(const char* aName)
     : BlockingResourceBase(aName, eReentrantMonitor)
 #ifdef DEBUG
     , mEntryCount(0)
@@ -54,9 +54,9 @@ public:
     }
   }
 
-  
-
-
+  /**
+   * ~ReentrantMonitor
+   **/
   ~ReentrantMonitor()
   {
     NS_ASSERTION(mReentrantMonitor,
@@ -67,52 +67,52 @@ public:
   }
 
 #ifndef DEBUG
-  
-
-
-
+  /**
+   * Enter
+   * @see prmon.h
+   **/
   void Enter() { PR_EnterMonitor(mReentrantMonitor); }
 
-  
-
-
-
+  /**
+   * Exit
+   * @see prmon.h
+   **/
   void Exit() { PR_ExitMonitor(mReentrantMonitor); }
 
-  
-
-
-
+  /**
+   * Wait
+   * @see prmon.h
+   **/
   nsresult Wait(PRIntervalTime aInterval = PR_INTERVAL_NO_TIMEOUT)
   {
 #ifdef MOZILLA_INTERNAL_API
     GeckoProfilerSleepRAII profiler_sleep;
-#endif 
+#endif //MOZILLA_INTERNAL_API
     return PR_Wait(mReentrantMonitor, aInterval) == PR_SUCCESS ?
       NS_OK : NS_ERROR_FAILURE;
   }
 
-#else 
+#else // ifndef DEBUG
   void Enter();
   void Exit();
   nsresult Wait(PRIntervalTime aInterval = PR_INTERVAL_NO_TIMEOUT);
 
-#endif  
+#endif  // ifndef DEBUG
 
-  
-
-
-
+  /**
+   * Notify
+   * @see prmon.h
+   **/
   nsresult Notify()
   {
     return PR_Notify(mReentrantMonitor) == PR_SUCCESS ? NS_OK :
                                                         NS_ERROR_FAILURE;
   }
 
-  
-
-
-
+  /**
+   * NotifyAll
+   * @see prmon.h
+   **/
   nsresult NotifyAll()
   {
     return PR_NotifyAll(mReentrantMonitor) == PR_SUCCESS ? NS_OK :
@@ -120,29 +120,29 @@ public:
   }
 
 #ifdef DEBUG
-  
-
-
-
+  /**
+   * AssertCurrentThreadIn
+   * @see prmon.h
+   **/
   void AssertCurrentThreadIn()
   {
     PR_ASSERT_CURRENT_THREAD_IN_MONITOR(mReentrantMonitor);
   }
 
-  
-
-
-
+  /**
+   * AssertNotCurrentThreadIn
+   * @see prmon.h
+   **/
   void AssertNotCurrentThreadIn()
   {
-    
+    // FIXME bug 476536
   }
 
 #else
   void AssertCurrentThreadIn() {}
   void AssertNotCurrentThreadIn() {}
 
-#endif  
+#endif  // ifdef DEBUG
 
 private:
   ReentrantMonitor();
@@ -156,24 +156,24 @@ private:
 };
 
 
-
-
-
-
-
-
-
+/**
+ * ReentrantMonitorAutoEnter
+ * Enters the ReentrantMonitor when it enters scope, and exits it when
+ * it leaves scope.
+ *
+ * MUCH PREFERRED to bare calls to ReentrantMonitor.Enter and Exit.
+ */
 class NS_COM_GLUE MOZ_STACK_CLASS ReentrantMonitorAutoEnter
 {
 public:
-  
-
-
-
-
-
-
-  ReentrantMonitorAutoEnter(mozilla::ReentrantMonitor& aReentrantMonitor)
+  /**
+   * Constructor
+   * The constructor aquires the given lock.  The destructor
+   * releases the lock.
+   *
+   * @param aReentrantMonitor A valid mozilla::ReentrantMonitor*.
+   **/
+  explicit ReentrantMonitorAutoEnter(mozilla::ReentrantMonitor& aReentrantMonitor)
     : mReentrantMonitor(&aReentrantMonitor)
   {
     NS_ASSERTION(mReentrantMonitor, "null monitor");
@@ -203,26 +203,26 @@ private:
   mozilla::ReentrantMonitor* mReentrantMonitor;
 };
 
-
-
-
-
-
-
-
+/**
+ * ReentrantMonitorAutoExit
+ * Exit the ReentrantMonitor when it enters scope, and enters it when it leaves
+ * scope.
+ *
+ * MUCH PREFERRED to bare calls to ReentrantMonitor.Exit and Enter.
+ */
 class MOZ_STACK_CLASS ReentrantMonitorAutoExit
 {
 public:
-  
-
-
-
-
-
-
-
-
-  ReentrantMonitorAutoExit(ReentrantMonitor& aReentrantMonitor)
+  /**
+   * Constructor
+   * The constructor releases the given lock.  The destructor
+   * acquires the lock. The lock must be held before constructing
+   * this object!
+   *
+   * @param aReentrantMonitor A valid mozilla::ReentrantMonitor*. It
+   *                 must be already locked.
+   **/
+  explicit ReentrantMonitorAutoExit(ReentrantMonitor& aReentrantMonitor)
     : mReentrantMonitor(&aReentrantMonitor)
   {
     NS_ASSERTION(mReentrantMonitor, "null monitor");
@@ -245,7 +245,7 @@ private:
   ReentrantMonitor* mReentrantMonitor;
 };
 
-} 
+} // namespace mozilla
 
 
-#endif 
+#endif // ifndef mozilla_ReentrantMonitor_h

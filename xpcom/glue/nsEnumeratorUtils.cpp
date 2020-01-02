@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Attributes.h"
 
@@ -21,14 +21,14 @@ class EmptyEnumeratorImpl
 public:
   EmptyEnumeratorImpl() {}
 
-  
-  NS_DECL_ISUPPORTS_INHERITED  
+  // nsISupports interface
+  NS_DECL_ISUPPORTS_INHERITED  // not really inherited, but no mRefCnt
 
-  
+  // nsISimpleEnumerator
   NS_DECL_NSISIMPLEENUMERATOR
   NS_DECL_NSIUTF8STRINGENUMERATOR
-  
-  
+  // can't use NS_DECL_NSISTRINGENUMERATOR because they share the
+  // HasMore() signature
   NS_IMETHOD GetNext(nsAString& aResult);
 
   static EmptyEnumeratorImpl* GetInstance()
@@ -38,7 +38,7 @@ public:
   }
 };
 
-
+// nsISupports interface
 NS_IMETHODIMP_(MozExternalRefCountType)
 EmptyEnumeratorImpl::AddRef(void)
 {
@@ -54,7 +54,7 @@ EmptyEnumeratorImpl::Release(void)
 NS_IMPL_QUERY_INTERFACE(EmptyEnumeratorImpl, nsISimpleEnumerator,
                         nsIUTF8StringEnumerator, nsIStringEnumerator)
 
-
+// nsISimpleEnumerator interface
 NS_IMETHODIMP
 EmptyEnumeratorImpl::HasMoreElements(bool* aResult)
 {
@@ -94,18 +94,18 @@ NS_NewEmptyEnumerator(nsISimpleEnumerator** aResult)
   return NS_OK;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsSingletonEnumerator MOZ_FINAL : public nsISimpleEnumerator
 {
 public:
   NS_DECL_ISUPPORTS
 
-  
+  // nsISimpleEnumerator methods
   NS_IMETHOD HasMoreElements(bool* aResult);
   NS_IMETHOD GetNext(nsISupports** aResult);
 
-  nsSingletonEnumerator(nsISupports* aValue);
+  explicit nsSingletonEnumerator(nsISupports* aValue);
 
 private:
   ~nsSingletonEnumerator();
@@ -174,14 +174,14 @@ NS_NewSingletonEnumerator(nsISimpleEnumerator** aResult,
   return NS_OK;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class nsUnionEnumerator MOZ_FINAL : public nsISimpleEnumerator
 {
 public:
   NS_DECL_ISUPPORTS
 
-  
+  // nsISimpleEnumerator methods
   NS_IMETHOD HasMoreElements(bool* aResult);
   NS_IMETHOD GetNext(nsISupports** aResult);
 
