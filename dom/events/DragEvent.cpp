@@ -116,7 +116,7 @@ DragEvent::GetDataTransfer()
   
   
   
-  if (!mEvent || mEvent->eventStructType != NS_DRAG_EVENT) {
+  if (!mEvent || mEvent->mClass != NS_DRAG_EVENT) {
     NS_WARNING("Tried to get dataTransfer from non-drag event!");
     return nullptr;
   }
