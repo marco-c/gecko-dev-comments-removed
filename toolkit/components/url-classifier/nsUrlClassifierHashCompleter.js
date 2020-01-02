@@ -21,12 +21,9 @@ const PARTIAL_LENGTH = 4;
 
 
 
-
-
 const BACKOFF_ERRORS = 2;
-const BACKOFF_INTERVAL = 30 * 60;
-const BACKOFF_MAX = 8 * 60 * 60;
-const BACKOFF_TIME = 5 * 60;
+const BACKOFF_INTERVAL = 30 * 60 * 1000;
+const BACKOFF_MAX = 8 * 60 * 60 * 1000;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -36,29 +33,18 @@ function HashCompleter() {
   
   
   this._currentRequest = null;
+  
+  this._pendingRequests = {};
+
+  
+  this._backoffs = {};
 
   
   this._shuttingDown = false;
 
-  
-  
-  
-  
-  
-  this._backoff = false;
-  
-  
-  this._backoffTime = 0;
-  
-  
-  this._nextRequestTime = 0;
-  
-  
-  
-  this._errorTimes = [];
-
   Services.obs.addObserver(this, "xpcom-shutdown", true);
 }
+
 HashCompleter.prototype = {
   classID: Components.ID("{9111de73-9322-4bfc-8b65-2b727f3e6ec8}"),
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIUrlClassifierHashCompleter,
@@ -70,108 +56,91 @@ HashCompleter.prototype = {
   
   
   
-  complete: function HC_complete(aPartialHash, aCallback) {
-    if (!this._currentRequest) {
-      this._currentRequest = new HashCompleterRequest(this);
-
-      
-      if (this._getHashUrl) {
-        Services.tm.currentThread.dispatch(this, Ci.nsIThread.DISPATCH_NORMAL);
-      }
+  complete: function HC_complete(aPartialHash, aGethashUrl, aCallback) {
+    if (!aGethashUrl) {
+      throw Cr.NS_ERROR_NOT_INITIALIZED;
     }
 
-    this._currentRequest.add(aPartialHash, aCallback);
+    if (!this._currentRequest) {
+      this._currentRequest = new HashCompleterRequest(this, aGethashUrl);
+    }
+    if (this._currentRequest.gethashUrl == aGethashUrl) {
+      this._currentRequest.add(aPartialHash, aCallback);
+    } else {
+      if (!this._pendingRequests[aGethashUrl]) {
+        this._pendingRequests[aGethashUrl] =
+          new HashCompleterRequest(this, aGethashUrl);
+      }
+      this._pendingRequests[aGethashUrl].add(aPartialHash, aCallback);
+    }
+
+    if (!this._backoffs[aGethashUrl]) {
+      
+      
+      var jslib = Cc["@mozilla.org/url-classifier/jslib;1"]
+                  .getService().wrappedJSObject;
+      this._backoffs[aGethashUrl] = new jslib.RequestBackoff(
+        BACKOFF_ERRORS ,
+        60*1000 ,
+        10 ,
+        0 ,
+        BACKOFF_INTERVAL ,
+        BACKOFF_MAX );
+    }
+    
+    
+    Services.tm.currentThread.dispatch(this, Ci.nsIThread.DISPATCH_NORMAL);
   },
 
   
   
   
-  run: function HC_run() {
+  run: function() {
+    
     if (this._shuttingDown) {
       this._currentRequest = null;
+      this._pendingRequests = null;
+      for (var url in this._backoffs) {
+        this._backoffs[url] = null;
+      }
       throw Cr.NS_ERROR_NOT_INITIALIZED;
     }
-
-    if (!this._currentRequest) {
-      return;
-    }
-
-    if (!this._getHashUrl) {
-      throw Cr.NS_ERROR_NOT_INITIALIZED;
-    }
-
-    let url = this._getHashUrl;
-
-    let uri = Services.io.newURI(url, null, null);
-    this._currentRequest.setURI(uri);
 
     
-    try {
-      this._currentRequest.begin();
+    let pendingUrls = Object.keys(this._pendingRequests);
+    if (!this._currentRequest && (pendingUrls.length > 0)) {
+      let nextUrl = pendingUrls[0];
+      this._currentRequest = this._pendingRequests[nextUrl];
+      delete this._pendingRequests[nextUrl];
     }
-    finally {
-      this._currentRequest = null;
-    }
-  },
-
-  get gethashUrl() {
-    return this._getHashUrl;
-  },
-  
-  
-  set gethashUrl(aNewUrl) {
-    this._getHashUrl = aNewUrl;
 
     if (this._currentRequest) {
-      Services.tm.currentThread.dispatch(this, Ci.nsIThread.DISPATCH_NORMAL);
+      try {
+        this._currentRequest.begin();
+      } finally {
+        
+        this._currentRequest = null;
+      }
     }
   },
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  noteServerResponse: function HC_noteServerResponse(aSuccess) {
-    if (aSuccess) {
-      this._backoff = false;
-      this._nextRequestTime = 0;
-      this._backoffTime = 0;
-      return;
-    }
+  finishRequest: function(url, aStatus) {
+    this._backoffs[url].noteServerResponse(aStatus);
+    Services.tm.currentThread.dispatch(this, Ci.nsIThread.DISPATCH_NORMAL);
+  },
 
-    let now = Date.now();
-
-    
-    
-    this._errorTimes.push(now);
-    if (this._errorTimes.length > BACKOFF_ERRORS) {
-      this._errorTimes.shift();
-    }
-
-    if (this._backoff) {
-      this._backoffTime *= 2;
-    } else if (this._errorTimes.length == BACKOFF_ERRORS &&
-               ((now - this._errorTimes[0]) / 1000) <= BACKOFF_TIME) {
-      this._backoff = true;
-      this._backoffTime = BACKOFF_INTERVAL;
-    }
-
-    if (this._backoff) {
-      this._backoffTime = Math.min(this._backoffTime, BACKOFF_MAX);
-      this._nextRequestTime = now + (this._backoffTime * 1000);
-    }
+  
+  canMakeRequest: function(aGethashUrl) {
+    return this._backoffs[aGethashUrl].canMakeRequest();
   },
 
   
   
-  get nextRequestTime() {
-    return this._nextRequestTime;
+  
+  noteRequest: function(aGethashUrl) {
+    return this._backoffs[aGethashUrl].noteRequest();
   },
 
   observe: function HC_observe(aSubject, aTopic, aData) {
@@ -181,20 +150,18 @@ HashCompleter.prototype = {
   },
 };
 
-function HashCompleterRequest(aCompleter) {
+function HashCompleterRequest(aCompleter, aGethashUrl) {
   
   this._completer = aCompleter;
   
   this._requests = [];
-  
-  
-  this._uri = null;
   
   this._channel = null;
   
   this._response = "";
   
   this._shuttingDown = false;
+  this.gethashUrl = aGethashUrl;
 }
 HashCompleterRequest.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIRequestObserver,
@@ -214,8 +181,10 @@ HashCompleterRequest.prototype = {
 
   
   
+  
   begin: function HCR_begin() {
-    if (Date.now() < this._completer.nextRequestTime) {
+    if (!this._completer.canMakeRequest(this.gethashUrl)) {
+      dump("hashcompleter: Can't make request to " + this.gethashUrl + "\n");
       this.notifyFailure(Cr.NS_ERROR_ABORT);
       return;
     }
@@ -224,6 +193,9 @@ HashCompleterRequest.prototype = {
 
     try {
       this.openChannel();
+      
+      
+      this._completer.noteRequest(this.gethashUrl);
     }
     catch (err) {
       this.notifyFailure(err);
@@ -231,16 +203,13 @@ HashCompleterRequest.prototype = {
     }
   },
 
-  setURI: function HCR_setURI(aURI) {
-    this._uri = aURI;
-  },
-
   
   openChannel: function HCR_openChannel() {
     let loadFlags = Ci.nsIChannel.INHIBIT_CACHING |
                     Ci.nsIChannel.LOAD_BYPASS_CACHE;
 
-    let channel = Services.io.newChannelFromURI(this._uri);
+    let uri = Services.io.newURI(this.gethashUrl, null, null);
+    let channel = Services.io.newChannelFromURI(uri);
     channel.loadFlags = loadFlags;
 
     this._channel = channel;
@@ -306,8 +275,9 @@ HashCompleterRequest.prototype = {
     let start = 0;
 
     let length = this._response.length;
-    while (start != length)
+    while (start != length) {
       start = this.handleTable(start);
+    }
   },
 
   
@@ -404,16 +374,21 @@ HashCompleterRequest.prototype = {
       throw Cr.NS_ERROR_ABORT;
     }
 
+    
+    
+    let httpStatus = 503;
     if (Components.isSuccessCode(aStatusCode)) {
       let channel = aRequest.QueryInterface(Ci.nsIHttpChannel);
       let success = channel.requestSucceeded;
+      httpStatus = channel.responseStatus;
       if (!success) {
         aStatusCode = Cr.NS_ERROR_ABORT;
       }
     }
 
     let success = Components.isSuccessCode(aStatusCode);
-    this._completer.noteServerResponse(success);
+    
+    this._completer.finishRequest(this.gethashUrl, httpStatus);
 
     if (success) {
       try {
