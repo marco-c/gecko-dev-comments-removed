@@ -1,22 +1,22 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* jshint esnext:true */
-/* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
-           dump, NetworkManager, PdfJsTelemetry, DEFAULT_PREFERENCES */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 'use strict';
 
@@ -26,22 +26,20 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
-// True only if this is the version of pdf.js that is included with firefox.
+
 const MOZ_CENTRAL = JSON.parse('true');
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'pdfjs';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
 const MAX_DATABASE_LENGTH = 4096;
-const MAX_STRING_PREF_LENGTH = 4096;
+const MAX_NUMBER_OF_PREFS = 50;
+const MAX_STRING_PREF_LENGTH = 128;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 Cu.import('resource://pdf.js/network.js');
-
-// Load the default preferences.
-Cu.import('resource://pdf.js/default_preferences.js');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
@@ -145,9 +143,9 @@ function getLocalizedString(strings, id, property) {
   return id;
 }
 
-// PDF data storage
+
 function PdfDataListener(length) {
-  this.length = length; // less than 0, if length is unknown
+  this.length = length; 
   this.data = new Uint8Array(length >= 0 ? length : 0x10000);
   this.loaded = 0;
 }
@@ -156,11 +154,11 @@ PdfDataListener.prototype = {
   append: function PdfDataListener_append(chunk) {
     var willBeLoaded = this.loaded + chunk.length;
     if (this.length >= 0 && this.length < willBeLoaded) {
-      this.length = -1; // reset the length, server is giving incorrect one
+      this.length = -1; 
     }
     if (this.length < 0 && this.data.length < willBeLoaded) {
-      // data length is unknown and new chunk will not fit in the existing
-      // buffer, resizing the buffer by doubling the its last length
+      
+      
       var newLength = this.data.length;
       for (; newLength < willBeLoaded; newLength *= 2) {}
       var newData = new Uint8Array(newLength);
@@ -175,7 +173,7 @@ PdfDataListener.prototype = {
     var data = this.data;
     if (this.loaded != data.length)
       data = data.subarray(0, this.loaded);
-    delete this.data; // releasing temporary storage
+    delete this.data; 
     return data;
   },
   finish: function PdfDataListener_finish() {
@@ -205,7 +203,7 @@ PdfDataListener.prototype = {
   }
 };
 
-// All the priviledged actions.
+
 function ChromeActions(domWindow, contentDispositionFilename) {
   this.domWindow = domWindow;
   this.contentDispositionFilename = contentDispositionFilename;
@@ -224,8 +222,8 @@ ChromeActions.prototype = {
   download: function(data, sendResponse) {
     var self = this;
     var originalUrl = data.originalUrl;
-    // The data may not be downloaded so we need just retry getting the pdf with
-    // the original url.
+    
+    
     var originalUri = NetUtil.newURI(data.originalUrl);
     var filename = data.filename;
     if (typeof filename !== 'string' || !/\.pdf$/i.test(filename)) {
@@ -250,13 +248,13 @@ ChromeActions.prototype = {
           sendResponse(true);
         return;
       }
-      // Create a nsIInputStreamChannel so we can set the url on the channel
-      // so the filename will be correct.
+      
+      
       var channel = Cc['@mozilla.org/network/input-stream-channel;1'].
                        createInstance(Ci.nsIInputStreamChannel);
       channel.QueryInterface(Ci.nsIChannel);
       try {
-        // contentDisposition/contentDispositionFilename is readonly before FF18
+        
         channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
         if (self.contentDispositionFilename) {
           channel.contentDispositionFilename = self.contentDispositionFilename;
@@ -281,7 +279,7 @@ ChromeActions.prototype = {
         onStopRequest: function(aRequest, aContext, aStatusCode) {
           if (this.extListener)
             this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
-          // Notify the content code we're done downloading.
+          
           if (sendResponse)
             sendResponse(false);
         },
@@ -298,7 +296,7 @@ ChromeActions.prototype = {
   setDatabase: function(data) {
     if (this.isInPrivateBrowsing())
       return;
-    // Protect against something sending tons of data to setDatabase.
+    
     if (data.length > MAX_DATABASE_LENGTH)
       return;
     setStringPref(PREF_PREFIX + '.database', data);
@@ -313,7 +311,7 @@ ChromeActions.prototype = {
   },
   getStrings: function(data) {
     try {
-      // Lazy initialization of localizedStrings
+      
       if (!('localizedStrings' in this))
         this.localizedStrings = getLocalizedStrings('viewer.properties');
 
@@ -328,8 +326,8 @@ ChromeActions.prototype = {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
   supportsIntegratedFind: function() {
-    // Integrated find is only supported when we're not in a frame and when the
-    // new find events code exists.
+    
+    
     return this.domWindow.frameElement === null &&
            getChromeWindow(this.domWindow).gFindBar &&
            'updateControlState' in getChromeWindow(this.domWindow).gFindBar;
@@ -395,7 +393,7 @@ ChromeActions.prototype = {
 
     var notificationBox = null;
     try {
-      // Based on MDN's "Working with windows in chrome code"
+      
       var mainWindow = domWindow
         .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
         .getInterface(Components.interfaces.nsIWebNavigation)
@@ -411,9 +409,9 @@ ChromeActions.prototype = {
       return;
     }
 
-    // Flag so we don't call the response callback twice, since if the user
-    // clicks open with different viewer both the button callback and
-    // eventCallback will be called.
+    
+    
+    
     var sentResponse = false;
     var buttons = [{
       label: getLocalizedString(strings, 'open_with_different_viewer'),
@@ -428,12 +426,12 @@ ChromeActions.prototype = {
                                        notificationBox.PRIORITY_INFO_LOW,
                                        buttons,
                                        function eventsCallback(eventType) {
-      // Currently there is only one event "removed" but if there are any other
-      // added in the future we still only care about removed at the moment.
+      
+      
       if (eventType !== 'removed')
         return;
-      // Don't send a response again if we already responded when the button was
-      // clicked.
+      
+      
       if (!sentResponse)
         sendResponse(false);
     });
@@ -441,7 +439,7 @@ ChromeActions.prototype = {
   updateFindControlState: function(data) {
     if (!this.supportsIntegratedFind())
       return;
-    // Verify what we're sending to the findbar.
+    
     var result = data.result;
     var findPrevious = data.findPrevious;
     var findPreviousType = typeof findPrevious;
@@ -453,56 +451,60 @@ ChromeActions.prototype = {
                                    .updateControlState(result, findPrevious);
   },
   setPreferences: function(prefs) {
-    var prefValue, defaultValue, prefName, prefType, defaultType;
-
-    for (var key in DEFAULT_PREFERENCES) {
+    var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
+    var numberOfPrefs = 0;
+    var prefValue, prefName;
+    for (var key in prefs) {
+      if (++numberOfPrefs > MAX_NUMBER_OF_PREFS) {
+        log('setPreferences - Exceeded the maximum number of preferences ' +
+            'that is allowed to be set at once.');
+        break;
+      } else if (!defaultBranch.getPrefType(key)) {
+        continue;
+      }
       prefValue = prefs[key];
-      defaultValue = DEFAULT_PREFERENCES[key];
       prefName = (PREF_PREFIX + '.' + key);
-
-      if (prefValue === undefined || prefValue === defaultValue) {
-        Services.prefs.clearUserPref(prefName);
-      } else {
-        prefType = typeof prefValue;
-        defaultType = typeof defaultValue;
-
-        if (prefType !== defaultType) {
-          continue;
-        }
-        switch (defaultType) {
-          case 'boolean':
-            setBoolPref(prefName, prefValue);
-            break;
-          case 'number':
-            setIntPref(prefName, prefValue);
-            break;
-          case 'string':
-            // Protect against adding arbitrarily long strings in about:config.
-            if (prefValue.length <= MAX_STRING_PREF_LENGTH) {
-              setStringPref(prefName, prefValue);
-            }
-            break;
-        }
+      switch (typeof prefValue) {
+        case 'boolean':
+          setBoolPref(prefName, prefValue);
+          break;
+        case 'number':
+          setIntPref(prefName, prefValue);
+          break;
+        case 'string':
+          if (prefValue.length > MAX_STRING_PREF_LENGTH) {
+            log('setPreferences - Exceeded the maximum allowed length ' +
+                'for a string preference.');
+          } else {
+            setStringPref(prefName, prefValue);
+          }
+          break;
       }
     }
   },
-  getPreferences: function() {
-    var currentPrefs = {};
-    var defaultValue, prefName;
-
-    for (var key in DEFAULT_PREFERENCES) {
-      defaultValue = DEFAULT_PREFERENCES[key];
+  getPreferences: function(prefs) {
+    var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
+    var currentPrefs = {}, numberOfPrefs = 0;
+    var prefValue, prefName;
+    for (var key in prefs) {
+      if (++numberOfPrefs > MAX_NUMBER_OF_PREFS) {
+        log('getPreferences - Exceeded the maximum number of preferences ' +
+            'that is allowed to be fetched at once.');
+        break;
+      } else if (!defaultBranch.getPrefType(key)) {
+        continue;
+      }
+      prefValue = prefs[key];
       prefName = (PREF_PREFIX + '.' + key);
-
-      switch (typeof defaultValue) {
+      switch (typeof prefValue) {
         case 'boolean':
-          currentPrefs[key] = getBoolPref(prefName, defaultValue);
+          currentPrefs[key] = getBoolPref(prefName, prefValue);
           break;
         case 'number':
-          currentPrefs[key] = getIntPref(prefName, defaultValue);
+          currentPrefs[key] = getIntPref(prefName, prefValue);
           break;
         case 'string':
-          currentPrefs[key] = getStringPref(prefName, defaultValue);
+          currentPrefs[key] = getStringPref(prefName, prefValue);
           break;
       }
     }
@@ -511,9 +513,9 @@ ChromeActions.prototype = {
 };
 
 var RangedChromeActions = (function RangedChromeActionsClosure() {
-  /**
-   * This is for range requests
-   */
+  
+
+
   function RangedChromeActions(
               domWindow, contentDispositionFilename, originalRequest,
               dataListener) {
@@ -525,15 +527,15 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     this.pdfUrl = originalRequest.URI.spec;
     this.contentLength = originalRequest.contentLength;
 
-    // Pass all the headers from the original request through
+    
     var httpHeaderVisitor = {
       headers: {},
       visitHeader: function(aHeader, aValue) {
         if (aHeader === 'Range') {
-          // When loading the PDF from cache, firefox seems to set the Range
-          // request header to fetch only the unfetched portions of the file
-          // (e.g. 'Range: bytes=1024-'). However, we want to set this header
-          // manually to fetch the PDF in chunks.
+          
+          
+          
+          
           return;
         }
         this.headers[aHeader] = aValue;
@@ -543,7 +545,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
 
     var self = this;
     var xhr_onreadystatechange = function xhr_onreadystatechange() {
-      if (this.readyState === 1) { // LOADING
+      if (this.readyState === 1) { 
         var netChannel = this.channel;
         if ('nsIPrivateBrowsingChannel' in Ci &&
             netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
@@ -565,8 +567,8 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
       getXhr: getXhr
     });
 
-    // If we are in range request mode, this means we manually issued xhr
-    // requests, which we need to abort when we leave the page
+    
+    
     domWindow.addEventListener('unload', function unload(e) {
       self.networkManager.abortAllRequests();
       domWindow.removeEventListener(e.type, unload);
@@ -595,9 +597,9 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     var begin = args.begin;
     var end = args.end;
     var domWindow = this.domWindow;
-    // TODO(mack): Support error handler. We're not currently not handling
-    // errors from chrome code for non-range requests, so this doesn't
-    // seem high-pri
+    
+    
+    
     this.networkManager.requestRange(begin, end, {
       onDone: function RangedChromeActions_onDone(args) {
         domWindow.postMessage({
@@ -620,9 +622,9 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
 
 var StandardChromeActions = (function StandardChromeActionsClosure() {
 
-  /**
-   * This is for a single network stream
-   */
+  
+
+
   function StandardChromeActions(domWindow, contentDispositionFilename,
                                  dataListener) {
 
@@ -669,11 +671,11 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
   return StandardChromeActions;
 })();
 
-// Event listener to trigger chrome privedged code.
+
 function RequestListener(actions) {
   this.actions = actions;
 }
-// Receive an event and synchronously or asynchronously responds.
+
 RequestListener.prototype.receive = function(event) {
   var message = event.target;
   var doc = message.ownerDocument;
@@ -704,8 +706,8 @@ RequestListener.prototype.receive = function(event) {
                                     __exposedProps__: {response: 'r'}});
           return message.dispatchEvent(listener);
         } catch (e) {
-          // doc is no longer accessible because the requestor is already
-          // gone. unloaded content cannot receive the response anyway.
+          
+          
           return false;
         }
       };
@@ -714,8 +716,8 @@ RequestListener.prototype.receive = function(event) {
   }
 };
 
-// Forwards events from the eventElement to the contentWindow only if the
-// content window matches the currently selected browser window.
+
+
 function FindEventManager(eventElement, contentWindow, chromeWindow) {
   this.types = ['find',
                 'findagain',
@@ -742,7 +744,7 @@ FindEventManager.prototype.bind = function() {
 FindEventManager.prototype.handleEvent = function(e) {
   var chromeWindow = this.chromeWindow;
   var contentWindow = this.contentWindow;
-  // Only forward the events if they are for our dom window.
+  
   if (chromeWindow.gBrowser.selectedBrowser.contentWindow === contentWindow) {
     var detail = e.detail;
     detail.__exposedProps__ = {
@@ -770,7 +772,7 @@ function PdfStreamConverter() {
 
 PdfStreamConverter.prototype = {
 
-  // properties required for XPCOM registration:
+  
   classID: Components.ID('{d0c5195d-e798-49d4-b1d3-9324328b2291}'),
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
@@ -782,34 +784,34 @@ PdfStreamConverter.prototype = {
       Ci.nsIRequestObserver
   ]),
 
-  /*
-   * This component works as such:
-   * 1. asyncConvertData stores the listener
-   * 2. onStartRequest creates a new channel, streams the viewer
-   * 3. If range requests are supported:
-   *      3.1. Leave the request open until the viewer is ready to switch to
-   *           range requests.
-   *
-   *    If range rquests are not supported:
-   *      3.1. Read the stream as it's loaded in onDataAvailable to send
-   *           to the viewer
-   *
-   * The convert function just returns the stream, it's just the synchronous
-   * version of asyncConvertData.
-   */
+  
 
-  // nsIStreamConverter::convert
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   convert: function(aFromStream, aFromType, aToType, aCtxt) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
 
-  // nsIStreamConverter::asyncConvertData
+  
   asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
-    // Store the listener passed to us
+    
     this.listener = aListener;
   },
 
-  // nsIStreamListener::onDataAvailable
+  
   onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
     if (!this.dataListener) {
       return;
@@ -821,9 +823,9 @@ PdfStreamConverter.prototype = {
     this.dataListener.append(chunk);
   },
 
-  // nsIRequestObserver::onStartRequest
+  
   onStartRequest: function(aRequest, aContext) {
-    // Setup the request so we can use it below.
+    
     var isHttpRequest = false;
     try {
       aRequest.QueryInterface(Ci.nsIHttpChannel);
@@ -858,11 +860,11 @@ PdfStreamConverter.prototype = {
       contentDispositionFilename = aRequest.contentDispositionFilename;
     } catch (e) {}
 
-    // Change the content type so we don't get stuck in a loop.
+    
     aRequest.setProperty('contentType', aRequest.contentType);
     aRequest.contentType = 'text/html';
     if (isHttpRequest) {
-      // We trust PDF viewer, using no CSP
+      
       aRequest.setResponseHeader('Content-Security-Policy', '', false);
       aRequest.setResponseHeader('Content-Security-Policy-Report-Only', '',
                                  false);
@@ -875,23 +877,23 @@ PdfStreamConverter.prototype = {
     PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
 
 
-    // Creating storage for PDF data
+    
     var contentLength = aRequest.contentLength;
     this.dataListener = new PdfDataListener(contentLength);
     this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
                         .createInstance(Ci.nsIBinaryInputStream);
 
-    // Create a new channel that is viewer loaded as a resource.
+    
     var ioService = Services.io;
     var channel = ioService.newChannel(
                     PDF_VIEWER_WEB_PAGE, null, null);
 
     var listener = this.listener;
     var dataListener = this.dataListener;
-    // Proxy all the request observer calls, when it gets to onStopRequest
-    // we can get the dom window.  We also intentionally pass on the original
-    // request(aRequest) below so we don't overwrite the original channel and
-    // trigger an assertion.
+    
+    
+    
+    
     var proxy = {
       onStartRequest: function(request, context) {
         listener.onStartRequest(aRequest, context);
@@ -900,8 +902,8 @@ PdfStreamConverter.prototype = {
         listener.onDataAvailable(aRequest, context, inputStream, offset, count);
       },
       onStopRequest: function(request, context, statusCode) {
-        // We get the DOM window here instead of before the request since it
-        // may have changed during a redirect.
+        
+        
         var domWindow = getDOMWindow(channel);
         var actions;
         if (rangeRequest) {
@@ -926,17 +928,17 @@ PdfStreamConverter.prototype = {
       }
     };
 
-    // Keep the URL the same so the browser sees it as the same.
+    
     channel.originalURI = aRequest.URI;
     channel.loadGroup = aRequest.loadGroup;
 
-    // We can use resource principal when data is fetched by the chrome
-    // e.g. useful for NoScript
+    
+    
     var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
                           .getService(Ci.nsIScriptSecurityManager);
     var uri = ioService.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-    // FF16 and below had getCodebasePrincipal, it was replaced by
-    // getNoAppCodebasePrincipal (bug 758258).
+    
+    
     var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
                             securityManager.getNoAppCodebasePrincipal(uri) :
                             securityManager.getCodebasePrincipal(uri);
@@ -944,10 +946,10 @@ PdfStreamConverter.prototype = {
     channel.asyncOpen(proxy, aContext);
   },
 
-  // nsIRequestObserver::onStopRequest
+  
   onStopRequest: function(aRequest, aContext, aStatusCode) {
     if (!this.dataListener) {
-      // Do nothing
+      
       return;
     }
 
