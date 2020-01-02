@@ -1,31 +1,31 @@
-/*
-******************************************************************************
-*
-*   Copyright (C) 1999-2012, International Business Machines
-*   Corporation and others.  All Rights Reserved.
-*
-******************************************************************************
-*
-*
-*  ucnv_io.cpp:
-*  initializes global variables and defines functions pertaining to converter 
-*  name resolution aspect of the conversion code.
-*
-*   new implementation:
-*
-*   created on: 1999nov22
-*   created by: Markus W. Scherer
-*
-*   Use the binary cnvalias.icu (created from convrtrs.txt) to work
-*   with aliases for converter names.
-*
-*   Date        Name        Description
-*   11/22/1999  markus      Created
-*   06/28/2002  grhoten     Major overhaul of the converter alias design.
-*                           Now an alias can map to different converters
-*                           depending on the specified standard.
-*******************************************************************************
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "unicode/utypes.h"
 
@@ -36,6 +36,7 @@
 
 #include "umutex.h"
 #include "uarrsort.h"
+#include "uassert.h"
 #include "udataswp.h"
 #include "cstring.h"
 #include "cmemory.h"
@@ -43,126 +44,126 @@
 #include "uenumimp.h"
 #include "ucln_cmn.h"
 
-/* Format of cnvalias.icu -----------------------------------------------------
- *
- * cnvalias.icu is a binary, memory-mappable form of convrtrs.txt.
- * This binary form contains several tables. All indexes are to uint16_t
- * units, and not to the bytes (uint8_t units). Addressing everything on
- * 16-bit boundaries allows us to store more information with small index
- * numbers, which are also 16-bit in size. The majority of the table (except
- * the string table) are 16-bit numbers.
- *
- * First there is the size of the Table of Contents (TOC). The TOC
- * entries contain the size of each section. In order to find the offset
- * you just need to sum up the previous offsets.
- * The TOC length and entries are an array of uint32_t values.
- * The first section after the TOC starts immediately after the TOC.
- *
- * 1) This section contains a list of converters. This list contains indexes
- * into the string table for the converter name. The index of this list is
- * also used by other sections, which are mentioned later on.
- * This list is not sorted.
- *
- * 2) This section contains a list of tags. This list contains indexes
- * into the string table for the tag name. The index of this list is
- * also used by other sections, which are mentioned later on.
- * This list is in priority order of standards.
- *
- * 3) This section contains a list of sorted unique aliases. This
- * list contains indexes into the string table for the alias name. The
- * index of this list is also used by other sections, like the 4th section.
- * The index for the 3rd and 4th section is used to get the
- * alias -> converter name mapping. Section 3 and 4 form a two column table.
- * Some of the most significant bits of each index may contain other
- * information (see findConverter for details).
- *
- * 4) This section contains a list of mapped converter names. Consider this
- * as a table that maps the 3rd section to the 1st section. This list contains
- * indexes into the 1st section. The index of this list is the same index in
- * the 3rd section. There is also some extra information in the high bits of
- * each converter index in this table. Currently it's only used to say that
- * an alias mapped to this converter is ambiguous. See UCNV_CONVERTER_INDEX_MASK
- * and UCNV_AMBIGUOUS_ALIAS_MAP_BIT for more information. This section is
- * the predigested form of the 5th section so that an alias lookup can be fast.
- *
- * 5) This section contains a 2D array with indexes to the 6th section. This
- * section is the full form of all alias mappings. The column index is the
- * index into the converter list (column header). The row index is the index
- * to tag list (row header). This 2D array is the top part a 3D array. The
- * third dimension is in the 6th section.
- *
- * 6) This is blob of variable length arrays. Each array starts with a size,
- * and is followed by indexes to alias names in the string table. This is
- * the third dimension to the section 5. No other section should be referencing
- * this section.
- *
- * 7) Starting in ICU 3.6, this can be a UConverterAliasOptions struct. Its
- * presence indicates that a section 9 exists. UConverterAliasOptions specifies
- * what type of string normalization is used among other potential things in the
- * future.
- *
- * 8) This is the string table. All strings are indexed on an even address.
- * There are two reasons for this. First many chip architectures locate strings
- * faster on even address boundaries. Second, since all indexes are 16-bit
- * numbers, this string table can be 128KB in size instead of 64KB when we
- * only have strings starting on an even address.
- *
- * 9) When present this is a set of prenormalized strings from section 8. This
- * table contains normalized strings with the dashes and spaces stripped out,
- * and all strings lowercased. In the future, the options in section 7 may state
- * other types of normalization.
- *
- * Here is the concept of section 5 and 6. It's a 3D cube. Each tag
- * has a unique alias among all converters. That same alias can
- * be mentioned in other standards on different converters,
- * but only one alias per tag can be unique.
- *
- *
- *              Converter Names (Usually in TR22 form)
- *           -------------------------------------------.
- *     T    /                                          /|
- *     a   /                                          / |
- *     g  /                                          /  |
- *     s /                                          /   |
- *      /                                          /    |
- *      ------------------------------------------/     |
- *    A |                                         |     |
- *    l |                                         |     |
- *    i |                                         |    /
- *    a |                                         |   /
- *    s |                                         |  /
- *    e |                                         | /
- *    s |                                         |/
- *      -------------------------------------------
- *
- *
- *
- * Here is what it really looks like. It's like swiss cheese.
- * There are holes. Some converters aren't recognized by
- * a standard, or they are really old converters that the
- * standard doesn't recognize anymore.
- *
- *              Converter Names (Usually in TR22 form)
- *           -------------------------------------------.
- *     T    /##########################################/|
- *     a   /     #            #                       /#
- *     g  /  #      ##     ##     ### # ### ### ### #/
- *     s / #             #####  ####        ##  ## #/#
- *      / ### # # ##  #  #   #          ### # #   #/##
- *      ------------------------------------------/# #
- *    A |### # # ##  #  #   #          ### # #   #|# #
- *    l |# # #    #     #               ## #     #|# #
- *    i |# # #    #     #                #       #|#
- *    a |#                                       #|#
- *    s |                                        #|#
- *    e
- *    s
- *
- */
 
-/**
- * Used by the UEnumeration API
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct UAliasContext {
     uint32_t listOffset;
     uint32_t listIdx;
@@ -172,6 +173,7 @@ static const char DATA_NAME[] = "cnvalias";
 static const char DATA_TYPE[] = "icu";
 
 static UDataMemory *gAliasData=NULL;
+static icu::UInitOnce gAliasDataInitOnce = U_INITONCE_INITIALIZER;
 
 enum {
     tocLengthIndex=0,
@@ -184,13 +186,13 @@ enum {
     tableOptionsIndex=7,
     stringTableIndex=8,
     normalizedStringTableIndex=9,
-    offsetsCount,    /* length of the swapper's temporary offsets[] */
-    minTocLength=8 /* min. tocLength in the file, does not count the tocLengthIndex! */
+    offsetsCount,    
+    minTocLength=8 
 };
 
 static const UConverterAliasOptions defaultTableOptions = {
     UCNV_IO_UNNORMALIZED,
-    0 /* containsCnvOptionInfo */
+    0 
 };
 static UConverterAlias gMainTable;
 
@@ -198,14 +200,14 @@ static UConverterAlias gMainTable;
 #define GET_NORMALIZED_STRING(idx) (const char *)(gMainTable.normalizedStringTable + (idx))
 
 static UBool U_CALLCONV
-isAcceptable(void * /*context*/,
-             const char * /*type*/, const char * /*name*/,
+isAcceptable(void * ,
+             const char * , const char * ,
              const UDataInfo *pInfo) {
     return (UBool)(
         pInfo->size>=20 &&
         pInfo->isBigEndian==U_IS_BIG_ENDIAN &&
         pInfo->charsetFamily==U_CHARSET_FAMILY &&
-        pInfo->dataFormat[0]==0x43 &&   /* dataFormat="CvAl" */
+        pInfo->dataFormat[0]==0x43 &&   
         pInfo->dataFormat[1]==0x76 &&
         pInfo->dataFormat[2]==0x41 &&
         pInfo->dataFormat[3]==0x6c &&
@@ -218,113 +220,97 @@ static UBool U_CALLCONV ucnv_io_cleanup(void)
         udata_close(gAliasData);
         gAliasData = NULL;
     }
+    gAliasDataInitOnce.reset();
 
     uprv_memset(&gMainTable, 0, sizeof(gMainTable));
 
-    return TRUE;                   /* Everything was cleaned up */
+    return TRUE;                   
 }
+
+static void U_CALLCONV initAliasData(UErrorCode &errCode) {
+    UDataMemory *data;
+    const uint16_t *table;
+    const uint32_t *sectionSizes;
+    uint32_t tableStart;
+    uint32_t currOffset;
+
+    ucln_common_registerCleanup(UCLN_COMMON_UCNV_IO, ucnv_io_cleanup);
+
+    U_ASSERT(gAliasData == NULL);
+    data = udata_openChoice(NULL, DATA_TYPE, DATA_NAME, isAcceptable, NULL, &errCode);
+    if(U_FAILURE(errCode)) {
+        return;
+    }
+
+    sectionSizes = (const uint32_t *)udata_getMemory(data);
+    table = (const uint16_t *)sectionSizes;
+
+    tableStart      = sectionSizes[0];
+    if (tableStart < minTocLength) {
+        errCode = U_INVALID_FORMAT_ERROR;
+        udata_close(data);
+        return;
+    }
+    gAliasData = data;
+
+    gMainTable.converterListSize      = sectionSizes[1];
+    gMainTable.tagListSize            = sectionSizes[2];
+    gMainTable.aliasListSize          = sectionSizes[3];
+    gMainTable.untaggedConvArraySize  = sectionSizes[4];
+    gMainTable.taggedAliasArraySize   = sectionSizes[5];
+    gMainTable.taggedAliasListsSize   = sectionSizes[6];
+    gMainTable.optionTableSize        = sectionSizes[7];
+    gMainTable.stringTableSize        = sectionSizes[8];
+
+    if (tableStart > 8) {
+        gMainTable.normalizedStringTableSize = sectionSizes[9];
+    }
+
+    currOffset = tableStart * (sizeof(uint32_t)/sizeof(uint16_t)) + (sizeof(uint32_t)/sizeof(uint16_t));
+    gMainTable.converterList = table + currOffset;
+
+    currOffset += gMainTable.converterListSize;
+    gMainTable.tagList = table + currOffset;
+
+    currOffset += gMainTable.tagListSize;
+    gMainTable.aliasList = table + currOffset;
+
+    currOffset += gMainTable.aliasListSize;
+    gMainTable.untaggedConvArray = table + currOffset;
+
+    currOffset += gMainTable.untaggedConvArraySize;
+    gMainTable.taggedAliasArray = table + currOffset;
+
+    
+    currOffset += gMainTable.taggedAliasArraySize;
+    gMainTable.taggedAliasLists = table + currOffset;
+
+    currOffset += gMainTable.taggedAliasListsSize;
+    if (gMainTable.optionTableSize > 0
+        && ((const UConverterAliasOptions *)(table + currOffset))->stringNormalizationType < UCNV_IO_NORM_TYPE_COUNT)
+    {
+        
+        gMainTable.optionTable = (const UConverterAliasOptions *)(table + currOffset);
+    }
+    else {
+        
+
+        gMainTable.optionTable = &defaultTableOptions;
+    }
+
+    currOffset += gMainTable.optionTableSize;
+    gMainTable.stringTable = table + currOffset;
+
+    currOffset += gMainTable.stringTableSize;
+    gMainTable.normalizedStringTable = ((gMainTable.optionTable->stringNormalizationType == UCNV_IO_UNNORMALIZED)
+        ? gMainTable.stringTable : (table + currOffset));
+}
+
 
 static UBool
 haveAliasData(UErrorCode *pErrorCode) {
-    int needInit;
-
-    if(pErrorCode==NULL || U_FAILURE(*pErrorCode)) {
-        return FALSE;
-    }
-
-    UMTX_CHECK(NULL, (gAliasData==NULL), needInit);
-
-    /* load converter alias data from file if necessary */
-    if (needInit) {
-        UDataMemory *data;
-        const uint16_t *table;
-        const uint32_t *sectionSizes;
-        uint32_t tableStart;
-        uint32_t currOffset;
-
-        data = udata_openChoice(NULL, DATA_TYPE, DATA_NAME, isAcceptable, NULL, pErrorCode);
-        if(U_FAILURE(*pErrorCode)) {
-            return FALSE;
-        }
-
-        sectionSizes = (const uint32_t *)udata_getMemory(data);
-        table = (const uint16_t *)sectionSizes;
-
-        tableStart      = sectionSizes[0];
-        if (tableStart < minTocLength) {
-            *pErrorCode = U_INVALID_FORMAT_ERROR;
-            udata_close(data);
-            return FALSE;
-        }
-
-        umtx_lock(NULL);
-        if(gAliasData==NULL) {
-            gMainTable.converterListSize      = sectionSizes[1];
-            gMainTable.tagListSize            = sectionSizes[2];
-            gMainTable.aliasListSize          = sectionSizes[3];
-            gMainTable.untaggedConvArraySize  = sectionSizes[4];
-            gMainTable.taggedAliasArraySize   = sectionSizes[5];
-            gMainTable.taggedAliasListsSize   = sectionSizes[6];
-            gMainTable.optionTableSize        = sectionSizes[7];
-            gMainTable.stringTableSize        = sectionSizes[8];
-
-            if (tableStart > 8) {
-                gMainTable.normalizedStringTableSize = sectionSizes[9];
-            }
-
-            currOffset = tableStart * (sizeof(uint32_t)/sizeof(uint16_t)) + (sizeof(uint32_t)/sizeof(uint16_t));
-            gMainTable.converterList = table + currOffset;
-
-            currOffset += gMainTable.converterListSize;
-            gMainTable.tagList = table + currOffset;
-
-            currOffset += gMainTable.tagListSize;
-            gMainTable.aliasList = table + currOffset;
-
-            currOffset += gMainTable.aliasListSize;
-            gMainTable.untaggedConvArray = table + currOffset;
-
-            currOffset += gMainTable.untaggedConvArraySize;
-            gMainTable.taggedAliasArray = table + currOffset;
-
-            /* aliasLists is a 1's based array, but it has a padding character */
-            currOffset += gMainTable.taggedAliasArraySize;
-            gMainTable.taggedAliasLists = table + currOffset;
-
-            currOffset += gMainTable.taggedAliasListsSize;
-            if (gMainTable.optionTableSize > 0
-                && ((const UConverterAliasOptions *)(table + currOffset))->stringNormalizationType < UCNV_IO_NORM_TYPE_COUNT)
-            {
-                /* Faster table */
-                gMainTable.optionTable = (const UConverterAliasOptions *)(table + currOffset);
-            }
-            else {
-                /* Smaller table, or I can't handle this normalization mode!
-                Use the original slower table lookup. */
-                gMainTable.optionTable = &defaultTableOptions;
-            }
-
-            currOffset += gMainTable.optionTableSize;
-            gMainTable.stringTable = table + currOffset;
-
-            currOffset += gMainTable.stringTableSize;
-            gMainTable.normalizedStringTable = ((gMainTable.optionTable->stringNormalizationType == UCNV_IO_UNNORMALIZED)
-                ? gMainTable.stringTable : (table + currOffset));
-
-            ucln_common_registerCleanup(UCLN_COMMON_UCNV_IO, ucnv_io_cleanup);
-
-            gAliasData = data;
-            data=NULL;
-        }
-        umtx_unlock(NULL);
-
-        /* if a different thread set it first, then close the extra data */
-        if(data!=NULL) {
-            udata_close(data); /* NULL if it was set correctly */
-        }
-    }
-
-    return TRUE;
+    umtx_initOnce(gAliasDataInitOnce, &initAliasData, *pErrorCode);
+    return U_SUCCESS(*pErrorCode);
 }
 
 static inline UBool
@@ -349,15 +335,15 @@ static uint32_t getTagNumber(const char *tagname) {
     return UINT32_MAX;
 }
 
-/* character types relevant for ucnv_compareNames() */
+
 enum {
-    IGNORE,
+    UIGNORE,
     ZERO,
     NONZERO,
-    MINLETTER /* any values from here on are lowercase letter mappings */
+    MINLETTER 
 };
 
-/* character types for ASCII 00..7F */
+
 static const uint8_t asciiTypes[128] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -369,9 +355,9 @@ static const uint8_t asciiTypes[128] = {
     0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0, 0, 0, 0, 0
 };
 
-#define GET_ASCII_TYPE(c) ((int8_t)(c) >= 0 ? asciiTypes[(uint8_t)c] : (uint8_t)IGNORE)
+#define GET_ASCII_TYPE(c) ((int8_t)(c) >= 0 ? asciiTypes[(uint8_t)c] : (uint8_t)UIGNORE)
 
-/* character types for EBCDIC 80..FF */
+
 static const uint8_t ebcdicTypes[128] = {
     0,    0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0, 0, 0, 0, 0, 0,
     0,    0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0, 0, 0, 0, 0, 0,
@@ -383,7 +369,7 @@ static const uint8_t ebcdicTypes[128] = {
     ZERO, NONZERO, NONZERO, NONZERO, NONZERO, NONZERO, NONZERO, NONZERO, NONZERO, NONZERO, 0, 0, 0, 0, 0, 0
 };
 
-#define GET_EBCDIC_TYPE(c) ((int8_t)(c) < 0 ? ebcdicTypes[(c)&0x7f] : (uint8_t)IGNORE)
+#define GET_EBCDIC_TYPE(c) ((int8_t)(c) < 0 ? ebcdicTypes[(c)&0x7f] : (uint8_t)UIGNORE)
 
 #if U_CHARSET_FAMILY==U_ASCII_FAMILY
 #   define GET_CHAR_TYPE(c) GET_ASCII_TYPE(c)
@@ -393,7 +379,7 @@ static const uint8_t ebcdicTypes[128] = {
 #   error U_CHARSET_FAMILY is not valid
 #endif
 
-/* @see ucnv_compareNames */
+
 U_CFUNC char * U_EXPORT2
 ucnv_io_stripASCIIForCompare(char *dst, const char *name) {
     char *dstItr = dst;
@@ -404,14 +390,14 @@ ucnv_io_stripASCIIForCompare(char *dst, const char *name) {
     while ((c1 = *name++) != 0) {
         type = GET_ASCII_TYPE(c1);
         switch (type) {
-        case IGNORE:
+        case UIGNORE:
             afterDigit = FALSE;
-            continue; /* ignore all but letters and digits */
+            continue; 
         case ZERO:
             if (!afterDigit) {
                 nextType = GET_ASCII_TYPE(*name);
                 if (nextType == ZERO || nextType == NONZERO) {
-                    continue; /* ignore leading zero before another digit */
+                    continue; 
                 }
             }
             break;
@@ -419,7 +405,7 @@ ucnv_io_stripASCIIForCompare(char *dst, const char *name) {
             afterDigit = TRUE;
             break;
         default:
-            c1 = (char)type; /* lowercased letter */
+            c1 = (char)type; 
             afterDigit = FALSE;
             break;
         }
@@ -439,14 +425,14 @@ ucnv_io_stripEBCDICForCompare(char *dst, const char *name) {
     while ((c1 = *name++) != 0) {
         type = GET_EBCDIC_TYPE(c1);
         switch (type) {
-        case IGNORE:
+        case UIGNORE:
             afterDigit = FALSE;
-            continue; /* ignore all but letters and digits */
+            continue; 
         case ZERO:
             if (!afterDigit) {
                 nextType = GET_EBCDIC_TYPE(*name);
                 if (nextType == ZERO || nextType == NONZERO) {
-                    continue; /* ignore leading zero before another digit */
+                    continue; 
                 }
             }
             break;
@@ -454,7 +440,7 @@ ucnv_io_stripEBCDICForCompare(char *dst, const char *name) {
             afterDigit = TRUE;
             break;
         default:
-            c1 = (char)type; /* lowercased letter */
+            c1 = (char)type; 
             afterDigit = FALSE;
             break;
         }
@@ -464,27 +450,27 @@ ucnv_io_stripEBCDICForCompare(char *dst, const char *name) {
     return dst;
 }
 
-/**
- * Do a fuzzy compare of two converter/alias names.
- * The comparison is case-insensitive, ignores leading zeroes if they are not
- * followed by further digits, and ignores all but letters and digits.
- * Thus the strings "UTF-8", "utf_8", "u*T@f08" and "Utf 8" are exactly equivalent.
- * See section 1.4, Charset Alias Matching in Unicode Technical Standard #22
- * at http://www.unicode.org/reports/tr22/
- *
- * This is a symmetrical (commutative) operation; order of arguments
- * is insignificant.  This is an important property for sorting the
- * list (when the list is preprocessed into binary form) and for
- * performing binary searches on it at run time.
- *
- * @param name1 a converter name or alias, zero-terminated
- * @param name2 a converter name or alias, zero-terminated
- * @return 0 if the names match, or a negative value if the name1
- * lexically precedes name2, or a positive value if the name1
- * lexically follows name2.
- *
- * @see ucnv_io_stripForCompare
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 U_CAPI int U_EXPORT2
 ucnv_compareNames(const char *name1, const char *name2) {
     int rc;
@@ -496,14 +482,14 @@ ucnv_compareNames(const char *name1, const char *name2) {
         while ((c1 = *name1++) != 0) {
             type = GET_CHAR_TYPE(c1);
             switch (type) {
-            case IGNORE:
+            case UIGNORE:
                 afterDigit1 = FALSE;
-                continue; /* ignore all but letters and digits */
+                continue; 
             case ZERO:
                 if (!afterDigit1) {
                     nextType = GET_CHAR_TYPE(*name1);
                     if (nextType == ZERO || nextType == NONZERO) {
-                        continue; /* ignore leading zero before another digit */
+                        continue; 
                     }
                 }
                 break;
@@ -511,23 +497,23 @@ ucnv_compareNames(const char *name1, const char *name2) {
                 afterDigit1 = TRUE;
                 break;
             default:
-                c1 = (char)type; /* lowercased letter */
+                c1 = (char)type; 
                 afterDigit1 = FALSE;
                 break;
             }
-            break; /* deliver c1 */
+            break; 
         }
         while ((c2 = *name2++) != 0) {
             type = GET_CHAR_TYPE(c2);
             switch (type) {
-            case IGNORE:
+            case UIGNORE:
                 afterDigit2 = FALSE;
-                continue; /* ignore all but letters and digits */
+                continue; 
             case ZERO:
                 if (!afterDigit2) {
                     nextType = GET_CHAR_TYPE(*name2);
                     if (nextType == ZERO || nextType == NONZERO) {
-                        continue; /* ignore leading zero before another digit */
+                        continue; 
                     }
                 }
                 break;
@@ -535,19 +521,19 @@ ucnv_compareNames(const char *name1, const char *name2) {
                 afterDigit2 = TRUE;
                 break;
             default:
-                c2 = (char)type; /* lowercased letter */
+                c2 = (char)type; 
                 afterDigit2 = FALSE;
                 break;
             }
-            break; /* deliver c2 */
+            break; 
         }
 
-        /* If we reach the ends of both strings then they match */
+        
         if ((c1|c2)==0) {
             return 0;
         }
 
-        /* Case-insensitive comparison */
+        
         rc = (int)(unsigned char)c1 - (int)(unsigned char)c2;
         if (rc != 0) {
             return rc;
@@ -555,10 +541,10 @@ ucnv_compareNames(const char *name1, const char *name2) {
     }
 }
 
-/*
- * search for an alias
- * return the converter number index for gConverterList
- */
+
+
+
+
 static inline uint32_t
 findConverter(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) {
     uint32_t mid, start, limit;
@@ -573,12 +559,12 @@ findConverter(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) 
             return UINT32_MAX;
         }
 
-        /* Lower case and remove ignoreable characters. */
+        
         ucnv_io_stripForCompare(strippedName, alias);
         alias = strippedName;
     }
 
-    /* do a binary search for the alias */
+    
     start = 0;
     limit = gMainTable.untaggedConvArraySize;
     mid = limit;
@@ -586,8 +572,8 @@ findConverter(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) 
 
     for (;;) {
         mid = (uint32_t)((start + limit) / 2);
-        if (lastMid == mid) {   /* Have we moved? */
-            break;  /* We haven't moved, and it wasn't found. */
+        if (lastMid == mid) {   
+            break;  
         }
         lastMid = mid;
         if (isUnnormalized) {
@@ -602,15 +588,15 @@ findConverter(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) 
         } else if (result > 0) {
             start = mid;
         } else {
-            /* Since the gencnval tool folds duplicates into one entry,
-             * this alias in gAliasList is unique, but different standards
-             * may map an alias to different converters.
-             */
+            
+
+
+
             if (gMainTable.untaggedConvArray[mid] & UCNV_AMBIGUOUS_ALIAS_MAP_BIT) {
                 *pErrorCode = U_AMBIGUOUS_ALIAS_WARNING;
             }
-            /* State whether the canonical converter name contains an option.
-            This information is contained in this list in order to maintain backward & forward compatibility. */
+            
+
             if (containsOption) {
                 UBool containsCnvOptionInfo = (UBool)gMainTable.optionTable->containsCnvOptionInfo;
                 *containsOption = (UBool)((containsCnvOptionInfo
@@ -624,16 +610,16 @@ findConverter(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) 
     return UINT32_MAX;
 }
 
-/*
- * Is this alias in this list?
- * alias and listOffset should be non-NULL.
- */
+
+
+
+
 static inline UBool
 isAliasInList(const char *alias, uint32_t listOffset) {
     if (listOffset) {
         uint32_t currAlias;
         uint32_t listCount = gMainTable.taggedAliasLists[listOffset];
-        /* +1 to skip listCount */
+        
         const uint16_t *currList = gMainTable.taggedAliasLists + listOffset + 1;
         for (currAlias = 0; currAlias < listCount; currAlias++) {
             if (currList[currAlias]
@@ -646,12 +632,12 @@ isAliasInList(const char *alias, uint32_t listOffset) {
     return FALSE;
 }
 
-/*
- * Search for an standard name of an alias (what is the default name
- * that this standard uses?)
- * return the listOffset for gTaggedAliasLists. If it's 0,
- * the it couldn't be found, but the parameters are valid.
- */
+
+
+
+
+
+
 static uint32_t
 findTaggedAliasListsOffset(const char *alias, const char *standard, UErrorCode *pErrorCode) {
     uint32_t idx;
@@ -660,7 +646,7 @@ findTaggedAliasListsOffset(const char *alias, const char *standard, UErrorCode *
     UErrorCode myErr = U_ZERO_ERROR;
     uint32_t tagNum = getTagNumber(standard);
 
-    /* Make a quick guess. Hopefully they used a TR22 canonical alias. */
+    
     convNum = findConverter(alias, NULL, &myErr);
     if (myErr != U_ZERO_ERROR) {
         *pErrorCode = myErr;
@@ -672,11 +658,11 @@ findTaggedAliasListsOffset(const char *alias, const char *standard, UErrorCode *
             return listOffset;
         }
         if (myErr == U_AMBIGUOUS_ALIAS_WARNING) {
-            /* Uh Oh! They used an ambiguous alias.
-               We have to search the whole swiss cheese starting
-               at the highest standard affinity.
-               This may take a while.
-            */
+            
+
+
+
+
             for (idx = 0; idx < gMainTable.taggedAliasArraySize; idx++) {
                 listOffset = gMainTable.taggedAliasArray[idx];
                 if (listOffset && isAliasInList(alias, listOffset)) {
@@ -686,23 +672,23 @@ findTaggedAliasListsOffset(const char *alias, const char *standard, UErrorCode *
                     if (tempListOffset && gMainTable.taggedAliasLists[tempListOffset + 1]) {
                         return tempListOffset;
                     }
-                    /* else keep on looking */
-                    /* We could speed this up by starting on the next row
-                       because an alias is unique per row, right now.
-                       This would change if alias versioning appears. */
+                    
+                    
+
+
                 }
             }
-            /* The standard doesn't know about the alias */
+            
         }
-        /* else no default name */
+        
         return 0;
     }
-    /* else converter or tag not found */
+    
 
     return UINT32_MAX;
 }
 
-/* Return the canonical name */
+
 static uint32_t
 findTaggedConverterNum(const char *alias, const char *standard, UErrorCode *pErrorCode) {
     uint32_t idx;
@@ -711,7 +697,7 @@ findTaggedConverterNum(const char *alias, const char *standard, UErrorCode *pErr
     UErrorCode myErr = U_ZERO_ERROR;
     uint32_t tagNum = getTagNumber(standard);
 
-    /* Make a quick guess. Hopefully they used a TR22 canonical alias. */
+    
     convNum = findConverter(alias, NULL, &myErr);
     if (myErr != U_ZERO_ERROR) {
         *pErrorCode = myErr;
@@ -723,11 +709,11 @@ findTaggedConverterNum(const char *alias, const char *standard, UErrorCode *pErr
             return convNum;
         }
         if (myErr == U_AMBIGUOUS_ALIAS_WARNING) {
-            /* Uh Oh! They used an ambiguous alias.
-               We have to search one slice of the swiss cheese.
-               We search only in the requested tag, not the whole thing.
-               This may take a while.
-            */
+            
+
+
+
+
             uint32_t convStart = (tagNum)*gMainTable.converterListSize;
             uint32_t convLimit = (tagNum+1)*gMainTable.converterListSize;
             for (idx = convStart; idx < convLimit; idx++) {
@@ -736,11 +722,11 @@ findTaggedConverterNum(const char *alias, const char *standard, UErrorCode *pErr
                     return idx-convStart;
                 }
             }
-            /* The standard doesn't know about the alias */
+            
         }
-        /* else no canonical name */
+        
     }
-    /* else converter or tag not found */
+    
 
     return UINT32_MAX;
 }
@@ -753,11 +739,11 @@ ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *p
     int32_t i = 0;
     for (i = 0; i < 2; i++) {
         if (i == 1) {
-            /*
-             * After the first unsuccess converter lookup, check to see if
-             * the name begins with 'x-'. If it does, strip it off and try
-             * again.  This behaviour is similar to how ICU4J does it.
-             */
+            
+
+
+
+
             if (aliasTmp[0] == 'x' || aliasTmp[1] == '-') {
                 aliasTmp = aliasTmp+2;
             } else {
@@ -769,7 +755,7 @@ ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *p
             if (convNum < gMainTable.converterListSize) {
                 return GET_STRING(gMainTable.converterList[convNum]);
             }
-            /* else converter not found */
+            
         } else {
             break;
         }
@@ -779,7 +765,7 @@ ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *p
 }
 
 static int32_t U_CALLCONV
-ucnv_io_countStandardAliases(UEnumeration *enumerator, UErrorCode * /*pErrorCode*/) {
+ucnv_io_countStandardAliases(UEnumeration *enumerator, UErrorCode * ) {
     int32_t value = 0;
     UAliasContext *myContext = (UAliasContext *)(enumerator->context);
     uint32_t listOffset = myContext->listOffset;
@@ -793,7 +779,7 @@ ucnv_io_countStandardAliases(UEnumeration *enumerator, UErrorCode * /*pErrorCode
 static const char* U_CALLCONV
 ucnv_io_nextStandardAliases(UEnumeration *enumerator,
                             int32_t* resultLength,
-                            UErrorCode * /*pErrorCode*/)
+                            UErrorCode * )
 {
     UAliasContext *myContext = (UAliasContext *)(enumerator->context);
     uint32_t listOffset = myContext->listOffset;
@@ -810,7 +796,7 @@ ucnv_io_nextStandardAliases(UEnumeration *enumerator,
             return myStr;
         }
     }
-    /* Either we accessed a zero length list, or we enumerated too far. */
+    
     if (resultLength) {
         *resultLength = 0;
     }
@@ -818,7 +804,7 @@ ucnv_io_nextStandardAliases(UEnumeration *enumerator,
 }
 
 static void U_CALLCONV
-ucnv_io_resetStandardAliases(UEnumeration *enumerator, UErrorCode * /*pErrorCode*/) {
+ucnv_io_resetStandardAliases(UEnumeration *enumerator, UErrorCode * ) {
     ((UAliasContext *)(enumerator->context))->listIdx = 0;
 }
 
@@ -828,7 +814,7 @@ ucnv_io_closeUEnumeration(UEnumeration *enumerator) {
     uprv_free(enumerator);
 }
 
-/* Enumerate the aliases for the specified converter and standard tag */
+
 static const UEnumeration gEnumAliases = {
     NULL,
     NULL,
@@ -848,9 +834,9 @@ ucnv_openStandardNames(const char *convName,
     if (haveAliasData(pErrorCode) && isAlias(convName, pErrorCode)) {
         uint32_t listOffset = findTaggedAliasListsOffset(convName, standard, pErrorCode);
 
-        /* When listOffset == 0, we want to acknowledge that the
-           converter name and standard are okay, but there
-           is nothing to enumerate. */
+        
+
+
         if (listOffset < gMainTable.taggedAliasListsSize) {
             UAliasContext *myContext;
 
@@ -870,7 +856,7 @@ ucnv_openStandardNames(const char *convName,
             myContext->listIdx = 0;
             myEnum->context = myContext;
         }
-        /* else converter or tag not found */
+        
     }
     return myEnum;
 }
@@ -880,15 +866,15 @@ ucnv_io_countAliases(const char *alias, UErrorCode *pErrorCode) {
     if(haveAliasData(pErrorCode) && isAlias(alias, pErrorCode)) {
         uint32_t convNum = findConverter(alias, NULL, pErrorCode);
         if (convNum < gMainTable.converterListSize) {
-            /* tagListNum - 1 is the ALL tag */
+            
             int32_t listOffset = gMainTable.taggedAliasArray[(gMainTable.tagListSize - 1)*gMainTable.converterListSize + convNum];
 
             if (listOffset) {
                 return gMainTable.taggedAliasLists[listOffset];
             }
-            /* else this shouldn't happen. internal program error */
+            
         }
-        /* else converter not found */
+        
     }
     return 0;
 }
@@ -899,21 +885,21 @@ ucnv_io_getAliases(const char *alias, uint16_t start, const char **aliases, UErr
         uint32_t currAlias;
         uint32_t convNum = findConverter(alias, NULL, pErrorCode);
         if (convNum < gMainTable.converterListSize) {
-            /* tagListNum - 1 is the ALL tag */
+            
             int32_t listOffset = gMainTable.taggedAliasArray[(gMainTable.tagListSize - 1)*gMainTable.converterListSize + convNum];
 
             if (listOffset) {
                 uint32_t listCount = gMainTable.taggedAliasLists[listOffset];
-                /* +1 to skip listCount */
+                
                 const uint16_t *currList = gMainTable.taggedAliasLists + listOffset + 1;
 
                 for (currAlias = start; currAlias < listCount; currAlias++) {
                     aliases[currAlias] = GET_STRING(currList[currAlias]);
                 }
             }
-            /* else this shouldn't happen. internal program error */
+            
         }
-        /* else converter not found */
+        
     }
     return 0;
 }
@@ -923,12 +909,12 @@ ucnv_io_getAlias(const char *alias, uint16_t n, UErrorCode *pErrorCode) {
     if(haveAliasData(pErrorCode) && isAlias(alias, pErrorCode)) {
         uint32_t convNum = findConverter(alias, NULL, pErrorCode);
         if (convNum < gMainTable.converterListSize) {
-            /* tagListNum - 1 is the ALL tag */
+            
             int32_t listOffset = gMainTable.taggedAliasArray[(gMainTable.tagListSize - 1)*gMainTable.converterListSize + convNum];
 
             if (listOffset) {
                 uint32_t listCount = gMainTable.taggedAliasLists[listOffset];
-                /* +1 to skip listCount */
+                
                 const uint16_t *currList = gMainTable.taggedAliasLists + listOffset + 1;
 
                 if (n < listCount)  {
@@ -936,9 +922,9 @@ ucnv_io_getAlias(const char *alias, uint16_t n, UErrorCode *pErrorCode) {
                 }
                 *pErrorCode = U_INDEX_OUTOFBOUNDS_ERROR;
             }
-            /* else this shouldn't happen. internal program error */
+            
         }
-        /* else converter not found */
+        
     }
     return NULL;
 }
@@ -946,7 +932,7 @@ ucnv_io_getAlias(const char *alias, uint16_t n, UErrorCode *pErrorCode) {
 static uint16_t
 ucnv_io_countStandards(UErrorCode *pErrorCode) {
     if (haveAliasData(pErrorCode)) {
-        /* Don't include the empty list */
+        
         return (uint16_t)(gMainTable.tagListSize - UCNV_NUM_HIDDEN_TAGS);
     }
 
@@ -973,12 +959,12 @@ ucnv_getStandardName(const char *alias, const char *standard, UErrorCode *pError
         if (0 < listOffset && listOffset < gMainTable.taggedAliasListsSize) {
             const uint16_t *currList = gMainTable.taggedAliasLists + listOffset + 1;
 
-            /* Get the preferred name from this list */
+            
             if (currList[0]) {
                 return GET_STRING(currList[0]);
             }
-            /* else someone screwed up the alias table. */
-            /* *pErrorCode = U_INVALID_FORMAT_ERROR */
+            
+            
         }
     }
 
@@ -1025,14 +1011,14 @@ ucnv_getCanonicalName(const char *alias, const char *standard, UErrorCode *pErro
 }
 
 static int32_t U_CALLCONV
-ucnv_io_countAllConverters(UEnumeration * /*enumerator*/, UErrorCode * /*pErrorCode*/) {
+ucnv_io_countAllConverters(UEnumeration * , UErrorCode * ) {
     return gMainTable.converterListSize;
 }
 
 static const char* U_CALLCONV
 ucnv_io_nextAllConverters(UEnumeration *enumerator,
                             int32_t* resultLength,
-                            UErrorCode * /*pErrorCode*/)
+                            UErrorCode * )
 {
     uint16_t *myContext = (uint16_t *)(enumerator->context);
 
@@ -1043,7 +1029,7 @@ ucnv_io_nextAllConverters(UEnumeration *enumerator,
         }
         return myStr;
     }
-    /* Either we accessed a zero length list, or we enumerated too far. */
+    
     if (resultLength) {
         *resultLength = 0;
     }
@@ -1051,7 +1037,7 @@ ucnv_io_nextAllConverters(UEnumeration *enumerator,
 }
 
 static void U_CALLCONV
-ucnv_io_resetAllConverters(UEnumeration *enumerator, UErrorCode * /*pErrorCode*/) {
+ucnv_io_resetAllConverters(UEnumeration *enumerator, UErrorCode * ) {
     *((uint16_t *)(enumerator->context)) = 0;
 }
 
@@ -1097,17 +1083,17 @@ ucnv_io_countKnownConverters(UErrorCode *pErrorCode) {
     return 0;
 }
 
-/* alias table swapping ----------------------------------------------------- */
+
 
 typedef char * U_CALLCONV StripForCompareFn(char *dst, const char *name);
 
-/*
- * row of a temporary array
- *
- * gets platform-endian charset string indexes and sorting indexes;
- * after sorting this array by strings, the actual arrays are permutated
- * according to the sorting indexes
- */
+
+
+
+
+
+
+
 typedef struct TempRow {
     uint16_t strIndex, sortIndex;
 } TempRow;
@@ -1145,23 +1131,23 @@ ucnv_swapAliases(const UDataSwapper *ds,
     const uint16_t *inTable;
     const uint32_t *inSectionSizes;
     uint32_t toc[offsetsCount];
-    uint32_t offsets[offsetsCount]; /* 16-bit-addressed offsets from inTable/outTable */
+    uint32_t offsets[offsetsCount]; 
     uint32_t i, count, tocLength, topOffset;
 
     TempRow rows[STACK_ROW_CAPACITY];
     uint16_t resort[STACK_ROW_CAPACITY];
     TempAliasTable tempTable;
 
-    /* udata_swapDataHeader checks the arguments */
+    
     headerSize=udata_swapDataHeader(ds, inData, length, outData, pErrorCode);
     if(pErrorCode==NULL || U_FAILURE(*pErrorCode)) {
         return 0;
     }
 
-    /* check data format and format version */
+    
     pInfo=(const UDataInfo *)((const char *)inData+4);
     if(!(
-        pInfo->dataFormat[0]==0x43 &&   /* dataFormat="CvAl" */
+        pInfo->dataFormat[0]==0x43 &&   
         pInfo->dataFormat[1]==0x76 &&
         pInfo->dataFormat[2]==0x41 &&
         pInfo->dataFormat[3]==0x6c &&
@@ -1175,7 +1161,7 @@ ucnv_swapAliases(const UDataSwapper *ds,
         return 0;
     }
 
-    /* an alias table must contain at least the table of contents array */
+    
     if(length>=0 && (length-headerSize)<4*(1+minTocLength)) {
         udata_printError(ds, "ucnv_swapAliases(): too few bytes (%d after header) for an alias table\n",
                          length-headerSize);
@@ -1193,19 +1179,19 @@ ucnv_swapAliases(const UDataSwapper *ds,
         return 0;
     }
 
-    /* read the known part of the table of contents */
+    
     for(i=converterListIndex; i<=tocLength; ++i) {
         toc[i]=ds->readUInt32(inSectionSizes[i]);
     }
 
-    /* compute offsets */
+    
     uprv_memset(offsets, 0, sizeof(offsets));
-    offsets[converterListIndex]=2*(1+tocLength); /* count two 16-bit units per toc entry */
+    offsets[converterListIndex]=2*(1+tocLength); 
     for(i=tagListIndex; i<=tocLength; ++i) {
         offsets[i]=offsets[i-1]+toc[i-1];
     }
 
-    /* compute the overall size of the after-header data, in numbers of 16-bit units */
+    
     topOffset=offsets[i-1]+toc[i-1];
 
     if(length>=0) {
@@ -1223,10 +1209,10 @@ ucnv_swapAliases(const UDataSwapper *ds,
 
         outTable=(uint16_t *)((char *)outData+headerSize);
 
-        /* swap the entire table of contents */
+        
         ds->swapArray32(ds, inTable, 4*(1+tocLength), outTable, pErrorCode);
 
-        /* swap unormalized strings & normalized strings */
+        
         ds->swapInvChars(ds, inTable+offsets[stringTableIndex], 2*(int32_t)(toc[stringTableIndex]+toc[normalizedStringTableIndex]),
                              outTable+offsets[stringTableIndex], pErrorCode);
         if(U_FAILURE(*pErrorCode)) {
@@ -1235,17 +1221,17 @@ ucnv_swapAliases(const UDataSwapper *ds,
         }
 
         if(ds->inCharset==ds->outCharset) {
-            /* no need to sort, just swap all 16-bit values together */
+            
             ds->swapArray16(ds,
                             inTable+offsets[converterListIndex],
                             2*(int32_t)(offsets[stringTableIndex]-offsets[converterListIndex]),
                             outTable+offsets[converterListIndex],
                             pErrorCode);
         } else {
-            /* allocate the temporary table for sorting */
+            
             count=toc[aliasListIndex];
 
-            tempTable.chars=(const char *)(outTable+offsets[stringTableIndex]); /* sort by outCharset */
+            tempTable.chars=(const char *)(outTable+offsets[stringTableIndex]); 
 
             if(count<=STACK_ROW_CAPACITY) {
                 tempTable.rows=rows;
@@ -1263,19 +1249,19 @@ ucnv_swapAliases(const UDataSwapper *ds,
 
             if(ds->outCharset==U_ASCII_FAMILY) {
                 tempTable.stripForCompare=ucnv_io_stripASCIIForCompare;
-            } else /* U_EBCDIC_FAMILY */ {
+            } else  {
                 tempTable.stripForCompare=ucnv_io_stripEBCDICForCompare;
             }
 
-            /*
-             * Sort unique aliases+mapped names.
-             *
-             * We need to sort the list again by outCharset strings because they
-             * sort differently for different charset families.
-             * First we set up a temporary table with the string indexes and
-             * sorting indexes and sort that.
-             * Then we permutate and copy/swap the actual values.
-             */
+            
+
+
+
+
+
+
+
+
             p=inTable+offsets[aliasListIndex];
             q=outTable+offsets[aliasListIndex];
 
@@ -1292,7 +1278,7 @@ ucnv_swapAliases(const UDataSwapper *ds,
                            FALSE, pErrorCode);
 
             if(U_SUCCESS(*pErrorCode)) {
-                /* copy/swap/permutate items */
+                
                 if(p!=q) {
                     for(i=0; i<count; ++i) {
                         oldIndex=tempTable.rows[i].sortIndex;
@@ -1300,11 +1286,11 @@ ucnv_swapAliases(const UDataSwapper *ds,
                         ds->swapArray16(ds, p2+oldIndex, 2, q2+i, pErrorCode);
                     }
                 } else {
-                    /*
-                     * If we swap in-place, then the permutation must use another
-                     * temporary array (tempTable.resort)
-                     * before the results are copied to the outBundle.
-                     */
+                    
+
+
+
+
                     uint16_t *r=tempTable.resort;
 
                     for(i=0; i<count; ++i) {
@@ -1331,7 +1317,7 @@ ucnv_swapAliases(const UDataSwapper *ds,
                 return 0;
             }
 
-            /* swap remaining 16-bit values */
+            
             ds->swapArray16(ds,
                             inTable+offsets[converterListIndex],
                             2*(int32_t)(offsets[aliasListIndex]-offsets[converterListIndex]),
@@ -1350,11 +1336,12 @@ ucnv_swapAliases(const UDataSwapper *ds,
 
 #endif
 
-/*
- * Hey, Emacs, please set the following:
- *
- * Local Variables:
- * indent-tabs-mode: nil
- * End:
- *
- */
+
+
+
+
+
+
+
+
+

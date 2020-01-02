@@ -1,18 +1,18 @@
-/*
-*******************************************************************************
-*
-*   Copyright (C) 2002-2011, International Business Machines
-*   Corporation and others.  All Rights Reserved.
-*
-*******************************************************************************
-*   file name:  uiter.cpp
-*   encoding:   US-ASCII
-*   tab size:   8 (not used)
-*   indentation:4
-*
-*   created on: 2002jan18
-*   created by: Markus W. Scherer
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "unicode/utypes.h"
 #include "unicode/ustring.h"
@@ -31,35 +31,35 @@ U_NAMESPACE_USE
 
 U_CDECL_BEGIN
 
-/* No-Op UCharIterator implementation for illegal input --------------------- */
+
 
 static int32_t U_CALLCONV
-noopGetIndex(UCharIterator * /*iter*/, UCharIteratorOrigin /*origin*/) {
+noopGetIndex(UCharIterator * , UCharIteratorOrigin ) {
     return 0;
 }
 
 static int32_t U_CALLCONV
-noopMove(UCharIterator * /*iter*/, int32_t /*delta*/, UCharIteratorOrigin /*origin*/) {
+noopMove(UCharIterator * , int32_t , UCharIteratorOrigin ) {
     return 0;
 }
 
 static UBool U_CALLCONV
-noopHasNext(UCharIterator * /*iter*/) {
+noopHasNext(UCharIterator * ) {
     return FALSE;
 }
 
 static UChar32 U_CALLCONV
-noopCurrent(UCharIterator * /*iter*/) {
+noopCurrent(UCharIterator * ) {
     return U_SENTINEL;
 }
 
 static uint32_t U_CALLCONV
-noopGetState(const UCharIterator * /*iter*/) {
+noopGetState(const UCharIterator * ) {
     return UITER_NO_STATE;
 }
 
 static void U_CALLCONV
-noopSetState(UCharIterator * /*iter*/, uint32_t /*state*/, UErrorCode *pErrorCode) {
+noopSetState(UCharIterator * , uint32_t , UErrorCode *pErrorCode) {
     *pErrorCode=U_UNSUPPORTED_ERROR;
 }
 
@@ -77,14 +77,14 @@ static const UCharIterator noopIterator={
     noopSetState
 };
 
-/* UCharIterator implementation for simple strings -------------------------- */
 
-/*
- * This is an implementation of a code unit (UChar) iterator
- * for UChar * strings.
- *
- * The UCharIterator.context field holds a pointer to the string.
- */
+
+
+
+
+
+
+
 
 static int32_t U_CALLCONV
 stringIteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
@@ -100,8 +100,8 @@ stringIteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
     case UITER_LENGTH:
         return iter->length;
     default:
-        /* not a valid origin */
-        /* Should never get here! */
+        
+        
         return -1;
     }
 }
@@ -127,7 +127,7 @@ stringIteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origi
         pos=iter->length+delta;
         break;
     default:
-        return -1;  /* Error */
+        return -1;  
     }
 
     if(pos<iter->start) {
@@ -184,7 +184,7 @@ stringIteratorGetState(const UCharIterator *iter) {
 static void U_CALLCONV
 stringIteratorSetState(UCharIterator *iter, uint32_t state, UErrorCode *pErrorCode) {
     if(pErrorCode==NULL || U_FAILURE(*pErrorCode)) {
-        /* do nothing */
+        
     } else if(iter==NULL) {
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
     } else if((int32_t)state<iter->start || iter->limit<(int32_t)state) {
@@ -226,19 +226,19 @@ uiter_setString(UCharIterator *iter, const UChar *s, int32_t length) {
     }
 }
 
-/* UCharIterator implementation for UTF-16BE strings ------------------------ */
 
-/*
- * This is an implementation of a code unit (UChar) iterator
- * for UTF-16BE strings, i.e., strings in byte-vectors where
- * each UChar is stored as a big-endian pair of bytes.
- *
- * The UCharIterator.context field holds a pointer to the string.
- * Everything works just like with a normal UChar iterator (uiter_setString),
- * except that UChars are assembled from byte pairs.
- */
 
-/* internal helper function */
+
+
+
+
+
+
+
+
+
+
+
 static inline UChar32
 utf16BEIteratorGet(UCharIterator *iter, int32_t index) {
     const uint8_t *p=(const uint8_t *)iter->context;
@@ -294,22 +294,22 @@ static const UCharIterator utf16BEIterator={
     stringIteratorSetState
 };
 
-/*
- * Count the number of UChars in a UTF-16BE string before a terminating UChar NUL,
- * i.e., before a pair of 0 bytes where the first 0 byte is at an even
- * offset from s.
- */
+
+
+
+
+
 static int32_t
 utf16BE_strlen(const char *s) {
     if(IS_POINTER_EVEN(s)) {
-        /*
-         * even-aligned, call u_strlen(s)
-         * we are probably on a little-endian machine, but searching for UChar NUL
-         * does not care about endianness
-         */
+        
+
+
+
+
         return u_strlen((const UChar *)s);
     } else {
-        /* odd-aligned, search for pair of 0 bytes */
+        
         const char *p=s;
 
         while(!(*p==0 && p[1]==0)) {
@@ -322,13 +322,13 @@ utf16BE_strlen(const char *s) {
 U_CAPI void U_EXPORT2
 uiter_setUTF16BE(UCharIterator *iter, const char *s, int32_t length) {
     if(iter!=NULL) {
-        /* allow only even-length strings (the input length counts bytes) */
+        
         if(s!=NULL && (length==-1 || (length>=0 && IS_EVEN(length)))) {
-            /* length/=2, except that >>=1 also works for -1 (-1/2==0, -1>>1==-1) */
+            
             length>>=1;
 
             if(U_IS_BIG_ENDIAN && IS_POINTER_EVEN(s)) {
-                /* big-endian machine and 2-aligned UTF-16BE string: use normal UChar iterator */
+                
                 uiter_setString(iter, (const UChar *)s, length);
                 return;
             }
@@ -347,14 +347,14 @@ uiter_setUTF16BE(UCharIterator *iter, const char *s, int32_t length) {
     }
 }
 
-/* UCharIterator wrapper around CharacterIterator --------------------------- */
 
-/*
- * This is wrapper code around a C++ CharacterIterator to
- * look like a C UCharIterator.
- *
- * The UCharIterator.context field holds a pointer to the CharacterIterator.
- */
+
+
+
+
+
+
+
 
 static int32_t U_CALLCONV
 characterIteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
@@ -370,8 +370,8 @@ characterIteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
     case UITER_LENGTH:
         return ((CharacterIterator *)(iter->context))->getLength();
     default:
-        /* not a valid origin */
-        /* Should never get here! */
+        
+        
         return -1;
     }
 }
@@ -390,8 +390,8 @@ characterIteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin or
         ((CharacterIterator *)(iter->context))->setIndex(((CharacterIterator *)(iter->context))->getLength()+delta);
         return ((CharacterIterator *)(iter->context))->getIndex();
     default:
-        /* not a valid origin */
-        /* Should never get here! */
+        
+        
         return -1;
     }
 }
@@ -444,7 +444,7 @@ characterIteratorGetState(const UCharIterator *iter) {
 static void U_CALLCONV
 characterIteratorSetState(UCharIterator *iter, uint32_t state, UErrorCode *pErrorCode) {
     if(pErrorCode==NULL || U_FAILURE(*pErrorCode)) {
-        /* do nothing */
+        
     } else if(iter==NULL || iter->context==NULL) {
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
     } else if((int32_t)state<((CharacterIterator *)(iter->context))->startIndex() || ((CharacterIterator *)(iter->context))->endIndex()<(int32_t)state) {
@@ -480,16 +480,16 @@ uiter_setCharacterIterator(UCharIterator *iter, CharacterIterator *charIter) {
     }
 }
 
-/* UCharIterator wrapper around Replaceable --------------------------------- */
 
-/*
- * This is an implementation of a code unit (UChar) iterator
- * based on a Replaceable object.
- *
- * The UCharIterator.context field holds a pointer to the Replaceable.
- * UCharIterator.length and UCharIterator.index hold Replaceable.length()
- * and the iteration index.
- */
+
+
+
+
+
+
+
+
+
 
 static UChar32 U_CALLCONV
 replaceableIteratorCurrent(UCharIterator *iter) {
@@ -545,43 +545,43 @@ uiter_setReplaceable(UCharIterator *iter, const Replaceable *rep) {
     }
 }
 
-/* UCharIterator implementation for UTF-8 strings --------------------------- */
 
-/*
- * Possible, probably necessary only for an implementation for arbitrary
- * converters:
- * Maintain a buffer (ring buffer?) for a piece of converted 16-bit text.
- * This would require to turn reservedFn into a close function and
- * to introduce a uiter_close(iter).
- */
+
+
+
+
+
+
+
+
 
 #define UITER_CNV_CAPACITY 16
 
-/*
- * Minimal implementation:
- * Maintain a single-UChar buffer for an additional surrogate.
- * The caller must not modify start and limit because they are used internally.
- *
- * Use UCharIterator fields as follows:
- *   context        pointer to UTF-8 string
- *   length         UTF-16 length of the string; -1 until lazy evaluation
- *   start          current UTF-8 index
- *   index          current UTF-16 index; may be -1="unknown" after setState()
- *   limit          UTF-8 length of the string
- *   reservedField  supplementary code point
- *
- * Since UCharIterator delivers 16-bit code units, the iteration can be
- * currently in the middle of the byte sequence for a supplementary code point.
- * In this case, reservedField will contain that code point and start will
- * point to after the corresponding byte sequence. The UTF-16 index will be
- * one less than what it would otherwise be corresponding to the UTF-8 index.
- * Otherwise, reservedField will be 0.
- */
 
-/*
- * Possible optimization for NUL-terminated UTF-8 and UTF-16 strings:
- * Add implementations that do not call strlen() for iteration but check for NUL.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static int32_t U_CALLCONV
 utf8IteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
@@ -591,29 +591,25 @@ utf8IteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
         return 0;
     case UITER_CURRENT:
         if(iter->index<0) {
-            /* the current UTF-16 index is unknown after setState(), count from the beginning */
+            
             const uint8_t *s;
             UChar32 c;
             int32_t i, limit, index;
 
             s=(const uint8_t *)iter->context;
             i=index=0;
-            limit=iter->start; /* count up to the UTF-8 index */
+            limit=iter->start; 
             while(i<limit) {
-                U8_NEXT(s, i, limit, c);
-                if(c<=0xffff) {
-                    ++index;
-                } else {
-                    index+=2;
-                }
+                U8_NEXT_OR_FFFD(s, i, limit, c);
+                index+=U16_LENGTH(c);
             }
 
-            iter->start=i; /* just in case setState() did not get us to a code point boundary */
+            iter->start=i; 
             if(i==iter->limit) {
-                iter->length=index; /* in case it was <0 or wrong */
+                iter->length=index; 
             }
             if(iter->reservedField!=0) {
-                --index; /* we are in the middle of a supplementary code point */
+                --index; 
             }
             iter->index=index;
         }
@@ -627,25 +623,21 @@ utf8IteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
 
             s=(const uint8_t *)iter->context;
             if(iter->index<0) {
-                /*
-                 * the current UTF-16 index is unknown after setState(),
-                 * we must first count from the beginning to here
-                 */
+                
+
+
+
                 i=length=0;
                 limit=iter->start;
 
-                /* count from the beginning to the current index */
+                
                 while(i<limit) {
-                    U8_NEXT(s, i, limit, c);
-                    if(c<=0xffff) {
-                        ++length;
-                    } else {
-                        length+=2;
-                    }
+                    U8_NEXT_OR_FFFD(s, i, limit, c);
+                    length+=U16_LENGTH(c);
                 }
 
-                /* assume i==limit==iter->start, set the UTF-16 index */
-                iter->start=i; /* just in case setState() did not get us to a code point boundary */
+                
+                iter->start=i; 
                 iter->index= iter->reservedField!=0 ? length-1 : length;
             } else {
                 i=iter->start;
@@ -655,22 +647,18 @@ utf8IteratorGetIndex(UCharIterator *iter, UCharIteratorOrigin origin) {
                 }
             }
 
-            /* count from the current index to the end */
+            
             limit=iter->limit;
             while(i<limit) {
-                U8_NEXT(s, i, limit, c);
-                if(c<=0xffff) {
-                    ++length;
-                } else {
-                    length+=2;
-                }
+                U8_NEXT_OR_FFFD(s, i, limit, c);
+                length+=U16_LENGTH(c);
             }
             iter->length=length;
         }
         return iter->length;
     default:
-        /* not a valid origin */
-        /* Should never get here! */
+        
+        
         return -1;
     }
 }
@@ -679,24 +667,24 @@ static int32_t U_CALLCONV
 utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin) {
     const uint8_t *s;
     UChar32 c;
-    int32_t pos; /* requested UTF-16 index */
-    int32_t i; /* UTF-8 index */
+    int32_t pos; 
+    int32_t i; 
     UBool havePos;
 
-    /* calculate the requested UTF-16 index */
+    
     switch(origin) {
     case UITER_ZERO:
     case UITER_START:
         pos=delta;
         havePos=TRUE;
-        /* iter->index<0 (unknown) is possible */
+        
         break;
     case UITER_CURRENT:
         if(iter->index>=0) {
             pos=iter->index+delta;
             havePos=TRUE;
         } else {
-            /* the current UTF-16 index is unknown after setState(), use only delta */
+            
             pos=0;
             havePos=FALSE;
         }
@@ -707,25 +695,25 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
             pos=iter->length+delta;
             havePos=TRUE;
         } else {
-            /* pin to the end, avoid counting the length */
+            
             iter->index=-1;
             iter->start=iter->limit;
             iter->reservedField=0;
             if(delta>=0) {
                 return UITER_UNKNOWN_INDEX;
             } else {
-                /* the current UTF-16 index is unknown, use only delta */
+                
                 pos=0;
                 havePos=FALSE;
             }
         }
         break;
     default:
-        return -1;  /* Error */
+        return -1;  
     }
 
     if(havePos) {
-        /* shortcuts: pinning to the edges of the string */
+        
         if(pos<=0) {
             iter->index=iter->start=iter->reservedField=0;
             return 0;
@@ -736,16 +724,16 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
             return iter->index;
         }
 
-        /* minimize the number of U8_NEXT/PREV operations */
+        
         if(iter->index<0 || pos<iter->index/2) {
-            /* go forward from the start instead of backward from the current index */
+            
             iter->index=iter->start=iter->reservedField=0;
         } else if(iter->length>=0 && (iter->length-pos)<(pos-iter->index)) {
-            /*
-             * if we have the UTF-16 index and length and the new position is
-             * closer to the end than the current index,
-             * then go backward from the end instead of forward from the current index
-             */
+            
+
+
+
+
             iter->index=iter->length;
             iter->start=iter->limit;
             iter->reservedField=0;
@@ -753,33 +741,33 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
 
         delta=pos-iter->index;
         if(delta==0) {
-            return iter->index; /* nothing to do */
+            return iter->index; 
         }
     } else {
-        /* move relative to unknown UTF-16 index */
+        
         if(delta==0) {
-            return UITER_UNKNOWN_INDEX; /* nothing to do */
+            return UITER_UNKNOWN_INDEX; 
         } else if(-delta>=iter->start) {
-            /* moving backwards by more UChars than there are UTF-8 bytes, pin to 0 */
+            
             iter->index=iter->start=iter->reservedField=0;
             return 0;
         } else if(delta>=(iter->limit-iter->start)) {
-            /* moving forward by more UChars than the remaining UTF-8 bytes, pin to the end */
-            iter->index=iter->length; /* may or may not be <0 (unknown) */
+            
+            iter->index=iter->length; 
             iter->start=iter->limit;
             iter->reservedField=0;
             return iter->index>=0 ? iter->index : (int32_t)UITER_UNKNOWN_INDEX;
         }
     }
 
-    /* delta!=0 */
+    
 
-    /* move towards the requested position, pin to the edges of the string */
+    
     s=(const uint8_t *)iter->context;
-    pos=iter->index; /* could be <0 (unknown) */
+    pos=iter->index; 
     i=iter->start;
     if(delta>0) {
-        /* go forward */
+        
         int32_t limit=iter->limit;
         if(iter->reservedField!=0) {
             iter->reservedField=0;
@@ -787,18 +775,18 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
             --delta;
         }
         while(delta>0 && i<limit) {
-            U8_NEXT(s, i, limit, c);
-            if(c<0xffff) {
+            U8_NEXT_OR_FFFD(s, i, limit, c);
+            if(c<=0xffff) {
                 ++pos;
                 --delta;
             } else if(delta>=2) {
                 pos+=2;
                 delta-=2;
-            } else /* delta==1 */ {
-                /* stop in the middle of a supplementary code point */
+            } else  {
+                
                 iter->reservedField=c;
                 ++pos;
-                break; /* delta=0; */
+                break; 
             }
         }
         if(i==limit) {
@@ -808,28 +796,28 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
                 iter->index= iter->reservedField==0 ? iter->length : iter->length-1;
             }
         }
-    } else /* delta<0 */ {
-        /* go backward */
+    } else  {
+        
         if(iter->reservedField!=0) {
             iter->reservedField=0;
-            i-=4; /* we stayed behind the supplementary code point; go before it now */
+            i-=4; 
             --pos;
             ++delta;
         }
         while(delta<0 && i>0) {
-            U8_PREV(s, 0, i, c);
-            if(c<0xffff) {
+            U8_PREV_OR_FFFD(s, 0, i, c);
+            if(c<=0xffff) {
                 --pos;
                 ++delta;
             } else if(delta<=-2) {
                 pos-=2;
                 delta+=2;
-            } else /* delta==-1 */ {
-                /* stop in the middle of a supplementary code point */
-                i+=4; /* back to behind this supplementary code point for consistent state */
+            } else  {
+                
+                i+=4; 
                 iter->reservedField=c;
                 --pos;
-                break; /* delta=0; */
+                break; 
             }
         }
     }
@@ -838,11 +826,11 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
     if(iter->index>=0) {
         return iter->index=pos;
     } else {
-        /* we started with index<0 (unknown) so pos is bogus */
+        
         if(i<=1) {
-            return iter->index=i; /* reached the beginning */
+            return iter->index=i; 
         } else {
-            /* we still don't know the UTF-16 index */
+            
             return UITER_UNKNOWN_INDEX;
         }
     }
@@ -867,10 +855,8 @@ utf8IteratorCurrent(UCharIterator *iter) {
         UChar32 c;
         int32_t i=iter->start;
 
-        U8_NEXT(s, i, iter->limit, c);
-        if(c<0) {
-            return 0xfffd;
-        } else if(c<=0xffff) {
+        U8_NEXT_OR_FFFD(s, i, iter->limit, c);
+        if(c<=0xffff) {
             return c;
         } else {
             return U16_LEAD(c);
@@ -895,7 +881,7 @@ utf8IteratorNext(UCharIterator *iter) {
         const uint8_t *s=(const uint8_t *)iter->context;
         UChar32 c;
 
-        U8_NEXT(s, iter->start, iter->limit, c);
+        U8_NEXT_OR_FFFD(s, iter->start, iter->limit, c);
         if((index=iter->index)>=0) {
             iter->index=++index;
             if(iter->length<0 && iter->start==iter->limit) {
@@ -904,9 +890,7 @@ utf8IteratorNext(UCharIterator *iter) {
         } else if(iter->start==iter->limit && iter->length>=0) {
             iter->index= c<=0xffff ? iter->length : iter->length-1;
         }
-        if(c<0) {
-            return 0xfffd;
-        } else if(c<=0xffff) {
+        if(c<=0xffff) {
             return c;
         } else {
             iter->reservedField=c;
@@ -924,7 +908,7 @@ utf8IteratorPrevious(UCharIterator *iter) {
     if(iter->reservedField!=0) {
         UChar lead=U16_LEAD(iter->reservedField);
         iter->reservedField=0;
-        iter->start-=4; /* we stayed behind the supplementary code point; go before it now */
+        iter->start-=4; 
         if((index=iter->index)>0) {
             iter->index=index-1;
         }
@@ -933,18 +917,16 @@ utf8IteratorPrevious(UCharIterator *iter) {
         const uint8_t *s=(const uint8_t *)iter->context;
         UChar32 c;
 
-        U8_PREV(s, 0, iter->start, c);
+        U8_PREV_OR_FFFD(s, 0, iter->start, c);
         if((index=iter->index)>0) {
             iter->index=index-1;
         } else if(iter->start<=1) {
             iter->index= c<=0xffff ? iter->start : iter->start+1;
         }
-        if(c<0) {
-            return 0xfffd;
-        } else if(c<=0xffff) {
+        if(c<=0xffff) {
             return c;
         } else {
-            iter->start+=4; /* back to behind this supplementary code point for consistent state */
+            iter->start+=4; 
             iter->reservedField=c;
             return U16_TRAIL(c);
         }
@@ -968,30 +950,30 @@ utf8IteratorSetState(UCharIterator *iter,
                      UErrorCode *pErrorCode)
 {
     if(pErrorCode==NULL || U_FAILURE(*pErrorCode)) {
-        /* do nothing */
+        
     } else if(iter==NULL) {
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
     } else if(state==utf8IteratorGetState(iter)) {
-        /* setting to the current state: no-op */
+        
     } else {
-        int32_t index=(int32_t)(state>>1); /* UTF-8 index */
-        state&=1; /* 1 if in surrogate pair, must be index>=4 */
+        int32_t index=(int32_t)(state>>1); 
+        state&=1; 
 
         if((state==0 ? index<0 : index<4) || iter->limit<index) {
             *pErrorCode=U_INDEX_OUTOFBOUNDS_ERROR;
         } else {
-            iter->start=index; /* restore UTF-8 byte index */
+            iter->start=index; 
             if(index<=1) {
                 iter->index=index;
             } else {
-                iter->index=-1; /* unknown UTF-16 index */
+                iter->index=-1; 
             }
             if(state==0) {
                 iter->reservedField=0;
             } else {
-                /* verified index>=4 above */
+                
                 UChar32 c;
-                U8_PREV((const uint8_t *)iter->context, 0, index, c);
+                U8_PREV_OR_FFFD((const uint8_t *)iter->context, 0, index, c);
                 if(c<=0xffff) {
                     *pErrorCode=U_INDEX_OUTOFBOUNDS_ERROR;
                 } else {
@@ -1034,7 +1016,7 @@ uiter_setUTF8(UCharIterator *iter, const char *s, int32_t length) {
     }
 }
 
-/* Helper functions --------------------------------------------------------- */
+
 
 U_CAPI UChar32 U_EXPORT2
 uiter_current32(UCharIterator *iter) {
@@ -1043,23 +1025,23 @@ uiter_current32(UCharIterator *iter) {
     c=iter->current(iter);
     if(U16_IS_SURROGATE(c)) {
         if(U16_IS_SURROGATE_LEAD(c)) {
-            /*
-             * go to the next code unit
-             * we know that we are not at the limit because c!=U_SENTINEL
-             */
+            
+
+
+
             iter->move(iter, 1, UITER_CURRENT);
             if(U16_IS_TRAIL(c2=iter->current(iter))) {
                 c=U16_GET_SUPPLEMENTARY(c, c2);
             }
 
-            /* undo index movement */
+            
             iter->move(iter, -1, UITER_CURRENT);
         } else {
             if(U16_IS_LEAD(c2=iter->previous(iter))) {
                 c=U16_GET_SUPPLEMENTARY(c2, c);
             }
             if(c2>=0) {
-                /* undo index movement */
+                
                 iter->move(iter, 1, UITER_CURRENT);
             }
         }
@@ -1076,7 +1058,7 @@ uiter_next32(UCharIterator *iter) {
         if(U16_IS_TRAIL(c2=iter->next(iter))) {
             c=U16_GET_SUPPLEMENTARY(c, c2);
         } else if(c2>=0) {
-            /* unmatched first surrogate, undo index movement */
+            
             iter->move(iter, -1, UITER_CURRENT);
         }
     }
@@ -1092,7 +1074,7 @@ uiter_previous32(UCharIterator *iter) {
         if(U16_IS_LEAD(c2=iter->previous(iter))) {
             c=U16_GET_SUPPLEMENTARY(c2, c);
         } else if(c2>=0) {
-            /* unmatched second surrogate, undo index movement */
+            
             iter->move(iter, 1, UITER_CURRENT);
         }
     }
@@ -1111,7 +1093,7 @@ uiter_getState(const UCharIterator *iter) {
 U_CAPI void U_EXPORT2
 uiter_setState(UCharIterator *iter, uint32_t state, UErrorCode *pErrorCode) {
     if(pErrorCode==NULL || U_FAILURE(*pErrorCode)) {
-        /* do nothing */
+        
     } else if(iter==NULL) {
         *pErrorCode=U_ILLEGAL_ARGUMENT_ERROR;
     } else if(iter->setState==NULL) {
