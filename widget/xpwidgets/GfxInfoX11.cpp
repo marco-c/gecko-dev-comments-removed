@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -27,7 +27,7 @@ namespace widget {
 NS_IMPL_ISUPPORTS_INHERITED(GfxInfo, GfxInfoBase, nsIGfxInfoDebug)
 #endif
 
-// these global variables will be set when firing the glxtest process
+
 int glxtest_pipe = 0;
 pid_t glxtest_pid = 0;
 
@@ -52,10 +52,10 @@ GfxInfo::Init()
 void
 GfxInfo::GetData()
 {
-    // to understand this function, see bug 639842. We retrieve the OpenGL driver information in a
-    // separate process to protect against bad drivers.
+    
+    
 
-    // if glxtest_pipe == 0, that means that we already read the information
+    
     if (!glxtest_pipe)
         return;
 
@@ -63,21 +63,21 @@ GfxInfo::GetData()
     char buf[buf_size];
     ssize_t bytesread = read(glxtest_pipe,
                              &buf,
-                             buf_size-1); // -1 because we'll append a zero
+                             buf_size-1); 
     close(glxtest_pipe);
     glxtest_pipe = 0;
 
-    // bytesread < 0 would mean that the above read() call failed.
-    // This should never happen. If it did, the outcome would be to blacklist anyway.
+    
+    
     if (bytesread < 0)
         bytesread = 0;
 
-    // let buf be a zero-terminated string
+    
     buf[bytesread] = 0;
 
-    // Wait for the glxtest process to finish. This serves 2 purposes:
-    // * avoid having a zombie glxtest process laying around
-    // * get the glxtest process status info.
+    
+    
+    
     int glxtest_status = 0;
     bool wait_for_glxtest_process = true;
     bool waiting_for_glxtest_process_failed = false;
@@ -89,10 +89,10 @@ GfxInfo::GetData()
             if (waitpid_errno == EINTR) {
                 wait_for_glxtest_process = true;
             } else {
-                // Bug 718629
-                // ECHILD happens when the glxtest process got reaped got reaped after a PR_CreateProcess
-                // as per bug 227246. This shouldn't matter, as we still seem to get the data
-                // from the pipe, and if we didn't, the outcome would be to blacklist anyway.
+                
+                
+                
+                
                 waiting_for_glxtest_process_failed = (waitpid_errno != ECHILD);
             }
         }
@@ -132,8 +132,8 @@ GfxInfo::GetData()
     if (!strcmp(textureFromPixmap.get(), "TRUE"))
         mHasTextureFromPixmap = true;
 
-    // only useful for Linux kernel version check for FGLRX driver.
-    // assumes X client == X server, which is sad.
+    
+    
     struct utsname unameobj;
     if (!uname(&unameobj))
     {
@@ -198,21 +198,21 @@ GfxInfo::GetData()
     CrashReporter::AppendAppNotesToCrashReport(note);
 #endif
 
-    // determine the major OpenGL version. That's the first integer in the version string.
+    
     mGLMajorVersion = strtol(mVersion.get(), 0, 10);
 
-    // determine driver type (vendor) and where in the version string
-    // the actual driver version numbers should be expected to be found (whereToReadVersionNumbers)
+    
+    
     const char *whereToReadVersionNumbers = nullptr;
     const char *Mesa_in_version_string = strstr(mVersion.get(), "Mesa");
     if (Mesa_in_version_string) {
         mIsMesa = true;
-        // with Mesa, the version string contains "Mesa major.minor" and that's all the version information we get:
-        // there is no actual driver version info.
+        
+        
         whereToReadVersionNumbers = Mesa_in_version_string + strlen("Mesa");
         if (strcasestr(mVendor.get(), "nouveau"))
             mIsNouveau = true;
-        if (strcasestr(mRenderer.get(), "intel")) // yes, intel is in the renderer string
+        if (strcasestr(mRenderer.get(), "intel")) 
             mIsIntel = true;
         if (strcasestr(mRenderer.get(), "llvmpipe"))
             mIsLlvmpipe = true;
@@ -220,27 +220,27 @@ GfxInfo::GetData()
             mIsOldSwrast = true;
     } else if (strstr(mVendor.get(), "NVIDIA Corporation")) {
         mIsNVIDIA = true;
-        // with the NVIDIA driver, the version string contains "NVIDIA major.minor"
-        // note that here the vendor and version strings behave differently, that's why we don't put this above
-        // alongside Mesa_in_version_string.
+        
+        
+        
         const char *NVIDIA_in_version_string = strstr(mVersion.get(), "NVIDIA");
         if (NVIDIA_in_version_string)
             whereToReadVersionNumbers = NVIDIA_in_version_string + strlen("NVIDIA");
     } else if (strstr(mVendor.get(), "ATI Technologies Inc")) {
         mIsFGLRX = true;
-        // with the FGLRX driver, the version string only gives a OpenGL version :/ so let's return that.
-        // that can at least give a rough idea of how old the driver is.
+        
+        
         whereToReadVersionNumbers = mVersion.get();
     }
 
-    // read major.minor version numbers of the driver (not to be confused with the OpenGL version)
+    
     if (whereToReadVersionNumbers) {
-        // copy into writable buffer, for tokenization
+        
         strncpy(buf, whereToReadVersionNumbers, buf_size);
         bufptr = buf;
 
-        // now try to read major.minor version numbers. In case of failure, gracefully exit: these numbers have
-        // been initialized as 0 anyways
+        
+        
         char *token = NS_strtok(".", &bufptr);
         if (token) {
             mMajorVersion = strtol(token, 0, 10);
@@ -263,10 +263,10 @@ static inline uint64_t version(uint32_t major, uint32_t minor, uint32_t revision
 const nsTArray<GfxDriverInfo>&
 GfxInfo::GetGfxDriverInfo()
 {
-  // Nothing here yet.
-  //if (!mDriverInfo->Length()) {
-  //
-  //}
+  
+  
+  
+  
   return *mDriverInfo;
 }
 
@@ -275,7 +275,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
                               int32_t *aStatus, 
                               nsAString & aSuggestedDriverVersion, 
                               const nsTArray<GfxDriverInfo>& aDriverInfo, 
-                              OperatingSystem* aOS /* = nullptr */)
+                              OperatingSystem* aOS )
 
 {
   GetData();
@@ -288,32 +288,32 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
     *aOS = os;
 
   if (mGLMajorVersion == 1) {
-    // We're on OpenGL 1. In most cases that indicates really old hardware.
-    // We better block them, rather than rely on them to fail gracefully, because they don't!
-    // see bug 696636
+    
+    
+    
     *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
     return NS_OK;
   }
 
-  // Don't evaluate any special cases if we're checking the downloaded blocklist.
+  
   if (!aDriverInfo.Length()) {
-    // Only check features relevant to Linux.
+    
     if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS ||
         aFeature == nsIGfxInfo::FEATURE_WEBGL_OPENGL ||
         aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA) {
 
-      // Disable OpenGL layers when we don't have texture_from_pixmap because it regresses performance. 
+      
       if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS && !mHasTextureFromPixmap) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
         aSuggestedDriverVersion.AssignLiteral("<Anything with EXT_texture_from_pixmap support>");
         return NS_OK;
       }
 
-      // whitelist the linux test slaves' current configuration.
-      // this is necessary as they're still using the slightly outdated 190.42 driver.
-      // this isn't a huge risk, as at least this is the exact setting in which we do continuous testing,
-      // and this only affects GeForce 9400 cards on linux on this precise driver version, which is very few users.
-      // We do the same thing on Windows XP, see in widget/windows/GfxInfo.cpp
+      
+      
+      
+      
+      
       if (mIsNVIDIA &&
           !strcmp(mRenderer.get(), "GeForce 9400/PCI/SSE2") &&
           !strcmp(mVersion.get(), "3.2.0 NVIDIA 190.42"))
@@ -335,8 +335,8 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
         }
         else if (mIsLlvmpipe && version(mMajorVersion, mMinorVersion) < version(9, 1)) {
-          // bug 791905, Mesa bug 57733, fixed in Mesa 9.1 according to
-          // https://bugs.freedesktop.org/show_bug.cgi?id=57733#c3
+          
+          
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
         }
         else if (aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA)
@@ -352,13 +352,13 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
           aSuggestedDriverVersion.AssignLiteral("NVIDIA 257.21");
         }
       } else if (mIsFGLRX) {
-        // FGLRX does not report a driver version number, so we have the OpenGL version instead.
-        // by requiring OpenGL 3, we effectively require recent drivers.
+        
+        
         if (version(mMajorVersion, mMinorVersion, mRevisionVersion) < version(3, 0)) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
           aSuggestedDriverVersion.AssignLiteral("<Something recent>");
         }
-        // Bug 724640: FGLRX + Linux 2.6.32 is a crashy combo
+        
         bool unknownOS = mOS.IsEmpty() || mOSRelease.IsEmpty();
         bool badOS = mOS.Find("Linux", true) != -1 &&
                      mOSRelease.Find("2.6.32") != -1;
@@ -366,8 +366,8 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
         }
       } else {
-        // like on windows, let's block unknown vendors. Think of virtual machines.
-        // Also, this case is hit whenever the GLXtest probe failed to get driver info or crashed.
+        
+        
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
       }
     }
@@ -389,21 +389,21 @@ GfxInfo::GetDWriteEnabled(bool *aEnabled)
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString DWriteVersion; */
+
 NS_IMETHODIMP
 GfxInfo::GetDWriteVersion(nsAString & aDwriteVersion)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString cleartypeParameters; */
+
 NS_IMETHODIMP
 GfxInfo::GetCleartypeParameters(nsAString & aCleartypeParams)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString adapterDescription; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDescription(nsAString & aAdapterDescription)
 {
@@ -412,44 +412,44 @@ GfxInfo::GetAdapterDescription(nsAString & aAdapterDescription)
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDescription2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDescription2(nsAString & aAdapterDescription)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString adapterRAM; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterRAM(nsAString & aAdapterRAM)
 {
-  aAdapterRAM.AssignLiteral("");
+  aAdapterRAM.Truncate();
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterRAM2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterRAM2(nsAString & aAdapterRAM)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString adapterDriver; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriver(nsAString & aAdapterDriver)
 {
-  aAdapterDriver.AssignLiteral("");
+  aAdapterDriver.Truncate();
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDriver2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriver2(nsAString & aAdapterDriver)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString adapterDriverVersion; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVersion(nsAString & aAdapterDriverVersion)
 {
@@ -458,29 +458,29 @@ GfxInfo::GetAdapterDriverVersion(nsAString & aAdapterDriverVersion)
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDriverVersion2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVersion2(nsAString & aAdapterDriverVersion)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString adapterDriverDate; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverDate(nsAString & aAdapterDriverDate)
 {
-  aAdapterDriverDate.AssignLiteral("");
+  aAdapterDriverDate.Truncate();
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDriverDate2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverDate2(nsAString & aAdapterDriverDate)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString adapterVendorID; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterVendorID(nsAString & aAdapterVendorID)
 {
@@ -489,14 +489,14 @@ GfxInfo::GetAdapterVendorID(nsAString & aAdapterVendorID)
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterVendorID2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterVendorID2(nsAString & aAdapterVendorID)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute DOMString adapterDeviceID; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDeviceID(nsAString & aAdapterDeviceID)
 {
@@ -505,14 +505,14 @@ GfxInfo::GetAdapterDeviceID(nsAString & aAdapterDeviceID)
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDeviceID2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDeviceID2(nsAString & aAdapterDeviceID)
 {
   return NS_ERROR_FAILURE;
 }
 
-/* readonly attribute boolean isGPU2Active; */
+
 NS_IMETHODIMP
 GfxInfo::GetIsGPU2Active(bool* aIsGPU2Active)
 {
@@ -521,38 +521,38 @@ GfxInfo::GetIsGPU2Active(bool* aIsGPU2Active)
 
 #ifdef DEBUG
 
-// Implement nsIGfxInfoDebug
-// We don't support spoofing anything on Linux
 
-/* void spoofVendorID (in DOMString aVendorID); */
+
+
+
 NS_IMETHODIMP GfxInfo::SpoofVendorID(const nsAString & aVendorID)
 {
   CopyUTF16toUTF8(aVendorID, mVendor);
   return NS_OK;
 }
 
-/* void spoofDeviceID (in unsigned long aDeviceID); */
+
 NS_IMETHODIMP GfxInfo::SpoofDeviceID(const nsAString & aDeviceID)
 {
   CopyUTF16toUTF8(aDeviceID, mRenderer);
   return NS_OK;
 }
 
-/* void spoofDriverVersion (in DOMString aDriverVersion); */
+
 NS_IMETHODIMP GfxInfo::SpoofDriverVersion(const nsAString & aDriverVersion)
 {
   CopyUTF16toUTF8(aDriverVersion, mVersion);
   return NS_OK;
 }
 
-/* void spoofOSVersion (in unsigned long aVersion); */
+
 NS_IMETHODIMP GfxInfo::SpoofOSVersion(uint32_t aVersion)
 {
-  // We don't support OS versioning on Linux. There's just "Linux".
+  
   return NS_OK;
 }
 
 #endif
 
-} // end namespace widget
-} // end namespace mozilla
+} 
+} 
