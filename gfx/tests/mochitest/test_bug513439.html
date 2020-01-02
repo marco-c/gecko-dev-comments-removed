@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-<!--
-https://bugzilla.mozilla.org/show_bug.cgi?id=513439
--->
+
+
+
 <head>
   <title>Test for Bug 513439</title>
   <script type="application/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -25,8 +25,7 @@ var layoutCSSBranch = prefService.getBranch("layout.css.");
 var oldVal = layoutCSSBranch.getCharPref("devPixelsPerPx");
 
 try {
-  var domWindowUtils = window.QueryInterface(SpecialPowers.Ci.nsIInterfaceRequestor)
-                             .getInterface(SpecialPowers.Ci.nsIDOMWindowUtils);
+  var domWindowUtils = SpecialPowers.DOMWindowUtils;
   var devPxPerCSSPx = domWindowUtils.screenPixelsPerCSSPixel;
 
   layoutCSSBranch.setCharPref("devPixelsPerPx", "2");
