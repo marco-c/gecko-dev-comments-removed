@@ -189,9 +189,6 @@ pref("privacy.item.siteSettings", true);
 pref("privacy.item.syncAccount", true);
 
 
-pref("browser.geolocation.warning.infoURL", "http://www.mozilla.com/%LOCALE%/firefox/geolocation/");
-
-
 pref("geo.wifi.uri", "https://maps.googleapis.com/maps/api/browserlocation/json");
 
 
@@ -342,7 +339,6 @@ pref("browser.safebrowsing.provider.0.reportMalwareURL", "http://{moz:locale}.ma
 pref("browser.safebrowsing.provider.0.reportMalwareErrorURL", "http://{moz:locale}.malware-error.mozilla.com/?hl={moz:locale}");
 
 
-pref("browser.geolocation.warning.infoURL", "http://www.mozilla.com/%LOCALE%/%APP%/geolocation/");
 
 
 
@@ -405,6 +401,7 @@ pref("dom.mozBrowserFramesEnabled", true);
 pref("dom.ipc.processCount", 100000);
 
 pref("dom.ipc.browser_frames.oop_by_default", false);
+pref("dom.browser_frames.useAsyncPanZoom", true);
 
 
 pref("dom.sms.enabled", true);
