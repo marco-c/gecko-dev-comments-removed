@@ -21,7 +21,7 @@
 #include "cubeb_resampler.h"
 #include <stdio.h>
 
-#if 1
+#if 0
 #  define LOG(...) do {         \
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n");        \
@@ -102,8 +102,6 @@ struct cubeb_stream
   IAudioRenderClient * render_client;
   
   IAudioClock * audio_clock;
-  
-  IAudioStreamVolume * audio_stream_volume;
   
 
   HANDLE shutdown_event;
@@ -750,14 +748,6 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
     return CUBEB_ERROR;
   }
 
-  hr = stm->client->GetService(__uuidof(IAudioStreamVolume),
-                               (void **)&stm->audio_stream_volume);
-  if (FAILED(hr)) {
-    LOG("Could not get the IAudioStreamVolume %x.", hr);
-    wasapi_stream_destroy(stm);
-    return CUBEB_ERROR;
-  }
-
   hr = stm->audio_clock->GetFrequency(&stm->clock_freq);
   if (FAILED(hr)) {
     LOG("failed to get audio clock frequency, %x", hr);
@@ -892,39 +882,6 @@ int wasapi_stream_get_latency(cubeb_stream * stm, uint32_t * latency)
   return CUBEB_OK;
 }
 
-int wasapi_stream_set_volume(cubeb_stream * stm, float volume)
-{
-  HRESULT hr;
-  uint32_t channels;
-  
-  float volumes[10];
-
-  hr = stm->audio_stream_volume->GetChannelCount(&channels);
-  if (hr != S_OK) {
-    LOG("could not get the channel count: %x", hr);
-    return CUBEB_ERROR;
-  }
-
-  assert(channels <= 10 && "bump the array size");
-
-  for (uint32_t i = 0; i < channels; i++) {
-    volumes[i] = volume;
-  }
-
-  hr = stm->audio_stream_volume->SetAllVolumes(channels,  volumes);
-  if (hr != S_OK) {
-    LOG("coult not set the channels volume: %x", hr);
-    return CUBEB_ERROR;
-  }
-  return CUBEB_OK;
-}
-
-int wasapi_stream_set_panning(cubeb_stream * stream, float panning)
-{
-  assert(false && "not implemented");
-  return CUBEB_OK;
-}
-
 cubeb_ops const wasapi_ops = {
    wasapi_init,
    wasapi_get_backend_id,
@@ -937,12 +894,7 @@ cubeb_ops const wasapi_ops = {
    wasapi_stream_start,
    wasapi_stream_stop,
    wasapi_stream_get_position,
-   wasapi_stream_get_latency,
-   wasapi_stream_set_volume,
-   wasapi_stream_set_panning,
-   NULL,
-   NULL,
-   NULL
+   wasapi_stream_get_latency
  };
 } 
 
