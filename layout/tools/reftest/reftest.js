@@ -1192,7 +1192,7 @@ function Focus()
         dock.activateApplication(true);
     } catch(ex) {
     }
-#endif 
+#endif // XP_MACOSX
     return true;
 }
 
