@@ -103,7 +103,8 @@ function test() {
       let query = data.keyword;
       if (data.searchWord)
         query += " " + data.searchWord;
-      let returnedData = yield getShortcutOrURIAndPostData(query);
+      let returnedData = yield new Promise(
+        resolve => getShortcutOrURIAndPostData(query, resolve));
       
       let expected = result.url || query;
       is(returnedData.url, expected, "got correct URL for " + data.keyword);
