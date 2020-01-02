@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "vm/Stack-inl.h"
 
@@ -26,17 +26,17 @@ using namespace js;
 
 using mozilla::PodCopy;
 
-/*****************************************************************************/
+
 
 void
 StackFrame::initExecuteFrame(JSContext *cx, JSScript *script, AbstractFramePtr evalInFramePrev,
                              const Value &thisv, JSObject &scopeChain, ExecuteType type)
 {
-    /*
-     * See encoding of ExecuteType. When GLOBAL isn't set, we are executing a
-     * script in the context of another frame and the frame type is determined
-     * by the context.
-     */
+    
+
+
+
+
     flags_ = type | HAS_SCOPECHAIN;
 
     JSObject *callee = nullptr;
@@ -100,7 +100,7 @@ StackFrame::copyFrameAndValues(JSContext *cx, Value *vp, StackFrame *otherfp,
     JS_ASSERT(othersp >= otherfp->slots());
     JS_ASSERT(othersp <= otherfp->generatorSlotsSnapshotBegin() + otherfp->script()->nslots());
 
-    /* Copy args, StackFrame, and slots. */
+    
     const Value *srcend = otherfp->generatorArgsSnapshotEnd();
     Value *dst = vp;
     for (const Value *src = othervp; src < srcend; src++, dst++) {
@@ -124,7 +124,7 @@ StackFrame::copyFrameAndValues(JSContext *cx, Value *vp, StackFrame *otherfp,
     }
 }
 
-/* Note: explicit instantiation for js_NewGenerator located in jsiter.cpp. */
+
 template
 void StackFrame::copyFrameAndValues<StackFrame::NoPostBarrier>(
                                     JSContext *, Value *, StackFrame *, const Value *, Value *);
@@ -135,7 +135,7 @@ void StackFrame::copyFrameAndValues<StackFrame::DoPostBarrier>(
 void
 StackFrame::writeBarrierPost()
 {
-    /* This needs to follow the same rules as in StackFrame::mark. */
+    
     if (scopeChain_)
         JSObject::writeBarrierPost(scopeChain_, (void *)&scopeChain_);
     if (flags_ & HAS_ARGS_OBJ)
@@ -202,11 +202,11 @@ AssertDynamicScopeMatchesStaticScope(JSContext *cx, JSScript *script, JSObject *
         }
     }
 
-    /*
-     * Ideally, we'd JS_ASSERT(!scope->is<ScopeObject>()) but the enclosing
-     * lexical scope chain stops at eval() boundaries. See StaticScopeIter
-     * comment.
-     */
+    
+
+
+
+
 #endif
 }
 
@@ -282,13 +282,13 @@ StackFrame::epilogue(JSContext *cx)
             if (isDebuggerFrame())
                 JS_ASSERT(!scopeChain()->is<ScopeObject>());
         } else {
-            /*
-             * Debugger.Object.prototype.evalInGlobal creates indirect eval
-             * frames scoped to the given global;
-             * Debugger.Object.prototype.evalInGlobalWithBindings creates
-             * indirect eval frames scoped to an object carrying the introduced
-             * bindings.
-             */
+            
+
+
+
+
+
+
             if (isDebuggerFrame()) {
                 JS_ASSERT(scopeChain()->is<GlobalObject>() ||
                           scopeChain()->enclosingScope()->is<GlobalObject>());
@@ -354,11 +354,11 @@ StackFrame::popWith(JSContext *cx)
 void
 StackFrame::mark(JSTracer *trc)
 {
-    /*
-     * Normally we would use MarkRoot here, except that generators also take
-     * this path. However, generators use a special write barrier when the stack
-     * frame is copied to the floating frame. Therefore, no barrier is needed.
-     */
+    
+
+
+
+
     if (flags_ & HAS_SCOPECHAIN)
         gc::MarkObjectUnbarriered(trc, &scopeChain_, "scope chain");
     if (flags_ & HAS_ARGS_OBJ)
@@ -381,11 +381,11 @@ StackFrame::markValues(JSTracer *trc, Value *sp)
     JS_ASSERT(sp >= slots());
     gc::MarkValueRootRange(trc, sp - slots(), slots(), "vm_stack");
     if (hasArgs()) {
-        // Mark callee, |this| and arguments.
+        
         unsigned argc = Max(numActualArgs(), numFormalArgs());
         gc::MarkValueRootRange(trc, argc + 2, argv_ - 2, "fp argv");
     } else {
-        // Mark callee and |this|
+        
         gc::MarkValueRootRange(trc, 2, ((Value *)this) - 2, "stack callee and this");
     }
 }
@@ -411,10 +411,10 @@ js::MarkInterpreterActivations(JSRuntime *rt, JSTracer *trc)
 
 }
 
-/*****************************************************************************/
 
-// Unlike the other methods of this calss, this method is defined here so that
-// we don't have to #include jsautooplen.h in vm/Stack.h.
+
+
+
 void
 FrameRegs::setToEndOfScript()
 {
@@ -424,7 +424,7 @@ FrameRegs::setToEndOfScript()
     JS_ASSERT(*pc == JSOP_RETRVAL);
 }
 
-/*****************************************************************************/
+
 
 StackFrame *
 InterpreterStack::pushInvokeFrame(JSContext *cx, const CallArgs &args, InitialFrameFlags initial)
@@ -452,7 +452,7 @@ InterpreterStack::pushExecuteFrame(JSContext *cx, HandleScript script, const Val
 {
     LifoAlloc::Mark mark = allocator_.mark();
 
-    unsigned nvars = 2 /* callee, this */ + script->nslots();
+    unsigned nvars = 2  + script->nslots();
     uint8_t *buffer = allocateFrame(cx, sizeof(StackFrame) + nvars * sizeof(Value));
     if (!buffer)
         return nullptr;
@@ -465,9 +465,9 @@ InterpreterStack::pushExecuteFrame(JSContext *cx, HandleScript script, const Val
     return fp;
 }
 
-/*****************************************************************************/
 
-/* MSVC PGO causes xpcshell startup crashes. */
+
+
 #if defined(_MSC_VER)
 # pragma optimize("g", off)
 #endif
@@ -503,14 +503,14 @@ ScriptFrameIter::settleOnActivation()
 
         Activation *activation = data_.activations_.activation();
 
-        // If JS_SaveFrameChain was called, stop iterating here (unless
-        // GO_THROUGH_SAVED is set).
+        
+        
         if (data_.savedOption_ == STOP_AT_SAVED && activation->hasSavedFrameChain()) {
             data_.state_ = DONE;
             return;
         }
 
-        // Skip activations from another context if needed.
+        
         JS_ASSERT(activation->cx());
         JS_ASSERT(data_.cx_);
         if (data_.contextOption_ == CURRENT_CONTEXT && activation->cx() != data_.cx_) {
@@ -518,8 +518,8 @@ ScriptFrameIter::settleOnActivation()
             continue;
         }
 
-        // If the caller supplied principals, only show activations which are subsumed (of the same
-        // origin or of an origin accessible) by these principals.
+        
+        
         if (data_.principals_) {
             if (JSSubsumesOp subsumes = data_.cx_->runtime()->securityCallbacks->subsumes) {
                 JS::AutoAssertNoGC nogc;
@@ -534,12 +534,12 @@ ScriptFrameIter::settleOnActivation()
         if (activation->isJit()) {
             data_.ionFrames_ = jit::IonFrameIterator(data_.activations_);
 
-            // Stop at the first scripted frame.
+            
             while (!data_.ionFrames_.isScripted() && !data_.ionFrames_.done())
                 ++data_.ionFrames_;
 
-            // It's possible to have an JitActivation with no scripted frames,
-            // for instance if we hit an over-recursion during bailout.
+            
+            
             if (data_.ionFrames_.done()) {
                 ++data_.activations_;
                 continue;
@@ -549,6 +549,12 @@ ScriptFrameIter::settleOnActivation()
             data_.state_ = JIT;
             return;
         }
+
+        
+        if (activation->isForkJoin()) {
+            ++data_.activations_;
+            continue;
+        }
 #endif
 
         JS_ASSERT(activation->isInterpreter());
@@ -556,8 +562,8 @@ ScriptFrameIter::settleOnActivation()
         InterpreterActivation *interpAct = activation->asInterpreter();
         data_.interpFrames_ = InterpreterFrameIterator(interpAct);
 
-        // If we OSR'ed into JIT code, skip the interpreter frame so that
-        // the same frame is not reported twice.
+        
+        
         if (data_.interpFrames_.frame()->runningInJit()) {
             ++data_.interpFrames_;
             if (data_.interpFrames_.done()) {
@@ -689,8 +695,8 @@ ScriptFrameIter::operator++()
         if (interpFrame()->isDebuggerFrame() && interpFrame()->evalInFramePrev()) {
             AbstractFramePtr eifPrev = interpFrame()->evalInFramePrev();
 
-            // Eval-in-frame can cross contexts and works across saved frame
-            // chains.
+            
+            
             ContextOption prevContextOption = data_.contextOption_;
             SavedOption prevSavedOption = data_.savedOption_;
             data_.contextOption_ = ALL_CONTEXTS;
@@ -732,10 +738,10 @@ ScriptFrameIter::Data *
 ScriptFrameIter::copyData() const
 {
 #ifdef JS_ION
-    /*
-     * This doesn't work for optimized Ion frames since ionInlineFrames_ is
-     * not copied.
-     */
+    
+
+
+
     JS_ASSERT(data_.ionFrames_.type() != jit::IonFrame_OptimizedJS);
 #endif
     return data_.cx_->new_<Data>(data_);
@@ -905,12 +911,12 @@ ScriptFrameIter::updatePcQuadratic()
         StackFrame *frame = interpFrame();
         InterpreterActivation *activation = data_.activations_.activation()->asInterpreter();
 
-        // Look for the current frame.
+        
         data_.interpFrames_ = InterpreterFrameIterator(activation);
         while (data_.interpFrames_.frame() != frame)
             ++data_.interpFrames_;
 
-        // Update the pc.
+        
         JS_ASSERT(data_.interpFrames_.frame() == frame);
         data_.pc_ = data_.interpFrames_.pc();
         return;
@@ -921,18 +927,18 @@ ScriptFrameIter::updatePcQuadratic()
             jit::BaselineFrame *frame = data_.ionFrames_.baselineFrame();
             jit::JitActivation *activation = data_.activations_.activation()->asJit();
 
-            // ActivationIterator::ionTop_ may be invalid, so create a new
-            // activation iterator.
+            
+            
             data_.activations_ = ActivationIterator(data_.cx_->runtime());
             while (data_.activations_.activation() != activation)
                 ++data_.activations_;
 
-            // Look for the current frame.
+            
             data_.ionFrames_ = jit::IonFrameIterator(data_.activations_);
             while (!data_.ionFrames_.isBaselineJS() || data_.ionFrames_.baselineFrame() != frame)
                 ++data_.ionFrames_;
 
-            // Update the pc.
+            
             JS_ASSERT(data_.ionFrames_.baselineFrame() == frame);
             data_.ionFrames_.baselineScriptAndPc(nullptr, &data_.pc_);
             return;
@@ -1236,12 +1242,12 @@ js::SelfHostedFramesVisible()
 }
 #endif
 
-/*****************************************************************************/
+
 
 JSObject *
 AbstractFramePtr::evalPrevScopeChain(JSContext *cx) const
 {
-    // Eval frames are not compiled by Ion, though their caller might be.
+    
     AllFramesIter iter(cx);
     while (iter.isIon() || iter.abstractFramePtr() != *this)
         ++iter;
@@ -1272,8 +1278,8 @@ js::CheckLocalUnaliased(MaybeCheckAliasing checkAliasing, JSScript *script, uint
     if (i < script->nfixed()) {
         JS_ASSERT(!script->varIsAliased(i));
     } else {
-        // FIXME: The callers of this function do not easily have the PC of the
-        // current frame, and so they do not know the block scope.
+        
+        
     }
 }
 #endif
@@ -1304,8 +1310,8 @@ jit::JitActivation::~JitActivation()
 void
 jit::JitActivation::setActive(JSContext *cx, bool active)
 {
-    // Only allowed to deactivate/activate if activation is top.
-    // (Not tested and will probably fail in other situations.)
+    
+    
     JS_ASSERT(cx->mainThread().activation_ == this);
     JS_ASSERT(active != active_);
     active_ = active;
