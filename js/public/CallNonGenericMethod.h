@@ -14,7 +14,7 @@
 namespace JS {
 
 
-typedef bool (*IsAcceptableThis)(Handle<Value> v);
+typedef bool (*IsAcceptableThis)(HandleValue v);
 
 
 
