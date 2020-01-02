@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 MARIONETTE_TIMEOUT = 60000;
 
@@ -14,25 +14,26 @@ function verifyInitialState() {
   log("Verifying initial state.");
   ok(manager instanceof MozMobileMessageManager,
      "manager is instance of " + manager.constructor);
-  
+  // Ensure test is starting clean with no existing sms messages
   deleteAllMsgs(simulateIncomingSms);
 }
 
 function deleteAllMsgs(nextFunction) {
   let msgList = new Array();
+  let filter = new MozSmsFilter;
 
-  let cursor = manager.getMessages();
+  let cursor = manager.getMessages(filter, false);
   ok(cursor instanceof DOMCursor,
       "cursor is instanceof " + cursor.constructor);
 
   cursor.onsuccess = function(event) {
-    
+    // Check if message was found
     if (cursor.result) {
       msgList.push(cursor.result.id);
-      
+      // Now get next message in the list
       cursor.continue();
     } else {
-      
+      // No (more) messages found
       if (msgList.length) {
         log("Found " + msgList.length + " SMS messages to delete.");
         deleteMsgs(msgList, nextFunction);
@@ -63,7 +64,7 @@ function deleteMsgs(msgList, nextFunction) {
   request.onsuccess = function(event) {
     log("Received 'onsuccess' smsrequest event.");
     if (event.target.result) {
-      
+      // Message deleted, continue until none are left
       if (msgList.length) {
         deleteMsgs(msgList, nextFunction);
       } else {
@@ -93,7 +94,7 @@ function simulateIncomingSms() {
   log("Simulating incoming SMS number " + (smsList.length + 1) + " of "
       + (numberMsgs - 1) + ".");
 
-  
+  // Simulate incoming sms sent from remoteNumber to our emulator
   rcvdEmulatorCallback = false;
   runEmulatorCmd("sms send " + remoteNumber + " " + text, function(result) {
     is(result[0], "OK", "emulator callback");
@@ -101,7 +102,7 @@ function simulateIncomingSms() {
   });
 }
 
-
+// Callback for incoming sms
 manager.onreceived = function onreceived(event) {
   log("Received 'onreceived' sms event.");
   let incomingSms = event.message;
@@ -109,7 +110,7 @@ manager.onreceived = function onreceived(event) {
 
   smsList.push(incomingSms);
 
-  
+  // Wait for emulator to catch up before continuing
   waitFor(nextRep,function() {
     return(rcvdEmulatorCallback);
   });
@@ -119,7 +120,7 @@ function nextRep() {
   if (smsList.length < (numberMsgs - 1)) {
     simulateIncomingSms();
   } else {
-    
+    // Now send one message also so the filter won't find all
     sendSms();
   }
 }
@@ -139,7 +140,7 @@ function sendSms() {
     log("Sent SMS (id: " + sentSms.id + ").");
     is(sentSms.delivery, "sent", "delivery");
     if (gotSmsSent && gotRequestSuccess) {
-      
+      // Test the filter
       getMsgs();
     }
   };
@@ -153,7 +154,7 @@ function sendSms() {
     if(event.target.result) {
       gotRequestSuccess = true;
       if (gotSmsSent && gotRequestSuccess) {
-        
+        // Test the filter
         getMsgs(); 
       }
     } else {
@@ -173,10 +174,11 @@ function sendSms() {
 }
 
 function getMsgs() {
+  var filter = new MozSmsFilter();
   let foundSmsList = new Array();
 
-  
-  let filter = { delivery: "received" };
+  // Set filter for received messages
+  filter.delivery = "received";
 
   log("Getting the received SMS messages.");
   let cursor = manager.getMessages(filter, false);
@@ -187,14 +189,14 @@ function getMsgs() {
     log("Received 'onsuccess' event.");
 
     if (cursor.result) {
-      
+      // Another message found
       log("Got SMS (id: " + cursor.result.id + ").");
-      
+      // Store found message
       foundSmsList.push(cursor.result);
-      
+      // Now get next message in the list
       cursor.continue();
     } else {
-      
+      // No more messages; ensure correct number found
       if (foundSmsList.length == smsList.length) {
         log("SMS getMessages returned " + foundSmsList.length +
             " messages as expected.");
@@ -232,5 +234,5 @@ function cleanUp() {
   finish();
 }
 
-
+// Start the test
 verifyInitialState();
