@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_SVGMarkerElement_h
 #define mozilla_dom_SVGMarkerElement_h
@@ -23,12 +23,12 @@ nsresult NS_NewSVGMarkerElement(nsIContent **aResult,
 namespace mozilla {
 namespace dom {
 
-// Marker Unit Types
+
 static const unsigned short SVG_MARKERUNITS_UNKNOWN         = 0;
 static const unsigned short SVG_MARKERUNITS_USERSPACEONUSE = 1;
 static const unsigned short SVG_MARKERUNITS_STROKEWIDTH    = 2;
 
-// Marker Orientation Types
+
 static const unsigned short SVG_MARKER_ORIENT_UNKNOWN            = 0;
 static const unsigned short SVG_MARKER_ORIENT_AUTO               = 1;
 static const unsigned short SVG_MARKER_ORIENT_ANGLE              = 2;
@@ -44,16 +44,16 @@ public:
   nsresult SetBaseValue(uint16_t aValue,
                         nsSVGElement *aSVGElement);
 
-  // XXX FIXME like https://bugzilla.mozilla.org/show_bug.cgi?id=545550 but
-  // without adding an mIsAnimated member...?
+  
+  
   void SetBaseValue(uint16_t aValue)
     { mAnimVal = mBaseVal = uint8_t(aValue); }
-  // no need to notify, since nsSVGAngle does that
+  
   void SetAnimValue(uint16_t aValue)
     { mAnimVal = uint8_t(aValue); }
 
-  // we want to avoid exposing SVG_MARKER_ORIENT_AUTO_START_REVERSE to
-  // Web content
+  
+  
   uint16_t GetBaseValue() const
     { return mAnimVal == SVG_MARKER_ORIENT_AUTO_START_REVERSE ?
                SVG_MARKER_ORIENT_UNKNOWN : mBaseVal; }
@@ -78,7 +78,7 @@ private:
       , mVal(aVal)
     {}
 
-    nsSVGOrientType *mVal; // kept alive because it belongs to content
+    nsSVGOrientType *mVal; 
 
     using mozilla::dom::SVGAnimatedEnumeration::SetBaseVal;
     virtual uint16_t BaseVal() MOZ_OVERRIDE
@@ -106,20 +106,19 @@ protected:
   friend nsresult (::NS_NewSVGMarkerElement(nsIContent **aResult,
                                             already_AddRefed<nsINodeInfo>&& aNodeInfo));
   SVGMarkerElement(already_AddRefed<nsINodeInfo>& aNodeInfo);
-  virtual JSObject* WrapNode(JSContext *cx,
-                             JS::Handle<JSObject*> scope) MOZ_OVERRIDE;
+  virtual JSObject* WrapNode(JSContext *cx) MOZ_OVERRIDE;
 
 public:
-  // nsIContent interface
+  
   NS_IMETHOD_(bool) IsAttributeMapped(const nsIAtom* name) const MOZ_OVERRIDE;
 
   virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
                              bool aNotify) MOZ_OVERRIDE;
 
-  // nsSVGSVGElement methods:
+  
   virtual bool HasValidDimensions() const MOZ_OVERRIDE;
 
-  // public helpers
+  
   gfx::Matrix GetMarkerTransform(float aStrokeWidth,
                                  float aX, float aY, float aAutoAngle,
                                  bool aIsStart);
@@ -130,10 +129,10 @@ public:
 
   nsSVGOrientType* GetOrientType() { return &mOrientType; }
 
-  // Returns the value of svg.marker-improvements.enabled.
+  
   static bool MarkerImprovementsPrefEnabled();
 
-  // WebIDL
+  
   already_AddRefed<SVGAnimatedRect> ViewBox();
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
   already_AddRefed<SVGAnimatedLength> RefX();
@@ -176,14 +175,14 @@ protected:
   nsSVGViewBox             mViewBox;
   SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
 
-  // derived properties (from 'orient') handled separately
+  
   nsSVGOrientType                        mOrientType;
 
   SVGSVGElement                         *mCoordCtx;
   nsAutoPtr<gfx::Matrix>                 mViewBoxToViewportTransform;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_SVGMarkerElement_h
+#endif 
