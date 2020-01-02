@@ -191,10 +191,8 @@ FilePicker.prototype = {
 
     
     if (name) {
-      let file = new FileUtils.File(data.result.blob.name);
-      if (file && file.leafName) {
-        name = file.leafName;
-      }
+      let names = OS.Path.split(name);
+      name = names.components[names.components.length - 1];
     }
 
     
