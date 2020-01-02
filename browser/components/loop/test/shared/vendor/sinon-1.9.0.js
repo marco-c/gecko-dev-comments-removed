@@ -1,37 +1,37 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Sinon.JS 1.9.0, 2014/03/05
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @author Contributors: https://github.com/cjohansen/Sinon.JS/blob/master/AUTHORS
+ *
+ * (The BSD License)
+ * 
+ * Copyright (c) 2010-2014, Christian Johansen, christian@cjohansen.no
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright notice,
+ *       this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright notice,
+ *       this list of conditions and the following disclaimer in the documentation
+ *       and/or other materials provided with the distribution.
+ *     * Neither the name of Christian Johansen nor the names of his contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 this.sinon = (function () {
 var samsam, formatio;
@@ -39,34 +39,34 @@ function define(mod, deps, fn) { if (mod == "samsam") { samsam = deps(); } else 
 define.amd = true;
 ((typeof define === "function" && define.amd && function (m) { define("samsam", m); }) ||
  (typeof module === "object" &&
-      function (m) { module.exports = m(); }) || 
- function (m) { this.samsam = m(); } 
+      function (m) { module.exports = m(); }) || // Node
+ function (m) { this.samsam = m(); } // Browser globals
 )(function () {
     var o = Object.prototype;
     var div = typeof document !== "undefined" && document.createElement("div");
 
     function isNaN(value) {
-        
-        
-        
-        var val = value; 
+        // Unlike global isNaN, this avoids type coercion
+        // typeof check avoids IE host object issues, hat tip to
+        // lodash
+        var val = value; // JsLint thinks value !== value is "weird"
         return typeof value === "number" && value !== val;
     }
 
     function getClass(value) {
-        
-        
-        
+        // Returns the internal [[Class]] by calling Object.prototype.toString
+        // with the provided value as this. Return value is a string, naming the
+        // internal class, e.g. "Array"
         return o.toString.call(value).split(/[ \]]/)[1];
     }
 
-    
-
-
-
-
-
-
+    /**
+     * @name samsam.isArguments
+     * @param Object object
+     *
+     * Returns ``true`` if ``object`` is an ``arguments`` object,
+     * ``false`` otherwise.
+     */
     function isArguments(object) {
         if (typeof object !== "object" || typeof object.length !== "number" ||
                 getClass(object) === "Array") {
@@ -82,15 +82,15 @@ define.amd = true;
         return false;
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * @name samsam.isElement
+     * @param Object object
+     *
+     * Returns ``true`` if ``object`` is a DOM element node. Unlike
+     * Underscore.js/lodash, this function will return ``false`` if ``object``
+     * is an *element-like* object, i.e. a regular object with a ``nodeType``
+     * property that holds the value ``1``.
+     */
     function isElement(object) {
         if (!object || object.nodeType !== 1 || !div) { return false; }
         try {
@@ -102,12 +102,12 @@ define.amd = true;
         return true;
     }
 
-    
-
-
-
-
-
+    /**
+     * @name samsam.keys
+     * @param Object object
+     *
+     * Return an array of own property names.
+     */
     function keys(object) {
         var ks = [], prop;
         for (prop in object) {
@@ -116,41 +116,41 @@ define.amd = true;
         return ks;
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * @name samsam.isDate
+     * @param Object value
+     *
+     * Returns true if the object is a ``Date``, or *date-like*. Duck typing
+     * of date objects work by checking that the object has a ``getTime``
+     * function whose return value equals the return value from the object's
+     * ``valueOf``.
+     */
     function isDate(value) {
         return typeof value.getTime == "function" &&
             value.getTime() == value.valueOf();
     }
 
-    
-
-
-
-
-
+    /**
+     * @name samsam.isNegZero
+     * @param Object value
+     *
+     * Returns ``true`` if ``value`` is ``-0``.
+     */
     function isNegZero(value) {
         return value === 0 && 1 / value === -Infinity;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
+    /**
+     * @name samsam.equal
+     * @param Object obj1
+     * @param Object obj2
+     *
+     * Returns ``true`` if two objects are strictly equal. Compared to
+     * ``===`` there are two exceptions:
+     *
+     *   - NaN is considered equal to NaN
+     *   - -0 and +0 are not considered equal
+     */
     function identical(obj1, obj2) {
         if (obj1 === obj2 || (isNaN(obj1) && isNaN(obj2))) {
             return obj1 !== 0 || isNegZero(obj1) === isNegZero(obj2);
@@ -158,41 +158,41 @@ define.amd = true;
     }
 
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * @name samsam.deepEqual
+     * @param Object obj1
+     * @param Object obj2
+     *
+     * Deep equal comparison. Two values are "deep equal" if:
+     *
+     *   - They are equal, according to samsam.identical
+     *   - They are both date objects representing the same time
+     *   - They are both arrays containing elements that are all deepEqual
+     *   - They are objects with the same set of properties, and each property
+     *     in ``obj1`` is deepEqual to the corresponding property in ``obj2``
+     *
+     * Supports cyclic objects.
+     */
     function deepEqualCyclic(obj1, obj2) {
 
-        
-        
+        // used for cyclic comparison
+        // contain already visited objects
         var objects1 = [],
             objects2 = [],
-        
-        
-        
+        // contain pathes (position in the object structure)
+        // of the already visited objects
+        // indexes same as in objects arrays
             paths1 = [],
             paths2 = [],
-        
-        
+        // contains combinations of already compared objects
+        // in the manner: { "$1['ref']$2['ref']": true }
             compared = {};
 
-        
-
-
-
-
+        /**
+         * used to check, if the value of a property is an object
+         * (cyclic logic is only needed for objects)
+         * only needed for cyclic logic
+         */
         function isObject(value) {
 
             if (typeof value === 'object' && value !== null &&
@@ -208,11 +208,11 @@ define.amd = true;
             return false;
         }
 
-        
-
-
-
-
+        /**
+         * returns the index of the given object in the
+         * given objects array, -1 if not contained
+         * only needed for cyclic logic
+         */
         function getIndex(objects, obj) {
 
             var i;
@@ -225,12 +225,12 @@ define.amd = true;
             return -1;
         }
 
-        
+        // does the recursion for the deep equal check
         return (function deepEqual(obj1, obj2, path1, path2) {
             var type1 = typeof obj1;
             var type2 = typeof obj2;
 
-            
+            // == null also matches undefined
             if (obj1 === obj2 ||
                     isNaN(obj1) || isNaN(obj2) ||
                     obj1 == null || obj2 == null ||
@@ -239,7 +239,7 @@ define.amd = true;
                 return identical(obj1, obj2);
             }
 
-            
+            // Elements are only equal if identical(expected, actual)
             if (isElement(obj1) || isElement(obj2)) { return false; }
 
             var isDate1 = isDate(obj1), isDate2 = isDate(obj2);
@@ -268,7 +268,7 @@ define.amd = true;
             }
 
             var key, i, l,
-                
+                // following vars are used for the cyclic logic
                 value1, value2,
                 isObject1, isObject2,
                 index1, index2,
@@ -280,7 +280,7 @@ define.amd = true;
                     return false;
                 }
 
-                
+                // Start of the cyclic logic
 
                 value1 = obj1[key];
                 value2 = obj2[key];
@@ -288,16 +288,16 @@ define.amd = true;
                 isObject1 = isObject(value1);
                 isObject2 = isObject(value2);
 
-                
-                
-                
+                // determine, if the objects were already visited
+                // (it's faster to check for isObject first, than to
+                // get -1 from getIndex for non objects)
                 index1 = isObject1 ? getIndex(objects1, value1) : -1;
                 index2 = isObject2 ? getIndex(objects2, value2) : -1;
 
-                
-                
-                
-                
+                // determine the new pathes of the objects
+                // - for non cyclic objects the current path will be extended
+                //   by current property name
+                // - for cyclic objects the stored path is taken
                 newPath1 = index1 !== -1
                     ? paths1[index1]
                     : path1 + '[' + JSON.stringify(key) + ']';
@@ -305,12 +305,12 @@ define.amd = true;
                     ? paths2[index2]
                     : path2 + '[' + JSON.stringify(key) + ']';
 
-                
+                // stop recursion if current objects are already compared
                 if (compared[newPath1 + newPath2]) {
                     return true;
                 }
 
-                
+                // remember the current objects and their pathes
                 if (index1 === -1 && isObject1) {
                     objects1.push(value1);
                     paths1.push(newPath1);
@@ -320,15 +320,15 @@ define.amd = true;
                     paths2.push(newPath2);
                 }
 
-                
+                // remember that the current objects are already compared
                 if (isObject1 && isObject2) {
                     compared[newPath1 + newPath2] = true;
                 }
 
-                
+                // End of cyclic logic
 
-                
-                
+                // neither value1 nor value2 is a cycle
+                // continue with next level
                 if (!deepEqual(value1, value2, newPath1, newPath2)) {
                     return false;
                 }
@@ -355,13 +355,13 @@ define.amd = true;
         return false;
     }
 
-    
-
-
-
-
-
-
+    /**
+     * @name samsam.match
+     * @param Object object
+     * @param Object matcher
+     *
+     * Compare arbitrary value ``object`` with matcher.
+     */
     match = function match(object, matcher) {
         if (matcher && typeof matcher.test === "function") {
             return matcher.test(object);
@@ -613,16 +613,16 @@ define.amd = true;
 
     return Formatio.prototype;
 });
-
-
-
-
-
-
-
-
-
-
+/*jslint eqeqeq: false, onevar: false, forin: true, nomen: false, regexp: false, plusplus: false*/
+/*global module, require, __dirname, document*/
+/**
+ * Sinon core utilities. For internal use only.
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 var sinon = (function (formatio) {
     var div = typeof document != "undefined" && document.createElement("div");
@@ -640,7 +640,7 @@ var sinon = (function (formatio) {
             try {
                 obj.removeChild(div);
             } catch (e) {
-                
+                // Remove failed, not much we can do about that
             }
         }
 
@@ -701,19 +701,19 @@ var sinon = (function (formatio) {
                 throw error;
             }
 
-            
-            
+            // IE 8 does not support hasOwnProperty on the window object and Firefox has a problem
+            // when using hasOwn.call on objects from other frames.
             var owned = object.hasOwnProperty ? object.hasOwnProperty(property) : hasOwn.call(object, property);
             object[property] = method;
             method.displayName = property;
-            
-            
+            // Set up a stack trace which can be used later to find what line of
+            // code the original method was created on.
             method._stack = (new Error('Stack Trace for original')).stack;
 
             method.restore = function () {
-                
-                
-                
+                // For prototype properties try to reset by delete first.
+                // If this fails (ex: localStorage on mobile safari) then force a reset
+                // via direct assignment.
                 if (!owned) {
                     delete object[property];
                 }
@@ -735,7 +735,7 @@ var sinon = (function (formatio) {
                         target[prop] = arguments[i][prop];
                     }
 
-                    
+                    // DONT ENUM bug, only care about toString
                     if (arguments[i].hasOwnProperty("toString") &&
                         arguments[i].toString != target.toString) {
                         target.toString = arguments[i].toString;
@@ -810,10 +810,10 @@ var sinon = (function (formatio) {
         functionName: function functionName(func) {
             var name = func.displayName || func.name;
 
-            
-            
-            
-            
+            // Use function decomposition as a last resort to get function
+            // name. Does not rely on function decomposition to work - if it
+            // doesn't debugging will be slightly less informative
+            // (i.e. toString will say 'spy' rather than 'myFunc').
             if (!name) {
                 var matches = func.toString().match(/function ([^\s\(]+)/);
                 name = matches && matches[1];
@@ -885,7 +885,7 @@ var sinon = (function (formatio) {
 
         orderByFirstCall: function (spies) {
             return spies.sort(function (a, b) {
-                
+                // uuid, won't ever be equal
                 var aCall = a.getCall(0);
                 var bCall = b.getCall(0);
                 var aId = aCall && aCall.callId || -1;
@@ -978,25 +978,25 @@ var sinon = (function (formatio) {
                 return typeof value == "object" && value.toString === Object.prototype.toString ? util.inspect(value) : value;
             };
         } catch (e) {
-            
-
+            /* Node, but no util module - would be very old, but better safe than
+             sorry */
         }
     }
 
     return sinon;
 }(typeof formatio == "object" && formatio));
 
-
-
-
-
-
-
-
-
-
-
-
+/* @depend ../sinon.js */
+/*jslint eqeqeq: false, onevar: false, plusplus: false*/
+/*global module, require, sinon*/
+/**
+ * Match functions
+ *
+ * @author Maximilian Antoni (mail@maxantoni.de)
+ * @license BSD
+ *
+ * Copyright (c) 2012 Maximilian Antoni
+ */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -1229,22 +1229,22 @@ var sinon = (function (formatio) {
     }
 }(typeof sinon == "object" && sinon || null));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+  * @depend ../sinon.js
+  * @depend match.js
+  */
+/*jslint eqeqeq: false, onevar: false, plusplus: false*/
+/*global module, require, sinon*/
+/**
+  * Spy calls
+  *
+  * @author Christian Johansen (christian@cjohansen.no)
+  * @author Maximilian Antoni (mail@maxantoni.de)
+  * @license BSD
+  *
+  * Copyright (c) 2010-2013 Christian Johansen
+  * Copyright (c) 2013 Maximilian Antoni
+  */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -1422,7 +1422,7 @@ var sinon = (function (formatio) {
 
         return proxyCall;
     }
-    createSpyCall.toString = callProto.toString; 
+    createSpyCall.toString = callProto.toString; // used by mocks
 
     if (commonJSModule) {
         module.exports = createSpyCall;
@@ -1432,20 +1432,20 @@ var sinon = (function (formatio) {
 }(typeof sinon == "object" && sinon || null));
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+  * @depend ../sinon.js
+  * @depend call.js
+  */
+/*jslint eqeqeq: false, onevar: false, plusplus: false*/
+/*global module, require, sinon*/
+/**
+  * Spy functions
+  *
+  * @author Christian Johansen (christian@cjohansen.no)
+  * @license BSD
+  *
+  * Copyright (c) 2010-2013 Christian Johansen
+  */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -1504,7 +1504,7 @@ var sinon = (function (formatio) {
 
     var vars = "a,b,c,d,e,f,g,h,i,j,k,l";
     function createProxy(func) {
-        
+        // Retain the function length:
         var p;
         if (func.length) {
             eval("p = (function proxy(" + vars.substring(0, func.length * 2 - 1) +
@@ -1520,7 +1520,7 @@ var sinon = (function (formatio) {
 
     var uuid = 0;
 
-    
+    // Public API
     var spyApi = {
         reset: function () {
             this.called = false;
@@ -1770,7 +1770,7 @@ var sinon = (function (formatio) {
     delegateToCalls("yield", false, "yield", function () {
         throw new Error(this.toString() + " cannot yield since it was not yet invoked.");
     });
-    
+    // "invokeCallback" is an alias for "yield" since "yield" is invalid in strict mode.
     spyApi.invokeCallback = spyApi.yield;
     delegateToCalls("yieldOn", false, "yieldOn", function () {
         throw new Error(this.toString() + " cannot yield since it was not yet invoked.");
@@ -1839,20 +1839,20 @@ var sinon = (function (formatio) {
     }
 }(typeof sinon == "object" && sinon || null));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ */
+/*jslint eqeqeq: false, onevar: false*/
+/*global module, require, sinon, process, setImmediate, setTimeout*/
+/**
+ * Stub behavior
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @author Tim Fischbach (mail@timfischbach.de)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -2005,7 +2005,7 @@ var sinon = (function (formatio) {
             return this.stub.onThirdCall();
         },
 
-        withArgs: function() {
+        withArgs: function(/* arguments */) {
             throw new Error('Defining a stub by invoking "stub.onCall(...).withArgs(...)" is not supported. ' +
                             'Use "stub.withArgs(...).onCall(...)" to define sequential behavior for calls with certain arguments.');
         },
@@ -2148,9 +2148,9 @@ var sinon = (function (formatio) {
         }
     };
 
-    
+    // create asynchronous versions of callsArg* and yields* methods
     for (var method in proto) {
-        
+        // need to avoid creating anotherasync versions of the newly added async methods
         if (proto.hasOwnProperty(method) &&
             method.match(/^(callsArg|yields)/) &&
             !method.match(/Async/)) {
@@ -2170,21 +2170,21 @@ var sinon = (function (formatio) {
         sinon.behavior = proto;
     }
 }(typeof sinon == "object" && sinon || null));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ * @depend spy.js
+ * @depend behavior.js
+ */
+/*jslint eqeqeq: false, onevar: false*/
+/*global module, require, sinon*/
+/**
+ * Stub functions
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -2329,20 +2329,20 @@ var sinon = (function (formatio) {
     }
 }(typeof sinon == "object" && sinon || null));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ * @depend stub.js
+ */
+/*jslint eqeqeq: false, onevar: false, nomen: false*/
+/*global module, require, sinon*/
+/**
+ * Mock functions.
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -2778,21 +2778,21 @@ var sinon = (function (formatio) {
     }
 }(typeof sinon == "object" && sinon || null));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ * @depend stub.js
+ * @depend mock.js
+ */
+/*jslint eqeqeq: false, onevar: false, forin: true*/
+/*global module, require, sinon*/
+/**
+ * Collections of stubs, spies and mocks.
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -2931,25 +2931,25 @@ var sinon = (function (formatio) {
     }
 }(typeof sinon == "object" && sinon || null));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*jslint eqeqeq: false, plusplus: false, evil: true, onevar: false, browser: true, forin: false*/
+/*global module, require, window*/
+/**
+ * Fake timer API
+ * setTimeout
+ * setInterval
+ * clearTimeout
+ * clearInterval
+ * tick
+ * reset
+ * Date
+ *
+ * Inspired by jsUnitMockTimeOut from JsUnit
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 if (typeof sinon == "undefined") {
     var sinon = {};
@@ -3171,8 +3171,8 @@ if (typeof sinon == "undefined") {
             var NativeDate = Date;
 
             function ClockDate(year, month, date, hour, minute, second, ms) {
-                
-                
+                // Defensive and verbose to avoid potential harm in passing
+                // explicit undefined when user does not pass argument
                 switch (arguments.length) {
                 case 0:
                     return new NativeDate(ClockDate.clock.now);
@@ -3258,7 +3258,7 @@ if (typeof sinon == "undefined") {
             }
         }
 
-        
+        // Prevent multiple executions which will completely remove these props
         this.methods = [];
     }
 
@@ -3316,20 +3316,20 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = sinon;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*jslint eqeqeq: false, onevar: false*/
+/*global sinon, module, require, ActiveXObject, XMLHttpRequest, DOMParser*/
+/**
+ * Minimal Event interface implementation
+ *
+ * Original implementation by Sven Fuchs: https://gist.github.com/995028
+ * Modifications and tests by Christian Johansen.
+ *
+ * @author Sven Fuchs (svenfuchs@artweb-design.de)
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2011 Sven Fuchs, Christian Johansen
+ */
 
 if (typeof sinon == "undefined") {
     this.sinon = {};
@@ -3410,22 +3410,22 @@ if (typeof sinon == "undefined") {
     };
 }());
 
+/**
+ * @depend ../../sinon.js
+ * @depend event.js
+ */
+/*jslint eqeqeq: false, onevar: false*/
+/*global sinon, module, require, ActiveXObject, XMLHttpRequest, DOMParser*/
+/**
+ * Fake XMLHttpRequest object
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// wrapper for global
 (function(global) {
     if (typeof sinon === "undefined") {
         global.sinon = {};
@@ -3443,7 +3443,7 @@ if (typeof sinon == "undefined") {
                                      ? function() { return new xhr.GlobalActiveXObject("MSXML2.XMLHTTP.3.0") } : false;
     xhr.supportsCORS = 'withCredentials' in (new sinon.xhr.GlobalXMLHttpRequest());
 
-    
+    /*jsl:ignore*/
     var unsafeHeaders = {
         "Accept-Charset": true,
         "Accept-Encoding": true,
@@ -3464,7 +3464,7 @@ if (typeof sinon == "undefined") {
         "User-Agent": true,
         "Via": true
     };
-    
+    /*jsl:end*/
 
     function FakeXMLHttpRequest() {
         this.readyState = FakeXMLHttpRequest.UNSENT;
@@ -3500,10 +3500,10 @@ if (typeof sinon == "undefined") {
         }
     }
 
-    
-    
-    
-    
+    // An upload object is created for each
+    // FakeXMLHttpRequest and allows upload
+    // events to be simulated using uploadProgress
+    // and uploadError.
     function UploadProgress() {
         this.eventListeners = {
             "progress": [],
@@ -3545,8 +3545,8 @@ if (typeof sinon == "undefined") {
         }
     }
 
-    
-    
+    // filtering to enable a white-list version of Sinon FakeXhr,
+    // where whitelisted requests are passed through to real XHR
     function each(collection, callback) {
         if (!collection) return;
         for (var i = 0, l = collection.length; i < l; i += 1) {
@@ -3559,7 +3559,7 @@ if (typeof sinon == "undefined") {
         }
         return false;
     }
-    
+    // largest arity in XHR is 5 - XHR#open
     var apply = function(obj,method,args) {
         switch(args.length) {
         case 0: return obj[method]();
@@ -3716,7 +3716,7 @@ if (typeof sinon == "undefined") {
             }
         },
 
-        
+        // Helps testing
         setResponseHeaders: function setResponseHeaders(headers) {
             verifyRequestOpened(this);
             this.responseHeaders = {};
@@ -3734,7 +3734,7 @@ if (typeof sinon == "undefined") {
             }
         },
 
-        
+        // Currently treats ALL data as a DOMString (i.e. no Document)
         send: function send(data) {
             verifyState(this);
 
@@ -3844,7 +3844,7 @@ if (typeof sinon == "undefined") {
                 try {
                     this.responseXML = FakeXMLHttpRequest.parseXML(this.responseText);
                 } catch (e) {
-                    
+                    // Unable to parse XML - no biggie
                 }
             }
 
@@ -3883,7 +3883,7 @@ if (typeof sinon == "undefined") {
         DONE: 4
     });
 
-    
+    // Borrowed from JSpec
     FakeXMLHttpRequest.parseXML = function parseXML(text) {
         var xmlDoc;
 
@@ -3985,22 +3985,22 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = sinon;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend fake_xml_http_request.js
+ */
+/*jslint eqeqeq: false, onevar: false, regexp: false, plusplus: false*/
+/*global module, require, window*/
+/**
+ * The Sinon "server" mimics a web server that receives requests from
+ * sinon.FakeXMLHttpRequest and provides an API to respond to those requests,
+ * both synchronously and asynchronously. To respond synchronuously, canned
+ * answers have to be provided upfront.
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 if (typeof sinon == "undefined") {
     var sinon = {};
@@ -4197,26 +4197,26 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = sinon;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend fake_server.js
+ * @depend fake_timers.js
+ */
+/*jslint browser: true, eqeqeq: false, onevar: false*/
+/*global sinon*/
+/**
+ * Add-on for sinon.fakeServer that automatically handles a fake timer along with
+ * the FakeXMLHttpRequest. The direct inspiration for this add-on is jQuery
+ * 1.3.x, which does not use xhr object's onreadystatehandler at all - instead,
+ * it polls the object for completion with setInterval. Dispite the direct
+ * motivation, there is nothing jQuery-specific in this file, so it can be used
+ * in any environment where the ajax implementation depends on setInterval or
+ * setTimeout.
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function () {
     function Server() {}
@@ -4280,23 +4280,23 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }());
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ * @depend collection.js
+ * @depend util/fake_timers.js
+ * @depend util/fake_server_with_clock.js
+ */
+/*jslint eqeqeq: false, onevar: false, plusplus: false*/
+/*global require, module*/
+/**
+ * Manages fake collections as well as fake utilities such as Sinon's
+ * timers and fake XHR implementation in one convenient object.
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 if (typeof module !== 'undefined' && module.exports) {
     var sinon = require("../sinon");
@@ -4422,22 +4422,22 @@ if (typeof module !== 'undefined' && module.exports) {
     }
 }());
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ * @depend stub.js
+ * @depend mock.js
+ * @depend sandbox.js
+ */
+/*jslint eqeqeq: false, onevar: false, forin: true, plusplus: false*/
+/*global module, require, sinon*/
+/**
+ * Test function, sandboxes fakes
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -4497,20 +4497,20 @@ if (typeof module !== 'undefined' && module.exports) {
     }
 }(typeof sinon == "object" && sinon || null));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ * @depend test.js
+ */
+/*jslint eqeqeq: false, onevar: false, eqeqeq: false*/
+/*global module, require, sinon*/
+/**
+ * Test case, sandboxes all test functions
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function (sinon) {
     var commonJSModule = typeof module !== 'undefined' && module.exports;
@@ -4550,11 +4550,11 @@ if (typeof module !== 'undefined' && module.exports) {
     }
 
     function testCase(tests, prefix) {
-        
+        /*jsl:ignore*/
         if (!tests || typeof tests != "object") {
             throw new TypeError("sinon.testCase needs an object with test functions");
         }
-        
+        /*jsl:end*/
 
         prefix = prefix || "test";
         var rPrefix = new RegExp("^" + prefix);
@@ -4594,20 +4594,20 @@ if (typeof module !== 'undefined' && module.exports) {
     }
 }(typeof sinon == "object" && sinon || null));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @depend ../sinon.js
+ * @depend stub.js
+ */
+/*jslint eqeqeq: false, onevar: false, nomen: false, plusplus: false*/
+/*global module, require, sinon*/
+/**
+ * Assertions matching the test spy retrieval interface.
+ *
+ * @author Christian Johansen (christian@cjohansen.no)
+ * @license BSD
+ *
+ * Copyright (c) 2010-2013 Christian Johansen
+ */
 
 (function (sinon, global) {
     var commonJSModule = typeof module !== "undefined" && module.exports;
@@ -4708,7 +4708,7 @@ if (typeof module !== 'undefined' && module.exports) {
                     }
                     actual = sinon.orderByFirstCall(calls).join(", ");
                 } catch (e) {
-                    
+                    // If this fails, we'll just fall back to the blank string
                 }
 
                 failAssertion(this, "expected " + expected + " to be " +
