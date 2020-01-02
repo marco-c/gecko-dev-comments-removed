@@ -158,7 +158,6 @@
   ALLOW_SYSCALL(readlink), \
   ALLOW_SYSCALL(getsockname), \
   ALLOW_SYSCALL(recvmsg), \
-  ALLOW_SYSCALL(uname), \
   /* duplicate rt_sigaction in SECCOMP_WHITELIST_PROFILING */ \
   ALLOW_SYSCALL(rt_sigaction), \
   ALLOW_SYSCALL(getuid), \
@@ -256,8 +255,11 @@
   ALLOW_SYSCALL(access), \
   ALLOW_SYSCALL(unlink), \
   ALLOW_SYSCALL(fsync), \
+  ALLOW_SYSCALL(msync), \
    \
   ALLOW_SYSCALL(getpriority), \
+  ALLOW_SYSCALL(sched_get_priority_min), \
+  ALLOW_SYSCALL(sched_get_priority_max), \
   ALLOW_SYSCALL(setpriority), \
   SECCOMP_WHITELIST_PROFILING \
   SECCOMP_WHITELIST_B2G_LOW \
@@ -268,6 +270,9 @@
    \
    \
   SECCOMP_WHITELIST_DESKTOP_LINUX \
+   \
+   \
+  ALLOW_SYSCALL(uname), \
   ALLOW_SYSCALL(exit_group), \
   ALLOW_SYSCALL(exit)
 
