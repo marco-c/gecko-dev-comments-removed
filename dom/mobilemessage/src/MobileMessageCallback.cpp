@@ -1,12 +1,11 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "MobileMessageCallback.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsContentUtils.h"
-#include "nsCxPusher.h"
 #include "nsIDOMMozSmsMessage.h"
 #include "nsIDOMMozMmsMessage.h"
 #include "nsIScriptGlobalObject.h"
@@ -61,7 +60,7 @@ ConvertErrorCodeToErrorString(int32_t aError)
     case nsIMobileMessageCallback::SIM_NOT_MATCHED_ERROR:
       errorStr = NS_LITERAL_STRING("SimNotMatchedError");
       break;
-    default: // SUCCESS_NO_ERROR is handled above.
+    default: 
       MOZ_CRASH("Should never get here!");
   }
 
@@ -281,6 +280,6 @@ MobileMessageCallback::NotifyGetSmscAddressFailed(int32_t aError)
   return NotifyError(aError);
 }
 
-} // namesapce mobilemessage
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 

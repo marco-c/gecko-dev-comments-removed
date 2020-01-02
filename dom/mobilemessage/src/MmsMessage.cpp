@@ -1,22 +1,22 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "MmsMessage.h"
 #include "nsIDOMClassInfo.h"
-#include "jsapi.h" // For OBJECT_TO_JSVAL and JS_NewDateObjectMsec
-#include "jsfriendapi.h" // For js_DateGetMsecSinceEpoch
+#include "jsapi.h" 
+#include "jsfriendapi.h" 
 #include "nsJSUtils.h"
 #include "nsContentUtils.h"
 #include "nsIDOMFile.h"
 #include "nsTArrayHelpers.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/mobilemessage/Constants.h" // For MessageType
+#include "mozilla/dom/mobilemessage/Constants.h" 
 #include "mozilla/dom/mobilemessage/SmsTypes.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsDOMFile.h"
-#include "nsCxPusher.h"
 
 using namespace mozilla::dom::mobilemessage;
 
@@ -105,10 +105,10 @@ MmsMessage::MmsMessage(const mobilemessage::MmsMessageData& aData)
     MmsDeliveryInfo info;
     const MmsDeliveryInfoData &infoData = aData.deliveryInfo()[i];
 
-    // Prepare |info.mReceiver|.
+    
     info.mReceiver = infoData.receiver();
 
-    // Prepare |info.mDeliveryStatus|.
+    
     nsString statusStr;
     switch (infoData.deliveryStatus()) {
       case eDeliveryStatus_NotApplicable:
@@ -135,10 +135,10 @@ MmsMessage::MmsMessage(const mobilemessage::MmsMessageData& aData)
     }
     info.mDeliveryStatus = statusStr;
 
-    // Prepare |info.mDeliveryTimestamp|.
+    
     info.mDeliveryTimestamp = infoData.deliveryTimestamp();
 
-    // Prepare |info.mReadStatus|.
+    
     nsString statusReadString;
     switch(infoData.readStatus()) {
       case eReadStatus_NotApplicable:
@@ -159,14 +159,14 @@ MmsMessage::MmsMessage(const mobilemessage::MmsMessageData& aData)
     }
     info.mReadStatus = statusReadString;
 
-    // Prepare |info.mReadTimestamp|.
+    
     info.mReadTimestamp = infoData.readTimestamp();
 
     mDeliveryInfo.AppendElement(info);
   }
 }
 
-/* static */ nsresult
+ nsresult
 MmsMessage::Create(int32_t aId,
                    uint64_t aThreadId,
                    const nsAString& aIccId,
@@ -187,7 +187,7 @@ MmsMessage::Create(int32_t aId,
 {
   *aMessage = nullptr;
 
-  // Set |delivery|.
+  
   DeliveryState delivery;
   if (aDelivery.Equals(DELIVERY_SENT)) {
     delivery = eDeliveryState_Sent;
@@ -203,7 +203,7 @@ MmsMessage::Create(int32_t aId,
     return NS_ERROR_INVALID_ARG;
   }
 
-  // Set |deliveryInfo|.
+  
   if (!aDeliveryInfo.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -231,7 +231,7 @@ MmsMessage::Create(int32_t aId,
     deliveryInfo.AppendElement(info);
   }
 
-  // Set |receivers|.
+  
   if (!aReceivers.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -258,7 +258,7 @@ MmsMessage::Create(int32_t aId,
     receivers.AppendElement(receiverStr);
   }
 
-  // Set |attachments|.
+  
   if (!aAttachments.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -328,10 +328,10 @@ MmsMessage::GetData(ContentParent* aParent,
     MmsDeliveryInfoData infoData;
     const MmsDeliveryInfo &info = mDeliveryInfo[i];
 
-    // Prepare |infoData.mReceiver|.
+    
     infoData.receiver().Assign(info.mReceiver);
 
-    // Prepare |infoData.mDeliveryStatus|.
+    
     DeliveryStatus status;
     if (info.mDeliveryStatus.Equals(DELIVERY_STATUS_NOT_APPLICABLE)) {
       status = eDeliveryStatus_NotApplicable;
@@ -350,10 +350,10 @@ MmsMessage::GetData(ContentParent* aParent,
     }
     infoData.deliveryStatus() = status;
 
-    // Prepare |infoData.mDeliveryTimestamp|.
+    
     infoData.deliveryTimestamp() = info.mDeliveryTimestamp;
 
-    // Prepare |infoData.mReadStatus|.
+    
     ReadStatus readStatus;
     if (info.mReadStatus.Equals(READ_STATUS_NOT_APPLICABLE)) {
       readStatus = eReadStatus_NotApplicable;
@@ -368,7 +368,7 @@ MmsMessage::GetData(ContentParent* aParent,
     }
     infoData.readStatus() = readStatus;
 
-    // Prepare |infoData.mReadTimestamp|.
+    
     infoData.readTimestamp() = info.mReadTimestamp;
 
     aData.deliveryInfo().AppendElement(infoData);
@@ -381,10 +381,10 @@ MmsMessage::GetData(ContentParent* aParent,
     mma.id().Assign(element.id);
     mma.location().Assign(element.location);
 
-    // This is a workaround. Sometimes the blob we get from the database
-    // doesn't have a valid last modified date, making the ContentParent
-    // send a "Mystery Blob" to the ContentChild. Attempting to get the
-    // last modified date of blob can force that value to be initialized.
+    
+    
+    
+    
     DOMFile* file = static_cast<DOMFile*>(element.content.get());
     if (file->IsDateUnknown()) {
       uint64_t date;
@@ -462,9 +462,9 @@ MmsMessage::GetDelivery(nsAString& aDelivery)
 NS_IMETHODIMP
 MmsMessage::GetDeliveryInfo(JSContext* aCx, JS::MutableHandle<JS::Value> aDeliveryInfo)
 {
-  // TODO Bug 850525 It'd be better to depend on the delivery of MmsMessage
-  // to return a more correct value. Ex, if .delivery = 'received', we should
-  // also make .deliveryInfo = null, since the .deliveryInfo is useless.
+  
+  
+  
   uint32_t length = mDeliveryInfo.Length();
   if (length == 0) {
     aDeliveryInfo.setNull();
@@ -549,7 +549,7 @@ MmsMessage::GetAttachments(JSContext* aCx, JS::MutableHandle<JS::Value> aAttachm
 
     JS::Rooted<JSString*> tmpJsStr(aCx);
 
-    // Get |attachment.mId|.
+    
     tmpJsStr = JS_NewUCStringCopyN(aCx,
                                    attachment.id.get(),
                                    attachment.id.Length());
@@ -559,7 +559,7 @@ MmsMessage::GetAttachments(JSContext* aCx, JS::MutableHandle<JS::Value> aAttachm
       return NS_ERROR_FAILURE;
     }
 
-    // Get |attachment.mLocation|.
+    
     tmpJsStr = JS_NewUCStringCopyN(aCx,
                                    attachment.location.get(),
                                    attachment.location.Length());
@@ -569,7 +569,7 @@ MmsMessage::GetAttachments(JSContext* aCx, JS::MutableHandle<JS::Value> aAttachm
       return NS_ERROR_FAILURE;
     }
 
-    // Get |attachment.mContent|.
+    
     JS::Rooted<JS::Value> tmpJsVal(aCx);
     nsresult rv = nsContentUtils::WrapNative(aCx,
                                              attachment.content,
@@ -605,5 +605,5 @@ MmsMessage::GetReadReportRequested(bool* aReadReportRequested)
 }
 
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 
 #include "IndexedDBParent.h"
@@ -17,7 +17,6 @@
 #include "mozilla/dom/ipc/Blob.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/unused.h"
-#include "nsCxPusher.h"
 
 #include "AsyncConnectionHelper.h"
 #include "DatabaseInfo.h"
@@ -39,9 +38,9 @@ USING_INDEXEDDB_NAMESPACE
 using namespace mozilla;
 using namespace mozilla::dom;
 
-/*******************************************************************************
- * AutoSetCurrentTransaction
- ******************************************************************************/
+
+
+
 
 AutoSetCurrentTransaction::AutoSetCurrentTransaction(
                                                    IDBTransaction* aTransaction)
@@ -55,9 +54,9 @@ AutoSetCurrentTransaction::~AutoSetCurrentTransaction()
   AsyncConnectionHelper::SetCurrentTransaction(nullptr);
 }
 
-/*******************************************************************************
- * IndexedDBParent
- ******************************************************************************/
+
+
+
 
 IndexedDBParent::IndexedDBParent(ContentParent* aContentParent)
 : mManagerContent(aContentParent), mManagerTab(nullptr), mDisconnected(false)
@@ -104,7 +103,7 @@ IndexedDBParent::CheckReadPermission(const nsAString& aDatabaseName)
 bool
 IndexedDBParent::CheckWritePermission(const nsAString& aDatabaseName)
 {
-  // Write permission assumes read permission is granted as well.
+  
   MOZ_ASSERT(CheckReadPermission(aDatabaseName));
 
   NS_NAMED_LITERAL_CSTRING(permission, PERMISSION_SUFFIX_WRITE);
@@ -156,7 +155,7 @@ IndexedDBParent::CheckPermissionInternal(const nsAString& aDatabaseName,
 void
 IndexedDBParent::ActorDestroy(ActorDestroyReason aWhy)
 {
-  // Nothing really needs to be done here...
+  
 }
 
 bool
@@ -171,7 +170,7 @@ IndexedDBParent::RecvPIndexedDBDatabaseConstructor(
   }
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -204,7 +203,7 @@ IndexedDBParent::RecvPIndexedDBDeleteDatabaseRequestConstructor(
   }
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -259,9 +258,9 @@ IndexedDBParent::DeallocPIndexedDBDeleteDatabaseRequestParent(
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBDatabaseParent
- ******************************************************************************/
+
+
+
 
 IndexedDBDatabaseParent::IndexedDBDatabaseParent()
 : mEventListener(MOZ_THIS_IN_INITIALIZER_LIST())
@@ -306,7 +305,7 @@ IndexedDBDatabaseParent::HandleEvent(nsIDOMEvent* aEvent)
   MOZ_ASSERT(aEvent);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this event.
+    
     return NS_OK;
   }
 
@@ -484,9 +483,9 @@ IndexedDBDatabaseParent::HandleRequestEvent(nsIDOMEvent* aEvent,
     MOZ_ASSERT(transaction);
 
     if (!CheckWritePermission(database->Name())) {
-      // If we get here then the child process is either dead or in the process
-      // of being killed. Abort the transaction now to prevent any changes to
-      // the database.
+      
+      
+      
       ErrorResult rv;
       transaction->Abort(rv);
       if (rv.Failed()) {
@@ -568,7 +567,7 @@ IndexedDBDatabaseParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   if (mDatabase) {
     mDatabase->SetActor(static_cast<IndexedDBDatabaseParent*>(nullptr));
-    mDatabase->InvalidateInternal(/* aIsDead */ true);
+    mDatabase->InvalidateInternal( true);
   }
 }
 
@@ -578,7 +577,7 @@ IndexedDBDatabaseParent::RecvClose(const bool& aUnlinked)
   MOZ_ASSERT(mDatabase);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -596,7 +595,7 @@ IndexedDBDatabaseParent::RecvPIndexedDBTransactionConstructor(
   MOZ_ASSERT(!mOpenRequest);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -615,7 +614,7 @@ IndexedDBDatabaseParent::RecvPIndexedDBTransactionConstructor(
   }
 
   if (mDatabase->IsClosed()) {
-    // If the window was navigated then we won't be able to do anything here.
+    
     return true;
   }
 
@@ -649,9 +648,9 @@ IndexedDBDatabaseParent::DeallocPIndexedDBTransactionParent(
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBTransactionParent
- ******************************************************************************/
+
+
+
 
 IndexedDBTransactionParent::IndexedDBTransactionParent()
 : mEventListener(MOZ_THIS_IN_INITIALIZER_LIST()),
@@ -696,7 +695,7 @@ IndexedDBTransactionParent::HandleEvent(nsIDOMEvent* aEvent)
   MOZ_ASSERT(aEvent);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this event.
+    
     return NS_OK;
   }
 
@@ -736,8 +735,8 @@ IndexedDBTransactionParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   if (mTransaction) {
     if (mArtificialRequestCount) {
-      // The transaction never completed and now the child side is dead. Abort
-      // here to be safe.
+      
+      
       ErrorResult rv;
       mTransaction->Abort(rv);
 
@@ -756,7 +755,7 @@ IndexedDBTransactionParent::RecvAbort(const nsresult& aAbortCode)
   MOZ_ASSERT(mTransaction);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -771,7 +770,7 @@ IndexedDBTransactionParent::RecvAllRequestsFinished()
   MOZ_ASSERT(mArtificialRequestCount);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -793,7 +792,7 @@ IndexedDBTransactionParent::RecvPIndexedDBObjectStoreConstructor(
                                     const ObjectStoreConstructorParams& aParams)
 {
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -848,9 +847,9 @@ IndexedDBTransactionParent::DeallocPIndexedDBObjectStoreParent(
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBVersionChangeTransactionParent
- ******************************************************************************/
+
+
+
 
 IndexedDBVersionChangeTransactionParent::
   IndexedDBVersionChangeTransactionParent()
@@ -872,7 +871,7 @@ IndexedDBVersionChangeTransactionParent::RecvDeleteObjectStore(
              mTransaction->GetMode() == IDBTransaction::VERSION_CHANGE);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -881,8 +880,8 @@ IndexedDBVersionChangeTransactionParent::RecvDeleteObjectStore(
   }
 
   if (mTransaction->Database()->IsInvalidated()) {
-    // If we've invalidated this database in the parent then we should bail out
-    // now to avoid logic problems that could force-kill the child.
+    
+    
     return true;
   }
 
@@ -906,7 +905,7 @@ IndexedDBVersionChangeTransactionParent::RecvPIndexedDBObjectStoreConstructor(
                                     const ObjectStoreConstructorParams& aParams)
 {
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -915,8 +914,8 @@ IndexedDBVersionChangeTransactionParent::RecvPIndexedDBObjectStoreConstructor(
   }
 
   if (mTransaction->Database()->IsInvalidated()) {
-    // If we've invalidated this database in the parent then we should bail out
-    // now to avoid logic problems that could force-kill the child.
+    
+    
     return true;
   }
 
@@ -970,9 +969,9 @@ IndexedDBVersionChangeTransactionParent::AllocPIndexedDBObjectStoreParent(
   return IndexedDBTransactionParent::AllocPIndexedDBObjectStoreParent(aParams);
 }
 
-/*******************************************************************************
- * IndexedDBCursorParent
- ******************************************************************************/
+
+
+
 
 IndexedDBCursorParent::IndexedDBCursorParent(IDBCursor* aCursor)
 : mCursor(aCursor)
@@ -1009,7 +1008,7 @@ IndexedDBCursorParent::RecvPIndexedDBRequestConstructor(
   MOZ_ASSERT(mCursor);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -1017,8 +1016,8 @@ IndexedDBCursorParent::RecvPIndexedDBRequestConstructor(
     static_cast<IndexedDBCursorRequestParent*>(aActor);
 
   if (mCursor->Transaction()->Database()->IsInvalidated()) {
-    // If we've invalidated this database in the parent then we should bail out
-    // now to avoid logic problems that could force-kill the child.
+    
+    
     return actor->Send__delete__(actor, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
 
@@ -1048,9 +1047,9 @@ IndexedDBCursorParent::DeallocPIndexedDBRequestParent(PIndexedDBRequestParent* a
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBObjectStoreParent
- ******************************************************************************/
+
+
+
 
 IndexedDBObjectStoreParent::IndexedDBObjectStoreParent()
 {
@@ -1065,7 +1064,7 @@ IndexedDBObjectStoreParent::~IndexedDBObjectStoreParent()
 void
 IndexedDBObjectStoreParent::SetObjectStore(IDBObjectStore* aObjectStore)
 {
-  // Sadly can't assert aObjectStore here...
+  
   MOZ_ASSERT(!mObjectStore);
 
   mObjectStore = aObjectStore;
@@ -1091,7 +1090,7 @@ IndexedDBObjectStoreParent::RecvPIndexedDBRequestConstructor(
                                         const ObjectStoreRequestParams& aParams)
 {
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -1103,8 +1102,8 @@ IndexedDBObjectStoreParent::RecvPIndexedDBRequestConstructor(
     static_cast<IndexedDBObjectStoreRequestParent*>(aActor);
 
   if (mObjectStore->Transaction()->Database()->IsInvalidated()) {
-    // If we've invalidated this database in the parent then we should bail out
-    // now to avoid logic problems that could force-kill the child.
+    
+    
     return actor->Send__delete__(actor, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
 
@@ -1152,7 +1151,7 @@ IndexedDBObjectStoreParent::RecvPIndexedDBIndexConstructor(
                                           const IndexConstructorParams& aParams)
 {
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -1234,9 +1233,9 @@ IndexedDBObjectStoreParent::DeallocPIndexedDBCursorParent(
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBVersionChangeObjectStoreParent
- ******************************************************************************/
+
+
+
 
 IndexedDBVersionChangeObjectStoreParent::
   IndexedDBVersionChangeObjectStoreParent()
@@ -1258,7 +1257,7 @@ IndexedDBVersionChangeObjectStoreParent::RecvDeleteIndex(const nsString& aName)
              IDBTransaction::VERSION_CHANGE);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -1267,8 +1266,8 @@ IndexedDBVersionChangeObjectStoreParent::RecvDeleteIndex(const nsString& aName)
   }
 
   if (mObjectStore->Transaction()->Database()->IsInvalidated()) {
-    // If we've invalidated this database in the parent then we should bail out
-    // now to avoid logic problems that could force-kill the child.
+    
+    
     return true;
   }
 
@@ -1290,7 +1289,7 @@ IndexedDBVersionChangeObjectStoreParent::RecvPIndexedDBIndexConstructor(
                                           const IndexConstructorParams& aParams)
 {
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -1299,8 +1298,8 @@ IndexedDBVersionChangeObjectStoreParent::RecvPIndexedDBIndexConstructor(
   }
 
   if (mObjectStore->Transaction()->Database()->IsInvalidated()) {
-    // If we've invalidated this database in the parent then we should bail out
-    // now to avoid logic problems that could force-kill the child.
+    
+    
     return true;
   }
 
@@ -1332,9 +1331,9 @@ IndexedDBVersionChangeObjectStoreParent::RecvPIndexedDBIndexConstructor(
                                                                     aParams);
 }
 
-/*******************************************************************************
- * IndexedDBIndexParent
- ******************************************************************************/
+
+
+
 
 IndexedDBIndexParent::IndexedDBIndexParent()
 {
@@ -1369,7 +1368,7 @@ IndexedDBIndexParent::RecvPIndexedDBRequestConstructor(
                                               const IndexRequestParams& aParams)
 {
   if (IsDisconnected()) {
-    // We're shutting down, ignore this request.
+    
     return true;
   }
 
@@ -1381,8 +1380,8 @@ IndexedDBIndexParent::RecvPIndexedDBRequestConstructor(
     static_cast<IndexedDBIndexRequestParent*>(aActor);
 
   if (mIndex->ObjectStore()->Transaction()->Database()->IsInvalidated()) {
-    // If we've invalidated this database in the parent then we should bail out
-    // now to avoid logic problems that could force-kill the child.
+    
+    
     return actor->Send__delete__(actor, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
 
@@ -1442,9 +1441,9 @@ IndexedDBIndexParent::DeallocPIndexedDBCursorParent(PIndexedDBCursorParent* aAct
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBRequestParentBase
- ******************************************************************************/
+
+
+
 
 IndexedDBRequestParentBase::IndexedDBRequestParentBase()
 {
@@ -1464,9 +1463,9 @@ IndexedDBRequestParentBase::ActorDestroy(ActorDestroyReason aWhy)
   }
 }
 
-/*******************************************************************************
- * IndexedDBObjectStoreRequestParent
- ******************************************************************************/
+
+
+
 
 IndexedDBObjectStoreRequestParent::IndexedDBObjectStoreRequestParent(
                                                    IDBObjectStore* aObjectStore,
@@ -1474,7 +1473,7 @@ IndexedDBObjectStoreRequestParent::IndexedDBObjectStoreRequestParent(
 : mObjectStore(aObjectStore), mRequestType(aRequestType)
 {
   MOZ_COUNT_CTOR(IndexedDBObjectStoreRequestParent);
-  // Sadly can't assert aObjectStore here...
+  
   MOZ_ASSERT(aRequestType > ParamsUnionType::T__None &&
              aRequestType <= ParamsUnionType::T__Last);
 }
@@ -1493,7 +1492,7 @@ IndexedDBObjectStoreRequestParent::ConvertBlobActors(
   MOZ_ASSERT(mObjectStore);
 
   if (!aActors.IsEmpty()) {
-    // Walk the chain to get to ContentParent.
+    
     MOZ_ASSERT(mObjectStore->Transaction()->Database()->GetContentParent());
 
     uint32_t length = aActors.Length();
@@ -1838,9 +1837,9 @@ IndexedDBObjectStoreRequestParent::OpenKeyCursor(
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBIndexRequestParent
- ******************************************************************************/
+
+
+
 
 IndexedDBIndexRequestParent::IndexedDBIndexRequestParent(
                                                        IDBIndex* aIndex,
@@ -1848,7 +1847,7 @@ IndexedDBIndexRequestParent::IndexedDBIndexRequestParent(
 : mIndex(aIndex), mRequestType(aRequestType)
 {
   MOZ_COUNT_CTOR(IndexedDBIndexRequestParent);
-  // Sadly can't assert aIndex here...
+  
   MOZ_ASSERT(aRequestType > ParamsUnionType::T__None &&
              aRequestType <= ParamsUnionType::T__Last);
 }
@@ -2110,9 +2109,9 @@ IndexedDBIndexRequestParent::OpenKeyCursor(const OpenKeyCursorParams& aParams)
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBCursorRequestParent
- ******************************************************************************/
+
+
+
 
 IndexedDBCursorRequestParent::IndexedDBCursorRequestParent(
                                                        IDBCursor* aCursor,
@@ -2159,9 +2158,9 @@ IndexedDBCursorRequestParent::Continue(const ContinueParams& aParams)
   return true;
 }
 
-/*******************************************************************************
- * IndexedDBDeleteDatabaseRequestParent
- ******************************************************************************/
+
+
+
 
 IndexedDBDeleteDatabaseRequestParent::IndexedDBDeleteDatabaseRequestParent(
                                                            IDBFactory* aFactory)
@@ -2182,7 +2181,7 @@ IndexedDBDeleteDatabaseRequestParent::HandleEvent(nsIDOMEvent* aEvent)
   MOZ_ASSERT(aEvent);
 
   if (IsDisconnected()) {
-    // We're shutting down, ignore this event.
+    
     return NS_OK;
   }
 
@@ -2223,7 +2222,7 @@ IndexedDBDeleteDatabaseRequestParent::HandleEvent(nsIDOMEvent* aEvent)
 void
 IndexedDBDeleteDatabaseRequestParent::ActorDestroy(ActorDestroyReason aWhy)
 {
-  // Implement me! Bug 1005149
+  
 }
 
 nsresult
@@ -2251,9 +2250,9 @@ IndexedDBDeleteDatabaseRequestParent::SetOpenRequest(
   return NS_OK;
 }
 
-/*******************************************************************************
- * WeakEventListener
- ******************************************************************************/
+
+
+
 
  NS_IMPL_ISUPPORTS(WeakEventListenerBase, nsIDOMEventListener)
 

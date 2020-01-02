@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "IDBRequest.h"
 
@@ -18,7 +18,6 @@
 #include "nsDOMClassInfoID.h"
 #include "nsDOMJSUtils.h"
 #include "nsContentUtils.h"
-#include "nsCxPusher.h"
 #include "nsJSUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsString.h"
@@ -40,7 +39,7 @@ namespace {
 uint64_t gNextRequestSerialNumber = 1;
 #endif
 
-} // anonymous namespace
+} 
 
 USING_INDEXEDDB_NAMESPACE
 using mozilla::dom::OwningIDBObjectStoreOrIDBIndexOrIDBCursor;
@@ -81,7 +80,7 @@ IDBRequest::~IDBRequest()
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 }
 
-// static
+
 already_AddRefed<IDBRequest>
 IDBRequest::Create(IDBDatabase* aDatabase,
                    IDBTransaction* aTransaction)
@@ -100,7 +99,7 @@ IDBRequest::Create(IDBDatabase* aDatabase,
   return request.forget();
 }
 
-// static
+
 already_AddRefed<IDBRequest>
 IDBRequest::Create(IDBObjectStore* aSourceAsObjectStore,
                    IDBDatabase* aDatabase,
@@ -113,7 +112,7 @@ IDBRequest::Create(IDBObjectStore* aSourceAsObjectStore,
   return request.forget();
 }
 
-// static
+
 already_AddRefed<IDBRequest>
 IDBRequest::Create(IDBIndex* aSourceAsIndex,
                    IDBDatabase* aDatabase,
@@ -130,9 +129,9 @@ IDBRequest::Create(IDBIndex* aSourceAsIndex,
 void
 IDBRequest::AssertSourceIsCorrect() const
 {
-  // At most one of mSourceAs* is allowed to be non-null.  Check that by
-  // summing the double negation of each one and asserting the sum is at most
-  // 1.
+  
+  
+  
 
   MOZ_ASSERT(!!mSourceAsObjectStore + !!mSourceAsIndex + !!mSourceAsCursor <= 1);
 }
@@ -176,28 +175,28 @@ IDBRequest::NotifyHelperCompleted(HelperBase* aHelper)
 
   nsresult rv = aHelper->GetResultCode();
 
-  // If the request failed then set the error code and return.
+  
   if (NS_FAILED(rv)) {
     SetError(rv);
     return NS_OK;
   }
 
-  // See if our window is still valid. If not then we're going to pretend that
-  // we never completed.
+  
+  
   if (NS_FAILED(CheckInnerWindowCorrectness())) {
     return NS_OK;
   }
 
-  // Otherwise we need to get the result from the helper.
+  
   AutoJSAPI jsapi;
   Maybe<JSAutoCompartment> ac;
   if (GetScriptOwner()) {
-    // If we have a script owner we want the SafeJSContext and then to enter
-    // the script owner's compartment.
+    
+    
     jsapi.Init();
     ac.emplace(jsapi.cx(), GetScriptOwner());
   } else {
-    // Otherwise our owner is a window and we use that to initialize.
+    
     if (!jsapi.InitWithLegacyErrorReporting(GetOwner())) {
       IDB_WARNING("Failed to initialise AutoJSAPI!");
       rv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
@@ -234,8 +233,8 @@ IDBRequest::NotifyHelperSentResultsToChildProcess(nsresult aRv)
   NS_ASSERTION(!mHaveResultOrErrorCode, "Already called!");
   NS_ASSERTION(mResultVal.isUndefined(), "Should be undefined!");
 
-  // See if our window is still valid. If not then we're going to pretend that
-  // we never completed.
+  
+  
   if (NS_FAILED(CheckInnerWindowCorrectness())) {
     return;
   }
@@ -318,7 +317,7 @@ IDBRequest::GetResult(JS::MutableHandle<JS::Value> aResult,
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 
   if (!mHaveResultOrErrorCode) {
-    // XXX Need a real error code here.
+    
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR);
   }
 
@@ -342,8 +341,8 @@ IDBRequest::GetError(mozilla::ErrorResult& aRv)
 NS_IMPL_CYCLE_COLLECTION_CLASS(IDBRequest)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(IDBRequest, IDBWrapperCache)
-  // Don't need NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS because
-  // DOMEventTargetHelper does it for us.
+  
+  
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSourceAsObjectStore)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSourceAsIndex)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSourceAsCursor)
@@ -361,8 +360,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(IDBRequest, IDBWrapperCache)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(IDBRequest, IDBWrapperCache)
-  // Don't need NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER because
-  // DOMEventTargetHelper does it for us.
+  
+  
   NS_IMPL_CYCLE_COLLECTION_TRACE_JSVAL_MEMBER_CALLBACK(mResultVal)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
@@ -393,7 +392,7 @@ IDBOpenDBRequest::~IDBOpenDBRequest()
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
 }
 
-// static
+
 already_AddRefed<IDBOpenDBRequest>
 IDBOpenDBRequest::Create(IDBFactory* aFactory,
                          nsPIDOMWindow* aOwner,
@@ -434,7 +433,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(IDBOpenDBRequest,
                                                 IDBRequest)
-  // Don't unlink mFactory!
+  
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(IDBOpenDBRequest)

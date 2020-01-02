@@ -1,13 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "DOMRequest.h"
 
 #include "DOMError.h"
-#include "nsCxPusher.h"
 #include "nsThreadUtils.h"
 #include "DOMCursor.h"
 #include "nsIDOMEvent.h"
@@ -41,8 +40,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(DOMRequest,
                                                DOMEventTargetHelper)
-  // Don't need NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER because
-  // DOMEventTargetHelper does it for us.
+  
+  
   NS_IMPL_CYCLE_COLLECTION_TRACE_JSVAL_MEMBER_CALLBACK(mResult)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
@@ -53,7 +52,7 @@ NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 NS_IMPL_ADDREF_INHERITED(DOMRequest, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(DOMRequest, DOMEventTargetHelper)
 
-/* virtual */ JSObject*
+ JSObject*
 DOMRequest::WrapObject(JSContext* aCx)
 {
   return DOMRequestBinding::Wrap(aCx, this);
@@ -246,9 +245,9 @@ class FireSuccessAsyncTask : public nsRunnable
 
 public:
 
-  // Due to the fact that initialization can fail during shutdown (since we
-  // can't fetch a js context), set up an initiatization function to make sure
-  // we can return the failure appropriately
+  
+  
+  
   static nsresult
   Dispatch(DOMRequest* aRequest,
            const JS::Value& aResult)

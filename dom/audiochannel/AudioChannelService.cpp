@@ -1,8 +1,8 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "AudioChannelService.h"
 #include "AudioChannelServiceChild.h"
@@ -23,7 +23,6 @@
 
 #ifdef MOZ_WIDGET_GONK
 #include "nsJSUtils.h"
-#include "nsCxPusher.h"
 #include "nsIAudioManager.h"
 #include "SpeakerManagerService.h"
 #define NS_AUDIOMANAGER_CONTRACTID "@mozilla.org/telephony/audiomanager;1"
@@ -37,7 +36,7 @@ using namespace mozilla::hal;
 
 StaticRefPtr<AudioChannelService> gAudioChannelService;
 
-// Mappings from 'mozaudiochannel' attribute strings to an enumeration.
+
 static const nsAttrValue::EnumTable kMozAudioChannelAttributeTable[] = {
   { "normal",             (int16_t)AudioChannel::Normal },
   { "content",            (int16_t)AudioChannel::Content },
@@ -49,7 +48,7 @@ static const nsAttrValue::EnumTable kMozAudioChannelAttributeTable[] = {
   { nullptr }
 };
 
-// static
+
 AudioChannelService*
 AudioChannelService::GetAudioChannelService()
 {
@@ -59,12 +58,12 @@ AudioChannelService::GetAudioChannelService()
     return AudioChannelServiceChild::GetAudioChannelService();
   }
 
-  // If we already exist, exit early
+  
   if (gAudioChannelService) {
     return gAudioChannelService;
   }
 
-  // Create new instance, register, return
+  
   nsRefPtr<AudioChannelService> service = new AudioChannelService();
   NS_ENSURE_TRUE(service, nullptr);
 
@@ -99,7 +98,7 @@ AudioChannelService::AudioChannelService()
       obs->AddObserver(this, "ipc:content-shutdown", false);
       obs->AddObserver(this, "xpcom-shutdown", false);
 #ifdef MOZ_WIDGET_GONK
-      // To monitor the volume settings based on audio channel.
+      
       obs->AddObserver(this, "mozsettings-changed", false);
 #endif
     }
@@ -120,13 +119,13 @@ AudioChannelService::RegisterAudioChannelAgent(AudioChannelAgent* aAgent,
   }
 
   AudioChannelAgentData* data = new AudioChannelAgentData(aChannel,
-                                true /* aElementHidden */,
-                                AUDIO_CHANNEL_STATE_MUTED /* aState */,
+                                true ,
+                                AUDIO_CHANNEL_STATE_MUTED ,
                                 aWithVideo);
   mAgents.Put(aAgent, data);
   RegisterType(aChannel, CONTENT_PROCESS_ID_MAIN, aWithVideo);
 
-  // If this is the first agent for this window, we must notify the observers.
+  
   uint32_t count = CountWindow(aAgent->Window());
   if (count == 1) {
     nsCOMPtr<nsIObserverService> observerService =
@@ -152,14 +151,14 @@ AudioChannelService::RegisterType(AudioChannel aChannel, uint64_t aChildID,
 
   if (XRE_GetProcessType() == GeckoProcessType_Default) {
 
-    // We must keep the childIds in order to decide which app is allowed to play
-    // with then telephony channel.
+    
+    
     if (aChannel == AudioChannel::Telephony) {
       RegisterTelephonyChild(aChildID);
     }
 
-    // Since there is another telephony registered, we can unregister old one
-    // immediately.
+    
+    
     if (mDeferTelChannelTimer && aChannel == AudioChannel::Telephony) {
       mDeferTelChannelTimer->Cancel();
       mDeferTelChannelTimer = nullptr;
@@ -171,24 +170,24 @@ AudioChannelService::RegisterType(AudioChannel aChannel, uint64_t aChildID,
       mWithVideoChildIDs.AppendElement(aChildID);
     }
 
-    // No hidden content channel can be playable if there is a content channel
-    // in foreground (bug 855208), nor if there is a normal channel with video
-    // in foreground (bug 894249).
+    
+    
+    
     if (type == AUDIO_CHANNEL_INT_CONTENT ||
         (type == AUDIO_CHANNEL_INT_NORMAL &&
          mWithVideoChildIDs.Contains(aChildID))) {
       mPlayableHiddenContentChildID = CONTENT_PROCESS_ID_UNKNOWN;
     }
-    // One hidden content channel can be playable only when there is no any
-    // content channel in the foreground, and no normal channel with video in
-    // foreground.
+    
+    
+    
     else if (type == AUDIO_CHANNEL_INT_CONTENT_HIDDEN &&
         mChannelCounters[AUDIO_CHANNEL_INT_CONTENT].IsEmpty()) {
       mPlayableHiddenContentChildID = aChildID;
     }
 
-    // In order to avoid race conditions, it's safer to notify any existing
-    // agent any time a new one is registered.
+    
+    
     SendAudioChannelChangedNotification(aChildID);
     SendNotification();
   }
@@ -215,7 +214,7 @@ AudioChannelService::UnregisterAudioChannelAgent(AudioChannelAgent* aAgent)
   }
 #endif
 
-  // If this is the last agent for this window, we must notify the observers.
+  
   uint32_t count = CountWindow(aAgent->Window());
   if (count == 0) {
     nsCOMPtr<nsIObserverService> observerService =
@@ -238,9 +237,9 @@ AudioChannelService::UnregisterType(AudioChannel aChannel,
     return;
   }
 
-  // There are two reasons to defer the decrease of telephony channel.
-  // 1. User can have time to remove device from his ear before music resuming.
-  // 2. Give BT SCO to be disconnected before starting to connect A2DP.
+  
+  
+  
   if (XRE_GetProcessType() == GeckoProcessType_Default) {
 
     if (aChannel == AudioChannel::Telephony) {
@@ -267,17 +266,17 @@ AudioChannelService::UnregisterTypeInternal(AudioChannel aChannel,
                                             uint64_t aChildID,
                                             bool aWithVideo)
 {
-  // The array may contain multiple occurrence of this appId but
-  // this should remove only the first one.
+  
+  
   AudioChannelInternalType type = GetInternalType(aChannel, aElementHidden);
   MOZ_ASSERT(mChannelCounters[type].Contains(aChildID));
   mChannelCounters[type].RemoveElement(aChildID);
 
-  // In order to avoid race conditions, it's safer to notify any existing
-  // agent any time a new one is registered.
+  
+  
   if (XRE_GetProcessType() == GeckoProcessType_Default) {
-    // No hidden content channel is playable if the original playable hidden
-    // process does not need to play audio from background anymore.
+    
+    
     if (aChannel == AudioChannel::Content &&
         mPlayableHiddenContentChildID == aChildID &&
         !mChannelCounters[AUDIO_CHANNEL_INT_CONTENT_HIDDEN].Contains(aChildID)) {
@@ -300,7 +299,7 @@ AudioChannelService::UpdateChannelType(AudioChannel aChannel,
                                        bool aElementHidden,
                                        bool aElementWasHidden)
 {
-  // Calculate the new and old internal type and update the hashtable if needed.
+  
   AudioChannelInternalType newType = GetInternalType(aChannel, aElementHidden);
   AudioChannelInternalType oldType = GetInternalType(aChannel, aElementWasHidden);
 
@@ -310,17 +309,17 @@ AudioChannelService::UpdateChannelType(AudioChannel aChannel,
     mChannelCounters[oldType].RemoveElement(aChildID);
   }
 
-  // No hidden content channel can be playable if there is a content channel
-  // in foreground (bug 855208), nor if there is a normal channel with video
-  // in foreground (bug 894249).
+  
+  
+  
   if (newType == AUDIO_CHANNEL_INT_CONTENT ||
       (newType == AUDIO_CHANNEL_INT_NORMAL &&
        mWithVideoChildIDs.Contains(aChildID))) {
     mPlayableHiddenContentChildID = CONTENT_PROCESS_ID_UNKNOWN;
   }
-  // If there is no content channel in foreground and no normal channel with
-  // video in foreground, the last content channel which goes from foreground
-  // to background can be playable.
+  
+  
+  
   else if (oldType == AUDIO_CHANNEL_INT_CONTENT &&
       newType == AUDIO_CHANNEL_INT_CONTENT_HIDDEN &&
       mChannelCounters[AUDIO_CHANNEL_INT_CONTENT].IsEmpty()) {
@@ -337,7 +336,7 @@ AudioChannelService::GetState(AudioChannelAgent* aAgent, bool aElementHidden)
   }
 
   bool oldElementHidden = data->mElementHidden;
-  // Update visibility.
+  
   data->mElementHidden = aElementHidden;
 
   data->mState = GetStateInternal(data->mChannel, CONTENT_PROCESS_ID_MAIN,
@@ -352,7 +351,7 @@ AudioChannelService::GetStateInternal(AudioChannel aChannel, uint64_t aChildID,
 {
   UpdateChannelType(aChannel, aChildID, aElementHidden, aElementWasHidden);
 
-  // Calculating the new and old type and update the hashtable if needed.
+  
   AudioChannelInternalType newType = GetInternalType(aChannel, aElementHidden);
   AudioChannelInternalType oldType = GetInternalType(aChannel,
                                                      aElementWasHidden);
@@ -366,7 +365,7 @@ AudioChannelService::GetStateInternal(AudioChannel aChannel, uint64_t aChildID,
 
   SendAudioChannelChangedNotification(aChildID);
 
-  // Let play any visible audio channel.
+  
   if (!aElementHidden) {
     if (CheckVolumeFadedCondition(newType, aElementHidden)) {
       return AUDIO_CHANNEL_STATE_FADED;
@@ -374,24 +373,24 @@ AudioChannelService::GetStateInternal(AudioChannel aChannel, uint64_t aChildID,
     return CheckTelephonyPolicy(aChannel, aChildID);
   }
 
-  // We are not visible, maybe we have to mute.
+  
   if (newType == AUDIO_CHANNEL_INT_NORMAL_HIDDEN ||
       (newType == AUDIO_CHANNEL_INT_CONTENT_HIDDEN &&
-       // One process can have multiple content channels; and during the
-       // transition from foreground to background, its content channels will be
-       // updated with correct visibility status one by one. All its content
-       // channels should remain playable until all of their visibility statuses
-       // have been updated as hidden. After all its content channels have been
-       // updated properly as hidden, mPlayableHiddenContentChildID is used to
-       // check whether this background process is playable or not.
+       
+       
+       
+       
+       
+       
+       
        !(mChannelCounters[AUDIO_CHANNEL_INT_CONTENT].Contains(aChildID) ||
          (mChannelCounters[AUDIO_CHANNEL_INT_CONTENT].IsEmpty() &&
           mPlayableHiddenContentChildID == aChildID)))) {
     return AUDIO_CHANNEL_STATE_MUTED;
   }
 
-  // After checking the condition on normal & content channel, if the state
-  // is not on muted then checking other higher channels type here.
+  
+  
   if (ChannelsActiveWithHigherPriorityThan(newType)) {
     MOZ_ASSERT(newType != AUDIO_CHANNEL_INT_NORMAL_HIDDEN);
     if (CheckVolumeFadedCondition(newType, aElementHidden)) {
@@ -407,7 +406,7 @@ AudioChannelState
 AudioChannelService::CheckTelephonyPolicy(AudioChannel aChannel,
                                           uint64_t aChildID)
 {
-  // Only the latest childID is allowed to play with telephony channel.
+  
   if (aChannel != AudioChannel::Telephony) {
     return AUDIO_CHANNEL_STATE_NORMAL;
   }
@@ -434,26 +433,26 @@ bool
 AudioChannelService::CheckVolumeFadedCondition(AudioChannelInternalType aType,
                                                bool aElementHidden)
 {
-  // Only normal & content channels are considered
+  
   if (aType > AUDIO_CHANNEL_INT_CONTENT_HIDDEN) {
     return false;
   }
 
-  // Consider that audio from notification is with short duration
-  // so just fade the volume not pause it
+  
+  
   if (mChannelCounters[AUDIO_CHANNEL_INT_NOTIFICATION].IsEmpty() &&
       mChannelCounters[AUDIO_CHANNEL_INT_NOTIFICATION_HIDDEN].IsEmpty()) {
     return false;
   }
 
-  // Since this element is on the foreground, it can be allowed to play always.
-  // So return true directly when there is any notification channel alive.
+  
+  
   if (aElementHidden == false) {
    return true;
   }
 
-  // If element is on the background, it is possible paused by channels higher
-  // then notification.
+  
+  
   for (int i = AUDIO_CHANNEL_INT_LAST - 1;
     i != AUDIO_CHANNEL_INT_NOTIFICATION_HIDDEN; --i) {
     if (!mChannelCounters[i].IsEmpty()) {
@@ -504,9 +503,9 @@ AudioChannelService::SetDefaultVolumeControlChannelInternal(int32_t aChannel,
     return;
   }
 
-  // If this child is in the background and mDefChannelChildID is set to
-  // others then it means other child in the foreground already set it's
-  // own default channel already.
+  
+  
+  
   if (!aHidden && mDefChannelChildID != aChildID) {
     return;
   }
@@ -543,10 +542,10 @@ AudioChannelService::SendAudioChannelChangedNotification(uint64_t aChildID)
                          "audio-channel-process-changed", nullptr);
   }
 
-  // Calculating the most important active channel.
+  
   int32_t higher = -1;
 
-  // Top-Down in the hierarchy for visible elements
+  
   if (!mChannelCounters[AUDIO_CHANNEL_INT_PUBLICNOTIFICATION].IsEmpty()) {
     higher = static_cast<int32_t>(AudioChannel::Publicnotification);
   }
@@ -577,8 +576,8 @@ AudioChannelService::SendAudioChannelChangedNotification(uint64_t aChildID)
 
   int32_t visibleHigher = higher;
 
-  // Top-Down in the hierarchy for non-visible elements
-  // And we can ignore normal channel because it can't play in the background.
+  
+  
   int32_t index;
   for (index = 0; kMozAudioChannelAttributeTable[index].tag; ++index);
 
@@ -586,8 +585,8 @@ AudioChannelService::SendAudioChannelChangedNotification(uint64_t aChildID)
        kMozAudioChannelAttributeTable[index].value > higher &&
        kMozAudioChannelAttributeTable[index].value > (int16_t)AudioChannel::Normal;
        --index) {
-    // Each channel type will be split to fg and bg for recording the state,
-    // so here need to do a translation.
+    
+    
     if (mChannelCounters[index * 2 + 1].IsEmpty()) {
       continue;
     }
@@ -681,10 +680,10 @@ AudioChannelService::Notify()
   MOZ_ASSERT(NS_IsMainThread());
   mRunnable = nullptr;
 
-  // Notify any agent for the main process.
+  
   mAgents.EnumerateRead(NotifyEnumerator, nullptr);
 
-  // Notify for the child processes.
+  
   nsTArray<ContentParent*> children;
   ContentParent::GetAll(children);
   for (uint32_t i = 0; i < children.Length(); i++) {
@@ -760,8 +759,8 @@ AudioChannelService::Observe(nsISupports* aSubject, const char* aTopic, const ch
         }
       }
 
-      // No hidden content channel is playable if the original playable hidden
-      // process shuts down.
+      
+      
       if (mPlayableHiddenContentChildID == childID) {
         mPlayableHiddenContentChildID = CONTENT_PROCESS_ID_UNKNOWN;
       }
@@ -770,8 +769,8 @@ AudioChannelService::Observe(nsISupports* aSubject, const char* aTopic, const ch
         mWithVideoChildIDs.RemoveElementAt(index);
       }
 
-      // We don't have to remove the agents from the mAgents hashtable because if
-      // that table contains only agents running on the same process.
+      
+      
 
       SendAudioChannelChangedNotification(childID);
       SendNotification();
@@ -785,8 +784,8 @@ AudioChannelService::Observe(nsISupports* aSubject, const char* aTopic, const ch
     }
   }
 #ifdef MOZ_WIDGET_GONK
-  // To process the volume control on each audio channel according to
-  // change of settings
+  
+  
   else if (!strcmp(aTopic, "mozsettings-changed")) {
     AutoSafeJSContext cx;
     nsDependentString dataStr(aData);
@@ -830,11 +829,11 @@ AudioChannelService::Observe(nsISupports* aSubject, const char* aTopic, const ch
     } else if (keyStr.EqualsLiteral("audio.volume.telephony")) {
       audioManager->SetAudioChannelVolume((int32_t)AudioChannel::Telephony, index);
     } else if (!keyStr.EqualsLiteral("audio.volume.bt_sco")) {
-      // bt_sco is not a valid audio channel so we manipulate it in
-      // AudioManager.cpp. And the others should not be used.
-      // We didn't use MOZ_CRASH or MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE here
-      // because any web content who has permission of mozSettings can set any
-      // names then it can be easy to crash the B2G.
+      
+      
+      
+      
+      
       NS_WARNING("unexpected audio channel for volume control");
     }
   }
@@ -965,13 +964,13 @@ AudioChannelService::CountWindow(nsIDOMWindow* aWindow)
   return data.mCount;
 }
 
-/* static */ const nsAttrValue::EnumTable*
+ const nsAttrValue::EnumTable*
 AudioChannelService::GetAudioChannelTable()
 {
   return kMozAudioChannelAttributeTable;
 }
 
-/* static */ AudioChannel
+ AudioChannel
 AudioChannelService::GetAudioChannel(const nsAString& aChannel)
 {
   for (uint32_t i = 0; kMozAudioChannelAttributeTable[i].tag; ++i) {
@@ -983,7 +982,7 @@ AudioChannelService::GetAudioChannel(const nsAString& aChannel)
   return AudioChannel::Normal;
 }
 
-/* static */ AudioChannel
+ AudioChannel
 AudioChannelService::GetDefaultAudioChannel()
 {
   nsString audioChannel = Preferences::GetString("media.defaultAudioChannel");
@@ -1000,7 +999,7 @@ AudioChannelService::GetDefaultAudioChannel()
   return AudioChannel::Normal;
 }
 
-/* static */ void
+ void
 AudioChannelService::GetAudioChannelString(AudioChannel aChannel,
                                            nsAString& aString)
 {
@@ -1015,7 +1014,7 @@ AudioChannelService::GetAudioChannelString(AudioChannel aChannel,
   }
 }
 
-/* static */ void
+ void
 AudioChannelService::GetDefaultAudioChannelString(nsAString& aString)
 {
   aString.AssignASCII("normal");

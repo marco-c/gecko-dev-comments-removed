@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "SmsParent.h"
 #include "nsISmsService.h"
@@ -19,10 +19,9 @@
 #include "nsIDOMFile.h"
 #include "mozilla/dom/ipc/Blob.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/mobilemessage/Constants.h" // For MessageType
+#include "mozilla/dom/mobilemessage/Constants.h" 
 #include "nsContentUtils.h"
 #include "nsTArrayHelpers.h"
-#include "nsCxPusher.h"
 #include "xpcpublic.h"
 #include "nsServiceManagerUtils.h"
 #include "DeletedMessageInfo.h"
@@ -77,7 +76,7 @@ GetParamsFromSendMmsMessageRequest(JSContext* aCx,
   JS::Rooted<JSObject*> paramsObj(aCx, JS_NewObject(aCx, nullptr, JS::NullPtr(), JS::NullPtr()));
   NS_ENSURE_TRUE(paramsObj, false);
 
-  // smil
+  
   JS::Rooted<JSString*> smilStr(aCx, JS_NewUCStringCopyN(aCx,
                                                          aRequest.smil().get(),
                                                          aRequest.smil().Length()));
@@ -86,7 +85,7 @@ GetParamsFromSendMmsMessageRequest(JSContext* aCx,
     return false;
   }
 
-  // subject
+  
   JS::Rooted<JSString*> subjectStr(aCx, JS_NewUCStringCopyN(aCx,
                                                             aRequest.subject().get(),
                                                             aRequest.subject().Length()));
@@ -95,7 +94,7 @@ GetParamsFromSendMmsMessageRequest(JSContext* aCx,
     return false;
   }
 
-  // receivers
+  
   JS::Rooted<JSObject*> receiverArray(aCx);
   if (NS_FAILED(nsTArrayToJSArray(aCx, aRequest.receivers(), &receiverArray)))
   {
@@ -105,7 +104,7 @@ GetParamsFromSendMmsMessageRequest(JSContext* aCx,
     return false;
   }
 
-  // attachments
+  
   JS::Rooted<JSObject*> attachmentArray(aCx, JS_NewArrayObject(aCx,
                                                                aRequest.attachments().Length()));
   for (uint32_t i = 0; i < aRequest.attachments().Length(); i++) {
@@ -409,8 +408,8 @@ PSmsRequestParent*
 SmsParent::AllocPSmsRequestParent(const IPCSmsRequest& aRequest)
 {
   SmsRequestParent* actor = new SmsRequestParent();
-  // Add an extra ref for IPDL. Will be released in
-  // SmsParent::DeallocPSmsRequestParent().
+  
+  
   actor->AddRef();
 
   return actor;
@@ -419,7 +418,7 @@ SmsParent::AllocPSmsRequestParent(const IPCSmsRequest& aRequest)
 bool
 SmsParent::DeallocPSmsRequestParent(PSmsRequestParent* aActor)
 {
-  // SmsRequestParent is refcounted, must not be freed manually.
+  
   static_cast<SmsRequestParent*>(aActor)->Release();
   return true;
 }
@@ -447,8 +446,8 @@ PMobileMessageCursorParent*
 SmsParent::AllocPMobileMessageCursorParent(const IPCMobileMessageCursor& aRequest)
 {
   MobileMessageCursorParent* actor = new MobileMessageCursorParent();
-  // Add an extra ref for IPDL. Will be released in
-  // SmsParent::DeallocPMobileMessageCursorParent().
+  
+  
   actor->AddRef();
 
   return actor;
@@ -457,14 +456,14 @@ SmsParent::AllocPMobileMessageCursorParent(const IPCMobileMessageCursor& aReques
 bool
 SmsParent::DeallocPMobileMessageCursorParent(PMobileMessageCursorParent* aActor)
 {
-  // MobileMessageCursorParent is refcounted, must not be freed manually.
+  
   static_cast<MobileMessageCursorParent*>(aActor)->Release();
   return true;
 }
 
-/*******************************************************************************
- * SmsRequestParent
- ******************************************************************************/
+
+
+
 
 NS_IMPL_ISUPPORTS(SmsRequestParent, nsIMobileMessageCallback)
 
@@ -491,10 +490,10 @@ SmsRequestParent::DoRequest(const SendMessageRequest& aRequest)
       nsCOMPtr<nsIMmsService> mmsService = do_GetService(MMS_SERVICE_CONTRACTID);
       NS_ENSURE_TRUE(mmsService, true);
 
-      // There are cases (see bug 981202) where this is called with no JS on the
-      // stack. And since mmsService might be JS-Implemented, we need to pass a
-      // jsval to ::Send. Only system code should be looking at the result here,
-      // so we just create it in the System-Principaled Junk Scope.
+      
+      
+      
+      
       AutoJSContext cx;
       JSAutoCompartment ac(cx, xpc::GetJunkScope());
       JS::Rooted<JS::Value> params(cx);
@@ -626,15 +625,15 @@ SmsRequestParent::DoRequest(const GetSegmentInfoForTextRequest& aRequest)
 nsresult
 SmsRequestParent::SendReply(const MessageReply& aReply)
 {
-  // The child process could die before this asynchronous notification, in which
-  // case ActorDestroy() was called and mActorDestroyed is set to true. Return
-  // an error here to avoid sending a message to the dead process.
+  
+  
+  
   NS_ENSURE_TRUE(!mActorDestroyed, NS_ERROR_FAILURE);
 
   return Send__delete__(this, aReply) ? NS_OK : NS_ERROR_FAILURE;
 }
 
-// nsIMobileMessageCallback
+
 
 NS_IMETHODIMP
 SmsRequestParent::NotifyMessageSent(nsISupports *aMessage)
@@ -738,20 +737,20 @@ SmsRequestParent::NotifyGetSmscAddressFailed(int32_t aError)
   return SendReply(ReplyGetSmscAddressFail(aError));
 }
 
-/*******************************************************************************
- * MobileMessageCursorParent
- ******************************************************************************/
+
+
+
 
 NS_IMPL_ISUPPORTS(MobileMessageCursorParent, nsIMobileMessageCursorCallback)
 
 void
 MobileMessageCursorParent::ActorDestroy(ActorDestroyReason aWhy)
 {
-  // Two possible scenarios here:
-  // 1) When parent fails to SendNotifyResult() in NotifyCursorResult(), it's
-  //    destroyed without nulling out mContinueCallback.
-  // 2) When parent dies normally, mContinueCallback should have been cleared in
-  //    NotifyCursorError(), but just ensure this again.
+  
+  
+  
+  
+  
   mContinueCallback = nullptr;
 }
 
@@ -808,14 +807,14 @@ MobileMessageCursorParent::DoRequest(const CreateThreadCursorRequest& aRequest)
   return true;
 }
 
-// nsIMobileMessageCursorCallback
+
 
 NS_IMETHODIMP
 MobileMessageCursorParent::NotifyCursorError(int32_t aError)
 {
-  // The child process could die before this asynchronous notification, in which
-  // case ActorDestroy() was called and mContinueCallback is now null. Return an
-  // error here to avoid sending a message to the dead process.
+  
+  
+  
   NS_ENSURE_TRUE(mContinueCallback, NS_ERROR_FAILURE);
 
   mContinueCallback = nullptr;
@@ -826,9 +825,9 @@ MobileMessageCursorParent::NotifyCursorError(int32_t aError)
 NS_IMETHODIMP
 MobileMessageCursorParent::NotifyCursorResult(nsISupports* aResult)
 {
-  // The child process could die before this asynchronous notification, in which
-  // case ActorDestroy() was called and mContinueCallback is now null. Return an
-  // error here to avoid sending a message to the dead process.
+  
+  
+  
   NS_ENSURE_TRUE(mContinueCallback, NS_ERROR_FAILURE);
 
   nsCOMPtr<nsIDOMMozSmsMessage> iSms = do_QueryInterface(aResult);
@@ -866,6 +865,6 @@ MobileMessageCursorParent::NotifyCursorDone()
   return NotifyCursorError(nsIMobileMessageCallback::SUCCESS_NO_ERROR);
 }
 
-} // namespace mobilemessage
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 

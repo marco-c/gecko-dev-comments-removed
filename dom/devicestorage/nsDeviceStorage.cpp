@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sw=2 et tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsDeviceStorage.h"
 
@@ -43,7 +43,6 @@
 #include "nsIPrincipal.h"
 #include "nsJSUtils.h"
 #include "nsContentUtils.h"
-#include "nsCxPusher.h"
 #include "nsXULAppAPI.h"
 #include "DeviceStorageFileDescriptor.h"
 #include "DeviceStorageRequestChild.h"
@@ -61,7 +60,7 @@
 
 #include "mozilla/dom/DeviceStorageBinding.h"
 
-// Microsoft's API Name hackery sucks
+
 #undef CreateEvent
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -137,8 +136,8 @@ DeviceStorageUsedSpaceCache::GetCacheEntry(const nsAString& aStorageName)
 static int64_t
 GetFreeBytes(const nsAString& aStorageName)
 {
-  // This function makes the assumption that the various types
-  // are all stored on the same filesystem. So we use pictures.
+  
+  
 
   nsRefPtr<DeviceStorageFile> dsf(new DeviceStorageFile(NS_LITERAL_STRING(DEVICESTORAGE_PICTURES),
                                                         aStorageName));
@@ -160,7 +159,7 @@ DeviceStorageUsedSpaceCache::AccumUsedSizes(const nsAString& aStorageName,
   }
   int64_t freeBytes = GetFreeBytes(cacheEntry->mStorageName);
   if (freeBytes != cacheEntry->mFreeBytes) {
-    // Free space changed, so our cached results are no longer valid.
+    
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -293,7 +292,7 @@ DeviceStorageTypeChecker::Check(const nsAString& aType, nsIDOMBlob* aBlob)
   if (aType.EqualsLiteral(DEVICESTORAGE_APPS) ||
       aType.EqualsLiteral(DEVICESTORAGE_SDCARD) ||
       aType.EqualsLiteral(DEVICESTORAGE_CRASHES)) {
-    // Apps, crashes and sdcard have no restriction on mime types
+    
     return true;
   }
 
@@ -308,7 +307,7 @@ DeviceStorageTypeChecker::Check(const nsAString& aType, nsIFile* aFile)
   if (aType.EqualsLiteral(DEVICESTORAGE_APPS) ||
       aType.EqualsLiteral(DEVICESTORAGE_SDCARD) ||
       aType.EqualsLiteral(DEVICESTORAGE_CRASHES)) {
-    // Apps, crashes and sdcard have no restrictions on what file extensions used.
+    
     return true;
   }
 
@@ -389,7 +388,7 @@ DeviceStorageTypeChecker::GetPermissionForType(const nsAString& aType,
       !aType.EqualsLiteral(DEVICESTORAGE_APPS) &&
       !aType.EqualsLiteral(DEVICESTORAGE_SDCARD) &&
       !aType.EqualsLiteral(DEVICESTORAGE_CRASHES)) {
-    // unknown type
+    
     return NS_ERROR_FAILURE;
   }
 
@@ -429,15 +428,15 @@ DeviceStorageTypeChecker::GetAccessForRequest(
   return NS_OK;
 }
 
-//static
+
 bool
 DeviceStorageTypeChecker::IsVolumeBased(const nsAString& aType)
 {
 #ifdef MOZ_WIDGET_GONK
-  // The apps and crashes aren't stored in the same place as the media, so
-  // we only ever return a single apps object, and not an array
-  // with one per volume (as is the case for the remaining
-  // storage types).
+  
+  
+  
+  
   return !aType.EqualsLiteral(DEVICESTORAGE_APPS) &&
          !aType.EqualsLiteral(DEVICESTORAGE_CRASHES);
 #else
@@ -604,10 +603,10 @@ DeviceStorageFile::Init()
   MOZ_ASSERT(typeChecker);
 }
 
-// The OverrideRootDir is needed to facilitate testing of the
-// device.storage.overrideRootDir preference. The preference is normally
-// only read once during initialization, but since the test environment has
-// no convenient way to restart, we use a pref watcher instead.
+
+
+
+
 class OverrideRootDir MOZ_FINAL : public nsIObserver
 {
   ~OverrideRootDir();
@@ -633,9 +632,9 @@ OverrideRootDir::GetSingleton()
   if (sSingleton) {
     return sSingleton;
   }
-  // Preference changes are automatically forwarded from parent to child
-  // in ContentParent::Observe, so we'll see the change in both the parent
-  // and the child process.
+  
+  
+  
 
   sSingleton = new OverrideRootDir();
   Preferences::AddStrongObserver(sSingleton, "device.storage.overrideRootDir");
@@ -684,9 +683,9 @@ OverrideRootDir::Init()
         NS_LITERAL_CSTRING("device-storage-testing"));
     }
   } else {
-    // For users running on desktop, it's convenient to be able to override
-    // all of the directories to point to a single tree, much like what happens
-    // on a real device.
+    
+    
+    
     const nsAdoptingString& overrideRootDir =
       mozilla::Preferences::GetString("device.storage.overrideRootDir");
     if (overrideRootDir && overrideRootDir.Length() > 0) {
@@ -699,10 +698,10 @@ OverrideRootDir::Init()
 
   if (sDirs->overrideRootDir) {
     if (XRE_GetProcessType() == GeckoProcessType_Default) {
-      // Only the parent process can create directories. In testing, because
-      // the preference is updated after startup, its entirely possible that
-      // the preference updated notification will be received by a child
-      // prior to the parent.
+      
+      
+      
+      
       nsresult rv
         = sDirs->overrideRootDir->Create(nsIFile::DIRECTORY_TYPE, 0777);
       nsString path;
@@ -717,9 +716,9 @@ OverrideRootDir::Init()
   }
 }
 
-// Directories which don't depend on a volume should be calculated once
-// here. Directories which depend on the root directory of a volume
-// should be calculated in DeviceStorageFile::GetRootDirectoryForType.
+
+
+
 static void
 InitDirs()
 {
@@ -736,8 +735,8 @@ InitDirs()
 
 #if !defined(MOZ_WIDGET_GONK)
 
-// Keep MOZ_WIDGET_COCOA above XP_UNIX,
-// because both are defined in Darwin builds.
+
+
 #if defined (MOZ_WIDGET_COCOA)
   dirService->Get(NS_OSX_PICTURE_DOCUMENTS_DIR,
                   NS_GET_IID(nsIFile),
@@ -749,28 +748,28 @@ InitDirs()
                   NS_GET_IID(nsIFile),
                   getter_AddRefs(sDirs->music));
 
-// Keep MOZ_WIDGET_ANDROID above XP_UNIX,
-// because both are defined in Android builds.
+
+
 #elif defined (MOZ_WIDGET_ANDROID)
   nsAutoString path;
   if (NS_SUCCEEDED(mozilla::AndroidBridge::GetExternalPublicDirectory(
       NS_LITERAL_STRING(DEVICESTORAGE_PICTURES), path))) {
-    NS_NewLocalFile(path, /* aFollowLinks */ true,
+    NS_NewLocalFile(path,  true,
                     getter_AddRefs(sDirs->pictures));
   }
   if (NS_SUCCEEDED(mozilla::AndroidBridge::GetExternalPublicDirectory(
       NS_LITERAL_STRING(DEVICESTORAGE_VIDEOS), path))) {
-    NS_NewLocalFile(path, /* aFollowLinks */ true,
+    NS_NewLocalFile(path,  true,
                     getter_AddRefs(sDirs->videos));
   }
   if (NS_SUCCEEDED(mozilla::AndroidBridge::GetExternalPublicDirectory(
       NS_LITERAL_STRING(DEVICESTORAGE_MUSIC), path))) {
-    NS_NewLocalFile(path, /* aFollowLinks */ true,
+    NS_NewLocalFile(path,  true,
                     getter_AddRefs(sDirs->music));
   }
   if (NS_SUCCEEDED(mozilla::AndroidBridge::GetExternalPublicDirectory(
       NS_LITERAL_STRING(DEVICESTORAGE_SDCARD), path))) {
-    NS_NewLocalFile(path, /* aFollowLinks */ true,
+    NS_NewLocalFile(path,  true,
                     getter_AddRefs(sDirs->sdcard));
   }
 
@@ -798,15 +797,15 @@ InitDirs()
 #endif
 
 #ifndef MOZ_WIDGET_ANDROID
-  // Eventually, on desktop, we want to do something smarter -- for example,
-  // detect when an sdcard is inserted, and use that instead of this.
+  
+  
   dirService->Get(NS_APP_USER_PROFILE_50_DIR, NS_GET_IID(nsIFile),
                   getter_AddRefs(sDirs->sdcard));
   if (sDirs->sdcard) {
     sDirs->sdcard->AppendRelativeNativePath(NS_LITERAL_CSTRING("fake-sdcard"));
   }
-#endif // !MOZ_WIDGET_ANDROID
-#endif // !MOZ_WIDGET_GONK
+#endif 
+#endif 
 
 #ifdef MOZ_WIDGET_GONK
   NS_NewLocalFile(NS_LITERAL_STRING("/data"),
@@ -826,8 +825,8 @@ InitDirs()
       sDirs->crashes->Append(NS_LITERAL_STRING("Crash Reports"));
     }
   } else {
-    // NS_GetSpecialDirectory("UAppData") fails in content processes because
-    // gAppData from toolkit/xre/nsAppRunner.cpp is not initialized.
+    
+    
 #ifdef MOZ_WIDGET_GONK
     NS_NewLocalFile(NS_LITERAL_STRING("/data/b2g/mozilla/Crash Reports"),
                                       false,
@@ -855,9 +854,9 @@ DeviceStorageFile::GetFullPath(nsAString &aFullPath)
 }
 
 
-// Directories which don't depend on a volume should be calculated once
-// in InitDirs. Directories which depend on the root directory of a volume
-// should be calculated in this method.
+
+
+
 void
 DeviceStorageFile::GetRootDirectoryForType(const nsAString& aStorageType,
                                            const nsAString& aStorageName,
@@ -882,7 +881,7 @@ DeviceStorageFile::GetRootDirectoryForType(const nsAString& aStorageType,
   }
 #endif
 
-  // Picture directory
+  
   if (aStorageType.EqualsLiteral(DEVICESTORAGE_PICTURES)) {
 #ifdef MOZ_WIDGET_GONK
     NS_NewLocalFile(volMountPoint, false, getter_AddRefs(f));
@@ -891,7 +890,7 @@ DeviceStorageFile::GetRootDirectoryForType(const nsAString& aStorageType,
 #endif
   }
 
-  // Video directory
+  
   else if (aStorageType.EqualsLiteral(DEVICESTORAGE_VIDEOS)) {
 #ifdef MOZ_WIDGET_GONK
     NS_NewLocalFile(volMountPoint, false, getter_AddRefs(f));
@@ -900,7 +899,7 @@ DeviceStorageFile::GetRootDirectoryForType(const nsAString& aStorageType,
 #endif
   }
 
-  // Music directory
+  
   else if (aStorageType.EqualsLiteral(DEVICESTORAGE_MUSIC)) {
 #ifdef MOZ_WIDGET_GONK
     NS_NewLocalFile(volMountPoint, false, getter_AddRefs(f));
@@ -909,13 +908,13 @@ DeviceStorageFile::GetRootDirectoryForType(const nsAString& aStorageType,
 #endif
   }
 
-  // Apps directory
+  
   else if (aStorageType.EqualsLiteral(DEVICESTORAGE_APPS)) {
     f = sDirs->apps;
     allowOverride = false;
   }
 
-   // default SDCard
+   
    else if (aStorageType.EqualsLiteral(DEVICESTORAGE_SDCARD)) {
 #ifdef MOZ_WIDGET_GONK
      NS_NewLocalFile(volMountPoint, false, getter_AddRefs(f));
@@ -924,20 +923,20 @@ DeviceStorageFile::GetRootDirectoryForType(const nsAString& aStorageType,
 #endif
   }
 
-  // crash reports directory.
+  
   else if (aStorageType.EqualsLiteral(DEVICESTORAGE_CRASHES)) {
     f = sDirs->crashes;
     allowOverride = false;
   } else {
-    // Not a storage type that we recognize. Return null
+    
     return;
   }
 
-  // In testing, we default all device storage types to a temp directory.
-  // sDirs->overrideRootDir will only have been initialized (in InitDirs)
-  // if the preference device.storage.testing was set to true, or if
-  // device.storage.overrideRootDir is set. We can't test the preferences
-  // directly here, since we may not be on the main thread.
+  
+  
+  
+  
+  
   if (allowOverride && sDirs->overrideRootDir) {
     f = sDirs->overrideRootDir;
   }
@@ -947,7 +946,7 @@ DeviceStorageFile::GetRootDirectoryForType(const nsAString& aStorageType,
   }
 }
 
-//static
+
 already_AddRefed<DeviceStorageFile>
 DeviceStorageFile::CreateUnique(nsAString& aFileName,
                                 uint32_t aFileType,
@@ -977,8 +976,8 @@ DeviceStorageFile::CreateUnique(nsAString& aFileName,
   nsresult rv = dsf->mFile->CreateUnique(aFileType, aFileAttributes);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
-  // CreateUnique may cause the filename to change. So we need to update mPath
-  // to reflect that.
+  
+  
   nsString leafName;
   dsf->mFile->GetLeafName(leafName);
 
@@ -986,7 +985,7 @@ DeviceStorageFile::CreateUnique(nsAString& aFileName,
   if (lastSlashIndex == kNotFound) {
     dsf->mPath.Assign(leafName);
   } else {
-    // Include the last '/'
+    
     dsf->mPath = Substring(dsf->mPath, 0, lastSlashIndex + 1);
     dsf->mPath.Append(leafName);
   }
@@ -1005,8 +1004,8 @@ DeviceStorageFile::SetEditable(bool aEditable) {
   mEditable = aEditable;
 }
 
-// we want to make sure that the names of file can't reach
-// outside of the type of storage the user asked for.
+
+
 bool
 DeviceStorageFile::IsSafePath()
 {
@@ -1020,7 +1019,7 @@ DeviceStorageFile::IsSafePath(const nsAString& aPath)
   aPath.BeginReading(start);
   aPath.EndReading(end);
 
-  // if the path is a '~' or starts with '~/', return false.
+  
   NS_NAMED_LITERAL_STRING(tilde, "~");
   NS_NAMED_LITERAL_STRING(tildeSlash, "~/");
   if (aPath.Equals(tilde) ||
@@ -1028,7 +1027,7 @@ DeviceStorageFile::IsSafePath(const nsAString& aPath)
     NS_WARNING("Path name starts with tilde!");
     return false;
    }
-  // split on /.  if any token is "", ., or .., return false.
+  
   NS_ConvertUTF16toUTF8 cname(aPath);
   char* buffer = cname.BeginWriting();
   const char* token;
@@ -1054,11 +1053,11 @@ DeviceStorageFile::AppendRelativePath(const nsAString& aPath) {
     return;
   }
   if (!IsSafePath(aPath)) {
-    // All of the APIs (in the child) do checks to verify that the path is
-    // valid and return PERMISSION_DENIED if a non-safe path is entered.
-    // This check is done in the parent and prevents a compromised
-    // child from bypassing the check. It shouldn't be possible for this
-    // code path to be taken with a non-compromised child.
+    
+    
+    
+    
+    
     NS_WARNING("Unsafe path detected - ignoring");
     NS_WARNING(NS_LossyConvertUTF16toASCII(aPath).get());
     return;
@@ -1076,9 +1075,9 @@ DeviceStorageFile::CreateFileDescriptor(FileDescriptor& aFileDescriptor)
                                         0660, &fd.rwget());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // NOTE: The FileDescriptor::PlatformHandleType constructor returns a dup of
-  //       the file descriptor, so we don't need the original fd after this.
-  //       Our scoped file descriptor will automatically close fd.
+  
+  
+  
   aFileDescriptor = FileDescriptor(
     FileDescriptor::PlatformHandleType(PR_FileDesc2NativeHandle(fd)));
   return NS_OK;
@@ -1331,7 +1330,7 @@ DeviceStorageFile::collectFilesInternal(
       continue;
     }
 
-    nsAString::size_type len = aRootPath.Length() + 1; // +1 for the trailing /
+    nsAString::size_type len = aRootPath.Length() + 1; 
     nsDependentSubstring newPath = Substring(fullpath, len);
 
     if (isDir) {
@@ -1426,7 +1425,7 @@ DeviceStorageFile::AccumDirectoryUsage(nsIFile* aFile,
     }
 
     if (isLink) {
-      // for now, lets just totally ignore symlinks.
+      
       NS_WARNING("DirectoryDiskUsage ignores symlinks");
     } else if (isDir) {
       AccumDirectoryUsage(f, aPicturesSoFar, aVideosSoFar,
@@ -1717,7 +1716,7 @@ InterfaceToJsval(nsPIDOMWindow* aWindow,
   JS::Rooted<JSObject*> scopeObj(runtime, unrootedScopeObj);
   nsresult rv;
 
-  { // Protect someJsVal from moving GC in ~JSAutoCompartment
+  { 
     AutoJSContext cx;
     JSAutoCompartment ac(cx, scopeObj);
 
@@ -1741,16 +1740,16 @@ nsIFileToJsval(nsPIDOMWindow* aWindow, DeviceStorageFile* aFile)
   }
 
   if (aFile->mEditable) {
-    // TODO - needs janv's file handle support.
+    
     return JSVAL_NULL;
   }
 
   nsString fullPath;
   aFile->GetFullPath(fullPath);
 
-  // This check is useful to know if somewhere the DeviceStorageFile
-  // has not been properly set. Mimetype is not checked because it can be
-  // empty.
+  
+  
+  
   MOZ_ASSERT(aFile->mLength != UINT64_MAX);
   MOZ_ASSERT(aFile->mLastModifiedDate != UINT64_MAX);
 
@@ -1899,7 +1898,7 @@ ContinueCursorEvent::Continue()
   nsRefPtr<DeviceStorageFile> file = GetNextFile();
 
   if (!file) {
-    // done with enumeration.
+    
     DebugOnly<nsresult> rv = NS_DispatchToMainThread(this);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     return;
@@ -2104,8 +2103,8 @@ nsDOMDeviceStorageCursor::Continue(ErrorResult& aRv)
   }
 
   if (mResult != JSVAL_VOID) {
-    // We call onsuccess multiple times. Clear the last
-    // result.
+    
+    
     mResult = JSVAL_VOID;
     mDone = false;
   }
@@ -3023,8 +3022,8 @@ public:
             ->SendPDeviceStorageRequestConstructor(child, params);
           return NS_OK;
         }
-        // this needs to be dispatched to only one (1)
-        // thread or we will do more work than required.
+        
+        
         DeviceStorageUsedSpaceCache* usedSpaceCache
           = DeviceStorageUsedSpaceCache::CreateOrGet();
         MOZ_ASSERT(usedSpaceCache);
@@ -3171,7 +3170,7 @@ nsDOMDeviceStorage::nsDOMDeviceStorage(nsPIDOMWindow* aWindow)
 {
 }
 
-/* virtual */ JSObject*
+ JSObject*
 nsDOMDeviceStorage::WrapObject(JSContext* aCx)
 {
   return DeviceStorageBinding::Wrap(aCx, this);
@@ -3216,15 +3215,15 @@ nsDOMDeviceStorage::Init(nsPIDOMWindow* aWindow, const nsAString &aType,
 #endif
   }
 
-  // Grab the principal of the document
+  
   nsCOMPtr<nsIDocument> doc = aWindow->GetDoc();
   if (!doc) {
     return NS_ERROR_FAILURE;
   }
   mPrincipal = doc->NodePrincipal();
 
-  // the 'apps' type is special.  We only want this exposed
-  // if the caller has the "webapps-manage" permission.
+  
+  
   if (aType.EqualsLiteral(DEVICESTORAGE_APPS)) {
     nsCOMPtr<nsIPermissionManager> permissionManager
       = services::GetPermissionManager();
@@ -3269,7 +3268,7 @@ nsDOMDeviceStorage::Shutdown()
 
 StaticAutoPtr<nsTArray<nsString>> nsDOMDeviceStorage::sVolumeNameCache;
 
-// static
+
 void
 nsDOMDeviceStorage::GetOrderedVolumeNames(
   nsDOMDeviceStorage::VolumeNameArray &aVolumeNames)
@@ -3295,7 +3294,7 @@ nsDOMDeviceStorage::GetOrderedVolumeNames(
       }
     }
 
-    // If the volume sdcard exists, then we want it to be first.
+    
 
     VolumeNameArray::index_type sdcardIndex;
     sdcardIndex = aVolumeNames.IndexOf(NS_LITERAL_STRING("sdcard"));
@@ -3312,7 +3311,7 @@ nsDOMDeviceStorage::GetOrderedVolumeNames(
   sVolumeNameCache->AppendElements(aVolumeNames);
 }
 
-// static
+
 void
 nsDOMDeviceStorage::CreateDeviceStorageFor(nsPIDOMWindow* aWin,
                                            const nsAString &aType,
@@ -3320,7 +3319,7 @@ nsDOMDeviceStorage::CreateDeviceStorageFor(nsPIDOMWindow* aWin,
 {
   nsString storageName;
   if (!DeviceStorageTypeChecker::IsVolumeBased(aType)) {
-    // The storage name will be the empty string
+    
     storageName.Truncate();
   } else {
     GetDefaultStorageName(aType, storageName);
@@ -3334,7 +3333,7 @@ nsDOMDeviceStorage::CreateDeviceStorageFor(nsPIDOMWindow* aWin,
   NS_ADDREF(*aStore = ds.get());
 }
 
-// static
+
 void
 nsDOMDeviceStorage::CreateDeviceStoragesFor(
   nsPIDOMWindow* aWin,
@@ -3365,7 +3364,7 @@ nsDOMDeviceStorage::CreateDeviceStoragesFor(
   }
 }
 
-// static
+
 bool
 nsDOMDeviceStorage::ParseFullPath(const nsAString& aFullPath,
                                   nsAString& aOutStorageName,
@@ -3381,7 +3380,7 @@ nsDOMDeviceStorage::ParseFullPath(const nsAString& aFullPath,
   if (StringBeginsWith(aFullPath, slash)) {
     int32_t slashIndex = aFullPath.FindChar('/', 1);
     if (slashIndex == kNotFound) {
-      // names of the form /filename are illegal
+      
       return false;
     }
     storageName.Rebind(aFullPath, 1, slashIndex - 1);
@@ -3389,9 +3388,9 @@ nsDOMDeviceStorage::ParseFullPath(const nsAString& aFullPath,
   } else {
     aOutStoragePath = aFullPath;
   }
-  // If no volume name was specified in aFullPath, then aOutStorageName
-  // will wind up being the empty string. It's up to the caller to figure
-  // out which storage name to actually use.
+  
+  
+  
   aOutStorageName = storageName;
   return true;
 }
@@ -3441,12 +3440,12 @@ nsDOMDeviceStorage::GetStorageByName(const nsAString& aStorageName)
   return nullptr;
 }
 
-// static
+
 void
 nsDOMDeviceStorage::GetDefaultStorageName(const nsAString& aStorageType,
                                           nsAString& aStorageName)
 {
-  // See if the preferred volume is available.
+  
   nsRefPtr<nsDOMDeviceStorage> ds;
   nsAdoptingString prefStorageName =
     mozilla::Preferences::GetString("device.storage.writable.name");
@@ -3455,7 +3454,7 @@ nsDOMDeviceStorage::GetDefaultStorageName(const nsAString& aStorageType,
     return;
   }
 
-  // No preferred storage, we'll use the first one (which should be sdcard).
+  
 
   VolumeNameArray volNames;
   GetOrderedVolumeNames(volNames);
@@ -3464,8 +3463,8 @@ nsDOMDeviceStorage::GetDefaultStorageName(const nsAString& aStorageType,
     return;
   }
 
-  // No volumes available, return the empty string. This is normal for
-  // b2g-desktop.
+  
+  
   aStorageName.Truncate();
 }
 
@@ -3498,20 +3497,20 @@ nsDOMDeviceStorage::Add(nsIDOMBlob* aBlob, ErrorResult& aRv)
     return nullptr;
   }
 
-  // if mimeType isn't set, we will not get a correct
-  // extension, and AddNamed() will fail.  This will post an
-  // onerror to the requestee.
+  
+  
+  
   nsString mimeType;
   aBlob->GetType(mimeType);
 
   nsCString extension;
   mimeSvc->GetPrimaryExtension(NS_LossyConvertUTF16toASCII(mimeType),
                                EmptyCString(), extension);
-  // if extension is null here, we will ignore it for now.
-  // AddNamed() will check the file path and fail.  This
-  // will post an onerror to the requestee.
+  
+  
+  
 
-  // possible race here w/ unique filename
+  
   char buffer[32];
   NS_MakeRandomString(buffer, ArrayLength(buffer) - 1);
 
@@ -3557,7 +3556,7 @@ nsDOMDeviceStorage::AddOrAppendNamed(nsIDOMBlob* aBlob, const nsAString& aPath,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // if the blob is null here, bail
+  
   if (!aBlob) {
     return nullptr;
   }
@@ -4038,14 +4037,14 @@ nsDOMDeviceStorage::Default()
 bool
 nsDOMDeviceStorage::CanBeFormatted()
 {
-  // Currently, any volume which can be shared can also be formatted.
+  
   return mIsShareable;
 }
 
 bool
 nsDOMDeviceStorage::CanBeMounted()
 {
-  // Currently, any volume which can be shared can also be mounted/unmounted.
+  
   return mIsShareable;
 }
 
@@ -4140,7 +4139,7 @@ void
 nsDOMDeviceStorage::DispatchStatusChangeEvent(nsAString& aStatus)
 {
   if (aStatus == mLastStatus) {
-    // We've already sent this status, don't bother sending it again.
+    
     return;
   }
   mLastStatus = aStatus;
@@ -4164,7 +4163,7 @@ void
 nsDOMDeviceStorage::DispatchStorageStatusChangeEvent(nsAString& aStorageStatus)
 {
   if (aStorageStatus == mLastStorageStatus) {
-     // We've already sent this status, don't bother sending it again.
+     
     return;
   }
   mLastStorageStatus = aStorageStatus;
@@ -4199,10 +4198,10 @@ nsDOMDeviceStorage::Observe(nsISupports *aSubject,
     return NS_OK;
   }
   if (!strcmp(aTopic, "disk-space-watcher")) {
-    // 'disk-space-watcher' notifications are sent when there is a modification
-    // of a file in a specific location while a low device storage situation
-    // exists or after recovery of a low storage situation. For Firefox OS,
-    // these notifications are specific for apps storage.
+    
+    
+    
+    
     nsRefPtr<DeviceStorageFile> file =
       new DeviceStorageFile(mStorageType, mStorageName);
     if (!NS_strcmp(aData, MOZ_UTF16("full"))) {
@@ -4215,8 +4214,8 @@ nsDOMDeviceStorage::Observe(nsISupports *aSubject,
 
 #ifdef MOZ_WIDGET_GONK
   else if (!strcmp(aTopic, NS_VOLUME_STATE_CHANGED)) {
-    // We invalidate the used space cache for the volume that actually changed
-    // state.
+    
+    
     nsCOMPtr<nsIVolume> vol = do_QueryInterface(aSubject);
     if (!vol) {
       return NS_OK;
@@ -4230,18 +4229,18 @@ nsDOMDeviceStorage::Observe(nsISupports *aSubject,
     usedSpaceCache->Invalidate(volName);
 
     if (!volName.Equals(mStorageName)) {
-      // Not our volume - we can ignore.
+      
       return NS_OK;
     }
 
     nsRefPtr<DeviceStorageFile> dsf(new DeviceStorageFile(mStorageType, mStorageName));
     nsString status, storageStatus;
 
-    // Get Status (one of "available, unavailable, shared")
+    
     dsf->GetStatus(status);
     DispatchStatusChangeEvent(status);
 
-    // Get real volume status (defined in dom/system/gonk/nsIVolume.idl)
+    
     dsf->GetStorageStatus(storageStatus);
     DispatchStorageStatusChangeEvent(storageStatus);
     return NS_OK;
@@ -4259,7 +4258,7 @@ nsDOMDeviceStorage::Notify(const char* aReason, DeviceStorageFile* aFile)
 
   if (!mStorageType.Equals(aFile->mStorageType) ||
       !mStorageName.Equals(aFile->mStorageName)) {
-    // Ignore this
+    
     return NS_OK;
   }
 

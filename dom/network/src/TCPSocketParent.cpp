@@ -1,24 +1,24 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "TCPSocketParent.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "nsJSUtils.h"
 #include "nsIDOMTCPSocket.h"
-#include "nsCxPusher.h"
 #include "mozilla/unused.h"
 #include "mozilla/AppProcessChecker.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PNeckoParent.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/TabParent.h"
 #include "nsIScriptSecurityManager.h"
 
 namespace IPC {
 
-//Defined in TCPSocketChild.cpp
+
 extern bool
 DeserializeArrayBuffer(JS::Handle<JSObject*> aObj,
                        const InfallibleTArray<uint8_t>& aBuffer,
@@ -86,15 +86,15 @@ bool
 TCPSocketParent::RecvOpen(const nsString& aHost, const uint16_t& aPort, const bool& aUseSSL,
                           const nsString& aBinaryType)
 {
-  // We don't have browser actors in xpcshell, and hence can't run automated
-  // tests without this loophole.
+  
+  
   if (net::UsingNeckoIPCSecurity() &&
       !AssertAppProcessPermission(Manager()->Manager(), "tcp-socket")) {
     FireInteralError(this, __LINE__);
     return true;
   }
 
-  // Obtain App ID
+  
   uint32_t appId = nsIScriptSecurityManager::NO_APP_ID;
   const PContentParent *content = Manager()->Manager();
   const InfallibleTArray<PBrowserParent*>& browsers = content->ManagedPBrowserParent();
@@ -316,5 +316,5 @@ TCPSocketParent::RecvRequestDelete()
   return true;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

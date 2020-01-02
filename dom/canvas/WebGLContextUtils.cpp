@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "WebGLContext.h"
 
@@ -10,7 +10,6 @@
 #include "GLContext.h"
 #include "jsapi.h"
 #include "mozilla/Preferences.h"
-#include "nsCxPusher.h"
 #include "nsIDOMDataContainerEvent.h"
 #include "nsIDOMEvent.h"
 #include "nsIScriptSecurityManager.h"
@@ -23,6 +22,8 @@
 #include "WebGLProgram.h"
 #include "WebGLTexture.h"
 #include "WebGLVertexArray.h"
+
+#include "mozilla/dom/ScriptSettings.h"
 
 namespace mozilla {
 
@@ -54,10 +55,10 @@ FormatHasAlpha(GLenum webGLFormat)
            webGLFormat == LOCAL_GL_SRGB_ALPHA;
 }
 
-/**
- * Convert WebGL/ES format and type into GL format and GL internal
- * format valid for underlying driver.
- */
+
+
+
+
 void
 DriverFormatsFromFormatAndType(GLContext* gl, GLenum webGLFormat, GLenum webGLType,
                                GLenum* out_driverInternalFormat, GLenum* out_driverFormat)
@@ -67,9 +68,9 @@ DriverFormatsFromFormatAndType(GLContext* gl, GLenum webGLFormat, GLenum webGLTy
     if (!out_driverInternalFormat || !out_driverFormat)
         return;
 
-    // ES2 requires that format == internalformat; floating-point is
-    // indicated purely by the type that's loaded.  For desktop GL, we
-    // have to specify a floating point internal format.
+    
+    
+    
     if (gl->IsGLES()) {
         *out_driverInternalFormat = webGLFormat;
         *out_driverFormat = webGLFormat;
@@ -149,12 +150,12 @@ DriverFormatsFromFormatAndType(GLContext* gl, GLenum webGLFormat, GLenum webGLTy
             break;
         }
 
-        // Handle ES2 and GL differences when supporting sRGB internal formats. GL ES
-        // requires that format == internalformat, but GL will fail in this case.
-        // GL requires:
-        //      format  ->  internalformat
-        //      GL_RGB      GL_SRGB_EXT
-        //      GL_RGBA     GL_SRGB_ALPHA_EXT
+        
+        
+        
+        
+        
+        
         switch (format) {
         case LOCAL_GL_SRGB:
             internalFormat = format;
@@ -181,7 +182,7 @@ DriverTypeFromType(GLContext* gl, GLenum webGLType)
     if (gl->IsGLES())
         return webGLType;
 
-    // convert type for half float if not on GLES2
+    
     GLenum type = webGLType;
     if (type == LOCAL_GL_HALF_FLOAT_OES) {
         if (gl->IsSupported(gl::GLFeature::texture_half_float)) {
@@ -216,7 +217,7 @@ WebGLContext::GenerateWarning(const char *fmt, va_list ap)
     char buf[1024];
     PR_vsnprintf(buf, 1024, fmt, ap);
 
-    // no need to print to stderr, as JS_ReportWarning takes care of this for us.
+    
 
     AutoJSContext cx;
     JS_ReportWarning(cx, "WebGL: %s", buf);
@@ -245,10 +246,10 @@ WebGLContext::GetImageSize(GLsizei height,
 {
     CheckedUint32 checked_plainRowSize = CheckedUint32(width) * pixelSize;
 
-    // alignedRowSize = row size rounded up to next multiple of packAlignment
+    
     CheckedUint32 checked_alignedRowSize = RoundedToNextMultipleOf(checked_plainRowSize, packOrUnpackAlignment);
 
-    // if height is 0, we don't need any memory to store this; without this check, we'll get an overflow
+    
     CheckedUint32 checked_neededByteLength
         = height <= 0 ? 0 : (height-1) * checked_alignedRowSize + checked_plainRowSize;
 
@@ -258,12 +259,12 @@ WebGLContext::GetImageSize(GLsizei height,
 void
 WebGLContext::SynthesizeGLError(GLenum err)
 {
-    /* ES2 section 2.5 "GL Errors" states that implementations can have
-     * multiple 'flags', as errors might be caught in different parts of
-     * a distributed implementation.
-     * We're signing up as a distributed implementation here, with
-     * separate flags for WebGL and the underlying GLContext.
-     */
+    
+
+
+
+
+
     if (!mWebGLError)
         mWebGLError = err;
 }
@@ -445,11 +446,11 @@ WebGLContext::IsTextureFormatCompressed(GLenum format)
 GLenum
 WebGLContext::GetAndFlushUnderlyingGLErrors()
 {
-    // Get and clear GL error in ALL cases.
+    
     GLenum error = gl->GetAndClearError();
 
-    // Only store in mUnderlyingGLError if is hasn't already recorded an
-    // error.
+    
+    
     if (!mUnderlyingGLError)
         mUnderlyingGLError = error;
 
@@ -457,13 +458,13 @@ WebGLContext::GetAndFlushUnderlyingGLErrors()
 }
 
 #ifdef DEBUG
-// For NaNs, etc.
+
 static bool
 IsCacheCorrect(float cached, float actual)
 {
     if (IsNaN(cached)) {
-        // GL is allowed to do anything it wants for NaNs, so if we're shadowing
-        // a NaN, then whatever `actual` is might be correct.
+        
+        
         return true;
     }
 
@@ -501,14 +502,14 @@ WebGLContext::AssertCachedBindings()
         AssertUintParamCorrect(gl, LOCAL_GL_VERTEX_ARRAY_BINDING, bound);
     }
 
-    // Bound object state
+    
     GLuint bound = mBoundFramebuffer ? mBoundFramebuffer->GLName() : 0;
     AssertUintParamCorrect(gl, LOCAL_GL_FRAMEBUFFER_BINDING, bound);
 
     bound = mCurrentProgram ? mCurrentProgram->GLName() : 0;
     AssertUintParamCorrect(gl, LOCAL_GL_CURRENT_PROGRAM, bound);
 
-    // Textures
+    
     GLenum activeTexture = mActiveTexture + LOCAL_GL_TEXTURE0;
     AssertUintParamCorrect(gl, LOCAL_GL_ACTIVE_TEXTURE, activeTexture);
 
@@ -520,7 +521,7 @@ WebGLContext::AssertCachedBindings()
     bound = curTex ? curTex->GLName() : 0;
     AssertUintParamCorrect(gl, LOCAL_GL_TEXTURE_BINDING_CUBE_MAP, bound);
 
-    // Buffers
+    
     bound = mBoundArrayBuffer ? mBoundArrayBuffer->GLName() : 0;
     AssertUintParamCorrect(gl, LOCAL_GL_ARRAY_BUFFER_BINDING, bound);
 
@@ -541,13 +542,13 @@ WebGLContext::AssertCachedState()
 
     GetAndFlushUnderlyingGLErrors();
 
-    // extensions
+    
     if (IsExtensionEnabled(WebGLExtensionID::WEBGL_draw_buffers)) {
         AssertUintParamCorrect(gl, LOCAL_GL_MAX_COLOR_ATTACHMENTS, mGLMaxColorAttachments);
         AssertUintParamCorrect(gl, LOCAL_GL_MAX_DRAW_BUFFERS, mGLMaxDrawBuffers);
     }
 
-    // Draw state
+    
     MOZ_ASSERT(gl->fIsEnabled(LOCAL_GL_SCISSOR_TEST) == mScissorTestEnabled);
     MOZ_ASSERT(gl->fIsEnabled(LOCAL_GL_DITHER) == mDitherEnabled);
     MOZ_ASSERT_IF(IsWebGL2(),
@@ -587,7 +588,7 @@ WebGLContext::AssertCachedState()
     AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_WRITEMASK,      mStencilWriteMaskFront);
     AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_WRITEMASK, mStencilWriteMaskBack);
 
-    // Viewport
+    
     GLint int4[4] = {0, 0, 0, 0};
     gl->fGetIntegerv(LOCAL_GL_VIEWPORT, int4);
     MOZ_ASSERT(int4[0] == mViewportX &&
@@ -602,4 +603,4 @@ WebGLContext::AssertCachedState()
 #endif
 }
 
-} // namespace mozilla
+} 

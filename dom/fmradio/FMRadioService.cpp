@@ -1,8 +1,8 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "FMRadioService.h"
 #include "mozilla/Hal.h"
@@ -12,10 +12,10 @@
 #include "nsDOMClassInfo.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/FMRadioChild.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "nsIObserverService.h"
 #include "nsISettingsService.h"
 #include "nsJSUtils.h"
-#include "nsCxPusher.h"
 
 #define BAND_87500_108000_kHz 1
 #define BAND_76000_108000_kHz 2
@@ -29,7 +29,7 @@ using mozilla::Preferences;
 
 BEGIN_FMRADIO_NAMESPACE
 
-// static
+
 IFMRadioService*
 IFMRadioService::Singleton()
 {
@@ -51,7 +51,7 @@ FMRadioService::FMRadioService()
   , mObserverList(FMRadioEventObserverList())
 {
 
-  // Read power state and frequency from Hal.
+  
   mEnabled = IsFMRadioOn();
   if (mEnabled) {
     mPendingFrequencyInKHz = GetFMRadioFrequency();
@@ -88,7 +88,7 @@ FMRadioService::FMRadioService()
 
   mPreemphasis = Preferences::GetInt("dom.fmradio.preemphasis", 50);
   switch (mPreemphasis) {
-    // values in microseconds
+    
     case 0:
     case 50:
     case 75:
@@ -103,7 +103,7 @@ FMRadioService::FMRadioService()
 
   if (obs && NS_FAILED(obs->AddObserver(this,
                                         MOZSETTINGS_CHANGED_ID,
-                                        /* useWeak */ false))) {
+                                         false))) {
     NS_WARNING("Failed to add settings change observer!");
   }
 
@@ -138,8 +138,8 @@ public:
 
     FMRadioService* fmRadioService = FMRadioService::Singleton();
     if (!fmRadioService->mTuneThread) {
-      // SeekRunnable and SetFrequencyRunnable run on this thread.
-      // These call ioctls that can stall the main thread, so we run them here.
+      
+      
       NS_NewNamedThread("FM Tuning", getter_AddRefs(fmRadioService->mTuneThread));
     }
 
@@ -153,10 +153,10 @@ private:
   uint32_t mPreemphasis;
 };
 
-/**
- * Read the airplane-mode setting, if the airplane-mode is not enabled, we
- * enable the FM radio.
- */
+
+
+
+
 class ReadAirplaneModeSettingTask MOZ_FINAL : public nsISettingsServiceCallback
 {
 public:
@@ -174,7 +174,7 @@ public:
     fmRadioService->mHasReadAirplaneModeSetting = true;
 
     if (!aResult.isBoolean()) {
-      // Failed to read the setting value, set the state back to Disabled.
+      
       fmRadioService->TransitionState(
         ErrorResponse(NS_LITERAL_STRING("Unexpected error")), Disabled);
       return NS_OK;
@@ -189,7 +189,7 @@ public:
                            fmRadioService->mPreemphasis);
       NS_DispatchToMainThread(runnable);
     } else {
-      // Airplane mode is enabled, set the state back to Disabled.
+      
       fmRadioService->TransitionState(ErrorResponse(
         NS_LITERAL_STRING("Airplane mode currently enabled")), Disabled);
     }
@@ -227,8 +227,8 @@ public:
       fmRadioService->mTuneThread->Shutdown();
       fmRadioService->mTuneThread = nullptr;
     }
-    // Fix Bug 796733. DisableFMRadio should be called before
-    // SetFmRadioAudioEnabled to prevent the annoying beep sound.
+    
+    
     DisableFMRadio();
     fmRadioService->EnableAudio(false);
 
@@ -309,7 +309,7 @@ FMRadioService::RemoveObserver(FMRadioEventObserver* aObserver)
 
   if (mObserverList.Length() == 0)
   {
-    // Turning off the FM radio HW because observer list is empty.
+    
     if (IsFMRadioOn()) {
       DoDisable();
     }
@@ -334,25 +334,25 @@ FMRadioService::EnableAudio(bool aAudioEnabled)
   }
 }
 
-/**
- * Round the frequency to match the range of frequency and the channel width. If
- * the given frequency is out of range, return 0. For example:
- *  - lower: 87500KHz, upper: 108000KHz, channel width: 200KHz
- *    87.6MHz is rounded to 87700KHz
- *    87.58MHz is rounded to 87500KHz
- *    87.49MHz is rounded to 87500KHz
- *    109MHz is not rounded, 0 will be returned
- *
- * We take frequency in MHz to prevent precision losing, and return rounded
- * value in KHz for Gonk using.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 int32_t
 FMRadioService::RoundFrequency(double aFrequencyInMHz)
 {
   double halfChannelWidthInMHz = mChannelWidthInKHz / 1000.0 / 2;
 
-  // Make sure 87.49999MHz would be rounded to the lower bound when
-  // the lower bound is 87500KHz.
+  
+  
   if (aFrequencyInMHz < mLowerBoundInKHz / 1000.0 - halfChannelWidthInMHz ||
       aFrequencyInMHz > mUpperBoundInKHz / 1000.0 + halfChannelWidthInMHz) {
     return 0;
@@ -450,11 +450,11 @@ FMRadioService::Enable(double aFrequencyInMHz,
   }
 
   SetState(Enabling);
-  // Cache the enable request just in case disable() is called
-  // while the FM radio HW is being enabled.
+  
+  
   mPendingRequest = aReplyRunnable;
 
-  // Cache the frequency value, and set it after the FM radio HW is enabled
+  
   mPendingFrequencyInKHz = roundedFrequency;
 
   if (!mHasReadAirplaneModeSetting) {
@@ -490,9 +490,9 @@ FMRadioService::Enable(double aFrequencyInMHz,
 void
 FMRadioService::Disable(FMRadioReplyRunnable* aReplyRunnable)
 {
-  // When airplane-mode is enabled, we will call this function from
-  // FMRadioService::Observe without passing a FMRadioReplyRunnable,
-  // so we have to check if |aReplyRunnable| is null before we dispatch it.
+  
+  
+  
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
 
   switch (mState) {
@@ -518,8 +518,8 @@ FMRadioService::Disable(FMRadioReplyRunnable* aReplyRunnable)
 
   nsRefPtr<FMRadioReplyRunnable> enablingRequest = mPendingRequest;
 
-  // If the FM Radio is currently seeking, no fail-to-seek or similar
-  // event will be fired, execute the seek callback manually.
+  
+  
   if (mState == Seeking) {
     TransitionState(ErrorResponse(
       NS_LITERAL_STRING("Seek action is cancelled")), Disabling);
@@ -530,15 +530,15 @@ FMRadioService::Disable(FMRadioReplyRunnable* aReplyRunnable)
   mPendingRequest = aReplyRunnable;
 
   if (preState == Enabling) {
-    // If the radio is currently enabling, we fire the error callback on the
-    // enable request immediately. When the radio finishes enabling, we'll call
-    // DoDisable and fire the success callback on the disable request.
+    
+    
+    
     enablingRequest->SetReply(
       ErrorResponse(NS_LITERAL_STRING("Enable action is cancelled")));
     NS_DispatchToMainThread(enablingRequest);
 
-    // If we haven't read the airplane mode settings yet we won't enable the
-    // FM radio HW, so fail the disable request immediately.
+    
+    
     if (!mHasReadAirplaneModeSetting) {
       SetState(Disabled);
 
@@ -557,13 +557,13 @@ FMRadioService::Disable(FMRadioReplyRunnable* aReplyRunnable)
 void
 FMRadioService::DoDisable()
 {
-  // To make such codes work:
-  //    navigator.mozFMRadio.disable();
-  //    navigator.mozFMRadio.ondisabled = function() {
-  //      console.log("We will catch disabled event ");
-  //    };
-  // we need to call hal::DisableFMRadio() asynchronously. Same reason for
-  // EnableRunnable and SetFrequencyRunnable.
+  
+  
+  
+  
+  
+  
+  
   NS_DispatchToMainThread(new DisableRunnable());
 }
 
@@ -659,7 +659,7 @@ FMRadioService::CancelSeek(FMRadioReplyRunnable* aReplyRunnable)
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
   MOZ_ASSERT(aReplyRunnable);
 
-  // We accept canceling seek request only if it's currently seeking.
+  
   if (mState != Seeking) {
     aReplyRunnable->SetReply(
       ErrorResponse(NS_LITERAL_STRING("FM radio currently not seeking")));
@@ -667,7 +667,7 @@ FMRadioService::CancelSeek(FMRadioReplyRunnable* aReplyRunnable)
     return;
   }
 
-  // Cancel the seek immediately to prevent it from completing.
+  
   CancelFMRadioSeek();
 
   TransitionState(
@@ -689,8 +689,8 @@ FMRadioService::Observe(nsISupports * aSubject,
     return NS_OK;
   }
 
-  // The string that we're interested in will be a JSON string looks like:
-  //  {"key":"airplaneMode.enabled","value":true}
+  
+  
   AutoSafeJSContext cx;
   const nsDependentString dataStr(aData);
   JS::Rooted<JS::Value> val(cx);
@@ -728,7 +728,7 @@ FMRadioService::Observe(nsISupports * aSubject,
     mAirplaneModeEnabled = value.toBoolean();
     mHasReadAirplaneModeSetting = true;
 
-    // Disable the FM radio HW if Airplane mode is enabled.
+    
     if (mAirplaneModeEnabled) {
       Disable(nullptr);
     }
@@ -751,33 +751,33 @@ FMRadioService::Notify(const FMRadioOperationInformation& aInfo)
       MOZ_ASSERT(IsFMRadioOn());
       MOZ_ASSERT(mState == Disabling || mState == Enabling);
 
-      // If we're disabling, disable the radio right now.
+      
       if (mState == Disabling) {
         DoDisable();
         return;
       }
 
-      // Fire success callback on the enable request.
+      
       TransitionState(SuccessResponse(), Enabled);
 
-      // To make sure the FM app will get the right frequency after the FM
-      // radio is enabled, we have to set the frequency first.
+      
+      
       SetFMRadioFrequency(mPendingFrequencyInKHz);
 
-      // Bug 949855: enable audio after the FM radio HW is enabled, to make sure
-      // 'hw.fm.isAnalog' could be detected as |true| during first time launch.
-      // This case is for audio output on analog path, i.e. 'ro.moz.fm.noAnalog'
-      // is not |true|.
+      
+      
+      
+      
       EnableAudio(true);
 
-      // Update the current frequency without sending the`FrequencyChanged`
-      // event, to make sure the FM app will get the right frequency when the
-      // `EnabledChange` event is sent.
+      
+      
+      
       mPendingFrequencyInKHz = GetFMRadioFrequency();
       UpdatePowerState();
 
-      // The frequency was changed from '0' to some meaningful number, so we
-      // should send the `FrequencyChanged` event manually.
+      
+      
       NotifyFMRadioEvent(FrequencyChanged);
       break;
     case FM_RADIO_OPERATION_DISABLE:
@@ -788,8 +788,8 @@ FMRadioService::Notify(const FMRadioOperationInformation& aInfo)
       break;
     case FM_RADIO_OPERATION_SEEK:
 
-      // Seek action might be cancelled by SetFrequency(), we need to check if
-      // the current state is Seeking.
+      
+      
       if (mState == Seeking) {
         TransitionState(SuccessResponse(), Enabled);
       }
@@ -824,7 +824,7 @@ FMRadioService::UpdateFrequency()
   }
 }
 
-// static
+
 FMRadioService*
 FMRadioService::Singleton()
 {

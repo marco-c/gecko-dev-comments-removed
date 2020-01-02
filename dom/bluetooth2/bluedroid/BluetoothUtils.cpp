@@ -1,8 +1,8 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "base/basictypes.h"
 
@@ -12,9 +12,9 @@
 #include "BluetoothUtils.h"
 #include "jsapi.h"
 #include "mozilla/Scoped.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/bluetooth/BluetoothTypes.h"
 #include "nsContentUtils.h"
-#include "nsCxPusher.h"
 #include "nsIScriptContext.h"
 #include "nsISystemMessagesInternal.h"
 #include "nsString.h"
@@ -169,7 +169,7 @@ DispatchBluetoothReply(BluetoothReplyRunnable* aRunnable,
                        const BluetoothValue& aValue,
                        const nsAString& aErrorStr)
 {
-  // Reply will be deleted by the runnable after running on main thread
+  
   BluetoothReply* reply;
   if (!aErrorStr.IsEmpty()) {
     nsString err(aErrorStr);
