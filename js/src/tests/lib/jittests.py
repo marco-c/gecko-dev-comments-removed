@@ -1,10 +1,10 @@
+#!/usr/bin/env python
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-
-
-
-
-
+# jit_test.py -- Python harness for JavaScript trace tests.
 
 from __future__ import print_function
 import os, posixpath, sys, tempfile, traceback, time
@@ -28,10 +28,9 @@ JS_DIR = os.path.dirname(os.path.dirname(TESTS_LIB_DIR))
 TOP_SRC_DIR = os.path.dirname(os.path.dirname(JS_DIR))
 TEST_DIR = os.path.join(JS_DIR, 'jit-test', 'tests')
 LIB_DIR = os.path.join(JS_DIR, 'jit-test', 'lib') + os.path.sep
-JS_CACHE_DIR = os.path.join(JS_DIR, 'jit-test', '.js-cache')
 ECMA6_DIR = posixpath.join(JS_DIR, 'tests', 'ecma_6')
 
-
+# Backported from Python 3.1 posixpath.py
 def _relpath(path, start=None):
     """Return a relative version of a path"""
 
@@ -44,7 +43,7 @@ def _relpath(path, start=None):
     start_list = os.path.abspath(start).split(os.sep)
     path_list = os.path.abspath(path).split(os.sep)
 
-    
+    # Work out how much of the filepath is shared by start and path.
     i = len(os.path.commonprefix([start_list, path_list]))
 
     rel_list = [os.pardir] * (len(start_list)-i) + path_list[i:]
@@ -72,22 +71,22 @@ class Test:
     del valgrinds
 
     def __init__(self, path):
-        
+        # Absolute path of the test file.
         self.path = path
 
-        
+        # Path relative to the top mozilla/ directory.
         self.relpath_top = os.path.relpath(path, TOP_SRC_DIR)
 
-        
+        # Path relative to mozilla/js/src/jit-test/tests/.
         self.relpath_tests = os.path.relpath(path, TEST_DIR)
 
-        self.jitflags = []     
-        self.slow = False      
-        self.allow_oom = False 
-        self.valgrind = False  
-        self.tz_pacific = False 
-        self.expect_error = '' 
-        self.expect_status = 0 
+        self.jitflags = []     # jit flags to enable
+        self.slow = False      # True means the test is slow-running
+        self.allow_oom = False # True means that OOM is not considered a failure
+        self.valgrind = False  # True means run under valgrind
+        self.tz_pacific = False # True means force Pacific time for the test
+        self.expect_error = '' # Errors to expect and consider passing
+        self.expect_status = 0 # Exit status to expect from shell
 
     def copy(self):
         t = Test(self.path)
@@ -166,19 +165,19 @@ class Test:
         if not scriptdir_var.endswith('/'):
             scriptdir_var += '/'
 
-        
-        
-        
-        
-        
-        
+        # Platforms where subprocess immediately invokes exec do not care
+        # whether we use double or single quotes. On windows and when using
+        # a remote device, however, we have to be careful to use the quote
+        # style that is the opposite of what the exec wrapper uses.
+        # This uses %r to get single quotes on windows and special cases
+        # the remote device.
         fmt = 'const platform=%r; const libdir=%r; const scriptdir=%r'
         if remote_prefix:
             fmt = 'const platform="%s"; const libdir="%s"; const scriptdir="%s"'
         expr = fmt % (sys.platform, libdir, scriptdir_var)
 
-        
-        
+        # We may have specified '-a' or '-d' twice: once via --jitflags, once
+        # via the "|jit-test|" line.  Remove dups because they are toggles.
         cmd = prefix + list(set(self.jitflags)) + ['-e', expr, '-f', path]
         if self.valgrind:
             cmd = self.VALGRIND_CMD + cmd
@@ -214,7 +213,7 @@ def read_and_unlink(path):
     return d
 
 def th_run_cmd(cmdline, options, l):
-    
+    # close_fds is not supported on Windows and will cause a ValueError.
     if sys.platform != 'win32':
         options["close_fds"] = True
     p = Popen(cmdline, stdin=PIPE, stdout=PIPE, stderr=PIPE, **options)
@@ -228,10 +227,10 @@ def run_timeout_cmd(cmdline, options, timeout=60.0):
     timed_out = False
     th = Thread(target=th_run_cmd, args=(cmdline, options, l))
 
-    
-    
-    
-    
+    # If our SIGINT handler is set to SIG_IGN (ignore)
+    # then we are running as a child process for parallel
+    # execution and we must ensure to kill our child
+    # when we are signaled to exit.
     sigint_handler = signal.getsignal(signal.SIGINT)
     sigterm_handler = signal.getsignal(signal.SIGTERM)
     if (sigint_handler == signal.SIG_IGN):
@@ -254,7 +253,7 @@ def run_timeout_cmd(cmdline, options, timeout=60.0):
     while th.isAlive():
         if l[0] is not None:
             try:
-                
+                # In Python 3, we could just do l[0].kill().
                 if sys.platform != 'win32':
                     os.kill(l[0].pid, signal.SIGKILL)
                 else:
@@ -263,11 +262,11 @@ def run_timeout_cmd(cmdline, options, timeout=60.0):
                 time.sleep(.1)
                 timed_out = True
             except OSError:
-                
+                # Expecting a "No such process" error
                 pass
     th.join()
 
-    
+    # Restore old signal handlers
     if (sigint_handler == signal.SIG_IGN):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, sigterm_handler)
@@ -319,15 +318,15 @@ def run_test_remote(test, device, prefix, options):
                               timeout=int(options.timeout))
 
     out = buf.getvalue()
-    
-    
+    # We can't distinguish between stdout and stderr so we pass
+    # the same buffer to both.
     return TestOutput(test, cmd, out, out, returncode, None, False)
 
 def check_output(out, err, rc, test):
     if test.expect_error:
-        
-        
-        
+        # The shell exits with code 3 on uncaught exceptions.
+        # Sometimes 0 is returned on Windows for unknown reasons.
+        # See bug 899697.
         if sys.platform in ['win32', 'cygwin']:
             if rc != 3 and rc != 0:
                 return False
@@ -346,30 +345,30 @@ def check_output(out, err, rc, test):
             return False
 
     if rc != test.expect_status:
-        
-        
+        # Allow a non-zero exit code if we want to allow OOM, but only if we
+        # actually got OOM.
         return test.allow_oom and 'out of memory' in err and 'Assertion failure' not in err
 
     return True
 
 def print_tinderbox(ok, res):
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # Output test failures in a TBPL parsable format, eg:
+    # TEST-PASS | /foo/bar/baz.js | --ion-eager
+    # TEST-UNEXPECTED-FAIL | /foo/bar/baz.js | --no-ion: Assertion failure: ...
+    # INFO exit-status     : 3
+    # INFO timed-out       : False
+    # INFO stdout          > foo
+    # INFO stdout          > bar
+    # INFO stdout          > baz
+    # INFO stderr         2> TypeError: or something
+    # TEST-UNEXPECTED-FAIL | jit_test.py: Test execution interrupted by user
     label = "TEST-PASS" if ok else "TEST-UNEXPECTED-FAIL"
     jitflags = " ".join(res.test.jitflags)
     print("%s | %s | %s" % (label, res.test.relpath_top, jitflags))
     if ok:
         return
 
-    
+    # For failed tests, print as much information as we have, to aid debugging.
     print("INFO exit-status     : {}".format(res.rc))
     print("INFO timed-out       : {}".format(res.timed_out))
     for line in res.out.split('\n'):
@@ -378,35 +377,35 @@ def print_tinderbox(ok, res):
         print("INFO stderr         2> " + line)
 
 def wrap_parallel_run_test(test, prefix, resultQueue, options):
-    
+    # Ignore SIGINT in the child
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     result = run_test(test, prefix, options)
     resultQueue.put(result)
     return result
 
 def run_tests_parallel(tests, prefix, options):
-    
-    
-    
+    # This queue will contain the results of the various tests run.
+    # We could make this queue a global variable instead of using
+    # a manager to share, but this will not work on Windows.
     queue_manager = Manager()
     async_test_result_queue = queue_manager.Queue()
 
-    
-    
-    
-    
+    # This queue will be used by the result process to indicate
+    # that it has received a result and we can start a new process
+    # on our end. The advantage is that we don't have to sleep and
+    # check for worker completion ourselves regularly.
     notify_queue = queue_manager.Queue()
 
-    
-    
+    # This queue will contain the return value of the function
+    # processing the test results.
     result_process_return_queue = queue_manager.Queue()
     result_process = Process(target=process_test_results_parallel,
                              args=(async_test_result_queue, result_process_return_queue,
                                    notify_queue, len(tests), options))
     result_process.start()
 
-    
-    
+    # Ensure that a SIGTERM is handled the same way as SIGINT
+    # to terminate all child processes.
     sigint_handler = signal.getsignal(signal.SIGINT)
     signal.signal(signal.SIGTERM, sigint_handler)
 
@@ -423,38 +422,38 @@ def run_tests_parallel(tests, prefix, options):
 
     try:
         testcnt = 0
-        
+        # Initially start as many jobs as allowed to run parallel
         for i in range(min(options.max_jobs,len(tests))):
             notify_queue.put(True)
 
-        
-        
+        # For every item in the notify queue, start one new worker.
+        # Every completed worker adds a new item to this queue.
         while notify_queue.get():
             if (testcnt < len(tests)):
-                
+                # Start one new worker
                 worker_process = Process(target=wrap_parallel_run_test, args=(tests[testcnt], prefix, async_test_result_queue, options))
                 worker_processes.append(worker_process)
                 worker_process.start()
                 testcnt += 1
 
-                
+                # Collect completed workers
                 worker_processes = remove_completed_workers(worker_processes)
             else:
                 break
 
-        
+        # Wait for all processes to terminate
         while len(worker_processes) > 0:
             worker_processes = remove_completed_workers(worker_processes)
 
-        
+        # Signal completion to result processor, then wait for it to complete on its own
         async_test_result_queue.put(None)
         result_process.join()
 
-        
+        # Return what the result process has returned to us
         return result_process_return_queue.get()
     except (Exception, KeyboardInterrupt) as e:
-        
-        
+        # Print the exception if it's not an interrupt,
+        # might point to a bug or other faulty condition
         if not isinstance(e,KeyboardInterrupt):
             traceback.print_exc()
 
@@ -472,11 +471,11 @@ def get_parallel_results(async_test_result_queue, notify_queue):
     while True:
         async_test_result = async_test_result_queue.get()
 
-        
+        # Check if we are supposed to terminate
         if (async_test_result == None):
             return
 
-        
+        # Notify parent that we got a result
         notify_queue.put(True)
 
         yield async_test_result
@@ -491,7 +490,7 @@ def print_test_summary(num_tests, failures, complete, doing, options):
         if options.write_failures:
             try:
                 out = open(options.write_failures, 'w')
-                
+                # Don't write duplicate entries when we are doing multiple failures per job.
                 written = set()
                 for res in failures:
                     if res.test.path not in written:
@@ -600,8 +599,8 @@ def get_remote_results(tests, device, prefix, options):
         yield run_test_remote(test, device, prefix, options)
 
 def push_libs(options, device):
-    
-    
+    # This saves considerable time in pushing unnecessary libraries
+    # to the device but needs to be updated if the dependencies change.
     required_libs = ['libnss3.so', 'libmozglue.so']
 
     for file in os.listdir(options.local_lib):
@@ -615,7 +614,7 @@ def push_progs(options, device, progs):
         device.pushFile(local_file, remote_file)
 
 def run_tests_remote(tests, prefix, options):
-    
+    # Setup device with everything needed to run our tests.
     from mozdevice import devicemanager, devicemanagerADB, devicemanagerSUT
 
     if options.device_transport == 'adb':
@@ -629,11 +628,11 @@ def run_tests_remote(tests, prefix, options):
             print('Error: you must provide a device IP to connect to via the --device option')
             sys.exit(1)
 
-    
+    # Update the test root to point to our test directory.
     jit_tests_dir = posixpath.join(options.remote_test_root, 'jit-tests')
     options.remote_test_root = posixpath.join(jit_tests_dir, 'jit-tests')
 
-    
+    # Push js shell and libraries.
     if dm.dirExists(jit_tests_dir):
         dm.removeDir(jit_tests_dir)
     dm.mkDirs(options.remote_test_root)
@@ -645,7 +644,7 @@ def run_tests_remote(tests, prefix, options):
     dm.pushDir(os.path.dirname(TEST_DIR), options.remote_test_root, timeout=600)
     prefix[0] = os.path.join(options.remote_test_root, 'js')
 
-    
+    # Run all tests.
     gen = get_remote_results(tests, dm, prefix, options)
     ok = process_test_results(gen, len(tests), options)
     return ok
@@ -662,10 +661,10 @@ def parse_jitflags(options):
 
 def platform_might_be_android():
     try:
-        
-        
-        
-        
+        # The python package for SL4A provides an |android| module.
+        # If that module is present, we're likely in SL4A-python on
+        # device.  False positives and negatives are possible,
+        # however.
         import android
         return True
     except ImportError:

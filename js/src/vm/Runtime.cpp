@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "vm/Runtime-inl.h"
 
@@ -50,9 +50,9 @@ using mozilla::ThreadLocal;
 using JS::GenericNaN;
 using JS::DoubleNaNValue;
 
- ThreadLocal<PerThreadData*> js::TlsPerThreadData;
+/* static */ ThreadLocal<PerThreadData*> js::TlsPerThreadData;
 
- Atomic<size_t> JSRuntime::liveRuntimesCount;
+/* static */ Atomic<size_t> JSRuntime::liveRuntimesCount;
 
 const JSSecurityCallbacks js::NullSecurityCallbacks = { };
 
@@ -92,8 +92,8 @@ PerThreadData::init()
 void
 PerThreadData::addToThreadList()
 {
-    
-    
+    // PerThreadData which are created/destroyed off the main thread do not
+    // show up in the runtime's thread list.
     JS_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
     runtime_->threadList.insertBack(this);
 }
@@ -288,13 +288,12 @@ JSRuntime::JSRuntime(JSUseHelperThreads useHelperThreads)
 {
     liveRuntimesCount++;
 
-    
+    /* Initialize infallibly first, so we can goto bad and JS_DestroyRuntime. */
     JS_INIT_CLIST(&onNewGlobalObjectWatchers);
 
     PodZero(&debugHooks);
     PodZero(&atomState);
     PodArrayZero(nativeStackQuota);
-    PodZero(&asmJSCacheOps);
 
 #if JS_STACK_GROWTH_DIRECTION > 0
     nativeStackLimit = UINTPTR_MAX;
@@ -402,10 +401,10 @@ JSRuntime::~JSRuntime()
 {
     JS_ASSERT(!isHeapBusy());
 
-    
+    /* Free source hook early, as its destructor may want to delete roots. */
     sourceHook = nullptr;
 
-    
+    /* Off thread compilation and parsing depend on atoms still existing. */
     for (CompartmentsIter comp(this); !comp.done(); comp.next())
         CancelOffThreadIonCompile(comp, nullptr);
     WaitForOffThreadParsingToFinish(this);
@@ -415,35 +414,35 @@ JSRuntime::~JSRuntime()
         workerThreadState->cleanup(this);
 #endif
 
-    
+    /* Poison common names before final GC. */
     FinishCommonNames(this);
 
-    
+    /* Clear debugging state to remove GC roots. */
     for (CompartmentsIter comp(this); !comp.done(); comp.next()) {
         comp->clearTraps(defaultFreeOp());
         if (WatchpointMap *wpmap = comp->watchpointMap)
             wpmap->clear();
     }
 
-    
+    /* Clear the statics table to remove GC roots. */
     staticStrings.finish();
 
-    
-
-
-
+    /*
+     * Flag us as being destroyed. This allows the GC to free things like
+     * interned atoms and Ion trampolines.
+     */
     beingDestroyed_ = true;
 
-    
+    /* Allow the GC to release scripts that were being profiled. */
     profilingScripts = false;
 
     JS::PrepareForFullGC(this);
     GC(this, GC_NORMAL, JS::gcreason::DESTROY_RUNTIME);
 
-    
-
-
-
+    /*
+     * Clear the self-hosted global and delete self-hosted classes *after*
+     * GC, as finalizers for objects check for clasp->finalize during GC.
+     */
     finishSelfHosting();
 
     mainThread.removeFromThreadList();
@@ -457,7 +456,7 @@ JSRuntime::~JSRuntime()
 
     JS_ASSERT(!numExclusiveThreads);
 
-    
+    // Avoid bogus asserts during teardown.
     exclusiveThreadsPaused = true;
 #endif
 
@@ -467,14 +466,14 @@ JSRuntime::~JSRuntime()
         PR_DestroyLock(operationCallbackLock);
 #endif
 
-    
-
-
-
+    /*
+     * Even though all objects in the compartment are dead, we may have keep
+     * some filenames around because of gcKeepAtoms.
+     */
     FreeScriptData(this);
 
 #ifdef DEBUG
-    
+    /* Don't hurt everyone in leaky ol' Mozilla with a fatal JS_ASSERT! */
     if (hasContexts()) {
         unsigned cxcount = 0;
         for (ContextIter acx(this); !acx.done(); acx.next()) {
@@ -508,7 +507,7 @@ JSRuntime::~JSRuntime()
 #ifdef JS_ION
     js_delete(ionRuntime_);
 #endif
-    js_delete(execAlloc_);  
+    js_delete(execAlloc_);  /* Delete after ionRuntime_. */
 
     js_delete(ionPcScriptCache);
 
@@ -543,7 +542,7 @@ NewObjectCache::clearNurseryObjects(JSRuntime *rt)
 void
 JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::RuntimeSizes *rtSizes)
 {
-    
+    // Several tables in the runtime enumerated below can be used off thread.
     AutoLockForExclusiveAccess lock(this);
 
     rtSizes->object += mallocSizeOf(this);
@@ -588,21 +587,21 @@ JSRuntime::triggerOperationCallback(OperationCallbackTrigger trigger)
 {
     AutoLockForOperationCallback lock(this);
 
-    
-
-
-
-
-
+    /*
+     * Invalidate ionTop to trigger its over-recursion check. Note this must be
+     * set before interrupt, to avoid racing with js_InvokeOperationCallback,
+     * into a weird state where interrupt is stuck at 0 but ionStackLimit is
+     * MAXADDR.
+     */
     mainThread.setIonStackLimit(-1);
 
     interrupt = 1;
 
 #ifdef JS_ION
-    
-
-
-
+    /*
+     * asm.js and, optionally, normal Ion code use memory protection and signal
+     * handlers to halt running code.
+     */
     TriggerOperationCallbackForAsmJSCode(this);
     jit::TriggerOperationCallbackForIonCode(this, trigger);
 #endif
@@ -687,7 +686,7 @@ JSRuntime::getDefaultLocale()
 #else
     locale = getenv("LANG");
 #endif
-    
+    // convert to a well-formed BCP 47 language tag
     if (!locale || !strcmp(locale, "C"))
         locale = const_cast<char*>("und");
     lang = JS_strdup(this, locale);
@@ -705,10 +704,10 @@ JSRuntime::getDefaultLocale()
 void
 JSRuntime::setGCMaxMallocBytes(size_t value)
 {
-    
-
-
-
+    /*
+     * For compatibility treat any value that exceeds PTRDIFF_T_MAX to
+     * mean that value.
+     */
     gcMaxMallocBytes = (ptrdiff_t(value) >= 0) ? value : size_t(-1) >> 1;
     resetGCMallocBytes();
     for (ZonesIter zone(this); !zone.done(); zone.next())
@@ -724,7 +723,7 @@ JSRuntime::updateMallocCounter(size_t nbytes)
 void
 JSRuntime::updateMallocCounter(JS::Zone *zone, size_t nbytes)
 {
-    
+    /* We tolerate any thread races when updating gcMallocBytes. */
     ptrdiff_t oldCount = gcMallocBytes;
     ptrdiff_t newCount = oldCount - ptrdiff_t(nbytes);
     gcMallocBytes = newCount;
@@ -753,10 +752,10 @@ JSRuntime::onOutOfMemory(void *p, size_t nbytes, JSContext *cx)
     if (isHeapBusy())
         return nullptr;
 
-    
-
-
-
+    /*
+     * Retry when we are done with the background sweeping and have stopped
+     * all the allocations and released the empty GC chunks.
+     */
     JS::ShrinkGCBuffers(this);
     gcHelperThread.waitBackgroundSweepOrAllocEnd();
     if (!p)
@@ -797,7 +796,7 @@ JSRuntime::clearUsedByExclusiveThread(Zone *zone)
     numExclusiveThreads--;
 }
 
-#endif 
+#endif // JS_WORKER_THREADS
 
 #ifdef JS_THREADSAFE
 
