@@ -1,12 +1,12 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+ * JS bytecode descriptors, disassemblers, and (expression) decompilers.
+ */
 
 #include "jsopcodeinlines.h"
 
@@ -48,9 +48,9 @@ using namespace js::gc;
 
 using js::frontend::IsIdentifier;
 
-
-
-
+/*
+ * Index limit must stay within 32 bits.
+ */
 JS_STATIC_ASSERT(sizeof(uint32_t) * JS_BITS_PER_BYTE >= INDEX_LIMIT_LOG2 + 1);
 
 const JSCodeSpec js_CodeSpec[] = {
@@ -61,27 +61,27 @@ const JSCodeSpec js_CodeSpec[] = {
 
 const unsigned js_NumCodeSpecs = JS_ARRAY_LENGTH(js_CodeSpec);
 
-
-
-
-
+/*
+ * Each element of the array is either a source literal associated with JS
+ * bytecode or null.
+ */
 static const char * const CodeToken[] = {
 #define TOKEN(op, val, name, token, ...)  token,
     FOR_EACH_OPCODE(TOKEN)
 #undef TOKEN
 };
 
-
-
-
-
+/*
+ * Array of JS bytecode names used by PC count JSON, DEBUG-only js_Disassemble
+ * and JIT debug spew.
+ */
 const char * const js_CodeName[] = {
 #define OPNAME(op, val, name, ...)  name,
     FOR_EACH_OPCODE(OPNAME)
 #undef OPNAME
 };
 
-
+/************************************************************************/
 
 #define COUNTS_LEN 16
 
@@ -92,7 +92,7 @@ js_GetVariableBytecodeLength(jsbytecode *pc)
     JS_ASSERT(js_CodeSpec[op].length == -1);
     switch (op) {
       case JSOP_TABLESWITCH: {
-        
+        /* Structure: default-jump case-low case-high case1-jump ... */
         pc += JUMP_OFFSET_LEN;
         int32_t low = GET_JUMP_OFFSET(pc);
         pc += JUMP_OFFSET_LEN;
@@ -117,8 +117,10 @@ js::StackUses(JSScript *script, jsbytecode *pc)
     switch (op) {
       case JSOP_POPN:
         return GET_UINT16(pc);
+      case JSOP_POPNV:
+        return GET_UINT16(pc) + 1;
       default:
-        
+        /* stack: fun, this, [argc arguments] */
         JS_ASSERT(op == JSOP_NEW || op == JSOP_CALL || op == JSOP_EVAL ||
                   op == JSOP_FUNCALL || op == JSOP_FUNAPPLY);
         return 2 + GET_ARGC(pc);
@@ -193,7 +195,7 @@ static const char * const countArithNames[] = {
 JS_STATIC_ASSERT(JS_ARRAY_LENGTH(countBaseNames) +
                  JS_ARRAY_LENGTH(countArithNames) == PCCounts::ARITH_LIMIT);
 
- const char *
+/* static */ const char *
 PCCounts::countName(JSOp op, size_t which)
 {
     JS_ASSERT(which < numCounts(op));
@@ -280,19 +282,19 @@ js_DumpPCCounts(JSContext *cx, HandleScript script, js::Sprinter *sp)
 #endif
 }
 
+/////////////////////////////////////////////////////////////////////
+// Bytecode Parser
+/////////////////////////////////////////////////////////////////////
 
-
-
-
-
+// Ensure that script analysis reports the same stack depth.
 static void
 AssertStackDepth(JSScript *script, uint32_t offset, uint32_t stackDepth) {
-    
-
-
-
-
-
+    /*
+     * If this assertion fails, run the failing test case under gdb and use the
+     * following gdb command to understand the execution path of this function.
+     *
+     *     call js_DumpScriptDepth(cx, script, pc)
+     */
     if (script->hasAnalysis())
         script->analysis()->assertMatchingStackDepthAtOffset(offset, stackDepth);
 }
@@ -306,17 +308,17 @@ class BytecodeParser
       public:
         Bytecode() { mozilla::PodZero(this); }
 
-        
-        
+        // Whether this instruction has been analyzed to get its output defines
+        // and stack.
         bool parsed : 1;
 
-        
+        // Stack depth before this opcode.
         uint32_t stackDepth;
 
-        
-        
-        
-        
+        // Pointer to array of |stackDepth| offsets.  An element at position N
+        // in the array is the offset of the opcode that defined the
+        // corresponding stack slot.  The top of the stack is at position
+        // |stackDepth - 1|.
         uint32_t *offsetStack;
 
         bool captureOffsetStack(LifoAlloc &alloc, const uint32_t *stack, uint32_t depth) {
@@ -331,11 +333,11 @@ class BytecodeParser
             return true;
         }
 
-        
-        
-        
-        
-        
+        // When control-flow merges, intersect the stacks, marking slots that
+        // are defined by different offsets with the UINT32_MAX sentinel.
+        // This is sufficient for forward control-flow.  It doesn't grok loops
+        // -- for that you would have to iterate to a fixed point -- but there
+        // shouldn't be operands on the stack at a loop back-edge anyway.
         void mergeOffsetStack(const uint32_t *stack, uint32_t depth) {
             JS_ASSERT(depth == stackDepth);
             for (uint32_t n = 0; n < stackDepth; n++)
@@ -365,9 +367,9 @@ class BytecodeParser
 #endif
 
     uint32_t stackDepthAtPC(uint32_t offset) {
-        
-        
-        
+        // Sometimes the code generator in debug mode asks about the stack depth
+        // of unreachable code (bug 932180 comment 22).  Assume that unreachable
+        // code has no operands on the stack.
         return getCode(offset).stackDepth;
     }
     uint32_t stackDepthAtPC(const jsbytecode *pc) { return stackDepthAtPC(script_->pcToOffset(pc)); }
@@ -426,7 +428,7 @@ class BytecodeParser
                         uint32_t stackDepth, const uint32_t *offsetStack);
 };
 
-}  
+}  // anonymous namespace
 
 uint32_t
 BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t *offsetStack, uint32_t stackDepth)
@@ -438,9 +440,9 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t *offsetStack, uint
     stackDepth -= nuses;
     JS_ASSERT(stackDepth + ndefs <= maximumStackDepth());
 
-    
-    
-    
+    // Mark the current offset as defining its values on the offset stack,
+    // unless it just reshuffles the stack.  In that case we want to preserve
+    // the opcode that generated the original value.
     switch (op) {
       default:
         for (uint32_t n = 0; n != ndefs; ++n)
@@ -448,7 +450,7 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t *offsetStack, uint
         break;
 
       case JSOP_CASE:
-        
+        /* Keep the switch value. */
         JS_ASSERT(ndefs == 1);
         break;
 
@@ -465,16 +467,6 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t *offsetStack, uint
             offsetStack[stackDepth + 3] = offsetStack[stackDepth + 1];
         }
         break;
-
-      case JSOP_DUPAT: {
-        JS_ASSERT(ndefs == 1);
-        jsbytecode *pc = script_->offsetToPC(offset);
-        unsigned n = GET_UINT24(pc);
-        JS_ASSERT(n < stackDepth);
-        if (offsetStack)
-            offsetStack[stackDepth] = offsetStack[stackDepth - 1 - n];
-        break;
-      }
 
       case JSOP_SWAP:
         JS_ASSERT(ndefs == 2);
@@ -510,9 +502,9 @@ BytecodeParser::addJump(uint32_t offset, uint32_t *currentOffset,
     }
 
     if (offset < *currentOffset && !code->parsed) {
-        
-        
-        
+        // Backedge in a while/for loop, whose body has not been parsed due
+        // to a lack of fallthrough at the loop head. Roll back the offset
+        // to analyze the body.
         *currentOffset = offset;
     }
 
@@ -534,14 +526,14 @@ BytecodeParser::parse()
 
     mozilla::PodZero(codeArray_, length);
 
-    
+    // Fill in stack depth and definitions at initial bytecode.
     Bytecode *startcode = alloc().new_<Bytecode>();
     if (!startcode) {
         reportOOM();
         return false;
     }
 
-    
+    // Fill in stack depth and definitions at initial bytecode.
     uint32_t *offsetStack = alloc().newArray<uint32_t>(maximumStackDepth());
     if (maximumStackDepth() && !offsetStack) {
         reportOOM();
@@ -561,20 +553,20 @@ BytecodeParser::parse()
         JSOp op = (JSOp)*pc;
         JS_ASSERT(op < JSOP_LIMIT);
 
-        
+        // Immediate successor of this bytecode.
         uint32_t successorOffset = offset + GetBytecodeLength(pc);
 
-        
-        
+        // Next bytecode to analyze.  This is either the successor, or is an
+        // earlier bytecode if this bytecode has a loop backedge.
         nextOffset = successorOffset;
 
         if (!code) {
-            
+            // Haven't found a path by which this bytecode is reachable.
             continue;
         }
 
         if (code->parsed) {
-            
+            // No need to reparse.
             continue;
         }
 
@@ -606,10 +598,10 @@ BytecodeParser::parse()
           }
 
           case JSOP_TRY: {
-            
-            
-            
-            
+            // Everything between a try and corresponding catch or finally is conditional.
+            // Note that there is no problem with code which is skipped by a thrown
+            // exception but is not caught by a later handler in the same function:
+            // no more code will execute, and it does not matter what is defined.
             JSTryNote *tn = script_->trynotes()->vector;
             JSTryNote *tnlimit = tn + script_->trynotes()->length;
             for (; tn < tnlimit; tn++) {
@@ -629,9 +621,9 @@ BytecodeParser::parse()
             break;
         }
 
-        
+        // Check basic jump opcodes, which may or may not have a fallthrough.
         if (IsJumpOpcode(op)) {
-            
+            // Case instructions do not push the lvalue back when branching.
             uint32_t newStackDepth = stackDepth;
             if (op == JSOP_CASE)
                 newStackDepth--;
@@ -641,7 +633,7 @@ BytecodeParser::parse()
                 return false;
         }
 
-        
+        // Handle any fallthrough from this opcode.
         if (BytecodeFallsThrough(op)) {
             JS_ASSERT(successorOffset < script_->length());
 
@@ -684,11 +676,11 @@ js::ReconstructStackDepth(JSContext *cx, JSScript *script, jsbytecode *pc, uint3
     return true;
 }
 
-
-
-
-
-
+/*
+ * If pc != nullptr, include a prefix indicating whether the PC is at the
+ * current line. If showAll is true, include the source note type and the
+ * entry stack depth.
+ */
 JS_FRIEND_API(bool)
 js_DisassembleAtPC(JSContext *cx, JSScript *scriptArg, bool lines,
                    jsbytecode *pc, bool showAll, Sprinter *sp)
@@ -794,9 +786,9 @@ js_DumpScript(JSContext *cx, JSScript *scriptArg)
     return ok;
 }
 
-
-
-
+/*
+ * Useful to debug ReconstructPCStack.
+ */
 JS_FRIEND_API(bool)
 js_DumpScriptDepth(JSContext *cx, JSScript *scriptArg, jsbytecode *pc)
 {
@@ -840,9 +832,9 @@ ToDisassemblySource(JSContext *cx, HandleValue v, JSAutoByteString *bytes)
 
     if (!JSVAL_IS_PRIMITIVE(v)) {
         JSObject *obj = JSVAL_TO_OBJECT(v);
-        if (obj->is<StaticBlockObject>()) {
+        if (obj->is<BlockObject>()) {
             char *source = JS_sprintf_append(nullptr, "depth %d {",
-                                             obj->as<StaticBlockObject>().localOffset());
+                                             obj->as<BlockObject>().stackDepth());
             if (!source)
                 return false;
 
@@ -915,10 +907,10 @@ js_Disassemble1(JSContext *cx, HandleScript script, jsbytecode *pc,
 
     switch (JOF_TYPE(cs->format)) {
       case JOF_BYTE:
-          
-          
-          
-          
+          // Scan the trynotes to find the associated catch block
+          // and make the try opcode look like a jump instruction
+          // with an offset. This simplifies code coverage analysis
+          // based on this disassembled output.
           if (op == JSOP_TRY) {
               TryNoteArray *trynotes = script->trynotes();
               uint32_t i;
@@ -970,7 +962,7 @@ js_Disassemble1(JSContext *cx, HandleScript script, jsbytecode *pc,
       }
 
       case JOF_OBJECT: {
-        
+        /* Don't call obj.toSource if analysis/inference is active. */
         if (script->compartment()->activeAnalysis) {
             Sprint(sp, " object");
             break;
@@ -1033,8 +1025,7 @@ js_Disassemble1(JSContext *cx, HandleScript script, jsbytecode *pc,
         goto print_int;
 
       case JOF_UINT24:
-        JS_ASSERT(op == JSOP_UINT24 || op == JSOP_NEWARRAY || op == JSOP_INITELEM_ARRAY ||
-                  op == JSOP_DUPAT);
+        JS_ASSERT(op == JSOP_UINT24 || op == JSOP_NEWARRAY || op == JSOP_INITELEM_ARRAY);
         i = (int)GET_UINT24(pc);
         goto print_int;
 
@@ -1066,9 +1057,9 @@ js_Disassemble1(JSContext *cx, HandleScript script, jsbytecode *pc,
     return len;
 }
 
-#endif 
+#endif /* DEBUG */
 
-
+/************************************************************************/
 
 const size_t Sprinter::DefaultSize = 64;
 
@@ -1161,7 +1152,7 @@ Sprinter::reserve(size_t len)
 {
     InvariantChecker ic(this);
 
-    while (len + 1 > size - offset) { 
+    while (len + 1 > size - offset) { /* Include trailing \0 */
         if (!realloc_(size * 2))
             return nullptr;
     }
@@ -1184,11 +1175,11 @@ Sprinter::put(const char *s, size_t len)
     if (!bp)
         return -1;
 
-    
+    /* s is within the buffer already */
     if (s >= oldBase && s < oldEnd) {
-        
+        /* buffer was realloc'ed */
         if (base != oldBase)
-            s = stringAt(s - oldBase);  
+            s = stringAt(s - oldBase);  /* this is where it lives now */
         memmove(bp, s, len);
     } else {
         js_memcpy(bp, s, len);
@@ -1278,7 +1269,7 @@ js::Sprint(Sprinter *sp, const char *format, ...)
     ptrdiff_t offset;
 
     va_start(ap, format);
-    bp = JS_vsmprintf(format, ap);      
+    bp = JS_vsmprintf(format, ap);      /* XXX vsaprintf */
     va_end(ap);
     if (!bp) {
         sp->reportOutOfMemory();
@@ -1307,7 +1298,7 @@ const char js_EscapeMap[] = {
 static char *
 QuoteString(Sprinter *sp, JSString *str, uint32_t quote)
 {
-    
+    /* Sample off first for later return value pointer computation. */
     bool dontEscape = (quote & DONT_ESCAPE) != 0;
     jschar qc = (jschar) quote;
     ptrdiff_t offset = sp->getOffset();
@@ -1319,9 +1310,9 @@ QuoteString(Sprinter *sp, JSString *str, uint32_t quote)
         return nullptr;
     const jschar *z = s + str->length();
 
-    
+    /* Loop control variables: z points at end of string sentinel. */
     for (const jschar *t = s; t < z; s = ++t) {
-        
+        /* Move t forward from s past un-quote-worthy characters. */
         jschar c = *t;
         while (c < 127 && isprint(c) && c != qc && c != '\\' && c != '\t') {
             c = *++t;
@@ -1344,7 +1335,7 @@ QuoteString(Sprinter *sp, JSString *str, uint32_t quote)
         if (t == z)
             break;
 
-        
+        /* Use js_EscapeMap, \u, or \x only if necessary. */
         bool ok;
         const char *e;
         if (!(c >> 8) && c != 0 && (e = strchr(js_EscapeMap, (int)c)) != nullptr) {
@@ -1352,25 +1343,25 @@ QuoteString(Sprinter *sp, JSString *str, uint32_t quote)
                  ? Sprint(sp, "%c", (char)c) >= 0
                  : Sprint(sp, "\\%c", e[1]) >= 0;
         } else {
-            
-
-
-
-
+            /*
+             * Use \x only if the high byte is 0 and we're in a quoted string,
+             * because ECMA-262 allows only \u, not \x, in Unicode identifiers
+             * (see bug 621814).
+             */
             ok = Sprint(sp, (qc && !(c >> 8)) ? "\\x%02X" : "\\u%04X", c) >= 0;
         }
         if (!ok)
             return nullptr;
     }
 
-    
+    /* Sprint the closing quote and return the quoted string. */
     if (qc && Sprint(sp, "%c", (char)qc) < 0)
         return nullptr;
 
-    
-
-
-
+    /*
+     * If we haven't Sprint'd anything yet, Sprint an empty string so that
+     * the return below gives a valid result.
+     */
     if (offset == sp->getOffset() && Sprint(sp, "") < 0)
         return nullptr;
 
@@ -1389,40 +1380,40 @@ js_QuoteString(ExclusiveContext *cx, JSString *str, jschar quote)
     return js_NewStringCopyZ<CanGC>(cx, bytes);
 }
 
-
+/************************************************************************/
 
 namespace {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * The expression decompiler is invoked by error handling code to produce a
+ * string representation of the erroring expression. As it's only a debugging
+ * tool, it only supports basic expressions. For anything complicated, it simply
+ * puts "(intermediate value)" into the error result.
+ *
+ * Here's the basic algorithm:
+ *
+ * 1. Find the stack location of the value whose expression we wish to
+ * decompile. The error handler can explicitly pass this as an
+ * argument. Otherwise, we search backwards down the stack for the offending
+ * value.
+ *
+ * 2. Instantiate and run a BytecodeParser for the current frame. This creates a
+ * stack of pcs parallel to the interpreter stack; given an interpreter stack
+ * location, the corresponding pc stack location contains the opcode that pushed
+ * the value in the interpreter. Now, with the result of step 1, we have the
+ * opcode responsible for pushing the value we want to decompile.
+ *
+ * 3. Pass the opcode to decompilePC. decompilePC is the main decompiler
+ * routine, responsible for a string representation of the expression that
+ * generated a certain stack location. decompilePC looks at one opcode and
+ * returns the JS source equivalent of that opcode.
+ *
+ * 4. Expressions can, of course, contain subexpressions. For example, the
+ * literals "4" and "5" are subexpressions of the addition operator in "4 +
+ * 5". If we need to decompile a subexpression, we call decompilePC (step 2)
+ * recursively on the operands' pcs. The result is a depth-first traversal of
+ * the expression tree.
+ *
+ */
 struct ExpressionDecompiler
 {
     JSContext *cx;
@@ -1445,8 +1436,9 @@ struct ExpressionDecompiler
     bool init();
     bool decompilePCForStackOperand(jsbytecode *pc, int i);
     bool decompilePC(jsbytecode *pc);
-    JSAtom *getFixed(uint32_t slot, jsbytecode *pc);
+    JSAtom *getVar(uint32_t slot);
     JSAtom *getArg(unsigned slot);
+    JSAtom *findLetVar(jsbytecode *pc, unsigned depth);
     JSAtom *loadAtom(jsbytecode *pc);
     bool quote(JSString *s, uint32_t quote);
     bool write(const char *s);
@@ -1471,7 +1463,7 @@ ExpressionDecompiler::decompilePC(jsbytecode *pc)
     JSOp op = (JSOp)*pc;
 
     if (const char *token = CodeToken[op]) {
-        
+        // Handle simple cases of binary and unary operators.
         switch (js_CodeSpec[op].nuses) {
           case 2: {
             jssrcnote *sn = js_GetSrcNote(cx, script, pc);
@@ -1512,9 +1504,18 @@ ExpressionDecompiler::decompilePC(jsbytecode *pc)
       case JSOP_GETLOCAL:
       case JSOP_CALLLOCAL: {
         uint32_t i = GET_LOCALNO(pc);
-        if (JSAtom *atom = getFixed(i, pc))
-            return write(atom);
-        return write("(intermediate value)");
+        JSAtom *atom;
+        if (i >= script->nfixed()) {
+            i -= script->nfixed();
+            JS_ASSERT(i < unsigned(parser.stackDepthAtPC(pc)));
+            atom = findLetVar(pc, i);
+            if (!atom)
+                return decompilePCForStackOperand(pc, i); // Destructing temporary
+        } else {
+            atom = getVar(i);
+        }
+        JS_ASSERT(atom);
+        return write(atom);
       }
       case JSOP_CALLALIASEDVAR:
       case JSOP_GETALIASEDVAR: {
@@ -1560,8 +1561,8 @@ ExpressionDecompiler::decompilePC(jsbytecode *pc)
       case JSOP_UNDEFINED:
         return write(js_undefined_str);
       case JSOP_THIS:
-        
-        
+        // |this| could convert to a very long object initialiser, so cite it by
+        // its keyword name.
         return write(js_this_str);
       case JSOP_CALL:
       case JSOP_FUNCALL:
@@ -1640,6 +1641,26 @@ ExpressionDecompiler::loadAtom(jsbytecode *pc)
 }
 
 JSAtom *
+ExpressionDecompiler::findLetVar(jsbytecode *pc, uint32_t depth)
+{
+    for (JSObject *chain = script->getStaticScope(pc); chain; chain = chain->getParent()) {
+        if (!chain->is<StaticBlockObject>())
+            continue;
+        StaticBlockObject &block = chain->as<StaticBlockObject>();
+        uint32_t blockDepth = block.stackDepth();
+        uint32_t blockCount = block.slotCount();
+        if (uint32_t(depth - blockDepth) < uint32_t(blockCount)) {
+            for (Shape::Range<NoGC> r(block.lastProperty()); !r.empty(); r.popFront()) {
+                const Shape &shape = r.front();
+                if (shape.shortid() == int(depth - blockDepth))
+                    return JSID_TO_ATOM(shape.propid());
+            }
+        }
+    }
+    return nullptr;
+}
+
+JSAtom *
 ExpressionDecompiler::getArg(unsigned slot)
 {
     JS_ASSERT(fun);
@@ -1648,31 +1669,12 @@ ExpressionDecompiler::getArg(unsigned slot)
 }
 
 JSAtom *
-ExpressionDecompiler::getFixed(uint32_t slot, jsbytecode *pc)
+ExpressionDecompiler::getVar(uint32_t slot)
 {
-    if (slot < script->nfixedvars()) {
-        JS_ASSERT(fun);
-        slot += fun->nargs();
-        JS_ASSERT(slot < script->bindings.count());
-        return (*localNames)[slot].name();
-    }
-    for (JSObject *chain = script->getStaticScope(pc); chain; chain = chain->getParent()) {
-        if (!chain->is<StaticBlockObject>())
-            continue;
-        StaticBlockObject &block = chain->as<StaticBlockObject>();
-        if (slot < block.localOffset())
-            continue;
-        slot -= block.localOffset();
-        if (slot >= block.slotCount())
-            return nullptr;
-        for (Shape::Range<NoGC> r(block.lastProperty()); !r.empty(); r.popFront()) {
-            const Shape &shape = r.front();
-            if (shape.shortid() == int(slot))
-                return JSID_TO_ATOM(shape.propid());
-        }
-        break;
-    }
-    return nullptr;
+    JS_ASSERT(fun);
+    slot += fun->nargs();
+    JS_ASSERT(slot < script->bindings.count());
+    return (*localNames)[slot].name();
 }
 
 bool
@@ -1687,7 +1689,7 @@ ExpressionDecompiler::getOutput(char **res)
     return true;
 }
 
-}  
+}  // anonymous namespace
 
 static bool
 FindStartPC(JSContext *cx, ScriptFrameIter &iter, int spindex, int skipStackHits, Value v,
@@ -1698,10 +1700,10 @@ FindStartPC(JSContext *cx, ScriptFrameIter &iter, int spindex, int skipStackHits
     if (spindex == JSDVG_IGNORE_STACK)
         return true;
 
-    
-
-
-
+    /*
+     * FIXME: Fall back if iter.isIon(), since the stack snapshot may be for the
+     * previous pc (see bug 831120).
+     */
     if (iter.isIon())
         return true;
 
@@ -1718,9 +1720,9 @@ FindStartPC(JSContext *cx, ScriptFrameIter &iter, int spindex, int skipStackHits
         size_t index = iter.numFrameSlots();
         JS_ASSERT(index >= size_t(parser.stackDepthAtPC(current)));
 
-        
-        
-        
+        // We search from fp->sp to base to find the most recently calculated
+        // value matching v under assumption that it is the value that caused
+        // the exception.
         int stackHits = 0;
         Value s;
         do {
@@ -1729,9 +1731,9 @@ FindStartPC(JSContext *cx, ScriptFrameIter &iter, int spindex, int skipStackHits
             s = iter.frameSlotValue(--index);
         } while (s != v || stackHits++ != skipStackHits);
 
-        
-        
-        
+        // If the current PC has fewer values on the stack than the index we are
+        // looking for, the blamed value must be one pushed by the current
+        // bytecode, so restore *valuepc.
         jsbytecode *pc = nullptr;
         if (index < size_t(parser.stackDepthAtPC(current)))
             pc = parser.pcForStackOperand(current, index);
@@ -1753,11 +1755,11 @@ DecompileExpressionFromStack(JSContext *cx, int spindex, int skipStackHits, Hand
     *res = nullptr;
 
 #ifdef JS_MORE_DETERMINISTIC
-    
-
-
-
-
+    /*
+     * Give up if we need deterministic behavior for differential testing.
+     * IonMonkey doesn't use StackFrames and this ensures we get the same
+     * error messages.
+     */
     return true;
 #endif
 
@@ -1775,7 +1777,7 @@ DecompileExpressionFromStack(JSContext *cx, int spindex, int skipStackHits, Hand
 
     JS_ASSERT(script->containsPC(valuepc));
 
-    
+    // Give up if in prologue.
     if (valuepc < script->main())
         return true;
 
@@ -1810,7 +1812,7 @@ js::DecompileValueGenerator(JSContext *cx, int spindex, HandleValue v,
     }
     if (!fallback) {
         if (v.isUndefined())
-            return JS_strdup(cx, js_undefined_str); 
+            return JS_strdup(cx, js_undefined_str); // Prevent users from seeing "(void 0)"
         fallback = ValueToSource(cx, v);
         if (!fallback)
             return nullptr;
@@ -1831,21 +1833,21 @@ DecompileArgumentFromStack(JSContext *cx, int formalIndex, char **res)
     *res = nullptr;
 
 #ifdef JS_MORE_DETERMINISTIC
-    
+    /* See note in DecompileExpressionFromStack. */
     return true;
 #endif
 
-    
-
-
-
+    /*
+     * Settle on the nearest script frame, which should be the builtin that
+     * called the intrinsic.
+     */
     ScriptFrameIter frameIter(cx);
     JS_ASSERT(!frameIter.done());
 
-    
-
-
-
+    /*
+     * Get the second-to-top frame, the caller of the builtin that called the
+     * intrinsic.
+     */
     ++frameIter;
     if (frameIter.done())
         return true;
@@ -1862,7 +1864,7 @@ DecompileArgumentFromStack(JSContext *cx, int formalIndex, char **res)
     if (current < script->main())
         return true;
 
-    
+    /* Don't handle getters, setters or calls from fun.call/fun.apply. */
     if (JSOp(*current) != JSOP_CALL || static_cast<unsigned>(formalIndex) >= GET_ARGC(current))
         return true;
 
@@ -1898,7 +1900,7 @@ js::DecompileArgument(JSContext *cx, int formalIndex, HandleValue v)
         }
     }
     if (v.isUndefined())
-        return JS_strdup(cx, js_undefined_str); 
+        return JS_strdup(cx, js_undefined_str); // Prevent users from seeing "(void 0)"
     RootedString fallback(cx, ValueToSource(cx, v));
     if (!fallback)
         return nullptr;
@@ -1912,14 +1914,14 @@ js::DecompileArgument(JSContext *cx, int formalIndex, HandleValue v)
 bool
 js::CallResultEscapes(jsbytecode *pc)
 {
-    
-
-
-
-
-
-
-
+    /*
+     * If we see any of these sequences, the result is unused:
+     * - call / pop
+     *
+     * If we see any of these sequences, the result is only tested for nullness:
+     * - call / ifeq
+     * - call / not / ifeq
+     */
 
     if (*pc == JSOP_CALL)
         pc += JSOP_CALL_LENGTH;
@@ -1940,7 +1942,7 @@ js::CallResultEscapes(jsbytecode *pc)
 extern bool
 js::IsValidBytecodeOffset(JSContext *cx, JSScript *script, size_t offset)
 {
-    
+    // This could be faster (by following jump instructions if the target is <= offset).
     for (BytecodeRange r(cx, script); !r.empty(); r.popFront()) {
         size_t here = r.frontOffset();
         if (here >= offset)
@@ -2000,11 +2002,11 @@ js::GetPCCountScriptSummary(JSContext *cx, size_t index)
     const ScriptAndCounts &sac = (*rt->scriptAndCountsVector)[index];
     RootedScript script(cx, sac.script);
 
-    
-
-
-
-
+    /*
+     * OOM on buffer appends here will not be caught immediately, but since
+     * StringBuffer uses a ContextAllocPolicy will trigger an exception on the
+     * context if they occur, which we'll catch before returning.
+     */
     StringBuffer buf(cx);
 
     buf.append('{');

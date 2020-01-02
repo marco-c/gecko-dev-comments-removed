@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_BaselineCompiler_h
 #define jit_BaselineCompiler_h
@@ -26,7 +26,7 @@ namespace jit {
     _(JSOP_LABEL)              \
     _(JSOP_POP)                \
     _(JSOP_POPN)               \
-    _(JSOP_DUPAT)              \
+    _(JSOP_POPNV)              \
     _(JSOP_ENTERWITH)          \
     _(JSOP_LEAVEWITH)          \
     _(JSOP_DUP)                \
@@ -174,18 +174,18 @@ class BaselineCompiler : public BaselineCompilerSpecific
     NonAssertingLabel           postBarrierSlot_;
 #endif
 
-    
+    // Native code offset right before the scope chain is initialized.
     CodeOffsetLabel prologueOffset_;
 
-    
+    // Whether any on stack arguments are modified.
     bool modifiesArguments_;
 
     Label *labelOf(jsbytecode *pc) {
         return &labels_[script->pcToOffset(pc)];
     }
 
-    
-    
+    // If a script has more |nslots| than this, then emit code to do an
+    // early stack check.
     static const unsigned EARLY_STACK_CHECK_SLOT_COUNT = 128;
     bool needsEarlyStackCheck() const {
         return script->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
@@ -231,13 +231,13 @@ class BaselineCompiler : public BaselineCompilerSpecific
     OPCODE_LIST(EMIT_OP)
 #undef EMIT_OP
 
-    
+    // JSOP_NEG, JSOP_BITNOT
     bool emitUnaryArith();
 
-    
+    // JSOP_BITXOR, JSOP_LSH, JSOP_ADD etc.
     bool emitBinaryArith();
 
-    
+    // Handles JSOP_LT, JSOP_GT, and friends
     bool emitCompare();
 
     bool emitReturn();
@@ -259,9 +259,9 @@ class BaselineCompiler : public BaselineCompilerSpecific
     Address getScopeCoordinateAddress(Register reg);
 };
 
-} 
-} 
+} // namespace jit
+} // namespace js
 
-#endif 
+#endif // JS_ION
 
-#endif 
+#endif /* jit_BaselineCompiler_h */

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_Stack_inl_h
 #define vm_Stack_inl_h
@@ -22,11 +22,11 @@
 
 namespace js {
 
-
-
-
-
-
+/*
+ * We cache name lookup results only for the global object or for native
+ * non-global objects without prototype or with prototype that never mutates,
+ * see bug 462734 and bug 487039.
+ */
 static inline bool
 IsCacheableNonGlobalScope(JSObject *obj)
 {
@@ -76,7 +76,7 @@ StackFrame::initCallFrame(JSContext *cx, StackFrame *prev, jsbytecode *prevpc, V
     JS_ASSERT((flagsArg & ~CONSTRUCTING) == 0);
     JS_ASSERT(callee.nonLazyScript() == script);
 
-    
+    /* Initialize stack frame members. */
     flags_ = FUNCTION | HAS_SCOPECHAIN | flagsArg;
     argv_ = argv;
     exec.fun = &callee;
@@ -100,14 +100,13 @@ inline Value &
 StackFrame::unaliasedVar(uint32_t i, MaybeCheckAliasing checkAliasing)
 {
     JS_ASSERT_IF(checkAliasing, !script()->varIsAliased(i));
-    JS_ASSERT(i < script()->nfixedvars());
+    JS_ASSERT(i < script()->nfixed());
     return slots()[i];
 }
 
 inline Value &
 StackFrame::unaliasedLocal(uint32_t i, MaybeCheckAliasing checkAliasing)
 {
-    JS_ASSERT(i < script()->nfixed());
 #ifdef DEBUG
     CheckLocalUnaliased(checkAliasing, script(), i);
 #endif
@@ -217,7 +216,7 @@ StackFrame::callObj() const
     return pobj->as<CallObject>();
 }
 
-
+/*****************************************************************************/
 
 inline void
 InterpreterStack::purge(JSRuntime *rt)
@@ -263,10 +262,10 @@ InterpreterStack::getCallFrame(JSContext *cx, const CallArgs &args, HandleScript
         return reinterpret_cast<StackFrame *>(buffer);
     }
 
-    
+    // Pad any missing arguments with |undefined|.
     JS_ASSERT(args.length() < nformal);
 
-    nvals += nformal + 2; 
+    nvals += nformal + 2; // Include callee, |this|.
     uint8_t *buffer = allocateFrame(cx, sizeof(StackFrame) + nvals * sizeof(Value));
     if (!buffer)
         return nullptr;
@@ -306,7 +305,7 @@ InterpreterStack::pushInlineFrame(JSContext *cx, FrameRegs &regs, const CallArgs
 
     fp->mark_ = mark;
 
-    
+    /* Initialize frame, locals, regs. */
     fp->initCallFrame(cx, prev, prevpc, prevsp, *callee, script, argv, args.length(), flags);
 
     regs.prepareToRun(*fp, script);
@@ -854,7 +853,7 @@ InterpreterActivation::InterpreterActivation(RunState &state, JSContext *cx, Sta
 
 InterpreterActivation::~InterpreterActivation()
 {
-    
+    // Pop all inline frames.
     while (regs_.fp() != entryFrame_)
         popInlineFrame(regs_.fp());
 
@@ -885,13 +884,13 @@ InterpreterActivation::pushInlineFrame(const CallArgs &args, HandleScript script
 inline void
 InterpreterActivation::popInlineFrame(StackFrame *frame)
 {
-    (void)frame; 
+    (void)frame; // Quell compiler warning.
     JS_ASSERT(regs_.fp() == frame);
     JS_ASSERT(regs_.fp() != entryFrame_);
 
     cx_->runtime()->interpreterStack().popInlineFrame(regs_);
 }
 
-} 
+} /* namespace js */
 
-#endif 
+#endif /* vm_Stack_inl_h */
