@@ -314,6 +314,25 @@ RValueAllocation::write(CompactBufferWriter &writer) const
     }
 }
 
+HashNumber
+RValueAllocation::hash() const {
+    CompactBufferWriter writer;
+    write(writer);
+
+    
+    
+    
+    MOZ_ASSERT(!writer.oom());
+    MOZ_ASSERT(writer.length() <= 11);
+
+    HashNumber res = 0;
+    for (size_t i = 0; i < writer.length(); i++) {
+        res = ((res << 8) | (res >> (sizeof(res) - 1)));
+        res ^= writer.buffer()[i];
+    }
+    return res;
+}
+
 void
 Location::dump(FILE *fp) const
 {
@@ -411,13 +430,16 @@ RValueAllocation::dump(FILE *fp) const
     }
 }
 
-SnapshotReader::SnapshotReader(const uint8_t *buffer, const uint8_t *end)
-  : reader_(buffer, end),
+SnapshotReader::SnapshotReader(const uint8_t *snapshots, uint32_t offset,
+                               uint32_t RVATableSize, uint32_t listSize)
+  : reader_(snapshots + offset, snapshots + listSize),
+    allocReader_(snapshots + listSize, snapshots + listSize + RVATableSize),
+    allocTable_(snapshots + listSize),
     allocCount_(0),
     frameCount_(0),
     allocRead_(0)
 {
-    if (!buffer)
+    if (!snapshots)
         return;
     IonSpew(IonSpew_Snapshots, "Creating snapshot reader");
     readSnapshotHeader();
@@ -481,13 +503,40 @@ SnapshotReader::spewBailingFrom() const
 }
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const size_t ALLOCATION_TABLE_ALIGNMENT = 2; 
+
 RValueAllocation
 SnapshotReader::readAllocation()
 {
     JS_ASSERT(allocRead_ < allocCount_);
     IonSpew(IonSpew_Snapshots, "Reading slot %u", allocRead_);
     allocRead_++;
-    return RValueAllocation::read(reader_);
+
+    uint32_t offset = reader_.readUnsigned() * ALLOCATION_TABLE_ALIGNMENT;
+    allocReader_.seek(allocTable_, offset);
+    return RValueAllocation::read(allocReader_);
+}
+
+bool
+SnapshotWriter::init()
+{
+    
+    
+    
+    return allocMap_.init(32);
 }
 
 SnapshotOffset
@@ -549,19 +598,38 @@ SnapshotWriter::trackFrame(uint32_t pcOpcode, uint32_t mirOpcode, uint32_t mirId
 }
 #endif
 
-void
+bool
 SnapshotWriter::add(const RValueAllocation &alloc)
 {
+    MOZ_ASSERT(allocMap_.initialized());
+
+    uint32_t offset;
+    RValueAllocMap::AddPtr p = allocMap_.lookupForAdd(alloc);
+    if (!p) {
+        
+        while (allocWriter_.length() % ALLOCATION_TABLE_ALIGNMENT)
+            allocWriter_.writeByte(0x7f);
+
+        offset = allocWriter_.length();
+        JS_ASSERT(offset % ALLOCATION_TABLE_ALIGNMENT == 0);
+        alloc.write(allocWriter_);
+        if (!allocMap_.add(p, alloc, offset))
+            return false;
+    } else {
+        offset = p->value();
+    }
+
     if (IonSpewEnabled(IonSpew_Snapshots)) {
         IonSpewHeader(IonSpew_Snapshots);
-        fprintf(IonSpewFile, "    slot %u: ", allocWritten_);
+        fprintf(IonSpewFile, "    slot %u (%d): ", allocWritten_, offset);
         alloc.dump(IonSpewFile);
         fprintf(IonSpewFile, "\n");
     }
 
     allocWritten_++;
     JS_ASSERT(allocWritten_ <= nallocs_);
-    alloc.write(writer_);
+    writer_.writeUnsigned(offset / ALLOCATION_TABLE_ALIGNMENT);
+    return true;
 }
 
 void
