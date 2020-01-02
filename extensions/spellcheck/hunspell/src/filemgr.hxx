@@ -1,37 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _FILEMGR_HXX_
 #define _FILEMGR_HXX_
 
@@ -42,6 +9,9 @@
 
 class LIBHUNSPELL_DLL_EXPORTED FileMgr
 {
+private:
+    FileMgr(const FileMgr&);
+    FileMgr& operator = (const FileMgr&);
 protected:
     FILE * fin;
     Hunzip * hin;

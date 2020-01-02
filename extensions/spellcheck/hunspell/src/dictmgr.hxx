@@ -1,37 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _DICTMGR_HXX_
 #define _DICTMGR_HXX_
 
@@ -49,7 +15,10 @@ struct dictentry {
 
 class LIBHUNSPELL_DLL_EXPORTED DictMgr
 {
-
+private:
+  DictMgr(const DictMgr&);
+  DictMgr& operator = (const DictMgr&);
+private:
   int                 numdict;
   dictentry *         pdentry;
 

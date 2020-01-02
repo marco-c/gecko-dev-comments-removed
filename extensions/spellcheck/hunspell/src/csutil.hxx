@@ -1,60 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef __CSUTILHXX__
 #define __CSUTILHXX__
 
@@ -108,6 +51,9 @@
 #define DEFAULTFLAGS   65510
 #define FORBIDDENWORD  65510
 #define ONLYUPCASEFLAG 65511
+
+
+LIBHUNSPELL_DLL_EXPORTED FILE * myfopen(const char * path, const char * mode);
 
 
 LIBHUNSPELL_DLL_EXPORTED char * u16_u8(char * dest, int size, const w_char * src, int srclen);

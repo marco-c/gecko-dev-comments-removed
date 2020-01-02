@@ -1,60 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _AFFIXMGR_HXX_
 #define _AFFIXMGR_HXX_
 
@@ -98,6 +41,7 @@ class LIBHUNSPELL_DLL_EXPORTED AffixMgr
   FLAG                compoundroot;
   FLAG                compoundforbidflag;
   FLAG                compoundpermitflag;
+  int                 compoundmoresuffixes;
   int                 checkcompounddup;
   int                 checkcompoundrep;
   int                 checkcompoundcase;
@@ -301,6 +245,7 @@ private:
   int process_sfx_tree_to_list();
   int redundant_condition(char, char * strip, int stripl,
       const char * cond, int);
+  void finishFileMgr(FileMgr *afflst);
 };
 
 #endif

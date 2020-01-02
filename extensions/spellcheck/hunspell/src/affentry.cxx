@@ -1,59 +1,5 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#include "license.hunspell"
+#include "license.myspell"
 
 #include <stdlib.h>
 #include <string.h>
@@ -63,13 +9,17 @@
 #include "affentry.hxx"
 #include "csutil.hxx"
 
+#define MAXTEMPWORDLEN (MAXWORDUTF8LEN + 4)
+
 PfxEntry::PfxEntry(AffixMgr* pmgr, affentry* dp)
+    
+    : pmyMgr(pmgr)
+    , next(NULL)
+    , nexteq(NULL)
+    , nextne(NULL)
+    , flgnxt(NULL)
 {
   
-  pmyMgr = pmgr;
-
-  
-
   aflag = dp->aflag;         
   strip = dp->strip;         
   appnd = dp->appnd;         
@@ -82,9 +32,6 @@ PfxEntry::PfxEntry(AffixMgr* pmgr, affentry* dp)
     memcpy(c.conds, dp->c.l.conds1, MAXCONDLEN_1);
     c.l.conds2 = dp->c.l.conds2;
   } else memcpy(c.conds, dp->c.conds, MAXCONDLEN);
-  next = NULL;
-  nextne = NULL;
-  nexteq = NULL;
   morphcode = dp->morphcode;
   contclass = dp->contclass;
   contclasslen = dp->contclasslen;
@@ -107,16 +54,17 @@ PfxEntry::~PfxEntry()
 
 char * PfxEntry::add(const char * word, int len)
 {
-    char tword[MAXWORDUTF8LEN + 4];
+    char tword[MAXTEMPWORDLEN];
 
     if ((len > stripl || (len == 0 && pmyMgr->get_fullstrip())) && 
        (len >= numconds) && test_condition(word) &&
        (!stripl || (strncmp(word, strip, stripl) == 0)) &&
-       ((MAXWORDUTF8LEN + 4) > (len + appndl - stripl))) {
+       ((MAXTEMPWORDLEN) > (len + appndl - stripl))) {
     
               char * pp = tword;
               if (appndl) {
-                  strcpy(tword,appnd);
+                  strncpy(tword, appnd, MAXTEMPWORDLEN-1);
+                  tword[MAXTEMPWORDLEN-1] = '\0';
                   pp += appndl;
                }
                strcpy(pp, (word + stripl));
@@ -164,13 +112,15 @@ inline int PfxEntry::test_condition(const char * st)
                 if (*st == '\0' && p) return 0; 
                 break;
             }
-         case '.': if (!pos) { 
+         case '.':
+            if (!pos) { 
                 p = nextchar(p);
                 
                 for (st++; (opts & aeUTF8) && (*st & 0xc0) == 0x80; st++);
                 if (*st == '\0' && p) return 0; 
                 break;
             }
+            
     default: {
                 if (*st == *p) {
                     st++;
@@ -187,11 +137,11 @@ inline int PfxEntry::test_condition(const char * st)
                         }
                         if (pos && st != pos) {
                             ingroup = true;
-                            while (p && *p != ']' && (p = nextchar(p)));
+                            while (p && *p != ']' && ((p = nextchar(p)) != NULL));
                         }
                     } else if (pos) {
                         ingroup = true;
-                        while (p && *p != ']' && (p = nextchar(p)));
+                        while (p && *p != ']' && ((p = nextchar(p)) != NULL));
                     }
                 } else if (pos) { 
                     p = nextchar(p);
@@ -207,7 +157,7 @@ struct hentry * PfxEntry::checkword(const char * word, int len, char in_compound
 {
     int                 tmpl;   
     struct hentry *     he;     
-    char                tmpword[MAXWORDUTF8LEN + 4];
+    char                tmpword[MAXTEMPWORDLEN];
 
     
     
@@ -221,7 +171,10 @@ struct hentry * PfxEntry::checkword(const char * word, int len, char in_compound
             
             
 
-            if (stripl) strcpy (tmpword, strip);
+            if (stripl) {
+                strncpy(tmpword, strip, MAXTEMPWORDLEN-1);
+                tmpword[MAXTEMPWORDLEN-1] = '\0';
+            }
             strcpy ((tmpword + stripl), (word + appndl));
 
             
@@ -268,7 +221,7 @@ struct hentry * PfxEntry::check_twosfx(const char * word, int len,
 {
     int                 tmpl;   
     struct hentry *     he;     
-    char                tmpword[MAXWORDUTF8LEN + 4];
+    char                tmpword[MAXTEMPWORDLEN];
 
     
     
@@ -283,7 +236,10 @@ struct hentry * PfxEntry::check_twosfx(const char * word, int len,
             
             
 
-            if (stripl) strcpy (tmpword, strip);
+            if (stripl) {
+                strncpy(tmpword, strip, MAXTEMPWORDLEN-1);
+                tmpword[MAXTEMPWORDLEN-1] = '\0';
+            }
             strcpy ((tmpword + stripl), (word + appndl));
 
             
@@ -315,7 +271,7 @@ char * PfxEntry::check_twosfx_morph(const char * word, int len,
          char in_compound, const FLAG needflag)
 {
     int                 tmpl;   
-    char                tmpword[MAXWORDUTF8LEN + 4];
+    char                tmpword[MAXTEMPWORDLEN];
 
     
     
@@ -330,7 +286,10 @@ char * PfxEntry::check_twosfx_morph(const char * word, int len,
             
             
 
-            if (stripl) strcpy (tmpword, strip);
+            if (stripl) {
+                strncpy(tmpword, strip, MAXTEMPWORDLEN-1);
+                tmpword[MAXTEMPWORDLEN-1] = '\0';
+            }
             strcpy ((tmpword + stripl), (word + appndl));
 
             
@@ -362,7 +321,7 @@ char * PfxEntry::check_morph(const char * word, int len, char in_compound, const
 {
     int                 tmpl;   
     struct hentry *     he;     
-    char                tmpword[MAXWORDUTF8LEN + 4];
+    char                tmpword[MAXTEMPWORDLEN];
     char                result[MAXLNLEN];
     char * st;
 
@@ -381,7 +340,10 @@ char * PfxEntry::check_morph(const char * word, int len, char in_compound, const
             
             
 
-            if (stripl) strcpy (tmpword, strip);
+            if (stripl) {
+                strncpy(tmpword, strip, MAXTEMPWORDLEN-1);
+                tmpword[MAXTEMPWORDLEN-1] = '\0';
+            }
             strcpy ((tmpword + stripl), (word + appndl));
 
             
@@ -449,10 +411,15 @@ char * PfxEntry::check_morph(const char * word, int len, char in_compound, const
 }
 
 SfxEntry::SfxEntry(AffixMgr * pmgr, affentry* dp)
+    : pmyMgr(pmgr) 
+    , next(NULL)
+    , nexteq(NULL)
+    , nextne(NULL)
+    , flgnxt(NULL)
+    , l_morph(NULL)
+    , r_morph(NULL)
+    , eq_morph(NULL)
 {
-  
-  pmyMgr = pmgr;
-
   
   aflag = dp->aflag;         
   strip = dp->strip;         
@@ -467,9 +434,6 @@ SfxEntry::SfxEntry(AffixMgr * pmgr, affentry* dp)
     memcpy(c.l.conds1, dp->c.l.conds1, MAXCONDLEN_1);
     c.l.conds2 = dp->c.l.conds2;
   } else memcpy(c.conds, dp->c.conds, MAXCONDLEN);
-  next = NULL;
-  nextne = NULL;
-  nexteq = NULL;
   rappnd = myrevstrdup(appnd);
   morphcode = dp->morphcode;
   contclass = dp->contclass;
@@ -494,15 +458,16 @@ SfxEntry::~SfxEntry()
 
 char * SfxEntry::add(const char * word, int len)
 {
-    char                tword[MAXWORDUTF8LEN + 4];
+    char tword[MAXTEMPWORDLEN];
 
      
      if ((len > stripl || (len == 0 && pmyMgr->get_fullstrip())) &&
         (len >= numconds) && test_condition(word + len, word) &&
         (!stripl || (strcmp(word + len - stripl, strip) == 0)) &&
-        ((MAXWORDUTF8LEN + 4) > (len + appndl - stripl))) {
+        ((MAXTEMPWORDLEN) > (len + appndl - stripl))) {
               
-              strcpy(tword,word);
+              strncpy(tword, word, MAXTEMPWORDLEN-1);
+              tword[MAXTEMPWORDLEN-1] = '\0';
               if (appndl) {
                   strcpy(tword + len - stripl, appnd);
               } else {
@@ -537,24 +502,37 @@ inline int SfxEntry::test_condition(const char * st, const char * beg)
     int i = 1;
     while (1) {
       switch (*p) {
-        case '\0': return 1;
-        case '[': { p = nextchar(p); pos = st; break; }
-        case '^': { p = nextchar(p); neg = true; break; }
-        case ']': { if (!neg && !ingroup) return 0;
-                i++;
+        case '\0':
+            return 1;
+        case '[':
+            p = nextchar(p);
+            pos = st;
+            break;
+        case '^':
+            p = nextchar(p);
+            neg = true;
+            break;
+        case ']':
+            if (!neg && !ingroup)
+              return 0;
+            i++;
+            
+            if (!ingroup)
+            {
+                for (; (opts & aeUTF8) && (st >= beg) && (*st & 0xc0) == 0x80; st--);
+                st--;
+            }                    
+            pos = NULL;
+            neg = false;
+            ingroup = false;
+            p = nextchar(p);
+            if (st < beg && p)
+                return 0; 
+            break;
+        case '.':
+            if (!pos)
+            {
                 
-                if (!ingroup) {
-                    for (; (opts & aeUTF8) && (st >= beg) && (*st & 0xc0) == 0x80; st--);
-                    st--;
-                }                    
-                pos = NULL;
-                neg = false;
-                ingroup = false;
-                p = nextchar(p);
-                if (st < beg && p) return 0; 
-                break;
-            }
-        case '.': if (!pos) { 
                 p = nextchar(p);
                 
                 for (st--; (opts & aeUTF8) && (st >= beg) && (*st & 0xc0) == 0x80; st--);
@@ -569,6 +547,7 @@ inline int SfxEntry::test_condition(const char * st, const char * beg)
                 }
                 break;
             }
+            
     default: {
                 if (*st == *p) {
                     p = nextchar(p);
@@ -589,7 +568,7 @@ inline int SfxEntry::test_condition(const char * st, const char * beg)
                             if (neg) return 0;
                             else if (i == numconds) return 1;
                             ingroup = true;
-                            while (p && *p != ']' && (p = nextchar(p)));
+                            while (p && *p != ']' && ((p = nextchar(p)) != NULL));
 			    st--;
                         }
                         if (p && *p != ']') p = nextchar(p);
@@ -597,8 +576,8 @@ inline int SfxEntry::test_condition(const char * st, const char * beg)
                         if (neg) return 0;
                         else if (i == numconds) return 1;
                         ingroup = true;
-			while (p && *p != ']' && (p = nextchar(p)))
-                          ;
+			while (p && *p != ']' && ((p = nextchar(p)) != NULL))
+                           ;
 
                         st--;
                     }
@@ -624,7 +603,7 @@ struct hentry * SfxEntry::checkword(const char * word, int len, int optflags,
     int                 tmpl;            
     struct hentry *     he;              
     unsigned char *     cp;
-    char                tmpword[MAXWORDUTF8LEN + 4];
+    char                tmpword[MAXTEMPWORDLEN];
     PfxEntry* ep = ppfx;
 
     
@@ -649,7 +628,8 @@ struct hentry * SfxEntry::checkword(const char * word, int len, int optflags,
             
             
 
-            strcpy (tmpword, word);
+            strncpy (tmpword, word, MAXTEMPWORDLEN-1);
+            tmpword[MAXTEMPWORDLEN-1] = '\0';
             cp = (unsigned char *)(tmpword + tmpl);
             if (stripl) {
                 strcpy ((char *)cp, strip);
@@ -702,7 +682,10 @@ struct hentry * SfxEntry::checkword(const char * word, int len, int optflags,
                 } else if (wlst && (*ns < maxSug)) {
                     int cwrd = 1;
                     for (int k=0; k < *ns; k++)
-                        if (strcmp(tmpword, wlst[k]) == 0) cwrd = 0;
+                        if (strcmp(tmpword, wlst[k]) == 0) {
+                           cwrd = 0;
+                           break;
+                        }
                     if (cwrd) {
                         wlst[*ns] = mystrdup(tmpword);
                         if (wlst[*ns] == NULL) {
@@ -725,7 +708,7 @@ struct hentry * SfxEntry::check_twosfx(const char * word, int len, int optflags,
     int                 tmpl;            
     struct hentry *     he;              
     unsigned char *     cp;
-    char                tmpword[MAXWORDUTF8LEN + 4];
+    char                tmpword[MAXTEMPWORDLEN];
     PfxEntry* ep = ppfx;
 
 
@@ -749,7 +732,8 @@ struct hentry * SfxEntry::check_twosfx(const char * word, int len, int optflags,
             
             
 
-            strcpy (tmpword, word);
+            strncpy(tmpword, word, MAXTEMPWORDLEN-1);
+            tmpword[MAXTEMPWORDLEN-1] = '\0';
             cp = (unsigned char *)(tmpword + tmpl);
             if (stripl) {
                 strcpy ((char *)cp, strip);
@@ -786,7 +770,7 @@ char * SfxEntry::check_twosfx_morph(const char * word, int len, int optflags,
 {
     int                 tmpl;            
     unsigned char *     cp;
-    char                tmpword[MAXWORDUTF8LEN + 4];
+    char                tmpword[MAXTEMPWORDLEN];
     PfxEntry* ep = ppfx;
     char * st;
 
@@ -814,7 +798,8 @@ char * SfxEntry::check_twosfx_morph(const char * word, int len, int optflags,
             
             
 
-            strcpy (tmpword, word);
+            strncpy(tmpword, word, MAXTEMPWORDLEN-1);
+            tmpword[MAXTEMPWORDLEN-1] = '\0';
             cp = (unsigned char *)(tmpword + tmpl);
             if (stripl) {
                 strcpy ((char *)cp, strip);

@@ -1,64 +1,11 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#include "license.hunspell"
+#include "license.myspell"
 
 #include <stdlib.h> 
 #include <string.h>
 #include <stdio.h> 
 #include <ctype.h>
+#include <limits>
 
 #include "hashmgr.hxx"
 #include "csutil.hxx"
@@ -67,12 +14,19 @@
 
 
 HashMgr::HashMgr(const char * tpath, const char * apath, const char * key)
+  : tablesize(0)
+  , tableptr(NULL)
+  , userword(0)
+  , flag_mode(FLAG_CHAR)
+  , complexprefixes(0)
+  , utf8(0)
+  , forbiddenword(FORBIDDENWORD) 
+  , numaliasf(0)
+  , aliasf(NULL)
+  , aliasflen(0)
+  , numaliasm(0)
+  , aliasm(NULL)
 {
-  tablesize = 0;
-  tableptr = NULL;
-  flag_mode = FLAG_CHAR;
-  complexprefixes = 0;
-  utf8 = 0;
   langnum = 0;
   lang = NULL;
   enc = NULL;
@@ -80,11 +34,6 @@ HashMgr::HashMgr(const char * tpath, const char * apath, const char * key)
   ignorechars = NULL;
   ignorechars_utf16 = NULL;
   ignorechars_utf16_len = 0;
-  numaliasf = 0;
-  aliasf = NULL;
-  numaliasm = 0;
-  aliasm = NULL;
-  forbiddenword = FORBIDDENWORD; 
   load_config(apath, key);
   int ec = load_tables(tpath, key);
   if (ec) {
@@ -170,7 +119,7 @@ int HashMgr::add_word(const char * word, int wbl, int wcl, unsigned short * aff,
     int al, const char * desc, bool onlyupcase)
 {
     bool upcasehomonym = false;
-    int descl = desc ? (aliasm ? sizeof(short) : strlen(desc) + 1) : 0;
+    int descl = desc ? (aliasm ? sizeof(char *) : strlen(desc) + 1) : 0;
     
     struct hentry* hp = 
 	(struct hentry *) malloc (sizeof(struct hentry) + wbl + descl);
@@ -264,18 +213,21 @@ int HashMgr::add_word(const char * word, int wbl, int wcl, unsigned short * aff,
 }     
 
 int HashMgr::add_hidden_capitalized_word(char * word, int wbl, int wcl,
-    unsigned short * flags, int al, char * dp, int captype)
+    unsigned short * flags, int flagslen, char * dp, int captype)
 {
+    if (flags == NULL)
+        flagslen = 0;
+
     
     
     
     if (((captype == HUHCAP) || (captype == HUHINITCAP) ||
-      ((captype == ALLCAP) && (flags != NULL))) &&
-      !((flags != NULL) && TESTAFF(flags, forbiddenword, al))) {
-          unsigned short * flags2 = (unsigned short *) malloc (sizeof(unsigned short) * (al+1));
+      ((captype == ALLCAP) && (flagslen != 0))) &&
+      !((flagslen != 0) && TESTAFF(flags, forbiddenword, flagslen))) {
+          unsigned short * flags2 = (unsigned short *) malloc (sizeof(unsigned short) * (flagslen+1));
 	  if (!flags2) return 1;
-          if (al) memcpy(flags2, flags, al * sizeof(unsigned short));
-          flags2[al] = ONLYUPCASEFLAG;
+          if (flagslen) memcpy(flags2, flags, flagslen * sizeof(unsigned short));
+          flags2[flagslen] = ONLYUPCASEFLAG;
           if (utf8) {
               char st[BUFSIZE];
               w_char w[BUFSIZE];
@@ -283,11 +235,11 @@ int HashMgr::add_hidden_capitalized_word(char * word, int wbl, int wcl,
               mkallsmall_utf(w, wlen, langnum);
               mkallcap_utf(w, 1, langnum);
               u16_u8(st, BUFSIZE, w, wlen);
-              return add_word(st,wbl,wcl,flags2,al+1,dp, true);
+              return add_word(st,wbl,wcl,flags2,flagslen+1,dp, true);
            } else {
                mkallsmall(word, csconv);
                mkinitcap(word, csconv);
-               return add_word(word,wbl,wcl,flags2,al+1,dp, true);
+               return add_word(word,wbl,wcl,flags2,flagslen+1,dp, true);
            }
     }
     return 0;
@@ -417,8 +369,8 @@ int HashMgr::load_tables(const char * tpath, const char * key)
   if (dict == NULL) return 1;
 
   
-  if (!(ts = dict->getline())) {
-    HUNSPELL_WARNING(stderr, "error: empty dic file\n");
+  if ((ts = dict->getline()) == NULL) {
+    HUNSPELL_WARNING(stderr, "error: empty dic file %s\n", tpath);
     delete dict;
     return 2;
   }
@@ -431,30 +383,32 @@ int HashMgr::load_tables(const char * tpath, const char * key)
   }
 
   tablesize = atoi(ts);
-  if (tablesize == 0) {
+
+  int nExtra = 5 + USERWORD;
+
+  if (tablesize <= 0 || (tablesize >= (std::numeric_limits<int>::max() - 1 - nExtra) / int(sizeof(struct hentry *)))) {
     HUNSPELL_WARNING(stderr, "error: line 1: missing or bad word count in the dic file\n");
     delete dict;
     return 4;
   }
-  tablesize = tablesize + 5 + USERWORD;
-  if ((tablesize %2) == 0) tablesize++;
+  tablesize += nExtra;
+  if ((tablesize % 2) == 0) tablesize++;
 
   
-  tableptr = (struct hentry **) malloc(tablesize * sizeof(struct hentry *));
+  tableptr = (struct hentry **) calloc(tablesize, sizeof(struct hentry *));
   if (! tableptr) {
     delete dict;
     return 3;
   }
-  for (int i=0; i<tablesize; i++) tableptr[i] = NULL;
 
   
   
 
-  while ((ts = dict->getline())) {
+  while ((ts = dict->getline()) != NULL) {
     mychomp(ts);
     
     dp = ts;
-    while ((dp = strchr(dp, ':'))) {
+    while ((dp = strchr(dp, ':')) != NULL) {
 	if ((dp > ts + 3) && (*(dp - 3) == ' ' || *(dp - 3) == '\t')) {
 	    for (dp -= 4; dp >= ts && (*dp == ' ' || *dp == '\t'); dp--);
 	    if (dp < ts) { 
@@ -670,7 +624,7 @@ int  HashMgr::load_config(const char * affpath, const char * key)
     
     
 
-    while ((line = afflst->getline())) {
+    while ((line = afflst->getline()) != NULL) {
         mychomp(line);
 
        
@@ -810,7 +764,7 @@ int  HashMgr::parse_aliasf(char * line, FileMgr * af)
    
    char * nl;
    for (int j=0; j < numaliasf; j++) {
-        if (!(nl = af->getline())) return 1;
+        if ((nl = af->getline()) == NULL) return 1;
         mychomp(nl);
         tp = nl;
         i = 0;
@@ -917,7 +871,7 @@ int  HashMgr::parse_aliasm(char * line, FileMgr * af)
    
    char * nl = line;
    for (int j=0; j < numaliasm; j++) {
-        if (!(nl = af->getline())) return 1;
+        if ((nl = af->getline()) == NULL) return 1;
         mychomp(nl);
         tp = nl;
         i = 0;

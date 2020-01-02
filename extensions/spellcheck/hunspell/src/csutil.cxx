@@ -1,60 +1,5 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#include "license.hunspell"
+#include "license.myspell"
 
 #include <stdlib.h> 
 #include <string.h>
@@ -71,6 +16,11 @@ struct unicode_info {
   unsigned short cupper;
   unsigned short clower;
 };
+
+#ifdef _WIN32
+#include <windows.h>
+#include <wchar.h>
+#endif
 
 #ifdef OPENOFFICEORG
 #  include <unicode/uchar.h>
@@ -99,6 +49,21 @@ struct unicode_info2 {
 
 static struct unicode_info2 * utf_tbl = NULL;
 static int utf_tbl_count = 0; 
+
+FILE * myfopen(const char * path, const char * mode) {
+#ifdef _WIN32
+#define WIN32_LONG_PATH_PREFIX "\\\\?\\"
+    if (strncmp(path, WIN32_LONG_PATH_PREFIX, 4) == 0) {
+        int len = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
+        wchar_t *buff = (wchar_t *) malloc(len * sizeof(wchar_t));
+        MultiByteToWideChar(CP_UTF8, 0, path, -1, buff, len);
+        FILE * f = _wfopen(buff, (strcmp(mode, "r") == 0) ? L"r" : L"rb");
+        free(buff);
+        return f;
+    }
+#endif
+    return fopen(path, mode);
+}
 
 
 char * u16_u8(char * dest, int size, const w_char * src, int srclen) {
@@ -396,7 +361,10 @@ char * line_uniq(char * text, char breakchar) {
     for ( i = 1; i < linenum; i++ ) {
         int dup = 0;
         for (int j = 0; j < i; j++) {
-            if (strcmp(lines[i], lines[j]) == 0) dup = 1;
+            if (strcmp(lines[i], lines[j]) == 0) {
+              dup = 1;
+              break;
+            }
         }
         if (!dup) {
             if ((i > 1) || (*(lines[0]) != '\0')) {
@@ -5531,6 +5499,7 @@ struct cs_info * get_current_cs(const char * es) {
     ccs[i].cupper = i;
   }
 
+
   nsCOMPtr<nsIUnicodeEncoder> encoder; 
   nsCOMPtr<nsIUnicodeDecoder> decoder; 
 
@@ -5707,7 +5676,7 @@ unsigned short unicodetoupper(unsigned short c, int langnum)
   if (c == 0x0069 && ((langnum == LANG_az) || (langnum == LANG_tr)))
     return 0x0130;
 #ifdef OPENOFFICEORG
-  return u_toupper(c);
+  return static_cast<unsigned short>(u_toupper(c));
 #else
 #ifdef MOZILLA_CLIENT
   return ToUpperCase((char16_t) c);
@@ -5725,7 +5694,7 @@ unsigned short unicodetolower(unsigned short c, int langnum)
   if (c == 0x0049 && ((langnum == LANG_az) || (langnum == LANG_tr)))
     return 0x0131;
 #ifdef OPENOFFICEORG
-  return u_tolower(c);
+  return static_cast<unsigned short>(u_tolower(c));
 #else
 #ifdef MOZILLA_CLIENT
   return ToLowerCase((char16_t) c);

@@ -1,60 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _SUGGESTMGR_HXX_
 #define _SUGGESTMGR_HXX_
 
@@ -89,6 +32,10 @@ enum { LCS_UP, LCS_LEFT, LCS_UPLEFT };
 
 class LIBHUNSPELL_DLL_EXPORTED SuggestMgr
 {
+private:
+  SuggestMgr(const SuggestMgr&);
+  SuggestMgr& operator = (const SuggestMgr&);
+private:
   char *          ckey;
   int             ckeyl;
   w_char *        ckey_utf;

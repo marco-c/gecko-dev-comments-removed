@@ -1,43 +1,11 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 
 #include "dictmgr.hxx"
+#include "csutil.hxx"
 
 DictMgr::DictMgr(const char * dictpath, const char * etype) : numdict(0)
 {
@@ -90,7 +58,7 @@ int  DictMgr::parse_file(const char * dictpath, const char * etype)
 
     
     FILE * dictlst;
-    dictlst = fopen(dictpath,"r");
+    dictlst = myfopen(dictpath,"r");
     if (!dictlst) {
       return 1;
     }
@@ -133,7 +101,8 @@ int  DictMgr::parse_file(const char * dictpath, const char * etype)
                     case 3:
                        free(pdict->region);
                        pdict->region=NULL;
-                    case 2: 
+                       
+                    case 2:
                        free(pdict->lang);
                        pdict->lang=NULL;
                     default:

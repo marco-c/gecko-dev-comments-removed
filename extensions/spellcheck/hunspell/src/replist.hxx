@@ -1,38 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _REPLIST_HXX_
 #define _REPLIST_HXX_
 
@@ -42,6 +8,9 @@
 
 class LIBHUNSPELL_DLL_EXPORTED RepList
 {
+private:
+    RepList(const RepList&);
+    RepList& operator = (const RepList&);
 protected:
     replentry ** dat;
     int size;

@@ -1,37 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _HUNZIP_HXX_
 #define _HUNZIP_HXX_
 
@@ -54,7 +23,9 @@ struct bit {
 
 class LIBHUNSPELL_DLL_EXPORTED Hunzip
 {
-
+private:
+    Hunzip(const Hunzip&);
+    Hunzip& operator = (const Hunzip&);
 protected:
     char * filename;
     FILE * fin;

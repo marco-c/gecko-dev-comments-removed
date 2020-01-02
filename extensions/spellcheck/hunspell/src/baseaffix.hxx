@@ -1,60 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef _BASEAFF_HXX_
 #define _BASEAFF_HXX_
 
@@ -62,7 +5,11 @@
 
 class LIBHUNSPELL_DLL_EXPORTED AffEntry
 {
+private:
+    AffEntry(const AffEntry&);
+    AffEntry& operator = (const AffEntry&);
 protected:
+    AffEntry() {}
     char *         appnd;
     char *         strip;
     unsigned char  appndl;
