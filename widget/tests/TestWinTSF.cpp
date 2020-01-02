@@ -1,18 +1,18 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* This tests Mozilla's Text Services Framework implementation (bug #88831)
+ *
+ * The Mozilla implementation interacts with the TSF system through a
+ * system-provided COM interface, ITfThreadMgr. This tests works by swapping
+ * the system version of the interface with a custom version implemented in
+ * here. This way the Mozilla implementation thinks it's interacting with the
+ * system but in fact is interacting with this test program. This allows the
+ * test program to access and test every aspect of the Mozilla implementation.
+ */
 
 #include <ole2.h>
 #include <msctf.h>
@@ -25,7 +25,7 @@
 #define WM_USER_TSF_TEXTCHANGE  (WM_USER + 0x100)
 
 #ifndef MOZILLA_INTERNAL_API
-
+// some of the includes make use of internal string types
 #define nsAString_h___
 #define nsString_h___
 #define nsStringFwd_h___
@@ -201,16 +201,16 @@ GetRegularExtent(ITfRange *aRange, LONG &aStart, LONG &aEnd)
   return S_OK;
 }
 
-
+// {3B2DFDF5-2485-4858-8185-5C6B4EFD38F5}
 static const GUID GUID_COMPOSING_SELECTION_ATTR = 
   { 0x3b2dfdf5, 0x2485, 0x4858,
     { 0x81, 0x85, 0x5c, 0x6b, 0x4e, 0xfd, 0x38, 0xf5 } };
 #define GUID_ATOM_COMPOSING_SELECTION_ATTR \
   (static_cast<TfGuidAtom>(0x3b2dfdf5))
 
-
-
-
+/******************************************************************************
+ * TSFRangeImpl
+ ******************************************************************************/
 
 class TSFRangeImpl : public ITfRangeACP
 {
@@ -230,7 +230,7 @@ public:
   {
   }
 
-public: 
+public: // IUnknown
 
   STDMETHODIMP QueryInterface(REFIID riid, void** ppUnk)
   {
@@ -254,7 +254,7 @@ public:
     return 0;
   }
 
-public: 
+public: // ITfRange
 
   STDMETHODIMP GetText(TfEditCookie ec, DWORD dwFlags, WCHAR *pchText,
                        ULONG cchMax, ULONG *pcch)
@@ -401,7 +401,7 @@ public:
     return E_NOTIMPL;
   }
 
-public: 
+public: // ITfRangeACP
 
   STDMETHODIMP GetExtent(LONG *pacpAnchor, LONG *pcch)
   {
@@ -420,9 +420,9 @@ public:
   }
 };
 
-
-
-
+/******************************************************************************
+ * TSFEnumRangeImpl
+ ******************************************************************************/
 
 class TSFEnumRangeImpl : public IEnumTfRanges
 {
@@ -442,7 +442,7 @@ public:
   {
   }
 
-public: 
+public: // IUnknown
 
   STDMETHODIMP QueryInterface(REFIID riid, void** ppUnk)
   {
@@ -466,7 +466,7 @@ public:
     return 0;
   }
 
-public: 
+public: // IEnumTfRanges
 
   STDMETHODIMP Clone(IEnumTfRanges **ppEnum)
   {
@@ -503,9 +503,9 @@ public:
   }
 };
 
-
-
-
+/******************************************************************************
+ * TSFDispAttrInfoImpl
+ ******************************************************************************/
 
 class TSFDispAttrInfoImpl : public ITfDisplayAttributeInfo
 {
@@ -534,7 +534,7 @@ public:
   {
   }
 
-public: 
+public: // IUnknown
 
   STDMETHODIMP QueryInterface(REFIID riid, void** ppUnk)
   {
@@ -558,7 +558,7 @@ public:
     return 0;
   }
 
-public: 
+public: // ITfDisplayAttributeInfo
 
   STDMETHODIMP GetGUID(GUID *pguid)
   {
@@ -592,9 +592,9 @@ public:
   }
 };
 
-
-
-
+/******************************************************************************
+ * TSFAttrPropImpl
+ ******************************************************************************/
 
 class TSFAttrPropImpl : public ITfProperty
 {
@@ -613,7 +613,7 @@ public:
   {
   }
 
-public: 
+public: // IUnknown
 
   STDMETHODIMP QueryInterface(REFIID riid, void** ppUnk)
   {
@@ -638,7 +638,7 @@ public:
     return 0;
   }
 
-public: 
+public: // ITfProperty
 
   STDMETHODIMP FindRange(TfEditCookie ec, ITfRange *pRange, ITfRange **ppRange,
                          TfAnchor aPos)
@@ -667,7 +667,7 @@ public:
     return E_NOTIMPL;
   }
 
-public: 
+public: // ITfReadOnlyProperty
 
   STDMETHODIMP GetType(GUID *pguid)
   {
@@ -681,7 +681,7 @@ public:
     NS_ENSURE_TRUE(ppEnum, E_INVALIDARG);
     NS_ENSURE_TRUE(pTargetRange, E_INVALIDARG);
 
-    
+    // XXX ec checking is not implemented yet.
 
     LONG targetStart = 0, targetEnd = 0;
     if (pTargetRange) {
@@ -695,11 +695,11 @@ public:
       HRESULT hr = GetRegularExtent(mRanges[i], start, end);
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
       if (pTargetRange) {
-        
-        
+        // If pTargetRange is not null and the current range is not overlapped
+        // with it, we don't need to add range.
         if (targetStart > end || targetEnd < start)
           continue;
-        
+        // Otherwise, shrink to the target range.
         start = std::max(targetStart, start);
         end = std::min(targetEnd, end);
       }
@@ -723,7 +723,7 @@ public:
       LONG start, end;
       HRESULT hr = GetRegularExtent(mRanges[i], start, end);
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-      
+      // pRange must be same as (or included in) a range of mRanges.
       if (givenStart > start || givenEnd < end)
         continue;
       pvarValue->vt = VT_I4;
@@ -740,9 +740,9 @@ public:
   }
 };
 
-
-
-
+/******************************************************************************
+ * TSFContextImpl
+ ******************************************************************************/
 
 class TSFContextImpl : public ITfContext,
                        public ITfCompositionView, public ITextStoreACPSink
@@ -773,7 +773,7 @@ public:
   {
   }
 
-public: 
+public: // IUnknown
 
   STDMETHODIMP QueryInterface(REFIID riid, void** ppUnk)
   {
@@ -799,7 +799,7 @@ public:
     return 0;
   }
 
-public: 
+public: // ITfContext
 
   STDMETHODIMP RequestEditSession(TfClientId tid, ITfEditSession *pes,
                                   DWORD dwFlags, HRESULT *phrSession)
@@ -903,7 +903,7 @@ public:
     return E_NOTIMPL;
   }
 
-public: 
+public: // ITfCompositionView
 
   STDMETHODIMP GetOwnerClsid(CLSID* pclsid)
   {
@@ -932,7 +932,7 @@ public:
     return S_OK;
   }
 
-public: 
+public: // ITextStoreACPSink
 
   STDMETHODIMP OnTextChange(DWORD dwFlags, const TS_TEXTCHANGE *pChange)
   {
@@ -976,9 +976,9 @@ public:
   }
 };
 
-
-
-
+/******************************************************************************
+ * TSFDocumentMgrImpl
+ ******************************************************************************/
 
 class TSFDocumentMgrImpl : public ITfDocumentMgr
 {
@@ -989,7 +989,7 @@ public:
   nsRefPtr<TSFMgrImpl> mMgr;
   nsRefPtr<ITextStoreACP> mStore;
   nsRefPtr<TSFContextImpl> mContextBase;
-  nsRefPtr<TSFContextImpl> mContextTop; 
+  nsRefPtr<TSFContextImpl> mContextTop; // XXX currently, we don't support this.
 
 public:
   TSFDocumentMgrImpl(TSFMgrImpl* aMgr) :
@@ -1001,7 +1001,7 @@ public:
   {
   }
 
-public: 
+public: // IUnknown
 
   STDMETHODIMP QueryInterface(REFIID riid, void** ppUnk)
   {
@@ -1020,7 +1020,7 @@ public:
 
   STDMETHODIMP_(ULONG) Release(void);
 
-public: 
+public: // ITfDocumentMgr
 
   STDMETHODIMP CreateContext(TfClientId tidOwner, DWORD dwFlags,
                              IUnknown *punk, ITfContext **ppic,
@@ -1106,9 +1106,9 @@ public:
 
 };
 
-
-
-
+/******************************************************************************
+ * TSFMgrImpl
+ ******************************************************************************/
 
 class TSFMgrImpl : public ITfThreadMgr,
                    public ITfDisplayAttributeMgr, public ITfCategoryMgr
@@ -1120,7 +1120,7 @@ public:
   nsRefPtr<TestApp> mTestApp;
   TestApp::test_type mTest;
   bool mDeactivated;
-  TSFDocumentMgrImpl* mFocusedDocument; 
+  TSFDocumentMgrImpl* mFocusedDocument; // Must be raw pointer, but strong.
   int32_t mFocusCount;
 
   TSFMgrImpl(TestApp* test) : mTestApp(test), mTest(nullptr), mRefCnt(0),
@@ -1132,7 +1132,7 @@ public:
   {
   }
 
-public: 
+public: // IUnknown
 
   STDMETHODIMP QueryInterface(REFIID riid, void** ppUnk)
   {
@@ -1160,7 +1160,7 @@ public:
     return 0;
   }
 
-public: 
+public: // ITfThreadMgr
 
   STDMETHODIMP Activate(TfClientId *ptid)
   {
@@ -1246,7 +1246,7 @@ public:
     return E_NOTIMPL;
   }
 
-public: 
+public: // ITfCategoryMgr
 
   STDMETHODIMP RegisterCategory(REFCLSID rclsid, REFGUID rcatid, REFGUID rguid)
   {
@@ -1339,7 +1339,7 @@ public:
     return E_NOTIMPL;
   }
 
-public: 
+public: // ITfDisplayAttributeMgr
 
   STDMETHODIMP OnUpdateInfo()
   {
@@ -1391,7 +1391,7 @@ public:
 STDMETHODIMP
 TSFContextImpl::OnLockGranted(DWORD dwLockFlags)
 {
-  
+  // If we have a test, run it
   if (mDocMgr->mMgr->mTest &&
      !((*mDocMgr->mMgr->mTestApp).*(mDocMgr->mMgr->mTest))())
     return S_FALSE;
@@ -1418,8 +1418,8 @@ NS_IMPL_ISUPPORTS(TestApp, nsIWebProgressListener,
 nsresult
 TestApp::Run(void)
 {
-  
-  
+  // Create a test window
+  // We need a full-fledged window to test for TSF functionality
   nsresult rv;
   mAppShell = do_GetService(kAppShellCID);
   NS_ENSURE_TRUE(mAppShell, NS_ERROR_UNEXPECTED);
@@ -1434,8 +1434,8 @@ TestApp::Run(void)
 
   rv = appShellService->CreateTopLevelWindow(nullptr, uri,
                            nsIWebBrowserChrome::CHROME_DEFAULT,
-                           800 ,
-                           600 ,
+                           800 /*nsIAppShellService::SIZE_TO_CONTENT*/,
+                           600 /*nsIAppShellService::SIZE_TO_CONTENT*/,
                            getter_AddRefs(mWindow));
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1456,7 +1456,7 @@ TestApp::Run(void)
 bool
 TestApp::CheckFailed(void)
 {
-  
+  // All windows should be closed by now
   if (mMgr && !mMgr->mDeactivated) {
     fail("TSF not terminated properly");
     mFailed = true;
@@ -1468,8 +1468,8 @@ TestApp::CheckFailed(void)
 nsresult
 TestApp::Init(void)
 {
-  
-  
+  // Replace TSF manager pointer, category manager pointer and display
+  // attribute manager pointer.
   nsCOMPtr<nsIBaseWindow> baseWindow(do_QueryInterface(mWindow));
   NS_ENSURE_TRUE(baseWindow, NS_ERROR_UNEXPECTED);
   nsCOMPtr<nsIWidget> widget;
@@ -1487,7 +1487,7 @@ TestApp::Init(void)
     (*threadMgr)->Release();
     (*threadMgr) = nullptr;
   } else {
-    
+    // This is only for information. The test does not need TSF to run.
     printf("TSF not initialized properly (TSF is not enabled/installed?)\n");
   }
 
@@ -1515,11 +1515,11 @@ TestApp::Init(void)
   (*daMgr) = mMgr;
   (*daMgr)->AddRef();
 
-  
+  // Apply the change
   reinterpret_cast<ITfThreadMgr**>(
       widget->GetNativeData(NS_NATIVE_TSF_THREAD_MGR));
 
-  
+  // Create a couple of text boxes for testing
   nsCOMPtr<nsIDOMWindow> win(do_GetInterface(mWindow));
   NS_ENSURE_TRUE(win, NS_ERROR_UNEXPECTED);
   nsCOMPtr<nsIDOMDocument> document;
@@ -1573,8 +1573,8 @@ TestApp::Init(void)
   rv = htmlBody->AppendChild(form, getter_AddRefs(node));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
+  // set a background color manually,
+  // otherwise the window might be transparent
   static_cast<HTMLBodyElement*>(htmlBody)->
       SetBgColor(NS_LITERAL_STRING("white"));
 
@@ -1706,14 +1706,14 @@ TestApp::TestFocus(void)
   uint32_t focus = mMgr->mFocusCount;
   nsresult rv;
 
-  
-
-
-
-
-
-
-
+  /* If these fail the cause is probably one or more of:
+   * - nsIMEStateManager::OnTextStateFocus not called by nsEventStateManager
+   * - nsIMEStateManager::OnTextStateBlur not called by nsEventStateManager
+   * - nsWindow::OnIMEFocusChange (nsIWidget) not called by nsIMEStateManager
+   * - nsTextStore::Create/Focus/Destroy not called by nsWindow
+   * - ITfThreadMgr::CreateDocumentMgr/SetFocus not called by nsTextStore
+   * - ITfDocumentMgr::CreateContext/Push not called by nsTextStore
+   */
 
   rv = mInput->Focus();
   if (!(NS_SUCCEEDED(rv) &&
@@ -1747,11 +1747,11 @@ TestApp::TestFocus(void)
 bool
 TestApp::TestClustering(void)
 {
-  
+  // Text for testing
   const uint32_t STRING_LENGTH = 2;
   char16_t string[3];
   string[0] = 'e';
-  string[1] = 0x0301; 
+  string[1] = 0x0301; // U+0301 'acute accent'
   string[2] = nullptr;
 
   if (!mMgr->GetFocusedStore()) {
@@ -1759,7 +1759,7 @@ TestApp::TestClustering(void)
     return false;
   }
 
-  
+  // Replace entire string with our string
   TS_TEXTCHANGE textChange;
   HRESULT hr =
     mMgr->GetFocusedStore()->SetText(0, 0, -1, string, STRING_LENGTH,
@@ -1791,7 +1791,7 @@ TestApp::TestClustering(void)
     return false;
   }
 
-  
+  // Get rect of first char (the letter)
   hr = mMgr->GetFocusedStore()->GetTextExt(view, 0, STRING_LENGTH / 2,
                                            &rectLetter, &clipped);
   if (!(SUCCEEDED(hr))) {
@@ -1804,7 +1804,7 @@ TestApp::TestClustering(void)
     return false;
   }
 
-  
+  // Get rect of second char (the accent)
   hr = mMgr->GetFocusedStore()->GetTextExt(view, STRING_LENGTH / 2,
                                            STRING_LENGTH,
                                            &rectAccent, &clipped);
@@ -1818,7 +1818,7 @@ TestApp::TestClustering(void)
     return false;
   }
 
-  
+  // Get rect of combined char
   hr = mMgr->GetFocusedStore()->GetTextExt(view, 0, STRING_LENGTH,
                                            &rectWhole, &clipped);
   if (!(SUCCEEDED(hr))) {
@@ -1883,14 +1883,14 @@ TestApp::TestSelection(void)
 {
   bool succeeded = true;
 
-  
-
-
-
-
-
-
-
+  /* If these fail the cause is probably one or more of:
+   * nsTextStore::GetSelection not sending NS_QUERY_SELECTED_TEXT
+   * NS_QUERY_SELECTED_TEXT not handled by ContentEventHandler
+   * Bug in NS_QUERY_SELECTED_TEXT handler
+   * nsTextStore::SetSelection not sending NS_SELECTION_SET
+   * NS_SELECTION_SET not handled by ContentEventHandler
+   * Bug in NS_SELECTION_SET handler
+   */
 
   TS_SELECTION_ACP testSel;
   ULONG selFetched;
@@ -1957,21 +1957,21 @@ TestApp::TestText(void)
   TS_TEXTCHANGE textChange;
   HRESULT hr;
 
-  
-
-
-
-
-
-
-
+  /* If these fail the cause is probably one or more of:
+   * nsTextStore::GetText not sending NS_QUERY_TEXT_CONTENT
+   * NS_QUERY_TEXT_CONTENT not handled by ContentEventHandler
+   * Bug in NS_QUERY_TEXT_CONTENT handler
+   * nsTextStore::SetText not calling SetSelection or InsertTextAtSelection
+   * Bug in SetSelection or InsertTextAtSelection
+   *  NS_SELECTION_SET bug or NS_COMPOSITION_* / NS_TEXT_TEXT bug
+   */
 
   if (!mMgr->GetFocusedStore()) {
     fail("TestText: GetFocusedStore returns null #1");
     return false;
   }
 
-  
+  // Get all text
   hr = mMgr->GetFocusedStore()->GetText(0, -1, buffer, BUFFER_SIZE, &bufferRet,
                                         runInfo, RUNINFO_SIZE, &runInfoRet,
                                         &acpRet);
@@ -1990,7 +1990,7 @@ TestApp::TestText(void)
     return false;
   }
 
-  
+  // Get text from GETTEXT2_START to GETTEXT2_END
   const uint32_t GETTEXT2_START       = (18);
   const uint32_t GETTEXT2_END         = (mTestString.Length() - 16);
   const uint32_t GETTEXT2_BUFFER_SIZE = (0x10);
@@ -2014,7 +2014,7 @@ TestApp::TestText(void)
     return false;
   }
 
-  
+  // Replace text from SETTEXT1_START to SETTEXT1_END with insertString
   const uint32_t SETTEXT1_START        = (8);
   const uint32_t SETTEXT1_TAIL_LENGTH  = (40);
   const uint32_t SETTEXT1_END          = (mTestString.Length() -
@@ -2079,7 +2079,7 @@ TestApp::TestText(void)
     return false;
   }
 
-  
+  // Restore entire text to original text (mTestString)
   continueTest = true;
   hr = mMgr->GetFocusedStore()->SetText(0, 0, -1, mTestString.get(),
                                         mTestString.Length(), &textChange);
@@ -2265,7 +2265,7 @@ TestApp::TestExtents(void)
     succeeded = false;
   }
 
-  
+  // Offsets must be between GETTEXTEXT2_START and GETTEXTEXT2_END
   const LONG GETTEXTEXT3_START = 23;
   const LONG GETTEXTEXT3_END   = 23;
 
@@ -2279,9 +2279,9 @@ TestApp::TestExtents(void)
   hr = mMgr->GetFocusedStore()->GetTextExt(view, GETTEXTEXT3_START,
                                            GETTEXTEXT3_END, &textRect1,
                                            &clipped);
-  
-  
-  
+  // Rectangle must be entirely inside the previous rectangle,
+  // since GETTEXTEXT3_START and GETTEXTEXT3_END are between
+  // GETTEXTEXT2_START and GETTEXTEXT2_START
   if (!(SUCCEEDED(hr) && ::IsRectEmpty(&textRect1) ||
         (textRect1.left >= textRect2.left &&
         textRect1.top >= textRect2.top &&
@@ -2454,7 +2454,7 @@ TestApp::TestComposition(void)
     return false;
   }
 
-  const LONG COMPOSITION3_TEXT_START_OFFSET = -8; 
+  const LONG COMPOSITION3_TEXT_START_OFFSET = -8; // offset 8 from the end
   const LONG COMPOSITION3_TEXT_END_OFFSET   = 4;
 
   const LONG COMPOSITION3_TEXT_START = range->mStart + range->mLength +
@@ -2603,7 +2603,7 @@ bool
 TestApp::TestNotification(void)
 {
   nsresult nsr;
-  
+  // get selection to test notification support
   nsCOMPtr<nsISelectionController> selCon;
   if (!(NS_SUCCEEDED(GetSelCon(getter_AddRefs(selCon))) && selCon)) {
     fail("TestNotification: get nsISelectionController");
@@ -2651,12 +2651,12 @@ TestApp::TestNotification(void)
   NS_NAMED_LITERAL_STRING(character, "");
   NS_NAMED_LITERAL_STRING(characterA, "A");
 
-  
+  // The selection test code above placed the selection at offset 1 to 2
   const LONG TEXTCHANGE1_START  = 1;
   const LONG TEXTCHANGE1_OLDEND = 2;
   const LONG TEXTCHANGE1_NEWEND = 2;
 
-  
+  // replace single selected character with 'A'
   if (!TestNotificationTextChange(widget, 'A', characterA,
         TEXTCHANGE1_START, TEXTCHANGE1_OLDEND, TEXTCHANGE1_NEWEND)) {
     fail("TestNotification: text change 1");
@@ -2667,7 +2667,7 @@ TestApp::TestNotification(void)
   const LONG TEXTCHANGE2_OLDEND = TEXTCHANGE1_NEWEND;
   const LONG TEXTCHANGE2_NEWEND = TEXTCHANGE1_NEWEND + 1;
 
-  
+  // insert 'A'
   if (!TestNotificationTextChange(widget, 'A', characterA,
         TEXTCHANGE2_START, TEXTCHANGE2_OLDEND, TEXTCHANGE2_NEWEND)) {
     fail("TestNotification: text change 2");
@@ -2678,7 +2678,7 @@ TestApp::TestNotification(void)
   const LONG TEXTCHANGE3_OLDEND = TEXTCHANGE2_NEWEND;
   const LONG TEXTCHANGE3_NEWEND = TEXTCHANGE2_NEWEND - 1;
 
-  
+  // backspace
   if (!TestNotificationTextChange(widget, '\b', character,
         TEXTCHANGE3_START, TEXTCHANGE3_OLDEND, TEXTCHANGE3_NEWEND)) {
     fail("TestNotification: text change 3");
@@ -2692,10 +2692,10 @@ TestApp::TestEditMessages(void)
 {
   mTestString = NS_LITERAL_STRING(
     "This is a test of\nthe native editing command messages");
-  
-  
+  // 0123456789012345678901 2345678901234567890123456789012
+  // 0         1         2          3         4         5
 
-  
+  // The native text string is increased by converting \n to \r\n.
   uint32_t testStringLength = mTestString.Length() + 1;
 
   mTextArea->SetValue(mTestString);
@@ -2903,7 +2903,7 @@ TestApp::TestScrollMessages(void)
 #define DO_CHECK(aFailureCondition, aDescription) \
   if (aFailureCondition) { \
     nsAutoCString str(aDescription); \
-    str.Append(": "); \
+    str.AppendLiteral(": "); \
     str.Append(#aFailureCondition); \
     fail(str.get()); \
     mTextArea->SetAttribute(NS_LITERAL_STRING("style"), EmptyString()); \
