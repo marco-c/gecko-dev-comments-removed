@@ -57,7 +57,10 @@ class BaselineFrame
         HAS_HOOK_DATA    = 1 << 7,
 
         
-        HAS_PUSHED_SPS_FRAME = 1 << 8
+        HAS_PUSHED_SPS_FRAME = 1 << 8,
+
+        
+        OVER_RECURSED    = 1 << 9
     };
 
   protected: 
@@ -303,6 +306,14 @@ class BaselineFrame
 
     void unsetPushedSPSFrame() {
         flags_ &= ~HAS_PUSHED_SPS_FRAME;
+    }
+
+    bool overRecursed() const {
+        return flags_ & OVER_RECURSED;
+    }
+
+    void setOverRecursed() {
+        flags_ |= OVER_RECURSED;
     }
 
     void trace(JSTracer *trc);
