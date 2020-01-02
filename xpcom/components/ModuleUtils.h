@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_GenericModule_h
 #define mozilla_GenericModule_h
@@ -66,8 +66,8 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
     return rv;                                                                \
 }
 
-// 'Constructor' that uses an existing getter function that gets a singleton.
-// NOTE: assumes that getter does an AddRef - so additional AddRef is not done.
+
+
 #define NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(_InstanceClass, _GetterProc) \
 static nsresult                                                               \
 _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
@@ -104,22 +104,19 @@ namespace mozilla {
 
 class GenericModule MOZ_FINAL : public nsIModule
 {
-    ~GenericModule() {}
+  ~GenericModule() {}
 
 public:
-    explicit GenericModule(const mozilla::Module* aData)
-        : mData(aData)
-    {
-    }
+  explicit GenericModule(const mozilla::Module* aData) : mData(aData) {}
 
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIMODULE
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIMODULE
 
 private:
-    const mozilla::Module* mData;
+  const mozilla::Module* mData;
 };
 
-} // namespace mozilla
+} 
 
 #define NS_IMPL_MOZILLA192_NSGETMODULE(module)     \
 extern "C" NS_EXPORT nsresult                      \
@@ -134,4 +131,4 @@ NSGetModule(nsIComponentManager* aCompMgr,         \
 
 #endif
 
-#endif // mozilla_GenericModule_h
+#endif 
