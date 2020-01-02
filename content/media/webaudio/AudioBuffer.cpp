@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "AudioBuffer.h"
 #include "mozilla/dom/AudioBufferBinding.h"
@@ -93,9 +93,9 @@ AudioBuffer::RestoreJSChannelData(JSContext* aJSContext)
   if (mSharedChannels) {
     for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
       const float* data = mSharedChannels->GetData(i);
-      // The following code first zeroes the array and then copies our data
-      // into it. We could avoid this with additional JS APIs to construct
-      // an array (or ArrayBuffer) containing initial data.
+      
+      
+      
       JS::Rooted<JSObject*> array(aJSContext,
                                   JS_NewFloat32Array(aJSContext, mLength));
       if (!array) {
@@ -125,7 +125,7 @@ AudioBuffer::CopyFromChannel(const Float32Array& aDestination, uint32_t aChannel
   }
 
   if (!mSharedChannels && JS_GetTypedArrayLength(mJSChannels[aChannelNumber]) != mLength) {
-    // The array was probably neutered
+    
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
     return;
   }
@@ -151,7 +151,7 @@ AudioBuffer::CopyToChannel(JSContext* aJSContext, const Float32Array& aSource,
   }
 
   if (!mSharedChannels && JS_GetTypedArrayLength(mJSChannels[aChannelNumber]) != mLength) {
-    // The array was probably neutered
+    
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
     return;
   }
@@ -217,7 +217,7 @@ AudioBuffer::GetThreadSharedChannelsForRate(JSContext* aJSContext)
   if (!mSharedChannels) {
     for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
       if (mLength != JS_GetTypedArrayLength(mJSChannels[i])) {
-        // Probably one of the arrays was neutered
+        
         return nullptr;
       }
     }
@@ -233,27 +233,38 @@ void
 AudioBuffer::MixToMono(JSContext* aJSContext)
 {
   if (mJSChannels.Length() == 1) {
-    // The buffer is already mono
+    
     return;
   }
 
-  // Prepare the input channels
+  
   nsAutoTArray<const void*, GUESS_AUDIO_CHANNELS> channels;
   channels.SetLength(mJSChannels.Length());
   for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
     channels[i] = JS_GetFloat32ArrayData(mJSChannels[i]);
   }
 
-  // Prepare the output channels
+  
   float* downmixBuffer = new float[mLength];
 
-  // Perform the down-mix
+  
   AudioChannelsDownMix(channels, &downmixBuffer, 1, mLength);
 
-  // Truncate the shared channels and copy the downmixed data over
+  
   mJSChannels.SetLength(1);
   SetRawChannelContents(aJSContext, 0, downmixBuffer);
   delete[] downmixBuffer;
+}
+
+size_t
+AudioBuffer::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t amount = aMallocSizeOf(this);
+  amount += mJSChannels.SizeOfExcludingThis(aMallocSizeOf);
+  if (mSharedChannels) {
+    amount += mSharedChannels->SizeOfExcludingThis(aMallocSizeOf);
+  }
+  return amount;
 }
 
 }
