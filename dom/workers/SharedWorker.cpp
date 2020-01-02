@@ -1,7 +1,7 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "SharedWorker.h"
 
@@ -23,12 +23,6 @@ using mozilla::dom::Sequence;
 
 USING_WORKERS_NAMESPACE
 
-namespace {
-
-const char kSharedWorkersEnabledPref[] = "dom.workers.sharedWorkers.enabled";
-
-} // anonymous namespace
-
 SharedWorker::SharedWorker(nsPIDOMWindow* aWindow,
                            WorkerPrivate* aWorkerPrivate)
 : nsDOMEventTargetHelper(aWindow), mWorkerPrivate(aWorkerPrivate),
@@ -48,16 +42,7 @@ SharedWorker::~SharedWorker()
   MOZ_ASSERT(!mWorkerPrivate);
 }
 
-//static
-bool
-SharedWorker::PrefEnabled()
-{
-  AssertIsOnMainThread();
 
-  return mozilla::Preferences::GetBool(kSharedWorkersEnabledPref, false);
-}
-
-// static
 already_AddRefed<SharedWorker>
 SharedWorker::Constructor(const GlobalObject& aGlobal, JSContext* aCx,
                           const nsAString& aScriptURL,
