@@ -2991,6 +2991,14 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
         if (scheme.LowerCaseEqualsLiteral("app") ||
             scheme.LowerCaseEqualsLiteral("jar")) {
           mIsMappedArrayBuffer = true;
+          if (XRE_GetProcessType() != GeckoProcessType_Default) {
+            nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(mChannel);
+            
+            
+            
+            
+            jarChannel->EnsureChildFd();
+          }
         }
       }
     }
