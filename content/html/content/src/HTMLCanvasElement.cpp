@@ -72,7 +72,7 @@ HTMLCanvasPrintState::~HTMLCanvasPrintState()
 }
 
  JSObject*
-HTMLCanvasPrintState::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aScope)
+HTMLCanvasPrintState::WrapObject(JSContext* aCx)
 {
   return MozCanvasPrintStateBinding::Wrap(aCx, this);
 }
