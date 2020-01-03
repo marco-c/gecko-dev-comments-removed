@@ -410,6 +410,7 @@ public:
                    LayerManager::DrawPaintedLayerCallback aCallback,
                    void* aCallbackData) = 0;
 
+  virtual bool SupportsProgressiveUpdate() = 0;
   virtual bool ProgressiveUpdate(nsIntRegion& aValidRegion,
                          nsIntRegion& aInvalidRegion,
                          const nsIntRegion& aOldValidRegion,
@@ -469,6 +470,7 @@ public:
                    LayerManager::DrawPaintedLayerCallback aCallback,
                    void* aCallbackData) override;
 
+  virtual bool SupportsProgressiveUpdate() override { return true; }
   
 
 
