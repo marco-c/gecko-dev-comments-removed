@@ -55,6 +55,8 @@ static const char *kTypeString[] = {
                                     "", 
                                     "", 
                                     "", 
+                                    "", 
+                                    "", 
                                     ""  
 };
 
