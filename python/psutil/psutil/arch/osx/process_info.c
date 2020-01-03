@@ -32,15 +32,12 @@ psutil_pid_exists(long pid)
     int kill_ret;
 
     
-    if (pid < 0) {
+    if (pid < 0)
         return 0;
-    }
-
     
     kill_ret = kill(pid , 0);
-    if ( (0 == kill_ret) || (EPERM == errno) ) {
+    if ( (0 == kill_ret) || (EPERM == errno))
         return 1;
-    }
 
     
     return 0;
@@ -85,34 +82,29 @@ psutil_get_proc_list(kinfo_proc **procList, size_t *procCount)
 
     while (lim-- > 0) {
         size = 0;
-        if (sysctl((int *)mib3, 3, NULL, &size, NULL, 0) == -1) {
+        if (sysctl((int *)mib3, 3, NULL, &size, NULL, 0) == -1)
             return errno;
-        }
-
         size2 = size + (size >> 3);  
         if (size2 > size) {
             ptr = malloc(size2);
-            if (ptr == NULL) {
+            if (ptr == NULL)
                 ptr = malloc(size);
-            } else {
+            else
                 size = size2;
-            }
         }
         else {
             ptr = malloc(size);
         }
-        if (ptr == NULL) {
+        if (ptr == NULL)
             return ENOMEM;
-        }
 
         if (sysctl((int *)mib3, 3, ptr, &size, NULL, 0) == -1) {
             err = errno;
             free(ptr);
-            if (err != ENOMEM) {
+            if (err != ENOMEM)
                 return err;
-            }
-
-        } else {
+        }
+        else {
             *procList = (kinfo_proc *)ptr;
             *procCount = size / sizeof(kinfo_proc);
             return 0;
@@ -130,9 +122,8 @@ psutil_get_argmax()
     int mib[] = { CTL_KERN, KERN_ARGMAX };
     size_t size = sizeof(argmax);
 
-    if (sysctl(mib, 2, &argmax, &size, NULL, 0) == 0) {
+    if (sysctl(mib, 2, &argmax, &size, NULL, 0) == 0)
         return argmax;
-    }
     return 0;
 }
 
@@ -153,9 +144,8 @@ psutil_get_arg_list(long pid)
     PyObject *arglist = NULL;
 
     
-    if (pid == 0) {
+    if (pid == 0)
         return Py_BuildValue("[]");
-    }
 
     
     argmax = psutil_get_argmax();
@@ -177,11 +167,10 @@ psutil_get_arg_list(long pid)
     if (sysctl(mib, 3, procargs, &argmax, NULL, 0) < 0) {
         if (EINVAL == errno) {
             
-            if ( psutil_pid_exists(pid) ) {
+            if (psutil_pid_exists(pid))
                 AccessDenied();
-            } else {
+            else
                 NoSuchProcess();
-            }
         }
         goto error;
     }
@@ -201,9 +190,8 @@ psutil_get_arg_list(long pid)
 
     
     for (; arg_ptr < arg_end; arg_ptr++) {
-        if (*arg_ptr != '\0') {
+        if (*arg_ptr != '\0')
             break;
-        }
     }
 
     

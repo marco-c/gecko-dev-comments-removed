@@ -14,29 +14,17 @@
 
 import datetime
 import os
-import sys
 
 
-if sys.version_info >= (3, ):
-    def u(s):
-        return s
-else:
-    def u(s):
-        if not isinstance(s, unicode):  
-            s = unicode(s, "unicode_escape")  
-        return s
-
-
-PROJECT_NAME = u("psutil")
-AUTHOR = u("Giampaolo Rodola'")
+PROJECT_NAME = "psutil"
+AUTHOR = "Giampaolo Rodola'"
 THIS_YEAR = str(datetime.datetime.now().year)
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_version():
     INIT = os.path.abspath(os.path.join(HERE, '../psutil/__init__.py'))
-    f = open(INIT, 'r')
-    try:
+    with open(INIT, 'r') as f:
         for line in f:
             if line.startswith('__version__'):
                 ret = eval(line.strip().split(' = ')[1])
@@ -46,8 +34,6 @@ def get_version():
                 return ret
         else:
             raise ValueError("couldn't find version string")
-    finally:
-        f.close()
 
 VERSION = get_version()
 
@@ -77,7 +63,7 @@ master_doc = 'index'
 
 
 project = PROJECT_NAME
-copyright = u('2009-%s, %s' % (THIS_YEAR, AUTHOR))
+copyright = '2009-%s, %s' % (THIS_YEAR, AUTHOR)
 
 
 
@@ -223,7 +209,7 @@ htmlhelp_basename = '%s-doc' % PROJECT_NAME
 
 latex_documents = [
     ('index', '%s.tex' % PROJECT_NAME,
-     u('%s documentation') % PROJECT_NAME, AUTHOR),
+     '%s documentation' % PROJECT_NAME, AUTHOR),
 ]
 
 
@@ -255,7 +241,7 @@ latex_documents = [
 
 
 man_pages = [
-    ('index', PROJECT_NAME, u('%s documentation') % PROJECT_NAME, [AUTHOR], 1)
+    ('index', PROJECT_NAME, '%s documentation' % PROJECT_NAME, [AUTHOR], 1)
 ]
 
 
