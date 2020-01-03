@@ -602,6 +602,74 @@ DispatchToTracer(JSTracer* trc, T* thingp, const char* name)
 
 
 
+namespace js {
+
+typedef bool DoNothingMarkingType;
+
+template <typename T>
+struct LinearlyMarkedEphemeronKeyType {
+    typedef DoNothingMarkingType Type;
+};
+
+
+
+
+template <>
+struct LinearlyMarkedEphemeronKeyType<JSObject*> {
+    typedef JSObject* Type;
+};
+
+template <>
+struct LinearlyMarkedEphemeronKeyType<JSScript*> {
+    typedef JSScript* Type;
+};
+
+void
+GCMarker::markEphemeronValues(gc::Cell* markedCell, WeakEntryVector& values)
+{
+    size_t initialLen = values.length();
+    for (size_t i = 0; i < initialLen; i++)
+        values[i].weakmap->maybeMarkEntry(this, markedCell, values[i].key);
+
+    
+    
+    
+    MOZ_ASSERT(values.length() == initialLen);
+}
+
+template <typename T>
+void
+GCMarker::markPotentialEphemeronKeyHelper(T markedThing)
+{
+    if (!isWeakMarkingTracer())
+        return;
+
+    MOZ_ASSERT(gc::TenuredCell::fromPointer(markedThing)->zone()->isGCMarking());
+    MOZ_ASSERT(!gc::TenuredCell::fromPointer(markedThing)->zone()->isGCSweeping());
+
+    auto weakValues = weakKeys.get(JS::GCCellPtr(markedThing));
+    if (!weakValues)
+        return;
+
+    markEphemeronValues(markedThing, weakValues->value);
+    weakValues->value.clear(); 
+}
+
+template <>
+void
+GCMarker::markPotentialEphemeronKeyHelper(bool)
+{
+}
+
+template <typename T>
+void
+GCMarker::markPotentialEphemeronKey(T* thing)
+{
+    markPotentialEphemeronKeyHelper<typename LinearlyMarkedEphemeronKeyType<T*>::Type>(thing);
+}
+
+} 
+
 template <typename T>
 static inline bool
 MustSkipMarking(T thing)
@@ -700,7 +768,6 @@ js::GCMarker::markAndTraceChildren(T* thing)
 namespace js {
 template <> void GCMarker::traverse(BaseShape* thing) { markAndTraceChildren(thing); }
 template <> void GCMarker::traverse(JS::Symbol* thing) { markAndTraceChildren(thing); }
-template <> void GCMarker::traverse(JSScript* thing) { markAndTraceChildren(thing); }
 } 
 
 
@@ -725,17 +792,21 @@ template <> void GCMarker::traverse(Shape* thing) { markAndScan(thing); }
 
 
 
+
 template <typename T>
 void
 js::GCMarker::markAndPush(StackTag tag, T* thing)
 {
-    if (mark(thing))
-        pushTaggedPtr(tag, thing);
+    if (!mark(thing))
+        return;
+    pushTaggedPtr(tag, thing);
+    markPotentialEphemeronKey(thing);
 }
 namespace js {
 template <> void GCMarker::traverse(JSObject* thing) { markAndPush(ObjectTag, thing); }
 template <> void GCMarker::traverse(ObjectGroup* thing) { markAndPush(GroupTag, thing); }
 template <> void GCMarker::traverse(jit::JitCode* thing) { markAndPush(JitCodeTag, thing); }
+template <> void GCMarker::traverse(JSScript* thing) { markAndPush(ScriptTag, thing); }
 } 
 
 namespace js {
@@ -1274,6 +1345,10 @@ GCMarker::processMarkStackTop(SliceBudget& budget)
         return reinterpret_cast<jit::JitCode*>(addr)->traceChildren(this);
       }
 
+      case ScriptTag: {
+        return reinterpret_cast<JSScript*>(addr)->traceChildren(this);
+      }
+
       case SavedValueArrayTag: {
         MOZ_ASSERT(!(addr & CellMask));
         JSObject* obj = reinterpret_cast<JSObject*>(addr);
@@ -1327,6 +1402,7 @@ GCMarker::processMarkStackTop(SliceBudget& budget)
             return;
         }
 
+        markPotentialEphemeronKey(obj);
         ObjectGroup* group = obj->groupFromGC();
         traverseEdge(obj, group);
 
@@ -1594,8 +1670,10 @@ MarkStack::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
 
 
 
+
+
 GCMarker::GCMarker(JSRuntime* rt)
-  : JSTracer(rt, JSTracer::TracerKindTag::Marking, DoNotTraceWeakMaps),
+  : JSTracer(rt, JSTracer::TracerKindTag::Marking, ExpandWeakMaps),
     stack(size_t(-1)),
     color(BLACK),
     unmarkedArenaStackTop(nullptr),
@@ -1608,7 +1686,7 @@ GCMarker::GCMarker(JSRuntime* rt)
 bool
 GCMarker::init(JSGCMode gcMode)
 {
-    return stack.init(gcMode);
+    return stack.init(gcMode) && weakKeys.init();
 }
 
 void
@@ -1617,10 +1695,10 @@ GCMarker::start()
     MOZ_ASSERT(!started);
     started = true;
     color = BLACK;
+    linearWeakMarkingDisabled_ = false;
 
     MOZ_ASSERT(!unmarkedArenaStackTop);
     MOZ_ASSERT(markLaterArenas == 0);
-
 }
 
 void
@@ -1636,6 +1714,7 @@ GCMarker::stop()
 
     
     stack.reset();
+    weakKeys.clear();
 }
 
 void
@@ -1658,6 +1737,27 @@ GCMarker::reset()
     }
     MOZ_ASSERT(isDrained());
     MOZ_ASSERT(!markLaterArenas);
+}
+
+void
+GCMarker::enterWeakMarkingMode()
+{
+    MOZ_ASSERT(tag_ == TracerKindTag::Marking);
+    if (linearWeakMarkingDisabled_)
+        return;
+
+    
+    
+    if (weakMapAction() == ExpandWeakMaps) {
+        tag_ = TracerKindTag::WeakMarking;
+
+        for (GCCompartmentGroupIter c(runtime()); !c.done(); c.next()) {
+            for (WeakMapBase* m = c->gcWeakMapList; m; m = m->next) {
+                if (m->marked)
+                    m->markEphemeronEntries(this);
+            }
+        }
+    }
 }
 
 void

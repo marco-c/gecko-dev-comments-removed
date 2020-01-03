@@ -50,22 +50,26 @@ WeakMapBase::trace(JSTracer* tracer)
 {
     MOZ_ASSERT(isInList());
     if (tracer->isMarkingTracer()) {
-        
-        
-        
-        
-        MOZ_ASSERT(tracer->eagerlyTraceWeakMaps() == DoNotTraceWeakMaps);
         marked = true;
+        if (tracer->weakMapAction() == DoNotTraceWeakMaps) {
+            
+            
+            
+            
+        } else {
+            MOZ_ASSERT(tracer->weakMapAction() == ExpandWeakMaps);
+            markEphemeronEntries(tracer);
+        }
     } else {
         
         
         
         
-        if (tracer->eagerlyTraceWeakMaps() == DoNotTraceWeakMaps)
+        if (tracer->weakMapAction() == DoNotTraceWeakMaps)
             return;
 
         nonMarkingTraceValues(tracer);
-        if (tracer->eagerlyTraceWeakMaps() == TraceWeakMapKeysValues)
+        if (tracer->weakMapAction() == TraceWeakMapKeysValues)
             nonMarkingTraceKeys(tracer);
     }
 }
@@ -80,7 +84,7 @@ WeakMapBase::unmarkCompartment(JSCompartment* c)
 void
 WeakMapBase::markAll(JSCompartment* c, JSTracer* tracer)
 {
-    MOZ_ASSERT(tracer->eagerlyTraceWeakMaps() != DoNotTraceWeakMaps);
+    MOZ_ASSERT(tracer->weakMapAction() != DoNotTraceWeakMaps);
     for (WeakMapBase* m = c->gcWeakMapList; m; m = m->next) {
         m->trace(tracer);
         if (m->memberOf)
@@ -158,7 +162,7 @@ WeakMapBase::saveCompartmentMarkedWeakMaps(JSCompartment* c, WeakMapSet& markedW
 }
 
 void
-WeakMapBase::restoreCompartmentMarkedWeakMaps(WeakMapSet& markedWeakMaps)
+WeakMapBase::restoreMarkedWeakMaps(WeakMapSet& markedWeakMaps)
 {
     for (WeakMapSet::Range r = markedWeakMaps.all(); !r.empty(); r.popFront()) {
         WeakMapBase* map = r.front();

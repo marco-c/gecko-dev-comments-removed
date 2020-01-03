@@ -27,9 +27,21 @@ GCTraceKindToAscii(JS::TraceKind kind);
 } 
 
 enum WeakMapTraceKind {
-    DoNotTraceWeakMaps = 0,
-    TraceWeakMapValues = 1,
-    TraceWeakMapKeysValues = 2
+    
+    DoNotTraceWeakMaps,
+
+    
+    
+    
+    ExpandWeakMaps,
+
+    
+    
+    TraceWeakMapValues,
+
+    
+    
+    TraceWeakMapKeysValues
 };
 
 class JS_PUBLIC_API(JSTracer)
@@ -39,15 +51,17 @@ class JS_PUBLIC_API(JSTracer)
     JSRuntime* runtime() const { return runtime_; }
 
     
-    WeakMapTraceKind eagerlyTraceWeakMaps() const { return eagerlyTraceWeakMaps_; }
+    WeakMapTraceKind weakMapAction() const { return weakMapAction_; }
 
     
     enum class TracerKindTag {
         Marking,
+        WeakMarking, 
         Tenuring,
         Callback
     };
-    bool isMarkingTracer() const { return tag_ == TracerKindTag::Marking; }
+    bool isMarkingTracer() const { return tag_ == TracerKindTag::Marking || tag_ == TracerKindTag::WeakMarking; }
+    bool isWeakMarkingTracer() const { return tag_ == TracerKindTag::WeakMarking; }
     bool isTenuringTracer() const { return tag_ == TracerKindTag::Tenuring; }
     bool isCallbackTracer() const { return tag_ == TracerKindTag::Callback; }
     inline JS::CallbackTracer* asCallbackTracer();
@@ -55,13 +69,15 @@ class JS_PUBLIC_API(JSTracer)
   protected:
     JSTracer(JSRuntime* rt, TracerKindTag tag,
              WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
-      : runtime_(rt), tag_(tag), eagerlyTraceWeakMaps_(weakTraceKind)
+      : runtime_(rt), weakMapAction_(weakTraceKind), tag_(tag)
     {}
 
   private:
     JSRuntime*          runtime_;
+    WeakMapTraceKind    weakMapAction_;
+
+  protected:
     TracerKindTag       tag_;
-    WeakMapTraceKind    eagerlyTraceWeakMaps_;
 };
 
 namespace JS {

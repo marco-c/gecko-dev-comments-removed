@@ -64,6 +64,11 @@ typedef HashSet<ReadBarrieredGlobalObject,
 
 
 
+
+
+
+
+
 template <class UnbarrieredKey, bool InvisibleKeysOk=false>
 class DebuggerWeakMap : private WeakMap<PreBarriered<UnbarrieredKey>, RelocatablePtrObject>
 {

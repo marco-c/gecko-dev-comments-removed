@@ -7,6 +7,8 @@
 #ifndef jsweakmap_h
 #define jsweakmap_h
 
+#include "mozilla/Move.h"
+
 #include "jscompartment.h"
 #include "jsfriendapi.h"
 #include "jsobj.h"
@@ -39,6 +41,8 @@ typedef HashSet<WeakMapBase*, DefaultHasher<WeakMapBase*>, SystemAllocPolicy> We
 
 
 class WeakMapBase {
+    friend void js::GCMarker::enterWeakMarkingMode();
+
   public:
     WeakMapBase(JSObject* memOf, JSCompartment* c);
     virtual ~WeakMapBase();
@@ -75,10 +79,16 @@ class WeakMapBase {
     static bool saveCompartmentMarkedWeakMaps(JSCompartment* c, WeakMapSet& markedWeakMaps);
 
     
-    static void restoreCompartmentMarkedWeakMaps(WeakMapSet& markedWeakMaps);
+    static void restoreMarkedWeakMaps(WeakMapSet& markedWeakMaps);
 
     
     static void removeWeakMapFromList(WeakMapBase* weakmap);
+
+    
+    
+    virtual void maybeMarkEntry(JSTracer* trc, gc::Cell* markedCell, JS::GCCellPtr l) = 0;
+
+    virtual void markEphemeronEntries(JSTracer* trc) = 0;
 
   protected:
     
@@ -105,6 +115,17 @@ class WeakMapBase {
     
     bool marked;
 };
+
+template <typename T>
+static T extractUnbarriered(BarrieredBase<T> v)
+{
+    return v.get();
+}
+template <typename T>
+static T* extractUnbarriered(T* v)
+{
+    return v;
+}
 
 template <class Key, class Value,
           class HashPolicy = DefaultHasher<Key> >
@@ -154,6 +175,77 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
         return p;
     }
 
+    
+    
+    
+    
+    void maybeMarkEntry(JSTracer* trc, gc::Cell* markedCell, JS::GCCellPtr origKey) override
+    {
+        MOZ_ASSERT(marked);
+
+        gc::Cell* l = origKey.asCell();
+        Ptr p = Base::lookup(reinterpret_cast<Lookup&>(l));
+        MOZ_ASSERT(p.found());
+
+        Key key(p->key());
+        if (gc::IsMarked(&key)) {
+            TraceEdge(trc, &p->value(), "ephemeron value");
+        } else if (keyNeedsMark(key)) {
+            TraceEdge(trc, &p->value(), "WeakMap ephemeron value");
+            TraceEdge(trc, &key, "proxy-preserved WeakMap ephemeron key");
+            MOZ_ASSERT(key == p->key()); 
+        }
+        key.unsafeSet(nullptr); 
+    }
+
+  protected:
+    static void addWeakEntry(JSTracer* trc, JS::GCCellPtr key, gc::WeakMarkable markable)
+    {
+        GCMarker& marker = *static_cast<GCMarker*>(trc);
+
+        auto p = marker.weakKeys.get(key);
+        if (p) {
+            gc::WeakEntryVector& weakEntries = p->value;
+            if (!weakEntries.append(Move(markable)))
+                marker.abortLinearWeakMarking();
+        } else {
+            gc::WeakEntryVector weakEntries;
+            MOZ_ALWAYS_TRUE(weakEntries.append(Move(markable)));
+            if (!marker.weakKeys.put(JS::GCCellPtr(key), Move(weakEntries)))
+                marker.abortLinearWeakMarking();
+        }
+    }
+
+    void markEphemeronEntries(JSTracer* trc) override {
+        MOZ_ASSERT(marked);
+        for (Enum e(*this); !e.empty(); e.popFront()) {
+            Key key(e.front().key());
+
+            
+            if (gc::IsMarked(&key)) {
+                (void) markValue(trc, &e.front().value());
+                MOZ_ASSERT(key == e.front().key()); 
+            } else if (keyNeedsMark(key)) {
+                TraceEdge(trc, &e.front().value(), "WeakMap entry value");
+                TraceEdge(trc, &key, "proxy-preserved WeakMap entry key");
+                MOZ_ASSERT(key == e.front().key()); 
+            } else if (trc->isWeakMarkingTracer()) {
+                
+                
+                
+                
+                
+                
+                JS::GCCellPtr weakKey(extractUnbarriered(key));
+                gc::WeakMarkable markable(this, weakKey);
+                addWeakEntry(trc, weakKey, markable);
+                if (JSObject* delegate = getDelegate(key))
+                    addWeakEntry(trc, JS::GCCellPtr(delegate), markable);
+            }
+            key.unsafeSet(nullptr); 
+        }
+    }
+
   private:
     void exposeGCThingToActiveJS(const JS::Value& v) const { JS::ExposeValueToActiveJS(v); }
     void exposeGCThingToActiveJS(JSObject* obj) const { JS::ExposeObjectToActiveJS(obj); }
@@ -166,7 +258,7 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
         return true;
     }
 
-    void nonMarkingTraceKeys(JSTracer* trc) {
+    void nonMarkingTraceKeys(JSTracer* trc) override {
         for (Enum e(*this); !e.empty(); e.popFront()) {
             Key key(e.front().key());
             TraceEdge(trc, &key, "WeakMap entry key");
@@ -175,29 +267,34 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
         }
     }
 
-    void nonMarkingTraceValues(JSTracer* trc) {
+    void nonMarkingTraceValues(JSTracer* trc) override {
         for (Range r = Base::all(); !r.empty(); r.popFront())
             TraceEdge(trc, &r.front().value(), "WeakMap entry value");
     }
 
-    bool keyNeedsMark(JSObject* key) {
-        if (JSWeakmapKeyDelegateOp op = key->getClass()->ext.weakmapKeyDelegateOp) {
-            JSObject* delegate = op(key);
-            
+    JSObject* getDelegate(JSObject* key) const {
+        JSWeakmapKeyDelegateOp op = key->getClass()->ext.weakmapKeyDelegateOp;
+        return op ? op(key) : nullptr;
+    }
+
+    JSObject* getDelegate(gc::Cell* cell) const {
+        return nullptr;
+    }
+
+    bool keyNeedsMark(JSObject* key) const {
+        JSObject* delegate = getDelegate(key);
+        
 
 
 
+        return delegate && gc::IsMarkedUnbarriered(&delegate);
+    }
 
-            return delegate && gc::IsMarkedUnbarriered(&delegate);
-        }
+    bool keyNeedsMark(gc::Cell* cell) const {
         return false;
     }
 
-    bool keyNeedsMark(gc::Cell* cell) {
-        return false;
-    }
-
-    bool markIteratively(JSTracer* trc) {
+    bool markIteratively(JSTracer* trc) override {
         bool markedAny = false;
         for (Enum e(*this); !e.empty(); e.popFront()) {
             
@@ -214,17 +311,17 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
                     entryMoved(e, key);
                 markedAny = true;
             }
-            key.unsafeSet(nullptr);
+            key.unsafeSet(nullptr); 
         }
         return markedAny;
     }
 
-    bool findZoneEdges() {
+    bool findZoneEdges() override {
         
         return true;
     }
 
-    void sweep() {
+    void sweep() override {
         
         for (Enum e(*this); !e.empty(); e.popFront()) {
             Key k(e.front().key());
@@ -240,12 +337,12 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
         assertEntriesNotAboutToBeFinalized();
     }
 
-    void finish() {
+    void finish() override {
         Base::finish();
     }
 
     
-    void traceMappings(WeakMapTracer* tracer) {
+    void traceMappings(WeakMapTracer* tracer) override {
         for (Range r = Base::all(); !r.empty(); r.popFront()) {
             gc::Cell* key = gc::ToMarkable(r.front().key());
             gc::Cell* value = gc::ToMarkable(r.front().value());
@@ -262,7 +359,7 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
         e.rekeyFront(k);
     }
 
-protected:
+  protected:
     void assertEntriesNotAboutToBeFinalized() {
 #if DEBUG
         for (Range r = Base::all(); !r.empty(); r.popFront()) {

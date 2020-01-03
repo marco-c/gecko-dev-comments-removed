@@ -70,7 +70,6 @@ BEGIN_TEST(testWeakMap_keyDelegates)
 {
     JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL);
     JS_GC(rt);
-
     JS::RootedObject map(cx, JS::NewWeakMapObject(cx));
     CHECK(map);
 
@@ -81,16 +80,26 @@ BEGIN_TEST(testWeakMap_keyDelegates)
     CHECK(delegate);
     keyDelegate = delegate;
 
+    JS::RootedObject delegateRoot(cx);
+    {
+        JSAutoCompartment ac(cx, delegate);
+        delegateRoot = JS_NewPlainObject(cx);
+        CHECK(delegateRoot);
+        JS::RootedValue delegateValue(cx, ObjectValue(*delegate));
+        CHECK(JS_DefineProperty(cx, delegateRoot, "delegate", delegateValue, 0));
+    }
+    delegate = nullptr;
+
     
 
 
 
-    CHECK(newCCW(map, delegate));
+    CHECK(newCCW(map, delegateRoot));
     js::SliceBudget budget(js::WorkBudget(1000000));
     rt->gc.startDebugGC(GC_NORMAL, budget);
     CHECK(!JS::IsIncrementalGCInProgress(rt));
 #ifdef DEBUG
-    CHECK(map->zone()->lastZoneGroupIndex() < delegate->zone()->lastZoneGroupIndex());
+    CHECK(map->zone()->lastZoneGroupIndex() < delegateRoot->zone()->lastZoneGroupIndex());
 #endif
 
     
@@ -100,7 +109,7 @@ BEGIN_TEST(testWeakMap_keyDelegates)
 
     
     key = nullptr;
-    CHECK(newCCW(map, delegate));
+    CHECK(newCCW(map, delegateRoot));
     budget = js::SliceBudget(js::WorkBudget(100000));
     rt->gc.startDebugGC(GC_NORMAL, budget);
     CHECK(!JS::IsIncrementalGCInProgress(rt));
@@ -111,11 +120,11 @@ BEGIN_TEST(testWeakMap_keyDelegates)
 
 
 #ifdef DEBUG
-    CHECK(map->zone()->lastZoneGroupIndex() == delegate->zone()->lastZoneGroupIndex());
+    CHECK(map->zone()->lastZoneGroupIndex() == delegateRoot->zone()->lastZoneGroupIndex());
 #endif
 
     
-    delegate = nullptr;
+    delegateRoot = nullptr;
     keyDelegate = nullptr;
     JS_GC(rt);
     CHECK(checkSize(map, 0));
