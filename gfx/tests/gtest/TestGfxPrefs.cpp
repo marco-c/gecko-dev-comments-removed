@@ -25,7 +25,7 @@ TEST(GfxPrefs, LiveValues) {
   ASSERT_TRUE(gfxPrefs::SingletonExists());
 
   
-  ASSERT_FALSE(gfxPrefs::CanvasAzureAccelerated());
+  ASSERT_FALSE(gfxPrefs::LayersDumpTexture());
 
   
   ASSERT_TRUE(gfxPrefs::LayerScopePort() == 23456);
@@ -66,11 +66,11 @@ TEST(GfxPrefs, Set) {
   ASSERT_FALSE(gfxPrefs::LayersDump());
 
   
-  ASSERT_FALSE(gfxPrefs::CanvasAzureAccelerated());
-  gfxPrefs::SetCanvasAzureAccelerated(true);
-  ASSERT_TRUE(gfxPrefs::CanvasAzureAccelerated());
-  gfxPrefs::SetCanvasAzureAccelerated(false);
-  ASSERT_FALSE(gfxPrefs::CanvasAzureAccelerated());
+  ASSERT_FALSE(gfxPrefs::LayersDumpTexture());
+  gfxPrefs::SetLayersDumpTexture(true);
+  ASSERT_TRUE(gfxPrefs::LayersDumpTexture());
+  gfxPrefs::SetLayersDumpTexture(false);
+  ASSERT_FALSE(gfxPrefs::LayersDumpTexture());
 
   
   ASSERT_TRUE(gfxPrefs::APZMaxVelocity() == -1.0f);
