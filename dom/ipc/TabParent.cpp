@@ -1059,7 +1059,11 @@ TabParent::UIResolutionChanged()
     
     mDPI = -1;
     TryCacheDPIAndScale();
-    unused << SendUIResolutionChanged();
+    
+    
+    
+    
+    unused << SendUIResolutionChanged(mDPI, mDPI < 0 ? -1.0 : mDefaultScale.scale);
   }
 }
 
