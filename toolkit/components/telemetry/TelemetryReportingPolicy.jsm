@@ -339,12 +339,8 @@ let TelemetryReportingPolicyImpl = {
 
     
     
-    if (!this._ensureUserNotified()) {
-      return false;
-    }
-
-    
-    return true;
+    const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, false);
+    return this.isUserNotifiedOfCurrentPolicy || bypassNotification;
   },
 
   
@@ -361,23 +357,27 @@ let TelemetryReportingPolicyImpl = {
 
 
 
-  _ensureUserNotified: function() {
-    const BYPASS_NOTIFICATION = Preferences.get(PREF_BYPASS_NOTIFICATION, false);
-    if (this.isUserNotifiedOfCurrentPolicy || BYPASS_NOTIFICATION) {
-      return true;
+  _showInfobar: function() {
+    if (!this.dataSubmissionEnabled) {
+      this._log.trace("_showInfobar - Data submission disabled by the policy.");
+      return;
     }
 
-    this._log.trace("ensureUserNotified - User not notified, notifying now.");
+    const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, false);
+    if (this.isUserNotifiedOfCurrentPolicy || bypassNotification) {
+      this._log.trace("_showInfobar - User already notified or bypassing the policy.");
+      return;
+    }
+
     if (this._notificationInProgress) {
-      this._log.trace("ensureUserNotified - User not notified, notification in progress.");
-      return false;
+      this._log.trace("_showInfobar - User not notified, notification already in progress.");
+      return;
     }
 
+    this._log.trace("_showInfobar - User not notified, notifying now.");
     this._notificationInProgress = true;
     let request = new NotifyPolicyRequest(this._log);
     Observers.notify("datareporting:notify-data-policy:request", request);
-
-    return false;
   },
 
   
@@ -412,7 +412,7 @@ let TelemetryReportingPolicyImpl = {
 
     this._startupNotificationTimerId = Policy.setShowInfobarTimeout(
         
-        () => this.canUpload(), delay);
+        () => this._showInfobar(), delay);
     
     Preferences.set(PREF_FIRST_RUN, false);
   },
