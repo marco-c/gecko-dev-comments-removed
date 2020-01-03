@@ -703,7 +703,15 @@ class IceTestPeer : public sigslot::has_slots<> {
           ASSERT_EQ(expected_local_type_, local->type);
           ASSERT_EQ(expected_local_transport_, local->local_addr.transport);
           DumpCandidate("Remote ", *remote);
-          ASSERT_EQ(expected_remote_type_, remote->type);
+          
+
+          if (expected_local_transport_ == kNrIceTransportTcp &&
+              expected_remote_type_ == NrIceCandidate::ICE_HOST) {
+            ASSERT_NE(NrIceCandidate::ICE_SERVER_REFLEXIVE, remote->type);
+            ASSERT_NE(NrIceCandidate::ICE_RELAYED, remote->type);
+          } else {
+            ASSERT_EQ(expected_remote_type_, remote->type);
+          }
           if (!expected_remote_addr_.empty()) {
             ASSERT_EQ(expected_remote_addr_, remote->cand_addr.host);
           }
