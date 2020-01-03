@@ -45,6 +45,10 @@ exports.getHighlighterUtils = function(toolbox) {
   let isPicking = false;
 
   
+  
+  let isNodeFrontHighlighted = false;
+
+  
 
 
   exported.release = function() {
@@ -203,6 +207,7 @@ exports.getHighlighterUtils = function(toolbox) {
       return;
     }
 
+    isNodeFrontHighlighted = true;
     if (isRemoteHighlightable()) {
       yield toolbox.highlighter.showBoxModel(nodeFront, options);
     } else {
@@ -256,7 +261,8 @@ exports.getHighlighterUtils = function(toolbox) {
 
     
     
-    if (forceHide && toolbox.highlighter && isRemoteHighlightable()) {
+    if (isNodeFrontHighlighted && forceHide && toolbox.highlighter && isRemoteHighlightable()) {
+      isNodeFrontHighlighted = false;
       yield toolbox.highlighter.hideBoxModel();
     }
 
