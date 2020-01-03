@@ -270,6 +270,7 @@ private:
 
   nsresult MaybeCreateDocShell();
   nsresult EnsureMessageManager();
+  nsresult ReallyLoadFrameScripts();
 
   
   
