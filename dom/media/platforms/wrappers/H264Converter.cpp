@@ -165,6 +165,9 @@ H264Converter::CreateDecoderAndInit(MediaRawData* aSample)
 
   if (NS_SUCCEEDED(rv)) {
     mDecoderInitializing = true;
+    
+    mMediaRawSamples.AppendElement(aSample);
+
     nsRefPtr<H264Converter> self = this;
 
     
