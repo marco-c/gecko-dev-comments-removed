@@ -50,6 +50,7 @@ public:
 
     if (FAILED(hr)) {
       mTask->mSink->ProcessReadback(nullptr);
+      return NS_OK;
     }
 
     {
