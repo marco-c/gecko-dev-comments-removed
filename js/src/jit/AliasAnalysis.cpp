@@ -205,6 +205,12 @@ AliasAnalysis::analyze()
             if (set.isNone())
                 continue;
 
+            
+            
+            
+            if (def->canRecoverOnBailout())
+                continue;
+
             if (set.isStore()) {
                 for (AliasSetIterator iter(set); iter; iter++) {
                     if (!stores[*iter].append(*def))
