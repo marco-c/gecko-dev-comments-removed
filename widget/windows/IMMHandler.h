@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIMM32Handler_h__
-#define nsIMM32Handler_h__
+#ifndef IMMHandler_h_
+#define IMMHandler_h_
 
 #include "nscore.h"
 #include <windows.h>
@@ -104,14 +104,8 @@ protected:
   HIMC mIMC;
 };
 
-} 
-} 
-
-class nsIMM32Handler
+class IMMHandler final
 {
-  typedef mozilla::widget::IMEContext IMEContext;
-  typedef mozilla::widget::IMENotification IMENotification;
-  typedef mozilla::widget::MSGResult MSGResult;
 public:
   static void Initialize();
   static void Terminate();
@@ -186,8 +180,8 @@ protected:
                                         WPARAM &wParam, LPARAM &lParam,
                                         MSGResult& aResult);
 
-  nsIMM32Handler();
-  ~nsIMM32Handler();
+  IMMHandler();
+  ~IMMHandler();
 
   
   
@@ -431,5 +425,8 @@ protected:
   static bool sAssumeVerticalWritingModeNotSupported;
   static bool sHasFocus;
 };
+
+} 
+} 
 
 #endif 

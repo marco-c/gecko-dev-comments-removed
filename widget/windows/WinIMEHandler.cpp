@@ -5,8 +5,8 @@
 
 #include "WinIMEHandler.h"
 
+#include "IMMHandler.h"
 #include "mozilla/Preferences.h"
-#include "nsIMM32Handler.h"
 #include "nsWindowDefs.h"
 
 #ifdef NS_ENABLE_TSF
@@ -52,7 +52,7 @@ IMEHandler::Initialize()
   }
 #endif 
 
-  nsIMM32Handler::Initialize();
+  IMMHandler::Initialize();
 }
 
 
@@ -66,7 +66,7 @@ IMEHandler::Terminate()
   }
 #endif 
 
-  nsIMM32Handler::Terminate();
+  IMMHandler::Terminate();
 }
 
 
@@ -125,8 +125,8 @@ IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
   }
 #endif 
 
-  return nsIMM32Handler::ProcessMessage(aWindow, aMessage, aWParam, aLParam,
-                                        aResult);
+  return IMMHandler::ProcessMessage(aWindow, aMessage, aWParam, aLParam,
+                                    aResult);
 }
 
 #ifdef NS_ENABLE_TSF
@@ -144,11 +144,11 @@ IMEHandler::IsComposing()
 {
 #ifdef NS_ENABLE_TSF
   if (IsTSFAvailable()) {
-    return nsTextStore::IsComposing() || nsIMM32Handler::IsComposing();
+    return nsTextStore::IsComposing() || IMMHandler::IsComposing();
   }
 #endif 
 
-  return nsIMM32Handler::IsComposing();
+  return IMMHandler::IsComposing();
 }
 
 
@@ -158,11 +158,11 @@ IMEHandler::IsComposingOn(nsWindow* aWindow)
 #ifdef NS_ENABLE_TSF
   if (IsTSFAvailable()) {
     return nsTextStore::IsComposingOn(aWindow) ||
-           nsIMM32Handler::IsComposingOn(aWindow);
+           IMMHandler::IsComposingOn(aWindow);
   }
 #endif 
 
-  return nsIMM32Handler::IsComposingOn(aWindow);
+  return IMMHandler::IsComposingOn(aWindow);
 }
 
 
@@ -180,10 +180,9 @@ IMEHandler::NotifyIME(nsWindow* aWindow,
         
         bool isIMMActive = IsIMMActive();
         if (isIMMActive) {
-          nsIMM32Handler::OnUpdateComposition(aWindow);
+          IMMHandler::OnUpdateComposition(aWindow);
         }
-        nsIMM32Handler::OnSelectionChange(aWindow, aIMENotification,
-                                          isIMMActive);
+        IMMHandler::OnSelectionChange(aWindow, aIMENotification, isIMMActive);
         return rv;
       }
       case NOTIFY_IME_OF_COMPOSITION_UPDATE:
@@ -191,7 +190,7 @@ IMEHandler::NotifyIME(nsWindow* aWindow,
         
         
         if (IsIMMActive()) {
-          nsIMM32Handler::OnUpdateComposition(aWindow);
+          IMMHandler::OnUpdateComposition(aWindow);
         } else {
           nsTextStore::OnUpdateComposition();
         }
@@ -199,31 +198,31 @@ IMEHandler::NotifyIME(nsWindow* aWindow,
       case NOTIFY_IME_OF_TEXT_CHANGE:
         return nsTextStore::OnTextChange(aIMENotification);
       case NOTIFY_IME_OF_FOCUS:
-        nsIMM32Handler::OnFocusChange(true, aWindow);
+        IMMHandler::OnFocusChange(true, aWindow);
         return nsTextStore::OnFocusChange(true, aWindow,
                                           aWindow->GetInputContext());
       case NOTIFY_IME_OF_BLUR:
-        nsIMM32Handler::OnFocusChange(false, aWindow);
+        IMMHandler::OnFocusChange(false, aWindow);
         return nsTextStore::OnFocusChange(false, aWindow,
                                           aWindow->GetInputContext());
       case NOTIFY_IME_OF_MOUSE_BUTTON_EVENT:
         
         if (IsIMMActive()) {
-          return nsIMM32Handler::OnMouseButtonEvent(aWindow, aIMENotification);
+          return IMMHandler::OnMouseButtonEvent(aWindow, aIMENotification);
         }
         return nsTextStore::OnMouseButtonEvent(aIMENotification);
       case REQUEST_TO_COMMIT_COMPOSITION:
         if (nsTextStore::IsComposingOn(aWindow)) {
           nsTextStore::CommitComposition(false);
         } else if (IsIMMActive()) {
-          nsIMM32Handler::CommitComposition(aWindow);
+          IMMHandler::CommitComposition(aWindow);
         }
         return NS_OK;
       case REQUEST_TO_CANCEL_COMPOSITION:
         if (nsTextStore::IsComposingOn(aWindow)) {
           nsTextStore::CommitComposition(true);
         } else if (IsIMMActive()) {
-          nsIMM32Handler::CancelComposition(aWindow);
+          IMMHandler::CancelComposition(aWindow);
         }
         return NS_OK;
       case NOTIFY_IME_OF_POSITION_CHANGE:
@@ -236,25 +235,25 @@ IMEHandler::NotifyIME(nsWindow* aWindow,
 
   switch (aIMENotification.mMessage) {
     case REQUEST_TO_COMMIT_COMPOSITION:
-      nsIMM32Handler::CommitComposition(aWindow);
+      IMMHandler::CommitComposition(aWindow);
       return NS_OK;
     case REQUEST_TO_CANCEL_COMPOSITION:
-      nsIMM32Handler::CancelComposition(aWindow);
+      IMMHandler::CancelComposition(aWindow);
       return NS_OK;
     case NOTIFY_IME_OF_POSITION_CHANGE:
     case NOTIFY_IME_OF_COMPOSITION_UPDATE:
-      nsIMM32Handler::OnUpdateComposition(aWindow);
+      IMMHandler::OnUpdateComposition(aWindow);
       return NS_OK;
     case NOTIFY_IME_OF_SELECTION_CHANGE:
-      nsIMM32Handler::OnSelectionChange(aWindow, aIMENotification, true);
+      IMMHandler::OnSelectionChange(aWindow, aIMENotification, true);
       return NS_OK;
     case NOTIFY_IME_OF_MOUSE_BUTTON_EVENT:
-      return nsIMM32Handler::OnMouseButtonEvent(aWindow, aIMENotification);
+      return IMMHandler::OnMouseButtonEvent(aWindow, aIMENotification);
     case NOTIFY_IME_OF_FOCUS:
-      nsIMM32Handler::OnFocusChange(true, aWindow);
+      IMMHandler::OnFocusChange(true, aWindow);
       return NS_OK;
     case NOTIFY_IME_OF_BLUR:
-      nsIMM32Handler::OnFocusChange(false, aWindow);
+      IMMHandler::OnFocusChange(false, aWindow);
 #ifdef NS_ENABLE_TSF
       
       
@@ -279,7 +278,7 @@ IMEHandler::GetUpdatePreference()
   }
 #endif 
 
-  return nsIMM32Handler::GetIMEUpdatePreference();
+  return IMMHandler::GetIMEUpdatePreference();
 }
 
 
@@ -436,7 +435,7 @@ IMEHandler::CurrentKeyboardLayoutHasIME()
   }
 #endif 
 
-  return nsIMM32Handler::IsIMEAvailable();
+  return IMMHandler::IsIMEAvailable();
 }
 #endif 
 
