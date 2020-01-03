@@ -1414,8 +1414,6 @@ protected:
 
   ElementInTreeState mElementInTreeState;
 
-  bool mHaveDispatchedInterruptBeginEvent;
-
 public:
   
   class TimeDurationAccumulator {
