@@ -1016,7 +1016,6 @@ pref("media.webspeech.synth.enabled", true);
 
 
 pref("media.webspeech.recognition.enable", true);
-pref("media.webspeech.service.default", "pocketsphinx");
 
 
 pref("dom.mozDownloads.enabled", true);

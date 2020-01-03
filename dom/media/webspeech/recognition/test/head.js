@@ -45,6 +45,11 @@ function EventManager(sr) {
   var isDone = false;
 
   
+  var sgl = new SpeechGrammarList();
+  sgl.addFromString("#JSGF V1.0; grammar test; public <simple> = hello ;", 1);
+  sr.grammars = sgl;
+
+  
   
   
   var isSendingAudioData = false;
