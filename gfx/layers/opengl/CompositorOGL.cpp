@@ -1627,7 +1627,7 @@ CompositorOGL::BindAndDrawQuads(ShaderProgramOGL *aProg,
   
   
   mGLContext->fDrawArrays(LOCAL_GL_TRIANGLES, 0, 6 * aQuads);
-  LayerScope::SetLayerRects(aQuads, aLayerRects);
+  LayerScope::SetDrawRects(aQuads, aLayerRects, aTextureRects);
 }
 
 GLBlitTextureImageHelper*

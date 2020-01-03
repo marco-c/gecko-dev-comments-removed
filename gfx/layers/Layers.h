@@ -1583,6 +1583,16 @@ public:
   
   virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent);
 
+  
+
+
+  void SetDisplayListLog(const char *log);
+
+  
+
+
+  void GetDisplayListLog(nsCString& log);
+
   static bool IsLogEnabled() { return LayerManager::IsLogEnabled(); }
 
   
@@ -1785,6 +1795,8 @@ protected:
 #ifdef MOZ_DUMP_PAINTING
   nsTArray<nsCString> mExtraDumpInfo;
 #endif
+  
+  nsCString mDisplayListLog;
 };
 
 

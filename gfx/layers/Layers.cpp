@@ -36,6 +36,7 @@
 #include "nsPrintfCString.h"            
 #include "nsStyleStruct.h"              
 #include "protobuf/LayerScopePacket.pb.h"
+#include "mozilla/Compression.h"
 
 uint8_t gLayerManagerLayerBuilder;
 
@@ -51,6 +52,7 @@ FILEOrDefault(FILE* aFile)
 typedef FrameMetrics::ViewID ViewID;
 
 using namespace mozilla::gfx;
+using namespace mozilla::Compression;
 
 
 
@@ -1592,6 +1594,35 @@ Layer::Dump(layerscope::LayersPacket* aPacket, const void* aParent)
 }
 
 void
+Layer::SetDisplayListLog(const char* log)
+{
+  if (gfxUtils::DumpDisplayList()) {
+    mDisplayListLog = log;
+  }
+}
+
+void
+Layer::GetDisplayListLog(nsCString& log)
+{
+  log.SetLength(0);
+
+  if (gfxUtils::DumpDisplayList()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    log.AppendPrintf("0x%p\n%s",(void*) this, mDisplayListLog.get());
+  }
+}
+
+void
 Layer::Log(const char* aPrefix)
 {
   if (!IsLogEnabled())
@@ -1807,9 +1838,21 @@ Layer::DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent)
                       LayersPacket::Layer::HORIZONTAL);
     layer->set_barid(GetScrollbarTargetContainerId());
   }
+
   
   if (mMaskLayer) {
     layer->set_mask(reinterpret_cast<uint64_t>(mMaskLayer.get()));
+  }
+
+  
+  if (mDisplayListLog.Length() > 0) {
+    layer->set_displaylistloglength(mDisplayListLog.Length());
+    auto compressedData =
+      MakeUnique<char[]>(LZ4::maxCompressedSize(mDisplayListLog.Length()));
+    int compressedSize = LZ4::compress((char*)mDisplayListLog.get(),
+                                       mDisplayListLog.Length(),
+                                       compressedData.get());
+    layer->set_displaylistlog(compressedData.get(), compressedSize);
   }
 }
 
