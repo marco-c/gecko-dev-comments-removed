@@ -40,6 +40,8 @@ class BluetoothServiceBluedroid : public BluetoothService
   class SspReplyResultHandler;
   class StartDiscoveryResultHandler;
 
+  class GetDeviceRequest;
+
 public:
   BluetoothServiceBluedroid();
   ~BluetoothServiceBluedroid();
@@ -412,8 +414,13 @@ protected:
   bool mIsFirstTimeToggleOffBt;
 
   
+  
+  
+  
+  nsTArray<GetDeviceRequest> mGetDeviceRequests;
+
+  
   nsTArray<nsRefPtr<BluetoothReplyRunnable>> mSetAdapterPropertyRunnables;
-  nsTArray<nsRefPtr<BluetoothReplyRunnable>> mGetDeviceRunnables;
   nsTArray<nsRefPtr<BluetoothReplyRunnable>> mCreateBondRunnables;
   nsTArray<nsRefPtr<BluetoothReplyRunnable>> mRemoveBondRunnables;
 
