@@ -1160,14 +1160,6 @@ pref("browser.flash-protected-mode-flip.enable", false);
 
 pref("browser.flash-protected-mode-flip.done", false);
 
-#ifdef XP_MACOSX
-
-pref("dom.ipc.plugins.enabled.i386", true);
-pref("dom.ipc.plugins.enabled.x86_64", true);
-#else
-pref("dom.ipc.plugins.enabled", true);
-#endif
-
 pref("dom.ipc.shims.enabledWarnings", false);
 
 
