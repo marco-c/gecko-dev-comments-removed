@@ -60,6 +60,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   
   prefObserver.observe();
+
+  
+  let tpUIEnabled = false;
+  try {
+    tpUIEnabled = Services.prefs.getBoolPref("privacy.trackingprotection.ui.enabled");
+  } catch (ex) {
+    
+  }
+  if (!tpUIEnabled) {
+    document.getElementById("trackingProtectionSection")
+            .setAttribute("hidden", "true");
+  }
 }, false);
 
 function openPrivateWindow() {
