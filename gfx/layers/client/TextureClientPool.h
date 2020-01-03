@@ -18,13 +18,29 @@ namespace layers {
 
 class ISurfaceAllocator;
 
-class TextureClientPool final
+class TextureClientAllocator
+{
+protected:
+  virtual ~TextureClientAllocator() {}
+public:
+  NS_INLINE_DECL_REFCOUNTING(TextureClientAllocator)
+
+  virtual already_AddRefed<TextureClient> GetTextureClient() = 0;
+
+  
+
+
+
+  virtual void ReturnTextureClientDeferred(TextureClient *aClient) = 0;
+
+  virtual void ReportClientLost() = 0;
+};
+
+class TextureClientPool final : public TextureClientAllocator
 {
   ~TextureClientPool();
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(TextureClientPool)
-
   TextureClientPool(gfx::SurfaceFormat aFormat, gfx::IntSize aSize,
                     uint32_t aMaxTextureClients,
                     uint32_t aShrinkTimeoutMsec,
@@ -39,7 +55,7 @@ public:
 
 
 
-  already_AddRefed<TextureClient> GetTextureClient();
+  already_AddRefed<TextureClient> GetTextureClient() override;
 
   
 
@@ -51,7 +67,7 @@ public:
 
 
 
-  void ReturnTextureClientDeferred(TextureClient *aClient);
+  void ReturnTextureClientDeferred(TextureClient *aClient) override;
 
   
 
@@ -75,7 +91,7 @@ public:
 
 
 
-  void ReportClientLost();
+  virtual void ReportClientLost() override;
 
   
 
