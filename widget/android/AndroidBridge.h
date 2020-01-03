@@ -264,6 +264,7 @@ public:
     
     
     uint32_t GetScreenOrientation();
+    uint16_t GetScreenAngle();
 
     int GetAPIVersion() { return mAPIVersion; }
     bool IsHoneycomb() { return mAPIVersion >= 11 && mAPIVersion <= 13; }
