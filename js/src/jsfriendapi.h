@@ -2134,6 +2134,16 @@ JS_IsDataViewObject(JSObject* obj);
 
 
 
+JS_FRIEND_API(JSObject*)
+JS_NewDataView(JSContext* cx, JS::HandleObject arrayBuffer, uint32_t byteOffset, int32_t byteLength);
+
+
+
+
+
+
+
+
 
 JS_FRIEND_API(uint32_t)
 JS_GetDataViewByteOffset(JSObject* obj);
