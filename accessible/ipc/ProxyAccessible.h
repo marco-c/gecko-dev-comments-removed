@@ -82,6 +82,11 @@ public:
   
 
 
+  uint64_t NativeState() const;
+
+  
+
+
   void Name(nsString& aName) const;
 
   

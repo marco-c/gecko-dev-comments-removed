@@ -66,6 +66,11 @@ public:
   
 
 
+  virtual bool RecvNativeState(const uint64_t& aID, uint64_t* aState) override;
+
+  
+
+
   virtual bool RecvName(const uint64_t& aID, nsString* aName) override;
 
   virtual bool RecvValue(const uint64_t& aID, nsString* aValue) override;
