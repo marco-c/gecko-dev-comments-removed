@@ -259,6 +259,13 @@ function dumpLogin(label, login) {
     ok(true, label + loginText);
 }
 
+function getRecipeParent() {
+  var { LoginManagerParent } = SpecialPowers.Cu.import("resource://gre/modules/LoginManagerParent.jsm", {});
+  return LoginManagerParent.recipeParentPromise.then((recipeParent) => {
+    return SpecialPowers.wrap(recipeParent);
+  });
+}
+
 
 
 
@@ -305,9 +312,6 @@ if (this.addMessageListener) {
 } else {
   
   SimpleTest.registerCleanupFunction(() => {
-    var { LoginManagerParent } = SpecialPowers.Cu.import("resource://gre/modules/LoginManagerParent.jsm", {});
-    return LoginManagerParent.recipeParentPromise.then((recipeParent) => {
-      SpecialPowers.wrap(recipeParent).reset();
-    });
+    getRecipeParent().then(recipeParent => recipeParent.reset());
   });
 }
