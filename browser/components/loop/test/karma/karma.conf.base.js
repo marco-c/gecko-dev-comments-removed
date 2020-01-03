@@ -28,8 +28,17 @@ module.exports = function(config) {
     reporters: ["progress", "coverage"],
 
     coverageReporter: {
-      type: "html",
-      dir: "test/coverage/"
+      dir: "test/coverage/",
+      reporters: [{
+        type: "html",
+        subdir: function(browser) {
+          
+          
+          return browser.toLowerCase().split(/[ /-]/)[0];
+        }
+      }, {
+        type: "text-summary"
+      }]
     },
 
     
