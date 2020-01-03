@@ -129,7 +129,7 @@ public final class WaitHelper {
 
 
     private interface ChangeVerifier {
-        public String getLogTag();
+        String getLogTag();
 
         
 
@@ -137,8 +137,8 @@ public final class WaitHelper {
 
 
 
-        public void storeState();
-        public boolean hasStateChanged();
+        void storeState();
+        boolean hasStateChanged();
     }
 
     private static class ToolbarTitleTextChangeVerifier implements ChangeVerifier {
