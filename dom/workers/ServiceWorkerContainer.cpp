@@ -113,13 +113,32 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
     return nullptr;
   }
 
-  nsCOMPtr<nsPIDOMWindow> window = GetOwner();
-  MOZ_ASSERT(window);
+  nsCOMPtr<nsIURI> baseURI;
+
+  nsIDocument* doc = GetEntryDocument();
+  if (doc) {
+    baseURI = doc->GetBaseURI();
+  } else {
+    
+    
+    
+    nsCOMPtr<nsPIDOMWindow> window = GetOwner();
+    nsCOMPtr<nsPIDOMWindow> outerWindow;
+    if (window && (outerWindow = window->GetOuterWindow()) &&
+        outerWindow->GetServiceWorkersTestingEnabled()) {
+      baseURI = window->GetDocBaseURI();
+    }
+  }
+
+
+  if (!baseURI) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
 
   nsresult rv;
   nsCOMPtr<nsIURI> scriptURI;
-  rv = NS_NewURI(getter_AddRefs(scriptURI), aScriptURL, nullptr,
-                 window->GetDocBaseURI());
+  rv = NS_NewURI(getter_AddRefs(scriptURI), aScriptURL, nullptr, baseURI);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.ThrowTypeError(MSG_INVALID_URL, &aScriptURL);
     return nullptr;
@@ -143,17 +162,19 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
   } else {
     
     rv = NS_NewURI(getter_AddRefs(scopeURI), aOptions.mScope.Value(),
-                   nullptr, window->GetDocBaseURI());
+                   nullptr, baseURI);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       nsAutoCString spec;
-      if (window->GetDocBaseURI()) {
-        window->GetDocBaseURI()->GetSpec(spec);
-      }
+      baseURI->GetSpec(spec);
       aRv.ThrowTypeError(MSG_INVALID_SCOPE, &aOptions.mScope.Value(), &spec);
       return nullptr;
     }
   }
 
+  
+  
+  nsCOMPtr<nsPIDOMWindow> window = GetOwner();
+  MOZ_ASSERT(window);
   aRv = swm->Register(window, scopeURI, scriptURI, getter_AddRefs(promise));
   if (aRv.Failed()) {
     return nullptr;
