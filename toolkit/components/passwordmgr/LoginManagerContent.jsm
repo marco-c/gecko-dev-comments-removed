@@ -188,6 +188,7 @@ var LoginManagerContent = {
         loginFormOrigin: msg.data.loginFormOrigin,
         loginsFound: jsLoginsToXPCOM(msg.data.logins),
         recipes: msg.data.recipes,
+        inputElement: msg.objects.inputElement,
       });
       return;
     }
@@ -447,23 +448,37 @@ var LoginManagerContent = {
 
 
 
-  fillForm({ topDocument, loginFormOrigin, loginsFound, recipes }) {
+
+
+  fillForm({ topDocument, loginFormOrigin, loginsFound, recipes, inputElement }) {
     let topState = this.stateForDocument(topDocument);
     if (!topState.loginFormForFill) {
       log("fillForm: There is no login form anymore. The form may have been",
           "removed or the document may have changed.");
       return;
     }
-    if (LoginUtils._getPasswordOrigin(topDocument.documentURI) !=
-        loginFormOrigin) {
-      log("fillForm: The requested origin doesn't match the one form the",
-          "document. This may mean we navigated to a document from a different",
-          "site before we had a chance to indicate this change in the user",
-          "interface.");
-      return;
+    if (LoginUtils._getPasswordOrigin(topDocument.documentURI) != loginFormOrigin) {
+      if (!inputElement ||
+          LoginUtils._getPasswordOrigin(inputElement.ownerDocument.documentURI) != loginFormOrigin) {
+        log("fillForm: The requested origin doesn't match the one form the",
+            "document. This may mean we navigated to a document from a different",
+            "site before we had a chance to indicate this change in the user",
+            "interface.");
+        return;
+      }
     }
-    this._fillForm(topState.loginFormForFill, true, true, true, true,
-                   loginsFound, recipes);
+    let form = topState.loginFormForFill;
+    let clobberUsername = true;
+    let options = {
+      inputElement,
+    };
+
+    
+    if (inputElement) {
+      form = FormLikeFactory.createFromPasswordField(inputElement);
+      clobberUsername = false;
+    }
+    this._fillForm(form, true, clobberUsername, true, true, loginsFound, recipes, options);
   },
 
   loginsFound: function({ form, loginsFound, recipes }) {
@@ -815,8 +830,10 @@ var LoginManagerContent = {
 
 
 
+
+
   _fillForm : function (form, autofillForm, clobberUsername, clobberPassword,
-                        userTriggered, foundLogins, recipes) {
+                        userTriggered, foundLogins, recipes, {inputElement} = {}) {
     let ignoreAutocomplete = true;
     const AUTOFILL_RESULT = {
       FILLED: 0,
@@ -854,6 +871,17 @@ var LoginManagerContent = {
       
       var [usernameField, passwordField, ignored] =
             this._getFormFields(form, false, recipes);
+
+      
+      
+      
+      if (inputElement) {
+        if (inputElement.type != "password") {
+          throw new Error("Unexpected input element type.");
+        }
+        passwordField = inputElement;
+        usernameField = null;
+      }
 
       
       if (passwordField == null) {

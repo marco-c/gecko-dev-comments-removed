@@ -235,7 +235,7 @@ var LoginManagerParent = {
 
 
 
-  fillForm: Task.async(function* ({ browser, loginFormOrigin, login }) {
+  fillForm: Task.async(function* ({ browser, loginFormOrigin, login, inputElement }) {
     let recipes = [];
     if (loginFormOrigin) {
       let formHost;
@@ -251,11 +251,13 @@ var LoginManagerParent = {
     
     
     let jsLogins = JSON.parse(JSON.stringify([login]));
+
+    let objects = inputElement ? {inputElement} : null;
     browser.messageManager.sendAsyncMessage("RemoteLogins:fillForm", {
       loginFormOrigin,
       logins: jsLogins,
       recipes,
-    });
+    }, objects);
   }),
 
   
