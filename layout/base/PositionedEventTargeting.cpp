@@ -535,6 +535,11 @@ FindFrameTargetedByInputEvent(WidgetGUIEvent* aEvent,
         aEvent->AsMouseEventBase()->hitCluster = true;
       }
       PET_LOG("Target %p is clickable\n", target);
+      
+      
+      
+      
+      clickableAncestor = target->GetContent();
     }
   }
 
