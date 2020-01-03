@@ -229,12 +229,12 @@ this.SystemMessagePermissionsChecker = {
                                                 aManifestURL,
                                                 aOrigin,
                                                 aManifest) {
-      
-      let newManifest = new ManifestHelper(aManifest, aOrigin, aManifestURL);
-      let launchUrl = newManifest.fullLaunchPath();
-      return this.isSystemMessagePermittedToSend(aSysMsgName,
-                                                 launchUrl,
-                                                 aManifestURL);
+    
+    let newManifest = new ManifestHelper(aManifest, aOrigin, aManifestURL);
+    let launchUrl = newManifest.fullLaunchPath();
+    return this.isSystemMessagePermittedToSend(aSysMsgName,
+                                               launchUrl,
+                                               aManifestURL);
   },
 
   

@@ -437,8 +437,6 @@ pref("browser.dom.window.dump.enabled", false);
 
 pref("security.apps.certified.CSP.default", "default-src * data: blob:; script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline' app://theme.gaiamobile.org");
 
-pref("security.apps.trusted.CSP.default", "default-src * data: blob:; object-src 'none'; frame-src 'none'");
-
 
 
 pref("browser.link.open_newwindow", 3);
