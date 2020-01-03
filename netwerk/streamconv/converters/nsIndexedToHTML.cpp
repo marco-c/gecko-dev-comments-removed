@@ -699,7 +699,7 @@ nsIndexedToHTML::OnIndexAvailable(nsIRequest *aRequest,
 
     
     loc.Truncate(nsUnescapeCount(loc.BeginWriting()));
-    if (loc.First() == PRUnichar('.'))
+    if (loc.First() == char16_t('.'))
         pushBuffer.AppendLiteral(" class=\"hidden-object\"");
 
     pushBuffer.AppendLiteral(">\n <td sortable-data=\"");
