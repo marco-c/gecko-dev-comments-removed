@@ -4,10 +4,6 @@
 "use strict";
 
 
-const DBG_STRINGS_URI = "chrome://browser/locale/devtools/debugger.properties";
-const DBG_L10N = new ViewHelpers.L10N(DBG_STRINGS_URI);
-
-
 
 
 let RecordingsView = Heritage.extend(WidgetMethods, {
@@ -151,7 +147,7 @@ let RecordingsView = Heritage.extend(WidgetMethods, {
 
     
     let durationNode = $(".recording-item-duration", recordingItem.target);
-    durationNode.setAttribute("value", DBG_L10N.getStr("loadingText"));
+    durationNode.setAttribute("value", L10N.getStr("recordingsList.loadingLabel"));
   },
 
   
@@ -214,8 +210,7 @@ let RecordingsView = Heritage.extend(WidgetMethods, {
 
   _onSaveButtonClick: function (e) {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-    
-    fp.init(window, "Save recording…", Ci.nsIFilePicker.modeSave);
+    fp.init(window, L10N.getStr("recordingsList.saveDialogTitle"), Ci.nsIFilePicker.modeSave);
     fp.appendFilter(L10N.getStr("recordingsList.saveDialogJSONFilter"), "*.json");
     fp.appendFilter(L10N.getStr("recordingsList.saveDialogAllFilter"), "*.*");
     fp.defaultString = "profile.json";

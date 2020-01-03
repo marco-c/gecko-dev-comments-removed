@@ -8,10 +8,9 @@ const { ViewHelpers } = require("resource:///modules/devtools/ViewHelpers.jsm");
 
 
 
-
 const L10N = new ViewHelpers.MultiL10N([
-  "chrome://browser/locale/devtools/timeline.properties",
-  "chrome://browser/locale/devtools/profiler.properties"
+  "chrome://browser/locale/devtools/markers.properties",
+  "chrome://browser/locale/devtools/performance.properties"
 ]);
 
 
