@@ -22,12 +22,14 @@ addEventListener("DOMContentLoaded", function domContentLoaded(event) {
     
     return;
   }
-  iframe.addEventListener("load", function iframeLoaded(event) {
+  
+  
+  addEventListener("DOMContentLoaded", function iframeLoaded(event) {
     if (iframe.contentWindow.location.href == "about:blank" ||
-        event.target != iframe) {
+        event.target != iframe.contentDocument) {
       return;
     }
-    iframe.removeEventListener("load", iframeLoaded, true);
+    removeEventListener("DOMContentLoaded", iframeLoaded, true);
     sendAsyncMessage("test:iframe:load", {url: iframe.getAttribute("src")});
     
     
