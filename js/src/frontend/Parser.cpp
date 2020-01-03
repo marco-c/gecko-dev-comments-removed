@@ -6351,8 +6351,7 @@ static const JSOp ParseNodeKindToJSOp[] = {
     JSOP_SUB,
     JSOP_MUL,
     JSOP_DIV,
-    JSOP_MOD,
-    JSOP_POW
+    JSOP_MOD
 };
 
 static inline JSOp
@@ -6393,11 +6392,10 @@ static const int PrecedenceTable[] = {
     9, 
     10, 
     10, 
-    10, 
-    11  
+    10  
 };
 
-static const int PRECEDENCE_CLASSES = 11;
+static const int PRECEDENCE_CLASSES = 10;
 
 static int
 Precedence(ParseNodeKind pnk) {
@@ -6446,6 +6444,7 @@ Parser<ParseHandler>::orExpr1(InHandling inHandling, YieldHandling yieldHandling
             pnk = PNK_LIMIT;
         }
 
+        
         
         
         
@@ -6614,7 +6613,6 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
       case TOK_MULASSIGN:    kind = PNK_MULASSIGN;    op = JSOP_MUL;    break;
       case TOK_DIVASSIGN:    kind = PNK_DIVASSIGN;    op = JSOP_DIV;    break;
       case TOK_MODASSIGN:    kind = PNK_MODASSIGN;    op = JSOP_MOD;    break;
-      case TOK_POWASSIGN:    kind = PNK_POWASSIGN;    op = JSOP_POW;    break;
 
       case TOK_ARROW: {
         

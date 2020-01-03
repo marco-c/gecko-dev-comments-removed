@@ -197,7 +197,6 @@ class UpvarCookie
     F(STAR) \
     F(DIV) \
     F(MOD) \
-    F(POW) \
     \
     /* Assignment operators (= += -= etc.). */ \
     /* ParseNode::isAssignment assumes all these are consecutive. */ \
@@ -212,8 +211,7 @@ class UpvarCookie
     F(URSHASSIGN) \
     F(MULASSIGN) \
     F(DIVASSIGN) \
-    F(MODASSIGN) \
-    F(POWASSIGN)
+    F(MODASSIGN)
 
 
 
@@ -232,9 +230,9 @@ enum ParseNodeKind
 #undef EMIT_ENUM
     PNK_LIMIT, 
     PNK_BINOP_FIRST = PNK_OR,
-    PNK_BINOP_LAST = PNK_POW,
+    PNK_BINOP_LAST = PNK_MOD,
     PNK_ASSIGNMENT_START = PNK_ASSIGN,
-    PNK_ASSIGNMENT_LAST = PNK_POWASSIGN
+    PNK_ASSIGNMENT_LAST = PNK_MODASSIGN
 };
 
 inline bool
@@ -242,9 +240,6 @@ IsDeleteKind(ParseNodeKind kind)
 {
     return PNK_DELETENAME <= kind && kind <= PNK_DELETEEXPR;
 }
-
-
-
 
 
 

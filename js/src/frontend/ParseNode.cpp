@@ -272,7 +272,6 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       case PNK_MULASSIGN:
       case PNK_DIVASSIGN:
       case PNK_MODASSIGN:
-      case PNK_POWASSIGN:
       
       case PNK_ELEM:
       case PNK_IMPORT_SPEC:
@@ -479,7 +478,6 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       case PNK_STAR:
       case PNK_DIV:
       case PNK_MOD:
-      case PNK_POW:
       case PNK_COMMA:
       case PNK_NEW:
       case PNK_CALL:
@@ -613,18 +611,7 @@ ParseNode::appendOrCreateList(ParseNodeKind kind, JSOp op, ParseNode* left, Pars
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        if (left->isKind(kind) &&
-            left->isOp(op) &&
-            (js_CodeSpec[op].format & JOF_LEFTASSOC ||
-             (kind == PNK_POW && !left->pn_parens)))
-        {
+        if (left->isKind(kind) && left->isOp(op) && (js_CodeSpec[op].format & JOF_LEFTASSOC)) {
             ListNode* list = &left->as<ListNode>();
 
             list->append(right);
