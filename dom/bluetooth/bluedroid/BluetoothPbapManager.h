@@ -13,6 +13,8 @@
 #include "mozilla/dom/bluetooth/BluetoothTypes.h"
 #include "mozilla/ipc/SocketBase.h"
 
+class nsIInputStream;
+
 namespace mozilla {
   namespace dom {
     class Blob;
@@ -70,7 +72,10 @@ public:
 
 
 
-  void ReplyToPullPhonebook(BlobParent* aActor, uint16_t aPhonebookSize);
+
+
+
+  bool ReplyToPullPhonebook(BlobParent* aActor, uint16_t aPhonebookSize);
 
   
 
@@ -78,7 +83,10 @@ public:
 
 
 
-  void ReplyToPullPhonebook(Blob* aBlob, uint16_t aPhonebookSize);
+
+
+
+  bool ReplyToPullPhonebook(Blob* aBlob, uint16_t aPhonebookSize);
 
   
 
@@ -86,7 +94,10 @@ public:
 
 
 
-  void ReplyToPullvCardListing(BlobParent* aActor, uint16_t aPhonebookSize);
+
+
+
+  bool ReplyToPullvCardListing(BlobParent* aActor, uint16_t aPhonebookSize);
 
   
 
@@ -94,21 +105,30 @@ public:
 
 
 
-  void ReplyToPullvCardListing(Blob* aBlob, uint16_t aPhonebookSize);
+
+
+
+  bool ReplyToPullvCardListing(Blob* aBlob, uint16_t aPhonebookSize);
 
   
 
 
 
 
-  void ReplyToPullvCardEntry(BlobParent* aActor);
+
+
+
+  bool ReplyToPullvCardEntry(BlobParent* aActor);
 
   
 
 
 
 
-  void ReplyToPullvCardEntry(Blob* aBlob);
+
+
+
+  bool ReplyToPullvCardEntry(Blob* aBlob);
 
 protected:
   virtual ~BluetoothPbapManager();
@@ -123,6 +143,8 @@ private:
   void ReplyToSetPath();
   void ReplyError(uint8_t aError);
   void SendObexData(uint8_t* aData, uint8_t aOpcode, int aSize);
+  bool ReplyToGet(nsIInputStream* aStream, uint16_t aPhonebookSize = 0);
+  bool GetInputStreamFromBlob(nsIInputStream* aStream, Blob* aBlob);
 
   uint8_t SetPhoneBookPath(uint8_t flags, const ObexHeaderSet& aHeader);
   uint8_t PullPhonebook(const ObexHeaderSet& aHeader);
@@ -151,6 +173,11 @@ private:
   nsString mDeviceAddress;
 
   
+
+
+  unsigned int mRemoteMaxPacketLength;
+
+  
   
   
   nsRefPtr<BluetoothSocket> mSocket;
@@ -159,6 +186,17 @@ private:
   
   
   nsRefPtr<BluetoothSocket> mServerSocket;
+
+  
+
+
+  nsCOMPtr<nsIInputStream> mVCardDataStream;
+
+  
+
+
+
+  bool mRequirePhonebookSize;
 };
 
 END_BLUETOOTH_NAMESPACE
