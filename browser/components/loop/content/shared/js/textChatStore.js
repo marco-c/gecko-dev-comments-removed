@@ -122,7 +122,7 @@ loop.store.TextChatStore = (function() {
 
       
       
-      if (message.contentType != CHAT_CONTENT_TYPES.ROOM_NAME) {
+      if (message.contentType !== CHAT_CONTENT_TYPES.ROOM_NAME) {
         window.dispatchEvent(new CustomEvent("LoopChatMessageAppended"));
       }
     },
@@ -135,7 +135,7 @@ loop.store.TextChatStore = (function() {
     receivedTextChatMessage: function(actionData) {
       
       
-      if (actionData.contentType != CHAT_CONTENT_TYPES.TEXT) {
+      if (actionData.contentType !== CHAT_CONTENT_TYPES.TEXT) {
         return;
       }
 

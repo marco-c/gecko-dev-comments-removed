@@ -115,7 +115,7 @@ loop.validate = (function() {
         try {
           return typeof Type === "undefined"         || 
                  Type === null && value === null     || 
-                 value.constructor == Type           || 
+                 value.constructor === Type          || 
                  Type.prototype.isPrototypeOf(value) || 
                  typeName(value) === typeName(Type);    
         } catch (e) {
