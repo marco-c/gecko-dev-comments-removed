@@ -194,6 +194,18 @@ public:
 
   bool ImageIsLocked() const { return mImageIsLocked; }
 
+
+  
+
+
+  void SetIsFirstFrameDecode()
+  {
+    MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
+    mFirstFrameDecode = true;
+  }
+
+  bool IsFirstFrameDecode() const { return mFirstFrameDecode; }
+
   size_t BytesDecoded() const { return mBytesDecoded; }
 
   
@@ -443,6 +455,7 @@ private:
   bool mSendPartialInvalidations : 1;
   bool mImageIsTransient : 1;
   bool mImageIsLocked : 1;
+  bool mFirstFrameDecode : 1;
   bool mInFrame : 1;
   bool mIsAnimated : 1;
   bool mDataDone : 1;

@@ -115,6 +115,7 @@ nsPNGDecoder::nsPNGDecoder(RasterImage* aImage)
    mHeaderBytesRead(0), mCMSMode(0),
    mChannels(0), mFrameIsHidden(false),
    mDisablePremultipliedAlpha(false),
+   mSuccessfulEarlyFinish(false),
    mNumFrames(0)
 {
 }
@@ -375,7 +376,7 @@ nsPNGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 
       
       
-      if (!HasError()) {
+      if (!mSuccessfulEarlyFinish && !HasError()) {
         PostDataError();
       }
 
@@ -826,6 +827,14 @@ nsPNGDecoder::frame_info_callback(png_structp png_ptr, png_uint_32 frame_num)
 
   
   decoder->EndImageFrame();
+
+  if (!decoder->mFrameIsHidden && decoder->IsFirstFrameDecode()) {
+    
+    
+    decoder->PostDecodeDone();
+    decoder->mSuccessfulEarlyFinish = true;
+    png_longjmp(decoder->mPNG, 1);
+  }
 
   
   decoder->mFrameIsHidden = false;

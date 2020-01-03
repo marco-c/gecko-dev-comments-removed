@@ -906,6 +906,13 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
       break;
 
     case gif_image_header: {
+      if (mGIFStruct.images_decoded > 0 && IsFirstFrameDecode()) {
+        
+        
+        mGIFStruct.state = gif_done;
+        break;
+      }
+
       
       mGIFStruct.x_offset = GETINT16(q);
       mGIFStruct.y_offset = GETINT16(q + 2);
