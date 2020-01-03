@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko;
 
+import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.gfx.ImmutableViewportMetrics;
 import org.mozilla.gecko.gfx.LayerView;
 
@@ -11,6 +12,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Point;
 import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -53,10 +55,7 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
     private float mTop;
     private boolean mIsRTL; 
     private PointF mGeckoPoint;
-    private float mTouchStartX;
-    private float mTouchStartY;
-    private int mLayerViewX;
-    private int mLayerViewY;
+    private PointF mTouchStart;
 
     private RelativeLayout.LayoutParams mLayoutParams;
 
@@ -79,28 +78,33 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
             mHandleType = HandleType.FOCUS;
 
         mGeckoPoint = new PointF(0.0f, 0.0f);
+        mTouchStart = new PointF(0.0f, 0.0f);
 
         mWidth = getResources().getDimensionPixelSize(R.dimen.text_selection_handle_width);
         mHeight = getResources().getDimensionPixelSize(R.dimen.text_selection_handle_height);
         mShadow = getResources().getDimensionPixelSize(R.dimen.text_selection_handle_shadow);
     }
 
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
-                mTouchStartX = event.getX();
-                mTouchStartY = event.getY();
-
-                int[] rect = new int[2];
-                GeckoAppShell.getLayerView().getLocationOnScreen(rect);
-                mLayerViewX = rect[0];
-                mLayerViewY = rect[1];
+                mTouchStart.x = event.getX();
+                mTouchStart.y = event.getY();
                 break;
             }
             case MotionEvent.ACTION_UP: {
-                mTouchStartX = 0;
-                mTouchStartY = 0;
+                mTouchStart.x = 0;
+                mTouchStart.y = 0;
 
                 
                 JSONObject args = new JSONObject();
@@ -125,18 +129,26 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
         
         
         
-        mLeft = newX - mLayerViewX - mTouchStartX;
-        mTop = newY - mLayerViewY - mTouchStartY;
+        
+        
+        
+        float layerViewTranslation = ViewHelper.getTranslationY(GeckoAppShell.getLayerView());
+        int[] layerViewPosition = new int[2];
+        GeckoAppShell.getLayerView().getLocationOnScreen(layerViewPosition);
+        float ancestorOrigin = layerViewPosition[1] - layerViewTranslation;
+
+        mLeft = newX - mTouchStart.x;
+        mTop = newY - mTouchStart.y - ancestorOrigin;
 
         LayerView layerView = GeckoAppShell.getLayerView();
         if (layerView == null) {
             Log.e(LOGTAG, "Can't move selection because layerView is null");
             return;
         }
-        
-        float left = mLeft + adjustLeftForHandle();
 
-        PointF geckoPoint = new PointF(left, mTop);
+        
+        PointF geckoPoint = new PointF(mLeft + adjustLeftForHandle(),
+                                       mTop - layerViewTranslation);
         geckoPoint = layerView.convertViewPointToLayerPoint(geckoPoint);
 
         JSONObject args = new JSONObject();
@@ -172,16 +184,14 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
         }
 
         ImmutableViewportMetrics metrics = layerView.getViewportMetrics();
-        PointF offset = metrics.getMarginOffset();
-        repositionWithViewport(metrics.viewportRectLeft - offset.x, metrics.viewportRectTop - offset.y, metrics.zoomFactor);
+        repositionWithViewport(metrics.viewportRectLeft, metrics.viewportRectTop, metrics.zoomFactor);
     }
 
     void repositionWithViewport(float x, float y, float zoom) {
         PointF viewPoint = new PointF((mGeckoPoint.x * zoom) - x,
                                       (mGeckoPoint.y * zoom) - y);
-
         mLeft = viewPoint.x - adjustLeftForHandle();
-        mTop = viewPoint.y;
+        mTop = viewPoint.y + ViewHelper.getTranslationY(GeckoAppShell.getLayerView());
 
         setLayoutPosition();
     }
