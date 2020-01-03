@@ -1510,7 +1510,7 @@ IMContextWrapper::CreateTextRangeArray(GtkIMContext* aContext,
 
     do {
         TextRange range;
-        if (!SetTextRange(iter, preedit_string, range)) {
+        if (!SetTextRange(iter, preedit_string, cursor_pos, range)) {
             continue;
         }
         textRangeArray->AppendElement(range);
@@ -1555,6 +1555,7 @@ IMContextWrapper::ToNscolor(PangoAttrColor* aPangoAttrColor)
 bool
 IMContextWrapper::SetTextRange(PangoAttrIterator* aPangoAttrIter,
                                const gchar* aUTF8CompositionString,
+                               int32_t aUTF16CaretOffset,
                                TextRange& aTextRange) const
 {
     
@@ -1682,25 +1683,44 @@ IMContextWrapper::SetTextRange(PangoAttrIterator* aPangoAttrIter,
 
 
 
+
+
+
+
+
+
+
+
+
+
     if (!attrUnderline && !attrForeground && !attrBackground) {
         MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("GTKIM: %p   SetTextRange(), FAILED, due to no attr", this));
+            ("GTKIM: %p   SetTextRange(), FAILED, due to no attr, "
+             "aTextRange= { mStartOffset=%u, mEndOffset=%u }",
+             this, aTextRange.mStartOffset, aTextRange.mEndOffset));
         return false;
     }
 
     
-    if (attrUnderline && attrForeground) {
+    
+    if (!utf8ClauseStart &&
+        utf8ClauseEnd == static_cast<gint>(strlen(aUTF8CompositionString)) &&
+        aTextRange.mEndOffset == static_cast<uint32_t>(aUTF16CaretOffset)) {
+        aTextRange.mRangeType = NS_TEXTRANGE_RAWINPUT;
+    }
+    
+    
+    
+    else if (aTextRange.mStartOffset <=
+                 static_cast<uint32_t>(aUTF16CaretOffset) &&
+             aTextRange.mEndOffset >
+                 static_cast<uint32_t>(aUTF16CaretOffset)) {
         aTextRange.mRangeType = NS_TEXTRANGE_SELECTEDCONVERTEDTEXT;
     }
     
-    else if (attrUnderline) {
-        aTextRange.mRangeType = NS_TEXTRANGE_CONVERTEDTEXT;
-    }
     
-    else if (attrForeground) {
-        aTextRange.mRangeType = NS_TEXTRANGE_SELECTEDRAWTEXT;
-    } else {
-        aTextRange.mRangeType = NS_TEXTRANGE_RAWINPUT;
+    else {
+        aTextRange.mRangeType = NS_TEXTRANGE_CONVERTEDTEXT;
     }
 
     MOZ_LOG(gGtkIMLog, LogLevel::Debug,
