@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 const Cc = Components.classes;
 const Cu = Components.utils;
@@ -36,12 +36,12 @@ const HELP_URL = "https://developer.mozilla.org/docs/Tools/WebIDE/Troubleshootin
 const MAX_ZOOM = 1.4;
 const MIN_ZOOM = 0.6;
 
-// Download remote resources early
+
 getJSON("devtools.webide.addonsURL", true);
 getJSON("devtools.webide.templatesURL", true);
 getJSON("devtools.devices.url", true);
 
-// See bug 989619
+
 console.log = console.log.bind(console);
 console.warn = console.warn.bind(console);
 console.error = console.error.bind(console);
@@ -98,8 +98,8 @@ let UI = {
       this.reportError("error_appProjectsLoadFailed");
     });
 
-    // Auto install the ADB Addon Helper and Tools Adapters. Only once.
-    // If the user decides to uninstall any of this addon, we won't install it again.
+    
+    
     let autoinstallADBHelper = Services.prefs.getBoolPref("devtools.webide.autoinstallADBHelper");
     let autoinstallFxdtAdapters = Services.prefs.getBoolPref("devtools.webide.autoinstallFxdtAdapters");
     if (autoinstallADBHelper) {
@@ -155,10 +155,10 @@ let UI = {
   },
 
   onfocus: function() {
-    // Because we can't track the activity in the folder project,
-    // we need to validate the project regularly. Let's assume that
-    // if a modification happened, it happened when the window was
-    // not focused.
+    
+    
+    
+    
     if (AppManager.selectedProject &&
         AppManager.selectedProject.type != "mainProcess" &&
         AppManager.selectedProject.type != "runtimeApp" &&
@@ -166,15 +166,15 @@ let UI = {
       AppManager.validateAndUpdateProject(AppManager.selectedProject);
     }
 
-    // Hook to display promotional Developer Edition doorhanger. Only displayed once.
-    // Hooked into the `onfocus` event because sometimes does not work
-    // when run at the end of `init`. ¯\(°_o)/¯
+    
+    
+    
     showDoorhanger({ window, type: "deveditionpromo", anchor: document.querySelector("#deck") });
   },
 
   appManagerUpdate: function(event, what, details) {
-    // Got a message from app-manager.js
-    // See AppManager.update() for descriptions of what these events mean.
+    
+    
     switch (what) {
       case "runtime-list":
         this.autoConnectRuntime();
@@ -190,7 +190,7 @@ let UI = {
         }
         break;
       case "project":
-        this._updatePromise = Task.spawn(function() {
+        this._updatePromise = Task.spawn(function*() {
           UI.updateTitle();
           yield UI.destroyToolbox();
           UI.updateCommands();
@@ -244,7 +244,7 @@ let UI = {
   },
 
   openInBrowser: function(url) {
-    // Open a URL in a Firefox window
+    
     let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
     if (browserWin) {
       let gBrowser = browserWin.gBrowser;
@@ -264,16 +264,16 @@ let UI = {
     }
   },
 
-  // TODO: remove hidePanel when project layout is complete - Bug 1079347
+  
   hidePanels: function() {
     let panels = document.querySelectorAll("panel");
     for (let p of panels) {
-      // Sometimes in tests, p.hidePopup is not defined - Bug 1151796.
+      
       p.hidePopup && p.hidePopup();
     }
   },
 
-  /********** BUSY UI **********/
+  
 
   _busyTimeout: null,
   _busyOperationDescription: null,
@@ -328,8 +328,8 @@ let UI = {
   },
 
   busyUntil: function(promise, operationDescription) {
-    // Freeze the UI until the promise is resolved. A timeout will unfreeze the
-    // UI, just in case the promise never gets resolved.
+    
+    
     this._busyPromise = promise;
     this._busyOperationDescription = operationDescription;
     this.setupBusyTimeout();
@@ -340,8 +340,8 @@ let UI = {
     }, (e) => {
       let message;
       if (e && e.error && e.message) {
-        // Some errors come from fronts that are not based on protocol.js.
-        // Errors are not translated to strings.
+        
+        
         message = operationDescription + " (" + e.error + "): " + e.message;
       } else {
         message = operationDescription + (e ? (": " + e) : "");
@@ -389,23 +389,23 @@ let UI = {
     nbox.removeAllNotifications(true);
   },
 
-  /********** COMMANDS **********/
+  
 
-  /**
-   * This module emits various events when state changes occur.
-   *
-   * The events this module may emit include:
-   *   busy:
-   *     The window is currently busy and certain UI functions may be disabled.
-   *   unbusy:
-   *     The window is not busy and certain UI functions may be re-enabled.
-   */
+  
+
+
+
+
+
+
+
+
   update: function(what, details) {
     this.emit("webide-update", what, details);
   },
 
   updateCommands: function() {
-    // Action commands
+    
     let playCmd = document.querySelector("#cmd_play");
     let stopCmd = document.querySelector("#cmd_stop");
     let debugCmd = document.querySelector("#cmd_toggleToolbox");
@@ -436,7 +436,7 @@ let UI = {
         debugCmd.setAttribute("disabled", "true");
       }
 
-      // If connected and a project is selected
+      
       if (AppManager.selectedProject.type == "runtimeApp") {
         playCmd.removeAttribute("disabled");
       } else if (AppManager.selectedProject.type == "tab") {
@@ -467,7 +467,7 @@ let UI = {
   },
 
   updateRemoveProjectButton: function() {
-    // Remove command
+    
     let removeCmdNode = document.querySelector("#cmd_removeProject");
     if (AppManager.selectedProject) {
       removeCmdNode.removeAttribute("disabled");
@@ -476,7 +476,7 @@ let UI = {
     }
   },
 
-  /********** RUNTIME **********/
+  
 
   get lastConnectedRuntime() {
     return Services.prefs.getCharPref("devtools.webide.lastConnectedRuntime");
@@ -487,8 +487,8 @@ let UI = {
   },
 
   autoConnectRuntime: function () {
-    // Automatically reconnect to the previously selected runtime,
-    // if available and has an ID and feature is enabled
+    
+    
     if (AppManager.selectedRuntime ||
         !Services.prefs.getBoolPref("devtools.webide.autoConnectRuntime") ||
         !this.lastConnectedRuntime) {
@@ -498,19 +498,19 @@ let UI = {
 
     type = type.toLowerCase();
 
-    // Local connection is mapped to AppManager.runtimeList.other array
+    
     if (type == "local") {
       type = "other";
     }
 
-    // We support most runtimes except simulator, that needs to be manually
-    // launched
+    
+    
     if (type == "usb" || type == "wifi" || type == "other") {
       for (let runtime of AppManager.runtimeList[type]) {
-        // Some runtimes do not expose an id and don't support autoconnect (like
-        // remote connection)
+        
+        
         if (runtime.id == id) {
-          // Only want one auto-connect attempt, so clear last runtime value
+          
           this.lastConnectedRuntime = "";
           this.connectToRuntime(runtime);
         }
@@ -523,13 +523,13 @@ let UI = {
     let promise = AppManager.connectToRuntime(runtime);
     promise.then(() => this.initConnectionTelemetry())
            .catch(() => {
-             // Empty rejection handler to silence uncaught rejection warnings
-             // |busyUntil| will listen for rejections.
-             // Bug 1121100 may find a better way to silence these.
+             
+             
+             
            });
     promise = this.busyUntil(promise, "Connecting to " + name);
-    // Stop busy timeout for runtimes that take unknown or long amounts of time
-    // to connect.
+    
+    
     if (runtime.prolongedConnection) {
       this.cancelBusyTimeout();
     }
@@ -556,24 +556,24 @@ let UI = {
     }
   },
 
-  /********** ACTIONS **********/
+  
 
   _actionsToLog: new Set(),
 
-  /**
-   * For each new connection, track whether play and debug were ever used.  Only
-   * one value is collected for each button, even if they are used multiple
-   * times during a connection.
-   */
+  
+
+
+
+
   initConnectionTelemetry: function() {
     this._actionsToLog.add("play");
     this._actionsToLog.add("debug");
   },
 
-  /**
-   * Action occurred.  Log that it happened, and remove it from the loggable
-   * set.
-   */
+  
+
+
+
   onAction: function(action) {
     if (!this._actionsToLog.has(action)) {
       return;
@@ -582,10 +582,10 @@ let UI = {
     this._actionsToLog.delete(action);
   },
 
-  /**
-   * Connection status changed or we are shutting down.  Record any loggable
-   * actions as having not occurred.
-   */
+  
+
+
+
   updateConnectionTelemetry: function() {
     for (let action of this._actionsToLog.values()) {
       this.logActionState(action, false);
@@ -599,9 +599,9 @@ let UI = {
     this._telemetry.log(histogramId, state);
   },
 
-  /********** PROJECTS **********/
+  
 
-  // Panel & button
+  
 
   updateProjectButton: function() {
     let buttonNode = document.querySelector("#project-panel-button");
@@ -623,7 +623,7 @@ let UI = {
     }
   },
 
-  // ProjectEditor & details screen
+  
 
   destroyProjectEditor: function() {
     if (this.projecteditor) {
@@ -689,21 +689,21 @@ let UI = {
   openProject: function() {
     let project = AppManager.selectedProject;
 
-    // Nothing to show
+    
 
     if (!project) {
       this.resetDeck();
       return;
     }
 
-    // Make sure the directory exist before we show Project Editor
+    
 
     let forceDetailsOnly = false;
     if (project.type == "packaged") {
       forceDetailsOnly = !utils.doesFileExist(project.location);
     }
 
-    // Show only the details screen
+    
 
     if (project.type != "packaged" ||
         !this.isProjectEditorEnabled() ||
@@ -712,7 +712,7 @@ let UI = {
       return;
     }
 
-    // Show ProjectEditor
+    
 
     this.selectDeckPanel("projecteditor");
 
@@ -730,11 +730,11 @@ let UI = {
     if (!(project.type == "runtimeApp" ||
           project.type == "mainProcess" ||
           project.type == "tab")) {
-      return; // For something that is not an editable app, we're done.
+      return; 
     }
 
-    // Do not force opening apps that are already running, as they may have
-    // some activity being opened and don't want to dismiss them.
+    
+    
     if (project.type == "runtimeApp" && !AppManager.isProjectRunning()) {
       yield UI.busyUntil(AppManager.launchRuntimeApp(), "running app");
     }
@@ -749,7 +749,7 @@ let UI = {
     if (!(project.type == "runtimeApp" ||
           project.type == "mainProcess" ||
           project.type == "tab")) {
-      return; // For something that is not an editable app, we're done.
+      return; 
     }
 
     yield UI.createToolbox();
@@ -762,26 +762,26 @@ let UI = {
       project = yield AppProjects[isPackaged ? "addPackaged" : "addHosted"](source);
     } catch (e) {
       if (e === "Already added") {
-        // Select project that's already been added,
-        // and allow it to be revalidated and selected
+        
+        
         project = AppProjects.get(isPackaged ? source.path : source);
       } else {
         throw e;
       }
     }
 
-    // Select project
+    
     AppManager.selectedProject = project;
   }),
 
-  // Remember the last selected project on the runtime
+  
   saveLastSelectedProject: function() {
     let shouldRestore = Services.prefs.getBoolPref("devtools.webide.restoreLastProject");
     if (!shouldRestore) {
       return;
     }
 
-    // Ignore unselection of project on runtime disconnection
+    
     if (!AppManager.connected) {
       return;
     }
@@ -833,7 +833,7 @@ let UI = {
       }
     }
 
-    // For other project types, we need to be connected to the runtime
+    
     if (!AppManager.connected) {
       return;
     }
@@ -857,7 +857,7 @@ let UI = {
     }
   },
 
-  /********** DECK **********/
+  
 
   setupDeck: function() {
     let iframes = document.querySelectorAll("#deck > iframe");
@@ -873,7 +873,7 @@ let UI = {
   selectDeckPanel: function(id) {
     let deck = document.querySelector("#deck");
     if (deck.selectedPanel && deck.selectedPanel.id === "deck-panel-" + id) {
-      // This panel is already displayed.
+      
       return;
     }
     this.hidePanels();
@@ -896,23 +896,23 @@ let UI = {
     this.updateProjectEditorMenusVisibility();
   },
 
-  /********** TOOLBOX **********/
+  
 
   onMessage: function(event) {
-    // The custom toolbox sends a message to its parent
-    // window.
+    
+    
     try {
       let json = JSON.parse(event.data);
       switch (json.name) {
         case "toolbox-close":
-          // There are many ways to close a toolbox:
-          // * Close button inside the toolbox
-          // * Toggle toolbox wrench in WebIDE
-          // * Disconnect the current runtime gracefully
-          // * Yank cord out of device
-          // We can't know for sure which one was used here, so reset the
-          // |toolboxPromise| since someone must be destroying it to reach here,
-          // and call our own close method.
+          
+          
+          
+          
+          
+          
+          
+          
           if (this.toolboxIframe && this.toolboxIframe.uid == json.uid) {
             this.toolboxPromise = null;
             this._closeToolboxUI();
@@ -923,7 +923,7 @@ let UI = {
   },
 
   destroyToolbox: function() {
-    // Only have a live toolbox if |this.toolboxPromise| exists
+    
     if (this.toolboxPromise) {
       let toolboxPromise = this.toolboxPromise;
       this.toolboxPromise = null;
@@ -937,7 +937,7 @@ let UI = {
   },
 
   createToolbox: function() {
-    // If |this.toolboxPromise| exists, there is already a live toolbox
+    
     if (this.toolboxPromise) {
       return this.toolboxPromise;
     }
@@ -954,8 +954,8 @@ let UI = {
     let iframe = document.createElement("iframe");
     iframe.id = "toolbox";
 
-    // Compute a uid on the iframe in order to identify toolbox iframe
-    // when receiving toolbox-close event
+    
+    
     iframe.uid = new Date().getTime();
 
     document.querySelector("notificationbox").insertBefore(iframe, splitter.nextSibling);
@@ -993,8 +993,8 @@ let UI = {
     this.resetFocus();
     Services.prefs.setIntPref("devtools.toolbox.footer.height", this.toolboxIframe.height);
 
-    // We have to destroy the iframe, otherwise, the keybindings of webide don't work
-    // properly anymore.
+    
+    
     this.toolboxIframe.remove();
     this.toolboxIframe = null;
 
@@ -1020,13 +1020,13 @@ let Cmds = {
     }
   },
 
-  /**
-   * testOptions: {       chrome mochitest support
-   *   folder: nsIFile,   where to store the app
-   *   index: Number,     index of the app in the template list
-   *   name: String       name of the app
-   * }
-   */
+  
+
+
+
+
+
+
   newApp: function(testOptions) {
     projectList.newApp(testOptions);
   },
@@ -1046,10 +1046,10 @@ let Cmds = {
       ProjectPanel.showPopup();
     }
 
-    // There are currently no available events to listen for when an unselected
-    // tab navigates.  Since we show every tab's location in the project menu,
-    // we re-list all the tabs each time the menu is displayed.
-    // TODO: An event-based solution will be needed for the sidebar UI.
+    
+    
+    
+    
     if (!projectList.sidebarsEnabled && AppManager.connected) {
       return AppManager.listTabs().then(() => {
         projectList.updateTabs();
