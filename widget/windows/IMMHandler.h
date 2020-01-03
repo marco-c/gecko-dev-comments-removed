@@ -279,11 +279,39 @@ protected:
                                const IMEContext& aContext);
   void SetIMERelatedWindowsPosOnPlugin(nsWindow* aWindow,
                                        const IMEContext& aContext);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   bool GetCharacterRectOfSelectedTextAt(
          nsWindow* aWindow,
          uint32_t aOffset,
          nsIntRect& aCharRect,
          mozilla::WritingMode* aWritingMode = nullptr);
+  
+
+
+
+
+
+
+
+
+
+
   bool GetCaretRect(nsWindow* aWindow,
                     nsIntRect& aCaretRect,
                     mozilla::WritingMode* aWritingMode = nullptr);
@@ -402,6 +430,7 @@ protected:
       mIsValid = false;
     }
     uint32_t Length() const { return mString.Length(); }
+    bool Collapsed() const { return !Length(); }
 
     bool IsValid() const;
     bool Update(const IMENotification& aIMENotification);

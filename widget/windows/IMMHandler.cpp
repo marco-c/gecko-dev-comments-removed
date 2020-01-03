@@ -1248,6 +1248,7 @@ IMMHandler::HandleStartComposition(nsWindow* aWindow,
   AdjustCompositionFont(aContext, selection.mWritingMode);
 
   mCompositionStart = selection.mOffset;
+  mCursorPosition = NO_IME_CARET;
 
   WidgetCompositionEvent event(true, NS_COMPOSITION_START, aWindow);
   nsIntPoint point(0, 0);
@@ -2096,23 +2097,63 @@ IMMHandler::GetCharacterRectOfSelectedTextAt(nsWindow* aWindow,
     return false;
   }
 
-  uint32_t offset = selection.mOffset + aOffset;
-  bool useCaretRect = selection.mString.IsEmpty();
-  if (useCaretRect && ShouldDrawCompositionStringOurselves() &&
-      mIsComposing && !mCompositionString.IsEmpty()) {
-    
-    
-    useCaretRect = false;
-    if (mCursorPosition != NO_IME_CARET) {
-      uint32_t cursorPosition =
-        std::min<uint32_t>(mCursorPosition, mCompositionString.Length());
-      NS_ASSERTION(offset >= cursorPosition, "offset is less than cursorPosition!");
-      offset -= cursorPosition;
+  
+  
+  uint32_t baseOffset =
+    mIsComposing ? mCompositionStart : selection.mOffset;
+
+  CheckedInt<uint32_t> checkingOffset =
+    CheckedInt<uint32_t>(baseOffset) + aOffset;
+  if (NS_WARN_IF(!checkingOffset.isValid()) ||
+      checkingOffset.value() == UINT32_MAX) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: GetCharacterRectOfSelectedTextAt, FAILED, due to "
+       "aOffset is too large (aOffset=%u, baseOffset=%u, mIsComposing=%s)",
+       aOffset, baseOffset, GetBoolName(mIsComposing)));
+    return false;
+  }
+
+  
+  
+  
+  
+  uint32_t targetLength =
+    mIsComposing ? mCompositionString.Length() : selection.Length();
+  if (NS_WARN_IF(aOffset > targetLength)) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: GetCharacterRectOfSelectedTextAt, FAILED, due to "
+       "aOffset is too large (aOffset=%u, targetLength=%u, mIsComposing=%s)",
+       aOffset, targetLength, GetBoolName(mIsComposing)));
+    return false;
+  }
+
+  uint32_t offset = checkingOffset.value();
+
+  
+  uint32_t caretOffset = UINT32_MAX;
+  
+  if (selection.Collapsed()) {
+    if (mIsComposing) {
+      
+      
+      if (mCursorPosition != NO_IME_CARET) {
+        MOZ_ASSERT(mCursorPosition >= 0);
+        caretOffset = mCompositionStart + mCursorPosition;
+      } else if (!ShouldDrawCompositionStringOurselves() ||
+                 mCompositionString.IsEmpty()) {
+        
+        
+        caretOffset = mCompositionStart;
+      }
+    } else {
+      
+      caretOffset = selection.mOffset;
     }
   }
 
-  nsIntRect r;
-  if (!useCaretRect) {
+  
+  
+  if (offset != caretOffset) {
     WidgetQueryContentEvent charRect(true, NS_QUERY_TEXT_RECT, aWindow);
     charRect.InitForQueryTextRect(offset, 1);
     aWindow->InitEvent(charRect, &point);
