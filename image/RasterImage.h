@@ -207,12 +207,6 @@ public:
   void     SetLoopCount(int32_t aLoopCount);
 
   
-  void OnDecodingComplete(bool aIsAnimated);
-
-  
-  void MarkAnimationDecoded();
-
-  
 
 
 
@@ -233,6 +227,10 @@ public:
 
 
   void FinalizeDecoder(Decoder* aDecoder);
+
+  
+  void MarkAnimationDecoded();
+  void ReportDecoderError(Decoder* aDecoder);
 
 
   

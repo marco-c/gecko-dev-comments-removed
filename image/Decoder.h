@@ -46,12 +46,6 @@ public:
 
 
 
-  void Finish();
-
-  
-
-
-
   bool ShouldSyncDecode(size_t aByteLimit);
 
   
@@ -107,7 +101,7 @@ public:
     MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
     mMetadataDecode = aMetadataDecode;
   }
-  bool IsMetadataDecode() { return mMetadataDecode; }
+  bool IsMetadataDecode() const { return mMetadataDecode; }
 
   
 
@@ -219,17 +213,29 @@ public:
   }
 
   
+  bool HasAnimation() const { return mIsAnimated; }
+
+  
   bool HasError() const { return HasDataError() || HasDecoderError(); }
   bool HasDataError() const { return mDataError; }
   bool HasDecoderError() const { return NS_FAILED(mFailCode); }
+  bool ShouldReportError() const { return mShouldReportError; }
   nsresult GetDecoderError() const { return mFailCode; }
   void PostResizeError() { PostDataError(); }
 
+  
   bool GetDecodeDone() const
   {
     return mDecodeDone || (mMetadataDecode && HasSize()) ||
            HasError() || mDataDone;
   }
+
+  
+  
+  bool GetDecodeTotallyDone() const { return mDecodeDone && !IsMetadataDecode(); }
+
+  
+  bool InFrame() const { return mInFrame; }
 
   
 
