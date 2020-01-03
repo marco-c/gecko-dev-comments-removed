@@ -1426,6 +1426,157 @@ FoldElement(ExclusiveContext* cx, ParseNode** nodePtr, Parser<FullParseHandler>&
     return true;
 }
 
+static bool
+FoldAdd(ExclusiveContext* cx, ParseNode** nodePtr, Parser<FullParseHandler>& parser,
+        bool inGenexpLambda)
+{
+    ParseNode* node = *nodePtr;
+
+    MOZ_ASSERT(node->isKind(PNK_ADD));
+    MOZ_ASSERT(node->isArity(PN_LIST));
+    MOZ_ASSERT(node->pn_count >= 2);
+
+    
+    if (!FoldList(cx, node, parser, inGenexpLambda))
+        return false;
+
+    
+    
+    
+    
+    
+    
+    ParseNode* current = node->pn_head;
+    ParseNode* next = current->pn_next;
+    if (current->isKind(PNK_NUMBER)) {
+        do {
+            if (!next->isKind(PNK_NUMBER))
+                break;
+
+            current->pn_dval += next->pn_dval;
+            current->pn_next = next->pn_next;
+            parser.freeTree(next);
+            next = current->pn_next;
+
+            MOZ_ASSERT(node->pn_count > 1);
+            node->pn_count--;
+        } while (next);
+    }
+
+    
+    do {
+        
+        if (!next)
+            break;
+
+        
+        
+        if (current->isKind(PNK_NUMBER) && next->isKind(PNK_STRING)) {
+            if (!FoldType(cx, current, PNK_STRING))
+                return false;
+            next = current->pn_next;
+        }
+
+        
+        
+        do {
+            if (current->isKind(PNK_STRING))
+                break;
+
+            current = next;
+            next = next->pn_next;
+        } while (next);
+
+        
+        if (!next)
+            break;
+
+        RootedString combination(cx);
+        RootedString tmp(cx);
+        do {
+            
+            
+            
+            MOZ_ASSERT(current->isKind(PNK_STRING));
+
+            combination = current->pn_atom;
+
+            do {
+                
+                if (!FoldType(cx, next, PNK_STRING))
+                    return false;
+
+                
+                if (!next->isKind(PNK_STRING))
+                    break;
+
+                
+                tmp = next->pn_atom;
+                combination = ConcatStrings<CanGC>(cx, combination, tmp);
+                if (!combination)
+                    return false;
+
+                current->pn_next = next->pn_next;
+                parser.freeTree(next);
+                next = current->pn_next;
+
+                MOZ_ASSERT(node->pn_count > 1);
+                node->pn_count--;
+            } while (next);
+
+            
+            MOZ_ASSERT(current->isKind(PNK_STRING));
+            combination = AtomizeString(cx, combination);
+            if (!combination)
+                return false;
+            current->pn_atom = &combination->asAtom();
+
+
+            
+            if (!next)
+                break;
+
+            current = next;
+            next = current->pn_next;
+
+            
+            
+            if (!next)
+                break;
+
+            
+            do {
+                current = next;
+                next = current->pn_next;
+
+                if (!FoldType(cx, current, PNK_STRING))
+                    return false;
+                next = current->pn_next;
+            } while (!current->isKind(PNK_STRING) && next);
+        } while (next);
+    } while (false);
+
+    MOZ_ASSERT(!next, "must have considered all nodes here");
+    MOZ_ASSERT(!current->pn_next, "current node must be the last node");
+
+    node->pn_tail = &current->pn_next;
+    node->checkListConsistency();
+
+    if (node->pn_count == 1) {
+        
+        
+        ReplaceNode(nodePtr, current);
+
+        
+        node->setKind(PNK_TRUE);
+        node->setArity(PN_NULLARY);
+        node->setOp(JSOP_TRUE);
+        parser.freeTree(node);
+    }
+
+    return true;
+}
+
 bool
 Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bool inGenexpLambda,
      SyntacticContext sc)
@@ -1433,8 +1584,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
     JS_CHECK_RECURSION(cx, return false);
 
     ParseNode* pn = *pnp;
-    ParseNode* pn1 = nullptr;
-    ParseNode* pn2 = nullptr;
 
     switch (pn->getKind()) {
       case PNK_NEWTARGET:
@@ -1606,6 +1755,9 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_ELEM:
         return FoldElement(cx, pnp, parser, inGenexpLambda);
 
+      case PNK_ADD:
+        return FoldAdd(cx, pnp, parser, inGenexpLambda);
+
       case PNK_EXPORT:
       case PNK_ASSIGN:
       case PNK_ADDASSIGN:
@@ -1638,7 +1790,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_FORIN:
       case PNK_FOROF:
       case PNK_FORHEAD:
-      case PNK_ADD:
       case PNK_NEW:
       case PNK_CALL:
       case PNK_GENEXP:
@@ -1676,10 +1827,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
 
         
         pn->pn_tail = listp;
-
-        
-        pn1 = pn->pn_head;
-        pn2 = nullptr;
         break;
       }
 
@@ -1693,7 +1840,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
             if (!Fold(cx, &pn->pn_kid1, parser, inGenexpLambda, SyntacticContext::Other))
                 return false;
         }
-        pn1 = pn->pn_kid1;
 
         if (pn->pn_kid2) {
             if (!Fold(cx, &pn->pn_kid2, parser, inGenexpLambda, condIf(pn, PNK_FORHEAD)))
@@ -1703,7 +1849,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
                 pn->pn_kid2 = nullptr;
             }
         }
-        pn2 = pn->pn_kid2;
 
         if (pn->pn_kid3) {
             if (!Fold(cx, &pn->pn_kid3, parser, inGenexpLambda, SyntacticContext::Other))
@@ -1723,8 +1868,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
             if (!Fold(cx, &pn->pn_right, parser, inGenexpLambda, condIf(pn, PNK_DOWHILE)))
                 return false;
         }
-        pn1 = pn->pn_left;
-        pn2 = pn->pn_right;
         break;
 
       case PN_UNARY:
@@ -1734,13 +1877,10 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
             if (!Fold(cx, &pn->pn_kid, parser, inGenexpLambda, SyntacticContext::Other))
                 return false;
         }
-        pn1 = pn->pn_kid;
         break;
 
       case PN_NAME:
         
-
-
 
 
 
@@ -1750,7 +1890,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
                 lhsp = &(*lhsp)->pn_expr;
             if (*lhsp && !Fold(cx, lhsp, parser, inGenexpLambda, SyntacticContext::Other))
                 return false;
-            pn1 = *lhsp;
         }
         break;
 
@@ -1768,102 +1907,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
         return true;
 
     switch (pn->getKind()) {
-      case PNK_ADD: {
-        MOZ_ASSERT(pn->isArity(PN_LIST));
-
-        bool folded = false;
-
-        pn2 = pn1->pn_next;
-        if (pn1->isKind(PNK_NUMBER)) {
-            
-            
-            
-            while (pn2 && pn2->isKind(PNK_NUMBER)) {
-                pn1->pn_dval += pn2->pn_dval;
-                pn1->pn_next = pn2->pn_next;
-                parser.freeTree(pn2);
-                pn2 = pn1->pn_next;
-                pn->pn_count--;
-                folded = true;
-            }
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        bool isStringConcat = false;
-        RootedString foldedStr(cx);
-
-        
-        
-        
-        if (pn1->isKind(PNK_NUMBER) && pn2 && pn2->isKind(PNK_STRING))
-            isStringConcat = true;
-
-        while (pn2) {
-            isStringConcat = isStringConcat || pn1->isKind(PNK_STRING);
-
-            if (isStringConcat &&
-                (pn1->isKind(PNK_STRING) || pn1->isKind(PNK_NUMBER)) &&
-                (pn2->isKind(PNK_STRING) || pn2->isKind(PNK_NUMBER)))
-            {
-                
-                if (pn1->isKind(PNK_NUMBER) && !FoldType(cx, pn1, PNK_STRING))
-                    return false;
-                if (pn2->isKind(PNK_NUMBER) && !FoldType(cx, pn2, PNK_STRING))
-                    return false;
-                if (!foldedStr)
-                    foldedStr = pn1->pn_atom;
-                RootedString right(cx, pn2->pn_atom);
-                foldedStr = ConcatStrings<CanGC>(cx, foldedStr, right);
-                if (!foldedStr)
-                    return false;
-                pn1->pn_next = pn2->pn_next;
-                parser.freeTree(pn2);
-                pn2 = pn1->pn_next;
-                pn->pn_count--;
-                folded = true;
-            } else {
-                if (foldedStr) {
-                    
-                    pn1->pn_atom = AtomizeString(cx, foldedStr);
-                    if (!pn1->pn_atom)
-                        return false;
-                    foldedStr = nullptr;
-                }
-                pn1 = pn2;
-                pn2 = pn2->pn_next;
-            }
-        }
-
-        if (foldedStr) {
-            
-            pn1->pn_atom = AtomizeString(cx, foldedStr);
-            if (!pn1->pn_atom)
-                return false;
-        }
-
-        if (folded) {
-            if (pn->pn_count == 1) {
-                
-                
-                
-                ReplaceNode(pnp, pn1);
-                pn = pn1;
-            } else if (!pn2) {
-                pn->pn_tail = &pn1->pn_next;
-            }
-        }
-
-        break;
-      }
-
       case PNK_TYPEOFNAME:
       case PNK_TYPEOFEXPR:
       case PNK_VOID:
@@ -1884,6 +1927,7 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_MOD:
       case PNK_POW:
       case PNK_ELEM:
+      case PNK_ADD:
         MOZ_CRASH("should have been fully handled above");
 
       default:;
