@@ -127,6 +127,10 @@ public:
 
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
+  void ClearSelectors() {
+    mPendingRestyles.ClearSelectors();
+  }
+
 private:
   
   void ComputeAndProcessStyleChange(nsIFrame*              aFrame,

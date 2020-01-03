@@ -1709,6 +1709,15 @@ CSSStyleSheet::List(FILE* out, int32_t aIndent) const
 void 
 CSSStyleSheet::ClearRuleCascades()
 {
+  
+  
+  
+  
+  
+  for (nsStyleSet* styleSet : mStyleSets) {
+    styleSet->ClearSelectors();
+  }
+
   bool removedSheetFromRuleProcessorCache = false;
   if (mRuleProcessors) {
     nsCSSRuleProcessor **iter = mRuleProcessors->Elements(),
