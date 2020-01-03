@@ -168,11 +168,8 @@ H264Converter::CreateDecoderAndInit(MediaRawData* aSample)
 
     nsRefPtr<H264Converter> self = this;
 
-    
-    
-    
     mInitPromiseRequest.Begin(mDecoder->Init()
-      ->Then(AbstractThread::GetCurrent(), __func__, this,
+      ->Then(AbstractThread::GetCurrent()->AsTaskQueue(), __func__, this,
              &H264Converter::OnDecoderInitDone,
              &H264Converter::OnDecoderInitFailed));
   }

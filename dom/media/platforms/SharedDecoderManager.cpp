@@ -187,11 +187,8 @@ SharedDecoderManager::InitDecoder()
     nsRefPtr<SharedDecoderManager> self = this;
     nsRefPtr<MediaDataDecoder::InitPromise> p = mDecoderInitPromise.Ensure(__func__);
 
-    
-    
-    
     mDecoderInitPromiseRequest.Begin(
-      mDecoder->Init()->Then(AbstractThread::GetCurrent(), __func__,
+      mDecoder->Init()->Then(AbstractThread::GetCurrent()->AsTaskQueue(), __func__,
         [self] (TrackInfo::TrackType aType) -> void {
           self->mDecoderInitPromiseRequest.Complete();
           self->mInit = true;
