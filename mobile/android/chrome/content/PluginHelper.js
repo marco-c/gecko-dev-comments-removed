@@ -87,6 +87,17 @@ var PluginHelper = {
       objLoadingContent.playPlugin();
   },
 
+  stopPlayPreview: function(plugin, playPlugin) {
+    let objLoadingContent = plugin.QueryInterface(Ci.nsIObjectLoadingContent);
+    if (objLoadingContent.activated)
+      return;
+
+    if (playPlugin)
+      objLoadingContent.playPlugin();
+    else
+      objLoadingContent.cancelPlayPreview();
+  },
+
   getPluginPreference: function getPluginPreference() {
     let pluginDisable = Services.prefs.getBoolPref("plugin.disable");
     if (pluginDisable)
@@ -201,6 +212,54 @@ var PluginHelper = {
         break;
       }
 
+      case "PluginPlayPreview": {
+        let previewContent = doc.getAnonymousElementByAttribute(plugin, "class", "previewPluginContent");
+        let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
+        let mimeType = PluginHelper.getPluginMimeType(plugin);
+        let playPreviewInfo = pluginHost.getPlayPreviewInfo(mimeType);
+
+        if (!playPreviewInfo.ignoreCTP) {
+          
+          
+          if (aTab.clickToPlayPluginsActivated ||
+              Services.perms.testPermission(aTab.browser.currentURI, "plugins") ==
+              Services.perms.ALLOW_ACTION) {
+            PluginHelper.playPlugin(plugin);
+            return;
+          }
+
+          
+          PluginHelper.delayAndShowDoorHanger(aTab);
+        }
+
+        let iframe = previewContent.getElementsByClassName("previewPluginContentFrame")[0];
+        if (!iframe) {
+          
+          iframe = doc.createElementNS("http://www.w3.org/1999/xhtml", "iframe");
+          iframe.className = "previewPluginContentFrame";
+          previewContent.appendChild(iframe);
+        }
+        iframe.src = playPreviewInfo.redirectURL;
+
+        
+        
+        previewContent.addEventListener("MozPlayPlugin", function playPluginHandler(e) {
+          if (!e.isTrusted)
+            return;
+
+          previewContent.removeEventListener("MozPlayPlugin", playPluginHandler, true);
+
+          let playPlugin = !aEvent.detail;
+          PluginHelper.stopPlayPreview(plugin, playPlugin);
+
+          
+          let iframe = previewContent.getElementsByClassName("previewPluginContentFrame")[0];
+          if (iframe)
+            previewContent.removeChild(iframe);
+        }, true);
+        break;
+      }
+
       case "PluginNotFound": {
         
         
@@ -224,6 +283,8 @@ var PluginHelper = {
         return "PluginNotFound";
       case Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY:
         return "PluginClickToPlay";
+      case Ci.nsIObjectLoadingContent.PLUGIN_PLAY_PREVIEW:
+        return "PluginPlayPreview";
       default:
         
         return null;
