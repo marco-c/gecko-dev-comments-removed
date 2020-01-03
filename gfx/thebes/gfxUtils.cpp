@@ -391,7 +391,7 @@ IsSafeImageTransformComponent(gfxFloat aValue)
   return aValue >= -32768 && aValue <= 32767;
 }
 
-#ifndef MOZ_GFX_OPTIMIZE_MOBILE
+#if !defined(MOZ_GFX_OPTIMIZE_MOBILE)
 
 
 
@@ -423,6 +423,12 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
 {
     PROFILER_LABEL("gfxUtils", "CreateSamplingRestricedDrawable",
       js::ProfileEntry::Category::GRAPHICS);
+
+    DrawTarget* destDrawTarget = aContext->GetDrawTarget();
+    if ((destDrawTarget->GetBackendType() == BackendType::DIRECT2D1_1) ||
+        (destDrawTarget->GetBackendType() == BackendType::DIRECT2D)) {
+      return nullptr;
+    }
 
     gfxRect clipExtents = aContext->GetClipExtents();
 
@@ -756,18 +762,18 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
             
             
             
-#ifndef MOZ_GFX_OPTIMIZE_MOBILE
+#if !defined(MOZ_GFX_OPTIMIZE_MOBILE)
             nsRefPtr<gfxDrawable> restrictedDrawable =
               CreateSamplingRestrictedDrawable(aDrawable, aContext,
                                                aRegion, aFormat);
             if (restrictedDrawable) {
-                drawable.swap(restrictedDrawable);
-            }
+              drawable.swap(restrictedDrawable);
 
-            
-            
-            
-            doTile = false;
+              
+              
+              
+              doTile = false;
+            }
 #endif
         }
     }
