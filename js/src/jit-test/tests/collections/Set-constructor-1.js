@@ -9,8 +9,6 @@ assertEq(s.size, 0);
 s = new Set(null);
 assertEq(s.size, 0);
 
-
-assertWarning(() => Set(), "None");
-
-
-
+assertThrowsInstanceOf(() => Set(), TypeError);
+assertThrowsInstanceOf(() => Set(undefined), TypeError);
+assertThrowsInstanceOf(() => Set(null), TypeError);

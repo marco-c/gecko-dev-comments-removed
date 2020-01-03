@@ -512,13 +512,13 @@ static bool
 WeakMap_construct(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    RootedObject obj(cx, NewBuiltinClassInstance(cx, &WeakMapObject::class_));
-    if (!obj)
-        return false;
 
     
-    
-    if (!WarnIfNotConstructing(cx, args, "WeakMap"))
+    if (!ThrowIfNotConstructing(cx, args, "WeakMap"))
+        return false;
+
+    RootedObject obj(cx, NewBuiltinClassInstance(cx, &WeakMapObject::class_));
+    if (!obj)
         return false;
 
     

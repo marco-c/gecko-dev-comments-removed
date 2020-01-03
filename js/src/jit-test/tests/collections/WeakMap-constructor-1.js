@@ -6,8 +6,6 @@ new WeakMap();
 new WeakMap(undefined);
 new WeakMap(null);
 
-
-assertWarning(() => WeakMap(), "None");
-
-
-
+assertThrowsInstanceOf(() => WeakMap(), TypeError);
+assertThrowsInstanceOf(() => WeakMap(undefined), TypeError);
+assertThrowsInstanceOf(() => WeakMap(null), TypeError);
