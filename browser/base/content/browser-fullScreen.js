@@ -458,7 +458,21 @@ var FullScreen = {
         this._element.removeAttribute(currentState);
       }
       if (newState != "hidden") {
-        this._element.setAttribute(newState, true);
+        if (currentState != "hidden") {
+          this._element.setAttribute(newState, true);
+        } else {
+          
+          
+          
+          
+          
+          
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this._element.setAttribute(newState, true);
+            });
+          });
+        }
       }
     },
 
@@ -476,7 +490,7 @@ var FullScreen = {
             }
           } else {
             let elemRect = this._element.getBoundingClientRect();
-            if (state == "hiding") {
+            if (state == "hiding" && this._lastState != "hidden") {
               
               
               if (event.clientY <= elemRect.bottom + 50) {
