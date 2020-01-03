@@ -6017,6 +6017,10 @@ var FormAssistant = {
       aCallback(false);
       return;
     }
+    if (this._isDisabledElement(aElement)) {
+      aCallback(false);
+      return;
+    }
 
     
     
@@ -6083,6 +6087,17 @@ var FormAssistant = {
 
   _hideFormAssistPopup: function _hideFormAssistPopup() {
     Messaging.sendRequest({ type: "FormAssist:Hide" });
+  },
+
+  _isDisabledElement : function(aElement) {
+    let currentElement = aElement;
+    while (currentElement) {
+      if(currentElement.disabled)
+	return true;
+
+      currentElement = currentElement.parentElement;
+    }
+    return false;
   }
 };
 
