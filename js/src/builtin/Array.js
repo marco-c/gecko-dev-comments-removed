@@ -226,6 +226,15 @@ function ArrayForEach(callbackfn) {
     return void 0;
 }
 
+function ArrayStaticForEach(list, callbackfn) {
+    if (arguments.length < 2)
+        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, 'Array.forEach');
+    if (!IsCallable(callbackfn))
+        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, callbackfn));
+    var T = arguments.length > 2 ? arguments[2] : void 0;
+    callFunction(ArrayForEach, list, callbackfn, T);
+}
+
 
 function ArrayMap(callbackfn) {
     
@@ -270,13 +279,52 @@ function ArrayStaticMap(list, callbackfn) {
     return callFunction(ArrayMap, list, callbackfn, T);
 }
 
-function ArrayStaticForEach(list, callbackfn) {
+
+function ArrayFilter(callbackfn) {
+    
+    var O = ToObject(this);
+
+    
+    var len = ToInteger(O.length);
+
+    
+    if (arguments.length === 0)
+        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, 'Array.prototype.filter');
+    if (!IsCallable(callbackfn))
+        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+
+    
+    var T = arguments.length > 1 ? arguments[1] : void 0;
+
+    
+    var A = [];
+
+    
+    
+    for (var k = 0, to = 0; k < len; k++) {
+        
+        if (k in O) {
+            
+            var kValue = O[k];
+            
+            var selected = callFunction(callbackfn, T, kValue, k, O);
+            
+            if (selected)
+                _DefineDataProperty(A, to++, kValue);
+        }
+    }
+
+    
+    return A;
+}
+
+function ArrayStaticFilter(list, callbackfn) {
     if (arguments.length < 2)
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, 'Array.forEach');
+        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, 'Array.filter');
     if (!IsCallable(callbackfn))
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, callbackfn));
     var T = arguments.length > 2 ? arguments[2] : void 0;
-    callFunction(ArrayForEach, list, callbackfn, T);
+    return callFunction(ArrayFilter, list, callbackfn, T);
 }
 
 
