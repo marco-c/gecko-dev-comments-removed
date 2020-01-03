@@ -1176,11 +1176,8 @@ ComputeCornerSkirtSize(Float aAlpha1, Float aAlpha2,
 
 
 
-
-
 static void
 DrawBorderRadius(DrawTarget* aDrawTarget,
-                 const Point& aSideStart, Float aSideWidth,
                  mozilla::css::Corner c,
                  const Point& aOuterCorner, const Point& aInnerCorner,
                  const twoFloats& aCornerMultPrev, const twoFloats& aCornerMultNext,
@@ -1221,14 +1218,7 @@ DrawBorderRadius(DrawTarget* aDrawTarget,
 
   if (aFirstColor.a > 0) {
     builder = aDrawTarget->CreatePathBuilder();
-    
-    if (aSideWidth > 0) {
-      builder->MoveTo(aSideStart + aCornerMultNext * aSideWidth);
-      builder->LineTo(aSideStart);
-      builder->LineTo(outerCornerStart);
-    } else {
-      builder->MoveTo(outerCornerStart);
-    }
+    builder->MoveTo(outerCornerStart);
   }
 
   if (aFirstColor != aSecondColor) {
@@ -1308,11 +1298,8 @@ DrawBorderRadius(DrawTarget* aDrawTarget,
 
 
 
-
-
 static void
 DrawCorner(DrawTarget* aDrawTarget,
-           const Point& aSideStart, Float aSideWidth,
            mozilla::css::Corner c,
            const Point& aOuterCorner, const Point& aInnerCorner,
            const twoFloats& aCornerMultPrev, const twoFloats& aCornerMultNext,
@@ -1330,13 +1317,7 @@ DrawCorner(DrawTarget* aDrawTarget,
 
   if (aFirstColor.a > 0) {
     builder = aDrawTarget->CreatePathBuilder();
-    
-    if (aSideWidth > 0) {
-      builder->MoveTo(aSideStart + aCornerMultNext * aSideWidth);
-      builder->LineTo(aSideStart);
-    } else {
-      builder->MoveTo(cornerStart);
-    }
+    builder->MoveTo(cornerStart);
   }
 
   if (aFirstColor != aSecondColor) {
@@ -1444,8 +1425,12 @@ nsCSSBorderRenderer::DrawNoCompositeColorSolidBorder()
         cornerMults[i2] * mBorderCornerDimensions[prevCorner];
     Point sideEnd = outerCorner + cornerMults[i] * mBorderCornerDimensions[c];
     
-    if (-(sideEnd - sideStart).DotProduct(cornerMults[i]) <= 0) {
-      sideWidth = 0.0f;
+    if (sideWidth > 0 && firstColor.a > 0 &&
+        -(sideEnd - sideStart).DotProduct(cornerMults[i]) > 0) {
+      mDrawTarget->StrokeLine(sideStart + centerAdjusts[i] * sideWidth,
+                              sideEnd + centerAdjusts[i] * sideWidth,
+                              ColorPattern(firstColor),
+                              StrokeOptions(sideWidth));
     }
 
     Float skirtSize = 0.0f, skirtSlope = 0.0f;
@@ -1462,7 +1447,6 @@ nsCSSBorderRenderer::DrawNoCompositeColorSolidBorder()
     if (!mBorderRadii[c].IsEmpty()) {
       
       DrawBorderRadius(mDrawTarget,
-                       sideStart, sideWidth,
                        c, outerCorner, innerCorner,
                        cornerMults[i], cornerMults[i3],
                        mBorderCornerDimensions[c],
@@ -1471,17 +1455,10 @@ nsCSSBorderRenderer::DrawNoCompositeColorSolidBorder()
     } else if (!mBorderCornerDimensions[c].IsEmpty()) {
       
       DrawCorner(mDrawTarget,
-                 sideStart, sideWidth,
                  c, outerCorner, innerCorner,
                  cornerMults[i], cornerMults[i3],
                  mBorderCornerDimensions[c],
                  firstColor, secondColor, skirtSize, skirtSlope);
-    } else if (sideWidth > 0 && firstColor.a > 0) {
-      
-      mDrawTarget->StrokeLine(sideStart + centerAdjusts[i] * sideWidth,
-                              sideEnd + centerAdjusts[i] * sideWidth,
-                              ColorPattern(firstColor),
-                              StrokeOptions(sideWidth));
     }
   }
 }
