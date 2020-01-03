@@ -356,6 +356,31 @@ function requestViaObject(url) {
 
 
 
+
+
+
+
+
+function requestViaWebSocket(url) {
+  return new Promise(function(resolve, reject) {
+    var websocket = new WebSocket(url);
+
+    websocket.addEventListener("message", function(e) {
+      resolve(JSON.parse(e.data));
+    });
+
+    websocket.addEventListener("open", function(e) {
+      websocket.send("echo");
+    });
+
+    websocket.addEventListener("error", function(e) {
+      reject(e)
+    });
+  });
+}
+
+
+
 function SanityChecker() {}
 SanityChecker.prototype.checkScenario = function() {};
 SanityChecker.prototype.setFailTimeout = function(test, timeout) {};
