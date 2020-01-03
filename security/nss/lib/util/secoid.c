@@ -22,13 +22,7 @@
 
 
 
-
-
-
-const char __nss_util_rcsid[] = "$Header: NSS " NSSUTIL_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__ " $";
-const char __nss_util_sccsid[] = "@(#)NSS " NSSUTIL_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__;
+const char __nss_util_version[] = "Version: NSS " NSSUTIL_VERSION _DEBUG_STRING;
 
 
 
@@ -1921,7 +1915,7 @@ SECOID_Init(void)
     char * envVal;
     volatile char c; 
 
-    c = __nss_util_rcsid[0] + __nss_util_sccsid[0];
+    c = __nss_util_version[0];
 
     if (oidhash) {
 	return SECSuccess; 

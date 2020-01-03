@@ -15,10 +15,4 @@
 
 
 
-
-
-
-const char __nss_freebl_rcsid[] = "$Header: NSS " SOFTOKEN_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__ " $";
-const char __nss_freebl_sccsid[] = "@(#)NSS " SOFTOKEN_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__;
+const char __nss_freebl_version[] = "Version: NSS " SOFTOKEN_VERSION _DEBUG_STRING;

@@ -15,10 +15,4 @@
 
 
 
-
-
-
-const char __nss_smime_rcsid[] = "$Header: NSS " NSS_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__ " $";
-const char __nss_smime_sccsid[] = "@(#)NSS " NSS_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__;
+const char __nss_smime_version[] = "Version: NSS " NSS_VERSION _DEBUG_STRING;

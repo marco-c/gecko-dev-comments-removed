@@ -186,10 +186,15 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 
 
+
 #define SSL_REUSE_SERVER_ECDHE_KEY 27
 
 #define SSL_ENABLE_FALLBACK_SCSV       28 /* Send fallback SCSV in
                                            * handshakes. */
+
+
+
+#define SSL_ENABLE_SERVER_DHE 29
 
 #ifdef SSL_DEPRECATED_FUNCTION 
 
@@ -291,6 +296,46 @@ SSL_IMPORT SECStatus SSL_CipherPrefSetDefault(PRInt32 cipher, PRBool enabled);
 SSL_IMPORT SECStatus SSL_CipherPrefGetDefault(PRInt32 cipher, PRBool *enabled);
 SSL_IMPORT SECStatus SSL_CipherPolicySet(PRInt32 cipher, PRInt32 policy);
 SSL_IMPORT SECStatus SSL_CipherPolicyGet(PRInt32 cipher, PRInt32 *policy);
+
+
+
+
+
+
+
+
+
+SSL_IMPORT SECStatus SSL_DHEGroupPrefSet(PRFileDesc *fd,
+                                         SSLDHEGroupType *groups,
+                                         PRUint16 num_groups);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSL_IMPORT SECStatus SSL_EnableWeakDHEPrimeGroup(PRFileDesc *fd, PRBool enabled);
 
 
 

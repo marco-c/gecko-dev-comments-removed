@@ -14,12 +14,5 @@
 
 
 
-
-
-
-const char __nss_ckcapi_rcsid[] = "$Header: NSS Access to Microsoft Certificate Store "
-        NSS_CKCAPI_LIBRARY_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__ " $";
-const char __nss_ckcapi_sccsid[] = "@(#)NSS Access to Microsoft Certificate Store "
-        NSS_CKCAPI_LIBRARY_VERSION _DEBUG_STRING
-        "  " __DATE__ " " __TIME__;
+const char __nss_ckcapi_version[] = "Version: NSS Access to Microsoft Certificate Store "
+        NSS_CKCAPI_LIBRARY_VERSION _DEBUG_STRING;
