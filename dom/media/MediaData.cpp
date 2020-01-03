@@ -485,17 +485,14 @@ VideoData::Create(const VideoInfo& aInfo,
 
 #define RAW_DATA_ALIGNMENT 31U
 
-#define RAW_DATA_DEFAULT_SIZE 4096
-
 MediaRawData::MediaRawData()
   : MediaData(RAW_DATA, 0)
   , mCrypto(mCryptoInternal)
   , mData(nullptr)
   , mSize(0)
-  , mBuffer(new MediaByteBuffer())
-  , mPadding(0)
+  , mBuffer(nullptr)
+  , mCapacity(0)
 {
-  unused << mBuffer->SetCapacity(RAW_DATA_DEFAULT_SIZE, fallible);
 }
 
 MediaRawData::MediaRawData(const uint8_t* aData, size_t aSize)
@@ -503,16 +500,15 @@ MediaRawData::MediaRawData(const uint8_t* aData, size_t aSize)
   , mCrypto(mCryptoInternal)
   , mData(nullptr)
   , mSize(0)
-  , mBuffer(new MediaByteBuffer())
-  , mPadding(0)
+  , mBuffer(nullptr)
+  , mCapacity(0)
 {
   if (!EnsureCapacity(aSize)) {
     return;
   }
 
   
-  MOZ_ALWAYS_TRUE(mBuffer->AppendElements(aData, aSize, fallible));
-  MOZ_ALWAYS_TRUE(mBuffer->AppendElements(RAW_DATA_ALIGNMENT, fallible));
+  memcpy(mData, aData, aSize);
   mSize = aSize;
 }
 
@@ -533,42 +529,39 @@ MediaRawData::Clone() const
       return nullptr;
     }
 
-    
-    MOZ_ALWAYS_TRUE(s->mBuffer->AppendElements(mData, mSize, fallible));
-    MOZ_ALWAYS_TRUE(s->mBuffer->AppendElements(RAW_DATA_ALIGNMENT, fallible));
+    memcpy(s->mData, mData, mSize);
     s->mSize = mSize;
   }
   return s.forget();
 }
 
+
+
 bool
 MediaRawData::EnsureCapacity(size_t aSize)
 {
-  if (mData && mBuffer->Capacity() >= aSize + RAW_DATA_ALIGNMENT * 2) {
+  const size_t sizeNeeded = aSize + RAW_DATA_ALIGNMENT * 2;
+
+  if (mData && mCapacity >= sizeNeeded) {
     return true;
   }
-  if (!mBuffer->SetCapacity(aSize + RAW_DATA_ALIGNMENT * 2, fallible)) {
+  nsAutoArrayPtr<uint8_t> newBuffer;
+  newBuffer = new (fallible) uint8_t[sizeNeeded];
+  if (!newBuffer) {
     return false;
   }
+
   
   const uintptr_t alignmask = RAW_DATA_ALIGNMENT;
-  mData = reinterpret_cast<uint8_t*>(
-    (reinterpret_cast<uintptr_t>(mBuffer->Elements()) + alignmask) & ~alignmask);
-  MOZ_ASSERT(uintptr_t(mData) % (RAW_DATA_ALIGNMENT+1) == 0);
+  uint8_t* newData = reinterpret_cast<uint8_t*>(
+    (reinterpret_cast<uintptr_t>(newBuffer.get()) + alignmask) & ~alignmask);
+  MOZ_ASSERT(uintptr_t(newData) % (RAW_DATA_ALIGNMENT+1) == 0);
+  memcpy(newData, mData, mSize);
 
-  
-  uint32_t oldpadding = int32_t(mPadding);
-  mPadding = mData - mBuffer->Elements();
-  int32_t shift = int32_t(mPadding) - int32_t(oldpadding);
+  mBuffer = newBuffer.forget();
+  mCapacity = sizeNeeded;
+  mData = newData;
 
-  if (shift == 0) {
-    
-  } else if (shift > 0) {
-    
-    MOZ_ALWAYS_TRUE(mBuffer->InsertElementsAt(oldpadding, shift, fallible));
-  } else {
-    mBuffer->RemoveElementsAt(mPadding, -shift);
-  }
   return true;
 }
 
@@ -580,8 +573,7 @@ size_t
 MediaRawData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t size = aMallocSizeOf(this);
-
-  size += mBuffer->ShallowSizeOfIncludingThis(aMallocSizeOf);
+  size += aMallocSizeOf(mBuffer.get());
   return size;
 }
 
@@ -594,7 +586,6 @@ MediaRawData::CreateWriter()
 MediaRawDataWriter::MediaRawDataWriter(MediaRawData* aMediaRawData)
   : mCrypto(aMediaRawData->mCryptoInternal)
   , mTarget(aMediaRawData)
-  , mBuffer(aMediaRawData->mBuffer.get())
 {
 }
 
@@ -617,10 +608,6 @@ MediaRawDataWriter::SetSize(size_t aSize)
     return false;
   }
 
-  
-  MOZ_ALWAYS_TRUE(
-    mBuffer->SetLength(aSize + mTarget->mPadding + RAW_DATA_ALIGNMENT,
-                       fallible));
   mTarget->mSize = aSize;
   return true;
 }
@@ -633,8 +620,9 @@ MediaRawDataWriter::Prepend(const uint8_t* aData, size_t aSize)
   }
 
   
-  MOZ_ALWAYS_TRUE(mBuffer->InsertElementsAt(mTarget->mPadding, aData, aSize,
-                                            fallible));
+  memmove(mTarget->mData + aSize, mTarget->mData, mTarget->mSize);
+  memcpy(mTarget->mData, aData, aSize);
+
   mTarget->mSize += aSize;
   return true;
 }
@@ -642,13 +630,13 @@ MediaRawDataWriter::Prepend(const uint8_t* aData, size_t aSize)
 bool
 MediaRawDataWriter::Replace(const uint8_t* aData, size_t aSize)
 {
+  
+  
   if (!EnsureSize(aSize)) {
     return false;
   }
 
-  
-  MOZ_ALWAYS_TRUE(mBuffer->ReplaceElementsAt(mTarget->mPadding, mTarget->mSize,
-                                             aData, aSize, fallible));
+  memcpy(mTarget->mData, aData, aSize);
   mTarget->mSize = aSize;
   return true;
 }
@@ -656,7 +644,6 @@ MediaRawDataWriter::Replace(const uint8_t* aData, size_t aSize)
 void
 MediaRawDataWriter::Clear()
 {
-  mBuffer->RemoveElementsAt(mTarget->mPadding, mTarget->mSize);
   mTarget->mSize = 0;
   mTarget->mData = nullptr;
 }
