@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 'use strict';
 
 module.metadata = {
@@ -56,8 +56,8 @@ exports['test bookmark-item-changed'] = function (assert, done) {
   let id;
   let complete = makeCompleted(done);
 
-  // Due to bug 969616 and bug 971964, disabling tests in 10.6 (happens only
-  // in debug builds) to prevent intermittent failures
+  
+  
   if (isOSX10_6) {
     assert.pass('skipping test in OSX 10.6');
     return done();
@@ -66,9 +66,9 @@ exports['test bookmark-item-changed'] = function (assert, done) {
   function handler ({type, data}) {
     if (type !== 'bookmark-item-changed') return;
     if (data.id !== id) return;
-    // Abort if the 'bookmark-item-changed' event isn't for the `title` property,
-    // as sometimes the event can be for the `url` property.
-    // Intermittent failure, bug 969616
+    
+    
+    
     if (data.property !== 'title') return;
 
     assert.equal(type, 'bookmark-item-changed',
@@ -99,8 +99,8 @@ exports['test bookmark-item-moved'] = function (assert, done) {
   let complete = makeCompleted(done);
   let previousIndex, previousParentId;
 
-  // Due to bug 969616 and bug 971964, disabling tests in 10.6 (happens only
-  // in debug builds) to prevent intermittent failures
+  
+  
   if (isOSX10_6) {
     assert.ok(true, 'skipping test in OSX 10.6');
     return done();
@@ -305,8 +305,16 @@ exports['test history-delete-visits'] = function (assert) {
   assert.pass('TODO test history-delete-visits');
 };
 
+
+
+
+
+
+
+
+
+after(exports, (name, assert, done) => setTimeout(() => resetPlaces(done), 1));
 before(exports, (name, assert, done) => resetPlaces(done));
-after(exports, (name, assert, done) => resetPlaces(done));
 
 function saveP () {
   return promisedEmitter(save.apply(null, Array.slice(arguments)));
