@@ -194,8 +194,11 @@ TextTrackList::CreateAndDispatchTrackEventRunner(TextTrack* aTrack,
     TrackEvent::Constructor(this, aEventName, eventInit);
 
   
-  nsCOMPtr<nsIRunnable> eventRunner = new TrackEventRunner(this, event);
-  NS_DispatchToMainThread(eventRunner);
+  rv = thread->Dispatch(do_AddRef(new TrackEventRunner(this, event)),
+                        NS_DISPATCH_NORMAL);
+
+  
+  NS_WARN_IF(NS_FAILED(rv));
 }
 
 HTMLMediaElement*
