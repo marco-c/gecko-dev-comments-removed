@@ -668,8 +668,7 @@ TrackBuffersManager::SegmentParserLoop()
       }
       
       
-      MSE_DEBUG("Found invalid data, ignoring.");
-      mInputBuffer = nullptr;
+      MSE_DEBUG("Found invalid or incomplete data.");
       NeedMoreData();
       return;
     }
