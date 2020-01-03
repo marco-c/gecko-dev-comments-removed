@@ -55,7 +55,7 @@ public:
   NS_DECL_NSIRUNNABLE
 
   CacheEntry(const nsACString& aStorageID, nsIURI* aURI, const nsACString& aEnhanceID,
-             bool aUseDisk);
+             bool aUseDisk, uint32_t aPinningAppId);
 
   void AsyncOpen(nsICacheEntryOpenCallback* aCallback, uint32_t aFlags);
 
@@ -275,6 +275,9 @@ private:
 
   
   bool const mUseDisk;
+
+  
+  uint32_t const mPinningAppId;
 
   
   

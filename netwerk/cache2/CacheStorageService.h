@@ -29,6 +29,17 @@ class nsIEventTarget;
 namespace mozilla {
 namespace net {
 
+namespace CacheFileUtils {
+
+class KeyInfo {
+public:
+  bool mPinningStorage;
+  nsCString mIdEnhance;
+  nsCString mURISpec;
+};
+
+} 
+
 class CacheStorageService;
 class CacheStorage;
 class CacheEntry;
@@ -229,8 +240,7 @@ private:
 
 
   void CacheFileDoomed(nsILoadContextInfo* aLoadContextInfo,
-                       const nsACString & aIdExtension,
-                       const nsACString & aURISpec);
+                       CacheFileUtils::KeyInfo* aKeyInfo);
 
   
 
@@ -241,8 +251,7 @@ private:
 
 
   bool GetCacheEntryInfo(nsILoadContextInfo* aLoadContextInfo,
-                         const nsACString & aIdExtension,
-                         const nsACString & aURISpec,
+                         CacheFileUtils::KeyInfo* aKeyInfo,
                          EntryInfoCallback *aCallback);
 
 private:
@@ -273,11 +282,13 @@ private:
   nsresult DoomStorageEntries(nsCSubstring const& aContextKey,
                               nsILoadContextInfo* aContext,
                               bool aDiskStorage,
+                              bool aPinningStorage,
                               nsICacheEntryDoomCallback* aCallback);
   nsresult AddStorageEntry(nsCSubstring const& aContextKey,
                            nsIURI* aURI,
                            const nsACString & aIdExtension,
                            bool aWriteToDisk,
+                           uint32_t aPinningAppId,
                            bool aCreateIfNotExist,
                            bool aReplace,
                            CacheEntryHandle** aResult);

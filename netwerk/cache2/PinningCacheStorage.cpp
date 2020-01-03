@@ -1,0 +1,25 @@
+
+
+
+
+#include "PinningCacheStorage.h"
+
+namespace mozilla {
+namespace net {
+
+bool PinningCacheStorage::IsPinning() const
+{
+  if (LoadInfo()->AppId() == nsILoadContextInfo::NO_APP_ID) {
+    return false;
+  }
+
+  if (LoadInfo()->IsPrivate()) {
+    return false;
+  }
+
+  
+  return true;
+}
+
+} 
+} 
