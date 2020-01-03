@@ -79,6 +79,7 @@ private:
   
   TimeDuration mVsyncAdjust;     
   TimeDuration mMaxPredict;      
+  TimeDuration mMinDelta;        
 
   
   
