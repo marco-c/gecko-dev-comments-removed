@@ -237,6 +237,7 @@ TabParent::TabParent(nsIContentParent* aManager, const TabContext& aContext, uin
   , mMarkedDestroying(false)
   , mIsDestroyed(false)
   , mAppPackageFileDescriptorSent(false)
+  , mSendOfflineStatus(true)
   , mChromeFlags(aChromeFlags)
 {
   MOZ_ASSERT(aManager);
@@ -502,6 +503,14 @@ TabParent::LoadURL(nsIURI* aURI)
         return;
     }
 
+    uint32_t appId = OwnOrContainingAppId();
+    if (mSendOfflineStatus && NS_IsAppOffline(appId)) {
+      
+      
+      unused << SendAppOfflineStatus(appId, true);
+    }
+    mSendOfflineStatus = false;
+
     unused << SendLoadURL(spec);
 
     
@@ -560,7 +569,7 @@ TabParent::Show(const nsIntSize& size)
 }
 
 void
-TabParent::UpdateDimensions(const nsRect& rect, const nsIntSize& size)
+TabParent::UpdateDimensions(const nsIntRect& rect, const nsIntSize& size)
 {
   if (mIsDestroyed) {
     return;
