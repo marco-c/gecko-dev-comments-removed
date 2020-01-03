@@ -1,14 +1,7 @@
 
 
 
-
-
-
-
-
-
 this.onpush = handlePush;
-this.onmessage = handleMessage;
 
 function handlePush(event) {
 
@@ -19,28 +12,5 @@ function handlePush(event) {
       return;
     }
     result[0].postMessage({type: "finished", okay: "no"});
-  });
-}
-
-function handleMessage(event) {
-  self.registration.pushManager.getSubscription().then(subscription => {
-    if (subscription.endpoint != event.data.endpoint) {
-      throw new Error("Wrong push endpoint in worker");
-    }
-    return subscription.unsubscribe();
-  }).then(result => {
-    if (!result) {
-      throw new Error("Error dropping subscription in worker");
-    }
-    return self.registration.pushManager.getSubscription();
-  }).then(subscription => {
-    if (subscription) {
-      throw new Error("Subscription not dropped in worker");
-    }
-    return self.registration.pushManager.subscribe();
-  }).then(subscription => {
-    event.ports[0].postMessage({endpoint: subscription.endpoint});
-  }).catch(error => {
-    event.ports[0].postMessage({error: error});
   });
 }
