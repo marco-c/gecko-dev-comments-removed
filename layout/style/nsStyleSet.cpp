@@ -385,6 +385,14 @@ SortStyleSheetsByScope(nsTArray<CSSStyleSheet*>& aSheets)
 nsresult
 nsStyleSet::GatherRuleProcessors(sheetType aType)
 {
+  
+  
+  
+  
+  
+  if (IsCSSSheetType(aType)) {
+    ClearSelectors();
+  }
   nsCOMPtr<nsIStyleRuleProcessor> oldRuleProcessor(mRuleProcessors[aType]);
   nsTArray<nsCOMPtr<nsIStyleRuleProcessor>> oldScopedDocRuleProcessors;
   if (aType == eAgentSheet || aType == eUserSheet) {
@@ -2497,4 +2505,10 @@ nsStyleSet::HasRuleProcessorUsedByMultipleStyleSets(sheetType aSheetType)
   nsCSSRuleProcessor* rp =
     static_cast<nsCSSRuleProcessor*>(mRuleProcessors[aSheetType].get());
   return rp->IsUsedByMultipleStyleSets();
+}
+
+void
+nsStyleSet::ClearSelectors()
+{
+  PresContext()->RestyleManager()->ClearSelectors();
 }

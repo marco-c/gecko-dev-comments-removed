@@ -231,6 +231,7 @@ public:
   explicit RestyleTracker(Element::FlagsType aRestyleBits)
     : mRestyleBits(aRestyleBits)
     , mHaveLaterSiblingRestyles(false)
+    , mHaveSelectors(false)
   {
     NS_PRECONDITION((mRestyleBits & ~ELEMENT_ALL_RESTYLE_FLAGS) == 0,
                     "Why do we have these bits set?");
@@ -355,6 +356,14 @@ public:
   
 
 
+
+
+
+  void ClearSelectors();
+
+  
+
+
   inline nsIDocument* Document() const;
 
 #ifdef RESTYLE_LOGGING
@@ -402,6 +411,9 @@ private:
   
   
   bool mHaveLaterSiblingRestyles;
+  
+  
+  bool mHaveSelectors;
 };
 
 inline bool
@@ -411,6 +423,11 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
                                          const RestyleHintData* aRestyleHintData)
 {
   RestyleData* existingData;
+
+  if (aRestyleHintData &&
+      !aRestyleHintData->mSelectorsForDescendants.IsEmpty()) {
+    mHaveSelectors = true;
+  }
 
   
   
