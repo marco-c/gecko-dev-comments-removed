@@ -3241,6 +3241,9 @@ pref("ui.osk.detect_physical_keyboard", true);
 
 pref("ui.osk.on_screen_keyboard_path", "");
 
+
+pref("ui.osk.require_tablet_mode", true);
+
 # XP_WIN
 #endif
 
