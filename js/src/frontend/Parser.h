@@ -456,7 +456,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     
 
 
-    Node parse(JSObject* chain);
+    Node parse();
 
     
 

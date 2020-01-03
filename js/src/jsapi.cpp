@@ -4171,7 +4171,7 @@ JS_BufferIsCompilableUnit(JSContext* cx, HandleObject obj, const char* utf8, siz
                                               options, chars, length,
                                                true, nullptr, nullptr);
     JSErrorReporter older = JS_SetErrorReporter(cx->runtime(), nullptr);
-    if (!parser.checkOptions() || !parser.parse(obj)) {
+    if (!parser.checkOptions() || !parser.parse()) {
         
         
         
