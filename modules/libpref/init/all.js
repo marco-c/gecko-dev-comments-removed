@@ -139,6 +139,7 @@ pref("dom.workers.maxPerDomain", 20);
 
 pref("dom.workers.sharedWorkers.enabled", true);
 
+
 pref("dom.serviceWorkers.enabled", false);
 
 
@@ -4447,12 +4448,19 @@ pref("dom.mozAlarms.enabled", false);
 
 
 
-pref("dom.push.enabled", false);
+#if !defined(MOZ_B2G) && !defined(ANDROID)
 
-#if !defined(RELEASE_BUILD)
-pref("dom.push.debug", true);
+#ifdef RELEASE_BUILD
+pref("dom.push.enabled", false);
+#else
+pref("dom.push.enabled", true);
+#endif
+#else
+
+pref("dom.push.enabled", false);
 #endif
 
+pref("dom.push.debug", false);
 pref("dom.push.serverURL", "wss://push.services.mozilla.com/");
 pref("dom.push.userAgentID", "");
 
