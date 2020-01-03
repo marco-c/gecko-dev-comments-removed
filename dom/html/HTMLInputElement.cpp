@@ -80,6 +80,7 @@
 
 
 #include "mozilla/dom/File.h"
+#include "mozilla/dom/FileList.h"
 #include "nsIFile.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
