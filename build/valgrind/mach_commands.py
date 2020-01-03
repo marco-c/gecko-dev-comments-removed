@@ -109,6 +109,7 @@ class MachCommands(MachCommandBase):
                 '--show-possibly-lost=no',
                 '--track-origins=yes',
                 '--trace-children=yes',
+                '-v',  
             ]
 
             for s in suppressions:
