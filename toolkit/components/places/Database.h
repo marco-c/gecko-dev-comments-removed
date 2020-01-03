@@ -94,10 +94,7 @@ public:
 
 
 
-  static already_AddRefed<Database> GetDatabase()
-  {
-    return GetSingleton();
-  }
+  static already_AddRefed<Database> GetDatabase();
 
   
 

@@ -348,7 +348,7 @@ OptimizeIconSize(IconData& aIcon,
 
 AsyncFaviconHelperBase::AsyncFaviconHelperBase(
   nsCOMPtr<nsIFaviconDataCallback>& aCallback
-) : mDB(Database::GetDatabase())
+)
 {
   
   mCallback.swap(aCallback);
@@ -451,7 +451,9 @@ AsyncFetchAndSetIconForPage::Run()
                   "This should not be called on the main thread");
 
   
-  nsresult rv = FetchIconInfo(mDB, mIcon);
+  nsRefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
+  nsresult rv = FetchIconInfo(DB, mIcon);
   NS_ENSURE_SUCCESS(rv, rv);
 
   bool isInvalidIcon = mIcon.data.IsEmpty() ||
@@ -464,7 +466,7 @@ AsyncFetchAndSetIconForPage::Run()
     
     nsRefPtr<AsyncAssociateIconToPage> event =
         new AsyncAssociateIconToPage(mIcon, mPage, mCallback);
-    mDB->DispatchToAsyncThread(event);
+    DB->DispatchToAsyncThread(event);
 
     return NS_OK;
   }
@@ -695,9 +697,11 @@ AsyncFetchAndSetIconFromNetwork::OnStopRequest(nsIRequest* aRequest,
 
   mIcon.status = ICON_STATUS_CHANGED;
 
+  nsRefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
   nsRefPtr<AsyncAssociateIconToPage> event =
     new AsyncAssociateIconToPage(mIcon, mPage, mCallback);
-  mDB->DispatchToAsyncThread(event);
+  DB->DispatchToAsyncThread(event);
 
   return NS_OK;
 }
@@ -725,7 +729,9 @@ AsyncAssociateIconToPage::Run()
   NS_PRECONDITION(!NS_IsMainThread(),
                   "This should not be called on the main thread");
 
-  nsresult rv = FetchPageInfo(mDB, mPage);
+  nsRefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
+  nsresult rv = FetchPageInfo(DB, mPage);
   if (rv == NS_ERROR_NOT_AVAILABLE){
     
     
@@ -737,19 +743,19 @@ AsyncAssociateIconToPage::Run()
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  mozStorageTransaction transaction(mDB->MainConn(), false,
+  mozStorageTransaction transaction(DB->MainConn(), false,
                                     mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
   
   if (mIcon.id == 0 || (mIcon.status & ICON_STATUS_CHANGED)) {
-    rv = SetIconInfo(mDB, mIcon);
+    rv = SetIconInfo(DB, mIcon);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
     
     
     mIcon.status = (mIcon.status & ~(ICON_STATUS_CACHED)) | ICON_STATUS_SAVED;
-    rv = FetchIconInfo(mDB, mIcon);
+    rv = FetchIconInfo(DB, mIcon);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -764,7 +770,7 @@ AsyncAssociateIconToPage::Run()
   if (mPage.iconId != mIcon.id) {
     nsCOMPtr<mozIStorageStatement> stmt;
     if (mPage.id) {
-      stmt = mDB->GetStatement(
+      stmt = DB->GetStatement(
         "UPDATE moz_places SET favicon_id = :icon_id WHERE id = :page_id"
       );
       NS_ENSURE_STATE(stmt);
@@ -772,7 +778,7 @@ AsyncAssociateIconToPage::Run()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     else {
-      stmt = mDB->GetStatement(
+      stmt = DB->GetStatement(
         "UPDATE moz_places SET favicon_id = :icon_id WHERE url = :page_url"
       );
       NS_ENSURE_STATE(stmt);
@@ -846,8 +852,10 @@ AsyncGetFaviconURLForPage::Run()
   NS_PRECONDITION(!NS_IsMainThread(),
                   "This should not be called on the main thread.");
 
+  nsRefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
   nsAutoCString iconSpec;
-  nsresult rv = FetchIconURL(mDB, mPageSpec, iconSpec);
+  nsresult rv = FetchIconURL(DB, mPageSpec, iconSpec);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -911,8 +919,10 @@ AsyncGetFaviconDataForPage::Run()
   NS_PRECONDITION(!NS_IsMainThread(),
                   "This should not be called on the main thread.");
 
+  nsRefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
   nsAutoCString iconSpec;
-  nsresult rv = FetchIconURL(mDB, mPageSpec, iconSpec);
+  nsresult rv = FetchIconURL(DB, mPageSpec, iconSpec);
   NS_ENSURE_SUCCESS(rv, rv);
 
   IconData iconData;
@@ -922,7 +932,7 @@ AsyncGetFaviconDataForPage::Run()
   pageData.spec.Assign(mPageSpec);
 
   if (!iconSpec.IsEmpty()) {
-    rv = FetchIconInfo(mDB, iconData);
+    rv = FetchIconInfo(DB, iconData);
     if (NS_FAILED(rv)) {
       iconData.spec.Truncate();
     }
@@ -975,16 +985,18 @@ AsyncReplaceFaviconData::Run()
   NS_PRECONDITION(!NS_IsMainThread(),
                   "This should not be called on the main thread");
 
+  nsRefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
   IconData dbIcon;
   dbIcon.spec.Assign(mIcon.spec);
-  nsresult rv = FetchIconInfo(mDB, dbIcon);
+  nsresult rv = FetchIconInfo(DB, dbIcon);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!dbIcon.id) {
     return NS_OK;
   }
 
-  rv = SetIconInfo(mDB, mIcon);
+  rv = SetIconInfo(DB, mIcon);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1096,11 +1108,14 @@ NotifyIconObservers::SendGlobalNotifications(nsIURI* aIconURI)
     PageData bookmarkedPage;
     bookmarkedPage.spec = mPage.bookmarkedSpec;
 
+    nsRefPtr<Database> DB = Database::GetDatabase();
+    if (!DB)
+      return;
     
     nsCOMPtr<nsIFaviconDataCallback> nullCallback;
     nsRefPtr<AsyncAssociateIconToPage> event =
         new AsyncAssociateIconToPage(mIcon, bookmarkedPage, nullCallback);
-    mDB->DispatchToAsyncThread(event);
+    DB->DispatchToAsyncThread(event);
   }
 }
 

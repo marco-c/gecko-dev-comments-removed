@@ -315,8 +315,8 @@ public:
 
 
 
-  bool IsStarted() const {
-    return mIsStarted;
+  static bool IsStarted() {
+    return sIsStarted;
   }
 
 private:
@@ -354,21 +354,22 @@ private:
     NOTIFIED_OBSERVERS_PLACES_CONNECTION_CLOSED,
   };
   State mState;
-  bool mIsStarted;
 
   
   
   uint16_t mCounter;
   static uint16_t sCounter;
 
+  static Atomic<bool> sIsStarted;
+
   ~DatabaseShutdown() {}
 };
 uint16_t DatabaseShutdown::sCounter = 0;
+Atomic<bool> DatabaseShutdown::sIsStarted(false);
 
 DatabaseShutdown::DatabaseShutdown(Database* aDatabase)
   : mDatabase(aDatabase)
   , mState(NOT_STARTED)
-  , mIsStarted(false)
   , mCounter(sCounter++)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -465,7 +466,7 @@ DatabaseShutdown::BlockShutdown(nsIAsyncShutdownClient* aParentClient)
 {
   mParentClient = aParentClient;
   mState = RECEIVED_BLOCK_SHUTDOWN;
-  mIsStarted = true;
+  sIsStarted = true;
 
   if (NS_WARN_IF(!mBarrier)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -660,6 +661,15 @@ Database::GetConnectionShutdown()
   MOZ_ASSERT(mConnectionShutdown);
 
   return mConnectionShutdown->GetClient();
+}
+
+
+already_AddRefed<Database>
+Database::GetDatabase()
+{
+  if (DatabaseShutdown::IsStarted())
+    return nullptr;
+  return GetSingleton();
 }
 
 nsresult
