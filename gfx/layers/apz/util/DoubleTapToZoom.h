@@ -1,0 +1,29 @@
+
+
+
+
+
+#ifndef mozilla_layers_DoubleTapToZoom_h
+#define mozilla_layers_DoubleTapToZoom_h
+
+#include "Units.h"
+
+class nsIDocument;
+template<class T> class nsCOMPtr;
+
+namespace mozilla {
+namespace layers {
+
+
+
+
+
+
+
+CSSRect CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
+                              const CSSPoint& aPoint);
+
+}
+}
+
+#endif 
