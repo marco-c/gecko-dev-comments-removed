@@ -659,19 +659,7 @@ bool
 MediaDecoder::IsExpectingMoreData()
 {
   ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-
-  
-  if (!mResource) {
-    return true;
-  }
-
-  
-  if (mResource->IsDataCachedToEndOfResource(mDecoderPosition)) {
-    return false;
-  }
-
-  
-  return !mResource->IsSuspended();
+  return !mResource || mResource->IsExpectingMoreData();
 }
 
 void MediaDecoder::MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
