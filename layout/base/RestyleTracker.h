@@ -17,6 +17,7 @@
 #include "mozilla/SplayTree.h"
 #include "mozilla/RestyleLogging.h"
 #include "GeckoProfiler.h"
+#include "mozilla/Maybe.h"
 
 #if defined(MOZ_ENABLE_PROFILER_SPS) && !defined(MOZILLA_XPCOMRT_API)
 #include "ProfilerBacktrace.h"
@@ -257,9 +258,18 @@ public:
 
 
 
+
+
+
+
+
   bool AddPendingRestyle(Element* aElement, nsRestyleHint aRestyleHint,
                          nsChangeHint aMinChangeHint,
-                         const RestyleHintData* aRestyleHintData = nullptr);
+                         const RestyleHintData* aRestyleHintData = nullptr,
+                         mozilla::Maybe<Element*> aRestyleRoot =
+                           mozilla::Nothing());
+
+  Element* FindClosestRestyleRoot(Element* aElement);
 
   
 
@@ -437,11 +447,40 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
   return hadRestyleLaterSiblings;
 }
 
+inline mozilla::dom::Element*
+RestyleTracker::FindClosestRestyleRoot(Element* aElement)
+{
+  Element* cur = aElement;
+  while (!cur->HasFlag(RootBit())) {
+    nsIContent* parent = cur->GetFlattenedTreeParent();
+    
+    
+    
+    
+    
+    if (!parent || !parent->IsElement() ||
+        
+        
+        
+        
+        
+        
+        (cur->IsInNativeAnonymousSubtree() && !parent->GetParent() &&
+         cur->GetPrimaryFrame() &&
+         cur->GetPrimaryFrame()->GetParent() != parent->GetPrimaryFrame())) {
+      return nullptr;
+    }
+    cur = parent->AsElement();
+  }
+  return cur;
+}
+
 inline bool
 RestyleTracker::AddPendingRestyle(Element* aElement,
                                   nsRestyleHint aRestyleHint,
                                   nsChangeHint aMinChangeHint,
-                                  const RestyleHintData* aRestyleHintData)
+                                  const RestyleHintData* aRestyleHintData,
+                                  mozilla::Maybe<Element*> aRestyleRoot)
 {
   bool hadRestyleLaterSiblings =
     AddPendingRestyleToTable(aElement, aRestyleHint, aMinChangeHint,
@@ -452,29 +491,11 @@ RestyleTracker::AddPendingRestyle(Element* aElement,
   
   if ((aRestyleHint & ~eRestyle_LaterSiblings) ||
       (aMinChangeHint & nsChangeHint_ReconstructFrame)) {
-    Element* cur = aElement;
-    while (!cur->HasFlag(RootBit())) {
-      nsIContent* parent = cur->GetFlattenedTreeParent();
-      
-      
-      
-      
-      
-      if (!parent || !parent->IsElement() ||
-          
-          
-          
-          
-          
-          
-          (cur->IsInNativeAnonymousSubtree() && !parent->GetParent() &&
-           cur->GetPrimaryFrame() &&
-           cur->GetPrimaryFrame()->GetParent() != parent->GetPrimaryFrame())) {
-        mRestyleRoots.AppendElement(aElement);
-        cur = aElement;
-        break;
-      }
-      cur = parent->AsElement();
+    Element* cur =
+      aRestyleRoot ? *aRestyleRoot : FindClosestRestyleRoot(aElement);
+    if (!cur) {
+      mRestyleRoots.AppendElement(aElement);
+      cur = aElement;
     }
     
     
