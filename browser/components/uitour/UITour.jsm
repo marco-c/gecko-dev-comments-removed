@@ -461,17 +461,22 @@ this.UITour = {
         
         if (typeof data.message !== "string" || data.message === "") {
           log.error("showHeartbeat: Invalid message specified.");
-          break;
+          return false;
         }
 
         if (typeof data.thankyouMessage !== "string" || data.thankyouMessage === "") {
           log.error("showHeartbeat: Invalid thank you message specified.");
-          break;
+          return false;
         }
 
         if (typeof data.flowId !== "string" || data.flowId === "") {
           log.error("showHeartbeat: Invalid flowId specified.");
-          break;
+          return false;
+        }
+
+        if (data.engagementButtonLabel && typeof data.engagementButtonLabel != "string") {
+          log.error("showHeartbeat: Invalid engagementButtonLabel specified");
+          return false;
         }
 
         
@@ -1128,12 +1133,31 @@ this.UITour = {
 
 
 
+
+
+
+
   showHeartbeat(aChromeWindow, aOptions) {
     let nb = aChromeWindow.document.getElementById("high-priority-global-notificationbox");
+    let buttons = null;
 
+    if (aOptions.engagementButtonLabel) {
+      buttons = [{
+        label: aOptions.engagementButtonLabel,
+        callback: () => {
+          
+          this.notify("Heartbeat:Engaged", { flowId: aOptions.flowId, timestamp: Date.now() });
+
+          userEngaged(new Map([
+            ["type", "button"],
+            ["flowid", aOptions.flowId]
+          ]));
+        },
+      }];
+    }
     
     let notice = nb.appendNotification(aOptions.message, "heartbeat-" + aOptions.flowId,
-      "chrome://browser/skin/heartbeat-icon.svg", nb.PRIORITY_INFO_HIGH, null, function() {
+      "chrome://browser/skin/heartbeat-icon.svg", nb.PRIORITY_INFO_HIGH, buttons, function() {
         
         
         this.notify("Heartbeat:NotificationClosed", { flowId: aOptions.flowId, timestamp: Date.now() });
@@ -1145,11 +1169,51 @@ this.UITour = {
     let messageText =
       aChromeWindow.document.getAnonymousElementByAttribute(notice, "anonid", "messageText");
 
+    function userEngaged(aEngagementParams) {
+      
+      notice.label = aOptions.thankyouMessage;
+      messageImage.classList.remove("pulse-onshow");
+      messageImage.classList.add("pulse-twice");
+
+      
+      
+      while (notice.firstChild) {
+        notice.removeChild(notice.firstChild);
+      }
+
+      
+      let engagementURL = null;
+      try {
+        engagementURL = new URL(aOptions.engagementURL);
+      } catch (error) {
+        log.error("showHeartbeat: Invalid URL specified.");
+      }
+
+      
+      if (engagementURL) {
+        for (let [param, value] of aEngagementParams) {
+          engagementURL.searchParams.append(param, value);
+        }
+
+        
+        aChromeWindow.gBrowser.selectedTab =
+          aChromeWindow.gBrowser.addTab(engagementURL.toString(), {
+            owner: aChromeWindow.gBrowser.selectedTab,
+            relatedToCurrent: true
+          });
+      }
+
+      
+      aChromeWindow.setTimeout(() => {
+        nb.removeNotification(notice);
+      }, 3000);
+    }
+
     
     let frag = aChromeWindow.document.createDocumentFragment();
 
     
-    const numStars = 5;
+    const numStars = aOptions.engagementButtonLabel ? 0 : 5;
     let ratingContainer = aChromeWindow.document.createElement("hbox");
     ratingContainer.id = "star-rating-container";
 
@@ -1171,43 +1235,11 @@ this.UITour = {
         this.notify("Heartbeat:Voted", { flowId: aOptions.flowId, score: rating, timestamp: Date.now() });
 
         
-        notice.label = aOptions.thankyouMessage;
-        messageImage.classList.remove("pulse-onshow");
-        messageImage.classList.add("pulse-twice");
-
-        
-        
-        while (notice.firstChild) {
-          notice.removeChild(notice.firstChild);
-        }
-
-        
-        let engagementURL = null;
-        try {
-          engagementURL = new URL(aOptions.engagementURL);
-        } catch (error) {
-          log.error("showHeartbeat: Invalid URL specified.");
-        }
-
-        
-        if (engagementURL) {
-          
-          engagementURL.searchParams.append("type", "stars");
-          engagementURL.searchParams.append("score", rating);
-          engagementURL.searchParams.append("flowid", aOptions.flowId);
-
-          
-          aChromeWindow.gBrowser.selectedTab =
-            aChromeWindow.gBrowser.addTab(engagementURL.toString(), {
-              owner: aChromeWindow.gBrowser.selectedTab,
-              relatedToCurrent: true
-            });
-        }
-
-        
-        aChromeWindow.setTimeout(() => {
-          nb.removeNotification(notice);
-        }, 3000);
+        userEngaged(new Map([
+          ["type", "stars"],
+          ["score", rating],
+          ["flowid", aOptions.flowId]
+        ]));
       }.bind(this));
 
       
