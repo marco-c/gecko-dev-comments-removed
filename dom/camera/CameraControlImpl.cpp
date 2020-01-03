@@ -6,7 +6,6 @@
 #include "base/basictypes.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/unused.h"
-#include "nsPrintfCString.h"
 #include "nsIWeakReferenceUtils.h"
 #include "CameraCommon.h"
 #include "nsGlobalWindow.h"
@@ -18,7 +17,7 @@ using namespace mozilla;
  StaticRefPtr<nsIThread> CameraControlImpl::sCameraThread;
 
 CameraControlImpl::CameraControlImpl()
-  : mListenerLock(PR_NewRWLock(PR_RWLOCK_RANK_NONE, "CameraControlImpl.Listeners.Lock"))
+  : mListenerLock("mozilla::camera::CameraControlImpl.Listeners")
   , mPreviewState(CameraControlListener::kPreviewStopped)
   , mHardwareState(CameraControlListener::kHardwareUninitialized)
   , mHardwareStateChangeReason(NS_OK)
@@ -50,32 +49,11 @@ CameraControlImpl::CameraControlImpl()
     mCameraThread->Dispatch(new Delegate(), NS_DISPATCH_NORMAL);
     sCameraThread = mCameraThread;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mListenerLock) {
-    MOZ_CRASH("Out of memory getting new PRRWLock");
-  }
 }
 
 CameraControlImpl::~CameraControlImpl()
 {
   DOM_CAMERA_LOGT("%s:%d : this=%p\n", __func__, __LINE__, this);
-
-  MOZ_ASSERT(mListenerLock, "mListenerLock missing in ~CameraControlImpl()");
-  if (mListenerLock) {
-    PR_DestroyRWLock(mListenerLock);
-    mListenerLock = nullptr;
-  }
 }
 
 void
@@ -85,7 +63,7 @@ CameraControlImpl::OnHardwareStateChange(CameraControlListener::HardwareState aN
   
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   if (aNewState == mHardwareState) {
     DOM_CAMERA_LOGI("OnHardwareStateChange: state did not change from %d\n", mHardwareState);
@@ -114,7 +92,7 @@ void
 CameraControlImpl::OnConfigurationChange()
 {
   MOZ_ASSERT(NS_GetCurrentThread() == mCameraThread);
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   DOM_CAMERA_LOGI("OnConfigurationChange : %zu listeners\n", mListeners.Length());
 
@@ -130,7 +108,7 @@ CameraControlImpl::OnAutoFocusComplete(bool aAutoFocusSucceeded)
   
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   for (uint32_t i = 0; i < mListeners.Length(); ++i) {
     CameraControlListener* l = mListeners[i];
@@ -141,7 +119,7 @@ CameraControlImpl::OnAutoFocusComplete(bool aAutoFocusSucceeded)
 void
 CameraControlImpl::OnAutoFocusMoving(bool aIsMoving)
 {
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   for (uint32_t i = 0; i < mListeners.Length(); ++i) {
     CameraControlListener* l = mListeners[i];
@@ -155,7 +133,7 @@ CameraControlImpl::OnFacesDetected(const nsTArray<Face>& aFaces)
   
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   for (uint32_t i = 0; i < mListeners.Length(); ++i) {
     CameraControlListener* l = mListeners[i];
@@ -169,7 +147,7 @@ CameraControlImpl::OnTakePictureComplete(const uint8_t* aData, uint32_t aLength,
   
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   for (uint32_t i = 0; i < mListeners.Length(); ++i) {
     CameraControlListener* l = mListeners[i];
@@ -182,7 +160,7 @@ CameraControlImpl::OnPoster(dom::BlobImpl* aBlobImpl)
 {
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   for (uint32_t i = 0; i < mListeners.Length(); ++i) {
     CameraControlListener* l = mListeners[i];
@@ -196,7 +174,7 @@ CameraControlImpl::OnShutter()
   
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   for (uint32_t i = 0; i < mListeners.Length(); ++i) {
     CameraControlListener* l = mListeners[i];
@@ -211,7 +189,7 @@ CameraControlImpl::OnRecorderStateChange(CameraControlListener::RecorderState aS
   
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   for (uint32_t i = 0; i < mListeners.Length(); ++i) {
     CameraControlListener* l = mListeners[i];
@@ -225,7 +203,7 @@ CameraControlImpl::OnPreviewStateChange(CameraControlListener::PreviewState aNew
   
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   if (aNewState == mPreviewState) {
     DOM_CAMERA_LOGI("OnPreviewStateChange: state did not change from %d\n", mPreviewState);
@@ -252,7 +230,7 @@ void
 CameraControlImpl::OnRateLimitPreview(bool aLimit)
 {
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   DOM_CAMERA_LOGI("OnRateLimitPreview: %d\n", aLimit);
 
@@ -267,7 +245,7 @@ CameraControlImpl::OnNewPreviewFrame(layers::Image* aImage, uint32_t aWidth, uin
 {
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   DOM_CAMERA_LOGI("OnNewPreviewFrame: we have %zu preview frame listener(s)\n",
     mListeners.Length());
@@ -287,7 +265,7 @@ CameraControlImpl::OnUserError(CameraControlListener::UserContext aContext,
 {
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   const char* context[] = {
     "StartCamera",
@@ -328,7 +306,7 @@ CameraControlImpl::OnSystemError(CameraControlListener::SystemContext aContext,
 {
   
   
-  RwLockAutoEnterRead lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   const char* context[] = {
     "Camera Service"
@@ -746,7 +724,7 @@ protected:
 void
 CameraControlImpl::AddListenerImpl(already_AddRefed<CameraControlListener> aListener)
 {
-  RwLockAutoEnterWrite lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   CameraControlListener* l = *mListeners.AppendElement() = aListener;
   DOM_CAMERA_LOGI("Added camera control listener %p\n", l);
@@ -784,7 +762,7 @@ CameraControlImpl::AddListener(CameraControlListener* aListener)
 void
 CameraControlImpl::RemoveListenerImpl(CameraControlListener* aListener)
 {
-  RwLockAutoEnterWrite lock(mListenerLock);
+  MutexAutoLock lock(mListenerLock);
 
   nsRefPtr<CameraControlListener> l(aListener);
   mListeners.RemoveElement(l);
