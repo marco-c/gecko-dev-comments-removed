@@ -86,29 +86,11 @@ BluetoothAvrcpInterface::~BluetoothAvrcpInterface()
 
 
 
-BluetoothGattClientNotificationHandler::~BluetoothGattClientNotificationHandler()
-{ }
-
-BluetoothGattServerNotificationHandler::~BluetoothGattServerNotificationHandler()
-{ }
-
 BluetoothGattNotificationHandler::~BluetoothGattNotificationHandler()
 { }
 
 
 
-
-BluetoothGattClientInterface::BluetoothGattClientInterface()
-{ }
-
-BluetoothGattClientInterface::~BluetoothGattClientInterface()
-{ }
-
-BluetoothGattServerInterface::BluetoothGattServerInterface()
-{ }
-
-BluetoothGattServerInterface::~BluetoothGattServerInterface()
-{ }
 
 BluetoothGattInterface::BluetoothGattInterface()
 { }
