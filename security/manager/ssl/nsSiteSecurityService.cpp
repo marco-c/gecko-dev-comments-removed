@@ -718,7 +718,10 @@ nsSiteSecurityService::ProcessPKPHeader(nsIURI* aSourceURI,
   }
 
   if (!isBuiltIn && !mProcessPKPHeadersFromNonBuiltInRoots) {
-    return NS_OK;
+    if (aFailureResult) {
+      *aFailureResult = nsISiteSecurityService::ERROR_ROOT_NOT_BUILT_IN;
+    }
+    return NS_ERROR_FAILURE;
   }
 
   
