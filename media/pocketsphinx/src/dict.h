@@ -44,6 +44,7 @@
 
 
 #include <sphinxbase/hash_table.h>
+#include <sphinxbase/ngram_model.h>
 
 
 #include "s3types.h"
@@ -86,8 +87,21 @@ typedef struct {
     s3wid_t finishwid;	
     s3wid_t silwid;	
     int nocase;
+    ngram_model_t *ngram_g2p_model;
 } dict_t;
 
+struct winner_t
+{
+    size_t length_match;
+    int winner_wid;
+    size_t len_phoneme;
+};
+
+typedef struct
+{
+    char *word;
+    char *phone;
+} unigram_t;
 
 
 
@@ -101,7 +115,8 @@ typedef struct {
 
 
 dict_t *dict_init(cmd_ln_t *config, 
-                  bin_mdef_t *mdef  
+                  bin_mdef_t *mdef,  
+                  logmath_t *logmath 
     );
 
 
@@ -202,6 +217,9 @@ int dict_free(dict_t *d);
 
 void dict_report(dict_t *d 
     );
+
+
+int dict_add_g2p_word(dict_t * dict, char const *word);
 
 #ifdef __cplusplus
 }

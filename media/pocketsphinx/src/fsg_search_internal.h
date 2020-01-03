@@ -69,7 +69,8 @@ typedef struct fsg_search_s {
     ps_search_t base;
 
     hmm_context_t *hmmctx; 
-
+    char const *arpafile;
+    cmd_ln_t *config;
     fsg_model_t *fsg;		
     struct fsg_lextree_s *lextree;
 
