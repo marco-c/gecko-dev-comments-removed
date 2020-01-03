@@ -85,5 +85,11 @@ config = {
     "partial_env": {
         "PATH": "%(pythondir)s/bin:%(gccdir)s/bin:%(PATH)s",
         "LD_LIBRARY_PATH": "%(sixgilldir)s/usr/lib64",
+
+        
+        
+        
+        
+        "I_PREFER_A_SUBOPTIMAL_MERCURIAL_EXPERIENCE": "1",
     },
 }
