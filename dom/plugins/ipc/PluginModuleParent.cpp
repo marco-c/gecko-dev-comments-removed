@@ -491,6 +491,16 @@ PluginModuleChromeParent::LoadModule(const char* aFilePath, uint32_t aPluginId,
     if (NS_FAILED(Preferences::GetInt(sandboxPref.get(), &sandboxLevel))) {
       sandboxLevel = Preferences::GetInt("dom.ipc.plugins.sandbox-level.default");
     }
+
+#if defined(_AMD64_)
+    
+    
+    
+    if (aPluginTag->mIsFlashPlugin &&
+        !PR_GetEnv("MOZ_ALLOW_WEAKER_SANDBOX") && sandboxLevel < 2) {
+        sandboxLevel = 2;
+    }
+#endif
 #endif
 
     nsAutoPtr<PluginModuleChromeParent> parent(new PluginModuleChromeParent(aFilePath, aPluginId,

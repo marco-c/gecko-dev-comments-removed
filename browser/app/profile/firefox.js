@@ -1184,7 +1184,12 @@ pref("security.sandbox.windows.log", false);
 
 
 pref("dom.ipc.plugins.sandbox-level.default", 0);
+#if defined(_AMD64_)
+
+pref("dom.ipc.plugins.sandbox-level.flash", 2);
+#else
 pref("dom.ipc.plugins.sandbox-level.flash", 0);
+#endif
 
 #if defined(MOZ_CONTENT_SANDBOX)
 
@@ -1689,7 +1694,13 @@ pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
 
 #ifdef NIGHTLY_BUILD
+
+#ifdef UNIX_BUT_NOT_MAC
 pref("shumway.disabled", true);
+#else
+pref("shumway.disabled", false);
+pref("shumway.swf.whitelist", "http://www.areweflashyet.com/*.swf");
+#endif
 #endif
 
 
