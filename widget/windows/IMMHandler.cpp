@@ -2695,7 +2695,7 @@ IMMHandler::OnKeyDownEvent(nsWindow* aWindow,
     case VK_UP:
     case VK_RIGHT:
     case VK_DOWN:
-      
+    case VK_RETURN:
       
       
       
