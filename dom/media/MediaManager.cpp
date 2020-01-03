@@ -797,6 +797,9 @@ public:
     if (mAudioSource &&
         mAudioSource->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
       domStream = DOMLocalMediaStream::CreateAudioCaptureStream(window);
+      
+      
+      domStream->SetPrincipal(window->GetExtantDoc()->NodePrincipal());
       msg->RegisterCaptureStreamForWindow(
             mWindowID, domStream->GetStream()->AsProcessedStream());
       window->SetAudioCapture(true);
