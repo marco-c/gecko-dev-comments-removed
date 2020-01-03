@@ -1653,6 +1653,11 @@ WebGLContext::InitAndValidateGL()
     if (!gl)
         return false;
 
+    
+    
+    
+    mFormatUsage = CreateFormatUsage();
+
     GLenum error = gl->fGetError();
     if (error != LOCAL_GL_NO_ERROR) {
         GenerateWarning("GL error 0x%x occurred during OpenGL context"
