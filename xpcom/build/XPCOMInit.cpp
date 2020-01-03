@@ -8,6 +8,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Poison.h"
+#include "mozilla/SharedThreadPool.h"
 #include "mozilla/XPCOM.h"
 #include "nsXULAppAPI.h"
 
@@ -713,6 +714,9 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   
   
   nsDirectoryService::gService->RegisterCategoryProviders();
+
+  
+  SharedThreadPool::InitStatics();
 
   
   
