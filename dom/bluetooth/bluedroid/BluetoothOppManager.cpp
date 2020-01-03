@@ -1551,11 +1551,14 @@ BluetoothOppManager::OnSocketDisconnect(BluetoothSocket* aSocket)
 
   if (!mSuccessFlag) {
     if (mIsServer) {
+      
       DeleteReceivedFile();
-    }
-
-    FileTransferComplete();
-    if (!mIsServer) {
+      FileTransferComplete();
+    } else {
+      
+      if (mCurrentBlobIndex >= 0) {
+        FileTransferComplete();
+      }
       
       DiscardBlobsToSend();
     }
