@@ -412,8 +412,15 @@ PackagedAppService::PackagedAppDownloader::GetSubresourceURI(nsIRequest * aReque
 
   path += PACKAGED_APP_TOKEN;
 
-  
-  if (StringBeginsWith(contentLocation, NS_LITERAL_CSTRING("/"))) {
+  {
+    
+    
+    nsCOMPtr<nsIURI> tempURI;
+    NS_NewURI(getter_AddRefs(tempURI), "http://temp-domain.local/");
+    tempURI->SetPath(contentLocation);
+    
+    tempURI->GetPath(contentLocation);
+    
     contentLocation = Substring(contentLocation, 1);
   }
 
