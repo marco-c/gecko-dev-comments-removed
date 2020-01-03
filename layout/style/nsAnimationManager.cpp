@@ -455,14 +455,8 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
           animationChanged =
             oldEffect->Timing() != newEffect->Timing() ||
             oldEffect->Properties() != newEffect->Properties();
-          oldEffect->Timing() = newEffect->Timing();
+          oldEffect->SetTiming(newEffect->Timing(), *oldAnim);
           oldEffect->Properties() = newEffect->Properties();
-          
-          
-          
-          
-          
-          oldAnim->SetEffect(oldEffect);
         }
 
         
@@ -507,10 +501,6 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
         newAnim = nullptr;
         newAnimations.ReplaceElementAt(newIdx, oldAnim);
         collection->mAnimations.RemoveElementAt(oldIdx);
-
-        
-        
-        oldAnim->UpdateRelevance();
       }
     }
   } else {

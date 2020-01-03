@@ -51,9 +51,9 @@ Animation::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 void
 Animation::SetEffect(KeyframeEffectReadOnly* aEffect)
 {
-  
-  
-  
+  if (mEffect == aEffect) {
+    return;
+  }
   if (mEffect) {
     mEffect->SetParentTime(Nullable<TimeDuration>());
   }
