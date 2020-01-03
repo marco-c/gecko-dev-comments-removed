@@ -1909,7 +1909,7 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
         QuickExit();
     }
 
-#if !defined(DEBUG) and !defined(MOZ_ASAN)
+#if !defined(DEBUG) && !defined(MOZ_ASAN)
     
     
     
