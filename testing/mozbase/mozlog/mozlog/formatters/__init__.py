@@ -2,13 +2,18 @@
 
 
 
-import json
 from unittest import UnittestFormatter
 from xunit import XUnitFormatter
 from html import HTMLFormatter
 from machformatter import MachFormatter
 from tbplformatter import TbplFormatter
 from errorsummary import ErrorSummaryFormatter
+
+try:
+    import ujson as json
+except ImportError:
+    import json
+
 
 def JSONFormatter():
     return lambda x: json.dumps(x) + "\n"
