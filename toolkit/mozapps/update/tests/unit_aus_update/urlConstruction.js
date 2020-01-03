@@ -112,6 +112,9 @@ function check_test_pt4() {
     if (macutils.isUniversalBinary) {
       abi += "-u-" + macutils.architecturesInBinary;
     }
+  } else if (IS_WIN) {
+    
+    abi += "-" + getProcArchitecture();
   }
 
   Assert.equal(getResult(gRequestURL), gAppInfo.OS + "_" + abi,
