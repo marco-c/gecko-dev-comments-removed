@@ -850,49 +850,9 @@ Search.prototype = {
     
     
     
-    
-    
-    let hasFirstResult = false;
-
-    if (this._searchTokens.length > 0) {
-      
-      hasFirstResult = yield this._matchPlacesKeyword();
-    }
-
-    if (this.pending && this._enableActions && !hasFirstResult) {
-      
-      
-      hasFirstResult = yield this._matchSearchEngineAlias();
-    }
-
-    let shouldAutofill = this._shouldAutofill;
-    if (this.pending && !hasFirstResult && shouldAutofill) {
-      
-      hasFirstResult = yield this._matchKnownUrl(conn);
-    }
-
-    if (this.pending && !hasFirstResult && shouldAutofill) {
-      
-      hasFirstResult = yield this._matchSearchEngineUrl();
-    }
-
-    if (this.pending && this._enableActions && !hasFirstResult) {
-      
-      
-
-      
-      
-      
-      
-      hasFirstResult = yield this._matchUnknownUrl();
-    }
-
-    if (this.pending && this._enableActions && !hasFirstResult) {
-      
-      hasFirstResult = yield this._matchCurrentSearchEngine();
-    }
-
-    
+    this._addingHeuristicFirstMatch = true;
+    yield this._matchFirstHeuristicResult(conn);
+    this._addingHeuristicFirstMatch = false;
 
     yield this._sleep(Prefs.delay);
     if (!this.pending)
@@ -925,6 +885,68 @@ Search.prototype = {
     
     yield Promise.all(this._remoteMatchesPromises);
   }),
+
+  *_matchFirstHeuristicResult(conn) {
+    
+    
+
+    if (this._searchTokens.length > 0) {
+      
+      let matched = yield this._matchPlacesKeyword();
+      if (matched) {
+        return;
+      }
+    }
+
+    if (this.pending && this._enableActions) {
+      
+      
+      let matched = yield this._matchSearchEngineAlias();
+      if (matched) {
+        return;
+      }
+    }
+
+    let shouldAutofill = this._shouldAutofill;
+    if (this.pending && shouldAutofill) {
+      
+      let matched = yield this._matchKnownUrl(conn);
+      if (matched) {
+        return;
+      }
+    }
+
+    if (this.pending && shouldAutofill) {
+      
+      let matched = yield this._matchSearchEngineUrl();
+      if (matched) {
+        return;
+      }
+    }
+
+    if (this.pending && this._enableActions) {
+      
+      
+
+      
+      
+      
+      
+      let matched = yield this._matchUnknownUrl();
+      if (matched) {
+        return;
+      }
+    }
+
+    if (this.pending && this._enableActions && this._originalSearchString) {
+      
+      
+      let matched = yield this._matchCurrentSearchEngine();
+      if (matched) {
+        return;
+      }
+    }
+  },
 
   *_matchSearchSuggestions() {
     
@@ -1298,6 +1320,10 @@ Search.prototype = {
       this._maybeRestyleSearchMatch(match);
     }
 
+    if (this._addingHeuristicFirstMatch) {
+      match.style += " heuristic";
+    }
+
     match.icon = match.icon || PlacesUtils.favicons.defaultFavicon.spec;
     match.finalCompleteValue = match.finalCompleteValue || "";
 
@@ -1576,7 +1602,7 @@ Search.prototype = {
     if (!Prefs.autofill)
       return false;
 
-    if (!this._searchTokens.length == 1)
+    if (this._searchTokens.length != 1)
       return false;
 
     
