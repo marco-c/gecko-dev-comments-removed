@@ -288,7 +288,6 @@ struct ParseContext : public GenericParseContext
 
     StmtInfoPC* topStmt() const { return stmtStack.top(); }
     StmtInfoPC* topScopeStmt() const { return stmtStack.topScopal(); }
-    NestedScopeObject* topStaticScope() const { return stmtStack.topStaticScope(); }
 
     
     

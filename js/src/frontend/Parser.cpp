@@ -3006,6 +3006,7 @@ Parser<ParseHandler>::reportRedeclaration(Node pn, Definition::Kind redeclKind, 
 
 
 
+
 template <>
  bool
 Parser<FullParseHandler>::bindLexical(BindData<FullParseHandler>* data,
@@ -3173,7 +3174,10 @@ Parser<ParseHandler>::AutoPushStmtInfoPC::AutoPushStmtInfoPC(Parser<ParseHandler
     stmt_(parser.context)
 {
     stmt_.blockid = parser.pc->blockid();
-    staticScope.initEnclosingNestedScopeFromParser(parser.pc->topStaticScope());
+    NestedScopeObject* enclosing = nullptr;
+    if (StmtInfoPC* stmt = parser.pc->topScopeStmt())
+        enclosing = stmt->staticScope;
+    staticScope.initEnclosingNestedScopeFromParser(enclosing);
     parser.pc->stmtStack.pushNestedScope(&stmt_, type, staticScope);
 }
 
@@ -4093,13 +4097,16 @@ Parser<FullParseHandler>::checkAndPrepareLexical(bool isConst, const TokenPos& e
 
     if (stmt->isBlockScope) {
         
-        MOZ_ASSERT(pc->topStaticScope() == stmt->staticScope);
+        MOZ_ASSERT(pc->topScopeStmt() == stmt);
     } else {
         
         StaticBlockObject* blockObj = StaticBlockObject::create(context);
         if (!blockObj)
             return false;
-        blockObj->initEnclosingNestedScopeFromParser(pc->topStaticScope());
+        NestedScopeObject* enclosing = nullptr;
+        if (StmtInfoPC* stmt = pc->topScopeStmt())
+            enclosing = stmt->staticScope;
+        blockObj->initEnclosingNestedScopeFromParser(enclosing);
 
         ObjectBox* blockbox = newObjectBox(blockObj);
         if (!blockbox)
@@ -5866,7 +5873,8 @@ Parser<ParseHandler>::tryStatement(YieldHandling yieldHandling)
 
 
 
-            data.initLexical(HoistVars, &pc->topStaticScope()->template as<StaticBlockObject>(),
+            data.initLexical(HoistVars,
+                             &pc->topScopeStmt()->staticScope->template as<StaticBlockObject>(),
                              JSMSG_TOO_MANY_CATCH_VARS);
             MOZ_ASSERT(data.let.blockObj);
 
@@ -7234,8 +7242,9 @@ Parser<FullParseHandler>::legacyComprehensionTail(ParseNode* bodyExpr, unsigned 
     if (!transplanter.transplant(bodyExpr))
         return null();
 
-    MOZ_ASSERT(pc->topStaticScope() && pc->topStaticScope() == pn->pn_objbox->object);
-    data.initLexical(HoistVars, &pc->topStaticScope()->as<StaticBlockObject>(),
+    MOZ_ASSERT(pc->topScopeStmt() && pc->topScopeStmt()->staticScope == pn->pn_objbox->object);
+    data.initLexical(HoistVars,
+                     &pc->topScopeStmt()->staticScope->as<StaticBlockObject>(),
                      JSMSG_ARRAY_INIT_TOO_BIG);
 
     while (true) {
