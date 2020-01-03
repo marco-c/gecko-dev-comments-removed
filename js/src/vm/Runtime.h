@@ -1502,7 +1502,8 @@ struct JSRuntime : public JS::shadow::Runtime,
           : iteration(0)
           , isEmpty(true)
           , currentPerfGroupCallback(nullptr)
-          , isActive_(false)
+          , isMonitoringJank_(false)
+          , isMonitoringCPOW_(false)
         { }
 
         
@@ -1516,7 +1517,6 @@ struct JSRuntime : public JS::shadow::Runtime,
             ++iteration;
             isEmpty = true;
         }
-
         
 
 
@@ -1528,8 +1528,8 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-        bool setIsActive(bool value) {
-            if (isActive_ != value)
+        bool setIsMonitoringJank(bool value) {
+            if (isMonitoringJank_ != value)
                 reset();
 
             if (value && !groups_.initialized()) {
@@ -1537,15 +1537,24 @@ struct JSRuntime : public JS::shadow::Runtime,
                     return false;
             }
 
-            isActive_ = value;
+            isMonitoringJank_ = value;
             return true;
         }
+        bool isMonitoringJank() const {
+            return isMonitoringJank_;
+        }
+
 
         
 
 
-        bool isActive() const {
-            return isActive_;
+        bool setIsMonitoringCPOW(bool value) {
+            isMonitoringCPOW_ = value;
+            return true;
+        }
+
+        bool isMonitoringCPOW() const {
+            return isMonitoringCPOW_;
         }
 
         
@@ -1596,7 +1605,8 @@ struct JSRuntime : public JS::shadow::Runtime,
         
 
 
-        bool isActive_;
+        bool isMonitoringJank_;
+        bool isMonitoringCPOW_;
     };
     Stopwatch stopwatch;
 };
