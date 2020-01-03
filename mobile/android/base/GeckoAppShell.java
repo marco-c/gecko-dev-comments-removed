@@ -1210,12 +1210,6 @@ public class GeckoAppShell
 
         if (intent != null) {
             
-            if (!targetURI.startsWith("file:")) {
-                
-                intent.addCategory(Intent.CATEGORY_BROWSABLE);
-            }
-
-            
             
             
             intent.putExtra(Browser.EXTRA_APPLICATION_ID, AppConstants.ANDROID_PACKAGE_NAME);
@@ -1253,6 +1247,9 @@ public class GeckoAppShell
                 Log.e(LOGTAG, "Unable to parse URI - " + e);
                 return null;
             }
+
+            
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
 
             
             intent.setComponent(null);
