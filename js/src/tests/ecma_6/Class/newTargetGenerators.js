@@ -10,10 +10,6 @@ const ITERATIONS = 25;
 for (let i = 0; i < ITERATIONS; i++)
     assertEq(generatorNewTarget(undefined).next().value(), undefined);
 
-for (let i = 0; i < ITERATIONS; i++)
-    assertEq(new generatorNewTarget(generatorNewTarget).next().value(),
-             generatorNewTarget);
-
 
 
 

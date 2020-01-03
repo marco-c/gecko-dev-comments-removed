@@ -67,7 +67,7 @@ assertEq(next.value.hello, 2);
 assertEq(next.value.world, 3);
 
 
-assertEq(b.g.hasOwnProperty("prototype"), true);
+assertEq(b.g.hasOwnProperty("prototype"), false);
 
 
 a = {*b(c){"use strict";yield c;}};
@@ -77,11 +77,6 @@ assertEq(a.b(1).next().value, 1);
 
 
 a = {*g() { yield 1; }}
-it = new a.g;
-next = it.next();
-assertEq(next.done, false);
-assertEq(next.value, 1);
-next = it.next();
-assertEq(next.done, true);
+assertThrowsInstanceOf(() => { new a.g }, TypeError);
 
 reportCompare(0, 0, "ok");
