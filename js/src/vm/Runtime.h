@@ -36,6 +36,7 @@
 #ifdef DEBUG
 # include "js/Proxy.h" 
 #endif
+#include "js/TraceableVector.h"
 #include "js/Vector.h"
 #include "vm/CommonPropertyNames.h"
 #include "vm/DateTime.h"
@@ -139,7 +140,7 @@ struct ScopeCoordinateNameCache {
     void purge();
 };
 
-typedef Vector<ScriptAndCounts, 0, SystemAllocPolicy> ScriptAndCountsVector;
+using ScriptAndCountsVector = TraceableVector<ScriptAndCounts, 0, SystemAllocPolicy>;
 
 struct EvalCacheEntry
 {
@@ -690,12 +691,12 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-    js::SavedFrame* asyncStackForNewActivations;
+    JS::PersistentRooted<js::SavedFrame*> asyncStackForNewActivations;
 
     
 
 
-    JSString* asyncCauseForNewActivations;
+    JS::PersistentRooted<JSString*> asyncCauseForNewActivations;
 
     
 
@@ -1051,7 +1052,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 #endif
 
     
-    js::ScriptAndCountsVector* scriptAndCountsVector;
+    JS::PersistentRooted<js::ScriptAndCountsVector>* scriptAndCountsVector;
 
     
     const js::Value     NaNValue;
