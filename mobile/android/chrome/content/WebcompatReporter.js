@@ -1,9 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
+Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -78,7 +79,11 @@ var WebcompatReporter = {
     let webcompatURL = new URL("http://webcompat.com/");
     webcompatURL.searchParams.append("open", "1");
     webcompatURL.searchParams.append("url", url);
-    BrowserApp.addTab(webcompatURL.href);
+    if (PrivateBrowsingUtils.isBrowserPrivate(BrowserApp.selectedTab.browser)) {
+      BrowserApp.addTab(webcompatURL.href, {parentId: BrowserApp.selectedTab.id, isPrivate: true});
+    } else {
+      BrowserApp.addTab(webcompatURL.href);
+    }
   }
 };
 
