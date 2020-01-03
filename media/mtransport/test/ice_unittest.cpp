@@ -2914,7 +2914,7 @@ static std::string get_environment(const char *name) {
 
 int main(int argc, char **argv)
 {
-#ifdef LINUX
+#ifdef ANDROID
   
   CHECK_ENVIRONMENT_FLAG("MOZ_WEBRTC_TESTS")
 #endif
