@@ -66,7 +66,7 @@ public:
 
     
     static already_AddRefed<GLContext>
-    CreateHeadless(bool requireCompatProfile);
+    CreateHeadless(bool requireCompatProfile, bool forceEnabled = false);
 
     
 

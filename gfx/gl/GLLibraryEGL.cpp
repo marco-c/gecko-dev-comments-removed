@@ -146,7 +146,7 @@ GetAndInitDisplay(GLLibraryEGL& egl, void* displayType)
 }
 
 bool
-GLLibraryEGL::EnsureInitialized()
+GLLibraryEGL::EnsureInitialized(bool forceAccel)
 {
     if (mInitialized) {
         return true;
@@ -311,18 +311,19 @@ GLLibraryEGL::EnsureInitialized()
     nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
     mIsANGLE = IsExtensionSupported(ANGLE_platform_angle_d3d);
 
-    
     if (mIsANGLE) {
         bool accelAngleSupport = IsAccelAngleSupported(gfxInfo);
         bool warpAngleSupport = gfxPlatform::CanUseDirect3D11ANGLE();
 
-        
-        
-        bool shouldTryWARP = warpAngleSupport && !accelAngleSupport;
+        bool shouldTryAccel = forceAccel || accelAngleSupport;
+        bool shouldTryWARP = !shouldTryAccel && warpAngleSupport;
         if (gfxPrefs::WebGLANGLEForceWARP()) {
             shouldTryWARP = true;
+            shouldTryAccel = false;
         }
 
+        
+        
         if (shouldTryWARP) {
             mEGLDisplay = GetAndInitWARPDisplay(*this,
                                                 EGL_DEFAULT_DISPLAY);
@@ -332,37 +333,33 @@ GLLibraryEGL::EnsureInitialized()
         }
 
         
-        if (mEGLDisplay == EGL_NO_DISPLAY && !accelAngleSupport) {
+        
+        if (mEGLDisplay == EGL_NO_DISPLAY && !shouldTryAccel) {
             NS_ERROR("Fallback WARP ANGLE context failed to initialize.");
             return false;
+        }
+
+        
+        if (mEGLDisplay == EGL_NO_DISPLAY && shouldTryAccel) {
+            
+            
+            
+            if (gfxPrefs::LayersOffMainThreadCompositionEnabled() &&
+                !gfxPrefs::LayersPreferD3D9())
+            {
+                if (gfxPrefs::WebGLANGLEForceD3D11()) {
+                    mEGLDisplay = GetAndInitDisplay(*this,
+                                                    LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE);
+                } else if (gfxPrefs::WebGLANGLETryD3D11() && gfxPlatform::CanUseDirect3D11ANGLE()) {
+                    mEGLDisplay = GetAndInitDisplay(*this,
+                                                    LOCAL_EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE);
+                }
+            }
         }
     }
 
     if (mEGLDisplay == EGL_NO_DISPLAY) {
         mEGLDisplay = GetAndInitDisplay(*this, EGL_DEFAULT_DISPLAY);
-
-        EGLDisplay newDisplay = EGL_NO_DISPLAY;
-
-        
-        
-        
-        if (gfxPrefs::LayersOffMainThreadCompositionEnabled() &&
-            !gfxPrefs::LayersPreferD3D9())
-        {
-            if (gfxPrefs::WebGLANGLEForceD3D11()) {
-                newDisplay = GetAndInitDisplay(*this,
-                                               LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE);
-            } else if (gfxPrefs::WebGLANGLETryD3D11() && gfxPlatform::CanUseDirect3D11ANGLE()) {
-                newDisplay = GetAndInitDisplay(*this,
-                                               LOCAL_EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE);
-            }
-        }
-
-        if (newDisplay != EGL_NO_DISPLAY) {
-            DebugOnly<EGLBoolean> success = fTerminate(mEGLDisplay);
-            MOZ_ASSERT(success == LOCAL_EGL_TRUE);
-            mEGLDisplay = newDisplay;
-        }
     }
 
     InitExtensionsFromDisplay(mEGLDisplay);
