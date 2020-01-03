@@ -3226,6 +3226,18 @@ pref("ui.window_class_override", "");
 
 pref("ui.elantech_gesture_hacks.enabled", -1);
 
+
+#ifdef RELEASE_BUILD
+pref("ui.osk.enabled", false);
+#else
+pref("ui.osk.enabled", true);
+#endif
+
+
+pref("ui.osk.detect_physical_keyboard", true);
+
+pref("ui.osk.on_screen_keyboard_path", "");
+
 # XP_WIN
 #endif
 
@@ -4999,6 +5011,10 @@ pref("reader.parse-node-limit", 3000);
 
 
 pref("reader.parse-on-load.force-enabled", false);
+
+
+
+pref("reader.errors.includeURLs", false);
 
 
 pref("reader.font_size", 5);

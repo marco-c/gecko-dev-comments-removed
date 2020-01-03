@@ -271,8 +271,13 @@ pref("browser.urlbar.doubleClickSelectsAll", false);
 pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.typed", true);
 
+#ifdef NIGHTLY_BUILD
 
 pref("browser.urlbar.unifiedcomplete", true);
+#else
+
+pref("browser.urlbar.unifiedcomplete", false);
+#endif
 
 
 
@@ -305,11 +310,7 @@ pref("browser.urlbar.match.url", "@");
 pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.bookmark",             true);
 pref("browser.urlbar.suggest.openpage",             true);
-#ifdef NIGHTLY_BUILD
 pref("browser.urlbar.suggest.searches",             true);
-#else
-pref("browser.urlbar.suggest.searches",             false);
-#endif
 
 
 
@@ -1928,6 +1929,10 @@ pref("dom.ipc.reportProcessHangs", true);
 pref("browser.reader.detectedFirstArticle", false);
 
 pref("reader.parse-node-limit", 0);
+
+
+
+pref("reader.errors.includeURLs", true);
 
 pref("browser.pocket.enabled", true);
 pref("browser.pocket.api", "api.getpocket.com");
