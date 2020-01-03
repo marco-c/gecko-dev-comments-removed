@@ -263,7 +263,10 @@ nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
       
       
       
-      if (anchorRect.Contains(*pos)) {
+      nsPresContext* presContext = item->Frame()->PresContext();
+      nsIntPoint posCSSPixels(presContext->DevPixelsToIntCSSPixels(pos->x),
+                              presContext->DevPixelsToIntCSSPixels(pos->y));
+      if (anchorRect.Contains(posCSSPixels)) {
         if (consumeResult == ConsumeOutsideClicks_ParentOnly) {
           consume = true;
         }
