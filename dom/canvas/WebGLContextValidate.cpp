@@ -610,40 +610,6 @@ WebGLContext::ValidateTexImageFormat(GLenum format, WebGLTexImageFunc func,
 
 
 
-bool
-WebGLContext::ValidateTexImageTarget(GLenum target, WebGLTexImageFunc func,
-                                     WebGLTexDimensions dims)
-{
-    switch (dims) {
-    case WebGLTexDimensions::Tex2D:
-        if (target == LOCAL_GL_TEXTURE_2D ||
-            IsTexImageCubemapTarget(target))
-        {
-            return true;
-        }
-
-        ErrorInvalidEnumWithName(this, "invalid target", target, func, dims);
-        return false;
-
-    case WebGLTexDimensions::Tex3D:
-        if (target == LOCAL_GL_TEXTURE_3D)
-        {
-            return true;
-        }
-
-        ErrorInvalidEnumWithName(this, "invalid target", target, func, dims);
-        return false;
-
-    default:
-        MOZ_ASSERT(false, "ValidateTexImageTarget: Invalid dims");
-    }
-
-    return false;
-}
-
-
-
-
 
 bool
 WebGLContext::ValidateTexImageType(GLenum type, WebGLTexImageFunc func,
