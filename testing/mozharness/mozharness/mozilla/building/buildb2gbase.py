@@ -347,11 +347,6 @@ class B2GBuildBaseScript(BuildbotMixin, MockMixin,
         if not retval:
             self.rmtree(repo_dir)
             self.fatal("Automation Error: couldn't clone repo", exit_code=4)
-        
-        
-        git = self.query_exe("git")
-        self.run_command([git, 'checkout', '-B', 'tmp_moz_branch', repo_rev],
-                         cwd=repo_dir, halt_on_failure=True)
         return retval
 
     def checkout_tools(self):
