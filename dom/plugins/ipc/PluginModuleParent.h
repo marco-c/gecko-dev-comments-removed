@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: sw=4 ts=4 et :
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_plugins_PluginModuleParent_h
 #define mozilla_plugins_PluginModuleParent_h
@@ -16,6 +16,7 @@
 #include "mozilla/plugins/PPluginModuleParent.h"
 #include "mozilla/plugins/PluginMessageUtils.h"
 #include "mozilla/plugins/PluginTypes.h"
+#include "mozilla/TimeStamp.h"
 #include "npapi.h"
 #include "npfunctions.h"
 #include "nsAutoPtr.h"
@@ -34,7 +35,7 @@ class CrashReporterParent;
 }
 
 namespace plugins {
-
+//-----------------------------------------------------------------------------
 
 class BrowserStreamParent;
 class PluginInstanceParent;
@@ -43,23 +44,23 @@ class PluginInstanceParent;
 class PluginHangUIParent;
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * PluginModuleParent
+ *
+ * This class implements the NPP API from the perspective of the rest
+ * of Gecko, forwarding NPP calls along to the child process that is
+ * actually running the plugin.
+ *
+ * This class /also/ implements a version of the NPN API, because the
+ * child process needs to make these calls back into Gecko proper.
+ * This class is responsible for "actually" making those function calls.
+ *
+ * If a plugin is running, there will always be one PluginModuleParent for it in
+ * the chrome process. In addition, any content process using the plugin will
+ * have its own PluginModuleParent. The subclasses PluginModuleChromeParent and
+ * PluginModuleContentParent implement functionality that is specific to one
+ * case or the other.
+ */
 class PluginModuleParent
     : public PPluginModuleParent
     , public PluginLibrary
@@ -104,6 +105,10 @@ public:
     }
 
     void ProcessRemoteNativeEventsInInterruptCall();
+
+    nsCString GetHistogramKey() const {
+        return mPluginName + mPluginVersion;
+    }
 
 protected:
     virtual mozilla::ipc::RacyInterruptPolicy
@@ -162,9 +167,9 @@ protected:
 
     void SetPluginFuncs(NPPluginFuncs* aFuncs);
 
-    
-    
-    
+    // NPP-like API that Gecko calls are trampolined into.  These 
+    // messages then get forwarded along to the plugin instance,
+    // and then eventually the child process.
 
     static NPError NPP_Destroy(NPP instance, NPSavedData** save);
 
@@ -245,12 +250,13 @@ protected:
     nsString mBrowserDumpID;
     nsString mHangID;
     nsRefPtr<nsIObserver> mProfilerObserver;
+    TimeDuration mTimeBlocked;
     nsCString mPluginName;
     nsCString mPluginVersion;
 
 #ifdef MOZ_X11
-    
-    
+    // Dup of plugin's X socket, used to scope its resources to this
+    // object instead of the plugin process's lifetime
     ScopedClose mPluginXSocketFdDup;
 #endif
 
@@ -283,12 +289,12 @@ class PluginModuleChromeParent
     , public mozilla::HangMonitor::Annotator
 {
   public:
-    
-
-
-
-
-
+    /**
+     * LoadModule
+     *
+     * This may or may not launch a plugin child process,
+     * and may or may not be very expensive.
+     */
     static PluginLibrary* LoadModule(const char* aFilePath, uint32_t aPluginId);
 
     virtual ~PluginModuleChromeParent();
@@ -296,13 +302,13 @@ class PluginModuleChromeParent
     void TerminateChildProcess(MessageLoop* aMsgLoop);
 
 #ifdef XP_WIN
-    
-
-
-
+    /**
+     * Called by Plugin Hang UI to notify that the user has clicked continue.
+     * Used for chrome hang annotations.
+     */
     void
     OnHangUIContinue();
-#endif 
+#endif // XP_WIN
 
     void CachedSettingChanged();
 
@@ -338,7 +344,7 @@ private:
 
     virtual void ActorDestroy(ActorDestroyReason why) MOZ_OVERRIDE;
 
-    
+    // aFilePath is UTF8, not native!
     explicit PluginModuleChromeParent(const char* aFilePath, uint32_t aPluginId);
 
     CrashReporterParent* CrashReporter();
@@ -380,33 +386,33 @@ private:
     bool mHangUIEnabled;
     bool mIsTimerReset;
 #ifdef MOZ_CRASHREPORTER
-    
-
-
-
-
-
+    /**
+     * This mutex protects the crash reporter when the Plugin Hang UI event
+     * handler is executing off main thread. It is intended to protect both
+     * the mCrashReporter variable in addition to the CrashReporterParent object
+     * that mCrashReporter refers to.
+     */
     mozilla::Mutex mCrashReporterMutex;
     CrashReporterParent* mCrashReporter;
-#endif 
+#endif // MOZ_CRASHREPORTER
 
 
     void
     EvaluateHangUIState(const bool aReset);
 
-    
-
-
-
-
-
-
+    /**
+     * Launches the Plugin Hang UI.
+     *
+     * @return true if plugin-hang-ui.exe has been successfully launched.
+     *         false if the Plugin Hang UI is disabled, already showing,
+     *               or the launch failed.
+     */
     bool
     LaunchHangUI();
 
-    
-
-
+    /**
+     * Finishes the Plugin Hang UI and cancels if it is being shown to the user.
+     */
     void
     FinishHangUI();
 #endif
@@ -425,7 +431,7 @@ private:
     nsCOMPtr<nsIObserver> mOfflineObserver;
 };
 
-} 
-} 
+} // namespace plugins
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_plugins_PluginModuleParent_h
