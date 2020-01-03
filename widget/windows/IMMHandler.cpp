@@ -1971,13 +1971,25 @@ IMMHandler::CreateTextRangeArray()
     return textRangeArray.forget();
   }
 
-  int32_t cursor = mCursorPosition;
-  if (uint32_t(cursor) > mCompositionString.Length()) {
+  uint32_t cursor = static_cast<uint32_t>(mCursorPosition);
+  if (cursor > mCompositionString.Length()) {
     MOZ_LOG(gIMMLog, LogLevel::Info,
       ("IMM: CreateTextRangeArray, mCursorPosition=%ld. "
        "This is larger than mCompositionString.Length()=%lu",
        mCursorPosition, mCompositionString.Length()));
     cursor = mCompositionString.Length();
+  }
+
+  
+  
+  
+  const TextRange* targetClause = textRangeArray->GetTargetClause();
+  if (targetClause &&
+      cursor >= targetClause->mStartOffset &&
+      cursor <= targetClause->mEndOffset) {
+    MOZ_LOG(gIMMLog, LogLevel::Info,
+      ("IMM: CreateTextRangeArray, no caret due to it's in the target clause"));
+    return textRangeArray.forget();
   }
 
   range.mStartOffset = range.mEndOffset = cursor;
