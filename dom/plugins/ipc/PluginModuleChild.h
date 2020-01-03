@@ -75,7 +75,7 @@ protected:
 
     
     virtual bool AnswerNP_GetEntryPoints(NPError* rv) MOZ_OVERRIDE;
-    virtual bool AnswerNP_Initialize(const uint32_t& aFlags, NPError* rv) MOZ_OVERRIDE;
+    virtual bool AnswerNP_Initialize(NPError* rv) MOZ_OVERRIDE;
 
     virtual PPluginIdentifierChild*
     AllocPPluginIdentifierChild(const nsCString& aString,
@@ -183,8 +183,6 @@ public:
     bool NPObjectIsRegistered(NPObject* aObject);
 #endif
 
-    bool AsyncDrawingAllowed() { return mAsyncDrawingAllowed; }
-
     
 
 
@@ -244,7 +242,7 @@ public:
     }
 #endif
 
-    
+
     enum PluginQuirks {
         QUIRKS_NOT_INITIALIZED                          = 0,
         
@@ -315,7 +313,6 @@ private:
     nsCString mPluginFilename; 
     nsCString mUserAgent;
     int mQuirks;
-    bool mAsyncDrawingAllowed;
 
     
     NP_PLUGINSHUTDOWN mShutdownFunc;

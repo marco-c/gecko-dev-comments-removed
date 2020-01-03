@@ -67,11 +67,6 @@ public:
   NPBool     ConvertPoint(double sourceX, double sourceY, NPCoordinateSpace sourceSpace,
                           double *destX, double *destY, NPCoordinateSpace destSpace) MOZ_OVERRIDE;
   
-  virtual NPError InitAsyncSurface(NPSize *size, NPImageFormat format,
-                                   void *initData, NPAsyncSurface *surface) MOZ_OVERRIDE;
-  virtual NPError FinalizeAsyncSurface(NPAsyncSurface *surface) MOZ_OVERRIDE;
-  virtual void SetCurrentAsyncSurface(NPAsyncSurface *surface, NPRect *changed) MOZ_OVERRIDE;
-
   
 
 
@@ -149,11 +144,11 @@ public:
   
   void BeginCGPaint();
   void EndCGPaint();
-#else
+#else 
   void UpdateWindowPositionAndClipRect(bool aSetWindow);
   void UpdateWindowVisibility(bool aVisible);
   void UpdateDocumentActiveState(bool aIsActive);
-#endif
+#endif 
 
   void SetFrame(nsPluginFrame *aFrame);
   nsPluginFrame* GetFrame();
