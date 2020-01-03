@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsGtkIMModule_h__
-#define __nsGtkIMModule_h__
+#ifndef IMContextWrapper_h_
+#define IMContextWrapper_h_
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -22,20 +22,18 @@
 
 class nsWindow;
 
-class nsGtkIMModule
-{
-protected:
-    typedef mozilla::widget::IMENotification IMENotification;
-    typedef mozilla::widget::InputContext InputContext;
-    typedef mozilla::widget::InputContextAction InputContextAction;
+namespace mozilla {
+namespace widget {
 
+class IMContextWrapper final
+{
 public:
     
     
     
-    explicit nsGtkIMModule(nsWindow* aOwnerWindow);
+    explicit IMContextWrapper(nsWindow* aOwnerWindow);
 
-    NS_INLINE_DECL_REFCOUNTING(nsGtkIMModule)
+    NS_INLINE_DECL_REFCOUNTING(IMContextWrapper)
 
     
     
@@ -72,7 +70,7 @@ public:
     void OnLayoutChange();
 
 protected:
-    ~nsGtkIMModule();
+    ~IMContextWrapper();
 
     
     
@@ -205,7 +203,7 @@ protected:
     {
         uint32_t mOffset;
         uint32_t mLength;
-        mozilla::WritingMode mWritingMode;
+        WritingMode mWritingMode;
 
         Selection()
             : mOffset(UINT32_MAX)
@@ -217,11 +215,11 @@ protected:
         {
             mOffset = UINT32_MAX;
             mLength = UINT32_MAX;
-            mWritingMode = mozilla::WritingMode();
+            mWritingMode = WritingMode();
         }
 
         void Assign(const IMENotification& aIMENotification);
-        void Assign(const mozilla::WidgetQueryContentEvent& aSelectedTextEvent);
+        void Assign(const WidgetQueryContentEvent& aSelectedTextEvent);
 
         bool IsValid() const { return mOffset != UINT32_MAX; }
         bool Collapsed() const { return !mLength; }
@@ -230,8 +228,8 @@ protected:
             if (NS_WARN_IF(!IsValid())) {
                 return UINT32_MAX;
             }
-            mozilla::CheckedInt<uint32_t> endOffset =
-                mozilla::CheckedInt<uint32_t>(mOffset) + mLength;
+            CheckedInt<uint32_t> endOffset =
+                CheckedInt<uint32_t>(mOffset) + mLength;
             if (NS_WARN_IF(!endOffset.isValid())) {
                 return UINT32_MAX;
             }
@@ -267,7 +265,7 @@ protected:
     
     
     
-    static nsGtkIMModule* sLastFocusedModule;
+    static IMContextWrapper* sLastFocusedContext;
 
     
     
@@ -276,32 +274,32 @@ protected:
 
     
     
-    static gboolean OnRetrieveSurroundingCallback(GtkIMContext  *aContext,
-                                                  nsGtkIMModule *aModule);
-    static gboolean OnDeleteSurroundingCallback(GtkIMContext  *aContext,
-                                                gint           aOffset,
-                                                gint           aNChars,
-                                                nsGtkIMModule *aModule);
-    static void OnCommitCompositionCallback(GtkIMContext *aContext,
-                                            const gchar *aString,
-                                            nsGtkIMModule* aModule);
-    static void OnChangeCompositionCallback(GtkIMContext *aContext,
-                                            nsGtkIMModule* aModule);
-    static void OnStartCompositionCallback(GtkIMContext *aContext,
-                                           nsGtkIMModule* aModule);
-    static void OnEndCompositionCallback(GtkIMContext *aContext,
-                                         nsGtkIMModule* aModule);
+    static gboolean OnRetrieveSurroundingCallback(GtkIMContext* aContext,
+                                                  IMContextWrapper* aModule);
+    static gboolean OnDeleteSurroundingCallback(GtkIMContext* aContext,
+                                                gint aOffset,
+                                                gint aNChars,
+                                                IMContextWrapper* aModule);
+    static void OnCommitCompositionCallback(GtkIMContext* aContext,
+                                            const gchar* aString,
+                                            IMContextWrapper* aModule);
+    static void OnChangeCompositionCallback(GtkIMContext* aContext,
+                                            IMContextWrapper* aModule);
+    static void OnStartCompositionCallback(GtkIMContext* aContext,
+                                           IMContextWrapper* aModule);
+    static void OnEndCompositionCallback(GtkIMContext* aContext,
+                                         IMContextWrapper* aModule);
 
     
-    gboolean OnRetrieveSurroundingNative(GtkIMContext  *aContext);
-    gboolean OnDeleteSurroundingNative(GtkIMContext  *aContext,
-                                       gint           aOffset,
-                                       gint           aNChars);
-    void OnCommitCompositionNative(GtkIMContext *aContext,
-                                   const gchar *aString);
-    void OnChangeCompositionNative(GtkIMContext *aContext);
-    void OnStartCompositionNative(GtkIMContext *aContext);
-    void OnEndCompositionNative(GtkIMContext *aContext);
+    gboolean OnRetrieveSurroundingNative(GtkIMContext* aContext);
+    gboolean OnDeleteSurroundingNative(GtkIMContext* aContext,
+                                       gint aOffset,
+                                       gint aNChars);
+    void OnCommitCompositionNative(GtkIMContext* aContext,
+                                   const gchar* aString);
+    void OnChangeCompositionNative(GtkIMContext* aContext);
+    void OnStartCompositionNative(GtkIMContext* aContext);
+    void OnEndCompositionNative(GtkIMContext* aContext);
 
     
 
@@ -349,7 +347,7 @@ protected:
 
 
 
-    already_AddRefed<mozilla::TextRangeArray>
+    already_AddRefed<TextRangeArray>
         CreateTextRangeArray(GtkIMContext* aContext,
                              const nsAString& aLastDispatchedData);
 
@@ -379,10 +377,10 @@ protected:
                         uint32_t aNChars);
 
     
-    void InitEvent(mozilla::WidgetGUIEvent& aEvent);
+    void InitEvent(WidgetGUIEvent& aEvent);
 
     
-    void PrepareToDestroyContext(GtkIMContext *aContext);
+    void PrepareToDestroyContext(GtkIMContext* aContext);
 
     
 
@@ -429,5 +427,8 @@ protected:
              GtkIMContext* aContext,
              const nsAString* aCommitString = nullptr);
 };
+
+} 
+} 
 
 #endif 

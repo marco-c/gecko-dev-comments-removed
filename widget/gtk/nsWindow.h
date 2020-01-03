@@ -31,7 +31,7 @@
 #endif
 #include "mozilla/EventForwards.h"
 
-#include "nsGtkIMModule.h"
+#include "IMContextWrapper.h"
 
 #undef LOG
 #ifdef MOZ_LOGGING
@@ -490,7 +490,7 @@ private:
 
 
 
-    nsRefPtr<nsGtkIMModule> mIMModule;
+    nsRefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
     
     gint GdkScaleFactor();
