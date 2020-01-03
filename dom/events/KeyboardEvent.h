@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_KeyboardEvent_h_
 #define mozilla_dom_KeyboardEvent_h_
@@ -24,10 +24,10 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMKeyEvent Interface
+  
   NS_DECL_NSIDOMKEYEVENT
 
-  // Forward to base class
+  
   NS_FORWARD_TO_UIEVENT
 
   static already_AddRefed<KeyboardEvent> Constructor(
@@ -74,16 +74,22 @@ public:
 protected:
   ~KeyboardEvent() {}
 
+  void InitWithKeyboardEventInit(EventTarget* aOwner,
+                                 const nsAString& aType,
+                                 const KeyboardEventInit& aParam,
+                                 ErrorResult& aRv);
+
 private:
-  // True, if the instance is created with Constructor().
+  
   bool mInitializedByCtor;
-  // If the instance is created with Constructor(), which may have independent
-  // value.  mInitializedWhichValue stores it.  I.e., this is invalid when
-  // mInitializedByCtor is false.
-  uint32_t mInitialzedWhichValue;
+
+  
+  
+  
+  uint32_t mInitializedWhichValue;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_KeyboardEvent_h_
+#endif 
