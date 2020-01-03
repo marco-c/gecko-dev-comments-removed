@@ -111,13 +111,6 @@ class MachCommands(MachCommandBase):
                 '--show-possibly-lost=no',
                 '--track-origins=yes',
                 '--trace-children=yes',
-                
-                
-                
-                
-                
-                
-                '--trace-children-skip=*/gst-plugin-scanner',
                 '-v',  
             ]
 
