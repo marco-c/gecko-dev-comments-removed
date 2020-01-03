@@ -169,7 +169,7 @@ public:
     
 
     
-    amount += mInputNodes.SizeOfExcludingThis(aMallocSizeOf);
+    amount += mInputNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
     if (mNodeStreamPort) {
       amount += mNodeStreamPort->SizeOfIncludingThis(aMallocSizeOf);

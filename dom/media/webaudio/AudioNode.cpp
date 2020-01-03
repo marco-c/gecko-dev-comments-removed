@@ -97,16 +97,16 @@ AudioNode::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   
   size_t amount = 0;
 
-  amount += mInputNodes.SizeOfExcludingThis(aMallocSizeOf);
+  amount += mInputNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (size_t i = 0; i < mInputNodes.Length(); i++) {
     amount += mInputNodes[i].SizeOfExcludingThis(aMallocSizeOf);
   }
 
   
   
-  amount += mOutputNodes.SizeOfExcludingThis(aMallocSizeOf);
+  amount += mOutputNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
-  amount += mOutputParams.SizeOfExcludingThis(aMallocSizeOf);
+  amount += mOutputParams.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (size_t i = 0; i < mOutputParams.Length(); i++) {
     amount += mOutputParams[i]->SizeOfIncludingThis(aMallocSizeOf);
   }

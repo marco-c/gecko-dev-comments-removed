@@ -546,7 +546,7 @@ size_t
 RtspMediaResource::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t size = BaseMediaResource::SizeOfExcludingThis(aMallocSizeOf);
-  size += mTrackBuffer.SizeOfExcludingThis(aMallocSizeOf);
+  size += mTrackBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   
   for (size_t i = 0; i < mTrackBuffer.Length(); i++) {

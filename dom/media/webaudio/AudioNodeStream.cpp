@@ -62,7 +62,7 @@ AudioNodeStream::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   
 
   amount += ProcessedMediaStream::SizeOfExcludingThis(aMallocSizeOf);
-  amount += mLastChunks.SizeOfExcludingThis(aMallocSizeOf);
+  amount += mLastChunks.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (size_t i = 0; i < mLastChunks.Length(); i++) {
     
     

@@ -262,9 +262,11 @@ public:
 
   
   
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+  
+  
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   {
-    return mArray.SizeOfExcludingThis(aMallocSizeOf);
+    return mArray.ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
   

@@ -1088,7 +1088,7 @@ SizeOfPrefFontEntryExcludingThis
     
     
     
-    return aList.SizeOfExcludingThis(aMallocSizeOf);
+    return aList.ShallowSizeOfExcludingThis(aMallocSizeOf);
 }
 
 static size_t
@@ -1130,7 +1130,7 @@ gfxPlatformFontList::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
     aSizes->mFontListSize +=
         mCodepointsWithNoFonts.SizeOfExcludingThis(aMallocSizeOf);
     aSizes->mFontListSize +=
-        mFontFamiliesToLoad.SizeOfExcludingThis(aMallocSizeOf);
+        mFontFamiliesToLoad.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
     aSizes->mFontListSize +=
         mPrefFonts.SizeOfExcludingThis(SizeOfPrefFontEntryExcludingThis,

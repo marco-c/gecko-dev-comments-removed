@@ -218,7 +218,7 @@ public:
     
     
     size_t amount = AudioNodeEngine::SizeOfExcludingThis(aMallocSizeOf);
-    amount += mBiquads.SizeOfExcludingThis(aMallocSizeOf);
+    amount += mBiquads.ShallowSizeOfExcludingThis(aMallocSizeOf);
     return amount;
   }
 

@@ -383,7 +383,7 @@ StartupCache::HeapSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     
     return aMallocSizeOf(this) +
            mTable.SizeOfExcludingThis(SizeOfEntryExcludingThis, aMallocSizeOf) +
-           mPendingWrites.SizeOfExcludingThis(aMallocSizeOf);
+           mPendingWrites.ShallowSizeOfExcludingThis(aMallocSizeOf);
 }
 
  size_t
