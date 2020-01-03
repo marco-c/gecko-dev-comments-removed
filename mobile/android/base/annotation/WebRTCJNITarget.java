@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.mozglue;
+package org.mozilla.gecko.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -32,9 +32,9 @@ import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
+import org.mozilla.gecko.annotation.WebRTCJNITarget;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoAppShell.AppStateListener;
-import org.mozilla.gecko.mozglue.WebRTCJNITarget;
 
 
 
