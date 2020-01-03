@@ -2226,7 +2226,7 @@ void ScrollFrameHelper::MarkRecentlyScrolled()
   }
 }
 
-void ScrollFrameHelper::ScrollVisual(nsPoint aOldScrolledFramePos)
+void ScrollFrameHelper::ScrollVisual()
 {
   
   
@@ -2245,7 +2245,6 @@ void ScrollFrameHelper::ScrollVisual(nsPoint aOldScrolledFramePos)
     MarkRecentlyScrolled();
   }
 
-  mOuter->SchedulePaint();
 }
 
 
@@ -2419,15 +2418,35 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
     mListeners[i]->ScrollPositionWillChange(pt.x, pt.y);
   }
 
-  nsPoint oldScrollFramePos = mScrolledFrame->GetPosition();
+  nsRect oldDisplayPort;
+  nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &oldDisplayPort);
+  oldDisplayPort.MoveBy(-mScrolledFrame->GetPosition());
+
   
   mScrolledFrame->SetPosition(mScrollPort.TopLeft() - pt);
   mLastScrollOrigin = aOrigin;
   mLastSmoothScrollOrigin = nullptr;
   mScrollGeneration = ++sScrollGenerationCounter;
 
-  
-  ScrollVisual(oldScrollFramePos);
+  ScrollVisual();
+
+  if (LastScrollOrigin() == nsGkAtoms::apz) {
+    
+    
+    
+    nsRect displayPort;
+    DebugOnly<bool> usingDisplayPort =
+      nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort);
+    NS_ASSERTION(usingDisplayPort, "Must have a displayport for apz scrolls!");
+
+    displayPort.MoveBy(-mScrolledFrame->GetPosition());
+
+    if (!displayPort.IsEqualEdges(oldDisplayPort)) {
+      mOuter->SchedulePaint();
+    }
+  } else {
+    mOuter->SchedulePaint();
+  }
 
   if (mOuter->ChildrenHavePerspective()) {
     

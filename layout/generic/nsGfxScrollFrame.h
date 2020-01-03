@@ -222,7 +222,7 @@ public:
 
 
   void ScrollToImpl(nsPoint aScrollPosition, const nsRect& aRange, nsIAtom* aOrigin = nullptr);
-  void ScrollVisual(nsPoint aOldScrolledFramePosition);
+  void ScrollVisual();
   
 
 
