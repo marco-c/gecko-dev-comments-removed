@@ -156,6 +156,8 @@ public:
   NS_IMETHOD GetResponseStatusText(nsACString& aValue) override;
   NS_IMETHOD GetRequestSucceeded(bool *aValue) override;
   NS_IMETHOD RedirectTo(nsIURI *newURI) override;
+  NS_IMETHOD GetSchedulingContextID(nsID *aSCID) override;
+  NS_IMETHOD SetSchedulingContextID(const nsID aSCID) override;
 
   
   NS_IMETHOD GetDocumentURI(nsIURI **aDocumentURI) override;
@@ -431,6 +433,9 @@ protected:
 
   
   nsCString mNetworkInterfaceId;
+
+  nsID mSchedulingContextID;
+  bool EnsureSchedulingContextID();
 };
 
 
