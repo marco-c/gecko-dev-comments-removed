@@ -265,16 +265,22 @@ nsSecureBrowserUIImpl::MapInternalToExternalState(uint32_t* aState, lockIconStat
   }
   
   
+  uint32_t tempState = STATE_IS_BROKEN;
+  if (lock == lis_no_security) {
+      
+      
+      tempState = STATE_IS_INSECURE;
+  }
   if (docShell->GetHasMixedActiveContentLoaded() &&
       docShell->GetHasMixedDisplayContentLoaded()) {
-      *aState = STATE_IS_BROKEN |
+      *aState = tempState |
                 nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT |
                 nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
   } else if (docShell->GetHasMixedActiveContentLoaded()) {
-      *aState = STATE_IS_BROKEN |
+      *aState = tempState |
                 nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
   } else if (docShell->GetHasMixedDisplayContentLoaded()) {
-      *aState = STATE_IS_BROKEN |
+      *aState = tempState |
                 nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
   }
 
