@@ -923,39 +923,33 @@ XPCConvert::JSObject2NativeInterface(void** dest, HandleObject src,
 
         
         if (GetISupportsFromJSObject(inner ? inner : src, &iface)) {
-            if (iface)
-                return NS_SUCCEEDED(iface->QueryInterface(*iid, dest));
-
-            return false;
+            return iface && NS_SUCCEEDED(iface->QueryInterface(*iid, dest));
         }
     }
-
-    
 
     nsRefPtr<nsXPCWrappedJS> wrapper;
     nsresult rv = nsXPCWrappedJS::GetNewOrUsed(src, *iid, getter_AddRefs(wrapper));
     if (pErr)
         *pErr = rv;
-    if (NS_SUCCEEDED(rv) && wrapper) {
-        
-        
-        
-        if (aOuter)
-            wrapper->SetAggregatedNativeObject(aOuter);
 
-        
-        
-        
-        
-        rv = aOuter ? wrapper->AggregatedQueryInterface(*iid, dest) :
-                      wrapper->QueryInterface(*iid, dest);
-        if (pErr)
-            *pErr = rv;
-        return NS_SUCCEEDED(rv);
-    }
+    if (NS_FAILED(rv) || !wrapper)
+        return false;
 
     
-    return false;
+    
+    
+    if (aOuter)
+        wrapper->SetAggregatedNativeObject(aOuter);
+
+    
+    
+    
+    
+    rv = aOuter ? wrapper->AggregatedQueryInterface(*iid, dest) :
+        wrapper->QueryInterface(*iid, dest);
+    if (pErr)
+        *pErr = rv;
+    return NS_SUCCEEDED(rv);
 }
 
 
