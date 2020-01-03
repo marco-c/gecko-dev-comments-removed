@@ -505,6 +505,21 @@ AudioDestinationNode::WindowVolumeChanged(float aVolume, bool aMuted)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+AudioDestinationNode::WindowAudioCaptureChanged()
+{
+  MOZ_ASSERT(mAudioChannelAgent);
+
+  if (!mStream) {
+    return NS_OK;
+  }
+
+  DebugOnly<bool> captured = GetOwner()->GetAudioCaptured();
+
+  
+  return NS_OK;
+}
+
 AudioChannel
 AudioDestinationNode::MozAudioChannelType() const
 {
@@ -591,6 +606,8 @@ AudioDestinationNode::CreateAudioChannelAgent()
   
   
   InputMuted(false);
+
+  WindowAudioCaptureChanged();
 }
 
 void
