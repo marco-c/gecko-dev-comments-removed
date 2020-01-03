@@ -349,6 +349,14 @@ class SpidermonkeyBuild(MockMixin,
 
     def checkout_tools(self):
         dirs = self.query_abs_dirs()
+
+        
+        
+        if self.config['source']:
+            srcdir = self.config['source']
+            if os.path.samefile(srcdir, os.path.dirname(dirs['abs_tools_dir'])):
+                raise Exception("Cannot run from source checkout to avoid overwriting subdirs")
+
         rev = self.vcs_checkout(
             vcs='hg',  
             repo=self.config['tools_repo'],
