@@ -353,28 +353,11 @@ var FullScreen = {
       };
     },
 
-    close: function() {
-      if (!this._element)
-        return;
-      this._element.removeEventListener("transitionend", this);
-      this._fadeOutTimeout.cancel();
-
-      
-      
-      
-      
-      gBrowser.selectedBrowser.focus();
-
-      this._element.setAttribute("hidden", true);
-      this._element.removeAttribute("fade-warning-out");
-      this._fadeOutTimeout = null;
-      this._element = null;
-    },
-
     
     show: function(aOrigin) {
-      if (!document.mozFullScreen)
+      if (!document.mozFullScreen) {
         return;
+      }
 
       
       if (aOrigin) {
@@ -420,12 +403,32 @@ var FullScreen = {
       this._fadeOutTimeout.start();
     },
 
+    close: function() {
+      if (!this._element) {
+        return;
+      }
+      this._element.removeEventListener("transitionend", this);
+      this._fadeOutTimeout.cancel();
+
+      
+      
+      
+      
+      gBrowser.selectedBrowser.focus();
+
+      this._element.setAttribute("hidden", true);
+      this._element.removeAttribute("fade-warning-out");
+      this._fadeOutTimeout = null;
+      this._element = null;
+    },
+
     handleEvent: function(event) {
       switch (event.type) {
-        case "transitionend":
+        case "transitionend": {
           if (event.propertyName == "opacity")
             this.close();
           break;
+        }
       }
     }
   },
