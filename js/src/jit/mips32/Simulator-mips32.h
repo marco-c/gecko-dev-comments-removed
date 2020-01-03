@@ -26,10 +26,10 @@
 
 
 
-#ifndef jit_mips_Simulator_mips_h
-#define jit_mips_Simulator_mips_h
+#ifndef jit_mips32_Simulator_mips32_h
+#define jit_mips32_Simulator_mips32_h
 
-#ifdef JS_SIMULATOR_MIPS
+#ifdef JS_SIMULATOR_MIPS32
 
 #include "jslock.h"
 

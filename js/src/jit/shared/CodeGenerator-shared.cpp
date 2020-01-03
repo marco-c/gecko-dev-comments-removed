@@ -1584,7 +1584,7 @@ CodeGeneratorShared::jumpToBlock(MBasicBlock* mir)
 }
 
 
-#ifndef JS_CODEGEN_MIPS
+#ifndef JS_CODEGEN_MIPS32
 void
 CodeGeneratorShared::jumpToBlock(MBasicBlock* mir, Assembler::Condition cond)
 {

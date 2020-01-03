@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_CodeGenerator_mips_h
-#define jit_mips_CodeGenerator_mips_h
+#ifndef jit_mips32_CodeGenerator_mips32_h
+#define jit_mips32_CodeGenerator_mips32_h
 
 #include "jit/mips32/Assembler-mips32.h"
 #include "jit/shared/CodeGenerator-shared.h"

@@ -322,7 +322,7 @@ CodeGenerator::visitValueToFloat32(LValueToFloat32* lir)
     masm.bind(&isDouble);
     
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
     masm.unboxDouble(operand, ScratchDoubleReg);
     masm.convertDoubleToFloat32(ScratchDoubleReg, output);
 #else
@@ -5212,7 +5212,7 @@ CodeGenerator::visitAbsI(LAbsI* ins)
     masm.branchTest32(Assembler::NotSigned, input, input, &positive);
     masm.neg32(input);
     LSnapshot* snapshot = ins->snapshot();
-#ifdef JS_CODEGEN_MIPS
+#ifdef JS_CODEGEN_MIPS32
     if (snapshot)
         bailoutCmp32(Assembler::Equal, input, Imm32(INT32_MIN), snapshot);
 #else
@@ -6847,7 +6847,7 @@ CodeGenerator::visitOutOfLineStoreElementHole(OutOfLineStoreElementHole* ool)
     
     
     Label callStub;
-#ifdef JS_CODEGEN_MIPS
+#ifdef JS_CODEGEN_MIPS32
     
     if (unboxedType == JSVAL_TYPE_MAGIC) {
         Address initLength(elements, ObjectElements::offsetOfInitializedLength());

@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_MoveEmitter_mips_h
-#define jit_mips_MoveEmitter_mips_h
+#ifndef jit_mips32_MoveEmitter_mips32_h
+#define jit_mips32_MoveEmitter_mips32_h
 
 #include "jit/MacroAssembler.h"
 #include "jit/MoveResolver.h"

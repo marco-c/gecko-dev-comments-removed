@@ -373,7 +373,7 @@ struct BaselineStackBuilder
         priorOffset -= sizeof(void*);
         return virtualPointerAtStackOffset(priorOffset);
 #elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-      defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_MIPS)
+      defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_MIPS32)
         
         
         BufferPointer<RectifierFrameLayout> priorFrame =

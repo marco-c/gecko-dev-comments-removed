@@ -5,7 +5,7 @@
 
 
 
-#if defined(JS_SIMULATOR_MIPS)
+#if defined(JS_SIMULATOR_MIPS32)
 #include "jit/Linker.h"
 #include "jit/MacroAssembler.h"
 #include "jit/mips32/Assembler-mips32.h"

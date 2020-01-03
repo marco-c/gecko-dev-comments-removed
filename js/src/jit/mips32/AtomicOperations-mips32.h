@@ -6,8 +6,8 @@
 
 
 
-#ifndef jit_mips_AtomicOperations_mips_h
-#define jit_mips_AtomicOperations_mips_h
+#ifndef jit_mips32_AtomicOperations_mips32_h
+#define jit_mips32_AtomicOperations_mips32_h
 
 #include "jit/AtomicOperations.h"
 

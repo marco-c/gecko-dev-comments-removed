@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_LIR_mips_h
-#define jit_mips_LIR_mips_h
+#ifndef jit_mips32_LIR_mips32_h
+#define jit_mips32_LIR_mips32_h
 
 namespace js {
 namespace jit {

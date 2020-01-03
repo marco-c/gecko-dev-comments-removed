@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_BaselineCompiler_mips_h
-#define jit_mips_BaselineCompiler_mips_h
+#ifndef jit_mips32_BaselineCompiler_mips32_h
+#define jit_mips32_BaselineCompiler_mips32_h
 
 #include "jit/shared/BaselineCompiler-shared.h"
 

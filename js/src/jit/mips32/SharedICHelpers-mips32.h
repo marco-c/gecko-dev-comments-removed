@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_SharedICHelpers_mips_h
-#define jit_mips_SharedICHelpers_mips_h
+#ifndef jit_mips32_SharedICHelpers_mips32_h
+#define jit_mips32_SharedICHelpers_mips32_h
 
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"

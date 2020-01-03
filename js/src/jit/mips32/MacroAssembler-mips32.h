@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_MacroAssembler_mips_h
-#define jit_mips_MacroAssembler_mips_h
+#ifndef jit_mips32_MacroAssembler_mips32_h
+#define jit_mips32_MacroAssembler_mips32_h
 
 #include "jsopcode.h"
 

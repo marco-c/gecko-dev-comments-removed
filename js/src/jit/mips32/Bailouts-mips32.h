@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_Bailouts_mips_h
-#define jit_mips_Bailouts_mips_h
+#ifndef jit_mips32_Bailouts_mips32_h
+#define jit_mips32_Bailouts_mips32_h
 
 #include "jit/Bailouts.h"
 #include "jit/JitCompartment.h"

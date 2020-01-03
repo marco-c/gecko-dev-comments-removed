@@ -10894,7 +10894,7 @@ static const LiveRegisterSet NonVolatileRegs =
                     FloatRegisterSet(FloatRegisters::NonVolatileMask));
 #endif
 
-#if defined(JS_CODEGEN_MIPS)
+#if defined(JS_CODEGEN_MIPS32)
 
 
 static const unsigned FramePushedAfterSave = NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
@@ -10920,7 +10920,7 @@ GenerateEntry(ModuleCompiler& m, unsigned exportIndex)
     
 #if defined(JS_CODEGEN_ARM)
     masm.push(lr);
-#elif defined(JS_CODEGEN_MIPS)
+#elif defined(JS_CODEGEN_MIPS32)
     masm.push(ra);
 #elif defined(JS_CODEGEN_X86)
     static const unsigned EntryFrameSize = sizeof(void*);
@@ -10935,7 +10935,7 @@ GenerateEntry(ModuleCompiler& m, unsigned exportIndex)
     
     
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
     masm.movePtr(IntArgReg1, GlobalReg);
     masm.addPtr(Imm32(AsmJSGlobalRegBias), GlobalReg);
 #endif
@@ -11239,7 +11239,7 @@ GenerateFFIInterpExit(ModuleCompiler& m, const ModuleCompiler::ExitDescriptor& e
     return !masm.oom() && m.finishGeneratingInterpExit(exitIndex, &begin, &profilingReturn);
 }
 
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
 static const unsigned MaybeSavedGlobalReg = sizeof(void*);
 #else
 static const unsigned MaybeSavedGlobalReg = 0;
@@ -11283,7 +11283,7 @@ GenerateFFIIonExit(ModuleCompiler& m, const ModuleCompiler::ExitDescriptor& exit
     m.masm().append(AsmJSGlobalAccess(masm.leaRipRelative(callee), globalDataOffset));
 #elif defined(JS_CODEGEN_X86)
     m.masm().append(AsmJSGlobalAccess(masm.movlWithPatch(Imm32(0), callee), globalDataOffset));
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS)
+#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
     masm.computeEffectiveAddress(Address(GlobalReg, globalDataOffset - AsmJSGlobalRegBias), callee);
 #endif
 
@@ -11319,7 +11319,7 @@ GenerateFFIIonExit(ModuleCompiler& m, const ModuleCompiler::ExitDescriptor& exit
     
     
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
     static_assert(MaybeSavedGlobalReg == sizeof(void*), "stack frame accounting");
     masm.storePtr(GlobalReg, Address(masm.getStackPointer(), ionFrameBytes));
 #endif
@@ -11435,7 +11435,7 @@ GenerateFFIIonExit(ModuleCompiler& m, const ModuleCompiler::ExitDescriptor& exit
     }
 
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
     static_assert(MaybeSavedGlobalReg == sizeof(void*), "stack frame accounting");
     masm.loadPtr(Address(masm.getStackPointer(), ionFrameBytes), GlobalReg);
 #endif
@@ -11750,7 +11750,7 @@ GenerateAsyncInterruptExit(ModuleCompiler& m, Label* throwLabel)
     masm.PopRegsInMask(AllRegsExceptSP); 
     masm.popFlags();              
     masm.ret();                   
-#elif defined(JS_CODEGEN_MIPS)
+#elif defined(JS_CODEGEN_MIPS32)
     
     masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
     

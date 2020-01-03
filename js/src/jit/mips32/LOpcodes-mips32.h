@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_LOpcodes_mips_h__
-#define jit_mips_LOpcodes_mips_h__
+#ifndef jit_mips32_LOpcodes_mips32_h__
+#define jit_mips32_LOpcodes_mips32_h__
 
 #include "jit/shared/LOpcodes-shared.h"
 

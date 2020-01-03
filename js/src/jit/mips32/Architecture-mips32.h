@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_Architecture_mips_h
-#define jit_mips_Architecture_mips_h
+#ifndef jit_mips32_Architecture_mips32_h
+#define jit_mips32_Architecture_mips32_h
 
 #include "mozilla/MathAlgorithms.h"
 
@@ -17,7 +17,7 @@
 
 
 #ifdef _mips_hard_float
-#define JS_CODEGEN_MIPS_HARDFP
+#define JS_CODEGEN_MIPS32_HARDFP
 #endif
 
 #if _MIPS_SIM == _ABIO32
