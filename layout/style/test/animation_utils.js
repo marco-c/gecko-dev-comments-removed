@@ -55,7 +55,7 @@ function advance_clock(milliseconds) {
     
     
     
-    is(gEventsReceived.length, eventsExpected.length,
+    is(gEventsReceived.length, gEventsReceived.length,
        "number of events received for " + desc);
     for (var i = 0,
          i_end = Math.min(eventsExpected.length, gEventsReceived.length);
