@@ -114,6 +114,8 @@ private:
   
   uint32_t PlayFromAudioQueue();
 
+  void UpdateStreamSettings();
+
   
   
   void StartAudioStreamPlaybackIfNeeded();
@@ -170,7 +172,15 @@ private:
 
   dom::AudioChannel mChannel;
 
+  double mVolume;
+  double mPlaybackRate;
+  bool mPreservesPitch;
+
   bool mStopAudioThread;
+
+  bool mSetVolume;
+  bool mSetPlaybackRate;
+  bool mSetPreservesPitch;
 
   bool mPlaying;
 
