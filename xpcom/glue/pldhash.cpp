@@ -686,7 +686,7 @@ PLDHashTable::Remove(const void* aKey)
                 : nullptr;
   if (entry) {
     
-    PL_DHashTableRawRemove(this, entry);
+    RawRemove(entry);
 
     
     uint32_t capacity = Capacity();

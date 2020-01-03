@@ -301,11 +301,43 @@ public:
   uint32_t EntryCount() const { return mEntryCount; }
   uint32_t Generation() const { return mGeneration; }
 
+  
+  
+  
+  
+  
+  
   PLDHashEntryHdr* Search(const void* aKey);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   PLDHashEntryHdr* Add(const void* aKey, const mozilla::fallible_t&);
+
+  
+  
   PLDHashEntryHdr* Add(const void* aKey);
+
+  
+  
+  
+  
+  
   void Remove(const void* aKey);
 
+  
+  
+  
+  
   void RawRemove(PLDHashEntryHdr* aEntry);
 
   
@@ -322,15 +354,22 @@ public:
   
   void ClearAndPrepareForLength(uint32_t aLength);
 
+  
+  
+  
   size_t SizeOfIncludingThis(
     PLDHashSizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
     mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr) const;
 
+  
   size_t SizeOfExcludingThis(
     PLDHashSizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
     mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr) const;
 
 #ifdef DEBUG
+  
+  
+  
   void MarkImmutable();
 #endif
 
@@ -485,7 +524,6 @@ typedef void (*PLDHashMoveEntry)(PLDHashTable* aTable,
 
 
 
-
 typedef void (*PLDHashClearEntry)(PLDHashTable* aTable,
                                   PLDHashEntryHdr* aEntry);
 
@@ -570,72 +608,25 @@ const PLDHashTableOps* PL_DHashGetStubOps(void);
 
 
 
-
-
-
-
-
 PLDHashEntryHdr* PL_DHASH_FASTCALL
 PL_DHashTableSearch(PLDHashTable* aTable, const void* aKey);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 PLDHashEntryHdr* PL_DHASH_FASTCALL
 PL_DHashTableAdd(PLDHashTable* aTable, const void* aKey,
                  const mozilla::fallible_t&);
 
-
-
-
-
 PLDHashEntryHdr* PL_DHASH_FASTCALL
 PL_DHashTableAdd(PLDHashTable* aTable, const void* aKey);
-
-
-
-
-
-
-
 
 void PL_DHASH_FASTCALL
 PL_DHashTableRemove(PLDHashTable* aTable, const void* aKey);
 
-
-
-
-
-
-
-
-
 void PL_DHashTableRawRemove(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
-
-
-
-
-
-
 
 size_t PL_DHashTableSizeOfExcludingThis(
   const PLDHashTable* aTable,
   PLDHashSizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
   mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr);
-
-
-
 
 size_t PL_DHashTableSizeOfIncludingThis(
   const PLDHashTable* aTable,
@@ -643,20 +634,6 @@ size_t PL_DHashTableSizeOfIncludingThis(
   mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr);
 
 #ifdef DEBUG
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void PL_DHashMarkTableImmutable(PLDHashTable* aTable);
 #endif
 
