@@ -66,6 +66,7 @@ public:
       mIsNonAsyncScriptInserted(false),
       mIsXSLT(false),
       mIsCanceled(false),
+      mOffThreadToken(nullptr),
       mScriptTextBuf(nullptr),
       mScriptTextLength(0),
       mJSVersion(aVersion),
@@ -101,6 +102,11 @@ public:
     return mIsCanceled;
   }
 
+  void** OffThreadTokenPtr()
+  {
+    return mOffThreadToken ?  &mOffThreadToken : nullptr;
+  }
+
   using super::getNext;
   using super::isInList;
 
@@ -113,6 +119,7 @@ public:
   bool mIsNonAsyncScriptInserted; 
   bool mIsXSLT;           
   bool mIsCanceled;       
+  void* mOffThreadToken;  
   nsString mSourceMapURL; 
   char16_t* mScriptTextBuf; 
   size_t mScriptTextLength; 
@@ -379,8 +386,7 @@ public:
 
 
 
-  nsresult ProcessOffThreadRequest(nsScriptLoadRequest *aRequest,
-                                   void **aOffThreadToken);
+  nsresult ProcessOffThreadRequest(nsScriptLoadRequest *aRequest);
 
   bool AddPendingChildLoader(nsScriptLoader* aChild) {
     return mPendingChildLoaders.AppendElement(aChild) != nullptr;
@@ -440,15 +446,13 @@ private:
   }
 
   nsresult AttemptAsyncScriptParse(nsScriptLoadRequest* aRequest);
-  nsresult ProcessRequest(nsScriptLoadRequest* aRequest,
-                          void **aOffThreadToken = nullptr);
+  nsresult ProcessRequest(nsScriptLoadRequest* aRequest);
   void FireScriptAvailable(nsresult aResult,
                            nsScriptLoadRequest* aRequest);
   void FireScriptEvaluated(nsresult aResult,
                            nsScriptLoadRequest* aRequest);
   nsresult EvaluateScript(nsScriptLoadRequest* aRequest,
-                          JS::SourceBufferHolder& aSrcBuf,
-                          void **aOffThreadToken);
+                          JS::SourceBufferHolder& aSrcBuf);
 
   already_AddRefed<nsIScriptGlobalObject> GetScriptGlobalObject();
   void FillCompileOptionsForRequest(const mozilla::dom::AutoJSAPI &jsapi,
