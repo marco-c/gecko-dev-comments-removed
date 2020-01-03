@@ -185,7 +185,7 @@ DebuggerMemory::drainAllocationsLog(JSContext* cx, unsigned argc, Value* vp)
         return false;
     }
 
-    size_t length = dbg->allocationsLogLength;
+    size_t length = dbg->allocationsLog.length();
 
     RootedArrayObject result(cx, NewDenseFullyAllocatedArray(cx, length));
     if (!result)
@@ -201,17 +201,17 @@ DebuggerMemory::drainAllocationsLog(JSContext* cx, unsigned argc, Value* vp)
         
         
         
-        Debugger::AllocationSite* allocSite = dbg->allocationsLog.getFirst();
+        Debugger::AllocationsLogEntry& entry = dbg->allocationsLog.front();
 
-        RootedValue frame(cx, ObjectOrNullValue(allocSite->frame));
+        RootedValue frame(cx, ObjectOrNullValue(entry.frame));
         if (!DefineProperty(cx, obj, cx->names().frame, frame))
             return false;
 
-        RootedValue timestampValue(cx, NumberValue(allocSite->when));
+        RootedValue timestampValue(cx, NumberValue(entry.when));
         if (!DefineProperty(cx, obj, cx->names().timestamp, timestampValue))
             return false;
 
-        RootedString className(cx, Atomize(cx, allocSite->className, strlen(allocSite->className)));
+        RootedString className(cx, Atomize(cx, entry.className, strlen(entry.className)));
         if (!className)
             return false;
         RootedValue classNameValue(cx, StringValue(className));
@@ -219,12 +219,12 @@ DebuggerMemory::drainAllocationsLog(JSContext* cx, unsigned argc, Value* vp)
             return false;
 
         RootedValue ctorName(cx, NullValue());
-        if (allocSite->ctorName)
-            ctorName.setString(allocSite->ctorName);
+        if (entry.ctorName)
+            ctorName.setString(entry.ctorName);
         if (!DefineProperty(cx, obj, cx->names().constructor, ctorName))
             return false;
 
-        RootedValue size(cx, NumberValue(allocSite->size));
+        RootedValue size(cx, NumberValue(entry.size));
         if (!DefineProperty(cx, obj, cx->names().size, size))
             return false;
 
@@ -233,12 +233,13 @@ DebuggerMemory::drainAllocationsLog(JSContext* cx, unsigned argc, Value* vp)
         
         
         
-        MOZ_ALWAYS_TRUE(dbg->allocationsLog.popFirst() == allocSite);
-        js_delete(allocSite);
+        if (!dbg->allocationsLog.popFront()) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
     }
 
     dbg->allocationsLogOverflowed = false;
-    dbg->allocationsLogLength = 0;
     args.rval().setObject(*result);
     return true;
 }
@@ -272,9 +273,11 @@ DebuggerMemory::setMaxAllocationsLogLength(JSContext* cx, unsigned argc, Value* 
     Debugger* dbg = memory->getDebugger();
     dbg->maxAllocationsLogLength = max;
 
-    while (dbg->allocationsLogLength > dbg->maxAllocationsLogLength) {
-        js_delete(dbg->allocationsLog.getFirst());
-        dbg->allocationsLogLength--;
+    while (dbg->allocationsLog.length() > dbg->maxAllocationsLogLength) {
+        if (!dbg->allocationsLog.popFront()) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
     }
 
     args.rval().setUndefined();
@@ -352,7 +355,7 @@ DebuggerMemory::drainTenurePromotionsLog(JSContext* cx, unsigned argc, Value* vp
         return false;
     }
 
-    size_t length = dbg->tenurePromotionsLogLength;
+    size_t length = dbg->tenurePromotionsLog.length();
 
     RootedArrayObject result(cx, NewDenseFullyAllocatedArray(cx, length));
     if (!result)
@@ -368,27 +371,27 @@ DebuggerMemory::drainTenurePromotionsLog(JSContext* cx, unsigned argc, Value* vp
         
         
         
-        auto* entry = dbg->tenurePromotionsLog.getFirst();
+        auto& entry = dbg->tenurePromotionsLog.front();
 
-        RootedValue frame(cx, ObjectOrNullValue(entry->frame));
+        RootedValue frame(cx, ObjectOrNullValue(entry.frame));
         if (!cx->compartment()->wrap(cx, &frame) ||
             !DefineProperty(cx, obj, cx->names().frame, frame))
         {
             return false;
         }
 
-        RootedValue timestampValue(cx, NumberValue(entry->when));
+        RootedValue timestampValue(cx, NumberValue(entry.when));
         if (!DefineProperty(cx, obj, cx->names().timestamp, timestampValue))
             return false;
 
-        RootedString className(cx, Atomize(cx, entry->className, strlen(entry->className)));
+        RootedString className(cx, Atomize(cx, entry.className, strlen(entry.className)));
         if (!className)
             return false;
         RootedValue classNameValue(cx, StringValue(className));
         if (!DefineProperty(cx, obj, cx->names().class_, classNameValue))
             return false;
 
-        RootedValue sizeValue(cx, NumberValue(entry->size));
+        RootedValue sizeValue(cx, NumberValue(entry.size));
         if (!DefineProperty(cx, obj, cx->names().size, sizeValue))
             return false;
 
@@ -397,12 +400,13 @@ DebuggerMemory::drainTenurePromotionsLog(JSContext* cx, unsigned argc, Value* vp
         
         
         
-        MOZ_ALWAYS_TRUE(dbg->tenurePromotionsLog.popFirst() == entry);
-        js_delete(entry);
+        if (!dbg->tenurePromotionsLog.popFront()) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
     }
 
     dbg->tenurePromotionsLogOverflowed = false;
-    dbg->tenurePromotionsLogLength = 0;
     args.rval().setObject(*result);
     return true;
 }
@@ -436,9 +440,11 @@ DebuggerMemory::setMaxTenurePromotionsLogLength(JSContext* cx, unsigned argc, Va
     Debugger* dbg = memory->getDebugger();
     dbg->maxTenurePromotionsLogLength = max;
 
-    while (dbg->tenurePromotionsLogLength > dbg->maxAllocationsLogLength) {
-        js_delete(dbg->tenurePromotionsLog.getFirst());
-        dbg->tenurePromotionsLogLength--;
+    while (dbg->tenurePromotionsLog.length() > dbg->maxAllocationsLogLength) {
+        if (!dbg->tenurePromotionsLog.popFront()) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
     }
 
     args.rval().setUndefined();
