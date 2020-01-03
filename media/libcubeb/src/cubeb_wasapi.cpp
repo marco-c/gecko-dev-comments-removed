@@ -144,17 +144,28 @@ private:
 };
 
 struct auto_com {
-  auto_com(DWORD dwCoInit = COINIT_MULTITHREADED) {
-    result = CoInitializeEx(NULL, dwCoInit);
+  auto_com() {
+    result = CoInitializeEx(NULL, COINIT_MULTITHREADED);
   }
   ~auto_com() {
-    if (ok()) {
+    if (result == RPC_E_CHANGED_MODE) {
+      
+      
+      LOG("COM already initialized in STA.\n");
+    } else if (result == S_FALSE) {
+      
+      
+      
+      LOG("COM already initialized in MTA\n");
+    }
+    if (SUCCEEDED(result)) {
       CoUninitialize();
     }
   }
   bool ok() {
-    return SUCCEEDED(result);
+    return result == RPC_E_CHANGED_MODE || SUCCEEDED(result);
   }
+private:
   HRESULT result;
 };
 
@@ -481,7 +492,6 @@ wasapi_stream_render_loop(LPVOID stream)
   auto_com com;
   if (!com.ok()) {
     LOG("COM initialization failed on render_loop thread.\n");
-    stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_ERROR);
     return 0;
   }
 
@@ -678,57 +688,27 @@ HRESULT get_default_endpoint(IMMDevice ** device)
 
   return ERROR_SUCCESS;
 }
-
-owned_critical_section g_first_init_lock;
-bool g_first_init = false;
 } 
 
 extern "C" {
 int wasapi_init(cubeb ** context, char const * context_name)
 {
-  auto_lock lock(&g_first_init_lock);
-  if (!g_first_init) {
-    
-    auto_com com(COINIT_APARTMENTTHREADED);
-    if (FAILED(com.result)) {
-      return CUBEB_ERROR;
-    }
-
-    
-
-
-    IMMDevice * device;
-    HRESULT hr = get_default_endpoint(&device);
-    if (FAILED(hr)) {
-      LOG("Could not get device: %x\n", hr);
-      return CUBEB_ERROR;
-    }
-    IAudioClient * client;
-    hr = device->Activate(__uuidof(IAudioClient),
-                          CLSCTX_INPROC_SERVER,
-                          NULL, (void **)&client);
-    if (SUCCEEDED(hr)) {
-      WAVEFORMATEX * mix_format;
-      hr = client->GetMixFormat(&mix_format);
-      if (SUCCEEDED(hr)) {
-        hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                AUDCLNT_STREAMFLAGS_EVENTCALLBACK |
-                                AUDCLNT_STREAMFLAGS_NOPERSIST,
-                                ms_to_hns(100),
-                                0,
-                                mix_format,
-                                NULL);
-        CoTaskMemFree(mix_format);
-        g_first_init = true;
-      }
-      SafeRelease(client);
-    }
-    SafeRelease(device);
-    if (FAILED(hr)) {
-      LOG("Could not initialize IAudioClient: %x\n", hr);
-      return CUBEB_ERROR;
-    }
+  HRESULT hr;
+  auto_com com;
+  if (!com.ok()) {
+    return CUBEB_ERROR;
   }
+
+  
+
+
+  IMMDevice * device;
+  hr = get_default_endpoint(&device);
+  if (FAILED(hr)) {
+    LOG("Could not get device.\n");
+    return CUBEB_ERROR;
+  }
+  SafeRelease(device);
 
   cubeb * ctx = (cubeb *)calloc(1, sizeof(cubeb));
 
@@ -804,8 +784,10 @@ wasapi_get_max_channel_count(cubeb * ctx, uint32_t * max_channels)
   HRESULT hr;
   IAudioClient * client;
   WAVEFORMATEX * mix_format;
-  XASSERT(g_first_init);
-  auto_com com; 
+  auto_com com;
+  if (!com.ok()) {
+    return CUBEB_ERROR;
+  }
 
   XASSERT(ctx && max_channels);
 
@@ -843,8 +825,10 @@ wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * laten
   HRESULT hr;
   IAudioClient * client;
   REFERENCE_TIME default_period;
-  XASSERT(g_first_init);
-  auto_com com; 
+  auto_com com;
+  if (!com.ok()) {
+    return CUBEB_ERROR;
+  }
 
   IMMDevice * device;
   hr = get_default_endpoint(&device);
@@ -888,8 +872,10 @@ wasapi_get_preferred_sample_rate(cubeb * ctx, uint32_t * rate)
   HRESULT hr;
   IAudioClient * client;
   WAVEFORMATEX * mix_format;
-  XASSERT(g_first_init);
-  auto_com com; 
+  auto_com com;
+  if (!com.ok()) {
+    return CUBEB_ERROR;
+  }
 
   IMMDevice * device;
   hr = get_default_endpoint(&device);
