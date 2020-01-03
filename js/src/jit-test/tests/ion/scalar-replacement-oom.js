@@ -1,6 +1,5 @@
-
 if (typeof oomAtAllocation !== 'function')
-    quit(3);
+    quit();
 
 var lfcode = new Array();
 function k(a, f_arg, b, c) {
@@ -16,7 +15,9 @@ function t() {
     oomAtAllocation(101);
 }
 
-t();
-t();
-
-quit(3);
+try {
+    t();
+    t();
+} catch(e) {
+    
+}

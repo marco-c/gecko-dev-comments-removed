@@ -1,7 +1,5 @@
-
-
 if (typeof 'oomAtAllocation' === 'undefined')
-    quit(3);
+    quit();
 
 function fn(i) {
     if (i == 3)
@@ -9,10 +7,13 @@ function fn(i) {
     return [];
 }
 
-fn(0);
-fn(1);
-fn(2);
-oomAtAllocation(50);
-fn(3);
+try {
+    fn(0);
+    fn(1);
+    fn(2);
+    oomAtAllocation(50);
+    fn(3);
+} catch(e) {
+    
+}
 
-quit(3);
