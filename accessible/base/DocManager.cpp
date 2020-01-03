@@ -455,8 +455,6 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
                              ApplicationAcc());
 
     if (IPCAccessibilityActive()) {
-      DocAccessibleChild* ipcDoc = new DocAccessibleChild(docAcc);
-      docAcc->SetIPCDoc(ipcDoc);
       nsIDocShell* docShell = aDocument->GetDocShell();
       if (docShell) {
         nsCOMPtr<nsITabChild> tabChild = do_GetInterface(docShell);
@@ -465,6 +463,8 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
         
         
         if (tabChild) {
+          DocAccessibleChild* ipcDoc = new DocAccessibleChild(docAcc);
+          docAcc->SetIPCDoc(ipcDoc);
           static_cast<TabChild*>(tabChild.get())->
             SendPDocAccessibleConstructor(ipcDoc, nullptr, 0);
         }
