@@ -49,6 +49,20 @@ public:
     , mCheapString(nullptr)
   { }
 
+  void TakeParsedValue(nsAttrValue& aValue)
+  {
+    mStoredAttrValue.SwapValueWith(aValue);
+    mAttrValue = &mStoredAttrValue;
+    mStringPtr = nullptr;
+  }
+  
+
+
+  nsAttrValue* GetStoredAttrValue()
+  {
+    return mAttrValue == &mStoredAttrValue ? &mStoredAttrValue : nullptr;
+  }
+
   
 
 
@@ -74,6 +88,7 @@ protected:
   const nsAttrValue*       mAttrValue;
   mutable const nsAString* mStringPtr;
   mutable nsCheapString    mCheapString;
+  nsAttrValue              mStoredAttrValue;
 };
 
 #endif 

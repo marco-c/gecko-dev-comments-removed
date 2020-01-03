@@ -331,7 +331,7 @@ protected:
   
   
   virtual nsresult BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
-                                 const nsAttrValueOrString* aValue,
+                                 nsAttrValueOrString* aValue,
                                  bool aNotify) override final { return NS_OK; }
 #endif 
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,

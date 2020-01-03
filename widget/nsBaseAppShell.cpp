@@ -17,7 +17,7 @@
 
 
 
-#define THREAD_EVENT_STARVATION_LIMIT PR_MillisecondsToInterval(20)
+#define THREAD_EVENT_STARVATION_LIMIT PR_MillisecondsToInterval(10)
 
 NS_IMPL_ISUPPORTS(nsBaseAppShell, nsIAppShell, nsIThreadObserver, nsIObserver)
 
