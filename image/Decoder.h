@@ -42,10 +42,7 @@ public:
 
 
 
-
-
-
-  nsresult Decode(IResumable* aOnResume = nullptr);
+  nsresult Decode();
 
   
 
