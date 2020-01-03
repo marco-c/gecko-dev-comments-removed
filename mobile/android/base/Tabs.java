@@ -967,6 +967,9 @@ public class Tabs implements GeckoEventListener {
 
 
 
+
+
+
     public void loadUrlInTab(String url) {
         Iterable<Tab> tabs = getTabsInOrder();
         for (Tab tab : tabs) {
@@ -980,12 +983,17 @@ public class Tabs implements GeckoEventListener {
         
         
         int parentId = -1;
-        Tab selectedTab = getSelectedTab();
+        int flags = LOADURL_NEW_TAB;
+
+        final Tab selectedTab = getSelectedTab();
         if (selectedTab != null) {
             parentId = selectedTab.getId();
+            if (selectedTab.isPrivate()) {
+                flags = flags | LOADURL_PRIVATE;
+            }
         }
 
-        loadUrl(url, null, parentId, LOADURL_NEW_TAB);
+        loadUrl(url, null, parentId, flags);
     }
 
     
