@@ -289,6 +289,8 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
     mTaskQueue, this, &MediaDecoderStateMachine::OnAudioPopped);
   mVideoQueueListener = VideoQueue().PopEvent().Connect(
     mTaskQueue, this, &MediaDecoderStateMachine::OnVideoPopped);
+
+  mMetadataManager.Connect(mReader->TimedMetadataEvent(), OwnerThread());
 }
 
 MediaDecoderStateMachine::~MediaDecoderStateMachine()
@@ -2205,6 +2207,7 @@ MediaDecoderStateMachine::FinishShutdown()
   
   mAudioQueueListener.Disconnect();
   mVideoQueueListener.Disconnect();
+  mMetadataManager.Disconnect();
 
   
   mBuffered.DisconnectIfConnected();

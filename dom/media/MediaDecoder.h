@@ -198,6 +198,7 @@
 #include "nsITimer.h"
 #include "MediaResource.h"
 #include "MediaDecoderOwner.h"
+#include "MediaEventSource.h"
 #include "MediaStreamGraph.h"
 #include "AbstractMediaDecoder.h"
 #include "DecodedStream.h"
@@ -989,6 +990,8 @@ protected:
 
   const char* PlayStateStr();
 
+  void OnMetadataUpdate(TimedMetadata&& aMetadata);
+
   
   
   
@@ -1058,6 +1061,9 @@ protected:
 
   
   nsCOMPtr<nsITimer> mDormantTimer;
+
+  
+  MediaEventListener mTimedMetadataListener;
 
 protected:
   

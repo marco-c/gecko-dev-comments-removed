@@ -154,6 +154,10 @@ public:
   
   void SetDormant(bool aDormant);
 
+  TimedMetadataEventSource& TimedMetadataEvent() {
+    return mMetadataManager.TimedMetadataEvent();
+  }
+
 private:
   
   
