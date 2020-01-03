@@ -217,14 +217,14 @@ static void CalculatePluginClip(const gfx::IntRect& aBounds,
                                 bool& aPluginIsVisible)
 {
   aPluginIsVisible = true;
-  
-  nsIntRegion contentVisibleRegion(aBounds);
+  nsIntRegion contentVisibleRegion;
   
   for (uint32_t idx = 0; idx < aPluginClipRects.Length(); idx++) {
     gfx::IntRect rect = aPluginClipRects[idx];
     
     rect.MoveBy(aBounds.x, aBounds.y);
-    contentVisibleRegion.AndWith(rect);
+    
+    contentVisibleRegion.OrWith(rect);
   }
   
   nsIntRegion region = aParentLayerVisibleRegion;
