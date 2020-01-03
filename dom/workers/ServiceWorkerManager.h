@@ -552,7 +552,7 @@ private:
   
   
   void
-  RemoveAllRegistrations(mozIApplicationClearPrivateDataParams* aParams);
+  RemoveAllRegistrations(OriginAttributes* aParams);
 
   nsRefPtr<ServiceWorkerManagerChild> mActor;
 
