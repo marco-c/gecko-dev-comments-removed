@@ -33,11 +33,12 @@ namespace mozilla {
 
 
 
+
+
 class SharedThreadPool : public nsIThreadPool
 {
 public:
 
-  
   
   
   static already_AddRefed<SharedThreadPool> Get(const nsCString& aName,
