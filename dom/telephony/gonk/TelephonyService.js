@@ -1887,9 +1887,33 @@ TelephonyService.prototype = {
     if (!call.isConference) {
       let heldCalls = this._getCallsWithState(aClientId, nsITelephonyService.CALL_STATE_HELD);
 
-      
       if (heldCalls.length) {
-        this._hangUpForeground(aClientId, aCallback);
+        if (call.state === nsITelephonyService.CALL_STATE_CONNECTED) {
+          
+          this._hangUpForeground(aClientId, aCallback);
+        } else {
+          
+          this._sendToRilWorker(aClientId, "hangUpCall", { callIndex: aCallIndex }, response => {
+            if (response.errorMsg) {
+              aCallback.notifyError(response.errorMsg);
+            } else {
+              aCallback.notifySuccess();
+
+              let emptyCallback = {
+                QueryInterface: XPCOMUtils.generateQI([Ci.nsITelephonyCallback]),
+                notifySuccess: () => {},
+                notifyError: () => {}
+              };
+
+              if (heldCalls.length === 1) {
+                this.resumeCall(aClientId, heldCalls[0].callIndex, emptyCallback);
+              } else {
+                this.resumeConference(aClientId, emptyCallback);
+              }
+            }
+          });
+        }
+
         return;
       }
     }
