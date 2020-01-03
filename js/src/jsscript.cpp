@@ -2650,10 +2650,6 @@ JSScript::linkToFunctionFromEmitter(js::ExclusiveContext* cx, JS::Handle<JSScrip
         fun->setUnlazifiedScript(script);
     else
         fun->setScript(script);
-
-    
-    
-    funbox->switchStaticScopeToFunction();
 }
 
  bool
