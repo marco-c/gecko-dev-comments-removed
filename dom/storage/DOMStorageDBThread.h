@@ -10,6 +10,7 @@
 #include "prthread.h"
 #include "prinrval.h"
 #include "nsTArray.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/storage/StatementCache.h"
 #include "nsString.h"
@@ -292,7 +293,7 @@ private:
 
   
   
-  bool mDBReady;
+  Atomic<bool, ReleaseAcquire> mDBReady;
 
   
   nsresult mStatus;
