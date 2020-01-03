@@ -7116,7 +7116,7 @@ var IdentityHandler = {
 
     
     if ((aState & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT) &&
-         Services.prefs.getBoolPref("security.mixed_content.block_active_content")) {
+         !Services.prefs.getBoolPref("security.mixed_content.block_active_content")) {
       return this.MIXED_MODE_CONTENT_LOADED;
     }
 
