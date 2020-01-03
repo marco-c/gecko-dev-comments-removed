@@ -1036,27 +1036,12 @@ nsHTMLReflowState::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
   return aFrame;
 }
 
-
-
-
-
-
-
-struct nsHypotheticalBox {
+struct nsHypotheticalPosition {
   
-  nscoord       mIStart, mIEnd;
+  nscoord       mIStart;
   
   nscoord       mBStart;
   WritingMode   mWritingMode;
-#ifdef DEBUG
-  bool          mIStartIsExact, mIEndIsExact;
-#endif
-
-  nsHypotheticalBox() {
-#ifdef DEBUG
-    mIStartIsExact = mIEndIsExact = false;
-#endif
-  }
 };
 
 static bool
@@ -1194,12 +1179,14 @@ static bool AreAllEarlierInFlowFramesEmpty(nsIFrame* aFrame,
 
 
 
+
 void
-nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
-                                            nsIFrame*         aPlaceholderFrame,
-                                            const nsHTMLReflowState* cbrs,
-                                            nsHypotheticalBox& aHypotheticalBox,
-                                            nsIAtom*          aFrameType)
+nsHTMLReflowState::CalculateHypotheticalPosition
+                     (nsPresContext*           aPresContext,
+                      nsIFrame*                aPlaceholderFrame,
+                      const nsHTMLReflowState* cbrs,
+                      nsHypotheticalPosition&  aHypotheticalPos,
+                      nsIAtom*                 aFrameType)
 {
   NS_ASSERTION(mStyleDisplay->mOriginalDisplay != NS_STYLE_DISPLAY_NONE,
                "mOriginalDisplay has not been properly initialized");
@@ -1306,7 +1293,7 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
     if (!isValid) {
       
       
-      aHypotheticalBox.mBStart = placeholderOffset.B(wm);
+      aHypotheticalPos.mBStart = placeholderOffset.B(wm);
     } else {
       NS_ASSERTION(iter.GetContainer() == blockFrame,
                    "Found placeholder in wrong block!");
@@ -1320,7 +1307,7 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
       if (mStyleDisplay->IsOriginalDisplayInlineOutsideStyle()) {
         
         
-        aHypotheticalBox.mBStart = lineBounds.BStart(wm) + blockOffset.B(wm);
+        aHypotheticalPos.mBStart = lineBounds.BStart(wm) + blockOffset.B(wm);
       } else {
         
         
@@ -1345,15 +1332,17 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
             
             
             
-            aHypotheticalBox.mBStart = lineBounds.BStart(wm) + blockOffset.B(wm);
+            aHypotheticalPos.mBStart =
+              lineBounds.BStart(wm) + blockOffset.B(wm);
           } else {
             
             
-            aHypotheticalBox.mBStart = lineBounds.BEnd(wm) + blockOffset.B(wm);
+            aHypotheticalPos.mBStart =
+              lineBounds.BEnd(wm) + blockOffset.B(wm);
           }
         } else {
           
-          aHypotheticalBox.mBStart = placeholderOffset.B(wm);
+          aHypotheticalPos.mBStart = placeholderOffset.B(wm);
         }
       }
     }
@@ -1361,7 +1350,7 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
     
     
     
-    aHypotheticalBox.mBStart = placeholderOffset.B(wm);
+    aHypotheticalPos.mBStart = placeholderOffset.B(wm);
   }
 
   
@@ -1369,28 +1358,9 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
   
   if (mStyleDisplay->IsOriginalDisplayInlineOutsideStyle()) {
     
-    aHypotheticalBox.mIStart = placeholderOffset.I(wm);
+    aHypotheticalPos.mIStart = placeholderOffset.I(wm);
   } else {
-    aHypotheticalBox.mIStart = blockIStartContentEdge;
-  }
-#ifdef DEBUG
-  aHypotheticalBox.mIStartIsExact = true;
-#endif
-
-  if (knowBoxISize) {
-    aHypotheticalBox.mIEnd = aHypotheticalBox.mIStart + boxISize;
-#ifdef DEBUG
-    aHypotheticalBox.mIEndIsExact = true;
-#endif
-  } else {
-    
-    
-    
-    aHypotheticalBox.mIEnd =
-      blockIStartContentEdge + blockContentSize.ISize(wm);
-#ifdef DEBUG
-    aHypotheticalBox.mIEndIsExact = false;
-#endif
+    aHypotheticalPos.mIStart = blockIStartContentEdge;
   }
 
   
@@ -1432,9 +1402,8 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
   }
   nsSize cbrsSize = cbrs->ComputedSizeAsContainerIfConstrained();
   LogicalPoint logCBOffs(wm, cbOffset, cbrsSize - containerSize);
-  aHypotheticalBox.mIStart += logCBOffs.I(wm);
-  aHypotheticalBox.mIEnd += logCBOffs.I(wm);
-  aHypotheticalBox.mBStart += logCBOffs.B(wm);
+  aHypotheticalPos.mIStart += logCBOffs.I(wm);
+  aHypotheticalPos.mBStart += logCBOffs.B(wm);
 
   
   
@@ -1442,9 +1411,8 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
   LogicalMargin border =
     cbrs->ComputedLogicalBorderPadding() - cbrs->ComputedLogicalPadding();
   border = border.ConvertTo(wm, cbrs->GetWritingMode());
-  aHypotheticalBox.mIStart -= border.IStart(wm);
-  aHypotheticalBox.mIEnd -= border.IStart(wm);
-  aHypotheticalBox.mBStart -= border.BStart(wm);
+  aHypotheticalPos.mIStart -= border.IStart(wm);
+  aHypotheticalPos.mBStart -= border.BStart(wm);
 
   
   
@@ -1497,21 +1465,16 @@ nsHTMLReflowState::CalculateHypotheticalBox(nsPresContext*    aPresContext,
 
     LogicalSize boxSize(wm, knowBoxISize ? boxISize : 0, boxBSize);
 
-    LogicalPoint origin(wm, aHypotheticalBox.mIStart,
-                        aHypotheticalBox.mBStart);
+    LogicalPoint origin(wm, aHypotheticalPos.mIStart,
+                        aHypotheticalPos.mBStart);
     origin = origin.ConvertTo(cbwm, wm, cbrsSize -
                               boxSize.GetPhysicalSize(wm));
 
-    aHypotheticalBox.mIStart = origin.I(cbwm);
-    aHypotheticalBox.mIEnd = aHypotheticalBox.mIStart +
-                             boxSize.ConvertTo(cbwm, wm).ISize(cbwm);
-#ifdef DEBUG
-    aHypotheticalBox.mIEndIsExact = false; 
-#endif
-    aHypotheticalBox.mBStart = origin.B(cbwm);
-    aHypotheticalBox.mWritingMode = cbwm;
+    aHypotheticalPos.mIStart = origin.I(cbwm);
+    aHypotheticalPos.mBStart = origin.B(cbwm);
+    aHypotheticalPos.mWritingMode = cbwm;
   } else {
-    aHypotheticalBox.mWritingMode = wm;
+    aHypotheticalPos.mWritingMode = wm;
   }
 }
 
@@ -1540,13 +1503,13 @@ nsHTMLReflowState::InitAbsoluteConstraints(nsPresContext* aPresContext,
   
   
   
-  nsHypotheticalBox hypotheticalBox;
+  nsHypotheticalPosition hypotheticalPos;
   if (((eStyleUnit_Auto == mStylePosition->mOffset.GetLeftUnit()) &&
        (eStyleUnit_Auto == mStylePosition->mOffset.GetRightUnit())) ||
       ((eStyleUnit_Auto == mStylePosition->mOffset.GetTopUnit()) &&
        (eStyleUnit_Auto == mStylePosition->mOffset.GetBottomUnit()))) {
-    CalculateHypotheticalBox(aPresContext, placeholderFrame, cbrs,
-                             hypotheticalBox, aFrameType);
+    CalculateHypotheticalPosition(aPresContext, placeholderFrame, cbrs,
+                                  hypotheticalPos, aFrameType);
   }
 
   
@@ -1578,13 +1541,11 @@ nsHTMLReflowState::InitAbsoluteConstraints(nsPresContext* aPresContext,
   }
 
   if (iStartIsAuto && iEndIsAuto) {
-    NS_ASSERTION(hypotheticalBox.mIStartIsExact, "should always have "
-                 "exact value on containing block's start side");
-    if (cbwm.IsBidiLTR() != hypotheticalBox.mWritingMode.IsBidiLTR()) {
-      offsets.IEnd(cbwm) = hypotheticalBox.mIStart;
+    if (cbwm.IsBidiLTR() != hypotheticalPos.mWritingMode.IsBidiLTR()) {
+      offsets.IEnd(cbwm) = hypotheticalPos.mIStart;
       iEndIsAuto = false;
     } else {
-      offsets.IStart(cbwm) = hypotheticalBox.mIStart;
+      offsets.IStart(cbwm) = hypotheticalPos.mIStart;
       iStartIsAuto = false;
     }
   }
@@ -1608,7 +1569,7 @@ nsHTMLReflowState::InitAbsoluteConstraints(nsPresContext* aPresContext,
 
   if (bStartIsAuto && bEndIsAuto) {
     
-    offsets.BStart(cbwm) = hypotheticalBox.mBStart;
+    offsets.BStart(cbwm) = hypotheticalPos.mBStart;
     bStartIsAuto = false;
   }
 

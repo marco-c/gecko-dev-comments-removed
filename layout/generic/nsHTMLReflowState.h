@@ -19,7 +19,7 @@ class nsRenderingContext;
 class nsFloatManager;
 class nsLineLayout;
 class nsIPercentBSizeObserver;
-struct nsHypotheticalBox;
+struct nsHypotheticalPosition;
 
 
 
@@ -921,11 +921,11 @@ protected:
   
   
   
-  void CalculateHypotheticalBox(nsPresContext*    aPresContext,
-                                nsIFrame*         aPlaceholderFrame,
-                                const nsHTMLReflowState* cbrs,
-                                nsHypotheticalBox& aHypotheticalBox,
-                                nsIAtom*          aFrameType);
+  void CalculateHypotheticalPosition(nsPresContext* aPresContext,
+                                     nsIFrame* aPlaceholderFrame,
+                                     const nsHTMLReflowState* cbrs,
+                                     nsHypotheticalPosition& aHypotheticalPos,
+                                     nsIAtom* aFrameType);
 
   void InitAbsoluteConstraints(nsPresContext* aPresContext,
                                const nsHTMLReflowState* cbrs,
