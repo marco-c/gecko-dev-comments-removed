@@ -84,6 +84,7 @@ nsJPEGDecoder::nsJPEGDecoder(RasterImage* aImage,
                              Decoder::DecodeStyle aDecodeStyle)
  : Decoder(aImage)
  , mDecodeStyle(aDecodeStyle)
+ , mSampleSize(0)
 {
   mState = JPEG_HEADER;
   mReading = true;
@@ -248,10 +249,10 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
         return; 
       }
 
-      int sampleSize = GetImage()->GetRequestedSampleSize();
-      if (sampleSize > 0) {
+      
+      if (mSampleSize > 0) {
         mInfo.scale_num = 1;
-        mInfo.scale_denom = sampleSize;
+        mInfo.scale_denom = mSampleSize;
       }
 
       

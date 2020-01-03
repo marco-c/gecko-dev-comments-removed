@@ -269,16 +269,9 @@ public:
     mRequestedResolution = requestedResolution;
   }
 
-  nsIntSize GetRequestedResolution() {
-    return mRequestedResolution;
-  }
   
   void SetRequestedSampleSize(int requestedSampleSize) {
     mRequestedSampleSize = requestedSampleSize;
-  }
-
-  int GetRequestedSampleSize() {
-    return mRequestedSampleSize;
   }
 
  nsCString GetURIString() {

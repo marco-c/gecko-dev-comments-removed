@@ -62,12 +62,18 @@ public:
 
 
 
+
+
+
+
   static already_AddRefed<Decoder>
   CreateDecoder(DecoderType aType,
                 RasterImage* aImage,
                 SourceBuffer* aSourceBuffer,
                 const Maybe<gfx::IntSize>& aTargetSize,
                 uint32_t aFlags,
+                int aSampleSize,
+                const gfx::IntSize& aResolution,
                 bool aIsRedecode,
                 bool aImageIsTransient,
                 bool aImageIsLocked);
@@ -84,10 +90,16 @@ public:
 
 
 
+
+
+
+
   static already_AddRefed<Decoder>
   CreateMetadataDecoder(DecoderType aType,
                         RasterImage* aImage,
-                        SourceBuffer* aSourceBuffer);
+                        SourceBuffer* aSourceBuffer,
+                        int aSampleSize,
+                        const gfx::IntSize& aResolution);
 
 private:
   virtual ~DecoderFactory() = 0;

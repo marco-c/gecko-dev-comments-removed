@@ -1445,8 +1445,8 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
   
   nsRefPtr<Decoder> decoder =
     DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer, targetSize,
-                                  aFlags, mHasBeenDecoded, mTransient,
-                                  imageIsLocked);
+                                  aFlags, mRequestedSampleSize, mRequestedResolution,
+                                  mHasBeenDecoded, mTransient, imageIsLocked);
 
   
   if (!decoder) {
@@ -1499,7 +1499,9 @@ RasterImage::DecodeMetadata(uint32_t aFlags)
 
   
   nsRefPtr<Decoder> decoder =
-    DecoderFactory::CreateMetadataDecoder(mDecoderType, this, mSourceBuffer);
+    DecoderFactory::CreateMetadataDecoder(mDecoderType, this, mSourceBuffer,
+                                          mRequestedSampleSize,
+                                          mRequestedResolution);
 
   
   if (!decoder) {

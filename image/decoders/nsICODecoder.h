@@ -36,6 +36,11 @@ public:
     return mDirEntry.mHeight == 0 ? 256 : mDirEntry.mHeight;
   }
 
+  virtual void SetResolution(const gfx::IntSize& aResolution) override
+  {
+    mResolution = aResolution;
+  }
+
   virtual void WriteInternal(const char* aBuffer, uint32_t aCount) override;
   virtual void FinishInternal() override;
   virtual void FinishWithErrorInternal() override;
@@ -76,6 +81,7 @@ private:
   
   uint16_t GetNumColors();
 
+  gfx::IntSize mResolution;  
   uint16_t mBPP; 
   uint32_t mPos; 
   uint16_t mNumIcons; 
