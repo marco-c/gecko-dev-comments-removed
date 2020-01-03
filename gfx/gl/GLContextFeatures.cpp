@@ -210,34 +210,53 @@ static const FeatureInfo sFeatureInfoArr[] = {
         }
     },
     {
+        
+        
         "framebuffer_blit",
         GLVersion::GL3,
         GLESVersion::ES3,
-        GLContext::Extension_None,
+        GLContext::ARB_framebuffer_object,
         {
-            GLContext::EXT_framebuffer_blit,
             GLContext::ANGLE_framebuffer_blit,
+            GLContext::EXT_framebuffer_blit,
+            GLContext::NV_framebuffer_blit,
             GLContext::Extensions_End
         }
     },
     {
+        
+        
         "framebuffer_multisample",
         GLVersion::GL3,
         GLESVersion::ES3,
-        GLContext::Extension_None,
+        GLContext::ARB_framebuffer_object,
         {
-            GLContext::EXT_framebuffer_multisample,
             GLContext::ANGLE_framebuffer_multisample,
+            GLContext::APPLE_framebuffer_multisample,
+            GLContext::EXT_framebuffer_multisample,
+            GLContext::EXT_multisampled_render_to_texture,
             GLContext::Extensions_End
         }
     },
     {
+        
         "framebuffer_object",
         GLVersion::GL3,
-        GLESVersion::ES2,
+        GLESVersion::ES3,
         GLContext::ARB_framebuffer_object,
         {
+            GLContext::Extensions_End
+        }
+    },
+    {
+        
+        "framebuffer_object_EXT_OES",
+        GLVersion::GL3,
+        GLESVersion::ES2,
+        GLContext::Extension_None,
+        {
             GLContext::EXT_framebuffer_object,
+            GLContext::OES_framebuffer_object,
             GLContext::Extensions_End
         }
     },
