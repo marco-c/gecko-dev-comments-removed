@@ -584,7 +584,7 @@ CopyBoxedOrUnboxedDenseElements(JSContext* cx, JSObject* dst, JSObject* src,
 
 
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 # define DEPENDENT_TEMPLATE_HINT
 #else
 # define DEPENDENT_TEMPLATE_HINT template

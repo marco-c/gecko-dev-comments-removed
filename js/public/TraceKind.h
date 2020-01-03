@@ -98,7 +98,9 @@ JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 
 
 
-#ifdef _MSC_VER
+
+
+#if defined(_MSC_VER) && !defined(__clang__)
 # define JS_DEPENDENT_TEMPLATE_HINT
 #else
 # define JS_DEPENDENT_TEMPLATE_HINT template
