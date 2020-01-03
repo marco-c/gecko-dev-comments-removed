@@ -1196,7 +1196,40 @@ DataStoreService::CheckPermission(nsIPrincipal* aPrincipal)
   }
 
   
-  return status == nsIPrincipal::APP_STATUS_CERTIFIED;
+  if (status == nsIPrincipal::APP_STATUS_CERTIFIED) {
+    return true;
+  }
+
+  if (status != nsIPrincipal::APP_STATUS_PRIVILEGED) {
+    return false;
+  }
+
+  
+  nsAdoptingString homescreen =
+    Preferences::GetString("dom.mozApps.homescreenURL");
+  if (!homescreen) {
+    return false;
+  }
+
+  uint32_t appId;
+  nsresult rv = aPrincipal->GetAppId(&appId);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  nsCOMPtr<nsIAppsService> appsService =
+    do_GetService("@mozilla.org/AppsService;1");
+  if (NS_WARN_IF(!appsService)) {
+    return false;
+  }
+
+  nsAutoString manifestURL;
+  rv = appsService->GetManifestURLByLocalId(appId, manifestURL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  return manifestURL.Equals(homescreen);
 }
 
 NS_IMETHODIMP
