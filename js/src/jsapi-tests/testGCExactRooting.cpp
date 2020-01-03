@@ -123,6 +123,15 @@ struct RootedBase<DynamicContainer> {
     RelocatablePtrObject& obj() { return static_cast<Rooted<DynamicContainer>*>(this)->get().obj; }
     RelocatablePtrString& str() { return static_cast<Rooted<DynamicContainer>*>(this)->get().str; }
 };
+template <>
+struct PersistentRootedBase<DynamicContainer> {
+    RelocatablePtrObject& obj() {
+        return static_cast<PersistentRooted<DynamicContainer>*>(this)->get().obj;
+    }
+    RelocatablePtrString& str() {
+        return static_cast<PersistentRooted<DynamicContainer>*>(this)->get().str;
+    }
+};
 } 
 
 BEGIN_TEST(testGCRootedDynamicStructInternalStackStorage)
@@ -153,6 +162,40 @@ BEGIN_TEST(testGCRootedDynamicStructInternalStackStorageAugmented)
     JS::RootedObject obj(cx, container.obj());
     JS::RootedValue val(cx, StringValue(container.str()));
     CHECK(JS_SetProperty(cx, obj, "foo", val));
+    obj = nullptr;
+    val = UndefinedValue();
+
+    {
+        JS::RootedString actual(cx);
+        bool same;
+
+        
+        JS::PersistentRooted<DynamicContainer> heap(cx, container);
+
+        
+        container.obj() = nullptr;
+        container.str() = nullptr;
+
+        obj = heap.obj();
+        CHECK(JS_GetProperty(cx, obj, "foo", &val));
+        actual = val.toString();
+        CHECK(JS_StringEqualsAscii(cx, actual, "Hello", &same));
+        CHECK(same);
+        obj = nullptr;
+        actual = nullptr;
+
+        JS_GC(cx->runtime());
+        JS_GC(cx->runtime());
+
+        obj = heap.obj();
+        CHECK(JS_GetProperty(cx, obj, "foo", &val));
+        actual = val.toString();
+        CHECK(JS_StringEqualsAscii(cx, actual, "Hello", &same));
+        CHECK(same);
+        obj = nullptr;
+        actual = nullptr;
+    }
+
     return true;
 }
 END_TEST(testGCRootedDynamicStructInternalStackStorageAugmented)
@@ -231,6 +274,16 @@ BEGIN_TEST(testGCHandleHashMap)
     JS_GC(rt);
 
     CHECK(CheckMyHashMap(cx, map));
+
+    
+    
+    JS::PersistentRooted<MyHashMap> heapMap(cx, mozilla::Move(map.get()));
+    CHECK(CheckMyHashMap(cx, heapMap));
+
+    JS_GC(rt);
+    JS_GC(rt);
+
+    CHECK(CheckMyHashMap(cx, heapMap));
 
     return true;
 }
