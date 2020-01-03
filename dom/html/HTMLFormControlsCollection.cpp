@@ -389,15 +389,6 @@ HTMLFormControlsCollection::NamedGetter(const nsAString& aName,
   MOZ_ASSERT_UNREACHABLE("Should only have Elements and NodeLists here.");
 }
 
-static PLDHashOperator
-CollectNames(const nsAString& aName,
-             nsISupports* ,
-             void* aClosure)
-{
-  static_cast<nsTArray<nsString>*>(aClosure)->AppendElement(aName);
-  return PL_DHASH_NEXT;
-}
-
 void
 HTMLFormControlsCollection::GetSupportedNames(unsigned aFlags,
                                               nsTArray<nsString>& aNames)
@@ -410,7 +401,9 @@ HTMLFormControlsCollection::GetSupportedNames(unsigned aFlags,
   
   
   
-  mNameLookupTable.EnumerateRead(CollectNames, &aNames);
+  for (auto iter = mNameLookupTable.Iter(); !iter.Done(); iter.Next()) {
+    aNames.AppendElement(iter.Key());
+  }
 }
 
  JSObject*
