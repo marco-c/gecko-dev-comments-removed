@@ -2,77 +2,21 @@
 
 
 MARIONETTE_TIMEOUT = 60000;
+MARIONETTE_HEAD_JS = 'head.js';
 
-SpecialPowers.addPermission("sms", true, document);
 
+const SMSC = "+123456789";
+const TON = "international";
+const NPI = "isdn";
 
-const SMSC = "\"+123456789\",145";
+function verifySmscAddress(smsc, expectedAddr, expectedTon, expectedNpi) {
+  is(smsc.address, expectedAddr);
+  is(smsc.typeOfAddress.typeOfNumber, expectedTon);
+  is(smsc.typeOfAddress.numberPlanIdentification, expectedNpi);
+}
 
-let manager = window.navigator.mozMobileMessage;
-
-let tasks = {
-  
-  
-  _tasks: [],
-  _nextTaskIndex: 0,
-
-  push: function(func) {
-    this._tasks.push(func);
-  },
-
-  next: function() {
-    let index = this._nextTaskIndex++;
-    let task = this._tasks[index];
-    try {
-      task();
-    } catch (ex) {
-      ok(false, "test task[" + index + "] throws: " + ex);
-      
-      if (index != this._tasks.length - 1) {
-        this.finish();
-      }
-    }
-  },
-
-  finish: function() {
-    this._tasks[this._tasks.length - 1]();
-  },
-
-  run: function() {
-    this.next();
-  }
-};
-
-tasks.push(function init() {
-  log("Initialize test object.");
-  ok(manager instanceof MozMobileMessageManager,
-     "manager is instance of " + manager.constructor);
-  tasks.next();
+startTestCommon(function testCaseMain() {
+  return Promise.resolve()
+    .then(() => manager.getSmscAddress())
+    .then((result) => verifySmscAddress(result, SMSC, TON, NPI));
 });
-
-tasks.push(function readSmscAddress() {
-  log("read SMSC address");
-
-  let req = manager.getSmscAddress();
-  ok(req, "DOMRequest object for getting smsc address");
-
-  req.onsuccess = function(e) {
-    is(e.target.result, SMSC, "SMSC address");
-    tasks.next();
-  };
-
-  req.onerror = function(error) {
-    ok(false, "readSmscAddress(): Received 'onerror'");
-    tasks.finish();
-  };
-});
-
-
-tasks.push(function cleanUp() {
-  manager.onreceived = null;
-  SpecialPowers.removePermission("sms", document);
-  finish();
-});
-
-
-tasks.run();

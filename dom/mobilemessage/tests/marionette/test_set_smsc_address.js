@@ -14,59 +14,53 @@ const SMSC_DEF_TEXT = '"+123456789",145';
 const SMSC_TON_UNKNOWN = '0407485455'
 const SMSC_TON_UNKNOWN_TEXT = '"0407485455",129';
 
-function getSmscAddress() {
-  return new Promise((resolve, reject) => {
-    let req = manager.getSmscAddress();
-    if (!req) {
-      reject("manager.getSmscAddress() returns null.");
-    }
+function verifySmscAddress(smsc, expectedAddr, expectedTon, expectedNpi) {
+  is(smsc.address, expectedAddr);
+  is(smsc.typeOfAddress.typeOfNumber, expectedTon);
+  is(smsc.typeOfAddress.numberPlanIdentification, expectedNpi);
+}
 
-    req.onsuccess = function() {
-      resolve(this.result);
-    };
+startTestCommon(function testCaseMain() {
+  return Promise.resolve()
 
-    req.onerror = function() {
-      reject(this.error);
-    };
-  });
-};
+    
+    .then(() => manager.setSmscAddress({ address:SMSC_ATT }))
+    .then(() => manager.getSmscAddress())
+    .then((result) =>
+      verifySmscAddress(result, SMSC_ATT, "international", "isdn"))
 
-startTestBase(function testCaseMain() {
-  return ensureMobileMessage()
+    
+    .then(() => manager.setSmscAddress({ address:SMSC_O2 }))
+    .then(() => manager.getSmscAddress())
+    .then((result) =>
+      verifySmscAddress(result, SMSC_O2, "international", "isdn"))
 
-  
-  .then(() => manager.setSmscAddress({ address:SMSC_ATT }))
-  .then(() => getSmscAddress())
-  .then((result) => is(result, SMSC_ATT_TEXT))
+    
+    .then(() => manager.setSmscAddress({ address:SMSC_ATT_TYPO }))
+    .then(() => manager.getSmscAddress())
+    .then((result) =>
+      verifySmscAddress(result, SMSC_ATT, "international", "isdn"))
 
-  
-  .then(() => manager.setSmscAddress({ address:SMSC_O2 }))
-  .then(() => getSmscAddress())
-  .then((result) => is(result, SMSC_O2_TEXT))
+    
+    .then(() => manager.setSmscAddress({ address:SMSC_TON_UNKNOWN }))
+    .then(() => manager.getSmscAddress())
+    .then((result) =>
+      verifySmscAddress(result, SMSC_TON_UNKNOWN, "unknown", "isdn"))
 
-  
-  .then(() => manager.setSmscAddress({ address:SMSC_ATT_TYPO }))
-  .then(() => getSmscAddress())
-  .then((result) => is(result, SMSC_ATT_TEXT))
+    
+    .then(() => manager.setSmscAddress({}))
+    .then(() => Promise.reject("Expect for an error."),
+      (err) => log("Got expected error: " + err))
+    .then(() => manager.setSmscAddress({ address:"" }))
+    .then(() => Promise.reject("Expect for an error."),
+      (err) => log("Got expected error: " + err))
+    .then(() => manager.setSmscAddress({ address:"???" }))
+    .then(() => Promise.reject("Expect for an error."),
+      (err) => log("Got expected error: " + err))
 
-  
-  .then(() => manager.setSmscAddress({ address:SMSC_TON_UNKNOWN }))
-  .then(() => getSmscAddress())
-  .then((result) => is(result, SMSC_TON_UNKNOWN_TEXT))
-
-  
-  .then(() => manager.setSmscAddress({}))
-  .then(() => Promise.reject("Expect for an error."),
-    (err) => log("Got expected error: " + err))
-  .then(() => manager.setSmscAddress({ address:"" }))
-  .then(() => Promise.reject("Expect for an error."),
-    (err) => log("Got expected error: " + err))
-  .then(() => manager.setSmscAddress({ address:"???" }))
-  .then(() => Promise.reject("Expect for an error."),
-    (err) => log("Got expected error: " + err))
-
-  
-  .then(() => manager.setSmscAddress({ address:SMSC_DEF }))
-  .then(() => getSmscAddress())
-  .then((result) => is(result, SMSC_DEF_TEXT));
+    
+    .then(() => manager.setSmscAddress({ address:SMSC_DEF }))
+    .then(() => manager.getSmscAddress())
+    .then((result) =>
+      verifySmscAddress(result, SMSC_DEF, "international", "isdn"));
 });
