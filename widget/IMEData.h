@@ -539,7 +539,7 @@ struct IMENotification final
   };
 
   
-  struct SelectionChangeData
+  struct SelectionChangeDataBase
   {
     
     uint32_t mOffset;
@@ -590,7 +590,7 @@ struct IMENotification final
     {
       return mOffset != UINT32_MAX;
     }
-    void Assign(const SelectionChangeData& aOther)
+    void Assign(const SelectionChangeDataBase& aOther)
     {
       mOffset = aOther.mOffset;
       *mString = aOther.String();
@@ -599,6 +599,46 @@ struct IMENotification final
       mCausedByComposition = aOther.mCausedByComposition;
       mCausedBySelectionEvent = aOther.mCausedBySelectionEvent;
     }
+  };
+
+  
+  
+  
+  
+  struct SelectionChangeData final : public SelectionChangeDataBase
+  {
+    SelectionChangeData()
+    {
+      mString = &mStringInstance;
+      Clear();
+    }
+    explicit SelectionChangeData(const SelectionChangeDataBase& aOther)
+    {
+      mString = &mStringInstance;
+      Assign(aOther);
+    }
+    SelectionChangeData(const SelectionChangeData& aOther)
+    {
+      mString = &mStringInstance;
+      Assign(aOther);
+    }
+    SelectionChangeData& operator=(const SelectionChangeDataBase& aOther)
+    {
+      mString = &mStringInstance;
+      Assign(aOther);
+      return *this;
+    }
+    SelectionChangeData& operator=(const SelectionChangeData& aOther)
+    {
+      mString = &mStringInstance;
+      Assign(aOther);
+      return *this;
+    }
+
+  private:
+    
+    
+    nsString mStringInstance;
   };
 
   struct TextChangeDataBase
@@ -708,7 +748,7 @@ struct IMENotification final
   union
   {
     
-    SelectionChangeData mSelectionChangeData;
+    SelectionChangeDataBase mSelectionChangeData;
 
     
     TextChangeDataBase mTextChangeData;
