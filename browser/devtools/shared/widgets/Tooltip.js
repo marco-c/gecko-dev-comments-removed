@@ -1031,7 +1031,11 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
+
   addSwatch: function(swatchEl, callbacks={}) {
+    if (!callbacks.onShow) {
+      callbacks.onShow = function() {};
+    }
     if (!callbacks.onPreview) {
       callbacks.onPreview = function() {};
     }
@@ -1069,6 +1073,7 @@ SwatchBasedEditorTooltip.prototype = {
     if (swatch) {
       this.activeSwatch = event.target;
       this.show();
+      swatch.callbacks.onShow();
       event.stopPropagation();
     }
   },
