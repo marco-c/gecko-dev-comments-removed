@@ -12,6 +12,8 @@
 
 const {Cc, Ci, Cu} = require("chrome");
 const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
+const {setTimeout, clearTimeout} =
+      Cu.import("resource://gre/modules/Timer.jsm", {});
 const {CssLogic} = require("devtools/styleinspector/css-logic");
 const {InplaceEditor, editableField, editableItem} =
       require("devtools/shared/inplace-editor");
@@ -20,6 +22,14 @@ const {ELEMENT_STYLE, PSEUDO_ELEMENTS} =
 const {OutputParser} = require("devtools/output-parser");
 const {PrefObserver, PREF_ORIG_SOURCES} = require("devtools/styleeditor/utils");
 const {
+  createChild,
+  appendText,
+  advanceValidate,
+  blurOnMultipleProperties,
+  promiseWarn,
+  throttle
+} = require("devtools/styleinspector/utils");
+const {
   parseDeclarations,
   parseSingleValue,
   parsePseudoClassesAndAttributes,
@@ -27,7 +37,6 @@ const {
   SELECTOR_ELEMENT,
   SELECTOR_PSEUDO_CLASS
 } = require("devtools/styleinspector/css-parsing-utils");
-
 loader.lazyRequireGetter(this, "overlays",
   "devtools/styleinspector/style-inspector-overlays");
 loader.lazyRequireGetter(this, "EventEmitter",
@@ -52,11 +61,6 @@ const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
 
 const IOService = Cc["@mozilla.org/network/io-service;1"]
                   .getService(Ci.nsIIOService);
-
-function promiseWarn(err) {
-  console.error(err);
-  return promise.reject(err);
-}
 
 
 
@@ -3651,77 +3655,6 @@ UserProperties.prototype = {
 
 
 
-
-function createChild(parent, tag, attributes) {
-  let elt = parent.ownerDocument.createElementNS(HTML_NS, tag);
-  for (let attr in attributes) {
-    if (attributes.hasOwnProperty(attr)) {
-      if (attr === "textContent") {
-        elt.textContent = attributes[attr];
-      } else if (attr === "child") {
-        elt.appendChild(attributes[attr]);
-      } else {
-        elt.setAttribute(attr, attributes[attr]);
-      }
-    }
-  }
-  parent.appendChild(elt);
-  return elt;
-}
-
-function setTimeout() {
-  let window = Services.appShell.hiddenDOMWindow;
-  return window.setTimeout.apply(window, arguments);
-}
-
-function clearTimeout() {
-  let window = Services.appShell.hiddenDOMWindow;
-  return window.clearTimeout.apply(window, arguments);
-}
-
-function throttle(func, wait, scope) {
-  let timer = null;
-  return function() {
-    if (timer) {
-      clearTimeout(timer);
-    }
-    let args = arguments;
-    timer = setTimeout(function() {
-      timer = null;
-      func.apply(scope, args);
-    }, wait);
-  };
-}
-
-
-
-
-
-function blurOnMultipleProperties(e) {
-  setTimeout(() => {
-    let props = parseDeclarations(e.target.value);
-    if (props.length > 1) {
-      e.target.blur();
-    }
-  }, 0);
-}
-
-
-
-
-function appendText(aParent, aText) {
-  aParent.appendChild(aParent.ownerDocument.createTextNode(aText));
-}
-
-
-
-
-
-
-
-
-
-
 function getParentTextPropertyHolder(node) {
   while (true) {
     if (!node || !node.classList) {
@@ -3780,51 +3713,6 @@ function getPropertyNameAndValue(node) {
     node = node.parentNode;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function advanceValidate(keyCode, value, insertionPoint) {
-  
-  if (keyCode !== Ci.nsIDOMKeyEvent.DOM_VK_SEMICOLON) {
-    return false;
-  }
-
-  
-  
-  
-  
-  value = value.slice(0, insertionPoint) + ";" +
-    value.slice(insertionPoint);
-  let lexer = domUtils.getCSSLexer(value);
-  while (true) {
-    let token = lexer.nextToken();
-    if (token.endOffset > insertionPoint) {
-      if (token.tokenType === "symbol" && token.text === ";") {
-        
-        return true;
-      }
-      
-      break;
-    }
-  }
-  return false;
-}
-
-
-exports._advanceValidate = advanceValidate;
 
 XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function() {
   return Cc["@mozilla.org/widget/clipboardhelper;1"]
