@@ -1271,8 +1271,6 @@ private:
   
   bool mDecodingFirstFrame;
 
-  bool mDisabledHardwareAcceleration;
-
   
   
   bool mSentLoadedMetadataEvent;

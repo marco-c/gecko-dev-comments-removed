@@ -399,6 +399,8 @@ private:
   
   bool mTrackDemuxersMayBlock;
 
+  bool mHardwareAccelerationDisabled;
+
   
   bool IsSeeking() const { return mPendingSeekTime.isSome(); }
   void AttemptSeek();

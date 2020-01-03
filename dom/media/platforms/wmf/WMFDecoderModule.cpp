@@ -41,13 +41,6 @@ WMFDecoderModule::~WMFDecoderModule()
   }
 }
 
-void
-WMFDecoderModule::DisableHardwareAcceleration()
-{
-  sDXVAEnabled = false;
-  sIsIntelDecoderEnabled = false;
-}
-
 static void
 SetNumOfDecoderThreads()
 {
@@ -131,14 +124,6 @@ WMFDecoderModule::CreateAudioDecoder(const AudioInfo& aConfig,
   nsRefPtr<MediaDataDecoder> decoder =
     new WMFMediaDataDecoder(manager.forget(), mft, aAudioTaskQueue, aCallback);
   return decoder.forget();
-}
-
-bool
-WMFDecoderModule::SupportsSharedDecoders(const VideoInfo& aConfig) const
-{
-  
-  
-  return !AgnosticMimeType(aConfig.mMimeType);
 }
 
 bool

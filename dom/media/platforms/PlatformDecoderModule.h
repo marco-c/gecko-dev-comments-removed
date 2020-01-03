@@ -110,8 +110,6 @@ public:
   
   virtual ConversionRequired DecoderNeedsConversion(const TrackInfo& aConfig) const = 0;
 
-  virtual void DisableHardwareAcceleration() {}
-
   virtual bool SupportsSharedDecoders(const VideoInfo& aConfig) const {
     return !AgnosticMimeType(aConfig.mMimeType);
   }
