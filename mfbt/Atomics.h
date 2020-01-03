@@ -267,28 +267,12 @@ struct IntrinsicAddSub<T*, Order> : public IntrinsicBase<T*, Order>
 
   static T* add(typename Base::ValueType& aPtr, ptrdiff_t aVal)
   {
-    return aPtr.fetch_add(fixupAddend(aVal), Base::OrderedOp::AtomicRMWOrder);
+    return aPtr.fetch_add(aVal, Base::OrderedOp::AtomicRMWOrder);
   }
 
   static T* sub(typename Base::ValueType& aPtr, ptrdiff_t aVal)
   {
-    return aPtr.fetch_sub(fixupAddend(aVal), Base::OrderedOp::AtomicRMWOrder);
-  }
-private:
-  
-
-
-
-
-  static ptrdiff_t fixupAddend(ptrdiff_t aVal)
-  {
-#if defined(__clang__) || defined(_MSC_VER)
-    return aVal;
-#elif defined(__GNUC__) && !MOZ_GCC_VERSION_AT_LEAST(4, 7, 0)
-    return aVal * sizeof(T);
-#else
-    return aVal;
-#endif
+    return aPtr.fetch_sub(aVal, Base::OrderedOp::AtomicRMWOrder);
   }
 };
 
