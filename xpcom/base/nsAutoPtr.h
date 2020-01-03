@@ -418,34 +418,30 @@ operator!=(U* aLhs, const nsAutoPtr<T>& aRhs)
 
 template <class T>
 inline bool
-operator==(const nsAutoPtr<T>& aLhs, NSCAP_Zero* aRhs)
-
+operator==(const nsAutoPtr<T>& aLhs, decltype(nullptr))
 {
-  return static_cast<const void*>(aLhs.get()) == reinterpret_cast<const void*>(aRhs);
+  return aLhs.get() == nullptr;
 }
 
 template <class T>
 inline bool
-operator==(NSCAP_Zero* aLhs, const nsAutoPtr<T>& aRhs)
-
+operator==(decltype(nullptr), const nsAutoPtr<T>& aRhs)
 {
-  return reinterpret_cast<const void*>(aLhs) == static_cast<const void*>(aRhs.get());
+  return nullptr == aRhs.get();
 }
 
 template <class T>
 inline bool
-operator!=(const nsAutoPtr<T>& aLhs, NSCAP_Zero* aRhs)
-
+operator!=(const nsAutoPtr<T>& aLhs, decltype(nullptr))
 {
-  return static_cast<const void*>(aLhs.get()) != reinterpret_cast<const void*>(aRhs);
+  return aLhs.get() != nullptr;
 }
 
 template <class T>
 inline bool
-operator!=(NSCAP_Zero* aLhs, const nsAutoPtr<T>& aRhs)
-
+operator!=(decltype(nullptr), const nsAutoPtr<T>& aRhs)
 {
-  return reinterpret_cast<const void*>(aLhs) != static_cast<const void*>(aRhs.get());
+  return nullptr != aRhs.get();
 }
 
 
@@ -770,34 +766,30 @@ operator!=(U* aLhs, const nsAutoArrayPtr<T>& aRhs)
 
 template <class T>
 inline bool
-operator==(const nsAutoArrayPtr<T>& aLhs, NSCAP_Zero* aRhs)
-
+operator==(const nsAutoArrayPtr<T>& aLhs, decltype(nullptr))
 {
-  return static_cast<const void*>(aLhs.get()) == reinterpret_cast<const void*>(aRhs);
+  return aLhs.get() == nullptr;
 }
 
 template <class T>
 inline bool
-operator==(NSCAP_Zero* aLhs, const nsAutoArrayPtr<T>& aRhs)
-
+operator==(decltype(nullptr), const nsAutoArrayPtr<T>& aRhs)
 {
-  return reinterpret_cast<const void*>(aLhs) == static_cast<const void*>(aRhs.get());
+  return nullptr == aRhs.get();
 }
 
 template <class T>
 inline bool
-operator!=(const nsAutoArrayPtr<T>& aLhs, NSCAP_Zero* aRhs)
-
+operator!=(const nsAutoArrayPtr<T>& aLhs, decltype(nullptr))
 {
-  return static_cast<const void*>(aLhs.get()) != reinterpret_cast<const void*>(aRhs);
+  return aLhs.get() != nullptr;
 }
 
 template <class T>
 inline bool
-operator!=(NSCAP_Zero* aLhs, const nsAutoArrayPtr<T>& aRhs)
-
+operator!=(decltype(nullptr), const nsAutoArrayPtr<T>& aRhs)
 {
-  return reinterpret_cast<const void*>(aLhs) != static_cast<const void*>(aRhs.get());
+  return nullptr != aRhs.get();
 }
 
 

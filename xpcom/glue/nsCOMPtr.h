@@ -1352,38 +1352,32 @@ operator!=(U* aLhs, const nsCOMPtr<T>& aRhs)
 
 
 
-class NSCAP_Zero;
-
-
 template<class T>
 inline bool
-operator==(const nsCOMPtr<T>& aLhs, NSCAP_Zero* aRhs)
+operator==(const nsCOMPtr<T>& aLhs, decltype(nullptr))
 {
-  return static_cast<const void*>(aLhs.get()) == reinterpret_cast<const void*>(aRhs);
+  return aLhs.get() == nullptr;
 }
 
-
 template<class T>
 inline bool
-operator==(NSCAP_Zero* aLhs, const nsCOMPtr<T>& aRhs)
+operator==(decltype(nullptr), const nsCOMPtr<T>& aRhs)
 {
-  return reinterpret_cast<const void*>(aLhs) == static_cast<const void*>(aRhs.get());
+  return nullptr == aRhs.get();
 }
 
-
 template<class T>
 inline bool
-operator!=(const nsCOMPtr<T>& aLhs, NSCAP_Zero* aRhs)
+operator!=(const nsCOMPtr<T>& aLhs, decltype(nullptr))
 {
-  return static_cast<const void*>(aLhs.get()) != reinterpret_cast<const void*>(aRhs);
+  return aLhs.get() != nullptr;
 }
 
-
 template<class T>
 inline bool
-operator!=(NSCAP_Zero* aLhs, const nsCOMPtr<T>& aRhs)
+operator!=(decltype(nullptr), const nsCOMPtr<T>& aRhs)
 {
-  return reinterpret_cast<const void*>(aLhs) != static_cast<const void*>(aRhs.get());
+  return nullptr != aRhs.get();
 }
 
 
