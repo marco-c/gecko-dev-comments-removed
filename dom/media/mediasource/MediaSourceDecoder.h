@@ -65,7 +65,6 @@ public:
   void OnTrackBufferConfigured(TrackBuffer* aTrackBuffer, const MediaInfo& aInfo);
 
   void Ended(bool aEnded);
-  bool IsExpectingMoreData() override;
 
   
   virtual double GetDuration() override;

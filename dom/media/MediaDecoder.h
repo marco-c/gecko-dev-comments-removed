@@ -624,13 +624,6 @@ public:
 
   
   
-  
-  
-  
-  virtual bool IsExpectingMoreData();
-
-  
-  
   void PlaybackEnded();
 
   void OnSeekRejected()
