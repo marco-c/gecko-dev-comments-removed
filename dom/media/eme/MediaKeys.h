@@ -99,7 +99,8 @@ public:
   CDMProxy* GetCDMProxy() { return mProxy; }
 
   
-  already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv);
+  already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv,
+                                                const nsACString& aName);
   
   
   

@@ -51,6 +51,9 @@ bool ParseKeySystem(const nsAString& aKeySystem,
                     nsAString& aOutKeySystem,
                     int32_t& aOutMinCDMVersion);
 
+void
+LogToBrowserConsole(const nsAString& aMsg);
+
 } 
 
 #endif 
