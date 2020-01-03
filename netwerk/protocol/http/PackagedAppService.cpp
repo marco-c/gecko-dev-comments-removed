@@ -342,7 +342,9 @@ PackagedAppService::PackagedAppDownloader::OnStopRequest(nsIRequest *aRequest,
     CallCallbacks(uri, entry, aStatusCode);
   }
 
-  bool lastPart = false;
+  
+  
+  bool lastPart = true;
   if (multiChannel) {
     rv = multiChannel->GetIsLastPart(&lastPart);
     if (NS_SUCCEEDED(rv) && !lastPart) {
