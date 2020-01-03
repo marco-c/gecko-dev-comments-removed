@@ -26,7 +26,7 @@ class AudioSink {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioSink)
 
-  AudioSink(MediaQueue<AudioData>& aAudioQueue,
+  AudioSink(MediaQueue<MediaData>& aAudioQueue,
             int64_t aStartTime,
             const AudioInfo& aInfo,
             dom::AudioChannel aChannel);
@@ -114,14 +114,12 @@ private:
   
   uint32_t PlayFromAudioQueue();
 
-  void UpdateStreamSettings();
-
   
   
   void StartAudioStreamPlaybackIfNeeded();
   void WriteSilence(uint32_t aFrames);
 
-  MediaQueue<AudioData>& AudioQueue() const {
+  MediaQueue<MediaData>& AudioQueue() const {
     return mAudioQueue;
   }
 
@@ -136,7 +134,7 @@ private:
   void AssertOnAudioThread();
   void AssertNotOnAudioThread();
 
-  MediaQueue<AudioData>& mAudioQueue;
+  MediaQueue<MediaData>& mAudioQueue;
   mutable ReentrantMonitor mMonitor;
 
   
@@ -172,15 +170,7 @@ private:
 
   dom::AudioChannel mChannel;
 
-  double mVolume;
-  double mPlaybackRate;
-  bool mPreservesPitch;
-
   bool mStopAudioThread;
-
-  bool mSetVolume;
-  bool mSetPlaybackRate;
-  bool mSetPreservesPitch;
 
   bool mPlaying;
 
