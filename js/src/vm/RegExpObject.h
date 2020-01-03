@@ -361,6 +361,10 @@ class RegExpObject : public NativeObject
     static const Class class_;
 
     
+    
+    static const size_t MaxPairCount = 14;
+
+    
 
 
 

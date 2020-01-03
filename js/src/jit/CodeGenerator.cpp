@@ -1009,12 +1009,9 @@ CodeGenerator::visitRegExp(LRegExp* lir)
 }
 
 
-static const size_t RegExpMaxPairCount = 6;
-
-
 static const size_t RegExpReservedStack = sizeof(irregexp::InputOutputData)
                                         + sizeof(MatchPairs)
-                                        + RegExpMaxPairCount * sizeof(MatchPair);
+                                        + RegExpObject::MaxPairCount * sizeof(MatchPair);
 
 static size_t
 RegExpPairsVectorStartOffset(size_t inputOutputDataStartOffset)
@@ -1093,7 +1090,7 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
     if (mode == RegExpShared::Normal) {
         
         masm.load32(Address(temp1, RegExpShared::offsetOfParenCount()), temp2);
-        masm.branch32(Assembler::AboveOrEqual, temp2, Imm32(RegExpMaxPairCount), failure);
+        masm.branch32(Assembler::AboveOrEqual, temp2, Imm32(RegExpObject::MaxPairCount), failure);
 
         
         masm.add32(Imm32(1), temp2);
@@ -1342,7 +1339,7 @@ JitCompartment::generateRegExpExecStub(JSContext* cx)
 
     
     
-    MOZ_ASSERT(ObjectElements::VALUES_PER_HEADER + RegExpMaxPairCount ==
+    MOZ_ASSERT(ObjectElements::VALUES_PER_HEADER + RegExpObject::MaxPairCount ==
                gc::GetGCKindSlots(templateObject->asTenured().getAllocKind()));
 
     MacroAssembler masm(cx);
