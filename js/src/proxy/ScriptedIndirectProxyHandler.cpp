@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 
 #include "proxy/ScriptedIndirectProxyHandler.h"
@@ -110,30 +110,30 @@ ArrayToIdVector(JSContext *cx, const Value &array, AutoIdVector &props)
 
 namespace {
 
-/*
- * Old-style indirect proxies allow callers to specify distinct scripted
- * [[Call]] and [[Construct]] traps. We use an intermediate object so that we
- * can stash this information in a single reserved slot on the proxy object.
- *
- * Note - Currently this is slightly unnecesary, because we actually have 2
- * extra slots, neither of which are used for ScriptedIndirectProxy. But we're
- * eventually moving towards eliminating one of those slots, and so we don't
- * want to add a dependency here.
- */
+
+
+
+
+
+
+
+
+
+
 static const Class CallConstructHolder = {
     "CallConstructHolder",
     JSCLASS_HAS_RESERVED_SLOTS(2) | JSCLASS_IS_ANONYMOUS
 };
 
-} /* anonymous namespace */
+} 
 
-// This variable exists solely to provide a unique address for use as an identifier.
+
 const char ScriptedIndirectProxyHandler::family = 0;
 
 bool
 ScriptedIndirectProxyHandler::preventExtensions(JSContext *cx, HandleObject proxy, bool *succeeded) const
 {
-    // See above.
+    
     *succeeded = false;
     return true;
 }
@@ -142,7 +142,7 @@ bool
 ScriptedIndirectProxyHandler::isExtensible(JSContext *cx, HandleObject proxy,
                                            bool *extensible) const
 {
-    // Scripted indirect proxies don't support extensibility changes.
+    
     *extensible = true;
     return true;
 }
@@ -230,7 +230,7 @@ bool
 ScriptedIndirectProxyHandler::enumerate(JSContext *cx, HandleObject proxy,
                                         MutableHandleObject objp) const
 {
-    // The hook that is called "enumerate" in the spec, used to be "iterate"
+    
     RootedObject handler(cx, GetIndirectProxyHandlerObject(proxy));
     RootedValue value(cx);
     if (!GetDerivedTrap(cx, handler, cx->names().iterate, &value))
@@ -316,9 +316,9 @@ bool
 ScriptedIndirectProxyHandler::derivedSet(JSContext *cx, HandleObject proxy, HandleObject receiver,
                                          HandleId id, bool strict, MutableHandleValue vp) const
 {
-    // Find an own or inherited property. The code here is strange for maximum
-    // backward compatibility with earlier code written before ES6 and before
-    // SetPropertyIgnoringNamedGetter.
+    
+    
+    
     Rooted<PropertyDescriptor> desc(cx);
     if (!getOwnPropertyDescriptor(cx, proxy, id, &desc))
         return false;
@@ -406,19 +406,16 @@ js::proxy_create(JSContext *cx, unsigned argc, Value *vp)
     JSObject *handler = NonNullObject(cx, args[0]);
     if (!handler)
         return false;
-    JSObject *proto, *parent = nullptr;
+    JSObject *proto;
     if (args.get(1).isObject()) {
         proto = &args[1].toObject();
-        parent = proto->getParent();
     } else {
         MOZ_ASSERT(IsFunctionObject(&args.callee()));
         proto = nullptr;
     }
-    if (!parent)
-        parent = args.callee().getParent();
     RootedValue priv(cx, ObjectValue(*handler));
     JSObject *proxy = NewProxyObject(cx, &ScriptedIndirectProxyHandler::singleton,
-                                     priv, proto, parent);
+                                     priv, proto);
     if (!proxy)
         return false;
 
@@ -438,12 +435,9 @@ js::proxy_createFunction(JSContext *cx, unsigned argc, Value *vp)
     RootedObject handler(cx, NonNullObject(cx, args[0]));
     if (!handler)
         return false;
-    RootedObject proto(cx), parent(cx);
-    parent = args.callee().getParent();
-    proto = parent->global().getOrCreateFunctionPrototype(cx);
+    RootedObject proto(cx, args.callee().global().getOrCreateFunctionPrototype(cx));
     if (!proto)
         return false;
-    parent = proto->getParent();
 
     RootedObject call(cx, ValueToCallable(cx, args[1], args.length() - 2));
     if (!call)
@@ -457,8 +451,8 @@ js::proxy_createFunction(JSContext *cx, unsigned argc, Value *vp)
         construct = call;
     }
 
-    // Stash the call and construct traps on a holder object that we can stick
-    // in a slot on the proxy.
+    
+    
     RootedObject ccHolder(cx, JS_NewObjectWithGivenProto(cx, Jsvalify(&CallConstructHolder),
                                                          js::NullPtr()));
     if (!ccHolder)
@@ -469,7 +463,7 @@ js::proxy_createFunction(JSContext *cx, unsigned argc, Value *vp)
     RootedValue priv(cx, ObjectValue(*handler));
     JSObject *proxy =
         NewProxyObject(cx, &CallableScriptedIndirectProxyHandler::singleton,
-                       priv, proto, parent);
+                       priv, proto);
     if (!proxy)
         return false;
     proxy->as<ProxyObject>().setExtra(0, ObjectValue(*ccHolder));
