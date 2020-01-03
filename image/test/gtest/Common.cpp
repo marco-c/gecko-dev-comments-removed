@@ -136,7 +136,10 @@ ImageTestCase GreenBMPTestCase()
 
 ImageTestCase GreenICOTestCase()
 {
-  return ImageTestCase("green.ico", "image/x-icon", IntSize(100, 100));
+  
+  
+  return ImageTestCase("green.ico", "image/x-icon", IntSize(100, 100),
+                       TEST_CASE_IS_TRANSPARENT);
 }
 
 ImageTestCase GreenFirstFrameAnimatedGIFTestCase()
@@ -146,12 +149,53 @@ ImageTestCase GreenFirstFrameAnimatedGIFTestCase()
 
 ImageTestCase GreenFirstFrameAnimatedPNGTestCase()
 {
-  return ImageTestCase("first-frame-green.png", "image/png", IntSize(100, 100));
+  return ImageTestCase("first-frame-green.png", "image/png", IntSize(100, 100),
+                       TEST_CASE_IS_TRANSPARENT);
 }
 
 ImageTestCase CorruptTestCase()
 {
-  return ImageTestCase("corrupt.jpg", "image/jpeg", IntSize(100, 100));
+  return ImageTestCase("corrupt.jpg", "image/jpeg", IntSize(100, 100),
+                       TEST_CASE_HAS_ERROR);
+}
+
+ImageTestCase TransparentPNGTestCase()
+{
+  return ImageTestCase("transparent.png", "image/png", IntSize(32, 32),
+                       TEST_CASE_IS_TRANSPARENT);
+}
+
+ImageTestCase TransparentGIFTestCase()
+{
+  return ImageTestCase("transparent.gif", "image/gif", IntSize(16, 16),
+                       TEST_CASE_IS_TRANSPARENT);
+}
+
+ImageTestCase FirstFramePaddingGIFTestCase()
+{
+  return ImageTestCase("transparent.gif", "image/gif", IntSize(16, 16),
+                       TEST_CASE_IS_TRANSPARENT);
+}
+
+ImageTestCase TransparentBMPWhenBMPAlphaEnabledTestCase()
+{
+  
+  
+  
+  
+  return ImageTestCase("transparent.bmp", "image/bmp", IntSize(32, 32));
+}
+
+ImageTestCase RLE4BMPTestCase()
+{
+  return ImageTestCase("rle4.bmp", "image/bmp", IntSize(320, 240),
+                       TEST_CASE_IS_TRANSPARENT);
+}
+
+ImageTestCase RLE8BMPTestCase()
+{
+  return ImageTestCase("rle8.bmp", "image/bmp", IntSize(32, 32),
+                       TEST_CASE_IS_TRANSPARENT);
 }
 
 } 
