@@ -364,6 +364,10 @@ class StackFrame : public JS::Traceable {
     size_t functionDisplayName(RangedPtr<char16_t> destination, size_t length) const;
 
     
+    size_t sourceLength();
+    size_t functionDisplayNameLength();
+
+    
     static void trace(StackFrame* frame, JSTracer* trc) {
         if (frame)
             frame->trace(trc);
