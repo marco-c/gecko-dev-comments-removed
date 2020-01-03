@@ -186,7 +186,7 @@ let wrapper = {
       
       
       if (accountData.verified) {
-        show("stage", "manage");
+        openPrefs();
       }
       this.injectData("message", { status: "login" });
       
