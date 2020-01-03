@@ -268,7 +268,7 @@ MediaEngineWebRTCMicrophoneSource::Config(bool aEchoOn, uint32_t aEcho,
 
 
 
-uint32_t MediaEngineWebRTCAudioSource::GetBestFitnessDistance(
+uint32_t MediaEngineWebRTCMicrophoneSource::GetBestFitnessDistance(
     const nsTArray<const dom::MediaTrackConstraintSet*>& aConstraintSets,
     const nsString& aDeviceId)
 {
