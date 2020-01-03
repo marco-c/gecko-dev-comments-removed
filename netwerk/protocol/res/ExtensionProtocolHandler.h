@@ -26,6 +26,19 @@ public:
 
 protected:
   ~ExtensionProtocolHandler() {}
+
+  bool ResolveSpecialCases(const nsACString& aHost, const nsACString& aPath, nsACString& aResult) override
+  {
+    
+    
+    
+    if (SubstitutingProtocolHandler::HasSubstitution(aHost) && aPath.EqualsLiteral("/_blank.html")) {
+      aResult.AssignLiteral("about:blank");
+      return true;
+    }
+
+    return false;
+  }
 };
 
 } 
