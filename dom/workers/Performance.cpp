@@ -33,7 +33,12 @@ Performance::Now() const
 {
   TimeDuration duration =
     TimeStamp::Now() - mWorkerPrivate->NowBaseTimeStamp();
-  return duration.ToMilliseconds();
+  double nowTime = duration.ToMilliseconds();
+  
+  
+  
+  const double maxResolutionMs = 0.005;
+  return floor(nowTime / maxResolutionMs) * maxResolutionMs;
 }
 
 

@@ -504,6 +504,7 @@ nsPerformance::Now() const
   double nowTimeMs = GetDOMTiming()->TimeStampToDOMHighRes(TimeStamp::Now());
   
   
+  
   const double maxResolutionMs = 0.005;
   return floor(nowTimeMs / maxResolutionMs) * maxResolutionMs;
 }
