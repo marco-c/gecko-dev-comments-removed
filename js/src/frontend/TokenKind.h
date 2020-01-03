@@ -1,55 +1,55 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef frontend_TokenKind_h
 #define frontend_TokenKind_h
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * List of token kinds and their ranges.
+ *
+ * The format for each line is:
+ *
+ *   macro(<TOKEN_KIND_NAME>, <DESCRIPTION>)
+ *
+ * or
+ *
+ *   range(<TOKEN_RANGE_NAME>, <TOKEN_KIND_NAME>)
+ *
+ * where ;
+ * <TOKEN_KIND_NAME> is a legal C identifier of the token, that will be used in
+ * the JS engine source, with `TOK_` prefix.
+ *
+ * <DESCRIPTION> is a string that describe about the token, and will be used in
+ * error message.
+ *
+ * <TOKEN_RANGE_NAME> is a legal C identifier of the range that will be used to
+ * JS engine source, with `TOK_` prefix. It should end with `_FIRST` or `_LAST`.
+ * This is used to check TokenKind by range-testing:
+ *   TOK_BINOP_FIRST <= tt && tt <= TOK_BINOP_LAST
+ *
+ * Second argument of `range` is the actual value of the <TOKEN_RANGE_NAME>,
+ * should be same as one of <TOKEN_KIND_NAME> in other `macro`s.
+ *
+ * To use this macro, define two macros for `macro` and `range`, and pass them
+ * as arguments.
+ *
+ *   #define EMIT_TOKEN(name, desc) ...
+ *   #define EMIT_RANGE(name, value) ...
+ *   FOR_EACH_TOKEN_KIND_WITH_RANGE(EMIT_TOKEN, EMIT_RANGE)
+ *   #undef EMIT_TOKEN
+ *   #undef EMIT_RANGE
+ *
+ * If you don't need range data, use FOR_EACH_TOKEN_KIND instead.
+ *
+ *   #define EMIT_TOKEN(name, desc) ...
+ *   FOR_EACH_TOKEN_KIND(EMIT_TOKEN)
+ *   #undef EMIT_TOKEN
+ *
+ * Note that this list does not contain ERROR and LIMIT.
+ */
 #define FOR_EACH_TOKEN_KIND_WITH_RANGE(macro, range) \
     macro(EOF,         "end of script") \
     \
@@ -112,6 +112,7 @@
     macro(IMPORT,       "keyword 'import'") \
     macro(CLASS,        "keyword 'class'") \
     macro(EXTENDS,      "keyword 'extends'") \
+    macro(SUPER,        "keyword 'super'") \
     macro(RESERVED,     "reserved keyword") \
     /* reserved keywords in strict mode */ \
     macro(STRICT_RESERVED, "reserved keyword") \
@@ -195,15 +196,15 @@
 namespace js {
 namespace frontend {
 
-
-
+// Values of this type are used to index into arrays such as isExprEnding[],
+// so the first value must be zero.
 enum TokenKind {
 #define EMIT_ENUM(name, desc) TOK_##name,
 #define EMIT_ENUM_RANGE(name, value) TOK_##name = TOK_##value,
     FOR_EACH_TOKEN_KIND_WITH_RANGE(EMIT_ENUM, EMIT_ENUM_RANGE)
 #undef EMIT_ENUM
 #undef EMIT_ENUM_RANGE
-    TOK_LIMIT                      
+    TOK_LIMIT                      // domain size
 };
 
 inline bool
@@ -242,7 +243,7 @@ TokenKindIsDecl(TokenKind tt)
     return tt == TOK_VAR || tt == TOK_LET;
 }
 
-} 
-} 
+} // namespace frontend
+} // namespace js
 
-#endif 
+#endif /* frontend_TokenKind_h */
