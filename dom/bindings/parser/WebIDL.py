@@ -6148,8 +6148,8 @@ class Parser(Tokenizer):
         """
             UnsignedIntegerType : UNSIGNED IntegerType
         """
-        p[0] = p[2] + 1 
-                        
+        
+        p[0] = p[2] + 1
 
     def p_UnsignedIntegerType(self, p):
         """
