@@ -20,21 +20,14 @@
 namespace mozilla {
 namespace gfx {
 
-bool DriverInitCrashDetection::sDisableAcceleration = false;
 bool DriverInitCrashDetection::sEnvironmentHasBeenUpdated = false;
 
 DriverInitCrashDetection::DriverInitCrashDetection()
  : mIsChromeProcess(XRE_GetProcessType() == GeckoProcessType_Default)
 {
-  if (sDisableAcceleration) {
-    
-    return;
-  }
-
   if (!mIsChromeProcess) {
     
     
-    sDisableAcceleration = (gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::Recovered));
     return;
   }
 
@@ -47,7 +40,6 @@ DriverInitCrashDetection::DriverInitCrashDetection()
     
     
     gfxCriticalError(CriticalLog::DefaultOptions(false)) << "Recovered from graphics driver startup crash; acceleration disabled.";
-    sDisableAcceleration = true;
     return;
   }
 
@@ -81,6 +73,12 @@ DriverInitCrashDetection::~DriverInitCrashDetection()
                                        NS_LITERAL_CSTRING(""));
 #endif
   }
+}
+
+bool
+DriverInitCrashDetection::DisableAcceleration() const
+{
+  return gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::Recovered);
 }
 
 bool
@@ -183,7 +181,6 @@ DriverInitCrashDetection::UpdateEnvironment()
   
   changed |= (gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::None));
 
-  mGfxInfo = nullptr;
   return changed;
 }
 
