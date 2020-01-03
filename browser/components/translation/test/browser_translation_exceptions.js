@@ -58,7 +58,19 @@ function getDomainExceptions() {
 }
 
 function getInfoBar() {
-  return gBrowser.getNotificationBox().getNotificationWithValue("translation");
+  let deferred = Promise.defer();
+  let infobar =
+    gBrowser.getNotificationBox().getNotificationWithValue("translation");
+
+  if (!infobar) {
+    deferred.resolve();
+  } else {
+    
+    Promise.all(infobar.getAnimations().map(animation => animation.finished))
+      .then(() => deferred.resolve(infobar));
+  }
+
+  return deferred.promise;
 }
 
 function openPopup(aPopup) {
@@ -109,7 +121,7 @@ let gTests = [
                                       {state: Translation.STATE_OFFER,
                                        originalShown: true,
                                        detectedLanguage: "fr"});
-    let notif = getInfoBar();
+    let notif = yield getInfoBar();
     ok(notif, "the infobar is visible");
     let ui = gBrowser.selectedBrowser.translationUI;
     let uri = gBrowser.selectedBrowser.currentURI;
@@ -127,7 +139,8 @@ let gTests = [
 
     
     notif._getAnonElt("neverForLanguage").click();
-    ok(!getInfoBar(), "infobar hidden");
+    notif = yield getInfoBar();
+    ok(!notif, "infobar hidden");
 
     
     let langs = getLanguageExceptions();
@@ -138,7 +151,7 @@ let gTests = [
 
     
     PopupNotifications.getNotification("translate").anchorElement.click();
-    notif = getInfoBar();
+    notif = yield getInfoBar();
     
     yield openPopup(notif._getAnonElt("options"));
     ok(notif._getAnonElt("neverForLanguage").disabled,
@@ -158,7 +171,7 @@ let gTests = [
                                       {state: Translation.STATE_OFFER,
                                        originalShown: true,
                                        detectedLanguage: "fr"});
-    let notif = getInfoBar();
+    let notif = yield getInfoBar();
     ok(notif, "the infobar is visible");
     let ui = gBrowser.selectedBrowser.translationUI;
     let uri = gBrowser.selectedBrowser.currentURI;
@@ -176,7 +189,8 @@ let gTests = [
 
     
     notif._getAnonElt("neverForSite").click();
-    ok(!getInfoBar(), "infobar hidden");
+    notif = yield getInfoBar();
+    ok(!notif, "infobar hidden");
 
     
     let sites = getDomainExceptions();
@@ -187,7 +201,7 @@ let gTests = [
 
     
     PopupNotifications.getNotification("translate").anchorElement.click();
-    notif = getInfoBar();
+    notif = yield getInfoBar();
     
     yield openPopup(notif._getAnonElt("options"));
     ok(notif._getAnonElt("neverForSite").disabled,
