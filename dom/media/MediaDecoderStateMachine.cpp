@@ -284,17 +284,10 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   timeBeginPeriod(1);
 #endif
 
-  nsRefPtr<MediaDecoderStateMachine> self = this;
-
-  AudioQueue().AddPopListener(
-    [self] (const MediaData* aSample) {
-      self->OnAudioPopped(aSample->As<AudioData>());
-     }, mTaskQueue);
-
-  VideoQueue().AddPopListener(
-    [self] (const MediaData* aSample) {
-      self->OnVideoPopped(aSample->As<VideoData>());
-    }, mTaskQueue);
+  mAudioQueueListener = AudioQueue().PopEvent().Connect(
+    mTaskQueue, this, &MediaDecoderStateMachine::OnAudioPopped);
+  mVideoQueueListener = VideoQueue().PopEvent().Connect(
+    mTaskQueue, this, &MediaDecoderStateMachine::OnVideoPopped);
 }
 
 MediaDecoderStateMachine::~MediaDecoderStateMachine()
@@ -684,7 +677,7 @@ MediaDecoderStateMachine::PushFront(VideoData* aSample)
 }
 
 void
-MediaDecoderStateMachine::OnAudioPopped(const AudioData* aSample)
+MediaDecoderStateMachine::OnAudioPopped(const MediaData* aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
@@ -694,7 +687,7 @@ MediaDecoderStateMachine::OnAudioPopped(const AudioData* aSample)
 }
 
 void
-MediaDecoderStateMachine::OnVideoPopped(const VideoData* aSample)
+MediaDecoderStateMachine::OnVideoPopped(const MediaData* aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
@@ -2216,8 +2209,10 @@ MediaDecoderStateMachine::FinishShutdown()
   
   
   
-  AudioQueue().ClearListeners();
-  VideoQueue().ClearListeners();
+
+  
+  mAudioQueueListener.Disconnect();
+  mVideoQueueListener.Disconnect();
 
   
   mBuffered.DisconnectIfConnected();
