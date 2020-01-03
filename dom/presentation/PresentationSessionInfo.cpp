@@ -11,14 +11,118 @@
 #include "mozilla/Services.h"
 #include "nsIDocShell.h"
 #include "nsIFrameLoader.h"
+#include "nsIMutableArray.h"
+#include "nsINetAddr.h"
+#include "nsISocketTransport.h"
+#include "nsISupportsPrimitives.h"
+#include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "PresentationService.h"
 #include "PresentationSessionInfo.h"
 
+#ifdef MOZ_WIDGET_GONK
+#include "nsINetworkInterface.h"
+#include "nsINetworkManager.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::services;
+
+
+
+
+
+namespace mozilla {
+namespace dom {
+
+class PresentationChannelDescription final : public nsIPresentationChannelDescription
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPRESENTATIONCHANNELDESCRIPTION
+
+  PresentationChannelDescription(nsACString& aAddress,
+                                 uint16_t aPort)
+    : mAddress(aAddress)
+    , mPort(aPort)
+  {
+  }
+
+private:
+  ~PresentationChannelDescription() {}
+
+  nsCString mAddress;
+  uint16_t mPort;
+};
+
+} 
+} 
+
+NS_IMPL_ISUPPORTS(PresentationChannelDescription, nsIPresentationChannelDescription)
+
+NS_IMETHODIMP
+PresentationChannelDescription::GetType(uint8_t* aRetVal)
+{
+  if (NS_WARN_IF(!aRetVal)) {
+    return NS_ERROR_INVALID_POINTER;
+  }
+
+  
+  
+  *aRetVal = nsIPresentationChannelDescription::TYPE_TCP;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+PresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
+{
+  if (NS_WARN_IF(!aRetVal)) {
+    return NS_ERROR_INVALID_POINTER;
+  }
+
+  nsCOMPtr<nsIMutableArray> array = do_CreateInstance(NS_ARRAY_CONTRACTID);
+  if (NS_WARN_IF(!array)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsISupportsCString> address = do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
+  if (NS_WARN_IF(!address)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  address->SetData(mAddress);
+
+  array->AppendElement(address, false);
+  array.forget(aRetVal);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+PresentationChannelDescription::GetTcpPort(uint16_t* aRetVal)
+{
+  if (NS_WARN_IF(!aRetVal)) {
+    return NS_ERROR_INVALID_POINTER;
+  }
+
+  *aRetVal = mPort;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+PresentationChannelDescription::GetDataChannelSDP(nsAString& aDataChannelSDP)
+{
+  
+  
+  aDataChannelSDP.Truncate();
+  return NS_OK;
+}
 
 
 
@@ -233,6 +337,40 @@ PresentationRequesterInfo::Init(nsIPresentationControlChannel* aControlChannel)
 
   
   
+  mServerSocket = do_CreateInstance(NS_SERVERSOCKET_CONTRACTID);
+  if (NS_WARN_IF(!mServerSocket)) {
+    return ReplyError(NS_ERROR_NOT_AVAILABLE);
+  }
+
+  nsresult rv = mServerSocket->Init(-1, false, -1);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = mServerSocket->AsyncListen(this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  int32_t port;
+  rv = mServerSocket->GetPort(&port);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCString address;
+  rv = GetAddress(address);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsRefPtr<PresentationChannelDescription> description =
+    new PresentationChannelDescription(address, static_cast<uint16_t>(port));
+  rv = mControlChannel->SendOffer(description);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   return NS_OK;
 }
@@ -247,6 +385,51 @@ PresentationRequesterInfo::Shutdown(nsresult aReason)
     NS_WARN_IF(NS_FAILED(mServerSocket->Close()));
     mServerSocket = nullptr;
   }
+}
+
+nsresult
+PresentationRequesterInfo::GetAddress(nsACString& aAddress)
+{
+#ifdef MOZ_WIDGET_GONK
+  nsCOMPtr<nsINetworkManager> networkManager =
+    do_GetService("@mozilla.org/network/manager;1");
+  if (NS_WARN_IF(!networkManager)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsCOMPtr<nsINetworkInfo> activeNetworkInfo;
+  networkManager->GetActiveNetworkInfo(getter_AddRefs(activeNetworkInfo));
+  if (NS_WARN_IF(!activeNetworkInfo)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  char16_t** ips = nullptr;
+  uint32_t* prefixes = nullptr;
+  uint32_t count = 0;
+  activeNetworkInfo->GetAddresses(&ips, &prefixes, &count);
+  if (NS_WARN_IF(!count)) {
+    NS_Free(prefixes);
+    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(count, ips);
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
+  
+  nsAutoString ip;
+  ip.Assign(ips[0]);
+  aAddress = NS_ConvertUTF16toUTF8(ip);
+
+  NS_Free(prefixes);
+  NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(count, ips);
+#else
+  
+  aAddress.Truncate();
+#endif
+
+  return NS_OK;
 }
 
 
@@ -426,6 +609,28 @@ PresentationResponderInfo::InitTransportAndSendAnswer()
   }
 
   
+  
+  
+  
+  
+  
+  nsCOMPtr<nsINetAddr> selfAddr;
+  rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCString address;
+  selfAddr->GetAddress(address);
+  uint16_t port;
+  selfAddr->GetPort(&port);
+  nsCOMPtr<nsIPresentationChannelDescription> description =
+    new PresentationChannelDescription(address, port);
+
+  rv = mControlChannel->SendAnswer(description);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   return NS_OK;
  }
