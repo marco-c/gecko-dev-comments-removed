@@ -720,6 +720,14 @@ PlainObject*
 NewPlainObjectWithProperties(ExclusiveContext* cx, IdValuePair* properties, size_t nproperties,
                              NewObjectKind newKind);
 
+bool
+CombineArrayElementTypes(ExclusiveContext* cx, JSObject* newObj,
+                         const Value* compare, size_t ncompare);
+
+bool
+CombinePlainObjectPropertyTypes(ExclusiveContext* cx, JSObject* newObj,
+                                const Value* compare, size_t ncompare);
+
 } 
 
 #endif 
