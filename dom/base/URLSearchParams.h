@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_URLSearchParams_h
 #define mozilla_dom_URLSearchParams_h
@@ -18,6 +18,14 @@ namespace dom {
 
 class URLSearchParams;
 
+class URLSearchParamsObserver : public nsISupports
+{
+public:
+  virtual ~URLSearchParamsObserver() {}
+
+  virtual void URLSearchParamsUpdated(URLSearchParams* aFromThis) = 0;
+};
+
 class URLSearchParams MOZ_FINAL : public nsISupports,
                                   public nsWrapperCache
 {
@@ -29,7 +37,7 @@ public:
 
   URLSearchParams();
 
-  
+  // WebIDL methods
   nsISupports* GetParentObject() const
   {
     return nullptr;
@@ -46,7 +54,12 @@ public:
   Constructor(const GlobalObject& aGlobal, URLSearchParams& aInit,
               ErrorResult& aRv);
 
-  void ParseInput(const nsACString& aInput);
+  void ParseInput(const nsACString& aInput,
+                  URLSearchParamsObserver* aObserver);
+
+  void AddObserver(URLSearchParamsObserver* aObserver);
+  void RemoveObserver(URLSearchParamsObserver* aObserver);
+  void RemoveObservers();
 
   void Serialize(nsAString& aValue) const;
 
@@ -68,10 +81,14 @@ public:
   }
 
 private:
+  void AppendInternal(const nsAString& aName, const nsAString& aValue);
+
   void DeleteAll();
 
   void DecodeString(const nsACString& aInput, nsAString& aOutput);
   void ConvertString(const nsACString& aInput, nsAString& aOutput);
+
+  void NotifyObservers(URLSearchParamsObserver* aExceptObserver);
 
   struct Param
   {
@@ -81,10 +98,11 @@ private:
 
   nsTArray<Param> mSearchParams;
 
+  nsTArray<nsRefPtr<URLSearchParamsObserver>> mObservers;
   nsCOMPtr<nsIUnicodeDecoder> mDecoder;
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif /* mozilla_dom_URLSearchParams_h */

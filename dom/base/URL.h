@@ -1,11 +1,12 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef URL_h___
 #define URL_h___
 
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/URLSearchParams.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsAutoPtr.h"
 #include "nsString.h"
@@ -31,7 +32,7 @@ namespace workers {
 class URLProxy;
 }
 
-class URL MOZ_FINAL : public nsISupports
+class URL MOZ_FINAL : public URLSearchParamsObserver
 {
   ~URL() {}
 
@@ -41,7 +42,7 @@ public:
 
   explicit URL(nsIURI* aURI);
 
-  
+  // WebIDL methods
   JSObject*
   WrapObject(JSContext* aCx);
 
@@ -108,6 +109,10 @@ public:
 
   void SetSearch(const nsAString& aArg, ErrorResult& aRv);
 
+  URLSearchParams* SearchParams();
+
+  void SetSearchParams(URLSearchParams& aSearchParams);
+
   void GetHash(nsString& aRetval, ErrorResult& aRv) const;
 
   void SetHash(const nsAString& aArg, ErrorResult& aRv);
@@ -117,11 +122,20 @@ public:
     GetHref(aRetval, aRv);
   }
 
+  // URLSearchParamsObserver
+  void URLSearchParamsUpdated(URLSearchParams* aSearchParams) MOZ_OVERRIDE;
+
 private:
   nsIURI* GetURI() const
   {
     return mURI;
   }
+
+  void CreateSearchParamsIfNeeded();
+
+  void SetSearchInternal(const nsAString& aSearch);
+
+  void UpdateURLSearchParams();
 
   static void CreateObjectURLInternal(const GlobalObject& aGlobal,
                                       nsISupports* aObject,
@@ -131,6 +145,7 @@ private:
                                       ErrorResult& aError);
 
   nsCOMPtr<nsIURI> mURI;
+  nsRefPtr<URLSearchParams> mSearchParams;
 
   friend class mozilla::dom::workers::URLProxy;
 };
@@ -140,4 +155,4 @@ bool IsChromeURI(nsIURI* aURI);
 }
 }
 
-#endif 
+#endif /* URL_h___ */

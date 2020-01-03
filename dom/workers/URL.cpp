@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "URL.h"
 
@@ -12,6 +12,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/URL.h"
 #include "mozilla/dom/URLBinding.h"
+#include "mozilla/dom/URLSearchParams.h"
 #include "nsGlobalWindow.h"
 #include "nsHostObjectProtocolHandler.h"
 #include "nsNetCID.h"
@@ -52,7 +53,7 @@ public:
   }
 
 private:
-  
+  // Private destructor, to discourage deletion outside of Release():
   ~URLProxy()
   {
      MOZ_ASSERT(!mURL);
@@ -61,7 +62,7 @@ private:
   nsRefPtr<mozilla::dom::URL> mURL;
 };
 
-
+// This class creates an URL from a DOM Blob on the main thread.
 class CreateURLRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -123,7 +124,7 @@ public:
   }
 };
 
-
+// This class revokes an URL on the main thread.
 class RevokeURLRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -181,7 +182,7 @@ public:
   }
 };
 
-
+// This class creates a URL object on the main thread.
 class ConstructorRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -282,7 +283,7 @@ private:
   nsRefPtr<URLProxy> mURLProxy;
 };
 
-
+// This class is the generic getter for any URL property.
 class GetterRunnable : public WorkerMainThreadRunnable
 {
 public:
@@ -373,7 +374,7 @@ private:
   nsRefPtr<URLProxy> mURLProxy;
 };
 
-
+// This class is the generic setter for any URL property.
 class SetterRunnable : public WorkerMainThreadRunnable
 {
 public:
@@ -459,10 +460,10 @@ private:
   mozilla::ErrorResult& mRv;
 };
 
-NS_IMPL_CYCLE_COLLECTION_0(URL)
+NS_IMPL_CYCLE_COLLECTION(URL, mSearchParams)
 
-
-
+// The reason for using worker::URL is to have different refcnt logging than
+// for main thread URL.
 NS_IMPL_CYCLE_COLLECTING_ADDREF(workers::URL)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(workers::URL)
 
@@ -470,7 +471,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(URL)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-
+// static
 already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  URL& aBase, ErrorResult& aRv)
@@ -495,7 +496,7 @@ URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
   return url.forget();
 }
 
-
+// static
 already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  const nsAString& aBase, ErrorResult& aRv)
@@ -570,6 +571,8 @@ URL::SetHref(const nsAString& aHref, ErrorResult& aRv)
   if (!runnable->Dispatch(mWorkerPrivate->GetJSContext())) {
     JS_ReportPendingException(mWorkerPrivate->GetJSContext());
   }
+
+  UpdateURLSearchParams();
 }
 
 void
@@ -774,6 +777,13 @@ URL::GetSearch(nsString& aSearch, ErrorResult& aRv) const
 void
 URL::SetSearch(const nsAString& aSearch, ErrorResult& aRv)
 {
+  SetSearchInternal(aSearch);
+  UpdateURLSearchParams();
+}
+
+void
+URL::SetSearchInternal(const nsAString& aSearch)
+{
   ErrorResult rv;
   nsRefPtr<SetterRunnable> runnable =
     new SetterRunnable(mWorkerPrivate, SetterRunnable::SetterSearch,
@@ -782,6 +792,28 @@ URL::SetSearch(const nsAString& aSearch, ErrorResult& aRv)
   if (!runnable->Dispatch(mWorkerPrivate->GetJSContext())) {
     JS_ReportPendingException(mWorkerPrivate->GetJSContext());
   }
+}
+
+mozilla::dom::URLSearchParams*
+URL::SearchParams()
+{
+  CreateSearchParamsIfNeeded();
+  return mSearchParams;
+}
+
+void
+URL::SetSearchParams(URLSearchParams& aSearchParams)
+{
+  if (mSearchParams) {
+    mSearchParams->RemoveObserver(this);
+  }
+
+  mSearchParams = &aSearchParams;
+  mSearchParams->AddObserver(this);
+
+  nsString search;
+  mSearchParams->Serialize(search);
+  SetSearchInternal(search);
 }
 
 void
@@ -809,7 +841,7 @@ URL::SetHash(const nsAString& aHash, ErrorResult& aRv)
   }
 }
 
-
+// static
 void
 URL::CreateObjectURL(const GlobalObject& aGlobal, JSObject* aBlob,
                      const mozilla::dom::objectURLOptions& aOptions,
@@ -822,7 +854,7 @@ URL::CreateObjectURL(const GlobalObject& aGlobal, JSObject* aBlob,
   aRv.ThrowTypeError(MSG_DOES_NOT_IMPLEMENT_INTERFACE, &argStr, &blobStr);
 }
 
-
+// static
 void
 URL::CreateObjectURL(const GlobalObject& aGlobal, File& aBlob,
                      const mozilla::dom::objectURLOptions& aOptions,
@@ -839,7 +871,7 @@ URL::CreateObjectURL(const GlobalObject& aGlobal, File& aBlob,
   }
 }
 
-
+// static
 void
 URL::RevokeObjectURL(const GlobalObject& aGlobal, const nsAString& aUrl)
 {
@@ -851,6 +883,38 @@ URL::RevokeObjectURL(const GlobalObject& aGlobal, const nsAString& aUrl)
 
   if (!runnable->Dispatch(cx)) {
     JS_ReportPendingException(cx);
+  }
+}
+
+void
+URL::URLSearchParamsUpdated(URLSearchParams* aSearchParams)
+{
+  MOZ_ASSERT(mSearchParams);
+  MOZ_ASSERT(mSearchParams == aSearchParams);
+
+  nsString search;
+  mSearchParams->Serialize(search);
+  SetSearchInternal(search);
+}
+
+void
+URL::UpdateURLSearchParams()
+{
+  if (mSearchParams) {
+    nsString search;
+    ErrorResult rv;
+    GetSearch(search, rv);
+    mSearchParams->ParseInput(NS_ConvertUTF16toUTF8(Substring(search, 1)), this);
+  }
+}
+
+void
+URL::CreateSearchParamsIfNeeded()
+{
+  if (!mSearchParams) {
+    mSearchParams = new URLSearchParams();
+    mSearchParams->AddObserver(this);
+    UpdateURLSearchParams();
   }
 }
 
