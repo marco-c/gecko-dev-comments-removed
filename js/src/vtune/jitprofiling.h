@@ -587,15 +587,15 @@ iJIT_IsProfilingActiveFlags JITAPI iJIT_IsProfilingActive(void);
 
 
 
-int JITAPI iJIT_NotifyEvent(iJIT_JVM_EVENT event_type, void *EventSpecificData);
+int JITAPI iJIT_NotifyEvent(iJIT_JVM_EVENT event_type, void* EventSpecificData);
 
 
 
 
 
 
-typedef void (*iJIT_ModeChangedEx)(void *UserData, iJIT_ModeFlags Flags);
-void JITAPI iJIT_RegisterCallbackEx(void *userdata,
+typedef void (*iJIT_ModeChangedEx)(void* UserData, iJIT_ModeFlags Flags);
+void JITAPI iJIT_RegisterCallbackEx(void* userdata,
                                     iJIT_ModeChangedEx NewModeCallBackFuncEx);
 void JITAPI FinalizeThread(void);
 void JITAPI FinalizeProcess(void);
