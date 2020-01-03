@@ -335,4 +335,8 @@ user_pref("media.webspeech.synth.test", true);
 
 user_pref("browser.urlbar.suggest.searches", false);
 
+
+
+user_pref("browser.urlbar.userMadeSearchSuggestionsChoice", true);
+
 user_pref("dom.audiochannel.mutedByDefault", false);
