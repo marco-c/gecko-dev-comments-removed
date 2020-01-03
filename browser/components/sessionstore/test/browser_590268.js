@@ -9,6 +9,7 @@ let stateBackup = ss.getBrowserState();
 function test() {
   
   waitForExplicitFinish();
+  requestLongerTimeout(2);
 
   let startedTest = false;
 
