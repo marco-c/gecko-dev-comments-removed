@@ -26,8 +26,9 @@ struct JSContext;
 class nsCSSPropertySet;
 
 namespace mozilla {
-
+namespace css {
 class AnimValuesStyleRule;
+} 
 
 
 
@@ -318,7 +319,7 @@ public:
   
   
   
-  void ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
+  void ComposeStyle(nsRefPtr<css::AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties);
 
 protected:

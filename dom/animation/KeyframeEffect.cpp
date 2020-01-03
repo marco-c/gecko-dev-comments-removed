@@ -299,8 +299,9 @@ KeyframeEffectReadOnly::HasAnimationOfProperties(
 }
 
 void
-KeyframeEffectReadOnly::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
-                                     nsCSSPropertySet& aSetProperties)
+KeyframeEffectReadOnly::ComposeStyle(
+                          nsRefPtr<css::AnimValuesStyleRule>& aStyleRule,
+                          nsCSSPropertySet& aSetProperties)
 {
   ComputedTiming computedTiming = GetComputedTiming();
 
@@ -369,7 +370,7 @@ KeyframeEffectReadOnly::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
 
     if (!aStyleRule) {
       
-      aStyleRule = new AnimValuesStyleRule();
+      aStyleRule = new css::AnimValuesStyleRule();
     }
 
     double positionInSegment =
