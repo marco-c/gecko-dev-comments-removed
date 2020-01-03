@@ -3473,6 +3473,13 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(AudioNodeStream* aStream,
         mMixer.RemoveCallback(CurrentDriver()->AsAudioCallbackDriver());
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
+      
+      
+      
+    } else if (!audioTrackPresent && CurrentDriver()->Switching()) {
+      MOZ_ASSERT(CurrentDriver()->NextDriver()->AsAudioCallbackDriver());
+      CurrentDriver()->NextDriver()->AsAudioCallbackDriver()->
+        EnqueueStreamAndPromiseForOperation(aStream, aPromise, aOperation);
     } else {
       
       
