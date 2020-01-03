@@ -99,10 +99,11 @@ public:
   uint32_t mDisplayWidth;
   uint32_t mDisplayHeight;
   uint32_t mMaxRefFrames;
+  bool mUseSoftwareImages;
+  bool mIs106;
 
 private:
   VDADecoder mDecoder;
-  bool mIs106;
 
   
   nsresult SubmitFrame(MediaRawData* aSample);
