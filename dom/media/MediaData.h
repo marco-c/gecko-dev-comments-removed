@@ -394,6 +394,10 @@ public:
   const uint8_t* Data() const { return mData; }
   
   size_t Size() const { return mSize; }
+  size_t ComputedSizeOfIncludingThis() const
+  {
+    return sizeof(*this) + mCapacity;
+  }
 
   const CryptoSample& mCrypto;
   nsRefPtr<MediaByteBuffer> mExtraData;
