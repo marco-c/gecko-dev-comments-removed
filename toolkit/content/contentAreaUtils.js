@@ -80,7 +80,7 @@ function forbidCPOW(arg, func, argname)
 
 
 function saveURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
-                 aSkipPrompt, aReferrer, aSourceDocument)
+                 aSkipPrompt, aReferrer, aSourceDocument, aIsContentWindowPrivate)
 {
   forbidCPOW(aURL, "saveURL", "aURL");
   forbidCPOW(aReferrer, "saveURL", "aReferrer");
@@ -88,7 +88,7 @@ function saveURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 
   internalSave(aURL, null, aFileName, null, null, aShouldBypassCache,
                aFilePickerTitleKey, null, aReferrer, aSourceDocument,
-               aSkipPrompt, null);
+               aSkipPrompt, null, aIsContentWindowPrivate);
 }
 
 
@@ -273,10 +273,15 @@ const kSaveAsType_Text     = 2;
 
 
 
+
+
+
+
+
 function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
                       aContentType, aShouldBypassCache, aFilePickerTitleKey,
                       aChosenData, aReferrer, aInitiatingDocument, aSkipPrompt,
-                      aCacheKey)
+                      aCacheKey, aIsContentWindowPrivate)
 {
   forbidCPOW(aURL, "internalSave", "aURL");
   forbidCPOW(aReferrer, "internalSave", "aReferrer");
@@ -357,13 +362,18 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
       sourceCacheKey    : aCacheKey,
       sourcePostData    : nonCPOWDocument ? getPostData(aDocument) : null,
       bypassCache       : aShouldBypassCache,
-      initiatingWindow  : aInitiatingDocument.defaultView
+      initiatingWindow  : aInitiatingDocument && aInitiatingDocument.defaultView,
+      isContentWindowPrivate : aIsContentWindowPrivate
     };
 
     
     internalPersist(persistArgs);
   }
 }
+
+
+
+
 
 
 
@@ -414,7 +424,10 @@ function internalPersist(persistArgs)
   
   var targetFileURL = makeFileURI(persistArgs.targetFile);
 
-  let isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(persistArgs.initiatingWindow);
+  let isPrivate = persistArgs.isContentWindowPrivate;
+  if (isPrivate === undefined) {
+    isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(persistArgs.initiatingWindow);
+  }
 
   
   var tr = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);

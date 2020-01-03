@@ -2411,8 +2411,10 @@ function BrowserViewSource(browser) {
 
 
 
-function BrowserPageInfo(doc, initialTab, imageElement) {
-  var args = {doc: doc, initialTab: initialTab, imageElement: imageElement};
+
+function BrowserPageInfo(doc, initialTab, imageElement, frameOuterWindowID) {
+  var args = {doc: doc, initialTab: initialTab, imageElement: imageElement,
+              frameOuterWindowID: frameOuterWindowID};
   var windows = Services.wm.getEnumerator("Browser:page-info");
 
   var documentURL = doc ? doc.location : window.gBrowser.selectedBrowser.contentDocumentAsCPOW.location;
