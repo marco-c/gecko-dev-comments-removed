@@ -1,5 +1,9 @@
 
-setObjectMetadataCallback(function(obj) {
+
+
+
+
+enableShellObjectMetadataCallback(function(obj) {
     var res = {};
     return res;
   });

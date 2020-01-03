@@ -4,7 +4,11 @@ gczeal(14);
 
 
 
-setObjectMetadataCallback(function() {});
+
+
+
+
+enableShellObjectMetadataCallback(function() {});
 function f() {
     (function() {
         '' ^ Object
@@ -17,7 +21,8 @@ for (var j = 0; j < 99; ++j) {
 
 try {
   x = true;
-  setObjectMetadataCallback(function([x, y, z], ... Debugger) {});
+  
+  enableShellObjectMetadataCallback(function([x, y, z], ... Debugger) {});
   for (var i = 0; i < 10; ++i) {
     var f = function() {
       function g() {
