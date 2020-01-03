@@ -5,35 +5,173 @@
 "use strict";
 
 const {StorageFront} = require("devtools/server/actors/storage");
-let gTests;
-let gExpected;
-let index = 0;
-
 const beforeReload = {
   cookies: ["test1.example.org", "sectest1.example.org"],
   localStorage: ["http://test1.example.org", "http://sectest1.example.org"],
   sessionStorage: ["http://test1.example.org", "http://sectest1.example.org"],
 };
 
-function finishTests(client) {
+const TESTS = [
   
-  forceCollections();
-  client.close(() => {
-    forceCollections();
-    DebuggerServer.destroy();
-    forceCollections();
-    gTests = null;
-    finish();
-  });
-}
+  {
+    action: function(win) {
+      info('win.addCookie("c1", "foobar1")');
+      win.addCookie("c1", "foobar1");
 
-function markOutMatched(toBeEmptied, data, deleted) {
+      info('win.addCookie("c2", "foobar2")');
+      win.addCookie("c2", "foobar2");
+
+      info('win.localStorage.setItem("l1", "foobar1")');
+      win.localStorage.setItem("l1", "foobar1");
+    },
+    expected: {
+      added: {
+        cookies: {
+          "test1.example.org": ["c1", "c2"]
+        },
+        localStorage: {
+          "http://test1.example.org": ["l1"]
+        }
+      }
+    }
+  },
+
+  
+  {
+    action: function(win) {
+      info('win.addCookie("c1", "new_foobar1")');
+      win.addCookie("c1", "new_foobar1");
+
+      info('win.localStorage.setItem("l2", "foobar2")');
+      win.localStorage.setItem("l2", "foobar2");
+    },
+    expected: {
+      changed: {
+        cookies: {
+          "test1.example.org": ["c1"]
+        }
+      },
+      added: {
+        localStorage: {
+          "http://test1.example.org": ["l2"]
+        }
+      }
+    }
+  },
+
+  
+  {
+    action: function(win) {
+      info('win.removeCookie("c2")');
+      win.removeCookie("c2");
+
+      info('win.localStorage.removeItem("l1")');
+      win.localStorage.removeItem("l1");
+
+      info('win.localStorage.setItem("l3", "foobar3")');
+      win.localStorage.setItem("l3", "foobar3");
+    },
+    expected: {
+      deleted: {
+        cookies: {
+          "test1.example.org": ["c2"]
+        },
+        localStorage: {
+          "http://test1.example.org": ["l1"]
+        }
+      },
+      added: {
+        localStorage: {
+          "http://test1.example.org": ["l3"]
+        }
+      }
+    }
+  },
+
+  
+  {
+    action: function(win) {
+      info('win.removeCookie("c1")');
+      win.removeCookie("c1");
+
+      info('win.addCookie("c3", "foobar3")');
+      win.addCookie("c3", "foobar3");
+
+      info('win.localStorage.removeItem("l2")');
+      win.localStorage.removeItem("l2");
+
+      info('win.sessionStorage.setItem("s1", "foobar1")');
+      win.sessionStorage.setItem("s1", "foobar1");
+
+      info('win.sessionStorage.setItem("s2", "foobar2")');
+      win.sessionStorage.setItem("s2", "foobar2");
+
+      info('win.localStorage.setItem("l3", "new_foobar3")');
+      win.localStorage.setItem("l3", "new_foobar3");
+    },
+    expected: {
+      added: {
+        cookies: {
+          "test1.example.org": ["c3"]
+        },
+        sessionStorage: {
+          "http://test1.example.org": ["s1", "s2"]
+        }
+      },
+      changed: {
+        localStorage: {
+          "http://test1.example.org": ["l3"]
+        }
+      },
+      deleted: {
+        cookies: {
+          "test1.example.org": ["c1"]
+        },
+        localStorage: {
+          "http://test1.example.org": ["l2"]
+        }
+      }
+    }
+  },
+
+  
+  {
+    action: function(win) {
+      info('win.sessionStorage.removeItem("s1")');
+      win.sessionStorage.removeItem("s1");
+    },
+    expected: {
+      deleted: {
+        sessionStorage: {
+          "http://test1.example.org": ["s1"]
+        }
+      }
+    }
+  },
+
+  
+  {
+    action: function(win) {
+      info("win.clearCookies()");
+      win.clearCookies();
+    },
+    expected: {
+      deleted: {
+        cookies: {
+          "test1.example.org": ["c3"]
+        }
+      }
+    }
+  }
+];
+
+function markOutMatched(toBeEmptied, data) {
   if (!Object.keys(toBeEmptied).length) {
     info("Object empty");
     return;
   }
-  ok(Object.keys(data).length,
-     "Atleast some storage types should be present in deleted");
+  ok(Object.keys(data).length, "At least one storage type should be present");
+
   for (let storageType in toBeEmptied) {
     if (!data[storageType]) {
       continue;
@@ -59,22 +197,7 @@ function markOutMatched(toBeEmptied, data, deleted) {
   }
 }
 
-function onStoresCleared(data) {
-  if (data.sessionStorage || data.localStorage) {
-    let hosts = data.sessionStorage || data.localStorage;
-    info("Stores cleared required for session storage");
-    is(hosts.length, 1, "number of hosts is 1");
-    is(hosts[0], "http://test1.example.org",
-       "host matches for " + Object.keys(data)[0]);
-    gTests.next();
-  }
-  else {
-    ok(false, "Stores cleared should only be for local and sesion storage");
-  }
-
-}
-
-function onStoresUpdate({added, changed, deleted}) {
+function onStoresUpdate(expected, {added, changed, deleted}, index) {
   info("inside stores update for index " + index);
 
   
@@ -82,162 +205,99 @@ function onStoresUpdate({added, changed, deleted}) {
   
   if (added) {
     info("matching added object for index " + index);
-    markOutMatched(gExpected.added, added);
+    markOutMatched(expected.added, added);
   }
   if (changed) {
     info("matching changed object for index " + index);
-    markOutMatched(gExpected.changed, changed);
+    markOutMatched(expected.changed, changed);
   }
   if (deleted) {
     info("matching deleted object for index " + index);
-    markOutMatched(gExpected.deleted, deleted);
+    markOutMatched(expected.deleted, deleted);
   }
 
-  if ((!gExpected.added || !Object.keys(gExpected.added).length) &&
-      (!gExpected.changed || !Object.keys(gExpected.changed).length) &&
-      (!gExpected.deleted || !Object.keys(gExpected.deleted).length)) {
+  if ((!expected.added || !Object.keys(expected.added).length) &&
+      (!expected.changed || !Object.keys(expected.changed).length) &&
+      (!expected.deleted || !Object.keys(expected.deleted).length)) {
     info("Everything expected has been received for index " + index);
-    index++;
-    gTests.next();
-  }
-  else {
+  } else {
     info("Still some updates pending for index " + index);
   }
 }
 
-function* UpdateTests(front, win, client) {
-  front.on("stores-update", onStoresUpdate);
-
-  
-  gExpected = {
-    added: {
-      cookies: {
-        "test1.example.org": ["c1", "c2"]
-      },
-      localStorage: {
-        "http://test1.example.org": ["l1"]
-      }
-    }
-  };
-  win.addCookie("c1", "foobar1");
-  win.addCookie("c2", "foobar2");
-  win.localStorage.setItem("l1", "foobar1");
-  yield undefined;
-
-  
-  gExpected = {
-    changed: {
-      cookies: {
-        "test1.example.org": ["c1"]
-      }
-    },
-    added: {
-      localStorage: {
-        "http://test1.example.org": ["l2"]
-      }
-    }
-  };
-  win.addCookie("c1", "new_foobar1");
-  win.localStorage.setItem("l2", "foobar2");
-  yield undefined;
-
-  
-  gExpected = {
-    deleted: {
-      cookies: {
-        "test1.example.org": ["c2"]
-      },
-      localStorage: {
-        "http://test1.example.org": ["l1"]
-      }
-    },
-    added: {
-      localStorage: {
-        "http://test1.example.org": ["l3"]
-      }
-    }
-  };
-  win.removeCookie("c2");
-  win.localStorage.removeItem("l1");
-  win.localStorage.setItem("l3", "foobar3");
-  yield undefined;
-
-  
-  gExpected = {
-    added: {
-      cookies: {
-        "test1.example.org": ["c3"]
-      },
-      sessionStorage: {
-        "http://test1.example.org": ["s1", "s2"]
-      }
-    },
-    changed: {
-      localStorage: {
-        "http://test1.example.org": ["l3"]
-      }
-    },
-    deleted: {
-      cookies: {
-        "test1.example.org": ["c1"]
-      },
-      localStorage: {
-        "http://test1.example.org": ["l2"]
-      }
-    }
-  };
-  win.removeCookie("c1");
-  win.addCookie("c3", "foobar3");
-  win.localStorage.removeItem("l2");
-  win.sessionStorage.setItem("s1", "foobar1");
-  win.sessionStorage.setItem("s2", "foobar2");
-  win.localStorage.setItem("l3", "new_foobar3");
-  yield undefined;
-
-  
-  gExpected = {
-    deleted: {
-      sessionStorage: {
-        "http://test1.example.org": ["s1"]
-      }
-    }
-  };
-  win.sessionStorage.removeItem("s1");
-  yield undefined;
-
-  
-  gExpected = {
-    deleted: {
-      cookies: {
-        "test1.example.org": ["c3"]
-      }
-    }
-  };
-  front.on("stores-cleared", onStoresCleared);
-  win.clear();
-  yield undefined;
-  
-  
-  yield undefined;
-  yield undefined;
-
-  front.off("stores-cleared", onStoresCleared);
-  front.off("stores-update", onStoresUpdate);
-  finishTests(client);
-}
-
-
-function test() {
-  addTab(MAIN_DOMAIN + "storage-updates.html").then(function(doc) {
-    initDebuggerServer();
-
-    let client = new DebuggerClient(DebuggerServer.connectPipe());
-    connectDebuggerClient(client).then(form => {
-      let front = StorageFront(client, form);
-      gTests = UpdateTests(front, doc.defaultView.wrappedJSObject,
-                           client);
-      
-      front.listStores().then(() => gTests.next());
+function runTest({action, expected}, front, win, index) {
+  return new Promise(resolve => {
+    front.once("stores-update", function(addedChangedDeleted) {
+      onStoresUpdate(expected, addedChangedDeleted, index);
+      resolve();
     });
-  })
+
+    info("Running test at index " + index);
+    action(win);
+  });
 }
+
+function* testClearLocalAndSessionStores(front, win) {
+  return new Promise(resolve => {
+    
+    
+    let localStorage = false;
+    let sessionStorage = false;
+
+    front.on("stores-cleared", function onStoresCleared(data) {
+      storesCleared(data);
+
+      if (data.localStorage) {
+        localStorage = true;
+      }
+      if (data.sessionStorage) {
+        sessionStorage = true;
+      }
+      if (localStorage && sessionStorage) {
+        front.off("stores-cleared", onStoresCleared);
+        resolve();
+      }
+    });
+
+    win.clearLocalAndSessionStores();
+  });
+}
+
+function storesCleared(data) {
+  if (data.sessionStorage || data.localStorage) {
+    let hosts = data.sessionStorage || data.localStorage;
+    info("Stores cleared required for session storage");
+    is(hosts.length, 1, "number of hosts is 1");
+    is(hosts[0], "http://test1.example.org",
+       "host matches for " + Object.keys(data)[0]);
+  } else {
+    ok(false, "Stores cleared should only be for local and session storage");
+  }
+}
+
+function* finishTests(client) {
+  yield client.close();
+  DebuggerServer.destroy();
+  finish();
+}
+
+add_task(function*() {
+  let doc = yield addTab(MAIN_DOMAIN + "storage-updates.html");
+
+  initDebuggerServer();
+
+  let client = new DebuggerClient(DebuggerServer.connectPipe());
+  let form = yield connectDebuggerClient(client);
+  let front = StorageFront(client, form);
+  let win = doc.defaultView.wrappedJSObject;
+
+  yield front.listStores();
+
+  for (let i = 0; i < TESTS.length; i++) {
+    let test = TESTS[i];
+    yield runTest(test, front, win, i);
+  }
+
+  yield testClearLocalAndSessionStores(front, win);
+  yield finishTests(client);
+});

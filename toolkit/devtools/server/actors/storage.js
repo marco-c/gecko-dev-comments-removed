@@ -7,12 +7,6 @@
 const {Cc, Ci} = require("chrome");
 const events = require("sdk/event/core");
 const protocol = require("devtools/server/protocol");
-try {
-  const { indexedDB } = require("sdk/indexed-db");
-} catch (e) {
-  
-  
-}
 const {async} = require("devtools/async-utils");
 const {Arg, method, RetVal, types} = protocol;
 const {LongStringActor} = require("devtools/server/actors/string");
@@ -20,6 +14,7 @@ const {DebuggerServer} = require("devtools/server/main");
 const Services = require("Services");
 const promise = require("promise");
 const LayoutHelpers = require("devtools/toolkit/layout-helpers");
+const { setTimeout, clearTimeout } = require("sdk/timers");
 
 loader.lazyImporter(this, "OS", "resource://gre/modules/osfile.jsm");
 loader.lazyImporter(this, "Sqlite", "resource://gre/modules/Sqlite.jsm");
@@ -31,7 +26,7 @@ let gTrackedMessageManager = new Map();
 const MAX_STORE_OBJECT_COUNT = 50;
 
 
-const UPDATE_INTERVAL = 500;
+const BATCH_DELAY = 200;
 
 
 
@@ -68,16 +63,13 @@ function getRegisteredTypes() {
 
 
 function sleep(time) {
-  let wait = promise.defer();
-  let updateTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  updateTimer.initWithCallback({
-    notify: function() {
-      updateTimer.cancel();
-      updateTimer = null;
-      wait.resolve(null);
-    }
-  }, time, Ci.nsITimer.TYPE_ONE_SHOT);
-  return wait.promise;
+  let deferred = promise.defer();
+
+  setTimeout(() => {
+    deferred.resolve(null);
+  }, time);
+
+  return deferred.promise;
 }
 
 
@@ -227,6 +219,8 @@ StorageActors.defaults = function(typeName, observationTopic, storeObjectType) {
       }
       events.off(this.storageActor, "window-ready", this.onWindowReady);
       events.off(this.storageActor, "window-destroyed", this.onWindowDestroyed);
+
+      this.storageActor = null;
     },
 
     getNamesForHost: function(host) {
@@ -482,19 +476,17 @@ StorageActors.createActor({
   destroy: function() {
     this.hostVsStores = null;
 
-    this.removeCookieObservers();
-
     
-    let oldMM = gTrackedMessageManager.get("cookies");
-
-    if (oldMM) {
-      gTrackedMessageManager.delete("cookies");
-      oldMM.removeMessageListener("storage:storage-cookie-request-parent",
-                                  cookieHelpers.handleChildRequest);
+    
+    
+    if (!DebuggerServer.isInChildProcess) {
+      this.removeCookieObservers();
     }
 
     events.off(this.storageActor, "window-ready", this.onWindowReady);
     events.off(this.storageActor, "window-destroyed", this.onWindowDestroyed);
+
+    this._pendingResponse = this.storageActor = null;
   },
 
   
@@ -584,7 +576,9 @@ StorageActors.createActor({
 
 
   onCookieChanged: function(subject, topic, action) {
-    if (topic != "cookie-changed" || !this.storageActor.windows) {
+    if (topic !== "cookie-changed" ||
+        !this.storageActor ||
+        !this.storageActor.windows) {
       return null;
     }
 
@@ -674,10 +668,8 @@ StorageActors.createActor({
 
       if (reply.length === 0) {
         console.error("ERR_DIRECTOR_CHILD_NO_REPLY from " + methodName);
-        throw Error("ERR_DIRECTOR_CHILD_NO_REPLY from " + methodName);
       } else if (reply.length > 1) {
         console.error("ERR_DIRECTOR_CHILD_MULTIPLE_REPLIES from " + methodName);
-        throw Error("ERR_DIRECTOR_CHILD_MULTIPLE_REPLIES from " + methodName);
       }
 
       let result = reply[0];
@@ -746,7 +738,6 @@ let cookieHelpers = {
         return JSON.stringify(cookies);
       case "addCookieObservers":
         return cookieHelpers.addCookieObservers();
-        break;
       case "removeCookieObservers":
         return cookieHelpers.removeCookieObservers();
       default:
@@ -775,9 +766,15 @@ exports.setupParentProcessForCookies = function({mm, prefix}) {
 
   function handleMessageManagerDisconnected(evt, { mm: disconnected_mm }) {
     
-    if (disconnected_mm !== mm || !gTrackedMessageManager.has(mm)) {
+    if (disconnected_mm !== mm || !gTrackedMessageManager.has("cookies")) {
       return;
     }
+
+    
+    
+    
+    
+    cookieHelpers.removeCookieObservers();
 
     gTrackedMessageManager.delete("cookies");
 
@@ -791,10 +788,16 @@ exports.setupParentProcessForCookies = function({mm, prefix}) {
     if (methodName === "onCookieChanged") {
       args[0] = JSON.stringify(args[0]);
     }
-    let reply = mm.sendAsyncMessage("storage:storage-cookie-request-child", {
-      method: methodName,
-      args: args
-    });
+
+    try {
+      mm.sendAsyncMessage("storage:storage-cookie-request-child", {
+        method: methodName,
+        args: args
+      });
+    } catch(e) {
+      
+      
+    }
   }
 };
 
@@ -1054,15 +1057,6 @@ StorageActors.createActor({
   destroy: function() {
     this.hostVsStores = null;
     this.objectsSize = null;
-
-    
-    let oldMM = gTrackedMessageManager.get("indexedDB");
-
-    if (oldMM) {
-      gTrackedMessageManager.delete("indexedDB");
-      oldMM.removeMessageListener("storage:storage-cookie-request-parent",
-                                  indexedDBHelpers.handleChildRequest);
-    }
 
     events.off(this.storageActor, "window-ready", this.onWindowReady);
     events.off(this.storageActor, "window-destroyed", this.onWindowDestroyed);
@@ -1616,7 +1610,7 @@ exports.setupParentProcessForIndexedDB = function({mm, prefix}) {
 
   function handleMessageManagerDisconnected(evt, { mm: disconnected_mm }) {
     
-    if (disconnected_mm !== mm || !gTrackedMessageManager.has(mm)) {
+    if (disconnected_mm !== mm || !gTrackedMessageManager.has("indexedDB")) {
       return;
     }
 
@@ -1699,11 +1693,6 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
 
     this.destroyed = false;
     this.boundUpdate = {};
-    
-    
-    this.updateTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    this.updateTimer.initWithCallback(this, UPDATE_INTERVAL,
-      Ci.nsITimer.TYPE_REPEATING_PRECISE_CAN_SKIP);
 
     
     
@@ -1711,8 +1700,8 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
   },
 
   destroy: function() {
-    this.updateTimer.cancel();
-    this.updateTimer = null;
+    clearTimeout(this.batchTimer);
+    this.batchTimer = null;
     this.layoutHelper = null;
     
     Services.obs.removeObserver(this, "content-document-global-created", false);
@@ -1730,7 +1719,9 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
     }
     this.childActorPool.clear();
     this.childWindowPool.clear();
-    this.childWindowPool = this.childActorPool = null;
+    this.childWindowPool = this.childActorPool = this.__poolMap = this.conn =
+      this.parentActor = this.boundUpdate = this.registeredPool =
+      this._pendingResponse = null;
   },
 
   
@@ -1856,20 +1847,6 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
   
 
 
-  notify: function() {
-    if (!this.updatePending || this.updatingUpdateObject) {
-      return null;
-    }
-
-    events.emit(this, "stores-update", this.boundUpdate);
-    this.boundUpdate = {};
-    this.updatePending = false;
-    return null;
-  },
-
-  
-
-
 
 
 
@@ -1897,14 +1874,15 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
       return null;
     }
 
-    this.updatingUpdateObject = true;
+    if (this.batchTimer) {
+      clearTimeout(this.batchTimer);
+    }
     if (!this.boundUpdate[action]) {
       this.boundUpdate[action] = {};
     }
     if (!this.boundUpdate[action][storeType]) {
       this.boundUpdate[action][storeType] = {};
     }
-    this.updatePending = true;
     for (let host in data) {
       if (!this.boundUpdate[action][storeType][host] || action == "deleted") {
         this.boundUpdate[action][storeType][host] = data[host];
@@ -1942,7 +1920,13 @@ let StorageActor = exports.StorageActor = protocol.ActorClass({
         }
       }
     }
-    this.updatingUpdateObject = false;
+
+    this.batchTimer = setTimeout(() => {
+      clearTimeout(this.batchTimer);
+      events.emit(this, "stores-update", this.boundUpdate);
+      this.boundUpdate = {};
+    }, BATCH_DELAY);
+
     return null;
   },
 

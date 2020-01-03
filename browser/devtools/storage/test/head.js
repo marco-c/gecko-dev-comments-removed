@@ -10,6 +10,8 @@ let { console } = Cu.import("resource://gre/modules/devtools/Console.jsm", {});
 
 const SPLIT_CONSOLE_PREF = "devtools.toolbox.splitconsoleEnabled";
 const STORAGE_PREF = "devtools.storage.enabled";
+const DUMPEMIT_PREF = "devtools.dump.emit";
+const DEBUGGERLOG_PREF = "devtools.debugger.log";
 const PATH = "browser/browser/devtools/storage/test/";
 const MAIN_DOMAIN = "http://test1.example.org/" + PATH;
 const ALT_DOMAIN = "http://sectest1.example.org/" + PATH;
@@ -22,12 +24,17 @@ waitForExplicitFinish();
 
 let gToolbox, gPanelWindow, gWindow, gUI;
 
+
+
+
 Services.prefs.setBoolPref(STORAGE_PREF, true);
 DevToolsUtils.testing = true;
 registerCleanupFunction(() => {
   gToolbox = gPanelWindow = gWindow = gUI = null;
   Services.prefs.clearUserPref(STORAGE_PREF);
   Services.prefs.clearUserPref(SPLIT_CONSOLE_PREF);
+  Services.prefs.clearUserPref(DUMPEMIT_PREF);
+  Services.prefs.clearUserPref(DEBUGGERLOG_PREF);
   DevToolsUtils.testing = false;
   while (gBrowser.tabs.length > 1) {
     gBrowser.removeCurrentTab();
@@ -74,7 +81,8 @@ function addTab(url) {
 
 
 
-let openTabAndSetupStorage = Task.async(function*(url) {
+
+function* openTabAndSetupStorage(url) {
   
 
 
@@ -107,7 +115,7 @@ let openTabAndSetupStorage = Task.async(function*(url) {
 
   
   return yield openStoragePanel();
-});
+}
 
 
 
@@ -195,40 +203,57 @@ function forceCollections() {
 
 
 
-function finishTests() {
-  
-
-  
 
 
 
-  let clearIDB = (w, i, c) => {
-    if (w[i] && w[i].clear) {
-      w[i].clearIterator = w[i].clear(() => clearIDB(w, i + 1, c));
-      w[i].clearIterator.next();
-    }
-    else if (w[i] && w[i + 1]) {
-      clearIDB(w, i + 1, c);
-    }
-    else {
-      c();
+
+
+
+function getAllWindows(baseWindow=gWindow) {
+  let windows = new Set();
+
+  let _getAllWindows = function(win) {
+    windows.add(win);
+
+    for (let i = 0; i < win.length; i++) {
+      _getAllWindows(win[i]);
     }
   };
+  _getAllWindows(baseWindow);
 
-  gWindow.clearIterator = gWindow.clear(() => {
-    clearIDB(gWindow, 0, () => {
-      
-      forceCollections();
-      finish();
-    });
-  });
-  gWindow.clearIterator.next();
+  return windows;
 }
 
 
-function click(node) {
+
+
+function* finishTests() {
+  for (let win of getAllWindows()) {
+    if (win.clear) {
+      console.log("Clearing cookies, localStorage and indexedDBs from " +
+                  win.document.location);
+      yield win.clear();
+    }
+  }
+
+  forceCollections();
+  finish();
+}
+
+
+function* click(node) {
+  let def = promise.defer();
+
   node.scrollIntoView();
-  executeSoon(() => EventUtils.synthesizeMouseAtCenter(node, {}, gPanelWindow));
+
+  
+  
+  setTimeout(() => {
+    node.click();
+    def.resolve();
+  }, 200);
+
+  return def;
 }
 
 
@@ -463,39 +488,18 @@ function matchVariablesViewProperty(aProp, aRule) {
 
 
 
-function selectTreeItem(ids) {
+function* selectTreeItem(ids) {
   
   
   gUI.tree.expandAll();
-  let target = gPanelWindow.document.querySelector(
-                 "[data-id='" + JSON.stringify(ids) + "'] > .tree-widget-item");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  let animatingList = target.nextElementSibling;
-  while (animatingList) {
-    if (window.getComputedStyle(animatingList).maxHeight != "none") {
-      break;
-    }
-    animatingList = animatingList.parentNode.closest(".tree-widget-item + ul");
-  }
+  let selector = "[data-id='" + JSON.stringify(ids) + "'] > .tree-widget-item";
+  let target = gPanelWindow.document.querySelector(selector);
 
-  if (animatingList) {
-    animatingList.addEventListener("animationend", function animationend() {
-      animatingList.removeEventListener("animationend", animationend);
-      click(target);
-    });
-  } else {
-    click(target);
-  }
+  let updated = gUI.once("store-objects-updated");
+
+  yield click(target);
+  yield updated;
 }
 
 
@@ -504,7 +508,40 @@ function selectTreeItem(ids) {
 
 
 
-function selectTableItem(id) {
-  click(gPanelWindow.document.querySelector(".table-widget-cell[data-id='" +
-        id + "']"));
+function* selectTableItem(id) {
+  let selector = ".table-widget-cell[data-id='" + id + "']";
+  let target = gPanelWindow.document.querySelector(selector);
+
+  yield click(target);
+  yield gUI.once("sidebar-updated");
+}
+
+
+
+
+
+
+
+
+
+function once(target, eventName, useCapture=false) {
+  info("Waiting for event: '" + eventName + "' on " + target + ".");
+
+  let deferred = promise.defer();
+
+  for (let [add, remove] of [
+    ["addEventListener", "removeEventListener"],
+    ["addListener", "removeListener"],
+    ["on", "off"]
+  ]) {
+    if ((add in target) && (remove in target)) {
+      target[add](eventName, function onEvent(...aArgs) {
+        target[remove](eventName, onEvent, useCapture);
+        deferred.resolve.apply(deferred, aArgs);
+      }, useCapture);
+      break;
+    }
+  }
+
+  return deferred.promise;
 }
