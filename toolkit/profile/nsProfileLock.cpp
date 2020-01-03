@@ -34,7 +34,7 @@
 #include <rmsdef.h>
 #endif
 
-#if defined(MOZ_B2G) && !defined(MOZ_CRASHREPORTER)
+#if defined(MOZ_WIDGET_GONK) && !defined(MOZ_CRASHREPORTER)
 #include <sys/syscall.h>
 #endif
 
@@ -196,7 +196,7 @@ void nsProfileLock::FatalSignalHandler(int signo
         }
     }
 
-#ifdef MOZ_B2G
+#ifdef MOZ_WIDGET_GONK
     switch (signo) {
         case SIGQUIT:
         case SIGILL:
@@ -302,7 +302,7 @@ static bool IsSymlinkStaleLock(struct in_addr* aAddr, const char* aFileName,
                     
                     return true;
                 }
-                    
+
                 char *after = nullptr;
                 pid_t pid = strtol(colon, &after, 0);
                 if (pid != 0 && *after == '\0')
@@ -312,7 +312,7 @@ static bool IsSymlinkStaleLock(struct in_addr* aAddr, const char* aFileName,
                         
                         return false;
                     }
-    
+
                     
                     
                     if (kill(pid, 0) == 0 || errno != ESRCH)
@@ -489,7 +489,7 @@ nsresult nsProfileLock::Lock(nsIFile* aProfileDir,
     rv = lockFile->Append(LOCKFILE_NAME);
     if (NS_FAILED(rv))
         return rv;
-        
+
 #if defined(XP_MACOSX)
     
     
@@ -501,7 +501,7 @@ nsresult nsProfileLock::Lock(nsIFile* aProfileDir,
         
         rv = LockWithSymlink(lockFile, false);
     }
-    
+
     if (NS_SUCCEEDED(rv))
     {
         
