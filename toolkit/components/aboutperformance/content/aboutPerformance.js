@@ -17,323 +17,777 @@ const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
 
 
 
-const UPDATE_IMMEDIATELY_TOPIC = "about:performance-update-immediately";
+const TEST_DRIVER_TOPIC = "test-about:performance-test-driver";
 
 
 
 const UPDATE_COMPLETE_TOPIC = "about:performance-update-complete";
 
 
+const BUFFER_SAMPLING_RATE_MS = 1000;
 
 
-const MEASURES = [
-  {probe: "jank", key: "longestDuration", percentOfDeltaT: false, label: "Jank level"},
-  {probe: "jank", key: "totalUserTime", percentOfDeltaT: true, label: "User (%)"},
-  {probe: "jank", key: "totalSystemTime", percentOfDeltaT: true, label: "System (%)"},
-  {probe: "cpow", key: "totalCPOWTime", percentOfDeltaT: true, label: "Cross-Process (%)"},
-  {probe: "ticks",key: "ticks", percentOfDeltaT: false, label: "Activations"},
-];
+const BUFFER_DURATION_MS = 10000;
+
+
+const UPDATE_INTERVAL_MS = 5000;
+
+
+const BRAND_BUNDLE = Services.strings.createBundle(
+  "chrome://branding/locale/brand.properties");
+const BRAND_NAME = BRAND_BUNDLE.GetStringFromName("brandShortName");
+
+
+
+const MAX_NUMBER_OF_ITEMS_TO_DISPLAY = 3;
+
+
+
+const MAX_FREQUENCY_FOR_NO_IMPACT = .05;
+
+
+
+const MAX_FREQUENCY_FOR_RARE = .1;
+
+
+
+const MAX_FREQUENCY_FOR_FREQUENT = .5;
 
 
 
 
-let AutoUpdate = {
-
-  
+const MIN_PROPORTION_FOR_MAJOR_IMPACT = .05;
 
 
-  _timerId: null,
 
-  
-
-
-  _intervalDropdown: null,
-
-  
+const MIN_PROPORTION_FOR_NOTICEABLE_IMPACT = .1;
 
 
-  start: function () {
-    if (AutoUpdate._intervalDropdown == null){
-      AutoUpdate._intervalDropdown = document.getElementById("intervalDropdown");
+
+
+const MODE_GLOBAL = "global";
+const MODE_RECENT = "recent";
+
+
+
+
+
+
+
+
+
+
+
+function findTabFromWindow(windowId) {
+  let windows = Services.wm.getEnumerator("navigator:browser");
+  while (windows.hasMoreElements()) {
+    let win = windows.getNext();
+    let tabbrowser = win.gBrowser;
+    let foundBrowser = tabbrowser.getBrowserForOuterWindowID(windowId);
+    if (foundBrowser) {
+      return {tabbrowser, tab: tabbrowser.getTabForBrowser(foundBrowser)};
     }
-
-    if (AutoUpdate._timerId == null) {
-      let dropdownIndex = AutoUpdate._intervalDropdown.selectedIndex;
-      let dropdownValue = AutoUpdate._intervalDropdown.options[dropdownIndex].value;
-      AutoUpdate._timerId = window.setInterval(update, dropdownValue);
-    }
-  },
-
-  
-
-
-  stop: function () {
-    if (AutoUpdate._timerId == null) {
-      return;
-    }
-    clearInterval(AutoUpdate._timerId);
-    AutoUpdate._timerId = null;
-  },
-
-  
-
-
-  updateRefreshRate: function () {
-    AutoUpdate.stop();
-    AutoUpdate.start();
   }
+  return null;
+}
 
-};
+
+
+
+let Delta = {
+  compare: function(a, b) {
+    
+    
+    if (a.cpow.totalCPOWTime && !b.cpow.totalCPOWTime) {
+      return 1;
+    }
+    if (b.cpow.totalCPOWTime && !a.cpow.totalCPOWTime) {
+      return -1;
+    }
+    return (
+      (a.jank.longestDuration - b.jank.longestDuration) ||
+      (a.jank.totalUserTime - b.jank.totalUserTime) ||
+      (a.jank.totalSystemTime - b.jank.totalSystemTime) ||
+      (a.cpow.totalCPOWTime - b.cpow.totalCPOWTime) ||
+      (a.ticks.ticks - b.ticks.ticks) ||
+      0
+    );
+  },
+  revCompare: function(a, b) {
+    return -Delta.compare(a, b);
+  },
+  
+
+
+  MAX_DELTA_FOR_GOOD_RECENT_PERFORMANCE: {
+    cpow: {
+      totalCPOWTime: 0,
+    },
+    jank: {
+      longestDuration: 3,
+      totalUserTime: Number.POSITIVE_INFINITY,
+      totalSystemTime: Number.POSITIVE_INFINITY
+    },
+    ticks: {
+      ticks: Number.POSITIVE_INFINITY,
+    }
+  },
+  
+
+
+  MAX_DELTA_FOR_AVERAGE_RECENT_PERFORMANCE: {
+    cpow: {
+      totalCPOWTime: Number.POSITIVE_INFINITY,
+    },
+    jank: {
+      longestDuration: 7,
+      totalUserTime: Number.POSITIVE_INFINITY,
+      totalSystemTime: Number.POSITIVE_INFINITY
+    },
+    ticks: {
+      ticks: Number.POSITIVE_INFINITY,
+    }
+  }
+}
+
+
+
 
 let State = {
-  _monitor: PerformanceStats.getMonitor([
-    "jank", "cpow", "ticks",
-    "jank-content", "cpow-content", "ticks-content",
-  ]),
-
-  
-
-
-  _processData: null,
-  
-
-
-
-
-  _componentsData: new Map(),
-
-  
-
-
-  _date: window.performance.now(),
+  _monitor: PerformanceStats.getMonitor(["jank", "cpow", "ticks"]),
 
   
 
 
 
 
+  _buffer: [],
+  
 
 
+
+
+  _oldest: null,
+
+  
+
+
+
+
+  _latest: null,
+
+  
+
+
+
+
+
+
+
+
+
+  _alerts: new Map(),
+
+  
+
+
+
+
+
+
+
+
+
+  _firstSeen: new Map(),
+
+  
+
+
+
+
+
+
+
+
+  _promiseSnapshot: Task.async(function*() {
+    let snapshot = yield this._monitor.promiseSnapshot();
+    snapshot.date = Date.now();
+    let componentsMap = new Map();
+    snapshot.componentsMap = componentsMap;
+    for (let component of snapshot.componentsData) {
+      componentsMap.set(component.groupId, component);
+    }
+    return snapshot;
+  }),
+
+  
+
+
+
+
+
+
+  _getSlowness: function(component) {
+    if (Delta.compare(component, Delta.MAX_DELTA_FOR_GOOD_RECENT_PERFORMANCE) <= 0) {
+      return 0;
+    }
+    if (Delta.compare(component, Delta.MAX_DELTA_FOR_AVERAGE_RECENT_PERFORMANCE) <= 0) {
+      return 1;
+    }
+    return 2;
+  },
+
+  
 
 
 
 
   update: Task.async(function*() {
-    let snapshot = yield this._monitor.promiseSnapshot();
-    let newData = new Map();
-    let deltas = [];
-    for (let componentNew of snapshot.componentsData) {
-      let key = componentNew.groupId;
-      let componentOld = State._componentsData.get(key);
-      deltas.push(componentNew.subtract(componentOld));
-      newData.set(key, componentNew);
+    
+    if (this._buffer.length == 0) {
+      if (this._oldest) {
+        throw new Error("Internal Error, we shouldn't have a `_oldest` value yet.");
+      }
+      this._latest = this._oldest = yield this._promiseSnapshot();
+      this._buffer.push(this._oldest);
+      yield new Promise(resolve => setTimeout(resolve, BUFFER_SAMPLING_RATE_MS * 1.1));
     }
-    State._componentsData = newData;
-    let now = window.performance.now();
-    let process = snapshot.processData.subtract(State._processData);
-    let result = {
-      components: deltas.filter(x => x.ticks.ticks > 0),
-      process: snapshot.processData.subtract(State._processData),
-      deltaT: now - State._date
+
+
+    let now = Date.now();
+    
+    
+    let latestInBuffer = this._buffer[this._buffer.length - 1];
+    let deltaT = now - latestInBuffer.date;
+    if (deltaT > BUFFER_SAMPLING_RATE_MS) {
+      this._latest = this._oldest = yield this._promiseSnapshot();
+      this._buffer.push(this._latest);
+
+      
+      let cleanedUpAlerts = new Map(); 
+      for (let component of this._latest.componentsData) {
+        let slowness = this._getSlowness(component, deltaT);
+        let myAlerts = this._alerts.get(component.groupId) || [0, 0];
+        if (slowness > 0) {
+          myAlerts[slowness - 1]++;
+        }
+        cleanedUpAlerts.set(component.groupId, myAlerts);
+        this._alerts = cleanedUpAlerts;
+      }
+    }
+
+    
+    let oldestInBuffer = this._buffer[0];
+    if (oldestInBuffer.date + BUFFER_DURATION_MS < this._latest.date) {
+      this._buffer.shift();
+    }
+  }),
+
+  
+
+
+  promiseDeltaSinceStartOfTime: function() {
+    return this._promiseDeltaSince(this._oldest);
+  },
+
+  
+
+
+  promiseDeltaSinceStartOfBuffer: function() {
+    return this._promiseDeltaSince(this._buffer[0]);
+  },
+
+  
+
+
+  _promiseDeltaSince: Task.async(function*(oldest) {
+    let current = this._latest;
+    if (!oldest) {
+      throw new TypeError();
+    }
+    if (!current) {
+      throw new TypeError();
+    }
+
+    let addons = [];
+    let webpages = [];
+    let system = [];
+    let groups = new Set();
+
+    
+    
+    
+    let oldFirstSeen = this._firstSeen;
+    let cleanedUpFirstSeen = new Map();
+    this._firstSeen = cleanedUpFirstSeen;
+    for (let component of current.componentsData) {
+      
+      let delta = component.subtract(oldest.componentsMap.get(component.groupId));
+      delta.alerts = (this._alerts.get(component.groupId) || []).slice();
+
+      
+      let creationDate = oldFirstSeen.get(component.groupId) || current.date;
+      cleanedUpFirstSeen.set(component.groupId, creationDate);
+      delta.age = current.date - creationDate;
+
+      groups.add(component.groupId);
+
+      
+      delta.fullName = delta.name;
+      delta.readableName = delta.name;
+      if (component.addonId) {
+        let found = yield new Promise(resolve =>
+          AddonManager.getAddonByID(delta.addonId, a => {
+            if (a) {
+              delta.readableName = a.name;
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          }));
+        delta.fullName = delta.addonId;
+        if (found) {
+          
+          
+          addons.push(delta);
+        }
+      } else if (!delta.isSystem || delta.title) {
+        
+        
+        if (delta.title == document.title) {
+          if (!findTabFromWindow(delta.windowId)) {
+            
+            system.push(delta);
+            continue;
+          }
+        }
+        delta.readableName = delta.title || delta.name;
+        webpages.push(delta);
+      } else {
+        system.push(delta);
+      }
+    }
+
+    return {
+      addons,
+      webpages,
+      system,
+      groups,
+      duration: current.date - oldest.date
     };
-    result.components.sort((a, b) => {
-      if (a.longestDuration < b.longestDuration) {
-        return true;
-      }
-      if (a.longestDuration == b.longestDuration) {
-        return a.totalUserTime <= b.totalUserTime
-      }
-      return false;
-    });
-    State._processData = snapshot.processData;
-    State._date = now;
-    return result;
-  })
+  }),
 };
 
-
-let update = Task.async(function*() {
-  yield updateLiveData();
-  yield updateSlowAddons();
-  Services.obs.notifyObservers(null, UPDATE_COMPLETE_TOPIC, "");
-});
+let View = {
+  
 
 
 
 
-let updateSlowAddons = Task.async(function*() {
-  try {
-    let data = AddonWatcher.alerts;
-    if (data.size == 0) {
-      
-      return;
-    }
-    let alerts = 0;
-    for (let [addonId, details] of data) {
-      for (let k of Object.keys(details.alerts)) {
-        alerts += details.alerts[k];
-      }
-    }
 
-    if (!alerts) {
-      
-      return;
-    }
-
-
-    let elData = document.getElementById("slowAddonsList");
-    elData.innerHTML = "";
-    let elTable = document.createElement("table");
-    elData.appendChild(elTable);
-
+  DOMCache: {
+    _map: new Map(),
     
-    let elHeader = document.createElement("tr");
-    elTable.appendChild(elHeader);
-    for (let name of [
-      "Alerts",
-      "Jank level alerts",
-      "(highest jank)",
-      "Cross-Process alerts",
-      "(highest CPOW)"
-    ]) {
-      let elName = document.createElement("td");
-      elName.textContent = name;
-      elHeader.appendChild(elName);
-      elName.classList.add("header");
-    }
-    for (let [addonId, details] of data) {
-      let elAddon = document.createElement("tr");
 
-      
-      let elTotal = document.createElement("td");
-      let total = 0;
-      for (let k of Object.keys(details.alerts)) {
-        total += details.alerts[k];
-      }
-      elTotal.textContent = total;
-      elAddon.appendChild(elTotal);
 
-      for (let filter of ["longestDuration", "totalCPOWTime"]) {
-        for (let stat of ["alerts", "peaks"]) {
-          let el = document.createElement("td");
-          el.textContent = details[stat][filter] || 0;
-          elAddon.appendChild(el);
+
+
+    get: function(groupId) {
+      return this._map.get(groupId);
+    },
+    set: function(groupId, value) {
+      this._map.set(groupId, value);
+    },
+    
+
+
+
+
+    trimTo: function(set) {
+      let remove = [];
+      for (let key of this._map.keys()) {
+        if (!set.has(key)) {
+          remove.push(key);
         }
       }
+      for (let key of remove) {
+        this._map.delete(key);
+      }
+    }
+  },
+  
 
-      
-      let elName = document.createElement("td");
-      elAddon.appendChild(elName);
-      AddonManager.getAddonByID(addonId, a => {
-        elName.textContent = a ? a.name : addonId
+
+
+
+
+
+
+
+  updateCategory: function(subset, id, nature, deltaT, currentMode) {
+    subset = subset.slice().sort(Delta.revCompare);
+
+    
+    let eltContainer = this._setupStructure(id);
+
+    
+    let toAdd = [];
+    for (let delta of subset) {
+      let cachedElements = this._grabOrCreateElements(delta, nature);
+      toAdd.push(cachedElements);
+      cachedElements.eltTitle.textContent = delta.readableName;
+      cachedElements.eltName.textContent = `Full name: ${delta.fullName}.`;
+      cachedElements.eltLoaded.textContent = `Measure start: ${Math.round(delta.age/1000)} seconds ago.`
+      cachedElements.eltProcess.textContent = `Process: ${delta.processId} (${delta.isChildProcess?"child":"parent"}).`;
+      let eltImpact = cachedElements.eltImpact;
+      if (currentMode == MODE_RECENT) {
+        cachedElements.eltRoot.setAttribute("impact", delta.jank.longestDuration + 1);
+        if (Delta.compare(delta, Delta.MAX_DELTA_FOR_GOOD_RECENT_PERFORMANCE) <= 0) {
+          eltImpact.textContent = ` currently performs well.`;
+        } else if (Delta.compare(delta, Delta.MAX_DELTA_FOR_AVERAGE_RECENT_PERFORMANCE)) {
+          eltImpact.textContent = ` may currently be slowing down ${BRAND_NAME}.`;
+        } else {
+          eltImpact.textContent = ` is currently considerably slowing down ${BRAND_NAME}.`;
+        }
+        cachedElements.eltFPS.textContent = `Impact on framerate: ${delta.jank.longestDuration + 1}/${delta.jank.durations.length}.`;
+        cachedElements.eltCPU.textContent = `CPU usage: ${Math.min(100, Math.ceil(delta.jank.totalUserTime/deltaT))}%.`;
+        cachedElements.eltSystem.textContent = `System usage: ${Math.min(100, Math.ceil(delta.jank.totalSystemTime/deltaT))}%.`;
+        cachedElements.eltCPOW.textContent = `Blocking process calls: ${Math.ceil(delta.cpow.totalCPOWTime/deltaT)}%.`;
+      } else {
+        if (delta.alerts.length == 0) {
+          eltImpact.textContent = " has performed well so far.";
+          cachedElements.eltFPS.textContent = `Impact on framerate: no impact.`;
+        } else {
+          let sum =  delta.alerts[0] +  delta.alerts[1];
+          let frequency = sum * 1000 / delta.age;
+
+          let describeFrequency;
+          if (frequency <= MAX_FREQUENCY_FOR_NO_IMPACT) {
+            describeFrequency = `has no impact on the performance of ${BRAND_NAME}.`
+            cachedElements.eltRoot.classList.add("impact0");
+          } else {
+            let describeImpact;
+            if (frequency <= MAX_FREQUENCY_FOR_RARE) {
+              describeFrequency = `rarely slows down ${BRAND_NAME}.`;
+            } else if (frequency <= MAX_FREQUENCY_FOR_FREQUENT) {
+              describeFrequency = `has slown down ${BRAND_NAME} frequently.`;
+            } else {
+              describeFrequency = `seems to have slown down ${BRAND_NAME} very often.`;
+            }
+            
+            if (delta.alerts[1] / sum > MIN_PROPORTION_FOR_MAJOR_IMPACT) {
+              describeImpact = "When this happens, the slowdown is generally important."
+            } else {
+              describeImpact = "When this happens, the slowdown is generally noticeable."
+            }
+
+            eltImpact.textContent = ` ${describeFrequency} ${describeImpact}`;
+            cachedElements.eltFPS.textContent = `Impact on framerate: ${delta.alerts[1]} high-impacts, ${delta.alerts[0]} medium-impact.`;
+          }
+          cachedElements.eltCPU.textContent = `CPU usage: ${Math.min(100, Math.ceil(delta.jank.totalUserTime/delta.age))}% (total ${delta.jank.totalUserTime}ms).`;
+          cachedElements.eltSystem.textContent = `System usage: ${Math.min(100, Math.ceil(delta.jank.totalSystemTime/delta.age))}% (total ${delta.jank.totalSystemTime}ms).`;
+          cachedElements.eltCPOW.textContent = `Blocking process calls: ${Math.ceil(delta.cpow.totalCPOWTime/delta.age)}% (total ${delta.cpow.totalCPOWTime}ms).`;
+        }
+      }
+    }
+    this._insertElements(toAdd, id);
+  },
+
+  _insertElements: function(elements, id) {
+    let eltContainer = document.getElementById(id);
+    eltContainer.classList.remove("measuring");
+    eltContainer.eltVisibleContent.innerHTML = "";
+    eltContainer.eltHiddenContent.innerHTML = "";
+    eltContainer.appendChild(eltContainer.eltShowMore);
+
+    for (let i = 0; i < elements.length && i < MAX_NUMBER_OF_ITEMS_TO_DISPLAY; ++i) {
+      let cachedElements = elements[i];
+      eltContainer.eltVisibleContent.appendChild(cachedElements.eltRoot);
+    }
+    for (let i = MAX_NUMBER_OF_ITEMS_TO_DISPLAY; i < elements.length; ++i) {
+      let cachedElements = elements[i];
+      eltContainer.eltHiddenContent.appendChild(cachedElements.eltRoot);
+    }
+    if (elements.length <= MAX_NUMBER_OF_ITEMS_TO_DISPLAY) {
+      eltContainer.eltShowMore.classList.add("hidden");
+    } else {
+      eltContainer.eltShowMore.classList.remove("hidden");
+    }
+    if (elements.length == 0) {
+      eltContainer.textContent = "Nothing";
+    }
+  },
+  _setupStructure: function(id) {
+    let eltContainer = document.getElementById(id);
+    if (!eltContainer.eltVisibleContent) {
+      eltContainer.eltVisibleContent = document.createElement("ul");
+      eltContainer.eltVisibleContent.classList.add("visible_items");
+      eltContainer.appendChild(eltContainer.eltVisibleContent);
+    }
+    if (!eltContainer.eltHiddenContent) {
+      eltContainer.eltHiddenContent = document.createElement("ul");
+      eltContainer.eltHiddenContent.classList.add("hidden");
+      eltContainer.eltHiddenContent.classList.add("hidden_additional_items");
+      eltContainer.appendChild(eltContainer.eltHiddenContent);
+    }
+    if (!eltContainer.eltShowMore) {
+      eltContainer.eltShowMore = document.createElement("button");
+      eltContainer.eltShowMore.textContent = "Show all";
+      eltContainer.eltShowMore.classList.add("show_all_items");
+      eltContainer.appendChild(eltContainer.eltShowMore);
+      eltContainer.eltShowMore.addEventListener("click", function() {
+        if (eltContainer.eltHiddenContent.classList.contains("hidden")) {
+          eltContainer.eltHiddenContent.classList.remove("hidden");
+          eltContainer.eltShowMore.textContent = "Hide";
+        } else {
+          eltContainer.eltHiddenContent.classList.add("hidden");
+          eltContainer.eltShowMore.textContent = "Show all";
+        }
+      });
+    }
+    return eltContainer;
+  },
+
+  _grabOrCreateElements: function(delta, nature) {
+    let cachedElements = this.DOMCache.get(delta.groupId);
+    if (cachedElements) {
+      if (cachedElements.eltRoot.parentElement) {
+        cachedElements.eltRoot.parentElement.removeChild(cachedElements.eltRoot);
+      }
+    } else {
+      this.DOMCache.set(delta.groupId, cachedElements = {});
+
+      let eltDelta = document.createElement("li");
+      eltDelta.classList.add("delta");
+      cachedElements.eltRoot = eltDelta;
+
+      let eltSpan = document.createElement("span");
+      eltDelta.appendChild(eltSpan);
+
+      let eltSummary = document.createElement("span");
+      eltSummary.classList.add("summary");
+      eltSpan.appendChild(eltSummary);
+
+      let eltTitle = document.createElement("span");
+      eltTitle.classList.add("title");
+      eltSummary.appendChild(eltTitle);
+      cachedElements.eltTitle = eltTitle;
+
+      let eltImpact = document.createElement("span");
+      eltImpact.classList.add("impact");
+      eltSummary.appendChild(eltImpact);
+      cachedElements.eltImpact = eltImpact;
+
+      let eltShowMore = document.createElement("a");
+      eltShowMore.classList.add("more");
+      eltSpan.appendChild(eltShowMore);
+      eltShowMore.textContent = "more";
+      eltShowMore.href = "";
+      eltShowMore.addEventListener("click", () => {
+        if (eltDetails.classList.contains("hidden")) {
+          eltDetails.classList.remove("hidden");
+          eltShowMore.textContent = "less";
+        } else {
+          eltDetails.classList.add("hidden");
+          eltShowMore.textContent = "more";
+        }
       });
 
-      elTable.appendChild(elAddon);
-    }
-  } catch (ex) {
-    console.error(ex);
-  }
-});
+      
+      if (nature == "addons") {
+        eltSpan.appendChild(document.createElement("br"));
+        let eltDisable = document.createElement("button");
+        eltDisable.textContent = "Disable";
+        eltSpan.appendChild(eltDisable);
 
+        let eltUninstall = document.createElement("button");
+        eltUninstall.textContent = "Uninstall";
+        eltSpan.appendChild(eltUninstall);
 
+        let eltRestart = document.createElement("button");
+        eltRestart.textContent = `Restart ${BRAND_NAME} to apply your changes.`
+        eltRestart.classList.add("hidden");
+        eltSpan.appendChild(eltRestart);
 
+        eltRestart.addEventListener("click", () => {
+          Services.startup.quit(Services.startup.eForceQuit | Services.startup.eRestart);
+        });
+        AddonManager.getAddonByID(delta.addonId, addon => {
+          eltDisable.addEventListener("click", () => {
+            addon.userDisabled = true;
+            if (addon.pendingOperations == addon.PENDING_NONE) {
+              
+              return;
+            }
+            eltDisable.classList.add("hidden");
+            eltUninstall.classList.add("hidden");
+            eltRestart.classList.remove("hidden");
+          });
 
-let updateLiveData = Task.async(function*() {
-  try {
-    let dataElt = document.getElementById("liveData");
-    dataElt.innerHTML = "";
+          eltUninstall.addEventListener("click", () => {
+            addon.uninstall();
+            if (addon.pendingOperations == addon.PENDING_NONE) {
+              
+              return;
+            }
+            eltDisable.classList.add("hidden");
+            eltUninstall.classList.add("hidden");
+            eltRestart.classList.remove("hidden");
+          });
+        });
+      } else if (nature == "webpages") {
+        eltSpan.appendChild(document.createElement("br"));
 
-    
-    let headerElt = document.createElement("tr");
-    dataElt.appendChild(headerElt);
-    headerElt.classList.add("header");
-    for (let column of [...MEASURES, {key: "name", name: ""}, {key: "process", name: ""}]) {
-      let el = document.createElement("td");
-      el.classList.add(column.key);
-      el.textContent = column.label;
-      headerElt.appendChild(el);
-    }
+        let eltCloseTab = document.createElement("button");
+        eltCloseTab.textContent = "Close tab";
+        eltSpan.appendChild(eltCloseTab);
+        let windowId = delta.windowId;
+        eltCloseTab.addEventListener("click", () => {
+          let found = findTabFromWindow(windowId);
+          if (!found) {
+            
+            return;
+          }
+          let {tabbrowser, tab} = found;
+          tabbrowser.removeTab(tab);
+        });
 
-    let deltas = yield State.update();
-
-    for (let item of [deltas.process, ...deltas.components]) {
-      let row = document.createElement("tr");
-      if (item.addonId) {
-        row.classList.add("addon");
-      } else if (item.isSystem) {
-        row.classList.add("platform");
-      } else {
-        row.classList.add("content");
+        let eltReloadTab = document.createElement("button");
+        eltReloadTab.textContent = "Reload tab";
+        eltSpan.appendChild(eltReloadTab);
+        eltReloadTab.addEventListener("click", () => {
+          let found = findTabFromWindow(windowId);
+          if (!found) {
+            
+            return;
+          }
+          let {tabbrowser, tab} = found;
+          tabbrowser.reloadTab(tab);
+        });
       }
-      dataElt.appendChild(row);
 
       
-      for (let {probe, key, percentOfDeltaT} of MEASURES) {
-        let el = document.createElement("td");
-        el.classList.add(key);
-        el.classList.add("contents");
-        row.appendChild(el);
+      let eltDetails = document.createElement("ul");
+      eltDetails.classList.add("details");
+      eltDetails.classList.add("hidden");
+      eltSpan.appendChild(eltDetails);
 
-        let rawValue = item[probe][key];
-        let value = percentOfDeltaT ? Math.round(rawValue / deltas.deltaT) : rawValue;
-        if (key == "longestDuration") {
-          value += 1;
-          el.classList.add("jank" + value);
-        }
-        el.textContent = value;
-      }
-
-      {
-        
-        let el = document.createElement("td");
-        let id = item.id;
-        el.classList.add("contents");
-        el.classList.add("name");
-        row.appendChild(el);
-        if (item.addonId) {
-          let _el = el;
-          let _item = item;
-          AddonManager.getAddonByID(item.addonId, a => {
-            _el.textContent = a ? a.name : _item.name
-          });
-        } else {
-          el.textContent = item.title || item.name;
-        }
-      }
-
-      {
-        
-        let el = document.createElement("td");
-        el.classList.add("contents");
-        el.classList.add("process");
-        row.appendChild(el);
-        if (item.isChildProcess) {
-          el.textContent = "(child)";
-          row.classList.add("child");
-        } else {
-          el.textContent = "(parent)";
-          row.classList.add("parent");
-        }
+      for (let [name, className] of [
+        ["eltName", "name"],
+        ["eltFPS", "fps"],
+        ["eltCPU", "cpu"],
+        ["eltSystem", "system"],
+        ["eltCPOW", "cpow"],
+        ["eltLoaded", "loaded"],
+        ["eltProcess", "process"]
+      ]) {
+        let elt = document.createElement("li");
+        elt.classList.add(className);
+        eltDetails.appendChild(elt);
+        cachedElements[name] = elt;
       }
     }
-  } catch (ex) {
-    console.error(ex);
-  }
+
+    return cachedElements;
+  },
+};
+
+let Control = {
+  init: function() {
+    this._initAutorefresh();
+    this._initDisplayMode();
+  },
+  update: Task.async(function*() {
+    let mode = this._displayMode;
+    if (this._autoRefreshInterval) {
+      
+      yield State.update();
+    }
+    let state = yield (mode == MODE_GLOBAL?
+      State.promiseDeltaSinceStartOfTime():
+      State.promiseDeltaSinceStartOfBuffer());
+
+    for (let category of ["webpages", "addons"]) {
+      yield Promise.resolve();
+      yield View.updateCategory(state[category], category, category, state.duration, mode);
+    }
+    yield Promise.resolve();
+
+    
+    View.DOMCache.trimTo(state.groups);
+
+    
+    Services.obs.notifyObservers(null, UPDATE_COMPLETE_TOPIC, mode);
+  }),
+  _setOptions: function(options) {
+    let eltRefresh = document.getElementById("check-autorefresh");
+    if ((options.autoRefresh > 0) != eltRefresh.checked) {
+      eltRefresh.click();
+    }
+    let eltCheckRecent = document.getElementById("check-display-recent");
+    if (!!options.displayRecent != eltCheckRecent.checked) {
+      eltCheckRecent.click();
+    }
+  },
+  _initAutorefresh: function() {
+    let onRefreshChange = (shouldUpdateNow = false) => {
+      if (eltRefresh.checked == !!this._autoRefreshInterval) {
+        
+        return;
+      }
+      if (eltRefresh.checked) {
+        this._autoRefreshInterval = window.setInterval(() => Control.update(), UPDATE_INTERVAL_MS);
+        if (shouldUpdateNow) {
+          Control.update();
+        }
+      } else {
+        window.clearInterval(this._autoRefreshInterval);
+        this._autoRefreshInterval = null;
+      }
+    }
+
+    let eltRefresh = document.getElementById("check-autorefresh");
+    eltRefresh.addEventListener("change", () => onRefreshChange(true));
+
+    onRefreshChange(false);
+  },
+  _autoRefreshInterval: null,
+  _initDisplayMode: function() {
+    let onModeChange = (shouldUpdateNow) => {
+      if (eltCheckRecent.checked) {
+        this._displayMode = MODE_RECENT;
+      } else {
+        this._displayMode = MODE_GLOBAL;
+      }
+      if (shouldUpdateNow) {
+        Control.update();
+      }
+    };
+
+    let eltCheckRecent = document.getElementById("check-display-recent");
+    let eltLabelRecent = document.getElementById("label-display-recent");
+    eltCheckRecent.addEventListener("click", () => onModeChange(true));
+    eltLabelRecent.textContent = `Display only the latest ${Math.round(BUFFER_DURATION_MS/1000)}s`;
+
+    onModeChange(false);
+  },
+  
+  _displayMode: MODE_GLOBAL,
+};
+
+let go = Task.async(function*() {
+  Control.init();
+
+  
+  let testUpdate = function(subject, topic, value) {
+    let options = JSON.parse(value);
+    Control._setOptions(options);
+    Control.update();
+  };
+  Services.obs.addObserver(testUpdate, TEST_DRIVER_TOPIC, false);
+  window.addEventListener("unload", () => Services.obs.removeObserver(testUpdate, TEST_DRIVER_TOPIC));
+
+  yield Control.update();
+  yield new Promise(resolve => setTimeout(resolve, BUFFER_SAMPLING_RATE_MS * 1.1));
+  yield Control.update();
 });
-
-function go() {
-  document.getElementById("playButton").addEventListener("click", () => AutoUpdate.start());
-  document.getElementById("pauseButton").addEventListener("click", () => AutoUpdate.stop());
-
-  document.getElementById("intervalDropdown").addEventListener("change", () => AutoUpdate.updateRefreshRate());
-
-  
-  
-  State.update();
-  window.setTimeout(update, 500);
-
-  let observer = update;
-  
-  Services.obs.addObserver(update, UPDATE_IMMEDIATELY_TOPIC, false);
-  window.addEventListener("unload", () => Services.obs.removeObserver(update, UPDATE_IMMEDIATELY_TOPIC));
-}
