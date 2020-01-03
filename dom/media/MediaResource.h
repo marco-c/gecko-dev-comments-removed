@@ -836,16 +836,18 @@ public:
   
   
   
-
   
   
   
   
   nsresult ReadAt(int64_t aOffset, char* aBuffer,
-                  uint32_t aCount, uint32_t* aBytes) const
-  {
-    return mResource->ReadAt(aOffset, aBuffer, aCount, aBytes);
-  }
+                  uint32_t aCount, uint32_t* aBytes) const;
+
+  
+  
+  
+  
+
   
   
   
