@@ -54,7 +54,6 @@ public:
   void AttachSourceBuffer(TrackBuffersManager* aSourceBuffer);
   void DetachSourceBuffer(TrackBuffersManager* aSourceBuffer);
   TaskQueue* GetTaskQueue() { return mTaskQueue; }
-  void NotifyTimeRangesChanged();
 
   
   
@@ -117,10 +116,6 @@ public:
     return false;
   }
 
-  
-  
-  void NotifyTimeRangesChanged();
-
 private:
   nsRefPtr<SeekPromise> DoSeek(media::TimeUnit aTime);
   nsRefPtr<SamplesPromise> DoGetSamples(int32_t aNumSamples);
@@ -132,7 +127,6 @@ private:
   nsRefPtr<MediaSourceDemuxer> mParent;
   nsRefPtr<TrackBuffersManager> mManager;
   TrackInfo::TrackType mType;
-  media::TimeIntervals mBufferedRanges;
   
   Monitor mMonitor;
   media::TimeUnit mNextRandomAccessPoint;

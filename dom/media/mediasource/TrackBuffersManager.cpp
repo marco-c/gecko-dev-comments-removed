@@ -581,9 +581,6 @@ TrackBuffersManager::UpdateBufferedRanges()
 #endif
 
   mOfficialGroupEndTimestamp = mGroupEndTimestamp;
-
-  
-  mMediaSourceDemuxer->NotifyTimeRangesChanged();
 }
 
 nsRefPtr<TrackBuffersManager::AppendPromise>
