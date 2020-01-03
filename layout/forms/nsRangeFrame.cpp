@@ -873,7 +873,10 @@ nsRangeFrame::GetAdditionalStyleContext(int32_t aIndex) const
   
   
   
-  return aIndex == 0 ? mOuterFocusStyle : nullptr;
+  if (aIndex != 0) {
+    return nullptr;
+  }
+  return mOuterFocusStyle;
 }
 
 void
