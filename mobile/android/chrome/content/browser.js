@@ -912,7 +912,7 @@ var BrowserApp = {
         UITelemetry.addEvent("action.1", "contextmenu", null, "web_mute");
         aTarget.muted = true;
       });
-  
+
     NativeWindow.contextmenus.add(stringGetter("contextmenu.unmute"),
       NativeWindow.contextmenus.mediaContext("media-muted"),
       function(aTarget) {
@@ -1604,6 +1604,7 @@ var BrowserApp = {
 
   sanitize: function (aItems, callback) {
     let success = true;
+    var promises = [];
 
     for (let key in aItems) {
       if (!aItems[key])
@@ -1611,7 +1612,6 @@ var BrowserApp = {
 
       key = key.replace("private.data.", "");
 
-      var promises = [];
       switch (key) {
         case "cookies_sessions":
           promises.push(Sanitizer.clearItem("cookies"));
@@ -2320,7 +2320,7 @@ var NativeWindow = {
         return;
 
       Messaging.sendRequest({
-        type: "Menu:Update", 
+        type: "Menu:Update",
         id: aId,
         options: aOptions
       });

@@ -919,6 +919,20 @@ this.DownloadIntegration = {
 
 
 
+
+  forceSave: function DI_forceSave() {
+    if (this._store) {
+      return this._store.save();
+    }
+    return Promise.resolve();
+  },
+
+  
+
+
+
+
+
   get _importedFromSqlite() {
     try {
       return Services.prefs.getBoolPref(kPrefImportedFromSqlite);
