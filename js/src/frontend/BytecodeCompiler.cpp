@@ -87,7 +87,6 @@ class MOZ_STACK_CLASS BytecodeCompiler
     bool maybeSetSourceMapFromOptions();
     bool emitFinalReturn();
     bool initGlobalBindings(ParseContext<FullParseHandler>& pc);
-    void markFunctionsWithinEvalScript();
     bool maybeCompleteCompressSource();
 
     AutoCompilationTraceLogger traceLogger;
@@ -519,29 +518,6 @@ BytecodeCompiler::initGlobalBindings(ParseContext<FullParseHandler>& pc)
     return true;
 }
 
-void
-BytecodeCompiler::markFunctionsWithinEvalScript()
-{
-    
-
-    if (!script->hasObjects())
-        return;
-
-    ObjectArray* objects = script->objects();
-    size_t start = script->innerObjectsStart();
-
-    for (size_t i = start; i < objects->length; i++) {
-        JSObject* obj = objects->vector[i];
-        if (obj->is<JSFunction>()) {
-            JSFunction* fun = &obj->as<JSFunction>();
-            if (fun->hasScript())
-                fun->nonLazyScript()->setDirectlyInsideEval();
-            else if (fun->isInterpretedLazy())
-                fun->lazyScript()->setDirectlyInsideEval();
-        }
-    }
-}
-
 bool
 BytecodeCompiler::maybeCompleteCompressSource()
 {
@@ -620,12 +596,6 @@ BytecodeCompiler::compileScript(HandleObject scopeChain, HandleScript evalCaller
     {
         return nullptr;
     }
-
-    
-    
-    
-    if (options.forEval)
-        markFunctionsWithinEvalScript();
 
     emitter->tellDebuggerAboutCompiledScript(cx);
 
@@ -790,8 +760,6 @@ frontend::CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const cha
 
     script->bindings = pn->pn_funbox->bindings;
 
-    if (lazy->directlyInsideEval())
-        script->setDirectlyInsideEval();
     if (lazy->usesArgumentsApplyAndThis())
         script->setUsesArgumentsApplyAndThis();
     if (lazy->hasBeenCloned())

@@ -13,6 +13,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/UniquePtr.h"
 
@@ -48,6 +49,8 @@ using namespace js;
 using namespace js::gc;
 using namespace js::frontend;
 
+using mozilla::Maybe;
+using mozilla::Some;
 using mozilla::DebugOnly;
 using mozilla::NumberIsInt32;
 using mozilla::PodCopy;
@@ -1502,57 +1505,65 @@ BytecodeEmitter::tryConvertFreeName(ParseNode* pn)
                 return true;
         }
 
-        size_t hops = 0;
+        
+        
+        uint32_t hops = 0;
+        Maybe<uint32_t> slot;
         FunctionBox* funbox = sc->asFunctionBox();
-        if (funbox->hasExtensibleScope())
-            return false;
-        if (funbox->function()->isNamedLambda() && funbox->function()->atom() == pn->pn_atom)
-            return false;
-        if (funbox->isHeavyweight()) {
-            hops++;
-            if (funbox->function()->isNamedLambda())
-                hops++;
-        }
-        if (script->directlyInsideEval())
-            return false;
-        RootedObject outerScope(cx, script->enclosingStaticScope());
-        for (StaticScopeIter<CanGC> ssi(cx, outerScope); !ssi.done(); ssi++) {
-            if (ssi.type() != StaticScopeIter<CanGC>::Function) {
-                if (ssi.type() == StaticScopeIter<CanGC>::Block) {
-                    
-                    return false;
-                }
-                if (ssi.hasSyntacticDynamicScopeObject())
-                    hops++;
+        PropertyName* name = pn->pn_atom->asPropertyName();
+        for (StaticScopeIter<NoGC> ssi(funbox->staticScope()); !ssi.done(); ssi++) {
+            
+            if (ssi.type() == StaticScopeIter<NoGC>::Eval)
+                return false;
+
+            if (!ssi.hasSyntacticDynamicScopeObject())
                 continue;
-            }
-            RootedScript script(cx, ssi.funScript());
-            if (script->functionNonDelazifying()->atom() == pn->pn_atom)
-                return false;
-            if (ssi.hasSyntacticDynamicScopeObject()) {
-                uint32_t slot;
-                if (lookupAliasedName(script, pn->pn_atom->asPropertyName(), &slot, pn)) {
-                    JSOp op;
-                    switch (pn->getOp()) {
-                      case JSOP_GETNAME: op = JSOP_GETALIASEDVAR; break;
-                      case JSOP_SETNAME: op = JSOP_SETALIASEDVAR; break;
-                      default: return false;
+
+            
+            if (ssi.type() == StaticScopeIter<NoGC>::Function) {
+                RootedScript funScript(cx, ssi.funScript());
+                if (funScript->funHasExtensibleScope() || ssi.fun().atom() == pn->pn_atom)
+                    return false;
+
+                
+                
+                if (script != funScript) {
+                    uint32_t slot_;
+                    if (lookupAliasedName(funScript, name, &slot_, pn)) {
+                        slot = Some(slot_);
+                        break;
                     }
-
-                    pn->setOp(op);
-                    MOZ_ALWAYS_TRUE(pn->pn_scopecoord.set(parser->tokenStream, hops, slot));
-                    return true;
                 }
-                hops++;
+            } else if (ssi.type() == StaticScopeIter<NoGC>::Block) {
+                RootedShape shape(cx, ssi.block().lookupAliasedName(name));
+                if (shape) {
+                    
+                    
+                    if (!shape->writable() && pn->getOp() == JSOP_SETNAME)
+                        return false;
+                    slot = Some(shape->slot());
+                    pn->pn_dflags |= PND_LEXICAL;
+                    break;
+                }
+            } else {
+                MOZ_ASSERT(ssi.type() != StaticScopeIter<NoGC>::With);
             }
 
-            
-            
-            
-            
-            
-            if (script->funHasExtensibleScope() || script->directlyInsideEval())
-                return false;
+            hops++;
+        }
+
+        
+        
+        if (slot.isSome()) {
+            JSOp op;
+            switch (pn->getOp()) {
+              case JSOP_GETNAME: op = JSOP_GETALIASEDVAR; break;
+              case JSOP_SETNAME: op = JSOP_SETALIASEDVAR; break;
+              default: return false;
+            }
+            pn->setOp(op);
+            MOZ_ALWAYS_TRUE(pn->pn_scopecoord.set(parser->tokenStream, hops, *slot));
+            return true;
         }
     }
 
