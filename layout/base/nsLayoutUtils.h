@@ -2613,6 +2613,17 @@ public:
 
 
 
+
+  static FrameMetrics CalculateBasicFrameMetrics(nsIScrollableFrame* aScrollFrame);
+
+  
+
+
+
+
+
+
+
   static bool CalculateAndSetDisplayPortMargins(nsIScrollableFrame* aScrollFrame,
                                                 RepaintMode aRepaintMode);
 
