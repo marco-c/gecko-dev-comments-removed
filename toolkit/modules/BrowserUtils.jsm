@@ -30,6 +30,12 @@ this.BrowserUtils = {
   restartApplication: function() {
     let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"]
                        .getService(Ci.nsIAppStartup);
+    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"]
+                       .createInstance(Ci.nsISupportsPRBool);
+    Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
+    if (cancelQuit.data) { 
+      return false;
+    }
     
     if (Services.appinfo.inSafeMode) {
       appStartup.restartInSafeMode(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
