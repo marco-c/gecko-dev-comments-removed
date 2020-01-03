@@ -8,14 +8,13 @@ import mozilla.prettyprinters
 
 
 
-import mozilla.GCCellPtr
 import mozilla.Interpreter
+import mozilla.jsid
 import mozilla.JSObject
 import mozilla.JSString
 import mozilla.JSSymbol
-import mozilla.Root
-import mozilla.jsid
 import mozilla.jsval
+import mozilla.Root
 
 
 try:
