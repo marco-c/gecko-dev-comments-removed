@@ -1157,6 +1157,30 @@ CallTraceCallbackOnNonHeap(T* v, const TraceCallbacks& aCallbacks, const char* a
 } 
 } 
 
+
+
+namespace mozilla {
+
+template <typename T>
+inline void
+Swap(JS::Heap<T>& aX, JS::Heap<T>& aY)
+{
+    T tmp = aX;
+    aX = aY;
+    aY = tmp;
+}
+
+template <typename T>
+inline void
+Swap(JS::TenuredHeap<T>& aX, JS::TenuredHeap<T>& aY)
+{
+    T tmp = aX;
+    aX = aY;
+    aY = tmp;
+}
+
+} 
+
 #undef DELETE_ASSIGNMENT_OPS
 
 #endif  
