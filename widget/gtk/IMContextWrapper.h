@@ -358,6 +358,20 @@ protected:
 
 
 
+
+
+
+
+
+    bool SetTextRange(PangoAttrIterator* aPangoAttrIter,
+                      const gchar* aUTF8CompositionString,
+                      TextRange& aTextRange) const;
+
+    
+
+
+
+
     void SetCursorPosition(GtkIMContext* aContext);
 
     
