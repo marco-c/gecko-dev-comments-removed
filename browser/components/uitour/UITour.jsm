@@ -98,20 +98,11 @@ this.UITour = {
   targets: new Map([
     ["accountStatus", {
       query: (aDocument) => {
-        
-        let fxAFooter = aDocument.getElementById("PanelUI-footer-fxa");
-        if (fxAFooter.getAttribute("fxastatus")) {
-          return aDocument.getElementById("PanelUI-fxa-avatar");
-        }
-
-        
         let statusButton = aDocument.getElementById("PanelUI-fxa-label");
         return aDocument.getAnonymousElementByAttribute(statusButton,
                                                         "class",
                                                         "toolbarbutton-icon");
       },
-      
-      
       widgetName: "PanelUI-fxa-label",
     }],
     ["addons",      {query: "#add-ons-button"}],
