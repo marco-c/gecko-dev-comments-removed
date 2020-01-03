@@ -3,6 +3,7 @@
 
 
 
+
 #include "CertBlocklist.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Preferences.h"
@@ -437,21 +438,6 @@ ProcessBlocklistEntry(BlocklistItemKey* aHashKey, void* aUserArg)
 
 
 PLDHashOperator
-WriteSerial(nsCStringHashKey* aHashKey, void* aUserArg)
-{
-  BlocklistSaveInfo* saveInfo = reinterpret_cast<BlocklistSaveInfo*>(aUserArg);
-
-  nsresult rv = WriteLine(saveInfo->outputStream,
-                          NS_LITERAL_CSTRING(" ") + aHashKey->GetKey());
-  if (NS_FAILED(rv)) {
-    saveInfo->success = false;
-    return PL_DHASH_STOP;
-  }
-  return PL_DHASH_NEXT;
-}
-
-
-PLDHashOperator
 WriteIssuer(nsCStringHashKey* aHashKey, void* aUserArg)
 {
   BlocklistSaveInfo* saveInfo = reinterpret_cast<BlocklistSaveInfo*>(aUserArg);
@@ -464,7 +450,16 @@ WriteIssuer(nsCStringHashKey* aHashKey, void* aUserArg)
     return PL_DHASH_STOP;
   }
 
-  issuerSet->EnumerateEntries(WriteSerial, saveInfo);
+  
+  for (auto iter = issuerSet->Iter(); !iter.Done(); iter.Next()) {
+    nsresult rv = WriteLine(saveInfo->outputStream,
+                            NS_LITERAL_CSTRING(" ") + iter.Get()->GetKey());
+    if (NS_FAILED(rv)) {
+      saveInfo->success = false;
+      break;
+    }
+  }
+
   if (!saveInfo->success) {
     saveInfo->success = false;
     return PL_DHASH_STOP;
