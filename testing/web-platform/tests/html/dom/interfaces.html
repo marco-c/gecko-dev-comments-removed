@@ -1,7 +1,8 @@
 <!doctype html>
 <meta charset=utf-8>
-<!-- WARNING: These tests are preliminary and probably partly incorrect.  -->
+
 <title>HTML IDL tests</title>
+<meta name=timeout content=long>
 <script src=/resources/testharness.js></script>
 <script src=/resources/testharnessreport.js></script>
 <script src=/resources/WebIDLParser.js></script>
@@ -10,12 +11,12 @@
 <h1>HTML IDL tests</h1>
 <div id=log></div>
 
-<!-- URLUtils* stubs -->
+
 <script type=text/plain class=untested>
 interface URLUtils {};
 interface URLUtilsReadOnly {};
 </script>
-<!-- DOM IDLs -->
+
 <script type=text/plain class=untested>
 exception DOMException {
   const unsigned short INDEX_SIZE_ERR = 1;
@@ -506,7 +507,7 @@ interface DOMSettableTokenList : DOMTokenList {
             attribute DOMString value;
 };
 </script>
-<!-- UI Events IDLs -->
+
 <script type=text/plain class=untested>
 [Constructor(DOMString type, optional UIEventInit eventInitDict)]
 interface UIEvent : Event {
@@ -569,7 +570,7 @@ partial interface MouseEvent {
     void initMouseEvent (DOMString typeArg, boolean bubblesArg, boolean cancelableArg, Window? viewArg, long detailArg, long screenXArg, long screenYArg, long clientXArg, long clientYArg, boolean ctrlKeyArg, boolean altKeyArg, boolean shiftKeyArg, boolean metaKeyArg, short buttonArg, EventTarget? relatedTargetArg);
 };
 </script>
-<!-- Touch Events IDLs -->
+
 <script type=text/plain class=untested>
 interface Touch {
     readonly    attribute long        identifier;
@@ -582,7 +583,7 @@ interface Touch {
     readonly    attribute long        pageY;
 };
 </script>
-<!-- CSSOM IDLs -->
+
 <script type=text/plain class=untested>
 interface MediaList {
   stringifier attribute DOMString mediaText;
@@ -886,7 +887,7 @@ interface CSSPropertyValue {
 //};
 </script>
 
-<!-- HTML IDLs -->
+
 <script type=text/plain>
 typedef (Int8Array or Uint8Array or Uint8ClampedArray or
          Int16Array or Uint16Array or
