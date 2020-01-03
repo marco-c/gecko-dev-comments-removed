@@ -42,13 +42,11 @@ public:
                             hb_codepoint_t variation_selector) const;
 
     
-    hb_position_t GetGlyphHAdvance(gfxContext *aContext,
-                                   hb_codepoint_t glyph) const;
+    hb_position_t GetGlyphHAdvance(hb_codepoint_t glyph) const;
 
-    hb_position_t GetGlyphVAdvance(gfxContext *aContext,
-                                   hb_codepoint_t glyph) const;
+    hb_position_t GetGlyphVAdvance(hb_codepoint_t glyph) const;
 
-    void GetGlyphVOrigin(gfxContext *aContext, hb_codepoint_t aGlyph,
+    void GetGlyphVOrigin(hb_codepoint_t aGlyph,
                          hb_position_t *aX, hb_position_t *aY) const;
 
     

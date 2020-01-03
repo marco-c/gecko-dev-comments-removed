@@ -184,8 +184,7 @@ struct GlyphMetrics {
 };
 
 hb_position_t
-gfxHarfBuzzShaper::GetGlyphHAdvance(gfxContext *aContext,
-                                    hb_codepoint_t glyph) const
+gfxHarfBuzzShaper::GetGlyphHAdvance(hb_codepoint_t glyph) const
 {
     
     
@@ -208,8 +207,7 @@ gfxHarfBuzzShaper::GetGlyphHAdvance(gfxContext *aContext,
 }
 
 hb_position_t
-gfxHarfBuzzShaper::GetGlyphVAdvance(gfxContext *aContext,
-                                    hb_codepoint_t glyph) const
+gfxHarfBuzzShaper::GetGlyphVAdvance(hb_codepoint_t glyph) const
 {
     if (!mVmtxTable) {
         
@@ -244,9 +242,8 @@ gfxHarfBuzzShaper::HBGetGlyphHAdvance(hb_font_t *font, void *font_data,
     gfxFont *gfxfont = fcd->mShaper->GetFont();
     if (gfxfont->ProvidesGlyphWidths()) {
         return gfxfont->GetGlyphWidth(fcd->mContext, glyph);
-    } else {
-        return fcd->mShaper->GetGlyphHAdvance(fcd->mContext, glyph);
     }
+    return fcd->mShaper->GetGlyphHAdvance(glyph);
 }
 
 
@@ -259,9 +256,8 @@ gfxHarfBuzzShaper::HBGetGlyphVAdvance(hb_font_t *font, void *font_data,
     gfxFont *gfxfont = fcd->mShaper->GetFont();
     if (gfxfont->ProvidesGlyphWidths()) {
         return gfxfont->GetGlyphWidth(fcd->mContext, glyph);
-    } else {
-        return fcd->mShaper->GetGlyphVAdvance(fcd->mContext, glyph);
     }
+    return fcd->mShaper->GetGlyphVAdvance(glyph);
 }
 
 
@@ -296,15 +292,15 @@ gfxHarfBuzzShaper::HBGetGlyphVOrigin(hb_font_t *font, void *font_data,
 {
     const gfxHarfBuzzShaper::FontCallbackData *fcd =
         static_cast<const gfxHarfBuzzShaper::FontCallbackData*>(font_data);
-    fcd->mShaper->GetGlyphVOrigin(fcd->mContext, glyph, x, y);
+    fcd->mShaper->GetGlyphVOrigin(glyph, x, y);
     return true;
 }
 
 void
-gfxHarfBuzzShaper::GetGlyphVOrigin(gfxContext *aContext, hb_codepoint_t aGlyph,
+gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
                                    hb_position_t *aX, hb_position_t *aY) const
 {
-    *aX = -0.5 * GetGlyphHAdvance(aContext, aGlyph);
+    *aX = -0.5 * GetGlyphHAdvance(aGlyph);
 
     if (mVORGTable) {
         
