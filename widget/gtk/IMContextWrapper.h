@@ -348,10 +348,9 @@ protected:
 
 
 
-
     already_AddRefed<TextRangeArray>
         CreateTextRangeArray(GtkIMContext* aContext,
-                             const nsAString& aLastDispatchedData);
+                             const nsAString& aCompositionString);
 
     
 
