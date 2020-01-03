@@ -932,11 +932,6 @@ nsTransitionManager::FlushTransitions(FlushFlags aFlags)
 
       bool canThrottleTick = aFlags == Can_Throttle;
 
-      MOZ_ASSERT(collection->mElement->GetCrossShadowCurrentDoc() ==
-                   mPresContext->Document(),
-                 "Element::UnbindFromTree should have "
-                 "destroyed the element transitions object");
-
       
       
       for (auto iter = collection->mAnimations.cbegin();
@@ -944,16 +939,6 @@ nsTransitionManager::FlushTransitions(FlushFlags aFlags)
            ++iter) {
         canThrottleTick &= (*iter)->CanThrottle();
       }
-
-      
-      
-      MOZ_ASSERT(collection->mElementProperty ==
-                   nsGkAtoms::transitionsProperty ||
-                 collection->mElementProperty ==
-                   nsGkAtoms::transitionsOfBeforeProperty ||
-                 collection->mElementProperty ==
-                   nsGkAtoms::transitionsOfAfterProperty,
-                 "Unexpected element property; might restyle too much");
 
       collection->RequestRestyle(canThrottleTick ?
                                  AnimationCollection::RestyleType::Throttled :

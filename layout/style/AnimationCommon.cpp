@@ -968,11 +968,18 @@ AnimationCollection::CanThrottleAnimation(TimeStamp aTime)
 void
 AnimationCollection::RequestRestyle(RestyleType aRestyleType)
 {
+  MOZ_ASSERT(IsForElement() || IsForBeforePseudo() || IsForAfterPseudo(),
+             "Unexpected mElementProperty; might restyle too much");
+
   nsPresContext* presContext = mManager->PresContext();
   if (!presContext) {
     
     return;
   }
+
+  MOZ_ASSERT(mElement->GetCrossShadowCurrentDoc() == presContext->Document(),
+             "Element::UnbindFromTree should have destroyed the element "
+             "transition/animations object");
 
   
   
