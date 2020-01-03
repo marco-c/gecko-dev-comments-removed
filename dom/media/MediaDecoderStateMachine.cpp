@@ -2456,12 +2456,12 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
         AbstractThread::MainThread()->Dispatch(event.forget());
 
         mSentPlaybackEndedEvent = true;
-      }
 
-      
-      
-      StopAudioThread();
-      mDecodedStream->StopPlayback();
+        
+        
+        StopAudioThread();
+        mDecodedStream->StopPlayback();
+      }
 
       return NS_OK;
     }
