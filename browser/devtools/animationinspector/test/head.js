@@ -462,3 +462,26 @@ let getAnimationPlayerState = Task.async(function*(selector, animationIndex=0) {
 function isNodeVisible(node) {
   return !!node.getClientRects().length;
 }
+
+
+
+
+
+
+
+let waitForAllAnimationTargets = Task.async(function*(panel) {
+  let targets = [];
+  if (panel.animationsTimelineComponent) {
+    targets = targets.concat(panel.animationsTimelineComponent.targetNodes);
+  }
+  if (panel.playerWidgets) {
+    targets = targets.concat(panel.playerWidgets.map(w => w.targetNodeComponent));
+  }
+  yield promise.all(targets.map(t => {
+    if (!t.nodeFront) {
+      return t.once("target-retrieved");
+    }
+    return false;
+  }));
+  return targets;
+});
