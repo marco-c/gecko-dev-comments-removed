@@ -118,6 +118,20 @@ function forceCollections() {
   Cu.forceShrinkingGC();
 }
 
+
+
+
+
+
+
+
+function getMockTabActor(win) {
+  return {
+    window: win,
+    isRootActor: true
+  };
+}
+
 registerCleanupFunction(function tearDown() {
   while (gBrowser.tabs.length > 1) {
     gBrowser.removeCurrentTab();

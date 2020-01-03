@@ -607,9 +607,10 @@ LayoutHelpers.isShadowAnonymous = function(node) {
 
 
 
+
 let windowUtils = new WeakMap;
-LayoutHelpers.getCurrentZoom = function(node, map = z=>z) {
-  let win = node.ownerDocument.defaultView;
+LayoutHelpers.getCurrentZoom = function(node) {
+  let win = node.self === node ? node : node.ownerDocument.defaultView;
   let utils = windowUtils.get(win);
   if (utils) {
     return utils.fullZoom;
