@@ -374,6 +374,14 @@ Animation::Tick()
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+
+  
+  AnimationCollection* collection = GetCollection();
+  if (collection) {
+    collection->RequestRestyle(CanThrottle() ?
+      AnimationCollection::RestyleType::Throttled :
+      AnimationCollection::RestyleType::Standard);
+  }
 }
 
 void
