@@ -2,6 +2,7 @@
 
 
 
+import collections
 import json
 import math
 import os
@@ -279,8 +280,33 @@ def from_Histograms_json(filename):
 def from_UseCounters_conf(filename):
     return usecounters.generate_histograms(filename)
 
+def from_nsDeprecatedOperationList(filename):
+    operation_regex = re.compile('^DEPRECATED_OPERATION\\(([^)]+)\\)')
+    histograms = collections.OrderedDict()
+
+    with open(filename, 'r') as f:
+        for line in f:
+            match = operation_regex.search(line)
+            if not match:
+                continue
+
+            op = match.group(1)
+
+            def add_counter(context):
+                name = 'USE_COUNTER_DEPRECATED_%s_%s' % (op, context.upper())
+                histograms[name] = {
+                    'expires_in_version': 'never',
+                    'kind': 'boolean',
+                    'description': 'Whether a %s used %s' % (context, op)
+                }
+            add_counter('document')
+            add_counter('page')
+
+    return histograms
+
 FILENAME_PARSERS = {
     'Histograms.json': from_Histograms_json,
+    'nsDeprecatedOperationList.h': from_nsDeprecatedOperationList,
 }
 
 
