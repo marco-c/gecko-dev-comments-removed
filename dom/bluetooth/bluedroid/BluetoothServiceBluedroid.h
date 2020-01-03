@@ -10,6 +10,9 @@
 #include "BluetoothCommon.h"
 #include "BluetoothInterface.h"
 #include "BluetoothService.h"
+#ifndef MOZ_B2G_BT_API_V1
+#include "nsDataHashtable.h"
+#endif
 
 BEGIN_BLUETOOTH_NAMESPACE
 
@@ -407,6 +410,12 @@ protected:
   
   bool mIsRestart;
   bool mIsFirstTimeToggleOffBt;
+
+#ifndef MOZ_B2G_BT_API_V1
+  
+  nsDataHashtable<nsStringHashKey, nsString> mDeviceNameMap;
+#endif
+
 };
 
 END_BLUETOOTH_NAMESPACE
