@@ -553,7 +553,6 @@ public:
                                      
                                      
                                      
-    uint16_t mHasClearance:1;        
     uint16_t mAssumingHScrollbar:1;  
                                      
     uint16_t mAssumingVScrollbar:1;  
