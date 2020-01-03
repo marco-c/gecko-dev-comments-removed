@@ -225,7 +225,11 @@ class WebMBufferedState final
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebMBufferedState)
 
 public:
-  WebMBufferedState() : mReentrantMonitor("WebMBufferedState") {
+  WebMBufferedState()
+    : mReentrantMonitor("WebMBufferedState")
+    , mLastBlockOffset(-1)
+    , mLastEndOffset(-1)
+  {
     MOZ_COUNT_CTOR(WebMBufferedState);
   }
 
@@ -242,6 +246,8 @@ public:
 
   
   int64_t GetInitEndOffset();
+  
+  int64_t GetLastBlockOffset();
 
   
   bool GetStartTime(uint64_t *aTime);
@@ -261,6 +267,10 @@ private:
   
   
   nsTArray<WebMTimeDataOffset> mTimeMapping;
+  
+  int64_t mLastBlockOffset;
+  
+  int64_t mLastEndOffset;
 
   
   nsTArray<WebMBufferedParser> mRangeParsers;
