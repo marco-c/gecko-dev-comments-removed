@@ -338,7 +338,21 @@ UpgradeHostToOriginAndInsert(const nsACString& aHost, const nsAFlatCString& aTyp
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    rv = histQuery->SetDomain(aHost);
+    nsAutoCString eTLD1;
+    nsCOMPtr<nsIEffectiveTLDService> tldService =
+      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+    MOZ_ASSERT(tldService); 
+    if (tldService) {
+      rv = tldService->GetBaseDomainFromHost(aHost, 0, eTLD1);
+      NS_ENSURE_SUCCESS(rv, rv);
+    } else {
+      
+      
+      eTLD1 = aHost;
+    }
+
+    
+    rv = histQuery->SetDomain(eTLD1);
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = histQuery->SetDomainIsHost(false);
