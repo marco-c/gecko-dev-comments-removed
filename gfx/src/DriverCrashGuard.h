@@ -28,13 +28,22 @@ enum class DriverInitStatus
   Recovered
 };
 
+
+
+
+
+
+
+
+
+
 class DriverCrashGuard
 {
 public:
   DriverCrashGuard();
   ~DriverCrashGuard();
 
-  bool DisableAcceleration() const;
+  bool Crashed();
 
   
   
@@ -46,6 +55,8 @@ public:
   };
 
 private:
+  void InitializeIfNeeded();
+  void Initialize();
   bool InitLockFilePath();
   bool UpdateEnvironment();
   bool CheckAndUpdatePref(const char* aPrefName, const nsAString& aCurrentValue);
@@ -61,6 +72,7 @@ private:
   static bool sEnvironmentHasBeenUpdated;
 
 private:
+  bool mInitialized;
   bool mIsChromeProcess;
   nsCOMPtr<nsIGfxInfo> mGfxInfo;
   nsCOMPtr<nsIFile> mLockFile;
