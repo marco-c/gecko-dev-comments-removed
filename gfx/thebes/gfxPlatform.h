@@ -307,12 +307,6 @@ public:
     int GetTileWidth();
     int GetTileHeight();
     void SetTileSize(int aWidth, int aHeight);
-    
-
-
-
-
-    void ComputeTileSize();
 
     
 
@@ -759,6 +753,13 @@ private:
     friend void RecordingPrefChanged(const char *aPrefName, void *aClosure);
 
     virtual void GetPlatformCMSOutputProfile(void *&mem, size_t &size);
+
+    
+
+
+
+
+    void ComputeTileSize();
 
     nsRefPtr<gfxASurface> mScreenReferenceSurface;
     nsTArray<uint32_t> mCJKPrefLangs;
