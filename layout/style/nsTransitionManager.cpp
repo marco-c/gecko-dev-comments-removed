@@ -937,38 +937,13 @@ nsTransitionManager::FlushTransitions(FlushFlags aFlags)
                  "Element::UnbindFromTree should have "
                  "destroyed the element transitions object");
 
-      size_t i = collection->mAnimations.Length();
-      MOZ_ASSERT(i != 0, "empty transitions list?");
-      bool transitionStartedOrEnded = false;
-      do {
-        --i;
-        Animation* anim = collection->mAnimations[i];
-        if (!anim->GetEffect()->IsFinishedTransition()) {
-          MOZ_ASSERT(anim->GetEffect(), "Transitions should have an effect");
-          ComputedTiming computedTiming =
-            anim->GetEffect()->GetComputedTiming();
-          if (computedTiming.mPhase == ComputedTiming::AnimationPhase_After) {
-            
-            
-            
-            
-            
-            
-            
-            anim->GetEffect()->SetIsFinishedTransition(true);
-            collection->UpdateAnimationGeneration(mPresContext);
-            transitionStartedOrEnded = true;
-          } else if ((computedTiming.mPhase ==
-                      ComputedTiming::AnimationPhase_Active) &&
-                     canThrottleTick &&
-                     !anim->IsRunningOnCompositor()) {
-            
-            
-            collection->UpdateAnimationGeneration(mPresContext);
-            transitionStartedOrEnded = true;
-          }
-        }
-      } while (i != 0);
+      
+      
+      for (auto iter = collection->mAnimations.cbegin();
+           canThrottleTick && iter != collection->mAnimations.cend();
+           ++iter) {
+        canThrottleTick &= (*iter)->CanThrottle();
+      }
 
       
       
@@ -979,7 +954,7 @@ nsTransitionManager::FlushTransitions(FlushFlags aFlags)
                  collection->mElementProperty ==
                    nsGkAtoms::transitionsOfAfterProperty,
                  "Unexpected element property; might restyle too much");
-      if (!canThrottleTick || transitionStartedOrEnded) {
+      if (!canThrottleTick) {
         collection->PostRestyleForAnimation(mPresContext);
       } else {
         didThrottle = true;
