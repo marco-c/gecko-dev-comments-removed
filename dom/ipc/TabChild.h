@@ -34,6 +34,7 @@
 #include "mozilla/layers/CompositorTypes.h"
 #include "nsIWebBrowserChrome3.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "AudioChannelService.h"
 #include "PuppetWidget.h"
 
 class nsICachedFileDescriptorListener;
@@ -494,10 +495,6 @@ public:
 
     virtual ScreenIntSize GetInnerSize() override;
 
-    virtual PWebBrowserPersistDocumentChild* AllocPWebBrowserPersistDocumentChild() override;
-    virtual bool RecvPWebBrowserPersistDocumentConstructor(PWebBrowserPersistDocumentChild *aActor) override;
-    virtual bool DeallocPWebBrowserPersistDocumentChild(PWebBrowserPersistDocumentChild* aActor) override;
-
 protected:
     virtual ~TabChild();
 
@@ -641,9 +638,10 @@ private:
     double mDefaultScale;
     bool mIPCOpen;
     bool mParentIsActive;
-    bool mAudioChannelActive;
     bool mAsyncPanZoomEnabled;
     CSSSize mUnscaledInnerSize;
+
+    nsAutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
     DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };

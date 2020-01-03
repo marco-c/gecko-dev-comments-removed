@@ -8,7 +8,6 @@
 
 #include "TabChild.h"
 
-#include "AudioChannelService.h"
 #include "gfxPrefs.h"
 #ifdef ACCESSIBILITY
 #include "mozilla/a11y/DocAccessibleChild.h"
@@ -35,7 +34,6 @@
 #include "mozilla/layout/RenderFrameChild.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
-#include "mozilla/PWebBrowserPersistDocumentChild.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEvents.h"
@@ -99,7 +97,6 @@
 #include "nsIScriptError.h"
 #include "mozilla/EventForwards.h"
 #include "nsDeviceContext.h"
-#include "mozilla/WebBrowserPersistDocumentChild.h"
 
 #define BROWSER_ELEMENT_CHILD_SCRIPT \
     NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js")
@@ -573,7 +570,6 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mDefaultScale(0)
   , mIPCOpen(true)
   , mParentIsActive(false)
-  , mAudioChannelActive(false)
 {
   
   
@@ -602,6 +598,10 @@ TabChild::TabChild(nsIContentChild* aManager,
 
       observerService->AddObserver(this, topic.get(), false);
     }
+  }
+
+  for (uint32_t idx = 0; idx < NUMBER_OF_AUDIO_CHANNELS; idx++) {
+    mAudioChannelsActive.AppendElement(false);
   }
 }
 
@@ -670,8 +670,8 @@ TabChild::Observe(nsISupports *aSubject,
 
     nsAutoString activeStr(aData);
     bool active = activeStr.EqualsLiteral("active");
-    if (active != mAudioChannelActive) {
-      mAudioChannelActive = active;
+    if (active != mAudioChannelsActive[audioChannel]) {
+      mAudioChannelsActive[audioChannel] = active;
       unused << SendAudioChannelActivityNotification(audioChannel, active);
     }
   }
@@ -711,7 +711,7 @@ TabChild::Init()
 
   nsCOMPtr<nsIDocShellTreeItem> docShellItem(do_QueryInterface(WebNavigation()));
   docShellItem->SetItemType(nsIDocShellTreeItem::typeContentWrapper);
-  
+
   nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(WebNavigation());
   if (!baseWindow) {
     NS_ERROR("mWebNav doesn't QI to nsIBaseWindow");
@@ -3108,23 +3108,3 @@ TabChildGlobal::GetGlobalJSObject()
   return ref->GetJSObject();
 }
 
-PWebBrowserPersistDocumentChild*
-TabChild::AllocPWebBrowserPersistDocumentChild()
-{
-  return new WebBrowserPersistDocumentChild();
-}
-
-bool
-TabChild::RecvPWebBrowserPersistDocumentConstructor(PWebBrowserPersistDocumentChild *aActor)
-{
-  nsCOMPtr<nsIDocument> doc = GetDocument();
-  static_cast<WebBrowserPersistDocumentChild*>(aActor)->Start(doc);
-  return true;
-}
-
-bool
-TabChild::DeallocPWebBrowserPersistDocumentChild(PWebBrowserPersistDocumentChild* aActor)
-{
-  delete aActor;
-  return true;
-}
