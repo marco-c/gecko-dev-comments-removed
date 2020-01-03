@@ -35,7 +35,6 @@ public:
                      const nsAString& aAddonId,
                      const nsAString& aTitle,
                      const uint64_t aWindowId,
-                     const uint64_t aProcessId,
                      const bool aIsSystem,
                      const js::PerformanceData& aPerformanceData)
     : mName(aName)
@@ -43,7 +42,6 @@ public:
     , mAddonId(aAddonId)
     , mTitle(aTitle)
     , mWindowId(aWindowId)
-    , mProcessId(aProcessId)
     , mIsSystem(aIsSystem)
     , mPerformanceData(aPerformanceData)
   {
@@ -123,7 +121,7 @@ public:
   };
 
   
-  NS_IMETHOD GetDurations(uint32_t *aCount, uint64_t **aNumberOfOccurrences) override {
+  NS_IMETHODIMP GetDurations(uint32_t *aCount, uint64_t **aNumberOfOccurrences) override {
     const size_t length = mozilla::ArrayLength(mPerformanceData.durations);
     if (aCount) {
       *aCount = length;
@@ -135,15 +133,6 @@ public:
     return NS_OK;
   };
 
-  
-
-
-  NS_IMETHODIMP GetProcessId(uint64_t* processId)
-  {
-    *processId = mProcessId;
-    return NS_OK;
-  }
-
 private:
   nsString mName;
   nsString mParentId;
@@ -151,7 +140,6 @@ private:
   nsString mAddonId;
   nsString mTitle;
   uint64_t mWindowId;
-  uint64_t mProcessId;
   bool mIsSystem;
 
   js::PerformanceData mPerformanceData;
@@ -370,7 +358,7 @@ nsPerformanceSnapshot::ImportStats(JSContext* cx, const js::PerformanceData& per
   bool isSystem = GetIsSystem(cx, global);
 
   nsCOMPtr<nsIPerformanceStats> result =
-    new nsPerformanceStats(name, parent, groupId, addonId, title, windowId, mProcessId, isSystem, performance);
+    new nsPerformanceStats(name, parent, groupId, addonId, title, windowId, isSystem, performance);
   return result.forget();
 }
 
@@ -414,7 +402,6 @@ nsPerformanceSnapshot::Init(JSContext* cx, uint64_t processId) {
                                         NS_LITERAL_STRING(""),          
                                         NS_LITERAL_STRING(""),          
                                         0,                              
-                                        mProcessId,                     
                                         true,                           
                                         processStats);
   return NS_OK;
