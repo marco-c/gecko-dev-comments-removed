@@ -214,13 +214,6 @@ if (typeof(computedStyle) == 'undefined') {
     };
 }
 
-
-
-
-SimpleTest.testPluginIsOOP = function () {
-    return true;
-};
-
 SimpleTest._tests = [];
 SimpleTest._stopOnLoad = true;
 SimpleTest._cleanupFunctions = [];
