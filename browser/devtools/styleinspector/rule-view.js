@@ -2857,6 +2857,13 @@ TextPropertyEditor.prototype = {
   
 
 
+  get rule() {
+    return this.prop.rule;
+  },
+
+  
+
+
   _create: function() {
     this.element = this.doc.createElementNS(HTML_NS, "li");
     this.element.classList.add("ruleview-property");
@@ -3004,7 +3011,7 @@ TextPropertyEditor.prototype = {
 
 
   get sheetHref() {
-    let domRule = this.prop.rule.domRule;
+    let domRule = this.rule.domRule;
     if (domRule) {
       return domRule.href || domRule.nodeHref;
     }
@@ -3068,14 +3075,14 @@ TextPropertyEditor.prototype = {
 
     
     
-    let store = this.prop.rule.elementStyle.store;
-    let val = store.userProperties.getProperty(this.prop.rule.style, name,
+    let store = this.rule.elementStyle.store;
+    let val = store.userProperties.getProperty(this.rule.style, name,
                                                this.prop.value);
     if (this.prop.priority) {
       val += " !" + this.prop.priority;
     }
 
-    let propDirty = store.userProperties.contains(this.prop.rule.style, name);
+    let propDirty = store.userProperties.contains(this.rule.style, name);
 
     if (propDirty) {
       this.element.setAttribute("dirty", "");
