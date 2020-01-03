@@ -3153,24 +3153,31 @@ void* nsWindow::GetNativeData(uint32_t aDataType)
   return nullptr;
 }
 
+static void
+SetChildStyleAndParent(HWND aChildWindow, HWND aParentWindow)
+{
+    
+    LONG_PTR style = GetWindowLongPtr(aChildWindow, GWL_STYLE);
+    style |= WS_CHILD;
+    style &= ~WS_POPUP;
+    SetWindowLongPtr(aChildWindow, GWL_STYLE, style);
+
+    
+    
+    ::SetParent(aChildWindow, aParentWindow);
+}
+
 void
 nsWindow::SetNativeData(uint32_t aDataType, uintptr_t aVal)
 {
   switch (aDataType) {
     case NS_NATIVE_CHILD_WINDOW:
-      {
-        HWND childWindow = reinterpret_cast<HWND>(aVal);
-
-        
-        LONG_PTR style = GetWindowLongPtr(childWindow, GWL_STYLE);
-        style |= WS_CHILD;
-        style &= ~WS_POPUP;
-        SetWindowLongPtr(childWindow, GWL_STYLE, style);
-
-        
-        ::SetParent(childWindow, mWnd);
-        break;
-      }
+      SetChildStyleAndParent(reinterpret_cast<HWND>(aVal), mWnd);
+      break;
+    case NS_NATIVE_CHILD_OF_SHAREABLE_WINDOW:
+      SetChildStyleAndParent(reinterpret_cast<HWND>(aVal),
+                             WinUtils::GetTopLevelHWND(mWnd));
+      break;
     default:
       NS_ERROR("SetNativeData called with unsupported data type.");
   }
