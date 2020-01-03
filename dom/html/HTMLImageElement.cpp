@@ -800,10 +800,30 @@ HTMLImageElement::GetNaturalWidth(uint32_t* aNaturalWidth)
 nsresult
 HTMLImageElement::CopyInnerTo(Element* aDest)
 {
-  if (aDest->OwnerDoc()->IsStaticDocument()) {
-    CreateStaticImageClone(static_cast<HTMLImageElement*>(aDest));
+  bool destIsStatic = aDest->OwnerDoc()->IsStaticDocument();
+  auto dest = static_cast<HTMLImageElement*>(aDest);
+  if (destIsStatic) {
+    CreateStaticImageClone(dest);
   }
-  return nsGenericHTMLElement::CopyInnerTo(aDest);
+
+  nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (!destIsStatic) {
+    
+    
+    
+    
+    if (!dest->InResponsiveMode() &&
+        dest->HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
+      nsContentUtils::AddScriptRunner(
+        NS_NewRunnableMethod(dest, &HTMLImageElement::MaybeLoadImage));
+    }
+  }
+
+  return NS_OK;
 }
 
 CORSMode
