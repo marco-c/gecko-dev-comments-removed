@@ -901,9 +901,7 @@ moz_gtk_button_paint(cairo_t *cr, GdkRectangle* rect,
         y += default_top;
         width -= (default_left + default_right);
         height -= (default_top + default_bottom);
-    }
- 
-    if (relief != GTK_RELIEF_NONE || state->depressed ||
+    } else if (relief != GTK_RELIEF_NONE || state->depressed ||
         (state_flags & GTK_STATE_FLAG_PRELIGHT)) {
         
 
