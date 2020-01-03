@@ -53,10 +53,6 @@ public:
   void SetPreservesPitch(bool aPreservesPitch);
   void SetPlaying(bool aPlaying);
 
-  
-  
-  void NotifyData();
-
 private:
   enum State {
     AUDIOSINK_STATE_INIT,
@@ -72,6 +68,10 @@ private:
   void SetState(State aState);
   void ScheduleNextLoop();
   void ScheduleNextLoopCrossThread();
+
+  void OnAudioQueueEvent();
+  void ConnectListener();
+  void DisconnectListener();
 
   
   
@@ -175,6 +175,9 @@ private:
   bool mPlaying;
 
   MozPromiseHolder<GenericPromise> mEndPromise;
+
+  MediaEventListener mPushListener;
+  MediaEventListener mFinishListener;
 };
 
 } 

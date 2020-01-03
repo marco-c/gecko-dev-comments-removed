@@ -633,9 +633,6 @@ MediaDecoderStateMachine::Push(AudioData* aSample)
   UpdateNextFrameStatus();
   DispatchDecodeTasksIfNeeded();
 
-  if (mAudioSink) {
-    mAudioSink->NotifyData();
-  }
 }
 
 void
@@ -779,10 +776,6 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
       }
       CheckIfDecodeComplete();
       mDecoder->GetReentrantMonitor().NotifyAll();
-      
-      if (mAudioSink) {
-        mAudioSink->NotifyData();
-      }
       
       if (mAudioCaptured) {
         ScheduleStateMachine();
