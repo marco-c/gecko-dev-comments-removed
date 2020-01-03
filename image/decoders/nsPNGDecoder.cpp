@@ -47,11 +47,6 @@ GetPNGDecoderAccountingLog()
 #  define MOZ_PNG_MAX_DIMENSION 32767
 #endif
 
-
-#define WIDTH_OFFSET 16
-#define HEIGHT_OFFSET (WIDTH_OFFSET + 4)
-#define BYTES_NEEDED_FOR_DIMENSIONS (HEIGHT_OFFSET + 4)
-
 nsPNGDecoder::AnimFrameInfo::AnimFrameInfo()
  : mDispose(DisposalMethod::KEEP)
  , mBlend(BlendMethod::OVER)
@@ -148,6 +143,7 @@ nsPNGDecoder::CreateFrame(png_uint_32 aXOffset, png_uint_32 aYOffset,
                           gfx::SurfaceFormat aFormat)
 {
   MOZ_ASSERT(HasSize());
+  MOZ_ASSERT(!IsMetadataDecode());
 
   if (aFormat == gfx::SurfaceFormat::B8G8R8A8) {
     PostHasTransparency();
@@ -226,11 +222,6 @@ nsPNGDecoder::EndImageFrame()
 void
 nsPNGDecoder::InitInternal()
 {
-  
-  if (IsMetadataDecode()) {
-    return;
-  }
-
   mCMSMode = gfxPlatform::GetCMSMode();
   if (GetDecodeFlags() & imgIContainer::FLAG_DECODE_NO_COLORSPACE_CONVERSION) {
     mCMSMode = eCMSMode_Off;
@@ -256,8 +247,6 @@ nsPNGDecoder::InitInternal()
         116,  73,  77,  69, '\0',   
         122,  84,  88, 116, '\0'};  
 #endif
-
-  
 
   
   
@@ -322,72 +311,23 @@ nsPNGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
   MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
 
   
-  if (IsMetadataDecode()) {
+  if (setjmp(png_jmpbuf(mPNG))) {
 
     
-    if (mHeaderBytesRead == BYTES_NEEDED_FOR_DIMENSIONS) {
-      return;
-    }
-
     
-    uint32_t pos = 0;
-    const uint8_t* bptr = (uint8_t*)aBuffer;
-
-    while (pos < aCount && mHeaderBytesRead < BYTES_NEEDED_FOR_DIMENSIONS) {
-      
-      if (mHeaderBytesRead < sizeof(pngSignatureBytes)) {
-        if (bptr[pos] != nsPNGDecoder::pngSignatureBytes[mHeaderBytesRead]) {
-          PostDataError();
-          return;
-        }
-      }
-
-      
-      if ((mHeaderBytesRead >= WIDTH_OFFSET) &&
-          (mHeaderBytesRead < BYTES_NEEDED_FOR_DIMENSIONS)) {
-        mSizeBytes[mHeaderBytesRead - WIDTH_OFFSET] = bptr[pos];
-      }
-      pos ++;
-      mHeaderBytesRead ++;
-    }
-
     
-    if (mHeaderBytesRead == BYTES_NEEDED_FOR_DIMENSIONS) {
-
-      
-      uint32_t width = png_get_uint_32(mSizeBytes);
-      uint32_t height = png_get_uint_32(mSizeBytes + 4);
-
-      
-      if ((width > MOZ_PNG_MAX_DIMENSION) || (height > MOZ_PNG_MAX_DIMENSION)) {
-        PostDataError();
-        return;
-      }
-
-      
-      PostSize(width, height);
+    if (!mSuccessfulEarlyFinish && !HasError()) {
+      PostDataError();
     }
+
+    png_destroy_read_struct(&mPNG, &mInfo, nullptr);
+    return;
+  }
 
   
-  } else {
-
-    
-    if (setjmp(png_jmpbuf(mPNG))) {
-
-      
-      
-      if (!mSuccessfulEarlyFinish && !HasError()) {
-        PostDataError();
-      }
-
-      png_destroy_read_struct(&mPNG, &mInfo, nullptr);
-      return;
-    }
-
-    
-    png_process_data(mPNG, mInfo, (unsigned char*)aBuffer, aCount);
-
-  }
+  png_process_data(mPNG, mInfo,
+                   reinterpret_cast<unsigned char*>(const_cast<char*>((aBuffer))),
+                   aCount);
 }
 
 
@@ -543,6 +483,12 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
   decoder->PostSize(width, height);
   if (decoder->HasError()) {
     
+    png_longjmp(decoder->mPNG, 1);
+  }
+
+  if (decoder->IsMetadataDecode()) {
+    
+    decoder->mSuccessfulEarlyFinish = true;
     png_longjmp(decoder->mPNG, 1);
   }
 
