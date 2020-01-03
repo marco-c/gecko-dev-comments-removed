@@ -340,8 +340,11 @@ class MochitestRunner(MozbuildObject):
         options.manifestFile = manifest
 
         
-        if len(tests) == 1 and options.closeWhenDone and suite == 'plain':
-            options.closeWhenDone = False
+        
+        
+        
+        if len(tests) == 1 and options.keep_open is None and suite == 'plain':
+            options.keep_open = True
 
         
         self.log_manager.enable_unstructured()
