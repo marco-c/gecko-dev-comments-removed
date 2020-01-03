@@ -51,6 +51,13 @@ nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
     return NS_OK;
   }
 
+  
+  
+  if (aType.LowerCaseEqualsLiteral("application/x-shockwave-flash") &&
+      nsContentUtils::IsSWFPlayerEnabled()) {
+    return NS_OK;
+  }
+
   const nsCString& flatType = PromiseFlatCString(aType);
   nsresult rv = IsTypeSupportedInternal(flatType, aIsTypeSupported);
   NS_ENSURE_SUCCESS(rv, rv);

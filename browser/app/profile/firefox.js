@@ -1689,13 +1689,7 @@ pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
 
 #ifdef NIGHTLY_BUILD
-
-#ifdef UNIX_BUT_NOT_MAC
 pref("shumway.disabled", true);
-#else
-pref("shumway.disabled", false);
-pref("shumway.swf.whitelist", "http://www.areweflashyet.com/*.swf");
-#endif
 #endif
 
 
