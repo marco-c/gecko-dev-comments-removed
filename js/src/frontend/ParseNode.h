@@ -29,40 +29,55 @@ class ObjectBox;
 
 
 
-class UpvarCookie
+
+
+
+
+
+class PackedScopeCoordinate
 {
-    uint32_t level_ : SCOPECOORD_HOPS_BITS;
+    uint32_t hops_ : SCOPECOORD_HOPS_BITS;
     uint32_t slot_ : SCOPECOORD_SLOT_BITS;
 
     void checkInvariants() {
-        static_assert(sizeof(UpvarCookie) == sizeof(uint32_t),
+        static_assert(sizeof(PackedScopeCoordinate) == sizeof(uint32_t),
                       "Not necessary for correctness, but good for ParseNode memory use");
     }
 
   public:
     
-    static const uint32_t FREE_LEVEL = SCOPECOORD_HOPS_LIMIT - 1;
-    bool isFree() const { return level_ == FREE_LEVEL; }
-
-    uint32_t level() const { MOZ_ASSERT(!isFree()); return level_; }
-    uint32_t slot()  const { MOZ_ASSERT(!isFree()); return slot_; }
-
     
-    bool set(TokenStream& ts, unsigned newLevel, uint32_t newSlot) {
-        if (newLevel >= FREE_LEVEL)
-            return ts.reportError(JSMSG_TOO_DEEP, js_function_str);
+    
+    
+    static const uint32_t UNKNOWN_HOPS = SCOPECOORD_HOPS_LIMIT - 1;
+    static const uint32_t UNKNOWN_SLOT = SCOPECOORD_SLOT_LIMIT - 1;
+    bool isHopsUnknown() const { return hops_ == UNKNOWN_HOPS; }
+    bool isFree() const { return slot_ == UNKNOWN_SLOT; }
 
-        if (newSlot >= SCOPECOORD_SLOT_LIMIT)
+    uint32_t hops() const { MOZ_ASSERT(!isFree()); return hops_; }
+    uint32_t slot() const { MOZ_ASSERT(!isFree()); return slot_; }
+
+    bool setSlot(TokenStream& ts, uint32_t newSlot) {
+        if (newSlot >= UNKNOWN_SLOT)
             return ts.reportError(JSMSG_TOO_MANY_LOCALS);
-
-        level_ = newLevel;
         slot_ = newSlot;
         return true;
     }
 
+    bool setHops(TokenStream& ts, uint32_t newHops) {
+        if (newHops >= UNKNOWN_HOPS)
+            return ts.reportError(JSMSG_TOO_DEEP, js_function_str);
+        hops_ = newHops;
+        return true;
+    }
+
+    bool set(TokenStream& ts, uint32_t newHops, uint32_t newSlot) {
+        return setHops(ts, newHops) && setSlot(ts, newSlot);
+    }
+
     void makeFree() {
-        level_ = FREE_LEVEL;
-        slot_ = 0;      
+        hops_ = UNKNOWN_HOPS;
+        slot_ = UNKNOWN_SLOT;
         MOZ_ASSERT(isFree());
     }
 };
@@ -478,7 +493,6 @@ IsDeleteKind(ParseNodeKind kind)
 
 
 
-
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -632,9 +646,7 @@ class ParseNode
 
                 Definition* lexdef;    
             };
-            UpvarCookie cookie;         
-
-
+            PackedScopeCoordinate scopeCoord;
             uint32_t    dflags:NumDefinitionFlagBits, 
                         blockid:NumBlockIdBits;  
 
@@ -652,7 +664,7 @@ class ParseNode
 #define pn_modulebox    pn_u.name.modulebox
 #define pn_funbox       pn_u.name.funbox
 #define pn_body         pn_u.name.expr
-#define pn_cookie       pn_u.name.cookie
+#define pn_scopecoord   pn_u.name.scopeCoord
 #define pn_dflags       pn_u.name.dflags
 #define pn_blockid      pn_u.name.blockid
 #define pn_head         pn_u.list.head
@@ -732,7 +744,8 @@ class ParseNode
                                            still valid, but this use no longer
                                            optimizable via an upvar opcode */
 #define PND_CLOSED              0x40    /* variable is closed over */
-
+#define PND_KNOWNALIASED        0x80    /* definition known to be aliased and
+                                           already has a translated pnk_scopecoord */
 #define PND_IMPLICITARGUMENTS  0x100    /* the definition is a placeholder for
                                            'arguments' that has been converted
                                            into a definition after the function
@@ -757,14 +770,9 @@ class ParseNode
 
     static_assert(PNX_NONCONST < (1 << NumListFlagBits), "Not enough bits");
 
-    unsigned frameLevel() const {
-        MOZ_ASSERT(pn_arity == PN_CODE || pn_arity == PN_NAME);
-        return pn_cookie.level();
-    }
-
     uint32_t frameSlot() const {
         MOZ_ASSERT(pn_arity == PN_CODE || pn_arity == PN_NAME);
-        return pn_cookie.slot();
+        return pn_scopecoord.slot();
     }
 
     bool functionIsHoisted() const {
@@ -812,6 +820,7 @@ class ParseNode
     bool isBound() const        { return test(PND_BOUND); }
     bool isImplicitArguments() const { return test(PND_IMPLICITARGUMENTS); }
     bool isHoistedLexicalUse() const { return test(PND_LEXICAL) && isUsed(); }
+    bool isKnownAliased() const { return test(PND_KNOWNALIASED); }
 
     
     bool isLiteral() const {
@@ -1068,7 +1077,7 @@ struct CodeNode : public ParseNode
         MOZ_ASSERT(!pn_body);
         MOZ_ASSERT(!pn_funbox);
         MOZ_ASSERT(pn_dflags == 0);
-        pn_cookie.makeFree();
+        pn_scopecoord.makeFree();
     }
 
 #ifdef DEBUG
@@ -1084,7 +1093,7 @@ struct NameNode : public ParseNode
     {
         pn_atom = atom;
         pn_expr = nullptr;
-        pn_cookie.makeFree();
+        pn_scopecoord.makeFree();
         pn_dflags = 0;
         pn_blockid = blockid;
         MOZ_ASSERT(pn_blockid == blockid);  
@@ -1104,7 +1113,7 @@ struct LexicalScopeNode : public ParseNode
         MOZ_ASSERT(pn_dflags == 0);
         MOZ_ASSERT(pn_blockid == 0);
         pn_objbox = blockBox;
-        pn_cookie.makeFree();
+        pn_scopecoord.makeFree();
     }
 
     LexicalScopeNode(ObjectBox* blockBox, ParseNode* blockNode)
@@ -1568,7 +1577,7 @@ struct Definition : public ParseNode
 {
     bool isFreeVar() const {
         MOZ_ASSERT(isDefn());
-        return pn_cookie.isFree();
+        return pn_scopecoord.isFree();
     }
 
     enum Kind { MISSING = 0, VAR, GLOBALCONST, CONST, LET, ARG, NAMED_LAMBDA, PLACEHOLDER };

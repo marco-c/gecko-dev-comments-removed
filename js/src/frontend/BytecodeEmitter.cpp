@@ -155,11 +155,6 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
 {
     MOZ_ASSERT_IF(evalCaller, insideEval);
     MOZ_ASSERT_IF(emitterMode == LazyFunction, lazyScript);
-
-    
-    
-    if (sc->isFunctionBox())
-        sc->asFunctionBox()->switchStaticScopeToFunction();
 }
 
 bool
@@ -794,24 +789,31 @@ BytecodeEmitter::computeAliasedSlots(Handle<StaticBlockObject*> blockObj)
 
         MOZ_ASSERT(dn->isDefn());
 
-        
-        
-        
-        if (!dn->pn_cookie.set(parser->tokenStream, dn->pn_cookie.level(),
-                               numAliased + blockObj->blockIndexToLocalIndex(dn->frameSlot())))
-        {
-            return false;
+        uint32_t index = dn->pn_scopecoord.slot();
+        uint32_t slot;
+
+        if (isAliasedName(this, dn)) {
+            slot = blockObj->blockIndexToSlot(index);
+            blockObj->setAliased(i, true);
+        } else {
+            
+            
+            
+            slot = numAliased + blockObj->blockIndexToLocalIndex(index);
+            blockObj->setAliased(i, false);
         }
+
+        if (!dn->pn_scopecoord.setSlot(parser->tokenStream, slot))
+            return false;
 
 #ifdef DEBUG
         for (ParseNode* pnu = dn->dn_uses; pnu; pnu = pnu->pn_link) {
             MOZ_ASSERT(pnu->pn_lexdef == dn);
             MOZ_ASSERT(!(pnu->pn_dflags & PND_BOUND));
-            MOZ_ASSERT(pnu->pn_cookie.isFree());
+            MOZ_ASSERT(pnu->pn_scopecoord.isFree());
         }
 #endif
 
-        blockObj->setAliased(i, isAliasedName(dn));
     }
 
     MOZ_ASSERT_IF(sc->allLocalsAliased(), AllLocalsAliased(*blockObj));
@@ -1165,20 +1167,6 @@ BytecodeEmitter::emitAliasedVarOp(JSOp op, ScopeCoordinate sc, MaybeCheckLexical
     return emitScopeCoordOp(op, sc);
 }
 
-unsigned
-BytecodeEmitter::dynamicNestedScopeDepth()
-{
-    unsigned depth = 0;
-    if (StmtInfoBCE* stmt = innermostScopeStmt()) {
-        for (NestedScopeObject* b = stmt->staticScope; b; b = b->enclosingNestedScope()) {
-            if (!b->is<StaticBlockObject>() || b->as<StaticBlockObject>().needsClone())
-                ++depth;
-        }
-    }
-
-    return depth;
-}
-
 bool
 BytecodeEmitter::lookupAliasedName(HandleScript script, PropertyName* name, uint32_t* pslot,
                                    ParseNode* pn)
@@ -1239,128 +1227,81 @@ BytecodeEmitter::lookupAliasedNameSlot(PropertyName* name, ScopeCoordinate* sc)
     return true;
 }
 
-bool
-BytecodeEmitter::assignHops(ParseNode* pn, unsigned src, ScopeCoordinate* dst)
-{
-    if (src > UINT8_MAX) {
-        reportError(pn, JSMSG_TOO_DEEP, js_function_str);
-        return false;
-    }
-
-    dst->setHops(src);
-    return true;
-}
-
 static inline MaybeCheckLexical
 NodeNeedsCheckLexical(ParseNode* pn)
 {
     return pn->isHoistedLexicalUse() ? CheckLexical : DontCheckLexical;
 }
 
-bool
-BytecodeEmitter::emitAliasedVarOp(JSOp op, ParseNode* pn)
+static inline JSOp
+UnaliasedVarOpToAliasedVarOp(JSOp op)
 {
-    
-
-
-
-
-
-
-
-
-    unsigned skippedScopes = 0;
-    BytecodeEmitter* bceOfDef = this;
-    if (pn->isUsed()) {
-        
-
-
-
-
-        for (unsigned i = pn->pn_cookie.level(); i; i--) {
-            skippedScopes += bceOfDef->dynamicNestedScopeDepth();
-            FunctionBox* funbox = bceOfDef->sc->asFunctionBox();
-            if (funbox->isHeavyweight()) {
-                skippedScopes++;
-                if (funbox->function()->isNamedLambda())
-                    skippedScopes++;
-            }
-            bceOfDef = bceOfDef->parent;
-        }
-    } else {
-        MOZ_ASSERT(pn->isDefn());
-        MOZ_ASSERT(pn->pn_cookie.level() == script->staticLevel());
+    switch (op) {
+      case JSOP_GETARG: case JSOP_GETLOCAL: return JSOP_GETALIASEDVAR;
+      case JSOP_SETARG: case JSOP_SETLOCAL: return JSOP_SETALIASEDVAR;
+      case JSOP_INITLEXICAL: return JSOP_INITALIASEDLEXICAL;
+      default: MOZ_CRASH("unexpected var op");
     }
-
-    
-
-
-
-
-
-
-    ScopeCoordinate sc;
-    if (IsArgOp(pn->getOp())) {
-        if (!assignHops(pn, skippedScopes + bceOfDef->dynamicNestedScopeDepth(), &sc))
-            return false;
-        JS_ALWAYS_TRUE(bceOfDef->lookupAliasedNameSlot(pn->name(), &sc));
-    } else {
-        MOZ_ASSERT(IsLocalOp(pn->getOp()) || pn->isKind(PNK_FUNCTION));
-        uint32_t local = pn->pn_cookie.slot();
-        if (local < bceOfDef->script->bindings.numBodyLevelLocals()) {
-            if (!assignHops(pn, skippedScopes + bceOfDef->dynamicNestedScopeDepth(), &sc))
-                return false;
-            JS_ALWAYS_TRUE(bceOfDef->lookupAliasedNameSlot(pn->name(), &sc));
-        } else {
-            MOZ_ASSERT_IF(this->sc->isFunctionBox(), local <= bceOfDef->script->bindings.numLocals());
-            MOZ_ASSERT(bceOfDef->innermostScopeStmt()->staticScope->is<StaticBlockObject>());
-            StmtInfoBCE* stmt = bceOfDef->innermostScopeStmt();
-            Rooted<StaticBlockObject*> b(cx, &stmt->staticScope->as<StaticBlockObject>());
-            local = bceOfDef->localsToFrameSlots_[local];
-            while (local < b->localOffset()) {
-                if (b->needsClone())
-                    skippedScopes++;
-                b = &b->enclosingNestedScope()->as<StaticBlockObject>();
-            }
-            if (!assignHops(pn, skippedScopes, &sc))
-                return false;
-            sc.setSlot(b->localIndexToSlot(local));
-        }
-    }
-
-    return emitAliasedVarOp(op, sc, NodeNeedsCheckLexical(pn));
 }
 
 bool
 BytecodeEmitter::emitVarOp(ParseNode* pn, JSOp op)
 {
     MOZ_ASSERT(pn->isKind(PNK_FUNCTION) || pn->isKind(PNK_NAME));
-    MOZ_ASSERT(!pn->pn_cookie.isFree());
+    MOZ_ASSERT(!pn->pn_scopecoord.isFree());
 
+    if (pn->isDefn()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (pn->pn_scopecoord.isHopsUnknown()) {
+            BytecodeEmitter* bceOfDef;
+            uint32_t hops = computeHops(pn, &bceOfDef);
+            MOZ_ASSERT(bceOfDef == this);
+            if (!pn->pn_scopecoord.setHops(parser->tokenStream, hops))
+                return false;
+        }
+
+#ifdef DEBUG
+        BytecodeEmitter* bceOfDef;
+        uint32_t hops = computeHops(pn, &bceOfDef);
+        MOZ_ASSERT(bceOfDef == this);
+        MOZ_ASSERT(hops == pn->pn_scopecoord.hops());
+#endif
+
+        if (!computeDefinitionIsAliased(this, pn->resolve(), &op))
+            return false;
+    }
+
+    
     if (IsAliasedVarOp(op)) {
         ScopeCoordinate sc;
-        sc.setHops(pn->pn_cookie.level());
-        sc.setSlot(pn->pn_cookie.slot());
+        sc.setHops(pn->pn_scopecoord.hops());
+        sc.setSlot(pn->pn_scopecoord.slot());
         return emitAliasedVarOp(op, sc, NodeNeedsCheckLexical(pn));
     }
 
+#ifdef DEBUG
+    BytecodeEmitter* bceOfDef;
+    
+    (void) computeHops(pn, &bceOfDef);
+    MOZ_ASSERT(!isAliasedName(bceOfDef, pn));
+#endif
     MOZ_ASSERT_IF(pn->isKind(PNK_NAME), IsArgOp(op) || IsLocalOp(op));
-
-    if (!isAliasedName(pn)) {
-        MOZ_ASSERT(pn->isUsed() || pn->isDefn());
-        MOZ_ASSERT_IF(pn->isUsed(), pn->pn_cookie.level() == 0);
-        MOZ_ASSERT_IF(pn->isDefn(), pn->pn_cookie.level() == script->staticLevel());
-        return emitUnaliasedVarOp(op, pn->pn_cookie.slot(), NodeNeedsCheckLexical(pn));
-    }
-
-    switch (op) {
-      case JSOP_GETARG: case JSOP_GETLOCAL: op = JSOP_GETALIASEDVAR; break;
-      case JSOP_SETARG: case JSOP_SETLOCAL: op = JSOP_SETALIASEDVAR; break;
-      case JSOP_INITLEXICAL: op = JSOP_INITALIASEDLEXICAL; break;
-      default: MOZ_CRASH("unexpected var op");
-    }
-
-    return emitAliasedVarOp(op, pn);
+    MOZ_ASSERT(pn->isUsed() || pn->isDefn());
+    return emitUnaliasedVarOp(op, pn->pn_scopecoord.slot(), NodeNeedsCheckLexical(pn));
 }
 
 static JSOp
@@ -1378,7 +1319,7 @@ BytecodeEmitter::emitVarIncDec(ParseNode* pn)
     JSOp op = pn->pn_kid->getOp();
     MOZ_ASSERT(IsArgOp(op) || IsLocalOp(op) || IsAliasedVarOp(op));
     MOZ_ASSERT(pn->pn_kid->isKind(PNK_NAME));
-    MOZ_ASSERT(!pn->pn_kid->pn_cookie.isFree());
+    MOZ_ASSERT(!pn->pn_kid->pn_scopecoord.isFree());
 
     bool post;
     JSOp binop = GetIncDecInfo(pn->getKind(), &post);
@@ -1413,18 +1354,40 @@ BytecodeEmitter::emitVarIncDec(ParseNode* pn)
     return true;
 }
 
-bool
-BytecodeEmitter::isAliasedName(ParseNode* pn)
+uint32_t
+BytecodeEmitter::computeHops(ParseNode* pn, BytecodeEmitter** bceOfDefOut)
 {
     Definition* dn = pn->resolve();
     MOZ_ASSERT(dn->isDefn());
     MOZ_ASSERT(!dn->isPlaceholder());
     MOZ_ASSERT(dn->isBound());
 
+    uint32_t hops = 0;
+    BytecodeEmitter* bceOfDef = this;
+    StaticScopeIter<NoGC> ssi(innermostStaticScope());
+    JSObject* defScope = blockScopeOfDef(dn);
+    while (ssi.staticScope() != defScope) {
+        if (ssi.hasSyntacticDynamicScopeObject())
+            hops++;
+        if (ssi.type() == StaticScopeIter<NoGC>::Function) {
+            MOZ_ASSERT(dn->isClosed());
+            bceOfDef = bceOfDef->parent;
+        }
+        ssi++;
+    }
+
+    *bceOfDefOut = bceOfDef;
+    return hops;
+}
+
+bool
+BytecodeEmitter::isAliasedName(BytecodeEmitter* bceOfDef, ParseNode* pn)
+{
     
-    if (dn->pn_cookie.level() != script->staticLevel())
+    if (bceOfDef != this)
         return true;
 
+    Definition* dn = pn->resolve();
     switch (dn->kind()) {
       case Definition::LET:
       case Definition::CONST:
@@ -1450,17 +1413,43 @@ BytecodeEmitter::isAliasedName(ParseNode* pn)
 
 
 
-        return script->formalIsAliased(pn->pn_cookie.slot());
+        return script->formalIsAliased(pn->pn_scopecoord.slot());
       case Definition::VAR:
       case Definition::GLOBALCONST:
-        MOZ_ASSERT_IF(sc->allLocalsAliased(), script->cookieIsAliased(pn->pn_cookie));
-        return script->cookieIsAliased(pn->pn_cookie);
+        MOZ_ASSERT_IF(sc->allLocalsAliased(), script->localIsAliased(pn->pn_scopecoord.slot()));
+        return script->localIsAliased(pn->pn_scopecoord.slot());
       case Definition::PLACEHOLDER:
       case Definition::NAMED_LAMBDA:
       case Definition::MISSING:
         MOZ_CRASH("unexpected dn->kind");
     }
     return false;
+}
+
+bool
+BytecodeEmitter::computeDefinitionIsAliased(BytecodeEmitter* bceOfDef, Definition* dn, JSOp* op)
+{
+    if (dn->isKnownAliased()) {
+        *op = UnaliasedVarOpToAliasedVarOp(*op);
+    } else if (isAliasedName(bceOfDef, dn)) {
+        
+        
+        
+        uint32_t slot = dn->pn_scopecoord.slot();
+        if (blockScopeOfDef(dn)->is<JSFunction>()) {
+            MOZ_ASSERT(IsArgOp(*op) || slot < bceOfDef->script->bindings.numBodyLevelLocals());
+            MOZ_ALWAYS_TRUE(bceOfDef->lookupAliasedName(bceOfDef->script, dn->name(), &slot));
+        }
+        if (!dn->pn_scopecoord.setSlot(parser->tokenStream, slot))
+            return false;
+
+        *op = UnaliasedVarOpToAliasedVarOp(*op);
+
+        
+        dn->pn_dflags |= PND_KNOWNALIASED;
+    }
+
+    return true;
 }
 
 JSOp
@@ -1563,7 +1552,7 @@ BytecodeEmitter::tryConvertFreeName(ParseNode* pn)
                     }
 
                     pn->setOp(op);
-                    JS_ALWAYS_TRUE(pn->pn_cookie.set(parser->tokenStream, hops, slot));
+                    MOZ_ALWAYS_TRUE(pn->pn_scopecoord.set(parser->tokenStream, hops, slot));
                     return true;
                 }
                 hops++;
@@ -1672,7 +1661,7 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
 
     Definition* dn;
     if (pn->isUsed()) {
-        MOZ_ASSERT(pn->pn_cookie.isFree());
+        MOZ_ASSERT(pn->pn_scopecoord.isFree());
         dn = pn->pn_lexdef;
         MOZ_ASSERT(dn->isDefn());
         pn->pn_dflags |= (dn->pn_dflags & PND_CONST);
@@ -1697,7 +1686,7 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
         }
     }
 
-    if (dn->pn_cookie.isFree()) {
+    if (dn->pn_scopecoord.isFree()) {
         if (evalCaller) {
             MOZ_ASSERT(script->treatAsRunOnce() || sc->isFunctionBox());
 
@@ -1749,7 +1738,7 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
     MOZ_ASSERT(!pn->isDefn());
     MOZ_ASSERT(pn->isUsed());
     MOZ_ASSERT(pn->pn_lexdef);
-    MOZ_ASSERT(pn->pn_cookie.isFree());
+    MOZ_ASSERT(pn->pn_scopecoord.isFree());
 
     
 
@@ -1793,10 +1782,10 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
 
 
 
-        if (dn->pn_cookie.level() != script->staticLevel())
+        JSFunction* fun = sc->asFunctionBox()->function();
+        if (blockScopeOfDef(dn) != fun)
             return true;
 
-        DebugOnly<JSFunction*> fun = sc->asFunctionBox()->function();
         MOZ_ASSERT(fun->isLambda());
         MOZ_ASSERT(pn->pn_atom == fun->atom());
 
@@ -1842,12 +1831,10 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
     }
 
     
-
-
-
-
-    unsigned skip = script->staticLevel() - dn->pn_cookie.level();
-    MOZ_ASSERT_IF(skip, dn->isClosed());
+    
+    BytecodeEmitter* bceOfDef;
+    uint32_t slot = dn->pn_scopecoord.slot();
+    uint32_t hops = computeHops(pn, &bceOfDef);
 
     
 
@@ -1858,19 +1845,24 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
 
 
 
-    if (skip) {
-        BytecodeEmitter* bceSkipped = this;
-        for (unsigned i = 0; i < skip; i++)
-            bceSkipped = bceSkipped->parent;
-        if (!bceSkipped->sc->isFunctionBox())
-            return true;
+    if (bceOfDef != this && !bceOfDef->sc->isFunctionBox())
+        return true;
+
+    if (!pn->pn_scopecoord.set(parser->tokenStream, hops, slot))
+        return false;
+
+    if (!computeDefinitionIsAliased(bceOfDef, dn, &op))
+        return false;
+
+    
+    
+    if (IsAliasedVarOp(op)) {
+        MOZ_ASSERT(dn->isKnownAliased());
+        pn->pn_scopecoord.setSlot(parser->tokenStream, dn->pn_scopecoord.slot());
     }
 
     MOZ_ASSERT(!pn->isOp(op));
     pn->setOp(op);
-    if (!pn->pn_cookie.set(parser->tokenStream, skip, dn->pn_cookie.slot()))
-        return false;
-
     pn->pn_dflags |= PND_BOUND;
     return true;
 }
@@ -2507,7 +2499,7 @@ BytecodeEmitter::emitNameOp(ParseNode* pn, bool callContext)
         if (!emit1(op))
             return false;
     } else {
-        if (!pn->pn_cookie.isFree()) {
+        if (!pn->pn_scopecoord.isFree()) {
             MOZ_ASSERT(JOF_OPTYPE(op) != JOF_ATOM);
             if (!emitVarOp(pn, op))
                 return false;
@@ -3400,15 +3392,7 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
 
     
     
-    RootedFunction fun(cx, funbox->function());
-    MOZ_ASSERT(fun->isInterpreted());
-
-    script->setFunction(fun);
-
-    if (fun->isInterpretedLazy())
-        fun->setUnlazifiedScript(script);
-    else
-        fun->setScript(script);
+    JSScript::linkToFunctionFromEmitter(cx, script, funbox);
 
     if (funbox->argumentsHasLocalBinding()) {
         MOZ_ASSERT(offset() == 0);  
@@ -3420,7 +3404,7 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
             ScopeCoordinate sc;
             sc.setHops(0);
             sc.setSlot(0);  
-            JS_ALWAYS_TRUE(lookupAliasedNameSlot(cx->names().arguments, &sc));
+            MOZ_ALWAYS_TRUE(lookupAliasedNameSlot(cx->names().arguments, &sc));
             if (!emitAliasedVarOp(JSOP_SETALIASEDVAR, sc, DontCheckLexical))
                 return false;
         } else {
@@ -3522,8 +3506,8 @@ BytecodeEmitter::maybeEmitVarDecl(JSOp prologueOp, ParseNode* pn, jsatomid* resu
 {
     jsatomid atomIndex;
 
-    if (!pn->pn_cookie.isFree()) {
-        atomIndex = pn->pn_cookie.slot();
+    if (!pn->pn_scopecoord.isFree()) {
+        atomIndex = pn->pn_scopecoord.slot();
     } else {
         if (!makeAtomIndex(pn->pn_atom, &atomIndex))
             return false;
@@ -3692,7 +3676,9 @@ BytecodeEmitter::emitDestructuringLHS(ParseNode* target, VarEmitOption emitOptio
 
               case JSOP_SETLOCAL:
               case JSOP_SETARG:
+              case JSOP_SETALIASEDVAR:
               case JSOP_INITLEXICAL:
+              case JSOP_INITALIASEDLEXICAL:
                 if (!emitVarOp(target, target->getOp()))
                     return false;
                 break;
@@ -4272,7 +4258,7 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
         JSOp op;
         op = pn2->getOp();
         MOZ_ASSERT(op != JSOP_CALLEE);
-        MOZ_ASSERT(!pn2->pn_cookie.isFree() || !pn->isOp(JSOP_NOP));
+        MOZ_ASSERT(!pn2->pn_scopecoord.isFree() || !pn->isOp(JSOP_NOP));
 
         jsatomid atomIndex;
         if (!maybeEmitVarDecl(pn->getOp(), pn2, &atomIndex))
@@ -4321,7 +4307,7 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
         }
 
         MOZ_ASSERT_IF(pn2->isDefn(), pn3 == pn2->pn_expr);
-        if (!pn2->pn_cookie.isFree()) {
+        if (!pn2->pn_scopecoord.isFree()) {
             if (!emitVarOp(pn2, op))
                 return false;
         } else {
@@ -4359,7 +4345,7 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
       case PNK_NAME:
         if (!bindNameToSlot(lhs))
             return false;
-        if (lhs->pn_cookie.isFree()) {
+        if (lhs->pn_scopecoord.isFree()) {
             if (!makeAtomIndex(lhs->pn_atom, &atomIndex))
                 return false;
             if (!lhs->isConst()) {
@@ -4439,11 +4425,11 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
                 if (!emitIndex32(JSOP_GETXPROP, atomIndex))
                     return false;
             } else if (lhs->isOp(JSOP_SETGNAME) || lhs->isOp(JSOP_STRICTSETGNAME)) {
-                MOZ_ASSERT(lhs->pn_cookie.isFree());
+                MOZ_ASSERT(lhs->pn_scopecoord.isFree());
                 if (!emitAtomOp(lhs, JSOP_GETGNAME))
                     return false;
             } else if (lhs->isOp(JSOP_SETINTRINSIC)) {
-                MOZ_ASSERT(lhs->pn_cookie.isFree());
+                MOZ_ASSERT(lhs->pn_scopecoord.isFree());
                 if (!emitAtomOp(lhs, JSOP_GETINTRINSIC))
                     return false;
             } else {
@@ -4806,7 +4792,7 @@ BytecodeEmitter::emitCatch(ParseNode* pn)
 
       case PNK_NAME:
         
-        MOZ_ASSERT(!pn2->pn_cookie.isFree());
+        MOZ_ASSERT(!pn2->pn_scopecoord.isFree());
         if (!emitVarOp(pn2, JSOP_INITLEXICAL))
             return false;
         if (!emit1(JSOP_POP))
@@ -5838,7 +5824,7 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
 
     if (!sc->isFunctionBox()) {
-        MOZ_ASSERT(pn->pn_cookie.isFree());
+        MOZ_ASSERT(pn->pn_scopecoord.isFree());
         MOZ_ASSERT(pn->getOp() == JSOP_NOP);
         MOZ_ASSERT(!innermostStmt());
         switchToPrologue();
@@ -6879,7 +6865,7 @@ BytecodeEmitter::emitIncOrDec(ParseNode* pn)
         if (op == JSOP_CALLEE) {
             if (!emit1(op))
                 return false;
-        } else if (!pn2->pn_cookie.isFree()) {
+        } else if (!pn2->pn_scopecoord.isFree()) {
             if (maySet) {
                 if (!emitVarIncDec(pn))
                     return false;
@@ -7385,7 +7371,7 @@ BytecodeEmitter::emitLexicalInitialization(ParseNode* pn, JSOp globalDefOp)
             return false;
     }
 
-    if (!pn->pn_cookie.isFree()) {
+    if (!pn->pn_scopecoord.isFree()) {
         if (!emitVarOp(pn, pn->getOp()))
             return false;
     } else {

@@ -289,9 +289,8 @@ BytecodeCompiler::createParseContext(Maybe<ParseContext<FullParseHandler>>& pars
                                      uint32_t blockScopeDepth)
 {
     parseContext.emplace(parser.ptr(), (GenericParseContext*) nullptr, (ParseNode*) nullptr,
-                         &globalsc, (Directives*) nullptr, staticLevel,  0,
-                         blockScopeDepth);
-    return parseContext->init(parser->tokenStream);
+                         &globalsc, (Directives*) nullptr, staticLevel, blockScopeDepth);
+    return parseContext->init(*parser);
 }
 
 bool
@@ -305,7 +304,7 @@ BytecodeCompiler::saveCallerFun(HandleScript evalCaller,
 
 
 
-    JSFunction* fun = evalCaller->functionOrCallerFunction();
+    RootedFunction fun(cx, evalCaller->functionOrCallerFunction());
     MOZ_ASSERT_IF(fun->strict(), options.strictOption);
     Directives directives( options.strictOption);
     ObjectBox* funbox = parser->newFunctionBox( nullptr, fun, &parseContext,
@@ -333,6 +332,7 @@ BytecodeCompiler::handleStatementParseFailure(HandleObject scopeChain, HandleScr
     
     parser->clearAbortedSyntaxParse();
     parser->tokenStream.seek(startPosition);
+    parser->blockScopes.clear();
 
     
     

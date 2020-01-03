@@ -123,6 +123,8 @@ class StaticScopeIter
     bool done() const;
     void operator++(int);
 
+    JSObject* staticScope() const { MOZ_ASSERT(!done()); return obj; }
+
     
     
     
@@ -663,11 +665,17 @@ class StaticBlockObject : public BlockObject
     
     
     
+    uint32_t blockIndexToSlot(uint32_t index) {
+        MOZ_ASSERT(index < numVariables());
+        return RESERVED_SLOTS + index;
+    }
+
+    
+    
+    
     uint32_t localIndexToSlot(uint32_t local) {
         MOZ_ASSERT(local >= localOffset());
-        local -= localOffset();
-        MOZ_ASSERT(local < numVariables());
-        return RESERVED_SLOTS + local;
+        return blockIndexToSlot(local - localOffset());
     }
 
     
@@ -1229,6 +1237,7 @@ bool HasNonSyntacticStaticScopeChain(JSObject* staticScope);
 
 #ifdef DEBUG
 void DumpStaticScopeChain(JSScript* script);
+void DumpStaticScopeChain(JSObject* staticScope);
 bool
 AnalyzeEntrainedVariables(JSContext* cx, HandleScript script);
 #endif
