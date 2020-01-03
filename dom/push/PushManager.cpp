@@ -129,23 +129,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PushSubscription)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-
-
-bool
-PushManager::Enabled(JSContext* aCx, JSObject* aObj)
-{
-  if (NS_IsMainThread()) {
-    return Preferences::GetBool("dom.push.enabled", false);
-  }
-
-  
-  
-  ServiceWorkerGlobalScope* scope = nullptr;
-  nsresult rv = UnwrapObject<prototypes::id::ServiceWorkerGlobalScope_workers,
-                             mozilla::dom::ServiceWorkerGlobalScopeBinding_workers::NativeType>(aObj, scope);
-  return NS_SUCCEEDED(rv);
-}
-
 PushManager::PushManager(nsIGlobalObject* aGlobal, const nsAString& aScope)
   : mGlobal(aGlobal), mScope(aScope)
 {

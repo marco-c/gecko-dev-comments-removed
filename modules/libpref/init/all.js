@@ -4429,7 +4429,7 @@ pref("dom.mozAlarms.enabled", false);
 
 
 
-#if !defined(MOZ_WIDGET_GONK) && !defined(MOZ_WIDGET_ANDROID)
+#if !defined(MOZ_B2G) && !defined(ANDROID)
 
 #ifdef RELEASE_BUILD
 pref("dom.push.enabled", false);
