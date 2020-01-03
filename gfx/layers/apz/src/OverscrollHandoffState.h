@@ -26,39 +26,6 @@ class AsyncPanZoomController;
 
 
 
-
-
-
-#define NS_INLINE_DECL_THREADSAFE_MUTABLE_REFCOUNTING(_class)                 \
-public:                                                                       \
-  NS_METHOD_(MozExternalRefCountType) AddRef(void) const {                    \
-    MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                                \
-    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");                      \
-    nsrefcnt count = ++mRefCnt;                                               \
-    NS_LOG_ADDREF(const_cast<_class*>(this), count, #_class, sizeof(*this));  \
-    return (nsrefcnt) count;                                                  \
-  }                                                                           \
-  NS_METHOD_(MozExternalRefCountType) Release(void) const {                   \
-    MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");                          \
-    nsrefcnt count = --mRefCnt;                                               \
-    NS_LOG_RELEASE(const_cast<_class*>(this), count, #_class);                \
-    if (count == 0) {                                                         \
-      delete (this);                                                          \
-      return 0;                                                               \
-    }                                                                         \
-    return count;                                                             \
-  }                                                                           \
-protected:                                                                    \
-  mutable ::mozilla::ThreadSafeAutoRefCnt mRefCnt;                            \
-public:
-
-
-
-
-
-
-
-
 class OverscrollHandoffChain
 {
 protected:
@@ -70,7 +37,7 @@ public:
   
   
   
-  NS_INLINE_DECL_THREADSAFE_MUTABLE_REFCOUNTING(OverscrollHandoffChain)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OverscrollHandoffChain)
 
   
 
