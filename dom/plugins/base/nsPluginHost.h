@@ -12,6 +12,7 @@
 #include "prlink.h"
 #include "prclist.h"
 #include "nsIPluginTag.h"
+#include "nsPluginPlayPreviewInfo.h"
 #include "nsPluginsDir.h"
 #include "nsPluginDirServiceProvider.h"
 #include "nsAutoPtr.h"
@@ -23,7 +24,6 @@
 #include "nsTObserverArray.h"
 #include "nsITimer.h"
 #include "nsPluginTags.h"
-#include "nsPluginPlayPreviewInfo.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIIDNService.h"
 #include "nsCRT.h"
@@ -79,6 +79,7 @@ class nsPluginHost final : public nsIPluginHost,
                            public nsSupportsWeakReference
 {
   friend class nsPluginTag;
+  friend class nsFakePluginTag;
   virtual ~nsPluginHost();
 
 public:
@@ -103,7 +104,8 @@ public:
   
   enum PluginFilter {
     eExcludeNone     = nsIPluginHost::EXCLUDE_NONE,
-    eExcludeDisabled = nsIPluginHost::EXCLUDE_DISABLED
+    eExcludeDisabled = nsIPluginHost::EXCLUDE_DISABLED,
+    eExcludeFake     = nsIPluginHost::EXCLUDE_FAKE
   };
   
   bool HavePluginForType(const nsACString & aMimeType,
@@ -268,9 +270,30 @@ private:
 
   
   
+  
+  nsIInternalPluginTag* FindPluginForType(const nsACString& aMimeType,
+                                          bool aIncludeFake, bool aCheckEnabled);
+
+  
+  
+  nsFakePluginTag* FindFakePluginForType(const nsACString & aMimeType,
+                                         bool aCheckEnabled);
+
+  
+  
+  
+  nsFakePluginTag* FindFakePluginForExtension(const nsACString & aExtension,
+                                               nsACString & aMimeType,
+                                              bool aCheckEnabled);
+
+  
+  
   nsPluginTag* FindNativePluginForType(const nsACString & aMimeType,
                                        bool aCheckEnabled);
 
+  
+  
+  
   nsPluginTag* FindNativePluginForExtension(const nsACString & aExtension,
                                              nsACString & aMimeType,
                                             bool aCheckEnabled);
@@ -285,8 +308,10 @@ private:
 
   
   
-  
-  enum nsRegisterType { ePluginRegister, ePluginUnregister };
+  enum nsRegisterType { ePluginRegister,
+                        ePluginUnregister,
+                        
+                        ePluginMaybeUnregister };
   void RegisterWithCategoryManager(const nsCString& aMimeType,
                                    nsRegisterType aType);
 
@@ -349,6 +374,9 @@ private:
   nsRefPtr<nsPluginTag> mCachedPlugins;
   nsRefPtr<nsInvalidPluginTag> mInvalidPlugins;
   nsTArray< nsRefPtr<nsPluginPlayPreviewInfo> > mPlayPreviewMimeTypes;
+
+  nsTArray< nsRefPtr<nsFakePluginTag> > mFakePlugins;
+
   bool mPluginsLoaded;
 
   
