@@ -8,6 +8,7 @@
 #define Tokenizer_h__
 
 #include "nsString.h"
+#include "mozilla/CheckedInt.h"
 
 namespace mozilla {
 
@@ -43,17 +44,19 @@ public:
 
   class Token {
     TokenType mType;
-    nsCString mWord;
+    nsDependentCSubstring mWord;
     char mChar;
-    int64_t mInteger;
+    uint64_t mInteger;
 
   public:
     Token() : mType(TOKEN_UNKNOWN), mChar(0), mInteger(0) {}
+    Token(const Token& aOther);
+    Token& operator=(const Token& aOther);
 
     
     static Token Word(const nsACString& aWord);
     static Token Char(const char aChar);
-    static Token Number(const int64_t aNumber);
+    static Token Number(const uint64_t aNumber);
     static Token Whitespace();
     static Token NewLine();
     static Token EndOfFile();
@@ -65,28 +68,35 @@ public:
 
     TokenType Type() const { return mType; }
     char AsChar() const;
-    nsCString AsString() const;
-    int64_t AsInteger() const;
+    nsDependentCSubstring AsString() const;
+    uint64_t AsInteger() const;
   };
 
 public:
-  explicit Tokenizer(const nsACString& aSource);
-
   
 
 
 
 
-  enum ClaimInclusion {
-    
 
 
-    INCLUDE_LAST,
-    
 
 
-    EXCLUDE_LAST
-  };
+
+
+
+
+
+
+
+
+
+  explicit Tokenizer(const nsACString& aSource,
+                     const char* aWhitespaces = nullptr,
+                     const char* aAdditionalWordChars = nullptr);
+  explicit Tokenizer(const char* aSource,
+                     const char* aWhitespaces = nullptr,
+                     const char* aAdditionalWordChars = nullptr);
 
   
 
@@ -122,7 +132,23 @@ public:
   
 
 
-  void SkipWhites();
+  enum WhiteSkipping {
+    
+
+
+    DONT_INCLUDE_NEW_LINE = 0,
+    
+
+
+
+    INCLUDE_NEW_LINE = 1
+  };
+
+  
+
+
+
+  void SkipWhites(WhiteSkipping aIncludeNewLines = DONT_INCLUDE_NEW_LINE);
 
   
 
@@ -149,9 +175,14 @@ public:
   
 
 
-  template <size_t N>
   MOZ_WARN_UNUSED_RESULT
-  bool CheckWord(const char (&aWord)[N]) { return Check(Token::Word(nsLiteralCString(aWord))); }
+  bool CheckWord(const nsACString& aWord) { return Check(Token::Word(aWord)); }
+  
+
+
+  template <uint32_t N>
+  MOZ_WARN_UNUSED_RESULT
+  bool CheckWord(const char (&aWord)[N]) { return Check(Token::Word(nsDependentCString(aWord, N - 1))); }
   
 
 
@@ -167,11 +198,68 @@ public:
   
 
 
+  bool ReadChar(char* aValue);
+  bool ReadWord(nsACString& aValue);
+  bool ReadWord(nsDependentCSubstring& aValue);
+
+  
+
+
+
+
+
+
+
+  template <typename T>
+  bool ReadInteger(T* aValue)
+  {
+    MOZ_RELEASE_ASSERT(aValue);
+
+    nsACString::const_char_iterator rollback = mRollback;
+    nsACString::const_char_iterator cursor = mCursor;
+    Token t;
+    if (!Check(TOKEN_INTEGER, t)) {
+      return false;
+    }
+
+    mozilla::CheckedInt<T> checked(t.AsInteger());
+    if (!checked.isValid()) {
+      
+      mRollback = rollback;
+      mCursor = cursor;
+      mHasFailed = true;
+      return false;
+    }
+
+    *aValue = checked.value();
+    return true;
+  }
+
+  
+
+
 
 
 
 
   void Rollback();
+
+  
+
+
+
+
+
+  enum ClaimInclusion {
+    
+
+
+    INCLUDE_LAST,
+    
+
+
+    EXCLUDE_LAST
+  };
 
   
 
@@ -204,6 +292,10 @@ protected:
 
 private:
   Tokenizer() = delete;
+  Tokenizer(const Tokenizer&) = delete;
+  Tokenizer(Tokenizer&&) = delete;
+  Tokenizer(const Tokenizer&&) = delete;
+  Tokenizer &operator=(const Tokenizer&) = delete;
 
   
   bool mPastEof;
@@ -211,7 +303,9 @@ private:
   bool mHasFailed;
 
   
-  char const* mWhitespaces;
+  const char* mWhitespaces;
+  
+  const char* mAdditionalWordChars;
 
   
   nsACString::const_char_iterator mRecord; 
