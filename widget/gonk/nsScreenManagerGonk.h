@@ -90,8 +90,8 @@ public:
     
     void SetEGLInfo(hwc_display_t aDisplay, hwc_surface_t aSurface,
                     mozilla::gl::GLContext* aGLContext);
-    hwc_display_t GetDpy();
-    hwc_surface_t GetSur();
+    hwc_display_t GetEGLDisplay();
+    hwc_surface_t GetEGLSurface();
 
 protected:
     uint32_t mId;
@@ -107,10 +107,12 @@ protected:
 #if ANDROID_VERSION >= 17
     android::sp<android::DisplaySurface> mDisplaySurface;
 #endif
+
+    
     GonkDisplay::DisplayType mDisplayType;
-    hwc_display_t mDpy; 
-    hwc_surface_t mSur; 
-    mozilla::gl::GLContext* mGLContext; 
+    hwc_display_t mEGLDisplay;
+    hwc_surface_t mEGLSurface;
+    mozilla::gl::GLContext* mGLContext;
 };
 
 class nsScreenManagerGonk final : public nsIScreenManager
