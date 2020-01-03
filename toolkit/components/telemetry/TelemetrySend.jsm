@@ -901,6 +901,7 @@ let TelemetrySendImpl = {
         
         this._log.error("_doPing - error submitting to " + url + ", status: " + status
                         + " - ping request broken?");
+        Telemetry.getHistogramById("TELEMETRY_PING_EVICTED_FOR_SERVER_ERRORS").add();
         
         
         success = true;
