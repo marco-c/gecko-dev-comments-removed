@@ -194,16 +194,14 @@ function readURI(uri) {
 
 
 function join (...paths) {
-  let joined = pathJoin(...paths);
-  let resolved = normalize(joined);
-
+  let resolved = normalize(pathJoin(...paths))
   
   
   
-  let re = /^(resource|file|chrome)(\:\/{1,3})([^\/])/;
-  let matches = joined.match(re);
-
-  return resolved.replace(re, (...args) => args[1] + matches[2] + args[3]);
+  resolved = resolved.replace(/^resource\:\/([^\/])/, 'resource://$1');
+  resolved = resolved.replace(/^file\:\/([^\/])/, 'file:///$1');
+  resolved = resolved.replace(/^chrome\:\/([^\/])/, 'chrome://$1');
+  return resolved;
 }
 Loader.join = join;
 
@@ -570,8 +568,7 @@ Loader.resolveURI = resolveURI;
 const Require = iced(function Require(loader, requirer) {
   let {
     modules, mapping, resolve: loaderResolve, load,
-    manifest, rootURI, isNative, requireMap,
-    overrideRequire
+    manifest, rootURI, isNative, requireMap
   } = loader;
 
   function require(id) {
@@ -579,14 +576,6 @@ const Require = iced(function Require(loader, requirer) {
       throw Error('You must provide a module name when calling require() from '
                   + requirer.id, requirer.uri);
 
-    if (overrideRequire) {
-      return overrideRequire(id, _require);
-    }
-
-    return _require(id);
-  }
-
-  function _require(id) {
     let { uri, requirement } = getRequirements(id);
     let module = null;
     
@@ -726,7 +715,7 @@ const Require = iced(function Require(loader, requirer) {
   }
 
   
-  require.resolve = _require.resolve = function resolve(id) {
+  require.resolve = function resolve(id) {
     let { uri } = getRequirements(id);
     return uri;
   }
@@ -912,7 +901,6 @@ function Loader(options) {
                            value: options.invisibleToDebugger || false },
     load: { enumerable: false, value: options.load || load },
     checkCompatibility: { enumerable: false, value: checkCompatibility },
-    overrideRequire: { enumerable: false, value: options.require },
     
     
     main: new function() {
