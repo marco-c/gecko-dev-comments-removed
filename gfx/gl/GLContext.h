@@ -199,6 +199,14 @@ public:
     
 
 
+
+    virtual bool IsWARP() const {
+        return false;
+    }
+
+    
+
+
     inline bool IsCoreProfile() const {
         MOZ_ASSERT(mProfile != ContextProfile::Unknown, "unknown context profile");
 
