@@ -110,7 +110,8 @@ function ToLength(v) {
     if (v <= 0)
         return 0;
 
-    return std_Math_min(v, 2 ** 53 - 1);
+    
+    return std_Math_min(v, 0x1fffffffffffff);
 }
 
 
