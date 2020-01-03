@@ -119,6 +119,8 @@ HELPER_SHEET += ":-moz-devtools-highlighted { outline: 2px dashed #F06!important
 loader.lazyRequireGetter(this, "DevToolsUtils",
                          "devtools/toolkit/DevToolsUtils");
 
+loader.lazyRequireGetter(this, "AsyncUtils", "devtools/toolkit/async-utils");
+
 loader.lazyGetter(this, "DOMParser", function() {
   return Cc["@mozilla.org/xmlextras/domparser;1"].createInstance(Ci.nsIDOMParser);
 });
@@ -624,16 +626,12 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
   getImageData: method(function(maxDim) {
-    
-    try {
-      let imageData = imageToImageData(this.rawNode, maxDim);
-      return promise.resolve({
+    return imageToImageData(this.rawNode, maxDim).then(imageData => {
+      return {
         data: LongStringActor(this.conn, imageData.data),
         size: imageData.size
-      });
-    } catch(e) {
-      return promise.reject(new Error("Image not available"));
-    }
+      };
+    });
   }, {
     request: {maxDim: Arg(0, "nullable:number")},
     response: RetVal("imageData")
@@ -3645,39 +3643,16 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
 
 
   getImageDataFromURL: method(function(url, maxDim) {
-    let deferred = promise.defer();
     let img = new this.window.Image();
-
-    
-    img.onload = () => {
-      
-      try {
-        let imageData = imageToImageData(img, maxDim);
-        deferred.resolve({
-          data: LongStringActor(this.conn, imageData.data),
-          size: imageData.size
-        });
-      } catch (e) {
-        deferred.reject(new Error("Image " + url+ " not available"));
-      }
-    }
-
-    
-    img.onerror = () => {
-      deferred.reject(new Error("Image " + url+ " not available"));
-    }
-
-    
-    
-    if (!DevToolsUtils.testing) {
-      this.window.setTimeout(() => {
-        deferred.reject(new Error("Image " + url + " could not be retrieved in time"));
-      }, IMAGE_FETCHING_TIMEOUT);
-    }
-
     img.src = url;
 
-    return deferred.promise;
+    
+    return imageToImageData(img, maxDim).then(imageData => {
+      return {
+        data: LongStringActor(this.conn, imageData.data),
+        size: imageData.size
+      };
+    });
   }, {
     request: {url: Arg(0), maxDim: Arg(1, "nullable:number")},
     response: RetVal("imageData")
@@ -3930,12 +3905,76 @@ function allAnonymousContentTreeWalkerFilter(aNode) {
 
 
 
-function imageToImageData(node, maxDim) {
-  let isImg = node.tagName.toLowerCase() === "img";
-  let isCanvas = node.tagName.toLowerCase() === "canvas";
+
+
+function ensureImageLoaded(image, timeout) {
+  let { HTMLImageElement } = image.ownerDocument.defaultView;
+  if (!(image instanceof HTMLImageElement)) {
+    return promise.reject("image must be an HTMLImageELement");
+  }
+
+  if (image.complete) {
+    
+    return promise.resolve();
+  }
+
+  
+  let onLoad = AsyncUtils.listenOnce(image, "load");
+
+  
+  let onError = AsyncUtils.listenOnce(image, "error").then(() => {
+    return promise.reject("Image '" + image.src + "' failed to load.");
+  });
+
+  
+  let onAbort = new promise(() => {});
+
+  if (!DevToolsUtils.testing) {
+    
+    onAbort = DevToolsUtils.waitForTime(timeout).then(() => {
+      return promise.reject("Image '" + image.src + "' took too long to load.");
+    });
+  }
+
+  
+  return promise.race([onLoad, onError, onAbort]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let imageToImageData = Task.async(function* (node, maxDim) {
+  let { HTMLCanvasElement, HTMLImageElement } = node.ownerDocument.defaultView;
+
+  let isImg = node instanceof HTMLImageElement;
+  let isCanvas = node instanceof HTMLCanvasElement;
 
   if (!isImg && !isCanvas) {
-    return null;
+    throw "node is not a <canvas> or <img> element.";
+  }
+
+  if (isImg) {
+    
+    yield ensureImageLoaded(node, IMAGE_FETCHING_TIMEOUT);
   }
 
   
@@ -3973,7 +4012,7 @@ function imageToImageData(node, maxDim) {
       resized: resizeRatio !== 1
     }
   }
-}
+});
 
 loader.lazyGetter(this, "DOMUtils", function () {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
