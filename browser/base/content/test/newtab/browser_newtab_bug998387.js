@@ -1,8 +1,14 @@
 
 
 
+const PREF_NEWTAB_ROWS = "browser.newtabpage.rows";
+
 function runTests() {
+  
+  Services.prefs.setIntPref(PREF_NEWTAB_ROWS, 1);
   yield setLinks("0");
+  yield addNewTabPageTab();
+  
   yield addNewTabPageTab();
 
   
@@ -22,4 +28,5 @@ function runTests() {
 
   
   checkGrid("0");
+  Services.prefs.clearUserPref(PREF_NEWTAB_ROWS);
 }

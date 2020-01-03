@@ -11,6 +11,7 @@ function runTests() {
   
   
   
+  
   let FOCUS_COUNT = 30;
 
   
@@ -42,7 +43,9 @@ function countFocus(aExpectedCount) {
     let focusedElement = document.commandDispatcher.focusedElement;
     if (focusedElement && focusedElement.classList.contains("urlbar-input")) {
       window.removeEventListener("focus", onFocus, true);
-      is(focusCount, aExpectedCount, "Validate focus count in the new tab page.");
+      
+      ok(focusCount == aExpectedCount || focusCount == (aExpectedCount + 1),
+         "Validate focus count in the new tab page.");
       executeSoon(TestRunner.next);
     } else {
       if (focusedElement && focusedElement.ownerDocument == contentDoc &&

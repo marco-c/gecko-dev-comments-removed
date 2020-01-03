@@ -1,8 +1,14 @@
 
 
 
+const PREF_NEWTAB_ROWS = "browser.newtabpage.rows";
+
 function runTests() {
+  
+  Services.prefs.setIntPref(PREF_NEWTAB_ROWS, 1);
   yield setLinks("-1");
+  yield addNewTabPageTab();
+  
   yield addNewTabPageTab();
 
   
@@ -16,4 +22,5 @@ function runTests() {
   
   yield EventUtils.synthesizeMouseAtCenter(cell.node, {button: 1}, getContentWindow());
   ok(clicked, "middle click triggered click listener");
+  Services.prefs.clearUserPref(PREF_NEWTAB_ROWS);
 }
