@@ -126,6 +126,10 @@ typedef int64_t GMPTimestamp;
 #define GMP_EME_CAP_DECRYPT_AND_DECODE_VIDEO (uint64_t(1) << 3)
 
 
+#define GMP_EME_CAP_RENDER_AUDIO (uint64_t(1) << 4)
+#define GMP_EME_CAP_RENDER_VIDEO (uint64_t(1) << 5)
+
+
 class GMPDecryptorCallback {
 public:
 
