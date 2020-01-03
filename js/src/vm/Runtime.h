@@ -1053,7 +1053,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 #endif
 
     
-    js::ScriptAndCountsVector* scriptAndCountsVector;
+    JS::PersistentRooted<js::ScriptAndCountsVector>* scriptAndCountsVector;
 
     
     const js::Value     NaNValue;
