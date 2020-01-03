@@ -3115,6 +3115,17 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
         }
       }
     }
+#if !defined(MOZ_WIDGET_ANDROID) || defined(MOZ_ANDROID_APZ)
+    else if (presShell->GetDocument() && presShell->GetDocument()->IsRootDisplayDocument()) {
+      
+      
+      
+      if (dom::Element* element = presShell->GetDocument()->GetDocumentElement()) {
+        id = nsLayoutUtils::FindOrCreateIDFor(element);
+      }
+    }
+#endif
+
     nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(&builder, id);
 
     PROFILER_LABEL("nsLayoutUtils", "PaintFrame::BuildDisplayList",
@@ -7579,7 +7590,7 @@ nsLayoutUtils::GetContentViewerSize(nsPresContext* aPresContext,
 }
 
  nsSize
-nsLayoutUtils::CalculateCompositionSizeForFrame(nsIFrame* aFrame)
+nsLayoutUtils::CalculateCompositionSizeForFrame(nsIFrame* aFrame, bool aSubtractScrollbars)
 {
   
   
@@ -7635,7 +7646,7 @@ nsLayoutUtils::CalculateCompositionSizeForFrame(nsIFrame* aFrame)
         }
       }
 
-      if (scrollableFrame && !LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars)) {
+      if (aSubtractScrollbars && scrollableFrame && !LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars)) {
         nsMargin margins = scrollableFrame->GetActualScrollbarSizes();
         size.width -= margins.LeftRight();
         size.height -= margins.TopBottom();
