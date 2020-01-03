@@ -1541,7 +1541,7 @@
 
       
       
-      var expectedWarningsCount = 18;
+      var expectedWarningsCount = 16;
       var warningsMismatch = caughtWarnings.length !== expectedWarningsCount;
       if (uncaughtError || warningsMismatch) {
         $("#results").append("<div class='failures'><em>" +

@@ -50,7 +50,8 @@ loop.store.StandaloneMetricsStore = (function() {
       "mediaConnected",
       "recordClick",
       "remotePeerConnected",
-      "retryAfterRoomFailure"
+      "retryAfterRoomFailure",
+      "windowUnload"
     ],
 
     
@@ -257,6 +258,17 @@ loop.store.StandaloneMetricsStore = (function() {
       var muteState = muted ? "mute" : "unmute";
 
       this._storeEvent(METRICS_GA_CATEGORY.general, muteType, muteState);
+    },
+
+    
+
+
+
+
+    windowUnload: function() {
+      if (this.activeRoomStore) {
+        this.stopListening(this.activeRoomStore);
+      }
     }
   });
 
