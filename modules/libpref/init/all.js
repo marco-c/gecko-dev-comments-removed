@@ -1504,8 +1504,6 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 pref("network.jar.open-unsafe-types", false);
 
-pref("network.jar.block-remote-files", false);
-
 
 
 
