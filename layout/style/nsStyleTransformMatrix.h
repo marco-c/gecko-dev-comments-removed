@@ -11,7 +11,6 @@
 #define nsStyleTransformMatrix_h_
 
 #include "nsCSSValue.h"
-#include "gfx3DMatrix.h"
 
 class nsIFrame;
 class nsStyleContext;
@@ -136,12 +135,12 @@ namespace nsStyleTransformMatrix {
                              TransformReferenceBox::DimensionGetter aDimensionGetter = nullptr);
 
   void
-  ProcessInterpolateMatrix(gfx3DMatrix& aMatrix,
-                            const nsCSSValue::Array* aData,
-                            nsStyleContext* aContext,
-                            nsPresContext* aPresContext,
-                            mozilla::RuleNodeCacheConditions& aConditions,
-                            TransformReferenceBox& aBounds);
+  ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
+                           const nsCSSValue::Array* aData,
+                           nsStyleContext* aContext,
+                           nsPresContext* aPresContext,
+                           mozilla::RuleNodeCacheConditions& aConditions,
+                           TransformReferenceBox& aBounds);
 
   
 
@@ -159,12 +158,12 @@ namespace nsStyleTransformMatrix {
 
 
 
-  gfx3DMatrix ReadTransforms(const nsCSSValueList* aList,
-                             nsStyleContext* aContext,
-                             nsPresContext* aPresContext,
-                             mozilla::RuleNodeCacheConditions& aConditions,
-                             TransformReferenceBox& aBounds,
-                             float aAppUnitsPerMatrixUnit);
+  mozilla::gfx::Matrix4x4 ReadTransforms(const nsCSSValueList* aList,
+                                         nsStyleContext* aContext,
+                                         nsPresContext* aPresContext,
+                                         mozilla::RuleNodeCacheConditions& aConditions,
+                                         TransformReferenceBox& aBounds,
+                                         float aAppUnitsPerMatrixUnit);
 
 } 
 

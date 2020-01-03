@@ -25,6 +25,10 @@ namespace dom {
 class Element;
 } 
 
+namespace gfx {
+class Matrix4x4;
+} 
+
 
 
 
@@ -189,9 +193,9 @@ public:
 
 
 
-  static gfx3DMatrix InterpolateTransformMatrix(const gfx3DMatrix &aMatrix1,
-                                                const gfx3DMatrix &aMatrix2,
-                                                double aProgress);
+  static gfx::Matrix4x4 InterpolateTransformMatrix(const gfx::Matrix4x4 &aMatrix1,
+                                                   const gfx::Matrix4x4 &aMatrix2,
+                                                   double aProgress);
 
   static already_AddRefed<nsCSSValue::Array>
     AppendTransformFunction(nsCSSKeyword aTransformFunction,
