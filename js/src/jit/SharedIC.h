@@ -335,7 +335,26 @@ class ICEntry
     inline ICStub** addressOfFirstStub() {
         return &firstStub_;
     }
+
+    void trace(JSTracer* trc);
 };
+
+class IonICEntry : public ICEntry
+{
+  JSScript* script_;
+
+  public:
+    IonICEntry(uint32_t pcOffset, Kind kind, JSScript* script)
+      : ICEntry(pcOffset, kind),
+        script_(script)
+    { }
+
+    JSScript* script() {
+        return script_;
+    }
+
+};
+
 
 class ICMonitoredStub;
 class ICMonitoredFallbackStub;
