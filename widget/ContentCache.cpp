@@ -974,6 +974,9 @@ ContentCacheInParent::MaybeNotifyIME(nsIWidget* aWidget,
     case NOTIFY_IME_OF_TEXT_CHANGE:
       mPendingTextChange.MergeWith(aNotification);
       break;
+    case NOTIFY_IME_OF_POSITION_CHANGE:
+      mPendingLayoutChange.MergeWith(aNotification);
+      break;
     case NOTIFY_IME_OF_COMPOSITION_UPDATE:
       mPendingCompositionUpdate.MergeWith(aNotification);
       break;
@@ -1015,6 +1018,16 @@ ContentCacheInParent::FlushPendingNotifications(nsIWidget* aWidget)
 
   
   
+  if (mPendingLayoutChange.HasNotification()) {
+    IMENotification notification(mPendingLayoutChange);
+    if (!aWidget->Destroyed()) {
+      mPendingLayoutChange.Clear();
+      IMEStateManager::NotifyIME(notification, aWidget, true);
+    }
+  }
+
+  
+  
   if (mPendingCompositionUpdate.HasNotification()) {
     IMENotification notification(mPendingCompositionUpdate);
     if (!aWidget->Destroyed()) {
@@ -1026,6 +1039,7 @@ ContentCacheInParent::FlushPendingNotifications(nsIWidget* aWidget)
   if (!--mPendingEventsNeedingAck && !aWidget->Destroyed() &&
       (mPendingTextChange.HasNotification() ||
        mPendingSelectionChange.HasNotification() ||
+       mPendingLayoutChange.HasNotification() ||
        mPendingCompositionUpdate.HasNotification())) {
     FlushPendingNotifications(aWidget);
   }

@@ -353,6 +353,7 @@ public:
 private:
   IMENotification mPendingSelectionChange;
   IMENotification mPendingTextChange;
+  IMENotification mPendingLayoutChange;
   IMENotification mPendingCompositionUpdate;
 
   
