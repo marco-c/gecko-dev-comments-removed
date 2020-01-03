@@ -1111,8 +1111,7 @@ nsXMLHttpRequest::Status()
     return 0;
   }
 
-  uint16_t readyState;
-  GetReadyState(&readyState);
+  uint16_t readyState = ReadyState();
   if (readyState == UNSENT || readyState == OPENED) {
     return 0;
   }
@@ -1136,14 +1135,8 @@ nsXMLHttpRequest::Status()
 
   nsCOMPtr<nsIHttpChannel> httpChannel = GetCurrentHttpChannel();
   if (!httpChannel) {
-
     
-    nsCOMPtr<nsIJARChannel> jarChannel = GetCurrentJARChannel();
-    if (jarChannel) {
-      return 200; 
-    }
-
-    return 0;
+    return 200;
   }
 
   uint32_t status;
@@ -1159,13 +1152,8 @@ IMPL_CSTRING_GETTER(GetStatusText)
 void
 nsXMLHttpRequest::GetStatusText(nsCString& aStatusText)
 {
-  nsCOMPtr<nsIHttpChannel> httpChannel = GetCurrentHttpChannel();
-
+  
   aStatusText.Truncate();
-
-  if (!httpChannel) {
-    return;
-  }
 
   
   
@@ -1173,18 +1161,25 @@ nsXMLHttpRequest::GetStatusText(nsCString& aStatusText)
     return;
   }
 
-
   
   
   
   
-  uint16_t readyState;
-  GetReadyState(&readyState);
-  if (readyState != OPENED && readyState != UNSENT) {
-    httpChannel->GetResponseStatusText(aStatusText);
+  uint16_t readyState = ReadyState();
+  if (readyState == UNSENT || readyState == OPENED) {
+    return;
   }
 
+  if (mErrorLoad) {
+    return;
+  }
 
+  nsCOMPtr<nsIHttpChannel> httpChannel = GetCurrentHttpChannel();
+  if (httpChannel) {
+    httpChannel->GetResponseStatusText(aStatusText);
+  } else {
+    aStatusText.AssignLiteral("OK");
+  }
 }
 
 void
