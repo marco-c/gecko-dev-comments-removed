@@ -389,10 +389,13 @@ protected:
                                           uint8_t aPaletteDepth,
                                           imgFrame* aPreviousFrame);
 
-  
+protected:
+  uint8_t* mImageData;  
+  uint32_t mImageDataLength;
+  uint32_t* mColormap;  
+  uint32_t mColormapSize;
 
-
-
+private:
   nsRefPtr<RasterImage> mImage;
   Maybe<SourceBufferIterator> mIterator;
   RawAccessFrameRef mCurrentFrame;
@@ -400,10 +403,9 @@ protected:
   nsIntRect mInvalidRect; 
   Progress mProgress;
 
-  uint8_t* mImageData;  
-  uint32_t mImageDataLength;
-  uint32_t* mColormap;  
-  uint32_t mColormapSize;
+  uint32_t mFrameCount; 
+
+  nsresult mFailCode;
 
   
   TimeDuration mDecodeTime;
@@ -411,24 +413,19 @@ protected:
 
   uint32_t mFlags;
   size_t mBytesDecoded;
-  bool mSendPartialInvalidations;
-  bool mDataDone;
-  bool mDecodeDone;
-  bool mDataError;
-  bool mDecodeAborted;
-  bool mShouldReportError;
-  bool mImageIsTransient;
-  bool mImageIsLocked;
 
-private:
-  uint32_t mFrameCount; 
-
-  nsresult mFailCode;
-
-  bool mInitialized;
-  bool mMetadataDecode;
-  bool mInFrame;
-  bool mIsAnimated;
+  bool mInitialized : 1;
+  bool mMetadataDecode : 1;
+  bool mSendPartialInvalidations : 1;
+  bool mImageIsTransient : 1;
+  bool mImageIsLocked : 1;
+  bool mInFrame : 1;
+  bool mIsAnimated : 1;
+  bool mDataDone : 1;
+  bool mDecodeDone : 1;
+  bool mDataError : 1;
+  bool mDecodeAborted : 1;
+  bool mShouldReportError : 1;
 };
 
 } 
