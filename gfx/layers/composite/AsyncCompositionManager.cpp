@@ -11,6 +11,7 @@
 #include "LayerManagerComposite.h"      
 #include "Layers.h"                     
 #include "gfxPoint.h"                   
+#include "gfxPrefs.h"                   
 #include "mozilla/StyleAnimationValue.h" 
 #include "mozilla/WidgetUtils.h"        
 #include "mozilla/dom/KeyframeEffect.h" 
