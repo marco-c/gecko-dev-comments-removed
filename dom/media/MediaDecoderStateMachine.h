@@ -493,7 +493,7 @@ protected:
   void UpdatePlaybackPositionInternal(int64_t aTime);
 
   
-  void CheckTurningOffHardwareDecoder(VideoData* aData);
+  bool CheckFrameValidity(VideoData* aData);
 
   
   
