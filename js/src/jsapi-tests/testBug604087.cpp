@@ -1,11 +1,11 @@
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ *
+ * Tests JS_TransplantObject
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsobj.h"
 #include "jswrapper.h"
@@ -17,12 +17,12 @@
 const js::Class OuterWrapperClass =
     PROXY_CLASS_WITH_EXT(
         "Proxy",
-        0, 
+        0, /* additional class flags */
         PROXY_MAKE_EXT(
-            nullptr, 
+            nullptr, /* outerObject */
             js::proxy_innerObject,
-            false,   
-            nullptr  
+            false,   /* isWrappedNative */
+            nullptr  /* objectMoved */
         ));
 
 static JSObject *
@@ -44,9 +44,10 @@ PreWrap(JSContext *cx, JS::HandleObject scope, JS::HandleObject obj,
 }
 
 static JSObject *
-Wrap(JSContext *cx, JS::HandleObject existing, JS::HandleObject obj)
+Wrap(JSContext *cx, JS::HandleObject existing, JS::HandleObject obj,
+     JS::HandleObject parent)
 {
-    return js::Wrapper::New(cx, obj, &js::CrossCompartmentWrapper::singleton);
+    return js::Wrapper::New(cx, obj, parent, &js::CrossCompartmentWrapper::singleton);
 }
 
 static const JSWrapObjectCallbacks WrapObjectCallbacks = {
@@ -59,7 +60,7 @@ BEGIN_TEST(testBug604087)
     js::WrapperOptions options;
     options.setClass(&OuterWrapperClass);
     options.setSingleton(true);
-    JS::RootedObject outerObj(cx, js::Wrapper::New(cx, global, &js::Wrapper::singleton, options));
+    JS::RootedObject outerObj(cx, js::Wrapper::New(cx, global, global, &js::Wrapper::singleton, options));
     JS::RootedObject compartment2(cx, JS_NewGlobalObject(cx, getGlobalClass(), nullptr, JS::FireOnNewGlobalHook));
     JS::RootedObject compartment3(cx, JS_NewGlobalObject(cx, getGlobalClass(), nullptr, JS::FireOnNewGlobalHook));
     JS::RootedObject compartment4(cx, JS_NewGlobalObject(cx, getGlobalClass(), nullptr, JS::FireOnNewGlobalHook));
@@ -80,7 +81,7 @@ BEGIN_TEST(testBug604087)
     JS::RootedObject next(cx);
     {
         JSAutoCompartment ac(cx, compartment2);
-        next = js::Wrapper::New(cx, compartment2, &js::Wrapper::singleton, options);
+        next = js::Wrapper::New(cx, compartment2, compartment2, &js::Wrapper::singleton, options);
         CHECK(next);
     }
 
