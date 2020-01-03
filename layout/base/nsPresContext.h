@@ -1193,6 +1193,10 @@ protected:
 
   bool IsChromeSlow() const;
 
+  bool InitTimer(nsCOMPtr<nsITimer>& aTimer,
+                 nsTimerCallbackFunc aCallback,
+                 uint32_t aDelay);
+
   
   
   

@@ -926,16 +926,15 @@ nsPresContext::PreferenceChanged(const char* aPrefName)
   
   if (!mPrefChangedTimer)
   {
-    mPrefChangedTimer = do_CreateInstance("@mozilla.org/timer;1");
-    if (!mPrefChangedTimer)
-      return;
     
     
     
     
     
     nsLayoutStylesheetCache::InvalidatePreferenceSheets();
-    mPrefChangedTimer->InitWithFuncCallback(nsPresContext::PrefChangedUpdateTimerCallback, (void*)this, 0, nsITimer::TYPE_ONE_SHOT);
+    if (!InitTimer(mPrefChangedTimer, nsPresContext::PrefChangedUpdateTimerCallback, 0)) {
+      return;
+    }
   }
   if (prefName.EqualsLiteral("nglayout.debug.paint_flashing") ||
       prefName.EqualsLiteral("nglayout.debug.paint_flashing_chrome")) {
@@ -2531,6 +2530,21 @@ nsPresContext::HasCachedStyleData()
   return mShell && mShell->StyleSet()->HasCachedStyleData();
 }
 
+bool
+nsPresContext::InitTimer(nsCOMPtr<nsITimer>& aTimer,
+                         nsTimerCallbackFunc aCallback,
+                         uint32_t aDelay)
+{
+  aTimer = do_CreateInstance("@mozilla.org/timer;1");
+  if (!aTimer) {
+    return false;
+  }
+
+  nsresult rv = aTimer->InitWithFuncCallback(aCallback, this, aDelay,
+                                             nsITimer::TYPE_ONE_SHOT);
+  return NS_SUCCEEDED(rv);
+}
+
 static bool sGotInterruptEnv = false;
 enum InterruptMode {
   ModeRandom,
@@ -2920,13 +2934,9 @@ nsRootPresContext::InitApplyPluginGeometryTimer()
   
   
   
-  mApplyPluginGeometryTimer = do_CreateInstance("@mozilla.org/timer;1");
-  if (mApplyPluginGeometryTimer) {
-    mApplyPluginGeometryTimer->
-      InitWithFuncCallback(ApplyPluginGeometryUpdatesCallback, this,
-                           nsRefreshDriver::DefaultInterval() * 2,
-                           nsITimer::TYPE_ONE_SHOT);
-  }
+  InitTimer(mApplyPluginGeometryTimer,
+            ApplyPluginGeometryUpdatesCallback,
+            nsRefreshDriver::DefaultInterval() * 2);
 }
 
 void
@@ -3096,11 +3106,8 @@ nsRootPresContext::EnsureEventualDidPaintEvent()
 {
   if (mNotifyDidPaintTimer)
     return;
-  mNotifyDidPaintTimer = do_CreateInstance("@mozilla.org/timer;1");
-  if (!mNotifyDidPaintTimer)
-    return;
-  mNotifyDidPaintTimer->InitWithFuncCallback(NotifyDidPaintForSubtreeCallback,
-                                             (void*)this, 100, nsITimer::TYPE_ONE_SHOT);
+
+  InitTimer(mNotifyDidPaintTimer, NotifyDidPaintForSubtreeCallback, 100);
 }
 
 void
