@@ -40,20 +40,16 @@ PresentationSessionInfo::Shutdown(nsresult aReason)
 {
   
   if (mControlChannel) {
-    mControlChannel->SetListener(nullptr);
     NS_WARN_IF(NS_FAILED(mControlChannel->Close(aReason)));
-    mControlChannel = nullptr;
   }
 
   
   if (mTransport) {
-    mTransport->SetCallback(nullptr);
+    
     NS_WARN_IF(NS_FAILED(mTransport->Close(aReason)));
-    mTransport = nullptr;
   }
 
   mIsResponderReady = false;
-  mIsTransportReady = false;
 }
 
 nsresult
@@ -76,14 +72,29 @@ PresentationSessionInfo::SetListener(nsIPresentationSessionListener* aListener)
 nsresult
 PresentationSessionInfo::Send(nsIInputStream* aData)
 {
-  
-  return NS_OK;
+  if (NS_WARN_IF(!IsSessionReady())) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  if (NS_WARN_IF(!mTransport)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  return mTransport->Send(aData);
 }
 
 nsresult
 PresentationSessionInfo::Close(nsresult aReason)
 {
   
+  
+  if (!IsSessionReady() && NS_SUCCEEDED(aReason) && mListener) {
+    nsresult rv = mListener->NotifyStateChange(mSessionId,
+                                               nsIPresentationSessionListener::STATE_TERMINATED);
+    NS_WARN_IF(NS_FAILED(rv));
+  }
+
+  Shutdown(aReason);
   return NS_OK;
 }
 
@@ -150,12 +161,18 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
+  mTransport->SetCallback(nullptr);
   mTransport = nullptr;
 
   if (!IsSessionReady()) {
     
     return ReplyError(aReason);
   }
+
+  
+  mIsTransportReady = false;
 
   Shutdown(aReason);
 
@@ -175,9 +192,15 @@ PresentationSessionInfo::NotifyData(const nsACString& aData)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
+  if (NS_WARN_IF(!IsSessionReady())) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
-  return NS_OK;
+  if (NS_WARN_IF(!mListener)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  return mListener->NotifyMessage(mSessionId, aData);
 }
 
 
@@ -266,9 +289,18 @@ PresentationRequesterInfo::NotifyClosed(nsresult aReason)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
   SetControlChannel(nullptr);
 
   if (NS_WARN_IF(NS_FAILED(aReason))) {
+    if (mListener) {
+      
+      
+      return mListener->NotifyStateChange(mSessionId,
+                                          nsIPresentationSessionListener::STATE_TERMINATED);
+    }
+
     
     return ReplyError(aReason);
   }
@@ -461,9 +493,18 @@ PresentationResponderInfo::NotifyClosed(nsresult aReason)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
   SetControlChannel(nullptr);
 
   if (NS_WARN_IF(NS_FAILED(aReason))) {
+    if (mListener) {
+      
+      
+      return mListener->NotifyStateChange(mSessionId,
+                                          nsIPresentationSessionListener::STATE_TERMINATED);
+    }
+
     
     return ReplyError(aReason);
   }
