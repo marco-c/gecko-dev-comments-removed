@@ -163,8 +163,7 @@ NS_IMPL_ISUPPORTS(CacheEntry,
 CacheEntry::CacheEntry(const nsACString& aStorageID,
                        nsIURI* aURI,
                        const nsACString& aEnhanceID,
-                       bool aUseDisk,
-                       uint32_t aPinningAppId)
+                       bool aUseDisk)
 : mFrecency(0)
 , mSortingExpirationTime(uint32_t(-1))
 , mLock("CacheEntry")
@@ -173,7 +172,6 @@ CacheEntry::CacheEntry(const nsACString& aStorageID,
 , mEnhanceID(aEnhanceID)
 , mStorageID(aStorageID)
 , mUseDisk(aUseDisk)
-, mPinningAppId(aPinningAppId)
 , mIsDoomed(false)
 , mSecurityInfoLoaded(false)
 , mPreventCallbacks(false)
@@ -343,8 +341,7 @@ bool CacheEntry::Load(bool aTruncate, bool aPriority)
   
   
   
-  if ((!aTruncate || !mUseDisk) && NS_SUCCEEDED(rv) &&
-      !mPinningAppId) {
+  if ((!aTruncate || !mUseDisk) && NS_SUCCEEDED(rv)) {
     
     
     CacheIndex::EntryStatus status;
@@ -394,7 +391,6 @@ bool CacheEntry::Load(bool aTruncate, bool aPriority)
       rv = mFile->Init(fileKey,
                        aTruncate,
                        !mUseDisk,
-                       mPinningAppId,
                        aPriority,
                        directLoad ? nullptr : this);
     }
@@ -490,7 +486,6 @@ already_AddRefed<CacheEntryHandle> CacheEntry::ReopenTruncated(bool aMemoryOnly,
     nsresult rv = CacheStorageService::Self()->AddStorageEntry(
       GetStorageID(), GetURI(), GetEnhanceID(),
       mUseDisk && !aMemoryOnly,
-      mPinningAppId,
       true, 
       true, 
       getter_AddRefs(handle));

@@ -481,9 +481,6 @@ private:
     uint32_t                          mHasAutoRedirectVetoNotifier : 1;
     
     
-    uint32_t                          mPinCacheContent : 1;
-    
-    
     
     
     uint32_t                          mIsPackagedAppResource : 1;

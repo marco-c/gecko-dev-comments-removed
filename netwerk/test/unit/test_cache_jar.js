@@ -101,8 +101,7 @@ function run_test() {
 
 function doneFirstLoad(req, buffer, expected) {
   
-  var nc = req.notificationCallbacks.getInterface(Ci.nsILoadContext);
-  var chan = makeChan(URL, nc.appId, nc.isInBrowserElement);
+  var chan = makeChan(URL, 0, false);
   chan.asyncOpen(new ChannelListener(doneSecondLoad, expected), null);
 }
 

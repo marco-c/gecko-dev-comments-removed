@@ -429,10 +429,6 @@ CacheStorageEvictHelper::Run(mozIApplicationClearPrivateDataParams* aParams)
   rv = ClearStorage(true, aBrowserOnly, true);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  rv = CacheFileIOManager::EvictPinned(mAppId);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   return NS_OK;
 }
 
