@@ -268,8 +268,8 @@ class FirefoxUIUpdates(FirefoxUITests):
 
             try:
                 
-                urllib2.urlopen(symbols_path)
-                return symbols_path
+                urllib2.urlopen(symbols_url)
+                return symbols_url
 
             except urllib2.HTTPError, e:
                 self.warning("%s - %s" % (str(e), symbols_url))
