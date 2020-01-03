@@ -39,10 +39,6 @@ public:
 
   
   
-  void PrepareToShutdown();
-
-  
-  
   void Shutdown();
 
   void SetVolume(double aVolume);
