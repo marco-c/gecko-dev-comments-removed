@@ -999,3 +999,16 @@ function waitForStyleEditor(toolbox, href) {
 
   return def.promise;
 }
+
+
+
+
+
+
+
+
+function reloadPage(inspector) {
+  let onNewRoot = inspector.once("new-root");
+  content.location.reload();
+  return onNewRoot.then(inspector.markup._waitForChildren);
+}
