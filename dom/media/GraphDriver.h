@@ -90,9 +90,6 @@ public:
                                        GraphTime& aTo) = 0;
   
 
-  virtual GraphTime GetCurrentTime() = 0;
-  
-
   virtual void WaitForNextIteration() = 0;
   
   virtual void WakeUp() = 0;
@@ -292,7 +289,6 @@ public:
   virtual ~SystemClockDriver();
   virtual void GetIntervalForIteration(GraphTime& aFrom,
                                        GraphTime& aTo) override;
-  virtual GraphTime GetCurrentTime() override;
   virtual void WaitForNextIteration() override;
   virtual void WakeUp() override;
 
@@ -313,7 +309,6 @@ public:
   virtual ~OfflineClockDriver();
   virtual void GetIntervalForIteration(GraphTime& aFrom,
                                        GraphTime& aTo) override;
-  virtual GraphTime GetCurrentTime() override;
   virtual void WaitForNextIteration() override;
   virtual void WakeUp() override;
   virtual TimeStamp GetCurrentTimeStamp() override;
@@ -376,7 +371,6 @@ public:
   virtual void Revive() override;
   virtual void GetIntervalForIteration(GraphTime& aFrom,
                                        GraphTime& aTo) override;
-  virtual GraphTime GetCurrentTime() override;
   virtual void WaitForNextIteration() override;
   virtual void WakeUp() override;
 
