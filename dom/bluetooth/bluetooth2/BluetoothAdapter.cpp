@@ -509,11 +509,6 @@ void
 BluetoothAdapter::SetDiscoveryHandleInUse(
   BluetoothDiscoveryHandle* aDiscoveryHandle)
 {
-  
-  if (mDiscoveryHandleInUse) {
-    mDiscoveryHandleInUse->DisconnectFromOwner();
-  }
-
   mDiscoveryHandleInUse = aDiscoveryHandle;
 }
 

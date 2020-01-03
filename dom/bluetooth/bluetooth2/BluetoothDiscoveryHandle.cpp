@@ -43,12 +43,6 @@ BluetoothDiscoveryHandle::~BluetoothDiscoveryHandle()
 {
 }
 
-void
-BluetoothDiscoveryHandle::DisconnectFromOwner()
-{
-  DOMEventTargetHelper::DisconnectFromOwner();
-}
-
 
 already_AddRefed<BluetoothDiscoveryHandle>
 BluetoothDiscoveryHandle::Create(nsPIDOMWindow* aWindow)
