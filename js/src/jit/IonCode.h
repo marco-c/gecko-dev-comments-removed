@@ -15,6 +15,7 @@
 
 #include "gc/Heap.h"
 #include "jit/ExecutableAllocator.h"
+#include "jit/ICStubSpace.h"
 #include "jit/IonOptimizationLevels.h"
 #include "jit/IonTypes.h"
 #include "js/UbiNode.h"
@@ -27,6 +28,7 @@ namespace jit {
 class MacroAssembler;
 class PatchableBackedge;
 class IonBuilder;
+class IonICEntry;
 
 typedef Vector<JSObject*, 4, JitAllocPolicy> ObjectVector;
 
@@ -260,6 +262,10 @@ struct IonScript
     uint32_t backedgeEntries_;
 
     
+    uint32_t sharedStubList_;
+    uint32_t sharedStubEntries_;
+
+    
     uint32_t invalidationCount_;
 
     
@@ -271,6 +277,9 @@ struct IonScript
     
     
     uint32_t osrPcMismatchCounter_;
+
+    
+    FallbackICStubSpace fallbackStubSpace_;
 
     
     TraceLoggerEvent traceLoggerScriptEvent_;
@@ -327,7 +336,8 @@ struct IonScript
                           size_t constants, size_t safepointIndexEntries,
                           size_t osiIndexEntries, size_t cacheEntries,
                           size_t runtimeSize, size_t safepointsSize,
-                          size_t backedgeEntries, OptimizationLevel optimizationLevel);
+                          size_t backedgeEntries, size_t sharedStubEntries,
+                          OptimizationLevel optimizationLevel);
     static void Trace(JSTracer* trc, IonScript* script);
     static void Destroy(FreeOp* fop, IonScript* script);
 
@@ -486,6 +496,12 @@ struct IonScript
     size_t numCaches() const {
         return cacheEntries_;
     }
+    IonICEntry* sharedStubList() {
+        return (IonICEntry*) &bottomBuffer()[sharedStubList_];
+    }
+    size_t numSharedStubs() const {
+        return sharedStubEntries_;
+    }
     size_t runtimeSize() const {
         return runtimeSize_;
     }
@@ -555,6 +571,12 @@ struct IonScript
     void clearRecompiling() {
         recompiling_ = false;
     }
+
+    FallbackICStubSpace* fallbackStubSpace() {
+        return &fallbackStubSpace_;
+    }
+    void adoptFallbackStubs(FallbackICStubSpace* stubSpace);
+    void purgeOptimizedStubs(Zone* zone);
 
     enum ShouldIncreaseAge {
         IncreaseAge = true,

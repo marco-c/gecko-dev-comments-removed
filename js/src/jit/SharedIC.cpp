@@ -81,6 +81,14 @@ ICEntry::fallbackStub() const
     return firstStub()->getChainFallback();
 }
 
+void
+ICEntry::trace(JSTracer* trc)
+{
+    if (!hasStub())
+        return;
+    for (ICStub* stub = firstStub(); stub; stub = stub->next())
+        stub->trace(trc);
+}
 
 ICStubConstIterator&
 ICStubConstIterator::operator++()
@@ -142,7 +150,7 @@ ICStub::updateCode(JitCode* code)
  void
 ICStub::trace(JSTracer* trc)
 {
-    markCode(trc, "baseline-stub-jitcode");
+    markCode(trc, "shared-stub-jitcode");
 
     
     
