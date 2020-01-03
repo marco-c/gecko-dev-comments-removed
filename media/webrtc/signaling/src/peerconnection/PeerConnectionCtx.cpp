@@ -205,6 +205,7 @@ EverySecondTelemetryCallback_s(nsAutoPtr<RTCStatsQueries> aQueryList) {
   for (auto q = aQueryList->begin(); q != aQueryList->end(); ++q) {
     PeerConnectionImpl::ExecuteStatsQuery_s(*q);
     auto& r = *(*q)->report;
+    bool isHello = (*q)->isHello;
     if (r.mInboundRTPStreamStats.WasPassed()) {
       
       const Sequence<RTCInboundRTPStreamStats> *lastInboundStats = nullptr;
@@ -237,9 +238,15 @@ EverySecondTelemetryCallback_s(nsAutoPtr<RTCStatsQueries> aQueryList) {
         }
         if (s.mMozRtt.WasPassed()) {
           MOZ_ASSERT(s.mIsRemote);
-          Accumulate(isAudio? WEBRTC_AUDIO_QUALITY_OUTBOUND_RTT :
-                              WEBRTC_VIDEO_QUALITY_OUTBOUND_RTT,
-                      s.mMozRtt.Value());
+          ID id;
+          if (isAudio) {
+            id = isHello ? LOOP_AUDIO_QUALITY_OUTBOUND_RTT :
+                           WEBRTC_AUDIO_QUALITY_OUTBOUND_RTT;
+          } else {
+            id = isHello ? LOOP_VIDEO_QUALITY_OUTBOUND_RTT :
+                           WEBRTC_VIDEO_QUALITY_OUTBOUND_RTT;
+          }
+          Accumulate(id, s.mMozRtt.Value());
         }
         if (lastInboundStats && s.mBytesReceived.WasPassed()) {
           auto& laststats = *lastInboundStats;
@@ -249,15 +256,32 @@ EverySecondTelemetryCallback_s(nsAutoPtr<RTCStatsQueries> aQueryList) {
             if (lasts.mBytesReceived.WasPassed()) {
               auto delta_ms = int32_t(s.mTimestamp.Value() -
                                       lasts.mTimestamp.Value());
-              if (delta_ms > 0 && delta_ms < 60000) {
-                Accumulate(s.mIsRemote?
-                           (isAudio? WEBRTC_AUDIO_QUALITY_OUTBOUND_BANDWIDTH_KBITS :
-                                     WEBRTC_VIDEO_QUALITY_OUTBOUND_BANDWIDTH_KBITS) :
-                           (isAudio? WEBRTC_AUDIO_QUALITY_INBOUND_BANDWIDTH_KBITS :
-                                     WEBRTC_VIDEO_QUALITY_INBOUND_BANDWIDTH_KBITS),
-                           ((s.mBytesReceived.Value() -
-                             lasts.mBytesReceived.Value()) * 8) / delta_ms);
+              
+              
+              if (delta_ms > 500 && delta_ms < 60000) {
+                ID id;
+                if (s.mIsRemote) {
+                  if (isAudio) {
+                    id = isHello ? LOOP_AUDIO_QUALITY_OUTBOUND_BANDWIDTH_KBITS :
+                                   WEBRTC_AUDIO_QUALITY_OUTBOUND_BANDWIDTH_KBITS;
+                  } else {
+                    id = isHello ? LOOP_VIDEO_QUALITY_OUTBOUND_BANDWIDTH_KBITS :
+                                   WEBRTC_VIDEO_QUALITY_OUTBOUND_BANDWIDTH_KBITS;
+                  }
+                } else {
+                  if (isAudio) {
+                    id = isHello ? LOOP_AUDIO_QUALITY_INBOUND_BANDWIDTH_KBITS :
+                                   WEBRTC_AUDIO_QUALITY_INBOUND_BANDWIDTH_KBITS;
+                  } else {
+                    id = isHello ? LOOP_VIDEO_QUALITY_INBOUND_BANDWIDTH_KBITS :
+                                   WEBRTC_VIDEO_QUALITY_INBOUND_BANDWIDTH_KBITS;
+                  }
+                }
+                Accumulate(id, ((s.mBytesReceived.Value() -
+                                 lasts.mBytesReceived.Value()) * 8) / delta_ms);
               }
+              
+              
             }
           }
         }
