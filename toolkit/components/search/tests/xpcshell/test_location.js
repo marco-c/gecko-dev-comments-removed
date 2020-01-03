@@ -39,20 +39,20 @@ function run_test() {
     }
 
     if (probeUSMismatched && probeNonUSMismatched) {
-      let gfxInfo2 = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo2);
-      print("Platform says the country-code is", gfxInfo2.countryCode);
+      let countryCode = Services.sysinfo.get("countryCode");
+      print("Platform says the country-code is", countryCode);
       let expectedResult;
       let hid;
       
       
-      if (gfxInfo2.countryCode == "US") {
+      if (countryCode == "US") {
         hid = probeUSMismatched;
         expectedResult = [0,1,0]; 
       } else {
         
         
         hid = probeNonUSMismatched;
-        expectedResult = gfxInfo2.countryCode == "AU" ? [1,0,0] : [0,1,0];
+        expectedResult = countryCode == "AU" ? [1,0,0] : [0,1,0];
       }
 
       let histogram = Services.telemetry.getHistogramById(hid);

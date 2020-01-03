@@ -612,13 +612,8 @@ function storeCountryCode(cc) {
   }
   
   
-  let gfxInfo2;
-  try {
-    gfxInfo2 = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo2);
-  } catch (ex) {
-    
-  }
-  if (gfxInfo2) {
+  let platformCC = Services.sysinfo.get("countryCode");
+  if (platformCC) {
     let probeUSMismatched, probeNonUSMismatched;
     switch (Services.appinfo.OS) {
       case "Darwin":
@@ -630,11 +625,10 @@ function storeCountryCode(cc) {
         probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
         break;
       default:
-        Cu.reportError("Platform " + Services.appinfo.OS + " has nsIGfxInfo2 but no search service telemetry probes");
+        Cu.reportError("Platform " + Services.appinfo.OS + " has system country code but no search service telemetry probes");
         break;
     }
     if (probeUSMismatched && probeNonUSMismatched) {
-      let platformCC = gfxInfo2.countryCode;
       if (cc == "US" || platformCC == "US") {
         
         Services.telemetry.getHistogramById(probeUSMismatched).add(cc != platformCC);
