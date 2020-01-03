@@ -3301,23 +3301,34 @@ TextPropertyEditor.prototype = {
 
 
   _onNameDone: function(aValue, aCommit) {
-    if (aCommit && !this.ruleEditor.isEditing) {
+    if ((!aCommit && this.ruleEditor.isEditing) ||
+        this.committed.name == aValue) {
       
-      
-      if (aValue.trim() === "") {
-        this.remove();
-      } else {
-        
-        
-        let properties = parseDeclarations(aValue);
+      if (!this.prop.enabled) {
+        this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
+      }
 
-        if (properties.length) {
-          this.prop.setName(properties[0].name);
-          if (properties.length > 1) {
-            this.prop.setValue(properties[0].value, properties[0].priority);
-            this.ruleEditor.addProperties(properties.slice(1), this.prop);
-          }
-        }
+      return;
+    }
+
+    
+    
+    if (aValue.trim() === "") {
+      this.remove();
+      return;
+    }
+
+    
+    
+    let properties = parseDeclarations(aValue);
+
+    if (properties.length) {
+      this.prop.setName(properties[0].name);
+      this.committed.name = this.prop.name;
+
+      if (properties.length > 1) {
+        this.prop.setValue(properties[0].value, properties[0].priority);
+        this.ruleEditor.addProperties(properties.slice(1), this.prop);
       }
     }
   },
@@ -3349,35 +3360,33 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onValueDone: function(aValue, aCommit) {
-    if (!aCommit && !this.ruleEditor.isEditing) {
+  _onValueDone: function(aValue="", aCommit) {
+    let parsedProperties = this._getValueAndExtraProperties(aValue);
+    let val = parseSingleValue(parsedProperties.firstValue);
+    let isValueUnchanged =
+      !parsedProperties.propertiesToAdd.length &&
+      this.committed.value == val.value &&
+      this.committed.priority == val.priority;
+
+    if ((!aCommit && !this.ruleEditor.isEditing) || isValueUnchanged) {
       
       if (this.removeOnRevert) {
         this.remove();
       } else {
         
-        this.update();
-
-        
-        this.ruleEditor.rule.previewPropertyValue(this.prop,
-          this.prop.value, this.prop.priority);
+        this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
       }
       return;
     }
 
-    let {propertiesToAdd, firstValue} =
-        this._getValueAndExtraProperties(aValue);
-
     
-    let val = parseSingleValue(firstValue);
-
     this.prop.setValue(val.value, val.priority);
     this.removeOnRevert = false;
     this.committed.value = this.prop.value;
     this.committed.priority = this.prop.priority;
 
     
-    this.ruleEditor.addProperties(propertiesToAdd, this.prop);
+    this.ruleEditor.addProperties(parsedProperties.propertiesToAdd, this.prop);
 
     
     
