@@ -1772,6 +1772,16 @@ pref("network.automatic-ntlm-auth.trusted-uris", "");
 
 
 
+
+
+pref("network.generic-ntlm-auth.workstation", "WORKSTATION");
+
+
+
+
+
+
+
 pref("network.auth.allow-subresource-auth", 1);
 
 pref("permissions.default.image",           1); 
