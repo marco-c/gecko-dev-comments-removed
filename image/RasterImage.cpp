@@ -289,7 +289,7 @@ RasterImage::Init(const char* aMimeType,
 
   if (!mSyncLoad) {
     
-    nsresult rv = Decode(Nothing(), DECODE_FLAGS_DEFAULT);
+    nsresult rv = DecodeMetadata(DECODE_FLAGS_DEFAULT);
     if (NS_FAILED(rv)) {
       return NS_ERROR_FAILURE;
     }
@@ -482,7 +482,7 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
     
     MOZ_ASSERT(!mAnim, "Animated frames should be locked");
 
-    Decode(Some(requestedSize), aFlags);
+    Decode(requestedSize, aFlags);
 
     
     if (aFlags & FLAG_SYNC_DECODE) {
@@ -1163,14 +1163,15 @@ RasterImage::OnImageDataComplete(nsIRequest*, nsISupports*, nsresult aStatus,
   
   
   
-  bool canSyncSizeDecode = mSyncLoad || mTransient ||
-                           DecodePool::NumberOfCores() < 2;
+  
+  bool canSyncDecodeMetadata = mSyncLoad || mTransient ||
+                               DecodePool::NumberOfCores() < 2;
 
-  if (canSyncSizeDecode && !mHasSize) {
+  if (canSyncDecodeMetadata && !mHasSize) {
     
     
     
-    Decode(Nothing(), FLAG_SYNC_DECODE);
+    DecodeMetadata(FLAG_SYNC_DECODE);
   }
 
   
@@ -1189,7 +1190,8 @@ RasterImage::OnImageDataComplete(nsIRequest*, nsISupports*, nsresult aStatus,
 
   if (!mHasSize && !mError) {
     
-    MOZ_ASSERT(!canSyncSizeDecode, "Firing load async but canSyncSizeDecode?");
+    MOZ_ASSERT(!canSyncDecodeMetadata,
+               "Firing load async after metadata sync decode?");
     NotifyProgress(FLAG_ONLOAD_BLOCKED);
     mLoadProgress = Some(loadProgress);
     return finalStatus;
@@ -1320,79 +1322,6 @@ RasterImage::CanDiscard() {
 }
 
 
-already_AddRefed<Decoder>
-RasterImage::CreateDecoder(const Maybe<IntSize>& aSize, uint32_t aFlags)
-{
-  
-  if (aSize) {
-    MOZ_ASSERT(mHasSize, "Must do a size decode before a full decode!");
-    MOZ_ASSERT(mDownscaleDuringDecode || *aSize == mSize,
-               "Can only decode to our intrinsic size if we're not allowed to "
-               "downscale-during-decode");
-  } else {
-    MOZ_ASSERT(!mHasSize, "Should not do unnecessary size decodes");
-  }
-
-  bool imageIsLocked = false;
-  if (!mHasBeenDecoded && aSize) {
-    
-    
-    
-    LockImage();
-    imageIsLocked = true;
-  }
-
-  nsRefPtr<Decoder> decoder;
-  if (aSize) {
-    Maybe<IntSize> targetSize = mSize != *aSize ? aSize : Nothing();
-    decoder = DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer,
-                                            targetSize, aFlags, mHasBeenDecoded,
-                                            mTransient, imageIsLocked);
-  } else {
-    decoder = DecoderFactory::CreateMetadataDecoder(mDecoderType, this,
-                                                    mSourceBuffer);
-  }
-
-  
-  if (!decoder) {
-    return nullptr;
-  }
-
-  if (aSize) {
-    
-    
-    InsertOutcome outcome =
-      SurfaceCache::InsertPlaceholder(ImageKey(this),
-                                      RasterSurfaceKey(*aSize,
-                                                       decoder->GetDecodeFlags(),
-                                                        0));
-    if (outcome != InsertOutcome::SUCCESS) {
-      return nullptr;
-    }
-
-    Telemetry::GetHistogramById(
-      Telemetry::IMAGE_DECODE_COUNT)->Subtract(mDecodeCount);
-    mDecodeCount++;
-    Telemetry::GetHistogramById(
-      Telemetry::IMAGE_DECODE_COUNT)->Add(mDecodeCount);
-
-    if (mDecodeCount > sMaxDecodeCount) {
-      
-      
-      if (sMaxDecodeCount > 0) {
-        Telemetry::GetHistogramById(
-          Telemetry::IMAGE_MAX_DECODE_COUNT)->Subtract(sMaxDecodeCount);
-      }
-      sMaxDecodeCount = mDecodeCount;
-      Telemetry::GetHistogramById(
-        Telemetry::IMAGE_MAX_DECODE_COUNT)->Add(sMaxDecodeCount);
-    }
-  }
-
-  return decoder.forget();
-}
-
-
 
 NS_IMETHODIMP
 RasterImage::RequestDecode()
@@ -1442,22 +1371,52 @@ RasterImage::RequestDecodeForSize(const IntSize& aSize, uint32_t aFlags)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-RasterImage::Decode(const Maybe<IntSize>& aSize, uint32_t aFlags)
+static void
+LaunchDecoder(Decoder* aDecoder,
+              RasterImage* aImage,
+              uint32_t aFlags,
+              bool aHaveSourceData)
 {
-  MOZ_ASSERT(!aSize || NS_IsMainThread());
+  if (aHaveSourceData) {
+    
+    if (aFlags & imgIContainer::FLAG_SYNC_DECODE) {
+      PROFILER_LABEL_PRINTF("DecodePool", "SyncDecodeIfPossible",
+        js::ProfileEntry::Category::GRAPHICS,
+        "%s", aImage->GetURIString().get());
+      DecodePool::Singleton()->SyncDecodeIfPossible(aDecoder);
+      return;
+    }
+
+    if (aFlags & imgIContainer::FLAG_SYNC_DECODE_IF_FAST) {
+      PROFILER_LABEL_PRINTF("DecodePool", "SyncDecodeIfSmall",
+        js::ProfileEntry::Category::GRAPHICS,
+        "%s", aImage->GetURIString().get());
+      DecodePool::Singleton()->SyncDecodeIfSmall(aDecoder);
+      return;
+    }
+  }
+
+  
+  
+  DecodePool::Singleton()->AsyncDecode(aDecoder);
+}
+
+NS_IMETHODIMP
+RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
+{
+  MOZ_ASSERT(NS_IsMainThread());
 
   if (mError) {
     return NS_ERROR_FAILURE;
   }
 
   
-  if (!mHasSize && aSize) {
+  if (!mHasSize) {
     mWantFullDecode = true;
     return NS_OK;
   }
 
-  if (mDownscaleDuringDecode && aSize) {
+  if (mDownscaleDuringDecode) {
     
     
     
@@ -1468,32 +1427,87 @@ RasterImage::Decode(const Maybe<IntSize>& aSize, uint32_t aFlags)
     SurfaceCache::UnlockSurfaces(ImageKey(this));
   }
 
+  MOZ_ASSERT(mDownscaleDuringDecode || aSize == mSize,
+             "Can only decode to our intrinsic size if we're not allowed to "
+             "downscale-during-decode");
+
+  Maybe<IntSize> targetSize = mSize != aSize ? Some(aSize) : Nothing();
+
+  bool imageIsLocked = false;
+  if (!mHasBeenDecoded) {
+    
+    
+    
+    LockImage();
+    imageIsLocked = true;
+  }
+
   
-  nsRefPtr<Decoder> decoder = CreateDecoder(aSize, aFlags);
+  nsRefPtr<Decoder> decoder =
+    DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer, targetSize,
+                                  aFlags, mHasBeenDecoded, mTransient,
+                                  imageIsLocked);
+
+  
   if (!decoder) {
     return NS_ERROR_FAILURE;
   }
 
-  if (mHasSourceData) {
-    
-    if (aFlags & FLAG_SYNC_DECODE) {
-      PROFILER_LABEL_PRINTF("DecodePool", "SyncDecodeIfPossible",
-        js::ProfileEntry::Category::GRAPHICS, "%s", GetURIString().get());
-      DecodePool::Singleton()->SyncDecodeIfPossible(decoder);
-      return NS_OK;
-    }
-
-    if (aFlags & FLAG_SYNC_DECODE_IF_FAST) {
-      PROFILER_LABEL_PRINTF("DecodePool", "SyncDecodeIfSmall",
-        js::ProfileEntry::Category::GRAPHICS, "%s", GetURIString().get());
-      DecodePool::Singleton()->SyncDecodeIfSmall(decoder);
-      return NS_OK;
-    }
+  
+  
+  InsertOutcome outcome =
+    SurfaceCache::InsertPlaceholder(ImageKey(this),
+                                    RasterSurfaceKey(aSize,
+                                                     decoder->GetDecodeFlags(),
+                                                      0));
+  if (outcome != InsertOutcome::SUCCESS) {
+    return NS_ERROR_FAILURE;
   }
 
   
+  Telemetry::GetHistogramById(Telemetry::IMAGE_DECODE_COUNT)
+    ->Subtract(mDecodeCount);
+  mDecodeCount++;
+  Telemetry::GetHistogramById(Telemetry::IMAGE_DECODE_COUNT)
+    ->Add(mDecodeCount);
+
+  if (mDecodeCount > sMaxDecodeCount) {
+    
+    
+    if (sMaxDecodeCount > 0) {
+      Telemetry::GetHistogramById(Telemetry::IMAGE_MAX_DECODE_COUNT)
+        ->Subtract(sMaxDecodeCount);
+    }
+    sMaxDecodeCount = mDecodeCount;
+    Telemetry::GetHistogramById(Telemetry::IMAGE_MAX_DECODE_COUNT)
+      ->Add(sMaxDecodeCount);
+  }
+
   
-  DecodePool::Singleton()->AsyncDecode(decoder);
+  LaunchDecoder(decoder, this, aFlags, mHasSourceData);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RasterImage::DecodeMetadata(uint32_t aFlags)
+{
+  if (mError) {
+    return NS_ERROR_FAILURE;
+  }
+
+  MOZ_ASSERT(!mHasSize, "Should not do unnecessary metadata decodes");
+
+  
+  nsRefPtr<Decoder> decoder =
+    DecoderFactory::CreateMetadataDecoder(mDecoderType, this, mSourceBuffer);
+
+  
+  if (!decoder) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  LaunchDecoder(decoder, this, aFlags, mHasSourceData);
   return NS_OK;
 }
 
@@ -1512,13 +1526,13 @@ RasterImage::RecoverFromLossOfFrames(const IntSize& aSize, uint32_t aFlags)
   
   
   if (mAnim) {
-    Decode(Some(mSize), aFlags | FLAG_SYNC_DECODE);
+    Decode(mSize, aFlags | FLAG_SYNC_DECODE);
     ResetAnimation();
     return;
   }
 
   
-  Decode(Some(aSize), aFlags);
+  Decode(aSize, aFlags);
 }
 
 bool

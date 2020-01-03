@@ -344,15 +344,19 @@ private:
 
 
 
-  NS_IMETHOD Decode(const Maybe<nsIntSize>& aSize, uint32_t aFlags);
+
+
+
+
+
+
+  NS_IMETHOD Decode(const gfx::IntSize& aSize, uint32_t aFlags);
 
   
 
 
 
-
-  already_AddRefed<Decoder> CreateDecoder(const Maybe<nsIntSize>& aSize,
-                                          uint32_t aFlags);
+  NS_IMETHOD DecodeMetadata(uint32_t aFlags);
 
   
 
