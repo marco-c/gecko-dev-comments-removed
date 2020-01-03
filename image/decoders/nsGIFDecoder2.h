@@ -22,8 +22,6 @@ class RasterImage;
 class nsGIFDecoder2 : public Decoder
 {
 public:
-
-  explicit nsGIFDecoder2(RasterImage* aImage);
   ~nsGIFDecoder2();
 
   virtual void WriteInternal(const char* aBuffer, uint32_t aCount) override;
@@ -31,9 +29,13 @@ public:
   virtual Telemetry::ID SpeedHistogram() override;
 
 private:
-  
-  
+  friend class DecoderFactory;
 
+  
+  explicit nsGIFDecoder2(RasterImage* aImage);
+
+  
+  
   void      BeginGIF();
   nsresult  BeginImageFrame(uint16_t aDepth);
   void      EndImageFrame();

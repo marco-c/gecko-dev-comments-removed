@@ -22,8 +22,6 @@ class RasterImage;
 class nsBMPDecoder : public Decoder
 {
 public:
-
-    explicit nsBMPDecoder(RasterImage* aImage);
     ~nsBMPDecoder();
 
     
@@ -55,6 +53,12 @@ public:
     virtual void FinishInternal() override;
 
 private:
+    friend class DecoderFactory;
+    friend class nsICODecoder;
+
+    
+    
+    explicit nsBMPDecoder(RasterImage* aImage);
 
     
     

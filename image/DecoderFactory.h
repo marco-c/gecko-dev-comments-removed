@@ -91,6 +91,13 @@ public:
 
 private:
   virtual ~DecoderFactory() = 0;
+
+  
+
+
+  static already_AddRefed<Decoder> GetDecoder(DecoderType aType,
+                                              RasterImage* aImage,
+                                              bool aIsRedecode);
 };
 
 } 

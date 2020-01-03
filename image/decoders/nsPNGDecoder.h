@@ -24,7 +24,6 @@ class RasterImage;
 class nsPNGDecoder : public Decoder
 {
 public:
-  explicit nsPNGDecoder(RasterImage* aImage);
   virtual ~nsPNGDecoder();
 
   virtual void InitInternal() override;
@@ -66,6 +65,14 @@ public:
       return false;
     }
   }
+
+private:
+  friend class DecoderFactory;
+  friend class nsICODecoder;
+
+  
+  
+  explicit nsPNGDecoder(RasterImage* aImage);
 
 public:
   png_structp mPNG;

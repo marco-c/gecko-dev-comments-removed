@@ -22,8 +22,6 @@ class RasterImage;
 class nsICODecoder : public Decoder
 {
 public:
-
-  explicit nsICODecoder(RasterImage* aImage);
   virtual ~nsICODecoder();
 
   
@@ -43,6 +41,11 @@ public:
   virtual void FinishWithErrorInternal() override;
 
 private:
+  friend class DecoderFactory;
+
+  
+  explicit nsICODecoder(RasterImage* aImage);
+
   
   
   bool WriteToContainedDecoder(const char* aBuffer, uint32_t aCount);
