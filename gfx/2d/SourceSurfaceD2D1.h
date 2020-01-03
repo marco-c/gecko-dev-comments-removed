@@ -39,7 +39,7 @@ public:
 private:
   friend class DrawTargetD2D1;
 
-  void EnsureRealizedBitmap();
+  bool EnsureRealizedBitmap();
 
   
   
