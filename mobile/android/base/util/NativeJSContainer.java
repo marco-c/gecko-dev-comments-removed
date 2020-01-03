@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.util;
 
+import org.mozilla.gecko.mozglue.generatorannotations.WrapEntireClassForJNI;
 import org.mozilla.gecko.mozglue.JNITarget;
 
 
@@ -16,12 +17,10 @@ import org.mozilla.gecko.mozglue.JNITarget;
 
 
 @JNITarget
+@WrapEntireClassForJNI
 public final class NativeJSContainer extends NativeJSObject
 {
-    private final long mNativeObject;
-
-    private NativeJSContainer(long nativeObject) {
-        mNativeObject = nativeObject;
+    private NativeJSContainer() {
     }
 
     
@@ -35,5 +34,6 @@ public final class NativeJSContainer extends NativeJSObject
 
 
 
-    public native void dispose();
+    @Override
+    public native void disposeNative();
 }
