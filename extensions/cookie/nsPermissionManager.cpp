@@ -204,7 +204,7 @@ public:
                           int64_t aModificationTime) = 0;
 };
 
-class UpgradeHostToOriginDBMigration final : public UpgradeHostToOriginHelper {
+class MOZ_STACK_CLASS UpgradeHostToOriginDBMigration final : public UpgradeHostToOriginHelper {
 public:
   UpgradeHostToOriginDBMigration(mozIStorageConnection* aDBConn, int64_t* aID) : mDBConn(aDBConn)
                                                                                , mID(aID)
@@ -256,7 +256,7 @@ private:
   int64_t* mID;
 };
 
-class UpgradeHostToOriginHostfileImport final : public UpgradeHostToOriginHelper {
+class MOZ_STACK_CLASS UpgradeHostToOriginHostfileImport final : public UpgradeHostToOriginHelper {
 public:
   UpgradeHostToOriginHostfileImport(nsPermissionManager* aPm,
                                     nsPermissionManager::DBOperationType aOperation,
@@ -284,6 +284,93 @@ private:
   nsPermissionManager::DBOperationType mOperation;
   int64_t mID;
 };
+
+class MOZ_STACK_CLASS UpgradeIPHostToOriginDB final : public UpgradeHostToOriginHelper {
+public:
+  UpgradeIPHostToOriginDB(mozIStorageConnection* aDBConn, int64_t* aID) : mDBConn(aDBConn)
+                                                                        , mID(aID)
+  {
+    mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+      "INSERT INTO moz_perms"
+      "(id, origin, type, permission, expireType, expireTime, modificationTime) "
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"), getter_AddRefs(mStmt));
+
+    mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+      "SELECT id FROM moz_perms WHERE origin = ?1 AND type = ?2"),
+      getter_AddRefs(mLookupStmt));
+  }
+
+  nsresult
+  Insert(const nsACString& aOrigin, const nsAFlatCString& aType,
+         uint32_t aPermission, uint32_t aExpireType, int64_t aExpireTime,
+         int64_t aModificationTime) final
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+
+    nsresult rv = mLookupStmt->Reset();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mLookupStmt->BindUTF8StringByIndex(0, aOrigin);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mLookupStmt->BindUTF8StringByIndex(1, aType);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    bool moreStmts = false;
+    if (NS_FAILED(mLookupStmt->ExecuteStep(&moreStmts)) || moreStmts) {
+      mLookupStmt->Reset();
+      NS_WARNING("A permissions entry was going to be re-migrated, "
+                 "but was already found in the permissions database.");
+      return NS_OK;
+    }
+
+    
+    rv = mStmt->BindInt64ByIndex(0, *mID);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mStmt->BindUTF8StringByIndex(1, aOrigin);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mStmt->BindUTF8StringByIndex(2, aType);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mStmt->BindInt32ByIndex(3, aPermission);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mStmt->BindInt32ByIndex(4, aExpireType);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mStmt->BindInt64ByIndex(5, aExpireTime);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mStmt->BindInt64ByIndex(6, aModificationTime);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    (*mID)++;
+
+    rv = mStmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    return NS_OK;
+  }
+
+private:
+  nsCOMPtr<mozIStorageStatement> mStmt;
+  nsCOMPtr<mozIStorageStatement> mLookupStmt;
+  nsCOMPtr<mozIStorageConnection> mDBConn;
+  int64_t* mID;
+};
+
 
 nsresult
 UpgradeHostToOriginAndInsert(const nsACString& aHost, const nsAFlatCString& aType,
@@ -344,8 +431,10 @@ UpgradeHostToOriginAndInsert(const nsACString& aHost, const nsAFlatCString& aTyp
     MOZ_ASSERT(tldService); 
     if (tldService) {
       rv = tldService->GetBaseDomainFromHost(aHost, 0, eTLD1);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
+    }
+
+    if (!tldService || NS_FAILED(rv)) {
+      
       
       
       eTLD1 = aHost;
@@ -446,32 +535,45 @@ UpgradeHostToOriginAndInsert(const nsACString& aHost, const nsAFlatCString& aTyp
   
   
   if (!foundHistory) {
-    rv = NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("http://") + aHost);
-    if (NS_SUCCEEDED(rv)) {
-      nsCOMPtr<nsIPrincipal> principal;
-      rv = GetPrincipal(uri, aAppId, aIsInBrowserElement, getter_AddRefs(principal));
-      NS_ENSURE_SUCCESS(rv, rv);
+    nsAutoCString hostSegment;
+    nsCOMPtr<nsIPrincipal> principal;
+    nsAutoCString origin;
 
-      nsAutoCString origin;
-      rv = principal->GetOrigin(origin);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      aHelper->Insert(origin, aType, aPermission,
-                      aExpireType, aExpireTime, aModificationTime);
+    
+    
+    if (aHost.FindChar(':') != -1) {
+      hostSegment.Assign("[");
+      hostSegment.Append(aHost);
+      hostSegment.Append("]");
+    } else {
+      hostSegment.Assign(aHost);
     }
-    rv = NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("https://") + aHost);
-    if (NS_SUCCEEDED(rv)) {
-      nsCOMPtr<nsIPrincipal> principal;
-      rv = GetPrincipal(uri, aAppId, aIsInBrowserElement, getter_AddRefs(principal));
-      NS_ENSURE_SUCCESS(rv, rv);
 
-      nsAutoCString origin;
-      rv = principal->GetOrigin(origin);
-      NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("http://") + hostSegment);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      aHelper->Insert(origin, aType, aPermission,
-                      aExpireType, aExpireTime, aModificationTime);
-    }
+    rv = GetPrincipal(uri, aAppId, aIsInBrowserElement, getter_AddRefs(principal));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = principal->GetOrigin(origin);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    aHelper->Insert(origin, aType, aPermission,
+                    aExpireType, aExpireTime, aModificationTime);
+
+    
+    rv = NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("https://") + hostSegment);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = GetPrincipal(uri, aAppId, aIsInBrowserElement, getter_AddRefs(principal));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = principal->GetOrigin(origin);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    aHelper->Insert(origin, aType, aPermission,
+                    aExpireType, aExpireTime, aModificationTime);
   }
 
   return NS_OK;
@@ -614,7 +716,7 @@ nsPermissionManager::AppClearDataObserverInit()
 
 
 #define PERMISSIONS_FILE_NAME "permissions.sqlite"
-#define HOSTS_SCHEMA_VERSION 7
+#define HOSTS_SCHEMA_VERSION 8
 
 #define HOSTPERM_FILE_NAME "hostperm.1"
 
@@ -1059,8 +1161,8 @@ nsPermissionManager::InitDB(bool aRemoveFile)
             
 
             nsCOMPtr<mozIStorageStatement> countStmt;
-            mDBConn->CreateStatement(NS_LITERAL_CSTRING("SELECT COUNT(*) FROM moz_perms"),
-                                     getter_AddRefs(countStmt));
+            rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING("SELECT COUNT(*) FROM moz_perms"),
+                                          getter_AddRefs(countStmt));
             bool hasResult = false;
             if (NS_SUCCEEDED(rv) &&
                 NS_SUCCEEDED(countStmt->ExecuteStep(&hasResult)) &&
@@ -1136,6 +1238,107 @@ nsPermissionManager::InitDB(bool aRemoveFile)
 #endif
 
         rv = mDBConn->SetSchemaVersion(7);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
+    
+    
+    
+    
+    
+    case 7:
+      {
+        
+        
+        
+        
+
+        
+        bool hostsIsBackupExists = false;
+        mDBConn->TableExists(NS_LITERAL_CSTRING("moz_hosts_is_backup"),
+                             &hostsIsBackupExists);
+
+        
+        
+        if (dbSchemaVersion == 7 && hostsIsBackupExists) {
+          nsCOMPtr<nsIEffectiveTLDService> tldService =
+            do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+          MOZ_ASSERT(tldService); 
+
+          nsCOMPtr<mozIStorageStatement> stmt;
+          rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+            "SELECT host, type, permission, expireType, expireTime, "
+            "modificationTime, appId, isInBrowserElement FROM moz_hosts"),
+             getter_AddRefs(stmt));
+          NS_ENSURE_SUCCESS(rv, rv);
+
+          nsCOMPtr<mozIStorageStatement> idStmt;
+          rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+            "SELECT MAX(id) FROM moz_hosts"), getter_AddRefs(idStmt));
+          int64_t id = 0;
+          bool hasResult = false;
+          if (NS_SUCCEEDED(rv) &&
+              NS_SUCCEEDED(idStmt->ExecuteStep(&hasResult)) &&
+              hasResult) {
+            id = idStmt->AsInt32(0) + 1;
+          }
+
+          nsAutoCString host, type;
+          uint32_t permission;
+          uint32_t expireType;
+          int64_t expireTime;
+          int64_t modificationTime;
+          uint32_t appId;
+          bool isInBrowserElement;
+
+          while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
+            
+            rv = stmt->GetUTF8String(0, host);
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              continue;
+            }
+
+            nsAutoCString eTLD1;
+            rv = tldService->GetBaseDomainFromHost(host, 0, eTLD1);
+            if (NS_SUCCEEDED(rv)) {
+              
+              continue;
+            }
+
+            rv = stmt->GetUTF8String(1, type);
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              continue;
+            }
+            permission = stmt->AsInt32(2);
+            expireType = stmt->AsInt32(3);
+            expireTime = stmt->AsInt64(4);
+            modificationTime = stmt->AsInt64(5);
+            if (NS_WARN_IF(stmt->AsInt64(6) < 0)) {
+              continue;
+            }
+            appId = static_cast<uint32_t>(stmt->AsInt64(6));
+            isInBrowserElement = static_cast<bool>(stmt->AsInt32(7));
+
+            
+            
+            UpgradeIPHostToOriginDB upHelper(mDBConn, &id);
+            rv = UpgradeHostToOriginAndInsert(host, type, permission,
+                                              expireType, expireTime,
+                                              modificationTime, appId,
+                                              isInBrowserElement,
+                                              &upHelper);
+            if (NS_FAILED(rv)) {
+              NS_WARNING("Unexpected failure when upgrading migrating permission "
+                         "from host to origin");
+            }
+          }
+        }
+
+        
+        
+        rv = mDBConn->SetSchemaVersion(8);
         NS_ENSURE_SUCCESS(rv, rv);
       }
 

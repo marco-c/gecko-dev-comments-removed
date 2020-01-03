@@ -121,7 +121,7 @@ function run_test() {
 
   
   
-  do_check_eq(connection.schemaVersion, 7);
+  do_check_eq(connection.schemaVersion, 8);
 
   let select = connection.createStatement("SELECT modificationTime FROM moz_perms")
   let numMigrated = 0;

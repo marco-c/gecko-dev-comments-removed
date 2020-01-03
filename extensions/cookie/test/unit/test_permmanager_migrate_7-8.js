@@ -22,7 +22,7 @@ add_task(function test() {
   let profile = do_get_profile();
 
   let db = Services.storage.openDatabase(GetPermissionsFile(profile));
-  db.schemaVersion = 6;
+  db.schemaVersion = 7;
 
   
 
@@ -67,6 +67,11 @@ add_task(function test() {
     ") VALUES (" +
       ":id, :host, :type, :permission, :expireType, :expireTime, :modificationTime, :appId, :isInBrowserElement" +
     ")");
+
+  
+
+
+  db.executeSimpleSQL("CREATE TABLE moz_hosts_is_backup (dummy INTEGER PRIMARY KEY)");
 
   let id = 0;
 
@@ -122,10 +127,11 @@ add_task(function test() {
     };
   }
 
-  let created6 = [
+  let created7 = [
     insertOrigin("https://foo.com", "A", 2, 0, 0, 0),
     insertOrigin("http://foo.com", "A", 2, 0, 0, 0),
     insertOrigin("http://foo.com^appId=1000&inBrowser=1", "A", 2, 0, 0, 0),
+    insertOrigin("https://192.0.2.235", "A", 2, 0, 0),
   ];
 
   
@@ -142,6 +148,10 @@ add_task(function test() {
     insertHost("localhost", "A", 1, 0, 0, 0, 0, false),
     insertHost("127.0.0.1", "A", 1, 0, 0, 0, 0, false),
     insertHost("192.0.2.235", "A", 1, 0, 0, 0, 0, false),
+    
+    
+    
+    insertHost("2001:db8::ff00:42:8329", "C", 1, 0, 0, 0, 0, false),
     insertHost("file:///some/path/to/file.html", "A", 1, 0, 0, 0, 0, false),
     insertHost("file:///another/file.html", "A", 1, 0, 0, 0, 0, false),
     insertHost("moz-nullprincipal:{8695105a-adbe-4e4e-8083-851faa5ca2d7}", "A", 1, 0, 0, 0, 0, false),
@@ -158,52 +168,20 @@ add_task(function test() {
 
   let expected = [
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    ["https://foo.com", "A", 1, 0, 0],
-    ["https://foo.com", "C", 1, 0, 0],
-    ["https://foo.com^appId=1000", "A", 1, 0, 0],
-    ["https://foo.com^appId=2000&inBrowser=1", "A", 1, 0, 0],
-    ["https://sub.foo.com", "B", 1, 0, 0],
-    ["https://subber.sub.foo.com", "B", 1, 0, 0],
+    ["https://foo.com", "A", 2, 0, 0, 0],
+    ["http://foo.com", "A", 2, 0, 0, 0],
+    ["http://foo.com^appId=1000&inBrowser=1", "A", 2, 0, 0, 0],
 
     
-    ["http://bar.ca", "B", 1, 0, 0],
-    ["https://bar.ca", "B", 1, 0, 0],
-    ["http://bar.ca^appId=1000", "B", 1, 0, 0],
-    ["https://bar.ca^appId=1000", "B", 1, 0, 0],
-    ["http://bar.ca^appId=1000&inBrowser=1", "A", 1, 0, 0],
-    ["https://bar.ca^appId=1000&inBrowser=1", "A", 1, 0, 0],
-    ["file:///some/path/to/file.html", "A", 1, 0, 0],
-    ["file:///another/file.html", "A", 1, 0, 0],
+    ["https://localhost:8080", "A", 1, 0, 0],
+    ["ftp://127.0.0.1:8080", "A", 1, 0, 0],
 
-    
-    
-    ["ftp://foo.com:8000", "A", 1, 0, 0],
-    ["ftp://foo.com:8000", "C", 1, 0, 0],
-    ["ftp://foo.com:8000^appId=1000", "A", 1, 0, 0],
-    ["ftp://foo.com:8000^appId=2000&inBrowser=1", "A", 1, 0, 0],
-
-    
-    
-    ["ftp://sub.foo.com:8000", "B", 1, 0, 0],
-    ["ftp://subber.sub.foo.com:8000", "B", 1, 0, 0],
-
-    
-    ["http://localhost", "A", 1, 0, 0],
-    ["https://localhost", "A", 1, 0, 0],
-    ["http://127.0.0.1", "A", 1, 0, 0],
-    ["https://127.0.0.1", "A", 1, 0, 0],
+    ["http://[2001:db8::ff00:42:8329]", "C", 1, 0, 0],
+    ["https://[2001:db8::ff00:42:8329]", "C", 1, 0, 0],
     ["http://192.0.2.235", "A", 1, 0, 0],
-    ["https://192.0.2.235", "A", 1, 0, 0],
+
+    
+    ["https://192.0.2.235", "A", 2, 0, 0],
   ];
 
   let found = expected.map((it) => 0);
@@ -211,6 +189,8 @@ add_task(function test() {
   
   yield PlacesTestUtils.addVisits(Services.io.newURI("https://foo.com/some/other/subdirectory", null, null));
   yield PlacesTestUtils.addVisits(Services.io.newURI("ftp://some.subdomain.of.foo.com:8000/some/subdirectory", null, null));
+  yield PlacesTestUtils.addVisits(Services.io.newURI("ftp://127.0.0.1:8080", null, null));
+  yield PlacesTestUtils.addVisits(Services.io.newURI("https://localhost:8080", null, null));
 
   
   let enumerator = Services.perms.enumerator;
@@ -249,7 +229,7 @@ add_task(function test() {
     do_check_true(db.tableExists("moz_perms"));
     do_check_true(db.tableExists("moz_hosts"));
     do_check_true(db.tableExists("moz_hosts_is_backup"));
-    do_check_true(db.tableExists("moz_perms_v6"));
+    do_check_false(db.tableExists("moz_perms_v6"));
 
     let mozHostsStmt = db.createStatement("SELECT " +
                                           "host, type, permission, expireType, expireTime, " +
@@ -277,27 +257,9 @@ add_task(function test() {
     do_check_eq(mozHostsCount.getInt64(0), created.length);
 
     
-    let mozPermsV6Stmt = db.createStatement("SELECT " +
-                                            "origin, type, permission, expireType, expireTime, modificationTime " +
-                                            "FROM moz_perms_v6 WHERE id = :id");
-
-    
-    created6.forEach((it) => {
-      mozPermsV6Stmt.reset();
-      mozPermsV6Stmt.bindByName("id", it.id);
-      mozPermsV6Stmt.executeStep();
-      do_check_eq(mozPermsV6Stmt.getUTF8String(0), it.origin);
-      do_check_eq(mozPermsV6Stmt.getUTF8String(1), it.type);
-      do_check_eq(mozPermsV6Stmt.getInt64(2), it.permission);
-      do_check_eq(mozPermsV6Stmt.getInt64(3), it.expireType);
-      do_check_eq(mozPermsV6Stmt.getInt64(4), it.expireTime);
-      do_check_eq(mozPermsV6Stmt.getInt64(5), it.modificationTime);
-    });
-
-    
-    let mozPermsV6Count = db.createStatement("SELECT count(*) FROM moz_perms_v6");
-    mozPermsV6Count.executeStep();
-    do_check_eq(mozPermsV6Count.getInt64(0), created6.length);
+    let mozPermsCount = db.createStatement("SELECT count(*) FROM moz_perms");
+    mozPermsCount.executeStep();
+    do_check_eq(mozPermsCount.getInt64(0), expected.length);
 
     db.close();
   }
