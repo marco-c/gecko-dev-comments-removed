@@ -1082,6 +1082,10 @@ HelperThread::handleAsmJSWorkload()
     } while(0);
 
     
+    if (success)
+        success = HelperThreadState().asmJSFinishedList().append(asmData);
+
+    
     if (!success) {
         HelperThreadState().noteAsmJSFailure(asmData->func);
         HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER);
@@ -1090,11 +1094,8 @@ HelperThread::handleAsmJSWorkload()
     }
 
     
-    HelperThreadState().asmJSFinishedList().append(asmData);
-    asmData = nullptr;
-
-    
     HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER);
+    asmData = nullptr;
 }
 
 void
