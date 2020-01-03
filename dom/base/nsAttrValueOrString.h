@@ -62,6 +62,7 @@ public:
   {
     return mAttrValue == &mStoredAttrValue ? &mStoredAttrValue : nullptr;
   }
+  const nsAttrValue* GetAttrValue() { return mAttrValue; }
 
   
 
