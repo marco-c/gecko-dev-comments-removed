@@ -190,8 +190,6 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
     for (unsigned rangeIndex = 0; rangeIndex < m_numberOfRanges; ++rangeIndex) {
         
         FFTBlock frame(fftSize);
-        nsAutoArrayPtr<float> realP(new float[halfSize + 1]);
-        nsAutoArrayPtr<float> imagP(new float[halfSize + 1]);
 
         
         
@@ -201,23 +199,18 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
         numberOfPartials = std::min(numberOfPartials, numberOfComponents - 1);
 
         
-        float scale = fftSize;
-        AudioBufferCopyWithScale(realData, scale, realP, numberOfPartials + 1);
         
         
-        AudioBufferCopyWithScale(imagData, -scale, imagP, numberOfPartials + 1);
-
         
-        for (i = numberOfPartials + 1; i < halfSize + 1; ++i) {
-            realP[i] = 0;
-            imagP[i] = 0;
+        for (i = 0; i < numberOfPartials + 1; ++i) {
+            frame.RealData(i) = realData[i];
+            frame.ImagData(i) = -imagData[i];
         }
 
         
-        realP[0] = 0;
-
+        frame.RealData(0) = 0;
         
-        imagP[0] = 0;
+        frame.ImagData(0) = 0;
 
         
         AlignedAudioFloatArray* table = new AlignedAudioFloatArray(m_periodicWaveSize);
@@ -225,7 +218,7 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
 
         
         float* data = m_bandLimitedTables[rangeIndex]->Elements();
-        frame.PerformInverseFFT(realP, imagP, data);
+        frame.GetInverseWithoutScaling(data);
 
         
         
