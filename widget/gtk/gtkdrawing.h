@@ -339,6 +339,16 @@ moz_gtk_button_get_default_overflow(gint* border_top, gint* border_left,
 
 
 
+void
+moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
+                          gint* scale_height);
+
+
+
+
+
+
+
 
 
 gint
