@@ -2890,29 +2890,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
-  AppendScrollPartsTo(aBuilder, aDirtyRect, aLists, usingDisplayport,
-                      createLayersForScrollbars, false);
-
-  if (aBuilder->IsForImageVisibility()) {
-    
-    
-    
-    
-    dirtyRect = ExpandRectToNearlyVisible(dirtyRect);
-  }
-
-  const nsStyleDisplay* disp = mOuter->StyleDisplay();
-  if (disp && (disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_SCROLL)) {
-    aBuilder->AddToWillChangeBudget(mOuter, GetScrollPositionClampingScrollPortSize());
-  }
-
-  
-  
-  
-  
-  
-  
-  
   
   
   mShouldBuildScrollableLayer = usingDisplayport || nsContentUtils::HasScrollgrab(mOuter->GetContent());
@@ -2929,6 +2906,29 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       (!(gfxPrefs::LayoutUseContainersForRootFrames() && mIsRoot) ||
        (aBuilder->RootReferenceFrame()->PresContext() != mOuter->PresContext()));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  AppendScrollPartsTo(aBuilder, aDirtyRect, aLists, usingDisplayport,
+                      createLayersForScrollbars, false);
+
+  if (aBuilder->IsForImageVisibility()) {
+    
+    
+    
+    
+    dirtyRect = ExpandRectToNearlyVisible(dirtyRect);
+  }
+
+  const nsStyleDisplay* disp = mOuter->StyleDisplay();
+  if (disp && (disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_SCROLL)) {
+    aBuilder->AddToWillChangeBudget(mOuter, GetScrollPositionClampingScrollPortSize());
   }
 
   mScrollParentID = aBuilder->GetCurrentScrollParentId();
