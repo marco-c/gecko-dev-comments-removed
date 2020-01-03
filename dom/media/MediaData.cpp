@@ -639,7 +639,8 @@ MediaRawDataWriter::Prepend(const uint8_t* aData, size_t aSize)
   }
 
   
-  MOZ_ALWAYS_TRUE(mBuffer->InsertElementsAt(mTarget->mPadding, aData, aSize));
+  MOZ_ALWAYS_TRUE(mBuffer->InsertElementsAt(mTarget->mPadding, aData, aSize,
+                                            fallible));
   mTarget->mSize += aSize;
   mSize = mTarget->mSize;
   return true;
