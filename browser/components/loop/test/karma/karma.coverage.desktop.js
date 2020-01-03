@@ -16,7 +16,7 @@ module.exports = function(config) {
     "content/shared/libs/lodash-3.9.3.js",
     "content/shared/libs/backbone-1.2.1.js",
     "test/shared/vendor/*.js",
-    "test/karma/stubs.js", 
+    "test/karma/head.js", 
     "content/shared/js/utils.js",
     "content/shared/js/models.js",
     "content/shared/js/mixins.js",
