@@ -1,11 +1,8 @@
 
 
 
-let Toolbox = devtools.Toolbox;
-let temp = {};
-Cu.import("resource://gre/modules/Services.jsm", temp);
-let Services = temp.Services;
-temp = null;
+let {Toolbox} = require("devtools/framework/toolbox");
+
 let toolbox = null;
 
 function test() {

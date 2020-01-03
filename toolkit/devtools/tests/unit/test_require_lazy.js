@@ -9,7 +9,7 @@ function run_test() {
   const path = "devtools/async-utils";
   const o = {};
   devtools.lazyRequireGetter(o, name, path);
-  const asyncUtils = devtools.require(path);
+  const asyncUtils = require(path);
   
   
   do_check_true(o.asyncUtils === asyncUtils);

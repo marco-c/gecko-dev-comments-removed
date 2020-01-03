@@ -5,7 +5,7 @@
 
 
 
-const {ToolSidebar} = devtools.require("devtools/framework/sidebar");
+const {ToolSidebar} = require("devtools/framework/sidebar");
 
 const testToolDefinition = {
   id: "testTool",

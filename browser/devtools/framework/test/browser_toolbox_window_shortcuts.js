@@ -1,7 +1,7 @@
 
 
 
-let Toolbox = devtools.Toolbox;
+let {Toolbox} = require("devtools/framework/toolbox");
 
 let toolbox, toolIDs, idIndex, modifiedPrefs = [];
 

@@ -3,10 +3,13 @@ Cu.import("resource://gre/modules/osfile.jsm");
 const {Services} = Cu.import("resource://gre/modules/Services.jsm");
 const {FileUtils} = Cu.import("resource://gre/modules/FileUtils.jsm");
 const {NetUtil} = Cu.import("resource://gre/modules/NetUtil.jsm");
-const {devtools} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
-const DevToolsUtils = devtools.require("devtools/toolkit/DevToolsUtils.js");
+const DevToolsUtils = require("devtools/toolkit/DevToolsUtils.js");
 const EventEmitter = require("devtools/toolkit/event-emitter");
+
+
+
+loader.lazyRequireGetter(this, "TargetFactory", "devtools/framework/target", true);
 
 
 
@@ -317,7 +320,7 @@ function getTargetForApp(client, webappsActor, manifestURL) {
         chrome: false
       };
 
-      devtools.TargetFactory.forRemoteTab(options).then((target) => {
+      TargetFactory.forRemoteTab(options).then((target) => {
         target.isApp = true;
         appTargets.set(manifestURL, target);
         target.on("close", () => {
@@ -380,7 +383,7 @@ function getTarget(client, form) {
     chrome: false
   };
 
-  devtools.TargetFactory.forRemoteTab(options).then((target) => {
+  TargetFactory.forRemoteTab(options).then((target) => {
     target.isApp = true;
     deferred.resolve(target)
   }, (error) => {

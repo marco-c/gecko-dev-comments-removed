@@ -2,7 +2,7 @@
 
 
 const { JSONPacket, BulkPacket } =
-  devtools.require("devtools/toolkit/transport/packets");
+  require("devtools/toolkit/transport/packets");
 
 function run_test() {
   add_test(test_packet_done);

@@ -4,8 +4,7 @@
 
 
 const Cu = Components.utils;
-let {devtools} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-let require = devtools.require;
+let {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const {parseAttribute} = require("devtools/shared/node-attribute-parser");
 
 const TEST_DATA = [{

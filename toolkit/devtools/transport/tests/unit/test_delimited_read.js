@@ -1,7 +1,7 @@
 
 
 
-const StreamUtils = devtools.require("devtools/toolkit/transport/stream-utils");
+const StreamUtils = require("devtools/toolkit/transport/stream-utils");
 
 const StringInputStream = CC("@mozilla.org/io/string-input-stream;1",
                              "nsIStringInputStream", "setData");

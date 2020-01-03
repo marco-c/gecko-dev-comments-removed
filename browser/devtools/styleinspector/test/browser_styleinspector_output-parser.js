@@ -9,8 +9,7 @@
 
 
 
-let {devtools} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-let {OutputParser} = devtools.require("devtools/output-parser");
+let {OutputParser} = require("devtools/output-parser");
 
 const COLOR_CLASS = "color-class";
 const URL_CLASS = "url-class";

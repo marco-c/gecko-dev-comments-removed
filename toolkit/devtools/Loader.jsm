@@ -21,7 +21,7 @@ let loader = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {}).
 let promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
 
 this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
-                         "SrcdirProvider"];
+                         "SrcdirProvider", "require"];
 
 
 
@@ -458,3 +458,5 @@ DevToolsLoader.prototype = {
 
 
 this.devtools = new DevToolsLoader();
+
+this.require = this.devtools.require.bind(this.devtools);

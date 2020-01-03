@@ -8,15 +8,15 @@ const Cu = Components.utils;
 const Cr = Components.results;
 const CC = Components.Constructor;
 
-const { devtools } =
+const { require } =
   Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const { Promise: promise } =
   Cu.import("resource://gre/modules/Promise.jsm", {});
 const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
 
-const Services = devtools.require("Services");
-const DevToolsUtils = devtools.require("devtools/toolkit/DevToolsUtils.js");
-const xpcInspector = devtools.require("xpcInspector");
+const Services = require("Services");
+const DevToolsUtils = require("devtools/toolkit/DevToolsUtils.js");
+const xpcInspector = require("xpcInspector");
 
 
 

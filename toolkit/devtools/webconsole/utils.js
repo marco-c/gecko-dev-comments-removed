@@ -14,8 +14,6 @@ loader.lazyImporter(this, "Services", "resource://gre/modules/Services.jsm");
 
 
 
-loader.lazyImporter(this, "gDevTools", "resource:///modules/devtools/gDevTools.jsm");
-loader.lazyImporter(this, "devtools", "resource://gre/modules/devtools/Loader.jsm");
 loader.lazyImporter(this, "VariablesView", "resource:///modules/devtools/VariablesView.jsm");
 const DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
 const LayoutHelpers = require("devtools/toolkit/layout-helpers");

@@ -5,8 +5,7 @@
 
 
 
-let devtools = Cu.import("resource://gre/modules/devtools/Loader.jsm", {}).devtools;
-let { BrowserTabList } = devtools.require("devtools/server/actors/webbrowser");
+let { BrowserTabList } = require("devtools/server/actors/webbrowser");
 
 let gTestPage = "data:text/html;charset=utf-8," + encodeURIComponent(
   "<title>JS Debugger BrowserTabList test page</title><body>Yo.</body>");

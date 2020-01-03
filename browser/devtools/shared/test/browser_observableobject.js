@@ -2,9 +2,8 @@
 
 
 function test() {
-  let tmp = {};
-  Cu.import("resource://gre/modules/devtools/Loader.jsm", tmp);
-  let ObservableObject = tmp.devtools.require("devtools/shared/observable-object");
+  let {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+  let ObservableObject = require("devtools/shared/observable-object");
 
   let rawObject = {};
   let oe = new ObservableObject(rawObject);

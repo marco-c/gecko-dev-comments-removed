@@ -3,7 +3,7 @@
 
 
 
-let EventEmitter = devtools.require("devtools/toolkit/event-emitter");
+let EventEmitter = require("devtools/toolkit/event-emitter");
 
 var gClient;
 var gActors;

@@ -4,7 +4,7 @@
 
 
 
-let {getColor, getTheme, setTheme} = devtools.require("devtools/shared/theme");
+let {getColor, getTheme, setTheme} = require("devtools/shared/theme");
 
 function test() {
   testGetTheme();

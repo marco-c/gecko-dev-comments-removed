@@ -1,9 +1,6 @@
 
 
 
-let { devtools } =
-  Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-
 
 function test() {
   waitForExplicitFinish();
@@ -15,7 +12,7 @@ function test() {
       chrome: true
     };
 
-    devtools.TargetFactory.forRemoteTab(options).then(target => {
+    TargetFactory.forRemoteTab(options).then(target => {
       target.on("close", () => {
         ok(true, "Target was closed");
         finish();

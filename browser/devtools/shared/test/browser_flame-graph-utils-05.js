@@ -3,7 +3,7 @@
 
 
 
-let {FlameGraphUtils} = devtools.require("devtools/shared/widgets/FlameGraph");
+let {FlameGraphUtils} = require("devtools/shared/widgets/FlameGraph");
 
 add_task(function*() {
   yield promiseTab("about:blank");

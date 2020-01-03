@@ -3,7 +3,7 @@
 
 
 
-let {FlameGraphUtils} = devtools.require("devtools/shared/widgets/FlameGraph");
+let {FlameGraphUtils} = require("devtools/shared/widgets/FlameGraph");
 
 let test = Task.async(function*() {
   let hash1 = FlameGraphUtils._getStringHash("abc");

@@ -4,7 +4,7 @@
 
 
 
-const ScriptStore = devtools.require("devtools/server/actors/utils/ScriptStore");
+const ScriptStore = require("devtools/server/actors/utils/ScriptStore");
 
 
 

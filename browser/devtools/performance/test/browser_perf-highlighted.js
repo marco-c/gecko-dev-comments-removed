@@ -6,7 +6,7 @@
 
 
 
-let { getPerformanceFront } = devtools.require("devtools/performance/front");
+let { getPerformanceFront } = require("devtools/performance/front");
 
 function* spawnTest() {
   let profilerConnected = waitForProfilerConnection();

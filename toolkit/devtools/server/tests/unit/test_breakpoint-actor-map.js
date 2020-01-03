@@ -4,7 +4,7 @@
 
 
 
-const { BreakpointActorMap, ThreadActor } = devtools.require("devtools/server/actors/script");
+const { BreakpointActorMap, ThreadActor } = require("devtools/server/actors/script");
 
 function run_test()
 {

@@ -2,7 +2,7 @@
 
 
 
-const { LongStringActor } = devtools.require("devtools/server/actors/object");
+const { LongStringActor } = require("devtools/server/actors/object");
 
 function run_test()
 {

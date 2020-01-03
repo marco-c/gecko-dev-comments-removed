@@ -7,7 +7,7 @@ let {
   getLayoutChangesObserver,
   releaseLayoutChangesObserver,
   LayoutChangesObserver
-} = devtools.require("devtools/server/actors/layout");
+} = require("devtools/server/actors/layout");
 
 
 
