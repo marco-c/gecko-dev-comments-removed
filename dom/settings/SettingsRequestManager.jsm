@@ -55,7 +55,11 @@ const kAllSettingsWritePermission      = "settings" + kSettingsWriteSuffix;
 const kSomeSettingsReadPermission      = "settings-api" + kSettingsReadSuffix;
 const kSomeSettingsWritePermission     = "settings-api" + kSettingsWriteSuffix;
 
-const kSoftLockupDelta                 = 30;
+
+let kSoftLockupDelta = 30;
+try {
+  kSoftLockupDelta = Services.prefs.getIntPref("dom.mozSettings.softLockupDelta");
+} catch (ex) { }
 
 XPCOMUtils.defineLazyServiceGetter(this, "mrm",
                                    "@mozilla.org/memory-reporter-manager;1",
