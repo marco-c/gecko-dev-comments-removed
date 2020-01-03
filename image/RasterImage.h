@@ -171,12 +171,6 @@ public:
   virtual void OnSurfaceDiscarded() override;
 
   
-  static NS_METHOD WriteToSourceBuffer(nsIInputStream* aIn, void* aClosure,
-                                       const char* aFromRawSegment,
-                                       uint32_t aToOffset, uint32_t aCount,
-                                       uint32_t* aWriteCount);
-
-  
   uint32_t GetNumFrames() const { return mFrameCount; }
 
   virtual size_t SizeOfSourceWithComputedFallback(MallocSizeOf aMallocSizeOf)

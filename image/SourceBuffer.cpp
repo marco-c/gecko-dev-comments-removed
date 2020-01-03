@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstring>
 #include "mozilla/Likely.h"
+#include "nsIInputStream.h"
 #include "MainThreadUtils.h"
 #include "SurfaceCache.h"
 
@@ -352,6 +353,46 @@ SourceBuffer::Append(const char* aData, size_t aLength)
   }
 
   return NS_OK;
+}
+
+static NS_METHOD
+AppendToSourceBuffer(nsIInputStream*,
+                     void* aClosure,
+                     const char* aFromRawSegment,
+                     uint32_t,
+                     uint32_t aCount,
+                     uint32_t* aWriteCount)
+{
+  SourceBuffer* sourceBuffer = static_cast<SourceBuffer*>(aClosure);
+
+  
+  
+  
+  
+  nsresult rv = sourceBuffer->Append(aFromRawSegment, aCount);
+  if (rv == NS_ERROR_OUT_OF_MEMORY) {
+    return rv;
+  }
+
+  
+  *aWriteCount = aCount;
+
+  return NS_OK;
+}
+
+nsresult
+SourceBuffer::AppendFromInputStream(nsIInputStream* aInputStream,
+                                    uint32_t aCount)
+{
+  uint32_t bytesRead;
+  nsresult rv = aInputStream->ReadSegments(AppendToSourceBuffer, this,
+                                           aCount, &bytesRead);
+
+  MOZ_ASSERT(bytesRead == aCount || rv == NS_ERROR_OUT_OF_MEMORY,
+             "AppendToSourceBuffer should consume everything unless "
+             "we run out of memory");
+
+  return rv;
 }
 
 void

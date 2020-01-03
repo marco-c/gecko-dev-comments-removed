@@ -1188,20 +1188,16 @@ RasterImage::NotifyForLoadEvent(Progress aProgress)
 nsresult
 RasterImage::OnImageDataAvailable(nsIRequest*,
                                   nsISupports*,
-                                  nsIInputStream* aInStr,
-                                  uint64_t aOffset,
+                                  nsIInputStream* aInputStream,
+                                  uint64_t,
                                   uint32_t aCount)
 {
-  nsresult rv;
+  nsresult rv = mSourceBuffer->AppendFromInputStream(aInputStream, aCount);
+  MOZ_ASSERT(rv == NS_OK || rv == NS_ERROR_OUT_OF_MEMORY);
 
-  
-  
-  uint32_t bytesRead;
-  rv = aInStr->ReadSegments(WriteToSourceBuffer, this, aCount, &bytesRead);
-
-  MOZ_ASSERT(bytesRead == aCount || HasError() || NS_FAILED(rv),
-    "WriteToSourceBuffer should consume everything if ReadSegments succeeds or "
-    "the image must be in error!");
+  if (MOZ_UNLIKELY(rv == NS_ERROR_OUT_OF_MEMORY)) {
+    DoError();
+  }
 
   return rv;
 }
@@ -1898,36 +1894,6 @@ NS_IMETHODIMP
 RasterImage::HandleErrorWorker::Run()
 {
   mImage->DoError();
-
-  return NS_OK;
-}
-
-
-
-
-NS_METHOD
-RasterImage::WriteToSourceBuffer(nsIInputStream* ,
-                                 void*          aClosure,
-                                 const char*    aFromRawSegment,
-                                 uint32_t       ,
-                                 uint32_t       aCount,
-                                 uint32_t*      aWriteCount)
-{
-  
-  RasterImage* image = static_cast<RasterImage*>(aClosure);
-
-  
-  
-  
-  
-  nsresult rv = image->mSourceBuffer->Append(aFromRawSegment, aCount);
-  if (rv == NS_ERROR_OUT_OF_MEMORY) {
-    image->DoError();
-    return rv;
-  }
-
-  
-  *aWriteCount = aCount;
 
   return NS_OK;
 }
