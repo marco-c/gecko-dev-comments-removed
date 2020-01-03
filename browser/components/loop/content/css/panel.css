@@ -265,6 +265,12 @@ html[dir="rtl"] .tab-view li:nth-child(2).selected ~ .slide-bar {
   font-weight: lighter;
 }
 
+
+.contacts-gravatar-promo ~ .contact-list-empty {
+  background-image: none;
+  padding-top: 3%;
+}
+
 .contact-list-empty {
   padding-top: 27%;
 }
