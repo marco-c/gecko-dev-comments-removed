@@ -597,10 +597,14 @@ public:
   static already_AddRefed<nsIWritableVariant> ToJSArray(SourceSet& aDevices);
 private:
   already_AddRefed<PledgeSourceSet>
-  EnumerateRawDevices(uint64_t aWindowId, dom::MediaSourceEnum aSrcType,
+  EnumerateRawDevices(uint64_t aWindowId,
+                      dom::MediaSourceEnum aVideoType,
+                      dom::MediaSourceEnum aAudioType,
                       bool aFake, bool aFakeTracks);
   already_AddRefed<PledgeSourceSet>
-  EnumerateDevicesImpl(uint64_t aWindowId, dom::MediaSourceEnum aSrcType,
+  EnumerateDevicesImpl(uint64_t aWindowId,
+                       dom::MediaSourceEnum aVideoSrcType,
+                       dom::MediaSourceEnum aAudioSrcType,
                        bool aFake = false, bool aFakeTracks = false);
 
   StreamListeners* AddWindowID(uint64_t aWindowId);
