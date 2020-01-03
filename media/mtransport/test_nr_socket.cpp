@@ -380,7 +380,11 @@ int TestNrSocket::connect(nr_transport_addr *addr) {
     return R_INTERNAL;
   }
 
-  if (!nat_->enabled_ || nat_->is_an_internal_tuple(*addr)) {
+  if (!nat_->enabled_
+      || addr->protocol==IPPROTO_UDP  
+                                      
+                                      
+      || nat_->is_an_internal_tuple(*addr)) {
     
     return NrSocket::connect(addr);
   }
