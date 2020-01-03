@@ -4492,7 +4492,7 @@ void HTMLMediaElement::UpdateAudioChannelPlayingState()
       if (!mAudioChannelAgent) {
         return;
       }
-      mAudioChannelAgent->InitWithWeakCallback(OwnerDoc()->GetWindow(),
+      mAudioChannelAgent->InitWithWeakCallback(OwnerDoc()->GetInnerWindow(),
                                                static_cast<int32_t>(mAudioChannel),
                                                this);
     }
@@ -4504,6 +4504,10 @@ void HTMLMediaElement::UpdateAudioChannelPlayingState()
 void
 HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
 {
+    
+    
+    WindowAudioCaptureChanged();
+
   
   
   
@@ -4674,6 +4678,15 @@ HTMLMediaElement::GetTopLevelPrincipal()
   return principal.forget();
 }
 #endif 
+
+NS_IMETHODIMP HTMLMediaElement::WindowAudioCaptureChanged()
+{
+  MOZ_ASSERT(mAudioChannelAgent);
+  DebugOnly<bool> captured = OwnerDoc()->GetInnerWindow()->GetAudioCaptured();
+
+  
+  return NS_OK;
+}
 
 AudioTrackList*
 HTMLMediaElement::AudioTracks()
