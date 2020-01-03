@@ -14305,6 +14305,9 @@ class CallbackMember(CGNativeMember):
                                         self.descriptorProvider,
                                         exceptionCode=self.exceptionCode,
                                         isCallbackReturnValue=isCallbackReturnValue,
+                                        
+                                        
+                                        allowTreatNonCallableAsNull=True,
                                         sourceDescription=sourceDescription),
             replacements)
         assignRetval = string.Template(
