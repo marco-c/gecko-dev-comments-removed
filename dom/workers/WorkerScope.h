@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workerscope_h__
 #define mozilla_dom_workerscope_h__
@@ -24,16 +24,16 @@ namespace cache {
 
 class CacheStorage;
 
-} 
+} // namespace cache
 
 namespace indexedDB {
 
 class IDBFactory;
 
-} 
+} // namespace indexedDB
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 BEGIN_WORKERS_NAMESPACE
 
@@ -113,8 +113,8 @@ public:
   SetTimeout(JSContext* aCx, Function& aHandler, const int32_t aTimeout,
              const Sequence<JS::Value>& aArguments, ErrorResult& aRv);
   int32_t
-  SetTimeout(JSContext* , const nsAString& aHandler,
-             const int32_t aTimeout, const Sequence<JS::Value>& ,
+  SetTimeout(JSContext* /* unused */, const nsAString& aHandler,
+             const int32_t aTimeout, const Sequence<JS::Value>& /* unused */,
              ErrorResult& aRv);
   void
   ClearTimeout(int32_t aHandle, ErrorResult& aRv);
@@ -123,9 +123,9 @@ public:
               const Optional<int32_t>& aTimeout,
               const Sequence<JS::Value>& aArguments, ErrorResult& aRv);
   int32_t
-  SetInterval(JSContext* , const nsAString& aHandler,
+  SetInterval(JSContext* /* unused */, const nsAString& aHandler,
               const Optional<int32_t>& aTimeout,
-              const Sequence<JS::Value>& , ErrorResult& aRv);
+              const Sequence<JS::Value>& /* unused */, ErrorResult& aRv);
   void
   ClearInterval(int32_t aHandle, ErrorResult& aRv);
 
@@ -276,6 +276,9 @@ public:
   IMPL_EVENT_HANDLER(message)
 
   void
+  SetImmediate(JSContext* aCx, Function& aHandler, ErrorResult& aRv);
+
+  void
   ReportError(JSContext* aCx, const nsAString& aMessage);
 
   void
@@ -293,4 +296,4 @@ ToSupports(mozilla::dom::workers::WorkerGlobalScope* aScope)
   return static_cast<nsIDOMEventTarget*>(aScope);
 }
 
-#endif
+#endif /* mozilla_dom_workerscope_h__ */
