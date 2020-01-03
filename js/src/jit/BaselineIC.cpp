@@ -1905,6 +1905,10 @@ DoBinaryArithFallback(JSContext* cx, BaselineFrame* frame, ICBinaryArith_Fallbac
         if (!ModValues(cx, &lhsCopy, &rhsCopy, ret))
             return false;
         break;
+      case JSOP_POW:
+        if (!math_pow_handle(cx, lhsCopy, rhsCopy, ret))
+            return false;
+        break;
       case JSOP_BITOR: {
         int32_t result;
         if (!BitOr(cx, lhs, rhs, &result))
@@ -2038,7 +2042,7 @@ DoBinaryArithFallback(JSContext* cx, BaselineFrame* frame, ICBinaryArith_Fallbac
         }
     }
 
-    if (lhs.isInt32() && rhs.isInt32()) {
+    if (lhs.isInt32() && rhs.isInt32() && op != JSOP_POW) {
         bool allowDouble = ret.isDouble();
         if (allowDouble)
             stub->unlinkStubsWithKind(cx, ICStub::BinaryArith_Int32);
@@ -10024,7 +10028,7 @@ ICCallStubCompiler::pushSpreadCallArguments(MacroAssembler& masm,
     masm.unboxObject(Address(masm.getStackPointer(),
                              (isConstructing * sizeof(Value)) + STUB_FRAME_SIZE), startReg);
     masm.loadPtr(Address(startReg, NativeObject::offsetOfElements()), startReg);
-    
+
     
     
     if (isJitCall) {
@@ -10274,18 +10278,18 @@ ICCall_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
         
         
         
-        
+
         
         if (isConstructing_)
             masm.pushValue(Address(BaselineFrameReg, STUB_FRAME_SIZE));
-        
+
         
         uint32_t valueOffset = isConstructing_;
         masm.pushValue(Address(BaselineFrameReg, valueOffset++ * sizeof(Value) + STUB_FRAME_SIZE));
-        
+
         
         masm.pushValue(Address(BaselineFrameReg, valueOffset++ * sizeof(Value) + STUB_FRAME_SIZE));
-        
+
         
         masm.pushValue(Address(BaselineFrameReg, valueOffset++ * sizeof(Value) + STUB_FRAME_SIZE));
 
