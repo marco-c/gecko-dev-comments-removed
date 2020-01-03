@@ -426,8 +426,8 @@ public:
 
 
 
-  static MFBT_API TimeStamp Now() { return Now(true); }
-  static MFBT_API TimeStamp NowLoRes() { return Now(false); }
+  static TimeStamp Now() { return Now(true); }
+  static TimeStamp NowLoRes() { return Now(false); }
 
   
 
