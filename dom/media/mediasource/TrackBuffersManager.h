@@ -156,7 +156,7 @@ private:
 
   
   
-  void RecreateParser();
+  void RecreateParser(bool aReuseInitData);
   nsAutoPtr<ContainerParser> mParser;
 
   

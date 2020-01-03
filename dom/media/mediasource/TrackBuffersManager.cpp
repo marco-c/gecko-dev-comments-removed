@@ -386,7 +386,7 @@ TrackBuffersManager::CompleteResetParserState()
     mInputBuffer = new MediaByteBuffer;
     mInputBuffer->AppendElements(*mInitData);
   }
-  RecreateParser();
+  RecreateParser(true);
 
   
   SetAppendState(AppendState::WAITING_FOR_SEGMENT);
@@ -649,8 +649,7 @@ TrackBuffersManager::SegmentParserLoop()
         SetAppendState(AppendState::PARSING_INIT_SEGMENT);
         if (mFirstInitializationSegmentReceived) {
           
-          mInitData = nullptr;
-          RecreateParser();
+          RecreateParser(false);
         }
         continue;
       }
@@ -994,7 +993,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
   
   
   mCurrentInputBuffer->EvictAll();
-  RecreateParser();
+  RecreateParser(true);
 
   
   SetAppendState(AppendState::WAITING_FOR_SEGMENT);
@@ -1191,7 +1190,7 @@ TrackBuffersManager::CompleteCodedFrameProcessing()
   
   mCurrentInputBuffer->EvictAll();
   mInputDemuxer->NotifyDataRemoved();
-  RecreateParser();
+  RecreateParser(true);
 
   
   SetAppendState(AppendState::WAITING_FOR_SEGMENT);
@@ -1627,7 +1626,7 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
 }
 
 void
-TrackBuffersManager::RecreateParser()
+TrackBuffersManager::RecreateParser(bool aReuseInitData)
 {
   MOZ_ASSERT(OnTaskQueue());
   
@@ -1635,7 +1634,7 @@ TrackBuffersManager::RecreateParser()
   
   
   mParser = ContainerParser::CreateForMIMEType(mType);
-  if (mInitData) {
+  if (aReuseInitData && mInitData) {
     int64_t start, end;
     mParser->ParseStartAndEndTimestamps(mInitData, start, end);
     mProcessedInput = mInitData->Length();
