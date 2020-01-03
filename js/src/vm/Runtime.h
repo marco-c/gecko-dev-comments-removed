@@ -1516,6 +1516,11 @@ struct JSRuntime : public JS::shadow::Runtime,
         
 
 
+        js::PerformanceGroupHolder performance;
+
+        
+
+
 
 
 
@@ -1523,17 +1528,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
         uint64_t iteration;
-
-        
-
-
-
-        bool isEmpty;
-
-        
-
-
-        js::PerformanceData performance;
 
         
 
@@ -1547,9 +1541,9 @@ struct JSRuntime : public JS::shadow::Runtime,
 
         JSCurrentPerfGroupCallback currentPerfGroupCallback;
 
-        Stopwatch()
-          : iteration(0)
-          , isEmpty(true)
+        explicit Stopwatch(JSRuntime* runtime)
+          : performance(runtime)
+          , iteration(0)
           , currentPerfGroupCallback(nullptr)
           , isMonitoringJank_(false)
           , isMonitoringCPOW_(false)
@@ -1566,7 +1560,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
         void reset() {
             ++iteration;
-            isEmpty = true;
         }
         
 
@@ -1653,6 +1646,9 @@ struct JSRuntime : public JS::shadow::Runtime,
         MonotonicTimeStamp userTimeFix;
 
     private:
+        Stopwatch(const Stopwatch&) = delete;
+        Stopwatch& operator=(const Stopwatch&) = delete;
+
         Groups groups_;
         friend struct js::PerformanceGroupHolder;
 
