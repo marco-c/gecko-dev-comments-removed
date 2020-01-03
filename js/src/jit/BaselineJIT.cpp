@@ -67,7 +67,8 @@ BaselineScript::BaselineScript(uint32_t prologueOffset, uint32_t epilogueOffset,
     postDebugPrologueOffset_(postDebugPrologueOffset),
     flags_(0),
     inlinedBytecodeLength_(0),
-    maxInliningDepth_(UINT8_MAX)
+    maxInliningDepth_(UINT8_MAX),
+    pendingBuilder_(nullptr)
 { }
 
 static const unsigned BASELINE_MAX_ARGS_LENGTH = 20000;
@@ -472,6 +473,8 @@ BaselineScript::Destroy(FreeOp* fop, BaselineScript* script)
 
 
     MOZ_ASSERT(fop->runtime()->gc.nursery.isEmpty());
+
+    MOZ_ASSERT(!script->hasPendingIonBuilder());
 
     script->unlinkDependentAsmJSModules(fop);
 

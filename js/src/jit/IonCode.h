@@ -275,8 +275,6 @@ struct IonScript
     
     TraceLoggerEvent traceLoggerScriptEvent_;
 
-    IonBuilder* pendingBuilder_;
-
   private:
     inline uint8_t* bottomBuffer() {
         return reinterpret_cast<uint8_t*>(this);
@@ -286,14 +284,6 @@ struct IonScript
     }
 
   public:
-
-    
-    void setPendingBuilderPrivate(IonBuilder* builder) {
-        pendingBuilder_ = builder;
-    }
-    IonBuilder* pendingBuilder() const {
-        return pendingBuilder_;
-    }
 
     SnapshotOffset* bailoutTable() {
         return (SnapshotOffset*) &bottomBuffer()[bailoutTable_];
