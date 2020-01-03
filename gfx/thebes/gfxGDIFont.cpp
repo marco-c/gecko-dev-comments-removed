@@ -480,13 +480,22 @@ gfxGDIFont::GetGlyph(uint32_t aUnicode, uint32_t aVarSelector)
     wchar_t ch = aUnicode;
     WORD glyph;
     DWORD ret = ScriptGetCMap(nullptr, &mScriptCache, &ch, 1, 0, &glyph);
-    if (ret == E_PENDING) {
+    if (ret != S_OK) {
         AutoDC dc;
         AutoSelectFont fs(dc.GetDC(), GetHFONT());
-        ret = ScriptGetCMap(dc.GetDC(), &mScriptCache, &ch, 1, 0, &glyph);
-    }
-    if (ret != S_OK) {
-        glyph = 0;
+        if (ret == E_PENDING) {
+            
+            ret = ScriptGetCMap(dc.GetDC(), &mScriptCache, &ch, 1, 0, &glyph);
+        }
+        if (ret != S_OK) {
+            
+            
+            ret = GetGlyphIndicesW(dc.GetDC(), &ch, 1, &glyph,
+                                   GGI_MARK_NONEXISTING_GLYPHS);
+            if (ret == GDI_ERROR || glyph == 0xFFFF) {
+                glyph = 0;
+            }
+        }
     }
 
     mGlyphIDs->Put(aUnicode, glyph);
