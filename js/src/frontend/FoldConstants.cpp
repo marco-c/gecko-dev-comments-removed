@@ -513,9 +513,6 @@ enum class SyntacticContext : int {
     Condition,
 
     
-    Delete,
-
-    
     Other
 };
 
