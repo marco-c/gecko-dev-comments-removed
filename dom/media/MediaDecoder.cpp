@@ -132,8 +132,6 @@ MediaDecoder::InitStatics()
 
   
   gMediaDecoderLog = PR_NewLogModule("MediaDecoder");
-  gMozPromiseLog = PR_NewLogModule("MozPromise");
-  gStateWatchingLog = PR_NewLogModule("StateWatching");
   gMediaTimerLog = PR_NewLogModule("MediaTimer");
   gMediaSampleLog = PR_NewLogModule("MediaSample");
 }
