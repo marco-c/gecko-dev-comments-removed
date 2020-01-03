@@ -405,6 +405,14 @@ public:
   
   
   
+  virtual bool IsExpectingMoreData()
+  {
+    
+    return false;
+  }
+  
+  
+  
   
   
   
