@@ -436,11 +436,29 @@ protected:
     bool Update(const IMENotification& aIMENotification);
     bool Init(nsWindow* aWindow);
     bool EnsureValidSelection(nsWindow* aWindow);
+  private:
+    Selection(const Selection& aOther) = delete;
+    void operator =(const Selection& aOther) = delete;
   };
+  
+  
+  
   Selection mSelection;
-  
-  
-  Selection GetSelection() { return sHasFocus ? mSelection : Selection(); }
+
+  Selection& GetSelection()
+  {
+    
+    
+    if (sHasFocus) {
+      return mSelection;
+    }
+    
+    
+    
+    static Selection sTempSelection;
+    sTempSelection.Clear();
+    return sTempSelection;
+  }
 
   bool mIsComposing;
   bool mIsComposingOnPlugin;
