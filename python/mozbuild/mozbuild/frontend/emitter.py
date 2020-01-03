@@ -556,6 +556,8 @@ class TreeMetadataEmitter(LoggingMixin):
         
         passthru = VariablePassthru(context)
         varlist = [
+            'ANDROID_APK_NAME',
+            'ANDROID_APK_PACKAGE',
             'ANDROID_GENERATED_RESFILES',
             'DISABLE_STL_WRAPPING',
             'EXTRA_COMPONENTS',
