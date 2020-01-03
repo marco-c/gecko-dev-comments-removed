@@ -4451,7 +4451,7 @@ Evaluate(JSContext* cx, HandleObject scope, Handle<ScopeObject*> staticScope,
     RootedScript script(cx, frontend::CompileScript(cx, &cx->tempLifoAlloc(),
                                                     scope, staticScope,
                                                      nullptr, options,
-                                                    srcBuf,  nullptr, 0, &sct));
+                                                    srcBuf,  nullptr, &sct));
     if (!script)
         return false;
 

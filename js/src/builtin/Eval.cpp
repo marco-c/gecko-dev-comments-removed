@@ -260,11 +260,9 @@ EvalKernel(JSContext* cx, const CallArgs& args, EvalType evalType, AbstractFrame
     
     
     
-    unsigned staticLevel;
     RootedValue thisv(cx);
     if (evalType == DIRECT_EVAL) {
         MOZ_ASSERT_IF(caller.isInterpreterFrame(), !caller.asInterpreterFrame()->runningInJit());
-        staticLevel = caller.script()->staticLevel() + 1;
 
         
         
@@ -274,7 +272,6 @@ EvalKernel(JSContext* cx, const CallArgs& args, EvalType evalType, AbstractFrame
         thisv = caller.thisValue();
     } else {
         MOZ_ASSERT(args.callee().global() == *scopeobj);
-        staticLevel = 0;
 
         
         JSObject* thisobj = GetThisObject(cx, scopeobj);
@@ -340,7 +337,7 @@ EvalKernel(JSContext* cx, const CallArgs& args, EvalType evalType, AbstractFrame
         SourceBufferHolder srcBuf(chars, linearStr->length(), ownership);
         JSScript* compiled = frontend::CompileScript(cx, &cx->tempLifoAlloc(),
                                                      scopeobj, staticScope, callerScript,
-                                                     options, srcBuf, linearStr, staticLevel);
+                                                     options, srcBuf, linearStr);
         if (!compiled)
             return false;
 
@@ -371,8 +368,6 @@ js::DirectEvalStringFromIon(JSContext* cx,
     }
 
     
-
-    unsigned staticLevel = callerScript->staticLevel() + 1;
 
     RootedLinearString linearStr(cx, str->ensureLinear(cx));
     if (!linearStr)
@@ -424,7 +419,7 @@ js::DirectEvalStringFromIon(JSContext* cx,
         SourceBufferHolder srcBuf(chars, linearStr->length(), ownership);
         JSScript* compiled = frontend::CompileScript(cx, &cx->tempLifoAlloc(),
                                                      scopeobj, staticScope, callerScript,
-                                                     options, srcBuf, linearStr, staticLevel);
+                                                     options, srcBuf, linearStr);
         if (!compiled)
             return false;
 

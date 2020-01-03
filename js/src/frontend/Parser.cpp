@@ -735,7 +735,7 @@ Parser<ParseHandler>::parse()
                                  options().extraWarningsOption);
     ParseContext<ParseHandler> globalpc(this,  nullptr, ParseHandler::null(),
                                         &globalsc,  nullptr,
-                                         0,  0);
+                                         0);
     if (!globalpc.init(*this))
         return null();
 
@@ -824,7 +824,7 @@ Parser<FullParseHandler>::standaloneFunctionBody(HandleFunction fun, const AutoN
     handler.setFunctionBox(fn, funbox);
 
     ParseContext<FullParseHandler> funpc(this, pc, fn, funbox, newDirectives,
-                                          0,  0);
+                                          0);
     if (!funpc.init(*this))
         return null();
 
@@ -2445,7 +2445,7 @@ Parser<FullParseHandler>::functionArgsAndBody(InHandling inHandling, ParseNode* 
                 return false;
 
             ParseContext<SyntaxParseHandler> funpc(parser, outerpc, SyntaxParseHandler::null(),
-                                                   funbox, newDirectives, outerpc->staticLevel + 1,
+                                                   funbox, newDirectives,
                                                     0);
             if (!funpc.init(*parser))
                 return false;
@@ -2483,8 +2483,7 @@ Parser<FullParseHandler>::functionArgsAndBody(InHandling inHandling, ParseNode* 
     blockScopes.resize(oldBlockScopesLength);
 
     
-    ParseContext<FullParseHandler> funpc(this, pc, pn, funbox,
-                                         newDirectives, outerpc->staticLevel + 1,
+    ParseContext<FullParseHandler> funpc(this, pc, pn, funbox, newDirectives,
                                           0);
     if (!funpc.init(*this))
         return false;
@@ -2523,8 +2522,7 @@ Parser<SyntaxParseHandler>::functionArgsAndBody(InHandling inHandling, Node pn, 
         return false;
 
     
-    ParseContext<SyntaxParseHandler> funpc(this, pc, handler.null(), funbox,
-                                           newDirectives, outerpc->staticLevel + 1,
+    ParseContext<SyntaxParseHandler> funpc(this, pc, handler.null(), funbox, newDirectives,
                                             0);
     if (!funpc.init(*this))
         return false;
@@ -2563,8 +2561,8 @@ Parser<ParseHandler>::appendToCallSiteObj(Node callSiteObj)
 
 template <>
 ParseNode*
-Parser<FullParseHandler>::standaloneLazyFunction(HandleFunction fun, unsigned staticLevel,
-                                                 bool strict, GeneratorKind generatorKind)
+Parser<FullParseHandler>::standaloneLazyFunction(HandleFunction fun, bool strict,
+                                                 GeneratorKind generatorKind)
 {
     MOZ_ASSERT(checkOptionsCalled);
 
@@ -2589,7 +2587,7 @@ Parser<FullParseHandler>::standaloneLazyFunction(HandleFunction fun, unsigned st
 
     Directives newDirectives = directives;
     ParseContext<FullParseHandler> funpc(this,  nullptr, pn, funbox,
-                                         &newDirectives, staticLevel,  0);
+                                         &newDirectives,  0);
     if (!funpc.init(*this))
         return null();
 
@@ -7537,7 +7535,6 @@ Parser<ParseHandler>::generatorComprehensionLambda(GeneratorKind comprehensionKi
 
     ParseContext<ParseHandler> genpc(this, outerpc, genfn, genFunbox,
                                       nullptr,
-                                     outerpc->staticLevel + 1,
                                       0);
     if (!genpc.init(*this))
         return null();
