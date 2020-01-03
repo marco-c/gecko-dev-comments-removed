@@ -206,9 +206,6 @@ abstract class Axis {
     protected abstract float getViewportLength();
     protected abstract float getPageStart();
     protected abstract float getPageLength();
-    protected abstract float getMarginStart();
-    protected abstract float getMarginEnd();
-    protected abstract boolean marginsHidden();
 
     Axis(SubdocumentScrollHelper subscroller) {
         mSubscroller = subscroller;
@@ -372,13 +369,6 @@ abstract class Axis {
 
         
         
-        
-        if (marginsHidden()) {
-            return true;
-        }
-
-        
-        
         return getViewportLength() <= getPageLength() - MIN_SCROLLABLE_DISTANCE ||
                getOverScrollMode() == View.OVER_SCROLL_ALWAYS;
     }
@@ -507,10 +497,10 @@ abstract class Axis {
         if (getOverScrollMode() == View.OVER_SCROLL_NEVER && !mSubscroller.scrolling()) {
             float originalDisplacement = mDisplacement;
 
-            if (mDisplacement + getOrigin() < getPageStart() - getMarginStart()) {
-                mDisplacement = getPageStart() - getMarginStart() - getOrigin();
-            } else if (mDisplacement + getViewportEnd() > getPageEnd() + getMarginEnd()) {
-                mDisplacement = getPageEnd() - getMarginEnd() - getViewportEnd();
+            if (mDisplacement + getOrigin() < getPageStart()) {
+                mDisplacement = getPageStart() - getOrigin();
+            } else if (mDisplacement + getViewportEnd() > getPageEnd()) {
+                mDisplacement = getPageEnd() - getViewportEnd();
             }
 
             
