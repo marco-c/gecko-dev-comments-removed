@@ -25,6 +25,9 @@ public:
   nsVolume(const Volume* aVolume);
 
   
+  nsVolume(const nsVolume* aVolume);
+
+  
   
   nsVolume(const nsAString& aName, const nsAString& aMountPoint,
            const int32_t& aState, const int32_t& aMountGeneration,
@@ -47,25 +50,8 @@ public:
   {
   }
 
-  
-  
-  nsVolume(const nsAString& aName)
-    : mName(aName),
-      mState(STATE_INIT),
-      mMountGeneration(-1),
-      mMountLocked(true),  
-      mIsFake(false),
-      mIsMediaPresent(false),
-      mIsSharing(false),
-      mIsFormatting(false),
-      mIsUnmounting(false),
-      mIsRemovable(false),
-      mIsHotSwappable(false)
-  {
-  }
-
   bool Equals(nsIVolume* aVolume);
-  void Set(nsIVolume* aVolume);
+  void UpdateMountLock(nsVolume* aOldVolume);
 
   void LogState() const;
 
