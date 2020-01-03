@@ -660,9 +660,6 @@ MediaDecoderStateMachine::Push(VideoData* aSample)
   VideoQueue().Push(aSample);
   UpdateNextFrameStatus();
   DispatchDecodeTasksIfNeeded();
-
-  
-  mDecoder->GetReentrantMonitor().NotifyAll();
 }
 
 void
@@ -694,9 +691,6 @@ MediaDecoderStateMachine::OnVideoPopped(const MediaData* aSample)
   mDecoder->UpdatePlaybackOffset(aSample->mOffset);
   UpdateNextFrameStatus();
   DispatchVideoDecodeTaskIfNeeded();
-  
-  
-  mDecoder->GetReentrantMonitor().NotifyAll();
 }
 
 void
@@ -778,7 +772,6 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
         return;
       }
       CheckIfDecodeComplete();
-      mDecoder->GetReentrantMonitor().NotifyAll();
       
       if (mAudioCaptured) {
         ScheduleStateMachine();
@@ -1093,7 +1086,6 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
     mDecodedStream->StartPlayback(GetMediaTime(), mInfo);
   }
 
-  mDecoder->GetReentrantMonitor().NotifyAll();
   DispatchDecodeTasksIfNeeded();
 }
 
@@ -1260,13 +1252,11 @@ void MediaDecoderStateMachine::SetDormant(bool aDormant)
     
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(mReader, &MediaDecoderReader::ReleaseMediaResources);
     DecodeTaskQueue()->Dispatch(r.forget());
-    mDecoder->GetReentrantMonitor().NotifyAll();
   } else if ((aDormant != true) && (mState == DECODER_STATE_DORMANT)) {
     mDecodingFrozenAtStateDecoding = true;
     ScheduleStateMachine();
     mDecodingFirstFrame = true;
     SetState(DECODER_STATE_DECODING_NONE);
-    mDecoder->GetReentrantMonitor().NotifyAll();
   }
 }
 
@@ -1911,10 +1901,6 @@ MediaDecoderStateMachine::DecodeError()
 
   
   
-  mDecoder->GetReentrantMonitor().NotifyAll();
-
-  
-  
   nsCOMPtr<nsIRunnable> event =
     NS_NewRunnableMethod(mDecoder, &MediaDecoder::DecodeError);
   AbstractThread::MainThread()->Dispatch(event.forget());
@@ -2356,8 +2342,6 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
       DECODER_LOG("Buffered for %.3lfs", (now - mBufferingStart).ToSeconds());
       StartDecoding();
 
-      
-      mDecoder->GetReentrantMonitor().NotifyAll();
       NS_ASSERTION(IsStateMachineScheduled(), "Must have timer scheduled");
       return NS_OK;
     }
@@ -3076,9 +3060,6 @@ void MediaDecoderStateMachine::OnAudioSinkComplete()
   mAudioSinkPromise.Complete();
   ResyncAudioClock();
   mAudioCompleted = true;
-
-  
-  mDecoder->GetReentrantMonitor().NotifyAll();
 }
 
 void MediaDecoderStateMachine::OnAudioSinkError()

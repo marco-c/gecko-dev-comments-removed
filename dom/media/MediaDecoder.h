@@ -1098,12 +1098,8 @@ protected:
   
   
   
-  
-  
   Canonical<PlayState> mPlayState;
 
-  
-  
   
   
   

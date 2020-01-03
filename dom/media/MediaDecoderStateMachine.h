@@ -117,7 +117,6 @@ extern PRLogModuleInfo* gMediaSampleLog;
 
 
 
-
 class MediaDecoderStateMachine
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDecoderStateMachine)
@@ -885,8 +884,6 @@ private:
   
   MediaQueue<MediaData> mVideoQueue;
 
-  
-  
   
   
   Watchable<State> mState;
