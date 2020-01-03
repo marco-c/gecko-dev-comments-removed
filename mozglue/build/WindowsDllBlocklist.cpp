@@ -170,6 +170,10 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   { "rndlmainbrowserrecordplugin.dll", ALL_VERSIONS },
 
   
+  { "nprpffbrowserrecordext.dll", ALL_VERSIONS },
+  { "nprndlffbrowserrecordext.dll", ALL_VERSIONS },
+
+  
   { "ycwebcamerasource.ax", MAKE_VERSION(2, 0, 0, 1611) },
 
   
