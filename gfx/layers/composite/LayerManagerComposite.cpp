@@ -774,7 +774,8 @@ LayerManagerComposite::Render()
       js::ProfileEntry::Category::GRAPHICS);
 
     mCompositor->EndFrame();
-    mCompositor->SetDispAcquireFence(mRoot); 
+    mCompositor->SetDispAcquireFence(mRoot,
+                                     mCompositor->GetWidget()); 
   }
 
   if (composer2D) {
@@ -992,9 +993,10 @@ LayerManagerComposite::RenderToPresentationSurface()
   RootLayer()->RenderLayer(clipRect);
 
   mCompositor->EndFrame();
-  mCompositor->SetDispAcquireFence(mRoot); 
-
 #ifdef MOZ_WIDGET_GONK
+  mCompositor->SetDispAcquireFence(mRoot,
+                                   mirrorScreenWidget); 
+
   nsRefPtr<Composer2D> composer2D;
   composer2D = mCompositor->GetWidget()->GetComposer2D();
   if (composer2D) {

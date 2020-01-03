@@ -1471,7 +1471,7 @@ CompositorOGL::EndFrame()
 
 #if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
 void
-CompositorOGL::SetDispAcquireFence(Layer* aLayer)
+CompositorOGL::SetDispAcquireFence(Layer* aLayer, nsIWidget* aWidget)
 {
   
   
@@ -1480,10 +1480,10 @@ CompositorOGL::SetDispAcquireFence(Layer* aLayer)
   
   
 
-  if (!aLayer) {
+  if (!aLayer || !aWidget) {
     return;
   }
-  nsWindow* window = static_cast<nsWindow*>(mWidget);
+  nsWindow* window = static_cast<nsWindow*>(aWidget);
   RefPtr<FenceHandle::FdObj> fence = new FenceHandle::FdObj(
       window->GetScreen()->GetPrevDispAcquireFd());
   mReleaseFenceHandle.Merge(FenceHandle(fence));
@@ -1502,7 +1502,7 @@ CompositorOGL::GetReleaseFence()
 
 #else
 void
-CompositorOGL::SetDispAcquireFence(Layer* aLayer)
+CompositorOGL::SetDispAcquireFence(Layer* aLayer, nsIWidget* aWidget)
 {
 }
 
