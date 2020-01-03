@@ -27,6 +27,10 @@ class nsHttpResponseHead;
 
 
 
+
+
+
+
 class PackagedAppService final
   : public nsIPackagedAppService
 {
@@ -37,6 +41,20 @@ class PackagedAppService final
 
 private:
   ~PackagedAppService();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult OpenNewPackageInternal(nsIURI *aURI,
+                                  nsICacheEntryOpenCallback *aCallback,
+                                  nsILoadContextInfo *aInfo);
 
   
   
@@ -58,6 +76,7 @@ private:
     NS_DECL_NSISTREAMLISTENER
     NS_DECL_NSIREQUESTOBSERVER
 
+    
     
     
     
@@ -111,10 +130,6 @@ private:
     
     nsresult AddCallback(nsIURI *aURI, nsICacheEntryOpenCallback *aCallback);
 
-    
-    
-    
-    void SetIsFromCache(bool aFromCache) { mIsFromCache = aFromCache; }
   private:
     ~PackagedAppDownloader() { }
 
@@ -127,6 +142,9 @@ private:
     
     
     nsresult ClearCallbacks(nsresult aResult);
+    static PLDHashOperator ClearCallbacksEnumerator(const nsACString& key,
+      nsAutoPtr<nsCOMArray<nsICacheEntryOpenCallback>>& callbackArray,
+      void* arg);
     
     
     
@@ -144,9 +162,6 @@ private:
     
     
     nsCString mPackageKey;
-
-    
-    bool mIsFromCache;
   };
 
   
@@ -154,28 +169,26 @@ private:
   
   
   
-  
-  
-  
-  class PackagedAppChannelListener final
-    : public nsIStreamListener
+  class CacheEntryChecker final
+    : public nsICacheEntryOpenCallback
   {
   public:
     NS_DECL_ISUPPORTS
-    NS_DECL_NSISTREAMLISTENER
-    NS_DECL_NSIREQUESTOBSERVER
+    NS_DECL_NSICACHEENTRYOPENCALLBACK
 
-    PackagedAppChannelListener(PackagedAppDownloader *aDownloader,
-                               nsIStreamListener *aListener)
-    : mDownloader(aDownloader)
-    , mListener(aListener)
+    CacheEntryChecker(nsIURI *aURI, nsICacheEntryOpenCallback * aCallback,
+                      nsILoadContextInfo *aInfo)
+      : mURI(aURI)
+      , mCallback(aCallback)
+      , mLoadContextInfo(aInfo)
     {
     }
   private:
-    ~PackagedAppChannelListener() { }
+    ~CacheEntryChecker() { }
 
-    nsRefPtr<PackagedAppDownloader> mDownloader;
-    nsCOMPtr<nsIStreamListener> mListener; 
+    nsCOMPtr<nsIURI> mURI;
+    nsCOMPtr<nsICacheEntryOpenCallback> mCallback;
+    nsCOMPtr<nsILoadContextInfo> mLoadContextInfo;
   };
 
   

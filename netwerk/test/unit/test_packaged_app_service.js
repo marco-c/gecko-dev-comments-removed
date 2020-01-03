@@ -43,19 +43,8 @@ var packagedAppRequestsMade = 0;
 function packagedAppContentHandler(metadata, response)
 {
   packagedAppRequestsMade++;
-  if (packagedAppRequestsMade == 2) {
-    
-    response.setStatusLine(metadata.httpVersion, 304, "Not Modified");
-    response.bodyOutputStream.write("", 0);
-    return;
-  }
   response.setHeader("Content-Type", 'application/package');
   var body = testData.getData();
-
-  if (packagedAppRequestsMade == 3) {
-    
-    body = body.replace(/\.\.\./g, 'xxx');
-  }
   response.bodyOutputStream.write(body, body.length);
 }
 
@@ -114,7 +103,6 @@ function run_test()
   add_test(test_callback_gets_called);
   add_test(test_same_content);
   add_test(test_request_number);
-  add_test(test_updated_package);
 
   add_test(test_package_does_not_exist);
   add_test(test_file_does_not_exist);
@@ -139,33 +127,24 @@ var metadataListener = {
 }
 
 
-function packagedResourceListener(content) {
-  this.content = content;
-}
 
-packagedResourceListener.prototype = {
-  QueryInterface: function (iid) {
-    if (iid.equals(Ci.nsICacheEntryOpenCallback) ||
-        iid.equals(Ci.nsISupports))
-      return this;
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  },
+
+var cacheListener = {
   onCacheEntryCheck: function() { return Ci.nsICacheEntryOpenCallback.ENTRY_WANTED; },
   onCacheEntryAvailable: function (entry, isnew, appcache, status) {
-    equal(status, Cr.NS_OK, "status is NS_OK");
     ok(!!entry, "Needs to have an entry");
+    equal(status, Cr.NS_OK, "status is NS_OK");
     equal(entry.key, uri + packagePath + "!//index.html", "Check entry has correct name");
     entry.visitMetaData(metadataListener);
     var inputStream = entry.openInputStream(0);
-    pumpReadStream(inputStream, (read) => {
+    pumpReadStream(inputStream, function(read) {
         inputStream.close();
-        equal(read, this.content); 
-        run_next_test();
+        equal(read,"<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n"); 
     });
+    run_next_test();
   }
 };
 
-var cacheListener = new packagedResourceListener(testData.content[0].data);
 
 
 
@@ -193,15 +172,8 @@ function test_same_content() {
 
 
 function test_request_number() {
-  equal(packagedAppRequestsMade, 2, "2 requests are expected. First with content, second is a 304 not modified.");
+  equal(packagedAppRequestsMade, 1, "only one request should be made. Second should be loaded from cache");
   run_next_test();
-}
-
-
-function test_updated_package() {
-  packagePath = "/package";
-  paservice.requestURI(createURI(uri + packagePath + "!//index.html"), LoadContextInfo.default,
-      new packagedResourceListener(testData.content[0].data.replace(/\.\.\./g, 'xxx')));
 }
 
 

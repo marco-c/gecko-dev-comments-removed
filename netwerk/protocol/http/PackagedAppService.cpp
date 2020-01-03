@@ -49,8 +49,6 @@ LogURI(const char *aFunctionName, void *self, nsIURI *aURI, nsILoadContextInfo *
   }
 }
 
-
-
  nsresult
 PackagedAppService::CacheEntryWriter::Create(nsIURI *aURI,
                                              nsICacheStorage *aStorage,
@@ -202,48 +200,6 @@ PackagedAppService::CacheEntryWriter::OnDataAvailable(nsIRequest *aRequest,
   uint32_t n;
   return aInputStream->ReadSegments(ConsumeData, this, aCount, &n);
 }
-
-
-
-NS_IMPL_ISUPPORTS(PackagedAppService::PackagedAppChannelListener, nsIStreamListener)
-
-NS_IMETHODIMP
-PackagedAppService::PackagedAppChannelListener::OnStartRequest(nsIRequest *aRequest,
-                                                               nsISupports *aContext)
-{
-  bool isFromCache = false;
-  nsCOMPtr<nsICacheInfoChannel> cacheChan = do_QueryInterface(aRequest);
-  if (cacheChan) {
-      cacheChan->IsFromCache(&isFromCache);
-  }
-
-  mDownloader->SetIsFromCache(isFromCache);
-  LOG(("[%p] Downloader isFromCache: %d\n", mDownloader.get(), isFromCache));
-
-  
-  
-  return mListener->OnStartRequest(aRequest, aContext);
-}
-
-NS_IMETHODIMP
-PackagedAppService::PackagedAppChannelListener::OnStopRequest(nsIRequest *aRequest,
-                                                    nsISupports *aContext,
-                                                    nsresult aStatusCode)
-{
-  return mListener->OnStopRequest(aRequest, aContext, aStatusCode);
-}
-
-NS_IMETHODIMP
-PackagedAppService::PackagedAppChannelListener::OnDataAvailable(nsIRequest *aRequest,
-                                                      nsISupports *aContext,
-                                                      nsIInputStream *aInputStream,
-                                                      uint64_t aOffset,
-                                                      uint32_t aCount)
-{
-  return mListener->OnDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount);
-}
-
-
 
 
 NS_IMPL_ISUPPORTS(PackagedAppService::PackagedAppDownloader, nsIStreamListener)
@@ -399,10 +355,7 @@ PackagedAppService::PackagedAppDownloader::OnStopRequest(nsIRequest *aRequest,
 
   
   
-  
-  
-  
-  if (NS_SUCCEEDED(aStatusCode) && lastPart && !mIsFromCache) {
+  if (NS_SUCCEEDED(aStatusCode) && lastPart) {
     aStatusCode = NS_ERROR_FILE_NOT_FOUND;
   }
 
@@ -444,20 +397,9 @@ PackagedAppService::PackagedAppDownloader::AddCallback(nsIURI *aURI,
   
   nsCOMArray<nsICacheEntryOpenCallback>* array = mCallbacks.Get(spec);
   if (array) {
-    if (array->Length() == 0) {
-      
-      
-      
-      LOG(("[%p]    > already downloaded\n", this));
-      mCacheStorage->AsyncOpenURI(aURI, EmptyCString(),
-                                  nsICacheStorage::OPEN_READONLY, aCallback);
-    } else {
-      LOG(("[%p]    > adding to array\n", this));
-      
-      array->AppendObject(aCallback);
-    }
+    
+    array->AppendObject(aCallback);
   } else {
-    LOG(("[%p]    > creating array\n", this));
     
     
     nsCOMArray<nsICacheEntryOpenCallback>* newArray =
@@ -481,7 +423,7 @@ PackagedAppService::PackagedAppDownloader::CallCallbacks(nsIURI *aURI,
   LOG(("[%p]    > status:%X\n", this, aResult));
 
   nsAutoCString spec;
-  aURI->GetAsciiSpec(spec);
+  aURI->GetSpec(spec);
 
   nsCOMArray<nsICacheEntryOpenCallback>* array = mCallbacks.Get(spec);
   if (array) {
@@ -493,22 +435,26 @@ PackagedAppService::PackagedAppDownloader::CallCallbacks(nsIURI *aURI,
                                   nsICacheStorage::OPEN_READONLY, callback);
     }
     
-    
-    
     array->Clear();
-    LOG(("[%p]    > called callbacks\n", this));
-  } else {
-    
-    
-    
-    nsCOMArray<nsICacheEntryOpenCallback>* newArray =
-      new nsCOMArray<nsICacheEntryOpenCallback>();
-    mCallbacks.Put(spec, newArray);
-    LOG(("[%p]    > created array\n", this));
+    mCallbacks.Remove(spec);
+    aEntry->ForceValidFor(0);
   }
-
-  aEntry->ForceValidFor(0);
   return NS_OK;
+}
+
+PLDHashOperator
+PackagedAppService::PackagedAppDownloader::ClearCallbacksEnumerator(const nsACString& key,
+  nsAutoPtr<nsCOMArray<nsICacheEntryOpenCallback> >& callbackArray,
+  void* arg)
+{
+  MOZ_ASSERT(arg, "The void* parameter should be a pointer to nsresult");
+  nsresult *result = static_cast<nsresult*>(arg);
+  for (uint32_t i = 0; i < callbackArray->Length(); ++i) {
+    nsCOMPtr<nsICacheEntryOpenCallback> callback = callbackArray->ObjectAt(i);
+    callback->OnCacheEntryAvailable(nullptr, false, nullptr, *result);
+  }
+  
+  return PL_DHASH_REMOVE;
 }
 
 nsresult
@@ -517,43 +463,47 @@ PackagedAppService::PackagedAppDownloader::ClearCallbacks(nsresult aResult)
   MOZ_RELEASE_ASSERT(NS_IsMainThread(), "mCallbacks hashtable is not thread safe");
   LOG(("[%p] PackagedAppService::PackagedAppDownloader::ClearCallbacks > packageKey:%s status:%X\n",
        this, mPackageKey.get(), aResult));
-
-  for (auto iter = mCallbacks.Iter(); !iter.Done(); iter.Next()) {
-    const nsACString& key = iter.Key();
-    const nsCOMArray<nsICacheEntryOpenCallback>* callbackArray = iter.UserData();
-
-    if (NS_SUCCEEDED(aResult)) {
-      
-      
-      
-      nsCOMPtr<nsIURI> uri;
-      nsresult rv = NS_NewURI(getter_AddRefs(uri), key);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-      LOG(("[%p]    > calling AsyncOpenURI for %s\n", this, key.BeginReading()));
-      for (uint32_t i = 0; i < callbackArray->Length(); ++i) {
-        nsCOMPtr<nsICacheEntryOpenCallback> callback = callbackArray->ObjectAt(i);
-        mCacheStorage->AsyncOpenURI(uri, EmptyCString(),
-                                    nsICacheStorage::OPEN_READONLY, callback);
-      }
-
-    } else { 
-      
-      LOG(("[%p]    > passing NULL cache entry for %s\n", this, key.BeginReading()));
-      for (uint32_t i = 0; i < callbackArray->Length(); ++i) {
-        nsCOMPtr<nsICacheEntryOpenCallback> callback = callbackArray->ObjectAt(i);
-        callback->OnCacheEntryAvailable(nullptr, false, nullptr, aResult);
-      }
-    }
-
-    
-    iter.Remove();
-  }
-
+  mCallbacks.Enumerate(ClearCallbacksEnumerator, &aResult);
   return NS_OK;
 }
 
+NS_IMPL_ISUPPORTS(PackagedAppService::CacheEntryChecker, nsICacheEntryOpenCallback)
 
+NS_IMETHODIMP
+PackagedAppService::CacheEntryChecker::OnCacheEntryCheck(nsICacheEntry *aEntry,
+                                                         nsIApplicationCache *aApplicationCache,
+                                                         uint32_t *_retval)
+{
+  nsresult rv = mCallback->OnCacheEntryCheck(aEntry, aApplicationCache, _retval);
+  LOG(("[%p] PackagedAppService::CacheEntryChecker::OnCacheEntryCheck > rv=%X retval=%X\n",
+       this, rv, _retval));
+  return rv;
+}
+
+NS_IMETHODIMP
+PackagedAppService::CacheEntryChecker::OnCacheEntryAvailable(nsICacheEntry *aEntry,
+                                                             bool aNew,
+                                                             nsIApplicationCache *aApplicationCache,
+                                                             nsresult aResult)
+{
+  LogURI("PackagedAppService::CacheEntryChecker::OnCacheEntryAvailable",
+         this, mURI, mLoadContextInfo);
+  if (aResult == NS_ERROR_CACHE_KEY_NOT_FOUND) {
+    MOZ_ASSERT(!aEntry, "No entry");
+    LOG(("[%p]    > NOT FOUND\n", this));
+    
+    
+    gPackagedAppService->OpenNewPackageInternal(mURI, mCallback,
+                                                mLoadContextInfo);
+  } else {
+    LOG(("[%p]    > FOUND ENTRY status:%X entry:%p\n", this, aResult, aEntry));
+    
+    
+    mCallback->OnCacheEntryAvailable(aEntry, aNew, aApplicationCache, aResult);
+    
+  }
+  return NS_OK;
+}
 
 PackagedAppService::PackagedAppService()
 {
@@ -613,14 +563,66 @@ PackagedAppService::RequestURI(nsIURI *aURI,
     return NS_ERROR_INVALID_ARG;
   }
 
+  nsAutoCString path;
+  aURI->GetPath(path);
+  int32_t pos = path.Find(PACKAGED_APP_TOKEN);
+  if (pos == kNotFound) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
-  nsresult rv;
   LogURI("PackagedAppService::RequestURI", this, aURI, aInfo);
 
+  nsresult rv;
+  nsCOMPtr<nsICacheStorageService> cacheStorageService =
+    do_GetService("@mozilla.org/netwerk/cache-storage-service;1", &rv);
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCOMPtr<nsICacheStorage> cacheStorage;
+
+  rv = cacheStorageService->DiskCacheStorage(aInfo, false,
+                                             getter_AddRefs(cacheStorage));
+
+  nsRefPtr<CacheEntryChecker> checker = new CacheEntryChecker(aURI, aCallback, aInfo);
+  return cacheStorage->AsyncOpenURI(aURI, EmptyCString(),
+                                    nsICacheStorage::OPEN_READONLY, checker);
+}
+
+nsresult
+PackagedAppService::NotifyPackageDownloaded(nsCString aKey)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread(), "mDownloadingPackages hashtable is not thread safe");
+  mDownloadingPackages.Remove(aKey);
+  LOG(("[%p] PackagedAppService::NotifyPackageDownloaded > %s\n", this, aKey.get()));
+  return NS_OK;
+}
+
+nsresult
+PackagedAppService::OpenNewPackageInternal(nsIURI *aURI,
+                                           nsICacheEntryOpenCallback *aCallback,
+                                           nsILoadContextInfo *aInfo)
+{
   MOZ_RELEASE_ASSERT(NS_IsMainThread(), "mDownloadingPackages hashtable is not thread safe");
 
+  nsAutoCString path;
+  nsresult rv = aURI->GetPath(path);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  int32_t pos = path.Find(PACKAGED_APP_TOKEN);
+  MOZ_ASSERT(pos != kNotFound,
+             "This should never be called if the token is missing");
+
   nsCOMPtr<nsIURI> packageURI;
-  rv = GetPackageURI(aURI, getter_AddRefs(packageURI));
+  rv = aURI->CloneIgnoringRef(getter_AddRefs(packageURI));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  rv = packageURI->SetPath(Substring(path, 0, pos));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -686,7 +688,8 @@ PackagedAppService::RequestURI(nsIURI *aURI,
   }
 
   nsCOMPtr<nsIStreamListener> mimeConverter;
-  rv = streamconv->AsyncConvertData(APPLICATION_PACKAGE, "*/*", downloader, nullptr,
+  
+  rv = streamconv->AsyncConvertData("multipart/mixed", "*/*", downloader, this,
                                     getter_AddRefs(mimeConverter));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -695,19 +698,7 @@ PackagedAppService::RequestURI(nsIURI *aURI,
   
   mDownloadingPackages.Put(key, downloader);
 
-  nsRefPtr<PackagedAppChannelListener> listener =
-    new PackagedAppChannelListener(downloader, mimeConverter);
-
-  return channel->AsyncOpen(listener, nullptr);
-}
-
-nsresult
-PackagedAppService::NotifyPackageDownloaded(nsCString aKey)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread(), "mDownloadingPackages hashtable is not thread safe");
-  mDownloadingPackages.Remove(aKey);
-  LOG(("[%p] PackagedAppService::NotifyPackageDownloaded > %s\n", this, aKey.get()));
-  return NS_OK;
+  return channel->AsyncOpen(mimeConverter, nullptr);
 }
 
 } 
