@@ -70,7 +70,7 @@ static MOZ_CONSTEXPR nsAttrValue::EnumTable kKindTable[] = {
 };
 
 
-static MOZ_CONSTEXPR const char* kKindTableDefaultString = kKindTable->tag;
+static MOZ_CONSTEXPR const char* kKindTableDefaultString = kKindTable[0].tag;
 
 
 HTMLTrackElement::HTMLTrackElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
