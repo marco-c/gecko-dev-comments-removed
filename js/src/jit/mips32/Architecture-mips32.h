@@ -537,6 +537,12 @@ hasMultiAlias() {
 
 
 
+
+#define JS_CODEGEN_REGISTER_PAIR 1
+
+
+
+
 static const size_t AsmJSCheckedImmediateRange = 0;
 static const size_t AsmJSImmediateRange = 0;
 
