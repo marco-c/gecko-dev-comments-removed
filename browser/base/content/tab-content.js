@@ -646,6 +646,12 @@ let DOMFullscreenHandler = {
       case "MozDOMFullscreen:Entered":
       case "MozDOMFullscreen:Exited": {
         addEventListener("MozAfterPaint", this);
+        if (!content || !content.document.mozFullScreen) {
+          
+          
+          
+          sendAsyncMessage("DOMFullscreen:Exit");
+        }
         break;
       }
       case "MozAfterPaint": {
