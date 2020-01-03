@@ -79,6 +79,9 @@ const MINIMUM_LOCAL_MATCHES = 5;
 const REGEXP_SINGLEWORD_HOST = new RegExp("^[a-z0-9-]+$", "i");
 
 
+const REGEXP_SPACES = /\s+/;
+
+
 const QUERYINDEX_QUERYTYPE     = 0;
 const QUERYINDEX_URL           = 1;
 const QUERYINDEX_TITLE         = 2;
@@ -517,7 +520,7 @@ function fixupSearchText(spec)
 
 
 function getUnfilteredSearchTokens(searchString)
-  searchString.length ? searchString.split(" ") : [];
+  searchString.length ? searchString.split(REGEXP_SPACES) : [];
 
 
 
@@ -977,7 +980,7 @@ Search.prototype = {
     if (searchString.length < 2)
       return true;
 
-    let tokens = searchString.split(/\s/);
+    let tokens = searchString.split(REGEXP_SPACES);
 
     
     if (REGEXP_SINGLEWORD_HOST.test(tokens[0]) &&
@@ -1105,7 +1108,7 @@ Search.prototype = {
   },
 
   _matchSearchEngineAlias: function* () {
-    if (this._searchTokens.length < 2)
+    if (this._searchTokens.length < 1)
       return false;
 
     let alias = this._searchTokens[0];
@@ -1589,7 +1592,7 @@ Search.prototype = {
     
     
     
-    if (/\s/.test(this._originalSearchString))
+    if (REGEXP_SPACES.test(this._originalSearchString))
       return false;
 
     if (this._searchString.length == 0)
