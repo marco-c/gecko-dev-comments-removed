@@ -37,10 +37,8 @@ Decoder::Decoder(RasterImage* aImage)
   , mMetadataDecode(false)
   , mSendPartialInvalidations(false)
   , mImageIsTransient(false)
-  , mImageIsLocked(false)
   , mFirstFrameDecode(false)
   , mInFrame(false)
-  , mIsAnimated(false)
   , mDataDone(false)
   , mDecodeDone(false)
   , mDataError(false)
@@ -237,7 +235,7 @@ Decoder::CompleteDecode()
     
     
     
-    if (!mIsAnimated && !mImageIsTransient && mCurrentFrame) {
+    if (!HasAnimation() && !mImageIsTransient && mCurrentFrame) {
       mCurrentFrame->SetOptimizable();
     }
   }
@@ -260,7 +258,12 @@ Decoder::AllocateFrame(uint32_t aFrameNum,
     mCurrentFrame->GetPaletteData(&mColormap, &mColormapSize);
 
     if (aFrameNum + 1 == mFrameCount) {
-      PostFrameStart();
+      
+      MOZ_ASSERT_IF(mFrameCount > 1, HasAnimation());
+
+      
+      MOZ_ASSERT(!mInFrame, "Starting new frame but not done with old one!");
+      mInFrame = true;
     }
   } else {
     PostDataError();
@@ -406,19 +409,11 @@ Decoder::PostHasTransparency()
 }
 
 void
-Decoder::PostFrameStart()
+Decoder::PostIsAnimated(int32_t aFirstFrameTimeout)
 {
-  
-  MOZ_ASSERT(!mInFrame, "Starting new frame but not done with old one!");
-
-  
-  mInFrame = true;
-
-  
-  if (mFrameCount > 1) {
-    mIsAnimated = true;
-    mProgress |= FLAG_IS_ANIMATED;
-  }
+  mProgress |= FLAG_IS_ANIMATED;
+  mImageMetadata.SetHasAnimation();
+  mImageMetadata.SetFirstFrameTimeout(aFirstFrameTimeout);
 }
 
 void
@@ -442,7 +437,7 @@ Decoder::PostFrameStop(Opacity aFrameOpacity    ,
 
   
   
-  if (!mSendPartialInvalidations && !mIsAnimated) {
+  if (!mSendPartialInvalidations && !HasAnimation()) {
     mInvalidRect.UnionRect(mInvalidRect,
                            gfx::IntRect(gfx::IntPoint(0, 0), GetSize()));
   }
@@ -459,7 +454,7 @@ Decoder::PostInvalidation(const nsIntRect& aRect,
 
   
   
-  if (mSendPartialInvalidations && !mIsAnimated) {
+  if (mSendPartialInvalidations && !HasAnimation()) {
     mInvalidRect.UnionRect(mInvalidRect, aRect);
     mCurrentFrame->ImageUpdated(aRectAtTargetSize.valueOr(aRect));
   }

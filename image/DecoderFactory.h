@@ -64,8 +64,6 @@ public:
 
 
 
-
-
   static already_AddRefed<Decoder>
   CreateDecoder(DecoderType aType,
                 RasterImage* aImage,
@@ -75,8 +73,28 @@ public:
                 int aSampleSize,
                 const gfx::IntSize& aResolution,
                 bool aIsRedecode,
-                bool aImageIsTransient,
-                bool aImageIsLocked);
+                bool aImageIsTransient);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<Decoder>
+  CreateAnimationDecoder(DecoderType aType,
+                         RasterImage* aImage,
+                         SourceBuffer* aSourceBuffer,
+                         uint32_t aFlags,
+                         const gfx::IntSize& aResolution);
 
   
 

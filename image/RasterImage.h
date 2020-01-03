@@ -132,6 +132,7 @@ namespace image {
 
 class Decoder;
 class FrameAnimator;
+class ImageMetadata;
 class SourceBuffer;
 
 
@@ -192,18 +193,6 @@ public:
 
 
 
-  nsresult SetSize(int32_t aWidth, int32_t aHeight, Orientation aOrientation);
-
-  
-
-
-
-  void     SetLoopCount(int32_t aLoopCount);
-
-  
-
-
-
 
 
 
@@ -223,7 +212,6 @@ public:
   void FinalizeDecoder(Decoder* aDecoder);
 
   
-  void MarkAnimationDecoded();
   void ReportDecoderError(Decoder* aDecoder);
 
 
@@ -338,6 +326,19 @@ private:
 
 
   NS_IMETHOD DecodeMetadata(uint32_t aFlags);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult SetMetadata(const ImageMetadata& aMetadata, bool aFromMetadataDecode);
 
   
 

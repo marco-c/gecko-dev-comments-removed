@@ -857,6 +857,11 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
       }
 
       mGIFStruct.delay_time = GETINT16(q + 1) * 10;
+
+      if (mGIFStruct.delay_time > 0) {
+        PostIsAnimated(mGIFStruct.delay_time);
+      }
+
       GETN(1, gif_consume_block);
       break;
 
@@ -921,11 +926,20 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
       break;
 
     case gif_image_header: {
-      if (mGIFStruct.images_decoded > 0 && IsFirstFrameDecode()) {
-        
-        
-        mGIFStruct.state = gif_done;
-        break;
+      if (mGIFStruct.images_decoded == 1) {
+        if (!HasAnimation()) {
+          
+          
+          
+          
+          PostIsAnimated( 0);
+        }
+        if (IsFirstFrameDecode()) {
+          
+          
+          mGIFStruct.state = gif_done;
+          break;
+        }
       }
 
       

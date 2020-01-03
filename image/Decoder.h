@@ -184,20 +184,6 @@ public:
   
 
 
-
-
-  void SetImageIsLocked()
-  {
-    MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
-    mImageIsLocked = true;
-  }
-
-  bool ImageIsLocked() const { return mImageIsLocked; }
-
-
-  
-
-
   void SetIsFirstFrameDecode()
   {
     MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
@@ -225,7 +211,7 @@ public:
   }
 
   
-  bool HasAnimation() const { return mIsAnimated; }
+  bool HasAnimation() const { return mImageMetadata.HasAnimation(); }
 
   
   bool HasError() const { return HasDataError() || HasDecoderError(); }
@@ -346,7 +332,9 @@ protected:
 
   
   
-  void PostFrameStart();
+  
+  
+  void PostIsAnimated(int32_t aFirstFrameTimeout);
 
   
   
@@ -451,10 +439,8 @@ private:
   bool mMetadataDecode : 1;
   bool mSendPartialInvalidations : 1;
   bool mImageIsTransient : 1;
-  bool mImageIsLocked : 1;
   bool mFirstFrameDecode : 1;
   bool mInFrame : 1;
-  bool mIsAnimated : 1;
   bool mDataDone : 1;
   bool mDecodeDone : 1;
   bool mDataError : 1;

@@ -291,14 +291,19 @@ FrameAnimator::GetCompositedFrame(uint32_t aFrameNum)
 int32_t
 FrameAnimator::GetTimeoutForFrame(uint32_t aFrameNum) const
 {
+  int32_t rawTimeout = 0;
+
   RawAccessFrameRef frame = GetRawFrame(aFrameNum);
-  if (!frame) {
+  if (frame) {
+    AnimationData data = frame->GetAnimationData();
+    rawTimeout = data.mRawTimeout;
+  } else if (aFrameNum == 0) {
+    rawTimeout = mFirstFrameTimeout;
+  } else {
     NS_WARNING("No frame; called GetTimeoutForFrame too early?");
     return 100;
   }
 
-  AnimationData data = frame->GetAnimationData();
-
   
   
   
@@ -312,11 +317,11 @@ FrameAnimator::GetTimeoutForFrame(uint32_t aFrameNum) const
   
   
   
-  if (data.mRawTimeout >= 0 && data.mRawTimeout <= 10) {
+  if (rawTimeout >= 0 && rawTimeout <= 10) {
     return 100;
   }
 
-  return data.mRawTimeout;
+  return rawTimeout;
 }
 
 static void

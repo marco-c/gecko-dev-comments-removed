@@ -24,6 +24,7 @@
 #include "nsIConsoleService.h"
 #include "nsIInputStream.h"
 #include "nsIScriptError.h"
+#include "nsISupportsPrimitives.h"
 #include "nsPresContext.h"
 #include "SourceBuffer.h"
 #include "SurfaceCache.h"
@@ -478,7 +479,7 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
     
     
     
-    MOZ_ASSERT(!mAnim, "Animated frames should be locked");
+    MOZ_ASSERT(!mAnim || GetNumFrames() < 1, "Animated frames should be locked");
 
     Decode(requestedSize, aFlags);
 
@@ -529,7 +530,7 @@ RasterImage::GetRequestedFrameIndex(uint32_t aWhichFrame) const
 IntRect
 RasterImage::GetFirstFrameRect()
 {
-  if (mAnim) {
+  if (mAnim && mHasBeenDecoded) {
     return mAnim->GetFirstFrameRefreshArea();
   }
 
@@ -581,6 +582,9 @@ RasterImage::GetAnimated(bool* aAnimated)
     return NS_OK;
   }
 
+  
+  
+  
   
   
   if (!mHasBeenDecoded) {
@@ -921,21 +925,9 @@ RasterImage::OnAddedFrame(uint32_t aNewFrameCount,
     mFrameCount = aNewFrameCount;
 
     if (aNewFrameCount == 2) {
-      
-      MOZ_ASSERT(!mAnim, "Already have animation state?");
-      mAnim = MakeUnique<FrameAnimator>(this, mSize, mAnimationMode);
+      MOZ_ASSERT(mAnim, "Should already have animation state");
 
       
-      
-      
-      
-      
-      
-      
-      
-      
-      LockImage();
-
       if (mPendingAnimation && ShouldAnimate()) {
         StartAnimation();
       }
@@ -947,7 +939,8 @@ RasterImage::OnAddedFrame(uint32_t aNewFrameCount,
 }
 
 nsresult
-RasterImage::SetSize(int32_t aWidth, int32_t aHeight, Orientation aOrientation)
+RasterImage::SetMetadata(const ImageMetadata& aMetadata,
+                         bool aFromMetadataDecode)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -955,26 +948,64 @@ RasterImage::SetSize(int32_t aWidth, int32_t aHeight, Orientation aOrientation)
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  if ((aWidth < 0) || (aHeight < 0)) {
-    return NS_ERROR_INVALID_ARG;
+  if (aMetadata.HasSize()) {
+    IntSize size = aMetadata.GetSize();
+    if (size.width < 0 || size.height < 0) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
+    MOZ_ASSERT(aMetadata.HasOrientation());
+    Orientation orientation = aMetadata.GetOrientation();
+
+    
+    if (mHasSize && (size != mSize || orientation != mOrientation)) {
+      NS_WARNING("Image changed size or orientation on redecode! "
+                 "This should not happen!");
+      DoError();
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    
+    mSize = size;
+    mOrientation = orientation;
+    mHasSize = true;
   }
 
-  
-  if (mHasSize &&
-      ((aWidth != mSize.width) ||
-       (aHeight != mSize.height) ||
-       (aOrientation != mOrientation))) {
-    NS_WARNING("Image changed size on redecode! This should not happen!");
-    DoError();
-    return NS_ERROR_UNEXPECTED;
+  if (mHasSize && aMetadata.HasAnimation() && !mAnim) {
+    
+    mAnim = MakeUnique<FrameAnimator>(this, mSize, mAnimationMode);
+
+    
+    
+    LockImage();
+
+    if (!aFromMetadataDecode) {
+      
+      
+      
+      
+      RecoverFromLossOfFrames(mSize, DECODE_FLAGS_DEFAULT);
+    }
   }
 
-  
-  mSize.SizeTo(aWidth, aHeight);
-  mOrientation = aOrientation;
-  mHasSize = true;
+  if (mAnim) {
+    mAnim->SetLoopCount(aMetadata.GetLoopCount());
+    mAnim->SetFirstFrameTimeout(aMetadata.GetFirstFrameTimeout());
+  }
+
+  if (aMetadata.HasHotspot()) {
+    IntPoint hotspot = aMetadata.GetHotspot();
+
+    nsCOMPtr<nsISupportsPRUint32> intwrapx =
+      do_CreateInstance(NS_SUPPORTS_PRUINT32_CONTRACTID);
+    nsCOMPtr<nsISupportsPRUint32> intwrapy =
+      do_CreateInstance(NS_SUPPORTS_PRUINT32_CONTRACTID);
+    intwrapx->SetData(hotspot.x);
+    intwrapy->SetData(hotspot.y);
+
+    Set("hotspotX", intwrapx);
+    Set("hotspotY", intwrapy);
+  }
 
   return NS_OK;
 }
@@ -1001,8 +1032,7 @@ RasterImage::StartAnimation()
 
   
   
-  
-  mPendingAnimation = !mAnim;
+  mPendingAnimation = !mAnim || GetNumFrames() < 2;
   if (mPendingAnimation) {
     return NS_OK;
   }
@@ -1089,19 +1119,6 @@ RasterImage::GetFrameIndex(uint32_t aWhichFrame)
   return (aWhichFrame == FRAME_FIRST || !mAnim)
          ? 0.0f
          : mAnim->GetCurrentAnimationFrameIndex();
-}
-
-void
-RasterImage::SetLoopCount(int32_t aLoopCount)
-{
-  if (mError) {
-    return;
-  }
-
-  
-  if (mAnim) {
-    mAnim->SetLoopCount(aLoopCount);
-  }
 }
 
 NS_IMETHODIMP_(IntRect)
@@ -1391,20 +1408,19 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
 
   Maybe<IntSize> targetSize = mSize != aSize ? Some(aSize) : Nothing();
 
-  bool imageIsLocked = false;
-  if (!mHasBeenDecoded) {
-    
-    
-    
-    LockImage();
-    imageIsLocked = true;
-  }
-
   
-  nsRefPtr<Decoder> decoder =
-    DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer, targetSize,
-                                  aFlags, mRequestedSampleSize, mRequestedResolution,
-                                  mHasBeenDecoded, mTransient, imageIsLocked);
+  nsRefPtr<Decoder> decoder;
+  if (mAnim) {
+    decoder = DecoderFactory::CreateAnimationDecoder(mDecoderType, this,
+                                                     mSourceBuffer, aFlags,
+                                                     mRequestedResolution);
+  } else {
+    decoder = DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer,
+                                            targetSize, aFlags,
+                                            mRequestedSampleSize,
+                                            mRequestedResolution,
+                                            mHasBeenDecoded, mTransient);
+  }
 
   
   if (!decoder) {
@@ -1953,7 +1969,8 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
   }
 
   
-  nsresult rv = aDecoder->GetImageMetadata().SetOnImage(this);
+  nsresult rv = SetMetadata(aDecoder->GetImageMetadata(),
+                            aDecoder->IsMetadataDecode());
   if (NS_FAILED(rv)) {
     aDecoder->PostResizeError();
   }
@@ -1964,17 +1981,8 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
   if (aDecoder->GetDecodeTotallyDone() && !mError) {
     
     mHasBeenDecoded = true;
-
-    if (aDecoder->HasAnimation()) {
-      if (mAnim) {
-        mAnim->SetDoneDecoding(true);
-      } else {
-        
-        
-        nsCOMPtr<nsIRunnable> runnable =
-          NS_NewRunnableMethod(this, &RasterImage::MarkAnimationDecoded);
-        NS_DispatchToMainThread(runnable);
-      }
+    if (mAnim) {
+      mAnim->SetDoneDecoding(true);
     }
   }
 
@@ -2022,27 +2030,11 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
     }
   }
 
-  if (aDecoder->ImageIsLocked()) {
-    
-    UnlockImage();
-  }
-
   
   if (done && wasMetadata && mWantFullDecode) {
     mWantFullDecode = false;
     RequestDecode();
   }
-}
-
-void
-RasterImage::MarkAnimationDecoded()
-{
-  MOZ_ASSERT(mAnim, "Should have an animation now");
-  if (!mAnim) {
-    return;
-  }
-
-  mAnim->SetDoneDecoding(true);
 }
 
 void

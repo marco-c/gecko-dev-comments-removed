@@ -33,6 +33,7 @@ public:
     , mLoopRemainingCount(-1)
     , mLastCompositedFrameIndex(-1)
     , mLoopCount(-1)
+    , mFirstFrameTimeout(0)
     , mAnimationMode(aAnimationMode)
     , mDoneDecoding(false)
   { }
@@ -147,6 +148,12 @@ public:
 
   void SetLoopCount(int32_t aLoopCount) { mLoopCount = aLoopCount; }
   int32_t LoopCount() const { return mLoopCount; }
+
+  
+
+
+
+  void SetFirstFrameTimeout(int32_t aTimeout) { mFirstFrameTimeout = aTimeout; }
 
   
 
@@ -276,6 +283,9 @@ private:
 
   
   int32_t mLoopCount;
+
+  
+  int32_t mFirstFrameTimeout;
 
   
   uint16_t mAnimationMode;
