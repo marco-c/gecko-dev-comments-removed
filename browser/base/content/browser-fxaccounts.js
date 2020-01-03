@@ -447,7 +447,7 @@ let gFxAccounts = {
       this.openPreferences();
       break;
     default:
-      this.openAccountsPage(null, { entryPoint: "menupanel" });
+      this.openAccountsPage(null, { entrypoint: "menupanel" });
       break;
     }
 
@@ -464,7 +464,7 @@ let gFxAccounts = {
     
     if (UITour.tourBrowsersByWindow.get(window) &&
         UITour.tourBrowsersByWindow.get(window).has(gBrowser.selectedBrowser)) {
-      urlParams.entryPoint = "uitour";
+      urlParams.entrypoint = "uitour";
     }
     let params = new URLSearchParams();
     if (action) {
@@ -482,7 +482,7 @@ let gFxAccounts = {
   },
 
   openSignInAgainPage: function (entryPoint) {
-    this.openAccountsPage("reauth", { entryPoint: entryPoint });
+    this.openAccountsPage("reauth", { entrypoint: entryPoint });
   },
 };
 
