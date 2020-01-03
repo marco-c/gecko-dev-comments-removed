@@ -914,8 +914,13 @@ protected:
   
   nsIFrame* GetHypotheticalBoxContainer(nsIFrame* aFrame,
                                         nscoord& aCBIStartEdge,
-                                        nscoord& aCBISize);
+                                        mozilla::LogicalSize& aCBSize);
 
+  
+  
+  
+  
+  
   void CalculateHypotheticalBox(nsPresContext*    aPresContext,
                                 nsIFrame*         aPlaceholderFrame,
                                 const nsHTMLReflowState* cbrs,
@@ -932,9 +937,13 @@ protected:
   
   void ComputeMinMaxValues(const mozilla::LogicalSize& aContainingBlockSize);
 
-  void CalculateInlineBorderPaddingMargin(nscoord aContainingBlockISize,
-                                          nscoord* aInsideBoxSizing,
-                                          nscoord* aOutsideBoxSizing);
+  
+  
+  
+  void CalculateBorderPaddingMargin(mozilla::LogicalAxis aAxis,
+                                    nscoord aContainingBlockSize,
+                                    nscoord* aInsideBoxSizing,
+                                    nscoord* aOutsideBoxSizing);
 
   void CalculateBlockSideMargins(nsIAtom* aFrameType);
 };
