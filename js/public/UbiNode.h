@@ -13,12 +13,16 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
+#include "mozilla/RangedPtr.h"
+#include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
 
 #include "jspubtd.h"
 
 #include "js/GCAPI.h"
 #include "js/HashTable.h"
+#include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
 #include "js/Vector.h"
@@ -139,25 +143,292 @@
 
 
 
+class JSAtom;
+
 namespace JS {
 namespace ubi {
 
 class Edge;
 class EdgeRange;
+class StackFrame;
 
 } 
 } 
 
 namespace mozilla {
+
 template<>
 class DefaultDelete<JS::ubi::EdgeRange> : public JS::DeletePolicy<JS::ubi::EdgeRange> { };
+
+template<>
+class DefaultDelete<JS::ubi::StackFrame> : public JS::DeletePolicy<JS::ubi::StackFrame> { };
+
 } 
 
 namespace JS {
 namespace ubi {
 
 using mozilla::Maybe;
+using mozilla::Move;
+using mozilla::RangedPtr;
 using mozilla::UniquePtr;
+using mozilla::Variant;
+
+
+
+
+
+
+
+
+using AtomOrTwoByteChars = Variant<JSAtom*, const char16_t*>;
+
+
+
+class BaseStackFrame {
+    friend class StackFrame;
+
+    BaseStackFrame(const StackFrame&) = delete;
+    BaseStackFrame& operator=(const StackFrame&) = delete;
+
+  protected:
+    void* ptr;
+    explicit BaseStackFrame(void* ptr) : ptr(ptr) { }
+
+  public:
+    
+    
+
+    
+    
+    virtual uintptr_t identifier() const { return reinterpret_cast<uintptr_t>(ptr); }
+
+    
+    virtual StackFrame parent() const = 0;
+
+    
+    virtual uint32_t line() const = 0;
+
+    
+    virtual uint32_t column() const = 0;
+
+    
+    virtual AtomOrTwoByteChars source() const = 0;
+
+    
+    
+    virtual AtomOrTwoByteChars functionDisplayName() const = 0;
+
+    
+    
+    virtual bool isSystem() const = 0;
+
+    
+    
+    virtual bool isSelfHosted() const = 0;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    virtual bool constructSavedFrameStack(JSContext* cx,
+                                          MutableHandleObject outSavedFrameStack) const = 0;
+
+    
+    virtual void trace(JSTracer* trc) = 0;
+};
+
+
+
+
+template<typename T> class ConcreteStackFrame;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class StackFrame : public JS::Traceable {
+    
+    mozilla::AlignedStorage2<BaseStackFrame> storage;
+
+    BaseStackFrame* base() { return storage.addr(); }
+    const BaseStackFrame* base() const { return storage.addr(); }
+
+    template<typename T>
+    void construct(T* ptr) {
+        static_assert(mozilla::IsBaseOf<BaseStackFrame, ConcreteStackFrame<T>>::value,
+                      "ConcreteStackFrame<T> must inherit from BaseStackFrame");
+        static_assert(sizeof(ConcreteStackFrame<T>) == sizeof(*base()),
+                      "ubi::ConcreteStackFrame<T> specializations must be the same size as "
+                      "ubi::BaseStackFrame");
+        ConcreteStackFrame<T>::construct(base(), ptr);
+    }
+    struct ConstructFunctor;
+
+  public:
+    StackFrame() { construct<void>(nullptr); }
+
+    template<typename T>
+    MOZ_IMPLICIT StackFrame(T* ptr) {
+        construct(ptr);
+    }
+
+    template<typename T>
+    StackFrame& operator=(T* ptr) {
+        construct(ptr);
+        return *this;
+    }
+
+    
+
+    template<typename T>
+    explicit StackFrame(const JS::Handle<T*>& handle) {
+        construct(handle.get());
+    }
+
+    template<typename T>
+    StackFrame& operator=(const JS::Handle<T*>& handle) {
+        construct(handle.get());
+        return *this;
+    }
+
+    template<typename T>
+    explicit StackFrame(const JS::Rooted<T*>& root) {
+        construct(root.get());
+    }
+
+    template<typename T>
+    StackFrame& operator=(const JS::Rooted<T*>& root) {
+        construct(root.get());
+        return *this;
+    }
+
+    
+    
+    
+    
+    StackFrame(const StackFrame& rhs) {
+        memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    }
+
+    StackFrame& operator=(const StackFrame& rhs) {
+        memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+        return *this;
+    }
+
+    bool operator==(const StackFrame& rhs) const { return base()->ptr == rhs.base()->ptr; }
+    bool operator!=(const StackFrame& rhs) const { return !(*this == rhs); }
+
+    explicit operator bool() const {
+        return base()->ptr != nullptr;
+    }
+
+    
+    
+    
+    size_t source(RangedPtr<char16_t> destination, size_t length) const;
+
+    
+    
+    
+    size_t functionDisplayName(RangedPtr<char16_t> destination, size_t length) const;
+
+    
+    static void trace(StackFrame* frame, JSTracer* trc) {
+        if (frame)
+            frame->trace(trc);
+    }
+
+    
+
+    void trace(JSTracer* trc) { base()->trace(trc); }
+    uintptr_t identifier() const { return base()->identifier(); }
+    uint32_t line() const { return base()->line(); }
+    uint32_t column() const { return base()->column(); }
+    AtomOrTwoByteChars source() const { return base()->source(); }
+    AtomOrTwoByteChars functionDisplayName() const { return base()->functionDisplayName(); }
+    StackFrame parent() const { return base()->parent(); }
+    bool isSystem() const { return base()->isSystem(); }
+    bool isSelfHosted() const { return base()->isSelfHosted(); }
+    bool constructSavedFrameStack(JSContext* cx,
+                                  MutableHandleObject outSavedFrameStack) const {
+        return base()->constructSavedFrameStack(cx, outSavedFrameStack);
+    }
+
+    struct HashPolicy {
+        using Lookup = JS::ubi::StackFrame;
+
+        static js::HashNumber hash(const Lookup& lookup) {
+            return lookup.identifier();
+        }
+
+        static bool match(const StackFrame& key, const Lookup& lookup) {
+            return key == lookup;
+        }
+
+        static void rekey(StackFrame& k, const StackFrame& newKey) {
+            k = newKey;
+        }
+    };
+};
+
+
+
+template<>
+class ConcreteStackFrame<void> : public BaseStackFrame {
+    explicit ConcreteStackFrame(void* ptr) : BaseStackFrame(ptr) { }
+
+  public:
+    static void construct(void* storage, void*) { new (storage) ConcreteStackFrame(nullptr); }
+
+    uintptr_t identifier() const override { return 0; }
+    void trace(JSTracer* trc) override { }
+    bool constructSavedFrameStack(JSContext* cx, MutableHandleObject out) const override {
+        out.set(nullptr);
+        return true;
+    }
+
+    uint32_t line() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+    uint32_t column() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+    AtomOrTwoByteChars source() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+    AtomOrTwoByteChars functionDisplayName() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+    StackFrame parent() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+    bool isSystem() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+    bool isSelfHosted() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+};
+
+
+
 
 
 
@@ -236,6 +507,16 @@ class Base {
     
     
     virtual JSCompartment* compartment() const { return nullptr; }
+
+    
+    virtual bool hasAllocationStack() const { return false; }
+
+    
+    
+    virtual StackFrame allocationStack() const {
+        MOZ_CRASH("Concrete classes that have an allocation stack must override both "
+                  "hasAllocationStack and allocationStack.");
+    }
 
     
     
@@ -400,6 +681,11 @@ class Node {
         return base()->edges(cx, wantNames);
     }
 
+    bool hasAllocationStack() const { return base()->hasAllocationStack(); }
+    StackFrame allocationStack() const {
+        return base()->allocationStack();
+    }
+
     typedef Base::Id Id;
     Id identifier() const { return base()->identifier(); }
 
@@ -417,6 +703,8 @@ class Node {
         static void rekey(Node& k, const Node& newKey) { k = newKey; }
     };
 };
+
+
 
 
 
@@ -548,6 +836,7 @@ class PreComputedEdgeRange : public EdgeRange {
         settle();
     }
 };
+
 
 
 
@@ -711,6 +1000,7 @@ namespace js {
 
 
 template<> struct DefaultHasher<JS::ubi::Node> : JS::ubi::Node::HashPolicy { };
+template<> struct DefaultHasher<JS::ubi::StackFrame> : JS::ubi::StackFrame::HashPolicy { };
 
 } 
 
