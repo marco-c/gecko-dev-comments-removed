@@ -74,24 +74,15 @@ class HomeConfigPrefsBackend implements HomeConfigBackend {
                                                   EnumSet.of(PanelConfig.Flags.DEFAULT_PANEL)));
 
         panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.BOOKMARKS));
-        panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.READING_LIST));
-
-        final PanelConfig historyEntry = createBuiltinPanelConfig(mContext, PanelType.HISTORY);
-        final PanelConfig recentTabsEntry = createBuiltinPanelConfig(mContext, PanelType.RECENT_TABS);
+        panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.HISTORY));
 
         
-        final PanelConfig remoteTabsEntry;
         if (RestrictedProfiles.isAllowed(mContext, Restriction.DISALLOW_MODIFY_ACCOUNTS)) {
-            remoteTabsEntry = createBuiltinPanelConfig(mContext, PanelType.REMOTE_TABS);
-        } else {
-            remoteTabsEntry = null;
+            panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.REMOTE_TABS));
         }
 
-        panelConfigs.add(historyEntry);
-        panelConfigs.add(recentTabsEntry);
-        if (remoteTabsEntry != null) {
-            panelConfigs.add(remoteTabsEntry);
-        }
+        panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.RECENT_TABS));
+        panelConfigs.add(createBuiltinPanelConfig(mContext, PanelType.READING_LIST));
 
         return new State(panelConfigs, true);
     }
