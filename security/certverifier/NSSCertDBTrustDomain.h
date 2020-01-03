@@ -70,6 +70,7 @@ public:
                        unsigned int minRSABits,
                        ValidityCheckingMode validityCheckingMode,
                        SignatureDigestOption,
+           PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
            const char* hostname = nullptr,
        ScopedCERTCertList* builtChain = nullptr);
 
@@ -154,6 +155,7 @@ private:
   const unsigned int mMinRSABits;
   ValidityCheckingMode mValidityCheckingMode;
   SignatureDigestOption mSignatureDigestOption;
+  PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname; 
   ScopedCERTCertList* mBuiltChain; 
   nsCOMPtr<nsICertBlocklist> mCertBlocklist;

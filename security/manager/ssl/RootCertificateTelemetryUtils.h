@@ -12,6 +12,15 @@
 
 namespace mozilla { namespace psm {
 
+
+
+
+#define ROOT_CERTIFICATE_UNKNOWN  0
+#define ROOT_CERTIFICATE_HASH_FAILURE -1
+
+int32_t
+RootCABinNumber(const SECItem* cert);
+
 void
 AccumulateTelemetryForRootCA(mozilla::Telemetry::ID probe, const CERTCertificate* cert);
 

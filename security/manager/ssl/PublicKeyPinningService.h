@@ -6,6 +6,7 @@
 #define PublicKeyPinningService_h
 
 #include "cert.h"
+#include "CertVerifier.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "pkix/Time.h"
@@ -31,7 +32,8 @@ public:
                                     const char* hostname,
                                     mozilla::pkix::Time time,
                                     bool enforceTestMode,
-                             bool& chainHasValidPins);
+                             bool& chainHasValidPins,
+                    PinningTelemetryInfo* pinningTelemetryInfo);
   
 
 

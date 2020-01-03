@@ -11,13 +11,7 @@
 #include "ScopedNSSTypes.h"
 #include "mozilla/ArrayUtils.h"
 
-
-
-
-#define UNKNOWN_ROOT  0
-#define HASH_FAILURE -1
-
-namespace mozilla { namespace psm { 
+namespace mozilla { namespace psm {
 
 PRLogModuleInfo* gPublicKeyPinningTelemetryLog =
   PR_NewLogModule("PublicKeyPinningTelemetryService");
@@ -54,7 +48,7 @@ RootCABinNumber(const SECItem* cert)
   
   nsresult rv = digest.DigestBuf(SEC_OID_SHA256, cert->data, cert->len);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return HASH_FAILURE;
+    return ROOT_CERTIFICATE_HASH_FAILURE;
   }
 
   
@@ -76,7 +70,7 @@ RootCABinNumber(const SECItem* cert)
   }
 
   
-  return UNKNOWN_ROOT;
+  return ROOT_CERTIFICATE_UNKNOWN;
 }
 
 
@@ -88,7 +82,7 @@ AccumulateTelemetryForRootCA(mozilla::Telemetry::ID probe,
 {
   int32_t binId = RootCABinNumber(&cert->derCert);
 
-  if (binId != HASH_FAILURE) {
+  if (binId != ROOT_CERTIFICATE_HASH_FAILURE) {
     Accumulate(probe, binId);
   }
 }

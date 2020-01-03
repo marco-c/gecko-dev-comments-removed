@@ -7,6 +7,7 @@
 #ifndef mozilla_psm__CertVerifier_h
 #define mozilla_psm__CertVerifier_h
 
+#include "mozilla/Telemetry.h"
 #include "pkix/pkixtypes.h"
 #include "OCSPCache.h"
 #include "ScopedNSSTypes.h"
@@ -29,6 +30,20 @@ enum class SignatureDigestStatus {
   WeakCACert = 3,
   WeakCAAndEE = 4,
   AlreadyBad = 5,
+};
+
+class PinningTelemetryInfo
+{
+public:
+  
+  bool accumulateResult;
+  Telemetry::ID certPinningResultHistogram;
+  int32_t certPinningResultBucket;
+  
+  bool accumulateForRoot;
+  int32_t rootBucket;
+
+  void Reset() { accumulateForRoot = false; accumulateResult = false; }
 };
 
 class CertVerifier
@@ -62,7 +77,8 @@ public:
        SECOidTag* evOidPolicy = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
-       SignatureDigestStatus* sigDigestStatus = nullptr);
+       SignatureDigestStatus* sigDigestStatus = nullptr,
+       PinningTelemetryInfo* pinningTelemetryInfo = nullptr);
 
   SECStatus VerifySSLServerCert(
                     CERTCertificate* peerCert,
@@ -76,7 +92,8 @@ public:
     SECOidTag* evOidPolicy = nullptr,
     OCSPStaplingStatus* ocspStaplingStatus = nullptr,
     KeySizeStatus* keySizeStatus = nullptr,
-    SignatureDigestStatus* sigDigestStatus = nullptr);
+    SignatureDigestStatus* sigDigestStatus = nullptr,
+    PinningTelemetryInfo* pinningTelemetryInfo = nullptr);
 
   enum PinningMode {
     pinningDisabled = 0,
