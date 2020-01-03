@@ -54,5 +54,16 @@ add_task(function* test_purpose() {
   check_submission("&channel=sb", "", null,        "searchbar");
   check_submission("&channel=sb", "", "text/html", "searchbar");
 
+  
+  base = "http://www.google.com/search?q=foo";
+  check_submission("&channel=sb", "foo", "text/html", "system");
+  check_submission("&channel=sb", "foo", "text/html", "searchbar");
+  
+  [engine] = yield addTestEngines([
+    { name: "engine-system-purpose", xmlFileName: "engine-system-purpose.xml" }
+  ]);
+  
+  check_submission("&channel=sys", "foo", "text/html", "system");
+
   do_test_finished();
 });

@@ -1324,6 +1324,10 @@ EngineURL.prototype = {
     var purpose = aPurpose || "";
 
     
+    if (purpose == "system" && !this.params.some(p => p.purpose == "system"))
+      purpose = "searchbar";
+
+    
     
     var dataString = "";
     for (var i = 0; i < this.params.length; ++i) {
