@@ -13,6 +13,7 @@
 #include "mozilla/TimeStamp.h" 
 #include "mozilla/dom/AnimationBinding.h" 
 #include "mozilla/dom/AnimationTimeline.h" 
+#include "mozilla/DOMEventTargetHelper.h" 
 #include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/dom/Promise.h" 
 #include "nsCSSProperty.h" 
@@ -47,15 +48,14 @@ class CSSAnimation;
 class CSSTransition;
 
 class Animation
-  : public nsISupports
-  , public nsWrapperCache
+  : public DOMEventTargetHelper
 {
 protected:
   virtual ~Animation() {}
 
 public:
   explicit Animation(nsIGlobalObject* aGlobal)
-    : mGlobal(aGlobal)
+    : DOMEventTargetHelper(aGlobal)
     , mPlaybackRate(1.0)
     , mPendingState(PendingState::NotPending)
     , mSequenceNum(kUnsequenced)
@@ -66,8 +66,9 @@ public:
   {
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Animation)
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Animation,
+                                           DOMEventTargetHelper)
 
   AnimationTimeline* GetParentObject() const { return mTimeline; }
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -354,7 +355,6 @@ protected:
   virtual css::CommonAnimationManager* GetAnimationManager() const = 0;
   AnimationCollection* GetCollection() const;
 
-  nsCOMPtr<nsIGlobalObject> mGlobal;
   nsRefPtr<AnimationTimeline> mTimeline;
   nsRefPtr<KeyframeEffectReadOnly> mEffect;
   
