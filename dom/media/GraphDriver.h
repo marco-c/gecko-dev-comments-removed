@@ -156,7 +156,6 @@ public:
   void SetGraphTime(GraphDriver* aPreviousDriver,
                     GraphTime aLastSwitchNextIterationStart,
                     GraphTime aLastSwitchNextIterationEnd,
-                    GraphTime aLastSwitchNextStateComputedTime,
                     GraphTime aLastSwitchStateComputedTime);
 
   
@@ -197,7 +196,6 @@ protected:
   GraphTime mIterationEnd;
   
   GraphTime mStateComputedTime;
-  GraphTime mNextStateComputedTime;
   
   
   MediaStreamGraphImpl* mGraphImpl;

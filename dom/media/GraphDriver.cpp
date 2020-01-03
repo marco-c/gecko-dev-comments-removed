@@ -46,7 +46,6 @@ GraphDriver::GraphDriver(MediaStreamGraphImpl* aGraphImpl)
   : mIterationStart(0),
     mIterationEnd(0),
     mStateComputedTime(0),
-    mNextStateComputedTime(0),
     mGraphImpl(aGraphImpl),
     mWaitState(WAITSTATE_RUNNING),
     mCurrentTimeStamp(TimeStamp::Now()),
@@ -57,8 +56,7 @@ GraphDriver::GraphDriver(MediaStreamGraphImpl* aGraphImpl)
 void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
                                GraphTime aLastSwitchNextIterationStart,
                                GraphTime aLastSwitchNextIterationEnd,
-                               GraphTime aLastSwitchStateComputedTime,
-                               GraphTime aLastSwitchNextStateComputedTime)
+                               GraphTime aLastSwitchStateComputedTime)
 {
   
   
@@ -67,7 +65,6 @@ void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
   mIterationStart = aLastSwitchNextIterationStart;
   mIterationEnd = aLastSwitchNextIterationEnd;
   mStateComputedTime = aLastSwitchStateComputedTime;
-  mNextStateComputedTime = aLastSwitchNextStateComputedTime;
 
   STREAM_LOG(LogLevel::Debug, ("Setting previous driver: %p (%s)", aPreviousDriver, aPreviousDriver->AsAudioCallbackDriver() ? "AudioCallbackDriver" : "SystemClockDriver"));
   MOZ_ASSERT(!mPreviousDriver);
@@ -242,7 +239,7 @@ ThreadedDriver::Revive()
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
   if (mNextDriver) {
     mNextDriver->SetGraphTime(this, mIterationStart, mIterationEnd,
-                               mStateComputedTime, mNextStateComputedTime);
+                              mStateComputedTime);
     mGraphImpl->SetCurrentDriver(mNextDriver);
     mNextDriver->Start();
   } else {
@@ -295,26 +292,25 @@ ThreadedDriver::RunThread()
       STREAM_LOG(LogLevel::Debug, ("Time did not advance"));
     }
 
-    MOZ_ASSERT(mStateComputedTime == mNextStateComputedTime);
-    mNextStateComputedTime =
+    GraphTime nextStateComputedTime =
       mGraphImpl->RoundUpToNextAudioBlock(
         mIterationEnd + mGraphImpl->MillisecondsToMediaTime(AUDIO_TARGET_MS));
     STREAM_LOG(LogLevel::Debug,
                ("interval[%ld; %ld] state[%ld; %ld]",
                (long)mIterationStart, (long)mIterationEnd,
-               (long)mStateComputedTime, (long)mNextStateComputedTime));
+               (long)mStateComputedTime, (long)nextStateComputedTime));
 
     mGraphImpl->mFlushSourcesNow = mGraphImpl->mFlushSourcesOnNextIteration;
     mGraphImpl->mFlushSourcesOnNextIteration = false;
     stillProcessing = mGraphImpl->OneIteration(mIterationStart,
                                                mIterationEnd,
                                                StateComputedTime(),
-                                               mNextStateComputedTime);
+                                               nextStateComputedTime);
 
     if (mNextDriver && stillProcessing) {
       STREAM_LOG(LogLevel::Debug, ("Switching to AudioCallbackDriver"));
       mNextDriver->SetGraphTime(this, mIterationStart, mIterationEnd,
-                                 mStateComputedTime, mNextStateComputedTime);
+                                mStateComputedTime);
       mGraphImpl->SetCurrentDriver(mNextDriver);
       mNextDriver->Start();
       return;
@@ -578,7 +574,7 @@ AudioCallbackDriver::Init()
     
     mNextDriver = new SystemClockDriver(GraphImpl());
     mNextDriver->SetGraphTime(this, mIterationStart, mIterationEnd,
-                               mStateComputedTime, mNextStateComputedTime);
+                              mStateComputedTime);
     mGraphImpl->SetCurrentDriver(mNextDriver);
     DebugOnly<bool> found = mGraphImpl->RemoveMixerCallback(this);
     NS_WARN_IF_FALSE(!found, "Mixer callback not added when switching?");
@@ -672,7 +668,7 @@ AudioCallbackDriver::Revive()
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
   if (mNextDriver) {
     mNextDriver->SetGraphTime(this, mIterationStart, mIterationEnd,
-                              mStateComputedTime, mNextStateComputedTime);
+                              mStateComputedTime);
     mGraphImpl->SetCurrentDriver(mNextDriver);
     mNextDriver->Start();
   } else {
@@ -822,12 +818,10 @@ AudioCallbackDriver::DataCallback(AudioDataValue* aBuffer, long aFrames)
   
   if (mBuffer.Available()) {
 
-    MOZ_ASSERT(mStateComputedTime == mNextStateComputedTime);
-
     
     
     
-    mNextStateComputedTime =
+    GraphTime nextStateComputedTime =
       mGraphImpl->RoundUpToNextAudioBlock(mStateComputedTime + mBuffer.Available());
 
     mIterationStart = mIterationEnd;
@@ -845,9 +839,9 @@ AudioCallbackDriver::DataCallback(AudioDataValue* aBuffer, long aFrames)
 
     STREAM_LOG(LogLevel::Debug, ("interval[%ld; %ld] state[%ld; %ld] (frames: %ld) (durationMS: %u) (duration ticks: %ld)\n",
                               (long)mIterationStart, (long)mIterationEnd,
-                              (long)mStateComputedTime, (long)mNextStateComputedTime,
+                              (long)mStateComputedTime, (long)nextStateComputedTime,
                               (long)aFrames, (uint32_t)durationMS,
-                              (long)(mNextStateComputedTime - mStateComputedTime)));
+                              (long)(nextStateComputedTime - mStateComputedTime)));
 
     mCurrentTimeStamp = TimeStamp::Now();
 
@@ -859,7 +853,7 @@ AudioCallbackDriver::DataCallback(AudioDataValue* aBuffer, long aFrames)
     stillProcessing = mGraphImpl->OneIteration(mIterationStart,
                                                mIterationEnd,
                                                mStateComputedTime,
-                                               mNextStateComputedTime);
+                                               nextStateComputedTime);
   } else {
     NS_WARNING("DataCallback buffer filled entirely from scratch buffer, skipping iteration.");
     stillProcessing = true;
@@ -878,7 +872,7 @@ AudioCallbackDriver::DataCallback(AudioDataValue* aBuffer, long aFrames)
     }
     STREAM_LOG(LogLevel::Debug, ("Switching to system driver."));
     mNextDriver->SetGraphTime(this, mIterationStart, mIterationEnd,
-                               mStateComputedTime, mNextStateComputedTime);
+                              mStateComputedTime);
     mGraphImpl->SetCurrentDriver(mNextDriver);
     mNextDriver->Start();
     
@@ -986,7 +980,7 @@ AudioCallbackDriver::DeviceChangedCallback() {
   mGraphImpl->mFlushSourcesOnNextIteration = true;
   mNextDriver = new SystemClockDriver(GraphImpl());
   mNextDriver->SetGraphTime(this, mIterationStart, mIterationEnd,
-                            mStateComputedTime, mNextStateComputedTime);
+                            mStateComputedTime);
   mGraphImpl->SetCurrentDriver(mNextDriver);
   mNextDriver->Start();
 #endif
