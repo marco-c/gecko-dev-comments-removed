@@ -308,14 +308,10 @@ MediaSource::EndOfStream(const Optional<MediaSourceEndOfStreamError>& aError, Er
   }
   switch (aError.Value()) {
   case MediaSourceEndOfStreamError::Network:
-    
-    
-    
+    mDecoder->NetworkError();
     break;
   case MediaSourceEndOfStreamError::Decode:
-    
-    
-    
+    mDecoder->DecodeError();
     break;
   default:
     aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
