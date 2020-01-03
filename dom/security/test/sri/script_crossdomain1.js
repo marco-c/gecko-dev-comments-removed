@@ -1,0 +1,4 @@
+
+
+
+window.hasCORSLoaded = true;
