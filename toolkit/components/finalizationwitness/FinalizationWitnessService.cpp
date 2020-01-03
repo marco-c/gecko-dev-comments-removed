@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "FinalizationWitnessService.h"
 
@@ -17,20 +17,20 @@
 #include "nsThreadUtils.h"
 
 
-// Implementation of nsIFinalizationWitnessService
+
 
 namespace mozilla {
 
 namespace {
 
-/**
- * An event meant to be dispatched to the main thread upon finalization
- * of a FinalizationWitness, unless method |forget()| has been called.
- *
- * Held as private data by each instance of FinalizationWitness.
- * Important note: we maintain the invariant that these private data
- * slots are already addrefed.
- */
+
+
+
+
+
+
+
+
 class FinalizationEvent MOZ_FINAL: public nsRunnable
 {
 public:
@@ -44,8 +44,8 @@ public:
     nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
     if (!observerService) {
-      // This is either too early or, more likely, too late for notifications.
-      // Bail out.
+      
+      
       return NS_ERROR_NOT_AVAILABLE;
     }
     (void)observerService->
@@ -53,18 +53,18 @@ public:
     return NS_OK;
   }
 private:
-  /**
-   * The topic on which to broadcast the notification of finalization.
-   *
-   * Deallocated on the main thread.
-   */
+  
+
+
+
+
   const nsCString mTopic;
 
-  /**
-   * The result of converting the exception to a string.
-   *
-   * Deallocated on the main thread.
-   */
+  
+
+
+
+
   const nsString mValue;
 };
 
@@ -73,16 +73,16 @@ enum {
   WITNESS_INSTANCES_SLOTS
 };
 
-/**
- * Extract the FinalizationEvent from an instance of FinalizationWitness
- * and clear the slot containing the FinalizationEvent.
- */
+
+
+
+
 already_AddRefed<FinalizationEvent>
 ExtractFinalizationEvent(JSObject *objSelf)
 {
   JS::Value slotEvent = JS_GetReservedSlot(objSelf, WITNESS_SLOT_EVENT);
   if (slotEvent.isUndefined()) {
-    // Forget() has been called
+    
     return nullptr;
   }
 
@@ -91,38 +91,38 @@ ExtractFinalizationEvent(JSObject *objSelf)
   return dont_AddRef(static_cast<FinalizationEvent*>(slotEvent.toPrivate()));
 }
 
-/**
- * Finalizer for instances of FinalizationWitness.
- *
- * Unless method Forget() has been called, the finalizer displays an error
- * message.
- */
+
+
+
+
+
+
 void Finalize(JSFreeOp *fop, JSObject *objSelf)
 {
   nsRefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
   if (event == nullptr) {
-    // Forget() has been called
+    
     return;
   }
 
-  // Notify observers. Since we are executed during garbage-collection,
-  // we need to dispatch the notification to the main thread.
+  
+  
   (void)NS_DispatchToMainThread(event);
-  // We may fail at dispatching to the main thread if we arrive too late
-  // during shutdown. In that case, there is not much we can do.
+  
+  
 }
 
 static const JSClass sWitnessClass = {
   "FinalizationWitness",
   JSCLASS_HAS_RESERVED_SLOTS(WITNESS_INSTANCES_SLOTS),
-  nullptr /* addProperty */,
-  nullptr /* delProperty */,
-  nullptr /* getProperty */,
-  nullptr /* setProperty */,
-  nullptr /* enumerate */,
-  nullptr /* resolve */,
-  nullptr /* convert */,
-  Finalize /* finalize */
+  nullptr ,
+  nullptr ,
+  JS_PropertyStub ,
+  JS_StrictPropertyStub ,
+  nullptr ,
+  nullptr ,
+  nullptr ,
+  Finalize 
 };
 
 bool IsWitness(JS::Handle<JS::Value> v)
@@ -131,14 +131,14 @@ bool IsWitness(JS::Handle<JS::Value> v)
 }
 
 
-/**
- * JS method |forget()|
- *
- * === JS documentation
- *
- *  Neutralize the witness. Once this method is called, the witness will
- *  never report any error.
- */
+
+
+
+
+
+
+
+
 bool ForgetImpl(JSContext* cx, JS::CallArgs args)
 {
   if (args.length() != 0) {
@@ -173,18 +173,18 @@ static const JSFunctionSpec sWitnessClassFunctions[] = {
 
 NS_IMPL_ISUPPORTS(FinalizationWitnessService, nsIFinalizationWitnessService)
 
-/**
- * Create a new Finalization Witness.
- *
- * A finalization witness is an object whose sole role is to notify
- * observers when it is gc-ed. Once the witness is created, call its
- * method |forget()| to prevent the observers from being notified.
- *
- * @param aTopic The notification topic.
- * @param aValue The notification value. Converted to a string.
- *
- * @constructor
- */
+
+
+
+
+
+
+
+
+
+
+
+
 NS_IMETHODIMP
 FinalizationWitnessService::Make(const char* aTopic,
                                  const char16_t* aValue,
@@ -202,7 +202,7 @@ FinalizationWitnessService::Make(const char* aTopic,
 
   nsRefPtr<FinalizationEvent> event = new FinalizationEvent(aTopic, aValue);
 
-  // Transfer ownership of the addrefed |event| to |objResult|.
+  
   JS_SetReservedSlot(objResult, WITNESS_SLOT_EVENT,
                      JS::PrivateValue(event.forget().take()));
 
@@ -210,4 +210,4 @@ FinalizationWitnessService::Make(const char* aTopic,
   return NS_OK;
 }
 
-} // namespace mozilla
+} 
