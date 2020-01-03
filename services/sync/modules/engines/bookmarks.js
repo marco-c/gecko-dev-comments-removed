@@ -240,6 +240,32 @@ BookmarksEngine.prototype = {
     }
   },
 
+  
+  
+  
+  
+  
+  _getStringUrlForId(id) {
+    let url;
+    try {
+      let stmt = this._store._getStmt(`
+            SELECT h.url
+            FROM moz_places h
+            JOIN moz_bookmarks b ON h.id = b.fk
+            WHERE b.id = :id`);
+      stmt.params.id = id;
+      let rows = Async.querySpinningly(stmt, ["url"]);
+      url = rows.length == 0 ? "<not found>" : rows[0].url;
+    } catch (ex) {
+      if (ex instanceof Ci.mozIStorageError) {
+        url = `<failed: Storage error: ${ex.message} (${ex.result})>`;
+      } else {
+        url = `<failed: ${ex.toString()}>`;
+      }
+    }
+    return url;
+  },
+
   _guidMapFailed: false,
   _buildGUIDMap: function _buildGUIDMap() {
     let guidMap = {};
@@ -277,7 +303,9 @@ BookmarksEngine.prototype = {
               uri = PlacesUtils.bookmarks.getBookmarkURI(id);
             } catch (ex) {
               
-              this._log.warn("Deleting bookmark with invalid URI. id: " + id);
+              
+              let url = this._getStringUrlForId(id);
+              this._log.warn(`Deleting bookmark with invalid URI. url="${url}", id=${id}`);
               try {
                 PlacesUtils.bookmarks.removeItem(id);
               } catch (ex) {
