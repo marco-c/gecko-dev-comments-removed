@@ -20,6 +20,7 @@ class Image;
 class PlanarYCbCrImage;
 class GrallocImage;
 class SurfaceTextureImage;
+class MacIOSurfaceImage;
 class EGLImageImage;
 } 
 
@@ -100,7 +101,8 @@ class GLBlitHelper final
         ConvertGralloc,
         ConvertPlanarYCbCr,
         ConvertSurfaceTexture,
-        ConvertEGLImage
+        ConvertEGLImage,
+        ConvertMacIOSurfaceImage
     };
     
     GLContext* mGL;
@@ -119,8 +121,10 @@ class GLBlitHelper final
     
     GLuint mTexExternalBlit_FragShader;
     GLuint mTexYUVPlanarBlit_FragShader;
+    GLuint mTexNV12PlanarBlit_FragShader;
     GLuint mTexExternalBlit_Program;
     GLuint mTexYUVPlanarBlit_Program;
+    GLuint mTexNV12PlanarBlit_Program;
     GLuint mFBO;
     GLuint mSrcTexY;
     GLuint mSrcTexCb;
@@ -152,6 +156,9 @@ class GLBlitHelper final
     
     bool BlitSurfaceTextureImage(layers::SurfaceTextureImage* stImage);
     bool BlitEGLImageImage(layers::EGLImageImage* eglImage);
+#endif
+#ifdef XP_MACOSX
+    bool BlitMacIOSurfaceImage(layers::MacIOSurfaceImage* ioImage);
 #endif
 
     explicit GLBlitHelper(GLContext* gl);
