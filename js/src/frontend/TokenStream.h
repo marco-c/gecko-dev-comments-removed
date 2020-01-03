@@ -117,6 +117,29 @@ struct Token
         
         TemplateTail,
     };
+    enum ModifierException
+    {
+        NoException,
+
+        
+        
+        
+        NoneIsOperand,
+
+        
+        
+        
+        
+        NoneIsOperandYieldEOL,
+
+        
+        
+        OperandIsNone,
+
+        
+        
+        NoneIsKeywordIsName,
+    };
     friend class TokenStream;
 
   public:
@@ -136,7 +159,7 @@ struct Token
     } u;
 #ifdef DEBUG
     Modifier modifier;                  
-    uint8_t modifierExceptions;         
+    ModifierException modifierException; 
 #endif
 
     
@@ -411,37 +434,47 @@ class MOZ_STACK_CLASS TokenStream
     static MOZ_CONSTEXPR_VAR Modifier KeywordIsName = Token::KeywordIsName;
     static MOZ_CONSTEXPR_VAR Modifier TemplateTail = Token::TemplateTail;
 
-    enum ModifierException
-    {
-        NoException = 0x00,
-
-        
-        
-        NoneIsOperand = 0x01,
-
-        
-        
-        OperandIsNone = 0x02,
-
-        
-        
-        NoneIsKeywordIsName = 0x04,
-    };
+    typedef Token::ModifierException ModifierException;
+    static MOZ_CONSTEXPR_VAR ModifierException NoException = Token::NoException;
+    static MOZ_CONSTEXPR_VAR ModifierException NoneIsOperand = Token::NoneIsOperand;
+    static MOZ_CONSTEXPR_VAR ModifierException NoneIsOperandYieldEOL = Token::NoneIsOperandYieldEOL;
+    static MOZ_CONSTEXPR_VAR ModifierException OperandIsNone = Token::OperandIsNone;
+    static MOZ_CONSTEXPR_VAR ModifierException NoneIsKeywordIsName = Token::NoneIsKeywordIsName;
 
     void addModifierException(ModifierException modifierException) {
 #ifdef DEBUG
         const Token& next = nextToken();
+        if (next.modifierException == NoneIsOperand ||
+            next.modifierException == NoneIsOperandYieldEOL)
+        {
+            
+            
+            MOZ_ASSERT(modifierException == OperandIsNone);
+            if (next.modifierException == NoneIsOperand)
+                MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
+                           "next token requires contextual specifier to be parsed unambiguously");
+            else
+                MOZ_ASSERT(next.type != TOK_DIV,
+                           "next token requires contextual specifier to be parsed unambiguously");
+
+            
+            return;
+        }
+
+        MOZ_ASSERT(next.modifierException == NoException);
         switch (modifierException) {
           case NoneIsOperand:
             MOZ_ASSERT(next.modifier == Operand);
             MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
                        "next token requires contextual specifier to be parsed unambiguously");
             break;
+          case NoneIsOperandYieldEOL:
+            MOZ_ASSERT(next.modifier == Operand);
+            MOZ_ASSERT(next.type != TOK_DIV,
+                       "next token requires contextual specifier to be parsed unambiguously");
+            break;
           case OperandIsNone:
-            
-            
-            MOZ_ASSERT(next.modifier == None ||
-                       ((next.modifierExceptions & NoneIsOperand) && next.modifier == Operand));
+            MOZ_ASSERT(next.modifier == None);
             MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
                        "next token requires contextual specifier to be parsed unambiguously");
             break;
@@ -452,7 +485,7 @@ class MOZ_STACK_CLASS TokenStream
           default:
             MOZ_CRASH("unexpected modifier exception");
         }
-        tokens[(cursor + 1) & ntokensMask].modifierExceptions |= modifierException;
+        tokens[(cursor + 1) & ntokensMask].modifierException = modifierException;
 #endif
     }
 
@@ -473,19 +506,21 @@ class MOZ_STACK_CLASS TokenStream
         if (modifier == lookaheadToken.modifier)
             return;
 
-        if (lookaheadToken.modifierExceptions & OperandIsNone) {
+        if (lookaheadToken.modifierException == OperandIsNone) {
             
             if (modifier == Operand && lookaheadToken.modifier == None)
                 return;
         }
 
-        if (lookaheadToken.modifierExceptions & NoneIsOperand) {
+        if (lookaheadToken.modifierException == NoneIsOperand ||
+            lookaheadToken.modifierException == NoneIsOperandYieldEOL)
+        {
             
             if (modifier == None && lookaheadToken.modifier == Operand)
                 return;
         }
 
-        if (lookaheadToken.modifierExceptions & NoneIsKeywordIsName) {
+        if (lookaheadToken.modifierException == NoneIsKeywordIsName) {
             
             if (modifier == None && lookaheadToken.modifier == KeywordIsName)
                 return;
