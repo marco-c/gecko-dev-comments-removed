@@ -3293,7 +3293,7 @@ ICGetElemNativeCompiler<T>::emitCallScripted(MacroAssembler& masm, Register objR
     
     {
         Register callScratch = regs.takeAny();
-        EmitCreateStubFrameDescriptor(masm, callScratch);
+        EmitBaselineCreateStubFrameDescriptor(masm, callScratch);
         masm.Push(Imm32(0));  
         masm.Push(callee);
         masm.Push(callScratch);
@@ -7215,7 +7215,7 @@ ICGetProp_CallScripted::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     masm.Push(R0);
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
     masm.Push(Imm32(0));  
     masm.Push(callee);
     masm.Push(scratch);
@@ -8747,7 +8747,7 @@ ICSetProp_CallScripted::Compiler::generateStubCode(MacroAssembler& masm)
     
     masm.PushValue(Address(BaselineFrameReg, STUB_FRAME_SIZE));
     masm.Push(R0);
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
     masm.Push(Imm32(1));  
     masm.Push(callee);
     masm.Push(scratch);
@@ -10171,7 +10171,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
     masm.popValue(val);
     callee = masm.extractObject(val, ExtractTemp0);
 
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
 
     
     
@@ -10474,7 +10474,7 @@ ICCall_Native::Compiler::generateStubCode(MacroAssembler& masm)
     masm.push(argcReg);
 
     Register scratch = regs.takeAny();
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
     masm.push(scratch);
     masm.push(ICTailCallReg);
     masm.enterFakeExitFrame(NativeExitFrameLayout::Token());
@@ -10572,7 +10572,7 @@ ICCall_ClassHook::Compiler::generateStubCode(MacroAssembler& masm)
     
     masm.push(argcReg);
 
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
     masm.push(scratch);
     masm.push(ICTailCallReg);
     masm.enterFakeExitFrame(NativeExitFrameLayout::Token());
@@ -10659,7 +10659,7 @@ ICCall_ScriptedApplyArray::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     Register scratch = regs.takeAny();
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
 
     
     masm.extractObject(arrayVal, argcReg);
@@ -10760,7 +10760,7 @@ ICCall_ScriptedApplyArguments::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     Register scratch = regs.takeAny();
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
 
     masm.loadPtr(Address(BaselineFrameReg, 0), argcReg);
     masm.loadPtr(Address(argcReg, BaselineFrame::offsetOfNumActualArgs()), argcReg);
@@ -10893,7 +10893,7 @@ ICCall_ScriptedFunCall::Compiler::generateStubCode(MacroAssembler& masm)
     callee = masm.extractObject(val, ExtractTemp0);
 
     Register scratch = regs.takeAny();
-    EmitCreateStubFrameDescriptor(masm, scratch);
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch);
 
     
     

@@ -70,7 +70,7 @@ EmitChangeICReturnAddress(MacroAssembler& masm, Register reg)
 }
 
 inline void
-EmitTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
+EmitBaselineTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 {
     
     masm.movq(BaselineFrameReg, ScratchReg);
@@ -90,7 +90,13 @@ EmitTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 }
 
 inline void
-EmitCreateStubFrameDescriptor(MacroAssembler& masm, Register reg)
+EmitIonTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t stackSize)
+{
+    MOZ_CRASH("Not implemented yet.");
+}
+
+inline void
+EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm, Register reg)
 {
     
     
@@ -102,11 +108,17 @@ EmitCreateStubFrameDescriptor(MacroAssembler& masm, Register reg)
 }
 
 inline void
-EmitCallVM(JitCode* target, MacroAssembler& masm)
+EmitBaselineCallVM(JitCode* target, MacroAssembler& masm)
 {
-    EmitCreateStubFrameDescriptor(masm, ScratchReg);
+    EmitBaselineCreateStubFrameDescriptor(masm, ScratchReg);
     masm.push(ScratchReg);
     masm.call(target);
+}
+
+inline void
+EmitIonCallVM(JitCode* target, size_t stackSlots, MacroAssembler& masm)
+{
+    MOZ_CRASH("Not implemented yet.");
 }
 
 
@@ -114,7 +126,7 @@ static const uint32_t STUB_FRAME_SIZE = 4 * sizeof(void*);
 static const uint32_t STUB_FRAME_SAVED_STUB_OFFSET = sizeof(void*);
 
 inline void
-EmitEnterStubFrame(MacroAssembler& masm, Register)
+EmitBaselineEnterStubFrame(MacroAssembler& masm, Register)
 {
     EmitRestoreTailCallReg(masm);
 
@@ -140,7 +152,13 @@ EmitEnterStubFrame(MacroAssembler& masm, Register)
 }
 
 inline void
-EmitLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
+EmitIonEnterStubFrame(MacroAssembler& masm, Register scratch)
+{
+    MOZ_CRASH("Not implemented yet.");
+}
+
+inline void
+EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
 {
     
     
@@ -163,6 +181,12 @@ EmitLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     
     
     masm.storePtr(ICTailCallReg, Address(BaselineStackReg, 0));
+}
+
+inline void
+EmitIonLeaveStubFrame(MacroAssembler& masm)
+{
+    MOZ_CRASH("Not implemented yet.");
 }
 
 inline void
@@ -242,7 +266,7 @@ EmitCallTypeUpdateIC(MacroAssembler& masm, JitCode* code, uint32_t objectOffset)
     masm.j(Assembler::Equal, &success);
 
     
-    EmitEnterStubFrame(masm, R1.scratchReg());
+    EmitBaselineEnterStubFrame(masm, R1.scratchReg());
 
     masm.loadValue(Address(BaselineStackReg, STUB_FRAME_SIZE + objectOffset), R1);
 
@@ -254,8 +278,8 @@ EmitCallTypeUpdateIC(MacroAssembler& masm, JitCode* code, uint32_t objectOffset)
     masm.loadPtr(Address(BaselineFrameReg, 0), R0.scratchReg());
     masm.pushBaselineFramePtr(R0.scratchReg(), R0.scratchReg());
 
-    EmitCallVM(code, masm);
-    EmitLeaveStubFrame(masm);
+    EmitBaselineCallVM(code, masm);
+    EmitBaselineLeaveStubFrame(masm);
 
     
     masm.bind(&success);
