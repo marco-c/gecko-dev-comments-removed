@@ -37,6 +37,7 @@ class nsIWidget;
 
 namespace mozilla {
 class PRemoteSpellcheckEngineParent;
+class ProfileGatherer;
 
 namespace ipc {
 class OptionalURIParams;
@@ -856,6 +857,7 @@ private:
 
     virtual bool RecvGamepadListenerAdded() override;
     virtual bool RecvGamepadListenerRemoved() override;
+    virtual bool RecvProfile(const nsCString& aProfile) override;
 
     
     
@@ -931,6 +933,8 @@ private:
 #endif
 
     PProcessHangMonitorParent* mHangMonitorActor;
+    nsRefPtr<mozilla::ProfileGatherer> mGatherer;
+    nsCString mProfile;
 };
 
 } 

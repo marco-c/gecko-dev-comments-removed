@@ -15,9 +15,6 @@
 #include "js/TrackedOptimizationInfo.h"
 
 
-#include "ProfileJSONWriter.h"
-
-
 #include "ProfileEntry.h"
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
