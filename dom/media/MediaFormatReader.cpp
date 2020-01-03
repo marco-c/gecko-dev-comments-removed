@@ -154,10 +154,6 @@ MediaFormatReader::Shutdown()
 void
 MediaFormatReader::InitLayersBackendType()
 {
-  if (!IsVideoContentType(mDecoder->GetResource()->GetContentType())) {
-    
-    return;
-  }
   
   
   
