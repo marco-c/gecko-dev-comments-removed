@@ -127,24 +127,18 @@ public:
 
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
-  void ClearSelectors() {
-    mPendingRestyles.ClearSelectors();
-  }
-
 private:
   
-  void ComputeAndProcessStyleChange(nsIFrame*              aFrame,
-                                    nsChangeHint           aMinChange,
-                                    RestyleTracker&        aRestyleTracker,
-                                    nsRestyleHint          aRestyleHint,
-                                    const RestyleHintData& aRestyleHintData);
+  void ComputeAndProcessStyleChange(nsIFrame*       aFrame,
+                                    nsChangeHint    aMinChange,
+                                    RestyleTracker& aRestyleTracker,
+                                    nsRestyleHint   aRestyleHint);
   
-  void ComputeAndProcessStyleChange(nsStyleContext*        aNewContext,
-                                    Element*               aElement,
-                                    nsChangeHint           aMinChange,
-                                    RestyleTracker&        aRestyleTracker,
-                                    nsRestyleHint          aRestyleHint,
-                                    const RestyleHintData& aRestyleHintData);
+  void ComputeAndProcessStyleChange(nsStyleContext* aNewContext,
+                                    Element*        aElement,
+                                    nsChangeHint    aMinChange,
+                                    RestyleTracker& aRestyleTracker,
+                                    nsRestyleHint   aRestyleHint);
 
 public:
 
@@ -342,11 +336,9 @@ public:
 
 
 
-
   void PostRestyleEvent(Element* aElement,
                         nsRestyleHint aRestyleHint,
-                        nsChangeHint aMinChangeHint,
-                        const RestyleHintData* aRestyleHintData = nullptr);
+                        nsChangeHint aMinChangeHint);
 
   void PostRestyleEventForLazyConstruction()
   {
@@ -431,8 +423,7 @@ private:
                       nsIFrame*       aPrimaryFrame,
                       nsChangeHint    aMinHint,
                       RestyleTracker& aRestyleTracker,
-                      nsRestyleHint   aRestyleHint,
-                      const RestyleHintData& aRestyleHintData);
+                      nsRestyleHint   aRestyleHint);
 
   void StartRebuildAllStyleData(RestyleTracker& aRestyleTracker);
   void FinishRebuildAllStyleData();
@@ -523,7 +514,6 @@ public:
                   nsStyleChangeList* aChangeList,
                   nsChangeHint aHintsHandledByAncestors,
                   RestyleTracker& aRestyleTracker,
-                  nsTArray<nsCSSSelector*>& aSelectorsForDescendants,
                   TreeMatchContext& aTreeMatchContext,
                   nsTArray<nsIContent*>& aVisibleKidsOfHiddenElement,
                   nsTArray<ContextToClear>& aContextsToClear,
@@ -554,7 +544,6 @@ public:
                   nsStyleChangeList* aChangeList,
                   nsChangeHint aHintsHandledByAncestors,
                   RestyleTracker& aRestyleTracker,
-                  nsTArray<nsCSSSelector*>& aSelectorsForDescendants,
                   TreeMatchContext& aTreeMatchContext,
                   nsTArray<nsIContent*>& aVisibleKidsOfHiddenElement,
                   nsTArray<ContextToClear>& aContextsToClear,
@@ -588,9 +577,7 @@ public:
                                                nsStyleContext* aNewContext,
                                                nsChangeHint    aMinHint,
                                                RestyleTracker& aRestyleTracker,
-                                               nsRestyleHint   aRestyleHint,
-                                               const RestyleHintData&
-                                                 aRestyleHintData);
+                                               nsRestyleHint   aRestyleHint);
 
   
 
@@ -601,7 +588,6 @@ public:
                                     nsChangeHint       aMinChange,
                                     RestyleTracker&    aRestyleTracker,
                                     nsRestyleHint      aRestyleHint,
-                                    const RestyleHintData& aRestyleHintData,
                                     nsTArray<ContextToClear>& aContextsToClear,
                                     nsTArray<nsRefPtr<nsStyleContext>>&
                                       aSwappedStructOwners);
@@ -643,31 +629,6 @@ private:
 
 
   void RestyleChildren(nsRestyleHint aChildRestyleHint);
-
-  
-
-
-
-  bool SelectorMatchesForRestyle(Element* aElement);
-
-  
-
-
-
-
-
-
-  bool MustRestyleSelf(nsRestyleHint aRestyleHint, Element* aElement);
-
-  
-
-
-
-
-
-
-
-  bool CanReparentStyleContext(nsRestyleHint aRestyleHint);
 
   
 
@@ -729,9 +690,6 @@ private:
     eNotifyHidden
   };
 
-  void AddPendingRestylesForDescendantsMatchingSelectors(Element* aElement,
-                                                         Element* aRestyleRoot);
-
 #ifdef RESTYLE_LOGGING
   int32_t& LoggingDepth() { return mLoggingDepth; }
 #endif
@@ -759,7 +717,6 @@ private:
   nsChangeHint mParentFrameHintsNotHandledForDescendants;
   nsChangeHint mHintsNotHandledForDescendants;
   RestyleTracker& mRestyleTracker;
-  nsTArray<nsCSSSelector*>& mSelectorsForDescendants;
   TreeMatchContext& mTreeMatchContext;
   nsIFrame* mResolvedChild; 
   

@@ -784,38 +784,11 @@ RuleHash::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-struct SelectorPair
-{
-  SelectorPair(nsCSSSelector* aSelector, nsCSSSelector* aRightmostSelector)
-    : mSelector(aSelector), mRightmostSelector(aRightmostSelector)
-  {
-    MOZ_ASSERT(aSelector);
-    MOZ_ASSERT(mRightmostSelector);
-  }
-  SelectorPair(const SelectorPair& aOther)
-    : mSelector(aOther.mSelector)
-    , mRightmostSelector(aOther.mRightmostSelector) {}
-  nsCSSSelector* const mSelector;
-  nsCSSSelector* const mRightmostSelector;
-};
-
-
 struct AtomSelectorEntry : public PLDHashEntryHdr {
   nsIAtom *mAtom;
   
   
-  nsAutoTArray<SelectorPair, 2> mSelectors;
+  nsAutoTArray<nsCSSSelector*, 2> mSelectors;
 };
 
 static void
@@ -938,7 +911,7 @@ struct RuleCascadeData {
 
   
   
-  nsTArray<SelectorPair>* AttributeListFor(nsIAtom* aAttribute);
+  nsTArray<nsCSSSelector*>* AttributeListFor(nsIAtom* aAttribute);
 
   nsMediaQueryResultCacheKey mCacheKey;
   RuleCascadeData*  mNext; 
@@ -1002,7 +975,7 @@ RuleCascadeData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   return n;
 }
 
-nsTArray<SelectorPair>*
+nsTArray<nsCSSSelector*>*
 RuleCascadeData::AttributeListFor(nsIAtom* aAttribute)
 {
   AtomSelectorEntry *entry =
@@ -2320,63 +2293,6 @@ static bool SelectorMatches(Element* aElement,
 
 #undef STATE_CHECK
 
-#ifdef DEBUG
-static bool
-HasPseudoClassSelectorArgsWithCombinators(nsCSSSelector* aSelector)
-{
-  for (nsPseudoClassList* p = aSelector->mPseudoClassList; p; p = p->mNext) {
-    if (nsCSSPseudoClasses::HasSelectorListArg(p->mType)) {
-      for (nsCSSSelectorList* l = p->u.mSelectors; l; l = l->mNext) {
-        if (l->mSelectors->mNext) {
-          return true;
-        }
-      }
-    }
-  }
-  for (nsCSSSelector* n = aSelector->mNegations; n; n = n->mNegations) {
-    if (n->mNext) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif
-
- bool
-nsCSSRuleProcessor::RestrictedSelectorMatches(
-    Element* aElement,
-    nsCSSSelector* aSelector,
-    TreeMatchContext& aTreeMatchContext)
-{
-  MOZ_ASSERT(aSelector->IsRestrictedSelector(),
-             "aSelector must not have a pseudo-element");
-
-  NS_WARN_IF_FALSE(!HasPseudoClassSelectorArgsWithCombinators(aSelector),
-                   "processing eRestyle_SomeDescendants can be slow if "
-                   "pseudo-classes with selector arguments can now have "
-                   "combinators in them");
-
-  
-  
-
-  NodeMatchContext nodeContext(EventStates(),
-                               nsCSSRuleProcessor::IsLink(aElement));
-  if (nodeContext.mIsRelevantLink) {
-    aTreeMatchContext.SetHaveRelevantLink();
-  }
-  aTreeMatchContext.ResetForUnvisitedMatching();
-  bool matches = SelectorMatches(aElement, aSelector, nodeContext,
-                                 aTreeMatchContext, SelectorMatchesFlags::NONE);
-  if (nodeContext.mIsRelevantLink) {
-    aTreeMatchContext.ResetForVisitedMatching();
-    if (SelectorMatches(aElement, aSelector, nodeContext, aTreeMatchContext,
-                        SelectorMatchesFlags::NONE)) {
-      matches = true;
-    }
-  }
-  return matches;
-}
-
 
 
 
@@ -2781,81 +2697,16 @@ nsCSSRuleProcessor::HasDocumentStateDependentStyle(StateRuleProcessorData* aData
 }
 
 struct AttributeEnumData {
-  AttributeEnumData(AttributeRuleProcessorData *aData,
-                    RestyleHintData& aRestyleHintData)
-    : data(aData), change(nsRestyleHint(0)), hintData(aRestyleHintData) {}
+  explicit AttributeEnumData(AttributeRuleProcessorData *aData)
+    : data(aData), change(nsRestyleHint(0)) {}
 
   AttributeRuleProcessorData *data;
   nsRestyleHint change;
-  RestyleHintData& hintData;
 };
 
 
-static inline nsRestyleHint
-RestyleHintForSelectorWithAttributeChange(nsRestyleHint aCurrentHint,
-                                          nsCSSSelector* aSelector,
-                                          nsCSSSelector* aRightmostSelector)
-{
-  MOZ_ASSERT(aSelector);
-
-  char16_t oper = aSelector->mOperator;
-
-  if (oper == char16_t('+') || oper == char16_t('~')) {
-    return eRestyle_LaterSiblings;
-  }
-
-  if (oper == char16_t(':')) {
-    return eRestyle_Subtree;
-  }
-
-  if (oper != char16_t(0)) {
-    
-    
-
-    if (aCurrentHint & eRestyle_Subtree) {
-      
-      
-      return eRestyle_Subtree;
-    }
-
-    if (!aRightmostSelector) {
-      
-      
-      return eRestyle_Subtree;
-    }
-
-    MOZ_ASSERT(aSelector != aRightmostSelector,
-               "if aSelector == aRightmostSelector then we should have "
-               "no operator");
-
-    
-    if (!aRightmostSelector->IsRestrictedSelector()) {
-      return eRestyle_Subtree;
-    }
-
-    
-    
-    
-    
-    for (nsCSSSelector* sel = aRightmostSelector->mNext;
-         sel != aSelector;
-         sel = sel->mNext) {
-      MOZ_ASSERT(sel, "aSelector must be reachable from aRightmostSelector");
-      if (sel->PseudoType() != nsCSSPseudoElements::ePseudo_NotPseudoElement) {
-        return eRestyle_Subtree;
-      }
-    }
-
-    return eRestyle_SomeDescendants;
-  }
-
-  return eRestyle_Self;
-}
-
 static void
-AttributeEnumFunc(nsCSSSelector* aSelector,
-                  nsCSSSelector* aRightmostSelector,
-                  AttributeEnumData* aData)
+AttributeEnumFunc(nsCSSSelector* aSelector, AttributeEnumData* aData)
 {
   AttributeRuleProcessorData *data = aData->data;
 
@@ -2866,36 +2717,18 @@ AttributeEnumFunc(nsCSSSelector* aSelector,
     return;
   }
 
-  nsRestyleHint possibleChange =
-    RestyleHintForSelectorWithAttributeChange(aData->change,
-                                              aSelector, aRightmostSelector);
+  nsRestyleHint possibleChange = RestyleHintForOp(aSelector->mOperator);
 
   
   
   
-  
-  
-  
   NodeMatchContext nodeContext(EventStates(), false);
-  if (((possibleChange & (~(aData->change) | eRestyle_SomeDescendants))) &&
+  if ((possibleChange & ~(aData->change)) &&
       SelectorMatches(data->mElement, aSelector, nodeContext,
                       data->mTreeMatchContext, SelectorMatchesFlags::UNKNOWN) &&
       SelectorMatchesTree(data->mElement, aSelector->mNext,
                           data->mTreeMatchContext, false)) {
     aData->change = nsRestyleHint(aData->change | possibleChange);
-    if (possibleChange & eRestyle_SomeDescendants) {
-      aData->hintData.mSelectorsForDescendants.AppendElement(aRightmostSelector);
-    }
-  }
-}
-
-static MOZ_ALWAYS_INLINE void
-EnumerateSelectors(nsTArray<SelectorPair>& aSelectors, AttributeEnumData* aData)
-{
-  SelectorPair *iter = aSelectors.Elements(),
-               *end = iter + aSelectors.Length();
-  for (; iter != end; ++iter) {
-    AttributeEnumFunc(iter->mSelector, iter->mRightmostSelector, aData);
   }
 }
 
@@ -2905,19 +2738,17 @@ EnumerateSelectors(nsTArray<nsCSSSelector*>& aSelectors, AttributeEnumData* aDat
   nsCSSSelector **iter = aSelectors.Elements(),
                 **end = iter + aSelectors.Length();
   for (; iter != end; ++iter) {
-    AttributeEnumFunc(*iter, nullptr, aData);
+    AttributeEnumFunc(*iter, aData);
   }
 }
 
 nsRestyleHint
-nsCSSRuleProcessor::HasAttributeDependentStyle(
-    AttributeRuleProcessorData* aData,
-    RestyleHintData& aRestyleHintDataResult)
+nsCSSRuleProcessor::HasAttributeDependentStyle(AttributeRuleProcessorData* aData)
 {
   
   
 
-  AttributeEnumData data(aData, aRestyleHintDataResult);
+  AttributeEnumData data(aData);
 
   
   
@@ -3239,9 +3070,7 @@ AddSelector(RuleCascadeData* aCascade,
             
             nsCSSSelector* aSelectorInTopLevel,
             
-            nsCSSSelector* aSelectorPart,
-            
-            nsCSSSelector* aRightmostSelector)
+            nsCSSSelector* aSelectorPart)
 {
   
   
@@ -3266,13 +3095,12 @@ AddSelector(RuleCascadeData* aCascade,
           break;
         }
         case nsCSSPseudoClasses::ePseudoClass_mozTableBorderNonzero: {
-          nsTArray<SelectorPair> *array =
+          nsTArray<nsCSSSelector*> *array =
             aCascade->AttributeListFor(nsGkAtoms::border);
           if (!array) {
             return false;
           }
-          array->AppendElement(SelectorPair(aSelectorInTopLevel,
-                                            aRightmostSelector));
+          array->AppendElement(aSelectorInTopLevel);
           break;
         }
         default: {
@@ -3296,8 +3124,7 @@ AddSelector(RuleCascadeData* aCascade,
         AtomSelectorEntry *entry = static_cast<AtomSelectorEntry*>
           (PL_DHashTableAdd(&aCascade->mIdSelectors, curID->mAtom, fallible));
         if (entry) {
-          entry->mSelectors.AppendElement(SelectorPair(aSelectorInTopLevel,
-                                                       aRightmostSelector));
+          entry->mSelectors.AppendElement(aSelectorInTopLevel);
         }
       }
     } else if (negation->mIDList) {
@@ -3312,8 +3139,7 @@ AddSelector(RuleCascadeData* aCascade,
           (PL_DHashTableAdd(&aCascade->mClassSelectors, curClass->mAtom,
                             fallible));
         if (entry) {
-          entry->mSelectors.AppendElement(SelectorPair(aSelectorInTopLevel,
-                                                       aRightmostSelector));
+          entry->mSelectors.AppendElement(aSelectorInTopLevel);
         }
       }
     } else if (negation->mClassList) {
@@ -3323,20 +3149,18 @@ AddSelector(RuleCascadeData* aCascade,
     
     for (nsAttrSelector *attr = negation->mAttrList; attr;
          attr = attr->mNext) {
-      nsTArray<SelectorPair> *array =
+      nsTArray<nsCSSSelector*> *array =
         aCascade->AttributeListFor(attr->mCasedAttr);
       if (!array) {
         return false;
       }
-      array->AppendElement(SelectorPair(aSelectorInTopLevel,
-                                        aRightmostSelector));
+      array->AppendElement(aSelectorInTopLevel);
       if (attr->mLowercaseAttr != attr->mCasedAttr) {
         array = aCascade->AttributeListFor(attr->mLowercaseAttr);
         if (!array) {
           return false;
         }
-        array->AppendElement(SelectorPair(aSelectorInTopLevel,
-                                          aRightmostSelector));
+        array->AppendElement(aSelectorInTopLevel);
       }
     }
 
@@ -3346,8 +3170,7 @@ AddSelector(RuleCascadeData* aCascade,
       if (pseudoClass->mType == nsCSSPseudoClasses::ePseudoClass_any) {
         for (nsCSSSelectorList *l = pseudoClass->u.mSelectors; l; l = l->mNext) {
           nsCSSSelector *s = l->mSelectors;
-          if (!AddSelector(aCascade, aSelectorInTopLevel, s,
-                           aRightmostSelector)) {
+          if (!AddSelector(aCascade, aSelectorInTopLevel, s)) {
             return false;
           }
         }
@@ -3428,7 +3251,7 @@ AddRule(RuleSelectorPair* aRuleInfo, RuleCascadeData* aCascade)
         continue;
       }
     }
-    if (!AddSelector(cascade, selector, selector, aRuleInfo->mSelector)) {
+    if (!AddSelector(cascade, selector, selector)) {
       return false;
     }
   }

@@ -62,9 +62,7 @@ SVGAttrAnimationRuleProcessor::HasDocumentStateDependentStyle(StateRuleProcessor
 }
 
  nsRestyleHint
-SVGAttrAnimationRuleProcessor::HasAttributeDependentStyle(
-    AttributeRuleProcessorData* aData,
-    RestyleHintData& aRestyleHintDataResult)
+SVGAttrAnimationRuleProcessor::HasAttributeDependentStyle(AttributeRuleProcessorData* aData)
 {
   return nsRestyleHint(0);
 }

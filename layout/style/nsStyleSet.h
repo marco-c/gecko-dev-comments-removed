@@ -286,9 +286,7 @@ class nsStyleSet final
                                            nsIAtom*       aAttribute,
                                            int32_t        aModType,
                                            bool           aAttrHasChanged,
-                                           const nsAttrValue* aOtherValue,
-                                           mozilla::RestyleHintData&
-                                             aRestyleHintDataResult);
+                                           const nsAttrValue* aOtherValue);
 
   
 
@@ -398,10 +396,6 @@ class nsStyleSet final
   nsIStyleRule* InitialStyleRule();
 
   bool HasRuleProcessorUsedByMultipleStyleSets(sheetType aSheetType);
-
-  
-  
-  void ClearSelectors();
 
  private:
   nsStyleSet(const nsStyleSet& aCopy) = delete;

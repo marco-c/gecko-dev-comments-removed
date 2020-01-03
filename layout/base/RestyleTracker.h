@@ -17,7 +17,6 @@
 #include "mozilla/SplayTree.h"
 #include "mozilla/RestyleLogging.h"
 #include "GeckoProfiler.h"
-#include "mozilla/Maybe.h"
 
 #if defined(MOZ_ENABLE_PROFILER_SPS) && !defined(MOZILLA_XPCOMRT_API)
 #include "ProfilerBacktrace.h"
@@ -231,7 +230,6 @@ public:
   explicit RestyleTracker(Element::FlagsType aRestyleBits)
     : mRestyleBits(aRestyleBits)
     , mHaveLaterSiblingRestyles(false)
-    , mHaveSelectors(false)
   {
     NS_PRECONDITION((mRestyleBits & ~ELEMENT_ALL_RESTYLE_FLAGS) == 0,
                     "Why do we have these bits set?");
@@ -259,18 +257,8 @@ public:
 
 
 
-
-
-
-
-
   bool AddPendingRestyle(Element* aElement, nsRestyleHint aRestyleHint,
-                         nsChangeHint aMinChangeHint,
-                         const RestyleHintData* aRestyleHintData = nullptr,
-                         mozilla::Maybe<Element*> aRestyleRoot =
-                           mozilla::Nothing());
-
-  Element* FindClosestRestyleRoot(Element* aElement);
+                         nsChangeHint aMinChangeHint);
 
   
 
@@ -288,9 +276,8 @@ public:
   }
 
   struct Hints {
-    nsRestyleHint mRestyleHint;        
-    nsChangeHint mChangeHint;          
-    RestyleHintData mRestyleHintData;  
+    nsRestyleHint mRestyleHint;       
+    nsChangeHint mChangeHint;         
   };
 
   struct RestyleData : Hints {
@@ -299,13 +286,9 @@ public:
       mChangeHint = NS_STYLE_HINT_NONE;
     }
 
-    RestyleData(nsRestyleHint aRestyleHint, nsChangeHint aChangeHint,
-                const RestyleHintData* aRestyleHintData) {
+    RestyleData(nsRestyleHint aRestyleHint, nsChangeHint aChangeHint) {
       mRestyleHint = aRestyleHint;
       mChangeHint = aChangeHint;
-      if (aRestyleHintData) {
-        mRestyleHintData = *aRestyleHintData;
-      }
     }
 
     
@@ -334,14 +317,6 @@ public:
 
 
 
-  bool HasRestyleData(Element* aElement) {
-    return mPendingRestyles.Contains(aElement);
-  }
-
-  
-
-
-
 
 
 
@@ -356,14 +331,6 @@ public:
   
 
 
-
-
-
-  void ClearSelectors();
-
-  
-
-
   inline nsIDocument* Document() const;
 
 #ifdef RESTYLE_LOGGING
@@ -374,8 +341,7 @@ public:
 
 private:
   bool AddPendingRestyleToTable(Element* aElement, nsRestyleHint aRestyleHint,
-                                nsChangeHint aMinChangeHint,
-                                const RestyleHintData* aRestyleHintData = nullptr);
+                                nsChangeHint aMinChangeHint);
 
   
 
@@ -384,8 +350,7 @@ private:
 
   inline void ProcessOneRestyle(Element* aElement,
                                 nsRestyleHint aRestyleHint,
-                                nsChangeHint aChangeHint,
-                                const RestyleHintData& aRestyleHintData);
+                                nsChangeHint aChangeHint);
 
   typedef nsClassHashtable<nsISupportsHashKey, RestyleData> PendingRestyleTable;
   typedef nsAutoTArray< nsRefPtr<Element>, 32> RestyleRootArray;
@@ -411,23 +376,14 @@ private:
   
   
   bool mHaveLaterSiblingRestyles;
-  
-  
-  bool mHaveSelectors;
 };
 
 inline bool
 RestyleTracker::AddPendingRestyleToTable(Element* aElement,
                                          nsRestyleHint aRestyleHint,
-                                         nsChangeHint aMinChangeHint,
-                                         const RestyleHintData* aRestyleHintData)
+                                         nsChangeHint aMinChangeHint)
 {
   RestyleData* existingData;
-
-  if (aRestyleHintData &&
-      !aRestyleHintData->mSelectorsForDescendants.IsEmpty()) {
-    mHaveSelectors = true;
-  }
 
   
   
@@ -440,8 +396,7 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
   }
 
   if (!existingData) {
-    RestyleData* rd =
-      new RestyleData(aRestyleHint, aMinChangeHint, aRestyleHintData);
+    RestyleData* rd = new RestyleData(aRestyleHint, aMinChangeHint);
 #if defined(MOZ_ENABLE_PROFILER_SPS) && !defined(MOZILLA_XPCOMRT_API)
     if (profiler_feature_active("restyle")) {
       rd->mBacktrace.reset(profiler_get_backtrace());
@@ -456,63 +411,46 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
   existingData->mRestyleHint =
     nsRestyleHint(existingData->mRestyleHint | aRestyleHint);
   NS_UpdateHint(existingData->mChangeHint, aMinChangeHint);
-  if (aRestyleHintData) {
-    existingData->mRestyleHintData.mSelectorsForDescendants
-      .AppendElements(aRestyleHintData->mSelectorsForDescendants);
-  }
 
   return hadRestyleLaterSiblings;
-}
-
-inline mozilla::dom::Element*
-RestyleTracker::FindClosestRestyleRoot(Element* aElement)
-{
-  Element* cur = aElement;
-  while (!cur->HasFlag(RootBit())) {
-    nsIContent* parent = cur->GetFlattenedTreeParent();
-    
-    
-    
-    
-    
-    if (!parent || !parent->IsElement() ||
-        
-        
-        
-        
-        
-        
-        (cur->IsInNativeAnonymousSubtree() && !parent->GetParent() &&
-         cur->GetPrimaryFrame() &&
-         cur->GetPrimaryFrame()->GetParent() != parent->GetPrimaryFrame())) {
-      return nullptr;
-    }
-    cur = parent->AsElement();
-  }
-  return cur;
 }
 
 inline bool
 RestyleTracker::AddPendingRestyle(Element* aElement,
                                   nsRestyleHint aRestyleHint,
-                                  nsChangeHint aMinChangeHint,
-                                  const RestyleHintData* aRestyleHintData,
-                                  mozilla::Maybe<Element*> aRestyleRoot)
+                                  nsChangeHint aMinChangeHint)
 {
   bool hadRestyleLaterSiblings =
-    AddPendingRestyleToTable(aElement, aRestyleHint, aMinChangeHint,
-                             aRestyleHintData);
+    AddPendingRestyleToTable(aElement, aRestyleHint, aMinChangeHint);
 
   
   
   
   if ((aRestyleHint & ~eRestyle_LaterSiblings) ||
       (aMinChangeHint & nsChangeHint_ReconstructFrame)) {
-    Element* cur =
-      aRestyleRoot ? *aRestyleRoot : FindClosestRestyleRoot(aElement);
-    if (!cur) {
-      mRestyleRoots.AppendElement(aElement);
-      cur = aElement;
+    Element* cur = aElement;
+    while (!cur->HasFlag(RootBit())) {
+      nsIContent* parent = cur->GetFlattenedTreeParent();
+      
+      
+      
+      
+      
+      if (!parent || !parent->IsElement() ||
+          
+          
+          
+          
+          
+          
+          (cur->IsInNativeAnonymousSubtree() && !parent->GetParent() &&
+           cur->GetPrimaryFrame() &&
+           cur->GetPrimaryFrame()->GetParent() != parent->GetPrimaryFrame())) {
+        mRestyleRoots.AppendElement(aElement);
+        cur = aElement;
+        break;
+      }
+      cur = parent->AsElement();
     }
     
     

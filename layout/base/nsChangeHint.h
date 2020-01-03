@@ -8,11 +8,8 @@
 #ifndef nsChangeHint_h___
 #define nsChangeHint_h___
 
-#include "mozilla/Types.h"
 #include "nsDebug.h"
-#include "nsTArray.h"
-
-struct nsCSSSelector;
+#include "mozilla/Types.h"
 
 
 
@@ -382,38 +379,34 @@ enum nsRestyleHint {
 
   
   
-  eRestyle_SomeDescendants = (1<<1),
+  
+  
+  eRestyle_Subtree = (1<<1),
 
   
   
-  
-  
-  eRestyle_Subtree = (1<<2),
-
-  
-  
-  eRestyle_LaterSiblings = (1<<3),
-
-  
-  
-  
-  
-  
-  eRestyle_CSSTransitions = (1<<4),
+  eRestyle_LaterSiblings = (1<<2),
 
   
   
   
   
   
-  eRestyle_CSSAnimations = (1<<5),
+  eRestyle_CSSTransitions = (1<<3),
 
   
   
   
   
   
-  eRestyle_SVGAttrAnimations = (1<<6),
+  eRestyle_CSSAnimations = (1<<4),
+
+  
+  
+  
+  
+  
+  eRestyle_SVGAttrAnimations = (1<<5),
 
   
   
@@ -424,22 +417,22 @@ enum nsRestyleHint {
   
   
   
-  eRestyle_StyleAttribute = (1<<7),
+  eRestyle_StyleAttribute = (1<<6),
 
   
   
-  eRestyle_StyleAttribute_Animations = (1<<8),
+  eRestyle_StyleAttribute_Animations = (1<<7),
 
   
   
-  eRestyle_Force = (1<<9),
+  eRestyle_Force = (1<<8),
 
   
   
   
   
   
-  eRestyle_ForceDescendants = (1<<10),
+  eRestyle_ForceDescendants = (1<<9),
 
   
   eRestyle_AllHintsWithAnimations = eRestyle_CSSTransitions |
@@ -489,20 +482,5 @@ inline nsRestyleHint operator^=(nsRestyleHint& aLeft, nsRestyleHint aRight)
 {
   return aLeft = aLeft ^ aRight;
 }
-
-namespace mozilla {
-
-
-
-
-
-struct RestyleHintData
-{
-  
-  
-  nsTArray<nsCSSSelector*> mSelectorsForDescendants;
-};
-
-} 
 
 #endif 
