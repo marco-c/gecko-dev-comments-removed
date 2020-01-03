@@ -5,8 +5,8 @@
 
 
 
+#include "ds/TraceableFifo.h"
 #include "js/RootingAPI.h"
-#include "js/TraceableFifo.h"
 #include "js/TraceableHashTable.h"
 #include "js/TraceableVector.h"
 
