@@ -10,6 +10,7 @@ import org.mozilla.gecko.util.FloatUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.graphics.PointF;
+import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.animation.DecelerateInterpolator;
 import android.view.MotionEvent;
@@ -60,6 +61,21 @@ public class DynamicToolbarAnimator {
     private float SCROLL_TOOLBAR_THRESHOLD = 0.20f;
     
     private Integer mPrefObserverId;
+
+    
+
+
+
+
+
+    private Integer mHeightDuringResize;
+
+    
+
+
+
+
+    private boolean mSnapRequired = false;
 
     
     private DynamicToolbarAnimationTask mAnimationTask;
@@ -145,14 +161,14 @@ public class DynamicToolbarAnimator {
     }
 
     public void showToolbar(boolean immediately) {
-        animateToolbar(0, immediately);
+        animateToolbar(true, immediately);
     }
 
     public void hideToolbar(boolean immediately) {
-        animateToolbar(mMaxTranslation, immediately);
+        animateToolbar(false, immediately);
     }
 
-    private void animateToolbar(final float translation, boolean immediately) {
+    private void animateToolbar(final boolean showToolbar, boolean immediately) {
         ThreadUtils.assertOnUiThread();
 
         if (mAnimationTask != null) {
@@ -160,25 +176,62 @@ public class DynamicToolbarAnimator {
             mAnimationTask = null;
         }
 
-        Log.v(LOGTAG, "Requested " + (immediately ? "immedate " : "") + "toolbar animation to translation " + translation);
-        if (FloatUtils.fuzzyEquals(mToolbarTranslation, translation)) {
+        float desiredTranslation = (showToolbar ? 0 : mMaxTranslation);
+        Log.v(LOGTAG, "Requested " + (immediately ? "immediate " : "") + "toolbar animation to translation " + desiredTranslation);
+        if (FloatUtils.fuzzyEquals(mToolbarTranslation, desiredTranslation)) {
             
             
             immediately = true;
             Log.v(LOGTAG, "Changing animation to immediate jump");
         }
 
-        if (immediately) {
-            mToolbarTranslation = translation;
+        if (showToolbar && immediately) {
+            
+            
+            
+            
+            mToolbarTranslation = desiredTranslation;
             fireListeners();
-            resizeViewport();
-            mTarget.getView().requestRender();
-            return;
+            
+            
         }
 
-        Log.v(LOGTAG, "Kicking off animation...");
-        mAnimationTask = new DynamicToolbarAnimationTask(false, translation);
+        if (!showToolbar) {
+            
+            
+            
+            
+            
+            shiftLayerView(desiredTranslation);
+        }
+
+        mAnimationTask = new DynamicToolbarAnimationTask(desiredTranslation, immediately, showToolbar);
         mTarget.getView().postRenderTask(mAnimationTask);
+    }
+
+    private synchronized void shiftLayerView(float desiredTranslation) {
+        float layerViewTranslationNeeded = desiredTranslation - mLayerViewTranslation;
+        mLayerViewTranslation = desiredTranslation;
+        synchronized (mTarget.getLock()) {
+            mHeightDuringResize = new Integer(mTarget.getViewportMetrics().viewportRectHeight);
+            mSnapRequired = mTarget.setViewportSize(
+                mTarget.getView().getWidth(),
+                mTarget.getView().getHeight() - Math.round(mMaxTranslation - mLayerViewTranslation),
+                new PointF(0, -layerViewTranslationNeeded));
+            if (!mSnapRequired) {
+                mHeightDuringResize = null;
+                ThreadUtils.postToUiThread(new Runnable() {
+                    
+                    
+                    @Override
+                    public void run() {
+                        fireListeners();
+                    }
+                });
+            }
+            
+            mTarget.getView().requestRender();
+        }
     }
 
     IntSize getViewportSize() {
@@ -188,15 +241,41 @@ public class DynamicToolbarAnimator {
         return new IntSize(viewWidth, viewHeightVisible);
     }
 
-    private void resizeViewport() {
-        ThreadUtils.assertOnUiThread();
+    boolean isResizing() {
+        return mHeightDuringResize != null;
+    }
 
-        
-        
+    private final Runnable mSnapRunnable = new Runnable() {
+        private int mFrame = 0;
+
+        @Override
+        public final void run() {
+            
+            
+            
+            
+            
+            if (mFrame == 1) {
+                synchronized (this) {
+                    this.notifyAll();
+                }
+                mFrame = 0;
+                return;
+            }
+
+            if (mFrame == 0) {
+                fireListeners();
+            }
+
+            ViewCompat.postOnAnimation(mTarget.getView(), this);
+            mFrame++;
+        }
+    };
+
+    void scrollChangeResizeCompleted() {
         synchronized (mTarget.getLock()) {
-            IntSize viewportSize = getViewportSize();
-            Log.v(LOGTAG, "Resize viewport to dimensions " + viewportSize);
-            mTarget.setViewportSize(viewportSize.width, viewportSize.height);
+            Log.v(LOGTAG, "Scrollchange resize completed");
+            mHeightDuringResize = null;
         }
     }
 
@@ -337,30 +416,61 @@ public class DynamicToolbarAnimator {
     }
 
     private float bottomOfCssViewport(ImmutableViewportMetrics aMetrics) {
-        return aMetrics.getHeight() + mMaxTranslation - mLayerViewTranslation;
+        return (isResizing() ? mHeightDuringResize : aMetrics.getHeight())
+                + mMaxTranslation - mLayerViewTranslation;
     }
 
-    void populateFixedPositionMargins(ViewTransform aTransform, ImmutableViewportMetrics aMetrics) {
-        Log.v(LOGTAG, "Populating top fixed margin using " + mLayerViewTranslation + " - " + mToolbarTranslation);
+    private synchronized boolean getAndClearSnapRequired() {
+        boolean snapRequired = mSnapRequired;
+        mSnapRequired = false;
+        return snapRequired;
+    }
+
+    void populateViewTransform(ViewTransform aTransform, ImmutableViewportMetrics aMetrics) {
+        if (getAndClearSnapRequired()) {
+            synchronized (mSnapRunnable) {
+                ViewCompat.postOnAnimation(mTarget.getView(), mSnapRunnable);
+                try {
+                    
+                    
+                    
+                    mSnapRunnable.wait(100);
+                } catch (InterruptedException ie) {
+                }
+            }
+        }
+
+        aTransform.x = aMetrics.viewportRectLeft;
+        aTransform.y = aMetrics.viewportRectTop;
+        aTransform.width = aMetrics.viewportRectWidth;
+        aTransform.height = aMetrics.viewportRectHeight;
+        aTransform.scale = aMetrics.zoomFactor;
+
         aTransform.fixedLayerMarginTop = mLayerViewTranslation - mToolbarTranslation;
         float bottomOfScreen = mTarget.getView().getHeight();
         
         
         
-        Log.v(LOGTAG, "Populating bottom fixed margin using " + bottomOfCssViewport(aMetrics) + " - " + bottomOfScreen);
         aTransform.fixedLayerMarginBottom = bottomOfCssViewport(aMetrics) - bottomOfScreen;
+        
+        
+        
     }
 
     class DynamicToolbarAnimationTask extends RenderTask {
         private final float mStartTranslation;
         private final float mEndTranslation;
+        private final boolean mImmediate;
+        private final boolean mShiftLayerView;
         private boolean mContinueAnimation;
 
-        public DynamicToolbarAnimationTask(boolean aRunAfter, float aTranslation) {
-            super(aRunAfter);
+        public DynamicToolbarAnimationTask(float aTranslation, boolean aImmediate, boolean aShiftLayerView) {
+            super(false);
             mContinueAnimation = true;
             mStartTranslation = mToolbarTranslation;
             mEndTranslation = aTranslation;
+            mImmediate = aImmediate;
+            mShiftLayerView = aShiftLayerView;
         }
 
         @Override
@@ -370,7 +480,9 @@ public class DynamicToolbarAnimator {
             }
 
             
-            final float progress = mInterpolator.getInterpolation(
+            final float progress = mImmediate
+                ? 1.0f
+                : mInterpolator.getInterpolation(
                     Math.min(1.0f, (System.nanoTime() - getStartTime())
                                     / (float)ANIMATION_DURATION));
 
@@ -383,13 +495,10 @@ public class DynamicToolbarAnimator {
                 public void run() {
                     
                     mToolbarTranslation = FloatUtils.interpolate(mStartTranslation, mEndTranslation, progress);
-                    
-                    
-                    mLayerViewTranslation = Math.max(mLayerViewTranslation, mToolbarTranslation);
                     fireListeners();
 
-                    if (progress >= 1.0f) {
-                        resizeViewport();
+                    if (mShiftLayerView && progress >= 1.0f) {
+                        shiftLayerView(mEndTranslation);
                     }
                 }
             });
@@ -399,6 +508,18 @@ public class DynamicToolbarAnimator {
                 mContinueAnimation = false;
             }
             return mContinueAnimation;
+        }
+    }
+
+    class SnapMetrics {
+        public final int viewportWidth;
+        public final int viewportHeight;
+        public final float scrollChangeY;
+
+        SnapMetrics(ImmutableViewportMetrics aMetrics, float aScrollChange) {
+            viewportWidth = aMetrics.viewportRectWidth;
+            viewportHeight = aMetrics.viewportRectHeight;
+            scrollChangeY = aScrollChange;
         }
     }
 }
