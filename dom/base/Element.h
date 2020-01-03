@@ -276,7 +276,7 @@ public:
   
 
 
-  virtual bool IsInteractiveHTMLContent() const;
+  virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const;
 
   
 
