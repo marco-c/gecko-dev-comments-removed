@@ -2450,9 +2450,15 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
         return result.fail(JSMSG_CANT_SET_PROTO);
 
     
+
+
+
+
+    RootedObject outerObj(cx, GetOuterObject(cx, obj));
     RootedObject obj2(cx);
     for (obj2 = proto; obj2; ) {
-        if (obj2 == obj)
+        MOZ_ASSERT(GetOuterObject(cx, obj2) == obj2);
+        if (obj2 == outerObj)
             return result.fail(JSMSG_CANT_SET_PROTO_CYCLE);
 
         if (!GetPrototype(cx, obj2, &obj2))
