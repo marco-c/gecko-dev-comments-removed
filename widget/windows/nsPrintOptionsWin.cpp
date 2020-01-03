@@ -10,6 +10,8 @@
 #include "nsGfxCIID.h"
 #include "nsIServiceManager.h"
 #include "nsIWebBrowserPrint.h"
+#include "nsWindowsHelpers.h"
+#include "ipc/IPCMessageUtils.h"
 
 const char kPrinterEnumeratorContractID[] = "@mozilla.org/gfx/printerenumerator;1";
 
@@ -65,6 +67,38 @@ nsPrintOptionsWin::SerializeToPrintData(nsIPrintSettings* aSettings,
   free(deviceName);
   free(driverName);
 
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    
+    
+    LPDEVMODEW devModeRaw;
+    psWin->GetDevMode(&devModeRaw); 
+                                    
+                                    
+                                    
+                                    
+    if (devModeRaw) {
+      nsAutoDevMode devMode(devModeRaw);
+      devModeRaw = nullptr;
+
+      size_t devModeTotalSize = devMode->dmSize + devMode->dmDriverExtra;
+      size_t msgTotalSize = sizeof(PrintData) + devModeTotalSize;
+
+      if (msgTotalSize > IPC::MAX_MESSAGE_SIZE) {
+        return NS_ERROR_FAILURE;
+      }
+
+      
+      
+      const char* devModeData = reinterpret_cast<const char*>(devMode.get());
+      nsTArray<uint8_t> arrayBuf;
+      arrayBuf.AppendElements(devModeData, devModeTotalSize);
+      data->devModeData().SwapElements(arrayBuf);
+    }
+  }
+
   return NS_OK;
 }
 
@@ -80,19 +114,31 @@ nsPrintOptionsWin::DeserializeToPrintSettings(const PrintData& data,
     return NS_ERROR_FAILURE;
   }
 
-  psWin->SetDeviceName(data.deviceName().get());
-  psWin->SetDriverName(data.driverName().get());
+  if (XRE_IsContentProcess()) {
+    psWin->SetDeviceName(data.deviceName().get());
+    psWin->SetDriverName(data.driverName().get());
 
-  
-  
-  nsXPIDLString printerName;
-  settings->GetPrinterName(getter_Copies(printerName));
-  HGLOBAL gDevMode = CreateGlobalDevModeAndInit(printerName, settings);
-  LPDEVMODEW devMode = (LPDEVMODEW)::GlobalLock(gDevMode);
-  psWin->SetDevMode(devMode);
+    nsXPIDLString printerName;
+    settings->GetPrinterName(getter_Copies(printerName));
 
-  ::GlobalUnlock(gDevMode);
-  ::GlobalFree(gDevMode);
+    DEVMODEW* devModeRaw = (DEVMODEW*)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY,
+                                                  data.devModeData().Length());
+    if (!devModeRaw) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+
+    nsAutoDevMode devMode(devModeRaw);
+    devModeRaw = nullptr;
+
+    
+    
+    
+    
+    
+    memcpy(devMode.get(), data.devModeData().Elements(), data.devModeData().Length());
+
+    psWin->SetDevMode(devMode); 
+  }
 
   return NS_OK;
 }
