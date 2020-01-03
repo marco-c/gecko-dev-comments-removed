@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko;
 
@@ -130,9 +130,9 @@ public abstract class GeckoApp
     private static final int ONE_DAY_MS = 1000*60*60*24;
 
     private static enum StartupAction {
-        NORMAL,     
-        URL,        
-        PREFETCH    
+        NORMAL,     /* normal application start */
+        URL,        /* launched with a passed URL */
+        PREFETCH    /* launched with a passed URL that we prefetch */
     }
 
     public static final String ACTION_ALERT_CALLBACK       = "org.mozilla.gecko.ACTION_ALERT_CALLBACK";
@@ -155,8 +155,8 @@ public abstract class GeckoApp
     public static final String SAVED_STATE_IN_BACKGROUND   = "inBackground";
     public static final String SAVED_STATE_PRIVATE_SESSION = "privateSession";
 
-    
-    
+    // Delay before running one-time "cleanup" tasks that may be needed
+    // after a version upgrade.
     private static final int CLEANUP_DEFERRAL_SECONDS = 15;
 
     protected RelativeLayout mRootLayout;
@@ -268,18 +268,18 @@ public abstract class GeckoApp
 
     @Override
     public void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
-        
-        
+        // When a tab is closed, it is always unselected first.
+        // When a tab is unselected, another tab is always selected first.
         switch(msg) {
             case UNSELECTED:
                 hidePlugins(tab);
                 break;
 
             case LOCATION_CHANGE:
-                
+                // We only care about location change for the selected tab.
                 if (!Tabs.getInstance().isSelectedTab(tab))
                     break;
-                
+                // Fall through...
             case SELECTED:
                 invalidateOptionsMenu();
                 if (mFormAssistPopup != null)
@@ -287,8 +287,8 @@ public abstract class GeckoApp
                 break;
 
             case LOADED:
-                
-                
+                // Sync up the layer view and the tab if the tab is
+                // currently displayed.
                 LayerView layerView = mLayerView;
                 if (layerView != null && Tabs.getInstance().isSelectedTab(tab))
                     layerView.setBackgroundColor(tab.getBackgroundColor());
@@ -359,12 +359,12 @@ public abstract class GeckoApp
 
     @Override
     public void showMenu(final View menu) {
-        
-        
+        // On devices using the custom menu, focus is cleared from the menu when its tapped.
+        // Close and then reshow it to avoid these issues. See bug 794581 and bug 968182.
         closeMenu();
 
-        
-        
+        // Post the reshow code back to the UI thread to avoid some optimizations Android
+        // has put in place for menus that hide/show themselves quickly. See bug 985400.
         ThreadUtils.postToUiThread(new Runnable() {
             @Override
             public void run() {
@@ -386,7 +386,7 @@ public abstract class GeckoApp
             if (mMenuPanel == null) {
                 mMenuPanel = new MenuPanel(this, null);
             } else {
-                
+                // Prepare the panel everytime before showing the menu.
                 onPreparePanel(featureId, mMenuPanel, mMenu);
             }
 
@@ -426,19 +426,19 @@ public abstract class GeckoApp
 
     @Override
     public boolean onMenuOpened(int featureId, Menu menu) {
-        
+        // exit full-screen mode whenever the menu is opened
         if (mLayerView != null && mLayerView.isFullScreen()) {
             GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("FullScreen:Exit", null));
         }
 
         if (Versions.feature11Plus && featureId == Window.FEATURE_OPTIONS_PANEL) {
             if (mMenu == null) {
-                
+                // getMenuPanel() will force the creation of the menu as well
                 MenuPanel panel = getMenuPanel();
                 onPreparePanel(featureId, panel, mMenu);
             }
 
-            
+            // Scroll custom menu to the top
             if (mMenuPanel != null)
                 mMenuPanel.scrollTo(0, 0);
 
@@ -451,7 +451,7 @@ public abstract class GeckoApp
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.quit) {
-            
+            // Make sure the Guest Browsing notification goes away when we quit.
             GuestSession.hideNotification(this);
 
             if (GeckoThread.checkAndSetLaunchState(GeckoThread.LaunchState.GeckoRunning, GeckoThread.LaunchState.GeckoExiting)) {
@@ -474,8 +474,8 @@ public abstract class GeckoApp
                     Log.e(LOGTAG, "Error adding sanitize object", ex);
                 }
 
-                
-                
+                // If the user has opted out of session restore, and does want to clear history
+                // we also want to prevent the current session info from being saved.
                 if (clearObj.has("private.data.history")) {
                     final String sessionRestore = getSessionRestorePreference();
                     try {
@@ -506,7 +506,7 @@ public abstract class GeckoApp
  
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        
+        // Handle hardware menu key presses separately so that we can show a custom menu in some cases.
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             openOptionsMenu();
             return true;
@@ -537,13 +537,13 @@ public abstract class GeckoApp
 
     public void hideTabs() { }
 
-    
-
-
-
-
-
-
+    /**
+     * Close the tab UI indirectly (not as the result of a direct user
+     * action).  This does not force the UI to close; for example in Firefox
+     * tablet mode it will remain open unless the user explicitly closes it.
+     *
+     * @return True if the tab UI was hidden.
+     */
     public boolean autoHideTabs() { return false; }
 
     @Override
@@ -584,12 +584,12 @@ public abstract class GeckoApp
                 Intent i = new Intent(ContactsContract.Intents.SHOW_OR_CREATE_CONTACT, contactUri);
                 startActivity(i);
             } else {
-                
+                // something went wrong.
                 Log.e(LOGTAG, "Received Contact:Add message with no email nor phone number");
             }
 
         } else if ("DOMFullScreen:Start".equals(event)) {
-            
+            // Local ref to layerView for thread safety
             LayerView layerView = mLayerView;
             if (layerView != null) {
                 layerView.setFullScreenState(message.getBoolean("rootElement")
@@ -597,7 +597,7 @@ public abstract class GeckoApp
             }
 
         } else if ("DOMFullScreen:Stop".equals(event)) {
-            
+            // Local ref to layerView for thread safety
             LayerView layerView = mLayerView;
             if (layerView != null) {
                 layerView.setFullScreenState(FullScreenState.NONE);
@@ -629,7 +629,7 @@ public abstract class GeckoApp
             String text = message.getString("text");
             GeckoAppShell.openUriExternal(text, "text/plain", "", "", Intent.ACTION_SEND, "");
 
-            
+            // Context: Sharing via chrome list (no explicit session is active)
             Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST);
 
         } else if ("SystemUI:Visibility".equals(event)) {
@@ -680,10 +680,10 @@ public abstract class GeckoApp
                 mGeckoReadyStartupTimer.stop();
                 geckoConnected();
 
-                
-                
-                
-                
+                // This method is already running on the background thread, so we
+                // know that mHealthRecorder will exist. That doesn't stop us being
+                // paranoid.
+                // This method is cheap, so don't spawn a new runnable.
                 final HealthRecorder rec = mHealthRecorder;
                 if (rec != null) {
                   rec.recordGeckoStartupTime(mGeckoReadyStartupTimer.getElapsed());
@@ -702,11 +702,11 @@ public abstract class GeckoApp
 
     void onStatePurged() { }
 
-    
-
-
-
-
+    /**
+     * @param permissions
+     *        Array of JSON objects to represent site permissions.
+     *        Example: { type: "offline-app", setting: "Store Offline Data", value: "Allow" }
+     */
     private void showSiteSettingsDialog(final String host, final NativeJSObject[] permissions) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
@@ -715,8 +715,8 @@ public abstract class GeckoApp
         ((TextView) customTitleView.findViewById(R.id.host)).setText(host);
         builder.setCustomTitle(customTitleView);
 
-        
-        
+        // If there are no permissions to clear, show the user a message about that.
+        // In the future, we want to disable the menu item if there are no permissions to clear.
         if (permissions.length == 0) {
             builder.setMessage(R.string.site_settings_no_settings);
         } else {
@@ -730,8 +730,8 @@ public abstract class GeckoApp
                 itemList.add(map);
             }
 
-            
-            
+            // setMultiChoiceItems doesn't support using an adapter, so we're creating a hack with
+            // setSingleChoiceItems and changing the choiceMode below when we create the dialog
             builder.setSingleChoiceItems(new SimpleAdapter(
                 GeckoApp.this,
                 itemList,
@@ -749,7 +749,7 @@ public abstract class GeckoApp
                     ListView listView = ((AlertDialog) dialog).getListView();
                     SparseBooleanArray checkedItemPositions = listView.getCheckedItemPositions();
 
-                    
+                    // An array of the indices of the permissions we want to clear
                     JSONArray permissionsToClear = new JSONArray();
                     for (int i = 0; i < checkedItemPositions.size(); i++)
                         if (checkedItemPositions.get(i))
@@ -912,8 +912,8 @@ public abstract class GeckoApp
 
         mFullScreenPluginContainer.removeView(mFullScreenPluginView);
 
-        
-        
+        // We need do do this on the next iteration in order to avoid
+        // a deadlock, see comment below in FullScreenHolder
         ThreadUtils.postToUiThread(new Runnable() {
             @Override
             public void run() {
@@ -951,7 +951,7 @@ public abstract class GeckoApp
         });
     }
 
-    
+    // This method starts downloading an image synchronously and displays the Chooser activity to set the image as wallpaper.
     private void setImageAs(final String aSrc) {
         boolean isDataURI = aSrc.startsWith("data:");
         Bitmap image = null;
@@ -969,8 +969,8 @@ public abstract class GeckoApp
                 URL url = new URL(aSrc);
                 is = url.openStream();
 
-                
-                
+                // Cannot read from same stream twice. Also, InputStream from
+                // URL does not support reset. So converting to byte array.
 
                 while((byteRead = is.read(buf)) != -1) {
                     os.write(buf, 0, byteRead);
@@ -979,7 +979,7 @@ public abstract class GeckoApp
                 image = BitmapUtils.decodeByteArray(imgBuffer);
             }
             if (image != null) {
-                
+                // Some devices don't have a DCIM folder and the Media.insertImage call will fail.
                 File dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
                 if (!dcimDir.mkdirs() && !dcimDir.isDirectory()) {
                     Toast.makeText((Context) this, R.string.set_image_path_fail, Toast.LENGTH_SHORT).show();
@@ -994,7 +994,7 @@ public abstract class GeckoApp
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
                 intent.setData(Uri.parse(path));
 
-                
+                // Removes the image from storage once the chooser activity ends.
                 Intent chooser = Intent.createChooser(intent, getString(R.string.set_image_chooser_title));
                 ActivityResultHandler handler = new ActivityResultHandler() {
                     @Override
@@ -1099,9 +1099,9 @@ public abstract class GeckoApp
         });
     }
 
-    
-
-
+    /**
+     * Check and start the Java profiler if MOZ_PROFILER_STARTUP env var is specified.
+     **/
     protected static void earlyStartJavaSampler(Intent intent) {
         String env = StringUtils.getStringExtra(intent, "env0");
         for (int i = 1; env != null; i++) {
@@ -1116,23 +1116,23 @@ public abstract class GeckoApp
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * Called when the activity is first created.
+     *
+     * Here we initialize all of our profile settings, Firefox Health Report,
+     * and other one-shot constructions.
+     **/
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         GeckoAppShell.registerGlobalExceptionHandler();
 
-        
+        // Enable Android Strict Mode for developers' local builds (the "default" channel).
         if ("default".equals(AppConstants.MOZ_UPDATE_CHANNEL)) {
             enableStrictMode();
         }
 
-        
+        // The clock starts...now. Better hurry!
         mJavaUiStartupTimer = new Telemetry.UptimeTimer("FENNEC_STARTUP_TIME_JAVAUI");
         mGeckoReadyStartupTimer = new Telemetry.UptimeTimer("FENNEC_STARTUP_TIME_GECKOREADY");
 
@@ -1142,9 +1142,9 @@ public abstract class GeckoApp
 
         earlyStartJavaSampler(intent);
 
-        
-        
-        
+        // GeckoLoader wants to dig some environment variables out of the
+        // incoming intent, so pass it in here. GeckoLoader will do its
+        // business later and dispose of the reference.
         GeckoLoader.setLastIntent(intent);
 
         if (mProfile == null) {
@@ -1177,7 +1177,7 @@ public abstract class GeckoApp
             }
         }
 
-        
+        // Speculatively pre-fetch the profile in the background.
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
             public void run() {
@@ -1185,28 +1185,37 @@ public abstract class GeckoApp
             }
         });
 
-        
+        // Workaround for <http://code.google.com/p/android/issues/detail?id=20915>.
         try {
             Class.forName("android.os.AsyncTask");
         } catch (ClassNotFoundException e) {}
 
-        
-        
-        
-        
-        
-        
+        MemoryMonitor.getInstance().init(getApplicationContext());
+
+        // GeckoAppShell is tightly coupled to us, rather than
+        // the app context, because various parts of Fennec (e.g.,
+        // GeckoScreenOrientation) use GAS to access the Activity in
+        // the guise of fetching a Context.
+        // When that's fixed, `this` can change to
+        // `(GeckoApplication) getApplication()` here.
         GeckoAppShell.setContextGetter(this);
         GeckoAppShell.setGeckoInterface(this);
 
-        
-        
-        
-        
-        
-        
-        
-        
+        Tabs.getInstance().attachToContext(this);
+        try {
+            Favicons.initializeWithContext(this);
+        } catch (Exception e) {
+            Log.e(LOGTAG, "Exception starting favicon cache. Corrupt resources?", e);
+        }
+
+        // Did the OS locale change while we were backgrounded? If so,
+        // we need to die so that Gecko will re-init add-ons that touch
+        // the UI.
+        // This is using a sledgehammer to crack a nut, but it'll do for
+        // now.
+        // Our OS locale pref will be detected as invalid after the
+        // restart, and will be propagated to Gecko accordingly, so there's
+        // no need to touch that here.
         if (BrowserLocaleManager.getInstance().systemLocaleDidChange()) {
             Log.i(LOGTAG, "System locale changed. Restarting.");
             doRestart();
@@ -1215,8 +1224,8 @@ public abstract class GeckoApp
         }
 
         if (GeckoThread.isCreated()) {
-            
-            
+            // This happens when the GeckoApp activity is destroyed by Android
+            // without killing the entire application (see Bug 769269).
             mIsRestoringActivity = true;
             Telemetry.HistogramAdd("FENNEC_RESTORING_ACTIVITY", 1);
 
@@ -1242,36 +1251,22 @@ public abstract class GeckoApp
                     GeckoThread.setLaunchState(GeckoThread.LaunchState.Launched);
                     GeckoThread.createAndStart();
                 }
-            }, 1000 * 5 );
-        }
-
-        
-        
-        
-        ThreadUtils.reduceGeckoPriority();
-
-        MemoryMonitor.getInstance().init(getApplicationContext());
-
-        Tabs.getInstance().attachToContext(this);
-        try {
-            Favicons.initializeWithContext(this);
-        } catch (Exception e) {
-            Log.e(LOGTAG, "Exception starting favicon cache. Corrupt resources?", e);
+            }, 1000 * 5 /* 5 seconds */);
         }
 
         Bundle stateBundle = getIntent().getBundleExtra(EXTRA_STATE_BUNDLE);
         if (stateBundle != null) {
-            
-            
-            
-            
+            // Use the state bundle if it was given as an intent extra. This is
+            // only intended to be used internally via Robocop, so a boolean
+            // is read from a private shared pref to prevent other apps from
+            // injecting states.
             final SharedPreferences prefs = getSharedPreferences();
             if (prefs.getBoolean(PREFS_ALLOW_STATE_BUNDLE, false)) {
                 prefs.edit().remove(PREFS_ALLOW_STATE_BUNDLE).apply();
                 savedInstanceState = stateBundle;
             }
         } else if (savedInstanceState != null) {
-            
+            // Bug 896992 - This intent has already been handled; reset the intent.
             setIntent(new Intent(Intent.ACTION_MAIN));
         }
 
@@ -1281,19 +1276,19 @@ public abstract class GeckoApp
 
         setContentView(getLayout());
 
-        
+        // Set up Gecko layout.
         mRootLayout = (RelativeLayout) findViewById(R.id.root_layout);
         mGeckoLayout = (RelativeLayout) findViewById(R.id.gecko_layout);
         mMainLayout = (RelativeLayout) findViewById(R.id.main_layout);
 
-        
+        // Determine whether we should restore tabs.
         mShouldRestore = getSessionRestoreState(savedInstanceState);
         if (mShouldRestore && savedInstanceState != null) {
             boolean wasInBackground =
                 savedInstanceState.getBoolean(SAVED_STATE_IN_BACKGROUND, false);
 
-            
-            
+            // Don't log OOM-kills if only one activity was destroyed. (For example
+            // from "Don't keep activities" on ICS)
             if (!wasInBackground && !mIsRestoringActivity) {
                 Telemetry.HistogramAdd("FENNEC_WAS_KILLED", 1);
             }
@@ -1301,14 +1296,14 @@ public abstract class GeckoApp
             mPrivateBrowsingSession = savedInstanceState.getString(SAVED_STATE_PRIVATE_SESSION);
         }
 
-        
+        // Perform background initialization.
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
             public void run() {
                 final SharedPreferences prefs = GeckoApp.this.getSharedPreferences();
 
-                
-                
+                // Wait until now to set this, because we'd rather throw an exception than
+                // have a caller of BrowserLocaleManager regress startup.
                 final LocaleManager localeManager = BrowserLocaleManager.getInstance();
                 localeManager.initialize(getApplicationContext());
 
@@ -1320,22 +1315,22 @@ public abstract class GeckoApp
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putBoolean(GeckoApp.PREFS_OOM_EXCEPTION, false);
 
-                
-                
+                // Put a flag to check if we got a normal `onSaveInstanceState`
+                // on exit, or if we were suddenly killed (crash or native OOM).
                 editor.putBoolean(GeckoApp.PREFS_WAS_STOPPED, false);
 
                 editor.apply();
 
-                
-                
-                
+                // The lifecycle of mHealthRecorder is "shortly after onCreate"
+                // through "onDestroy" -- essentially the same as the lifecycle
+                // of the activity itself.
                 final String profilePath = getProfile().getDir().getAbsolutePath();
                 final EventDispatcher dispatcher = EventDispatcher.getInstance();
 
-                
+                // This is the locale prior to fixing it up.
                 final Locale osLocale = Locale.getDefault();
 
-                
+                // Both of these are Java-format locale strings: "en_US", not "en-US".
                 final String osLocaleString = osLocale.toString();
                 String appLocaleString = localeManager.getAndApplyPersistedLocale(GeckoApp.this);
                 Log.d(LOGTAG, "OS locale is " + osLocaleString + ", app locale is " + appLocaleString);
@@ -1359,8 +1354,8 @@ public abstract class GeckoApp
                     }
                 });
 
-                
-                
+                // We use per-profile prefs here, because we're tracking against
+                // a Gecko pref. The same applies to the locale switcher!
                 BrowserLocaleManager.storeAndNotifyOSLocale(GeckoSharedPrefs.forProfile(GeckoApp.this), osLocale);
             }
         });
@@ -1369,19 +1364,19 @@ public abstract class GeckoApp
         IntentHelper.init(this);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * At this point, the resource system and the rest of the browser are
+     * aware of the locale.
+     *
+     * Now we can display strings!
+     *
+     * You can think of this as being something like a second phase of onCreate,
+     * where you can do string-related operations. Use this in place of embedding
+     * strings in view XML.
+     *
+     * By contrast, onConfigurationChanged does some locale operations, but is in
+     * response to device changes.
+     */
     @Override
     public void onLocaleReady(final String locale) {
         if (!ThreadUtils.isOnUiThread()) {
@@ -1393,7 +1388,7 @@ public abstract class GeckoApp
             Log.d(LOGTAG, "New locale same as old; onLocaleReady has nothing to do.");
         }
 
-        
+        // The URL bar hint needs to be populated.
         TextView urlBar = (TextView) findViewById(R.id.url_bar_title);
         if (urlBar != null) {
             final String hint = getResources().getString(R.string.url_bar_default_text);
@@ -1404,10 +1399,10 @@ public abstract class GeckoApp
 
         mLastLocale = loc;
 
-        
-        
-        
-        
+        // Allow onConfigurationChanged to take care of the rest.
+        // We don't call this.onConfigurationChanged, because (a) that does
+        // work that's unnecessary after this locale action, and (b) it can
+        // cause a loop! See Bug 1011008, Comment 12.
         super.onConfigurationChanged(getResources().getConfiguration());
     }
 
@@ -1417,7 +1412,7 @@ public abstract class GeckoApp
         mFormAssistPopup = (FormAssistPopup) findViewById(R.id.form_assist_popup);
 
         if (mCameraView == null) {
-            
+            // Pre-ICS devices need the camera surface in a visible layout.
             if (Versions.preICS) {
                 mCameraView = new SurfaceView(this);
                 ((SurfaceView)mCameraView).getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
@@ -1432,29 +1427,29 @@ public abstract class GeckoApp
             GeckoAppShell.sendEventToGecko(GeckoEvent.createObjectEvent(
                 GeckoEvent.ACTION_OBJECT_LAYER_CLIENT, layerView.getLayerClientObject()));
 
-            
+            // bind the GeckoEditable instance to the new LayerView
             GeckoAppShell.notifyIMEContext(GeckoEditableListener.IME_STATE_DISABLED, "", "", "");
         }
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Loads the initial tab at Fennec startup.
+     *
+     * If Fennec was opened with an external URL, that URL will be loaded.
+     * Otherwise, unless there was a session restore, the default URL
+     * (about:home) be loaded.
+     *
+     * @param url External URL to load, or null to load the default URL
+     */
     protected void loadStartupTab(String url) {
         if (url == null) {
             if (!mShouldRestore) {
-                
-                
+                // Show about:home if we aren't restoring previous session and
+                // there's no external URL.
                 Tabs.getInstance().loadUrl(AboutPages.HOME, Tabs.LOADURL_NEW_TAB);
             }
         } else {
-            
+            // If given an external URL, load it
             int flags = Tabs.LOADURL_NEW_TAB | Tabs.LOADURL_USER_ENTERED | Tabs.LOADURL_EXTERNAL;
             Tabs.getInstance().loadUrl(url, flags);
         }
@@ -1481,8 +1476,8 @@ public abstract class GeckoApp
             startupAction = StartupAction.NORMAL;
         }
 
-        
-        
+        // Start migrating as early as possible, can do this in
+        // parallel with Gecko load.
         checkMigrateProfile();
 
         Tabs.registerOnTabsChangedListener(this);
@@ -1491,20 +1486,20 @@ public abstract class GeckoApp
 
         BrowserDB.initialize(getProfile().getName());
 
-        
+        // If we are doing a restore, read the session data and send it to Gecko
         if (!mIsRestoringActivity) {
             String restoreMessage = null;
             if (mShouldRestore) {
                 try {
-                    
-                    
-                    
-                    
-                    
-                    
+                    // restoreSessionTabs() will create simple tab stubs with the
+                    // URL and title for each page, but we also need to restore
+                    // session history. restoreSessionTabs() will inject the IDs
+                    // of the tab stubs into the JSON data (which holds the session
+                    // history). This JSON data is then sent to Gecko so session
+                    // history can be restored for each tab.
                     restoreMessage = restoreSessionTabs(isExternalURL);
                 } catch (SessionRestoreException e) {
-                    
+                    // If restore failed, do a normal startup
                     Log.e(LOGTAG, "An error occurred during restore", e);
                     mShouldRestore = false;
                 }
@@ -1513,38 +1508,38 @@ public abstract class GeckoApp
             GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Session:Restore", restoreMessage));
         }
 
-        
-        
+        // External URLs should always be loaded regardless of whether Gecko is
+        // already running.
         if (isExternalURL) {
             loadStartupTab(passedUri);
         } else if (!mIsRestoringActivity) {
             loadStartupTab(null);
         }
 
-        
-        
+        // We now have tab stubs from the last session. Any future tabs should
+        // be animated.
         Tabs.getInstance().notifyListeners(null, Tabs.TabEvents.RESTORED);
 
-        
-        
+        // If we're not restoring, move the session file so it can be read for
+        // the last tabs section.
         if (!mShouldRestore) {
             getProfile().moveSessionFile();
         }
 
         Telemetry.HistogramAdd("FENNEC_STARTUP_GECKOAPP_ACTION", startupAction.ordinal());
 
-        
+        // Check if launched from data reporting notification.
         if (ACTION_LAUNCH_SETTINGS.equals(action)) {
             Intent settingsIntent = new Intent(GeckoApp.this, GeckoPreferences.class);
-            
+            // Copy extras.
             settingsIntent.putExtras(intent);
             startActivity(settingsIntent);
         }
 
-        
+        //app state callbacks
         mAppStateListeners = new LinkedList<GeckoAppShell.AppStateListener>();
 
-        
+        //register for events
         EventDispatcher.getInstance().registerGeckoThreadListener((GeckoEventListener)this,
             "Gecko:Ready",
             "Gecko:DelayedStartup",
@@ -1598,8 +1593,8 @@ public abstract class GeckoApp
             }
         });
 
-        
-        
+        // Trigger the completion of the telemetry timer that wraps activity startup,
+        // then grab the duration to give to FHR.
         mJavaUiStartupTimer.stop();
         final long javaDuration = mJavaUiStartupTimer.getElapsed();
 
@@ -1611,9 +1606,9 @@ public abstract class GeckoApp
                     rec.recordJavaStartupTime(javaDuration);
                 }
 
-                
-                
-                
+                // Kick off our background services. We do this by invoking the broadcast
+                // receiver, which uses the system alarm infrastructure to perform tasks at
+                // intervals.
                 GeckoPreferences.broadcastHealthReportUploadPref(GeckoApp.this);
                 if (!GeckoThread.checkLaunchState(GeckoThread.LaunchState.Launched)) {
                     return;
@@ -1635,10 +1630,6 @@ public abstract class GeckoApp
         } else if (NotificationHelper.HELPER_BROADCAST_ACTION.equals(action)) {
             NotificationHelper.getInstance(getApplicationContext()).handleNotificationIntent(intent);
         }
-
-        
-        
-        ThreadUtils.resetGeckoPriority();
     }
 
     private String restoreSessionTabs(final boolean isExternalURL) throws SessionRestoreException {
@@ -1648,9 +1639,9 @@ public abstract class GeckoApp
                 throw new SessionRestoreException("Could not read from session file");
             }
 
-            
-            
-            
+            // If we are doing an OOM restore, parse the session data and
+            // stub the restored tabs immediately. This allows the UI to be
+            // updated before Gecko has restored.
             if (mShouldRestore) {
                 final JSONArray tabs = new JSONArray();
                 SessionParser parser = new SessionParser() {
@@ -1699,34 +1690,34 @@ public abstract class GeckoApp
 
     @Override
     public synchronized GeckoProfile getProfile() {
-        
+        // fall back to default profile if we didn't load a specific one
         if (mProfile == null) {
             mProfile = GeckoProfile.get(this);
         }
         return mProfile;
     }
 
-    
-
-
-
-
-
+    /**
+     * Determine whether the session should be restored.
+     *
+     * @param savedInstanceState Saved instance state given to the activity
+     * @return                   Whether to restore
+     */
     protected boolean getSessionRestoreState(Bundle savedInstanceState) {
         final SharedPreferences prefs = getSharedPreferences();
         boolean shouldRestore = false;
 
         final int versionCode = getVersionCode();
         if (prefs.getInt(PREFS_VERSION_CODE, 0) != versionCode) {
-            
-            
+            // If the version has changed, the user has done an upgrade, so restore
+            // previous tabs.
             prefs.edit().putInt(PREFS_VERSION_CODE, versionCode).apply();
             shouldRestore = true;
         } else if (savedInstanceState != null ||
                    getSessionRestorePreference().equals("always") ||
                    getRestartFromIntent()) {
-            
-            
+            // We're coming back from a background kill by the OS, the user
+            // has chosen to always restore, or we restarted.
             shouldRestore = true;
         } else if (prefs.getBoolean(GeckoApp.PREFS_CRASHED, false)) {
             prefs.edit().putBoolean(PREFS_CRASHED, false).apply();
@@ -1744,10 +1735,10 @@ public abstract class GeckoApp
         return getIntent().getBooleanExtra("didRestart", false);
     }
 
-    
-
-
-
+    /**
+     * Enable Android StrictMode checks (for supported OS versions).
+     * http://developer.android.com/reference/android/os/StrictMode.html
+     */
     private void enableStrictMode() {
         Log.d(LOGTAG, "Enabling Android StrictMode");
 
@@ -1764,7 +1755,7 @@ public abstract class GeckoApp
 
     @Override
     public void enableCameraView() {
-        
+        // Start listening for orientation events
         mCameraOrientationEventListener = new OrientationEventListener(this) {
             @Override
             public void onOrientationChanged(int orientation) {
@@ -1777,13 +1768,13 @@ public abstract class GeckoApp
         };
         mCameraOrientationEventListener.enable();
 
-        
+        // Try to make it fully transparent.
         if (mCameraView instanceof SurfaceView) {
             if (Versions.feature11Plus) {
                 mCameraView.setAlpha(0.0f);
             }
             ViewGroup mCameraLayout = (ViewGroup) findViewById(R.id.camera_layout);
-            
+            // Some phones (eg. nexus S) need at least a 8x16 preview size
             mCameraLayout.addView(mCameraView,
                                   new AbsoluteLayout.LayoutParams(8, 16, 0, 0));
         }
@@ -1825,14 +1816,14 @@ public abstract class GeckoApp
     @Override
     protected void onNewIntent(Intent intent) {
         if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoExiting)) {
-            
-            
+            // We're exiting and shouldn't try to do anything else. In the case
+            // where we are hung while exiting, we should force the process to exit.
             GeckoAppShell.systemExit();
             return;
         }
 
-        
-        
+        // if we were previously OOM killed, we can end up here when launching
+        // from external shortcuts, so set this as the intent for initialization
         if (!mInitialized) {
             setIntent(intent);
             return;
@@ -1849,9 +1840,9 @@ public abstract class GeckoApp
                                             Tabs.LOADURL_USER_ENTERED |
                                             Tabs.LOADURL_EXTERNAL);
         } else if (action != null && action.startsWith(ACTION_WEBAPP_PREFIX)) {
-            
-            
-            
+            // A lightweight mechanism for loading a web page as a webapp
+            // without installing the app natively nor registering it in the DOM
+            // application registry.
             String uri = getURIFromIntent(intent);
             GeckoAppShell.sendEventToGecko(GeckoEvent.createWebappLoadEvent(uri));
         } else if (ACTION_HOMESCREEN_SHORTCUT.equals(action)) {
@@ -1865,18 +1856,18 @@ public abstract class GeckoApp
         } else if (NotificationHelper.HELPER_BROADCAST_ACTION.equals(action)) {
             NotificationHelper.getInstance(getApplicationContext()).handleNotificationIntent(intent);
         } else if (ACTION_LAUNCH_SETTINGS.equals(action)) {
-            
+            // Check if launched from data reporting notification.
             Intent settingsIntent = new Intent(GeckoApp.this, GeckoPreferences.class);
-            
+            // Copy extras.
             settingsIntent.putExtras(intent);
             startActivity(settingsIntent);
         }
     }
 
-    
-
-
-
+    /**
+     * Handles getting a URI from an intent in a way that is backwards-
+     * compatible with our previous implementations.
+     */
     protected String getURIFromIntent(Intent intent) {
         final String action = intent.getAction();
         if (ACTION_ALERT_CALLBACK.equals(action) || NotificationHelper.HELPER_BROADCAST_ACTION.equals(action)) {
@@ -1893,8 +1884,8 @@ public abstract class GeckoApp
     @Override
     public void onResume()
     {
-        
-        
+        // After an onPause, the activity is back in the foreground.
+        // Undo whatever we did in onPause.
         super.onResume();
 
         int newOrientation = getResources().getConfiguration().orientation;
@@ -1903,9 +1894,9 @@ public abstract class GeckoApp
         }
 
         if (!Versions.feature14Plus) {
-            
-            
-            
+            // Update accessibility settings in case it has been changed by the
+            // user. On API14+, this is handled in LayerView by registering an
+            // accessibility state change listener.
             GeckoAccessibility.updateAccessibilitySettings(this);
         }
 
@@ -1915,17 +1906,17 @@ public abstract class GeckoApp
             }
         }
 
-        
-        
-        
+        // We use two times: a pseudo-unique wall-clock time to identify the
+        // current session across power cycles, and the elapsed realtime to
+        // track the duration of the session.
         final long now = System.currentTimeMillis();
         final long realTime = android.os.SystemClock.elapsedRealtime();
 
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
             public void run() {
-                
-                
+                // Now construct the new session on HealthRecorder's behalf. We do this here
+                // so it can benefit from a single near-startup prefs commit.
                 SessionInformation currentSession = new SessionInformation(now, realTime);
 
                 SharedPreferences prefs = GeckoApp.this.getSharedPreferences();
@@ -1961,9 +1952,9 @@ public abstract class GeckoApp
         final HealthRecorder rec = mHealthRecorder;
         final Context context = this;
 
-        
-        
-        
+        // In some way it's sad that Android will trigger StrictMode warnings
+        // here as the whole point is to save to disk while the activity is not
+        // interacting with the user.
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
             public void run() {
@@ -1974,7 +1965,7 @@ public abstract class GeckoApp
                     rec.recordSessionEnd("P", editor);
                 }
 
-                
+                // If we haven't done it before, cleanup any old files in our old temp dir
                 if (prefs.getBoolean(GeckoApp.PREFS_CLEANUP_TEMP_FILES, true)) {
                     File tempDir = GeckoLoader.getGREDir(GeckoApp.this);
                     FileUtils.delTree(tempDir, new FileUtils.NameAndAgeFilter(null, ONE_DAY_MS), false);
@@ -1984,9 +1975,9 @@ public abstract class GeckoApp
 
                 editor.apply();
 
-                
-                
-                
+                // In theory, the first browser session will not run long enough that we need to
+                // prune during it and we'd rather run it when the browser is inactive so we wait
+                // until here to register the prune service.
                 GeckoPreferences.broadcastHealthReportPrune(context);
             }
         });
@@ -2002,7 +1993,7 @@ public abstract class GeckoApp
 
     @Override
     public void onRestart() {
-        
+        // Faster on main thread with an async apply().
         final StrictMode.ThreadPolicy savedPolicy = StrictMode.allowThreadDiskReads();
         try {
             SharedPreferences.Editor editor = GeckoApp.this.getSharedPreferences().edit();
@@ -2078,7 +2069,7 @@ public abstract class GeckoApp
         final HealthRecorder rec = mHealthRecorder;
         mHealthRecorder = null;
         if (rec != null && rec.isEnabled()) {
-            
+            // Closing a BrowserHealthRecorder could incur a write.
             ThreadUtils.postToBackgroundThread(new Runnable() {
                 @Override
                 public void run() {
@@ -2094,13 +2085,13 @@ public abstract class GeckoApp
         Tabs.unregisterOnTabsChangedListener(this);
     }
 
-    
+    // Get a temporary directory, may return null
     public static File getTempDirectory() {
         File dir = GeckoApplication.get().getExternalFilesDir("temp");
         return dir;
     }
 
-    
+    // Delete any files in our temporary directory
     public static void deleteTempFiles() {
         File dir = getTempDirectory();
         if (dir == null)
@@ -2123,9 +2114,9 @@ public abstract class GeckoApp
             onLocaleChanged(BrowserLocaleManager.getLanguageTag(changed));
         }
 
-        
-        
-        
+        // onConfigurationChanged is not called for 180 degree orientation changes,
+        // we will miss such rotations and the screen orientation will not be
+        // updated.
         if (GeckoScreenOrientation.getInstance().update(newConfig.orientation)) {
             if (mFormAssistPopup != null)
                 mFormAssistPopup.hide();
@@ -2170,7 +2161,7 @@ public abstract class GeckoApp
             Intent intent = new Intent(action);
             intent.setClassName(AppConstants.ANDROID_PACKAGE_NAME, RESTARTER_CLASS);
 
-            
+            /* TODO: addEnvToIntent(intent); */
             if (args != null) {
                 intent.putExtra("args", args);
             }
@@ -2188,14 +2179,14 @@ public abstract class GeckoApp
         }
 
         finish();
-        
+        // Give the restart process time to start before we die
         GeckoAppShell.waitForAnotherGeckoProc();
     }
 
     public void handleNotification(String action, String alertName, String alertCookie) {
-        
-        
-        
+        // If Gecko isn't running yet, we ignore the notification. Note that
+        // even if Gecko is running but it was restarted since the notification
+        // was created, the notification won't be handled (bug 849653).
         if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
             GeckoAppShell.handleNotification(action, alertName, alertCookie);
         }
@@ -2216,9 +2207,9 @@ public abstract class GeckoApp
     }
 
     private class DeferredCleanupTask implements Runnable {
-        
-        
-        
+        // The cleanup-version setting is recorded to avoid repeating the same
+        // tasks on subsequent startups; CURRENT_CLEANUP_VERSION may be updated
+        // if we need to do additional cleanup for future Gecko versions.
 
         private static final String CLEANUP_VERSION = "cleanup-version";
         private static final int CURRENT_CLEANUP_VERSION = 1;
@@ -2228,10 +2219,10 @@ public abstract class GeckoApp
             long cleanupVersion = getSharedPreferences().getInt(CLEANUP_VERSION, 0);
 
             if (cleanupVersion < 1) {
-                
-                
-                
-                
+                // Reduce device storage footprint by removing .ttf files from
+                // the res/fonts directory: we no longer need to copy our
+                // bundled fonts out of the APK in order to use them.
+                // See https://bugzilla.mozilla.org/show_bug.cgi?id=878674.
                 File dir = new File("res/fonts");
                 if (dir.exists() && dir.isDirectory()) {
                     for (File file : dir.listFiles()) {
@@ -2245,7 +2236,7 @@ public abstract class GeckoApp
                 }
             }
 
-            
+            // Additional cleanup needed for future versions would go here
 
             if (cleanupVersion != CURRENT_CLEANUP_VERSION) {
                 SharedPreferences.Editor editor = GeckoApp.this.getSharedPreferences().edit();
@@ -2306,7 +2297,7 @@ public abstract class GeckoApp
         int parentId = tab.getParentId();
         Tab parent = tabs.getTab(parentId);
         if (parent != null) {
-            
+            // The back button should always return to the parent (not a sibling).
             tabs.closeTab(tab, parent);
             return;
         }
@@ -2324,7 +2315,7 @@ public abstract class GeckoApp
     @Override
     public AbsoluteLayout getPluginContainer() { return mPluginContainer; }
 
-    
+    // Accelerometer.
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
@@ -2334,10 +2325,10 @@ public abstract class GeckoApp
         GeckoAppShell.sendEventToGecko(GeckoEvent.createSensorEvent(event));
     }
 
-    
+    // Geolocation.
     @Override
     public void onLocationChanged(Location location) {
-        
+        // No logging here: user-identifying information.
         GeckoAppShell.sendEventToGecko(GeckoEvent.createLocationEvent(location));
     }
 
@@ -2359,7 +2350,7 @@ public abstract class GeckoApp
     private static final String CPU = "cpu";
     private static final String SCREEN = "screen";
 
-    
+    // Called when a Gecko Hal WakeLock is changed
     @Override
     public void notifyWakeLockChanged(String topic, String state) {
         PowerManager.WakeLock wl = mWakeLocks.get(topic);
@@ -2437,9 +2428,9 @@ public abstract class GeckoApp
 
         @Override
         public void setDrawingCacheEnabled(boolean enabled) {
-            
-            
-            
+            // Instead of setting drawing cache in the view itself, we simply
+            // enable drawing caching on its children. This is mainly used in
+            // animations (see PropertyAnimator)
             super.setChildrenDrawnWithCacheEnabled(enabled);
         }
     }
@@ -2452,15 +2443,15 @@ public abstract class GeckoApp
 
         @Override
         public void addView(View view, int index) {
-            
-
-
-
-
-
-
-
-
+            /**
+             * This normally gets called when Flash adds a separate SurfaceView
+             * for the video. It is unhappy if we have the LayerView underneath
+             * it for some reason so we need to hide that. Hiding the LayerView causes
+             * its surface to be destroyed, which causes a pause composition
+             * event to be sent to Gecko. We synchronously wait for that to be
+             * processed. Simultaneously, however, Flash is waiting on a mutex so
+             * the post() below is an attempt to avoid a deadlock.
+             */
             super.addView(view, index);
 
             ThreadUtils.postToUiThread(new Runnable() {
@@ -2471,13 +2462,13 @@ public abstract class GeckoApp
             });
         }
 
-        
-
-
-
-
-
-
+        /**
+         * The methods below are simply copied from what Android WebKit does.
+         * It wasn't ever called in my testing, but might as well
+         * keep it in case it is for some reason. The methods
+         * all return true because we don't want any events
+         * leaking out from the fullscreen view.
+         */
         @Override
         public boolean onKeyDown(int keyCode, KeyEvent event) {
             if (event.isSystem()) {
@@ -2509,8 +2500,8 @@ public abstract class GeckoApp
     }
 
     protected NotificationClient makeNotificationClient() {
-        
-        
+        // Don't use a notification service; we may be killed in the background
+        // during downloads.
         return new AppNotificationClient(getApplicationContext());
     }
 
@@ -2525,39 +2516,39 @@ public abstract class GeckoApp
     }
 
     protected boolean getIsDebuggable() {
-        
-        
-        
-        
+        // Return false so Fennec doesn't appear to be debuggable.  WebappImpl
+        // then overrides this and returns the value of android:debuggable for
+        // the webapp APK, so webapps get the behavior supported by this method
+        // (i.e. automatic configuration and enabling of the remote debugger).
         return false;
 
-        
-        
-        
-        
-        
-        
-        
-        
+        // If we ever want to expose this for Fennec, here's how we would do it:
+        // int flags = 0;
+        // try {
+        //     flags = getPackageManager().getPackageInfo(getPackageName(), 0).applicationInfo.flags;
+        // } catch (NameNotFoundException e) {
+        //     Log.wtf(LOGTAG, getPackageName() + " not found", e);
+        // }
+        // return (flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
     }
 
-    
-    
+    // FHR reason code for a session end prior to a restart for a
+    // locale change.
     private static final String SESSION_END_LOCALE_CHANGED = "L";
 
-    
-
-
-
-
-
+    /**
+     * This exists so that a locale can be applied in two places: when saved
+     * in a nested activity, and then again when we get back up to GeckoApp.
+     *
+     * GeckoApp needs to do a bunch more stuff than, say, GeckoPreferences.
+     */
     protected void onLocaleChanged(final String locale) {
         final boolean startNewSession = true;
         final boolean shouldRestart = false;
 
-        
-        
-        
+        // If the HealthRecorder is not yet initialized (unlikely), the locale change won't
+        // trigger a session transition and subsequent events will be recorded in an environment
+        // with the wrong locale.
         final HealthRecorder rec = mHealthRecorder;
         if (rec != null) {
             rec.onAppLocaleChanged(locale);
@@ -2574,8 +2565,8 @@ public abstract class GeckoApp
             return;
         }
 
-        
-        
+        // Do this in the background so that the health recorder has its
+        // time to finish.
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
             public void run() {
@@ -2585,10 +2576,10 @@ public abstract class GeckoApp
         });
     }
 
-    
-
-
-
+    /**
+     * Use BrowserLocaleManager to change our persisted and current locales,
+     * and poke HealthRecorder to tell it of our changed state.
+     */
     protected void setLocale(final String locale) {
         if (locale == null) {
             return;
@@ -2625,7 +2616,7 @@ public abstract class GeckoApp
                                                   final String osLocale,
                                                   final String appLocale,
                                                   final SessionInformation previousSession) {
-        
+        // GeckoApp does not need to record any health information - return a stub.
         return new StubbedHealthRecorder();
     }
 }
