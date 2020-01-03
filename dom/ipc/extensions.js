@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+dump("######################## extensions.js loaded\n");
+
+Components.utils.import("resource://gre/modules/ExtensionContent.jsm");
+
+ExtensionContent.init(this);
+
+addEventListener("unload", () => {
+  ExtensionContent.uninit(this);
+});
