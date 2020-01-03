@@ -945,8 +945,8 @@ protected:
   
 
 
-  virtual void BindToParent(Accessible* aParent, uint32_t aIndexInParent);
-  virtual void UnbindFromParent();
+  void BindToParent(Accessible* aParent, uint32_t aIndexInParent);
+  void UnbindFromParent();
 
   
 

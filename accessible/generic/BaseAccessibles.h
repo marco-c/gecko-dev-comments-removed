@@ -56,12 +56,14 @@ class LinkableAccessible : public AccessibleWrap
 public:
   enum { eAction_Jump = 0 };
 
-  LinkableAccessible(nsIContent* aContent, DocAccessible* aDoc);
+  LinkableAccessible(nsIContent* aContent, DocAccessible* aDoc) :
+    AccessibleWrap(aContent, aDoc)
+  {
+  }
 
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  virtual void Shutdown() override;
   virtual void Value(nsString& aValue) override;
   virtual uint64_t NativeLinkState() const override;
   virtual void TakeFocus() override;
@@ -73,21 +75,14 @@ public:
   virtual KeyBinding AccessKey() const override;
 
   
+  Accessible* ActionWalk(bool* aIsLink = nullptr,
+                          bool* aIsOnclick = nullptr);
+  
   virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) override;
 
 protected:
   virtual ~LinkableAccessible() {}
 
-  
-  virtual void BindToParent(Accessible* aParent, uint32_t aIndexInParent) override;
-  virtual void UnbindFromParent() override;
-
-  
-
-
-  Accessible* mActionAcc;
-  bool mIsLink;
-  bool mIsOnclick;
 };
 
 
