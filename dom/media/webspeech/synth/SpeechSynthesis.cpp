@@ -111,17 +111,19 @@ SpeechSynthesis::Pending() const
 bool
 SpeechSynthesis::Speaking() const
 {
-  if (mSpeechQueue.IsEmpty()) {
-    return false;
+  if (!mSpeechQueue.IsEmpty() &&
+      mSpeechQueue.ElementAt(0)->GetState() == SpeechSynthesisUtterance::STATE_SPEAKING) {
+    return true;
   }
 
-  return mSpeechQueue.ElementAt(0)->GetState() == SpeechSynthesisUtterance::STATE_SPEAKING;
+  
+  return nsSynthVoiceRegistry::GetInstance()->IsSpeaking();
 }
 
 bool
 SpeechSynthesis::Paused() const
 {
-  return mHoldQueue ||
+  return mHoldQueue || (mCurrentTask && mCurrentTask->IsPrePaused()) ||
          (!mSpeechQueue.IsEmpty() && mSpeechQueue.ElementAt(0)->IsPaused());
 }
 
@@ -178,14 +180,17 @@ SpeechSynthesis::AdvanceQueue()
 void
 SpeechSynthesis::Cancel()
 {
-  if (mCurrentTask) {
-    if (mSpeechQueue.Length() > 1) {
-      
-      mSpeechQueue.RemoveElementsAt(1, mSpeechQueue.Length() - 1);
-    }
-    mCurrentTask->Cancel();
+  if (!mSpeechQueue.IsEmpty() &&
+      mSpeechQueue.ElementAt(0)->GetState() == SpeechSynthesisUtterance::STATE_SPEAKING) {
+    
+    
+    mSpeechQueue.RemoveElementsAt(1, mSpeechQueue.Length() - 1);
   } else {
     mSpeechQueue.Clear();
+  }
+
+  if (mCurrentTask) {
+    mCurrentTask->Cancel();
   }
 }
 
@@ -267,6 +272,14 @@ SpeechSynthesis::GetVoices(nsTArray< nsRefPtr<SpeechSynthesisVoice> >& aResult)
     SpeechSynthesisVoice* voice = aResult[i];
     mVoiceCache.Put(voice->mUri, voice);
   }
+}
+
+
+
+void
+SpeechSynthesis::DropGlobalQueue()
+{
+  nsSynthVoiceRegistry::GetInstance()->DropGlobalQueue();
 }
 
 } 
