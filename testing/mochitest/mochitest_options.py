@@ -713,7 +713,7 @@ class MochitestArguments(ArgumentContainer):
 
         options.leakThresholds = {
             "default": options.defaultLeakThreshold,
-            "tab": 10000,  
+            "tab": 14000,  
             
             "geckomediaplugin": 20000,
         }
