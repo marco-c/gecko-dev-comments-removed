@@ -40,30 +40,29 @@ class WeakCache : public HashMap<Key, Value, HashPolicy, AllocPolicy> {
         for (Enum e(*this); !e.empty(); e.popFront()) {
             
             
-            Key k(e.front().key);
-            bool isKeyDying = gc::IsAboutToBeFinalized(&k);
-
-            if (isKeyDying || gc::IsAboutToBeFinalized(e.front().value)) {
+            Key key(e.front().key);
+            MOZ_ASSERT(key);
+            MOZ_ASSERT(e.front().value());
+            if (gc::IsAboutToBeFinalized(&key) || gc::IsAboutToBeFinalized(e.front().value))
                 e.removeFront();
-            } else {
-                
-                
-                
-                
-            }
+            else if (key != e.front().key)
+                e.rekeyFront(key);
         }
 
-#if DEBUG
+#ifdef DEBUG
         
         
         for (Range r = Base::all(); !r.empty(); r.popFront()) {
-            Key k(r.front().key);
-
-            MOZ_ASSERT(!gc::IsAboutToBeFinalized(&k));
-            MOZ_ASSERT(!gc::IsAboutToBeFinalized(r.front().value));
-
-            
-            MOZ_ASSERT(k == r.front().key);
+            Key key(r.front().key);
+            Value value(r.front().value);
+            MOZ_ASSERT(key);
+            MOZ_ASSERT(value);
+            MOZ_ASSERT(!gc::IsAboutToBeFinalized(&key));
+            MOZ_ASSERT(!gc::IsAboutToBeFinalized(&value));
+            CheckGCThingAfterMovingGC(key);
+            CheckGCThingAfterMovingGC(value);
+            auto ptr = this->lookup(key);
+            MOZ_ASSERT(ptr.found() && &*ptr == &r.front());
         }
 #endif
     }
@@ -89,15 +88,22 @@ class WeakValueCache : public HashMap<Key, Value, HashPolicy, AllocPolicy>
     void sweep(FreeOp* fop) {
         
         for (Enum e(*this); !e.empty(); e.popFront()) {
+            MOZ_ASSERT(e.front().value());
             if (gc::IsAboutToBeFinalized(&e.front().value()))
                 e.removeFront();
         }
 
-#if DEBUG
+#ifdef DEBUG
         
         
-        for (Range r = Base::all(); !r.empty(); r.popFront())
-            MOZ_ASSERT(!gc::IsAboutToBeFinalized(&r.front().value()));
+        for (Range r = Base::all(); !r.empty(); r.popFront()) {
+            Value value(r.front().value());
+            MOZ_ASSERT(value);
+            MOZ_ASSERT(!gc::IsAboutToBeFinalized(&value));
+            CheckGCThingAfterMovingGC(value);
+            auto ptr = this->lookup(r.front().key());
+            MOZ_ASSERT(ptr.found() && &*ptr == &r.front());
+        }
 #endif
     }
 };

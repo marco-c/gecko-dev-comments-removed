@@ -466,12 +466,8 @@ class JitCompartment
         return nullptr;
     }
     bool putStubCode(uint32_t key, Handle<JitCode*> stubCode) {
-        
-        
-        
-        MOZ_ASSERT(!stubCodes_->has(key));
-        ICStubCodeMap::AddPtr p = stubCodes_->lookupForAdd(key);
-        return stubCodes_->add(p, key, stubCode.get());
+        MOZ_ASSERT(stubCode);
+        return stubCodes_->putNew(key, stubCode.get());
     }
     void initBaselineCallReturnAddr(void* addr, bool constructing) {
         MOZ_ASSERT(baselineCallReturnAddrs_[constructing] == nullptr);
