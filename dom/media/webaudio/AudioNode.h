@@ -100,6 +100,11 @@ public:
   
   
   virtual void NotifyInputsChanged() {}
+  
+  
+  
+  
+  virtual void NotifyHasPhantomInput() {}
 
   
   

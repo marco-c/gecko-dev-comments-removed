@@ -173,6 +173,8 @@ AudioNode::DisconnectFromGraph()
     
     
     output->mInputNodes.RemoveElementAt(inputIndex);
+    
+    output->NotifyHasPhantomInput();
   }
 
   while (!mOutputParams.IsEmpty()) {
