@@ -509,7 +509,6 @@ gfxWindowsPlatform::HandleDeviceReset()
 
   
   
-  mIsWARP = false;
   mHasDeviceReset = false;
   mHasFakeDeviceReset = false;
   mDoesD3D11TextureSharingWork = false;
@@ -1914,6 +1913,11 @@ CanUseWARP()
 FeatureStatus
 gfxWindowsPlatform::CheckD3D11Support(bool* aCanUseHardware)
 {
+  
+  if (IsFeatureStatusFailure(mD3D11Status)) {
+    return mD3D11Status;
+  }
+
   if (gfxPrefs::LayersD3D11ForceWARP()) {
     *aCanUseHardware = false;
     return FeatureStatus::Available;
@@ -2078,6 +2082,11 @@ void
 gfxWindowsPlatform::InitializeDevices()
 {
   
+  if (IsFeatureStatusFailure(mAcceleration)) {
+    return;
+  }
+
+  
   
   DriverInitCrashDetection detectCrashes;
   if (detectCrashes.DisableAcceleration() || InSafeMode()) {
@@ -2136,6 +2145,12 @@ gfxWindowsPlatform::InitializeD3D11()
   }
 
   
+  if (gfxPrefs::DeviceFailForTesting()) {
+    mD3D11Status = FeatureStatus::Failed;
+    return;
+  }
+
+  
   if (canUseHardware) {
     AttemptD3D11DeviceCreation();
   }
@@ -2186,6 +2201,11 @@ IsD2DBlacklisted()
 FeatureStatus
 gfxWindowsPlatform::CheckD2DSupport()
 {
+  
+  if (IsFeatureStatusFailure(mD2DStatus)) {
+    return mD2DStatus;
+  }
+
   if (!gfxPrefs::Direct2DForceEnabled() && IsD2DBlacklisted()) {
     return FeatureStatus::Blacklisted;
   }
@@ -2239,6 +2259,10 @@ gfxWindowsPlatform::InitializeD2D()
 FeatureStatus
 gfxWindowsPlatform::CheckD2D1Support()
 {
+  
+  if (IsFeatureStatusFailure(mD2D1Status)) {
+    return mD2D1Status;
+  }
   if (!Factory::SupportsD2D1()) {
     return FeatureStatus::Unavailable;
   }
