@@ -736,7 +736,7 @@ NS_IMETHODIMP_(nsresult) XPCVariant::GetAsID(nsID* retval)
 
 NS_IMETHODIMP XPCVariant::GetAsAString(nsAString & _retval)
 {
-    return nsVariant::ConvertToAString(mData, _retval);
+    return mData.ConvertToAString(_retval);
 }
 
 
@@ -744,31 +744,31 @@ NS_IMETHODIMP XPCVariant::GetAsDOMString(nsAString & _retval)
 {
     
     
-    return nsVariant::ConvertToAString(mData, _retval);
+    return mData.ConvertToAString(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsACString(nsACString & _retval)
 {
-    return nsVariant::ConvertToACString(mData, _retval);
+    return mData.ConvertToACString(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsAUTF8String(nsAUTF8String & _retval)
 {
-    return nsVariant::ConvertToAUTF8String(mData, _retval);
+    return mData.ConvertToAUTF8String(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsString(char** _retval)
 {
-    return nsVariant::ConvertToString(mData, _retval);
+    return mData.ConvertToString(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsWString(char16_t** _retval)
 {
-    return nsVariant::ConvertToWString(mData, _retval);
+    return mData.ConvertToWString(_retval);
 }
 
 
@@ -793,11 +793,11 @@ NS_IMETHODIMP_(nsresult) XPCVariant::GetAsArray(uint16_t* type, nsIID* iid, uint
 
 NS_IMETHODIMP XPCVariant::GetAsStringWithSize(uint32_t* size, char** str)
 {
-    return nsVariant::ConvertToStringWithSize(mData, size, str);
+    return mData.ConvertToStringWithSize(size, str);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsWStringWithSize(uint32_t* size, char16_t** str)
 {
-    return nsVariant::ConvertToWStringWithSize(mData, size, str);
+    return mData.ConvertToWStringWithSize(size, str);
 }
