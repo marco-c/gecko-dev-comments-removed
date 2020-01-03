@@ -11,9 +11,8 @@
 
 
 
-"use strict";
 
-Cu.import("resource://gre/modules/Promise.jsm");
+"use strict";
 
 function run_test() {
   Cu.import("resource://gre/modules/LogShake.jsm");
@@ -22,11 +21,12 @@ function run_test() {
 
 add_test(setup_logshake_mocks);
 
-add_test(function test_logShake_captureLogs_writes() {
+add_test(function test_logShake_captureLogs_waits_to_read() {
   
   LogShake.init();
 
-  let expectedFiles = [];
+  
+  LogShake.LOGS_WITH_PARSERS = {};
 
   LogShake.captureLogs().then(logResults => {
     LogShake.uninit();
@@ -35,21 +35,25 @@ add_test(function test_logShake_captureLogs_writes() {
     ok(logResults.logPaths.length > 0, "Should have paths");
     ok(!logResults.compressed, "Should not be compressed");
 
-    logResults.logPaths.forEach(f => {
-      let p = OS.Path.join(sdcard, f);
-      ok(p, "Should have a valid result path: " + p);
+    
+    
+    
+    let hasAboutMemory = false;
 
-      let t = OS.File.exists(p).then(rv => {
-        ok(rv, "File exists: " + p);
-      });
-
-      expectedFiles.push(t);
+    logResults.logFilenames.forEach(filename => {
+      
+      
+      
+      if (filename.indexOf("about_memory") < 0) {
+        return;
+      }
+      hasAboutMemory = true;
     });
 
-    Promise.all(expectedFiles).then(() => {
-      ok(true, "Completed all files checks");
-      run_next_test();
-    });
+    ok(hasAboutMemory,
+       "LogShake's asynchronous read of about:memory should have succeeded.");
+
+    run_next_test();
   },
   error => {
     LogShake.uninit();

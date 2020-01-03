@@ -16,10 +16,14 @@ function parseLogArray(array) {
   let data = new DataView(array.buffer);
   let byteString = String.fromCharCode.apply(null, array);
 
+  
+  
+  const HEADER_LENGTH = 21;
+
   let logMessages = [];
   let pos = 0;
 
-  while (pos < byteString.length) {
+  while (pos + HEADER_LENGTH < byteString.length) {
     
 
     

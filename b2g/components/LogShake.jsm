@@ -277,15 +277,18 @@ let LogShake = {
 
 
   captureLogs: function() {
-    let logArrays = this.readLogs();
-    return this.saveLogs(logArrays);
+    return this.readLogs().then(logArrays => {
+      return this.saveLogs(logArrays);
+    });
   },
 
   
 
 
+
   readLogs: function() {
     let logArrays = {};
+    let readPromises = [];
 
     try {
       logArrays["properties"] =
@@ -295,14 +298,15 @@ let LogShake = {
     }
 
     
-    try {
+    let readAboutMemoryPromise = new Promise(resolve => {
+      
       LogCapture.readAboutMemory().then(aboutMemory => {
         let file = OS.Path.basename(aboutMemory);
         let logArray;
         try {
           logArray = LogCapture.readLogFile(aboutMemory);
           if (!logArray) {
-            debug("LogCapture.readLogFile() returned nothing about:memory ");
+            debug("LogCapture.readLogFile() returned nothing for about:memory");
           }
           
           OS.File.remove(aboutMemory);
@@ -310,18 +314,25 @@ let LogShake = {
           Cu.reportError("Unable to handle about:memory dump: " + ex);
         }
         logArrays[file] = LogParser.prettyPrintArray(logArray);
+        resolve();
+      }, ex => {
+        Cu.reportError("Unable to get about:memory dump: " + ex);
+        resolve();
       });
-    } catch (ex) {
-      Cu.reportError("Unable to get about:memory dump: " + ex);
-    }
+    });
+    readPromises.push(readAboutMemoryPromise);
 
-    try {
+    
+    let readScreenshotPromise = new Promise(resolve => {
       LogCapture.getScreenshot().then(screenshot => {
         logArrays["screenshot.png"] = screenshot;
+        resolve();
+      }, ex => {
+        Cu.reportError("Unable to get screenshot dump: " + ex);
+        resolve();
       });
-    } catch (ex) {
-      Cu.reportError("Unable to get screenshot dump: " + ex);
-    }
+    });
+    readPromises.push(readScreenshotPromise);
 
     for (let loc in this.LOGS_WITH_PARSERS) {
       let logArray;
@@ -343,7 +354,12 @@ let LogShake = {
         continue;
       }
     }
-    return logArrays;
+
+    
+    
+    return Promise.all(readPromises).then(() => {
+      return logArrays;
+    });
   },
 
   
