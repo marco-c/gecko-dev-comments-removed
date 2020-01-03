@@ -1119,9 +1119,6 @@ pref("dom.mapped_arraybuffer.enabled", true);
 #endif
 
 
-pref("dom.broadcastChannel.enabled", true);
-
-
 pref("dom.system_update.enabled", true);
 
 

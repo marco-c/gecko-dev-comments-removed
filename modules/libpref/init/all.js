@@ -4718,9 +4718,6 @@ pref("dom.voicemail.enabled", false);
 pref("dom.voicemail.defaultServiceId", 0);
 
 
-pref("dom.broadcastChannel.enabled", true);
-
-
 pref("dom.inter-app-communication-api.enabled", false);
 
 
