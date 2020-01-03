@@ -18,6 +18,7 @@ const Services = require("Services");
 const DevToolsUtils = require("devtools/toolkit/DevToolsUtils.js");
 const xpcInspector = require("xpcInspector");
 const { DebuggerServer } = require("devtools/server/main");
+const { DebuggerClient } = require("devtools/toolkit/client/main");
 
 
 
@@ -29,18 +30,6 @@ const { DebuggerServer } = require("devtools/server/main");
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
 Services.prefs.setIntPref("devtools.remote.tls-handshake-timeout", 1000);
-
-function tryImport(url) {
-  try {
-    Cu.import(url);
-  } catch (e) {
-    dump("Error importing " + url + "\n");
-    dump(DevToolsUtils.safeErrorString(e) + "\n");
-    throw e;
-  }
-}
-
-tryImport("resource://gre/modules/devtools/dbg-client.jsm");
 
 
 function scriptErrorFlagsToKind(aFlags) {
