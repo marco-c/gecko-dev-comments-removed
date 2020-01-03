@@ -35,6 +35,12 @@
   display: none;
 }
 
+
+
+#identity-popup [hidden] {
+  display: none !important;
+}
+
 #identity-popup,
 #identity-popup:not([panelopen]) .panel-viewstack[viewtype="main"]:not([transitioning]) #identity-popup-mainView {
   
