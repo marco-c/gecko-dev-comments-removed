@@ -2391,12 +2391,20 @@ public class GeckoAppShell
         return HardwareUtils.isTablet();
     }
 
+    private static boolean sImeWasEnabledOnLastResize = false;
     public static void viewSizeChanged() {
         LayerView v = getLayerView();
-        if (v != null && v.isIMEEnabled()) {
+        if (v == null) {
+            return;
+        }
+        boolean imeIsEnabled = v.isIMEEnabled();
+        if (imeIsEnabled && !sImeWasEnabledOnLastResize) {
+            
+            
             sendEventToGecko(GeckoEvent.createBroadcastEvent(
                     "ScrollTo:FocusedInput", ""));
         }
+        sImeWasEnabledOnLastResize = imeIsEnabled;
     }
 
     @WrapForJNI(stubName = "GetCurrentNetworkInformationWrapper")
