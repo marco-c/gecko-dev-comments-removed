@@ -332,7 +332,7 @@ public:
   
   bool IsShutdown();
 
-  void QueueMetadata(int64_t aPublishTime,
+  void QueueMetadata(const media::TimeUnit& aPublishTime,
                      nsAutoPtr<MediaInfo> aInfo,
                      nsAutoPtr<MetadataTags> aTags);
 

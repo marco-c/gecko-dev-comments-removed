@@ -11,6 +11,7 @@
 
 #include "nsAutoPtr.h"
 #include "AbstractMediaDecoder.h"
+#include "TimeUnits.h"
 #include "VideoUtils.h"
 
 namespace mozilla {
@@ -20,7 +21,7 @@ namespace mozilla {
 class TimedMetadata : public LinkedListElement<TimedMetadata> {
 public:
   
-  int64_t mPublishTime;
+  media::TimeUnit mPublishTime;
   
   
   nsAutoPtr<MetadataTags> mTags;
@@ -46,9 +47,9 @@ public:
     mMetadataQueue.insertBack(aMetadata);
   }
 
-  void DispatchMetadataIfNeeded(AbstractMediaDecoder* aDecoder, double aCurrentTime) {
+  void DispatchMetadataIfNeeded(AbstractMediaDecoder* aDecoder, const media::TimeUnit& aCurrentTime) {
     TimedMetadata* metadata = mMetadataQueue.getFirst();
-    while (metadata && aCurrentTime >= static_cast<double>(metadata->mPublishTime) / USECS_PER_S) {
+    while (metadata && aCurrentTime >= metadata->mPublishTime) {
       
       nsCOMPtr<nsIRunnable> removeTracksEvent =
         new RemoveMediaTracksEventRunner(aDecoder);
