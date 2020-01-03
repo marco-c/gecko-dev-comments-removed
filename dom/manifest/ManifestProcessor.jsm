@@ -22,9 +22,7 @@
 
 'use strict';
 const {
-  utils: Cu,
-  interfaces: Ci,
-  classes: Cc
+  utils: Cu
 } = Components;
 Cu.importGlobalProperties(['URL']);
 const displayModes = new Set(['fullscreen', 'standalone', 'minimal-ui',
@@ -34,41 +32,23 @@ const orientationTypes = new Set(['any', 'natural', 'landscape', 'portrait',
   'portrait-primary', 'portrait-secondary', 'landscape-primary',
   'landscape-secondary'
 ]);
-const {
-  ConsoleAPI
-} = Cu.import('resource://gre/modules/devtools/Console.jsm', {});
+Cu.import('resource://gre/modules/devtools/Console.jsm');
 
 
-const {
-  ValueExtractor
-} = Cu.import('resource://gre/modules/ValueExtractor.js', {});
+Cu.import('resource://gre/modules/ValueExtractor.jsm');
 
-const {
-  ImageObjectProcessor
-} = Cu.import('resource://gre/modules/ImageObjectProcessor.js', {});
+Cu.import('resource://gre/modules/ImageObjectProcessor.jsm');
 
-function ManifestProcessor() {}
-
-
-Object.defineProperties(ManifestProcessor, {
-  'defaultDisplayMode': {
-    get: function() {
-      return 'browser';
-    }
+this.ManifestProcessor = { 
+  get defaultDisplayMode() {
+    return 'browser';
   },
-  'displayModes': {
-    get: function() {
-      return displayModes;
-    }
+  get displayModes() {
+    return displayModes;
   },
-  'orientationTypes': {
-    get: function() {
-      return orientationTypes;
-    }
-  }
-});
-
-ManifestProcessor.prototype = {
+  get orientationTypes() {
+    return orientationTypes;
+  },
   
   
   
@@ -99,8 +79,8 @@ ManifestProcessor.prototype = {
     const processedManifest = {
       'lang': processLangMember(),
       'start_url': processStartURLMember(),
-      'display': processDisplayMember(),
-      'orientation': processOrientationMember(),
+      'display': processDisplayMember.call(this),
+      'orientation': processOrientationMember.call(this),
       'name': processNameMember(),
       'icons': imgObjProcessor.process(
         rawManifest, manifestURL, 'icons'
@@ -145,7 +125,7 @@ ManifestProcessor.prototype = {
         trim: true
       };
       const value = extractor.extractValue(spec);
-      if (ManifestProcessor.orientationTypes.has(value)) {
+      if (this.orientationTypes.has(value)) {
         return value;
       }
       
@@ -161,10 +141,10 @@ ManifestProcessor.prototype = {
         trim: true
       };
       const value = extractor.extractValue(spec);
-      if (ManifestProcessor.displayModes.has(value)) {
+      if (displayModes.has(value)) {
         return value;
       }
-      return ManifestProcessor.defaultDisplayMode;
+      return this.defaultDisplayMode;
     }
 
     function processScopeMember() {
@@ -249,8 +229,7 @@ ManifestProcessor.prototype = {
         objectName: 'manifest',
         object: rawManifest,
         property: 'lang',
-        expectedType: 'string',
-        trim: true
+        expectedType: 'string', trim: true
       };
       let tag = extractor.extractValue(spec);
       
@@ -265,5 +244,4 @@ ManifestProcessor.prototype = {
     }
   }
 };
-this.ManifestProcessor = ManifestProcessor; 
 this.EXPORTED_SYMBOLS = ['ManifestProcessor']; 
