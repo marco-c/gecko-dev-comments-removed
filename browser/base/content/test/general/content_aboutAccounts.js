@@ -13,6 +13,12 @@ addEventListener("load", function load(event) {
   }
 
   sendAsyncMessage("test:document:load");
+  
+  
+  
+  content.openPrefs = function() {
+    sendAsyncMessage("test:openPrefsCalled");
+  }
 }, true);
 
 addEventListener("DOMContentLoaded", function domContentLoaded(event) {
