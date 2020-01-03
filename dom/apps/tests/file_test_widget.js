@@ -170,7 +170,9 @@ function checkIsWidgetScript(testMozbrowserEvent) {
   request.onerror = onError;
 
   if (testMozbrowserEvent) {
-    content.window.open("about:blank"); 
+    var win = content.window.open("about:blank"); 
+    
+    win.close();
     content.window.scrollTo(4000, 4000); 
   }
 }
