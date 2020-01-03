@@ -3,11 +3,13 @@
 
 
 
+#include "ipc/PresentationIPCService.h"
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
 #include "nsIPresentationListener.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 #include "PresentationService.h"
 
 using namespace mozilla;
@@ -168,7 +170,15 @@ NS_CreatePresentationService()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsCOMPtr<nsIPresentationService> service = new PresentationService();
-  return NS_WARN_IF(!static_cast<PresentationService*>(service.get())->Init()) ?
-         nullptr : service.forget();
+  nsCOMPtr<nsIPresentationService> service;
+  if (XRE_GetProcessType() == GeckoProcessType_Content) {
+    service = new mozilla::dom::PresentationIPCService();
+  } else {
+    service = new PresentationService();
+    if (NS_WARN_IF(!static_cast<PresentationService*>(service.get())->Init())) {
+      return nullptr;
+    }
+  }
+
+  return service.forget();
 }
