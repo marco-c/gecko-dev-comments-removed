@@ -177,6 +177,16 @@ public:
         (*aData)[3] == 0x6b) {
       return true;
     }
+    
+    if (aData->Length() >= 1 &&
+        (*aData)[0] == 0xa3) {
+      return true;
+    }
+    
+    if (aData->Length() >= 1 &&
+        (*aData)[0] == 0xa1) {
+      return true;
+    }
     return false;
   }
 
