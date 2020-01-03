@@ -4,9 +4,6 @@
 
 
 
-
-
-
 #include <new>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +11,6 @@
 #include "pldhash.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MathAlgorithms.h"
-#include "nsDebug.h"     
 #include "nsAlgorithm.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
@@ -149,8 +145,6 @@ SizeOfEntryStore(uint32_t aCapacity, uint32_t aEntrySize, uint32_t* aNbytes)
   *aNbytes = aCapacity * aEntrySize;
   return uint64_t(*aNbytes) == nbytes64;   
 }
-
-
 
 
 
@@ -295,8 +289,6 @@ PLDHashTable::Hash2(PLDHashNumber aHash,
 
 
 
-
-
  MOZ_ALWAYS_INLINE bool
 PLDHashTable::EntryIsFree(PLDHashEntryHdr* aEntry)
 {
@@ -416,9 +408,7 @@ PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash)
   Hash2(aKeyHash, hash2, sizeMask);
 
   
-
-
-
+  
   PLDHashEntryHdr* firstRemoved = nullptr;
 
   for (;;) {
@@ -450,9 +440,6 @@ PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash)
   
   return nullptr;
 }
-
-
-
 
 
 
@@ -606,10 +593,8 @@ PLDHashTable::Add(const void* aKey, const mozilla::fallible_t&)
   }
 
   
-
-
-
-
+  
+  
   uint32_t capacity = Capacity();
   if (mEntryCount + mRemovedCount >= MaxLoad(capacity)) {
     
@@ -621,10 +606,7 @@ PLDHashTable::Add(const void* aKey, const mozilla::fallible_t&)
     }
 
     
-
-
-
-
+    
     if (!ChangeTable(deltaLog2) &&
         mEntryCount + mRemovedCount >= MaxLoadOnGrowthFailure(capacity)) {
       return nullptr;
@@ -632,9 +614,7 @@ PLDHashTable::Add(const void* aKey, const mozilla::fallible_t&)
   }
 
   
-
-
-
+  
   PLDHashNumber keyHash = ComputeKeyHash(aKey);
   PLDHashEntryHdr* entry = SearchTable<ForAdd>(aKey, keyHash);
   if (!EntryIsLive(entry)) {

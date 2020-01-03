@@ -7,8 +7,6 @@
 #ifndef pldhash_h___
 #define pldhash_h___
 
-
-
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h" 
 #include "mozilla/fallible.h"
@@ -29,8 +27,6 @@ typedef uint32_t PLDHashNumber;
 
 class PLDHashTable;
 struct PLDHashTableOps;
-
-
 
 
 
@@ -219,8 +215,6 @@ private:
 
 
 
-
-
 class PLDHashTable
 {
 private:
@@ -288,10 +282,8 @@ public:
   const PLDHashTableOps* const Ops() { return mOps; }
 
   
-
-
-
-
+  
+  
   uint32_t Capacity() const
   {
     return mEntryStore ? CapacityFromHashShift() : 0;
@@ -497,12 +489,8 @@ private:
 
 
 
-
-
 typedef PLDHashNumber (*PLDHashHashKey)(PLDHashTable* aTable,
                                         const void* aKey);
-
-
 
 
 
@@ -514,13 +502,9 @@ typedef bool (*PLDHashMatchEntry)(PLDHashTable* aTable,
 
 
 
-
-
 typedef void (*PLDHashMoveEntry)(PLDHashTable* aTable,
                                  const PLDHashEntryHdr* aFrom,
                                  PLDHashEntryHdr* aTo);
-
-
 
 
 
@@ -531,11 +515,7 @@ typedef void (*PLDHashClearEntry)(PLDHashTable* aTable,
 
 
 
-
-
 typedef void (*PLDHashInitEntry)(PLDHashEntryHdr* aEntry, const void* aKey);
-
-
 
 
 
@@ -571,8 +551,6 @@ struct PLDHashTableOps
 
 
 
-
-
 PLDHashNumber
 PL_DHashStringKey(PLDHashTable* aTable, const void* aKey);
 
@@ -602,8 +580,6 @@ PL_DHashMoveEntryStub(PLDHashTable* aTable,
 
 void
 PL_DHashClearEntryStub(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
-
-
 
 
 
