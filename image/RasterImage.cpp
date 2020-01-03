@@ -1484,6 +1484,11 @@ RasterImage::RecoverFromLossOfFrames(const IntSize& aSize, uint32_t aFlags)
   SurfaceCache::RemoveImage(ImageKey(this));
 
   
+  if (mLockCount > 0) {
+    SurfaceCache::LockImage(ImageKey(this));
+  }
+
+  
   
   if (mAnim) {
     Decode(mSize, aFlags | FLAG_SYNC_DECODE);
