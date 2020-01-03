@@ -41,6 +41,14 @@ public:
   
   
   
+  
+  static CanPlayStatus CanHandleCodecsType(const char* aMIMEType,
+                                           const nsAString& aRequestedCodecs);
+
+  
+  
+  
+  
   static bool ShouldHandleMediaType(const char* aMIMEType);
 
   
@@ -63,6 +71,7 @@ public:
   static bool DecoderWaitsForOnConnected(const nsACString& aType);
 
   static bool IsWebMType(const nsACString& aType);
+  static bool IsMP4Type(const nsACString& aType);
 };
 
 } 
