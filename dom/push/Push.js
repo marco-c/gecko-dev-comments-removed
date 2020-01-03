@@ -5,7 +5,7 @@
 "use strict";
 
 
-let gDebuggingEnabled = true;
+let gDebuggingEnabled = false;
 
 function debug(s) {
   if (gDebuggingEnabled)
