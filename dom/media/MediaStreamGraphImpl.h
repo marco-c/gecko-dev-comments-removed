@@ -533,13 +533,6 @@ public:
   }
 
   
-  void RegisterCaptureStreamForWindow(uint64_t aWindowId,
-                                      ProcessedMediaStream* aCaptureStream);
-  void UnregisterCaptureStreamForWindow(uint64_t aWindowId);
-  already_AddRefed<MediaInputPort>
-  ConnectToCaptureStream(uint64_t aWindowId, MediaStream* aMediaStream);
-
-  
   
   
 
@@ -762,16 +755,6 @@ private:
 
 
   nsTArray<AudioNodeSizes> mAudioStreamSizes;
-
-  struct WindowAndStream
-  {
-    uint64_t mWindowId;
-    nsRefPtr<ProcessedMediaStream> mCaptureStreamSink;
-  };
-  
-
-
-  nsTArray<WindowAndStream> mWindowCaptureStreams;
   
 
 

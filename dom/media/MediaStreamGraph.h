@@ -1263,10 +1263,6 @@ public:
 
   ProcessedMediaStream* CreateTrackUnionStream(DOMMediaStream* aWrapper);
   
-
-
-  ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper);
-  
   
   
   enum AudioNodeStreamKind { SOURCE_STREAM, INTERNAL_STREAM, EXTERNAL_STREAM };
@@ -1321,12 +1317,6 @@ public:
 
 
   TrackRate GraphRate() const { return mSampleRate; }
-
-  void RegisterCaptureStreamForWindow(uint64_t aWindowId,
-                                      ProcessedMediaStream* aCaptureStream);
-  void UnregisterCaptureStreamForWindow(uint64_t aWindowId);
-  already_AddRefed<MediaInputPort> ConnectToCaptureStream(
-    uint64_t aWindowId, MediaStream* aMediaStream);
 
 protected:
   explicit MediaStreamGraph(TrackRate aSampleRate)

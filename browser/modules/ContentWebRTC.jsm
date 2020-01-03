@@ -86,21 +86,14 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
 
   
   let video = aConstraints.video || aConstraints.picture;
-  let audio = aConstraints.audio;
   let sharingScreen = video && typeof(video) != "boolean" &&
                       video.mediaSource != "camera";
-  let sharingAudio = audio && typeof(audio) != "boolean" &&
-                     audio.mediaSource != "microphone";
   for (let device of aDevices) {
     device = device.QueryInterface(Ci.nsIMediaDevice);
     switch (device.type) {
       case "audio":
-        
-        
-        
-        if (audio && (device.mediaSource == "microphone") != sharingAudio) {
-          audioDevices.push({name: device.name, deviceIndex: devices.length,
-                             mediaSource: device.mediaSource});
+        if (aConstraints.audio) {
+          audioDevices.push({name: device.name, deviceIndex: devices.length});
           devices.push(device);
         }
         break;
@@ -120,7 +113,7 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
   if (videoDevices.length)
     requestTypes.push(sharingScreen ? "Screen" : "Camera");
   if (audioDevices.length)
-    requestTypes.push(sharingAudio ? "AudioCapture" : "Microphone");
+    requestTypes.push("Microphone");
 
   if (!requestTypes.length) {
     denyRequest({callID: aCallID}, "NotFoundError");
@@ -140,7 +133,6 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
     secure: aSecure,
     requestTypes: requestTypes,
     sharingScreen: sharingScreen,
-    sharingAudio: sharingAudio,
     audioDevices: audioDevices,
     videoDevices: videoDevices
   };

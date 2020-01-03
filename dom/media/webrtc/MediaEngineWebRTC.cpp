@@ -291,13 +291,6 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
   
   MutexAutoLock lock(mMutex);
 
-  if (aMediaSource == dom::MediaSourceEnum::AudioCapture) {
-    nsRefPtr<MediaEngineWebRTCAudioCaptureSource> audioCaptureSource =
-      new MediaEngineWebRTCAudioCaptureSource(nullptr);
-    aASources->AppendElement(audioCaptureSource);
-    return;
-  }
-
 #ifdef MOZ_WIDGET_ANDROID
   jobject context = mozilla::AndroidBridge::Bridge()->GetGlobalContextRef();
 
@@ -365,14 +358,15 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
       strcpy(uniqueId,deviceName); 
     }
 
-    nsRefPtr<MediaEngineAudioSource> aSource;
+    nsRefPtr<MediaEngineWebRTCAudioSource> aSource;
     NS_ConvertUTF8toUTF16 uuid(uniqueId);
     if (mAudioSources.Get(uuid, getter_AddRefs(aSource))) {
       
       aASources->AppendElement(aSource.get());
     } else {
-      aSource = new MediaEngineWebRTCMicrophoneSource(mThread, mVoiceEngine, i,
-                                                      deviceName, uniqueId);
+      aSource = new MediaEngineWebRTCAudioSource(
+        mThread, mVoiceEngine, i, deviceName, uniqueId
+      );
       mAudioSources.Put(uuid, aSource); 
       aASources->AppendElement(aSource);
     }
@@ -391,8 +385,9 @@ ClearVideoSource (const nsAString&,
 }
 
 static PLDHashOperator
-ClearAudioSource(const nsAString &, 
-                 MediaEngineAudioSource *aData, void *userArg)
+ClearAudioSource (const nsAString&, 
+                  MediaEngineWebRTCAudioSource* aData,
+                  void *userArg)
 {
   if (aData) {
     aData->Shutdown();
