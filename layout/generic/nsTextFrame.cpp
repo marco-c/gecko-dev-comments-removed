@@ -355,6 +355,9 @@ public:
     }
   }
 
+  nscolor GetSystemFieldForegroundColor();
+  nscolor GetSystemFieldBackgroundColor();
+
 protected:
   nsTextFrame*   mFrame;
   nsPresContext* mPresContext;
@@ -374,6 +377,8 @@ protected:
 
   int32_t mSufficientContrast;
   nscolor mFrameBackgroundColor;
+  nscolor mSystemFieldForegroundColor;
+  nscolor mSystemFieldBackgroundColor;
 
   
   
@@ -3635,6 +3640,11 @@ nsTextPaintStyle::InitCommonColors()
   nscolor defaultBgColor = mPresContext->DefaultBackgroundColor();
   mFrameBackgroundColor = NS_ComposeColors(defaultBgColor, bgColor);
 
+  mSystemFieldForegroundColor =
+    LookAndFeel::GetColor(LookAndFeel::eColorID__moz_fieldtext);
+  mSystemFieldBackgroundColor =
+    LookAndFeel::GetColor(LookAndFeel::eColorID__moz_field);
+
   if (bgFrame->IsThemed()) {
     
     mSufficientContrast = 0;
@@ -3660,6 +3670,20 @@ nsTextPaintStyle::InitCommonColors()
                                            selectionBGColor));
 
   mInitCommonColors = true;
+}
+
+nscolor
+nsTextPaintStyle::GetSystemFieldForegroundColor()
+{
+  InitCommonColors();
+  return mSystemFieldForegroundColor;
+}
+
+nscolor
+nsTextPaintStyle::GetSystemFieldBackgroundColor()
+{
+  InitCommonColors();
+  return mSystemFieldBackgroundColor;
 }
 
 static Element*
@@ -5339,13 +5363,25 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
           
           return;
         }
-        if (aRangeStyle.IsUnderlineColorDefined()) {
+        
+        
+        if (aRangeStyle.IsUnderlineColorDefined() &&
+            aRangeStyle.IsForegroundColorDefined() &&
+            aRangeStyle.mUnderlineColor != aRangeStyle.mForegroundColor) {
           color = aRangeStyle.mUnderlineColor;
-        } else if (aRangeStyle.IsForegroundColorDefined()) {
-          color = aRangeStyle.mForegroundColor;
-        } else {
-          NS_ASSERTION(!aRangeStyle.IsBackgroundColorDefined(),
-                       "Only the background color is defined");
+        }
+        
+        
+        
+        
+        else if (aRangeStyle.IsForegroundColorDefined() ||
+                 aRangeStyle.IsBackgroundColorDefined()) {
+          nscolor bg;
+          GetSelectionTextColors(aType, aTextPaintStyle, aRangeStyle,
+                                 &color, &bg);
+        }
+        
+        else {
           color = aTextPaintStyle.GetTextColor();
         }
       } else if (!weDefineSelectionUnderline) {
@@ -5406,17 +5442,28 @@ nsTextFrame::GetSelectionTextColors(SelectionType aType,
     case nsISelectionController::SELECTION_IME_CONVERTEDTEXT:
     case nsISelectionController::SELECTION_IME_SELECTEDCONVERTEDTEXT:
       if (aRangeStyle.IsDefined()) {
-        *aForeground = aTextPaintStyle.GetTextColor();
-        *aBackground = NS_RGBA(0,0,0,0);
         if (!aRangeStyle.IsForegroundColorDefined() &&
             !aRangeStyle.IsBackgroundColorDefined()) {
+          *aForeground = aTextPaintStyle.GetTextColor();
+          *aBackground = NS_RGBA(0,0,0,0);
           return false;
         }
         if (aRangeStyle.IsForegroundColorDefined()) {
           *aForeground = aRangeStyle.mForegroundColor;
-        }
-        if (aRangeStyle.IsBackgroundColorDefined()) {
+          if (aRangeStyle.IsBackgroundColorDefined()) {
+            *aBackground = aRangeStyle.mBackgroundColor;
+          } else {
+            
+            
+            
+            *aBackground = aTextPaintStyle.GetSystemFieldBackgroundColor();
+          }
+        } else { 
           *aBackground = aRangeStyle.mBackgroundColor;
+          
+          
+          
+          *aForeground = aTextPaintStyle.GetSystemFieldForegroundColor();
         }
         return true;
       }
