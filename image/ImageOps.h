@@ -12,8 +12,14 @@
 
 class gfxDrawable;
 class imgIContainer;
+class nsIInputStream;
 
 namespace mozilla {
+
+namespace gfx {
+class SourceSurface;
+}
+
 namespace image {
 
 class Image;
@@ -60,6 +66,23 @@ public:
 
   static already_AddRefed<imgIContainer>
   CreateFromDrawable(gfxDrawable* aDrawable);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<gfx::SourceSurface>
+  DecodeToSurface(nsIInputStream* aInputStream,
+                  const nsACString& aMimeType,
+                  uint32_t aFlags);
 
 private:
   

@@ -290,9 +290,6 @@ public:
 
   RasterImage* GetImage() const { MOZ_ASSERT(mImage); return mImage.get(); }
 
-  
-  
-  
   RawAccessFrameRef GetCurrentFrameRef()
   {
     return mCurrentFrame ? mCurrentFrame->RawAccessRef()

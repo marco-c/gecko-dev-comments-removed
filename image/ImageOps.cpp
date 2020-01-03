@@ -4,14 +4,23 @@
 
 
 
-#include "imgIContainer.h"
+#include "ImageOps.h"
+
+#include "mozilla/gfx/2D.h"
+
 #include "ClippedImage.h"
+#include "DecodePool.h"
+#include "Decoder.h"
+#include "DecoderFactory.h"
 #include "DynamicImage.h"
 #include "FrozenImage.h"
-#include "OrientedImage.h"
 #include "Image.h"
+#include "imgIContainer.h"
+#include "nsStreamUtils.h"
+#include "OrientedImage.h"
+#include "SourceBuffer.h"
 
-#include "ImageOps.h"
+using namespace mozilla::gfx;
 
 namespace mozilla {
 namespace image {
@@ -66,6 +75,71 @@ ImageOps::CreateFromDrawable(gfxDrawable* aDrawable)
 {
   nsCOMPtr<imgIContainer> drawableImage = new DynamicImage(aDrawable);
   return drawableImage.forget();
+}
+
+ already_AddRefed<gfx::SourceSurface>
+ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
+                          const nsACString& aMimeType,
+                          uint32_t aFlags)
+{
+  MOZ_ASSERT(aInputStream);
+
+  nsresult rv;
+
+  
+  nsCOMPtr<nsIInputStream> inputStream = aInputStream;
+  if (!NS_InputStreamIsBuffered(aInputStream)) {
+    nsCOMPtr<nsIInputStream> bufStream;
+    rv = NS_NewBufferedInputStream(getter_AddRefs(bufStream),
+                                   aInputStream, 1024);
+    if (NS_SUCCEEDED(rv)) {
+      inputStream = bufStream;
+    }
+  }
+
+  
+  uint64_t length;
+  rv = inputStream->Available(&length);
+  if (NS_FAILED(rv) || length > UINT32_MAX) {
+    return nullptr;
+  }
+
+  
+  nsRefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
+  sourceBuffer->ExpectLength(length);
+  rv = sourceBuffer->AppendFromInputStream(inputStream, length);
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+  sourceBuffer->Complete(NS_OK);
+
+  
+  DecoderType decoderType =
+    DecoderFactory::GetDecoderType(PromiseFlatCString(aMimeType).get());
+  nsRefPtr<Decoder> decoder =
+    DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer, aFlags);
+  if (!decoder) {
+    return nullptr;
+  }
+
+  
+  decoder->Decode();
+  if (!decoder->GetDecodeDone() || decoder->HasError()) {
+    return nullptr;
+  }
+
+  
+  RawAccessFrameRef frame = decoder->GetCurrentFrameRef();
+  if (!frame) {
+    return nullptr;
+  }
+
+  RefPtr<SourceSurface> surface = frame->GetSurface();
+  if (!surface) {
+    return nullptr;
+  }
+
+  return surface.forget();
 }
 
 } 
