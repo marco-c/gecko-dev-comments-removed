@@ -89,15 +89,6 @@ using namespace mozilla;
 using namespace mozilla::ipc;
 USING_BLUETOOTH_NAMESPACE
 
-static nsString sAdapterBdAddress;
-static nsString sAdapterBdName;
-
-static bool sAdapterDiscoverable(false);
-static bool sAdapterDiscovering(false);
-
-
-static InfallibleTArray<nsString> sAdapterBondedAddressArray;
-
 static BluetoothInterface* sBtInterface;
 
 static nsTArray<nsRefPtr<BluetoothProfileController> > sControllerArray;
@@ -113,8 +104,6 @@ static bool sIsRestart(false);
 static bool sIsFirstTimeToggleOffBt(false);
 
 #ifndef MOZ_B2G_BT_API_V1
-static bool sAdapterEnabled(false);
-
 
 static nsDataHashtable<nsStringHashKey, nsString> sDeviceNameMap;
 
@@ -123,12 +112,6 @@ static nsTArray<nsRefPtr<BluetoothReplyRunnable> > sChangeDiscoveryRunnableArray
 static nsTArray<nsRefPtr<BluetoothReplyRunnable> > sFetchUuidsRunnableArray;
 #else
 
-#endif
-
-#ifndef MOZ_B2G_BT_API_V1
-
-#else
-static uint32_t sAdapterDiscoverableTimeout(0);
 #endif
 
 
@@ -435,6 +418,14 @@ BluetoothServiceBluedroid::StopGonkBluetooth()
 
 
 BluetoothServiceBluedroid::BluetoothServiceBluedroid()
+  : mEnabled(false)
+  , mDiscoverable(false)
+  , mDiscovering(false)
+#ifndef MOZ_B2G_BT_API_V1
+  
+#else
+  , mDiscoverableTimeout(0)
+#endif
 {
   sBtInterface = BluetoothInterface::GetInstance();
   if (!sBtInterface) {
@@ -795,17 +786,17 @@ BluetoothServiceBluedroid::GetAdaptersInternal(
     BluetoothValue properties = InfallibleTArray<BluetoothNamedValue>();
 
     BT_APPEND_NAMED_VALUE(properties.get_ArrayOfBluetoothNamedValue(),
-                          "State", sAdapterEnabled);
+                          "State", mEnabled);
     BT_APPEND_NAMED_VALUE(properties.get_ArrayOfBluetoothNamedValue(),
-                          "Address", sAdapterBdAddress);
+                          "Address", mBdAddress);
     BT_APPEND_NAMED_VALUE(properties.get_ArrayOfBluetoothNamedValue(),
-                          "Name", sAdapterBdName);
+                          "Name", mBdName);
     BT_APPEND_NAMED_VALUE(properties.get_ArrayOfBluetoothNamedValue(),
-                          "Discoverable", sAdapterDiscoverable);
+                          "Discoverable", mDiscoverable);
     BT_APPEND_NAMED_VALUE(properties.get_ArrayOfBluetoothNamedValue(),
-                          "Discovering", sAdapterDiscovering);
+                          "Discovering", mDiscovering);
     BT_APPEND_NAMED_VALUE(properties.get_ArrayOfBluetoothNamedValue(),
-                          "PairedDevices", sAdapterBondedAddressArray);
+                          "PairedDevices", mBondedAddresses);
 
     BT_APPEND_NAMED_VALUE(adaptersProperties.get_ArrayOfBluetoothNamedValue(),
                           "Adapter", properties);
@@ -821,27 +812,22 @@ BluetoothServiceBluedroid::GetDefaultAdapterPathInternal(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  bool discoverable = sAdapterDiscoverable;
-  uint32_t discoverableTimeout = sAdapterDiscoverableTimeout;
-
   BluetoothValue v = InfallibleTArray<BluetoothNamedValue>();
 
   BT_APPEND_NAMED_VALUE(v.get_ArrayOfBluetoothNamedValue(),
-                        "Address", sAdapterBdAddress);
+                        "Address", mBdAddress);
 
   BT_APPEND_NAMED_VALUE(v.get_ArrayOfBluetoothNamedValue(),
-                        "Name", sAdapterBdName);
+                        "Name", mBdName);
 
   BT_APPEND_NAMED_VALUE(v.get_ArrayOfBluetoothNamedValue(),
-                        "Discoverable", discoverable);
+                        "Discoverable", mDiscoverable);
 
   BT_APPEND_NAMED_VALUE(v.get_ArrayOfBluetoothNamedValue(),
-                        "DiscoverableTimeout", discoverableTimeout);
+                        "DiscoverableTimeout", mDiscoverableTimeout);
 
   BT_APPEND_NAMED_VALUE(v.get_ArrayOfBluetoothNamedValue(),
-                        "Devices", sAdapterBondedAddressArray);
+                        "Devices", mBondedAddresses);
 
   DispatchReplySuccess(aRunnable, v);
 
@@ -1075,7 +1061,7 @@ BluetoothServiceBluedroid::FetchUuidsInternal(
 
 
 
-  if (sAdapterDiscovering) {
+  if (mDiscovering) {
     sBtInterface->CancelDiscovery(new CancelDiscoveryResultHandler(aRunnable));
   }
 
@@ -1830,9 +1816,9 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
     sIsFirstTimeToggleOffBt = false;
   }
 
-  sAdapterEnabled = aState;
+  mEnabled = aState;
 
-  if (!sAdapterEnabled) {
+  if (!mEnabled) {
     static void (* const sDeinitManager[])(BluetoothProfileResultHandler*) = {
       BluetoothHfpManager::DeinitHfpInterface,
       BluetoothA2dpManager::DeinitA2dpInterface,
@@ -1844,18 +1830,18 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
     NS_ENSURE_TRUE_VOID(bs);
 
     
-    sAdapterBdAddress.Truncate();
-    sAdapterBdName.Truncate();
+    mBdAddress.Truncate();
+    mBdName.Truncate();
 
     InfallibleTArray<BluetoothNamedValue> props;
-    BT_APPEND_NAMED_VALUE(props, "Name", sAdapterBdName);
-    BT_APPEND_NAMED_VALUE(props, "Address", sAdapterBdAddress);
-    if (sAdapterDiscoverable) {
-      sAdapterDiscoverable = false;
+    BT_APPEND_NAMED_VALUE(props, "Name", mBdName);
+    BT_APPEND_NAMED_VALUE(props, "Address", mBdAddress);
+    if (mDiscoverable) {
+      mDiscoverable = false;
       BT_APPEND_NAMED_VALUE(props, "Discoverable", false);
     }
-    if (sAdapterDiscovering) {
-      sAdapterDiscovering = false;
+    if (mDiscovering) {
+      mDiscovering = false;
       BT_APPEND_NAMED_VALUE(props, "Discovering", false);
     }
 
@@ -1873,7 +1859,7 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
     }
   }
 
-  if (sAdapterEnabled) {
+  if (mEnabled) {
 
     
     
@@ -1942,8 +1928,8 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
     };
 
     
-    if (sAdapterDiscoverable) {
-      sAdapterDiscoverable = false;
+    if (mDiscoverable) {
+      mDiscoverable = false;
     }
 
     
@@ -2021,12 +2007,12 @@ BluetoothServiceBluedroid::AdapterPropertiesNotification(
     const BluetoothProperty& p = aProperties[i];
 
     if (p.mType == PROPERTY_BDADDR) {
-      sAdapterBdAddress = p.mString;
-      BT_APPEND_NAMED_VALUE(propertiesArray, "Address", sAdapterBdAddress);
+      mBdAddress = p.mString;
+      BT_APPEND_NAMED_VALUE(propertiesArray, "Address", mBdAddress);
 
     } else if (p.mType == PROPERTY_BDNAME) {
-      sAdapterBdName = p.mString;
-      BT_APPEND_NAMED_VALUE(propertiesArray, "Name", sAdapterBdName);
+      mBdName = p.mString;
+      BT_APPEND_NAMED_VALUE(propertiesArray, "Name", mBdName);
 
     } else if (p.mType == PROPERTY_ADAPTER_SCAN_MODE) {
 
@@ -2034,10 +2020,8 @@ BluetoothServiceBluedroid::AdapterPropertiesNotification(
       
       
       if (IsEnabled()) {
-        sAdapterDiscoverable =
-          (p.mScanMode == SCAN_MODE_CONNECTABLE_DISCOVERABLE);
-        BT_APPEND_NAMED_VALUE(propertiesArray, "Discoverable",
-                              sAdapterDiscoverable);
+        mDiscoverable = (p.mScanMode == SCAN_MODE_CONNECTABLE_DISCOVERABLE);
+        BT_APPEND_NAMED_VALUE(propertiesArray, "Discoverable", mDiscoverable);
       }
     } else if (p.mType == PROPERTY_ADAPTER_BONDED_DEVICES) {
       
@@ -2047,11 +2031,11 @@ BluetoothServiceBluedroid::AdapterPropertiesNotification(
               p.mStringArray.Length());
 
       
-      sAdapterBondedAddressArray.Clear();
-      sAdapterBondedAddressArray.AppendElements(p.mStringArray);
+      mBondedAddresses.Clear();
+      mBondedAddresses.AppendElements(p.mStringArray);
 
       BT_APPEND_NAMED_VALUE(propertiesArray, "PairedDevices",
-                            sAdapterBondedAddressArray);
+                            mBondedAddresses);
     } else if (p.mType == PROPERTY_UNKNOWN) {
       
     } else {
@@ -2074,7 +2058,6 @@ BluetoothServiceBluedroid::AdapterPropertiesNotification(
 #else
   MOZ_ASSERT(NS_IsMainThread());
 
-  BluetoothValue propertyValue;
   InfallibleTArray<BluetoothNamedValue> props;
 
   for (int i = 0; i < aNumProperties; i++) {
@@ -2082,14 +2065,12 @@ BluetoothServiceBluedroid::AdapterPropertiesNotification(
     const BluetoothProperty& p = aProperties[i];
 
     if (p.mType == PROPERTY_BDADDR) {
-      sAdapterBdAddress = p.mString;
-      propertyValue = sAdapterBdAddress;
-      BT_APPEND_NAMED_VALUE(props, "Address", propertyValue);
+      mBdAddress = p.mString;
+      BT_APPEND_NAMED_VALUE(props, "Address", mBdAddress);
 
     } else if (p.mType == PROPERTY_BDNAME) {
-      sAdapterBdName = p.mString;
-      propertyValue = sAdapterBdName;
-      BT_APPEND_NAMED_VALUE(props, "Name", propertyValue);
+      mBdName = p.mString;
+      BT_APPEND_NAMED_VALUE(props, "Name", mBdName);
 
     } else if (p.mType == PROPERTY_ADAPTER_SCAN_MODE) {
       BluetoothScanMode newMode = p.mScanMode;
@@ -2097,17 +2078,14 @@ BluetoothServiceBluedroid::AdapterPropertiesNotification(
       
       
       
-      if (newMode == SCAN_MODE_CONNECTABLE_DISCOVERABLE && IsEnabled()) {
-        propertyValue = sAdapterDiscoverable = true;
-      } else {
-        propertyValue = sAdapterDiscoverable = false;
-      }
-
-      BT_APPEND_NAMED_VALUE(props, "Discoverable", propertyValue);
+      mDiscoverable =
+        (newMode == SCAN_MODE_CONNECTABLE_DISCOVERABLE && IsEnabled());
+      BT_APPEND_NAMED_VALUE(props, "Discoverable", mDiscoverable);
 
     } else if (p.mType == PROPERTY_ADAPTER_DISCOVERY_TIMEOUT) {
-      propertyValue = sAdapterDiscoverableTimeout = p.mUint32;
-      BT_APPEND_NAMED_VALUE(props, "DiscoverableTimeout", propertyValue);
+      mDiscoverableTimeout = p.mUint32;
+      BT_APPEND_NAMED_VALUE(props, "DiscoverableTimeout",
+                            mDiscoverableTimeout);
 
     } else if (p.mType == PROPERTY_ADAPTER_BONDED_DEVICES) {
       
@@ -2117,14 +2095,10 @@ BluetoothServiceBluedroid::AdapterPropertiesNotification(
               p.mStringArray.Length());
 
       
-      sAdapterBondedAddressArray.Clear();
+      mBondedAddresses.Clear();
+      mBondedAddresses.AppendElements(p.mStringArray);
 
-      for (size_t index = 0; index < p.mStringArray.Length(); index++) {
-        sAdapterBondedAddressArray.AppendElement(p.mStringArray[index]);
-      }
-
-      propertyValue = sAdapterBondedAddressArray;
-      BT_APPEND_NAMED_VALUE(props, "Devices", propertyValue);
+      BT_APPEND_NAMED_VALUE(props, "Devices", mBondedAddresses);
 
     } else if (p.mType == PROPERTY_UUIDS) {
       
@@ -2341,7 +2315,7 @@ BluetoothServiceBluedroid::RemoteDevicePropertiesNotification(
 
 
 
-    if (sAdapterDiscovering) {
+    if (mDiscovering) {
       
       
       DistributeSignal(BluetoothSignal(NS_LITERAL_STRING("DeviceFound"),
@@ -2471,11 +2445,11 @@ BluetoothServiceBluedroid::DiscoveryStateChangedNotification(bool aState)
 #ifndef MOZ_B2G_BT_API_V1
   MOZ_ASSERT(NS_IsMainThread());
 
-  sAdapterDiscovering = aState;
+  mDiscovering = aState;
 
   
   InfallibleTArray<BluetoothNamedValue> propertiesArray;
-  BT_APPEND_NAMED_VALUE(propertiesArray, "Discovering", sAdapterDiscovering);
+  BT_APPEND_NAMED_VALUE(propertiesArray, "Discovering", mDiscovering);
 
   DistributeSignal(NS_LITERAL_STRING("PropertyChanged"),
                    NS_LITERAL_STRING(KEY_ADAPTER),
@@ -2489,17 +2463,16 @@ BluetoothServiceBluedroid::DiscoveryStateChangedNotification(bool aState)
 #else
   MOZ_ASSERT(NS_IsMainThread());
 
-  sAdapterDiscovering = aState;
+  mDiscovering = aState;
 
   DistributeSignal(
     BluetoothSignal(NS_LITERAL_STRING(DISCOVERY_STATE_CHANGED_ID),
-                    NS_LITERAL_STRING(KEY_ADAPTER), sAdapterDiscovering));
+                    NS_LITERAL_STRING(KEY_ADAPTER), mDiscovering));
 
   
   
   InfallibleTArray<BluetoothNamedValue> props;
-  BT_APPEND_NAMED_VALUE(props, "Discovering",
-                        BluetoothValue(sAdapterDiscovering));
+  BT_APPEND_NAMED_VALUE(props, "Discovering", mDiscovering);
   DistributeSignal(BluetoothSignal(NS_LITERAL_STRING("PropertyChanged"),
                                    NS_LITERAL_STRING(KEY_ADAPTER),
                                    BluetoothValue(props)));
@@ -2669,10 +2642,10 @@ BluetoothServiceBluedroid::BondStateChangedNotification(
   
   InfallibleTArray<BluetoothNamedValue> propertiesArray;
   if (!bonded) {
-    sAdapterBondedAddressArray.RemoveElement(remoteBdAddr);
+    mBondedAddresses.RemoveElement(remoteBdAddr);
   } else {
-    if (!sAdapterBondedAddressArray.Contains(remoteBdAddr)) {
-      sAdapterBondedAddressArray.AppendElement(remoteBdAddr);
+    if (!mBondedAddresses.Contains(remoteBdAddr)) {
+      mBondedAddresses.AppendElement(remoteBdAddr);
     }
 
     
@@ -2705,7 +2678,7 @@ BluetoothServiceBluedroid::BondStateChangedNotification(
   }
 #else
   if (aState == BOND_STATE_BONDED &&
-      sAdapterBondedAddressArray.Contains(aRemoteBdAddr)) {
+      mBondedAddresses.Contains(aRemoteBdAddr)) {
     
     return;
   }
@@ -2716,10 +2689,10 @@ BluetoothServiceBluedroid::BondStateChangedNotification(
       bool bonded;
       if (aState == BOND_STATE_NONE) {
         bonded = false;
-        sAdapterBondedAddressArray.RemoveElement(aRemoteBdAddr);
+        mBondedAddresses.RemoveElement(aRemoteBdAddr);
       } else if (aState == BOND_STATE_BONDED) {
         bonded = true;
-        sAdapterBondedAddressArray.AppendElement(aRemoteBdAddr);
+        mBondedAddresses.AppendElement(aRemoteBdAddr);
       } else {
         return;
       }
@@ -2727,7 +2700,7 @@ BluetoothServiceBluedroid::BondStateChangedNotification(
       
       InfallibleTArray<BluetoothNamedValue> propertiesChangeArray;
       BT_APPEND_NAMED_VALUE(propertiesChangeArray, "Devices",
-                            sAdapterBondedAddressArray);
+                            mBondedAddresses);
 
       DistributeSignal(BluetoothSignal(NS_LITERAL_STRING("PropertyChanged"),
                                        NS_LITERAL_STRING(KEY_ADAPTER),
