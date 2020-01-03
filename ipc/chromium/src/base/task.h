@@ -270,6 +270,19 @@ struct RunnableMethodTraits {
 
 
 
+template <class T>
+struct RunnableMethodTraits<const T> {
+  static void RetainCallee(const T* obj) {
+    const_cast<T*>(obj)->AddRef();
+  }
+  static void ReleaseCallee(const  T* obj) {
+    const_cast<T*>(obj)->Release();
+  }
+};
+
+
+
+
 
 
 
