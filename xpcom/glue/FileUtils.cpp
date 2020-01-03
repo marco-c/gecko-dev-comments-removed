@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include <errno.h>
 #include <stdio.h>
@@ -34,8 +34,8 @@
 #include <windows.h>
 #endif
 
-// Functions that are not to be used in standalone glue must be implemented
-// within this #if block
+
+
 #if !defined(XPCOM_GLUE)
 
 bool
@@ -60,10 +60,10 @@ mozilla::fallocate(PRFileDesc* aFD, int64_t aLength)
 #elif defined(XP_MACOSX)
   int fd = PR_FileDesc2NativeHandle(aFD);
   fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, aLength};
-  // Try to get a continous chunk of disk space
+  
   int ret = fcntl(fd, F_PREALLOCATE, &store);
   if (ret == -1) {
-    // OK, perhaps we are too fragmented, allocate non-continuous
+    
     store.fst_flags = F_ALLOCATEALL;
     ret = fcntl(fd, F_PREALLOCATE, &store);
     if (ret == -1) {
@@ -72,13 +72,13 @@ mozilla::fallocate(PRFileDesc* aFD, int64_t aLength)
   }
   return ftruncate(fd, aLength) == 0;
 #elif defined(XP_UNIX)
-  // The following is copied from fcntlSizeHint in sqlite
-  /* If the OS does not have posix_fallocate(), fake it. First use
-  ** ftruncate() to set the file size, then write a single byte to
-  ** the last byte in each block within the extended region. This
-  ** is the same technique used by glibc to implement posix_fallocate()
-  ** on systems that do not have a real fallocate() system call.
-  */
+  
+  
+
+
+
+
+
   int64_t oldpos = PR_Seek64(aFD, 0, PR_SEEK_CUR);
   if (oldpos == -1) {
     return false;
@@ -104,8 +104,8 @@ mozilla::fallocate(PRFileDesc* aFD, int64_t aLength)
     return false;
   }
 
-  int nWrite; // Return value from write()
-  int64_t iWrite = ((buf.st_size + 2 * nBlk - 1) / nBlk) * nBlk - 1; // Next offset to write to
+  int nWrite; 
+  int64_t iWrite = ((buf.st_size + 2 * nBlk - 1) / nBlk) * nBlk - 1; 
   while (iWrite < aLength) {
     nWrite = 0;
     if (PR_Seek64(aFD, iWrite, PR_SEEK_SET) == iWrite) {
@@ -142,8 +142,8 @@ mozilla::ReadSysFile(
   ssize_t bytesRead;
   size_t offset = 0;
   do {
-    bytesRead = MOZ_TEMP_FAILURE_RETRY(
-      read(fd, aBuf + offset, aBufSize - offset));
+    bytesRead = MOZ_TEMP_FAILURE_RETRY(read(fd, aBuf + offset,
+                                            aBufSize - offset));
     if (bytesRead == -1) {
       return false;
     }
@@ -186,7 +186,7 @@ mozilla::ReadSysFile(
   return true;
 }
 
-#endif /* ReadSysFile_PRESENT */
+#endif 
 
 void
 mozilla::ReadAheadLib(nsIFile* aFile)
@@ -225,7 +225,7 @@ mozilla::ReadAheadFile(nsIFile* aFile, const size_t aOffset,
 #endif
 }
 
-#endif // !defined(XPCOM_GLUE)
+#endif 
 
 #if defined(LINUX) && !defined(ANDROID)
 
@@ -318,9 +318,9 @@ mozilla::ReadAhead(mozilla::filedesc_t aFd, const size_t aOffset,
   fpOffset.u.HighPart = 0;
 #endif
 
-  // Get the current file pointer so that we can restore it. This isn't
-  // really necessary other than to provide the same semantics regarding the
-  // file pointer that other platforms do
+  
+  
+  
   if (!SetFilePointerEx(aFd, fpOffset, &fpOriginal, FILE_CURRENT)) {
     return;
   }
@@ -341,16 +341,16 @@ mozilla::ReadAhead(mozilla::filedesc_t aFd, const size_t aOffset,
   char buf[64 * 1024];
   size_t totalBytesRead = 0;
   DWORD dwBytesRead;
-  // Do dummy reads to trigger kernel-side readhead via FILE_FLAG_SEQUENTIAL_SCAN.
-  // Abort when underfilling because during testing the buffers are read fully
-  // A buffer that's not keeping up would imply that readahead isn't working right
+  
+  
+  
   while (totalBytesRead < aCount &&
          ReadFile(aFd, buf, sizeof(buf), &dwBytesRead, nullptr) &&
          dwBytesRead == sizeof(buf)) {
     totalBytesRead += dwBytesRead;
   }
 
-  // Restore the file pointer
+  
   SetFilePointerEx(aFd, fpOriginal, nullptr, FILE_BEGIN);
 
 #elif defined(LINUX) && !defined(ANDROID)
@@ -362,7 +362,7 @@ mozilla::ReadAhead(mozilla::filedesc_t aFd, const size_t aOffset,
   struct radvisory ra;
   ra.ra_offset = aOffset;
   ra.ra_count = aCount;
-  // The F_RDADVISE fcntl is equivalent to Linux' readahead() system call.
+  
   fcntl(aFd, F_RDADVISE, &ra);
 
 #endif
@@ -387,10 +387,10 @@ mozilla::ReadAheadLib(mozilla::pathstr_t aFilePath)
     char buf[bufsize];
     Elf_Ehdr ehdr;
   } elf;
-  // Read ELF header (ehdr) and program header table (phdr).
-  // We check that the ELF magic is found, that the ELF class matches
-  // our own, and that the program header table as defined in the ELF
-  // headers fits in the buffer we read.
+  
+  
+  
+  
   if ((read(fd, elf.buf, bufsize) <= 0) ||
       (memcmp(elf.buf, ELFMAG, 4)) ||
       (elf.ehdr.e_ident[EI_CLASS] != ELFCLASS) ||
@@ -398,11 +398,11 @@ mozilla::ReadAheadLib(mozilla::pathstr_t aFilePath)
     close(fd);
     return;
   }
-  // The program header table contains segment definitions. One such
-  // segment type is PT_LOAD, which describes how the dynamic loader
-  // is going to map the file in memory. We use that information to
-  // find the biggest offset from the library that will be mapped in
-  // memory.
+  
+  
+  
+  
+  
   Elf_Phdr* phdr = (Elf_Phdr*)&elf.buf[elf.ehdr.e_phoff];
   Elf_Off end = 0;
   for (int phnum = elf.ehdr.e_phnum; phnum; phdr++, phnum--) {
@@ -411,8 +411,8 @@ mozilla::ReadAheadLib(mozilla::pathstr_t aFilePath)
       end = phdr->p_offset + phdr->p_filesz;
     }
   }
-  // Let the kernel read ahead what the dynamic loader is going to
-  // map in memory soon after.
+  
+  
   if (end > 0) {
     ReadAhead(fd, 0, end);
   }
@@ -424,10 +424,10 @@ mozilla::ReadAheadLib(mozilla::pathstr_t aFilePath)
     return;
   }
 
-  // An OSX binary might either be a fat (universal) binary or a
-  // Mach-O binary. A fat binary actually embeds several Mach-O
-  // binaries. If we have a fat binary, find the offset where the
-  // Mach-O binary for our CPU type can be found.
+  
+  
+  
+  
   struct fat_header* fh = (struct fat_header*)base;
 
   if (OSSwapBigToHostInt32(fh->magic) == FAT_MAGIC) {
@@ -444,18 +444,18 @@ mozilla::ReadAheadLib(mozilla::pathstr_t aFilePath)
     }
   }
 
-  // Check Mach-O magic in the Mach header
+  
   struct cpu_mach_header* mh = (struct cpu_mach_header*)base;
   if (mh->magic != MH_MAGIC) {
     return;
   }
 
-  // The Mach header is followed by a sequence of load commands.
-  // Each command has a header containing the command type and the
-  // command size. LD_SEGMENT commands describes how the dynamic
-  // loader is going to map the file in memory. We use that
-  // information to find the biggest offset from the library that
-  // will be mapped in memory.
+  
+  
+  
+  
+  
+  
   char* cmd = &base[sizeof(struct cpu_mach_header)];
   uint32_t end = 0;
   for (uint32_t ncmds = mh->ncmds; ncmds; ncmds--) {
@@ -468,8 +468,8 @@ mozilla::ReadAheadLib(mozilla::pathstr_t aFilePath)
     }
     cmd += sh->cmdsize;
   }
-  // Let the kernel read ahead what the dynamic loader is going to
-  // map in memory soon after.
+  
+  
   if (end > 0) {
     ReadAhead(buf.getFd(), base - buf, end);
   }
