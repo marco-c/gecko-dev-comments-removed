@@ -177,6 +177,11 @@ typedef struct {
 
 
 
+
+
+
+
+
 static const LangTag ot_languages[] = {
   {"aa",	HB_TAG('A','F','R',' ')},	
   {"ab",	HB_TAG('A','B','K',' ')},	
@@ -217,9 +222,9 @@ static const LangTag ot_languages[] = {
   {"bci",	HB_TAG('B','A','U',' ')},	
   {"bcl",	HB_TAG('B','I','K',' ')},	
   {"bcq",	HB_TAG('B','C','H',' ')},	
-  {"be",	HB_TAG('B','E','L',' ')},  	
+  {"be",	HB_TAG('B','E','L',' ')},	
   {"bem",	HB_TAG('B','E','M',' ')},	
-  {"ber",	HB_TAG('B','E','R',' ')},  	
+  {"ber",	HB_TAG('B','E','R',' ')},	
   {"bfq",	HB_TAG('B','A','D',' ')},	
   {"bft",	HB_TAG('B','L','T',' ')},	
   {"bfy",	HB_TAG('B','A','G',' ')},	
@@ -346,9 +351,9 @@ static const LangTag ot_languages[] = {
   {"gv",	HB_TAG('M','N','X',' ')},	
   {"ha",	HB_TAG('H','A','U',' ')},	
   {"har",	HB_TAG('H','R','I',' ')},	
-  {"haw",	HB_TAG('H','A','W',' ')},  	
-  {"hay",	HB_TAG('H','A','Y',' ')},  	
-  {"haz",	HB_TAG('H','A','Z',' ')},  	
+  {"haw",	HB_TAG('H','A','W',' ')},	
+  {"hay",	HB_TAG('H','A','Y',' ')},	
+  {"haz",	HB_TAG('H','A','Z',' ')},	
   {"he",	HB_TAG('I','W','R',' ')},	
   {"hz",	HB_TAG('H','E','R',' ')},	
   {"hi",	HB_TAG('H','I','N',' ')},	
@@ -542,6 +547,7 @@ static const LangTag ot_languages[] = {
   {"nr",	HB_TAG('N','D','B',' ')},	
   {"nsk",	HB_TAG('N','A','S',' ')},	
   {"nso",	HB_TAG('S','O','T',' ')},	
+  {"nv",	HB_TAG('N','A','V',' ')},	
   {"ny",	HB_TAG('C','H','I',' ')},	
   {"nym",	HB_TAG('N','Y','M',' ')},	
   {"nyn",	HB_TAG('N','K','L',' ')},	
@@ -863,6 +869,15 @@ hb_ot_tag_from_language (hb_language_t language)
 
   return HB_OT_TAG_DEFAULT_LANGUAGE;
 }
+
+
+
+
+
+
+
+
+
 
 hb_language_t
 hb_ot_tag_to_language (hb_tag_t tag)

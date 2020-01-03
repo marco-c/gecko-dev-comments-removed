@@ -47,12 +47,9 @@ typedef struct hb_feature_t {
   unsigned int  end;
 } hb_feature_t;
 
-
 hb_bool_t
 hb_feature_from_string (const char *str, int len,
 			hb_feature_t *feature);
-
-
 
 void
 hb_feature_to_string (hb_feature_t *feature,

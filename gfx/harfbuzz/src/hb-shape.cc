@@ -34,6 +34,17 @@
 #include "hb-font-private.hh"
 
 
+
+
+
+
+
+
+
+
+
+
+
 static bool
 parse_space (const char **pp, const char *end)
 {
@@ -208,6 +219,7 @@ parse_one_feature (const char **pp, const char *end, hb_feature_t *feature)
 
 
 
+
 hb_bool_t
 hb_feature_from_string (const char *str, int len,
 			hb_feature_t *feature)
@@ -228,6 +240,8 @@ hb_feature_from_string (const char *str, int len,
     memset (feature, 0, sizeof (*feature));
   return false;
 }
+
+
 
 
 
@@ -296,6 +310,7 @@ void free_static_shaper_list (void)
 
 
 
+
 const char **
 hb_shape_list_shapers (void)
 {
@@ -345,6 +360,10 @@ retry:
 
 
 
+
+
+
+
 hb_bool_t
 hb_shape_full (hb_font_t          *font,
 	       hb_buffer_t        *buffer,
@@ -365,6 +384,11 @@ hb_shape_full (hb_font_t          *font,
     buffer->content_type = HB_BUFFER_CONTENT_TYPE_GLYPHS;
   return res;
 }
+
+
+
+
+
 
 
 

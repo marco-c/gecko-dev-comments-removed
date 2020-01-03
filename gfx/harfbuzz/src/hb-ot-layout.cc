@@ -128,12 +128,18 @@ hb_ot_layout_has_glyph_classes (hb_face_t *face)
   return _get_gdef (face).has_glyph_classes ();
 }
 
+
+
+
 hb_ot_layout_glyph_class_t
 hb_ot_layout_get_glyph_class (hb_face_t      *face,
 			      hb_codepoint_t  glyph)
 {
   return (hb_ot_layout_glyph_class_t) _get_gdef (face).get_glyph_class (glyph);
 }
+
+
+
 
 void
 hb_ot_layout_get_glyphs_in_class (hb_face_t                  *face,
@@ -285,6 +291,28 @@ hb_ot_layout_table_get_feature_tags (hb_face_t    *face,
   return g.get_feature_tags (start_offset, feature_count, feature_tags);
 }
 
+hb_bool_t
+hb_ot_layout_table_find_feature (hb_face_t    *face,
+				 hb_tag_t      table_tag,
+				 hb_tag_t      feature_tag,
+				 unsigned int *feature_index)
+{
+  ASSERT_STATIC (OT::Index::NOT_FOUND_INDEX == HB_OT_LAYOUT_NO_FEATURE_INDEX);
+  const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
+
+  unsigned int num_features = g.get_feature_count ();
+  for (unsigned int i = 0; i < num_features; i++)
+  {
+    if (feature_tag == g.get_feature_tag (i)) {
+      if (feature_index) *feature_index = i;
+      return true;
+    }
+  }
+
+  if (feature_index) *feature_index = HB_OT_LAYOUT_NO_FEATURE_INDEX;
+  return false;
+}
+
 
 unsigned int
 hb_ot_layout_script_get_language_tags (hb_face_t    *face,
@@ -334,6 +362,9 @@ hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
 						     feature_index,
 						     NULL);
 }
+
+
+
 
 hb_bool_t
 hb_ot_layout_language_get_required_feature (hb_face_t    *face,
@@ -419,6 +450,9 @@ hb_ot_layout_language_find_feature (hb_face_t    *face,
   return false;
 }
 
+
+
+
 unsigned int
 hb_ot_layout_feature_get_lookups (hb_face_t    *face,
 				  hb_tag_t      table_tag,
@@ -432,6 +466,9 @@ hb_ot_layout_feature_get_lookups (hb_face_t    *face,
 
   return f.get_lookup_indexes (start_offset, lookup_count, lookup_indexes);
 }
+
+
+
 
 unsigned int
 hb_ot_layout_table_get_lookup_count (hb_face_t    *face,
@@ -590,6 +627,9 @@ _hb_ot_layout_collect_lookups_languages (hb_face_t      *face,
   }
 }
 
+
+
+
 void
 hb_ot_layout_collect_lookups (hb_face_t      *face,
 			      hb_tag_t        table_tag,
@@ -630,6 +670,9 @@ hb_ot_layout_collect_lookups (hb_face_t      *face,
     }
   }
 }
+
+
+
 
 void
 hb_ot_layout_lookup_collect_glyphs (hb_face_t    *face,
@@ -676,6 +719,9 @@ hb_ot_layout_has_substitution (hb_face_t *face)
   return &_get_gsub (face) != &OT::Null(OT::GSUB);
 }
 
+
+
+
 hb_bool_t
 hb_ot_layout_lookup_would_substitute (hb_face_t            *face,
 				      unsigned int          lookup_index,
@@ -714,6 +760,9 @@ hb_ot_layout_substitute_finish (hb_font_t *font, hb_buffer_t *buffer)
   OT::GSUB::substitute_finish (font, buffer);
 }
 
+
+
+
 void
 hb_ot_layout_lookup_substitute_closure (hb_face_t    *face,
 				        unsigned int  lookup_index,
@@ -747,6 +796,9 @@ hb_ot_layout_position_finish (hb_font_t *font, hb_buffer_t *buffer)
 {
   OT::GPOS::position_finish (font, buffer);
 }
+
+
+
 
 hb_bool_t
 hb_ot_layout_get_size_params (hb_face_t    *face,
@@ -875,7 +927,7 @@ apply_backward (OT::hb_apply_context_t *c,
 
 struct hb_apply_forward_context_t
 {
-  inline const char *get_name (void) { return "APPLY_FORWARD"; }
+  inline const char *get_name (void) { return "APPLY_FWD"; }
   static const unsigned int max_debug_depth = HB_DEBUG_APPLY;
   typedef bool return_t;
   template <typename T, typename F>

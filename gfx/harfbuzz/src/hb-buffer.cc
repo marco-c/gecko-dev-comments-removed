@@ -36,6 +36,9 @@
 #endif
 
 
+
+
+
 hb_bool_t
 hb_segment_properties_equal (const hb_segment_properties_t *a,
 			     const hb_segment_properties_t *b)
@@ -47,6 +50,9 @@ hb_segment_properties_equal (const hb_segment_properties_t *a,
 	 a->reserved2 == b->reserved2;
 
 }
+
+
+
 
 unsigned int
 hb_segment_properties_hash (const hb_segment_properties_t *p)
@@ -498,14 +504,10 @@ hb_buffer_t::reverse_clusters (void)
 }
 
 void
-hb_buffer_t::merge_clusters (unsigned int start,
-			     unsigned int end)
+hb_buffer_t::merge_clusters_impl (unsigned int start,
+				  unsigned int end)
 {
-#ifdef HB_NO_MERGE_CLUSTERS
-  return;
-#endif
-
-  if (unlikely (end - start < 2))
+  if (cluster_level == HB_BUFFER_CLUSTER_LEVEL_CHARACTERS)
     return;
 
   unsigned int cluster = info[start].cluster;
@@ -523,7 +525,7 @@ hb_buffer_t::merge_clusters (unsigned int start,
 
   
   if (idx == start)
-    for (unsigned i = out_len; i && out_info[i - 1].cluster == info[start].cluster; i--)
+    for (unsigned int i = out_len; i && out_info[i - 1].cluster == info[start].cluster; i--)
       out_info[i - 1].cluster = cluster;
 
   for (unsigned int i = start; i < end; i++)
@@ -533,9 +535,8 @@ void
 hb_buffer_t::merge_out_clusters (unsigned int start,
 				 unsigned int end)
 {
-#ifdef HB_NO_MERGE_CLUSTERS
-  return;
-#endif
+  if (cluster_level == HB_BUFFER_CLUSTER_LEVEL_CHARACTERS)
+    return;
 
   if (unlikely (end - start < 2))
     return;
@@ -555,11 +556,43 @@ hb_buffer_t::merge_out_clusters (unsigned int start,
 
   
   if (end == out_len)
-    for (unsigned i = idx; i < len && info[i].cluster == out_info[end - 1].cluster; i++)
+    for (unsigned int i = idx; i < len && info[i].cluster == out_info[end - 1].cluster; i++)
       info[i].cluster = cluster;
 
   for (unsigned int i = start; i < end; i++)
     out_info[i].cluster = cluster;
+}
+void
+hb_buffer_t::delete_glyph ()
+{
+  unsigned int cluster = info[idx].cluster;
+  if (idx + 1 < len && cluster == info[idx + 1].cluster)
+  {
+    
+    goto done;
+  }
+
+  if (out_len)
+  {
+    
+    if (cluster < out_info[out_len - 1].cluster)
+    {
+      unsigned int old_cluster = out_info[out_len - 1].cluster;
+      for (unsigned i = out_len; i && out_info[i - 1].cluster == old_cluster; i--)
+	out_info[i - 1].cluster = cluster;
+    }
+    goto done;
+  }
+
+  if (idx + 1 < len)
+  {
+    
+    merge_clusters (idx, idx + 2);
+    goto done;
+  }
+
+done:
+  skip_glyph ();
 }
 
 void
@@ -703,6 +736,7 @@ hb_buffer_get_empty (void)
 
     const_cast<hb_unicode_funcs_t *> (&_hb_unicode_funcs_nil),
     HB_BUFFER_FLAG_DEFAULT,
+    HB_BUFFER_CLUSTER_LEVEL_DEFAULT,
     HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT,
 
     HB_BUFFER_CONTENT_TYPE_INVALID,
@@ -1057,6 +1091,41 @@ hb_buffer_get_flags (hb_buffer_t *buffer)
 
 
 
+void
+hb_buffer_set_cluster_level (hb_buffer_t       *buffer,
+		     hb_buffer_cluster_level_t  cluster_level)
+{
+  if (unlikely (hb_object_is_inert (buffer)))
+    return;
+
+  buffer->cluster_level = cluster_level;
+}
+
+
+
+
+
+
+
+
+
+
+
+hb_buffer_cluster_level_t
+hb_buffer_get_cluster_level (hb_buffer_t *buffer)
+{
+  return buffer->cluster_level;
+}
+
+
+
+
+
+
+
+
+
+
 
 void
 hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
@@ -1280,6 +1349,23 @@ void
 hb_buffer_reverse (hb_buffer_t *buffer)
 {
   buffer->reverse ();
+}
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_buffer_reverse_range (hb_buffer_t *buffer,
+			 unsigned int start, unsigned int end)
+{
+  buffer->reverse_range (start, end);
 }
 
 

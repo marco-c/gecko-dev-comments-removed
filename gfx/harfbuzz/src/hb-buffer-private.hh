@@ -50,6 +50,7 @@ struct hb_buffer_t {
   
   hb_unicode_funcs_t *unicode; 
   hb_buffer_flags_t flags; 
+  hb_buffer_cluster_level_t cluster_level;
   hb_codepoint_t replacement; 
 
   
@@ -171,9 +172,18 @@ struct hb_buffer_t {
 			      unsigned int cluster_end);
 
   HB_INTERNAL void merge_clusters (unsigned int start,
-				   unsigned int end);
+				   unsigned int end)
+  {
+    if (end - start < 2)
+      return;
+    merge_clusters_impl (start, end);
+  }
+  HB_INTERNAL void merge_clusters_impl (unsigned int start,
+					unsigned int end);
   HB_INTERNAL void merge_out_clusters (unsigned int start,
 				       unsigned int end);
+  
+  HB_INTERNAL void delete_glyph (void);
 
   
   HB_INTERNAL bool enlarge (unsigned int size);

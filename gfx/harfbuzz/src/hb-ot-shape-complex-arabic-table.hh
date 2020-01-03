@@ -76,9 +76,9 @@ static const uint8_t joining_table[] =
 
   
 
-   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,
+   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,
 
-#define joining_offset_0x1806u 691
+#define joining_offset_0x1806u 693
 
   
 
@@ -89,33 +89,33 @@ static const uint8_t joining_table[] =
    U,U,U,U,U,U,U,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,D,D,D,D,X,D,
 
-#define joining_offset_0x200cu 856
+#define joining_offset_0x200cu 858
 
   
 
                            U,C,
 
-#define joining_offset_0x2066u 858
+#define joining_offset_0x2066u 860
 
   
 
                U,U,U,U,
 
-#define joining_offset_0xa840u 862
+#define joining_offset_0xa840u 864
 
   
 
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,L,U,
 
-#define joining_offset_0x10ac0u 914
+#define joining_offset_0x10ac0u 916
 
   
 
    D,D,D,D,D,R,U,R,U,R,R,U,U,L,R,R,R,R,R,D,D,D,D,L,D,D,D,D,D,R,D,D,
    D,R,U,U,R,X,X,X,X,X,X,D,D,D,D,R,
 
-#define joining_offset_0x10b80u 962
+#define joining_offset_0x10b80u 964
 
   
 
@@ -131,7 +131,7 @@ joining_type (hb_codepoint_t u)
   switch (u >> 12)
   {
     case 0x0u:
-      if (hb_in_range (u, 0x0600u, 0x08B2u)) return joining_table[u - 0x0600u + joining_offset_0x0600u];
+      if (hb_in_range (u, 0x0600u, 0x08B4u)) return joining_table[u - 0x0600u + joining_offset_0x0600u];
       break;
 
     case 0x1u:

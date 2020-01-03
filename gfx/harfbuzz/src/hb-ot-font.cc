@@ -220,7 +220,7 @@ hb_ot_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
 			   void *user_data HB_UNUSED)
 {
   const hb_ot_font_t *ot_font = (const hb_ot_font_t *) font_data;
-  return font->em_scale_y (-ot_font->v_metrics.get_advance (glyph));
+  return font->em_scale_y (-(int) ot_font->v_metrics.get_advance (glyph));
 }
 
 static hb_bool_t
@@ -333,6 +333,9 @@ _hb_ot_get_font_funcs (void)
 
   return const_cast<hb_font_funcs_t *> (&ot_ffuncs);
 }
+
+
+
 
 
 void
