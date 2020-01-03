@@ -9,6 +9,9 @@ import os
 import platform
 import sys
 import time
+import __builtin__
+
+from types import ModuleType
 
 
 STATE_DIR_FIRST_RUN = '''
@@ -327,3 +330,70 @@ def bootstrap(topsrcdir, mozilla_dir=None):
         mach.load_commands_from_file(os.path.join(mozilla_dir, path))
 
     return mach
+
+
+
+
+
+
+
+class ImportHook(object):
+    def __init__(self, original_import):
+        self._original_import = original_import
+        
+        
+        self._source_dir = os.path.normcase(os.path.abspath(
+            os.path.dirname(os.path.dirname(__file__)))) + os.sep
+        self._modules = set()
+
+    def __call__(self, name, globals=None, locals=None, fromlist=None,
+                 level=-1):
+        
+        
+        
+        
+        
+        module = self._original_import(name, globals, locals, fromlist, level)
+
+        
+        if not isinstance(module, ModuleType):
+            return module
+
+        resolved_name = module.__name__
+        if resolved_name in self._modules:
+            return module
+        self._modules.add(resolved_name)
+
+        
+        if not hasattr(module, '__file__'):
+            return module
+
+        
+        path = os.path.normcase(os.path.abspath(module.__file__))
+        
+        
+        if not path.endswith(('.pyc', '.pyo')):
+            return module
+
+        
+        if not path.startswith(self._source_dir):
+            return module
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if not os.path.exists(module.__file__[:-1]):
+            os.remove(module.__file__)
+            del sys.modules[module.__name__]
+            module = self(name, globals, locals, fromlist, level)
+
+        return module
+
+
+
+__builtin__.__import__ = ImportHook(__builtin__.__import__)
