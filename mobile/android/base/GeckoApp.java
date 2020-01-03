@@ -137,7 +137,8 @@ public abstract class GeckoApp
         URL,        
         PREFETCH,   
         WEBAPP,     
-        GUEST       
+        GUEST,      
+        RESTRICTED  
     }
 
     public static final String ACTION_ALERT_CALLBACK       = "org.mozilla.gecko.ACTION_ALERT_CALLBACK";
