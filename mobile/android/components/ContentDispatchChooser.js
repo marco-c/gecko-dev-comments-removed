@@ -63,7 +63,16 @@ ContentDispatchChooser.prototype =
         uri: aURI.spec,
       };
 
-      Messaging.sendRequest(msg);
+      Messaging.sendRequestForResult(msg).then(() => {
+        
+      }, (uri) => {
+        
+        
+        
+        
+        
+        window.location.href = uri;
+      });
     }
   },
 };

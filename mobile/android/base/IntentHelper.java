@@ -6,8 +6,11 @@
 package org.mozilla.gecko;
 
 import org.mozilla.gecko.util.ActivityResultHandler;
+import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoEventListener;
 import org.mozilla.gecko.util.JSONUtils;
+import org.mozilla.gecko.util.NativeEventListener;
+import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.WebActivityMapper;
 
 import org.json.JSONArray;
@@ -26,14 +29,19 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
 
-public final class IntentHelper implements GeckoEventListener {
+public final class IntentHelper implements GeckoEventListener,
+                                           NativeEventListener {
+
     private static final String LOGTAG = "GeckoIntentHelper";
     private static final String[] EVENTS = {
         "Intent:GetHandlers",
         "Intent:Open",
         "Intent:OpenForResult",
-        "Intent:OpenNoHandler",
         "WebActivity:Open"
+    };
+
+    private static final String[] NATIVE_EVENTS = {
+        "Intent:OpenNoHandler",
     };
 
     
@@ -49,7 +57,8 @@ public final class IntentHelper implements GeckoEventListener {
 
     private IntentHelper(Activity activity) {
         this.activity = activity;
-        EventDispatcher.getInstance().registerGeckoThreadListener(this, EVENTS);
+        EventDispatcher.getInstance().registerGeckoThreadListener((GeckoEventListener) this, EVENTS);
+        EventDispatcher.getInstance().registerGeckoThreadListener((NativeEventListener) this, NATIVE_EVENTS);
     }
 
     public static IntentHelper init(Activity activity) {
@@ -64,8 +73,16 @@ public final class IntentHelper implements GeckoEventListener {
 
     public static void destroy() {
         if (instance != null) {
-            EventDispatcher.getInstance().unregisterGeckoThreadListener(instance, EVENTS);
+            EventDispatcher.getInstance().unregisterGeckoThreadListener((GeckoEventListener) instance, EVENTS);
+            EventDispatcher.getInstance().unregisterGeckoThreadListener((NativeEventListener) instance, NATIVE_EVENTS);
             instance = null;
+        }
+    }
+
+    @Override
+    public void handleMessage(final String event, final NativeJSObject message, final EventCallback callback) {
+        if (event.equals("Intent:OpenNoHandler")) {
+            openNoHandler(message, callback);
         }
     }
 
@@ -78,8 +95,6 @@ public final class IntentHelper implements GeckoEventListener {
                 open(message);
             } else if (event.equals("Intent:OpenForResult")) {
                 openForResult(message);
-            } else if (event.equals("Intent:OpenNoHandler")) {
-                openNoHandler(message);
             } else if (event.equals("WebActivity:Open")) {
                 openWebActivity(message);
             }
@@ -133,12 +148,12 @@ public final class IntentHelper implements GeckoEventListener {
 
 
 
-    private void openNoHandler(final JSONObject msg) {
-        final String uri = msg.optString("uri");
+    private void openNoHandler(final NativeJSObject msg, final EventCallback callback) {
+        final String uri = msg.getString("uri");
 
         if (TextUtils.isEmpty(uri)) {
-            openUnknownProtocolErrorPage("");
             Log.w(LOGTAG, "Received empty URL - loading about:neterror");
+            callback.sendError(getUnknownProtocolErrorPageUri(""));
             return;
         }
 
@@ -147,14 +162,16 @@ public final class IntentHelper implements GeckoEventListener {
             
             intent = Intent.parseUri(uri, 0);
         } catch (final URISyntaxException e) {
+            String errorUri;
             try {
-                openUnknownProtocolErrorPage(URLEncoder.encode(uri, "UTF-8"));
+                errorUri = getUnknownProtocolErrorPageUri(URLEncoder.encode(uri, "UTF-8"));
             } catch (final UnsupportedEncodingException encodingE) {
-                openUnknownProtocolErrorPage("");
+                errorUri = getUnknownProtocolErrorPageUri("");
             }
 
             
             Log.w(LOGTAG, "Unable to parse Intent URI - loading about:neterror");
+            callback.sendError(errorUri);
             return;
         }
 
@@ -174,16 +191,20 @@ public final class IntentHelper implements GeckoEventListener {
             final Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(marketUri));
             marketIntent.addCategory(Intent.CATEGORY_BROWSABLE);
             marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            
+            
             activity.startActivity(marketIntent);
+            callback.sendSuccess(null);
 
         } else if (intent.hasExtra(EXTRA_BROWSER_FALLBACK_URL)) {
             final String fallbackUrl = intent.getStringExtra(EXTRA_BROWSER_FALLBACK_URL);
-            Tabs.getInstance().loadUrl(fallbackUrl);
+            callback.sendError(fallbackUrl);
 
         }  else {
-            openUnknownProtocolErrorPage(intent.getData().toString());
             
             Log.w(LOGTAG, "Unable to open URI, default case - loading about:neterror");
+            callback.sendError(getUnknownProtocolErrorPageUri(intent.getData().toString()));
         }
     }
 
@@ -193,9 +214,8 @@ public final class IntentHelper implements GeckoEventListener {
 
 
 
-    private void openUnknownProtocolErrorPage(final String encodedUri) {
-        final String errorUri = UNKNOWN_PROTOCOL_URI_PREFIX + encodedUri;
-        Tabs.getInstance().loadUrl(errorUri);
+    private String getUnknownProtocolErrorPageUri(final String encodedUri) {
+        return UNKNOWN_PROTOCOL_URI_PREFIX + encodedUri;
     }
 
     private void openWebActivity(JSONObject message) throws JSONException {
