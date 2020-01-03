@@ -500,7 +500,7 @@ PuppetWidget::ExecuteNativeKeyBinding(NativeKeyBindingsType aType,
                                       void* aCallbackData)
 {
   
-#ifdef MOZ_B2G
+#ifdef MOZ_WIDGET_GONK
   return false;
 #else 
   MOZ_ASSERT(mNativeKeyCommandsValid);
