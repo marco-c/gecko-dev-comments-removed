@@ -564,13 +564,25 @@ PR_STATIC_ASSERT(uint32_t(CAIRO_SURFACE_TYPE_SKIA) ==
 
 
 
-static int64_t gSurfaceMemoryUsed[size_t(gfxSurfaceType::Max)] = { 0 };
-
 class SurfaceMemoryReporter final : public nsIMemoryReporter
 {
     ~SurfaceMemoryReporter() {}
 
+    
+    
+    
+    
+    static Atomic<size_t, Relaxed> sSurfaceMemoryUsed[size_t(gfxSurfaceType::Max)];
+
 public:
+    static void AdjustUsedMemory(gfxSurfaceType aType, int32_t aBytes)
+    {
+        
+        
+        
+        sSurfaceMemoryUsed[size_t(aType)] = sSurfaceMemoryUsed[size_t(aType)] + aBytes;
+    };
+    
     NS_DECL_ISUPPORTS
 
     NS_IMETHOD CollectReports(nsIMemoryReporterCallback *aCb,
@@ -578,7 +590,7 @@ public:
     {
         const size_t len = ArrayLength(sSurfaceMemoryReporterAttrs);
         for (size_t i = 0; i < len; i++) {
-            int64_t amount = gSurfaceMemoryUsed[i];
+            int64_t amount = sSurfaceMemoryUsed[i];
 
             if (amount != 0) {
                 const char *path = sSurfaceMemoryReporterAttrs[i].path;
@@ -589,7 +601,7 @@ public:
 
                 nsresult rv = aCb->Callback(EmptyCString(), nsCString(path),
                                             KIND_OTHER, UNITS_BYTES,
-                                            gSurfaceMemoryUsed[i],
+                                            amount,
                                             nsCString(desc), aClosure);
                 NS_ENSURE_SUCCESS(rv, rv);
             }
@@ -598,6 +610,8 @@ public:
         return NS_OK;
     }
 };
+
+Atomic<size_t, Relaxed> SurfaceMemoryReporter::sSurfaceMemoryUsed[size_t(gfxSurfaceType::Max)];
 
 NS_IMPL_ISUPPORTS(SurfaceMemoryReporter, nsIMemoryReporter)
 
@@ -616,7 +630,7 @@ gfxASurface::RecordMemoryUsedForSurfaceType(gfxSurfaceType aType,
         registered = true;
     }
 
-    gSurfaceMemoryUsed[size_t(aType)] += aBytes;
+    SurfaceMemoryReporter::AdjustUsedMemory(aType, aBytes);
 }
 
 void
