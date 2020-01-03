@@ -36,8 +36,8 @@ DeviceStorageFileSystem::DeviceStorageFileSystem(
   mString.Append('-');
   mString.Append(mStorageName);
 
-  mIsTesting =
-    mozilla::Preferences::GetBool("device.storage.prompt.testing", false);
+  mRequiresPermissionChecks =
+    !mozilla::Preferences::GetBool("device.storage.prompt.testing", false);
 
   
   nsresult rv =
