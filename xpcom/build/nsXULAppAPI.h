@@ -148,14 +148,6 @@
 
 
 
-#define XRE_MAIN_FLAG_USE_METRO 0x01
-
-
-
-
-
-
-
 
 
 
@@ -461,24 +453,6 @@ XRE_API(void,
                           nsIFile* aAppOmni))
 XRE_API(void,
         XRE_StopLateWriteChecks, (void))
-
-#ifdef XP_WIN
-
-
-
-enum WindowsEnvironmentType
-{
-  WindowsEnvironmentType_Desktop = 0,
-  WindowsEnvironmentType_Metro = 1
-};
-
-
-
-
-
-XRE_API(WindowsEnvironmentType,
-        XRE_GetWindowsEnvironment, ())
-#endif 
 
 #ifdef MOZ_B2G_LOADER
 XRE_API(int,
