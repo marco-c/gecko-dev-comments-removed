@@ -148,6 +148,10 @@ public final class IntentHelper implements GeckoEventListener,
 
 
 
+
+
+
+
     private void openNoHandler(final NativeJSObject msg, final EventCallback callback) {
         final String uri = msg.getString("uri");
 
