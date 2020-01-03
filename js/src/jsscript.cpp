@@ -2916,7 +2916,7 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
     
 
     
-    MOZ_ASSERT(!src->sourceObject()->asTenured()->isMarked(gc::GRAY));
+    MOZ_ASSERT(!src->sourceObject()->asTenured().isMarked(gc::GRAY));
 
     uint32_t nconsts   = src->hasConsts()   ? src->consts()->length   : 0;
     uint32_t nobjects  = src->hasObjects()  ? src->objects()->length  : 0;

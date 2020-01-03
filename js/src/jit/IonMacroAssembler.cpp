@@ -595,7 +595,7 @@ MacroAssembler::newGCThing(Register result, Register temp, JSObject *templateObj
     
     MOZ_ASSERT(!templateObj->numDynamicSlots());
 
-    gc::AllocKind allocKind = templateObj->asTenured()->getAllocKind();
+    gc::AllocKind allocKind = templateObj->asTenured().getAllocKind();
     MOZ_ASSERT(allocKind >= gc::FINALIZE_OBJECT0 && allocKind <= gc::FINALIZE_OBJECT_LAST);
 
     allocateObject(result, temp, allocKind, templateObj->numDynamicSlots(), initialHeap, fail);
@@ -606,7 +606,7 @@ MacroAssembler::createGCObject(Register obj, Register temp, JSObject *templateOb
                                gc::InitialHeap initialHeap, Label *fail, bool initFixedSlots)
 {
     uint32_t nDynamicSlots = templateObj->numDynamicSlots();
-    gc::AllocKind allocKind = templateObj->asTenured()->getAllocKind();
+    gc::AllocKind allocKind = templateObj->asTenured().getAllocKind();
     MOZ_ASSERT(allocKind >= gc::FINALIZE_OBJECT0 && allocKind <= gc::FINALIZE_OBJECT_LAST);
 
     
@@ -736,7 +736,7 @@ void
 MacroAssembler::newGCThingPar(Register result, Register cx, Register tempReg1, Register tempReg2,
                               JSObject *templateObject, Label *fail)
 {
-    gc::AllocKind allocKind = templateObject->asTenured()->getAllocKind();
+    gc::AllocKind allocKind = templateObject->asTenured().getAllocKind();
     MOZ_ASSERT(allocKind >= gc::FINALIZE_OBJECT0 && allocKind <= gc::FINALIZE_OBJECT_LAST);
     MOZ_ASSERT(!templateObject->numDynamicSlots());
 
