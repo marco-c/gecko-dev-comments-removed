@@ -1257,12 +1257,14 @@ let TelemetryStorageImpl = {
       ping = yield this.loadPingFile(info.path, false);
     } catch(e) {
       
-      
       if (e instanceof PingReadError) {
         Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_READ").add();
       } else if (e instanceof PingParseError) {
         Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_PARSE").add();
       }
+      
+      this._pendingPings.delete(id);
+      
       throw e;
     };
 
@@ -1442,8 +1444,9 @@ let TelemetryStorageImpl = {
     try {
       array = yield OS.File.read(aFilePath, options);
     } catch(e) {
+      this._log.trace("loadPingfile - unreadable ping " + aFilePath, e);
       throw new PingReadError(e.message);
-    };
+    }
 
     let decoder = new TextDecoder();
     let string = decoder.decode(array);
@@ -1455,6 +1458,10 @@ let TelemetryStorageImpl = {
         ping.payload = JSON.parse(ping.payload);
       }
     } catch (e) {
+      this._log.trace("loadPingfile - unparseable ping " + aFilePath, e);
+      yield OS.File.remove(aFilePath).catch((ex) => {
+        this._log.error("loadPingFile - failed removing unparseable ping file", ex);
+      });
       throw new PingParseError(e.message);
     }
 
