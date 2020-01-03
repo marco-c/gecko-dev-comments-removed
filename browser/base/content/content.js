@@ -14,6 +14,7 @@ Cu.import("resource:///modules/ContentWebRTC.jsm");
 Cu.import("resource:///modules/ContentObservers.jsm");
 Cu.import("resource://gre/modules/InlineSpellChecker.jsm");
 Cu.import("resource://gre/modules/InlineSpellCheckerContent.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
   "resource://gre/modules/BrowserUtils.jsm");
@@ -879,8 +880,7 @@ let PageInfoListener = {
     sendAsyncMessage("PageInfo:data", pageInfoData);
 
     
-    let pageInfoMediaData = {imageViewRows: this.getMediaInfo(document, window, strings)};
-    sendAsyncMessage("PageInfo:mediaData", pageInfoMediaData);
+    this.getMediaInfo(document, window, strings);
   },
 
   getMetaInfo: function(document) {
@@ -965,7 +965,7 @@ let PageInfoListener = {
   getMediaInfo: function(document, window, strings)
   {
     let frameList = this.goThroughFrames(document, window);
-    return this.processFrames(document, frameList, strings);
+    Task.spawn(() => this.processFrames(document, frameList, strings));
   },
 
   goThroughFrames: function(document, window)
@@ -982,21 +982,29 @@ let PageInfoListener = {
     return frameList;
   },
 
-  processFrames: function(document, frameList, strings)
+  processFrames: function*(document, frameList, strings)
   {
-    let imageViewRows = [];
+    let nodeCount = 0;
     for (let doc of frameList) {
       let iterator = doc.createTreeWalker(doc, content.NodeFilter.SHOW_ELEMENT);
 
+      
       while (iterator.nextNode()) {
         let mediaNode = this.getMediaNode(document, strings, iterator.currentNode);
 
         if (mediaNode) {
-          imageViewRows.push(mediaNode);
+          sendAsyncMessage("PageInfo:mediaData",
+                           {imageViewRow: mediaNode, isComplete: false});
+        }
+
+        if (++nodeCount % 500 == 0) {
+          
+          yield new Promise(resolve => setTimeout(resolve, 10));
         }
       }
     }
-    return imageViewRows;
+    
+    sendAsyncMessage("PageInfo:mediaData", {isComplete: true});
   },
 
   getMediaNode: function(document, strings, elem)

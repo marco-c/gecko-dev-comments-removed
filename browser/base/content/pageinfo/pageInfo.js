@@ -364,7 +364,7 @@ function loadPageInfo(frameOuterWindowID)
   mm.sendAsyncMessage("PageInfo:getData", {strings: gStrings,
                       frameOuterWindowID: frameOuterWindowID});
 
-  let pageInfoData = null;
+  let pageInfoData;
 
   
   mm.addMessageListener("PageInfo:data", function onmessage(message) {
@@ -389,12 +389,22 @@ function loadPageInfo(frameOuterWindowID)
   });
 
   
-  mm.addMessageListener("PageInfo:mediaData", function onmessage(message){
-    mm.removeMessageListener("PageInfo:mediaData", onmessage);
-    makeMediaTab(message.data.imageViewRows);
+  mm.addMessageListener("PageInfo:mediaData", function onmessage(message) {
+    
+    if (window.closed) {
+      mm.removeMessageListener("PageInfo:mediaData", onmessage);
+      return;
+    }
 
     
-    onFinished.forEach(function(func) { func(pageInfoData); });
+    if (message.data.isComplete) {
+      mm.removeMessageListener("PageInfo:mediaData", onmessage);
+      onFinished.forEach(function(func) { func(pageInfoData); });
+      return;
+    }
+
+    addImage(message.data.imageViewRow);
+    selectImage();
   });
 
   
@@ -580,18 +590,10 @@ function makeGeneralTab(metaViewRows, docInfo)
   });
 }
 
-function makeMediaTab(imageViewRows)
+function addImage(imageViewRow)
 {
-  
-  for (let image of imageViewRows) {
-    let [url, type, alt, elem, isBg] = image;
-    addImage(url, type, alt, elem, isBg);
-  }
-  selectImage();
-}
+  let [url, type, alt, elem, isBg] = imageViewRow;
 
-function addImage(url, type, alt, elem, isBg)
-{
   if (!url)
     return;
 
