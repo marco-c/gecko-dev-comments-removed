@@ -442,6 +442,8 @@ class AsmJSModule
             uint32_t startOffsetInModule_;  
             uint32_t endOffsetInModule_;    
         } pod;
+
+        
         uint32_t funcIndex_;
 
         friend class AsmJSModule;
