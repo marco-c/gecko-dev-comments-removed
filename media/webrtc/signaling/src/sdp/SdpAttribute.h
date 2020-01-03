@@ -68,6 +68,7 @@ public:
     kSendonlyAttribute,
     kSendrecvAttribute,
     kSetupAttribute,
+    kSimulcastAttribute,
     kSsrcAttribute,
     kSsrcGroupAttribute,
     kLastAttribute = kSsrcGroupAttribute
@@ -1294,6 +1295,63 @@ inline std::ostream& operator<<(std::ostream& os, SdpSetupAttribute::Role r)
   }
   return os;
 }
+
+
+
+
+
+
+
+
+
+
+
+class SdpSimulcastAttribute : public SdpAttribute
+{
+public:
+  SdpSimulcastAttribute() : SdpAttribute(kSimulcastAttribute) {}
+
+  void Serialize(std::ostream& os) const override;
+  bool Parse(std::istream& is, std::string* error);
+
+  class Version
+  {
+    public:
+      void Serialize(std::ostream& os) const;
+      bool IsSet() const
+      {
+        return !choices.empty();
+      }
+      bool Parse(std::istream& is, std::string* error);
+
+      std::vector<uint16_t> choices;
+  };
+
+  class Versions : public std::vector<Version>
+  {
+    public:
+      void Serialize(std::ostream& os) const;
+      bool IsSet() const
+      {
+        if (empty()) {
+          return false;
+        }
+
+        for (const Version& version : *this) {
+          if (version.IsSet()) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+      bool Parse(std::istream& is, std::string* error);
+  };
+
+  Versions sendVersions;
+  Versions recvVersions;
+  Versions sendrecvVersions;
+};
 
 
 
