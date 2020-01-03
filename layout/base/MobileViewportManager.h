@@ -54,6 +54,7 @@ private:
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell; 
   nsCOMPtr<nsIDOMEventTarget> mEventTarget;
   bool mIsFirstPaint;
+  bool mPainted;
   mozilla::LayoutDeviceIntSize mDisplaySize;
   mozilla::CSSSize mMobileViewportSize;
 };
