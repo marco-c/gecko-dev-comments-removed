@@ -221,6 +221,7 @@ struct BytecodeEmitter
 
     StmtInfoBCE* innermostStmt() const { return stmtStack.innermost(); }
     StmtInfoBCE* innermostScopeStmt() const { return stmtStack.innermostScopeStmt(); }
+    JSObject* innermostStaticScope() const;
 
     bool isAliasedName(ParseNode* pn);
 
@@ -333,10 +334,6 @@ struct BytecodeEmitter
     void pushStatement(StmtInfoBCE* stmt, StmtType type, ptrdiff_t top);
     void pushStatementInner(StmtInfoBCE* stmt, StmtType type, ptrdiff_t top);
     void pushLoopStatement(LoopStmtInfo* stmt, StmtType type, ptrdiff_t top);
-
-    
-    
-    JSObject* enclosingStaticScope();
 
     
     
