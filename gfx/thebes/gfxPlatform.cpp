@@ -504,8 +504,6 @@ gfxPlatform::Init()
     InitLayersAccelerationPrefs();
     InitLayersIPC();
 
-    gPlatform->ComputeTileSize();
-
     nsresult rv;
 
     bool usePlatformFontList = true;
@@ -1004,7 +1002,7 @@ gfxPlatform::ComputeTileSize()
   
   
   if (!XRE_IsParentProcess()) {
-    return;
+    NS_RUNTIMEABORT("wrong process.");
   }
 
   int32_t w = gfxPrefs::LayersTileWidth();
