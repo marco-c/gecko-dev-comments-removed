@@ -593,9 +593,20 @@ let Impl = {
 
 
   enableTelemetryRecording: function enableTelemetryRecording() {
-    const enabled = Preferences.get(PREF_ENABLED, false);
+    
+    
+    
+    if (Utils.isContentProcess && !this._testMode && !Services.appinfo.browserTabsRemoteAutostart) {
+      this._log.config("enableTelemetryRecording - not enabling Telemetry for non-e10s child process");
+      Telemetry.canRecordBase = false;
+      Telemetry.canRecordExtended = false;
+      return false;
+    }
 
     
+    
+    
+    const enabled = Preferences.get(PREF_ENABLED, false);
     Telemetry.canRecordBase = enabled || (IS_UNIFIED_TELEMETRY && !IS_UNIFIED_OPTIN);
 
 #ifdef MOZILLA_OFFICIAL

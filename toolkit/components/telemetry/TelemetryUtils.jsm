@@ -12,7 +12,21 @@ const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
+const IS_CONTENT_PROCESS = (function() {
+  
+  
+  let runtime = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
+  return runtime.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+})();
+
 this.TelemetryUtils = {
+  
+
+
+  get isContentProcess() {
+    return IS_CONTENT_PROCESS;
+  },
+
   
 
 
