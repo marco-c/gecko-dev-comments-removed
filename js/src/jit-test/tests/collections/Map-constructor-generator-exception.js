@@ -1,4 +1,4 @@
-// Iterating over the argument to Map can throw. The exception is propagated.
+
 
 load(libdir + "asserts.js");
 
@@ -9,4 +9,4 @@ function data2() {
 }
 
 var it = data2();
-assertThrowsValue(function () { Map(it); }, "oops");
+assertThrowsValue(function () { new Map(it); }, "oops");
