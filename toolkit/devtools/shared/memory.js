@@ -261,15 +261,6 @@ let Memory = exports.Memory = Class({
 
 
 
-
-
-
-
-
-
-
-
-
   getAllocations: expectState("attached", function() {
     if (this.dbg.memory.allocationsLogOverflowed) {
       
@@ -283,9 +274,8 @@ let Memory = exports.Memory = Class({
     const allocations = this.dbg.memory.drainAllocationsLog()
     const packet = {
       allocations: [],
-      allocationsTimestamps: []
+      allocationsTimestamps: [],
     };
-
     for (let { frame: stack, timestamp } of allocations) {
       if (stack && Cu.isDeadWrapper(stack)) {
         continue;

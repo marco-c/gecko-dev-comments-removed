@@ -371,12 +371,7 @@ MemoryFrontFacade.prototype = {
     let memoryData = yield this.getAllocations();
     
     
-    this.emit("timeline-data", "allocations", {
-      sites: memoryData.allocations,
-      timestamps: memoryData.allocationsTimestamps,
-      frames: memoryData.frames,
-      counts: memoryData.counts
-    });
+    this.emit("timeline-data", "allocations", memoryData);
 
     deferred.resolve();
   }),
