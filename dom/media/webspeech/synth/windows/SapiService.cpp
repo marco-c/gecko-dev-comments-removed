@@ -132,6 +132,8 @@ SapiCallback::OnSpeechEvent(const SPEVENT& speechEvent)
     mTask->DispatchBoundary(NS_LITERAL_STRING("sentence"),
                             GetTickCount() - mStartingTime, mCurrentIndex);
     break;
+  default:
+    break;
   }
 }
 
@@ -180,7 +182,7 @@ SapiService::Init()
 
   if (Preferences::GetBool("media.webspeech.synth.test")) {
     
-    return nullptr;
+    return false;
   }
 
   if (FAILED(CoCreateInstance(CLSID_SpVoice, nullptr, CLSCTX_ALL, IID_ISpVoice,
