@@ -59,6 +59,7 @@ public:
 
   
   using nsWrapperCache::GetWrapperPreserveColor;
+  using nsWrapperCache::GetWrapper;
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 protected:
   virtual ~HTMLPropertiesCollection();

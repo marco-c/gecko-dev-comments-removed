@@ -100,7 +100,9 @@ public:
   
   
   static already_AddRefed<Promise>
-  Create(nsIGlobalObject* aGlobal, ErrorResult& aRv);
+  Create(nsIGlobalObject* aGlobal, ErrorResult& aRv,
+         
+         JS::Handle<JSObject*> aDesiredProto = nullptr);
 
   typedef void (Promise::*MaybeFunc)(JSContext* aCx,
                                      JS::Handle<JS::Value> aValue);
@@ -159,7 +161,7 @@ public:
 
   static already_AddRefed<Promise>
   Constructor(const GlobalObject& aGlobal, PromiseInit& aInit,
-              ErrorResult& aRv);
+              ErrorResult& aRv, JS::Handle<JSObject*> aDesiredProto);
 
   static already_AddRefed<Promise>
   Resolve(const GlobalObject& aGlobal,
@@ -217,7 +219,8 @@ protected:
   virtual ~Promise();
 
   
-  void CreateWrapper(ErrorResult& aRv);
+  
+  void CreateWrapper(JS::Handle<JSObject*> aDesiredProto, ErrorResult& aRv);
 
   
   
