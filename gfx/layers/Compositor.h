@@ -496,17 +496,20 @@ public:
   }
   void SetCompositionTime(TimeStamp aTimeStamp) {
     mCompositionTime = aTimeStamp;
-    mCompositeAgainTime = TimeStamp();
-  }
-
-  void CompositeAgainAt(TimeStamp aTimeStamp) {
-    if (mCompositeAgainTime.IsNull() ||
-        mCompositeAgainTime > aTimeStamp) {
-      mCompositeAgainTime = aTimeStamp;
+    if (!mCompositionTime.IsNull() && !mCompositeUntilTime.IsNull() &&
+        mCompositionTime >= mCompositeUntilTime) {
+      mCompositeUntilTime = TimeStamp();
     }
   }
-  TimeStamp GetCompositeAgainTime() const {
-    return mCompositeAgainTime;
+
+  void CompositeUntil(TimeStamp aTimeStamp) {
+    if (mCompositeUntilTime.IsNull() ||
+        mCompositeUntilTime < aTimeStamp) {
+      mCompositeUntilTime = aTimeStamp;
+    }
+  }
+  TimeStamp GetCompositeUntilTime() const {
+    return mCompositeUntilTime;
   }
 
 protected:
@@ -531,7 +534,8 @@ protected:
 
 
 
-  TimeStamp mCompositeAgainTime;
+
+  TimeStamp mCompositeUntilTime;
 
   uint32_t mCompositorID;
   DiagnosticTypes mDiagnosticTypes;

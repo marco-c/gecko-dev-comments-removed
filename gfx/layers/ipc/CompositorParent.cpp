@@ -1181,7 +1181,8 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
   
   
   
-  if (!mCompositor->GetCompositeAgainTime().IsNull() ||
+  
+  if (!mCompositor->GetCompositeUntilTime().IsNull() ||
       mLayerManager->DebugOverlayWantsNextFrame()) {
     ScheduleComposition();
   }
