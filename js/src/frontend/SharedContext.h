@@ -506,20 +506,16 @@ struct StmtInfoBase {
     bool isBlockScope:1;
 
     
-    bool isNestedScope:1;
-
-    
     bool isForLetBlock:1;
 
     
     RootedAtom      label;
 
     
-    
     Rooted<NestedScopeObject*> staticScope;
 
     explicit StmtInfoBase(ExclusiveContext* cx)
-        : isBlockScope(false), isNestedScope(false), isForLetBlock(false),
+        : isBlockScope(false), isForLetBlock(false),
           label(cx), staticScope(cx)
     {}
 
@@ -529,11 +525,11 @@ struct StmtInfoBase {
     }
 
     bool linksScope() const {
-        return isNestedScope;
+        return !!staticScope;
     }
 
     StaticBlockObject& staticBlock() const {
-        MOZ_ASSERT(isNestedScope);
+        MOZ_ASSERT(staticScope);
         MOZ_ASSERT(isBlockScope);
         return staticScope->as<StaticBlockObject>();
     }
@@ -554,25 +550,18 @@ PushStatement(ContextT* ct, typename ContextT::StmtInfo* stmt, StmtType type)
 {
     stmt->type = type;
     stmt->isBlockScope = false;
-    stmt->isNestedScope = false;
     stmt->isForLetBlock = false;
     stmt->label = nullptr;
     stmt->staticScope = nullptr;
     stmt->down = ct->topStmt;
     ct->topStmt = stmt;
-    if (stmt->linksScope()) {
-        stmt->downScope = ct->topScopeStmt;
-        ct->topScopeStmt = stmt;
-    } else {
-        stmt->downScope = nullptr;
-    }
+    stmt->downScope = nullptr;
 }
 
 template <class ContextT>
 void
 FinishPushNestedScope(ContextT* ct, typename ContextT::StmtInfo* stmt, NestedScopeObject& staticScope)
 {
-    stmt->isNestedScope = true;
     stmt->downScope = ct->topScopeStmt;
     ct->topScopeStmt = stmt;
     ct->staticScope = &staticScope;
@@ -590,10 +579,8 @@ FinishPopStatement(ContextT* ct)
     ct->topStmt = stmt->down;
     if (stmt->linksScope()) {
         ct->topScopeStmt = stmt->downScope;
-        if (stmt->isNestedScope) {
-            MOZ_ASSERT(stmt->staticScope);
+        if (stmt->staticScope)
             ct->staticScope = stmt->staticScope->enclosingNestedScope();
-        }
     }
 }
 
