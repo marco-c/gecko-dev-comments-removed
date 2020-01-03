@@ -495,7 +495,6 @@ enum class StmtType : uint16_t {
 
 
 
-
 struct StmtInfoBase
 {
     
@@ -613,47 +612,6 @@ class MOZ_STACK_CLASS StmtInfoStack
         linkAsTopScopal(topStmt_, blockObj);
     }
 };
-
-
-template <class ContextT>
-void
-PushStatement(ContextT* ct, typename ContextT::StmtInfo* stmt, StmtType type)
-{
-    stmt->type = type;
-    stmt->isBlockScope = false;
-    stmt->isForLetBlock = false;
-    stmt->label = nullptr;
-    stmt->staticScope = nullptr;
-    stmt->down = ct->topStmt;
-    ct->topStmt = stmt;
-    stmt->downScope = nullptr;
-}
-
-template <class ContextT>
-void
-FinishPushNestedScope(ContextT* ct, typename ContextT::StmtInfo* stmt, NestedScopeObject& staticScope)
-{
-    stmt->downScope = ct->topScopeStmt;
-    ct->topScopeStmt = stmt;
-    ct->staticScope = &staticScope;
-    stmt->staticScope = &staticScope;
-}
-
-
-
-
-template <class ContextT>
-void
-FinishPopStatement(ContextT* ct)
-{
-    typename ContextT::StmtInfo* stmt = ct->topStmt;
-    ct->topStmt = stmt->down;
-    if (stmt->linksScope()) {
-        ct->topScopeStmt = stmt->downScope;
-        if (stmt->staticScope)
-            ct->staticScope = stmt->staticScope->enclosingNestedScope();
-    }
-}
 
 } 
 

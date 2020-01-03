@@ -105,8 +105,6 @@ enum VarEmitOption {
 
 struct BytecodeEmitter
 {
-    typedef StmtInfoBCE StmtInfo;
-
     SharedContext* const sc;      
 
     ExclusiveContext* const cx;
@@ -137,10 +135,7 @@ struct BytecodeEmitter
 
     HandleScript    evalCaller;     
 
-    StmtInfoBCE*    topStmt;       
-    StmtInfoBCE*    topScopeStmt;  
-    Rooted<NestedScopeObject*> staticScope;
-                                    
+    StmtInfoStack<StmtInfoBCE> stmtStack;
 
     OwnedAtomIndexMapPtr atomIndices; 
     unsigned        firstLine;      
@@ -223,6 +218,10 @@ struct BytecodeEmitter
                     bool insideNonGlobalEval, uint32_t lineNum, EmitterMode emitterMode = Normal);
     bool init();
     bool updateLocalsToFrameSlots();
+
+    StmtInfoBCE* topStmt() const { return stmtStack.top(); }
+    StmtInfoBCE* topScopeStmt() const { return stmtStack.topScopal(); }
+    NestedScopeObject* topStaticScope() const;
 
     bool isAliasedName(ParseNode* pn);
 
