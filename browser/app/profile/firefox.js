@@ -1865,6 +1865,8 @@ pref("browser.translation.engine", "bing");
 
 pref("toolkit.telemetry.archive.enabled", true);
 
+pref("toolkit.telemetry.optoutSample", true);
+
 
 pref("experiments.enabled", true);
 pref("experiments.manifest.fetchIntervalSeconds", 86400);
