@@ -1658,14 +1658,7 @@ urlInlineComplete.prototype = {
 
   
   
-
-  get searchType() {
-    return Ci.nsIAutoCompleteSearchDescriptor.SEARCH_TYPE_IMMEDIATE;
-  },
-
-  get clearingAutoFillSearchesAgain() {
-    return false;
-  },
+  get searchType() Ci.nsIAutoCompleteSearchDescriptor.SEARCH_TYPE_IMMEDIATE,
 
   
   

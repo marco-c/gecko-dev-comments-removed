@@ -139,19 +139,8 @@ protected:
   nsString mSearchString;
   nsString mPlaceholderCompletionString;
   bool mDefaultIndexCompleted;
+  bool mBackspaced;
   bool mPopupClosedByCompositionStart;
-
-  
-  
-  bool mProhibitAutoFill;
-
-  
-  
-  bool mUserClearedAutoFill;
-
-  
-  bool mClearingAutoFillSearchesAgain;
-
   enum CompositionState {
     eCompositionState_None,
     eCompositionState_Composing,

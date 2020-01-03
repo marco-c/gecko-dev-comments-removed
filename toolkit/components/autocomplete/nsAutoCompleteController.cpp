@@ -44,10 +44,8 @@ NS_INTERFACE_MAP_END
 
 nsAutoCompleteController::nsAutoCompleteController() :
   mDefaultIndexCompleted(false),
+  mBackspaced(false),
   mPopupClosedByCompositionStart(false),
-  mProhibitAutoFill(false),
-  mUserClearedAutoFill(false),
-  mClearingAutoFillSearchesAgain(false),
   mCompositionState(eCompositionState_None),
   mSearchStatus(nsAutoCompleteController::STATUS_NONE),
   mRowCount(0),
@@ -121,7 +119,7 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
   mSearchString = newValue;
   mPlaceholderCompletionString.Truncate();
   mDefaultIndexCompleted = false;
-  mProhibitAutoFill = false;
+  mBackspaced = false;
   mSearchStatus = nsIAutoCompleteController::STATUS_NONE;
   mRowCount = 0;
   mSearchesOngoing = 0;
@@ -150,17 +148,12 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
       mSearches.AppendObject(search);
 
       
+      uint16_t searchType = nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED;
       nsCOMPtr<nsIAutoCompleteSearchDescriptor> searchDesc =
         do_QueryInterface(search);
-      if (searchDesc) {
-        uint16_t searchType = nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED;
-        if (NS_SUCCEEDED(searchDesc->GetSearchType(&searchType)) &&
-            searchType == nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_IMMEDIATE)
-          mImmediateSearchesCount++;
-
-        if (!mClearingAutoFillSearchesAgain)
-          searchDesc->GetClearingAutoFillSearchesAgain(&mClearingAutoFillSearchesAgain);
-      }
+      if (searchDesc && NS_SUCCEEDED(searchDesc->GetSearchType(&searchType)) &&
+          searchType == nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_IMMEDIATE)
+        mImmediateSearchesCount++;
     }
   }
 
@@ -228,35 +221,21 @@ nsAutoCompleteController::HandleText()
   
   
   
-  
-  
-
-  bool userAddedText = newValue.Length() > mSearchString.Length();
-  mUserClearedAutoFill =
-    !userAddedText &&
-    newValue.Length() < mPlaceholderCompletionString.Length() &&
-    Substring(mPlaceholderCompletionString, 0, newValue.Length()).Equals(newValue);
-
-  bool searchAgainOnAutoFillClear = mUserClearedAutoFill && mClearingAutoFillSearchesAgain;
-
-  if (!handlingCompositionCommit &&
-      !searchAgainOnAutoFillClear &&
-      newValue.Length() > 0 &&
+  if (!handlingCompositionCommit && newValue.Length() > 0 &&
       newValue.Equals(mSearchString)) {
     return NS_OK;
   }
 
   
-  if (!userAddedText &&
-      Substring(mSearchString, 0, newValue.Length()).Equals(newValue)) {
+  if (newValue.Length() < mSearchString.Length() &&
+      Substring(mSearchString, 0, newValue.Length()).Equals(newValue))
+  {
     
-    if (newValue.Length() < mSearchString.Length()) {
-      ClearResults();
-    }
-    mProhibitAutoFill = true;
+    ClearResults();
+    mBackspaced = true;
     mPlaceholderCompletionString.Truncate();
   } else {
-    mProhibitAutoFill = false;
+    mBackspaced = false;
   }
 
   mSearchString = newValue;
@@ -1172,13 +1151,6 @@ nsAutoCompleteController::StartSearch(uint16_t aSearchType)
     if (NS_FAILED(rv))
         return rv;
 
-    
-    
-    
-    if (mProhibitAutoFill && mClearingAutoFillSearchesAgain) {
-      searchParam.AppendLiteral(" prohibit-autofill");
-    }
-
     rv = search->StartSearch(mSearchString, searchParam, result, static_cast<nsIAutoCompleteObserver *>(this));
     if (NS_FAILED(rv)) {
       ++mSearchesFailed;
@@ -1253,7 +1225,6 @@ nsAutoCompleteController::MaybeCompletePlaceholder()
   
   
   bool usePlaceholderCompletion =
-    !mUserClearedAutoFill &&
     !mPlaceholderCompletionString.IsEmpty() &&
     mPlaceholderCompletionString.Length() > mSearchString.Length() &&
     selectionEnd == selectionStart &&
@@ -1642,7 +1613,7 @@ nsAutoCompleteController::ClearResults()
 nsresult
 nsAutoCompleteController::CompleteDefaultIndex(int32_t aResultIndex)
 {
-  if (mDefaultIndexCompleted || mProhibitAutoFill || mSearchString.Length() == 0 || !mInput)
+  if (mDefaultIndexCompleted || mBackspaced || mSearchString.Length() == 0 || !mInput)
     return NS_OK;
 
   nsCOMPtr<nsIAutoCompleteInput> input(mInput);
