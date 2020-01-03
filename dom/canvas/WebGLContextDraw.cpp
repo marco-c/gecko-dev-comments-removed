@@ -25,11 +25,7 @@ static const int MAX_DRAW_CALLS_SINCE_FLUSH = 100;
 bool
 WebGLContext::DrawInstanced_check(const char* info)
 {
-    
-    if (!IsWebGL2() &&
-        IsExtensionEnabled(WebGLExtensionID::ANGLE_instanced_arrays) &&
-        !mBufferFetchingHasPerVertex)
-    {
+    if (!mBufferFetchingHasPerVertex) {
         
 
 
