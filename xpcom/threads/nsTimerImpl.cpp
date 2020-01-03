@@ -205,23 +205,7 @@ nsTimerImpl::InitCommon(uint32_t aType, uint32_t aDelay)
     return rv;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (mArmed) {
-    gThread->RemoveTimer(this);
-  }
+  gThread->RemoveTimer(this);
   mCanceled = false;
   mTimeout = TimeStamp();
   mGeneration = gGenerator++;
