@@ -99,6 +99,10 @@ public:
 
   
   
+  virtual void NotifyInputsChanged() {}
+
+  
+  
   
   virtual uint16_t NumberOfInputs() const { return 1; }
   virtual uint16_t NumberOfOutputs() const { return 1; }
