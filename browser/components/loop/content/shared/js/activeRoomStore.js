@@ -580,21 +580,6 @@ loop.store.ActiveRoomStore = (function() {
 
 
     connectionFailure: function(actionData) {
-      
-
-
-
-
-      if (this._isDesktop &&
-          actionData.reason === FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA &&
-          this.getStoreState().videoMuted === false) {
-        
-        
-        this.setStoreState({videoMuted: true});
-        this._sdkDriver.retryPublishWithoutVideo();
-        return;
-      }
-
       var exitState = this._storeState.roomState === ROOM_STATES.FAILED ?
         this._storeState.failureExitState : this._storeState.roomState;
 

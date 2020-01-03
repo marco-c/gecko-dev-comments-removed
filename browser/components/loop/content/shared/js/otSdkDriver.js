@@ -64,12 +64,23 @@ loop.OTSdkDriver = (function() {
 
 
 
-    if (this._isDesktop && !window.MediaStreamTrack.getSources) {
+    if (this._isDesktop) {
       
       
       
       window.MediaStreamTrack.getSources = function(callback) {
-        callback([{kind: "audio"}, {kind: "video"}]);
+        navigator.mediaDevices.enumerateDevices().then(function(devices) {
+          var result = [];
+          devices.forEach(function(device) {
+            if (device.kind === "audioinput") {
+              result.push({kind: "audio"});
+            }
+            if (device.kind === "videoinput") {
+              result.push({kind: "video"});
+            }
+          });
+          callback(result);
+        });
       };
     }
   };
@@ -111,19 +122,11 @@ loop.OTSdkDriver = (function() {
 
       
       
-      
-      this._publishLocalStreams();
-    },
-
-    
-
-
-
-    _publishLocalStreams: function() {
-      
-      
       this._mockPublisherEl = document.createElement("div");
 
+      
+      
+      
       this.publisher = this.sdk.initPublisher(this._mockPublisherEl,
         _.extend(this._getDataChannelSettings, this._getCopyPublisherConfig));
 
@@ -133,17 +136,6 @@ loop.OTSdkDriver = (function() {
       this.publisher.on("accessDenied", this._onPublishDenied.bind(this));
       this.publisher.on("accessDialogOpened",
         this._onAccessDialogOpened.bind(this));
-    },
-
-    
-
-
-
-    retryPublishWithoutVideo: function() {
-      window.MediaStreamTrack.getSources = function(callback) {
-        callback([{kind: "audio"}]);
-      };
-      this._publishLocalStreams();
     },
 
     

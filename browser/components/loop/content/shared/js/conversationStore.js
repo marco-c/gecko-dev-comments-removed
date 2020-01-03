@@ -146,21 +146,6 @@ loop.store = loop.store || {};
 
 
     connectionFailure: function(actionData) {
-      
-
-
-
-
-      if (this._isDesktop &&
-          actionData.reason === FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA &&
-          this.getStoreState().videoMuted === false) {
-        
-        
-        this.setStoreState({videoMuted: true});
-        this.sdkDriver.retryPublishWithoutVideo();
-        return;
-      }
-
       this._endSession();
       this.setStoreState({
         callState: CALL_STATES.TERMINATED,
