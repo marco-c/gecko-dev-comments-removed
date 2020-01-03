@@ -25,8 +25,8 @@ namespace frontend {
 
 struct StmtInfoPC : public StmtInfoBase
 {
-    StmtInfoPC*     down;          
-    StmtInfoPC*     downScope;     
+    StmtInfoPC*     enclosing;
+    StmtInfoPC*     enclosingScope;
 
     uint32_t        blockid;        
     uint32_t        innerBlockScopeDepth; 
@@ -284,10 +284,10 @@ struct ParseContext : public GenericParseContext
 
     bool init(TokenStream& ts);
 
-    unsigned blockid() { return stmtStack.top() ? stmtStack.top()->blockid : bodyid; }
+    unsigned blockid() { return stmtStack.innermost() ? stmtStack.innermost()->blockid : bodyid; }
 
-    StmtInfoPC* topStmt() const { return stmtStack.top(); }
-    StmtInfoPC* topScopeStmt() const { return stmtStack.topScopal(); }
+    StmtInfoPC* innermostStmt() const { return stmtStack.innermost(); }
+    StmtInfoPC* innermostScopeStmt() const { return stmtStack.innermostScopal(); }
 
     
     
@@ -296,8 +296,8 @@ struct ParseContext : public GenericParseContext
     
     
     
-    bool atBodyLevel() { return !topStmt(); }
-    bool atGlobalLevel() { return atBodyLevel() && !sc->isFunctionBox() && !topScopeStmt(); }
+    bool atBodyLevel() { return !innermostStmt(); }
+    bool atGlobalLevel() { return atBodyLevel() && !sc->isFunctionBox() && !innermostScopeStmt(); }
 
     
     
@@ -354,7 +354,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
         ~AutoPushStmtInfoPC();
 
         bool generateBlockId();
-        bool makeTopLexicalScope(StaticBlockObject& blockObj);
+        bool makeInnermostLexicalScope(StaticBlockObject& blockObj);
 
         StmtInfoPC& operator*() { return stmt_; }
         StmtInfoPC* operator->() { return &stmt_; }
