@@ -13,7 +13,7 @@ browserElementTestHelpers.addPermission();
 
 
 
-function playMediaScript() {
+function playAudioScript() {
   var audio = new content.Audio();
   content.document.body.appendChild(audio);
   audio.oncanplay = function() {
@@ -42,14 +42,14 @@ function runTest() {
   
   iframe.addEventListener('mozbrowserloadend', () => {
     let mm = SpecialPowers.getBrowserFrameMessageManager(iframe);
-    mm.loadFrameScript('data:,(' + playMediaScript.toString() + ')();', false);
+    mm.loadFrameScript('data:,(' + playAudioScript.toString() + ')();', false);
   });
 
   
   
   
   let expectedNextData = 'active';
-  iframe.addEventListener('mozbrowsermediaplaybackchange', (e) => {
+  iframe.addEventListener('mozbrowseraudioplaybackchange', (e) => {
     is(e.detail, expectedNextData, 'Audio detail should be correct')
     is(e.target, iframe, 'event target should be the first iframe')
     if (e.detail === 'inactive') {
@@ -59,9 +59,9 @@ function runTest() {
   });
 
   
-  iframe2.addEventListener('mozbrowsermediaplaybackchange', (e) => {
+  iframe2.addEventListener('mozbrowseraudioplaybackchange', (e) => {
     ok(false,
-       'mozbrowsermediaplaybackchange should dispatch to the correct browser');
+       'mozbrowseraudioplaybackchange should dispatch to the correct browser');
   });
 
   
