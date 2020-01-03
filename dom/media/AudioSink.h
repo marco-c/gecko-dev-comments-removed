@@ -83,6 +83,12 @@ private:
 
   
   
+  bool PlayAudio();
+
+  void FinishAudioLoop();
+
+  
+  
   
   
   

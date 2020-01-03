@@ -174,42 +174,11 @@ AudioSink::AudioLoop()
         break;
       }
     }
-    
-    
-    
-    
-    NS_ASSERTION(AudioQueue().GetSize() > 0, "Should have data to play");
-    CheckedInt64 sampleTime = UsecsToFrames(AudioQueue().PeekFront()->mTime, mInfo.mRate);
-
-    
-    CheckedInt64 playedFrames = UsecsToFrames(mStartTime, mInfo.mRate) +
-                                static_cast<int64_t>(mWritten);
-
-    CheckedInt64 missingFrames = sampleTime - playedFrames;
-    if (!missingFrames.isValid() || !sampleTime.isValid()) {
-      NS_WARNING("Int overflow adding in AudioLoop");
+    if (!PlayAudio()) {
       break;
     }
-
-    if (missingFrames.value() > AUDIO_FUZZ_FRAMES) {
-      
-      
-      
-      
-      missingFrames = std::min<int64_t>(UINT32_MAX, missingFrames.value());
-      mWritten += PlaySilence(static_cast<uint32_t>(missingFrames.value()));
-    } else {
-      mWritten += PlayFromAudioQueue();
-    }
   }
-  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-  MOZ_ASSERT(mStopAudioThread || AudioQueue().AtEndOfStream());
-  if (!mStopAudioThread && mPlaying) {
-    Drain();
-  }
-  SINK_LOG("AudioLoop complete");
-  Cleanup();
-  SINK_LOG("AudioLoop exit");
+  FinishAudioLoop();
 }
 
 nsresult
@@ -295,6 +264,53 @@ AudioSink::IsPlaybackContinuing()
   UpdateStreamSettings();
 
   return true;
+}
+
+bool
+AudioSink::PlayAudio()
+{
+  
+  
+  
+  
+  NS_ASSERTION(AudioQueue().GetSize() > 0, "Should have data to play");
+  CheckedInt64 sampleTime = UsecsToFrames(AudioQueue().PeekFront()->mTime, mInfo.mRate);
+
+  
+  CheckedInt64 playedFrames = UsecsToFrames(mStartTime, mInfo.mRate) +
+                              static_cast<int64_t>(mWritten);
+
+  CheckedInt64 missingFrames = sampleTime - playedFrames;
+  if (!missingFrames.isValid() || !sampleTime.isValid()) {
+    NS_WARNING("Int overflow adding in AudioLoop");
+    return false;
+  }
+
+  if (missingFrames.value() > AUDIO_FUZZ_FRAMES) {
+    
+    
+    
+    
+    missingFrames = std::min<int64_t>(UINT32_MAX, missingFrames.value());
+    mWritten += PlaySilence(static_cast<uint32_t>(missingFrames.value()));
+  } else {
+    mWritten += PlayFromAudioQueue();
+  }
+
+  return true;
+}
+
+void
+AudioSink::FinishAudioLoop()
+{
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+  MOZ_ASSERT(mStopAudioThread || AudioQueue().AtEndOfStream());
+  if (!mStopAudioThread && mPlaying) {
+    Drain();
+  }
+  SINK_LOG("AudioLoop complete");
+  Cleanup();
+  SINK_LOG("AudioLoop exit");
 }
 
 uint32_t
