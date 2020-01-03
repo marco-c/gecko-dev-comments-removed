@@ -96,8 +96,8 @@ let MemoryCallTreeView = Heritage.extend(DetailsSubview, {
       
       
       visibleCells: {
-        allocations: true,
-        selfAllocations: true,
+        selfCount: true,
+        count: true,
         function: true
       }
     });

@@ -37,14 +37,14 @@ function ThreadNode(thread, options = {}) {
   this.duration = options.endTime - options.startTime;
   this.nodeType = "Thread";
 
-  let { samples, stackTable, frameTable, stringTable, allocationsTable } = thread;
+  let { samples, stackTable, frameTable, stringTable } = thread;
 
   
   if (samples.data.length === 0) {
     return;
   }
 
-  this._buildInverted(samples, stackTable, frameTable, stringTable, allocationsTable, options);
+  this._buildInverted(samples, stackTable, frameTable, stringTable, options);
   if (!options.invertTree) {
     this._uninvert();
   }
@@ -74,10 +74,7 @@ ThreadNode.prototype = {
 
 
 
-
-
-
-  _buildInverted: function buildInverted(samples, stackTable, frameTable, stringTable, allocationsTable, options) {
+  _buildInverted: function buildInverted(samples, stackTable, frameTable, stringTable, options) {
     function getOrAddFrameNode(calls, isLeaf, frameKey, inflatedFrame, isMetaCategory, leafTable) {
       
       let frameNode;
@@ -203,7 +200,7 @@ ThreadNode.prototype = {
 
         
         let inflatedFrame = getOrAddInflatedFrame(inflatedFrameCache, frameIndex, frameTable,
-                                                  stringTable, allocationsTable);
+                                                  stringTable);
 
         
         mutableFrameKeyOptions.isRoot = stackIndex === null;
@@ -382,11 +379,10 @@ ThreadNode.prototype = {
 
 
 
-function FrameNode(frameKey, { location, line, category, allocations, isContent }, isMetaCategory) {
+function FrameNode(frameKey, { location, line, category, isContent }, isMetaCategory) {
   this.key = frameKey;
   this.location = location;
   this.line = line;
-  this.allocations = allocations;
   this.youngestFrameSamples = 0;
   this.samples = 0;
   this.calls = [];
