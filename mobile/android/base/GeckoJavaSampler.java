@@ -19,7 +19,6 @@ public class GeckoJavaSampler {
     private static Thread sSamplingThread;
     private static SamplingThread sSamplingRunnable;
     private static Thread sMainThread;
-    private static volatile boolean sLibsLoaded;
 
     
     
@@ -31,7 +30,7 @@ public class GeckoJavaSampler {
         public long mJavaTime; 
         public Sample(StackTraceElement[] aStack) {
             mFrames = new Frame[aStack.length];
-            if (sLibsLoaded) {
+            if (GeckoThread.isStateAtLeast(GeckoThread.State.LIBS_READY)) {
                 mTime = getProfilerTime();
             }
             if (mTime == 0.0d) {
@@ -207,10 +206,6 @@ public class GeckoJavaSampler {
             sSamplingThread = null;
             sSamplingRunnable = null;
         }
-    }
-
-    public static void setLibsLoaded() {
-        sLibsLoaded = true;
     }
 }
 

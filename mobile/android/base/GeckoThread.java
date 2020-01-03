@@ -36,6 +36,10 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         
         LAUNCHED,
         
+        MOZGLUE_READY,
+        
+        LIBS_READY,
+        
         RUNNING,
         
         EXITING,
@@ -121,6 +125,7 @@ public class GeckoThread extends Thread implements GeckoEventListener {
 
         final Context context = GeckoAppShell.getContext();
         GeckoLoader.loadMozGlue(context);
+        setState(State.MOZGLUE_READY);
 
         final Resources res = context.getResources();
         if (locale.toString().equalsIgnoreCase("zh_hk")) {
@@ -145,7 +150,7 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         GeckoLoader.loadSQLiteLibs(context, resourcePath);
         GeckoLoader.loadNSSLibs(context, resourcePath);
         GeckoLoader.loadGeckoLibs(context, resourcePath);
-        GeckoJavaSampler.setLibsLoaded();
+        setState(State.LIBS_READY);
 
         return resourcePath;
     }
