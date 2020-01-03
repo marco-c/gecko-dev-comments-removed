@@ -743,9 +743,6 @@ private:
   
   void FinishWrite(bool aSucceeded);
 
-  static PLDHashOperator ApplyIndexChanges(CacheIndexEntry *aEntry,
-                                           void* aClosure);
-
   
   
   
@@ -842,8 +839,7 @@ private:
   
   void FinishUpdate(bool aSucceeded);
 
-  static PLDHashOperator RemoveNonFreshEntries(CacheIndexEntry *aEntry,
-                                               void* aClosure);
+  void RemoveNonFreshEntries();
 
   enum EState {
     
