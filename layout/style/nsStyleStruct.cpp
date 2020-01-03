@@ -1602,7 +1602,10 @@ nsChangeHint nsStylePosition::CalcDifference(const nsStylePosition& aOther) cons
     
     
     
-    return NS_CombineHint(hint, nsChangeHint_AllReflowHints);
+    return NS_CombineHint(hint, nsChangeHint_NeedReflow |
+        nsChangeHint_ClearAncestorIntrinsics |
+        nsChangeHint_ClearDescendantIntrinsics | nsChangeHint_NeedDirtyReflow |
+        nsChangeHint_ReflowChangesSizeOrPosition);
   }
 
   if (mWidth != aOther.mWidth ||
