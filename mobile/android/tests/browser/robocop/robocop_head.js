@@ -22,11 +22,7 @@ var _pendingTimers = [];
 
 function _dump(str) {
   let start = /^TEST-/.test(str) ? "\n" : "";
-  if (typeof _XPCSHELL_PROCESS == "undefined") {
-    dump(start + str);
-  } else {
-    dump(start + _XPCSHELL_PROCESS + ": " + str);
-  }
+  dump(start + str);
 }
 
 
@@ -906,71 +902,6 @@ function do_register_cleanup(unused) {
   
   _dump("TEST-INFO | (xpcshell/head.js) | test IGNORING do_register_cleanup() Registration\n");
 }
-
-
-
-
-
-
-
-
-
-function do_load_child_test_harness()
-{
-  
-  if (!runningInParent) {
-    do_throw("run_test_in_child cannot be called from child!");
-  }
-
-  
-  if (typeof do_load_child_test_harness.alreadyRun != "undefined")
-    return;
-  do_load_child_test_harness.alreadyRun = 1;
-
-  _XPCSHELL_PROCESS = "parent";
-
-  let command =
-        "const _HEAD_JS_PATH=" + uneval(_HEAD_JS_PATH) + "; "
-      + "const _HEAD_FILES=" + uneval(_HEAD_FILES) + "; "
-      + "const _TAIL_FILES=" + uneval(_TAIL_FILES) + "; "
-      + "const _XPCSHELL_PROCESS='child';";
-
-  if (this._TESTING_MODULES_DIR) {
-    command += " const _TESTING_MODULES_DIR=" + uneval(_TESTING_MODULES_DIR) + ";";
-  }
-
-  command += " load(_HEAD_JS_PATH);";
-
-  sendCommand(command);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function run_test_in_child(testFile, optionalCallback)
-{
-  var callback = (typeof optionalCallback == 'undefined') ?
-                    do_test_finished : optionalCallback;
-
-  do_load_child_test_harness();
-
-  var testPath = do_get_file(testFile).path.replace(/\\/g, "/");
-  do_test_pending();
-  sendCommand("_dump('CHILD-TEST-STARTED'); "
-              + "const _TEST_FILE=['" + testPath + "']; _execute_test(); "
-              + "_dump('CHILD-TEST-COMPLETED');",
-              callback);
-}
-
 
 
 
