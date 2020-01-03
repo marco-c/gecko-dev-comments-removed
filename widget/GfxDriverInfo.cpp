@@ -158,6 +158,8 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id)
       APPEND_DEVICE(0x2e23); 
       APPEND_DEVICE(0x2e12); 
       APPEND_DEVICE(0x2e13); 
+      break;
+    case IntelHDGraphicsToIvyBridge:
       APPEND_DEVICE(0x0042); 
       APPEND_DEVICE(0x0046); 
       APPEND_DEVICE(0x0102); 
