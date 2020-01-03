@@ -212,6 +212,7 @@ function WebappsActor(aConnection) {
   Cu.import("resource://gre/modules/Webapps.jsm");
   Cu.import("resource://gre/modules/AppsUtils.jsm");
   Cu.import("resource://gre/modules/FileUtils.jsm");
+  Cu.import("resource://gre/modules/MessageBroadcaster.jsm");
 
   
   
@@ -289,17 +290,17 @@ WebappsActor.prototype = {
         
         
         
-        reg.broadcastMessage("Webapps:UpdateState", {
+        MessageBroadcaster.broadcastMessage("Webapps:UpdateState", {
           app: aApp,
           manifest: manifest,
           id: aApp.id
         });
-        reg.broadcastMessage("Webapps:FireEvent", {
+        MessageBroadcaster.broadcastMessage("Webapps:FireEvent", {
           eventType: ["downloadsuccess", "downloadapplied"],
           manifestURL: aApp.manifestURL
         });
-        reg.broadcastMessage("Webapps:AddApp", { id: aId, app: aApp });
-        reg.broadcastMessage("Webapps:Install:Return:OK", {
+        MessageBroadcaster.broadcastMessage("Webapps:AddApp", { id: aId, app: aApp });
+        MessageBroadcaster.broadcastMessage("Webapps:Install:Return:OK", {
           app: aApp,
           oid: "foo",
           requestID: "bar"
