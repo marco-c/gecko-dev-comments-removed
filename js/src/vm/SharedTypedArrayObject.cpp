@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "vm/SharedTypedArrayObject.h"
 
@@ -56,40 +56,40 @@ using mozilla::PositiveInfinity;
 using JS::CanonicalizeNaN;
 using JS::GenericNaN;
 
-TypedArrayLayout SharedTypedArrayObject::layout_(true, 
-                                                 false, 
+TypedArrayLayout SharedTypedArrayObject::layout_(true, // shared
+                                                 false, // neuterable
                                                  &SharedTypedArrayObject::classes[0],
                                                  &SharedTypedArrayObject::classes[Scalar::TypeMax]);
 
 inline void
 InitSharedArrayBufferViewDataPointer(SharedTypedArrayObject *obj, SharedArrayBufferObject *buffer, size_t byteOffset)
 {
-    
-
-
-
-
+    /*
+     * N.B. The base of the array's data is stored in the object's
+     * private data rather than a slot to avoid the restriction that
+     * private Values that are pointers must have the low bits clear.
+     */
     MOZ_ASSERT(buffer->dataPointer() != nullptr);
     obj->initPrivate(buffer->dataPointer() + byteOffset);
 }
 
-
-
-
-
+// See note in TypedArrayObject.cpp about how we can probably merge
+// the below type with the one in that file, once TypedArrayObject is
+// less dissimilar from SharedTypedArrayObject (ie, when it is closer
+// to ES6).
 
 template<typename NativeType>
 class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
 {
-    
+    // A value that signifies that we should use the buffer up to the end.
     static const uint32_t LENGTH_NOT_PROVIDED = (uint32_t)-1;
 
-    
-    
-    
+    // This is the max implementation value of 'length': 2^31-1.
+    // The reason it is not 2^32-2 is due to Bug 1068458: most of the
+    // TypedArray code limits the length to INT32_MAX.
     static const uint32_t MAX_LENGTH = INT32_MAX;
 
-    
+    // This is the max value of 'byteOffset': one below the length.
     static const uint32_t MAX_BYTEOFFSET = MAX_LENGTH - 1;
 
   public:
@@ -146,7 +146,7 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
     {
         MOZ_ASSERT(len <= MAX_LENGTH / sizeof(NativeType));
 
-        
+        // Multiplication is safe due to preconditions for makeInstance().
         if (len * sizeof(NativeType) >= SharedTypedArrayObject::SINGLETON_TYPE_BYTE_LENGTH) {
             return &NewBuiltinClassInstance(cx, instanceClass(), allocKind,
                                             SingletonObject)->as<SharedTypedArrayObject>();
@@ -203,7 +203,7 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
             MOZ_ASSERT(arrayByteOffset <= bufferByteLength);
         }
 
-        
+        // Verify that the private slot is at the expected place
         MOZ_ASSERT(obj->numFixedSlots() == DATA_SLOT);
 #endif
 
@@ -217,12 +217,12 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
         return makeInstance(cx, bufobj, byteOffset, len, nullproto);
     }
 
-    
-
-
-
-
-
+    /*
+     * Shared{Type}Array(object)
+     *
+     * new Shared{Type}Array(length)
+     * new Shared{Type}Array(SharedArrayBuffer, [optional] byteOffset, [optional] length)
+     */
     static bool
     class_constructor(JSContext *cx, unsigned argc, Value *vp)
     {
@@ -254,13 +254,13 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
         if (args.length() == 0)
             return fromLength(cx, 0);
 
-        
+        // Case 1: (length)
         if (!args[0].isObject()) {
-            
+            // If not an object then it must be a length.
             uint32_t length;
             bool overflow;
             if (!ToLengthClamped(cx, args[0], &length, &overflow)) {
-                
+                // Bug 1068458: Limit length to 2^31-1.
                 if (overflow || length > INT32_MAX)
                     JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
                 return nullptr;
@@ -268,7 +268,7 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
             return fromLength(cx, length);
         }
 
-        
+        // Case 2: (SharedArrayBuffer, [byteOffset, [length]])
         RootedObject dataObj(cx, &args.get(0).toObject());
 
         if (!UncheckedUnwrap(dataObj)->is<SharedArrayBufferObject>()) {
@@ -293,7 +293,7 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
             if (args.length() > 2) {
                 bool overflow;
                 if (!ToLengthClamped(cx, args[2], &length, &overflow)) {
-                    
+                    // Bug 1068458: Limit length to 2^31-1.
                     if (overflow || length > INT32_MAX)
                         JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr,
                                              JSMSG_SHARED_TYPED_ARRAY_ARG_RANGE, "'length'");
@@ -314,9 +314,9 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
         return true;
     }
 
-    
-    
-    
+    // ValueGetter is a function that takes an unwrapped typed array object and
+    // returns a Value. Given such a function, Getter<> is a native that
+    // retrieves a given Value, probably from a slot on the object.
     template<Value ValueGetter(SharedTypedArrayObject *tarr)>
     static bool
     Getter(JSContext *cx, unsigned argc, Value *vp)
@@ -341,7 +341,7 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
         return CallNonGenericMethod(cx, is, BufferGetterImpl, args);
     }
 
-    
+    // Define an accessor for a read-only property that invokes a native getter
     static bool
     DefineGetter(JSContext *cx, HandleNativeObject proto, PropertyName *name, Native native)
     {
@@ -370,11 +370,11 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
     static void
     setIndexValue(SharedTypedArrayObject &tarray, uint32_t index, double d)
     {
-        
-        
-        
+        // If the array is an integer array, we only handle up to
+        // 32-bit ints from this point on.  if we want to handle
+        // 64-bit ints, we'll need some changes.
 
-        
+        // Assign based on characteristics of the destination type
         if (ArrayTypeIsFloatingPoint()) {
             setIndex(tarray, index, NativeType(d));
         } else if (ArrayTypeIsUnsigned()) {
@@ -382,8 +382,8 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
             uint32_t n = ToUint32(d);
             setIndex(tarray, index, NativeType(n));
         } else if (ArrayTypeID() == Scalar::Uint8Clamped) {
-            
-            
+            // The uint8_clamped type has a special rounding converter
+            // for doubles.
             setIndex(tarray, index, NativeType(d));
         } else {
             MOZ_ASSERT(sizeof(NativeType) <= 4);
@@ -412,11 +412,11 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
     {
         if (!ObjectClassIs(bufobj, ESClass_SharedArrayBuffer, cx)) {
             JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr, JSMSG_SHARED_TYPED_ARRAY_BAD_OBJECT);
-            return nullptr; 
+            return nullptr; // must be SharedArrayBuffer
         }
 
         if (bufobj->is<ProxyObject>()) {
-            
+            // Complicated, see TypedArrayObject.cpp for code.  For now, punt.
             JS_ReportError(cx, "Permission denied to access object");
             return nullptr;
         }
@@ -424,7 +424,7 @@ class SharedTypedArrayObjectTemplate : public SharedTypedArrayObject
         Rooted<SharedArrayBufferObject *> buffer(cx, &AsSharedArrayBuffer(bufobj));
 
         if (byteOffset > buffer->byteLength() || byteOffset % sizeof(NativeType) != 0) {
-            
+            // Invalid byteOffset.
             JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr, JSMSG_SHARED_TYPED_ARRAY_BAD_ARGS);
             return nullptr;
         }
@@ -524,7 +524,7 @@ class SharedUint8ClampedArrayObject : public SharedTypedArrayObjectTemplate<uint
     static const JSPropertySpec jsprops[];
 };
 
- bool
+/* static */ bool
 SharedTypedArrayObject::is(HandleValue v)
 {
     return v.isObject() && v.toObject().is<SharedTypedArrayObject>();
@@ -536,24 +536,24 @@ struct SharedTypedArrayObject::OfType
     typedef SharedTypedArrayObjectTemplate<T> Type;
 };
 
+// The different typed arrays each have their own prototypes, but those
+// prototypes are mostly empty.  Typed array methods instead are defined a
+// single time on a single %TypedArray%.prototype object.  These functions
+// behave identically on any kind of typed array.  (It's irrelevant right here,
+// but each typed array constructor inherits from the %TypedArray% function
+// to similarly share functions that live on the constructor.)
+//
+// In contrast, shared typed array methods are duplicated on each different
+// shared typed array prototype (likewise for functions on the constructors),
+// and each function only works on the corresponding kind of shared typed array
+// (enforced by SharedTypedArrayObjectTemplate<T>::is in these methods).
+//
+// It's probably worth changing the shared typed array spec to use a similar
+// %SharedTypedArray% structure to avoid duplication at some point.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * SharedTypedArrayObject boilerplate
+ */
 
 #define IMPL_SHARED_TYPED_ARRAY_STATICS(_typedArray)                               \
 bool                                                                               \
@@ -704,13 +704,13 @@ IMPL_SHARED_TYPED_ARRAY_COMBINED_UNWRAPPERS(Float64, double, double)
     JSCLASS_HAS_RESERVED_SLOTS(SharedTypedArrayObject::RESERVED_SLOTS) |       \
     JSCLASS_HAS_PRIVATE |                                                      \
     JSCLASS_HAS_CACHED_PROTO(JSProto_Shared##_typedArray),                     \
-    nullptr,                 /* addProperty */                                 \
-    nullptr,                 /* delProperty */                                 \
+    JS_PropertyStub,         /* addProperty */                                 \
+    JS_DeletePropertyStub,   /* delProperty */                                 \
     JS_PropertyStub,         /* getProperty */                                 \
     JS_StrictPropertyStub,   /* setProperty */                                 \
-    nullptr,                 /* enumerate   */                                 \
-    nullptr,                 /* resolve     */                                 \
-    nullptr,                 /* convert     */                                 \
+    JS_EnumerateStub,                                                          \
+    JS_ResolveStub,                                                            \
+    JS_ConvertStub,                                                            \
     nullptr,                 /* finalize    */                                 \
     nullptr,                 /* call        */                                 \
     nullptr,                 /* hasInstance */                                 \
@@ -725,13 +725,13 @@ IMPL_SHARED_TYPED_ARRAY_COMBINED_UNWRAPPERS(Float64, double, double)
     JSCLASS_HAS_RESERVED_SLOTS(SharedTypedArrayObject::RESERVED_SLOTS) |       \
     JSCLASS_HAS_PRIVATE | JSCLASS_IMPLEMENTS_BARRIERS |                        \
     JSCLASS_HAS_CACHED_PROTO(JSProto_Shared##_typedArray),                     \
-    nullptr,                 /* addProperty */                                 \
-    nullptr,                 /* delProperty */                                 \
+    JS_PropertyStub,         /* addProperty */                                 \
+    JS_DeletePropertyStub,   /* delProperty */                                 \
     JS_PropertyStub,         /* getProperty */                                 \
     JS_StrictPropertyStub,   /* setProperty */                                 \
-    nullptr,                 /* enumerate   */                                 \
-    nullptr,                 /* resolve     */                                 \
-    nullptr,                 /* convert     */                                 \
+    JS_EnumerateStub,                                                          \
+    JS_ResolveStub,                                                            \
+    JS_ConvertStub,                                                            \
     nullptr,                 /* finalize    */                                 \
     nullptr,                 /* call        */                                 \
     nullptr,                 /* hasInstance */                                 \
@@ -797,8 +797,8 @@ const Class SharedTypedArrayObject::protoClasses[Scalar::TypeMax] = {
     IMPL_SHARED_TYPED_ARRAY_PROTO_CLASS(Uint8ClampedArray)
 };
 
-
-
+// this default implementation is only valid for integer types
+// less than 32-bits in size.
 template<typename NativeType>
 Value
 SharedTypedArrayObjectTemplate<NativeType>::getIndexValue(JSObject *tarray, uint32_t index)
@@ -808,7 +808,7 @@ SharedTypedArrayObjectTemplate<NativeType>::getIndexValue(JSObject *tarray, uint
     return Int32Value(getIndex(tarray, index));
 }
 
-
+// and we need to specialize for 32-bit integers and floats
 template<>
 Value
 SharedTypedArrayObjectTemplate<int32_t>::getIndexValue(JSObject *tarray, uint32_t index)
@@ -831,16 +831,16 @@ SharedTypedArrayObjectTemplate<float>::getIndexValue(JSObject *tarray, uint32_t 
     float val = getIndex(tarray, index);
     double dval = val;
 
-    
-
-
-
-
-
-
-
-
-
+    /*
+     * Doubles in typed arrays could be typed-punned arrays of integers. This
+     * could allow user code to break the engine-wide invariant that only
+     * canonical nans are stored into jsvals, which means user code could
+     * confuse the engine into interpreting a double-typed jsval as an
+     * object-typed jsval.
+     *
+     * This could be removed for platforms/compilers known to convert a 32-bit
+     * non-canonical nan to a 64-bit canonical nan.
+     */
     return DoubleValue(CanonicalizeNaN(dval));
 }
 
@@ -850,17 +850,17 @@ SharedTypedArrayObjectTemplate<double>::getIndexValue(JSObject *tarray, uint32_t
 {
     double val = getIndex(tarray, index);
 
-    
-
-
-
-
-
-
+    /*
+     * Doubles in typed arrays could be typed-punned arrays of integers. This
+     * could allow user code to break the engine-wide invariant that only
+     * canonical nans are stored into jsvals, which means user code could
+     * confuse the engine into interpreting a double-typed jsval as an
+     * object-typed jsval.
+     */
     return DoubleValue(CanonicalizeNaN(val));
 }
 
- bool
+/* static */ bool
 SharedTypedArrayObject::isOriginalLengthGetter(Scalar::Type type, Native native)
 {
     switch (type) {

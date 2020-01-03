@@ -1,13 +1,13 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/*
+ * Tests that generational garbage collection post-barriers are correctly
+ * implemented for nsTArrays that contain JavaScript Values.
+ */
 
 #include "jsapi.h"
 #include "nsTArray.h"
@@ -31,10 +31,10 @@ TraceArray(JSTracer* trc, void* data)
     JS_CallObjectTracer(trc, &array->ElementAt(i), "array-element");
 }
 
-
-
-
-
+/*
+ * Use arrays with initial size much smaller than the final number of elements
+ * to test that moving Heap<T> elements works correctly.
+ */
 const size_t ElementCount = 100;
 const size_t InitialElements = ElementCount / 10;
 
@@ -47,10 +47,10 @@ RunTest(JSRuntime* rt, JSContext* cx, ArrayT* array)
   ASSERT_TRUE(array != nullptr);
   JS_AddExtraGCRootsTracer(rt, TraceArray<ArrayT>, array);
 
-  
-
-
-
+  /*
+   * Create the array and fill it with new JS objects. With GGC these will be
+   * allocated in the nursery.
+   */
   RootedValue value(cx);
   const char* property = "foo";
   for (size_t i = 0; i < ElementCount; ++i) {
@@ -65,15 +65,15 @@ RunTest(JSRuntime* rt, JSContext* cx, ArrayT* array)
     array->AppendElement(obj);
   }
 
-  
-
-
-
+  /*
+   * If postbarriers are not working, we will crash here when we try to mark
+   * objects that have been moved to the tenured heap.
+   */
   JS_GC(rt);
 
-  
-
-
+  /*
+   * Sanity check that our array contains what we expect.
+   */
   for (size_t i = 0; i < ElementCount; ++i) {
     RootedObject obj(cx, array->ElementAt(i));
     ASSERT_FALSE(js::gc::IsInsideNursery(AsCell(obj)));
@@ -90,9 +90,9 @@ CreateGlobalAndRunTest(JSRuntime* rt, JSContext* cx)
 {
   static const JSClass GlobalClass = {
     "global", JSCLASS_GLOBAL_FLAGS,
-    nullptr, nullptr, JS_PropertyStub, JS_StrictPropertyStub,
+    JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+    JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub,
     nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr,
     JS_GlobalObjectTraceHook
   };
 
