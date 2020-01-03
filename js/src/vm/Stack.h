@@ -8,22 +8,17 @@
 #define vm_Stack_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/Variant.h"
 
 #include "jsfun.h"
 #include "jsscript.h"
 #include "jsutil.h"
 
 #include "asmjs/AsmJSFrameIterator.h"
-#include "gc/Rooting.h"
 #include "jit/JitFrameIterator.h"
 #ifdef CHECK_OSIPOINT_REGISTERS
 #include "jit/Registers.h" 
 #endif
-#include "js/RootingAPI.h"
-#include "vm/SavedFrame.h"
 
 struct JSCompartment;
 
@@ -39,7 +34,6 @@ class ArgumentsObject;
 class AsmJSModule;
 class InterpreterRegs;
 class CallObject;
-class FrameIter;
 class ScopeObject;
 class ScriptFrameIter;
 class SPSProfiler;
@@ -49,10 +43,6 @@ class StaticBlockObject;
 class ScopeCoordinate;
 
 class SavedFrame;
-
-namespace jit {
-class CommonFrameLayout;
-}
 
 
 
@@ -206,8 +196,6 @@ class AbstractFramePtr
     inline bool isGlobalFrame() const;
     inline bool isEvalFrame() const;
     inline bool isDebuggerEvalFrame() const;
-    inline bool hasCachedSavedFrame() const;
-    inline void setHasCachedSavedFrame();
 
     inline JSScript* script() const;
     inline JSFunction* fun() const;
@@ -291,71 +279,63 @@ enum ExecuteType {
 class InterpreterFrame
 {
   public:
-    enum Flags : uint32_t {
+    enum Flags {
         
-        GLOBAL                 =        0x1,  
-        FUNCTION               =        0x2,  
-
-        
-        EVAL                   =        0x4,  
-
+        GLOBAL             =        0x1,  
+        FUNCTION           =        0x2,  
 
         
-
-
-
-
-
-
-
-
-
-
-
-        DEBUGGER_EVAL          =        0x8,
-
-        CONSTRUCTING           =       0x10,  
-
-        RESUMED_GENERATOR      =       0x20,  
-
-        
-
-        
-        HAS_CALL_OBJ           =      0x100,  
-        HAS_ARGS_OBJ           =      0x200,  
-
-        
-        HAS_RVAL               =      0x800,  
-        HAS_SCOPECHAIN         =     0x1000,  
-
-        
-        PREV_UP_TO_DATE        =     0x4000,  
-
-        
-
-
-
-        DEBUGGEE               =     0x8000,  
-
-        
-        HAS_PUSHED_SPS_FRAME   =    0x10000, 
+        EVAL               =        0x4,  
 
 
         
 
 
 
-        RUNNING_IN_JIT         =    0x20000,
+
+
+
+
+
+
+
+
+        DEBUGGER_EVAL      =        0x8,
+
+        CONSTRUCTING       =       0x10,  
+
+        RESUMED_GENERATOR  =       0x20,  
 
         
-        CREATE_SINGLETON       =    0x40000,   
+
+        
+        HAS_CALL_OBJ       =      0x100,  
+        HAS_ARGS_OBJ       =      0x200,  
+
+        
+        HAS_RVAL           =      0x800,  
+        HAS_SCOPECHAIN     =     0x1000,  
+
+        
+        PREV_UP_TO_DATE    =     0x4000,  
 
         
 
 
 
+        DEBUGGEE           =     0x8000,  
 
-        HAS_CACHED_SAVED_FRAME =    0x80000,
+        
+        HAS_PUSHED_SPS_FRAME =   0x10000, 
+
+        
+
+
+
+        RUNNING_IN_JIT     =    0x20000,
+
+        
+        CREATE_SINGLETON   =    0x40000   
     };
 
   private:
@@ -918,13 +898,6 @@ class InterpreterFrame
 
     inline void unsetIsDebuggee();
 
-    bool hasCachedSavedFrame() const {
-        return flags_ & HAS_CACHED_SAVED_FRAME;
-    }
-    void setHasCachedSavedFrame() {
-        flags_ |= HAS_CACHED_SAVED_FRAME;
-    }
-
   public:
     void mark(JSTracer* trc);
     void markValues(JSTracer* trc, unsigned start, unsigned end);
@@ -1118,128 +1091,6 @@ struct DefaultHasher<AbstractFramePtr> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LiveSavedFrameCache : public JS::StaticTraceable
-{
-  public:
-    using FramePtr = mozilla::Variant<AbstractFramePtr, jit::CommonFrameLayout*>;
-
-  private:
-    struct Entry
-    {
-        FramePtr                    framePtr;
-        jsbytecode*                 pc;
-        RelocatablePtr<SavedFrame*> savedFrame;
-
-        Entry(FramePtr& framePtr, jsbytecode* pc, SavedFrame* savedFrame)
-          : framePtr(framePtr)
-          , pc(pc)
-          , savedFrame(savedFrame)
-        { }
-    };
-
-    using EntryVector = Vector<Entry, 0, SystemAllocPolicy>;
-    EntryVector* frames;
-
-    LiveSavedFrameCache(const LiveSavedFrameCache&) = delete;
-    LiveSavedFrameCache& operator=(const LiveSavedFrameCache&) = delete;
-
-  public:
-    explicit LiveSavedFrameCache() : frames(nullptr) { }
-
-    LiveSavedFrameCache(LiveSavedFrameCache&& rhs)
-        : frames(rhs.frames)
-    {
-        MOZ_ASSERT(this != &rhs, "self-move disallowed");
-        rhs.frames = nullptr;
-    }
-
-    ~LiveSavedFrameCache() {
-        if (frames) {
-            js_delete(frames);
-            frames = nullptr;
-        }
-    }
-
-    bool initialized() const { return !!frames; }
-    bool init(JSContext* cx) {
-        frames = js_new<EntryVector>();
-        if (!frames) {
-            JS_ReportOutOfMemory(cx);
-            return false;
-        }
-        return true;
-    }
-
-    static mozilla::Maybe<FramePtr> getFramePtr(FrameIter& iter);
-    static void trace(LiveSavedFrameCache* cache, JSTracer* trc);
-
-    void find(JSContext* cx, FrameIter& frameIter, MutableHandleSavedFrame frame) const;
-    bool insert(JSContext* cx, FramePtr& framePtr, jsbytecode* pc, HandleSavedFrame savedFrame);
-};
-
-static_assert(sizeof(LiveSavedFrameCache) == sizeof(uintptr_t),
-              "Every js::Activation has a LiveSavedFrameCache, so we need to be pretty careful "
-              "about avoiding bloat. If you're adding members to LiveSavedFrameCache, maybe you "
-              "should consider figuring out a way to make js::Activation have a "
-              "LiveSavedFrameCache* instead of a Rooted<LiveSavedFrameCache>.");
-
-
-
 class InterpreterActivation;
 class AsmJSActivation;
 
@@ -1267,10 +1118,6 @@ class Activation
     
     
     size_t hideScriptedCallerCount_;
-
-    
-    
-    Rooted<LiveSavedFrameCache> frameCache_;
 
     
     
@@ -1375,8 +1222,6 @@ class Activation
     bool asyncCallIsExplicit() const {
         return asyncCallIsExplicit_;
     }
-
-    inline LiveSavedFrameCache* getLiveSavedFrameCache(JSContext* cx);
 
   private:
     Activation(const Activation& other) = delete;
@@ -1868,17 +1713,12 @@ class FrameIter
     bool isAsmJS() const { MOZ_ASSERT(!done()); return data_.state_ == ASMJS; }
     inline bool isIon() const;
     inline bool isBaseline() const;
-    inline bool isPhysicalIonFrame() const;
 
     bool isFunctionFrame() const;
     bool isGlobalFrame() const;
     bool isEvalFrame() const;
     bool isNonEvalFunctionFrame() const;
     bool hasArgs() const { return isNonEvalFunctionFrame(); }
-
-    
-    inline bool hasCachedSavedFrame() const;
-    inline void setHasCachedSavedFrame();
 
     ScriptSource* scriptSource() const;
     const char* scriptFilename() const;
@@ -1966,9 +1806,6 @@ class FrameIter
 
     
     inline InterpreterFrame* interpFrame() const;
-
-    
-    inline jit::CommonFrameLayout* physicalIonFrame() const;
 
   private:
     Data data_;
@@ -2176,21 +2013,6 @@ FrameIter::interpFrame() const
 {
     MOZ_ASSERT(data_.state_ == INTERP);
     return data_.interpFrames_.frame();
-}
-
-inline bool
-FrameIter::isPhysicalIonFrame() const
-{
-    return isJit() &&
-           data_.jitFrames_.isIonScripted() &&
-           ionInlineFrames_.frameNo() == 0;
-}
-
-inline jit::CommonFrameLayout*
-FrameIter::physicalIonFrame() const
-{
-    MOZ_ASSERT(isPhysicalIonFrame());
-    return data_.jitFrames_.current();
 }
 
 }  

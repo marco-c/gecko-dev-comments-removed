@@ -609,10 +609,6 @@ class DispatchWrapper
   public:
     
     MOZ_IMPLICIT DispatchWrapper(const T& initial) : tracer(&T::trace), storage(initial) {}
-    MOZ_IMPLICIT DispatchWrapper(T&& initial)
-      : tracer(&T::trace),
-        storage(mozilla::Forward<T>(initial))
-    { }
     T* operator &() { return &storage; }
     const T* operator &() const { return &storage; }
     operator T&() { return storage; }
