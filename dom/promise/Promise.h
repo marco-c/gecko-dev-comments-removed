@@ -205,16 +205,16 @@ public:
   
   uint64_t GetID();
 
+  
+  static void
+  DispatchToMicroTask(nsIRunnable* aRunnable);
+
 protected:
   
   
   explicit Promise(nsIGlobalObject* aGlobal);
 
   virtual ~Promise();
-
-  
-  static void
-  DispatchToMicroTask(nsIRunnable* aRunnable);
 
   
   void CreateWrapper(ErrorResult& aRv);
