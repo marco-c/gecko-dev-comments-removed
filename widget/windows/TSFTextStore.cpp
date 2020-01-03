@@ -1350,6 +1350,8 @@ TSFTextStore::Destroy()
     CommitCompositionInternal(false);
   }
 
+  MaybeDestroyNativeCaret();
+
   if (mSink) {
     MOZ_LOG(sTextStoreLog, LogLevel::Debug,
       ("TSF: 0x%p   TSFTextStore::Destroy(), calling "
@@ -1579,10 +1581,6 @@ TSFTextStore::RequestLock(DWORD dwLockFlags,
 void
 TSFTextStore::DidLockGranted()
 {
-  if (mNativeCaretIsCreated) {
-    ::DestroyCaret();
-    mNativeCaretIsCreated = false;
-  }
   if (IsReadWriteLocked()) {
     
     
@@ -3517,10 +3515,6 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
       mComposition.IsComposing() &&
       mComposition.mStart <= acpStart && mComposition.EndOffset() >= acpStart &&
       mComposition.mStart <= acpEnd && mComposition.EndOffset() >= acpEnd) {
-    if (mNativeCaretIsCreated) {
-      ::DestroyCaret();
-      mNativeCaretIsCreated = false;
-    }
     CreateNativeCaret();
   }
 
@@ -4562,6 +4556,10 @@ TSFTextStore::NotifyTSFOfLayoutChange(bool aFlush)
   }
 
   
+  
+  MaybeDestroyNativeCaret();
+
+  
   bool ret = false;
 
   if (mSink) {
@@ -4684,6 +4682,8 @@ TSFTextStore::OnMouseButtonEventInternal(
 void
 TSFTextStore::CreateNativeCaret()
 {
+  MaybeDestroyNativeCaret();
+
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
          ("TSF: 0x%p   TSFTextStore::CreateNativeCaret(), "
           "mComposition.IsComposing()=%s",
@@ -4737,6 +4737,21 @@ TSFTextStore::CreateNativeCaret()
   }
 
   ::SetCaretPos(caretRect.x, caretRect.y);
+}
+
+void
+TSFTextStore::MaybeDestroyNativeCaret()
+{
+  if (!mNativeCaretIsCreated) {
+    return;
+  }
+
+  MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+         ("TSF: 0x%p   TSFTextStore::MaybeDestroyNativeCaret(), "
+          "destroying native caret", this));
+
+  ::DestroyCaret();
+  mNativeCaretIsCreated = false;
 }
 
 void
