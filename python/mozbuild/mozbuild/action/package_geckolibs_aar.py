@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 '''
 Script to produce an Android ARchive (.aar) containing the compiled
@@ -57,13 +57,13 @@ def package_geckolibs_aar(topsrcdir, distdir, output_file):
     for p, f in jni.find('**/*.so'):
         jarrer.add(os.path.join('jni', p), f)
 
-    
-    
+    # Include the buildinfo JSON as an asset, to give future consumers at least
+    # a hope of determining where this AAR came from.
     json = FileFinder(distdir, ignore=['*.mozinfo.json'])
     for p, f in json.find('*.json'):
         jarrer.add(os.path.join('assets', p), f)
 
-    
+    # This neatly ignores omni.ja.
     assets = FileFinder(os.path.join(distdir, 'fennec', 'assets'))
     for p, f in assets.find('**/*.so'):
         jarrer.add(os.path.join('assets', p), f)
@@ -77,6 +77,8 @@ def main(args):
     parser.add_argument(dest='dir',
                         metavar='DIR',
                         help='Path to write geckolibs Android ARchive and metadata to.')
+    parser.add_argument('--verbose', '-v', default=False, action='store_true',
+                        help='be verbose')
     parser.add_argument('--revision',
                         help='Revision identifier to write.')
     parser.add_argument('--topsrcdir',
@@ -108,15 +110,19 @@ def main(args):
             organisation='org.mozilla',
             module='geckolibs',
             revision=args.revision,
-            publication=args.revision, 
+            publication=args.revision, # A white lie.
             name='geckolibs',
             type='aar',
             ext='aar',
         ))
 
     for p in paths_to_hash:
-        with open("%s.sha1" % p, 'wt') as f:
+        sha = "%s.sha1" % p
+        with open(sha, 'wt') as f:
             f.write(util.hash_file(p, hasher=hashlib.sha1()))
+        if args.verbose:
+            print(p)
+            print(sha)
 
     return 0
 
