@@ -64,6 +64,8 @@ ToolbarView.prototype = {
     this._stepOverButton.setAttribute("tooltiptext", this._stepOverTooltip);
     this._stepInButton.setAttribute("tooltiptext", this._stepInTooltip);
     this._stepOutButton.setAttribute("tooltiptext", this._stepOutTooltip);
+    this._toggleButtonsState({ enabled: false });
+
     this._addCommands();
   },
 
@@ -112,17 +114,39 @@ ToolbarView.prototype = {
 
 
 
-  toggleResumeButtonState: function(aState) {
+
+
+  toggleResumeButtonState: function(aState, hasLocation) {
     
     if (aState == "paused") {
       this._resumeButton.setAttribute("checked", "true");
       this._resumeButton.setAttribute("tooltiptext", this._resumeTooltip);
+
+      
+      
+      
+      
+      if (hasLocation) {
+        this._toggleButtonsState({ enabled: true });
+      }
     }
     
     else if (aState == "attached") {
       this._resumeButton.removeAttribute("checked");
       this._resumeButton.setAttribute("tooltiptext", this._pauseTooltip);
-    }
+      this._toggleButtonsState({ enabled: false });
+   }
+  },
+
+  _toggleButtonsState: function({ enabled }) {
+    const buttons = [
+      this._stepOutButton,
+      this._stepInButton,
+      this._stepOverButton
+    ];
+    for (let button of buttons) {
+      button.disabled = !enabled;
+    };
   },
 
   
@@ -157,7 +181,7 @@ ToolbarView.prototype = {
 
 
   _onStepOverPressed: function() {
-    if (this.activeThread.paused) {
+    if (this.activeThread.paused && !this._stepOverButton.disabled) {
       this.StackFrames.currentFrameDepth = -1;
       this.activeThread.stepOver(this.resumptionWarnFunc);
     }
@@ -167,7 +191,8 @@ ToolbarView.prototype = {
 
 
   _onStepInPressed: function() {
-    if (this.StackFrames._currentFrameDescription != FRAME_TYPE.NORMAL) {
+    if (this.StackFrames._currentFrameDescription != FRAME_TYPE.NORMAL ||
+       this._stepInButton.disabled) {
       return;
     }
 
@@ -181,7 +206,7 @@ ToolbarView.prototype = {
 
 
   _onStepOutPressed: function() {
-    if (this.activeThread.paused) {
+    if (this.activeThread.paused && !this._stepOutButton.disabled) {
       this.StackFrames.currentFrameDepth = -1;
       this.activeThread.stepOut(this.resumptionWarnFunc);
     }
