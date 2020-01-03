@@ -4395,14 +4395,14 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             arrayRef = "${declName}"
 
         elementConversion = string.Template(elementInfo.template).substitute({
-                "val": "temp" + str(nestingLevel),
-                "declName": "slot" + str(nestingLevel),
-                
-                
-                
-                "holderName": "tempHolder" + str(nestingLevel),
-                "passedToJSImpl": "${passedToJSImpl}"
-            })
+            "val": "temp" + str(nestingLevel),
+            "declName": "slot" + str(nestingLevel),
+            
+            
+            
+            "holderName": "tempHolder" + str(nestingLevel),
+            "passedToJSImpl": "${passedToJSImpl}"
+        })
 
         
         templateBody = fill(
@@ -4502,14 +4502,14 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             mozMapRef = "${declName}"
 
         valueConversion = string.Template(valueInfo.template).substitute({
-                "val": "temp",
-                "declName": "slot",
-                
-                
-                
-                "holderName": "tempHolder",
-                "passedToJSImpl": "${passedToJSImpl}"
-            })
+            "val": "temp",
+            "declName": "slot",
+            
+            
+            
+            "holderName": "tempHolder",
+            "passedToJSImpl": "${passedToJSImpl}"
+        })
 
         templateBody = fill(
             """
