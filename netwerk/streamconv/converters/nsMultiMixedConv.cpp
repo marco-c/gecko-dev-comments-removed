@@ -13,7 +13,7 @@
 #include "nsIHttpChannelInternal.h"
 #include "nsURLHelper.h"
 #include "nsIStreamConverterService.h"
-#include "nsIPackagedAppService.h"
+#include "nsICacheInfoChannel.h"
 #include <algorithm>
 #include "nsContentSecurityManager.h"
 #include "nsHttp.h"
@@ -492,8 +492,7 @@ nsMultiMixedConv::AsyncConvertData(const char *aFromType, const char *aToType,
     
     mFinalListener = aListener;
 
-    nsCOMPtr<nsIPackagedAppService> pas(do_QueryInterface(aCtxt));
-    if (pas) {
+    if (NS_LITERAL_CSTRING(APPLICATION_PACKAGE).Equals(aFromType)) {
         mPackagedApp = true;
     }
     return NS_OK;
@@ -753,7 +752,12 @@ nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(request, &rv);
     if (NS_FAILED(rv)) return rv;
-    
+
+    nsCOMPtr<nsICacheInfoChannel> cacheChan = do_QueryInterface(request);
+    if (cacheChan) {
+        cacheChan->IsFromCache(&mIsFromCache);
+    }
+
     
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel, &rv);
     if (NS_SUCCEEDED(rv)) {
@@ -773,7 +777,7 @@ nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
     
     
     
-    if (delimiter.Find("application/package") != kNotFound) {
+    if (delimiter.Find(NS_LITERAL_CSTRING(APPLICATION_PACKAGE)) != kNotFound) {
         mPackagedApp = true;
         mHasAppContentType = true;
         mToken.Truncate();
@@ -829,7 +833,14 @@ nsMultiMixedConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
 
     
     
-    if (mToken.IsEmpty()) {
+    
+    
+    
+    
+    
+    if (mToken.IsEmpty() &&
+        NS_SUCCEEDED(rv) && 
+        !(mPackagedApp && mIsFromCache && mFirstOnData)) {
         aStatus = NS_ERROR_FAILURE;
         rv = NS_ERROR_FAILURE;
     }
@@ -859,6 +870,12 @@ nsMultiMixedConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
         
         
         (void) mFinalListener->OnStopRequest(request, ctxt, aStatus);
+    } else if (mIsFromCache && mFirstOnData) {
+        
+        
+        
+        
+        (void) mFinalListener->OnStopRequest(request, ctxt, aStatus);
     }
 
     return rv;
@@ -881,6 +898,7 @@ nsMultiMixedConv::nsMultiMixedConv() :
     mIsByteRangeRequest = false;
     mPackagedApp        = false;
     mHasAppContentType  = false;
+    mIsFromCache        = false;
 }
 
 nsMultiMixedConv::~nsMultiMixedConv() {
@@ -1061,7 +1079,7 @@ nsMultiMixedConv::ParseHeaders(nsIChannel *aChannel, char *&aPtr,
     
     
     if (mPackagedApp && !mResponseHead) {
-        mResponseHead = new nsHttpResponseHead();
+        mResponseHead = new mozilla::net::nsHttpResponseHead();
     }
 
     mContentLength = UINT64_MAX; 
