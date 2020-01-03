@@ -74,7 +74,7 @@ var gcTypes = {};
 var gcPointers = {}; 
 var nonGCTypes = {}; 
 var nonGCPointers = {}; 
-var gcFields = {};
+var gcFields = new Map;
 
 
 
@@ -119,9 +119,9 @@ function markGCType(typeName, child, why, depth, ptrdness)
         gcPointers[typeName].add(why);
     }
 
-    if (!(typeName in gcFields))
-        gcFields[typeName] = new Map();
-    gcFields[typeName].set(why, [ child, ptrdness ]);
+        if (!gcFields.has(typeName))
+            gcFields.set(typeName, new Map());
+        gcFields.get(typeName).set(child, [ why, ptrdness ]);
 
     if (typeName in structureParents) {
         for (var field of structureParents[typeName]) {
@@ -163,17 +163,19 @@ function explain(csu, indent, seen) {
     if (!seen)
         seen = new Set();
     seen.add(csu);
-    if (!(csu in gcFields))
+    if (!gcFields.has(csu))
         return;
-    if (gcFields[csu].has('<annotation>')) {
+    var fields = gcFields.get(csu);
+
+    if (fields.has('<annotation>')) {
         print(indent + "which is a GCThing because I said so");
         return;
     }
-    if (gcFields[csu].has('<pointer-annotation>')) {
+    if (fields.has('<pointer-annotation>')) {
         print(indent + "which is a GCPointer because I said so");
         return;
     }
-    for (var [ field, [ child, ptrdness ] ] of gcFields[csu]) {
+    for (var [ field, [ child, ptrdness ] ] of fields) {
         var inherit = "";
         if (field == "field:0")
             inherit = " (probably via inheritance)";
