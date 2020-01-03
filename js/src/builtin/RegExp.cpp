@@ -142,17 +142,9 @@ js::ExecuteRegExpLegacy(JSContext *cx, RegExpStatics *res, RegExpObject &reobj,
 
 
 
-
-
-
-
-
-
-
-
 static bool
 CompileRegExpObject(JSContext *cx, RegExpObjectBuilder &builder, CallArgs args,
-                    RegExpStaticsUse staticsUse)
+                    RegExpStaticsUse staticsUse, RegExpCreationMode creationMode)
 {
     if (args.length() == 0) {
         MOZ_ASSERT(staticsUse == UseRegExpStatics);
@@ -169,19 +161,12 @@ CompileRegExpObject(JSContext *cx, RegExpObjectBuilder &builder, CallArgs args,
 
     RootedValue sourceValue(cx, args[0]);
 
-    
-
-
-
     if (IsObjectWithClass(sourceValue, ESClass_RegExp, cx)) {
         
 
 
 
-
-        RootedObject sourceObj(cx, &sourceValue.toObject());
-
-        if (args.hasDefined(1)) {
+        if (args.hasDefined(1) && creationMode == CreateForCompile) {
             JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_NEWREGEXP_FLAGGED);
             return false;
         }
@@ -190,15 +175,35 @@ CompileRegExpObject(JSContext *cx, RegExpObjectBuilder &builder, CallArgs args,
 
 
 
+
+        RootedObject sourceObj(cx, &sourceValue.toObject());
+
         RootedAtom sourceAtom(cx);
         RegExpFlag flags;
         {
+            
+
+
+
             RegExpGuard g(cx);
             if (!RegExpToShared(cx, sourceObj, &g))
                 return false;
-
             sourceAtom = g->getSource();
-            flags = g->getFlags();
+
+            
+
+
+
+            if (args.hasDefined(1)) {
+                flags = RegExpFlag(0);
+                RootedString flagStr(cx, ToString<CanGC>(cx, args[1]));
+                if (!flagStr)
+                    return false;
+                if (!ParseRegExpFlags(cx, flagStr, &flags))
+                    return false;
+            } else {
+                flags = g->getFlags();
+            }
         }
 
         RegExpObject *reobj = builder.build(sourceAtom, flags);
@@ -224,7 +229,6 @@ CompileRegExpObject(JSContext *cx, RegExpObjectBuilder &builder, CallArgs args,
         RootedString flagStr(cx, ToString<CanGC>(cx, args[1]));
         if (!flagStr)
             return false;
-        args[1].setString(flagStr);
         if (!ParseRegExpFlags(cx, flagStr, &flags))
             return false;
     }
@@ -260,7 +264,7 @@ regexp_compile_impl(JSContext *cx, CallArgs args)
 {
     MOZ_ASSERT(IsRegExp(args.thisv()));
     RegExpObjectBuilder builder(cx, &args.thisv().toObject().as<RegExpObject>());
-    return CompileRegExpObject(cx, builder, args, UseRegExpStatics);
+    return CompileRegExpObject(cx, builder, args, UseRegExpStatics, CreateForCompile);
 }
 
 static bool
@@ -291,7 +295,7 @@ regexp_construct(JSContext *cx, unsigned argc, Value *vp)
     }
 
     RegExpObjectBuilder builder(cx);
-    return CompileRegExpObject(cx, builder, args, UseRegExpStatics);
+    return CompileRegExpObject(cx, builder, args, UseRegExpStatics, CreateForConstruct);
 }
 
 bool
@@ -305,7 +309,7 @@ js::regexp_construct_no_statics(JSContext *cx, unsigned argc, Value *vp)
     MOZ_ASSERT(!args.isConstructing());
 
     RegExpObjectBuilder builder(cx);
-    return CompileRegExpObject(cx, builder, args, DontUseRegExpStatics);
+    return CompileRegExpObject(cx, builder, args, DontUseRegExpStatics, CreateForConstruct);
 }
 
 MOZ_ALWAYS_INLINE bool
