@@ -11,6 +11,12 @@
 #include "gfxRect.h"
 #include "mozilla/Attributes.h"
 
+namespace mozilla {
+namespace gfx {
+class Matrix4x4;
+} 
+} 
+
 
 
 
@@ -78,6 +84,11 @@ public:
     gfxMatrix operator * (const gfxMatrix& m) const {
         return gfxMatrix(*this) *= m;
     }
+
+    
+
+
+    mozilla::gfx::Matrix4x4 operator * (const mozilla::gfx::Matrix4x4& aMatrix) const;
 
     
 
