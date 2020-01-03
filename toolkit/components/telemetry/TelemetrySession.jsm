@@ -532,31 +532,19 @@ let TelemetryScheduler = {
     this._lastTickTime = now;
 
     
-    let isAbortedPingDue =
-      (now - this._lastSessionCheckpointTime) >= ABORTED_SESSION_UPDATE_INTERVAL_MS;
-    
-    let shouldSendDaily = this._isDailyPingDue(nowDate);
-    
-    
-    
-    
-    
-    let nextSessionCheckpoint =
-      this._lastSessionCheckpointTime + ABORTED_SESSION_UPDATE_INTERVAL_MS;
-    let combineActions = (shouldSendDaily && isAbortedPingDue) || (shouldSendDaily &&
-                          Utils.areTimesClose(now, nextSessionCheckpoint,
-                                                       SCHEDULER_COALESCE_THRESHOLD_MS));
+    const shouldSendDaily = this._isDailyPingDue(nowDate);
 
-    if (combineActions) {
-      this._log.trace("_schedulerTickLogic - Combining pings.");
-      
-      return Impl._sendDailyPing(true).then(() => this._dailyPingSucceeded(now),
-                                            () => this._dailyPingFailed(now));
-    } else if (shouldSendDaily) {
+    if (shouldSendDaily) {
       this._log.trace("_schedulerTickLogic - Daily ping due.");
       return Impl._sendDailyPing().then(() => this._dailyPingSucceeded(now),
                                         () => this._dailyPingFailed(now));
-    } else if (isAbortedPingDue) {
+    }
+
+    
+    
+    const isAbortedPingDue =
+      (now - this._lastSessionCheckpointTime) >= ABORTED_SESSION_UPDATE_INTERVAL_MS;
+    if (isAbortedPingDue) {
       this._log.trace("_schedulerTickLogic - Aborted session ping due.");
       return this._saveAbortedPing(now);
     }
@@ -1873,9 +1861,7 @@ let Impl = {
 
 
 
-
-
-  _sendDailyPing: function(saveAsAborted = false) {
+  _sendDailyPing: function() {
     this._log.trace("_sendDailyPing");
     let payload = this.getSessionPayload(REASON_DAILY, true);
 
@@ -1885,11 +1871,14 @@ let Impl = {
     };
 
     let promise = TelemetryController.submitExternalPing(getPingType(payload), payload, options);
+
     
-    if (saveAsAborted && IS_UNIFIED_TELEMETRY) {
+    
+    if (IS_UNIFIED_TELEMETRY) {
       let abortedPromise = this._saveAbortedSessionPing(payload);
       promise = promise.then(() => abortedPromise);
     }
+
     return promise;
   },
 
