@@ -774,20 +774,20 @@ NS_IMETHODIMP XPCVariant::GetAsWString(char16_t** _retval)
 
 NS_IMETHODIMP XPCVariant::GetAsISupports(nsISupports** _retval)
 {
-    return nsVariant::ConvertToISupports(mData, _retval);
+    return mData.ConvertToISupports(_retval);
 }
 
 
-NS_IMETHODIMP XPCVariant::GetAsInterface(nsIID * *iid, void * *iface)
+NS_IMETHODIMP XPCVariant::GetAsInterface(nsIID** iid, void** iface)
 {
-    return nsVariant::ConvertToInterface(mData, iid, iface);
+    return mData.ConvertToInterface(iid, iface);
 }
 
 
 
 NS_IMETHODIMP_(nsresult) XPCVariant::GetAsArray(uint16_t* type, nsIID* iid, uint32_t* count, void * *ptr)
 {
-    return nsVariant::ConvertToArray(mData, type, iid, count, ptr);
+    return mData.ConvertToArray(type, iid, count, ptr);
 }
 
 
