@@ -3,7 +3,7 @@
 
 
 var loop = loop || {};
-loop.Client = (function($) {
+loop.Client = (function() {
   "use strict";
 
   
@@ -116,4 +116,4 @@ loop.Client = (function($) {
   };
 
   return Client;
-})(jQuery);
+})();
