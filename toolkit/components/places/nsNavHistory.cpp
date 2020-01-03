@@ -2281,7 +2281,7 @@ nsNavHistory::GetObservers(uint32_t* _count,
 
   
   for (uint32_t i = 0; i < mObservers.Length(); ++i) {
-    const nsCOMPtr<nsINavHistoryObserver> &observer = mObservers.ElementAt(i);
+    const nsCOMPtr<nsINavHistoryObserver> &observer = mObservers.ElementAt(i).GetValue();
     
     if (observer)
       observers.AppendElement(observer);
