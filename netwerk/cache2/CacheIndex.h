@@ -723,6 +723,8 @@ private:
 
   
   void ProcessPendingOperations();
+  static PLDHashOperator UpdateEntryInIndex(CacheIndexEntryUpdate *aEntry,
+                                            void* aClosure);
 
   
   
@@ -743,6 +745,11 @@ private:
   
   void FinishWrite(bool aSucceeded);
 
+  static PLDHashOperator CopyRecordsToRWBuf(CacheIndexEntry *aEntry,
+                                            void* aClosure);
+  static PLDHashOperator ApplyIndexChanges(CacheIndexEntry *aEntry,
+                                           void* aClosure);
+
   
   
   
@@ -755,6 +762,9 @@ private:
   void     RemoveIndexFromDisk();
   
   nsresult WriteLogToDisk();
+
+  static PLDHashOperator WriteEntryToLog(CacheIndexEntry *aEntry,
+                                         void* aClosure);
 
   
   
@@ -810,8 +820,12 @@ private:
   
   
   void EnsureCorrectStats();
+  static PLDHashOperator SumIndexStats(CacheIndexEntry *aEntry, void* aClosure);
   
   void FinishRead(bool aSucceeded);
+
+  static PLDHashOperator ProcessJournalEntry(CacheIndexEntry *aEntry,
+                                             void* aClosure);
 
   
   
@@ -839,7 +853,8 @@ private:
   
   void FinishUpdate(bool aSucceeded);
 
-  void RemoveNonFreshEntries();
+  static PLDHashOperator RemoveNonFreshEntries(CacheIndexEntry *aEntry,
+                                               void* aClosure);
 
   enum EState {
     

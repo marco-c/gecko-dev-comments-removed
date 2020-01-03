@@ -320,6 +320,12 @@ class nsCookieService final : public nsICookieService
 
 
 
+    static PLDHashOperator GetCookiesForApp(nsCookieEntry* entry, void* arg);
+
+    
+
+
+
 
     nsresult Remove(const nsACString& aHost, uint32_t aAppId,
                     bool aInBrowserElement, const nsACString& aName,
@@ -350,6 +356,7 @@ class nsCookieService final : public nsICookieService
     int64_t                       mCookiePurgeAge;
 
     
+    friend PLDHashOperator purgeCookiesCallback(nsCookieEntry *aEntry, void *aArg);
     friend class DBListenerErrorHandler;
     friend class ReadCookieDBListener;
     friend class CloseCookieDBListener;
