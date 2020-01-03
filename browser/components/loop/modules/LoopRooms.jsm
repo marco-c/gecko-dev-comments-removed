@@ -309,6 +309,21 @@ let LoopRoomsInternal = {
 
 
 
+  refreshRoomUrlWithNewKey: function(roomUrl, roomKey) {
+    
+    roomUrl = roomUrl.split("#")[0];
+    
+    return roomUrl + "#" + roomKey;
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -404,10 +419,7 @@ let LoopRoomsInternal = {
     roomData.roomKey = key;
     roomData.decryptedContext = JSON.parse(decryptedData);
 
-    
-    roomData.roomUrl = roomData.roomUrl.split("#")[0];
-    
-    roomData.roomUrl = roomData.roomUrl + "#" + roomData.roomKey;
+    roomData.roomUrl = this.refreshRoomUrlWithNewKey(roomData.roomUrl, roomData.roomKey);
 
     return roomData;
   }),
@@ -610,6 +622,8 @@ let LoopRoomsInternal = {
       extend(room, JSON.parse(response.body));
       
       delete room.expiresIn;
+      
+      room.roomUrl = this.refreshRoomUrlWithNewKey(room.roomUrl, room.roomKey);
       this.rooms.set(room.roomToken, room);
 
       if (this.sessionType == LOOP_SESSION_TYPE.GUEST) {
