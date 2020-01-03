@@ -73,6 +73,7 @@ class ArrayBufferViewObject;
 
 
 
+
 class ArrayBufferObjectMaybeShared;
 
 uint32_t AnyArrayBufferByteLength(const ArrayBufferObjectMaybeShared* buf);
