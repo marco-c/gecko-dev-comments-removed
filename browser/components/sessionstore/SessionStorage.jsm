@@ -9,6 +9,7 @@ this.EXPORTED_SYMBOLS = ["SessionStorage"];
 const Cu = Components.utils;
 const Ci = Components.interfaces;
 
+Cu.import("resource://gre/modules/BrowserUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -74,7 +75,7 @@ let SessionStorageInternal = {
 
       
       
-      let origin = principal.jarPrefix + principal.originNoSuffix;
+      let origin = principal.origin;
       if (visitedOrigins.has(origin)) {
         
         return;
@@ -102,10 +103,9 @@ let SessionStorageInternal = {
 
 
   restore: function (aDocShell, aStorageData) {
-    for (let host of Object.keys(aStorageData)) {
-      let data = aStorageData[host];
-      let uri = Services.io.newURI(host, null, null);
-      let principal = Services.scriptSecurityManager.getDocShellCodebasePrincipal(uri, aDocShell);
+    for (let origin of Object.keys(aStorageData)) {
+      let data = aStorageData[origin];
+      let principal = BrowserUtils.principalFromOrigin(origin);
       let storageManager = aDocShell.QueryInterface(Ci.nsIDOMStorageManager);
       let window = aDocShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
 
