@@ -15,6 +15,7 @@
 #endif
 #include "mozilla/Assertions.h"
 #include <vector>
+#include "RefPtrSkia.h"
 
 namespace mozilla {
 namespace gfx {
@@ -147,7 +148,7 @@ StrokeOptionsToPaint(SkPaint& aPaint, const StrokeOptions &aOptions)
     }
 
     SkDashPathEffect* dash = SkDashPathEffect::Create(&pattern.front(),
-                                                      dashCount, 
+                                                      dashCount,
                                                       SkFloatToScalar(aOptions.mDashOffset));
     SkSafeUnref(aPaint.setPathEffect(dash));
   }
@@ -237,14 +238,14 @@ static inline SkColor ColorToSkColor(const Color &color, Float aAlpha)
 static inline SkRect
 RectToSkRect(const Rect& aRect)
 {
-  return SkRect::MakeXYWH(SkFloatToScalar(aRect.x), SkFloatToScalar(aRect.y), 
+  return SkRect::MakeXYWH(SkFloatToScalar(aRect.x), SkFloatToScalar(aRect.y),
                           SkFloatToScalar(aRect.width), SkFloatToScalar(aRect.height));
 }
 
 static inline SkRect
 IntRectToSkRect(const IntRect& aRect)
 {
-  return SkRect::MakeXYWH(SkIntToScalar(aRect.x), SkIntToScalar(aRect.y), 
+  return SkRect::MakeXYWH(SkIntToScalar(aRect.x), SkIntToScalar(aRect.y),
                           SkIntToScalar(aRect.width), SkIntToScalar(aRect.height));
 }
 
@@ -288,74 +289,6 @@ ExtendModeToTileMode(ExtendMode aMode)
   }
   return SkShader::kClamp_TileMode;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T> class RefPtrSkia {
-public:
-  RefPtrSkia() : fObj(NULL) {}
-  explicit RefPtrSkia(T* obj) : fObj(obj) { SkSafeRef(fObj); }
-  RefPtrSkia(const RefPtrSkia& o) : fObj(o.fObj) { SkSafeRef(fObj); }
-  ~RefPtrSkia() { SkSafeUnref(fObj); }
-
-  RefPtrSkia& operator=(const RefPtrSkia& rp) {
-    SkRefCnt_SafeAssign(fObj, rp.fObj);
-    return *this;
-  }
-  RefPtrSkia& operator=(T* obj) {
-    SkRefCnt_SafeAssign(fObj, obj);
-    return *this;
-  }
-
-  T* get() const { return fObj; }
-  T& operator*() const { return *fObj; }
-  T* operator->() const { return fObj; }
-
-  RefPtrSkia& adopt(T* obj) {
-    SkSafeUnref(fObj);
-    fObj = obj;
-    return *this;
-  }
-
-  typedef T* RefPtrSkia::*unspecified_bool_type;
-  operator unspecified_bool_type() const {
-    return fObj ? &RefPtrSkia::fObj : NULL;
-  }
-
-private:
-  T* fObj;
-};
-
-
 
 } 
 } 

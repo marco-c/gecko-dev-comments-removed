@@ -3,17 +3,21 @@
 
 
 
-#include "mozilla/RefPtr.h"
+#ifndef SKIA_GL_GLUE_H_
+#define SKIA_GL_GLUE_H_
 
 #ifdef USE_SKIA_GPU
 
-#include "GLContext.h"
-#include "skia/include/gpu/gl/GrGLInterface.h"
-#include "skia/include/gpu/GrContext.h"
-#include "mozilla/gfx/HelpersSkia.h"
+#include "mozilla/gfx/RefPtrSkia.h"
+#include "mozilla/RefPtr.h"
+
+struct GrGLInterface;
+class GrContext;
 
 namespace mozilla {
 namespace gl {
+
+class GLContext;
 
 class SkiaGLGlue : public GenericAtomicRefCounted
 {
@@ -24,27 +28,18 @@ public:
   GrContext* GetGrContext() const { return mGrContext.get(); }
 
 protected:
-  virtual ~SkiaGLGlue() {
-    
-
-
-
-
-    mGrContext = nullptr;
-    mGrGLInterface = nullptr;
-    mGLContext = nullptr;
-  }
+  virtual ~SkiaGLGlue();
 
 private:
   RefPtr<GLContext> mGLContext;
-  mozilla::gfx::RefPtrSkia<GrGLInterface> mGrGLInterface;
-  mozilla::gfx::RefPtrSkia<GrContext> mGrContext;
+  gfx::RefPtrSkia<GrGLInterface> mGrGLInterface;
+  gfx::RefPtrSkia<GrContext> mGrContext;
 };
 
 } 
 } 
 
-#else
+#else 
 
 class GrContext;
 
@@ -60,7 +55,10 @@ public:
   GLContext* GetGLContext() const { return nullptr; }
   GrContext* GetGrContext() const { return nullptr; }
 };
-}
-}
 
-#endif
+} 
+} 
+
+#endif 
+
+#endif 

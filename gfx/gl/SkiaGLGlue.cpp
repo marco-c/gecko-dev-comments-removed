@@ -899,3 +899,15 @@ SkiaGLGlue::SkiaGLGlue(GLContext* context)
     mGrGLInterface->fCallbackData = reinterpret_cast<GrGLInterfaceCallbackData>(this);
     mGrContext.adopt(GrContext::Create(kOpenGL_GrBackend, (GrBackendContext)mGrGLInterface.get()));
 }
+
+SkiaGLGlue::~SkiaGLGlue()
+{
+    
+
+
+
+
+    mGrContext = nullptr;
+    mGrGLInterface = nullptr;
+    mGLContext = nullptr;
+}
