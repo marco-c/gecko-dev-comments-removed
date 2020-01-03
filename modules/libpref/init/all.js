@@ -1052,6 +1052,10 @@ pref("dom.forms.autocomplete.experimental", false);
 
 pref("dom.forms.requestAutocomplete", false);
 
+#ifdef NIGHTLY_BUILD
+pref("dom.input.dirpicker", true);
+#endif
+
 
 pref("dom.sysmsg.enabled", false);
 
