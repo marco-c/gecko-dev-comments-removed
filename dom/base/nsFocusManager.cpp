@@ -1134,12 +1134,14 @@ nsFocusManager::ActivateOrDeactivate(nsPIDOMWindow* aWindow, bool aActive)
   aWindow->ActivateOrDeactivate(aActive);
 
   
-  nsContentUtils::DispatchEventOnlyToChrome(aWindow->GetExtantDoc(),
-                                            aWindow,
-                                            aActive ?
-                                              NS_LITERAL_STRING("activate") :
-                                              NS_LITERAL_STRING("deactivate"),
-                                            true, true, nullptr);
+  if (aWindow->GetExtantDoc()) {
+    nsContentUtils::DispatchEventOnlyToChrome(aWindow->GetExtantDoc(),
+                                              aWindow,
+                                              aActive ?
+                                                NS_LITERAL_STRING("activate") :
+                                                NS_LITERAL_STRING("deactivate"),
+                                              true, true, nullptr);
+  }
 
   
   nsContentUtils::CallOnAllRemoteChildren(aWindow, ActivateOrDeactivateChild,
