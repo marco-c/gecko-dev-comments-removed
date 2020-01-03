@@ -60,6 +60,13 @@ BreakpointActorMap.prototype = {
 
 
   findActors: function* (location = new OriginalLocation()) {
+    
+    
+    
+    if (this.size === 0) {
+      return;
+    }
+
     function* findKeys(object, key) {
       if (key !== undefined) {
         if (key in object) {
