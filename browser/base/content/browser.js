@@ -6678,12 +6678,10 @@ var gIdentityHandler = {
   IDENTITY_MODE_MIXED_ACTIVE_BLOCKED                   : "verifiedDomain mixedContent mixedActiveBlocked",  
   IDENTITY_MODE_MIXED_ACTIVE_BLOCKED_IDENTIFIED        : "verifiedIdentity mixedContent mixedActiveBlocked",  
   IDENTITY_MODE_CHROMEUI                               : "chromeUI",         
-  IDENTITY_MODE_FILE_URI                               : "fileURI",  
 
-  
-  _lastStatus : null,
-  _lastUri : null,
-  _mode : "unknownIdentity",
+  _isChromeUI: false,
+  _sslStatus: null,
+  _uri: null,
 
   
   get _identityPopup () {
@@ -6714,20 +6712,10 @@ var gIdentityHandler = {
     return this._identityPopupContentVerif =
       document.getElementById("identity-popup-content-verifier");
   },
-  get _identityPopupSecurityContent () {
-    delete this._identityPopupSecurityContent;
-    return this._identityPopupSecurityContent =
-      document.getElementById("identity-popup-security-content");
-  },
-  get _identityPopupSecurityView () {
-    delete this._identityPopupSecurityView;
-    return this._identityPopupSecurityView =
-      document.getElementById("identity-popup-securityView");
-  },
-  get _identityPopupMainView () {
-    delete this._identityPopupMainView;
-    return this._identityPopupMainView =
-      document.getElementById("identity-popup-mainView");
+  get _identityPopupMixedContentLearnMore () {
+    delete this._identityPopupMixedContentLearnMore;
+    return this._identityPopupMixedContentLearnMore =
+      document.getElementById("identity-popup-mcb-learn-more");
   },
   get _identityIconLabel () {
     delete this._identityIconLabel;
@@ -6806,13 +6794,33 @@ var gIdentityHandler = {
     }
   },
 
+  disableMixedContentProtection() {
+    
+    const kMIXED_CONTENT_UNBLOCK_EVENT = 2;
+    let histogram =
+      Services.telemetry.getHistogramById(
+        "MIXED_CONTENT_UNBLOCK_COUNTER");
+    histogram.add(kMIXED_CONTENT_UNBLOCK_EVENT);
+    
+    BrowserReloadWithFlags(
+      Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT);
+    this._identityPopup.hidePopup();
+  },
+
+  enableMixedContentProtection() {
+    gBrowser.selectedBrowser.messageManager.sendAsyncMessage(
+      "MixedContent:ReenableProtection", {});
+    BrowserReload();
+    this._identityPopup.hidePopup();
+  },
+
   
 
 
 
   getIdentityData : function() {
     var result = {};
-    var status = this._lastStatus.QueryInterface(Components.interfaces.nsISSLStatus);
+    var status = this._sslStatus.QueryInterface(Ci.nsISSLStatus);
     var cert = status.serverCert;
 
     
@@ -6848,67 +6856,57 @@ var gIdentityHandler = {
 
 
   checkIdentity : function(state, uri) {
-    var currentStatus = gBrowser.securityUI
-                                .QueryInterface(Components.interfaces.nsISSLStatusProvider)
-                                .SSLStatus;
-    this._lastStatus = currentStatus;
-    this._lastUri = uri;
-
     let nsIWebProgressListener = Ci.nsIWebProgressListener;
-
-    
-    
-    let unknown = false;
-    try {
-      uri.host;
-    } catch (e) { unknown = true; }
 
     
     
     let whitelist = /^about:(accounts|addons|app-manager|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|sessionrestore|support|welcomeback)/i;
     let isChromeUI = uri.schemeIs("about") && whitelist.test(uri.spec);
+    let mode = this.IDENTITY_MODE_UNKNOWN;
+
     if (isChromeUI) {
-      this.setMode(this.IDENTITY_MODE_CHROMEUI);
-    } else if (unknown) {
-      this.setMode(this.IDENTITY_MODE_UNKNOWN);
+      mode = this.IDENTITY_MODE_CHROMEUI;
     } else if (state & nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL) {
       if (state & nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT) {
-        this.setMode(this.IDENTITY_MODE_MIXED_ACTIVE_BLOCKED_IDENTIFIED);
+        mode = this.IDENTITY_MODE_MIXED_ACTIVE_BLOCKED_IDENTIFIED;
       } else {
-        this.setMode(this.IDENTITY_MODE_IDENTIFIED);
+        mode = this.IDENTITY_MODE_IDENTIFIED;
       }
     } else if (state & nsIWebProgressListener.STATE_IS_SECURE) {
       if (state & nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT) {
-        this.setMode(this.IDENTITY_MODE_MIXED_ACTIVE_BLOCKED);
+        mode = this.IDENTITY_MODE_MIXED_ACTIVE_BLOCKED;
       } else {
-        this.setMode(this.IDENTITY_MODE_DOMAIN_VERIFIED);
+        mode = this.IDENTITY_MODE_DOMAIN_VERIFIED;
       }
     } else if (state & nsIWebProgressListener.STATE_IS_BROKEN) {
       if (state & nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT) {
-        this.setMode(this.IDENTITY_MODE_MIXED_ACTIVE_LOADED);
+        mode = this.IDENTITY_MODE_MIXED_ACTIVE_LOADED;
       } else if (state & nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT) {
-        this.setMode(this.IDENTITY_MODE_MIXED_DISPLAY_LOADED_ACTIVE_BLOCKED);
+        mode = this.IDENTITY_MODE_MIXED_DISPLAY_LOADED_ACTIVE_BLOCKED;
       } else if (state & nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT) {
-        this.setMode(this.IDENTITY_MODE_MIXED_DISPLAY_LOADED);
+        mode = this.IDENTITY_MODE_MIXED_DISPLAY_LOADED;
       } else {
-        this.setMode(this.IDENTITY_MODE_USES_WEAK_CIPHER);
-      }
-    } else {
-      
-      
-      let resolvedURI = NetUtil.newChannel({uri,loadUsingSystemPrincipal:true}).URI;
-      if (resolvedURI.schemeIs("jar")) {
-        
-        
-        resolvedURI = NetUtil.newURI(resolvedURI.path);
-      }
-
-      if (resolvedURI.schemeIs("file")) {
-        this.setMode(this.IDENTITY_MODE_FILE_URI);
-      } else {
-        this.setMode(this.IDENTITY_MODE_UNKNOWN);
+        mode = this.IDENTITY_MODE_USES_WEAK_CIPHER;
       }
     }
+
+    
+    this._uri = uri;
+    this._state = state;
+    this._isChromeUI = isChromeUI;
+    this._sslStatus =
+      gBrowser.securityUI.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus;
+
+    
+    if (this._identityBox) {
+      this._identityBox.className = mode;
+      this.refreshIdentityBlock(mode);
+    }
+
+    
+    
+    
+    
 
     
     
@@ -6961,12 +6959,12 @@ var gIdentityHandler = {
                          .getService(Ci.nsIIDNService);
     try {
       let baseDomain =
-        Services.eTLD.getBaseDomainFromHost(this._lastUri.host);
+        Services.eTLD.getBaseDomainFromHost(this._uri.host);
       return this._IDNService.convertToDisplayIDN(baseDomain, {});
     } catch (e) {
       
       
-      return this._lastUri.host;
+      return this._uri.host;
     }
   },
 
@@ -6974,33 +6972,9 @@ var gIdentityHandler = {
 
 
 
-  setMode : function(newMode) {
-    if (!this._identityBox) {
-      
-      
-      return;
-    }
-
-    this._identityPopup.className = newMode;
-    this._identityBox.className = newMode;
-    this.setIdentityMessages(newMode);
-
-    
-    if (this._identityPopup.state == "open") {
-      this.setPopupMessages(newMode);
-      this.updateSitePermissions();
-    }
-
-    this._mode = newMode;
-  },
-
-  
 
 
-
-
-
-  setIdentityMessages : function(newMode) {
+  refreshIdentityBlock(newMode) {
     let icon_label = "";
     let tooltip = "";
     let icon_country_label = "";
@@ -7017,11 +6991,11 @@ var gIdentityHandler = {
                                                     [iData.caOrg]);
 
       
-      let host = this._lastUri.host;
+      let host = this._uri.host;
       let port = 443;
       try {
-        if (this._lastUri.port > 0)
-          port = this._lastUri.port;
+        if (this._uri.port > 0)
+          port = this._uri.port;
       } catch (e) {}
 
       if (this._overrideService.hasMatchingOverride(host, port, iData.cert, {}, {}))
@@ -7071,14 +7045,77 @@ var gIdentityHandler = {
 
 
 
+  refreshIdentityPopup() {
+    
+    let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
+    let learnMoreHref = `${baseURL}mixed-content`;
+    this._identityPopupMixedContentLearnMore.setAttribute("href", learnMoreHref);
 
+    
+    let isBroken = this._state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
+    let isSecure = this._state & Ci.nsIWebProgressListener.STATE_IS_SECURE;
+    let isEV = this._state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL;
 
-  setPopupMessages : function(newMode) {
+    
+    let connection = "not-secure";
+    if (this._isChromeUI) {
+      connection = "chrome";
+    } else if (this._isURILoadedFromFile(this._uri)) {
+      connection = "file";
+    } else if (isEV) {
+      connection = "secure-ev";
+    } else if (isSecure) {
+      connection = "secure";
+    }
 
-    this._identityPopup.className = newMode;
-    this._identityPopupMainView.className = newMode;
-    this._identityPopupSecurityView.className = newMode;
-    this._identityPopupSecurityContent.className = newMode;
+    
+    let isMixedActiveContentLoaded =
+      this._state & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT;
+    let isMixedActiveContentBlocked =
+      this._state & Ci.nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT;
+    let isMixedPassiveContentLoaded =
+      this._state & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT;
+
+    
+    let mixedcontent = [];
+    if (isMixedPassiveContentLoaded) {
+      mixedcontent.push("passive-loaded");
+    }
+    if (isMixedActiveContentLoaded) {
+      mixedcontent.push("active-loaded");
+    } else if (isMixedActiveContentBlocked) {
+      mixedcontent.push("active-blocked");
+    }
+    mixedcontent = mixedcontent.join(" ");
+
+    
+    
+    
+    let ciphers = "";
+    if (isBroken && !isMixedActiveContentLoaded) {
+      ciphers = "weak";
+    }
+
+    
+    let elementIDs = [
+      "identity-popup",
+      "identity-popup-securityView-body",
+    ];
+
+    function updateAttribute(elem, attr, value) {
+      if (value) {
+        elem.setAttribute(attr, value);
+      } else {
+        elem.removeAttribute(attr);
+      }
+    }
+
+    for (let id of elementIDs) {
+      let element = document.getElementById(id);
+      updateAttribute(element, "connection", connection);
+      updateAttribute(element, "ciphers", ciphers);
+      updateAttribute(element, "mixedcontent", mixedcontent);
+    }
 
     
     let supplemental = "";
@@ -7092,19 +7129,18 @@ var gIdentityHandler = {
       
     }
 
+    
     if (!host) {
-      
-      host = this._lastUri.specIgnoringRef;
+      host = this._uri.specIgnoringRef;
     }
 
-    switch (newMode) {
-    case this.IDENTITY_MODE_DOMAIN_VERIFIED:
-    case this.IDENTITY_MODE_MIXED_ACTIVE_BLOCKED:
+    
+    if (isSecure) {
       verifier = this._identityBox.tooltipText;
-      break;
-    case this.IDENTITY_MODE_IDENTIFIED:
-    case this.IDENTITY_MODE_MIXED_ACTIVE_BLOCKED_IDENTIFIED: {
-      
+    }
+
+    
+    if (isEV) {
       let iData = this.getIdentityData();
       host = owner = iData.subjectOrg;
       verifier = this._identityBox.tooltipText;
@@ -7119,21 +7155,6 @@ var gIdentityHandler = {
         supplemental += iData.state;
       else if (iData.country) 
         supplemental += iData.country;
-      break;
-    }
-    case this.IDENTITY_MODE_UNKNOWN:
-      supplemental = gNavigatorBundle.getString("identity.not_secure");
-      break;
-    case this.IDENTITY_MODE_USES_WEAK_CIPHER:
-      supplemental = gNavigatorBundle.getString("identity.uses_weak_cipher");
-      break;
-    case this.IDENTITY_MODE_MIXED_DISPLAY_LOADED:
-    case this.IDENTITY_MODE_MIXED_DISPLAY_LOADED_ACTIVE_BLOCKED:
-      supplemental = gNavigatorBundle.getString("identity.mixed_display_loaded");
-      break;
-    case this.IDENTITY_MODE_MIXED_ACTIVE_LOADED:
-      supplemental = gNavigatorBundle.getString("identity.mixed_active_loaded2");
-      break;
     }
 
     
@@ -7145,7 +7166,30 @@ var gIdentityHandler = {
     this._identityPopupContentVerif.textContent = verifier;
 
     
-    document.getElementById("identity-popup-multiView").showMainView();
+    this.updateSitePermissions();
+  },
+
+  _isURILoadedFromFile(uri) {
+    try {
+      uri.host;
+      
+      return false;
+    } catch (e) {
+      
+    }
+
+    
+    
+    let chanOptions = {uri, loadUsingSystemPrincipal: true};
+    let resolvedURI = NetUtil.newChannel(chanOptions).URI;
+    if (resolvedURI.schemeIs("jar")) {
+      
+      
+      resolvedURI = NetUtil.newURI(resolvedURI.path);
+    }
+
+    
+    return resolvedURI.schemeIs("file");
   },
 
   
@@ -7170,9 +7214,7 @@ var gIdentityHandler = {
     this._identityPopup.hidden = false;
 
     
-    this.setPopupMessages(this._identityBox.className);
-
-    this.updateSitePermissions();
+    this.refreshIdentityPopup();
 
     
     this._identityBox.setAttribute("open", "true");
