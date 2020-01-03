@@ -974,17 +974,32 @@ AnimationCollection::RequestRestyle(RestyleType aRestyleType)
     return;
   }
 
-  switch (aRestyleType) {
-    case RestyleType::Throttled:
-      presContext->Document()->SetNeedStyleFlush();
-      break;
+  
+  
+  
+  
+  
+  presContext->Document()->SetNeedStyleFlush();
 
-    case RestyleType::Standard:
-      if (!mHasPendingAnimationRestyle) {
-        mHasPendingAnimationRestyle = true;
-        PostRestyleForAnimation(presContext);
-      }
-      break;
+  
+  
+  if (mHasPendingAnimationRestyle) {
+    return;
+  }
+
+  
+  
+  if (aRestyleType == RestyleType::Throttled) {
+    TimeStamp now = presContext->RefreshDriver()->MostRecentRefresh();
+    if (!CanPerformOnCompositorThread(CanAnimateFlags(0)) ||
+        !CanThrottleAnimation(now)) {
+      aRestyleType = RestyleType::Standard;
+    }
+  }
+
+  if (aRestyleType == RestyleType::Standard) {
+    mHasPendingAnimationRestyle = true;
+    PostRestyleForAnimation(presContext);
   }
 }
 
