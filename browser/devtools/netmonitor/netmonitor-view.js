@@ -2475,14 +2475,14 @@ NetworkDetailsView.prototype = {
     let isHtml = RequestsMenuView.prototype.isHtml({ attachment: aData });
 
     
-    this.sidebar.toggleTab(isHtml, "preview-tab", "preview-tabpanel");
+    this.sidebar.toggleTab(isHtml, "preview-tab");
 
     
     
     
     let hasSecurityInfo = aData.securityState &&
                           aData.securityState !== "insecure";
-    this.sidebar.toggleTab(hasSecurityInfo, "security-tab", "security-tabpanel");
+    this.sidebar.toggleTab(hasSecurityInfo, "security-tab");
 
     
     
