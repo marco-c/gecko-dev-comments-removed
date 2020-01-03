@@ -486,11 +486,11 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    void setupAlignedABICall(uint32_t args); 
+    void setupAlignedABICall(); 
 
     
     
-    void setupUnalignedABICall(uint32_t args, Register scratch) PER_ARCH;
+    void setupUnalignedABICall(Register scratch) PER_ARCH;
 
     
     

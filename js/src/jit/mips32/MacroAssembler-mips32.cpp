@@ -3204,7 +3204,7 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler)
     ma_move(a0, StackPointer); 
 
     
-    asMasm().setupUnalignedABICall(1, a1);
+    asMasm().setupUnalignedABICall(a1);
     asMasm().passABIArg(a0);
     asMasm().callWithABI(handler);
 
@@ -3549,7 +3549,7 @@ MacroAssembler::call(JitCode* c)
 
 
 void
-MacroAssembler::setupUnalignedABICall(uint32_t args, Register scratch)
+MacroAssembler::setupUnalignedABICall(Register scratch)
 {
     setupABICall();
     dynamicAlignment_ = true;

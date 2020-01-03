@@ -1080,7 +1080,7 @@ EmitBaselineDebugModeOSRHandlerTail(MacroAssembler& masm, Register temp, bool re
     masm.push(Address(temp, offsetof(BaselineDebugModeOSRInfo, resumeAddr)));
 
     
-    masm.setupUnalignedABICall(1, temp);
+    masm.setupUnalignedABICall(temp);
     masm.loadBaselineFramePtr(BaselineFrameReg, temp);
     masm.passABIArg(temp);
     masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, FinishBaselineDebugModeOSR));
@@ -1132,7 +1132,7 @@ JitRuntime::generateBaselineDebugModeOSRHandler(JSContext* cx, uint32_t* noFrame
     masm.push(BaselineFrameReg);
 
     
-    masm.setupUnalignedABICall(3, temp);
+    masm.setupUnalignedABICall(temp);
     masm.loadBaselineFramePtr(BaselineFrameReg, temp);
     masm.passABIArg(temp);
     masm.passABIArg(syncedStackStart);

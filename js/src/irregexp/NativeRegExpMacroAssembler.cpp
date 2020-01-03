@@ -402,7 +402,7 @@ NativeRegExpMacroAssembler::GenerateCode(JSContext* cx, bool match_only)
         volatileRegs.takeUnchecked(temp1);
         masm.PushRegsInMask(volatileRegs);
 
-        masm.setupUnalignedABICall(1, temp0);
+        masm.setupUnalignedABICall(temp0);
         masm.passABIArg(temp1);
         masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, GrowBacktrackStack));
         masm.storeCallResult(temp0);
@@ -814,7 +814,7 @@ NativeRegExpMacroAssembler::CheckNotBackReferenceIgnoreCase(int start_reg, Label
         
         
         
-        masm.setupUnalignedABICall(3, temp0);
+        masm.setupUnalignedABICall(temp0);
         masm.passABIArg(current_character);
         masm.passABIArg(current_position);
         masm.passABIArg(temp1);
