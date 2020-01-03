@@ -849,6 +849,98 @@ FoldIncrementDecrement(ExclusiveContext* cx, ParseNode* node, Parser<FullParseHa
 }
 
 
+static bool
+FoldConditional(ExclusiveContext* cx, ParseNode** nodePtr, Parser<FullParseHandler>& parser,
+                bool inGenexpLambda)
+{
+    ParseNode** nextNode = nodePtr;
+
+    do {
+        
+        
+        
+        nodePtr = nextNode;
+        nextNode = nullptr;
+
+        ParseNode* node = *nodePtr;
+        MOZ_ASSERT(node->isKind(PNK_CONDITIONAL));
+        MOZ_ASSERT(node->isArity(PN_TERNARY));
+
+        ParseNode*& expr = node->pn_kid1;
+        if (!Fold(cx, &expr, parser, inGenexpLambda, SyntacticContext::Condition))
+            return false;
+
+        ParseNode*& ifTruthy = node->pn_kid2;
+        if (!Fold(cx, &ifTruthy, parser, inGenexpLambda, SyntacticContext::Other))
+            return false;
+
+        ParseNode*& ifFalsy = node->pn_kid3;
+
+        
+        
+        
+        
+        
+        
+        
+        if (ifFalsy->isKind(PNK_CONDITIONAL)) {
+            nextNode = &ifFalsy;
+        } else {
+            if (!Fold(cx, &ifFalsy, parser, inGenexpLambda, SyntacticContext::Other))
+                return false;
+        }
+
+        
+        Truthiness t = Boolish(expr);
+        if (t == Unknown)
+            continue;
+
+        
+        ParseNode* replacement;
+        ParseNode* discarded;
+        if (t == Truthy) {
+            replacement = ifTruthy;
+            discarded = ifFalsy;
+        } else {
+            replacement = ifFalsy;
+            discarded = ifTruthy;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (replacement->isDefn())
+            continue;
+
+        
+        
+        
+        if (nextNode)
+            nextNode = (*nextNode == replacement) ? nodePtr : nullptr;
+        ReplaceNode(nodePtr, replacement);
+
+        parser.freeTree(discarded);
+    } while (nextNode);
+
+    return true;
+}
+
 bool
 Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bool inGenexpLambda,
      SyntacticContext sc)
@@ -926,6 +1018,9 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_DELETESUPERPROP:
         return FoldDeleteProperty(cx, pn, parser, inGenexpLambda);
 
+      case PNK_CONDITIONAL:
+        return FoldConditional(cx, pnp, parser, inGenexpLambda);
+
       case PNK_NOT:
         return FoldNot(cx, pn, parser, inGenexpLambda);
 
@@ -980,7 +1075,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_IMPORT:
       case PNK_EXPORT_FROM:
       case PNK_EXPORT_DEFAULT:
-      case PNK_CONDITIONAL:
       case PNK_FORIN:
       case PNK_FOROF:
       case PNK_FORHEAD:
@@ -1107,7 +1201,9 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
         pn2 = pn->pn_kid2;
 
         if (pn->pn_kid3) {
-            if (pn->isKind(PNK_IF) || pn->isKind(PNK_CONDITIONAL)) {
+            MOZ_ASSERT(!pn->isKind(PNK_CONDITIONAL),
+                       "should be skipping this above");
+            if (pn->isKind(PNK_IF)) {
                 restartNode = &pn->pn_kid3;
                 restartContext = SyntacticContext::Other;
             } else {
@@ -1203,9 +1299,7 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
             }
         }
         mightHaveHoistedDeclarations = false;
-        
 
-      case PNK_CONDITIONAL:
         
         switch (pn1->getKind()) {
           case PNK_NUMBER:
@@ -1446,6 +1540,7 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_BITNOT:
       case PNK_POS:
       case PNK_NEG:
+      case PNK_CONDITIONAL:
         MOZ_CRASH("should have been fully handled above");
 
       case PNK_ELEM: {
