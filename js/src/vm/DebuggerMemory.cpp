@@ -1147,7 +1147,7 @@ class ByUbinodeType : public CountType {
 
 
 class ByAllocationStack : public CountType {
-    typedef HashMap<SavedFrame*, CountBasePtr, DefaultHasher<SavedFrame*>,
+    typedef HashMap<JS::ubi::StackFrame, CountBasePtr, DefaultHasher<JS::ubi::StackFrame>,
                     SystemAllocPolicy> Table;
     typedef Table::Entry Entry;
 
@@ -1218,8 +1218,9 @@ class ByAllocationStack : public CountType {
 
             
             
-            SavedFrame** keyPtr = const_cast<SavedFrame**>(&r.front().key());
-            TraceRoot(trc, keyPtr, "Debugger.Memory.prototype.census byAllocationStack count key");
+            const JS::ubi::StackFrame* key = &r.front().key();
+            auto& k = *const_cast<JS::ubi::StackFrame*>(key);
+            k.trace(trc);
         }
         count.noStack->trace(trc);
     }
@@ -1233,24 +1234,17 @@ class ByAllocationStack : public CountType {
         Count& count = static_cast<Count&>(countBase);
         count.total_++;
 
-        SavedFrame* allocationStack = nullptr;
-        if (node.is<JSObject>()) {
-            JSObject* metadata = GetObjectMetadata(node.as<JSObject>());
-            if (metadata && metadata->is<SavedFrame>())
-                allocationStack = &metadata->as<SavedFrame>();
-        }
         
         
-
-        
-        
-        if (allocationStack) {
-            Table::AddPtr p = count.table.lookupForAdd(allocationStack);
+        if (node.hasAllocationStack()) {
+            auto allocationStack = node.allocationStack();
+            auto p = count.table.lookupForAdd(allocationStack);
             if (!p) {
                 CountBasePtr stackCount(entryType->makeCount());
                 if (!stackCount || !count.table.add(p, allocationStack, Move(stackCount)))
                     return false;
             }
+            MOZ_ASSERT(p);
             return p->value()->count(node);
         }
 
@@ -1283,18 +1277,22 @@ class ByAllocationStack : public CountType {
             return false;
         for (Entry** entryPtr = entries.begin(); entryPtr < entries.end(); entryPtr++) {
             Entry& entry = **entryPtr;
-
             MOZ_ASSERT(entry.key());
-            RootedValue stack(cx, ObjectValue(*entry.key()));
-            if (!cx->compartment()->wrap(cx, &stack))
+
+            RootedObject stack(cx);
+            if (!entry.key().constructSavedFrameStack(cx, &stack) ||
+                !cx->compartment()->wrap(cx, &stack))
+            {
                 return false;
+            }
+            RootedValue stackVal(cx, ObjectValue(*stack));
 
             CountBasePtr& stackCount = entry.value();
             RootedValue stackReport(cx);
             if (!stackCount->report(&stackReport))
                 return false;
 
-            if (!MapObject::set(cx, map, stack, stackReport))
+            if (!MapObject::set(cx, map, stackVal, stackReport))
                 return false;
         }
 
