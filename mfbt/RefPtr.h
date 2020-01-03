@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Move.h"
 #include "mozilla/RefCountType.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/TypeTraits.h"
 #if defined(MOZILLA_INTERNAL_API)
 #include "nsXPCOM.h"
@@ -278,9 +279,22 @@ public:
   }
 
   T* get() const { return mPtr; }
-  operator T*() const { return mPtr; }
+  operator T*() const
+#ifdef MOZ_HAVE_REF_QUALIFIERS
+  &
+#endif
+  { return mPtr; }
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return mPtr; }
   T& operator*() const { return *mPtr; }
+
+#ifdef MOZ_HAVE_REF_QUALIFIERS
+  
+  
+  operator T*() const && = delete;
+
+  
+  explicit operator bool() const { return !!mPtr; }
+#endif
 
 private:
   void assign(T* aVal)
@@ -374,5 +388,20 @@ MakeAndAddRef(Args&&... aArgs)
 }
 
 } 
+
+
+template<class T> template<class U>
+nsRefPtr<T>::nsRefPtr(mozilla::RefPtr<U>&& aOther)
+  : nsRefPtr(aOther.forget())
+{
+}
+
+template<class T> template<class U>
+nsRefPtr<T>&
+nsRefPtr<T>::operator=(mozilla::RefPtr<U>&& aOther)
+{
+  assign_assuming_AddRef(aOther.forget().take());
+  return *this;
+}
 
 #endif 
