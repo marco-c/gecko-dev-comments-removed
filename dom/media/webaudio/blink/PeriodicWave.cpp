@@ -178,18 +178,18 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
     float normalizationScale = 1;
 
     unsigned fftSize = m_periodicWaveSize;
-    unsigned halfSize = fftSize / 2 + 1;
+    unsigned halfSize = fftSize / 2;
     unsigned i;
 
-    numberOfComponents = std::min(numberOfComponents, halfSize);
+    numberOfComponents = std::min(numberOfComponents, halfSize + 1);
 
     m_bandLimitedTables.SetCapacity(m_numberOfRanges);
 
     for (unsigned rangeIndex = 0; rangeIndex < m_numberOfRanges; ++rangeIndex) {
         
         FFTBlock frame(fftSize);
-        nsAutoArrayPtr<float> realP(new float[halfSize]);
-        nsAutoArrayPtr<float> imagP(new float[halfSize]);
+        nsAutoArrayPtr<float> realP(new float[halfSize + 1]);
+        nsAutoArrayPtr<float> imagP(new float[halfSize + 1]);
 
         
         float scale = fftSize;
@@ -198,7 +198,7 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
 
         
         
-        for (i = numberOfComponents; i < halfSize; ++i) {
+        for (i = numberOfComponents; i < halfSize + 1; ++i) {
             realP[i] = 0;
             imagP[i] = 0;
         }
@@ -206,7 +206,7 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
         
         
         float minusOne = -1;
-        AudioBufferInPlaceScale(imagP, minusOne, halfSize);
+        AudioBufferInPlaceScale(imagP, minusOne, halfSize + 1);
 
         
         
@@ -214,20 +214,20 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
         unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
 
         
-        for (i = numberOfPartials + 1; i < halfSize; ++i) {
+        for (i = numberOfPartials + 1; i < halfSize + 1; ++i) {
             realP[i] = 0;
             imagP[i] = 0;
         }
         
-        if (numberOfPartials < halfSize)
-            realP[halfSize-1] = 0;
+        if (numberOfPartials < halfSize + 1)
+            realP[halfSize] = 0;
 
         
         realP[0] = 0;
 
         
         imagP[0] = 0;
-        imagP[halfSize-1] = 0;
+        imagP[halfSize] = 0;
 
         
         AlignedAudioFloatArray* table = new AlignedAudioFloatArray(m_periodicWaveSize);
@@ -256,20 +256,20 @@ void PeriodicWave::generateBasicWaveform(OscillatorType shape)
 {
     const float piFloat = M_PI;
     unsigned fftSize = periodicWaveSize();
-    unsigned halfSize = fftSize / 2 + 1;
+    unsigned halfSize = fftSize / 2;
 
-    AudioFloatArray real(halfSize);
-    AudioFloatArray imag(halfSize);
+    AudioFloatArray real(halfSize + 1);
+    AudioFloatArray imag(halfSize + 1);
     float* realP = real.Elements();
     float* imagP = imag.Elements();
 
     
     realP[0] = 0;
     imagP[0] = 0;
-    realP[halfSize-1] = 0;
-    imagP[halfSize-1] = 0;
+    realP[halfSize] = 0;
+    imagP[halfSize] = 0;
 
-    for (unsigned n = 1; n < halfSize; ++n) {
+    for (unsigned n = 1; n < halfSize + 1; ++n) {
         float omega = 2 * piFloat * n;
         float invOmega = 1 / omega;
 
@@ -319,7 +319,7 @@ void PeriodicWave::generateBasicWaveform(OscillatorType shape)
         imagP[n] = b;
     }
 
-    createBandLimitedTables(realP, imagP, halfSize);
+    createBandLimitedTables(realP, imagP, halfSize + 1);
 }
 
 } 
