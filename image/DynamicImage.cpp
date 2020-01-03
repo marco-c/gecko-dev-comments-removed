@@ -336,5 +336,11 @@ DynamicImage::Unwrap()
   return self.forget();
 }
 
+void
+DynamicImage::PropagateUseCounters(nsIDocument*)
+{
+  
+}
+
 } 
 } 

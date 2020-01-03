@@ -2091,6 +2091,12 @@ RasterImage::Unwrap()
   return self.forget();
 }
 
+void
+RasterImage::PropagateUseCounters(nsIDocument*)
+{
+  
+}
+
 IntSize
 RasterImage::OptimalImageSizeForDest(const gfxSize& aDest, uint32_t aWhichFrame,
                                      GraphicsFilter aFilter, uint32_t aFlags)
