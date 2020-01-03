@@ -1015,6 +1015,7 @@ GetObjectClassName(JSContext* cx, HandleObject obj);
 
 
 
+
 inline JSObject*
 GetInnerObject(JSObject* obj)
 {
@@ -1024,6 +1025,7 @@ GetInnerObject(JSObject* obj)
     }
     return obj;
 }
+
 
 
 
