@@ -16,14 +16,12 @@ import android.content.Context;
 
 
 public class testJarReader extends BaseTest {
-    public void testGetJarURL() {
+    public void testJarReader() {
         
         final String s = GeckoJarReader.computeJarURI("some[1].apk", "something/else");
         mAsserter.ok(!s.contains("["), "Illegal characters are escaped away.", null);
         mAsserter.ok(!s.toLowerCase().contains("%2f"), "Path characters aren't escaped.", null);
-    }
 
-    public void testJarReader() {
         final Context context = getInstrumentation().getTargetContext().getApplicationContext();
         String appPath = getActivity().getApplication().getPackageResourcePath();
         mAsserter.isnot(appPath, null, "getPackageResourcePath is non-null");
@@ -42,6 +40,12 @@ public class testJarReader extends BaseTest {
         url = "jar:file://" + appPath + "!/" + "BAD" + AppConstants.OMNIJAR_NAME;
         stream = GeckoJarReader.getStream(context, "jar:" + url + "!/chrome/chrome/content/branding/favicon32.png");
         mAsserter.is(stream, null, "JarReader returned null for valid file in invalid jar file");
+
+        
+        
+        url = "jar:file://" + appPath + "!/" + AppConstants.OMNIJAR_NAME + "BAD";
+        stream = GeckoJarReader.getStream(context, "jar:" + url + "!/chrome/chrome/content/branding/favicon32.png");
+        mAsserter.is(stream, null, "JarReader returned null for valid file in other invalid jar file");
 
         
         url = "jar:file://" + appPath + "!" + "!/" + AppConstants.OMNIJAR_NAME;

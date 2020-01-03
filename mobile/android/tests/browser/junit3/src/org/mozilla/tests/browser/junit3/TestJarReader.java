@@ -41,6 +41,12 @@ public class TestJarReader extends InstrumentationTestCase {
         assertNull(stream);
 
         
+        
+        url = "jar:file://" + appPath + "!/" + AppConstants.OMNIJAR_NAME + "BAD";
+        stream = GeckoJarReader.getStream(context, "jar:" + url + "!/chrome/chrome/content/branding/favicon32.png");
+        assertNull(stream);
+
+        
         url = "jar:file://" + appPath + "!" + "!/" + AppConstants.OMNIJAR_NAME;
         stream = GeckoJarReader.getStream(context, "jar:" + url + "!/chrome/chrome/content/branding/nonexistent_file.png");
         assertNull(stream);
