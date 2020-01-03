@@ -39,6 +39,8 @@ class Matrix;
 } 
 } 
 
+#define SVG_ZERO_LENGTH_PATH_FIX_FACTOR 512
+
 inline bool
 IsSVGWhitespace(char aChar)
 {

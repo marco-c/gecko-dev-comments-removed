@@ -25,6 +25,10 @@ protected:
   virtual JSObject* WrapNode(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
   friend nsresult (::NS_NewSVGLineElement(nsIContent **aResult,
                                           already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+  
+  
+  
+  void MaybeAdjustForZeroLength(float aX1, float aY1, float& aX2, float aY2);
 
 public:
   
