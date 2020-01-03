@@ -88,7 +88,7 @@ class Configuration:
             self.descriptors.extend([Descriptor(self, iface, x) for x in entry])
 
         
-        self.descriptors.sort(lambda x,y: cmp(x.name, y.name))
+        self.descriptors.sort(lambda x, y: cmp(x.name, y.name))
 
         self.descriptorsByName = {}
         for d in self.descriptors:
@@ -241,7 +241,7 @@ class Configuration:
                 else:
                     items = filter(lambda x: x.getUserData("mainThread", False), items)
             else:
-                assert(0) 
+                assert(0)  
         return items
     def getDictionaries(self, **filters):
         return self._filterForFileAndWorkers(self.dictionaries, filters)
@@ -513,7 +513,7 @@ class Descriptor(DescriptorProvider):
         
         
         
-        self.extendedAttributes = { 'all': {}, 'getterOnly': {}, 'setterOnly': {} }
+        self.extendedAttributes = {'all': {}, 'getterOnly': {}, 'setterOnly': {}}
 
         def addExtendedAttribute(attribute, config):
             def add(key, members, attribute):
@@ -805,8 +805,8 @@ def getTypesFromCallback(callback):
     types of its arguments.
     """
     sig = callback.signatures()[0]
-    types = [sig[0]] 
-    types.extend(arg.type for arg in sig[1]) 
+    types = [sig[0]]  
+    types.extend(arg.type for arg in sig[1])  
     return types
 
 def findCallbacksAndDictionaries(inputTypes):
