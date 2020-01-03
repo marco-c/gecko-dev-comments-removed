@@ -75,40 +75,40 @@ JitOptions::JitOptions()
     SET_DEFAULT(checkRangeAnalysis, false);
 
     
-    SET_DEFAULT(runExtraChecks, false);
-
-    
-    SET_DEFAULT(disableScalarReplacement, false);
-
-    
-    SET_DEFAULT(disableEagerSimdUnbox, false);
-
-    
-    SET_DEFAULT(disableGvn, false);
-
-    
-    SET_DEFAULT(disableLicm, false);
-
-    
-    SET_DEFAULT(disableInlining, false);
-
-    
-    SET_DEFAULT(disableEdgeCaseAnalysis, false);
-
-    
-    SET_DEFAULT(disableRangeAnalysis, false);
-
-    
-    SET_DEFAULT(disableSink, true);
-
-    
-    SET_DEFAULT(disableLoopUnrolling, true);
+    SET_DEFAULT(disableAma, false);
 
     
     SET_DEFAULT(disableEaa, false);
 
     
-    SET_DEFAULT(disableAma, false);
+    SET_DEFAULT(disableEagerSimdUnbox, false);
+
+    
+    SET_DEFAULT(disableEdgeCaseAnalysis, false);
+
+    
+    SET_DEFAULT(disableGvn, false);
+
+    
+    SET_DEFAULT(disableInlining, false);
+
+    
+    SET_DEFAULT(disableLicm, false);
+
+    
+    SET_DEFAULT(disableLoopUnrolling, true);
+
+    
+    SET_DEFAULT(disableRangeAnalysis, false);
+
+    
+    SET_DEFAULT(disableScalarReplacement, false);
+
+    
+    SET_DEFAULT(disableSharedStubs, true);
+
+    
+    SET_DEFAULT(disableSink, true);
 
     
     SET_DEFAULT(eagerCompilation, false);
@@ -117,31 +117,13 @@ JitOptions::JitOptions()
     SET_DEFAULT(forceInlineCaches, false);
 
     
-    
-    
-    const char* forcedDefaultIonWarmUpThresholdEnv = "JIT_OPTION_forcedDefaultIonWarmUpThreshold";
-    if (const char* env = getenv(forcedDefaultIonWarmUpThresholdEnv)) {
-        Maybe<int> value = ParseInt(env);
-        if (value.isSome())
-            forcedDefaultIonWarmUpThreshold.emplace(value.ref());
-        else
-            Warn(forcedDefaultIonWarmUpThresholdEnv, env);
-    }
-
-    
-    
-    const char* forcedRegisterAllocatorEnv = "JIT_OPTION_forcedRegisterAllocator";
-    if (const char* env = getenv(forcedRegisterAllocatorEnv)) {
-        forcedRegisterAllocator = LookupRegisterAllocator(env);
-        if (!forcedRegisterAllocator.isSome())
-            Warn(forcedRegisterAllocatorEnv, env);
-    }
-
-    
     SET_DEFAULT(limitScriptSize, true);
 
     
     SET_DEFAULT(osr, true);
+
+    
+    SET_DEFAULT(runExtraChecks, false);
 
     
     
@@ -164,6 +146,27 @@ JitOptions::JitOptions()
 
     
     SET_DEFAULT(smallFunctionMaxBytecodeLength_, 100);
+
+    
+    
+    
+    const char* forcedDefaultIonWarmUpThresholdEnv = "JIT_OPTION_forcedDefaultIonWarmUpThreshold";
+    if (const char* env = getenv(forcedDefaultIonWarmUpThresholdEnv)) {
+        Maybe<int> value = ParseInt(env);
+        if (value.isSome())
+            forcedDefaultIonWarmUpThreshold.emplace(value.ref());
+        else
+            Warn(forcedDefaultIonWarmUpThresholdEnv, env);
+    }
+
+    
+    
+    const char* forcedRegisterAllocatorEnv = "JIT_OPTION_forcedRegisterAllocator";
+    if (const char* env = getenv(forcedRegisterAllocatorEnv)) {
+        forcedRegisterAllocator = LookupRegisterAllocator(env);
+        if (!forcedRegisterAllocator.isSome())
+            Warn(forcedRegisterAllocatorEnv, env);
+    }
 
     
     SET_DEFAULT(disableUnboxedObjects, false);
