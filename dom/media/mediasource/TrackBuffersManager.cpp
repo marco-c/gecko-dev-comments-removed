@@ -370,6 +370,8 @@ TrackBuffersManager::CompleteResetParserState()
   mInputBuffer = nullptr;
   if (mCurrentInputBuffer) {
     mCurrentInputBuffer->EvictAll();
+    
+    
     mCurrentInputBuffer = new SourceBufferResource(mType);
   }
 
@@ -685,7 +687,7 @@ TrackBuffersManager::SegmentParserLoop()
       }
       
       if (mParser->MediaHeaderRange().IsNull()) {
-        mCurrentInputBuffer->AppendData(mInputBuffer);
+        AppendDataToCurrentInputBuffer(mInputBuffer);
         mInputBuffer = nullptr;
         NeedMoreData();
         return;
@@ -774,10 +776,23 @@ TrackBuffersManager::CreateDemuxerforMIMEType()
 }
 
 void
+TrackBuffersManager::AppendDataToCurrentInputBuffer(MediaByteBuffer* aData)
+{
+  MOZ_ASSERT(mCurrentInputBuffer);
+  int64_t offset = mCurrentInputBuffer->GetLength();
+  mCurrentInputBuffer->AppendData(aData);
+  
+  mInputDemuxer->NotifyDataArrived(uint32_t(aData->Length()), offset);
+}
+
+void
 TrackBuffersManager::InitializationSegmentReceived()
 {
   MOZ_ASSERT(mParser->HasCompleteInitData());
   mCurrentInputBuffer = new SourceBufferResource(mType);
+  
+  
+  
   mCurrentInputBuffer->AppendData(mParser->InitData());
   uint32_t length =
     mParser->InitSegmentRange().mEnd - (mProcessedInput - mInputBuffer->Length());
@@ -990,6 +1005,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
   
   
   mCurrentInputBuffer->EvictAll();
+  mInputDemuxer->NotifyDataRemoved();
   RecreateParser(true);
 
   
@@ -1014,25 +1030,22 @@ TrackBuffersManager::CodedFrameProcessing()
   MOZ_ASSERT(mProcessingPromise.IsEmpty());
   nsRefPtr<CodedFrameProcessingPromise> p = mProcessingPromise.Ensure(__func__);
 
-  int64_t offset = mCurrentInputBuffer->GetLength();
   MediaByteRange mediaRange = mParser->MediaSegmentRange();
-  uint32_t length;
   if (mediaRange.IsNull()) {
-    length = mInputBuffer->Length();
-    mCurrentInputBuffer->AppendData(mInputBuffer);
+    AppendDataToCurrentInputBuffer(mInputBuffer);
     mInputBuffer = nullptr;
   } else {
     
-    length = mediaRange.mEnd - (mProcessedInput - mInputBuffer->Length());
+    uint32_t length =
+      mediaRange.mEnd - (mProcessedInput - mInputBuffer->Length());
     nsRefPtr<MediaByteBuffer> segment = new MediaByteBuffer;
     MOZ_ASSERT(mInputBuffer->Length() >= length);
     if (!segment->AppendElements(mInputBuffer->Elements(), length, fallible)) {
       return CodedFrameProcessingPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
     }
-    mCurrentInputBuffer->AppendData(segment);
+    AppendDataToCurrentInputBuffer(segment);
     mInputBuffer->RemoveElementsAt(0, length);
   }
-  mInputDemuxer->NotifyDataArrived(length, offset);
 
   DoDemuxVideo();
 
