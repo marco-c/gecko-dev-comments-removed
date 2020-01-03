@@ -16,6 +16,7 @@
 namespace mozilla {
   namespace dom {
     class Blob;
+    class BlobParent;
   }
 }
 
@@ -62,8 +63,51 @@ public:
 
   static BluetoothPbapManager* Get();
   bool Listen();
+
+  
+
+
+
+
+
+  void ReplyToPullPhonebook(BlobParent* aActor, uint16_t aPhonebookSize);
+
+  
+
+
+
+
+
   void ReplyToPullPhonebook(Blob* aBlob, uint16_t aPhonebookSize);
+
+  
+
+
+
+
+
+  void ReplyToPullvCardListing(BlobParent* aActor, uint16_t aPhonebookSize);
+
+  
+
+
+
+
+
   void ReplyToPullvCardListing(Blob* aBlob, uint16_t aPhonebookSize);
+
+  
+
+
+
+
+  void ReplyToPullvCardEntry(BlobParent* aActor);
+
+  
+
+
+
+
   void ReplyToPullvCardEntry(Blob* aBlob);
 
 protected:
