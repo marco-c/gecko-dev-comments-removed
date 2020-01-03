@@ -491,6 +491,11 @@ public:
      mShared = true;
    }
 
+  ISurfaceAllocator* GetAllocator()
+  {
+    return mAllocator;
+  }
+
 private:
   
 
@@ -518,11 +523,6 @@ protected:
 
 
   virtual bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor) = 0;
-
-  ISurfaceAllocator* GetAllocator()
-  {
-    return mAllocator;
-  }
 
   RefPtr<TextureChild> mActor;
   RefPtr<ISurfaceAllocator> mAllocator;

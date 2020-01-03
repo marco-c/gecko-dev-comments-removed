@@ -14,6 +14,8 @@
 namespace mozilla {
 namespace layers {
 
+class SharedTextureClientD3D9;
+
 
 
 
@@ -53,11 +55,8 @@ private:
   void EnsureSynchronized();
 
   gfx::IntSize mSize;
-  RefPtr<IDirect3DTexture9> mTexture;
   RefPtr<IDirect3DQuery9> mQuery;
-  RefPtr<TextureClient> mTextureClient;
-  HANDLE mShareHandle;
-  D3DSURFACE_DESC mDesc;
+  RefPtr<SharedTextureClientD3D9> mTextureClient;
   bool mValid;
 };
 
