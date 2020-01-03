@@ -685,7 +685,11 @@ CreateOffscreen(GLContext* gl, const WebGLContextOptions& options,
     if (!baseCaps.alpha)
         baseCaps.premultAlpha = true;
 
-    if (gl->IsANGLE() || gl->GetContextType() == GLContextType::GLX) {
+    if (gl->IsANGLE() ||
+        (gl->GetContextType() == GLContextType::GLX &&
+         gfxPlatform::GetPlatform()->GetCompositorBackend() == LayersBackend::LAYERS_OPENGL))
+    {
+        
         
         
         
