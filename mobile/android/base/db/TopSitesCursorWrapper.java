@@ -486,6 +486,11 @@ public class TopSitesCursorWrapper implements Cursor {
         throw new UnsupportedOperationException();
     }
 
+    
+    public void setExtras(Bundle extras) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public boolean getWantsAllOnMoveCalls() {
         return false;
