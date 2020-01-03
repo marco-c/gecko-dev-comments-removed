@@ -6,15 +6,18 @@
 #ifndef MOZILLA_GFX_TEXTURECLIENT_RECYCLE_ALLOCATOR_H
 #define MOZILLA_GFX_TEXTURECLIENT_RECYCLE_ALLOCATOR_H
 
+#include <map>
+#include <stack>
 #include "mozilla/gfx/Types.h"
 #include "mozilla/RefPtr.h"
 #include "TextureClient.h"
+#include "mozilla/Mutex.h"
 
 namespace mozilla {
 namespace layers {
 
 class ISurfaceAllocator;
-class TextureClientRecycleAllocatorImp;
+class TextureClientHolder;
 
 
 
@@ -43,7 +46,22 @@ public:
                             TextureAllocationFlags flags = ALLOC_DEFAULT);
 
 private:
-  RefPtr<TextureClientRecycleAllocatorImp> mAllocator;
+  void RecycleCallbackImp(TextureClient* aClient);
+
+  static void RecycleCallback(TextureClient* aClient, void* aClosure);
+
+  static const uint32_t kMaxPooledSized = 2;
+
+  uint32_t mMaxPooledSize;
+  RefPtr<ISurfaceAllocator> mSurfaceAllocator;
+  std::map<TextureClient*, RefPtr<TextureClientHolder> > mInUseClients;
+
+  
+  
+  
+  
+  std::stack<RefPtr<TextureClientHolder> > mPooledClients;
+  Mutex mLock;
 };
 
 } 
