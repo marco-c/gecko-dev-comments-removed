@@ -110,6 +110,7 @@ VRHMDManager::ManagerInit()
 
   
   
+  
   bool useOculus050 = true;
   unused << useOculus050;
 

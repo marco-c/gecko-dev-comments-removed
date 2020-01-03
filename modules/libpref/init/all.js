@@ -4619,7 +4619,14 @@ pref("dom.browserElement.maxScreenshotDelayMS", 2000);
 
 pref("dom.placeholder.show_on_focus", true);
 
+
 pref("dom.vr.enabled", false);
+
+pref("dom.vr.oculus.enabled", true);
+
+pref("dom.vr.oculus050.enabled", true);
+
+pref("dom.vr.cardboard.enabled", false);
 
 pref("dom.vr.add-test-devices", 1);
 
