@@ -38,8 +38,8 @@ XPCOMUtils.defineLazyGetter(this, "PageMenuChild", function() {
   Cu.import("resource://gre/modules/PageMenu.jsm", tmp);
   return new tmp.PageMenuChild();
 });
-
-XPCOMUtils.defineLazyModuleGetter(this, "Feeds", "resource:///modules/Feeds.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Feeds",
+  "resource:///modules/Feeds.jsm");
 
 
 var global = this;
@@ -849,10 +849,10 @@ addMessageListener("ContextMenu:SetAsDesktopBackground", (message) => {
     sendAsyncMessage("ContextMenu:SetAsDesktopBackground:Result", { disable });
 });
 
-let pageInfoListener = {
+let PageInfoListener = {
 
-  init: function(chromeGlobal) {
-    chromeGlobal.addMessageListener("PageInfo:getData", this, false, true);
+  init: function() {
+    addMessageListener("PageInfo:getData", this);
   },
 
   receiveMessage: function(message) {
@@ -1224,4 +1224,4 @@ let pageInfoListener = {
     return text.replace(endRE, "");
   }
 };
-pageInfoListener.init(this);
+PageInfoListener.init();
