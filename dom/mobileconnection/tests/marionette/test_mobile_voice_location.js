@@ -10,13 +10,20 @@ function verifyVoiceCellLocationInfo(aLac, aCid) {
 
   is(cell.gsmLocationAreaCode, aLac, "check voice.cell.gsmLocationAreaCode");
   is(cell.gsmCellId, aCid, "check voice.cell.gsmCellId");
-  is(cell.cdmaBaseStationId, -1, "check voice.cell.cdmaBaseStationId");
-  is(cell.cdmaBaseStationLatitude, -2147483648,
-     "check voice.cell.cdmaBaseStationLatitude");
-  is(cell.cdmaBaseStationLongitude, -2147483648,
-     "check voice.cell.cdmaBaseStationLongitude");
-  is(cell.cdmaSystemId, -1, "check voice.cell.cdmaSystemId");
-  is(cell.cdmaNetworkId, -1, "check voice.cell.cdmaNetworkId");
+
+  
+  
+  
+
+  
+
+
+
+
+
+
+
+
 }
 
 
