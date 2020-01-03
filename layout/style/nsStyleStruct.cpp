@@ -1600,11 +1600,8 @@ nsChangeHint nsStylePosition::CalcDifference(const nsStylePosition& aOther) cons
     
     
     
-    
-    
     return NS_CombineHint(hint, nsChangeHint_NeedReflow |
-        nsChangeHint_ClearAncestorIntrinsics |
-        nsChangeHint_ClearDescendantIntrinsics |
+        nsChangeHint_UpdateComputedBSize |
         nsChangeHint_ReflowChangesSizeOrPosition);
   }
 
