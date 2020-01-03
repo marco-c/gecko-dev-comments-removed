@@ -127,4 +127,11 @@ extern "C" {
   JNIEnv* jsjni_GetJNIForThread() {
     return GetJNIForThread();
   }
+
+  
+  
+  __attribute__ ((visibility("default")))
+  JNIEnv* GetJNIForThread() {
+    return mozilla::jni::GetEnvForThread();
+  }
 }
