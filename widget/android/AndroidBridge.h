@@ -39,8 +39,6 @@
 class nsIObserver;
 class Task;
 
-extern bool mozilla_AndroidBridge_SetMainThread(pthread_t);
-
 namespace base {
 class Thread;
 } 
@@ -133,20 +131,12 @@ public:
         return pthread_equal(pthread_self(), sJavaUiThread);
     }
 
-    static void ConstructBridge(JNIEnv *jEnv,
-                                jni::Object::Param clsLoader,
-                                jni::Object::Param msgQueue);
+    static void ConstructBridge();
+    static void DeconstructBridge();
 
     static AndroidBridge *Bridge() {
         return sBridge;
     }
-
-    
-    
-    
-    
-    
-    bool SetMainThread(pthread_t thr);
 
     
     bool GetThreadNameJavaProfiling(uint32_t aThreadId, nsCString & aResult);
@@ -325,9 +315,6 @@ protected:
 
     AndroidBridge();
     ~AndroidBridge();
-
-    void InitStubs(JNIEnv *jEnv);
-    void Init(JNIEnv *jEnv, jni::Object::Param clsLoader);
 
     bool mOpenedGraphicsLibraries;
     void OpenGraphicsLibraries();

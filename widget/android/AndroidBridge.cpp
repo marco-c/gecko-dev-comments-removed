@@ -151,7 +151,7 @@ jfieldID AndroidBridge::GetStaticFieldID(JNIEnv* env, jclass jClass,
 }
 
 void
-AndroidBridge::ConstructBridge(JNIEnv *jEnv, Object::Param clsLoader, Object::Param msgQueue)
+AndroidBridge::ConstructBridge()
 {
     
 
@@ -162,31 +162,49 @@ AndroidBridge::ConstructBridge(JNIEnv *jEnv, Object::Param clsLoader, Object::Pa
     putenv("NSS_DISABLE_UNLOAD=1");
 
     MOZ_ASSERT(!sBridge);
-    sBridge = new AndroidBridge;
-    sBridge->Init(jEnv, clsLoader); 
+    sBridge = new AndroidBridge();
 
-    auto msgQueueClass = ClassObject::LocalRef::Adopt(
-            jEnv, jEnv->GetObjectClass(msgQueue.Get()));
-    sBridge->mMessageQueue = msgQueue;
-    
-    sBridge->mMessageQueueNext = GetMethodID(
-            jEnv, msgQueueClass.Get(), "next", "()Landroid/os/Message;");
-    
-    sBridge->mMessageQueueMessages = jEnv->GetFieldID(
-            msgQueueClass.Get(), "mMessages", "Landroid/os/Message;");
 }
 
 void
-AndroidBridge::Init(JNIEnv *jEnv, Object::Param clsLoader)
+AndroidBridge::DeconstructBridge()
+{
+    if (sBridge) {
+        delete sBridge;
+        
+        
+        sBridge = nullptr;
+    }
+}
+
+AndroidBridge::~AndroidBridge()
+{
+}
+
+AndroidBridge::AndroidBridge()
+  : mLayerClient(nullptr),
+    mPresentationWindow(nullptr),
+    mPresentationSurface(nullptr)
 {
     ALOG_BRIDGE("AndroidBridge::Init");
 
+    JNIEnv* const jEnv = jni::GetGeckoThreadEnv();
     AutoLocalJNIFrame jniFrame(jEnv);
 
-    mClassLoader = Object::GlobalRef(jEnv, clsLoader);
+    mClassLoader = Object::GlobalRef(jEnv, widget::GeckoThread::ClsLoader());
     mClassLoaderLoadClass = GetMethodID(
-            jEnv, jEnv->GetObjectClass(clsLoader.Get()),
+            jEnv, jEnv->GetObjectClass(mClassLoader.Get()),
             "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+
+    mMessageQueue = widget::GeckoThread::MsgQueue();
+    auto msgQueueClass = ClassObject::LocalRef::Adopt(
+            jEnv, jEnv->GetObjectClass(mMessageQueue.Get()));
+    
+    mMessageQueueNext = GetMethodID(
+            jEnv, msgQueueClass.Get(), "next", "()Landroid/os/Message;");
+    
+    mMessageQueueMessages = jEnv->GetFieldID(
+            msgQueueClass.Get(), "mMessages", "Landroid/os/Message;");
 
     mGLControllerObj = nullptr;
     mOpenedGraphicsLibraries = false;
@@ -243,30 +261,6 @@ AndroidBridge::Init(JNIEnv *jEnv, Object::Param clsLoader)
 
     InitAndroidJavaWrappers(jEnv);
     ANRReporter::Init();
-
-    
-    
-    
-}
-
-bool
-AndroidBridge::SetMainThread(pthread_t thr)
-{
-    ALOG_BRIDGE("AndroidBridge::SetMainThread");
-
-    if (thr) {
-        return true;
-    }
-
-    
-    
-    if (sBridge) {
-        delete sBridge;
-        
-        
-        sBridge = nullptr;
-    }
-    return true;
 }
 
 
@@ -782,13 +776,6 @@ AndroidBridge::GetStaticStringField(const char *className, const char *fieldName
 
     result.Assign(nsJNIString(jstr, jEnv));
     return true;
-}
-
-
-bool
-mozilla_AndroidBridge_SetMainThread(pthread_t thr)
-{
-    return AndroidBridge::Bridge()->SetMainThread(thr);
 }
 
 void*
@@ -1524,17 +1511,6 @@ void AndroidBridge::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset, floa
 
     aOffset.x = viewTransform->OffsetX();
     aOffset.y = viewTransform->OffsetY();
-}
-
-AndroidBridge::AndroidBridge()
-  : mLayerClient(nullptr),
-    mPresentationWindow(nullptr),
-    mPresentationSurface(nullptr)
-{
-}
-
-AndroidBridge::~AndroidBridge()
-{
 }
 
 
