@@ -164,7 +164,7 @@ MP3TrackDemuxer::FastSeek(TimeUnit aTime) {
     
     mOffset = mFirstFrameOffset;
     mFrameIndex = 0;
-    mParser.FinishParsing();
+    mParser.EndFrameSession();
     return TimeUnit();
   }
 
@@ -176,7 +176,8 @@ MP3TrackDemuxer::FastSeek(TimeUnit aTime) {
                             mSamplesPerSecond / mSamplesPerFrame;
   mOffset = mFirstFrameOffset + numFrames * AverageFrameLength();
   mFrameIndex = numFrames;
-  mParser.FinishParsing();
+
+  mParser.EndFrameSession();
 
   return Duration(mFrameIndex);
 }
@@ -234,6 +235,8 @@ MP3TrackDemuxer::Reset() {
   mSamplesPerFrame = 0;
   mSamplesPerSecond = 0;
   mChannels = 0;
+
+  mParser.Reset();
 }
 
 nsRefPtr<MP3TrackDemuxer::SkipAccessPointPromise>
@@ -392,7 +395,7 @@ MP3TrackDemuxer::UpdateState(const MediaByteRange& aRange) {
   MOZ_ASSERT(mFrameIndex > 0);
 
   
-  mParser.FinishParsing();
+  mParser.EndFrameSession();
 }
 
 int32_t
@@ -440,7 +443,7 @@ FrameParser::Reset() {
 }
 
 void
-FrameParser::FinishParsing() {
+FrameParser::EndFrameSession() {
   if (!mID3Parser.Header().IsValid()) {
     
     mID3Parser.Reset();

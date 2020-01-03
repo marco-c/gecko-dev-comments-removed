@@ -280,7 +280,7 @@ public:
   
   
   
-  void FinishParsing();
+  void EndFrameSession();
 
   
   
