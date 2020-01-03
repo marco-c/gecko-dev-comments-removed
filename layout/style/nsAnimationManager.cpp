@@ -113,6 +113,13 @@ CSSAnimation::PauseFromStyle()
   }
 }
 
+void
+CSSAnimation::Tick()
+{
+  Animation::Tick();
+  QueueEvents();
+}
+
 bool
 CSSAnimation::HasLowerCompositeOrderThan(const Animation& aOther) const
 {
@@ -158,11 +165,39 @@ CSSAnimation::HasLowerCompositeOrderThan(const Animation& aOther) const
 }
 
 void
-CSSAnimation::QueueEvents(EventArray& aEventsToDispatch)
+CSSAnimation::QueueEvents()
 {
   if (!mEffect) {
     return;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mOwningElement.IsSet()) {
+    return;
+  }
+
+  dom::Element* owningElement;
+  nsCSSPseudoElements::Type owningPseudoType;
+  mOwningElement.GetElement(owningElement, owningPseudoType);
+  MOZ_ASSERT(owningElement, "Owning element should be set");
+
+  
+  nsPresContext* presContext = mOwningElement.GetRenderedPresContext();
+  if (!presContext) {
+    return;
+  }
+  nsAnimationManager* manager = presContext->AnimationManager();
 
   ComputedTiming computedTiming = mEffect->GetComputedTiming();
 
@@ -200,10 +235,6 @@ CSSAnimation::QueueEvents(EventArray& aEventsToDispatch)
     mPreviousPhaseOrIteration = PREVIOUS_PHASE_AFTER;
   }
 
-  dom::Element* target;
-  nsCSSPseudoElements::Type targetPseudoType;
-  mEffect->GetTarget(target, targetPseudoType);
-
   uint32_t message;
 
   if (!wasActive && isActive) {
@@ -218,10 +249,10 @@ CSSAnimation::QueueEvents(EventArray& aEventsToDispatch)
     StickyTimeDuration elapsedTime =
       std::min(StickyTimeDuration(mEffect->InitialAdvance()),
                computedTiming.mActiveDuration);
-    AnimationEventInfo ei(target, mAnimationName, NS_ANIMATION_START,
+    AnimationEventInfo ei(owningElement, mAnimationName, NS_ANIMATION_START,
                           elapsedTime,
-                          PseudoTypeAsString(targetPseudoType));
-    aEventsToDispatch.AppendElement(ei);
+                          PseudoTypeAsString(owningPseudoType));
+    manager->QueueEvent(ei);
     
     message = NS_ANIMATION_END;
   } else {
@@ -241,9 +272,9 @@ CSSAnimation::QueueEvents(EventArray& aEventsToDispatch)
     elapsedTime = computedTiming.mActiveDuration;
   }
 
-  AnimationEventInfo ei(target, mAnimationName, message, elapsedTime,
-                        PseudoTypeAsString(targetPseudoType));
-  aEventsToDispatch.AppendElement(ei);
+  AnimationEventInfo ei(owningElement, mAnimationName, message, elapsedTime,
+                        PseudoTypeAsString(owningPseudoType));
+  manager->QueueEvent(ei);
 }
 
 CommonAnimationManager*
@@ -267,26 +298,6 @@ CSSAnimation::PseudoTypeAsString(nsCSSPseudoElements::Type aPseudoType)
       return NS_LITERAL_STRING("::after");
     default:
       return EmptyString();
-  }
-}
-
-void
-nsAnimationManager::UpdateStyleAndEvents(AnimationCollection* aCollection,
-                                         TimeStamp aRefreshTime,
-                                         EnsureStyleRuleFlags aFlags)
-{
-  aCollection->EnsureStyleRuleFor(aRefreshTime, aFlags);
-  QueueEvents(aCollection, mPendingEvents);
-}
-
-void
-nsAnimationManager::QueueEvents(AnimationCollection* aCollection,
-                                EventArray& aEventsToDispatch)
-{
-  for (size_t animIdx = aCollection->mAnimations.Length(); animIdx-- != 0; ) {
-    CSSAnimation* anim = aCollection->mAnimations[animIdx]->AsCSSAnimation();
-    MOZ_ASSERT(anim, "Expected a collection of CSS Animations");
-    anim->QueueEvents(aEventsToDispatch);
   }
 }
 
@@ -503,8 +514,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
   UpdateCascadeResults(aStyleContext, collection);
 
   TimeStamp refreshTime = mPresContext->RefreshDriver()->MostRecentRefresh();
-  UpdateStyleAndEvents(collection, refreshTime,
-                       EnsureStyleRule_IsNotThrottled);
+  collection->EnsureStyleRuleFor(refreshTime, EnsureStyleRule_IsNotThrottled);
   
   
   
@@ -514,6 +524,12 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
   }
 
   return GetAnimationRule(aElement, aStyleContext->GetPseudoType());
+}
+
+void
+nsAnimationManager::QueueEvent(AnimationEventInfo& aEventInfo)
+{
+  mPendingEvents.AppendElement(aEventInfo);
 }
 
 struct KeyframeData {
@@ -968,9 +984,9 @@ nsAnimationManager::FlushAnimations(FlushFlags aFlags)
       collection->CanThrottleAnimation(now);
 
     nsRefPtr<css::AnimValuesStyleRule> oldStyleRule = collection->mStyleRule;
-    UpdateStyleAndEvents(collection, now, canThrottleTick
-                                          ? EnsureStyleRule_IsThrottled
-                                          : EnsureStyleRule_IsNotThrottled);
+    collection->EnsureStyleRuleFor(now, canThrottleTick
+                                        ? EnsureStyleRule_IsThrottled
+                                        : EnsureStyleRule_IsNotThrottled);
     if (oldStyleRule != collection->mStyleRule) {
       collection->PostRestyleForAnimation(mPresContext);
     } else {
@@ -983,8 +999,6 @@ nsAnimationManager::FlushAnimations(FlushFlags aFlags)
   }
 
   MaybeStartOrStopObservingRefreshDriver();
-
-  DispatchEvents(); 
 }
 
 void
@@ -992,6 +1006,7 @@ nsAnimationManager::DoDispatchEvents()
 {
   EventArray events;
   mPendingEvents.SwapElements(events);
+  
   for (uint32_t i = 0, i_end = events.Length(); i < i_end; ++i) {
     AnimationEventInfo &info = events[i];
     EventDispatcher::Dispatch(info.mElement, mPresContext, &info.mEvent);

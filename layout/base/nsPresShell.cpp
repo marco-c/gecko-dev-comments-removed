@@ -1250,6 +1250,10 @@ PresShell::Destroy()
     }
   }
 
+  if (mPresContext) {
+    mPresContext->AnimationManager()->ClearEventQueue();
+  }
+
   
   
   
