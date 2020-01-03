@@ -80,6 +80,6 @@ abstract class NavButton extends ShapedButton {
 
     @Override
     public void onLightweightThemeReset() {
-        setBackgroundResource(R.drawable.new_tablet_url_bar_nav_button);
+        setBackgroundResource(R.drawable.url_bar_nav_button);
     }
 }
