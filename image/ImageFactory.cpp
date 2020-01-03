@@ -119,14 +119,13 @@ ImageFactory::CreateImage(nsIRequest* aRequest,
 }
 
 
-
-
 template <typename T>
 static already_AddRefed<Image>
-BadImage(nsRefPtr<T>& image)
+BadImage(const char* aMessage, nsRefPtr<T>& aImage)
 {
-  image->SetHasError();
-  return image.forget();
+  NS_WARNING(aMessage);
+  aImage->SetHasError();
+  return aImage.forget();
 }
 
  already_AddRefed<Image>
@@ -141,7 +140,9 @@ ImageFactory::CreateAnonymousImage(const nsCString& aMimeType)
   newImage->SetProgressTracker(newTracker);
 
   rv = newImage->Init(aMimeType.get(), Image::INIT_FLAG_SYNC_LOAD);
-  NS_ENSURE_SUCCESS(rv, BadImage(newImage));
+  if (NS_FAILED(rv)) {
+    return BadImage("RasterImage::Init failed", newImage);
+  }
 
   return newImage.forget();
 }
@@ -245,7 +246,9 @@ ImageFactory::CreateRasterImage(nsIRequest* aRequest,
   }
 
   rv = newImage->Init(aMimeType.get(), aImageFlags);
-  NS_ENSURE_SUCCESS(rv, BadImage(newImage));
+  if (NS_FAILED(rv)) {
+    return BadImage("RasterImage::Init failed", newImage);
+  }
 
   newImage->SetInnerWindowID(aInnerWindowId);
 
@@ -288,12 +291,16 @@ ImageFactory::CreateVectorImage(nsIRequest* aRequest,
   newImage->SetProgressTracker(aProgressTracker);
 
   rv = newImage->Init(aMimeType.get(), aImageFlags);
-  NS_ENSURE_SUCCESS(rv, BadImage(newImage));
+  if (NS_FAILED(rv)) {
+    return BadImage("VectorImage::Init failed", newImage);
+  }
 
   newImage->SetInnerWindowID(aInnerWindowId);
 
   rv = newImage->OnStartRequest(aRequest, nullptr);
-  NS_ENSURE_SUCCESS(rv, BadImage(newImage));
+  if (NS_FAILED(rv)) {
+    return BadImage("VectorImage::OnStartRequest failed", newImage);
+  }
 
   return newImage.forget();
 }
