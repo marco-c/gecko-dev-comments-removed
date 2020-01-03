@@ -2105,5 +2105,14 @@ BluetoothHfpManager::OnDisconnect(const nsAString& aErrorStr)
   controller->NotifyCompletion(aErrorStr);
 }
 
+bool
+BluetoothHfpManager::IsNrecEnabled()
+{
+  
+  
+  
+  return HFP_NREC_STARTED;
+}
+
 NS_IMPL_ISUPPORTS(BluetoothHfpManager, nsIObserver)
 
