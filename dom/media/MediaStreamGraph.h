@@ -557,10 +557,6 @@ public:
   GraphTime StreamTimeToGraphTime(StreamTime aTime);
   bool IsFinishedOnGraphThread() { return mFinished; }
   void FinishOnGraphThread();
-  
-
-
-  int64_t GetProcessingGraphUpdateIndex();
 
   bool HasCurrentData() { return mHasCurrentData; }
 
@@ -590,8 +586,6 @@ protected:
   void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime, GraphTime aBlockedTime)
   {
     mBufferStartTime += aBlockedTime;
-    mGraphUpdateIndices.InsertTimeAtStart(aBlockedTime);
-    mGraphUpdateIndices.AdvanceCurrentTime(aCurrentTime);
     mExplicitBlockerCount.AdvanceCurrentTime(aCurrentTime);
 
     mBuffer.ForgetUpTo(aCurrentTime - mBufferStartTime);
@@ -656,8 +650,6 @@ protected:
   
   
   TimeVarying<GraphTime,bool,5> mBlocked;
-  
-  TimeVarying<GraphTime,int64_t,0> mGraphUpdateIndices;
 
   
   nsTArray<MediaInputPort*> mConsumers;
@@ -1315,8 +1307,7 @@ public:
 
 protected:
   explicit MediaStreamGraph(TrackRate aSampleRate)
-    : mNextGraphUpdateIndex(1)
-    , mSampleRate(aSampleRate)
+    : mSampleRate(aSampleRate)
   {
     MOZ_COUNT_CTOR(MediaStreamGraph);
   }
@@ -1327,11 +1318,6 @@ protected:
 
   
   nsTArray<nsCOMPtr<nsIRunnable> > mPendingUpdateRunnables;
-
-  
-  
-  
-  int64_t mNextGraphUpdateIndex;
 
   
 

@@ -32,7 +32,6 @@ class AudioOutputObserver;
 
 struct StreamUpdate
 {
-  int64_t mGraphUpdateIndex;
   nsRefPtr<MediaStream> mStream;
   StreamTime mNextMainThreadCurrentTime;
   bool mNextMainThreadFinished;
@@ -75,7 +74,6 @@ protected:
 class MessageBlock
 {
 public:
-  int64_t mGraphUpdateIndex;
   nsTArray<nsAutoPtr<ControlMessage> > mMessages;
 };
 
@@ -425,11 +423,6 @@ public:
   }
 
   
-  
-
-
-  int64_t GetProcessingGraphUpdateIndex() const { return mProcessingGraphUpdateIndex; }
-  
 
 
   void AddStream(MediaStream* aStream);
@@ -572,10 +565,6 @@ public:
 
 
   TimeStamp mLastMainThreadUpdate;
-  
-
-
-  int64_t mProcessingGraphUpdateIndex;
   
 
 
