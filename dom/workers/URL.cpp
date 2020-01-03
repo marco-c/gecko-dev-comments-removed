@@ -1,7 +1,7 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "URL.h"
 
@@ -13,6 +13,9 @@
 #include "mozilla/dom/URL.h"
 #include "mozilla/dom/URLBinding.h"
 #include "mozilla/dom/URLSearchParams.h"
+#include "mozilla/dom/ipc/BlobChild.h"
+#include "mozilla/dom/ipc/nsIRemoteBlob.h"
+#include "mozilla/ipc/BackgroundChild.h"
 #include "nsGlobalWindow.h"
 #include "nsHostObjectProtocolHandler.h"
 #include "nsNetCID.h"
@@ -53,7 +56,7 @@ public:
   }
 
 private:
-  // Private destructor, to discourage deletion outside of Release():
+  
   ~URLProxy()
   {
      MOZ_ASSERT(!mURL);
@@ -62,7 +65,7 @@ private:
   nsRefPtr<mozilla::dom::URL> mURL;
 };
 
-// This class creates an URL from a DOM Blob on the main thread.
+
 class CreateURLRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -83,7 +86,33 @@ public:
   bool
   MainThreadRun()
   {
+    using namespace mozilla::ipc;
+
     AssertIsOnMainThread();
+
+    nsRefPtr<FileImpl> newBlobImplHolder;
+
+    if (nsCOMPtr<nsIRemoteBlob> remoteBlob = do_QueryInterface(mBlobImpl)) {
+      if (BlobChild* blobChild = remoteBlob->GetBlobChild()) {
+        if (PBackgroundChild* blobManager = blobChild->GetBackgroundManager()) {
+          PBackgroundChild* backgroundManager =
+            BackgroundChild::GetForCurrentThread();
+          MOZ_ASSERT(backgroundManager);
+
+          if (blobManager != backgroundManager) {
+            
+            
+            blobChild = BlobChild::GetOrCreate(backgroundManager, mBlobImpl);
+            MOZ_ASSERT(blobChild);
+
+            newBlobImplHolder = blobChild->GetBlobImpl();
+            MOZ_ASSERT(newBlobImplHolder);
+
+            mBlobImpl = newBlobImplHolder;
+          }
+        }
+      }
+    }
 
     nsCOMPtr<nsIPrincipal> principal;
     nsIDocument* doc = nullptr;
@@ -124,7 +153,7 @@ public:
   }
 };
 
-// This class revokes an URL on the main thread.
+
 class RevokeURLRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -182,7 +211,7 @@ public:
   }
 };
 
-// This class creates a URL object on the main thread.
+
 class ConstructorRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -283,7 +312,7 @@ private:
   nsRefPtr<URLProxy> mURLProxy;
 };
 
-// This class is the generic getter for any URL property.
+
 class GetterRunnable : public WorkerMainThreadRunnable
 {
 public:
@@ -374,7 +403,7 @@ private:
   nsRefPtr<URLProxy> mURLProxy;
 };
 
-// This class is the generic setter for any URL property.
+
 class SetterRunnable : public WorkerMainThreadRunnable
 {
 public:
@@ -462,8 +491,8 @@ private:
 
 NS_IMPL_CYCLE_COLLECTION(URL, mSearchParams)
 
-// The reason for using worker::URL is to have different refcnt logging than
-// for main thread URL.
+
+
 NS_IMPL_CYCLE_COLLECTING_ADDREF(workers::URL)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(workers::URL)
 
@@ -471,7 +500,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(URL)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-// static
+
 already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  URL& aBase, ErrorResult& aRv)
@@ -496,7 +525,7 @@ URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
   return url.forget();
 }
 
-// static
+
 already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  const nsAString& aBase, ErrorResult& aRv)
@@ -841,7 +870,7 @@ URL::SetHash(const nsAString& aHash, ErrorResult& aRv)
   }
 }
 
-// static
+
 void
 URL::CreateObjectURL(const GlobalObject& aGlobal, JSObject* aBlob,
                      const mozilla::dom::objectURLOptions& aOptions,
@@ -854,7 +883,7 @@ URL::CreateObjectURL(const GlobalObject& aGlobal, JSObject* aBlob,
   aRv.ThrowTypeError(MSG_DOES_NOT_IMPLEMENT_INTERFACE, &argStr, &blobStr);
 }
 
-// static
+
 void
 URL::CreateObjectURL(const GlobalObject& aGlobal, File& aBlob,
                      const mozilla::dom::objectURLOptions& aOptions,
@@ -871,7 +900,7 @@ URL::CreateObjectURL(const GlobalObject& aGlobal, File& aBlob,
   }
 }
 
-// static
+
 void
 URL::RevokeObjectURL(const GlobalObject& aGlobal, const nsAString& aUrl)
 {
