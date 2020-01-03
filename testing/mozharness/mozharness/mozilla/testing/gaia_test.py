@@ -212,7 +212,10 @@ class GaiaTest(TestingMixin, MercurialScript, TransferMixin, GaiaMixin, BlobUplo
         """
         if code == 0:
             level = INFO
-            if passed == 0 or failed > 0:
+            
+            
+            
+            if failed > 0:
                 status = 'test failures'
                 tbpl_status = TBPL_WARNING
             else:
