@@ -1,7 +1,7 @@
-
-
-
-
+/* vim: set shiftwidth=2 tabstop=8 autoindent cindent expandtab: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef mozilla_dom_TouchEvent_h_
 #define mozilla_dom_TouchEvent_h_
 
@@ -89,7 +89,7 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TouchEvent, UIEvent)
 
-  virtual JSObject* WrapObject(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
   {
     return TouchEventBinding::Wrap(aCx, this);
   }
@@ -128,7 +128,7 @@ protected:
   nsRefPtr<TouchList> mChangedTouches;
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_dom_TouchEvent_h_

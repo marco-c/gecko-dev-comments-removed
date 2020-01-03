@@ -1,8 +1,8 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Portions Copyright 2013 Microsoft Open Technologies, Inc. */
 
 #ifndef mozilla_dom_PointerEvent_h_
 #define mozilla_dom_PointerEvent_h_
@@ -22,7 +22,7 @@ public:
                nsPresContext* aPresContext,
                WidgetPointerEvent* aEvent);
 
-  virtual JSObject* WrapObject(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
   {
     return PointerEventBinding::Wrap(aCx, this);
   }
@@ -48,7 +48,7 @@ public:
   void GetPointerType(nsAString& aPointerType);
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_dom_PointerEvent_h_

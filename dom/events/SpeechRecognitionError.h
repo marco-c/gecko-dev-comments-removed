@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef SpeechRecognitionError_h__
 #define SpeechRecognitionError_h__
@@ -26,7 +26,7 @@ public:
               const SpeechRecognitionErrorInit& aParam,
               ErrorResult& aRv);
 
-  virtual JSObject* WrapObject(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
   {
     return mozilla::dom::SpeechRecognitionErrorBinding::Wrap(aCx, this);
   }
@@ -59,4 +59,4 @@ protected:
 }
 }
 
-#endif 
+#endif // SpeechRecognitionError_h__

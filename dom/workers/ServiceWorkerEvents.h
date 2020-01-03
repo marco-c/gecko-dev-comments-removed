@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workers_serviceworkerevents_h__
 #define mozilla_dom_workers_serviceworkerevents_h__
@@ -13,8 +13,8 @@
 namespace mozilla {
 namespace dom {
   class Promise;
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 BEGIN_WORKERS_NAMESPACE
 
@@ -36,7 +36,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InstallPhaseEvent, Event)
   NS_FORWARD_TO_EVENT
 
-  virtual JSObject* WrapObject(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
   {
     return mozilla::dom::InstallPhaseEventBinding_workers::Wrap(aCx, this);
   }
@@ -76,7 +76,7 @@ public:
 
 class InstallEvent MOZ_FINAL : public InstallPhaseEvent
 {
-  
+  // FIXME(nsm): Bug 982787 will allow actually populating this.
   nsRefPtr<ServiceWorker> mActiveWorker;
 
 protected:
@@ -88,7 +88,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InstallEvent, InstallPhaseEvent)
   NS_FORWARD_TO_EVENT
 
-  virtual JSObject* WrapObject(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
   {
     return mozilla::dom::InstallEventBinding_workers::Wrap(aCx, this);
   }
@@ -126,10 +126,10 @@ public:
   void
   Replace()
   {
-    
+    // FIXME(nsm): Unspecced. Bug 982711
     NS_WARNING("Not Implemented");
   };
 };
 
 END_WORKERS_NAMESPACE
-#endif 
+#endif /* mozilla_dom_workers_serviceworkerevents_h__ */
