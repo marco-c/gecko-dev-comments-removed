@@ -542,44 +542,6 @@ protected:
 
 
 
-class ChannelSuspendAgent {
-public:
-  explicit ChannelSuspendAgent(nsIChannel* aChannel)
-  : mChannel(aChannel),
-    mSuspendCount(0),
-    mIsChannelSuspended(false)
-  {}
-
-  
-  bool IsSuspended();
-
-  
-  
-  bool Suspend();
-
-  
-  bool Resume();
-
-  
-  
-  void NotifyChannelOpened(nsIChannel* aChannel);
-
-  
-  void NotifyChannelClosing();
-private:
-  
-  void SuspendInternal();
-
-  nsIChannel* mChannel;
-  Atomic<uint32_t> mSuspendCount;
-  bool mIsChannelSuspended;
-};
-
-
-
-
-
-
 
 
 
@@ -746,11 +708,20 @@ protected:
                                       uint32_t *aWriteCount);
 
   
+  
+  
+  void PossiblySuspend();
+
+  
+  void PossiblyResume();
+
+  
   int64_t            mOffset;
   nsRefPtr<Listener> mListener;
   
   
   nsRevocableEventPtr<nsRunnableMethod<ChannelMediaResource, void, false> > mDataReceivedEvent;
+  Atomic<uint32_t>   mSuspendCount;
   
   
   bool               mReopenOnError;
@@ -776,8 +747,6 @@ protected:
   
   
   bool mIsTransportSeekable;
-
-  ChannelSuspendAgent mSuspendAgent;
 };
 
 
