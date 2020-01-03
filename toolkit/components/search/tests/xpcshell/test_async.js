@@ -25,6 +25,10 @@ function run_test() {
     let engine = Services.search.getEngineByName("bug645970");
     do_check_neq(engine, null);
 
+    
+    engine = Services.search.getEngineByName("hidden");
+    do_check_eq(engine, null);
+
     do_test_finished();
   });
 }

@@ -62,34 +62,6 @@ function checkRequest(cohort = "") {
   do_check_eq(req._queryString, cohort ? "/" + cohort : "");
 }
 
-function promiseGlobalMetadata() {
-  return new Promise(resolve => Task.spawn(function* () {
-    let path = OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
-    let bytes = yield OS.File.read(path);
-    resolve(JSON.parse(new TextDecoder().decode(bytes))["[global]"]);
-  }));
-}
-
-function promiseSaveGlobalMetadata(globalData) {
-  return new Promise(resolve => Task.spawn(function* () {
-    let path = OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
-    let bytes = yield OS.File.read(path);
-    let data = JSON.parse(new TextDecoder().decode(bytes));
-    data["[global]"] = globalData;
-    yield OS.File.writeAtomic(path,
-                              new TextEncoder().encode(JSON.stringify(data)));
-    resolve();
-  }));
-}
-
-let forceExpiration = Task.async(function* () {
-  let metadata = yield promiseGlobalMetadata();
-
-  
-  metadata.searchdefaultexpir = Date.now() - 1000;
-  yield promiseSaveGlobalMetadata(metadata);
-});
-
 add_task(function* no_request_if_prefed_off() {
   
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
