@@ -16,6 +16,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/Services.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/dom/ContentChild.h"
 
 namespace mozilla {
 namespace gfx {
@@ -25,17 +26,17 @@ static const char* sCrashGuardNames[NUM_CRASH_GUARD_TYPES] = {
   "d3d11layers",
 };
 
-DriverCrashGuard::DriverCrashGuard(CrashGuardType aType)
+DriverCrashGuard::DriverCrashGuard(CrashGuardType aType, dom::ContentParent* aContentParent)
  : mType(aType)
+ , mMode(aContentParent ? Mode::Proxy : Mode::Normal)
  , mInitialized(false)
+ , mGuardActivated(false)
+ , mCrashDetected(false)
 {
   MOZ_ASSERT(mType < CrashGuardType::NUM_TYPES);
 
-  mStatusPref.Assign("gfx.driver-init.status.");
+  mStatusPref.Assign("gfx.crash-guard.status.");
   mStatusPref.Append(sCrashGuardNames[size_t(mType)]);
-
-  mGuardFilename.Assign(sCrashGuardNames[size_t(mType)]);
-  mGuardFilename.Append(".guard");
 }
 
 void
@@ -52,106 +53,167 @@ DriverCrashGuard::InitializeIfNeeded()
 void
 DriverCrashGuard::Initialize()
 {
-  if (!InitLockFilePath()) {
-    gfxCriticalError(CriticalLog::DefaultOptions(false)) << "Failed to create the graphics startup lockfile.";
+  if (XRE_IsContentProcess()) {
+    
+    
+    dom::ContentChild* cc = dom::ContentChild::GetSingleton();
+    cc->SendBeginDriverCrashGuard(uint32_t(mType), &mCrashDetected);
+    if (mCrashDetected) {
+      LogFeatureDisabled();
+      return;
+    }
+
+    ActivateGuard();
     return;
   }
 
-  if (RecoverFromDriverInitCrash()) {
+  
+  
+  
+  if (RecoverFromCrash()) {
+    mCrashDetected = true;
     return;
   }
 
-  if (PrepareToGuard()) {
-    
-    
-    
-    AllowDriverInitAttempt();
+  
+  
+  
+  
+  
+  if (CheckOrRefreshEnvironment() ||
+      (mMode == Mode::Proxy && GetStatus() != DriverInitStatus::Crashed))
+  {
+    ActivateGuard();
+    return;
+  }
+
+  
+  
+  if (GetStatus() == DriverInitStatus::Crashed) {
+    mCrashDetected = true;
+    LogFeatureDisabled();
   }
 }
 
 DriverCrashGuard::~DriverCrashGuard()
 {
-  if (mGuardFile) {
-    mGuardFile->Remove(false);
+  if (!mGuardActivated) {
+    return;
   }
 
-  if (GetStatus() == DriverInitStatus::Attempting) {
+  if (XRE_IsParentProcess()) {
+    if (mGuardFile) {
+      mGuardFile->Remove(false);
+    }
+
     
     
-    SetStatus(DriverInitStatus::Okay);
+    if (GetStatus() != DriverInitStatus::Crashed) {
+      SetStatus(DriverInitStatus::Okay);
+    }
+  } else {
+    dom::ContentChild::GetSingleton()->SendEndDriverCrashGuard(uint32_t(mType));
+  }
 
 #ifdef MOZ_CRASHREPORTER
-    
-    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
-                                       NS_LITERAL_CSTRING(""));
+  
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
+                                     NS_LITERAL_CSTRING(""));
 #endif
-  }
 }
 
 bool
 DriverCrashGuard::Crashed()
 {
   InitializeIfNeeded();
-  return gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::Recovered);
+
+  
+  
+  
+  return mCrashDetected;
 }
 
-bool
-DriverCrashGuard::InitLockFilePath()
+nsCOMPtr<nsIFile>
+DriverCrashGuard::GetGuardFile()
 {
-  NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR, getter_AddRefs(mGuardFile));
-  if (!mGuardFile) {
-    return false;
-  }
+  nsCString filename;
+  filename.Assign(sCrashGuardNames[size_t(mType)]);
+  filename.Append(".guard");
 
-  if (!NS_SUCCEEDED(mGuardFile->AppendNative(mGuardFilename))) {
-    return false;
+  nsCOMPtr<nsIFile> file;
+  NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR, getter_AddRefs(file));
+  if (!file) {
+    return nullptr;
   }
-  return true;
+  if (!NS_SUCCEEDED(file->AppendNative(filename))) {
+    return nullptr;
+  }
+  return file;
 }
 
 void
-DriverCrashGuard::AllowDriverInitAttempt()
+DriverCrashGuard::ActivateGuard()
 {
+  mGuardActivated = true;
+
+#ifdef MOZ_CRASHREPORTER
   
-  FILE* fp;
-  if (!NS_SUCCEEDED(mGuardFile->OpenANSIFileDesc("w", &fp))) {
+  
+  
+  if (mMode != Mode::Proxy) {
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
+                                       NS_LITERAL_CSTRING("1"));
+  }
+#endif
+
+  
+  
+  if (XRE_IsContentProcess()) {
     return;
   }
-  fclose(fp);
 
   SetStatus(DriverInitStatus::Attempting);
 
-  
-  FlushPreferences();
+  if (mMode != Mode::Proxy) {
+    
+    
+    FlushPreferences();
 
-#ifdef MOZ_CRASHREPORTER
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
-                                     NS_LITERAL_CSTRING("1"));
-#endif
+    
+    FILE* fp = nullptr;
+    mGuardFile = GetGuardFile();
+    if (!mGuardFile || !NS_SUCCEEDED(mGuardFile->OpenANSIFileDesc("w", &fp))) {
+      return;
+    }
+    fclose(fp);
+  }
+}
+
+void
+DriverCrashGuard::NotifyCrashed()
+{
+  CheckOrRefreshEnvironment();
+  SetStatus(DriverInitStatus::Crashed);
+  FlushPreferences();
+  LogCrashRecovery();
 }
 
 bool
-DriverCrashGuard::RecoverFromDriverInitCrash()
+DriverCrashGuard::RecoverFromCrash()
 {
+  nsCOMPtr<nsIFile> file = GetGuardFile();
   bool exists;
-  if (mGuardFile &&
-      NS_SUCCEEDED(mGuardFile->Exists(&exists)) &&
-      exists)
+  if ((file &&
+       NS_SUCCEEDED(file->Exists(&exists)) &&
+       exists) ||
+      (GetStatus() == DriverInitStatus::Attempting))
   {
     
     
-    
-    
-    SetStatus(DriverInitStatus::Recovered);
-    UpdateBaseEnvironment();
-    UpdateEnvironment();
-    FlushPreferences();
-    LogCrashRecovery();
-    return true;
-  }
-  if (GetStatus() == DriverInitStatus::Recovered) {
-    
-    LogFeatureDisabled();
+    if (file) {
+      file->Remove(false);
+    }
+    NotifyCrashed();
     return true;
   }
   return false;
@@ -159,13 +221,16 @@ DriverCrashGuard::RecoverFromDriverInitCrash()
 
 
 
+
+
 bool
-DriverCrashGuard::PrepareToGuard()
+DriverCrashGuard::CheckOrRefreshEnvironment()
 {
   static bool sBaseInfoChanged = false;
   static bool sBaseInfoChecked = false;
 
   if (!sBaseInfoChecked) {
+    
     sBaseInfoChecked = true;
     sBaseInfoChanged = UpdateBaseEnvironment();
   }
@@ -173,7 +238,7 @@ DriverCrashGuard::PrepareToGuard()
   
   return UpdateEnvironment() ||
          sBaseInfoChanged ||
-         gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::None);
+         GetStatus() == DriverInitStatus::Unknown;
 }
 
 bool
@@ -185,16 +250,13 @@ DriverCrashGuard::UpdateBaseEnvironment()
 
     
     mGfxInfo->GetAdapterDriverVersion(value);
-    changed |= CheckAndUpdatePref("gfx.driver-init.driverVersion", value);
+    changed |= CheckAndUpdatePref("driverVersion", value);
     mGfxInfo->GetAdapterDeviceID(value);
-    changed |= CheckAndUpdatePref("gfx.driver-init.deviceID", value);
+    changed |= CheckAndUpdatePref("deviceID", value);
   }
 
   
-  changed |= CheckAndUpdatePref("gfx.driver-init.appVersion", NS_LITERAL_STRING(MOZ_APP_VERSION));
-
-  
-  changed |= (GetStatus() == DriverInitStatus::None);
+  changed |= CheckAndUpdatePref("appVersion", NS_LITERAL_STRING(MOZ_APP_VERSION));
 
   return changed;
 }
@@ -212,25 +274,38 @@ DriverCrashGuard::FeatureEnabled(int aFeature)
 bool
 DriverCrashGuard::CheckAndUpdateBoolPref(const char* aPrefName, bool aCurrentValue)
 {
+  std::string pref = GetFullPrefName(aPrefName);
+
   bool oldValue;
-  if (NS_SUCCEEDED(Preferences::GetBool(aPrefName, &oldValue)) &&
+  if (NS_SUCCEEDED(Preferences::GetBool(pref.c_str(), &oldValue)) &&
       oldValue == aCurrentValue)
   {
     return false;
   }
-  Preferences::SetBool(aPrefName, aCurrentValue);
+  Preferences::SetBool(pref.c_str(), aCurrentValue);
   return true;
 }
 
 bool
 DriverCrashGuard::CheckAndUpdatePref(const char* aPrefName, const nsAString& aCurrentValue)
 {
-  nsAdoptingString oldValue = Preferences::GetString(aPrefName);
+  std::string pref = GetFullPrefName(aPrefName);
+
+  nsAdoptingString oldValue = Preferences::GetString(pref.c_str());
   if (oldValue == aCurrentValue) {
     return false;
   }
-  Preferences::SetString(aPrefName, aCurrentValue);
+  Preferences::SetString(pref.c_str(), aCurrentValue);
   return true;
+}
+
+std::string
+DriverCrashGuard::GetFullPrefName(const char* aPref)
+{
+  return std::string("gfx.crash-guard.") +
+         std::string(sCrashGuardNames[uint32_t(mType)]) +
+         std::string(".") +
+         std::string(aPref);
 }
 
 DriverInitStatus
@@ -242,19 +317,23 @@ DriverCrashGuard::GetStatus() const
 void
 DriverCrashGuard::SetStatus(DriverInitStatus aStatus)
 {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   Preferences::SetInt(mStatusPref.get(), int32_t(aStatus));
 }
 
 void
 DriverCrashGuard::FlushPreferences()
 {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   if (nsIPrefService* prefService = Preferences::GetService()) {
     prefService->SavePrefFile(nullptr);
   }
 }
 
-D3D11LayersCrashGuard::D3D11LayersCrashGuard()
- : DriverCrashGuard(CrashGuardType::D3D11Layers)
+D3D11LayersCrashGuard::D3D11LayersCrashGuard(dom::ContentParent* aContentParent)
+ : DriverCrashGuard(CrashGuardType::D3D11Layers, aContentParent)
 {
 }
 
@@ -277,6 +356,7 @@ D3D11LayersCrashGuard::Initialize()
 bool
 D3D11LayersCrashGuard::UpdateEnvironment()
 {
+  
   static bool checked = false;
   static bool changed = false;
 
@@ -291,13 +371,13 @@ D3D11LayersCrashGuard::UpdateEnvironment()
 #if defined(XP_WIN)
     bool d2dEnabled = gfxPrefs::Direct2DForceEnabled() ||
                       (!gfxPrefs::Direct2DDisabled() && FeatureEnabled(nsIGfxInfo::FEATURE_DIRECT2D));
-    changed |= CheckAndUpdateBoolPref("gfx.driver-init.feature-d2d", d2dEnabled);
+    changed |= CheckAndUpdateBoolPref("feature-d2d", d2dEnabled);
 
     bool d3d11Enabled = !gfxPrefs::LayersPreferD3D9();
     if (!FeatureEnabled(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS)) {
       d3d11Enabled = false;
     }
-    changed |= CheckAndUpdateBoolPref("gfx.driver-init.feature-d3d11", d3d11Enabled);
+    changed |= CheckAndUpdateBoolPref("feature-d3d11", d3d11Enabled);
 #endif
   }
 

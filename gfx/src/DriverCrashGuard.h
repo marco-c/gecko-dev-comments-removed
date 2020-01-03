@@ -10,14 +10,20 @@
 #include "nsIGfxInfo.h"
 #include "nsIFile.h"
 #include "nsString.h"
+#include <string>
 
 namespace mozilla {
+
+namespace dom {
+class ContentParent;
+} 
+
 namespace gfx {
 
 enum class DriverInitStatus
 {
   
-  None,
+  Unknown,
 
   
   Attempting,
@@ -26,13 +32,12 @@ enum class DriverInitStatus
   Okay,
 
   
-  Recovered
+  Crashed
 };
 
 enum class CrashGuardType : uint32_t
 {
   D3D11Layers,
-
   NUM_TYPES
 };
 
@@ -48,10 +53,11 @@ enum class CrashGuardType : uint32_t
 class DriverCrashGuard
 {
 public:
-  DriverCrashGuard(CrashGuardType aType);
-  ~DriverCrashGuard();
+  DriverCrashGuard(CrashGuardType aType, dom::ContentParent* aContentParent);
+  virtual ~DriverCrashGuard();
 
   bool Crashed();
+  void NotifyCrashed();
 
   
   
@@ -60,6 +66,14 @@ public:
     EnvironmentChanged = 1,
     RecoveredFromCrash = 2,
     FeatureDisabled = 3
+  };
+
+  enum class Mode {
+    
+    Normal,
+
+    
+    Proxy
   };
 
 protected:
@@ -72,33 +86,39 @@ protected:
   bool FeatureEnabled(int aFeature);
   bool CheckAndUpdatePref(const char* aPrefName, const nsAString& aCurrentValue);
   bool CheckAndUpdateBoolPref(const char* aPrefName, bool aCurrentValue);
+  std::string GetFullPrefName(const char* aPref);
 
 private:
+  
   void InitializeIfNeeded();
-  bool InitLockFilePath();
-  void AllowDriverInitAttempt();
-  bool RecoverFromDriverInitCrash();
-  void FlushPreferences();
-  bool PrepareToGuard();
+  bool CheckOrRefreshEnvironment();
   bool UpdateBaseEnvironment();
   DriverInitStatus GetStatus() const;
+
+  
+  nsCOMPtr<nsIFile> GetGuardFile();
+  bool RecoverFromCrash();
+  void ActivateGuard();
+  void FlushPreferences();
   void SetStatus(DriverInitStatus aStatus);
 
 private:
   CrashGuardType mType;
+  Mode mMode;
   bool mInitialized;
+  bool mGuardActivated;
+  bool mCrashDetected;
   nsCOMPtr<nsIFile> mGuardFile;
 
 protected:
   nsCString mStatusPref;
-  nsCString mGuardFilename;
   nsCOMPtr<nsIGfxInfo> mGfxInfo;
 };
 
 class D3D11LayersCrashGuard final : public DriverCrashGuard
 {
  public:
-  D3D11LayersCrashGuard();
+  explicit D3D11LayersCrashGuard(dom::ContentParent* aContentParent = nullptr);
 
  protected:
   void Initialize() override;
