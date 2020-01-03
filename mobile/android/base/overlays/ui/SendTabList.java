@@ -49,7 +49,7 @@ public class SendTabList extends ListView {
 
     
     
-    public static final int MAXIMUM_INLINE_ELEMENTS = 2;
+    public static final int MAXIMUM_INLINE_ELEMENTS = R.integer.number_of_inline_share_devices;
 
     private SendTabDeviceListArrayAdapter clientListAdapter;
 
