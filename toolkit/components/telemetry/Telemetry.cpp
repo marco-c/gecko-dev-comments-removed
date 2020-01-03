@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <algorithm>
 
@@ -126,10 +126,10 @@ AutoHashtable<EntryType>::ReflectEntryStub(EntryType *entry, void *arg)
   return PL_DHASH_NEXT;
 }
 
-
-
-
-
+/**
+ * Reflect the individual entries of table into JS, usually by defining
+ * some property and value of obj.  entryFunc is called for each entry.
+ */
 template<typename EntryType>
 bool
 AutoHashtable<EntryType>::ReflectIntoJS(ReflectEntryFunc entryFunc,
@@ -140,8 +140,8 @@ AutoHashtable<EntryType>::ReflectIntoJS(ReflectEntryFunc entryFunc,
   return num == this->Count();
 }
 
-
-
+// This class is conceptually a list of ProcessedStack objects, but it represents them
+// more efficiently by keeping a single global list of modules.
 class CombinedStacks {
 public:
   typedef std::vector<Telemetry::ProcessedStack::Frame> Stack;
@@ -209,12 +209,12 @@ CombinedStacks::GetStackCount() const {
 
 size_t
 CombinedStacks::SizeOfExcludingThis() const {
-  
-  
-  
-  
-  
-  
+  // This is a crude approximation. We would like to do something like
+  // aMallocSizeOf(&mModules[0]), but on linux aMallocSizeOf will call
+  // malloc_usable_size which is only safe on the pointers returned by malloc.
+  // While it works on current libstdc++, it is better to be safe and not assume
+  // that &vec[0] points to one. We could use a custom allocator, but
+  // it doesn't seem worth it.
   size_t n = 0;
   n += mModules.capacity() * sizeof(Telemetry::ProcessedStack::Module);
   n += mStacks.capacity() * sizeof(Stack);
@@ -228,10 +228,10 @@ CombinedStacks::SizeOfExcludingThis() const {
 
 class HangReports {
 public:
-  
-
-
-
+  /**
+   * This struct encapsulates information for an individual ChromeHang annotation.
+   * mHangIndex is the index of the corresponding ChromeHang.
+   */
   struct AnnotationInfo {
     AnnotationInfo(uint32_t aHangIndex,
                    HangAnnotations* aAnnotations)
@@ -256,16 +256,16 @@ public:
   const std::vector<AnnotationInfo>& GetAnnotationInfo() const;
   const CombinedStacks& GetStacks() const;
 private:
-  
-
-
-
+  /**
+   * This struct encapsulates the data for an individual ChromeHang, excluding
+   * annotations.
+   */
   struct HangInfo {
-    
+    // Hang duration (in seconds)
     uint32_t mDuration;
-    
+    // System uptime (in minutes) at the time of the hang
     int32_t mSystemUptime;
-    
+    // Firefox uptime (in minutes) at the time of the hang
     int32_t mFirefoxUptime;
   };
   std::vector<HangInfo> mHangInfo;
@@ -293,8 +293,8 @@ size_t
 HangReports::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t n = 0;
   n += mStacks.SizeOfExcludingThis();
-  
-  
+  // This is a crude approximation. See comment on
+  // CombinedStacks::SizeOfExcludingThis.
   n += mHangInfo.capacity() * sizeof(HangInfo);
   n += mAnnotationInfo.capacity() * sizeof(AnnotationInfo);
   for (std::vector<AnnotationInfo>::const_iterator i = mAnnotationInfo.begin(),
@@ -329,13 +329,13 @@ HangReports::GetAnnotationInfo() const {
   return mAnnotationInfo;
 }
 
-
-
-
-
+/**
+ * IOInterposeObserver recording statistics of main-thread I/O during execution,
+ * aimed at consumption by TelemetryImpl
+ */
 class TelemetryIOInterposeObserver : public IOInterposeObserver
 {
-  
+  /** File-level statistics structure */
   struct FileStats {
     FileStats()
       : creates(0)
@@ -345,12 +345,12 @@ class TelemetryIOInterposeObserver : public IOInterposeObserver
       , stats(0)
       , totalTime(0)
     {}
-    uint32_t  creates;      
-    uint32_t  reads;        
-    uint32_t  writes;       
-    uint32_t  fsyncs;       
-    uint32_t  stats;        
-    double    totalTime;    
+    uint32_t  creates;      /** Number of create/open operations */
+    uint32_t  reads;        /** Number of read operations */
+    uint32_t  writes;       /** Number of write operations */
+    uint32_t  fsyncs;       /** Number of fsync operations */
+    uint32_t  stats;        /** Number of stat operations */
+    double    totalTime;    /** Accumulated duration of all operations */
   };
 
   struct SafeDir {
@@ -362,34 +362,34 @@ class TelemetryIOInterposeObserver : public IOInterposeObserver
       return mPath.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
              mSubstName.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
     }
-    nsString  mPath;        
-    nsString  mSubstName;   
+    nsString  mPath;        /** Path to the directory */
+    nsString  mSubstName;   /** Name to substitute with */
   };
 
 public:
   explicit TelemetryIOInterposeObserver(nsIFile* aXreDir);
 
-  
-
-
-
+  /**
+   * An implementation of Observe that records statistics of all
+   * file IO operations.
+   */
   void Observe(Observation& aOb);
 
-  
-
-
+  /**
+   * Reflect recorded file IO statistics into Javascript
+   */
   bool ReflectIntoJS(JSContext *cx, JS::Handle<JSObject*> rootObj);
 
-  
-
-
-
-
+  /**
+   * Adds a path for inclusion in main thread I/O report.
+   * @param aPath Directory path
+   * @param aSubstName Name to substitute for aPath for privacy reasons
+   */
   void AddPath(const nsAString& aPath, const nsAString& aSubstName);
 
-  
-
-
+  /**
+   * Get size of hash table with file stats
+   */
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
@@ -434,17 +434,17 @@ private:
   };
   typedef nsBaseHashtableET<nsStringHashKey, FileStatsByStage> FileIOEntryType;
 
-  
+  // Statistics for each filename
   AutoHashtable<FileIOEntryType> mFileStats;
-  
+  // Container for whitelisted directories
   nsTArray<SafeDir> mSafeDirs;
   Stage             mCurStage;
 
-  
-
-
-
-
+  /**
+   * Reflect a FileIOEntryType object to a Javascript property on obj with
+   * filename as key containing array:
+   * [totalTime, creates, reads, writes, fsyncs, stats]
+   */
   static bool ReflectFileStats(FileIOEntryType* entry, JSContext *cx,
                                JS::Handle<JSObject*> obj);
 
@@ -472,12 +472,12 @@ void TelemetryIOInterposeObserver::AddPath(const nsAString& aPath,
   mSafeDirs.AppendElement(SafeDir(aPath, aSubstName));
 }
 
-
+// Threshold for reporting slow main-thread I/O (50 milliseconds).
 const TimeDuration kTelemetryReportThreshold = TimeDuration::FromMilliseconds(50);
 
 void TelemetryIOInterposeObserver::Observe(Observation& aOb)
 {
-  
+  // We only report main-thread I/O
   if (!IsMainThread()) {
     return;
   }
@@ -492,10 +492,10 @@ void TelemetryIOInterposeObserver::Observe(Observation& aOb)
     return;
   }
 
-  
+  // Get the filename
   const char16_t* filename = aOb.Filename();
  
-  
+  // Discard observations without filename
   if (!filename) {
     return;
   }
@@ -520,11 +520,11 @@ void TelemetryIOInterposeObserver::Observe(Observation& aOb)
     return;
   }
 
-  
+  // Create a new entry or retrieve the existing one
   FileIOEntryType* entry = mFileStats.PutEntry(processedName);
   if (entry) {
     FileStats& stats = entry->mData.mStats[mCurStage];
-    
+    // Update the statistics
     stats.totalTime += (double) aOb.Duration().ToMilliseconds();
     switch (aOb.ObservedOperation()) {
       case OpCreateOrOpen:
@@ -561,12 +561,12 @@ bool TelemetryIOInterposeObserver::ReflectFileStats(FileIOEntryType* entry,
     if (fileStats.totalTime == 0 && fileStats.creates == 0 &&
         fileStats.reads == 0 && fileStats.writes == 0 &&
         fileStats.fsyncs == 0 && fileStats.stats == 0) {
-      
+      // Don't add an array that contains no information
       stages[s].setNull();
       continue;
     }
 
-    
+    // Array we want to report
     JS::AutoValueArray<6> stats(cx);
     stats[0].setNumber(fileStats.totalTime);
     stats[1].setNumber(fileStats.creates);
@@ -575,7 +575,7 @@ bool TelemetryIOInterposeObserver::ReflectFileStats(FileIOEntryType* entry,
     stats[4].setNumber(fileStats.fsyncs);
     stats[5].setNumber(fileStats.stats);
 
-    
+    // Create jsStats as array of elements above
     JS::RootedObject jsStats(cx, JS_NewArrayObject(cx, stats));
     if (!jsStats) {
       continue;
@@ -589,7 +589,7 @@ bool TelemetryIOInterposeObserver::ReflectFileStats(FileIOEntryType* entry,
     return false;
   }
 
-  
+  // Add jsEntry to top-level dictionary
   const nsAString& key = entry->GetKey();
   return JS_DefineUCProperty(cx, obj, key.Data(), key.Length(),
                              jsEntry, JSPROP_ENUMERATE | JSPROP_READONLY);
@@ -601,8 +601,8 @@ bool TelemetryIOInterposeObserver::ReflectIntoJS(JSContext *cx,
   return mFileStats.ReflectIntoJS(ReflectFileStats, cx, rootObj);
 }
 
-
-
+// This is not a member of TelemetryImpl because we want to record I/O during
+// startup.
 StaticAutoPtr<TelemetryIOInterposeObserver> sTelemetryIOObserver;
 
 void
@@ -710,7 +710,7 @@ KeyedHistogram::GetHistogram(const nsCString& key)
   return h;
 }
 
-
+/* static */
 PLDHashOperator
 KeyedHistogram::ClearHistogramEnumerator(KeyedHistogramEntry* entry, void*)
 {
@@ -725,7 +725,7 @@ KeyedHistogram::Clear()
   mHistogramMap.Clear();
 }
 
-
+/* static */
 PLDHashOperator
 KeyedHistogram::ReflectKeys(KeyedHistogramEntry* entry, void* arg)
 {
@@ -763,7 +763,7 @@ KeyedHistogram::GetJSKeys(JSContext* cx, JS::CallArgs& args)
   return NS_OK;
 }
 
-
+/* static */
 bool
 KeyedHistogram::ReflectKeyedHistogram(KeyedHistogramEntry* entry, JSContext* cx, JS::Handle<JSObject*> obj)
 {
@@ -856,7 +856,7 @@ private:
   bool GetSQLStats(JSContext *cx, JS::MutableHandle<JS::Value> ret,
                    bool includePrivateSql);
 
-  
+  // Like GetHistogramById, but returns the underlying C++ object, not the JS one.
   nsresult GetHistogramByName(const nsACString &name, Histogram **ret);
   bool ShouldReflectHistogram(Histogram *h);
   void IdentifyCorruptHistograms(StatisticsRecorder::Histograms &hs);
@@ -881,7 +881,7 @@ private:
   void ReadLateWritesStacks(nsIFile* aProfileDir);
   AddonMapType mAddonMap;
 
-  
+  // This is used for speedy string->Telemetry::ID conversions
   typedef nsBaseHashtableET<nsDepCharHashKey, Telemetry::ID> CharPtrEntryType;
   typedef AutoHashtable<CharPtrEntryType> HistogramMapType;
   HistogramMapType mHistogramMap;
@@ -889,17 +889,17 @@ private:
   static TelemetryImpl *sTelemetry;
   AutoHashtable<SlowSQLEntryType> mPrivateSQL;
   AutoHashtable<SlowSQLEntryType> mSanitizedSQL;
-  
-  
+  // This gets marked immutable in debug builds, so we can't use
+  // AutoHashtable here.
   nsTHashtable<nsCStringHashKey> mTrackedDBs;
   Mutex mHashMutex;
   HangReports mHangReports;
   Mutex mHangReportsMutex;
-  
+  // mThreadHangStats stores recorded, inactive thread hang stats
   Vector<Telemetry::ThreadHangStats> mThreadHangStats;
   Mutex mThreadHangStatsMutex;
 
-  CombinedStacks mLateWritesStacks; 
+  CombinedStacks mLateWritesStacks; // This is collected out of the main thread.
   bool mCachedTelemetryData;
   uint32_t mLastShutdownTime;
   uint32_t mFailedLockCount;
@@ -930,10 +930,10 @@ TelemetryImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
     "Memory used by the telemetry system.");
 }
 
-
+// A initializer to initialize histogram collection
 StatisticsRecorder gStatisticsRecorder;
 
-
+// Hardcoded probes
 struct TelemetryHistogram {
   uint32_t min;
   uint32_t max;
@@ -989,11 +989,11 @@ CheckHistogramArguments(uint32_t histogramType, uint32_t min, uint32_t max,
   if (histogramType != nsITelemetry::HISTOGRAM_BOOLEAN
       && histogramType != nsITelemetry::HISTOGRAM_FLAG
       && histogramType != nsITelemetry::HISTOGRAM_COUNT) {
-    
+    // The min, max & bucketCount arguments are not optional for this type.
     if (!haveOptArgs)
       return NS_ERROR_ILLEGAL_VALUE;
 
-    
+    // Sanity checks for histogram parameters.
     if (min >= max)
       return NS_ERROR_ILLEGAL_VALUE;
 
@@ -1007,10 +1007,10 @@ CheckHistogramArguments(uint32_t histogramType, uint32_t min, uint32_t max,
   return NS_OK;
 }
 
-
-
-
-
+/*
+ * min, max & bucketCount are optional for boolean, flag & count histograms.
+ * haveOptArgs has to be set if the caller provides them.
+ */
 nsresult
 HistogramGet(const char *name, const char *expiration, uint32_t histogramType,
              uint32_t min, uint32_t max, uint32_t bucketCount, bool haveOptArgs,
@@ -1052,7 +1052,7 @@ HistogramGet(const char *name, const char *expiration, uint32_t histogramType,
   return NS_OK;
 }
 
-
+// O(1) histogram lookup by numeric id
 nsresult
 GetHistogramByEnumId(Telemetry::ID id, Histogram **ret)
 {
@@ -1074,8 +1074,8 @@ GetHistogramByEnumId(Telemetry::ID id, Histogram **ret)
     return rv;
 
 #ifdef DEBUG
-  
-  
+  // Check that the C++ Histogram code computes the same ranges as the
+  // Python histogram code.
   if (!IsExpired(p.expiration())) {
     const struct bounds &b = gBucketLowerBoundIndex[id];
     if (b.length != 0) {
@@ -1112,7 +1112,7 @@ enum reflectStatus
 ReflectHistogramAndSamples(JSContext *cx, JS::Handle<JSObject*> obj, Histogram *h,
                            const Histogram::SampleSet &ss)
 {
-  
+  // We don't want to reflect corrupt histograms.
   if (h->FindCorruption(ss) != Histogram::NO_INCONSISTENCIES) {
     return REFLECT_CORRUPT;
   }
@@ -1130,10 +1130,10 @@ ReflectHistogramAndSamples(JSContext *cx, JS::Handle<JSObject*> obj, Histogram *
       return REFLECT_FAILURE;
     }
   } else {
-    
-    
+    // Export |sum_squares| as two separate 32-bit properties so that we
+    // can accurately reconstruct it on the analysis side.
     uint64_t sum_squares = ss.sum_squares();
-    
+    // Cast to avoid implicit truncation warnings.
     uint32_t lo = static_cast<uint32_t>(sum_squares);
     uint32_t hi = static_cast<uint32_t>(sum_squares >> 32);
     if (!(JS_DefineProperty(cx, obj, "sum_squares_lo", lo, JSPROP_ENUMERATE)
@@ -1266,9 +1266,8 @@ nsresult
 WrapAndReturnHistogram(Histogram *h, JSContext *cx, JS::MutableHandle<JS::Value> ret)
 {
   static const JSClass JSHistogram_class = {
-    "JSHistogram",  
-    JSCLASS_HAS_PRIVATE, 
-    nullptr, nullptr, JS_PropertyStub, JS_StrictPropertyStub
+    "JSHistogram",  /* name */
+    JSCLASS_HAS_PRIVATE  /* flags */
   };
 
   JS::Rooted<JSObject*> obj(cx, JS_NewObject(cx, &JSHistogram_class, JS::NullPtr(), JS::NullPtr()));
@@ -1443,9 +1442,8 @@ nsresult
 WrapAndReturnKeyedHistogram(KeyedHistogram *h, JSContext *cx, JS::MutableHandle<JS::Value> ret)
 {
   static const JSClass JSHistogram_class = {
-    "JSKeyedHistogram",  
-    JSCLASS_HAS_PRIVATE, 
-    nullptr, nullptr, JS_PropertyStub, JS_StrictPropertyStub
+    "JSKeyedHistogram",  /* name */
+    JSCLASS_HAS_PRIVATE  /* flags */
   };
 
   JS::Rooted<JSObject*> obj(cx, JS_NewObject(cx, &JSHistogram_class, JS::NullPtr(), JS::NullPtr()));
@@ -1604,9 +1602,9 @@ GetShutdownTimeFileName()
 NS_IMETHODIMP
 TelemetryImpl::GetLastShutdownDuration(uint32_t *aResult)
 {
-  
-  
-  
+  // The user must call AsyncFetchTelemetryData first. We return zero instead of
+  // reporting a failure so that the rest of telemetry can uniformly handle
+  // the read not being available yet.
   if (!mCachedTelemetryData) {
     *aResult = 0;
     return NS_OK;
@@ -1619,9 +1617,9 @@ TelemetryImpl::GetLastShutdownDuration(uint32_t *aResult)
 NS_IMETHODIMP
 TelemetryImpl::GetFailedProfileLockCount(uint32_t* aResult)
 {
-  
-  
-  
+  // The user must call AsyncFetchTelemetryData first. We return zero instead of
+  // reporting a failure so that the rest of telemetry can uniformly handle
+  // the read not being available yet.
   if (!mCachedTelemetryData) {
     *aResult = 0;
     return NS_OK;
@@ -1634,29 +1632,29 @@ TelemetryImpl::GetFailedProfileLockCount(uint32_t* aResult)
 NS_IMETHODIMP
 TelemetryImpl::AsyncFetchTelemetryData(nsIFetchTelemetryDataCallback *aCallback)
 {
-  
+  // We have finished reading the data already, just call the callback.
   if (mCachedTelemetryData) {
     aCallback->Complete();
     return NS_OK;
   }
 
-  
+  // We already have a read request running, just remember the callback.
   if (mCallbacks.Count() != 0) {
     mCallbacks.AppendObject(aCallback);
     return NS_OK;
   }
 
-  
-  
-  
+  // We make this check so that GetShutdownTimeFileName() doesn't get
+  // called; calling that function without telemetry enabled violates
+  // assumptions that the write-the-shutdown-timestamp machinery makes.
   if (!Telemetry::CanRecord()) {
     mCachedTelemetryData = true;
     aCallback->Complete();
     return NS_OK;
   }
 
-  
-  
+  // Send the read to a background thread provided by the stream transport
+  // service to avoid a read in the main thread.
   nsCOMPtr<nsIEventTarget> targetThread =
     do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
   if (!targetThread) {
@@ -1665,7 +1663,7 @@ TelemetryImpl::AsyncFetchTelemetryData(nsIFetchTelemetryDataCallback *aCallback)
     return NS_OK;
   }
 
-  
+  // We have to get the filename from the main thread.
   const char *shutdownTimeFilename = GetShutdownTimeFileName();
   if (!shutdownTimeFilename) {
     mCachedTelemetryData = true;
@@ -1711,7 +1709,7 @@ mCachedTelemetryData(false),
 mLastShutdownTime(0),
 mFailedLockCount(0)
 {
-  
+  // A whitelist to prevent Telemetry reporting on Addon & Thunderbird DBs
   const char *trackedDBs[] = {
     "addons.sqlite", "content-prefs.sqlite", "cookies.sqlite",
     "downloads.sqlite", "extensions.sqlite", "formhistory.sqlite",
@@ -1724,7 +1722,7 @@ mFailedLockCount(0)
     mTrackedDBs.PutEntry(nsDependentCString(trackedDBs[i]));
 
 #ifdef DEBUG
-  
+  // Mark immutable to prevent asserts on simultaneous access from multiple threads
   mTrackedDBs.MarkImmutable();
 #endif
 
@@ -1857,8 +1855,8 @@ TelemetryImpl::GetHistogramEnumId(const char *name, Telemetry::ID *id)
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // Cache names
+  // Note the histogram names are statically allocated
   TelemetryImpl::HistogramMapType *map = &sTelemetry->mHistogramMap;
   if (!map->Count()) {
     for (uint32_t i = 0; i < Telemetry::HistogramCount; i++) {
@@ -1934,7 +1932,7 @@ TelemetryImpl::IdentifyCorruptHistograms(StatisticsRecorder::Histograms &hs)
 
     Telemetry::ID id;
     nsresult rv = GetHistogramEnumId(h->histogram_name().c_str(), &id);
-    
+    // This histogram isn't a static histogram, just ignore it.
     if (NS_FAILED(rv)) {
       continue;
     }
@@ -1973,12 +1971,12 @@ TelemetryImpl::ShouldReflectHistogram(Histogram *h)
   Telemetry::ID id;
   nsresult rv = GetHistogramEnumId(name, &id);
   if (NS_FAILED(rv)) {
-    
-    
-    
-    
-    
-    
+    // GetHistogramEnumId generally should not fail.  But a lookup
+    // failure shouldn't prevent us from reflecting histograms into JS.
+    //
+    // However, these two histograms are created by Histogram itself for
+    // tracking corruption.  We have our own histograms for that, so
+    // ignore these two.
     if (strcmp(name, "Histogram.InconsistentCountHigh") == 0
         || strcmp(name, "Histogram.InconsistentCountLow") == 0) {
       return false;
@@ -1989,10 +1987,10 @@ TelemetryImpl::ShouldReflectHistogram(Histogram *h)
   }
 }
 
-
-
-
-
+// Compute the name to pass into Histogram for the addon histogram
+// 'name' from the addon 'id'.  We can't use 'name' directly because it
+// might conflict with other histograms in other addons or even with our
+// own.
 void
 AddonHistogramName(const nsACString &id, const nsACString &name,
                    nsACString &ret)
@@ -2016,7 +2014,7 @@ TelemetryImpl::RegisterAddonHistogram(const nsACString &id,
       return NS_ERROR_INVALID_ARG;
     }
 
-    
+    // Sanity checks for histogram parameters.
     if (min >= max)
       return NS_ERROR_ILLEGAL_VALUE;
 
@@ -2042,7 +2040,7 @@ TelemetryImpl::RegisterAddonHistogram(const nsACString &id,
 
   AddonHistogramMapType *histogramMap = addonEntry->mData;
   AddonHistogramEntryType *histogramEntry = histogramMap->GetEntry(name);
-  
+  // Can't re-register the same histogram.
   if (histogramEntry) {
     return NS_ERROR_FAILURE;
   }
@@ -2066,14 +2064,14 @@ TelemetryImpl::GetAddonHistogram(const nsACString &id, const nsACString &name,
                                  JSContext *cx, JS::MutableHandle<JS::Value> ret)
 {
   AddonEntryType *addonEntry = mAddonMap.GetEntry(id);
-  
+  // The given id has not been registered.
   if (!addonEntry) {
     return NS_ERROR_INVALID_ARG;
   }
 
   AddonHistogramMapType *histogramMap = addonEntry->mData;
   AddonHistogramEntryType *histogramEntry = histogramMap->GetEntry(name);
-  
+  // The given histogram name has not been registered.
   if (!histogramEntry) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2094,10 +2092,10 @@ TelemetryImpl::UnregisterAddonHistograms(const nsACString &id)
 {
   AddonEntryType *addonEntry = mAddonMap.GetEntry(id);
   if (addonEntry) {
-    
-    
-    
-    
+    // Histogram's destructor is private, so this is the best we can do.
+    // The histograms the addon created *will* stick around, but they
+    // will be deleted if and when the addon registers histograms with
+    // the same names.
     delete addonEntry->mData;
     mAddonMap.RemoveEntry(id);
   }
@@ -2113,8 +2111,8 @@ TelemetryImpl::GetHistogramSnapshots(JSContext *cx, JS::MutableHandle<JS::Value>
     return NS_ERROR_FAILURE;
   ret.setObject(*root_obj);
 
-  
-  
+  // Ensure that all the HISTOGRAM_FLAG & HISTOGRAM_COUNT histograms have
+  // been created, so that their values are snapshotted.
   for (size_t i = 0; i < Telemetry::HistogramCount; ++i) {
     if (gHistograms[i].keyed) {
       continue;
@@ -2131,15 +2129,15 @@ TelemetryImpl::GetHistogramSnapshots(JSContext *cx, JS::MutableHandle<JS::Value>
   StatisticsRecorder::Histograms hs;
   StatisticsRecorder::GetHistograms(&hs);
 
-  
-  
-  
-  
-  
-  
+  // We identify corrupt histograms first, rather than interspersing it
+  // in the loop below, to ensure that our corruption statistics don't
+  // depend on histogram enumeration order.
+  //
+  // Of course, we hope that all of these corruption-statistics
+  // histograms are not themselves corrupt...
   IdentifyCorruptHistograms(hs);
 
-  
+  // OK, now we can actually reflect things.
   JS::Rooted<JSObject*> hobj(cx);
   for (HistogramIterator it = hs.begin(); it != hs.end(); ++it) {
     Histogram *h = *it;
@@ -2153,9 +2151,9 @@ TelemetryImpl::GetHistogramSnapshots(JSContext *cx, JS::MutableHandle<JS::Value>
     }
     switch (ReflectHistogramSnapshot(cx, hobj, h)) {
     case REFLECT_CORRUPT:
-      
-      
-      
+      // We can still hit this case even if ShouldReflectHistograms
+      // returns true.  The histogram lies outside of our control
+      // somehow; just skip it.
       continue;
     case REFLECT_FAILURE:
       return NS_ERROR_FAILURE;
@@ -2180,9 +2178,9 @@ TelemetryImpl::CreateHistogramForAddon(const nsACString &name,
   if (NS_FAILED(rv)) {
     return false;
   }
-  
-  
-  
+  // Don't let this histogram be reported via the normal means
+  // (e.g. Telemetry.registeredHistograms); we'll make it available in
+  // other ways.
   h->ClearFlags(Histogram::kUmaTargetedHistogramFlag);
   info.h = h;
   return true;
@@ -2194,9 +2192,9 @@ TelemetryImpl::AddonHistogramReflector(AddonHistogramEntryType *entry,
 {
   AddonHistogramInfo &info = entry->mData;
 
-  
+  // Never even accessed the histogram.
   if (!info.h) {
-    
+    // Have to force creation of HISTOGRAM_FLAG histograms.
     if (info.histogramType != nsITelemetry::HISTOGRAM_FLAG) 
       return true;
 
@@ -2211,7 +2209,7 @@ TelemetryImpl::AddonHistogramReflector(AddonHistogramEntryType *entry,
 
   JS::Rooted<JSObject*> snapshot(cx, JS_NewObject(cx, nullptr, JS::NullPtr(), JS::NullPtr()));
   if (!snapshot) {
-    
+    // Just consider this to be skippable.
     return true;
   }
   switch (ReflectHistogramSnapshot(cx, snapshot, info.h)) {
@@ -2263,7 +2261,7 @@ TelemetryImpl::GetAddonHistogramSnapshots(JSContext *cx, JS::MutableHandle<JS::V
   return NS_OK;
 }
 
-
+/* static */
 PLDHashOperator
 TelemetryImpl::KeyedHistogramsReflector(const nsACString& key, nsAutoPtr<KeyedHistogram>& entry, void* arg)
 {
@@ -2314,10 +2312,10 @@ TelemetryImpl::GetSQLStats(JSContext *cx, JS::MutableHandle<JS::Value> ret, bool
   ret.setObject(*root_obj);
 
   MutexAutoLock hashMutex(mHashMutex);
-  
+  // Add info about slow SQL queries on the main thread
   if (!AddSQLInfo(cx, root_obj, true, includePrivateSql))
     return false;
-  
+  // Add info about slow SQL queries on other threads
   if (!AddSQLInfo(cx, root_obj, false, includePrivateSql))
     return false;
 
@@ -2474,7 +2472,7 @@ CreateJSStackObject(JSContext *cx, const CombinedStacks &stacks) {
 
   const size_t moduleCount = stacks.GetModuleCount();
   for (size_t moduleIndex = 0; moduleIndex < moduleCount; ++moduleIndex) {
-    
+    // Current module
     const Telemetry::ProcessedStack::Module& module =
       stacks.GetModule(moduleIndex);
 
@@ -2488,7 +2486,7 @@ CreateJSStackObject(JSContext *cx, const CombinedStacks &stacks) {
 
     unsigned index = 0;
 
-    
+    // Module name
     JS::Rooted<JSString*> str(cx, JS_NewStringCopyZ(cx, module.mName.c_str()));
     if (!str) {
       return nullptr;
@@ -2497,7 +2495,7 @@ CreateJSStackObject(JSContext *cx, const CombinedStacks &stacks) {
       return nullptr;
     }
 
-    
+    // Module breakpad identifier
     JS::Rooted<JSString*> id(cx, JS_NewStringCopyZ(cx, module.mBreakpadId.c_str()));
     if (!id) {
       return nullptr;
@@ -2518,7 +2516,7 @@ CreateJSStackObject(JSContext *cx, const CombinedStacks &stacks) {
 
   const size_t length = stacks.GetStackCount();
   for (size_t i = 0; i < length; ++i) {
-    
+    // Represent call stack PCs as (module index, offset) pairs.
     JS::Rooted<JSObject*> pcArray(cx, JS_NewArrayObject(cx, 0));
     if (!pcArray) {
       return nullptr;
@@ -2567,8 +2565,8 @@ IsValidBreakpadId(const std::string &breakpadId) {
   return true;
 }
 
-
-
+// Read a stack from the given file name. In case of any error, aStack is
+// unchanged.
 static void
 ReadStack(const char *aFileName, Telemetry::ProcessedStack &aStack)
 {
@@ -2644,8 +2642,8 @@ ReadStack(const char *aFileName, Telemetry::ProcessedStack &aStack)
 static JSObject*
 CreateJSTimeHistogram(JSContext* cx, const Telemetry::TimeHistogram& time)
 {
-  
-
+  /* Create JS representation of TimeHistogram,
+     in the format of Chromium-style histograms. */
   JS::RootedObject ret(cx, JS_NewObject(cx, nullptr, JS::NullPtr(), JS::NullPtr()));
   if (!ret) {
     return nullptr;
@@ -2661,7 +2659,7 @@ CreateJSTimeHistogram(JSContext* cx, const Telemetry::TimeHistogram& time)
                          JSPROP_ENUMERATE)) {
     return nullptr;
   }
-  
+  // TODO: calculate "sum", "log_sum", and "log_sum_squares"
   if (!JS_DefineProperty(cx, ret, "sum", 0, JSPROP_ENUMERATE) ||
       !JS_DefineProperty(cx, ret, "log_sum", 0.0, JSPROP_ENUMERATE) ||
       !JS_DefineProperty(cx, ret, "log_sum_squares", 0.0, JSPROP_ENUMERATE)) {
@@ -2675,8 +2673,8 @@ CreateJSTimeHistogram(JSContext* cx, const Telemetry::TimeHistogram& time)
   if (!ranges || !counts) {
     return nullptr;
   }
-  
-
+  /* In a Chromium-style histogram, the first bucket is an "under" bucket
+     that represents all values below the histogram's range. */
   if (!JS_SetElement(cx, ranges, 0, time.GetBucketMin(0)) ||
       !JS_SetElement(cx, counts, 0, 0)) {
     return nullptr;
@@ -2784,10 +2782,10 @@ TelemetryImpl::GetThreadHangStats(JSContext* cx, JS::MutableHandle<JS::Value> re
   size_t threadIndex = 0;
 
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
-  
-
-
-
+  /* First add active threads; we need to hold |iter| (and its lock)
+     throughout this method to avoid a race condition where a thread can
+     be recorded twice if the thread is destroyed while this method is
+     running */
   BackgroundHangMonitor::ThreadHangStatsIterator iter;
   for (Telemetry::ThreadHangStats* histogram = iter.GetNext();
        histogram; histogram = iter.GetNext()) {
@@ -2799,7 +2797,7 @@ TelemetryImpl::GetThreadHangStats(JSContext* cx, JS::MutableHandle<JS::Value> re
   }
 #endif
 
-  
+  // Add saved threads next
   MutexAutoLock autoLock(mThreadHangStatsMutex);
   for (size_t i = 0; i < mThreadHangStats.length(); i++) {
     JS::RootedObject obj(cx,
@@ -2844,7 +2842,7 @@ TelemetryImpl::ReadLateWritesStacks(nsIFile* aProfileDir)
     if (stack.GetStackSize() != 0) {
       mLateWritesStacks.AddStack(stack);
     }
-    
+    // Delete the file so that we don't report it again on the next run.
     PR_Delete(stackNativePath.get());
   }
   PR_CloseDir(dir);
@@ -2853,18 +2851,18 @@ TelemetryImpl::ReadLateWritesStacks(nsIFile* aProfileDir)
 NS_IMETHODIMP
 TelemetryImpl::GetLateWrites(JSContext *cx, JS::MutableHandle<JS::Value> ret)
 {
-  
-  
-  
+  // The user must call AsyncReadTelemetryData first. We return an empty list
+  // instead of reporting a failure so that the rest of telemetry can uniformly
+  // handle the read not being available yet.
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // FIXME: we allocate the js object again and again in the getter. We should
+  // figure out a way to cache it. In order to do that we have to call
+  // JS_AddNamedObjectRoot. A natural place to do so is in the TelemetryImpl
+  // constructor, but it is not clear how to get a JSContext in there.
+  // Another option would be to call it in here when we first call
+  // CreateJSStackObject, but we would still need to figure out where to call
+  // JS_RemoveObjectRoot. Would it be ok to never call JS_RemoveObjectRoot
+  // and just set the pointer to nullptr is the telemetry destructor?
 
   JSObject *report;
   if (!mCachedTelemetryData) {
@@ -2943,7 +2941,7 @@ TelemetryImpl::GetKeyedHistogramById(const nsACString &name, JSContext *cx,
   return WrapAndReturnKeyedHistogram(keyed, cx, ret);
 }
 
-
+/* static */
 KeyedHistogram*
 TelemetryImpl::GetKeyedHistogramById(const nsACString &name)
 {
@@ -2988,9 +2986,9 @@ TelemetryImpl::CreateTelemetryInstance()
 {
   NS_ABORT_IF_FALSE(sTelemetry == nullptr, "CreateTelemetryInstance may only be called once, via GetService()");
   sTelemetry = new TelemetryImpl();
-  
+  // AddRef for the local reference
   NS_ADDREF(sTelemetry);
-  
+  // AddRef for the caller
   nsCOMPtr<nsITelemetry> ret = sTelemetry;
 
   sTelemetry->InitMemoryReporter();
@@ -3001,7 +2999,7 @@ TelemetryImpl::CreateTelemetryInstance()
 void
 TelemetryImpl::ShutdownTelemetry()
 {
-  
+  // No point in collecting IO beyond this point
   ClearIOReporting();
   NS_IF_RELEASE(sTelemetry);
 }
@@ -3038,49 +3036,49 @@ TelemetryImpl::StoreSlowSQL(const nsACString &sql, uint32_t delay,
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This method replaces string literals in SQL strings with the word :private
+ *
+ * States used in this state machine:
+ *
+ * NORMAL:
+ *  - This is the active state when not iterating over a string literal or
+ *  comment
+ *
+ * SINGLE_QUOTE:
+ *  - Defined here: http://www.sqlite.org/lang_expr.html
+ *  - This state represents iterating over a string literal opened with
+ *  a single quote.
+ *  - A single quote within the string can be encoded by putting 2 single quotes
+ *  in a row, e.g. 'This literal contains an escaped quote '''
+ *  - Any double quotes found within a single-quoted literal are ignored
+ *  - This state covers BLOB literals, e.g. X'ABC123'
+ *  - The string literal and the enclosing quotes will be replaced with
+ *  the text :private
+ *
+ * DOUBLE_QUOTE:
+ *  - Same rules as the SINGLE_QUOTE state.
+ *  - According to http://www.sqlite.org/lang_keywords.html,
+ *  SQLite interprets text in double quotes as an identifier unless it's used in
+ *  a context where it cannot be resolved to an identifier and a string literal
+ *  is allowed. This method removes text in double-quotes for safety.
+ *
+ *  DASH_COMMENT:
+ *  - http://www.sqlite.org/lang_comment.html
+ *  - A dash comment starts with two dashes in a row,
+ *  e.g. DROP TABLE foo -- a comment
+ *  - Any text following two dashes in a row is interpreted as a comment until
+ *  end of input or a newline character
+ *  - Any quotes found within the comment are ignored and no replacements made
+ *
+ *  C_STYLE_COMMENT:
+ *  - http://www.sqlite.org/lang_comment.html
+ *  - A C-style comment starts with a forward slash and an asterisk, and ends
+ *  with an asterisk and a forward slash
+ *  - Any text following comment start is interpreted as a comment up to end of
+ *  input or comment end
+ *  - Any quotes found within the comment are ignored and no replacements made
+ */
 nsCString
 TelemetryImpl::SanitizeSQL(const nsACString &sql) {
   nsCString output;
@@ -3111,7 +3109,7 @@ TelemetryImpl::SanitizeSQL(const nsACString &sql) {
         } else if ((state == SINGLE_QUOTE && character == '\'') ||
                    (state == DOUBLE_QUOTE && character == '"')) {
           if (nextCharacter == character) {
-            
+            // Two consecutive quotes within a string literal are a single escaped quote
             i++;
           } else {
             state = NORMAL;
@@ -3158,10 +3156,10 @@ TelemetryImpl::SanitizeSQL(const nsACString &sql) {
   return output;
 }
 
-
-
-
-
+// Slow SQL statements will be automatically
+// trimmed to kMaxSlowStatementLength characters.
+// This limit doesn't include the ellipsis and DB name,
+// that are appended at the end of the stored statement.
 const uint32_t kMaxSlowStatementLength = 1000;
 
 void
@@ -3182,7 +3180,7 @@ TelemetryImpl::RecordSlowStatement(const nsACString &sql,
     sanitizedSQL.AppendPrintf(" /* %s */", nsPromiseFlatCString(dbName).get());
     StoreSlowSQL(sanitizedSQL, delay, Sanitized);
   } else {
-    
+    // Report aggregate DB-level statistics for addon DBs
     nsAutoCString aggregate;
     aggregate.AppendPrintf("Untracked SQL for %s",
                            nsPromiseFlatCString(dbName).get());
@@ -3290,26 +3288,26 @@ TelemetryImpl::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
 {
   size_t n = aMallocSizeOf(this);
 
-  
+  // Ignore the hashtables in mAddonMap; they are not significant.
   n += mAddonMap.SizeOfExcludingThis(nullptr, aMallocSizeOf);
   n += mHistogramMap.SizeOfExcludingThis(nullptr, aMallocSizeOf);
-  { 
+  { // Scope for mHashMutex lock
     MutexAutoLock lock(mHashMutex);
     n += mPrivateSQL.SizeOfExcludingThis(aMallocSizeOf);
     n += mSanitizedSQL.SizeOfExcludingThis(aMallocSizeOf);
   }
   n += mTrackedDBs.SizeOfExcludingThis(aMallocSizeOf);
-  { 
+  { // Scope for mHangReportsMutex lock
     MutexAutoLock lock(mHangReportsMutex);
     n += mHangReports.SizeOfExcludingThis(aMallocSizeOf);
   }
-  { 
+  { // Scope for mThreadHangStatsMutex lock
     MutexAutoLock lock(mThreadHangStatsMutex);
     n += mThreadHangStats.sizeOfExcludingThis(aMallocSizeOf);
   }
 
-  
-  
+  // It's a bit gross that we measure this other stuff that lives outside of
+  // TelemetryImpl... oh well.
   if (sTelemetryIOObserver) {
     n += sTelemetryIOObserver->SizeOfIncludingThis(aMallocSizeOf);
   }
@@ -3323,19 +3321,19 @@ TelemetryImpl::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
   return n;
 }
 
-} 
+} // anonymous namespace
 
 namespace mozilla {
 void
 RecordShutdownStartTimeStamp() {
 #ifdef DEBUG
-  
-  
-  
-  
+  // FIXME: this function should only be called once, since it should be called
+  // at the earliest point we *know* we are shutting down. Unfortunately
+  // this assert has been firing. Given that if we are called multiple times
+  // we just keep the last timestamp, the assert is commented for now.
   static bool recorded = false;
-  
-  (void)recorded; 
+  //  MOZ_ASSERT(!recorded);
+  (void)recorded; // Silence unused-var warnings (remove when assert re-enabled)
   recorded = true;
 #endif
 
@@ -3362,10 +3360,10 @@ RecordShutdownEndTimeStamp() {
   FILE *f = fopen(tmpName.get(), "w");
   if (!f)
     return;
-  
-  
-  
-  
+  // On a normal release build this should be called just before
+  // calling _exit, but on a debug build or when the user forces a full
+  // shutdown this is called as late as possible, so we have to
+  // white list this write as write poisoning will be enabled.
   MozillaRegisterDebugFILE(f);
 
   TimeStamp now = TimeStamp::Now();
@@ -3464,7 +3462,7 @@ RecordSlowSQLStatement(const nsACString &statement,
 
 void Init()
 {
-  
+  // Make the service manager hold a long-lived reference to the service
   nsCOMPtr<nsITelemetry> telemetryService =
     do_GetService("@mozilla.org/base/telemetry;1");
   MOZ_ASSERT(telemetryService);
@@ -3535,9 +3533,9 @@ bool ProcessedStack::Module::operator==(const Module& aOther) const {
 
 struct StackFrame
 {
-  uintptr_t mPC;      
-  uint16_t mIndex;    
-  uint16_t mModIndex; 
+  uintptr_t mPC;      // The program counter at this position in the call stack.
+  uint16_t mIndex;    // The number of this frame in the call stack.
+  uint16_t mModIndex; // The index of module that has this program counter.
 };
 
 
@@ -3566,7 +3564,7 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
   }
 
 #ifdef MOZ_ENABLE_PROFILER_SPS
-  
+  // Remove all modules not referenced by a PC on the stack
   std::sort(rawStack.begin(), rawStack.end(), CompareByPC);
 
   size_t moduleIndex = 0;
@@ -3580,7 +3578,7 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
     const SharedLibrary& module = rawModules.GetEntry(moduleIndex);
     uintptr_t moduleStart = module.GetStart();
     uintptr_t moduleEnd = module.GetEnd() - 1;
-    
+    // the interval is [moduleStart, moduleEnd)
 
     bool moduleReferenced = false;
     for (;stackIndex < stackSize; ++stackIndex) {
@@ -3589,15 +3587,15 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
         break;
 
       if (pc >= moduleStart) {
-        
-        
+        // If the current PC is within the current module, mark
+        // module as used
         moduleReferenced = true;
         rawStack[stackIndex].mPC -= moduleStart;
         rawStack[stackIndex].mModIndex = moduleIndex;
       } else {
-        
-        
-        
+        // PC does not belong to any module. It is probably from
+        // the JIT. Use a fixed mPC so that we don't get different
+        // stacks on different runs.
         rawStack[stackIndex].mPC =
           std::numeric_limits<uintptr_t>::max();
       }
@@ -3606,20 +3604,20 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
     if (moduleReferenced) {
       ++moduleIndex;
     } else {
-      
+      // Remove module if no PCs within its address range
       rawModules.RemoveEntries(moduleIndex, moduleIndex + 1);
     }
   }
 
   for (;stackIndex < stackSize; ++stackIndex) {
-    
+    // These PCs are past the last module.
     rawStack[stackIndex].mPC = std::numeric_limits<uintptr_t>::max();
   }
 
   std::sort(rawStack.begin(), rawStack.end(), CompareByIndex);
 #endif
 
-  
+  // Copy the information to the return value.
   ProcessedStack Ret;
   for (std::vector<StackFrame>::iterator i = rawStack.begin(),
          e = rawStack.end(); i != e; ++i) {
@@ -3634,9 +3632,9 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
     const std::string &name = info.GetName();
     std::string basename = name;
 #ifdef XP_MACOSX
-    
-    
-    
+    // FIXME: We want to use just the basename as the libname, but the
+    // current profiler addon needs the full path name, so we compute the
+    // basename in here.
     size_t pos = name.rfind('/');
     if (pos != std::string::npos) {
       basename = name.substr(pos + 1);
@@ -3661,7 +3659,7 @@ WriteFailedProfileLock(nsIFile* aProfileDir)
   NS_ENSURE_SUCCESS_VOID(rv);
   int64_t fileSize = 0;
   rv = file->GetFileSize(&fileSize);
-  
+  // It's expected that the file might not exist yet
   if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
     return;
   }
@@ -3683,7 +3681,7 @@ WriteFailedProfileLock(nsIFile* aProfileDir)
   bufStr.AppendInt(static_cast<int>(failedLockCount));
   nsCOMPtr<nsISeekableStream> seekStream = do_QueryInterface(fileStream);
   NS_ENSURE_TRUE_VOID(seekStream);
-  
+  // If we read in an existing failed lock count, we need to reset the file ptr
   if (fileSize > 0) {
     rv = seekStream->Seek(nsISeekableStream::NS_SEEK_SET, 0);
     NS_ENSURE_SUCCESS_VOID(rv);
@@ -3706,7 +3704,7 @@ WriteFailedProfileLock(nsIFile* aProfileDir)
 void
 InitIOReporting(nsIFile* aXreDir)
 {
-  
+  // Never initialize twice
   if (sTelemetryIOObserver) {
     return;
   }
@@ -3742,12 +3740,12 @@ const char*
 HangStack::InfallibleAppendViaBuffer(const char* aText, size_t aLength)
 {
   MOZ_ASSERT(this->canAppendWithoutRealloc(1));
-  
+  // Include null-terminator in length count.
   MOZ_ASSERT(mBuffer.canAppendWithoutRealloc(aLength + 1));
 
   const char* const entry = mBuffer.end();
   mBuffer.infallibleAppend(aText, aLength);
-  mBuffer.infallibleAppend('\0'); 
+  mBuffer.infallibleAppend('\0'); // Explicitly append null-terminator
   this->infallibleAppend(entry);
   return entry;
 }
@@ -3759,20 +3757,20 @@ HangStack::AppendViaBuffer(const char* aText, size_t aLength)
     return nullptr;
   }
 
-  
+  // Keep track of the previous buffer in case we need to adjust pointers later.
   const char* const prevStart = mBuffer.begin();
   const char* const prevEnd = mBuffer.end();
 
-  
+  // Include null-terminator in length count.
   if (!mBuffer.reserve(mBuffer.length() + aLength + 1)) {
     return nullptr;
   }
 
   if (prevStart != mBuffer.begin()) {
-    
+    // The buffer has moved; we have to adjust pointers in the stack.
     for (const char** entry = this->begin(); entry != this->end(); entry++) {
       if (*entry >= prevStart && *entry < prevEnd) {
-        
+        // Move from old buffer to new buffer.
         *entry += mBuffer.begin() - prevStart;
       }
     }
@@ -3787,9 +3785,9 @@ HangHistogram::GetHash(const HangStack& aStack)
   uint32_t hash = 0;
   for (const char* const* label = aStack.begin();
        label != aStack.end(); label++) {
-    
-
-
+    /* If the string is within our buffer, we need to hash its content.
+       Otherwise, the string is statically allocated, and we only need
+       to hash the pointer instead of the content. */
     if (aStack.IsInBuffer(*label)) {
       hash = AddToHash(hash, HashString(*label));
     } else {
@@ -3812,15 +3810,15 @@ HangHistogram::operator==(const HangHistogram& aOther) const
 }
 
 
-} 
-} 
+} // namespace Telemetry
+} // namespace mozilla
 
 NSMODULE_DEFN(nsTelemetryModule) = &kTelemetryModule;
 
-
-
-
-
+/**
+ * The XRE_TelemetryAdd function is to be used by embedding applications
+ * that can't use mozilla::Telemetry::Accumulate() directly.
+ */
 void
 XRE_TelemetryAccumulate(int aID, uint32_t aSample)
 {
