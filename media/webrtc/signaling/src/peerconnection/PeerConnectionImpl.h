@@ -265,7 +265,13 @@ public:
                                         const std::string& aId);
 
   
-  void NotifyDataChannel(already_AddRefed<mozilla::DataChannel> aChannel);
+  void NotifyDataChannel(already_AddRefed<mozilla::DataChannel> aChannel)
+#ifdef MOZILLA_INTERNAL_API
+    
+    
+    MOZ_OVERRIDE
+#endif
+    ;
 
   
   const nsRefPtr<PeerConnectionMedia>& media() const {
