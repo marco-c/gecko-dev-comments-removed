@@ -10,6 +10,7 @@
 #include "VideoUtils.h"
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/DebugOnly.h"
 
 namespace mozilla {
 
@@ -28,6 +29,8 @@ AudioSink::AudioSink(MediaQueue<AudioData>& aAudioQueue,
                      dom::AudioChannel aChannel)
   : mAudioQueue(aAudioQueue)
   , mMonitor("AudioSink::mMonitor")
+  , mState(AUDIOSINK_STATE_INIT)
+  , mAudioLoopScheduled(false)
   , mStartTime(aStartTime)
   , mWritten(0)
   , mLastGoodPosition(0)
@@ -44,6 +47,48 @@ AudioSink::AudioSink(MediaQueue<AudioData>& aAudioQueue,
 {
 }
 
+void
+AudioSink::SetState(State aState)
+{
+  AssertOnAudioThread();
+  mPendingState = Some(aState);
+}
+
+void
+AudioSink::DispatchTask(already_AddRefed<nsIRunnable>&& event)
+{
+  DebugOnly<nsresult> rv = mThread->Dispatch(Move(event), NS_DISPATCH_NORMAL);
+  
+  
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+}
+
+void
+AudioSink::ScheduleNextLoop()
+{
+  AssertOnAudioThread();
+  if (mAudioLoopScheduled) {
+    return;
+  }
+  mAudioLoopScheduled = true;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(this, &AudioSink::AudioLoop);
+  DispatchTask(r.forget());
+}
+
+void
+AudioSink::ScheduleNextLoopCrossThread()
+{
+  AssertNotOnAudioThread();
+  nsRefPtr<AudioSink> self = this;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
+    
+    if (!self->mAudioLoopScheduled) {
+      self->AudioLoop();
+    }
+  });
+  DispatchTask(r.forget());
+}
+
 nsRefPtr<GenericPromise>
 AudioSink::Init()
 {
@@ -57,13 +102,7 @@ AudioSink::Init()
     return p;
   }
 
-  nsCOMPtr<nsIRunnable> event = NS_NewRunnableMethod(this, &AudioSink::AudioLoop);
-  rv =  mThread->Dispatch(event, NS_DISPATCH_NORMAL);
-  if (NS_FAILED(rv)) {
-    mEndPromise.Reject(rv, __func__);
-    return p;
-  }
-
+  ScheduleNextLoopCrossThread();
   return p;
 }
 
@@ -99,7 +138,7 @@ AudioSink::Shutdown()
   if (mAudioStream) {
     mAudioStream->Cancel();
   }
-  GetReentrantMonitor().NotifyAll();
+  ScheduleNextLoopCrossThread();
 
   
   ReentrantMonitorAutoExit exit(GetReentrantMonitor());
@@ -109,6 +148,12 @@ AudioSink::Shutdown()
     mAudioStream->Shutdown();
     mAudioStream = nullptr;
   }
+
+  
+  MOZ_ASSERT(mState == AUDIOSINK_STATE_SHUTDOWN ||
+             mState == AUDIOSINK_STATE_ERROR);
+  
+  MOZ_ASSERT(mPendingState.isNothing());
 }
 
 void
@@ -141,44 +186,13 @@ AudioSink::SetPlaying(bool aPlaying)
 {
   ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   mPlaying = aPlaying;
-  GetReentrantMonitor().NotifyAll();
+  ScheduleNextLoopCrossThread();
 }
 
 void
 AudioSink::NotifyData()
 {
-  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-  GetReentrantMonitor().NotifyAll();
-}
-
-void
-AudioSink::AudioLoop()
-{
-  AssertOnAudioThread();
-  SINK_LOG("AudioLoop started");
-
-  nsresult rv = InitializeAudioStream();
-  if (NS_FAILED(rv)) {
-    NS_WARNING("Initializing AudioStream failed.");
-    mEndPromise.Reject(rv, __func__);
-    return;
-  }
-
-  while (1) {
-    {
-      ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-      while (WaitingForAudioToPlay()) {
-        GetReentrantMonitor().Wait();
-      }
-      if (!IsPlaybackContinuing()) {
-        break;
-      }
-    }
-    if (!PlayAudio()) {
-      break;
-    }
-  }
-  FinishAudioLoop();
+  ScheduleNextLoopCrossThread();
 }
 
 nsresult
@@ -264,6 +278,72 @@ AudioSink::IsPlaybackContinuing()
   UpdateStreamSettings();
 
   return true;
+}
+
+void
+AudioSink::AudioLoop()
+{
+  AssertOnAudioThread();
+  mAudioLoopScheduled = false;
+
+  switch (mState) {
+    case AUDIOSINK_STATE_INIT: {
+      SINK_LOG("AudioLoop started");
+      nsresult rv = InitializeAudioStream();
+      if (NS_FAILED(rv)) {
+        NS_WARNING("Initializing AudioStream failed.");
+        mEndPromise.Reject(rv, __func__);
+        SetState(AUDIOSINK_STATE_ERROR);
+        break;
+      }
+      SetState(AUDIOSINK_STATE_PLAYING);
+      break;
+    }
+
+    case AUDIOSINK_STATE_PLAYING: {
+      {
+        ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+        if (WaitingForAudioToPlay()) {
+          
+          break;
+        }
+        if (!IsPlaybackContinuing()) {
+          SetState(AUDIOSINK_STATE_COMPLETE);
+          break;
+        }
+      }
+      if (!PlayAudio()) {
+        SetState(AUDIOSINK_STATE_COMPLETE);
+        break;
+      }
+      
+      ScheduleNextLoop();
+      break;
+    }
+
+    case AUDIOSINK_STATE_COMPLETE: {
+      FinishAudioLoop();
+      SetState(AUDIOSINK_STATE_SHUTDOWN);
+      break;
+    }
+
+    case AUDIOSINK_STATE_SHUTDOWN:
+      break;
+
+    case AUDIOSINK_STATE_ERROR:
+      break;
+  } 
+
+  
+  
+  if (mPendingState.isSome()) {
+    MOZ_ASSERT(mState != mPendingState.ref());
+    SINK_LOG("change mState, %d -> %d", mState, mPendingState.ref());
+    mState = mPendingState.ref();
+    mPendingState.reset();
+    
+    ScheduleNextLoop();
+  }
 }
 
 bool
@@ -428,6 +508,12 @@ void
 AudioSink::AssertOnAudioThread()
 {
   MOZ_ASSERT(NS_GetCurrentThread() == mThread);
+}
+
+void
+AudioSink::AssertNotOnAudioThread()
+{
+  MOZ_ASSERT(NS_GetCurrentThread() != mThread);
 }
 
 } 

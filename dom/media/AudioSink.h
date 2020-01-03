@@ -12,6 +12,7 @@
 
 #include "mozilla/dom/AudioChannelBinding.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/ReentrantMonitor.h"
 
@@ -57,7 +58,20 @@ public:
   void NotifyData();
 
 private:
+  enum State {
+    AUDIOSINK_STATE_INIT,
+    AUDIOSINK_STATE_PLAYING,
+    AUDIOSINK_STATE_COMPLETE,
+    AUDIOSINK_STATE_SHUTDOWN,
+    AUDIOSINK_STATE_ERROR
+  };
+
   ~AudioSink() {}
+
+  void DispatchTask(already_AddRefed<nsIRunnable>&& event);
+  void SetState(State aState);
+  void ScheduleNextLoop();
+  void ScheduleNextLoopCrossThread();
 
   
   
@@ -120,9 +134,15 @@ private:
   }
 
   void AssertOnAudioThread();
+  void AssertNotOnAudioThread();
 
   MediaQueue<AudioData>& mAudioQueue;
   mutable ReentrantMonitor mMonitor;
+
+  
+  State mState;
+  Maybe<State> mPendingState;
+  bool mAudioLoopScheduled;
 
   
   
