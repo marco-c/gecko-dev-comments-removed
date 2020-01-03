@@ -48,8 +48,6 @@ var ecmaGlobals =
     "Number",
     "Object",
     "Proxy",
-    "PushEvent",
-    "PushMessageData",
     "RangeError",
     "ReferenceError",
     "Reflect",
@@ -172,9 +170,13 @@ var interfaceNamesInGlobalScope =
 
     "Promise",
 
-    "PushManager",
+    { name: "PushEvent", b2g: false, android: false, release: false },
 
-    "PushSubscription",
+    { name: "PushManager", b2g: false, android: false, release: false },
+
+    { name: "PushMessageData", b2g: false, android: false, release: false },
+
+    { name: "PushSubscription", b2g: false, android: false, release: false },
 
     "Request",
 
