@@ -125,16 +125,19 @@ public:
 
   
 
-  bool Write(JSContext* aCx,
-             JS::Handle<JS::Value> aValue);
-
-  bool Write(JSContext* aCx,
+  void Write(JSContext* aCx,
              JS::Handle<JS::Value> aValue,
-             JS::Handle<JS::Value> aTransfer);
+             ErrorResult &aRv);
 
-  bool Read(nsISupports* aParent,
+  void Write(JSContext* aCx,
+             JS::Handle<JS::Value> aValue,
+             JS::Handle<JS::Value> aTransfer,
+             ErrorResult &aRv);
+
+  void Read(nsISupports* aParent,
             JSContext* aCx,
-            JS::MutableHandle<JS::Value> aValue);
+            JS::MutableHandle<JS::Value> aValue,
+            ErrorResult &aRv);
 
   
   
@@ -145,11 +148,12 @@ public:
   
   
   
-  bool ReadFromBuffer(nsISupports* aParent,
+  void ReadFromBuffer(nsISupports* aParent,
                       JSContext* aCx,
                       uint64_t* aBuffer,
                       size_t aBufferLength,
-                      JS::MutableHandle<JS::Value> aValue);
+                      JS::MutableHandle<JS::Value> aValue,
+                      ErrorResult &aRv);
 
   
   void FreeBuffer(uint64_t* aBuffer,
