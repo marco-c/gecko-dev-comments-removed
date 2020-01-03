@@ -435,6 +435,13 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
           }
         }
         if (!oldAnim) {
+          
+          
+          
+          
+          
+          
+          newAnim->AsCSSAnimation()->QueueEvents();
           continue;
         }
 
@@ -450,6 +457,12 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
             oldEffect->Properties() != newEffect->Properties();
           oldEffect->Timing() = newEffect->Timing();
           oldEffect->Properties() = newEffect->Properties();
+          
+          
+          
+          
+          
+          oldAnim->SetEffect(oldEffect);
         }
 
         
@@ -477,7 +490,10 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
 
         oldAnim->CopyAnimationIndex(*newAnim->AsCSSAnimation());
 
-        if (animationChanged) {
+        
+        
+        
+        if (animationChanged && oldAnim->IsRelevant()) {
           nsNodeUtils::AnimationChanged(oldAnim);
         }
 
@@ -500,10 +516,15 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
   } else {
     collection =
       GetAnimations(aElement, aStyleContext->GetPseudoType(), true);
+    for (Animation* animation : newAnimations) {
+      
+      
+      
+      animation->AsCSSAnimation()->QueueEvents();
+    }
   }
   collection->mAnimations.SwapElements(newAnimations);
   collection->mNeedsRefreshes = true;
-  collection->Tick();
 
   
   for (size_t newAnimIdx = newAnimations.Length(); newAnimIdx-- != 0; ) {
