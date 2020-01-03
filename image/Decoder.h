@@ -197,7 +197,6 @@ public:
   bool HasDecoderError() const { return NS_FAILED(mFailCode); }
   bool ShouldReportError() const { return mShouldReportError; }
   nsresult GetDecoderError() const { return mFailCode; }
-  void PostResizeError() { PostDataError(); }
 
   
   bool GetDecodeDone() const
@@ -205,10 +204,6 @@ public:
     return mDecodeDone || (mMetadataDecode && HasSize()) ||
            HasError() || mDataDone;
   }
-
-  
-  
-  bool GetDecodeTotallyDone() const { return mDecodeDone && !IsMetadataDecode(); }
 
   
   bool InFrame() const { return mInFrame; }
