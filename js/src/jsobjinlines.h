@@ -622,8 +622,6 @@ IsInternalFunctionObject(JSObject& funobj)
     return fun.isLambda() && fun.isInterpreted() && !fun.environment();
 }
 
-typedef AutoVectorRooter<PropertyDescriptor> AutoPropertyDescriptorVector;
-
 
 
 

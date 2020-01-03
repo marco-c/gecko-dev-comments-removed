@@ -222,7 +222,6 @@ class JS_PUBLIC_API(AutoGCRooter)
         PARSER =       -3, 
         SHAPEVECTOR =  -4, 
         IDARRAY =      -6, 
-        DESCVECTOR =   -7, 
         VALVECTOR =   -10, 
         IDVECTOR =    -11, 
         IDVALVECTOR = -12, 
@@ -244,7 +243,6 @@ class JS_PUBLIC_API(AutoGCRooter)
     static ptrdiff_t GetTag(JSScript* script) { return SCRIPTVECTOR; }
     static ptrdiff_t GetTag(JSString* string) { return STRINGVECTOR; }
     static ptrdiff_t GetTag(js::Shape* shape) { return SHAPEVECTOR; }
-    static ptrdiff_t GetTag(const JSPropertyDescriptor& pd) { return DESCVECTOR; }
 
   private:
     AutoGCRooter ** const stackTop;
