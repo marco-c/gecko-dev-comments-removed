@@ -2188,7 +2188,7 @@ public:
 
 
 template<class TArrayBase, size_t N>
-class nsAutoArrayBase : public TArrayBase
+class MOZ_NON_MEMMOVABLE nsAutoArrayBase : public TArrayBase
 {
   static_assert(N != 0, "nsAutoArrayBase<TArrayBase, 0> should be specialized");
 public:

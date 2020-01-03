@@ -560,7 +560,7 @@ protected:
 
 
 
-class nsTAutoString_CharT : public nsTFixedString_CharT
+class MOZ_NON_MEMMOVABLE nsTAutoString_CharT : public nsTFixedString_CharT
 {
 public:
 
