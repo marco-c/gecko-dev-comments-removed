@@ -502,46 +502,38 @@ AccessibleCaretManager::GetCaretMode() const
   return CaretMode::Selection;
 }
 
-bool
+nsIFrame*
 AccessibleCaretManager::ChangeFocus(nsIFrame* aFrame) const
 {
-  nsIFrame* currFrame = aFrame;
-  nsIContent* newFocusContent = nullptr;
-  while (currFrame) {
-    int32_t tabIndexUnused = 0;
-    if (currFrame->IsFocusable(&tabIndexUnused, true)) {
-      newFocusContent = currFrame->GetContent();
-      nsCOMPtr<nsIDOMElement> domElement(do_QueryInterface(newFocusContent));
-      if (domElement)
-        break;
+  
+  
+  nsIFrame* focusableFrame = aFrame;
+  while (focusableFrame) {
+    if (focusableFrame->IsFocusable(nullptr, true)) {
+      break;
     }
-    currFrame = currFrame->GetParent();
+    focusableFrame = focusableFrame->GetParent();
   }
 
-  
   
   
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (newFocusContent && currFrame) {
-    nsCOMPtr<nsIDOMElement> domElement(do_QueryInterface(newFocusContent));
-    fm->SetFocus(domElement, 0);
+  MOZ_ASSERT(fm);
+
+  if (focusableFrame) {
+    nsIContent* focusableContent = focusableFrame->GetContent();
+    MOZ_ASSERT(focusableContent, "Focusable frame must have content!");
+    nsCOMPtr<nsIDOMElement> focusableElement = do_QueryInterface(focusableContent);
+    fm->SetFocus(focusableElement, nsIFocusManager::FLAG_BYMOUSE);
   } else {
-    nsIContent* focusedContent = GetFocusedContent();
-    if (focusedContent) {
-      
-      nsGenericHTMLElement* focusedGeneric =
-        nsGenericHTMLElement::FromContent(focusedContent);
-      if (focusedContent->GetTextEditorRootContent() ||
-          (focusedGeneric && focusedGeneric->IsContentEditable())) {
-        nsIDOMWindow* win = mPresShell->GetDocument()->GetWindow();
-        if (win) {
-          fm->ClearFocus(win);
-        }
-      }
+    nsIDOMWindow* win = mPresShell->GetDocument()->GetWindow();
+    if (win) {
+      fm->ClearFocus(win);
+      fm->SetFocusedWindow(win);
     }
   }
 
-  return (newFocusContent && currFrame);
+  return focusableFrame;
 }
 
 nsresult

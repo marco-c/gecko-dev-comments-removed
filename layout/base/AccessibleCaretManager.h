@@ -115,7 +115,10 @@ protected:
   void UpdateCaretsForSelectionMode();
   void UpdateCaretsForTilt();
 
-  bool ChangeFocus(nsIFrame* aFrame) const;
+  
+  
+  nsIFrame* ChangeFocus(nsIFrame* aFrame) const;
+
   nsresult SelectWord(nsIFrame* aFrame, const nsPoint& aPoint) const;
   void SetSelectionDragState(bool aState) const;
   void SetSelectionDirection(nsDirection aDir) const;
