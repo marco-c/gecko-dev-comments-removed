@@ -195,6 +195,10 @@ gfxPlatformFontList::~gfxPlatformFontList()
 nsresult
 gfxPlatformFontList::InitFontList()
 {
+    if (LOG_FONTINIT_ENABLED()) {
+        LOG_FONTINIT(("(fontinit) system fontlist initialization\n"));
+    }
+
     
     gfxFontCache *fontCache = gfxFontCache::GetCache();
     if (fontCache) {
