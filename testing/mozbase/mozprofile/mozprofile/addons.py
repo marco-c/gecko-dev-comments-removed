@@ -11,7 +11,6 @@ import zipfile
 from xml.dom import minidom
 
 import mozfile
-from manifestparser import ManifestParser
 from mozlog.unstructured import getLogger
 
 
@@ -185,6 +184,14 @@ class AddonManager(object):
         Installs addons from a manifest
         :param filepath: path to the manifest of addons to install
         """
+        try:
+            from manifestparser import ManifestParser
+        except ImportError:
+            module_logger.critical(
+                "Installing addons from manifest requires the"
+                " manifestparser package to be installed.")
+            raise
+
         manifest = ManifestParser()
         manifest.read(filepath)
         addons = manifest.get()
