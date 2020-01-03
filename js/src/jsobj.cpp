@@ -2588,6 +2588,8 @@ js::GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id,
         
         
         
+        desc.setGetter(nullptr);
+        desc.setSetter(nullptr);
         desc.attributesRef() &= ~JSPROP_SHARED;
 
         if (IsImplicitDenseOrTypedArrayElement(shape)) {
