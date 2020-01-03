@@ -231,7 +231,7 @@ AccumulateLayerTransforms(Layer* aLayer,
 
 static LayerPoint
 GetLayerFixedMarginsOffset(Layer* aLayer,
-                           const LayerMargin& aFixedLayerMargins)
+                           const ScreenMargin& aFixedLayerMargins)
 {
   
   
@@ -272,7 +272,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    FrameMetrics::ViewID aTransformScrollId,
                                                    const Matrix4x4& aPreviousTransformForRoot,
                                                    const Matrix4x4& aCurrentTransformForRoot,
-                                                   const LayerMargin& aFixedLayerMargins)
+                                                   const ScreenMargin& aFixedLayerMargins)
 {
   bool isRootFixedForSubtree = aLayer->GetIsFixedPosition() &&
     aLayer->GetFixedPositionScrollContainerId() == aTransformScrollId &&
@@ -597,7 +597,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
 
   Matrix4x4 combinedAsyncTransform;
   bool hasAsyncTransform = false;
-  LayerMargin fixedLayerMargins(0, 0, 0, 0);
+  ScreenMargin fixedLayerMargins(0, 0, 0, 0);
 
   
   
@@ -1012,7 +1012,7 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
     ) * geckoZoom);
   displayPort += scrollOffsetLayerPixels;
 
-  LayerMargin fixedLayerMargins(0, 0, 0, 0);
+  ScreenMargin fixedLayerMargins(0, 0, 0, 0);
 
   
   
@@ -1088,6 +1088,25 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
   
   AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
                             aLayer->GetLocalTransform(), fixedLayerMargins);
+
+  
+  
+  
+  
+  
+  
+  Maybe<ParentLayerIntRect> rootClipRect = aLayer->AsLayerComposite()->GetShadowClipRect();
+  if (rootClipRect && fixedLayerMargins != ScreenMargin()) {
+#ifndef MOZ_WIDGET_ANDROID
+    
+    
+    MOZ_ASSERT(false);
+#endif
+    ParentLayerRect rect(rootClipRect.value());
+    rect.Deflate(ViewAs<ParentLayerPixel>(fixedLayerMargins,
+      PixelCastJustification::ScreenIsParentLayerForRoot));
+    aLayer->AsLayerComposite()->SetShadowClipRect(Some(RoundedOut(rect)));
+  }
 }
 
 void
@@ -1180,7 +1199,7 @@ AsyncCompositionManager::SyncViewportInfo(const LayerIntRect& aDisplayPort,
                                           bool aLayersUpdated,
                                           ParentLayerPoint& aScrollOffset,
                                           CSSToParentLayerScale& aScale,
-                                          LayerMargin& aFixedLayerMargins)
+                                          ScreenMargin& aFixedLayerMargins)
 {
 #ifdef MOZ_WIDGET_ANDROID
   AndroidBridge::Bridge()->SyncViewportInfo(aDisplayPort,
@@ -1200,7 +1219,7 @@ AsyncCompositionManager::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset,
                                           const CSSRect& aDisplayPort,
                                           const CSSToLayerScale& aDisplayResolution,
                                           bool aIsFirstPaint,
-                                          LayerMargin& aFixedLayerMargins)
+                                          ScreenMargin& aFixedLayerMargins)
 {
 #ifdef MOZ_WIDGET_ANDROID
   AndroidBridge::Bridge()->SyncFrameMetrics(aScrollOffset, aZoom, aCssPageRect,
