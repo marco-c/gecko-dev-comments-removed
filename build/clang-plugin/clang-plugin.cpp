@@ -111,6 +111,11 @@ private:
     virtual void run(const MatchFinder::MatchResult &Result);
   };
 
+  class ExplicitImplicitChecker : public MatchFinder::MatchCallback {
+  public:
+    virtual void run(const MatchFinder::MatchResult &Result);
+  };
+
   ScopeChecker stackClassChecker;
   ScopeChecker globalClassChecker;
   NonHeapClassChecker nonheapClassChecker;
@@ -123,6 +128,7 @@ private:
   NoDuplicateRefCntMemberChecker noDuplicateRefCntMemberChecker;
   NeedsNoVTableTypeChecker needsNoVTableTypeChecker;
   NonMemMovableChecker nonMemMovableChecker;
+  ExplicitImplicitChecker explicitImplicitChecker;
   MatchFinder astMatcher;
 };
 
@@ -181,7 +187,6 @@ bool isInIgnoredNamespaceForImplicitConversion(const Decl *decl) {
 }
 
 bool isIgnoredPathForImplicitCtor(const Decl *decl) {
-  decl = decl->getCanonicalDecl();
   SourceLocation Loc = decl->getLocation();
   const SourceManager &SM = decl->getASTContext().getSourceManager();
   SmallString<1024> FileName = SM.getFilename(Loc);
@@ -220,11 +225,6 @@ bool isIgnoredPathForImplicitConversion(const Decl *decl) {
     }
   }
   return false;
-}
-
-bool isInterestingDeclForImplicitCtor(const Decl *decl) {
-  return !isInIgnoredNamespaceForImplicitCtor(decl) &&
-         !isIgnoredPathForImplicitCtor(decl);
 }
 
 bool isInterestingDeclForImplicitConversion(const Decl *decl) {
@@ -370,34 +370,6 @@ public:
         Diag.Report(d->getLocation(), overrideID) << d->getDeclName() <<
           (*it)->getDeclName();
         Diag.Report((*it)->getLocation(), overrideNote);
-      }
-    }
-
-    if (!d->isAbstract() && isInterestingDeclForImplicitCtor(d)) {
-      for (CXXRecordDecl::ctor_iterator ctor = d->ctor_begin(),
-           e = d->ctor_end(); ctor != e; ++ctor) {
-        
-        if (!ctor->isConvertingConstructor(false)) {
-          continue;
-        }
-        
-        if (ctor->isCopyOrMoveConstructor()) {
-          continue;
-        }
-        
-        if (ctor->isDeleted()) {
-          continue;
-        }
-        
-        if (MozChecker::hasCustomAnnotation(*ctor, "moz_implicit")) {
-          continue;
-        }
-        unsigned ctorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-          DiagnosticIDs::Error, "bad implicit conversion constructor for %0");
-        unsigned noteID = Diag.getDiagnosticIDs()->getCustomDiagID(
-          DiagnosticIDs::Note, "consider adding the explicit keyword to the constructor");
-        Diag.Report(ctor->getLocation(), ctorID) << d->getDeclName();
-        Diag.Report(ctor->getLocation(), noteID);
       }
     }
 
@@ -812,6 +784,29 @@ AST_MATCHER(CXXRecordDecl, needsMemMovable) {
   return MozChecker::hasCustomAnnotation(&Node, "moz_needs_memmovable_type");
 }
 
+AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
+  const CXXConstructorDecl *decl = Node.getCanonicalDecl();
+  return
+    
+    !isInIgnoredNamespaceForImplicitCtor(decl) &&
+    !isIgnoredPathForImplicitCtor(decl) &&
+    
+    decl->isConvertingConstructor(false) &&
+    
+    !decl->isCopyOrMoveConstructor() &&
+    
+    !decl->isDeleted();
+}
+
+
+AST_MATCHER(CXXConstructorDecl, isMarkedImplicit) {
+  return MozChecker::hasCustomAnnotation(&Node, "moz_implicit");
+}
+
+AST_MATCHER(CXXRecordDecl, isConcreteClass) {
+  return !Node.isAbstract();
+}
+
 }
 }
 
@@ -1051,6 +1046,12 @@ DiagnosticsMatcher::DiagnosticsMatcher()
             hasAnyTemplateArgument(refersToType(isNonMemMovable())))
       ).bind("specialization"),
       &nonMemMovableChecker);
+
+  astMatcher.addMatcher(
+      constructorDecl(isInterestingImplicitCtor(),
+                      ofClass(allOf(isConcreteClass(), decl().bind("class"))),
+                      unless(isMarkedImplicit())).bind("ctor"),
+      &explicitImplicitChecker);
 }
 
 void DiagnosticsMatcher::ScopeChecker::run(
@@ -1323,6 +1324,23 @@ void DiagnosticsMatcher::NonMemMovableChecker::run(
         << argType << reason;
     }
   }
+}
+
+void DiagnosticsMatcher::ExplicitImplicitChecker::run(
+    const MatchFinder::MatchResult &Result) {
+  DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
+  unsigned ErrorID = Diag.getDiagnosticIDs()->getCustomDiagID(
+      DiagnosticIDs::Error, "bad implicit conversion constructor for %0");
+  unsigned NoteID = Diag.getDiagnosticIDs()->getCustomDiagID(
+      DiagnosticIDs::Note, "consider adding the explicit keyword to the constructor");
+
+  
+
+  const CXXConstructorDecl *Ctor = Result.Nodes.getNodeAs<CXXConstructorDecl>("ctor");
+  const CXXRecordDecl *Decl = Result.Nodes.getNodeAs<CXXRecordDecl>("class");
+
+  Diag.Report(Ctor->getLocation(), ErrorID) << Decl->getDeclName();
+  Diag.Report(Ctor->getLocation(), NoteID);
 }
 
 class MozCheckAction : public PluginASTAction {

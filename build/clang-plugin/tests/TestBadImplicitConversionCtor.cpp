@@ -4,6 +4,8 @@ struct Foo {
   Foo(int); 
   Foo(int, char=0); 
   Foo(...); 
+  template<class T>
+  Foo(float); 
   Foo(int, unsigned);
   Foo(Foo&);
   Foo(const Foo&);
@@ -38,4 +40,11 @@ struct Abstract {
   Abstract(int, char=0);
   Abstract(...);
   virtual void f() = 0;
+};
+
+template<class T>
+struct Template {
+  Template(int); 
+  template<class U>
+  Template(float); 
 };
