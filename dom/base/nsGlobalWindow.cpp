@@ -6358,6 +6358,12 @@ FullscreenTransitionTask::Run()
 {
   Stage stage = mStage;
   mStage = Stage(mStage + 1);
+  if (MOZ_UNLIKELY(mWidget->Destroyed())) {
+    
+    
+    NS_WARNING("The widget to fullscreen has been destroyed");
+    return NS_OK;
+  }
   if (stage == eBeforeToggle) {
     mWidget->PerformFullscreenTransition(nsIWidget::eBeforeFullscreenToggle,
                                          mDuration.mFadeIn, mTransitionData,
