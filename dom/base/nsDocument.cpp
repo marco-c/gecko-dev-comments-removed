@@ -326,13 +326,6 @@ nsIdentifierMapEntry::RemoveContentChangeCallback(nsIDocument::IDTargetObserver 
   }
 }
 
-struct FireChangeArgs {
-  Element* mFrom;
-  Element* mTo;
-  bool mImageOnly;
-  bool mHaveImageOverride;
-};
-
 
 template<>
 struct nsIStyleRule::COMTypeInfo<css::Rule, void> {
@@ -548,19 +541,6 @@ CustomElementData::RunCallbackQueue()
 } 
 } 
 
-static PLDHashOperator
-FireChangeEnumerator(nsIdentifierMapEntry::ChangeCallbackEntry *aEntry, void *aArg)
-{
-  FireChangeArgs* args = static_cast<FireChangeArgs*>(aArg);
-  
-  
-  if (aEntry->mKey.mForImage ? (args->mHaveImageOverride && !args->mImageOnly) :
-                               args->mImageOnly)
-    return PL_DHASH_NEXT;
-  return aEntry->mKey.mCallback(args->mFrom, args->mTo, aEntry->mKey.mData)
-      ? PL_DHASH_NEXT : PL_DHASH_REMOVE;
-}
-
 void
 nsIdentifierMapEntry::FireChangeCallbacks(Element* aOldElement,
                                           Element* aNewElement,
@@ -569,8 +549,18 @@ nsIdentifierMapEntry::FireChangeCallbacks(Element* aOldElement,
   if (!mChangeCallbacks)
     return;
 
-  FireChangeArgs args = { aOldElement, aNewElement, aImageOnly, !!mImageElement };
-  mChangeCallbacks->EnumerateEntries(FireChangeEnumerator, &args);
+  for (auto iter = mChangeCallbacks->ConstIter(); !iter.Done(); iter.Next()) {
+    nsIdentifierMapEntry::ChangeCallbackEntry* entry = iter.Get();
+    
+    
+    if (entry->mKey.mForImage ? (mImageElement && !aImageOnly) : aImageOnly) {
+      continue;
+    }
+
+    if (!entry->mKey.mCallback(aOldElement, aNewElement, entry->mKey.mData)) {
+      iter.Remove();
+    }
+  }
 }
 
 namespace {
