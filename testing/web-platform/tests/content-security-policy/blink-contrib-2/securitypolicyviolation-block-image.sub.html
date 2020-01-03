@@ -15,7 +15,6 @@
 
 <body>
     <script>
-        console.info('Check that a SecurityPolicyViolationEvent is fired upon blocking an image.');
         var img = document.createElement('img');
         img.src = '../support/fail.png';
         img.onerror = function() {
@@ -27,6 +26,7 @@
         document.body.appendChild(img);
 
     </script>
+    <p>Check that a SecurityPolicyViolationEvent is fired upon blocking an image.</p>
     <div id="log"></div>
     <script async defer src="../support/checkReport.sub.js?reportExists=true&amp;reportField=violated-directive&amp;reportValue=img-src%20&apos;none&apos;"></script>
 </body>

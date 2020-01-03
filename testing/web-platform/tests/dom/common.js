@@ -163,6 +163,7 @@ function setupRangeTests() {
         "[detachedForeignComment, 0, detachedForeignComment, 1]",
         "[detachedXmlComment, 2, detachedXmlComment, 6]",
         "[docfrag, 0, docfrag, 0]",
+        "[processingInstruction, 0, processingInstruction, 4]",
     ];
 
     testRanges = testRangesShort.concat([
@@ -829,89 +830,206 @@ function myExtractContents(range) {
 
 
 
-
-
 function myInsertNode(range, node) {
     
     
     
-    
-    try {
-        range.collapsed;
-    } catch (e) {
-        return "INVALID_STATE_ERR";
+    if (range.startContainer.nodeType == Node.PROCESSING_INSTRUCTION_NODE
+            || range.startContainer.nodeType == Node.COMMENT_NODE
+            || (range.startContainer.nodeType == Node.TEXT_NODE
+                && !range.startContainer.parentNode)) {
+                    return "HIERARCHY_REQUEST_ERR";
     }
 
     
-    
-    if (range.startContainer.nodeType == Node.COMMENT_NODE
-    || (range.startContainer.nodeType == Node.TEXT_NODE
-    && !range.startContainer.parentNode)) {
-        return "HIERARCHY_REQUEST_ERR";
-    }
+    var referenceNode = null;
 
     
-    
-    var referenceNode;
     if (range.startContainer.nodeType == Node.TEXT_NODE) {
+        referenceNode = range.startContainer;
+
         
         
-        
-        var start = [range.startContainer, range.startOffset];
-        var end = [range.endContainer, range.endOffset];
-
-        referenceNode = range.startContainer.splitText(range.startOffset);
-
-        if (start[0] == end[0]
-        && end[1] > start[1]) {
-            end[0] = referenceNode;
-            end[1] -= start[1];
-        } else if (end[0] == start[0].parentNode
-        && end[1] > indexOf(referenceNode)) {
-            end[1]++;
-        }
-        range.setStart(start[0], start[1]);
-        range.setEnd(end[0], end[1]);
-
-    
-    
     } else {
-        referenceNode = range.startContainer.childNodes[range.startOffset];
-        if (typeof referenceNode == "undefined") {
+        if (range.startOffset < range.startContainer.childNodes.length) {
+            referenceNode = range.startContainer.childNodes[range.startOffset];
+        } else {
             referenceNode = null;
         }
     }
 
     
-    var parent_;
-    if (!referenceNode) {
-        parent_ = range.startContainer;
+    
+    var parent_ = referenceNode === null ? range.startContainer :
+        referenceNode.parentNode;
 
     
-    } else {
-        parent_ = referenceNode.parentNode;
+    
+    var error = ensurePreInsertionValidity(node, parent_, referenceNode);
+    if (error) {
+        return error;
     }
 
     
     
-    var newOffset = referenceNode ? indexOf(referenceNode) : nodeLength(parent_);
-
-    
-    
-    newOffset += node.nodeType == Node.DOCUMENT_FRAGMENT_NODE
-        ? nodeLength(node)
-        : 1;
-
-    
-    try {
-        parent_.insertBefore(node, referenceNode);
-    } catch (e) {
-        return getDomExceptionName(e);
+    if (range.startContainer.nodeType == Node.TEXT_NODE) {
+        referenceNode = range.startContainer.splitText(range.startOffset);
     }
 
     
-    if (range.collapsed) {
+    if (node == referenceNode) {
+        referenceNode = referenceNode.nextSibling;
+    }
+
+    
+    if (node.parentNode) {
+        node.parentNode.removeChild(node);
+    }
+
+    
+    
+    var newOffset = referenceNode === null ? nodeLength(parent_) :
+        indexOf(referenceNode);
+
+    
+    
+    newOffset += node.nodeType == Node.DOCUMENT_FRAGMENT_NODE ?
+        nodeLength(node) : 1;
+
+    
+    parent_.insertBefore(node, referenceNode);
+
+    
+    
+    if (range.startContainer == range.endContainer
+    && range.startOffset == range.endOffset) {
         range.setEnd(parent_, newOffset);
+    }
+}
+
+
+function isElement(node) {
+    return node.nodeType == Node.ELEMENT_NODE;
+}
+
+function isText(node) {
+    return node.nodeType == Node.TEXT_NODE;
+}
+
+function isDoctype(node) {
+    return node.nodeType == Node.DOCUMENT_TYPE_NODE;
+}
+
+function ensurePreInsertionValidity(node, parent_, child) {
+    
+    
+    if (parent_.nodeType != Node.DOCUMENT_NODE
+            && parent_.nodeType != Node.DOCUMENT_FRAGMENT_NODE
+            && parent_.nodeType != Node.ELEMENT_NODE) {
+                return "HIERARCHY_REQUEST_ERR";
+    }
+
+    
+    
+    
+    
+    if (isInclusiveAncestor(node, parent_)) {
+        return "HIERARCHY_REQUEST_ERR";
+    }
+
+    
+    
+    if (child && child.parentNode != parent_) {
+        return "NOT_FOUND_ERR";
+    }
+
+    
+    
+    if (node.nodeType != Node.DOCUMENT_FRAGMENT_NODE
+            && node.nodeType != Node.DOCUMENT_TYPE_NODE
+            && node.nodeType != Node.ELEMENT_NODE
+            && node.nodeType != Node.TEXT_NODE
+            && node.nodeType != Node.PROCESSING_INSTRUCTION_NODE
+            && node.nodeType != Node.COMMENT_NODE) {
+                return "HIERARCHY_REQUEST_ERR";
+    }
+
+    
+    
+    if ((node.nodeType == Node.TEXT_NODE
+                && parent_.nodeType == Node.DOCUMENT_NODE)
+            || (node.nodeType == Node.DOCUMENT_TYPE_NODE
+                && parent_.nodeType != Node.DOCUMENT_NODE)) {
+                    return "HIERARCHY_REQUEST_ERR";
+    }
+
+    
+    
+    if (parent_.nodeType == Node.DOCUMENT_NODE) {
+        switch (node.nodeType) {
+        case Node.DOCUMENT_FRAGMENT_NODE:
+            
+            
+            
+            
+            if ([].filter.call(node.childNodes, isElement).length > 1) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+
+            if ([].some.call(node.childNodes, isText)) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+
+            if ([].filter.call(node.childNodes, isElement).length == 1) {
+                if ([].some.call(parent_.childNodes, isElement)) {
+                    return "HIERARCHY_REQUEST_ERR";
+                }
+
+                if (child && child.nodeType == Node.DOCUMENT_TYPE_NODE) {
+                    return "HIERARCHY_REQUEST_ERR";
+                }
+
+                if (child && [].slice.call(parent_.childNodes, indexOf(child) + 1)
+                               .filter(isDoctype)) {
+                    return "HIERARCHY_REQUEST_ERR";
+                }
+            }
+            break;
+
+        case Node.ELEMENT_NODE:
+            
+            
+            if ([].some.call(parent_.childNodes, isElement)) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+
+            if (child.nodeType == Node.DOCUMENT_TYPE_NODE) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+
+            if (child && [].slice.call(parent_.childNodes, indexOf(child) + 1)
+                           .filter(isDoctype)) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+            break;
+
+        case Node.DOCUMENT_TYPE_NODE:
+            
+            
+            if ([].some.call(parent_.childNodes, isDoctype)) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+
+            if (child && [].slice.call(parent_.childNodes, 0, indexOf(child))
+                           .some(isElement)) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+
+            if (!child && [].some.call(parent_.childNodes, isElement)) {
+                return "HIERARCHY_REQUEST_ERR";
+            }
+            break;
+        }
     }
 }
 
@@ -927,8 +1045,7 @@ function assertNodesEqual(actual, expected, msg) {
         while (actual && expected) {
             assert_true(actual.nodeType === expected.nodeType
                 && actual.nodeName === expected.nodeName
-                && actual.nodeValue === expected.nodeValue
-                && actual.childNodes.length === expected.childNodes.length,
+                && actual.nodeValue === expected.nodeValue,
                 "First differing node: expected " + format_value(expected)
                 + ", got " + format_value(actual) + " [" + msg + "]");
             actual = nextNode(actual);
