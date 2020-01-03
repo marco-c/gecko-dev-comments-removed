@@ -1087,7 +1087,7 @@ pref("privacy.donottrackheader.enabled",    false);
 
 pref("privacy.trackingprotection.enabled",  false);
 
-pref("privacy.trackingprotection.pbmode.enabled",  false);
+pref("privacy.trackingprotection.pbmode.enabled",  true);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
