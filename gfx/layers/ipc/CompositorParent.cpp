@@ -29,7 +29,6 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/layers/APZCTreeManager.h"  
-#include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"
 #include "mozilla/layers/BasicCompositor.h"  
 #include "mozilla/layers/Compositor.h"  
@@ -801,6 +800,22 @@ CompositorParent::SchedulePauseOnCompositorThread()
 }
 
 bool
+CompositorParent::ScheduleResumeOnCompositorThread()
+{
+  MonitorAutoLock lock(mResumeCompositionMonitor);
+
+  CancelableTask *resumeTask =
+    NewRunnableMethod(this, &CompositorParent::ResumeComposition);
+  MOZ_ASSERT(CompositorLoop());
+  CompositorLoop()->PostTask(FROM_HERE, resumeTask);
+
+  
+  lock.Wait();
+
+  return !mPaused;
+}
+
+bool
 CompositorParent::ScheduleResumeOnCompositorThread(int width, int height)
 {
   MonitorAutoLock lock(mResumeCompositionMonitor);
@@ -1236,39 +1251,6 @@ CompositorParent::GetAPZTestData(const LayerTransactionParent* aLayerTree,
   *aOutData = sIndirectLayerTrees[mRootLayerTreeID].mApzTestData;
 }
 
-class NotifyAPZConfirmedTargetTask : public Task
-{
-public:
-  explicit NotifyAPZConfirmedTargetTask(const nsRefPtr<APZCTreeManager>& aAPZCTM,
-                                        const uint64_t& aInputBlockId,
-                                        const nsTArray<ScrollableLayerGuid>& aTargets)
-   : mAPZCTM(aAPZCTM),
-     mInputBlockId(aInputBlockId),
-     mTargets(aTargets)
-  {
-  }
-
-  virtual void Run() override {
-    mAPZCTM->SetTargetAPZC(mInputBlockId, mTargets);
-  }
-
-private:
-  nsRefPtr<APZCTreeManager> mAPZCTM;
-  uint64_t mInputBlockId;
-  nsTArray<ScrollableLayerGuid> mTargets;
-};
-
-void
-CompositorParent::SetConfirmedTargetAPZC(const LayerTransactionParent* aLayerTree,
-                                         const uint64_t& aInputBlockId,
-                                         const nsTArray<ScrollableLayerGuid>& aTargets)
-{
-  if (!mApzcTreeManager) {
-    return;
-  }
-  APZThreadUtils::RunOnControllerThread(new NotifyAPZConfirmedTargetTask(
-    mApzcTreeManager, aInputBlockId, aTargets));
-}
 
 void
 CompositorParent::InitializeLayerManager(const nsTArray<LayersBackend>& aBackendHints)
@@ -1621,9 +1603,6 @@ public:
   virtual void LeaveTestMode(LayerTransactionParent* aLayerTree) override;
   virtual void GetAPZTestData(const LayerTransactionParent* aLayerTree,
                               APZTestData* aOutData) override;
-  virtual void SetConfirmedTargetAPZC(const LayerTransactionParent* aLayerTree,
-                                      const uint64_t& aInputBlockId,
-                                      const nsTArray<ScrollableLayerGuid>& aTargets) override;
 
   virtual AsyncCompositionManager* GetCompositionManager(LayerTransactionParent* aParent) override;
 
@@ -2006,24 +1985,6 @@ CrossProcessCompositorParent::GetAPZTestData(const LayerTransactionParent* aLaye
   *aOutData = sIndirectLayerTrees[id].mApzTestData;
 }
 
-void
-CrossProcessCompositorParent::SetConfirmedTargetAPZC(const LayerTransactionParent* aLayerTree,
-                                                     const uint64_t& aInputBlockId,
-                                                     const nsTArray<ScrollableLayerGuid>& aTargets)
-{
-  uint64_t id = aLayerTree->GetId();
-  MOZ_ASSERT(id != 0);
-  CompositorParent* parent = nullptr;
-  {
-    MonitorAutoLock lock(*sIndirectLayerTreesLock);
-    const CompositorParent::LayerTreeState* state = CompositorParent::GetIndirectShadowTree(id);
-    if (!state || !state->mParent) {
-      return;
-    }
-    parent = state->mParent;
-  }
-  parent->SetConfirmedTargetAPZC(aLayerTree, aInputBlockId, aTargets);
-}
 
 AsyncCompositionManager*
 CrossProcessCompositorParent::GetCompositionManager(LayerTransactionParent* aLayerTree)
