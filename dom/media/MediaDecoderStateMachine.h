@@ -406,9 +406,6 @@ protected:
   MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
   MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
 
-  bool IsDecodingFirstFrame();
-  nsresult FinishDecodeFirstFrame();
-
   
   
   bool NeedToDecodeAudio();
@@ -557,11 +554,6 @@ protected:
 
   
   
-  
-  nsresult EnqueueDecodeFirstFrameTask();
-
-  
-  
   void InitiateSeek();
 
   nsresult DispatchAudioDecodeTaskIfNeeded();
@@ -619,14 +611,12 @@ protected:
 
   
   
-  nsresult DecodeFirstFrame();
-
-  
-  void CallDecodeFirstFrame();
-
   
   
-  void MaybeFinishDecodeFirstFrame();
+  bool MaybeFinishDecodeFirstFrame();
+  
+  bool IsDecodingFirstFrame();
+  void FinishDecodeFirstFrame();
 
   
   
