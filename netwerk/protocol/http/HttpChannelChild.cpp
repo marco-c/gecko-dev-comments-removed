@@ -1307,6 +1307,10 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener *listener,
     
     
     PHttpChannelChild::Send__delete__(this);
+    if (mLoadInfo && mLoadInfo->GetEnforceSecurity()) {
+        MOZ_ASSERT(!aContext, "aContext should be null!");
+        return AsyncOpen2(listener);
+    }
     return AsyncOpen(listener, aContext);
   }
 
