@@ -1,7 +1,7 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 package org.mozilla.gecko;
 
@@ -51,6 +51,7 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         if (isCreated())
             return false;
         sGeckoThread = new GeckoThread(sArgs, sAction, sUri);
+        ThreadUtils.sGeckoThread = sGeckoThread;
         return true;
     }
 
@@ -88,8 +89,8 @@ public class GeckoThread extends Thread implements GeckoEventListener {
     }
 
     private String initGeckoEnvironment() {
-        // At some point while loading the gecko libs our default locale gets set
-        // so just save it to locale here and reset it as default after the join
+        
+        
         Locale locale = Locale.getDefault();
 
         if (locale.toString().equalsIgnoreCase("zh_hk")) {
@@ -152,8 +153,8 @@ public class GeckoThread extends Thread implements GeckoEventListener {
                     guestArg = " " + BrowserApp.GUEST_BROWSING_ARG;
                 }
             } else if (!GeckoProfile.sIsUsingCustomProfile) {
-                // If nothing was passed in the intent, make sure the default profile exists and
-                // force Gecko to use the default profile for this activity
+                
+                
                 profileArg = " -P " + profile.forceCreate().getName();
             }
         }
@@ -164,14 +165,13 @@ public class GeckoThread extends Thread implements GeckoEventListener {
     @Override
     public void run() {
         Looper.prepare();
-        ThreadUtils.sGeckoThread = this;
         ThreadUtils.sGeckoHandler = new Handler();
         ThreadUtils.sGeckoQueue = Looper.myQueue();
 
         String path = initGeckoEnvironment();
 
-        // This can only happen after the call to initGeckoEnvironment
-        // above, because otherwise the JNI code hasn't been loaded yet.
+        
+        
         ThreadUtils.postToUiThread(new Runnable() {
             @Override public void run() {
                 GeckoAppShell.registerJavaUiThread();
@@ -186,7 +186,7 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         if (!AppConstants.MOZILLA_OFFICIAL) {
             Log.i(LOGTAG, "RunGecko - args = " + args);
         }
-        // and then fire us up
+        
         GeckoAppShell.runGecko(path, args, mUri, type);
     }
 
@@ -208,10 +208,10 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         sLaunchState.set(setState);
     }
 
-    /**
-     * Set the launch state to <code>setState</code> and return true if the current launch
-     * state is <code>checkState</code>; otherwise do nothing and return false.
-     */
+    
+
+
+
     static boolean checkAndSetLaunchState(LaunchState checkState, LaunchState setState) {
         return sLaunchState.compareAndSet(checkState, setState);
     }
