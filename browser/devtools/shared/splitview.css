@@ -43,12 +43,8 @@ box,
   display: -moz-box;
 }
 
-.splitview-landscape-resizer {
-  cursor: ew-resize;
-}
 
-
-@media (min-width: 551px) {
+@media (min-width: 701px) {
   .splitview-root {
     -moz-box-orient: horizontal;
   }
@@ -79,20 +75,8 @@ ol.splitview-nav > li.splitview-filtered {
   display: -moz-box;
 }
 
-.splitview-portrait-resizer {
-  display: none;
-}
 
-
-@media (max-width: 550px) {
-  .splitview-landscape-splitter {
-    display: none;
-  }
-
-  .splitview-portrait-resizer {
-    display: -moz-box;
-  }
-
+@media (max-width: 700px) {
   .splitview-controller {
     max-width: none;
   }
