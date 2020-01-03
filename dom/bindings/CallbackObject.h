@@ -83,6 +83,16 @@ public:
     return result;
   }
 
+  void MarkForCC()
+  {
+    if (mCallback) {
+      JS::ExposeObjectToActiveJS(mCallback);
+    }
+    if (mCreationStack) {
+      JS::ExposeObjectToActiveJS(mCreationStack);
+    }
+  }
+
   
 
 
