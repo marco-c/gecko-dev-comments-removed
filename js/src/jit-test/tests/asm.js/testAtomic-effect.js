@@ -1,4 +1,4 @@
-// |jit-test| test-also-noasmjs
+
 if (!this.Atomics)
     quit();
 
@@ -11,9 +11,9 @@ function m(stdlib, ffi, heap)
     var load = stdlib.Atomics.load;
     var _emscripten_asm_const_int=ffi._emscripten_asm_const_int;
 
-    // Regression test for bug 1154858 - Atomics.add for effect did
-    // not get compiled properly because of an assembler bug.  This
-    // kernel is derived from the large test case in that bug.
+    
+    
+    
 
     function add_sharedEv(i1) {
 	i1 = i1 | 0;
@@ -30,13 +30,16 @@ function m(stdlib, ffi, heap)
     return {add_sharedEv:add_sharedEv};
 }
 
+if (isAsmJSCompilationAvailable())
+    assertEq(isAsmJSModule(m), true);
+
 var x;
 
 var sab = new SharedArrayBuffer(65536);
 var ffi =
     { _emscripten_asm_const_int:
       function (...rest) {
-	  //print("OUT: " + rest.join(" "));
+	  
 	  if (rest[0] == 8)
 	      x = rest[2];
       }
