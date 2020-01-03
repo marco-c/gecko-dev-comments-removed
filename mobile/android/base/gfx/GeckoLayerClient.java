@@ -748,6 +748,12 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
     
     @Override
+    public PointF getVisibleEndOfLayerView() {
+        return mToolbarAnimator.getVisibleEndOfLayerView();
+    }
+
+    
+    @Override
     public void setAnimationTarget(ImmutableViewportMetrics metrics) {
         if (mGeckoIsReady) {
             
