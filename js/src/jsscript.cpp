@@ -1275,12 +1275,11 @@ JSScript::initScriptCounts(JSContext* cx)
 {
     MOZ_ASSERT(!hasScriptCounts());
 
-    size_t n = 0;
+    
+    
+    size_t nbytes = length() * sizeof(PCCounts);
 
-    for (jsbytecode* pc = code(); pc < codeEnd(); pc += GetBytecodeLength(pc))
-        n += PCCounts::numCounts(JSOp(*pc));
-
-    size_t nbytes = (length() * sizeof(PCCounts)) + (n * sizeof(double));
+    
     uint8_t* base = zone()->pod_calloc<uint8_t>(nbytes);
     if (!base)
         return false;
@@ -1297,29 +1296,15 @@ JSScript::initScriptCounts(JSContext* cx)
         compartment()->scriptCountsMap = map;
     }
 
-    uint8_t* cursor = base;
-
     ScriptCounts scriptCounts;
-    scriptCounts.pcCountsVector = (PCCounts*) cursor;
-    cursor += length() * sizeof(PCCounts);
+    scriptCounts.pcCountsVector = (PCCounts*) base;
 
-    for (jsbytecode* pc = code(); pc < codeEnd(); pc += GetBytecodeLength(pc)) {
-        MOZ_ASSERT(uintptr_t(cursor) % sizeof(double) == 0);
-        scriptCounts.pcCountsVector[pcToOffset(pc)].counts = (double*) cursor;
-        size_t capacity = PCCounts::numCounts(JSOp(*pc));
-#ifdef DEBUG
-        scriptCounts.pcCountsVector[pcToOffset(pc)].capacity = capacity;
-#endif
-        cursor += capacity * sizeof(double);
-    }
-
+    
     if (!map->putNew(this, scriptCounts)) {
         js_free(base);
         return false;
     }
     hasScriptCounts_ = true; 
-
-    MOZ_ASSERT(size_t(cursor - base) == nbytes);
 
     
     for (ActivationIterator iter(cx->runtime()); !iter.done(); ++iter) {
