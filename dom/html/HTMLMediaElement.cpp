@@ -4510,6 +4510,11 @@ void
 HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
 {
   
+  if (!HasAudio()) {
+    return;
+  }
+
+  
   
   WindowAudioCaptureChanged();
 
