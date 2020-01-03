@@ -941,6 +941,9 @@ Search.prototype = {
       );
     let promise = this._searchSuggestionController.fetchCompletePromise
       .then(() => {
+        
+        if (!this._searchSuggestionController)
+          return;
         if (this._searchSuggestionController.resultsCount >= 0 &&
             this._searchSuggestionController.resultsCount < 2) {
           
