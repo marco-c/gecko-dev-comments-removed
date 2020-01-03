@@ -34,6 +34,9 @@ class MOZ_STACK_CLASS nsViewportInfo
       mAllowZoom(aAllowZoom),
       mAllowDoubleTapZoom(aAllowDoubleTapZoom)
     {
+        
+        MOZ_ASSERT(mAllowZoom || !mAllowDoubleTapZoom);
+
         mSize = mozilla::ScreenSize(aDisplaySize) / mDefaultZoom;
         mozilla::CSSToLayoutDeviceScale pixelRatio(1.0f);
         mMinZoom = pixelRatio * kViewportMinScale;
@@ -56,6 +59,9 @@ class MOZ_STACK_CLASS nsViewportInfo
                      mAllowZoom(aAllowZoom),
                      mAllowDoubleTapZoom(aAllowDoubleTapZoom)
     {
+      
+      MOZ_ASSERT(mAllowZoom || !mAllowDoubleTapZoom);
+
       ConstrainViewportValues();
     }
 

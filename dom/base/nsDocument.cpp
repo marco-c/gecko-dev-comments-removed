@@ -7906,14 +7906,14 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     return nsViewportInfo(aDisplaySize,
                           defaultScale,
                           false,
-                           true);
+                           false);
   }
 
   if (!gfxPrefs::MetaViewportEnabled()) {
     return nsViewportInfo(aDisplaySize,
                           defaultScale,
                            false,
-                           true);
+                           false);
   }
 
   

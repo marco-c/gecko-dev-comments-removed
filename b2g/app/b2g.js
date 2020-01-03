@@ -1040,6 +1040,9 @@ pref("security.exthelperapp.disable_background_handling", true);
 pref("osfile.reset_worker_delay", 5000);
 
 
+#ifdef MOZ_WIDGET_GONK
+pref("apz.allow_zooming", true);
+#endif
 
 
 
