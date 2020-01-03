@@ -58,6 +58,8 @@ body {
 }
 
 .showcase > section .comp {
+  
+  position: relative;
   margin: 0 auto; 
 }
 
@@ -167,7 +169,7 @@ body {
 }
 
 
-.force-menu-show * {
+.force-menu-show .icons,
+.force-menu-show .dropdown-menu {
   display: inline-block !important;
 }
-

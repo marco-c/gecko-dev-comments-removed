@@ -910,9 +910,8 @@ function injectLoopAPI(targetWindow) {
       enumerable: true,
       writable: true,
       value: function(emailAddress, size = 40) {
-        const kEmptyGif = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         if (!emailAddress || !MozLoopService.getLoopPref("contacts.gravatars.show")) {
-          return kEmptyGif;
+          return null;
         }
 
         
