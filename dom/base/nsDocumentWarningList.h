@@ -10,4 +10,4 @@
 
 
 
-DOCUMENT_WARNING(WillChangeOverBudgetIgnored)
+DOCUMENT_WARNING(IgnoringWillChangeOverBudget)
