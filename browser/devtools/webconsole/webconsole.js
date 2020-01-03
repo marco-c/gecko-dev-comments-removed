@@ -65,7 +65,7 @@ const SEARCH_DELAY = 200;
 
 
 
-const DEFAULT_LOG_LIMIT = 200;
+const DEFAULT_LOG_LIMIT = 1000;
 
 
 

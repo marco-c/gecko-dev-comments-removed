@@ -1602,10 +1602,11 @@ pref("devtools.webconsole.timestampMessages", false);
 
 
 
-pref("devtools.hud.loglimit.network", 200);
-pref("devtools.hud.loglimit.cssparser", 200);
-pref("devtools.hud.loglimit.exception", 200);
-pref("devtools.hud.loglimit.console", 200);
+
+pref("devtools.hud.loglimit.network", 1000);
+pref("devtools.hud.loglimit.cssparser", 1000);
+pref("devtools.hud.loglimit.exception", 1000);
+pref("devtools.hud.loglimit.console", 1000);
 
 
 pref("devtools.eyedropper.zoom", 6);
