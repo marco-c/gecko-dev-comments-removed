@@ -164,8 +164,8 @@ class JS_FRIEND_API(GCCellPtr)
 
     
     template <typename T>
-    explicit GCCellPtr(T* ptr) : ptr(checkedCast(ptr, JS::MapTypeToTraceKind<T>::kind)) { }
-    explicit GCCellPtr(JSFunction* ptr) : ptr(checkedCast(ptr, JS::TraceKind::Object)) { }
+    explicit GCCellPtr(T* p) : ptr(checkedCast(p, JS::MapTypeToTraceKind<T>::kind)) { }
+    explicit GCCellPtr(JSFunction* p) : ptr(checkedCast(p, JS::TraceKind::Object)) { }
     explicit GCCellPtr(JSFlatString* str) : ptr(checkedCast(str, JS::TraceKind::String)) { }
     explicit GCCellPtr(const Value& v);
 
@@ -189,7 +189,7 @@ class JS_FRIEND_API(GCCellPtr)
     
     
     template <typename T>
-    T& to() const {
+    T& as() const {
         MOZ_ASSERT(kind() == JS::MapTypeToTraceKind<T>::kind);
         
         

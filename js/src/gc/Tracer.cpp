@@ -341,7 +341,7 @@ ObjectGroupCycleCollectorTracer::onChild(const JS::GCCellPtr& thing)
     if (thing.is<ObjectGroup>()) {
         
         
-        ObjectGroup& group = thing.to<ObjectGroup>();
+        ObjectGroup& group = thing.as<ObjectGroup>();
         if (group.maybeUnboxedLayout()) {
             for (size_t i = 0; i < seen.length(); i++) {
                 if (seen[i] == &group)
