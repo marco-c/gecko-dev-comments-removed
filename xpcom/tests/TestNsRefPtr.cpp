@@ -32,6 +32,9 @@ class Foo : public nsISupports
       virtual void VirtualConstMemberFunction( int, int*, int& ) const;
       static void print_totals();
 
+      void NonconstMethod() {}
+      void ConstMethod() const {}
+
     private:
       unsigned int refcount_;
 
@@ -613,8 +616,25 @@ main()
 			AVoidPtrPtrContext( getter_AddRefs(fooP) );
 		}
 
+		{
+		  printf("\n### setup for Test 25\n");
+		  nsRefPtr<Foo> fooP(new Foo);
 
-    printf("\n### Test 25: will a static |nsCOMPtr| |Release| before program termination?\n");
+		  printf("### Test 25: can you construct an |nsRefPtr<const T>| from an |nsRefPtr<T>|?\n");
+		  nsRefPtr<const Foo> constFooP = fooP;
+
+		  printf("### Test 25: can you call a non-const method on an |nsRefPtr<const T>|?\n");
+		  constFooP->ConstMethod();
+
+		  
+		  
+
+		  
+		  
+		}
+
+
+    printf("\n### Test 26: will a static |nsCOMPtr| |Release| before program termination?\n");
     gFoop = do_QueryObject(new Foo);
 
     {

@@ -29,7 +29,7 @@ private:
   assign_with_AddRef(T* aRawPtr)
   {
     if (aRawPtr) {
-      aRawPtr->AddRef();
+      AddRefTraits<T>::AddRef(aRawPtr);
     }
     assign_assuming_AddRef(aRawPtr);
   }
@@ -47,7 +47,7 @@ private:
     T* oldPtr = mRawPtr;
     mRawPtr = aNewPtr;
     if (oldPtr) {
-      oldPtr->Release();
+      AddRefTraits<T>::Release(oldPtr);
     }
   }
 
@@ -60,7 +60,7 @@ public:
   ~nsRefPtr()
   {
     if (mRawPtr) {
-      mRawPtr->Release();
+      AddRefTraits<T>::Release(mRawPtr);
     }
   }
 
@@ -77,7 +77,7 @@ public:
     
   {
     if (mRawPtr) {
-      mRawPtr->AddRef();
+      AddRefTraits<T>::AddRef(mRawPtr);
     }
   }
 
@@ -93,7 +93,7 @@ public:
     : mRawPtr(aRawPtr)
   {
     if (mRawPtr) {
-      mRawPtr->AddRef();
+      AddRefTraits<T>::AddRef(mRawPtr);
     }
   }
 
@@ -109,6 +109,16 @@ public:
     : mRawPtr(aSmartPtr.take())
     
   {
+  }
+
+  template <typename I>
+  MOZ_IMPLICIT nsRefPtr(const nsRefPtr<I>& aSmartPtr)
+    : mRawPtr(aSmartPtr.get())
+    
+  {
+    if (mRawPtr) {
+      AddRefTraits<T>::AddRef(mRawPtr);
+    }
   }
 
   template <typename I>
@@ -131,6 +141,15 @@ public:
   
   {
     assign_with_AddRef(aRhs.mRawPtr);
+    return *this;
+  }
+
+  template <typename I>
+  nsRefPtr<T>&
+  operator=(const nsRefPtr<I>& aRhs)
+  
+  {
+    assign_with_AddRef(aRhs.get());
     return *this;
   }
 
@@ -307,6 +326,35 @@ public:
     assign_assuming_AddRef(0);
     return reinterpret_cast<T**>(&mRawPtr);
   }
+private:
+  
+  
+  
+  
+  
+  
+  
+  
+  template<class U>
+  struct AddRefTraits
+  {
+    static void AddRef(U* aPtr) {
+      aPtr->AddRef();
+    }
+    static void Release(U* aPtr) {
+      aPtr->Release();
+    }
+  };
+  template<class U>
+  struct AddRefTraits<const U>
+  {
+    static void AddRef(const U* aPtr) {
+      const_cast<U*>(aPtr)->AddRef();
+    }
+    static void Release(const U* aPtr) {
+      const_cast<U*>(aPtr)->Release();
+    }
+  };
 };
 
 class nsCycleCollectionTraversalCallback;
