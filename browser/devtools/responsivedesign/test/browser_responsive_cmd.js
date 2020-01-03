@@ -1,6 +1,13 @@
 
 
 
+
+
+
+
+
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("destroy");
+
 function test() {
   function isOpen() {
     return !!gBrowser.selectedTab.__responsiveUI;
