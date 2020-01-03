@@ -7,7 +7,7 @@
 
 
 function* spawnTest() {
-  PMM_loadFrameScripts(gBrowser);
+  loadFrameScripts();
   
   Services.prefs.setIntPref(PROFILER_BUFFER_SIZE_PREF, 1000000);
   let { panel } = yield initPerformance(SIMPLE_URL);

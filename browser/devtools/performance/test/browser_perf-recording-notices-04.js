@@ -10,7 +10,7 @@ function* spawnTest() {
   let { gFront, EVENTS, $, PerformanceController, PerformanceView } = panel.panelWin;
 
   
-  PMM_loadFrameScripts(gBrowser);
+  PMM_loadProfilerScripts(gBrowser);
   yield PMM_stopProfiler();
   Services.prefs.setIntPref(PROFILER_BUFFER_SIZE_PREF, 1000);
   

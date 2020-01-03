@@ -9,11 +9,11 @@
 
 
 const { PerformanceFront } = require("devtools/server/actors/performance");
-const { sendProfilerCommand, PMM_isProfilerActive, PMM_stopProfiler, PMM_loadFrameScripts } = require("devtools/toolkit/performance/process-communication");
+const { sendProfilerCommand, PMM_isProfilerActive, PMM_stopProfiler, PMM_loadProfilerScripts } = require("devtools/toolkit/shared/profiler");
 
 add_task(function*() {
   
-  PMM_loadFrameScripts(gBrowser);
+  PMM_loadProfilerScripts(gBrowser);
   let ENTRIES = 1000000;
   let INTERVAL = 1;
   let FEATURES = ["js"];
