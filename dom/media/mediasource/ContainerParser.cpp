@@ -139,8 +139,6 @@ public:
                   
     
     
-
-    
     if (aData->Length() >= 4 &&
         (*aData)[0] == 0x1a && (*aData)[1] == 0x45 && (*aData)[2] == 0xdf &&
         (*aData)[3] == 0xa3) {
@@ -162,17 +160,9 @@ public:
     
     
     
-
-    
     if (aData->Length() >= 4 &&
         (*aData)[0] == 0x1f && (*aData)[1] == 0x43 && (*aData)[2] == 0xb6 &&
         (*aData)[3] == 0x75) {
-      return true;
-    }
-    
-    if (aData->Length() >= 4 &&
-        (*aData)[0] == 0x1c && (*aData)[1] == 0x53 && (*aData)[2] == 0xbb &&
-        (*aData)[3] == 0x6b) {
       return true;
     }
     return false;
@@ -188,8 +178,6 @@ public:
       mOverlappedMapping.Clear();
       mInitData = new MediaByteBuffer();
       mResource = new SourceBufferResource(NS_LITERAL_CSTRING("video/webm"));
-      mCompleteMediaHeaderRange = MediaByteRange();
-      mCompleteMediaSegmentRange = MediaByteRange();
     }
 
     
@@ -230,21 +218,8 @@ public:
       return false;
     }
 
+    
     uint32_t endIdx = mapping.Length() - 1;
-
-    
-    uint32_t segmentEndIdx = endIdx;
-    while (mapping[0].mSyncOffset != mapping[segmentEndIdx].mSyncOffset) {
-      segmentEndIdx -= 1;
-    }
-    if (segmentEndIdx > 0 && mOffset >= mapping[segmentEndIdx].mEndOffset) {
-      mCompleteMediaHeaderRange = MediaByteRange(mParser.mInitEndOffset,
-                                                 mapping[0].mEndOffset);
-      mCompleteMediaSegmentRange = MediaByteRange(mParser.mInitEndOffset,
-                                                  mapping[segmentEndIdx].mEndOffset);
-    }
-
-    
     while (mOffset < mapping[endIdx].mEndOffset && endIdx > 0) {
       endIdx -= 1;
     }
