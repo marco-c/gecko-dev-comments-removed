@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "URLSearchParams.h"
 #include "mozilla/dom/URLSearchParamsBinding.h"
@@ -35,7 +35,7 @@ URLSearchParams::WrapObject(JSContext* aCx)
   return URLSearchParamsBinding::Wrap(aCx, this);
 }
 
-/* static */ already_AddRefed<URLSearchParams>
+ already_AddRefed<URLSearchParams>
 URLSearchParams::Constructor(const GlobalObject& aGlobal,
                              const nsAString& aInit,
                              ErrorResult& aRv)
@@ -45,7 +45,7 @@ URLSearchParams::Constructor(const GlobalObject& aGlobal,
   return sp.forget();
 }
 
-/* static */ already_AddRefed<URLSearchParams>
+ already_AddRefed<URLSearchParams>
 URLSearchParams::Constructor(const GlobalObject& aGlobal,
                              URLSearchParams& aInit,
                              ErrorResult& aRv)
@@ -59,7 +59,7 @@ void
 URLSearchParams::ParseInput(const nsACString& aInput,
                             URLSearchParamsObserver* aObserver)
 {
-  // Remove all the existing data before parsing a new input.
+  
   DeleteAll();
 
   nsACString::const_iterator start, end;
@@ -121,14 +121,14 @@ URLSearchParams::DecodeString(const nsACString& aInput, nsAString& aOutput)
   nsCString unescaped;
 
   while (start != end) {
-    // replace '+' with U+0020
+    
     if (*start == '+') {
       unescaped.Append(' ');
       ++start;
       continue;
     }
 
-    // Percent decode algorithm
+    
     if (*start == '%') {
       nsACString::const_iterator first(start);
       ++first;
@@ -190,7 +190,7 @@ URLSearchParams::ConvertString(const nsACString& aInput, nsAString& aOutput)
     return;
   }
 
-  if (!aOutput.SetLength(outputLength, fallible_t())) {
+  if (!aOutput.SetLength(outputLength, fallible)) {
     return;
   }
 
@@ -267,7 +267,7 @@ URLSearchParams::Set(const nsAString& aName, const nsAString& aValue)
       ++i;
       continue;
     }
-    // Remove duplicates.
+    
     mSearchParams.RemoveElementAt(i);
     --len;
   }
@@ -340,10 +340,10 @@ void SerializeString(const nsCString& aInput, nsAString& aValue)
   const unsigned char* p = (const unsigned char*) aInput.get();
 
   while (p && *p) {
-    // ' ' to '+'
+    
     if (*p == 0x20) {
       aValue.Append(0x2B);
-    // Percent Encode algorithm
+    
     } else if (*p == 0x2A || *p == 0x2D || *p == 0x2E ||
                (*p >= 0x30 && *p <= 0x39) ||
                (*p >= 0x41 && *p <= 0x5A) || *p == 0x5F ||
@@ -357,7 +357,7 @@ void SerializeString(const nsCString& aInput, nsAString& aValue)
   }
 }
 
-} // anonymous namespace
+} 
 
 void
 URLSearchParams::Serialize(nsAString& aValue) const
@@ -388,5 +388,5 @@ URLSearchParams::NotifyObservers(URLSearchParamsObserver* aExceptObserver)
   }
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
