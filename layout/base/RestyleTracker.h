@@ -323,6 +323,14 @@ public:
 
 
 
+  bool HasRestyleData(Element* aElement) {
+    return mPendingRestyles.Contains(aElement);
+  }
+
+  
+
+
+
 
 
 
