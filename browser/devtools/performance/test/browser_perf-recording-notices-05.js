@@ -6,8 +6,11 @@
 
 
 function* spawnTest() {
-  let { panel } = yield initPerformance(SIMPLE_URL, void 0, { TEST_MOCK_PROFILER_CHECK_TIMER: 10 });
-  let { EVENTS, $, PerformanceController, PerformanceView } = panel.panelWin;
+  let { panel } = yield initPerformance(SIMPLE_URL);
+  let { gFront, EVENTS, $, PerformanceController, PerformanceView } = panel.panelWin;
+
+  
+  yield gFront.setProfilerStatusInterval(10);
 
   let supported = false;
   let enabled = false;

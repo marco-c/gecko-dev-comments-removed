@@ -25,9 +25,7 @@ loader.lazyRequireGetter(this, "L10N",
 loader.lazyRequireGetter(this, "TIMELINE_BLUEPRINT",
   "devtools/performance/markers", true);
 loader.lazyRequireGetter(this, "RecordingUtils",
-  "devtools/performance/recording-utils");
-loader.lazyRequireGetter(this, "RecordingModel",
-  "devtools/performance/recording-model", true);
+  "devtools/toolkit/performance/utils");
 loader.lazyRequireGetter(this, "GraphsController",
   "devtools/performance/graphs", true);
 loader.lazyRequireGetter(this, "WaterfallHeader",
@@ -92,15 +90,15 @@ const EVENTS = {
   UI_STOP_RECORDING: "Performance:UI:StopRecording",
 
   
-  UI_IMPORT_RECORDING: "Performance:UI:ImportRecording",
+  UI_RECORDING_IMPORTED: "Performance:UI:ImportRecording",
   
   UI_EXPORT_RECORDING: "Performance:UI:ExportRecording",
 
   
-  RECORDING_STARTED: "Performance:RecordingStarted",
-  RECORDING_STOPPED: "Performance:RecordingStopped",
-  RECORDING_WILL_START: "Performance:RecordingWillStart",
-  RECORDING_WILL_STOP: "Performance:RecordingWillStop",
+  NEW_RECORDING: "Performance:NewRecording",
+
+  
+  RECORDING_STATE_CHANGE: "Performance:RecordingStateChange",
 
   
   
@@ -110,7 +108,6 @@ const EVENTS = {
   RECORDINGS_CLEARED: "Performance:RecordingsCleared",
 
   
-  RECORDING_IMPORTED: "Performance:RecordingImported",
   RECORDING_EXPORTED: "Performance:RecordingExported",
 
   
@@ -153,7 +150,25 @@ const EVENTS = {
 
   
   SOURCE_SHOWN_IN_JS_DEBUGGER: "Performance:UI:SourceShownInJsDebugger",
-  SOURCE_NOT_FOUND_IN_JS_DEBUGGER: "Performance:UI:SourceNotFoundInJsDebugger"
+  SOURCE_NOT_FOUND_IN_JS_DEBUGGER: "Performance:UI:SourceNotFoundInJsDebugger",
+
+  
+  
+  
+  RECORDING_STARTED: "Performance:RecordingStarted",
+  RECORDING_WILL_STOP: "Performance:RecordingWillStop",
+  RECORDING_STOPPED: "Performance:RecordingStopped",
+
+  
+  RECORDINGS_SEEDED: "Performance:RecordingsSeeded",
+
+  
+  
+  CONTROLLER_STOPPED_RECORDING: "Performance:Controller:StoppedRecording",
+
+  
+  
+  RECORDING_IMPORTED: "Performance:ImportedRecording",
 };
 
 
@@ -165,20 +180,16 @@ let gToolbox, gTarget, gFront;
 
 
 let startupPerformance = Task.async(function*() {
-  yield promise.all([
-    PerformanceController.initialize(),
-    PerformanceView.initialize()
-  ]);
+  yield PerformanceController.initialize();
+  yield PerformanceView.initialize();
 });
 
 
 
 
 let shutdownPerformance = Task.async(function*() {
-  yield promise.all([
-    PerformanceController.destroy(),
-    PerformanceView.destroy()
-  ]);
+  yield PerformanceController.destroy();
+  yield PerformanceView.destroy();
 });
 
 
@@ -202,8 +213,7 @@ let PerformanceController = {
     this._onRecordingSelectFromView = this._onRecordingSelectFromView.bind(this);
     this._onPrefChanged = this._onPrefChanged.bind(this);
     this._onThemeChanged = this._onThemeChanged.bind(this);
-    this._onRecordingStateChange = this._onRecordingStateChange.bind(this);
-    this._onProfilerStatusUpdated = this._onProfilerStatusUpdated.bind(this);
+    this._onFrontEvent = this._onFrontEvent.bind(this);
 
     
     this._e10s = Services.appinfo.browserTabsRemoteAutostart;
@@ -212,15 +222,11 @@ let PerformanceController = {
     this._prefs = require("devtools/performance/global").PREFS;
     this._prefs.on("pref-changed", this._onPrefChanged);
 
-    gFront.on("recording-starting", this._onRecordingStateChange);
-    gFront.on("recording-started", this._onRecordingStateChange);
-    gFront.on("recording-stopping", this._onRecordingStateChange);
-    gFront.on("recording-stopped", this._onRecordingStateChange);
-    gFront.on("profiler-status", this._onProfilerStatusUpdated);
+    gFront.on("*", this._onFrontEvent);
     ToolbarView.on(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceView.on(EVENTS.UI_START_RECORDING, this.startRecording);
     PerformanceView.on(EVENTS.UI_STOP_RECORDING, this.stopRecording);
-    PerformanceView.on(EVENTS.UI_IMPORT_RECORDING, this.importRecording);
+    PerformanceView.on(EVENTS.UI_RECORDING_IMPORTED, this.importRecording);
     PerformanceView.on(EVENTS.UI_CLEAR_RECORDINGS, this.clearRecordings);
     RecordingsView.on(EVENTS.UI_EXPORT_RECORDING, this.exportRecording);
     RecordingsView.on(EVENTS.RECORDING_SELECTED, this._onRecordingSelectFromView);
@@ -234,15 +240,11 @@ let PerformanceController = {
   destroy: function() {
     this._prefs.off("pref-changed", this._onPrefChanged);
 
-    gFront.off("recording-starting", this._onRecordingStateChange);
-    gFront.off("recording-started", this._onRecordingStateChange);
-    gFront.off("recording-stopping", this._onRecordingStateChange);
-    gFront.off("recording-stopped", this._onRecordingStateChange);
-    gFront.off("profiler-status", this._onProfilerStatusUpdated);
+    gFront.off("*", this._onFrontEvent);
     ToolbarView.off(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceView.off(EVENTS.UI_START_RECORDING, this.startRecording);
     PerformanceView.off(EVENTS.UI_STOP_RECORDING, this.stopRecording);
-    PerformanceView.off(EVENTS.UI_IMPORT_RECORDING, this.importRecording);
+    PerformanceView.off(EVENTS.UI_RECORDING_IMPORTED, this.importRecording);
     PerformanceView.off(EVENTS.UI_CLEAR_RECORDINGS, this.clearRecordings);
     RecordingsView.off(EVENTS.UI_EXPORT_RECORDING, this.exportRecording);
     RecordingsView.off(EVENTS.RECORDING_SELECTED, this._onRecordingSelectFromView);
@@ -294,7 +296,6 @@ let PerformanceController = {
   
 
 
-
   startRecording: Task.async(function *() {
     let options = {
       withMarkers: true,
@@ -314,10 +315,16 @@ let PerformanceController = {
   
 
 
-
   stopRecording: Task.async(function *() {
     let recording = this.getLatestManualRecording();
     yield gFront.stopRecording(recording);
+
+    
+    
+    
+    
+    
+    this.emit(EVENTS.CONTROLLER_STOPPED_RECORDING);
   }),
 
   
@@ -346,7 +353,7 @@ let PerformanceController = {
     
     
     if (latest && !latest.isCompleted()) {
-      yield this.once(EVENTS.RECORDING_STOPPED);
+      yield this.waitForStateChangeOnRecording(latest, "recording-stopped");
     }
 
     this._recordings.length = 0;
@@ -362,11 +369,15 @@ let PerformanceController = {
 
 
   importRecording: Task.async(function*(_, file) {
-    let recording = new RecordingModel();
-    this._recordings.push(recording);
-    yield recording.importRecording(file);
+    let recording = yield gFront.importRecording(file);
+    this._addNewRecording(recording);
 
-    this.emit(EVENTS.RECORDING_IMPORTED, recording);
+    
+    
+    
+    if (DevToolsUtils.testing) {
+      this.emit(EVENTS.RECORDING_IMPORTED, recording);
+    }
   }),
 
   
@@ -436,7 +447,21 @@ let PerformanceController = {
   
 
 
-  _onProfilerStatusUpdated: function (_, data) {
+  _onFrontEvent: function (eventName, ...data) {
+    if (eventName === "profiler-status") {
+      this._onProfilerStatusUpdated(...data);
+      return;
+    }
+
+    if (["recording-started", "recording-stopped", "recording-stopping"].indexOf(eventName) !== -1) {
+      this._onRecordingStateChange(eventName, ...data);
+    }
+  },
+
+  
+
+
+  _onProfilerStatusUpdated: function (data) {
     this.emit(EVENTS.PROFILER_STATUS_UPDATED, data);
   },
 
@@ -445,35 +470,58 @@ let PerformanceController = {
 
 
 
+  _addNewRecording: function (recording) {
+    if (this._recordings.indexOf(recording) === -1) {
+      this._recordings.push(recording);
+      this.emit(EVENTS.NEW_RECORDING, recording);
+    }
+  },
+
+  
+
+
+
+
+
 
   _onRecordingStateChange: function (state, model) {
-    
-    
-    if (state !== "recording-starting" && this.getRecordings().indexOf(model) === -1) {
-      return;
-    }
+    this._addNewRecording(model);
 
-    switch (state) {
-      
-      case "recording-starting":
-        
-        this._recordings.push(model);
-        this.emit(EVENTS.RECORDING_WILL_START, model);
-        break;
-      
-      case "recording-started":
-        this.emit(EVENTS.RECORDING_STARTED, model);
-        break;
-      
-      
-      case "recording-stopping":
-        this.emit(EVENTS.RECORDING_WILL_STOP, model);
-        break;
-      
-      case "recording-stopped":
-        this.emit(EVENTS.RECORDING_STOPPED, model);
-        break;
+    this.emit(EVENTS.RECORDING_STATE_CHANGE, state, model);
+
+    
+    
+    
+    
+    
+    if (DevToolsUtils.testing) {
+      switch (state) {
+        case "recording-started":
+          this.emit(EVENTS.RECORDING_STARTED, model);
+          break;
+        case "recording-stopping":
+          this.emit(EVENTS.RECORDING_WILL_STOP, model);
+          break;
+        case "recording-stopped":
+          this.emit(EVENTS.RECORDING_STOPPED, model);
+          break;
+      }
     }
+  },
+
+  
+
+
+
+  getBufferUsageForRecording: function (recording) {
+    return gFront.getBufferUsageForRecording(recording);
+  },
+
+  
+
+
+  isRecording: function () {
+    return this._recordings.some(r => r.isRecording());
   },
 
   
@@ -481,6 +529,13 @@ let PerformanceController = {
 
   getRecordings: function () {
     return this._recordings;
+  },
+
+  
+
+
+  getTraits: function () {
+    return gFront.traits;
   },
 
   
@@ -515,6 +570,21 @@ let PerformanceController = {
 
 
 
+
+  populateWithRecordings: function (recordings=[]) {
+    for (let recording of recordings) {
+      PerformanceController._addNewRecording(recording);
+    }
+    this.emit(EVENTS.RECORDINGS_SEEDED);
+  },
+
+  
+
+
+
+
+
+
   getMultiprocessStatus: function () {
     
     
@@ -529,6 +599,25 @@ let PerformanceController = {
     let enabled = this._e10s;
     return { supported, enabled };
   },
+
+  
+
+
+
+
+
+
+
+  waitForStateChangeOnRecording: Task.async(function *(recording, expectedState) {
+    let deferred = promise.defer();
+    this.on(EVENTS.RECORDING_STATE_CHANGE, function handler (state, model) {
+      if (state === expectedState && model === recording) {
+        this.off(EVENTS.RECORDING_STATE_CHANGE, handler);
+        deferred.resolve();
+      }
+    });
+    yield deferred.promise;
+  }),
 
   
 

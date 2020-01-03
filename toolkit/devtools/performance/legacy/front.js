@@ -3,87 +3,66 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
+const { Cu } = require("chrome");
 const { Task } = require("resource://gre/modules/Task.jsm");
 
 loader.lazyRequireGetter(this, "Services");
 loader.lazyRequireGetter(this, "promise");
-loader.lazyRequireGetter(this, "EventEmitter",
-  "devtools/toolkit/event-emitter");
 loader.lazyRequireGetter(this, "extend",
   "sdk/util/object", true);
 
 loader.lazyRequireGetter(this, "Actors",
-  "devtools/performance/actors");
-loader.lazyRequireGetter(this, "RecordingModel",
-  "devtools/performance/recording-model", true);
+  "devtools/toolkit/performance/legacy/actors");
+loader.lazyRequireGetter(this, "LegacyPerformanceRecording",
+  "devtools/toolkit/performance/legacy/recording", true);
+loader.lazyRequireGetter(this, "importRecording",
+  "devtools/toolkit/performance/legacy/recording", true);
 loader.lazyRequireGetter(this, "normalizePerformanceFeatures",
-  "devtools/performance/recording-utils", true);
+  "devtools/toolkit/performance/utils", true);
 loader.lazyRequireGetter(this, "DevToolsUtils",
   "devtools/toolkit/DevToolsUtils");
-
-loader.lazyImporter(this, "gDevTools",
-  "resource:///modules/devtools/gDevTools.jsm");
-
-
-
-
-
-let PerformanceFronts = new WeakMap();
+loader.lazyRequireGetter(this, "events",
+  "sdk/event/core");
+loader.lazyRequireGetter(this, "EventTarget",
+  "sdk/event/target", true);
+loader.lazyRequireGetter(this, "Class",
+  "sdk/core/heritage", true);
 
 
 
 
 
+const LegacyPerformanceFront = Class({
+  extends: EventTarget,
 
+  LEGACY_FRONT: true,
 
+  traits: {
+    features: {
+      withMarkers: true,
+      withTicks: true,
+      withMemory: false,
+      withAllocations: false,
+      withJITOptimizations: false,
+    },
+  },
 
+  initialize: function (target) {
+    let { form, client } = target;
+    this._target = target;
+    this._form = form;
+    this._client = client;
+    this._pendingConsoleRecordings = [];
+    this._sitesPullTimeout = 0;
+    this._recordings = [];
 
-
-PerformanceFronts.forTarget = function(target) {
-  if (this.has(target)) {
-    return this.get(target);
-  }
-
-  let instance = new PerformanceFront(target);
-  this.set(target, instance);
-  return instance;
-};
-
-
-
-
-
-
-
-
-
-
-
-function PerformanceFront (target) {
-  EventEmitter.decorate(this);
-
-  this._target = target;
-  this._client = this._target.client;
-  this._pendingConsoleRecordings = [];
-  this._sitesPullTimeout = 0;
-  this._recordings = [];
-
-  this._pipeToFront = this._pipeToFront.bind(this);
-  this._onTimelineData = this._onTimelineData.bind(this);
-  this._onConsoleProfileStart = this._onConsoleProfileStart.bind(this);
-  this._onConsoleProfileEnd = this._onConsoleProfileEnd.bind(this);
-  this._onProfilerStatus = this._onProfilerStatus.bind(this);
-  this._onProfilerUnexpectedlyStopped = this._onProfilerUnexpectedlyStopped.bind(this);
-
-  Services.obs.notifyObservers(null, "performance-tools-connection-created", null);
-}
-
-PerformanceFront.prototype = {
-
-  
-  _memorySupported: true,
-  _timelineSupported: true,
+    this._pipeToFront = this._pipeToFront.bind(this);
+    this._onTimelineData = this._onTimelineData.bind(this);
+    this._onConsoleProfileStart = this._onConsoleProfileStart.bind(this);
+    this._onConsoleProfileStop = this._onConsoleProfileStop.bind(this);
+    this._onProfilerStatus = this._onProfilerStatus.bind(this);
+    this._onProfilerUnexpectedlyStopped = this._onProfilerUnexpectedlyStopped.bind(this);
+  },
 
   
 
@@ -92,7 +71,7 @@ PerformanceFront.prototype = {
 
 
 
-  open: Task.async(function*() {
+  connect: Task.async(function*() {
     if (this._connecting) {
       return this._connecting.promise;
     }
@@ -102,9 +81,6 @@ PerformanceFront.prototype = {
     this._connecting = promise.defer();
 
     
-    yield this._target.makeRemote();
-
-    
     
     
     
@@ -112,7 +88,6 @@ PerformanceFront.prototype = {
     yield this._registerListeners();
 
     this._connecting.resolve();
-    Services.obs.notifyObservers(null, "performance-tools-connection-opened", null);
   }),
 
   
@@ -131,9 +106,9 @@ PerformanceFront.prototype = {
     this._connecting = null;
     this._profiler = null;
     this._timeline = null;
-    this._memory = null;
-    this._target = null;
     this._client = null;
+    this._form = null;
+    this._target = this._target;
   }),
 
   
@@ -141,20 +116,17 @@ PerformanceFront.prototype = {
 
 
   _connectActors: Task.async(function*() {
-    this._profiler = new Actors.ProfilerFront(this._target);
-    this._memory = new Actors.MemoryFront(this._target);
-    this._timeline = new Actors.TimelineFront(this._target);
+    this._profiler = new Actors.LegacyProfilerFront(this._target);
+    this._timeline = new Actors.LegacyTimelineFront(this._target);
 
     yield promise.all([
       this._profiler.connect(),
-      this._memory.connect(),
       this._timeline.connect()
     ]);
 
     
-    
-    this._memorySupported = !this._memory.IS_MOCK;
-    this._timelineSupported = !this._timeline.IS_MOCK;
+    this.traits.features.withMarkers = !this._timeline.IS_MOCK;
+    this.traits.features.withTicks = !this._timeline.IS_MOCK;
   }),
 
   
@@ -163,12 +135,9 @@ PerformanceFront.prototype = {
 
   _registerListeners: function () {
     this._timeline.on("timeline-data", this._onTimelineData);
-    this._memory.on("timeline-data", this._onTimelineData);
     this._profiler.on("console-profile-start", this._onConsoleProfileStart);
-    this._profiler.on("console-profile-end", this._onConsoleProfileEnd);
+    this._profiler.on("console-profile-stop", this._onConsoleProfileStop);
     this._profiler.on("profiler-stopped", this._onProfilerUnexpectedlyStopped);
-    this._profiler.on("profiler-already-active", this._pipeToFront);
-    this._profiler.on("profiler-activated", this._pipeToFront);
     this._profiler.on("profiler-status", this._onProfilerStatus);
   },
 
@@ -177,12 +146,9 @@ PerformanceFront.prototype = {
 
   _unregisterListeners: function () {
     this._timeline.off("timeline-data", this._onTimelineData);
-    this._memory.off("timeline-data", this._onTimelineData);
     this._profiler.off("console-profile-start", this._onConsoleProfileStart);
-    this._profiler.off("console-profile-end", this._onConsoleProfileEnd);
+    this._profiler.off("console-profile-stop", this._onConsoleProfileStop);
     this._profiler.off("profiler-stopped", this._onProfilerUnexpectedlyStopped);
-    this._profiler.off("profiler-already-active", this._pipeToFront);
-    this._profiler.off("profiler-activated", this._pipeToFront);
     this._profiler.off("profiler-status", this._onProfilerStatus);
   },
 
@@ -193,7 +159,6 @@ PerformanceFront.prototype = {
     yield promise.all([
       this._profiler.destroy(),
       this._timeline.destroy(),
-      this._memory.destroy()
     ]);
   }),
 
@@ -214,13 +179,9 @@ PerformanceFront.prototype = {
       return;
     }
 
-    
-    
-    
-    
-    yield gDevTools.getToolbox(this._target).loadTool("performance");
+    events.emit(this, "console-profile-start");
 
-    let model = yield this.startRecording(extend(getRecordingModelPrefs(), {
+    yield this.startRecording(extend({}, getLegacyPerformanceRecordingPrefs(), {
       console: true,
       label: profileLabel
     }));
@@ -235,7 +196,7 @@ PerformanceFront.prototype = {
 
 
 
-  _onConsoleProfileEnd: Task.async(function *(_, data) {
+  _onConsoleProfileStop: Task.async(function *(_, data) {
     
     
     if (!data) {
@@ -284,11 +245,9 @@ PerformanceFront.prototype = {
 
 
 
-
-
   _onTimelineData: function (_, ...data) {
     this._recordings.forEach(e => e._addTimelineData.apply(e, data));
-    this.emit("timeline-data", ...data);
+    events.emit(this, "timeline-data", ...data);
   },
 
   
@@ -297,15 +256,12 @@ PerformanceFront.prototype = {
   _onProfilerStatus: function (_, data) {
     
     
-    if (!data) {
+    if (!data || data.position === void 0) {
       return;
     }
-    
-    
-    if (data.position !== void 0) {
-      this._recordings.forEach(e => e._addBufferStatusData.call(e, data));
-    }
-    this.emit("profiler-status", data);
+
+    this._currentBufferStatus = data;
+    events.emit(this, "profiler-status", data);
   },
 
   
@@ -318,9 +274,7 @@ PerformanceFront.prototype = {
 
 
   startRecording: Task.async(function*(options = {}) {
-    let model = new RecordingModel(normalizePerformanceFeatures(options, this.getActorSupport()));
-
-    this.emit("recording-starting", model);
+    let model = new LegacyPerformanceRecording(normalizePerformanceFeatures(options, this.traits.features));
 
     
     
@@ -328,14 +282,12 @@ PerformanceFront.prototype = {
     
     let profilerStart = this._profiler.start(options);
     let timelineStart = this._timeline.start(options);
-    let memoryStart = this._memory.start(options);
 
     let { startTime, position, generation, totalSize } = yield profilerStart;
     let timelineStartTime = yield timelineStart;
-    let memoryStartTime = yield memoryStart;
 
     let data = {
-      profilerStartTime: startTime, timelineStartTime, memoryStartTime,
+      profilerStartTime: startTime, timelineStartTime,
       generation, position, totalSize
     };
 
@@ -344,7 +296,7 @@ PerformanceFront.prototype = {
     model._populate(data);
     this._recordings.push(model);
 
-    this.emit("recording-started", model);
+    events.emit(this, "recording-started", model);
     return model;
   }),
 
@@ -368,7 +320,7 @@ PerformanceFront.prototype = {
     
     let endTime = Date.now();
     model._onStoppingRecording(endTime);
-    this.emit("recording-stopping", model);
+    events.emit(this, "recording-stopping", model);
 
     
     
@@ -383,7 +335,6 @@ PerformanceFront.prototype = {
     let config = model.getConfiguration();
     let startTime = model.getProfilerStartTime();
     let profilerData = yield this._profiler.getProfile({ startTime });
-    let memoryEndTime = Date.now();
     let timelineEndTime = Date.now();
 
     
@@ -394,7 +345,6 @@ PerformanceFront.prototype = {
       
       
       yield this._profiler.stop();
-      memoryEndTime = yield this._memory.stop(config);
       timelineEndTime = yield this._timeline.stop(config);
     }
 
@@ -405,11 +355,10 @@ PerformanceFront.prototype = {
 
       
       profilerEndTime: profilerData.currentTime,
-      timelineEndTime: timelineEndTime,
-      memoryEndTime: memoryEndTime
+      timelineEndTime: timelineEndTime
     });
 
-    this.emit("recording-stopped", model);
+    events.emit(this, "recording-stopped", model);
     return model;
   }),
 
@@ -418,11 +367,10 @@ PerformanceFront.prototype = {
 
 
 
-  getActorSupport: function () {
-    return {
-      memory: this._memorySupported,
-      timeline: this._timelineSupported
-    };
+
+
+  importRecording: function (file) {
+    return importRecording(file);
   },
 
   
@@ -439,8 +387,39 @@ PerformanceFront.prototype = {
 
 
 
+
+
+
+  getBufferUsageForRecording: function (recording) {
+    if (!recording.isRecording() || !this._currentBufferStatus) {
+      return null;
+    }
+    let { position: currentPosition, totalSize, generation: currentGeneration } = this._currentBufferStatus;
+    let { position: origPosition, generation: origGeneration } = recording.getStartingBufferStatus();
+
+    let normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) + currentPosition;
+    let percent = (normalizedCurrent - origPosition) / totalSize;
+    return percent > 1 ? 1 : percent;
+  },
+
+  
+
+
+
+
+
+
+  getConfiguration: Task.async(function *() {
+    let profilerConfig = yield this._request("profiler", "getStartOptions");
+    return profilerConfig;
+  }),
+
+  
+
+
+
   _pipeToFront: function (eventName, ...args) {
-    this.emit(eventName, ...args);
+    events.emit(this, eventName, ...args);
   },
 
   
@@ -449,19 +428,30 @@ PerformanceFront.prototype = {
 
   _request: function (actorName, method, ...args) {
     if (!DevToolsUtils.testing) {
-      throw new Error("PerformanceFront._request may only be used in tests.");
+      throw new Error("LegacyPerformanceFront._request may only be used in tests.");
     }
     let actor = this[`_${actorName}`];
     return actor[method].apply(actor, args);
   },
 
-  toString: () => "[object PerformanceFront]"
-};
+  
+
+
+
+  setProfilerStatusInterval: function (n) {
+    if (this._profiler._poller) {
+      this._profiler._poller._wait = n;
+    }
+    this._profiler._PROFILER_CHECK_TIMER = n;
+  },
+
+  toString: () => "[object LegacyPerformanceFront]"
+});
 
 
 
 
-function getRecordingModelPrefs () {
+function getLegacyPerformanceRecordingPrefs () {
   return {
     withMarkers: true,
     withMemory: Services.prefs.getBoolPref("devtools.performance.ui.enable-memory"),
@@ -473,5 +463,4 @@ function getRecordingModelPrefs () {
   };
 }
 
-exports.getPerformanceFront = t => PerformanceFronts.forTarget(t);
-exports.PerformanceFront = PerformanceFront;
+exports.LegacyPerformanceFront = LegacyPerformanceFront;
