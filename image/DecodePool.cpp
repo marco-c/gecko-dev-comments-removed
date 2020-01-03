@@ -451,7 +451,10 @@ DecodePool::Decode(Decoder* aDecoder)
   nsresult rv = aDecoder->Decode();
 
   if (NS_SUCCEEDED(rv) && !aDecoder->GetDecodeDone()) {
-    if (aDecoder->HasProgress()) {
+    
+    
+    
+    if (aDecoder->HasProgress() && !aDecoder->IsMetadataDecode()) {
       NotifyProgress(aDecoder);
     }
     
