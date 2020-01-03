@@ -46,9 +46,6 @@ DriverCrashGuard::Initialize()
   }
 
   if (RecoverFromDriverInitCrash()) {
-    
-    
-    gfxCriticalError(CriticalLog::DefaultOptions(false)) << "Recovered from graphics driver startup crash; acceleration disabled.";
     return;
   }
 
@@ -57,10 +54,7 @@ DriverCrashGuard::Initialize()
     
     
     AllowDriverInitAttempt();
-    return;
   }
-
-  RecordTelemetry(TelemetryState::Okay);
 }
 
 DriverCrashGuard::~DriverCrashGuard()
@@ -117,10 +111,6 @@ DriverCrashGuard::AllowDriverInitAttempt()
   
   FlushPreferences();
 
-  
-  
-  RecordTelemetry(TelemetryState::EnvironmentChanged);
-
 #ifdef MOZ_CRASHREPORTER
   CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
                                      NS_LITERAL_CSTRING("1"));
@@ -142,13 +132,12 @@ DriverCrashGuard::RecoverFromDriverInitCrash()
     gfxPrefs::SetDriverInitStatus(int32_t(DriverInitStatus::Recovered));
     UpdateEnvironment();
     FlushPreferences();
-    RecordTelemetry(TelemetryState::RecoveredFromCrash);
+    LogCrashRecovery();
     return true;
   }
   if (gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::Recovered)) {
     
-    
-    RecordTelemetry(TelemetryState::AccelerationDisabled);
+    LogFeatureDisabled();
     return true;
   }
   return false;
@@ -168,7 +157,9 @@ DriverCrashGuard::PrepareToGuard()
   }
 
   
-  return UpdateEnvironment() || sBaseInfoChanged;
+  return UpdateEnvironment() ||
+         sBaseInfoChanged ||
+         gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::None);
 }
 
 bool
@@ -234,12 +225,6 @@ DriverCrashGuard::FlushPreferences()
   }
 }
 
-void
-DriverCrashGuard::RecordTelemetry(TelemetryState aState)
-{
-  
-}
-
 D3D11LayersCrashGuard::D3D11LayersCrashGuard()
 {
 }
@@ -254,6 +239,10 @@ D3D11LayersCrashGuard::Initialize()
   }
 
   DriverCrashGuard::Initialize();
+
+  
+  
+  RecordTelemetry(TelemetryState::Okay);
 }
 
 bool
@@ -283,18 +272,33 @@ D3D11LayersCrashGuard::UpdateEnvironment()
 #endif
   }
 
-  
-  changed |= (gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::None));
+  if (!changed) {
+    return false;
+  }
 
-  return changed;
+  RecordTelemetry(TelemetryState::EnvironmentChanged);
+  return true;
+}
+
+void
+D3D11LayersCrashGuard::LogCrashRecovery()
+{
+  RecordTelemetry(TelemetryState::RecoveredFromCrash);
+  gfxCriticalError(CriticalLog::DefaultOptions(false)) << "D3D11 layers just crashed; D3D11 will be disabled.";
+}
+
+void
+D3D11LayersCrashGuard::LogFeatureDisabled()
+{
+  RecordTelemetry(TelemetryState::FeatureDisabled);
+  gfxCriticalError(CriticalLog::DefaultOptions(false)) << "D3D11 layers disabled due to a prior crash.";
 }
 
 void
 D3D11LayersCrashGuard::RecordTelemetry(TelemetryState aState)
 {
   
-  
-  if (XRE_GetProcessType() != GeckoProcessType_Default) {
+  if (!XRE_IsParentProcess()) {
     return;
   }
 
