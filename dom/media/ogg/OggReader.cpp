@@ -950,7 +950,7 @@ bool OggReader::ReadOggPage(ogg_page* aPage)
     uint32_t bytesRead = 0;
 
     nsresult rv = mResource.Read(buffer, 4096, &bytesRead);
-    if (NS_FAILED(rv) || (bytesRead == 0 && ret == 0)) {
+    if (NS_FAILED(rv) || !bytesRead) {
       
       return false;
     }
