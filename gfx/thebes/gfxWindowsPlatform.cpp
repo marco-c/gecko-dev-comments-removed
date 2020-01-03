@@ -1911,27 +1911,32 @@ CanUseWARP()
   return true;
 }
 
-auto
-gfxWindowsPlatform::CheckD3D11Support() -> D3D11Status
+FeatureStatus
+gfxWindowsPlatform::CheckD3D11Support(bool* aCanUseHardware)
 {
   if (gfxPrefs::LayersD3D11ForceWARP()) {
-    return D3D11Status::OnlyWARP;
+    *aCanUseHardware = false;
+    return FeatureStatus::Available;
   }
+
   if (nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo()) {
     int32_t status;
     if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS, &status))) {
       if (status != nsIGfxInfo::FEATURE_STATUS_OK) {
-        if (!CanUseWARP()) {
-          return D3D11Status::Blocked;
+        if (CanUseWARP()) {
+          *aCanUseHardware = false;
+          return FeatureStatus::Available;
         }
-        return D3D11Status::OnlyWARP;
+        return FeatureStatus::Blacklisted;
       }
     }
   }
-  if (!GetDXGIAdapter()) {
-    return D3D11Status::OnlyWARP;
+
+  
+  if (!GetDXGIAdapter() || mIsWARP) {
+    *aCanUseHardware = false;
   }
-  return D3D11Status::Ok;
+  return FeatureStatus::Available;
 }
 
 
@@ -1939,7 +1944,7 @@ gfxWindowsPlatform::CheckD3D11Support() -> D3D11Status
 
 decltype(D3D11CreateDevice)* sD3D11CreateDeviceFn = nullptr;
 
-bool
+void
 gfxWindowsPlatform::AttemptD3D11DeviceCreation()
 {
   RefPtr<IDXGIAdapter1> adapter = GetDXGIAdapter();
@@ -1957,15 +1962,15 @@ gfxWindowsPlatform::AttemptD3D11DeviceCreation()
                            D3D11_SDK_VERSION, byRef(mD3D11Device), nullptr, nullptr);
   } MOZ_SEH_EXCEPT (EXCEPTION_EXECUTE_HANDLER) {
     gfxCriticalError() << "Crash during D3D11 device creation";
-    return false;
+    return;
   }
 
   if (FAILED(hr) || !DoesD3D11DeviceWork(mD3D11Device)) {
     gfxCriticalError() << "D3D11 device creation failed" << hexa(hr);
-    return false;
+    return;
   }
   if (!mD3D11Device) {
-    return false;
+    return;
   }
 
   CheckIfRenderTargetViewNeedsRecreating(mD3D11Device);
@@ -1975,10 +1980,9 @@ gfxWindowsPlatform::AttemptD3D11DeviceCreation()
   mDoesD3D11TextureSharingWork = ::DoesD3D11TextureSharingWork(mD3D11Device);
   mD3D11Device->SetExceptionMode(0);
   mIsWARP = false;
-  return true;
 }
 
-bool
+void
 gfxWindowsPlatform::AttemptWARPDeviceCreation()
 {
   ScopedGfxFeatureReporter reporterWARP("D3D11-WARP", gfxPrefs::LayersD3D11ForceWARP());
@@ -1996,13 +2000,13 @@ gfxWindowsPlatform::AttemptWARPDeviceCreation()
     if (FAILED(hr)) {
       
       gfxCriticalError() << "Failed to initialize WARP D3D11 device! " << hexa(hr);
-      return false;
+      return;
     }
 
     reporterWARP.SetSuccessful();
   } MOZ_SEH_EXCEPT (EXCEPTION_EXECUTE_HANDLER) {
     gfxCriticalError() << "Exception occurred initializing WARP D3D11 device!";
-    return false;
+    return;
 
   }
 
@@ -2013,7 +2017,6 @@ gfxWindowsPlatform::AttemptWARPDeviceCreation()
   }
   mD3D11Device->SetExceptionMode(0);
   mIsWARP = true;
-  return true;
 }
 
 bool
@@ -2046,7 +2049,7 @@ gfxWindowsPlatform::AttemptD3D11ContentDeviceCreation()
   return true;
 }
 
-bool
+void
 gfxWindowsPlatform::AttemptD3D11ImageBridgeDeviceCreation()
 {
   HRESULT hr = E_INVALIDARG;
@@ -2057,19 +2060,18 @@ gfxWindowsPlatform::AttemptD3D11ImageBridgeDeviceCreation()
                            mFeatureLevels.Elements(), mFeatureLevels.Length(),
                            D3D11_SDK_VERSION, byRef(mD3D11ImageBridgeDevice), nullptr, nullptr);
   } MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
-    return false;
+    return;
   }
 
   if (FAILED(hr)) {
-    return false;
+    return;
   }
 
   mD3D11ImageBridgeDevice->SetExceptionMode(0);
   if (!DoesD3D11AlphaTextureSharingWork(mD3D11ImageBridgeDevice)) {
     mD3D11ImageBridgeDevice = nullptr;
-    return false;
+    return;
   }
-  return true;
 }
 
 void
@@ -2117,9 +2119,9 @@ gfxWindowsPlatform::InitializeD3D11()
   
 
   
-  D3D11Status support = CheckD3D11Support();
-  if (support == D3D11Status::Blocked) {
-    mD3D11Status = FeatureStatus::Blacklisted;
+  bool canUseHardware = true;
+  mD3D11Status = CheckD3D11Support(&canUseHardware);
+  if (IsFeatureStatusFailure(mD3D11Status)) {
     return;
   }
 
@@ -2134,11 +2136,12 @@ gfxWindowsPlatform::InitializeD3D11()
   }
 
   
-  
-  if (support == D3D11Status::Ok && !AttemptD3D11DeviceCreation()) {
-    support = D3D11Status::OnlyWARP;
+  if (canUseHardware) {
+    AttemptD3D11DeviceCreation();
   }
-  if (support == D3D11Status::OnlyWARP && CanUseWARP()) {
+
+  
+  if (!mD3D11Device && CanUseWARP()) {
     AttemptWARPDeviceCreation();
   }
 
