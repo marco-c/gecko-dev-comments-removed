@@ -8,8 +8,8 @@ if (!("startgc" in this &&
 if (helperThreadCount() == 0)
     quit();
 
-if ("gczeal" in this)
-   gczeal(0);
+gczeal(0);
+gc();
 
 
 startgc(0);
