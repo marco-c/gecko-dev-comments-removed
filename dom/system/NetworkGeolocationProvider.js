@@ -444,7 +444,7 @@ WifiGeoPositionProvider.prototype = {
               break;
             
           };
-          result.push({ radio: radioTechFamily,
+          result.push({ radioType: radioTechFamily,
                       mobileCountryCode: voice.network.mcc,
                       mobileNetworkCode: voice.network.mnc,
                       locationAreaCode: cell.gsmLocationAreaCode,
