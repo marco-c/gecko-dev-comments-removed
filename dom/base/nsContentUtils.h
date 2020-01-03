@@ -1980,11 +1980,6 @@ public:
   
 
 
-  static bool IsFrameTimingEnabled();
-
-  
-
-
 
   static bool EncodeDecodeURLHash()
   {
@@ -2574,7 +2569,6 @@ private:
   static bool sIsPerformanceTimingEnabled;
   static bool sIsResourceTimingEnabled;
   static bool sIsUserTimingLoggingEnabled;
-  static bool sIsFrameTimingPrefEnabled;
   static bool sIsExperimentalAutocompleteEnabled;
   static bool sEncodeDecodeURLHash;
   static bool sGettersDecodeURLHash;
