@@ -323,6 +323,21 @@ public:
   
 
 
+  void SlowDrawRect(const gfx::Rect& aRect, const gfx::Color& color,
+                const gfx::Rect& aClipRect = gfx::Rect(),
+                const gfx::Matrix4x4& aTransform = gfx::Matrix4x4(),
+                int aStrokeWidth = 1);
+
+  
+
+
+  void FillRect(const gfx::Rect& aRect, const gfx::Color& color,
+                    const gfx::Rect& aClipRect = gfx::Rect(),
+                    const gfx::Matrix4x4& aTransform = gfx::Matrix4x4());
+
+  
+
+
   virtual void ClearRect(const gfx::Rect& aRect) = 0;
 
   
