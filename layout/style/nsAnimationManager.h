@@ -256,9 +256,6 @@ public:
     const MOZ_MUST_OVERRIDE override;
 
   
-  virtual void WillRefresh(mozilla::TimeStamp aTime) override;
-
-  
 
 
 

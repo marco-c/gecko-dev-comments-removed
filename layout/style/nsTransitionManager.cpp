@@ -887,21 +887,3 @@ nsTransitionManager::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
-
- void
-nsTransitionManager::WillRefresh(mozilla::TimeStamp aTime)
-{
-  MOZ_ASSERT(mPresContext,
-             "refresh driver should not notify additional observers "
-             "after pres context has been destroyed");
-  if (!mPresContext->GetPresShell()) {
-    
-    
-    
-    
-    RemoveAllElementCollections();
-    return;
-  }
-
-  FlushAnimations(Can_Throttle);
-}
