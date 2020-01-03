@@ -927,12 +927,6 @@ pref("consoleservice.logcat", true);
 #endif
 
 
-#ifndef RELEASE_BUILD
-pref("dom.serviceWorkers.enabled", true);
-pref("dom.serviceWorkers.interception.enabled", true);
-#endif
-
-
 pref("dom.vr.cardboard.enabled", true);
 
 

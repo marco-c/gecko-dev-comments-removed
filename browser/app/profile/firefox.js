@@ -271,13 +271,8 @@ pref("browser.urlbar.doubleClickSelectsAll", false);
 pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.typed", true);
 
-#ifdef NIGHTLY_BUILD
 
 pref("browser.urlbar.unifiedcomplete", true);
-#else
-
-pref("browser.urlbar.unifiedcomplete", false);
-#endif
 
 
 
@@ -310,8 +305,11 @@ pref("browser.urlbar.match.url", "@");
 pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.bookmark",             true);
 pref("browser.urlbar.suggest.openpage",             true);
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.suggest.searches",             true);
+#else
 pref("browser.urlbar.suggest.searches",             false);
-pref("browser.urlbar.userMadeSearchSuggestionsChoice", false);
+#endif
 
 
 
@@ -1931,10 +1929,6 @@ pref("browser.reader.detectedFirstArticle", false);
 
 pref("reader.parse-node-limit", 0);
 
-
-
-pref("reader.errors.includeURLs", true);
-
 pref("browser.pocket.enabled", true);
 pref("browser.pocket.api", "api.getpocket.com");
 pref("browser.pocket.site", "getpocket.com");
@@ -1945,7 +1939,8 @@ pref("browser.pocket.enabledLocales", "cs de en-GB en-US en-ZA es-ES es-MX fr hu
 pref("view_source.tab", true);
 
 
-#ifndef RELEASE_BUILD
+
 pref("dom.serviceWorkers.enabled", true);
-pref("dom.serviceWorkers.interception.enabled", true);
-#endif
+
+
+pref("dom.push.enabled", true);

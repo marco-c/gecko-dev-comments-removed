@@ -139,7 +139,6 @@ pref("dom.workers.maxPerDomain", 20);
 
 pref("dom.workers.sharedWorkers.enabled", true);
 
-
 pref("dom.serviceWorkers.enabled", false);
 
 
@@ -3227,18 +3226,6 @@ pref("ui.window_class_override", "");
 
 pref("ui.elantech_gesture_hacks.enabled", -1);
 
-
-#ifdef RELEASE_BUILD
-pref("ui.osk.enabled", false);
-#else
-pref("ui.osk.enabled", true);
-#endif
-
-
-pref("ui.osk.detect_physical_keyboard", true);
-
-pref("ui.osk.on_screen_keyboard_path", "");
-
 # XP_WIN
 #endif
 
@@ -4460,19 +4447,12 @@ pref("dom.mozAlarms.enabled", false);
 
 
 
-#if !defined(MOZ_B2G) && !defined(ANDROID)
-
-#ifdef RELEASE_BUILD
 pref("dom.push.enabled", false);
-#else
-pref("dom.push.enabled", true);
-#endif
-#else
 
-pref("dom.push.enabled", false);
+#if !defined(RELEASE_BUILD)
+pref("dom.push.debug", true);
 #endif
 
-pref("dom.push.debug", false);
 pref("dom.push.serverURL", "wss://push.services.mozilla.com/");
 pref("dom.push.userAgentID", "");
 
@@ -5019,10 +4999,6 @@ pref("reader.parse-node-limit", 3000);
 
 
 pref("reader.parse-on-load.force-enabled", false);
-
-
-
-pref("reader.errors.includeURLs", false);
 
 
 pref("reader.font_size", 5);
