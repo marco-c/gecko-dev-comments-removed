@@ -15,6 +15,7 @@
 
 namespace android {
 struct MOZ_EXPORT MediaSource;
+class MediaStreamSource;
 } 
 
 namespace mozilla {
@@ -43,6 +44,9 @@ public:
 
 protected:
   dom::AudioChannel mAudioChannel;
+  
+  
+  android::MediaStreamSource* mStreamSource;
 };
 
 } 

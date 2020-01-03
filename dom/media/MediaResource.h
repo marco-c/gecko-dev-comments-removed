@@ -281,13 +281,6 @@ public:
   
   
   
-  
-  
-  virtual nsresult Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes) = 0;
-  
-  
-  
-  
   virtual nsresult ReadAt(int64_t aOffset, char* aBuffer,
                           uint32_t aCount, uint32_t* aBytes) = 0;
   
@@ -319,55 +312,6 @@ public:
   
   
   
-  
-  
-  
-  
-  virtual already_AddRefed<MediaByteBuffer> SilentReadAt(int64_t aOffset, uint32_t aCount)
-  {
-    nsRefPtr<MediaByteBuffer> bytes = new MediaByteBuffer(aCount);
-    bytes->SetLength(aCount);
-    nsresult rv =
-      ReadFromCache(reinterpret_cast<char*>(bytes->Elements()), aOffset, aCount);
-    if (NS_SUCCEEDED(rv)) {
-      return bytes.forget();
-    }
-    int64_t pos = Tell();
-    
-    bytes = nullptr;
-    bytes = MediaReadAt(aOffset, aCount);
-    Seek(nsISeekableStream::NS_SEEK_SET, pos);
-    NS_ENSURE_TRUE(bytes && bytes->Length() == aCount, nullptr);
-    return bytes.forget();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual nsresult Seek(int32_t aWhence, int64_t aOffset) = 0;
   
   virtual int64_t Tell() = 0;
   
@@ -670,12 +614,10 @@ public:
   
   virtual void     SetReadMode(MediaCacheStream::ReadMode aMode) override;
   virtual void     SetPlaybackRate(uint32_t aBytesPerSecond) override;
-  virtual nsresult Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes) override;
   virtual nsresult ReadAt(int64_t offset, char* aBuffer,
                           uint32_t aCount, uint32_t* aBytes) override;
   virtual already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount) override;
-  virtual nsresult Seek(int32_t aWhence, int64_t aOffset) override;
-  virtual int64_t  Tell() override;
+  virtual int64_t Tell() override;
 
   
   virtual void    Pin() override;
@@ -832,6 +774,97 @@ class MOZ_STACK_CLASS AutoPinned {
 private:
   T* mResource;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
+
+
+
+
+
+
+
+
+class MediaResourceIndex
+{
+public:
+  explicit MediaResourceIndex(MediaResource* aResource)
+    : mResource(aResource)
+    , mOffset(0)
+  {}
+
+  
+  
+  
+  
+  
+  
+  nsresult Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult Seek(int32_t aWhence, int64_t aOffset);
+  
+  int64_t Tell() const { return mOffset; }
+
+  
+  MediaResource* GetResource() const { return mResource; }
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  nsresult ReadAt(int64_t aOffset, char* aBuffer,
+                  uint32_t aCount, uint32_t* aBytes) const
+  {
+    return mResource->ReadAt(aOffset, aBuffer, aCount, aBytes);
+  }
+  
+  
+  
+  
+  already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount) const
+  {
+    return mResource->MediaReadAt(aOffset, aCount);
+  }
+  
+  
+  
+  
+  
+  
+  int64_t GetLength() const { return mResource->GetLength(); }
+
+private:
+  nsRefPtr<MediaResource> mResource;
+  int64_t mOffset;
 };
 
 } 

@@ -10,6 +10,7 @@
 
 #include "FlushableTaskQueue.h"
 #include "MediaDecoderReader.h"
+#include "MediaResource.h"
 #include "PlatformDecoderModule.h"
 #include "nsAutoRef.h"
 #include "nestegg/nestegg.h"
@@ -218,6 +219,8 @@ private:
   
   bool mHasVideo;
   bool mHasAudio;
+
+  MediaResourceIndex mResource;
 
 };
 
