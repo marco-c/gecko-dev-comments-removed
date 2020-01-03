@@ -1737,6 +1737,8 @@ private:
   
   void MaybeRescheduleAnimationFrameNotifications();
 
+  void MaybeClearBoxObjectTable();
+
   
   nsDocument(const nsDocument& aOther);
   nsDocument& operator=(const nsDocument& aOther);
