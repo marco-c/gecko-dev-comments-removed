@@ -207,6 +207,8 @@ public:
   virtual
   ~ConsoleRunnable()
   {
+    
+    Shutdown();
   }
 
   bool

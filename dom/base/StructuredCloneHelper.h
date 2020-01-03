@@ -17,6 +17,9 @@ namespace dom {
 class StructuredCloneHelperInternal
 {
 public:
+  StructuredCloneHelperInternal();
+  virtual ~StructuredCloneHelperInternal();
+
   
   
 
@@ -28,6 +31,12 @@ public:
   virtual bool WriteCallback(JSContext* aCx,
                              JSStructuredCloneWriter* aWriter,
                              JS::Handle<JSObject*> aObj) = 0;
+
+  
+  
+  
+  
+  void Shutdown();
 
   
   
@@ -69,6 +78,10 @@ public:
 
 protected:
   nsAutoPtr<JSAutoStructuredCloneBuffer> mBuffer;
+
+#ifdef DEBUG
+  bool mShutdownCalled;
+#endif
 };
 
 class MessagePortBase;
