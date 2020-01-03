@@ -197,8 +197,7 @@ DecodedStreamData::SetPlaying(bool aPlaying)
 class OutputStreamListener : public MediaStreamListener {
   typedef MediaStreamListener::MediaStreamGraphEvent MediaStreamGraphEvent;
 public:
-  OutputStreamListener(DecodedStream* aDecodedStream, MediaStream* aStream)
-    : mDecodedStream(aDecodedStream), mStream(aStream) {}
+  OutputStreamListener(OutputStreamData* aOwner) : mOwner(aOwner) {}
 
   void NotifyEvent(MediaStreamGraph* aGraph, MediaStreamGraphEvent event) override
   {
@@ -212,35 +211,86 @@ public:
   void Forget()
   {
     MOZ_ASSERT(NS_IsMainThread());
-    mDecodedStream = nullptr;
+    mOwner = nullptr;
   }
 
 private:
   void DoNotifyFinished()
   {
     MOZ_ASSERT(NS_IsMainThread());
-    if (mDecodedStream) {
+    if (mOwner) {
       
-      mDecodedStream->Remove(mStream);
+      mOwner->Remove();
     }
   }
 
   
-  DecodedStream* mDecodedStream;
-  nsRefPtr<MediaStream> mStream;
+  OutputStreamData* mOwner;
 };
 
 OutputStreamData::~OutputStreamData()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   mListener->Forget();
+  
+  if (mPort) {
+    mPort->Destroy();
+  }
 }
 
 void
-OutputStreamData::Init(DecodedStream* aDecodedStream, ProcessedMediaStream* aStream)
+OutputStreamData::Init(DecodedStream* aOwner, ProcessedMediaStream* aStream)
 {
+  mOwner = aOwner;
   mStream = aStream;
-  mListener = new OutputStreamListener(aDecodedStream, aStream);
+  mListener = new OutputStreamListener(this);
   aStream->AddListener(mListener);
+}
+
+void
+OutputStreamData::Connect(MediaStream* aStream)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mPort, "Already connected?");
+  MOZ_ASSERT(!mStream->IsDestroyed(), "Can't connect a destroyed stream.");
+
+  
+  
+  mPort = mStream->AllocateInputPort(aStream,
+    MediaInputPort::FLAG_BLOCK_INPUT | MediaInputPort::FLAG_BLOCK_OUTPUT);
+  
+  
+  mStream->ChangeExplicitBlockerCount(-1);
+}
+
+bool
+OutputStreamData::Disconnect()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  if (mStream->IsDestroyed()) {
+    return false;
+  }
+
+  
+  if (mPort) {
+    mPort->Destroy();
+    mPort = nullptr;
+  }
+  
+  
+  mStream->ChangeExplicitBlockerCount(1);
+  return true;
+}
+
+void
+OutputStreamData::Remove()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  mOwner->Remove(mStream);
 }
 
 DecodedStream::DecodedStream(MediaQueue<MediaData>& aAudioQueue,
@@ -289,24 +339,12 @@ DecodedStream::DestroyData()
     return;
   }
 
-  
-  
   auto& outputStreams = OutputStreams();
   for (int32_t i = outputStreams.Length() - 1; i >= 0; --i) {
     OutputStreamData& os = outputStreams[i];
-    
-    
-    MOZ_ASSERT(os.mPort, "Double-delete of the ports!");
-    os.mPort->Destroy();
-    os.mPort = nullptr;
-    
-    
-    
-    if (os.mStream->IsDestroyed()) {
+    if (!os.Disconnect()) {
       
       outputStreams.RemoveElementAt(i);
-    } else {
-      os.mStream->ChangeExplicitBlockerCount(1);
     }
   }
 
@@ -344,8 +382,7 @@ DecodedStream::RecreateData(MediaStreamGraph* aGraph)
   auto& outputStreams = OutputStreams();
   for (int32_t i = outputStreams.Length() - 1; i >= 0; --i) {
     OutputStreamData& os = outputStreams[i];
-    MOZ_ASSERT(!os.mStream->IsDestroyed(), "Should've been removed in DestroyData()");
-    Connect(&os);
+    os.Connect(mData->mStream);
   }
 }
 
@@ -372,22 +409,6 @@ DecodedStream::GetReentrantMonitor() const
 }
 
 void
-DecodedStream::Connect(OutputStreamData* aStream)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  GetReentrantMonitor().AssertCurrentThreadIn();
-  NS_ASSERTION(!aStream->mPort, "Already connected?");
-
-  
-  
-  aStream->mPort = aStream->mStream->AllocateInputPort(mData->mStream,
-      MediaInputPort::FLAG_BLOCK_INPUT | MediaInputPort::FLAG_BLOCK_OUTPUT);
-  
-  
-  aStream->mStream->ChangeExplicitBlockerCount(-1);
-}
-
-void
 DecodedStream::Connect(ProcessedMediaStream* aStream, bool aFinishWhenEnded)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -399,7 +420,7 @@ DecodedStream::Connect(ProcessedMediaStream* aStream, bool aFinishWhenEnded)
 
   OutputStreamData* os = OutputStreams().AppendElement();
   os->Init(this, aStream);
-  Connect(os);
+  os->Connect(mData->mStream);
   if (aFinishWhenEnded) {
     
     aStream->SetAutofinish(true);
@@ -415,12 +436,7 @@ DecodedStream::Remove(MediaStream* aStream)
   auto& streams = OutputStreams();
   for (int32_t i = streams.Length() - 1; i >= 0; --i) {
     auto& os = streams[i];
-    MediaStream* p = os.mStream.get();
-    if (p == aStream) {
-      if (os.mPort) {
-        os.mPort->Destroy();
-        os.mPort = nullptr;
-      }
+    if (os.Equals(aStream)) {
       streams.RemoveElementAt(i);
       break;
     }

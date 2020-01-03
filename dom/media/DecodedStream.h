@@ -39,7 +39,25 @@ class Image;
 class OutputStreamData {
 public:
   ~OutputStreamData();
-  void Init(DecodedStream* aDecodedStream, ProcessedMediaStream* aStream);
+  void Init(DecodedStream* aOwner, ProcessedMediaStream* aStream);
+
+  
+  void Connect(MediaStream* aStream);
+  
+  
+  bool Disconnect();
+  
+  
+  void Remove();
+  
+  
+  bool Equals(MediaStream* aStream)
+  {
+    return mStream == aStream;
+  }
+
+private:
+  DecodedStream* mOwner;
   nsRefPtr<ProcessedMediaStream> mStream;
   
   nsRefPtr<MediaInputPort> mPort;
@@ -84,7 +102,6 @@ protected:
 private:
   ReentrantMonitor& GetReentrantMonitor() const;
   void RecreateData(MediaStreamGraph* aGraph);
-  void Connect(OutputStreamData* aStream);
   nsTArray<OutputStreamData>& OutputStreams();
   void InitTracks();
   void AdvanceTracks();
