@@ -986,7 +986,7 @@ PresShell::Init(nsIDocument* aDocument,
     mZoomConstraintsClient->Init(this, mDocument);
 #ifndef MOZ_WIDGET_ANDROID
     
-    if (gfxPrefs::MetaViewportEnabled()) {
+    if (gfxPrefs::MetaViewportEnabled() || gfxPrefs::APZAllowZooming()) {
       mMobileViewportManager = new MobileViewportManager(this, mDocument);
     }
 #endif

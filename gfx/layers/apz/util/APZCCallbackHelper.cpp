@@ -7,6 +7,7 @@
 
 #include "ContentHelper.h"
 #include "gfxPlatform.h" 
+#include "gfxPrefs.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/layers/LayerTransactionChild.h"
@@ -194,33 +195,40 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
 
   MOZ_ASSERT(aMetrics.GetUseDisplayPortMargins());
 
-  float presShellResolution = nsLayoutUtils::GetResolution(shell);
+  if (gfxPrefs::APZAllowZooming()) {
+    
+    
+    
+    
 
-  
-  
-  
-  
-  if (presShellResolution != aMetrics.GetPresShellResolution()) {
-    return;
+    float presShellResolution = nsLayoutUtils::GetResolution(shell);
+
+    
+    
+    
+    
+    if (presShellResolution != aMetrics.GetPresShellResolution()) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    CSSSize scrollPort = aMetrics.CalculateCompositedSizeInCssPixels();
+    nsLayoutUtils::SetScrollPositionClampingScrollPortSize(shell, scrollPort);
+
+    
+    
+    presShellResolution = aMetrics.GetPresShellResolution()
+                        * aMetrics.GetAsyncZoom().scale;
+    nsLayoutUtils::SetResolutionAndScaleTo(shell, presShellResolution);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  CSSSize scrollPort = aMetrics.CalculateCompositedSizeInCssPixels();
-  nsLayoutUtils::SetScrollPositionClampingScrollPortSize(shell, scrollPort);
-
-  
-  
-  presShellResolution = aMetrics.GetPresShellResolution()
-                      * aMetrics.GetAsyncZoom().scale;
-  nsLayoutUtils::SetResolutionAndScaleTo(shell, presShellResolution);
 
   
   
