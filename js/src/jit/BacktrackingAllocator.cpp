@@ -546,6 +546,7 @@ BacktrackingAllocator::buildLivenessInfo()
                 LAllocation* use = phi->getOperand(mblock->positionInPhiSuccessor());
                 uint32_t reg = use->toUse()->virtualRegister();
                 live.insert(reg);
+                vreg(use).setUsedByPhi();
             }
         }
 
@@ -1671,6 +1672,40 @@ BacktrackingAllocator::insertAllRanges(LiveRangeSet& set, LiveBundle* bundle)
 }
 
 bool
+BacktrackingAllocator::deadRange(LiveRange* range)
+{
+    
+    if (range->hasUses() || range->hasDefinition())
+        return false;
+
+    CodePosition start = range->from();
+    LNode* ins = insData[start];
+    if (start == entryOf(ins->block()))
+        return false;
+
+    VirtualRegister& reg = vregs[range->vreg()];
+
+    
+    LiveRange::RegisterLinkIterator iter = reg.rangesBegin(range);
+    for (iter++; iter; iter++) {
+        LiveRange* laterRange = LiveRange::get(*iter);
+        if (laterRange->from() > range->from())
+            return false;
+    }
+
+    
+    LNode* last = insData[range->to().previous()];
+    if (last->isGoto() && last->toGoto()->target()->id() < last->block()->mir()->id())
+        return false;
+
+    
+    if (reg.usedByPhi())
+        return false;
+
+    return true;
+}
+
+bool
 BacktrackingAllocator::resolveControlFlow()
 {
     
@@ -1685,20 +1720,30 @@ BacktrackingAllocator::resolveControlFlow()
         if (mir->shouldCancel("Backtracking Resolve Control Flow (vreg loop)"))
             return false;
 
-        for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter; iter++) {
+        for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter; ) {
             LiveRange* range = LiveRange::get(*iter);
 
             
-            
-            if (range->hasDefinition())
+            if (deadRange(range)) {
+                reg.removeRangeAndIncrement(iter);
                 continue;
+            }
+
+            
+            
+            if (range->hasDefinition()) {
+                iter++;
+                continue;
+            }
 
             
             
             CodePosition start = range->from();
             LNode* ins = insData[start];
-            if (start == entryOf(ins->block()))
+            if (start == entryOf(ins->block())) {
+                iter++;
                 continue;
+            }
 
             
             
@@ -1716,8 +1761,10 @@ BacktrackingAllocator::resolveControlFlow()
                     break;
                 }
             }
-            if (skip)
+            if (skip) {
+                iter++;
                 continue;
+            }
 
             LiveRange* predecessorRange = reg.rangeFor(start.previous(),  true);
             if (start.subpos() == CodePosition::INPUT) {
@@ -1727,6 +1774,8 @@ BacktrackingAllocator::resolveControlFlow()
                 if (!moveAfter(ins->toInstruction(), predecessorRange, range, reg.type()))
                     return false;
             }
+
+            iter++;
         }
     }
 
@@ -2416,16 +2465,19 @@ BacktrackingAllocator::computeSpillWeight(LiveBundle* bundle)
         return fixed ? 2000000 : 1000000;
 
     size_t usesTotal = 0;
+    fixed = false;
 
     for (LiveRange::BundleLinkIterator iter = bundle->rangesBegin(); iter; iter++) {
         LiveRange* range = LiveRange::get(*iter);
 
         if (range->hasDefinition()) {
             VirtualRegister& reg = vregs[range->vreg()];
-            if (reg.def()->policy() == LDefinition::FIXED && reg.def()->output()->isRegister())
+            if (reg.def()->policy() == LDefinition::FIXED && reg.def()->output()->isRegister()) {
                 usesTotal += 2000;
-            else if (!reg.ins()->isPhi())
+                fixed = true;
+            } else if (!reg.ins()->isPhi()) {
                 usesTotal += 2000;
+            }
         }
 
         for (UsePositionIterator iter = range->usesBegin(); iter; iter++) {
@@ -2436,8 +2488,9 @@ BacktrackingAllocator::computeSpillWeight(LiveBundle* bundle)
                 usesTotal += 1000;
                 break;
 
-              case LUse::REGISTER:
               case LUse::FIXED:
+                fixed = true;
+              case LUse::REGISTER:
                 usesTotal += 2000;
                 break;
 
@@ -2450,6 +2503,11 @@ BacktrackingAllocator::computeSpillWeight(LiveBundle* bundle)
             }
         }
     }
+
+    
+    
+    if (testbed && fixed)
+        usesTotal *= 2;
 
     
     

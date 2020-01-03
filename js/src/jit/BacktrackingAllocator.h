@@ -465,6 +465,10 @@ class VirtualRegister
 
     
     
+    bool usedByPhi_;
+
+    
+    
     bool mustCopyInput_;
 
     void operator=(const VirtualRegister&) = delete;
@@ -505,6 +509,13 @@ class VirtualRegister
         return isTemp_;
     }
 
+    void setUsedByPhi() {
+        usedByPhi_ = true;
+    }
+    bool usedByPhi() {
+        return usedByPhi_;
+    }
+
     void setMustCopyInput() {
         mustCopyInput_ = true;
     }
@@ -514,6 +525,9 @@ class VirtualRegister
 
     LiveRange::RegisterLinkIterator rangesBegin() const {
         return ranges_.begin();
+    }
+    LiveRange::RegisterLinkIterator rangesBegin(LiveRange* range) const {
+        return ranges_.begin(&range->registerLink);
     }
     bool hasRanges() const {
         return !!rangesBegin();
@@ -527,6 +541,10 @@ class VirtualRegister
     LiveRange* rangeFor(CodePosition pos, bool preferRegister = false) const;
     void removeRange(LiveRange* range);
     void addRange(LiveRange* range);
+
+    void removeRangeAndIncrement(LiveRange::RegisterLinkIterator& iter) {
+        ranges_.removeAndIncrement(iter);
+    }
 
     LiveBundle* firstBundle() const {
         return firstRange()->bundle();
@@ -665,6 +683,7 @@ class BacktrackingAllocator : protected RegisterAllocator
     bool reifyAllocations();
     bool populateSafepoints();
     bool annotateMoveGroups();
+    bool deadRange(LiveRange* range);
     size_t findFirstNonCallSafepoint(CodePosition from);
     size_t findFirstSafepoint(CodePosition pos, size_t startFrom);
     void addLiveRegistersForRange(VirtualRegister& reg, LiveRange* range);
