@@ -10423,6 +10423,10 @@ nsDocShell::DoURILoad(nsIURI* aURI,
         
         
         if (browserFrame && !browserFrame->GetReallyIsApp()) {
+          nsCOMPtr<nsIObserverService> serv = services::GetObserverService();
+          if (serv) {
+              serv->NotifyObservers(GetDocument(), "invalid-widget", nullptr);
+          }
           return NS_ERROR_MALFORMED_URI;
         }
       }
