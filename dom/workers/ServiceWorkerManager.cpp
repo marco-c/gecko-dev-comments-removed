@@ -96,6 +96,16 @@ static_assert(nsIHttpChannelInternal::CORS_MODE_CORS_WITH_FORCED_PREFLIGHT == st
 
 static StaticRefPtr<ServiceWorkerManager> gInstance;
 
+
+
+
+
+
+
+
+
+Atomic<uint32_t> gDOMDisableOpenClickDelay(0);
+
 struct ServiceWorkerManager::RegistrationDataPerPrincipal
 {
   
@@ -386,6 +396,8 @@ ServiceWorkerManager::ServiceWorkerManager()
 {
   
   MOZ_ALWAYS_TRUE(BackgroundChild::GetOrCreateForCurrentThread(this));
+
+  gDOMDisableOpenClickDelay = Preferences::GetInt("dom.disable_open_click_delay");
 }
 
 ServiceWorkerManager::~ServiceWorkerManager()
@@ -1614,10 +1626,11 @@ ServiceWorkerManager::AppendPendingOperation(nsIRunnable* aRunnable)
 
 namespace {
 
-class KeepAliveHandler final : public PromiseNativeHandler
+class KeepAliveHandler : public PromiseNativeHandler
 {
   nsMainThreadPtrHandle<ServiceWorker> mServiceWorker;
 
+protected:
   virtual ~KeepAliveHandler()
   {}
 
@@ -1650,6 +1663,150 @@ public:
 };
 
 NS_IMPL_ISUPPORTS0(KeepAliveHandler)
+
+void
+DummyCallback(nsITimer* aTimer, void* aClosure)
+{
+  
+}
+
+class AllowWindowInteractionKeepAliveHandler;
+
+class ClearWindowAllowedRunnable final : public WorkerRunnable
+{
+public:
+  ClearWindowAllowedRunnable(WorkerPrivate* aWorkerPrivate,
+                             AllowWindowInteractionKeepAliveHandler* aHandler)
+  : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
+  , mHandler(aHandler)
+  { }
+
+private:
+  bool
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    
+    
+    
+    
+    return true;
+  }
+
+  void
+  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
+               bool aDispatchResult) override
+  {
+    
+  }
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
+
+  nsRefPtr<AllowWindowInteractionKeepAliveHandler> mHandler;
+};
+
+class AllowWindowInteractionKeepAliveHandler final : public KeepAliveHandler
+{
+  friend class ClearWindowAllowedRunnable;
+  nsCOMPtr<nsITimer> mTimer;
+
+  ~AllowWindowInteractionKeepAliveHandler()
+  {
+    MOZ_ASSERT(!mTimer);
+  }
+
+  void
+  ClearWindowAllowed(WorkerPrivate* aWorkerPrivate)
+  {
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
+
+    if (mTimer) {
+      aWorkerPrivate->GlobalScope()->ConsumeWindowInteraction();
+      mTimer->Cancel();
+      mTimer = nullptr;
+      MOZ_ALWAYS_TRUE(aWorkerPrivate->ModifyBusyCountFromWorker(aWorkerPrivate->GetJSContext(), false));
+    }
+  }
+
+  void
+  StartClearWindowTimer(WorkerPrivate* aWorkerPrivate)
+  {
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(!mTimer);
+
+    nsresult rv;
+    nsCOMPtr<nsITimer> timer = do_CreateInstance(NS_TIMER_CONTRACTID, &rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
+    nsRefPtr<ClearWindowAllowedRunnable> r =
+      new ClearWindowAllowedRunnable(aWorkerPrivate, this);
+
+    nsRefPtr<TimerThreadEventTarget> target =
+      new TimerThreadEventTarget(aWorkerPrivate, r);
+
+    rv = timer->SetTarget(target);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
+    
+    if (NS_WARN_IF(!aWorkerPrivate->ModifyBusyCountFromWorker(aWorkerPrivate->GetJSContext(), true))) {
+      return;
+    }
+    aWorkerPrivate->GlobalScope()->AllowWindowInteraction();
+    timer.swap(mTimer);
+
+    
+    
+    
+    
+    
+    rv = mTimer->InitWithFuncCallback(DummyCallback, nullptr, gDOMDisableOpenClickDelay, nsITimer::TYPE_ONE_SHOT);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      ClearWindowAllowed(aWorkerPrivate);
+      return;
+    }
+  }
+
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+
+  AllowWindowInteractionKeepAliveHandler(const nsMainThreadPtrHandle<ServiceWorker>& aServiceWorker,
+                                         WorkerPrivate* aWorkerPrivate)
+    : KeepAliveHandler(aServiceWorker)
+  {
+    StartClearWindowTimer(aWorkerPrivate);
+  }
+
+  void
+  ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
+    ClearWindowAllowed(worker);
+    KeepAliveHandler::ResolvedCallback(aCx, aValue);
+  }
+
+  void
+  RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
+    ClearWindowAllowed(worker);
+    KeepAliveHandler::RejectedCallback(aCx, aValue);
+  }
+};
+
+NS_IMPL_ISUPPORTS_INHERITED0(AllowWindowInteractionKeepAliveHandler, KeepAliveHandler)
+
+bool
+ClearWindowAllowedRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
+{
+  mHandler->ClearWindowAllowed(aWorkerPrivate);
+  return true;
+}
 
 
 
@@ -2381,12 +2538,17 @@ public:
       return false;
     }
 
+    aWorkerPrivate->GlobalScope()->AllowWindowInteraction();
     event->SetTrusted(true);
     nsRefPtr<Promise> waitUntilPromise =
       DispatchExtendableEventOnWorkerScope(aCx, aWorkerPrivate->GlobalScope(), event);
+    
+    
+    aWorkerPrivate->GlobalScope()->ConsumeWindowInteraction();
 
     if (waitUntilPromise) {
-      nsRefPtr<KeepAliveHandler> handler = new KeepAliveHandler(mServiceWorker);
+      nsRefPtr<AllowWindowInteractionKeepAliveHandler> handler =
+        new AllowWindowInteractionKeepAliveHandler(mServiceWorker, aWorkerPrivate);
       waitUntilPromise->AppendNativeHandler(handler);
     }
 
@@ -2411,6 +2573,8 @@ ServiceWorkerManager::SendNotificationClickEvent(const nsACString& aOriginSuffix
   if (!attrs.PopulateFromSuffix(aOriginSuffix)) {
     return NS_ERROR_INVALID_ARG;
   }
+
+  gDOMDisableOpenClickDelay = Preferences::GetInt("dom.disable_open_click_delay");
 
   nsRefPtr<ServiceWorker> serviceWorker =
     CreateServiceWorkerForScope(attrs, aScope, nullptr);
