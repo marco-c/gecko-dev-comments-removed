@@ -8,6 +8,7 @@ package org.mozilla.gecko.util;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.CheckResult;
 import android.support.annotation.ColorRes;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
@@ -16,6 +17,11 @@ import android.support.v4.graphics.drawable.DrawableCompat;
 
 public class DrawableUtil {
 
+    
+
+
+
+    @CheckResult
     public static Drawable tintDrawable(@NonNull final Context context, @DrawableRes final int drawableID,
                 @ColorRes final int colorID) {
         final Drawable icon = DrawableCompat.wrap(
@@ -24,6 +30,11 @@ public class DrawableUtil {
         return icon;
     }
 
+    
+
+
+
+    @CheckResult
     public static Drawable tintDrawableWithStateList(@NonNull final Drawable drawable,
             @NonNull final ColorStateList colorList) {
         final Drawable wrappedDrawable = DrawableCompat.wrap(drawable.mutate());
