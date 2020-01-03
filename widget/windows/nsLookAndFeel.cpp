@@ -566,6 +566,8 @@ GetSysFontInfo(HDC aHDC, LookAndFeel::FontID anID,
     case LookAndFeel::eFont_Widget:
     case LookAndFeel::eFont_Dialog:
     case LookAndFeel::eFont_Button:
+    case LookAndFeel::eFont_Field:
+    case LookAndFeel::eFont_List:
       
       
       
