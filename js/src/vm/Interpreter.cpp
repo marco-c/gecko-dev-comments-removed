@@ -1017,7 +1017,7 @@ js::UnwindForUncatchableException(JSContext *cx, const InterpreterRegs &regs)
     
     for (TryNoteIter tni(cx, regs); !tni.done(); ++tni) {
         JSTryNote *tn = *tni;
-        if (tn->kind == JSTRY_ITER) {
+        if (tn->kind == JSTRY_FOR_IN) {
             Value *sp = regs.spForStackDepth(tn->stackDepth);
             UnwindIteratorForUncatchableException(cx, &sp[-1].toObject());
         }
@@ -1151,7 +1151,7 @@ HandleError(JSContext *cx, InterpreterRegs &regs)
               case JSTRY_FINALLY:
                 return FinallyContinuation;
 
-              case JSTRY_ITER: {
+              case JSTRY_FOR_IN: {
                 
                 MOZ_ASSERT(JSOp(*regs.pc) == JSOP_ENDITER);
                 RootedObject obj(cx, &regs.sp[-1].toObject());
