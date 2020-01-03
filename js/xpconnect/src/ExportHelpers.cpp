@@ -271,7 +271,17 @@ StackScopedClone(JSContext* cx, StackScopedCloneOptions& options,
     }
 
     
-    return buffer.read(cx, val, &gStackScopedCloneCallbacks, &data);
+    if (!buffer.read(cx, val, &gStackScopedCloneCallbacks, &data))
+        return false;
+
+    
+    if (options.deepFreeze && val.isObject()) {
+        RootedObject obj(cx, &val.toObject());
+        if (!JS_DeepFreezeObject(cx, obj))
+            return false;
+    }
+
+    return true;
 }
 
 

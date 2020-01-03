@@ -3567,11 +3567,13 @@ public:
         : OptionsBase(cx, options)
         , wrapReflectors(false)
         , cloneFunctions(false)
+        , deepFreeze(false)
     { }
 
     virtual bool Parse() {
         return ParseBoolean("wrapReflectors", &wrapReflectors) &&
-               ParseBoolean("cloneFunctions", &cloneFunctions);
+               ParseBoolean("cloneFunctions", &cloneFunctions) &&
+               ParseBoolean("deepFreeze", &deepFreeze);
     }
 
     
@@ -3580,6 +3582,9 @@ public:
     
     
     bool cloneFunctions;
+
+    
+    bool deepFreeze;
 };
 
 JSObject*
