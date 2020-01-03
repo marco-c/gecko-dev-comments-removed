@@ -1736,6 +1736,12 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
     }
   }
 
+  
+  
+  if (!mPaintingSuppressed) {
+    ScheduleBeforeFirstPaint();
+  }
+
   if (root && root->IsXULElement()) {
     mozilla::Telemetry::AccumulateTimeDelta(Telemetry::XUL_INITIAL_FRAME_CONSTRUCTION,
                                             timerStart);
@@ -3774,6 +3780,17 @@ PresShell::CaptureHistoryState(nsILayoutHistoryState** aState)
 }
 
 void
+PresShell::ScheduleBeforeFirstPaint()
+{
+  if (!mDocument->IsResourceDoc()) {
+    
+    
+    
+    nsContentUtils::AddScriptRunner(new nsBeforeFirstPaintDispatcher(mDocument));
+  }
+}
+
+void
 PresShell::UnsuppressAndInvalidate()
 {
   
@@ -3784,12 +3801,7 @@ PresShell::UnsuppressAndInvalidate()
     return;
   }
 
-  if (!mDocument->IsResourceDoc()) {
-    
-    
-    
-    nsContentUtils::AddScriptRunner(new nsBeforeFirstPaintDispatcher(mDocument));
-  }
+  ScheduleBeforeFirstPaint();
 
   mPaintingSuppressed = false;
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
@@ -8957,7 +8969,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
 
   nsDocShell* docShell = static_cast<nsDocShell*>(GetPresContext()->GetDocShell());
   if (docShell) {
-    TimelineConsumers::AddMarkerForDocShell(docShell, "Reflow", TRACING_INTERVAL_START);
+    docShell->AddProfileTimelineMarker("Reflow", TRACING_INTERVAL_START);
   }
 
   if (mReflowContinueTimer) {
@@ -9134,7 +9146,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
   }
 
   if (docShell) {
-    TimelineConsumers::AddMarkerForDocShell(docShell, "Reflow", TRACING_INTERVAL_END);
+    docShell->AddProfileTimelineMarker("Reflow", TRACING_INTERVAL_END);
   }
   return !interrupted;
 }
