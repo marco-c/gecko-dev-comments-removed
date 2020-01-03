@@ -473,7 +473,6 @@ var BrowserApp = {
     Services.obs.addObserver(this, "FullScreen:Exit", false);
     Services.obs.addObserver(this, "Viewport:Change", false);
     Services.obs.addObserver(this, "Viewport:Flush", false);
-    Services.obs.addObserver(this, "Viewport:FixedMarginsChanged", false);
     Services.obs.addObserver(this, "Passwords:Init", false);
     Services.obs.addObserver(this, "FormHistory:Init", false);
     Services.obs.addObserver(this, "gather-telemetry", false);
@@ -1949,13 +1948,6 @@ var BrowserApp = {
         Messaging.sendRequest({ type: "Telemetry:Gather" });
         break;
 
-      case "Viewport:FixedMarginsChanged":
-        gViewportMargins = JSON.parse(aData);
-        if (this.selectedTab) {
-          this.selectedTab.updateViewportSize(gScreenWidth);
-        }
-        break;
-
       case "nsPref:changed":
         this.notifyPrefObservers(aData);
         break;
@@ -3409,12 +3401,6 @@ let gScreenHeight = 1;
 let gReflowPending = null;
 
 
-
-
-
-let gViewportMargins = { top: 0, right: 0, bottom: 0, left: 0};
-
-
 let gTilesReportURL = null;
 
 function Tab(aURL, aParams) {
@@ -3430,10 +3416,6 @@ function Tab(aURL, aParams) {
   this._fixedMarginRight = 0;
   this._fixedMarginBottom = 0;
   this.userScrollPos = { x: 0, y: 0 };
-  this.viewportExcludesHorizontalMargins = true;
-  this.viewportExcludesVerticalMargins = true;
-  this.viewportMeasureCallback = null;
-  this.lastPageSizeAfterViewportRemeasure = { width: 0, height: 0 };
   this.contentDocumentIsDisplayed = true;
   this.pluginDoorhangerTimeout = null;
   this.shouldShowPluginDoorhanger = true;
@@ -3857,13 +3839,11 @@ Tab.prototype = {
 
     let scrollx = this.browser.contentWindow.scrollX * zoom;
     let scrolly = this.browser.contentWindow.scrollY * zoom;
-    let screenWidth = gScreenWidth - gViewportMargins.left - gViewportMargins.right;
-    let screenHeight = gScreenHeight - gViewportMargins.top - gViewportMargins.bottom;
     let displayPortMargins = {
       left: scrollx - aDisplayPort.left,
       top: scrolly - aDisplayPort.top,
-      right: aDisplayPort.right - (scrollx + screenWidth),
-      bottom: aDisplayPort.bottom - (scrolly + screenHeight)
+      right: aDisplayPort.right - (scrollx + gScreenWidth),
+      bottom: aDisplayPort.bottom - (scrolly + gScreenHeight)
     };
 
     if (this._oldDisplayPortMargins == null ||
@@ -3885,16 +3865,6 @@ Tab.prototype = {
     let viewportHeight = gScreenHeight / zoom;
     let screenWidth = gScreenWidth;
     let screenHeight = gScreenHeight;
-
-    
-    if (this.viewportExcludesVerticalMargins) {
-      screenHeight = gScreenHeight - gViewportMargins.top - gViewportMargins.bottom;
-      viewportHeight = screenHeight / zoom;
-    }
-    if (this.viewportExcludesHorizontalMargins) {
-      screenWidth = gScreenWidth - gViewportMargins.left - gViewportMargins.right;
-      viewportWidth = screenWidth / zoom;
-    }
 
     
     
@@ -3977,24 +3947,22 @@ Tab.prototype = {
   },
 
   getViewport: function() {
-    let screenW = gScreenWidth - gViewportMargins.left - gViewportMargins.right;
-    let screenH = gScreenHeight - gViewportMargins.top - gViewportMargins.bottom;
     let zoom = this.restoredSessionZoom() || this._zoom;
 
     let viewport = {
-      width: screenW,
-      height: screenH,
-      cssWidth: screenW / zoom,
-      cssHeight: screenH / zoom,
+      width: gScreenWidth,
+      height: gScreenHeight,
+      cssWidth: gScreenWidth / zoom,
+      cssHeight: gScreenHeight / zoom,
       pageLeft: 0,
       pageTop: 0,
-      pageRight: screenW,
-      pageBottom: screenH,
+      pageRight: gScreenWidth,
+      pageBottom: gScreenHeight,
       
       cssPageLeft: 0,
       cssPageTop: 0,
-      cssPageRight: screenW / zoom,
-      cssPageBottom: screenH / zoom,
+      cssPageRight: gScreenWidth / zoom,
+      cssPageBottom: gScreenHeight / zoom,
       fixedMarginLeft: this._fixedMarginLeft,
       fixedMarginTop: this._fixedMarginTop,
       fixedMarginRight: this._fixedMarginRight,
@@ -4048,66 +4016,6 @@ Tab.prototype = {
     let displayPort = Services.androidBridge.getDisplayPort(aPageSizeUpdate, BrowserApp.isBrowserContentDocumentDisplayed(), this.id, viewport);
     if (displayPort != null)
       this.setDisplayPort(displayPort);
-  },
-
-  updateViewportForPageSize: function() {
-    let hasHorizontalMargins = gViewportMargins.left != 0 || gViewportMargins.right != 0;
-    let hasVerticalMargins = gViewportMargins.top != 0 || gViewportMargins.bottom != 0;
-
-    if (!hasHorizontalMargins && !hasVerticalMargins) {
-      
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    let viewport = this.getViewport();
-    let pageWidth = viewport.pageRight - viewport.pageLeft;
-    let pageHeight = viewport.pageBottom - viewport.pageTop;
-    let remeasureNeeded = false;
-
-    if (hasHorizontalMargins) {
-      let viewportShouldExcludeHorizontalMargins = (pageWidth <= gScreenWidth - 0.5);
-      if (viewportShouldExcludeHorizontalMargins != this.viewportExcludesHorizontalMargins) {
-        remeasureNeeded = true;
-      }
-    }
-    if (hasVerticalMargins) {
-      let viewportShouldExcludeVerticalMargins = (pageHeight <= gScreenHeight - 0.5);
-      if (viewportShouldExcludeVerticalMargins != this.viewportExcludesVerticalMargins) {
-        remeasureNeeded = true;
-      }
-    }
-
-    if (remeasureNeeded) {
-      if (!this.viewportMeasureCallback) {
-        this.viewportMeasureCallback = setTimeout(function() {
-          this.viewportMeasureCallback = null;
-
-          
-          
-          let viewport = this.getViewport();
-          let pageWidth = viewport.pageRight - viewport.pageLeft;
-          let pageHeight = viewport.pageBottom - viewport.pageTop;
-
-          if (Math.abs(pageWidth - this.lastPageSizeAfterViewportRemeasure.width) >= 0.5 ||
-              Math.abs(pageHeight - this.lastPageSizeAfterViewportRemeasure.height) >= 0.5) {
-            this.updateViewportSize(gScreenWidth);
-          }
-        }.bind(this), kViewportRemeasureThrottle);
-      }
-    } else if (this.viewportMeasureCallback) {
-      
-      
-      
-      clearTimeout(this.viewportMeasureCallback);
-      this.viewportMeasureCallback = null;
-    }
   },
 
   
@@ -4471,7 +4379,6 @@ Tab.prototype = {
           return;
 
         this.sendViewportUpdate(true);
-        this.updateViewportForPageSize();
         break;
       }
 
@@ -4886,23 +4793,16 @@ Tab.prototype = {
     
     
 
-    if (this.viewportMeasureCallback) {
-      clearTimeout(this.viewportMeasureCallback);
-      this.viewportMeasureCallback = null;
-    }
-
     let browser = this.browser;
     if (!browser)
       return;
 
-    let screenW = gScreenWidth - gViewportMargins.left - gViewportMargins.right;
-    let screenH = gScreenHeight - gViewportMargins.top - gViewportMargins.bottom;
     let viewportW, viewportH;
 
     let metadata = this.metadata;
     if (metadata.autoSize) {
-      viewportW = screenW / window.devicePixelRatio;
-      viewportH = screenH / window.devicePixelRatio;
+      viewportW = gScreenWidth / window.devicePixelRatio;
+      viewportH = gScreenHeight / window.devicePixelRatio;
     } else {
       viewportW = metadata.width;
       viewportH = metadata.height;
@@ -4910,16 +4810,16 @@ Tab.prototype = {
       
       let maxInitialZoom = metadata.defaultZoom || metadata.maxZoom;
       if (maxInitialZoom && viewportW) {
-        viewportW = Math.max(viewportW, screenW / maxInitialZoom);
+        viewportW = Math.max(viewportW, gScreenWidth / maxInitialZoom);
       }
 
       let validW = viewportW > 0;
       let validH = viewportH > 0;
 
       if (!validW)
-        viewportW = validH ? (viewportH * (screenW / screenH)) : BrowserApp.defaultBrowserWidth;
+        viewportW = validH ? (viewportH * (gScreenWidth / gScreenHeight)) : BrowserApp.defaultBrowserWidth;
       if (!validH)
-        viewportH = viewportW * (screenH / screenW);
+        viewportH = viewportW * (gScreenHeight / gScreenWidth);
     }
 
     
@@ -4957,14 +4857,12 @@ Tab.prototype = {
     
     let zoom = this.restoredSessionZoom() || metadata.defaultZoom;
     if (!zoom || !aInitialLoad) {
-      let zoomScale = (screenW * oldBrowserWidth) / (aOldScreenWidth * viewportW);
+      let zoomScale = (gScreenWidth * oldBrowserWidth) / (aOldScreenWidth * viewportW);
       zoom = this.clampZoom(this._zoom * zoomScale);
     }
     this.setResolution(zoom, false);
     this.setScrollClampingSize(zoom);
 
-    this.viewportExcludesHorizontalMargins = true;
-    this.viewportExcludesVerticalMargins = true;
     let minScale = 1.0;
     if (this.browser.contentDocument) {
       
@@ -4972,22 +4870,10 @@ Tab.prototype = {
       let cwu = this.browser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
       let cssPageRect = cwu.getRootBounds();
 
-      
-      
-      
-      if (cssPageRect.width * this._zoom > gScreenWidth - 0.5) {
-        screenW = gScreenWidth;
-        this.viewportExcludesHorizontalMargins = false;
-      }
-      if (cssPageRect.height * this._zoom > gScreenHeight - 0.5) {
-        screenH = gScreenHeight;
-        this.viewportExcludesVerticalMargins = false;
-      }
-
-      minScale = screenW / cssPageRect.width;
+      minScale = gScreenWidth / cssPageRect.width;
     }
     minScale = this.clampZoom(minScale);
-    viewportH = Math.max(viewportH, screenH / minScale);
+    viewportH = Math.max(viewportH, gScreenHeight / minScale);
 
     
     
@@ -5008,20 +4894,12 @@ Tab.prototype = {
       
       
       var oldAllowDoubleTapZoom = metadata.allowDoubleTapZoom;
-      var newAllowDoubleTapZoom = (!metadata.isSpecified) || (viewportW > screenW / window.devicePixelRatio);
+      var newAllowDoubleTapZoom = (!metadata.isSpecified) || (viewportW > gScreenWidth / window.devicePixelRatio);
       if (oldAllowDoubleTapZoom !== newAllowDoubleTapZoom) {
         metadata.allowDoubleTapZoom = newAllowDoubleTapZoom;
         this.sendViewportMetadata();
       }
     }
-
-    
-    
-    let viewport = this.getViewport();
-    this.lastPageSizeAfterViewportRemeasure = {
-      width: viewport.pageRight - viewport.pageLeft,
-      height: viewport.pageBottom - viewport.pageTop
-    };
   },
 
   sendViewportMetadata: function sendViewportMetadata() {
