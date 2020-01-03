@@ -44,6 +44,9 @@ class VCSToolsScript(VCSScript):
             for vcs_tool in VCS_TOOLS:
                 file_path = self.which(vcs_tool)
 
+                if not file_path:
+                    file_path = self.query_exe(vcs_tool)
+
                 
                 
                 if type(self.query_exe(vcs_tool)) is list:
