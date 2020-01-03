@@ -89,8 +89,6 @@ extern bool gBluetoothDebugFlag;
 
 
 
-
-
 #define BT_INSERT_NAMED_VALUE(array, index, name, value)                      \
   array.InsertElementAt(index, BluetoothNamedValue(NS_LITERAL_STRING(name),   \
                                                    BluetoothValue(value)))
@@ -188,21 +186,6 @@ extern bool gBluetoothDebugFlag;
 #define PAIRING_REQ_TYPE_ENTERPINCODE         "enterpincodereq"
 #define PAIRING_REQ_TYPE_CONFIRMATION         "pairingconfirmationreq"
 #define PAIRING_REQ_TYPE_CONSENT              "pairingconsentreq"
-
-
-
-
-
-
-
-#define PAIRED_STATUS_CHANGED_ID             "pairedstatuschanged"
-
-
-
-
-
-
-#define DISCOVERY_STATE_CHANGED_ID           "discoverystatechanged"
 
 
 
