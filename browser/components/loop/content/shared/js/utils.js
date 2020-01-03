@@ -446,7 +446,11 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
   
   
   if (!Uint8Array.prototype.slice) {
+    
+    
+    
     Uint8Array.prototype.slice = Uint8Array.prototype.subarray;
+    
   }
 
   
