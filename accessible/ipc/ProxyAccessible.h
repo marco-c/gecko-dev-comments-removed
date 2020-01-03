@@ -49,6 +49,7 @@ public:
 
   
   size_t IndexInParent() const { return Parent()->mChildren.IndexOf(this); }
+  uint32_t EmbeddedChildCount() const;
   int32_t IndexOfEmbeddedChild(const ProxyAccessible*);
   ProxyAccessible* EmbeddedChildAt(size_t aChildIdx);
   bool MustPruneChildren() const;
