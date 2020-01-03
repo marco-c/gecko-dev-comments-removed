@@ -36,7 +36,6 @@
 #ifdef DEBUG
 # include "js/Proxy.h" 
 #endif
-#include "js/TraceableVector.h"
 #include "js/Vector.h"
 #include "vm/CommonPropertyNames.h"
 #include "vm/DateTime.h"
@@ -140,7 +139,7 @@ struct ScopeCoordinateNameCache {
     void purge();
 };
 
-using ScriptAndCountsVector = TraceableVector<ScriptAndCounts, 0, SystemAllocPolicy>;
+typedef Vector<ScriptAndCounts, 0, SystemAllocPolicy> ScriptAndCountsVector;
 
 struct EvalCacheEntry
 {
@@ -691,12 +690,12 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-    JS::PersistentRooted<js::SavedFrame*> asyncStackForNewActivations;
+    js::SavedFrame* asyncStackForNewActivations;
 
     
 
 
-    JS::PersistentRooted<JSString*> asyncCauseForNewActivations;
+    JSString* asyncCauseForNewActivations;
 
     
 
@@ -1052,7 +1051,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 #endif
 
     
-    JS::PersistentRooted<js::ScriptAndCountsVector>* scriptAndCountsVector;
+    js::ScriptAndCountsVector* scriptAndCountsVector;
 
     
     const js::Value     NaNValue;
@@ -1516,6 +1515,11 @@ struct JSRuntime : public JS::shadow::Runtime,
         
 
 
+        js::PerformanceGroupHolder performance;
+
+        
+
+
 
 
 
@@ -1523,17 +1527,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
         uint64_t iteration;
-
-        
-
-
-
-        bool isEmpty;
-
-        
-
-
-        js::PerformanceData performance;
 
         
 
@@ -1547,9 +1540,9 @@ struct JSRuntime : public JS::shadow::Runtime,
 
         JSCurrentPerfGroupCallback currentPerfGroupCallback;
 
-        Stopwatch()
-          : iteration(0)
-          , isEmpty(true)
+        explicit Stopwatch(JSRuntime* runtime)
+          : performance(runtime)
+          , iteration(0)
           , currentPerfGroupCallback(nullptr)
           , isMonitoringJank_(false)
           , isMonitoringCPOW_(false)
@@ -1566,7 +1559,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
         void reset() {
             ++iteration;
-            isEmpty = true;
         }
         
 
@@ -1653,6 +1645,9 @@ struct JSRuntime : public JS::shadow::Runtime,
         MonotonicTimeStamp userTimeFix;
 
     private:
+        Stopwatch(const Stopwatch&) = delete;
+        Stopwatch& operator=(const Stopwatch&) = delete;
+
         Groups groups_;
         friend struct js::PerformanceGroupHolder;
 
