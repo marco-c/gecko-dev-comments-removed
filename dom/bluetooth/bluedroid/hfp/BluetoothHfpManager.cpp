@@ -238,7 +238,7 @@ bool
 BluetoothHfpManager::Init()
 {
   
-  MOZ_ASSERT(IsMainProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   MOZ_ASSERT(NS_IsMainThread());
 
