@@ -23,9 +23,17 @@ add_task(function*() {
 
 function* testRuleView(ruleView, inspector) {
   info("Showing the tooltip");
+
   let tooltip = ruleView.tooltips.previewTooltip;
+  tooltip.setTextContent({messages: ["rule-view tooltip"]});
+  
+  
+  
+  
+  tooltip.stopTogglingOnHover();
+
   let onShown = tooltip.once("shown");
-  tooltip.show();
+  tooltip.show(ruleView.styleDocument.firstElementChild);
   yield onShown;
 
   info("Selecting a new node");
@@ -38,9 +46,17 @@ function* testRuleView(ruleView, inspector) {
 
 function* testComputedView(computedView, inspector) {
   info("Showing the tooltip");
+
   let tooltip = computedView.tooltips.previewTooltip;
+  tooltip.setTextContent({messages: ["computed-view tooltip"]});
+  
+  
+  
+  
+  tooltip.stopTogglingOnHover();
+
   let onShown = tooltip.once("shown");
-  tooltip.show();
+  tooltip.show(computedView.styleDocument.firstElementChild);
   yield onShown;
 
   info("Selecting a new node");
