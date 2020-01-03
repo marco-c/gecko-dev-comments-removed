@@ -816,12 +816,6 @@ struct JSRuntime : public JS::shadow::Runtime,
     static const size_t TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;
     js::LifoAlloc tempLifoAlloc;
 
-    
-
-
-
-    js::LifoAlloc freeLifoAlloc;
-
   private:
     
 
