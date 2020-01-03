@@ -109,7 +109,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       } else {
         
         JSObject* glob = js::GetGlobalForObjectCrossCompartment(realCallback);
-        globalObject = xpc::GetNativeForGlobal(glob);
+        globalObject = xpc::NativeGlobal(glob);
         MOZ_ASSERT(globalObject);
         cx = nsContentUtils::GetSafeJSContext();
       }

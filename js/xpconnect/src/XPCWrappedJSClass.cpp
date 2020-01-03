@@ -489,7 +489,7 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
     
     nsIGlobalObject* nativeGlobal =
-      GetNativeForGlobal(js::GetGlobalForObjectCrossCompartment(self->GetJSObject()));
+      NativeGlobal(js::GetGlobalForObjectCrossCompartment(self->GetJSObject()));
     AutoEntryScript aes(nativeGlobal,  true);
     XPCCallContext ccx(NATIVE_CALLER, aes.cx());
     if (!ccx.IsValid()) {
@@ -890,7 +890,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     
     
     nsIGlobalObject* nativeGlobal =
-      GetNativeForGlobal(js::GetGlobalForObjectCrossCompartment(wrapper->GetJSObject()));
+      NativeGlobal(js::GetGlobalForObjectCrossCompartment(wrapper->GetJSObject()));
     AutoEntryScript aes(nativeGlobal,  true);
     XPCCallContext ccx(NATIVE_CALLER, aes.cx());
     if (!ccx.IsValid())

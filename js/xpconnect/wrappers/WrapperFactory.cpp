@@ -644,9 +644,9 @@ TransplantObject(JSContext *cx, JS::HandleObject origobj, JS::HandleObject targe
 }
 
 nsIGlobalObject *
-GetNativeForGlobal(JSObject *obj)
+NativeGlobal(JSObject *obj)
 {
-    MOZ_ASSERT(JS_IsGlobalObject(obj));
+    obj = js::GetGlobalForObjectCrossCompartment(obj);
 
     
     

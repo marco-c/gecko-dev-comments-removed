@@ -61,7 +61,7 @@ nsStructuredCloneContainer::InitFromJSVal(JS::Handle<JS::Value> aData)
     
     
     nsIGlobalObject* nativeGlobal =
-      xpc::GetNativeForGlobal(js::GetGlobalForObjectCrossCompartment(&aData.toObject()));
+      xpc::NativeGlobal(js::GetGlobalForObjectCrossCompartment(&aData.toObject()));
     dom::AutoEntryScript aes(nativeGlobal);
     success = JS_WriteStructuredClone(aes.cx(), aData, &jsBytes, &mSize,
                                       nullptr, nullptr,
