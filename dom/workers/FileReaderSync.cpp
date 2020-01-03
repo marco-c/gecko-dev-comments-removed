@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FileReaderSync.h"
 
@@ -32,7 +32,7 @@ using namespace mozilla::dom;
 using mozilla::dom::Optional;
 using mozilla::dom::GlobalObject;
 
-
+// static
 already_AddRefed<FileReaderSync>
 FileReaderSync::Constructor(const GlobalObject& aGlobal, ErrorResult& aRv)
 {
@@ -52,7 +52,7 @@ FileReaderSync::WrapObject(JSContext* aCx,
 void
 FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
                                   JS::Handle<JSObject*> aScopeObj,
-                                  Blob& aBlob,
+                                  File& aBlob,
                                   JS::MutableHandle<JSObject*> aRetval,
                                   ErrorResult& aRv)
 {
@@ -95,7 +95,7 @@ FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
 }
 
 void
-FileReaderSync::ReadAsBinaryString(Blob& aBlob,
+FileReaderSync::ReadAsBinaryString(File& aBlob,
                                    nsAString& aResult,
                                    ErrorResult& aRv)
 {
@@ -125,7 +125,7 @@ FileReaderSync::ReadAsBinaryString(Blob& aBlob,
 }
 
 void
-FileReaderSync::ReadAsText(Blob& aBlob,
+FileReaderSync::ReadAsText(File& aBlob,
                            const Optional<nsAString>& aEncoding,
                            nsAString& aResult,
                            ErrorResult& aRv)
@@ -147,14 +147,14 @@ FileReaderSync::ReadAsText(Blob& aBlob,
     return;
   }
 
-  
-  
+  // The BOM sniffing is baked into the "decode" part of the Encoding
+  // Standard, which the File API references.
   if (!nsContentUtils::CheckForBOM(sniffBuf, numRead, encoding)) {
-    
+    // BOM sniffing failed. Try the API argument.
     if (!aEncoding.WasPassed() ||
         !EncodingUtils::FindEncodingForLabel(aEncoding.Value(),
                                              encoding)) {
-      
+      // API argument failed. Try the type property of the blob.
       nsAutoString type16;
       aBlob.GetType(type16);
       NS_ConvertUTF16toUTF8 type(type16);
@@ -167,7 +167,7 @@ FileReaderSync::ReadAsText(Blob& aBlob,
                                        &charsetStart,
                                        &charsetEnd);
       if (!EncodingUtils::FindEncodingForLabel(specifiedCharset, encoding)) {
-        
+        // Type property failed. Use UTF-8.
         encoding.AssignLiteral("UTF-8");
       }
     }
@@ -179,8 +179,8 @@ FileReaderSync::ReadAsText(Blob& aBlob,
     return;
   }
 
-  
-  
+  // Seek to 0 because to undo the BOM sniffing advance. UTF-8 and UTF-16
+  // decoders will swallow the BOM.
   rv = seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
@@ -195,7 +195,7 @@ FileReaderSync::ReadAsText(Blob& aBlob,
 }
 
 void
-FileReaderSync::ReadAsDataURL(Blob& aBlob, nsAString& aResult,
+FileReaderSync::ReadAsDataURL(File& aBlob, nsAString& aResult,
                               ErrorResult& aRv)
 {
   nsAutoString scratchResult;

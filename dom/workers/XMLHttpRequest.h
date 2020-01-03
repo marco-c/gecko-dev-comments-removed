@@ -1,15 +1,15 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workers_xmlhttprequest_h__
 #define mozilla_dom_workers_xmlhttprequest_h__
 
 #include "mozilla/dom/workers/bindings/WorkerFeature.h"
 
-
+// Need this for XMLHttpRequestResponseType.
 #include "mozilla/dom/XMLHttpRequestBinding.h"
 
 #include "mozilla/dom/TypedArray.h"
@@ -19,7 +19,7 @@
 
 namespace mozilla {
 namespace dom {
-class Blob;
+class File;
 }
 }
 
@@ -80,7 +80,7 @@ public:
   nsISupports*
   GetParentObject() const
   {
-    
+    // There's only one global on a worker, so we don't need to specify.
     return nullptr;
   }
 
@@ -93,7 +93,7 @@ public:
   Constructor(const GlobalObject& aGlobal, const nsAString& ignored,
               ErrorResult& aRv)
   {
-    
+    // Pretend like someone passed null, so we can pick up the default values
     MozXMLHttpRequestParameters params;
     if (!params.Init(aGlobal.Context(), JS::NullHandleValue)) {
       aRv.Throw(NS_ERROR_UNEXPECTED);
@@ -171,7 +171,7 @@ public:
   Send(JS::Handle<JSObject*> aBody, ErrorResult& aRv);
 
   void
-  Send(Blob& aBody, ErrorResult& aRv);
+  Send(File& aBody, ErrorResult& aRv);
 
   void
   Send(nsFormData& aBody, ErrorResult& aRv);
@@ -224,7 +224,7 @@ public:
   SetResponseType(XMLHttpRequestResponseType aResponseType, ErrorResult& aRv);
 
   void
-  GetResponse(JSContext* , JS::MutableHandle<JS::Value> aResponse,
+  GetResponse(JSContext* /* unused */, JS::MutableHandle<JS::Value> aResponse,
               ErrorResult& aRv);
 
   void
@@ -298,4 +298,4 @@ private:
 
 END_WORKERS_NAMESPACE
 
-#endif 
+#endif // mozilla_dom_workers_xmlhttprequest_h__

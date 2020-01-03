@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * url, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workers_url_h__
 #define mozilla_dom_workers_url_h__
@@ -15,7 +15,7 @@
 
 namespace mozilla {
 namespace dom {
-class Blob;
+class File;
 struct objectURLOptions;
 }
 }
@@ -40,14 +40,14 @@ public:
   nsISupports*
   GetParentObject() const
   {
-    
+    // There's only one global on a worker, so we don't need to specify.
     return nullptr;
   }
 
   bool
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aReflector);
 
-  
+  // Methods for WebIDL
 
   static already_AddRefed<URL>
   Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
@@ -61,7 +61,7 @@ public:
 
   static void
   CreateObjectURL(const GlobalObject& aGlobal,
-                  Blob& aArg, const objectURLOptions& aOptions,
+                  File& aArg, const objectURLOptions& aOptions,
                   nsAString& aResult, ErrorResult& aRv);
 
   static void
@@ -119,7 +119,7 @@ public:
     GetHref(aRetval, aRv);
   }
 
-  
+  // IURLSearchParamsObserver
   void URLSearchParamsUpdated(URLSearchParams* aSearchParams) override;
 
 private:
@@ -145,4 +145,4 @@ private:
 
 END_WORKERS_NAMESPACE
 
-#endif 
+#endif /* mozilla_dom_workers_url_h__ */

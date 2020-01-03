@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CaptureTask.h"
 #include "mozilla/dom/ImageCapture.h"
@@ -15,18 +15,18 @@
 namespace mozilla {
 
 nsresult
-CaptureTask::TaskComplete(already_AddRefed<dom::Blob> aBlob, nsresult aRv)
+CaptureTask::TaskComplete(already_AddRefed<dom::File> aBlob, nsresult aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
   DetachStream();
 
   nsresult rv;
-  nsRefPtr<dom::Blob> blob(aBlob);
+  nsRefPtr<dom::File> blob(aBlob);
 
-  
+  // We have to set the parent because the blob has been generated with a valid one.
   if (blob) {
-    blob = dom::Blob::Create(mImageCapture->GetParentObject(), blob->Impl());
+    blob = new dom::File(mImageCapture->GetParentObject(), blob->Impl());
   }
 
   if (mPrincipalChanged) {
@@ -40,8 +40,8 @@ CaptureTask::TaskComplete(already_AddRefed<dom::Blob> aBlob, nsresult aRv)
     rv = mImageCapture->PostErrorEvent(dom::ImageCaptureError::PHOTO_ERROR, aRv);
   }
 
-  
-  
+  // Ensure ImageCapture dereference on main thread here because the TakePhoto()
+  // sequences stopped here.
   mImageCapture = nullptr;
 
   return rv;
@@ -97,15 +97,15 @@ CaptureTask::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
     return;
   }
 
-  
+  // Callback for encoding complete, it calls on main thread.
   class EncodeComplete : public dom::EncodeCompleteCallback
   {
   public:
     explicit EncodeComplete(CaptureTask* aTask) : mTask(aTask) {}
 
-    nsresult ReceiveBlob(already_AddRefed<dom::Blob> aBlob) override
+    nsresult ReceiveBlob(already_AddRefed<dom::File> aBlob) override
     {
-      nsRefPtr<dom::Blob> blob(aBlob);
+      nsRefPtr<dom::File> blob(aBlob);
       mTask->TaskComplete(blob.forget(), NS_OK);
       mTask = nullptr;
       return NS_OK;
@@ -121,12 +121,12 @@ CaptureTask::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
     VideoSegment::ChunkIterator iter(*video);
     while (!iter.IsEnded()) {
       VideoChunk chunk = *iter;
-      
+      // Extract the first valid video frame.
       VideoFrame frame;
       if (!chunk.IsNull()) {
         nsRefPtr<layers::Image> image;
         if (chunk.mFrame.GetForceBlack()) {
-          
+          // Create a black image.
           image = VideoFrame::CreateBlackImage(chunk.mFrame.GetIntrinsicSize());
         } else {
           image = chunk.mFrame.GetImage();
@@ -134,7 +134,7 @@ CaptureTask::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
         MOZ_ASSERT(image);
         mImageGrabbedOrTrackEnd = true;
 
-        
+        // Encode image.
         nsresult rv;
         nsAutoString type(NS_LITERAL_STRING("image/jpeg"));
         nsAutoString options;
@@ -168,7 +168,7 @@ CaptureTask::PostTrackEndEvent()
 {
   mImageGrabbedOrTrackEnd = true;
 
-  
+  // Got track end or finish event, stop the task.
   class TrackEndRunnable : public nsRunnable
   {
   public:
@@ -190,4 +190,4 @@ CaptureTask::PostTrackEndEvent()
   NS_DispatchToMainThread(new TrackEndRunnable(this));
 }
 
-} 
+} // namespace mozilla

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workers_serviceworkerevents_h__
 #define mozilla_dom_workers_serviceworkerevents_h__
@@ -25,11 +25,10 @@ class nsIInterceptedChannel;
 
 namespace mozilla {
 namespace dom {
-class Blob;
-class Request;
-class ResponseOrPromise;
-} 
-} 
+  class Request;
+  class ResponseOrPromise;
+} // namespace dom
+} // namespace mozilla
 
 BEGIN_WORKERS_NAMESPACE
 
@@ -177,7 +176,7 @@ public:
   void Json(JSContext* cx, JS::MutableHandle<JSObject*> aRetval);
   void Text(nsAString& aData);
   void ArrayBuffer(JSContext* cx, JS::MutableHandle<JSObject*> aRetval);
-  mozilla::dom::Blob* Blob();
+  mozilla::dom::File* Blob();
 
   explicit PushMessageData(const nsAString& aData);
 private:
@@ -239,7 +238,7 @@ public:
     return data.forget();
   }
 };
-#endif 
+#endif /* ! MOZ_SIMPLEPUSH */
 
 END_WORKERS_NAMESPACE
-#endif 
+#endif /* mozilla_dom_workers_serviceworkerevents_h__ */

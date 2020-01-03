@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "URL.h"
 
@@ -56,7 +56,7 @@ public:
   }
 
 private:
-  
+  // Private destructor, to discourage deletion outside of Release():
   ~URLProxy()
   {
      MOZ_ASSERT(!mURL);
@@ -65,7 +65,7 @@ private:
   nsRefPtr<mozilla::dom::URL> mURL;
 };
 
-
+// This class creates an URL from a DOM Blob on the main thread.
 class CreateURLRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -104,8 +104,8 @@ public:
           MOZ_ASSERT(backgroundManager);
 
           if (blobManager != backgroundManager) {
-            
-            
+            // Always make sure we have a blob from an actor we can use on this
+            // thread.
             blobChild = BlobChild::GetOrCreate(backgroundManager, mBlobImpl);
             MOZ_ASSERT(blobChild);
 
@@ -137,14 +137,14 @@ public:
 
     if (!mWorkerPrivate->IsSharedWorker() &&
         !mWorkerPrivate->IsServiceWorker()) {
-      
+      // Walk up to top worker object.
       WorkerPrivate* wp = mWorkerPrivate;
       while (WorkerPrivate* parent = wp->GetParent()) {
         wp = parent;
       }
 
       nsCOMPtr<nsIScriptContext> sc = wp->GetScriptContext();
-      
+      // We could not have a ScriptContext in JSM code. In this case, we leak.
       if (sc) {
         nsCOMPtr<nsIGlobalObject> global = sc->GetGlobalObject();
         MOZ_ASSERT(global);
@@ -158,7 +158,7 @@ public:
   }
 };
 
-
+// This class revokes an URL on the main thread.
 class RevokeURLRunnable : public WorkerMainThreadRunnable
 {
 private:
@@ -192,14 +192,14 @@ public:
 
     if (!mWorkerPrivate->IsSharedWorker() &&
         !mWorkerPrivate->IsServiceWorker()) {
-      
+      // Walk up to top worker object.
       WorkerPrivate* wp = mWorkerPrivate;
       while (WorkerPrivate* parent = wp->GetParent()) {
         wp = parent;
       }
 
       nsCOMPtr<nsIScriptContext> sc = wp->GetScriptContext();
-      
+      // We could not have a ScriptContext in JSM code. In this case, we leak.
       if (sc) {
         nsCOMPtr<nsIGlobalObject> global = sc->GetGlobalObject();
         MOZ_ASSERT(global);
@@ -212,13 +212,13 @@ public:
   }
 };
 
-
+// This class creates a URL object on the main thread.
 class ConstructorRunnable : public WorkerMainThreadRunnable
 {
 private:
   const nsString mURL;
 
-  nsString mBase; 
+  nsString mBase; // IsVoid() if we have no base URI string.
   nsRefPtr<URLProxy> mBaseProxy;
   mozilla::ErrorResult& mRv;
 
@@ -303,7 +303,7 @@ private:
   nsRefPtr<URLProxy> mURLProxy;
 };
 
-
+// This class is the generic getter for any URL property.
 class GetterRunnable : public WorkerMainThreadRunnable
 {
 public:
@@ -394,7 +394,7 @@ private:
   nsRefPtr<URLProxy> mURLProxy;
 };
 
-
+// This class is the generic setter for any URL property.
 class SetterRunnable : public WorkerMainThreadRunnable
 {
 public:
@@ -482,8 +482,8 @@ private:
 
 NS_IMPL_CYCLE_COLLECTION(URL, mSearchParams)
 
-
-
+// The reason for using worker::URL is to have different refcnt logging than
+// for main thread URL.
 NS_IMPL_CYCLE_COLLECTING_ADDREF(workers::URL)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(workers::URL)
 
@@ -491,7 +491,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(URL)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-
+// static
 already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  URL& aBase, ErrorResult& aRv)
@@ -505,7 +505,7 @@ URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
   return FinishConstructor(cx, workerPrivate, runnable, aRv);
 }
 
-
+// static
 already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  const Optional<nsAString>& aBase, ErrorResult& aRv)
@@ -519,7 +519,7 @@ URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
   return FinishConstructor(cx, workerPrivate, runnable, aRv);
 }
 
-
+// static
 already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  const nsAString& aBase, ErrorResult& aRv)
@@ -535,7 +535,7 @@ URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
   return FinishConstructor(cx, workerPrivate, runnable, aRv);
 }
 
-
+// static
 already_AddRefed<URL>
 URL::FinishConstructor(JSContext* aCx, WorkerPrivate* aPrivate,
                        ConstructorRunnable* aRunnable, ErrorResult& aRv)
@@ -878,9 +878,9 @@ URL::SetHash(const nsAString& aHash, ErrorResult& aRv)
   }
 }
 
-
+// static
 void
-URL::CreateObjectURL(const GlobalObject& aGlobal, Blob& aBlob,
+URL::CreateObjectURL(const GlobalObject& aGlobal, File& aBlob,
                      const mozilla::dom::objectURLOptions& aOptions,
                      nsAString& aResult, mozilla::ErrorResult& aRv)
 {
@@ -914,7 +914,7 @@ URL::CreateObjectURL(const GlobalObject& aGlobal, Blob& aBlob,
   }
 }
 
-
+// static
 void
 URL::RevokeObjectURL(const GlobalObject& aGlobal, const nsAString& aUrl,
                      ErrorResult& aRv)

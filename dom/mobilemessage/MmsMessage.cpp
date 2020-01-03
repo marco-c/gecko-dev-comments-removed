@@ -1,19 +1,19 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MmsMessage.h"
 #include "nsIDOMClassInfo.h"
-#include "jsapi.h" 
-#include "jsfriendapi.h" 
+#include "jsapi.h" // For OBJECT_TO_JSVAL and JS_NewDateObjectMsec
+#include "jsfriendapi.h" // For js_DateGetMsecSinceEpoch
 #include "nsJSUtils.h"
 #include "nsContentUtils.h"
 #include "nsTArrayHelpers.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/File.h"
-#include "mozilla/dom/mobilemessage/Constants.h" 
+#include "mozilla/dom/mobilemessage/Constants.h" // For MessageType
 #include "mozilla/dom/mobilemessage/SmsTypes.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -90,14 +90,14 @@ MmsMessage::MmsMessage(const mobilemessage::MmsMessageData& aData)
     att.mId = element.id();
     att.mLocation = element.location();
 
-    
-    
+    // mContent is not going to be exposed to JS directly so we can use
+    // nullptr as parent.
     if (element.contentParent()) {
       nsRefPtr<FileImpl> impl = static_cast<BlobParent*>(element.contentParent())->GetBlobImpl();
-      att.mContent = Blob::Create(nullptr, impl);
+      att.mContent = new File(nullptr, impl);
     } else if (element.contentChild()) {
       nsRefPtr<FileImpl> impl = static_cast<BlobChild*>(element.contentChild())->GetBlobImpl();
-      att.mContent = Blob::Create(nullptr, impl);
+      att.mContent = new File(nullptr, impl);
     } else {
       NS_WARNING("MmsMessage: Unable to get attachment content.");
     }
@@ -110,10 +110,10 @@ MmsMessage::MmsMessage(const mobilemessage::MmsMessageData& aData)
     MmsDeliveryInfo info;
     const MmsDeliveryInfoData &infoData = aData.deliveryInfo()[i];
 
-    
+    // Prepare |info.mReceiver|.
     info.mReceiver = infoData.receiver();
 
-    
+    // Prepare |info.mDeliveryStatus|.
     nsString statusStr;
     switch (infoData.deliveryStatus()) {
       case eDeliveryStatus_NotApplicable:
@@ -140,10 +140,10 @@ MmsMessage::MmsMessage(const mobilemessage::MmsMessageData& aData)
     }
     info.mDeliveryStatus = statusStr;
 
-    
+    // Prepare |info.mDeliveryTimestamp|.
     info.mDeliveryTimestamp = infoData.deliveryTimestamp();
 
-    
+    // Prepare |info.mReadStatus|.
     nsString statusReadString;
     switch(infoData.readStatus()) {
       case eReadStatus_NotApplicable:
@@ -164,14 +164,14 @@ MmsMessage::MmsMessage(const mobilemessage::MmsMessageData& aData)
     }
     info.mReadStatus = statusReadString;
 
-    
+    // Prepare |info.mReadTimestamp|.
     info.mReadTimestamp = infoData.readTimestamp();
 
     mDeliveryInfo.AppendElement(info);
   }
 }
 
- nsresult
+/* static */ nsresult
 MmsMessage::Create(int32_t aId,
                    uint64_t aThreadId,
                    const nsAString& aIccId,
@@ -192,7 +192,7 @@ MmsMessage::Create(int32_t aId,
 {
   *aMessage = nullptr;
 
-  
+  // Set |delivery|.
   DeliveryState delivery;
   if (aDelivery.Equals(DELIVERY_SENT)) {
     delivery = eDeliveryState_Sent;
@@ -208,7 +208,7 @@ MmsMessage::Create(int32_t aId,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
+  // Set |deliveryInfo|.
   if (!aDeliveryInfo.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -236,7 +236,7 @@ MmsMessage::Create(int32_t aId,
     deliveryInfo.AppendElement(info);
   }
 
-  
+  // Set |receivers|.
   if (!aReceivers.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -263,7 +263,7 @@ MmsMessage::Create(int32_t aId,
     receivers.AppendElement(receiverStr);
   }
 
-  
+  // Set |attachments|.
   if (!aAttachments.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -333,10 +333,10 @@ MmsMessage::GetData(ContentParent* aParent,
     MmsDeliveryInfoData infoData;
     const MmsDeliveryInfo &info = mDeliveryInfo[i];
 
-    
+    // Prepare |infoData.mReceiver|.
     infoData.receiver().Assign(info.mReceiver);
 
-    
+    // Prepare |infoData.mDeliveryStatus|.
     DeliveryStatus status;
     if (info.mDeliveryStatus.Equals(DELIVERY_STATUS_NOT_APPLICABLE)) {
       status = eDeliveryStatus_NotApplicable;
@@ -355,10 +355,10 @@ MmsMessage::GetData(ContentParent* aParent,
     }
     infoData.deliveryStatus() = status;
 
-    
+    // Prepare |infoData.mDeliveryTimestamp|.
     infoData.deliveryTimestamp() = info.mDeliveryTimestamp;
 
-    
+    // Prepare |infoData.mReadStatus|.
     ReadStatus readStatus;
     if (info.mReadStatus.Equals(READ_STATUS_NOT_APPLICABLE)) {
       readStatus = eReadStatus_NotApplicable;
@@ -373,7 +373,7 @@ MmsMessage::GetData(ContentParent* aParent,
     }
     infoData.readStatus() = readStatus;
 
-    
+    // Prepare |infoData.mReadTimestamp|.
     infoData.readTimestamp() = info.mReadTimestamp;
 
     aData.deliveryInfo().AppendElement(infoData);
@@ -386,17 +386,14 @@ MmsMessage::GetData(ContentParent* aParent,
     mma.id().Assign(element.id);
     mma.location().Assign(element.location);
 
-    
-    
-    
-    
-    nsRefPtr<FileImpl> impl = element.content->Impl();
-    if (impl && impl->IsDateUnknown()) {
-      ErrorResult rv;
-      impl->GetLastModified(rv);
-      if (rv.Failed()) {
+    // This is a workaround. Sometimes the blob we get from the database
+    // doesn't have a valid last modified date, making the ContentParent
+    // send a "Mystery Blob" to the ContentChild. Attempting to get the
+    // last modified date of blob can force that value to be initialized.
+    if (element.content->IsDateUnknown()) {
+      int64_t date;
+      if (NS_FAILED(element.content->GetMozLastModifiedDate(&date))) {
         NS_WARNING("Failed to get last modified date!");
-        rv.SuppressException();
       }
     }
 
@@ -469,9 +466,9 @@ MmsMessage::GetDelivery(nsAString& aDelivery)
 NS_IMETHODIMP
 MmsMessage::GetDeliveryInfo(JSContext* aCx, JS::MutableHandle<JS::Value> aDeliveryInfo)
 {
-  
-  
-  
+  // TODO Bug 850525 It'd be better to depend on the delivery of MmsMessage
+  // to return a more correct value. Ex, if .delivery = 'received', we should
+  // also make .deliveryInfo = null, since the .deliveryInfo is useless.
   uint32_t length = mDeliveryInfo.Length();
   if (length == 0) {
     aDeliveryInfo.setNull();
@@ -555,7 +552,7 @@ MmsMessage::GetAttachments(JSContext* aCx, JS::MutableHandle<JS::Value> aAttachm
 
     JS::Rooted<JSString*> tmpJsStr(aCx);
 
-    
+    // Get |attachment.mId|.
     tmpJsStr = JS_NewUCStringCopyN(aCx,
                                    attachment.id.get(),
                                    attachment.id.Length());
@@ -565,7 +562,7 @@ MmsMessage::GetAttachments(JSContext* aCx, JS::MutableHandle<JS::Value> aAttachm
       return NS_ERROR_FAILURE;
     }
 
-    
+    // Get |attachment.mLocation|.
     tmpJsStr = JS_NewUCStringCopyN(aCx,
                                    attachment.location.get(),
                                    attachment.location.Length());
@@ -575,15 +572,15 @@ MmsMessage::GetAttachments(JSContext* aCx, JS::MutableHandle<JS::Value> aAttachm
       return NS_ERROR_FAILURE;
     }
 
-    
+    // Get |attachment.mContent|.
 
-    
+    // Duplicating the File with the correct parent object.
     nsIGlobalObject *global = xpc::NativeGlobal(JS::CurrentGlobalOrNull(aCx));
     MOZ_ASSERT(global);
-    nsRefPtr<Blob> newBlob = Blob::Create(global, attachment.content->Impl());
+    nsRefPtr<File> newBlob = new File(global, attachment.content->Impl());
 
     JS::Rooted<JS::Value> val(aCx);
-    if (!ToJSValue(aCx, newBlob, &val)) {
+    if (!GetOrCreateDOMReflector(aCx, newBlob, &val)) {
       return NS_ERROR_FAILURE;
     }
 
@@ -615,5 +612,5 @@ MmsMessage::GetReadReportRequested(bool* aReadReportRequested)
 }
 
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

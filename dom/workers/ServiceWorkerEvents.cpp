@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ServiceWorkerEvents.h"
 #include "ServiceWorkerClient.h"
@@ -53,7 +53,7 @@ FetchEvent::PostInit(nsMainThreadPtrHandle<nsIInterceptedChannel>& aChannel,
   mClientInfo = aClientInfo;
 }
 
- already_AddRefed<FetchEvent>
+/*static*/ already_AddRefed<FetchEvent>
 FetchEvent::Constructor(const GlobalObject& aGlobal,
                         const nsAString& aType,
                         const FetchEventInit& aOptions,
@@ -117,8 +117,8 @@ public:
     nsCOMPtr<nsISupports> infoObj;
     nsAutoCString securityInfo(mInternalResponse->GetSecurityInfo());
     if (securityInfo.IsEmpty()) {
-      
-      
+      // We are dealing with a synthesized response here, so fall back to the
+      // security info for the worker script.
       securityInfo = mWorkerSecurityInfo;
     }
     nsresult rv = NS_DeserializeObject(securityInfo, getter_AddRefs(infoObj));
@@ -234,8 +234,8 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
     return;
   }
 
-  
-  
+  // Section 4.2, step 2.2 "If either response's type is "opaque" and request's
+  // mode is not "no-cors" or response's type is error, return a network error."
   if (((response->Type() == ResponseType::Opaque) && (mRequestMode != RequestMode::No_cors)) ||
       response->Type() == ResponseType::Error) {
     return;
@@ -258,7 +258,7 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
       new RespondWithClosure(mInterceptedChannel, ir, worker->GetSecurityInfo()));
   nsCOMPtr<nsIInputStream> body;
   response->GetBody(getter_AddRefs(body));
-  
+  // Errors and redirects may not have a body.
   if (body) {
     response->SetBodyUsed();
 
@@ -273,8 +273,8 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
       return;
     }
 
-    
-    
+    // XXXnsm, Fix for Bug 1141332 means that if we decide to make this
+    // streaming at some point, we'll need a different solution to that bug.
     rv = NS_AsyncCopy(body, responseBody, stsThread, NS_ASYNCCOPY_VIA_READSEGMENTS, 4096,
                       RespondWithCopyComplete, closure.forget());
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -301,7 +301,7 @@ RespondWithHandler::CancelRequest()
   NS_DispatchToMainThread(runnable);
 }
 
-} 
+} // anonymous namespace
 
 void
 FetchEvent::RespondWith(const ResponseOrPromise& aArg, ErrorResult& aRv)
@@ -364,7 +364,7 @@ ExtendableEvent::WaitUntil(Promise& aPromise)
 {
   MOZ_ASSERT(!NS_IsMainThread());
 
-  
+  // Only first caller counts.
   if (EventPhase() == AT_TARGET && !mPromise) {
     mPromise = &aPromise;
   }
@@ -395,7 +395,7 @@ NS_IMPL_ISUPPORTS0(PushMessageData);
 void
 PushMessageData::Json(JSContext* cx, JS::MutableHandle<JSObject*> aRetval)
 {
-  
+  //todo bug 1149195.  Don't be lazy.
    NS_ABORT();
 }
 
@@ -408,14 +408,14 @@ PushMessageData::Text(nsAString& aData)
 void
 PushMessageData::ArrayBuffer(JSContext* cx, JS::MutableHandle<JSObject*> aRetval)
 {
-  
+  //todo bug 1149195.  Don't be lazy.
    NS_ABORT();
 }
 
-mozilla::dom::Blob*
+mozilla::dom::File*
 PushMessageData::Blob()
 {
-  
+  //todo bug 1149195.  Don't be lazy.
   NS_ABORT();
   return nullptr;
 }
@@ -431,6 +431,6 @@ NS_INTERFACE_MAP_END_INHERITING(ExtendableEvent)
 NS_IMPL_ADDREF_INHERITED(PushEvent, ExtendableEvent)
 NS_IMPL_RELEASE_INHERITED(PushEvent, ExtendableEvent)
 
-#endif 
+#endif /* ! MOZ_SIMPLEPUSH */
 
 END_WORKERS_NAMESPACE
