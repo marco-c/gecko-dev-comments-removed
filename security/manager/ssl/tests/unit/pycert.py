@@ -152,7 +152,10 @@ def stringToCommonName(string):
     RDN with one AVA consisting of a Common Name encoded as a
     UTF8String."""
     commonName = rfc2459.X520CommonName()
-    commonName.setComponentByName('utf8String', string)
+    
+    
+    
+    commonName.setComponentByName('utf8String', string.decode(encoding='string_escape'))
     ava = rfc2459.AttributeTypeAndValue()
     ava.setComponentByName('type', rfc2459.id_at_commonName)
     ava.setComponentByName('value', commonName)
@@ -333,7 +336,10 @@ class Certificate:
         count = 0
         for dNSName in dNSNames.split(','):
             generalName = rfc2459.GeneralName()
-            generalName.setComponentByName('dNSName', dNSName)
+            
+            
+            
+            generalName.setComponentByName('dNSName', dNSName.decode(encoding='string_escape'))
             subjectAlternativeName.setComponentByPosition(count, generalName)
             count += 1
         self.addExtension(rfc2459.id_ce_subjectAltName, subjectAlternativeName)
