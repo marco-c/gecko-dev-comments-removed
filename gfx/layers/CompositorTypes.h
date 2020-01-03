@@ -121,7 +121,6 @@ enum class EffectTypes : uint8_t {
   MAX_SECONDARY, 
   RGB,
   YCBCR,
-  NV12,
   COMPONENT_ALPHA,
   SOLID_COLOR,
   RENDER_TARGET,
