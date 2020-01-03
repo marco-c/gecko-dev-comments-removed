@@ -2744,6 +2744,9 @@ RuleEditor.prototype = {
 
       let {ruleProps, isMatching} = response;
       if (!ruleProps) {
+        
+        
+        ruleView.emit("ruleview-invalid-selector");
         return;
       }
 
