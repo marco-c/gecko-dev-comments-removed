@@ -279,14 +279,12 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    const Matrix4x4& aCurrentTransformForRoot,
                                                    const LayerMargin& aFixedLayerMargins)
 {
-  
-  
-  bool isRootFixed = aLayer->GetIsFixedPosition() &&
-    aLayer != aTransformedSubtreeRoot &&
+  bool isRootFixedForSubtree = aLayer->GetIsFixedPosition() &&
+    aLayer->GetFixedPositionScrollContainerId() == aTransformScrollId &&
     !aLayer->GetParent()->GetIsFixedPosition();
   bool isStickyForSubtree = aLayer->GetIsStickyPosition() &&
     aLayer->GetStickyScrollContainerId() == aTransformScrollId;
-  bool isFixedOrSticky = (isRootFixed || isStickyForSubtree);
+  bool isFixedOrSticky = (isRootFixedForSubtree || isStickyForSubtree);
 
   
   
@@ -296,12 +294,10 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
     
     
     
-    if (aLayer == aTransformedSubtreeRoot || !aLayer->HasScrollableFrameMetrics()) {
-      for (Layer* child = aLayer->GetFirstChild(); child; child = child->GetNextSibling()) {
-        AlignFixedAndStickyLayers(child, aTransformedSubtreeRoot, aTransformScrollId,
-                                  aPreviousTransformForRoot,
-                                  aCurrentTransformForRoot, aFixedLayerMargins);
-      }
+    for (Layer* child = aLayer->GetFirstChild(); child; child = child->GetNextSibling()) {
+      AlignFixedAndStickyLayers(child, aTransformedSubtreeRoot, aTransformScrollId,
+                                aPreviousTransformForRoot,
+                                aCurrentTransformForRoot, aFixedLayerMargins);
     }
     return;
   }
