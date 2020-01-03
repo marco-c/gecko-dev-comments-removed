@@ -26,12 +26,12 @@
 #define STACK_SIZE_PARAM_IS_A_RESERVATION   0x00010000    // Threads only
 #endif
 
-#define LOGGING_ENABLED
+
 
 #ifdef LOGGING_ENABLED
 #  define LOG(...) do {         \
-  fprintf(stderr, __VA_ARGS__); \
-  fprintf(stderr, "\n");        \
+  fprintf(stdout, __VA_ARGS__); \
+  fprintf(stdout, "\n");        \
 } while(0);
 #else
 #  define LOG(...)
@@ -75,6 +75,20 @@ void SafeRelease(T * ptr)
   }
 }
 
+struct auto_lock {
+  auto_lock(CRITICAL_SECTION * lock)
+    :lock(lock)
+  {
+    EnterCriticalSection(lock);
+  }
+  ~auto_lock()
+  {
+    LeaveCriticalSection(lock);
+  }
+private:
+  CRITICAL_SECTION * lock;
+};
+
 struct auto_com {
   auto_com()
   : need_uninit(true) {
@@ -105,7 +119,7 @@ private:
 };
 
 typedef HANDLE (WINAPI *set_mm_thread_characteristics_function)(
-                                      const char* TaskName, LPDWORD TaskIndex);
+                                      const char * TaskName, LPDWORD TaskIndex);
 typedef BOOL (WINAPI *revert_mm_thread_characteristics_function)(HANDLE handle);
 
 extern cubeb_ops const wasapi_ops;
@@ -113,11 +127,9 @@ extern cubeb_ops const wasapi_ops;
 int wasapi_stream_stop(cubeb_stream * stm);
 int wasapi_stream_start(cubeb_stream * stm);
 void close_wasapi_stream(cubeb_stream * stm);
-HRESULT setup_wasapi_stream(cubeb_stream * stm);
+int setup_wasapi_stream(cubeb_stream * stm);
 
 }
-
-struct cubeb_stream;
 
 
 struct cubeb
@@ -128,6 +140,62 @@ struct cubeb
   HMODULE mmcss_module;
   set_mm_thread_characteristics_function set_mm_thread_characteristics;
   revert_mm_thread_characteristics_function revert_mm_thread_characteristics;
+};
+
+class wasapi_endpoint_notification_client;
+
+struct cubeb_stream
+{
+  cubeb * context;
+  
+
+
+  cubeb_stream_params mix_params;
+  cubeb_stream_params stream_params;
+  
+  unsigned latency;
+  cubeb_state_callback state_callback;
+  cubeb_data_callback data_callback;
+  void * user_ptr;
+
+  
+
+
+
+
+
+  
+  IAudioClient * client;
+  
+  IAudioRenderClient * render_client;
+  
+  IAudioStreamVolume * audio_stream_volume;
+  
+
+  IMMDeviceEnumerator * device_enumerator;
+  
+
+
+  wasapi_endpoint_notification_client * notification_client;
+  
+
+  HANDLE shutdown_event;
+  
+  HANDLE refill_event;
+  
+  HANDLE thread;
+  
+  LONG64 clock;
+  CRITICAL_SECTION stream_reset_lock;
+  
+  uint32_t buffer_frame_count;
+  
+  cubeb_resampler * resampler;
+  
+
+  float * mix_buffer;
+  
+  bool draining;
 };
 
 
@@ -188,10 +256,13 @@ public:
 
     
     wasapi_stream_stop(stm);
-    close_wasapi_stream(stm);
-    
+    {
+      auto_lock lock(&stm->stream_reset_lock);
+      close_wasapi_stream(stm);
+      
 
-    setup_wasapi_stream(stm);
+      setup_wasapi_stream(stm);
+    }
     wasapi_stream_start(stm);
 
     return S_OK;
@@ -230,60 +301,6 @@ private:
   
 
   cubeb_stream * stm;
-};
-
-struct cubeb_stream
-{
-  cubeb * context;
-  
-
-
-  cubeb_stream_params mix_params;
-  cubeb_stream_params stream_params;
-  
-  unsigned latency;
-  cubeb_state_callback state_callback;
-  cubeb_data_callback data_callback;
-  void * user_ptr;
-
-  
-
-
-
-
-
-  
-  IAudioClient * client;
-  
-  IAudioRenderClient * render_client;
-  
-  IAudioClock * audio_clock;
-  
-  IAudioStreamVolume * audio_stream_volume;
-  
-
-  IMMDeviceEnumerator * device_enumerator;
-  
-
-
-  wasapi_endpoint_notification_client * notification_client;
-  
-
-  HANDLE shutdown_event;
-  
-  HANDLE refill_event;
-  
-  HANDLE thread;
-  uint64_t clock_freq;
-  
-  uint32_t buffer_frame_count;
-  
-  cubeb_resampler * resampler;
-  
-
-  float * mix_buffer;
-  
-  bool draining;
 };
 
 namespace {
@@ -369,6 +386,8 @@ refill(cubeb_stream * stm, float * data, long frames_needed)
   } else {
     dest = data;
   }
+
+  stm->clock = InterlockedAdd64(&stm->clock, frames_needed);
 
   long out_frames = cubeb_resampler_fill(stm->resampler, dest, frames_needed);
 
@@ -458,7 +477,7 @@ wasapi_stream_render_loop(LPVOID stream)
         continue;
       }
 
-      BYTE* data;
+      BYTE * data;
       hr = stm->render_client->GetBuffer(available, &data);
       if (SUCCEEDED(hr)) {
         refill(stm, reinterpret_cast<float *>(data), available);
@@ -629,7 +648,7 @@ void wasapi_destroy(cubeb * context)
   free(context);
 }
 
-char const* wasapi_get_backend_id(cubeb * context)
+char const * wasapi_get_backend_id(cubeb * context)
 {
   return "wasapi";
 }
@@ -908,25 +927,10 @@ int setup_wasapi_stream(cubeb_stream * stm)
     return CUBEB_ERROR;
   }
 
-  hr = stm->client->GetService(__uuidof(IAudioClock),
-      (void **)&stm->audio_clock);
-  if (FAILED(hr)) {
-    LOG("Could not get the IAudioClock, %x", hr);
-    wasapi_stream_destroy(stm);
-    return CUBEB_ERROR;
-  }
-
   hr = stm->client->GetService(__uuidof(IAudioStreamVolume),
       (void **)&stm->audio_stream_volume);
   if (FAILED(hr)) {
     LOG("Could not get the IAudioStreamVolume %x.", hr);
-    wasapi_stream_destroy(stm);
-    return CUBEB_ERROR;
-  }
-
-  hr = stm->audio_clock->GetFrequency(&stm->clock_freq);
-  if (FAILED(hr)) {
-    LOG("failed to get audio clock frequency, %x", hr);
     wasapi_stream_destroy(stm);
     return CUBEB_ERROR;
   }
@@ -973,6 +977,8 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
   stm->stream_params = stream_params;
   stm->draining = false;
   stm->latency = latency;
+  stm->clock = 0;
+  InitializeCriticalSection(&stm->stream_reset_lock);
 
   stm->shutdown_event = CreateEvent(NULL, 0, 0, NULL);
   stm->refill_event = CreateEvent(NULL, 0, 0, NULL);
@@ -1013,7 +1019,6 @@ void close_wasapi_stream(cubeb_stream * stm)
 
   SafeRelease(stm->client);
   SafeRelease(stm->render_client);
-  SafeRelease(stm->audio_clock);
 
   cubeb_resampler_destroy(stm->resampler);
 
@@ -1033,6 +1038,7 @@ void wasapi_stream_destroy(cubeb_stream * stm)
 
   SafeRelease(stm->shutdown_event);
   SafeRelease(stm->refill_event);
+  DeleteCriticalSection(&stm->stream_reset_lock);
 
   close_wasapi_stream(stm);
 
@@ -1044,6 +1050,8 @@ void wasapi_stream_destroy(cubeb_stream * stm)
 int wasapi_stream_start(cubeb_stream * stm)
 {
   HRESULT hr;
+
+  auto_lock lock(&stm->stream_reset_lock);
 
   assert(stm);
 
@@ -1068,6 +1076,8 @@ int wasapi_stream_stop(cubeb_stream * stm)
 {
   assert(stm && stm->shutdown_event);
 
+  auto_lock lock(&stm->stream_reset_lock);
+
   SetEvent(stm->shutdown_event);
 
   HRESULT hr = stm->client->Stop();
@@ -1090,16 +1100,7 @@ int wasapi_stream_get_position(cubeb_stream * stm, uint64_t * position)
 {
   assert(stm && position);
 
-  UINT64 pos;
-  HRESULT hr;
-
-  hr = stm->audio_clock->GetPosition(&pos, NULL);
-  if (FAILED(hr)) {
-    LOG("Could not get accurate position: %x\n", hr);
-    return CUBEB_ERROR;
-  }
-
-  *position = static_cast<uint64_t>(static_cast<double>(pos) / stm->clock_freq * stm->stream_params.rate);
+  *position = InterlockedAdd64(&stm->clock, 0);
 
   return CUBEB_OK;
 }
@@ -1107,6 +1108,8 @@ int wasapi_stream_get_position(cubeb_stream * stm, uint64_t * position)
 int wasapi_stream_get_latency(cubeb_stream * stm, uint32_t * latency)
 {
   assert(stm && latency);
+
+  auto_lock lock(&stm->stream_reset_lock);
 
   
 
@@ -1128,6 +1131,8 @@ int wasapi_stream_set_volume(cubeb_stream * stm, float volume)
   uint32_t channels;
   
   float volumes[10];
+
+  auto_lock lock(&stm->stream_reset_lock);
 
   hr = stm->audio_stream_volume->GetChannelCount(&channels);
   if (hr != S_OK) {
