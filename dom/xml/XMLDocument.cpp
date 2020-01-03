@@ -332,41 +332,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
     return false;
   }
 
-  
-  
-  
-  
-
-  
-  
-  
-  if (!nsContentUtils::IsSystemPrincipal(principal)) {
-    rv = principal->CheckMayLoad(uri, false, false);
-    if (NS_FAILED(rv)) {
-      aRv.Throw(rv);
-      return false;
-    }
-
-    int16_t shouldLoad = nsIContentPolicy::ACCEPT;
-    rv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-                                   uri,
-                                   principal,
-                                   callingDoc ? callingDoc.get() :
-                                     static_cast<nsIDocument*>(this),
-                                   NS_LITERAL_CSTRING("application/xml"),
-                                   nullptr,
-                                   &shouldLoad,
-                                   nsContentUtils::GetContentPolicy(),
-                                   nsContentUtils::GetSecurityManager());
-    if (NS_FAILED(rv)) {
-      aRv.Throw(rv);
-      return false;
-    }
-    if (NS_CP_REJECTED(shouldLoad)) {
-      aRv.Throw(NS_ERROR_CONTENT_BLOCKED);
-      return false;
-    }
-  } else {
+  if (nsContentUtils::IsSystemPrincipal(principal)) {
     
     
 
@@ -444,7 +410,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
                      uri,
                      callingDoc ? callingDoc.get() :
                                   static_cast<nsIDocument*>(this),
-                     nsILoadInfo::SEC_NORMAL,
+                     nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
                      nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
                      loadGroup,
                      req,
@@ -478,7 +444,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
   
 
   
-  rv = channel->AsyncOpen(listener, nullptr);
+  rv = channel->AsyncOpen2(listener);
   if (NS_FAILED(rv)) {
     mChannelIsPending = false;
     aRv.Throw(rv);
