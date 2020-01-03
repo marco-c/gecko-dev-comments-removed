@@ -688,7 +688,7 @@ pref("gfx.content.azure.backends", "direct2d1.1,direct2d,cairo");
 pref("gfx.content.azure.backends", "cg");
 pref("gfx.canvas.azure.backends", "skia");
 
-pref("gfx.canvas.azure.accelerated", false);
+pref("gfx.canvas.azure.accelerated", true);
 #else
 pref("gfx.canvas.azure.backends", "cairo");
 pref("gfx.content.azure.backends", "cairo");
@@ -4430,7 +4430,7 @@ pref("dom.mozAlarms.enabled", false);
 
 
 
-#if !defined(MOZ_WIDGET_GONK) && !defined(MOZ_WIDGET_ANDROID)
+#if !defined(MOZ_B2G) && !defined(ANDROID)
 
 #ifdef RELEASE_BUILD
 pref("dom.push.enabled", false);
@@ -4879,7 +4879,14 @@ pref("intl.collation.mac.use_icu", true);
 
 
 pref("intl.ime.nstextinput.enable", false);
+
+#if !defined(RELEASE_BUILD) || defined(DEBUG)
+
+
+
+pref("intl.allow-insecure-text-input", false);
 #endif
+#endif // XP_MACOSX
 
 
 pref("dom.meta-viewport.enabled", false);
