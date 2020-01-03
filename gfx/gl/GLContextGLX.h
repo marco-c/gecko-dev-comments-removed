@@ -50,6 +50,13 @@ public:
 
     virtual bool SwapBuffers() override;
 
+    
+    
+    bool OverrideDrawable(GLXDrawable drawable);
+
+    
+    bool RestoreDrawable();
+
     virtual Maybe<gfx::IntSize> GetTargetSize() override;
 
 private:

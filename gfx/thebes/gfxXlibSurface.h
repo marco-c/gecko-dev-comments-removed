@@ -87,6 +87,9 @@ public:
 
 #if defined(GL_PROVIDER_GLX)
     GLXPixmap GetGLXPixmap();
+    
+    
+    void BindGLXPixmap(GLXPixmap aPixmap);
 #endif
 
     
