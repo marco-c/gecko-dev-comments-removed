@@ -55,18 +55,19 @@ static bool sLoggingBuffered = true;
 static bool sLoggingLogcat = true;
 #endif 
 
+nsConsoleService::MessageElement::~MessageElement()
+{
+}
 
 nsConsoleService::nsConsoleService()
-  : mMessages(nullptr)
-  , mCurrent(0)
-  , mFull(false)
+  : mCurrentSize(0)
   , mDeliveringMessage(false)
   , mLock("nsConsoleService.mLock")
 {
   
   
   
-  mBufferSize = 250;
+  mMaximumSize = 250;
 }
 
 
@@ -75,53 +76,46 @@ nsConsoleService::ClearMessagesForWindowID(const uint64_t innerID)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  
-  for (uint32_t i = 0; i < mBufferSize && mMessages[i]; i++) {
+  for (MessageElement* e = mMessages.getFirst(); e != nullptr; ) {
     
-    nsCOMPtr<nsIScriptError> scriptError = do_QueryInterface(mMessages[i]);
+    
+    nsCOMPtr<nsIScriptError> scriptError = do_QueryInterface(e->Get());
     if (!scriptError) {
+      e = e->getNext();
       continue;
     }
     uint64_t innerWindowID;
     nsresult rv = scriptError->GetInnerWindowID(&innerWindowID);
     if (NS_FAILED(rv) || innerWindowID != innerID) {
+      e = e->getNext();
       continue;
     }
 
-    
-    NS_RELEASE(mMessages[i]);
+    MessageElement* next = e->getNext();
+    e->remove();
+    delete e;
+    mCurrentSize--;
+    MOZ_ASSERT(mCurrentSize < mMaximumSize);
 
-    uint32_t j = i;
-    
-    
-    for (; j < mBufferSize - 1 && mMessages[j + 1]; j++) {
-      mMessages[j] = mMessages[j + 1];
-    }
-    
-    mMessages[j] = nullptr;
-    mCurrent = j;
-
-    
-    mFull = false;
-
-    
-    i--;
+    e = next;
   }
+}
+
+void
+nsConsoleService::ClearMessages()
+{
+  while (!mMessages.isEmpty()) {
+    MessageElement* e = mMessages.popFirst();
+    delete e;
+  }
+  mCurrentSize = 0;
 }
 
 nsConsoleService::~nsConsoleService()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  uint32_t i = 0;
-  while (i < mBufferSize && mMessages[i]) {
-    NS_RELEASE(mMessages[i]);
-    i++;
-  }
-
-  if (mMessages) {
-    free(mMessages);
-  }
+  ClearMessages();
 }
 
 class AddConsolePrefWatchers : public nsRunnable
@@ -157,15 +151,6 @@ private:
 nsresult
 nsConsoleService::Init()
 {
-  mMessages = (nsIConsoleMessage**)
-    moz_xmalloc(mBufferSize * sizeof(nsIConsoleMessage*));
-  if (!mMessages) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  
-  memset(mMessages, 0, mBufferSize * sizeof(nsIConsoleMessage*));
-
   NS_DispatchToMainThread(new AddConsolePrefWatchers(this));
 
   return NS_OK;
@@ -241,11 +226,7 @@ nsConsoleService::LogMessageWithMode(nsIConsoleMessage* aMessage,
   }
 
   nsRefPtr<LogMessageRunnable> r;
-  nsIConsoleMessage* retiredMessage;
-
-  if (sLoggingBuffered) {
-    NS_ADDREF(aMessage); 
-  }
+  nsCOMPtr<nsIConsoleMessage> retiredMessage;
 
   
 
@@ -311,18 +292,16 @@ nsConsoleService::LogMessageWithMode(nsIConsoleMessage* aMessage,
     }
 #endif
 
-    
-
-
-
-
-    retiredMessage = mMessages[mCurrent];
-
     if (sLoggingBuffered) {
-      mMessages[mCurrent++] = aMessage;
-      if (mCurrent == mBufferSize) {
-        mCurrent = 0; 
-        mFull = true;
+      MessageElement* e = new MessageElement(aMessage);
+      mMessages.insertBack(e);
+      if (mCurrentSize != mMaximumSize) {
+        mCurrentSize++;
+      } else {
+        MessageElement* p = mMessages.popFirst();
+        MOZ_ASSERT(p);
+        retiredMessage = p->forget();
+        delete p;
       }
     }
 
@@ -377,21 +356,15 @@ nsConsoleService::GetMessageArray(uint32_t* aCount,
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  nsIConsoleMessage** messageArray;
-
-  
-
-
-
   MutexAutoLock lock(mLock);
 
-  if (mCurrent == 0 && !mFull) {
+  if (mMessages.isEmpty()) {
     
 
 
 
 
-    messageArray = (nsIConsoleMessage**)
+    nsIConsoleMessage** messageArray = (nsIConsoleMessage**)
       moz_xmalloc(sizeof(nsIConsoleMessage*));
     *messageArray = nullptr;
     *aMessages = messageArray;
@@ -400,32 +373,21 @@ nsConsoleService::GetMessageArray(uint32_t* aCount,
     return NS_OK;
   }
 
-  uint32_t resultSize = mFull ? mBufferSize : mCurrent;
-  messageArray =
-    (nsIConsoleMessage**)moz_xmalloc((sizeof(nsIConsoleMessage*))
-                                         * resultSize);
+  MOZ_ASSERT(mCurrentSize <= mMaximumSize);
+  nsIConsoleMessage** messageArray =
+    static_cast<nsIConsoleMessage**>(moz_xmalloc(sizeof(nsIConsoleMessage*)
+                                                 * mCurrentSize));
 
-  if (!messageArray) {
-    *aMessages = nullptr;
-    *aCount = 0;
-    return NS_ERROR_FAILURE;
-  }
+  uint32_t i = 0;
+  for (MessageElement* e = mMessages.getFirst(); e != nullptr; e = e->getNext()) {
+    nsCOMPtr<nsIConsoleMessage> m = e->Get();
+    m.forget(&messageArray[i]);
+    i++;
+  };
 
-  uint32_t i;
-  if (mFull) {
-    for (i = 0; i < mBufferSize; i++) {
-      
-      
-      messageArray[i] = mMessages[(mCurrent + i) % mBufferSize];
-      NS_ADDREF(messageArray[i]);
-    }
-  } else {
-    for (i = 0; i < mCurrent; i++) {
-      messageArray[i] = mMessages[i];
-      NS_ADDREF(messageArray[i]);
-    }
-  }
-  *aCount = resultSize;
+  MOZ_ASSERT(i == mCurrentSize);
+
+  *aCount = i;
   *aMessages = messageArray;
 
   return NS_OK;
@@ -480,16 +442,7 @@ nsConsoleService::Reset()
 
   MutexAutoLock lock(mLock);
 
-  mCurrent = 0;
-  mFull = false;
-
-  
-
-
-  for (uint32_t i = 0; i < mBufferSize && mMessages[i]; i++) {
-    NS_RELEASE(mMessages[i]);
-  }
-
+  ClearMessages();
   return NS_OK;
 }
 
