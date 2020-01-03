@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.mozglue.generatorannotations;
+package org.mozilla.gecko.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface WrapElementForJNI {
+public @interface WrapForJNI {
     
     
     String stubName() default "";

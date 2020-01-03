@@ -5,7 +5,7 @@
 
 package org.mozilla.gecko.gfx;
 
-import org.mozilla.gecko.mozglue.generatorannotations.WrapElementForJNI;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
@@ -13,7 +13,7 @@ import org.mozilla.gecko.mozglue.generatorannotations.WrapElementForJNI;
 
 
 
-@WrapElementForJNI
+@WrapForJNI
 public class ProgressiveUpdateData {
     public float x;
     public float y;

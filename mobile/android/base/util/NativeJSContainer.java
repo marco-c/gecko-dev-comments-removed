@@ -5,7 +5,7 @@
 
 package org.mozilla.gecko.util;
 
-import org.mozilla.gecko.mozglue.generatorannotations.WrapElementForJNI;
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNITarget;
 
 
@@ -16,8 +16,7 @@ import org.mozilla.gecko.mozglue.JNITarget;
 
 
 
-@JNITarget
-@WrapElementForJNI
+@WrapForJNI
 public final class NativeJSContainer extends NativeJSObject
 {
     private NativeJSContainer() {

@@ -6,8 +6,8 @@ package org.mozilla.gecko.util;
 
 import java.util.concurrent.SynchronousQueue;
 
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.AppConstants.Versions;
-import org.mozilla.gecko.mozglue.generatorannotations.WrapElementForJNI;
 
 import android.content.ClipData;
 import android.content.Context;
@@ -32,7 +32,7 @@ public final class Clipboard {
         mContext = c.getApplicationContext();
     }
 
-    @WrapElementForJNI(stubName = "GetClipboardTextWrapper")
+    @WrapForJNI(stubName = "GetClipboardTextWrapper")
     public static String getText() {
         
         
@@ -59,7 +59,7 @@ public final class Clipboard {
         }
     }
 
-    @WrapElementForJNI(stubName = "SetClipboardText")
+    @WrapForJNI(stubName = "SetClipboardText")
     public static void setText(final CharSequence text) {
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
@@ -90,7 +90,7 @@ public final class Clipboard {
     
 
 
-    @WrapElementForJNI
+    @WrapForJNI
     public static boolean hasText() {
         if (Versions.feature11Plus) {
             android.content.ClipboardManager cm = (android.content.ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -105,7 +105,7 @@ public final class Clipboard {
     
 
 
-    @WrapElementForJNI
+    @WrapForJNI
     public static void clearText() {
         setText(null);
     }
