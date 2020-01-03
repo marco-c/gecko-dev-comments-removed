@@ -280,7 +280,6 @@ public:
     return surface.forget();
   }
 
-  MOZ_WARN_UNUSED_RESULT  
   Pair<already_AddRefed<CachedSurface>, MatchType>
   LookupBestMatch(const SurfaceKey&      aSurfaceKey,
                   const Maybe<uint32_t>& aAlternateFlags)
