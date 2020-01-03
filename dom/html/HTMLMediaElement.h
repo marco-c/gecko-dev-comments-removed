@@ -547,8 +547,12 @@ public:
   }
 
   already_AddRefed<MediaSource> GetMozMediaSourceObject() const;
-  already_AddRefed<DOMMediaStream> GetMozSrcObject() const;
+  already_AddRefed<DOMMediaStream> GetSrcObject() const;
+  void SetSrcObject(DOMMediaStream& aValue);
+  void SetSrcObject(DOMMediaStream* aValue);
 
+  
+  already_AddRefed<DOMMediaStream> GetMozSrcObject() const;
   void SetMozSrcObject(DOMMediaStream& aValue);
   void SetMozSrcObject(DOMMediaStream* aValue);
 
