@@ -86,13 +86,24 @@ var gPermissionManager = {
     let principal;
     try {
       
+      
+      
+      
+      
+      
+      
       let uri;
       try {
         uri = Services.io.newURI(input_url, null, null);
+        principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
+        
+        principal.origin;
       } catch(ex) {
         uri = Services.io.newURI("http://" + input_url, null, null);
+        principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
+        
+        principal.origin;
       }
-      principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
     } catch(ex) {
       var message = this._bundle.getString("invalidURI");
       var title = this._bundle.getString("invalidURITitle");
