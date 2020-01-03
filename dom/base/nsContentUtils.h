@@ -2107,6 +2107,11 @@ public:
 
   static bool IsPDFJSEnabled();
 
+  
+
+
+  static bool IsSWFPlayerEnabled();
+
   enum ContentViewerType
   {
       TYPE_UNSUPPORTED,
