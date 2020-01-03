@@ -273,7 +273,7 @@ nsSVGElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     ParseStyleAttribute(stringValue, attrValue, true);
     
     
-    rv = mAttrsAndChildren.SetAndTakeAttr(nsGkAtoms::style, attrValue);
+    rv = mAttrsAndChildren.SetAndSwapAttr(nsGkAtoms::style, attrValue);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1455,6 +1455,8 @@ nsSVGElement::WillChangeValue(nsIAtom* aName)
 
 
 
+
+
 void
 nsSVGElement::DidChangeValue(nsIAtom* aName,
                              const nsAttrValue& aEmptyOrOldValue,
@@ -1489,7 +1491,7 @@ nsSVGElement::MaybeSerializeAttrBeforeRemoval(nsIAtom* aName, bool aNotify)
   nsAutoString serializedValue;
   attrValue->ToString(serializedValue);
   nsAttrValue oldAttrValue(serializedValue);
-  mAttrsAndChildren.SetAndTakeAttr(aName, oldAttrValue);
+  mAttrsAndChildren.SetAndSwapAttr(aName, oldAttrValue);
 }
 
 

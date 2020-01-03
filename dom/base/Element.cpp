@@ -2276,7 +2276,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     
     if (!IsAttributeMapped(aName) ||
         !SetMappedAttribute(document, aName, aParsedValue, &rv)) {
-      rv = mAttrsAndChildren.SetAndTakeAttr(aName, aParsedValue);
+      rv = mAttrsAndChildren.SetAndSwapAttr(aName, aParsedValue);
     }
   }
   else {
@@ -2285,7 +2285,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
                                                    aNamespaceID,
                                                    nsIDOMNode::ATTRIBUTE_NODE);
 
-    rv = mAttrsAndChildren.SetAndTakeAttr(ni, aParsedValue);
+    rv = mAttrsAndChildren.SetAndSwapAttr(ni, aParsedValue);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
