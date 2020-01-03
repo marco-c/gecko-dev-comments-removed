@@ -300,48 +300,6 @@ nsSMILAnimationController::MaybeStartSampling(nsRefreshDriver* aRefreshDriver)
 
 
 
-PLDHashOperator
-TransferCachedBaseValue(nsSMILCompositor* aCompositor,
-                        void* aData)
-{
-  nsSMILCompositorTable* lastCompositorTable =
-    static_cast<nsSMILCompositorTable*>(aData);
-  nsSMILCompositor* lastCompositor =
-    lastCompositorTable->GetEntry(aCompositor->GetKey());
-
-  if (lastCompositor) {
-    aCompositor->StealCachedBaseValue(lastCompositor);
-  }
-
-  return PL_DHASH_NEXT;  
-}
-
-PLDHashOperator
-RemoveCompositorFromTable(nsSMILCompositor* aCompositor,
-                          void* aData)
-{
-  nsSMILCompositorTable* lastCompositorTable =
-    static_cast<nsSMILCompositorTable*>(aData);
-  lastCompositorTable->RemoveEntry(aCompositor->GetKey());
-  return PL_DHASH_NEXT;
-}
-
-PLDHashOperator
-DoClearAnimationEffects(nsSMILCompositor* aCompositor,
-                        void* )
-{
-  aCompositor->ClearAnimationEffects();
-  return PL_DHASH_NEXT;
-}
-
-PLDHashOperator
-DoComposeAttribute(nsSMILCompositor* aCompositor,
-                   void* )
-{
-  aCompositor->ComposeAttribute();
-  return PL_DHASH_NEXT;
-}
-
 void
 nsSMILAnimationController::DoSample()
 {
@@ -416,10 +374,11 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
   nsAutoPtr<nsSMILCompositorTable>
     currentCompositorTable(new nsSMILCompositorTable(0));
 
-  SampleAnimationParams saParams = { &activeContainers,
-                                     currentCompositorTable };
-  mAnimationElementTable.EnumerateEntries(SampleAnimation,
-                                          &saParams);
+  for (auto iter = mAnimationElementTable.Iter(); !iter.Done(); iter.Next()) {
+    SVGAnimationElement* animElem = iter.Get()->GetKey();
+    SampleTimedElement(animElem, &activeContainers);
+    AddAnimationToCompositorTable(animElem, currentCompositorTable);
+  }
   activeContainers.Clear();
 
   
@@ -427,18 +386,32 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
   
   if (mLastCompositorTable) {
     
-    currentCompositorTable->EnumerateEntries(TransferCachedBaseValue,
-                                             mLastCompositorTable);
+    for (auto iter = currentCompositorTable->Iter();
+         !iter.Done();
+         iter.Next()) {
+      nsSMILCompositor* compositor = iter.Get();
+      nsSMILCompositor* lastCompositor =
+        mLastCompositorTable->GetEntry(compositor->GetKey());
+
+      if (lastCompositor) {
+        compositor->StealCachedBaseValue(lastCompositor);
+      }
+    }
 
     
     
     
-    currentCompositorTable->EnumerateEntries(RemoveCompositorFromTable,
-                                             mLastCompositorTable);
+    for (auto iter = currentCompositorTable->Iter();
+         !iter.Done();
+         iter.Next()) {
+      mLastCompositorTable->RemoveEntry(iter.Get()->GetKey());
+    }
 
     
     
-    mLastCompositorTable->EnumerateEntries(DoClearAnimationEffects, nullptr);
+    for (auto iter = mLastCompositorTable->Iter(); !iter.Done(); iter.Next()) {
+      iter.Get()->ClearAnimationEffects();
+    }
   }
 
   
@@ -460,7 +433,9 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
   
   
   
-  currentCompositorTable->EnumerateEntries(DoComposeAttribute, nullptr);
+  for (auto iter = currentCompositorTable->Iter(); !iter.Done(); iter.Next()) {
+    iter.Get()->ComposeAttribute();
+  }
 
   
   mLastCompositorTable = currentCompositorTable.forget();
@@ -638,23 +613,6 @@ nsSMILAnimationController::GetMilestoneElements(TimeContainerPtrKey* aKey,
 
   container->PopMilestoneElementsAtMilestone(params->mMilestone,
                                              params->mElements);
-
-  return PL_DHASH_NEXT;
-}
-
- PLDHashOperator
-nsSMILAnimationController::SampleAnimation(AnimationElementPtrKey* aKey,
-                                           void* aData)
-{
-  NS_ENSURE_TRUE(aKey, PL_DHASH_NEXT);
-  NS_ENSURE_TRUE(aKey->GetKey(), PL_DHASH_NEXT);
-  NS_ENSURE_TRUE(aData, PL_DHASH_NEXT);
-
-  SVGAnimationElement* animElem = aKey->GetKey();
-  SampleAnimationParams* params = static_cast<SampleAnimationParams*>(aData);
-
-  SampleTimedElement(animElem, params->mActiveContainers);
-  AddAnimationToCompositorTable(animElem, params->mCompositorTable);
 
   return PL_DHASH_NEXT;
 }
