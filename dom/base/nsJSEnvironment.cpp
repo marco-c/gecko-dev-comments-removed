@@ -1554,7 +1554,7 @@ nsJSContext::RunCycleCollectorSlice()
 
   
   
-  js::SliceBudget budget;
+  js::SliceBudget budget = js::SliceBudget::unlimited();
 
   if (sIncrementalCC) {
     if (gCCStats.mBeginTime.IsNull()) {

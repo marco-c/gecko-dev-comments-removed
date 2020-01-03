@@ -31,8 +31,16 @@ struct JS_PUBLIC_API(WorkBudget)
 
 
 
-struct JS_PUBLIC_API(SliceBudget)
+class JS_PUBLIC_API(SliceBudget)
 {
+    static const int64_t unlimitedDeadline = INT64_MAX;
+    static const intptr_t unlimitedStartCounter = INTPTR_MAX;
+
+    bool checkOverBudget();
+
+    SliceBudget();
+
+  public:
     
     
     
@@ -48,7 +56,7 @@ struct JS_PUBLIC_API(SliceBudget)
     static const int64_t UnlimitedWorkBudget = -1;
 
     
-    SliceBudget();
+    static SliceBudget unlimited() { return SliceBudget(); }
 
     
     explicit SliceBudget(TimeBudget time);
@@ -76,12 +84,6 @@ struct JS_PUBLIC_API(SliceBudget)
     bool isUnlimited() const { return deadline == unlimitedDeadline; }
 
     int describe(char* buffer, size_t maxlen) const;
-
-  private:
-    bool checkOverBudget();
-
-    static const int64_t unlimitedDeadline = INT64_MAX;
-    static const intptr_t unlimitedStartCounter = INTPTR_MAX;
 };
 
 } 
