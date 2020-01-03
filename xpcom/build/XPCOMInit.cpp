@@ -6,6 +6,7 @@
 
 #include "base/basictypes.h"
 
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Poison.h"
 #include "mozilla/SharedThreadPool.h"
@@ -717,6 +718,9 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 
   
   SharedThreadPool::InitStatics();
+
+  
+  AbstractThread::InitStatics();
 
   
   

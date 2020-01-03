@@ -129,7 +129,6 @@ void
 MediaDecoder::InitStatics()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  AbstractThread::InitStatics();
 
   
   gMediaDecoderLog = PR_NewLogModule("MediaDecoder");
