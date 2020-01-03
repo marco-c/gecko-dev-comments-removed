@@ -644,6 +644,10 @@ protected:
   
   void OnTouchEndOrCancel();
 
+  
+  
+  void OverscrollAnimationEnding();
+
   uint64_t mLayersId;
   nsRefPtr<CompositorParent> mCompositorParent;
   TaskThrottler mPaintThrottler;
