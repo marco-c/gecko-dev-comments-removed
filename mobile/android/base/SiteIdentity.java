@@ -150,7 +150,6 @@ public class SiteIdentity {
         try {
             JSONObject mode = identityData.getJSONObject("mode");
 
-            
             try {
                 mMixedMode = MixedMode.fromString(mode.getString("mixed"));
             } catch (Exception e) {
