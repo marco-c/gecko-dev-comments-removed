@@ -485,6 +485,21 @@ public class CodeGenerator {
         }
     }
 
+    public void generateClasses(final ClassWithOptions[] classes) {
+        if (classes.length == 0) {
+            return;
+        }
+
+        header.append(
+                "public:\n");
+        for (final ClassWithOptions cls : classes) {
+            
+            header.append(
+                    "    class " + Utils.getUnqualifiedName(cls.generatedName) + ";\n");
+        }
+        header.append('\n');
+    }
+
     
 
 

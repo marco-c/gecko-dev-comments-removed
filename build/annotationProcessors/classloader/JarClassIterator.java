@@ -28,19 +28,20 @@ public class JarClassIterator implements Iterator<ClassWithOptions> {
         String className = mTargetClassListIterator.next();
         try {
             Class<?> ret = mTarget.loadClass(className);
-            final String canonicalName;
 
             
             
             
             
+            final Class<?> enclosingClass;
             try {
-                canonicalName = ret.getCanonicalName();
+                enclosingClass = ret.getEnclosingClass();
             } catch (IncompatibleClassChangeError e) {
                 return next();
             }
 
-            if (canonicalName == null || "null".equals(canonicalName)) {
+            if (enclosingClass != null) {
+                
                 
                 return next();
             }
