@@ -2083,9 +2083,9 @@ UpdatePluginWindowState(uint64_t aId)
   bool shouldComposePlugin = !!lts.mRoot &&
                              !!lts.mRoot->GetParent();
 
-  bool shouldHidePlugin = (!lts.mRoot ||
-                           !lts.mRoot->GetParent()) &&
-                          !lts.mUpdatedPluginDataAvailable;
+  bool shouldHidePlugin = !lts.mRoot ||
+                          !lts.mRoot->GetParent();
+
   if (shouldComposePlugin) {
     if (!lts.mPluginData.Length()) {
       
