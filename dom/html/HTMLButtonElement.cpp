@@ -252,8 +252,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
     if (mouseEvent && mouseEvent->IsLeftClickEvent()) {
       
       
-      InternalUIEvent actEvent(aVisitor.mEvent->mFlags.mIsTrusted,
-                               NS_UI_ACTIVATE);
+      InternalUIEvent actEvent(true, NS_UI_ACTIVATE, mouseEvent);
       actEvent.detail = 1;
 
       nsCOMPtr<nsIPresShell> shell = aVisitor.mPresContext->GetPresShell();

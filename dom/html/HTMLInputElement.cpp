@@ -3631,8 +3631,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         !ShouldPreventDOMActivateDispatch(aVisitor.mEvent->originalTarget)) {
       
       
-      InternalUIEvent actEvent(aVisitor.mEvent->mFlags.mIsTrusted,
-                               NS_UI_ACTIVATE);
+      InternalUIEvent actEvent(true, NS_UI_ACTIVATE, mouseEvent);
       actEvent.detail = 1;
 
       nsCOMPtr<nsIPresShell> shell = aVisitor.mPresContext->GetPresShell();
