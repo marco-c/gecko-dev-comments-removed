@@ -170,7 +170,6 @@ RilObject.prototype = {
     this.IMEISV = null;
     this.ESN = null;
     this.MEID = null;
-    this.SMSC = null;
 
     
 
@@ -1621,17 +1620,7 @@ RilObject.prototype = {
 
 
   getSmscAddress: function(options) {
-    if (!this.SMSC) {
-      this.context.Buf.simpleRequest(REQUEST_GET_SMSC_ADDRESS, options);
-      return;
-    }
-
-    if (!options || options.rilMessageType !== "getSmscAddress") {
-      return;
-    }
-
-    options.smscAddress = this.SMSC;
-    this.sendChromeMessage(options);
+    this.context.Buf.simpleRequest(REQUEST_GET_SMSC_ADDRESS, options);
   },
 
   
@@ -1673,7 +1662,6 @@ RilObject.prototype = {
     }
 
     
-    this.SMSC = null;
     let Buf = this.context.Buf;
     Buf.newParcel(REQUEST_SET_SMSC_ADDRESS, options);
 
@@ -4824,22 +4812,96 @@ RilObject.prototype[REQUEST_EXIT_EMERGENCY_CALLBACK_MODE] = function REQUEST_EXI
   this.sendChromeMessage(options);
 };
 RilObject.prototype[REQUEST_GET_SMSC_ADDRESS] = function REQUEST_GET_SMSC_ADDRESS(length, options) {
-  this.SMSC = options.errorMsg ? null : this.context.Buf.readString();
-
   if (!options.rilMessageType || options.rilMessageType !== "getSmscAddress") {
     return;
   }
 
-  options.smscAddress = this.SMSC;
+  if (options.errorMsg) {
+    this.sendChromeMessage(options);
+    return;
+  }
+
+  let tosca = TOA_UNKNOWN;
+  let smsc = "";
+  let Buf = this.context.Buf;
+  if (RILQUIRKS_SMSC_ADDRESS_FORMAT === "pdu") {
+    let pduHelper = this.context.GsmPDUHelper;
+    let strlen = Buf.readInt32();
+    let length = pduHelper.readHexOctet();
+
+    
+    
+    
+    
+    
+    const MAX_LENGTH = 11
+    if (length <= MAX_LENGTH) {
+      tosca = pduHelper.readHexOctet();
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      smsc = pduHelper.readSwappedNibbleBcdString(length - 1, true)
+                      .replace(/a/ig, "*")
+                      .replace(/b/ig, "#")
+                      .replace(/c/ig, "a")
+                      .replace(/d/ig, "b")
+                      .replace(/e/ig, "c");
+
+      Buf.readStringDelimiter(strlen);
+    }
+  } else  {
+    let text = Buf.readString();
+    let segments = text.split(",", 2);
+    
+    
+    
+    if (segments.length === 2) {
+      tosca = this.parseInt(segments[1], TOA_UNKNOWN, 10);
+    }
+
+    smsc = segments[0].replace(/\"/g, "");
+  }
+
+  
+  
+  
+  let npi = CALLED_PARTY_BCD_NPI.indexOf(tosca & 0xf);
+  if (npi === -1) {
+    npi = CALLED_PARTY_BCD_NPI.indexOf(CALLED_PARTY_BCD_NPI_ISDN);
+  }
+
+  
+  let ton = (tosca & 0x70) >> 4;
+
+  
+  const TON_INTERNATIONAL = (TOA_INTERNATIONAL & 0x70) >> 4;
+  if (ton ===  TON_INTERNATIONAL && smsc.charAt(0) !== "+") {
+    smsc = "+" + smsc;
+  } else if (smsc.charAt(0) === "+" && ton !== TON_INTERNATIONAL) {
+    if (DEBUG) {
+      this.context.debug("SMSC address number begins with '+' while the TON is not international. Change TON to international.");
+    }
+    ton = TON_INTERNATIONAL;
+  }
+
+  options.smscAddress = smsc;
+  options.typeOfNumber = ton;
+  options.numberPlanIdentification = npi;
   this.sendChromeMessage(options);
 };
 RilObject.prototype[REQUEST_SET_SMSC_ADDRESS] = function REQUEST_SET_SMSC_ADDRESS(length, options) {
   if (!options.rilMessageType || options.rilMessageType !== "setSmscAddress") {
     return;
-  }
-
-  if (options.rilRequestError) {
-    optioins.errorMsg = RIL_ERROR_TO_GECKO_ERROR[options.rilRequestError];
   }
 
   this.sendChromeMessage(options);
