@@ -1075,9 +1075,6 @@ protected:
   nsRefPtr<MediaInputPort> mPlaybackStreamInputPort;
 
   
-  nsRefPtr<MediaInputPort> mCaptureStreamPort;
-
-  
   
   
   nsRefPtr<DOMMediaStream> mPlaybackStream;
@@ -1285,9 +1282,6 @@ protected:
 
   
   bool mAudioCaptured;
-
-  
-  bool mAudioCapturedByWindow;
 
   
   

@@ -399,8 +399,6 @@ public:
   
   
   virtual void AddOutputStream(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
-  
-  virtual void RemoveOutputStream(MediaStream* aStream);
 
   
   virtual double GetDuration();

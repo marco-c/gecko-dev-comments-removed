@@ -445,8 +445,6 @@ pref("media.getusermedia.screensharing.allowed_domains", "mozilla.github.io,webe
 
 pref("media.getusermedia.screensharing.allow_on_old_platforms", false);
 
-pref("media.getusermedia.audiocapture.enabled", false);
-
 
 pref("media.webvtt.enabled", true);
 pref("media.webvtt.regions.enabled", false);
