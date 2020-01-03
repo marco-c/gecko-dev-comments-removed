@@ -1512,9 +1512,7 @@ public:
       return false;
     }
 
-    
-    (workerPromise.get()->*mFunc)(aCx,
-                                  value);
+    (workerPromise->*mFunc)(aCx, value);
 
     
     mPromiseWorkerProxy->CleanUp(aCx);
