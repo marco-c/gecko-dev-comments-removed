@@ -116,10 +116,7 @@ static bool sIsFirstTimeToggleOffBt(false);
 static bool sAdapterEnabled(false);
 
 
-
-
-
-static nsDataHashtable<nsStringHashKey, nsString> sPairingNameTable;
+static nsDataHashtable<nsStringHashKey, nsString> sDeviceNameMap;
 
 static nsTArray<nsRefPtr<BluetoothReplyRunnable> > sChangeAdapterStateRunnableArray;
 static nsTArray<nsRefPtr<BluetoothReplyRunnable> > sChangeDiscoveryRunnableArray;
@@ -1896,7 +1893,7 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
     sFetchUuidsRunnableArray.Clear();
     sBondingRunnableArray.Clear();
     sUnbondingRunnableArray.Clear();
-    sPairingNameTable.Clear();
+    sDeviceNameMap.Clear();
 
     
     
@@ -2178,7 +2175,8 @@ BluetoothServiceBluedroid::RemoteDevicePropertiesNotification(
 
   InfallibleTArray<BluetoothNamedValue> propertiesArray;
 
-  BT_APPEND_NAMED_VALUE(propertiesArray, "Address", nsString(aBdAddr));
+  nsString bdAddr(aBdAddr);
+  BT_APPEND_NAMED_VALUE(propertiesArray, "Address", bdAddr);
 
   for (int i = 0; i < aNumProperties; ++i) {
 
@@ -2187,6 +2185,9 @@ BluetoothServiceBluedroid::RemoteDevicePropertiesNotification(
     if (p.mType == PROPERTY_BDNAME) {
       BT_APPEND_NAMED_VALUE(propertiesArray, "Name", p.mString);
 
+      
+      sDeviceNameMap.Remove(bdAddr);
+      sDeviceNameMap.Put(bdAddr, p.mString);
     } else if (p.mType == PROPERTY_CLASS_OF_DEVICE) {
       uint32_t cod = p.mUint32;
       BT_APPEND_NAMED_VALUE(propertiesArray, "Cod", cod);
@@ -2382,19 +2383,19 @@ BluetoothServiceBluedroid::DeviceFoundNotification(
 #ifndef MOZ_B2G_BT_API_V1
   MOZ_ASSERT(NS_IsMainThread());
 
-  BluetoothValue propertyValue;
   InfallibleTArray<BluetoothNamedValue> propertiesArray;
 
+  nsString bdAddr, bdName;
   for (int i = 0; i < aNumProperties; i++) {
 
     const BluetoothProperty& p = aProperties[i];
 
     if (p.mType == PROPERTY_BDADDR) {
       BT_APPEND_NAMED_VALUE(propertiesArray, "Address", p.mString);
-
+      bdAddr = p.mString;
     } else if (p.mType == PROPERTY_BDNAME) {
       BT_APPEND_NAMED_VALUE(propertiesArray, "Name", p.mString);
-
+      bdName = p.mString;
     } else if (p.mType == PROPERTY_CLASS_OF_DEVICE) {
       BT_APPEND_NAMED_VALUE(propertiesArray, "Cod", p.mUint32);
 
@@ -2422,6 +2423,10 @@ BluetoothServiceBluedroid::DeviceFoundNotification(
       BT_LOGD("Not handled remote device property: %d", p.mType);
     }
   }
+
+  
+  sDeviceNameMap.Remove(bdAddr);
+  sDeviceNameMap.Put(bdAddr, bdName);
 
   DistributeSignal(NS_LITERAL_STRING("DeviceFound"),
                    NS_LITERAL_STRING(KEY_ADAPTER),
@@ -2515,13 +2520,22 @@ BluetoothServiceBluedroid::PinRequestNotification(const nsAString& aRemoteBdAddr
 
   InfallibleTArray<BluetoothNamedValue> propertiesArray;
 
-  BT_APPEND_NAMED_VALUE(propertiesArray, "address", nsString(aRemoteBdAddr));
-  BT_APPEND_NAMED_VALUE(propertiesArray, "name", nsString(aBdName));
+  
+  
+  nsString bdAddr(aRemoteBdAddr);
+  nsString bdName(aBdName);
+  if (bdName.IsEmpty()) {
+    sDeviceNameMap.Get(bdAddr, &bdName);
+  } else {
+    sDeviceNameMap.Remove(bdAddr);
+    sDeviceNameMap.Put(bdAddr, bdName);
+  }
+
+  BT_APPEND_NAMED_VALUE(propertiesArray, "address", bdAddr);
+  BT_APPEND_NAMED_VALUE(propertiesArray, "name", bdName);
   BT_APPEND_NAMED_VALUE(propertiesArray, "passkey", EmptyString());
   BT_APPEND_NAMED_VALUE(propertiesArray, "type",
                         NS_LITERAL_STRING(PAIRING_REQ_TYPE_ENTERPINCODE));
-
-  sPairingNameTable.Put(nsString(aRemoteBdAddr), nsString(aBdName));
 
   DistributeSignal(NS_LITERAL_STRING("PairingRequest"),
                    NS_LITERAL_STRING(KEY_PAIRING_LISTENER),
@@ -2551,8 +2565,17 @@ BluetoothServiceBluedroid::SspRequestNotification(
 
 #ifndef MOZ_B2G_BT_API_V1
   InfallibleTArray<BluetoothNamedValue> propertiesArray;
-  nsAutoString passkey;
-  nsAutoString pairingType;
+
+  
+  
+  nsString bdAddr(aRemoteBdAddr);
+  nsString bdName(aBdName);
+  if (bdName.IsEmpty()) {
+    sDeviceNameMap.Get(bdAddr, &bdName);
+  } else {
+    sDeviceNameMap.Remove(bdAddr);
+    sDeviceNameMap.Put(bdAddr, bdName);
+  }
 
   
 
@@ -2562,6 +2585,8 @@ BluetoothServiceBluedroid::SspRequestNotification(
 
 
 
+  nsAutoString passkey;
+  nsAutoString pairingType;
   switch (aPairingVariant) {
     case SSP_VARIANT_PASSKEY_CONFIRMATION:
       pairingType.AssignLiteral(PAIRING_REQ_TYPE_CONFIRMATION);
@@ -2579,12 +2604,10 @@ BluetoothServiceBluedroid::SspRequestNotification(
       return;
   }
 
-  BT_APPEND_NAMED_VALUE(propertiesArray, "address", nsString(aRemoteBdAddr));
-  BT_APPEND_NAMED_VALUE(propertiesArray, "name", nsString(aBdName));
+  BT_APPEND_NAMED_VALUE(propertiesArray, "address", bdAddr);
+  BT_APPEND_NAMED_VALUE(propertiesArray, "name", bdName);
   BT_APPEND_NAMED_VALUE(propertiesArray, "passkey", passkey);
   BT_APPEND_NAMED_VALUE(propertiesArray, "type", pairingType);
-
-  sPairingNameTable.Put(nsString(aRemoteBdAddr), nsString(aBdName));
 
   DistributeSignal(NS_LITERAL_STRING("PairingRequest"),
                    NS_LITERAL_STRING(KEY_PAIRING_LISTENER),
@@ -2643,15 +2666,12 @@ BluetoothServiceBluedroid::BondStateChangedNotification(
   }
 
   
-  nsString deviceName;
-  bool nameExists = sPairingNameTable.Get(aRemoteBdAddr, &deviceName);
-  if (nameExists) {
-    sPairingNameTable.Remove(aRemoteBdAddr);
-  }
+  nsString remoteBdAddr(aRemoteBdAddr);
+  nsString remotebdName;
+  sDeviceNameMap.Get(remoteBdAddr, &remotebdName);
 
   
   InfallibleTArray<BluetoothNamedValue> propertiesArray;
-  nsString remoteBdAddr = nsString(aRemoteBdAddr);
   if (!bonded) {
     sAdapterBondedAddressArray.RemoveElement(remoteBdAddr);
   } else {
@@ -2663,17 +2683,13 @@ BluetoothServiceBluedroid::BondStateChangedNotification(
     
     
     
-    
-    
-    
-
-    BT_APPEND_NAMED_VALUE(propertiesArray, "Name", deviceName);
+    BT_APPEND_NAMED_VALUE(propertiesArray, "Name", remotebdName);
   }
 
   
   BT_APPEND_NAMED_VALUE(propertiesArray, "Paired", bonded);
   DistributeSignal(NS_LITERAL_STRING("PropertyChanged"),
-                   aRemoteBdAddr,
+                   remoteBdAddr,
                    BluetoothValue(propertiesArray));
 
   
