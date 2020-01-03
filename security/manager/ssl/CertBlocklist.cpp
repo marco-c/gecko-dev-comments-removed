@@ -400,44 +400,6 @@ WriteLine(nsIOutputStream* outputStream, const nsACString& string)
 
 
 PLDHashOperator
-ProcessBlocklistEntry(BlocklistItemKey* aHashKey, void* aUserArg)
-{
-  BlocklistSaveInfo* saveInfo = reinterpret_cast<BlocklistSaveInfo*>(aUserArg);
-  CertBlocklistItem item = aHashKey->GetKey();
-
-  if (!item.mIsCurrent) {
-    return PL_DHASH_NEXT;
-  }
-
-  nsAutoCString encDN;
-  nsAutoCString encOther;
-
-  nsresult rv = item.ToBase64(encDN, encOther);
-  if (NS_FAILED(rv)) {
-    saveInfo->success = false;
-    return PL_DHASH_STOP;
-  }
-
-  
-  if (item.mItemMechanism == BlockBySubjectAndPubKey) {
-    WriteLine(saveInfo->outputStream, encDN);
-    WriteLine(saveInfo->outputStream, NS_LITERAL_CSTRING("\t") + encOther);
-    return PL_DHASH_NEXT;
-  }
-
-  
-  saveInfo->issuers.PutEntry(encDN);
-  BlocklistStringSet* issuerSet = saveInfo->issuerTable.Get(encDN);
-  if (!issuerSet) {
-    issuerSet = new BlocklistStringSet();
-    saveInfo->issuerTable.Put(encDN, issuerSet);
-  }
-  issuerSet->PutEntry(encOther);
-  return PL_DHASH_NEXT;
-}
-
-
-PLDHashOperator
 WriteIssuer(nsCStringHashKey* aHashKey, void* aUserArg)
 {
   BlocklistSaveInfo* saveInfo = reinterpret_cast<BlocklistSaveInfo*>(aUserArg);
@@ -511,7 +473,39 @@ CertBlocklist::SaveEntries()
     return rv;
   }
 
-  mBlocklist.EnumerateEntries(ProcessBlocklistEntry, &saveInfo);
+  
+  for (auto iter = mBlocklist.Iter(); !iter.Done(); iter.Next()) {
+    CertBlocklistItem item = iter.Get()->GetKey();
+    if (!item.mIsCurrent) {
+      continue;
+    }
+
+    nsAutoCString encDN;
+    nsAutoCString encOther;
+
+    nsresult rv = item.ToBase64(encDN, encOther);
+    if (NS_FAILED(rv)) {
+      saveInfo.success = false;
+      break;
+    }
+
+    
+    if (item.mItemMechanism == BlockBySubjectAndPubKey) {
+      WriteLine(saveInfo.outputStream, encDN);
+      WriteLine(saveInfo.outputStream, NS_LITERAL_CSTRING("\t") + encOther);
+      continue;
+    }
+
+    
+    saveInfo.issuers.PutEntry(encDN);
+    BlocklistStringSet* issuerSet = saveInfo.issuerTable.Get(encDN);
+    if (!issuerSet) {
+      issuerSet = new BlocklistStringSet();
+      saveInfo.issuerTable.Put(encDN, issuerSet);
+    }
+    issuerSet->PutEntry(encOther);
+  }
+
   if (!saveInfo.success) {
     MOZ_LOG(gCertBlockPRLog, LogLevel::Warning,
            ("CertBlocklist::SaveEntries writing revocation data failed"));
