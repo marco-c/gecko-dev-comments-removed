@@ -7559,17 +7559,30 @@ function safeModeRestart() {
 
 
 function duplicateTabIn(aTab, where, delta) {
-  let newTab = SessionStore.duplicateTab(window, aTab, delta);
-
   switch (where) {
     case "window":
-      gBrowser.hideTab(newTab);
-      gBrowser.replaceTabWithWindow(newTab);
+      let otherWin = OpenBrowserWindow();
+      let delayedStartupFinished = (subject, topic) => {
+        if (topic == "browser-delayed-startup-finished" &&
+            subject == otherWin) {
+          Services.obs.removeObserver(delayedStartupFinished, topic);
+          let otherGBrowser = otherWin.gBrowser;
+          let otherTab = otherGBrowser.selectedTab;
+          SessionStore.duplicateTab(otherWin, aTab, delta);
+          otherGBrowser.removeTab(otherTab, { animate: false });
+        }
+      };
+
+      Services.obs.addObserver(delayedStartupFinished,
+                               "browser-delayed-startup-finished",
+                               false);
       break;
     case "tabshifted":
+      SessionStore.duplicateTab(window, aTab, delta);
       
       break;
     case "tab":
+      let newTab = SessionStore.duplicateTab(window, aTab, delta);
       gBrowser.selectedTab = newTab;
       break;
   }
