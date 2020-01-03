@@ -505,10 +505,11 @@ struct AutoResolving {
 
 
 
-class ContextIter {
+class ContextIter
+{
     JSContext* iter;
 
-public:
+  public:
     explicit ContextIter(JSRuntime* rt) {
         iter = rt->contextList.getFirst();
     }

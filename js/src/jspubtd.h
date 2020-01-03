@@ -37,6 +37,7 @@ class Rooted;
 class JS_FRIEND_API(CompileOptions);
 class JS_FRIEND_API(ReadOnlyCompileOptions);
 class JS_FRIEND_API(OwningCompileOptions);
+class JS_FRIEND_API(TransitiveCompileOptions);
 class JS_PUBLIC_API(CompartmentOptions);
 
 class Value;
@@ -221,7 +222,6 @@ class JS_PUBLIC_API(AutoGCRooter)
         IDARRAY =      -6, 
         VALVECTOR =   -10, 
         IDVECTOR =    -11, 
-        IDVALVECTOR = -12, 
         OBJVECTOR =   -14, 
         SCRIPTVECTOR =-16, 
         NAMEVECTOR =  -17, 
