@@ -113,6 +113,21 @@ public:
   static bool IsLink(mozilla::dom::Element* aElement);
 
   
+
+
+
+
+
+
+
+
+
+
+  static bool RestrictedSelectorMatches(mozilla::dom::Element* aElement,
+                                        nsCSSSelector* aSelector,
+                                        TreeMatchContext& aTreeMatchContext);
+
+  
   virtual void RulesMatching(ElementRuleProcessorData* aData) override;
 
   virtual void RulesMatching(PseudoElementRuleProcessorData* aData) override;
