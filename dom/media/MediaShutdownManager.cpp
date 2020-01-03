@@ -8,7 +8,6 @@
 #include "nsContentUtils.h"
 #include "mozilla/StaticPtr.h"
 #include "MediaDecoder.h"
-#include "mozilla/SharedThreadPool.h"
 #include "mozilla/Logging.h"
 
 namespace mozilla {
@@ -119,11 +118,6 @@ MediaShutdownManager::Shutdown()
     iter.Get()->GetKey()->Shutdown();
     iter.Remove();
   }
-
-  
-  
-  
-  SharedThreadPool::SpinUntilEmpty();
 
   
   
