@@ -7,16 +7,16 @@ const { Cc, Ci, Cu, Cr } = require("chrome");
 const { Task } = require("resource://gre/modules/Task.jsm");
 
 loader.lazyRequireGetter(this, "PerformanceIO",
-  "devtools/toolkit/performance/io");
+  "devtools/performance/io", true);
 loader.lazyRequireGetter(this, "RecordingUtils",
-  "devtools/toolkit/performance/utils");
+  "devtools/performance/recording-utils");
 
 
 
 
 
 
-const LegacyPerformanceRecording = function (options={}) {
+const RecordingModel = function (options={}) {
   this._label = options.label || "";
   this._console = options.console || false;
 
@@ -33,7 +33,7 @@ const LegacyPerformanceRecording = function (options={}) {
   };
 };
 
-LegacyPerformanceRecording.prototype = {
+RecordingModel.prototype = {
   
   _console: false,
   _imported: false,
@@ -43,7 +43,7 @@ LegacyPerformanceRecording.prototype = {
   _timelineStartTime: 0,
   _memoryStartTime: 0,
   _configuration: {},
-  _startingBufferStatus: null,
+  _originalBufferStatus: null,
   _bufferPercent: null,
 
   
@@ -102,7 +102,7 @@ LegacyPerformanceRecording.prototype = {
     this._profilerStartTime = info.profilerStartTime;
     this._timelineStartTime = info.timelineStartTime;
     this._memoryStartTime = info.memoryStartTime;
-    this._startingBufferStatus = {
+    this._originalBufferStatus = {
       position: info.position,
       totalSize: info.totalSize,
       generation: info.generation
@@ -296,16 +296,26 @@ LegacyPerformanceRecording.prototype = {
 
 
 
-  isFinalizing: function () {
-    return !this.isRecording() && !this.isCompleted();
+  getBufferUsage: function () {
+    return this.isRecording() ? this._bufferPercent : null;
   },
 
   
 
 
+  _addBufferStatusData: function (bufferStatus) {
+    
+    
+    
+    if (!bufferStatus || !this.isRecording()) {
+      return;
+    }
+    let { position: currentPosition, totalSize, generation: currentGeneration } = bufferStatus;
+    let { position: origPosition, generation: origGeneration } = this._originalBufferStatus;
 
-  getStartingBufferStatus: function () {
-    return this._startingBufferStatus;
+    let normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) + currentPosition;
+    let percent = (normalizedCurrent - origPosition) / totalSize;
+    this._bufferPercent = percent > 1 ? 1 : percent;
   },
 
   
@@ -327,14 +337,25 @@ LegacyPerformanceRecording.prototype = {
         if (!config.withMarkers) { break; }
         let [markers] = data;
         RecordingUtils.offsetMarkerTimes(markers, this._timelineStartTime);
-        RecordingUtils.pushAll(this._markers, markers);
+        pushAll(this._markers, markers);
         break;
       }
       
       case "frames": {
         if (!config.withMarkers) { break; }
         let [, frames] = data;
-        RecordingUtils.pushAll(this._frames, frames);
+        pushAll(this._frames, frames);
+        break;
+      }
+      
+      
+      case "memory": {
+        if (!config.withMemory) { break; }
+        let [currentTime, measurement] = data;
+        this._memory.push({
+          delta: currentTime - this._timelineStartTime,
+          value: measurement.total / 1024 / 1024
+        });
         break;
       }
       
@@ -344,10 +365,47 @@ LegacyPerformanceRecording.prototype = {
         this._ticks = timestamps;
         break;
       }
+      
+      
+      
+      case "allocations": {
+        if (!config.withAllocations) { break; }
+        let [{
+          allocations: sites,
+          allocationsTimestamps: timestamps,
+          frames,
+        }] = data;
+
+        let timeOffset = this._memoryStartTime;
+        RecordingUtils.offsetAndScaleTimestamps(timestamps, timeOffset);
+        pushAll(this._allocations.sites, sites);
+        pushAll(this._allocations.timestamps, timestamps);
+        pushAll(this._allocations.frames, frames);
+        break;
+      }
     }
   },
 
-  toString: () => "[object LegacyPerformanceRecording]"
+  toString: () => "[object RecordingModel]"
 };
 
-exports.LegacyPerformanceRecording = LegacyPerformanceRecording;
+
+
+
+
+
+
+
+
+
+
+
+
+function pushAll (dest, src) {
+  let length = src.length;
+  for (let i = 0; i < length; i++) {
+    dest.push(src[i]);
+  }
+}
+
+exports.RecordingModel = RecordingModel;

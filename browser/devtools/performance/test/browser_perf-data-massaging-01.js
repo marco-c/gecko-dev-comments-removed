@@ -8,21 +8,14 @@
 
 const WAIT_TIME = 1000; 
 
-const { PerformanceFront } = require("devtools/server/actors/performance");
-
-add_task(function*() {
-  let doc = yield addTab(MAIN_DOMAIN + "doc_perf.html");
-
-  initDebuggerServer();
-  let client = new DebuggerClient(DebuggerServer.connectPipe());
-  let form = yield connectDebuggerClient(client);
-  let front = PerformanceFront(client, form);
-  yield front.connect();
+function* spawnTest() {
+  let { panel } = yield initPerformance(SIMPLE_URL);
+  let front = panel.panelWin.gFront;
 
   
 
   let firstRecording = yield front.startRecording();
-  let firstRecordingStartTime = firstRecording._startTime;
+  let firstRecordingStartTime = firstRecording._profilerStartTime;
   info("Started profiling at: " + firstRecordingStartTime);
 
   busyWait(WAIT_TIME); 
@@ -35,7 +28,7 @@ add_task(function*() {
   
 
   let secondRecording = yield front.startRecording();
-  let secondRecordingStartTime = secondRecording._startTime;
+  let secondRecordingStartTime = secondRecording._profilerStartTime;
   info("Started profiling at: " + secondRecordingStartTime);
 
   busyWait(WAIT_TIME); 
@@ -56,6 +49,6 @@ add_task(function*() {
     "There should be no samples from the first recording in the second one, " +
     "even though the total number of frames did not overflow.");
 
-  yield closeDebuggerClient(client);
-  gBrowser.removeCurrentTab();
-});
+  yield teardown(panel);
+  finish();
+}

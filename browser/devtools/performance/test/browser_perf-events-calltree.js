@@ -5,6 +5,7 @@
 
 
 const { ThreadNode } = require("devtools/performance/tree-model");
+const RecordingUtils = require("devtools/performance/recording-utils")
 
 function* spawnTest() {
   let focus = 0;

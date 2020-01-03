@@ -21,12 +21,66 @@ function MockFront (blueprint) {
   }
 }
 
+function MockMemoryFront () {
+  MockFront.call(this, [
+    ["start", 0], 
+    ["stop", 0], 
+    ["destroy"],
+    ["attach"],
+    ["detach"],
+    ["getState", "detached"],
+    ["startRecordingAllocations", 0],
+    ["stopRecordingAllocations", 0],
+    ["getAllocations", createMockAllocations],
+  ]);
+}
+
 function MockTimelineFront () {
   MockFront.call(this, [
     ["destroy"],
     ["start", 0],
     ["stop", 0],
   ]);
+}
+
+
+
+
+
+
+
+function createMockAllocations () {
+  return {
+    allocations: [],
+    allocationsTimestamps: [],
+    frames: [],
+    counts: []
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function memoryActorSupported (target) {
+  
+  
+  if (target.TEST_MOCK_MEMORY_ACTOR) {
+    return false;
+  }
+
+  
+  
+  
+  
+  return !!target.getTrait("memoryActorAllocations") && target.hasActor("memory");
 }
 
 
@@ -63,6 +117,8 @@ function callFrontMethod (method) {
   };
 }
 
+exports.MockMemoryFront = MockMemoryFront;
 exports.MockTimelineFront = MockTimelineFront;
+exports.memoryActorSupported = memoryActorSupported;
 exports.timelineActorSupported = timelineActorSupported;
 exports.callFrontMethod = callFrontMethod;

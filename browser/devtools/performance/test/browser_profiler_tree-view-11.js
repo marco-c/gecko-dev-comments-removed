@@ -6,7 +6,8 @@
 
 
 
-let { CATEGORY_MASK } = require("devtools/performance/global");
+const RecordingUtils = require("devtools/performance/recording-utils");
+const { CATEGORY_MASK } = require("devtools/performance/global");
 
 function* spawnTest() {
   let { panel } = yield initPerformance(SIMPLE_URL);

@@ -14,15 +14,19 @@ let RecordingsView = Heritage.extend(WidgetMethods, {
     this.widget = new SideMenuWidget($("#recordings-list"));
 
     this._onSelect = this._onSelect.bind(this);
-    this._onRecordingStateChange = this._onRecordingStateChange.bind(this);
-    this._onNewRecording = this._onNewRecording.bind(this);
+    this._onRecordingStarted = this._onRecordingStarted.bind(this);
+    this._onRecordingStopped = this._onRecordingStopped.bind(this);
+    this._onRecordingWillStop = this._onRecordingWillStop.bind(this);
+    this._onRecordingImported = this._onRecordingImported.bind(this);
     this._onSaveButtonClick = this._onSaveButtonClick.bind(this);
     this._onRecordingsCleared = this._onRecordingsCleared.bind(this);
 
     this.emptyText = L10N.getStr("noRecordingsText");
 
-    PerformanceController.on(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
-    PerformanceController.on(EVENTS.NEW_RECORDING, this._onNewRecording);
+    PerformanceController.on(EVENTS.RECORDING_STARTED, this._onRecordingStarted);
+    PerformanceController.on(EVENTS.RECORDING_STOPPED, this._onRecordingStopped);
+    PerformanceController.on(EVENTS.RECORDING_WILL_STOP, this._onRecordingWillStop);
+    PerformanceController.on(EVENTS.RECORDING_IMPORTED, this._onRecordingImported);
     PerformanceController.on(EVENTS.RECORDINGS_CLEARED, this._onRecordingsCleared);
     this.widget.addEventListener("select", this._onSelect, false);
   },
@@ -31,8 +35,10 @@ let RecordingsView = Heritage.extend(WidgetMethods, {
 
 
   destroy: function() {
-    PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
-    PerformanceController.off(EVENTS.NEW_RECORDING, this._onNewRecording);
+    PerformanceController.off(EVENTS.RECORDING_STARTED, this._onRecordingStarted);
+    PerformanceController.off(EVENTS.RECORDING_STOPPED, this._onRecordingStopped);
+    PerformanceController.off(EVENTS.RECORDING_WILL_STOP, this._onRecordingWillStop);
+    PerformanceController.off(EVENTS.RECORDING_IMPORTED, this._onRecordingImported);
     PerformanceController.off(EVENTS.RECORDINGS_CLEARED, this._onRecordingsCleared);
     this.widget.removeEventListener("select", this._onSelect, false);
   },
@@ -91,8 +97,42 @@ let RecordingsView = Heritage.extend(WidgetMethods, {
 
 
 
-  _onNewRecording: function (_, recording) {
-    this._onRecordingStateChange(_, null, recording);
+  _onRecordingStarted: function (_, recording) {
+    
+    
+    
+    
+    let recordingItem = this.addEmptyRecording(recording);
+
+    
+    recordingItem.isRecording = true;
+
+    
+    
+    if (!recording.isConsole() || this.selectedIndex === -1) {
+      this.selectedItem = recordingItem;
+    }
+  },
+
+  
+
+
+
+
+
+  _onRecordingStopped: function (_, recording) {
+    let recordingItem = this.getItemForPredicate(e => e.attachment === recording);
+
+    
+    recordingItem.isRecording = false;
+
+    
+    this.finalizeRecording(recordingItem);
+
+    
+    if (!recording.isConsole()) {
+      this.forceSelect(recordingItem);
+    }
   },
 
   
@@ -102,41 +142,29 @@ let RecordingsView = Heritage.extend(WidgetMethods, {
 
 
 
-
-  _onRecordingStateChange: function (_, state, recording) {
+  _onRecordingWillStop: function(_, recording) {
     let recordingItem = this.getItemForPredicate(e => e.attachment === recording);
-    if (!recordingItem) {
-      recordingItem = this.addEmptyRecording(recording);
-
-      
-      
-      if (!recording.isConsole() || this.selectedIndex === -1) {
-        this.selectedItem = recordingItem;
-      }
-    }
-
-    recordingItem.isRecording = recording.isRecording();
 
     
-    if (!recording.isRecording() && !recording.isCompleted()) {
-      
-      let durationNode = $(".recording-item-duration", recordingItem.target);
-      durationNode.setAttribute("value", L10N.getStr("recordingsList.loadingLabel"));
-    }
+    let durationNode = $(".recording-item-duration", recordingItem.target);
+    durationNode.setAttribute("value", L10N.getStr("recordingsList.loadingLabel"));
+  },
+
+  
+
+
+
+
+
+  _onRecordingImported: function (_, model) {
+    let recordingItem = this.addEmptyRecording(model);
+    recordingItem.isRecording = false;
 
     
-    if (recording.isCompleted() && !recordingItem.finalized) {
-      this.finalizeRecording(recordingItem);
-      
-      if (!recording.isConsole()) {
-        this.forceSelect(recordingItem);
-      }
-    }
+    this.selectedItem = recordingItem;
 
     
-    if (recording.isImported()) {
-      this.selectedItem = recordingItem;
-    }
+    this.finalizeRecording(recordingItem);
   },
 
   
@@ -154,7 +182,6 @@ let RecordingsView = Heritage.extend(WidgetMethods, {
 
   finalizeRecording: function (recordingItem) {
     let model = recordingItem.attachment;
-    recordingItem.finalized = true;
 
     let saveNode = $(".recording-item-save", recordingItem.target);
     saveNode.setAttribute("value",

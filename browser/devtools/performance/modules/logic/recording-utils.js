@@ -12,49 +12,35 @@ loader.lazyRequireGetter(this, "extend",
 
 
 
-function mapRecordingOptions (type, options) {
-  if (type === "profiler") {
-    return {
-      entries: options.bufferSize,
-      interval: options.sampleFrequency ? (1000 / (options.sampleFrequency * 1000)) : void 0
-    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+function normalizePerformanceFeatures (options, support) {
+  let supportOptions = Object.create(null);
+
+  
+  
+  
+  if (!support.memory) {
+    supportOptions.withMemory = false;
+    supportOptions.withAllocations = false;
+  }
+  if (!support.timeline) {
+    supportOptions.withMarkers = false;
+    supportOptions.withTicks = false;
   }
 
-  if (type === "memory") {
-    return {
-      probability: options.allocationsSampleProbability,
-      maxLogLength: options.allocationsMaxLogLength
-    };
-  }
-
-  if (type === "timeline") {
-    return {
-      withMemory: options.withMemory,
-      withTicks: options.withTicks,
-    };
-  }
-
-  return options;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function normalizePerformanceFeatures (options, supportedFeatures) {
-  return Object.keys(options).reduce((modifiedOptions, feature) => {
-    if (supportedFeatures[feature] !== false) {
-      modifiedOptions[feature] = options[feature];
-    }
-    return modifiedOptions;
-  }, Object.create(null));
+  return extend(options, supportOptions);
 }
 
 
@@ -123,25 +109,6 @@ function offsetAndScaleTimestamps(timestamps, timeOffset, timeScale) {
     if (timeScale) {
       timestamps[i] /= timeScale;
     }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function pushAll (dest, src) {
-  let length = src.length;
-  for (let i = 0; i < length; i++) {
-    dest.push(src[i]);
   }
 }
 
@@ -609,8 +576,6 @@ UniqueStacks.prototype.getOrAddStringIndex = function(s) {
   return this._uniqueStrings.getOrAddStringIndex(s);
 };
 
-exports.pushAll = pushAll;
-exports.mapRecordingOptions = mapRecordingOptions;
 exports.normalizePerformanceFeatures = normalizePerformanceFeatures;
 exports.filterSamples = filterSamples;
 exports.offsetSampleTimes = offsetSampleTimes;

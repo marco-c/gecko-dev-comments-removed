@@ -51,7 +51,10 @@ let PerformanceView = {
     this._onClearButtonClick = this._onClearButtonClick.bind(this);
     this._onRecordingSelected = this._onRecordingSelected.bind(this);
     this._onProfilerStatusUpdated = this._onProfilerStatusUpdated.bind(this);
-    this._onRecordingStateChange = this._onRecordingStateChange.bind(this);
+    this._onRecordingWillStart = this._onRecordingWillStart.bind(this);
+    this._onRecordingStarted = this._onRecordingStarted.bind(this);
+    this._onRecordingWillStop = this._onRecordingWillStop.bind(this);
+    this._onRecordingStopped = this._onRecordingStopped.bind(this);
 
     for (let button of $$(".record-button")) {
       button.addEventListener("click", this._onRecordButtonClick);
@@ -62,8 +65,10 @@ let PerformanceView = {
     
     PerformanceController.on(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     PerformanceController.on(EVENTS.PROFILER_STATUS_UPDATED, this._onProfilerStatusUpdated);
-    PerformanceController.on(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
-    PerformanceController.on(EVENTS.NEW_RECORDING, this._onRecordingStateChange);
+    PerformanceController.on(EVENTS.RECORDING_WILL_START, this._onRecordingWillStart);
+    PerformanceController.on(EVENTS.RECORDING_STARTED, this._onRecordingStarted);
+    PerformanceController.on(EVENTS.RECORDING_WILL_STOP, this._onRecordingWillStop);
+    PerformanceController.on(EVENTS.RECORDING_STOPPED, this._onRecordingStopped);
 
     this.setState("empty");
 
@@ -87,8 +92,10 @@ let PerformanceView = {
 
     PerformanceController.off(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     PerformanceController.off(EVENTS.PROFILER_STATUS_UPDATED, this._onProfilerStatusUpdated);
-    PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
-    PerformanceController.off(EVENTS.NEW_RECORDING, this._onRecordingStateChange);
+    PerformanceController.off(EVENTS.RECORDING_WILL_START, this._onRecordingWillStart);
+    PerformanceController.off(EVENTS.RECORDING_STARTED, this._onRecordingStarted);
+    PerformanceController.off(EVENTS.RECORDING_WILL_STOP, this._onRecordingWillStop);
+    PerformanceController.off(EVENTS.RECORDING_STOPPED, this._onRecordingStopped);
 
     yield ToolbarView.destroy();
     yield RecordingsView.destroy();
@@ -150,7 +157,7 @@ let PerformanceView = {
       return;
     }
 
-    let bufferUsage = PerformanceController.getBufferUsageForRecording(recording) || 0;
+    let bufferUsage = recording.getBufferUsage();
 
     
     let percent = Math.floor(bufferUsage * 100);
@@ -167,7 +174,7 @@ let PerformanceView = {
     }
 
     $bufferLabel.value = L10N.getFormatStr("profiler.bufferFull", percent);
-    this.emit(EVENTS.UI_BUFFER_STATUS_UPDATED, percent);
+    this.emit(EVENTS.UI_BUFFER_UPDATED, percent);
   },
 
   
@@ -205,21 +212,57 @@ let PerformanceView = {
   
 
 
-  _onRecordingStateChange: function () {
-    let currentRecording = PerformanceController.getCurrentRecording();
-    let recordings = PerformanceController.getRecordings();
 
-    this._activateRecordButtons(recordings.find(r => !r.isConsole() && r.isRecording()));
-    this._lockRecordButtons(recordings.find(r => !r.isConsole() && r.isFinalizing()));
+  _onRecordingWillStart: function (_, recording) {
+    if (!recording.isConsole()) {
+      this._lockRecordButtons(true);
+      this._activateRecordButtons(true);
+    }
+  },
 
-    if (currentRecording && currentRecording.isFinalizing()) {
+  
+
+
+  _onRecordingStarted: function (_, recording) {
+    
+    
+    if (!recording.isConsole()) {
+      this._lockRecordButtons(false);
+    }
+    if (recording.isRecording()) {
+      this.updateBufferStatus();
+    }
+  },
+
+  
+
+
+  _onRecordingWillStop: function (_, recording) {
+    if (!recording.isConsole()) {
+      this._lockRecordButtons(true);
+      this._activateRecordButtons(false);
+    }
+    
+    
+    if (recording === PerformanceController.getCurrentRecording()) {
       this.setState("loading");
     }
-    if (currentRecording && currentRecording.isCompleted()) {
-      this.setState("recorded");
+  },
+
+  
+
+
+  _onRecordingStopped: function (_, recording) {
+    
+    
+    if (!recording.isConsole()) {
+      this._lockRecordButtons(false);
     }
-    if (currentRecording && currentRecording.isRecording()) {
-      this.updateBufferStatus();
+
+    
+    
+    if (recording === PerformanceController.getCurrentRecording()) {
+      this.setState("recorded");
     }
   },
 
@@ -237,8 +280,6 @@ let PerformanceView = {
     if (this._recordButton.hasAttribute("checked")) {
       this.emit(EVENTS.UI_STOP_RECORDING);
     } else {
-      this._lockRecordButtons(true);
-      this._activateRecordButtons(true);
       this.emit(EVENTS.UI_START_RECORDING);
     }
   },

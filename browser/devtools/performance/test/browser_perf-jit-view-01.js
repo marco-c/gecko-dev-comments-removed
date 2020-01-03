@@ -6,6 +6,8 @@
 
 
 
+const RecordingUtils = require("devtools/performance/recording-utils");
+
 Services.prefs.setBoolPref(INVERT_PREF, false);
 
 function* spawnTest() {

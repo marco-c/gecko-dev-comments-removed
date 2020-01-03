@@ -12,16 +12,26 @@ loader.lazyRequireGetter(this, "Poller",
   "devtools/shared/poller", true);
 
 loader.lazyRequireGetter(this, "CompatUtils",
-  "devtools/toolkit/performance/legacy/compatibility");
+  "devtools/performance/compatibility");
 loader.lazyRequireGetter(this, "RecordingUtils",
-  "devtools/toolkit/performance/utils");
+  "devtools/performance/recording-utils");
 loader.lazyRequireGetter(this, "TimelineFront",
   "devtools/server/actors/timeline", true);
+loader.lazyRequireGetter(this, "MemoryFront",
+  "devtools/server/actors/memory", true);
 loader.lazyRequireGetter(this, "ProfilerFront",
   "devtools/server/actors/profiler", true);
 
 
+const ALLOCATION_SITE_POLL_TIMER = 200; 
+
+
 const PROFILER_CHECK_TIMER = 5000; 
+
+const MEMORY_ACTOR_METHODS = [
+  "attach", "detach", "getState", "getAllocationsSettings",
+  "getAllocations", "startRecordingAllocations", "stopRecordingAllocations"
+];
 
 const TIMELINE_ACTOR_METHODS = [
   "start", "stop",
@@ -35,7 +45,7 @@ const PROFILER_ACTOR_METHODS = [
 
 
 
-function LegacyProfilerFront (target) {
+function ProfilerFrontFacade (target) {
   this._target = target;
   this._onProfilerEvent = this._onProfilerEvent.bind(this);
   this._checkProfilerStatus = this._checkProfilerStatus.bind(this);
@@ -44,7 +54,7 @@ function LegacyProfilerFront (target) {
   EventEmitter.decorate(this);
 }
 
-LegacyProfilerFront.prototype = {
+ProfilerFrontFacade.prototype = {
   EVENTS: ["console-api-profiler", "profiler-stopped"],
 
   
@@ -60,7 +70,7 @@ LegacyProfilerFront.prototype = {
     
     
     yield this.registerEventNotifications({ events: this.EVENTS });
-    target.client.addListener("eventNotification", this._onProfilerEvent);
+    this.EVENTS.forEach(e => this._front.on(e, this._onProfilerEvent));
   }),
 
   
@@ -70,8 +80,10 @@ LegacyProfilerFront.prototype = {
     if (this._poller) {
       yield this._poller.destroy();
     }
+
+    this.EVENTS.forEach(e => this._front.off(e, this._onProfilerEvent));
     yield this.unregisterEventNotifications({ events: this.EVENTS });
-    this._target.client.removeListener("eventNotification", this._onProfilerEvent);
+    yield this._front.destroy();
   }),
 
   
@@ -95,9 +107,17 @@ LegacyProfilerFront.prototype = {
     
     
     
-    let { isActive, currentTime, position, generation, totalSize } = yield this.getStatus();
+    let status = yield this.getStatus();
+
+    
+    if (!status) {
+      return;
+    }
+
+    let { isActive, currentTime, position, generation, totalSize } = status;
 
     if (isActive) {
+      this.emit("profiler-already-active");
       return { startTime: currentTime, position, generation, totalSize };
     }
 
@@ -110,10 +130,11 @@ LegacyProfilerFront.prototype = {
 
     let startInfo = yield this.startProfiler(profilerOptions);
     let startTime = 0;
-    if ('currentTime' in startInfo) {
+    if ("currentTime" in startInfo) {
       startTime = startInfo.currentTime;
     }
 
+    this.emit("profiler-activated");
     return { startTime, position, generation, totalSize };
   }),
 
@@ -130,7 +151,7 @@ LegacyProfilerFront.prototype = {
 
 
   getStatus: Task.async(function *() {
-    let data = yield (CompatUtils.callFrontMethod("isActive").call(this));
+    let data = yield CompatUtils.callFrontMethod("isActive").call(this);
     
     
     if (!data) {
@@ -157,7 +178,7 @@ LegacyProfilerFront.prototype = {
 
 
   getProfile: Task.async(function *(options) {
-    let profilerData = yield (CompatUtils.callFrontMethod("getProfile").call(this, options));
+    let profilerData = yield CompatUtils.callFrontMethod("getProfile").call(this, options);
     
     
     if (profilerData.profile.meta.version === 2) {
@@ -179,12 +200,14 @@ LegacyProfilerFront.prototype = {
 
 
 
-  _onProfilerEvent: function (_, { topic, subject, details }) {
+  _onProfilerEvent: function (data) {
+    let { subject, topic, details } = data;
+
     if (topic === "console-api-profiler") {
       if (subject.action === "profile") {
         this.emit("console-profile-start", details);
       } else if (subject.action === "profileEnd") {
-        this.emit("console-profile-stop", details);
+        this.emit("console-profile-end", details);
       }
     } else if (topic === "profiler-stopped") {
       this.emit("profiler-stopped");
@@ -196,19 +219,19 @@ LegacyProfilerFront.prototype = {
     yield this.getStatus();
   }),
 
-  toString: () => "[object LegacyProfilerFront]"
+  toString: () => "[object ProfilerFrontFacade]"
 };
 
 
 
 
-function LegacyTimelineFront (target) {
+function TimelineFrontFacade (target) {
   this._target = target;
   EventEmitter.decorate(this);
 }
 
-LegacyTimelineFront.prototype = {
-  EVENTS: ["markers", "frames", "ticks"],
+TimelineFrontFacade.prototype = {
+  EVENTS: ["markers", "frames", "memory", "ticks"],
 
   connect: Task.async(function*() {
     let supported = yield CompatUtils.timelineActorSupported(this._target);
@@ -243,12 +266,124 @@ LegacyTimelineFront.prototype = {
     this.emit("timeline-data", type, ...data);
   },
 
-  toString: () => "[object LegacyTimelineFront]"
+  toString: () => "[object TimelineFrontFacade]"
 };
 
 
-PROFILER_ACTOR_METHODS.forEach(m => LegacyProfilerFront.prototype[m] = CompatUtils.callFrontMethod(m));
-TIMELINE_ACTOR_METHODS.forEach(m => LegacyTimelineFront.prototype[m] = CompatUtils.callFrontMethod(m));
 
-exports.LegacyProfilerFront = LegacyProfilerFront;
-exports.LegacyTimelineFront = LegacyTimelineFront;
+
+function MemoryFrontFacade (target) {
+  this._target = target;
+  this._pullAllocationSites = this._pullAllocationSites.bind(this);
+
+  EventEmitter.decorate(this);
+}
+
+MemoryFrontFacade.prototype = {
+  connect: Task.async(function*() {
+    let supported = yield CompatUtils.memoryActorSupported(this._target);
+    this._front = supported ?
+                  new MemoryFront(this._target.client, this._target.form) :
+                  new CompatUtils.MockMemoryFront();
+
+    this.IS_MOCK = !supported;
+  }),
+
+  
+
+
+  destroy: Task.async(function *() {
+    if (this._poller) {
+      yield this._poller.destroy();
+    }
+    yield this._front.destroy();
+  }),
+
+  
+
+
+  start: Task.async(function *(options) {
+    if (!options.withAllocations) {
+      return 0;
+    }
+
+    yield this.attach();
+
+    
+    
+    let allocationOptions = {};
+    if (options.allocationsSampleProbability !== void 0) {
+      allocationOptions.probability = options.allocationsSampleProbability;
+    }
+    if (options.allocationsMaxLogLength !== void 0) {
+      allocationOptions.maxLogLength = options.allocationsMaxLogLength;
+    }
+
+    let startTime = yield this.startRecordingAllocations(allocationOptions);
+
+    if (!this._poller) {
+      this._poller = new Poller(this._pullAllocationSites, ALLOCATION_SITE_POLL_TIMER, false);
+    }
+    if (!this._poller.isPolling()) {
+      this._poller.on();
+    }
+
+    return startTime;
+  }),
+
+  
+
+
+  stop: Task.async(function *(options) {
+    if (!options.withAllocations) {
+      return 0;
+    }
+
+    
+    
+    
+    
+    
+    yield this._poller.off();
+    yield this._lastPullAllocationSitesFinished;
+
+    let endTime = yield this.stopRecordingAllocations();
+    yield this.detach();
+
+    return endTime;
+  }),
+
+  
+
+
+
+
+
+  _pullAllocationSites: Task.async(function *() {
+    let deferred = promise.defer();
+    this._lastPullAllocationSitesFinished = deferred.promise;
+
+    if ((yield this.getState()) !== "attached") {
+      deferred.resolve();
+      return;
+    }
+
+    let memoryData = yield this.getAllocations();
+    
+    
+    this.emit("timeline-data", "allocations", memoryData);
+
+    deferred.resolve();
+  }),
+
+  toString: () => "[object MemoryFrontFacade]"
+};
+
+
+PROFILER_ACTOR_METHODS.forEach(m => ProfilerFrontFacade.prototype[m] = CompatUtils.callFrontMethod(m));
+TIMELINE_ACTOR_METHODS.forEach(m => TimelineFrontFacade.prototype[m] = CompatUtils.callFrontMethod(m));
+MEMORY_ACTOR_METHODS.forEach(m => MemoryFrontFacade.prototype[m] = CompatUtils.callFrontMethod(m));
+
+exports.ProfilerFront = ProfilerFrontFacade;
+exports.TimelineFront = TimelineFrontFacade;
+exports.MemoryFront = MemoryFrontFacade;

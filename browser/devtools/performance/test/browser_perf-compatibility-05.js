@@ -10,9 +10,7 @@
 const WAIT_TIME = 1000; 
 
 function* spawnTest() {
-  let { panel } = yield initPerformance(SIMPLE_URL, void 0, {
-    TEST_PERFORMANCE_LEGACY_FRONT: true,
-  });
+  let { panel } = yield initPerformance(SIMPLE_URL);
   let { gFront: front, gTarget: target } = panel.panelWin;
 
   
