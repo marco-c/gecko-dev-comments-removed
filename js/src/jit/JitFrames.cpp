@@ -3292,7 +3292,9 @@ AssertJitStackInvariants(JSContext* cx)
 #if defined(JS_CODEGEN_X86)
                     + sizeof(void*) 
 #endif
-                    + sizeof(Value) * (frames.callee()->nargs() + 1  )
+                    + sizeof(Value) * (frames.callee()->nargs() +
+                                       1  +
+                                       frames.isConstructing() )
                     + sizeof(JitFrameLayout);
                 MOZ_RELEASE_ASSERT(frameSize >= expectedFrameSize,
                   "The frame is large enough to hold all arguments");
