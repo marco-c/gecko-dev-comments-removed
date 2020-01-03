@@ -535,6 +535,10 @@ Service::initialize()
 
   
   
+  sqlite3_config(SQLITE_CONFIG_PAGECACHE, NULL, 0, 0);
+
+  
+  
   
   rc = ::sqlite3_initialize();
   if (rc != SQLITE_OK)
