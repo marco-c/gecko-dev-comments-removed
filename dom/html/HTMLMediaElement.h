@@ -218,6 +218,9 @@ public:
   virtual nsresult DispatchAsyncEvent(const nsAString& aName) final override;
 
   
+  void UpdateReadyState() override { UpdateReadyStateInternal(); }
+
+  
   nsresult DispatchPendingMediaEvents();
 
   
@@ -642,17 +645,7 @@ protected:
   class StreamSizeListener;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
-
-  void SetDecoder(MediaDecoder* aDecoder)
-  {
-    if (mDecoder) {
-      mReadyStateUpdater->Unwatch(mDecoder->ReadyStateWatchTarget());
-    }
-    mDecoder = aDecoder;
-    if (mDecoder) {
-      mReadyStateUpdater->Watch(mDecoder->ReadyStateWatchTarget());
-    }
-  }
+  void SetDecoder(MediaDecoder* aDecoder) { mDecoder = aDecoder; }
 
   virtual void GetItemValueText(DOMString& text) override;
   virtual void SetItemValueText(const nsAString& text) override;
@@ -1033,6 +1026,9 @@ protected:
   nsRefPtr<MediaDecoder> mDecoder;
 
   
+  WatchManager<HTMLMediaElement> mWatchManager;
+
+  
   
   nsRefPtr<VideoFrameContainer> mVideoFrameContainer;
 
@@ -1101,8 +1097,6 @@ protected:
   
   nsMediaNetworkState mNetworkState;
   Watchable<nsMediaReadyState> mReadyState;
-
-  WatcherHolder mReadyStateUpdater;
 
   enum LoadAlgorithmState {
     

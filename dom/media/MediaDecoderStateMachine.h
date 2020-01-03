@@ -776,6 +776,9 @@ public:
   nsRefPtr<MediaTaskQueue> mTaskQueue;
 
   
+  WatchManager<MediaDecoderStateMachine> mWatchManager;
+
+  
   bool mRealTime;
 
   
@@ -903,7 +906,6 @@ public:
 
   
   
-  WatcherHolder mNextFrameStatusUpdater;
   Canonical<NextFrameStatus>::Holder mNextFrameStatus;
 public:
   AbstractCanonical<NextFrameStatus>* CanonicalNextFrameStatus() { return &mNextFrameStatus; }

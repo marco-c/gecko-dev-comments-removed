@@ -76,18 +76,7 @@ public:
   virtual void Notify() = 0;
 
 protected:
-  virtual ~AbstractWatcher() {}
-  virtual void CustomDestroy() {}
-
-private:
-  
-  friend class WatcherHolder;
-  void Destroy()
-  {
-    mDestroyed = true;
-    CustomDestroy();
-  }
-
+  virtual ~AbstractWatcher() { MOZ_ASSERT(mDestroyed); }
   bool mDestroyed;
 };
 
@@ -185,76 +174,117 @@ private:
 
 
 
-class Watcher : public AbstractWatcher, public WatchTarget
+
+
+
+
+
+
+template <typename OwnerType>
+class WatchManager
 {
 public:
-  explicit Watcher(const char* aName)
-    : WatchTarget(aName), mNotifying(false) {}
+  typedef void(OwnerType::*CallbackMethod)();
+  explicit WatchManager(OwnerType* aOwner)
+    : mOwner(aOwner) {}
 
-  void Notify() override
+  ~WatchManager()
   {
-    if (mNotifying) {
-      return;
-    }
-    mNotifying = true;
-
-    
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(this, &Watcher::DoNotify);
-    AbstractThread::GetCurrent()->TailDispatcher().AddDirectTask(r.forget());
-  }
-
-  void Watch(WatchTarget& aTarget) { aTarget.AddWatcher(this); }
-  void Unwatch(WatchTarget& aTarget) { aTarget.RemoveWatcher(this); }
-
-  template<typename ThisType>
-  void AddWeakCallback(ThisType* aThisVal, void(ThisType::*aMethod)())
-  {
-    mCallbacks.AppendElement(NS_NewNonOwningRunnableMethod(aThisVal, aMethod));
-  }
-
-protected:
-  void CustomDestroy() override { mCallbacks.Clear(); }
-
-  void DoNotify()
-  {
-    MOZ_ASSERT(mNotifying);
-    mNotifying = false;
-
-    
-    NotifyWatchers();
-
-    for (size_t i = 0; i < mCallbacks.Length(); ++i) {
-      mCallbacks[i]->Run();
+    for (size_t i = 0; i < mWatchers.Length(); ++i) {
+      mWatchers[i]->Destroy();
     }
   }
 
-private:
-  nsTArray<nsCOMPtr<nsIRunnable>> mCallbacks;
-
-  bool mNotifying;
-};
-
-
-
-
-
-class WatcherHolder
-{
-public:
-  explicit WatcherHolder(const char* aName) { mWatcher = new Watcher(aName); }
-  operator Watcher*() { return mWatcher; }
-  Watcher* operator->() { return mWatcher; }
-
-  ~WatcherHolder()
+  void Watch(WatchTarget& aTarget, CallbackMethod aMethod)
   {
-    mWatcher->Destroy();
-    mWatcher = nullptr;
+    aTarget.AddWatcher(&EnsureWatcher(aMethod));
+  }
+
+  void Unwatch(WatchTarget& aTarget, CallbackMethod aMethod)
+  {
+    PerCallbackWatcher* watcher = GetWatcher(aMethod);
+    MOZ_ASSERT(watcher);
+    aTarget.RemoveWatcher(watcher);
+  }
+
+  void ManualNotify(CallbackMethod aMethod)
+  {
+    PerCallbackWatcher* watcher = GetWatcher(aMethod);
+    MOZ_ASSERT(watcher);
+    watcher->Notify();
   }
 
 private:
-  nsRefPtr<Watcher> mWatcher;
-};
+  class PerCallbackWatcher : public AbstractWatcher
+  {
+  public:
+    PerCallbackWatcher(OwnerType* aOwner, CallbackMethod aMethod)
+      : mOwner(aOwner), mCallbackMethod(aMethod) {}
 
+    void Destroy()
+    {
+      mDestroyed = true;
+      mOwner = nullptr;
+    }
+
+    void Notify() override
+    {
+      MOZ_DIAGNOSTIC_ASSERT(mOwner, "mOwner is only null after destruction, "
+                                    "at which point we shouldn't be notified");
+      if (mStrongRef) {
+        
+        return;
+      }
+      mStrongRef = mOwner; 
+
+      
+      nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(this, &PerCallbackWatcher::DoNotify);
+      AbstractThread::GetCurrent()->TailDispatcher().AddDirectTask(r.forget());
+    }
+
+    bool CallbackMethodIs(CallbackMethod aMethod) const
+    {
+      return mCallbackMethod == aMethod;
+    }
+
+  private:
+    ~PerCallbackWatcher() {}
+
+    void DoNotify()
+    {
+      MOZ_ASSERT(mStrongRef);
+      nsRefPtr<OwnerType> ref = mStrongRef.forget();
+      ((*ref).*mCallbackMethod)();
+    }
+
+    OwnerType* mOwner; 
+    nsRefPtr<OwnerType> mStrongRef; 
+    CallbackMethod mCallbackMethod;
+  };
+
+  PerCallbackWatcher* GetWatcher(CallbackMethod aMethod)
+  {
+    for (size_t i = 0; i < mWatchers.Length(); ++i) {
+      if (mWatchers[i]->CallbackMethodIs(aMethod)) {
+        return mWatchers[i];
+      }
+    }
+    return nullptr;
+  }
+
+  PerCallbackWatcher& EnsureWatcher(CallbackMethod aMethod)
+  {
+    PerCallbackWatcher* watcher = GetWatcher(aMethod);
+    if (watcher) {
+      return *watcher;
+    }
+    watcher = mWatchers.AppendElement(new PerCallbackWatcher(mOwner, aMethod))->get();
+    return *watcher;
+  }
+
+  nsTArray<nsRefPtr<PerCallbackWatcher>> mWatchers;
+  OwnerType* mOwner;
+};
 
 #undef WATCH_LOG
 
