@@ -685,6 +685,9 @@ protected:
     return CurrentState().font;
   }
 
+  
+  
+  
   static std::vector<CanvasRenderingContext2D*>& DemotableContexts();
   static void DemoteOldestContextIfNecessary();
 
