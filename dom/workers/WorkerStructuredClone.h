@@ -12,6 +12,10 @@
 class nsPIDOMWindow;
 
 namespace mozilla {
+namespace layers {
+class Image;
+}
+
 namespace dom {
 
 class MessagePortBase;
@@ -35,6 +39,12 @@ public:
   nsCOMPtr<nsPIDOMWindow> mParentWindow;
 
   nsTArray<nsCOMPtr<nsISupports>> mClonedObjects;
+
+  
+  
+  
+  
+  nsTArray<nsRefPtr<layers::Image>> mClonedImages;
 
   
   nsTArray<nsRefPtr<MessagePortBase>> mMessagePorts;

@@ -6,8 +6,11 @@
 
 #include "StructuredCloneHelper.h"
 
+#include "ImageContainer.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/FileListBinding.h"
+#include "mozilla/dom/ImageBitmap.h"
+#include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 
 namespace mozilla {
@@ -363,6 +366,15 @@ StructuredCloneHelper::ReadCallback(JSContext* aCx,
     return &val.toObject();
   }
 
+  if (aTag == SCTAG_DOM_IMAGEBITMAP) {
+     
+     
+     nsCOMPtr<nsIGlobalObject> parent = do_QueryInterface(mParent);
+     
+     return ImageBitmap::ReadStructuredClone(aCx, aReader,
+                                             parent, GetImages(), aIndex);
+   }
+
   return NS_DOMReadStructuredClone(aCx, aReader, aTag, aIndex, nullptr);
 }
 
@@ -411,6 +423,16 @@ StructuredCloneHelper::WriteCallback(JSContext* aCx,
     }
   }
 
+  
+  {
+    ImageBitmap* imageBitmap = nullptr;
+    if (NS_SUCCEEDED(UNWRAP_OBJECT(ImageBitmap, aObj, imageBitmap))) {
+      return ImageBitmap::WriteStructuredClone(aWriter,
+                                               GetImages(),
+                                               imageBitmap);
+    }
+  }
+
   return NS_DOMWriteStructuredClone(aCx, aWriter, aObj, nullptr);
 }
 
@@ -453,7 +475,6 @@ StructuredCloneHelper::ReadTransferCallback(JSContext* aCx,
 
   return false;
 }
-
 
 bool
 StructuredCloneHelper::WriteTransferCallback(JSContext* aCx,

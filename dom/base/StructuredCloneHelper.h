@@ -12,6 +12,10 @@
 #include "nsTArray.h"
 
 namespace mozilla {
+namespace layers {
+class Image;
+}
+
 namespace dom {
 
 class StructuredCloneHelperInternal
@@ -177,6 +181,11 @@ public:
     return mPortIdentifiers;
   }
 
+  nsTArray<nsRefPtr<layers::Image>>& GetImages()
+  {
+    return mClonedImages;
+  }
+
   
 
   virtual JSObject* ReadCallback(JSContext* aCx,
@@ -213,6 +222,12 @@ private:
   
 
   nsTArray<nsRefPtr<BlobImpl>> mBlobImplArray;
+
+  
+  
+  
+  
+  nsTArray<nsRefPtr<layers::Image>> mClonedImages;
 
   
   
