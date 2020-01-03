@@ -516,6 +516,17 @@ CssComputedView.prototype = {
   
 
 
+
+
+  setFilterStyles: function(value="") {
+    this.searchField.value = value;
+    this.searchField.focus();
+    this._onFilterStyles();
+  },
+
+  
+
+
   _onFilterStyles: function() {
     if (this._filterChangedTimeout) {
       clearTimeout(this._filterChangedTimeout);
@@ -568,9 +579,7 @@ CssComputedView.prototype = {
 
   _onClearSearch: function() {
     if (this.searchField.value) {
-      this.searchField.value = "";
-      this.searchField.focus();
-      this._onFilterStyles();
+      this.setFilterStyles("");
       return true;
     }
 
