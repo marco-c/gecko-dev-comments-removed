@@ -3339,8 +3339,25 @@ PreliminaryObjectArray::sweep()
     
     for (size_t i = 0; i < COUNT; i++) {
         JSObject** ptr = &objects[i];
-        if (*ptr && IsAboutToBeFinalizedUnbarriered(ptr))
+        if (*ptr && IsAboutToBeFinalizedUnbarriered(ptr)) {
+            
+            
+            
+            
+            
+            
+            JSObject* obj = *ptr;
+            GlobalObject* global = obj->compartment()->maybeGlobal();
+            if (global && !obj->isSingleton()) {
+                JSObject* objectProto = GetBuiltinPrototypePure(global, JSProto_Object);
+                obj->setGroup(objectProto->groupRaw());
+                MOZ_ASSERT(obj->is<NativeObject>());
+                MOZ_ASSERT(obj->getClass() == objectProto->getClass());
+                MOZ_ASSERT(!obj->getClass()->finalize);
+            }
+
             *ptr = nullptr;
+        }
     }
 }
 
