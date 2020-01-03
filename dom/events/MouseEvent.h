@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_MouseEvent_h_
 #define mozilla_dom_MouseEvent_h_
@@ -24,10 +24,10 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMMouseEvent Interface
+  
   NS_DECL_NSIDOMMOUSEEVENT
 
-  // Forward to base class
+  
   NS_FORWARD_TO_UIEVENT
 
   virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
@@ -35,7 +35,7 @@ public:
     return MouseEventBinding::Wrap(aCx, this);
   }
 
-  // Web IDL binding methods
+  
   virtual uint32_t Which() MOZ_OVERRIDE
   {
     return Button() + 1;
@@ -83,6 +83,7 @@ public:
     return GetMovementPoint().y;
   }
   float MozPressure() const;
+  bool HitCluster() const;
   uint16_t MozInputSource() const;
   void InitNSMouseEvent(const nsAString& aType,
                         bool aCanBubble, bool aCancelable,
@@ -118,11 +119,11 @@ protected:
                           const nsAString& aModifiersList);
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 #define NS_FORWARD_TO_MOUSEEVENT \
   NS_FORWARD_NSIDOMMOUSEEVENT(MouseEvent::) \
   NS_FORWARD_TO_UIEVENT
 
-#endif // mozilla_dom_MouseEvent_h_
+#endif 
