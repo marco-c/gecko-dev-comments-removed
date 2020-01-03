@@ -1721,11 +1721,6 @@ nsVariant::nsVariant()
 #endif
 }
 
-nsVariant::~nsVariant()
-{
-  mData.Cleanup();
-}
-
 
 
 
