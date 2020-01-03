@@ -406,13 +406,11 @@ private:
 
     nsTArray<nsString> mNonExistingFonts;
 
-    typedef nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> FontTable;
-
     
 
 
 
-    FontTable mFontSubstitutes;
+    FontFamilyTable mFontSubstitutes;
 
     bool mInitialized;
     virtual nsresult DelayedInitFontList();

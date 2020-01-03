@@ -296,6 +296,8 @@ protected:
 
     void RebuildLocalFonts();
 
+    typedef nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> FontFamilyTable;
+
     
     static size_t
     SizeOfFamilyNameEntryExcludingThis(const nsAString&               aKey,
@@ -304,16 +306,16 @@ protected:
                                        void*                          aUserArg);
 
     
-    nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> mFontFamilies;
+    FontFamilyTable mFontFamilies;
 
 #if defined(XP_MACOSX)
     
-    nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> mSystemFontFamilies;
+    FontFamilyTable mSystemFontFamilies;
 #endif
 
     
     
-    nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> mOtherFamilyNames;
+    FontFamilyTable mOtherFamilyNames;
 
     
     bool mOtherFamilyNamesInitialized;
