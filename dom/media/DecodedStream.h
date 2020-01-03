@@ -12,6 +12,7 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/nsRefPtr.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/UniquePtr.h"
@@ -53,7 +54,11 @@ public:
 
   
   
-  void StartPlayback(int64_t aStartTime, const MediaInfo& aInfo);
+  
+  
+  
+  nsRefPtr<GenericPromise> StartPlayback(int64_t aStartTime,
+                                         const MediaInfo& aInfo);
   
   void StopPlayback();
 
@@ -71,8 +76,7 @@ public:
   bool IsFinished() const;
   bool HasConsumers() const;
 
-  
-  bool SendData();
+  void SendData();
 
 protected:
   virtual ~DecodedStream();

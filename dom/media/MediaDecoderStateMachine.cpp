@@ -376,7 +376,7 @@ void MediaDecoderStateMachine::SendStreamData()
   AssertCurrentThreadInMonitor();
   MOZ_ASSERT(!mAudioSink, "Should've been stopped in RunStateMachine()");
 
-  bool finished = mDecodedStream->SendData();
+  mDecodedStream->SendData();
 
   const auto clockTime = GetClock();
   while (true) {
@@ -391,12 +391,6 @@ void MediaDecoderStateMachine::SendStreamData()
       continue;
     }
     break;
-  }
-
-  
-  
-  if (finished && AudioQueue().GetSize() == 0) {
-    mAudioCompleted = true;
   }
 }
 
@@ -1079,12 +1073,7 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   MOZ_ASSERT(IsPlaying());
 
   StartAudioThread();
-
-  
-  
-  if (mAudioCaptured) {
-    mDecodedStream->StartPlayback(GetMediaTime(), mInfo);
-  }
+  StartDecodedStream();
 
   DispatchDecodeTasksIfNeeded();
 }
@@ -1792,6 +1781,32 @@ MediaDecoderStateMachine::StartAudioThread()
   }
 }
 
+void
+MediaDecoderStateMachine::StopDecodedStream()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  AssertCurrentThreadInMonitor();
+  mDecodedStream->StopPlayback();
+  mDecodedStreamPromise.DisconnectIfExists();
+}
+
+void
+MediaDecoderStateMachine::StartDecodedStream()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  AssertCurrentThreadInMonitor();
+
+  
+  
+  if (mAudioCaptured && !mDecodedStreamPromise.Exists()) {
+    mDecodedStreamPromise.Begin(
+      mDecodedStream->StartPlayback(GetMediaTime(), mInfo)->Then(
+        OwnerThread(), __func__, this,
+        &MediaDecoderStateMachine::OnDecodedStreamFinish,
+        &MediaDecoderStateMachine::OnDecodedStreamError));
+  }
+}
+
 int64_t MediaDecoderStateMachine::AudioDecodedUsecs()
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -2395,7 +2410,7 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
         
         
         StopAudioThread();
-        mDecodedStream->StopPlayback();
+        StopDecodedStream();
       }
 
       return NS_OK;
@@ -2425,7 +2440,7 @@ MediaDecoderStateMachine::Reset()
   
   
   StopAudioThread();
-  mDecodedStream->StopPlayback();
+  StopDecodedStream();
 
   mVideoFrameEndTime = -1;
   mDecodedVideoEndTime = -1;
@@ -3076,6 +3091,32 @@ void MediaDecoderStateMachine::OnAudioSinkError()
   DecodeError();
 }
 
+void
+MediaDecoderStateMachine::OnDecodedStreamFinish()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
+  MOZ_ASSERT(mAudioCaptured, "Audio should be captured.");
+
+  mDecodedStreamPromise.Complete();
+  if (mInfo.HasAudio()) {
+    mAudioCompleted = true;
+  }
+  
+  ScheduleStateMachine();
+}
+
+void
+MediaDecoderStateMachine::OnDecodedStreamError()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
+  MOZ_ASSERT(mAudioCaptured, "Audio should be captured.");
+
+  mDecodedStreamPromise.Complete();
+  DecodeError();
+}
+
 uint32_t MediaDecoderStateMachine::GetAmpleVideoFrames() const
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -3099,7 +3140,7 @@ void MediaDecoderStateMachine::DispatchAudioCaptured()
       
       
       if (self->IsPlaying()) {
-        self->mDecodedStream->StartPlayback(self->GetMediaTime(), self->mInfo);
+        self->StartDecodedStream();
       }
       self->ScheduleStateMachine();
     }
@@ -3115,6 +3156,7 @@ void MediaDecoderStateMachine::DispatchAudioUncaptured()
     MOZ_ASSERT(self->OnTaskQueue());
     ReentrantMonitorAutoEnter mon(self->mDecoder->GetReentrantMonitor());
     if (self->mAudioCaptured) {
+      self->StopDecodedStream();
       
       self->mAudioCaptured = false;
       if (self->IsPlaying()) {

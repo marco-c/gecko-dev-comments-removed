@@ -4,13 +4,13 @@
 
 
 
-#include "DecodedStream.h"
-#include "MediaStreamGraph.h"
 #include "AudioSegment.h"
-#include "VideoSegment.h"
-#include "MediaQueue.h"
+#include "DecodedStream.h"
 #include "MediaData.h"
+#include "MediaQueue.h"
+#include "MediaStreamGraph.h"
 #include "SharedBuffer.h"
+#include "VideoSegment.h"
 #include "VideoUtils.h"
 
 namespace mozilla {
@@ -244,14 +244,15 @@ DecodedStream::~DecodedStream()
 {
 }
 
-void
+nsRefPtr<GenericPromise>
 DecodedStream::StartPlayback(int64_t aStartTime, const MediaInfo& aInfo)
 {
   ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-  if (mStartTime.isNothing()) {
-    mStartTime.emplace(aStartTime);
-    mInfo = aInfo;
-  }
+  MOZ_ASSERT(mStartTime.isNothing(), "playback already started.");
+  mStartTime.emplace(aStartTime);
+  mInfo = aInfo;
+  
+  return nullptr;
 }
 
 void DecodedStream::StopPlayback()
@@ -680,11 +681,16 @@ DecodedStream::AdvanceTracks()
   }
 }
 
-bool
+void
 DecodedStream::SendData()
 {
   ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   MOZ_ASSERT(mStartTime.isSome(), "Must be called after StartPlayback()");
+
+  
+  if (mData->mHaveSentFinish) {
+    return;
+  }
 
   InitTracks();
   SendAudio(mVolume, mSameOrigin);
@@ -698,8 +704,6 @@ DecodedStream::SendData()
     mData->mHaveSentFinish = true;
     mData->mStream->Finish();
   }
-
-  return finished;
 }
 
 int64_t

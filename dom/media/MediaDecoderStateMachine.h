@@ -518,6 +518,10 @@ protected:
   
   void StartAudioThread();
 
+  void StopDecodedStream();
+
+  void StartDecodedStream();
+
   
   void PlayStateChanged();
 
@@ -669,6 +673,10 @@ private:
 
   
   void OnAudioSinkError();
+
+  void OnDecodedStreamFinish();
+
+  void OnDecodedStreamError();
 
   
   
@@ -1284,6 +1292,7 @@ private:
   nsRefPtr<MediaResource> mResource;
 
   MozPromiseRequestHolder<GenericPromise> mAudioSinkPromise;
+  MozPromiseRequestHolder<GenericPromise> mDecodedStreamPromise;
 
   MediaEventListener mAudioQueueListener;
   MediaEventListener mVideoQueueListener;
