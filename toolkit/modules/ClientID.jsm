@@ -11,6 +11,7 @@ const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Preferences.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
                                   "resource://services-common/utils.js");
@@ -23,6 +24,8 @@ XPCOMUtils.defineLazyGetter(this, "gStateFilePath", () => {
   return OS.Path.join(gDatareportingPath, "state.json");
 });
 
+const PREF_CACHED_CLIENTID = "toolkit.telemetry.cachedClientID";
+
 this.ClientID = Object.freeze({
   
 
@@ -33,6 +36,17 @@ this.ClientID = Object.freeze({
 
   getClientID: function() {
     return ClientIDImpl.getClientID();
+  },
+
+
+
+
+
+
+
+
+  getCachedClientID: function() {
+    return ClientIDImpl.getCachedClientID();
   },
 
   
@@ -71,6 +85,7 @@ let ClientIDImpl = {
       let state = yield CommonUtils.readJSON(gStateFilePath);
       if (state && 'clientID' in state && typeof(state.clientID) == 'string') {
         this._clientID = state.clientID;
+        Preferences.set(PREF_CACHED_CLIENTID, this._clientID);
         return this._clientID;
       }
     } catch (e) {
@@ -83,6 +98,7 @@ let ClientIDImpl = {
       let state = yield CommonUtils.readJSON(fhrStatePath);
       if (state && 'clientID' in state && typeof(state.clientID) == 'string') {
         this._clientID = state.clientID;
+        Preferences.set(PREF_CACHED_CLIENTID, this._clientID);
         this._saveClientID();
         return this._clientID;
       }
@@ -92,6 +108,7 @@ let ClientIDImpl = {
 
     
     this._clientID = CommonUtils.generateUUID();
+    Preferences.set(PREF_CACHED_CLIENTID, this._clientID);
     this._saveClientIdTask = this._saveClientID();
 
     
@@ -128,6 +145,23 @@ let ClientIDImpl = {
     }
 
     return Promise.resolve(this._clientID);
+  },
+
+  
+
+
+
+
+
+
+  getCachedClientID: function() {
+    if (this._clientID) {
+      
+      return this._clientID;
+    }
+
+    
+    return Preferences.get(PREF_CACHED_CLIENTID, null);
   },
 
   

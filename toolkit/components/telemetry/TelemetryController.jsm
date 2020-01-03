@@ -678,7 +678,7 @@ let Impl = {
     
     
     
-    this._clientID = Preferences.get(PREF_CACHED_CLIENTID, null);
+    this._clientID = ClientID.getCachedClientID();
 
     
     
@@ -693,7 +693,6 @@ let Impl = {
 
         
         this._clientID = yield ClientID.getClientID();
-        Preferences.set(PREF_CACHED_CLIENTID, this._clientID);
 
         
         
