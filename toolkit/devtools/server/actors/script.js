@@ -762,7 +762,7 @@ ThreadActor.prototype = {
   _makeOnEnterFrame: function ({ pauseAndRespond }) {
     return aFrame => {
       const generatedLocation = this.sources.getFrameLocation(aFrame);
-      let { originalSourceActor } = this.synchronize(this.sources.getOriginalLocation(
+      let { originalSourceActor } = this.unsafeSynchronize(this.sources.getOriginalLocation(
         generatedLocation));
       let url = originalSourceActor.url;
 
@@ -777,7 +777,7 @@ ThreadActor.prototype = {
       
 
       const generatedLocation = thread.sources.getFrameLocation(this);
-      const { originalSourceActor } = thread.synchronize(thread.sources.getOriginalLocation(
+      const { originalSourceActor } = thread.unsafeSynchronize(thread.sources.getOriginalLocation(
         generatedLocation));
       const url = originalSourceActor.url;
 
@@ -819,7 +819,7 @@ ThreadActor.prototype = {
       
 
       const generatedLocation = thread.sources.getFrameLocation(this);
-      const newLocation = thread.synchronize(thread.sources.getOriginalLocation(
+      const newLocation = thread.unsafeSynchronize(thread.sources.getOriginalLocation(
         generatedLocation));
 
       
@@ -1045,7 +1045,11 @@ ThreadActor.prototype = {
 
 
 
-  synchronize: function(aPromise) {
+
+
+
+
+  unsafeSynchronize: function(aPromise) {
     let needNest = true;
     let eventLoop;
     let returnVal;
@@ -1056,7 +1060,7 @@ ThreadActor.prototype = {
         returnVal = aResolvedVal;
       })
       .then(null, (aError) => {
-        reportError(aError, "Error inside synchronize:");
+        reportError(aError, "Error inside unsafeSynchronize:");
       })
       .then(() => {
         if (eventLoop) {
@@ -1786,7 +1790,7 @@ ThreadActor.prototype = {
     
     
     const generatedLocation = this.sources.getFrameLocation(aFrame);
-    const { originalSourceActor } = this.synchronize(this.sources.getOriginalLocation(
+    const { originalSourceActor } = this.unsafeSynchronize(this.sources.getOriginalLocation(
       generatedLocation));
     const url = originalSourceActor ? originalSourceActor.url : null;
 
@@ -1818,7 +1822,7 @@ ThreadActor.prototype = {
     }
 
     const generatedLocation = this.sources.getFrameLocation(aFrame);
-    const { sourceActor } = this.synchronize(this.sources.getOriginalLocation(
+    const { sourceActor } = this.unsafeSynchronize(this.sources.getOriginalLocation(
       generatedLocation));
     const url = sourceActor ? sourceActor.url : null;
 
@@ -1910,7 +1914,7 @@ ThreadActor.prototype = {
     
     
     
-    this.synchronize(this.sources.createSourceActors(aSource));
+    this.unsafeSynchronize(this.sources.createSourceActors(aSource));
 
     
     let promises = [];
@@ -1938,7 +1942,7 @@ ThreadActor.prototype = {
     }
 
     if (promises.length > 0) {
-      this.synchronize(promise.all(promises));
+      this.unsafeSynchronize(promise.all(promises));
     }
 
     return true;
@@ -3275,7 +3279,7 @@ BreakpointActor.prototype = {
     
     
     let generatedLocation = this.threadActor.sources.getFrameLocation(aFrame);
-    let { originalSourceActor } = this.threadActor.synchronize(
+    let { originalSourceActor } = this.threadActor.unsafeSynchronize(
       this.threadActor.sources.getOriginalLocation(generatedLocation));
     let url = originalSourceActor.url;
 

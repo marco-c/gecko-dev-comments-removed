@@ -15,6 +15,7 @@ function run_test() {
   gClient.connect(function () {
     attachTestTabAndResume(gClient, "test-nesting", function (aResponse, aTabClient, aThreadClient) {
       
+      
       gThreadActor = aThreadClient._transport._serverConnection.getActor(aThreadClient._actor);
 
       test_nesting();
@@ -41,6 +42,7 @@ function test_nesting() {
       
       do_check_eq(++currentStep, 2);
       
+      
       do_check_eq(thread._nestedEventLoops.size, 2);
 
       executeSoon(function () {
@@ -56,6 +58,7 @@ function test_nesting() {
 
       resolve(true);
       
+      
       do_check_eq(thread._nestedEventLoops.size, 2);
     });
 
@@ -67,7 +70,7 @@ function test_nesting() {
     eventLoop.enter();
   });
 
-  do_check_eq(thread.synchronize(p), true);
+  do_check_eq(thread.unsafeSynchronize(p), true);
 
   
   do_check_eq(++currentStep, 4);

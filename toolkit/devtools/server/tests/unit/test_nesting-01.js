@@ -37,7 +37,7 @@ function test_nesting() {
     resolve(true);
   });
 
-  do_check_eq(thread.synchronize(p), true);
+  do_check_eq(thread.unsafeSynchronize(p), true);
 
   
   do_check_eq(++currentStep, 2);
