@@ -722,6 +722,7 @@ GfxInfoBase::FindBlocklistedDeviceInList(const nsTArray<GfxDriverInfo>& info,
     
     
     
+    
     if (info[i].mOperatingSystem == DRIVER_OS_UNKNOWN ||
         (info[i].mOperatingSystem != DRIVER_OS_ALL &&
          info[i].mOperatingSystem != os))
