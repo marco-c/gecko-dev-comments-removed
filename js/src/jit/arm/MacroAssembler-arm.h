@@ -401,9 +401,14 @@ class MacroAssemblerARM : public Assembler
     void ma_vcvt_U32_F32(FloatRegister src, FloatRegister dest, Condition cc = Always);
 
 
+    
     void ma_vxfer(VFPRegister src, Register dest, Condition cc = Always);
+    
     void ma_vxfer(VFPRegister src, Register dest1, Register dest2, Condition cc = Always);
 
+    
+    void ma_vxfer(Register src, FloatRegister dest, Condition cc = Always);
+    
     void ma_vxfer(Register src1, Register src2, FloatRegister dest, Condition cc = Always);
 
     BufferOffset ma_vdtr(LoadStore ls, const Address& addr, VFPRegister dest, Condition cc = Always);
