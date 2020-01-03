@@ -290,18 +290,18 @@ ContainerRenderVR(ContainerT* aContainer,
   aManager->GetCompositor()->DrawQuad(rect, rect, solidEffect, 1.0, gfx::Matrix4x4());
 
   
-  gfx::Matrix4x4 scaleTransform = aContainer->GetEffectiveTransform();
   EffectChain vrEffect(aContainer);
   bool skipDistortion = vrRendering || PR_GetEnv("MOZ_GFX_VR_NO_DISTORTION");
   if (skipDistortion) {
     vrEffect.mPrimaryEffect = new EffectRenderTarget(surface);
-    scaleTransform.PreScale(rtBounds.width / float(surfaceRect.width),
-                            rtBounds.height / float(surfaceRect.height),
-                            1.0f);
   } else {
     vrEffect.mPrimaryEffect = new EffectVRDistortion(aHMD, surface);
-    
   }
+
+  gfx::Matrix4x4 scaleTransform = aContainer->GetEffectiveTransform();
+  scaleTransform.PreScale(rtBounds.width / float(surfaceRect.width),
+                          rtBounds.height / float(surfaceRect.height),
+                          1.0f);
 
   
   
