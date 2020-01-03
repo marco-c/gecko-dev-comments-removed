@@ -90,15 +90,18 @@ Decoder::Init()
 }
 
 nsresult
-Decoder::Decode()
+Decoder::Decode(IResumable* aOnResume)
 {
   MOZ_ASSERT(mInitialized, "Should be initialized here");
   MOZ_ASSERT(mIterator, "Should have a SourceBufferIterator");
 
   
+  IResumable* onResume = aOnResume ? aOnResume : this;
+
+  
   
   while (!GetDecodeDone() && !HasError()) {
-    auto newState = mIterator->AdvanceOrScheduleResume(this);
+    auto newState = mIterator->AdvanceOrScheduleResume(onResume);
 
     if (newState == SourceBufferIterator::WAITING) {
       
