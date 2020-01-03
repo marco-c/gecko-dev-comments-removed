@@ -593,7 +593,7 @@ MaybeAddNsprLogFileAccess(std::vector<std::wstring>& aAllowedFilesReadWrite)
   
   
   
-  aAllowedFilesReadWrite.push_back(resolvedFilePath.get());
+  aAllowedFilesReadWrite.push_back(std::wstring(resolvedFilePath.get()));
   nsAutoCString resolvedEnvVar("NSPR_LOG_FILE=");
   AppendUTF16toUTF8(resolvedFilePath, resolvedEnvVar);
   PR_SetEnv(resolvedEnvVar.get());

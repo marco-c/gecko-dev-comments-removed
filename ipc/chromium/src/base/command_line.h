@@ -119,6 +119,12 @@ class CommandLine {
   
   void AppendLooseValue(const std::wstring& value);
 
+#if defined(OS_WIN)
+  void AppendLooseValue(const wchar_t* value) {
+    AppendLooseValue(std::wstring(value));
+  }
+#endif
+
   
   
   void AppendArguments(const CommandLine& other,
