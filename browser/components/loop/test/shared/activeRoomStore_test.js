@@ -318,9 +318,8 @@ describe("loop.store.ActiveRoomStore", function () {
         mozLoop: fakeMozLoop,
         sdkDriver: {}
       });
-      fakeMozLoop.rooms.get.
-        withArgs(fakeToken).
-        callsArgOnWith(1, 
+      fakeMozLoop.rooms.get.withArgs(fakeToken).callsArgOnWith(
+        1, 
         store, 
         null, 
         fakeRoomData
@@ -335,8 +334,8 @@ describe("loop.store.ActiveRoomStore", function () {
           roomToken: fakeToken
         }));
 
-        expect(store.getStoreState()).
-          to.have.property("roomState", ROOM_STATES.GATHER);
+        expect(store.getStoreState()).to.have.property(
+          "roomState", ROOM_STATES.GATHER);
       });
 
     it("should dispatch an SetupRoomInfo action if the get is successful",
@@ -377,9 +376,8 @@ describe("loop.store.ActiveRoomStore", function () {
       function() {
 
         var fakeError = new Error("fake error");
-        fakeMozLoop.rooms.get.
-          withArgs(fakeToken).
-          callsArgOnWith(1, 
+        fakeMozLoop.rooms.get.withArgs(fakeToken).callsArgOnWith(
+          1, 
           store, 
           fakeError); 
 

@@ -519,7 +519,9 @@ loop.store = loop.store || {};
           var isValidURL = false;
           try {
             isValidURL = new URL(newRoomURL.location);
-          } catch(ex) {}
+          } catch(ex) {
+            
+          }
           if (isValidURL) {
             roomData.urls = [newRoomURL];
           }
