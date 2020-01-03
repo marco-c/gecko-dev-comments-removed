@@ -1042,6 +1042,10 @@ public:
     return mX.IsOverscrolled() || mY.IsOverscrolled();
   }
 
+  bool IsPannedIntoOverscroll() const {
+    return IsOverscrolled() && IsInPanningState();
+  }
+
 private:
   
 
