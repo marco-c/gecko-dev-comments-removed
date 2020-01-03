@@ -6,10 +6,7 @@
 
 this.EXPORTED_SYMBOLS = ["MigrationUtils", "MigratorPrototype"];
 
-const Cu = Components.utils;
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-
+const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 const TOPIC_WILL_IMPORT_BOOKMARKS = "initial-migration-will-import-default-bookmarks";
 const TOPIC_DID_IMPORT_BOOKMARKS = "initial-migration-did-import-default-bookmarks";
 
@@ -42,12 +39,15 @@ function getMigrationBundle() {
 
 
 function getMigratorKeyForDefaultBrowser() {
+  
   const APP_DESC_TO_KEY = {
     "Internet Explorer":                 "ie",
     "Safari":                            "safari",
     "Firefox":                           "firefox",
     "Google Chrome":                     "chrome",  
     "Chrome":                            "chrome",  
+    "Chromium":                          "chromium", 
+    "Chromium Web Browser":              "chromium", 
     "360\u5b89\u5168\u6d4f\u89c8\u5668": "360se",
   };
 
@@ -406,6 +406,8 @@ this.MigrationUtils = Object.freeze({
 
 
   getLocalizedString: function MU_getLocalizedString(aKey, aReplacements) {
+    aKey = aKey.replace(/_(canary|chromium)$/, "_chrome");
+
     const OVERRIDES = {
       "4_firefox": "4_firefox_history_and_bookmarks",
       "64_firefox": "64_firefox_other"
@@ -462,6 +464,8 @@ this.MigrationUtils = Object.freeze({
 
 
 
+
+
   getMigrator: function MU_getMigrator(aKey) {
     let migrator = null;
     if (this._migrators.has(aKey)) {
@@ -484,11 +488,11 @@ this.MigrationUtils = Object.freeze({
   get migrators() {
     let migratorKeysOrdered = [
 #ifdef XP_WIN
-      "firefox", "ie", "chrome", "safari", "360se"
+      "firefox", "ie", "chrome", "chromium", "safari", "360se", "canary"
 #elifdef XP_MACOSX
-      "firefox", "safari", "chrome"
+      "firefox", "safari", "chrome", "chromium", "canary"
 #elifdef XP_UNIX
-      "firefox", "chrome"
+      "firefox", "chrome", "chromium"
 #endif
     ];
 
