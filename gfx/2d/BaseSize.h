@@ -30,6 +30,10 @@ struct BaseSize {
     return width == 0 || height == 0;
   }
 
+  bool IsSquare() const {
+    return width == height;
+  }
+
   
   
 
