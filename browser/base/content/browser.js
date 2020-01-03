@@ -6860,12 +6860,22 @@ var gIdentityHandler = {
 
     
     
+    
+    let unknown = false;
+    try {
+      uri.host;
+    } catch (e) { unknown = true; }
+
+    
+    
     let whitelist = /^about:(accounts|addons|app-manager|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|sessionrestore|support|welcomeback)/i;
     let isChromeUI = uri.schemeIs("about") && whitelist.test(uri.spec);
     let mode = this.IDENTITY_MODE_UNKNOWN;
 
     if (isChromeUI) {
       mode = this.IDENTITY_MODE_CHROMEUI;
+    } else if (unknown) {
+      
     } else if (state & nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL) {
       if (state & nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT) {
         mode = this.IDENTITY_MODE_MIXED_ACTIVE_BLOCKED_IDENTIFIED;
