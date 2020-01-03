@@ -38,8 +38,6 @@ let gTests = [
 {
   desc: "Test the remote commands",
   teardown: function* () {
-    
-    gBrowser.removeCurrentTab();
     gBrowser.removeCurrentTab();
     yield fxAccounts.signOut();
   },
