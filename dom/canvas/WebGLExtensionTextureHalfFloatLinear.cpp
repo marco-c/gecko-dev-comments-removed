@@ -6,12 +6,36 @@
 
 #include "mozilla/dom/WebGLRenderingContextBinding.h"
 #include "WebGLContext.h"
+#include "WebGLFormats.h"
 
 namespace mozilla {
+
+using mozilla::webgl::EffectiveFormat;
 
 WebGLExtensionTextureHalfFloatLinear::WebGLExtensionTextureHalfFloatLinear(WebGLContext* webgl)
     : WebGLExtensionBase(webgl)
 {
+    
+    
+    
+
+    webgl::FormatUsageAuthority* authority = webgl->mFormatUsage.get();
+
+    auto updateUsage = [authority](EffectiveFormat effectiveFormat) {
+        webgl::FormatUsageInfo* usage = authority->GetUsage(effectiveFormat);
+        MOZ_ASSERT(usage);
+        usage->isFilterable = true;
+    };
+
+    
+    WebGLExtensionTextureHalfFloat::InitWebGLFormats(authority);
+
+    
+    updateUsage(EffectiveFormat::RGBA16F);
+    updateUsage(EffectiveFormat::RGB16F);
+    updateUsage(EffectiveFormat::Luminance16FAlpha16F);
+    updateUsage(EffectiveFormat::Luminance16F);
+    updateUsage(EffectiveFormat::Alpha16F);
 }
 
 WebGLExtensionTextureHalfFloatLinear::~WebGLExtensionTextureHalfFloatLinear()
