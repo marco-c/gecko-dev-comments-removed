@@ -47,6 +47,15 @@ private:
   Atomic<bool> mRevoked;
 };
 
+enum class ListenerMode : int8_t {
+  
+  
+  Exclusive,
+  
+  
+  NonExclusive
+};
+
 namespace detail {
 
 
@@ -111,7 +120,7 @@ private:
 
 } 
 
-template <typename T> class MediaEventSource;
+template <typename T, ListenerMode> class MediaEventSource;
 
 
 
@@ -120,7 +129,7 @@ template <typename T> class MediaEventSource;
 
 
 class MediaEventListener {
-  template <typename T>
+  template <typename T, ListenerMode>
   friend class MediaEventSource;
 
 public:
@@ -154,7 +163,7 @@ private:
 
 
 
-template <typename EventType>
+template <typename EventType, ListenerMode Mode = ListenerMode::NonExclusive>
 class MediaEventSource {
   static_assert(!IsReference<EventType>::value, "Ref-type not supported!");
   typedef typename detail::EventTypeTraits<EventType>::ArgType ArgType;
@@ -246,6 +255,7 @@ class MediaEventSource {
   MediaEventListener
   ConnectInternal(Target* aTarget, const Function& aFunction) {
     MutexAutoLock lock(mMutex);
+    MOZ_ASSERT(Mode == ListenerMode::NonExclusive || mListeners.IsEmpty());
     auto l = mListeners.AppendElement();
     l->reset(new ListenerImpl<Target, Function>(aTarget, aFunction));
     return MediaEventListener((*l)->Token());
@@ -346,8 +356,8 @@ private:
 
 
 
-template <typename EventType>
-class MediaEventProducer : public MediaEventSource<EventType> {
+template <typename EventType, ListenerMode Mode = ListenerMode::NonExclusive>
+class MediaEventProducer : public MediaEventSource<EventType, Mode> {
 public:
   void Notify(const EventType& aEvent) {
     this->NotifyInternal(aEvent);
