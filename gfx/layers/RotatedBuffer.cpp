@@ -734,16 +734,21 @@ RotatedContentBuffer::BorrowDrawTargetForPainting(PaintState& aPaintState,
   if (!result) {
     return nullptr;
   }
+
+  if (result->GetBackendType() == BackendType::DIRECT2D ||
+      result->GetBackendType() == BackendType::DIRECT2D1_1) {
+    
+    
+    
+    aPaintState.mRegionToDraw.SimplifyOutwardByArea(100 * 100);
+  }
+
   nsIntRegion* drawPtr = &aPaintState.mRegionToDraw;
   if (aIter) {
     
     
     aIter->mDrawRegion.And(aIter->mDrawRegion, aPaintState.mRegionToDraw);
     drawPtr = &aIter->mDrawRegion;
-  }
-  if (result->GetBackendType() == BackendType::DIRECT2D ||
-      result->GetBackendType() == BackendType::DIRECT2D1_1) {
-    drawPtr->SimplifyOutwardByArea(100 * 100);
   }
 
   if (aPaintState.mMode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {

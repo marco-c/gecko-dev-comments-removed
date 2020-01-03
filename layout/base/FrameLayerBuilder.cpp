@@ -1367,7 +1367,8 @@ public:
     mXScale(1.f), mYScale(1.f),
     mAppUnitsPerDevPixel(0),
     mTranslation(0, 0),
-    mAnimatedGeometryRootPosition(0, 0) {}
+    mAnimatedGeometryRootPosition(0, 0),
+    mNeedsRecomputeVisibility(false) {}
 
   
 
@@ -1438,6 +1439,11 @@ public:
 
   nsRefPtr<ColorLayer> mColorLayer;
   nsRefPtr<ImageLayer> mImageLayer;
+
+  
+  
+  
+  bool mNeedsRecomputeVisibility;
 };
 
 
@@ -2274,6 +2280,8 @@ ContainerState::PreparePaintedLayerForUse(PaintedLayer* aLayer,
   aLayer->SetBaseTransform(Matrix4x4::From2D(matrix));
 
   ComputeAndSetIgnoreInvalidationRect(aLayer, aData, aAnimatedGeometryRoot, mBuilder, pixOffset);
+
+  aData->mNeedsRecomputeVisibility = true;
 
   
 #ifndef MOZ_WIDGET_ANDROID
@@ -5535,6 +5543,7 @@ private:
 FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
                                    gfxContext* aContext,
                                    const nsIntRegion& aRegionToDraw,
+                                   const nsIntRegion& aDirtyRegion,
                                    DrawRegionClip aClip,
                                    const nsIntRegion& aRegionToInvalidate,
                                    void* aCallbackData)
@@ -5587,14 +5596,16 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
   nsIntPoint offset = GetTranslationForPaintedLayer(aLayer);
   nsPresContext* presContext = entry->mContainerLayerFrame->PresContext();
 
-  if (!layerBuilder->GetContainingPaintedLayerData()) {
+  if (userData->mNeedsRecomputeVisibility &&
+      !layerBuilder->GetContainingPaintedLayerData()) {
     
     
     
     int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-    RecomputeVisibilityForItems(entry->mItems, builder, aRegionToDraw,
+    RecomputeVisibilityForItems(entry->mItems, builder, aDirtyRegion,
                                 offset, appUnitsPerDevPixel,
                                 userData->mXScale, userData->mYScale);
+    userData->mNeedsRecomputeVisibility = false;
   }
 
   nsRenderingContext rc(aContext);
