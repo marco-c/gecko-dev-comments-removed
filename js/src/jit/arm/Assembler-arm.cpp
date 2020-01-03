@@ -26,15 +26,65 @@ void dbg_break() {}
 
 
 
+
+
 ABIArgGenerator::ABIArgGenerator()
   : intRegIndex_(0),
     floatRegIndex_(0),
     stackOffset_(0),
-    current_()
+    current_(),
+    useHardFp_(true)
 { }
 
+
+
 ABIArg
-ABIArgGenerator::next(MIRType type)
+ABIArgGenerator::softNext(MIRType type)
+{
+    switch (type) {
+      case MIRType_Int32:
+      case MIRType_Pointer:
+        if (intRegIndex_ == NumIntArgRegs) {
+            current_ = ABIArg(stackOffset_);
+            stackOffset_ += sizeof(uint32_t);
+            break;
+        }
+        current_ = ABIArg(Register::FromCode(intRegIndex_));
+        intRegIndex_++;
+        break;
+      case MIRType_Float32:
+        if (intRegIndex_ == NumIntArgRegs) {
+            current_ = ABIArg(stackOffset_);
+            stackOffset_ += sizeof(uint32_t);
+            break;
+        }
+        current_ = ABIArg(Register::FromCode(intRegIndex_));
+        intRegIndex_++;
+        break;
+      case MIRType_Double:
+        
+        
+        intRegIndex_ = (intRegIndex_ + 1) & ~1;
+        if (intRegIndex_ == NumIntArgRegs) {
+            
+            static const int align = sizeof(double) - 1;
+            stackOffset_ = (stackOffset_ + align) & ~align;
+            current_ = ABIArg(stackOffset_);
+            stackOffset_ += sizeof(double);
+            break;
+        }
+        current_ = ABIArg(Register::FromCode(intRegIndex_), Register::FromCode(intRegIndex_ + 1));
+        intRegIndex_ += 2;
+        break;
+      default:
+        MOZ_CRASH("Unexpected argument type");
+    }
+
+    return current_;
+}
+
+ABIArg
+ABIArgGenerator::hardNext(MIRType type)
 {
     switch (type) {
       case MIRType_Int32:
@@ -60,6 +110,8 @@ ABIArgGenerator::next(MIRType type)
         break;
       case MIRType_Double:
         
+        
+        
         floatRegIndex_ = (floatRegIndex_ + 1) & ~1;
         if (floatRegIndex_ == NumFloatArgRegs) {
             static const int align = sizeof(double) - 1;
@@ -69,13 +121,21 @@ ABIArgGenerator::next(MIRType type)
             break;
         }
         current_ = ABIArg(VFPRegister(floatRegIndex_ >> 1, VFPRegister::Double));
-        floatRegIndex_+=2;
+        floatRegIndex_ += 2;
         break;
       default:
         MOZ_CRASH("Unexpected argument type");
     }
 
     return current_;
+}
+
+ABIArg
+ABIArgGenerator::next(MIRType type)
+{
+    if (useHardFp_)
+        return hardNext(type);
+    return softNext(type);
 }
 
 const Register ABIArgGenerator::NonArgReturnReg0 = r4;
