@@ -90,7 +90,9 @@ public:
     UniquePtr<ServiceWorkerClientInfo> clientInfo;
 
     if (window) {
-      nsContentUtils::DispatchChromeEvent(window->GetExtantDoc(), window->GetOuterWindow(), NS_LITERAL_STRING("DOMServiceWorkerFocusClient"), true, true);
+      mozilla::ErrorResult result;
+      
+      window->Focus(result);
       clientInfo.reset(new ServiceWorkerClientInfo(window->GetDocument(),
                                                    window->GetOuterWindow()));
     }
@@ -140,22 +142,18 @@ ServiceWorkerWindowClient::Focus(ErrorResult& aRv) const
     return nullptr;
   }
 
-  if (workerPrivate->GlobalScope()->WindowInteractionAllowed()) {
-    nsRefPtr<PromiseWorkerProxy> promiseProxy =
-      PromiseWorkerProxy::Create(workerPrivate, promise);
-    if (!promiseProxy->GetWorkerPromise()) {
-      
-      return promise.forget();
-    }
+  nsRefPtr<PromiseWorkerProxy> promiseProxy =
+    PromiseWorkerProxy::Create(workerPrivate, promise);
+  if (!promiseProxy->GetWorkerPromise()) {
+    
+    return promise.forget();
+  }
 
-    nsRefPtr<ClientFocusRunnable> r = new ClientFocusRunnable(mWindowId,
-                                                              promiseProxy);
-    aRv = NS_DispatchToMainThread(r);
-    if (NS_WARN_IF(aRv.Failed())) {
-      promise->MaybeReject(aRv);
-    }
-  } else {
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+  nsRefPtr<ClientFocusRunnable> r = new ClientFocusRunnable(mWindowId,
+                                                            promiseProxy);
+  aRv = NS_DispatchToMainThread(r);
+  if (NS_WARN_IF(aRv.Failed())) {
+    promise->MaybeReject(aRv);
   }
 
   return promise.forget();
