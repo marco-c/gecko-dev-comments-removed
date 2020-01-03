@@ -62,6 +62,12 @@ public:
   {
     UpdateConnectedStatus();
   }
+  virtual void NotifyHasPhantomInput() override
+  {
+    mHasPhantomInput = true;
+    
+    
+  }
 
   virtual void SetChannelCount(uint32_t aChannelCount, ErrorResult& aRv) override
   {
@@ -105,6 +111,7 @@ private:
 
   const uint32_t mBufferSize;
   const uint32_t mNumberOfOutputChannels;
+  bool mHasPhantomInput = false;
 };
 
 } 

@@ -568,8 +568,9 @@ ScriptProcessorNode::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProt
 void
 ScriptProcessorNode::UpdateConnectedStatus()
 {
-  bool isConnected = !(OutputNodes().IsEmpty() && OutputParams().IsEmpty()
-                       && InputNodes().IsEmpty());
+  bool isConnected = mHasPhantomInput ||
+    !(OutputNodes().IsEmpty() && OutputParams().IsEmpty()
+      && InputNodes().IsEmpty());
 
   
   
