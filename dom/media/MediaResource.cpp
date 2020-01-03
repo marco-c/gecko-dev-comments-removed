@@ -1008,13 +1008,13 @@ ChannelMediaResource::CacheClientSeek(int64_t aOffset, bool aResume)
 
   mOffset = aOffset;
 
+  
+  
+  mIgnoreClose = true;
+
+  
+  
   if (mSuspendCount > 0) {
-    
-    
-    if (mChannel) {
-      mIgnoreClose = true;
-      CloseChannel();
-    }
     return NS_OK;
   }
 
