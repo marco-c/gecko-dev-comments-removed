@@ -2328,7 +2328,11 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
   }
 
   if (aNotify) {
-    nsNodeUtils::AttributeChanged(this, aNamespaceID, aName, aModType);
+    
+    
+    
+    nsNodeUtils::AttributeChanged(this, aNamespaceID, aName, aModType,
+        oldValue == &aParsedValue ? &aParsedValue : nullptr);
   }
 
   if (aFireMutation) {
@@ -2540,8 +2544,10 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   }
 
   if (aNotify) {
+    
+    
     nsNodeUtils::AttributeChanged(this, aNameSpaceID, aName,
-                                  nsIDOMMutationEvent::REMOVAL);
+                                  nsIDOMMutationEvent::REMOVAL, &oldValue);
   }
 
   rv = AfterSetAttr(aNameSpaceID, aName, nullptr, aNotify);
