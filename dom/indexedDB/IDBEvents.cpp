@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "IDBEvents.h"
 
@@ -33,25 +33,19 @@ CreateGenericEvent(EventTarget* aOwner,
                    Bubbles aBubbles,
                    Cancelable aCancelable)
 {
-  nsCOMPtr<nsIDOMEvent> event;
-  nsresult rv = NS_NewDOMEvent(getter_AddRefs(event), aOwner, nullptr, nullptr);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
+  nsRefPtr<Event> event = new Event(aOwner, nullptr, nullptr);
 
-  rv = event->InitEvent(aType,
-                        aBubbles == eDoesBubble ? true : false,
-                        aCancelable == eCancelable ? true : false);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
+    event->InitEvent(aType,
+                     aBubbles == eDoesBubble ? true : false,
+                     aCancelable == eCancelable ? true : false)));
 
   event->SetTrusted(true);
 
   return event.forget();
 }
 
-// static
+
 already_AddRefed<IDBVersionChangeEvent>
 IDBVersionChangeEvent::CreateInternal(EventTarget* aOwner,
                                       const nsAString& aType,
@@ -64,10 +58,7 @@ IDBVersionChangeEvent::CreateInternal(EventTarget* aOwner,
     event->mNewVersion.SetValue(aNewVersion.Value());
   }
 
-  nsresult rv = event->InitEvent(aType, false, false);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(event->InitEvent(aType, false, false)));
 
   event->SetTrusted(true);
 
@@ -101,6 +92,6 @@ IDBVersionChangeEvent::WrapObjectInternal(JSContext* aCx)
   return IDBVersionChangeEventBinding::Wrap(aCx, this);
 }
 
-} // namespace indexedDB
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
