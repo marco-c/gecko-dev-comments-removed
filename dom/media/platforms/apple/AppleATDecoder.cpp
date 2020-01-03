@@ -68,7 +68,7 @@ AppleATDecoder::Input(MediaRawData* aSample)
       aSample->mDuration,
       aSample->mTime,
       aSample->mKeyframe ? " keyframe" : "",
-      (unsigned long long)aSample->mSize);
+      (unsigned long long)aSample->Size());
 
   
   nsCOMPtr<nsIRunnable> runnable =
@@ -216,7 +216,7 @@ AppleATDecoder::DecodeSample(MediaRawData* aSample)
   
   
   PassthroughUserData userData =
-    { channels, (UInt32)aSample->mSize, aSample->mData };
+    { channels, (UInt32)aSample->Size(), aSample->Data() };
 
   
   nsAutoArrayPtr<AudioDataValue> decoded(new AudioDataValue[maxDecodedSamples]);
@@ -488,8 +488,8 @@ AppleATDecoder::GetImplicitAACMagicCookie(const MediaRawData* aSample)
   }
 
   OSStatus status = AudioFileStreamParseBytes(mStream,
-                                              adtssample->mSize,
-                                              adtssample->mData,
+                                              adtssample->Size(),
+                                              adtssample->Data(),
                                               0 );
   if (status) {
     NS_WARNING("Couldn't parse sample");

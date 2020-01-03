@@ -360,9 +360,9 @@ class MediaRawDataWriter
 {
 public:
   
-  uint8_t* mData;
+  uint8_t* Data();
   
-  size_t mSize;
+  size_t Size();
   
   CryptoSample& mCrypto;
 
@@ -392,9 +392,15 @@ public:
   MediaRawData(const uint8_t* aData, size_t mSize);
 
   
-  const uint8_t* mData;
+  const uint8_t* Data() const
+  {
+    return mData;
+  }
   
-  size_t mSize;
+  size_t Size() const
+  {
+    return mSize;
+  }
 
   const CryptoSample& mCrypto;
   nsRefPtr<MediaByteBuffer> mExtraData;
@@ -419,6 +425,8 @@ private:
   
   
   bool EnsureCapacity(size_t aSize);
+  uint8_t* mData;
+  size_t mSize;
   nsRefPtr<MediaByteBuffer> mBuffer;
   CryptoSample mCryptoInternal;
   uint32_t mPadding;

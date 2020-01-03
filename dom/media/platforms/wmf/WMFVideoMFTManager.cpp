@@ -272,8 +272,8 @@ WMFVideoMFTManager::Input(MediaRawData* aSample)
     return E_FAIL;
   }
   
-  return mDecoder->Input(aSample->mData,
-                         uint32_t(aSample->mSize),
+  return mDecoder->Input(aSample->Data(),
+                         uint32_t(aSample->Size()),
                          aSample->mTime);
 }
 

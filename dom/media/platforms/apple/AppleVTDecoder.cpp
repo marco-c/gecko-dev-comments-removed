@@ -84,7 +84,7 @@ AppleVTDecoder::Input(MediaRawData* aSample)
       aSample->mTime,
       aSample->mDuration,
       aSample->mKeyframe ? " keyframe" : "",
-      aSample->mSize);
+      aSample->Size());
 
 #ifdef LOG_MEDIA_SHA1
   SHA1Sum hash;
@@ -215,12 +215,12 @@ AppleVTDecoder::SubmitFrame(MediaRawData* aSample)
   
   
   rv = CMBlockBufferCreateWithMemoryBlock(kCFAllocatorDefault, 
-                                          const_cast<uint8_t*>(aSample->mData),
-                                          aSample->mSize,
+                                          const_cast<uint8_t*>(aSample->Data()),
+                                          aSample->Size(),
                                           kCFAllocatorNull, 
                                           NULL, 
                                           0,    
-                                          aSample->mSize,
+                                          aSample->Size(),
                                           false,
                                           block.receive());
   if (rv != noErr) {
