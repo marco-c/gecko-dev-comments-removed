@@ -6,15 +6,6 @@
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-addEventListener("load", function () {
-  
-  
-  
-  if (Services.prefs.getBoolPref("browser.readinglist.enabled")) {
-    document.getElementById("readinglist-engine").removeAttribute("hidden");
-  }
-});
-
 addEventListener("dialogaccept", function () {
   let pane = document.getElementById("sync-customize-pane");
   

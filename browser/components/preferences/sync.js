@@ -157,11 +157,6 @@ let gSyncPane = {
     
     if (service.fxAccountsEnabled) {
       
-      
-      if (Services.prefs.getBoolPref("browser.readinglist.enabled")) {
-        document.getElementById("readinglist-engine").removeAttribute("hidden");
-      }
-      
       this.page = PAGE_PLEASE_WAIT;
       fxAccounts.getSignedInUser().then(data => {
         if (!data) {

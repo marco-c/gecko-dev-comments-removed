@@ -318,12 +318,6 @@ let gSyncPane = {
       fxaEmailAddress1Label.hidden = false;
       displayNameLabel.hidden = true;
 
-      
-      
-      if (Services.prefs.getBoolPref("browser.readinglist.enabled")) {
-        document.getElementById("readinglist-engine").removeAttribute("hidden");
-      }
-
       let profileInfoEnabled;
       try {
         profileInfoEnabled = Services.prefs.getBoolPref("identity.fxaccounts.profile_image.enabled");

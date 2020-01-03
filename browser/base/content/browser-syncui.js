@@ -11,9 +11,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "CloudSync",
 let CloudSync = null;
 #endif
 
-XPCOMUtils.defineLazyModuleGetter(this, "ReadingListScheduler",
-                                  "resource:///modules/readinglist/Scheduler.jsm");
-
 
 let gSyncUI = {
   _obs: ["weave:service:sync:start",
@@ -31,10 +28,6 @@ let gSyncUI = {
          "weave:ui:sync:error",
          "weave:ui:sync:finish",
          "weave:ui:clear-error",
-
-         "readinglist:sync:start",
-         "readinglist:sync:finish",
-         "readinglist:sync:error",
   ],
 
   _unloaded: false,
@@ -117,14 +110,10 @@ let gSyncUI = {
     if (Weave.Status._authManager._signedInUser !== undefined) {
       
       
-      
-      
-      
       return !Weave.Status._authManager._signedInUser ||
              !Weave.Status._authManager._signedInUser.verified;
     }
 
-    
     
     let firstSync = "";
     try {
@@ -136,10 +125,9 @@ let gSyncUI = {
   },
 
   _loginFailed: function () {
-    this.log.debug("_loginFailed has sync state=${sync}, readinglist state=${rl}",
-                   { sync: Weave.Status.login, rl: ReadingListScheduler.state});
-    return Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED ||
-           ReadingListScheduler.state == ReadingListScheduler.STATE_ERROR_AUTHENTICATION;
+    this.log.debug("_loginFailed has sync state=${sync}",
+                   { sync: Weave.Status.login});
+    return Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED;
   },
 
   updateUI: function SUI_updateUI() {
@@ -235,8 +223,6 @@ let gSyncUI = {
 
   onLoginError: function SUI_onLoginError() {
     this.log.debug("onLoginError: login=${login}, sync=${sync}", Weave.Status);
-    
-    
     Weave.Notifications.removeAll();
 
     
@@ -260,12 +246,10 @@ let gSyncUI = {
   },
 
   showLoginError() {
-    
     let title = this._stringBundle.GetStringFromName("error.login.title");
 
     let description;
-    if (Weave.Status.sync == Weave.PROLONGED_SYNC_FAILURE ||
-        this.isProlongedReadingListError()) {
+    if (Weave.Status.sync == Weave.PROLONGED_SYNC_FAILURE) {
       this.log.debug("showLoginError has a prolonged login error");
       
       let lastSync =
@@ -333,7 +317,6 @@ let gSyncUI = {
     }
 
     Services.obs.notifyObservers(null, "cloudsync:user-sync", null);
-    Services.obs.notifyObservers(null, "readinglist:user-sync", null);
   },
 
   handleToolbarButton: function SUI_handleStatusbarButton() {
@@ -432,14 +415,6 @@ let gSyncUI = {
       lastSync = new Date(Services.prefs.getCharPref("services.sync.lastSync"));
     }
     catch (e) { };
-    
-    try {
-      let lastRLSync = new Date(Services.prefs.getCharPref("readinglist.scheduler.lastSync"));
-      if (!lastSync || lastRLSync > lastSync) {
-        lastSync = lastRLSync;
-      }
-    }
-    catch (e) { };
     if (!lastSync || this._needsSetup()) {
       if (syncButton) {
         syncButton.removeAttribute("tooltiptext");
@@ -473,75 +448,6 @@ let gSyncUI = {
 
     
     this.clearError(title);
-  },
-
-  
-  
-  
-  isProlongedReadingListError() {
-    
-    let enabled = false;
-    try {
-      enabled = Services.prefs.getBoolPref("readinglist.scheduler.enabled");
-    } catch (_) {}
-    if (!enabled) {
-      return false;
-    }
-    let lastSync, threshold, prolonged;
-    try {
-      lastSync = new Date(Services.prefs.getCharPref("readinglist.scheduler.lastSync"));
-      threshold = new Date(Date.now() - Services.prefs.getIntPref("services.sync.errorhandler.networkFailureReportTimeout") * 1000);
-      prolonged = lastSync <= threshold;
-    } catch (ex) {
-      
-      prolonged = false;
-    }
-    this.log.debug("isProlongedReadingListError has last successful sync at ${lastSync}, threshold is ${threshold}, prolonged=${prolonged}",
-                   {lastSync, threshold, prolonged});
-    return prolonged;
-  },
-
-  onRLSyncError() {
-    
-    
-    
-    
-    
-    
-    this.log.debug("onRLSyncError with readingList state", ReadingListScheduler.state);
-    if (ReadingListScheduler.state == ReadingListScheduler.STATE_ERROR_AUTHENTICATION) {
-      this.onLoginError();
-      return;
-    }
-    
-    if (!this.isProlongedReadingListError()) {
-      this.log.debug("onRLSyncError has a non-authentication, non-prolonged error, so not showing any error UI");
-      return;
-    }
-    
-    
-    this.log.debug("onRLSyncError has a prolonged error");
-    let title = this._stringBundle.GetStringFromName("error.sync.title");
-    
-    
-    
-    let lastSync =
-      Services.prefs.getIntPref("services.sync.errorhandler.networkFailureReportTimeout") / 86400;
-    let description =
-      this._stringBundle.formatStringFromName("error.sync.prolonged_failure", [lastSync], 1);
-    let priority = Weave.Notifications.PRIORITY_INFO;
-    let buttons = [
-      new Weave.NotificationButton(
-        this._stringBundle.GetStringFromName("error.sync.tryAgainButton.label"),
-        this._stringBundle.GetStringFromName("error.sync.tryAgainButton.accesskey"),
-        function() { gSyncUI.doSync(); return true; }
-      ),
-    ];
-    let notification =
-      new Weave.Notification(title, description, null, priority, buttons);
-    Weave.Notifications.replaceTitle(notification);
-
-    this.updateUI();
   },
 
   onSyncError: function SUI_onSyncError() {
@@ -637,19 +543,15 @@ let gSyncUI = {
     switch (topic) {
       case "weave:service:sync:start":
       case "weave:service:login:start":
-      case "readinglist:sync:start":
         this.onActivityStart();
         break;
       case "weave:service:sync:finish":
       case "weave:service:sync:error":
       case "weave:service:login:finish":
       case "weave:service:login:error":
-      case "readinglist:sync:finish":
-      case "readinglist:sync:error":
         this.onActivityStop();
         break;
     }
-    
     
     
     switch (topic) {
@@ -687,13 +589,6 @@ let gSyncUI = {
         this.initNotifications();
         break;
       case "weave:ui:clear-error":
-        this.clearError();
-        break;
-
-      case "readinglist:sync:error":
-        this.onRLSyncError();
-        break;
-      case "readinglist:sync:finish":
         this.clearError();
         break;
     }

@@ -6,7 +6,6 @@
 
 
 
-
 const TEST_PREFS = [
   ["reader.parse-on-load.enabled", true],
   ["browser.reader.detectedFirstArticle", false],

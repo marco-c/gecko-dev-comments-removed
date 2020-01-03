@@ -382,6 +382,7 @@ this.UITour = {
     
     
     
+    
     let originalUrl = ReaderMode.getOriginalUrl(aLocation);
     if (this._readerViewTriggerRegEx.test(originalUrl)) {
       this.startSubTour("readinglist");

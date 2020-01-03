@@ -5,8 +5,6 @@ let {Log} = Cu.import("resource://gre/modules/Log.jsm", {});
 let {Weave} = Cu.import("resource://services-sync/main.js", {});
 let {Notifications} = Cu.import("resource://services-sync/notifications.js", {});
 
-let {getInternalScheduler} = Cu.import("resource:///modules/readinglist/Scheduler.jsm", {});
-
 let stringBundle = Cc["@mozilla.org/intl/stringbundle;1"]
                    .getService(Ci.nsIStringBundleService)
                    .createBundle("chrome://weave/locale/services/sync.properties");
@@ -37,23 +35,6 @@ add_task(function* prepare() {
   });
 });
 
-add_task(function* testNotProlongedRLErrorWhenDisabled() {
-  
-  
-  
-  
-  let longAgo = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000); 
-  Services.prefs.setCharPref("readinglist.scheduler.lastSync", longAgo.toString());
-
-  
-  Services.prefs.setBoolPref("readinglist.scheduler.enabled", true);
-  Assert.equal(gSyncUI.isProlongedReadingListError(), true);
-
-  
-  Services.prefs.setBoolPref("readinglist.scheduler.enabled", false);
-  Assert.equal(gSyncUI.isProlongedReadingListError(), false);
-});
-
 add_task(function* testProlongedSyncError() {
   let promiseNotificationAdded = promiseObserver("weave:notification:added");
   Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
@@ -72,32 +53,6 @@ add_task(function* testProlongedSyncError() {
   let promiseNotificationRemoved = promiseObserver("weave:notification:removed");
   Weave.Status.sync = Weave.STATUS_OK;
   Services.obs.notifyObservers(null, "weave:ui:sync:finish", null);
-  yield promiseNotificationRemoved;
-  Assert.equal(Notifications.notifications.length, 0, "no notifications left");
-});
-
-add_task(function* testProlongedRLError() {
-  Services.prefs.setBoolPref("readinglist.scheduler.enabled", true);
-  let promiseNotificationAdded = promiseObserver("weave:notification:added");
-  Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
-
-  
-  let longAgo = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000); 
-  Services.prefs.setCharPref("readinglist.scheduler.lastSync", longAgo.toString());
-  getInternalScheduler().state = ReadingListScheduler.STATE_ERROR_OTHER;
-  Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-  Services.obs.notifyObservers(null, "readinglist:sync:error", null);
-
-  let subject = yield promiseNotificationAdded;
-  let notification = subject.wrappedJSObject.object; 
-  Assert.equal(notification.title, stringBundle.GetStringFromName("error.sync.title"));
-  Assert.equal(Notifications.notifications.length, 1, "exactly 1 notification");
-
-  
-  let promiseNotificationRemoved = promiseObserver("weave:notification:removed");
-  Services.prefs.setCharPref("readinglist.scheduler.lastSync", Date.now().toString());
-  Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-  Services.obs.notifyObservers(null, "readinglist:sync:finish", null);
   yield promiseNotificationRemoved;
   Assert.equal(Notifications.notifications.length, 0, "no notifications left");
 });
@@ -156,12 +111,6 @@ add_task(function* testSyncLoginNetworkError() {
     Assert.ok(sawNotificationAdded);
 
     
-    let promiseNotificationRemoved = promiseObserver("weave:notification:removed");
-    Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-    Services.obs.notifyObservers(null, "readinglist:sync:finish", null);
-    yield promiseNotificationRemoved;
-
-    
     sawNotificationAdded = false;
     Weave.Status.sync = Weave.LOGIN_FAILED;
     Weave.Status.login = Weave.LOGIN_FAILED_NETWORK_ERROR;
@@ -177,80 +126,6 @@ add_task(function* testSyncLoginNetworkError() {
   } finally {
     Services.obs.removeObserver(obs, "weave:notification:added");
   }
-});
-
-add_task(function* testRLLoginError() {
-  let promiseNotificationAdded = promiseObserver("weave:notification:added");
-  Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
-
-  
-  getInternalScheduler().state = ReadingListScheduler.STATE_ERROR_AUTHENTICATION;
-  Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-  Services.obs.notifyObservers(null, "readinglist:sync:error", null);
-
-  let subject = yield promiseNotificationAdded;
-  let notification = subject.wrappedJSObject.object; 
-  Assert.equal(notification.title, stringBundle.GetStringFromName("error.login.title"));
-  Assert.equal(Notifications.notifications.length, 1, "exactly 1 notification");
-
-  
-  getInternalScheduler().state = ReadingListScheduler.STATE_OK;
-  let promiseNotificationRemoved = promiseObserver("weave:notification:removed");
-  Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-  Services.obs.notifyObservers(null, "readinglist:sync:finish", null);
-  yield promiseNotificationRemoved;
-  Assert.equal(Notifications.notifications.length, 0, "no notifications left");
-});
-
-
-
-
-
-add_task(function* testRLLoginErrorRemains() {
-  let promiseNotificationAdded = promiseObserver("weave:notification:added");
-  Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
-
-  
-  getInternalScheduler().state = ReadingListScheduler.STATE_ERROR_AUTHENTICATION;
-  Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-  Services.obs.notifyObservers(null, "readinglist:sync:error", null);
-
-  let subject = yield promiseNotificationAdded;
-  let notification = subject.wrappedJSObject.object; 
-  Assert.equal(notification.title, stringBundle.GetStringFromName("error.login.title"));
-  Assert.equal(Notifications.notifications.length, 1, "exactly 1 notification");
-
-  
-  promiseNotificationAdded = promiseObserver("weave:notification:added");
-  Weave.Status.sync = Weave.PROLONGED_SYNC_FAILURE;
-  Weave.Status.login = Weave.LOGIN_FAILED_LOGIN_REJECTED;
-  Services.obs.notifyObservers(null, "weave:ui:sync:error", null);
-  subject = yield promiseNotificationAdded;
-  
-  notification = subject.wrappedJSObject.object;
-  Assert.equal(notification.title, stringBundle.GetStringFromName("error.login.title"));
-  Assert.equal(Notifications.notifications.length, 1, "exactly 1 notification");
-
-  
-  promiseNotificationAdded = promiseObserver("weave:notification:added");
-  Weave.Status.sync = Weave.STATUS_OK;
-  Weave.Status.login = Weave.LOGIN_SUCCEEDED;
-  Services.obs.notifyObservers(null, "weave:ui:sync:finish", null);
-
-  
-  subject = yield promiseNotificationAdded;
-  
-  notification = subject.wrappedJSObject.object;
-  Assert.equal(notification.title, stringBundle.GetStringFromName("error.login.title"));
-  Assert.equal(Notifications.notifications.length, 1, "exactly 1 notification");
-
-  
-  getInternalScheduler().state = ReadingListScheduler.STATE_OK;
-  let promiseNotificationRemoved = promiseObserver("weave:notification:removed");
-  Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-  Services.obs.notifyObservers(null, "readinglist:sync:finish", null);
-  yield promiseNotificationRemoved;
-  Assert.equal(Notifications.notifications.length, 0, "no notifications left");
 });
 
 function checkButtonsStatus(shouldBeActive) {
@@ -287,26 +162,12 @@ add_task(function* testButtonActivities() {
     testButtonActions("weave:service:sync:start", "weave:service:sync:finish");
     testButtonActions("weave:service:sync:start", "weave:service:sync:error");
 
-    testButtonActions("readinglist:sync:start", "readinglist:sync:finish");
-    testButtonActions("readinglist:sync:start", "readinglist:sync:error");
-
     
     Services.obs.notifyObservers(null, "weave:service:sync:start", null);
-    checkButtonsStatus(true);
-    Services.obs.notifyObservers(null, "readinglist:sync:start", null);
-    checkButtonsStatus(true);
-    Services.obs.notifyObservers(null, "readinglist:sync:finish", null);
-    
-    checkButtonsStatus(true);
-    
-    Services.obs.notifyObservers(null, "readinglist:sync:start", null);
     checkButtonsStatus(true);
     
     Services.obs.notifyObservers(null, "weave:service:sync:finish", null);
     
-    checkButtonsStatus(true);
-    
-    Services.obs.notifyObservers(null, "readinglist:sync:error", null);
     checkButtonsStatus(false);
   } finally {
     PanelUI.hide();
