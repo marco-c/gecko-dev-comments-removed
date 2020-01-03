@@ -112,6 +112,13 @@ struct arena_stats_s {
 	uint64_t	purged;
 
 	
+
+
+
+	size_t		metadata_mapped;
+	size_t		metadata_allocated; 
+
+	
 	size_t		allocated_large;
 	uint64_t	nmalloc_large;
 	uint64_t	ndalloc_large;
@@ -126,21 +133,6 @@ struct arena_stats_s {
 
 	
 	malloc_huge_stats_t	*hstats;
-};
-
-struct chunk_stats_s {
-	
-	uint64_t	nchunks;
-
-	
-	size_t		highchunks;
-
-	
-
-
-
-
-	size_t		curchunks;
 };
 
 #endif 

@@ -4,167 +4,289 @@
 
 
 
-
-
 #ifdef JEMALLOC_H_TYPES
 
+typedef struct rtree_node_elm_s rtree_node_elm_t;
+typedef struct rtree_level_s rtree_level_t;
 typedef struct rtree_s rtree_t;
 
 
 
 
 
-#define	RTREE_NODESIZE (1U << 16)
+#define	LG_RTREE_BITS_PER_LEVEL	4
+#define	RTREE_BITS_PER_LEVEL	(ZU(1) << LG_RTREE_BITS_PER_LEVEL)
+#define	RTREE_HEIGHT_MAX						\
+    ((ZU(1) << (LG_SIZEOF_PTR+3)) / RTREE_BITS_PER_LEVEL)
 
-typedef void *(rtree_alloc_t)(size_t);
-typedef void (rtree_dalloc_t)(void *);
+
+#define	RTREE_NODE_INITIALIZING	((rtree_node_elm_t *)0x1)
+
+
+
+
+
+
+typedef rtree_node_elm_t *(rtree_node_alloc_t)(size_t);
+typedef void (rtree_node_dalloc_t)(rtree_node_elm_t *);
 
 #endif 
 
 #ifdef JEMALLOC_H_STRUCTS
 
+struct rtree_node_elm_s {
+	union {
+		void			*pun;
+		rtree_node_elm_t	*child;
+		extent_node_t		*val;
+	};
+};
+
+struct rtree_level_s {
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	union {
+		void			*subtree_pun;
+		rtree_node_elm_t	*subtree;
+	};
+	
+	unsigned		bits;
+	
+
+
+
+	unsigned		cumbits;
+};
+
 struct rtree_s {
-	rtree_alloc_t	*alloc;
-	rtree_dalloc_t	*dalloc;
-	malloc_mutex_t	mutex;
-	void		**root;
-	unsigned	height;
-	unsigned	level2bits[1]; 
+	rtree_node_alloc_t	*alloc;
+	rtree_node_dalloc_t	*dalloc;
+	unsigned		height;
+	
+
+
+
+	unsigned		start_level[RTREE_HEIGHT_MAX];
+	rtree_level_t		levels[RTREE_HEIGHT_MAX];
 };
 
 #endif 
 
 #ifdef JEMALLOC_H_EXTERNS
 
-rtree_t	*rtree_new(unsigned bits, rtree_alloc_t *alloc, rtree_dalloc_t *dalloc);
+bool rtree_new(rtree_t *rtree, unsigned bits, rtree_node_alloc_t *alloc,
+    rtree_node_dalloc_t *dalloc);
 void	rtree_delete(rtree_t *rtree);
-void	rtree_prefork(rtree_t *rtree);
-void	rtree_postfork_parent(rtree_t *rtree);
-void	rtree_postfork_child(rtree_t *rtree);
+rtree_node_elm_t	*rtree_subtree_read_hard(rtree_t *rtree,
+    unsigned level);
+rtree_node_elm_t	*rtree_child_read_hard(rtree_t *rtree,
+    rtree_node_elm_t *elm, unsigned level);
 
 #endif 
 
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-#ifdef JEMALLOC_DEBUG
-uint8_t rtree_get_locked(rtree_t *rtree, uintptr_t key);
-#endif
-uint8_t	rtree_get(rtree_t *rtree, uintptr_t key);
-bool	rtree_set(rtree_t *rtree, uintptr_t key, uint8_t val);
+unsigned	rtree_start_level(rtree_t *rtree, uintptr_t key);
+uintptr_t	rtree_subkey(rtree_t *rtree, uintptr_t key, unsigned level);
+
+bool	rtree_node_valid(rtree_node_elm_t *node);
+rtree_node_elm_t	*rtree_child_tryread(rtree_node_elm_t *elm);
+rtree_node_elm_t	*rtree_child_read(rtree_t *rtree, rtree_node_elm_t *elm,
+    unsigned level);
+extent_node_t	*rtree_val_read(rtree_t *rtree, rtree_node_elm_t *elm,
+    bool dependent);
+void	rtree_val_write(rtree_t *rtree, rtree_node_elm_t *elm,
+    const extent_node_t *val);
+rtree_node_elm_t	*rtree_subtree_tryread(rtree_t *rtree, unsigned level);
+rtree_node_elm_t	*rtree_subtree_read(rtree_t *rtree, unsigned level);
+
+extent_node_t	*rtree_get(rtree_t *rtree, uintptr_t key, bool dependent);
+bool	rtree_set(rtree_t *rtree, uintptr_t key, const extent_node_t *val);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_RTREE_C_))
-#define	RTREE_GET_GENERATE(f)
-		\
-JEMALLOC_INLINE uint8_t							\
-f(rtree_t *rtree, uintptr_t key)					\
-{									\
-	uint8_t ret;							\
-	uintptr_t subkey;						\
-	unsigned i, lshift, height, bits;				\
-	void **node, **child;						\
-									\
-	RTREE_LOCK(&rtree->mutex);					\
-	for (i = lshift = 0, height = rtree->height, node = rtree->root;\
-	    i < height - 1;						\
-	    i++, lshift += bits, node = child) {			\
-		bits = rtree->level2bits[i];				\
-		subkey = (key << lshift) >> ((ZU(1) << (LG_SIZEOF_PTR +	\
-		    3)) - bits);					\
-		child = (void**)node[subkey];				\
-		if (child == NULL) {					\
-			RTREE_UNLOCK(&rtree->mutex);			\
-			return (0);					\
-		}							\
-	}								\
-									\
-	/*								\
-	 * node is a leaf, so it contains values rather than node	\
-	 * pointers.							\
-	 */								\
-	bits = rtree->level2bits[i];					\
-	subkey = (key << lshift) >> ((ZU(1) << (LG_SIZEOF_PTR+3)) -	\
-	    bits);							\
-	{								\
-		uint8_t *leaf = (uint8_t *)node;			\
-		ret = leaf[subkey];					\
-	}								\
-	RTREE_UNLOCK(&rtree->mutex);					\
-									\
-	RTREE_GET_VALIDATE						\
-	return (ret);							\
+JEMALLOC_INLINE unsigned
+rtree_start_level(rtree_t *rtree, uintptr_t key)
+{
+	unsigned start_level;
+
+	if (unlikely(key == 0))
+		return (rtree->height - 1);
+
+	start_level = rtree->start_level[lg_floor(key) >>
+	    LG_RTREE_BITS_PER_LEVEL];
+	assert(start_level < rtree->height);
+	return (start_level);
 }
 
-#ifdef JEMALLOC_DEBUG
-#  define RTREE_LOCK(l)		malloc_mutex_lock(l)
-#  define RTREE_UNLOCK(l)	malloc_mutex_unlock(l)
-#  define RTREE_GET_VALIDATE
-RTREE_GET_GENERATE(rtree_get_locked)
-#  undef RTREE_LOCK
-#  undef RTREE_UNLOCK
-#  undef RTREE_GET_VALIDATE
-#endif
+JEMALLOC_INLINE uintptr_t
+rtree_subkey(rtree_t *rtree, uintptr_t key, unsigned level)
+{
 
-#define	RTREE_LOCK(l)
-#define	RTREE_UNLOCK(l)
-#ifdef JEMALLOC_DEBUG
-   
-
-
-
-
-
-
-
-#  define RTREE_GET_VALIDATE						\
-	assert(rtree_get_locked(rtree, key) == ret);
-#else
-#  define RTREE_GET_VALIDATE
-#endif
-RTREE_GET_GENERATE(rtree_get)
-#undef RTREE_LOCK
-#undef RTREE_UNLOCK
-#undef RTREE_GET_VALIDATE
+	return ((key >> ((ZU(1) << (LG_SIZEOF_PTR+3)) -
+	    rtree->levels[level].cumbits)) & ((ZU(1) <<
+	    rtree->levels[level].bits) - 1));
+}
 
 JEMALLOC_INLINE bool
-rtree_set(rtree_t *rtree, uintptr_t key, uint8_t val)
+rtree_node_valid(rtree_node_elm_t *node)
 {
-	uintptr_t subkey;
-	unsigned i, lshift, height, bits;
-	void **node, **child;
 
-	malloc_mutex_lock(&rtree->mutex);
-	for (i = lshift = 0, height = rtree->height, node = rtree->root;
-	    i < height - 1;
-	    i++, lshift += bits, node = child) {
-		bits = rtree->level2bits[i];
-		subkey = (key << lshift) >> ((ZU(1) << (LG_SIZEOF_PTR+3)) -
-		    bits);
-		child = (void**)node[subkey];
-		if (child == NULL) {
-			size_t size = ((i + 1 < height - 1) ? sizeof(void *)
-			    : (sizeof(uint8_t))) << rtree->level2bits[i+1];
-			child = (void**)rtree->alloc(size);
-			if (child == NULL) {
-				malloc_mutex_unlock(&rtree->mutex);
-				return (true);
-			}
-			memset(child, 0, size);
-			node[subkey] = child;
-		}
-	}
+	return ((uintptr_t)node > (uintptr_t)RTREE_NODE_INITIALIZING);
+}
+
+JEMALLOC_INLINE rtree_node_elm_t *
+rtree_child_tryread(rtree_node_elm_t *elm)
+{
+	rtree_node_elm_t *child;
 
 	
-	bits = rtree->level2bits[i];
-	subkey = (key << lshift) >> ((ZU(1) << (LG_SIZEOF_PTR+3)) - bits);
-	{
-		uint8_t *leaf = (uint8_t *)node;
-		leaf[subkey] = val;
-	}
-	malloc_mutex_unlock(&rtree->mutex);
+	child = elm->child;
+	if (!rtree_node_valid(child))
+		child = atomic_read_p(&elm->pun);
+	return (child);
+}
 
-	return (false);
+JEMALLOC_INLINE rtree_node_elm_t *
+rtree_child_read(rtree_t *rtree, rtree_node_elm_t *elm, unsigned level)
+{
+	rtree_node_elm_t *child;
+
+	child = rtree_child_tryread(elm);
+	if (unlikely(!rtree_node_valid(child)))
+		child = rtree_child_read_hard(rtree, elm, level);
+	return (child);
+}
+
+JEMALLOC_INLINE extent_node_t *
+rtree_val_read(rtree_t *rtree, rtree_node_elm_t *elm, bool dependent)
+{
+
+	if (dependent) {
+		
+
+
+
+
+
+		return (elm->val);
+	} else {
+		
+
+
+
+
+		return (atomic_read_p(&elm->pun));
+	}
+}
+
+JEMALLOC_INLINE void
+rtree_val_write(rtree_t *rtree, rtree_node_elm_t *elm, const extent_node_t *val)
+{
+
+	atomic_write_p(&elm->pun, val);
+}
+
+JEMALLOC_INLINE rtree_node_elm_t *
+rtree_subtree_tryread(rtree_t *rtree, unsigned level)
+{
+	rtree_node_elm_t *subtree;
+
+	
+	subtree = rtree->levels[level].subtree;
+	if (!rtree_node_valid(subtree))
+		subtree = atomic_read_p(&rtree->levels[level].subtree_pun);
+	return (subtree);
+}
+
+JEMALLOC_INLINE rtree_node_elm_t *
+rtree_subtree_read(rtree_t *rtree, unsigned level)
+{
+	rtree_node_elm_t *subtree;
+
+	subtree = rtree_subtree_tryread(rtree, level);
+	if (unlikely(!rtree_node_valid(subtree)))
+		subtree = rtree_subtree_read_hard(rtree, level);
+	return (subtree);
+}
+
+JEMALLOC_INLINE extent_node_t *
+rtree_get(rtree_t *rtree, uintptr_t key, bool dependent)
+{
+	uintptr_t subkey;
+	unsigned i, start_level;
+	rtree_node_elm_t *node, *child;
+
+	start_level = rtree_start_level(rtree, key);
+
+	for (i = start_level, node = rtree_subtree_tryread(rtree, start_level);
+	    ; i++, node = child) {
+		if (!dependent && unlikely(!rtree_node_valid(node)))
+			return (NULL);
+		subkey = rtree_subkey(rtree, key, i);
+		if (i == rtree->height - 1) {
+			
+
+
+
+			return (rtree_val_read(rtree, &node[subkey],
+			    dependent));
+		}
+		assert(i < rtree->height - 1);
+		child = rtree_child_tryread(&node[subkey]);
+	}
+	not_reached();
+}
+
+JEMALLOC_INLINE bool
+rtree_set(rtree_t *rtree, uintptr_t key, const extent_node_t *val)
+{
+	uintptr_t subkey;
+	unsigned i, start_level;
+	rtree_node_elm_t *node, *child;
+
+	start_level = rtree_start_level(rtree, key);
+
+	node = rtree_subtree_read(rtree, start_level);
+	if (node == NULL)
+		return (true);
+	for (i = start_level; ; i++, node = child) {
+		subkey = rtree_subkey(rtree, key, i);
+		if (i == rtree->height - 1) {
+			
+
+
+
+			rtree_val_write(rtree, &node[subkey], val);
+			return (false);
+		}
+		assert(i + 1 < rtree->height);
+		child = rtree_child_read(rtree, &node[subkey], i);
+		if (child == NULL)
+			return (true);
+	}
+	not_reached();
 }
 #endif
 

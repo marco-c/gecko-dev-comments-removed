@@ -102,6 +102,21 @@ struct prof_tctx_s {
 	prof_gctx_t		*gctx;
 
 	
+
+
+
+
+
+
+
+
+
+
+
+
+	uint64_t		tctx_uid;
+
+	
 	rb_node(prof_tctx_t)	tctx_link;
 
 	
@@ -182,6 +197,13 @@ struct prof_tdata_s {
 
 
 
+	uint64_t		tctx_uid_next;
+
+	
+
+
+
+
 
 	ckh_t			bt2tctx;
 
@@ -240,6 +262,9 @@ extern char	opt_prof_prefix[
 extern bool	prof_active;
 
 
+extern bool	prof_gdump_val;
+
+
 
 
 
@@ -285,6 +310,8 @@ bool	prof_thread_active_get(void);
 bool	prof_thread_active_set(bool active);
 bool	prof_thread_active_init_get(void);
 bool	prof_thread_active_init_set(bool active_init);
+bool	prof_gdump_get(void);
+bool	prof_gdump_set(bool active);
 void	prof_boot0(void);
 void	prof_boot1(void);
 bool	prof_boot2(void);
@@ -299,6 +326,7 @@ void	prof_sample_threshold_update(prof_tdata_t *tdata);
 
 #ifndef JEMALLOC_ENABLE_INLINE
 bool	prof_active_get_unlocked(void);
+bool	prof_gdump_get_unlocked(void);
 prof_tdata_t	*prof_tdata_get(tsd_t *tsd, bool create);
 bool	prof_sample_accum_update(tsd_t *tsd, size_t usize, bool commit,
     prof_tdata_t **tdata_out);
@@ -325,6 +353,18 @@ prof_active_get_unlocked(void)
 
 
 	return (prof_active);
+}
+
+JEMALLOC_ALWAYS_INLINE bool
+prof_gdump_get_unlocked(void)
+{
+
+	
+
+
+
+
+	return (prof_gdump_val);
 }
 
 JEMALLOC_ALWAYS_INLINE prof_tdata_t *
@@ -354,34 +394,21 @@ prof_tdata_get(tsd_t *tsd, bool create)
 JEMALLOC_ALWAYS_INLINE prof_tctx_t *
 prof_tctx_get(const void *ptr)
 {
-	prof_tctx_t *ret;
-	arena_chunk_t *chunk;
 
 	cassert(config_prof);
 	assert(ptr != NULL);
 
-	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
-	if (likely(chunk != ptr))
-		ret = arena_prof_tctx_get(ptr);
-	else
-		ret = huge_prof_tctx_get(ptr);
-
-	return (ret);
+	return (arena_prof_tctx_get(ptr));
 }
 
 JEMALLOC_ALWAYS_INLINE void
 prof_tctx_set(const void *ptr, prof_tctx_t *tctx)
 {
-	arena_chunk_t *chunk;
 
 	cassert(config_prof);
 	assert(ptr != NULL);
 
-	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
-	if (likely(chunk != ptr))
-		arena_prof_tctx_set(ptr, tctx);
-	else
-		huge_prof_tctx_set(ptr, tctx);
+	arena_prof_tctx_set(ptr, tctx);
 }
 
 JEMALLOC_ALWAYS_INLINE bool

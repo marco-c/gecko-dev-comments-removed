@@ -26,22 +26,22 @@
 
 
 #define	prng32(r, lg_range, state, a, c) do {				\
-	assert(lg_range > 0);						\
-	assert(lg_range <= 32);						\
+	assert((lg_range) > 0);						\
+	assert((lg_range) <= 32);					\
 									\
 	r = (state * (a)) + (c);					\
 	state = r;							\
-	r >>= (32 - lg_range);						\
+	r >>= (32 - (lg_range));					\
 } while (false)
 
 
 #define	prng64(r, lg_range, state, a, c) do {				\
-	assert(lg_range > 0);						\
-	assert(lg_range <= 64);						\
+	assert((lg_range) > 0);						\
+	assert((lg_range) <= 64);					\
 									\
 	r = (state * (a)) + (c);					\
 	state = r;							\
-	r >>= (64 - lg_range);						\
+	r >>= (64 - (lg_range));					\
 } while (false)
 
 #endif 
