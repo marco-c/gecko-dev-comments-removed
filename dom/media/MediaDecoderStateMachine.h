@@ -525,6 +525,9 @@ protected:
   void LogicallySeekingChanged();
 
   
+  void SameOriginMediaChanged();
+
+  
   
   void StopPlayback();
 
