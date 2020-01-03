@@ -1412,7 +1412,7 @@ nsLocalFile::AppendInternal(const nsAFlatString& aNode,
 
   
   if (aNode.First() == L'\\' ||               
-      aNode.FindChar(L'/') != kNotFound ||    
+      aNode.Contains(L'/') ||                 
       aNode.EqualsASCII("..")) {              
     return NS_ERROR_FILE_UNRECOGNIZED_PATH;
   }
@@ -1441,7 +1441,7 @@ nsLocalFile::AppendInternal(const nsAFlatString& aNode,
     }
   }
   
-  else if (aNode.FindChar(L'\\') != kNotFound) {
+  else if (aNode.Contains(L'\\')) {
     return NS_ERROR_FILE_UNRECOGNIZED_PATH;
   }
 

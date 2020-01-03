@@ -258,7 +258,7 @@ AppendTagWithValue(nsACString & aTarget, char const aTag, nsCSubstring const & a
   
   
   if (!aValue.IsEmpty()) {
-    if (aValue.FindChar(',') == kNotFound) {
+    if (!aValue.Contains(',')) {
       
       aTarget.Append(aValue);
     } else {

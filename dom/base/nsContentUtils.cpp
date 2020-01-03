@@ -1729,7 +1729,7 @@ nsContentUtils::GetOfflineAppManifest(nsIDocument *aDocument, nsIURI **aURI)
 
   
   if (manifestSpec.IsEmpty() ||
-      manifestSpec.FindChar('#') != kNotFound) {
+      manifestSpec.Contains('#')) {
     return;
   }
 

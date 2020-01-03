@@ -542,7 +542,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
     
     
 
-    if (baseUri.FindChar('"') == kNotFound)
+    if (!baseUri.Contains('"'))
     {
         
         

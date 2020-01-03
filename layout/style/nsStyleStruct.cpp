@@ -152,7 +152,7 @@ nsStyleFont::Init(nsPresContext* aPresContext)
   
   
   if (!language.IsEmpty() &&
-      language.FindChar(char16_t(',')) == kNotFound) {
+      !language.Contains(char16_t(','))) {
     mLanguage = do_GetAtom(language);
     
     

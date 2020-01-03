@@ -665,7 +665,7 @@ nsDefaultURIFixup::ConvertFileToStringURI(const nsACString& aIn,
 
 #if defined(XP_WIN)
   
-  if (kNotFound != aIn.FindChar('\\') ||
+  if (aIn.Contains('\\') ||
       (aIn.Length() == 2 && (aIn.Last() == ':' || aIn.Last() == '|'))) {
     attemptFixup = true;
   }

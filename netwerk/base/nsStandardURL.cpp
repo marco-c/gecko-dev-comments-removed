@@ -574,9 +574,9 @@ nsStandardURL::BuildNormalizedSpec(const char *spec)
     if (mHost.mLen > 0) {
         const nsCSubstring& tempHost =
             Substring(spec + mHost.mPos, spec + mHost.mPos + mHost.mLen);
-        if (tempHost.FindChar('\0') != kNotFound)
+        if (tempHost.Contains('\0'))
             return NS_ERROR_MALFORMED_URI;  
-        if (tempHost.FindChar(' ') != kNotFound)
+        if (tempHost.Contains(' '))
             return NS_ERROR_MALFORMED_URI;  
         if ((useEncHost = NormalizeIDN(tempHost, encHost)))
             approxLen += encHost.Length();
@@ -1167,7 +1167,7 @@ nsStandardURL::SetSpec(const nsACString &input)
 
     
     
-    if (input.FindChar('\0') != kNotFound) {
+    if (input.Contains('\0')) {
         return NS_ERROR_MALFORMED_URI;
     }
 
@@ -2453,7 +2453,7 @@ nsStandardURL::SetRef(const nsACString &input)
 
     LOG(("nsStandardURL::SetRef [ref=%s]\n", ref));
 
-    if (input.FindChar('\0') != kNotFound) {
+    if (input.Contains('\0')) {
         return NS_ERROR_MALFORMED_URI;
     }
 
