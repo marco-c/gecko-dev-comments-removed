@@ -519,6 +519,7 @@ public:
                   nsStyleChangeList* aChangeList,
                   nsChangeHint aHintsHandledByAncestors,
                   RestyleTracker& aRestyleTracker,
+                  nsTArray<nsCSSSelector*>& aSelectorsForDescendants,
                   TreeMatchContext& aTreeMatchContext,
                   nsTArray<nsIContent*>& aVisibleKidsOfHiddenElement,
                   nsTArray<ContextToClear>& aContextsToClear,
@@ -549,6 +550,7 @@ public:
                   nsStyleChangeList* aChangeList,
                   nsChangeHint aHintsHandledByAncestors,
                   RestyleTracker& aRestyleTracker,
+                  nsTArray<nsCSSSelector*>& aSelectorsForDescendants,
                   TreeMatchContext& aTreeMatchContext,
                   nsTArray<nsIContent*>& aVisibleKidsOfHiddenElement,
                   nsTArray<ContextToClear>& aContextsToClear,
@@ -641,6 +643,21 @@ private:
   
 
 
+
+  bool SelectorMatchesForRestyle(Element* aElement);
+
+  
+
+
+
+
+
+
+  bool MustRestyleSelf(nsRestyleHint aRestyleHint, Element* aElement);
+
+  
+
+
   void AddLayerChangesForAnimation();
 
   
@@ -698,6 +715,8 @@ private:
     eNotifyHidden
   };
 
+  void AddPendingRestylesForDescendantsMatchingSelectors(Element* aElement);
+
 #ifdef RESTYLE_LOGGING
   int32_t& LoggingDepth() { return mLoggingDepth; }
 #endif
@@ -725,6 +744,7 @@ private:
   nsChangeHint mParentFrameHintsNotHandledForDescendants;
   nsChangeHint mHintsNotHandledForDescendants;
   RestyleTracker& mRestyleTracker;
+  nsTArray<nsCSSSelector*>& mSelectorsForDescendants;
   TreeMatchContext& mTreeMatchContext;
   nsIFrame* mResolvedChild; 
   
