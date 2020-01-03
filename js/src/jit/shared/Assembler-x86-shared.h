@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_shared_Assembler_x86_shared_h
 #define jit_shared_Assembler_x86_shared_h
@@ -127,8 +127,8 @@ class Operand
 class CPUInfo
 {
   public:
-    // As the SSE's were introduced in order, the presence of a later SSE implies
-    // the presence of an earlier SSE. For example, SSE4_2 support implies SSE2 support.
+    
+    
     enum SSEVersion {
         UnknownSSE = 0,
         NoSSE = 1,
@@ -237,16 +237,16 @@ class AssemblerX86Shared : public AssemblerShared
         NoParity = X86Assembler::ConditionNP
     };
 
-    // If this bit is set, the ucomisd operands have to be inverted.
+    
     static const int DoubleConditionBitInvert = 0x10;
 
-    // Bit set when a DoubleCondition does not map to a single x86 condition.
-    // The macro assembler has to special-case these conditions.
+    
+    
     static const int DoubleConditionBitSpecial = 0x20;
     static const int DoubleConditionBits = DoubleConditionBitInvert | DoubleConditionBitSpecial;
 
     enum DoubleCondition {
-        // These conditions will only evaluate to true if the comparison is ordered - i.e. neither operand is NaN.
+        
         DoubleOrdered = NoParity,
         DoubleEqual = Equal | DoubleConditionBitSpecial,
         DoubleNotEqual = NotEqual,
@@ -254,7 +254,7 @@ class AssemblerX86Shared : public AssemblerShared
         DoubleGreaterThanOrEqual = AboveOrEqual,
         DoubleLessThan = Above | DoubleConditionBitInvert,
         DoubleLessThanOrEqual = AboveOrEqual | DoubleConditionBitInvert,
-        // If either operand is NaN, these conditions always evaluate to true.
+        
         DoubleUnordered = Parity,
         DoubleEqualOrUnordered = Equal,
         DoubleNotEqualOrUnordered = NotEqual | DoubleConditionBitSpecial,
@@ -270,11 +270,11 @@ class AssemblerX86Shared : public AssemblerShared
         NaN_IsFalse
     };
 
-    // If the primary condition returned by ConditionFromDoubleCondition doesn't
-    // handle NaNs properly, return NaN_IsFalse if the comparison should be
-    // overridden to return false on NaN, NaN_IsTrue if it should be overridden
-    // to return true on NaN, or NaN_HandledByCond if no secondary check is
-    // needed.
+    
+    
+    
+    
+    
     static inline NaNCond NaNCondFromDoubleCondition(DoubleCondition cond) {
         switch (cond) {
           case DoubleOrdered:
@@ -300,23 +300,23 @@ class AssemblerX86Shared : public AssemblerShared
     }
 
     static void StaticAsserts() {
-        // DoubleConditionBits should not interfere with x86 condition codes.
+        
         JS_STATIC_ASSERT(!((Equal | NotEqual | Above | AboveOrEqual | Below |
                             BelowOrEqual | Parity | NoParity) & DoubleConditionBits));
     }
 
     static Condition InvertCondition(Condition cond);
 
-    // Return the primary condition to test. Some primary conditions may not
-    // handle NaNs properly and may therefore require a secondary condition.
-    // Use NaNCondFromDoubleCondition to determine what else is needed.
+    
+    
+    
     static inline Condition ConditionFromDoubleCondition(DoubleCondition cond) {
         return static_cast<Condition>(cond & ~DoubleConditionBits);
     }
 
     static void TraceDataRelocations(JSTracer *trc, JitCode *code, CompactBufferReader &reader);
 
-    // MacroAssemblers hold onto gcthings, so they are traced by the GC.
+    
     void trace(JSTracer *trc);
 
     bool oom() const {
@@ -350,11 +350,11 @@ class AssemblerX86Shared : public AssemblerShared
         return codeLabels_[i];
     }
 
-    // Size of the instruction stream, in bytes.
+    
     size_t size() const {
         return masm.size();
     }
-    // Size of the jump relocation table, in bytes.
+    
     size_t jumpRelocationTableBytes() const {
         return jumpRelocations_.length();
     }
@@ -364,7 +364,7 @@ class AssemblerX86Shared : public AssemblerShared
     size_t preBarrierTableBytes() const {
         return preBarriers_.length();
     }
-    // Size of the data table, in bytes.
+    
     size_t bytesNeeded() const {
         return size() +
                jumpRelocationTableBytes() +
@@ -378,8 +378,8 @@ class AssemblerX86Shared : public AssemblerShared
     }
     void writeCodePointer(AbsoluteLabel *label) {
         MOZ_ASSERT(!label->bound());
-        // Thread the patch list through the unpatched address word in the
-        // instruction stream.
+        
+        
         masm.jumpTablePointer(label->prev());
         label->setPrev(masm.size());
     }
@@ -461,8 +461,8 @@ class AssemblerX86Shared : public AssemblerShared
         masm.xchgl_rr(src.code(), dest.code());
     }
 
-    // Eventually movapd should be overloaded to support loads and
-    // stores too.
+    
+    
     void movapd(FloatRegister src, FloatRegister dest) {
         MOZ_ASSERT(HasSSE2());
         masm.movapd_rr(src.code(), dest.code());
@@ -525,9 +525,9 @@ class AssemblerX86Shared : public AssemblerShared
         }
     }
 
-    // movsd is only provided in load/store form since the
-    // register-to-register form has different semantics (it doesn't clobber
-    // the whole output register) and isn't needed currently.
+    
+    
+    
     void movsd(const Address &src, FloatRegister dest) {
         masm.movsd_mr(src.offset, src.base.code(), dest.code());
     }
@@ -540,10 +540,10 @@ class AssemblerX86Shared : public AssemblerShared
     void movsd(FloatRegister src, const BaseIndex &dest) {
         masm.movsd_rm(src.code(), dest.offset, dest.base.code(), dest.index.code(), dest.scale);
     }
-    // Although movss is not only provided in load/store form (for the same
-    // reasons as movsd above), the register to register form should be only
-    // used in contexts where we care about not clearing the higher lanes of
-    // the FloatRegister.
+    
+    
+    
+    
     void movss(const Address &src, FloatRegister dest) {
         masm.movss_mr(src.offset, src.base.code(), dest.code());
     }
@@ -742,10 +742,10 @@ class AssemblerX86Shared : public AssemblerShared
     JmpSrc jSrc(Condition cond, Label *label) {
         JmpSrc j = masm.jCC(static_cast<X86Assembler::Condition>(cond));
         if (label->bound()) {
-            // The jump can be immediately patched to the correct destination.
+            
             masm.linkJump(j, JmpDst(label->offset()));
         } else {
-            // Thread the jump list through the unpatched jump targets.
+            
             JmpSrc prev = JmpSrc(label->use(j.offset()));
             masm.setNextJump(j, prev);
         }
@@ -754,24 +754,24 @@ class AssemblerX86Shared : public AssemblerShared
     JmpSrc jmpSrc(Label *label) {
         JmpSrc j = masm.jmp();
         if (label->bound()) {
-            // The jump can be immediately patched to the correct destination.
+            
             masm.linkJump(j, JmpDst(label->offset()));
         } else {
-            // Thread the jump list through the unpatched jump targets.
+            
             JmpSrc prev = JmpSrc(label->use(j.offset()));
             masm.setNextJump(j, prev);
         }
         return j;
     }
 
-    // Comparison of EAX against the address given by a Label.
+    
     JmpSrc cmpSrc(Label *label) {
         JmpSrc j = masm.cmp_eax();
         if (label->bound()) {
-            // The jump can be immediately patched to the correct destination.
+            
             masm.linkJump(j, JmpDst(label->offset()));
         } else {
-            // Thread the jump list through the unpatched jump targets.
+            
             JmpSrc prev = JmpSrc(label->use(j.offset()));
             masm.setNextJump(j, prev);
         }
@@ -781,7 +781,7 @@ class AssemblerX86Shared : public AssemblerShared
     JmpSrc jSrc(Condition cond, RepatchLabel *label) {
         JmpSrc j = masm.jCC(static_cast<X86Assembler::Condition>(cond));
         if (label->bound()) {
-            // The jump can be immediately patched to the correct destination.
+            
             masm.linkJump(j, JmpDst(label->offset()));
         } else {
             label->use(j.offset());
@@ -791,10 +791,10 @@ class AssemblerX86Shared : public AssemblerShared
     JmpSrc jmpSrc(RepatchLabel *label) {
         JmpSrc j = masm.jmp();
         if (label->bound()) {
-            // The jump can be immediately patched to the correct destination.
+            
             masm.linkJump(j, JmpDst(label->offset()));
         } else {
-            // Thread the jump list through the unpatched jump targets.
+            
             label->use(j.offset());
         }
         return j;
@@ -850,7 +850,7 @@ class AssemblerX86Shared : public AssemblerShared
         return masm.label().offset();
     }
 
-    // Re-routes pending jumps to a new label.
+    
     void retarget(Label *label, Label *target) {
         if (label->used()) {
             bool more;
@@ -860,10 +860,10 @@ class AssemblerX86Shared : public AssemblerShared
                 more = masm.nextJump(jmp, &next);
 
                 if (target->bound()) {
-                    // The jump can be immediately patched to the correct destination.
+                    
                     masm.linkJump(jmp, JmpDst(target->offset()));
                 } else {
-                    // Thread the jump list through the unpatched jump targets.
+                    
                     JmpSrc prev = JmpSrc(target->use(jmp.offset()));
                     masm.setNextJump(jmp, prev);
                 }
@@ -886,7 +886,7 @@ class AssemblerX86Shared : public AssemblerShared
         label->bind();
     }
 
-    // See Bind and X86Assembler::setPointer.
+    
     size_t labelOffsetToPatchOffset(size_t offset) {
         return offset - sizeof(void*);
     }
@@ -895,7 +895,7 @@ class AssemblerX86Shared : public AssemblerShared
         masm.ret();
     }
     void retn(Imm32 n) {
-        // Remove the size of the return address which is included in the frame.
+        
         masm.ret(n.value - sizeof(void *));
     }
     void call(Label *label) {
@@ -935,9 +935,9 @@ class AssemblerX86Shared : public AssemblerShared
     static bool SupportsFloatingPoint() { return CPUInfo::IsSSE2Present(); }
     static bool SupportsSimd() { return CPUInfo::IsSSE2Present(); }
 
-    // The below cmpl methods switch the lhs and rhs when it invokes the
-    // macroassembler to conform with intel standard.  When calling this
-    // function put the left operand on the left as you would expect.
+    
+    
+    
     void cmpl(Register lhs, Register rhs) {
         masm.cmpl_rr(rhs.code(), lhs.code());
     }
@@ -1399,7 +1399,7 @@ class AssemblerX86Shared : public AssemblerShared
     }
 #endif
 
-    // Zero-extend byte to 32-bit integer.
+    
     void movzbl(Register src, Register dest) {
         masm.movzbl_rr(src.code(), dest.code());
     }
@@ -1595,6 +1595,54 @@ class AssemblerX86Shared : public AssemblerShared
             break;
           case Operand::MEM_ADDRESS32:
             masm.cmpps_mr(src.address(), dest.code(), order);
+            break;
+          default:
+            MOZ_CRASH("unexpected operand kind");
+        }
+    }
+    void rcpps(const Operand &src, FloatRegister dest) {
+        MOZ_ASSERT(HasSSE2());
+        switch (src.kind()) {
+          case Operand::FPREG:
+            masm.rcpps_rr(src.fpu(), dest.code());
+            break;
+          case Operand::MEM_REG_DISP:
+            masm.rcpps_mr(src.disp(), src.base(), dest.code());
+            break;
+          case Operand::MEM_ADDRESS32:
+            masm.rcpps_mr(src.address(), dest.code());
+            break;
+          default:
+            MOZ_CRASH("unexpected operand kind");
+        }
+    }
+    void sqrtps(const Operand &src, FloatRegister dest) {
+        MOZ_ASSERT(HasSSE2());
+        switch (src.kind()) {
+          case Operand::FPREG:
+            masm.sqrtps_rr(src.fpu(), dest.code());
+            break;
+          case Operand::MEM_REG_DISP:
+            masm.sqrtps_mr(src.disp(), src.base(), dest.code());
+            break;
+          case Operand::MEM_ADDRESS32:
+            masm.sqrtps_mr(src.address(), dest.code());
+            break;
+          default:
+            MOZ_CRASH("unexpected operand kind");
+        }
+    }
+    void rsqrtps(const Operand &src, FloatRegister dest) {
+        MOZ_ASSERT(HasSSE2());
+        switch (src.kind()) {
+          case Operand::FPREG:
+            masm.rsqrtps_rr(src.fpu(), dest.code());
+            break;
+          case Operand::MEM_REG_DISP:
+            masm.rsqrtps_mr(src.disp(), src.base(), dest.code());
+            break;
+          case Operand::MEM_ADDRESS32:
+            masm.rsqrtps_mr(src.address(), dest.code());
             break;
           default:
             MOZ_CRASH("unexpected operand kind");
@@ -2000,8 +2048,8 @@ class AssemblerX86Shared : public AssemblerShared
     }
     unsigned insertpsMask(SimdLane sourceLane, SimdLane destLane, unsigned zeroMask = 0)
     {
-        // Note that the sourceLane bits are ignored in the case of a source
-        // memory operand, and the source is the given 32-bits memory location.
+        
+        
         MOZ_ASSERT(zeroMask < 16);
         unsigned ret = zeroMask ;
         ret |= unsigned(destLane) << 4;
@@ -2093,7 +2141,7 @@ class AssemblerX86Shared : public AssemblerShared
         }
     }
 
-    // Defined for compatibility with ARM's assembler
+    
     uint32_t actualOffset(uint32_t x) {
         return x;
     }
@@ -2105,7 +2153,7 @@ class AssemblerX86Shared : public AssemblerShared
     void flushBuffer() {
     }
 
-    // Patching.
+    
 
     static size_t PatchWrite_NearCallSize() {
         return 5;
@@ -2114,8 +2162,8 @@ class AssemblerX86Shared : public AssemblerShared
         uintptr_t *ptr = ((uintptr_t *) instPtr) - 1;
         return *ptr;
     }
-    // Write a relative call at the start location |dataLabel|.
-    // Note that this DOES NOT patch data that comes before |label|.
+    
+    
     static void PatchWrite_NearCall(CodeLocationLabel startLabel, CodeLocationLabel target) {
         uint8_t *start = startLabel.raw();
         *start = 0xE8;
@@ -2130,7 +2178,7 @@ class AssemblerX86Shared : public AssemblerShared
 
     static void PatchDataWithValueCheck(CodeLocationLabel data, PatchedImmPtr newData,
                                         PatchedImmPtr expectedData) {
-        // The pointer given is a pointer to *after* the data.
+        
         uintptr_t *ptr = ((uintptr_t *) data.raw()) - 1;
         MOZ_ASSERT(*ptr == (uintptr_t)expectedData.value);
         *ptr = (uintptr_t)newData.value;
@@ -2150,7 +2198,7 @@ class AssemblerX86Shared : public AssemblerShared
         MOZ_CRASH("nextInstruction NYI on x86");
     }
 
-    // Toggle a jmp or cmp emitted by toggledJump().
+    
     static void ToggleToJmp(CodeLocationLabel inst) {
         uint8_t *ptr = (uint8_t *)inst.raw();
         MOZ_ASSERT(*ptr == 0x3D);
@@ -2163,13 +2211,13 @@ class AssemblerX86Shared : public AssemblerShared
     }
     static void ToggleCall(CodeLocationLabel inst, bool enabled) {
         uint8_t *ptr = (uint8_t *)inst.raw();
-        MOZ_ASSERT(*ptr == 0x3D || // CMP
-                   *ptr == 0xE8);  // CALL
+        MOZ_ASSERT(*ptr == 0x3D || 
+                   *ptr == 0xE8);  
         *ptr = enabled ? 0xE8 : 0x3D;
     }
 };
 
-} // namespace jit
-} // namespace js
+} 
+} 
 
-#endif /* jit_shared_Assembler_x86_shared_h */
+#endif 
