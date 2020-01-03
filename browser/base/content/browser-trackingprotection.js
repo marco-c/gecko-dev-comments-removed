@@ -53,9 +53,17 @@ let TrackingProtection = {
     return Services.telemetry.getHistogramById("TRACKING_PROTECTION_EVENTS");
   },
 
-  onSecurityChange(state) {
+  onSecurityChange(state, isSimulated) {
     if (!this.enabled) {
       return;
+    }
+
+    
+    
+    if (isSimulated) {
+      this.icon.removeAttribute("animate");
+    } else {
+      this.icon.setAttribute("animate", "true");
     }
 
     let {

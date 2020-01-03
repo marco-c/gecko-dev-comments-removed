@@ -4009,7 +4009,7 @@ var XULBrowserWindow = {
   init: function () {
     
     var securityUI = gBrowser.securityUI;
-    this.onSecurityChange(null, null, securityUI.state);
+    this.onSecurityChange(null, null, securityUI.state, true);
   },
 
   setJSStatus: function () {
@@ -4357,7 +4357,13 @@ var XULBrowserWindow = {
   _state: null,
   _lastLocation: null,
 
-  onSecurityChange: function (aWebProgress, aRequest, aState) {
+  
+  
+  
+  
+  
+  
+  onSecurityChange: function (aWebProgress, aRequest, aState, aIsSimulated) {
     
     
     let uri = gBrowser.currentURI;
@@ -4367,6 +4373,10 @@ var XULBrowserWindow = {
       return;
     this._state = aState;
     this._lastLocation = spec;
+
+    if (typeof(aIsSimulated) != "boolean" && typeof(aIsSimulated) != "undefined") {
+      throw "onSecurityChange: aIsSimulated receieved an unexpected type";
+    }
 
     
     
@@ -4403,7 +4413,7 @@ var XULBrowserWindow = {
       uri = Services.uriFixup.createExposableURI(uri);
     } catch (e) {}
     gIdentityHandler.checkIdentity(this._state, uri);
-    TrackingProtection.onSecurityChange(this._state);
+    TrackingProtection.onSecurityChange(this._state, aIsSimulated);
   },
 
   
