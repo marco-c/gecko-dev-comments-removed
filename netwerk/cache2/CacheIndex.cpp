@@ -1488,62 +1488,56 @@ CacheIndex::ProcessPendingOperations()
 
   AssertOwnsLock();
 
-  mPendingUpdates.EnumerateEntries(&CacheIndex::UpdateEntryInIndex, this);
+  for (auto iter = mPendingUpdates.Iter(); !iter.Done(); iter.Next()) {
+    CacheIndexEntryUpdate* update = iter.Get();
+
+    LOG(("CacheIndex::ProcessPendingOperations() [hash=%08x%08x%08x%08x%08x]",
+         LOGSHA1(update->Hash())));
+
+    MOZ_ASSERT(update->IsFresh());
+
+    CacheIndexEntry* entry = mIndex.GetEntry(*update->Hash());
+
+    {
+      CacheIndexEntryAutoManage emng(update->Hash(), this);
+      emng.DoNotSearchInUpdates();
+
+      if (update->IsRemoved()) {
+        if (entry) {
+          if (entry->IsRemoved()) {
+            MOZ_ASSERT(entry->IsFresh());
+            MOZ_ASSERT(entry->IsDirty());
+          } else if (!entry->IsDirty() && entry->IsFileEmpty()) {
+            
+            
+            
+            mIndex.RemoveEntry(*update->Hash());
+            entry = nullptr;
+          } else {
+            entry->MarkRemoved();
+            entry->MarkDirty();
+            entry->MarkFresh();
+          }
+        }
+      } else if (entry) {
+        
+        
+        
+        update->ApplyUpdate(entry);
+      } else {
+        
+        
+        entry = mIndex.PutEntry(*update->Hash());
+        *entry = *update;
+      }
+    }
+
+    iter.Remove();
+  }
 
   MOZ_ASSERT(mPendingUpdates.Count() == 0);
 
   EnsureCorrectStats();
-}
-
-
-PLDHashOperator
-CacheIndex::UpdateEntryInIndex(CacheIndexEntryUpdate *aEntry, void* aClosure)
-{
-  CacheIndex *index = static_cast<CacheIndex *>(aClosure);
-
-  LOG(("CacheFile::UpdateEntryInIndex() [hash=%08x%08x%08x%08x%08x]",
-       LOGSHA1(aEntry->Hash())));
-
-  MOZ_ASSERT(aEntry->IsFresh());
-
-  CacheIndexEntry *entry = index->mIndex.GetEntry(*aEntry->Hash());
-
-  CacheIndexEntryAutoManage emng(aEntry->Hash(), index);
-  emng.DoNotSearchInUpdates();
-
-  if (aEntry->IsRemoved()) {
-    if (entry) {
-      if (entry->IsRemoved()) {
-        MOZ_ASSERT(entry->IsFresh());
-        MOZ_ASSERT(entry->IsDirty());
-      } else if (!entry->IsDirty() && entry->IsFileEmpty()) {
-        
-        
-        
-        index->mIndex.RemoveEntry(*aEntry->Hash());
-        entry = nullptr;
-      } else {
-        entry->MarkRemoved();
-        entry->MarkDirty();
-        entry->MarkFresh();
-      }
-    }
-
-    return PL_DHASH_REMOVE;
-  }
-
-  if (entry) {
-    
-    
-    aEntry->ApplyUpdate(entry);
-  } else {
-    
-    
-    entry = index->mIndex.PutEntry(*aEntry->Hash());
-    *entry = *aEntry;
-  }
-
-  return PL_DHASH_REMOVE;
 }
 
 bool
@@ -1969,7 +1963,13 @@ CacheIndex::WriteLogToDisk()
   NS_ENSURE_SUCCESS(rv, rv);
 
   WriteLogHelper wlh(fd);
-  mIndex.EnumerateEntries(&CacheIndex::WriteEntryToLog, &wlh);
+  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
+    CacheIndexEntry* entry = iter.Get();
+    if (entry->IsRemoved() || entry->IsDirty()) {
+      wlh.AddEntry(entry);
+    }
+    iter.Remove();
+  }
 
   rv = wlh.Finish();
   PR_Close(fd);
@@ -2000,19 +2000,6 @@ CacheIndex::WriteLogToDisk()
   }
 
   return NS_OK;
-}
-
-
-PLDHashOperator
-CacheIndex::WriteEntryToLog(CacheIndexEntry *aEntry, void* aClosure)
-{
-  WriteLogHelper *wlh = static_cast<WriteLogHelper *>(aClosure);
-
-  if (aEntry->IsRemoved() || aEntry->IsDirty()) {
-    wlh->AddEntry(aEntry);
-  }
-
-  return PL_DHASH_REMOVE;
 }
 
 void
@@ -2392,7 +2379,10 @@ CacheIndex::EnsureNoFreshEntry()
 #ifdef DEBUG_STATS
   CacheIndexStats debugStats;
   debugStats.DisableLogging();
-  mIndex.EnumerateEntries(&CacheIndex::SumIndexStats, &debugStats);
+  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
+    debugStats.BeforeChange(nullptr);
+    debugStats.AfterChange(iter.Get());
+  }
   MOZ_ASSERT(debugStats.Fresh() == 0);
 #endif
 }
@@ -2404,19 +2394,12 @@ CacheIndex::EnsureCorrectStats()
   MOZ_ASSERT(mPendingUpdates.Count() == 0);
   CacheIndexStats debugStats;
   debugStats.DisableLogging();
-  mIndex.EnumerateEntries(&CacheIndex::SumIndexStats, &debugStats);
+  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
+    debugStats.BeforeChange(nullptr);
+    debugStats.AfterChange(iter.Get());
+  }
   MOZ_ASSERT(debugStats == mIndexStats);
 #endif
-}
-
-
-PLDHashOperator
-CacheIndex::SumIndexStats(CacheIndexEntry *aEntry, void* aClosure)
-{
-  CacheIndexStats *stats = static_cast<CacheIndexStats *>(aClosure);
-  stats->BeforeChange(nullptr);
-  stats->AfterChange(aEntry);
-  return PL_DHASH_NEXT;
 }
 
 void
