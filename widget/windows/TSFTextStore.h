@@ -835,6 +835,8 @@ protected:
 
   
   static bool sCreateNativeCaretForATOK;
+  static bool sDoNotReturnNoLayoutErrorToMSSimplifiedTIP;
+  static bool sDoNotReturnNoLayoutErrorToMSTraditionalTIP;
   static bool sDoNotReturnNoLayoutErrorToFreeChangJie;
   static bool sDoNotReturnNoLayoutErrorToEasyChangjei;
   static bool sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar;
