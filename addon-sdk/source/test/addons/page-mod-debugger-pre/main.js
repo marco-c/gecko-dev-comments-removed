@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 "use strict";
 
 const { Cu } = require('chrome');
@@ -36,7 +36,7 @@ exports.testDebugger = function(assert, done) {
   ok(true, 'PageMod was created');
 
   if (!DebuggerServer.initialized) {
-    DebuggerServer.init(() => true);
+    DebuggerServer.init();
     DebuggerServer.addBrowserActors();
   }
 
@@ -68,7 +68,7 @@ exports.testDebugger = function(assert, done) {
 function attachThread([aGrip, aResponse]) {
   let deferred = promise.defer();
 
-  // Now attach and resume...
+  
   gClient.request({ to: aResponse.threadActor, type: "attach" }, () => {
     gClient.request({ to: aResponse.threadActor, type: "resume" }, () => {
       ok(true, "Pause wasn't called before we've attached.");
@@ -127,7 +127,7 @@ function closeConnection() {
   return deferred.promise;
 }
 
-// bug 1042976 - temporary test disable
+
 module.exports = {};
 
 require('sdk/test/runner').runTestsFromModule(module);
