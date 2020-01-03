@@ -19,12 +19,20 @@
 #include "nsStringAPI.h"
 #endif
 
+#include "nsIFile.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsDirectoryServiceDefs.h"
+
 using mozilla::LogLevel;
 
 static int gWebRtcTraceLoggingOn = 0;
 
-#ifndef ANDROID
-static const char *default_log = "WebRTC.log";
+
+#if defined(ANDROID)
+static const char *default_tmp_dir = "/dev/null";
+static const char *default_log_name = "nspr";
+#else 
+NS_NAMED_LITERAL_CSTRING(default_log_name, "WebRTC.log");
 #endif
 
 static PRLogModuleInfo* GetWebRtcTraceLog()
@@ -106,39 +114,34 @@ void ConfigWebRtcLog(uint32_t trace_mask, nsCString &aLogFile, nsCString &aAECLo
     return;
   }
 
-  nsCString logFile;
-  nsCString aecLogDir;
-#if defined(XP_WIN)
+#if defined(ANDROID)
   
-  const char *temp_dir = PR_GetEnv("TEMP");
-  if (!temp_dir) {
-    logFile.Assign(default_log);
-  } else {
-    logFile.Assign(temp_dir);
-    logFile.Append('/');
-    aecLogDir = logFile;
-    logFile.Append(default_log);
-  }
-#elif defined(ANDROID)
+  aLogFile.Assign(default_log_name);
   
-  logFile.Assign("nspr");
-  
-  aecLogDir.Assign("/dev/null");
-#else
-  
-  logFile.Assign("/tmp/");
-  aecLogDir = logFile;
-  logFile.Append(default_log);
-#endif
-  if (aLogFile.IsEmpty()) {
-    aLogFile = logFile;
-  }
   if (aAECLogDir.IsEmpty()) {
-    aAECLogDir = aecLogDir;
+    aAECLogDir.Assign(default_tmp_dir);
   }
+#else
+  if (aLogFile.IsEmpty() || aAECLogDir.IsEmpty()) {
+    nsCOMPtr<nsIFile> tempDir;
+    nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tempDir));
+
+    if (NS_SUCCEEDED(rv)) {
+      if (aAECLogDir.IsEmpty()) {
+        tempDir->GetNativePath(aAECLogDir);
+      }
+
+      if (aLogFile.IsEmpty()) {
+        tempDir->AppendNative(default_log_name);
+        tempDir->GetNativePath(aLogFile);
+      }
+    }
+  }
+#endif
 
   webrtc::Trace::set_level_filter(trace_mask);
   webrtc::Trace::set_aec_debug_filename(aAECLogDir.get());
+
   if (trace_mask != 0) {
     if (aLogFile.EqualsLiteral("nspr")) {
       webrtc::Trace::SetTraceCallback(&gWebRtcCallback);
