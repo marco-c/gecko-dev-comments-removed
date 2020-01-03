@@ -568,6 +568,18 @@ AnimationCollection::CanAnimatePropertyOnCompositor(
       }
       return false;
     }
+    
+    
+    
+    
+    if (frame->StyleDisplay()->BackfaceIsHidden()) {
+      if (shouldLog) {
+        nsCString message;
+        message.AppendLiteral("Gecko bug: Async animation of 'backface-visibility: hidden' transforms is not supported.  See bug 1186204.");
+        LogAsyncAnimationFailure(message, aElement);
+      }
+      return false;
+    }
     if (frame->IsSVGTransformed()) {
       if (shouldLog) {
         nsCString message;
