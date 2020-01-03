@@ -1186,7 +1186,7 @@ nsContextMenu.prototype = {
 
   
   saveFrame: function () {
-    saveDocument(this.target.ownerDocument);
+    saveBrowser(this.browser, false, this.frameOuterWindowID);
   },
 
   

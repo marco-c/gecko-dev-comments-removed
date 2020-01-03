@@ -325,6 +325,23 @@ public:
 
   static uint16_t ReverseDocumentPosition(uint16_t aDocumentPosition);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsIDocument* GetSubdocumentWithOuterWindowId(nsIDocument *aDocument,
+                                                      uint64_t aOuterWindowId);
+
   static uint32_t CopyNewlineNormalizedUnicodeTo(const nsAString& aSource,
                                                  uint32_t aSrcOffset,
                                                  char16_t* aDest,

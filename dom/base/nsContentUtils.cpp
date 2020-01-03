@@ -3850,6 +3850,30 @@ nsContentUtils::MatchElementId(nsIContent *aContent, const nsAString& aId)
 }
 
 
+nsIDocument*
+nsContentUtils::GetSubdocumentWithOuterWindowId(nsIDocument *aDocument,
+                                                uint64_t aOuterWindowId)
+{
+  if (!aDocument || !aOuterWindowId) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsPIDOMWindow> window = nsGlobalWindow::GetOuterWindowWithId(aOuterWindowId);
+  if (!window) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIDocument> foundDoc = window->GetDoc();
+  if (nsContentUtils::ContentIsCrossDocDescendantOf(foundDoc, aDocument)) {
+    
+    
+    return foundDoc;
+  }
+
+  return nullptr;
+}
+
+
 
 nsresult
 nsContentUtils::ConvertStringFromEncoding(const nsACString& aEncoding,

@@ -346,7 +346,10 @@ ResourceReader::OnWalkSubframe(nsIDOMNode* aNode)
     NS_ENSURE_STATE(loader);
 
     ++mOutstandingDocuments;
-    nsresult rv = loader->StartPersistence(this);
+    
+    
+    
+    nsresult rv = loader->StartPersistence(0, this);
     if (NS_FAILED(rv)) {
         if (rv == NS_ERROR_NO_CONTENT) {
             

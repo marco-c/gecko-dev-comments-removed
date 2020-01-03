@@ -37,7 +37,11 @@ WebBrowserPersistResourcesChild::VisitDocument(nsIWebBrowserPersistDocument* aDo
 {
     auto* subActor = new WebBrowserPersistDocumentChild();
     dom::PBrowserChild* grandManager = Manager()->Manager();
-    if (!grandManager->SendPWebBrowserPersistDocumentConstructor(subActor)) {
+    
+    
+    
+    
+    if (!grandManager->SendPWebBrowserPersistDocumentConstructor(subActor, 0)) {
         
         return NS_ERROR_FAILURE;
     }

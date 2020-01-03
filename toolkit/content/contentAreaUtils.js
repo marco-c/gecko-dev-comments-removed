@@ -129,7 +129,7 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 
 
 
-function saveBrowser(aBrowser, aSkipPrompt)
+function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID=0)
 {
   if (!aBrowser) {
     throw "Must have a browser when calling saveBrowser";
@@ -138,7 +138,7 @@ function saveBrowser(aBrowser, aSkipPrompt)
                     .frameLoader
                     .QueryInterface(Ci.nsIWebBrowserPersistable);
   let stack = Components.stack.caller;
-  persistable.startPersistence({
+  persistable.startPersistence(aOuterWindowID, {
     onDocumentReady: function (document) {
       saveDocument(document, aSkipPrompt);
     },
