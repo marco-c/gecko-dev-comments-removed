@@ -44,11 +44,11 @@ let ViewSourceContent = {
   messages: [
     "ViewSource:LoadSource",
     "ViewSource:LoadSourceDeprecated",
+    "ViewSource:LoadSourceWithSelection",
     "ViewSource:GoToLine",
     "ViewSource:ToggleWrapping",
     "ViewSource:ToggleSyntaxHighlighting",
     "ViewSource:SetCharacterSet",
-    "ViewSource:ScheduleDrawSelection",
   ],
 
   
@@ -135,6 +135,9 @@ let ViewSourceContent = {
         this.viewSourceDeprecated(data.URL, objects.pageDescriptor, data.lineNumber,
                                   data.forcedCharSet);
         break;
+      case "ViewSource:LoadSourceWithSelection":
+        this.viewSourceWithSelection(data.URL, data.drawSelection, data.baseURI);
+        break;
       case "ViewSource:GoToLine":
         this.goToLine(data.lineNumber);
         break;
@@ -146,9 +149,6 @@ let ViewSourceContent = {
         break;
       case "ViewSource:SetCharacterSet":
         this.setCharacterSet(data.charset, data.doPageLoad);
-        break;
-      case "ViewSource:ScheduleDrawSelection":
-        this.scheduleDrawSelection();
         break;
     }
   },
@@ -763,6 +763,28 @@ let ViewSourceContent = {
 
 
 
+
+
+
+
+  viewSourceWithSelection(uri, drawSelection, baseURI)
+  {
+    this.needsDrawSelection = drawSelection;
+
+    
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+    let referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_DEFAULT;
+    let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
+    webNav.loadURIWithOptions(uri, loadFlags,
+                              null, referrerPolicy,  
+                              null, null,  
+                              Services.io.newURI(baseURI, null, null));
+  },
+
+  
+
+
+
   
 
 
@@ -776,15 +798,6 @@ let ViewSourceContent = {
     }
 
     this.updateStatusTask.arm();
-  },
-
-  
-
-
-
-
-  scheduleDrawSelection() {
-    this.needsDrawSelection = true;
   },
 
   

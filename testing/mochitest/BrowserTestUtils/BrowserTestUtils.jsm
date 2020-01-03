@@ -174,7 +174,8 @@ this.BrowserTestUtils = {
         let progressListener = {
           onLocationChange(aBrowser) {
             if (aBrowser != openEvent.target.linkedBrowser ||
-                aBrowser.currentURI.spec != url) {
+                (url && aBrowser.currentURI.spec != url) ||
+                (!url && aBrowser.currentURI.spec == "about:blank")) {
               return;
             }
 

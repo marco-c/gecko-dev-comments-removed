@@ -1005,27 +1005,8 @@ nsContextMenu.prototype = {
 
   
   viewPartialSource: function(aContext) {
-    var focusedWindow = document.commandDispatcher.focusedWindow;
-    if (focusedWindow == window)
-      focusedWindow = gBrowser.selectedBrowser.contentWindowAsCPOW;
-
-    var docCharset = null;
-    if (focusedWindow)
-      docCharset = "charset=" + focusedWindow.document.characterSet;
-
-    
-    
-    
-    var reference = null;
-    if (aContext == "selection")
-      reference = focusedWindow.getSelection();
-    else if (aContext == "mathml")
-      reference = this.target;
-    else
-      throw "not reached";
-
-    let inTab = Services.prefs.getBoolPref("view_source.tab");
-    if (inTab) {
+    let inWindow = !Services.prefs.getBoolPref("view_source.tab");
+    let openSelectionFn = inWindow ? null : function() {
       let tabBrowser = gBrowser;
       
       
@@ -1040,22 +1021,11 @@ nsContextMenu.prototype = {
         relatedToCurrent: true,
         inBackground: false
       });
-      let viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
-      if (aContext == "selection") {
-        top.gViewSourceUtils
-           .viewSourceFromSelectionInBrowser(reference, viewSourceBrowser);
-      } else {
-        top.gViewSourceUtils
-           .viewSourceFromFragmentInBrowser(reference, aContext,
-                                            viewSourceBrowser);
-      }
-    } else {
-      
-      var docUrl = null;
-      window.openDialog("chrome://global/content/viewPartialSource.xul",
-                        "_blank", "scrollbars,resizable,chrome,dialog=no",
-                        docUrl, docCharset, reference, aContext);
+      return tabBrowser.getBrowserForTab(tab);
     }
+
+    let target = aContext == "mathml" ? this.target : null;
+    top.gViewSourceUtils.viewPartialSourceInBrowser(gBrowser.selectedBrowser, target, openSelectionFn);
   },
 
   

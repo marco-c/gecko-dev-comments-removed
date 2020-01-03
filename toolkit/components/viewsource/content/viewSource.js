@@ -305,7 +305,11 @@ ViewSourceChrome.prototype = {
     
     
     let args = window.arguments[0];
-    this.loadViewSource(args);
+
+    
+    if (!args.partial) {
+      this.loadViewSource(args);
+    }
   },
 
   
@@ -322,12 +326,6 @@ ViewSourceChrome.prototype = {
     
     
     
-
-    if (aArguments[3] == "selection" ||
-        aArguments[3] == "mathml") {
-      
-      return;
-    }
 
     if (aArguments[2]) {
       let pageDescriptor = aArguments[2];

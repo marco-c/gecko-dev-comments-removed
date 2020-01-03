@@ -40,17 +40,29 @@ function testViewSourceWindow(aURI, aTestCallback, aCloseCallback) {
   });
 }
 
-function openViewPartialSourceWindow(aReference, aCallback) {
-  let viewSourceWindow = openDialog("chrome://global/content/viewPartialSource.xul",
-                                    null, null, null, null, aReference, "selection");
-  viewSourceWindow.addEventListener("pageshow", function pageShowHandler(event) {
-    
-    if (/^view-source:/.test(event.target.location)) {
-      info("View source window opened: " + event.target.location);
-      viewSourceWindow.removeEventListener("pageshow", pageShowHandler, false);
-      aCallback(viewSourceWindow);
-    }
-  }, false);
+
+
+
+
+
+
+
+
+
+function* openViewPartialSourceWindow(aCSSSelector) {
+  var contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
+  let popupShownPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popupshown");
+  yield BrowserTestUtils.synthesizeMouseAtCenter(aCSSSelector,
+          { type: "contextmenu", button: 2}, gBrowser.selectedBrowser);
+  yield popupShownPromise;
+
+  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null);
+
+  let popupHiddenPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popuphidden");
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("context-viewpartialsource-selection"), {});
+  yield popupHiddenPromise;
+
+  return (yield newTabPromise);
 }
 
 registerCleanupFunction(function() {
@@ -60,26 +72,38 @@ registerCleanupFunction(function() {
     windows.getNext().close();
 });
 
-function openDocument(aURI, aCallback) {
-  let tab = gBrowser.addTab(aURI);
-  let browser = tab.linkedBrowser;
-  browser.addEventListener("DOMContentLoaded", function pageLoadedListener() {
-    browser.removeEventListener("DOMContentLoaded", pageLoadedListener, false);
-    aCallback(tab);
-  }, false);
+
+
+
+
+
+
+
+
+ 
+function* openDocumentSelect(aURI, aCSSSelector) {
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, aURI);
   registerCleanupFunction(function() {
     gBrowser.removeTab(tab);
   });
-}
 
-function openDocumentSelect(aURI, aCSSSelector, aCallback) {
-  openDocument(aURI, function(aTab) {
-    let element = aTab.linkedBrowser.contentDocument.querySelector(aCSSSelector);
-    let selection = aTab.linkedBrowser.contentWindow.getSelection();
-    selection.selectAllChildren(element);
-
-    openViewPartialSourceWindow(selection, aCallback);
+  yield ContentTask.spawn(gBrowser.selectedBrowser, { selector: aCSSSelector }, function* (arg) {
+    let element = content.document.querySelector(arg.selector);
+    content.getSelection().selectAllChildren(element);
   });
+
+  let newtab = yield openViewPartialSourceWindow(aCSSSelector);
+
+  
+  yield new Promise(resolve => {
+    let mm = newtab.linkedBrowser.messageManager;
+    mm.addMessageListener("ViewSource:SourceLoaded", function selectionDrawn() {
+      mm.removeMessageListener("ViewSource:SourceLoaded", selectionDrawn);
+      setTimeout(resolve, 0);
+    });
+  });
+
+  return newtab;
 }
 
 function waitForPrefChange(pref) {

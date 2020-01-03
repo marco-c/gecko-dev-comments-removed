@@ -100,28 +100,37 @@ var gViewSourceUtils = {
 
 
 
-  viewSourceFromSelectionInBrowser: function(aSelection, aViewSourceInBrowser) {
-    let viewSourceBrowser = new ViewSourceBrowser(aViewSourceInBrowser);
-    viewSourceBrowser.loadViewSourceFromSelection(aSelection);
-  },
-
-  
 
 
 
+  viewPartialSourceInBrowser: function(aViewSourceInBrowser, aTarget, aGetBrowserFn) {
+    let mm = aViewSourceInBrowser.messageManager;
+    mm.addMessageListener("ViewSource:GetSelectionDone", function gotSelection(message) {
+      mm.removeMessageListener("ViewSource:GetSelectionDone", gotSelection);
 
+      if (!message.data)
+        return;
 
+      let browserToOpenIn = aGetBrowserFn ? aGetBrowserFn() : null;
+      if (browserToOpenIn) {
+        let viewSourceBrowser = new ViewSourceBrowser(browserToOpenIn);
+        viewSourceBrowser.loadViewSourceFromSelection(message.data.uri, message.data.drawSelection,
+                                                      message.data.baseURI);
+      }
+      else {
+        let docUrl = null;
+        window.openDialog("chrome://global/content/viewPartialSource.xul",
+                          "_blank", "scrollbars,resizable,chrome,dialog=no",
+                          {
+                            URI: message.data.uri,
+                            drawSelection: message.data.drawSelection,
+                            baseURI: message.data.baseURI,
+                            partial: true,
+                          });
+      }
+    });
 
-
-
-
-
-
-
-  viewSourceFromFragmentInBrowser: function(aNode, aContext,
-                                            aViewSourceInBrowser) {
-    let viewSourceBrowser = new ViewSourceBrowser(aViewSourceInBrowser);
-    viewSourceBrowser.loadViewSourceFromFragment(aNode, aContext);
+    mm.sendAsyncMessage("ViewSource:GetSelection", { }, { target: aTarget });
   },
 
   
