@@ -13,6 +13,7 @@
 
 
 #include "js/CallNonGenericMethod.h"
+#include "js/TraceableVector.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 
@@ -33,7 +34,6 @@ class AutoVectorRooter;
 typedef AutoVectorRooter<Value> AutoValueVector;
 typedef AutoVectorRooter<jsid> AutoIdVector;
 typedef AutoVectorRooter<JSObject*> AutoObjectVector;
-typedef AutoVectorRooter<JSFunction*> AutoFunctionVector;
 typedef AutoVectorRooter<JSScript*> AutoVector;
 
 class AutoIdArray;
@@ -81,8 +81,12 @@ using JS::AutoVectorRooter;
 typedef AutoVectorRooter<Value> AutoValueVector;
 typedef AutoVectorRooter<jsid> AutoIdVector;
 typedef AutoVectorRooter<JSObject*> AutoObjectVector;
-typedef AutoVectorRooter<JSFunction*> AutoFunctionVector;
 typedef AutoVectorRooter<JSScript*> AutoScriptVector;
+
+using ValueVector = TraceableVector<JS::Value>;
+using IdVector = TraceableVector<jsid>;
+using ObjectVector = TraceableVector<JSObject*>;
+using ScriptVector = TraceableVector<JSScript*>;
 
 using JS::AutoIdArray;
 
@@ -99,6 +103,7 @@ using JS::NativeImpl;
 using JS::OwningCompileOptions;
 using JS::ReadOnlyCompileOptions;
 using JS::SourceBufferHolder;
+using JS::TransitiveCompileOptions;
 
 using JS::Rooted;
 using JS::RootedFunction;

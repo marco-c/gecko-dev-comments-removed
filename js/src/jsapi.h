@@ -13,7 +13,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
-#include "mozilla/RefPtr.h"
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -29,6 +28,7 @@
 #include "js/Id.h"
 #include "js/Principals.h"
 #include "js/RootingAPI.h"
+#include "js/TraceableVector.h"
 #include "js/TracingAPI.h"
 #include "js/Utility.h"
 #include "js/Value.h"
@@ -215,8 +215,12 @@ class MOZ_STACK_CLASS AutoVectorRooter : public AutoVectorRooterBase<T>
 typedef AutoVectorRooter<Value> AutoValueVector;
 typedef AutoVectorRooter<jsid> AutoIdVector;
 typedef AutoVectorRooter<JSObject*> AutoObjectVector;
-typedef AutoVectorRooter<JSFunction*> AutoFunctionVector;
 typedef AutoVectorRooter<JSScript*> AutoScriptVector;
+
+using ValueVector = js::TraceableVector<JS::Value>;
+using IdVector = js::TraceableVector<jsid>;
+using ObjectVector = js::TraceableVector<JSObject*>;
+using ScriptVector = js::TraceableVector<JSScript*>;
 
 template<class Key, class Value>
 class AutoHashMapRooter : protected AutoGCRooter
@@ -3406,10 +3410,16 @@ namespace JS {
 
 
 
-class JS_FRIEND_API(ReadOnlyCompileOptions)
-{
-    friend class CompileOptions;
 
+
+
+
+
+
+
+
+class JS_FRIEND_API(TransitiveCompileOptions)
+{
   protected:
     
     
@@ -3431,7 +3441,7 @@ class JS_FRIEND_API(ReadOnlyCompileOptions)
     
     
     
-    ReadOnlyCompileOptions()
+    TransitiveCompileOptions()
       : mutedErrors_(false),
         filename_(nullptr),
         introducerFilename_(nullptr),
@@ -3439,11 +3449,6 @@ class JS_FRIEND_API(ReadOnlyCompileOptions)
         version(JSVERSION_UNKNOWN),
         versionSet(false),
         utf8(false),
-        lineno(1),
-        column(0),
-        isRunOnce(false),
-        forEval(false),
-        noScriptRval(false),
         selfHostingMode(false),
         canLazilyParse(true),
         strictOption(false),
@@ -3461,7 +3466,7 @@ class JS_FRIEND_API(ReadOnlyCompileOptions)
 
     
     
-    void copyPODOptions(const ReadOnlyCompileOptions& rhs);
+    void copyPODTransitiveOptions(const TransitiveCompileOptions& rhs);
 
   public:
     
@@ -3478,12 +3483,6 @@ class JS_FRIEND_API(ReadOnlyCompileOptions)
     JSVersion version;
     bool versionSet;
     bool utf8;
-    unsigned lineno;
-    unsigned column;
-    
-    bool isRunOnce;
-    bool forEval;
-    bool noScriptRval;
     bool selfHostingMode;
     bool canLazilyParse;
     bool strictOption;
@@ -3502,7 +3501,55 @@ class JS_FRIEND_API(ReadOnlyCompileOptions)
     bool hasIntroductionInfo;
 
   private:
-    static JSObject * const nullObjectPtr;
+    void operator=(const TransitiveCompileOptions&) = delete;
+};
+
+
+
+
+
+
+
+
+
+class JS_FRIEND_API(ReadOnlyCompileOptions) : public TransitiveCompileOptions
+{
+    friend class CompileOptions;
+
+  protected:
+    ReadOnlyCompileOptions()
+      : TransitiveCompileOptions(),
+        lineno(1),
+        column(0),
+        isRunOnce(false),
+        forEval(false),
+        noScriptRval(false)
+    { }
+
+    
+    
+    void copyPODOptions(const ReadOnlyCompileOptions& rhs);
+
+  public:
+    
+    
+    bool mutedErrors() const { return mutedErrors_; }
+    const char* filename() const { return filename_; }
+    const char* introducerFilename() const { return introducerFilename_; }
+    const char16_t* sourceMapURL() const { return sourceMapURL_; }
+    virtual JSObject* element() const = 0;
+    virtual JSString* elementAttributeName() const = 0;
+    virtual JSScript* introductionScript() const = 0;
+
+    
+    unsigned lineno;
+    unsigned column;
+    
+    bool isRunOnce;
+    bool forEval;
+    bool noScriptRval;
+
+  private:
     void operator=(const ReadOnlyCompileOptions&) = delete;
 };
 
@@ -3617,8 +3664,22 @@ class MOZ_STACK_CLASS JS_FRIEND_API(CompileOptions) : public ReadOnlyCompileOpti
     {
         copyPODOptions(rhs);
 
-        mutedErrors_ = rhs.mutedErrors_;
         filename_ = rhs.filename();
+        introducerFilename_ = rhs.introducerFilename();
+        sourceMapURL_ = rhs.sourceMapURL();
+        elementRoot = rhs.element();
+        elementAttributeNameRoot = rhs.elementAttributeName();
+        introductionScriptRoot = rhs.introductionScript();
+    }
+
+    CompileOptions(js::ContextFriendFields* cx, const TransitiveCompileOptions& rhs)
+      : ReadOnlyCompileOptions(), elementRoot(cx), elementAttributeNameRoot(cx),
+        introductionScriptRoot(cx)
+    {
+        copyPODTransitiveOptions(rhs);
+
+        filename_ = rhs.filename();
+        introducerFilename_ = rhs.introducerFilename();
         sourceMapURL_ = rhs.sourceMapURL();
         elementRoot = rhs.element();
         elementAttributeNameRoot = rhs.elementAttributeName();
@@ -5515,21 +5576,14 @@ struct PerformanceGroup {
         stopwatch_ = nullptr;
     }
 
-    
-    void AddRef();
-    void Release();
-
-    
-    explicit PerformanceGroup(JSRuntime* rt);
-
-    
-    explicit PerformanceGroup(JSContext* rt, void* key);
-
-private:
+    explicit PerformanceGroup(JSContext* cx, void* key);
+    ~PerformanceGroup()
+    {
+        MOZ_ASSERT(refCount_ == 0);
+    }
+  private:
     PerformanceGroup& operator=(const PerformanceGroup&) = delete;
     PerformanceGroup(const PerformanceGroup&) = delete;
-
-    JSRuntime* runtime_;
 
     
     
@@ -5543,13 +5597,19 @@ private:
     void* const key_;
 
     
+    uint64_t incRefCount() {
+        MOZ_ASSERT(refCount_ + 1 > 0);
+        return ++refCount_;
+    }
+    uint64_t decRefCount() {
+        MOZ_ASSERT(refCount_ > 0);
+        return --refCount_;
+    }
+    friend struct PerformanceGroupHolder;
+
+private:
+    
     uint64_t refCount_;
-
-
-    
-    
-    
-    const bool isSharedGroup_;
 };
 
 
@@ -5566,7 +5626,7 @@ struct PerformanceGroupHolder {
     js::PerformanceGroup* getSharedGroup(JSContext*);
 
     
-    js::PerformanceGroup* getOwnGroup();
+    js::PerformanceGroup* getOwnGroup(JSContext*);
 
     
     
@@ -5586,6 +5646,8 @@ struct PerformanceGroupHolder {
 
     explicit PerformanceGroupHolder(JSRuntime* runtime)
       : runtime_(runtime)
+      , sharedGroup_(nullptr)
+      , ownGroup_(nullptr)
     {   }
     ~PerformanceGroupHolder();
 
@@ -5600,8 +5662,8 @@ struct PerformanceGroupHolder {
     
     
     
-    mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
-    mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
+    js::PerformanceGroup* sharedGroup_;
+    js::PerformanceGroup* ownGroup_;
 };
 
 
