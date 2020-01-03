@@ -300,7 +300,8 @@ protected:
 NS_IMPL_ISUPPORTS(MediaDevice, nsIMediaDevice)
 
 MediaDevice::MediaDevice(MediaEngineSource* aSource, bool aIsVideo)
-  : mSource(aSource)
+  : mMediaSource(aSource->GetMediaSource())
+  , mSource(aSource)
   , mIsVideo(aIsVideo)
 {
   mSource->GetName(mName);
@@ -311,9 +312,7 @@ MediaDevice::MediaDevice(MediaEngineSource* aSource, bool aIsVideo)
 
 VideoDevice::VideoDevice(MediaEngineVideoSource* aSource)
   : MediaDevice(aSource, true)
-{
-  mMediaSource = aSource->GetMediaSource();
-}
+{}
 
 
 
@@ -439,6 +438,8 @@ MediaDevice::GetMediaSource(nsAString& aMediaSource)
 {
   if (mMediaSource == dom::MediaSourceEnum::Microphone) {
     aMediaSource.Assign(NS_LITERAL_STRING("microphone"));
+  } else if (mMediaSource == dom::MediaSourceEnum::AudioCapture) {
+    aMediaSource.Assign(NS_LITERAL_STRING("audioCapture"));
   } else if (mMediaSource == dom::MediaSourceEnum::Window) { 
     aMediaSource.Assign(NS_LITERAL_STRING("window"));
   } else { 
@@ -784,11 +785,52 @@ public:
       }
     }
 #endif
+
+    MediaStreamGraph* msg = MediaStreamGraph::GetInstance();
+    nsRefPtr<SourceMediaStream> stream = msg->CreateSourceStream(nullptr);
+
+    nsRefPtr<DOMLocalMediaStream> domStream;
     
-    nsRefPtr<nsDOMUserMediaStream> trackunion =
-      nsDOMUserMediaStream::CreateTrackUnionStream(window, mListener,
-                                                   mAudioSource, mVideoSource);
-    if (!trackunion || sInShutdown) {
+    
+    
+    
+    if (mAudioSource &&
+        mAudioSource->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
+      domStream = DOMLocalMediaStream::CreateAudioCaptureStream(window);
+      msg->RegisterCaptureStreamForWindow(
+            mWindowID, domStream->GetStream()->AsProcessedStream());
+      window->SetAudioCapture(true);
+    } else {
+      
+      
+      nsRefPtr<nsDOMUserMediaStream> trackunion =
+        nsDOMUserMediaStream::CreateTrackUnionStream(window, mListener,
+                                                     mAudioSource, mVideoSource);
+      trackunion->GetStream()->AsProcessedStream()->SetAutofinish(true);
+      nsRefPtr<MediaInputPort> port = trackunion->GetStream()->AsProcessedStream()->
+        AllocateInputPort(stream, MediaInputPort::FLAG_BLOCK_OUTPUT);
+      trackunion->mSourceStream = stream;
+      trackunion->mPort = port.forget();
+      
+      
+      AsyncLatencyLogger::Get(true);
+      LogLatency(AsyncLatencyLogger::MediaStreamCreate,
+          reinterpret_cast<uint64_t>(stream.get()),
+          reinterpret_cast<int64_t>(trackunion->GetStream()));
+
+      nsCOMPtr<nsIPrincipal> principal;
+      if (mPeerIdentity) {
+        principal = nsNullPrincipal::Create();
+        trackunion->SetPeerIdentity(mPeerIdentity.forget());
+      } else {
+        principal = window->GetExtantDoc()->NodePrincipal();
+      }
+      trackunion->CombineWithPrincipal(principal);
+
+      domStream = trackunion.forget();
+    }
+
+    if (!domStream || sInShutdown) {
       nsCOMPtr<nsIDOMGetUserMediaErrorCallback> onFailure = mOnFailure.forget();
       LOG(("Returning error for getUserMedia() - no stream"));
 
@@ -802,36 +844,6 @@ public:
       }
       return NS_OK;
     }
-    trackunion->AudioConfig(aec_on, (uint32_t) aec,
-                            agc_on, (uint32_t) agc,
-                            noise_on, (uint32_t) noise,
-                            playout_delay);
-
-
-    MediaStreamGraph* gm = MediaStreamGraph::GetInstance();
-    nsRefPtr<SourceMediaStream> stream = gm->CreateSourceStream(nullptr);
-
-    
-    trackunion->GetStream()->AsProcessedStream()->SetAutofinish(true);
-    nsRefPtr<MediaInputPort> port = trackunion->GetStream()->AsProcessedStream()->
-      AllocateInputPort(stream, MediaInputPort::FLAG_BLOCK_OUTPUT);
-    trackunion->mSourceStream = stream;
-    trackunion->mPort = port.forget();
-    
-    
-    AsyncLatencyLogger::Get(true);
-    LogLatency(AsyncLatencyLogger::MediaStreamCreate,
-               reinterpret_cast<uint64_t>(stream.get()),
-               reinterpret_cast<int64_t>(trackunion->GetStream()));
-
-    nsCOMPtr<nsIPrincipal> principal;
-    if (mPeerIdentity) {
-      principal = nsNullPrincipal::Create();
-      trackunion->SetPeerIdentity(mPeerIdentity.forget());
-    } else {
-      principal = window->GetExtantDoc()->NodePrincipal();
-    }
-    trackunion->CombineWithPrincipal(principal);
 
     
     
@@ -841,7 +853,7 @@ public:
 
     
     TracksAvailableCallback* tracksAvailableCallback =
-      new TracksAvailableCallback(mManager, mOnSuccess, mWindowID, trackunion);
+      new TracksAvailableCallback(mManager, mOnSuccess, mWindowID, domStream);
 
     mListener->AudioConfig(aec_on, (uint32_t) aec,
                            agc_on, (uint32_t) agc,
@@ -852,11 +864,11 @@ public:
     
     
     
-    MediaManager::PostTask(FROM_HERE,
-      new MediaOperationTask(MEDIA_START, mListener, trackunion,
-                             tracksAvailableCallback,
-                             mAudioSource, mVideoSource, false, mWindowID,
-                             mOnFailure.forget()));
+    MediaManager::PostTask(
+      FROM_HERE, new MediaOperationTask(MEDIA_START, mListener, domStream,
+                                        tracksAvailableCallback, mAudioSource,
+                                        mVideoSource, false, mWindowID,
+                                        mOnFailure.forget()));
     
     mOnFailure = nullptr;
 
@@ -2075,7 +2087,7 @@ StopSharingCallback(MediaManager *aThis,
         listener->Invalidate();
       }
       listener->Remove();
-      listener->StopScreenWindowSharing();
+      listener->StopSharing();
     }
     aListeners->Clear();
     aThis->RemoveWindowID(aWindowID);
@@ -2398,7 +2410,7 @@ MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
       uint64_t windowID = PromiseFlatString(Substring(data, strlen("screen:"))).ToInteger64(&rv);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
       if (NS_SUCCEEDED(rv)) {
-        LOG(("Revoking Screeen/windowCapture access for window %llu", windowID));
+        LOG(("Revoking Screen/windowCapture access for window %llu", windowID));
         StopScreensharing(windowID);
       }
     } else {
@@ -2579,7 +2591,7 @@ StopScreensharingCallback(MediaManager *aThis,
   if (aListeners) {
     auto length = aListeners->Length();
     for (size_t i = 0; i < length; ++i) {
-      aListeners->ElementAt(i)->StopScreenWindowSharing();
+      aListeners->ElementAt(i)->StopSharing();
     }
   }
 }
@@ -2741,7 +2753,7 @@ GetUserMediaCallbackMediaStreamListener::Invalidate()
 
 
 void
-GetUserMediaCallbackMediaStreamListener::StopScreenWindowSharing()
+GetUserMediaCallbackMediaStreamListener::StopSharing()
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
   if (mVideoSource && !mStopped &&
@@ -2754,6 +2766,13 @@ GetUserMediaCallbackMediaStreamListener::StopScreenWindowSharing()
                              this, nullptr, nullptr,
                              nullptr, mVideoSource,
                              mFinished, mWindowID, nullptr));
+  } else if (mAudioSource &&
+             mAudioSource->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
+    nsCOMPtr<nsPIDOMWindow> window = nsGlobalWindow::GetInnerWindowWithId(mWindowID);
+    MOZ_ASSERT(window);
+    window->SetAudioCapture(false);
+    MediaStreamGraph::GetInstance()->UnregisterCaptureStreamForWindow(mWindowID);
+    mStream->Destroy();
   }
 }
 
