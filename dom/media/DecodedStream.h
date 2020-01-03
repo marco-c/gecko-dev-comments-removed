@@ -27,6 +27,7 @@ class MediaInputPort;
 class MediaStream;
 class MediaStreamGraph;
 class OutputStreamListener;
+class OutputStreamManager;
 class ProcessedMediaStream;
 class ReentrantMonitor;
 
@@ -39,7 +40,7 @@ class Image;
 class OutputStreamData {
 public:
   ~OutputStreamData();
-  void Init(DecodedStream* aOwner, ProcessedMediaStream* aStream);
+  void Init(OutputStreamManager* aOwner, ProcessedMediaStream* aStream);
 
   
   void Connect(MediaStream* aStream);
@@ -57,11 +58,35 @@ public:
   }
 
 private:
-  DecodedStream* mOwner;
+  OutputStreamManager* mOwner;
   nsRefPtr<ProcessedMediaStream> mStream;
   
   nsRefPtr<MediaInputPort> mPort;
   nsRefPtr<OutputStreamListener> mListener;
+};
+
+class OutputStreamManager {
+public:
+  
+  void Add(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
+  
+  void Remove(MediaStream* aStream);
+  
+  bool IsEmpty() const
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mStreams.IsEmpty();
+  }
+  
+  void Connect(MediaStream* aStream);
+  
+  void Disconnect();
+
+private:
+  
+  
+  nsRefPtr<MediaStream> mInputStream;
+  nsTArray<OutputStreamData> mStreams;
 };
 
 class DecodedStream {
@@ -102,7 +127,6 @@ protected:
 private:
   ReentrantMonitor& GetReentrantMonitor() const;
   void RecreateData(MediaStreamGraph* aGraph);
-  nsTArray<OutputStreamData>& OutputStreams();
   void InitTracks();
   void AdvanceTracks();
   void SendAudio(double aVolume, bool aIsSameOrigin);
@@ -110,7 +134,7 @@ private:
 
   UniquePtr<DecodedStreamData> mData;
   
-  nsTArray<OutputStreamData> mOutputStreams;
+  OutputStreamManager mOutputStreamManager;
 
   
   
