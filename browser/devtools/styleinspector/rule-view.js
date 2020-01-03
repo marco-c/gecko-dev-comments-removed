@@ -942,30 +942,25 @@ Rule.prototype = {
 
 
 
-  editClosestTextProperty: function(aTextProperty) {
-    let index = this.textProps.indexOf(aTextProperty);
-    let previous = false;
 
-    
-    if (index === this.textProps.length - 1) {
-      index = index - 1;
-      previous = true;
-    } else {
-      index = index + 1;
-    }
 
-    let nextProp = this.textProps[index];
+  editClosestTextProperty: function(textProperty, direction) {
+    let index = this.textProps.indexOf(textProperty);
 
-    
-    
-    if (nextProp) {
-      if (previous) {
-        nextProp.editor.valueSpan.click();
+    if (direction === Ci.nsIFocusManager.MOVEFOCUS_FORWARD) {
+      if (index === this.textProps.length - 1) {
+        textProperty.rule.editor.closeBrace.click();
       } else {
+        let nextProp = this.textProps[index + 1];
         nextProp.editor.nameSpan.click();
       }
-    } else {
-      aTextProperty.rule.editor.closeBrace.focus();
+    } else if (direction === Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
+      if (index === 0) {
+        textProperty.editor.ruleEditor.selectorText.click();
+      } else {
+        let prevProp = this.textProps[index - 1];
+        prevProp.editor.valueSpan.click();
+      }
     }
   },
 
@@ -2842,7 +2837,6 @@ function TextPropertyEditor(aRuleEditor, aProperty) {
   this.prop = aProperty;
   this.prop.editor = this;
   this.browserWindow = this.doc.defaultView.top;
-  this.removeOnRevert = this.prop.value === "";
 
   this._onEnableClicked = this._onEnableClicked.bind(this);
   this._onExpandClicked = this._onExpandClicked.bind(this);
@@ -3317,27 +3311,32 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onNameDone: function(aValue, aCommit) {
-    if ((!aCommit && this.ruleEditor.isEditing) ||
-        this.committed.name == aValue) {
-      
-      if (!this.prop.enabled) {
-        this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
-      }
 
+
+  _onNameDone: function(value, commit, direction) {
+    let isNameUnchanged = (!commit && !this.ruleEditor.isEditing) ||
+                          this.committed.name == value;
+    if (this.prop.value && isNameUnchanged) {
+      return;
+    }
+
+    
+    if (!value.trim()) {
+      this.remove(direction);
       return;
     }
 
     
     
-    if (aValue.trim() === "") {
-      this.remove();
+    if (!this.prop.value &&
+        direction !== Ci.nsIFocusManager.MOVEFOCUS_FORWARD) {
+      this.remove(direction);
       return;
     }
 
     
     
-    let properties = parseDeclarations(aValue);
+    let properties = parseDeclarations(value);
 
     if (properties.length) {
       this.prop.setName(properties[0].name);
@@ -3358,7 +3357,11 @@ TextPropertyEditor.prototype = {
 
 
 
-  remove: function() {
+
+
+
+
+  remove: function(direction) {
     if (this._colorSwatchSpans && this._colorSwatchSpans.length) {
       for (let span of this._colorSwatchSpans) {
         this.ruleView.tooltips.colorPicker.removeSwatch(span);
@@ -3366,7 +3369,7 @@ TextPropertyEditor.prototype = {
     }
 
     this.element.parentNode.removeChild(this.element);
-    this.ruleEditor.rule.editClosestTextProperty(this.prop);
+    this.ruleEditor.rule.editClosestTextProperty(this.prop, direction);
     this.nameSpan.textProperty = null;
     this.valueSpan.textProperty = null;
     this.prop.remove();
@@ -3381,22 +3384,19 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onValueDone: function(aValue="", aCommit) {
-    let parsedProperties = this._getValueAndExtraProperties(aValue);
-    let val = parseSingleValue(parsedProperties.firstValue);
-    let isValueUnchanged =
-      !parsedProperties.propertiesToAdd.length &&
-      this.committed.value == val.value &&
-      this.committed.priority == val.priority;
 
-    if ((!aCommit && !this.ruleEditor.isEditing) || isValueUnchanged) {
-      
-      if (this.removeOnRevert) {
-        this.remove();
-      } else {
-        
-        this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
-      }
+
+  _onValueDone: function(value="", commit, direction) {
+    let parsedProperties = this._getValueAndExtraProperties(value);
+    let val = parseSingleValue(parsedProperties.firstValue);
+    let isValueUnchanged = (!commit && !this.ruleEditor.isEditing) ||
+                           !parsedProperties.propertiesToAdd.length &&
+                           this.committed.value === val.value &&
+                           this.committed.priority === val.priority;
+    
+    
+    if (value.trim() && isValueUnchanged) {
+      this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
       return;
     }
 
@@ -3407,7 +3407,6 @@ TextPropertyEditor.prototype = {
       this.prop.setEnabled(true);
     }
 
-    this.removeOnRevert = false;
     this.committed.value = this.prop.value;
     this.committed.priority = this.prop.priority;
 
@@ -3419,10 +3418,10 @@ TextPropertyEditor.prototype = {
     
     
     
-    if (val.value.trim() === "") {
+    if (!value.trim() && direction !== Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
       setTimeout(() => {
         if (!this.editing) {
-          this.remove();
+          this.remove(direction);
         }
       }, 0);
     }
