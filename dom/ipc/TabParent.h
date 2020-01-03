@@ -609,6 +609,8 @@ private:
     nsRefPtr<nsIPresShell> mPresShellWithRefreshListener;
 
     bool mHasContentOpener;
+
+    DebugOnly<int32_t> mActiveSupressDisplayportCount;
 private:
     
     

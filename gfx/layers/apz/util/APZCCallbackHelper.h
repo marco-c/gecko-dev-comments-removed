@@ -169,6 +169,10 @@ public:
 
     
     static void NotifyFlushComplete();
+
+    
+    static void SuppressDisplayport(const bool& aEnabled);
+    static bool IsDisplayportSuppressed();
 };
 
 } 
