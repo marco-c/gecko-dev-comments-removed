@@ -483,7 +483,7 @@ pref("media.mediasource.format-reader", true);
 
 pref("media.mediasource.format-reader.webm", false);
 
-pref("media.format-reader.webm", false);
+pref("media.format-reader.webm", true);
 
 #ifdef MOZ_WEBSPEECH
 pref("media.webspeech.recognition.enable", false);
