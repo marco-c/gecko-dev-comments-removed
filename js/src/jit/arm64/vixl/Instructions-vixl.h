@@ -271,6 +271,9 @@ class Instruction {
 INSTRUCTION_FIELDS_LIST(DEFINE_SETTERS)
 #undef DEFINE_SETTERS
 
+  static int ImmBranchRangeBitwidth(ImmBranchType branch_type);
+  static bool IsValidImmPCOffset(ImmBranchType branch_type, int32_t offset);
+
   
   
   Reg31Mode RdMode() const {

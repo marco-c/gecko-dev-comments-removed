@@ -328,10 +328,7 @@ class MacroAssembler : public js::jit::Assembler {
   void B(Label* label) {
     b(label);
   }
-  void B(Label* label, Condition cond) {
-    VIXL_ASSERT((cond != al) && (cond != nv));
-    b(label, cond);
-  }
+  void B(Label* label, Condition cond);
   void B(Condition cond, Label* label) {
     B(label, cond);
   }
@@ -1075,6 +1072,10 @@ class MacroAssembler : public js::jit::Assembler {
   
   void PrepareForPush(int count, int size);
   void PrepareForPop(int count, int size);
+
+  bool LabelIsOutOfRange(Label* label, ImmBranchType branch_type) {
+    return !Instruction::IsValidImmPCOffset(branch_type, nextOffset().diffB<int32_t>(label));
+  }
 
 #if DEBUG
   

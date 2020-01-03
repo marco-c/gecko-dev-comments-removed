@@ -63,6 +63,25 @@ void MacroAssembler::B(Label* label, BranchType type, Register reg, int bit) {
 }
 
 
+void MacroAssembler::B(Label* label, Condition cond) {
+  VIXL_ASSERT((cond != al) && (cond != nv));
+
+  if (label->bound() && LabelIsOutOfRange(label, CondBranchType)) {
+    
+    
+    Label done;
+    b(&done, InvertCondition(cond));
+    b(label);
+    bind(&done);
+  } else {
+    
+    
+    
+    b(label, cond);
+  }
+}
+
+
 void MacroAssembler::And(const Register& rd, const Register& rn, const Operand& operand) {
   LogicalMacro(rd, rn, operand, AND);
 }
