@@ -3253,6 +3253,20 @@ ElementRestyler::MustRestyleSelf(nsRestyleHint aRestyleHint,
           SelectorMatchesForRestyle(aElement));
 }
 
+bool
+ElementRestyler::CanReparentStyleContext(nsRestyleHint aRestyleHint)
+{
+  
+  
+  
+  
+  
+  return !(aRestyleHint & ~(eRestyle_Force |
+                            eRestyle_ForceDescendants |
+                            eRestyle_SomeDescendants)) &&
+         !mPresContext->StyleSet()->IsInRuleTreeReconstruct();
+}
+
 ElementRestyler::RestyleResult
 ElementRestyler::RestyleSelf(nsIFrame* aSelf,
                              nsRestyleHint aRestyleHint,
@@ -3364,8 +3378,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
   else {
     Element* element = ElementForStyleContext(mParentContent, aSelf, pseudoType);
     if (!MustRestyleSelf(aRestyleHint, element)) {
-      if (!(aRestyleHint & ~(eRestyle_Force | eRestyle_ForceDescendants)) &&
-          !styleSet->IsInRuleTreeReconstruct()) {
+      if (CanReparentStyleContext(aRestyleHint)) {
         LOG_RESTYLE("reparenting style context");
         newContext =
           styleSet->ReparentStyleContext(oldContext, parentContext, element);
@@ -3638,7 +3651,10 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
     Element* element = extraPseudoType != nsCSSPseudoElements::ePseudo_AnonBox
                          ? mContent->AsElement() : nullptr;
     if (!MustRestyleSelf(aRestyleHint, element)) {
-      if (styleSet->IsInRuleTreeReconstruct()) {
+      if (CanReparentStyleContext(aRestyleHint)) {
+        newExtraContext =
+          styleSet->ReparentStyleContext(oldExtraContext, newContext, element);
+      } else {
         
         
         
@@ -3653,9 +3669,6 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
           styleSet->ResolveStyleWithReplacement(element, pseudoElement,
                                                 newContext, oldExtraContext,
                                                 nsRestyleHint(0));
-      } else {
-        newExtraContext =
-          styleSet->ReparentStyleContext(oldExtraContext, newContext, element);
       }
     } else if (extraPseudoType == nsCSSPseudoElements::ePseudo_AnonBox) {
       newExtraContext = styleSet->ResolveAnonymousBoxStyle(extraPseudoTag,

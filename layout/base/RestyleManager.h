@@ -662,6 +662,16 @@ private:
   
 
 
+
+
+
+
+
+  bool CanReparentStyleContext(nsRestyleHint aRestyleHint);
+
+  
+
+
   void AddLayerChangesForAnimation();
 
   
