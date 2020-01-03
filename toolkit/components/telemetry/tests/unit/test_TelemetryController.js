@@ -152,10 +152,36 @@ add_task(function* test_deletionPing() {
     return;
   }
 
+  const PREF_TELEMETRY_SERVER = "toolkit.telemetry.server";
+
   
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
 
   let ping = yield PingServer.promiseNextPing();
+  checkPingFormat(ping, DELETION_PING_TYPE, true, false);
+  
+  yield TelemetrySend.testWaitOnOutgoingPings();
+
+  
+  Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
+
+  
+  yield PingServer.stop();
+  
+  Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
+  
+  
+  yield TelemetryController.reset();
+
+  
+  PingServer.start();
+  
+  
+  Preferences.set(PREF_TELEMETRY_SERVER, "http://localhost:" + PingServer.port);
+
+  
+  yield TelemetryController.reset();
+  ping = yield PingServer.promiseNextPing();
   checkPingFormat(ping, DELETION_PING_TYPE, true, false);
 
   
@@ -262,7 +288,7 @@ add_task(function* test_archivePings() {
 add_task(function* test_midnightPingSendFuzzing() {
   const fuzzingDelay = 60 * 60 * 1000;
   fakeMidnightPingFuzzingDelay(fuzzingDelay);
-  let now = new Date(2030, 5, 1, 11, 00, 0);
+  let now = new Date(2030, 5, 1, 11, 0, 0);
   fakeNow(now);
 
   let waitForTimer = () => new Promise(resolve => {
