@@ -278,19 +278,6 @@ if (inChild) {
         obs.notifyObservers(null, "chrome-flush-caches", null);
 
         
-        var chan_first = ios.newChannel2(uri,
-                                         null,
-                                         null,
-                                         null,      
-                                         Services.scriptSecurityManager.getSystemPrincipal(),
-                                         null,      
-                                         Ci.nsILoadInfo.SEC_NORMAL,
-                                         Ci.nsIContentPolicy.TYPE_OTHER)
-                            .QueryInterface(Ci.nsIJARChannel);
-        chan_first.asyncOpen(new Listener(function(l) {
-        }), null);
-
-        
         var num = 10;
         var chan = [];
         for (var i = 0; i < num; i++) {
@@ -303,7 +290,6 @@ if (inChild) {
                                       Ci.nsILoadInfo.SEC_NORMAL,
                                       Ci.nsIContentPolicy.TYPE_OTHER)
                          .QueryInterface(Ci.nsIJARChannel);
-            chan[i].ensureChildFd();
             chan[i].asyncOpen(new Listener(function(l) {
             }), null);
         }
@@ -318,7 +304,6 @@ if (inChild) {
                                         Ci.nsILoadInfo.SEC_NORMAL,
                                         Ci.nsIContentPolicy.TYPE_OTHER)
                            .QueryInterface(Ci.nsIJARChannel);
-        chan_last.ensureChildFd();
         chan_last.asyncOpen(new Listener(function(l) {
             run_next_test();
         }), null);

@@ -123,8 +123,7 @@ public:
 
 
 
-
-  nsresult OpenArchive(nsIFile *aFile, bool aMustCacheFd = false);
+  nsresult OpenArchive(nsIFile *aFile);
 
   
 
@@ -381,7 +380,7 @@ class nsZipHandle {
 friend class nsZipArchive;
 friend class mozilla::FileLocation;
 public:
-  static nsresult Init(nsIFile *file, bool aMustCacheFd, nsZipHandle **ret,
+  static nsresult Init(nsIFile *file, nsZipHandle **ret,
                        PRFileDesc **aFd = nullptr);
   static nsresult Init(nsZipArchive *zip, const char *entry,
                        nsZipHandle **ret);

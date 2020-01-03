@@ -202,7 +202,6 @@ nsJARChannel::nsJARChannel()
     , mIsPending(false)
     , mIsUnsafe(true)
     , mOpeningRemote(false)
-    , mEnsureChildFd(false)
     , mSynthesizedStreamLength(0)
     , mForceNoIntercept(false)
 {
@@ -386,9 +385,6 @@ nsJARChannel::LookupFile(bool aAllowAsync)
                     
                     return NS_OK;
                     #else
-                    if (!mEnsureChildFd) {
-                        return NS_OK;
-                    }
                     PRFileDesc *fd = nullptr;
                     jarCache->GetFd(mJarFile, &fd);
                     if (fd) {
@@ -404,13 +400,6 @@ nsJARChannel::LookupFile(bool aAllowAsync)
             }
 
             mOpeningRemote = true;
-
-            #if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA)
-            #else
-            if (mEnsureChildFd && jarCache) {
-                jarCache->SetMustCacheFd(remoteFile, true);
-            }
-            #endif
 
             if (gJarHandler->RemoteOpenFileInProgress(remoteFile, this)) {
                 
@@ -1117,13 +1106,6 @@ nsJARChannel::GetZipEntry(nsIZipEntry **aZipEntry)
 }
 
 NS_IMETHODIMP
-nsJARChannel::EnsureChildFd()
-{
-    mEnsureChildFd = true;
-    return NS_OK;
-}
-
-NS_IMETHODIMP
 nsJARChannel::ForceNoIntercept()
 {
     mForceNoIntercept = true;
@@ -1250,23 +1232,21 @@ nsJARChannel::OnRemoteFileOpenComplete(nsresult aOpenStatus)
         
         
         #else
-        if (mEnsureChildFd) {
-            
-            
-            mozilla::AutoFDClose fd;
-            mJarFile->OpenNSPRFileDesc(PR_RDONLY, 0, &fd.rwget());
-            if (!fd) {
-                nsIZipReaderCache *jarCache = gJarHandler->JarCache();
-                if (!jarCache) {
-                    rv = NS_ERROR_FAILURE;
-                }
-                PRFileDesc *jar_fd = nullptr;
-                jarCache->GetFd(mJarFile, &jar_fd);
-                
-                
-                
-                rv = SetRemoteNSPRFileDesc(jar_fd);
+        
+        
+        mozilla::AutoFDClose fd;
+        mJarFile->OpenNSPRFileDesc(PR_RDONLY, 0, &fd.rwget());
+        if (!fd) {
+            nsIZipReaderCache *jarCache = gJarHandler->JarCache();
+            if (!jarCache) {
+                rv = NS_ERROR_FAILURE;
             }
+            PRFileDesc *jar_fd = nullptr;
+            jarCache->GetFd(mJarFile, &jar_fd);
+            
+            
+            
+            rv = SetRemoteNSPRFileDesc(jar_fd);
         }
         #endif
         if (NS_SUCCEEDED(rv) || rv == NS_ERROR_ALREADY_OPENED) {
@@ -1324,14 +1304,8 @@ nsJARChannel::OnStopRequest(nsIRequest *req, nsISupports *ctx, nsresult status)
 
     #if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA)
     #else
-    if (mEnsureChildFd) {
-      nsIZipReaderCache *jarCache = gJarHandler->JarCache();
-      if (jarCache) {
-          jarCache->SetMustCacheFd(mJarFile, false);
-      }
-      
-      mJarFile = nullptr;
-    }
+    
+    mJarFile = nullptr;
     #endif
 
     return NS_OK;
