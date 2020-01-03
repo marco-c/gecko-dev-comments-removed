@@ -7,7 +7,7 @@
 
 
 
-var spawnTask = (function () {
+var spawn_task = (function () {
 
 
 
@@ -241,4 +241,43 @@ function isObject(val) {
 }
 
 return co;
+})();
+
+
+
+
+
+
+
+var add_task = (function () {
+  
+  var task_list = [];
+  
+  return function (generatorFunction) {
+    if (task_list.length === 0) {
+      
+      
+      if (!SimpleTest) {
+        throw new Error("SimpleTest not available.");
+      }
+      
+      SimpleTest.waitForExplicitFinish();
+      
+      
+      
+      
+      setTimeout(function () {
+        spawn_task(function* () {
+          for (var task of task_list) {
+            yield task();
+          }
+          
+          SimpleTest.finish();
+        });
+      });
+    }
+    
+    
+    task_list.push(generatorFunction);
+  };
 })();
