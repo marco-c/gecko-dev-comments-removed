@@ -2525,12 +2525,6 @@ pref("dom.ipc.plugins.hangUIMinDisplaySecs", 0);
 pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
 #endif
 
-#ifdef XP_WIN
-
-
-pref("dom.ipc.plugins.java.enabled", false);
-#endif
-
 pref("dom.ipc.plugins.flash.disable-protected-mode", false);
 
 pref("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", true);
