@@ -154,7 +154,9 @@ let Delta = {
 
 
 let State = {
-  _monitor: PerformanceStats.getMonitor(["jank", "cpow", "ticks"]),
+  _monitor: PerformanceStats.getMonitor([
+    "jank", "cpow", "ticks",
+  ]),
 
   
 

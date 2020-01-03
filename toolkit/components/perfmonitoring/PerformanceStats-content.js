@@ -31,7 +31,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 
 
-
 let gMonitor = PerformanceStats.getMonitor([]);
 
 
