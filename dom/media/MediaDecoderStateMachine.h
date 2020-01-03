@@ -154,10 +154,6 @@ public:
   
   void SetDormant(bool aDormant);
 
-  TimedMetadataEventSource& TimedMetadataEvent() {
-    return mMetadataManager.TimedMetadataEvent();
-  }
-
 private:
   
   
@@ -335,6 +331,10 @@ public:
   
   
   bool IsShutdown();
+
+  void QueueMetadata(const media::TimeUnit& aPublishTime,
+                     nsAutoPtr<MediaInfo> aInfo,
+                     nsAutoPtr<MetadataTags> aTags);
 
   
   

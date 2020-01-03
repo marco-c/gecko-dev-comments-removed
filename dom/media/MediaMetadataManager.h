@@ -7,41 +7,19 @@
 #if !defined(MediaMetadataManager_h__)
 #define MediaMetadataManager_h__
 
-#include "mozilla/AbstractThread.h"
 #include "mozilla/LinkedList.h"
 
 #include "nsAutoPtr.h"
 #include "AbstractMediaDecoder.h"
-#include "MediaEventSource.h"
 #include "TimeUnits.h"
 #include "VideoUtils.h"
 
 namespace mozilla {
 
-class TimedMetadata;
-typedef MediaEventProducer<TimedMetadata, ListenerMode::Exclusive>
-        TimedMetadataEventProducer;
-typedef MediaEventSource<TimedMetadata, ListenerMode::Exclusive>
-        TimedMetadataEventSource;
-
 
 
 class TimedMetadata : public LinkedListElement<TimedMetadata> {
 public:
-  TimedMetadata(const media::TimeUnit& aPublishTime,
-                nsAutoPtr<MetadataTags>&& aTags,
-                nsAutoPtr<MediaInfo>&& aInfo)
-    : mPublishTime(aPublishTime)
-    , mTags(Move(aTags))
-    , mInfo(Move(aInfo)) {}
-
-  
-  
-  TimedMetadata(TimedMetadata&& aOther)
-    : mPublishTime(aOther.mPublishTime)
-    , mTags(Move(aOther.mTags))
-    , mInfo(Move(aOther.mInfo)) {}
-
   
   media::TimeUnit mPublishTime;
   
@@ -55,7 +33,8 @@ public:
 
 
 
-class MediaMetadataManager {
+class MediaMetadataManager
+{
 public:
   ~MediaMetadataManager() {
     TimedMetadata* element;
@@ -64,41 +43,30 @@ public:
     }
   }
 
-  
-  void Connect(TimedMetadataEventSource& aEvent, AbstractThread* aThread) {
-    mListener = aEvent.Connect(
-      aThread, this, &MediaMetadataManager::OnMetadataQueued);
+  void QueueMetadata(TimedMetadata* aMetadata) {
+    mMetadataQueue.insertBack(aMetadata);
   }
 
-  
-  void Disconnect() {
-    mListener.Disconnect();
-  }
-
-  
-  
-  TimedMetadataEventSource& TimedMetadataEvent() {
-    return mTimedMetadataEvent;
-  }
-
-  void DispatchMetadataIfNeeded(const media::TimeUnit& aCurrentTime) {
+  void DispatchMetadataIfNeeded(AbstractMediaDecoder* aDecoder, const media::TimeUnit& aCurrentTime) {
     TimedMetadata* metadata = mMetadataQueue.getFirst();
     while (metadata && aCurrentTime >= metadata->mPublishTime) {
       
-      mTimedMetadataEvent.Notify(Move(*metadata));
+      nsCOMPtr<nsIRunnable> removeTracksEvent =
+        new RemoveMediaTracksEventRunner(aDecoder);
+      NS_DispatchToMainThread(removeTracksEvent);
+
+      nsCOMPtr<nsIRunnable> metadataUpdatedEvent =
+        new MetadataUpdatedEventRunner(aDecoder,
+                                       metadata->mInfo,
+                                       metadata->mTags);
+      NS_DispatchToMainThread(metadataUpdatedEvent);
       delete mMetadataQueue.popFirst();
       metadata = mMetadataQueue.getFirst();
     }
   }
 
 protected:
-  void OnMetadataQueued(TimedMetadata&& aMetadata) {
-    mMetadataQueue.insertBack(new TimedMetadata(Move(aMetadata)));
-  }
-
   LinkedList<TimedMetadata> mMetadataQueue;
-  MediaEventListener mListener;
-  TimedMetadataEventProducer mTimedMetadataEvent;
 };
 
 } 

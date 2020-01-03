@@ -198,7 +198,6 @@
 #include "nsITimer.h"
 #include "MediaResource.h"
 #include "MediaDecoderOwner.h"
-#include "MediaEventSource.h"
 #include "MediaStreamGraph.h"
 #include "AbstractMediaDecoder.h"
 #include "DecodedStream.h"
@@ -581,6 +580,13 @@ public:
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
 
   
+  
+  
+  void QueueMetadata(const media::TimeUnit& aPublishTime,
+                     nsAutoPtr<MediaInfo> aInfo,
+                     nsAutoPtr<MetadataTags> aTags) override;
+
+  
 
 
 
@@ -612,7 +618,7 @@ public:
 
   
   
-  void RemoveMediaTracks();
+  virtual void RemoveMediaTracks() override;
 
   
   
@@ -983,8 +989,6 @@ protected:
 
   const char* PlayStateStr();
 
-  void OnMetadataUpdate(TimedMetadata&& aMetadata);
-
   
   
   
@@ -1054,9 +1058,6 @@ protected:
 
   
   nsCOMPtr<nsITimer> mDormantTimer;
-
-  
-  MediaEventListener mTimedMetadataListener;
 
 protected:
   

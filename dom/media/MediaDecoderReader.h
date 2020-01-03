@@ -11,7 +11,6 @@
 #include "AbstractMediaDecoder.h"
 #include "MediaInfo.h"
 #include "MediaData.h"
-#include "MediaMetadataManager.h"
 #include "MediaQueue.h"
 #include "MediaTimer.h"
 #include "AudioCompactor.h"
@@ -328,10 +327,6 @@ public:
 
   virtual void DisableHardwareAcceleration() {}
 
-  TimedMetadataEventSource& TimedMetadataEvent() {
-    return mTimedMetadataEvent;
-  }
-
 protected:
   virtual ~MediaDecoderReader();
 
@@ -422,9 +417,6 @@ protected:
   
   bool mHitAudioDecodeError;
   bool mShutdown;
-
-  
-  TimedMetadataEventProducer mTimedMetadataEvent;
 
 private:
   
