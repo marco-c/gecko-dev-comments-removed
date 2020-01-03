@@ -218,10 +218,7 @@ if (typeof(computedStyle) == 'undefined') {
 
 
 SimpleTest.testPluginIsOOP = function () {
-    var testPluginIsOOP = false;
-    var ph = SpecialPowers.Cc["@mozilla.org/plugin/host;1"]
-                          .getService(SpecialPowers.Ci.nsIPluginHost);
-    return ph.isPluginOOP("application/x-test");
+    return true;
 };
 
 SimpleTest._tests = [];
