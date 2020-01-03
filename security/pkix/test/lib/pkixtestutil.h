@@ -28,6 +28,7 @@
 #include <ctime>
 #include <stdint.h> 
 #include <string>
+#include <cstring>
 
 #include "pkix/pkixtypes.h"
 #include "../../lib/ScopedPtr.h"
