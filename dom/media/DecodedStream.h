@@ -56,6 +56,8 @@ public:
   {
     return mStream == aStream;
   }
+  
+  MediaStreamGraph* Graph() const;
 
 private:
   OutputStreamManager* mOwner;
@@ -81,6 +83,12 @@ public:
   void Connect(MediaStream* aStream);
   
   void Disconnect();
+  
+  MediaStreamGraph* Graph() const
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return !IsEmpty() ? mStreams[0].Graph() : nullptr;
+  }
 
 private:
   
