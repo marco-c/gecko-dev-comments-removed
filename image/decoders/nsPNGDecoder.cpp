@@ -693,7 +693,7 @@ nsPNGDecoder::row_callback(png_structp png_ptr, png_bytep new_row,
     return;
   }
 
-  if (row_num >= (png_uint_32) decoder->mFrameRect.height) {
+  if (row_num >= static_cast<png_uint_32>(decoder->mFrameRect.height)) {
     return;
   }
 
@@ -772,11 +772,14 @@ nsPNGDecoder::row_callback(png_structp png_ptr, png_bytep new_row,
         png_longjmp(decoder->mPNG, 1);
     }
 
-    if (decoder->mNumFrames <= 1) {
+    if (!decoder->interlacebuf) {
       
+      decoder->PostInvalidation(IntRect(0, row_num, width, 1));
+    } else if (row_num ==
+               static_cast<png_uint_32>(decoder->mFrameRect.height - 1)) {
       
-      nsIntRect r(0, row_num, width, 1);
-      decoder->PostInvalidation(r);
+      decoder->PostInvalidation(IntRect(0, 0, width,
+                                decoder->mFrameRect.height));
     }
   }
 }
