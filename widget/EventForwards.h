@@ -28,7 +28,28 @@ enum nsEventStatus
   nsEventStatus_eSentinel
 };
 
+
+
+
+
+enum
+{
+
+#define NS_EVENT_MESSAGE(aMessage, aValue) aMessage = aValue,
+
+#include "mozilla/EventMessageList.h"
+
+#undef NS_EVENT_MESSAGE
+
+  
+  eEventMessage_MaxValue
+};
+
 namespace mozilla {
+
+
+
+
 
 typedef uint8_t EventClassIDType;
 
