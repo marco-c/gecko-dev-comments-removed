@@ -186,7 +186,7 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
 
   
   
-  mTile.mInvalidFront.OrWith(paintRegion);
+  mTile.mInvalidFront.OrWith(tileDirtyRegion);
 
   
   mTile.mInvalidBack.SubOut(tileDirtyRegion);
