@@ -171,6 +171,12 @@ this.MigratorPrototype = {
 
 
 
+  get sourceLocked() false,
+
+  
+
+
+
 
 
   getMigrateData: function MP_getMigrateData(aProfile) {
