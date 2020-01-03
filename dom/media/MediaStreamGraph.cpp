@@ -410,7 +410,6 @@ MediaStreamGraphImpl::UpdateCurrentTimeForStreams(GraphTime aPrevCurrentTime,
                                                     blockedTime);
       
       
-      
       stream->mBlocked.AdvanceCurrentTime(aNextCurrentTime);
 
       if (runningAndSuspendedPair[array] == &mStreams) {
