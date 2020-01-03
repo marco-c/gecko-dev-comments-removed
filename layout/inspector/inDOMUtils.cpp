@@ -12,6 +12,7 @@
 #include "nsIServiceManager.h"
 #include "nsISupportsArray.h"
 #include "nsString.h"
+#include "nsIStyleSheetLinkingElement.h"
 #include "nsIDOMElement.h"
 #include "nsIDocument.h"
 #include "nsIPresShell.h"
@@ -73,7 +74,7 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
 {
   NS_ENSURE_ARG_POINTER(aDocument);
 
-  nsCOMArray<nsIStyleSheet> sheets;
+  nsCOMArray<nsISupports> sheets;
 
   nsCOMPtr<nsIDocument> document = do_QueryInterface(aDocument);
   MOZ_ASSERT(document);
@@ -89,17 +90,6 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
     sheetType = nsStyleSet::eUserSheet;
     for (int32_t i = 0; i < styleSet->SheetCount(sheetType); i++) {
       sheets.AppendElement(styleSet->StyleSheetAt(sheetType, i));
-    }
-    nsAutoTArray<CSSStyleSheet*, 32> xblSheetArray;
-    styleSet->AppendAllXBLStyleSheets(xblSheetArray);
-
-    
-    nsTHashtable<nsPtrHashKey<CSSStyleSheet>> sheetSet;
-    for (CSSStyleSheet* sheet : xblSheetArray) {
-      if (!sheetSet.Contains(sheet)) {
-        sheetSet.PutEntry(sheet);
-        sheets.AppendElement(sheet);
-      }
     }
   }
 
@@ -298,6 +288,33 @@ inDOMUtils::GetRuleColumn(nsIDOMCSSRule* aRule, uint32_t* _retval)
   }
 
   *_retval = rule->GetColumnNumber();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+inDOMUtils::GetRelativeRuleLine(nsIDOMCSSRule* aRule, uint32_t* _retval)
+{
+  NS_ENSURE_ARG_POINTER(aRule);
+
+  Rule* rule = aRule->GetCSSRule();
+  if (!rule) {
+    return NS_ERROR_FAILURE;
+  }
+
+  uint32_t lineNumber = rule->GetLineNumber();
+  CSSStyleSheet* sheet = rule->GetStyleSheet();
+  if (sheet) {
+    nsINode* owningNode = sheet->GetOwnerNode();
+    if (owningNode) {
+      nsCOMPtr<nsIStyleSheetLinkingElement> link =
+        do_QueryInterface(owningNode);
+      if (link) {
+        lineNumber -= link->GetLineNumber() - 1;
+      }
+    }
+  }
+
+  *_retval = lineNumber;
   return NS_OK;
 }
 

@@ -119,6 +119,12 @@ nsStyleLinkElement::SetLineNumber(uint32_t aLineNumber)
   mLineNumber = aLineNumber;
 }
 
+ uint32_t
+nsStyleLinkElement::GetLineNumber()
+{
+  return mLineNumber;
+}
+
  bool
 nsStyleLinkElement::IsImportEnabled()
 {
