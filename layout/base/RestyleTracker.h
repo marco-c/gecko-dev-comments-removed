@@ -258,7 +258,8 @@ public:
 
 
   bool AddPendingRestyle(Element* aElement, nsRestyleHint aRestyleHint,
-                         nsChangeHint aMinChangeHint);
+                         nsChangeHint aMinChangeHint,
+                         const RestyleHintData* aRestyleHintData = nullptr);
 
   
 
@@ -276,8 +277,9 @@ public:
   }
 
   struct Hints {
-    nsRestyleHint mRestyleHint;       
-    nsChangeHint mChangeHint;         
+    nsRestyleHint mRestyleHint;        
+    nsChangeHint mChangeHint;          
+    RestyleHintData mRestyleHintData;  
   };
 
   struct RestyleData : Hints {
@@ -286,9 +288,13 @@ public:
       mChangeHint = NS_STYLE_HINT_NONE;
     }
 
-    RestyleData(nsRestyleHint aRestyleHint, nsChangeHint aChangeHint) {
+    RestyleData(nsRestyleHint aRestyleHint, nsChangeHint aChangeHint,
+                const RestyleHintData* aRestyleHintData) {
       mRestyleHint = aRestyleHint;
       mChangeHint = aChangeHint;
+      if (aRestyleHintData) {
+        mRestyleHintData = *aRestyleHintData;
+      }
     }
 
     
@@ -341,7 +347,8 @@ public:
 
 private:
   bool AddPendingRestyleToTable(Element* aElement, nsRestyleHint aRestyleHint,
-                                nsChangeHint aMinChangeHint);
+                                nsChangeHint aMinChangeHint,
+                                const RestyleHintData* aRestyleHintData = nullptr);
 
   
 
@@ -350,7 +357,8 @@ private:
 
   inline void ProcessOneRestyle(Element* aElement,
                                 nsRestyleHint aRestyleHint,
-                                nsChangeHint aChangeHint);
+                                nsChangeHint aChangeHint,
+                                const RestyleHintData& aRestyleHintData);
 
   typedef nsClassHashtable<nsISupportsHashKey, RestyleData> PendingRestyleTable;
   typedef nsAutoTArray< nsRefPtr<Element>, 32> RestyleRootArray;
@@ -381,7 +389,8 @@ private:
 inline bool
 RestyleTracker::AddPendingRestyleToTable(Element* aElement,
                                          nsRestyleHint aRestyleHint,
-                                         nsChangeHint aMinChangeHint)
+                                         nsChangeHint aMinChangeHint,
+                                         const RestyleHintData* aRestyleHintData)
 {
   RestyleData* existingData;
 
@@ -396,7 +405,8 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
   }
 
   if (!existingData) {
-    RestyleData* rd = new RestyleData(aRestyleHint, aMinChangeHint);
+    RestyleData* rd =
+      new RestyleData(aRestyleHint, aMinChangeHint, aRestyleHintData);
 #if defined(MOZ_ENABLE_PROFILER_SPS) && !defined(MOZILLA_XPCOMRT_API)
     if (profiler_feature_active("restyle")) {
       rd->mBacktrace.reset(profiler_get_backtrace());
@@ -411,6 +421,10 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
   existingData->mRestyleHint =
     nsRestyleHint(existingData->mRestyleHint | aRestyleHint);
   NS_UpdateHint(existingData->mChangeHint, aMinChangeHint);
+  if (aRestyleHintData) {
+    existingData->mRestyleHintData.mSelectorsForDescendants
+      .AppendElements(aRestyleHintData->mSelectorsForDescendants);
+  }
 
   return hadRestyleLaterSiblings;
 }
@@ -418,10 +432,12 @@ RestyleTracker::AddPendingRestyleToTable(Element* aElement,
 inline bool
 RestyleTracker::AddPendingRestyle(Element* aElement,
                                   nsRestyleHint aRestyleHint,
-                                  nsChangeHint aMinChangeHint)
+                                  nsChangeHint aMinChangeHint,
+                                  const RestyleHintData* aRestyleHintData)
 {
   bool hadRestyleLaterSiblings =
-    AddPendingRestyleToTable(aElement, aRestyleHint, aMinChangeHint);
+    AddPendingRestyleToTable(aElement, aRestyleHint, aMinChangeHint,
+                             aRestyleHintData);
 
   
   
