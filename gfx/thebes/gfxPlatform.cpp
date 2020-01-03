@@ -1090,7 +1090,8 @@ gfxPlatform::GetSkiaGLGlue()
 
 
     nsRefPtr<GLContext> glContext;
-    glContext = GLContextProvider::CreateHeadless(CreateContextFlags::REQUIRE_COMPAT_PROFILE);
+    glContext = GLContextProvider::CreateHeadless(CreateContextFlags::REQUIRE_COMPAT_PROFILE |
+                                                  CreateContextFlags::ALLOW_OFFLINE_RENDERER);
     if (!glContext) {
       printf_stderr("Failed to create GLContext for SkiaGL!\n");
       return nullptr;
