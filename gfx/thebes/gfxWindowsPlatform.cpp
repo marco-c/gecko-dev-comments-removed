@@ -2184,7 +2184,7 @@ gfxWindowsPlatform::InitializeDevices()
   
   
   DriverCrashGuard detectCrashes;
-  if (detectCrashes.DisableAcceleration()) {
+  if (detectCrashes.Crashed()) {
     mAcceleration = FeatureStatus::Blocked;
     return;
   }
