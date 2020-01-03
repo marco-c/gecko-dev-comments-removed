@@ -41,7 +41,6 @@ class SRGBOverrideObserver;
 namespace mozilla {
 namespace gl {
 class SkiaGLGlue;
-class GLContext;
 } 
 namespace gfx {
 class DrawTarget;
@@ -229,7 +228,7 @@ public:
       CreateOffscreenCanvasDrawTarget(const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat);
 
     virtual already_AddRefed<DrawTarget>
-      CreateDrawTargetForData(unsigned char* aData, const mozilla::gfx::IntSize& aSize,
+      CreateDrawTargetForData(unsigned char* aData, const mozilla::gfx::IntSize& aSize, 
                               int32_t aStride, mozilla::gfx::SurfaceFormat aFormat);
 
     
@@ -343,8 +342,8 @@ public:
     *CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
                      const gfxFontStyle *aStyle,
                      gfxUserFontSet *aUserFontSet) = 0;
-
-
+                                          
+                                          
     
 
 
@@ -435,7 +434,7 @@ public:
 
     
     void GetLangPrefs(eFontPrefLang aPrefLangs[], uint32_t &aLen, eFontPrefLang aCharLang, eFontPrefLang aPageLang);
-
+    
     
 
 
@@ -458,13 +457,13 @@ public:
 
     
     static const char* GetPrefLangName(eFontPrefLang aLang);
-
+   
     
     static eFontPrefLang GetFontPrefLangFor(uint8_t aUnicodeRange);
 
     
     static bool IsLangCJK(eFontPrefLang aLang);
-
+    
     
     static void AppendPrefLang(eFontPrefLang aPrefLangs[], uint32_t& aLen, eFontPrefLang aAddLang);
 
@@ -653,12 +652,6 @@ public:
     
     virtual void GetDeviceInitData(mozilla::gfx::DeviceInitData* aOut);
 
-    
-
-
-
-    bool CanDetachSurfaceTexture() { return mCanDetachSurfaceTexture; }
-
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();
@@ -794,8 +787,6 @@ private:
     
     
     mozilla::layers::LayersBackend mCompositorBackend;
-
-    bool mCanDetachSurfaceTexture;
 };
 
 #endif 

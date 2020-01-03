@@ -18,7 +18,6 @@
 #include "SurfaceTexture.h"
 #include "GLContext.h"
 #include "mozilla/Preferences.h"
-#include "gfxPlatform.h"
 
 using namespace mozilla;
 using namespace mozilla::jni;
@@ -100,6 +99,8 @@ AndroidSurfaceTexture::Attach(GLContext* aContext, PRIntervalTime aTimeout)
   mAttachedContext->MakeCurrent();
   aContext->fGenTextures(1, &mTexture);
 
+  UpdateCanDetach();
+
   return mSurfaceTexture->AttachToGLContext(mTexture);
 }
 
@@ -125,9 +126,25 @@ AndroidSurfaceTexture::Detach()
   return NS_OK;
 }
 
+void
+AndroidSurfaceTexture::UpdateCanDetach()
+{
+  
+  
+  
+  bool canDetach = Preferences::GetBool("gfx.SurfaceTexture.detach.enabled", true);
+
+  mCanDetach = AndroidBridge::Bridge()->GetAPIVersion() >= 16 &&
+    (!mAttachedContext || mAttachedContext->Vendor() != GLVendor::Imagination) &&
+    (!mAttachedContext || mAttachedContext->Vendor() != GLVendor::ARM ) &&
+    canDetach;
+}
+
 bool
 AndroidSurfaceTexture::Init(GLContext* aContext, GLuint aTexture)
 {
+  UpdateCanDetach();
+
   if (!aTexture && !CanDetach()) {
     
     return false;
@@ -165,6 +182,7 @@ AndroidSurfaceTexture::AndroidSurfaceTexture()
   , mSurface()
   , mMonitor("AndroidSurfaceTexture::mContextMonitor")
   , mAttachedContext(nullptr)
+  , mCanDetach(false)
 {
 }
 
