@@ -466,13 +466,6 @@ HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame, ResumeFromEx
             uint32_t retval = ExceptionHandlerBailout(cx, frame, rfe, propagateInfo, overrecursed);
             if (retval == BAILOUT_RETURN_OK)
                 return;
-
-            
-            
-            
-            
-            if (rematFrame)
-                Debugger::handleUnrecoverableIonBailoutError(cx, rematFrame);
         }
 
         MOZ_ASSERT_IF(rematFrame, !Debugger::inFrameMaps(rematFrame));

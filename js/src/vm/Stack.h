@@ -1604,6 +1604,10 @@ class JitActivation : public Activation
     
     RematerializedFrame* lookupRematerializedFrame(uint8_t* top, size_t inlineDepth = 0);
 
+    
+    
+    void removeRematerializedFramesFromDebugger(JSContext* cx, uint8_t* top);
+
     bool hasRematerializedFrame(uint8_t* top, size_t inlineDepth = 0) {
         return !!lookupRematerializedFrame(top, inlineDepth);
     }

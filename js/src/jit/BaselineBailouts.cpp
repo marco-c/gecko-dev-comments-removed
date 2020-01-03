@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/ScopeExit.h"
 #include "mozilla/SizePrintfMacros.h"
 
 #include "jsprf.h"
@@ -1409,6 +1410,13 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation, JitFrameIter
     
     
     
+    auto guardRemoveRematerializedFramesFromDebugger = mozilla::MakeScopeExit([&] {
+        activation->removeRematerializedFramesFromDebugger(cx, iter.fp());
+    });
+
+    
+    
+    
     
     
     MOZ_ASSERT(iter.isBailoutJS());
@@ -1591,6 +1599,7 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation, JitFrameIter
     info->numFrames = frameNo + 1;
     info->bailoutKind = bailoutKind;
     *bailoutInfo = info;
+    guardRemoveRematerializedFramesFromDebugger.release();
     return BAILOUT_RETURN_OK;
 }
 
