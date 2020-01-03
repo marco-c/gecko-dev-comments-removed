@@ -212,12 +212,6 @@ private:
   bool AllBordersSolid(bool *aHasCompositeColors);
 
   
-  already_AddRefed<mozilla::gfx::GradientStops>
-  CreateCornerGradient(mozilla::css::Corner aCorner, nscolor aFirstColor,
-                       nscolor aSecondColor, mozilla::gfx::DrawTarget *aDT,
-                       mozilla::gfx::Point &aPoint1, mozilla::gfx::Point &aPoint2);
-
-  
   void DrawSingleWidthSolidBorder();
 
   
