@@ -18,36 +18,21 @@ function getFocusedLocalName(browser) {
 }
 
 add_task(function* () {
-  gBrowser.selectedTab = gBrowser.addTab(URL);
-  let browser = gBrowser.selectedBrowser;
-  yield BrowserTestUtils.browserLoaded(browser);
+  let testTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
+
+  let browser = testTab.linkedBrowser;
 
   is((yield getFocusedLocalName(browser)), "button", "button is focused");
 
-  let promiseFocused = ContentTask.spawn(browser, null, function* () {
-    return new Promise(resolve => {
-      content.addEventListener("focus", function onFocus({target}) {
-        if (String(target.location).startsWith("data:")) {
-          content.removeEventListener("focus", onFocus);
-          resolve();
-        }
-      });
-    });
-  });
+  let blankTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
-  
-  
-  
-  gBrowser.selectedTab = gBrowser.addTab("about:blank");
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  gBrowser.removeCurrentTab();
-
-  
-  yield promiseFocused;
+  yield BrowserTestUtils.switchTab(gBrowser, testTab);
 
   
   is((yield getFocusedLocalName(browser)), "body", "body is focused");
 
   
+  gBrowser.removeTab(blankTab);
   gBrowser.removeCurrentTab();
+
 });
