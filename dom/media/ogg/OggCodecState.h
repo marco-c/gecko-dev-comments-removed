@@ -13,14 +13,12 @@
 #else
 #include <vorbis/codec.h>
 #endif
-#ifdef MOZ_OPUS
 #include <opus/opus.h>
 #include "opus/opus_multistream.h"
 
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "MediaDecoderStateMachine.h"
 #include "MediaDecoderReader.h"
-#endif
 #include <nsAutoRef.h>
 #include <nsDeque.h>
 #include <nsTArray.h>
@@ -323,7 +321,6 @@ private:
 };
 
 class OpusState : public OggCodecState {
-#ifdef MOZ_OPUS
 public:
   explicit OpusState(ogg_page* aBosPage);
   virtual ~OpusState();
@@ -375,7 +372,6 @@ private:
   
   int64_t mPrevPageGranulepos;
 
-#endif 
 };
 
 

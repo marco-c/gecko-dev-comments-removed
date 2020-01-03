@@ -24,9 +24,7 @@
 #include "vorbis/codec.h"
 #endif
 
-#ifdef MOZ_OPUS
 #include "OpusParser.h"
-#endif
 
 
 
@@ -190,10 +188,8 @@ public:
   MediaTaskQueue* GetTaskQueue() { return mTaskQueue; }
 
 protected:
-#ifdef MOZ_OPUS
   
   bool InitOpusDecoder();
-#endif
 
   
   
@@ -205,11 +201,9 @@ protected:
   bool DecodeVorbis(const unsigned char* aData, size_t aLength,
                     int64_t aOffset, uint64_t aTstampUsecs,
                     int32_t* aTotalFrames);
-#ifdef MOZ_OPUS
   bool DecodeOpus(const unsigned char* aData, size_t aLength,
                   int64_t aOffset, uint64_t aTstampUsecs,
                   nestegg_packet* aPacket);
-#endif
 
   
   
@@ -235,13 +229,11 @@ private:
   vorbis_block mVorbisBlock;
   int64_t mPacketCount;
 
-#ifdef MOZ_OPUS
   
   nsAutoPtr<OpusParser> mOpusParser;
   OpusMSDecoder *mOpusDecoder;
   uint16_t mSkip;        
   uint64_t mSeekPreroll; 
-#endif
 
   
   
@@ -288,12 +280,10 @@ private:
   bool mHasVideo;
   bool mHasAudio;
 
-#ifdef MOZ_OPUS
   
   
   
   bool mPaddingDiscarded;
-#endif
 };
 
 } 

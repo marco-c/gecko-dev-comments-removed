@@ -65,11 +65,8 @@ public:
                                   int64_t aTimeThreshold);
 
   virtual bool HasAudio() {
-    return (mVorbisState != 0 && mVorbisState->mActive)
-#ifdef MOZ_OPUS
-      || (mOpusState != 0 && mOpusState->mActive)
-#endif 
-      ;
+    return (mVorbisState != 0 && mVorbisState->mActive) ||
+           (mOpusState != 0 && mOpusState->mActive);
   }
 
   virtual bool HasVideo() {
@@ -285,7 +282,6 @@ private:
   
   VorbisState* mVorbisState;
 
-#ifdef MOZ_OPUS
   
   OpusState *mOpusState;
 
@@ -293,7 +289,6 @@ private:
   
   
   bool mOpusEnabled;
-#endif 
 
   
   SkeletonState* mSkeletonState;
