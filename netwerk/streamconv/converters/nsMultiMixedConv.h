@@ -43,6 +43,7 @@ public:
 
   void InitializeByteRange(int64_t aStart, int64_t aEnd);
   void SetIsLastPart() { mIsLastPart = true; }
+  void SetPreamble(const nsACString& aPreamble);
   nsresult SendOnStartRequest(nsISupports* aContext);
   nsresult SendOnDataAvailable(nsISupports* aContext, nsIInputStream* aStream,
                                uint64_t aOffset, uint32_t aLen);
@@ -86,6 +87,8 @@ protected:
   uint32_t                mPartID; 
                                    
   bool                    mIsLastPart;
+
+  nsCString               mPreamble;
 };
 
 
@@ -145,6 +148,7 @@ protected:
     int32_t  PushOverLine(char *&aPtr, uint32_t &aLen);
     char *FindToken(char *aCursor, uint32_t aLen);
     nsresult BufferData(char *aData, uint32_t aLen);
+    char* ProbeToken(char* aBuffer, uint32_t& aTokenLen);
 
     
     bool                mNewPart;        
@@ -187,6 +191,11 @@ protected:
     
     
     bool                mIsFromCache;
+
+    
+    
+    
+    nsCString           mPreamble;
 };
 
 #endif 

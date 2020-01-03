@@ -459,6 +459,18 @@ nsPartChannel::GetBaseChannel(nsIChannel ** aReturn)
     return NS_OK;
 }
 
+NS_IMETHODIMP
+nsPartChannel::GetPreamble(nsACString & aPreamble)
+{
+    aPreamble = mPreamble;
+    return NS_OK;
+}
+
+void
+nsPartChannel::SetPreamble(const nsACString& aPreamble)
+{
+    mPreamble = aPreamble;
+}
 
 
 NS_IMPL_ISUPPORTS(nsMultiMixedConv,
@@ -522,6 +534,49 @@ private:
   char *mBuffer;
 };
 
+char*
+nsMultiMixedConv::ProbeToken(char* aBuffer, uint32_t& aTokenLen)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    char* posCRLFDashDash = PL_strstr(aBuffer, "\r\n--");
+    if (!posCRLFDashDash) {
+        return nullptr;
+    }
+
+    char* tokenStart = posCRLFDashDash + 2; 
+    char* tokenEnd = PL_strstr(tokenStart, "\r\n");
+    if (!tokenEnd) {
+        return nullptr;
+    }
+
+    aTokenLen = tokenEnd - tokenStart;
+
+    return tokenStart;
+}
+
 
 NS_IMETHODIMP
 nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
@@ -584,24 +639,36 @@ nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
         } else if (mPackagedApp) {
             
             if (!StringBeginsWith(firstBuffer, NS_LITERAL_CSTRING("--"))) {
-                return NS_ERROR_FAILURE;
-            }
+                char* tokenPos = ProbeToken(buffer, mTokenLen);
+                if (!tokenPos) {
+                    
+                    mFirstOnData = true;
+                } else {
+                    
+                    mToken = Substring(tokenPos, mTokenLen);
+                    mPreamble = nsCString(Substring(buffer, tokenPos));
 
-            
-            
-            if (mTokenLen &&
-                !StringBeginsWith(Substring(firstBuffer, 2), mToken)) {
-                return NS_ERROR_FAILURE;
-            }
+                    
+                    
+                    cursor = tokenPos;
+                }
+            } else {
+                
+                
+                if (mTokenLen &&
+                    !StringBeginsWith(Substring(firstBuffer, 2), mToken)) {
+                    return NS_ERROR_FAILURE;
+                }
 
-            
-            if (!mTokenLen) {
-                mToken = nsCString(Substring(firstBuffer, 2).BeginReading(),
-                                   posCR - 2);
-                mTokenLen = mToken.Length();
-            }
+                
+                if (!mTokenLen) {
+                    mToken = nsCString(Substring(firstBuffer, 2).BeginReading(),
+                                       posCR - 2);
+                    mTokenLen = mToken.Length();
+                }
 
-            cursor = buffer;
+                cursor = buffer;
+            }
         } else if (!PL_strnstr(cursor, token, mTokenLen + 2)) {
             char *newBuffer = (char *) realloc(buffer, bufLen + mTokenLen + 1);
             if (!newBuffer)
@@ -964,6 +1031,9 @@ nsMultiMixedConv::SendStart(nsIChannel *aChannel) {
 
     
     mPartChannel = newChannel;
+
+    
+    mPartChannel->SetPreamble(mPreamble);
 
     
     mPartChannel->SetResponseHead(mResponseHead.forget());
