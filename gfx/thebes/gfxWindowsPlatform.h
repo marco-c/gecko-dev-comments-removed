@@ -244,7 +244,6 @@ public:
     ID3D10Device1 *GetD3D10Device() { return mD3D10Device; }
     ID3D11Device *GetD3D11Device();
     ID3D11Device *GetD3D11ContentDevice();
-    ID3D11Device* GetD3D11DeviceForCurrentThread();
     
     ID3D11Device *GetD3D11ImageBridgeDevice();
 

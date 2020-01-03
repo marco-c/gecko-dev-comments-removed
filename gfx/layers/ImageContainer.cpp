@@ -639,17 +639,20 @@ CairoImage::GetTextureClient(CompositableClient *aClient)
   if (!textureClient) {
     return nullptr;
   }
-
+  MOZ_ASSERT(textureClient->CanExposeDrawTarget());
   if (!textureClient->Lock(OpenMode::OPEN_WRITE_ONLY)) {
     return nullptr;
   }
 
-  TextureClientAutoUnlock autoUnlock(textureClient);
-
-  RefPtr<DataSourceSurface> dataSurf = surface->GetDataSurface();
-  textureClient->UpdateFromSurface(dataSurf);
-
-  textureClient->SyncWithObject(forwarder->GetSyncObject());
+  TextureClientAutoUnlock autoUnolck(textureClient);
+  {
+    
+    DrawTarget* dt = textureClient->BorrowDrawTarget();
+    if (!dt) {
+      return nullptr;
+    }
+    dt->CopySurface(surface, IntRect(IntPoint(), surface->GetSize()), IntPoint());
+  }
 
   mTextureClients.Put(forwarder->GetSerial(), textureClient);
   return textureClient;

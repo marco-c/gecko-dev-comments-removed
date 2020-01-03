@@ -266,14 +266,7 @@ public:
 
 
 
-
   virtual gfx::DrawTarget* BorrowDrawTarget() { return nullptr; }
-
-  
-
-
-
-  virtual void UpdateFromSurface(gfx::DataSourceSurface* aSurface) { MOZ_CRASH(); }
 
   
   virtual gfx::SurfaceFormat GetFormat() const
@@ -592,8 +585,6 @@ public:
   virtual bool CanExposeDrawTarget() const override { return true; }
 
   virtual gfx::DrawTarget* BorrowDrawTarget() override;
-
-  virtual void UpdateFromSurface(gfx::DataSourceSurface* aSurface) override;
 
   virtual bool AllocateForSurface(gfx::IntSize aSize,
                                   TextureAllocationFlags aFlags = ALLOC_DEFAULT) override;
