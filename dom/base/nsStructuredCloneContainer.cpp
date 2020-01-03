@@ -42,28 +42,19 @@ nsStructuredCloneContainer::~nsStructuredCloneContainer()
 }
 
 nsresult
-nsStructuredCloneContainer::InitFromJSVal(JS::Handle<JS::Value> aData)
+nsStructuredCloneContainer::InitFromJSVal(JS::Handle<JS::Value> aData,
+                                          JSContext* aCx)
 {
   NS_ENSURE_STATE(!mData);
 
   uint64_t* jsBytes = nullptr;
   bool success = false;
   if (aData.isPrimitive()) {
-    
-    
-    dom::AutoJSAPI jsapi;
-    jsapi.Init();
-    success = JS_WriteStructuredClone(jsapi.cx(), aData, &jsBytes, &mSize,
+    success = JS_WriteStructuredClone(aCx, aData, &jsBytes, &mSize,
                                       nullptr, nullptr,
                                       JS::UndefinedHandleValue);
   } else {
-    
-    
-    
-    nsIGlobalObject* nativeGlobal =
-      xpc::NativeGlobal(js::GetGlobalForObjectCrossCompartment(&aData.toObject()));
-    dom::AutoEntryScript aes(nativeGlobal);
-    success = JS_WriteStructuredClone(aes.cx(), aData, &jsBytes, &mSize,
+    success = JS_WriteStructuredClone(aCx, aData, &jsBytes, &mSize,
                                       nullptr, nullptr,
                                       JS::UndefinedHandleValue);
   }
