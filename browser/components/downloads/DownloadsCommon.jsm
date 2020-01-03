@@ -228,7 +228,7 @@ this.DownloadsCommon = {
 
 
   getData(aWindow) {
-    if (PrivateBrowsingUtils.isWindowPrivate(aWindow)) {
+    if (PrivateBrowsingUtils.isContentWindowPrivate(aWindow)) {
       return PrivateDownloadsData;
     } else {
       return DownloadsData;
@@ -250,7 +250,7 @@ this.DownloadsCommon = {
 
 
   getIndicatorData(aWindow) {
-    if (PrivateBrowsingUtils.isWindowPrivate(aWindow)) {
+    if (PrivateBrowsingUtils.isContentWindowPrivate(aWindow)) {
       return PrivateDownloadsIndicatorData;
     } else {
       return DownloadsIndicatorData;
@@ -268,7 +268,7 @@ this.DownloadsCommon = {
 
 
   getSummary(aWindow, aNumToExclude) {
-    if (PrivateBrowsingUtils.isWindowPrivate(aWindow)) {
+    if (PrivateBrowsingUtils.isContentWindowPrivate(aWindow)) {
       if (this._privateSummary) {
         return this._privateSummary;
       }
