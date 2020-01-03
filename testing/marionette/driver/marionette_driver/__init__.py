@@ -3,7 +3,7 @@
 
 
 
-__version__ = '0.10'
+__version__ = '0.11'
 
 
 from marionette_driver import ( errors, by, decorators, expected, geckoinstance,
@@ -14,4 +14,3 @@ from marionette_driver.date_time_value import DateTimeValue
 from marionette_driver.gestures import smooth_scroll, pinch
 from marionette_driver.wait import Wait
 from marionette_driver.marionette import Actions
-
