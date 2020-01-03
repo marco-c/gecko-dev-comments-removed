@@ -73,6 +73,13 @@ for (var object of objects) {
 }
 
 
+
+var objectProto = {};
+var nonExtensibleObject = Object.create(objectProto);
+Object.preventExtensions(nonExtensibleObject);
+assertEq(Object.setPrototypeOf(nonExtensibleObject, objectProto), nonExtensibleObject);
+
+
 var object = {};
 assertEq('x' in object, false);
 assertEq('y' in object, false);

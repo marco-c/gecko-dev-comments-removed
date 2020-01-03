@@ -2443,6 +2443,13 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
     }
 
     
+
+
+
+    if (proto == obj->getProto())
+        return result.succeed();
+
+    
     bool extensible;
     if (!IsExtensible(cx, obj, &extensible))
         return false;

@@ -357,6 +357,7 @@ class JSObject : public js::gc::Cell
 
 
 
+
     js::TaggedProto getTaggedProto() const {
         return group_->proto();
     }
@@ -366,7 +367,7 @@ class JSObject : public js::gc::Cell
     bool uninlinedIsProxy() const;
 
     JSObject* getProto() const {
-        MOZ_ASSERT(!uninlinedIsProxy());
+        MOZ_ASSERT(!hasLazyPrototype());
         return getTaggedProto().toObjectOrNull();
     }
 

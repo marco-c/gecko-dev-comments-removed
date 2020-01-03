@@ -27,7 +27,7 @@ proto = {};
 obj = Object.preventExtensions(Object.create(proto));
 assertEq(Reflect.setPrototypeOf(obj, {}), false);
 assertEq(Reflect.setPrototypeOf(obj, null), false);
-assertEq(Reflect.setPrototypeOf(obj, proto), false);  
+assertEq(Reflect.setPrototypeOf(obj, proto), true);  
 
 
 obj = {};
