@@ -1867,13 +1867,6 @@ ThreadActor.prototype = {
 
 
   onNewScript: function (aScript, aGlobal) {
-    
-    
-    
-    
-    
-    this.scripts.addScripts(this.dbg.findScripts({ source: aScript.source }));
-
     this._addSource(aScript.source);
   },
 
@@ -1909,6 +1902,12 @@ ThreadActor.prototype = {
     if (!this.sources.allowSource(aSource)) {
       return false;
     }
+
+    
+    
+    
+    
+    this.scripts.addScripts(this.dbg.findScripts({ source: aSource }));
 
     let sourceActor = this.sources.createNonSourceMappedActor(aSource);
 
