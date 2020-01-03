@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_LIR_Common_h
-#define jit_LIR_Common_h
+#ifndef jit_shared_LIR_shared_h
+#define jit_shared_LIR_shared_h
 
 #include "jsutil.h"
 
