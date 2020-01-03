@@ -14,7 +14,13 @@
 
 let loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
   .getService(Components.interfaces.mozIJSSubScriptLoader);
-loader.loadSubScript("resource://gre/modules/devtools/sourcemap/source-map.js", this);
+let exports = {};
+loader.loadSubScript("resource://gre/modules/devtools/sourcemap/source-map.js", exports);
+
+
+let define = this.define = exports.define;
+
+let require = exports.require;
 
 this.EXPORTED_SYMBOLS = [ "define", "runSourceMapTests" ];
 
