@@ -80,7 +80,7 @@ function AnimationTest(pollFreq, timeout, referenceElementId, imageElementId,
 {
   
   
-  clearImageCache();
+  clearAllImageCaches();
 
   this.wereFailures = false;
   this.pollFreq = pollFreq;
