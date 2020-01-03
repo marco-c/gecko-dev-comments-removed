@@ -729,9 +729,14 @@ CompositorD3D11::DrawVRDistortion(const gfx::Rect& aRect,
 
     
     D3D11_MAPPED_SUBRESOURCE resource;
-    mContext->Map(mAttachments->mVRDistortionConstants, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+    hr = mContext->Map(mAttachments->mVRDistortionConstants, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+    if (FAILED(hr) || !resource.pData) {
+      gfxCriticalError() << "Failed to map VRDistortionConstants. Result: " << hr;
+      return;
+    }
     *(gfx::VRDistortionConstants*)resource.pData = shaderConstants;
     mContext->Unmap(mAttachments->mVRDistortionConstants, 0);
+    resource.pData = nullptr;
 
     
     
