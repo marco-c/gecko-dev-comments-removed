@@ -110,7 +110,7 @@ function buildOptionListForChildren(node) {
       }
 
       let info = {
-        tagName: child.tagName,
+        tagName: tagName,
         textContent: textContent,
         disabled: child.disabled,
         
