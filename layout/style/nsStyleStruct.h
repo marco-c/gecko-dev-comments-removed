@@ -3163,10 +3163,8 @@ struct nsStyleSVGReset {
 
   nsChangeHint CalcDifference(const nsStyleSVGReset& aOther) const;
   static nsChangeHint MaxDifference() {
-    return nsChangeHint_UpdateEffects |
-           nsChangeHint_UpdateOverflow |
-           nsChangeHint_AddOrRemoveTransform |
-           NS_STYLE_HINT_REFLOW;
+    return NS_CombineHint(nsChangeHint_UpdateEffects,
+            NS_CombineHint(nsChangeHint_UpdateOverflow, NS_STYLE_HINT_REFLOW));
   }
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
     
@@ -3177,7 +3175,7 @@ struct nsStyleSVGReset {
   }
 
   bool HasFilters() const {
-    return !mFilters.IsEmpty();
+    return mFilters.Length() > 0;
   }
 
   bool HasNonScalingStroke() const {

@@ -776,9 +776,10 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
           
           
           if (cont->IsAbsPosContaininingBlock()) {
-            if (cont->StyleDisplay()->HasTransform(cont)) {
-              cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
-            }
+            
+            
+            
+            cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
             if (!cont->IsAbsoluteContainer() &&
                 (cont->GetStateBits() & NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
               cont->MarkAsAbsoluteContainingBlock();
