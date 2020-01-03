@@ -376,6 +376,8 @@ Animation::Tick()
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 
   
+  
+  
   AnimationCollection* collection = GetCollection();
   if (collection) {
     collection->RequestRestyle(CanThrottle() ?
@@ -953,7 +955,7 @@ Animation::PostUpdate()
 {
   AnimationCollection* collection = GetCollection();
   if (collection) {
-    collection->NotifyAnimationUpdated();
+    collection->RequestRestyle(AnimationCollection::RestyleType::Layer);
   }
 }
 

@@ -300,17 +300,6 @@ CommonAnimationManager::AddStyleUpdatesTo(RestyleTracker& aTracker)
   }
 }
 
-void
-CommonAnimationManager::NotifyCollectionUpdated(AnimationCollection&
-                                                  aCollection)
-{
-  MaybeStartObservingRefreshDriver();
-  mPresContext->ClearLastStyleUpdateForAllAnimations();
-  mPresContext->RestyleManager()->IncrementAnimationGeneration();
-  aCollection.UpdateAnimationGeneration(mPresContext);
-  aCollection.PostRestyleForAnimation(mPresContext);
-}
-
  bool
 CommonAnimationManager::ExtractComputedValueForTransition(
                           nsCSSProperty aProperty,
@@ -801,16 +790,6 @@ AnimationCollection::GetElementToRestyle() const
   return pseudoFrame->GetContent()->AsElement();
 }
 
-void
-AnimationCollection::NotifyAnimationUpdated()
-{
-  
-  mNeedsRefreshes = true;
-  mStyleRuleRefreshTime = TimeStamp();
-
-  mManager->NotifyCollectionUpdated(*this);
-}
-
  void
 AnimationCollection::LogAsyncAnimationFailure(nsCString& aMessage,
                                                      const nsIContent* aContent)
@@ -1003,14 +982,22 @@ AnimationCollection::RequestRestyle(RestyleType aRestyleType)
              "transition/animations object");
 
   
-  
-  
-  
-  
-  presContext->Document()->SetNeedStyleFlush();
+
+  if (aRestyleType == RestyleType::Layer) {
+    mStyleRuleRefreshTime = TimeStamp();
+    
+    
+    mNeedsRefreshes = true;
+    mManager->MaybeStartObservingRefreshDriver();
+
+    
+    presContext->ClearLastStyleUpdateForAllAnimations();
+    presContext->RestyleManager()->IncrementAnimationGeneration();
+    UpdateAnimationGeneration(presContext);
+  }
 
   
-  
+
   if (mHasPendingAnimationRestyle) {
     return;
   }
@@ -1025,10 +1012,17 @@ AnimationCollection::RequestRestyle(RestyleType aRestyleType)
     }
   }
 
-  if (aRestyleType == RestyleType::Standard) {
+  if (aRestyleType >= RestyleType::Standard) {
     mHasPendingAnimationRestyle = true;
     PostRestyleForAnimation(presContext);
+    return;
   }
+
+  
+
+  MOZ_ASSERT(aRestyleType == RestyleType::Throttled,
+             "Should have already handled all non-throttled restyles");
+  presContext->Document()->SetNeedStyleFlush();
 }
 
 void

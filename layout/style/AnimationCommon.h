@@ -100,10 +100,6 @@ public:
     return false;
   }
 
-  
-  
-  void NotifyCollectionUpdated(AnimationCollection& aCollection);
-
   enum FlushFlags {
     Can_Throttle,
     Cannot_Throttle
@@ -292,7 +288,15 @@ struct AnimationCollection : public PRCList
     
     Throttled,
     
-    Standard
+    Standard,
+    
+    
+    
+    
+    
+    
+    
+    Layer
   };
   void RequestRestyle(RestyleType aRestyleType);
 
@@ -383,8 +387,6 @@ public:
       aPresContext->PresShell()->RestyleForAnimation(element, hint);
     }
   }
-
-  void NotifyAnimationUpdated();
 
   static void LogAsyncAnimationFailure(nsCString& aMessage,
                                        const nsIContent* aContent = nullptr);
