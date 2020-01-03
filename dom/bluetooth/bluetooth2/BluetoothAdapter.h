@@ -28,6 +28,7 @@ BEGIN_BLUETOOTH_NAMESPACE
 
 class BluetoothDevice;
 class BluetoothDiscoveryHandle;
+class BluetoothGattServer;
 class BluetoothNamedValue;
 class BluetoothPairingListener;
 class BluetoothSignal;
@@ -76,6 +77,8 @@ public:
   {
     return mPairingReqs;
   }
+
+  BluetoothGattServer* GetGattServer();
 
   
 
@@ -356,6 +359,18 @@ private:
 
 
   bool mDiscovering;
+
+  
+
+
+
+
+
+
+
+
+
+  nsRefPtr<BluetoothGattServer> mGattServer;
 
   
 
