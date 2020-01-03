@@ -1959,6 +1959,9 @@ pref("security.mixed_content.block_active_content", false);
 pref("security.mixed_content.block_display_content", false);
 
 
+pref("security.sri.enable", false);
+
+
 pref("security.cert_pinning.enforcement_level", 0);
 
 

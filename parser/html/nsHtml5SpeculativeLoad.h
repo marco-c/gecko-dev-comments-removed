@@ -105,6 +105,7 @@ class nsHtml5SpeculativeLoad {
                            const nsAString& aCharset,
                            const nsAString& aType,
                            const nsAString& aCrossOrigin,
+                           const nsAString& aIntegrity,
                            bool aParserInHead)
     {
       NS_PRECONDITION(mOpCode == eSpeculativeLoadUninitialized,
@@ -115,10 +116,12 @@ class nsHtml5SpeculativeLoad {
       mCharset.Assign(aCharset);
       mTypeOrCharsetSource.Assign(aType);
       mCrossOrigin.Assign(aCrossOrigin);
+      mIntegrity.Assign(aIntegrity);
     }
 
     inline void InitStyle(const nsAString& aUrl, const nsAString& aCharset,
-                          const nsAString& aCrossOrigin)
+                          const nsAString& aCrossOrigin,
+                          const nsAString& aIntegrity)
     {
       NS_PRECONDITION(mOpCode == eSpeculativeLoadUninitialized,
                       "Trying to reinitialize a speculative load!");
@@ -126,6 +129,7 @@ class nsHtml5SpeculativeLoad {
       mUrl.Assign(aUrl);
       mCharset.Assign(aCharset);
       mCrossOrigin.Assign(aCrossOrigin);
+      mIntegrity.Assign(aIntegrity);
     }
 
     
@@ -219,6 +223,12 @@ class nsHtml5SpeculativeLoad {
 
 
     nsString mMedia;
+    
+
+
+
+
+    nsString mIntegrity;
 };
 
 #endif 

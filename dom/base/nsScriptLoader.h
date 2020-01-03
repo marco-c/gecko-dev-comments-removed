@@ -19,6 +19,7 @@
 #include "nsIDocument.h"
 #include "nsIStreamLoader.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
@@ -56,7 +57,8 @@ class nsScriptLoadRequest final : public nsISupports,
 public:
   nsScriptLoadRequest(nsIScriptElement* aElement,
                       uint32_t aVersion,
-                      mozilla::CORSMode aCORSMode)
+                      mozilla::CORSMode aCORSMode,
+                      const mozilla::dom::SRIMetadata &aIntegrity)
     : mElement(aElement),
       mLoading(true),
       mIsInline(true),
@@ -71,6 +73,7 @@ public:
       mJSVersion(aVersion),
       mLineNo(1),
       mCORSMode(aCORSMode),
+      mIntegrity(aIntegrity),
       mReferrerPolicy(mozilla::net::RP_Default)
   {
   }
@@ -122,6 +125,7 @@ public:
   nsAutoCString mURL;   
   int32_t mLineNo;
   const mozilla::CORSMode mCORSMode;
+  const mozilla::dom::SRIMetadata mIntegrity;
   mozilla::net::ReferrerPolicy mReferrerPolicy;
 };
 
@@ -369,9 +373,11 @@ public:
 
 
 
+
   virtual void PreloadURI(nsIURI *aURI, const nsAString &aCharset,
                           const nsAString &aType,
                           const nsAString &aCrossOrigin,
+                          const nsAString& aIntegrity,
                           bool aScriptFromHead,
                           const mozilla::net::ReferrerPolicy aReferrerPolicy);
 

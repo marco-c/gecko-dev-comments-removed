@@ -223,6 +223,7 @@ public:
                          bool aHasAlternateRel,
                          CORSMode aCORSMode,
                          ReferrerPolicy aReferrerPolicy,
+                         const nsAString& aIntegrity,
                          nsICSSLoaderObserver* aObserver,
                          bool* aIsAlternate);
 
@@ -320,7 +321,8 @@ public:
                      const nsCString& aCharset,
                      nsICSSLoaderObserver* aObserver,
                      CORSMode aCORSMode = CORS_NONE,
-                     ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Default);
+                     ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Default,
+                     const nsAString& aIntegrity = EmptyString());
 
   
 
@@ -417,6 +419,7 @@ private:
                        nsIPrincipal* aLoaderPrincipal,
                        CORSMode aCORSMode,
                        ReferrerPolicy aReferrerPolicy,
+                       const nsAString& aIntegrity,
                        bool aSyncLoad,
                        bool aHasAlternateRel,
                        const nsAString& aTitle,
@@ -450,7 +453,8 @@ private:
                                         CSSStyleSheet** aSheet,
                                         nsICSSLoaderObserver* aObserver,
                                         CORSMode aCORSMode = CORS_NONE,
-                                        ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Default);
+                                        ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Default,
+                                        const nsAString& aIntegrity = EmptyString());
 
   
   
