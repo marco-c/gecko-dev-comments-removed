@@ -1450,15 +1450,37 @@ let StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
 
 
 
+
+
+
 let RuleModificationList = Class({
+  
+
+
+
   initialize: function(rule) {
     this.rule = rule;
     this.modifications = [];
   },
 
+  
+
+
+
+
+
   apply: function() {
     return this.rule.modifyProperties(this.modifications);
   },
+
+  
+
+
+
+
+
+
+
   setProperty: function(name, value, priority) {
     this.modifications.push({
       type: "set",
@@ -1467,6 +1489,12 @@ let RuleModificationList = Class({
       priority: priority
     });
   },
+
+  
+
+
+
+
   removeProperty: function(name) {
     this.modifications.push({
       type: "remove",
