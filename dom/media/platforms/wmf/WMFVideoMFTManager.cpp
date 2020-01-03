@@ -307,6 +307,8 @@ WMFVideoMFTManager::Input(MediaRawData* aSample)
                                            &mLastInput);
   NS_ENSURE_TRUE(SUCCEEDED(hr) && mLastInput != nullptr, hr);
 
+  mLastDuration = aSample->mDuration;
+
   
   return mDecoder->Input(mLastInput);
 }
@@ -330,7 +332,11 @@ WMFVideoMFTManager::MaybeToggleDXVA(IMFMediaType* aType)
     return false;
   }
 
-  if (mDXVA2Manager->SupportsConfig(aType)) {
+  
+  
+  float framerate = 1000000.0 / mLastDuration;
+
+  if (mDXVA2Manager->SupportsConfig(aType, framerate)) {
     if (!mUseHwAccel) {
       
       ULONG_PTR manager = ULONG_PTR(mDXVA2Manager->GetDXVADeviceManager());
