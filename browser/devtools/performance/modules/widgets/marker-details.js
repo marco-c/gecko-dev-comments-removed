@@ -102,7 +102,7 @@ MarkerDetails.prototype = {
 
 
   _onClick: function (e) {
-    let data = findActionFromEvent(e.target);
+    let data = findActionFromEvent(e.target, this._parent);
     if (!data) {
       return;
     }
