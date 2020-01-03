@@ -2088,11 +2088,13 @@ class CloseNotificationRunnable final
   : public WorkerMainThreadRunnable
 {
   Notification* mNotification;
+  bool mHadObserver;
 
   public:
   explicit CloseNotificationRunnable(Notification* aNotification)
     : WorkerMainThreadRunnable(aNotification->mWorkerPrivate)
     , mNotification(aNotification)
+    , mHadObserver(false)
   {}
 
   bool
@@ -2102,26 +2104,54 @@ class CloseNotificationRunnable final
       
       mNotification->mObserver->ForgetNotification();
       mNotification->mObserver = nullptr;
+      mHadObserver = true;
     }
     mNotification->CloseInternal();
     return true;
+  }
+
+  bool
+  HadObserver()
+  {
+    return mHadObserver;
   }
 };
 
 bool
 NotificationFeature::Notify(JSContext* aCx, Status aStatus)
 {
-  MOZ_ASSERT(aStatus >= Canceling);
+  if (aStatus >= Canceling) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsRefPtr<Notification> kungFuDeathGrip = mNotification;
 
-  
-  nsRefPtr<CloseNotificationRunnable> r =
-    new CloseNotificationRunnable(mNotification);
-  r->Dispatch(aCx);
+    
+    nsRefPtr<CloseNotificationRunnable> r =
+      new CloseNotificationRunnable(mNotification);
+    r->Dispatch(aCx);
 
-  mNotification->ReleaseObject();
-  
-  
-  
+    
+    
+    
+    if (r->HadObserver()) {
+      mNotification->ReleaseObject();
+    }
+
+    
+    
+    
+  }
   return true;
 }
 
@@ -2132,8 +2162,13 @@ Notification::RegisterFeature()
   mWorkerPrivate->AssertIsOnWorkerThread();
   MOZ_ASSERT(!mFeature);
   mFeature = MakeUnique<NotificationFeature>(this);
-  return mWorkerPrivate->AddFeature(mWorkerPrivate->GetJSContext(),
-                                    mFeature.get());
+  bool added = mWorkerPrivate->AddFeature(mWorkerPrivate->GetJSContext(),
+                                          mFeature.get());
+  if (!added) {
+    mFeature = nullptr;
+  }
+
+  return added;
 }
 
 void
@@ -2305,14 +2340,14 @@ Notification::CreateAndShow(nsIGlobalObject* aGlobal,
   
   JS::Rooted<JS::Value> data(cx, aOptions.mData);
   notification->InitFromJSVal(cx, data, aRv);
-  if (aRv.Failed()) {
+  if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
   notification->SetScope(aScope);
 
   auto ref = MakeUnique<NotificationRef>(notification);
-  if (!ref->Initialized()) {
+  if (NS_WARN_IF(!ref->Initialized())) {
     aRv.Throw(NS_ERROR_DOM_ABORT_ERR);
     return nullptr;
   }
