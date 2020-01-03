@@ -286,6 +286,8 @@ private:
   
 
 
+
+
   void DispatchAttributeEvent(const Sequence<nsString>& aTypes);
 
   
