@@ -3095,7 +3095,11 @@ void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream)
   GetSrcMediaStream()->AddAudioOutput(this);
   SetVolumeInternal();
 
+#ifdef MOZ_WIDGET_GONK
   bool bUseOverlayImage = mSrcStream->AsDOMHwMediaStream() != nullptr;
+#else
+  bool bUseOverlayImage = false;
+#endif
   VideoFrameContainer* container;
 
   if (bUseOverlayImage) {
@@ -4518,17 +4522,13 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
   
   AutoNoJSAPI nojsapi;
 
-  
-  uint32_t notify = HasAudio() ? nsIAudioChannelAgent::AUDIO_AGENT_NOTIFY :
-                                 nsIAudioChannelAgent::AUDIO_AGENT_DONT_NOTIFY;
-
   if (aPlaying) {
     float volume = 0.0;
     bool muted = true;
-    mAudioChannelAgent->NotifyStartedPlaying(notify, &volume, &muted);
+    mAudioChannelAgent->NotifyStartedPlaying(&volume, &muted);
     WindowVolumeChanged(volume, muted);
   } else {
-    mAudioChannelAgent->NotifyStoppedPlaying(notify);
+    mAudioChannelAgent->NotifyStoppedPlaying();
     mAudioChannelAgent = nullptr;
   }
 }
