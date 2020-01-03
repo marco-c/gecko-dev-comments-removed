@@ -46,14 +46,12 @@ function* testLinkOpensUrl({ win, tab, elementId, expectedUrl }) {
 
 add_task(function* test_links() {
   
-  Services.prefs.setBoolPref("privacy.trackingprotection.ui.enabled", true);
   Services.prefs.setCharPref("app.support.baseURL", "https://example.com/");
   Services.prefs.setCharPref("privacy.trackingprotection.introURL",
                              "https://example.com/tour");
   registerCleanupFunction(function () {
     Services.prefs.clearUserPref("privacy.trackingprotection.introURL");
     Services.prefs.clearUserPref("app.support.baseURL");
-    Services.prefs.clearUserPref("privacy.trackingprotection.ui.enabled");
   });
 
   let { win, tab } = yield openAboutPrivateBrowsing();
@@ -77,12 +75,10 @@ add_task(function* test_links() {
 
 add_task(function* test_toggleTrackingProtection() {
   
-  Services.prefs.setBoolPref("privacy.trackingprotection.ui.enabled", true);
   Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled",
                              true);
   registerCleanupFunction(function () {
     Services.prefs.clearUserPref("privacy.trackingprotection.pbmode.enabled");
-    Services.prefs.clearUserPref("privacy.trackingprotection.ui.enabled");
   });
 
   let { win, tab } = yield openAboutPrivateBrowsing();
