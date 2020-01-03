@@ -244,6 +244,10 @@ public:
 
   
   
+  void SetTiming(const AnimationTiming& aTiming, Animation& aOwningAnimtion);
+
+  
+  
   
   
   TimeDuration InitialAdvance() const {
