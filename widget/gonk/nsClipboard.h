@@ -2,15 +2,15 @@
 
 
 
-
 #ifndef nsClipbard_h__
 #define nsClipbard_h__
 
+#include "GonkClipboardData.h"
+#include "mozilla/UniquePtr.h"
 #include "nsIClipboard.h"
 
 class nsClipboard final : public nsIClipboard
 {
-  nsAutoString mClipboard;
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICLIPBOARD
@@ -19,6 +19,9 @@ public:
 
 protected:
   ~nsClipboard() {}
+
+private:
+  mozilla::UniquePtr<mozilla::GonkClipboardData> mClipboard;
 };
 
 #endif
