@@ -41,7 +41,6 @@ import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.gfx.PanZoomController;
 import org.mozilla.gecko.mozglue.ContextUtils;
-import org.mozilla.gecko.mozglue.GeckoLoader;
 import org.mozilla.gecko.overlays.ui.ShareDialog;
 import org.mozilla.gecko.prompts.PromptService;
 import org.mozilla.gecko.util.EventCallback;
@@ -337,56 +336,6 @@ public class GeckoAppShell
     @RobocopTarget
     public static LayerView getLayerView() {
         return sLayerView;
-    }
-
-    public static void runGecko(String apkPath, String args, String url, String type) {
-        
-        MessageQueue.IdleHandler idleHandler = new MessageQueue.IdleHandler() {
-            @Override public boolean queueIdle() {
-                final Handler geckoHandler = ThreadUtils.sGeckoHandler;
-                Message idleMsg = Message.obtain(geckoHandler);
-                
-                idleMsg.obj = geckoHandler;
-                geckoHandler.sendMessageAtFrontOfQueue(idleMsg);
-                
-                return true;
-            }
-        };
-        Looper.myQueue().addIdleHandler(idleHandler);
-
-        
-        nativeInit(GeckoAppShell.class.getClassLoader(), Looper.myQueue());
-
-        
-        String combinedArgs = apkPath + " -greomni " + apkPath;
-        if (args != null)
-            combinedArgs += " " + args;
-        if (url != null)
-            combinedArgs += " -url " + url;
-        if (type != null)
-            combinedArgs += " " + type;
-
-        
-        
-        
-        
-        if (!AppConstants.MOZILLA_OFFICIAL) {
-            Log.w(LOGTAG, "STARTUP PERFORMANCE WARNING: un-official build: purging the " +
-                          "startup (JavaScript) caches.");
-            combinedArgs += " -purgecaches";
-        }
-
-        DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
-        combinedArgs += " -width " + metrics.widthPixels + " -height " + metrics.heightPixels;
-
-        if (!AppConstants.MOZILLA_OFFICIAL) {
-            Log.d(LOGTAG, "GeckoLoader.nativeRun " + combinedArgs);
-        }
-        
-        GeckoLoader.nativeRun(combinedArgs);
-
-        
-        Looper.myQueue().removeIdleHandler(idleHandler);
     }
 
     
