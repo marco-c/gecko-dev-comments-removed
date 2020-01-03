@@ -35,8 +35,6 @@
   --toolbarbutton-combined-backgroundimage: linear-gradient(hsla(210,54%,20%,.2) 0, hsla(210,54%,20%,.2) 18px);
 
   --identity-box-verified-background-color: #fff;
-
-  --panel-separator-color: ThreeDShadow;
 }
 
 #menubar-items {
@@ -327,7 +325,7 @@ menuitem.bookmark-item {
 }
 
 
-menuitem:not([type]):not(.menuitem-tooltip):not(.menuitem-iconic-tooltip) {
+menuitem:not([type]):not(.menuitem-tooltip):not(.menuitem-iconic-tooltip):not([endimage]) {
   -moz-binding: url("chrome://global/content/bindings/menu.xml#menuitem-iconic");
 }
 
@@ -962,7 +960,9 @@ toolbarbutton[constrain-size="true"][cui-areatype="toolbar"] > .toolbarbutton-ba
   color: GrayText;
 }
 
-%include ../shared/urlbarSearchSuggestionsNotification.inc.css
+#PopupAutoCompleteRichResult > richlistbox {
+  transition: height 100ms;
+}
 
 #search-container {
   min-width: calc(54px + 11ch);
@@ -1134,9 +1134,7 @@ richlistitem[type~="action"][actiontype="searchengine"][selected="true"] > .ac-t
   height: 16px;
 }
 
-.ac-comment,
-#PopupAutoCompleteRichResult > hbox[anonid="search-suggestions-notification"] > description,
-#PopupAutoCompleteRichResult > hbox[anonid="search-suggestions-notification"] > button {
+.ac-comment {
   font-size: 1.05em;
 }
 
