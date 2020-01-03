@@ -122,13 +122,6 @@ enum MenuPopupAnchorType {
 #define POPUPPOSITION_HFLIP(v) (v ^ 1)
 #define POPUPPOSITION_VFLIP(v) (v ^ 2)
 
-
-
-
-
-
-#define CONTEXT_MENU_OFFSET_PIXELS 2
-
 nsIFrame* NS_NewMenuPopupFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
 class nsView;

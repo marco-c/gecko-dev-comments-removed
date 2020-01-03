@@ -60,6 +60,11 @@ using namespace mozilla;
 using mozilla::dom::PopupBoxObject;
 
 int8_t nsMenuPopupFrame::sDefaultLevelIsTop = -1;
+
+
+
+
+
 uint32_t nsMenuPopupFrame::sTimeoutOfIncrementalSearch = 1000;
 
 const char* kPrefIncrementalSearchTimeout =
@@ -1170,7 +1175,7 @@ nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
         
         
         
-        nscoord newScreenPoint = startpos - aSize - aMarginBegin - aOffsetForContextMenu;
+        nscoord newScreenPoint = startpos - aSize - aMarginBegin - std::max(aOffsetForContextMenu, 0);
         if (newScreenPoint != aScreenPoint) {
           *aFlipSide = true;
           aScreenPoint = newScreenPoint;
@@ -1316,7 +1321,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
   nsRect rootScreenRect = rootFrame->GetScreenRectInAppUnits();
 
   nsDeviceContext* devContext = presContext->DeviceContext();
-  nscoord offsetForContextMenu = 0;
+  nsPoint offsetForContextMenu;
 
   bool isNoAutoHide = IsNoAutoHide();
   nsPopupLevel popupLevel = PopupLevel(isNoAutoHide);
@@ -1381,9 +1386,13 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     
     
     if (mAdjustOffsetForContextMenu) {
-      int32_t offsetForContextMenuDev =
-        nsPresContext::CSSPixelsToAppUnits(CONTEXT_MENU_OFFSET_PIXELS) / factor;
-      offsetForContextMenu = presContext->DevPixelsToAppUnits(offsetForContextMenuDev);
+      nsPoint offsetForContextMenuDev;
+      offsetForContextMenuDev.x = nsPresContext::CSSPixelsToAppUnits(LookAndFeel::GetInt(
+                                    LookAndFeel::eIntID_ContextMenuOffsetHorizontal)) / factor;
+      offsetForContextMenuDev.y = nsPresContext::CSSPixelsToAppUnits(LookAndFeel::GetInt(
+                                    LookAndFeel::eIntID_ContextMenuOffsetVertical)) / factor;
+      offsetForContextMenu.x = presContext->DevPixelsToAppUnits(offsetForContextMenuDev.x);
+      offsetForContextMenu.y = presContext->DevPixelsToAppUnits(offsetForContextMenuDev.y);
     }
 
     
@@ -1394,8 +1403,8 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     anchorRect = nsRect(screenPoint, nsSize(0, 0));
 
     
-    screenPoint.MoveBy(margin.left + offsetForContextMenu,
-                       margin.top + offsetForContextMenu);
+    screenPoint.MoveBy(margin.left + offsetForContextMenu.x,
+                       margin.top + offsetForContextMenu.y);
 
     
     vFlip = FlipStyle_Outside;
@@ -1439,7 +1448,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     } else {
       mRect.width = FlipOrResize(screenPoint.x, mRect.width, screenRect.x,
                                  screenRect.XMost(), anchorRect.x, anchorRect.XMost(),
-                                 margin.left, margin.right, offsetForContextMenu, hFlip,
+                                 margin.left, margin.right, offsetForContextMenu.x, hFlip,
                                  &mHFlip);
     }
     if (slideVertical) {
@@ -1448,7 +1457,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     } else {
       mRect.height = FlipOrResize(screenPoint.y, mRect.height, screenRect.y,
                                   screenRect.YMost(), anchorRect.y, anchorRect.YMost(),
-                                  margin.top, margin.bottom, offsetForContextMenu, vFlip,
+                                  margin.top, margin.bottom, offsetForContextMenu.y, vFlip,
                                   &mVFlip);
     }
 
@@ -2158,10 +2167,10 @@ nsMenuPopupFrame::MoveTo(int32_t aLeft, int32_t aTop, bool aUpdateAttrs)
 
   
   if (mAdjustOffsetForContextMenu) {
-    nscoord offsetForContextMenu =
-      nsPresContext::CSSPixelsToAppUnits(CONTEXT_MENU_OFFSET_PIXELS);
-    margin.left += offsetForContextMenu;
-    margin.top += offsetForContextMenu;
+    margin.left += nsPresContext::CSSPixelsToAppUnits(LookAndFeel::GetInt(
+                     LookAndFeel::eIntID_ContextMenuOffsetHorizontal));
+    margin.top += nsPresContext::CSSPixelsToAppUnits(LookAndFeel::GetInt(
+                     LookAndFeel::eIntID_ContextMenuOffsetVertical));
   }
 
   nsPresContext* presContext = PresContext();
