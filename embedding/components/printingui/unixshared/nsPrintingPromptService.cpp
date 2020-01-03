@@ -71,7 +71,6 @@ nsPrintingPromptService::Init()
     return rv;
 }
 
-
 NS_IMETHODIMP 
 nsPrintingPromptService::ShowPrintDialog(nsIDOMWindow *parent, nsIWebBrowserPrint *webBrowserPrint, nsIPrintSettings *printSettings)
 {
@@ -93,7 +92,6 @@ nsPrintingPromptService::ShowPrintDialog(nsIDOMWindow *parent, nsIWebBrowserPrin
     block->SetInt(0, 0);
     return DoDialog(parent, block, webBrowserPrint, printSettings, kPrintDialogURL);
 }
-
 
 NS_IMETHODIMP 
 nsPrintingPromptService::ShowProgress(nsIDOMWindow*            parent, 
@@ -135,7 +133,6 @@ nsPrintingPromptService::ShowProgress(nsIDOMWindow*            parent,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPrintingPromptService::ShowPageSetup(nsIDOMWindow *parent, nsIPrintSettings *printSettings, nsIObserver *aObs)
 {
@@ -155,7 +152,6 @@ nsPrintingPromptService::ShowPageSetup(nsIDOMWindow *parent, nsIPrintSettings *p
     block->SetInt(0, 0);
     return DoDialog(parent, block, nullptr, printSettings, kPageSetupDialogURL);
 }
-
 
 NS_IMETHODIMP 
 nsPrintingPromptService::ShowPrinterProperties(nsIDOMWindow *parent, const char16_t *printerName, nsIPrintSettings *printSettings)
@@ -251,7 +247,6 @@ nsPrintingPromptService::DoDialog(nsIDOMWindow *aParent,
 
 
 
-
 NS_IMETHODIMP 
 nsPrintingPromptService::OnStateChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, uint32_t aStateFlags, nsresult aStatus)
 {
@@ -266,7 +261,6 @@ nsPrintingPromptService::OnStateChange(nsIWebProgress *aWebProgress, nsIRequest 
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPrintingPromptService::OnProgressChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, int32_t aCurSelfProgress, int32_t aMaxSelfProgress, int32_t aCurTotalProgress, int32_t aMaxTotalProgress)
 {
@@ -275,7 +269,6 @@ nsPrintingPromptService::OnProgressChange(nsIWebProgress *aWebProgress, nsIReque
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPrintingPromptService::OnLocationChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, nsIURI *location, uint32_t aFlags)
@@ -286,7 +279,6 @@ nsPrintingPromptService::OnLocationChange(nsIWebProgress *aWebProgress, nsIReque
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPrintingPromptService::OnStatusChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, nsresult aStatus, const char16_t *aMessage)
 {
@@ -295,7 +287,6 @@ nsPrintingPromptService::OnStatusChange(nsIWebProgress *aWebProgress, nsIRequest
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPrintingPromptService::OnSecurityChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, uint32_t state)

@@ -126,7 +126,6 @@ nsDBusHandlerApp::LaunchWithURI(nsIURI *aURI,
 
 
 
-
 NS_IMETHODIMP nsDBusHandlerApp::GetService(nsACString & aService)
 {
   aService.Assign(mService);
@@ -138,7 +137,6 @@ NS_IMETHODIMP nsDBusHandlerApp::SetService(const nsACString & aService)
   mService.Assign(aService);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsDBusHandlerApp::GetMethod(nsACString & aMethod)
 {
@@ -152,7 +150,6 @@ NS_IMETHODIMP nsDBusHandlerApp::SetMethod(const nsACString & aMethod)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsDBusHandlerApp::GetDBusInterface(nsACString & aInterface)
 {
   aInterface.Assign(mInterface);
@@ -164,7 +161,6 @@ NS_IMETHODIMP nsDBusHandlerApp::SetDBusInterface(const nsACString & aInterface)
   mInterface.Assign(aInterface);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsDBusHandlerApp::GetObjectPath(nsACString & aObjpath)
 {

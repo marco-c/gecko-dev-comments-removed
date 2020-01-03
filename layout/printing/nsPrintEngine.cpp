@@ -797,7 +797,6 @@ nsPrintEngine::PrintPreview(nsIPrintSettings* aPrintSettings,
 }
 
 
-
 NS_IMETHODIMP
 nsPrintEngine::GetIsFramesetDocument(bool *aIsFramesetDocument)
 {
@@ -805,7 +804,6 @@ nsPrintEngine::GetIsFramesetDocument(bool *aIsFramesetDocument)
   *aIsFramesetDocument = IsParentAFrameSet(webContainer);
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP 
@@ -828,7 +826,6 @@ nsPrintEngine::GetIsIFrameSelected(bool *aIsIFrameSelected)
 }
 
 
-
 NS_IMETHODIMP 
 nsPrintEngine::GetIsRangeSelection(bool *aIsRangeSelection)
 {
@@ -839,7 +836,6 @@ nsPrintEngine::GetIsRangeSelection(bool *aIsRangeSelection)
 }
 
 
-
 NS_IMETHODIMP 
 nsPrintEngine::GetIsFramesetFrameSelected(bool *aIsFramesetFrameSelected)
 {
@@ -848,7 +844,6 @@ nsPrintEngine::GetIsFramesetFrameSelected(bool *aIsFramesetFrameSelected)
   *aIsFramesetFrameSelected = currentFocusWin != nullptr;
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP
@@ -912,7 +907,6 @@ nsPrintEngine::EnumerateDocumentNames(uint32_t* aCount,
 }
 
 
-
 nsresult
 nsPrintEngine::GetGlobalPrintSettings(nsIPrintSettings **aGlobalPrintSettings)
 {
@@ -928,7 +922,6 @@ nsPrintEngine::GetGlobalPrintSettings(nsIPrintSettings **aGlobalPrintSettings)
 }
 
 
-
 NS_IMETHODIMP
 nsPrintEngine::GetDoingPrint(bool *aDoingPrint)
 {
@@ -938,7 +931,6 @@ nsPrintEngine::GetDoingPrint(bool *aDoingPrint)
 }
 
 
-
 NS_IMETHODIMP
 nsPrintEngine::GetDoingPrintPreview(bool *aDoingPrintPreview)
 {
@@ -946,7 +938,6 @@ nsPrintEngine::GetDoingPrintPreview(bool *aDoingPrintPreview)
   *aDoingPrintPreview = mIsDoingPrintPreview;
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP

@@ -23,7 +23,6 @@ nsDocShellEnumerator::~nsDocShellEnumerator()
 
 NS_IMPL_ISUPPORTS(nsDocShellEnumerator, nsISimpleEnumerator)
 
-
 NS_IMETHODIMP
 nsDocShellEnumerator::GetNext(nsISupports** aResult)
 {
@@ -44,7 +43,6 @@ nsDocShellEnumerator::GetNext(nsISupports** aResult)
   item.forget(aResult);
   return rv;
 }
-
 
 NS_IMETHODIMP
 nsDocShellEnumerator::HasMoreElements(bool* aResult)

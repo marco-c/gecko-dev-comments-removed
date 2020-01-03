@@ -1988,7 +1988,6 @@ nsDocShell::GetChromeEventHandler(nsIDOMEventTarget** aChromeEventHandler)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsDocShell::SetCurrentURI(nsIURI* aURI)
 {
@@ -7117,7 +7116,6 @@ nsDocShell::Embed(nsIContentViewer* aContentViewer,
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsDocShell::SetIsPrinting(bool aIsPrinting)
@@ -12807,7 +12805,6 @@ nsDocShell::IsFrame()
   GetSameTypeParent(getter_AddRefs(parent));
   return !!parent;
 }
-
 
 NS_IMETHODIMP
 nsDocShell::IsBeingDestroyed(bool* aDoomed)

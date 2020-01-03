@@ -45,7 +45,6 @@ nsPrintSettingsWin::~nsPrintSettingsWin()
   if (mDevMode) ::HeapFree(::GetProcessHeap(), 0, mDevMode);
 }
 
-
 NS_IMETHODIMP nsPrintSettingsWin::SetDeviceName(const char16_t * aDeviceName)
 {
   if (mDeviceName) {
@@ -60,7 +59,6 @@ NS_IMETHODIMP nsPrintSettingsWin::GetDeviceName(char16_t **aDeviceName)
   *aDeviceName = mDeviceName?reinterpret_cast<char16_t*>(wcsdup(mDeviceName)):nullptr;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPrintSettingsWin::SetDriverName(const char16_t * aDriverName)
 {
@@ -87,7 +85,6 @@ void nsPrintSettingsWin::CopyDevMode(DEVMODEW* aInDevMode, DEVMODEW *& aOutDevMo
   }
 
 }
-
 
 NS_IMETHODIMP nsPrintSettingsWin::GetDevMode(DEVMODEW * *aDevMode)
 {
@@ -156,7 +153,6 @@ nsPrintSettingsWin& nsPrintSettingsWin::operator=(const nsPrintSettingsWin& rhs)
 
   return *this;
 }
-
 
 
 nsresult 

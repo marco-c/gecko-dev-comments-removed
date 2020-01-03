@@ -136,7 +136,6 @@ mozHunspell::~mozHunspell()
   delete mHunspell;
 }
 
-
 NS_IMETHODIMP mozHunspell::GetDictionary(char16_t **aDictionary)
 {
   NS_ENSURE_ARG_POINTER(aDictionary);
@@ -237,7 +236,6 @@ NS_IMETHODIMP mozHunspell::SetDictionary(const char16_t *aDictionary)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP mozHunspell::GetLanguage(char16_t **aLanguage)
 {
   NS_ENSURE_ARG_POINTER(aLanguage);
@@ -249,7 +247,6 @@ NS_IMETHODIMP mozHunspell::GetLanguage(char16_t **aLanguage)
   return *aLanguage ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
 
-
 NS_IMETHODIMP mozHunspell::GetProvidesPersonalDictionary(bool *aProvidesPersonalDictionary)
 {
   NS_ENSURE_ARG_POINTER(aProvidesPersonalDictionary);
@@ -257,7 +254,6 @@ NS_IMETHODIMP mozHunspell::GetProvidesPersonalDictionary(bool *aProvidesPersonal
   *aProvidesPersonalDictionary = false;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP mozHunspell::GetProvidesWordUtils(bool *aProvidesWordUtils)
 {
@@ -267,18 +263,15 @@ NS_IMETHODIMP mozHunspell::GetProvidesWordUtils(bool *aProvidesWordUtils)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP mozHunspell::GetName(char16_t * *aName)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP mozHunspell::GetCopyright(char16_t * *aCopyright)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP mozHunspell::GetPersonalDictionary(mozIPersonalDictionary * *aPersonalDictionary)
 {
@@ -313,7 +306,6 @@ AppendNewString(const nsAString& aString, nsIFile* aFile, void* aClosure)
   ++ans->count;
   return PL_DHASH_NEXT;
 }
-
 
 NS_IMETHODIMP mozHunspell::GetDictionaryList(char16_t ***aDictionaries,
                                             uint32_t *aCount)
@@ -519,7 +511,6 @@ nsresult mozHunspell::ConvertCharset(const char16_t* aStr, char ** aDst)
   return rv;
 }
 
-
 NS_IMETHODIMP mozHunspell::Check(const char16_t *aWord, bool *aResult)
 {
   NS_ENSURE_ARG_POINTER(aWord);
@@ -538,7 +529,6 @@ NS_IMETHODIMP mozHunspell::Check(const char16_t *aWord, bool *aResult)
 
   return rv;
 }
-
 
 NS_IMETHODIMP mozHunspell::Suggest(const char16_t *aWord, char16_t ***aSuggestions, uint32_t *aSuggestionCount)
 {
@@ -603,14 +593,12 @@ mozHunspell::Observe(nsISupports* aSubj, const char *aTopic,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP mozHunspell::AddDirectory(nsIFile *aDir)
 {
   mDynamicDirectories.AppendObject(aDir);
   LoadDictionaryList(true);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP mozHunspell::RemoveDirectory(nsIFile *aDir)
 {

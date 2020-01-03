@@ -111,7 +111,6 @@ void nsNSSASN1Tree::InitNodes()
   InitChildsRecursively(mTopNode);
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::LoadASN1Structure(nsIASN1Object *asn1Object)
 {
@@ -147,7 +146,6 @@ nsNSSASN1Tree::LoadASN1Structure(nsIASN1Object *asn1Object)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetRowCount(int32_t *aRowCount)
 {
@@ -158,7 +156,6 @@ nsNSSASN1Tree::GetRowCount(int32_t *aRowCount)
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetSelection(nsITreeSelection * *aSelection)
@@ -194,7 +191,6 @@ nsNSSASN1Tree::GetColumnProperties(nsITreeColumn* col, nsAString& aProps)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::IsContainer(int32_t index, bool *_retval)
 {
@@ -205,7 +201,6 @@ nsNSSASN1Tree::IsContainer(int32_t index, bool *_retval)
   *_retval = (n->seq != nullptr);
   return NS_OK; 
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::IsContainerOpen(int32_t index, bool *_retval)
@@ -218,7 +213,6 @@ nsNSSASN1Tree::IsContainerOpen(int32_t index, bool *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::IsContainerEmpty(int32_t index, bool *_retval)
 {
@@ -226,14 +220,12 @@ nsNSSASN1Tree::IsContainerEmpty(int32_t index, bool *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::IsSeparator(int32_t index, bool *_retval)
 {
   *_retval = false;
   return NS_OK; 
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetLevel(int32_t index, int32_t *_retval)
@@ -249,7 +241,6 @@ nsNSSASN1Tree::GetLevel(int32_t index, int32_t *_retval)
   return NS_OK; 
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetImageSrc(int32_t row, nsITreeColumn* col, 
                            nsAString& _retval)
@@ -257,13 +248,11 @@ nsNSSASN1Tree::GetImageSrc(int32_t row, nsITreeColumn* col,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetProgressMode(int32_t row, nsITreeColumn* col, int32_t* _retval)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetCellValue(int32_t row, nsITreeColumn* col, 
@@ -271,7 +260,6 @@ nsNSSASN1Tree::GetCellValue(int32_t row, nsITreeColumn* col,
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetCellText(int32_t row, nsITreeColumn* col, 
@@ -287,7 +275,6 @@ nsNSSASN1Tree::GetCellText(int32_t row, nsITreeColumn* col,
   return n->obj->GetDisplayName(_retval);
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetDisplayData(uint32_t index, nsAString &_retval)
 {
@@ -299,14 +286,12 @@ nsNSSASN1Tree::GetDisplayData(uint32_t index, nsAString &_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::SetTree(nsITreeBoxObject *tree)
 {
   mTree = tree;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::ToggleOpenState(int32_t index)
@@ -333,13 +318,11 @@ nsNSSASN1Tree::ToggleOpenState(int32_t index)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::CycleHeader(nsITreeColumn* col)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::SelectionChanged()
@@ -347,13 +330,11 @@ nsNSSASN1Tree::SelectionChanged()
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::CycleCell(int32_t row, nsITreeColumn* col)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::IsEditable(int32_t row, nsITreeColumn* col, 
@@ -363,7 +344,6 @@ nsNSSASN1Tree::IsEditable(int32_t row, nsITreeColumn* col,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::IsSelectable(int32_t row, nsITreeColumn* col, 
                             bool *_retval)
@@ -372,14 +352,12 @@ nsNSSASN1Tree::IsSelectable(int32_t row, nsITreeColumn* col,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::SetCellValue(int32_t row, nsITreeColumn* col, 
                             const nsAString& value)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::SetCellText(int32_t row, nsITreeColumn* col, 
@@ -388,20 +366,17 @@ nsNSSASN1Tree::SetCellText(int32_t row, nsITreeColumn* col,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::PerformAction(const char16_t *action)
 {
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::PerformActionOnRow(const char16_t *action, int32_t row)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::PerformActionOnCell(const char16_t *action, int32_t row, 
@@ -444,7 +419,6 @@ NS_IMETHODIMP nsNSSASN1Tree::IsSorted(bool *_retval)
 }
 
 
-
 NS_IMETHODIMP 
 nsNSSASN1Tree::GetParentIndex(int32_t rowIndex, int32_t *_retval)
 {
@@ -457,7 +431,6 @@ nsNSSASN1Tree::GetParentIndex(int32_t rowIndex, int32_t *_retval)
   *_retval = parentIndex;
   return NS_OK; 
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1Tree::HasNextSibling(int32_t rowIndex, int32_t afterIndex, 

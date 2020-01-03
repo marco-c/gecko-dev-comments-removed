@@ -81,7 +81,6 @@ nsresult nsVolumeMountLock::Init()
   return Lock(vol);
 }
 
-
 NS_IMETHODIMP nsVolumeMountLock::Unlock()
 {
   LOG("nsVolumeMountLock released for '%s'",

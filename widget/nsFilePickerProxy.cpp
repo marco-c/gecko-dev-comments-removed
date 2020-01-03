@@ -99,7 +99,6 @@ nsFilePickerProxy::SetFilterIndex(int32_t aFilterIndex)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsFilePickerProxy::GetFile(nsIFile** aFile)
 {
@@ -107,14 +106,12 @@ nsFilePickerProxy::GetFile(nsIFile** aFile)
   return NS_ERROR_FAILURE;
 }
 
-
 NS_IMETHODIMP
 nsFilePickerProxy::GetFileURL(nsIURI** aFileURL)
 {
   MOZ_ASSERT(false, "GetFileURL is unimplemented; use GetDomfile");
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 nsFilePickerProxy::GetFiles(nsISimpleEnumerator** aFiles)

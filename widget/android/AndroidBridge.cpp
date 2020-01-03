@@ -1585,7 +1585,6 @@ nsAndroidBridge::~nsAndroidBridge()
 {
 }
 
-
 NS_IMETHODIMP nsAndroidBridge::HandleGeckoMessage(JS::HandleValue val,
                                                   JSContext *cx)
 {
@@ -1619,20 +1618,17 @@ NS_IMETHODIMP nsAndroidBridge::HandleGeckoMessage(JS::HandleValue val,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsAndroidBridge::GetDisplayPort(bool aPageSizeUpdate, bool aIsBrowserContentDisplayed, int32_t tabId, nsIAndroidViewport* metrics, nsIAndroidDisplayport** displayPort)
 {
     AndroidBridge::Bridge()->GetDisplayPort(aPageSizeUpdate, aIsBrowserContentDisplayed, tabId, metrics, displayPort);
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsAndroidBridge::ContentDocumentChanged()
 {
     AndroidBridge::Bridge()->ContentDocumentChanged();
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsAndroidBridge::IsContentDocumentDisplayed(bool *aRet)
 {
@@ -1726,7 +1722,6 @@ AndroidBridge::PumpMessageLoop()
 
     return GeckoAppShell::PumpMessageLoop(msg);
 }
-
 
 NS_IMETHODIMP nsAndroidBridge::GetBrowserApp(nsIAndroidBrowserApp * *aBrowserApp)
 {

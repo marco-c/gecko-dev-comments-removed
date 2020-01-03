@@ -2476,7 +2476,6 @@ nsHTMLDocument::GenerateParserKey(void)
   return script;
 }
 
-
 NS_IMETHODIMP
 nsHTMLDocument::GetDesignMode(nsAString & aDesignMode)
 {
@@ -3329,7 +3328,6 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
   return !rv.Failed();
 }
 
-
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID,
                                     bool* _retval)
@@ -3383,7 +3381,6 @@ nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID, ErrorResult& rv)
   rv = cmdMgr->IsCommandEnabled(cmdToDispatch.get(), window, &retval);
   return retval;
 }
-
 
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandIndeterm(const nsAString & commandID,
@@ -3441,7 +3438,6 @@ nsHTMLDocument::QueryCommandIndeterm(const nsAString& commandID, ErrorResult& rv
   cmdParams->GetBooleanValue("state_mixed", &retval);
   return retval;
 }
-
 
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandState(const nsAString & commandID, bool *_retval)
@@ -3526,7 +3522,6 @@ nsHTMLDocument::QueryCommandState(const nsAString& commandID, ErrorResult& rv)
   return retval;
 }
 
-
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandSupported(const nsAString & commandID,
                                       bool *_retval)
@@ -3560,7 +3555,6 @@ nsHTMLDocument::QueryCommandSupported(const nsAString& commandID)
   nsAutoCString cmdToDispatch;
   return ConvertToMidasInternalCommand(commandID, cmdToDispatch);
 }
-
 
 NS_IMETHODIMP
 nsHTMLDocument::QueryCommandValue(const nsAString & commandID,

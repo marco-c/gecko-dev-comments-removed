@@ -139,7 +139,6 @@ RtspMetaData::SetWidth(uint32_t aWidth)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 RtspMetaData::GetHeight(uint32_t *aHeight)
 {
@@ -155,7 +154,6 @@ RtspMetaData::SetHeight(uint32_t aHeight)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 RtspMetaData::GetDuration(uint64_t *aDuration)
 {
@@ -170,7 +168,6 @@ RtspMetaData::SetDuration(uint64_t aDuration)
   mDuration = aDuration;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 RtspMetaData::GetSampleRate(uint32_t *aSampleRate)

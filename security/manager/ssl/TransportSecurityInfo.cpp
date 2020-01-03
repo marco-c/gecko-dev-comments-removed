@@ -132,7 +132,6 @@ TransportSecurityInfo::SetSecurityState(uint32_t aState)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 TransportSecurityInfo::GetCountSubRequestsBrokenSecurity(
   int32_t *aSubRequestsBrokenSecurity)
@@ -148,7 +147,6 @@ TransportSecurityInfo::SetCountSubRequestsBrokenSecurity(
   mSubRequestsBrokenSecurity = aSubRequestsBrokenSecurity;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 TransportSecurityInfo::GetCountSubRequestsNoSecurity(
@@ -276,7 +274,6 @@ TransportSecurityInfo::GetErrorCode(int32_t* state)
   *state = GetErrorCode();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 TransportSecurityInfo::GetInterface(const nsIID & uuid, void * *result)

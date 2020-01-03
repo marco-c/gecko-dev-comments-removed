@@ -1316,7 +1316,6 @@ void imgLoader::ReadAcceptHeaderPref()
   }
 }
 
-
 NS_IMETHODIMP
 imgLoader::ClearCache(bool chrome)
 {
@@ -1327,7 +1326,6 @@ imgLoader::ClearCache(bool chrome)
   }
 }
 
-
 NS_IMETHODIMP
 imgLoader::RemoveEntry(nsIURI* aURI)
 {
@@ -1337,7 +1335,6 @@ imgLoader::RemoveEntry(nsIURI* aURI)
 
   return NS_ERROR_NOT_AVAILABLE;
 }
-
 
 NS_IMETHODIMP
 imgLoader::FindEntryProperties(nsIURI* uri, nsIProperties** _retval)
@@ -2579,7 +2576,6 @@ ProxyListener::~ProxyListener()
 
 
 
-
 NS_IMETHODIMP
 ProxyListener::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
 {
@@ -2723,7 +2719,6 @@ imgCacheValidator::AddProxy(imgRequestProxy* aProxy)
 
   mProxies.AppendObject(aProxy);
 }
-
 
 
 

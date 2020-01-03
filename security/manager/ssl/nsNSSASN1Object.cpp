@@ -339,7 +339,6 @@ nsNSSASN1PrintableItem::~nsNSSASN1PrintableItem()
     free(mData);
 }
 
-
 NS_IMETHODIMP 
 nsNSSASN1PrintableItem::GetDisplayValue(nsAString &aValue)
 {
@@ -415,7 +414,6 @@ nsNSSASN1PrintableItem::GetData(char **outData, uint32_t *outLen)
   *outLen  = mLen;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsNSSASN1PrintableItem::GetDisplayName(nsAString &aDisplayName)

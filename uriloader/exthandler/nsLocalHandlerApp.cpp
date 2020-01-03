@@ -126,7 +126,6 @@ nsLocalHandlerApp::LaunchWithIProcess(const nsCString& aArg)
 
 
 
-
 NS_IMETHODIMP
 nsLocalHandlerApp::GetExecutable(nsIFile **aExecutable)
 {
@@ -141,14 +140,12 @@ nsLocalHandlerApp::SetExecutable(nsIFile *aExecutable)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsLocalHandlerApp::GetParameterCount(uint32_t *aParameterCount)
 {
   *aParameterCount = mParameters.Length();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsLocalHandlerApp::ClearParameters()
@@ -157,14 +154,12 @@ nsLocalHandlerApp::ClearParameters()
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsLocalHandlerApp::AppendParameter(const nsAString & aParam)
 {
   mParameters.AppendElement(aParam);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsLocalHandlerApp::GetParameter(uint32_t parameterIndex, nsAString & _retval)
@@ -175,7 +170,6 @@ nsLocalHandlerApp::GetParameter(uint32_t parameterIndex, nsAString & _retval)
   _retval.Assign(mParameters[parameterIndex]);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsLocalHandlerApp::ParameterExists(const nsAString & aParam, bool *_retval)

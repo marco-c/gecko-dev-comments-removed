@@ -17,13 +17,11 @@ nsVolumeStat::nsVolumeStat(const nsAString& aPath)
   }
 }
 
-
 NS_IMETHODIMP nsVolumeStat::GetTotalBytes(int64_t* aTotalBytes)
 {
   *aTotalBytes = mStat.f_blocks * mStat.f_bsize;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsVolumeStat::GetFreeBytes(int64_t* aFreeBytes)
 {

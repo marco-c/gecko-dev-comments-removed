@@ -20,7 +20,6 @@ mozSpellI18NManager::~mozSpellI18NManager()
   
 }
 
-
 NS_IMETHODIMP mozSpellI18NManager::GetUtil(const char16_t *aLanguage, mozISpellI18NUtil **_retval)
 {
  if( nullptr == _retval) {

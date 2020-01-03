@@ -101,14 +101,12 @@ nsSVGElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 
 
 
-
 NS_IMETHODIMP
 nsSVGElement::GetSVGClassName(nsISupports** aClassName)
 {
   *aClassName = ClassName().take();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsSVGElement::GetStyle(nsIDOMCSSStyleDeclaration** aStyle)
@@ -1084,7 +1082,6 @@ nsSVGElement::sMaskMap[] = {
 
 
 
-
 NS_IMETHODIMP
 nsSVGElement::GetOwnerSVGElement(nsIDOMSVGElement * *aOwnerSVGElement)
 {
@@ -1097,7 +1094,6 @@ nsSVGElement::GetOwnerSVGElement()
 {
   return GetCtx(); 
 }
-
 
 NS_IMETHODIMP
 nsSVGElement::GetViewportElement(nsIDOMSVGElement * *aViewportElement)

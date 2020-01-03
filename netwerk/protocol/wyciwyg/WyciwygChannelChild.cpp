@@ -368,13 +368,11 @@ void WyciwygChannelChild::CancelEarly(const nsresult& statusCode)
 
 
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::GetName(nsACString & aName)
 {
   return mURI->GetSpec(aName);
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::IsPending(bool *aIsPending)
@@ -383,14 +381,12 @@ WyciwygChannelChild::IsPending(bool *aIsPending)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::GetStatus(nsresult *aStatus)
 {
   *aStatus = mStatus;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::Cancel(nsresult aStatus)
@@ -405,20 +401,17 @@ WyciwygChannelChild::Cancel(nsresult aStatus)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::Suspend()
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::Resume()
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::GetLoadGroup(nsILoadGroup * *aLoadGroup)
@@ -442,7 +435,6 @@ WyciwygChannelChild::SetLoadGroup(nsILoadGroup * aLoadGroup)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::GetLoadFlags(nsLoadFlags *aLoadFlags)
 {
@@ -455,7 +447,6 @@ WyciwygChannelChild::SetLoadFlags(nsLoadFlags aLoadFlags)
   mLoadFlags = aLoadFlags;
   return NS_OK;
 }
-
 
 
 
@@ -479,7 +470,6 @@ WyciwygChannelChild::SetOriginalURI(nsIURI * aOriginalURI)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::GetURI(nsIURI * *aURI)
 {
@@ -487,7 +477,6 @@ WyciwygChannelChild::GetURI(nsIURI * *aURI)
   NS_IF_ADDREF(*aURI);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::GetOwner(nsISupports * *aOwner)
@@ -516,7 +505,6 @@ WyciwygChannelChild::SetLoadInfo(nsILoadInfo* aLoadInfo)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::GetNotificationCallbacks(nsIInterfaceRequestor * *aCallbacks)
 {
@@ -539,7 +527,6 @@ WyciwygChannelChild::SetNotificationCallbacks(nsIInterfaceRequestor * aCallbacks
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::GetSecurityInfo(nsISupports * *aSecurityInfo)
 {
@@ -547,7 +534,6 @@ WyciwygChannelChild::GetSecurityInfo(nsISupports * *aSecurityInfo)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::GetContentType(nsACString & aContentType)
@@ -560,7 +546,6 @@ WyciwygChannelChild::SetContentType(const nsACString & aContentType)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::GetContentCharset(nsACString & aContentCharset)
@@ -604,7 +589,6 @@ WyciwygChannelChild::GetContentDispositionHeader(nsACString &aContentDisposition
   return NS_ERROR_NOT_AVAILABLE;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::GetContentLength(int64_t *aContentLength)
 {
@@ -615,7 +599,6 @@ WyciwygChannelChild::SetContentLength(int64_t aContentLength)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::Open(nsIInputStream **_retval)
@@ -639,7 +622,6 @@ GetTabChild(nsIChannel* aChannel)
   NS_QueryNotificationCallbacks(aChannel, iTabChild);
   return iTabChild ? static_cast<mozilla::dom::TabChild*>(iTabChild.get()) : nullptr;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::AsyncOpen(nsIStreamListener *aListener, nsISupports *aContext)
@@ -695,7 +677,6 @@ WyciwygChannelChild::AsyncOpen2(nsIStreamListener *aListener)
 
 
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::WriteToCacheEntry(const nsAString & aData)
 {
@@ -717,7 +698,6 @@ WyciwygChannelChild::WriteToCacheEntry(const nsAString & aData)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::CloseCacheEntry(nsresult reason)
 {
@@ -731,7 +711,6 @@ WyciwygChannelChild::CloseCacheEntry(nsresult reason)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::SetSecurityInfo(nsISupports *aSecurityInfo)
@@ -753,7 +732,6 @@ WyciwygChannelChild::SetSecurityInfo(nsISupports *aSecurityInfo)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 WyciwygChannelChild::SetCharsetAndSource(int32_t aSource, const nsACString & aCharset)
 {
@@ -769,7 +747,6 @@ WyciwygChannelChild::SetCharsetAndSource(int32_t aSource, const nsACString & aCh
   SendSetCharsetAndSource(mCharsetSource, mCharset);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 WyciwygChannelChild::GetCharsetAndSource(int32_t *aSource, nsACString & _retval)

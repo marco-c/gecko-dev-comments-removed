@@ -174,7 +174,6 @@ public:
 
 NS_IMPL_ISUPPORTS(nsSelectionCommandsBase, nsIControllerCommand)
 
-
 NS_IMETHODIMP
 nsSelectionCommandsBase::IsCommandEnabled(const char * aCommandName,
                                       nsISupports *aCommandContext,
@@ -186,7 +185,6 @@ nsSelectionCommandsBase::IsCommandEnabled(const char * aCommandName,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsSelectionCommandsBase::GetCommandStateParams(const char *aCommandName,
                                             nsICommandParams *aParams, nsISupports *aCommandContext)
@@ -194,7 +192,6 @@ nsSelectionCommandsBase::GetCommandStateParams(const char *aCommandName,
   
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 nsSelectionCommandsBase::DoCommandParams(const char *aCommandName,
@@ -844,7 +841,6 @@ nsWebNavigationBaseCommand::DoCommand(const char *aCommandName,
   
   return DoWebNavCommand(aCommandName, webNav);
 }
-
 
 NS_IMETHODIMP
 nsWebNavigationBaseCommand::DoCommandParams(const char *aCommandName,

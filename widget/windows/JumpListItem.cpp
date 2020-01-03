@@ -43,7 +43,6 @@ NS_IMPL_CYCLE_COLLECTION(JumpListShortcut, mHandlerApp)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(JumpListShortcut)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(JumpListShortcut)
 
-
 NS_IMETHODIMP JumpListItem::GetType(int16_t *aType)
 {
   NS_ENSURE_ARG_POINTER(aType);
@@ -52,7 +51,6 @@ NS_IMETHODIMP JumpListItem::GetType(int16_t *aType)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP JumpListItem::Equals(nsIJumpListItem *aItem, bool *aResult)
 {
@@ -75,7 +73,6 @@ NS_IMETHODIMP JumpListItem::Equals(nsIJumpListItem *aItem, bool *aResult)
 
 
 
-
 NS_IMETHODIMP JumpListLink::GetUri(nsIURI **aURI)
 {
   NS_IF_ADDREF(*aURI = mURI);
@@ -89,7 +86,6 @@ NS_IMETHODIMP JumpListLink::SetUri(nsIURI *aURI)
   
   return NS_OK;
 }
-
 
 NS_IMETHODIMP JumpListLink::SetUriTitle(const nsAString &aUriTitle)
 {
@@ -105,7 +101,6 @@ NS_IMETHODIMP JumpListLink::GetUriTitle(nsAString& aUriTitle)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP JumpListLink::GetUriHash(nsACString& aUriHash)
 {
   if (!mURI)
@@ -113,7 +108,6 @@ NS_IMETHODIMP JumpListLink::GetUriHash(nsACString& aUriHash)
 
   return mozilla::widget::FaviconHelper::HashURI(mCryptoHash, mURI, aUriHash);
 }
-
 
 NS_IMETHODIMP JumpListLink::CompareHash(nsIURI *aUri, bool *aResult)
 {
@@ -137,7 +131,6 @@ NS_IMETHODIMP JumpListLink::CompareHash(nsIURI *aUri, bool *aResult)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP JumpListLink::Equals(nsIJumpListItem *aItem, bool *aResult)
 {
@@ -184,7 +177,6 @@ NS_IMETHODIMP JumpListLink::Equals(nsIJumpListItem *aItem, bool *aResult)
 
 
 
-
 NS_IMETHODIMP JumpListShortcut::GetApp(nsILocalHandlerApp **aApp)
 {
   NS_IF_ADDREF(*aApp = mHandlerApp);
@@ -203,7 +195,6 @@ NS_IMETHODIMP JumpListShortcut::SetApp(nsILocalHandlerApp *aApp)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP JumpListShortcut::GetIconIndex(int32_t *aIconIndex)
 {
   NS_ENSURE_ARG_POINTER(aIconIndex);
@@ -218,7 +209,6 @@ NS_IMETHODIMP JumpListShortcut::SetIconIndex(int32_t aIconIndex)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP JumpListShortcut::GetFaviconPageUri(nsIURI **aFaviconPageURI)
 {
   NS_IF_ADDREF(*aFaviconPageURI = mFaviconPageURI);
@@ -231,7 +221,6 @@ NS_IMETHODIMP JumpListShortcut::SetFaviconPageUri(nsIURI *aFaviconPageURI)
   mFaviconPageURI = aFaviconPageURI;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP JumpListShortcut::Equals(nsIJumpListItem *aItem, bool *aResult)
 {

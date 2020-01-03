@@ -294,7 +294,6 @@ Exception::StowJSVal(JS::Value& aVp)
   }
 }
 
-
 NS_IMETHODIMP
 Exception::GetMessageMoz(nsACString& aMessage)
 {
@@ -303,7 +302,6 @@ Exception::GetMessageMoz(nsACString& aMessage)
   aMessage.Assign(mMessage);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 Exception::GetResult(nsresult* aResult)
@@ -314,7 +312,6 @@ Exception::GetResult(nsresult* aResult)
   *aResult = mResult;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 Exception::GetName(nsACString& aName)
@@ -337,7 +334,6 @@ Exception::GetName(nsACString& aName)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 Exception::GetFilename(nsAString& aFilename)
 {
@@ -350,7 +346,6 @@ Exception::GetFilename(nsAString& aFilename)
   aFilename.Assign(mFilename);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 Exception::GetLineNumber(uint32_t *aLineNumber)
@@ -369,7 +364,6 @@ Exception::GetLineNumber(uint32_t *aLineNumber)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 Exception::GetColumnNumber(uint32_t* aColumnNumber)
 {
@@ -379,7 +373,6 @@ Exception::GetColumnNumber(uint32_t* aColumnNumber)
   *aColumnNumber = 0;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 Exception::GetLocation(nsIStackFrame** aLocation)
@@ -392,7 +385,6 @@ Exception::GetLocation(nsIStackFrame** aLocation)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 Exception::GetData(nsISupports** aData)
 {
@@ -404,7 +396,6 @@ Exception::GetData(nsISupports** aData)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 Exception::GetInner(nsIException** aException)
 {
@@ -415,7 +406,6 @@ Exception::GetInner(nsIException** aException)
   inner.forget(aException);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 Exception::ToString(nsACString& _retval)

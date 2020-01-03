@@ -3045,7 +3045,6 @@ NS_IMETHODIMP nsJSArgArray::GetLength(uint32_t *aLength)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsJSArgArray::QueryElementAt(uint32_t index, const nsIID & uuid, void * *result)
 {
   *result = nullptr;
@@ -3062,12 +3061,10 @@ NS_IMETHODIMP nsJSArgArray::QueryElementAt(uint32_t index, const nsIID & uuid, v
   return NS_ERROR_NO_INTERFACE;
 }
 
-
 NS_IMETHODIMP nsJSArgArray::IndexOf(uint32_t startIndex, nsISupports *element, uint32_t *_retval)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP nsJSArgArray::Enumerate(nsISimpleEnumerator **_retval)
 {

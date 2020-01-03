@@ -640,103 +640,86 @@ XPCVariant::VariantDataToJS(nsIVariant* variant,
 
 
 
-
 NS_IMETHODIMP XPCVariant::GetDataType(uint16_t* aDataType)
 {
     *aDataType = mData.GetType();
     return NS_OK;
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsInt8(uint8_t* _retval)
 {
     return mData.ConvertToInt8(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsInt16(int16_t* _retval)
 {
     return mData.ConvertToInt16(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsInt32(int32_t* _retval)
 {
     return mData.ConvertToInt32(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsInt64(int64_t* _retval)
 {
     return mData.ConvertToInt64(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsUint8(uint8_t* _retval)
 {
     return mData.ConvertToUint8(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsUint16(uint16_t* _retval)
 {
     return mData.ConvertToUint16(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsUint32(uint32_t* _retval)
 {
     return mData.ConvertToUint32(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsUint64(uint64_t* _retval)
 {
     return mData.ConvertToUint64(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsFloat(float* _retval)
 {
     return mData.ConvertToFloat(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsDouble(double* _retval)
 {
     return mData.ConvertToDouble(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsBool(bool* _retval)
 {
     return mData.ConvertToBool(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsChar(char* _retval)
 {
     return mData.ConvertToChar(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsWChar(char16_t* _retval)
 {
     return mData.ConvertToWChar(_retval);
 }
-
 
 NS_IMETHODIMP_(nsresult) XPCVariant::GetAsID(nsID* retval)
 {
     return mData.ConvertToID(retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsAString(nsAString & _retval)
 {
     return mData.ConvertToAString(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsDOMString(nsAString & _retval)
 {
@@ -745,36 +728,30 @@ NS_IMETHODIMP XPCVariant::GetAsDOMString(nsAString & _retval)
     return mData.ConvertToAString(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsACString(nsACString & _retval)
 {
     return mData.ConvertToACString(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsAUTF8String(nsAUTF8String & _retval)
 {
     return mData.ConvertToAUTF8String(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsString(char** _retval)
 {
     return mData.ConvertToString(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsWString(char16_t** _retval)
 {
     return mData.ConvertToWString(_retval);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsISupports(nsISupports** _retval)
 {
     return mData.ConvertToISupports(_retval);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsInterface(nsIID** iid, void** iface)
 {
@@ -782,18 +759,15 @@ NS_IMETHODIMP XPCVariant::GetAsInterface(nsIID** iid, void** iface)
 }
 
 
-
 NS_IMETHODIMP_(nsresult) XPCVariant::GetAsArray(uint16_t* type, nsIID* iid, uint32_t* count, void * *ptr)
 {
     return mData.ConvertToArray(type, iid, count, ptr);
 }
 
-
 NS_IMETHODIMP XPCVariant::GetAsStringWithSize(uint32_t* size, char** str)
 {
     return mData.ConvertToStringWithSize(size, str);
 }
-
 
 NS_IMETHODIMP XPCVariant::GetAsWStringWithSize(uint32_t* size, char16_t** str)
 {

@@ -352,13 +352,11 @@ NS_IMPL_RELEASE_INHERITED(JSStackFrame, StackFrame)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(JSStackFrame)
 NS_INTERFACE_MAP_END_INHERITING(StackFrame)
 
-
 NS_IMETHODIMP StackFrame::GetLanguage(uint32_t* aLanguage)
 {
   *aLanguage = mLanguage;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP StackFrame::GetLanguageName(nsACString& aLanguageName)
 {
@@ -409,7 +407,6 @@ GetValueIfNotCached(JSContext* aCx, JSObject* aStack,
   aPropGetter(aCx, stack, aValue);
 }
 
-
 NS_IMETHODIMP JSStackFrame::GetFilename(nsAString& aFilename)
 {
   if (!mStack) {
@@ -453,7 +450,6 @@ NS_IMETHODIMP StackFrame::GetFilename(nsAString& aFilename)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP JSStackFrame::GetName(nsAString& aFunction)
 {
@@ -531,7 +527,6 @@ JSStackFrame::GetLineno()
   return line;
 }
 
-
 NS_IMETHODIMP StackFrame::GetLineNumber(int32_t* aLineNumber)
 {
   *aLineNumber = GetLineno();
@@ -564,20 +559,17 @@ JSStackFrame::GetColNo()
   return col;
 }
 
-
 NS_IMETHODIMP StackFrame::GetColumnNumber(int32_t* aColumnNumber)
 {
   *aColumnNumber = GetColNo();
   return NS_OK;
 }
 
-
 NS_IMETHODIMP StackFrame::GetSourceLine(nsACString& aSourceLine)
 {
   aSourceLine.Truncate();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP JSStackFrame::GetAsyncCause(nsAString& aAsyncCause)
 {
@@ -629,7 +621,6 @@ NS_IMETHODIMP StackFrame::GetAsyncCause(nsAString& aAsyncCause)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP JSStackFrame::GetAsyncCaller(nsIStackFrame** aAsyncCaller)
 {
   if (!mStack) {
@@ -665,7 +656,6 @@ NS_IMETHODIMP StackFrame::GetAsyncCaller(nsIStackFrame** aAsyncCaller)
   NS_IF_ADDREF(*aAsyncCaller = mAsyncCaller);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP JSStackFrame::GetCaller(nsIStackFrame** aCaller)
 {
@@ -764,7 +754,6 @@ NS_IMETHODIMP StackFrame::GetFormattedStack(nsAString& aStack)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP JSStackFrame::GetNativeSavedFrame(JS::MutableHandle<JS::Value> aSavedFrame)
 {
   aSavedFrame.setObjectOrNull(mStack);
@@ -776,7 +765,6 @@ NS_IMETHODIMP StackFrame::GetNativeSavedFrame(JS::MutableHandle<JS::Value> aSave
   aSavedFrame.setNull();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP StackFrame::ToString(nsACString& _retval)
 {

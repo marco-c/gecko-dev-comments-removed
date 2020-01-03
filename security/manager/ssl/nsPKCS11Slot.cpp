@@ -89,7 +89,6 @@ void nsPKCS11Slot::destructorSafeDestroyNSSReference()
   }
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11Slot::GetName(char16_t **aName)
 {
@@ -113,7 +112,6 @@ nsPKCS11Slot::GetName(char16_t **aName)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11Slot::GetDesc(char16_t **aDesc)
 {
@@ -130,7 +128,6 @@ nsPKCS11Slot::GetDesc(char16_t **aDesc)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11Slot::GetManID(char16_t **aManID)
 {
@@ -141,7 +138,6 @@ nsPKCS11Slot::GetManID(char16_t **aManID)
   if (!*aManID) return NS_ERROR_OUT_OF_MEMORY;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPKCS11Slot::GetHWVersion(char16_t **aHWVersion)
@@ -154,7 +150,6 @@ nsPKCS11Slot::GetHWVersion(char16_t **aHWVersion)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11Slot::GetFWVersion(char16_t **aFWVersion)
 {
@@ -165,7 +160,6 @@ nsPKCS11Slot::GetFWVersion(char16_t **aFWVersion)
   if (!*aFWVersion) return NS_ERROR_OUT_OF_MEMORY;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPKCS11Slot::GetToken(nsIPK11Token **_retval)
@@ -179,7 +173,6 @@ nsPKCS11Slot::GetToken(nsIPK11Token **_retval)
   NS_ADDREF(*_retval);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPKCS11Slot::GetTokenName(char16_t **aName)
@@ -260,7 +253,6 @@ void nsPKCS11Module::destructorSafeDestroyNSSReference()
   }
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11Module::GetName(char16_t **aName)
 {
@@ -271,7 +263,6 @@ nsPKCS11Module::GetName(char16_t **aName)
   *aName = ToNewUnicode(NS_ConvertUTF8toUTF16(mModule->commonName));
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPKCS11Module::GetLibName(char16_t **aName)
@@ -287,7 +278,6 @@ nsPKCS11Module::GetLibName(char16_t **aName)
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPKCS11Module::FindSlotByName(const char16_t *aName,
@@ -334,7 +324,6 @@ nsPKCS11Module::FindSlotByName(const char16_t *aName,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11Module::ListSlots(nsIEnumerator **_retval)
 {
@@ -375,7 +364,6 @@ nsPKCS11ModuleDB::~nsPKCS11ModuleDB()
 {
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11ModuleDB::GetInternal(nsIPKCS11Module **_retval)
 {
@@ -389,7 +377,6 @@ nsPKCS11ModuleDB::GetInternal(nsIPKCS11Module **_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsPKCS11ModuleDB::GetInternalFIPS(nsIPKCS11Module **_retval)
 {
@@ -402,7 +389,6 @@ nsPKCS11ModuleDB::GetInternalFIPS(nsIPKCS11Module **_retval)
   NS_ADDREF(*_retval);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPKCS11ModuleDB::FindModuleByName(const char16_t *aName,
@@ -424,7 +410,6 @@ nsPKCS11ModuleDB::FindModuleByName(const char16_t *aName,
 
 
 
-
 NS_IMETHODIMP 
 nsPKCS11ModuleDB::FindSlotByName(const char16_t *aName,
                                  nsIPKCS11Slot **_retval)
@@ -441,7 +426,6 @@ nsPKCS11ModuleDB::FindSlotByName(const char16_t *aName,
   NS_ADDREF(*_retval);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPKCS11ModuleDB::ListModules(nsIEnumerator **_retval)
@@ -482,7 +466,6 @@ NS_IMETHODIMP nsPKCS11ModuleDB::GetCanToggleFIPS(bool *aCanToggleFIPS)
 }
 
 
-
 NS_IMETHODIMP nsPKCS11ModuleDB::ToggleFIPSMode()
 {
   nsNSSShutDownPreventionLock locker;
@@ -505,7 +488,6 @@ NS_IMETHODIMP nsPKCS11ModuleDB::ToggleFIPSMode()
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPKCS11ModuleDB::GetIsFIPSEnabled(bool *aIsFIPSEnabled)
 {

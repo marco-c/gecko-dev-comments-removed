@@ -37,7 +37,6 @@ NS_IMPL_ISUPPORTS(nsFontFace, nsIDOMFontFace)
 
 
 
-
 NS_IMETHODIMP
 nsFontFace::GetFromFontGroup(bool * aFromFontGroup)
 {
@@ -45,7 +44,6 @@ nsFontFace::GetFromFontGroup(bool * aFromFontGroup)
     (mMatchType & gfxTextRange::kFontGroup) != 0;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsFontFace::GetFromLanguagePrefs(bool * aFromLanguagePrefs)
@@ -55,7 +53,6 @@ nsFontFace::GetFromLanguagePrefs(bool * aFromLanguagePrefs)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsFontFace::GetFromSystemFallback(bool * aFromSystemFallback)
 {
@@ -63,7 +60,6 @@ nsFontFace::GetFromSystemFallback(bool * aFromSystemFallback)
     (mMatchType & gfxTextRange::kSystemFallback) != 0;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsFontFace::GetName(nsAString & aName)
@@ -77,14 +73,12 @@ nsFontFace::GetName(nsAString & aName)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsFontFace::GetCSSFamilyName(nsAString & aCSSFamilyName)
 {
   aCSSFamilyName = mFontEntry->FamilyName();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsFontFace::GetRule(nsIDOMCSSFontFaceRule **aRule)
@@ -107,7 +101,6 @@ nsFontFace::GetRule(nsIDOMCSSFontFaceRule **aRule)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsFontFace::GetSrcIndex(int32_t * aSrcIndex)
 {
@@ -119,7 +112,6 @@ nsFontFace::GetSrcIndex(int32_t * aSrcIndex)
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsFontFace::GetURI(nsAString & aURI)
@@ -136,7 +128,6 @@ nsFontFace::GetURI(nsAString & aURI)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsFontFace::GetLocalName(nsAString & aLocalName)
 {
@@ -148,7 +139,6 @@ nsFontFace::GetLocalName(nsAString & aLocalName)
   }
   return NS_OK;
 }
-
 
 static void
 AppendToFormat(nsAString & aResult, const char* aFormat)
@@ -190,7 +180,6 @@ nsFontFace::GetFormat(nsAString & aFormat)
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsFontFace::GetMetadata(nsAString & aMetadata)

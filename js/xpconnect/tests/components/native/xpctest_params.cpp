@@ -70,72 +70,60 @@ nsXPCTestParams::~nsXPCTestParams()
     return NS_OK;                                                             \
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestBoolean(bool a, bool* b, bool* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestOctet(uint8_t a, uint8_t* b, uint8_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestShort(int16_t a, int16_t* b, int16_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestLong(int32_t a, int32_t* b, int32_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestLongLong(int64_t a, int64_t* b, int64_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestUnsignedShort(uint16_t a, uint16_t* b, uint16_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestUnsignedLong(uint32_t a, uint32_t* b, uint32_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestUnsignedLongLong(uint64_t a, uint64_t* b, uint64_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestFloat(float a, float* b, float* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestDouble(double a, float* b, double* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestChar(char a, char* b, char* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestString(const char * a, char * *b, char * *_retval)
 {
@@ -151,12 +139,10 @@ NS_IMETHODIMP nsXPCTestParams::TestString(const char * a, char * *b, char * *_re
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestWchar(char16_t a, char16_t* b, char16_t* _retval)
 {
     GENERIC_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestWstring(const char16_t * a, char16_t * *b, char16_t * *_retval)
 {
@@ -172,12 +158,10 @@ NS_IMETHODIMP nsXPCTestParams::TestWstring(const char16_t * a, char16_t * *b, ch
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestDOMString(const nsAString & a, nsAString & b, nsAString & _retval)
 {
     STRING_METHOD_IMPL;
 }
-
 
 
 NS_IMETHODIMP nsXPCTestParams::TestAString(const nsAString & a, nsAString & b, nsAString & _retval)
@@ -185,18 +169,15 @@ NS_IMETHODIMP nsXPCTestParams::TestAString(const nsAString & a, nsAString & b, n
     STRING_METHOD_IMPL;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestAUTF8String(const nsACString & a, nsACString & b, nsACString & _retval)
 {
     STRING_METHOD_IMPL;
 }
 
-
 NS_IMETHODIMP nsXPCTestParams::TestACString(const nsACString & a, nsACString & b, nsACString & _retval)
 {
     STRING_METHOD_IMPL;
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestJsval(JS::Handle<JS::Value> a,
                                          JS::MutableHandle<JS::Value> b,
@@ -339,7 +320,6 @@ NS_IMETHODIMP nsXPCTestParams::TestInterfaceIsArray(uint32_t aLength, const nsII
     
     BUFFER_METHOD_IMPL(void*, 0, TAKE_OWNERSHIP_INTERFACE);
 }
-
 
 NS_IMETHODIMP nsXPCTestParams::TestOutAString(nsAString & o)
 {

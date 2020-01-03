@@ -36,7 +36,6 @@ mozEnglishWordUtils::~mozEnglishWordUtils()
 {
 }
 
-
 NS_IMETHODIMP mozEnglishWordUtils::GetLanguage(char16_t * *aLanguage)
 {
   nsresult rv = NS_OK;
@@ -46,7 +45,6 @@ NS_IMETHODIMP mozEnglishWordUtils::GetLanguage(char16_t * *aLanguage)
   if(!aLanguage) rv = NS_ERROR_OUT_OF_MEMORY;
   return rv;
  }
-
 
 
 NS_IMETHODIMP mozEnglishWordUtils::GetRootForm(const char16_t *aWord, uint32_t type, char16_t ***words, uint32_t *count)
@@ -137,7 +135,6 @@ bool mozEnglishWordUtils::ucIsAlpha(char16_t aChar)
   
   return nsIUGenCategory::kLetter == mozilla::unicode::GetGenCategory(aChar);
 }
-
 
 NS_IMETHODIMP mozEnglishWordUtils::FindNextWord(const char16_t *word, uint32_t length, uint32_t offset, int32_t *begin, int32_t *end)
 {

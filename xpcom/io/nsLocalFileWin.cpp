@@ -3192,7 +3192,6 @@ nsLocalFile::GetTarget(nsAString& aResult)
 }
 
 
-
 NS_IMETHODIMP
 nsLocalFile::GetFollowLinks(bool* aFollowLinks)
 {
@@ -3253,7 +3252,6 @@ nsLocalFile::SetPersistentDescriptor(const nsACString& aPersistentDescriptor)
     return InitWithNativePath(aPersistentDescriptor);
   }
 }
-
 
 NS_IMETHODIMP
 nsLocalFile::GetFileAttributesWin(uint32_t* aAttribs)

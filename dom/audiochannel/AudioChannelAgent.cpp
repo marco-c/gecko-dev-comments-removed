@@ -53,7 +53,6 @@ AudioChannelAgent::Shutdown()
   }
 }
 
-
 NS_IMETHODIMP AudioChannelAgent::GetAudioChannelType(int32_t *aAudioChannelType)
 {
   *aAudioChannelType = mAudioChannelType;
@@ -128,7 +127,6 @@ AudioChannelAgent::InitInternal(nsIDOMWindow* aWindow, int32_t aChannelType,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP AudioChannelAgent::NotifyStartedPlaying(float *aVolume,
                                                       bool* aMuted)
 {
@@ -149,7 +147,6 @@ NS_IMETHODIMP AudioChannelAgent::NotifyStartedPlaying(float *aVolume,
   mIsRegToService = true;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP AudioChannelAgent::NotifyStoppedPlaying(void)
 {

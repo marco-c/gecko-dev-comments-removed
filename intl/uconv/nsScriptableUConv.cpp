@@ -55,7 +55,6 @@ nsScriptableUnicodeConverter::ConvertFromUnicodeWithLength(const nsAString& aSrc
   return NS_ERROR_FAILURE;
 }
 
-
 NS_IMETHODIMP
 nsScriptableUnicodeConverter::ConvertFromUnicode(const nsAString& aSrc,
                                                  nsACString& _retval)
@@ -95,7 +94,6 @@ nsScriptableUnicodeConverter::FinishWithLength(char **_retval, int32_t* aLength)
 
 }
 
-
 NS_IMETHODIMP
 nsScriptableUnicodeConverter::Finish(nsACString& _retval)
 {
@@ -121,7 +119,6 @@ nsScriptableUnicodeConverter::Finish(nsACString& _retval)
   }
   return rv;
 }
-
 
 NS_IMETHODIMP
 nsScriptableUnicodeConverter::ConvertToUnicode(const nsACString& aSrc, nsAString& _retval)
@@ -203,7 +200,6 @@ nsScriptableUnicodeConverter::ConvertToByteArray(const nsAString& aString,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsScriptableUnicodeConverter::ConvertToInputStream(const nsAString& aString,
                                                    nsIInputStream** _retval)
@@ -229,7 +225,6 @@ nsScriptableUnicodeConverter::ConvertToInputStream(const nsAString& aString,
   NS_ADDREF(*_retval = inputStream);
   return rv;
 }
-
 
 NS_IMETHODIMP
 nsScriptableUnicodeConverter::GetCharset(char * *aCharset)

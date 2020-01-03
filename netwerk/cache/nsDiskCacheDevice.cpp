@@ -193,14 +193,12 @@ private:
 
 NS_IMPL_ISUPPORTS(nsDiskCacheDeviceInfo, nsICacheDeviceInfo)
 
-
 NS_IMETHODIMP nsDiskCacheDeviceInfo::GetDescription(char ** aDescription)
 {
     NS_ENSURE_ARG_POINTER(aDescription);
     *aDescription = NS_strdup("Disk cache device");
     return *aDescription ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
-
 
 NS_IMETHODIMP nsDiskCacheDeviceInfo::GetUsageReport(char ** usageReport)
 {
@@ -228,14 +226,12 @@ NS_IMETHODIMP nsDiskCacheDeviceInfo::GetUsageReport(char ** usageReport)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsDiskCacheDeviceInfo::GetEntryCount(uint32_t *aEntryCount)
 {
     NS_ENSURE_ARG_POINTER(aEntryCount);
     *aEntryCount = mDevice->getEntryCount();
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsDiskCacheDeviceInfo::GetTotalSize(uint32_t *aTotalSize)
 {
@@ -244,7 +240,6 @@ NS_IMETHODIMP nsDiskCacheDeviceInfo::GetTotalSize(uint32_t *aTotalSize)
     *aTotalSize = mDevice->getCacheSize() * 1024;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsDiskCacheDeviceInfo::GetMaximumSize(uint32_t *aMaximumSize)
 {

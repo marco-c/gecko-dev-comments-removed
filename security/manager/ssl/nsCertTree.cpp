@@ -836,7 +836,6 @@ nsCertTree::DeleteEntryObject(uint32_t index)
 
 
 
-
 NS_IMETHODIMP
 nsCertTree::GetCert(uint32_t aIndex, nsIX509Cert **_cert)
 {
@@ -872,7 +871,6 @@ nsCertTree::IsHostPortOverride(uint32_t aIndex, bool *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::GetRowCount(int32_t *aRowCount)
 {
@@ -888,7 +886,6 @@ nsCertTree::GetRowCount(int32_t *aRowCount)
   *aRowCount = count;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::GetSelection(nsITreeSelection * *aSelection)
@@ -923,7 +920,6 @@ nsCertTree::GetColumnProperties(nsITreeColumn* col, nsAString& aProps)
 {
   return NS_OK;
 }
-
 NS_IMETHODIMP 
 nsCertTree::IsContainer(int32_t index, bool *_retval)
 {
@@ -937,7 +933,6 @@ nsCertTree::IsContainer(int32_t index, bool *_retval)
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::IsContainerOpen(int32_t index, bool *_retval)
@@ -953,7 +948,6 @@ nsCertTree::IsContainerOpen(int32_t index, bool *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::IsContainerEmpty(int32_t index, bool *_retval)
 {
@@ -961,14 +955,12 @@ nsCertTree::IsContainerEmpty(int32_t index, bool *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::IsSeparator(int32_t index, bool *_retval)
 {
   *_retval = false;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::GetParentIndex(int32_t rowIndex, int32_t *_retval)
@@ -988,7 +980,6 @@ nsCertTree::GetParentIndex(int32_t rowIndex, int32_t *_retval)
   *_retval = -1;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::HasNextSibling(int32_t rowIndex, int32_t afterIndex, 
@@ -1011,7 +1002,6 @@ nsCertTree::HasNextSibling(int32_t rowIndex, int32_t afterIndex,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::GetLevel(int32_t index, int32_t *_retval)
 {
@@ -1026,7 +1016,6 @@ nsCertTree::GetLevel(int32_t index, int32_t *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::GetImageSrc(int32_t row, nsITreeColumn* col, 
                         nsAString& _retval)
@@ -1035,13 +1024,11 @@ nsCertTree::GetImageSrc(int32_t row, nsITreeColumn* col,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsCertTree::GetProgressMode(int32_t row, nsITreeColumn* col, int32_t* _retval)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::GetCellValue(int32_t row, nsITreeColumn* col, 
@@ -1050,7 +1037,6 @@ nsCertTree::GetCellValue(int32_t row, nsITreeColumn* col,
   _retval.Truncate();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::GetCellText(int32_t row, nsITreeColumn* col, 
@@ -1245,14 +1231,12 @@ nsCertTree::GetCellText(int32_t row, nsITreeColumn* col,
   return rv;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::SetTree(nsITreeBoxObject *tree)
 {
   mTree = tree;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::ToggleOpenState(int32_t index)
@@ -1268,13 +1252,11 @@ nsCertTree::ToggleOpenState(int32_t index)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::CycleHeader(nsITreeColumn* col)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::SelectionChanged()
@@ -1282,13 +1264,11 @@ nsCertTree::SelectionChanged()
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::CycleCell(int32_t row, nsITreeColumn* col)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::IsEditable(int32_t row, nsITreeColumn* col, bool *_retval)
@@ -1297,14 +1277,12 @@ nsCertTree::IsEditable(int32_t row, nsITreeColumn* col, bool *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::IsSelectable(int32_t row, nsITreeColumn* col, bool *_retval)
 {
   *_retval = false;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::SetCellValue(int32_t row, nsITreeColumn* col, 
@@ -1313,7 +1291,6 @@ nsCertTree::SetCellValue(int32_t row, nsITreeColumn* col,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::SetCellText(int32_t row, nsITreeColumn* col, 
                         const nsAString& value)
@@ -1321,13 +1298,11 @@ nsCertTree::SetCellText(int32_t row, nsITreeColumn* col,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP 
 nsCertTree::PerformAction(const char16_t *action)
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsCertTree::PerformActionOnRow(const char16_t *action, int32_t row)

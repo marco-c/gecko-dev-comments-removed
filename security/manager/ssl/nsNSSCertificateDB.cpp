@@ -1267,7 +1267,6 @@ finish:
   *_certNames = tmpArray;
 }
 
-
 NS_IMETHODIMP
 nsNSSCertificateDB::FindEmailEncryptionCert(const nsAString& aNickname,
                                             nsIX509Cert** _retval)
@@ -1304,7 +1303,6 @@ nsNSSCertificateDB::FindEmailEncryptionCert(const nsAString& aNickname,
   nssCert.forget(_retval);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsNSSCertificateDB::FindEmailSigningCert(const nsAString& aNickname,
@@ -1396,7 +1394,6 @@ nsNSSCertificateDB::FindCertByEmailAddress(nsISupports *aToken, const char *aEma
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsNSSCertificateDB::ConstructX509FromBase64(const char *base64,
                                             nsIX509Cert **_retval)
@@ -1434,7 +1431,6 @@ nsNSSCertificateDB::ConstructX509FromBase64(const char *base64,
   PL_strfree(certDER);
   return rv;
 }
-
 
 NS_IMETHODIMP
 nsNSSCertificateDB::ConstructX509(const char* certDER,

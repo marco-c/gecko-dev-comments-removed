@@ -47,7 +47,6 @@ nsDefaultURIFixup::~nsDefaultURIFixup()
 {
 }
 
-
 NS_IMETHODIMP
 nsDefaultURIFixup::CreateExposableURI(nsIURI* aURI, nsIURI** aReturn)
 {
@@ -110,7 +109,6 @@ nsDefaultURIFixup::CreateExposableURI(nsIURI* aURI, nsIURI** aReturn)
   uri.forget(aReturn);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsDefaultURIFixup::CreateFixupURI(const nsACString& aStringURI,

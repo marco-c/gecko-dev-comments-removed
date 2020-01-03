@@ -1724,7 +1724,6 @@ nsVariant::nsVariant()
 
 
 
-
 NS_IMETHODIMP
 nsVariant::GetDataType(uint16_t* aDataType)
 {
@@ -1732,13 +1731,11 @@ nsVariant::GetDataType(uint16_t* aDataType)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsInt8(uint8_t* aResult)
 {
   return mData.ConvertToInt8(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsInt16(int16_t* aResult)
@@ -1746,13 +1743,11 @@ nsVariant::GetAsInt16(int16_t* aResult)
   return mData.ConvertToInt16(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsInt32(int32_t* aResult)
 {
   return mData.ConvertToInt32(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsInt64(int64_t* aResult)
@@ -1760,13 +1755,11 @@ nsVariant::GetAsInt64(int64_t* aResult)
   return mData.ConvertToInt64(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsUint8(uint8_t* aResult)
 {
   return mData.ConvertToUint8(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsUint16(uint16_t* aResult)
@@ -1774,13 +1767,11 @@ nsVariant::GetAsUint16(uint16_t* aResult)
   return mData.ConvertToUint16(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsUint32(uint32_t* aResult)
 {
   return mData.ConvertToUint32(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsUint64(uint64_t* aResult)
@@ -1788,13 +1779,11 @@ nsVariant::GetAsUint64(uint64_t* aResult)
   return mData.ConvertToUint64(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsFloat(float* aResult)
 {
   return mData.ConvertToFloat(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsDouble(double* aResult)
@@ -1802,13 +1791,11 @@ nsVariant::GetAsDouble(double* aResult)
   return mData.ConvertToDouble(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsBool(bool* aResult)
 {
   return mData.ConvertToBool(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsChar(char* aResult)
@@ -1816,13 +1803,11 @@ nsVariant::GetAsChar(char* aResult)
   return mData.ConvertToChar(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsWChar(char16_t* aResult)
 {
   return mData.ConvertToWChar(aResult);
 }
-
 
 NS_IMETHODIMP_(nsresult)
 nsVariant::GetAsID(nsID* aResult)
@@ -1830,13 +1815,11 @@ nsVariant::GetAsID(nsID* aResult)
   return mData.ConvertToID(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsAString(nsAString& aResult)
 {
   return mData.ConvertToAString(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsDOMString(nsAString& aResult)
@@ -1846,13 +1829,11 @@ nsVariant::GetAsDOMString(nsAString& aResult)
   return mData.ConvertToAString(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsACString(nsACString& aResult)
 {
   return mData.ConvertToACString(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsAUTF8String(nsAUTF8String& aResult)
@@ -1860,13 +1841,11 @@ nsVariant::GetAsAUTF8String(nsAUTF8String& aResult)
   return mData.ConvertToAUTF8String(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsString(char** aResult)
 {
   return mData.ConvertToString(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsWString(char16_t** aResult)
@@ -1874,13 +1853,11 @@ nsVariant::GetAsWString(char16_t** aResult)
   return mData.ConvertToWString(aResult);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsISupports(nsISupports** aResult)
 {
   return mData.ConvertToISupports(aResult);
 }
-
 
 NS_IMETHODIMP
 nsVariant::GetAsJSVal(JS::MutableHandleValue)
@@ -1889,13 +1866,11 @@ nsVariant::GetAsJSVal(JS::MutableHandleValue)
   return NS_ERROR_CANNOT_CONVERT_DATA;
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsInterface(nsIID** aIID, void** aInterface)
 {
   return mData.ConvertToInterface(aIID, aInterface);
 }
-
 
 NS_IMETHODIMP_(nsresult)
 nsVariant::GetAsArray(uint16_t* aType, nsIID* aIID,
@@ -1904,20 +1879,17 @@ nsVariant::GetAsArray(uint16_t* aType, nsIID* aIID,
   return mData.ConvertToArray(aType, aIID, aCount, aPtr);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsStringWithSize(uint32_t* aSize, char** aStr)
 {
   return mData.ConvertToStringWithSize(aSize, aStr);
 }
 
-
 NS_IMETHODIMP
 nsVariant::GetAsWStringWithSize(uint32_t* aSize, char16_t** aStr)
 {
   return mData.ConvertToWStringWithSize(aSize, aStr);
 }
-
 
 
 
@@ -1942,7 +1914,6 @@ nsVariant::SetWritable(bool aWritable)
 
 
 
-
 NS_IMETHODIMP
 nsVariant::SetAsInt8(uint8_t aValue)
 {
@@ -1951,7 +1922,6 @@ nsVariant::SetAsInt8(uint8_t aValue)
   }
   return mData.SetFromInt8(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsInt16(int16_t aValue)
@@ -1962,7 +1932,6 @@ nsVariant::SetAsInt16(int16_t aValue)
   return mData.SetFromInt16(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsInt32(int32_t aValue)
 {
@@ -1971,7 +1940,6 @@ nsVariant::SetAsInt32(int32_t aValue)
   }
   return mData.SetFromInt32(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsInt64(int64_t aValue)
@@ -1982,7 +1950,6 @@ nsVariant::SetAsInt64(int64_t aValue)
   return mData.SetFromInt64(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsUint8(uint8_t aValue)
 {
@@ -1991,7 +1958,6 @@ nsVariant::SetAsUint8(uint8_t aValue)
   }
   return mData.SetFromUint8(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsUint16(uint16_t aValue)
@@ -2002,7 +1968,6 @@ nsVariant::SetAsUint16(uint16_t aValue)
   return mData.SetFromUint16(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsUint32(uint32_t aValue)
 {
@@ -2011,7 +1976,6 @@ nsVariant::SetAsUint32(uint32_t aValue)
   }
   return mData.SetFromUint32(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsUint64(uint64_t aValue)
@@ -2022,7 +1986,6 @@ nsVariant::SetAsUint64(uint64_t aValue)
   return mData.SetFromUint64(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsFloat(float aValue)
 {
@@ -2031,7 +1994,6 @@ nsVariant::SetAsFloat(float aValue)
   }
   return mData.SetFromFloat(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsDouble(double aValue)
@@ -2042,7 +2004,6 @@ nsVariant::SetAsDouble(double aValue)
   return mData.SetFromDouble(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsBool(bool aValue)
 {
@@ -2051,7 +2012,6 @@ nsVariant::SetAsBool(bool aValue)
   }
   return mData.SetFromBool(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsChar(char aValue)
@@ -2062,7 +2022,6 @@ nsVariant::SetAsChar(char aValue)
   return mData.SetFromChar(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsWChar(char16_t aValue)
 {
@@ -2071,7 +2030,6 @@ nsVariant::SetAsWChar(char16_t aValue)
   }
   return mData.SetFromWChar(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsID(const nsID& aValue)
@@ -2082,7 +2040,6 @@ nsVariant::SetAsID(const nsID& aValue)
   return mData.SetFromID(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsAString(const nsAString& aValue)
 {
@@ -2091,7 +2048,6 @@ nsVariant::SetAsAString(const nsAString& aValue)
   }
   return mData.SetFromAString(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsDOMString(const nsAString& aValue)
@@ -2103,7 +2059,6 @@ nsVariant::SetAsDOMString(const nsAString& aValue)
   return mData.SetFromDOMString(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsACString(const nsACString& aValue)
 {
@@ -2112,7 +2067,6 @@ nsVariant::SetAsACString(const nsACString& aValue)
   }
   return mData.SetFromACString(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsAUTF8String(const nsAUTF8String& aValue)
@@ -2123,7 +2077,6 @@ nsVariant::SetAsAUTF8String(const nsAUTF8String& aValue)
   return mData.SetFromAUTF8String(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsString(const char* aValue)
 {
@@ -2132,7 +2085,6 @@ nsVariant::SetAsString(const char* aValue)
   }
   return mData.SetFromString(aValue);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsWString(const char16_t* aValue)
@@ -2143,7 +2095,6 @@ nsVariant::SetAsWString(const char16_t* aValue)
   return mData.SetFromWString(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsISupports(nsISupports* aValue)
 {
@@ -2153,7 +2104,6 @@ nsVariant::SetAsISupports(nsISupports* aValue)
   return mData.SetFromISupports(aValue);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsInterface(const nsIID& aIID, void* aInterface)
 {
@@ -2162,7 +2112,6 @@ nsVariant::SetAsInterface(const nsIID& aIID, void* aInterface)
   }
   return mData.SetFromInterface(aIID, (nsISupports*)aInterface);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsArray(uint16_t aType, const nsIID* aIID,
@@ -2174,7 +2123,6 @@ nsVariant::SetAsArray(uint16_t aType, const nsIID* aIID,
   return mData.SetFromArray(aType, aIID, aCount, aPtr);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsStringWithSize(uint32_t aSize, const char* aStr)
 {
@@ -2183,7 +2131,6 @@ nsVariant::SetAsStringWithSize(uint32_t aSize, const char* aStr)
   }
   return mData.SetFromStringWithSize(aSize, aStr);
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsWStringWithSize(uint32_t aSize, const char16_t* aStr)
@@ -2194,7 +2141,6 @@ nsVariant::SetAsWStringWithSize(uint32_t aSize, const char16_t* aStr)
   return mData.SetFromWStringWithSize(aSize, aStr);
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsVoid()
 {
@@ -2203,7 +2149,6 @@ nsVariant::SetAsVoid()
   }
   return mData.SetToVoid();
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetAsEmpty()
@@ -2214,7 +2159,6 @@ nsVariant::SetAsEmpty()
   return mData.SetToEmpty();
 }
 
-
 NS_IMETHODIMP
 nsVariant::SetAsEmptyArray()
 {
@@ -2223,7 +2167,6 @@ nsVariant::SetAsEmptyArray()
   }
   return mData.SetToEmptyArray();
 }
-
 
 NS_IMETHODIMP
 nsVariant::SetFromVariant(nsIVariant* aValue)

@@ -2098,13 +2098,11 @@ CallMethodHelper::Invoke()
 
 
 
-
 JSObject*
 XPCWrappedNative::GetJSObject()
 {
     return GetFlatJSObject();
 }
-
 
 NS_IMETHODIMP XPCWrappedNative::GetNative(nsISupports * *aNative)
 {
@@ -2114,7 +2112,6 @@ NS_IMETHODIMP XPCWrappedNative::GetNative(nsISupports * *aNative)
     rval.forget(aNative);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP XPCWrappedNative::GetJSObjectPrototype(JSObject * *aJSObjectPrototype)
 {
@@ -2144,7 +2141,6 @@ XPCWrappedNative::GetObjectPrincipal() const
     return principal;
 }
 
-
 NS_IMETHODIMP XPCWrappedNative::FindInterfaceWithMember(HandleId name,
                                                         nsIInterfaceInfo * *_retval)
 {
@@ -2159,7 +2155,6 @@ NS_IMETHODIMP XPCWrappedNative::FindInterfaceWithMember(HandleId name,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP XPCWrappedNative::FindInterfaceWithName(HandleId name,
                                                       nsIInterfaceInfo * *_retval)
 {
@@ -2172,7 +2167,6 @@ NS_IMETHODIMP XPCWrappedNative::FindInterfaceWithName(HandleId name,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP_(bool)
 XPCWrappedNative::HasNativeMember(HandleId name)
 {
@@ -2180,7 +2174,6 @@ XPCWrappedNative::HasNativeMember(HandleId name)
     uint16_t ignored;
     return GetSet()->FindMember(name, &member, &ignored) && !!member;
 }
-
 
 NS_IMETHODIMP XPCWrappedNative::DebugDump(int16_t depth)
 {

@@ -505,7 +505,6 @@ NativeInterface2JSObject(HandleObject aScope,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::WrapNative(JSContext * aJSContext,
                         JSObject * aScopeArg,
@@ -531,7 +530,6 @@ nsXPConnect::WrapNative(JSContext * aJSContext,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::WrapNativeHolder(JSContext * aJSContext,
                               JSObject * aScopeArg,
@@ -550,7 +548,6 @@ nsXPConnect::WrapNativeHolder(JSContext * aJSContext,
                                     true, &v, aHolder);
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::WrapNativeToJSVal(JSContext* aJSContext,
                                JSObject* aScopeArg,
@@ -568,7 +565,6 @@ nsXPConnect::WrapNativeToJSVal(JSContext* aJSContext,
     return NativeInterface2JSObject(aScope, aCOMObj, aCache, aIID,
                                     aAllowWrapping, aVal, nullptr);
 }
-
 
 NS_IMETHODIMP
 nsXPConnect::WrapJS(JSContext * aJSContext,
@@ -606,7 +602,6 @@ nsXPConnect::JSValToVariant(JSContext* cx,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::WrapJSAggregatedToNative(nsISupports* aOuter,
                                       JSContext* aJSContext,
@@ -628,7 +623,6 @@ nsXPConnect::WrapJSAggregatedToNative(nsISupports* aOuter,
         return rv;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsXPConnect::GetWrappedNativeOfJSObject(JSContext * aJSContext,
@@ -673,14 +667,12 @@ xpc::UnwrapReflectorToISupports(JSObject* reflector)
     return canonical;
 }
 
-
 NS_IMETHODIMP_(nsISupports*)
 nsXPConnect::GetNativeOfWrapper(JSContext* aJSContext,
                                 JSObject* aJSObj)
 {
     return UnwrapReflectorToISupports(aJSObj);
 }
-
 
 NS_IMETHODIMP
 nsXPConnect::GetWrappedNativeOfNativeObject(JSContext * aJSContext,
@@ -716,7 +708,6 @@ nsXPConnect::GetWrappedNativeOfNativeObject(JSContext * aJSContext,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::GetCurrentJSStack(nsIStackFrame * *aCurrentJSStack)
 {
@@ -728,7 +719,6 @@ nsXPConnect::GetCurrentJSStack(nsIStackFrame * *aCurrentJSStack)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::GetCurrentNativeCallContext(nsAXPCNativeCallContext * *aCurrentNativeCallContext)
 {
@@ -737,7 +727,6 @@ nsXPConnect::GetCurrentNativeCallContext(nsAXPCNativeCallContext * *aCurrentNati
     *aCurrentNativeCallContext = XPCJSRuntime::Get()->GetCallContext();
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsXPConnect::SetFunctionThisTranslator(const nsIID & aIID,
@@ -794,7 +783,6 @@ nsXPConnect::EvalInSandboxObject(const nsAString& source, const char* filename,
                          JSVersion(jsVersion), rval);
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::GetWrappedNativePrototype(JSContext* aJSContext,
                                        JSObject* aScopeArg,
@@ -825,7 +813,6 @@ nsXPConnect::GetWrappedNativePrototype(JSContext* aJSContext,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::DebugDump(int16_t depth)
 {
@@ -847,7 +834,6 @@ nsXPConnect::DebugDump(int16_t depth)
 #endif
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsXPConnect::DebugDumpObject(nsISupports* p, int16_t depth)
@@ -888,7 +874,6 @@ nsXPConnect::DebugDumpObject(nsISupports* p, int16_t depth)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::DebugDumpJSStack(bool showArgs,
                               bool showLocals,
@@ -913,7 +898,6 @@ nsXPConnect::DebugPrintJSStack(bool showArgs,
     return nullptr;
 }
 
-
 NS_IMETHODIMP
 nsXPConnect::VariantToJS(JSContext* ctx, JSObject* scopeArg, nsIVariant* value,
                          MutableHandleValue _retval)
@@ -934,7 +918,6 @@ nsXPConnect::VariantToJS(JSContext* ctx, JSObject* scopeArg, nsIVariant* value,
     }
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsXPConnect::JSToVariant(JSContext* ctx, HandleValue value, nsIVariant** _retval)

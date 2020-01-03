@@ -393,7 +393,6 @@ struct IntervalComparator
 
 } 
 
-
 NS_IMETHODIMP
 TimerThread::Run()
 {
@@ -788,7 +787,6 @@ TimerThread::DoAfterSleep()
   mNotified = true;
   mMonitor.Notify();
 }
-
 
 
 NS_IMETHODIMP

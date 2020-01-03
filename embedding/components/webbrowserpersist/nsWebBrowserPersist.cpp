@@ -270,7 +270,6 @@ NS_IMETHODIMP nsWebBrowserPersist::GetInterface(const nsIID & aIID, void **aIFac
 
 
 
-
 NS_IMETHODIMP nsWebBrowserPersist::GetPersistFlags(uint32_t *aPersistFlags)
 {
     NS_ENSURE_ARG_POINTER(aPersistFlags);
@@ -284,7 +283,6 @@ NS_IMETHODIMP nsWebBrowserPersist::SetPersistFlags(uint32_t aPersistFlags)
     mSerializingOutput = (mPersistFlags & PERSIST_FLAGS_SERIALIZE_OUTPUT) ? true : false;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWebBrowserPersist::GetCurrentState(uint32_t *aCurrentState)
 {
@@ -304,14 +302,12 @@ NS_IMETHODIMP nsWebBrowserPersist::GetCurrentState(uint32_t *aCurrentState)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWebBrowserPersist::GetResult(nsresult *aResult)
 {
     NS_ENSURE_ARG_POINTER(aResult);
     *aResult = mPersistResult;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWebBrowserPersist::GetProgressListener(
     nsIWebProgressListener * *aProgressListener)
@@ -365,7 +361,6 @@ NS_IMETHODIMP nsWebBrowserPersist::SavePrivacyAwareURI(
                          aPostData, aExtraHeaders, fileAsURI, false, aIsPrivate);
     return NS_FAILED(rv) ? rv : NS_OK;
 }
-
 
 NS_IMETHODIMP nsWebBrowserPersist::SaveChannel(
     nsIChannel *aChannel, nsISupports *aFile)
@@ -480,14 +475,12 @@ NS_IMETHODIMP nsWebBrowserPersist::SaveDocument(
     return rv;
 }
 
-
 NS_IMETHODIMP nsWebBrowserPersist::Cancel(nsresult aReason)
 {
     mCancel = true;
     EndDownload(aReason);
     return NS_OK;
 }
-
 
 
 NS_IMETHODIMP nsWebBrowserPersist::CancelSave()

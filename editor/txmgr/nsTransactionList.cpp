@@ -39,7 +39,6 @@ nsTransactionList::~nsTransactionList()
   mTxnItem  = 0;
 }
 
-
 NS_IMETHODIMP nsTransactionList::GetNumItems(int32_t *aNumItems)
 {
   NS_ENSURE_TRUE(aNumItems, NS_ERROR_NULL_POINTER);
@@ -59,7 +58,6 @@ NS_IMETHODIMP nsTransactionList::GetNumItems(int32_t *aNumItems)
 
   return result;
 }
-
 
 NS_IMETHODIMP nsTransactionList::ItemIsBatch(int32_t aIndex, bool *aIsBatch)
 {
@@ -123,7 +121,6 @@ NS_IMETHODIMP nsTransactionList::GetData(int32_t aIndex,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsTransactionList::GetItem(int32_t aIndex, nsITransaction **aItem)
 {
   NS_ENSURE_TRUE(aItem, NS_ERROR_NULL_POINTER);
@@ -152,7 +149,6 @@ NS_IMETHODIMP nsTransactionList::GetItem(int32_t aIndex, nsITransaction **aItem)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsTransactionList::GetNumChildrenForItem(int32_t aIndex, int32_t *aNumChildren)
 {
   NS_ENSURE_TRUE(aNumChildren, NS_ERROR_NULL_POINTER);
@@ -178,7 +174,6 @@ NS_IMETHODIMP nsTransactionList::GetNumChildrenForItem(int32_t aIndex, int32_t *
 
   return item->GetNumberOfChildren(aNumChildren);
 }
-
 
 NS_IMETHODIMP nsTransactionList::GetChildListForItem(int32_t aIndex, nsITransactionList **aTxnList)
 {

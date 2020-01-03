@@ -1051,7 +1051,6 @@ mozJSComponentLoader::ImportInto(const nsACString& aLocation,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 mozJSComponentLoader::IsModuleLoaded(const nsACString& aLocation,
                                      bool* retval)

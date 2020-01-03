@@ -35,7 +35,6 @@ nsX509CertValidity::~nsX509CertValidity()
   
 }
 
-
 NS_IMETHODIMP nsX509CertValidity::GetNotBefore(PRTime *aNotBefore)
 {
   NS_ENSURE_ARG(aNotBefore);
@@ -105,7 +104,6 @@ NS_IMETHODIMP nsX509CertValidity::GetNotBeforeGMT(nsAString &aNotBeforeGMT)
   aNotBeforeGMT = date;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsX509CertValidity::GetNotAfter(PRTime *aNotAfter)
 {

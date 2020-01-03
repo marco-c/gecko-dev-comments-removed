@@ -341,7 +341,6 @@ RasterImage::RequestRefresh(const TimeStamp& aTime)
 }
 
 
-
 NS_IMETHODIMP
 RasterImage::GetWidth(int32_t* aWidth)
 {
@@ -355,7 +354,6 @@ RasterImage::GetWidth(int32_t* aWidth)
   *aWidth = mSize.width;
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP
@@ -373,7 +371,6 @@ RasterImage::GetHeight(int32_t* aHeight)
 }
 
 
-
 NS_IMETHODIMP
 RasterImage::GetIntrinsicSize(nsSize* aSize)
 {
@@ -385,7 +382,6 @@ RasterImage::GetIntrinsicSize(nsSize* aSize)
                   nsPresContext::CSSPixelsToAppUnits(mSize.height));
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP
@@ -404,7 +400,6 @@ RasterImage::GetOrientation()
 {
   return mOrientation;
 }
-
 
 
 NS_IMETHODIMP
@@ -570,7 +565,6 @@ RasterImage::OnSurfaceDiscarded()
 }
 
 
-
 NS_IMETHODIMP
 RasterImage::GetAnimated(bool* aAnimated)
 {
@@ -597,7 +591,6 @@ RasterImage::GetAnimated(bool* aAnimated)
 
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP_(int32_t)
@@ -1023,7 +1016,6 @@ RasterImage::StartAnimation()
 }
 
 
-
 nsresult
 RasterImage::StopAnimation()
 {
@@ -1039,7 +1031,6 @@ RasterImage::StopAnimation()
   mAnimating = false;
   return rv;
 }
-
 
 
 NS_IMETHODIMP
@@ -1904,7 +1895,6 @@ RasterImage::ShouldAnimate()
   return ImageResource::ShouldAnimate() && GetNumFrames() >= 2 &&
          !mAnimationFinished;
 }
-
 
 #ifdef DEBUG
 NS_IMETHODIMP

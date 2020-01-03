@@ -146,13 +146,11 @@ GfxInfo::GetDWriteEnabled(bool *aEnabled)
   return NS_ERROR_FAILURE;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetDWriteVersion(nsAString & aDwriteVersion)
 {
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetCleartypeParameters(nsAString & aCleartypeParams)
@@ -219,7 +217,6 @@ GfxInfo::EnsureInitialized()
   mInitialized = true;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterDescription(nsAString & aAdapterDescription)
 {
@@ -228,14 +225,12 @@ GfxInfo::GetAdapterDescription(nsAString & aAdapterDescription)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterDescription2(nsAString & aAdapterDescription)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterRAM(nsAString & aAdapterRAM)
@@ -245,14 +240,12 @@ GfxInfo::GetAdapterRAM(nsAString & aAdapterRAM)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterRAM2(nsAString & aAdapterRAM)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriver(nsAString & aAdapterDriver)
@@ -262,14 +255,12 @@ GfxInfo::GetAdapterDriver(nsAString & aAdapterDriver)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriver2(nsAString & aAdapterDriver)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVersion(nsAString & aAdapterDriverVersion)
@@ -279,14 +270,12 @@ GfxInfo::GetAdapterDriverVersion(nsAString & aAdapterDriverVersion)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVersion2(nsAString & aAdapterDriverVersion)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverDate(nsAString & aAdapterDriverDate)
@@ -296,14 +285,12 @@ GfxInfo::GetAdapterDriverDate(nsAString & aAdapterDriverDate)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverDate2(nsAString & aAdapterDriverDate)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterVendorID(nsAString & aAdapterVendorID)
@@ -313,14 +300,12 @@ GfxInfo::GetAdapterVendorID(nsAString & aAdapterVendorID)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterVendorID2(nsAString & aAdapterVendorID)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterDeviceID(nsAString & aAdapterDeviceID)
@@ -330,14 +315,12 @@ GfxInfo::GetAdapterDeviceID(nsAString & aAdapterDeviceID)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterDeviceID2(nsAString & aAdapterDeviceID)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterSubsysID(nsAString & aAdapterSubsysID)
@@ -346,14 +329,12 @@ GfxInfo::GetAdapterSubsysID(nsAString & aAdapterSubsysID)
   return NS_ERROR_FAILURE;
 }
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterSubsysID2(nsAString & aAdapterSubsysID)
 {
   EnsureInitialized();
   return NS_ERROR_FAILURE;
 }
-
 
 NS_IMETHODIMP
 GfxInfo::GetIsGPU2Active(bool* aIsGPU2Active)
@@ -607,13 +588,11 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
 
 
 
-
 NS_IMETHODIMP GfxInfo::SpoofVendorID(const nsAString & aVendorID)
 {
   mGLStrings->SpoofVendor(NS_LossyConvertUTF16toASCII(aVendorID));
   return NS_OK;
 }
-
 
 NS_IMETHODIMP GfxInfo::SpoofDeviceID(const nsAString & aDeviceID)
 {
@@ -621,13 +600,11 @@ NS_IMETHODIMP GfxInfo::SpoofDeviceID(const nsAString & aDeviceID)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP GfxInfo::SpoofDriverVersion(const nsAString & aDriverVersion)
 {
   mGLStrings->SpoofVersion(NS_LossyConvertUTF16toASCII(aDriverVersion));
   return NS_OK;
 }
-
 
 NS_IMETHODIMP GfxInfo::SpoofOSVersion(uint32_t aVersion)
 {

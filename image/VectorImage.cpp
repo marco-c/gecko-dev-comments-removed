@@ -492,7 +492,6 @@ VectorImage::SetAnimationStartTime(const TimeStamp& aTime)
 
 
 
-
 NS_IMETHODIMP
 VectorImage::GetWidth(int32_t* aWidth)
 {
@@ -506,7 +505,6 @@ VectorImage::GetWidth(int32_t* aWidth)
   }
   return *aWidth >= 0 ? NS_OK : NS_ERROR_FAILURE;
 }
-
 
 
 NS_IMETHODIMP_(void)
@@ -558,7 +556,6 @@ VectorImage::GetImageSpaceInvalidationRect(const IntRect& aRect)
 }
 
 
-
 NS_IMETHODIMP
 VectorImage::GetHeight(int32_t* aHeight)
 {
@@ -572,7 +569,6 @@ VectorImage::GetHeight(int32_t* aHeight)
   }
   return *aHeight >= 0 ? NS_OK : NS_ERROR_FAILURE;
 }
-
 
 
 NS_IMETHODIMP
@@ -600,7 +596,6 @@ VectorImage::GetIntrinsicSize(nsSize* aSize)
 }
 
 
-
 NS_IMETHODIMP
 VectorImage::GetIntrinsicRatio(nsSize* aRatio)
 {
@@ -624,7 +619,6 @@ VectorImage::GetOrientation()
 }
 
 
-
 NS_IMETHODIMP
 VectorImage::GetType(uint16_t* aType)
 {
@@ -633,7 +627,6 @@ VectorImage::GetType(uint16_t* aType)
   *aType = imgIContainer::TYPE_VECTOR;
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP
@@ -646,7 +639,6 @@ VectorImage::GetAnimated(bool* aAnimated)
   *aAnimated = mSVGDocumentWrapper->IsAnimated();
   return NS_OK;
 }
-
 
 
 int32_t
@@ -728,7 +720,6 @@ VectorImage::IsImageContainerAvailable(LayerManager* aManager, uint32_t aFlags)
 {
   return false;
 }
-
 
 
 NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
@@ -1055,7 +1046,6 @@ VectorImage::OnSurfaceDiscarded()
 }
 
 
-
 NS_IMETHODIMP
 VectorImage::ResetAnimation()
 {
@@ -1080,7 +1070,6 @@ VectorImage::GetFrameIndex(uint32_t aWhichFrame)
          ? 0.0f
          : mSVGDocumentWrapper->GetCurrentTime();
 }
-
 
 
 

@@ -47,7 +47,6 @@ nsSecretDecoderRing::~nsSecretDecoderRing()
 {
 }
 
-
 NS_IMETHODIMP nsSecretDecoderRing::
 Encrypt(unsigned char * data, int32_t dataLen, unsigned char * *result, int32_t *_retval)
 {
@@ -89,7 +88,6 @@ loser:
   return rv;
 }
 
-
 NS_IMETHODIMP nsSecretDecoderRing::
 Decrypt(unsigned char * data, int32_t dataLen, unsigned char * *result, int32_t *_retval)
 {
@@ -129,7 +127,6 @@ loser:
   return rv;
 }
 
-
 NS_IMETHODIMP nsSecretDecoderRing::
 EncryptString(const char *text, char **_retval)
 {
@@ -153,7 +150,6 @@ loser:
 
   return rv;
 }
-
 
 NS_IMETHODIMP nsSecretDecoderRing::
 DecryptString(const char *crypt, char **_retval)
@@ -193,7 +189,6 @@ loser:
 
   return rv;
 }
-
 
 NS_IMETHODIMP nsSecretDecoderRing::
 ChangePassword()
@@ -278,7 +273,6 @@ LogoutAndTeardown()
 
   return rv;
 }
-
 
 NS_IMETHODIMP nsSecretDecoderRing::
 SetWindow(nsISupports *w)

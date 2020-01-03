@@ -101,7 +101,6 @@ void nsPK11Token::destructorSafeDestroyNSSReference()
   }
 }
 
-
 NS_IMETHODIMP nsPK11Token::GetTokenName(char16_t * *aTokenName)
 {
   
@@ -114,7 +113,6 @@ NS_IMETHODIMP nsPK11Token::GetTokenName(char16_t * *aTokenName)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsPK11Token::GetTokenLabel(char16_t **aTokLabel)
 {
   
@@ -125,7 +123,6 @@ NS_IMETHODIMP nsPK11Token::GetTokenLabel(char16_t **aTokLabel)
   if (!*aTokLabel) return NS_ERROR_OUT_OF_MEMORY;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPK11Token::GetTokenManID(char16_t **aTokManID)
 {
@@ -138,7 +135,6 @@ NS_IMETHODIMP nsPK11Token::GetTokenManID(char16_t **aTokManID)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsPK11Token::GetTokenHWVersion(char16_t **aTokHWVersion)
 {
   
@@ -149,7 +145,6 @@ NS_IMETHODIMP nsPK11Token::GetTokenHWVersion(char16_t **aTokHWVersion)
   if (!*aTokHWVersion) return NS_ERROR_OUT_OF_MEMORY;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPK11Token::GetTokenFWVersion(char16_t **aTokFWVersion)
 {
@@ -162,7 +157,6 @@ NS_IMETHODIMP nsPK11Token::GetTokenFWVersion(char16_t **aTokFWVersion)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsPK11Token::GetTokenSerialNumber(char16_t **aTokSerialNum)
 {
   
@@ -173,7 +167,6 @@ NS_IMETHODIMP nsPK11Token::GetTokenSerialNumber(char16_t **aTokSerialNum)
   if (!*aTokSerialNum) return NS_ERROR_OUT_OF_MEMORY;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPK11Token::IsLoggedIn(bool *_retval)
 {
@@ -187,7 +180,6 @@ NS_IMETHODIMP nsPK11Token::IsLoggedIn(bool *_retval)
 
   return rv;
 }
-
 
 NS_IMETHODIMP 
 nsPK11Token::Login(bool force)
@@ -239,7 +231,6 @@ NS_IMETHODIMP nsPK11Token::LogoutAndDropAuthenticatedResources()
   return nssComponent->LogoutAuthenticatedPK11();
 }
 
-
 NS_IMETHODIMP nsPK11Token::Reset()
 {
   nsNSSShutDownPreventionLock locker;
@@ -249,7 +240,6 @@ NS_IMETHODIMP nsPK11Token::Reset()
   PK11_ResetToken(mSlot, 0);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPK11Token::GetMinimumPasswordLength(int32_t *aMinimumPasswordLength)
 {
@@ -262,7 +252,6 @@ NS_IMETHODIMP nsPK11Token::GetMinimumPasswordLength(int32_t *aMinimumPasswordLen
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsPK11Token::GetNeedsUserInit(bool *aNeedsUserInit)
 {
   nsNSSShutDownPreventionLock locker;
@@ -272,7 +261,6 @@ NS_IMETHODIMP nsPK11Token::GetNeedsUserInit(bool *aNeedsUserInit)
   *aNeedsUserInit = PK11_NeedUserInit(mSlot);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPK11Token::CheckPassword(const char16_t *password, bool *_retval)
 {
@@ -298,7 +286,6 @@ NS_IMETHODIMP nsPK11Token::CheckPassword(const char16_t *password, bool *_retval
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsPK11Token::InitPassword(const char16_t *initialPassword)
 {
   nsNSSShutDownPreventionLock locker;
@@ -316,7 +303,6 @@ done:
     return rv;
 }
 
-
 NS_IMETHODIMP 
 nsPK11Token::GetAskPasswordTimes(int32_t *rvAskTimes)
 {
@@ -329,7 +315,6 @@ nsPK11Token::GetAskPasswordTimes(int32_t *rvAskTimes)
     *rvAskTimes = askTimes;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP 
 nsPK11Token::GetAskPasswordTimeout(int32_t *rvAskTimeout)
@@ -359,7 +344,6 @@ nsPK11Token::SetAskPasswordDefaults(const int32_t askTimes,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsPK11Token::ChangePassword(const char16_t *oldPassword, const char16_t *newPassword)
 {
   nsNSSShutDownPreventionLock locker;
@@ -376,7 +360,6 @@ NS_IMETHODIMP nsPK11Token::ChangePassword(const char16_t *oldPassword, const cha
   return (rv == SECSuccess) ? NS_OK : NS_ERROR_FAILURE;
 }
 
-
 NS_IMETHODIMP nsPK11Token::IsHardwareToken(bool *_retval)
 {
   nsNSSShutDownPreventionLock locker;
@@ -390,7 +373,6 @@ NS_IMETHODIMP nsPK11Token::IsHardwareToken(bool *_retval)
   return rv;
 }
 
-
 NS_IMETHODIMP nsPK11Token::NeedsLogin(bool *_retval)
 {
   nsNSSShutDownPreventionLock locker;
@@ -403,7 +385,6 @@ NS_IMETHODIMP nsPK11Token::NeedsLogin(bool *_retval)
 
   return rv;
 }
-
 
 NS_IMETHODIMP nsPK11Token::IsFriendly(bool *_retval)
 {
@@ -432,7 +413,6 @@ nsPK11TokenDB::~nsPK11TokenDB()
   
 }
 
-
 NS_IMETHODIMP nsPK11TokenDB::GetInternalKeyToken(nsIPK11Token **_retval)
 {
   nsNSSShutDownPreventionLock locker;
@@ -452,7 +432,6 @@ done:
   return rv;
 }
 
-
 NS_IMETHODIMP nsPK11TokenDB::
 FindTokenByName(const char16_t* tokenName, nsIPK11Token **_retval)
 {
@@ -470,7 +449,6 @@ done:
   if (slot) PK11_FreeSlot(slot);
   return rv;
 }
-
 
 NS_IMETHODIMP nsPK11TokenDB::ListTokens(nsIEnumerator* *_retval)
 {

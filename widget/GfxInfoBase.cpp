@@ -1043,7 +1043,6 @@ GfxInfoBase::LogFailure(const nsACString &failure)
 }
 
 
-
 NS_IMETHODIMP GfxInfoBase::GetFailures(uint32_t* failureCount,
                                        int32_t** indices,
                                        char ***failures)

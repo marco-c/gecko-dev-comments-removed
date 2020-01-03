@@ -201,7 +201,6 @@ nsXULControllers::RemoveController(nsIController *controller)
   return NS_ERROR_FAILURE;      
 }
     
-
 NS_IMETHODIMP
 nsXULControllers::GetControllerId(nsIController *controller, uint32_t *_retval)
 {
@@ -224,7 +223,6 @@ nsXULControllers::GetControllerId(nsIController *controller, uint32_t *_retval)
   }
   return NS_ERROR_FAILURE;  
 }
-
 
 NS_IMETHODIMP
 nsXULControllers::GetControllerById(uint32_t controllerID, nsIController **_retval)

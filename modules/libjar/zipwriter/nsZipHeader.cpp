@@ -23,7 +23,6 @@
 
 NS_IMPL_ISUPPORTS(nsZipHeader, nsIZipEntry)
 
-
 NS_IMETHODIMP nsZipHeader::GetCompression(uint16_t *aCompression)
 {
     NS_ASSERTION(mInited, "Not initalised");
@@ -31,7 +30,6 @@ NS_IMETHODIMP nsZipHeader::GetCompression(uint16_t *aCompression)
     *aCompression = mMethod;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsZipHeader::GetSize(uint32_t *aSize)
 {
@@ -41,7 +39,6 @@ NS_IMETHODIMP nsZipHeader::GetSize(uint32_t *aSize)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsZipHeader::GetRealSize(uint32_t *aRealSize)
 {
     NS_ASSERTION(mInited, "Not initalised");
@@ -50,7 +47,6 @@ NS_IMETHODIMP nsZipHeader::GetRealSize(uint32_t *aRealSize)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsZipHeader::GetCRC32(uint32_t *aCRC32)
 {
     NS_ASSERTION(mInited, "Not initalised");
@@ -58,7 +54,6 @@ NS_IMETHODIMP nsZipHeader::GetCRC32(uint32_t *aCRC32)
     *aCRC32 = mCRC;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsZipHeader::GetIsDirectory(bool *aIsDirectory)
 {
@@ -70,7 +65,6 @@ NS_IMETHODIMP nsZipHeader::GetIsDirectory(bool *aIsDirectory)
         *aIsDirectory = false;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsZipHeader::GetLastModifiedTime(PRTime *aLastModifiedTime)
 {
@@ -118,7 +112,6 @@ NS_IMETHODIMP nsZipHeader::GetLastModifiedTime(PRTime *aLastModifiedTime)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsZipHeader::GetIsSynthetic(bool *aIsSynthetic)
 {
     NS_ASSERTION(mInited, "Not initalised");
@@ -126,7 +119,6 @@ NS_IMETHODIMP nsZipHeader::GetIsSynthetic(bool *aIsSynthetic)
     *aIsSynthetic = false;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsZipHeader::GetPermissions(uint32_t *aPermissions)
 {

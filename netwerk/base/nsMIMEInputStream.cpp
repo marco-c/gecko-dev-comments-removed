@@ -114,7 +114,6 @@ NS_METHOD nsMIMEInputStream::Init()
 }
 
 
-
 NS_IMETHODIMP
 nsMIMEInputStream::GetAddContentLength(bool *aAddContentLength)
 {
@@ -128,7 +127,6 @@ nsMIMEInputStream::SetAddContentLength(bool aAddContentLength)
     mAddContentLength = aAddContentLength;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsMIMEInputStream::AddHeader(const char *aName, const char *aValue)
@@ -146,7 +144,6 @@ nsMIMEInputStream::AddHeader(const char *aName, const char *aValue)
 
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsMIMEInputStream::SetData(nsIInputStream *aStream)

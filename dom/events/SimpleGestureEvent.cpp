@@ -39,7 +39,6 @@ NS_INTERFACE_MAP_BEGIN(SimpleGestureEvent)
   NS_INTERFACE_MAP_ENTRY(nsIDOMSimpleGestureEvent)
 NS_INTERFACE_MAP_END_INHERITING(MouseEvent)
 
-
 uint32_t
 SimpleGestureEvent::AllowedDirections()
 {
@@ -61,7 +60,6 @@ SimpleGestureEvent::SetAllowedDirections(uint32_t aAllowedDirections)
   return NS_OK;
 }
 
-
 uint32_t
 SimpleGestureEvent::Direction()
 {
@@ -76,7 +74,6 @@ SimpleGestureEvent::GetDirection(uint32_t* aDirection)
   return NS_OK;
 }
 
-
 double
 SimpleGestureEvent::Delta()
 {
@@ -90,7 +87,6 @@ SimpleGestureEvent::GetDelta(double* aDelta)
   *aDelta = Delta();
   return NS_OK;
 }
-
 
 uint32_t
 SimpleGestureEvent::ClickCount()

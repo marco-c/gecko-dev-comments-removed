@@ -908,7 +908,6 @@ nsNavHistoryQuery::nsNavHistoryQuery()
   mDomain.SetIsVoid(true);
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetBeginTime(PRTime *aBeginTime)
 {
   *aBeginTime = mBeginTime;
@@ -919,7 +918,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetBeginTime(PRTime aBeginTime)
   mBeginTime = aBeginTime;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetBeginTimeReference(uint32_t* _retval)
 {
@@ -934,20 +932,17 @@ NS_IMETHODIMP nsNavHistoryQuery::SetBeginTimeReference(uint32_t aReference)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetHasBeginTime(bool* _retval)
 {
   *_retval = ! (mBeginTimeReference == TIME_RELATIVE_EPOCH && mBeginTime == 0);
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetAbsoluteBeginTime(PRTime* _retval)
 {
   *_retval = nsNavHistory::NormalizeTime(mBeginTimeReference, mBeginTime);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetEndTime(PRTime *aEndTime)
 {
@@ -959,7 +954,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetEndTime(PRTime aEndTime)
   mEndTime = aEndTime;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetEndTimeReference(uint32_t* _retval)
 {
@@ -974,20 +968,17 @@ NS_IMETHODIMP nsNavHistoryQuery::SetEndTimeReference(uint32_t aReference)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetHasEndTime(bool* _retval)
 {
   *_retval = ! (mEndTimeReference == TIME_RELATIVE_EPOCH && mEndTime == 0);
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetAbsoluteEndTime(PRTime* _retval)
 {
   *_retval = nsNavHistory::NormalizeTime(mEndTimeReference, mEndTime);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetSearchTerms(nsAString& aSearchTerms)
 {
@@ -1005,7 +996,6 @@ NS_IMETHODIMP nsNavHistoryQuery::GetHasSearchTerms(bool* _retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetMinVisits(int32_t* _retval)
 {
   NS_ENSURE_ARG_POINTER(_retval);
@@ -1017,7 +1007,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetMinVisits(int32_t aVisits)
   mMinVisits = aVisits;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetMaxVisits(int32_t* _retval)
 {
@@ -1031,7 +1020,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetMaxVisits(int32_t aVisits)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetOnlyBookmarked(bool *aOnlyBookmarked)
 {
   *aOnlyBookmarked = mOnlyBookmarked;
@@ -1043,7 +1031,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetOnlyBookmarked(bool aOnlyBookmarked)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetDomainIsHost(bool *aDomainIsHost)
 {
   *aDomainIsHost = mDomainIsHost;
@@ -1054,7 +1041,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetDomainIsHost(bool aDomainIsHost)
   mDomainIsHost = aDomainIsHost;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetDomain(nsACString& aDomain)
 {
@@ -1073,7 +1059,6 @@ NS_IMETHODIMP nsNavHistoryQuery::GetHasDomain(bool* _retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetUriIsPrefix(bool* aIsPrefix)
 {
   *aIsPrefix = mUriIsPrefix;
@@ -1084,7 +1069,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetUriIsPrefix(bool aIsPrefix)
   mUriIsPrefix = aIsPrefix;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetUri(nsIURI** aUri)
 {
@@ -1102,7 +1086,6 @@ NS_IMETHODIMP nsNavHistoryQuery::GetHasUri(bool* aHasUri)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsNavHistoryQuery::GetAnnotationIsNot(bool* aIsNot)
 {
   *aIsNot = mAnnotationIsNot;
@@ -1113,7 +1096,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetAnnotationIsNot(bool aIsNot)
   mAnnotationIsNot = aIsNot;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetAnnotation(nsACString& aAnnotation)
 {
@@ -1130,7 +1112,6 @@ NS_IMETHODIMP nsNavHistoryQuery::GetHasAnnotation(bool* aHasIt)
   *aHasIt = ! mAnnotation.IsEmpty();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetTags(nsIVariant **aTags)
 {
@@ -1252,7 +1233,6 @@ NS_IMETHODIMP nsNavHistoryQuery::SetTags(nsIVariant *aTags)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsNavHistoryQuery::GetTagsAreNot(bool *aTagsAreNot)
 {

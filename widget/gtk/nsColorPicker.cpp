@@ -37,7 +37,6 @@ GtkColorSelection* nsColorPicker::WidgetGetColorSelection(GtkWidget* widget)
                              GTK_COLOR_SELECTION_DIALOG(widget)));
 }
 
-
 NS_IMETHODIMP nsColorPicker::Init(nsIDOMWindow *parent,
                                   const nsAString& title,
                                   const nsAString& initialColor)
@@ -48,7 +47,6 @@ NS_IMETHODIMP nsColorPicker::Init(nsIDOMWindow *parent,
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsColorPicker::Open(nsIColorPickerShownCallback *aColorPickerShownCallback)
 {

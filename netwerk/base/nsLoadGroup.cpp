@@ -722,7 +722,6 @@ nsLoadGroup::GetSchedulingContextID(nsID *aSCID)
 
 
 
-
 NS_IMETHODIMP
 nsLoadGroup::GetParentLoadGroup(nsILoadGroup * *aParentLoadGroup)
 {
@@ -741,14 +740,12 @@ nsLoadGroup::SetParentLoadGroup(nsILoadGroup *aParentLoadGroup)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsLoadGroup::GetChildLoadGroup(nsILoadGroup * *aChildLoadGroup)
 {
     NS_ADDREF(*aChildLoadGroup = this);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsLoadGroup::GetRootLoadGroup(nsILoadGroup * *aRootLoadGroup)

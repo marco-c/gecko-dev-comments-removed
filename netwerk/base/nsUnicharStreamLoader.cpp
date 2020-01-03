@@ -49,14 +49,12 @@ nsUnicharStreamLoader::Create(nsISupports *aOuter,
 NS_IMPL_ISUPPORTS(nsUnicharStreamLoader, nsIUnicharStreamLoader,
                   nsIRequestObserver, nsIStreamListener)
 
-
 NS_IMETHODIMP
 nsUnicharStreamLoader::GetChannel(nsIChannel **aChannel)
 {
   NS_IF_ADDREF(*aChannel = mChannel);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsUnicharStreamLoader::GetCharset(nsACString& aCharset)

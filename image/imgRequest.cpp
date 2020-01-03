@@ -710,7 +710,6 @@ imgRequest::HadInsecureRedirect() const
 
 
 
-
 NS_IMETHODIMP
 imgRequest::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
 {

@@ -25,7 +25,6 @@ NS_IMPL_ISUPPORTS(nsFontFaceList, nsIDOMFontFaceList)
 
 
 
-
 struct FindByIndexData {
   uint32_t mTarget;
   uint32_t mCurrent;
@@ -57,7 +56,6 @@ nsFontFaceList::Item(uint32_t index, nsIDOMFontFace **_retval)
   NS_IF_ADDREF(*_retval = userData.mResult);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsFontFaceList::GetLength(uint32_t *aLength)

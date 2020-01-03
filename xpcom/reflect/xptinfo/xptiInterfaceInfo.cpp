@@ -603,7 +603,6 @@ xptiInterfaceEntry::GetInterfaceIsArgNumberForParam(uint16_t methodIndex,
     return NS_OK;
 }
 
-
 nsresult 
 xptiInterfaceEntry::IsIID(const nsIID * IID, bool *_retval)
 {
@@ -611,7 +610,6 @@ xptiInterfaceEntry::IsIID(const nsIID * IID, bool *_retval)
     *_retval = mIID.Equals(*IID);
     return NS_OK;
 }
-
 
 nsresult 
 xptiInterfaceEntry::GetNameShared(const char **name)
@@ -621,7 +619,6 @@ xptiInterfaceEntry::GetNameShared(const char **name)
     return NS_OK;
 }
 
-
 nsresult 
 xptiInterfaceEntry::GetIIDShared(const nsIID * *iid)
 {
@@ -629,7 +626,6 @@ xptiInterfaceEntry::GetIIDShared(const nsIID * *iid)
     *iid = &mIID;
     return NS_OK;
 }
-
 
 nsresult 
 xptiInterfaceEntry::HasAncestor(const nsIID * iid, bool *_retval)

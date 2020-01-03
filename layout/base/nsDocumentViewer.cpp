@@ -2670,7 +2670,6 @@ NS_IMETHODIMP nsDocumentViewer::GetCopyable(bool *aCopyable)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsDocumentViewer::GetContents(const char *mimeType, bool selectionOnly, nsAString& aOutValue)
 {
   aOutValue.Truncate();
@@ -2694,7 +2693,6 @@ NS_IMETHODIMP nsDocumentViewer::GetContents(const char *mimeType, bool selection
   return nsCopySupport::GetContents(nsDependentCString(mimeType), 0, sel,
                                     mDocument, aOutValue);
 }
-
 
 NS_IMETHODIMP nsDocumentViewer::GetCanGetContents(bool *aCanGetContents)
 {
@@ -3914,13 +3912,11 @@ nsDocumentViewer::PrintPreviewNavigate(int16_t aType, int32_t aPageNum)
 
 }
 
-
 NS_IMETHODIMP
 nsDocumentViewer::GetGlobalPrintSettings(nsIPrintSettings * *aGlobalPrintSettings)
 {
   return nsPrintEngine::GetGlobalPrintSettings(aGlobalPrintSettings);
 }
-
 
 
 NS_IMETHODIMP
@@ -3937,7 +3933,6 @@ nsDocumentViewer::GetDoingPrint(bool *aDoingPrint)
 }
 
 
-
 NS_IMETHODIMP
 nsDocumentViewer::GetDoingPrintPreview(bool *aDoingPrintPreview)
 {
@@ -3949,7 +3944,6 @@ nsDocumentViewer::GetDoingPrintPreview(bool *aDoingPrintPreview)
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsDocumentViewer::GetCurrentPrintSettings(nsIPrintSettings * *aCurrentPrintSettings)
@@ -3963,7 +3957,6 @@ nsDocumentViewer::GetCurrentPrintSettings(nsIPrintSettings * *aCurrentPrintSetti
 }
 
 
-
 NS_IMETHODIMP 
 nsDocumentViewer::GetCurrentChildDOMWindow(nsIDOMWindow * *aCurrentChildDOMWindow)
 {
@@ -3972,14 +3965,12 @@ nsDocumentViewer::GetCurrentChildDOMWindow(nsIDOMWindow * *aCurrentChildDOMWindo
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP
 nsDocumentViewer::Cancel()
 {
   NS_ENSURE_TRUE(mPrintEngine, NS_ERROR_FAILURE);
   return mPrintEngine->Cancelled();
 }
-
 
 NS_IMETHODIMP
 nsDocumentViewer::ExitPrintPreview()
@@ -4011,7 +4002,6 @@ nsDocumentViewer::EnumerateDocumentNames(uint32_t* aCount,
 #endif
 }
 
-
 NS_IMETHODIMP 
 nsDocumentViewer::GetIsFramesetFrameSelected(bool *aIsFramesetFrameSelected)
 {
@@ -4024,7 +4014,6 @@ nsDocumentViewer::GetIsFramesetFrameSelected(bool *aIsFramesetFrameSelected)
   return NS_ERROR_FAILURE;
 #endif
 }
-
 
 NS_IMETHODIMP
 nsDocumentViewer::GetPrintPreviewNumPages(int32_t *aPrintPreviewNumPages)
@@ -4039,7 +4028,6 @@ nsDocumentViewer::GetPrintPreviewNumPages(int32_t *aPrintPreviewNumPages)
 #endif
 }
 
-
 NS_IMETHODIMP
 nsDocumentViewer::GetIsFramesetDocument(bool *aIsFramesetDocument)
 {
@@ -4053,7 +4041,6 @@ nsDocumentViewer::GetIsFramesetDocument(bool *aIsFramesetDocument)
 #endif
 }
 
-
 NS_IMETHODIMP 
 nsDocumentViewer::GetIsIFrameSelected(bool *aIsIFrameSelected)
 {
@@ -4066,7 +4053,6 @@ nsDocumentViewer::GetIsIFrameSelected(bool *aIsIFrameSelected)
   return NS_ERROR_FAILURE;
 #endif
 }
-
 
 NS_IMETHODIMP 
 nsDocumentViewer::GetIsRangeSelection(bool *aIsRangeSelection)

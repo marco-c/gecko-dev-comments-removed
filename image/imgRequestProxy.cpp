@@ -281,7 +281,6 @@ imgRequestProxy::RemoveFromLoadGroup(bool releaseLoadGroup)
 
 
 
-
 NS_IMETHODIMP
 imgRequestProxy::GetName(nsACString& aName)
 {
@@ -294,20 +293,17 @@ imgRequestProxy::GetName(nsACString& aName)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::IsPending(bool* _retval)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::GetStatus(nsresult* aStatus)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::Cancel(nsresult status)
@@ -333,7 +329,6 @@ imgRequestProxy::DoCancel(nsresult status)
 
   NullOutListener();
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::CancelAndForgetObserver(nsresult aStatus)
@@ -373,7 +368,6 @@ imgRequestProxy::CancelAndForgetObserver(nsresult aStatus)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::StartDecoding()
 {
@@ -391,7 +385,6 @@ imgRequestProxy::StartDecoding()
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::RequestDecode()
@@ -412,7 +405,6 @@ imgRequestProxy::RequestDecode()
 }
 
 
-
 NS_IMETHODIMP
 imgRequestProxy::LockImage()
 {
@@ -423,7 +415,6 @@ imgRequestProxy::LockImage()
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::UnlockImage()
@@ -437,7 +428,6 @@ imgRequestProxy::UnlockImage()
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::RequestDiscard()
@@ -487,20 +477,17 @@ imgRequestProxy::ClearAnimationConsumers()
   }
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::Suspend()
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::Resume()
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::GetLoadGroup(nsILoadGroup** loadGroup)
@@ -515,7 +502,6 @@ imgRequestProxy::SetLoadGroup(nsILoadGroup* loadGroup)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::GetLoadFlags(nsLoadFlags* flags)
 {
@@ -528,7 +514,6 @@ imgRequestProxy::SetLoadFlags(nsLoadFlags flags)
   mLoadFlags = flags;
   return NS_OK;
 }
-
 
 
 
@@ -557,7 +542,6 @@ imgRequestProxy::GetImage(imgIContainer** aImage)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::GetImageStatus(uint32_t* aStatus)
 {
@@ -566,7 +550,6 @@ imgRequestProxy::GetImageStatus(uint32_t* aStatus)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::GetImageErrorCode(nsresult* aStatus)
@@ -579,7 +562,6 @@ imgRequestProxy::GetImageErrorCode(nsresult* aStatus)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::GetURI(nsIURI** aURI)
@@ -612,7 +594,6 @@ imgRequestProxy::GetURI(ImageURL** aURI)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::GetNotificationObserver(imgINotificationObserver** aObserver)
 {
@@ -620,7 +601,6 @@ imgRequestProxy::GetNotificationObserver(imgINotificationObserver** aObserver)
   NS_IF_ADDREF(*aObserver);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::GetMimeType(char** aMimeType)
@@ -711,7 +691,6 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 imgRequestProxy::GetImagePrincipal(nsIPrincipal** aPrincipal)
 {
@@ -722,7 +701,6 @@ imgRequestProxy::GetImagePrincipal(nsIPrincipal** aPrincipal)
   NS_ADDREF(*aPrincipal = GetOwner()->GetPrincipal());
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::GetMultipart(bool* aMultipart)
@@ -735,7 +713,6 @@ imgRequestProxy::GetMultipart(bool* aMultipart)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 imgRequestProxy::GetCORSMode(int32_t* aCorsMode)

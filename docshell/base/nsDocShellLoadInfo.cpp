@@ -165,7 +165,6 @@ nsDocShellLoadInfo::SetPostDataStream(nsIInputStream* aStream)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsDocShellLoadInfo::GetHeadersStream(nsIInputStream** aHeadersStream)
 {

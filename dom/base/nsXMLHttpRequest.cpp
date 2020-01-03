@@ -580,7 +580,6 @@ nsXMLHttpRequest::SizeOfEventTargetIncludingThis(
   
 }
 
-
 NS_IMETHODIMP
 nsXMLHttpRequest::GetChannel(nsIChannel **aChannel)
 {
@@ -601,7 +600,6 @@ static void LogMessage(const char* aWarning, nsPIDOMWindow* aWindow)
                                   nsContentUtils::eDOM_PROPERTIES,
                                   aWarning);
 }
-
 
 NS_IMETHODIMP
 nsXMLHttpRequest::GetResponseXML(nsIDOMDocument **aResponseXML)
@@ -715,7 +713,6 @@ nsXMLHttpRequest::AppendToResponseText(const char * aSrcBuffer,
   mResponseText.SetLength(totalChars.value());
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsXMLHttpRequest::GetResponseText(nsAString& aResponseText)
@@ -834,7 +831,6 @@ nsXMLHttpRequest::CreatePartialBlob()
   mResponseBlob = mBlobSet->GetBlobInternal(GetOwner(), contentType);
 }
 
-
 NS_IMETHODIMP nsXMLHttpRequest::GetResponseType(nsAString& aResponseType)
 {
   switch (mResponseType) {
@@ -894,7 +890,6 @@ nsXMLHttpRequest::StaticAssertions()
 #undef ASSERT_ENUM_EQUAL
 }
 #endif
-
 
 NS_IMETHODIMP nsXMLHttpRequest::SetResponseType(const nsAString& aResponseType)
 {
@@ -963,7 +958,6 @@ nsXMLHttpRequest::SetResponseType(nsXMLHttpRequest::ResponseTypeEnum aResponseTy
   mResponseType = aResponseType;
 
 }
-
 
 NS_IMETHODIMP
 nsXMLHttpRequest::GetResponse(JSContext *aCx, JS::MutableHandle<JS::Value> aResult)
@@ -1093,7 +1087,6 @@ nsXMLHttpRequest::IsDeniedCrossSiteRequest()
   return false;
 }
 
-
 void
 nsXMLHttpRequest::GetResponseURL(nsAString& aUrl)
 {
@@ -1121,7 +1114,6 @@ nsXMLHttpRequest::GetResponseURL(nsAString& aUrl)
   responseUrl->GetSpecIgnoringRef(temp);
   CopyUTF8toUTF16(temp, aUrl);
 }
-
 
 NS_IMETHODIMP
 nsXMLHttpRequest::GetStatus(uint32_t *aStatus)
@@ -1259,7 +1251,6 @@ nsXMLHttpRequest::CloseRequestWithError(const nsAString& aType,
   mState &= ~XML_HTTP_REQUEST_SYNCLOOPING;
 }
 
-
 void
 nsXMLHttpRequest::Abort()
 {
@@ -1328,7 +1319,6 @@ nsXMLHttpRequest::IsSafeHeader(const nsACString& header, nsIHttpChannel* httpCha
   }
   return isSafe;
 }
-
 
 IMPL_CSTRING_GETTER(GetAllResponseHeaders)
 void
@@ -1984,7 +1974,6 @@ nsXMLHttpRequest::OnDataAvailable(nsIRequest *request,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXMLHttpRequest::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 {
@@ -2218,7 +2207,6 @@ nsXMLHttpRequest::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsXMLHttpRequest::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult status)
@@ -2634,7 +2622,6 @@ nsXMLHttpRequest::GetRequestBody(nsIVariant* aVariant,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsXMLHttpRequest::Send(nsIVariant *aBody)
 {
@@ -3039,7 +3026,6 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
 }
 
 
-
 NS_IMETHODIMP
 nsXMLHttpRequest::SetRequestHeader(const nsACString& header,
                                    const nsACString& value)
@@ -3144,7 +3130,6 @@ nsXMLHttpRequest::SetRequestHeader(const nsACString& header,
   return rv;
 }
 
-
 NS_IMETHODIMP
 nsXMLHttpRequest::GetTimeout(uint32_t *aTimeout)
 {
@@ -3208,7 +3193,6 @@ nsXMLHttpRequest::StartTimeoutTimer()
   );
 }
 
-
 NS_IMETHODIMP
 nsXMLHttpRequest::GetReadyState(uint16_t *aState)
 {
@@ -3236,14 +3220,12 @@ nsXMLHttpRequest::ReadyState()
   return DONE;
 }
 
-
 NS_IMETHODIMP
 nsXMLHttpRequest::SlowOverrideMimeType(const nsAString& aMimeType)
 {
   OverrideMimeType(aMimeType);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsXMLHttpRequest::GetMozBackgroundRequest(bool *_retval)
@@ -3286,7 +3268,6 @@ nsXMLHttpRequest::SetMozBackgroundRequest(bool aMozBackgroundRequest, nsresult& 
     mState &= ~XML_HTTP_REQUEST_BACKGROUND;
   }
 }
-
 
 NS_IMETHODIMP
 nsXMLHttpRequest::GetWithCredentials(bool *_retval)

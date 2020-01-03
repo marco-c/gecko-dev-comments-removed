@@ -139,7 +139,6 @@ NS_IMETHODIMP nsDeflateConverter::OnDataAvailable(nsIRequest *aRequest,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsDeflateConverter::OnStartRequest(nsIRequest *aRequest,
                                                  nsISupports *aContext)
 {

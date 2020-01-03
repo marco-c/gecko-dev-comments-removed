@@ -119,7 +119,6 @@ nsMacUtilsImpl::GetArchitecturesInBinary(nsAString& aArchString)
 }
 
 
-
 NS_IMETHODIMP
 nsMacUtilsImpl::GetIsTranslated(bool* aIsTranslated)
 {

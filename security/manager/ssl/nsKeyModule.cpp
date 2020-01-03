@@ -50,7 +50,6 @@ nsKeyObject::CleanUp()
 
 
 
-
 NS_IMETHODIMP
 nsKeyObject::InitKey(int16_t aAlgorithm, void * aKey)
 {
@@ -83,7 +82,6 @@ nsKeyObject::InitKey(int16_t aAlgorithm, void * aKey)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsKeyObject::GetKeyObj(void * *_retval)
 {
@@ -110,7 +108,6 @@ nsKeyObject::GetKeyObj(void * *_retval)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsKeyObject::GetType(int16_t *_retval)
 {
@@ -129,7 +126,6 @@ NS_IMPL_ISUPPORTS(nsKeyObjectFactory, nsIKeyObjectFactory)
 nsKeyObjectFactory::nsKeyObjectFactory()
 {
 }
-
 
 NS_IMETHODIMP
 nsKeyObjectFactory::LookupKeyByName(const nsACString & aName,

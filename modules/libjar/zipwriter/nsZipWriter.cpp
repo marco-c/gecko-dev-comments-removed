@@ -59,7 +59,6 @@ nsZipWriter::~nsZipWriter()
         Close();
 }
 
-
 NS_IMETHODIMP nsZipWriter::GetComment(nsACString & aComment)
 {
     if (!mStream)
@@ -79,13 +78,11 @@ NS_IMETHODIMP nsZipWriter::SetComment(const nsACString & aComment)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsZipWriter::GetInQueue(bool *aInQueue)
 {
     *aInQueue = mInQueue;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsZipWriter::GetFile(nsIFile **aFile)
 {
@@ -227,7 +224,6 @@ nsresult nsZipWriter::ReadFile(nsIFile *aFile)
     return NS_ERROR_UNEXPECTED;
 }
 
-
 NS_IMETHODIMP nsZipWriter::Open(nsIFile *aFile, int32_t aIoFlags)
 {
     if (mStream)
@@ -286,7 +282,6 @@ NS_IMETHODIMP nsZipWriter::Open(nsIFile *aFile, int32_t aIoFlags)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsZipWriter::GetEntry(const nsACString & aZipEntry,
                                     nsIZipEntry **_retval)
 {
@@ -298,7 +293,6 @@ NS_IMETHODIMP nsZipWriter::GetEntry(const nsACString & aZipEntry,
 
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsZipWriter::HasEntry(const nsACString & aZipEntry,
                                     bool *_retval)
@@ -509,7 +503,6 @@ nsresult nsZipWriter::AddEntryStream(const nsACString & aZipEntry,
     return rv;
 }
 
-
 NS_IMETHODIMP nsZipWriter::RemoveEntry(const nsACString & aZipEntry,
                                        bool aQueue)
 {
@@ -626,7 +619,6 @@ NS_IMETHODIMP nsZipWriter::ProcessQueue(nsIRequestObserver *aObserver,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsZipWriter::Close()
 {
     if (!mStream)
@@ -702,7 +694,6 @@ NS_IMETHODIMP nsZipWriter::Close()
 
     return rv;
 }
-
 
 
 NS_IMETHODIMP nsZipWriter::OnStartRequest(nsIRequest *aRequest,

@@ -115,7 +115,6 @@ nsInProcessTabChildGlobal::~nsInProcessTabChildGlobal()
 
 
 
-
 NS_IMETHODIMP_(bool)
 nsInProcessTabChildGlobal::MarkForCC()
 {

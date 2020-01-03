@@ -19,7 +19,6 @@ nsIMEPicker::~nsIMEPicker()
   
 }
 
-
 NS_IMETHODIMP nsIMEPicker::Show()
 {
     widget::GeckoAppShell::ShowInputMethodPicker();

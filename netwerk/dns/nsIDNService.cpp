@@ -153,7 +153,6 @@ nsIDNService::~nsIDNService()
   idn_nameprep_destroy(mNamePrepHandle);
 }
 
-
 NS_IMETHODIMP nsIDNService::ConvertUTF8toACE(const nsACString & input, nsACString & ace)
 {
   return UTF8toACE(input, ace, true, true);
@@ -213,7 +212,6 @@ nsresult nsIDNService::UTF8toACE(const nsACString & input, nsACString & ace, boo
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsIDNService::ConvertACEtoUTF8(const nsACString & input, nsACString & _retval)
 {
   return ACEtoUTF8(input, _retval, true, true);
@@ -267,7 +265,6 @@ nsresult nsIDNService::ACEtoUTF8(const nsACString & input, nsACString & _retval,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsIDNService::IsACE(const nsACString & input, bool *_retval)
 {
   nsACString::const_iterator begin;
@@ -285,7 +282,6 @@ NS_IMETHODIMP nsIDNService::IsACE(const nsACString & input, bool *_retval)
   *_retval = p && (p == data || *(p - 1) == '.');
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsIDNService::Normalize(const nsACString & input, nsACString & output)
 {

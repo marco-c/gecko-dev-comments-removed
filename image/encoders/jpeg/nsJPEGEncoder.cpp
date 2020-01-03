@@ -238,7 +238,6 @@ nsJPEGEncoder::EndImageEncode()
 }
 
 
-
 NS_IMETHODIMP
 nsJPEGEncoder::Close()
 {
@@ -252,7 +251,6 @@ nsJPEGEncoder::Close()
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsJPEGEncoder::Available(uint64_t* _retval)
 {
@@ -263,7 +261,6 @@ nsJPEGEncoder::Available(uint64_t* _retval)
   *_retval = mImageBufferUsed - mImageBufferReadPoint;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsJPEGEncoder::Read(char* aBuf, uint32_t aCount, uint32_t* _retval)
@@ -301,7 +298,6 @@ nsJPEGEncoder::ReadSegments(nsWriteSegmentFun aWriter,
   
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsJPEGEncoder::IsNonBlocking(bool* _retval)

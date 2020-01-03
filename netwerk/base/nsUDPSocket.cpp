@@ -295,7 +295,6 @@ nsUDPOutputStream::~nsUDPOutputStream()
 {
 }
 
-
 NS_IMETHODIMP nsUDPOutputStream::Close()
 {
   if (mIsClosed)
@@ -305,12 +304,10 @@ NS_IMETHODIMP nsUDPOutputStream::Close()
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsUDPOutputStream::Flush()
 {
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsUDPOutputStream::Write(const char * aBuf, uint32_t aCount, uint32_t *_retval)
 {
@@ -331,18 +328,15 @@ NS_IMETHODIMP nsUDPOutputStream::Write(const char * aBuf, uint32_t aCount, uint3
   return NS_OK;
 }
 
-
 NS_IMETHODIMP nsUDPOutputStream::WriteFrom(nsIInputStream *aFromStream, uint32_t aCount, uint32_t *_retval)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP nsUDPOutputStream::WriteSegments(nsReadSegmentFun aReader, void *aClosure, uint32_t aCount, uint32_t *_retval)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP nsUDPOutputStream::IsNonBlocking(bool *_retval)
 {
@@ -389,7 +383,6 @@ nsUDPMessage::~nsUDPMessage()
   mozilla::DropJSObjects(this);
 }
 
-
 NS_IMETHODIMP
 nsUDPMessage::GetFromAddr(nsINetAddr * *aFromAddr)
 {
@@ -401,14 +394,12 @@ nsUDPMessage::GetFromAddr(nsINetAddr * *aFromAddr)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsUDPMessage::GetData(nsACString & aData)
 {
   aData.Assign(reinterpret_cast<const char*>(mData.Elements()), mData.Length());
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsUDPMessage::GetOutputStream(nsIOutputStream * *aOutputStream)
@@ -417,7 +408,6 @@ nsUDPMessage::GetOutputStream(nsIOutputStream * *aOutputStream)
   NS_IF_ADDREF(*aOutputStream = mOutputStream);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsUDPMessage::GetRawData(JSContext* cx,
@@ -430,7 +420,6 @@ nsUDPMessage::GetRawData(JSContext* cx,
   aRawData.setObject(*mJsobj);
   return NS_OK;
 }
-
 
 FallibleTArray<uint8_t>&
 nsUDPMessage::GetDataAsTArray()
@@ -595,7 +584,6 @@ private:
 
 NS_IMPL_ISUPPORTS(UDPMessageProxy, nsIUDPMessage)
 
-
 NS_IMETHODIMP
 UDPMessageProxy::GetFromAddr(nsINetAddr * *aFromAddr)
 {
@@ -607,7 +595,6 @@ UDPMessageProxy::GetFromAddr(nsINetAddr * *aFromAddr)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 UDPMessageProxy::GetData(nsACString & aData)
 {
@@ -615,13 +602,11 @@ UDPMessageProxy::GetData(nsACString & aData)
   return NS_OK;
 }
 
-
 FallibleTArray<uint8_t>&
 UDPMessageProxy::GetDataAsTArray()
 {
   return mData;
 }
-
 
 NS_IMETHODIMP
 UDPMessageProxy::GetRawData(JSContext* cx,
@@ -629,7 +614,6 @@ UDPMessageProxy::GetRawData(JSContext* cx,
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 UDPMessageProxy::GetOutputStream(nsIOutputStream * *aOutputStream)

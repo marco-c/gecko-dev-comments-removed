@@ -119,7 +119,6 @@ NS_INTERFACE_MAP_END
 
 
 
-
 NS_IMETHODIMP
 nsWindowDataSource::OnWindowTitleChange(nsIXULWindow *window,
                                         const char16_t *newTitle)
@@ -162,7 +161,6 @@ nsWindowDataSource::OnWindowTitleChange(nsIXULWindow *window,
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsWindowDataSource::OnOpenWindow(nsIXULWindow *window)
 {
@@ -180,7 +178,6 @@ nsWindowDataSource::OnOpenWindow(nsIXULWindow *window)
 
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsWindowDataSource::OnCloseWindow(nsIXULWindow *window)
@@ -327,7 +324,6 @@ nsWindowDataSource::GetWindowForResource(const char *aResourceString,
 
 
 
-
 NS_IMETHODIMP nsWindowDataSource::GetURI(char * *aURI)
 {
     NS_ENSURE_ARG_POINTER(aURI);
@@ -339,7 +335,6 @@ NS_IMETHODIMP nsWindowDataSource::GetURI(char * *aURI)
 
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::GetTarget(nsIRDFResource *aSource, nsIRDFResource *aProperty, bool aTruthValue, nsIRDFNode **_retval)
 {
@@ -371,14 +366,12 @@ NS_IMETHODIMP nsWindowDataSource::GetTarget(nsIRDFResource *aSource, nsIRDFResou
     return mInner->GetTarget(aSource, aProperty, aTruthValue, _retval);
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::GetSource(nsIRDFResource *aProperty, nsIRDFNode *aTarget, bool aTruthValue, nsIRDFResource **_retval)
 {
     if (mInner)
         return mInner->GetSource(aProperty, aTarget, aTruthValue, _retval);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::GetSources(nsIRDFResource *aProperty, nsIRDFNode *aTarget, bool aTruthValue, nsISimpleEnumerator **_retval)
 {
@@ -387,14 +380,12 @@ NS_IMETHODIMP nsWindowDataSource::GetSources(nsIRDFResource *aProperty, nsIRDFNo
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::GetTargets(nsIRDFResource *aSource, nsIRDFResource *aProperty, bool aTruthValue, nsISimpleEnumerator **_retval)
 {
     if (mInner)
         return mInner->GetTargets(aSource, aProperty, aTruthValue, _retval);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::Assert(nsIRDFResource *aSource, nsIRDFResource *aProperty, nsIRDFNode *aTarget, bool aTruthValue)
 {
@@ -403,14 +394,12 @@ NS_IMETHODIMP nsWindowDataSource::Assert(nsIRDFResource *aSource, nsIRDFResource
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::Unassert(nsIRDFResource *aSource, nsIRDFResource *aProperty, nsIRDFNode *aTarget)
 {
     if (mInner)
         return mInner->Unassert(aSource, aProperty, aTarget);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::Change(nsIRDFResource *aSource, nsIRDFResource *aProperty, nsIRDFNode *aOldTarget, nsIRDFNode *aNewTarget)
 {
@@ -419,14 +408,12 @@ NS_IMETHODIMP nsWindowDataSource::Change(nsIRDFResource *aSource, nsIRDFResource
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::Move(nsIRDFResource *aOldSource, nsIRDFResource *aNewSource, nsIRDFResource *aProperty, nsIRDFNode *aTarget)
 {
     if (mInner)
         return mInner->Move(aOldSource, aNewSource, aProperty, aTarget);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::HasAssertion(nsIRDFResource *aSource, nsIRDFResource *aProperty, nsIRDFNode *aTarget, bool aTruthValue, bool *_retval)
 {
@@ -435,14 +422,12 @@ NS_IMETHODIMP nsWindowDataSource::HasAssertion(nsIRDFResource *aSource, nsIRDFRe
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::AddObserver(nsIRDFObserver *aObserver)
 {
     if (mInner)
         return mInner->AddObserver(aObserver);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::RemoveObserver(nsIRDFObserver *aObserver)
 {
@@ -451,14 +436,12 @@ NS_IMETHODIMP nsWindowDataSource::RemoveObserver(nsIRDFObserver *aObserver)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::ArcLabelsIn(nsIRDFNode *aNode, nsISimpleEnumerator **_retval)
 {
     if (mInner)
         return mInner->ArcLabelsIn(aNode, _retval);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::ArcLabelsOut(nsIRDFResource *aSource, nsISimpleEnumerator **_retval)
 {
@@ -467,14 +450,12 @@ NS_IMETHODIMP nsWindowDataSource::ArcLabelsOut(nsIRDFResource *aSource, nsISimpl
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::GetAllResources(nsISimpleEnumerator **_retval)
 {
     if (mInner)
         return mInner->GetAllResources(_retval);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::IsCommandEnabled(nsISupportsArray *aSources, nsIRDFResource *aCommand, nsISupportsArray *aArguments, bool *_retval)
 {
@@ -483,14 +464,12 @@ NS_IMETHODIMP nsWindowDataSource::IsCommandEnabled(nsISupportsArray *aSources, n
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::DoCommand(nsISupportsArray *aSources, nsIRDFResource *aCommand, nsISupportsArray *aArguments)
 {
     if (mInner)
         return mInner->DoCommand(aSources, aCommand, aArguments);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::GetAllCmds(nsIRDFResource *aSource, nsISimpleEnumerator **_retval)
 {
@@ -499,14 +478,12 @@ NS_IMETHODIMP nsWindowDataSource::GetAllCmds(nsIRDFResource *aSource, nsISimpleE
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::HasArcIn(nsIRDFNode *aNode, nsIRDFResource *aArc, bool *_retval)
 {
     if (mInner)
         return mInner->HasArcIn(aNode, aArc, _retval);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::HasArcOut(nsIRDFResource *aSource, nsIRDFResource *aArc, bool *_retval)
 {
@@ -515,14 +492,12 @@ NS_IMETHODIMP nsWindowDataSource::HasArcOut(nsIRDFResource *aSource, nsIRDFResou
     return NS_OK;
 }
 
-
 NS_IMETHODIMP nsWindowDataSource::BeginUpdateBatch()
 {
     if (mInner)
         return mInner->BeginUpdateBatch();
     return NS_OK;
 }
-
 
 NS_IMETHODIMP nsWindowDataSource::EndUpdateBatch()
 {

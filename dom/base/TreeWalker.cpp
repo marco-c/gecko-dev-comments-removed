@@ -61,20 +61,17 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(dom::TreeWalker)
 
 
 
-
 NS_IMETHODIMP TreeWalker::GetRoot(nsIDOMNode * *aRoot)
 {
     NS_ADDREF(*aRoot = Root()->AsDOMNode());
     return NS_OK;
 }
 
-
 NS_IMETHODIMP TreeWalker::GetWhatToShow(uint32_t *aWhatToShow)
 {
     *aWhatToShow = WhatToShow();
     return NS_OK;
 }
-
 
 NS_IMETHODIMP TreeWalker::GetFilter(nsIDOMNodeFilter * *aFilter)
 {
@@ -84,7 +81,6 @@ NS_IMETHODIMP TreeWalker::GetFilter(nsIDOMNodeFilter * *aFilter)
 
     return NS_OK;
 }
-
 
 NS_IMETHODIMP TreeWalker::GetCurrentNode(nsIDOMNode * *aCurrentNode)
 {
@@ -124,7 +120,6 @@ TreeWalker::SetCurrentNode(nsINode& aNode, ErrorResult& aResult)
 
 
 
-
 NS_IMETHODIMP TreeWalker::ParentNode(nsIDOMNode **_retval)
 {
     return ImplNodeGetter(&TreeWalker::ParentNode, _retval);
@@ -153,7 +148,6 @@ TreeWalker::ParentNode(ErrorResult& aResult)
     return nullptr;
 }
 
-
 NS_IMETHODIMP TreeWalker::FirstChild(nsIDOMNode **_retval)
 {
     return ImplNodeGetter(&TreeWalker::FirstChild, _retval);
@@ -164,7 +158,6 @@ TreeWalker::FirstChild(ErrorResult& aResult)
 {
     return FirstChildInternal(false, aResult);
 }
-
 
 NS_IMETHODIMP TreeWalker::LastChild(nsIDOMNode **_retval)
 {
@@ -177,7 +170,6 @@ TreeWalker::LastChild(ErrorResult& aResult)
     return FirstChildInternal(true, aResult);
 }
 
-
 NS_IMETHODIMP TreeWalker::PreviousSibling(nsIDOMNode **_retval)
 {
     return ImplNodeGetter(&TreeWalker::PreviousSibling, _retval);
@@ -189,7 +181,6 @@ TreeWalker::PreviousSibling(ErrorResult& aResult)
     return NextSiblingInternal(true, aResult);
 }
 
-
 NS_IMETHODIMP TreeWalker::NextSibling(nsIDOMNode **_retval)
 {
     return ImplNodeGetter(&TreeWalker::NextSibling, _retval);
@@ -200,7 +191,6 @@ TreeWalker::NextSibling(ErrorResult& aResult)
 {
     return NextSiblingInternal(false, aResult);
 }
-
 
 NS_IMETHODIMP TreeWalker::PreviousNode(nsIDOMNode **_retval)
 {
@@ -259,7 +249,6 @@ TreeWalker::PreviousNode(ErrorResult& aResult)
 
     return nullptr;
 }
-
 
 NS_IMETHODIMP TreeWalker::NextNode(nsIDOMNode **_retval)
 {

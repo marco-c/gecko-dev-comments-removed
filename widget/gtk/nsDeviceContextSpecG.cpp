@@ -408,7 +408,6 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::GetPrinterNameList(nsIStringEnumerator **a
   return NS_NewAdoptingStringEnumerator(aPrinterNameList, printers);
 }
 
-
 NS_IMETHODIMP nsPrinterEnumeratorGTK::GetDefaultPrinterName(char16_t **aDefaultPrinterName)
 {
   DO_PR_DEBUG_LOG(("nsPrinterEnumeratorGTK::GetDefaultPrinterName()\n"));
@@ -419,7 +418,6 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::GetDefaultPrinterName(char16_t **aDefaultP
   DO_PR_DEBUG_LOG(("GetDefaultPrinterName(): default printer='%s'.\n", NS_ConvertUTF16toUTF8(*aDefaultPrinterName).get()));
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const char16_t *aPrinterName, nsIPrintSettings *aPrintSettings)
 {

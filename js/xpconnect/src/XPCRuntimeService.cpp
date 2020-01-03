@@ -113,7 +113,6 @@ oom:
     return NS_ERROR_OUT_OF_MEMORY;
 }
 
-
 NS_IMETHODIMP
 BackstagePass::GetScriptableHelper(nsIXPCScriptable** retval)
 {
@@ -122,14 +121,12 @@ BackstagePass::GetScriptableHelper(nsIXPCScriptable** retval)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 BackstagePass::GetContractID(char * *aContractID)
 {
     *aContractID = nullptr;
     return NS_ERROR_NOT_AVAILABLE;
 }
-
 
 NS_IMETHODIMP
 BackstagePass::GetClassDescription(char * *aClassDescription)
@@ -139,7 +136,6 @@ BackstagePass::GetClassDescription(char * *aClassDescription)
     return *aClassDescription ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
 
-
 NS_IMETHODIMP
 BackstagePass::GetClassID(nsCID * *aClassID)
 {
@@ -147,14 +143,12 @@ BackstagePass::GetClassID(nsCID * *aClassID)
     return NS_OK;
 }
 
-
 NS_IMETHODIMP
 BackstagePass::GetFlags(uint32_t* aFlags)
 {
     *aFlags = nsIClassInfo::MAIN_THREAD_ONLY;
     return NS_OK;
 }
-
 
 NS_IMETHODIMP
 BackstagePass::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc)

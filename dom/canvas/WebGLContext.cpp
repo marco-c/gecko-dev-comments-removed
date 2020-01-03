@@ -1308,7 +1308,6 @@ WebGLContext::GetContextAttributes(dom::Nullable<dom::WebGLContextAttributes>& r
     result.mFailIfMajorPerformanceCaveat = mOptions.failIfMajorPerformanceCaveat;
 }
 
-
 NS_IMETHODIMP
 WebGLContext::MozGetUnderlyingParamString(uint32_t pname, nsAString& retval)
 {

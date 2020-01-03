@@ -57,7 +57,6 @@ protected:
   virtual ~UndoTxn() {}
 };
 
-
 NS_IMETHODIMP
 UndoTxn::DoTransaction()
 {
@@ -66,13 +65,11 @@ UndoTxn::DoTransaction()
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 UndoTxn::RedoTransaction()
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP
 UndoTxn::UndoTransaction()
@@ -80,14 +77,12 @@ UndoTxn::UndoTransaction()
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP
 UndoTxn::GetIsTransient(bool* aIsTransient)
 {
   *aIsTransient = false;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 UndoTxn::Merge(nsITransaction* aTransaction, bool* aResult)

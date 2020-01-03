@@ -420,7 +420,6 @@ nsPerformanceSnapshot::Init(JSContext* cx, uint64_t processId) {
 }
 
 
-
 NS_IMETHODIMP nsPerformanceSnapshot::GetComponentsData(nsIArray * *aComponents)
 {
   const size_t length = mComponentsData.Length();
@@ -433,7 +432,6 @@ NS_IMETHODIMP nsPerformanceSnapshot::GetComponentsData(nsIArray * *aComponents)
   components.forget(aComponents);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPerformanceSnapshot::GetProcessData(nsIPerformanceStats * *aProcess)
 {
@@ -500,7 +498,6 @@ NS_IMETHODIMP nsPerformanceStatsService::SetIsMonitoringPerCompartment(JSContext
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP nsPerformanceStatsService::GetSnapshot(JSContext* cx, nsIPerformanceSnapshot * *aSnapshot)
 {

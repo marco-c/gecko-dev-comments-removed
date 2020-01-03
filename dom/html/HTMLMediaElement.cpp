@@ -573,7 +573,6 @@ HTMLMediaElement::SetMozSrcObject(DOMMediaStream* aValue)
   DoLoad();
 }
 
-
 NS_IMETHODIMP HTMLMediaElement::GetMozAutoplayEnabled(bool *aAutoplayEnabled)
 {
   *aAutoplayEnabled = mAutoplayEnabled;
@@ -581,14 +580,12 @@ NS_IMETHODIMP HTMLMediaElement::GetMozAutoplayEnabled(bool *aAutoplayEnabled)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP HTMLMediaElement::GetError(nsIDOMMediaError * *aError)
 {
   NS_IF_ADDREF(*aError = mError);
 
   return NS_OK;
 }
-
 
 bool
 HTMLMediaElement::Ended()
@@ -610,7 +607,6 @@ NS_IMETHODIMP HTMLMediaElement::GetEnded(bool* aEnded)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP HTMLMediaElement::GetCurrentSrc(nsAString & aCurrentSrc)
 {
   nsAutoCString src;
@@ -618,7 +614,6 @@ NS_IMETHODIMP HTMLMediaElement::GetCurrentSrc(nsAString & aCurrentSrc)
   aCurrentSrc = NS_ConvertUTF8toUTF16(src);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP HTMLMediaElement::GetNetworkState(uint16_t* aNetworkState)
 {
@@ -810,7 +805,6 @@ void HTMLMediaElement::QueueSelectResourceTask()
   RunInStableState(
     NS_NewRunnableMethod(this, &HTMLMediaElement::SelectResourceWrapper));
 }
-
 
 NS_IMETHODIMP HTMLMediaElement::Load()
 {
@@ -1347,14 +1341,12 @@ nsresult HTMLMediaElement::LoadWithChannel(nsIChannel* aChannel,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP HTMLMediaElement::GetReadyState(uint16_t* aReadyState)
 {
   *aReadyState = ReadyState();
 
   return NS_OK;
 }
-
 
 bool
 HTMLMediaElement::Seeking() const
@@ -1367,7 +1359,6 @@ NS_IMETHODIMP HTMLMediaElement::GetSeeking(bool* aSeeking)
   *aSeeking = Seeking();
   return NS_OK;
 }
-
 
 double
 HTMLMediaElement::CurrentTime() const
@@ -1590,7 +1581,6 @@ NS_IMETHODIMP HTMLMediaElement::SetCurrentTime(double aCurrentTime)
   return rv.StealNSResult();
 }
 
-
 double
 HTMLMediaElement::Duration() const
 {
@@ -1621,14 +1611,12 @@ HTMLMediaElement::Seekable() const
   return ranges.forget();
 }
 
-
 NS_IMETHODIMP HTMLMediaElement::GetSeekable(nsIDOMTimeRanges** aSeekable)
 {
   nsRefPtr<TimeRanges> ranges = Seekable();
   ranges.forget(aSeekable);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP HTMLMediaElement::GetPaused(bool* aPaused)
 {
@@ -1665,14 +1653,12 @@ HTMLMediaElement::Played()
   return ranges.forget();
 }
 
-
 NS_IMETHODIMP HTMLMediaElement::GetPlayed(nsIDOMTimeRanges** aPlayed)
 {
   nsRefPtr<TimeRanges> ranges = Played();
   ranges.forget(aPlayed);
   return NS_OK;
 }
-
 
 void
 HTMLMediaElement::Pause(ErrorResult& aRv)
@@ -1708,7 +1694,6 @@ NS_IMETHODIMP HTMLMediaElement::Pause()
   Pause(rv);
   return rv.StealNSResult();
 }
-
 
 NS_IMETHODIMP HTMLMediaElement::GetVolume(double* aVolume)
 {
@@ -1787,7 +1772,6 @@ HTMLMediaElement::MozGetMetadata(JSContext* cx, JS::MutableHandle<JS::Value> aVa
 
   return rv.StealNSResult();
 }
-
 
 NS_IMETHODIMP HTMLMediaElement::GetMuted(bool* aMuted)
 {
@@ -4337,7 +4321,6 @@ void HTMLMediaElement::GetCurrentSpec(nsCString& aString)
   }
 }
 
-
 double
 HTMLMediaElement::MozFragmentEnd()
 {
@@ -4368,7 +4351,6 @@ static double ClampPlaybackRate(double aPlaybackRate)
   return aPlaybackRate;
 }
 
-
 NS_IMETHODIMP HTMLMediaElement::GetDefaultPlaybackRate(double* aDefaultPlaybackRate)
 {
   *aDefaultPlaybackRate = DefaultPlaybackRate();
@@ -4393,7 +4375,6 @@ NS_IMETHODIMP HTMLMediaElement::SetDefaultPlaybackRate(double aDefaultPlaybackRa
   SetDefaultPlaybackRate(aDefaultPlaybackRate, rv);
   return rv.StealNSResult();
 }
-
 
 NS_IMETHODIMP HTMLMediaElement::GetPlaybackRate(double* aPlaybackRate)
 {
@@ -4433,7 +4414,6 @@ NS_IMETHODIMP HTMLMediaElement::SetPlaybackRate(double aPlaybackRate)
   SetPlaybackRate(aPlaybackRate, rv);
   return rv.StealNSResult();
 }
-
 
 NS_IMETHODIMP HTMLMediaElement::GetMozPreservesPitch(bool* aPreservesPitch)
 {
@@ -4765,7 +4745,6 @@ HTMLMediaElement::VideoTracks()
   }
   return mVideoTrackList;
 }
-
 
 TextTrackList*
 HTMLMediaElement::GetTextTracks()

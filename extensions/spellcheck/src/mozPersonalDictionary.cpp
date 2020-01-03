@@ -389,7 +389,6 @@ NS_IMETHODIMP mozPersonalDictionary::Save()
   return res;
 }
 
-
 NS_IMETHODIMP mozPersonalDictionary::GetWordList(nsIStringEnumerator **aWords)
 {
   NS_ENSURE_ARG_POINTER(aWords);
@@ -407,7 +406,6 @@ NS_IMETHODIMP mozPersonalDictionary::GetWordList(nsIStringEnumerator **aWords)
   return NS_NewAdoptingStringEnumerator(aWords, array);
 }
 
-
 NS_IMETHODIMP mozPersonalDictionary::Check(const char16_t *aWord, const char16_t *aLanguage, bool *aResult)
 {
   NS_ENSURE_ARG_POINTER(aWord);
@@ -419,7 +417,6 @@ NS_IMETHODIMP mozPersonalDictionary::Check(const char16_t *aWord, const char16_t
   return NS_OK;
 }
 
-
 NS_IMETHODIMP mozPersonalDictionary::AddWord(const char16_t *aWord, const char16_t *aLang)
 {
   nsresult res;
@@ -429,7 +426,6 @@ NS_IMETHODIMP mozPersonalDictionary::AddWord(const char16_t *aWord, const char16
   res = Save();
   return res;
 }
-
 
 NS_IMETHODIMP mozPersonalDictionary::RemoveWord(const char16_t *aWord, const char16_t *aLang)
 {
@@ -441,7 +437,6 @@ NS_IMETHODIMP mozPersonalDictionary::RemoveWord(const char16_t *aWord, const cha
   return res;
 }
 
-
 NS_IMETHODIMP mozPersonalDictionary::IgnoreWord(const char16_t *aWord)
 {
   
@@ -449,7 +444,6 @@ NS_IMETHODIMP mozPersonalDictionary::IgnoreWord(const char16_t *aWord)
     mIgnoreTable.PutEntry(aWord);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP mozPersonalDictionary::EndSession()
 {
@@ -460,24 +454,20 @@ NS_IMETHODIMP mozPersonalDictionary::EndSession()
   return NS_OK;
 }
 
-
 NS_IMETHODIMP mozPersonalDictionary::AddCorrection(const char16_t *word, const char16_t *correction, const char16_t *lang)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP mozPersonalDictionary::RemoveCorrection(const char16_t *word, const char16_t *correction, const char16_t *lang)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
 NS_IMETHODIMP mozPersonalDictionary::GetCorrection(const char16_t *word, char16_t ***words, uint32_t *count)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
-
 
 NS_IMETHODIMP mozPersonalDictionary::Observe(nsISupports *aSubject, const char *aTopic, const char16_t *aData)
 {

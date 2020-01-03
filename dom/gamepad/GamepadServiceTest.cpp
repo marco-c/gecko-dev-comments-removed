@@ -39,7 +39,6 @@ GamepadServiceTest::~GamepadServiceTest()
 {
 }
 
-
 NS_IMETHODIMP
 GamepadServiceTest::AddGamepad(const char* aID,
                                uint32_t aMapping,
@@ -53,7 +52,6 @@ GamepadServiceTest::AddGamepad(const char* aID,
                                                 aNumAxes);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP GamepadServiceTest::RemoveGamepad(uint32_t aIndex)
 {

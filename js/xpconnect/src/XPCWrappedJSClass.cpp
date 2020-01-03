@@ -407,13 +407,11 @@ xpcProperty::xpcProperty(const char16_t* aName, uint32_t aNameLen,
 {
 }
 
-
 NS_IMETHODIMP xpcProperty::GetName(nsAString & aName)
 {
     aName.Assign(mName);
     return NS_OK;
 }
-
 
 NS_IMETHODIMP xpcProperty::GetValue(nsIVariant * *aValue)
 {

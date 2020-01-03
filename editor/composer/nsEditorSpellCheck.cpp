@@ -666,7 +666,6 @@ nsEditorSpellCheck::UninitSpellChecker()
 }
 
 
-
 NS_IMETHODIMP
 nsEditorSpellCheck::SetFilter(nsITextServicesFilter *filter)
 {
