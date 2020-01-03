@@ -120,28 +120,9 @@ private:
   
   static bool sIsIMMEnabled;
   static bool sPluginHasFocus;
-  static bool sShowingOnScreenKeyboard;
 
   static bool IsTSFAvailable() { return (sIsInTSFMode && !sPluginHasFocus); }
   static bool IsIMMActive();
-
-  static void MaybeShowOnScreenKeyboard();
-  static void MaybeDismissOnScreenKeyboard();
-  static bool WStringStartsWithCaseInsensitive(const std::wstring& aHaystack,
-                                               const std::wstring& aNeedle);
-  static bool IsKeyboardPresentOnSlate();
-
-  
-
-
-
-  static void ShowOnScreenKeyboard();
-
-  
-
-
-
-  static void DismissOnScreenKeyboard();
 #endif 
 };
 

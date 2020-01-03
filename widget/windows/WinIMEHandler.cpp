@@ -13,19 +13,8 @@
 #include "TSFTextStore.h"
 #endif 
 
-#include "nsLookAndFeel.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
-
-#include "shellapi.h"
-#include "Shlobj.h"
-#include "PowrProf.h"
-#include "Setupapi.h"
-#include "cfgmgr32.h"
-
-const char* kOskPathPrefName = "ui.osk.on_screen_keyboard_path";
-const char* kOskEnabled = "ui.osk.enabled";
-const char* kOskDetectPhysicalKeyboard = "ui.osk.detect_physical_keyboard";
 
 namespace mozilla {
 namespace widget {
@@ -38,7 +27,6 @@ namespace widget {
 bool IMEHandler::sIsInTSFMode = false;
 bool IMEHandler::sIsIMMEnabled = true;
 bool IMEHandler::sPluginHasFocus = false;
-bool IMEHandler::sShowingOnScreenKeyboard = false;
 decltype(SetInputScopes)* IMEHandler::sSetInputScopes = nullptr;
 #endif 
 
@@ -209,16 +197,11 @@ IMEHandler::NotifyIME(nsWindow* aWindow,
         return NS_OK;
       case NOTIFY_IME_OF_TEXT_CHANGE:
         return TSFTextStore::OnTextChange(aIMENotification);
-      case NOTIFY_IME_OF_FOCUS: {
+      case NOTIFY_IME_OF_FOCUS:
         IMMHandler::OnFocusChange(true, aWindow);
-        nsresult rv =
-          TSFTextStore::OnFocusChange(true, aWindow,
-                                      aWindow->GetInputContext());
-        IMEHandler::MaybeShowOnScreenKeyboard();
-        return rv;
-      }
+        return TSFTextStore::OnFocusChange(true, aWindow,
+                                           aWindow->GetInputContext());
       case NOTIFY_IME_OF_BLUR:
-        IMEHandler::MaybeDismissOnScreenKeyboard();
         IMMHandler::OnFocusChange(false, aWindow);
         return TSFTextStore::OnFocusChange(false, aWindow,
                                            aWindow->GetInputContext());
@@ -268,10 +251,8 @@ IMEHandler::NotifyIME(nsWindow* aWindow,
       return IMMHandler::OnMouseButtonEvent(aWindow, aIMENotification);
     case NOTIFY_IME_OF_FOCUS:
       IMMHandler::OnFocusChange(true, aWindow);
-      IMEHandler::MaybeShowOnScreenKeyboard();
       return NS_OK;
     case NOTIFY_IME_OF_BLUR:
-      IMEHandler::MaybeDismissOnScreenKeyboard();
       IMMHandler::OnFocusChange(false, aWindow);
 #ifdef NS_ENABLE_TSF
       
@@ -518,273 +499,6 @@ IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
   if (scopes && arraySize > 0) {
     sSetInputScopes(aWindow->GetWindowHandle(), scopes, arraySize, nullptr, 0,
                     nullptr, nullptr);
-  }
-}
-
-
-void
-IMEHandler::MaybeShowOnScreenKeyboard()
-{
-  if (sPluginHasFocus) {
-    return;
-  }
-  IMEHandler::ShowOnScreenKeyboard();
-}
-
-
-void
-IMEHandler::MaybeDismissOnScreenKeyboard()
-{
-  if (sPluginHasFocus) {
-    return;
-  }
-  IMEHandler::DismissOnScreenKeyboard();
-}
-
-
-bool
-IMEHandler::WStringStartsWithCaseInsensitive(const std::wstring& aHaystack,
-                                             const std::wstring& aNeedle)
-{
-  std::wstring lowerCaseHaystack(aHaystack);
-  std::wstring lowerCaseNeedle(aNeedle);
-  std::transform(lowerCaseHaystack.begin(), lowerCaseHaystack.end(),
-                 lowerCaseHaystack.begin(), ::tolower);
-  std::transform(lowerCaseNeedle.begin(), lowerCaseNeedle.end(),
-                 lowerCaseNeedle.begin(), ::tolower);
-  return wcsstr(lowerCaseHaystack.c_str(),
-                lowerCaseNeedle.c_str()) == lowerCaseHaystack.c_str();
-}
-
-
-
-
-
-
-
-
-bool
-IMEHandler::IsKeyboardPresentOnSlate()
-{
-  
-  if (!IsWin8OrLater()) {
-    return true;
-  }
-
-  if (!Preferences::GetBool(kOskDetectPhysicalKeyboard, true)) {
-    
-    return false;
-  }
-
-  
-  if ((::GetSystemMetrics(SM_DIGITIZER) & NID_INTEGRATED_TOUCH)
-        != NID_INTEGRATED_TOUCH) {
-    return true;
-  }
-
-  
-  if (::GetSystemMetrics(SM_SYSTEMDOCKED) != 0) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-
-  
-  
-
-  typedef BOOL (WINAPI* GetAutoRotationState)(PAR_STATE state);
-  GetAutoRotationState get_rotation_state =
-    reinterpret_cast<GetAutoRotationState>(::GetProcAddress(
-      ::GetModuleHandleW(L"user32.dll"), "GetAutoRotationState"));
-
-  if (get_rotation_state) {
-    AR_STATE auto_rotation_state = AR_ENABLED;
-    get_rotation_state(&auto_rotation_state);
-    if ((auto_rotation_state & AR_NOSENSOR) ||
-        (auto_rotation_state & AR_NOT_SUPPORTED)) {
-      
-      
-      
-      return true;
-    }
-  }
-
-  
-  
-  
-  
-  typedef POWER_PLATFORM_ROLE (WINAPI* PowerDeterminePlatformRole)();
-  PowerDeterminePlatformRole power_determine_platform_role =
-    reinterpret_cast<PowerDeterminePlatformRole>(::GetProcAddress(
-      ::LoadLibraryW(L"PowrProf.dll"), "PowerDeterminePlatformRole"));
-  if (power_determine_platform_role) {
-    POWER_PLATFORM_ROLE role = power_determine_platform_role();
-    if (((role == PlatformRoleMobile) || (role == PlatformRoleSlate)) &&
-         (::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) == 0)) {
-      return false;
-    }
-  }
-
-  const GUID KEYBOARD_CLASS_GUID =
-    { 0x4D36E96B, 0xE325,  0x11CE,
-      { 0xBF, 0xC1, 0x08, 0x00, 0x2B, 0xE1, 0x03, 0x18 } };
-
-  bool result = false;
-  
-  HDEVINFO device_info =
-    ::SetupDiGetClassDevs(&KEYBOARD_CLASS_GUID, nullptr,
-                          nullptr, DIGCF_PRESENT);
-  if (device_info == INVALID_HANDLE_VALUE) {
-    return result;
-  }
-
-  
-  
-  
-  for (DWORD i = 0;; ++i) {
-    SP_DEVINFO_DATA device_info_data = { 0 };
-    device_info_data.cbSize = sizeof(device_info_data);
-    if (!::SetupDiEnumDeviceInfo(device_info, i, &device_info_data)) {
-      break;
-    }
-
-    
-    wchar_t device_id[MAX_DEVICE_ID_LEN];
-    CONFIGRET status = ::CM_Get_Device_ID(device_info_data.DevInst,
-                                          device_id,
-                                          MAX_DEVICE_ID_LEN,
-                                          0);
-    if (status == CR_SUCCESS) {
-      
-      
-      if (IMEHandler::WStringStartsWithCaseInsensitive(device_id,
-                                                       L"ACPI") ||
-          IMEHandler::WStringStartsWithCaseInsensitive(device_id,
-                                                       L"HID\\VID")) {
-        
-        
-        
-        
-        result = true;
-      }
-    }
-  }
-  return result;
-}
-
-
-
-void
-IMEHandler::ShowOnScreenKeyboard()
-{
-  if (!IsWin8OrLater() ||
-      !Preferences::GetBool(kOskEnabled, true) ||
-      sShowingOnScreenKeyboard ||
-      IMEHandler::IsKeyboardPresentOnSlate()) {
-    return;
-  }
-
-  nsAutoString cachedPath;
-  nsresult result = Preferences::GetString(kOskPathPrefName, &cachedPath);
-  if (NS_FAILED(result) || cachedPath.IsEmpty()) {
-    wchar_t path[MAX_PATH];
-    
-    
-    const wchar_t kRegKeyName[] =
-      L"Software\\Classes\\CLSID\\"
-      L"{054AAE20-4BEA-4347-8A35-64A533254A9D}\\LocalServer32";
-    if (!WinUtils::GetRegistryKey(HKEY_LOCAL_MACHINE,
-                                  kRegKeyName,
-                                  0,
-                                  path,
-                                  sizeof path)) {
-      return;
-    }
-
-    std::wstring wstrpath(path);
-    
-    
-    size_t commonProgramFilesOffset = wstrpath.find(L"%CommonProgramFiles%");
-    if (commonProgramFilesOffset != std::wstring::npos) {
-      
-      
-      
-      
-      
-      
-      
-
-      
-      
-      std::wstring commonProgramFilesPath;
-      std::vector<wchar_t> commonProgramFilesPathW6432;
-      DWORD bufferSize = ::GetEnvironmentVariableW(L"CommonProgramW6432",
-                                                   nullptr, 0);
-      if (bufferSize) {
-        commonProgramFilesPathW6432.resize(bufferSize);
-        ::GetEnvironmentVariableW(L"CommonProgramW6432",
-                                  commonProgramFilesPathW6432.data(),
-                                  bufferSize);
-        commonProgramFilesPath =
-          std::wstring(commonProgramFilesPathW6432.data());
-      } else {
-        PWSTR path = nullptr;
-        HRESULT hres = ::SHGetKnownFolderPath(FOLDERID_ProgramFilesCommon, 0,
-                                              nullptr, &path);
-        if (FAILED(hres) || !path) {
-          return;
-        }
-        commonProgramFilesPath = nsDependentString(path).get();
-        ::CoTaskMemFree(path);
-      }
-      wstrpath.replace(commonProgramFilesOffset,
-                       wcslen(L"%CommonProgramFiles%"),
-                       commonProgramFilesPath);
-    }
-
-    cachedPath.Assign(wstrpath.data());
-    Preferences::SetString(kOskPathPrefName, cachedPath);
-  }
-
-  LPCWSTR cachedPathPtr;
-  cachedPath.GetData(&cachedPathPtr);
-  HINSTANCE ret = ::ShellExecuteW(nullptr,
-                                  L"",
-                                  cachedPathPtr,
-                                  nullptr,
-                                  nullptr,
-                                  SW_SHOW);
-  sShowingOnScreenKeyboard = true;
-}
-
-
-
-void
-IMEHandler::DismissOnScreenKeyboard()
-{
-  if (!IsWin8OrLater() ||
-      !sShowingOnScreenKeyboard) {
-    return;
-  }
-
-  sShowingOnScreenKeyboard = false;
-
-  
-  
-  const wchar_t kOSKClassName[] = L"IPTip_Main_Window";
-  HWND osk = ::FindWindowW(kOSKClassName, nullptr);
-  if (::IsWindow(osk) && ::IsWindowEnabled(osk)) {
-    ::PostMessage(osk, WM_SYSCOMMAND, SC_CLOSE, 0);
   }
 }
 
