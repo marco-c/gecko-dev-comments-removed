@@ -934,3 +934,6 @@ pref("dom.serviceWorkers.interception.enabled", true);
 
 
 pref("dom.vr.cardboard.enabled", true);
+
+
+pref("browser.tabs.showAudioPlayingIcon", false);
