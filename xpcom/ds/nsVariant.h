@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsVariant_h
 #define nsVariant_h
 
@@ -29,9 +27,12 @@ class nsCycleCollectionTraversalCallback;
 
 
 
-
-struct nsDiscriminatedUnion
+class nsDiscriminatedUnion
 {
+public:
+
+  nsDiscriminatedUnion() : mType(nsIDataType::VTYPE_EMPTY) {}
+
   union
   {
     int8_t         mInt8Value;
@@ -100,7 +101,6 @@ public:
 
   nsVariant();
 
-  static nsresult Initialize(nsDiscriminatedUnion* aData);
   static nsresult Cleanup(nsDiscriminatedUnion* aData);
 
   static nsresult ConvertToInt8(const nsDiscriminatedUnion& aData,
