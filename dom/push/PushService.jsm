@@ -1027,7 +1027,47 @@ this.PushService = {
   _clearAll: function _clearAll() {
     return this._checkActivated()
       .then(_ => this._db.clearAll())
-      .catch(_ => {
+      .catch(_ => Promise.resolve());
+  },
+
+  _clearForDomain: function(domain) {
+    
+
+
+
+
+
+
+
+    function hasRootDomain(str, aDomain)
+    {
+      let index = str.indexOf(aDomain);
+      
+      if (index == -1)
+        return false;
+
+      
+      if (str == aDomain)
+        return true;
+
+      
+      
+      
+      let prevChar = str[index - 1];
+      return (index == (str.length - aDomain.length)) &&
+             (prevChar == "." || prevChar == "/");
+    }
+
+    let clear = (db, domain) => {
+      db.clearIf(record => {
+        return hasRootDomain(record.origin, domain);
+      });
+    }
+
+    return this._checkActivated()
+      .then(_ => clear(this._db, domain))
+      .catch(e => {
+        debug("Error forgetting about domain! " + e);
         return Promise.resolve();
       });
   },

@@ -2,9 +2,9 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
+let Cc = Components.classes;
+let Ci = Components.interfaces;
+let Cu = Components.utils;
 
 var dirSvc = Cc["@mozilla.org/file/directory_service;1"].getService(Ci.nsIProperties);
 var profileDir = do_get_profile();
