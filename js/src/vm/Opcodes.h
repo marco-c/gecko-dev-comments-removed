@@ -1551,8 +1551,6 @@
  \
     macro(JSOP_DEBUGLEAVEBLOCK, 200,"debugleaveblock", NULL, 1,  0,  0,  JOF_BYTE) \
     \
-    macro(JSOP_UNUSED201,     201,"unused201",  NULL,     1,  0,  0,  JOF_BYTE) \
-    \
     
 
 
@@ -1561,7 +1559,43 @@
 
 
  \
-    macro(JSOP_GENERATOR,     202,"generator",   NULL,    1,  0,  0,  JOF_BYTE) \
+    macro(JSOP_GENERATOR,     201,"generator",   NULL,    1,  0,  1,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_INITIALYIELD,  202,"initialyield", NULL,   1,  1,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_YIELD,         203,"yield",       NULL,    1,  2,  1,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_FINALYIELD,    204,"finalyield",  NULL,    1,  2,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_FINALYIELDRVAL,205,"finalyieldrval",NULL,  1,  1,  0,  JOF_BYTE) \
     
 
 
@@ -1571,7 +1605,7 @@
 
 
  \
-    macro(JSOP_YIELD,         203,"yield",       NULL,    1,  1,  1,  JOF_BYTE) \
+    macro(JSOP_RESUME,        206,"resume",      NULL,    3,  2,  1,  JOF_UINT8|JOF_INVOKE) \
     
 
 
@@ -1582,12 +1616,8 @@
 
 
  \
-    macro(JSOP_ARRAYPUSH,     204,"arraypush",   NULL,    1,  2,  0,  JOF_BYTE) \
+    macro(JSOP_ARRAYPUSH,     207,"arraypush",   NULL,    1,  2,  0,  JOF_BYTE) \
     \
-    macro(JSOP_UNUSED205,     205, "unused205",    NULL,  1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED206,     206, "unused206",    NULL,  1,  0,  0,  JOF_BYTE) \
-    \
-    macro(JSOP_UNUSED207,     207, "unused207",    NULL,  1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED208,     208, "unused208",    NULL,  1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED209,     209, "unused209",    NULL,  1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED210,     210, "unused210",    NULL,  1,  0,  0,  JOF_BYTE) \
