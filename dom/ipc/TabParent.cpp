@@ -438,6 +438,8 @@ TabParent::Destroy()
     return;
   }
 
+  IMEStateManager::OnTabParentDestroying(this);
+
   RemoveWindowListeners();
 
   
@@ -484,6 +486,8 @@ TabParent::Recv__delete__()
 void
 TabParent::ActorDestroy(ActorDestroyReason why)
 {
+  
+  
   IMEStateManager::OnTabParentDestroying(this);
 
   nsRefPtr<nsFrameLoader> frameLoader = GetFrameLoader(true);
