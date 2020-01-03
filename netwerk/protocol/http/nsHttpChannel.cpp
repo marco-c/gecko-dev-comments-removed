@@ -5160,23 +5160,24 @@ nsHttpChannel::BeginConnect()
     nsRefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier();
     if (mLoadFlags & LOAD_CLASSIFY_URI) {
         nsCOMPtr<nsIURIClassifier> classifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
-        if (classifier) {
-            bool tpEnabled = false;
-            channelClassifier->ShouldEnableTrackingProtection(this, &tpEnabled);
+        bool tpEnabled = false;
+        channelClassifier->ShouldEnableTrackingProtection(this, &tpEnabled);
+        if (classifier && tpEnabled) {
             
             
             
             
             
-            if (tpEnabled) {
-                nsCOMPtr<nsIPrincipal> principal = GetURIPrincipal();
+            nsCOMPtr<nsIURI> uri;
+            rv = GetURI(getter_AddRefs(uri));
+            if (NS_SUCCEEDED(rv) && uri) {
                 nsAutoCString tables;
                 Preferences::GetCString("urlclassifier.trackingTable", &tables);
                 nsAutoCString results;
-                rv = classifier->ClassifyLocalWithTables(principal, tables, results);
+                rv = classifier->ClassifyLocalWithTables(uri, tables, results);
                 if (NS_SUCCEEDED(rv) && !results.IsEmpty()) {
                     LOG(("nsHttpChannel::ClassifyLocalWithTables found "
-                         "principal on local tracking blocklist [this=%p]",
+                         "uri on local tracking blocklist [this=%p]",
                          this));
                     mLocalBlocklist = true;
                 } else {

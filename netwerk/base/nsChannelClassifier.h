@@ -41,6 +41,8 @@ private:
     
     
     nsresult StartInternal();
+    
+    nsresult IsTrackerWhitelisted();
 
 public:
     
