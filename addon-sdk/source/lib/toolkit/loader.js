@@ -194,14 +194,16 @@ function readURI(uri) {
 
 
 function join (...paths) {
-  let resolved = normalize(pathJoin(...paths))
+  let joined = pathJoin(...paths);
+  let resolved = normalize(joined);
+
   
   
   
-  resolved = resolved.replace(/^resource\:\/([^\/])/, 'resource://$1');
-  resolved = resolved.replace(/^file\:\/([^\/])/, 'file:///$1');
-  resolved = resolved.replace(/^chrome\:\/([^\/])/, 'chrome://$1');
-  return resolved;
+  let re = /^(resource|file|chrome)(\:\/{1,3})([^\/])/;
+  let matches = joined.match(re);
+
+  return resolved.replace(re, (...args) => args[1] + matches[2] + args[3]);
 }
 Loader.join = join;
 
