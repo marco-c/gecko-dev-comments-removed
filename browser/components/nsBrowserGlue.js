@@ -2118,16 +2118,10 @@ BrowserGlue.prototype = {
          defaultThemeSelected = Services.prefs.getCharPref("general.skins.selectedSkin") == "classic/1.0";
       } catch(e) {}
 
-      let deveditionThemeEnabled = false;
-      try {
-         deveditionThemeEnabled = Services.prefs.getBoolPref("browser.devedition.theme.enabled");
-      } catch(e) {}
-
       
       
       
       let userChoseToNotUseDeveditionTheme =
-        !deveditionThemeEnabled ||
         !defaultThemeSelected ||
         (lightweightThemeSelected && selectedThemeID != "firefox-devedition@mozilla.org");
 
@@ -2135,8 +2129,6 @@ BrowserGlue.prototype = {
         Services.prefs.setCharPref("lightweightThemes.selectedThemeID", "");
       }
 
-      
-      
       Services.prefs.clearUserPref("browser.devedition.showCustomizeButton");
     }
 
