@@ -87,6 +87,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetrySession",
                                   "resource://gre/modules/TelemetrySession.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetrySend",
                                   "resource://gre/modules/TelemetrySend.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryReportingPolicy",
+                                  "resource://gre/modules/TelemetryReportingPolicy.jsm");
 
 
 
@@ -651,6 +653,9 @@ let Impl = {
       this._sessionRecorder.onStartup();
     }
 
+    
+    TelemetryReportingPolicy.setup();
+
     if (!this.enableTelemetryRecording()) {
       this._log.config("setupChromeProcess - Telemetry recording is disabled, skipping Chrome process setup.");
       return Promise.resolve();
@@ -726,6 +731,9 @@ let Impl = {
 
     
     try {
+      
+      TelemetryReportingPolicy.shutdown();
+
       
       yield TelemetrySend.shutdown();
 

@@ -30,6 +30,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
                                   "resource://gre/modules/AsyncShutdown.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStorage",
                                   "resource://gre/modules/TelemetryStorage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryReportingPolicy",
+                                  "resource://gre/modules/TelemetryReportingPolicy.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "Telemetry",
                                    "@mozilla.org/base/telemetry;1",
                                    "nsITelemetry");
@@ -196,6 +198,13 @@ this.TelemetrySend = {
 
   get overduePingsCount() {
     return TelemetrySendImpl.overduePingsCount;
+  },
+
+  
+
+
+  notifyCanUpload: function() {
+    return TelemetrySendImpl.notifyCanUpload();
   },
 
   
@@ -382,8 +391,8 @@ let SendScheduler = {
       let pending = TelemetryStorage.getPendingPingList();
       let current = TelemetrySendImpl.getUnpersistedPings();
       this._log.trace("_doSendTask - pending: " + pending.length + ", current: " + current.length);
-      pending = pending.filter(p => TelemetrySendImpl.canSend(p));
-      current = current.filter(p => TelemetrySendImpl.canSend(p));
+      pending = pending.filter(p => TelemetrySendImpl.sendingEnabled(p));
+      current = current.filter(p => TelemetrySendImpl.sendingEnabled(p));
       this._log.trace("_doSendTask - can send - pending: " + pending.length + ", current: " + current.length);
 
       
@@ -632,6 +641,15 @@ let TelemetrySendImpl = {
     return SendScheduler.reset();
   },
 
+  
+
+
+  notifyCanUpload: function() {
+    
+    SendScheduler.triggerSendingPings(true);
+    return this.promisePendingPingActivity();
+  },
+
   observe: function(subject, topic, data) {
     switch(topic) {
     case TOPIC_IDLE_DAILY:
@@ -643,15 +661,15 @@ let TelemetrySendImpl = {
   submitPing: function(ping) {
     this._log.trace("submitPing - ping id: " + ping.id);
 
-    if (!this.canSend(ping)) {
+    if (!this.sendingEnabled(ping)) {
       this._log.trace("submitPing - Telemetry is not allowed to send pings.");
       return Promise.resolve();
     }
 
-    if (!this._sendingEnabled) {
+    if (!this.canSendNow) {
       
       this._log.trace("submitPing - can't send ping now, persisting to disk - " +
-                      "sendingEnabled: " + this._sendingEnabled);
+                      "canSendNow: " + this.canSendNow);
       return TelemetryStorage.savePendingPing(ping);
     }
 
@@ -806,7 +824,7 @@ let TelemetrySendImpl = {
   },
 
   _doPing: function(ping, id, isPersisted) {
-    if (!this.canSend(ping)) {
+    if (!this.sendingEnabled(ping)) {
       
       this._log.trace("_doPing - Can't send ping " + ping.id);
       return Promise.resolve();
@@ -914,11 +932,25 @@ let TelemetrySendImpl = {
 
 
 
+  get canSendNow() {
+    
+    if (!TelemetryReportingPolicy.canUpload()) {
+      return false;
+    }
+
+    return this._sendingEnabled;
+  },
+
+  
 
 
 
 
-  canSend: function(ping = null) {
+
+
+
+
+  sendingEnabled: function(ping = null) {
     
     if (!Telemetry.isOfficialTelemetry && !this._testMode) {
       return false;
