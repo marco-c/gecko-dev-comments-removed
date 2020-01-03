@@ -45,9 +45,6 @@ public:
   explicit CommonAnimationManager(nsPresContext *aPresContext);
 
   
-  NS_DECL_ISUPPORTS
-
-  
   virtual nsRestyleHint HasStateDependentStyle(StateRuleProcessorData* aData) override;
   virtual nsRestyleHint HasStateDependentStyle(PseudoElementStateRuleProcessorData* aData) override;
   virtual bool HasDocumentStateDependentStyle(StateRuleProcessorData* aData) override;

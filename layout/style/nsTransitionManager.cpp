@@ -76,8 +76,6 @@ ElementPropertyTransition::CurrentValuePortion() const
 
 
 
-
-
 JSObject*
 CSSTransition::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
@@ -178,7 +176,7 @@ CSSTransition::HasLowerCompositeOrderThan(const Animation& aOther) const
 
 
 
-
+NS_IMPL_ISUPPORTS(nsTransitionManager, nsIStyleRuleProcessor)
 
 void
 nsTransitionManager::StyleContextChanged(dom::Element *aElement,
