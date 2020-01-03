@@ -184,7 +184,7 @@ abstract class BaseTest extends BaseRobocopTest {
 
         
         mSolo.clearEditText(urlEditView);
-        mSolo.typeText(urlEditView, url);
+        mSolo.enterText(urlEditView, url);
 
         
         final String urlBarText = urlEditView.getText().toString();

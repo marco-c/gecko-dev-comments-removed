@@ -23,7 +23,7 @@ public final class testInputUrlBar extends BaseTest {
         blockForGeckoReady();
 
         startEditingMode();
-        assertUrlBarText("");
+        assertUrlBarText(mStringHelper.ABOUT_HOME_URL);
 
         
         
@@ -97,7 +97,7 @@ public final class testInputUrlBar extends BaseTest {
 
         
         startEditingMode();
-        assertUrlBarText("");
+        assertUrlBarText(mStringHelper.ABOUT_HOME_URL);
 
         int width = mDriver.getGeckoWidth() / 2;
         int y = mDriver.getGeckoHeight() / 2;
