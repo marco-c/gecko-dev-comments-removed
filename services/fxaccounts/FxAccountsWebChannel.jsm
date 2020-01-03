@@ -9,7 +9,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["FxAccountsWebChannel"];
+this.EXPORTED_SYMBOLS = ["EnsureFxAccountsWebChannel"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
@@ -311,3 +311,21 @@ this.FxAccountsWebChannelHelpers.prototype = {
     return pressed === 0; 
   }
 };
+
+let singleton;
+
+
+
+
+
+this.EnsureFxAccountsWebChannel = function() {
+  if (!singleton) {
+    let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
+    
+    
+    singleton = new this.FxAccountsWebChannel({
+      content_uri: contentUri,
+      channel_id: WEBCHANNEL_ID,
+    });
+  }
+}

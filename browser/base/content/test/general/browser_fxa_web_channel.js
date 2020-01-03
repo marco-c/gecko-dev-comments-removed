@@ -12,8 +12,9 @@ XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function () {
 XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
                                   "resource://gre/modules/WebChannel.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "FxAccountsWebChannel",
-  "resource://gre/modules/FxAccountsWebChannel.jsm");
+
+
+let {FxAccountsWebChannel} = Components.utils.import("resource://gre/modules/FxAccountsWebChannel.jsm", {});
 
 const TEST_HTTP_PATH = "http://example.com";
 const TEST_BASE_URL = TEST_HTTP_PATH + "/browser/browser/base/content/test/general/browser_fxa_web_channel.html";
