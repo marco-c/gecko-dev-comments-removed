@@ -356,6 +356,10 @@ pref("browser.urlbar.suggest.searches",             false);
 
 
 
+pref("browser.urlbar.maxCharsForSearchSuggestions", 20);
+
+
+
 pref("browser.urlbar.suggest.history.onlyTyped",    false);
 
 pref("browser.urlbar.formatting.enabled", true);

@@ -38,6 +38,8 @@ const PREF_SUGGEST_OPENPAGE =       [ "suggest.openpage",       true ];
 const PREF_SUGGEST_HISTORY_ONLYTYPED = [ "suggest.history.onlyTyped", false ];
 const PREF_SUGGEST_SEARCHES =       [ "suggest.searches",       true ];
 
+const PREF_MAX_CHARS_FOR_SUGGEST =  [ "maxCharsForSearchSuggestions", 20];
+
 
 
 const MATCH_ANYWHERE = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
@@ -416,6 +418,7 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
     store.suggestOpenpage = prefs.get(...PREF_SUGGEST_OPENPAGE);
     store.suggestTyped = prefs.get(...PREF_SUGGEST_HISTORY_ONLYTYPED);
     store.suggestSearches = prefs.get(...PREF_SUGGEST_SEARCHES);
+    store.maxCharsForSearchSuggestions = prefs.get(...PREF_MAX_CHARS_FOR_SUGGEST);
 
     
     if (!store.suggestHistory) {
@@ -599,8 +602,10 @@ function makeActionURL(action, params) {
 
 
 
+
+
 function Search(searchString, searchParam, autocompleteListener,
-                resultListener, autocompleteSearch) {
+                resultListener, autocompleteSearch, prohibitSearchSuggestions) {
   
   this._originalSearchString = searchString;
   this._trimmedOriginalSearchString = searchString.trim();
@@ -631,6 +636,8 @@ function Search(searchString, searchParam, autocompleteListener,
     this._trimmedOriginalSearchString.slice(0, pathIndex).toLowerCase() +
     this._trimmedOriginalSearchString.slice(pathIndex)
   );
+
+  this._prohibitSearchSuggestions = prohibitSearchSuggestions;
 
   this._listener = autocompleteListener;
   this._autocompleteSearch = autocompleteSearch;
@@ -909,18 +916,29 @@ Search.prototype = {
   }),
 
   *_matchSearchSuggestions() {
-    if (!this.hasBehavior("searches") || this._inPrivateWindow) {
+    
+    let searchString = this._searchTokens.join(" ")
+                           .substr(0, Prefs.maxCharsForSearchSuggestions);
+    
+    
+    if (!this.hasBehavior("searches") || this._inPrivateWindow ||
+        this._prohibitSearchSuggestionsFor(searchString)) {
       return;
     }
 
     this._searchSuggestionController =
       PlacesSearchAutocompleteProvider.getSuggestionController(
-        this._searchTokens.join(" "),
+        searchString,
         this._inPrivateWindow,
         Prefs.maxRichResults
       );
     let promise = this._searchSuggestionController.fetchCompletePromise
       .then(() => {
+        if (this._searchSuggestionController.resultsCount >= 0 &&
+            this._searchSuggestionController.resultsCount < 2) {
+          
+          this._lastLowResultsSearchSuggestion = this._originalSearchString;
+        }
         while (this.pending && this._remoteMatchesCount < Prefs.maxRichResults) {
           let [match, suggestion] = this._searchSuggestionController.consume();
           if (!suggestion)
@@ -938,6 +956,28 @@ Search.prototype = {
     } else {
       this._remoteMatchesPromises.push(promise);
     }
+  },
+
+  _prohibitSearchSuggestionsFor(searchString) {
+    if (this._prohibitSearchSuggestions)
+      return true;
+
+    
+    if (searchString.length < 2)
+      return true;
+
+    let tokens = searchString.split(/\s/);
+
+    
+    if (REGEXP_SINGLEWORD_HOST.test(tokens[0]) &&
+        Services.uriFixup.isDomainWhitelisted(tokens[0], -1))
+      return true;
+
+    
+    
+    return tokens.some(token => {
+      return ["/", "@", ":", "."].some(c => token.includes(c));
+    });
   },
 
   _matchKnownUrl: function* (conn) {
@@ -1701,8 +1741,15 @@ UnifiedComplete.prototype = {
     
     
 
+    
+    
+    let prohibitSearchSuggestions =
+      this._lastLowResultsSearchSuggestion &&
+      searchString.length > this._lastLowResultsSearchSuggestion.length &&
+      searchString.startsWith(this._lastLowResultsSearchSuggestion);
+
     this._currentSearch = new Search(searchString, searchParam, listener,
-                                     this, this);
+                                     this, this, prohibitSearchSuggestions);
 
     
     
@@ -1745,6 +1792,7 @@ UnifiedComplete.prototype = {
     TelemetryStopwatch.cancel(TELEMETRY_6_FIRST_RESULTS, this);
     
     let search = this._currentSearch;
+    this._lastLowResultsSearchSuggestion = search._lastLowResultsSearchSuggestion;
     delete this._currentSearch;
 
     if (!notify)

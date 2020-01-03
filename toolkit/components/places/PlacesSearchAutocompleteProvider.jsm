@@ -133,7 +133,9 @@ function SearchSuggestionControllerWrapper(engine, searchToken,
   this._controller.maxRemoteResults = maxResults;
   let promise = this._controller.fetch(searchToken, inPrivateContext, engine);
   this._suggestions = [];
+  this._success = false;
   this._promise = promise.then(results => {
+    this._success = true;
     this._suggestions = (results ? results.remote : null) || [];
   }).catch(err => {
     
@@ -162,6 +164,14 @@ SearchSuggestionControllerWrapper.prototype = {
     return !this._suggestions.length ? [null, null] :
            [SearchAutocompleteProviderInternal.defaultMatch,
             this._suggestions.shift()];
+  },
+
+  
+
+
+
+  get resultsCount() {
+    return this._success ? this._suggestions.length : -1;
   },
 
   
