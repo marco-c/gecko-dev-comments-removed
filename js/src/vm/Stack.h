@@ -279,7 +279,7 @@ enum ExecuteType {
 class InterpreterFrame
 {
   public:
-    enum Flags {
+    enum Flags : uint32_t {
         
         GLOBAL             =        0x1,  
         FUNCTION           =        0x2,  
