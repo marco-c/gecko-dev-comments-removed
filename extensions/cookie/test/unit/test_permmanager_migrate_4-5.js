@@ -47,9 +47,7 @@ add_task(function test() {
   let id = 0;
 
   function insertHost(host, type, permission, expireType, expireTime, modificationTime, appId, isInBrowserElement) {
-    let thisId = id++;
-
-    stmtInsert.bindByName("id", thisId);
+    stmtInsert.bindByName("id", id++);
     stmtInsert.bindByName("host", host);
     stmtInsert.bindByName("type", type);
     stmtInsert.bindByName("permission", permission);
@@ -59,39 +57,30 @@ add_task(function test() {
     stmtInsert.bindByName("appId", appId);
     stmtInsert.bindByName("isInBrowserElement", isInBrowserElement);
 
-    stmtInsert.execute();
-
-    return {
-      id: thisId,
-      host: host,
-      type: type,
-      permission: permission,
-      expireType: expireType,
-      expireTime: expireTime,
-      modificationTime: modificationTime,
-      appId: appId,
-      isInBrowserElement: isInBrowserElement
-    };
+    try {
+      stmtInsert.executeStep();
+      stmtInsert.reset();
+    } catch (e) {
+      stmtInsert.reset();
+      throw e;
+    }
   }
 
   
-  let created = [
-    insertHost("foo.com", "A", 1, 0, 0, 0, 0, false),
-    insertHost("foo.com", "C", 1, 0, 0, 0, 0, false),
-    insertHost("foo.com", "A", 1, 0, 0, 0, 1000, false),
-    insertHost("foo.com", "A", 1, 0, 0, 0, 2000, true),
-    insertHost("sub.foo.com", "B", 1, 0, 0, 0, 0, false),
-    insertHost("subber.sub.foo.com", "B", 1, 0, 0, 0, 0, false),
-    insertHost("bar.ca", "B", 1, 0, 0, 0, 0, false),
-    insertHost("bar.ca", "B", 1, 0, 0, 0, 1000, false),
-    insertHost("bar.ca", "A", 1, 0, 0, 0, 1000, true),
-    insertHost("file:///some/path/to/file.html", "A", 1, 0, 0, 0, 0, false),
-    insertHost("file:///another/file.html", "A", 1, 0, 0, 0, 0, false),
-    insertHost("moz-nullprincipal:{8695105a-adbe-4e4e-8083-851faa5ca2d7}", "A", 1, 0, 0, 0, 0, false),
-    insertHost("moz-nullprincipal:{12ahjksd-akjs-asd3-8393-asdu2189asdu}", "B", 1, 0, 0, 0, 0, false),
-    insertHost("<file>", "A", 1, 0, 0, 0, 0, false),
-    insertHost("<file>", "B", 1, 0, 0, 0, 0, false),
-  ];
+  insertHost("foo.com", "A", 1, 0, 0, 0, 0, false);
+  insertHost("foo.com", "A", 1, 0, 0, 0, 1000, false);
+  insertHost("foo.com", "A", 1, 0, 0, 0, 2000, true);
+  insertHost("sub.foo.com", "B", 1, 0, 0, 0, 0, false);
+  insertHost("subber.sub.foo.com", "B", 1, 0, 0, 0, 0, false);
+  insertHost("bar.ca", "B", 1, 0, 0, 0, 0, false);
+  insertHost("bar.ca", "B", 1, 0, 0, 0, 1000, false);
+  insertHost("bar.ca", "A", 1, 0, 0, 0, 1000, true);
+  insertHost("file:///some/path/to/file.html", "A", 1, 0, 0, 0, 0, false);
+  insertHost("file:///another/file.html", "A", 1, 0, 0, 0, 0, false);
+  insertHost("moz-nullprincipal:{8695105a-adbe-4e4e-8083-851faa5ca2d7}", "A", 1, 0, 0, 0, 0, false);
+  insertHost("moz-nullprincipal:{12ahjksd-akjs-asd3-8393-asdu2189asdu}", "B", 1, 0, 0, 0, 0, false);
+  insertHost("<file>", "A", 1, 0, 0, 0, 0, false);
+  insertHost("<file>", "B", 1, 0, 0, 0, 0, false);
 
   
   stmtInsert.finalize();
@@ -107,12 +96,11 @@ add_task(function test() {
     
     
     
-    
-    
-    
+
+    ["http://sub.foo.com", "B", 1, 0, 0],
+    ["http://subber.sub.foo.com", "B", 1, 0, 0],
 
     ["https://foo.com", "A", 1, 0, 0],
-    ["https://foo.com", "C", 1, 0, 0],
     ["https://foo.com^appId=1000", "A", 1, 0, 0],
     ["https://foo.com^appId=2000&inBrowser=1", "A", 1, 0, 0],
     ["https://sub.foo.com", "B", 1, 0, 0],
@@ -131,14 +119,8 @@ add_task(function test() {
     
     
     ["ftp://foo.com:8000", "A", 1, 0, 0],
-    ["ftp://foo.com:8000", "C", 1, 0, 0],
     ["ftp://foo.com:8000^appId=1000", "A", 1, 0, 0],
     ["ftp://foo.com:8000^appId=2000&inBrowser=1", "A", 1, 0, 0],
-
-    
-    
-    ["ftp://sub.foo.com:8000", "B", 1, 0, 0],
-    ["ftp://subber.sub.foo.com:8000", "B", 1, 0, 0],
   ];
 
   let found = expected.map((it) => 0);
@@ -177,40 +159,4 @@ add_task(function test() {
   found.forEach((count, i) => {
     do_check_true(count == 1, "Expected count = 1, got count = " + count + " for permission " + expected[i]);
   });
-
-  
-  {
-    let db = Services.storage.openDatabase(GetPermissionsFile(profile));
-    do_check_true(db.tableExists("moz_perms"));
-    do_check_true(db.tableExists("moz_hosts"));
-    do_check_true(db.tableExists("moz_hosts_is_backup"));
-    do_check_false(db.tableExists("moz_perms_v6"));
-
-    let mozHostsStmt = db.createStatement("SELECT " +
-                                          "host, type, permission, expireType, expireTime, " +
-                                          "modificationTime, appId, isInBrowserElement " +
-                                          "FROM moz_hosts WHERE id = :id");
-
-    
-    created.forEach((it) => {
-      mozHostsStmt.reset();
-      mozHostsStmt.bindByName("id", it.id);
-      mozHostsStmt.executeStep();
-      do_check_eq(mozHostsStmt.getUTF8String(0), it.host);
-      do_check_eq(mozHostsStmt.getUTF8String(1), it.type);
-      do_check_eq(mozHostsStmt.getInt64(2), it.permission);
-      do_check_eq(mozHostsStmt.getInt64(3), it.expireType);
-      do_check_eq(mozHostsStmt.getInt64(4), it.expireTime);
-      do_check_eq(mozHostsStmt.getInt64(5), it.modificationTime);
-      do_check_eq(mozHostsStmt.getInt64(6), it.appId);
-      do_check_eq(mozHostsStmt.getInt64(7), it.isInBrowserElement);
-    });
-
-    
-    let mozHostsCount = db.createStatement("SELECT count(*) FROM moz_hosts");
-    mozHostsCount.executeStep();
-    do_check_eq(mozHostsCount.getInt64(0), created.length);
-
-    db.close();
-  }
 });
