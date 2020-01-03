@@ -724,14 +724,6 @@ this.TelemetrySession = Object.freeze({
   observe: function (aSubject, aTopic, aData) {
     return Impl.observe(aSubject, aTopic, aData);
   },
-  
-
-
-
-
-   get clientID() {
-    return Impl.clientID;
-   },
 });
 
 let Impl = {
