@@ -373,7 +373,7 @@ struct BytecodeEmitter
 
     
     
-    bool emit2(JSOp op, jsbytecode op1);
+    bool emit2(JSOp op, uint8_t op1);
 
     
     bool emit3(JSOp op, jsbytecode op1, jsbytecode op2);
