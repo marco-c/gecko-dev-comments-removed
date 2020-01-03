@@ -653,6 +653,17 @@ opensl_stream_init(cubeb * ctx, cubeb_stream ** stream, char const * stream_name
     return CUBEB_ERROR;
   }
 
+  {
+    
+    
+    
+    
+    uint8_t *buf = stm->queuebuf[stm->queuebuf_idx++];
+    memset(buf, 0, stm->framesize);
+    res = (*stm->bufq)->Enqueue(stm->bufq, buf, stm->framesize);
+    assert(res == SL_RESULT_SUCCESS);
+  }
+
   *stream = stm;
   return CUBEB_OK;
 }
@@ -676,9 +687,6 @@ opensl_stream_destroy(cubeb_stream * stm)
 static int
 opensl_stream_start(cubeb_stream * stm)
 {
-  
-
-  bufferqueue_callback(NULL, stm);
   SLresult res = (*stm->play)->SetPlayState(stm->play, SL_PLAYSTATE_PLAYING);
   if (res != SL_RESULT_SUCCESS)
     return CUBEB_ERROR;
