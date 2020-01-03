@@ -71,8 +71,9 @@ IsSupportedAudioCodec(const nsAString& aCodec,
                       bool& aOutContainsMP3)
 {
   
-  aOutContainsAAC = aCodec.EqualsASCII("mp4a.40.2") ||
-                    aCodec.EqualsASCII("mp4a.40.5");
+  aOutContainsAAC = aCodec.EqualsASCII("mp4a.40.2")     
+                    || aCodec.EqualsASCII("mp4a.40.5")  
+                    || aCodec.EqualsASCII("mp4a.67");   
   if (aOutContainsAAC) {
     return true;
   }
