@@ -20,6 +20,11 @@ XPCOMUtils.defineLazyServiceGetter(this, "gCrashReporter",
                                    "nsICrashReporter");
 #endif
 
+function isSameOrigin(url) {
+  let origin = Services.io.newURI(url, null, null).prePath;
+  return (origin == WebappRT.config.app.origin);
+}
+
 let progressListener = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                          Ci.nsISupportsWeakReference]),
@@ -46,30 +51,15 @@ let progressListener = {
       }
     }
 
-    let isSameOrigin = (location.prePath === WebappRT.config.app.origin);
-
     
     
     
     
     let title = WebappRT.localeManifest.name;
-    if (!isSameOrigin) {
+    if (!isSameOrigin(location.spec)) {
       title = location.prePath + " - " + title;
     }
     document.documentElement.setAttribute("title", title);
-
-#ifndef XP_WIN
-#ifndef XP_MACOSX
-    if (isSameOrigin) {
-      
-      
-      
-      if (document.mozFullScreenElement) {
-        document.getElementById("main-menubar").style.display = "none";
-      }
-    }
-#endif
-#endif
   },
 
   onStateChange: function onStateChange(aProgress, aRequest, aFlags, aStatus) {
@@ -82,38 +72,42 @@ let progressListener = {
 };
 
 function onOpenWindow(event) {
-  if (event.detail.name === "_blank") {
-    let uri = Services.io.newURI(event.detail.url, null, null);
+  let name = event.detail.name;
 
-    
-    
-    event.preventDefault();
+  if (name == "_blank") {
+    let uri = Services.io.newURI(event.detail.url, null, null);
 
     
     Cc["@mozilla.org/uriloader/external-protocol-service;1"].
     getService(Ci.nsIExternalProtocolService).
     getProtocolHandlerInfo(uri.scheme).
     launchWithURI(uri);
-  }
+  } else {
+    let win = window.openDialog("chrome://webapprt/content/webapp.xul",
+                                name,
+                                "chrome,dialog=no,resizable," + event.detail.features);
 
-  
-  
-}
+    win.addEventListener("load", function onLoad() {
+      win.removeEventListener("load", onLoad, false);
 
-function onDOMContentLoaded() {
-  window.removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
-  
-  
-  
-  
-  if (gAppBrowser.docShell.appId === Ci.nsIScriptSecurityManager.NO_APP_ID) {
-    
-    
-    
-    gAppBrowser.docShell.setIsApp(WebappRT.appID);
+#ifndef XP_WIN
+#ifndef XP_MACOSX
+      if (isSameOrigin(event.detail.url)) {
+        
+        
+        
+        if (document.mozFullScreenElement) {
+          win.document.getElementById("main-menubar").style.display = "none";
+        }
+      }
+#endif
+#endif
+
+      win.document.getElementById("content").docShell.setIsApp(WebappRT.appID);
+      win.document.getElementById("content").setAttribute("src", event.detail.url);
+    }, false);
   }
 }
-window.addEventListener("DOMContentLoaded", onDOMContentLoaded, false);
 
 function onLoad() {
   window.removeEventListener("load", onLoad, false);
