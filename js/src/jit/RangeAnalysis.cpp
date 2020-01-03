@@ -2503,7 +2503,6 @@ ComputeRequestedTruncateKind(MDefinition *candidate)
             
             
             
-            
             if (candidate->isUseRemoved() && needsConversion)
                 kind = Min(kind, MDefinition::TruncateAfterBailouts);
             continue;
