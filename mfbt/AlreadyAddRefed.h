@@ -96,7 +96,7 @@ struct MOZ_MUST_USE already_AddRefed
 
 
   template <typename U>
-  already_AddRefed(already_AddRefed<U>&& aOther) : mRawPtr(aOther.take()) {}
+  MOZ_IMPLICIT already_AddRefed(already_AddRefed<U>&& aOther) : mRawPtr(aOther.take()) {}
 
   ~already_AddRefed() { MOZ_ASSERT(!mRawPtr); }
 
