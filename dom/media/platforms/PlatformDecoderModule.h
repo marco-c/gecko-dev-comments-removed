@@ -263,7 +263,7 @@ public:
   
   
   
-  virtual bool IsHardwareAccelerated() const { return false; }
+  virtual bool IsHardwareAccelerated(nsACString& aFailureReason) const { return false; }
 
   
   
