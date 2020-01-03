@@ -1462,6 +1462,10 @@ private:
 
   
   TimeDurationAccumulator mJoinLatency;
+
+  
+  
+  bool mHasUserInteraction;
 };
 
 } 

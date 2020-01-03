@@ -1420,6 +1420,12 @@ HTMLMediaElement::Seek(double aTime,
   
   MOZ_ASSERT(!mozilla::IsNaN(aTime));
 
+  
+  
+  if (EventStateManager::IsHandlingUserInput() || nsContentUtils::IsCallerChrome()) {
+    mHasUserInteraction = true;
+  }
+
   StopSuspendingAfterFirstFrame();
 
   if (mSrcStream) {
@@ -2030,7 +2036,8 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mPlayingThroughTheAudioChannel(false),
     mDisableVideo(false),
     mPlayBlockedBecauseHidden(false),
-    mElementInTreeState(ELEMENT_NOT_INTREE)
+    mElementInTreeState(ELEMENT_NOT_INTREE),
+    mHasUserInteraction(false)
 {
   if (!gMediaElementLog) {
     gMediaElementLog = PR_NewLogModule("nsMediaElement");
@@ -2146,14 +2153,16 @@ HTMLMediaElement::Play(ErrorResult& aRv)
 {
   
   
-  nsRefPtr<TimeRanges> played(Played());
-  if (played->Length() == 0
+  if (!mHasUserInteraction
       && !IsAutoplayEnabled()
       && !EventStateManager::IsHandlingUserInput()
       && !nsContentUtils::IsCallerChrome()) {
     LOG(LogLevel::Debug, ("%p Blocked attempt to autoplay media.", this));
     return;
   }
+
+  
+  mHasUserInteraction = true;
 
   StopSuspendingAfterFirstFrame();
   SetPlayedOrSeeked(true);
