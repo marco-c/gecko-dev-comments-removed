@@ -3429,7 +3429,7 @@ IonBuilder::prepareForSimdLoadStore(CallInfo& callInfo, Scalar::Type simdType, M
         MAdd* addedIndex = MAdd::New(alloc(), *index, suppSlots);
         
         
-        addedIndex->setInt32();
+        addedIndex->setInt32Specialization();
         current->add(addedIndex);
         indexForBoundsCheck = addedIndex;
     }

@@ -113,6 +113,8 @@ EvaluateConstantOperands(TempAllocator& alloc, MBinaryInstruction* ins, bool* pt
     MDefinition* left = ins->getOperand(0);
     MDefinition* right = ins->getOperand(1);
 
+    MOZ_ASSERT(IsNumberType(left->type()) && IsNumberType(right->type()));
+
     if (!left->isConstantValue() || !right->isConstantValue())
         return nullptr;
 
@@ -2236,6 +2238,51 @@ NeedNegativeZeroCheck(MDefinition* def)
     return false;
 }
 
+MBinaryArithInstruction*
+MBinaryArithInstruction::New(TempAllocator& alloc, Opcode op,
+                             MDefinition* left, MDefinition* right)
+{
+    switch (op) {
+      case Op_Add:
+        return MAdd::New(alloc, left, right);
+      case Op_Sub:
+        return MSub::New(alloc, left, right);
+      case Op_Mul:
+        return MMul::New(alloc, left, right);
+      case Op_Div:
+        return MDiv::New(alloc, left, right);
+      case Op_Mod:
+        return MMod::New(alloc, left, right);
+      default:
+        MOZ_CRASH("unexpected binary opcode");
+    }
+}
+
+void
+MBinaryArithInstruction::setNumberSpecialization(TempAllocator& alloc, BaselineInspector* inspector,
+                                                 jsbytecode* pc)
+{
+    setSpecialization(MIRType_Double);
+
+    
+    if (getOperand(0)->type() == MIRType_Int32 && getOperand(1)->type() == MIRType_Int32) {
+        bool seenDouble = inspector->hasSeenDoubleResult(pc);
+
+        
+        
+        if (!seenDouble && !constantDoubleResult(alloc))
+            setInt32Specialization();
+    }
+}
+
+bool
+MBinaryArithInstruction::constantDoubleResult(TempAllocator& alloc)
+{
+    bool typeChange = false;
+    EvaluateConstantOperands(alloc, this, &typeChange);
+    return typeChange;
+}
+
 MDefinition*
 MBinaryArithInstruction::foldsTo(TempAllocator& alloc)
 {
@@ -2652,81 +2699,6 @@ SimpleArithOperand(MDefinition* op)
         && !op->mightBeType(MIRType_MagicOptimizedArguments)
         && !op->mightBeType(MIRType_MagicHole)
         && !op->mightBeType(MIRType_MagicIsConstructing);
-}
-
-void
-MBinaryArithInstruction::infer(TempAllocator& alloc, BaselineInspector* inspector, jsbytecode* pc)
-{
-    MOZ_ASSERT(this->type() == MIRType_Value);
-
-    specialization_ = MIRType_None;
-
-    
-    
-    if (!SimpleArithOperand(getOperand(0)) || !SimpleArithOperand(getOperand(1)))
-        return inferFallback(inspector, pc);
-
-    
-    MIRType lhs = getOperand(0)->type();
-    MIRType rhs = getOperand(1)->type();
-
-    
-    
-    if (lhs == MIRType_Int32 && rhs == MIRType_Int32) {
-        setResultType(MIRType_Int32);
-
-        
-        
-        if (isMul() || isDiv()) {
-            bool typeChange = false;
-            EvaluateConstantOperands(alloc, this, &typeChange);
-            if (typeChange)
-                setResultType(MIRType_Double);
-        }
-
-        
-        if (inspector->hasSeenDoubleResult(pc))
-            setResultType(MIRType_Double);
-
-    } else if (IsFloatingPointType(lhs) || IsFloatingPointType(rhs)) {
-        
-        
-        
-        setResultType(MIRType_Double);
-    } else {
-        return inferFallback(inspector, pc);
-    }
-
-    MOZ_ASSERT(lhs < MIRType_String || lhs == MIRType_Value);
-    MOZ_ASSERT(rhs < MIRType_String || rhs == MIRType_Value);
-
-    if (isAdd() || isMul())
-        setCommutative();
-
-    MOZ_ASSERT(IsNumberType(this->type()));
-    specialization_ = this->type();
-}
-
-void
-MBinaryArithInstruction::inferFallback(BaselineInspector* inspector,
-                                       jsbytecode* pc)
-{
-    
-    specialization_ = inspector->expectedBinaryArithSpecialization(pc);
-    if (specialization_ != MIRType_None) {
-        setResultType(specialization_);
-        return;
-    }
-
-    
-    
-    
-    if (getOperand(0)->emptyResultTypeSet() || getOperand(1)->emptyResultTypeSet()) {
-        LifoAlloc* alloc = GetJitContext()->temp->lifoAlloc();
-        TemporaryTypeSet* types = alloc->new_<TemporaryTypeSet>();
-        if (types)
-            setResultTypeSet(types);
-    }
 }
 
 static bool
