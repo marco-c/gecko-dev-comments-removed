@@ -26,7 +26,7 @@
 #undef CompareString
 
 #define TO_ICONTAINER(_node)                                                  \
-    static_cast<nsINavHistoryContainerResultNode*>(_node)                      
+    static_cast<nsINavHistoryContainerResultNode*>(_node)
 
 #define TO_CONTAINER(_node)                                                   \
     static_cast<nsNavHistoryContainerResultNode*>(_node)
@@ -1108,7 +1108,7 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_AnnotationLess(
                                                  &b_hasAnno), 0);
   } else {
     NS_ENSURE_SUCCESS(annosvc->PageHasAnnotation(b_uri, annoName,
-                                                 &b_hasAnno), 0);    
+                                                 &b_hasAnno), 0);
   }
 
   int32_t value = 0;
@@ -1374,8 +1374,8 @@ nsNavHistoryContainerResultNode::InsertSortedChild(
     nsAutoCString sortingAnnotation;
     GetSortingAnnotation(sortingAnnotation);
     bool itemExists;
-    uint32_t position = FindInsertionPoint(aNode, comparator, 
-                                           sortingAnnotation.get(), 
+    uint32_t position = FindInsertionPoint(aNode, comparator,
+                                           sortingAnnotation.get(),
                                            &itemExists);
     if (aIgnoreDuplicates && itemExists)
       return NS_OK;
@@ -1705,7 +1705,7 @@ nsNavHistoryContainerResultNode::FindNodeByDetails(const nsACString& aURIString,
                                                      aItemId,
                                                      aRecursive,
                                                      _retval);
-                                                      
+
         if (NS_SUCCEEDED(rv) && _retval)
           break;
       }
@@ -4278,7 +4278,7 @@ nsNavHistoryResult::AddObserver(nsINavHistoryResultObserver* aObserver,
   NS_ENSURE_ARG(aObserver);
   nsresult rv = mObservers.AppendWeakElement(aObserver, aOwnsWeak);
   NS_ENSURE_SUCCESS(rv, rv);
-  
+
   rv = aObserver->SetResult(this);
   NS_ENSURE_SUCCESS(rv, rv);
 
