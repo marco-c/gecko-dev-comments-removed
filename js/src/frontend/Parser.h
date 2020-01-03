@@ -23,7 +23,8 @@
 namespace js {
 namespace frontend {
 
-struct StmtInfoPC : public StmtInfoBase {
+struct StmtInfoPC : public StmtInfoBase
+{
     StmtInfoPC*     down;          
     StmtInfoPC*     downScope;     
 
@@ -98,16 +99,14 @@ GenerateBlockId(TokenStream& ts, ParseContext<ParseHandler>* pc, uint32_t& block
 template <typename ParseHandler>
 struct ParseContext : public GenericParseContext
 {
-    typedef StmtInfoPC StmtInfo;
     typedef typename ParseHandler::Node Node;
     typedef typename ParseHandler::DefinitionNode DefinitionNode;
 
     uint32_t        bodyid;         
     uint32_t        blockidGen;     
 
-    StmtInfoPC*     topStmt;       
-    StmtInfoPC*     topScopeStmt;  
-    Rooted<NestedScopeObject*> staticScope;  
+    StmtInfoStack<StmtInfoPC> stmtStack;
+
     Node            maybeFunction;  
 
     const unsigned  staticLevel;    
@@ -260,9 +259,7 @@ struct ParseContext : public GenericParseContext
       : GenericParseContext(parent, sc),
         bodyid(0),           
         blockidGen(bodyid),  
-        topStmt(nullptr),
-        topScopeStmt(nullptr),
-        staticScope(prs->context),
+        stmtStack(prs->context),
         maybeFunction(maybeFunction),
         staticLevel(staticLevel),
         lastYieldOffset(NoYieldOffset),
@@ -287,7 +284,11 @@ struct ParseContext : public GenericParseContext
 
     bool init(TokenStream& ts);
 
-    unsigned blockid() { return topStmt ? topStmt->blockid : bodyid; }
+    unsigned blockid() { return stmtStack.top() ? stmtStack.top()->blockid : bodyid; }
+
+    StmtInfoPC* topStmt() const { return stmtStack.top(); }
+    StmtInfoPC* topScopeStmt() const { return stmtStack.topScopal(); }
+    NestedScopeObject* topStaticScope() const { return stmtStack.topStaticScope(); }
 
     
     
@@ -296,8 +297,8 @@ struct ParseContext : public GenericParseContext
     
     
     
-    bool atBodyLevel() { return !topStmt; }
-    bool atGlobalLevel() { return atBodyLevel() && !sc->isFunctionBox() && (topStmt == topScopeStmt); }
+    bool atBodyLevel() { return !topStmt(); }
+    bool atGlobalLevel() { return atBodyLevel() && !sc->isFunctionBox() && !topScopeStmt(); }
 
     
     
@@ -342,6 +343,25 @@ enum DefaultHandling { NameRequired, AllowDefaultName };
 template <typename ParseHandler>
 class Parser : private JS::AutoGCRooter, public StrictModeGetter
 {
+    class MOZ_STACK_CLASS AutoPushStmtInfoPC
+    {
+        Parser<ParseHandler>& parser_;
+        StmtInfoPC stmt_;
+
+      public:
+        AutoPushStmtInfoPC(Parser<ParseHandler>& parser, StmtType type);
+        AutoPushStmtInfoPC(Parser<ParseHandler>& parser, StmtType type,
+                           NestedScopeObject& staticScope);
+        ~AutoPushStmtInfoPC();
+
+        bool generateBlockId();
+        bool makeTopLexicalScope(StaticBlockObject& blockObj);
+
+        StmtInfoPC& operator*() { return stmt_; }
+        StmtInfoPC* operator->() { return &stmt_; }
+        operator StmtInfoPC*() { return &stmt_; }
+    };
+
   public:
     ExclusiveContext* const context;
     LifoAlloc& alloc;
@@ -706,9 +726,9 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     bool checkStrictBinding(PropertyName* name, Node pn);
     bool defineArg(Node funcpn, HandlePropertyName name,
                    bool disallowDuplicateArgs = false, Node* duplicatedArg = nullptr);
-    Node pushLexicalScope(StmtInfoPC* stmt);
-    Node pushLexicalScope(Handle<StaticBlockObject*> blockObj, StmtInfoPC* stmt);
-    Node pushLetScope(Handle<StaticBlockObject*> blockObj, StmtInfoPC* stmt);
+    Node pushLexicalScope(AutoPushStmtInfoPC& stmt);
+    Node pushLexicalScope(Handle<StaticBlockObject*> blockObj, AutoPushStmtInfoPC& stmt);
+    Node pushLetScope(Handle<StaticBlockObject*> blockObj, AutoPushStmtInfoPC& stmt);
     bool noteNameUse(HandlePropertyName name, Node pn);
     Node computedPropertyName(YieldHandling yieldHandling, Node literal);
     Node arrayInitializer(YieldHandling yieldHandling);
