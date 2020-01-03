@@ -125,7 +125,7 @@ public final class NotificationHelper implements GeckoEventListener {
             mClearableNotifications.remove(id);
             
             
-            if (!GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+            if (!GeckoThread.isRunning()) {
                 return;
             }
         }

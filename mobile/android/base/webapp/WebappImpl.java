@@ -133,7 +133,7 @@ public class WebappImpl extends GeckoApp implements InstallCallback {
         String origin = allocator.getOrigin(index);
         boolean isInstallCompleting = (origin == null);
 
-        if (!GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning) || !isInstalled || isInstallCompleting) {
+        if (!GeckoThread.isRunning() || !isInstalled || isInstallCompleting) {
             
             overridePendingTransition(R.anim.grow_fade_in_center, android.R.anim.fade_out);
             showSplash();

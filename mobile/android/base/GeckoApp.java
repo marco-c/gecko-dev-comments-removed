@@ -1583,9 +1583,6 @@ public abstract class GeckoApp
                 
                 
                 GeckoPreferences.broadcastHealthReportUploadPref(GeckoApp.this);
-                if (!GeckoThread.checkLaunchState(GeckoThread.LaunchState.Launched)) {
-                    return;
-                }
             }
         }, 50);
 
@@ -1603,7 +1600,7 @@ public abstract class GeckoApp
                 Tabs.getInstance().notifyListeners(selectedTab, Tabs.TabEvents.SELECTED);
             }
 
-            if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+            if (GeckoThread.isRunning()) {
                 geckoConnected();
                 GeckoAppShell.sendEventToGecko(
                         GeckoEvent.createBroadcastEvent("Viewport:Flush", null));
@@ -2120,7 +2117,7 @@ public abstract class GeckoApp
             return;
         }
 
-        if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+        if (GeckoThread.isRunning()) {
             
             GeckoAppShell.sendEventToGeckoSync(GeckoEvent.createAppBackgroundingEvent());
         }
@@ -2238,7 +2235,7 @@ public abstract class GeckoApp
         
         
         
-        if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+        if (GeckoThread.isRunning()) {
             GeckoAppShell.handleNotification(action, alertName, alertCookie);
         }
     }

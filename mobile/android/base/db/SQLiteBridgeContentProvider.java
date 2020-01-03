@@ -142,7 +142,7 @@ public abstract class SQLiteBridgeContentProvider extends ContentProvider {
 
             
             
-            if (!GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+            if (!GeckoThread.isRunning()) {
                 Log.e(mLogTag, "Can not set up database. Gecko is not running");
                 return null;
             }

@@ -188,7 +188,7 @@ public class GeckoView extends LayerView
             
             GeckoProfile profile = GeckoProfile.get(context).forceCreate();
 
-        } else if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+        } else if (GeckoThread.isRunning()) {
             
             
             connectToGecko();

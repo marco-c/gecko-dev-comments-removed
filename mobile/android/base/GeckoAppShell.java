@@ -156,7 +156,7 @@ public class GeckoAppShell
 
         @Override
         public void uncaughtException(final Thread thread, final Throwable exc) {
-            if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoExited)) {
+            if (GeckoThread.isStateAtLeast(GeckoThread.State.EXITING)) {
                 
                 
                 return;
@@ -410,7 +410,7 @@ public class GeckoAppShell
             throw new IllegalArgumentException("e cannot be null.");
         }
 
-        if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+        if (GeckoThread.isRunning()) {
             notifyGeckoOfEvent(e);
             
             
@@ -511,8 +511,7 @@ public class GeckoAppShell
             sendEventToGecko(e);
             sWaitingForEventAck = true;
             while (true) {
-                if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoExiting) ||
-                        GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoExited)) {
+                if (GeckoThread.isStateAtLeast(GeckoThread.State.EXITING)) {
                     
                     Log.d(LOGTAG, "Skipping Gecko event sync during exit");
                     sWaitingForEventAck = false;

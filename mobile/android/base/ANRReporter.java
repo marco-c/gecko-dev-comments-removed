@@ -479,7 +479,7 @@ public final class ANRReporter extends BroadcastReceiver
         
         
         final boolean haveNativeStack =
-            GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning) ?
+            GeckoThread.isRunning() ?
             requestNativeStack( SysInfo.getMemSize() >= 640) : false;
 
         try {

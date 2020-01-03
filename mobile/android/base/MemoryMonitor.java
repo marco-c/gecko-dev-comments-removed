@@ -175,7 +175,7 @@ class MemoryMonitor extends BroadcastReceiver {
         
         if (level >= MEMORY_PRESSURE_MEDIUM) {
             
-            if (GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+            if (GeckoThread.isRunning()) {
                 GeckoAppShell.dispatchMemoryPressure();
             }
 
@@ -253,7 +253,7 @@ class MemoryMonitor extends BroadcastReceiver {
         @Override
         public void run() {
             
-            if (!GeckoThread.checkLaunchState(GeckoThread.LaunchState.GeckoRunning)) {
+            if (!GeckoThread.isRunning()) {
                 ThreadUtils.getBackgroundHandler().postDelayed(this, 10000);
                 return;
             }
