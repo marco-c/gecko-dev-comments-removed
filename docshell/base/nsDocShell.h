@@ -62,6 +62,7 @@
 namespace mozilla {
 namespace dom {
 class EventTarget;
+typedef uint32_t ScreenOrientationInternal;
 } 
 } 
 
@@ -874,6 +875,10 @@ protected:
     PARENT_PROHIBITS
   };
   FullscreenAllowedState mFullscreenAllowed;
+
+  
+  
+  mozilla::dom::ScreenOrientationInternal mOrientationLock;
 
   
   static bool sUseErrorPages;
