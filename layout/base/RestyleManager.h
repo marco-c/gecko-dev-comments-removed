@@ -129,16 +129,18 @@ public:
 
 private:
   
-  void ComputeAndProcessStyleChange(nsIFrame*       aFrame,
-                                    nsChangeHint    aMinChange,
-                                    RestyleTracker& aRestyleTracker,
-                                    nsRestyleHint   aRestyleHint);
+  void ComputeAndProcessStyleChange(nsIFrame*              aFrame,
+                                    nsChangeHint           aMinChange,
+                                    RestyleTracker&        aRestyleTracker,
+                                    nsRestyleHint          aRestyleHint,
+                                    const RestyleHintData& aRestyleHintData);
   
-  void ComputeAndProcessStyleChange(nsStyleContext* aNewContext,
-                                    Element*        aElement,
-                                    nsChangeHint    aMinChange,
-                                    RestyleTracker& aRestyleTracker,
-                                    nsRestyleHint   aRestyleHint);
+  void ComputeAndProcessStyleChange(nsStyleContext*        aNewContext,
+                                    Element*               aElement,
+                                    nsChangeHint           aMinChange,
+                                    RestyleTracker&        aRestyleTracker,
+                                    nsRestyleHint          aRestyleHint,
+                                    const RestyleHintData& aRestyleHintData);
 
 public:
 
@@ -336,9 +338,11 @@ public:
 
 
 
+
   void PostRestyleEvent(Element* aElement,
                         nsRestyleHint aRestyleHint,
-                        nsChangeHint aMinChangeHint);
+                        nsChangeHint aMinChangeHint,
+                        const RestyleHintData* aRestyleHintData = nullptr);
 
   void PostRestyleEventForLazyConstruction()
   {
@@ -423,7 +427,8 @@ private:
                       nsIFrame*       aPrimaryFrame,
                       nsChangeHint    aMinHint,
                       RestyleTracker& aRestyleTracker,
-                      nsRestyleHint   aRestyleHint);
+                      nsRestyleHint   aRestyleHint,
+                      const RestyleHintData& aRestyleHintData);
 
   void StartRebuildAllStyleData(RestyleTracker& aRestyleTracker);
   void FinishRebuildAllStyleData();
@@ -577,7 +582,9 @@ public:
                                                nsStyleContext* aNewContext,
                                                nsChangeHint    aMinHint,
                                                RestyleTracker& aRestyleTracker,
-                                               nsRestyleHint   aRestyleHint);
+                                               nsRestyleHint   aRestyleHint,
+                                               const RestyleHintData&
+                                                 aRestyleHintData);
 
   
 
@@ -588,6 +595,7 @@ public:
                                     nsChangeHint       aMinChange,
                                     RestyleTracker&    aRestyleTracker,
                                     nsRestyleHint      aRestyleHint,
+                                    const RestyleHintData& aRestyleHintData,
                                     nsTArray<ContextToClear>& aContextsToClear,
                                     nsTArray<nsRefPtr<nsStyleContext>>&
                                       aSwappedStructOwners);
