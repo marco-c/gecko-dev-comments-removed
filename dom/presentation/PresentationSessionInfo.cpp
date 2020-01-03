@@ -4,6 +4,13 @@
 
 
 
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/TabParent.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "nsIDocShell.h"
+#include "nsIFrameLoader.h"
+#include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "PresentationService.h"
@@ -11,6 +18,7 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
+using namespace mozilla::services;
 
 
 
@@ -229,6 +237,8 @@ PresentationRequesterInfo::OnOffer(nsIPresentationChannelDescription* aDescripti
 NS_IMETHODIMP
 PresentationRequesterInfo::OnAnswer(nsIPresentationChannelDescription* aDescription)
 {
+  mIsResponderReady = true;
+
   
   nsresult rv = mControlChannel->Close(NS_OK);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -313,14 +323,136 @@ PresentationRequesterInfo::OnStopListening(nsIServerSocket* aServerSocket,
 
 
 
-NS_IMPL_ISUPPORTS_INHERITED0(PresentationResponderInfo,
-                             PresentationSessionInfo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NS_IMPL_ISUPPORTS_INHERITED(PresentationResponderInfo,
+                            PresentationSessionInfo,
+                            nsIObserver,
+                            nsITimerCallback)
+
+nsresult
+PresentationResponderInfo::Init(nsIPresentationControlChannel* aControlChannel)
+{
+  PresentationSessionInfo::Init(aControlChannel);
+
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (NS_WARN_IF(!obs)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv = obs->AddObserver(this, "presentation-receiver-launched", false);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  
+  int32_t timeout =
+    Preferences::GetInt("presentation.receiver.loading.timeout", 10000);
+  mTimer = do_CreateInstance(NS_TIMER_CONTRACTID, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  rv = mTimer->InitWithCallback(this, timeout, nsITimer::TYPE_ONE_SHOT);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+void
+PresentationResponderInfo::Shutdown(nsresult aReason)
+{
+  PresentationSessionInfo::Shutdown(aReason);
+
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (obs) {
+    obs->RemoveObserver(this, "presentation-receiver-launched");
+  }
+
+  if (mTimer) {
+    mTimer->Cancel();
+  }
+
+  mLoadingCallback = nullptr;
+  mRequesterDescription = nullptr;
+}
+
+nsresult
+PresentationResponderInfo::InitTransportAndSendAnswer()
+{
+  
+  
+  mTransport = do_CreateInstance(PRESENTATION_SESSION_TRANSPORT_CONTRACTID);
+  if (NS_WARN_IF(!mTransport)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv = mTransport->InitWithChannelDescription(mRequesterDescription, this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+
+  return NS_OK;
+ }
+
+nsresult
+PresentationResponderInfo::NotifyResponderReady()
+{
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+
+  mIsResponderReady = true;
+
+  
+  
+  if (mRequesterDescription) {
+    nsresult rv = InitTransportAndSendAnswer();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return ReplyError(rv);
+    }
+  }
+
+  return NS_OK;
+}
 
 
 NS_IMETHODIMP
 PresentationResponderInfo::OnOffer(nsIPresentationChannelDescription* aDescription)
 {
+  if (NS_WARN_IF(!aDescription)) {
+    return ReplyError(NS_ERROR_INVALID_ARG);
+  }
+
+  mRequesterDescription = aDescription;
+
   
+  
+  if (mIsResponderReady) {
+    nsresult rv = InitTransportAndSendAnswer();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return ReplyError(rv);
+    }
+  }
+
   return NS_OK;
 }
 
@@ -347,7 +479,79 @@ PresentationResponderInfo::NotifyClosed(nsresult aReason)
 
   if (NS_WARN_IF(NS_FAILED(aReason))) {
     
+    return ReplyError(aReason);
   }
 
   return NS_OK;
+}
+
+
+NS_IMETHODIMP
+PresentationResponderInfo::Observe(nsISupports* aSubject,
+                                   const char* aTopic,
+                                   const char16_t* aData)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  if (!strcmp(aTopic, "presentation-receiver-launched")) {
+    
+    if (!mSessionId.Equals(aData)) {
+      return NS_OK;
+    }
+
+    
+    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+    if (obs) {
+      obs->RemoveObserver(this, "presentation-receiver-launched");
+    }
+
+    
+    nsCOMPtr<nsIFrameLoaderOwner> owner = do_QueryInterface(aSubject);
+    if (NS_WARN_IF(!owner)) {
+      return ReplyError(NS_ERROR_NOT_AVAILABLE);
+    }
+
+    nsCOMPtr<nsIFrameLoader> frameLoader;
+    nsresult rv = owner->GetFrameLoader(getter_AddRefs(frameLoader));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return ReplyError(rv);
+    }
+
+    nsRefPtr<TabParent> tabParent = TabParent::GetFrom(frameLoader);
+    if (tabParent) {
+      
+      nsCOMPtr<nsIContentParent> cp = tabParent->Manager();
+      NS_WARN_IF(!static_cast<ContentParent*>(cp.get())->SendNotifyPresentationReceiverLaunched(tabParent, mSessionId));
+    } else {
+      
+      nsCOMPtr<nsIDocShell> docShell;
+      rv = frameLoader->GetDocShell(getter_AddRefs(docShell));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return ReplyError(rv);
+      }
+
+      mLoadingCallback = new PresentationResponderLoadingCallback(mSessionId);
+      rv = mLoadingCallback->Init(docShell);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return ReplyError(rv);
+      }
+    }
+
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(false, "Unexpected topic for PresentationResponderInfo.");
+  return NS_ERROR_UNEXPECTED;
+}
+
+
+NS_IMETHODIMP
+PresentationResponderInfo::Notify(nsITimer* aTimer)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_WARNING("The receiver page fails to become ready before timeout.");
+
+  mTimer = nullptr;
+  return ReplyError(NS_ERROR_DOM_TIMEOUT_ERR);
 }
