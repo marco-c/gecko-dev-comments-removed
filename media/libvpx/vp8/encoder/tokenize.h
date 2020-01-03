@@ -9,11 +9,15 @@
 
 
 
-#ifndef tokenize_h
-#define tokenize_h
+#ifndef VP8_ENCODER_TOKENIZE_H_
+#define VP8_ENCODER_TOKENIZE_H_
 
 #include "vp8/common/entropy.h"
 #include "block.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void vp8_tokenize_initialize();
 
@@ -46,5 +50,9 @@ extern const short *const vp8_dct_value_cost_ptr;
 
 
 extern const TOKENVALUE *const vp8_dct_value_tokens_ptr;
+
+#ifdef __cplusplus
+}  
+#endif
 
 #endif  

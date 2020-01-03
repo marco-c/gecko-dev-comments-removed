@@ -9,8 +9,8 @@
 
 
 
-#ifndef ONYXD_INT_H_
-#define ONYXD_INT_H_
+#ifndef VP8_DECODER_ONYXD_INT_H_
+#define VP8_DECODER_ONYXD_INT_H_
 
 #include "vpx_config.h"
 #include "vp8/common/onyxd.h"
@@ -20,6 +20,10 @@
 
 #if CONFIG_ERROR_CONCEALMENT
 #include "ec_types.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef struct
@@ -122,7 +126,7 @@ typedef struct VP8D_COMP
     int independent_partitions;
     int frame_corrupt_residual;
 
-    vp8_decrypt_cb *decrypt_cb;
+    vpx_decrypt_cb decrypt_cb;
     void *decrypt_state;
 } VP8D_COMP;
 
@@ -146,6 +150,10 @@ int vp8_remove_decoder_instances(struct frame_buffers *fb);
             vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,\
                                "Failed to allocate "#lval);\
     } while(0)
+#endif
+
+#ifdef __cplusplus
+}  
 #endif
 
 #endif  

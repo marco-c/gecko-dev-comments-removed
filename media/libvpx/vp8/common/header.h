@@ -9,8 +9,12 @@
 
 
 
-#ifndef __INC_HEADER_H
-#define __INC_HEADER_H
+#ifndef VP8_COMMON_HEADER_H_
+#define VP8_COMMON_HEADER_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 typedef struct
@@ -40,4 +44,8 @@ typedef struct
 #endif
 
 
+#ifdef __cplusplus
+}  
 #endif
+
+#endif  

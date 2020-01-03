@@ -9,10 +9,14 @@
 
 
 
-#ifndef VPX_PORTS_ARM_H
-#define VPX_PORTS_ARM_H
+#ifndef VPX_PORTS_ARM_H_
+#define VPX_PORTS_ARM_H_
 #include <stdlib.h>
 #include "vpx_config.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 #define HAS_EDSP  0x01
@@ -23,5 +27,9 @@
 
 int arm_cpu_caps(void);
 
+#ifdef __cplusplus
+}  
 #endif
+
+#endif  
 

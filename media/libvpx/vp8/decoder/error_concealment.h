@@ -9,11 +9,15 @@
 
 
 
-#ifndef ERROR_CONCEALMENT_H_
-#define ERROR_CONCEALMENT_H_
+#ifndef VP8_DECODER_ERROR_CONCEALMENT_H_
+#define VP8_DECODER_ERROR_CONCEALMENT_H_
 
 #include "onyxd_int.h"
 #include "ec_types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 int vp8_alloc_overlap_lists(VP8D_COMP *pbi);
@@ -37,5 +41,9 @@ void vp8_interpolate_motion(MACROBLOCKD *mb,
 
 
 void vp8_conceal_corrupt_mb(MACROBLOCKD *xd);
+
+#ifdef __cplusplus
+}  
+#endif
 
 #endif  
