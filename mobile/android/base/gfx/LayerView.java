@@ -675,17 +675,6 @@ public class LayerView extends FrameLayout implements Tabs.OnTabsChangedListener
 
     
 
-    public interface OnMetricsChangedListener {
-        public void onMetricsChanged(ImmutableViewportMetrics viewport);
-        public void onPanZoomStopped();
-    }
-
-    public void setOnMetricsChangedZoomedViewportListener(OnMetricsChangedListener listener) {
-        mLayerClient.setOnMetricsChangedZoomedViewportListener(listener);
-    }
-
-    
-
     public interface ZoomedViewListener {
         public void requestZoomedViewRender();
         public void updateView(ByteBuffer data);
