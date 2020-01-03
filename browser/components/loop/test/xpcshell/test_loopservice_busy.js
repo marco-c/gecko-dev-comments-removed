@@ -115,9 +115,6 @@ function run_test() {
     
     MozLoopServiceInternal.fxAOAuthTokenData = null;
 
-    
-    Services.prefs.clearUserPref("loop.seenToS");
-
     LoopCallsInternal.mocks.webSocket = undefined;
   });
 
