@@ -105,7 +105,7 @@ private:
   
   AudioChannel mAudioChannel;
   bool mIsOffline;
-  bool mAudioChannelAgentMuted;
+  bool mAudioChannelAgentPlaying;
 
   TimeStamp mStartedBlockingDueToBeingOnlyNode;
   double mExtraCurrentTime;
