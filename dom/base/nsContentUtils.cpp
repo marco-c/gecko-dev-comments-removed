@@ -254,6 +254,7 @@ bool nsContentUtils::sInitialized = false;
 bool nsContentUtils::sIsFullScreenApiEnabled = false;
 bool nsContentUtils::sTrustedFullScreenOnly = true;
 bool nsContentUtils::sIsCutCopyAllowed = true;
+bool nsContentUtils::sIsFrameTimingPrefEnabled = false;
 bool nsContentUtils::sIsPerformanceTimingEnabled = false;
 bool nsContentUtils::sIsResourceTimingEnabled = false;
 bool nsContentUtils::sIsUserTimingLoggingEnabled = false;
@@ -535,6 +536,9 @@ nsContentUtils::Init()
 
   Preferences::AddBoolVarCache(&sIsUserTimingLoggingEnabled,
                                "dom.performance.enable_user_timing_logging", false);
+
+  Preferences::AddBoolVarCache(&sIsFrameTimingPrefEnabled,
+                               "dom.enable_frame_timing", true);
 
   Preferences::AddBoolVarCache(&sIsExperimentalAutocompleteEnabled,
                                "dom.forms.autocomplete.experimental", false);
@@ -6578,20 +6582,6 @@ nsContentUtils::IsPDFJSEnabled()
    return NS_SUCCEEDED(rv) && canConvert;
 }
 
-bool
-nsContentUtils::IsSWFPlayerEnabled()
-{
-   nsCOMPtr<nsIStreamConverterService> convServ =
-     do_GetService("@mozilla.org/streamConverters;1");
-   nsresult rv = NS_ERROR_FAILURE;
-   bool canConvert = false;
-   if (convServ) {
-     rv = convServ->CanConvert("application/x-shockwave-flash",
-                               "text/html", &canConvert);
-   }
-   return NS_SUCCEEDED(rv) && canConvert;
-}
-
 already_AddRefed<nsIDocumentLoaderFactory>
 nsContentUtils::FindInternalContentViewer(const nsACString& aType,
                                           ContentViewerType* aLoaderType)
@@ -6774,6 +6764,13 @@ nsContentUtils::IsCutCopyAllowed()
   return (!IsCutCopyRestricted() &&
           EventStateManager::IsHandlingUserInput()) ||
          IsCallerChrome();
+}
+
+
+bool
+nsContentUtils::IsFrameTimingEnabled()
+{
+  return sIsFrameTimingPrefEnabled;
 }
 
 
