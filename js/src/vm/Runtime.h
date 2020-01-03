@@ -691,12 +691,12 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-    js::SavedFrame* asyncStackForNewActivations;
+    JS::PersistentRooted<js::SavedFrame*> asyncStackForNewActivations;
 
     
 
 
-    JSString* asyncCauseForNewActivations;
+    JS::PersistentRooted<JSString*> asyncCauseForNewActivations;
 
     
 
