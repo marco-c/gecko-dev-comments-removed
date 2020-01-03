@@ -3,48 +3,115 @@
 
 
 
+
+
 #ifndef js_Date_h
 #define js_Date_h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
-#include "jstypes.h"
-
 #include "js/Conversions.h"
 #include "js/Value.h"
 
+struct JSContext;
+
 namespace JS {
+
+class ClippedTime;
+inline ClippedTime TimeClip(double time);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ClippedTime
 {
     double t;
 
-    
-    double timeClip(double time) {
-        
-        const double MaxTimeMagnitude = 8.64e15;
-        if (!mozilla::IsFinite(time) || mozilla::Abs(time) > MaxTimeMagnitude)
-            return JS::GenericNaN();
-
-        
-        return JS::ToInteger(time) + (+0.0);
-    }
+    explicit ClippedTime(double time) : t(time) {}
+    friend ClippedTime TimeClip(double time);
 
   public:
-    ClippedTime() : t(JS::GenericNaN()) {}
-    explicit ClippedTime(double time) : t(timeClip(time)) {}
+    
+    ClippedTime() : t(mozilla::UnspecifiedNaN<double>()) {}
 
-    static ClippedTime NaN() { return ClippedTime(); }
+    
+    
+    static ClippedTime invalid() { return ClippedTime(); }
 
-    double value() const { return t; }
+    double toDouble() const { return t; }
+
+    bool isValid() const { return !mozilla::IsNaN(t); }
 };
 
+
+
+
+
 inline ClippedTime
-TimeClip(double d)
+TimeClip(double time)
 {
-    return ClippedTime(d);
+    
+    const double MaxTimeMagnitude = 8.64e15;
+    if (!mozilla::IsFinite(time) || mozilla::Abs(time) > MaxTimeMagnitude)
+        return ClippedTime(mozilla::UnspecifiedNaN<double>());
+
+    
+    return ClippedTime(ToInteger(time) + (+0.0));
 }
+
+
+
+inline Value
+TimeValue(ClippedTime time)
+{
+    return DoubleValue(JS::CanonicalizeNaN(time.toDouble()));
+}
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+NewDateObject(JSContext* cx, ClippedTime time);
+
+
+
 
 
 

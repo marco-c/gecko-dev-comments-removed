@@ -9,6 +9,7 @@
 #ifndef mozilla_dom_Date_h
 #define mozilla_dom_Date_h
 
+#include "js/Date.h"
 #include "js/TypeDecls.h"
 
 namespace mozilla {
@@ -17,21 +18,33 @@ namespace dom {
 class Date
 {
 public:
-  
-  Date();
-  explicit Date(double aMilliseconds)
+  Date() {}
+  explicit Date(JS::ClippedTime aMilliseconds)
     : mMsecSinceEpoch(aMilliseconds)
   {}
 
-  bool IsUndefined() const;
-  double TimeStamp() const
+  bool IsUndefined() const
+  {
+    return !mMsecSinceEpoch.isValid();
+  }
+
+  JS::ClippedTime TimeStamp() const
   {
     return mMsecSinceEpoch;
   }
-  void SetTimeStamp(double aMilliseconds)
+
+  
+  
+  double ToDouble() const
+  {
+    return mMsecSinceEpoch.toDouble();
+  }
+
+  void SetTimeStamp(JS::ClippedTime aMilliseconds)
   {
     mMsecSinceEpoch = aMilliseconds;
   }
+
   
   
   bool SetTimeStamp(JSContext* aCx, JSObject* aObject);
@@ -39,7 +52,7 @@ public:
   bool ToDateObject(JSContext* aCx, JS::MutableHandle<JS::Value> aRval) const;
 
 private:
-  double mMsecSinceEpoch;
+  JS::ClippedTime mMsecSinceEpoch;
 };
 
 } 
