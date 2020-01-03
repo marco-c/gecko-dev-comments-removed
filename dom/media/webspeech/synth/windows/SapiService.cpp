@@ -278,11 +278,8 @@ SapiService::RegisterVoices()
     uri.AppendLiteral("?");
     uri.Append(locale);
 
-    
-    
-    
     rv = registry->AddVoice(this, uri, nsDependentString(description), locale,
-                            true, true);
+                            true);
     CoTaskMemFree(description);
     if (NS_FAILED(rv)) {
       continue;
