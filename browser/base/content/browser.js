@@ -7315,6 +7315,14 @@ let gRemoteTabsUI = {
       return;
     }
 
+#ifdef XP_MACOSX
+    if (Services.prefs.getBoolPref("layers.acceleration.disabled")) {
+      
+      
+      return;
+    }
+#endif
+
     let newRemoteWindow = document.getElementById("menu_newRemoteWindow");
     let newNonRemoteWindow = document.getElementById("menu_newNonRemoteWindow");
     let autostart = Services.appinfo.browserTabsRemoteAutostart;
