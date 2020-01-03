@@ -906,7 +906,7 @@ public:
 
   
   
-  Canonical<NextFrameStatus>::Holder mNextFrameStatus;
+  Canonical<NextFrameStatus> mNextFrameStatus;
 public:
   AbstractCanonical<NextFrameStatus>* CanonicalNextFrameStatus() { return &mNextFrameStatus; }
 protected:
