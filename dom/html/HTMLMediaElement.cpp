@@ -1211,6 +1211,7 @@ nsresult HTMLMediaElement::LoadResource()
       
       
       
+      decoder->Shutdown();
       return NS_ERROR_FAILURE;
     }
     nsRefPtr<MediaResource> resource =
