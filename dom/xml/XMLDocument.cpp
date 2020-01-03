@@ -22,7 +22,7 @@
 #include "nsIDOMDocumentType.h"
 #include "nsCOMPtr.h"
 #include "nsXPIDLString.h"
-#include "nsIHttpChannel.h"
+#include "nsIHttpChannelInternal.h"
 #include "nsIURI.h"
 #include "nsIServiceManager.h"
 #include "nsNetUtil.h"
@@ -419,6 +419,14 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return false;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(channel);
+  if (httpChannel) {
+    httpChannel->SetCorsMode(nsIHttpChannelInternal::CORS_MODE_SAME_ORIGIN);
   }
 
   
