@@ -429,11 +429,11 @@ protected:
 
       
       if (pJmp32 >= 0) {
-        if (origBytes[nBytes++] != 0x90) {
-          return;
+        if (origBytes[nBytes] == 0x90 || origBytes[nBytes] == 0xcc) {
+          nBytes++;
+          continue;
         }
-
-        continue;
+        return;
       }
       if (origBytes[nBytes] == 0x0f) {
         nBytes++;
