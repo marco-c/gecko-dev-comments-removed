@@ -96,7 +96,7 @@ public:
 
   nsresult Init();
 
-  void LoadDictionaryList();
+  void LoadDictionaryList(bool aNotifyChildProcesses);
 
   
   nsresult ConvertCharset(const char16_t* aStr, char ** aDst);
