@@ -449,25 +449,25 @@ SharedContext::allLocalsAliased()
 
 
 
-enum class StmtType : uint16_t {
-    LABEL,                 
-    IF,                    
-    ELSE,                  
-    SEQ,                   
-    BLOCK,                 
-    SWITCH,                
-    WITH,                  
-    CATCH,                 
-    TRY,                   
-    FINALLY,               
-    SUBROUTINE,            
-    DO_LOOP,               
-    FOR_LOOP,              
-    FOR_IN_LOOP,           
-    FOR_OF_LOOP,           
-    WHILE_LOOP,            
-    SPREAD,                
-    LIMIT
+enum StmtType {
+    STMT_LABEL,                 
+    STMT_IF,                    
+    STMT_ELSE,                  
+    STMT_SEQ,                   
+    STMT_BLOCK,                 
+    STMT_SWITCH,                
+    STMT_WITH,                  
+    STMT_CATCH,                 
+    STMT_TRY,                   
+    STMT_FINALLY,               
+    STMT_SUBROUTINE,            
+    STMT_DO_LOOP,               
+    STMT_FOR_LOOP,              
+    STMT_FOR_IN_LOOP,           
+    STMT_FOR_OF_LOOP,           
+    STMT_WHILE_LOOP,            
+    STMT_SPREAD,                
+    STMT_LIMIT
 };
 
 
@@ -498,12 +498,15 @@ enum class StmtType : uint16_t {
 
 struct StmtInfoBase {
     
-    StmtType type;
+    uint16_t        type;
 
     
     
     
     bool isBlockScope:1;
+
+    
+    bool isNestedScope:1;
 
     
     bool isForLetBlock:1;
@@ -512,34 +515,37 @@ struct StmtInfoBase {
     RootedAtom      label;
 
     
+    
     Rooted<NestedScopeObject*> staticScope;
 
     explicit StmtInfoBase(ExclusiveContext* cx)
-        : isBlockScope(false), isForLetBlock(false),
+        : isBlockScope(false), isNestedScope(false), isForLetBlock(false),
           label(cx), staticScope(cx)
     {}
 
     bool maybeScope() const {
-        return StmtType::BLOCK <= type && type <= StmtType::SUBROUTINE &&
-               type != StmtType::WITH;
+        return STMT_BLOCK <= type && type <= STMT_SUBROUTINE && type != STMT_WITH;
     }
 
     bool linksScope() const {
-        return !!staticScope;
+        return isNestedScope;
+    }
+
+    void setStaticScope() {
     }
 
     StaticBlockObject& staticBlock() const {
-        MOZ_ASSERT(staticScope);
+        MOZ_ASSERT(isNestedScope);
         MOZ_ASSERT(isBlockScope);
         return staticScope->as<StaticBlockObject>();
     }
 
     bool isLoop() const {
-        return type >= StmtType::DO_LOOP;
+        return type >= STMT_DO_LOOP;
     }
 
     bool isTrying() const {
-        return StmtType::TRY <= type && type <= StmtType::SUBROUTINE;
+        return STMT_TRY <= type && type <= STMT_SUBROUTINE;
     }
 };
 
@@ -550,18 +556,25 @@ PushStatement(ContextT* ct, typename ContextT::StmtInfo* stmt, StmtType type)
 {
     stmt->type = type;
     stmt->isBlockScope = false;
+    stmt->isNestedScope = false;
     stmt->isForLetBlock = false;
     stmt->label = nullptr;
     stmt->staticScope = nullptr;
     stmt->down = ct->topStmt;
     ct->topStmt = stmt;
-    stmt->downScope = nullptr;
+    if (stmt->linksScope()) {
+        stmt->downScope = ct->topScopeStmt;
+        ct->topScopeStmt = stmt;
+    } else {
+        stmt->downScope = nullptr;
+    }
 }
 
 template <class ContextT>
 void
 FinishPushNestedScope(ContextT* ct, typename ContextT::StmtInfo* stmt, NestedScopeObject& staticScope)
 {
+    stmt->isNestedScope = true;
     stmt->downScope = ct->topScopeStmt;
     ct->topScopeStmt = stmt;
     ct->staticScope = &staticScope;
@@ -579,8 +592,10 @@ FinishPopStatement(ContextT* ct)
     ct->topStmt = stmt->down;
     if (stmt->linksScope()) {
         ct->topScopeStmt = stmt->downScope;
-        if (stmt->staticScope)
+        if (stmt->isNestedScope) {
+            MOZ_ASSERT(stmt->staticScope);
             ct->staticScope = stmt->staticScope->enclosingNestedScope();
+        }
     }
 }
 
