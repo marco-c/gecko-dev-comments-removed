@@ -334,12 +334,9 @@ DoCollectSizeOfCompositingSurfaces(const RawAccessFrameRef& aSurface,
   SurfaceMemoryCounter counter(key,  true, aType);
 
   
-  size_t heap = aSurface
-    ->SizeOfExcludingThis(gfxMemoryLocation::IN_PROCESS_HEAP, aMallocSizeOf);
+  size_t heap = 0, nonHeap = 0;
+  aSurface->AddSizeOfExcludingThis(aMallocSizeOf, heap, nonHeap);
   counter.Values().SetDecodedHeap(heap);
-
-  size_t nonHeap = aSurface
-    ->SizeOfExcludingThis(gfxMemoryLocation::IN_PROCESS_NONHEAP, nullptr);
   counter.Values().SetDecodedNonHeap(nonHeap);
 
   

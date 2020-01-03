@@ -14,7 +14,7 @@
 #include "mozilla/Maybe.h"           
 #include "mozilla/MemoryReporting.h" 
 #include "mozilla/HashFunctions.h"   
-#include "gfx2DGlue.h"               
+#include "gfx2DGlue.h"
 #include "gfxPoint.h"                
 #include "nsCOMPtr.h"                
 #include "mozilla/gfx/Point.h"       

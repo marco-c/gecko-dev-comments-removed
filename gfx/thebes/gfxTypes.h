@@ -92,15 +92,4 @@ enum class gfxContentType {
   SENTINEL    = 0xffff
 };
 
-
-
-
-
-
-enum class gfxMemoryLocation {
-  IN_PROCESS_HEAP,
-  IN_PROCESS_NONHEAP,
-  OUT_OF_PROCESS
-};
-
 #endif 
