@@ -585,7 +585,7 @@ var shell = {
         
         
         channel.isActive().onsuccess = function(evt) {
-          this.sendChromeEvent({
+          SystemAppProxy._sendCustomEvent('mozSystemWindowChromeEvent', {
             type: 'system-audiochannel-state-changed',
             name: channel.name,
             isActive: evt.target.result
