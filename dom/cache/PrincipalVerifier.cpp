@@ -131,18 +131,25 @@ PrincipalVerifier::VerifyOnMainThread()
     return;
   }
 
+  nsCOMPtr<nsIScriptSecurityManager> ssm = nsContentUtils::GetSecurityManager();
+  if (NS_WARN_IF(!ssm)) {
+    DispatchToInitiatingThread(NS_ERROR_ILLEGAL_DURING_SHUTDOWN);
+    return;
+  }
+
+  
+  
+  if (NS_WARN_IF(actor && ssm->IsSystemPrincipal(principal))) {
+    DispatchToInitiatingThread(NS_ERROR_FAILURE);
+    return;
+  }
+
   
   if (NS_WARN_IF(actor && !AssertAppPrincipal(actor, principal))) {
     DispatchToInitiatingThread(NS_ERROR_FAILURE);
     return;
   }
   actor = nullptr;
-
-  nsCOMPtr<nsIScriptSecurityManager> ssm = nsContentUtils::GetSecurityManager();
-  if (NS_WARN_IF(!ssm)) {
-    DispatchToInitiatingThread(NS_ERROR_ILLEGAL_DURING_SHUTDOWN);
-    return;
-  }
 
 #ifdef DEBUG
   
