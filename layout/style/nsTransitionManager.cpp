@@ -43,11 +43,6 @@ using namespace mozilla::css;
 double
 ElementPropertyTransition::CurrentValuePortion() const
 {
-  
-  
-  
-  MOZ_ASSERT(!IsFinishedTransition(),
-             "Getting the value portion of a finished transition");
   MOZ_ASSERT(!GetLocalTime().IsNull(),
              "Getting the value portion of an animation that's not being "
              "sampled");
@@ -446,7 +441,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
                                              currentValue) ||
           currentValue != segment.mToValue) {
         
-        if (!anim->GetEffect()->IsFinishedTransition()) {
+        if (anim->HasCurrentEffect()) {
           collection->UpdateAnimationGeneration(mPresContext);
         }
         anim->CancelFromStyle();
