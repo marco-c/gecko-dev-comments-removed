@@ -8,6 +8,7 @@
 #define mozilla_AppleVDADecoder_h
 
 #include "PlatformDecoderModule.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "MP4Decoder.h"
 #include "nsIThread.h"
@@ -80,18 +81,28 @@ public:
     return true;
   }
 
-  nsresult OutputFrame(CVPixelBufferRef aImage,
-                       nsAutoPtr<AppleFrameRef> aFrameRef);
+  void DispatchOutputTask(already_AddRefed<nsIRunnable> aTask)
+  {
+    nsCOMPtr<nsIRunnable> task = aTask;
+    if (mIsShutDown || mIsFlushing) {
+      return;
+    }
+    mTaskQueue->Dispatch(task.forget());
+  }
 
+  nsresult OutputFrame(CFRefPtr<CVPixelBufferRef> aImage,
+                       AppleFrameRef aFrameRef);
+
+protected:
   
-  nsresult InitializeSession();
+  virtual void ProcessFlush();
+  virtual void ProcessDrain();
+  virtual void ProcessShutdown();
 
- protected:
   AppleFrameRef* CreateAppleFrameRef(const MediaRawData* aSample);
   void DrainReorderedFrames();
   void ClearReorderedFrames();
   CFDictionaryRef CreateOutputConfiguration();
-  nsresult InitDecoder();
 
   nsRefPtr<MediaByteBuffer> mExtraData;
   nsRefPtr<FlushableTaskQueue> mTaskQueue;
@@ -103,11 +114,26 @@ public:
   uint32_t mDisplayWidth;
   uint32_t mDisplayHeight;
   uint32_t mMaxRefFrames;
+  
+  
+  Atomic<uint32_t> mInputIncoming;
+  Atomic<bool> mIsShutDown;
+
   bool mUseSoftwareImages;
   bool mIs106;
 
+  
+  Monitor mMonitor;
+  
+  
+  
+  Atomic<bool> mIsFlushing;
+
 private:
   VDADecoder mDecoder;
+
+  
+  nsresult InitializeSession();
 
   
   nsresult SubmitFrame(MediaRawData* aSample);
