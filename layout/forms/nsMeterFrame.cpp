@@ -265,15 +265,18 @@ nsMeterFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 bool
 nsMeterFrame::ShouldUseNativeStyle() const
 {
+  nsIFrame* barFrame = mBarDiv->GetPrimaryFrame();
+
   
   
   
   
   return StyleDisplay()->mAppearance == NS_THEME_METERBAR &&
-         mBarDiv->GetPrimaryFrame()->StyleDisplay()->mAppearance == NS_THEME_METERBAR_CHUNK &&
          !PresContext()->HasAuthorSpecifiedRules(this,
                                                  NS_AUTHOR_SPECIFIED_BORDER | NS_AUTHOR_SPECIFIED_BACKGROUND) &&
-         !PresContext()->HasAuthorSpecifiedRules(mBarDiv->GetPrimaryFrame(),
+         barFrame &&
+         barFrame->StyleDisplay()->mAppearance == NS_THEME_METERBAR_CHUNK &&
+         !PresContext()->HasAuthorSpecifiedRules(barFrame,
                                                  NS_AUTHOR_SPECIFIED_BORDER | NS_AUTHOR_SPECIFIED_BACKGROUND);
 }
 
