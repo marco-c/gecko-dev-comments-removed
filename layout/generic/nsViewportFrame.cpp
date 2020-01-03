@@ -164,8 +164,6 @@ ViewportFrame::AdjustReflowStateAsContainingBlock(nsHTMLReflowState* aReflowStat
     rect.SizeTo(ps->GetScrollPositionClampingScrollPortSize());
   }
 
-  
-  rect.Deflate(ps->GetContentDocumentFixedPositionMargins());
   return rect;
 }
 
