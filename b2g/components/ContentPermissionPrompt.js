@@ -413,7 +413,10 @@ ContentPermissionPrompt.prototype = {
       type: type,
       permissions: permissions,
       id: requestId,
-      origin: principal.origin,
+      
+      
+      
+      origin: principal.originNoSuffix,
       isApp: isApp,
       remember: remember,
       isGranted: isGranted,
