@@ -92,12 +92,6 @@ namespace mozilla {
 namespace dom {
 namespace quota {
 
-
-
-
-
-const char QuotaManager::kReplaceChars[] = CONTROL_CHARACTERS "/:*?\"<>|\\";
-
 namespace {
 
 
@@ -1081,6 +1075,11 @@ public:
 void
 SanitizeOriginString(nsCString& aOrigin)
 {
+  
+  
+  
+  
+  static const char kReplaceChars[] = CONTROL_CHARACTERS "/:*?\"<>|\\";
 
 #ifdef XP_WIN
   NS_ASSERTION(!strcmp(kReplaceChars,
@@ -1088,7 +1087,7 @@ SanitizeOriginString(nsCString& aOrigin)
                "Illegal file characters have changed!");
 #endif
 
-  aOrigin.ReplaceChar(QuotaManager::kReplaceChars, '+');
+  aOrigin.ReplaceChar(kReplaceChars, '+');
 }
 
 bool
