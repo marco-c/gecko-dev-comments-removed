@@ -145,6 +145,15 @@ nsCanvasFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 
   
   mCustomContentContainer = doc->CreateHTMLElement(nsGkAtoms::div);
+#ifdef DEBUG
+  
+  
+  
+  
+  mCustomContentContainer->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                                       reinterpret_cast<void*>(true));
+#endif 
+
   aElements.AppendElement(mCustomContentContainer);
 
   

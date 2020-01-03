@@ -2079,6 +2079,7 @@ GK_ATOM(labelMouseDownPtProperty, "LabelMouseDownPtProperty")
 GK_ATOM(baseURIProperty, "baseURIProperty")
 GK_ATOM(lockedStyleStates, "lockedStyleStates")
 GK_ATOM(apzCallbackTransform, "apzCallbackTransform")
+GK_ATOM(restylableAnonymousNode, "restylableAnonymousNode")
 
 
 GK_ATOM(Japanese, "ja")

@@ -188,6 +188,15 @@ nsHTMLEditor::CreateAnonymousElement(const nsAString & aTag, nsIDOMNode *  aPare
   parentContent->AddMutationObserver(observer);
   newContent->AddMutationObserver(observer);
 
+#ifdef DEBUG
+  
+  
+  
+  
+  newContent->SetProperty(nsGkAtoms::restylableAnonymousNode,
+			  reinterpret_cast<void*>(true));
+#endif 
+
   
   ps->RecreateFramesFor(newContent);
 

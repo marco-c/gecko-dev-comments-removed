@@ -3839,6 +3839,14 @@ ScrollFrameHelper::CreateAnonymousContent(
   if (canHaveHorizontal) {
     nsRefPtr<NodeInfo> ni = nodeInfo;
     NS_TrustedNewXULElement(getter_AddRefs(mHScrollbarContent), ni.forget());
+#ifdef DEBUG
+    
+    
+    
+    mHScrollbarContent->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                                    reinterpret_cast<void*>(true));
+#endif 
+
     mHScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orient,
                                 NS_LITERAL_STRING("horizontal"), false);
     mHScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::clickthrough,
@@ -3854,6 +3862,14 @@ ScrollFrameHelper::CreateAnonymousContent(
   if (canHaveVertical) {
     nsRefPtr<NodeInfo> ni = nodeInfo;
     NS_TrustedNewXULElement(getter_AddRefs(mVScrollbarContent), ni.forget());
+#ifdef DEBUG
+    
+    
+    
+    mVScrollbarContent->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                                    reinterpret_cast<void*>(true));
+#endif 
+
     mVScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orient,
                                 NS_LITERAL_STRING("vertical"), false);
     mVScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::clickthrough,

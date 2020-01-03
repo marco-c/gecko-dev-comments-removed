@@ -6566,7 +6566,8 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
   } else {
     
     iter.GetNextChild();
-    NS_WARNING("Someone passed native anonymous content directly into frame "
+    MOZ_ASSERT(aChild->GetProperty(nsGkAtoms::restylableAnonymousNode),
+               "Someone passed native anonymous content directly into frame "
                "construction.  Stop doing that!");
   }
 

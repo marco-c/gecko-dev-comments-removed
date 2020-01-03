@@ -268,6 +268,16 @@ SVGUseElement::CreateAnonymousContent()
   if (!newcontent)
     return nullptr;
 
+#ifdef DEBUG
+  
+  
+  
+  
+  newcontent->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                          reinterpret_cast<void*>(true));
+#endif 
+
+
   if (newcontent->IsSVGElement(nsGkAtoms::symbol)) {
     nsIDocument *document = GetComposedDoc();
     if (!document)
