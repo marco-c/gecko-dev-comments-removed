@@ -22,6 +22,7 @@
 #include "RootAccessible.h"
 #include "nsAccessiblePivot.h"
 #include "nsAccUtils.h"
+#include "nsArrayUtils.h"
 #include "nsAttrName.h"
 #include "nsEventShell.h"
 #include "nsIURI.h"
@@ -276,11 +277,70 @@ nsAccessibilityService::~nsAccessibilityService()
 
 
 
+NS_IMETHODIMP
+nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges)
+{
+  uint32_t targetCount;
+  nsresult rv = aEventChanges->GetLength(&targetCount);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  for (uint32_t i = 0 ; i < targetCount ; i++) {
+    nsCOMPtr<nsIEventListenerChange> change = do_QueryElementAt(aEventChanges, i);
+
+    nsCOMPtr<nsIDOMEventTarget> target;
+    change->GetTarget(getter_AddRefs(target));
+    nsCOMPtr<nsIContent> node(do_QueryInterface(target));
+    if (!node || !node->IsHTMLElement()) {
+      continue;
+    }
+    nsCOMPtr<nsIArray> listenerNames;
+    change->GetChangedListenerNames(getter_AddRefs(listenerNames));
+
+    uint32_t changeCount;
+    rv = listenerNames->GetLength(&changeCount);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    for (uint32_t i = 0 ; i < changeCount ; i++) {
+      nsCOMPtr<nsIAtom> listenerName = do_QueryElementAt(listenerNames, i);
+
+      
+      
+      if (listenerName != nsGkAtoms::onclick &&
+          listenerName != nsGkAtoms::onmousedown &&
+          listenerName != nsGkAtoms::onmouseup) {
+        continue;
+      }
+
+      nsIDocument* ownerDoc = node->OwnerDoc();
+      DocAccessible* document = GetExistingDocAccessible(ownerDoc);
+
+      
+      if (document) {
+        if (nsCoreUtils::HasClickListener(node)) {
+          if (!document->GetAccessible(node)) {
+            document->RecreateAccessible(node);
+          }
+        } else {
+          if (document->GetAccessible(node)) {
+            document->RecreateAccessible(node);
+          }
+        }
+        break;
+      }
+    }
+  }
+  return NS_OK;
+}
+
+
+
+
 NS_IMPL_ISUPPORTS_INHERITED(nsAccessibilityService,
                             DocManager,
                             nsIAccessibilityService,
                             nsIAccessibleRetrieval,
                             nsIObserver,
+                            nsIListenerChangeListener,
                             nsISelectionListener) 
 
 
@@ -1257,6 +1317,14 @@ nsAccessibilityService::Init()
 
   static const char16_t kInitIndicator[] = { '1', 0 };
   observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown", kInitIndicator);
+
+  
+  nsCOMPtr<nsIEventListenerService> eventListenerService =
+    do_GetService("@mozilla.org/eventlistenerservice;1");
+  if (!eventListenerService)
+    return false;
+
+  eventListenerService->AddListenerChangeListener(this);
 
   for (uint32_t i = 0; i < ArrayLength(sMarkupMapList); i++)
     mMarkupMaps.Put(*sMarkupMapList[i].tag, &sMarkupMapList[i]);
