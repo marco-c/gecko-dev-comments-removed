@@ -1253,7 +1253,7 @@ ArrayReverseDenseKernel(JSContext* cx, HandleObject obj, uint32_t length)
         
         
         
-        if (length != obj->as<UnboxedArrayObject>().length())
+        if (length != obj->as<UnboxedArrayObject>().initializedLength())
             return DenseElementResult::Incomplete;
     }
 
