@@ -22,8 +22,9 @@ class Element;
 } 
 
 #define NS_IMUTATION_OBSERVER_IID \
-{ 0x51a4cec3, 0xb720, 0x4893, \
-  { 0xb1, 0x11, 0x33, 0xca, 0xbe, 0xae, 0xbf, 0x57 } }
+{ 0xdd74f0cc, 0x2849, 0x4d05, \
+  { 0x9c, 0xe3, 0xb0, 0x95, 0x3e, 0xc2, 0xfd, 0x44 } }
+
 
 
 
@@ -164,11 +165,14 @@ public:
 
 
 
+
+
   virtual void AttributeWillChange(nsIDocument* aDocument,
                                    mozilla::dom::Element* aElement,
                                    int32_t      aNameSpaceID,
                                    nsIAtom*     aAttribute,
-                                   int32_t      aModType) = 0;
+                                   int32_t      aModType,
+                                   const nsAttrValue* aNewValue) = 0;
 
   
 
@@ -339,7 +343,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIMutationObserver, NS_IMUTATION_OBSERVER_IID)
                                      mozilla::dom::Element* aElement,        \
                                      int32_t aNameSpaceID,                   \
                                      nsIAtom* aAttribute,                    \
-                                     int32_t aModType) override;
+                                     int32_t aModType,                       \
+                                     const nsAttrValue* aNewValue) override;
 
 #define NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED                         \
     virtual void AttributeChanged(nsIDocument* aDocument,                    \
@@ -409,7 +414,8 @@ _class::AttributeWillChange(nsIDocument* aDocument,                       \
                             mozilla::dom::Element* aElement,              \
                             int32_t aNameSpaceID,                         \
                             nsIAtom* aAttribute,                          \
-                            int32_t aModType)                             \
+                            int32_t aModType,                             \
+                            const nsAttrValue* aNewValue)                 \
 {                                                                         \
 }                                                                         \
 void                                                                      \

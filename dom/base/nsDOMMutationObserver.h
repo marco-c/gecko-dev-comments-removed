@@ -374,7 +374,7 @@ public:
   {
     
     AttributeWillChange(aDocument, aElement, aNameSpaceID, aAttribute,
-                        nsIDOMMutationEvent::MODIFICATION);
+                        nsIDOMMutationEvent::MODIFICATION, nullptr);
   }
 
 protected:
