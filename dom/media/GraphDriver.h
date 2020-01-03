@@ -127,10 +127,6 @@ public:
     return mIterationEnd;
   }
 
-  GraphTime StateComputedTime() {
-    return mStateComputedTime;
-  }
-
   virtual void GetAudioBuffer(float** aBuffer, long& aFrames) {
     MOZ_CRASH("This is not an Audio GraphDriver!");
   }
@@ -155,15 +151,7 @@ public:
 
   void SetGraphTime(GraphDriver* aPreviousDriver,
                     GraphTime aLastSwitchNextIterationStart,
-                    GraphTime aLastSwitchNextIterationEnd,
-                    GraphTime aLastSwitchStateComputedTime);
-
-  
-
-
-
-
-  void UpdateStateComputedTime(GraphTime aStateComputedTime);
+                    GraphTime aLastSwitchNextIterationEnd);
 
   
 
@@ -190,12 +178,12 @@ public:
   virtual bool OnThread() = 0;
 
 protected:
+  GraphTime StateComputedTime() const;
+
   
   GraphTime mIterationStart;
   
   GraphTime mIterationEnd;
-  
-  GraphTime mStateComputedTime;
   
   
   MediaStreamGraphImpl* mGraphImpl;

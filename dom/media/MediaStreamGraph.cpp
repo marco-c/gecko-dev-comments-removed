@@ -171,8 +171,8 @@ MediaStreamGraphImpl::ExtractPendingInput(SourceMediaStream* aStream,
       
       
       StreamTime t =
-        GraphTimeToStreamTime(aStream, CurrentDriver()->StateComputedTime()) +
-        (aDesiredUpToTime - CurrentDriver()->StateComputedTime());
+        GraphTimeToStreamTime(aStream, mStateComputedTime) +
+        (aDesiredUpToTime - mStateComputedTime);
       STREAM_LOG(LogLevel::Verbose, ("Calling NotifyPull aStream=%p t=%f current end=%f", aStream,
                                   MediaTimeToSeconds(t),
                                   MediaTimeToSeconds(aStream->mBuffer.GetEnd())));
@@ -254,7 +254,7 @@ StreamTime
 MediaStreamGraphImpl::GraphTimeToStreamTime(MediaStream* aStream,
                                             GraphTime aTime)
 {
-  MOZ_ASSERT(aTime <= CurrentDriver()->StateComputedTime(),
+  MOZ_ASSERT(aTime <= mStateComputedTime,
                "Don't ask about times where we haven't made blocking decisions yet");
   if (aTime <= IterationEnd()) {
     return std::max<StreamTime>(0, aTime - aStream->mBufferStartTime);
@@ -275,7 +275,7 @@ StreamTime
 MediaStreamGraphImpl::GraphTimeToStreamTimeOptimistic(MediaStream* aStream,
                                                       GraphTime aTime)
 {
-  GraphTime computedUpToTime = std::min(CurrentDriver()->StateComputedTime(), aTime);
+  GraphTime computedUpToTime = std::min(mStateComputedTime, aTime);
   StreamTime s = GraphTimeToStreamTime(aStream, computedUpToTime);
   return s + (aTime - computedUpToTime);
 }
@@ -303,9 +303,9 @@ MediaStreamGraphImpl::StreamTimeToGraphTime(MediaStream* aStream,
     }
     bool blocked;
     GraphTime end;
-    if (t < CurrentDriver()->StateComputedTime()) {
+    if (t < mStateComputedTime) {
       blocked = aStream->mBlocked.GetAt(t, &end);
-      end = std::min(end, CurrentDriver()->StateComputedTime());
+      end = std::min(end, mStateComputedTime);
     } else {
       blocked = false;
       end = GRAPH_TIME_MAX;
@@ -752,7 +752,7 @@ MediaStreamGraphImpl::RecomputeBlocking(GraphTime aEndBlockingDecisions)
   bool blockingDecisionsWillChange = false;
 
   STREAM_LOG(LogLevel::Verbose, ("Media graph %p computing blocking for time %f",
-                              this, MediaTimeToSeconds(CurrentDriver()->StateComputedTime())));
+                              this, MediaTimeToSeconds(mStateComputedTime)));
   nsTArray<MediaStream*>* runningAndSuspendedPair[2];
   runningAndSuspendedPair[0] = &mStreams;
   runningAndSuspendedPair[1] = &mSuspendedStreams;
@@ -768,7 +768,7 @@ MediaStreamGraphImpl::RecomputeBlocking(GraphTime aEndBlockingDecisions)
         AddBlockingRelatedStreamsToSet(&streamSet, stream);
 
         GraphTime end;
-        for (GraphTime t = CurrentDriver()->StateComputedTime();
+        for (GraphTime t = mStateComputedTime;
              t < aEndBlockingDecisions; t = end) {
           end = GRAPH_TIME_MAX;
           RecomputeBlockingAt(streamSet, t, aEndBlockingDecisions, &end);
@@ -786,10 +786,18 @@ MediaStreamGraphImpl::RecomputeBlocking(GraphTime aEndBlockingDecisions)
     }
   }
   STREAM_LOG(LogLevel::Verbose, ("Media graph %p computed blocking for interval %f to %f",
-                              this, MediaTimeToSeconds(CurrentDriver()->StateComputedTime()),
+                              this, MediaTimeToSeconds(mStateComputedTime),
                               MediaTimeToSeconds(aEndBlockingDecisions)));
 
-  CurrentDriver()->UpdateStateComputedTime(aEndBlockingDecisions);
+  MOZ_ASSERT(aEndBlockingDecisions >= IterationEnd());
+  
+  
+  
+  if (aEndBlockingDecisions < mStateComputedTime) {
+    printf("State time can't go backward %ld < %ld.\n", static_cast<long>(aEndBlockingDecisions), static_cast<long>(mStateComputedTime));
+  }
+
+  mStateComputedTime = aEndBlockingDecisions;
 
   if (blockingDecisionsWillChange) {
     
@@ -1128,13 +1136,13 @@ MediaStreamGraphImpl::PlayVideo(MediaStream* aStream)
   
   
   GraphTime framePosition = IterationEnd() + MillisecondsToMediaTime(CurrentDriver()->IterationDuration());
-  if (framePosition > CurrentDriver()->StateComputedTime()) {
+  if (framePosition > mStateComputedTime) {
 #ifdef DEBUG
-    if (std::abs(framePosition - CurrentDriver()->StateComputedTime()) >= MillisecondsToMediaTime(5)) {
+    if (std::abs(framePosition - mStateComputedTime) >= MillisecondsToMediaTime(5)) {
       STREAM_LOG(LogLevel::Debug, ("Graph thread slowdown?"));
     }
 #endif
-    framePosition = CurrentDriver()->StateComputedTime();
+    framePosition = mStateComputedTime;
   }
   MOZ_ASSERT(framePosition >= aStream->mBufferStartTime, "frame position before buffer?");
   StreamTime frameBufferTime = GraphTimeToStreamTime(aStream, framePosition);
@@ -1322,7 +1330,7 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecision)
   
   
   if (ensureNextIteration ||
-      aEndBlockingDecision == CurrentDriver()->StateComputedTime()) {
+      aEndBlockingDecision == mStateComputedTime) {
     EnsureNextIteration();
   }
 
@@ -1904,7 +1912,7 @@ MediaStream::Init()
   MediaStreamGraphImpl* graph = GraphImpl();
   mBlocked.SetAtAndAfter(graph->IterationEnd(), true);
   mExplicitBlockerCount.SetAtAndAfter(graph->IterationEnd(), true);
-  mExplicitBlockerCount.SetAtAndAfter(graph->CurrentDriver()->StateComputedTime(), false);
+  mExplicitBlockerCount.SetAtAndAfter(graph->mStateComputedTime, false);
 }
 
 MediaStreamGraphImpl*
@@ -2139,7 +2147,7 @@ MediaStream::ChangeExplicitBlockerCount(int32_t aDelta)
     virtual void Run()
     {
       mStream->ChangeExplicitBlockerCountImpl(
-          mStream->GraphImpl()->CurrentDriver()->StateComputedTime(), mDelta);
+          mStream->GraphImpl()->mStateComputedTime, mDelta);
     }
     int32_t mDelta;
   };
@@ -2162,7 +2170,7 @@ MediaStream::BlockStreamIfNeeded()
     virtual void Run()
     {
       mStream->BlockStreamIfNeededImpl(
-          mStream->GraphImpl()->CurrentDriver()->StateComputedTime());
+          mStream->GraphImpl()->mStateComputedTime);
     }
   };
 
@@ -2182,7 +2190,7 @@ MediaStream::UnblockStreamIfNeeded()
     virtual void Run()
     {
       mStream->UnblockStreamIfNeededImpl(
-          mStream->GraphImpl()->CurrentDriver()->StateComputedTime());
+          mStream->GraphImpl()->mStateComputedTime);
     }
   };
 
@@ -2635,7 +2643,7 @@ SourceMediaStream::GetBufferedTicks(TrackID aID)
     MediaSegment* segment = track->GetSegment();
     if (segment) {
       return segment->GetDuration() -
-          GraphTimeToStreamTime(GraphImpl()->CurrentDriver()->StateComputedTime());
+          GraphTimeToStreamTime(GraphImpl()->mStateComputedTime);
     }
   }
   return 0;
@@ -3445,7 +3453,7 @@ MediaStreamGraph::StartNonRealtimeProcessing(uint32_t aTicksToProcess)
     return;
 
   graph->mEndTime =
-    graph->RoundUpToNextAudioBlock(graph->CurrentDriver()->StateComputedTime() +
+    graph->RoundUpToNextAudioBlock(graph->mStateComputedTime +
                                    aTicksToProcess - 1);
   graph->mNonRealtimeProcessing = true;
   graph->EnsureRunInStableState();

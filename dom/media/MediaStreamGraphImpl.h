@@ -564,6 +564,12 @@ public:
   
 
 
+
+
+  GraphTime mStateComputedTime = 0;
+  
+
+
   TimeStamp mLastMainThreadUpdate;
   
 
