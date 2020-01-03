@@ -265,7 +265,7 @@ public:
 
   
   
-  nsRefPtr<ImportLoader> GetNearestPredecessor(nsINode* aNode);
+  ImportLoader* GetNearestPredecessor(nsINode* aNode);
 
 private:
   ImportMap mImports;
