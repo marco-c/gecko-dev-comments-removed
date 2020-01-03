@@ -43,6 +43,7 @@ namespace gonk {
 
 
 enum AudioOutputProfiles {
+  DEVICE_ERROR        = -1,
   DEVICE_PRIMARY      = 0,
   DEVICE_HEADSET      = 1,
   DEVICE_BLUETOOTH    = 2,
@@ -73,7 +74,7 @@ struct VolumeData {
 };
 
 class RecoverTask;
-class AudioChannelVolInitCallback;
+class VolumeInitCallback;
 class AudioProfileData;
 
 class AudioManager final : public nsIAudioManager
@@ -89,7 +90,7 @@ public:
   
   
   friend class RecoverTask;
-  friend class AudioChannelVolInitCallback;
+  friend class VolumeInitCallback;
 
   
   void SwitchProfileData(AudioOutputProfiles aProfile, bool aActive);
@@ -122,7 +123,8 @@ private:
   void CreateAudioProfilesData();
 
   
-  void InitProfilesVolume(uint32_t aCatogory, uint32_t aIndex);
+  void InitProfileVolume(AudioOutputProfiles aProfile,
+                        uint32_t aCatogory, uint32_t aIndex);
 
   
   void UpdateVolumeToProfile(AudioProfileData* aProfileData);
@@ -142,6 +144,17 @@ private:
   uint32_t GetMaxVolumeByCategory(uint32_t aCategory) const;
 
   AudioProfileData* FindAudioProfileData(AudioOutputProfiles aProfile);
+
+  
+  nsAutoCString AppendProfileToVolumeSetting(const char* aName,
+                                             AudioOutputProfiles aProfile);
+
+  
+  void InitVolumeFromDatabase();
+
+  
+  void InitProfileVolumeSucceeded();
+  void InitProfileVolumeFailed(const char* aError);
 
   AudioManager();
   ~AudioManager();
