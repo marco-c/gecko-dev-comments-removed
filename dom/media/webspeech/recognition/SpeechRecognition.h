@@ -266,6 +266,17 @@ private:
   
   bool mInterimResults;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t mMaxAlternatives;
+
   void ProcessTestEventRequest(nsISupports* aSubject, const nsAString& aEventName);
 
   const char* GetName(FSMState aId);
