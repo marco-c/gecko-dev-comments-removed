@@ -17,14 +17,16 @@
 #ifndef nsScreenManagerGonk_h___
 #define nsScreenManagerGonk_h___
 
-#include "mozilla/Hal.h"
-
 #include "cutils/properties.h"
 #include "hardware/hwcomposer.h"
+
 #include "libdisplay/GonkDisplay.h"
+#include "mozilla/Hal.h"
+#include "mozilla/Mutex.h"
 #include "nsBaseScreen.h"
 #include "nsCOMPtr.h"
 #include "nsIScreenManager.h"
+#include "nsProxyRelease.h"
 
 #include <android/native_window.h>
 
@@ -88,10 +90,24 @@ public:
     }
 
     
+    bool EnableMirroring();
+    bool DisableMirroring();
+    bool IsMirroring()
+    {
+        return mIsMirroring;
+    }
+
+    
+    bool SetMirroringScreen(nsScreenGonk* aScreen);
+    bool ClearMirroringScreen(nsScreenGonk* aScreen);
+
+    
     void SetEGLInfo(hwc_display_t aDisplay, hwc_surface_t aSurface,
                     mozilla::gl::GLContext* aGLContext);
     hwc_display_t GetEGLDisplay();
     hwc_surface_t GetEGLSurface();
+    void UpdateMirroringWidget(already_AddRefed<nsWindow>& aWindow); 
+    nsWindow* GetMirroringWidget(); 
 
 protected:
     uint32_t mId;
@@ -107,12 +123,15 @@ protected:
 #if ANDROID_VERSION >= 17
     android::sp<android::DisplaySurface> mDisplaySurface;
 #endif
+    bool mIsMirroring; 
+    nsRefPtr<nsScreenGonk> mMirroringScreen; 
 
     
     GonkDisplay::DisplayType mDisplayType;
     hwc_display_t mEGLDisplay;
     hwc_surface_t mEGLSurface;
-    mozilla::gl::GLContext* mGLContext;
+    nsRefPtr<mozilla::gl::GLContext> mGLContext;
+    nsRefPtr<nsWindow> mMirroringWidget; 
 };
 
 class nsScreenManagerGonk final : public nsIScreenManager
@@ -133,7 +152,7 @@ public:
     void DisplayEnabled(bool aEnabled);
 
     nsresult AddScreen(GonkDisplay::DisplayType aDisplayType,
-                       android::IGraphicBufferProducer* aProducer = nullptr);
+                       android::IGraphicBufferProducer* aSink = nullptr);
 
     nsresult RemoveScreen(GonkDisplay::DisplayType aDisplayType);
 

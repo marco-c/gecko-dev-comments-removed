@@ -997,6 +997,9 @@ pref("gfx.canvas.max-size-for-skia-gl", -1);
 pref("gfx.gralloc.fence-with-readpixels", true);
 
 
+pref("gfx.screen-mirroring.enabled", true);
+
+
 pref("b2g.neterror.url", "net_error.html");
 
 
