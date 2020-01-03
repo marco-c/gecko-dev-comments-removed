@@ -7199,7 +7199,9 @@ var gIdentityHandler = {
     let position = elem.compareDocumentPosition(this._identityPopup);
 
     if (!(position & (Node.DOCUMENT_POSITION_CONTAINS |
-                      Node.DOCUMENT_POSITION_CONTAINED_BY))) {
+                      Node.DOCUMENT_POSITION_CONTAINED_BY)) &&
+        !this._identityPopup.hasAttribute("noautohide")) {
+      
       
       
       this._identityPopup.hidePopup();
