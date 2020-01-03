@@ -48,7 +48,7 @@ WMFMediaDataDecoder::Init()
 
 
 static void
-SendTelemetry(HRESULT hr)
+SendTelemetry(unsigned long hr)
 {
   
   
