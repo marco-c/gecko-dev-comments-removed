@@ -34,6 +34,7 @@
 # define LOG_S "%S"
 
 #include "../common/updatehelper.h"
+#include "../common/certificatecheck.h"
 
 #else
 # include <unistd.h>
@@ -132,45 +133,6 @@ CheckMsg(const NS_tchar *path, const char *expected)
   return isMatch;
 }
 
-#ifdef XP_WIN
-
-
-
-
-
-
-DWORD
-VerifyCertificateTrustForFile(LPCWSTR filePath)
-{
-  
-  WINTRUST_FILE_INFO fileToCheck;
-  ZeroMemory(&fileToCheck, sizeof(fileToCheck));
-  fileToCheck.cbStruct = sizeof(WINTRUST_FILE_INFO);
-  fileToCheck.pcwszFilePath = filePath;
-
-  
-  WINTRUST_DATA trustData;
-  ZeroMemory(&trustData, sizeof(trustData));
-  trustData.cbStruct = sizeof(trustData);
-  trustData.pPolicyCallbackData = nullptr;
-  trustData.pSIPClientData = nullptr;
-  trustData.dwUIChoice = WTD_UI_NONE;
-  trustData.fdwRevocationChecks = WTD_REVOKE_NONE;
-  trustData.dwUnionChoice = WTD_CHOICE_FILE;
-  trustData.dwStateAction = 0;
-  trustData.hWVTStateData = nullptr;
-  trustData.pwszURLReference = nullptr;
-  
-  trustData.dwUIContext = 0;
-  trustData.pFile = &fileToCheck;
-
-  GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-  
-  return WinVerifyTrust(nullptr, &policyGUID, &trustData);
-}
-
-#endif
-
 int NS_main(int argc, NS_tchar **argv)
 {
   if (argc == 2) {
@@ -187,6 +149,16 @@ int NS_main(int argc, NS_tchar **argv)
       NS_tchar runFilePath[MAXPATHLEN];
       NS_tsnprintf(runFilePath, sizeof(runFilePath)/sizeof(runFilePath[0]),
                    NS_T("%s.running"), exePath);
+#ifdef XP_WIN
+      if (!NS_taccess(runFilePath, F_OK)) {
+        
+        
+        NS_tchar runFilePathBak[MAXPATHLEN];
+        NS_tsnprintf(runFilePathBak, sizeof(runFilePathBak)/sizeof(runFilePathBak[0]),
+                     NS_T("%s.bak"), runFilePath);
+        MoveFileExW(runFilePath, runFilePathBak, MOVEFILE_REPLACE_EXISTING);
+      }
+#endif
       WriteMsg(runFilePath, "running");
 
       if (!NS_tstrcmp(argv[1], NS_T("post-update-sync"))) {

@@ -1083,7 +1083,6 @@ function shouldUseService() {
 
 
 
-
 function isServiceInstalled() {
   if (AppConstants.MOZ_MAINTENANCE_SERVICE && AppConstants.platform == "win") {
     let installed = 0;

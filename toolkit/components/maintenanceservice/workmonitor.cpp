@@ -209,23 +209,6 @@ StartUpdateProcess(int argc,
   
   
   
-  
-  
-  
-  WCHAR updaterINI[MAX_PATH + 1];
-  WCHAR updaterINITemp[MAX_PATH + 1];
-  BOOL selfHandlePostUpdate = FALSE;
-  
-  
-  if (PathGetSiblingFilePath(updaterINI, argv[0], L"updater.ini") &&
-      PathGetSiblingFilePath(updaterINITemp, argv[0], L"updater.tmp")) {
-    selfHandlePostUpdate = MoveFileExW(updaterINI, updaterINITemp,
-                                       MOVEFILE_REPLACE_EXISTING);
-  }
-
-  
-  
-  
   putenv(const_cast<char*>("MOZ_USING_SERVICE=1"));
   LOG(("Starting service with cmdline: %ls", cmdLine));
   processStarted = CreateProcessW(argv[0], cmdLine,
@@ -297,37 +280,6 @@ StartUpdateProcess(int argc,
               argv[0], cmdLine, lastError));
   }
 
-  
-  
-  
-  if (selfHandlePostUpdate) {
-    MoveFileExW(updaterINITemp, updaterINI, MOVEFILE_REPLACE_EXISTING);
-
-    
-    if (updateWasSuccessful && argc > index) {
-      LPCWSTR updateInfoDir = argv[1];
-      bool stagingUpdate = IsUpdateBeingStaged(argc, argv);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!stagingUpdate) {
-        LOG(("Launching post update process as the service in session 0."));
-        if (!LaunchWinPostProcess(installDir, updateInfoDir, true, nullptr)) {
-          LOG_WARN(("The post update process could not be launched."
-                    " installDir: %ls, updateInfoDir: %ls",
-                    installDir, updateInfoDir));
-        }
-      }
-    }
-  }
   
   putenv(const_cast<char*>("MOZ_USING_SERVICE="));
 
