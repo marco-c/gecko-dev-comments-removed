@@ -15,6 +15,7 @@
 #include "mozilla/Scoped.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Vector.h"
 
 #include <setjmp.h>
 
@@ -1526,27 +1527,25 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-        uint64_t iteration;
+
+        JSCurrentPerfGroupCallback currentPerfGroupCallback;
 
         
 
 
-
-
-
-
-
-
-
-        JSCurrentPerfGroupCallback currentPerfGroupCallback;
+        uint64_t iteration() {
+            return iteration_;
+        }
 
         explicit Stopwatch(JSRuntime* runtime)
           : performance(runtime)
-          , iteration(0)
           , currentPerfGroupCallback(nullptr)
+          , totalCPOWTime(0)
           , isMonitoringJank_(false)
           , isMonitoringCPOW_(false)
           , isMonitoringPerCompartment_(false)
+          , iteration_(0)
+          , startedAtIteration_(0)
           , idCounter_(0)
         { }
 
@@ -1557,10 +1556,26 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-        void reset() {
-            ++iteration;
-        }
+
+        void reset();
+
         
+
+
+
+
+
+
+        void start();
+
+        
+
+
+
+        void commit();
+
+        
+
 
 
 
@@ -1587,6 +1602,18 @@ struct JSRuntime : public JS::shadow::Runtime,
             return isMonitoringJank_;
         }
 
+        
+
+
+
+
+
+
+
+
+
+
+
         bool setIsMonitoringPerCompartment(bool value) {
             if (isMonitoringPerCompartment_ != value)
                 reset();
@@ -1606,7 +1633,24 @@ struct JSRuntime : public JS::shadow::Runtime,
         
 
 
+
+
+
+
+
+
+
+
+
         bool setIsMonitoringCPOW(bool value) {
+            if (isMonitoringCPOW_ != value)
+                reset();
+
+            if (value && !groups_.initialized()) {
+                if (!groups_.init(128))
+                    return false;
+            }
+
             isMonitoringCPOW_ = value;
             return true;
         }
@@ -1623,31 +1667,36 @@ struct JSRuntime : public JS::shadow::Runtime,
         }
 
         
-        
-        
-        
-        
-        struct MonotonicTimeStamp {
-            MonotonicTimeStamp()
-              : latestGood_(0)
-            {}
-            inline uint64_t monotonize(uint64_t stamp)
-            {
-                if (stamp <= latestGood_)
-                    return latestGood_;
-                latestGood_ = stamp;
-                return stamp;
-            }
-          private:
-            uint64_t latestGood_;
-        };
-        MonotonicTimeStamp systemTimeFix;
-        MonotonicTimeStamp userTimeFix;
 
+
+
+
+
+        void addChangedGroup(js::PerformanceGroup* group) {
+            MOZ_ASSERT(group->recentTicks == 0);
+            touchedGroups.append(group);
+        }
+
+        
+        
+        uint64_t totalCPOWTime;
     private:
         Stopwatch(const Stopwatch&) = delete;
         Stopwatch& operator=(const Stopwatch&) = delete;
 
+        
+        
+        
+        void transferDeltas(uint64_t totalUserTimeDelta,
+                            uint64_t totalSystemTimeDelta,
+                            uint64_t totalCyclesDelta,
+                            js::PerformanceGroup* destination);
+
+        
+        
+        bool getResources(uint64_t* userTime, uint64_t* systemTime) const;
+
+    private:
         Groups groups_;
         friend struct js::PerformanceGroupHolder;
 
@@ -1655,13 +1704,54 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
         bool isMonitoringJank_;
+        
+
+
         bool isMonitoringCPOW_;
+        
+
+
+
         bool isMonitoringPerCompartment_;
 
         
 
 
+
+
+
+
+
+
+        uint64_t iteration_;
+
+        
+
+
+
+
+
+
+        uint64_t startedAtIteration_;
+
+        
+
+
         uint64_t idCounter_;
+
+        
+
+
+
+        uint64_t userTimeStart_;
+        uint64_t systemTimeStart_;
+
+        
+
+
+
+
+        mozilla::Vector<mozilla::RefPtr<js::PerformanceGroup>> touchedGroups;
     };
     Stopwatch stopwatch;
 };

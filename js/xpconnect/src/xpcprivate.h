@@ -615,10 +615,24 @@ public:
 
     PRTime GetWatchdogTimestamp(WatchdogTimestampCategory aCategory);
 
+    
+    
+    void OnBeforeProcessNextEvent() {
+        
+        
+        js::ResetPerformanceMonitoring(Get()->Runtime());
+    }
+
+    
+    
+    void OnAfterMicroTaskCheckPoint() {
+        
+        
+        js::FlushPerformanceMonitoring(Get()->Runtime());
+    }
     void OnProcessNextEvent() {
         mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
         mSlowScriptSecondHalf = false;
-        js::ResetStopwatches(Get()->Runtime());
     }
     void OnAfterProcessNextEvent() {
         mSlowScriptCheckpoint = mozilla::TimeStamp();
