@@ -137,16 +137,17 @@ function saveBrowser(aBrowser, aSkipPrompt)
   let persistable = aBrowser.QueryInterface(Ci.nsIFrameLoaderOwner)
                     .frameLoader
                     .QueryInterface(Ci.nsIWebBrowserPersistable);
+  let stack = Components.stack.caller;
   persistable.startPersistence({
     onDocumentReady: function (document) {
       saveDocument(document, aSkipPrompt);
+    },
+    onError: function (status) {
+      throw new Components.Exception("saveBrowser failed asynchronously in startPersistence",
+                                     status, stack);
     }
-    
-    
-    
   });
 }
-
 
 
 
