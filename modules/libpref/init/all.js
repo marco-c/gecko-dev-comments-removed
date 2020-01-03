@@ -2183,9 +2183,6 @@ pref("layout.word_select.stop_at_punctuation", true);
 pref("layout.selection.caret_style", 0);
 
 
-pref("layout.frames.force_resizability", false);
-
-
 pref("layout.css.report_errors", true);
 
 
