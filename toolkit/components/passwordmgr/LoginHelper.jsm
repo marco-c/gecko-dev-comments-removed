@@ -258,4 +258,25 @@ this.LoginHelper = {
 
     return newLogin;
   },
+
+  
+
+
+
+
+
+
+
+
+  openPasswordManager(window, filterString = "") {
+    let win = Services.wm.getMostRecentWindow("Toolkit:PasswordManager");
+    if (win) {
+      win.setFilter(filterString);
+      win.focus();
+    } else {
+      window.openDialog("chrome://passwordmgr/content/passwordManager.xul",
+                        "Toolkit:PasswordManager", "",
+                        {filterString : filterString});
+    }
+  },
 };
