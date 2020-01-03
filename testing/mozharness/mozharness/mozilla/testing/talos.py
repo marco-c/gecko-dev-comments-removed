@@ -523,14 +523,17 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin):
         
         if self.has_cloned_talos:
             
+            super(Talos, self).create_virtualenv(
+                modules=['mozinstall', 'pip>=1.5']
+            )
             
-            return super(Talos, self).create_virtualenv(
-                modules=['mozinstall'],
+            
+            self.install_module(
                 requirements=[os.path.join(self.talos_path,
                                            'requirements.txt')]
             )
         else:
-            return super(Talos, self).create_virtualenv(**kwargs)
+            super(Talos, self).create_virtualenv(**kwargs)
 
     def postflight_create_virtualenv(self):
         """ This belongs in download_and_install() but requires the
