@@ -81,22 +81,10 @@ class SavedFrame : public NativeObject {
         JSSLOT_ASYNCCAUSE,
         JSSLOT_PARENT,
         JSSLOT_PRINCIPALS,
-        JSSLOT_PRIVATE_PARENT,
 
         
         JSSLOT_COUNT
     };
-
-    
-    
-    
-    
-    
-    
-    
-    
-    bool parentMoved();
-    void updatePrivateParent();
 
     static bool checkThis(JSContext* cx, CallArgs& args, const char* fnName,
                           MutableHandleObject frame);

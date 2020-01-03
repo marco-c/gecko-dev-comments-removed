@@ -1253,6 +1253,9 @@ class JSScript : public js::gc::TenuredCell
     }
 
     
+    size_t calculateLiveFixed(jsbytecode* pc);
+
+    
     size_t fixedLexicalBegin() const {
         return nfixedvars();
     }
