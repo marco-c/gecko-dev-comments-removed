@@ -7,6 +7,18 @@
 #ifndef mozilla_nsRefPtr_h
 #define mozilla_nsRefPtr_h
 
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#  define MOZ_HAVE_REF_QUALIFIERS
+#elif defined(__clang__)
+
+#  define MOZ_HAVE_REF_QUALIFIERS
+#elif defined(__GNUC__)
+#  include "mozilla/Compiler.h"
+#  if MOZ_GCC_VERSION_AT_LEAST(4, 8, 1)
+#    define MOZ_HAVE_REF_QUALIFIERS
+#  endif
+#endif
+
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -241,6 +253,9 @@ public:
   }
 
   operator T*() const
+#ifdef MOZ_HAVE_REF_QUALIFIERS
+  &
+#endif
   
 
 
@@ -252,6 +267,19 @@ public:
   {
     return get();
   }
+
+#ifdef MOZ_HAVE_REF_QUALIFIERS
+  
+  
+  
+  operator T*() const && = delete;
+
+  
+  
+  
+  explicit operator bool() const { return !!mRawPtr; }
+  bool operator!() const { return !mRawPtr; }
+#endif
 
   T*
   operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN
@@ -570,5 +598,9 @@ do_AddRef(T*&& aObj)
   nsRefPtr<T> ref(aObj);
   return ref.forget();
 }
+
+#ifdef MOZ_HAVE_REF_QUALIFIERS
+#undef MOZ_HAVE_REF_QUALIFIERS
+#endif
 
 #endif 
