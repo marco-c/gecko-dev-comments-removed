@@ -18,14 +18,10 @@
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/mozalloc.h"
 #include "nsContentTypeParser.h"
-#include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsError.h"
-#include "nsIEffectiveTLDService.h"
 #include "nsIRunnable.h"
 #include "nsIScriptObjectPrincipal.h"
-#include "nsIURI.h"
-#include "nsNetCID.h"
 #include "nsPIDOMWindow.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -103,8 +99,7 @@ IsTypeSupported(const nsAString& aType)
         }
         return NS_OK;
       } else if (DecoderTraits::IsWebMType(mimeTypeUTF8)) {
-        if (!Preferences::GetBool("media.mediasource.webm.enabled", false) ||
-            Preferences::GetBool("media.mediasource.format-reader", false)) {
+        if (!Preferences::GetBool("media.mediasource.webm.enabled", false)) {
           return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
         }
         if (hasCodecs &&
@@ -342,46 +337,7 @@ MediaSource::IsTypeSupported(const GlobalObject&, const nsAString& aType)
  bool
 MediaSource::Enabled(JSContext* cx, JSObject* aGlobal)
 {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  JS::Rooted<JSObject*> global(cx, aGlobal);
-
-  bool enabled = Preferences::GetBool("media.mediasource.enabled");
-  if (!enabled) {
-    return false;
-  }
-
-  
-  bool restrict = Preferences::GetBool("media.mediasource.whitelist", false);
-  if (!restrict) {
-    return true;
-  }
-
-  
-  
-  
-  nsIPrincipal* principal = nsContentUtils::ObjectPrincipal(global);
-  nsCOMPtr<nsIURI> uri;
-  if (NS_FAILED(principal->GetURI(getter_AddRefs(uri))) || !uri) {
-    return false;
-  }
-
-  nsCOMPtr<nsIEffectiveTLDService> tldServ =
-    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-  NS_ENSURE_TRUE(tldServ, false);
-
-  nsAutoCString eTLDplusOne;
-   if (NS_FAILED(tldServ->GetBaseDomain(uri, 0, eTLDplusOne))) {
-     return false;
-   }
-
-   return eTLDplusOne.EqualsLiteral("youtube.com") ||
-          eTLDplusOne.EqualsLiteral("youtube-nocookie.com") ||
-          eTLDplusOne.EqualsLiteral("netflix.com") ||
-          eTLDplusOne.EqualsLiteral("dailymotion.com") ||
-          eTLDplusOne.EqualsLiteral("dmcdn.net");
+  return Preferences::GetBool("media.mediasource.enabled");
 }
 
 bool
