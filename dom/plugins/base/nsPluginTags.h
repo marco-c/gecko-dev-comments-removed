@@ -20,8 +20,56 @@ struct nsPluginInfo;
 class nsNPAPIPlugin;
 
 
+#define NS_IINTERNALPLUGINTAG_IID \
+{ 0xe8fdd227, 0x27da, 0x46ee,     \
+  { 0xbe, 0xf3, 0x1a, 0xef, 0x5a, 0x8f, 0xc5, 0xb4 } }
 
-class nsPluginTag final : public nsIPluginTag
+class nsIInternalPluginTag : public nsIPluginTag
+{
+public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IINTERNALPLUGINTAG_IID)
+
+  nsIInternalPluginTag(const char* aName, const char* aDescription,
+                       const char* aFileName, const char* aVersion);
+  nsIInternalPluginTag(const char* aName, const char* aDescription,
+                       const char* aFileName, const char* aVersion,
+                       const nsTArray<nsCString>& aMimeTypes,
+                       const nsTArray<nsCString>& aMimeDescriptions,
+                       const nsTArray<nsCString>& aExtensions);
+
+  virtual bool IsEnabled() = 0;
+
+  const nsCString& Name() const { return mName; }
+  const nsCString& Description() const { return mDescription; }
+
+  const nsTArray<nsCString>& MimeTypes() const { return mMimeTypes; }
+
+  const nsTArray<nsCString>& MimeDescriptions() const {
+    return mMimeDescriptions;
+  }
+
+  const nsTArray<nsCString>& Extensions() const { return mExtensions; }
+
+  const nsCString& FileName() const { return mFileName; }
+
+  const nsCString& Version() const { return mVersion; }
+
+protected:
+  ~nsIInternalPluginTag();
+
+  nsCString     mName; 
+  nsCString     mDescription; 
+  nsCString     mFileName; 
+  nsCString     mVersion;  
+  nsTArray<nsCString> mMimeTypes; 
+  nsTArray<nsCString> mMimeDescriptions; 
+  nsTArray<nsCString> mExtensions; 
+};
+NS_DEFINE_STATIC_IID_ACCESSOR(nsIInternalPluginTag, NS_IINTERNALPLUGINTAG_IID)
+
+
+
+class nsPluginTag final : public nsIInternalPluginTag
 {
 public:
   NS_DECL_ISUPPORTS
@@ -69,7 +117,7 @@ public:
   
   bool IsActive();
 
-  bool IsEnabled();
+  bool IsEnabled() override;
   void SetEnabled(bool enabled);
   bool IsClicktoplay();
   bool IsBlocklisted();
@@ -94,18 +142,11 @@ public:
   
   bool          mHadLocalInstance;
 
-  nsCString     mName; 
-  nsCString     mDescription; 
-  nsTArray<nsCString> mMimeTypes; 
-  nsTArray<nsCString> mMimeDescriptions; 
-  nsTArray<nsCString> mExtensions; 
   PRLibrary     *mLibrary;
   nsRefPtr<nsNPAPIPlugin> mPlugin;
   bool          mIsJavaPlugin;
   bool          mIsFlashPlugin;
-  nsCString     mFileName; 
   nsCString     mFullPath; 
-  nsCString     mVersion;  
   int64_t       mLastModifiedTime;
   nsCOMPtr<nsITimer> mUnloadTimer;
 
