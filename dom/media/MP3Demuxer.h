@@ -377,7 +377,7 @@ private:
   double AverageFrameLength() const;
 
   
-  nsRefPtr<MediaResource> mSource;
+  MediaResourceIndex mSource;
 
   
   FrameParser mParser;
