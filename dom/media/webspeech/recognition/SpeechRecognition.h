@@ -83,9 +83,9 @@ public:
 
   void SetContinuous(bool aArg, ErrorResult& aRv);
 
-  bool GetInterimResults(ErrorResult& aRv) const;
+  bool InterimResults() const;
 
-  void SetInterimResults(bool aArg, ErrorResult& aRv);
+  void SetInterimResults(bool aArg);
 
   uint32_t GetMaxAlternatives(ErrorResult& aRv) const;
 
@@ -254,6 +254,17 @@ private:
   nsString mLang;
 
   nsRefPtr<SpeechGrammarList> mSpeechGrammarList;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mInterimResults;
 
   void ProcessTestEventRequest(nsISupports* aSubject, const nsAString& aEventName);
 
