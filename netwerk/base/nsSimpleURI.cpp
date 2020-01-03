@@ -297,6 +297,7 @@ nsSimpleURI::GetHostPort(nsACString &result)
 {
     
     
+    
     return NS_ERROR_FAILURE;
 }
 
@@ -525,6 +526,13 @@ nsSimpleURI::GetAsciiSpec(nsACString &result)
     if (NS_FAILED(rv)) return rv;
     NS_EscapeURL(buf, esc_OnlyNonASCII|esc_AlwaysCopy, result);
     return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSimpleURI::GetAsciiHostPort(nsACString &result)
+{
+    
+    return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP

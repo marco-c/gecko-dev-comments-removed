@@ -1091,19 +1091,34 @@ nsStandardURL::GetAsciiSpec(nsACString &result)
     NS_EscapeURL(Userpass(true), esc_OnlyNonASCII | esc_AlwaysCopy, result);
 
     
-    nsAutoCString escHostport;
-    if (mHost.mLen > 0) {
-        
-        (void) GetAsciiHost(escHostport);
-
-        
-        uint32_t pos = mHost.mPos + mHost.mLen;
-        if (pos < mPath.mPos)
-            escHostport += Substring(mSpec, pos, mPath.mPos - pos);
-    }
-    result += escHostport;
+    nsAutoCString hostport;
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(GetAsciiHostPort(hostport)));
+    result += hostport;
 
     NS_EscapeURL(Path(), esc_OnlyNonASCII | esc_AlwaysCopy, result);
+    return NS_OK;
+}
+
+
+NS_IMETHODIMP
+nsStandardURL::GetAsciiHostPort(nsACString &result)
+{
+    if (mHostEncoding == eEncoding_ASCII) {
+        result = Hostport();
+        return NS_OK;
+    }
+
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(GetAsciiHost(result)));
+
+    
+    
+    MOZ_ASSERT(result.FindChar(':') == -1, "The host must not be ipv6");
+
+    
+    uint32_t pos = mHost.mPos + mHost.mLen;
+    if (pos < mPath.mPos)
+        result += Substring(mSpec, pos, mPath.mPos - pos);
+
     return NS_OK;
 }
 
