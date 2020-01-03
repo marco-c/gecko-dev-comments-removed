@@ -10,7 +10,6 @@
 #include <stdlib.h>                     
 #include "DirectedGraph.h"              
 #include "Layers.h"                     
-#include "gfx3DMatrix.h"                
 #include "gfxLineSegment.h"             
 #include "gfxPoint.h"                   
 #include "gfxQuad.h"                    
@@ -41,11 +40,11 @@ enum LayerSortOrder {
 
 
 
-static gfxFloat RecoverZDepth(const gfx3DMatrix& aTransform, const gfxPoint& aPoint)
+static gfxFloat RecoverZDepth(const Matrix4x4& aTransform, const gfxPoint& aPoint)
 {
     const Point3D l(0, 0, 1);
     Point3D l0 = Point3D(aPoint.x, aPoint.y, 0);
-    Point3D p0 = aTransform.Transform3D(Point3D(0, 0, 0));
+    Point3D p0 = aTransform * Point3D(0, 0, 0);
     Point3D normal = aTransform.GetNormalVector();
 
     gfxFloat n = normal.DotProduct(p0 - l0); 
@@ -79,12 +78,12 @@ static LayerSortOrder CompareDepth(Layer* aOne, Layer* aTwo) {
   gfxRect ourRect = aOne->GetEffectiveVisibleRegion().GetBounds();
   gfxRect otherRect = aTwo->GetEffectiveVisibleRegion().GetBounds();
 
-  gfx3DMatrix ourTransform = To3DMatrix(aOne->GetTransform());
-  gfx3DMatrix otherTransform = To3DMatrix(aTwo->GetTransform());
+  Matrix4x4 ourTransform = aOne->GetTransform();
+  Matrix4x4 otherTransform = aTwo->GetTransform();
 
   
-  gfxQuad ourTransformedRect = ourTransform.TransformRect(ourRect);
-  gfxQuad otherTransformedRect = otherTransform.TransformRect(otherRect);
+  gfxQuad ourTransformedRect = ourRect.TransformToQuad(ourTransform);
+  gfxQuad otherTransformedRect = otherRect.TransformToQuad(otherTransform);
 
   gfxRect ourBounds = ourTransformedRect.GetBounds();
   gfxRect otherBounds = otherTransformedRect.GetBounds();

@@ -7,7 +7,6 @@
 #include "CompositableHost.h"           
 #include "FrameMetrics.h"               
 #include "Units.h"                      
-#include "gfx2DGlue.h"                  
 #include "gfxUtils.h"                   
 #include "mozilla/Assertions.h"         
 #include "mozilla/gfx/Matrix.h"         

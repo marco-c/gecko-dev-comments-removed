@@ -8,7 +8,6 @@
 #include "apz/src/AsyncPanZoomController.h"  
 #include "FrameMetrics.h"               
 #include "Units.h"                      
-#include "gfx2DGlue.h"                  
 #include "gfxPrefs.h"                   
 #include "gfxUtils.h"                   
 #include "mozilla/Assertions.h"         

@@ -22,7 +22,6 @@
 #include "TiledContentHost.h"
 #include "Units.h"                      
 #include "UnitTransforms.h"             
-#include "gfx2DGlue.h"                  
 #include "gfxPrefs.h"                   
 #ifdef XP_MACOSX
 #include "gfxPlatformMac.h"
