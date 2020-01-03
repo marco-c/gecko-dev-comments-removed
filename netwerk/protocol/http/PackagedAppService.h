@@ -24,9 +24,6 @@ class nsHttpResponseHead;
 
 
 
-
-
-
 class PackagedAppService final
   : public nsIPackagedAppService
 {
