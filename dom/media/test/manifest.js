@@ -1343,7 +1343,7 @@ function removeNodeAndSource(n) {
   
   n.onerror = null;
   
-  n.mozSrcObject = null;
+  n.srcObject = null;
   n.src = "";
   while (n.firstChild) {
     n.removeChild(n.firstChild);

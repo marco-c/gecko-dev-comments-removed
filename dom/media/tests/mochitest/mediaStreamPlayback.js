@@ -122,7 +122,7 @@ MediaStreamPlayback.prototype = {
                                          false);
 
       
-      this.mediaElement.mozSrcObject = this.mediaStream;
+      this.mediaElement.srcObject = this.mediaStream;
       this.mediaElement.play();
 
       
@@ -142,7 +142,7 @@ MediaStreamPlayback.prototype = {
 
   stopMediaElement : function() {
     this.mediaElement.pause();
-    this.mediaElement.mozSrcObject = null;
+    this.mediaElement.srcObject = null;
   }
 }
 

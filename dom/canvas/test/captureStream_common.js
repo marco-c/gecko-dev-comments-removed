@@ -35,7 +35,7 @@ CaptureStreamTestHelper.prototype = {
   
   requestFrame: function (video) {
     info("Requesting frame from " + video.id);
-    video.mozSrcObject.requestFrame();
+    video.srcObject.requestFrame();
   },
 
   
