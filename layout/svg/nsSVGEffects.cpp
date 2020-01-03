@@ -572,8 +572,18 @@ nsSVGEffects::GetPaintServer(nsIFrame *aTargetFrame, const nsStyleSVGPaint *aPai
   if (aPaint->mType != eStyleSVGPaintType_Server)
     return nullptr;
 
-  nsIFrame *frame = aTargetFrame->GetContent()->IsNodeOfType(nsINode::eTEXT) ?
-                      aTargetFrame->GetParent() : aTargetFrame;
+  
+  
+  
+  
+  nsIFrame* frame = aTargetFrame;
+  if (frame->GetContent()->IsNodeOfType(nsINode::eTEXT)) {
+    frame = frame->GetParent();
+    nsIFrame* grandparent = frame->GetParent();
+    if (grandparent && grandparent->GetType() == nsGkAtoms::svgTextFrame) {
+      frame = grandparent;
+    }
+  }
   nsSVGPaintingProperty *property =
     nsSVGEffects::GetPaintingProperty(aPaint->mPaint.mPaintServer, frame, aType);
   if (!property)
