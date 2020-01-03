@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef TraceLoggingTypes_h
 #define TraceLoggingTypes_h
@@ -11,7 +11,6 @@
 #include "jsstr.h"
 
 #define TRACELOGGER_TREE_ITEMS(_)                     \
-    _(AnnotateScripts)                                \
     _(Baseline)                                       \
     _(BaselineCompilation)                            \
     _(Engine)                                         \
@@ -63,8 +62,8 @@
     _(Enable)                                         \
     _(Stop)
 
-
-
+// Predefined IDs for common operations. These IDs can be used
+// without using TraceLogCreateTextId, because there are already created.
 enum TraceLoggerTextId {
     TraceLogger_Error = 0,
 #define DEFINE_TEXT_ID(textId) TraceLogger_ ## textId,
@@ -102,13 +101,13 @@ TLTextIdIsToggable(uint32_t id)
         return false;
     if (id == TraceLogger_Stop)
         return false;
-    
+    // Actually never used. But added here so it doesn't show as toggle
     if (id == TraceLogger_LastTreeItem)
         return false;
     if (id == TraceLogger_Last)
         return false;
-    
-    
+    // Cannot toggle the logging of one engine on/off, because at the stop
+    // event it is sometimes unknown which engine was running.
     if (id == TraceLogger_IonMonkey || id == TraceLogger_Baseline || id == TraceLogger_Interpreter)
         return false;
     return true;
@@ -117,8 +116,8 @@ TLTextIdIsToggable(uint32_t id)
 inline bool
 TLTextIdIsTreeEvent(uint32_t id)
 {
-    
-    
+    // Everything between TraceLogger_Error and TraceLogger_LastTreeItem are tree events and
+    // atm also every custom event.
     return (id > TraceLogger_Error && id < TraceLogger_LastTreeItem) ||
            id >= TraceLogger_Last;
 }
@@ -225,8 +224,8 @@ class ContinuousSpace {
     }
 };
 
-
-
+// The layout of the event log in memory and in the log file.
+// Readable by JS using TypedArrays.
 struct EventEntry {
     uint64_t time;
     uint32_t textId;
@@ -235,4 +234,4 @@ struct EventEntry {
     { }
 };
 
-#endif 
+#endif /* TraceLoggingTypes_h */
