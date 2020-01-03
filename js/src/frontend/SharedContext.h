@@ -449,25 +449,25 @@ SharedContext::allLocalsAliased()
 
 
 
-enum StmtType {
-    STMT_LABEL,                 
-    STMT_IF,                    
-    STMT_ELSE,                  
-    STMT_SEQ,                   
-    STMT_BLOCK,                 
-    STMT_SWITCH,                
-    STMT_WITH,                  
-    STMT_CATCH,                 
-    STMT_TRY,                   
-    STMT_FINALLY,               
-    STMT_SUBROUTINE,            
-    STMT_DO_LOOP,               
-    STMT_FOR_LOOP,              
-    STMT_FOR_IN_LOOP,           
-    STMT_FOR_OF_LOOP,           
-    STMT_WHILE_LOOP,            
-    STMT_SPREAD,                
-    STMT_LIMIT
+enum class StmtType : uint16_t {
+    LABEL,                 
+    IF,                    
+    ELSE,                  
+    SEQ,                   
+    BLOCK,                 
+    SWITCH,                
+    WITH,                  
+    CATCH,                 
+    TRY,                   
+    FINALLY,               
+    SUBROUTINE,            
+    DO_LOOP,               
+    FOR_LOOP,              
+    FOR_IN_LOOP,           
+    FOR_OF_LOOP,           
+    WHILE_LOOP,            
+    SPREAD,                
+    LIMIT
 };
 
 
@@ -498,7 +498,7 @@ enum StmtType {
 
 struct StmtInfoBase {
     
-    uint16_t        type;
+    StmtType type;
 
     
     
@@ -524,14 +524,12 @@ struct StmtInfoBase {
     {}
 
     bool maybeScope() const {
-        return STMT_BLOCK <= type && type <= STMT_SUBROUTINE && type != STMT_WITH;
+        return StmtType::BLOCK <= type && type <= StmtType::SUBROUTINE &&
+               type != StmtType::WITH;
     }
 
     bool linksScope() const {
         return isNestedScope;
-    }
-
-    void setStaticScope() {
     }
 
     StaticBlockObject& staticBlock() const {
@@ -541,11 +539,11 @@ struct StmtInfoBase {
     }
 
     bool isLoop() const {
-        return type >= STMT_DO_LOOP;
+        return type >= StmtType::DO_LOOP;
     }
 
     bool isTrying() const {
-        return STMT_TRY <= type && type <= STMT_SUBROUTINE;
+        return StmtType::TRY <= type && type <= StmtType::SUBROUTINE;
     }
 };
 
