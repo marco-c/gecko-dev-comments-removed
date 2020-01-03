@@ -6348,7 +6348,7 @@ class Parser(Tokenizer):
                                 
                                 
                                 
-                            )
+                                )
         logger.reportGrammarErrors()
 
         self._globalScope = IDLScope(BuiltinLocation("<Global Scope>"), None, None)
