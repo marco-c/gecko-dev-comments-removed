@@ -1173,7 +1173,7 @@ struct DefaultHasher<AbstractFramePtr> {
 
 
 
-class LiveSavedFrameCache : public JS::StaticTraceable
+class LiveSavedFrameCache : public JS::Traceable
 {
   public:
     using FramePtr = mozilla::Variant<AbstractFramePtr, jit::CommonFrameLayout*>;

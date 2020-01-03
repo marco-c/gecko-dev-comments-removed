@@ -570,23 +570,12 @@ namespace JS {
 
 
 
-class DynamicTraceable
+
+
+class Traceable
 {
   public:
-    static js::ThingRootKind rootKind() { return js::THING_ROOT_DYNAMIC_TRACEABLE; }
-
-    virtual ~DynamicTraceable() {}
-    virtual void trace(JSTracer* trc) = 0;
-};
-
-
-
-
-
-class StaticTraceable
-{
-  public:
-    static js::ThingRootKind rootKind() { return js::THING_ROOT_STATIC_TRACEABLE; }
+    static js::ThingRootKind rootKind() { return js::THING_ROOT_TRACEABLE; }
 };
 
 } 
@@ -596,8 +585,8 @@ namespace js {
 template <typename T>
 class DispatchWrapper
 {
-    static_assert(mozilla::IsBaseOf<JS::StaticTraceable, T>::value,
-                  "DispatchWrapper is intended only for usage with a StaticTraceable");
+    static_assert(mozilla::IsBaseOf<JS::Traceable, T>::value,
+                  "DispatchWrapper is intended only for usage with a Traceable");
 
     using TraceFn = void (*)(T*, JSTracer*);
     TraceFn tracer;
@@ -620,7 +609,7 @@ class DispatchWrapper
 
     
     
-    static void TraceWrapped(JSTracer* trc, JS::StaticTraceable* thingp, const char* name) {
+    static void TraceWrapped(JSTracer* trc, JS::Traceable* thingp, const char* name) {
         auto wrapper = reinterpret_cast<DispatchWrapper*>(
                            uintptr_t(thingp) - offsetof(DispatchWrapper, storage));
         wrapper->tracer(&wrapper->storage, trc);
@@ -666,8 +655,7 @@ namespace JS {
 template <typename T>
 class MOZ_STACK_CLASS Rooted : public js::RootedBase<T>
 {
-    static_assert(!mozilla::IsConvertible<T, StaticTraceable*>::value &&
-                  !mozilla::IsConvertible<T, DynamicTraceable*>::value,
+    static_assert(!mozilla::IsConvertible<T, Traceable*>::value,
                   "Rooted takes pointer or Traceable types but not Traceable* type");
 
     
@@ -736,7 +724,7 @@ class MOZ_STACK_CLASS Rooted : public js::RootedBase<T>
 
 
     using MaybeWrapped = typename mozilla::Conditional<
-        mozilla::IsBaseOf<StaticTraceable, T>::value,
+        mozilla::IsBaseOf<Traceable, T>::value,
         js::DispatchWrapper<T>,
         T>::Type;
     MaybeWrapped ptr;

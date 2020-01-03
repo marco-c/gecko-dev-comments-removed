@@ -272,7 +272,7 @@ class TypeSet
     
     
     
-    class Type : public JS::StaticTraceable
+    class Type : public JS::Traceable
     {
         friend class TypeSet;
 

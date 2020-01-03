@@ -206,7 +206,7 @@ JS_STATIC_ASSERT(sizeof(Binding) == sizeof(uintptr_t));
 
 
 
-class Bindings : public JS::StaticTraceable
+class Bindings : public JS::Traceable
 {
     friend class BindingIter;
     friend class AliasedFormalIter;

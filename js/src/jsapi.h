@@ -2507,7 +2507,7 @@ JS_New(JSContext* cx, JS::HandleObject ctor, const JS::HandleValueArray& args);
 
 
 
-struct JSPropertyDescriptor : public JS::StaticTraceable {
+struct JSPropertyDescriptor : public JS::Traceable {
     JSObject* obj;
     unsigned attrs;
     JSGetterOp getter;
