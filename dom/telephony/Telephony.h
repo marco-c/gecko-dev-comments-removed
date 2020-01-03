@@ -11,7 +11,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/telephony/TelephonyCommon.h"
 
-#include "nsIAudioChannelAgent.h"
 #include "nsITelephonyCallInfo.h"
 #include "nsITelephonyService.h"
 
@@ -32,7 +31,6 @@ class TelephonyDialCallback;
 class OwningTelephonyCallOrTelephonyCallGroup;
 
 class Telephony final : public DOMEventTargetHelper,
-                        public nsIAudioChannelAgentCallback,
                         private nsITelephonyListener
 {
   
@@ -46,8 +44,6 @@ class Telephony final : public DOMEventTargetHelper,
 
   friend class telephony::TelephonyDialCallback;
 
-  
-  nsCOMPtr<nsIAudioChannelAgent> mAudioAgent;
   nsCOMPtr<nsITelephonyService> mService;
   nsRefPtr<Listener> mListener;
 
@@ -58,15 +54,8 @@ class Telephony final : public DOMEventTargetHelper,
 
   nsRefPtr<Promise> mReadyPromise;
 
-  bool mIsAudioStartPlaying;
-
-  uint32_t mAudioAgentNotify;
-  bool mHaveDispatchedInterruptBeginEvent;
-  bool mMuted;
-
 public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIAUDIOCHANNELAGENTCALLBACK
   NS_DECL_NSITELEPHONYLISTENER
   NS_REALLY_FORWARD_NSIDOMEVENTTARGET(DOMEventTargetHelper)
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Telephony,
@@ -104,15 +93,6 @@ public:
 
   void
   StopTone(const Optional<uint32_t>& aServiceId, ErrorResult& aRv);
-
-  
-  
-  
-  
-  
-  
-  void
-  OwnAudioChannel(ErrorResult& aRv);
 
   bool
   GetMuted(ErrorResult& aRv) const;
@@ -233,10 +213,6 @@ private:
 
   nsresult
   HandleCallInfo(nsITelephonyCallInfo* aInfo);
-
-  
-  nsresult
-  HandleAudioAgentState();
 };
 
 } 
