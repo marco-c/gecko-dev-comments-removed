@@ -319,7 +319,7 @@ public:
   SetBody(nsIInputStream* aStream)
   {
     
-    MOZ_ASSERT(!mBodyStream);
+    MOZ_ASSERT_IF(aStream, !mBodyStream);
     mBodyStream = aStream;
   }
 
