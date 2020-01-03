@@ -781,9 +781,8 @@ void
 TrackBuffersManager::InitializationSegmentReceived()
 {
   MOZ_ASSERT(mParser->HasCompleteInitData());
-  mInitData = mParser->InitData();
   mCurrentInputBuffer = new SourceBufferResource(mType);
-  mCurrentInputBuffer->AppendData(mInitData);
+  mCurrentInputBuffer->AppendData(mParser->InitData());
   uint32_t length =
     mParser->InitSegmentRange().mEnd - (mProcessedInput - mInputBuffer->Length());
   if (mInputBuffer->Length() == length) {
@@ -984,6 +983,9 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
     MonitorAutoLock mon(mMonitor);
     mInfo = info;
   }
+
+  
+  mInitData = mParser->InitData();
 
   
   
