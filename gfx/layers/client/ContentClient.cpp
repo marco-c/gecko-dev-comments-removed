@@ -293,7 +293,7 @@ ContentClientRemoteBuffer::CreateBackBuffer(const IntRect& aBufferRect)
 {
   
   mTextureClient = CreateTextureClientForDrawing(
-    mSurfaceFormat, mSize, BackendSelector::Content,
+    mSurfaceFormat, mSize, gfx::BackendType::NONE,
     mTextureFlags | ExtraTextureFlags(),
     TextureAllocationFlags::ALLOC_CLEAR_BUFFER
   );

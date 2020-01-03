@@ -138,12 +138,6 @@ protected:
   virtual ~TextureReadbackSink() {}
 };
 
-enum class BackendSelector
-{
-  Content,
-  Canvas
-};
-
 
 
 
@@ -180,7 +174,7 @@ public:
   CreateForDrawing(ISurfaceAllocator* aAllocator,
                    gfx::SurfaceFormat aFormat,
                    gfx::IntSize aSize,
-                   BackendSelector aSelector,
+                   gfx::BackendType aMoz2dBackend,
                    TextureFlags aTextureFlags,
                    TextureAllocationFlags flags = ALLOC_DEFAULT);
 
