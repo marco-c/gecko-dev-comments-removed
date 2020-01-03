@@ -287,6 +287,17 @@ function promiseRejects(promise) {
   return promise.then(() => false, () => true);
 }
 
+
+function generateRandomString(length) {
+  let string = "";
+
+  while (string.length < length) {
+    string += Math.random().toString(36);
+  }
+
+  return string.substring(0, length);
+}
+
 if (runningInParent) {
   
   Services.prefs.setCharPref("toolkit.telemetry.log.level", "Trace");
