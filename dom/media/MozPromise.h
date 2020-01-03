@@ -965,8 +965,8 @@ ProxyInternal(AbstractThread* aTarget, MethodCallBase<PromiseType>* aMethodCall,
 
 template<typename PromiseType, typename ThisType>
 static nsRefPtr<PromiseType>
-ProxyMediaCall(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
-               nsRefPtr<PromiseType>(ThisType::*aMethod)())
+InvokeAsync(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
+            nsRefPtr<PromiseType>(ThisType::*aMethod)())
 {
   typedef detail::MethodCallWithNoArgs<PromiseType, ThisType> MethodCallType;
   MethodCallType* methodCall = new MethodCallType(aThisVal, aMethod);
@@ -975,8 +975,8 @@ ProxyMediaCall(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerN
 
 template<typename PromiseType, typename ThisType, typename Arg1Type>
 static nsRefPtr<PromiseType>
-ProxyMediaCall(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
-               nsRefPtr<PromiseType>(ThisType::*aMethod)(Arg1Type), Arg1Type aArg1)
+InvokeAsync(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
+            nsRefPtr<PromiseType>(ThisType::*aMethod)(Arg1Type), Arg1Type aArg1)
 {
   typedef detail::MethodCallWithOneArg<PromiseType, ThisType, Arg1Type> MethodCallType;
   MethodCallType* methodCall = new MethodCallType(aThisVal, aMethod, aArg1);
@@ -985,8 +985,8 @@ ProxyMediaCall(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerN
 
 template<typename PromiseType, typename ThisType, typename Arg1Type, typename Arg2Type>
 static nsRefPtr<PromiseType>
-ProxyMediaCall(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
-               nsRefPtr<PromiseType>(ThisType::*aMethod)(Arg1Type, Arg2Type), Arg1Type aArg1, Arg2Type aArg2)
+InvokeAsync(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
+            nsRefPtr<PromiseType>(ThisType::*aMethod)(Arg1Type, Arg2Type), Arg1Type aArg1, Arg2Type aArg2)
 {
   typedef detail::MethodCallWithTwoArgs<PromiseType, ThisType, Arg1Type, Arg2Type> MethodCallType;
   MethodCallType* methodCall = new MethodCallType(aThisVal, aMethod, aArg1, aArg2);
@@ -995,8 +995,8 @@ ProxyMediaCall(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerN
 
 template<typename PromiseType, typename ThisType, typename Arg1Type, typename Arg2Type, typename Arg3Type>
 static nsRefPtr<PromiseType>
-ProxyMediaCall(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
-               nsRefPtr<PromiseType>(ThisType::*aMethod)(Arg1Type, Arg2Type, Arg3Type), Arg1Type aArg1, Arg2Type aArg2, Arg3Type aArg3)
+InvokeAsync(AbstractThread* aTarget, ThisType* aThisVal, const char* aCallerName,
+            nsRefPtr<PromiseType>(ThisType::*aMethod)(Arg1Type, Arg2Type, Arg3Type), Arg1Type aArg1, Arg2Type aArg2, Arg3Type aArg3)
 {
   typedef detail::MethodCallWithThreeArgs<PromiseType, ThisType, Arg1Type, Arg2Type, Arg3Type> MethodCallType;
   MethodCallType* methodCall = new MethodCallType(aThisVal, aMethod, aArg1, aArg2, aArg3);
