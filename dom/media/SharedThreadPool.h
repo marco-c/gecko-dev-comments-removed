@@ -26,6 +26,13 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
 class SharedThreadPool : public nsIThreadPool
 {
 public:
