@@ -1101,13 +1101,10 @@ pref("dom.wakelock.enabled", true);
 pref("dom.apps.customization.enabled", true);
 
 
-pref("touchcaret.enabled", false);
+pref("touchcaret.enabled", true);
 
 
-pref("selectioncaret.enabled", false);
-
-
-pref("layout.accessiblecaret.enabled", true);
+pref("selectioncaret.enabled", true);
 
 
 pref("services.sync.fxaccounts.enabled", true);
