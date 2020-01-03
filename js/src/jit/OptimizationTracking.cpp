@@ -384,12 +384,6 @@ class jit::UniqueTrackedTypes
 bool
 UniqueTrackedTypes::getIndexOf(JSContext* cx, TypeSet::Type ty, uint8_t* indexp)
 {
-    
-    
-    
-    cx->runtime()->gc.evictNursery();
-    MOZ_ASSERT_IF(ty.isSingletonUnchecked(), !IsInsideNursery(ty.singleton()));
-
     TypesMap::AddPtr p = map_.lookupForAdd(ty);
     if (p) {
         *indexp = p->value();
