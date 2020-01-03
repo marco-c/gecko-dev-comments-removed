@@ -48,6 +48,7 @@ function SecStateTest1B() {
   
   
   isSecurityState("secure");
+  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: false, passiveLoaded: false});
 
   whenLoaded(gTestBrowser, SecStateTest2A);
 
@@ -66,6 +67,7 @@ function SecStateTest2A() {
 
 function SecStateTest2B() {
   isSecurityState("broken");
+  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: false, passiveLoaded: true});
 
   SecStateTestsCompleted();
 }
