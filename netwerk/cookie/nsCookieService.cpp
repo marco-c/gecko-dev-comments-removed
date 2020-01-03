@@ -1442,25 +1442,6 @@ nsCookieService::HandleCorruptDB(DBState* aDBState)
   }
 }
 
-static PLDHashOperator
-RebuildDBCallback(nsCookieEntry *aEntry,
-                  void          *aArg)
-{
-  mozIStorageBindingParamsArray* paramsArray =
-    static_cast<mozIStorageBindingParamsArray*>(aArg);
-
-  const nsCookieEntry::ArrayType &cookies = aEntry->GetCookies();
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-    nsCookie* cookie = cookies[i];
-
-    if (!cookie->IsSession()) {
-      bindCookieParameters(paramsArray, nsCookieKey(aEntry), cookie);
-    }
-  }
-
-  return PL_DHASH_NEXT;
-}
-
 void
 nsCookieService::RebuildCorruptDB(DBState* aDBState)
 {
@@ -1514,7 +1495,18 @@ nsCookieService::RebuildCorruptDB(DBState* aDBState)
   mozIStorageAsyncStatement* stmt = aDBState->stmtInsert;
   nsCOMPtr<mozIStorageBindingParamsArray> paramsArray;
   stmt->NewBindingParamsArray(getter_AddRefs(paramsArray));
-  aDBState->hostTable.EnumerateEntries(RebuildDBCallback, paramsArray.get());
+  for (auto iter = aDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
+    nsCookieEntry* entry = iter.Get();
+
+    const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
+    for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+      nsCookie* cookie = cookies[i];
+
+      if (!cookie->IsSession()) {
+        bindCookieParameters(paramsArray, nsCookieKey(entry), cookie);
+      }
+    }
+  }
 
   
   uint32_t length;
@@ -1953,20 +1945,6 @@ nsCookieService::RemoveAll()
   return NS_OK;
 }
 
-static PLDHashOperator
-COMArrayCallback(nsCookieEntry *aEntry,
-                 void          *aArg)
-{
-  nsCOMArray<nsICookie> *data = static_cast<nsCOMArray<nsICookie> *>(aArg);
-
-  const nsCookieEntry::ArrayType &cookies = aEntry->GetCookies();
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-    data->AppendObject(cookies[i]);
-  }
-
-  return PL_DHASH_NEXT;
-}
-
 NS_IMETHODIMP
 nsCookieService::GetEnumerator(nsISimpleEnumerator **aEnumerator)
 {
@@ -1978,7 +1956,12 @@ nsCookieService::GetEnumerator(nsISimpleEnumerator **aEnumerator)
   EnsureReadComplete();
 
   nsCOMArray<nsICookie> cookieList(mDBState->cookieCount);
-  mDBState->hostTable.EnumerateEntries(COMArrayCallback, &cookieList);
+  for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
+    const nsCookieEntry::ArrayType& cookies = iter.Get()->GetCookies();
+    for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+      cookieList.AppendObject(cookies[i]);
+    }
+  }
 
   return NS_NewArrayEnumerator(aEnumerator, cookieList);
 }
@@ -3681,45 +3664,6 @@ nsCookieService::RemoveAllFromMemory()
 }
 
 
-
-struct nsPurgeData
-{
-  typedef nsTArray<nsListIter> ArrayType;
-
-  nsPurgeData(int64_t aCurrentTime,
-              int64_t aPurgeTime,
-              ArrayType &aPurgeList,
-              nsIMutableArray *aRemovedList,
-              mozIStorageBindingParamsArray *aParamsArray)
-   : currentTime(aCurrentTime)
-   , purgeTime(aPurgeTime)
-   , oldestTime(INT64_MAX)
-   , purgeList(aPurgeList)
-   , removedList(aRemovedList)
-   , paramsArray(aParamsArray)
-  {
-  }
-
-  
-  int64_t currentTime;
-
-  
-  int64_t purgeTime;
-
-  
-  int64_t oldestTime;
-
-  
-  ArrayType &purgeList;
-
-  
-  nsIMutableArray *removedList;
-
-  
-  mozIStorageBindingParamsArray *paramsArray;
-};
-
-
 class CompareCookiesByAge {
 public:
   bool Equals(const nsListIter &a, const nsListIter &b) const
@@ -3759,42 +3703,6 @@ public:
   }
 };
 
-PLDHashOperator
-purgeCookiesCallback(nsCookieEntry *aEntry,
-                     void          *aArg)
-{
-  nsPurgeData &data = *static_cast<nsPurgeData*>(aArg);
-
-  const nsCookieEntry::ArrayType &cookies = aEntry->GetCookies();
-  mozIStorageBindingParamsArray *array = data.paramsArray;
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ) {
-    nsListIter iter(aEntry, i);
-    nsCookie *cookie = cookies[i];
-
-    
-    if (cookie->Expiry() <= data.currentTime) {
-      data.removedList->AppendElement(cookie, false);
-      COOKIE_LOGEVICTED(cookie, "Cookie expired");
-
-      
-      gCookieService->RemoveCookieFromList(iter, array);
-
-    } else {
-      
-      if (cookie->LastAccessed() <= data.purgeTime) {
-        data.purgeList.AppendElement(iter);
-
-      } else if (cookie->LastAccessed() < data.oldestTime) {
-        
-        data.oldestTime = cookie->LastAccessed();
-      }
-
-      ++i;
-    }
-  }
-  return PL_DHASH_NEXT;
-}
-
 
 already_AddRefed<nsIArray>
 nsCookieService::PurgeCookies(int64_t aCurrentTimeInUsec)
@@ -3807,7 +3715,8 @@ nsCookieService::PurgeCookies(int64_t aCurrentTimeInUsec)
     ("PurgeCookies(): beginning purge with %ld cookies and %lld oldest age",
      mDBState->cookieCount, aCurrentTimeInUsec - mDBState->cookieOldestTime));
 
-  nsAutoTArray<nsListIter, kMaxNumberOfCookies> purgeList;
+  typedef nsAutoTArray<nsListIter, kMaxNumberOfCookies> PurgeList;
+  PurgeList purgeList;
 
   nsCOMPtr<nsIMutableArray> removedList = do_CreateInstance(NS_ARRAY_CONTRACTID);
 
@@ -3819,9 +3728,40 @@ nsCookieService::PurgeCookies(int64_t aCurrentTimeInUsec)
     stmt->NewBindingParamsArray(getter_AddRefs(paramsArray));
   }
 
-  nsPurgeData data(aCurrentTimeInUsec / PR_USEC_PER_SEC,
-    aCurrentTimeInUsec - mCookiePurgeAge, purgeList, removedList, paramsArray);
-  mDBState->hostTable.EnumerateEntries(purgeCookiesCallback, &data);
+  int64_t currentTime = aCurrentTimeInUsec / PR_USEC_PER_SEC;
+  int64_t purgeTime = aCurrentTimeInUsec - mCookiePurgeAge;
+  int64_t oldestTime = INT64_MAX;
+
+  for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
+    nsCookieEntry* entry = iter.Get();
+
+    const nsCookieEntry::ArrayType &cookies = entry->GetCookies();
+    for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ) {
+      nsListIter iter(entry, i);
+      nsCookie* cookie = cookies[i];
+
+      
+      if (cookie->Expiry() <= currentTime) {
+        removedList->AppendElement(cookie, false);
+        COOKIE_LOGEVICTED(cookie, "Cookie expired");
+
+        
+        gCookieService->RemoveCookieFromList(iter, paramsArray);
+
+      } else {
+        
+        if (cookie->LastAccessed() <= purgeTime) {
+          purgeList.AppendElement(iter);
+
+        } else if (cookie->LastAccessed() < oldestTime) {
+          
+          oldestTime = cookie->LastAccessed();
+        }
+
+        ++i;
+      }
+    }
+  }
 
   uint32_t postExpiryCookieCount = mDBState->cookieCount;
 
@@ -3834,7 +3774,7 @@ nsCookieService::PurgeCookies(int64_t aCurrentTimeInUsec)
     mDBState->cookieCount - mMaxNumberOfCookies : 0;
   if (purgeList.Length() > excess) {
     
-    data.oldestTime = purgeList[excess].Cookie()->LastAccessed();
+    oldestTime = purgeList[excess].Cookie()->LastAccessed();
 
     purgeList.SetLength(excess);
   }
@@ -3843,7 +3783,7 @@ nsCookieService::PurgeCookies(int64_t aCurrentTimeInUsec)
   
   
   purgeList.Sort(CompareCookiesByIndex());
-  for (nsPurgeData::ArrayType::index_type i = purgeList.Length(); i--; ) {
+  for (PurgeList::index_type i = purgeList.Length(); i--; ) {
     nsCookie *cookie = purgeList[i].Cookie();
     removedList->AppendElement(cookie, false);
     COOKIE_LOGEVICTED(cookie, "Cookie too old");
@@ -3865,7 +3805,7 @@ nsCookieService::PurgeCookies(int64_t aCurrentTimeInUsec)
   }
 
   
-  mDBState->cookieOldestTime = data.oldestTime;
+  mDBState->cookieOldestTime = oldestTime;
 
   COOKIE_LOGSTRING(LogLevel::Debug,
     ("PurgeCookies(): %ld expired; %ld purged; %ld remain; %lld oldest age",
@@ -4002,47 +3942,6 @@ nsCookieService::GetCookiesFromHost(const nsACString     &aHost,
   return NS_NewArrayEnumerator(aEnumerator, cookieList);
 }
 
-namespace {
-
-
-
-
-
-
-
-struct GetCookiesForAppStruct {
-  uint32_t              appId;
-  bool                  onlyBrowserElement;
-  nsCOMArray<nsICookie> cookies;
-
-  GetCookiesForAppStruct() = delete;
-  GetCookiesForAppStruct(uint32_t aAppId, bool aOnlyBrowserElement)
-    : appId(aAppId)
-    , onlyBrowserElement(aOnlyBrowserElement)
-  {}
-};
-
-} 
-
- PLDHashOperator
-nsCookieService::GetCookiesForApp(nsCookieEntry* entry, void* arg)
-{
-  GetCookiesForAppStruct* data = static_cast<GetCookiesForAppStruct*>(arg);
-
-  if (entry->mAppId != data->appId ||
-      (data->onlyBrowserElement && !entry->mInBrowserElement)) {
-    return PL_DHASH_NEXT;
-  }
-
-  const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
-
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-    data->cookies.AppendObject(cookies[i]);
-  }
-
-  return PL_DHASH_NEXT;
-}
-
 NS_IMETHODIMP
 nsCookieService::GetCookiesForApp(uint32_t aAppId, bool aOnlyBrowserElement,
                                   nsISimpleEnumerator** aEnumerator)
@@ -4054,10 +3953,23 @@ nsCookieService::GetCookiesForApp(uint32_t aAppId, bool aOnlyBrowserElement,
 
   NS_ENSURE_TRUE(aAppId != NECKO_UNKNOWN_APP_ID, NS_ERROR_INVALID_ARG);
 
-  GetCookiesForAppStruct data(aAppId, aOnlyBrowserElement);
-  mDBState->hostTable.EnumerateEntries(GetCookiesForApp, &data);
+  nsCOMArray<nsICookie> cookies;
+  for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
+    nsCookieEntry* entry = iter.Get();
 
-  return NS_NewArrayEnumerator(aEnumerator, data.cookies);
+    if (entry->mAppId != aAppId ||
+        (aOnlyBrowserElement && !entry->mInBrowserElement)) {
+      continue;
+    }
+
+    const nsCookieEntry::ArrayType& entryCookies = entry->GetCookies();
+
+    for (nsCookieEntry::IndexType i = 0; i < entryCookies.Length(); ++i) {
+      cookies.AppendObject(entryCookies[i]);
+    }
+  }
+
+  return NS_NewArrayEnumerator(aEnumerator, cookies);
 }
 
 NS_IMETHODIMP
