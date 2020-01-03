@@ -358,7 +358,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
                      PNGSIGNATURESIZE);
     if (mIsPNG) {
       mContainedDecoder = new nsPNGDecoder(mImage);
-      mContainedDecoder->SetSizeDecode(IsSizeDecode());
+      mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
       mContainedDecoder->SetSendPartialInvalidations(mSendPartialInvalidations);
       mContainedDecoder->Init();
       if (!WriteToContainedDecoder(mSignature, PNGSIGNATURESIZE)) {
@@ -384,7 +384,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 
     
     
-    if (!IsSizeDecode() &&
+    if (!IsMetadataDecode() &&
         !static_cast<nsPNGDecoder*>(mContainedDecoder.get())->IsValidICO()) {
       PostDataError();
     }
@@ -435,7 +435,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
     nsBMPDecoder* bmpDecoder = new nsBMPDecoder(mImage);
     mContainedDecoder = bmpDecoder;
     bmpDecoder->SetUseAlphaData(true);
-    mContainedDecoder->SetSizeDecode(IsSizeDecode());
+    mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
     mContainedDecoder->SetSendPartialInvalidations(mSendPartialInvalidations);
     mContainedDecoder->Init();
 
@@ -476,8 +476,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
              mContainedDecoder->GetImageMetadata().GetHeight());
 
     
-    
-    if (IsSizeDecode()) {
+    if (IsMetadataDecode()) {
       return;
     }
 

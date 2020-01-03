@@ -141,7 +141,7 @@ nsBMPDecoder::FinishInternal()
     MOZ_ASSERT(GetFrameCount() <= 1, "Multiple BMP frames?");
 
     
-    if (!IsSizeDecode() && HasSize()) {
+    if (!IsMetadataDecode() && HasSize()) {
 
         
         nsIntRect r(0, 0, mBIH.width, GetHeight());
@@ -370,8 +370,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       }
 
       
-      
-      if (IsSizeDecode()) {
+      if (IsMetadataDecode()) {
         return;
       }
 

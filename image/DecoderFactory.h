@@ -84,10 +84,6 @@ public:
 
 
 
-
-
-
-
   static already_AddRefed<Decoder>
   CreateMetadataDecoder(DecoderType aType,
                         RasterImage* aImage,

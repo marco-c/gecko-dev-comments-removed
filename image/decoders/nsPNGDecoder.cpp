@@ -227,7 +227,7 @@ void
 nsPNGDecoder::InitInternal()
 {
   
-  if (IsSizeDecode()) {
+  if (IsMetadataDecode()) {
     return;
   }
 
@@ -322,7 +322,7 @@ nsPNGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
   MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
 
   
-  if (IsSizeDecode()) {
+  if (IsMetadataDecode()) {
 
     
     if (mHeaderBytesRead == BYTES_NEEDED_FOR_DIMENSIONS) {

@@ -195,7 +195,7 @@ nsJPEGDecoder::FinishInternal()
   
   if ((mState != JPEG_DONE && mState != JPEG_SINK_NON_JPEG_TRAILER) &&
       (mState != JPEG_ERROR) &&
-      !IsSizeDecode()) {
+      !IsMetadataDecode()) {
     mState = JPEG_DONE;
   }
 }
@@ -267,7 +267,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       }
 
       
-      if (IsSizeDecode()) {
+      if (IsMetadataDecode()) {
         return;
       }
 

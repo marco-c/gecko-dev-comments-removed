@@ -42,7 +42,7 @@ Decoder::Decoder(RasterImage* aImage)
   , mFrameCount(0)
   , mFailCode(NS_OK)
   , mInitialized(false)
-  , mSizeDecode(false)
+  , mMetadataDecode(false)
   , mInFrame(false)
   , mIsAnimated(false)
 { }
@@ -169,7 +169,7 @@ Decoder::Write(const char* aBuffer, uint32_t aCount)
     return;
   }
 
-  if (IsSizeDecode() && HasSize()) {
+  if (IsMetadataDecode() && HasSize()) {
     
     return;
   }
@@ -200,7 +200,7 @@ Decoder::CompleteDecode()
   
   
   
-  if (!IsSizeDecode() && !mDecodeDone && !WasAborted()) {
+  if (!IsMetadataDecode() && !mDecodeDone && !WasAborted()) {
     mShouldReportError = true;
 
     
@@ -218,7 +218,7 @@ Decoder::CompleteDecode()
       PostDecodeDone();
     } else {
       
-      if (!IsSizeDecode()) {
+      if (!IsMetadataDecode()) {
         mProgress |= FLAG_DECODE_COMPLETE;
       }
       mProgress |= FLAG_HAS_ERROR;
@@ -269,7 +269,7 @@ Decoder::Finish()
     SetSizeOnImage();
   }
 
-  if (mDecodeDone && !IsSizeDecode()) {
+  if (mDecodeDone && !IsMetadataDecode()) {
     MOZ_ASSERT(HasError() || mCurrentFrame, "Should have an error or a frame");
 
     
@@ -478,7 +478,7 @@ Decoder::PostFrameStop(Opacity aFrameOpacity    ,
                        BlendMethod aBlendMethod )
 {
   
-  MOZ_ASSERT(!IsSizeDecode(), "Stopping frame during a size decode");
+  MOZ_ASSERT(!IsMetadataDecode(), "Stopping frame during metadata decode");
   MOZ_ASSERT(mInFrame, "Stopping frame when we didn't start one");
   MOZ_ASSERT(mCurrentFrame, "Stopping frame when we don't have one");
 
@@ -517,7 +517,7 @@ Decoder::PostInvalidation(const nsIntRect& aRect,
 void
 Decoder::PostDecodeDone(int32_t aLoopCount )
 {
-  MOZ_ASSERT(!IsSizeDecode(), "Can't be done with decoding with size decode!");
+  MOZ_ASSERT(!IsMetadataDecode(), "Done with decoding in metadata decode");
   MOZ_ASSERT(!mInFrame, "Can't be done decoding if we're mid-frame!");
   MOZ_ASSERT(!mDecodeDone, "Decode already done!");
   mDecodeDone = true;

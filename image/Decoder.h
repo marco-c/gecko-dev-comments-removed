@@ -98,14 +98,16 @@ public:
 
 
   
-  
-  
-  bool IsSizeDecode() { return mSizeDecode; }
-  void SetSizeDecode(bool aSizeDecode)
+
+
+
+
+  void SetMetadataDecode(bool aMetadataDecode)
   {
     MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
-    mSizeDecode = aSizeDecode;
+    mMetadataDecode = aMetadataDecode;
   }
+  bool IsMetadataDecode() { return mMetadataDecode; }
 
   
 
@@ -209,7 +211,8 @@ public:
 
   bool GetDecodeDone() const
   {
-    return mDecodeDone || (mSizeDecode && HasSize()) || HasError() || mDataDone;
+    return mDecodeDone || (mMetadataDecode && HasSize()) ||
+           HasError() || mDataDone;
   }
 
   
@@ -423,7 +426,7 @@ private:
   nsresult mFailCode;
 
   bool mInitialized;
-  bool mSizeDecode;
+  bool mMetadataDecode;
   bool mInFrame;
   bool mIsAnimated;
 };
