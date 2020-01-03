@@ -66,6 +66,7 @@ let windows_versions = [
 
 let windows_themes = [
   "aero",
+  "aero-lite",
   "luna-blue",
   "luna-olive",
   "luna-silver",
@@ -119,14 +120,17 @@ let testToggles = function (resisting) {
 
 
 let testWindowsSpecific = function (resisting, queryName, possibleValues) {
-  let found = false;
+  let foundValue = null;
   possibleValues.forEach(function (val) {
-    found = found || keyValMatches(queryName, val);
+    if (keyValMatches(queryName, val)) {
+      foundValue = val;
+    }
   });
   if (resisting) {
-    ok(!found, queryName + " should have no match");
+    ok(!foundValue, queryName + " should have no match");
   } else {
-    ok(found, queryName + " should match");
+    ok(foundValue, foundValue ? ("Match found: '" + queryName + ":" + foundValue + "'")
+                              : "Should have a match for '" + queryName + "'");
   }
 };
 
