@@ -957,13 +957,7 @@ Parser<FullParseHandler>::checkFunctionArguments()
         funbox->setArgumentsHasLocalBinding();
 
         
-
-
-
-
-
-
-        if (pc->sc->bindingsAccessedDynamically() && maybeArgDef)
+        if (pc->sc->bindingsAccessedDynamically())
             funbox->setDefinitelyNeedsArgsObj();
 
         
@@ -991,9 +985,6 @@ Parser<FullParseHandler>::checkFunctionArguments()
                         funbox->setDefinitelyNeedsArgsObj();
                 }
             }
-            
-            if (pc->sc->bindingsAccessedDynamically())
-                funbox->setDefinitelyNeedsArgsObj();
         }
     }
 

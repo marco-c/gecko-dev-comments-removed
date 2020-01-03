@@ -428,16 +428,9 @@ BytecodeCompiler::checkArgumentsWithinEval(JSContext* cx, HandleFunction fun)
         return false;
     }
 
-    
-    
     RootedScript script(cx, fun->getOrCreateScript(cx));
     if (!script)
         return false;
-
-    if (script->argumentsHasVarBinding()) {
-        if (!JSScript::argumentsOptimizationFailed(cx, script))
-            return false;
-    }
 
     
     if (script->isGeneratorExp() && script->isLegacyGenerator()) {

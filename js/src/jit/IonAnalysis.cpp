@@ -3474,21 +3474,9 @@ jit::AnalyzeArgumentsUsage(JSContext* cx, JSScript* scriptArg)
     
     
     
-    if (scriptArg->isDebuggee() || script->isGenerator())
+    
+    if (scriptArg->isDebuggee() || script->isGenerator() || script->bindingsAccessedDynamically())
         return true;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (script->bindingsAccessedDynamically()) {
-        script->setNeedsArgsObj(false);
-        return true;
-    }
 
     if (!jit::IsIonEnabled(cx))
         return true;
