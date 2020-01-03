@@ -231,6 +231,7 @@ CommonAnimationManager::RulesMatching(ElementRuleProcessorData* aData)
                      nsCSSPseudoElements::ePseudo_NotPseudoElement);
   if (rule) {
     aData->mRuleWalker->Forward(rule);
+    aData->mRuleWalker->CurrentNode()->SetIsAnimationRule();
   }
 }
 
@@ -250,6 +251,7 @@ CommonAnimationManager::RulesMatching(PseudoElementRuleProcessorData* aData)
   nsIStyleRule *rule = GetAnimationRule(aData->mElement, aData->mPseudoType);
   if (rule) {
     aData->mRuleWalker->Forward(rule);
+    aData->mRuleWalker->CurrentNode()->SetIsAnimationRule();
   }
 }
 
@@ -486,6 +488,15 @@ AnimValuesStyleRule::MapRuleInfoInto(nsRuleData* aRuleData)
     
     
     
+
+    
+    
+    
+    
+    
+    
+    
+    aRuleData->mConditions.SetUncacheable();
     return;
   }
 

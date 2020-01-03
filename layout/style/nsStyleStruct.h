@@ -67,11 +67,15 @@ class imgIContainer;
 #define NS_STYLE_CONTEXT_TYPE_SHIFT        34
 
 
+#define NS_RULE_NODE_IS_ANIMATION_RULE      0x01000000
 #define NS_RULE_NODE_GC_MARK                0x02000000
 #define NS_RULE_NODE_USED_DIRECTLY          0x04000000
 #define NS_RULE_NODE_IS_IMPORTANT           0x08000000
 #define NS_RULE_NODE_LEVEL_MASK             0xf0000000
 #define NS_RULE_NODE_LEVEL_SHIFT            28
+
+
+#define NS_RULE_NODE_HAS_ANIMATION_DATA     0x80000000
 
 
 
