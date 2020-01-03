@@ -23,7 +23,13 @@ function run_test() {
   
   overrideXHR(callHandleEvent);
   standardInit();
-  do_execute_soon(run_test_pt1);
+  
+  
+  if (IS_MAR_CHECKS_ENABLED) {
+    do_execute_soon(run_test_pt11);
+  } else {
+    do_execute_soon(run_test_pt1);
+  }
 }
 
 

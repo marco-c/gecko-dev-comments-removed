@@ -3872,6 +3872,13 @@ Downloader.prototype = {
     }
 
     LOG("Downloader:_verifyDownload downloaded size == expected size.");
+
+    
+    
+    if (AppConstants.MOZ_VERIFY_MAR_SIGNATURE) {
+      return true;
+    }
+
     let fileStream = Cc["@mozilla.org/network/file-input-stream;1"].
                      createInstance(Ci.nsIFileInputStream);
     fileStream.init(destination, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
