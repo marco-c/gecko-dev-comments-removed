@@ -76,6 +76,12 @@ public enum Restriction {
             15, "no_customize_home",
             R.string.restriction_disallow_customize_home_title,
             R.string.restriction_disallow_customize_home_description
+    ),
+
+    DISALLOW_PRIVATE_BROWSING(
+            16, "no_private_browsing",
+            R.string.restriction_disallow_private_browsing_title,
+            R.string.restriction_disallow_private_browsing_description
     );
 
     public final int id;
