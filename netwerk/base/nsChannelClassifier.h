@@ -11,6 +11,7 @@
 
 class nsIChannel;
 class nsIHttpChannelInternal;
+class nsIDocument;
 
 class nsChannelClassifier final : public nsIURIClassifierCallback
 {
@@ -43,6 +44,8 @@ private:
     nsresult StartInternal();
     
     nsresult IsTrackerWhitelisted();
+    
+    static bool SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel);
 
 public:
     

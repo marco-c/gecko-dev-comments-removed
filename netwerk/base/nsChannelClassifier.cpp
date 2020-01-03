@@ -451,6 +451,29 @@ nsChannelClassifier::HasBeenClassified(nsIChannel *aChannel)
 }
 
 
+bool
+nsChannelClassifier::SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel)
+{
+  nsCOMPtr<nsIURI> docURI = aDoc->GetDocumentURI();
+  nsCOMPtr<nsILoadInfo> channelLoadInfo = aChannel->GetLoadInfo();
+  if (!channelLoadInfo || !docURI) {
+    return false;
+  }
+  nsCOMPtr<nsIPrincipal> channelLoadingPrincipal = channelLoadInfo->LoadingPrincipal();
+  if (!channelLoadingPrincipal) {
+    return false;
+  }
+  nsCOMPtr<nsIURI> channelLoadingURI;
+  channelLoadingPrincipal->GetURI(getter_AddRefs(channelLoadingURI));
+  if (!channelLoadingURI) {
+    return false;
+  }
+  bool equals = false;
+  nsresult rv = docURI->EqualsExceptRef(channelLoadingURI, &equals);
+  return NS_SUCCEEDED(rv) && equals;
+}
+
+
 nsresult
 nsChannelClassifier::SetBlockedTrackingContent(nsIChannel *channel)
 {
@@ -479,6 +502,14 @@ nsChannelClassifier::SetBlockedTrackingContent(nsIChannel *channel)
   }
   nsCOMPtr<nsIDocument> doc = do_GetInterface(docShell, &rv);
   NS_ENSURE_SUCCESS(rv, NS_OK);
+
+  
+  
+  
+  
+  if (!SameLoadingURI(doc, channel)) {
+    return NS_OK;
+  }
 
   
   
