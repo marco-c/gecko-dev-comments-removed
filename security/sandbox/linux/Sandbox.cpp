@@ -201,26 +201,45 @@ InstallSigSysHandler(void)
 
 
 
-static void
-InstallSyscallFilter(const sock_fprog *prog)
+
+
+
+
+
+
+
+
+
+static bool MOZ_WARN_UNUSED_RESULT
+InstallSyscallFilter(const sock_fprog *aProg, bool aUseTSync)
 {
   if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
     SANDBOX_LOG_ERROR("prctl(PR_SET_NO_NEW_PRIVS) failed: %s", strerror(errno));
     MOZ_CRASH("prctl(PR_SET_NO_NEW_PRIVS)");
   }
 
-  if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, (unsigned long)prog, 0, 0)) {
-    SANDBOX_LOG_ERROR("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER) failed: %s",
-                      strerror(errno));
-    MOZ_CRASH("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
+  if (aUseTSync) {
+    if (syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER,
+                SECCOMP_FILTER_FLAG_TSYNC, aProg) != 0) {
+      SANDBOX_LOG_ERROR("thread-synchronized seccomp failed: %s",
+                        strerror(errno));
+      return false;
+    }
+  } else {
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, (unsigned long)aProg, 0, 0)) {
+      SANDBOX_LOG_ERROR("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER) failed: %s",
+                        strerror(errno));
+      return false;
+    }
   }
+  return true;
 }
 
 
 
 static mozilla::Atomic<int> gSetSandboxDone;
 
-static sock_fprog gSetSandboxFilter;
+static const sock_fprog* gSetSandboxFilter;
 
 
 
@@ -250,7 +269,9 @@ static bool
 SetThreadSandbox()
 {
   if (prctl(PR_GET_SECCOMP, 0, 0, 0, 0) == 0) {
-    InstallSyscallFilter(&gSetSandboxFilter);
+    if (!InstallSyscallFilter(gSetSandboxFilter, false)) {
+      MOZ_CRASH("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
+    }
     return true;
   }
   return false;
@@ -273,7 +294,16 @@ SetThreadSandboxHandler(int signum)
 }
 
 static void
-BroadcastSetThreadSandbox(UniquePtr<sock_filter[]> aProgram, size_t aProgLen)
+EnterChroot()
+{
+  if (gChrootHelper) {
+    gChrootHelper->Invoke();
+    gChrootHelper = nullptr;
+  }
+}
+
+static void
+BroadcastSetThreadSandbox(const sock_fprog* aFilter)
 {
   int signum;
   pid_t pid, tid, myTid;
@@ -282,10 +312,7 @@ BroadcastSetThreadSandbox(UniquePtr<sock_filter[]> aProgram, size_t aProgLen)
 
   
   
-  
-  gSetSandboxFilter.filter = aProgram.get();
-  gSetSandboxFilter.len = static_cast<unsigned short>(aProgLen);
-  MOZ_RELEASE_ASSERT(static_cast<size_t>(gSetSandboxFilter.len) == aProgLen);
+  gSetSandboxFilter = aFilter;
 
   static_assert(sizeof(mozilla::Atomic<int>) == sizeof(int),
                 "mozilla::Atomic<int> isn't represented by an int");
@@ -297,10 +324,7 @@ BroadcastSetThreadSandbox(UniquePtr<sock_filter[]> aProgram, size_t aProgLen)
     MOZ_CRASH();
   }
 
-  if (gChrootHelper) {
-    gChrootHelper->Invoke();
-    gChrootHelper = nullptr;
-  }
+  EnterChroot();
 
   signum = FindFreeSignalNumber();
   if (signum == 0) {
@@ -416,7 +440,20 @@ BroadcastSetThreadSandbox(UniquePtr<sock_filter[]> aProgram, size_t aProgLen)
   unused << closedir(taskdp);
   
   SetThreadSandbox();
-  gSetSandboxFilter.filter = nullptr;
+  gSetSandboxFilter = nullptr;
+}
+
+static void
+ApplySandboxWithTSync(sock_fprog* aFilter)
+{
+  EnterChroot();
+  
+  
+  
+  
+  if (!InstallSyscallFilter(aFilter, true)) {
+    MOZ_CRASH("seccomp+tsync failed, but kernel supports tsync");
+  }
 }
 
 
@@ -445,12 +482,30 @@ SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
 #endif
 
   
-  UniquePtr<sock_filter[]> flatProgram(new sock_filter[program->size()]);
+  size_t programLen = program->size();
+  UniquePtr<sock_filter[]> flatProgram(new sock_filter[programLen]);
   for (auto i = program->begin(); i != program->end(); ++i) {
     flatProgram[i - program->begin()] = *i;
   }
 
-  BroadcastSetThreadSandbox(Move(flatProgram), program->size());
+  sock_fprog fprog;
+  fprog.filter = flatProgram.get();
+  fprog.len = static_cast<unsigned short>(programLen);
+  MOZ_RELEASE_ASSERT(static_cast<size_t>(fprog.len) == programLen);
+
+  const SandboxInfo info = SandboxInfo::Get();
+  if (info.Test(SandboxInfo::kHasSeccompTSync)) {
+    if (info.Test(SandboxInfo::kVerbose)) {
+      SANDBOX_LOG_ERROR("using seccomp tsync");
+    }
+    ApplySandboxWithTSync(&fprog);
+  } else {
+    if (info.Test(SandboxInfo::kVerbose)) {
+      SANDBOX_LOG_ERROR("no tsync support; using signal broadcast");
+    }
+    BroadcastSetThreadSandbox(&fprog);
+  }
+  MOZ_RELEASE_ASSERT(!gChrootHelper, "forgot to chroot");
 }
 
 void
