@@ -13,6 +13,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
+#include "mozilla/RefPtr.h"
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -5514,14 +5515,21 @@ struct PerformanceGroup {
         stopwatch_ = nullptr;
     }
 
-    explicit PerformanceGroup(JSContext* cx, void* key);
-    ~PerformanceGroup()
-    {
-        MOZ_ASSERT(refCount_ == 0);
-    }
-  private:
+    
+    void AddRef();
+    void Release();
+
+    
+    explicit PerformanceGroup(JSRuntime* rt);
+
+    
+    explicit PerformanceGroup(JSContext* rt, void* key);
+
+private:
     PerformanceGroup& operator=(const PerformanceGroup&) = delete;
     PerformanceGroup(const PerformanceGroup&) = delete;
+
+    JSRuntime* runtime_;
 
     
     
@@ -5535,19 +5543,13 @@ struct PerformanceGroup {
     void* const key_;
 
     
-    uint64_t incRefCount() {
-        MOZ_ASSERT(refCount_ + 1 > 0);
-        return ++refCount_;
-    }
-    uint64_t decRefCount() {
-        MOZ_ASSERT(refCount_ > 0);
-        return --refCount_;
-    }
-    friend struct PerformanceGroupHolder;
-
-private:
-    
     uint64_t refCount_;
+
+
+    
+    
+    
+    const bool isSharedGroup_;
 };
 
 
@@ -5564,7 +5566,7 @@ struct PerformanceGroupHolder {
     js::PerformanceGroup* getSharedGroup(JSContext*);
 
     
-    js::PerformanceGroup* getOwnGroup(JSContext*);
+    js::PerformanceGroup* getOwnGroup();
 
     
     
@@ -5584,8 +5586,6 @@ struct PerformanceGroupHolder {
 
     explicit PerformanceGroupHolder(JSRuntime* runtime)
       : runtime_(runtime)
-      , sharedGroup_(nullptr)
-      , ownGroup_(nullptr)
     {   }
     ~PerformanceGroupHolder();
 
@@ -5600,8 +5600,8 @@ struct PerformanceGroupHolder {
     
     
     
-    js::PerformanceGroup* sharedGroup_;
-    js::PerformanceGroup* ownGroup_;
+    mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
+    mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
 };
 
 

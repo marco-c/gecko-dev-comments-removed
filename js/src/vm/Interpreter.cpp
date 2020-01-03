@@ -390,22 +390,6 @@ class AutoStopwatch final
     uint64_t iteration_;
 
     
-    
-    
-    
-    bool isMonitoringForGroup_;
-
-    
-    
-    
-    
-    bool isMonitoringForSelf_;
-
-    
-    
-    bool isMonitoringForTop_;
-
-    
     bool isMonitoringJank_;
     
     bool isMonitoringCPOW_;
@@ -414,6 +398,20 @@ class AutoStopwatch final
     uint64_t userTimeStart_;
     uint64_t systemTimeStart_;
     uint64_t CPOWTimeStart_;
+
+   
+   
+   
+   mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
+
+   
+   
+   mozilla::RefPtr<js::PerformanceGroup> topGroup_;
+
+   
+   
+   
+   mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
 
    public:
     
@@ -424,9 +422,6 @@ class AutoStopwatch final
     explicit inline AutoStopwatch(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : cx_(cx)
       , iteration_(0)
-      , isMonitoringForGroup_(false)
-      , isMonitoringForSelf_(false)
-      , isMonitoringForTop_(false)
       , isMonitoringJank_(false)
       , isMonitoringCPOW_(false)
       , userTimeStart_(0)
@@ -442,52 +437,23 @@ class AutoStopwatch final
         JSRuntime* runtime = cx_->runtime();
         iteration_ = runtime->stopwatch.iteration;
 
-        PerformanceGroup* sharedGroup = compartment->performanceMonitoring.getSharedGroup(cx);
-        if (!sharedGroup) {
-            
-            
-            return;
-        }
+        sharedGroup_ = acquireGroup(compartment->performanceMonitoring.getSharedGroup(cx));
+        if (sharedGroup_)
+            topGroup_ = acquireGroup(runtime->stopwatch.performance.getOwnGroup());
 
-        if (!sharedGroup->hasStopwatch(iteration_)) {
-            
-            
-            
-            sharedGroup->acquireStopwatch(iteration_, this);
-            isMonitoringForGroup_ = true;
-        }
+        if (runtime->stopwatch.isMonitoringPerCompartment())
+            ownGroup_ = acquireGroup(compartment->performanceMonitoring.getOwnGroup());
 
-        PerformanceGroup* ownGroup = nullptr;
-        if (runtime->stopwatch.isMonitoringPerCompartment()) {
-            
-            ownGroup = compartment->performanceMonitoring.getOwnGroup(cx);
-            if (!ownGroup->hasStopwatch(iteration_)) {
-                ownGroup->acquireStopwatch(iteration_, this);
-                isMonitoringForSelf_ = true;
-            }
-        }
-
-        if (runtime->stopwatch.isEmpty) {
-            
-            
-            
-            runtime->stopwatch.isEmpty = false;
-            isMonitoringForTop_ = true;
-
-            MOZ_ASSERT(isMonitoringForGroup_);
-        }
-
-        if (!isMonitoringForGroup_ && !isMonitoringForSelf_) {
-            
-            
+        if (!sharedGroup_ && !ownGroup_) {
             
             return;
         }
 
         enter();
     }
-    ~AutoStopwatch() {
-        if (!isMonitoringForGroup_ && !isMonitoringForSelf_) {
+    ~AutoStopwatch()
+    {
+        if (!sharedGroup_ && !ownGroup_) {
             
             
             
@@ -505,31 +471,19 @@ class AutoStopwatch final
             return;
         }
 
+        releaseGroup(sharedGroup_);
+        releaseGroup(topGroup_);
+        releaseGroup(ownGroup_);
+
         
         exit();
-
-        
-        if (isMonitoringForGroup_) {
-            PerformanceGroup* sharedGroup = compartment->performanceMonitoring.getSharedGroup(cx_);
-            MOZ_ASSERT(sharedGroup);
-            sharedGroup->releaseStopwatch(iteration_, this);
-        }
-
-        if (isMonitoringForSelf_) {
-            PerformanceGroup* ownGroup = compartment->performanceMonitoring.getOwnGroup(cx_);
-            MOZ_ASSERT(ownGroup);
-            ownGroup->releaseStopwatch(iteration_, this);
-        }
-
-        if (isMonitoringForTop_)
-            runtime->stopwatch.isEmpty = true;
     }
    private:
     void enter() {
         JSRuntime* runtime = cx_->runtime();
 
         if (runtime->stopwatch.isMonitoringCPOW()) {
-            CPOWTimeStart_ = runtime->stopwatch.performance.totalCPOWTime;
+            CPOWTimeStart_ = runtime->stopwatch.performance.getOwnGroup()->data.totalCPOWTime;
             isMonitoringCPOW_ = true;
         }
 
@@ -563,46 +517,54 @@ class AutoStopwatch final
         uint64_t CPOWTimeDelta = 0;
         if (isMonitoringCPOW_ && runtime->stopwatch.isMonitoringCPOW()) {
             
-            CPOWTimeDelta = runtime->stopwatch.performance.totalCPOWTime - CPOWTimeStart_;
+            CPOWTimeDelta = runtime->stopwatch.performance.getOwnGroup()->data.totalCPOWTime - CPOWTimeStart_;
 
         }
         commitDeltasToGroups(userTimeDelta, systemTimeDelta, CPOWTimeDelta);
     }
 
-    void commitDeltasToGroups(uint64_t userTimeDelta,
-                              uint64_t systemTimeDelta,
-                              uint64_t CPOWTimeDelta)
-    {
-        JSCompartment* compartment = cx_->compartment();
+    
+    
+    
+    
+    
+    PerformanceGroup* acquireGroup(PerformanceGroup* group) {
+        if (!group)
+            return nullptr;
 
-        PerformanceGroup* sharedGroup = compartment->performanceMonitoring.getSharedGroup(cx_);
-        MOZ_ASSERT(sharedGroup);
-        applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, sharedGroup->data);
+        if (group->hasStopwatch(iteration_))
+            return nullptr;
 
-        if (isMonitoringForSelf_) {
-            PerformanceGroup* ownGroup = compartment->performanceMonitoring.getOwnGroup(cx_);
-            MOZ_ASSERT(ownGroup);
-            applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, ownGroup->data);
-        }
-
-        if (isMonitoringForTop_) {
-            JSRuntime* runtime = cx_->runtime();
-            applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, runtime->stopwatch.performance);
-        }
+        group->acquireStopwatch(iteration_, this);
+        return group;
     }
 
+    
+    
+    
+    void releaseGroup(PerformanceGroup* group) {
+        if (group)
+            group->releaseStopwatch(iteration_, this);
+    }
 
-    void applyDeltas(uint64_t userTimeDelta,
-                     uint64_t systemTimeDelta,
-                     uint64_t CPOWTimeDelta,
-                     PerformanceData& data) const {
+    void commitDeltasToGroups(uint64_t userTimeDelta, uint64_t systemTimeDelta,
+                              uint64_t CPOWTimeDelta) const {
+        applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, sharedGroup_);
+        applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, topGroup_);
+        applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, ownGroup_);
+    }
 
-        data.ticks++;
+    void applyDeltas(uint64_t userTimeDelta, uint64_t systemTimeDelta,
+                     uint64_t CPOWTimeDelta, PerformanceGroup* group) const {
+        if (!group)
+            return;
+
+        group->data.ticks++;
 
         uint64_t totalTimeDelta = userTimeDelta + systemTimeDelta;
-        data.totalUserTime += userTimeDelta;
-        data.totalSystemTime += systemTimeDelta;
-        data.totalCPOWTime += CPOWTimeDelta;
+        group->data.totalUserTime += userTimeDelta;
+        group->data.totalSystemTime += systemTimeDelta;
+        group->data.totalCPOWTime += CPOWTimeDelta;
 
         
         
@@ -612,10 +574,10 @@ class AutoStopwatch final
         size_t i = 0;
         uint64_t duration = 1000;
         for (i = 0, duration = 1000;
-             i < ArrayLength(data.durations) && duration < totalTimeDelta;
+             i < ArrayLength(group->data.durations) && duration < totalTimeDelta;
              ++i, duration *= 2)
         {
-            data.durations[i]++;
+            group->data.durations[i]++;
         }
     }
 
