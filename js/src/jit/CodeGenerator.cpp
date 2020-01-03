@@ -3127,14 +3127,20 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
 
     
     MOZ_ASSERT(!target->isNative());
-    MOZ_ASSERT_IF(target->isClassConstructor(), call->isConstructing());
     
     DebugOnly<unsigned> numNonArgsOnStack = 1 + call->isConstructing();
     MOZ_ASSERT(target->nargs() <= call->mir()->numStackArgs() - numNonArgsOnStack);
 
-    MOZ_ASSERT_IF(call->mir()->isConstructing(), target->isConstructor());
+    MOZ_ASSERT_IF(call->isConstructing(), target->isConstructor());
 
     masm.checkStackAlignment();
+
+    if (target->isClassConstructor() && !call->isConstructing()) {
+        emitCallInvokeFunction(call, calleereg, call->isConstructing(), call->numActualArgs(), unusedStack);
+        return;
+    }
+
+    MOZ_ASSERT_IF(target->isClassConstructor(), call->isConstructing());
 
     
     
