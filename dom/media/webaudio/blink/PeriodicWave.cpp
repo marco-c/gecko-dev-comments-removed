@@ -203,12 +203,9 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
         
         float scale = fftSize;
         AudioBufferCopyWithScale(realData, scale, realP, numberOfPartials + 1);
-        AudioBufferCopyWithScale(imagData, scale, imagP, numberOfPartials + 1);
-
         
         
-        float minusOne = -1;
-        AudioBufferInPlaceScale(imagP, minusOne, numberOfPartials + 1);
+        AudioBufferCopyWithScale(imagData, -scale, imagP, numberOfPartials + 1);
 
         
         for (i = numberOfPartials + 1; i < halfSize + 1; ++i) {
