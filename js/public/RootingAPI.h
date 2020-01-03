@@ -993,7 +993,15 @@ class PersistentRooted : public js::PersistentRootedBase<T>,
 
     void registerWithRootLists(js::RootLists& roots) {
         MOZ_ASSERT(!initialized());
-        roots.getPersistentRootedList<T>().insertBack(this);
+        js::ThingRootKind kind = js::RootKind<T>::rootKind();
+        roots.heapRoots_[kind].insertBack(reinterpret_cast<JS::PersistentRooted<void*>*>(this));
+        
+        
+        MOZ_ASSERT(kind == js::THING_ROOT_OBJECT ||
+                   kind == js::THING_ROOT_SCRIPT ||
+                   kind == js::THING_ROOT_STRING ||
+                   kind == js::THING_ROOT_ID ||
+                   kind == js::THING_ROOT_VALUE);
     }
 
   public:
