@@ -2055,7 +2055,7 @@ NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj, HandleShape
 
 bool
 js::SetPropertyByDefining(JSContext* cx, HandleObject obj, HandleId id, HandleValue v,
-                          HandleValue receiverValue, bool objHasOwn, ObjectOpResult& result)
+                          HandleValue receiverValue, ObjectOpResult& result)
 {
     
     if (!receiverValue.isObject())
@@ -2063,25 +2063,7 @@ js::SetPropertyByDefining(JSContext* cx, HandleObject obj, HandleId id, HandleVa
     RootedObject receiver(cx, &receiverValue.toObject());
 
     bool existing;
-    if (receiver == obj) {
-        
-        
-        
-        
-        
-#ifdef DEBUG
-        
-        
-        
-        Rooted<PropertyDescriptor> desc(cx);
-        if (!GetOwnPropertyDescriptor(cx, receiver, id, &desc))
-            return false;
-        MOZ_ASSERT(!!desc.object() == objHasOwn);
-        MOZ_ASSERT_IF(desc.object(), desc.isDataDescriptor());
-        MOZ_ASSERT_IF(desc.object(), desc.writable());
-#endif
-        existing = objHasOwn;
-    } else {
+    {
         
         Rooted<PropertyDescriptor> desc(cx);
         if (!GetOwnPropertyDescriptor(cx, receiver, id, &desc))
@@ -2156,7 +2138,7 @@ js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue
     RootedObject proto(cx, obj->getProto());
     if (proto)
         return SetProperty(cx, proto, id, v, receiver, result);
-    return SetPropertyByDefining(cx, obj, id, v, receiver, false, result);
+    return SetPropertyByDefining(cx, obj, id, v, receiver, result);
 }
 
 
@@ -2178,7 +2160,7 @@ SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handl
             return false;
     }
 
-    return SetPropertyByDefining(cx, obj, id, v, receiver, false, result);
+    return SetPropertyByDefining(cx, obj, id, v, receiver, result);
 }
 
 
@@ -2239,7 +2221,7 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
             return SetDenseOrTypedArrayElement(cx, pobj, JSID_TO_INT(id), v, result);
 
         
-        return SetPropertyByDefining(cx, obj, id, v, receiver, obj == pobj, result);
+        return SetPropertyByDefining(cx, obj, id, v, receiver, result);
     }
 
     
@@ -2277,7 +2259,7 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
 
         
         
-        return SetPropertyByDefining(cx, obj, id, v, receiver, obj == pobj, result);
+        return SetPropertyByDefining(cx, obj, id, v, receiver, result);
     }
 
     
