@@ -3123,12 +3123,7 @@ GenerateSetUnboxed(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& 
             MOZ_ASSERT(!UnboxedTypeNeedsPreBarrier(unboxedType));
     }
 
-    
-    
-    
-    Label* storeFailure = obj->group()->unboxedLayout().nativeGroup() ? &failure : nullptr;
-
-    masm.storeUnboxedProperty(address, unboxedType, value, storeFailure);
+    masm.storeUnboxedProperty(address, unboxedType, value, &failure);
 
     attacher.jumpRejoin(masm);
 
