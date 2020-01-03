@@ -19,7 +19,7 @@ class SourceBufferResource;
 class ContainerParser {
 public:
   explicit ContainerParser(const nsACString& aType);
-  virtual ~ContainerParser() {}
+  virtual ~ContainerParser() = default;
 
   
   
