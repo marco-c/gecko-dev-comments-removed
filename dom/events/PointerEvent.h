@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Portions Copyright 2013 Microsoft Open Technologies, Inc. */
+
+
+
+
+
 
 #ifndef mozilla_dom_PointerEvent_h_
 #define mozilla_dom_PointerEvent_h_
@@ -48,7 +48,9 @@ public:
   void GetPointerType(nsAString& aPointerType);
 };
 
-} // namespace dom
-} // namespace mozilla
+void ConvertPointerTypeToString(uint16_t aPointerTypeSrc, nsAString& aPointerTypeDest);
 
-#endif // mozilla_dom_PointerEvent_h_
+} 
+} 
+
+#endif 
