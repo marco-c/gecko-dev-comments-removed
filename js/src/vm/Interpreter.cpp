@@ -56,7 +56,11 @@
 #include "vm/ScopeObject-inl.h"
 #include "vm/Stack-inl.h"
 
-#if defined(XP_WIN)
+#if defined(XP_MACOSX)
+#include <mach/mach.h>
+#elif defined(XP_UNIX)
+#include <sys/resource.h>
+#elif defined(XP_WIN)
 #include <processthreadsapi.h>
 #include <windows.h>
 #endif 
@@ -391,47 +395,25 @@ class AutoStopwatch final
     bool isMonitoringCPOW_;
 
     
-    uint64_t cyclesStart_;
+    uint64_t userTimeStart_;
+    uint64_t systemTimeStart_;
     uint64_t CPOWTimeStart_;
 
-    
-    
-#if defined(XP_WIN) && WINVER >= _WIN32_WINNT_VISTA
-    struct cpuid_t {
-        WORD group_;
-        BYTE number_;
-        cpuid_t(WORD group, BYTE number)
-          : group_(group),
-            number_(number)
-        { }
-        cpuid_t()
-          : group_(0),
-            number_(0)
-        { }
-    };
-#elif defined(XP_LINUX)
-    typedef int cpuid_t;
-#else
-    typedef struct {} cpuid_t;
-#endif 
+   
+   
+   
+   mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
 
-    cpuid_t cpuStart_;
+   
+   
+   mozilla::RefPtr<js::PerformanceGroup> topGroup_;
 
-    
-    
-    
-    mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
+   
+   
+   
+   mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
 
-    
-    
-    mozilla::RefPtr<js::PerformanceGroup> topGroup_;
-
-    
-    
-    
-    mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
-
- public:
+   public:
     
     
     
@@ -442,7 +424,8 @@ class AutoStopwatch final
       , iteration_(0)
       , isMonitoringJank_(false)
       , isMonitoringCPOW_(false)
-      , cyclesStart_(0)
+      , userTimeStart_(0)
+      , systemTimeStart_(0)
       , CPOWTimeStart_(0)
     {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
@@ -452,7 +435,7 @@ class AutoStopwatch final
             return;
 
         JSRuntime* runtime = cx_->runtime();
-        iteration_ = runtime->stopwatch.iteration();
+        iteration_ = runtime->stopwatch.iteration;
 
         sharedGroup_ = acquireGroup(compartment->performanceMonitoring.getSharedGroup(cx));
         if (sharedGroup_)
@@ -466,14 +449,13 @@ class AutoStopwatch final
             return;
         }
 
-        
-        
-        runtime->stopwatch.start();
         enter();
     }
     ~AutoStopwatch()
     {
         if (!sharedGroup_ && !ownGroup_) {
+            
+            
             
             return;
         }
@@ -483,32 +465,32 @@ class AutoStopwatch final
             return;
 
         JSRuntime* runtime = cx_->runtime();
-        if (iteration_ != runtime->stopwatch.iteration()) {
+        if (iteration_ != runtime->stopwatch.iteration) {
             
             
             return;
         }
 
-        
-        exit();
-
         releaseGroup(sharedGroup_);
         releaseGroup(topGroup_);
         releaseGroup(ownGroup_);
+
+        
+        exit();
     }
    private:
     void enter() {
         JSRuntime* runtime = cx_->runtime();
 
         if (runtime->stopwatch.isMonitoringCPOW()) {
-            CPOWTimeStart_ = runtime->stopwatch.totalCPOWTime;
+            CPOWTimeStart_ = runtime->stopwatch.performance.getOwnGroup()->data.totalCPOWTime;
             isMonitoringCPOW_ = true;
         }
 
         if (runtime->stopwatch.isMonitoringJank()) {
-            cyclesStart_ = this->getCycles();
-            cpuStart_ = this->getCPU();
-            isMonitoringJank_ = true;
+            if (this->getTimes(runtime, &userTimeStart_, &systemTimeStart_)) {
+                isMonitoringJank_ = true;
+            }
         }
 
     }
@@ -516,37 +498,29 @@ class AutoStopwatch final
     void exit() {
         JSRuntime* runtime = cx_->runtime();
 
-        uint64_t cyclesDelta = 0;
+        uint64_t userTimeDelta = 0;
+        uint64_t systemTimeDelta = 0;
         if (isMonitoringJank_ && runtime->stopwatch.isMonitoringJank()) {
             
-
-            
-            
-            
-            
-            
-            
-            const cpuid_t cpuEnd = this->getCPU();
-            if (isSameCPU(cpuStart_, cpuEnd)) {
-                const uint64_t cyclesEnd = getCycles();
-                cyclesDelta = getDelta(cyclesEnd, cyclesStart_);
+            uint64_t userTimeEnd, systemTimeEnd;
+            if (!this->getTimes(runtime, &userTimeEnd, &systemTimeEnd)) {
+                
+                
+                
+                
+                return;
             }
-#if (defined(XP_WIN) && WINVER >= _WIN32_WINNT_VISTA) || defined(XP_LINUX)
-            if (isSameCPU(cpuStart_, cpuEnd))
-                runtime->stopwatch.testCpuRescheduling.stayed += 1;
-            else
-                runtime->stopwatch.testCpuRescheduling.moved += 1;
-#endif 
+            userTimeDelta = userTimeEnd - userTimeStart_;
+            systemTimeDelta = systemTimeEnd - systemTimeStart_;
         }
 
         uint64_t CPOWTimeDelta = 0;
         if (isMonitoringCPOW_ && runtime->stopwatch.isMonitoringCPOW()) {
             
-            const uint64_t CPOWTimeEnd = runtime->stopwatch.totalCPOWTime;
-            CPOWTimeDelta = getDelta(CPOWTimeEnd, CPOWTimeStart_);
+            CPOWTimeDelta = runtime->stopwatch.performance.getOwnGroup()->data.totalCPOWTime - CPOWTimeStart_;
 
         }
-        addToGroups(cyclesDelta, CPOWTimeDelta);
+        commitDeltasToGroups(userTimeDelta, systemTimeDelta, CPOWTimeDelta);
     }
 
     
@@ -573,85 +547,121 @@ class AutoStopwatch final
             group->releaseStopwatch(iteration_, this);
     }
 
-    
-    
-    void addToGroups(uint64_t cyclesDelta, uint64_t CPOWTimeDelta) {
-        addToGroup(cyclesDelta, CPOWTimeDelta, sharedGroup_);
-        addToGroup(cyclesDelta, CPOWTimeDelta, topGroup_);
-        addToGroup(cyclesDelta, CPOWTimeDelta, ownGroup_);
+    void commitDeltasToGroups(uint64_t userTimeDelta, uint64_t systemTimeDelta,
+                              uint64_t CPOWTimeDelta) const {
+        applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, sharedGroup_);
+        applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, topGroup_);
+        applyDeltas(userTimeDelta, systemTimeDelta, CPOWTimeDelta, ownGroup_);
     }
 
-    
-    void addToGroup(uint64_t cyclesDelta, uint64_t CPOWTimeDelta, PerformanceGroup* group) {
+    void applyDeltas(uint64_t userTimeDelta, uint64_t systemTimeDelta,
+                     uint64_t CPOWTimeDelta, PerformanceGroup* group) const {
         if (!group)
             return;
 
-        MOZ_ASSERT(group->hasStopwatch(iteration_, this));
+        group->data.ticks++;
 
-        if (group->recentTicks == 0) {
-            
-            
-            JSRuntime* runtime = cx_->runtime();
-            runtime->stopwatch.addChangedGroup(group);
+        uint64_t totalTimeDelta = userTimeDelta + systemTimeDelta;
+        group->data.totalUserTime += userTimeDelta;
+        group->data.totalSystemTime += systemTimeDelta;
+        group->data.totalCPOWTime += CPOWTimeDelta;
+
+        
+        
+        
+
+        
+        size_t i = 0;
+        uint64_t duration = 1000;
+        for (i = 0, duration = 1000;
+             i < ArrayLength(group->data.durations) && duration < totalTimeDelta;
+             ++i, duration *= 2)
+        {
+            group->data.durations[i]++;
         }
-        group->recentTicks++;
-        group->recentCycles += cyclesDelta;
-        group->recentCPOW += CPOWTimeDelta;
     }
 
     
     
     
-    
-    
-    uint64_t getDelta(const uint64_t end, const uint64_t start) const
-    {
-        if (start >= end)
-            return 0;
-        return end - start;
-    }
+    bool getTimes(JSRuntime* runtime, uint64_t* userTime, uint64_t* systemTime) const {
+        MOZ_ASSERT(userTime);
+        MOZ_ASSERT(systemTime);
 
-    
-    
-    uint64_t getCycles() const
-    {
-#if defined(MOZ_HAVE_RDTSC)
-        return ReadTimestampCounter();
+#if defined(XP_MACOSX)
+        
+        
+
+        mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
+        thread_basic_info_data_t info;
+        mach_port_t port = mach_thread_self();
+        kern_return_t err =
+            thread_info( port,
+                         THREAD_BASIC_INFO,
+                          (thread_info_t)&info,
+                           &count);
+
+        
+        
+        mach_port_deallocate(mach_task_self(), port);
+
+        if (err != KERN_SUCCESS)
+            return false;
+
+        *userTime = info.user_time.microseconds + info.user_time.seconds * 1000000;
+        *systemTime = info.system_time.microseconds + info.system_time.seconds * 1000000;
+
+#elif defined(XP_UNIX)
+        struct rusage rusage;
+#if defined(RUSAGE_THREAD)
+        
+        int err = getrusage(RUSAGE_THREAD, &rusage);
 #else
-        return 0;
+        
+        
+        int err = getrusage(RUSAGE_SELF, &rusage);
 #endif 
-    }
 
+        if (err)
+            return false;
 
-    
-    
-    cpuid_t inline getCPU() const
-    {
-#if defined(XP_WIN) && WINVER >= _WIN32_WINNT_VISTA
-        PROCESSOR_NUMBER proc;
-        GetCurrentProcessorNumberEx(&proc);
+        *userTime = rusage.ru_utime.tv_usec + rusage.ru_utime.tv_sec * 1000000;
+        *systemTime = rusage.ru_stime.tv_usec + rusage.ru_stime.tv_sec * 1000000;
 
-        cpuid_t result(proc.Group, proc.Number);
-        return result;
-#elif defined(XP_LINUX)
-        return sched_getcpu();
-#else
-        return {};
+#elif defined(XP_WIN)
+        
+        
+        
+        FILETIME creationFileTime; 
+        FILETIME exitFileTime; 
+        FILETIME kernelFileTime;
+        FILETIME userFileTime;
+        BOOL success = GetThreadTimes(GetCurrentThread(),
+                                      &creationFileTime, &exitFileTime,
+                                      &kernelFileTime, &userFileTime);
+
+        if (!success)
+            return false;
+
+        ULARGE_INTEGER kernelTimeInt;
+        ULARGE_INTEGER userTimeInt;
+        kernelTimeInt.LowPart = kernelFileTime.dwLowDateTime;
+        kernelTimeInt.HighPart = kernelFileTime.dwHighDateTime;
+        
+        *systemTime = runtime->stopwatch.systemTimeFix.monotonize(kernelTimeInt.QuadPart / 10);
+
+        userTimeInt.LowPart = userFileTime.dwLowDateTime;
+        userTimeInt.HighPart = userFileTime.dwHighDateTime;
+        
+        *userTime = runtime->stopwatch.userTimeFix.monotonize(userTimeInt.QuadPart / 10);
+
 #endif 
-    }
 
-    
-    bool inline isSameCPU(const cpuid_t& a, const cpuid_t& b) const
-    {
-#if defined(XP_WIN)  && WINVER >= _WIN32_WINNT_VISTA
-        return a.group_ == b.group_ && a.number_ == b.number_;
-#elif defined(XP_LINUX)
-        return a == b;
-#else
         return true;
-#endif
     }
- private:
+
+
+private:
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 };
 
@@ -668,7 +678,7 @@ js::RunScript(JSContext* cx, RunState& state)
 {
     JS_CHECK_RECURSION(cx, return false);
 
-#if defined(NIGHTLY_BUILD) && defined(MOZ_HAVE_RDTSC)
+#if defined(NIGHTLY_BUILD)
     js::AutoStopwatch stopwatch(cx);
 #endif 
 
