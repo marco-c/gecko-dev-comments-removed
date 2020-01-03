@@ -76,42 +76,58 @@ var nonGCTypes = {};
 var nonGCPointers = {}; 
 var gcFields = new Map;
 
+function stars(n) { return n ? '*' + stars(n-1) : '' };
 
 
 
-function markGCType(typeName, child, why, depth, ptrdness)
+
+function markGCType(typeName, child, why, typePtrLevel, fieldPtrLevel, indent)
 {
     
+
     
     
     
     
     
-    if (!ptrdness && isUnsafeStorage(typeName)) {
+    
+    if (!fieldPtrLevel && isUnsafeStorage(typeName)) {
         
         
         
         
         
-        ptrdness = -1;
+        fieldPtrLevel = -1;
     }
 
-    depth += ptrdness;
-    if (depth > 2)
+    
+    
+    
+    
+    
+    
+    
+    
+    var ptrLevel = typePtrLevel + fieldPtrLevel;
+
+    
+    
+    
+    if (ptrLevel > 2)
         return;
 
-    if (depth == 0 && isRootedTypeName(typeName))
+    if (ptrLevel == 0 && isRootedTypeName(typeName))
         return;
-    if (depth == 1 && isRootedPointerTypeName(typeName))
+    if (ptrLevel == 1 && isRootedPointerTypeName(typeName))
         return;
 
-    if (depth == 0) {
+    if (ptrLevel == 0) {
         if (typeName in nonGCTypes)
             return;
         if (!(typeName in gcTypes))
             gcTypes[typeName] = new Set();
         gcTypes[typeName].add(why);
-    } else if (depth == 1) {
+    } else if (ptrLevel == 1) {
         if (typeName in nonGCPointers)
             return;
         if (!(typeName in gcPointers))
@@ -119,34 +135,34 @@ function markGCType(typeName, child, why, depth, ptrdness)
         gcPointers[typeName].add(why);
     }
 
-    if (depth < 2) {
+    if (ptrLevel < 2) {
         if (!gcFields.has(typeName))
             gcFields.set(typeName, new Map());
-        gcFields.get(typeName).set(child, [ why, ptrdness ]);
+        gcFields.get(typeName).set(child, [ why, fieldPtrLevel ]);
     }
 
     if (typeName in structureParents) {
         for (var field of structureParents[typeName]) {
             var [ holderType, fieldName ] = field;
-            markGCType(holderType, typeName, fieldName, depth, 0);
+            markGCType(holderType, fieldName, typeName, ptrLevel, 0, indent + "  ");
         }
     }
     if (typeName in pointerParents) {
         for (var field of pointerParents[typeName]) {
             var [ holderType, fieldName ] = field;
-            markGCType(holderType, typeName, fieldName, depth, 1);
+            markGCType(holderType, fieldName, typeName, ptrLevel, 1, indent + "  ");
         }
     }
 }
 
-function addGCType(typeName, child, why, depth, ptrdness)
+function addGCType(typeName, child, why, depth, fieldPtrLevel)
 {
-    markGCType(typeName, 'annotation', '<annotation>', 0, 0);
+    markGCType(typeName, '<annotation>', '(annotation)', 0, 0, "");
 }
 
 function addGCPointer(typeName)
 {
-    markGCType(typeName, 'annotation', '<pointer-annotation>', 1, 0);
+    markGCType(typeName, '<pointer-annotation>', '(annotation)', 1, 0, "");
 }
 
 for (var type of listNonGCTypes())
