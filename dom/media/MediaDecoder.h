@@ -581,13 +581,6 @@ public:
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
 
   
-  
-  
-  void QueueMetadata(const media::TimeUnit& aPublishTime,
-                     nsAutoPtr<MediaInfo> aInfo,
-                     nsAutoPtr<MetadataTags> aTags) override;
-
-  
 
 
 
@@ -619,7 +612,7 @@ public:
 
   
   
-  virtual void RemoveMediaTracks() override;
+  void RemoveMediaTracks();
 
   
   

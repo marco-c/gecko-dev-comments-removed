@@ -336,10 +336,6 @@ public:
   
   bool IsShutdown();
 
-  void QueueMetadata(const media::TimeUnit& aPublishTime,
-                     nsAutoPtr<MediaInfo> aInfo,
-                     nsAutoPtr<MetadataTags> aTags);
-
   
   
   bool IsPlaying() const;
