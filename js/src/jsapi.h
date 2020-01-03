@@ -5331,6 +5331,7 @@ class AutoStopwatch;
 
 
 
+
 struct PerformanceData {
     
     
@@ -5400,25 +5401,63 @@ struct PerformanceGroup {
     
     
     
-    bool hasStopwatch(uint64_t iteration) const {
-        return stopwatch_ != nullptr && iteration_ == iteration;
+    
+    uint64_t recentCycles;
+
+    
+    
+    uint64_t recentTicks;
+
+    
+    
+    uint64_t recentCPOW;
+
+    
+    uint64_t iteration() const {
+        return iteration_;
     }
 
     
     
-    void acquireStopwatch(uint64_t iteration, const AutoStopwatch* stopwatch) {
-        iteration_ = iteration;
+    
+    bool hasStopwatch(uint64_t it) const {
+        return stopwatch_ != nullptr && iteration_ == it;
+    }
+
+    
+    
+    
+    bool hasStopwatch(uint64_t it, const AutoStopwatch* stopwatch) const {
+        return stopwatch_ == stopwatch && iteration_ == it;
+    }
+
+    
+    
+    void acquireStopwatch(uint64_t it, const AutoStopwatch* stopwatch) {
+        if (iteration_ != it) {
+            
+            
+            resetRecentData();
+        }
+        iteration_ = it;
         stopwatch_ = stopwatch;
     }
 
     
     
-    void releaseStopwatch(uint64_t iteration, const AutoStopwatch* stopwatch) {
-        if (iteration_ != iteration)
+    void releaseStopwatch(uint64_t it, const AutoStopwatch* stopwatch) {
+        if (iteration_ != it)
             return;
 
         MOZ_ASSERT(stopwatch == stopwatch_ || stopwatch_ == nullptr);
         stopwatch_ = nullptr;
+    }
+
+    
+    void resetRecentData() {
+        recentCycles = 0;
+        recentTicks = 0;
+        recentCPOW = 0;
     }
 
     
@@ -5450,7 +5489,6 @@ private:
 
     
     uint64_t refCount_;
-
 
     
     
@@ -5515,8 +5553,15 @@ struct PerformanceGroupHolder {
 
 
 
+
 extern JS_PUBLIC_API(void)
-ResetStopwatches(JSRuntime*);
+FlushPerformanceMonitoring(JSRuntime*);
+
+
+
+
+extern JS_PUBLIC_API(void)
+ResetPerformanceMonitoring(JSRuntime*);
 
 
 
@@ -5544,8 +5589,9 @@ IsStopwatchActive(JSRuntime*);
 
 
 
-extern JS_PUBLIC_API(PerformanceData*)
-GetPerformanceData(JSRuntime*);
+
+extern JS_PUBLIC_API(void)
+AddCPOWPerformanceDelta(JSRuntime*, uint64_t delta);
 
 typedef bool
 (PerformanceStatsWalker)(JSContext* cx,

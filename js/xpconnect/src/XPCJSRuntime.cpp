@@ -35,7 +35,7 @@
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollector.h"
 #include "nsScriptLoader.h"
-#include "jsfriendapi.h"
+#include "jsapi.h"
 #include "jsprf.h"
 #include "js/MemoryMetrics.h"
 #include "mozilla/dom/GeneratedAtomList.h"
@@ -3602,7 +3602,10 @@ XPCJSRuntime::BeforeProcessTask(bool aMightBlock)
     
     mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
     mSlowScriptSecondHalf = false;
-    js::ResetStopwatches(Get()->Runtime());
+
+    
+    
+    js::ResetPerformanceMonitoring(Get()->Runtime());
 
     
     
@@ -3623,6 +3626,10 @@ XPCJSRuntime::AfterProcessTask(uint32_t aNewRecursionDepth)
     nsJSContext::MaybePokeCC();
 
     CycleCollectedJSRuntime::AfterProcessTask(aNewRecursionDepth);
+
+    
+    
+    js::FlushPerformanceMonitoring(Get()->Runtime());
 
     PopNullJSContext();
 }
