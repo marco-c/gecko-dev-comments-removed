@@ -411,7 +411,9 @@ typedef enum {
   , NPNVsupportsCocoaBool = 3001 
   , NPNVsupportsUpdatedCocoaTextInputBool = 3002 
 
+#endif
   , NPNVmuteAudioBool = 4000 
+#if defined(XP_MACOSX)
   , NPNVsupportsCompositingCoreAnimationPluginsBool = 74656 
 
 #endif
