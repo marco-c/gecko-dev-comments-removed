@@ -69,12 +69,14 @@ ChannelMediaResource::ChannelMediaResource(MediaDecoder* aDecoder,
                                            nsIURI* aURI,
                                            const nsACString& aContentType)
   : BaseMediaResource(aDecoder, aChannel, aURI, aContentType),
-    mOffset(0), mSuspendCount(0),
-    mReopenOnError(false), mIgnoreClose(false),
+    mOffset(0),
+    mReopenOnError(false),
+    mIgnoreClose(false),
     mCacheStream(this),
     mLock("ChannelMediaResource.mLock"),
     mIgnoreResume(false),
-    mIsTransportSeekable(true)
+    mIsTransportSeekable(true),
+    mSuspendAgent(mChannel)
 {
   if (!gMediaResourceLog) {
     gMediaResourceLog = PR_NewLogModule("MediaResource");
@@ -317,13 +319,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
   mReopenOnError = false;
   mIgnoreClose = false;
 
-  if (mSuspendCount > 0) {
-    
-    
-    
-    mChannel->Suspend();
-    mIgnoreResume = false;
-  }
+  mSuspendAgent.NotifyChannelOpened(mChannel);
 
   
   owner->DownloadProgressed();
@@ -389,7 +385,7 @@ nsresult
 ChannelMediaResource::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
 {
   NS_ASSERTION(mChannel.get() == aRequest, "Wrong channel!");
-  NS_ASSERTION(mSuspendCount == 0,
+  NS_ASSERTION(!mSuspendAgent.IsSuspended(),
                "How can OnStopRequest fire while we're suspended?");
 
   {
@@ -678,7 +674,7 @@ already_AddRefed<MediaResource> ChannelMediaResource::CloneData(MediaDecoder* aD
     
     
     
-    resource->mSuspendCount = 1;
+    resource->mSuspendAgent.Suspend();
     resource->mCacheStream.InitAsClone(&mCacheStream);
     resource->mChannelStatistics = new MediaChannelStatistics(mChannelStatistics);
     resource->mChannelStatistics->Stop();
@@ -701,10 +697,7 @@ void ChannelMediaResource::CloseChannel()
   }
 
   if (mChannel) {
-    if (mSuspendCount > 0) {
-      
-      PossiblyResume();
-    }
+    mSuspendAgent.NotifyChannelClosing();
     
     
     
@@ -790,29 +783,27 @@ void ChannelMediaResource::Suspend(bool aCloseImmediately)
     return;
   }
 
-  if (mChannel) {
-    if (aCloseImmediately && mCacheStream.IsTransportSeekable()) {
-      
-      mIgnoreClose = true;
-      CloseChannel();
-      element->DownloadSuspended();
-    } else if (mSuspendCount == 0) {
+  if (mChannel && aCloseImmediately && mCacheStream.IsTransportSeekable()) {
+    
+    mIgnoreClose = true;
+    CloseChannel();
+    element->DownloadSuspended();
+  }
+
+  if (mSuspendAgent.Suspend()) {
+    if (mChannel) {
       {
         MutexAutoLock lock(mLock);
         mChannelStatistics->Stop();
       }
-      PossiblySuspend();
       element->DownloadSuspended();
     }
   }
-
-  ++mSuspendCount;
 }
 
 void ChannelMediaResource::Resume()
 {
   NS_ASSERTION(NS_IsMainThread(), "Don't call on non-main thread");
-  NS_ASSERTION(mSuspendCount > 0, "Too many resumes!");
 
   MediaDecoderOwner* owner = mDecoder->GetMediaOwner();
   if (!owner) {
@@ -825,9 +816,7 @@ void ChannelMediaResource::Resume()
     return;
   }
 
-  NS_ASSERTION(mSuspendCount > 0, "Resume without previous Suspend!");
-  --mSuspendCount;
-  if (mSuspendCount == 0) {
+  if (mSuspendAgent.Resume()) {
     if (mChannel) {
       
       {
@@ -837,7 +826,6 @@ void ChannelMediaResource::Resume()
       
       
       mReopenOnError = true;
-      PossiblyResume();
       element->DownloadResumed();
     } else {
       int64_t totalLength = mCacheStream.GetLength();
@@ -1000,21 +988,19 @@ ChannelMediaResource::CacheClientSeek(int64_t aOffset, bool aResume)
 
   CloseChannel();
 
-  if (aResume) {
-    NS_ASSERTION(mSuspendCount > 0, "Too many resumes!");
-    
-    --mSuspendCount;
-  }
-
   mOffset = aOffset;
 
   
   
   mIgnoreClose = true;
 
+  if (aResume) {
+    mSuspendAgent.Resume();
+  }
+
   
   
-  if (mSuspendCount > 0) {
+  if (mSuspendAgent.IsSuspended()) {
     return NS_OK;
   }
 
@@ -1091,7 +1077,7 @@ ChannelMediaResource::IsSuspendedByCache()
 bool
 ChannelMediaResource::IsSuspended()
 {
-  return mSuspendCount > 0;
+  return mSuspendAgent.IsSuspended();
 }
 
 void
@@ -1131,28 +1117,75 @@ ChannelMediaResource::GetLength()
   return mCacheStream.GetLength();
 }
 
-void
-ChannelMediaResource::PossiblySuspend()
+
+
+bool
+ChannelSuspendAgent::Suspend()
 {
-  bool isPending = false;
-  nsresult rv = mChannel->IsPending(&isPending);
-  if (NS_SUCCEEDED(rv) && isPending) {
-    mChannel->Suspend();
-    mIgnoreResume = false;
-  } else {
-    mIgnoreResume = true;
+  SuspendInternal();
+  return (++mSuspendCount == 1);
+}
+
+void
+ChannelSuspendAgent::SuspendInternal()
+{
+  if (mChannel) {
+    bool isPending = false;
+    nsresult rv = mChannel->IsPending(&isPending);
+    if (NS_SUCCEEDED(rv) && isPending && !mIsChannelSuspended) {
+      mChannel->Suspend();
+      mIsChannelSuspended = true;
+    }
+  }
+}
+
+bool
+ChannelSuspendAgent::Resume()
+{
+  MOZ_ASSERT(IsSuspended(), "Resume without suspend!");
+  --mSuspendCount;
+
+  if (mSuspendCount == 0) {
+    if (mChannel && mIsChannelSuspended) {
+      mChannel->Resume();
+      mIsChannelSuspended = false;
+    }
+    return true;
+  }
+  return false;
+}
+
+void
+ChannelSuspendAgent::NotifyChannelOpened(nsIChannel* aChannel)
+{
+  MOZ_ASSERT(aChannel);
+  mChannel = aChannel;
+
+  if (!mIsChannelSuspended && IsSuspended()) {
+    SuspendInternal();
   }
 }
 
 void
-ChannelMediaResource::PossiblyResume()
+ChannelSuspendAgent::NotifyChannelClosing()
 {
-  if (!mIgnoreResume) {
+  MOZ_ASSERT(mChannel);
+  
+  
+  if (mIsChannelSuspended) {
     mChannel->Resume();
-  } else {
-    mIgnoreResume = false;
+    mIsChannelSuspended = false;
   }
+  mChannel = nullptr;
 }
+
+bool
+ChannelSuspendAgent::IsSuspended()
+{
+  return (mSuspendCount > 0);
+}
+
+
 
 class FileMediaResource : public BaseMediaResource
 {
