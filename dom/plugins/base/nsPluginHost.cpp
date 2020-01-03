@@ -247,6 +247,11 @@ IsTypeInList(nsCString &aMimeType, nsCString aTypeList)
   commaSeparated += aMimeType;
   commaSeparated.Append(',');
 
+  
+  
+  ToLowerCase(searchStr);
+  ToLowerCase(commaSeparated);
+
   return FindInReadable(commaSeparated, start, end);
 }
 
