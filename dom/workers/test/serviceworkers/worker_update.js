@@ -2,13 +2,18 @@
 
 
 onmessage = function(e) {
-  self.registration.update();
-  clients.matchAll().then(function(c) {
-    if (c.length == 0) {
-      
-      return;
-    }
+  self.registration.update().then(function(v) {
+    return v === undefined ? 'FINISH' : 'FAIL';
+  }).catch(function(e) {
+    return 'FAIL';
+  }).then(function(result) {
+    clients.matchAll().then(function(c) {
+      if (c.length == 0) {
+        dump("!!!!!!!!!!! WORKER HAS NO CLIENTS TO FINISH TEST !!!!!!!!!!!!\n");
+        return;
+      }
 
-    c[0].postMessage('FINISH');
+      c[0].postMessage(result);
+    });
   });
 }
