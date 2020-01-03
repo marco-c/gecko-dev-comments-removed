@@ -5,9 +5,11 @@ import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -198,6 +200,10 @@ public class RemoteTabsSplitPlaneFragment extends RemoteTabsBaseFragment {
         mClientList.removeFooterView(mFooterView);
 
         
+        mClientList.setOnTouchListener(new ListTouchListener(mClientList));
+        mTabList.setOnTouchListener(new ListTouchListener(mTabList));
+
+        
         mCursorLoaderCallbacks = new CursorLoaderCallbacks();
         loadIfVisible();
     }
@@ -360,6 +366,37 @@ public class RemoteTabsSplitPlaneFragment extends RemoteTabsBaseFragment {
             final boolean isSelected = client.guid.equals(sState.selectedClient);
             adapter.updateClientsItemView(isSelected, context, view, getItem(position));
             return view;
+        }
+    }
+
+    
+
+
+
+    private class ListTouchListener implements View.OnTouchListener {
+        private final AbsListView listView;
+
+        public ListTouchListener(AbsListView listView) {
+            this.listView = listView;
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            final int action = event.getAction();
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    
+                    mRefreshLayout.setEnabled(listView.getCount() <= 0
+                    	    || (listView.getFirstVisiblePosition() <= 0 && listView.getChildAt(0).getTop() >= 0));
+                    break;
+                case MotionEvent.ACTION_CANCEL:
+                case MotionEvent.ACTION_UP:
+                    mRefreshLayout.setEnabled(true);
+                    break;
+            }
+
+            
+            return false;
         }
     }
 }
