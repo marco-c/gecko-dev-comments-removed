@@ -558,9 +558,6 @@ TrackBuffersManager::CodedFrameRemoval(TimeInterval aInterval)
   }
   mEvictionOccurred = true;
 
-  
-  mMediaSourceDemuxer->NotifyTimeRangesChanged();
-
   return dataRemoved;
 }
 
@@ -584,6 +581,9 @@ TrackBuffersManager::UpdateBufferedRanges()
 #endif
 
   mOfficialGroupEndTimestamp = mGroupEndTimestamp;
+
+  
+  mMediaSourceDemuxer->NotifyTimeRangesChanged();
 }
 
 nsRefPtr<TrackBuffersManager::AppendPromise>
@@ -1195,9 +1195,6 @@ TrackBuffersManager::CompleteCodedFrameProcessing()
 
   
   SetAppendState(AppendState::WAITING_FOR_SEGMENT);
-
-  
-  mMediaSourceDemuxer->NotifyTimeRangesChanged();
 
   
   ResolveProcessing(false, __func__);
