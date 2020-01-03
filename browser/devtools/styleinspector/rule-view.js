@@ -12,8 +12,6 @@
 
 const {Cc, Ci, Cu} = require("chrome");
 const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
-const {setTimeout, clearTimeout} =
-      Cu.import("resource://gre/modules/Timer.jsm", {});
 const {CssLogic} = require("devtools/styleinspector/css-logic");
 const {InplaceEditor, editableField, editableItem} =
       require("devtools/shared/inplace-editor");
@@ -22,14 +20,6 @@ const {ELEMENT_STYLE, PSEUDO_ELEMENTS} =
 const {OutputParser} = require("devtools/output-parser");
 const {PrefObserver, PREF_ORIG_SOURCES} = require("devtools/styleeditor/utils");
 const {
-  createChild,
-  appendText,
-  advanceValidate,
-  blurOnMultipleProperties,
-  promiseWarn,
-  throttle
-} = require("devtools/styleinspector/utils");
-const {
   parseDeclarations,
   parseSingleValue,
   parsePseudoClassesAndAttributes,
@@ -37,6 +27,7 @@ const {
   SELECTOR_ELEMENT,
   SELECTOR_PSEUDO_CLASS
 } = require("devtools/styleinspector/css-parsing-utils");
+
 loader.lazyRequireGetter(this, "overlays", "devtools/styleinspector/style-inspector-overlays");
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/toolkit/event-emitter");
 loader.lazyRequireGetter(this, "StyleInspectorMenu", "devtools/styleinspector/style-inspector-menu");
@@ -58,6 +49,11 @@ const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
 
 const IOService = Cc["@mozilla.org/network/io-service;1"]
                   .getService(Ci.nsIIOService);
+
+function promiseWarn(err) {
+  console.error(err);
+  return promise.reject(err);
+}
 
 
 
@@ -3619,6 +3615,77 @@ UserProperties.prototype = {
 
 
 
+
+
+
+function createChild(aParent, aTag, aAttributes) {
+  let elt = aParent.ownerDocument.createElementNS(HTML_NS, aTag);
+  for (let attr in aAttributes) {
+    if (aAttributes.hasOwnProperty(attr)) {
+      if (attr === "textContent") {
+        elt.textContent = aAttributes[attr];
+      } else if (attr === "child") {
+        elt.appendChild(aAttributes[attr]);
+      } else {
+        elt.setAttribute(attr, aAttributes[attr]);
+      }
+    }
+  }
+  aParent.appendChild(elt);
+  return elt;
+}
+
+function setTimeout() {
+  let window = Services.appShell.hiddenDOMWindow;
+  return window.setTimeout.apply(window, arguments);
+}
+
+function clearTimeout() {
+  let window = Services.appShell.hiddenDOMWindow;
+  return window.clearTimeout.apply(window, arguments);
+}
+
+function throttle(func, wait, scope) {
+  let timer = null;
+  return function() {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    let args = arguments;
+    timer = setTimeout(function() {
+      timer = null;
+      func.apply(scope, args);
+    }, wait);
+  };
+}
+
+
+
+
+
+function blurOnMultipleProperties(e) {
+  setTimeout(() => {
+    let props = parseDeclarations(e.target.value);
+    if (props.length > 1) {
+      e.target.blur();
+    }
+  }, 0);
+}
+
+
+
+
+function appendText(aParent, aText) {
+  aParent.appendChild(aParent.ownerDocument.createTextNode(aText));
+}
+
+
+
+
+
+
+
+
 function getParentTextPropertyHolder(node) {
   while (true) {
     if (!node || !node.classList) {
@@ -3674,6 +3741,48 @@ function getPropertyNameAndValue(node) {
     node = node.parentNode;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+function advanceValidate(aKeyCode, aValue, aInsertionPoint) {
+  
+  if (aKeyCode !== Ci.nsIDOMKeyEvent.DOM_VK_SEMICOLON) {
+    return false;
+  }
+
+  
+  
+  
+  
+  aValue = aValue.slice(0, aInsertionPoint) + ";" +
+    aValue.slice(aInsertionPoint);
+  let lexer = domUtils.getCSSLexer(aValue);
+  while (true) {
+    let token = lexer.nextToken();
+    if (token.endOffset > aInsertionPoint) {
+      if (token.tokenType === "symbol" && token.text === ";") {
+        
+        return true;
+      }
+      
+      break;
+    }
+  }
+  return false;
+}
+
+
+exports._advanceValidate = advanceValidate;
 
 XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function() {
   return Cc["@mozilla.org/widget/clipboardhelper;1"]
