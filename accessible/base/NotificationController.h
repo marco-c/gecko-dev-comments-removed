@@ -300,12 +300,6 @@ private:
   
 
 
-  static PLDHashOperator TextEnumerator(nsCOMPtrHashKey<nsIContent>* aEntry,
-                                        void* aUserArg);
-
-  
-
-
 
   nsTArray<nsRefPtr<Notification> > mNotifications;
 };
