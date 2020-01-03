@@ -38,7 +38,7 @@ function* testCreateNewMultiUnfinished(inspector, ruleEditor, view) {
   let onMutation = inspector.once("markupmutation");
   
   
-  let onRuleViewChanged = waitRuleViewChanged(view, 6);
+  let onRuleViewChanged = waitRuleViewChanged(view, 5);
   yield createNewRuleViewProperty(ruleEditor,
     "color:blue;background : orange   ; text-align:center; border-color: ");
   yield onMutation;

@@ -414,28 +414,14 @@ function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
 
 
 let focusEditableField = Task.async(function*(ruleView, editable, xOffset=1, yOffset=1, options={}) {
-  
-  let expectRuleViewUpdate =
-    editable.classList.contains("ruleview-propertyname") ||
-    editable.classList.contains("ruleview-propertyvalue");
-  let onRuleViewChanged;
-  if (expectRuleViewUpdate) {
-    onRuleViewChanged = ruleView.once("ruleview-changed");
-  }
-
   let onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
   EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
     editable.ownerDocument.defaultView);
-  let event = yield onFocus;
+  yield onFocus;
 
   info("Editable field gained focus, returning the input field now");
   let onEdit = inplaceEditor(editable.ownerDocument.activeElement);
-
-  if (expectRuleViewUpdate) {
-    info("Waiting for rule view update");
-    yield onRuleViewChanged;
-  }
 
   return onEdit;
 });
