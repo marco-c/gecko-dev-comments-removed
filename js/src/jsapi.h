@@ -5681,6 +5681,11 @@ extern JS_PUBLIC_API(bool)
 IsStopwatchActive(JSRuntime*);
 
 
+extern JS_PUBLIC_API(void)
+GetPerfMonitoringTestCpuRescheduling(JSRuntime*, uint64_t* stayed, uint64_t* moved);
+
+
+
 
 
 
