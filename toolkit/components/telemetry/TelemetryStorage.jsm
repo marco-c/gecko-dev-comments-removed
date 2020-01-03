@@ -71,6 +71,34 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 
 
+
+function PingReadError(message="Error reading the ping file") {
+  Error.call(this, message);
+  let error = new Error();
+  this.name = "PingReadError";
+  this.message = message;
+  this.stack = error.stack;
+}
+PingReadError.prototype = Object.create(Error.prototype);
+PingReadError.prototype.constructor = PingReadError;
+
+
+
+
+
+function PingParseError(message="Error parsing ping content") {
+  Error.call(this, message);
+  let error = new Error();
+  this.name = "PingParseError";
+  this.message = message;
+  this.stack = error.stack;
+}
+PingParseError.prototype = Object.create(Error.prototype);
+PingParseError.prototype.constructor = PingParseError;
+
+
+
+
 let Policy = {
   now: () => new Date(),
   getArchiveQuota: () => ARCHIVE_QUOTA_BYTES,
@@ -1171,7 +1199,17 @@ let TelemetryStorageImpl = {
       return Promise.reject(new Error("TelemetryStorage.loadPendingPing - no ping with id " + id));
     }
 
-    return this.loadPingFile(info.path, false);
+    return this.loadPingFile(info.path, false).catch(e => {
+      
+      
+      if (e instanceof PingReadError) {
+        Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_READ").add();
+      } else if (e instanceof PingParseError) {
+        Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_PARSE").add();
+      }
+
+      return Promise.reject(e);
+    });
   },
 
   removePendingPing: function(id) {
@@ -1320,20 +1358,34 @@ let TelemetryStorageImpl = {
 
 
 
+
+
   loadPingFile: Task.async(function* (aFilePath, aCompressed = false) {
     let options = {};
     if (aCompressed) {
       options.compression = "lz4";
     }
-    let array = yield OS.File.read(aFilePath, options);
+
+    let array;
+    try {
+      array = yield OS.File.read(aFilePath, options);
+    } catch(e) {
+      throw new PingReadError(e.message);
+    };
+
     let decoder = new TextDecoder();
     let string = decoder.decode(array);
-
-    let ping = JSON.parse(string);
-    
-    if (typeof(ping.payload) == "string") {
-      ping.payload = JSON.parse(ping.payload);
+    let ping;
+    try {
+      ping = JSON.parse(string);
+      
+      if (typeof(ping.payload) == "string") {
+        ping.payload = JSON.parse(ping.payload);
+      }
+    } catch (e) {
+      throw new PingParseError(e.message);
     }
+
     return ping;
   }),
 
