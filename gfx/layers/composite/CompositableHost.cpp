@@ -14,7 +14,7 @@
 #include "mozilla/layers/ImageContainerParent.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureHost.h"  
-#include "nsRefPtr.h"                   
+#include "mozilla/nsRefPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "gfxPlatform.h"                

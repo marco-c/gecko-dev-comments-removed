@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsRefPtr_h
-#define nsRefPtr_h
+#ifndef mozilla_nsRefPtr_h
+#define mozilla_nsRefPtr_h
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"

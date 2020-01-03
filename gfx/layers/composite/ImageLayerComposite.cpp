@@ -18,7 +18,7 @@
 #include "mozilla/layers/TextureHost.h"  
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"
-#include "nsRefPtr.h"                   
+#include "mozilla/nsRefPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsString.h"                   

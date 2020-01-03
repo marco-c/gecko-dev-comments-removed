@@ -28,7 +28,7 @@
 
 #include "nsDebug.h" 
 #include "nsISupportsUtils.h" 
-#include "nsRefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 #include "nsCycleCollectionNoteChild.h"
 

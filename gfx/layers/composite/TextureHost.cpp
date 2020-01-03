@@ -17,7 +17,7 @@
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/YCbCrImageDataSerializer.h"
 #include "nsAString.h"
-#include "nsRefPtr.h"                   
+#include "mozilla/nsRefPtr.h"                   
 #include "nsPrintfCString.h"            
 #include "mozilla/layers/PTextureParent.h"
 #include "mozilla/unused.h"

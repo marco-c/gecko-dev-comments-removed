@@ -9,7 +9,7 @@
 #define IPC_FencerUtils_h
 
 #include "ipc/IPCMessageUtils.h"
-#include "nsRefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 
 namespace mozilla {
 namespace layers {

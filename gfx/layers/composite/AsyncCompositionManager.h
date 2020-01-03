@@ -16,7 +16,7 @@
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/layers/FrameUniformityData.h" 
 #include "mozilla/layers/LayersMessages.h"  
-#include "nsRefPtr.h"                   
+#include "mozilla/nsRefPtr.h"                   
 #include "nsISupportsImpl.h"            
 
 namespace mozilla {

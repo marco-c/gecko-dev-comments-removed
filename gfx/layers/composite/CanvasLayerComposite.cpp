@@ -15,7 +15,7 @@
 #include "mozilla/layers/Effects.h"     
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"
-#include "nsRefPtr.h"                   
+#include "mozilla/nsRefPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "nsString.h"                   
 #include "gfxVR.h"
