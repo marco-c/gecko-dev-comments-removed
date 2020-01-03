@@ -25,9 +25,20 @@
 #include "nsWindowsWMain.cpp"
 #endif
 
+#ifdef MOZ_WIDGET_GTK
+#include <gtk/gtk.h>
+#endif
+
 int
 main(int argc, char** argv, char** envp)
 {
+#ifdef MOZ_WIDGET_GTK
+    
+    
+    
+    gtk_parse_args(&argc, &argv);
+#endif
+
 #ifdef XP_MACOSX
     InitAutoreleasePool();
 #endif

@@ -612,7 +612,6 @@ ContentChild::Init(MessageLoop* aIOLoop,
                    IPC::Channel* aChannel)
 {
 #ifdef MOZ_WIDGET_GTK
-    
     gtk_init(nullptr, nullptr);
 #endif
 
