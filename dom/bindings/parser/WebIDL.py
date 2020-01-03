@@ -1640,7 +1640,7 @@ class IDLDictionary(IDLObjectWithScope):
                 if memberType.inner == dictionary:
                     return (True, [memberType.location])
 
-                (contains, locations) = dictionaryContainsDictionary(memberType.inner, \
+                (contains, locations) = dictionaryContainsDictionary(memberType.inner,
                                                                      dictionary)
                 if contains:
                     return (True, [memberType.location] + locations)
@@ -1846,11 +1846,11 @@ class IDLType(IDLObject):
         """ Returns a boolean indicating whether this type is an 'interface'
             type that is implemented in Spidermonkey.  At the moment, this
             only returns true for the types from the TypedArray spec. """
-        return self.isInterface() and (self.isArrayBuffer() or \
-                                       self.isArrayBufferView() or \
-                                       self.isSharedArrayBuffer() or \
-                                       self.isSharedArrayBufferView() or \
-                                       self.isTypedArray() or \
+        return self.isInterface() and (self.isArrayBuffer() or
+                                       self.isArrayBufferView() or
+                                       self.isSharedArrayBuffer() or
+                                       self.isSharedArrayBufferView() or
+                                       self.isTypedArray() or
                                        self.isSharedTypedArray())
 
     def isDictionary(self):
@@ -6409,6 +6409,8 @@ class Parser(Tokenizer):
         logger.reportGrammarErrors()
 
         self._globalScope = IDLScope(BuiltinLocation("<Global Scope>"), None, None)
+        
+        
         
         self._globalScope.primaryGlobalName = "FakeTestPrimaryGlobal"
         self._globalScope.globalNames.add("FakeTestPrimaryGlobal")
