@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/DebugOnly.h"
 #include "mozilla/dom/FetchDriver.h"
 
 #include "nsIDocument.h"
@@ -580,7 +581,8 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aF
   } else {
     mRequest->GetURL(reqURL);
   }
-  aResponse->SetUrl(reqURL);
+  DebugOnly<nsresult> rv = aResponse->StripFragmentAndSetUrl(reqURL);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
 

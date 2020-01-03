@@ -414,23 +414,13 @@ TypeUtils::ProcessURL(nsACString& aUrl, bool* aSchemeValidOut,
 
   uint32_t queryPos;
   int32_t queryLen;
-  uint32_t refPos;
-  int32_t refLen;
 
   aRv = urlParser->ParsePath(url + pathPos, flatURL.Length() - pathPos,
                              nullptr, nullptr,               
                              &queryPos, &queryLen,
-                             &refPos, &refLen);
+                             nullptr, nullptr);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
-  }
-
-  
-  if (refLen >= 0) {
-    
-    refPos += pathPos;
-
-    aUrl = Substring(aUrl, 0, refPos - 1);
   }
 
   if (!aUrlWithoutQueryOut) {

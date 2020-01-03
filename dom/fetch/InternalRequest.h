@@ -374,6 +374,7 @@ private:
   MapContentPolicyTypeToRequestContext(nsContentPolicyType aContentPolicyType);
 
   nsCString mMethod;
+  
   nsCString mURL;
   nsRefPtr<InternalHeaders> mHeaders;
   nsCOMPtr<nsIInputStream> mBodyStream;

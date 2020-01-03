@@ -78,6 +78,7 @@ public:
     aURL.Assign(mURL);
   }
 
+  
   void
   SetUrl(const nsACString& aURL)
   {
@@ -178,6 +179,9 @@ public:
   
   void
   SetPrincipalInfo(UniquePtr<mozilla::ipc::PrincipalInfo> aPrincipalInfo);
+
+  nsresult
+  StripFragmentAndSetUrl(const nsACString& aUrl);
 
 private:
   ~InternalResponse();
