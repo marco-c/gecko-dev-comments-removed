@@ -844,11 +844,17 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         }
 
         
-        if (sourceScheme.EqualsLiteral("chrome")) {
+        
+        
+        bool sourceIsChrome;
+        rv = NS_URIChainHasFlags(sourceURI,
+                                 nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                                 &sourceIsChrome);
+        NS_ENSURE_SUCCESS(rv, rv);
+        if (sourceIsChrome) {
             return NS_OK;
         }
 
-        
         if (reportErrors) {
             ReportError(nullptr, errorTag, sourceURI, aTargetURI);
         }
