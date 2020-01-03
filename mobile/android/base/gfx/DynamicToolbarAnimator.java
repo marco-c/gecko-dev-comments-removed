@@ -359,6 +359,15 @@ public class DynamicToolbarAnimator {
                 Log.v(LOGTAG, "Resetting touch sequence due to non-move");
                 mTouchStart = null;
             }
+
+            if (event.getActionMasked() == MotionEvent.ACTION_UP) {
+                
+                
+                
+                boolean toolbarMostlyVisible = mToolbarTranslation < (mMaxTranslation / 2);
+                Log.v(LOGTAG, "All fingers lifted, completing " + (toolbarMostlyVisible ? "show" : "hide"));
+                animateToolbar(toolbarMostlyVisible, false);
+            }
             return false;
         }
 
