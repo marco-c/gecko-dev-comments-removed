@@ -89,22 +89,13 @@ InvokeSetter(JSContext* cx, const Value& thisv, Value fval, HandleValue v);
 
 
 
+extern bool
+InvokeConstructor(JSContext* cx, CallArgs args);
 
 
 extern bool
-Construct(JSContext* cx, HandleValue fval, const ConstructArgs& args, HandleValue newTarget,
-          MutableHandleValue rval);
-
-
-
-
-
-
-
-extern bool
-InternalConstructWithProvidedThis(JSContext* cx, HandleValue fval, HandleValue thisv,
-                                  const ConstructArgs& args, HandleValue newTarget,
-                                  MutableHandleValue rval);
+InvokeConstructor(JSContext* cx, Value fval, unsigned argc, const Value* argv,
+                  bool newTargetInArgv, MutableHandleValue rval);
 
 
 
