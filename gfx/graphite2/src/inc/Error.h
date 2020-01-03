@@ -111,16 +111,23 @@ enum errors {
     E_BADRULEMAPPING = 50,  
     E_BADRANGE = 51,        
     E_BADRULENUM = 52,      
+    E_BADACOLLISION = 53,   
+    E_BADEMPTYPASS = 54,    
+    E_BADSILFVERSION = 55,  
+    E_BADCOLLISIONPASS = 56,    
 
     E_CODEFAILURE = 60,     
-        E_CODEALLOC = 61,       
-        E_INVALIDOPCODE = 62,   
-        E_UNIMPOPCODE = 63,     
-        E_OUTOFRANGECODE = 64,  
-        E_BADJUMPCODE = 65,     
-        E_CODEBADARGS = 66,     
-        E_CODENORETURN = 67,    
-        E_CODENESTEDCTXT = 68   
+    E_CODEALLOC = 61,       
+    E_INVALIDOPCODE = 62,   
+    E_UNIMPOPCODE = 63,     
+    E_OUTOFRANGECODE = 64,  
+    E_BADJUMPCODE = 65,     
+    E_CODEBADARGS = 66,     
+    E_CODENORETURN = 67,    
+    E_CODENESTEDCTXT = 68,   
+
+    E_BADSCHEME = 69,
+    E_SHRINKERFAILED = 70,
 };
 
 }

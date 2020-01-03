@@ -117,9 +117,8 @@ class NameAndFeatureRef
 class FeatureMap
 {
 public:
-    FeatureMap() : m_numFeats(0), m_feats(NULL), m_pNamedFeats(NULL),
-        m_defaultFeatures(NULL) {}
-    ~FeatureMap() { delete [] m_feats; delete[] m_pNamedFeats; delete m_defaultFeatures; }
+    FeatureMap() : m_numFeats(0), m_feats(NULL), m_pNamedFeats(NULL) {}
+    ~FeatureMap() { delete [] m_feats; delete[] m_pNamedFeats; }
 
     bool readFeats(const Face & face);
     const FeatureRef *findFeatureRef(uint32 name) const;
@@ -135,7 +134,7 @@ friend class SillMap;
 
     FeatureRef *m_feats;
     NameAndFeatureRef* m_pNamedFeats;   
-    FeatureVal* m_defaultFeatures;        
+    FeatureVal m_defaultFeatures;        
     
 private:        
     FeatureMap(const FeatureMap&);

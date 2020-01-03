@@ -43,7 +43,7 @@
 
 static const opcode_t opcode_table[] = 
 {
-    {{do2(nop)},                                    0,  "NOP"},
+    {{do2(nop)},                                    0, "NOP"},
 
     {{do2(push_byte)},                              1, "PUSH_BYTE"},                
     {{do2(push_byte_u)},                            1, "PUSH_BYTE_U"},              
@@ -114,6 +114,11 @@ static const opcode_t opcode_table[] =
     {{do_(put_glyph), NILOP},                       2, "PUT_GLYPH"},                
     {{do2(push_glyph_attr)},                        3, "PUSH_GLYPH_ATTR"},          
     {{do2(push_att_to_glyph_attr)},                 3, "PUSH_ATT_TO_GLYPH_ATTR"},   
+    {{do2(bor)},                                    0, "BITOR"},
+    {{do2(band)},                                   0, "BITAND"},
+    {{do2(bnot)},                                   0, "BITNOT"},   
+    {{do2(setbits)},                                4, "BITSET"},
+    {{do2(set_feat)},                               2, "SET_FEAT"},
     
     {{do_(temp_copy), NILOP},                       0, "TEMP_COPY"}
 };

@@ -120,13 +120,45 @@ enum gr_attrCode {
     
     gr_slatJWeight,         
     
-    gr_slatJWidth,          
+    gr_slatJWidth = 29,
     
     gr_slatSegSplit = gr_slatJStretch + 29,
     
     gr_slatUserDefn,
     
-    gr_slatBidiLevel,
+    gr_slatBidiLevel = 56,
+    
+    gr_slatColFlags,
+    
+    gr_slatColLimitblx,
+    
+    gr_slatColLimitbly,
+    
+    gr_slatColLimittrx,
+    
+    gr_slatColLimittry,
+    
+    gr_slatColShiftx,
+    
+    gr_slatColShifty,
+    
+    gr_slatColMargin,
+    
+    gr_slatColMarginWt,
+    
+    gr_slatColExclGlyph,
+    gr_slatColExclOffx,
+    gr_slatColExclOffy,
+    
+    gr_slatSeqClass,
+    gr_slatSeqProxClass,
+    gr_slatSeqOrder,
+    gr_slatSeqAboveXoff,
+    gr_slatSeqAboveWt,
+    gr_slatSeqBelowXlim,
+    gr_slatSeqBelowWt,
+    gr_slatSeqValignHt,
+    gr_slatSeqValignWt,
                             
     
     gr_slatMax,             

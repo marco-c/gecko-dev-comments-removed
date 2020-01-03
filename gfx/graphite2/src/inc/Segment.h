@@ -40,6 +40,7 @@
 #include "inc/Position.h"
 #include "inc/List.h"
 #include "inc/Bidi.h"
+#include "inc/Collider.h"
 
 #define MAX_SEG_GROWTH_FACTOR  256
 
@@ -86,6 +87,11 @@ class Segment
     Segment& operator=(const Segment&);
 
 public:
+
+    enum {
+        SEG_INITCOLLISIONS = 1
+    };
+
     unsigned int slotCount() const { return m_numGlyphs; }      
     void extendLength(int num) { m_numGlyphs += num; }
     Position advance() const { return m_advance; }
@@ -107,6 +113,8 @@ public:
             Slot * endSlot, const Slot * srcSlot,
             const size_t numGlyphs);
 #endif
+    uint8 flags() const { return m_flags; }
+    void flags(uint8 f) { m_flags = f; }
     Slot *first() { return m_first; }
     void first(Slot *p) { m_first = p; }
     Slot *last() { return m_last; }
@@ -116,13 +124,20 @@ public:
     void freeSlot(Slot *);
     SlotJustify *newJustify();
     void freeJustify(SlotJustify *aJustify);
-    Position positionSlots(const Font *font, Slot *first=0, Slot *last=0);
+    Position positionSlots(const Font *font=0, Slot *first=0, Slot *last=0, bool isFinal = true);
     void associateChars(int offset, int num);
     void linkClusters(Slot *first, Slot *last);
     uint16 getClassGlyph(uint16 cid, uint16 offset) const { return m_silf->getClassGlyph(cid, offset); }
     uint16 findClassIndex(uint16 cid, uint16 gid) const { return m_silf->findClassIndex(cid, gid); }
     int addFeatures(const Features& feats) { m_feats.push_back(feats); return m_feats.size() - 1; }
     uint32 getFeature(int index, uint8 findex) const { const FeatureRef* pFR=m_face->theSill().theFeatureMap().featureRef(findex); if (!pFR) return 0; else return pFR->getFeatureVal(m_feats[index]); }
+    void setFeature(int index, uint8 findex, uint32 val) {
+        const FeatureRef* pFR=m_face->theSill().theFeatureMap().featureRef(findex); 
+        if (pFR)
+        {
+            if (val > pFR->maxVal()) val = pFR->maxVal();
+            pFR->applyValToFeature(val, m_feats[index]);
+        } }
     void dir(int8 val) { m_dir = val; }
     unsigned int passBits() const { return m_passBits; }
     void mergePassBits(const unsigned int val) { m_passBits &= val; }
@@ -141,14 +156,16 @@ public:
     bool hasJustification() const { return m_justifies.size() != 0; }
 
     bool isWhitespace(const int cid) const;
+    bool hasCollisionInfo() const { return m_collisions != 0; }
+    SlotCollision *collisionInfo(const Slot *s) const { return m_collisions ? m_collisions + s->index() : NULL; }
 
     CLASS_NEW_DELETE
 
 public:       
     bool read_text(const Face *face, const Features* pFeats, gr_encform enc, const void*pStart, size_t nChars);
-    void prepare_pos(const Font *font);
     void finalise(const Font *font);
     float justify(Slot *pSlot, const Font *font, float width, enum justFlags flags, Slot *pFirst, Slot *pLast);
+    bool initCollisions();
   
 private:
     Position        m_advance;          
@@ -159,6 +176,7 @@ private:
     Slot          * m_freeSlots;        
     SlotJustify   * m_freeJustifies;    
     CharInfo      * m_charinfo;         
+    SlotCollision * m_collisions;       
     const Face    * m_face;             
     const Silf    * m_silf;
     Slot          * m_first;            
@@ -169,6 +187,7 @@ private:
                     m_passBits;         
     int             m_defaultOriginal;  
     int8            m_dir;
+    uint8           m_flags;            
 };
 
 
@@ -179,7 +198,7 @@ void Segment::finalise(const Font *font)
     if (!m_first) return;
 
     m_advance = positionSlots(font);
-    associateChars(0, m_numCharinfo);
+    
     linkClusters(m_first, m_last);
 }
 

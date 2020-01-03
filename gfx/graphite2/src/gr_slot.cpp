@@ -103,11 +103,11 @@ float gr_slot_advance_X(const gr_slot* p, const gr_face *face, const gr_font *fo
     return res;
 }
 
-float gr_slot_advance_Y(const gr_slot *p, const gr_face *face, const gr_font *font)
+float gr_slot_advance_Y(const gr_slot *p, GR_MAYBE_UNUSED const gr_face *face, const gr_font *font)
 {
     assert(p);
     float res = p->advancePos().y;
-    if (font && (face || !face))
+    if (font)
         return res * font->scale();
     else
         return res;
