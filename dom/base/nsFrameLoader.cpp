@@ -987,8 +987,8 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  nsCOMPtr<nsIDocShell> ourDocshell = GetExistingDocShell();
-  nsCOMPtr<nsIDocShell> otherDocshell = aOther->GetExistingDocShell();
+  nsRefPtr<nsDocShell> ourDocshell = static_cast<nsDocShell*>(GetExistingDocShell());
+  nsRefPtr<nsDocShell> otherDocshell = static_cast<nsDocShell*>(aOther->GetExistingDocShell());
   if (!ourDocshell || !otherDocshell) {
     
     return NS_ERROR_NOT_IMPLEMENTED;
@@ -1120,6 +1120,8 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
   mInSwap = aOther->mInSwap = true;
+  ourDocshell->SetInFrameSwap(true);
+  otherDocshell->SetInFrameSwap(true);
 
   
   
@@ -1132,26 +1134,32 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   nsIFrame* ourFrame = ourContent->GetPrimaryFrame();
   nsIFrame* otherFrame = otherContent->GetPrimaryFrame();
   if (!ourFrame || !otherFrame) {
-    mInSwap = aOther->mInSwap = false;
     nsContentUtils::FirePageShowEvent(ourDocshell, ourEventTarget, true);
     nsContentUtils::FirePageShowEvent(otherDocshell, otherEventTarget, true);
+    mInSwap = aOther->mInSwap = false;
+    ourDocshell->SetInFrameSwap(false);
+    otherDocshell->SetInFrameSwap(false);
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
   nsSubDocumentFrame* ourFrameFrame = do_QueryFrame(ourFrame);
   if (!ourFrameFrame) {
-    mInSwap = aOther->mInSwap = false;
     nsContentUtils::FirePageShowEvent(ourDocshell, ourEventTarget, true);
     nsContentUtils::FirePageShowEvent(otherDocshell, otherEventTarget, true);
+    mInSwap = aOther->mInSwap = false;
+    ourDocshell->SetInFrameSwap(false);
+    otherDocshell->SetInFrameSwap(false);
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
   
   rv = ourFrameFrame->BeginSwapDocShells(otherFrame);
   if (NS_FAILED(rv)) {
-    mInSwap = aOther->mInSwap = false;
     nsContentUtils::FirePageShowEvent(ourDocshell, ourEventTarget, true);
     nsContentUtils::FirePageShowEvent(otherDocshell, otherEventTarget, true);
+    mInSwap = aOther->mInSwap = false;
+    ourDocshell->SetInFrameSwap(false);
+    otherDocshell->SetInFrameSwap(false);
     return rv;
   }
 
@@ -1258,6 +1266,8 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   nsContentUtils::FirePageShowEvent(otherDocshell, otherEventTarget, true);
 
   mInSwap = aOther->mInSwap = false;
+  ourDocshell->SetInFrameSwap(false);
+  otherDocshell->SetInFrameSwap(false);
   return NS_OK;
 }
 

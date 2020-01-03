@@ -103,6 +103,7 @@ static PRLogModuleInfo* gMediaElementEventsLog;
 
 #include "nsIPermissionManager.h"
 #include "nsContentTypeParser.h"
+#include "nsDocShell.h"
 
 #include "mozilla/EventStateManager.h"
 
@@ -4013,7 +4014,14 @@ void HTMLMediaElement::NotifyOwnerDocumentActivityChanged()
   if (pauseElement && mAudioChannelAgent) {
     
     
-    NotifyAudioChannelAgent(false);
+    
+    auto docShell = static_cast<nsDocShell*>(OwnerDoc()->GetDocShell());
+    if (!docShell) {
+      return;
+    }
+    if (!docShell->InFrameSwap()) {
+      NotifyAudioChannelAgent(false);
+    }
   }
 }
 

@@ -258,6 +258,12 @@ public:
   
   void NotifyAsyncPanZoomStopped();
 
+  void SetInFrameSwap(bool aInSwap)
+  {
+    mInFrameSwap = aInSwap;
+  }
+  bool InFrameSwap();
+
 private:
   
   mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
@@ -900,6 +906,7 @@ protected:
   bool mUseRemoteTabs;
   bool mDeviceSizeIsPageSize;
   bool mWindowDraggingAllowed;
+  bool mInFrameSwap;
 
   
   
