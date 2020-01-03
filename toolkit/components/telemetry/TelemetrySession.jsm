@@ -1614,40 +1614,42 @@ let Impl = {
    
 
 
-  saveShutdownPings: Task.async(function*() {
+  saveShutdownPings: function() {
     this._log.trace("saveShutdownPings");
 
-    if (IS_UNIFIED_TELEMETRY) {
-      try {
-        let shutdownPayload = this.getSessionPayload(REASON_SHUTDOWN, false);
+    
+    
+    
+    let p = [];
 
-        let options = {
-          addClientId: true,
-          addEnvironment: true,
-          overwrite: true,
-        };
-        yield TelemetryController.addPendingPing(getPingType(shutdownPayload), shutdownPayload, options);
-      } catch (ex) {
-        this._log.error("saveShutdownPings - failed to submit shutdown ping", ex);
-      }
+    if (IS_UNIFIED_TELEMETRY) {
+      let shutdownPayload = this.getSessionPayload(REASON_SHUTDOWN, false);
+
+      let options = {
+        addClientId: true,
+        addEnvironment: true,
+        overwrite: true,
+      };
+      p.push(TelemetryController.addPendingPing(getPingType(shutdownPayload), shutdownPayload, options)
+                                .catch(e => this._log.error("saveShutdownPings - failed to submit shutdown ping", e)));
      }
 
     
     
     if (Telemetry.canRecordExtended) {
-      try {
-        let payload = this.getSessionPayload(REASON_SAVED_SESSION, false);
+      let payload = this.getSessionPayload(REASON_SAVED_SESSION, false);
 
-        let options = {
-          addClientId: true,
-          addEnvironment: true,
-        };
-        yield TelemetryController.addPendingPing(getPingType(payload), payload, options);
-      } catch (ex) {
-        this._log.error("saveShutdownPings - failed to submit saved-session ping", ex);
-      }
+      let options = {
+        addClientId: true,
+        addEnvironment: true,
+      };
+      p.push(TelemetryController.addPendingPing(getPingType(payload), payload, options)
+                                .catch (e => this._log.error("saveShutdownPings - failed to submit saved-session ping", e)));
     }
-  }),
+
+    
+    return Promise.all(p);
+  },
 
 
   testSavePendingPing: function testSaveHistograms() {
