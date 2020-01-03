@@ -77,10 +77,6 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
   
 
-  virtual void GetIntervalForIteration(GraphTime& aFrom,
-                                       GraphTime& aTo) = 0;
-  
-
   virtual void WaitForNextIteration() = 0;
   
   virtual void WakeUp() = 0;
@@ -265,6 +261,10 @@ public:
 
   virtual bool OnThread() override { return !mThread || NS_GetCurrentThread() == mThread; }
 
+  
+
+  virtual void GetIntervalForIteration(GraphTime& aFrom,
+                                       GraphTime& aTo) = 0;
 protected:
   nsCOMPtr<nsIThread> mThread;
 };
@@ -360,8 +360,6 @@ public:
   virtual void Stop() override;
   virtual void Resume() override;
   virtual void Revive() override;
-  virtual void GetIntervalForIteration(GraphTime& aFrom,
-                                       GraphTime& aTo) override;
   virtual void WaitForNextIteration() override;
   virtual void WakeUp() override;
 
