@@ -59,4 +59,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::MouseScrollEvent>
+NS_NewDOMMouseScrollEvent(mozilla::dom::EventTarget* aOwner,
+                          nsPresContext* aPresContext,
+                          mozilla::WidgetMouseScrollEvent* aEvent);
+
 #endif 

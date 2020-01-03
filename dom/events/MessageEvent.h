@@ -102,4 +102,9 @@ private:
 } 
 } 
 
+already_AddRefed<mozilla::dom::MessageEvent>
+NS_NewDOMMessageEvent(mozilla::dom::EventTarget* aOwner,
+                      nsPresContext* aPresContext,
+                      mozilla::WidgetEvent* aEvent);
+
 #endif 

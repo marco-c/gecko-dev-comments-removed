@@ -132,4 +132,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::TouchEvent>
+NS_NewDOMTouchEvent(mozilla::dom::EventTarget* aOwner,
+                    nsPresContext* aPresContext,
+                    mozilla::WidgetTouchEvent* aEvent);
+
 #endif 

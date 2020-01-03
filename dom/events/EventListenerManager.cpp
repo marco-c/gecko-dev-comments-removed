@@ -1109,8 +1109,10 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
           
           nsCOMPtr<EventTarget> et =
             do_QueryInterface(aEvent->originalTarget);
-          EventDispatcher::CreateEvent(et, aPresContext,
-                                       aEvent, EmptyString(), aDOMEvent);
+          nsRefPtr<Event> event = EventDispatcher::CreateEvent(et, aPresContext,
+                                                               aEvent,
+                                                               EmptyString());
+          event.forget(aDOMEvent);
         }
         if (*aDOMEvent) {
           if (!aEvent->currentTarget) {

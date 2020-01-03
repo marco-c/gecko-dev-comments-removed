@@ -52,4 +52,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::AnimationEvent>
+NS_NewDOMAnimationEvent(mozilla::dom::EventTarget* aOwner,
+                        nsPresContext* aPresContext,
+                        mozilla::InternalAnimationEvent* aEvent);
+
 #endif 

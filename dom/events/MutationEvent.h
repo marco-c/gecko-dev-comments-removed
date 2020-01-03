@@ -65,4 +65,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::MutationEvent>
+NS_NewDOMMutationEvent(mozilla::dom::EventTarget* aOwner,
+                       nsPresContext* aPresContext,
+                       mozilla::InternalMutationEvent* aEvent);
+
 #endif 

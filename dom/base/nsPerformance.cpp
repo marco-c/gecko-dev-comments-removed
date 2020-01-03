@@ -478,16 +478,15 @@ nsPerformance::Timing()
 void
 nsPerformance::DispatchBufferFullEvent()
 {
-  nsCOMPtr<nsIDOMEvent> event;
-  nsresult rv = NS_NewDOMEvent(getter_AddRefs(event), this, nullptr, nullptr);
-  if (NS_SUCCEEDED(rv)) {
-    
-    rv = event->InitEvent(NS_LITERAL_STRING("resourcetimingbufferfull"), true, false);
-    if (NS_SUCCEEDED(rv)) {
-      event->SetTrusted(true);
-      DispatchDOMEvent(nullptr, event, nullptr, nullptr);
-    }
+  nsRefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
+  
+  nsresult rv = event->InitEvent(NS_LITERAL_STRING("resourcetimingbufferfull"),
+                                 true, false);
+  if (NS_FAILED(rv)) {
+    return;
   }
+  event->SetTrusted(true);
+  DispatchDOMEvent(nullptr, event, nullptr, nullptr);
 }
 
 nsPerformanceNavigation*

@@ -43,4 +43,9 @@ public:
 } 
 } 
 
+already_AddRefed<mozilla::dom::BeforeAfterKeyboardEvent>
+NS_NewDOMBeforeAfterKeyboardEvent(mozilla::dom::EventTarget* aOwner,
+                                  nsPresContext* aPresContext,
+                                  mozilla::InternalBeforeAfterKeyboardEvent* aEvent);
+
 #endif 

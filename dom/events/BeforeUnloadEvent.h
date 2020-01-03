@@ -47,4 +47,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::BeforeUnloadEvent>
+NS_NewDOMBeforeUnloadEvent(mozilla::dom::EventTarget* aOwner,
+                           nsPresContext* aPresContext,
+                           mozilla::WidgetEvent* aEvent);
+
 #endif 

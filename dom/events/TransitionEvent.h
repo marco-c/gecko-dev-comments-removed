@@ -52,4 +52,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::TransitionEvent>
+NS_NewDOMTransitionEvent(mozilla::dom::EventTarget* aOwner,
+                         nsPresContext* aPresContext,
+                         mozilla::InternalTransitionEvent* aEvent);
+
 #endif 

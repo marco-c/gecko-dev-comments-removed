@@ -93,4 +93,9 @@ private:
 } 
 } 
 
+already_AddRefed<mozilla::dom::KeyboardEvent>
+NS_NewDOMKeyboardEvent(mozilla::dom::EventTarget* aOwner,
+                       nsPresContext* aPresContext,
+                       mozilla::WidgetKeyboardEvent* aEvent);
+
 #endif 

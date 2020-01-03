@@ -60,4 +60,9 @@ private:
 } 
 } 
 
+already_AddRefed<mozilla::dom::WheelEvent>
+NS_NewDOMWheelEvent(mozilla::dom::EventTarget* aOwner,
+                    nsPresContext* aPresContext,
+                    mozilla::WidgetWheelEvent* aEvent);
+
 #endif 

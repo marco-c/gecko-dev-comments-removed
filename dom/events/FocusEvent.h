@@ -53,4 +53,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::FocusEvent>
+NS_NewDOMFocusEvent(mozilla::dom::EventTarget* aOwner,
+                    nsPresContext* aPresContext,
+                    mozilla::InternalFocusEvent* aEvent);
+
 #endif 

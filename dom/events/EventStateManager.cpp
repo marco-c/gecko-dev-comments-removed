@@ -16,6 +16,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/DragEvent.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/dom/UIEvent.h"
@@ -54,7 +55,6 @@
 #include "nsIObserverService.h"
 #include "nsIDocShell.h"
 #include "nsIDOMWheelEvent.h"
-#include "nsIDOMDragEvent.h"
 #include "nsIDOMUIEvent.h"
 #include "nsIMozBrowserFrame.h"
 
@@ -1881,13 +1881,8 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
   
   
   
-  nsCOMPtr<nsIDOMEvent> domEvent;
-  NS_NewDOMDragEvent(getter_AddRefs(domEvent), dragTarget,
-                     aPresContext, aDragEvent);
-
-  nsCOMPtr<nsIDOMDragEvent> domDragEvent = do_QueryInterface(domEvent);
-  
-  
+  nsRefPtr<DragEvent> event =
+    NS_NewDOMDragEvent(dragTarget, aPresContext, aDragEvent);
 
   
   
@@ -1895,8 +1890,7 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
   
   if (!dragImage && aSelection) {
     dragService->InvokeDragSessionWithSelection(aSelection, transArray,
-                                                action, domDragEvent,
-                                                aDataTransfer);
+                                                action, event, aDataTransfer);
   }
   else {
     
@@ -1922,8 +1916,7 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
                                             region, action,
                                             dragImage ? dragImage->AsDOMNode() :
                                                         nullptr,
-                                            imageX,
-                                            imageY, domDragEvent,
+                                            imageX, imageY, event,
                                             aDataTransfer);
   }
 

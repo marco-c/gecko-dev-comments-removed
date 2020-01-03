@@ -78,4 +78,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::SimpleGestureEvent>
+NS_NewDOMSimpleGestureEvent(mozilla::dom::EventTarget* aOwner,
+                            nsPresContext* aPresContext,
+                            mozilla::WidgetSimpleGestureEvent* aEvent);
+
 #endif 

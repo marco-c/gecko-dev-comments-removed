@@ -61,4 +61,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::DragEvent>
+NS_NewDOMDragEvent(mozilla::dom::EventTarget* aOwner,
+                   nsPresContext* aPresContext,
+                   mozilla::WidgetDragEvent* aEvent);
+
 #endif 

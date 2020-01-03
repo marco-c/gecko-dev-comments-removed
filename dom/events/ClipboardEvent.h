@@ -56,4 +56,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::ClipboardEvent>
+NS_NewDOMClipboardEvent(mozilla::dom::EventTarget* aOwner,
+                        nsPresContext* aPresContext,
+                        mozilla::InternalClipboardEvent* aEvent);
+
 #endif 

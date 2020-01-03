@@ -63,4 +63,9 @@ private:
 } 
 } 
 
+already_AddRefed<mozilla::dom::TimeEvent>
+NS_NewDOMTimeEvent(mozilla::dom::EventTarget* aOwner,
+                   nsPresContext* aPresContext,
+                   mozilla::InternalSMILTimeEvent* aEvent);
+
 #endif 

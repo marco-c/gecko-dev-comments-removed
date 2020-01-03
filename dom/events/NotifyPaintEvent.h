@@ -67,4 +67,12 @@ private:
 } 
 } 
 
+
+already_AddRefed<mozilla::dom::NotifyPaintEvent>
+NS_NewDOMNotifyPaintEvent(mozilla::dom::EventTarget* aOwner,
+                          nsPresContext* aPresContext,
+                          mozilla::WidgetEvent* aEvent,
+                          uint32_t aEventType = 0,
+                          nsInvalidateRequestList* aInvalidateRequests = nullptr);
+
 #endif 

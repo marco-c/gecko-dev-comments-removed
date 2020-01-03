@@ -86,4 +86,9 @@ protected:
 } 
 } 
 
+already_AddRefed<mozilla::dom::ScrollAreaEvent>
+NS_NewDOMScrollAreaEvent(mozilla::dom::EventTarget* aOwner,
+                         nsPresContext* aPresContext,
+                         mozilla::InternalScrollAreaEvent* aEvent);
+
 #endif 

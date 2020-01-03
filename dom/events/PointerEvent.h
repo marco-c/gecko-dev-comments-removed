@@ -55,4 +55,9 @@ void ConvertPointerTypeToString(uint16_t aPointerTypeSrc, nsAString& aPointerTyp
 } 
 } 
 
+already_AddRefed<mozilla::dom::PointerEvent>
+NS_NewDOMPointerEvent(mozilla::dom::EventTarget* aOwner,
+                      nsPresContext* aPresContext,
+                      mozilla::WidgetPointerEvent* aEvent);
+
 #endif 

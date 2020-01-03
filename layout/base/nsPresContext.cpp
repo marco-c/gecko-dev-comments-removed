@@ -57,7 +57,7 @@
 #include "nsRefreshDriver.h"
 #include "Layers.h"
 #include "ClientLayerManager.h"
-#include "nsIDOMEvent.h"
+#include "mozilla/dom/NotifyPaintEvent.h"
 #include "gfxPrefs.h"
 #include "nsIDOMChromeWindow.h"
 #include "nsFrameLoader.h"
@@ -2255,23 +2255,21 @@ nsPresContext::FireDOMPaintEvent(nsInvalidateRequestList* aList)
   }
   
   
-  nsCOMPtr<nsIDOMEvent> event;
   
   
   
-  NS_NewDOMNotifyPaintEvent(getter_AddRefs(event), eventTarget, this, nullptr,
-                            NS_AFTERPAINT, aList);
-  if (!event) {
-    return;
-  }
+  
+  nsRefPtr<NotifyPaintEvent> event =
+    NS_NewDOMNotifyPaintEvent(eventTarget, this, nullptr, NS_AFTERPAINT,
+                              aList);
 
   
   
   
   event->SetTarget(eventTarget);
   event->SetTrusted(true);
-  EventDispatcher::DispatchDOMEvent(dispatchTarget, nullptr, event, this,
-                                    nullptr);
+  EventDispatcher::DispatchDOMEvent(dispatchTarget, nullptr,
+                                    static_cast<Event*>(event), this, nullptr);
 }
 
 static bool
