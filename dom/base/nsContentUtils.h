@@ -1951,6 +1951,14 @@ public:
   
 
 
+  static bool SendPerformanceTimingNotifications()
+  {
+    return sSendPerformanceTimingNotifications;
+  }
+
+  
+
+
 
   static bool EncodeDecodeURLHash()
   {
@@ -2544,6 +2552,7 @@ private:
   static bool sEncodeDecodeURLHash;
   static bool sGettersDecodeURLHash;
   static bool sPrivacyResistFingerprinting;
+  static bool sSendPerformanceTimingNotifications;
 
   static nsHtml5StringParser* sHTMLFragmentParser;
   static nsIParser* sXMLFragmentParser;

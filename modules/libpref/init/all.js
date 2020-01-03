@@ -161,6 +161,9 @@ pref("dom.enable_user_timing", true);
 pref("dom.performance.enable_user_timing_logging", false);
 
 
+pref("dom.performance.enable_notify_performance_timing", false);
+
+
 pref("dom.gamepad.enabled", true);
 #ifdef RELEASE_BUILD
 pref("dom.gamepad.non_standard_events.enabled", false);
