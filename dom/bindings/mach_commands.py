@@ -45,7 +45,7 @@ class WebIDLProvider(MachCommandBase):
         
         
         
-        sys.path.insert(0, self.topobjdir);
+        sys.path.insert(0, self.topobjdir)
 
         from runtests import run_tests
         return run_tests(None, verbose=verbose)
