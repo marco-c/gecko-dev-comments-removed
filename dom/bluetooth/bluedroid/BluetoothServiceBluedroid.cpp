@@ -100,8 +100,6 @@ static nsTArray<nsRefPtr<BluetoothReplyRunnable> > sGetDeviceRunnableArray;
 
 static nsTArray<nsRefPtr<BluetoothReplyRunnable> > sBondingRunnableArray;
 static nsTArray<nsRefPtr<BluetoothReplyRunnable> > sUnbondingRunnableArray;
-static bool sIsRestart(false);
-static bool sIsFirstTimeToggleOffBt(false);
 
 #ifndef MOZ_B2G_BT_API_V1
 
@@ -426,6 +424,8 @@ BluetoothServiceBluedroid::BluetoothServiceBluedroid()
 #else
   , mDiscoverableTimeout(0)
 #endif
+  , mIsRestart(false)
+  , mIsFirstTimeToggleOffBt(false)
 {
   sBtInterface = BluetoothInterface::GetInstance();
   if (!sBtInterface) {
@@ -1757,8 +1757,9 @@ class BluetoothServiceBluedroid::ProfileDeinitResultHandler final
   : public BluetoothProfileResultHandler
 {
 public:
-  ProfileDeinitResultHandler(unsigned char aNumProfiles)
+  ProfileDeinitResultHandler(unsigned char aNumProfiles, bool aIsRestart)
     : mNumProfiles(aNumProfiles)
+    , mIsRestart(aIsRestart)
   {
     MOZ_ASSERT(mNumProfiles);
   }
@@ -1780,14 +1781,16 @@ public:
 private:
   void Proceed() const
   {
-    if (!sIsRestart) {
-      sBtInterface->Cleanup(new CleanupResultHandler());
-    } else {
+    if (mIsRestart) {
       BT_LOGR("ProfileDeinitResultHandler::Proceed cancel cleanup() ");
+      return;
     }
+
+    sBtInterface->Cleanup(new CleanupResultHandler());
   }
 
   unsigned char mNumProfiles;
+  bool mIsRestart;
 };
 
 class BluetoothServiceBluedroid::SetAdapterPropertyDiscoverableResultHandler
@@ -1809,11 +1812,11 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
 
   BT_LOGR("BT_STATE: %d", aState);
 
-  if (sIsRestart && aState) {
+  if (mIsRestart && aState) {
     
     BT_LOGR("daemon restarted, reset flag");
-    sIsRestart = false;
-    sIsFirstTimeToggleOffBt = false;
+    mIsRestart = false;
+    mIsFirstTimeToggleOffBt = false;
   }
 
   mEnabled = aState;
@@ -1852,7 +1855,8 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
     
     
     nsRefPtr<ProfileDeinitResultHandler> res =
-      new ProfileDeinitResultHandler(MOZ_ARRAY_LENGTH(sDeinitManager));
+      new ProfileDeinitResultHandler(MOZ_ARRAY_LENGTH(sDeinitManager),
+                                     mIsRestart);
 
     for (size_t i = 0; i < MOZ_ARRAY_LENGTH(sDeinitManager); ++i) {
       sDeinitManager[i](res);
@@ -1903,8 +1907,8 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
   }
 
   
-  if (sIsRestart && !aState) {
-    BT_LOGR("sIsRestart and off, now restart");
+  if (mIsRestart && !aState) {
+    BT_LOGR("mIsRestart and off, now restart");
     StartBluetooth(false, nullptr);
   }
 
@@ -1913,11 +1917,11 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
 
   BT_LOGR("BT_STATE: %d", aState);
 
-  if (sIsRestart && aState) {
+  if (mIsRestart && aState) {
     
     BT_LOGR("daemon restarted, reset flag");
-    sIsRestart = false;
-    sIsFirstTimeToggleOffBt = false;
+    mIsRestart = false;
+    mIsFirstTimeToggleOffBt = false;
   }
   bool isBtEnabled = (aState == true);
 
@@ -1979,13 +1983,12 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
   }
 
   
-  if (sIsRestart && !aState) {
-    BT_LOGR("sIsRestart and off, now restart");
+  if (mIsRestart && !aState) {
+    BT_LOGR("mIsRestart and off, now restart");
     StartBluetooth(false);
   }
 #endif
 }
-
 
 
 
@@ -2814,7 +2817,7 @@ BluetoothServiceBluedroid::BackendErrorNotification(bool aCrashed)
   NS_ENSURE_TRUE_VOID(a2dp);
   a2dp->HandleBackendError();
 
-  sIsRestart = true;
+  mIsRestart = true;
   BT_LOGR("Recovery step2: stop bluetooth");
 #ifndef MOZ_B2G_BT_API_V1
   StopBluetooth(false, nullptr);
@@ -2828,13 +2831,13 @@ BluetoothServiceBluedroid::CompleteToggleBt(bool aEnabled)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (sIsRestart && !aEnabled && sIsFirstTimeToggleOffBt) {
+  if (mIsRestart && !aEnabled && mIsFirstTimeToggleOffBt) {
     
     
-  } else if (sIsRestart && !aEnabled && !sIsFirstTimeToggleOffBt) {
+  } else if (mIsRestart && !aEnabled && !mIsFirstTimeToggleOffBt) {
     
-    BT_LOGR("CompleteToggleBt set sIsFirstTimeToggleOffBt = true");
-    sIsFirstTimeToggleOffBt = true;
+    BT_LOGR("CompleteToggleBt set mIsFirstTimeToggleOffBt = true");
+    mIsFirstTimeToggleOffBt = true;
     BluetoothService::CompleteToggleBt(aEnabled);
     AdapterStateChangedNotification(false);
   } else {
