@@ -5936,7 +5936,10 @@ nsDocShell::SetIsActive(bool aIsActive)
   if (mScriptGlobal) {
     mScriptGlobal->SetIsBackground(!aIsActive);
     if (nsCOMPtr<nsIDocument> doc = mScriptGlobal->GetExtantDoc()) {
-      if (aIsActive) {
+      
+      
+      
+      if (aIsActive && !GetIsApp()) {
         nsCOMPtr<nsIDocShellTreeItem> parent;
         GetSameTypeParent(getter_AddRefs(parent));
         if (!parent) {
@@ -10071,7 +10074,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   
   
-  if (OrientationLock() != eScreenOrientation_None) {
+  
+  
+  if (OrientationLock() != eScreenOrientation_None && !GetIsApp()) {
 #ifdef DEBUG
     nsCOMPtr<nsIDocShellTreeItem> parent;
     GetSameTypeParent(getter_AddRefs(parent));
