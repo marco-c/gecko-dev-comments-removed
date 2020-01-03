@@ -451,6 +451,8 @@ CompositorOGL::PrepareViewport(CompositingRenderTargetOGL* aRenderTarget)
   
   mGLContext->fViewport(0, 0, size.width, size.height);
 
+  mRenderBound = Rect(0, 0, size.width, size.height);
+
   mViewportSize = size;
 
   if (!aRenderTarget->HasComplexProjection()) {
@@ -628,8 +630,6 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
   if (aRenderBoundsOut) {
     *aRenderBoundsOut = rect;
   }
-
-  mRenderBoundsOut = rect;
 
   GLint width = rect.width;
   GLint height = rect.height;
@@ -989,7 +989,7 @@ CompositorOGL::DrawQuad(const Rect& aRect,
   
   
   destRect.Inflate(1, 1);
-  if (!mRenderBoundsOut.Intersects(destRect)) {
+  if (!mRenderBound.Intersects(destRect)) {
     return;
   }
 
