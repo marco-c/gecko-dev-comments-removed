@@ -34,9 +34,7 @@ public:
   DriverInitCrashDetection();
   ~DriverInitCrashDetection();
 
-  bool DisableAcceleration() const {
-    return sDisableAcceleration;
-  }
+  bool DisableAcceleration() const;
 
   
   
@@ -60,7 +58,6 @@ private:
   void RecordTelemetry(TelemetryState aState);
 
 private:
-  static bool sDisableAcceleration;
   static bool sEnvironmentHasBeenUpdated;
 
 private:
