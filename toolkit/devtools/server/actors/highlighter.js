@@ -2933,6 +2933,45 @@ RulersHighlighter.prototype = {
                         .setAttribute("transform", `translate(0, ${-scrollY})`);
   },
 
+  _update: function() {
+    setIgnoreLayoutChanges(true);
+
+    let zoom = LayoutHelpers.getCurrentZoom(this.win);
+    let isZoomChanged = zoom !== this._zoom;
+
+    if (isZoomChanged) {
+      this._zoom = zoom;
+      this.updateViewport();
+    }
+
+    setIgnoreLayoutChanges(false, this.win.document.documentElement);
+
+    this._rafID = this.win.requestAnimationFrame(() => this._update());
+  },
+
+  _cancelUpdate: function() {
+    if (this._rafID) {
+      this.win.cancelAnimationFrame(this._rafID);
+      this._rafID = 0;
+    }
+  },
+  updateViewport: function() {
+    let { devicePixelRatio } = this.win;
+
+    
+    
+    let pixelRatio = devicePixelRatio / this._zoom;
+
+    
+    
+    
+    let minWidth = 1 / pixelRatio;
+    let strokeWidth = Math.min(minWidth, minWidth / this._zoom);
+
+    this.markup.getElement(this.ID_CLASS_PREFIX + "root").setAttribute("style",
+      `stroke-width:${strokeWidth};`);
+  },
+
   destroy: function() {
     this.hide();
 
@@ -2947,12 +2986,17 @@ RulersHighlighter.prototype = {
   show: function() {
     this.markup.removeAttributeForElement(this.ID_CLASS_PREFIX + "elements",
       "hidden");
+
+    this._update();
+
     return true;
   },
 
   hide: function() {
     this.markup.setAttributeForElement(this.ID_CLASS_PREFIX + "elements",
       "hidden", "true");
+
+    this._cancelUpdate();
   }
 };
 
