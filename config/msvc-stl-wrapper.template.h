@@ -13,9 +13,6 @@
 #endif
 
 
-#define NOMINMAX 1
-
-
 
 #ifndef mozilla_Throw_h
 #  include "mozilla/throw_msvc.h"

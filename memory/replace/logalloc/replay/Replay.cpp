@@ -8,9 +8,6 @@
 #include "mozmemory_wrap.h"
 
 #ifdef _WIN32
-
-
-#define NOMINMAX
 #include <windows.h>
 #include <io.h>
 typedef int ssize_t;
