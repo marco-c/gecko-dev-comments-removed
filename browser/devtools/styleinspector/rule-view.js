@@ -7,6 +7,7 @@
 
 
 
+
 "use strict";
 
 const {Cc, Ci, Cu} = require("chrome");
@@ -209,7 +210,7 @@ ElementStyle.prototype = {
       filter: this.showUserAgentStyles ? "ua" : undefined,
     }).then(entries => {
       if (this.destroyed) {
-        return;
+        return promise.resolve(undefined);
       }
 
       
@@ -236,14 +237,12 @@ ElementStyle.prototype = {
 
         
         delete this._refreshRules;
-
-        return null;
       });
     }).then(null, e => {
       
       
       if (this.destroyed) {
-        return;
+        return promise.resolve(undefined);
       }
       return promiseWarn(e);
     });
@@ -636,7 +635,7 @@ Rule.prototype = {
       disabled.delete(this.style);
     }
 
-    let promise = aModifications.apply().then(() => {
+    let modificationsPromise = aModifications.apply().then(() => {
       let cssProps = {};
       for (let cssProp of parseDeclarations(this.style.cssText)) {
         cssProps[cssProp.name] = cssProp;
@@ -668,8 +667,8 @@ Rule.prototype = {
       this.elementStyle._changed();
     }).then(null, promiseWarn);
 
-    this._applyingModifications = promise;
-    return promise;
+    this._applyingModifications = modificationsPromise;
+    return modificationsPromise;
   },
 
   
@@ -1741,7 +1740,7 @@ CssRuleView.prototype = {
   refreshPanel: function() {
     
     if (this.isEditing || !this._elementStyle) {
-      return;
+      return promise.resolve(undefined);
     }
 
     
@@ -1898,6 +1897,7 @@ CssRuleView.prototype = {
 
 
 
+
   createExpandableContainer: function(aLabel, isPseudo = false) {
     let header = this.styleDocument.createElementNS(HTML_NS, "div");
     header.className = this._getRuleViewHeaderClassName(true);
@@ -1915,42 +1915,57 @@ CssRuleView.prototype = {
     container.classList.add("ruleview-expandable-container");
     this.element.appendChild(container);
 
-    let toggleContainerVisibility = (isPseudo, showPseudo) => {
-      let isOpen = twisty.getAttribute("open");
-
-      if (isPseudo) {
-        this._showPseudoElements = !!showPseudo;
-
-        Services.prefs.setBoolPref("devtools.inspector.show_pseudo_elements",
-          this.showPseudoElements);
-
-        header.classList.toggle("show-expandable-container",
-          this.showPseudoElements);
-
-        isOpen = !this.showPseudoElements;
-      } else {
-        header.classList.toggle("show-expandable-container");
-      }
-
-      if (isOpen) {
-        twisty.removeAttribute("open");
-      } else {
-        twisty.setAttribute("open", "true");
-      }
-    };
-
     header.addEventListener("dblclick", () => {
-      toggleContainerVisibility(isPseudo, !this.showPseudoElements);
+      this._toggleContainerVisibility(twisty, header, isPseudo,
+        !this.showPseudoElements);
     }, false);
+
     twisty.addEventListener("click", () => {
-      toggleContainerVisibility(isPseudo, !this.showPseudoElements);
+      this._toggleContainerVisibility(twisty, header, isPseudo,
+        !this.showPseudoElements);
     }, false);
 
     if (isPseudo) {
-      toggleContainerVisibility(isPseudo, this.showPseudoElements);
+      this._toggleContainerVisibility(twisty, header, isPseudo,
+        this.showPseudoElements);
     }
 
     return container;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _toggleContainerVisibility: function(twisty, header, isPseudo, showPseudo) {
+    let isOpen = twisty.getAttribute("open");
+
+    if (isPseudo) {
+      this._showPseudoElements = !!showPseudo;
+
+      Services.prefs.setBoolPref("devtools.inspector.show_pseudo_elements",
+        this.showPseudoElements);
+
+      header.classList.toggle("show-expandable-container",
+        this.showPseudoElements);
+
+      isOpen = !this.showPseudoElements;
+    } else {
+      header.classList.toggle("show-expandable-container");
+    }
+
+    if (isOpen) {
+      twisty.removeAttribute("open");
+    } else {
+      twisty.setAttribute("open", "true");
+    }
   },
 
   _getRuleViewHeaderClassName: function(isPseudo) {
