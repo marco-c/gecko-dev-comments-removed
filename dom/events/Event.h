@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_Event_h_
 #define mozilla_dom_Event_h_
@@ -32,8 +32,8 @@ class ErrorEvent;
 class ProgressEvent;
 class WantsPopupControlCheck;
 
-// Dummy class so we can cast through it to get from nsISupports to
-// Event subclasses with only two non-ambiguous static casts.
+
+
 class EventBase : public nsIDOMEvent
 {
 };
@@ -74,9 +74,9 @@ public:
       nsCOMPtr<nsIDOMEvent> target_qi =
         do_QueryInterface(aSupports);
 
-      // If this assertion fires the QI implementation for the object in
-      // question doesn't use the nsIDOMEvent pointer as the
-      // nsISupports pointer. That must be fixed, or we'll crash...
+      
+      
+      
       MOZ_ASSERT(target_qi == event, "Uh, fix QI!");
     }
 #endif
@@ -105,12 +105,12 @@ public:
     return nullptr;
   }
 
-  // nsIDOMEvent Interface
+  
   NS_DECL_NSIDOMEVENT
 
   void InitPresContextData(nsPresContext* aPresContext);
 
-  // Returns true if the event should be trusted.
+  
   bool Init(EventTarget* aGlobal);
 
   static PopupControlState GetEventPopupControlState(WidgetEvent* aEvent,
@@ -138,19 +138,19 @@ public:
                                              const EventInit& aParam,
                                              ErrorResult& aRv);
 
-  // Implemented as xpidl method
-  // void GetType(nsString& aRetval) {}
+  
+  
 
   EventTarget* GetTarget() const;
   EventTarget* GetCurrentTarget() const;
 
   uint16_t EventPhase() const;
 
-  // xpidl implementation
-  // void StopPropagation();
+  
+  
 
-  // xpidl implementation
-  // void StopImmediatePropagation();
+  
+  
 
   bool Bubbles() const
   {
@@ -162,18 +162,18 @@ public:
     return mEvent->mFlags.mCancelable;
   }
 
-  // xpidl implementation
-  // void PreventDefault();
+  
+  
 
-  // You MUST NOT call PreventDefaultJ(JSContext*) from C++ code.  A call of
-  // this method always sets Event.defaultPrevented true for web contents.
-  // If default action handler calls this, web applications meet wrong
-  // defaultPrevented value.
+  
+  
+  
+  
   void PreventDefault(JSContext* aCx);
 
-  // You MUST NOT call DefaultPrevented(JSContext*) from C++ code.  This may
-  // return false even if PreventDefault() has been called.
-  // See comments in its implementation for the detail.
+  
+  
+  
   bool DefaultPrevented(JSContext* aCx) const;
 
   bool DefaultPrevented() const
@@ -209,12 +209,12 @@ public:
 
   bool GetPreventDefault() const;
 
-  /**
-   * @param aCalledByDefaultHandler     Should be true when this is called by
-   *                                    C++ or Chrome.  Otherwise, e.g., called
-   *                                    by a call of Event.preventDefault() in
-   *                                    content script, false.
-   */
+  
+
+
+
+
+
   void PreventDefaultInternal(bool aCalledByDefaultHandler);
 
   bool IsMainThreadEvent()
@@ -222,17 +222,17 @@ public:
     return mIsMainThreadEvent;
   }
 
-  /**
-   * For a given current target, returns the related target adjusted with
-   * shadow DOM retargeting rules. Returns nullptr if related target
-   * is not adjusted.
-   */
+  
+
+
+
+
   static nsIContent* GetShadowRelatedTarget(nsIContent* aCurrentTarget,
                                             nsIContent* aRelatedTarget);
 
 protected:
 
-  // Internal helper functions
+  
   void SetEventType(const nsAString& aEventTypeArg);
   already_AddRefed<nsIContent> GetTargetFromFrame();
 
@@ -247,28 +247,29 @@ protected:
     return IsTrusted() && mWantsPopupControlCheck;
   }
 
-  /**
-   * IsChrome() returns true if aCx is chrome context or the event is created
-   * in chrome's thread.  Otherwise, false.
-   */
+  
+
+
+
   bool IsChrome(JSContext* aCx) const;
 
   mozilla::WidgetEvent*       mEvent;
   nsRefPtr<nsPresContext>     mPresContext;
   nsCOMPtr<EventTarget>       mExplicitOriginalTarget;
-  nsCOMPtr<nsPIDOMWindow>     mOwner; // nsPIDOMWindow for now.
+  nsCOMPtr<nsPIDOMWindow>     mOwner; 
   bool                        mEventIsInternal;
   bool                        mPrivateDataDuplicated;
   bool                        mIsMainThreadEvent;
-  // True when popup control check should rely on event.type, not
-  // WidgetEvent.message.
+  
+  
   bool                        mWantsPopupControlCheck;
 };
 
 class MOZ_STACK_CLASS WantsPopupControlCheck
 {
 public:
-  WantsPopupControlCheck(nsIDOMEvent* aEvent) : mEvent(aEvent->InternalDOMEvent())
+  explicit WantsPopupControlCheck(nsIDOMEvent* aEvent) :
+    mEvent(aEvent->InternalDOMEvent())
   {
     mOriginalWantsPopupControlCheck = mEvent->GetWantsPopupControlCheck();
     mEvent->SetWantsPopupControlCheck(mEvent->IsTrusted());
@@ -284,8 +285,8 @@ private:
   bool mOriginalWantsPopupControlCheck;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 #define NS_FORWARD_TO_EVENT \
   NS_FORWARD_NSIDOMEVENT(Event::)
@@ -329,4 +330,4 @@ ToCanonicalSupports(mozilla::dom::Event* e)
   return static_cast<nsIDOMEvent*>(e);
 }
 
-#endif // mozilla_dom_Event_h_
+#endif 
