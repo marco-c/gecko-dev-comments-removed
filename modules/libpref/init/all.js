@@ -468,17 +468,15 @@ pref("media.webvtt.regions.enabled", false);
 pref("media.track.enabled", false);
 
 
-
-
-
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_GONK)
 pref("media.mediasource.enabled", true);
-#else
-pref("media.mediasource.enabled", false);
-#endif
 
 pref("media.mediasource.mp4.enabled", true);
+
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(MOZ_WIDGET_GONK) || defined(MOZ_WIDGET_ANDROID)
 pref("media.mediasource.webm.enabled", false);
+#else
+pref("media.mediasource.webm.enabled", true);
+#endif
 
 
 pref("media.mediasource.format-reader", true);
