@@ -392,7 +392,7 @@ public:
     SetHTMLAttr(nsGkAtoms::autocomplete, aValue, aRv);
   }
 
-  void GetAutocompleteInfo(AutocompleteInfo& aInfo);
+  void GetAutocompleteInfo(Nullable<AutocompleteInfo>& aInfo);
 
   bool Autofocus() const
   {
@@ -960,6 +960,11 @@ protected:
 
 
   bool DoesValueAsNumberApply() const { return DoesMinMaxApply(); }
+
+  
+
+
+  bool DoesAutocompleteApply() const;
 
   
 
