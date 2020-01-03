@@ -49,7 +49,7 @@ typedef unsigned int char32_t;
 #endif
 
 #ifdef MOZ_USE_CHAR16_WRAPPER
-# include <string>
+# include <cstdint>
   
 
 
@@ -92,10 +92,6 @@ public:
   operator bool() const
   {
     return mPtr != nullptr;
-  }
-  operator std::wstring() const
-  {
-    return std::wstring(static_cast<const wchar_t*>(*this));
   }
 
   

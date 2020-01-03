@@ -7,6 +7,11 @@
 #include "mozilla/Compression.h"
 #include "mozilla/CheckedInt.h"
 
+
+
+
+#include <string>
+
 using namespace mozilla::Compression;
 
 namespace {
