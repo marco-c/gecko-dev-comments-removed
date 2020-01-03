@@ -26,7 +26,6 @@
 
 #include "nsDOMMutationObserver.h"
 #include "nsICycleCollectorListener.h"
-#include "nsThread.h"
 #include "mozilla/XPTInterfaceInfoManager.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
@@ -37,9 +36,7 @@ using namespace mozilla::dom;
 using namespace xpc;
 using namespace JS;
 
-NS_IMPL_ISUPPORTS(nsXPConnect,
-                  nsIXPConnect,
-                  nsIThreadObserver)
+NS_IMPL_ISUPPORTS(nsXPConnect, nsIXPConnect)
 
 nsXPConnect* nsXPConnect::gSelf = nullptr;
 bool         nsXPConnect::gOnceAliveNowDead = false;
@@ -61,8 +58,7 @@ const char XPC_XPCONNECT_CONTRACTID[]     = "@mozilla.org/js/xpc/XPConnect;1";
 
 nsXPConnect::nsXPConnect()
     :   mRuntime(nullptr),
-        mShuttingDown(false),
-        mEventDepth(0)
+        mShuttingDown(false)
 {
     mRuntime = XPCJSRuntime::newXPCJSRuntime(this);
 
@@ -121,11 +117,6 @@ nsXPConnect::InitStatics()
     NS_ADDREF(gSelf);
 
     
-    if (NS_FAILED(nsThread::SetMainThreadObserver(gSelf))) {
-        MOZ_CRASH();
-    }
-
-    
     nsScriptSecurityManager::InitStatics();
     gScriptSecurityManager = nsScriptSecurityManager::GetScriptSecurityManager();
     gScriptSecurityManager->GetSystemPrincipal(&gSystemPrincipal);
@@ -152,8 +143,6 @@ nsXPConnect::ReleaseXPConnectSingleton()
 {
     nsXPConnect* xpc = gSelf;
     if (xpc) {
-        nsThread::SetMainThreadObserver(nullptr);
-
         nsrefcnt cnt;
         NS_RELEASE2(xpc, cnt);
     }
@@ -931,81 +920,6 @@ nsXPConnect::JSToVariant(JSContext* ctx, HandleValue value, nsIVariant** _retval
         return NS_ERROR_FAILURE;
 
     return NS_OK;
-}
-
-namespace {
-
-class DummyRunnable : public nsRunnable {
-public:
-    NS_IMETHOD Run() { return NS_OK; }
-};
-
-} 
-
-NS_IMETHODIMP
-nsXPConnect::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait,
-                                uint32_t aRecursionDepth)
-{
-    MOZ_ASSERT(NS_IsMainThread());
-
-    
-    
-    
-    if (aMayWait) {
-        if (Promise::PerformMicroTaskCheckpoint()) {
-            
-            
-            
-            
-            
-            NS_DispatchToMainThread(new DummyRunnable());
-        }
-    }
-
-    
-    mEventDepth++;
-
-    
-    mRuntime->OnProcessNextEvent();
-
-    
-    
-    bool ok = PushNullJSContext();
-    NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsXPConnect::AfterProcessNextEvent(nsIThreadInternal* aThread,
-                                   uint32_t aRecursionDepth,
-                                   bool aEventWasProcessed)
-{
-    
-    if (MOZ_UNLIKELY(mEventDepth == 0))
-        return NS_OK;
-    mEventDepth--;
-
-    
-    mRuntime->OnAfterProcessNextEvent();
-
-    
-    MOZ_ASSERT(NS_IsMainThread());
-    nsJSContext::MaybePokeCC();
-
-    nsContentUtils::PerformMainThreadMicroTaskCheckpoint();
-
-    Promise::PerformMicroTaskCheckpoint();
-
-    PopNullJSContext();
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsXPConnect::OnDispatchedEvent(nsIThreadInternal* aThread)
-{
-    NS_NOTREACHED("Why tell us?");
-    return NS_ERROR_UNEXPECTED;
 }
 
 NS_IMETHODIMP

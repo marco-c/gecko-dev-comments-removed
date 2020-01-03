@@ -633,9 +633,7 @@ AudioDestinationNode::ScheduleStableStateNotification()
     NS_NewRunnableMethod(this, &AudioDestinationNode::NotifyStableState);
   
   
-  nsContentUtils::RunInStableState(event.forget(),
-                                   nsContentUtils::
-                                     DispatchFailureHandling::IgnoreFailure);
+  nsContentUtils::RunInStableState(event.forget());
 }
 
 double

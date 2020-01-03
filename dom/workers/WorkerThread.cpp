@@ -310,8 +310,7 @@ WorkerThread::Observer::OnDispatchedEvent(nsIThreadInternal* )
 
 NS_IMETHODIMP
 WorkerThread::Observer::OnProcessNextEvent(nsIThreadInternal* ,
-                                           bool aMayWait,
-                                           uint32_t aRecursionDepth)
+                                           bool aMayWait)
 {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
@@ -321,23 +320,22 @@ WorkerThread::Observer::OnProcessNextEvent(nsIThreadInternal* ,
   
   
   if (aMayWait) {
-    MOZ_ASSERT(aRecursionDepth == 2);
+    MOZ_ASSERT(CycleCollectedJSRuntime::Get()->RecursionDepth() == 2);
     MOZ_ASSERT(!BackgroundChild::GetForCurrentThread());
     return NS_OK;
   }
 
-  mWorkerPrivate->OnProcessNextEvent(aRecursionDepth);
+  mWorkerPrivate->OnProcessNextEvent();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 WorkerThread::Observer::AfterProcessNextEvent(nsIThreadInternal* ,
-                                              uint32_t aRecursionDepth,
                                               bool )
 {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
-  mWorkerPrivate->AfterProcessNextEvent(aRecursionDepth);
+  mWorkerPrivate->AfterProcessNextEvent();
   return NS_OK;
 }
 

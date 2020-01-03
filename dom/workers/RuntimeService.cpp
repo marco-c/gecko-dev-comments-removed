@@ -996,6 +996,15 @@ public:
     }
   }
 
+  virtual void AfterProcessTask(uint32_t aRecursionDepth) override
+  {
+    
+    
+    if (aRecursionDepth == 2) {
+      CycleCollectedJSRuntime::AfterProcessTask(aRecursionDepth);
+    }
+  }
+
 private:
   WorkerPrivate* mWorkerPrivate;
 };

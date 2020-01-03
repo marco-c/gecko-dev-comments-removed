@@ -526,15 +526,13 @@ LazyIdleThread::OnDispatchedEvent(nsIThreadInternal* )
 
 NS_IMETHODIMP
 LazyIdleThread::OnProcessNextEvent(nsIThreadInternal* ,
-                                   bool ,
-                                   uint32_t )
+                                   bool )
 {
   return NS_OK;
 }
 
 NS_IMETHODIMP
 LazyIdleThread::AfterProcessNextEvent(nsIThreadInternal* ,
-                                      uint32_t ,
                                       bool aEventWasProcessed)
 {
   bool shouldNotifyIdle;

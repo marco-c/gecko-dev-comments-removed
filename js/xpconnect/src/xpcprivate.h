@@ -153,7 +153,6 @@
 #include "nsJSPrincipals.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "xpcObjectHelper.h"
-#include "nsIThreadInternal.h"
 
 #include "SandboxPrivate.h"
 #include "BackstagePass.h"
@@ -240,14 +239,12 @@ static inline bool IS_WN_REFLECTOR(JSObject* obj)
 
 
 
-class nsXPConnect final : public nsIXPConnect,
-                          public nsIThreadObserver
+class nsXPConnect final : public nsIXPConnect
 {
 public:
     
     NS_DECL_ISUPPORTS
     NS_DECL_NSIXPCONNECT
-    NS_DECL_NSITHREADOBSERVER
 
     
 public:
@@ -323,13 +320,6 @@ private:
 
     XPCJSRuntime*                   mRuntime;
     bool                            mShuttingDown;
-
-    
-    
-    
-    
-    
-    uint16_t                 mEventDepth;
 
     static uint32_t gReportAllJSExceptions;
 
@@ -489,6 +479,9 @@ public:
     NoteCustomGCThingXPCOMChildren(const js::Class* aClasp, JSObject* aObj,
                                    nsCycleCollectionTraversalCallback& aCb) const override;
 
+    virtual void BeforeProcessTask(bool aMightBlock) override;
+    virtual void AfterProcessTask(uint32_t aNewRecursionDepth) override;
+
     
 
 
@@ -614,16 +607,6 @@ public:
     void DeleteSingletonScopes();
 
     PRTime GetWatchdogTimestamp(WatchdogTimestampCategory aCategory);
-
-    void OnProcessNextEvent() {
-        mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
-        mSlowScriptSecondHalf = false;
-        js::ResetStopwatches(Get()->Runtime());
-    }
-    void OnAfterProcessNextEvent() {
-        mSlowScriptCheckpoint = mozilla::TimeStamp();
-        mSlowScriptSecondHalf = false;
-    }
 
     nsTArray<nsXPCWrappedJS*>& WrappedJSToReleaseArray() { return mWrappedJSToReleaseArray; }
 
