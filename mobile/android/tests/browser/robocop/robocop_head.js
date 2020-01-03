@@ -19,7 +19,6 @@ var _passedChecks = 0, _falsePassedChecks = 0;
 var _todoChecks = 0;
 var _cleanupFunctions = [];
 var _pendingTimers = [];
-var _profileInitialized = false;
 
 function _dump(str) {
   let start = /^TEST-/.test(str) ? "\n" : "";
@@ -903,84 +902,9 @@ function do_parse_document(aPath, aType) {
 
 
 
-
-
-
-function do_register_cleanup(aFunction)
-{
-  _cleanupFunctions.push(aFunction);
-}
-
-
-
-
-
-
-
-function do_get_profile() {
-  if (!runningInParent) {
-    _dump("TEST-INFO | (xpcshell/head.js) | Ignoring profile creation from child process.\n");
-    return null;
-  }
-
-  if (!_profileInitialized) {
-    
-    
-    do_register_cleanup(function() {
-      let obsSvc = Components.classes["@mozilla.org/observer-service;1"].
-                   getService(Components.interfaces.nsIObserverService);
-      obsSvc.notifyObservers(null, "profile-change-net-teardown", null);
-      obsSvc.notifyObservers(null, "profile-change-teardown", null);
-      obsSvc.notifyObservers(null, "profile-before-change", null);
-    });
-  }
-
-  let env = Components.classes["@mozilla.org/process/environment;1"]
-                      .getService(Components.interfaces.nsIEnvironment);
+function do_register_cleanup(unused) {
   
-  let profd = env.get("XPCSHELL_TEST_PROFILE_DIR");
-  let file = Components.classes["@mozilla.org/file/local;1"]
-                       .createInstance(Components.interfaces.nsILocalFile);
-  file.initWithPath(profd);
-
-  let dirSvc = Components.classes["@mozilla.org/file/directory_service;1"]
-                         .getService(Components.interfaces.nsIProperties);
-  let provider = {
-    getFile: function(prop, persistent) {
-      persistent.value = true;
-      if (prop == "ProfD" || prop == "ProfLD" || prop == "ProfDS" ||
-          prop == "ProfLDS" || prop == "TmpD") {
-        return file.clone();
-      }
-      throw Components.results.NS_ERROR_FAILURE;
-    },
-    QueryInterface: function(iid) {
-      if (iid.equals(Components.interfaces.nsIDirectoryServiceProvider) ||
-          iid.equals(Components.interfaces.nsISupports)) {
-        return this;
-      }
-      throw Components.results.NS_ERROR_NO_INTERFACE;
-    }
-  };
-  dirSvc.QueryInterface(Components.interfaces.nsIDirectoryService)
-        .registerProvider(provider);
-
-  let obsSvc = Components.classes["@mozilla.org/observer-service;1"].
-        getService(Components.interfaces.nsIObserverService);
-
-  if (!_profileInitialized) {
-    obsSvc.notifyObservers(null, "profile-do-change", "xpcshell-do-get-profile");
-    _profileInitialized = true;
-  }
-
-  
-  
-  env = null;
-  profd = null;
-  dirSvc = null;
-  provider = null;
-  obsSvc = null;
-  return file.clone();
+  _dump("TEST-INFO | (xpcshell/head.js) | test IGNORING do_register_cleanup() Registration\n");
 }
 
 
