@@ -1941,7 +1941,9 @@ WebGLContext::InitAndValidateGL()
     }
 
     
+    mVertexAttribType = MakeUnique<GLenum[]>(mGLMaxVertexAttribs);
     for (int32_t index = 0; index < mGLMaxVertexAttribs; ++index) {
+        mVertexAttribType[index] = LOCAL_GL_FLOAT;
         VertexAttrib4f(index, 0, 0, 0, 1);
     }
 
