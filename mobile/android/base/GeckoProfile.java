@@ -909,6 +909,9 @@ public final class GeckoProfile {
                     if (!profileDir.exists()) {
                         return;
                     }
+                    if (RestrictedProfiles.isUserRestricted(context)) {
+                        return;
+                    }
 
                     
                     
