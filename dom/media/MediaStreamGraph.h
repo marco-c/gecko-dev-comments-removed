@@ -832,14 +832,6 @@ public:
 
 
 
-
-  void DispatchWhenNotEnoughBuffered(TrackID aID,
-      TaskQueue* aSignalQueue, nsIRunnable* aSignalRunnable);
-  
-
-
-
-
   void EndTrack(TrackID aID);
   
 
@@ -930,7 +922,6 @@ protected:
     
     
     nsAutoPtr<MediaSegment> mData;
-    nsTArray<ThreadAndRunnable> mDispatchWhenNotEnough;
     
     
     uint32_t mCommands;

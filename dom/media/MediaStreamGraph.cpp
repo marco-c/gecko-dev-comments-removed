@@ -265,8 +265,6 @@ void
 MediaStreamGraphImpl::UpdateBufferSufficiencyState(SourceMediaStream* aStream)
 {
   StreamTime desiredEnd = GetDesiredBufferEnd(aStream);
-  nsTArray<SourceMediaStream::ThreadAndRunnable> runnables;
-
   {
     MutexAutoLock lock(aStream->mMutex);
     for (uint32_t i = 0; i < aStream->mUpdateTracks.Length(); ++i) {
@@ -280,7 +278,6 @@ MediaStreamGraphImpl::UpdateBufferSufficiencyState(SourceMediaStream* aStream)
       }
       if (data->mCommands & SourceMediaStream::TRACK_END) {
         
-        
         continue;
       }
       StreamBuffer::Track* track = aStream->mBuffer.FindTrack(data->mID);
@@ -288,18 +285,7 @@ MediaStreamGraphImpl::UpdateBufferSufficiencyState(SourceMediaStream* aStream)
       
       NS_ASSERTION(!track->IsEnded(), "What is this track doing here?");
       data->mHaveEnough = track->GetEnd() >= desiredEnd;
-      if (!data->mHaveEnough) {
-        runnables.MoveElementsFrom(data->mDispatchWhenNotEnough);
-      }
     }
-  }
-
-  for (uint32_t i = 0; i < runnables.Length(); ++i) {
-    
-    
-    
-    nsCOMPtr<nsIRunnable> r = runnables[i].mRunnable;
-    runnables[i].mTarget->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
   }
 }
 
@@ -2667,28 +2653,6 @@ SourceMediaStream::GetEndOfAppendedData(TrackID aID)
   }
   NS_ERROR("Track not found");
   return 0;
-}
-
-void
-SourceMediaStream::DispatchWhenNotEnoughBuffered(TrackID aID,
-    TaskQueue* aSignalQueue, nsIRunnable* aSignalRunnable)
-{
-  MutexAutoLock lock(mMutex);
-  TrackData* data = FindDataForTrack(aID);
-  if (!data) {
-    nsCOMPtr<nsIRunnable> r = aSignalRunnable;
-    aSignalQueue->Dispatch(r.forget());
-    return;
-  }
-
-  if (data->mHaveEnough) {
-    if (data->mDispatchWhenNotEnough.IsEmpty()) {
-      data->mDispatchWhenNotEnough.AppendElement()->Init(aSignalQueue, aSignalRunnable);
-    }
-  } else {
-    nsCOMPtr<nsIRunnable> r = aSignalRunnable;
-    aSignalQueue->Dispatch(r.forget());
-  }
 }
 
 void
