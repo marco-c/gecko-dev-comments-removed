@@ -574,9 +574,6 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin):
         
         python = self.query_python_path()
         self.run_command([python, "--version"])
-        
-        talos = os.path.join(self.talos_path, 'talos', 'PerfConfigurator.py')
-        command = [python, talos] + options
         parser = TalosOutputParser(config=self.config, log_obj=self.log_obj,
                                    error_list=TalosErrorList)
         env = {}
@@ -588,14 +585,8 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin):
         
         output_timeout = self.config.get('talos_output_timeout', 3600)
         
-        self.return_code = self.run_command(command, cwd=self.workdir,
-                                            output_timeout=output_timeout,
-                                            output_parser=parser,
-                                            env=env)
-        
         run_tests = os.path.join(self.talos_path, 'talos', 'run_tests.py')
-        options = "talos.yml"
-        command = [python, run_tests, '--noisy', '--debug'] + [options]
+        command = [python, run_tests, '--debug'] + options
         self.return_code = self.run_command(command, cwd=self.workdir,
                                             output_timeout=output_timeout,
                                             output_parser=parser,
