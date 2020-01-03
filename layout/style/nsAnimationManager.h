@@ -50,6 +50,8 @@ struct AnimationEventInfo {
   }
 };
 
+typedef InfallibleTArray<AnimationEventInfo> EventArray;
+
 namespace dom {
 
 class CSSAnimation final : public Animation
@@ -279,11 +281,7 @@ public:
   
 
 
-  void QueueEvent(mozilla::AnimationEventInfo&& aEventInfo)
-  {
-    mEventDispatcher.QueueEvent(
-      mozilla::Forward<mozilla::AnimationEventInfo>(aEventInfo));
-  }
+  void QueueEvent(mozilla::AnimationEventInfo& aEventInfo);
 
   
 
@@ -292,8 +290,14 @@ public:
 
 
 
-  void DispatchEvents()  { mEventDispatcher.DispatchEvents(mPresContext); }
-  void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
+  void DispatchEvents() {
+    
+    if (!mPendingEvents.IsEmpty()) {
+      DoDispatchEvents();
+    }
+  }
+
+  void ClearEventQueue() { mPendingEvents.Clear(); }
 
 protected:
   virtual ~nsAnimationManager() {}
@@ -311,8 +315,6 @@ protected:
     return true;
   }
 
-  mozilla::DelayedEventDispatcher<mozilla::AnimationEventInfo> mEventDispatcher;
-
 private:
   void BuildAnimations(nsStyleContext* aStyleContext,
                        mozilla::dom::Element* aTarget,
@@ -329,6 +331,11 @@ private:
   static void UpdateCascadeResults(nsStyleContext* aStyleContext,
                                    mozilla::AnimationCollection*
                                      aElementAnimations);
+
+  
+  void DoDispatchEvents();
+
+  mozilla::EventArray mPendingEvents;
 };
 
 #endif 

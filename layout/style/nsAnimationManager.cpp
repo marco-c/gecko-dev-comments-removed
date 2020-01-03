@@ -7,6 +7,7 @@
 #include "nsTransitionManager.h"
 #include "mozilla/dom/CSSAnimationBinding.h"
 
+#include "mozilla/EventDispatcher.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/DocumentTimeline.h"
@@ -250,9 +251,10 @@ CSSAnimation::QueueEvents()
     StickyTimeDuration elapsedTime =
       std::min(StickyTimeDuration(mEffect->InitialAdvance()),
                computedTiming.mActiveDuration);
-    manager->QueueEvent(
-      AnimationEventInfo(owningElement, mAnimationName, NS_ANIMATION_START,
-                         elapsedTime, PseudoTypeAsString(owningPseudoType)));
+    AnimationEventInfo ei(owningElement, mAnimationName, NS_ANIMATION_START,
+                          elapsedTime,
+                          PseudoTypeAsString(owningPseudoType));
+    manager->QueueEvent(ei);
     
     message = NS_ANIMATION_END;
   } else {
@@ -272,9 +274,9 @@ CSSAnimation::QueueEvents()
     elapsedTime = computedTiming.mActiveDuration;
   }
 
-  manager->QueueEvent(
-    AnimationEventInfo(owningElement, mAnimationName, message, elapsedTime,
-                       PseudoTypeAsString(owningPseudoType)));
+  AnimationEventInfo ei(owningElement, mAnimationName, message, elapsedTime,
+                        PseudoTypeAsString(owningPseudoType));
+  manager->QueueEvent(ei);
 }
 
 CommonAnimationManager*
@@ -303,7 +305,15 @@ CSSAnimation::PseudoTypeAsString(nsCSSPseudoElements::Type aPseudoType)
 
 
 
-NS_IMPL_CYCLE_COLLECTION(nsAnimationManager, mEventDispatcher)
+NS_IMPL_CYCLE_COLLECTION_CLASS(nsAnimationManager)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsAnimationManager)
+  tmp->mPendingEvents.Clear();
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsAnimationManager)
+  for (AnimationEventInfo& info : tmp->mPendingEvents) {
+    ImplCycleCollectionTraverse(cb, info.mElement, "mPendingEvents.mElement");
+  }
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsAnimationManager)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsAnimationManager)
@@ -531,11 +541,17 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
   
   
   
-  if (mEventDispatcher.HasQueuedEvents()) {
+  if (!mPendingEvents.IsEmpty()) {
     mPresContext->Document()->SetNeedStyleFlush();
   }
 
   return GetAnimationRule(aElement, aStyleContext->GetPseudoType());
+}
+
+void
+nsAnimationManager::QueueEvent(AnimationEventInfo& aEventInfo)
+{
+  mPendingEvents.AppendElement(aEventInfo);
 }
 
 struct KeyframeData {
@@ -1005,4 +1021,20 @@ nsAnimationManager::FlushAnimations(FlushFlags aFlags)
   }
 
   MaybeStartOrStopObservingRefreshDriver();
+}
+
+void
+nsAnimationManager::DoDispatchEvents()
+{
+  EventArray events;
+  mPendingEvents.SwapElements(events);
+  
+  for (uint32_t i = 0, i_end = events.Length(); i < i_end; ++i) {
+    AnimationEventInfo &info = events[i];
+    EventDispatcher::Dispatch(info.mElement, mPresContext, &info.mEvent);
+
+    if (!mPresContext) {
+      break;
+    }
+  }
 }
