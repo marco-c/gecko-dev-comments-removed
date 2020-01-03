@@ -154,13 +154,14 @@ ImageTestCase GreenICOTestCase()
 
 ImageTestCase GreenFirstFrameAnimatedGIFTestCase()
 {
-  return ImageTestCase("first-frame-green.gif", "image/gif", IntSize(100, 100));
+  return ImageTestCase("first-frame-green.gif", "image/gif", IntSize(100, 100),
+                       TEST_CASE_IS_ANIMATED);
 }
 
 ImageTestCase GreenFirstFrameAnimatedPNGTestCase()
 {
   return ImageTestCase("first-frame-green.png", "image/png", IntSize(100, 100),
-                       TEST_CASE_IS_TRANSPARENT);
+                       TEST_CASE_IS_TRANSPARENT | TEST_CASE_IS_ANIMATED);
 }
 
 ImageTestCase CorruptTestCase()
@@ -206,6 +207,15 @@ ImageTestCase RLE8BMPTestCase()
 {
   return ImageTestCase("rle8.bmp", "image/bmp", IntSize(32, 32),
                        TEST_CASE_IS_TRANSPARENT);
+}
+
+ImageTestCase NoFrameDelayGIFTestCase()
+{
+  
+  
+  
+  
+  return ImageTestCase("no-frame-delay.gif", "image/gif", IntSize(100, 100));
 }
 
 } 
