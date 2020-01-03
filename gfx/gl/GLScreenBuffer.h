@@ -149,6 +149,7 @@ protected:
     bool mNeedsBlit;
 
     GLenum mUserReadBufferMode;
+    GLenum mUserDrawBufferMode;
 
     
     GLuint mUserDrawFB;
@@ -222,6 +223,7 @@ public:
                         GLint y, GLsizei width, GLsizei height, GLint border);
 
     void SetReadBuffer(GLenum userMode);
+    void SetDrawBuffer(GLenum userMode);
 
     
 
