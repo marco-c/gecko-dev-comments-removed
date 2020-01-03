@@ -126,46 +126,91 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
                aDoc, aSkipPrompt, null);
 }
 
+
+
+
+function saveBrowser(aBrowser, aSkipPrompt)
+{
+  if (!aBrowser) {
+    throw "Must have a browser when calling saveBrowser";
+  }
+  let persistable = aBrowser.QueryInterface(Ci.nsIFrameLoaderOwner)
+                    .frameLoader
+                    .QueryInterface(Ci.nsIWebBrowserPersistable);
+  persistable.startPersistence({
+    onDocumentReady: function (document) {
+      saveDocument(document, aSkipPrompt);
+    }
+    
+    
+    
+  });
+}
+
+
+
+
+
+
+
+
+
 function saveDocument(aDocument, aSkipPrompt)
 {
+  const Ci = Components.interfaces;
+
   if (!aDocument)
     throw "Must have a document when calling saveDocument";
 
+  let contentDisposition = null;
+  let cacheKeyInt = null;
+
+  if (aDocument instanceof Ci.nsIWebBrowserPersistDocument) {
+    
+    contentDisposition = aDocument.contentDisposition;
+    cacheKeyInt = aDocument.cacheKey;
+  } else if (aDocument instanceof Ci.nsIDOMDocument) {
+    
+    
+    let ifreq =
+      aDocument.defaultView
+               .QueryInterface(Ci.nsIInterfaceRequestor);
+
+    try {
+      contentDisposition =
+        ifreq.getInterface(Ci.nsIDOMWindowUtils)
+             .getDocumentMetadata("content-disposition");
+    } catch (ex) {
+      
+    }
+
+    try {
+      let shEntry =
+        ifreq.getInterface(Ci.nsIWebNavigation)
+             .QueryInterface(Ci.nsIWebPageDescriptor)
+             .currentDescriptor
+             .QueryInterface(Ci.nsISHEntry);
+
+      let cacheKey = shEntry.cacheKey
+                            .QueryInterface(Ci.nsISupportsPRUint32)
+                            .data;
+      
+      
+      cacheKeyInt = cacheKey.data;
+    } catch (ex) {
+      
+    }
+  }
+
   
-  var ifreq =
-    aDocument.defaultView
-             .QueryInterface(Components.interfaces.nsIInterfaceRequestor);
-
-  var contentDisposition = null;
-  try {
-    contentDisposition =
-      ifreq.getInterface(Components.interfaces.nsIDOMWindowUtils)
-           .getDocumentMetadata("content-disposition");
-  } catch (ex) {
-    
-  }
-
   let cacheKey = null;
-  try {
-    let shEntry =
-      ifreq.getInterface(Components.interfaces.nsIWebNavigation)
-           .QueryInterface(Components.interfaces.nsIWebPageDescriptor)
-           .currentDescriptor
-           .QueryInterface(Components.interfaces.nsISHEntry);
-
-    shEntry.cacheKey.QueryInterface(Components.interfaces.nsISupportsPRUint32);
-
-    
-    
-    
+  if (cacheKeyInt) {
     cacheKey = Cc["@mozilla.org/supports-PRUint32;1"]
-                 .createInstance(Ci.nsISupportsPRUint32);
-    cacheKey.data = shEntry.cacheKey.data;
-  } catch (ex) {
-    
+      .createInstance(Ci.nsISupportsPRUint32);
+    cacheKey.data = cacheKeyInt;
   }
 
-  internalSave(aDocument.location.href, aDocument, null, contentDisposition,
+  internalSave(aDocument.documentURI, aDocument, null, contentDisposition,
                aDocument.contentType, false, null, null,
                aDocument.referrer ? makeURI(aDocument.referrer) : null,
                aDocument, aSkipPrompt, cacheKey);
@@ -353,6 +398,13 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
     let nonCPOWDocument =
       aDocument && !Components.utils.isCrossProcessWrapper(aDocument);
 
+    let isPrivate = aIsContentWindowPrivate;
+    if (isPrivate === undefined) {
+      isPrivate = aInitiatingDocument instanceof Components.interfaces.nsIDOMDocument
+        ? PrivateBrowsingUtils.isContentWindowPrivate(aInitiatingDocument.defaultView)
+        : aInitiatingDocument.isPrivate;
+    }
+
     var persistArgs = {
       sourceURI         : sourceURI,
       sourceReferrer    : aReferrer,
@@ -362,18 +414,13 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
       sourceCacheKey    : aCacheKey,
       sourcePostData    : nonCPOWDocument ? getPostData(aDocument) : null,
       bypassCache       : aShouldBypassCache,
-      initiatingWindow  : aInitiatingDocument && aInitiatingDocument.defaultView,
-      isContentWindowPrivate : aIsContentWindowPrivate
+      isPrivate         : isPrivate,
     };
 
     
     internalPersist(persistArgs);
   }
 }
-
-
-
-
 
 
 
@@ -424,15 +471,10 @@ function internalPersist(persistArgs)
   
   var targetFileURL = makeFileURI(persistArgs.targetFile);
 
-  let isPrivate = persistArgs.isContentWindowPrivate;
-  if (isPrivate === undefined) {
-    isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(persistArgs.initiatingWindow);
-  }
-
   
   var tr = Components.classes["@mozilla.org/transfer;1"].createInstance(Components.interfaces.nsITransfer);
   tr.init(persistArgs.sourceURI,
-          targetFileURL, "", null, null, null, persist, isPrivate);
+          targetFileURL, "", null, null, null, persist, persistArgs.isPrivate);
   persist.progressListener = new DownloadListener(window, tr);
 
   if (persistArgs.sourceDocument) {
@@ -471,7 +513,7 @@ function internalPersist(persistArgs)
                                 persistArgs.sourcePostData,
                                 null,
                                 targetFileURL,
-                                isPrivate);
+                                persistArgs.isPrivate);
   }
 }
 
@@ -828,17 +870,22 @@ function appendFiltersForContentType(aFilePicker, aContentType, aFileExtension, 
 
 function getPostData(aDocument)
 {
+  const Ci = Components.interfaces;
+
+  if (aDocument instanceof Ci.nsIWebBrowserPersistDocument) {
+    return aDocument.postData;
+  }
   try {
     
     
     
-    var sessionHistoryEntry =
+    let sessionHistoryEntry =
         aDocument.defaultView
-                 .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                 .getInterface(Components.interfaces.nsIWebNavigation)
-                 .QueryInterface(Components.interfaces.nsIWebPageDescriptor)
+                 .QueryInterface(Ci.nsIInterfaceRequestor)
+                 .getInterface(Ci.nsIWebNavigation)
+                 .QueryInterface(Ci.nsIWebPageDescriptor)
                  .currentDescriptor
-                 .QueryInterface(Components.interfaces.nsISHEntry);
+                 .QueryInterface(Ci.nsISHEntry);
     return sessionHistoryEntry.postData;
   }
   catch (e) {
