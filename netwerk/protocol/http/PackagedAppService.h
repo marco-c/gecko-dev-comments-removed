@@ -62,9 +62,6 @@ private:
   nsresult NotifyPackageDownloaded(nsCString aKey);
 
   
-  static nsresult GetPackageURI(nsIURI *aUri, nsIURI **aPackageURI);
-
-  
   
   
   
