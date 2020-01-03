@@ -19,8 +19,15 @@ public:
 
     
     
-    nsresult NewSrcdocChannel(nsIURI* uri, const nsAString &srcdoc,
-                              nsIChannel** result);
+    nsresult NewSrcdocChannel(nsIURI *aURI,
+                              nsIURI *aBaseURI,
+                              const nsAString &aSrcdoc,
+                              nsINode *aLoadingNode,
+                              nsIPrincipal *aLoadingPrincipal,
+                              nsIPrincipal *aTriggeringPrincipal,
+                              nsSecurityFlags aSecurityFlags,
+                              nsContentPolicyType aContentPolicyType,
+                              nsIChannel** outChannel);
 
     static nsViewSourceHandler* GetInstance();
 
