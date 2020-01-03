@@ -175,13 +175,15 @@ class Certificate:
     """Utility class for reading a certificate specification and
     generating a signed x509 certificate"""
 
-    def __init__(self, paramStream, now=datetime.datetime.utcnow()):
+    def __init__(self, paramStream):
         self.versionValue = 2 
         self.signature = 'sha256WithRSAEncryption'
         self.issuer = 'Default Issuer'
-        oneYear = datetime.timedelta(days=365)
-        self.notBefore = now - oneYear
-        self.notAfter = now + oneYear
+        now = datetime.datetime.utcnow()
+        currentYear = datetime.datetime.strptime(str(now.year), '%Y')
+        aYearAndAWhile = datetime.timedelta(days=550)
+        self.notBefore = currentYear - aYearAndAWhile
+        self.notAfter = currentYear + aYearAndAWhile
         self.subject = 'Default Subject'
         self.signatureAlgorithm = 'sha256WithRSAEncryption'
         self.extensions = None
@@ -417,12 +419,14 @@ class Certificate:
 
 
 
-def main(output, inputPath, buildIDPath):
-    with open(buildIDPath) as buildidFile:
-        buildid = buildidFile.read().strip()
-    now = datetime.datetime.strptime(buildid, '%Y%m%d%H%M%S')
+
+
+
+
+
+def main(output, inputPath):
     with open(inputPath) as configStream:
-        output.write(Certificate(configStream, now=now).toPEM())
+        output.write(Certificate(configStream).toPEM())
 
 
 
