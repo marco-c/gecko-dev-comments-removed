@@ -225,6 +225,11 @@ private:
   
 
 
+  bool IsRemoteFrame();
+
+  
+
+
 
 
   bool OwnerIsBrowserOrAppFrame();
