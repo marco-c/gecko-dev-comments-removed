@@ -6,7 +6,6 @@
 
 
 
-
 var BUGNUMBER = 622167;
 var summary = 'Handle infinite recursion';
 print(BUGNUMBER + ": " + summary);
@@ -44,10 +43,12 @@ function test()
     {
       for (var i in f());
     }
-    catch (e) { }
+    catch (e)
+    {
+      gc();
+    }
   }
   foopy();
-  gc();
 }
 test();
 
