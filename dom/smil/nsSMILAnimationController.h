@@ -74,10 +74,8 @@ public:
 
   void SetResampleNeeded()
   {
-    if (!mRunningSample) {
-      if (!mResampleNeeded) {
-        FlagDocumentNeedsFlush();
-      }
+    if (!mRunningSample && !mResampleNeeded) {
+      FlagDocumentNeedsFlush();
       mResampleNeeded = true;
     }
   }
@@ -104,10 +102,16 @@ public:
   void NotifyRefreshDriverDestroying(nsRefreshDriver* aRefreshDriver);
 
   
-  bool HasRegisteredAnimations()
-  { return mAnimationElementTable.Count() != 0; }
+  bool HasRegisteredAnimations() const
+  {
+    return mAnimationElementTable.Count() != 0;
+  }
 
   void AddStyleUpdatesTo(mozilla::RestyleTracker& aTracker);
+  bool MightHavePendingStyleUpdates() const
+  {
+    return mMightHavePendingStyleUpdates;
+  }
 
 protected:
   ~nsSMILAnimationController();
@@ -185,6 +189,9 @@ protected:
 
   
   bool                       mRegisteredWithRefreshDriver;
+
+  
+  bool                       mMightHavePendingStyleUpdates;
 
   
   

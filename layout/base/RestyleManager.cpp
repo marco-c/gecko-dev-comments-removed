@@ -1774,18 +1774,13 @@ RestyleManager::UpdateOnlyAnimationStyles()
   bool doCSS = mLastUpdateForThrottledAnimations != now;
   mLastUpdateForThrottledAnimations = now;
 
-  bool doSMIL = false;
   nsIDocument* document = mPresContext->Document();
-  nsSMILAnimationController* animationController = nullptr;
-  if (document->HasAnimationController()) {
-    animationController = document->GetAnimationController();
-    
-    
-    
-    
-    
-    doSMIL = true;
-  }
+  nsSMILAnimationController* animationController =
+    document->HasAnimationController() ?
+    document->GetAnimationController() :
+    nullptr;
+  bool doSMIL = animationController &&
+                animationController->MightHavePendingStyleUpdates();
 
   if (!doCSS && !doSMIL) {
     return;
