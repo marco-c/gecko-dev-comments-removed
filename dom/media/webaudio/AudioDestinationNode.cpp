@@ -243,7 +243,7 @@ public:
   explicit DestinationNodeEngine(AudioDestinationNode* aNode)
     : AudioNodeEngine(aNode)
     , mVolume(1.0f)
-    , mLastInputMuted(false)
+    , mLastInputMuted(true)
   {
     MOZ_ASSERT(aNode);
   }
@@ -613,10 +613,6 @@ AudioDestinationNode::CreateAudioChannelAgent()
                                            static_cast<int32_t>(mAudioChannel),
                                            this);
 
-  
-  
-  InputMuted(false);
-
   WindowAudioCaptureChanged();
 }
 
@@ -692,7 +688,10 @@ AudioDestinationNode::InputMuted(bool aMuted)
   MOZ_ASSERT(Context() && !Context()->IsOffline());
 
   if (!mAudioChannelAgent) {
-    return;
+    if (aMuted) {
+      return;
+    }
+    CreateAudioChannelAgent();
   }
 
   if (aMuted) {
