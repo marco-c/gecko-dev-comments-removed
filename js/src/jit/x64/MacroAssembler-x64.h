@@ -42,15 +42,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
   private:
     
     
-    bool inCall_;
-    uint32_t args_;
-    uint32_t passedIntArgs_;
-    uint32_t passedFloatArgs_;
-    uint32_t stackForCall_;
-    bool dynamicAlignment_;
-
-    
-    
     
     struct Double {
         double value;
@@ -83,11 +74,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     typedef HashMap<SimdConstant, size_t, SimdConstant, SystemAllocPolicy> SimdMap;
     SimdMap simdMap_;
 
-    void setupABICall(uint32_t arg);
-
-  protected:
-    MoveResolver moveResolver_;
-
   public:
     using MacroAssemblerX86Shared::callWithExitFrame;
     using MacroAssemblerX86Shared::branch32;
@@ -96,7 +82,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     using MacroAssemblerX86Shared::store32;
 
     MacroAssemblerX64()
-      : inCall_(false)
     {
     }
 
@@ -1364,40 +1349,7 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
         bind(&done);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    void setupAlignedABICall(uint32_t args);
-
-    
-    
-    void setupUnalignedABICall(uint32_t args, Register scratch);
-
-    
-    
-    
-    
-    
-    
-    void passABIArg(const MoveOperand& from, MoveOp::Type type);
-    void passABIArg(Register reg);
-    void passABIArg(FloatRegister reg, MoveOp::Type type);
-
-  private:
-    void callWithABIPre(uint32_t* stackAdjust);
-    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result);
-
   public:
-    
-    void callWithABI(void* fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(AsmJSImmPtr imm, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(Address fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
-
     void handleFailureWithHandlerTail(void* handler);
 
     void makeFrameDescriptor(Register frameSizeReg, FrameType type) {

@@ -24,14 +24,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     const MacroAssembler& asMasm() const;
 
   private:
-    
-    
-    bool inCall_;
-    uint32_t args_;
-    uint32_t passedArgs_;
-    uint32_t stackForCall_;
-    bool dynamicAlignment_;
-
     struct Double {
         double value;
         AbsoluteLabel uses;
@@ -99,7 +91,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     using MacroAssemblerX86Shared::call;
 
     MacroAssemblerX86()
-      : inCall_(false)
     {
     }
 
@@ -1141,40 +1132,7 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         bind(&done);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    void setupAlignedABICall(uint32_t args);
-
-    
-    
-    void setupUnalignedABICall(uint32_t args, Register scratch);
-
-    
-    
-    
-    
-    
-    
-    void passABIArg(const MoveOperand& from, MoveOp::Type type);
-    void passABIArg(Register reg);
-    void passABIArg(FloatRegister reg, MoveOp::Type type);
-
-  private:
-    void callWithABIPre(uint32_t* stackAdjust);
-    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result);
-
   public:
-    
-    void callWithABI(void* fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(AsmJSImmPtr fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(const Address& fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
-
     
     void handleFailureWithHandlerTail(void* handler);
 

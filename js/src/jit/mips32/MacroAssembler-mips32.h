@@ -352,34 +352,8 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
     MacroAssembler& asMasm();
     const MacroAssembler& asMasm() const;
 
-  private:
-    
-    
-    bool inCall_;
-    uint32_t args_;
-    
-    
-    uint32_t passedArgs_;
-    uint32_t passedArgTypes_;
-
-    uint32_t usedArgSlots_;
-    MoveOp::Type firstArgType;
-
-    bool dynamicAlignment_;
-
-    
-    
-    
-    
-    
-    void setupABICall(uint32_t arg);
-
-  protected:
-    MoveResolver moveResolver_;
-
   public:
     MacroAssemblerMIPSCompat()
-      : inCall_(false)
     { }
 
   public:
@@ -1418,43 +1392,10 @@ public:
         ma_cmp_set(dest, lhs, rhs, cond);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    void setupAlignedABICall(uint32_t args);
-
-    
-    
-    void setupUnalignedABICall(uint32_t args, Register scratch);
-
-    
-    
-    
-    
-    
-    void passABIArg(const MoveOperand& from, MoveOp::Type type);
-    void passABIArg(Register reg);
-    void passABIArg(FloatRegister reg, MoveOp::Type type);
-    void passABIArg(const ValueOperand& regs);
-
   protected:
     bool buildOOLFakeExitFrame(void* fakeReturnAddr);
 
-  private:
-    void callWithABIPre(uint32_t* stackAdjust, bool callFromAsmJS = false);
-    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result);
-
   public:
-    
-    void callWithABI(void* fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(AsmJSImmPtr imm, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(const Address& fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
-
     CodeOffsetLabel labelForPatch() {
         return CodeOffsetLabel(nextOffset().getOffset());
     }

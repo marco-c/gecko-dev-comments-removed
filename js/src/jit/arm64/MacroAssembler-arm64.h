@@ -59,29 +59,10 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     bool enoughMemory_;
     uint32_t framePushed_;
 
-    
-    
-    bool inCall_;
-    bool usedOutParam_;
-    uint32_t args_;
-    uint32_t passedIntArgs_;
-    uint32_t passedFloatArgs_;
-    uint32_t passedArgTypes_;
-    uint32_t stackForCall_;
-    bool dynamicAlignment_;
-
     MacroAssemblerCompat()
       : vixl::MacroAssembler(),
         enoughMemory_(true),
-        framePushed_(0),
-        inCall_(false),
-        usedOutParam_(false),
-        args_(0),
-        passedIntArgs_(0),
-        passedFloatArgs_(0),
-        passedArgTypes_(0),
-        stackForCall_(0),
-        dynamicAlignment_(false)
+        framePushed_(0)
     { }
 
   protected:
@@ -2650,47 +2631,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
             Add(dest64, dest64, Operand(address.offset));
     }
 
-  private:
-    void setupABICall(uint32_t args);
-
   public:
-    
-    
-    
-    
-    
-    
-    
-    void setupAlignedABICall(uint32_t args) {
-        MOZ_CRASH("setupAlignedABICall");
-    }
-
-    
-    
-    void setupUnalignedABICall(uint32_t args, Register scratch);
-
-    
-    
-    
-    
-    
-    
-    void passABIArg(const MoveOperand& from, MoveOp::Type type);
-    void passABIArg(Register reg);
-    void passABIArg(FloatRegister reg, MoveOp::Type type);
-    void passABIOutParam(Register reg);
-
-  private:
-    void callWithABIPre(uint32_t* stackAdjust);
-    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result);
-
-  public:
-    
-    void callWithABI(void* fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(AsmJSImmPtr imm, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(Address fun, MoveOp::Type result = MoveOp::GENERAL);
-
     CodeOffsetLabel labelForPatch() {
         return CodeOffsetLabel(nextOffset().getOffset());
     }

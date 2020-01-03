@@ -332,6 +332,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     MacroAssembler()
       : emitProfilingInstrumentation_(false),
         framePushed_(0)
+#ifdef DEBUG
+      , inCall_(false)
+#endif
     {
         JitContext* jcx = GetJitContext();
         JSContext* cx = jcx->cx;
@@ -364,6 +367,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     explicit MacroAssembler(AsmJSToken)
       : emitProfilingInstrumentation_(false),
         framePushed_(0)
+#ifdef DEBUG
+      , inCall_(false)
+#endif
     {
 #if defined(JS_CODEGEN_ARM)
         initWithAllocator();
@@ -472,6 +478,79 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     inline void call(const CallSiteDesc& desc, const Register reg);
     inline void call(const CallSiteDesc& desc, Label* label);
+
+  public:
+    
+    
+
+    
+    
+    
+    void setupAlignedABICall(uint32_t args); 
+
+    
+    
+    void setupUnalignedABICall(uint32_t args, Register scratch) PER_ARCH;
+
+    
+    
+    
+    
+    
+    
+    void passABIArg(const MoveOperand& from, MoveOp::Type type);
+    inline void passABIArg(Register reg);
+    inline void passABIArg(FloatRegister reg, MoveOp::Type type);
+
+    template <typename T>
+    inline void callWithABI(const T& fun, MoveOp::Type result = MoveOp::GENERAL);
+
+  private:
+    
+    
+    void setupABICall();
+
+    
+    void callWithABIPre(uint32_t* stackAdjust, bool callFromAsmJS = false) PER_ARCH;
+
+    
+    void callWithABINoProfiler(void* fun, MoveOp::Type result);
+    void callWithABINoProfiler(AsmJSImmPtr imm, MoveOp::Type result);
+    void callWithABINoProfiler(Register fun, MoveOp::Type result) PER_ARCH;
+    void callWithABINoProfiler(const Address& fun, MoveOp::Type result) PER_ARCH;
+
+    
+    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result) PER_ARCH;
+
+    
+    
+    inline void appendSignatureType(MoveOp::Type type);
+    inline ABIFunctionType signature() const;
+
+    
+    
+    
+    MoveResolver moveResolver_;
+
+    
+    
+    ABIArgGenerator abiArgs_;
+
+#ifdef DEBUG
+    
+    bool inCall_;
+#endif
+
+    
+    
+    bool dynamicAlignment_;
+
+#ifdef JS_SIMULATOR
+    
+    
+    
+    uint32_t signature_;
+#endif
 
     
   public:
@@ -1001,13 +1080,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-
-    template <typename T>
-    void callWithABI(const T& fun, MoveOp::Type result = MoveOp::GENERAL) {
-        profilerPreCall();
-        MacroAssemblerSpecific::callWithABI(fun, result);
-        profilerPostReturn();
-    }
 
     
     uint32_t callJit(Register callee) {

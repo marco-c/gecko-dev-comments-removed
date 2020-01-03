@@ -498,48 +498,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     MacroAssembler& asMasm();
     const MacroAssembler& asMasm() const;
 
-  private:
-    bool inCall_;
-    
-    
-    uint32_t args_;
-    
-    
-    uint32_t passedArgs_;
-    uint32_t passedArgTypes_;
-
-    
-    
-    
-    
-    
-    
-    uint32_t usedIntSlots_;
-#if defined(JS_CODEGEN_ARM_HARDFP) || defined(JS_SIMULATOR_ARM)
-    uint32_t usedFloatSlots_;
-    bool usedFloat32_;
-    uint32_t padding_;
-#endif
-    bool dynamicAlignment_;
-
-    
-    
-    mozilla::Array<MoveOperand, 4> floatArgsInGPR;
-    mozilla::Array<bool, 4> floatArgsInGPRValid;
-
-    
-    
-    
-    
-    
-    void setupABICall(uint32_t arg);
-
-  protected:
-    MoveResolver moveResolver_;
-
   public:
     MacroAssemblerARMCompat()
-      : inCall_(false)
     { }
 
   public:
@@ -1757,47 +1717,10 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
         emitSet(cond, dest);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    void setupAlignedABICall(uint32_t args);
-
-    
-    
-    void setupUnalignedABICall(uint32_t args, Register scratch);
-
-    
-    
-    
-    
-    
-    void passABIArg(const MoveOperand& from, MoveOp::Type type);
-    void passABIArg(Register reg);
-    void passABIArg(FloatRegister reg, MoveOp::Type type);
-    void passABIArg(const ValueOperand& regs);
-
-  private:
-    void passHardFpABIArg(const MoveOperand& from, MoveOp::Type type);
-    void passSoftFpABIArg(const MoveOperand& from, MoveOp::Type type);
-
   protected:
     bool buildOOLFakeExitFrame(void* fakeReturnAddr);
 
-  private:
-    void callWithABIPre(uint32_t* stackAdjust, bool callFromAsmJS = false);
-    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result);
-
   public:
-    
-    void callWithABI(void* fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(AsmJSImmPtr imm, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(const Address& fun, MoveOp::Type result = MoveOp::GENERAL);
-    void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
-
     CodeOffsetLabel labelForPatch() {
         return CodeOffsetLabel(nextOffset().getOffset());
     }
