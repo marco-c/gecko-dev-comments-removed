@@ -113,6 +113,20 @@ function isDeletionPing(aPing) {
   return isV4PingFormat(aPing) && (aPing.type == PING_TYPE_DELETION);
 }
 
+
+
+
+
+
+
+function savePing(aPing) {
+  if (isDeletionPing(aPing)) {
+    return TelemetryStorage.saveDeletionPing(aPing);
+  } else {
+    return TelemetryStorage.savePendingPing(aPing);
+  }
+}
+
 function tomorrow(date) {
   let d = new Date(date);
   d.setDate(d.getDate() + 1);
@@ -673,7 +687,7 @@ let TelemetrySendImpl = {
       
       this._log.trace("submitPing - can't send ping now, persisting to disk - " +
                       "canSendNow: " + this.canSendNow);
-      return TelemetryStorage.savePendingPing(ping);
+      return savePing(ping);
     }
 
     
@@ -716,11 +730,7 @@ let TelemetrySendImpl = {
         } catch (ex) {
           this._log.info("sendPings - ping " + ping.id + " not sent, saving to disk", ex);
           
-          if (isDeletionPing(ping)) {
-            yield TelemetryStorage.saveDeletionPing(ping);
-          } else {
-            yield TelemetryStorage.savePendingPing(ping);
-          }
+          yield savePing(ping);
         } finally {
           this._currentPings.delete(ping.id);
         }
@@ -1022,7 +1032,7 @@ let TelemetrySendImpl = {
   _persistCurrentPings: Task.async(function*() {
     for (let [id, ping] of this._currentPings) {
       try {
-        yield TelemetryStorage.savePendingPing(ping);
+        yield savePing(ping);
         this._log.trace("_persistCurrentPings - saved ping " + id);
       } catch (ex) {
         this._log.error("_persistCurrentPings - failed to save ping " + id, ex);
