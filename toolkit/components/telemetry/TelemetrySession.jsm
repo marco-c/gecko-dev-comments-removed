@@ -162,11 +162,21 @@ function generateUUID() {
   return str.substring(1, str.length - 1);
 }
 
+function getMsSinceProcessStart() {
+  try {
+    return Telemetry.msSinceProcessStart();
+  } catch (ex) {
+    
+    return -1;
+  }
+}
+
 
 
 
 let Policy = {
   now: () => new Date(),
+  monotonicNow: getMsSinceProcessStart,
   generateSessionUUID: () => generateUUID(),
   generateSubsessionUUID: () => generateUUID(),
   setSchedulerTickTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
@@ -710,6 +720,7 @@ this.TelemetrySession = Object.freeze({
     Impl._subsessionCounter = 0;
     Impl._profileSubsessionCounter = 0;
     Impl._subsessionStartActiveTicks = 0;
+    Impl._subsessionStartTimeMonotonic = 0;
     this.uninstall();
     return this.setup();
   },
@@ -795,6 +806,9 @@ let Impl = {
   _profileSubsessionCounter: 0,
   
   _subsessionStartDate: null,
+  
+  
+  _subsessionStartTimeMonotonic: 0,
   
   _subsessionStartActiveTicks: 0,
   
@@ -1079,11 +1093,9 @@ let Impl = {
   getMetadata: function getMetadata(reason) {
     this._log.trace("getMetadata - Reason " + reason);
 
-    let sessionStartDate = toLocalTimeISOString(Utils.truncateToDays(this._sessionStartDate));
-    let subsessionStartDate = toLocalTimeISOString(Utils.truncateToDays(this._subsessionStartDate));
-    
-    let subsessionLength =
-      Math.floor((Policy.now() - this._subsessionStartDate.getTime()) / 1000);
+    const sessionStartDate = toLocalTimeISOString(Utils.truncateToDays(this._sessionStartDate));
+    const subsessionStartDate = toLocalTimeISOString(Utils.truncateToDays(this._subsessionStartDate));
+    const monotonicNow = Policy.monotonicNow();
 
     let ret = {
       reason: reason,
@@ -1105,7 +1117,13 @@ let Impl = {
 
       sessionStartDate: sessionStartDate,
       subsessionStartDate: subsessionStartDate,
-      subsessionLength: subsessionLength,
+
+      
+      
+      
+      sessionLength: Math.floor(monotonicNow / 1000),
+      subsessionLength:
+        Math.floor((monotonicNow - this._subsessionStartTimeMonotonic) / 1000),
     };
 
     
@@ -1334,6 +1352,7 @@ let Impl = {
 
   startNewSubsession: function () {
     this._subsessionStartDate = Policy.now();
+    this._subsessionStartTimeMonotonic = Policy.monotonicNow();
     this._previousSubsessionId = this._subsessionId;
     this._subsessionId = Policy.generateSubsessionUUID();
     this._subsessionCounter++;
