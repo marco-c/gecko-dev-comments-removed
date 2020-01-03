@@ -113,7 +113,6 @@ const PSEUDO_SELECTORS = [
   ["::selection", 0]
 ];
 
-
 let HELPER_SHEET = ".__fx-devtools-hide-shortcut__ { visibility: hidden !important } ";
 HELPER_SHEET += ":-moz-devtools-highlighted { outline: 2px dashed #F06!important; outline-offset: -2px!important } ";
 
@@ -312,24 +311,20 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
       return 0;
     }
 
-    let numChildren = this.rawNode.childNodes.length;
+    let rawNode = this.rawNode;
+    let numChildren = rawNode.childNodes.length;
+    let hasAnonChildren = rawNode.nodeType === Ci.nsIDOMNode.ELEMENT_NODE &&
+                          rawNode.ownerDocument.getAnonymousNodes(rawNode);
+
     if (numChildren === 0 &&
-        (this.rawNode.contentDocument || this.rawNode.getSVGDocument)) {
+        (rawNode.contentDocument || rawNode.getSVGDocument)) {
       
       numChildren = 1;
     }
 
     
-    if (this.rawNode.nodeType === Ci.nsIDOMNode.ELEMENT_NODE) {
-      let anonChildren = this.rawNode.ownerDocument.getAnonymousNodes(this.rawNode);
-      if (anonChildren) {
-        numChildren += anonChildren.length;
-      }
-    }
-
     
-    
-    if (numChildren === 0) {
+    if (numChildren === 0 || hasAnonChildren) {
       numChildren = this.walker.children(this).nodes.length;
     }
 
@@ -3861,9 +3856,11 @@ DocumentWalker.prototype = {
   }
 };
 
-function isXULElement(el) {
-  return el &&
-         el.namespaceURI === XUL_NS;
+function isInXULDocument(el) {
+  let doc = nodeDocument(el);
+  return doc &&
+         doc.documentElement &&
+         doc.documentElement.namespaceURI === XUL_NS;
 }
 
 
@@ -3873,23 +3870,25 @@ function isXULElement(el) {
 
 function standardTreeWalkerFilter(aNode) {
   
+  
+  if (aNode.nodeName === "_moz_generated_content_before" ||
+      aNode.nodeName === "_moz_generated_content_after") {
+    return Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
+  }
+
+  
   if (aNode.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
       !/[^\s]/.exec(aNode.nodeValue)) {
     return Ci.nsIDOMNodeFilter.FILTER_SKIP;
   }
 
   
-  
-  
-  
-  
-  
-  if (LayoutHelpers.isNativeAnonymous(aNode) &&
-      !isXULElement(aNode.parentNode) &&
-      (
-        aNode.nodeName !== "_moz_generated_content_before" &&
-        aNode.nodeName !== "_moz_generated_content_after")
-      ) {
+  if (!isInXULDocument(aNode) && (LayoutHelpers.isXBLAnonymous(aNode) ||
+                                  LayoutHelpers.isNativeAnonymous(aNode))) {
+    
+    
+    
+    
     return Ci.nsIDOMNodeFilter.FILTER_SKIP;
   }
 
