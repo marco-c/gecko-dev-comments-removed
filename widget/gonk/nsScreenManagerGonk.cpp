@@ -295,7 +295,7 @@ nsScreenGonk::EffectiveScreenRotation()
 
 
 
-static ScreenOrientation
+static ScreenOrientationInternal
 ComputeOrientation(uint32_t aRotation, const nsIntSize& aScreenSize)
 {
     bool naturallyPortrait = (aScreenSize.height > aScreenSize.width);
@@ -322,8 +322,8 @@ ComputeOrientation(uint32_t aRotation, const nsIntSize& aScreenSize)
 ScreenConfiguration
 nsScreenGonk::GetConfiguration()
 {
-    ScreenOrientation orientation = ComputeOrientation(mScreenRotation,
-                                                       mNaturalBounds.Size());
+    ScreenOrientationInternal orientation = ComputeOrientation(mScreenRotation,
+                                                               mNaturalBounds.Size());
 
     
     

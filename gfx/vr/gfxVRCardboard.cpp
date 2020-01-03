@@ -42,7 +42,7 @@ namespace {
 
 
 Matrix4x4
-RemapMatrixForOrientation(ScreenOrientation screenConfig, const Matrix4x4& aMatrix)
+RemapMatrixForOrientation(ScreenOrientationInternal screenConfig, const Matrix4x4& aMatrix)
 {
   Matrix4x4 out;
   const float *in = &aMatrix._11;

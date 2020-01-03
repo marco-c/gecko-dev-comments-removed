@@ -194,7 +194,7 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
   
   
   
-  dom::ScreenOrientation orientation;
+  dom::ScreenOrientationInternal orientation;
   if (dom::TabChild* window = mWidget->GetOwningTabChild()) {
     orientation = window->GetOrientation();
   } else {
