@@ -334,13 +334,13 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
         
         mZoomIntermediate = (float)gi.ullArguments;
 
-        evt.message = NS_SIMPLE_GESTURE_MAGNIFY_START;
+        evt.mMessage = NS_SIMPLE_GESTURE_MAGNIFY_START;
         evt.delta = 0.0;
       }
       else if (gi.dwFlags & GF_END) {
         
         
-        evt.message = NS_SIMPLE_GESTURE_MAGNIFY;
+        evt.mMessage = NS_SIMPLE_GESTURE_MAGNIFY;
         
         evt.delta = -1.0 * (mZoomIntermediate - (float)gi.ullArguments);
         mZoomIntermediate = (float)gi.ullArguments;
@@ -348,7 +348,7 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
       else {
         
         
-        evt.message = NS_SIMPLE_GESTURE_MAGNIFY_UPDATE;
+        evt.mMessage = NS_SIMPLE_GESTURE_MAGNIFY_UPDATE;
         
         evt.delta = -1.0 * (mZoomIntermediate - (float)gi.ullArguments);
         mZoomIntermediate = (float)gi.ullArguments;
@@ -385,11 +385,11 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
         evt.direction = nsIDOMSimpleGestureEvent::ROTATION_CLOCKWISE;
 
       if (gi.dwFlags & GF_BEGIN)
-        evt.message = NS_SIMPLE_GESTURE_ROTATE_START;
+        evt.mMessage = NS_SIMPLE_GESTURE_ROTATE_START;
       else if (gi.dwFlags & GF_END)
-        evt.message = NS_SIMPLE_GESTURE_ROTATE;
+        evt.mMessage = NS_SIMPLE_GESTURE_ROTATE;
       else
-        evt.message = NS_SIMPLE_GESTURE_ROTATE_UPDATE;
+        evt.mMessage = NS_SIMPLE_GESTURE_ROTATE_UPDATE;
     }
     break;
 
@@ -397,7 +397,7 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
     {
       
       
-      evt.message = NS_SIMPLE_GESTURE_TAP;
+      evt.mMessage = NS_SIMPLE_GESTURE_TAP;
       evt.clickCount = 1;
     }
     break;
@@ -405,7 +405,7 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
     case GID_PRESSANDTAP:
     {
       
-      evt.message = NS_SIMPLE_GESTURE_PRESSTAP;
+      evt.mMessage = NS_SIMPLE_GESTURE_PRESSTAP;
       evt.clickCount = 1;
     }
     break;

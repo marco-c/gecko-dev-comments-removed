@@ -821,7 +821,7 @@ MouseScrollHandler::LastEventInfo::InitWheelEvent(
                                      WidgetWheelEvent& aWheelEvent,
                                      const ModifierKeyState& aModKeyState)
 {
-  MOZ_ASSERT(aWheelEvent.message == NS_WHEEL_WHEEL);
+  MOZ_ASSERT(aWheelEvent.mMessage == NS_WHEEL_WHEEL);
 
   
   

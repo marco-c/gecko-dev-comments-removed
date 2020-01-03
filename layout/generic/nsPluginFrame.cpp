@@ -1761,13 +1761,13 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
 
   mInstanceOwner->ConsiderNewEventloopNestingLevel();
 
-  if (anEvent->message == NS_PLUGIN_ACTIVATE) {
+  if (anEvent->mMessage == NS_PLUGIN_ACTIVATE) {
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     nsCOMPtr<nsIDOMElement> elem = do_QueryInterface(GetContent());
     if (fm && elem)
       return fm->SetFocus(elem, 0);
   }
-  else if (anEvent->message == NS_PLUGIN_FOCUS) {
+  else if (anEvent->mMessage == NS_PLUGIN_FOCUS) {
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm)
       return fm->FocusPlugin(GetContent());
@@ -1788,8 +1788,8 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
 
 #ifdef XP_MACOSX
   
-  if ((anEvent->message == NS_MOUSE_ENTER_WIDGET ||
-       anEvent->message == NS_WHEEL_WHEEL) &&
+  if ((anEvent->mMessage == NS_MOUSE_ENTER_WIDGET ||
+       anEvent->mMessage == NS_WHEEL_WHEEL) &&
       mInstanceOwner->GetEventModel() == NPEventModelCocoa) {
     *anEventStatus = mInstanceOwner->ProcessEvent(*anEvent);
     
@@ -1801,7 +1801,7 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
   
   
   
-  if (anEvent->message == NS_MOUSE_BUTTON_DOWN) {
+  if (anEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
     nsIPresShell::SetCapturingContent(GetContent(), CAPTURE_IGNOREALLOWED);
   }
 #endif
@@ -1812,7 +1812,7 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
   
 
 #ifdef XP_MACOSX
-  if (anEvent->message == NS_MOUSE_BUTTON_UP) {
+  if (anEvent->mMessage == NS_MOUSE_BUTTON_UP) {
     nsIPresShell::SetCapturingContent(nullptr, 0);
   }
 #endif

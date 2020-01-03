@@ -8113,7 +8113,7 @@ nsDocument::PreHandleEvent(EventChainPreVisitor& aVisitor)
   aVisitor.mForceContentDispatch = true;
 
   
-  if (aVisitor.mEvent->message != NS_LOAD) {
+  if (aVisitor.mEvent->mMessage != NS_LOAD) {
     nsGlobalWindow* window = static_cast<nsGlobalWindow*>(GetWindow());
     aVisitor.mParentTarget =
       window ? window->GetTargetForEventTargetChain() : nullptr;

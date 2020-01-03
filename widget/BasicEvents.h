@@ -599,7 +599,7 @@ class WidgetEvent
 protected:
   WidgetEvent(bool aIsTrusted, uint32_t aMessage, EventClassID aEventClassID)
     : mClass(aEventClassID)
-    , message(aMessage)
+    , mMessage(aMessage)
     , refPoint(0, 0)
     , lastRefPoint(0, 0)
     , time(0)
@@ -621,7 +621,7 @@ protected:
 public:
   WidgetEvent(bool aIsTrusted, uint32_t aMessage)
     : mClass(eBasicEventClass)
-    , message(aMessage)
+    , mMessage(aMessage)
     , refPoint(0, 0)
     , lastRefPoint(0, 0)
     , time(0)
@@ -650,7 +650,7 @@ public:
   {
     MOZ_ASSERT(mClass == eBasicEventClass,
                "Duplicate() must be overridden by sub class");
-    WidgetEvent* result = new WidgetEvent(false, message);
+    WidgetEvent* result = new WidgetEvent(false, mMessage);
     result->AssignEventData(*this, true);
     result->mFlags = mFlags;
     return result;
@@ -658,7 +658,7 @@ public:
 
   EventClassID mClass;
   
-  uint32_t message;
+  uint32_t mMessage;
   
   
   LayoutDeviceIntPoint refPoint;
@@ -842,7 +842,7 @@ public:
     MOZ_ASSERT(mClass == eGUIEventClass,
                "Duplicate() must be overridden by sub class");
     
-    WidgetGUIEvent* result = new WidgetGUIEvent(false, message, nullptr);
+    WidgetGUIEvent* result = new WidgetGUIEvent(false, mMessage, nullptr);
     result->AssignGUIEventData(*this, true);
     result->mFlags = mFlags;
     return result;
@@ -1006,7 +1006,7 @@ public:
     MOZ_ASSERT(mClass == eInputEventClass,
                "Duplicate() must be overridden by sub class");
     
-    WidgetInputEvent* result = new WidgetInputEvent(false, message, nullptr);
+    WidgetInputEvent* result = new WidgetInputEvent(false, mMessage, nullptr);
     result->AssignInputEventData(*this, true);
     result->mFlags = mFlags;
     return result;
@@ -1175,7 +1175,7 @@ public:
   {
     MOZ_ASSERT(mClass == eUIEventClass,
                "Duplicate() must be overridden by sub class");
-    InternalUIEvent* result = new InternalUIEvent(false, message);
+    InternalUIEvent* result = new InternalUIEvent(false, mMessage);
     result->AssignUIEventData(*this, true);
     result->mFlags = mFlags;
     return result;

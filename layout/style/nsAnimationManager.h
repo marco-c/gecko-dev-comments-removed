@@ -44,7 +44,8 @@ struct AnimationEventInfo {
   
   
   AnimationEventInfo(const AnimationEventInfo &aOther)
-    : mElement(aOther.mElement), mEvent(true, aOther.mEvent.message)
+    : mElement(aOther.mElement)
+    , mEvent(true, aOther.mEvent.mMessage)
   {
     mEvent.AssignAnimationEventData(aOther.mEvent, false);
   }

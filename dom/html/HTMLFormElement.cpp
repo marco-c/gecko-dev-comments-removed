@@ -492,7 +492,7 @@ HTMLFormElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mWantsWillHandleEvent = true;
   if (aVisitor.mEvent->originalTarget == static_cast<nsIContent*>(this)) {
-    uint32_t msg = aVisitor.mEvent->message;
+    uint32_t msg = aVisitor.mEvent->mMessage;
     if (msg == NS_FORM_SUBMIT) {
       if (mGeneratingSubmit) {
         aVisitor.mCanHandle = false;
@@ -522,8 +522,8 @@ HTMLFormElement::WillHandleEvent(EventChainPostVisitor& aVisitor)
   
   
   
-  if ((aVisitor.mEvent->message == NS_FORM_SUBMIT ||
-       aVisitor.mEvent->message == NS_FORM_RESET) &&
+  if ((aVisitor.mEvent->mMessage == NS_FORM_SUBMIT ||
+       aVisitor.mEvent->mMessage == NS_FORM_RESET) &&
       aVisitor.mEvent->mFlags.mInBubblingPhase &&
       aVisitor.mEvent->originalTarget != static_cast<nsIContent*>(this)) {
     aVisitor.mEvent->mFlags.mPropagationStopped = true;
@@ -535,7 +535,7 @@ nsresult
 HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 {
   if (aVisitor.mEvent->originalTarget == static_cast<nsIContent*>(this)) {
-    uint32_t msg = aVisitor.mEvent->message;
+    uint32_t msg = aVisitor.mEvent->mMessage;
     if (msg == NS_FORM_SUBMIT) {
       
       mDeferSubmission = false;

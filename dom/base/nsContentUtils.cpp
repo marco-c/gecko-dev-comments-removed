@@ -5446,8 +5446,8 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
   
   
   
-  NS_ASSERTION(aDragEvent->message != NS_DRAGDROP_GESTURE &&
-               aDragEvent->message != NS_DRAGDROP_START,
+  NS_ASSERTION(aDragEvent->mMessage != NS_DRAGDROP_GESTURE &&
+               aDragEvent->mMessage != NS_DRAGDROP_START,
                "draggesture event created without a dataTransfer");
 
   nsCOMPtr<nsIDragSession> dragSession = GetDragSession();
@@ -5466,20 +5466,22 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
     
     
     
-    initialDataTransfer = new DataTransfer(aDragEvent->target, aDragEvent->message, true, -1);
+    initialDataTransfer =
+      new DataTransfer(aDragEvent->target, aDragEvent->mMessage, true, -1);
 
     
     dragSession->SetDataTransfer(initialDataTransfer);
   }
 
   bool isCrossDomainSubFrameDrop = false;
-  if (aDragEvent->message == NS_DRAGDROP_DROP ||
-      aDragEvent->message == NS_DRAGDROP_DRAGDROP) {
+  if (aDragEvent->mMessage == NS_DRAGDROP_DROP ||
+      aDragEvent->mMessage == NS_DRAGDROP_DRAGDROP) {
     isCrossDomainSubFrameDrop = CheckForSubFrameDrop(dragSession, aDragEvent);
   }
 
   
-  initialDataTransfer->Clone(aDragEvent->target, aDragEvent->message, aDragEvent->userCancelled,
+  initialDataTransfer->Clone(aDragEvent->target, aDragEvent->mMessage,
+                             aDragEvent->userCancelled,
                              isCrossDomainSubFrameDrop,
                              getter_AddRefs(aDragEvent->dataTransfer));
   NS_ENSURE_TRUE(aDragEvent->dataTransfer, NS_ERROR_OUT_OF_MEMORY);
@@ -5487,16 +5489,16 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
   
   
   
-  if (aDragEvent->message == NS_DRAGDROP_ENTER ||
-      aDragEvent->message == NS_DRAGDROP_OVER) {
+  if (aDragEvent->mMessage == NS_DRAGDROP_ENTER ||
+      aDragEvent->mMessage == NS_DRAGDROP_OVER) {
     uint32_t action, effectAllowed;
     dragSession->GetDragAction(&action);
     aDragEvent->dataTransfer->GetEffectAllowedInt(&effectAllowed);
     aDragEvent->dataTransfer->SetDropEffectInt(FilterDropEffect(action, effectAllowed));
   }
-  else if (aDragEvent->message == NS_DRAGDROP_DROP ||
-           aDragEvent->message == NS_DRAGDROP_DRAGDROP ||
-           aDragEvent->message == NS_DRAGDROP_END) {
+  else if (aDragEvent->mMessage == NS_DRAGDROP_DROP ||
+           aDragEvent->mMessage == NS_DRAGDROP_DRAGDROP ||
+           aDragEvent->mMessage == NS_DRAGDROP_END) {
     
     
     

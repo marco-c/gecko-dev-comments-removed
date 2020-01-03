@@ -83,8 +83,7 @@ nsAutoRepeatBoxFrame::HandleEvent(nsPresContext* aPresContext,
     return NS_OK;
   }
 
-  switch(aEvent->message)
-  {
+  switch(aEvent->mMessage) {
     
     
     

@@ -248,10 +248,10 @@ TextInputProcessor::IsValidEventTypeForComposition(
                       const WidgetKeyboardEvent& aKeyboardEvent) const
 {
   
-  if (aKeyboardEvent.message == NS_KEY_DOWN) {
+  if (aKeyboardEvent.mMessage == NS_KEY_DOWN) {
     return true;
   }
-  if (aKeyboardEvent.message == NS_USER_DEFINED_EVENT &&
+  if (aKeyboardEvent.mMessage == NS_USER_DEFINED_EVENT &&
       aKeyboardEvent.userType &&
       nsDependentAtomString(aKeyboardEvent.userType).EqualsLiteral("on")) {
     return true;
@@ -308,7 +308,7 @@ TextInputProcessor::MaybeDispatchKeyupForComposition(
 
   
   
-  if (aKeyboardEvent->message == NS_KEY_DOWN) {
+  if (aKeyboardEvent->mMessage == NS_KEY_DOWN) {
     return result;
   }
 

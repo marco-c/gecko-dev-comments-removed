@@ -118,7 +118,7 @@ GetActionForEvent(nsIDOMEvent* aEvent)
   }
 
   if (keyEvent->mFlags.mInSystemGroup) {
-    NS_ASSERTION(keyEvent->message == NS_KEY_DOWN,
+    NS_ASSERTION(keyEvent->mMessage == NS_KEY_DOWN,
       "Assuming we're listening only keydown event in system group");
     return eEventAction_StopPropagation;
   }
@@ -126,8 +126,8 @@ GetActionForEvent(nsIDOMEvent* aEvent)
   if (keyEvent->IsAlt() || keyEvent->IsControl() || keyEvent->IsMeta()) {
     
     
-    return (keyEvent->message == NS_KEY_DOWN) ? eEventAction_StopPropagation :
-                                                eEventAction_Suppress;
+    return (keyEvent->mMessage == NS_KEY_DOWN) ? eEventAction_StopPropagation :
+                                                 eEventAction_Suppress;
   }
 
   static const uint32_t kOKKeyCodes[] = {

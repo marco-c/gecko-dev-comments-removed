@@ -74,7 +74,7 @@ HTMLFieldSetElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
 {
   
   aVisitor.mCanHandle = false;
-  if (IsDisabledForEvents(aVisitor.mEvent->message)) {
+  if (IsDisabledForEvents(aVisitor.mEvent->mMessage)) {
     return NS_OK;
   }
 

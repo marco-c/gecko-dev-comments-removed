@@ -3025,7 +3025,7 @@ HTMLInputElement::NeedToInitializeEditorForEvent(
     return false;
   }
 
-  switch (aVisitor.mEvent->message) {
+  switch (aVisitor.mEvent->mMessage) {
   case NS_MOUSE_MOVE:
   case NS_MOUSE_ENTER_WIDGET:
   case NS_MOUSE_EXIT_WIDGET:
@@ -3050,7 +3050,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
 {
   
   aVisitor.mCanHandle = false;
-  if (IsDisabledForEvents(aVisitor.mEvent->message)) {
+  if (IsDisabledForEvents(aVisitor.mEvent->mMessage)) {
     return NS_OK;
   }
 
@@ -3088,7 +3088,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
   bool outerActivateEvent =
     ((mouseEvent && mouseEvent->IsLeftClickEvent()) ||
-     (aVisitor.mEvent->message == NS_UI_ACTIVATE && !mInInternalActivate));
+     (aVisitor.mEvent->mMessage == NS_UI_ACTIVATE && !mInInternalActivate));
 
   if (outerActivateEvent) {
     aVisitor.mItemFlags |= NS_OUTER_ACTIVATE_EVENT;
@@ -3153,7 +3153,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
     aVisitor.mItemFlags |= NS_NO_CONTENT_DISPATCH;
   }
   if (IsSingleLineTextControl(false) &&
-      aVisitor.mEvent->message == NS_MOUSE_CLICK &&
+      aVisitor.mEvent->mMessage == NS_MOUSE_CLICK &&
       aVisitor.mEvent->AsMouseEvent()->button ==
         WidgetMouseEvent::eMiddleButton) {
     aVisitor.mEvent->mFlags.mNoContentDispatch = false;
@@ -3163,7 +3163,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   aVisitor.mItemFlags |= mType;
 
   
-  if (aVisitor.mEvent->message == NS_BLUR_CONTENT) {
+  if (aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
     
     
     
@@ -3178,8 +3178,8 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   }
 
   if (mType == NS_FORM_INPUT_RANGE &&
-      (aVisitor.mEvent->message == NS_FOCUS_CONTENT ||
-       aVisitor.mEvent->message == NS_BLUR_CONTENT)) {
+      (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT ||
+       aVisitor.mEvent->mMessage == NS_BLUR_CONTENT)) {
     
     
     nsIFrame* frame = GetPrimaryFrame();
@@ -3197,7 +3197,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
       
       
       
-      if (aVisitor.mEvent->message == NS_MOUSE_MOVE) {
+      if (aVisitor.mEvent->mMessage == NS_MOUSE_MOVE) {
         
         bool stopSpin = true;
         nsNumberControlFrame* numberControlFrame =
@@ -3228,13 +3228,13 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
         if (stopSpin) {
           StopNumberControlSpinnerSpin();
         }
-      } else if (aVisitor.mEvent->message == NS_MOUSE_BUTTON_UP) {
+      } else if (aVisitor.mEvent->mMessage == NS_MOUSE_BUTTON_UP) {
         StopNumberControlSpinnerSpin();
       }
     }
-    if (aVisitor.mEvent->message == NS_FOCUS_CONTENT ||
-        aVisitor.mEvent->message == NS_BLUR_CONTENT) {
-      if (aVisitor.mEvent->message == NS_FOCUS_CONTENT) {
+    if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT ||
+        aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+      if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT) {
         
         
         nsNumberControlFrame* numberControlFrame =
@@ -3254,7 +3254,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
         
         frame->InvalidateFrame();
       }
-    } else if (aVisitor.mEvent->message == NS_KEY_UP) {
+    } else if (aVisitor.mEvent->mMessage == NS_KEY_UP) {
       WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
       if ((keyEvent->keyCode == NS_VK_UP || keyEvent->keyCode == NS_VK_DOWN) &&
           !(keyEvent->IsShift() || keyEvent->IsControl() ||
@@ -3286,7 +3286,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
       textControl = numberControlFrame->GetAnonTextControl();
     }
     if (textControl && aVisitor.mEvent->originalTarget == textControl) {
-      if (aVisitor.mEvent->message == NS_EDITOR_INPUT) {
+      if (aVisitor.mEvent->mMessage == NS_EDITOR_INPUT) {
         
         nsAutoString value;
         numberControlFrame->GetValueOfAnonTextControl(value);
@@ -3300,7 +3300,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
           numberControlFrame->HandlingInputEvent(false);
         }
       }
-      else if (aVisitor.mEvent->message == NS_FORM_CHANGE) {
+      else if (aVisitor.mEvent->mMessage == NS_FORM_CHANGE) {
         
         
         
@@ -3588,15 +3588,15 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
     return MaybeInitPickers(aVisitor);
   }
 
-  if (aVisitor.mEvent->message == NS_FOCUS_CONTENT ||
-      aVisitor.mEvent->message == NS_BLUR_CONTENT) {
-    if (aVisitor.mEvent->message == NS_FOCUS_CONTENT &&
+  if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT ||
+      aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+    if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT &&
         MayFireChangeOnBlur() &&
         !mIsDraggingRange) { 
       GetValue(mFocusedValue);
     }
 
-    if (aVisitor.mEvent->message == NS_BLUR_CONTENT) {
+    if (aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
       if (mIsDraggingRange) {
         FinishRangeThumbDrag();
       } else if (mNumberControlSpinnerIsSpinning) {
@@ -3604,7 +3604,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       }
     }
 
-    UpdateValidityUIBits(aVisitor.mEvent->message == NS_FOCUS_CONTENT);
+    UpdateValidityUIBits(aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT);
 
     UpdateState(true);
   }
@@ -3721,7 +3721,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
   if (NS_SUCCEEDED(rv)) {
     WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
     if (mType ==  NS_FORM_INPUT_NUMBER &&
-        keyEvent && keyEvent->message == NS_KEY_PRESS &&
+        keyEvent && keyEvent->mMessage == NS_KEY_PRESS &&
         aVisitor.mEvent->mFlags.mIsTrusted &&
         (keyEvent->keyCode == NS_VK_UP || keyEvent->keyCode == NS_VK_DOWN) &&
         !(keyEvent->IsShift() || keyEvent->IsControl() ||
@@ -3744,7 +3744,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
       }
     } else if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
-      switch (aVisitor.mEvent->message) {
+      switch (aVisitor.mEvent->mMessage) {
 
         case NS_FOCUS_CONTENT:
         {
@@ -3779,9 +3779,9 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           
           
           WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
-          if ((aVisitor.mEvent->message == NS_KEY_PRESS &&
+          if ((aVisitor.mEvent->mMessage == NS_KEY_PRESS &&
                keyEvent->keyCode == NS_VK_RETURN) ||
-              (aVisitor.mEvent->message == NS_KEY_UP &&
+              (aVisitor.mEvent->mMessage == NS_KEY_UP &&
                keyEvent->keyCode == NS_VK_SPACE)) {
             switch(mType) {
               case NS_FORM_INPUT_CHECKBOX:
@@ -3814,7 +3814,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
               } 
             } 
           }
-          if (aVisitor.mEvent->message == NS_KEY_PRESS &&
+          if (aVisitor.mEvent->mMessage == NS_KEY_PRESS &&
               mType == NS_FORM_INPUT_RADIO && !keyEvent->IsAlt() &&
               !keyEvent->IsControl() && !keyEvent->IsMeta()) {
             bool isMovingBack = false;
@@ -3866,7 +3866,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
 
 
-          if (aVisitor.mEvent->message == NS_KEY_PRESS &&
+          if (aVisitor.mEvent->mMessage == NS_KEY_PRESS &&
               keyEvent->keyCode == NS_VK_RETURN &&
                (IsSingleLineTextControl(false, mType) ||
                 mType == NS_FORM_INPUT_NUMBER ||
@@ -3876,7 +3876,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
             NS_ENSURE_SUCCESS(rv, rv);
           }
 
-          if (aVisitor.mEvent->message == NS_KEY_PRESS &&
+          if (aVisitor.mEvent->mMessage == NS_KEY_PRESS &&
               mType == NS_FORM_INPUT_RANGE && !keyEvent->IsAlt() &&
               !keyEvent->IsControl() && !keyEvent->IsMeta() &&
               (keyEvent->keyCode == NS_VK_LEFT ||
@@ -3966,7 +3966,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
               nsNumberControlFrame* numberControlFrame =
                 do_QueryFrame(GetPrimaryFrame());
               if (numberControlFrame) {
-                if (aVisitor.mEvent->message == NS_MOUSE_BUTTON_DOWN && 
+                if (aVisitor.mEvent->mMessage == NS_MOUSE_BUTTON_DOWN && 
                     IsMutable()) {
                   switch (numberControlFrame->GetSpinButtonForPointerEvent(
                             aVisitor.mEvent->AsMouseEvent())) {
@@ -4028,7 +4028,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
             
             
             
-            if (presShell && (event.message != NS_FORM_SUBMIT ||
+            if (presShell && (event.mMessage != NS_FORM_SUBMIT ||
                               mForm->HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate) ||
                               
                               
@@ -4083,7 +4083,7 @@ HTMLInputElement::PostHandleEventForRangeThumb(EventChainPostVisitor& aVisitor)
     return;
   }
 
-  switch (aVisitor.mEvent->message)
+  switch (aVisitor.mEvent->mMessage)
   {
     case NS_MOUSE_BUTTON_DOWN:
     case NS_TOUCH_START: {
@@ -4100,7 +4100,7 @@ HTMLInputElement::PostHandleEventForRangeThumb(EventChainPostVisitor& aVisitor)
           inputEvent->IsOS()) {
         break; 
       }
-      if (aVisitor.mEvent->message == NS_MOUSE_BUTTON_DOWN) {
+      if (aVisitor.mEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
         if (aVisitor.mEvent->AsMouseEvent()->buttons ==
               WidgetMouseEvent::eLeftButtonFlag) {
           StartRangeThumbDrag(inputEvent);

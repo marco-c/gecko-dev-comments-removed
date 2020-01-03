@@ -564,14 +564,14 @@ EventListenerManager::ListenerCanHandle(Listener* aListener,
   if (aListener->mAllEvents) {
     return true;
   }
-  if (aEvent->message == NS_USER_DEFINED_EVENT) {
+  if (aEvent->mMessage == NS_USER_DEFINED_EVENT) {
     if (mIsMainThreadELM) {
       return aListener->mTypeAtom == aEvent->userType;
     }
     return aListener->mTypeString.Equals(aEvent->typeString);
   }
   MOZ_ASSERT(mIsMainThreadELM);
-  return aListener->mEventType == aEvent->message;
+  return aListener->mEventType == aEvent->mMessage;
 }
 
 void
@@ -1163,7 +1163,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
   aEvent->currentTarget = nullptr;
 
   if (mIsMainThreadELM && !hasListener) {
-    mNoListenerForEvent = aEvent->message;
+    mNoListenerForEvent = aEvent->mMessage;
     mNoListenerForEventAtom = aEvent->userType;
   }
 

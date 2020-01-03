@@ -1501,7 +1501,7 @@ nsresult
 HTMLSelectElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mCanHandle = false;
-  if (IsDisabledForEvents(aVisitor.mEvent->message)) {
+  if (IsDisabledForEvents(aVisitor.mEvent->mMessage)) {
     return NS_OK;
   }
 
@@ -1511,7 +1511,7 @@ HTMLSelectElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
 nsresult
 HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 {
-  if (aVisitor.mEvent->message == NS_FOCUS_CONTENT) {
+  if (aVisitor.mEvent->mMessage == NS_FOCUS_CONTENT) {
     
     
     mCanShowInvalidUI = !IsValid() && ShouldShowValidityUI();
@@ -1522,7 +1522,7 @@ HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
     
     
-  } else if (aVisitor.mEvent->message == NS_BLUR_CONTENT) {
+  } else if (aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
     mCanShowInvalidUI = true;
     mCanShowValidUI = true;
 

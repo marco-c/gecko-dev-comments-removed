@@ -957,7 +957,7 @@ private:
 
 #define NS_EVENT_NEEDS_FRAME(event) \
     (!(event)->HasPluginActivationEventMessage() && \
-     (event)->message != NS_MOUSE_CLICK && \
-     (event)->message != NS_MOUSE_DOUBLECLICK)
+     (event)->mMessage != NS_MOUSE_CLICK && \
+     (event)->mMessage != NS_MOUSE_DOUBLECLICK)
 
 #endif 

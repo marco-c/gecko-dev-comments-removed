@@ -467,15 +467,15 @@ public:
   virtual void HandleEvent(EventChainPostVisitor& aVisitor) override
   {
     if (aVisitor.mPresContext && aVisitor.mEvent->mClass != eBasicEventClass) {
-      if (aVisitor.mEvent->message == NS_MOUSE_BUTTON_DOWN ||
-          aVisitor.mEvent->message == NS_MOUSE_BUTTON_UP) {
+      if (aVisitor.mEvent->mMessage == NS_MOUSE_BUTTON_DOWN ||
+          aVisitor.mEvent->mMessage == NS_MOUSE_BUTTON_UP) {
         
         
         
         
         
         mPresShell->FlushPendingNotifications(Flush_Layout);
-      } else if (aVisitor.mEvent->message == NS_WHEEL_WHEEL &&
+      } else if (aVisitor.mEvent->mMessage == NS_WHEEL_WHEEL &&
                  aVisitor.mEventStatus != nsEventStatus_eConsumeNoDefault) {
         nsIFrame* frame = mPresShell->GetCurrentEventFrame();
         if (frame) {
@@ -492,8 +492,8 @@ public:
       }
       nsIFrame* frame = mPresShell->GetCurrentEventFrame();
       if (!frame &&
-          (aVisitor.mEvent->message == NS_MOUSE_BUTTON_UP ||
-           aVisitor.mEvent->message == NS_TOUCH_END)) {
+          (aVisitor.mEvent->mMessage == NS_MOUSE_BUTTON_UP ||
+           aVisitor.mEvent->mMessage == NS_TOUCH_END)) {
         
         
         frame = mPresShell->GetRootFrame();
@@ -6342,7 +6342,7 @@ nsIPresShell::GetPointerInfo(uint32_t aPointerId, bool& aActiveState)
 void
 PresShell::UpdateActivePointerState(WidgetGUIEvent* aEvent)
 {
-  switch (aEvent->message) {
+  switch (aEvent->mMessage) {
   case NS_MOUSE_ENTER_WIDGET:
     
     if (WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
@@ -6562,11 +6562,11 @@ PresShell::RecordMouseLocation(WidgetGUIEvent* aEvent)
     return;
   }
 
-  if ((aEvent->message == NS_MOUSE_MOVE &&
+  if ((aEvent->mMessage == NS_MOUSE_MOVE &&
        aEvent->AsMouseEvent()->reason == WidgetMouseEvent::eReal) ||
-      aEvent->message == NS_MOUSE_ENTER_WIDGET ||
-      aEvent->message == NS_MOUSE_BUTTON_DOWN ||
-      aEvent->message == NS_MOUSE_BUTTON_UP) {
+      aEvent->mMessage == NS_MOUSE_ENTER_WIDGET ||
+      aEvent->mMessage == NS_MOUSE_BUTTON_DOWN ||
+      aEvent->mMessage == NS_MOUSE_BUTTON_UP) {
     nsIFrame* rootFrame = GetRootFrame();
     if (!rootFrame) {
       nsView* rootView = mViewManager->GetRootView();
@@ -6577,15 +6577,17 @@ PresShell::RecordMouseLocation(WidgetGUIEvent* aEvent)
         nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, rootFrame);
     }
 #ifdef DEBUG_MOUSE_LOCATION
-    if (aEvent->message == NS_MOUSE_ENTER_WIDGET)
+    if (aEvent->mMessage == NS_MOUSE_ENTER_WIDGET) {
       printf("[ps=%p]got mouse enter for %p\n",
              this, aEvent->widget);
+    }
     printf("[ps=%p]setting mouse location to (%d,%d)\n",
            this, mMouseLocation.x, mMouseLocation.y);
 #endif
-    if (aEvent->message == NS_MOUSE_ENTER_WIDGET)
+    if (aEvent->mMessage == NS_MOUSE_ENTER_WIDGET) {
       SynthesizeMouseMove(false);
-  } else if (aEvent->message == NS_MOUSE_EXIT_WIDGET) {
+    }
+  } else if (aEvent->mMessage == NS_MOUSE_EXIT_WIDGET) {
     
     
     
@@ -6662,7 +6664,7 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
       return NS_OK;
     }
     int16_t button = mouseEvent->button;
-    switch (mouseEvent->message) {
+    switch (mouseEvent->mMessage) {
     case NS_MOUSE_MOVE:
       if (mouseEvent->buttons == 0) {
         button = -1;
@@ -6680,7 +6682,7 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
     }
 
     WidgetPointerEvent event(*mouseEvent);
-    event.message = pointerMessage;
+    event.mMessage = pointerMessage;
     event.button = button;
     event.pressure = event.buttons ?
                      mouseEvent->pressure ? mouseEvent->pressure : 0.5f :
@@ -6691,7 +6693,7 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
     WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
     
     
-    switch (touchEvent->message) {
+    switch (touchEvent->mMessage) {
     case NS_TOUCH_MOVE:
       pointerMessage = NS_POINTER_MOVE;
       break;
@@ -6840,7 +6842,7 @@ PresShell::DispatchBeforeKeyboardEventInternal(const nsTArray<nsCOMPtr<Element> 
   }
 
   uint32_t message =
-    (aEvent.message == NS_KEY_DOWN) ? NS_KEY_BEFORE_DOWN : NS_KEY_BEFORE_UP;
+    (aEvent.mMessage == NS_KEY_DOWN) ? NS_KEY_BEFORE_DOWN : NS_KEY_BEFORE_UP;
   nsCOMPtr<EventTarget> eventTarget;
   
   for (int32_t i = length - 1; i >= 0; i--) {
@@ -6874,7 +6876,7 @@ PresShell::DispatchAfterKeyboardEventInternal(const nsTArray<nsCOMPtr<Element> >
   }
 
   uint32_t message =
-    (aEvent.message == NS_KEY_DOWN) ? NS_KEY_AFTER_DOWN : NS_KEY_AFTER_UP;
+    (aEvent.mMessage == NS_KEY_DOWN) ? NS_KEY_AFTER_DOWN : NS_KEY_AFTER_UP;
   bool embeddedCancelled = aEmbeddedCancelled;
   nsCOMPtr<EventTarget> eventTarget;
   
@@ -6901,8 +6903,8 @@ PresShell::DispatchAfterKeyboardEvent(nsINode* aTarget,
   MOZ_ASSERT(aTarget);
   MOZ_ASSERT(BeforeAfterKeyboardEventEnabled());
 
-  if (NS_WARN_IF(aEvent.message != NS_KEY_DOWN &&
-                 aEvent.message != NS_KEY_UP)) {
+  if (NS_WARN_IF(aEvent.mMessage != NS_KEY_DOWN &&
+                 aEvent.mMessage != NS_KEY_UP)) {
     return;
   }
 
@@ -6931,7 +6933,7 @@ PresShell::HandleKeyboardEvent(nsINode* aTarget,
                                nsEventStatus* aStatus,
                                EventDispatchingCallback* aEventCB)
 {
-  if (aEvent.message == NS_KEY_PRESS ||
+  if (aEvent.mMessage == NS_KEY_PRESS ||
       !BeforeAfterKeyboardEventEnabled()) {
     EventDispatcher::Dispatch(aTarget, mPresContext,
                               &aEvent, nullptr, aStatus, aEventCB);
@@ -6939,7 +6941,7 @@ PresShell::HandleKeyboardEvent(nsINode* aTarget,
   }
 
   MOZ_ASSERT(aTarget);
-  MOZ_ASSERT(aEvent.message == NS_KEY_DOWN || aEvent.message == NS_KEY_UP);
+  MOZ_ASSERT(aEvent.mMessage == NS_KEY_DOWN || aEvent.mMessage == NS_KEY_UP);
 
   
   nsAutoTArray<nsCOMPtr<Element>, 5> chain;
@@ -7120,7 +7122,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     }
 #ifdef DEBUG
     if (aEvent->IsIMERelatedEvent()) {
-      nsPrintfCString warning("%d event is discarded", aEvent->message);
+      nsPrintfCString warning("%d event is discarded", aEvent->mMessage);
       NS_WARNING(warning.get());
     }
 #endif
@@ -7175,7 +7177,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       if (presShell != this) {
         nsIFrame* frame = presShell->GetRootFrame();
         if (!frame) {
-          if (aEvent->message == NS_QUERY_TEXT_CONTENT ||
+          if (aEvent->mMessage == NS_QUERY_TEXT_CONTENT ||
               aEvent->IsContentCommandEvent()) {
             return NS_OK;
           }
@@ -7194,7 +7196,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
 
   if (aEvent->mClass == eKeyboardEventClass &&
       mDocument && mDocument->EventHandlingSuppressed()) {
-    if (aEvent->message == NS_KEY_DOWN) {
+    if (aEvent->mMessage == NS_KEY_DOWN) {
       mNoDelayedKeyEvents = true;
     } else if (!mNoDelayedKeyEvents) {
       DelayedEvent* event = new DelayedKeyEvent(aEvent->AsKeyboardEvent());
@@ -7302,12 +7304,12 @@ PresShell::HandleEvent(nsIFrame* aFrame,
 
     
     if (aEvent->mClass == eTouchEventClass &&
-        aEvent->message != NS_TOUCH_START) {
+        aEvent->mMessage != NS_TOUCH_START) {
       captureRetarget = true;
     }
 
     WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-    bool isWindowLevelMouseExit = (aEvent->message == NS_MOUSE_EXIT_WIDGET) &&
+    bool isWindowLevelMouseExit = (aEvent->mMessage == NS_MOUSE_EXIT_WIDGET) &&
       (mouseEvent && mouseEvent->exit == WidgetMouseEvent::eTopLevel);
 
     
@@ -7318,7 +7320,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     if (!captureRetarget && !isWindowLevelMouseExit) {
       nsPoint eventPoint;
       uint32_t flags = 0;
-      if (aEvent->message == NS_TOUCH_START) {
+      if (aEvent->mMessage == NS_TOUCH_START) {
         flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
         WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
         
@@ -7446,7 +7448,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     }
 
     if (aEvent->mClass == ePointerEventClass &&
-        aEvent->message != NS_POINTER_DOWN) {
+        aEvent->mMessage != NS_POINTER_DOWN) {
       if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
         uint32_t pointerId = pointerEvent->pointerId;
         nsIContent* pointerCapturingContent = GetPointerCapturingContent(pointerId);
@@ -7461,8 +7463,8 @@ PresShell::HandleEvent(nsIFrame* aFrame,
             frame = capturingFrame;
           }
 
-          if (pointerEvent->message == NS_POINTER_UP ||
-              pointerEvent->message == NS_POINTER_CANCEL) {
+          if (pointerEvent->mMessage == NS_POINTER_UP ||
+              pointerEvent->mMessage == NS_POINTER_CANCEL) {
             
             
             releasePointerCaptureCaller.SetTarget(pointerId, pointerCapturingContent);
@@ -7475,9 +7477,10 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     if (aEvent->mClass == eMouseEventClass &&
         frame->PresContext()->Document()->EventHandlingSuppressed()) {
-      if (aEvent->message == NS_MOUSE_BUTTON_DOWN) {
+      if (aEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
         mNoDelayedMouseEvents = true;
-      } else if (!mNoDelayedMouseEvents && aEvent->message == NS_MOUSE_BUTTON_UP) {
+      } else if (!mNoDelayedMouseEvents &&
+                 aEvent->mMessage == NS_MOUSE_BUTTON_UP) {
         DelayedEvent* event = new DelayedMouseEvent(aEvent->AsMouseEvent());
         if (!mDelayedEvents.AppendElement(event)) {
           delete event;
@@ -7493,7 +7496,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
 
     PresShell* shell =
         static_cast<PresShell*>(frame->PresContext()->PresShell());
-    switch (aEvent->message) {
+    switch (aEvent->mMessage) {
       case NS_TOUCH_MOVE:
       case NS_TOUCH_CANCEL:
       case NS_TOUCH_END: {
@@ -7623,11 +7626,12 @@ PresShell::HandleEvent(nsIFrame* aFrame,
         }
       }
 
-      if (aEvent->message == NS_KEY_DOWN) {
+      if (aEvent->mMessage == NS_KEY_DOWN) {
         NS_IF_RELEASE(gKeyDownTarget);
         NS_IF_ADDREF(gKeyDownTarget = eventTarget);
       }
-      else if ((aEvent->message == NS_KEY_PRESS || aEvent->message == NS_KEY_UP) &&
+      else if ((aEvent->mMessage == NS_KEY_PRESS ||
+                aEvent->mMessage == NS_KEY_UP) &&
                gKeyDownTarget) {
         
         
@@ -7643,7 +7647,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
           }
         }
 
-        if (aEvent->message == NS_KEY_UP) {
+        if (aEvent->mMessage == NS_KEY_UP) {
           NS_RELEASE(gKeyDownTarget);
         }
       }
@@ -7831,7 +7835,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent, nsEventStatus* aStatus)
 
     
     if (aEvent->mFlags.mIsTrusted) {
-      switch (aEvent->message) {
+      switch (aEvent->mMessage) {
       case NS_KEY_PRESS:
       case NS_KEY_DOWN:
       case NS_KEY_UP: {
@@ -7851,7 +7855,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent, nsEventStatus* aStatus)
             
             
             if (!mIsLastChromeOnlyEscapeKeyConsumed &&
-                aEvent->message == NS_KEY_UP) {
+                aEvent->mMessage == NS_KEY_UP) {
               
               
               
@@ -7863,7 +7867,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent, nsEventStatus* aStatus)
           if (!mIsLastChromeOnlyEscapeKeyConsumed && pointerLockedDoc) {
             aEvent->mFlags.mDefaultPrevented = true;
             aEvent->mFlags.mOnlyChromeDispatch = true;
-            if (aEvent->message == NS_KEY_UP) {
+            if (aEvent->mMessage == NS_KEY_UP) {
               nsIDocument::UnlockPointer();
             }
           }
@@ -7902,7 +7906,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent, nsEventStatus* aStatus)
       }
     }
 
-    if (aEvent->message == NS_CONTEXTMENU) {
+    if (aEvent->mMessage == NS_CONTEXTMENU) {
       WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
       if (mouseEvent->context == WidgetMouseEvent::eContextMenuKey &&
           !AdjustContextMenuKeyEvent(mouseEvent)) {
@@ -7917,7 +7921,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent, nsEventStatus* aStatus)
     AutoHandlingUserInputStatePusher userInpStatePusher(isHandlingUserInput,
                                                         aEvent, mDocument);
 
-    if (aEvent->mFlags.mIsTrusted && aEvent->message == NS_MOUSE_MOVE) {
+    if (aEvent->mFlags.mIsTrusted && aEvent->mMessage == NS_MOUSE_MOVE) {
       nsIPresShell::AllowMouseCapture(
         EventStateManager::GetActiveEventStateManager() == manager);
     }
@@ -7962,12 +7966,12 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent, nsEventStatus* aStatus)
       }
     }
 
-    switch (aEvent->message) {
+    switch (aEvent->mMessage) {
     case NS_KEY_PRESS:
     case NS_KEY_DOWN:
     case NS_KEY_UP: {
       if (aEvent->AsKeyboardEvent()->keyCode == NS_VK_ESCAPE) {
-        if (aEvent->message == NS_KEY_UP) {
+        if (aEvent->mMessage == NS_KEY_UP) {
           
           mIsLastChromeOnlyEscapeKeyConsumed = false;
         } else {
@@ -8069,9 +8073,9 @@ PresShell::DispatchTouchEventToDOM(WidgetEvent* aEvent,
   
   
   
-  bool canPrevent = (aEvent->message == NS_TOUCH_START) ||
-              (aEvent->message == NS_TOUCH_MOVE && aTouchIsNew) ||
-              (aEvent->message == NS_TOUCH_END);
+  bool canPrevent = (aEvent->mMessage == NS_TOUCH_START) ||
+                    (aEvent->mMessage == NS_TOUCH_MOVE && aTouchIsNew) ||
+                    (aEvent->mMessage == NS_TOUCH_END);
   bool preventDefault = false;
   nsEventStatus tmpStatus = nsEventStatus_eIgnore;
   WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
@@ -8099,7 +8103,7 @@ PresShell::DispatchTouchEventToDOM(WidgetEvent* aEvent,
     }
     
     WidgetTouchEvent newEvent(touchEvent->mFlags.mIsTrusted,
-                              touchEvent->message, touchEvent->widget);
+                              touchEvent->mMessage, touchEvent->widget);
     newEvent.AssignTouchEventData(*touchEvent, false);
     newEvent.target = targetPtr;
 
@@ -9536,7 +9540,7 @@ PresShell::DelayedMouseEvent::DelayedMouseEvent(WidgetMouseEvent* aEvent) :
 {
   WidgetMouseEvent* mouseEvent =
     new WidgetMouseEvent(aEvent->mFlags.mIsTrusted,
-                         aEvent->message,
+                         aEvent->mMessage,
                          aEvent->widget,
                          aEvent->reason,
                          aEvent->context);
@@ -9549,7 +9553,7 @@ PresShell::DelayedKeyEvent::DelayedKeyEvent(WidgetKeyboardEvent* aEvent) :
 {
   WidgetKeyboardEvent* keyEvent =
     new WidgetKeyboardEvent(aEvent->mFlags.mIsTrusted,
-                            aEvent->message,
+                            aEvent->mMessage,
                             aEvent->widget);
   keyEvent->AssignKeyEventData(*aEvent, false);
   keyEvent->mFlags.mIsSynthesizedForTests = aEvent->mFlags.mIsSynthesizedForTests;

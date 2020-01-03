@@ -4695,7 +4695,7 @@ nsEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
   WidgetKeyboardEvent* nativeKeyEvent =
     aKeyEvent->GetInternalNSEvent()->AsKeyboardEvent();
   NS_ENSURE_TRUE(nativeKeyEvent, NS_ERROR_UNEXPECTED);
-  NS_ASSERTION(nativeKeyEvent->message == NS_KEY_PRESS,
+  NS_ASSERTION(nativeKeyEvent->mMessage == NS_KEY_PRESS,
                "HandleKeyPressEvent gets non-keypress event");
 
   
@@ -5151,7 +5151,7 @@ nsEditor::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
   
   bool needsWidget = false;
   WidgetGUIEvent* widgetGUIEvent = nullptr;
-  switch (widgetEvent->message) {
+  switch (widgetEvent->mMessage) {
     case NS_USER_DEFINED_EVENT:
       
       

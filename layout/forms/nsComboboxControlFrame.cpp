@@ -1133,7 +1133,7 @@ nsComboboxControlFrame::HandleEvent(nsPresContext* aPresContext,
   }
 
 #if COMBOBOX_ROLLUP_CONSUME_EVENT == 0
-  if (aEvent->message == NS_MOUSE_BUTTON_DOWN) {
+  if (aEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
     nsIWidget* widget = GetNearestWidget();
     if (widget && GetContent() == widget->GetLastRollup()) {
       

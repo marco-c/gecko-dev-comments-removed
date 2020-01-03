@@ -499,8 +499,8 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
   if (aEvent->mFlags.mIsTrusted &&
       ((mouseEvent && mouseEvent->IsReal() &&
-        mouseEvent->message != NS_MOUSE_ENTER_WIDGET &&
-        mouseEvent->message != NS_MOUSE_EXIT_WIDGET) ||
+        mouseEvent->mMessage != NS_MOUSE_ENTER_WIDGET &&
+        mouseEvent->mMessage != NS_MOUSE_EXIT_WIDGET) ||
        aEvent->mClass == eWheelEventClass ||
        aEvent->mClass == eKeyboardEventClass)) {
     if (gMouseOrKeyboardEventCounter == 0) {
@@ -542,7 +542,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 
   *aStatus = nsEventStatus_eIgnore;
 
-  switch (aEvent->message) {
+  switch (aEvent->mMessage) {
   case NS_CONTEXTMENU:
     if (sIsPointerLocked) {
       return NS_ERROR_DOM_INVALID_STATE_ERR;
@@ -615,7 +615,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       
-      mouseEvent->message = NS_MOUSE_MOVE;
+      mouseEvent->mMessage = NS_MOUSE_MOVE;
       mouseEvent->reason = WidgetMouseEvent::eSynthesized;
       
     } else {
@@ -625,7 +625,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       }
       GenerateMouseEnterExit(mouseEvent);
       
-      aEvent->message = 0;
+      aEvent->mMessage = 0;
       break;
     }
   case NS_MOUSE_MOVE:
@@ -717,7 +717,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         mCurrentTargetContent = content;
       }
 
-      if (aEvent->message != NS_WHEEL_WHEEL) {
+      if (aEvent->mMessage != NS_WHEEL_WHEEL) {
         break;
       }
 
@@ -1167,7 +1167,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
   case eWheelEventClass:
     return true;
   case eMouseEventClass:
-    switch (aEvent.message) {
+    switch (aEvent.mMessage) {
     case NS_MOUSE_BUTTON_DOWN:
     case NS_MOUSE_BUTTON_UP:
     case NS_MOUSE_MOVE:
@@ -1179,7 +1179,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
       return false;
     }
   case eTouchEventClass:
-    switch (aEvent.message) {
+    switch (aEvent.mMessage) {
     case NS_TOUCH_START:
     case NS_TOUCH_MOVE:
     case NS_TOUCH_END:
@@ -1189,7 +1189,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
       return false;
     }
   case eDragEventClass:
-    switch (aEvent.message) {
+    switch (aEvent.mMessage) {
     case NS_DRAGDROP_OVER:
     case NS_DRAGDROP_EXIT:
     case NS_DRAGDROP_DROP:
@@ -1215,7 +1215,7 @@ EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
   
   nsAutoTArray<nsCOMPtr<nsIContent>, 1> targets;
   if (aEvent->mClass != eTouchEventClass ||
-      aEvent->message == NS_TOUCH_START) {
+      aEvent->mMessage == NS_TOUCH_START) {
     
     
     nsIFrame* frame = GetEventTarget();
@@ -2588,7 +2588,7 @@ EventStateManager::DecideGestureEvent(WidgetGestureNotifyEvent* aEvent,
                                       nsIFrame* targetFrame)
 {
 
-  NS_ASSERTION(aEvent->message == NS_GESTURENOTIFY_EVENT_START,
+  NS_ASSERTION(aEvent->mMessage == NS_GESTURENOTIFY_EVENT_START,
                "DecideGestureEvent called with a non-gesture event");
 
   
@@ -2791,8 +2791,8 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
   
   
-  if (!mCurrentTarget && aEvent->message != NS_MOUSE_BUTTON_UP &&
-      aEvent->message != NS_MOUSE_BUTTON_DOWN) {
+  if (!mCurrentTarget && aEvent->mMessage != NS_MOUSE_BUTTON_UP &&
+      aEvent->mMessage != NS_MOUSE_BUTTON_DOWN) {
     return NS_OK;
   }
 
@@ -2800,7 +2800,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
   nsRefPtr<nsPresContext> presContext = aPresContext;
   nsresult ret = NS_OK;
 
-  switch (aEvent->message) {
+  switch (aEvent->mMessage) {
   case NS_MOUSE_BUTTON_DOWN:
     {
       WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
@@ -3073,7 +3073,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
           ScrollbarsForWheel::PrepareToScrollText(this, aTargetFrame, wheelEvent);
 
-          if (aEvent->message != NS_WHEEL_WHEEL ||
+          if (aEvent->mMessage != NS_WHEEL_WHEEL ||
               (!wheelEvent->deltaX && !wheelEvent->deltaY)) {
             break;
           }
@@ -3237,13 +3237,13 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
         
         
-        if (aEvent->message == NS_DRAGDROP_OVER && !isChromeDoc) {
+        if (aEvent->mMessage == NS_DRAGDROP_OVER && !isChromeDoc) {
           
           
           dragSession->SetOnlyChromeDrop(
             !dragEvent->mDefaultPreventedOnContent);
         }
-      } else if (aEvent->message == NS_DRAGDROP_OVER && !isChromeDoc) {
+      } else if (aEvent->mMessage == NS_DRAGDROP_OVER && !isChromeDoc) {
         
         dragSession->SetOnlyChromeDrop(true);
       }
@@ -4058,7 +4058,7 @@ void
 EventStateManager::GeneratePointerEnterExit(uint32_t aMessage, WidgetMouseEvent* aEvent)
 {
   WidgetPointerEvent pointerEvent(*aEvent);
-  pointerEvent.message = aMessage;
+  pointerEvent.mMessage = aMessage;
   GenerateMouseEnterExit(&pointerEvent);
 }
 
@@ -4072,7 +4072,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
   
   nsCOMPtr<nsIContent> targetBeforeEvent = mCurrentTargetContent;
 
-  switch(aMouseEvent->message) {
+  switch(aMouseEvent->mMessage) {
   case NS_MOUSE_MOVE:
     {
       
@@ -4268,7 +4268,7 @@ EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
   
   nsCOMPtr<nsIContent> targetBeforeEvent = mCurrentTargetContent;
 
-  switch(aDragEvent->message) {
+  switch(aDragEvent->mMessage) {
   case NS_DRAGDROP_OVER:
     {
       
@@ -4420,10 +4420,10 @@ EventStateManager::SetClickCount(nsPresContext* aPresContext,
 
   switch (aEvent->button) {
   case WidgetMouseEvent::eLeftButton:
-    if (aEvent->message == NS_MOUSE_BUTTON_DOWN) {
+    if (aEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
       mLastLeftMouseDownContent = mouseContent;
       mLastLeftMouseDownContentParent = mouseContentParent;
-    } else if (aEvent->message == NS_MOUSE_BUTTON_UP) {
+    } else if (aEvent->mMessage == NS_MOUSE_BUTTON_UP) {
       if (mLastLeftMouseDownContent == mouseContent ||
           mLastLeftMouseDownContentParent == mouseContent ||
           mLastLeftMouseDownContent == mouseContentParent) {
@@ -4438,10 +4438,10 @@ EventStateManager::SetClickCount(nsPresContext* aPresContext,
     break;
 
   case WidgetMouseEvent::eMiddleButton:
-    if (aEvent->message == NS_MOUSE_BUTTON_DOWN) {
+    if (aEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
       mLastMiddleMouseDownContent = mouseContent;
       mLastMiddleMouseDownContentParent = mouseContentParent;
-    } else if (aEvent->message == NS_MOUSE_BUTTON_UP) {
+    } else if (aEvent->mMessage == NS_MOUSE_BUTTON_UP) {
       if (mLastMiddleMouseDownContent == mouseContent ||
           mLastMiddleMouseDownContentParent == mouseContent ||
           mLastMiddleMouseDownContent == mouseContentParent) {
@@ -4456,10 +4456,10 @@ EventStateManager::SetClickCount(nsPresContext* aPresContext,
     break;
 
   case WidgetMouseEvent::eRightButton:
-    if (aEvent->message == NS_MOUSE_BUTTON_DOWN) {
+    if (aEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
       mLastRightMouseDownContent = mouseContent;
       mLastRightMouseDownContentParent = mouseContentParent;
-    } else if (aEvent->message == NS_MOUSE_BUTTON_UP) {
+    } else if (aEvent->mMessage == NS_MOUSE_BUTTON_UP) {
       if (mLastRightMouseDownContent == mouseContent ||
           mLastRightMouseDownContentParent == mouseContent ||
           mLastRightMouseDownContent == mouseContentParent) {
@@ -4573,8 +4573,8 @@ already_AddRefed<nsIContent>
 EventStateManager::GetEventTargetContent(WidgetEvent* aEvent)
 {
   if (aEvent &&
-      (aEvent->message == NS_FOCUS_CONTENT ||
-       aEvent->message == NS_BLUR_CONTENT)) {
+      (aEvent->mMessage == NS_FOCUS_CONTENT ||
+       aEvent->mMessage == NS_BLUR_CONTENT)) {
     nsCOMPtr<nsIContent> content = GetFocusedContent();
     return content.forget();
   }
@@ -4942,7 +4942,7 @@ EventStateManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
 bool
 EventStateManager::EventStatusOK(WidgetGUIEvent* aEvent)
 {
-  return !(aEvent->message == NS_MOUSE_BUTTON_DOWN &&
+  return !(aEvent->mMessage == NS_MOUSE_BUTTON_DOWN &&
            aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton &&
            !sNormalLMouseEventInProcess);
 }
@@ -5038,7 +5038,7 @@ EventStateManager::DoContentCommandEvent(WidgetContentCommandEvent* aEvent)
   nsCOMPtr<nsPIWindowRoot> root = window->GetTopWindowRoot();
   NS_ENSURE_TRUE(root, NS_ERROR_FAILURE);
   const char* cmd;
-  switch (aEvent->message) {
+  switch (aEvent->mMessage) {
     case NS_CONTENT_COMMAND_CUT:
       cmd = "cmd_cut";
       break;
@@ -5076,7 +5076,7 @@ EventStateManager::DoContentCommandEvent(WidgetContentCommandEvent* aEvent)
     NS_ENSURE_SUCCESS(rv, rv);
     aEvent->mIsEnabled = canDoIt;
     if (canDoIt && !aEvent->mOnlyEnabledCheck) {
-      switch (aEvent->message) {
+      switch (aEvent->mMessage) {
         case NS_CONTENT_COMMAND_PASTE_TRANSFERABLE: {
           nsCOMPtr<nsICommandController> commandController = do_QueryInterface(controller);
           NS_ENSURE_STATE(commandController);
@@ -5730,7 +5730,7 @@ AutoHandlingUserInputStatePusher::AutoHandlingUserInputStatePusher(
                                     WidgetEvent* aEvent,
                                     nsIDocument* aDocument) :
   mIsHandlingUserInput(aIsHandlingUserInput),
-  mIsMouseDown(aEvent && aEvent->message == NS_MOUSE_BUTTON_DOWN),
+  mIsMouseDown(aEvent && aEvent->mMessage == NS_MOUSE_BUTTON_DOWN),
   mResetFMMouseButtonHandlingState(false)
 {
   if (!aIsHandlingUserInput) {
@@ -5744,8 +5744,9 @@ AutoHandlingUserInputStatePusher::AutoHandlingUserInputStatePusher(
   if (!aDocument || !aEvent || !aEvent->mFlags.mIsTrusted) {
     return;
   }
-  mResetFMMouseButtonHandlingState = (aEvent->message == NS_MOUSE_BUTTON_DOWN ||
-                                      aEvent->message == NS_MOUSE_BUTTON_UP);
+  mResetFMMouseButtonHandlingState =
+    (aEvent->mMessage == NS_MOUSE_BUTTON_DOWN ||
+     aEvent->mMessage == NS_MOUSE_BUTTON_UP);
   if (mResetFMMouseButtonHandlingState) {
     nsFocusManager* fm = nsFocusManager::GetFocusManager();
     NS_ENSURE_TRUE_VOID(fm);

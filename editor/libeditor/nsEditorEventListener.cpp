@@ -369,7 +369,7 @@ nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
   
   
   
-  switch (internalEvent->message) {
+  switch (internalEvent->mMessage) {
     
     case NS_DRAGDROP_ENTER: {
       nsCOMPtr<nsIDOMDragEvent> dragEvent = do_QueryInterface(aEvent);
