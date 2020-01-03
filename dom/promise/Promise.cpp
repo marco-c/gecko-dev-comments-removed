@@ -1589,12 +1589,24 @@ PromiseWorkerProxy::GetWorkerPrivate() const
   
   MOZ_ASSERT(!mCleanedUp);
 
+#ifdef DEBUG
+  if (NS_IsMainThread()) {
+    mCleanUpLock.AssertCurrentThreadOwns();
+  }
+#endif
+
   return mWorkerPrivate;
 }
 
 Promise*
 PromiseWorkerProxy::GetWorkerPromise() const
 {
+
+#ifdef DEBUG
+  WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT(worker);
+  worker->AssertIsOnWorkerThread();
+#endif
   return mWorkerPromise;
 }
 
