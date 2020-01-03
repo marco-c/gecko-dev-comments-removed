@@ -1470,7 +1470,8 @@ RestyleManager::RestyleForRemove(Element* aContainer,
     
     
     
-    NS_WARNING("anonymous nodes should not be in child lists (bug 439258)");
+    MOZ_ASSERT(aOldChild->GetProperty(nsGkAtoms::restylableAnonymousNode),
+               "anonymous nodes should not be in child lists (bug 439258)");
   }
   uint32_t selectorFlags =
     aContainer ? (aContainer->GetFlags() & NODE_ALL_SELECTOR_FLAGS) : 0;
