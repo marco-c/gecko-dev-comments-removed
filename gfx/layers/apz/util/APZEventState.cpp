@@ -216,7 +216,7 @@ APZEventState::ProcessLongTap(const nsCOMPtr<nsIPresShell>& aPresShell,
     return;
   }
 
-  SendPendingTouchPreventedResponse(false, aGuid);
+  SendPendingTouchPreventedResponse(false);
 
   
   
@@ -290,7 +290,10 @@ APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
     mActiveElementManager->HandleTouchEndEvent(mEndTouchIsClick);
     
   case NS_TOUCH_MOVE: {
-    sentContentResponse = SendPendingTouchPreventedResponse(isTouchPrevented, aGuid);
+    if (mPendingTouchPreventedResponse) {
+      MOZ_ASSERT(aGuid == mPendingTouchPreventedGuid);
+    }
+    sentContentResponse = SendPendingTouchPreventedResponse(isTouchPrevented);
     break;
   }
 
@@ -396,11 +399,9 @@ APZEventState::ProcessAPZStateChange(const nsCOMPtr<nsIDocument>& aDocument,
 }
 
 bool
-APZEventState::SendPendingTouchPreventedResponse(bool aPreventDefault,
-                                                 const ScrollableLayerGuid& aGuid)
+APZEventState::SendPendingTouchPreventedResponse(bool aPreventDefault)
 {
   if (mPendingTouchPreventedResponse) {
-    MOZ_ASSERT(aGuid == mPendingTouchPreventedGuid);
     mContentReceivedInputBlockCallback->Run(mPendingTouchPreventedGuid,
         mPendingTouchPreventedBlockId, aPreventDefault);
     mPendingTouchPreventedResponse = false;
