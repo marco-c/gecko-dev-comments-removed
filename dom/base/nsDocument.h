@@ -1530,7 +1530,9 @@ protected:
   void NotifyStyleSheetApplicableStateChanged();
 
   
-  void ApplyFullscreen(const FullscreenRequest& aRequest);
+  
+  
+  bool ApplyFullscreen(const FullscreenRequest& aRequest);
 
   nsTArray<nsIObserver*> mCharSetObservers;
 
