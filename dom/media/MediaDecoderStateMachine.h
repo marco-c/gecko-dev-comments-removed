@@ -149,6 +149,8 @@ public:
   };
 
   void AddOutputStream(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
+  
+  void RemoveOutputStream(MediaStream* aStream);
 
   
   void SetDormant(bool aDormant);
@@ -160,6 +162,7 @@ private:
   void InitializationTask();
 
   void DispatchAudioCaptured();
+  void DispatchAudioUncaptured();
 
   void Shutdown();
 public:
