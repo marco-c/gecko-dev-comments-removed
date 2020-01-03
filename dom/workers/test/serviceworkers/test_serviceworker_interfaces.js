@@ -150,6 +150,8 @@ var interfaceNamesInGlobalScope =
 
     "IDBVersionChangeEvent",
 
+    "ImageBitmap",
+
     "ImageData",
 
     "MessageChannel",
