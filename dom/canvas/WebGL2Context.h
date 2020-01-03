@@ -8,6 +8,12 @@
 
 #include "WebGLContext.h"
 
+
+
+
+#define MINVALUE_GL_MAX_3D_TEXTURE_SIZE             256
+#define MINVALUE_GL_MAX_ARRAY_TEXTURE_LAYERS        256
+
 namespace mozilla {
 
 class ErrorResult;
