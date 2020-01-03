@@ -122,7 +122,6 @@ void ShutdownTileCache();
 
 using namespace mozilla;
 using namespace mozilla::layers;
-using namespace mozilla::gl;
 
 gfxPlatform *gPlatform = nullptr;
 static bool gEverInitialized = false;
@@ -495,7 +494,7 @@ gfxPlatform::Init()
 #endif
 
 #ifdef MOZ_GL_DEBUG
-    GLContext::StaticInit();
+    mozilla::gl::GLContext::StaticInit();
 #endif
 
     InitLayersAccelerationPrefs();
@@ -543,11 +542,11 @@ gfxPlatform::Init()
     gPlatform->mFontPrefsObserver = new FontPrefsObserver();
     Preferences::AddStrongObservers(gPlatform->mFontPrefsObserver, kObservedPrefs);
 
-    GLContext::PlatformStartup();
+    mozilla::gl::GLContext::PlatformStartup();
 
 #ifdef MOZ_WIDGET_ANDROID
     
-    TexturePoolOGL::Init();
+    mozilla::gl::TexturePoolOGL::Init();
 #endif
 
 #ifdef MOZ_WIDGET_GONK
@@ -627,11 +626,11 @@ gfxPlatform::Shutdown()
 
 #ifdef MOZ_WIDGET_ANDROID
     
-    TexturePoolOGL::Shutdown();
+    mozilla::gl::TexturePoolOGL::Shutdown();
 #endif
 
     
-    GLContextProvider::Shutdown();
+    mozilla::gl::GLContextProvider::Shutdown();
 
 #if defined(XP_WIN)
     
@@ -640,7 +639,7 @@ gfxPlatform::Shutdown()
     
     
     
-    GLContextProviderEGL::Shutdown();
+    mozilla::gl::GLContextProviderEGL::Shutdown();
 #endif
 
     
@@ -1079,7 +1078,7 @@ gfxPlatform::InitializeSkiaCacheLimits()
   }
 }
 
-SkiaGLGlue*
+mozilla::gl::SkiaGLGlue*
 gfxPlatform::GetSkiaGLGlue()
 {
 #ifdef USE_SKIA_GPU
@@ -1089,14 +1088,14 @@ gfxPlatform::GetSkiaGLGlue()
 
 
 
-    nsRefPtr<GLContext> glContext;
-    glContext = GLContextProvider::CreateHeadless(CreateContextFlags::REQUIRE_COMPAT_PROFILE |
-                                                  CreateContextFlags::ALLOW_OFFLINE_RENDERER);
+    bool requireCompatProfile = true;
+    nsRefPtr<mozilla::gl::GLContext> glContext;
+    glContext = mozilla::gl::GLContextProvider::CreateHeadless(requireCompatProfile);
     if (!glContext) {
       printf_stderr("Failed to create GLContext for SkiaGL!\n");
       return nullptr;
     }
-    mSkiaGlue = new SkiaGLGlue(glContext);
+    mSkiaGlue = new mozilla::gl::SkiaGLGlue(glContext);
     MOZ_ASSERT(mSkiaGlue->GetGrContext(), "No GrContext");
     InitializeSkiaCacheLimits();
   }

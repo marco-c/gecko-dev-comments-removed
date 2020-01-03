@@ -59,16 +59,14 @@ public:
 
 
 
-
-
     static already_AddRefed<GLContext>
     CreateOffscreen(const mozilla::gfx::IntSize& size,
                     const SurfaceCaps& caps,
-                    CreateContextFlags flags);
+                    bool requireCompatProfile);
 
     
     static already_AddRefed<GLContext>
-    CreateHeadless(CreateContextFlags flags);
+    CreateHeadless(bool requireCompatProfile, bool forceEnabled = false);
 
     
 
