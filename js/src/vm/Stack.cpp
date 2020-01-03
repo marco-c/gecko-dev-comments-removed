@@ -1554,7 +1554,6 @@ jit::JitActivation::getRematerializedFrame(JSContext* cx, const JitFrameIterator
         }
 
         
-        
         DebugScopes::unsetPrevUpToDateUntil(cx, p->value()[inlineDepth]);
     }
 

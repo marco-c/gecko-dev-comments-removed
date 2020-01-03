@@ -2294,6 +2294,7 @@ DebugScopes::unsetPrevUpToDateUntil(JSContext* cx, AbstractFramePtr until)
     
     
     
+    
     for (AllFramesIter i(cx); !i.done(); ++i) {
         if (!i.hasUsableAbstractFramePtr())
             continue;
