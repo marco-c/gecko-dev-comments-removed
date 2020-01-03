@@ -175,6 +175,9 @@ public:
     eColorID__moz_combobox,
 
     
+    eColorID__moz_gtk_info_bar_text,
+
+    
     eColorID_LAST_COLOR
   };
 

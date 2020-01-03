@@ -185,7 +185,9 @@ typedef enum {
   
   MOZ_GTK_SPLITTER_VERTICAL,
   
-  MOZ_GTK_WINDOW
+  MOZ_GTK_WINDOW,
+  
+  MOZ_GTK_INFO_BAR
 } GtkThemeWidgetType;
 
 
