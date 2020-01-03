@@ -13,6 +13,17 @@
 #include "prlock.h"
 #include "nsDebug.h"
 
+
+
+
+
+enum PLDHashOperator
+{
+  PL_DHASH_NEXT = 0,          
+  PL_DHASH_STOP = 1,          
+  PL_DHASH_REMOVE = 2         
+};
+
 template<class KeyClass, class DataType, class UserDataType>
 class nsBaseHashtable; 
 

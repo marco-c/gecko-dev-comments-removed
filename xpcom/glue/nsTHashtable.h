@@ -72,16 +72,6 @@
 
 
 
-
-
-
-enum PLDHashOperator
-{
-  PL_DHASH_NEXT = 0,          
-  PL_DHASH_STOP = 1,          
-  PL_DHASH_REMOVE = 2         
-};
-
 template<class EntryType>
 class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable
 {
@@ -187,46 +177,6 @@ public:
   void RawRemoveEntry(EntryType* aEntry)
   {
     PL_DHashTableRawRemove(&mTable, aEntry);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  typedef PLDHashOperator (*Enumerator)(EntryType* aEntry, void* userArg);
-
-  
-
-
-
-
-
-
-
-
-
-
-  uint32_t EnumerateEntries(Enumerator aEnumFunc, void* aUserArg)
-  {
-    uint32_t n = 0;
-    for (auto iter = mTable.Iter(); !iter.Done(); iter.Next()) {
-      auto entry = static_cast<EntryType*>(iter.Get());
-      PLDHashOperator op = aEnumFunc(entry, aUserArg);
-      n++;
-      if (op & PL_DHASH_REMOVE) {
-        iter.Remove();
-      }
-      if (op & PL_DHASH_STOP) {
-        break;
-      }
-    }
-    return n;
   }
 
   
