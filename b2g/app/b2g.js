@@ -1169,6 +1169,10 @@ pref("dom.vr.cardboard.enabled", true);
 pref("dom.audiochannel.mutedByDefault", true);
 
 
+
+pref("dom.bluetooth.app-origin", "app://bluetooth.gaiamobile.org");
+
+
 pref("dom.presentation.device.name", "Firefox OS");
 
 

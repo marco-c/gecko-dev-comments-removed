@@ -214,7 +214,7 @@ extern bool gBluetoothDebugFlag;
 
 
 
-#define BLUETOOTH_APP_ORIGIN                  "app://bluetooth.gaiamobile.org"
+#define PREF_BLUETOOTH_APP_ORIGIN             "dom.bluetooth.app-origin"
 
 
 
