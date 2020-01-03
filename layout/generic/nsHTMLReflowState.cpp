@@ -1016,11 +1016,10 @@ nsHTMLReflowState::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
     state = nullptr;
   }
 
-  WritingMode wm = aFrame->GetWritingMode();
   if (state) {
-    WritingMode stateWM = state->GetWritingMode();
-    aCBIStartEdge =
-      state->ComputedLogicalBorderPadding().ConvertTo(wm, stateWM).IStart(wm);
+    WritingMode wm = state->GetWritingMode();
+    NS_ASSERTION(wm == aFrame->GetWritingMode(), "unexpected writing mode");
+    aCBIStartEdge = state->ComputedLogicalBorderPadding().IStart(wm);
     aCBSize = state->ComputedSize(wm);
   } else {
     
@@ -1028,6 +1027,7 @@ nsHTMLReflowState::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
 
     NS_ASSERTION(!(aFrame->GetStateBits() & NS_FRAME_IN_REFLOW),
                  "aFrame shouldn't be in reflow; we'll lie if it is");
+    WritingMode wm = aFrame->GetWritingMode();
     LogicalMargin borderPadding = aFrame->GetLogicalUsedBorderAndPadding(wm);
     aCBIStartEdge = borderPadding.IStart(wm);
     aCBSize = aFrame->GetLogicalSize(wm) - borderPadding.Size(wm);
