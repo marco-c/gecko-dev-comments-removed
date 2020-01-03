@@ -76,4 +76,9 @@ const unsigned long SANDBOXED_DOMAIN = 0x100;
 
 
 const unsigned long SANDBOXED_AUXILIARY_NAVIGATION = 0x200;
+
+
+
+
+const unsigned long SANDBOXED_ORIENTATION_LOCK = 0x400;
 #endif

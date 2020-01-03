@@ -100,7 +100,7 @@ private:
 
   void DispatchChangeEvent();
 
-  LockPermission GetLockOrientationPermission() const;
+  LockPermission GetLockOrientationPermission(bool aCheckSandbox) const;
 
   
   nsIDocument* GetResponsibleDocument() const;
