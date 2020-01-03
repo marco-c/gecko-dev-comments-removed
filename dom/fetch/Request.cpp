@@ -14,6 +14,7 @@
 #include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/URL.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/workers/bindings/URL.h"
 
 #include "WorkerPrivate.h"
@@ -40,6 +41,25 @@ Request::Request(nsIGlobalObject* aOwner, InternalRequest* aRequest)
 
 Request::~Request()
 {
+}
+
+
+bool
+Request::RequestContextEnabled(JSContext* aCx, JSObject* aObj)
+{
+  if (NS_IsMainThread()) {
+    return Preferences::GetBool("dom.requestcontext.enabled", false);
+  }
+
+  using namespace workers;
+
+  
+  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
+  if (!workerPrivate) {
+    return false;
+  }
+
+  return workerPrivate->RequestContextEnabled();
 }
 
 already_AddRefed<InternalRequest>

@@ -5055,3 +5055,6 @@ pref("memory.report_concurrency", 10);
 pref("media.useAudioChannelService", true);
 
 pref("media.useAudioChannelAPI", false);
+
+
+pref("dom.requestcontext.enabled", false);
