@@ -1,14 +1,13 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/MessagePortBinding.h"
 #include "mozilla/dom/MessagePortList.h"
-#include "mozilla/dom/UnionTypes.h"
 
 #include "mozilla/HoldDropJSObjects.h"
 #include "jsapi.h"
@@ -112,7 +111,7 @@ MessageEvent::GetSource(Nullable<OwningWindowProxyOrMessagePort>& aValue) const
   }
 }
 
-/* static */ already_AddRefed<MessageEvent>
+ already_AddRefed<MessageEvent>
 MessageEvent::Constructor(const GlobalObject& aGlobal,
                           const nsAString& aType,
                           const MessageEventInit& aParam,
@@ -191,8 +190,8 @@ MessageEvent::SetPorts(MessagePortList* aPorts)
   mPorts = aPorts;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 using namespace mozilla;
 using namespace mozilla::dom;
