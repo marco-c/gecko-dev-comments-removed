@@ -441,7 +441,10 @@ BaselineScript::trace(JSTracer* trc)
     
     for (size_t i = 0; i < numICEntries(); i++) {
         ICEntry& ent = icEntry(i);
-        ent.trace(trc);
+        if (!ent.hasStub())
+            continue;
+        for (ICStub* stub = ent.firstStub(); stub; stub = stub->next())
+            stub->trace(trc);
     }
 }
 
