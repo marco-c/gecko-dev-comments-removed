@@ -477,6 +477,8 @@ public:
 
   virtual nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName, nsIAtom* aPrefix,
                            const nsAString& aValue, bool aNotify) override;
+  
+  
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsIAtom* aName, nsIAtom* aPrefix,
                          nsAttrValue& aParsedValue, bool aNotify);
   
@@ -1075,6 +1077,10 @@ protected:
   static const bool kDontCallAfterSetAttr        = false;
 
   
+
+
+
+
 
 
 

@@ -127,6 +127,12 @@ public:
   static void Shutdown();
 
   ValueType Type() const;
+  
+  
+  
+  
+  
+  inline bool StoresOwnData() const;
 
   void Reset();
 
