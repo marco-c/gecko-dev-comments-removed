@@ -23,4 +23,9 @@ public interface RestrictionConfiguration {
 
 
     boolean isRestricted();
+
+    
+
+
+    void update();
 }
