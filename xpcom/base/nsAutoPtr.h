@@ -97,7 +97,7 @@ public:
   }
 
   template <typename I>
-  nsAutoPtr(nsAutoPtr<I>& aSmartPtr)
+  MOZ_IMPLICIT nsAutoPtr(nsAutoPtr<I>& aSmartPtr)
     : mRawPtr(aSmartPtr.forget())
     
   {
@@ -110,7 +110,7 @@ public:
   }
 
   template <typename I>
-  nsAutoPtr(nsAutoPtr<I>&& aSmartPtr)
+  MOZ_IMPLICIT nsAutoPtr(nsAutoPtr<I>&& aSmartPtr)
     : mRawPtr(aSmartPtr.forget())
     
   {

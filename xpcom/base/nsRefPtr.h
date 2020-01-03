@@ -101,21 +101,21 @@ public:
   }
 
   template <typename I>
-  nsRefPtr(already_AddRefed<I>& aSmartPtr)
+  MOZ_IMPLICIT nsRefPtr(already_AddRefed<I>& aSmartPtr)
     : mRawPtr(aSmartPtr.take())
     
   {
   }
 
   template <typename I>
-  nsRefPtr(already_AddRefed<I>&& aSmartPtr)
+  MOZ_IMPLICIT nsRefPtr(already_AddRefed<I>&& aSmartPtr)
     : mRawPtr(aSmartPtr.take())
     
   {
   }
 
   template <typename I>
-  nsRefPtr(nsRefPtr<I>&& aSmartPtr)
+  MOZ_IMPLICIT nsRefPtr(nsRefPtr<I>&& aSmartPtr)
     : mRawPtr(aSmartPtr.forget().take())
     
   {
