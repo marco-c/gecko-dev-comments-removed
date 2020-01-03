@@ -554,7 +554,7 @@ Animation::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                         nsCSSPropertySet& aSetProperties,
                         bool& aNeedsRefreshes)
 {
-  if (!mEffect || mEffect->IsFinishedTransition()) {
+  if (!mEffect) {
     return;
   }
 
@@ -562,6 +562,10 @@ Animation::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
   if (playState == AnimationPlayState::Running ||
       playState == AnimationPlayState::Pending) {
     aNeedsRefreshes = true;
+  }
+
+  if (!IsInEffect()) {
+    return;
   }
 
   
