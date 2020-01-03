@@ -19,6 +19,7 @@
 
 struct nsRuleData;
 class nsCSSExpandedDataBlock;
+class nsIDocument;
 
 namespace mozilla {
 namespace css {
@@ -250,13 +251,16 @@ public:
 
 
 
+
+
     bool TransferFromBlock(nsCSSExpandedDataBlock& aFromBlock,
                            nsCSSProperty aPropID,
                            nsCSSProps::EnabledState aEnabledState,
                            bool aIsImportant,
                            bool aOverrideImportant,
                            bool aMustCallValueAppended,
-                           mozilla::css::Declaration* aDeclaration);
+                           mozilla::css::Declaration* aDeclaration,
+                           nsIDocument* aSheetDocument);
 
     
 
@@ -290,7 +294,8 @@ private:
                                bool aIsImportant,
                                bool aOverrideImportant,
                                bool aMustCallValueAppended,
-                               mozilla::css::Declaration* aDeclaration);
+                               mozilla::css::Declaration* aDeclaration,
+                               nsIDocument* aSheetDocument);
 
 #ifdef DEBUG
     void DoAssertInitialState();

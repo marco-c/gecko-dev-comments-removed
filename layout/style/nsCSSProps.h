@@ -15,6 +15,7 @@
 #include "nsCSSProperty.h"
 #include "nsStyleStructFwd.h"
 #include "nsCSSKeywords.h"
+#include "mozilla/UseCounter.h"
 
 
 
@@ -514,6 +515,20 @@ public:
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_with_aliases,
                "out of range");
     return gPropertyEnabled[aProperty];
+  }
+
+private:
+  
+  
+  
+  static const mozilla::UseCounter gPropertyUseCounter[eCSSProperty_COUNT_no_shorthands];
+
+public:
+
+  static mozilla::UseCounter UseCounterFor(nsCSSProperty aProperty) {
+    MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
+               "out of range");
+    return gPropertyUseCounter[aProperty];
   }
 
   static bool IsEnabled(nsCSSProperty aProperty, EnabledState aEnabled)

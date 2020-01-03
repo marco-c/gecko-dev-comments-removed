@@ -1183,9 +1183,18 @@ MappedAttrParser::ParseMappedAttrValue(nsIAtom* aMappedAttrName,
     nsCSSProps::LookupProperty(nsDependentAtomString(aMappedAttrName),
                                nsCSSProps::eEnabledForAllContent);
   if (propertyID != eCSSProperty_UNKNOWN) {
-    bool changed; 
+    bool changed = false; 
     mParser.ParseProperty(propertyID, aMappedAttrValue, mDocURI, mBaseURI,
                           mElement->NodePrincipal(), mDecl, &changed, false, true);
+    if (changed) {
+      
+      
+      MOZ_ASSERT(!nsCSSProps::IsShorthand(propertyID));
+      UseCounter useCounter = nsCSSProps::UseCounterFor(propertyID);
+      if (useCounter != eUseCounter_UNKNOWN) {
+        mElement->OwnerDoc()->SetDocumentAndPageUseCounter(useCounter);
+      }
+    }
     return;
   }
   MOZ_ASSERT(aMappedAttrName == nsGkAtoms::lang,
