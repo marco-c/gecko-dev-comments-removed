@@ -302,11 +302,15 @@ protected:
     void RebuildLocalFonts();
 
     typedef nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> FontFamilyTable;
+    typedef nsRefPtrHashtable<nsStringHashKey, gfxFontEntry> FontEntryTable;
 
     
     static size_t
     SizeOfFontFamilyTableExcludingThis(const FontFamilyTable& aTable,
                                        mozilla::MallocSizeOf aMallocSizeOf);
+    static size_t
+    SizeOfFontEntryTableExcludingThis(const FontEntryTable& aTable,
+                                      mozilla::MallocSizeOf aMallocSizeOf);
 
     
     FontFamilyTable mFontFamilies;
@@ -328,10 +332,11 @@ protected:
 
     struct ExtraNames {
       ExtraNames() : mFullnames(64), mPostscriptNames(64) {}
+
       
-      nsRefPtrHashtable<nsStringHashKey, gfxFontEntry> mFullnames;
+      FontEntryTable mFullnames;
       
-      nsRefPtrHashtable<nsStringHashKey, gfxFontEntry> mPostscriptNames;
+      FontEntryTable mPostscriptNames;
     };
     nsAutoPtr<ExtraNames> mExtraNames;
 
