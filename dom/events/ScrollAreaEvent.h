@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_ScrollAreaEvent_h_
 #define mozilla_dom_ScrollAreaEvent_h_
@@ -31,7 +31,7 @@ public:
   NS_FORWARD_NSIDOMUIEVENT(UIEvent::)
 
   NS_FORWARD_TO_EVENT_NO_SERIALIZATION_NO_DUPLICATION
-  NS_IMETHOD DuplicatePrivateData()
+  NS_IMETHOD DuplicatePrivateData() MOZ_OVERRIDE
   {
     return Event::DuplicatePrivateData();
   }
@@ -82,7 +82,7 @@ protected:
   nsRefPtr<DOMRect> mClientArea;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_ScrollAreaEvent_h_
+#endif 
