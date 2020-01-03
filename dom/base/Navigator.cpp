@@ -40,6 +40,7 @@
 #include "mozilla/dom/IccManager.h"
 #include "mozilla/dom/InputPortManager.h"
 #include "mozilla/dom/MobileMessageManager.h"
+#include "mozilla/dom/Permissions.h"
 #include "mozilla/dom/ServiceWorkerContainer.h"
 #include "mozilla/dom/Telephony.h"
 #include "mozilla/dom/Voicemail.h"
@@ -181,8 +182,9 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Navigator)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Navigator)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlugins)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMimeTypes)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlugins)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPermissions)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGeolocation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mNotification)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBatteryManager)
@@ -228,12 +230,14 @@ Navigator::Invalidate()
   
   
 
+  mMimeTypes = nullptr;
+
   if (mPlugins) {
     mPlugins->Invalidate();
     mPlugins = nullptr;
   }
 
-  mMimeTypes = nullptr;
+  mPermissions = nullptr;
 
   
   if (mGeolocation) {
@@ -575,6 +579,21 @@ Navigator::GetPlugins(ErrorResult& aRv)
   }
 
   return mPlugins;
+}
+
+Permissions*
+Navigator::GetPermissions(ErrorResult& aRv)
+{
+  if (!mWindow) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
+
+  if (!mPermissions) {
+    mPermissions = new Permissions(mWindow);
+  }
+
+  return mPermissions;
 }
 
 
