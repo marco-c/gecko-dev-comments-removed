@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
@@ -27,7 +27,84 @@ function runOffline(fun) {
 }
 
 let tests = [
+  taskify(function* test_gettingStartedClicked_linkOpenedWithExpectedParams() {
+    Services.prefs.setBoolPref("loop.gettingStarted.seen", false);
+    Services.prefs.setCharPref("loop.gettingStarted.url", "http://example.com");
+    ise(loopButton.open, false, "Menu should initially be closed");
+    loopButton.click();
+
+    yield waitForConditionPromise(() => {
+      return loopButton.open;
+    }, "Menu should be visible after showMenu()");
+
+    gContentAPI.registerPageID("hello-tour_OpenPanel_testPage");
+    yield new Promise(resolve => {
+      gContentAPI.ping(() => resolve());
+    });
+
+    let loopDoc = document.getElementById("loop-notification-panel").children[0].contentDocument;
+    let gettingStartedButton = loopDoc.getElementById("fte-button");
+    ok(gettingStartedButton, "Getting Started button should be found");
+
+    let newTabPromise = waitForConditionPromise(() => {
+      return gBrowser.currentURI.path.contains("utm_source=firefox-browser");
+    }, "New tab with utm_content=testPageNewID should have opened");
+
+    gettingStartedButton.click();
+    yield newTabPromise;
+    ok(gBrowser.currentURI.path.contains("utm_content=hello-tour_OpenPanel_testPage"),
+        "Expected URL opened (" + gBrowser.currentURI.path + ")");
+    yield gBrowser.removeCurrentTab();
+
+    checkLoopPanelIsHidden();
+  }),
+  taskify(function* test_gettingStartedClicked_linkOpenedWithExpectedParams2() {
+    Services.prefs.setBoolPref("loop.gettingStarted.seen", false);
+    
+    
+    let loopWin = document.getElementById("loop-notification-panel").children[0].contentWindow;
+    var event = new loopWin.CustomEvent("GettingStartedSeen");
+    loopWin.dispatchEvent(event);
+
+    UITour.pageIDsForSession.clear();
+    Services.prefs.setCharPref("loop.gettingStarted.url", "http://example.com");
+    ise(loopButton.open, false, "Menu should initially be closed");
+    loopButton.click();
+
+    yield waitForConditionPromise(() => {
+      return loopButton.open;
+    }, "Menu should be visible after showMenu()");
+
+
+    gContentAPI.registerPageID("hello-tour_OpenPanel_testPageOldId");
+    yield new Promise(resolve => {
+      gContentAPI.ping(() => resolve());
+    });
+    
+    UITour.pageIDsForSession.set("hello-tour_OpenPanel_testPageOldId",
+                                   {lastSeen: Date.now() - (10 * 60 * 60 * 1000)});
+
+    let loopDoc = loopWin.document;
+    let gettingStartedButton = loopDoc.getElementById("fte-button");
+    ok(gettingStartedButton, "Getting Started button should be found");
+
+    let newTabPromise = waitForConditionPromise(() => {
+      Services.console.logStringMessage(gBrowser.currentURI.path);
+      return gBrowser.currentURI.path.contains("utm_source=firefox-browser");
+    }, "New tab with utm_content=testPageNewID should have opened");
+
+    gettingStartedButton.click();
+    yield newTabPromise;
+    ok(!gBrowser.currentURI.path.contains("utm_content=hello-tour_OpenPanel_testPageOldId"),
+       "Expected URL opened without the utm_content parameter (" +
+        gBrowser.currentURI.path + ")");
+    yield gBrowser.removeCurrentTab();
+
+    checkLoopPanelIsHidden();
+  }),
   taskify(function* test_menu_show_hide() {
+    
+    Services.prefs.setBoolPref("loop.gettingStarted.seen", true);
     ise(loopButton.open, false, "Menu should initially be closed");
     gContentAPI.showMenu("loop");
 
@@ -47,7 +124,7 @@ let tests = [
 
     checkLoopPanelIsHidden();
   }),
-  // Test the menu was cleaned up in teardown.
+  
   taskify(function* setup_menu_cleanup() {
     gContentAPI.showMenu("loop");
 
@@ -55,10 +132,10 @@ let tests = [
       return loopButton.open;
     }, "Menu should be visible after showMenu()");
 
-    // Leave it open so it gets torn down and we can test below that teardown was succesful.
+    
   }),
   taskify(function* test_menu_cleanup() {
-    // Test that the open menu from above was torn down fully.
+    
     checkLoopPanelIsHidden();
   }),
   function test_availableTargets(done) {
@@ -204,13 +281,13 @@ let tests = [
   taskify(function* test_resumeViaMenuPanel_roomClosedTabOpen() {
     Services.prefs.setBoolPref("loop.gettingStarted.resumeOnFirstJoin", true);
 
-    // Create a fake room and then add a fake non-owner participant
+    
     let roomsMap = setupFakeRoom();
     roomsMap.get("fakeTourRoom").participants = [{
       owner: false,
     }];
 
-    // Set the tour URL to be the current page with a different query param
+    
     let gettingStartedURL = gTestTab.linkedBrowser.currentURI.resolve("?gettingstarted=1");
     Services.prefs.setCharPref("loop.gettingStarted.url", gettingStartedURL);
 
@@ -223,7 +300,7 @@ let tests = [
       });
     });
 
-    // Now open the menu while that non-owner is in the fake room to trigger resuming the tour
+    
     yield showMenuPromise("loop");
 
     yield observationPromise;
@@ -232,20 +309,20 @@ let tests = [
   taskify(function* test_resumeViaMenuPanel_roomClosedTabClosed() {
     Services.prefs.setBoolPref("loop.gettingStarted.resumeOnFirstJoin", true);
 
-    // Create a fake room and then add a fake non-owner participant
+    
     let roomsMap = setupFakeRoom();
     roomsMap.get("fakeTourRoom").participants = [{
       owner: false,
     }];
 
-    // Set the tour URL to a page that's not open yet
+    
     Services.prefs.setCharPref("loop.gettingStarted.url", gBrowser.currentURI.prePath);
 
     let newTabPromise = waitForConditionPromise(() => {
       return gBrowser.currentURI.path.contains("incomingConversation=waiting");
     }, "New tab with incomingConversation=waiting should have opened");
 
-    // Now open the menu while that non-owner is in the fake room to trigger resuming the tour
+    
     yield showMenuPromise("loop");
 
     yield newTabPromise;
@@ -255,7 +332,7 @@ let tests = [
   }),
 ];
 
-// End tests
+
 
 function checkLoopPanelIsHidden() {
   ok(!loopPanel.hasAttribute("noautohide"), "@noautohide on the loop panel should have been cleaned up");
@@ -277,8 +354,6 @@ function setupFakeRoom() {
 
 if (Services.prefs.getBoolPref("loop.enabled")) {
   loopButton = window.LoopUI.toolbarButton.node;
-  // The targets to highlight only appear after getting started is launched.
-  Services.prefs.setBoolPref("loop.gettingStarted.seen", true);
 
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("loop.gettingStarted.resumeOnFirstJoin");
@@ -286,17 +361,17 @@ if (Services.prefs.getBoolPref("loop.enabled")) {
     Services.prefs.clearUserPref("loop.gettingStarted.url");
     Services.io.offline = false;
 
-    // Copied from browser/components/loop/test/mochitest/head.js
-    // Remove the iframe after each test. This also avoids mochitest complaining
-    // about leaks on shutdown as we intentionally hold the iframe open for the
-    // life of the application.
+    
+    
+    
+    
     let frameId = loopButton.getAttribute("notificationFrameId");
     let frame = document.getElementById(frameId);
     if (frame) {
       frame.remove();
     }
 
-    // Remove the stubbed rooms
+    
     LoopRooms.stubCache(null);
   });
 } else {
