@@ -26,6 +26,15 @@ GCTraceKindToAscii(JS::TraceKind kind);
 
 } 
 
+namespace js {
+class BaseShape;
+class LazyScript;
+class ObjectGroup;
+namespace jit {
+class JitCode;
+} 
+} 
+
 enum WeakMapTraceKind {
     DoNotTraceWeakMaps = 0,
     TraceWeakMapValues = 1,

@@ -23,6 +23,18 @@
 
 #include "vm/NativeObject.h"
 
+#define FOR_EACH_GC_LAYOUT(D)
+ \
+    D(BaseShape,     js::BaseShape,     true) \
+    D(JitCode,       js::jit::JitCode,  true) \
+    D(LazyScript,    js::LazyScript,    true) \
+    D(Object,        JSObject,          true) \
+    D(ObjectGroup,   js::ObjectGroup,   true) \
+    D(Script,        JSScript,          true) \
+    D(Shape,         js::Shape,         true) \
+    D(String,        JSString,          false) \
+    D(Symbol,        JS::Symbol,        false)
+
 namespace js {
 
 unsigned GetCPUCount();
@@ -52,6 +64,15 @@ enum State {
 };
 
 
+template <typename T> struct MapTypeToTraceKind {};
+#define EXPAND_DEF(name, type, _) \
+    template <> struct MapTypeToTraceKind<type> { \
+        static const JS::TraceKind kind = JS::TraceKind::name; \
+    };
+FOR_EACH_GC_LAYOUT(EXPAND_DEF);
+#undef EXPAND_DEF
+
+
 template <typename T> struct MapTypeToFinalizeKind {};
 template <> struct MapTypeToFinalizeKind<JSScript>          { static const AllocKind kind = AllocKind::SCRIPT; };
 template <> struct MapTypeToFinalizeKind<LazyScript>        { static const AllocKind kind = AllocKind::LAZY_SCRIPT; };
@@ -68,7 +89,7 @@ template <> struct MapTypeToFinalizeKind<jit::JitCode>      { static const Alloc
 template <typename T> struct ParticipatesInCC {};
 #define EXPAND_PARTICIPATES_IN_CC(_, type, addToCCKind) \
     template <> struct ParticipatesInCC<type> { static const bool value = addToCCKind; };
-JS_FOR_EACH_TRACEKIND(EXPAND_PARTICIPATES_IN_CC)
+FOR_EACH_GC_LAYOUT(EXPAND_PARTICIPATES_IN_CC)
 #undef EXPAND_PARTICIPATES_IN_CC
 
 static inline bool
@@ -156,6 +177,53 @@ CanBeFinalizedInBackground(AllocKind kind, const Class* clasp)
             (!clasp->finalize || (clasp->flags & JSCLASS_BACKGROUND_FINALIZE)));
 }
 
+
+
+
+
+
+
+
+
+
+
+#ifdef _MSC_VER
+# define DEPENDENT_TEMPLATE_HINT
+#else
+# define DEPENDENT_TEMPLATE_HINT template
+#endif
+template <typename F, typename... Args>
+auto
+CallTyped(F f, JS::TraceKind traceKind, Args&&... args)
+  -> decltype(f. DEPENDENT_TEMPLATE_HINT operator()<JSObject>(mozilla::Forward<Args>(args)...))
+{
+    switch (traceKind) {
+#define EXPAND_DEF(name, type, _) \
+      case JS::TraceKind::name: \
+        return f. DEPENDENT_TEMPLATE_HINT operator()<type>(mozilla::Forward<Args>(args)...);
+      FOR_EACH_GC_LAYOUT(EXPAND_DEF);
+#undef EXPAND_DEF
+      default:
+          MOZ_CRASH("Invalid trace kind in CallTyped.");
+    }
+}
+#undef DEPENDENT_TEMPLATE_HINT
+
+template <typename F, typename... Args>
+auto
+CallTyped(F f, void* thing, JS::TraceKind traceKind, Args&&... args)
+  -> decltype(f(reinterpret_cast<JSObject*>(0), mozilla::Forward<Args>(args)...))
+{
+    switch (traceKind) {
+#define EXPAND_DEF(name, type, _) \
+      case JS::TraceKind::name: \
+          return f(static_cast<type*>(thing), mozilla::Forward<Args>(args)...);
+      FOR_EACH_GC_LAYOUT(EXPAND_DEF);
+#undef EXPAND_DEF
+      default:
+          MOZ_CRASH("Invalid trace kind in CallTyped.");
+    }
+}
 
 const size_t SLOTS_TO_THING_KIND_LIMIT = 17;
 

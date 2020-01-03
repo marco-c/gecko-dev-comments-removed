@@ -163,10 +163,12 @@ class JS_FRIEND_API(GCCellPtr)
     MOZ_IMPLICIT GCCellPtr(decltype(nullptr)) : ptr(checkedCast(nullptr, JS::TraceKind::Null)) {}
 
     
-    template <typename T>
-    explicit GCCellPtr(T* p) : ptr(checkedCast(p, JS::MapTypeToTraceKind<T>::kind)) { }
-    explicit GCCellPtr(JSFunction* p) : ptr(checkedCast(p, JS::TraceKind::Object)) { }
+    explicit GCCellPtr(JSObject* obj) : ptr(checkedCast(obj, JS::TraceKind::Object)) { }
+    explicit GCCellPtr(JSFunction* fun) : ptr(checkedCast(fun, JS::TraceKind::Object)) { }
+    explicit GCCellPtr(JSString* str) : ptr(checkedCast(str, JS::TraceKind::String)) { }
     explicit GCCellPtr(JSFlatString* str) : ptr(checkedCast(str, JS::TraceKind::String)) { }
+    explicit GCCellPtr(JS::Symbol* sym) : ptr(checkedCast(sym, JS::TraceKind::Symbol)) { }
+    explicit GCCellPtr(JSScript* script) : ptr(checkedCast(script, JS::TraceKind::Script)) { }
     explicit GCCellPtr(const Value& v);
 
     JS::TraceKind kind() const {
@@ -183,22 +185,31 @@ class JS_FRIEND_API(GCCellPtr)
     }
 
     
-    template <typename T>
-    bool is() const { return kind() == JS::MapTypeToTraceKind<T>::kind; }
+    bool isObject() const { return kind() == JS::TraceKind::Object; }
+    bool isScript() const { return kind() == JS::TraceKind::Script; }
+    bool isString() const { return kind() == JS::TraceKind::String; }
+    bool isSymbol() const { return kind() == JS::TraceKind::Symbol; }
+    bool isShape() const { return kind() == JS::TraceKind::Shape; }
+    bool isObjectGroup() const { return kind() == JS::TraceKind::ObjectGroup; }
 
     
     
-    template <typename T>
-    T& as() const {
-        MOZ_ASSERT(kind() == JS::MapTypeToTraceKind<T>::kind);
-        
-        
-        return *reinterpret_cast<T*>(asCell());
+    JSObject* toObject() const {
+        MOZ_ASSERT(kind() == JS::TraceKind::Object);
+        return reinterpret_cast<JSObject*>(asCell());
     }
-
-    
-    
-    
+    JSString* toString() const {
+        MOZ_ASSERT(kind() == JS::TraceKind::String);
+        return reinterpret_cast<JSString*>(asCell());
+    }
+    JSScript* toScript() const {
+        MOZ_ASSERT(kind() == JS::TraceKind::Script);
+        return reinterpret_cast<JSScript*>(asCell());
+    }
+    Symbol* toSymbol() const {
+        MOZ_ASSERT(kind() == JS::TraceKind::Symbol);
+        return reinterpret_cast<Symbol*>(asCell());
+    }
     js::gc::Cell* asCell() const {
         return reinterpret_cast<js::gc::Cell*>(ptr & ~OutOfLineTraceKindMask);
     }
