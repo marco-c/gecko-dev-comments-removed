@@ -8,7 +8,6 @@
 #include "mozilla/DebugOnly.h"
 
 #include "WindowsMessageLoop.h"
-#include "Neutering.h"
 #include "MessageChannel.h"
 
 #include "nsAutoPtr.h"
@@ -863,85 +862,6 @@ IsTimeoutExpired(PRIntervalTime aStart, PRIntervalTime aTimeout)
     (aTimeout <= (PR_IntervalNow() - aStart));
 }
 
-static HHOOK gWindowHook;
-
-static inline void
-StartNeutering()
-{
-  MOZ_ASSERT(gUIThreadId);
-  MOZ_ASSERT(!gWindowHook);
-  NS_ASSERTION(!MessageChannel::IsPumpingMessages(),
-               "Shouldn't be pumping already!");
-  MessageChannel::SetIsPumpingMessages(true);
-  gWindowHook = ::SetWindowsHookEx(WH_CALLWNDPROC, CallWindowProcedureHook,
-                                   nullptr, gUIThreadId);
-  NS_ASSERTION(gWindowHook, "Failed to set hook!");
-}
-
-static void
-StopNeutering()
-{
-  MOZ_ASSERT(MessageChannel::IsPumpingMessages());
-  ::UnhookWindowsHookEx(gWindowHook);
-  gWindowHook = NULL;
-  ::UnhookNeuteredWindows();
-  
-  
-  
-  
-  ::ScheduleDeferredMessageRun();
-  MessageChannel::SetIsPumpingMessages(false);
-}
-
-NeuteredWindowRegion::NeuteredWindowRegion(bool aDoNeuter MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : mNeuteredByThis(!gWindowHook)
-{
-  MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-  if (aDoNeuter && mNeuteredByThis) {
-    StartNeutering();
-  }
-}
-
-NeuteredWindowRegion::~NeuteredWindowRegion()
-{
-  if (gWindowHook && mNeuteredByThis) {
-    StopNeutering();
-  }
-}
-
-void
-NeuteredWindowRegion::PumpOnce()
-{
-  MSG msg = {0};
-  if (gCOMWindow) {
-    
-    
-    if (::PeekMessageW(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {
-      ::TranslateMessage(&msg);
-      ::DispatchMessageW(&msg);
-    }
-  } else {
-    
-    ::PeekMessageW(&msg, nullptr, 0, 0, PM_NOREMOVE);
-  }
-}
-
-DeneuteredWindowRegion::DeneuteredWindowRegion(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM_IN_IMPL)
-  : mReneuter(gWindowHook != NULL)
-{
-  MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-  if (mReneuter) {
-    StopNeutering();
-  }
-}
-
-DeneuteredWindowRegion::~DeneuteredWindowRegion()
-{
-  if (mReneuter) {
-    StartNeutering();
-  }
-}
-
 bool
 MessageChannel::WaitForSyncNotify()
 {
@@ -995,6 +915,15 @@ MessageChannel::WaitForSyncNotify()
     timerId = SetTimer(nullptr, 0, mTimeoutMs, nullptr);
     NS_ASSERTION(timerId, "SetTimer failed!");
   }
+
+  
+  NS_ASSERTION(!MessageChannel::IsPumpingMessages(),
+               "Shouldn't be pumping already!");
+
+  MessageChannel::SetIsPumpingMessages(true);
+  HHOOK windowHook = SetWindowsHookEx(WH_CALLWNDPROC, CallWindowProcedureHook,
+                                      nullptr, gUIThreadId);
+  NS_ASSERTION(windowHook, "Failed to set hook!");
 
   {
     while (1) {
@@ -1069,10 +998,24 @@ MessageChannel::WaitForSyncNotify()
     }
   }
 
+  
+  UnhookWindowsHookEx(windowHook);
+
+  
+  
+  UnhookNeuteredWindows();
+
+  
+  
+  
+  
+  ScheduleDeferredMessageRun();
+
   if (timerId) {
     KillTimer(nullptr, timerId);
-    timerId = 0;
   }
+
+  MessageChannel::SetIsPumpingMessages(false);
 
   return WaitResponse(timedout);
 }
@@ -1110,25 +1053,53 @@ MessageChannel::WaitForInterruptNotify()
   
   
   
+  
+  HHOOK windowHook = nullptr;
+
   while (1) {
-    NS_ASSERTION((!!gWindowHook) == MessageChannel::IsPumpingMessages(),
-                 "gWindowHook out of sync with reality");
+    NS_ASSERTION((!!windowHook) == MessageChannel::IsPumpingMessages(),
+                 "windowHook out of sync with reality");
 
     if (mTopFrame->mSpinNestedEvents) {
-      if (gWindowHook && timerId) {
-        KillTimer(nullptr, timerId);
-        timerId = 0;
+      if (windowHook) {
+        UnhookWindowsHookEx(windowHook);
+        windowHook = nullptr;
+
+        if (timerId) {
+          KillTimer(nullptr, timerId);
+          timerId = 0;
+        }
+
+        
+        MessageChannel::SetIsPumpingMessages(false);
+
+        
+        
+        UnhookNeuteredWindows();
+
+        
+        
+        
+        ScheduleDeferredMessageRun();
       }
-      DeneuteredWindowRegion deneuteredRgn;
       SpinInternalEventLoop();
       ResetEvent(mEvent);
       return true;
     }
 
-    if (mTimeoutMs != kNoTimeout && !timerId) {
-      InitTimeoutData(&timeoutData, mTimeoutMs);
-      timerId = SetTimer(nullptr, 0, mTimeoutMs, nullptr);
-      NS_ASSERTION(timerId, "SetTimer failed!");
+    if (!windowHook) {
+      MessageChannel::SetIsPumpingMessages(true);
+      windowHook = SetWindowsHookEx(WH_CALLWNDPROC, CallWindowProcedureHook,
+                                    nullptr, gUIThreadId);
+      NS_ASSERTION(windowHook, "Failed to set hook!");
+
+      NS_ASSERTION(!timerId, "Timer already initialized?");
+
+      if (mTimeoutMs != kNoTimeout) {
+        InitTimeoutData(&timeoutData, mTimeoutMs);
+        timerId = SetTimer(nullptr, 0, mTimeoutMs, nullptr);
+        NS_ASSERTION(timerId, "SetTimer failed!");
+      }
     }
 
     MSG msg = { 0 };
@@ -1180,10 +1151,26 @@ MessageChannel::WaitForInterruptNotify()
     }
   }
 
-  if (timerId) {
-    KillTimer(nullptr, timerId);
-    timerId = 0;
+  if (windowHook) {
+    
+    UnhookWindowsHookEx(windowHook);
+
+    
+    
+    UnhookNeuteredWindows();
+
+    
+    
+    
+    
+    ScheduleDeferredMessageRun();
+
+    if (timerId) {
+      KillTimer(nullptr, timerId);
+    }
   }
+
+  MessageChannel::SetIsPumpingMessages(false);
 
   return WaitResponse(timedout);
 }

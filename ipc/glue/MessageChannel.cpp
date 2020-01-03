@@ -853,7 +853,6 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
 
 #ifdef OS_WIN
     SyncStackFrame frame(this, false);
-    NeuteredWindowRegion neuteredRgn(mFlags & REQUIRE_DEFERRED_MESSAGE_PROTECTION);
 #endif
 
     CxxStackFrame f(*this, OUT_MESSAGE, msg);
@@ -995,7 +994,6 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
 
 #ifdef OS_WIN
     SyncStackFrame frame(this, true);
-    NeuteredWindowRegion neuteredRgn(mFlags & REQUIRE_DEFERRED_MESSAGE_PROTECTION);
 #endif
 
     
@@ -1033,12 +1031,6 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
             ReportConnectionError("MessageChannel::Call");
             return false;
         }
-
-#ifdef OS_WIN
-        
-
-        neuteredRgn.PumpOnce();
-#endif
 
         
         
@@ -1156,7 +1148,6 @@ MessageChannel::WaitForIncomingMessage()
 {
 #ifdef OS_WIN
     SyncStackFrame frame(this, true);
-    NeuteredWindowRegion neuteredRgn(mFlags & REQUIRE_DEFERRED_MESSAGE_PROTECTION);
 #endif
 
     { 
