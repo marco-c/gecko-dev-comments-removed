@@ -234,7 +234,7 @@ Animation::Finish(ErrorResult& aRv)
   TimeDuration limit =
     mPlaybackRate > 0 ? TimeDuration(EffectEnd()) : TimeDuration(0);
 
-  SetCurrentTime(limit);
+  SilentlySetCurrentTime(limit);
 
   
   
@@ -254,8 +254,12 @@ Animation::Finish(ErrorResult& aRv)
   
   
   
-  if (mPendingState == PendingState::PlayPending &&
-      !mStartTime.IsNull()) {
+  if (!mStartTime.IsNull() &&
+      (mPendingState == PendingState::PlayPending ||
+       mPendingState == PendingState::PausePending)) {
+    if (mPendingState == PendingState::PausePending) {
+      mHoldTime.SetNull();
+    }
     CancelPendingTasks();
     if (mReady) {
       mReady->MaybeResolve(this);
