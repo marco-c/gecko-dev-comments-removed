@@ -4044,7 +4044,8 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
 
 
 
-        if (!referent.is<JSObject>())
+
+        if (!referent.is<JSObject>() || referent.exposeToJS().isUndefined())
             return true;
 
         JSObject* obj = referent.as<JSObject>();
