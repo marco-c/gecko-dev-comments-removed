@@ -1743,52 +1743,52 @@ Toolbox.prototype = {
 
 
   destroyInspector: function() {
-    if (this._destroying) {
-      return this._destroying;
+    if (this._destroyingInspector) {
+      return this._destroyingInspector;
     }
 
-    if (!this._inspector) {
-      return promise.resolve();
-    }
+    return this._destroyingInspector = Task.spawn(function*() {
+      if (!this._inspector) {
+        return;
+      }
 
-    let outstanding = () => {
-      return Task.spawn(function*() {
-        yield this.highlighterUtils.stopPicker();
-        yield this._inspector.destroy();
-        if (this._highlighter) {
-          
-          
-          
-          
-          
-          if (!this.highlighter.traits.autoHideOnDestroy) {
-            this.highlighterUtils.unhighlight();
-          }
-          yield this._highlighter.destroy();
+      
+      
+      
+      
+      if (this._walker && !this.walker.traits.autoReleased) {
+        try {
+          yield this._walker.release();
+        } catch(e) {}
+      }
+
+      yield this.highlighterUtils.stopPicker();
+      yield this._inspector.destroy();
+      if (this._highlighter) {
+        
+        
+        
+        
+        
+        if (!this.highlighter.traits.autoHideOnDestroy) {
+          this.highlighterUtils.unhighlight();
         }
-        if (this._selection) {
-          this._selection.destroy();
-        }
+        yield this._highlighter.destroy();
+      }
+      if (this._selection) {
+        this._selection.destroy();
+      }
 
-        if (this.walker) {
-          this.walker.off("highlighter-ready", this._highlighterReady);
-          this.walker.off("highlighter-hide", this._highlighterHidden);
-        }
+      if (this.walker) {
+        this.walker.off("highlighter-ready", this._highlighterReady);
+        this.walker.off("highlighter-hide", this._highlighterHidden);
+      }
 
-        this._inspector = null;
-        this._highlighter = null;
-        this._selection = null;
-        this._walker = null;
-      }.bind(this));
-    };
-
-    
-    
-    
-    let walker = (this._destroying = this._walker) ?
-                 this._walker.release() :
-                 promise.resolve();
-    return walker.then(outstanding, outstanding);
+      this._inspector = null;
+      this._highlighter = null;
+      this._selection = null;
+      this._walker = null;
+    }.bind(this));
   },
 
   
