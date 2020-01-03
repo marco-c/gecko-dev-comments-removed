@@ -175,18 +175,22 @@ public class DynamicToolbarAnimator {
         mTarget.getView().postRenderTask(mAnimationTask);
     }
 
+    IntSize getViewportSize() {
+        int viewWidth = mTarget.getView().getWidth();
+        int viewHeight = mTarget.getView().getHeight();
+        int viewHeightVisible = viewHeight - Math.round(mMaxTranslation - mToolbarTranslation);
+        return new IntSize(viewWidth, viewHeightVisible);
+    }
+
     private void resizeViewport() {
         ThreadUtils.assertOnUiThread();
 
         
         
         synchronized (mTarget.getLock()) {
-            int viewWidth = mTarget.getView().getWidth();
-            int viewHeight = mTarget.getView().getHeight();
-            int viewHeightVisible = viewHeight - Math.round(mMaxTranslation - mToolbarTranslation);
-
-            Log.v(LOGTAG, "Resize viewport to dimensions " + viewWidth + "x" + viewHeightVisible);
-            mTarget.setViewportSize(viewWidth, viewHeightVisible);
+            IntSize viewportSize = getViewportSize();
+            Log.v(LOGTAG, "Resize viewport to dimensions " + viewportSize);
+            mTarget.setViewportSize(viewportSize.width, viewportSize.height);
         }
     }
 
