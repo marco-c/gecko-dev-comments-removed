@@ -141,7 +141,7 @@ public:
 
   virtual void CancelFromStyle() { DoCancel(); }
 
-  void Tick();
+  virtual void Tick();
 
   
 
