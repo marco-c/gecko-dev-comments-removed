@@ -56,7 +56,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback, AppStateL
   private Handler cameraThreadHandler;
   private Context context;
   private final int id;
-  private final long native_capturer;  
+  private volatile long native_capturer;  
   private SurfaceTexture cameraSurfaceTexture;
   private int[] cameraGlTextures = null;
 
@@ -371,6 +371,15 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback, AppStateL
     cameraThread = null;
     Log.d(TAG, "stopCapture done");
     return status;
+  }
+
+  @WebRTCJNITarget
+  private void unlinkCapturer() {
+    
+    
+    
+    
+    native_capturer = 0;
   }
 
   private void stopCaptureOnCameraThread(
