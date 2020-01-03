@@ -4886,9 +4886,6 @@ pref("dom.system_update.debug", false);
 pref("dom.udpsocket.enabled", false);
 
 
-pref("dom.messageChannel.enabled", true);
-
-
 pref("dom.beforeAfterKeyboardEvent.enabled", false);
 
 
