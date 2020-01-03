@@ -152,8 +152,8 @@ typedef CallbackObjectHolder<NodeFilter, nsIDOMNodeFilter> NodeFilterHolder;
 } 
 
 #define NS_IDOCUMENT_IID \
-{ 0x6d18ec0b, 0x1f68, 0x4ae6, \
-  { 0x8b, 0x3d, 0x8d, 0x7d, 0x8b, 0x8e, 0x28, 0xd4 } }
+{ 0x292450a1, 0x285e, 0x4a09, \
+  { 0x9a, 0xf9, 0x61, 0xf9, 0xb1, 0xbd, 0x27, 0xcc } }
 
 
 enum DocumentFlavor {
@@ -1373,9 +1373,10 @@ public:
   
 
 
-  virtual nsresult CreateElem(const nsAString& aName, nsIAtom *aPrefix,
-                              int32_t aNamespaceID,
-                              nsIContent** aResult) = 0;
+
+  virtual already_AddRefed<Element> CreateElem(const nsAString& aName,
+                                               nsIAtom* aPrefix,
+                                               int32_t aNamespaceID) = 0;
 
   
 
