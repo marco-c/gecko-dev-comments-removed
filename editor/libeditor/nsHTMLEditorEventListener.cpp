@@ -81,7 +81,11 @@ nsHTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
   
   
   if (!htmlEditor->IsAcceptableInputEvent(aMouseEvent)) {
-    return NS_OK;
+    
+    
+    
+    
+    return nsEditorEventListener::MouseDown(aMouseEvent);
   }
 
   

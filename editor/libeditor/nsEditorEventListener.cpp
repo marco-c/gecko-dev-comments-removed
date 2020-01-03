@@ -783,6 +783,8 @@ nsEditorEventListener::NotifyIMEOfMouseButtonEvent(
 nsresult
 nsEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
 {
+  
+  
   mEditor->ForceCompositionEnd();
   return NS_OK;
 }
