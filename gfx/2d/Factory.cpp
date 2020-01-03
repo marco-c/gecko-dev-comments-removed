@@ -621,7 +621,9 @@ Factory::SetDirect3D10Device(ID3D10Device1 *aDevice)
   
   
   
-  aDevice->SetExceptionMode(0);
+  if (aDevice) {
+    aDevice->SetExceptionMode(0);
+  }
   mD3D10Device = aDevice;
 }
 
