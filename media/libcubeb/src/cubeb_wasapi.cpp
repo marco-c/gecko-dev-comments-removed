@@ -919,9 +919,6 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
   }
 
   
-  WAVEFORMATEX hw_mixformat = **mix_format;
-
-  
 
 
 
@@ -930,9 +927,13 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
     return;
   }
 
+  WAVEFORMATEXTENSIBLE * format_pcm = reinterpret_cast<WAVEFORMATEXTENSIBLE *>(*mix_format);
+
+  
+  WAVEFORMATEXTENSIBLE hw_mix_format = *format_pcm;
+
   
 
-  WAVEFORMATEXTENSIBLE * format_pcm = reinterpret_cast<WAVEFORMATEXTENSIBLE *>((*mix_format));
   switch (stream_params->channels) {
     case 1: 
       format_pcm->dwChannelMask = KSAUDIO_SPEAKER_MONO;
@@ -969,7 +970,7 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
     
 
 
-    **mix_format = hw_mixformat;
+    *reinterpret_cast<WAVEFORMATEXTENSIBLE *>(*mix_format) = hw_mix_format;
   } else if (hr == S_OK) {
     LOG("Requested format accepted by WASAPI.\n");
   }
