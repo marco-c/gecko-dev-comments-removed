@@ -275,41 +275,6 @@ private:
   
 
 
-
-
-
-
-  struct GetPermissionsForAppStruct {
-    uint32_t                  appId;
-    bool                      browserOnly;
-    nsCOMArray<nsIPermission> permissions;
-
-    GetPermissionsForAppStruct() = delete;
-    GetPermissionsForAppStruct(uint32_t aAppId, bool aBrowserOnly)
-      : appId(aAppId)
-      , browserOnly(aBrowserOnly)
-    {}
-  };
-
-  
-
-
-
-
-  static PLDHashOperator
-  GetPermissionsForApp(PermissionHashKey* entry, void* arg);
-
-  
-
-
-  static PLDHashOperator
-  RemoveExpiredPermissionsForAppEnumerator(PermissionHashKey* entry,
-                                           void* nonused);
-
-
-  
-
-
   nsresult
   RemoveAllModifiedSince(int64_t aModificationTime);
 
