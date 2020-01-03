@@ -21,27 +21,39 @@ using mozilla::net::NeckoParent;
 
 namespace {
 
-bool
-CreateDummyChannel(nsIURI* aHostURI, bool aIsPrivate, nsIChannel **aChannel)
+
+
+void
+CreateDummyChannel(nsIURI* aHostURI, uint32_t aAppId, bool aInMozBrowser,
+                   bool aIsPrivate, nsIChannel **aChannel)
 {
+  MOZ_ASSERT(aAppId != nsIScriptSecurityManager::UNKNOWN_APP_ID);
+
   nsCOMPtr<nsIPrincipal> principal;
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-  nsresult rv = ssm->GetNoAppCodebasePrincipal(aHostURI, getter_AddRefs(principal));
+  nsresult rv = ssm->GetAppCodebasePrincipal(aHostURI, aAppId, aInMozBrowser,
+                                             getter_AddRefs(principal));
   if (NS_FAILED(rv)) {
-    return false;
+    return;
+  }
+
+  nsCOMPtr<nsIURI> dummyURI;
+  rv = NS_NewURI(getter_AddRefs(dummyURI), "about:blank");
+  if (NS_FAILED(rv)) {
+      return;
   }
 
   nsCOMPtr<nsIChannel> dummyChannel;
-  NS_NewChannel(getter_AddRefs(dummyChannel), aHostURI, principal,
+  NS_NewChannel(getter_AddRefs(dummyChannel), dummyURI, principal,
                 nsILoadInfo::SEC_NORMAL, nsIContentPolicy::TYPE_INVALID);
   nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel = do_QueryInterface(dummyChannel);
   if (!pbChannel) {
-    return false;
+    return;
   }
 
   pbChannel->SetPrivate(aIsPrivate);
   dummyChannel.forget(aChannel);
-  return true;
+  return;
 }
 
 }
@@ -163,10 +175,10 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
   
   
   nsCOMPtr<nsIChannel> dummyChannel;
-  if (!CreateDummyChannel(hostURI, isPrivate, getter_AddRefs(dummyChannel))) {
-    return false;
-  }
+  CreateDummyChannel(hostURI, appId, isInBrowserElement,
+                     isPrivate, getter_AddRefs(dummyChannel));
 
+  
   nsDependentCString cookieString(aCookieString, 0);
   mCookieService->SetCookieStringInternal(hostURI, aIsForeign, cookieString,
                                           aServerTime, aFromHttp, appId,
