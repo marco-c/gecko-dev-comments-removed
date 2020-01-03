@@ -789,7 +789,9 @@ NewImageChannel(nsIChannel** aResult,
     
     
     
-    MOZ_ASSERT(nsContentUtils::IsSystemPrincipal(triggeringPrincipal));
+    
+    
+    
     rv = NS_NewChannel(aResult,
                        aURI,
                        triggeringPrincipal,
