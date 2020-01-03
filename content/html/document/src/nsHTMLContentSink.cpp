@@ -1056,7 +1056,7 @@ HTMLContentSink::NotifyInsert(nsIContent* aContent,
                               nsIContent* aChildContent,
                               int32_t aIndexInContainer)
 {
-  if (aContent && aContent->GetCurrentDoc() != mDocument) {
+  if (aContent && aContent->GetUncomposedDoc() != mDocument) {
     
     
     return;
