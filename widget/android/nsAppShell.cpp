@@ -245,7 +245,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
             
             
             
-            if (AndroidBridge::HasEnv() &&
+            if (jni::IsAvailable() &&
                     AndroidBridge::Bridge()->PumpMessageLoop()) {
                 return true;
             }

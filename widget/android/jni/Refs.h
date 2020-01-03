@@ -157,7 +157,7 @@ public:
     {
         
         return Cls::mInstance == other.mInstance &&
-                GetJNIForThread()->IsSameObject(
+                GetEnvForThread()->IsSameObject(
                         Cls::mInstance, other.mInstance) != JNI_FALSE;
     }
 
@@ -321,7 +321,7 @@ public:
     
     static LocalRef Adopt(jobject instance)
     {
-        return LocalRef(GetJNIForThread(), instance);
+        return LocalRef(GetEnvForThread(), instance);
     }
 
     static LocalRef Adopt(JNIEnv* env, jobject instance)
@@ -343,7 +343,7 @@ public:
         ref.mInstance = nullptr;
     }
 
-    explicit LocalRef(JNIEnv* env = GetJNIForThread())
+    explicit LocalRef(JNIEnv* env = GetEnvForThread())
         : Ref<Cls>(nullptr)
         , mEnv(env)
     {}
@@ -352,7 +352,7 @@ public:
     
     MOZ_IMPLICIT LocalRef(const Ref<Cls>& ref)
         : Ref<Cls>(nullptr)
-        , mEnv(GetJNIForThread())
+        , mEnv(GetEnvForThread())
     {
         Ref<Cls>::mInstance = mEnv->NewLocalRef(ref.mInstance);
     }
@@ -377,7 +377,7 @@ public:
     
     MOZ_IMPLICIT LocalRef(decltype(nullptr))
         : Ref<Cls>(nullptr)
-        , mEnv(GetJNIForThread())
+        , mEnv(GetEnvForThread())
     {}
 
     ~LocalRef()
@@ -445,7 +445,7 @@ private:
             return nullptr;
         }
         if (!env) {
-            env = GetJNIForThread();
+            env = GetEnvForThread();
         }
         return env->NewGlobalRef(instance);
     }
@@ -491,7 +491,7 @@ public:
     ~GlobalRef()
     {
         if (Ref<Cls>::mInstance) {
-            JNIEnv* const env = GetJNIForThread();
+            JNIEnv* const env = GetEnvForThread();
             env->DeleteGlobalRef(Ref<Cls>::mInstance);
             Ref<Cls>::mInstance = nullptr;
         }
@@ -547,7 +547,7 @@ public:
     
     size_t Length() const
     {
-        JNIEnv* const env = GetJNIForThread();
+        JNIEnv* const env = GetEnvForThread();
         return env->GetStringLength(Get());
     }
 
@@ -556,7 +556,7 @@ public:
     {
         MOZ_ASSERT(String::mInstance);
 
-        JNIEnv* const env = GetJNIForThread();
+        JNIEnv* const env = GetEnvForThread();
         const jchar* const str = env->GetStringChars(Get(), nullptr);
         const jsize len = env->GetStringLength(Get());
 
@@ -596,22 +596,22 @@ public:
         , mEnv(nullptr)
     {}
 
-    MOZ_IMPLICIT Type(const nsAString& str, JNIEnv* env = GetJNIForThread())
+    MOZ_IMPLICIT Type(const nsAString& str, JNIEnv* env = GetEnvForThread())
         : Ref<String>(GetString(env, str))
         , mEnv(env)
     {}
 
-    MOZ_IMPLICIT Type(const char16_t* str, JNIEnv* env = GetJNIForThread())
+    MOZ_IMPLICIT Type(const char16_t* str, JNIEnv* env = GetEnvForThread())
         : Ref<String>(GetString(env, nsDependentString(str)))
         , mEnv(env)
     {}
 
-    MOZ_IMPLICIT Type(const nsACString& str, JNIEnv* env = GetJNIForThread())
+    MOZ_IMPLICIT Type(const nsACString& str, JNIEnv* env = GetEnvForThread())
         : Ref<String>(GetString(env, NS_ConvertUTF8toUTF16(str)))
         , mEnv(env)
     {}
 
-    MOZ_IMPLICIT Type(const char* str, JNIEnv* env = GetJNIForThread())
+    MOZ_IMPLICIT Type(const char* str, JNIEnv* env = GetEnvForThread())
         : Ref<String>(GetString(env, NS_ConvertUTF8toUTF16(str)))
         , mEnv(env)
     {}
@@ -625,7 +625,7 @@ public:
 
     operator String::LocalRef() const
     {
-        JNIEnv* const env = mEnv ? mEnv : GetJNIForThread();
+        JNIEnv* const env = mEnv ? mEnv : GetEnvForThread();
         
         
         return String::LocalRef::Adopt(env, env->NewLocalRef(Get()));
