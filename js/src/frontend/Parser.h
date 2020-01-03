@@ -287,7 +287,7 @@ struct ParseContext : public GenericParseContext
     unsigned blockid() { return stmtStack.innermost() ? stmtStack.innermost()->blockid : bodyid; }
 
     StmtInfoPC* innermostStmt() const { return stmtStack.innermost(); }
-    StmtInfoPC* innermostScopeStmt() const { return stmtStack.innermostScopal(); }
+    StmtInfoPC* innermostScopeStmt() const { return stmtStack.innermostScopeStmt(); }
 
     
     
