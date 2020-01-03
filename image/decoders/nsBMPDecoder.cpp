@@ -39,7 +39,7 @@ GetBMPLog()
 nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   : Decoder(aImage)
   , mPos(0)
-  , mLOH(WIN_V3_HEADER_LENGTH)
+  , mLOH(BMP_HEADER_LENGTH::WIN_V3)
   , mNumColors(0)
   , mColors(nullptr)
   , mRow(nullptr)
@@ -102,10 +102,11 @@ int32_t
 nsBMPDecoder::GetCompressedImageSize() const
 {
   
-  if (mBIH.compression != BI_RGB) {
+  if (mBIH.compression != BMPINFOHEADER::RGB) {
     return mBIH.image_size;
   }
 
+  
   
   
   uint32_t rowSize = (mBIH.bpp * mBIH.width + 7) / 8; 
@@ -208,21 +209,21 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 
   
   
-  MOZ_ASSERT(sizeof(mRawBuf) == WIN_V3_INTERNAL_BIH_LENGTH);
-  MOZ_ASSERT(sizeof(mRawBuf) >= BFH_INTERNAL_LENGTH);
-  MOZ_ASSERT(OS2_INTERNAL_BIH_LENGTH < WIN_V3_INTERNAL_BIH_LENGTH);
+  MOZ_ASSERT(sizeof(mRawBuf) == BIH_INTERNAL_LENGTH::WIN_V3);
+  MOZ_ASSERT(sizeof(mRawBuf) >= BMPFILEHEADER::INTERNAL_LENGTH);
+  MOZ_ASSERT(BIH_INTERNAL_LENGTH::OS2 < BIH_INTERNAL_LENGTH::WIN_V3);
 
   
   MOZ_ASSERT(sizeof(mRawBuf[0]) == 1);
 
-  if (mPos < BFH_INTERNAL_LENGTH) { 
+  if (mPos < BMPFILEHEADER::INTERNAL_LENGTH) { 
       
       
       
       
       
       
-      uint32_t toCopy = BFH_INTERNAL_LENGTH - mPos;
+      uint32_t toCopy = BMPFILEHEADER::INTERNAL_LENGTH - mPos;
       if (toCopy > aCount) {
           toCopy = aCount;
       }
@@ -248,17 +249,17 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       aCount -= toCopy;
       aBuffer += toCopy;
   }
-  if (mPos == BFH_INTERNAL_LENGTH) {
+  if (mPos == BMPFILEHEADER::INTERNAL_LENGTH) {
       ProcessFileHeader();
       if (mBFH.signature[0] != 'B' || mBFH.signature[1] != 'M') {
           PostDataError();
           return;
       }
-      if (mBFH.bihsize == OS2_BIH_LENGTH) {
-          mLOH = OS2_HEADER_LENGTH;
+      if (mBFH.bihsize == BIH_LENGTH::OS2) {
+          mLOH = BMP_HEADER_LENGTH::OS2;
       }
   }
-  if (mPos >= BFH_INTERNAL_LENGTH && mPos < mLOH) { 
+  if (mPos >= BMPFILEHEADER::INTERNAL_LENGTH && mPos < mLOH) { 
       
       
       
@@ -293,7 +294,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       
       
       
-      const uint32_t offset = mPos - BFH_INTERNAL_LENGTH;
+      const uint32_t offset = mPos - BMPFILEHEADER::INTERNAL_LENGTH;
       MOZ_ASSERT(offset < sizeof(mRawBuf));
 
       
@@ -386,7 +387,8 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
         
         mColors = new colorTable[256];
         memset(mColors, 0, 256 * sizeof(colorTable));
-      } else if (mBIH.compression != BI_BITFIELDS && mBIH.bpp == 16) {
+      } else if (mBIH.compression != BMPINFOHEADER::BITFIELDS &&
+                 mBIH.bpp == 16) {
         
         mBitFields.red   = 0x7C00;
         mBitFields.green = 0x03E0;
@@ -396,27 +398,30 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 
       
       
-      if (mBIH.compression != BI_RGB && mBIH.compression != BI_RLE8 &&
-          mBIH.compression != BI_RLE4 && mBIH.compression != BI_BITFIELDS) {
+      if (mBIH.compression != BMPINFOHEADER::RGB &&
+          mBIH.compression != BMPINFOHEADER::RLE8 &&
+          mBIH.compression != BMPINFOHEADER::RLE4 &&
+          mBIH.compression != BMPINFOHEADER::BITFIELDS) {
         PostDataError();
         return;
       }
 
       
       
-      if (mBIH.compression == BI_RLE8 && mBIH.bpp != 8) {
+      if (mBIH.compression == BMPINFOHEADER::RLE8 && mBIH.bpp != 8) {
         MOZ_LOG(GetBMPLog(), LogLevel::Debug,
                ("BMP RLE8 compression only supports 8 bits per pixel\n"));
         PostDataError();
         return;
       }
-      if (mBIH.compression == BI_RLE4 && mBIH.bpp != 4 && mBIH.bpp != 1) {
+      if (mBIH.compression == BMPINFOHEADER::RLE4 &&
+          mBIH.bpp != 4 && mBIH.bpp != 1) {
         MOZ_LOG(GetBMPLog(), LogLevel::Debug,
                ("BMP RLE4 compression only supports 4 bits per pixel\n"));
         PostDataError();
         return;
       }
-      if (mBIH.compression == BI_ALPHABITFIELDS &&
+      if (mBIH.compression == BMPINFOHEADER::ALPHABITFIELDS &&
           mBIH.bpp != 16 && mBIH.bpp != 32) {
         MOZ_LOG(GetBMPLog(), LogLevel::Debug,
                ("BMP ALPHABITFIELDS only supports 16 or 32 bits per pixel\n"
@@ -425,8 +430,9 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
         return;
       }
 
-      if (mBIH.compression != BI_RLE8 && mBIH.compression != BI_RLE4 &&
-          mBIH.compression != BI_ALPHABITFIELDS) {
+      if (mBIH.compression != BMPINFOHEADER::RLE8 &&
+          mBIH.compression != BMPINFOHEADER::RLE4 &&
+          mBIH.compression != BMPINFOHEADER::ALPHABITFIELDS) {
         
         mRow = (uint8_t*)malloc((mBIH.width * mBIH.bpp) / 8 + 4);
         
@@ -447,7 +453,8 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       MOZ_ASSERT(mImageData, "Should have a buffer now");
 
       
-      if ((mBIH.compression == BI_RLE8) || (mBIH.compression == BI_RLE4)) {
+      if ((mBIH.compression == BMPINFOHEADER::RLE8) ||
+          (mBIH.compression == BMPINFOHEADER::RLE4)) {
         
         memset(mImageData, 0, mImageDataLength);
       }
@@ -455,7 +462,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 
   if (mColors && mPos >= mLOH) {
     
-    uint8_t bytesPerColor = (mBFH.bihsize == OS2_BIH_LENGTH) ? 3 : 4;
+    uint8_t bytesPerColor = (mBFH.bihsize == BIH_LENGTH::OS2) ? 3 : 4;
     if (mPos < (mLOH + mNumColors * bytesPerColor)) {
       
       uint32_t colorBytes = mPos - mLOH;
@@ -488,9 +495,9 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
         at = (at + 1) % bytesPerColor;
       }
     }
-  } else if (aCount && mBIH.compression == BI_BITFIELDS && mPos <
-         (WIN_V3_HEADER_LENGTH + BITFIELD_LENGTH)) {
-    
+  } else if (aCount &&
+             mBIH.compression == BMPINFOHEADER::BITFIELDS &&
+             mPos < (BMP_HEADER_LENGTH::WIN_V3 + bitFields::LENGTH)) {
     
     
     
@@ -498,7 +505,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
     
     
     MOZ_ASSERT(mPos >= mLOH);
-    MOZ_ASSERT(mLOH == WIN_V3_HEADER_LENGTH);
+    MOZ_ASSERT(mLOH == BMP_HEADER_LENGTH::WIN_V3);
 
     
     
@@ -506,7 +513,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
     
     
     
-    uint32_t toCopy = (WIN_V3_HEADER_LENGTH + BITFIELD_LENGTH) - mPos;
+    uint32_t toCopy = (BMP_HEADER_LENGTH::WIN_V3 + bitFields::LENGTH) - mPos;
     if (toCopy > aCount) {
       toCopy = aCount;
     }
@@ -522,7 +529,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
     
     
     
-    const uint32_t offset = mPos - WIN_V3_HEADER_LENGTH;
+    const uint32_t offset = mPos - BMP_HEADER_LENGTH::WIN_V3;
     MOZ_ASSERT(offset < sizeof(mRawBuf));
 
     
@@ -553,8 +560,8 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
     aBuffer += toCopy;
     aCount -= toCopy;
   }
-  if (mPos == WIN_V3_HEADER_LENGTH + BITFIELD_LENGTH &&
-    mBIH.compression == BI_BITFIELDS) {
+  if (mPos == BMP_HEADER_LENGTH::WIN_V3 + bitFields::LENGTH &&
+      mBIH.compression == BMPINFOHEADER::BITFIELDS) {
     mBitFields.red = LittleEndian::readUint32(reinterpret_cast<uint32_t*>
                                               (mRawBuf));
     mBitFields.green = LittleEndian::readUint32(reinterpret_cast<uint32_t*>
@@ -570,7 +577,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
   if (aCount && ++mPos >= mBFH.dataoffset) {
     
     
-    if (!mBIH.compression || mBIH.compression == BI_BITFIELDS) {
+    if (!mBIH.compression || mBIH.compression == BMPINFOHEADER::BITFIELDS) {
         uint32_t rowSize = (mBIH.bpp * mBIH.width + 7) / 8; 
                                                             
         if (rowSize % 4) {
@@ -689,10 +696,10 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
           mRowBytes = 0;
         }
       } while (aCount > 0);
-    } else if ((mBIH.compression == BI_RLE8) ||
-             (mBIH.compression == BI_RLE4)) {
-      if (((mBIH.compression == BI_RLE8) && (mBIH.bpp != 8)) ||
-          ((mBIH.compression == BI_RLE4) && (mBIH.bpp != 4) &&
+    } else if ((mBIH.compression == BMPINFOHEADER::RLE8) ||
+               (mBIH.compression == BMPINFOHEADER::RLE4)) {
+      if (((mBIH.compression == BMPINFOHEADER::RLE8) && (mBIH.bpp != 8)) ||
+          ((mBIH.compression == BMPINFOHEADER::RLE4) && (mBIH.bpp != 4) &&
            (mBIH.bpp != 1))) {
         MOZ_LOG(GetBMPLog(), LogLevel::Debug,
                ("BMP RLE8/RLE4 compression only supports 8/4 bits per"
@@ -715,7 +722,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
           case eRLEStateNeedSecondEscapeByte:
             byte = *aBuffer++;
             aCount--;
-            if (mStateData != RLE_ESCAPE) { 
+            if (mStateData != RLE::ESCAPE) { 
               
               
               
@@ -729,7 +736,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
                 uint32_t* d = reinterpret_cast<uint32_t*>
                               (mImageData) + PIXEL_OFFSET(mCurLine, mCurPos);
                 mCurPos += pixelsNeeded;
-                if (mBIH.compression == BI_RLE8) {
+                if (mBIH.compression == BMPINFOHEADER::RLE8) {
                   do {
                     SetPixel(d, byte, mColors);
                     pixelsNeeded --;
@@ -744,18 +751,18 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
             }
 
             switch(byte) {
-              case RLE_ESCAPE_EOL:
+              case RLE::ESCAPE_EOL:
                 
                 mCurLine --;
                 mCurPos = 0;
                 mState = eRLEStateInitial;
                 break;
 
-              case RLE_ESCAPE_EOF: 
+              case RLE::ESCAPE_EOF: 
                 mCurPos = mCurLine = 0;
                 break;
 
-              case RLE_ESCAPE_DELTA:
+              case RLE::ESCAPE_DELTA:
                 mState = eRLEStateNeedXDelta;
                 continue;
 
@@ -834,7 +841,7 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
                             (mImageData) +
                             PIXEL_OFFSET(mCurLine, mCurPos);
               uint32_t* oldPos = d;
-              if (mBIH.compression == BI_RLE8) {
+              if (mBIH.compression == BMPINFOHEADER::RLE8) {
                   while (aCount > 0 && mStateData > 0) {
                     byte = *aBuffer++;
                     aCount--;

@@ -163,7 +163,8 @@ nsICOEncoder::AddImageFrame(const uint8_t* aData,
     
     
     
-    mICODirEntry.mBytesInRes = BMPImageBufferSize - BFH_LENGTH + andMaskSize;
+    mICODirEntry.mBytesInRes =
+      BMPImageBufferSize - BMPFILEHEADER::LENGTH + andMaskSize;
 
     
     EncodeFileHeader();
@@ -172,14 +173,14 @@ nsICOEncoder::AddImageFrame(const uint8_t* aData,
     char* imageBuffer;
     rv = mContainedEncoder->GetImageBuffer(&imageBuffer);
     NS_ENSURE_SUCCESS(rv, rv);
-    memcpy(mImageBufferCurr, imageBuffer + BFH_LENGTH,
-           BMPImageBufferSize - BFH_LENGTH);
+    memcpy(mImageBufferCurr, imageBuffer + BMPFILEHEADER::LENGTH,
+           BMPImageBufferSize - BMPFILEHEADER::LENGTH);
     
     uint32_t fixedHeight = GetRealHeight() * 2;
     NativeEndian::swapToLittleEndianInPlace(&fixedHeight, 1);
     
     memcpy(mImageBufferCurr + 8, &fixedHeight, sizeof(fixedHeight));
-    mImageBufferCurr += BMPImageBufferSize - BFH_LENGTH;
+    mImageBufferCurr += BMPImageBufferSize - BMPFILEHEADER::LENGTH;
 
     
     uint32_t rowSize = ((GetRealWidth() + 31) / 32) * 4; 

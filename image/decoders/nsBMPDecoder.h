@@ -64,8 +64,8 @@ private:
 
     BMPFILEHEADER mBFH;
     BITMAPV5HEADER mBIH;
-    char mRawBuf[WIN_V3_INTERNAL_BIH_LENGTH]; 
-                                              
+    char mRawBuf[BIH_INTERNAL_LENGTH::WIN_V3]; 
+                                               
 
     uint32_t mLOH; 
 
