@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
 import sys
@@ -17,25 +17,26 @@ from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
 from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
+from cuddlefish.prefs import DEFAULT_NO_CONNECTIONS_PREFS
 
-
+# Used to remove noise from ADB output
 CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)$')
-
+# Used to filter only messages send by `console` module
 FILTER_ONLY_CONSOLE_FROM_ADB = re.compile(r'^I/(stdout|stderr)\s*\(\s*\d+\):\s*((info|warning|error|debug): .*)$')
 
-
+# Used to detect the currently running test
 PARSEABLE_TEST_NAME = re.compile(r'TEST-START \| ([^\n]+)\n')
 
+# Maximum time we'll wait for tests to finish, in seconds.
+# The purpose of this timeout is to recover from infinite loops.  It should be
+# longer than the amount of time any test run takes, including those on slow
+# machines running slow (debug) versions of Firefox.
+RUN_TIMEOUT = 5400     #1.5 hours (1.5 * 60 * 60 sec)
 
-
-
-
-RUN_TIMEOUT = 1.5 * 60 * 60 
-
-
-
-
-OUTPUT_TIMEOUT = 60 * 5 
+# Maximum time we'll wait for tests to emit output, in seconds.
+# The purpose of this timeout is to recover from hangs.  It should be longer
+# than the amount of time any test takes to report results.
+OUTPUT_TIMEOUT = 300   #five minutes (60 * 5 sec)
 
 def follow_file(filename):
     """
@@ -75,8 +76,8 @@ def follow_file(filename):
                 f.close()
         yield newstuff
 
-
-
+# subprocess.check_output only appeared in python2.7, so this code is taken
+# from python source code for compatibility with py2.5/2.6
 class CalledProcessError(Exception):
     def __init__(self, returncode, cmd, output=None):
         self.returncode = returncode
@@ -112,7 +113,7 @@ class FennecRunner(mozrunner.Runner):
 
     def __init__(self, binary=None, **kwargs):
         if sys.platform == 'darwin' and binary and binary.endswith('.app'):
-            
+            # Assume it's a Fennec app dir.
             binary = os.path.join(binary, 'Contents/MacOS/fennec')
 
         self.__real_binary = binary
@@ -139,11 +140,11 @@ class RemoteFennecRunner(mozrunner.Runner):
     _adb_path = None
 
     def __init__(self, binary=None, **kwargs):
-        
+        # Check that we have a binary set
         if not binary:
             raise ValueError("You have to define `--binary` option set to the "
                             "path to your ADB executable.")
-        
+        # Ensure that binary refer to a valid ADB executable
         output = subprocess.Popen([binary], stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE).communicate()
         output = "".join(output)
@@ -156,14 +157,14 @@ class RemoteFennecRunner(mozrunner.Runner):
         self.profile = kwargs['profile']
         self._adb_path = binary
 
-        
-        
+        # This pref has to be set to `false` otherwise, we do not receive
+        # output of adb commands!
         subprocess.call([self._adb_path, "shell",
                         "setprop log.redirect-stdio false"])
 
-        
-        
-        
+        # Android apps are launched by their "intent" name,
+        # Automatically detect already installed firefox by using `pm` program
+        # or use name given as cfx `--mobile-app` argument.
         intents = self.getIntentNames()
         if not intents:
             raise ValueError("Unable to found any Firefox "
@@ -187,38 +188,38 @@ class RemoteFennecRunner(mozrunner.Runner):
 
         print "Launching mobile application with intent name " + self._intent_name
 
-        
+        # First try to kill firefox if it is already running
         pid = self.getProcessPID(self._intent_name)
         if pid != None:
             print "Killing running Firefox instance ..."
             subprocess.call([self._adb_path, "shell",
                              "am force-stop " + self._intent_name])
             time.sleep(7)
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            # It appears recently that the PID still exists even after
+            # Fennec closes, so removing this error still allows the tests
+            # to pass as the new Fennec instance is able to start.
+            # Leaving error in but commented out for now.
+            #
+            #if self.getProcessPID(self._intent_name) != None:
+            #    raise Exception("Unable to automatically kill running Firefox" +
+            #                    " instance. Please close it manually before " +
+            #                    "executing cfx.")
 
         print "Pushing the addon to your device"
 
-        
+        # Create a clean empty profile on the sd card
         subprocess.call([self._adb_path, "shell", "rm -r " + FENNEC_REMOTE_PATH])
         subprocess.call([self._adb_path, "shell", "mkdir " + FENNEC_REMOTE_PATH])
 
-        
-        
+        # Push the profile folder created by mozrunner to the device
+        # (we can't simply use `adb push` as it doesn't copy empty folders)
         localDir = self.profile.profile
         remoteDir = FENNEC_REMOTE_PATH
         for root, dirs, files in os.walk(localDir, followlinks='true'):
             relRoot = os.path.relpath(root, localDir)
-            
-            
-            
+            # Note about os.path usage below:
+            # Local files may be using Windows `\` separators but
+            # remote are always `/`, so we need to convert local ones to `/`
             for file in files:
                 localFile = os.path.join(root, file)
                 remoteFile = remoteDir.replace("/", os.sep)
@@ -234,7 +235,7 @@ class RemoteFennecRunner(mozrunner.Runner):
                     targetDir = os.path.join(targetDir, relRoot)
                 targetDir = os.path.join(targetDir, dir)
                 targetDir = "/".join(targetDir.split(os.sep))
-                
+                # `-p` option is not supported on all devices!
                 subprocess.call([self._adb_path, "shell", "mkdir " + targetDir])
 
     @property
@@ -293,21 +294,21 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
     profile_class = XulrunnerAppProfile
 
-    
-    
+    # This is a default, and will be overridden in the instance if
+    # Firefox is used in XULRunner mode.
     names = ['xulrunner']
 
-    
+    # Default location of XULRunner on OS X.
     __DARWIN_PATH = "/Library/Frameworks/XUL.framework/xulrunner-bin"
     __LINUX_PATH  = "/usr/bin/xulrunner"
 
-    
-    
+    # What our application.ini's path looks like if it's part of
+    # an "installed" XULRunner app on OS X.
     __DARWIN_APP_INI_SUFFIX = '.app/Contents/Resources/application.ini'
 
     def __init__(self, binary=None, **kwargs):
         if sys.platform == 'darwin' and binary and binary.endswith('.app'):
-            
+            # Assume it's a Firefox app dir.
             binary = os.path.join(binary, 'Contents/MacOS/firefox-bin')
 
         self.__app_ini = None
@@ -315,8 +316,8 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
         mozrunner.Runner.__init__(self, **kwargs)
 
-        
-        
+        # See if we're using a genuine xulrunner-bin from the XULRunner SDK,
+        # or if we're being asked to use Firefox in XULRunner mode.
         self.__is_xulrunner_sdk = 'xulrunner' in self.binary
 
         if sys.platform == 'linux2' and not self.env.get('LD_LIBRARY_PATH'):
@@ -338,11 +339,11 @@ class XulrunnerAppRunner(mozrunner.Runner):
         if (sys.platform == 'darwin' and
             self.binary == self.__DARWIN_PATH and
             self.__app_ini.endswith(self.__DARWIN_APP_INI_SUFFIX)):
-            
-            
-            
-            
-            
+            # If the application.ini is in an app bundle, then
+            # it could be inside an "installed" XULRunner app.
+            # If this is the case, use the app's actual
+            # binary instead of the XUL framework's, so we get
+            # a proper app icon, etc.
             new_binary = '/'.join(self.__app_ini.split('/')[:-2] +
                                   ['MacOS', 'xulrunner'])
             if os.path.exists(new_binary):
@@ -369,10 +370,10 @@ class XulrunnerAppRunner(mozrunner.Runner):
         return None
 
     def find_binary(self):
-        
-        
-        
-        
+        # This gets called by the superclass constructor. It will
+        # always get called, even if a binary was passed into the
+        # constructor, because we want to have full control over
+        # what the exact setting of self.binary is.
 
         if not self.__real_binary:
             self.__real_binary = self.__find_xulrunner_binary()
@@ -384,23 +385,23 @@ class XulrunnerAppRunner(mozrunner.Runner):
         return self.__real_binary
 
 def set_overloaded_modules(env_root, app_type, addon_id, preferences, overloads):
-    
+    # win32 file scheme needs 3 slashes
     desktop_file_scheme = "file://"
     if not env_root.startswith("/"):
       desktop_file_scheme = desktop_file_scheme + "/"
 
     pref_prefix = "extensions.modules." + addon_id + ".path"
 
-    
+    # Set preferences that will map require prefix to a given path
     for name, path in overloads.items():
         if len(name) == 0:
             prefName = pref_prefix
         else:
             prefName = pref_prefix + "." + name
         if app_type == "fennec-on-device":
-            
-            
-            
+            # For testing on device, we have to copy overloaded files from fs
+            # to the device and use device path instead of local fs path.
+            # Actual copy of files if done after the call to Profile constructor
             preferences[prefName] = "file://" + \
                 FENNEC_REMOTE_PATH + "/overloads/" + name
         else:
@@ -419,7 +420,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             overload_modules=False,
             bundle_sdk=True,
             pkgdir="",
-            enable_e10s=False):
+            enable_e10s=False,
+            no_connections=False):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -431,10 +433,13 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     cmdargs = []
     preferences = dict(DEFAULT_COMMON_PREFS)
 
+    if no_connections:
+      preferences.update(DEFAULT_NO_CONNECTIONS_PREFS)
+
     if enable_e10s:
         preferences['browser.tabs.remote.autostart'] = True
 
-    
+    # For now, only allow running on Mobile with --force-mobile argument
     if app_type in ["fennec", "fennec-on-device"] and not enable_mobile:
         print """
   WARNING: Firefox Mobile support is still experimental.
@@ -447,7 +452,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         profile_class = FennecProfile
         preferences.update(DEFAULT_FENNEC_PREFS)
         runner_class = RemoteFennecRunner
-        
+        # We pass the intent name through command arguments
         cmdargs.append(mobile_app_name)
     elif enable_mobile or app_type == "fennec":
         profile_class = FennecProfile
@@ -473,15 +478,15 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     if args:
         cmdargs.extend(shlex.split(args))
 
-    
+    # TODO: handle logs on remote device
     if app_type != "fennec-on-device":
-        
-        
-        
-        
-        
-        
-        
+        # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
+        # run"/"cfx test" on the same host. On unix it points at /tmp (which is
+        # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
+        # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
+        # gives us a unique filename that fixes both problems. We leave the
+        # (0-byte) file in place until the browser-side code starts writing to
+        # it, otherwise the symlink attack becomes possible again.
         fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
         os.close(fileno)
         harness_options['resultFile'] = resultfile
@@ -492,10 +497,10 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     logfile_tail = None
 
-    
-    
-    
-    
+    # We always buffer output through a logfile for two reasons:
+    # 1. On Windows, it's the only way to print console output to stdout/err.
+    # 2. It enables us to keep track of the last time output was emitted,
+    #    so we can raise an exception if the test runner hangs.
     if not logfile:
         fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
         os.close(fileno)
@@ -507,6 +512,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     env = {}
     env.update(os.environ)
+    if no_connections:
+      env['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
     env['MOZ_NO_REMOTE'] = '1'
     env['XPCOM_DEBUG_BREAK'] = 'stack'
     env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
@@ -514,8 +521,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     if norun:
         cmdargs.append("-no-remote")
 
-    
-    
+    # Create the addon XPI so mozrunner will copy it to the profile it creates.
+    # We delete it below after getting mozrunner to create the profile.
     from cuddlefish.xpi import build_xpi
     xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
     build_xpi(template_root_dir=harness_root_dir,
@@ -529,11 +536,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     starttime = last_output_time = time.time()
 
-    
-    
-    
-    
-    
+    # Redirect runner output to a file so we can catch output not generated
+    # by us.
+    # In theory, we could do this using simple redirection on all platforms
+    # other than Windows, but this way we only have a single codepath to
+    # maintain.
     fileno,outfile = tempfile.mkstemp(prefix="harness-stdout-")
     os.close(fileno)
     outfile_tail = follow_file(outfile)
@@ -550,37 +557,37 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     profile = None
 
     if app_type == "fennec-on-device":
-        
-        
+        # Install a special addon when we run firefox on mobile device
+        # in order to be able to kill it
         mydir = os.path.dirname(os.path.abspath(__file__))
         addon_dir = os.path.join(mydir, "mobile-utils")
         addons.append(addon_dir)
 
-    
+    # Overload addon-specific commonjs modules path with lib/ folder
     overloads = dict()
     if overload_modules:
         overloads[""] = os.path.join(env_root, "lib")
 
-    
+    # Overload tests/ mapping with test/ folder, only when running test
     if is_running_tests:
         overloads["tests"] = os.path.join(env_root, "test")
 
     set_overloaded_modules(env_root, app_type, harness_options["jetpackID"], \
                            preferences, overloads)
 
-    
+    # the XPI file is copied into the profile here
     profile = profile_class(addons=addons,
                             profile=profiledir,
                             preferences=preferences)
 
-    
+    # Delete the temporary xpi file
     os.remove(xpi_path)
 
-    
-    
-    
-    
-    
+    # Copy overloaded files registered in set_overloaded_modules
+    # For testing on device, we have to copy overloaded files from fs
+    # to the device and use device path instead of local fs path.
+    # (has to be done after the call to profile_class() which eventualy creates
+    #  profile folder)
     if app_type == "fennec-on-device":
         profile_path = profile.profile
         for name, path in overloads.items():
@@ -604,42 +611,42 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     cfx --force-mobile"""
             return 0
 
-        
+        # In case of mobile device, we need to get stdio from `adb logcat` cmd:
 
-        
+        # First flush logs in order to avoid catching previous ones
         subprocess.call([binary, "logcat", "-c"])
 
-        
+        # Launch adb command
         runner.start()
 
-        
-        
+        # We can immediatly remove temporary profile folder
+        # as it has been uploaded to the device
         profile.cleanup()
-        
+        # We are not going to use the output log file
         outf.close()
 
-        
+        # Then we simply display stdout of `adb logcat`
         p = subprocess.Popen([binary, "logcat", "stderr:V stdout:V GeckoConsole:V *:S"], stdout=subprocess.PIPE)
         while True:
             line = p.stdout.readline()
             if line == '':
                 break
-            
-            
+            # mobile-utils addon contains an application quit event observer
+            # that will print this string:
             if "APPLICATION-QUIT" in line:
                 break
 
             if verbose:
-                
-                
+                # if --verbose is given, we display everything:
+                # All JS Console messages, stdout and stderr.
                 m = CLEANUP_ADB.match(line)
                 if not m:
                     print line.rstrip()
                     continue
                 print m.group(3)
             else:
-                
-                
+                # Otherwise, display addons messages dispatched through
+                # console.[info, log, debug, warning, error](msg)
                 m = FILTER_ONLY_CONSOLE_FROM_ADB.match(line)
                 if m:
                     print m.group(2)
@@ -650,24 +657,24 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
 
-    
-    
-    
+    # Ensure cfx is being used with Firefox 4.0+.
+    # TODO: instead of dying when Firefox is < 4, warn when Firefox is outside
+    # the minVersion/maxVersion boundaries.
     version_output = check_output(runner.command + ["-v"])
-    
-    
-    
+    # Note: this regex doesn't handle all valid versions in the Toolkit Version
+    # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
+    # common subset that we expect Mozilla apps to use.
     mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec)\b[^ ]* ((\d+)\.\S*)",
                    version_output)
     if not mo:
-        
-        
+        # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox
+        # version.
         print """
   WARNING: cannot determine Firefox version; please ensure you are running
   a Mozilla application equivalent to Firefox 4.0 or greater.
   """
     elif mo.group(1) == "Fennec":
-        
+        # For now, only allow running on Mobile with --force-mobile argument
         if not enable_mobile:
             print """
   WARNING: Firefox Mobile support is still experimental.
@@ -686,24 +693,24 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     cfx --binary=PATH_TO_FIREFOX_BINARY"""
             return
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        # Set the appropriate extensions.checkCompatibility preference to false,
+        # so the tests run even if the SDK is not marked as compatible with the
+        # version of Firefox on which they are running, and we don't have to
+        # ensure we update the maxVersion before the version of Firefox changes
+        # every six weeks.
+        #
+        # The regex we use here is effectively the same as BRANCH_REGEX from
+        # /toolkit/mozapps/extensions/content/extensions.js, which toolkit apps
+        # use to determine whether or not to load an incompatible addon.
+        #
         br = re.search(r"^([^\.]+\.[0-9]+[a-z]*).*", mo.group(2), re.I)
         if br:
             prefname = 'extensions.checkCompatibility.' + br.group(1)
             profile.preferences[prefname] = False
-            
-            
-            
-            
+            # Calling profile.set_preferences here duplicates the list of prefs
+            # in prefs.js, since the profile calls self.set_preferences in its
+            # constructor, but that is ok, because it doesn't change the set of
+            # preferences that are ultimately registered in Firefox.
             profile.set_preferences(profile.preferences)
 
     print >>sys.stderr, "Using profile at '%s'." % profile.profile
@@ -760,7 +767,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         raise
     else:
         runner.wait(10)
-        
+        # double kill - hack for bugs 942111, 1006043..
         try:
             runner.stop()
         except:
