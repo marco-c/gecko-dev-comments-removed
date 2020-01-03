@@ -44,7 +44,7 @@ let OverviewView = {
     });
 
     
-    if (!gFront.getActorSupport().timeline) {
+    if (!PerformanceController.getTraits().features.withMarkers) {
       this.disable();
       return;
     }
@@ -52,10 +52,7 @@ let OverviewView = {
     
     this._multiprocessData = PerformanceController.getMultiprocessStatus();
 
-    this._onRecordingWillStart = this._onRecordingWillStart.bind(this);
-    this._onRecordingStarted = this._onRecordingStarted.bind(this);
-    this._onRecordingWillStop = this._onRecordingWillStop.bind(this);
-    this._onRecordingStopped = this._onRecordingStopped.bind(this);
+    this._onRecordingStateChange = this._onRecordingStateChange.bind(this);
     this._onRecordingSelected = this._onRecordingSelected.bind(this);
     this._onRecordingTick = this._onRecordingTick.bind(this);
     this._onGraphSelecting = this._onGraphSelecting.bind(this);
@@ -67,10 +64,7 @@ let OverviewView = {
     
     PerformanceController.on(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceController.on(EVENTS.THEME_CHANGED, this._onThemeChanged);
-    PerformanceController.on(EVENTS.RECORDING_WILL_START, this._onRecordingWillStart);
-    PerformanceController.on(EVENTS.RECORDING_STARTED, this._onRecordingStarted);
-    PerformanceController.on(EVENTS.RECORDING_WILL_STOP, this._onRecordingWillStop);
-    PerformanceController.on(EVENTS.RECORDING_STOPPED, this._onRecordingStopped);
+    PerformanceController.on(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
     PerformanceController.on(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     this.graphs.on("selecting", this._onGraphSelecting);
     this.graphs.on("rendered", this._onGraphRendered);
@@ -82,10 +76,7 @@ let OverviewView = {
   destroy: Task.async(function*() {
     PerformanceController.off(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceController.off(EVENTS.THEME_CHANGED, this._onThemeChanged);
-    PerformanceController.off(EVENTS.RECORDING_WILL_START, this._onRecordingWillStart);
-    PerformanceController.off(EVENTS.RECORDING_STARTED, this._onRecordingStarted);
-    PerformanceController.off(EVENTS.RECORDING_WILL_STOP, this._onRecordingWillStop);
-    PerformanceController.off(EVENTS.RECORDING_STOPPED, this._onRecordingStopped);
+    PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
     PerformanceController.off(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     this.graphs.off("selecting", this._onGraphSelecting);
     this.graphs.off("rendered", this._onGraphRendered);
@@ -213,27 +204,10 @@ let OverviewView = {
   
 
 
-
-
-  _onRecordingWillStart: OverviewViewOnStateChange(Task.async(function* () {
-    yield this._checkSelection();
-    this.graphs.dropSelection();
-  })),
-
-  
-
-
-  _onRecordingStarted: OverviewViewOnStateChange(),
-
-  
-
-
-  _onRecordingWillStop: OverviewViewOnStateChange(),
-
-  
-
-
-  _onRecordingStopped: OverviewViewOnStateChange(Task.async(function* (_, recording) {
+  _onRecordingStateChange: OverviewViewOnStateChange(Task.async(function* (_, state, recording) {
+    if (state !== "recording-stopped") {
+      return;
+    }
     
     
     
@@ -394,6 +368,12 @@ let OverviewView = {
 
 function OverviewViewOnStateChange (fn) {
   return function _onRecordingStateChange (eventName, recording) {
+    
+    
+    if (typeof recording === "string") {
+      recording = arguments[2];
+    }
+
     let currentRecording = PerformanceController.getCurrentRecording();
 
     
@@ -426,6 +406,7 @@ function OverviewViewOnStateChange (fn) {
     } else if (currentRecording.isRecording() && !this.isRendering()) {
       this._startPolling();
     }
+
     if (fn) {
       fn.apply(this, arguments);
     }

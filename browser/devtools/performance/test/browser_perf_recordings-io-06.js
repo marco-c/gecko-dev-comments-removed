@@ -6,8 +6,6 @@
 
 
 
-let RecordingUtils = require("devtools/performance/recording-utils");
-
 let STRINGED_THREAD = (function () {
   let thread = {};
 

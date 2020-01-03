@@ -5,8 +5,6 @@
 
 
 
-let RecordingUtils = require("devtools/performance/recording-utils");
-
 let TICKS_DATA = (function () {
   let ticks = [];
   for (let i = 0; i < 100; i++) {

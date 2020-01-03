@@ -10,15 +10,16 @@ const WAIT_TIME = 1000;
 
 let test = Task.async(function*() {
   let { target, panel, toolbox } = yield initPerformance(SIMPLE_URL, "performance", {
-    TEST_MOCK_MEMORY_ACTOR: true
+    TEST_PERFORMANCE_LEGACY_FRONT: true
   });
   Services.prefs.setBoolPref(MEMORY_PREF, true);
-  let { EVENTS, $, gFront, PerformanceController, PerformanceView, DetailsView, WaterfallView } = panel.panelWin;
+  let { EVENTS, $, gFront: front, PerformanceController, PerformanceView, DetailsView, WaterfallView } = panel.panelWin;
 
-
-  let { memory: memorySupport, timeline: timelineSupport } = gFront.getActorSupport();
-  ok(!memorySupport, "memory should be mocked.");
-  ok(timelineSupport, "timeline should not be mocked.");
+  ok(front.LEGACY_FRONT, true, "Using legacy front");
+  is(front.traits.features.withMarkers, true, "traits.features.withMarkers is true.");
+  is(front.traits.features.withTicks, true, "traits.features.withTicks is true.");
+  is(front.traits.features.withMemory, false, "traits.features.withMemory is false.");
+  is(front.traits.features.withAllocations, false, "traits.features.withAllocations is false.");
 
   yield startRecording(panel);
   yield busyWait(100);

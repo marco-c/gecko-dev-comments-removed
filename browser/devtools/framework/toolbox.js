@@ -59,8 +59,8 @@ loader.lazyRequireGetter(this, "DevToolsUtils",
   "devtools/toolkit/DevToolsUtils");
 loader.lazyRequireGetter(this, "showDoorhanger",
   "devtools/shared/doorhanger", true);
-loader.lazyRequireGetter(this, "getPerformanceFront",
-  "devtools/performance/front", true);
+loader.lazyRequireGetter(this, "createPerformanceFront",
+  "devtools/server/actors/performance", true);
 loader.lazyRequireGetter(this, "system",
   "devtools/toolkit/shared/system");
 loader.lazyGetter(this, "osString", () => {
@@ -135,6 +135,7 @@ function Toolbox(target, selectedTool, hostType, hostOptions) {
   this._onBottomHostMinimized = this._onBottomHostMinimized.bind(this);
   this._onBottomHostMaximized = this._onBottomHostMaximized.bind(this);
   this._onToolSelectWhileMinimized = this._onToolSelectWhileMinimized.bind(this);
+  this._onPerformanceFrontEvent = this._onPerformanceFrontEvent.bind(this);
   this._onBottomHostWillChange = this._onBottomHostWillChange.bind(this);
   this._toggleMinimizeMode = this._toggleMinimizeMode.bind(this);
 
@@ -1989,14 +1990,13 @@ Toolbox.prototype = {
     }
 
     this._performanceFrontConnection = promise.defer();
-
-    this._performance = getPerformanceFront(this._target);
-
-    yield this.performance.open();
+    this._performance = createPerformanceFront(this._target);
+    yield this.performance.connect();
 
     
     this.emit("profiler-connected");
 
+    this.performance.on("*", this._onPerformanceFrontEvent);
     this._performanceFrontConnection.resolve(this.performance);
     return this._performanceFrontConnection.promise;
   }),
@@ -2015,8 +2015,44 @@ Toolbox.prototype = {
     if (this._performanceFrontConnection) {
       yield this._performanceFrontConnection.promise;
     }
+    this.performance.off("*", this._onPerformanceFrontEvent);
     yield this.performance.destroy();
     this._performance = null;
+  }),
+
+  
+
+
+
+
+
+  _onPerformanceFrontEvent: Task.async(function*(eventName, recording) {
+    if (this.getPanel("performance")) {
+      this.performance.off("*", this._onPerformanceFrontEvent);
+      return;
+    }
+
+    let recordings = this._performanceQueuedRecordings = this._performanceQueuedRecordings || [];
+
+    
+    
+    
+    
+    if (eventName === "console-profile-start" && !this._performanceToolOpenedViaConsole) {
+      this._performanceToolOpenedViaConsole = this.loadTool("performance");
+      let panel = yield this._performanceToolOpenedViaConsole;
+      yield panel.open();
+
+      panel.panelWin.PerformanceController.populateWithRecordings(recordings);
+      this.performance.off("*", this._onPerformanceFrontEvent);
+    }
+
+    
+    
+    
+    if (eventName === "recording-started") {
+      recordings.push(recording);
+    }
   }),
 
   

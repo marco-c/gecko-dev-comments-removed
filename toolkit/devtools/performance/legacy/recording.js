@@ -7,16 +7,16 @@ const { Cc, Ci, Cu, Cr } = require("chrome");
 const { Task } = require("resource://gre/modules/Task.jsm");
 
 loader.lazyRequireGetter(this, "PerformanceIO",
-  "devtools/performance/io", true);
+  "devtools/toolkit/performance/io");
 loader.lazyRequireGetter(this, "RecordingUtils",
-  "devtools/performance/recording-utils");
+  "devtools/toolkit/performance/utils");
 
 
 
 
 
 
-const RecordingModel = function (options={}) {
+const LegacyPerformanceRecording = function (options={}) {
   this._label = options.label || "";
   this._console = options.console || false;
 
@@ -33,7 +33,7 @@ const RecordingModel = function (options={}) {
   };
 };
 
-RecordingModel.prototype = {
+LegacyPerformanceRecording.prototype = {
   
   _console: false,
   _imported: false,
@@ -43,7 +43,7 @@ RecordingModel.prototype = {
   _timelineStartTime: 0,
   _memoryStartTime: 0,
   _configuration: {},
-  _originalBufferStatus: null,
+  _startingBufferStatus: null,
   _bufferPercent: null,
 
   
@@ -102,7 +102,7 @@ RecordingModel.prototype = {
     this._profilerStartTime = info.profilerStartTime;
     this._timelineStartTime = info.timelineStartTime;
     this._memoryStartTime = info.memoryStartTime;
-    this._originalBufferStatus = {
+    this._startingBufferStatus = {
       position: info.position,
       totalSize: info.totalSize,
       generation: info.generation
@@ -296,26 +296,16 @@ RecordingModel.prototype = {
 
 
 
-  getBufferUsage: function () {
-    return this.isRecording() ? this._bufferPercent : null;
+  isFinalizing: function () {
+    return !this.isRecording() && !this.isCompleted();
   },
 
   
 
 
-  _addBufferStatusData: function (bufferStatus) {
-    
-    
-    
-    if (!bufferStatus || !this.isRecording()) {
-      return;
-    }
-    let { position: currentPosition, totalSize, generation: currentGeneration } = bufferStatus;
-    let { position: origPosition, generation: origGeneration } = this._originalBufferStatus;
 
-    let normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) + currentPosition;
-    let percent = (normalizedCurrent - origPosition) / totalSize;
-    this._bufferPercent = percent > 1 ? 1 : percent;
+  getStartingBufferStatus: function () {
+    return this._startingBufferStatus;
   },
 
   
@@ -337,25 +327,14 @@ RecordingModel.prototype = {
         if (!config.withMarkers) { break; }
         let [markers] = data;
         RecordingUtils.offsetMarkerTimes(markers, this._timelineStartTime);
-        pushAll(this._markers, markers);
+        RecordingUtils.pushAll(this._markers, markers);
         break;
       }
       
       case "frames": {
         if (!config.withMarkers) { break; }
         let [, frames] = data;
-        pushAll(this._frames, frames);
-        break;
-      }
-      
-      
-      case "memory": {
-        if (!config.withMemory) { break; }
-        let [currentTime, measurement] = data;
-        this._memory.push({
-          delta: currentTime - this._timelineStartTime,
-          value: measurement.total / 1024 / 1024
-        });
+        RecordingUtils.pushAll(this._frames, frames);
         break;
       }
       
@@ -365,47 +344,10 @@ RecordingModel.prototype = {
         this._ticks = timestamps;
         break;
       }
-      
-      
-      
-      case "allocations": {
-        if (!config.withAllocations) { break; }
-        let [{
-          allocations: sites,
-          allocationsTimestamps: timestamps,
-          frames,
-        }] = data;
-
-        let timeOffset = this._memoryStartTime;
-        RecordingUtils.offsetAndScaleTimestamps(timestamps, timeOffset);
-        pushAll(this._allocations.sites, sites);
-        pushAll(this._allocations.timestamps, timestamps);
-        pushAll(this._allocations.frames, frames);
-        break;
-      }
     }
   },
 
-  toString: () => "[object RecordingModel]"
+  toString: () => "[object LegacyPerformanceRecording]"
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-function pushAll (dest, src) {
-  let length = src.length;
-  for (let i = 0; i < length; i++) {
-    dest.push(src[i]);
-  }
-}
-
-exports.RecordingModel = RecordingModel;
+exports.LegacyPerformanceRecording = LegacyPerformanceRecording;
