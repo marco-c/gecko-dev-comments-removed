@@ -151,8 +151,8 @@ loop.shared.mixins = (function() {
         boundingRect.width -= boundOffset;
         boundingRect.height -= boundOffset;
 
-        var x = menuNodeRect.left;
-        var y = menuNodeRect.top;
+        x = menuNodeRect.left;
+        y = menuNodeRect.top;
 
         
         var anchor = this.refs.anchor && this.refs.anchor.getDOMNode();
@@ -472,8 +472,8 @@ loop.shared.mixins = (function() {
       
       
       if (!remoteVideoDimensions) {
-        var node = this._getElement(".remote");
-        var width = node.offsetWidth;
+        node = this._getElement(".remote");
+        width = node.offsetWidth;
         var height = node.offsetHeight;
         remoteVideoDimensions = {
           width: width,
