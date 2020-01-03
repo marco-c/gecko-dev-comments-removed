@@ -154,12 +154,13 @@ public:
   virtual ~TextureSourceD3D11() {}
 
   virtual ID3D11Texture2D* GetD3D11Texture() const { return mTexture; }
-
+  virtual ID3D11ShaderResourceView* GetShaderResourceView();
 protected:
   virtual gfx::IntSize GetSize() const { return mSize; }
 
   gfx::IntSize mSize;
   RefPtr<ID3D11Texture2D> mTexture;
+  RefPtr<ID3D11ShaderResourceView> mSRV;
 };
 
 
@@ -192,6 +193,8 @@ public:
   virtual TextureSourceD3D11* AsSourceD3D11() override { return this; }
 
   virtual ID3D11Texture2D* GetD3D11Texture() const override;
+
+  virtual ID3D11ShaderResourceView* GetShaderResourceView() override;
 
   virtual DataTextureSource* AsDataTextureSource() override { return this; }
 
@@ -227,6 +230,7 @@ protected:
   void Reset();
 
   std::vector< RefPtr<ID3D11Texture2D> > mTileTextures;
+  std::vector< RefPtr<ID3D11ShaderResourceView> > mTileSRVs;
   RefPtr<CompositorD3D11> mCompositor;
   gfx::SurfaceFormat mFormat;
   TextureFlags mFlags;
