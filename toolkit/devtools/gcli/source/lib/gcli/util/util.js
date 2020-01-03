@@ -254,8 +254,6 @@ exports.createEvent = function(name) {
 
 
 
-var Promise = require('../util/promise').Promise;
-
 
 
 

@@ -19,8 +19,6 @@
 
 
 
-var Promise = require('gcli/util/promise').Promise;
-
 var mockCommands;
 if (typeof exports !== 'undefined') {
   
