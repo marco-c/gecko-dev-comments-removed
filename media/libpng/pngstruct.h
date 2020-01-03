@@ -221,14 +221,16 @@ struct png_struct_def
    png_bytep prev_row;        
 
 
+
+
    png_bytep row_buf;         
 
 
-#ifdef PNG_WRITE_SUPPORTED
-   png_bytep sub_row;         
-   png_bytep up_row;          
-   png_bytep avg_row;         
-   png_bytep paeth_row;       
+
+
+#ifdef PNG_WRITE_FILTER_SUPPORTED
+   png_bytep try_row;    
+   png_bytep tst_row;    
 #endif
    png_size_t info_rowbytes;  
 
@@ -346,17 +348,7 @@ struct png_struct_def
    png_bytep quantize_index; 
 #endif
 
-#ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED
-   png_byte heuristic_method;        
-   png_byte num_prev_filters;        
-   png_bytep prev_filters;           
-   png_uint_16p filter_weights;      
-   png_uint_16p inv_filter_weights;  
-   png_uint_16p filter_costs;        
-   png_uint_16p inv_filter_costs;    
-#endif
 
-   
 #ifdef PNG_SET_OPTION_SUPPORTED
    png_byte options;           
 #endif

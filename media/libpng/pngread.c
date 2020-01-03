@@ -63,7 +63,7 @@ png_create_read_struct_2,(png_const_charp user_png_ver, png_voidp error_ptr,
          
 
 
-#        if PNG_LIBPNG_BUILD_BASE_TYPE >= PNG_LIBPNG_BUILD_RC
+#        if PNG_RELEASE_BUILD
             png_ptr->flags |= PNG_FLAG_APP_WARNINGS_WARN;
 #        endif
 #     endif
@@ -1123,7 +1123,7 @@ png_read_png(png_structrp png_ptr, png_inforp info_ptr,
    
 
    if ((transforms & PNG_TRANSFORM_SCALE_16) != 0)
-     
+      
 
 
 #ifdef PNG_READ_SCALE_16_TO_8_SUPPORTED
@@ -1289,7 +1289,7 @@ png_read_png(png_structrp png_ptr, png_inforp info_ptr,
 
       for (iptr = 0; iptr < info_ptr->height; iptr++)
          info_ptr->row_pointers[iptr] = png_voidcast(png_bytep,
-            png_malloc(png_ptr, info_ptr->rowbytes));
+             png_malloc(png_ptr, info_ptr->rowbytes));
    }
 
    png_read_image(png_ptr, info_ptr->row_pointers);

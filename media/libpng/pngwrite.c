@@ -90,30 +90,31 @@ png_write_info_before_PLTE(png_structrp png_ptr, png_const_inforp info_ptr)
 
    if ((png_ptr->mode & PNG_WROTE_INFO_BEFORE_PLTE) == 0)
    {
-   
-   png_write_sig(png_ptr);
+      
+      png_write_sig(png_ptr);
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
-   if ((png_ptr->mode & PNG_HAVE_PNG_SIGNATURE) != 0 && \
-       png_ptr->mng_features_permitted != 0)
-   {
-      png_warning(png_ptr, "MNG features are not allowed in a PNG datastream");
-      png_ptr->mng_features_permitted = 0;
-   }
+      if ((png_ptr->mode & PNG_HAVE_PNG_SIGNATURE) != 0 && \
+          png_ptr->mng_features_permitted != 0)
+      {
+         png_warning(png_ptr,
+             "MNG features are not allowed in a PNG datastream");
+         png_ptr->mng_features_permitted = 0;
+      }
 #endif
 
-   
-   png_write_IHDR(png_ptr, info_ptr->width, info_ptr->height,
-       info_ptr->bit_depth, info_ptr->color_type, info_ptr->compression_type,
-       info_ptr->filter_type,
+      
+      png_write_IHDR(png_ptr, info_ptr->width, info_ptr->height,
+          info_ptr->bit_depth, info_ptr->color_type, info_ptr->compression_type,
+          info_ptr->filter_type,
 #ifdef PNG_WRITE_INTERLACING_SUPPORTED
-       info_ptr->interlace_type
+          info_ptr->interlace_type
 #else
-       0
+          0
 #endif
-      );
+         );
 
-   
+      
 
 
 
@@ -141,50 +142,50 @@ png_write_info_before_PLTE(png_structrp png_ptr, png_const_inforp info_ptr)
 #endif
 
 #ifdef PNG_COLORSPACE_SUPPORTED
-   
+      
 
 
 #  ifdef PNG_WRITE_iCCP_SUPPORTED
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-          (info_ptr->valid & PNG_INFO_iCCP) != 0)
-      {
-#        ifdef PNG_WRITE_sRGB_SUPPORTED
-            if ((info_ptr->valid & PNG_INFO_sRGB) != 0)
-               png_app_warning(png_ptr,
-                  "profile matches sRGB but writing iCCP instead");
-#        endif
+         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
+             (info_ptr->valid & PNG_INFO_iCCP) != 0)
+         {
+#    ifdef PNG_WRITE_sRGB_SUPPORTED
+               if ((info_ptr->valid & PNG_INFO_sRGB) != 0)
+                  png_app_warning(png_ptr,
+                     "profile matches sRGB but writing iCCP instead");
+#     endif
 
-         png_write_iCCP(png_ptr, info_ptr->iccp_name,
-            info_ptr->iccp_profile);
-      }
+            png_write_iCCP(png_ptr, info_ptr->iccp_name,
+               info_ptr->iccp_profile);
+         }
 #     ifdef PNG_WRITE_sRGB_SUPPORTED
          else
 #     endif
 #  endif
 
 #  ifdef PNG_WRITE_sRGB_SUPPORTED
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-          (info_ptr->valid & PNG_INFO_sRGB) != 0)
-         png_write_sRGB(png_ptr, info_ptr->colorspace.rendering_intent);
+         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
+             (info_ptr->valid & PNG_INFO_sRGB) != 0)
+            png_write_sRGB(png_ptr, info_ptr->colorspace.rendering_intent);
 #  endif 
 #endif 
 
 #ifdef PNG_WRITE_sBIT_SUPPORTED
-   if ((info_ptr->valid & PNG_INFO_sBIT) != 0)
-      png_write_sBIT(png_ptr, &(info_ptr->sig_bit), info_ptr->color_type);
+         if ((info_ptr->valid & PNG_INFO_sBIT) != 0)
+            png_write_sBIT(png_ptr, &(info_ptr->sig_bit), info_ptr->color_type);
 #endif
 
 #ifdef PNG_COLORSPACE_SUPPORTED
 #  ifdef PNG_WRITE_cHRM_SUPPORTED
-      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
-         (info_ptr->colorspace.flags & PNG_COLORSPACE_FROM_cHRM) != 0 &&
-         (info_ptr->valid & PNG_INFO_cHRM) != 0)
-         png_write_cHRM_fixed(png_ptr, &info_ptr->colorspace.end_points_xy);
+         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_INVALID) == 0 &&
+             (info_ptr->colorspace.flags & PNG_COLORSPACE_FROM_cHRM) != 0 &&
+             (info_ptr->valid & PNG_INFO_cHRM) != 0)
+            png_write_cHRM_fixed(png_ptr, &info_ptr->colorspace.end_points_xy);
 #  endif
 #endif
 
 #ifdef PNG_WRITE_UNKNOWN_CHUNKS_SUPPORTED
-      write_unknown_chunks(png_ptr, info_ptr, PNG_HAVE_IHDR);
+         write_unknown_chunks(png_ptr, info_ptr, PNG_HAVE_IHDR);
 #endif
 
       png_ptr->mode |= PNG_WROTE_INFO_BEFORE_PLTE;
@@ -220,8 +221,13 @@ png_write_info(png_structrp png_ptr, png_const_inforp info_ptr)
       if ((png_ptr->transformations & PNG_INVERT_ALPHA) != 0 &&
           info_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
       {
-         int j;
-         for (j = 0; j<(int)info_ptr->num_trans; j++)
+         int j, jend;
+
+         jend = info_ptr->num_trans;
+         if (jend > PNG_MAX_PALETTE_LENGTH)
+            jend = PNG_MAX_PALETTE_LENGTH;
+
+         for (j = 0; j<jend; ++j)
             info_ptr->trans_alpha[j] =
                (png_byte)(255 - info_ptr->trans_alpha[j]);
       }
@@ -547,7 +553,7 @@ png_create_write_struct_2,(png_const_charp user_png_ver, png_voidp error_ptr,
       
 
 
-#if PNG_LIBPNG_BUILD_BASE_TYPE >= PNG_LIBPNG_BUILD_RC
+#if PNG_RELEASE_BUILD
       png_ptr->flags |= PNG_FLAG_APP_WARNINGS_WARN;
 #endif
 
@@ -858,7 +864,7 @@ png_write_row(png_structrp png_ptr, png_const_bytep row)
 
 
    if (row_info.pixel_depth != png_ptr->pixel_depth ||
-      row_info.pixel_depth != png_ptr->transformed_pixel_depth)
+       row_info.pixel_depth != png_ptr->transformed_pixel_depth)
       png_error(png_ptr, "internal write transform logic error");
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
@@ -926,10 +932,6 @@ png_write_flush(png_structrp png_ptr)
 }
 #endif 
 
-#ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED
-static void png_reset_filter_heuristics(png_structrp png_ptr);
-#endif
-
 
 static void
 png_write_destroy(png_structrp png_ptr)
@@ -946,24 +948,11 @@ png_write_destroy(png_structrp png_ptr)
    png_ptr->row_buf = NULL;
 #ifdef PNG_WRITE_FILTER_SUPPORTED
    png_free(png_ptr, png_ptr->prev_row);
-   png_free(png_ptr, png_ptr->sub_row);
-   png_free(png_ptr, png_ptr->up_row);
-   png_free(png_ptr, png_ptr->avg_row);
-   png_free(png_ptr, png_ptr->paeth_row);
+   png_free(png_ptr, png_ptr->try_row);
+   png_free(png_ptr, png_ptr->tst_row);
    png_ptr->prev_row = NULL;
-   png_ptr->sub_row = NULL;
-   png_ptr->up_row = NULL;
-   png_ptr->avg_row = NULL;
-   png_ptr->paeth_row = NULL;
-#endif
-
-#ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED
-   
-   png_reset_filter_heuristics(png_ptr);
-   png_free(png_ptr, png_ptr->filter_costs);
-   png_free(png_ptr, png_ptr->inv_filter_costs);
-   png_ptr->filter_costs = NULL;
-   png_ptr->inv_filter_costs = NULL;
+   png_ptr->try_row = NULL;
+   png_ptr->tst_row = NULL;
 #endif
 
 #ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
@@ -1053,7 +1042,12 @@ png_set_filter(png_structrp png_ptr, int method, int filters)
 #endif 
       }
 
+#ifdef PNG_WRITE_FILTER_SUPPORTED
       
+
+
+
+
 
 
 
@@ -1064,200 +1058,69 @@ png_set_filter(png_structrp png_ptr, int method, int filters)
 
       if (png_ptr->row_buf != NULL)
       {
-#ifdef PNG_WRITE_FILTER_SUPPORTED
-         if ((png_ptr->do_filter & PNG_FILTER_SUB) != 0 &&
-             png_ptr->sub_row == NULL)
+         int num_filters;
+         png_alloc_size_t buf_size;
+
+         
+
+
+
+         if (png_ptr->height == 1)
+            filters &= ~(PNG_FILTER_UP|PNG_FILTER_AVG|PNG_FILTER_PAETH);
+
+         if (png_ptr->width == 1)
+            filters &= ~(PNG_FILTER_SUB|PNG_FILTER_AVG|PNG_FILTER_PAETH);
+
+         if ((filters & (PNG_FILTER_UP|PNG_FILTER_AVG|PNG_FILTER_PAETH)) != 0
+            && png_ptr->prev_row == NULL)
          {
-            png_ptr->sub_row = (png_bytep)png_malloc(png_ptr,
-                (png_ptr->rowbytes + 1));
-            png_ptr->sub_row[0] = PNG_FILTER_VALUE_SUB;
+            
+
+
+            png_app_warning(png_ptr,
+               "png_set_filter: UP/AVG/PAETH cannot be added after start");
+            filters &= ~(PNG_FILTER_UP|PNG_FILTER_AVG|PNG_FILTER_PAETH);
          }
 
-         if ((png_ptr->do_filter & PNG_FILTER_UP) != 0 &&
-              png_ptr->up_row == NULL)
+         num_filters = 0;
+
+         if (filters & PNG_FILTER_SUB)
+            num_filters++;
+
+         if (filters & PNG_FILTER_UP)
+            num_filters++;
+
+         if (filters & PNG_FILTER_AVG)
+            num_filters++;
+
+         if (filters & PNG_FILTER_PAETH)
+            num_filters++;
+
+         
+
+
+         buf_size = PNG_ROWBYTES(png_ptr->usr_channels * png_ptr->usr_bit_depth,
+             png_ptr->width) + 1;
+
+         if (png_ptr->try_row == NULL)
+            png_ptr->try_row = png_voidcast(png_bytep,
+               png_malloc(png_ptr, buf_size));
+
+         if (num_filters > 1)
          {
-            if (png_ptr->prev_row == NULL)
-            {
-               png_warning(png_ptr, "Can't add Up filter after starting");
-               png_ptr->do_filter = (png_byte)(png_ptr->do_filter &
-                   ~PNG_FILTER_UP);
-            }
-
-            else
-            {
-               png_ptr->up_row = (png_bytep)png_malloc(png_ptr,
-                   (png_ptr->rowbytes + 1));
-               png_ptr->up_row[0] = PNG_FILTER_VALUE_UP;
-            }
+            if (png_ptr->tst_row == NULL)
+               png_ptr->tst_row = png_voidcast(png_bytep,
+                  png_malloc(png_ptr, buf_size));
          }
-
-         if ((png_ptr->do_filter & PNG_FILTER_AVG) != 0 &&
-              png_ptr->avg_row == NULL)
-         {
-            if (png_ptr->prev_row == NULL)
-            {
-               png_warning(png_ptr, "Can't add Average filter after starting");
-               png_ptr->do_filter = (png_byte)(png_ptr->do_filter &
-                   ~PNG_FILTER_AVG);
-            }
-
-            else
-            {
-               png_ptr->avg_row = (png_bytep)png_malloc(png_ptr,
-                   (png_ptr->rowbytes + 1));
-               png_ptr->avg_row[0] = PNG_FILTER_VALUE_AVG;
-            }
-         }
-
-         if ((png_ptr->do_filter & PNG_FILTER_PAETH) != 0 &&
-             png_ptr->paeth_row == NULL)
-         {
-            if (png_ptr->prev_row == NULL)
-            {
-               png_warning(png_ptr, "Can't add Paeth filter after starting");
-               png_ptr->do_filter &= (png_byte)(~PNG_FILTER_PAETH);
-            }
-
-            else
-            {
-               png_ptr->paeth_row = (png_bytep)png_malloc(png_ptr,
-                   (png_ptr->rowbytes + 1));
-               png_ptr->paeth_row[0] = PNG_FILTER_VALUE_PAETH;
-            }
-         }
-
-         if (png_ptr->do_filter == PNG_NO_FILTERS)
-#endif 
-            png_ptr->do_filter = PNG_FILTER_NONE;
       }
+      png_ptr->do_filter = (png_byte)filters;
+#endif
    }
    else
       png_error(png_ptr, "Unknown custom filter method");
 }
 
-
-
-
-
-
-
-
-#ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED      
-
-static void
-png_reset_filter_heuristics(png_structrp png_ptr)
-{
-   
-
-
-
-
-   png_ptr->num_prev_filters = 0;
-   png_ptr->heuristic_method = PNG_FILTER_HEURISTIC_UNWEIGHTED;
-   if (png_ptr->prev_filters != NULL)
-   {
-      png_bytep old = png_ptr->prev_filters;
-      png_ptr->prev_filters = NULL;
-      png_free(png_ptr, old);
-   }
-   if (png_ptr->filter_weights != NULL)
-   {
-      png_uint_16p old = png_ptr->filter_weights;
-      png_ptr->filter_weights = NULL;
-      png_free(png_ptr, old);
-   }
-
-   if (png_ptr->inv_filter_weights != NULL)
-   {
-      png_uint_16p old = png_ptr->inv_filter_weights;
-      png_ptr->inv_filter_weights = NULL;
-      png_free(png_ptr, old);
-   }
-
-   
-}
-
-static int
-png_init_filter_heuristics(png_structrp png_ptr, int heuristic_method,
-   int num_weights)
-{
-   if (png_ptr == NULL)
-      return 0;
-
-   
-   png_reset_filter_heuristics(png_ptr);
-
-   
-
-
-
-   if (heuristic_method == PNG_FILTER_HEURISTIC_WEIGHTED)
-   {
-      int i;
-
-      if (num_weights > 0)
-      {
-         png_ptr->prev_filters = (png_bytep)png_malloc(png_ptr,
-             (png_uint_32)((sizeof (png_byte)) * num_weights));
-
-         
-         for (i = 0; i < num_weights; i++)
-         {
-            png_ptr->prev_filters[i] = 255;
-         }
-
-         png_ptr->filter_weights = (png_uint_16p)png_malloc(png_ptr,
-             (png_uint_32)((sizeof (png_uint_16)) * num_weights));
-
-         png_ptr->inv_filter_weights = (png_uint_16p)png_malloc(png_ptr,
-             (png_uint_32)((sizeof (png_uint_16)) * num_weights));
-
-         for (i = 0; i < num_weights; i++)
-         {
-            png_ptr->inv_filter_weights[i] =
-            png_ptr->filter_weights[i] = PNG_WEIGHT_FACTOR;
-         }
-
-         
-         png_ptr->num_prev_filters = (png_byte)num_weights;
-      }
-
-      
-
-
-      if (png_ptr->filter_costs == NULL)
-      {
-         png_ptr->filter_costs = (png_uint_16p)png_malloc(png_ptr,
-             (png_uint_32)((sizeof (png_uint_16)) * PNG_FILTER_VALUE_LAST));
-
-         png_ptr->inv_filter_costs = (png_uint_16p)png_malloc(png_ptr,
-             (png_uint_32)((sizeof (png_uint_16)) * PNG_FILTER_VALUE_LAST));
-      }
-
-      for (i = 0; i < PNG_FILTER_VALUE_LAST; i++)
-      {
-         png_ptr->inv_filter_costs[i] =
-         png_ptr->filter_costs[i] = PNG_COST_FACTOR;
-      }
-
-      
-      png_ptr->heuristic_method = PNG_FILTER_HEURISTIC_WEIGHTED;
-
-      
-      return 1;
-   }
-   else if (heuristic_method == PNG_FILTER_HEURISTIC_DEFAULT ||
-      heuristic_method == PNG_FILTER_HEURISTIC_UNWEIGHTED)
-   {
-      return 1;
-   }
-   else
-   {
-      png_warning(png_ptr, "Unknown filter heuristic method");
-      return 0;
-   }
-}
-
+#ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED 
 
 #ifdef PNG_FLOATING_POINT_SUPPORTED
 void PNGAPI
@@ -1265,52 +1128,11 @@ png_set_filter_heuristics(png_structrp png_ptr, int heuristic_method,
     int num_weights, png_const_doublep filter_weights,
     png_const_doublep filter_costs)
 {
-   png_debug(1, "in png_set_filter_heuristics");
-
-   
-
-
-   if (png_init_filter_heuristics(png_ptr, heuristic_method, num_weights) == 0)
-      return;
-
-   
-   if (heuristic_method == PNG_FILTER_HEURISTIC_WEIGHTED)
-   {
-      int i;
-      for (i = 0; i < num_weights; i++)
-      {
-         if (filter_weights[i] <= 0.0)
-         {
-            png_ptr->inv_filter_weights[i] =
-            png_ptr->filter_weights[i] = PNG_WEIGHT_FACTOR;
-         }
-
-         else
-         {
-            png_ptr->inv_filter_weights[i] =
-                (png_uint_16)(PNG_WEIGHT_FACTOR*filter_weights[i]+.5);
-
-            png_ptr->filter_weights[i] =
-                (png_uint_16)(PNG_WEIGHT_FACTOR/filter_weights[i]+.5);
-         }
-      }
-
-      
-
-
-
-
-
-
-      for (i = 0; i < PNG_FILTER_VALUE_LAST; i++) if (filter_costs[i] >= 1.0)
-      {
-         png_ptr->inv_filter_costs[i] =
-             (png_uint_16)(PNG_COST_FACTOR / filter_costs[i] + .5);
-
-         png_ptr->filter_costs[i] =
-             (png_uint_16)(PNG_COST_FACTOR * filter_costs[i] + .5);
-      }
-   }
+   PNG_UNUSED(png_ptr)
+   PNG_UNUSED(heuristic_method)
+   PNG_UNUSED(num_weights)
+   PNG_UNUSED(filter_weights)
+   PNG_UNUSED(filter_costs)
 }
 #endif 
 
@@ -1320,63 +1142,11 @@ png_set_filter_heuristics_fixed(png_structrp png_ptr, int heuristic_method,
     int num_weights, png_const_fixed_point_p filter_weights,
     png_const_fixed_point_p filter_costs)
 {
-   png_debug(1, "in png_set_filter_heuristics_fixed");
-
-   
-
-
-   if (png_init_filter_heuristics(png_ptr, heuristic_method, num_weights) == 0)
-      return;
-
-   
-   if (heuristic_method == PNG_FILTER_HEURISTIC_WEIGHTED)
-   {
-      int i;
-      for (i = 0; i < num_weights; i++)
-      {
-         if (filter_weights[i] <= 0)
-         {
-            png_ptr->inv_filter_weights[i] =
-            png_ptr->filter_weights[i] = PNG_WEIGHT_FACTOR;
-         }
-
-         else
-         {
-            png_ptr->inv_filter_weights[i] = (png_uint_16)
-               ((PNG_WEIGHT_FACTOR*filter_weights[i]+PNG_FP_HALF)/PNG_FP_1);
-
-            png_ptr->filter_weights[i] = (png_uint_16)((PNG_WEIGHT_FACTOR*
-               PNG_FP_1+(filter_weights[i]/2))/filter_weights[i]);
-         }
-      }
-
-      
-
-
-
-
-
-
-      for (i = 0; i < PNG_FILTER_VALUE_LAST; i++)
-         if (filter_costs[i] >= PNG_FP_1)
-      {
-         png_uint_32 tmp;
-
-         
-
-
-
-         tmp = PNG_COST_FACTOR*PNG_FP_1 + (filter_costs[i]/2);
-         tmp /= filter_costs[i];
-
-         png_ptr->inv_filter_costs[i] = (png_uint_16)tmp;
-
-         tmp = PNG_COST_FACTOR * filter_costs[i] + PNG_FP_HALF;
-         tmp /= PNG_FP_1;
-
-         png_ptr->filter_costs[i] = (png_uint_16)tmp;
-      }
-   }
+   PNG_UNUSED(png_ptr)
+   PNG_UNUSED(heuristic_method)
+   PNG_UNUSED(num_weights)
+   PNG_UNUSED(filter_weights)
+   PNG_UNUSED(filter_costs)
 }
 #endif 
 #endif 
@@ -1625,14 +1395,14 @@ png_write_png(png_structrp png_ptr, png_inforp info_ptr,
 
 
    if ((transforms & (PNG_TRANSFORM_STRIP_FILLER_AFTER|
-      PNG_TRANSFORM_STRIP_FILLER_BEFORE)) != 0)
+       PNG_TRANSFORM_STRIP_FILLER_BEFORE)) != 0)
    {
 #ifdef PNG_WRITE_FILLER_SUPPORTED
       if ((transforms & PNG_TRANSFORM_STRIP_FILLER_AFTER) != 0)
       {
          if ((transforms & PNG_TRANSFORM_STRIP_FILLER_BEFORE) != 0)
             png_app_error(png_ptr,
-               "PNG_TRANSFORM_STRIP_FILLER: BEFORE+AFTER not supported");
+                "PNG_TRANSFORM_STRIP_FILLER: BEFORE+AFTER not supported");
 
          
          png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
@@ -1691,13 +1461,13 @@ png_write_png(png_structrp png_ptr, png_inforp info_ptr,
 
 
 #ifdef PNG_SIMPLIFIED_WRITE_SUPPORTED
-#ifdef PNG_STDIO_SUPPORTED 
+# ifdef PNG_STDIO_SUPPORTED 
 
 static int
 png_image_write_init(png_imagep image)
 {
    png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, image,
-          png_safe_error, png_safe_warning);
+       png_safe_error, png_safe_warning);
 
    if (png_ptr != NULL)
    {
@@ -1706,7 +1476,7 @@ png_image_write_init(png_imagep image)
       if (info_ptr != NULL)
       {
          png_controlp control = png_voidcast(png_controlp,
-            png_malloc_warn(png_ptr, (sizeof *control)));
+             png_malloc_warn(png_ptr, (sizeof *control)));
 
          if (control != NULL)
          {
@@ -1753,12 +1523,12 @@ static int
 png_write_image_16bit(png_voidp argument)
 {
    png_image_write_control *display = png_voidcast(png_image_write_control*,
-      argument);
+       argument);
    png_imagep image = display->image;
    png_structrp png_ptr = image->opaque->png_ptr;
 
    png_const_uint_16p input_row = png_voidcast(png_const_uint_16p,
-      display->first_row);
+       display->first_row);
    png_uint_16p output_row = png_voidcast(png_uint_16p, display->local_row);
    png_uint_16p row_end;
    const int channels = (image->format & PNG_FORMAT_FLAG_COLOR) != 0 ? 3 : 1;
@@ -1767,17 +1537,18 @@ png_write_image_16bit(png_voidp argument)
 
    if ((image->format & PNG_FORMAT_FLAG_ALPHA) != 0)
    {
-#     ifdef PNG_SIMPLIFIED_WRITE_AFIRST_SUPPORTED
-         if ((image->format & PNG_FORMAT_FLAG_AFIRST) != 0)
-         {
-            aindex = -1;
-            ++input_row; 
-            ++output_row;
-         }
-
+#   ifdef PNG_SIMPLIFIED_WRITE_AFIRST_SUPPORTED
+      if ((image->format & PNG_FORMAT_FLAG_AFIRST) != 0)
+      {
+         aindex = -1;
+         ++input_row; 
+         ++output_row;
+      }
          else
-#     endif
+            aindex = channels;
+#     else
          aindex = channels;
+#     endif
    }
 
    else
@@ -1859,7 +1630,7 @@ png_write_image_16bit(png_voidp argument)
 
 
 
-#define UNP_RECIPROCAL(alpha) ((((0xffff*0xff)<<7)+(alpha>>1))/alpha)
+#   define UNP_RECIPROCAL(alpha) ((((0xffff*0xff)<<7)+(alpha>>1))/alpha)
 
 static png_byte
 png_unpremultiply(png_uint_32 component, png_uint_32 alpha,
@@ -1910,12 +1681,12 @@ static int
 png_write_image_8bit(png_voidp argument)
 {
    png_image_write_control *display = png_voidcast(png_image_write_control*,
-      argument);
+       argument);
    png_imagep image = display->image;
    png_structrp png_ptr = image->opaque->png_ptr;
 
    png_const_uint_16p input_row = png_voidcast(png_const_uint_16p,
-      display->first_row);
+       display->first_row);
    png_bytep output_row = png_voidcast(png_bytep, display->local_row);
    png_uint_32 y = image->height;
    const int channels = (image->format & PNG_FORMAT_FLAG_COLOR) != 0 ? 3 : 1;
@@ -1925,17 +1696,17 @@ png_write_image_8bit(png_voidp argument)
       png_bytep row_end;
       int aindex;
 
-#     ifdef PNG_SIMPLIFIED_WRITE_AFIRST_SUPPORTED
-         if ((image->format & PNG_FORMAT_FLAG_AFIRST) != 0)
-         {
-            aindex = -1;
-            ++input_row; 
-            ++output_row;
-         }
+#   ifdef PNG_SIMPLIFIED_WRITE_AFIRST_SUPPORTED
+      if ((image->format & PNG_FORMAT_FLAG_AFIRST) != 0)
+      {
+         aindex = -1;
+         ++input_row; 
+         ++output_row;
+      }
 
-         else
-#     endif
-         aindex = channels;
+      else
+#   endif
+      aindex = channels;
 
       
       row_end = output_row + image->width * (channels+1);
@@ -1969,7 +1740,7 @@ png_write_image_8bit(png_voidp argument)
          } 
 
          png_write_row(png_ptr, png_voidcast(png_const_bytep,
-            display->local_row));
+             display->local_row));
          input_row += display->row_bytes/(sizeof (png_uint_16));
       } 
    }
@@ -2008,25 +1779,25 @@ png_image_set_PLTE(png_image_write_control *display)
    const png_imagep image = display->image;
    const void *cmap = display->colormap;
    const int entries = image->colormap_entries > 256 ? 256 :
-      (int)image->colormap_entries;
+       (int)image->colormap_entries;
 
    
    const png_uint_32 format = image->format;
    const int channels = PNG_IMAGE_SAMPLE_CHANNELS(format);
 
-#  if defined(PNG_FORMAT_BGR_SUPPORTED) &&\
+#   if defined(PNG_FORMAT_BGR_SUPPORTED) &&\
       defined(PNG_SIMPLIFIED_WRITE_AFIRST_SUPPORTED)
       const int afirst = (format & PNG_FORMAT_FLAG_AFIRST) != 0 &&
-         (format & PNG_FORMAT_FLAG_ALPHA) != 0;
-#  else
+          (format & PNG_FORMAT_FLAG_ALPHA) != 0;
+#   else
 #     define afirst 0
-#  endif
+#   endif
 
-#  ifdef PNG_FORMAT_BGR_SUPPORTED
+#   ifdef PNG_FORMAT_BGR_SUPPORTED
       const int bgr = (format & PNG_FORMAT_FLAG_BGR) != 0 ? 2 : 0;
-#  else
+#   else
 #     define bgr 0
-#  endif
+#   endif
 
    int i, num_trans;
    png_color palette[256];
@@ -2051,11 +1822,11 @@ png_image_set_PLTE(png_image_write_control *display)
             if (channels >= 3) 
             {
                palette[i].blue = (png_byte)PNG_sRGB_FROM_LINEAR(255 *
-                  entry[(2 ^ bgr)]);
+                   entry[(2 ^ bgr)]);
                palette[i].green = (png_byte)PNG_sRGB_FROM_LINEAR(255 *
-                  entry[1]);
+                   entry[1]);
                palette[i].red = (png_byte)PNG_sRGB_FROM_LINEAR(255 *
-                  entry[bgr]);
+                   entry[bgr]);
             }
 
             else 
@@ -2131,12 +1902,12 @@ png_image_set_PLTE(png_image_write_control *display)
       }
    }
 
-#  ifdef afirst
+#   ifdef afirst
 #     undef afirst
-#  endif
-#  ifdef bgr
+#   endif
+#   ifdef bgr
 #     undef bgr
-#  endif
+#   endif
 
    png_set_PLTE(image->opaque->png_ptr, image->opaque->info_ptr, palette,
       entries);
@@ -2164,10 +1935,10 @@ png_image_write_main(png_voidp argument)
    int alpha = !colormap && (format & PNG_FORMAT_FLAG_ALPHA);
    int write_16bit = linear && !colormap && (display->convert_to_8bit == 0);
 
-#  ifdef PNG_BENIGN_ERRORS_SUPPORTED
+#   ifdef PNG_BENIGN_ERRORS_SUPPORTED
       
       png_set_benign_errors(png_ptr, 0);
-#  endif
+#   endif
 
    
    if (display->row_stride == 0)
@@ -2246,23 +2017,23 @@ png_image_write_main(png_voidp argument)
          png_set_swap(png_ptr);
    }
 
-#  ifdef PNG_SIMPLIFIED_WRITE_BGR_SUPPORTED
+#   ifdef PNG_SIMPLIFIED_WRITE_BGR_SUPPORTED
       if ((format & PNG_FORMAT_FLAG_BGR) != 0)
       {
          if (colormap == 0 && (format & PNG_FORMAT_FLAG_COLOR) != 0)
             png_set_bgr(png_ptr);
          format &= ~PNG_FORMAT_FLAG_BGR;
       }
-#  endif
+#   endif
 
-#  ifdef PNG_SIMPLIFIED_WRITE_AFIRST_SUPPORTED
+#   ifdef PNG_SIMPLIFIED_WRITE_AFIRST_SUPPORTED
       if ((format & PNG_FORMAT_FLAG_AFIRST) != 0)
       {
          if (colormap == 0 && (format & PNG_FORMAT_FLAG_ALPHA) != 0)
             png_set_swap_alpha(png_ptr);
          format &= ~PNG_FORMAT_FLAG_AFIRST;
       }
-#  endif
+#   endif
 
    
 
@@ -2298,9 +2069,9 @@ png_image_write_main(png_voidp argument)
 
 
 
-#ifdef PNG_WRITE_CUSTOMIZE_COMPRESSION_SUPPORTED
+#   ifdef PNG_WRITE_CUSTOMIZE_COMPRESSION_SUPPORTED
       png_set_compression_level(png_ptr, 3);
-#endif
+#   endif
    }
 
    
@@ -2463,7 +2234,7 @@ png_image_write_to_file(png_imagep image, const char *file_name,
    else
       return 0;
 }
-#endif 
+# endif 
 #endif 
 
 #ifdef PNG_WRITE_APNG_SUPPORTED

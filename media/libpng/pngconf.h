@@ -295,11 +295,11 @@
 
 
 
-#ifndef PNG_EXPORTA
 
-#  define PNG_EXPORTA(ordinal, type, name, args, attributes)\
-      PNG_FUNCTION(PNG_EXPORT_TYPE(type),(PNGAPI name),PNGARG(args), \
-        extern attributes)
+#ifndef PNG_EXPORTA
+#  define PNG_EXPORTA(ordinal, type, name, args, attributes) \
+      PNG_FUNCTION(PNG_EXPORT_TYPE(type), (PNGAPI name), PNGARG(args), \
+      PNG_LINKAGE_API attributes)
 #endif
 
 
@@ -307,7 +307,7 @@
 
 #define PNG_EMPTY
 
-#define PNG_EXPORT(ordinal, type, name, args)\
+#define PNG_EXPORT(ordinal, type, name, args) \
    PNG_EXPORTA(ordinal, type, name, args, PNG_EMPTY)
 
 

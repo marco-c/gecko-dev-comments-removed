@@ -14,7 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_17 Your_png_h_is_not_version_1_6_17;
+typedef png_libpng_version_1_6_18 Your_png_h_is_not_version_1_6_18;
 
 
 
@@ -243,15 +243,15 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
       create_struct.user_height_max = PNG_USER_HEIGHT_MAX;
 
 #     ifdef PNG_USER_CHUNK_CACHE_MAX
-         
-         create_struct.user_chunk_cache_max = PNG_USER_CHUNK_CACHE_MAX;
+      
+      create_struct.user_chunk_cache_max = PNG_USER_CHUNK_CACHE_MAX;
 #     endif
 
 #     ifdef PNG_USER_CHUNK_MALLOC_MAX
-         
+      
 
 
-         create_struct.user_chunk_malloc_max = PNG_USER_CHUNK_MALLOC_MAX;
+      create_struct.user_chunk_malloc_max = PNG_USER_CHUNK_MALLOC_MAX;
 #     endif
 #  endif
 
@@ -275,7 +275,9 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
 
 #  ifdef PNG_SETJMP_SUPPORTED
       if (!setjmp(create_jmp_buf))
+#  endif
       {
+#  ifdef PNG_SETJMP_SUPPORTED
          
 
 
@@ -284,10 +286,8 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
          create_struct.jmp_buf_ptr = &create_jmp_buf;
          create_struct.jmp_buf_size = 0; 
          create_struct.longjmp_fn = longjmp;
-#  else
-      {
 #  endif
-
+         
 
          if (png_user_version_check(&create_struct, user_png_ver) != 0)
          {
@@ -304,10 +304,10 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
                create_struct.zstream.opaque = png_ptr;
 
 #              ifdef PNG_SETJMP_SUPPORTED
-                  
-                  create_struct.jmp_buf_ptr = NULL;
-                  create_struct.jmp_buf_size = 0;
-                  create_struct.longjmp_fn = 0;
+               
+               create_struct.jmp_buf_ptr = NULL;
+               create_struct.jmp_buf_size = 0;
+               create_struct.longjmp_fn = 0;
 #              endif
 
                *png_ptr = create_struct;
@@ -766,13 +766,13 @@ png_get_copyright(png_const_structrp png_ptr)
 #else
 #  ifdef __STDC__
    return PNG_STRING_NEWLINE \
-     "libpng version 1.6.17 - March 25, 2015" PNG_STRING_NEWLINE \
-     "Copyright (c) 1998-2015 Glenn Randers-Pehrson" PNG_STRING_NEWLINE \
-     "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
-     "Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc." \
-     PNG_STRING_NEWLINE;
+      "libpng version 1.6.18 - July 23, 2015" PNG_STRING_NEWLINE \
+      "Copyright (c) 1998-2015 Glenn Randers-Pehrson" PNG_STRING_NEWLINE \
+      "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
+      "Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc." \
+      PNG_STRING_NEWLINE;
 #  else
-      return "libpng version 1.6.17 - March 25, 2015\
+   return "libpng version 1.6.18 - July 23, 2015\
       Copyright (c) 1998-2015 Glenn Randers-Pehrson\
       Copyright (c) 1996-1997 Andreas Dilger\
       Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.";
@@ -811,9 +811,9 @@ png_get_header_version(png_const_structrp png_ptr)
 #ifdef __STDC__
    return PNG_HEADER_VERSION_STRING
 #  ifndef PNG_READ_SUPPORTED
-   "     (NO READ SUPPORT)"
+      " (NO READ SUPPORT)"
 #  endif
-   PNG_STRING_NEWLINE;
+      PNG_STRING_NEWLINE;
 #else
    return PNG_HEADER_VERSION_STRING;
 #endif
@@ -1086,10 +1086,10 @@ png_colorspace_set_gamma(png_const_structrp png_ptr,
       errmsg = "gamma value out of range";
 
 #  ifdef PNG_READ_gAMA_SUPPORTED
-      
-      else if ((png_ptr->mode & PNG_IS_READ_STRUCT) != 0 &&
-         (colorspace->flags & PNG_COLORSPACE_FROM_gAMA) != 0)
-         errmsg = "duplicate";
+   
+   else if ((png_ptr->mode & PNG_IS_READ_STRUCT) != 0 &&
+      (colorspace->flags & PNG_COLORSPACE_FROM_gAMA) != 0)
+      errmsg = "duplicate";
 #  endif
 
    
@@ -1130,31 +1130,31 @@ png_colorspace_sync_info(png_const_structrp png_ptr, png_inforp info_ptr)
          PNG_INFO_iCCP);
 
 #     ifdef PNG_COLORSPACE_SUPPORTED
-         
-         png_free_data(png_ptr, info_ptr, PNG_FREE_ICCP, -1);
+      
+      png_free_data(png_ptr, info_ptr, PNG_FREE_ICCP, -1);
 #     else
-         PNG_UNUSED(png_ptr)
+      PNG_UNUSED(png_ptr)
 #     endif
    }
 
    else
    {
 #     ifdef PNG_COLORSPACE_SUPPORTED
-         
+      
 
 
 
-         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_MATCHES_sRGB) != 0)
-            info_ptr->valid |= PNG_INFO_sRGB;
+      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_MATCHES_sRGB) != 0)
+         info_ptr->valid |= PNG_INFO_sRGB;
 
-         else
-            info_ptr->valid &= ~PNG_INFO_sRGB;
+      else
+         info_ptr->valid &= ~PNG_INFO_sRGB;
 
-         if ((info_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_ENDPOINTS) != 0)
-            info_ptr->valid |= PNG_INFO_cHRM;
+      if ((info_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_ENDPOINTS) != 0)
+         info_ptr->valid |= PNG_INFO_cHRM;
 
-         else
-            info_ptr->valid &= ~PNG_INFO_cHRM;
+      else
+         info_ptr->valid &= ~PNG_INFO_cHRM;
 #     endif
 
       if ((info_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_GAMMA) != 0)
@@ -1237,14 +1237,15 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 
 
 
-   if (xy->redx < 0 || xy->redx > PNG_FP_1) return 1;
-   if (xy->redy < 0 || xy->redy > PNG_FP_1-xy->redx) return 1;
+
+   if (xy->redx   < 0 || xy->redx > PNG_FP_1) return 1;
+   if (xy->redy   < 0 || xy->redy > PNG_FP_1-xy->redx) return 1;
    if (xy->greenx < 0 || xy->greenx > PNG_FP_1) return 1;
    if (xy->greeny < 0 || xy->greeny > PNG_FP_1-xy->greenx) return 1;
-   if (xy->bluex < 0 || xy->bluex > PNG_FP_1) return 1;
-   if (xy->bluey < 0 || xy->bluey > PNG_FP_1-xy->bluex) return 1;
+   if (xy->bluex  < 0 || xy->bluex > PNG_FP_1) return 1;
+   if (xy->bluey  < 0 || xy->bluey > PNG_FP_1-xy->bluex) return 1;
    if (xy->whitex < 0 || xy->whitex > PNG_FP_1) return 1;
-   if (xy->whitey < 0 || xy->whitey > PNG_FP_1-xy->whitex) return 1;
+   if (xy->whitey < 5 || xy->whitey > PNG_FP_1-xy->whitex) return 1;
 
    
 
@@ -2276,7 +2277,7 @@ png_compare_ICC_profile_with_sRGB(png_const_structrp png_ptr,
 
          
          if (length == png_sRGB_checks[i].length &&
-            intent == png_sRGB_checks[i].intent)
+            intent == (png_uint_32) png_sRGB_checks[i].intent)
          {
             
             if (adler == 0)
@@ -2843,7 +2844,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
       if (fp >= DBL_MIN && fp <= DBL_MAX)
       {
-         int exp_b10;       
+         int exp_b10;   
          double base;   
 
          
@@ -2891,7 +2892,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
 
          {
-            int czero, clead, cdigits;
+            unsigned int czero, clead, cdigits;
             char exponent[10];
 
             
@@ -2921,7 +2922,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
 
 
-               if (cdigits+czero-clead+1 < (int)precision)
+               if (cdigits+czero+1 < precision+clead)
                   fp = modf(fp, &d);
 
                else
@@ -3027,7 +3028,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
                   *ascii++ = (char)(48 + (int)d), ++cdigits;
                }
             }
-            while (cdigits+czero-clead < (int)precision && fp > DBL_MIN);
+            while (cdigits+czero < precision+clead && fp > DBL_MIN);
 
             
 
@@ -3095,7 +3096,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
             
 
 
-            if ((int)size > cdigits)
+            if (size > cdigits)
             {
                while (cdigits > 0) *ascii++ = exponent[--cdigits];
 

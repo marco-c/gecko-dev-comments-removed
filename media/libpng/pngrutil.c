@@ -341,7 +341,7 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
 
 
       (void)png_safecat(msg, (sizeof msg), 4, " using zstream");
-#if PNG_LIBPNG_BUILD_BASE_TYPE >= PNG_LIBPNG_BUILD_RC
+#if PNG_RELEASE_BUILD
       png_chunk_warning(png_ptr, msg);
       png_ptr->zowner = 0;
 #else
@@ -575,7 +575,7 @@ png_decompress_chunk(png_structrp png_ptr,
 
    png_alloc_size_t limit = PNG_SIZE_MAX;
 
-# ifdef PNG_SET_CHUNK_MALLOC_LIMIT_SUPPORTED
+# ifdef PNG_SET_USER_LIMITS_SUPPORTED
    if (png_ptr->user_chunk_malloc_max > 0 &&
        png_ptr->user_chunk_malloc_max < limit)
       limit = png_ptr->user_chunk_malloc_max;
@@ -670,7 +670,6 @@ png_decompress_chunk(png_structrp png_ptr,
 
 
                   png_free(png_ptr, text);
-                  text = NULL;
 
                   
 
@@ -1152,11 +1151,13 @@ png_handle_sBIT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       return;
 
    for (i=0; i<truelen; ++i)
+   {
       if (buf[i] == 0 || buf[i] > sample_depth)
       {
          png_chunk_benign_error(png_ptr, "invalid");
          return;
       }
+   }
 
    if ((png_ptr->color_type & PNG_COLOR_MASK_COLOR) != 0)
    {
@@ -1467,10 +1468,10 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                                     finished = 1;
 
 #                                   ifdef PNG_sRGB_SUPPORTED
-                                       
-                                       png_icc_set_sRGB(png_ptr,
-                                          &png_ptr->colorspace, profile,
-                                          png_ptr->zstream.adler);
+                                    
+                                    png_icc_set_sRGB(png_ptr,
+                                       &png_ptr->colorspace, profile,
+                                       png_ptr->zstream.adler);
 #                                   endif
 
                                     
@@ -1680,8 +1681,8 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    if (dl > max_dl)
    {
-       png_warning(png_ptr, "sPLT chunk too long");
-       return;
+      png_warning(png_ptr, "sPLT chunk too long");
+      return;
    }
 
    new_palette.nentries = (png_int_32)(data_length / entry_size);
@@ -1691,8 +1692,8 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    if (new_palette.entries == NULL)
    {
-       png_warning(png_ptr, "sPLT chunk requires too much memory");
-       return;
+      png_warning(png_ptr, "sPLT chunk requires too much memory");
+      return;
    }
 
 #ifdef PNG_POINTER_INDEXING_SUPPORTED
@@ -1822,7 +1823,8 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          return;
       }
 
-      if (length > png_ptr->num_palette || length > PNG_MAX_PALETTE_LENGTH ||
+      if (length > png_ptr->num_palette ||
+         length > (unsigned int) PNG_MAX_PALETTE_LENGTH ||
          length == 0)
       {
          png_crc_finish(png_ptr, length);
@@ -1985,7 +1987,7 @@ png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    num = length / 2 ;
 
-   if (num != png_ptr->num_palette || num > PNG_MAX_PALETTE_LENGTH)
+   if (num != png_ptr->num_palette || num > (unsigned int) PNG_MAX_PALETTE_LENGTH)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "invalid");
@@ -2894,14 +2896,14 @@ png_cache_unknown_chunk(png_structrp png_ptr, png_uint_32 length)
       png_ptr->unknown_chunk.data = NULL;
    }
 
-#  ifdef PNG_SET_CHUNK_MALLOC_LIMIT_SUPPORTED
-      if (png_ptr->user_chunk_malloc_max > 0 &&
-          png_ptr->user_chunk_malloc_max < limit)
-         limit = png_ptr->user_chunk_malloc_max;
+#  ifdef PNG_SET_USER_LIMITS_SUPPORTED
+   if (png_ptr->user_chunk_malloc_max > 0 &&
+       png_ptr->user_chunk_malloc_max < limit)
+      limit = png_ptr->user_chunk_malloc_max;
 
 #  elif PNG_USER_CHUNK_MALLOC_MAX > 0
-      if (PNG_USER_CHUNK_MALLOC_MAX < limit)
-         limit = PNG_USER_CHUNK_MALLOC_MAX;
+   if (PNG_USER_CHUNK_MALLOC_MAX < limit)
+      limit = PNG_USER_CHUNK_MALLOC_MAX;
 #  endif
 
    if (length <= limit)
@@ -2964,7 +2966,7 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
 #  ifndef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
 #     ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
-         keep = png_chunk_unknown_handling(png_ptr, png_ptr->chunk_name);
+   keep = png_chunk_unknown_handling(png_ptr, png_ptr->chunk_name);
 #     endif
 #  endif
 
@@ -2973,18 +2975,32 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
 
 #  ifdef PNG_READ_USER_CHUNKS_SUPPORTED
-      
+   
 
 
-      if (png_ptr->read_user_chunk_fn != NULL)
+   if (png_ptr->read_user_chunk_fn != NULL)
+   {
+      if (png_cache_unknown_chunk(png_ptr, length) != 0)
       {
-         if (png_cache_unknown_chunk(png_ptr, length) != 0)
+         
+         int ret = (*(png_ptr->read_user_chunk_fn))(png_ptr,
+            &png_ptr->unknown_chunk);
+
+         
+
+
+
+
+
+
+
+
+         if (ret < 0)
+            png_chunk_error(png_ptr, "error in user chunk");
+
+         else if (ret == 0)
          {
             
-            int ret = (*(png_ptr->read_user_chunk_fn))(png_ptr,
-               &png_ptr->unknown_chunk);
-
-            
 
 
 
@@ -2993,133 +3009,119 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
 
 
-            if (ret < 0)
-               png_chunk_error(png_ptr, "error in user chunk");
 
-            else if (ret == 0)
+
+            if (keep < PNG_HANDLE_CHUNK_IF_SAFE)
             {
-               
-
-
-
-
-
-
-
-
-
-
-               if (keep < PNG_HANDLE_CHUNK_IF_SAFE)
+#              ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
+               if (png_ptr->unknown_default < PNG_HANDLE_CHUNK_IF_SAFE)
                {
-#                 ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
-                     if (png_ptr->unknown_default < PNG_HANDLE_CHUNK_IF_SAFE)
-                     {
-                        png_chunk_warning(png_ptr, "Saving unknown chunk:");
-                        png_app_warning(png_ptr,
-                           "forcing save of an unhandled chunk;"
-                           " please call png_set_keep_unknown_chunks");
-                           
-                     }
-#                 endif
-                  keep = PNG_HANDLE_CHUNK_IF_SAFE;
+                  png_chunk_warning(png_ptr, "Saving unknown chunk:");
+                  png_app_warning(png_ptr,
+                     "forcing save of an unhandled chunk;"
+                     " please call png_set_keep_unknown_chunks");
+                     
                }
-            }
-
-            else 
-            {
-               handled = 1;
-               
-               keep = PNG_HANDLE_CHUNK_NEVER;
+#              endif
+               keep = PNG_HANDLE_CHUNK_IF_SAFE;
             }
          }
 
-         else
-            keep = PNG_HANDLE_CHUNK_NEVER; 
+         else 
+         {
+            handled = 1;
+            
+            keep = PNG_HANDLE_CHUNK_NEVER;
+         }
       }
 
       else
-         
+         keep = PNG_HANDLE_CHUNK_NEVER; 
+   }
+
+   else
+   
 #  endif 
 
 #  ifdef PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED
-      {
-         
-
-
-
-
-         if (keep == PNG_HANDLE_CHUNK_AS_DEFAULT)
-            keep = png_ptr->unknown_default;
-
-         if (keep == PNG_HANDLE_CHUNK_ALWAYS ||
-            (keep == PNG_HANDLE_CHUNK_IF_SAFE &&
-             PNG_CHUNK_ANCILLARY(png_ptr->chunk_name)))
-         {
-            if (png_cache_unknown_chunk(png_ptr, length) == 0)
-               keep = PNG_HANDLE_CHUNK_NEVER;
-         }
-
-         else
-            png_crc_finish(png_ptr, length);
-      }
-#  else
-#     ifndef PNG_READ_USER_CHUNKS_SUPPORTED
-#        error no method to support READ_UNKNOWN_CHUNKS
-#     endif
-
-      {
-         
-
-
-
-
-
-         if (keep > PNG_HANDLE_CHUNK_NEVER)
-            png_app_error(png_ptr, "no unknown chunk support available");
-
-         png_crc_finish(png_ptr, length);
-      }
-#  endif
-
-#  ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
+   {
       
 
+
+
+
+      if (keep == PNG_HANDLE_CHUNK_AS_DEFAULT)
+         keep = png_ptr->unknown_default;
 
       if (keep == PNG_HANDLE_CHUNK_ALWAYS ||
          (keep == PNG_HANDLE_CHUNK_IF_SAFE &&
           PNG_CHUNK_ANCILLARY(png_ptr->chunk_name)))
       {
-#     ifdef PNG_USER_LIMITS_SUPPORTED
-         switch (png_ptr->user_chunk_cache_max)
-         {
-            case 2:
-               png_ptr->user_chunk_cache_max = 1;
-               png_chunk_benign_error(png_ptr, "no space in chunk cache");
-               
-            case 1:
-               
-
-
-               break;
-
-            default: 
-               --(png_ptr->user_chunk_cache_max);
-               
-            case 0: 
-#     endif
-
-
-
-               png_set_unknown_chunks(png_ptr, info_ptr,
-                  &png_ptr->unknown_chunk, 1);
-               handled = 1;
-#     ifdef PNG_USER_LIMITS_SUPPORTED
-               break;
-         }
-#     endif
+         if (png_cache_unknown_chunk(png_ptr, length) == 0)
+            keep = PNG_HANDLE_CHUNK_NEVER;
       }
+
+      else
+         png_crc_finish(png_ptr, length);
+   }
+#  else
+#     ifndef PNG_READ_USER_CHUNKS_SUPPORTED
+#        error no method to support READ_UNKNOWN_CHUNKS
+#     endif
+
+   {
+      
+
+
+
+
+
+      if (keep > PNG_HANDLE_CHUNK_NEVER)
+         png_app_error(png_ptr, "no unknown chunk support available");
+
+      png_crc_finish(png_ptr, length);
+   }
+#  endif
+
+#  ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
+   
+
+
+   if (keep == PNG_HANDLE_CHUNK_ALWAYS ||
+      (keep == PNG_HANDLE_CHUNK_IF_SAFE &&
+       PNG_CHUNK_ANCILLARY(png_ptr->chunk_name)))
+   {
+#     ifdef PNG_USER_LIMITS_SUPPORTED
+      switch (png_ptr->user_chunk_cache_max)
+      {
+         case 2:
+            png_ptr->user_chunk_cache_max = 1;
+            png_chunk_benign_error(png_ptr, "no space in chunk cache");
+            
+         case 1:
+            
+
+
+            break;
+
+         default: 
+            --(png_ptr->user_chunk_cache_max);
+            
+         case 0: 
+#  endif
+
+
+
+            png_set_unknown_chunks(png_ptr, info_ptr,
+               &png_ptr->unknown_chunk, 1);
+            handled = 1;
+#  ifdef PNG_USER_LIMITS_SUPPORTED
+            break;
+      }
+#  endif
+   }
 #  else 
-      PNG_UNUSED(info_ptr)
+   PNG_UNUSED(info_ptr)
 #  endif
 
    
@@ -3221,13 +3223,13 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
       end_ptr = dp + PNG_ROWBYTES(pixel_depth, row_width) - 1;
       end_byte = *end_ptr;
 #     ifdef PNG_READ_PACKSWAP_SUPPORTED
-         if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
-            
-            end_mask = 0xff << end_mask;
+      if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
+         
+         end_mask = 0xff << end_mask;
 
-         else 
+      else 
 #     endif
-         end_mask = 0xff >> end_mask;
+      end_mask = 0xff >> end_mask;
       
    }
 
@@ -3385,12 +3387,12 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
          png_uint_32 mask;
 
 #        ifdef PNG_READ_PACKSWAP_SUPPORTED
-            if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
-               mask = MASK(pass, pixel_depth, display, 0);
+         if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
+            mask = MASK(pass, pixel_depth, display, 0);
 
-            else
+         else
 #        endif
-            mask = MASK(pass, pixel_depth, display, 1);
+         mask = MASK(pass, pixel_depth, display, 1);
 
          for (;;)
          {
@@ -3991,15 +3993,15 @@ png_read_filter_row_paeth_1byte_pixel(png_row_infop row_info, png_bytep row,
       p = b - c;
       pc = a - c;
 
-#     ifdef PNG_USE_ABS
-         pa = abs(p);
-         pb = abs(pc);
-         pc = abs(p + pc);
-#     else
-         pa = p < 0 ? -p : p;
-         pb = pc < 0 ? -pc : pc;
-         pc = (p + pc) < 0 ? -(p + pc) : p + pc;
-#     endif
+#ifdef PNG_USE_ABS
+      pa = abs(p);
+      pb = abs(pc);
+      pc = abs(p + pc);
+#else
+      pa = p < 0 ? -p : p;
+      pb = pc < 0 ? -pc : pc;
+      pc = (p + pc) < 0 ? -(p + pc) : p + pc;
+#endif
 
       
 
@@ -4046,15 +4048,15 @@ png_read_filter_row_paeth_multibyte_pixel(png_row_infop row_info, png_bytep row,
       p = b - c;
       pc = a - c;
 
-#     ifdef PNG_USE_ABS
-         pa = abs(p);
-         pb = abs(pc);
-         pc = abs(p + pc);
-#     else
-         pa = p < 0 ? -p : p;
-         pb = pc < 0 ? -pc : pc;
-         pc = (p + pc) < 0 ? -(p + pc) : p + pc;
-#     endif
+#ifdef PNG_USE_ABS
+      pa = abs(p);
+      pb = abs(pc);
+      pc = abs(p + pc);
+#else
+      pa = p < 0 ? -p : p;
+      pb = pc < 0 ? -pc : pc;
+      pc = (p + pc) < 0 ? -(p + pc) : p + pc;
+#endif
 
       if (pb < pa) pa = pb, a = b;
       if (pc < pa) a = c;
@@ -4495,18 +4497,18 @@ png_read_start_row(png_structrp png_ptr)
 #ifdef PNG_READ_EXPAND_16_SUPPORTED
    if ((png_ptr->transformations & PNG_EXPAND_16) != 0)
    {
-#     ifdef PNG_READ_EXPAND_SUPPORTED
-         
+#  ifdef PNG_READ_EXPAND_SUPPORTED
+      
 
 
-         if ((png_ptr->transformations & PNG_EXPAND) != 0)
-         {
-            if (png_ptr->bit_depth < 16)
-               max_pixel_depth *= 2;
-         }
-         else
-#     endif
-         png_ptr->transformations &= ~PNG_EXPAND_16;
+      if ((png_ptr->transformations & PNG_EXPAND) != 0)
+      {
+         if (png_ptr->bit_depth < 16)
+            max_pixel_depth *= 2;
+      }
+      else
+#  endif
+      png_ptr->transformations &= ~PNG_EXPAND_16;
    }
 #endif
 

@@ -412,6 +412,12 @@
 
 
 
+
+
+
+
+
+
 #ifndef PNG_H
 #define PNG_H
 
@@ -427,9 +433,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.17"
+#define PNG_LIBPNG_VER_STRING "1.6.18"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.17 - March 25, 2015\n"
+     " libpng version 1.6.18 - July 23, 2015\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -437,7 +443,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 17
+#define PNG_LIBPNG_VER_RELEASE 18
 
 
 
@@ -468,7 +474,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10617 /* 1.6.17 */
+#define PNG_LIBPNG_VER 10618 /* 1.6.18 */
 
 
 
@@ -588,7 +594,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_17;
+typedef char* png_libpng_version_1_6_18;
 
 
 
@@ -1647,34 +1653,6 @@ PNG_EXPORT(67, void, png_set_filter, (png_structrp png_ptr, int method,
 
 #ifdef PNG_WRITE_SUPPORTED
 #ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 PNG_FP_EXPORT(68, void, png_set_filter_heuristics, (png_structrp png_ptr,
     int heuristic_method, int num_weights, png_const_doublep filter_weights,
     png_const_doublep filter_costs))
@@ -1683,8 +1661,6 @@ PNG_FIXED_EXPORT(209, void, png_set_filter_heuristics_fixed,
     png_const_fixed_point_p filter_weights,
     png_const_fixed_point_p filter_costs))
 #endif 
-
-
 
 
 #define PNG_FILTER_HEURISTIC_DEFAULT    0  /* Currently "UNWEIGHTED" */
@@ -2834,6 +2810,7 @@ PNG_EXPORT(207, void, png_save_uint_16, (png_bytep buf, unsigned int i));
 
 
 
+
 #define PNG_IMAGE_VERSION 1
 
 typedef struct png_control *png_controlp;
@@ -3219,6 +3196,8 @@ PNG_EXPORT(240, int, png_image_write_to_stdio, (png_imagep image, FILE *file,
    int convert_to_8_bit, const void *buffer, png_int_32 row_stride,
    const void *colormap));
    
+
+
 
 
 

@@ -121,6 +121,10 @@
 
 
 
+
+
+
+
 #  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && \
    defined(PNG_ALIGNED_MEMORY_SUPPORTED)
 #     define PNG_ARM_NEON_OPT 2
@@ -248,17 +252,18 @@
 
 
 #ifndef PNG_INTERNAL_DATA
-#  define PNG_INTERNAL_DATA(type, name, array) extern type name array
+#  define PNG_INTERNAL_DATA(type, name, array) PNG_LINKAGE_DATA type name array
 #endif
 
 #ifndef PNG_INTERNAL_FUNCTION
 #  define PNG_INTERNAL_FUNCTION(type, name, args, attributes)\
-      extern PNG_FUNCTION(type, name, args, PNG_EMPTY attributes)
+      PNG_LINKAGE_FUNCTION PNG_FUNCTION(type, name, args, PNG_EMPTY attributes)
 #endif
 
 #ifndef PNG_INTERNAL_CALLBACK
 #  define PNG_INTERNAL_CALLBACK(type, name, args, attributes)\
-      extern PNG_FUNCTION(type, (PNGCBAPI name), args, PNG_EMPTY attributes)
+      PNG_LINKAGE_CALLBACK PNG_FUNCTION(type, (PNGCBAPI name), args,\
+         PNG_EMPTY attributes)
 #endif
 
 
@@ -294,6 +299,22 @@
 
 #ifndef PNG_DLL_EXPORT
 #  define PNG_DLL_EXPORT
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef PNG_RELEASE_BUILD
+#  define PNG_RELEASE_BUILD (PNG_LIBPNG_BUILD_BASE_TYPE >= PNG_LIBPNG_BUILD_RC)
 #endif
 
 
@@ -1386,10 +1407,6 @@ PNG_INTERNAL_FUNCTION(void,png_push_read_chunk,(png_structrp png_ptr,
 PNG_INTERNAL_FUNCTION(void,png_push_read_sig,(png_structrp png_ptr,
     png_inforp info_ptr),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_check_crc,(png_structrp png_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_crc_skip,(png_structrp png_ptr,
-    png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_crc_finish,(png_structrp png_ptr),
-    PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_save_buffer,(png_structrp png_ptr),
     PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_restore_buffer,(png_structrp png_ptr,
