@@ -287,7 +287,7 @@ class Graph(object):
 
         
         parameters = dict(gaia_info().items() + {
-            'index': 'index.garbage.staging.mshal-testing', 
+            'index': 'index',
             'project': project,
             'pushlog_id': params.get('pushlog_id', 0),
             'docker_image': docker_image,
