@@ -38,7 +38,7 @@ class MOZ_STACK_CLASS CPOWTimer final {
 
 
 
-    PRIntervalTime startInterval_;
+    int64_t startInterval_;
 };
 
 #endif
