@@ -400,7 +400,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  
 
 
   static_assert(TYPE_DATAREQUEST == TYPE_XMLHTTPREQUEST,
@@ -425,23 +424,23 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     case TYPE_IMAGE:
     case TYPE_MEDIA:
     case TYPE_OBJECT_SUBREQUEST:
-    case TYPE_PING:
-    case TYPE_BEACON:
       classification = eMixedDisplay;
       break;
 
     
     
     
-    case TYPE_IMAGESET:
+    case TYPE_BEACON:
     case TYPE_CSP_REPORT:
     case TYPE_DTD:
     case TYPE_FETCH:
     case TYPE_FONT:
+    case TYPE_IMAGESET:
     case TYPE_OBJECT:
     case TYPE_SCRIPT:
     case TYPE_STYLESHEET:
     case TYPE_SUBDOCUMENT:
+    case TYPE_PING:
     case TYPE_WEB_MANIFEST:
     case TYPE_XBL:
     case TYPE_XMLHTTPREQUEST:
