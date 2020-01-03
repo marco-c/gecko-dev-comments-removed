@@ -40,8 +40,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsScriptErrorWithStack)
 NS_INTERFACE_MAP_END
 
 nsScriptErrorWithStack::nsScriptErrorWithStack(JS::HandleObject aStack)
-    :  nsScriptError(),
-       mStack(aStack)
+  : mStack(aStack)
 {
     MOZ_ASSERT(NS_IsMainThread(), "You can't use this class on workers.");
     mozilla::HoldJSObjects(this);

@@ -2989,18 +2989,17 @@ xpc_PrintJSStack(JSContext* cx, bool showArgs, bool showLocals,
 
 
 
-class nsScriptError : public nsIScriptError {
+class nsScriptErrorBase : public nsIScriptError {
 public:
-    nsScriptError();
+    nsScriptErrorBase();
 
   
 
-    NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSICONSOLEMESSAGE
     NS_DECL_NSISCRIPTERROR
 
 protected:
-    virtual ~nsScriptError();
+    virtual ~nsScriptErrorBase();
 
     void
     InitializeOnMainThread();
@@ -3022,7 +3021,16 @@ protected:
     bool mIsFromPrivateWindow;
 };
 
-class nsScriptErrorWithStack : public nsScriptError {
+class nsScriptError final : public nsScriptErrorBase {
+public:
+    nsScriptError() {}
+    NS_DECL_THREADSAFE_ISUPPORTS
+
+private:
+    virtual ~nsScriptError() {}
+};
+
+class nsScriptErrorWithStack : public nsScriptErrorBase {
 public:
     explicit nsScriptErrorWithStack(JS::HandleObject);
 
