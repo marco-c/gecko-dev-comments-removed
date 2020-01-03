@@ -52,8 +52,6 @@ pref("extensions.getAddons.link.url", "https://addons.mozilla.org/%LOCALE%/firef
 
 
 pref("extensions.blocklist.enabled", true);
-
-
 pref("extensions.blocklist.interval", 86400);
 
 
@@ -1763,7 +1761,7 @@ pref("security.cert_pinning.enforcement_level", 1);
 
 
 
-pref("security.onecrl.maximum_staleness_in_seconds", 108000);
+pref("security.onecrl.maximum_staleness_in_seconds", 0);
 
 
 pref("plain_text.wrap_long_lines", true);
