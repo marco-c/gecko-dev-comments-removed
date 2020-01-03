@@ -534,12 +534,6 @@ Boolish(ParseNode* pn)
 
 enum class SyntacticContext : int {
     
-    
-    
-    
-    Condition,
-
-    
     Other
 };
 
@@ -1742,7 +1736,7 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_SUPERPROP:
       case PNK_FRESHENBLOCK:
         MOZ_ASSERT(pn->isArity(PN_NULLARY));
-        goto afterFolding;
+        return true;
 
       case PNK_TYPEOFNAME:
         MOZ_ASSERT(pn->isArity(PN_UNARY));
@@ -1984,56 +1978,8 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
         MOZ_CRASH("invalid node kind");
     }
 
-    switch (pn->getKind()) {
-      case PNK_TYPEOFNAME:
-      case PNK_TYPEOFEXPR:
-      case PNK_VOID:
-      case PNK_NOT:
-      case PNK_BITNOT:
-      case PNK_POS:
-      case PNK_NEG:
-      case PNK_CONDITIONAL:
-      case PNK_IF:
-      case PNK_AND:
-      case PNK_OR:
-      case PNK_SUB:
-      case PNK_STAR:
-      case PNK_LSH:
-      case PNK_RSH:
-      case PNK_URSH:
-      case PNK_DIV:
-      case PNK_MOD:
-      case PNK_POW:
-      case PNK_ELEM:
-      case PNK_ADD:
-        MOZ_CRASH("should have been fully handled above");
-
-      default:;
-    }
-
-  afterFolding:
-    if (sc == SyntacticContext::Condition) {
-        Truthiness t = Boolish(pn);
-        if (t != Unknown) {
-            
-
-
-
-
-
-            parser.prepareNodeForMutation(pn);
-            if (t == Truthy) {
-                pn->setKind(PNK_TRUE);
-                pn->setOp(JSOP_TRUE);
-            } else {
-                pn->setKind(PNK_FALSE);
-                pn->setOp(JSOP_FALSE);
-            }
-            pn->setArity(PN_NULLARY);
-        }
-    }
-
-    return true;
+    MOZ_CRASH("shouldn't reach here");
+    return false;
 }
 
 bool
