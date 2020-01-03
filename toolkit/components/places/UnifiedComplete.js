@@ -586,6 +586,14 @@ function makeActionURL(action, params) {
 
 
 
+function looksLikeUrl(str) {
+  
+  return !REGEXP_SPACES.test(str) &&
+         ["/", "@", ":", "."].some(c => str.includes(c));
+}
+
+
+
 
 
 
@@ -979,9 +987,11 @@ Search.prototype = {
           let [match, suggestion] = this._searchSuggestionController.consume();
           if (!suggestion)
             break;
-          
-          let searchString = this._searchTokens.join(" ");
-          this._addSearchEngineMatch(match, searchString, suggestion);
+          if (!looksLikeUrl(suggestion)) {
+            
+            let searchString = this._searchTokens.join(" ");
+            this._addSearchEngineMatch(match, searchString, suggestion);
+          }
         }
       });
 
@@ -1011,9 +1021,7 @@ Search.prototype = {
 
     
     
-    return tokens.some(token => {
-      return ["/", "@", ":", "."].some(c => token.includes(c));
-    });
+    return tokens.some(looksLikeUrl);
   },
 
   _matchKnownUrl: function* (conn) {
