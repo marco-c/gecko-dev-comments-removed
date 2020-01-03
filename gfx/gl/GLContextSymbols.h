@@ -490,6 +490,10 @@ struct GLContextSymbols
     PFNGLVERTEXATTRIBDIVISOR fVertexAttribDivisor;
 
     
+    typedef void (GLAPIENTRY * PFNGLGETINTERNALFORMATIVPROC) (GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint* params);
+    PFNGLGETINTERNALFORMATIVPROC fGetInternalformativ;
+
+    
     typedef void (GLAPIENTRY * PFNGLBINDBUFFERBASE) (GLenum target, GLuint index, GLuint buffer);
     PFNGLBINDBUFFERBASE fBindBufferBase;
     typedef void (GLAPIENTRY * PFNGLBINDBUFFERRANGE) (GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
