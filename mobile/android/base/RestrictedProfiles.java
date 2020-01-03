@@ -68,8 +68,6 @@ public class RestrictedProfiles {
         
         
         DISALLOW_DOWNLOADS(1, "no_download_files", 0, 0),
-        DISALLOW_INSTALL_EXTENSION(2, "no_install_extensions", 0, 0),
-        DISALLOW_INSTALL_APPS(3, "no_install_apps", 0, 0), 
         DISALLOW_BROWSE_FILES(4, "no_browse_files", 0, 0),
         DISALLOW_SHARE(5, "no_share", 0, 0),
         DISALLOW_BOOKMARK(6, "no_bookmark", 0, 0),
@@ -80,6 +78,8 @@ public class RestrictedProfiles {
 
         
         
+        DISALLOW_INSTALL_EXTENSION(2, "no_install_extensions", R.string.restriction_disallow_addons_title, R.string.restriction_disallow_addons_description),
+        DISALLOW_INSTALL_APPS(3, "no_install_apps", R.string.restriction_disallow_apps_title, R.string.restriction_disallow_apps_description), 
         DISALLOW_IMPORT_SETTINGS(11, "no_report_site_issue", R.string.restriction_disallow_import_settings_title, R.string.restriction_disallow_import_settings_description),
         DISALLOW_TOOLS_MENU(12, "no_tools_menu", R.string.restriction_disallow_tools_menu_title, R.string.restriction_disallow_tools_menu_description),
         DISALLOW_REPORT_SITE_ISSUE(13, "no_report_site_issue", R.string.restriction_disallow_report_site_issue_title, R.string.restriction_disallow_report_site_issue_description);
@@ -129,6 +129,8 @@ public class RestrictedProfiles {
 
     
     static List<Restriction> RESTRICTED_PROFILE_RESTRICTIONS = Arrays.asList(
+        Restriction.DISALLOW_INSTALL_EXTENSION,
+        Restriction.DISALLOW_INSTALL_APPS,
         Restriction.DISALLOW_TOOLS_MENU,
         Restriction.DISALLOW_REPORT_SITE_ISSUE,
         Restriction.DISALLOW_IMPORT_SETTINGS
