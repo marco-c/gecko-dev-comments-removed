@@ -322,7 +322,6 @@ private:
   
   nsRefPtr<dom::SourceBufferAttributes> mSourceBufferAttributes;
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
-  nsRefPtr<MediaSourceDemuxer> mMediaSourceDemuxer;
 
   
   Mirror<Maybe<double>> mMediaSourceDuration;
