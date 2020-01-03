@@ -6635,6 +6635,7 @@ var gIdentityHandler = {
   IDENTITY_MODE_MIXED_ACTIVE_BLOCKED                   : "verifiedDomain mixedContent mixedActiveBlocked",  
   IDENTITY_MODE_MIXED_ACTIVE_BLOCKED_IDENTIFIED        : "verifiedIdentity mixedContent mixedActiveBlocked",  
   IDENTITY_MODE_CHROMEUI                               : "chromeUI",         
+  IDENTITY_MODE_FILE_URI                               : "fileURI",  
 
   
   _lastStatus : null,
@@ -6850,7 +6851,20 @@ var gIdentityHandler = {
         this.setMode(this.IDENTITY_MODE_USES_WEAK_CIPHER);
       }
     } else {
-      this.setMode(this.IDENTITY_MODE_UNKNOWN);
+      
+      
+      let resolvedURI = NetUtil.newChannel({uri,loadUsingSystemPrincipal:true}).URI;
+      if (resolvedURI.schemeIs("jar")) {
+        
+        
+        resolvedURI = NetUtil.newURI(resolvedURI.path);
+      }
+
+      if (resolvedURI.schemeIs("file")) {
+        this.setMode(this.IDENTITY_MODE_FILE_URI);
+      } else {
+        this.setMode(this.IDENTITY_MODE_UNKNOWN);
+      }
     }
 
     
