@@ -1617,6 +1617,8 @@ private:
   
   void FireOnNewGlobalObject();
 
+  void DisconnectEventTargetObjects();
+
 protected:
   
   
