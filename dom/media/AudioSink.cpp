@@ -167,7 +167,9 @@ AudioSink::AudioLoop()
   while (1) {
     {
       ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-      WaitForAudioToPlay();
+      while (WaitingForAudioToPlay()) {
+        GetReentrantMonitor().Wait();
+      }
       if (!IsPlaybackContinuing()) {
         break;
       }
@@ -261,18 +263,19 @@ AudioSink::ExpectMoreAudioData()
   return AudioQueue().GetSize() == 0 && !AudioQueue().IsFinished();
 }
 
-void
-AudioSink::WaitForAudioToPlay()
+bool
+AudioSink::WaitingForAudioToPlay()
 {
   
   
   AssertCurrentThreadInMonitor();
-  while (!mStopAudioThread && (!mPlaying || ExpectMoreAudioData())) {
+  if (!mStopAudioThread && (!mPlaying || ExpectMoreAudioData())) {
     if (!mPlaying && !mAudioStream->IsPaused()) {
       mAudioStream->Pause();
     }
-    GetReentrantMonitor().Wait();
+    return true;
   }
+  return false;
 }
 
 bool

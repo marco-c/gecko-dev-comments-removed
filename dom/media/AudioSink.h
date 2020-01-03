@@ -74,7 +74,7 @@ private:
   bool ExpectMoreAudioData();
 
   
-  void WaitForAudioToPlay();
+  bool WaitingForAudioToPlay();
 
   
   
