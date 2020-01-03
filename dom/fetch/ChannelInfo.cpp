@@ -7,6 +7,7 @@
 #include "mozilla/dom/ChannelInfo.h"
 #include "nsCOMPtr.h"
 #include "nsIChannel.h"
+#include "nsIDocument.h"
 #include "nsIHttpChannel.h"
 #include "nsSerializationHelper.h"
 #include "mozilla/net/HttpBaseChannel.h"
@@ -17,6 +18,26 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
+
+void
+ChannelInfo::InitFromDocument(nsIDocument* aDoc)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mInited, "Cannot initialize the object twice");
+
+  nsCOMPtr<nsISupports> securityInfo = aDoc->GetSecurityInfo();
+  if (securityInfo) {
+    SetSecurityInfo(securityInfo);
+  }
+
+  
+  
+  
+  
+  
+  mRedirected = false;
+  mInited = true;
+}
 
 void
 ChannelInfo::InitFromChannel(nsIChannel* aChannel)

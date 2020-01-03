@@ -1033,9 +1033,7 @@ private:
       mWorkerPrivate->SetBaseURI(finalURI);
 
       
-      if (mWorkerPrivate->IsServiceWorker()) {
-        mWorkerPrivate->InitChannelInfo(channel);
-      }
+      mWorkerPrivate->InitChannelInfo(channel);
 
       
       WorkerPrivate* parent = mWorkerPrivate->GetParent();
