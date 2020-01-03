@@ -32,7 +32,6 @@ public:
 
   static void SendAsyncUpdate(nsIWidget* aWidget);
 
-public:
   PluginWidgetParent();
   virtual ~PluginWidgetParent();
 
@@ -43,7 +42,7 @@ public:
   virtual bool RecvGetNativePluginPort(uintptr_t* value) MOZ_OVERRIDE;
 
   
-  bool ActorDestroyed() { return mActorDestroyed; }
+  bool ActorDestroyed() { return !mWidget; }
 
   
   void ParentDestroy();
@@ -54,12 +53,22 @@ public:
 private:
   
   mozilla::dom::TabParent* GetTabParent();
+
+public:
+  
+  enum ShutdownType {
+    TAB_CLOSURE = 1,
+    CONTENT     = 2
+  };
+
+private:
+  void Shutdown(ShutdownType aType);
+
   
   nsCOMPtr<nsIWidget> mWidget;
 #if defined(MOZ_WIDGET_GTK)
   nsAutoPtr<nsPluginNativeWindowGtk> mWrapper;
 #endif
-  bool mActorDestroyed;
 };
 
 } 
