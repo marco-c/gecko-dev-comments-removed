@@ -34,7 +34,7 @@ struct BaselineDebugModeOSRInfo;
 class BaselineFrame
 {
   public:
-    enum Flags {
+    enum Flags : uint32_t {
         
         HAS_RVAL         = 1 << 0,
 
