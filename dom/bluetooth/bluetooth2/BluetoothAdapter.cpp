@@ -22,6 +22,7 @@
 #include "mozilla/dom/bluetooth/BluetoothClassOfDevice.h"
 #include "mozilla/dom/bluetooth/BluetoothDevice.h"
 #include "mozilla/dom/bluetooth/BluetoothDiscoveryHandle.h"
+#include "mozilla/dom/bluetooth/BluetoothGattServer.h"
 #include "mozilla/dom/bluetooth/BluetoothPairingListener.h"
 #include "mozilla/dom/bluetooth/BluetoothTypes.h"
 
@@ -361,6 +362,27 @@ BluetoothAdapter::Cleanup()
   }
 }
 
+BluetoothGattServer*
+BluetoothAdapter::GetGattServer()
+{
+  
+
+
+
+
+
+
+  if (mState != BluetoothAdapterState::Enabled) {
+    return nullptr;
+  }
+
+  if (!mGattServer) {
+    mGattServer = new BluetoothGattServer(GetOwner());
+  }
+
+  return mGattServer;
+}
+
 void
 BluetoothAdapter::GetPairedDeviceProperties(
   const nsTArray<nsString>& aDeviceAddresses)
@@ -391,6 +413,10 @@ BluetoothAdapter::SetPropertyByValue(const BluetoothNamedValue& aValue)
     if (mState == BluetoothAdapterState::Disabled) {
       mDevices.Clear();
       mLeScanHandleArray.Clear();
+      if (mGattServer) {
+        mGattServer->Invalidate();
+        mGattServer = nullptr;
+      }
     }
   } else if (name.EqualsLiteral("Name")) {
     mName = value.get_nsString();
@@ -973,6 +999,13 @@ BluetoothAdapter::SetAdapterState(BluetoothAdapterState aState)
   }
 
   mState = aState;
+
+  if (mState == BluetoothAdapterState::Disabled) {
+    if (mGattServer) {
+      mGattServer->Invalidate();
+      mGattServer = nullptr;
+    }
+  }
 
   
   Sequence<nsString> types;
