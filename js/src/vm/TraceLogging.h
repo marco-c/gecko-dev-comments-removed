@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef TraceLogging_h
 #define TraceLogging_h
@@ -32,36 +32,36 @@ namespace jit {
     class CompileRuntime;
 }
 
-/*
- * Tracelogging overview.
- *
- * Tracelogging makes it possible to trace the timestamp of a single event and/or
- * the duration of an event. This is implemented to give an as low overhead as
- * possible so it doesn't interfere with running.
- *
- *
- * Logging something is done in 3 stages.
- * 1) Get the tracelogger of the current thread.
- *     - TraceLoggerForMainThread(JSRuntime *)
- *     - TraceLoggerForCurrentThread(); // Should NOT be used for the mainthread.
- * 2) Optionally create a textId for the text that needs to get logged. This
- *    step takes some time, so try to do this beforehand, outside the hot
- *    path and don't do unnecessary repetitions, since it will criple
- *    performance.
- *     - TraceLogCreateTextId(logger, ...);
- *
- *    There are also some text IDs created beforehand. They are located in
- *    Tracelogger::TextId.
- * 3) Log the timestamp of an event:
- *    - TraceLogTimestamp(logger, textId);
- *
- *    or the duration:
- *    - TraceLogStartEvent(logger, textId);
- *    - TraceLogStopEvent(logger, textId);
- *
- *    or the duration with a RAII class:
- *    - AutoTraceLog logger(logger, textId);
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class AutoTraceLog;
@@ -85,10 +85,6 @@ class TraceLoggerThread
 
     ContinuousSpace<EventEntry> events;
 
-    // Every time the events get flushed, this count is increased by one.
-    // This together with events.lastEntryId(), gives an unique position.
-    uint32_t iteration_;
-
   public:
     AutoTraceLog *top;
 
@@ -103,53 +99,12 @@ class TraceLoggerThread
     bool enable(JSContext *cx);
     bool disable();
 
-    // Given the previous iteration and lastEntryId, return an array of events
-    // (there could be lost events). At the same time update the iteration and
-    // lastEntry and gives back how many events there are.
-    EventEntry *getEventsStartingAt(uint32_t *lastIteration, uint32_t *lastEntryId, size_t *num) {
-        EventEntry *start;
-        if (iteration_ == *lastIteration) {
-            MOZ_ASSERT(events.lastEntryId() >= *lastEntryId);
-            *num = events.lastEntryId() - *lastEntryId;
-            start = events.data() + *lastEntryId + 1;
-        } else {
-            *num = events.lastEntryId() + 1;
-            start = events.data();
-        }
-
-        *lastIteration = iteration_;
-        *lastEntryId = events.lastEntryId();
-        return start;
-    }
-
-    // Extract the details filename, lineNumber and columnNumber out of a event
-    // containing script information.
-    void extractScriptDetails(uint32_t textId, const char **filename, size_t *filename_len,
-                              const char **lineno, size_t *lineno_len, const char **colno,
-                              size_t *colno_len);
-
-    bool lostEvents(uint32_t lastIteration, uint32_t lastEntryId) {
-        // If still logging in the same iteration, there are no lost events.
-        if (lastIteration == iteration_) {
-            MOZ_ASSERT(lastEntryId <= events.lastEntryId());
-            return false;
-        }
-
-        // When proceeded to the next iteration and lastEntryId points to
-        // the maximum capacity there are no logs that are lost.
-        if (lastIteration + 1 == iteration_ && lastEntryId == events.capacity())
-            return false;
-
-        return true;
-    }
-
     const char *eventText(uint32_t id);
-    bool textIdIsScriptEvent(uint32_t id);
 
-    // The createTextId functions map a unique input to a logger ID.
-    // This can be used to give start and stop events. Calls to these functions should be
-    // limited if possible, because of the overhead.
-    // Note: it is not allowed to use them in logTimestamp.
+    
+    
+    
+    
     uint32_t createTextId(const char *text);
     uint32_t createTextId(JSScript *script);
     uint32_t createTextId(const JS::ReadOnlyCompileOptions &script);
@@ -157,10 +112,10 @@ class TraceLoggerThread
     uint32_t createTextId(const char *filename, size_t lineno, size_t colno, const void *p);
 
   public:
-    // Log an event (no start/stop, only the timestamp is recorded).
+    
     void logTimestamp(uint32_t id);
 
-    // Record timestamps for start and stop of an event.
+    
     void startEvent(uint32_t id);
     void stopEvent(uint32_t id);
 
@@ -317,7 +272,7 @@ inline void TraceLogStopEvent(TraceLoggerThread *logger, uint32_t textId) {
 #endif
 }
 
-// Automatic logging at the start and end of function call.
+
 class AutoTraceLog {
 #ifdef JS_TRACE_LOGGING
     TraceLoggerThread *logger;
@@ -370,6 +325,6 @@ class AutoTraceLog {
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-}  /* namedata js */
+}  
 
-#endif /* TraceLogging_h */
+#endif 
