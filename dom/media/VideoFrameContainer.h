@@ -56,6 +56,15 @@ public:
   
   
   double GetFrameDelay();
+
+  
+  
+  
+  ImageContainer::FrameID NewFrameID()
+  {
+    return ++mFrameID;
+  }
+
   
   enum {
     INVALIDATE_DEFAULT,
