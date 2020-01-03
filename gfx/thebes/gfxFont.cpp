@@ -1221,6 +1221,12 @@ gfxFont::SpaceMayParticipateInShaping(int32_t aRunScript)
         }
     }
 
+    if (FontCanSupportGraphite()) {
+        if (gfxPlatform::GetPlatform()->UseGraphiteShaping()) {
+            return mFontEntry->HasGraphiteSpaceContextuals();
+        }
+    }
+
     
     
     

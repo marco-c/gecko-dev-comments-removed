@@ -359,6 +359,10 @@ public:
     virtual void ReleaseGrFace(gr_face* aFace);
 
     
+    
+    bool HasGraphiteSpaceContextuals();
+
+    
     void DisconnectSVG();
 
     
@@ -402,6 +406,8 @@ public:
     bool             mHasSpaceFeaturesKerning : 1;
     bool             mHasSpaceFeaturesNonKerning : 1;
     bool             mSkipDefaultFeatureSpaceCheck : 1;
+    bool             mGraphiteSpaceContextualsInitialized : 1;
+    bool             mHasGraphiteSpaceContextuals : 1;
     bool             mSpaceGlyphIsInvisible : 1;
     bool             mSpaceGlyphIsInvisibleInitialized : 1;
     bool             mHasGraphiteTables : 1;
