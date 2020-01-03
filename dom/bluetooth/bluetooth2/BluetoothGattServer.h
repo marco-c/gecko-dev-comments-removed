@@ -7,20 +7,29 @@
 #ifndef mozilla_dom_bluetooth_BluetoothGattServer_h
 #define mozilla_dom_bluetooth_BluetoothGattServer_h
 
+#include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/BluetoothGattServerBinding.h"
 #include "mozilla/dom/bluetooth/BluetoothCommon.h"
 #include "nsCOMPtr.h"
 #include "nsPIDOMWindow.h"
-#include "nsWrapperCache.h"
+
+namespace mozilla {
+namespace dom {
+class Promise;
+}
+}
 
 BEGIN_BLUETOOTH_NAMESPACE
 
-class BluetoothGattServer final : public nsISupports
-                                , public nsWrapperCache
+class BluetoothSignal;
+
+class BluetoothGattServer final : public DOMEventTargetHelper
+                                , public BluetoothSignalObserver
 {
 public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BluetoothGattServer)
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(BluetoothGattServer,
+                                           DOMEventTargetHelper)
 
   
 
@@ -29,13 +38,20 @@ public:
   
 
 
+  IMPL_EVENT_HANDLER(connectionstatechanged);
 
   
 
 
+  already_AddRefed<Promise> Connect(
+    const nsAString& aAddress, ErrorResult& aRv);
+  already_AddRefed<Promise> Disconnect(
+    const nsAString& aAddress, ErrorResult& aRv);
 
   
 
+
+  void Notify(const BluetoothSignal& aData); 
 
   nsPIDOMWindow* GetParentObject() const
   {
@@ -45,6 +61,7 @@ public:
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
+  virtual void DisconnectFromOwner() override;
   BluetoothGattServer(nsPIDOMWindow* aOwner);
 
   
@@ -60,6 +77,17 @@ private:
 
 
   nsCOMPtr<nsPIDOMWindow> mOwner;
+
+  
+
+
+  nsString mAppUuid;
+
+  
+
+
+
+  int mServerIf;
 
   bool mValid;
 };
