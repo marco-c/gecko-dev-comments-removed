@@ -1759,13 +1759,21 @@ var BrowserApp = {
               
               
               
-              Services.perms.add(normalizedUrl, "trackingprotection", Services.perms.ALLOW_ACTION);
+              if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+                PrivateBrowsingUtils.addToTrackingAllowlist(normalizedUrl);
+              } else {
+                Services.perms.add(normalizedUrl, "trackingprotection", Services.perms.ALLOW_ACTION);
+              }
               Telemetry.addData("TRACKING_PROTECTION_EVENTS", 1);
             } else {
               
               
               
-              Services.perms.remove(normalizedUrl, "trackingprotection");
+              if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+                PrivateBrowsingUtils.removeFromTrackingAllowlist(normalizedUrl);
+              } else {
+                Services.perms.remove(normalizedUrl, "trackingprotection");
+              }
               Telemetry.addData("TRACKING_PROTECTION_EVENTS", 2);
             }
           }

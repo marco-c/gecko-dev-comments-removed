@@ -116,8 +116,12 @@ let TrackingProtection = {
     
     
     
-    Services.perms.add(normalizedUrl,
-      "trackingprotection", Services.perms.ALLOW_ACTION);
+    if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
+      PrivateBrowsingUtils.addToTrackingAllowlist(normalizedUrl);
+    } else {
+      Services.perms.add(normalizedUrl,
+        "trackingprotection", Services.perms.ALLOW_ACTION);
+    }
 
     
     this.eventsHistogram.add(1);
@@ -133,8 +137,11 @@ let TrackingProtection = {
       "https://" + gBrowser.selectedBrowser.currentURI.hostPort,
       null, null);
 
-    Services.perms.remove(normalizedUrl,
-      "trackingprotection");
+    if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
+      PrivateBrowsingUtils.removeFromTrackingAllowlist(normalizedUrl);
+    } else {
+      Services.perms.remove(normalizedUrl, "trackingprotection");
+    }
 
     
     this.eventsHistogram.add(2);
