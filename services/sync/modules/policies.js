@@ -575,7 +575,7 @@ ErrorHandler.prototype = {
     root.level = Log.Level[Svc.Prefs.get("log.rootLogger")];
 
     let logs = ["Sync", "FirefoxAccounts", "Hawk", "Common.TokenServerClient",
-                "Sync.SyncMigration"];
+                "Sync.SyncMigration", "browserwindow.syncui"];
 
     this._logManager = new LogManager(Svc.Prefs, logs, "sync");
   },
@@ -728,6 +728,9 @@ ErrorHandler.prototype = {
     }
   },
 
+  
+  
+  
   shouldReportError: function shouldReportError() {
     if (Status.login == MASTER_PASSWORD_LOCKED) {
       this._log.trace("shouldReportError: false (master password locked).");

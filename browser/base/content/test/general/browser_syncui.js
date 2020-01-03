@@ -12,6 +12,18 @@ let stringBundle = Cc["@mozilla.org/intl/stringbundle;1"]
 
 Log.repository.getLogger("browserwindow.syncui").addAppender(new Log.DumpAppender());
 
+
+
+
+function checkBroadcasterVisible(broadcasterId) {
+  let all = ["sync-reauth-state", "sync-setup-state", "sync-syncnow-state"];
+  Assert.ok(all.indexOf(broadcasterId) >= 0, "valid id");
+  for (let check of all) {
+    let eltHidden = document.getElementById(check).hidden;
+    Assert.equal(eltHidden, check == broadcasterId ? false : true, check);
+  }
+}
+
 function promiseObserver(topic) {
   return new Promise(resolve => {
     let obs = (subject, topic, data) => {
@@ -27,105 +39,39 @@ add_task(function* prepare() {
                               .getService(Components.interfaces.nsISupports)
                               .wrappedJSObject;
   yield xps.whenLoaded();
+  checkBroadcasterVisible("sync-setup-state");
   
   let oldNeedsSetup = window.gSyncUI._needsSetup;
   window.gSyncUI._needsSetup = () => false;
   registerCleanupFunction(() => {
     window.gSyncUI._needsSetup = oldNeedsSetup;
   });
-});
-
-add_task(function* testProlongedSyncError() {
-  let promiseNotificationAdded = promiseObserver("weave:notification:added");
-  Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
-
   
-  Weave.Status.sync = Weave.PROLONGED_SYNC_FAILURE;
-  Weave.Status.login = Weave.LOGIN_SUCCEEDED;
-  Services.obs.notifyObservers(null, "weave:ui:sync:error", null);
-
-  let subject = yield promiseNotificationAdded;
-  let notification = subject.wrappedJSObject.object; 
-  Assert.equal(notification.title, stringBundle.GetStringFromName("error.sync.title"));
-  Assert.equal(Notifications.notifications.length, 1, "exactly 1 notification");
-
-  
-  let promiseNotificationRemoved = promiseObserver("weave:notification:removed");
-  Weave.Status.sync = Weave.STATUS_OK;
-  Services.obs.notifyObservers(null, "weave:ui:sync:finish", null);
-  yield promiseNotificationRemoved;
-  Assert.equal(Notifications.notifications.length, 0, "no notifications left");
+  Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
+  checkBroadcasterVisible("sync-syncnow-state");
 });
 
 add_task(function* testSyncLoginError() {
-  let promiseNotificationAdded = promiseObserver("weave:notification:added");
   Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
+  checkBroadcasterVisible("sync-syncnow-state");
 
   
   Weave.Status.sync = Weave.LOGIN_FAILED;
   Weave.Status.login = Weave.LOGIN_FAILED_LOGIN_REJECTED;
   Services.obs.notifyObservers(null, "weave:ui:sync:error", null);
 
-  let subject = yield promiseNotificationAdded;
-  let notification = subject.wrappedJSObject.object; 
-  Assert.equal(notification.title, stringBundle.GetStringFromName("error.login.title"));
-  Assert.equal(Notifications.notifications.length, 1, "exactly 1 notification");
+  Assert.equal(Notifications.notifications.length, 0, "no notifications shown on login error");
+  
+  checkBroadcasterVisible("sync-reauth-state");
 
   
   Weave.Status.sync = Weave.STATUS_OK;
   Weave.Status.login = Weave.LOGIN_SUCCEEDED;
-  let promiseNotificationRemoved = promiseObserver("weave:notification:removed");
   Services.obs.notifyObservers(null, "weave:service:login:start", null);
   Services.obs.notifyObservers(null, "weave:service:login:finish", null);
-  yield promiseNotificationRemoved;
   Assert.equal(Notifications.notifications.length, 0, "no notifications left");
-});
-
-add_task(function* testSyncLoginNetworkError() {
-  Assert.equal(Notifications.notifications.length, 0, "start with no notifications");
-
   
-  
-  
-  
-
-  
-  
-  
-  
-
-  
-  
-  
-
-  let sawNotificationAdded = false;
-  let obs = (subject, topic, data) => {
-    sawNotificationAdded = true;
-  }
-  Services.obs.addObserver(obs, "weave:notification:added", false);
-  try {
-    
-    Weave.Status.sync = Weave.LOGIN_FAILED;
-    Weave.Status.login = Weave.LOGIN_FAILED_LOGIN_REJECTED;
-    Services.obs.notifyObservers(null, "weave:ui:login:error", null);
-    Assert.ok(sawNotificationAdded);
-
-    
-    sawNotificationAdded = false;
-    Weave.Status.sync = Weave.LOGIN_FAILED;
-    Weave.Status.login = Weave.LOGIN_FAILED_NETWORK_ERROR;
-    Services.obs.notifyObservers(null, "weave:ui:login:error", null);
-    Assert.ok(!sawNotificationAdded);
-
-    
-    Weave.Status.sync = Weave.LOGIN_FAILED;
-    Weave.Status.login = Weave.LOGIN_FAILED_SERVER_ERROR;
-    Services.obs.notifyObservers(null, "weave:ui:login:error", null);
-    Assert.ok(!sawNotificationAdded);
-    
-  } finally {
-    Services.obs.removeObserver(obs, "weave:notification:added");
-  }
+  checkBroadcasterVisible("sync-syncnow-state");
 });
 
 function checkButtonsStatus(shouldBeActive) {
