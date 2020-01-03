@@ -724,10 +724,6 @@ public:
   static bool IsAppleMP3Enabled();
 #endif
 
-  
-  
-  nsresult ScheduleStateMachine();
-
   struct Statistics {
     
     double mPlaybackRate;
