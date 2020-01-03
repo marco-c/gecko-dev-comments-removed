@@ -427,7 +427,8 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout
             trackingMode = TrackingMode.UNKNOWN;
         } else {
             securityMode = siteIdentity.getSecurityMode();
-            mixedMode = siteIdentity.getMixedMode();
+            
+            mixedMode = siteIdentity.getMixedModeActive();
             trackingMode = siteIdentity.getTrackingMode();
         }
 
@@ -435,6 +436,7 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout
         
         int imageLevel = securityMode.ordinal();
 
+        
         
         if (trackingMode == TrackingMode.TRACKING_CONTENT_LOADED) {
             imageLevel = LEVEL_SHIELD_DISABLED;
