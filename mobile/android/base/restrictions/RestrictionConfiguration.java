@@ -1,0 +1,26 @@
+
+
+
+
+
+package org.mozilla.gecko.restrictions;
+
+
+
+
+public interface RestrictionConfiguration {
+    
+
+
+    boolean isAllowed(Restriction restriction);
+
+    
+
+
+    boolean canLoadUrl(String url);
+
+    
+
+
+    boolean isRestricted();
+}
