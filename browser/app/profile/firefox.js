@@ -111,52 +111,9 @@ pref("app.update.backgroundMaxErrors", 10);
 
 
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+
 pref("app.update.cert.requireBuiltIn", false);
 pref("app.update.cert.checkAttributes", false);
-#else
-
-
-
-
-pref("app.update.cert.requireBuiltIn", true);
-
-
-
-
-
-pref("app.update.cert.checkAttributes", true);
-
-
-
-
-pref("app.update.cert.maxErrors", 5);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pref("app.update.certs.1.issuerName", "CN=DigiCert Secure Server CA,O=DigiCert Inc,C=US");
-pref("app.update.certs.1.commonName", "aus4.mozilla.org");
-
-pref("app.update.certs.2.issuerName", "CN=Thawte SSL CA,O=\"Thawte, Inc.\",C=US");
-pref("app.update.certs.2.commonName", "aus4.mozilla.org");
-#endif
 
 
 pref("app.update.enabled", true);
@@ -1984,7 +1941,7 @@ pref("browser.pocket.api", "api.getpocket.com");
 pref("browser.pocket.site", "getpocket.com");
 pref("browser.pocket.oAuthConsumerKey", "40249-e88c401e1b1f2242d9e441c4");
 pref("browser.pocket.useLocaleList", true);
-pref("browser.pocket.enabledLocales", "en-US de es-ES ja ja-JP-mac ru");
+pref("browser.pocket.enabledLocales", "cs de en-GB en-US en-ZA es-ES es-MX fr hu it ja ja-JP-mac ko nl pl pt-BR pt-PT ru zh-CN zh-TW");
 
 pref("view_source.tab", true);
 
