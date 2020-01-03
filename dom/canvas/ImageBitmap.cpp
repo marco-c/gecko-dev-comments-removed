@@ -456,11 +456,7 @@ ImageBitmap::PrepareForDrawTarget(gfx::DrawTarget* aTarget)
     
     
     
-    
-    
-    
-    
-    target = target->CreateSimilarDrawTarget(mSurface->GetSize(),
+    target = target->CreateSimilarDrawTarget(mPictureRect.Size(),
                                              target->GetFormat());
 
     if (!target) {
@@ -470,9 +466,30 @@ ImageBitmap::PrepareForDrawTarget(gfx::DrawTarget* aTarget)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    if (target->GetBackendType() == BackendType::DIRECT2D1_1 &&
+        mSurface->GetType() != SurfaceType::D2D1_1_IMAGE) {
+      RefPtr<DataSourceSurface> dataSurface = mSurface->GetDataSurface();
+      if (NS_WARN_IF(!dataSurface)) {
+        mSurface = nullptr;
+        RefPtr<gfx::SourceSurface> surface(mSurface);
+        return surface.forget();
+      }
+
+      mSurface = CropAndCopyDataSourceSurface(dataSurface, mPictureRect);
+    } else {
+      target->CopySurface(mSurface, surfPortion, dest);
+      mSurface = target->Snapshot();
+    }
+
+    
     mPictureRect.MoveTo(0, 0);
-    target->CopySurface(mSurface, surfPortion, dest);
-    mSurface = target->Snapshot();
   }
 
   
@@ -481,7 +498,6 @@ ImageBitmap::PrepareForDrawTarget(gfx::DrawTarget* aTarget)
   mSurface = target->OptimizeSourceSurface(mSurface);
 
   RefPtr<gfx::SourceSurface> surface(mSurface);
-
   return surface.forget();
 }
 
