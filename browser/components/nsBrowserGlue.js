@@ -1021,7 +1021,7 @@ BrowserGlue.prototype = {
 
 #ifdef NIGHTLY_BUILD
     
-    aWindow.messageManager.loadFrameScript("chrome://shumway/content/bootstrap-content.js", true);
+    Services.ppmm.loadProcessScript("chrome://shumway/content/bootstrap-content.js", true);
     
     ShumwayUtils.init();
 #endif
