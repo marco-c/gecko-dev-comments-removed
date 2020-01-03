@@ -117,9 +117,14 @@ struct VariantImplementation<N, T> {
 
   template<typename Variant>
   static bool
-  equal(const Variant& aLhs, const Variant& aRhs)
-  {
+  equal(const Variant& aLhs, const Variant& aRhs) {
       return aLhs.template as<T>() == aRhs.template as<T>();
+  }
+
+  template<typename Matcher, typename ConcreteVariant>
+  static typename Matcher::ReturnType
+  match(Matcher& aMatcher, ConcreteVariant& aV) {
+    return aMatcher.match(aV.template as<T>());
   }
 };
 
@@ -171,9 +176,60 @@ struct VariantImplementation<N, T, Ts...>
       return Next::equal(aLhs, aRhs);
     }
   }
+
+  template<typename Matcher, typename ConcreteVariant>
+  static typename Matcher::ReturnType
+  match(Matcher& aMatcher, ConcreteVariant& aV)
+  {
+    if (aV.template is<T>()) {
+      return aMatcher.match(aV.template as<T>());
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return Next::match(aMatcher, aV);
+    }
+  }
 };
 
 } 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -380,6 +436,22 @@ public:
                   "provided a type not found in this Variant's type list");
     MOZ_ASSERT(is<T>());
     return T(Move(as<T>()));
+  }
+
+  
+
+  
+  template<typename Matcher>
+  typename Matcher::ReturnType
+  match(Matcher& aMatcher) const {
+    return Impl::match(aMatcher, *this);
+  }
+
+  
+  template<typename Matcher>
+  typename Matcher::ReturnType
+  match(Matcher& aMatcher) {
+    return Impl::match(aMatcher, *this);
   }
 };
 
