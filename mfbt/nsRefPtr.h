@@ -251,19 +251,31 @@ public:
     return get();
   }
 
-  
-  
-  
-#ifndef _MSC_VER
-  template <class U, class V>
-  U&
-  operator->*(U V::* aMember)
+  template <typename R, typename... Args>
+  class Proxy
+  {
+    typedef R (T::*member_function)(Args...);
+    T* mRawPtr;
+    member_function mFunction;
+  public:
+    Proxy(T* aRawPtr, member_function aFunction)
+      : mRawPtr(aRawPtr),
+        mFunction(aFunction)
+    {
+    }
+    R operator()(Args... aArgs)
+    {
+      return ((*mRawPtr).*mFunction)(mozilla::Forward<Args>(aArgs)...);
+    }
+  };
+
+  template <typename R, typename... Args>
+  Proxy<R, Args...> operator->*(R (T::*aFptr)(Args...)) const
   {
     MOZ_ASSERT(mRawPtr != 0,
                "You can't dereference a NULL nsRefPtr with operator->*().");
-    return get()->*aMember;
+    return Proxy<R, Args...>(get(), aFptr);
   }
-#endif
 
   nsRefPtr<T>*
   get_address()
