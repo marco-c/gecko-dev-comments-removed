@@ -517,7 +517,7 @@ protected:
 
   
   
-  nsresult StartAudioThread();
+  void StartAudioThread();
 
   
   void PlayStateChanged();
@@ -1316,6 +1316,8 @@ private:
 
   
   nsRefPtr<MediaResource> mResource;
+
+  MozPromiseRequestHolder<GenericPromise> mAudioSinkPromise;
 
 private:
   

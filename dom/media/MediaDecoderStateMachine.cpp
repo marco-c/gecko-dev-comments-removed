@@ -1086,8 +1086,7 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   SetPlayStartTime(TimeStamp::Now());
   MOZ_ASSERT(IsPlaying());
 
-  nsresult rv = StartAudioThread();
-  NS_ENSURE_SUCCESS_VOID(rv);
+  StartAudioThread();
 
   
   
@@ -1481,6 +1480,7 @@ void MediaDecoderStateMachine::StopAudioThread()
     }
     mAudioSink = nullptr;
   }
+  mAudioSinkPromise.DisconnectIfExists();
 }
 
 nsresult
@@ -1783,31 +1783,31 @@ MediaDecoderStateMachine::RequestVideoData()
   }
 }
 
-nsresult
+void
 MediaDecoderStateMachine::StartAudioThread()
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
   if (mAudioCaptured) {
     MOZ_ASSERT(!mAudioSink);
-    return NS_OK;
+    return;
   }
 
   if (HasAudio() && !mAudioSink) {
-    auto audioStartTime = GetMediaTime();
     mAudioCompleted = false;
-    mAudioSink = new AudioSink(this, audioStartTime,
+    mAudioSink = new AudioSink(this, GetMediaTime(),
                                mInfo.mAudio, mDecoder->GetAudioChannel());
-    
-    
-    nsresult rv = mAudioSink->Init();
-    NS_ENSURE_SUCCESS(rv, rv);
+
+    mAudioSinkPromise.Begin(
+      mAudioSink->Init()->Then(
+        OwnerThread(), __func__, this,
+        &MediaDecoderStateMachine::OnAudioSinkComplete,
+        &MediaDecoderStateMachine::OnAudioSinkError));
 
     mAudioSink->SetVolume(mVolume);
     mAudioSink->SetPlaybackRate(mPlaybackRate);
     mAudioSink->SetPreservesPitch(mPreservesPitch);
   }
-  return NS_OK;
 }
 
 int64_t MediaDecoderStateMachine::AudioDecodedUsecs()
@@ -3122,11 +3122,12 @@ void MediaDecoderStateMachine::OnAudioSinkComplete()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-  if (mAudioCaptured) {
-    return;
-  }
+  MOZ_ASSERT(!mAudioCaptured, "Should be disconnected when capturing audio.");
+
+  mAudioSinkPromise.Complete();
   ResyncAudioClock();
   mAudioCompleted = true;
+
   
   mDecoder->GetReentrantMonitor().NotifyAll();
 }
@@ -3135,11 +3136,9 @@ void MediaDecoderStateMachine::OnAudioSinkError()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-  
-  if (mAudioCaptured) {
-    return;
-  }
+  MOZ_ASSERT(!mAudioCaptured, "Should be disconnected when capturing audio.");
 
+  mAudioSinkPromise.Complete();
   ResyncAudioClock();
   mAudioCompleted = true;
 
