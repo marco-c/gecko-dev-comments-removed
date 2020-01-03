@@ -21,6 +21,9 @@
 #include "frontend/SyntaxParseHandler.h"
 
 namespace js {
+
+class StaticFunctionBoxScopeObject;
+
 namespace frontend {
 
 struct StmtInfoPC : public StmtInfoBase
@@ -68,19 +71,11 @@ struct GenericParseContext
     
     bool funHasReturnVoid:1;
 
-    
-    
-
-    
-    
-    bool parsingWith:1;
-
     GenericParseContext(GenericParseContext* parent, SharedContext* sc)
       : parent(parent),
         sc(sc),
         funHasReturnExpr(false),
-        funHasReturnVoid(false),
-        parsingWith(parent ? parent->parsingWith : false)
+        funHasReturnVoid(false)
     {}
 };
 
@@ -97,7 +92,7 @@ GenerateBlockId(TokenStream& ts, ParseContext<ParseHandler>* pc, uint32_t& block
 
 
 template <typename ParseHandler>
-struct ParseContext : public GenericParseContext
+struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
 {
     typedef typename ParseHandler::Node Node;
     typedef typename ParseHandler::DefinitionNode DefinitionNode;
@@ -253,8 +248,7 @@ struct ParseContext : public GenericParseContext
     bool            inDeclDestructuring:1;
 
     ParseContext(Parser<ParseHandler>* prs, GenericParseContext* parent,
-                 Node maybeFunction, SharedContext* sc,
-                 Directives* newDirectives,
+                 Node maybeFunction, SharedContext* sc, Directives* newDirectives,
                  unsigned staticLevel, uint32_t bodyid, uint32_t blockScopeDepth)
       : GenericParseContext(parent, sc),
         bodyid(0),           
@@ -288,6 +282,11 @@ struct ParseContext : public GenericParseContext
 
     StmtInfoPC* innermostStmt() const { return stmtStack.innermost(); }
     StmtInfoPC* innermostScopeStmt() const { return stmtStack.innermostScopeStmt(); }
+    JSObject* innermostStaticScope() const {
+        if (StmtInfoPC* stmt = innermostScopeStmt())
+            return stmt->staticScope;
+        return sc->staticScope();
+    }
 
     
     
@@ -463,8 +462,33 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
 
     ObjectBox* newObjectBox(JSObject* obj);
-    FunctionBox* newFunctionBox(Node fn, JSFunction* fun, ParseContext<ParseHandler>* pc,
-                                Directives directives, GeneratorKind generatorKind);
+    FunctionBox* newFunctionBoxWithScope(Node fn, JSFunction* fun,
+                                         ParseContext<ParseHandler>* outerpc,
+                                         Directives directives, GeneratorKind generatorKind,
+                                         JSObject* staticScope);
+
+  private:
+    FunctionBox* newFunctionBox(Node fn, JSFunction* fun, ParseContext<ParseHandler>* outerpc,
+                                Directives directives, GeneratorKind generatorKind,
+                                JSObject* enclosingStaticScope);
+
+  public:
+    
+    FunctionBox* newFunctionBox(Node fn, JSFunction* fun,
+                                Directives directives, GeneratorKind generatorKind,
+                                JSObject* enclosingStaticScope)
+    {
+        return newFunctionBox(fn, fun, nullptr, directives, generatorKind,
+                              enclosingStaticScope);
+    }
+
+    
+    FunctionBox* newFunctionBox(Node fn, JSFunction* fun, ParseContext<ParseHandler>* outerpc,
+                                Directives directives, GeneratorKind generatorKind)
+    {
+        return newFunctionBox(fn, fun, outerpc, directives, generatorKind,
+                              outerpc->innermostStaticScope());
+    }
 
     
 
@@ -512,7 +536,8 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     
     Node standaloneFunctionBody(HandleFunction fun, const AutoNameVector& formals,
                                 GeneratorKind generatorKind,
-                                Directives inheritedDirectives, Directives* newDirectives);
+                                Directives inheritedDirectives, Directives* newDirectives,
+                                HandleObject enclosingStaticScope);
 
     
     
@@ -617,8 +642,6 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     Node parenExprOrGeneratorComprehension(YieldHandling yieldHandling);
     Node exprInParens(InHandling inHandling, YieldHandling yieldHandling);
 
-    bool checkAllowedNestedSyntax(SharedContext::AllowedSyntax allowed,
-                                  SharedContext** allowingContext = nullptr);
     bool tryNewTarget(Node& newTarget);
     bool checkAndMarkSuperScope();
 
