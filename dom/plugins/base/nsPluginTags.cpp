@@ -18,6 +18,7 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/unused.h"
+#include "nsNetUtil.h"
 #include <cctype>
 #include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/dom/ContentChild.h"
@@ -98,14 +99,24 @@ MakeNiceFileName(const nsCString & aFileName)
 }
 
 static nsCString
-MakePrefNameForPlugin(const char* const subname, nsPluginTag* aTag)
+MakePrefNameForPlugin(const char* const subname, nsIInternalPluginTag* aTag)
 {
   nsCString pref;
+  nsAutoCString pluginName(aTag->GetNiceFileName());
+
+  if (pluginName.IsEmpty()) {
+    
+    pluginName = aTag->FileName();
+    if (pluginName.IsEmpty()) {
+      MOZ_ASSERT_UNREACHABLE("Plugin with no filename or nice name in list");
+      pluginName.AssignLiteral("unknown-plugin-name");
+    }
+  }
 
   pref.AssignLiteral("plugin.");
   pref.Append(subname);
   pref.Append('.');
-  pref.Append(aTag->GetNiceFileName());
+  pref.Append(pluginName);
 
   return pref;
 }
@@ -134,11 +145,32 @@ CStringArrayToXPCArray(nsTArray<nsCString> & aArray,
 }
 
 static nsCString
-GetStatePrefNameForPlugin(nsPluginTag* aTag)
+GetStatePrefNameForPlugin(nsIInternalPluginTag* aTag)
 {
   return MakePrefNameForPlugin("state", aTag);
 }
 
+static nsresult
+IsEnabledStateLockedForPlugin(nsIInternalPluginTag* aTag,
+                              bool* aIsEnabledStateLocked)
+{
+  *aIsEnabledStateLocked = false;
+  nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID));
+
+  if (NS_WARN_IF(!prefs)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  unused << prefs->PrefIsLocked(GetStatePrefNameForPlugin(aTag).get(),
+                                aIsEnabledStateLocked);
+
+  return NS_OK;
+}
+
+
+nsIInternalPluginTag::nsIInternalPluginTag()
+{
+}
 
 nsIInternalPluginTag::nsIInternalPluginTag(const char* aName,
                                            const char* aDescription,
@@ -170,6 +202,20 @@ nsIInternalPluginTag::nsIInternalPluginTag(const char* aName,
 
 nsIInternalPluginTag::~nsIInternalPluginTag()
 {
+}
+
+bool
+nsIInternalPluginTag::HasExtension(const nsACString& aExtension,
+                                   nsACString& aMatchingType) const
+{
+  return SearchExtensions(mExtensions, mMimeTypes, aExtension, aMatchingType);
+}
+
+bool
+nsIInternalPluginTag::HasMimeType(const nsACString& aMimeType) const
+{
+  return mMimeTypes.Contains(aMimeType,
+                             nsCaseInsensitiveCStringArrayComparator());
 }
 
 
@@ -495,17 +541,7 @@ nsPluginTag::GetBlocklisted(bool* aBlocklisted)
 NS_IMETHODIMP
 nsPluginTag::GetIsEnabledStateLocked(bool* aIsEnabledStateLocked)
 {
-  *aIsEnabledStateLocked = false;
-  nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID));
-
-  if (NS_WARN_IF(!prefs)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  unused << prefs->PrefIsLocked(GetStatePrefNameForPlugin(this).get(),
-                                aIsEnabledStateLocked);
-
-  return NS_OK;
+  return IsEnabledStateLockedForPlugin(this, aIsEnabledStateLocked);
 }
 
 bool
@@ -629,7 +665,9 @@ void nsPluginTag::TryUnloadPlugin(bool inShutdown)
   }
 }
 
-nsCString nsPluginTag::GetNiceFileName() {
+const nsCString&
+nsPluginTag::GetNiceFileName()
+{
   if (!mNiceFileName.IsEmpty()) {
     return mNiceFileName;
   }
@@ -705,20 +743,6 @@ nsPluginTag::GetBlocklistState(uint32_t *aResult)
 #endif 
 }
 
-bool
-nsPluginTag::HasMimeType(const nsACString & aMimeType) const
-{
-  return mMimeTypes.Contains(aMimeType,
-                             nsCaseInsensitiveCStringArrayComparator());
-}
-
-bool
-nsPluginTag::HasExtension(const nsACString & aExtension,
-                          nsACString & aMatchingType) const
-{
-  return SearchExtensions(mExtensions, mMimeTypes, aExtension, aMatchingType);
-}
-
 void
 nsPluginTag::InvalidateBlocklistState()
 {
@@ -736,4 +760,184 @@ nsPluginTag::GetLastModifiedTime(PRTime* aLastModifiedTime)
 bool nsPluginTag::IsFromExtension() const
 {
   return mIsFromExtension;
+}
+
+
+
+nsFakePluginTag::nsFakePluginTag()
+  : mState(nsPluginTag::ePluginState_Disabled)
+{
+}
+
+nsFakePluginTag::~nsFakePluginTag()
+{
+}
+
+NS_IMPL_ADDREF(nsFakePluginTag)
+NS_IMPL_RELEASE(nsFakePluginTag)
+NS_INTERFACE_TABLE_HEAD(nsFakePluginTag)
+  NS_INTERFACE_TABLE_BEGIN
+    NS_INTERFACE_TABLE_ENTRY_AMBIGUOUS(nsFakePluginTag, nsIPluginTag,
+                                       nsIInternalPluginTag)
+    NS_INTERFACE_TABLE_ENTRY(nsFakePluginTag, nsIInternalPluginTag)
+    NS_INTERFACE_TABLE_ENTRY_AMBIGUOUS(nsFakePluginTag, nsISupports,
+                                       nsIInternalPluginTag)
+    NS_INTERFACE_TABLE_ENTRY(nsFakePluginTag, nsIFakePluginTag)
+  NS_INTERFACE_TABLE_END
+NS_INTERFACE_TABLE_TAIL
+
+NS_IMETHODIMP
+nsFakePluginTag::GetHandlerURI(nsIURI **aResult)
+{
+  NS_IF_ADDREF(*aResult = mHandlerURI);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetDescription( nsACString& aResult)
+{
+  aResult = mDescription;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetFilename( nsACString& aResult)
+{
+  aResult = mFileName;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetFullpath( nsACString& aResult)
+{
+  aResult = mFullPath;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetVersion( nsACString& aResult)
+{
+  aResult = mVersion;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetName( nsACString& aResult)
+{
+  aResult = mName;
+  return NS_OK;
+}
+
+const nsCString&
+nsFakePluginTag::GetNiceFileName()
+{
+  
+  
+  
+  if (mNiceName.IsEmpty() && !mFileName.IsEmpty()) {
+    mNiceName = MakeNiceFileName(mFileName);
+  }
+
+  return mNiceName;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetNiceName( nsACString& aResult)
+{
+  aResult = GetNiceFileName();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetBlocklistState(uint32_t* aResult)
+{
+  
+  *aResult = nsIBlocklistService::STATE_NOT_BLOCKED;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetBlocklisted(bool* aBlocklisted)
+{
+  
+  *aBlocklisted = false;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetIsEnabledStateLocked(bool* aIsEnabledStateLocked)
+{
+  return IsEnabledStateLockedForPlugin(this, aIsEnabledStateLocked);
+}
+
+bool
+nsFakePluginTag::IsEnabled()
+{
+  return mState == nsPluginTag::ePluginState_Enabled ||
+         mState == nsPluginTag::ePluginState_Clicktoplay;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetDisabled(bool* aDisabled)
+{
+  *aDisabled = !IsEnabled();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetClicktoplay(bool* aClicktoplay)
+{
+  *aClicktoplay = (mState == nsPluginTag::ePluginState_Clicktoplay);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetEnabledState(uint32_t* aEnabledState)
+{
+  *aEnabledState = (uint32_t)mState;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::SetEnabledState(uint32_t aEnabledState)
+{
+  
+  mState = (nsPluginTag::PluginState)aEnabledState;
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetMimeTypes(uint32_t* aCount, char16_t*** aResults)
+{
+  return CStringArrayToXPCArray(mMimeTypes, aCount, aResults);
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetMimeDescriptions(uint32_t* aCount, char16_t*** aResults)
+{
+  return CStringArrayToXPCArray(mMimeDescriptions, aCount, aResults);
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetExtensions(uint32_t* aCount, char16_t*** aResults)
+{
+  return CStringArrayToXPCArray(mExtensions, aCount, aResults);
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetActive(bool *aResult)
+{
+  
+  *aResult = IsEnabled();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFakePluginTag::GetLastModifiedTime(PRTime* aLastModifiedTime)
+{
+  
+  MOZ_ASSERT(aLastModifiedTime);
+  *aLastModifiedTime = 0;
+  return NS_OK;
 }
