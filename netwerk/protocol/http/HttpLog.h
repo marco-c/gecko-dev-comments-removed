@@ -23,6 +23,7 @@
 
 #undef LOG
 
+#if defined(PR_LOGGING)
 
 
 
@@ -35,6 +36,7 @@
 
 
 extern PRLogModuleInfo *gHttpLog;
+#endif
 
 
 #define LOG1(args) PR_LOG(gHttpLog, 1, args)

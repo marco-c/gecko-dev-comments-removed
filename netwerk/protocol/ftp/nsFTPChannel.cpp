@@ -10,7 +10,9 @@
 #include "nsThreadUtils.h"
 #include "mozilla/Attributes.h"
 
+#if defined(PR_LOGGING)
 extern PRLogModuleInfo* gFTPLog;
+#endif 
 
 
 

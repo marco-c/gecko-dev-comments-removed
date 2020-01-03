@@ -7,6 +7,7 @@
 namespace mozilla {
 namespace net {
 
+#if defined(PR_LOGGING)
 
 
 
@@ -23,6 +24,7 @@ PRLogModuleInfo* GetCache2Log()
     sLog = PR_NewLogModule("cache2");
   return sLog;
 }
+#endif
 
 } 
 } 

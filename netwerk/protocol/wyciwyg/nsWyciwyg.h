@@ -12,6 +12,7 @@
 
 #include "prlog.h"
 
+#if defined(PR_LOGGING)
 
 
 
@@ -24,6 +25,7 @@
 
 
 extern PRLogModuleInfo *gWyciwygLog;
+#endif
 
 
 #define LOG1(args) PR_LOG(gWyciwygLog, 1, args)

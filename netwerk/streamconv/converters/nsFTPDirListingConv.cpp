@@ -19,6 +19,7 @@
 #include "ParseFTPList.h"
 #include <algorithm>
 
+#if defined(PR_LOGGING)
 
 
 
@@ -32,6 +33,7 @@
 
 PRLogModuleInfo* gFTPDirListConvLog = nullptr;
 
+#endif 
 
 
 NS_IMPL_ISUPPORTS(nsFTPDirListingConv,
@@ -191,6 +193,7 @@ nsFTPDirListingConv::~nsFTPDirListingConv() {
 
 nsresult
 nsFTPDirListingConv::Init() {
+#if defined(PR_LOGGING)
     
     
     
@@ -198,6 +201,7 @@ nsFTPDirListingConv::Init() {
     if (nullptr == gFTPDirListConvLog) {
         gFTPDirListConvLog = PR_NewLogModule("nsFTPDirListingConv");
     }
+#endif 
 
     return NS_OK;
 }
