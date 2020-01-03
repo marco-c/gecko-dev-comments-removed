@@ -130,18 +130,6 @@ class Image : public imgIContainer
 {
 public:
   
-  enum eDecoderType {
-    eDecoderType_png     = 0,
-    eDecoderType_gif     = 1,
-    eDecoderType_jpeg    = 2,
-    eDecoderType_bmp     = 3,
-    eDecoderType_ico     = 4,
-    eDecoderType_icon    = 5,
-    eDecoderType_unknown = 6
-  };
-  static eDecoderType GetDecoderType(const char* aMimeType);
-
-  
 
 
 
