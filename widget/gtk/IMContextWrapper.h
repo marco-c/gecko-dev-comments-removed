@@ -370,6 +370,11 @@ protected:
     
 
 
+    static nscolor ToNscolor(PangoAttrColor* aPangoAttrColor);
+
+    
+
+
 
 
     void SetCursorPosition(GtkIMContext* aContext);
