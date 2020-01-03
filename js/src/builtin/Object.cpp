@@ -331,8 +331,8 @@ JS_BasicObjectToString(JSContext* cx, HandleObject obj)
 }
 
 
-static bool
-obj_toString(JSContext* cx, unsigned argc, Value* vp)
+bool
+js::obj_toString(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 

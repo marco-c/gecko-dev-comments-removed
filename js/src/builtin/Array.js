@@ -779,3 +779,17 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
     
     return A;
 }
+
+
+function ArrayToString() {
+    
+    var array = ToObject(this);
+
+    
+    var func = array.join;
+
+    
+    if (!IsCallable(func))
+        return callFunction(std_Object_toString, array);
+    return callFunction(func, array);
+}
