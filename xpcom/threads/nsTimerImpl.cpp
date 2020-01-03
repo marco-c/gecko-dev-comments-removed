@@ -291,12 +291,6 @@ nsTimerImpl::SetDelay(uint32_t aDelay)
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  
-  
-  if (!mTimeout.IsNull() && mType == TYPE_REPEATING_PRECISE) {
-    mTimeout = TimeStamp::Now();
-  }
-
   SetDelayInternal(aDelay);
 
   if (!mFiring && gThread) {
@@ -478,8 +472,7 @@ nsTimerImpl::Fire()
 
   
   
-  
-  if (IsRepeating() && mType != TYPE_REPEATING_PRECISE && !mArmed) {
+  if (IsRepeating() && !mArmed) {
     if (mType == TYPE_REPEATING_SLACK) {
       SetDelayInternal(mDelay);  
     }
@@ -499,9 +492,7 @@ nsTimerImpl::SetDelayInternal(uint32_t aDelay)
   mDelay = aDelay;
 
   TimeStamp now = TimeStamp::Now();
-  if (mTimeout.IsNull() || mType != TYPE_REPEATING_PRECISE) {
-    mTimeout = now;
-  }
+  mTimeout = now;
 
   mTimeout += delayInterval;
 

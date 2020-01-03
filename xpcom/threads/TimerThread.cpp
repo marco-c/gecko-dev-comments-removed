@@ -712,13 +712,6 @@ TimerThread::PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef)
   
   if (timer->IsRepeatingPrecisely()) {
     timer->SetDelayInternal(timer->mDelay);
-
-    
-    if (timer->mType == nsTimerImpl::TYPE_REPEATING_PRECISE) {
-      if (AddTimerInternal(timer) == -1) {
-        return timer.forget();
-      }
-    }
   }
 
 #ifdef MOZ_TASK_TRACER

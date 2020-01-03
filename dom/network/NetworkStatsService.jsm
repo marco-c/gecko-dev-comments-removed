@@ -127,7 +127,7 @@ this.NetworkStatsService = {
 
     
     this.timer.initWithCallback(this, this._db.sampleRate,
-                                Ci.nsITimer.TYPE_REPEATING_PRECISE);
+                                Ci.nsITimer.TYPE_REPEATING_PRECISE_CAN_SKIP);
 
     
     this.cachedStats = Object.create(null);
