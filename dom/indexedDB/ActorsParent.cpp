@@ -7909,10 +7909,11 @@ class QuotaClient final
   typedef nsClassHashtable<nsCStringHashKey, MultipleMaintenanceInfo>
           MaintenanceInfoHashtable;
 
-  enum MaintenanceAction {
-    MaintenanceAction_Nothing = 0,
-    MaintenanceAction_IncrementalVacuum,
-    MaintenanceAction_FullVacuum
+  enum class MaintenanceAction
+  {
+    Nothing = 0,
+    IncrementalVacuum,
+    FullVacuum
   };
 
   static QuotaClient* sInstance;
@@ -16433,14 +16434,14 @@ QuotaClient::PerformIdleMaintenanceOnDatabaseInternal(
   }
 
   switch (maintenanceAction) {
-    case MaintenanceAction_Nothing:
+    case MaintenanceAction::Nothing:
       break;
 
-    case MaintenanceAction_IncrementalVacuum:
+    case MaintenanceAction::IncrementalVacuum:
       IncrementalVacuum(connection);
       break;
 
-    case MaintenanceAction_FullVacuum:
+    case MaintenanceAction::FullVacuum:
       FullVacuum(connection, databaseFile);
       break;
 
@@ -16593,7 +16594,7 @@ QuotaClient::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
   
   
   if (schemaVersion < MakeSchemaVersion(18, 0)) {
-    *aMaintenanceAction = MaintenanceAction_Nothing;
+    *aMaintenanceAction = MaintenanceAction::Nothing;
     return NS_OK;
   }
 
@@ -16610,7 +16611,7 @@ QuotaClient::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
   
   
   if (lowDiskSpace) {
-    *aMaintenanceAction = MaintenanceAction_IncrementalVacuum;
+    *aMaintenanceAction = MaintenanceAction::IncrementalVacuum;
     return NS_OK;
   }
 
@@ -16653,12 +16654,12 @@ QuotaClient::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
 
   
   if (NS_WARN_IF(mMaintenanceStartTime <= lastVacuumTime)) {
-    *aMaintenanceAction = MaintenanceAction_Nothing;
+    *aMaintenanceAction = MaintenanceAction::Nothing;
     return NS_OK;
   }
 
   if (mMaintenanceStartTime - lastVacuumTime < kMinVacuumAge) {
-    *aMaintenanceAction = MaintenanceAction_IncrementalVacuum;
+    *aMaintenanceAction = MaintenanceAction::IncrementalVacuum;
     return NS_OK;
   }
 
@@ -16708,7 +16709,7 @@ QuotaClient::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
   MOZ_ASSERT(percentUnordered <= 100);
 
   if (percentUnordered >= kPercentUnorderedThreshold) {
-    *aMaintenanceAction = MaintenanceAction_FullVacuum;
+    *aMaintenanceAction = MaintenanceAction::FullVacuum;
     return NS_OK;
   }
 
@@ -16722,7 +16723,7 @@ QuotaClient::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
   if (currentFileSize <= lastVacuumSize ||
       (((currentFileSize - lastVacuumSize) * 100 / currentFileSize) <
          kPercentFileSizeGrowthThreshold)) {
-    *aMaintenanceAction = MaintenanceAction_IncrementalVacuum;
+    *aMaintenanceAction = MaintenanceAction::IncrementalVacuum;
     return NS_OK;
   }
 
@@ -16752,7 +16753,7 @@ QuotaClient::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
   
   
   if (freelistCount > kMaxFreelistThreshold) {
-    *aMaintenanceAction = MaintenanceAction_IncrementalVacuum;
+    *aMaintenanceAction = MaintenanceAction::IncrementalVacuum;
     return NS_OK;
   }
 
@@ -16782,8 +16783,8 @@ QuotaClient::DetermineMaintenanceAction(mozIStorageConnection* aConnection,
   MOZ_ASSERT(percentUnused <= 100);
 
   *aMaintenanceAction = percentUnused >= kPercentUnusedThreshold ?
-                        MaintenanceAction_FullVacuum :
-                        MaintenanceAction_IncrementalVacuum;
+                        MaintenanceAction::FullVacuum :
+                        MaintenanceAction::IncrementalVacuum;
   return NS_OK;
 }
 
