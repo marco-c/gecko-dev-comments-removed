@@ -174,7 +174,7 @@ public:
                 EmptyString(), EmptyString(), true, 2)
     , mDisplay(nsIntSize(aWidth, aHeight))
     , mStereoMode(StereoMode::MONO)
-    , mImage(nsIntSize(aWidth, aHeight))
+    , mImage(nsIntRect(0, 0, aWidth, aHeight))
     , mCodecSpecificConfig(new MediaByteBuffer)
     , mExtraData(new MediaByteBuffer)
   {
@@ -218,7 +218,7 @@ public:
   StereoMode mStereoMode;
 
   
-  nsIntSize mImage;
+  nsIntRect mImage;
   nsRefPtr<MediaByteBuffer> mCodecSpecificConfig;
   nsRefPtr<MediaByteBuffer> mExtraData;
 };

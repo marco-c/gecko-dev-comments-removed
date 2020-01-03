@@ -149,9 +149,6 @@ private:
   int64_t mLastVideoFrameTime;
 
   
-  nsIntRect mPicture;
-
-  
   int mAudioCodec;
   
   int mVideoCodec;
