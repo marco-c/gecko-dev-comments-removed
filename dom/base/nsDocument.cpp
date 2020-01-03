@@ -11089,12 +11089,42 @@ ResetFullScreen(nsIDocument* aDocument, void* aData)
         "Should have at most 1 fullscreen subdocument.");
     static_cast<nsDocument*>(aDocument)->CleanupFullscreenState();
     NS_ASSERTION(!aDocument->IsFullScreenDoc(), "Should reset full-screen");
-    nsTArray<nsIDocument*>* changed = reinterpret_cast<nsTArray<nsIDocument*>*>(aData);
+    auto changed = reinterpret_cast<nsCOMArray<nsIDocument>*>(aData);
     changed->AppendElement(aDocument);
     aDocument->EnumerateSubDocuments(ResetFullScreen, aData);
   }
   return true;
 }
+
+
+
+
+class ExitFullscreenScriptRunnable : public nsRunnable
+{
+public:
+  explicit ExitFullscreenScriptRunnable(nsCOMArray<nsIDocument>&& aDocuments)
+    : mDocuments(Move(aDocuments)) { }
+
+  NS_IMETHOD Run() override
+  {
+    
+    
+    
+    nsIDocument* lastDocument = mDocuments[mDocuments.Length() - 1];
+    nsContentUtils::DispatchEventOnlyToChrome(
+      lastDocument, ToSupports(lastDocument),
+      NS_LITERAL_STRING("MozDOMFullscreen:Exited"),
+       true,  false,  nullptr);
+    
+    if (nsPIDOMWindow* win = mDocuments[0]->GetWindow()) {
+      win->SetFullscreenInternal(nsPIDOMWindow::eForFullscreenAPI, false);
+    }
+    return NS_OK;
+  }
+
+private:
+  nsCOMArray<nsIDocument> mDocuments;
+};
 
  void
 nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
@@ -11122,7 +11152,7 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
   
   
   
-  nsAutoTArray<nsIDocument*, 8> changed;
+  nsCOMArray<nsIDocument> changed;
 
   
   ResetFullScreen(root, static_cast<void*>(&changed));
@@ -11138,17 +11168,10 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
     "Fullscreen root should no longer be a fullscreen doc...");
 
   
-  
-  
-  nsContentUtils::DispatchEventOnlyToChrome(
-    changed.LastElement(), ToSupports(changed.LastElement()),
-    NS_LITERAL_STRING("MozDOMFullscreen:Exited"),
-     true,  false,  nullptr);
-  
   FullscreenRoots::Remove(root);
-  if (nsPIDOMWindow* win = root->GetWindow()) {
-    win->SetFullscreenInternal(nsPIDOMWindow::eForFullscreenAPI, false);
-  }
+
+  nsContentUtils::AddScriptRunner(
+    new ExitFullscreenScriptRunnable(Move(changed)));
 }
 
 bool
