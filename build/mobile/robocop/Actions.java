@@ -15,11 +15,7 @@ public interface Actions {
         RIGHT,
         ENTER,
         MENU,
-        
-
-
-        @Deprecated
-        BACK
+        DELETE,
     }
 
     public interface EventExpecter {
