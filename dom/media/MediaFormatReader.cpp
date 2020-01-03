@@ -984,11 +984,11 @@ MediaFormatReader::DrainDecoder(TrackType aTrack)
     return;
   }
   decoder.mNeedDraining = false;
-  if (!decoder.mDecoder) {
-    return;
-  }
+  
+  
   decoder.mOutputRequested = true;
-  if (decoder.mNumSamplesInput == decoder.mNumSamplesOutput) {
+  if (!decoder.mDecoder ||
+      decoder.mNumSamplesInput == decoder.mNumSamplesOutput) {
     
     NotifyDrainComplete(aTrack);
     return;
