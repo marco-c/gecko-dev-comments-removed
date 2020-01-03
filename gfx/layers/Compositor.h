@@ -387,16 +387,6 @@ public:
   
 
 
-
-
-
-
-
-  virtual void PrepareViewport(const gfx::IntSize& aSize) = 0;
-
-  
-
-
   virtual bool SupportsPartialTextureUpdate() = 0;
 
   void SetDiagnosticTypes(DiagnosticTypes aDiagnostics)

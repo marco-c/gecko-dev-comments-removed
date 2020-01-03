@@ -129,7 +129,9 @@ public:
 
 
 
-  virtual void PrepareViewport(const gfx::IntSize& aSize) override;
+  virtual void PrepareViewport(const gfx::IntSize& aSize);
+  virtual void PrepareViewport(const gfx::IntSize& aSize, const gfx::Matrix4x4& aProjection,
+                               float aZNear, float aZFar);
 
   virtual bool SupportsPartialTextureUpdate() override { return true; }
 
