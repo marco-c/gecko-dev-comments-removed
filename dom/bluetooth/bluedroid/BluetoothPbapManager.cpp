@@ -17,6 +17,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "nsAutoPtr.h"
+#include "nsIInputStream.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 
@@ -75,6 +76,8 @@ BluetoothPbapManager::HandleShutdown()
 }
 
 BluetoothPbapManager::BluetoothPbapManager() : mConnected(false)
+                                             , mRemoteMaxPacketLength(0)
+                                             , mRequirePhonebookSize(false)
 {
   mDeviceAddress.AssignLiteral(BLUETOOTH_ADDRESS_NONE);
   mCurrentPath.AssignLiteral("");
@@ -218,6 +221,17 @@ BluetoothPbapManager::ReceiveSocketData(BluetoothSocket* aSocket,
         return;
       }
 
+      
+      mRemoteMaxPacketLength = ((static_cast<int>(data[5]) << 8) | data[6]);
+
+      if (mRemoteMaxPacketLength < kObexLeastMaxSize) {
+        BT_LOGR("Remote maximum packet length %d is smaller than %d bytes",
+          mRemoteMaxPacketLength, kObexLeastMaxSize);
+        mRemoteMaxPacketLength = 0;
+        ReplyError(ObexResponseCode::BadRequest);
+        return;
+      }
+
       ReplyToConnect();
       AfterPbapConnected();
       break;
@@ -254,7 +268,28 @@ BluetoothPbapManager::ReceiveSocketData(BluetoothSocket* aSocket,
       break;
     }
     case ObexRequestCode::Get:
+      
+      
+      
+      
+      BT_WARNING("PBAP shall always uses OBEX GetFinal instead of Get.");
+
+      
     case ObexRequestCode::GetFinal: {
+      
+      
+      
+      
+      if (mVCardDataStream) {
+        if (!ReplyToGet(mVCardDataStream)) {
+          BT_WARNING("Failed to reply to PBAP GET request.");
+          ReplyError(ObexResponseCode::InternalServerError);
+        }
+        return;
+      }
+
+      
+      
       
       if (receivedLength < 3 ||
           !ParseHeaders(&data[3], receivedLength - 3, &pktHeaders)) {
@@ -551,6 +586,11 @@ BluetoothPbapManager::AppendBtNamedValueByTagId(
       
       maxListCount = (maxListCount >> 8) | (maxListCount << 8);
 
+      
+      
+      
+      mRequirePhonebookSize = !maxListCount;
+
       BT_APPEND_NAMED_VALUE(aValues, "maxListCount", (uint32_t) maxListCount);
       break;
     }
@@ -654,6 +694,14 @@ void
 BluetoothPbapManager::AfterPbapDisconnected()
 {
   mConnected = false;
+
+  mRemoteMaxPacketLength = 0;
+  mRequirePhonebookSize = false;
+
+  if (mVCardDataStream) {
+    mVCardDataStream->Close();
+    mVCardDataStream = nullptr;
+  }
 }
 
 bool
@@ -678,21 +726,21 @@ BluetoothPbapManager::ReplyToConnect()
   
   
   
-  uint8_t req[255];
+  uint8_t res[kObexLeastMaxSize];
   int index = 7;
 
-  req[3] = 0x10; 
-  req[4] = 0x00; 
-  req[5] = BluetoothPbapManager::MAX_PACKET_LENGTH >> 8;
-  req[6] = (uint8_t)BluetoothPbapManager::MAX_PACKET_LENGTH;
+  res[3] = 0x10; 
+  res[4] = 0x00; 
+  res[5] = BluetoothPbapManager::MAX_PACKET_LENGTH >> 8;
+  res[6] = (uint8_t)BluetoothPbapManager::MAX_PACKET_LENGTH;
 
   
   
-  index += AppendHeaderWho(&req[index], 255, kPbapObexTarget.mUuid,
-                           sizeof(BluetoothUuid));
-  index += AppendHeaderConnectionId(&req[index], 0x01);
+  index += AppendHeaderWho(&res[index], kObexLeastMaxSize,
+                           kPbapObexTarget.mUuid, sizeof(BluetoothUuid));
+  index += AppendHeaderConnectionId(&res[index], 0x01);
 
-  SendObexData(req, ObexResponseCode::Success, index);
+  SendObexData(res, ObexResponseCode::Success, index);
 }
 
 void
@@ -705,10 +753,10 @@ BluetoothPbapManager::ReplyToDisconnectOrAbort()
   
   
   
-  uint8_t req[255];
-  int index = 3;
+  uint8_t res[kObexLeastMaxSize];
+  int index = kObexRespHeaderSize;
 
-  SendObexData(req, ObexResponseCode::Success, index);
+  SendObexData(res, ObexResponseCode::Success, index);
 }
 
 void
@@ -720,10 +768,10 @@ BluetoothPbapManager::ReplyToSetPath()
 
   
   
-  uint8_t req[255];
-  int index = 3;
+  uint8_t res[kObexLeastMaxSize];
+  int index = kObexRespHeaderSize;
 
-  SendObexData(req, ObexResponseCode::Success, index);
+  SendObexData(res, ObexResponseCode::Success, index);
 }
 
 InfallibleTArray<uint32_t>
@@ -753,52 +801,183 @@ BluetoothPbapManager::PackPropertiesMask(uint8_t* aData, int aSize)
   return propSelector;
 }
 
-void
+bool
 BluetoothPbapManager::ReplyToPullPhonebook(BlobParent* aActor,
                                            uint16_t aPhonebookSize)
 {
   nsRefPtr<BlobImpl> impl = aActor->GetBlobImpl();
   nsRefPtr<Blob> blob = Blob::Create(nullptr, impl);
 
-  ReplyToPullPhonebook(blob.get(), aPhonebookSize);
+  return ReplyToPullPhonebook(blob.get(), aPhonebookSize);
 }
 
-void
+bool
 BluetoothPbapManager::ReplyToPullPhonebook(Blob* aBlob, uint16_t aPhonebookSize)
 {
-  
+  if (!mConnected) {
+    return false;
+  }
+
+  if (!GetInputStreamFromBlob(mVCardDataStream, aBlob)) {
+    ReplyError(ObexResponseCode::InternalServerError);
+    return false;
+  }
+
+  return ReplyToGet(mVCardDataStream, aPhonebookSize);
 }
 
-void
+bool
 BluetoothPbapManager::ReplyToPullvCardListing(BlobParent* aActor,
                                               uint16_t aPhonebookSize)
 {
   nsRefPtr<BlobImpl> impl = aActor->GetBlobImpl();
   nsRefPtr<Blob> blob = Blob::Create(nullptr, impl);
 
-  ReplyToPullvCardListing(blob.get(), aPhonebookSize);
+  return ReplyToPullvCardListing(blob.get(), aPhonebookSize);
 }
 
-void
+bool
 BluetoothPbapManager::ReplyToPullvCardListing(Blob* aBlob,
                                               uint16_t aPhonebookSize)
 {
-  
+  if (!mConnected) {
+    return false;
+  }
+
+  if (!GetInputStreamFromBlob(mVCardDataStream, aBlob)) {
+    ReplyError(ObexResponseCode::InternalServerError);
+    return false;
+  }
+
+  return ReplyToGet(mVCardDataStream, aPhonebookSize);
 }
 
-void
+bool
 BluetoothPbapManager::ReplyToPullvCardEntry(BlobParent* aActor)
 {
   nsRefPtr<BlobImpl> impl = aActor->GetBlobImpl();
   nsRefPtr<Blob> blob = Blob::Create(nullptr, impl);
 
-  ReplyToPullvCardEntry(blob.get());
+  return ReplyToPullvCardEntry(blob.get());
 }
 
-void
+bool
 BluetoothPbapManager::ReplyToPullvCardEntry(Blob* aBlob)
 {
+  if (!mConnected) {
+    return false;
+  }
+
+  if (!GetInputStreamFromBlob(mVCardDataStream, aBlob)) {
+    ReplyError(ObexResponseCode::InternalServerError);
+    return false;
+  }
+
+  return ReplyToGet(mVCardDataStream);
+}
+
+bool
+BluetoothPbapManager::ReplyToGet(nsIInputStream* aStream,
+                                 uint16_t aPhonebookSize)
+{
+  MOZ_ASSERT(aStream);
+  MOZ_ASSERT(mRemoteMaxPacketLength >= kObexLeastMaxSize);
+
   
+  
+  
+  
+  
+
+  uint8_t* res = new uint8_t[mRemoteMaxPacketLength];
+
+  
+  
+  unsigned int index = kObexRespHeaderSize;
+
+  
+  if (mRequirePhonebookSize) {
+    
+    uint8_t phonebookSize[2];
+    phonebookSize[0] = (aPhonebookSize & 0xFF00) >> 8;
+    phonebookSize[1] = aPhonebookSize & 0x00FF;
+
+    
+    
+    
+    uint8_t appParameters[4];
+    AppendAppParameter(appParameters,
+                       sizeof(appParameters),
+                       (uint8_t) AppParameterTag::PhonebookSize,
+                       phonebookSize,
+                       sizeof(phonebookSize));
+
+    index += AppendHeaderAppParameters(&res[index],
+                                       mRemoteMaxPacketLength,
+                                       appParameters,
+                                       sizeof(appParameters));
+    mRequirePhonebookSize = false;
+  }
+
+  
+  
+  uint32_t remainingPacketSize = mRemoteMaxPacketLength - kObexBodyHeaderSize
+                                                        - index;
+
+  
+  uint32_t numRead = 0;
+  nsAutoArrayPtr<char> buffer(new char[remainingPacketSize]);
+  nsresult rv = aStream->Read(buffer, remainingPacketSize, &numRead);
+  if (NS_FAILED(rv)) {
+    BT_WARNING("Failed to read from input stream.");
+    return false;
+  }
+
+  if (numRead) {
+    index += AppendHeaderBody(&res[index],
+                              remainingPacketSize,
+                              (uint8_t*) buffer.forget(),
+                              numRead);
+  }
+
+  
+  
+  uint8_t opcode;
+  if (numRead + kObexBodyHeaderSize > remainingPacketSize) {
+    opcode = ObexResponseCode::Continue;
+  } else {
+    
+    opcode = ObexResponseCode::Success;
+    index += AppendHeaderEndOfBody(&res[index]);
+
+    aStream->Close();
+    aStream = nullptr;
+  }
+
+  SendObexData(res, opcode, index);
+  delete [] res;
+
+  return true;
+}
+
+bool
+BluetoothPbapManager::GetInputStreamFromBlob(nsIInputStream* aStream,
+                                             Blob* aBlob)
+{
+  
+  if (mVCardDataStream) {
+    BT_WARNING("Shouldn't handle multiple PBAP responses at the same time");
+    mVCardDataStream->Close();
+    mVCardDataStream = nullptr;
+  }
+
+  ErrorResult rv;
+  aBlob->GetInternalStream(getter_AddRefs(mVCardDataStream), rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    return false;
+  }
+
+  return true;
 }
 
 void
@@ -808,10 +987,8 @@ BluetoothPbapManager::ReplyError(uint8_t aError)
 
   
   
-  uint8_t req[255];
-  int index = 3;
-
-  SendObexData(req, aError, index);
+  uint8_t res[kObexLeastMaxSize];
+  SendObexData(res, aError, kObexBodyHeaderSize);
 }
 
 void
