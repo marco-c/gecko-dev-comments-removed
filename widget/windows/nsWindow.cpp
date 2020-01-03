@@ -2991,6 +2991,13 @@ NS_IMPL_ISUPPORTS0(FullscreenTransitionData)
  bool
 nsWindow::PrepareForFullscreenTransition(nsISupports** aData)
 {
+  
+  
+  
+  if (!nsUXThemeData::CheckForCompositor()) {
+    return false;
+  }
+
   FullscreenTransitionInitData initData;
   nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
   int32_t x, y, width, height;
