@@ -111,6 +111,7 @@ public:
   virtual void Pause(ErrorResult& aRv);
   virtual void Reverse(ErrorResult& aRv);
   bool IsRunningOnCompositor() const { return mIsRunningOnCompositor; }
+  IMPL_EVENT_HANDLER(finish);
 
   
   
@@ -339,6 +340,8 @@ protected:
   void ResetFinishedPromise();
   void MaybeResolveFinishedPromise();
   void DoFinishNotification(SyncNotifyFlag aSyncNotifyFlag);
+  void DoFinishNotificationImmediately();
+  void DispatchPlaybackEvent(const nsAString& aName);
 
   
 
