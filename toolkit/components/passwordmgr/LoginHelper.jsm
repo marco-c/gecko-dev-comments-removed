@@ -316,4 +316,30 @@ this.LoginHelper = {
                         {filterString : filterString});
     }
   },
+
+  
+
+
+
+
+
+
+
+
+  isUsernameFieldType(element) {
+    if (!(element instanceof Ci.nsIDOMHTMLInputElement))
+      return false;
+
+    let fieldType = (element.hasAttribute("type") ?
+                     element.getAttribute("type").toLowerCase() :
+                     element.type);
+    if (fieldType == "text"  ||
+        fieldType == "email" ||
+        fieldType == "url"   ||
+        fieldType == "tel"   ||
+        fieldType == "number") {
+      return true;
+    }
+    return false;
+  },
 };

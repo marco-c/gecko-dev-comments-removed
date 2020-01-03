@@ -294,7 +294,7 @@ var LoginManagerContent = {
       return;
     }
 
-    let formLike = FormLikeFactory.createFromPasswordField(pwField);
+    let formLike = FormLikeFactory.createFromField(pwField);
     log("onDOMInputPasswordAdded:", pwField, formLike);
 
     let deferredTask = this._deferredPasswordAddedTasksByRootElement.get(formLike.rootElement);
@@ -475,7 +475,7 @@ var LoginManagerContent = {
 
     
     if (inputElement) {
-      form = FormLikeFactory.createFromPasswordField(inputElement);
+      form = FormLikeFactory.createFromField(inputElement);
       clobberUsername = false;
     }
     this._fillForm(form, true, clobberUsername, true, true, loginsFound, recipes, options);
@@ -506,7 +506,7 @@ var LoginManagerContent = {
     if (!(acInputField.ownerDocument instanceof Ci.nsIDOMHTMLDocument))
       return;
 
-    if (!this._isUsernameFieldType(acInputField))
+    if (!LoginHelper.isUsernameFieldType(acInputField))
       return;
 
     var acForm = acInputField.form; 
@@ -577,25 +577,11 @@ var LoginManagerContent = {
     return pwFields;
   },
 
-  _isUsernameFieldType: function(element) {
-    if (!(element instanceof Ci.nsIDOMHTMLInputElement))
-      return false;
-
-    let fieldType = (element.hasAttribute("type") ?
-                     element.getAttribute("type").toLowerCase() :
-                     element.type);
-    if (fieldType == "text"  ||
-        fieldType == "email" ||
-        fieldType == "url"   ||
-        fieldType == "tel"   ||
-        fieldType == "number") {
-      return true;
-    }
-    return false;
-  },
-
-
   
+
+
+
+
 
 
 
@@ -623,7 +609,7 @@ var LoginManagerContent = {
       );
       if (pwOverrideField) {
         
-        let formLike = FormLikeFactory.createFromPasswordField(pwOverrideField);
+        let formLike = FormLikeFactory.createFromField(pwOverrideField);
         pwFields = [{
           index   : [...formLike.elements].indexOf(pwOverrideField),
           element : pwOverrideField,
@@ -656,7 +642,7 @@ var LoginManagerContent = {
       
       for (var i = pwFields[0].index - 1; i >= 0; i--) {
         var element = form.elements[i];
-        if (this._isUsernameFieldType(element)) {
+        if (LoginHelper.isUsernameFieldType(element)) {
           usernameField = element;
           break;
         }
@@ -1086,7 +1072,6 @@ var LoginUtils = {
 
     return this._getPasswordOrigin(uriString, true);
   },
-
 };
 
 
@@ -1228,18 +1213,18 @@ let FormLikeFactory = {
 
 
 
-  createFromPasswordField(aPasswordField) {
-    if (!(aPasswordField instanceof Ci.nsIDOMHTMLInputElement) ||
-        aPasswordField.type != "password" ||
-        !aPasswordField.ownerDocument) {
-      throw new Error("createFromPasswordField requires a password field in a document");
+  createFromField(aField) {
+    if (!(aField instanceof Ci.nsIDOMHTMLInputElement) ||
+        (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||
+        !aField.ownerDocument) {
+      throw new Error("createFromField requires a password or username field in a document");
     }
 
-    if (aPasswordField.form) {
-      return this.createFromForm(aPasswordField.form);
+    if (aField.form) {
+      return this.createFromForm(aField.form);
     }
 
-    let doc = aPasswordField.ownerDocument;
+    let doc = aField.ownerDocument;
     log("Created non-form FormLike for rootElement:", doc.documentElement);
     let formLike = {
       action: LoginUtils._getPasswordOrigin(doc.baseURI),
