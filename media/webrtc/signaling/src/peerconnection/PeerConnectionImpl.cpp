@@ -2030,6 +2030,13 @@ PeerConnectionImpl::GetStreamId(const DOMMediaStream& aStream)
 #endif
 }
 
+void
+PeerConnectionImpl::OnMediaError(const std::string& aError)
+{
+  CSFLogError(logTag, "Encountered media error! %s", aError.c_str());
+  
+}
+
 nsresult
 PeerConnectionImpl::AddTrack(MediaStreamTrack& aTrack,
                              const Sequence<OwningNonNull<DOMMediaStream>>& aStreams)
