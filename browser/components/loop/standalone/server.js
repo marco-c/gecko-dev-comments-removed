@@ -12,6 +12,8 @@
 var express = require("express");
 var app = express();
 
+var path = require("path");
+
 var port = process.env.PORT || 3000;
 var feedbackApiUrl = process.env.LOOP_FEEDBACK_API_URL ||
                      "https://input.allizom.org/api/v1/feedback";
@@ -62,32 +64,35 @@ app.get("/content/c/config.js", getConfigFile);
 
 
 
-app.use("/ui", express.static(__dirname + "/../ui"));
+app.use("/ui", express.static(path.join(__dirname, "..", "ui")));
+app.use("/ui/loop/", express.static(path.join(__dirname, "..", "content")));
+app.use("/ui/shared/", express.static(path.join(__dirname, "..", "content",
+                                                "shared")));
 
 
 
-app.use("/standalone/content", express.static(__dirname + "/content"));
+app.use("/standalone/content", express.static(path.join(__dirname, "content")));
 
 
 
 
 
-app.use("/content", express.static(__dirname + "/content"));
-app.use("/content", express.static(__dirname + "/../content"));
+app.use("/content", express.static(path.join(__dirname, "content")));
+app.use("/content", express.static(path.join(__dirname, "..", "content")));
 
-app.use("/content/c", express.static(__dirname + "/content"));
-app.use("/content/c", express.static(__dirname + "/../content"));
+app.use("/content/c", express.static(path.join(__dirname, "content")));
+app.use("/content/c", express.static(path.join(__dirname, "..", "content")));
 
 
-app.use("/test", express.static(__dirname + "/test"));
-app.use("/test", express.static(__dirname + "/../test"));
+app.use("/test", express.static(path.join(__dirname, "test")));
+app.use("/test", express.static(path.join(__dirname, "..", "test")));
 
 
 
 function serveIndex(req, res) {
   "use strict";
 
-  return res.sendfile(__dirname + "/content/index.html");
+  return res.sendfile(path.join(__dirname, "content", "index.html"));
 }
 
 app.get(/^\/content\/[\w\-]+$/, serveIndex);

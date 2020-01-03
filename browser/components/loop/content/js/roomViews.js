@@ -460,23 +460,6 @@ loop.roomViews = (function(mozL10n) {
         this.props.roomData.roomContextUrls[0];
     },
 
-    
-
-
-
-
-
-
-
-
-
-    _truncate: function(str, maxLen) {
-      if (!maxLen) {
-        maxLen = 72;
-      }
-      return (str.length > maxLen) ? str.substr(0, maxLen) + "…" : str;
-    },
-
     render: function() {
       if (!this.state.show) {
         return null;

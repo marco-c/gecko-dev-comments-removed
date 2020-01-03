@@ -740,6 +740,34 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     return obj;
   }
 
+  
+
+
+
+
+
+
+
+
+
+  function truncate(str, maxLen) {
+    maxLen = maxLen || 72;
+
+    if (str.length > maxLen) {
+      var substring = str.substr(0, maxLen);
+      
+      var direction = mozL10n.getDirection ? mozL10n.getDirection() :
+                      mozL10n.language.direction;
+      if (direction === "rtl") {
+        return "…" + substring;
+      }
+
+      return substring + "…";
+    }
+
+    return str;
+  }
+
   this.utils = {
     CALL_TYPES: CALL_TYPES,
     FAILURE_DETAILS: FAILURE_DETAILS,
@@ -768,6 +796,7 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     strToUint8Array: strToUint8Array,
     Uint8ArrayToStr: Uint8ArrayToStr,
     objectDiff: objectDiff,
-    stripFalsyValues: stripFalsyValues
+    stripFalsyValues: stripFalsyValues,
+    truncate: truncate
   };
 }).call(inChrome ? this : loop.shared);
