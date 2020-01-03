@@ -146,7 +146,6 @@ function gzipCompressString(string) {
   return observer.buffer;
 }
 
-
 this.TelemetrySend = {
 
   
@@ -391,8 +390,12 @@ let SendScheduler = {
       let pending = TelemetryStorage.getPendingPingList();
       let current = TelemetrySendImpl.getUnpersistedPings();
       this._log.trace("_doSendTask - pending: " + pending.length + ", current: " + current.length);
-      pending = pending.filter(p => TelemetrySendImpl.sendingEnabled(p));
-      current = current.filter(p => TelemetrySendImpl.sendingEnabled(p));
+      
+      
+      if (!TelemetrySendImpl.sendingEnabled()) {
+        pending = pending.filter(pingInfo => TelemetryStorage.isDeletionPing(pingInfo.id));
+        current = current.filter(p => isDeletionPing(p));
+      }
       this._log.trace("_doSendTask - can send - pending: " + pending.length + ", current: " + current.length);
 
       
@@ -712,7 +715,12 @@ let TelemetrySendImpl = {
           yield this._doPing(ping, ping.id, false);
         } catch (ex) {
           this._log.info("sendPings - ping " + ping.id + " not sent, saving to disk", ex);
-          yield TelemetryStorage.savePendingPing(ping);
+          
+          if (isDeletionPing(ping)) {
+            yield TelemetryStorage.saveDeletionPing(ping);
+          } else {
+            yield TelemetryStorage.savePendingPing(ping);
+          }
         } finally {
           this._currentPings.delete(ping.id);
         }
@@ -784,6 +792,9 @@ let TelemetrySendImpl = {
     }
 
     if (success && isPersisted) {
+      if (TelemetryStorage.isDeletionPing(id)) {
+        return TelemetryStorage.removeDeletionPing();
+      }
       return TelemetryStorage.removePendingPing(id);
     } else {
       return Promise.resolve();

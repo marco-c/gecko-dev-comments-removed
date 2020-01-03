@@ -34,6 +34,7 @@ const Utils = TelemetryUtils;
 const DATAREPORTING_DIR = "datareporting";
 const PINGS_ARCHIVE_DIR = "archived";
 const ABORTED_SESSION_FILE_NAME = "aborted-session-ping";
+const DELETION_PING_FILE_NAME = "pending-deletion-ping";
 
 XPCOMUtils.defineLazyGetter(this, "gDataReportingDir", function() {
   return OS.Path.join(OS.Constants.Path.profileDir, DATAREPORTING_DIR);
@@ -43,6 +44,9 @@ XPCOMUtils.defineLazyGetter(this, "gPingsArchivePath", function() {
 });
 XPCOMUtils.defineLazyGetter(this, "gAbortedSessionFilePath", function() {
   return OS.Path.join(gDataReportingDir, ABORTED_SESSION_FILE_NAME);
+});
+XPCOMUtils.defineLazyGetter(this, "gDeletionPingFilePath", function() {
+  return OS.Path.join(gDataReportingDir, DELETION_PING_FILE_NAME);
 });
 
 
@@ -267,6 +271,30 @@ this.TelemetryStorage = {
 
 
 
+  saveDeletionPing: function(ping) {
+    return TelemetryStorageImpl.saveDeletionPing(ping);
+  },
+
+  
+
+
+
+  removeDeletionPing: function() {
+    return TelemetryStorageImpl.removeDeletionPing();
+  },
+
+  
+
+
+  isDeletionPing: function(aPingId) {
+    return TelemetryStorageImpl.isDeletionPing(aPingId);
+  },
+
+  
+
+
+
+
   removeAbortedSessionPing: function() {
     return TelemetryStorageImpl.removeAbortedSessionPing();
   },
@@ -482,6 +510,8 @@ let TelemetryStorageImpl = {
   _logger: null,
   
   _abortedSessionSerializer: new SaveSerializer(),
+  
+  _deletionPingSerializer: new SaveSerializer(),
 
   
   
@@ -521,6 +551,7 @@ let TelemetryStorageImpl = {
   shutdown: Task.async(function*() {
     this._shutdown = true;
     yield this._abortedSessionSerializer.flushTasks();
+    yield this._deletionPingSerializer.flushTasks();
     
     
     yield this._cleanArchiveTask;
@@ -1225,6 +1256,18 @@ let TelemetryStorageImpl = {
     }
 
     yield iter.close();
+
+    
+    if (yield OS.File.exists(gDeletionPingFilePath)) {
+      this._log.trace("_scanPendingPings - Adding pending deletion ping.");
+      
+      
+      this._pendingPings.set(Utils.generateUUID(), {
+        path: gDeletionPingFilePath,
+        lastModificationDate: Date.now(),
+      });
+    }
+
     this._scannedPendingDirectory = true;
     return this._buildPingList();
   }),
@@ -1378,6 +1421,50 @@ let TelemetryStorageImpl = {
         this._log.error("removeAbortedSessionPing - error removing ping", ex)
       }
     }.bind(this)));
+  },
+
+  
+
+
+
+
+  saveDeletionPing: Task.async(function*(ping) {
+    this._log.trace("saveDeletionPing - ping path: " + gDeletionPingFilePath);
+    yield OS.File.makeDir(gDataReportingDir, { ignoreExisting: true });
+
+    return this._deletionPingSerializer.enqueueTask(() =>
+      this.savePingToFile(ping, gDeletionPingFilePath, true));
+  }),
+
+  
+
+
+
+  removeDeletionPing: Task.async(function*() {
+    return this._deletionPingSerializer.enqueueTask(Task.async(function*() {
+      try {
+        yield OS.File.remove(gDeletionPingFilePath, { ignoreAbsent: false });
+        this._log.trace("removeDeletionPing - success");
+      } catch (ex if ex.becauseNoSuchFile) {
+        this._log.trace("removeDeletionPing - no such file");
+      } catch (ex) {
+        this._log.error("removeDeletionPing - error removing ping", ex)
+      }
+    }.bind(this)));
+  }),
+
+  isDeletionPing: function(aPingId) {
+    this._log.trace("isDeletionPing - id: " + aPingId);
+    let pingInfo = this._pendingPings.get(aPingId);
+    if (!pingInfo) {
+      return false;
+    }
+
+    if (pingInfo.path != gDeletionPingFilePath) {
+      return false;
+    }
+
+    return true;
   },
 };
 
