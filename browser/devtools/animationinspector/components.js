@@ -652,12 +652,23 @@ exports.TimeScale = TimeScale;
 
 
 
+
+
+
+
+
 function AnimationsTimeline(inspector) {
   this.animations = [];
   this.targetNodes = [];
   this.inspector = inspector;
 
   this.onAnimationStateChanged = this.onAnimationStateChanged.bind(this);
+  this.onTimeHeaderMouseDown = this.onTimeHeaderMouseDown.bind(this);
+  this.onTimeHeaderMouseUp = this.onTimeHeaderMouseUp.bind(this);
+  this.onTimeHeaderMouseOut = this.onTimeHeaderMouseOut.bind(this);
+  this.onTimeHeaderMouseMove = this.onTimeHeaderMouseMove.bind(this);
+
+  EventEmitter.decorate(this);
 }
 
 exports.AnimationsTimeline = AnimationsTimeline;
@@ -673,12 +684,20 @@ AnimationsTimeline.prototype = {
       }
     });
 
+    this.scrubberEl = createNode({
+      parent: this.rootWrapperEl,
+      attributes: {
+        "class": "scrubber"
+      }
+    });
+
     this.timeHeaderEl = createNode({
       parent: this.rootWrapperEl,
       attributes: {
         "class": "time-header"
       }
     });
+    this.timeHeaderEl.addEventListener("mousedown", this.onTimeHeaderMouseDown);
 
     this.animationsEl = createNode({
       parent: this.rootWrapperEl,
@@ -692,12 +711,16 @@ AnimationsTimeline.prototype = {
   destroy: function() {
     this.unrender();
 
+    this.timeHeaderEl.removeEventListener("mousedown",
+      this.onTimeHeaderMouseDown);
+
     this.rootWrapperEl.remove();
     this.animations = [];
 
     this.rootWrapperEl = null;
     this.timeHeaderEl = null;
     this.animationsEl = null;
+    this.scrubberEl = null;
     this.win = null;
     this.inspector = null;
   },
@@ -717,6 +740,47 @@ AnimationsTimeline.prototype = {
     TimeScale.reset();
     this.destroyTargetNodes();
     this.animationsEl.innerHTML = "";
+  },
+
+  onTimeHeaderMouseDown: function(e) {
+    this.moveScrubberTo(e.pageX);
+    this.win.addEventListener("mouseup", this.onTimeHeaderMouseUp);
+    this.win.addEventListener("mouseout", this.onTimeHeaderMouseOut);
+    this.win.addEventListener("mousemove", this.onTimeHeaderMouseMove);
+  },
+
+  onTimeHeaderMouseUp: function() {
+    this.cancelTimeHeaderDragging();
+  },
+
+  onTimeHeaderMouseOut: function(e) {
+    
+    
+    if (!this.win.document.contains(e.relatedTarget)) {
+      this.cancelTimeHeaderDragging();
+    }
+  },
+
+  cancelTimeHeaderDragging: function() {
+    this.win.removeEventListener("mouseup", this.onTimeHeaderMouseUp);
+    this.win.removeEventListener("mouseout", this.onTimeHeaderMouseOut);
+    this.win.removeEventListener("mousemove", this.onTimeHeaderMouseMove);
+  },
+
+  onTimeHeaderMouseMove: function(e) {
+    this.moveScrubberTo(e.pageX);
+  },
+
+  moveScrubberTo: function(pageX) {
+    let offset = pageX - this.scrubberEl.offsetWidth;
+    if (offset < 0) {
+      offset = 0;
+    }
+
+    this.scrubberEl.style.left = offset + "px";
+
+    let time = TimeScale.distanceToTime(offset, this.timeHeaderEl.offsetWidth);
+    this.emit("current-time-changed", time);
   },
 
   render: function(animations) {
