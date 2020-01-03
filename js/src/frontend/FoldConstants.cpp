@@ -1140,6 +1140,30 @@ FoldIf(ExclusiveContext* cx, ParseNode** nodePtr, Parser<FullParseHandler>& pars
     return true;
 }
 
+static bool
+FoldFunction(ExclusiveContext* cx, ParseNode* node, Parser<FullParseHandler>& parser,
+             bool inGenexpLambda)
+{
+    MOZ_ASSERT(node->isKind(PNK_FUNCTION));
+    MOZ_ASSERT(node->isArity(PN_CODE));
+
+    
+    
+    if (node->pn_funbox->useAsmOrInsideUseAsm())
+        return true;
+
+    
+    if (ParseNode*& functionBody = node->pn_body) {
+        if (!Fold(cx, &functionBody, parser, node->pn_funbox->inGenexpLambda,
+                  SyntacticContext::Other))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool
 Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bool inGenexpLambda,
      SyntacticContext sc)
@@ -1242,6 +1266,9 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_OR:
         return FoldAndOr(cx, pnp, parser, inGenexpLambda, sc);
 
+      case PNK_FUNCTION:
+        return FoldFunction(cx, pn, parser, inGenexpLambda);
+
       case PNK_EXPORT:
       case PNK_ASSIGN:
       case PNK_ADDASSIGN:
@@ -1325,11 +1352,11 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
       case PNK_DOT:
       case PNK_LEXICALSCOPE:
       case PNK_NAME:
-      case PNK_FUNCTION:
       case PNK_CATCH:
       case PNK_EXPORT_SPEC:
       case PNK_IMPORT_SPEC:
       case PNK_CALLSITEOBJ:
+        MOZ_ASSERT(!pn->isArity(PN_CODE), "only functions are code nodes");
         break; 
 
       case PNK_LIMIT: 
@@ -1339,19 +1366,8 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
     
     switch (pn->getArity()) {
       case PN_CODE:
-        if (pn->isKind(PNK_FUNCTION) && pn->pn_funbox->useAsmOrInsideUseAsm())
-            return true;
-
-        
-        MOZ_ASSERT(pn->getKind() == PNK_FUNCTION);
-        if (pn->pn_body) {
-            if (!Fold(cx, &pn->pn_body, parser, pn->pn_funbox->inGenexpLambda,
-                      SyntacticContext::Other))
-            {
-                return false;
-            }
-        }
-        break;
+        MOZ_ASSERT(pn->isKind(PNK_FUNCTION));
+        MOZ_CRASH("should have been handled above");
 
       case PN_LIST:
       {
@@ -1697,8 +1713,6 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
 bool
 frontend::FoldConstants(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>* parser)
 {
-    
-    
     
     
     if (parser->pc->useAsmOrInsideUseAsm())
