@@ -7056,7 +7056,7 @@ var gIdentityHandler = {
     
     
     let ciphers = "";
-    if (isBroken && !isMixedActiveContentLoaded) {
+    if (isBroken && !isMixedActiveContentLoaded && !isMixedPassiveContentLoaded) {
       ciphers = "weak";
     }
 
