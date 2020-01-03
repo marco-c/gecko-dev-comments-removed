@@ -17,21 +17,9 @@
 
 #include "mozilla/mozalloc_abort.h"
 
-namespace std {
 
 
 
-
-
-MFBT_API __declspec(noreturn) void moz_Xinvalid_argument(const char*);
-MFBT_API __declspec(noreturn) void moz_Xlength_error(const char*);
-MFBT_API __declspec(noreturn) void moz_Xout_of_range(const char*);
-MFBT_API __declspec(noreturn) void moz_Xoverflow_error(const char*);
-MFBT_API __declspec(noreturn) void moz_Xruntime_error(const char*);
-
-} 
-
-#ifndef MOZALLOC_DONT_WRAP_RAISE_FUNCTIONS
 
 #  define _Xinvalid_argument  moz_Xinvalid_argument
 #  define _Xlength_error      moz_Xlength_error
@@ -44,7 +32,5 @@ MFBT_API __declspec(noreturn) void moz_Xruntime_error(const char*);
 
 #  undef _RAISE
 #  define _RAISE(x) mozalloc_abort((x).what())
-
-#endif  
 
 #endif  
