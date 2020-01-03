@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_MessageEvent_h_
 #define mozilla_dom_MessageEvent_h_
@@ -20,15 +20,15 @@ class MessagePortBase;
 class MessagePortList;
 class OwningWindowProxyOrMessagePort;
 
-/**
- * Implements the MessageEvent event, used for cross-document messaging and
- * server-sent events.
- *
- * See http://www.whatwg.org/specs/web-apps/current-work/#messageevent for
- * further details.
- */
-class MessageEvent : public Event,
-                     public nsIDOMMessageEvent
+
+
+
+
+
+
+
+class MessageEvent MOZ_FINAL : public Event,
+                               public nsIDOMMessageEvent
 {
 public:
   MessageEvent(EventTarget* aOwner,
@@ -40,7 +40,7 @@ public:
 
   NS_DECL_NSIDOMMESSAGEEVENT
 
-  // Forward to base class
+  
   NS_FORWARD_TO_EVENT
 
   virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE;
@@ -57,7 +57,7 @@ public:
 
   void SetPorts(MessagePortList* aPorts);
 
-  // Non WebIDL methods
+  
   void SetSource(mozilla::dom::MessagePort* aPort)
   {
     mPortSource = aPort;
@@ -86,7 +86,7 @@ private:
   nsRefPtr<MessagePortList> mPorts;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_MessageEvent_h_
+#endif 
