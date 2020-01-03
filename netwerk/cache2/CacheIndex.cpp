@@ -1710,7 +1710,25 @@ CacheIndex::FinishWrite(bool aSucceeded)
     
     MOZ_ASSERT(!mIndexFileOpener);
 
-    mIndex.EnumerateEntries(&CacheIndex::ApplyIndexChanges, this);
+    for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
+      CacheIndexEntry* entry = iter.Get();
+
+      bool remove = false;
+      {
+        CacheIndexEntryAutoManage emng(entry->Hash(), this);
+
+        if (entry->IsRemoved()) {
+          emng.DoNotSearchInIndex();
+          remove = true;
+        } else if (entry->IsDirty()) {
+          entry->ClearDirty();
+        }
+      }
+      if (remove) {
+        iter.Remove();
+      }
+    }
+
     mIndexOnDiskIsValid = true;
   } else {
     if (mIndexFileOpener) {
@@ -1763,26 +1781,6 @@ CacheIndex::CopyRecordsToRWBuf(CacheIndexEntry *aEntry, void* aClosure)
   aEntry->WriteToBuf(data->mBuf);
   data->mBuf += sizeof(CacheIndexRecord);
   data->mProcessed++;
-
-  return PL_DHASH_NEXT;
-}
-
-
-PLDHashOperator
-CacheIndex::ApplyIndexChanges(CacheIndexEntry *aEntry, void* aClosure)
-{
-  CacheIndex *index = static_cast<CacheIndex *>(aClosure);
-
-  CacheIndexEntryAutoManage emng(aEntry->Hash(), index);
-
-  if (aEntry->IsRemoved()) {
-    emng.DoNotSearchInIndex();
-    return PL_DHASH_REMOVE;
-  }
-
-  if (aEntry->IsDirty()) {
-    aEntry->ClearDirty();
-  }
 
   return PL_DHASH_NEXT;
 }
@@ -2477,7 +2475,7 @@ CacheIndex::FinishRead(bool aSucceeded)
     EnsureNoFreshEntry();
     ProcessPendingOperations();
     
-    mIndex.EnumerateEntries(&CacheIndex::RemoveNonFreshEntries, this);
+    RemoveNonFreshEntries();
     StartUpdatingIndex(true);
     return;
   }
@@ -3065,7 +3063,7 @@ CacheIndex::FinishUpdate(bool aSucceeded)
     
     
     
-    mIndex.EnumerateEntries(&CacheIndex::RemoveNonFreshEntries, this);
+    RemoveNonFreshEntries();
   }
 
   
@@ -3076,23 +3074,25 @@ CacheIndex::FinishUpdate(bool aSucceeded)
   mLastDumpTime = TimeStamp::NowLoRes(); 
 }
 
-
-PLDHashOperator
-CacheIndex::RemoveNonFreshEntries(CacheIndexEntry *aEntry, void* aClosure)
+void
+CacheIndex::RemoveNonFreshEntries()
 {
-  if (aEntry->IsFresh()) {
-    return PL_DHASH_NEXT;
+  for (auto iter = mIndex.Iter(); !iter.Done(); iter.Next()) {
+    CacheIndexEntry* entry = iter.Get();
+    if (entry->IsFresh()) {
+      continue;
+    }
+
+    LOG(("CacheIndex::RemoveNonFreshEntries() - Removing entry. "
+         "[hash=%08x%08x%08x%08x%08x]", LOGSHA1(entry->Hash())));
+
+    {
+      CacheIndexEntryAutoManage emng(entry->Hash(), this);
+      emng.DoNotSearchInIndex();
+    }
+
+    iter.Remove();
   }
-
-  LOG(("CacheFile::RemoveNonFreshEntries() - Removing entry. "
-       "[hash=%08x%08x%08x%08x%08x]", LOGSHA1(aEntry->Hash())));
-
-  CacheIndex *index = static_cast<CacheIndex *>(aClosure);
-
-  CacheIndexEntryAutoManage emng(aEntry->Hash(), index);
-  emng.DoNotSearchInIndex();
-
-  return PL_DHASH_REMOVE;
 }
 
 

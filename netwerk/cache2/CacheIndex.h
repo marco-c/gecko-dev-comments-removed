@@ -747,8 +747,6 @@ private:
 
   static PLDHashOperator CopyRecordsToRWBuf(CacheIndexEntry *aEntry,
                                             void* aClosure);
-  static PLDHashOperator ApplyIndexChanges(CacheIndexEntry *aEntry,
-                                           void* aClosure);
 
   
   
@@ -853,8 +851,7 @@ private:
   
   void FinishUpdate(bool aSucceeded);
 
-  static PLDHashOperator RemoveNonFreshEntries(CacheIndexEntry *aEntry,
-                                               void* aClosure);
+  void RemoveNonFreshEntries();
 
   enum EState {
     
