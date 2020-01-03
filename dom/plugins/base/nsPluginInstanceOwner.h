@@ -44,10 +44,10 @@ class gfxXlibSurface;
 #endif
 #endif
 
-class nsPluginInstanceOwner : public nsIPluginInstanceOwner,
-                              public nsIDOMEventListener,
-                              public nsIPrivacyTransitionObserver,
-                              public nsSupportsWeakReference
+class nsPluginInstanceOwner MOZ_FINAL : public nsIPluginInstanceOwner,
+                                        public nsIDOMEventListener,
+                                        public nsIPrivacyTransitionObserver,
+                                        public nsSupportsWeakReference
 {
 public:
   nsPluginInstanceOwner();
@@ -149,11 +149,11 @@ public:
   
   void BeginCGPaint();
   void EndCGPaint();
-#else 
+#else
   void UpdateWindowPositionAndClipRect(bool aSetWindow);
   void UpdateWindowVisibility(bool aVisible);
   void UpdateDocumentActiveState(bool aIsActive);
-#endif 
+#endif
 
   void SetFrame(nsObjectFrame *aFrame);
   nsObjectFrame* GetFrame();
@@ -357,5 +357,5 @@ private:
   bool mWaitingForPaint;
 };
 
-#endif
+#endif 
 

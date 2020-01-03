@@ -25,9 +25,9 @@ class nsRenderingContext;
 
 
 
-class nsCanvasFrame : public nsContainerFrame,
-                      public nsIScrollPositionListener,
-                      public nsIAnonymousContentCreator
+class nsCanvasFrame MOZ_FINAL : public nsContainerFrame,
+                                public nsIScrollPositionListener,
+                                public nsIAnonymousContentCreator
 {
 public:
   nsCanvasFrame(nsStyleContext* aContext)
@@ -259,4 +259,4 @@ public:
   NS_DISPLAY_DECL_NAME("CanvasThemedBackground", TYPE_CANVAS_THEMED_BACKGROUND)
 };
 
-#endif 
+#endif
