@@ -19,6 +19,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
+                                  "resource://gre/modules/BrowserUtils.jsm");
+
 this.EXPORTED_SYMBOLS = ["PushRecord"];
 
 const prefs = new Preferences("dom.push.");
@@ -38,7 +41,6 @@ const QUOTA_REFRESH_TRANSITIONS_SQL = [
 function PushRecord(props) {
   this.pushEndpoint = props.pushEndpoint;
   this.scope = props.scope;
-  this.origin = Services.io.newURI(this.scope, null, null).prePath;
   this.originAttributes = props.originAttributes;
   this.pushCount = props.pushCount || 0;
   this.lastPush = props.lastPush || 0;
@@ -116,8 +118,8 @@ PushRecord.prototype = {
         `,
         {
           
-          urlLowerBound: this.origin,
-          urlUpperBound: this.origin + "\x7f"
+          urlLowerBound: this.uri.prePath,
+          urlUpperBound: this.uri.prePath + "\x7f",
         }
       );
     }).then(rows => {
@@ -143,12 +145,30 @@ PushRecord.prototype = {
       for (let tab of tabs) {
         
         let tabURI = (tab.linkedBrowser || tab.browser).currentURI;
-        if (tabURI.prePath == this.origin) {
+        if (tabURI.prePath == this.uri.prePath) {
           return true;
         }
       }
     }
     return false;
+  },
+
+  
+
+
+
+  pushPermission() {
+    return Services.perms.testExactPermissionFromPrincipal(
+           this.principal, "push");
+  },
+
+  
+
+
+
+  hasPermission() {
+    let permission = this.pushPermission();
+    return permission == Ci.nsIPermissionManager.ALLOW_ACTION;
   },
 
   quotaApplies() {
@@ -176,8 +196,29 @@ PushRecord.prototype = {
 
 
 
-Object.defineProperty(PushRecord.prototype, "origin", {
-  configurable: true,
-  enumerable: false,
-  writable: true,
+let principals = new WeakMap();
+Object.defineProperties(PushRecord.prototype, {
+  principal: {
+    get() {
+      let principal = principals.get(this);
+      if (!principal) {
+        let url = this.scope;
+        if (this.originAttributes) {
+          
+          url += this.originAttributes;
+        }
+        principal = BrowserUtils.principalFromOrigin(url);
+        principals.set(this, principal);
+      }
+      return principal;
+    },
+    configurable: true,
+  },
+
+  uri: {
+    get() {
+      return this.principal.URI;
+    },
+    configurable: true,
+  },
 });
