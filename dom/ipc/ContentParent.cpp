@@ -4308,9 +4308,10 @@ ContentParent::GetConsoleService()
     
     
     
+    
     NS_DEFINE_CID(consoleServiceCID, NS_CONSOLESERVICE_CID);
-    nsCOMPtr<nsConsoleService>  consoleService(do_GetService(consoleServiceCID));
-    mConsoleService = consoleService;
+    nsCOMPtr<nsIConsoleService> consoleService(do_GetService(consoleServiceCID));
+    mConsoleService = static_cast<nsConsoleService*>(consoleService.get());
     return mConsoleService.get();
 }
 

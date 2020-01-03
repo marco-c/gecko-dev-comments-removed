@@ -42,7 +42,6 @@
 #include "WindowNamedPropertiesHandler.h"
 #include "nsFrameSelection.h"
 #include "nsNetUtil.h"
-#include "nsIConsoleService.h"
 
 
 #include "nsJSUtils.h"
@@ -1566,12 +1565,6 @@ void
 nsGlobalWindow::FreeInnerObjects()
 {
   NS_ASSERTION(IsInnerWindow(), "Don't free inner objects on an outer window");
-
-  
-  nsCOMPtr<nsIConsoleService> console(do_GetService("@mozilla.org/consoleservice;1"));
-  if (console) {
-    console->ClearMessagesForWindowID(mWindowID);
-  }
 
   
   
