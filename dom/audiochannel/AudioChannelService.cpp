@@ -562,6 +562,15 @@ AudioChannelService::RefreshAgentsCapture(nsPIDOMWindow* aWindow,
 
   AudioChannelWindow* winData = GetWindowData(pTopWindow->WindowID());
 
+  
+  
+  
+  
+  
+  if (!winData) {
+    return;
+  }
+
   nsTObserverArray<AudioChannelAgent*>::ForwardIterator
     iter(winData->mAgents);
   while (iter.HasMore()) {
