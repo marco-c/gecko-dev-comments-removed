@@ -45,11 +45,10 @@ function assertNodeSelected(inspector, tagName) {
 }
 
 function* selectWithBrowserMenu(inspector) {
-  yield executeInContent("Test:SynthesizeMouse", {
-    center: true,
-    selector: "div",
-    options: {type: "contextmenu", button: 2}
-  });
+  yield BrowserTestUtils.synthesizeMouseAtCenter("div", {
+    type: "contextmenu",
+    button: 2
+  }, gBrowser.selectedBrowser);
 
   
   
@@ -71,11 +70,9 @@ function* selectWithBrowserMenu(inspector) {
 
 function* selectWithElementPicker(inspector) {
   yield inspector.toolbox.highlighterUtils.startPicker();
-  yield executeInContent("Test:SynthesizeMouse", {
-    center: true,
-    selector: "div",
-    options: {type: "mousemove"}
-  });
+  yield BrowserTestUtils.synthesizeMouseAtCenter("div", {
+    type: "mousemove",
+  }, gBrowser.selectedBrowser);
   executeInContent("Test:SynthesizeKey", {
     key: "VK_RETURN",
     options: {}
