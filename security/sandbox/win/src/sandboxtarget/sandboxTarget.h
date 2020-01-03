@@ -11,6 +11,7 @@
 
 #include "base/MissingBasicTypes.h"
 #include "sandbox/win/src/sandbox.h"
+#include "sandbox/win/src/target_services.h"
 
 #ifdef TARGET_SANDBOX_EXPORTS
 #define TARGET_SANDBOX_EXPORT __declspec(dllexport)
@@ -38,19 +39,17 @@ public:
 
 
 
-  sandbox::ResultCode
-  InitTargetServices(sandbox::TargetServices* aTargetServices)
+
+  void SetTargetServices(sandbox::TargetServices* aTargetServices)
   {
     MOZ_ASSERT(aTargetServices);
     MOZ_ASSERT(!mTargetServices,
-               "Sandbox TargetServices must only be initialized once.");
+               "Sandbox TargetServices must only be set once.");
+    
+    MOZ_ASSERT(aTargetServices->GetState()->process_state_ > 1,
+               "Sandbox TargetServices must already be initialized.");
 
-    sandbox::ResultCode result = aTargetServices->Init();
-    if (sandbox::SBOX_ALL_OK == result) {
-      mTargetServices = aTargetServices;
-    }
-
-    return result;
+    mTargetServices = aTargetServices;
   }
 
   
