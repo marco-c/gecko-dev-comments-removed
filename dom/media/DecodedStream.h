@@ -7,81 +7,33 @@
 #ifndef DecodedStream_h_
 #define DecodedStream_h_
 
-#include "mozilla/nsRefPtr.h"
 #include "nsTArray.h"
 #include "MediaInfo.h"
 
+#include "mozilla/CheckedInt.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/nsRefPtr.h"
+#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/ReentrantMonitor.h"
-#include "mozilla/Maybe.h"
 
 namespace mozilla {
 
-class MediaData;
-class AudioSegment;
-class MediaStream;
-class MediaInputPort;
-class SourceMediaStream;
-class ProcessedMediaStream;
 class DecodedStream;
-class DecodedStreamGraphListener;
-class OutputStreamListener;
-class ReentrantMonitor;
+class DecodedStreamData;
+class MediaData;
+class MediaInputPort;
+class MediaStream;
 class MediaStreamGraph;
+class OutputStreamListener;
+class ProcessedMediaStream;
+class ReentrantMonitor;
 
 template <class T> class MediaQueue;
 
 namespace layers {
 class Image;
 } 
-
-
-
-
-
-
-
-
-
-class DecodedStreamData {
-public:
-  DecodedStreamData(SourceMediaStream* aStream, bool aPlaying);
-  ~DecodedStreamData();
-  bool IsFinished() const;
-  int64_t GetPosition() const;
-  void SetPlaying(bool aPlaying);
-
-  
-
-
-  
-  int64_t mAudioFramesWritten;
-  
-  
-  
-  int64_t mNextVideoTime; 
-  int64_t mNextAudioTime; 
-  
-  
-  nsRefPtr<layers::Image> mLastVideoImage;
-  gfx::IntSize mLastVideoImageDisplaySize;
-  
-  
-  bool mStreamInitialized;
-  bool mHaveSentFinish;
-  bool mHaveSentFinishAudio;
-  bool mHaveSentFinishVideo;
-
-  
-  const nsRefPtr<SourceMediaStream> mStream;
-  nsRefPtr<DecodedStreamGraphListener> mListener;
-  bool mPlaying;
-  
-  
-  bool mEOSVideoCompensation;
-};
 
 class OutputStreamData {
 public:
@@ -119,7 +71,7 @@ public:
   bool SendData(double aVolume, bool aIsSameOrigin);
 
 protected:
-  virtual ~DecodedStream() {}
+  virtual ~DecodedStream();
 
 private:
   ReentrantMonitor& GetReentrantMonitor() const;

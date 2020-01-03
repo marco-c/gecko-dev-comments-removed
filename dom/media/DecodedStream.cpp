@@ -87,6 +87,52 @@ UpdateStreamBlocking(MediaStream* aStream, bool aBlocking)
   }
 }
 
+
+
+
+
+
+
+
+
+class DecodedStreamData {
+public:
+  DecodedStreamData(SourceMediaStream* aStream, bool aPlaying);
+  ~DecodedStreamData();
+  bool IsFinished() const;
+  int64_t GetPosition() const;
+  void SetPlaying(bool aPlaying);
+
+  
+
+
+  
+  int64_t mAudioFramesWritten;
+  
+  
+  
+  int64_t mNextVideoTime; 
+  int64_t mNextAudioTime; 
+  
+  
+  nsRefPtr<layers::Image> mLastVideoImage;
+  gfx::IntSize mLastVideoImageDisplaySize;
+  
+  
+  bool mStreamInitialized;
+  bool mHaveSentFinish;
+  bool mHaveSentFinishAudio;
+  bool mHaveSentFinishVideo;
+
+  
+  const nsRefPtr<SourceMediaStream> mStream;
+  nsRefPtr<DecodedStreamGraphListener> mListener;
+  bool mPlaying;
+  
+  
+  bool mEOSVideoCompensation;
+};
+
 DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream, bool aPlaying)
   : mAudioFramesWritten(0)
   , mNextVideoTime(-1)
@@ -191,7 +237,10 @@ DecodedStream::DecodedStream(MediaQueue<MediaData>& aAudioQueue,
   , mAudioQueue(aAudioQueue)
   , mVideoQueue(aVideoQueue)
 {
-  
+}
+
+DecodedStream::~DecodedStream()
+{
 }
 
 void
