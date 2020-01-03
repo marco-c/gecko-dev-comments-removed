@@ -162,7 +162,7 @@ protected:
                                         "before a CSS transition is destroyed");
   }
 
-  virtual css::CommonAnimationManager* GetAnimationManager() const override;
+  virtual CommonAnimationManager* GetAnimationManager() const override;
 
   
   
@@ -173,11 +173,11 @@ protected:
 } 
 
 class nsTransitionManager final
-  : public mozilla::css::CommonAnimationManager
+  : public mozilla::CommonAnimationManager
 {
 public:
   explicit nsTransitionManager(nsPresContext *aPresContext)
-    : mozilla::css::CommonAnimationManager(aPresContext)
+    : mozilla::CommonAnimationManager(aPresContext)
     , mInAnimationOnlyStyleUpdate(false)
   {
   }
