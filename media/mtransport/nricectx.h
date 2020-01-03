@@ -208,12 +208,18 @@ class NrIceCtx {
                      ICE_CONTROLLED
   };
 
+  enum Policy { ICE_POLICY_NONE,
+                ICE_POLICY_RELAY,
+                ICE_POLICY_ALL
+  };
+
   static RefPtr<NrIceCtx> Create(const std::string& name,
                                  bool offerer,
                                  bool set_interface_priorities = true,
                                  bool allow_loopback = false,
                                  bool tcp_enabled = true,
-                                 bool allow_link_local = false);
+                                 bool allow_link_local = false,
+                                 Policy policy = ICE_POLICY_ALL);
 
   
   static void internal_DeinitializeGlobal();
@@ -274,6 +280,14 @@ class NrIceCtx {
 
   
   
+  nsresult SetPolicy(Policy policy);
+
+  Policy policy() const {
+    return policy_;
+  }
+
+  
+  
   nsresult SetStunServers(const std::vector<NrIceStunServer>& stun_servers);
 
   
@@ -315,7 +329,8 @@ class NrIceCtx {
 
  private:
   NrIceCtx(const std::string& name,
-           bool offerer)
+           bool offerer,
+           Policy policy)
   : connection_state_(ICE_CTX_INIT),
     gathering_state_(ICE_CTX_GATHER_INIT),
     name_(name),
@@ -325,7 +340,8 @@ class NrIceCtx {
     peer_(nullptr),
     ice_handler_vtbl_(nullptr),
     ice_handler_(nullptr),
-    trickle_(true) {
+    trickle_(true),
+    policy_(policy) {
     
     (void)offerer_;
   }
@@ -371,6 +387,7 @@ class NrIceCtx {
   nr_ice_handler* ice_handler_;  
   bool trickle_;
   nsCOMPtr<nsIEventTarget> sts_target_; 
+  Policy policy_;
 };
 
 
