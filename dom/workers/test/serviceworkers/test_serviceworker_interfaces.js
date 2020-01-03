@@ -172,6 +172,10 @@ var interfaceNamesInGlobalScope =
 
     "Promise",
 
+    "PushManager",
+
+    "PushSubscription",
+
     "Request",
 
     "Response",
