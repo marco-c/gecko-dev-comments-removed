@@ -941,6 +941,11 @@ AccessibleCaretManager::DispatchCaretStateChangedEvent(CaretChangedReason aReaso
     init.mSelectionVisible = true;
   }
 
+  
+  
+  init.mSelectionEditable = commonAncestorFrame &&
+    commonAncestorFrame->GetContent()->GetEditingHost();
+
   init.mBoundingClientRect = domRect;
   init.mReason = aReason;
   init.mCollapsed = sel->IsCollapsed();
