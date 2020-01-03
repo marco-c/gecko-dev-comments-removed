@@ -24,16 +24,21 @@
 
 
 
+
 const {Cu} = require("chrome");
 const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 const {setInterval, clearInterval} = require("sdk/timers");
 const protocol = require("devtools/server/protocol");
-const {ActorClass, Actor, FrontClass, Front, Arg, method, RetVal, types} = protocol;
+const {ActorClass, Actor, FrontClass, Front,
+       Arg, method, RetVal, types} = protocol;
+
 const {NodeActor} = require("devtools/server/actors/inspector");
 const events = require("sdk/event/core");
 
-const PLAYER_DEFAULT_AUTO_REFRESH_TIMEOUT = 500; 
+
+
+const PLAYER_DEFAULT_AUTO_REFRESH_TIMEOUT = 500;
 
 
 
@@ -47,6 +52,13 @@ const PLAYER_DEFAULT_AUTO_REFRESH_TIMEOUT = 500;
 let AnimationPlayerActor = ActorClass({
   typeName: "animationplayer",
 
+  events: {
+    "changed": {
+      type: "changed",
+      state: Arg(0, "json")
+    }
+  },
+
   
 
 
@@ -58,14 +70,29 @@ let AnimationPlayerActor = ActorClass({
   initialize: function(animationsActor, player, playerIndex) {
     Actor.prototype.initialize.call(this, animationsActor.conn);
 
+    this.onAnimationMutation = this.onAnimationMutation.bind(this);
+
+    this.tabActor = animationsActor.tabActor;
     this.player = player;
     this.node = player.effect.target;
     this.playerIndex = playerIndex;
-    this.styles = this.node.ownerDocument.defaultView.getComputedStyle(this.node);
+
+    let win = this.node.ownerDocument.defaultView;
+    this.styles = win.getComputedStyle(this.node);
+
+    
+    
+    this.observer = new win.MutationObserver(this.onAnimationMutation);
+    this.observer.observe(this.node, {animations: true});
   },
 
   destroy: function() {
-    this.player = this.node = this.styles = null;
+    
+    
+    if (this.observer && !Cu.isDeadWrapper(this.observer)) {
+      this.observer.disconnect();
+    }
+    this.tabActor = this.player = this.node = this.styles = this.observer = null;
     Actor.prototype.destroy.call(this);
   },
 
@@ -95,14 +122,14 @@ let AnimationPlayerActor = ActorClass({
 
   getPlayerIndex: function() {
     let names = this.styles.animationName;
+    if (names === "none") {
+      names = this.styles.transitionProperty;
+    }
 
     
     
     
-    
-    
-    
-    if (!names) {
+    if (!names || names === "none") {
       return this.playerIndex;
     }
 
@@ -114,7 +141,7 @@ let AnimationPlayerActor = ActorClass({
     
     
     names = names.split(",").map(n => n.trim());
-    for (let i = 0; i < names.length; i ++) {
+    for (let i = 0; i < names.length; i++) {
       if (names[i] === this.player.effect.name) {
         return i;
       }
@@ -247,6 +274,27 @@ let AnimationPlayerActor = ActorClass({
   
 
 
+
+  onAnimationMutation: function(mutations) {
+    let hasChanged = false;
+    for (let {changedAnimations} of mutations) {
+      if (!changedAnimations.length) {
+        return;
+      }
+      if (changedAnimations.some(animation => animation === this.player)) {
+        hasChanged = true;
+        break;
+      }
+    }
+
+    if (hasChanged) {
+      events.emit(this, "changed", this.getCurrentState());
+    }
+  },
+
+  
+
+
   pause: method(function() {
     this.player.pause();
     return this.player.ready;
@@ -348,8 +396,17 @@ let AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
       delay: this._form.delay,
       iterationCount: this._form.iterationCount,
       isRunningOnCompositor: this._form.isRunningOnCompositor
-    }
+    };
   },
+
+  
+
+
+
+  onChanged: protocol.preEvent("changed", function(partialState) {
+    let {state} = this.reconstructState(partialState);
+    this.state = state;
+  }),
 
   
   
@@ -416,19 +473,28 @@ let AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
 
   getCurrentState: protocol.custom(function() {
     this.currentStateHasChanged = false;
-    return this._getCurrentState().then(data => {
-      for (let key in this.state) {
-        if (typeof data[key] === "undefined") {
-          data[key] = this.state[key];
-        } else if (data[key] !== this.state[key]) {
-          this.currentStateHasChanged = true;
-        }
-      }
-      return data;
+    return this._getCurrentState().then(partialData => {
+      let {state, hasChanged} = this.reconstructState(partialData);
+      this.currentStateHasChanged = hasChanged;
+      return state;
     });
   }, {
     impl: "_getCurrentState"
   }),
+
+  reconstructState: function(data) {
+    let hasChanged = false;
+
+    for (let key in this.state) {
+      if (typeof data[key] === "undefined") {
+        data[key] = this.state[key];
+      } else if (data[key] !== this.state[key]) {
+        hasChanged = true;
+      }
+    }
+
+    return {state: data, hasChanged};
+  }
 });
 
 
@@ -449,7 +515,7 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
   typeName: "animations",
 
   events: {
-    "mutations" : {
+    "mutations": {
       type: "mutations",
       changes: Arg(0, "array:animationMutationChange")
     }
@@ -500,7 +566,7 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
     
     
     this.actors = [];
-    for (let i = 0; i < animations.length; i ++) {
+    for (let i = 0; i < animations.length; i++) {
       
       
       let actor = AnimationPlayerActor(this, animations[i], i);
@@ -532,7 +598,7 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
   onAnimationMutation: function(mutations) {
     let eventData = [];
 
-    for (let {addedAnimations, changedAnimations, removedAnimations} of mutations) {
+    for (let {addedAnimations, removedAnimations} of mutations) {
       for (let player of removedAnimations) {
         
         
@@ -687,9 +753,8 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
   toggleAll: method(function() {
     if (this.allAnimationsPaused) {
       return this.playAll();
-    } else {
-      return this.pauseAll();
     }
+    return this.pauseAll();
   }, {
     request: {},
     response: {}
