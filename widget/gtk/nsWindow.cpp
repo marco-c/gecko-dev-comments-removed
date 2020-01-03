@@ -6028,14 +6028,10 @@ nsWindow::GetInputContext()
 nsIMEUpdatePreference
 nsWindow::GetIMEUpdatePreference()
 {
-    nsIMEUpdatePreference updatePreference(
-        nsIMEUpdatePreference::NOTIFY_SELECTION_CHANGE |
-        nsIMEUpdatePreference::NOTIFY_POSITION_CHANGE);
-    
-    
-    
-    updatePreference.DontNotifyChangesCausedByComposition();
-    return updatePreference;
+    if (!mIMContext) {
+        return nsIMEUpdatePreference();
+    }
+    return mIMContext->GetIMEUpdatePreference();
 }
 
 bool

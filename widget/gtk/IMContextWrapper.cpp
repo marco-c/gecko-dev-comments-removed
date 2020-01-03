@@ -200,6 +200,23 @@ IMContextWrapper::~IMContextWrapper()
         ("GTKIM: %p ~IMContextWrapper()", this));
 }
 
+nsIMEUpdatePreference
+IMContextWrapper::GetIMEUpdatePreference() const
+{
+    nsIMEUpdatePreference::Notifications notifications =
+        nsIMEUpdatePreference::NOTIFY_SELECTION_CHANGE;
+    
+    if (IsEnabled()) {
+        notifications |= nsIMEUpdatePreference::NOTIFY_POSITION_CHANGE;
+    }
+    nsIMEUpdatePreference updatePreference(notifications);
+    
+    
+    
+    updatePreference.DontNotifyChangesCausedByComposition();
+    return updatePreference;
+}
+
 void
 IMContextWrapper::OnDestroyWindow(nsWindow* aWindow)
 {

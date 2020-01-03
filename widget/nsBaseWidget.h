@@ -502,9 +502,7 @@ protected:
   nsRefPtr<WidgetShutdownObserver> mShutdownObserver;
   nsRefPtr<TextEventDispatcher> mTextEventDispatcher;
   nsCursor          mCursor;
-  bool              mUpdateCursor;
   nsBorderStyle     mBorderStyle;
-  bool              mUseAttachedEvents;
   nsIntRect         mBounds;
   nsIntRect*        mOriginalBounds;
   
@@ -514,6 +512,10 @@ protected:
   nsPopupLevel      mPopupLevel;
   nsPopupType       mPopupType;
   SizeConstraints   mSizeConstraints;
+
+  bool              mUpdateCursor;
+  bool              mUseAttachedEvents;
+  bool              mIMEHasFocus;
 
   static nsIRollupListener* gRollupListener;
 

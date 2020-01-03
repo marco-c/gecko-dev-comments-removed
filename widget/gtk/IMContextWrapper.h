@@ -39,6 +39,8 @@ public:
     
     bool IsEnabled() const;
 
+    nsIMEUpdatePreference GetIMEUpdatePreference() const;
+
     
     void OnFocusWindow(nsWindow* aWindow);
     
