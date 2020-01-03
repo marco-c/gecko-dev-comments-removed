@@ -4556,6 +4556,12 @@ TSFTextStore::NotifyTSFOfLayoutChange(bool aFlush)
   mPendingOnLayoutChange = false;
 
   
+  
+  if (mLockedContent.IsInitialized()) {
+    mLockedContent.OnLayoutChanged();
+  }
+
+  
   bool ret = false;
 
   if (mSink) {
