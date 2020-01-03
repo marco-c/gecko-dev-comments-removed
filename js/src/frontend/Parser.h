@@ -227,7 +227,7 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
 
 
     
-    AutoFunctionVector innerFunctions;
+    Rooted<TraceableVector<JSFunction*>> innerFunctions;
 
     
     
@@ -265,7 +265,7 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
         oldpc(prs->pc),
         lexdeps(prs->context),
         funcStmts(nullptr),
-        innerFunctions(prs->context),
+        innerFunctions(prs->context, TraceableVector<JSFunction*>(prs->context)),
         newDirectives(newDirectives),
         inDeclDestructuring(false)
     {
