@@ -320,7 +320,7 @@ public:
 
   void PostUpdateLayerAnimations();
 
-  bool HasAnimationOfProperty(nsCSSProperty aProperty) const;
+  bool HasCurrentAnimationOfProperty(nsCSSProperty aProperty) const;
 
   bool IsForElement() const { 
     return mElementProperty == nsGkAtoms::animationsProperty ||

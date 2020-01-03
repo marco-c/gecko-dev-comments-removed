@@ -173,7 +173,7 @@ CommonAnimationManager::GetAnimationsForCompositor(const nsIFrame* aFrame,
 {
   AnimationCollection* collection = GetAnimationCollection(aFrame);
   if (!collection ||
-      !collection->HasAnimationOfProperty(aProperty) ||
+      !collection->HasCurrentAnimationOfProperty(aProperty) ||
       !collection->CanPerformOnCompositorThread(
         AnimationCollection::CanAnimate_AllowPartial)) {
     return nullptr;
@@ -708,12 +708,12 @@ AnimationCollection::PostUpdateLayerAnimations()
 }
 
 bool
-AnimationCollection::HasAnimationOfProperty(nsCSSProperty aProperty) const
+AnimationCollection::HasCurrentAnimationOfProperty(nsCSSProperty
+                                                     aProperty) const
 {
-  for (size_t animIdx = mAnimations.Length(); animIdx-- != 0; ) {
-    const KeyframeEffectReadOnly* effect = mAnimations[animIdx]->GetEffect();
-    if (effect && effect->HasAnimationOfProperty(aProperty) &&
-        !effect->IsFinishedTransition()) {
+  for (Animation* animation : mAnimations) {
+    if (animation->HasCurrentEffect() &&
+        animation->GetEffect()->HasAnimationOfProperty(aProperty)) {
       return true;
     }
   }
@@ -934,11 +934,18 @@ AnimationCollection::CanThrottleAnimation(TimeStamp aTime)
     return false;
   }
 
-
   const auto& info = CommonAnimationManager::sLayerAnimationInfo;
   for (size_t i = 0; i < ArrayLength(info); i++) {
     auto record = info[i];
-    if (!HasAnimationOfProperty(record.mProperty)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!HasCurrentAnimationOfProperty(record.mProperty)) {
       continue;
     }
 
