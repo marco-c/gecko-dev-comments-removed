@@ -159,8 +159,7 @@ bool
 MediaDecoder::IsHeuristicDormantSupported() const
 {
   return
-#if defined(MOZ_EME) && defined(RELEASE_BUILD)
-    
+#if defined(MOZ_EME)
     
     mInfo &&
     !mInfo->IsEncrypted() &&
