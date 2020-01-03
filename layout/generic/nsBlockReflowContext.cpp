@@ -136,6 +136,10 @@ nsBlockReflowContext::ComputeCollapsedBStartMargin(const nsHTMLReflowState& aRS,
             line->SetHasClearance();
             line->MarkDirty();
             dirtiedLine = true;
+            if (!setBlockIsEmpty && aBlockIsEmpty) {
+              setBlockIsEmpty = true;
+              *aBlockIsEmpty = false;
+            }
             goto done;
           }
           
