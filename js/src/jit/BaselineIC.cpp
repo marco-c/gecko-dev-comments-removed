@@ -8829,7 +8829,7 @@ TryAttachFunCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, 
 
 static bool
 GetTemplateObjectForNative(JSContext* cx, Native native, const CallArgs& args,
-                           MutableHandleObject res)
+                           MutableHandleObject res, bool* skipAttach)
 {
     
     
@@ -8845,10 +8845,17 @@ GetTemplateObjectForNative(JSContext* cx, Native native, const CallArgs& args,
             count = args[0].toInt32();
 
         if (count <= ArrayObject::EagerAllocationMaxLength) {
+            ObjectGroup* group = ObjectGroup::callingAllocationSiteGroup(cx, JSProto_Array);
+            if (!group)
+                return false;
+            if (group->maybePreliminaryObjects()) {
+                *skipAttach = true;
+                return true;
+            }
+
             
             
-            res.set(NewFullyAllocatedArrayForCallingAllocationSite(cx, count, TenuredObject,
-                                                                    true));
+            res.set(NewFullyAllocatedArrayForCallingAllocationSite(cx, count, TenuredObject));
             if (!res)
                 return false;
             return true;
@@ -8856,17 +8863,30 @@ GetTemplateObjectForNative(JSContext* cx, Native native, const CallArgs& args,
     }
 
     if (native == js::array_concat || native == js::array_slice) {
-        if (args.thisv().isObject() && !args.thisv().toObject().isSingleton()) {
-            res.set(NewFullyAllocatedArrayTryReuseGroup(cx, &args.thisv().toObject(), 0,
-                                                        TenuredObject,  true));
-            if (!res)
-                return false;
+        if (args.thisv().isObject()) {
+            JSObject* obj = &args.thisv().toObject();
+            if (!obj->isSingleton()) {
+                if (obj->group()->maybePreliminaryObjects()) {
+                    *skipAttach = true;
+                    return true;
+                }
+                res.set(NewFullyAllocatedArrayTryReuseGroup(cx, &args.thisv().toObject(), 0,
+                                                            TenuredObject));
+                return !!res;
+            }
         }
     }
 
     if (native == js::str_split && args.length() == 1 && args[0].isString()) {
-        res.set(NewFullyAllocatedArrayForCallingAllocationSite(cx, 0, TenuredObject,
-                                                                true));
+        ObjectGroup* group = ObjectGroup::callingAllocationSiteGroup(cx, JSProto_Array);
+        if (!group)
+            return false;
+        if (group->maybePreliminaryObjects()) {
+            *skipAttach = true;
+            return true;
+        }
+
+        res.set(NewFullyAllocatedArrayForCallingAllocationSite(cx, 0, TenuredObject));
         if (!res)
             return false;
         return true;
@@ -9165,9 +9185,15 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
 
         RootedObject templateObject(cx);
         if (MOZ_LIKELY(!isSpread)) {
+            bool skipAttach = false;
             CallArgs args = CallArgsFromVp(argc, vp);
-            if (!GetTemplateObjectForNative(cx, fun->native(), args, &templateObject))
+            if (!GetTemplateObjectForNative(cx, fun->native(), args, &templateObject, &skipAttach))
                 return false;
+            if (skipAttach) {
+                *handled = true;
+                return true;
+            }
+            MOZ_ASSERT_IF(templateObject, !templateObject->group()->maybePreliminaryObjects());
         }
 
         JitSpew(JitSpew_BaselineIC, "  Generating Call_Native stub (fun=%p, cons=%s, spread=%s)",
