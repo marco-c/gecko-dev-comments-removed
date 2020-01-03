@@ -3,14 +3,33 @@
 
 "use strict";
 
+this.EXPORTED_SYMBOLS = ["WebrtcUI"];
+
 XPCOMUtils.defineLazyModuleGetter(this, "Notifications", "resource://gre/modules/Notifications.jsm");
 
 var WebrtcUI = {
   _notificationId: null,
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   observe: function(aSubject, aTopic, aData) {
     if (aTopic === "getUserMedia:request") {
-      this.handleRequest(aSubject, aTopic, aData);
+      this.handleGumRequest(aSubject, aTopic, aData);
+    } else if (aTopic === "PeerConnection:request") {
+      this.handlePCRequest(aSubject, aTopic, aData);
     } else if (aTopic === "recording-device-events") {
       switch (aData) {
         case "shutdown":
@@ -72,7 +91,17 @@ var WebrtcUI = {
     }
   },
 
-  handleRequest: function handleRequest(aSubject, aTopic, aData) {
+  handlePCRequest: function handlePCRequest(aSubject, aTopic, aData) {
+    aSubject = aSubject.wrappedJSObject;
+    let { callID } = aSubject;
+    
+    
+    
+
+    Services.obs.notifyObservers(null, "PeerConnection:response:allow", callID);
+  },
+
+  handleGumRequest: function handleGumRequest(aSubject, aTopic, aData) {
     let constraints = aSubject.getConstraints();
     let contentWindow = Services.wm.getOuterWindowWithId(aSubject.windowID);
 

@@ -29,6 +29,8 @@ this.webrtcUI = {
 
     let mm = Cc["@mozilla.org/globalmessagemanager;1"]
                .getService(Ci.nsIMessageListenerManager);
+    mm.addMessageListener("rtcpeer:Request", this);
+    mm.addMessageListener("rtcpeer:CancelRequest", this);
     mm.addMessageListener("webrtc:Request", this);
     mm.addMessageListener("webrtc:CancelRequest", this);
     mm.addMessageListener("webrtc:UpdateBrowserIndicators", this);
@@ -44,6 +46,8 @@ this.webrtcUI = {
 
     let mm = Cc["@mozilla.org/globalmessagemanager;1"]
                .getService(Ci.nsIMessageListenerManager);
+    mm.removeMessageListener("rtcpeer:Request", this);
+    mm.removeMessageListener("rtcpeer:CancelRequest", this);
     mm.removeMessageListener("webrtc:Request", this);
     mm.removeMessageListener("webrtc:CancelRequest", this);
     mm.removeMessageListener("webrtc:UpdateBrowserIndicators", this);
@@ -124,6 +128,43 @@ this.webrtcUI = {
 
   receiveMessage: function(aMessage) {
     switch (aMessage.name) {
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      case "rtcpeer:Request": {
+        
+        let request = aMessage.data;
+        let mm = aMessage.target.messageManager;
+        mm.sendAsyncMessage("rtcpeer:Allow", { callID: request.callID,
+                                               windowID: request.windowID });
+        break;
+      }
+      case "rtcpeer:CancelRequest":
+        
+        break;
       case "webrtc:Request":
         prompt(aMessage.target, aMessage.data);
         break;
@@ -441,7 +482,7 @@ function prompt(aBrowser, aRequest) {
           return;
         }
 
-        let mm = notification.browser.messageManager
+        let mm = notification.browser.messageManager;
         mm.sendAsyncMessage("webrtc:Allow", {callID: aRequest.callID,
                                              windowID: aRequest.windowID,
                                              devices: allowedDevices});
