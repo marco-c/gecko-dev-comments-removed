@@ -568,7 +568,7 @@ nsXULElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
   
   
   if (aWithMouse &&
-      IsNonList(mNodeInfo) && 
+      IsNonList(mNodeInfo) &&
       !EventStateManager::IsRemoteTarget(this))
   {
     return false;
@@ -987,7 +987,7 @@ nsXULElement::RemoveChildAt(uint32_t aIndex, bool aNotify)
     }
 
     nsStyledElement::RemoveChildAt(aIndex, aNotify);
-    
+
     if (newCurrentIndex == -2)
         controlElement->SetCurrentItem(nullptr);
     else if (newCurrentIndex > -1) {
@@ -1054,7 +1054,7 @@ nsXULElement::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
         if (GetAttr(aNamespaceID, aName, oldValue)) {
             UnregisterAccessKey(oldValue);
         }
-    } 
+    }
     else if (aNamespaceID == kNameSpaceID_None && (aName ==
              nsGkAtoms::command || aName == nsGkAtoms::observes) && IsInDoc()) {
 
@@ -1101,7 +1101,7 @@ nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
                     SetEventHandler(aName, body, true);
                 }
             }
-    
+
             nsIDocument* document = GetUncomposedDoc();
 
             
@@ -1167,7 +1167,7 @@ nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
                     UpdateBrightTitlebarForeground(document);
                 }
             }
-    
+
             if (aName == nsGkAtoms::src && document) {
                 LoadSrc();
             }
@@ -1180,7 +1180,7 @@ nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
                     ResetChromeMargins();
                 }
             }
-    
+
             nsIDocument* doc = GetUncomposedDoc();
             if (doc && doc->GetRootElement() == this) {
                 if ((aName == nsGkAtoms::activetitlebarcolor ||
@@ -1771,7 +1771,7 @@ nsXULElement::ClickWithInputSource(uint16_t aInputSource)
                                      nullptr, WidgetMouseEvent::eReal);
             WidgetMouseEvent eventClick(isCallerChrome, NS_MOUSE_CLICK, nullptr,
                                         WidgetMouseEvent::eReal);
-            eventDown.inputSource = eventUp.inputSource = eventClick.inputSource 
+            eventDown.inputSource = eventUp.inputSource = eventClick.inputSource
                                   = aInputSource;
 
             
@@ -1878,7 +1878,7 @@ nsXULElement::MakeHeavyweight(nsXULPrototypeElement* aPrototype)
     for (i = 0; i < aPrototype->mNumAttributes; ++i) {
         nsXULPrototypeAttribute* protoattr = &aPrototype->mAttributes[i];
         nsAttrValue attrValue;
-        
+
         
         if (protoattr->mValue.Type() == nsAttrValue::eCSSStyleRule) {
             nsRefPtr<css::Rule> ruleClone =
@@ -2149,7 +2149,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsXULPrototypeNode)
             if (!name.IsAtom()) {
                 NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
                     "mAttributes[i].mName.NodeInfo()");
-                cb.NoteNativeChild(name.NodeInfo(), 
+                cb.NoteNativeChild(name.NodeInfo(),
                                    NS_CYCLE_COLLECTION_PARTICIPANT(NodeInfo));
             }
         }
@@ -2632,7 +2632,7 @@ nsXULPrototypeScript::SerializeOutOfLine(nsIObjectOutputStream* aStream,
     nsCOMPtr<nsIObjectOutputStream> oos;
     rv = cache->GetOutputStream(mSrcURI, getter_AddRefs(oos));
     NS_ENSURE_SUCCESS(rv, rv);
-    
+
     nsresult tmp = Serialize(oos, aProtoDoc, nullptr);
     if (NS_FAILED(tmp)) {
       rv = tmp;
@@ -2684,7 +2684,7 @@ nsXULPrototypeScript::DeserializeOutOfLine(nsIObjectInputStream* aInput,
     
     nsresult rv = NS_OK;
     nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
-  
+
     nsCOMPtr<nsIObjectInputStream> objectInput = aInput;
     if (cache) {
         bool useXULCache = true;
@@ -2711,10 +2711,10 @@ nsXULPrototypeScript::DeserializeOutOfLine(nsIObjectInputStream* aInput,
         if (!mScriptObject) {
             if (mSrcURI) {
                 rv = cache->GetInputStream(mSrcURI, getter_AddRefs(objectInput));
-            } 
+            }
             
             
- 
+
             
             
             
