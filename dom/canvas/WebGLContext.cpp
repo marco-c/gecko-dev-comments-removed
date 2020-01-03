@@ -902,6 +902,11 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
     }
 
     
+    
+    
+    ++mGeneration;
+
+    
     NS_ENSURE_TRUE(Preferences::GetRootBranch(), NS_ERROR_FAILURE);
 
     bool disabled = Preferences::GetBool("webgl.disabled", false);
@@ -948,9 +953,6 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
 
     mResetLayer = true;
     mOptionsFrozen = true;
-
-    
-    ++mGeneration;
 
     
     if (gl->WorkAroundDriverBugs() && gl->IsANGLE()) {
