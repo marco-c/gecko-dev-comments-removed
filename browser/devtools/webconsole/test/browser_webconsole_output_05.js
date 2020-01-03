@@ -11,7 +11,14 @@ const TEST_URI = "data:text/html;charset=utf8,test for console output - 05";
 const ELLIPSIS = Services.prefs.getComplexValue("intl.ellipsis",
   Ci.nsIPrefLocalizedString).data;
 
-let dateNow = Date.now();
+
+
+
+
+
+
+
+let testDate = -310435200000;
 
 let inputTests = [
   
@@ -49,9 +56,9 @@ let inputTests = [
 
   
   {
-    input: "new Date(" + dateNow + ")",
-    output: "Date " + (new Date(dateNow)).toISOString(),
-    printOutput: (new Date(dateNow)).toString(),
+    input: "new Date(" + testDate + ")",
+    output: "Date " + (new Date(testDate)).toISOString(),
+    printOutput: (new Date(testDate)).toString(),
     inspectable: true,
   },
 
@@ -132,6 +139,6 @@ function test() {
 }
 
 function finishUp() {
-  inputTests = dateNow = null;
+  inputTests = testDate = null;
   finishTest();
 }
