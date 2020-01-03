@@ -63,16 +63,37 @@ InvokeFunction(JSContext* cx, HandleObject obj, bool constructing, uint32_t argc
     AutoArrayRooter argvRoot(cx, argc + 1 + constructing, argv);
 
     
-    Value thisv = argv[0];
+    RootedValue thisv(cx, argv[0]);
     Value* argvWithoutThis = argv + 1;
 
-    
-    
-    
-    if (thisv.isMagic(JS_IS_CONSTRUCTING))
-        return InvokeConstructor(cx, ObjectValue(*obj), argc, argvWithoutThis, true, rval);
+    RootedValue fval(cx, ObjectValue(*obj));
+    if (constructing) {
+        if (!IsConstructor(fval)) {
+            ReportValueError(cx, JSMSG_NOT_CONSTRUCTOR, JSDVG_IGNORE_STACK, fval, nullptr);
+            return false;
+        }
 
-    return Invoke(cx, thisv, ObjectValue(*obj), argc, argvWithoutThis, rval);
+        ConstructArgs cargs(cx);
+        if (!cargs.init(argc))
+            return false;
+
+        for (uint32_t i = 0; i < argc; i++)
+            cargs[i].set(argvWithoutThis[i]);
+
+        RootedValue newTarget(cx, argvWithoutThis[argc]);
+
+        
+        if (thisv.isMagic(JS_IS_CONSTRUCTING))
+            return Construct(cx, fval, cargs, newTarget, rval);
+
+        
+        
+        
+        
+        return InternalConstructWithProvidedThis(cx, fval, thisv, cargs, newTarget, rval);
+    }
+
+    return Invoke(cx, thisv, fval, argc, argvWithoutThis, rval);
 }
 
 bool
