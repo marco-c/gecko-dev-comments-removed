@@ -44,19 +44,8 @@ CheckMetadata(const ImageTestCase& aTestCase, bool aEnableBMPAlpha = false)
   ASSERT_TRUE(inputStream != nullptr);
 
   
-  nsresult rv;
-  if (!NS_InputStreamIsBuffered(inputStream)) {
-    nsCOMPtr<nsIInputStream> bufStream;
-    rv = NS_NewBufferedInputStream(getter_AddRefs(bufStream),
-                                   inputStream, 1024);
-    if (NS_SUCCEEDED(rv)) {
-      inputStream = bufStream;
-    }
-  }
-
-  
   uint64_t length;
-  rv = inputStream->Available(&length);
+  nsresult rv = inputStream->Available(&length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
