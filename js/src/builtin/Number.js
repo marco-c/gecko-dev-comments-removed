@@ -71,7 +71,7 @@ function Number_isSafeInteger(number) {
         return false;
 
     
-    if (std_Math_abs(integer) <= 9007199254740991)
+    if (std_Math_abs(integer) <= 2 ** 53 - 1)
         return true;
 
     
