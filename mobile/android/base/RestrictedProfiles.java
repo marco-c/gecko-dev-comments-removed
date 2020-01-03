@@ -37,6 +37,8 @@ public class RestrictedProfiles {
         add("wyciwyg");
     }};
 
+    private static final String ABOUT_ADDONS = "about:addons";
+
     
 
 
@@ -269,6 +271,13 @@ public class RestrictedProfiles {
             }
 
             return !GUEST_RESTRICTIONS.contains(restriction);
+        }
+
+        
+        if (restriction == Restriction.DISALLOW_BROWSE_FILES
+            && url.toLowerCase().startsWith(ABOUT_ADDONS)
+            && !isAllowed(context, Restriction.DISALLOW_INSTALL_EXTENSION)) {
+            return false;
         }
 
         
