@@ -143,5 +143,11 @@ loop.store.StoreMixin = (function() {
   StoreMixin.register = function(stores) {
     _.extend(_stores, stores);
   };
+  
+
+
+  StoreMixin.clearRegisteredStores = function() {
+    _stores = {};
+  };
   return StoreMixin;
 })();
