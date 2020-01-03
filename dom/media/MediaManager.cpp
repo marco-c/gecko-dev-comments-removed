@@ -1691,10 +1691,10 @@ MediaManager::GetUserMedia(nsPIDOMWindow* aWindow,
 
     if (vc.mAdvanced.WasPassed() && videoType != dom::MediaSourceEnum::Camera) {
       
-      const char *camera = EnumToASCII(dom::MediaSourceEnumValues::strings,
-                                       dom::MediaSourceEnum::Camera);
+      const char *unset = EnumToASCII(dom::MediaSourceEnumValues::strings,
+                                      dom::MediaSourceEnum::Camera);
       for (MediaTrackConstraintSet& cs : vc.mAdvanced.Value()) {
-        if (cs.mMediaSource.EqualsASCII(camera)) {
+        if (cs.mMediaSource.EqualsASCII(unset)) {
           cs.mMediaSource = vc.mMediaSource;
         }
       }
@@ -1730,14 +1730,45 @@ MediaManager::GetUserMedia(nsPIDOMWindow* aWindow,
                              ac.mMediaSource,
                              audioType);
     
-    
-    if (audioType == dom::MediaSourceEnum::AudioCapture &&
-        !Preferences::GetBool("media.getusermedia.audiocapture.enabled")) {
-      nsRefPtr<MediaStreamError> error =
-        new MediaStreamError(aWindow,
-            NS_LITERAL_STRING("PermissionDeniedError"));
-      onFailure->OnError(error);
-      return NS_OK;
+    if (audioType == dom::MediaSourceEnum::Camera) {
+      audioType = dom::MediaSourceEnum::Microphone;
+      ac.mMediaSource.AssignASCII(EnumToASCII(dom::MediaSourceEnumValues::strings,
+                                              audioType));
+    }
+
+    switch (audioType) {
+      case dom::MediaSourceEnum::Microphone:
+        break;
+
+      case dom::MediaSourceEnum::AudioCapture:
+        
+        
+        if (!Preferences::GetBool("media.getusermedia.audiocapture.enabled")) {
+          nsRefPtr<MediaStreamError> error =
+            new MediaStreamError(aWindow,
+                                 NS_LITERAL_STRING("PermissionDeniedError"));
+          onFailure->OnError(error);
+          return NS_OK;
+        }
+        break;
+
+      case dom::MediaSourceEnum::Other:
+      default: {
+        nsRefPtr<MediaStreamError> error =
+            new MediaStreamError(aWindow, NS_LITERAL_STRING("NotFoundError"));
+        onFailure->OnError(error);
+        return NS_OK;
+      }
+    }
+    if (ac.mAdvanced.WasPassed()) {
+      
+      const char *unset = EnumToASCII(dom::MediaSourceEnumValues::strings,
+                                      dom::MediaSourceEnum::Camera);
+      for (MediaTrackConstraintSet& cs : ac.mAdvanced.Value()) {
+        if (cs.mMediaSource.EqualsASCII(unset)) {
+          cs.mMediaSource = ac.mMediaSource;
+        }
+      }
     }
   }
   StreamListeners* listeners = AddWindowID(windowID);
