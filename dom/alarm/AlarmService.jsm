@@ -5,7 +5,7 @@
 "use strict";
 
 
-const DEBUG = false;
+const DEBUG = true;
 
 function debug(aStr) {
   DEBUG && dump("AlarmService: " + aStr + "\n");
