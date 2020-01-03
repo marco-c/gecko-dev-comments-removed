@@ -237,6 +237,8 @@ public class BrowserSearch extends HomeFragment
         
         if (mSearchEngines.isEmpty() || !Locale.getDefault().equals(mLastLocale)) {
             GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:GetVisible", null));
+        } else {
+            updateSearchEngineBar();
         }
 
         Telemetry.startUISession(TelemetryContract.Session.FRECENCY);
@@ -342,10 +344,6 @@ public class BrowserSearch extends HomeFragment
         EventDispatcher.getInstance().registerGeckoThreadListener(this,
             "SearchEngines:Data");
 
-        
-        
-        
-        updateSearchEngineBar();
         mSearchEngineBar.setOnSearchBarClickListener(this);
     }
 
