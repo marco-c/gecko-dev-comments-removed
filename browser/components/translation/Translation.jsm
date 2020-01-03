@@ -84,10 +84,34 @@ this.Translation = {
   },
 
   openProviderAttribution: function() {
+    let attribution = this.supportedEngines[this.translationEngine];
     Cu.import("resource:///modules/RecentWindow.jsm");
-    RecentWindow.getMostRecentBrowserWindow().openUILinkIn(
-      "http://aka.ms/MicrosoftTranslatorAttribution", "tab");
-  }
+    RecentWindow.getMostRecentBrowserWindow().openUILinkIn(attribution, "tab");
+  },
+
+  
+
+
+  supportedEngines: {
+    "bing"    : "http://aka.ms/MicrosoftTranslatorAttribution",
+    "yandex"  : "http://translate.yandex.com/"
+  },
+
+  
+
+
+
+  get defaultEngine() {
+    return this.supportedEngines.keys[0];
+  },
+
+  
+
+
+  get translationEngine() {
+    let engine = Services.prefs.getCharPref("browser.translation.engine");
+    return Object.keys(this.supportedEngines).includes(engine) ? engine : this.defaultEngine;
+  },
 };
 
 
