@@ -838,23 +838,14 @@ DataCallHandler.prototype = {
   
 
 
-  notifyDataCallError: function(aMessage) {
+  notifyDataCallError: function(aDataCall, aErrorMsg) {
     
     let networkInterface = this.dataNetworkInterfaces.get(NETWORK_TYPE_MOBILE);
     if (networkInterface && networkInterface.enabled) {
       let dataCall = networkInterface.dataCall;
-      
-      
-      if (aMessage.cid !== undefined) {
-        if (aMessage.linkInfo.cid == dataCall.linkInfo.cid) {
-          Services.obs.notifyObservers(networkInterface, TOPIC_DATA_CALL_ERROR,
-                                       null);
-        }
-      } else {
-        if (this._compareDataCallOptions(dataCall, aMessage)) {
-          Services.obs.notifyObservers(networkInterface, TOPIC_DATA_CALL_ERROR,
-                                       null);
-        }
+      if (this._compareDataCallOptions(dataCall, aDataCall)) {
+        Services.obs.notifyObservers(networkInterface.info,
+                                     TOPIC_DATA_CALL_ERROR, aErrorMsg);
       }
     }
   },
@@ -1067,7 +1058,7 @@ DataCall.prototype = {
       }
 
       
-      this.dataCallHandler.notifyDataCallError(this);
+      this.dataCallHandler.notifyDataCallError(this, errorMsg);
 
       
       if (aDataCall.suggestedRetryTime === INT32_MAX ||
