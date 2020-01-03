@@ -1319,6 +1319,10 @@ void
 GCRuntime::finish()
 {
     
+    if (rt->gc.nursery.isEnabled())
+        rt->gc.nursery.waitBackgroundFreeEnd();
+
+    
 
 
 
