@@ -9,24 +9,24 @@ XPCOMUtils.defineLazyServiceGetter(this, "nssProxy",
                                    "@mozilla.org/networkstatsServiceProxy;1",
                                    "nsINetworkStatsServiceProxy");
 
-function mokConvertNetworkInterface() {
-  NetworkStatsService.convertNetworkInterface = function(aNetwork) {
-    if (aNetwork.type != Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE &&
-        aNetwork.type != Ci.nsINetworkInterface.NETWORK_TYPE_WIFI) {
+function mokConvertNetworkInfo() {
+  NetworkStatsService.convertNetworkInfo = function(aNetworkInfo) {
+    if (aNetworkInfo.type != Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE &&
+        aNetworkInfo.type != Ci.nsINetworkInfo.NETWORK_TYPE_WIFI) {
       return null;
     }
 
     let id = '0';
-    if (aNetwork.type == Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE) {
+    if (aNetworkInfo.type == Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE) {
       id = '1234'
     }
 
-    let netId = this.getNetworkId(id, aNetwork.type);
+    let netId = this.getNetworkId(id, aNetworkInfo.type);
 
     if (!this._networks[netId]) {
       this._networks[netId] = Object.create(null);
       this._networks[netId].network = { id: id,
-                                        type: aNetwork.type };
+                                        type: aNetworkInfo.type };
     }
 
     return netId;
@@ -39,9 +39,8 @@ add_test(function test_saveAppStats() {
 
   
   
-  
-  var wifi = {type: Ci.nsINetworkInterface.NETWORK_TYPE_WIFI, id: "0"};
-  var mobile = {type: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE, id: "1234"};
+  var wifi = {type: Ci.nsINetworkInfo.NETWORK_TYPE_WIFI, id: "0"};
+  var mobile = {type: Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE, id: "1234"};
 
   
   var mobileNetId = NetworkStatsService.getNetworkId(mobile.id, mobile.type);
@@ -85,9 +84,8 @@ add_test(function test_saveServiceStats() {
 
   
   
-  
-  var wifi = {type: Ci.nsINetworkInterface.NETWORK_TYPE_WIFI, id: "0"};
-  var mobile = {type: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE, id: "1234"};
+  var wifi = {type: Ci.nsINetworkInfo.NETWORK_TYPE_WIFI, id: "0"};
+  var mobile = {type: Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE, id: "1234"};
 
   
   var mobileNetId = NetworkStatsService.getNetworkId(mobile.id, mobile.type);
@@ -138,7 +136,7 @@ add_test(function test_saveStatsWithDifferentDates() {
   var today = NetworkStatsService.cachedStatsDate;
   var tomorrow = new Date(today.getTime() + (24 * 60 * 60 * 1000));
 
-  var mobile = {type: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE, id: "1234"};
+  var mobile = {type: Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE, id: "1234"};
 
   NetworkStatsService.updateCachedStats(function (success, message) {
     do_check_eq(success, true);
@@ -173,7 +171,7 @@ add_test(function test_saveStatsWithDifferentDates() {
 add_test(function test_saveStatsWithMaxCachedTraffic() {
   var timestamp = NetworkStatsService.cachedStatsDate.getTime();
   var maxtraffic = NetworkStatsService.maxCachedTraffic;
-  var wifi = {type: Ci.nsINetworkInterface.NETWORK_TYPE_WIFI, id: "0"};
+  var wifi = {type: Ci.nsINetworkInfo.NETWORK_TYPE_WIFI, id: "0"};
 
   NetworkStatsService.updateCachedStats(function (success, message) {
     do_check_eq(success, true);
@@ -202,8 +200,8 @@ add_test(function test_saveAppStats() {
   
   
   
-  var wifi = {type: Ci.nsINetworkInterface.NETWORK_TYPE_WIFI, id: "0"};
-  var mobile = {type: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE, id: "1234"};
+  var wifi = {type: Ci.nsINetworkInfo.NETWORK_TYPE_WIFI, id: "0"};
+  var mobile = {type: Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE, id: "1234"};
 
   
   var mobileNetId = NetworkStatsService.getNetworkId(mobile.id, mobile.type);
@@ -234,7 +232,7 @@ function run_test() {
 
   
   
-  mokConvertNetworkInterface();
+  mokConvertNetworkInfo();
 
   run_next_test();
 }
