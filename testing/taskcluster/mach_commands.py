@@ -283,6 +283,8 @@ class Graph(object):
         jobs = templates.load(job_path, {})
 
         job_graph = parse_commit(message, jobs)
+
+        
         mozharness = load_mozharness_info()
 
         
