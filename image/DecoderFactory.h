@@ -7,9 +7,12 @@
 #ifndef mozilla_image_DecoderFactory_h
 #define mozilla_image_DecoderFactory_h
 
+#include "DecoderFlags.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
+#include "SurfaceFlags.h"
 
 class nsACString;
 
@@ -19,6 +22,10 @@ namespace image {
 class Decoder;
 class RasterImage;
 class SourceBuffer;
+
+
+
+
 
 enum class DecoderType
 {
@@ -59,23 +66,18 @@ public:
 
 
 
-
-
-
-
-
   static already_AddRefed<Decoder>
   CreateDecoder(DecoderType aType,
                 RasterImage* aImage,
                 SourceBuffer* aSourceBuffer,
                 const Maybe<gfx::IntSize>& aTargetSize,
-                uint32_t aFlags,
+                DecoderFlags aDecoderFlags,
+                SurfaceFlags aSurfaceFlags,
                 int aSampleSize,
-                const gfx::IntSize& aResolution,
-                bool aIsRedecode,
-                bool aImageIsTransient);
+                const gfx::IntSize& aResolution);
 
   
+
 
 
 
@@ -93,7 +95,8 @@ public:
   CreateAnimationDecoder(DecoderType aType,
                          RasterImage* aImage,
                          SourceBuffer* aSourceBuffer,
-                         uint32_t aFlags,
+                         DecoderFlags aDecoderFlags,
+                         SurfaceFlags aSurfaceFlags,
                          const gfx::IntSize& aResolution);
 
   
@@ -132,11 +135,9 @@ public:
   static already_AddRefed<Decoder>
   CreateAnonymousDecoder(DecoderType aType,
                          SourceBuffer* aSourceBuffer,
-                         uint32_t aFlags);
+                         SurfaceFlags aSurfaceFlags);
 
   
-
-
 
 
 

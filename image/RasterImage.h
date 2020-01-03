@@ -135,17 +135,6 @@ class FrameAnimator;
 class ImageMetadata;
 class SourceBuffer;
 
-
-
-
-
-inline MOZ_CONSTEXPR uint32_t
-DecodeFlags(uint32_t aFlags)
-{
-  return aFlags & (imgIContainer::FLAG_DECODE_NO_PREMULTIPLY_ALPHA |
-                   imgIContainer::FLAG_DECODE_NO_COLORSPACE_CONVERSION);
-}
-
 class RasterImage final : public ImageResource
                         , public nsIProperties
                         , public SupportsWeakPtr<RasterImage>
@@ -202,7 +191,7 @@ public:
 
   void NotifyProgress(Progress aProgress,
                       const nsIntRect& aInvalidRect = nsIntRect(),
-                      uint32_t aFlags = DECODE_FLAGS_DEFAULT);
+                      SurfaceFlags aSurfaceFlags = DefaultSurfaceFlags());
 
   
 

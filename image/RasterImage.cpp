@@ -118,7 +118,9 @@ public:
     
     
     SurfaceCache::Insert(mDstRef.get(), ImageKey(mImage.get()),
-                         RasterSurfaceKey(mDstSize, mImageFlags, 0),
+                         RasterSurfaceKey(mDstSize,
+                                          ToSurfaceFlags(mImageFlags),
+                                           0),
                          Lifetime::Transient);
 
     return true;
@@ -168,7 +170,8 @@ public:
       
       SurfaceCache::RemoveSurface(ImageKey(mImage.get()),
                                   RasterSurfaceKey(mDstSize,
-                                                   mImageFlags, 0));
+                                                   ToSurfaceFlags(mImageFlags),
+                                                    0));
 
       
       mSrcRef.reset();
@@ -425,17 +428,18 @@ RasterImage::LookupFrameInternal(uint32_t aFrameNum,
   }
 
   if (mAnim && aFrameNum > 0) {
-    MOZ_ASSERT(DecodeFlags(aFlags) == DECODE_FLAGS_DEFAULT,
-               "Can't composite frames with non-default decode flags");
+    MOZ_ASSERT(ToSurfaceFlags(aFlags) == DefaultSurfaceFlags(),
+               "Can't composite frames with non-default surface flags");
     return mAnim->GetCompositedFrame(aFrameNum);
   }
 
-  Maybe<uint32_t> alternateFlags;
+  Maybe<SurfaceFlags> alternateFlags;
   if (IsOpaque()) {
     
     
     
-    alternateFlags = Some(aFlags ^ FLAG_DECODE_NO_PREMULTIPLY_ALPHA);
+    alternateFlags.emplace(ToSurfaceFlags(aFlags) ^
+                             SurfaceFlags::NO_PREMULTIPLY_ALPHA);
   }
 
   
@@ -443,7 +447,7 @@ RasterImage::LookupFrameInternal(uint32_t aFrameNum,
   if (aFlags & FLAG_SYNC_DECODE) {
     return SurfaceCache::Lookup(ImageKey(this),
                                 RasterSurfaceKey(aSize,
-                                                 DecodeFlags(aFlags),
+                                                 ToSurfaceFlags(aFlags),
                                                  aFrameNum),
                                 alternateFlags);
   }
@@ -451,7 +455,7 @@ RasterImage::LookupFrameInternal(uint32_t aFrameNum,
   
   return SurfaceCache::LookupBestMatch(ImageKey(this),
                                        RasterSurfaceKey(aSize,
-                                                        DecodeFlags(aFlags),
+                                                        ToSurfaceFlags(aFlags),
                                                         aFrameNum),
                                        alternateFlags);
 }
@@ -1409,17 +1413,30 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
   Maybe<IntSize> targetSize = mSize != aSize ? Some(aSize) : Nothing();
 
   
+  DecoderFlags decoderFlags = DefaultDecoderFlags();
+  if (aFlags & FLAG_ASYNC_NOTIFY) {
+    decoderFlags |= DecoderFlags::ASYNC_NOTIFY;
+  }
+  if (mTransient) {
+    decoderFlags |= DecoderFlags::IMAGE_IS_TRANSIENT;
+  }
+  if (mHasBeenDecoded) {
+    decoderFlags |= DecoderFlags::IS_REDECODE;
+  }
+
+  
   nsRefPtr<Decoder> decoder;
   if (mAnim) {
     decoder = DecoderFactory::CreateAnimationDecoder(mDecoderType, this,
-                                                     mSourceBuffer, aFlags,
+                                                     mSourceBuffer, decoderFlags,
+                                                     ToSurfaceFlags(aFlags),
                                                      mRequestedResolution);
   } else {
     decoder = DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer,
-                                            targetSize, aFlags,
+                                            targetSize, decoderFlags,
+                                            ToSurfaceFlags(aFlags),
                                             mRequestedSampleSize,
-                                            mRequestedResolution,
-                                            mHasBeenDecoded, mTransient);
+                                            mRequestedResolution);
   }
 
   
@@ -1432,7 +1449,7 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
   InsertOutcome outcome =
     SurfaceCache::InsertPlaceholder(ImageKey(this),
                                     RasterSurfaceKey(aSize,
-                                                     decoder->GetDecodeFlags(),
+                                                     decoder->GetSurfaceFlags(),
                                                       0));
   if (outcome != InsertOutcome::SUCCESS) {
     return NS_ERROR_FAILURE;
@@ -1641,7 +1658,7 @@ RasterImage::RequestScale(imgFrame* aFrame,
   }
 
   nsRefPtr<ScaleRunner> runner =
-    new ScaleRunner(this, DecodeFlags(aFlags), aSize, Move(frameRef));
+    new ScaleRunner(this, aFlags, aSize, Move(frameRef));
   if (runner->Init()) {
     if (!sScaleWorkerThread) {
       NS_NewNamedThread("Image Scaler", getter_AddRefs(sScaleWorkerThread));
@@ -1666,8 +1683,8 @@ RasterImage::DrawWithPreDownscaleIfNeeded(DrawableFrameRef&& aFrameRef,
     LookupResult result =
       SurfaceCache::Lookup(ImageKey(this),
                            RasterSurfaceKey(aSize,
-                                            DecodeFlags(aFlags),
-                                            0));
+                                            ToSurfaceFlags(aFlags),
+                                             0));
     if (!result) {
       
       
@@ -1746,7 +1763,7 @@ RasterImage::Draw(gfxContext* aContext,
   
   
   
-  if (DecodeFlags(aFlags) != DECODE_FLAGS_DEFAULT) {
+  if (ToSurfaceFlags(aFlags) != DefaultSurfaceFlags()) {
     return DrawResult::BAD_ARGS;
   }
 
@@ -1937,14 +1954,15 @@ RasterImage::GetFramesNotified(uint32_t* aFramesNotified)
 void
 RasterImage::NotifyProgress(Progress aProgress,
                             const IntRect& aInvalidRect ,
-                            uint32_t aFlags )
+                            SurfaceFlags aSurfaceFlags
+                              )
 {
   MOZ_ASSERT(NS_IsMainThread());
 
   
   nsRefPtr<RasterImage> image(this);
 
-  bool wasDefaultFlags = aFlags == DECODE_FLAGS_DEFAULT;
+  bool wasDefaultFlags = aSurfaceFlags == DefaultSurfaceFlags();
 
   if (!aInvalidRect.IsEmpty() && wasDefaultFlags) {
     
@@ -1989,7 +2007,7 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
   
   NotifyProgress(aDecoder->TakeProgress(),
                  aDecoder->TakeInvalidRect(),
-                 aDecoder->GetDecodeFlags());
+                 aDecoder->GetSurfaceFlags());
 
   bool wasMetadata = aDecoder->IsMetadataDecode();
   bool done = aDecoder->GetDecodeDone();
@@ -2094,8 +2112,8 @@ RasterImage::OptimalImageSizeForDest(const gfxSize& aDest, uint32_t aWhichFrame,
     LookupResult result =
       SurfaceCache::Lookup(ImageKey(this),
                            RasterSurfaceKey(destSize,
-                                            DecodeFlags(aFlags),
-                                            0));
+                                            ToSurfaceFlags(aFlags),
+                                             0));
 
     if (result && result.DrawableRef()->IsImageComplete()) {
       return destSize;  

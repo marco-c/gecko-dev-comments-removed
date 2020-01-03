@@ -111,7 +111,7 @@ CheckMetadata(const ImageTestCase& aTestCase,
   
   decoder =
     DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer,
-                                           imgIContainer::DECODE_FLAGS_DEFAULT);
+                                           DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
 
   if (aBMPAlpha == BMPAlpha::ENABLED) {
@@ -241,14 +241,14 @@ TEST(ImageMetadata, NoFrameDelayGIFFullDecode)
   LookupResult firstFrameLookupResult =
     SurfaceCache::Lookup(ImageKey(image.get()),
                          RasterSurfaceKey(imageSize,
-                                          imgIContainer::DECODE_FLAGS_DEFAULT,
+                                          DefaultSurfaceFlags(),
                                            0));
   EXPECT_EQ(MatchType::EXACT, firstFrameLookupResult.Type());
                                                              
   LookupResult secondFrameLookupResult =
     SurfaceCache::Lookup(ImageKey(image.get()),
                          RasterSurfaceKey(imageSize,
-                                          imgIContainer::DECODE_FLAGS_DEFAULT,
+                                          DefaultSurfaceFlags(),
                                            1));
   EXPECT_EQ(MatchType::EXACT, secondFrameLookupResult.Type());
 }
