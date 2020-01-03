@@ -292,8 +292,8 @@ IMEHandler::GetOpenState(nsWindow* aWindow)
   }
 #endif 
 
-  nsIMEContext IMEContext(aWindow->GetWindowHandle());
-  return IMEContext.GetOpenState();
+  IMEContext context(aWindow);
+  return context.GetOpenState();
 }
 
 
@@ -361,9 +361,9 @@ IMEHandler::SetInputContext(nsWindow* aWindow,
 
   AssociateIMEContext(aWindow, enable);
 
-  nsIMEContext IMEContext(aWindow->GetWindowHandle());
+  IMEContext context(aWindow);
   if (adjustOpenState) {
-    IMEContext.SetOpenState(open);
+    context.SetOpenState(open);
   }
 
   if (aInputContext.mNativeIMEContext) {
@@ -373,23 +373,23 @@ IMEHandler::SetInputContext(nsWindow* aWindow,
   
   
   aInputContext.mNativeIMEContext = enable ?
-    static_cast<void*>(IMEContext.get()) : oldInputContext.mNativeIMEContext;
+    static_cast<void*>(context.get()) : oldInputContext.mNativeIMEContext;
 }
 
 
 void
 IMEHandler::AssociateIMEContext(nsWindow* aWindow, bool aEnable)
 {
-  nsIMEContext IMEContext(aWindow->GetWindowHandle());
+  IMEContext context(aWindow);
   if (aEnable) {
-    IMEContext.AssociateDefaultContext();
+    context.AssociateDefaultContext();
     return;
   }
   
   if (aWindow->Destroyed()) {
     return;
   }
-  IMEContext.Disassociate();
+  context.Disassociate();
 }
 
 
@@ -415,8 +415,8 @@ IMEHandler::InitInputContext(nsWindow* aWindow, InputContext& aInputContext)
 #endif 
 
   
-  nsIMEContext IMEContext(aWindow->GetWindowHandle());
-  aInputContext.mNativeIMEContext = static_cast<void*>(IMEContext.get());
+  IMEContext context(aWindow);
+  aInputContext.mNativeIMEContext = static_cast<void*>(context.get());
   MOZ_ASSERT(aInputContext.mNativeIMEContext || !CurrentKeyboardLayoutHasIME());
   
   
