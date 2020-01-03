@@ -317,21 +317,16 @@ IterPerformanceStats(JSContext* cx,
     }
 
     JSRuntime* rt = JS_GetRuntime(cx);
-
-    
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
+    for (CompartmentsIter c(rt, WithAtoms); !c.done(); c.next()) {
         JSCompartment* compartment = c.get();
-        if (!c->principals()) {
-            
-            
-            continue;
-        }
-        if (!c->performanceMonitoring.hasSharedGroup()) {
+        if (!compartment->performanceMonitoring.isLinked()) {
             
             continue;
         }
+
         js::AutoCompartment autoCompartment(cx, compartment);
-        PerformanceGroup* group = compartment->performanceMonitoring.getSharedGroup(cx);
+        PerformanceGroup* group = compartment->performanceMonitoring.getGroup(cx);
+
         if (group->data.ticks == 0) {
             
             continue;
@@ -343,9 +338,7 @@ IterPerformanceStats(JSContext* cx,
             continue;
         }
 
-        if (!(*walker)(cx,
-                       group->data, group->uid, nullptr,
-                       closure)) {
+        if (!(*walker)(cx, group->data, group->uid, closure)) {
             
             return false;
         }
@@ -354,35 +347,6 @@ IterPerformanceStats(JSContext* cx,
             return false;
         }
     }
-
-    
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
-        JSCompartment* compartment = c.get();
-        if (!c->principals()) {
-            
-            
-            continue;
-        }
-        if (!c->performanceMonitoring.hasOwnGroup()) {
-            
-            continue;
-        }
-        js::AutoCompartment autoCompartment(cx, compartment);
-        PerformanceGroup* ownGroup = compartment->performanceMonitoring.getOwnGroup(cx);
-        if (ownGroup->data.ticks == 0) {
-            
-            continue;
-        }
-        PerformanceGroup* sharedGroup = compartment->performanceMonitoring.getSharedGroup(cx);
-        if (!(*walker)(cx,
-                       ownGroup->data, ownGroup->uid, &sharedGroup->uid,
-                       closure)) {
-            
-            return false;
-        }
-    }
-
-    
     *processStats = rt->stopwatch.performance;
     return true;
 }

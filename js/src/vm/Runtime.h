@@ -1492,29 +1492,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-
-
-
-
-
-
-        typedef js::HashMap<void*, js::PerformanceGroup*,
-                            js::DefaultHasher<void*>,
-                            js::SystemAllocPolicy> Groups;
-
-        Groups& groups() {
-            return groups_;
-        }
-
-        
-
-
-
-
-
-
-
-
         uint64_t iteration;
 
         
@@ -1546,7 +1523,6 @@ struct JSRuntime : public JS::shadow::Runtime,
           , currentPerfGroupCallback(nullptr)
           , isMonitoringJank_(false)
           , isMonitoringCPOW_(false)
-          , isMonitoringPerCompartment_(false)
           , idCounter_(0)
         { }
 
@@ -1588,21 +1564,6 @@ struct JSRuntime : public JS::shadow::Runtime,
             return isMonitoringJank_;
         }
 
-        bool setIsMonitoringPerCompartment(bool value) {
-            if (isMonitoringPerCompartment_ != value)
-                reset();
-
-            if (value && !groups_.initialized()) {
-                if (!groups_.init(128))
-                    return false;
-            }
-
-            isMonitoringPerCompartment_ = value;
-            return true;
-        }
-        bool isMonitoringPerCompartment() const {
-            return isMonitoringPerCompartment_;
-        }
 
         
 
@@ -1646,6 +1607,25 @@ struct JSRuntime : public JS::shadow::Runtime,
         MonotonicTimeStamp userTimeFix;
 
     private:
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        typedef js::HashMap<void*, js::PerformanceGroup*,
+                            js::DefaultHasher<void*>,
+                            js::SystemAllocPolicy> Groups;
+
         Groups groups_;
         friend struct js::PerformanceGroupHolder;
 
@@ -1654,7 +1634,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
         bool isMonitoringJank_;
         bool isMonitoringCPOW_;
-        bool isMonitoringPerCompartment_;
 
         
 
