@@ -76,6 +76,18 @@ public:
   bool Read(JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue);
 
+  uint64_t* BufferData() const
+  {
+    MOZ_ASSERT(mBuffer, "Write() has never been called.");
+    return mBuffer->data();
+  }
+
+  size_t BufferSize() const
+  {
+    MOZ_ASSERT(mBuffer, "Write() has never been called.");
+    return mBuffer->nbytes();
+  }
+
 protected:
   nsAutoPtr<JSAutoStructuredCloneBuffer> mBuffer;
 
@@ -84,31 +96,35 @@ protected:
 #endif
 };
 
+class BlobImpl;
 class MessagePortBase;
 class MessagePortIdentifier;
 
 class StructuredCloneHelper : public StructuredCloneHelperInternal
 {
 public:
-  enum StructuredCloneHelperFlags {
-    eAll = 0,
+  enum CloningSupport
+  {
+    CloningSupported,
+    CloningNotSupported
+  };
 
-    
-    
-    eBlobNotSupported = 1 << 0,
-
-    
-    
-    eFileListNotSupported = 1 << 1,
-
-    
-    
-    eMessagePortNotSupported = 1 << 2,
+  enum TransferringSupport
+  {
+    TransferringSupported,
+    TransferringNotSupported
   };
 
   
-  explicit StructuredCloneHelper(uint32_t aFlags = eAll);
+  
+  
+  
+  explicit StructuredCloneHelper(CloningSupport aSupportsCloning,
+                                 TransferringSupport aSupportsTransferring);
   virtual ~StructuredCloneHelper();
+
+  bool Write(JSContext* aCx,
+             JS::Handle<JS::Value> aValue);
 
   bool Write(JSContext* aCx,
              JS::Handle<JS::Value> aValue,
@@ -118,9 +134,22 @@ public:
             JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue);
 
+  bool ReadFromBuffer(nsISupports* aParent,
+                      JSContext* aCx,
+                      uint64_t* aBuffer,
+                      size_t aBufferLength,
+                      nsTArray<nsRefPtr<BlobImpl>>& aBlobImpls,
+                      JS::MutableHandle<JS::Value> aValue);
+
+  const nsTArray<nsRefPtr<BlobImpl>>& ClonedBlobImpls() const
+  {
+    MOZ_ASSERT(mBuffer, "Write() has never been called.");
+    return mBlobImplArray;
+  }
+
   nsTArray<nsRefPtr<MessagePortBase>>& GetTransferredPorts()
   {
-    MOZ_ASSERT(!(mFlags & eMessagePortNotSupported));
+    MOZ_ASSERT(mSupportsTransferring);
     return mTransferredPorts;
   }
 
@@ -154,19 +183,12 @@ public:
                                     void* aContent,
                                     uint64_t aExtraData) override;
 private:
-  bool StoreISupports(nsISupports* aSupports)
-  {
-    MOZ_ASSERT(aSupports);
-    mSupportsArray.AppendElement(aSupports);
-    return true;
-  }
-
-  
-  uint32_t mFlags;
+  bool mSupportsCloning;
+  bool mSupportsTransferring;
 
   
 
-  nsTArray<nsCOMPtr<nsISupports>> mSupportsArray;
+  nsTArray<nsRefPtr<BlobImpl>> mBlobImplArray;
 
   
   
