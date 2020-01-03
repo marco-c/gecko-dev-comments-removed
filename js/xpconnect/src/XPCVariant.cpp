@@ -652,79 +652,79 @@ NS_IMETHODIMP XPCVariant::GetDataType(uint16_t* aDataType)
 
 NS_IMETHODIMP XPCVariant::GetAsInt8(uint8_t* _retval)
 {
-    return nsVariant::ConvertToInt8(mData, _retval);
+    return mData.ConvertToInt8(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsInt16(int16_t* _retval)
 {
-    return nsVariant::ConvertToInt16(mData, _retval);
+    return mData.ConvertToInt16(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsInt32(int32_t* _retval)
 {
-    return nsVariant::ConvertToInt32(mData, _retval);
+    return mData.ConvertToInt32(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsInt64(int64_t* _retval)
 {
-    return nsVariant::ConvertToInt64(mData, _retval);
+    return mData.ConvertToInt64(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsUint8(uint8_t* _retval)
 {
-    return nsVariant::ConvertToUint8(mData, _retval);
+    return mData.ConvertToUint8(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsUint16(uint16_t* _retval)
 {
-    return nsVariant::ConvertToUint16(mData, _retval);
+    return mData.ConvertToUint16(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsUint32(uint32_t* _retval)
 {
-    return nsVariant::ConvertToUint32(mData, _retval);
+    return mData.ConvertToUint32(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsUint64(uint64_t* _retval)
 {
-    return nsVariant::ConvertToUint64(mData, _retval);
+    return mData.ConvertToUint64(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsFloat(float* _retval)
 {
-    return nsVariant::ConvertToFloat(mData, _retval);
+    return mData.ConvertToFloat(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsDouble(double* _retval)
 {
-    return nsVariant::ConvertToDouble(mData, _retval);
+    return mData.ConvertToDouble(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsBool(bool* _retval)
 {
-    return nsVariant::ConvertToBool(mData, _retval);
+    return mData.ConvertToBool(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsChar(char* _retval)
 {
-    return nsVariant::ConvertToChar(mData, _retval);
+    return mData.ConvertToChar(_retval);
 }
 
 
 NS_IMETHODIMP XPCVariant::GetAsWChar(char16_t* _retval)
 {
-    return nsVariant::ConvertToWChar(mData, _retval);
+    return mData.ConvertToWChar(_retval);
 }
 
 
