@@ -673,20 +673,22 @@ TabItem.prototype = Utils.extend(new Item(), new Subscribable(), {
   updateCanvas: function TabItem_updateCanvas() {
     
     let $canvas = this.$canvas;
-    if (!this.canvasSizeForced) {
-      let w = $canvas.width();
-      let h = $canvas.height();
-      if (w != $canvas[0].width || h != $canvas[0].height) {
-        $canvas[0].width = w;
-        $canvas[0].height = h;
-      }
-    }
+    let w = $canvas.width();
+    let h = $canvas.height();
+    let dimsChanged = !this.canvasSizeForced &&
+      (w != $canvas[0].width || h != $canvas[0].height);
 
     TabItems._lastUpdateTime = Date.now();
     this._lastTabUpdateTime = TabItems._lastUpdateTime;
 
-    if (this.tabCanvas)
-      this.tabCanvas.paint();
+    if (this.tabCanvas) {
+      if (dimsChanged) {
+        
+        this.tabCanvas.update(w, h);
+      } else {
+        this.tabCanvas.paint();
+      }
+    }
 
     
     if (this.isShowingCachedData())
@@ -1384,6 +1386,31 @@ TabCanvas.prototype = Utils.extend(new Subscribable(), {
       return;
 
     gPageThumbnails.captureToCanvas(this.tab.linkedBrowser, this.canvas, () => {
+      this._sendToSubscribers("painted");
+    });
+  },
+
+  
+  
+  
+  
+  
+  
+  update: function TabCanvas_update(aWidth, aHeight) {
+    let temp = gPageThumbnails.createCanvas(window);
+    temp.width = aWidth;
+    temp.height = aHeight;
+    gPageThumbnails.captureToCanvas(this.tab.linkedBrowser, temp, () => {
+      let ctx = this.canvas.getContext('2d');
+      this.canvas.width = aWidth;
+      this.canvas.height = aHeight;
+      try {
+        ctx.drawImage(temp, 0, 0);
+      } catch (ex if ex.name == "InvalidStateError") {
+        
+        
+        return;
+      }
       this._sendToSubscribers("painted");
     });
   },
