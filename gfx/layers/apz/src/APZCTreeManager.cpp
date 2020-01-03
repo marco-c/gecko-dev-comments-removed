@@ -28,6 +28,7 @@
 #include "UnitTransforms.h"             
 #include "gfxPrefs.h"                   
 #include "OverscrollHandoffState.h"     
+#include "TreeTraversal.h"              
 #include "LayersLogging.h"              
 #include "Units.h"                      
 
@@ -1529,39 +1530,6 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
 
     if (*aOutHitResult != HitNothing) {
       return result;
-    }
-  }
-
-  return nullptr;
-}
-
-
-
-
-
-
-
-
-template <typename Node, typename Condition>
-static const Node* BreadthFirstSearch(const Node* aRoot, const Condition& aCondition)
-{
-  if (!aRoot) {
-    return nullptr;
-  }
-  std::deque<const Node*> queue;
-  queue.push_back(aRoot);
-  while (!queue.empty()) {
-    const Node* node = queue.front();
-    queue.pop_front();
-
-    if (aCondition(node)) {
-      return node;
-    }
-
-    for (const Node* child = node->GetLastChild();
-         child;
-         child = child->GetPrevSibling()) {
-      queue.push_back(child);
     }
   }
 
