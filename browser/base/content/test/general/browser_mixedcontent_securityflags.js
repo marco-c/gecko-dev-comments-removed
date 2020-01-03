@@ -39,16 +39,13 @@ function overrideMCB()
 {
   
   gTestBrowser.addEventListener("load", mixedContentOverrideTest, true);
-  var notification = PopupNotifications.getNotification("bad-content", gTestBrowser);
-  ok(notification, "Mixed Content Doorhanger should appear");
-  notification.reshow();
-  ok(PopupNotifications.panel.firstChild.isMixedContentBlocked, "OK: Mixed Content is being blocked");
+
+  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
   
-  ok(!PopupNotifications.panel.firstChild.hasAttribute("mixedblockdisabled"),
-    "Doorhanger must have no mixedblockdisabled attribute");
-  
-  PopupNotifications.panel.firstChild.disableMixedContentProtection();
+  let {gIdentityHandler} = gTestBrowser.ownerGlobal;
+  gIdentityHandler.disableMixedContentProtection();
+
   notification.remove();
 }
 
@@ -61,13 +58,7 @@ function mixedContentOverrideTest()
   is(gTestBrowser.docShell.hasMixedDisplayContentBlocked, false, "second hasMixedDisplayContentBlocked flag has been set");
   is(gTestBrowser.docShell.hasMixedActiveContentBlocked, false, "second hasMixedActiveContentBlocked flag has been set");
 
-  let notification = PopupNotifications.getNotification("bad-content", gTestBrowser);
-  ok(notification, "Mixed Content Doorhanger should appear");
-  notification.reshow();
-
-  
-  is(PopupNotifications.panel.firstChild.getAttribute("mixedblockdisabled"), "true",
-    "Doorhanger must have [mixedblockdisabled='true'] attribute");
+  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: true});
 
   gBrowser.removeCurrentTab();
   finish();
