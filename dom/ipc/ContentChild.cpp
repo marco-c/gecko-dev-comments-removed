@@ -193,6 +193,7 @@
 #include "mozilla/RemoteSpellCheckEngineChild.h"
 #include "GMPServiceChild.h"
 #include "gfxPlatform.h"
+#include "nscore.h" 
 
 using namespace mozilla;
 using namespace mozilla::docshell;
@@ -1897,7 +1898,7 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
         QuickExit();
     }
 
-#if !defined(DEBUG) && !defined(MOZ_ASAN)
+#ifndef NS_FREE_PERMANENT_DATA
     
     
     

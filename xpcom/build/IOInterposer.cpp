@@ -16,6 +16,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"
+#include "nscore.h" 
 #if !defined(XP_WIN)
 #include "NSPRInterposer.h"
 #endif 
@@ -463,7 +464,7 @@ IOInterposer::Clear()
   
 
 
-#if defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING) || defined(MOZ_ASAN)
+#ifdef NS_FREE_PERMANENT_DATA
   UnregisterCurrentThread();
   sMasterList = nullptr;
 #endif

@@ -234,7 +234,7 @@
 
 
 
-#if defined(NS_BUILD_REFCNT_LOGGING) || defined(MOZ_VALGRIND)
+#if defined(NS_BUILD_REFCNT_LOGGING) || defined(MOZ_VALGRIND) || defined(MOZ_ASAN)
 #define NS_FREE_PERMANENT_DATA
 #endif
 

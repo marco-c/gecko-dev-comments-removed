@@ -2477,7 +2477,9 @@ pref("plugin.sessionPermissionNow.intervalInMinutes", 60);
 
 pref("plugin.persistentPermissionAlways.intervalInDays", 90);
 
-#if !defined(DEBUG) && !defined(MOZ_ASAN)
+
+
+#if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND)
 
 
 pref("dom.ipc.plugins.timeoutSecs", 45);
