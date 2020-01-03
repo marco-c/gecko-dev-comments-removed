@@ -602,11 +602,15 @@ nsSubDocumentFrame::GetIntrinsicISize()
   }
 
   NS_ASSERTION(ObtainIntrinsicSizeFrame() == nullptr,
-               "Intrinsic width should come from the embedded document.");
+               "Intrinsic isize should come from the embedded document.");
 
   
   
-  return nsPresContext::CSSPixelsToAppUnits(300);
+  
+  
+  
+  WritingMode wm = GetWritingMode();
+  return nsPresContext::CSSPixelsToAppUnits(wm.IsVertical() ? 150 : 300);
 }
 
 nscoord
@@ -620,10 +624,11 @@ nsSubDocumentFrame::GetIntrinsicBSize()
   }
 
   NS_ASSERTION(ObtainIntrinsicSizeFrame() == nullptr,
-               "Intrinsic height should come from the embedded document.");
+               "Intrinsic bsize should come from the embedded document.");
 
   
-  return nsPresContext::CSSPixelsToAppUnits(150);
+  WritingMode wm = GetWritingMode();
+  return nsPresContext::CSSPixelsToAppUnits(wm.IsVertical() ? 300 : 150);
 }
 
 #ifdef DEBUG_FRAME_DUMP

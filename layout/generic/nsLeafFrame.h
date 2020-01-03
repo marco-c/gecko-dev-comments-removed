@@ -85,6 +85,11 @@ protected:
 
 
 
+
+
+
+
+
   virtual nscoord GetIntrinsicISize() = 0;
 
   
