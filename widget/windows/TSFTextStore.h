@@ -3,8 +3,8 @@
 
 
 
-#ifndef NSTEXTSTORE_H_
-#define NSTEXTSTORE_H_
+#ifndef TSFTextStore_h_
+#define TSFTextStore_h_
 
 #include "nsAutoPtr.h"
 #include "nsString.h"
@@ -41,22 +41,21 @@ class nsWindow;
 
 namespace mozilla {
 namespace widget {
+
 struct MSGResult;
-} 
-} 
 
 
 
 
 
-class nsTextStore final : public ITextStoreACP
-                        , public ITfContextOwnerCompositionSink
-                        , public ITfMouseTrackerACP
+class TSFTextStore final : public ITextStoreACP
+                         , public ITfContextOwnerCompositionSink
+                         , public ITfMouseTrackerACP
 {
 public: 
   STDMETHODIMP          QueryInterface(REFIID, void**);
 
-  NS_INLINE_DECL_IUNKNOWN_REFCOUNTING(nsTextStore)
+  NS_INLINE_DECL_IUNKNOWN_REFCOUNTING(TSFTextStore)
 
 public: 
   STDMETHODIMP AdviseSink(REFIID, IUnknown*, DWORD);
@@ -100,12 +99,6 @@ public:
   STDMETHODIMP AdviseMouseSink(ITfRangeACP*, ITfMouseSink*, DWORD*);
   STDMETHODIMP UnadviseMouseSink(DWORD);
 
-protected:
-  typedef mozilla::widget::IMENotification IMENotification;
-  typedef mozilla::widget::IMEState IMEState;
-  typedef mozilla::widget::InputContext InputContext;
-  typedef mozilla::widget::InputContextAction InputContextAction;
-
 public:
   static void     Initialize(void);
   static void     Terminate(void);
@@ -113,7 +106,7 @@ public:
   static bool     ProcessRawKeyMessage(const MSG& aMsg);
   static void     ProcessMessage(nsWindowBase* aWindow, UINT aMessage,
                                  WPARAM& aWParam, LPARAM& aLParam,
-                                 mozilla::widget::MSGResult& aResult);
+                                 MSGResult& aResult);
 
 
   static void     SetIMEOpenState(bool);
@@ -227,8 +220,8 @@ public:
 #endif 
 
 protected:
-  nsTextStore();
-  ~nsTextStore();
+  TSFTextStore();
+  ~TSFTextStore();
 
   static bool CreateAndSetFocus(nsWindowBase* aFocusedWidget,
                                 const InputContext& aContext);
@@ -253,7 +246,7 @@ protected:
   
   void     DidLockGranted();
 
-  bool     GetScreenExtInternal(RECT &aScreenExt);
+  bool     GetScreenExtInternal(RECT& aScreenExt);
   
   
   
@@ -261,7 +254,7 @@ protected:
   
   HRESULT  SetSelectionInternal(const TS_SELECTION_ACP*,
                                 bool aDispatchCompositionChangeEvent = false);
-  bool     InsertTextAtSelectionInternal(const nsAString &aInsertStr,
+  bool     InsertTextAtSelectionInternal(const nsAString& aInsertStr,
                                          TS_TEXTCHANGE* aTextChange);
   void     CommitCompositionInternal(bool);
   nsresult OnTextChangeInternal(const IMENotification& aIMENotification);
@@ -289,7 +282,7 @@ protected:
   
   
   
-  void     DispatchEvent(mozilla::WidgetGUIEvent& aEvent);
+  void     DispatchEvent(WidgetGUIEvent& aEvent);
   void     OnLayoutInformationAvaliable();
 
   
@@ -401,8 +394,10 @@ protected:
       mACP.style.fInterimChar = FALSE;
     }
 
-    void SetSelection(uint32_t aStart, uint32_t aLength, bool aReversed,
-                      mozilla::WritingMode aWritingMode)
+    void SetSelection(uint32_t aStart,
+                      uint32_t aLength,
+                      bool aReversed,
+                      WritingMode aWritingMode)
     {
       mDirty = false;
       mACP.acpStart = static_cast<LONG>(aStart);
@@ -484,7 +479,7 @@ protected:
       return (mACP.style.fInterimChar != FALSE);
     }
 
-    mozilla::WritingMode GetWritingMode() const
+    WritingMode GetWritingMode() const
     {
       MOZ_ASSERT(!mDirty);
       return mWritingMode;
@@ -492,7 +487,7 @@ protected:
 
   private:
     TS_SELECTION_ACP mACP;
-    mozilla::WritingMode mWritingMode;
+    WritingMode mWritingMode;
     bool mDirty;
   };
   
@@ -523,7 +518,7 @@ protected:
     
     nsString mData;
     
-    nsRefPtr<mozilla::TextRangeArray> mRanges;
+    nsRefPtr<TextRangeArray> mRanges;
     
     bool mSelectionReversed;
     
@@ -547,7 +542,7 @@ protected:
     }
     PendingAction* newAction = mPendingActions.AppendElement();
     newAction->mType = PendingAction::COMPOSITION_UPDATE;
-    newAction->mRanges = new mozilla::TextRangeArray();
+    newAction->mRanges = new TextRangeArray();
     newAction->mIncomplete = true;
     return newAction;
   }
@@ -576,7 +571,7 @@ protected:
   class MOZ_STACK_CLASS AutoPendingActionAndContentFlusher final
   {
   public:
-    AutoPendingActionAndContentFlusher(nsTextStore* aTextStore)
+    AutoPendingActionAndContentFlusher(TSFTextStore* aTextStore)
       : mTextStore(aTextStore)
     {
       MOZ_ASSERT(!mTextStore->mIsRecordingActionsWithoutLock);
@@ -597,14 +592,14 @@ protected:
   private:
     AutoPendingActionAndContentFlusher() {}
 
-    nsRefPtr<nsTextStore> mTextStore;
+    nsRefPtr<TSFTextStore> mTextStore;
   };
 
   class Content final
   {
   public:
-    Content(nsTextStore::Composition& aComposition,
-            nsTextStore::Selection& aSelection) :
+    Content(TSFTextStore::Composition& aComposition,
+            TSFTextStore::Selection& aSelection) :
       mComposition(aComposition), mSelection(aSelection)
     {
       Clear();
@@ -664,16 +659,16 @@ protected:
       return mInitialized ? mMinTextModifiedOffset : NOT_MODIFIED;
     }
 
-    nsTextStore::Composition& Composition() { return mComposition; }
-    nsTextStore::Selection& Selection() { return mSelection; }
+    TSFTextStore::Composition& Composition() { return mComposition; }
+    TSFTextStore::Selection& Selection() { return mSelection; }
 
   private:
     nsString mText;
     
     
     nsString mLastCompositionString;
-    nsTextStore::Composition& mComposition;
-    nsTextStore::Selection& mSelection;
+    TSFTextStore::Composition& mComposition;
+    TSFTextStore::Selection& mSelection;
 
     
     enum : uint32_t
@@ -705,8 +700,8 @@ protected:
 
     MouseTracker();
 
-    HRESULT Init(nsTextStore* aTextStore);
-    HRESULT AdviseSink(nsTextStore* aTextStore,
+    HRESULT Init(TSFTextStore* aTextStore);
+    HRESULT AdviseSink(TSFTextStore* aTextStore,
                        ITfRangeACP* aTextRange, ITfMouseSink* aMouseSink);
     void UnadviseSink();
 
@@ -794,28 +789,27 @@ protected:
 
 
   
-  static mozilla::StaticRefPtr<ITfThreadMgr> sThreadMgr;
+  static StaticRefPtr<ITfThreadMgr> sThreadMgr;
   
-  static mozilla::StaticRefPtr<ITfMessagePump> sMessagePump;
+  static StaticRefPtr<ITfMessagePump> sMessagePump;
   
-  static mozilla::StaticRefPtr<ITfKeystrokeMgr> sKeystrokeMgr;
+  static StaticRefPtr<ITfKeystrokeMgr> sKeystrokeMgr;
   
-  static mozilla::StaticRefPtr<ITfDisplayAttributeMgr> sDisplayAttrMgr;
+  static StaticRefPtr<ITfDisplayAttributeMgr> sDisplayAttrMgr;
   
-  static mozilla::StaticRefPtr<ITfCategoryMgr> sCategoryMgr;
+  static StaticRefPtr<ITfCategoryMgr> sCategoryMgr;
 
   
   
   
   
-  static mozilla::StaticRefPtr<nsTextStore> sEnabledTextStore;
+  static StaticRefPtr<TSFTextStore> sEnabledTextStore;
 
   
-  static mozilla::StaticRefPtr<ITfDocumentMgr> sDisabledDocumentMgr;
-  static mozilla::StaticRefPtr<ITfContext> sDisabledContext;
+  static StaticRefPtr<ITfDocumentMgr> sDisabledDocumentMgr;
+  static StaticRefPtr<ITfContext> sDisabledContext;
 
-  static mozilla::StaticRefPtr<ITfInputProcessorProfiles>
-    sInputProcessorProfiles;
+  static StaticRefPtr<ITfInputProcessorProfiles> sInputProcessorProfiles;
 
   
   static DWORD sClientId;
@@ -827,5 +821,8 @@ protected:
   static bool sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar;
   static bool sDoNotReturnNoLayoutErrorToGoogleJaInputAtCaret;
 };
+
+} 
+} 
 
 #endif 
