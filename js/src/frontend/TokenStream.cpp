@@ -1645,6 +1645,13 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
 
     flags.isDirtyLine = true;
     tp->pos.end = userbuf.offset();
+#ifdef DEBUG
+    
+    
+    
+    tp->modifier = modifier;
+    tp->modifierExceptions = NoException;
+#endif
     MOZ_ASSERT(IsTokenSane(tp));
     *ttp = tp->type;
     return true;

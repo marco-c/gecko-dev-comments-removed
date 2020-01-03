@@ -10,6 +10,8 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/UniquePtr.h"
@@ -76,8 +78,48 @@ struct TokenPos {
 
 enum DecimalPoint { NoDecimal = false, HasDecimal = true };
 
+class TokenStream;
+
 struct Token
 {
+  private:
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    enum Modifier
+    {
+        
+        None,
+
+        
+        
+        
+        Operand,
+
+        
+        KeywordIsName,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        TemplateTail,
+    };
+    friend class TokenStream;
+
+  public:
     TokenKind           type;           
     TokenPos            pos;            
     union {
@@ -92,6 +134,10 @@ struct Token
         RegExpFlag      reflags;        
                                         
     } u;
+#ifdef DEBUG
+    Modifier modifier;                  
+    uint8_t modifierExceptions;         
+#endif
 
     
     
@@ -359,17 +405,97 @@ class MOZ_STACK_CLASS TokenStream
     };
 
   public:
-    
-    enum Modifier
+    typedef Token::Modifier Modifier;
+    static MOZ_CONSTEXPR_VAR Modifier None = Token::None;
+    static MOZ_CONSTEXPR_VAR Modifier Operand = Token::Operand;
+    static MOZ_CONSTEXPR_VAR Modifier KeywordIsName = Token::KeywordIsName;
+    static MOZ_CONSTEXPR_VAR Modifier TemplateTail = Token::TemplateTail;
+
+    enum ModifierException
     {
-        None,           
-        Operand,        
-                        
-                        
-                        
-        KeywordIsName,  
-        TemplateTail,   
+        NoException = 0x00,
+
+        
+        
+        NoneIsOperand = 0x01,
+
+        
+        
+        OperandIsNone = 0x02,
+
+        
+        
+        NoneIsKeywordIsName = 0x04,
     };
+
+    void addModifierException(ModifierException modifierException) {
+#ifdef DEBUG
+        const Token& next = nextToken();
+        switch (modifierException) {
+          case NoneIsOperand:
+            MOZ_ASSERT(next.modifier == Operand);
+            MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
+                       "next token requires contextual specifier to be parsed unambiguously");
+            break;
+          case OperandIsNone:
+            
+            
+            MOZ_ASSERT(next.modifier == None ||
+                       ((next.modifierExceptions & NoneIsOperand) && next.modifier == Operand));
+            MOZ_ASSERT(next.type != TOK_DIV && next.type != TOK_REGEXP,
+                       "next token requires contextual specifier to be parsed unambiguously");
+            break;
+          case NoneIsKeywordIsName:
+            MOZ_ASSERT(next.modifier == KeywordIsName);
+            MOZ_ASSERT(next.type != TOK_NAME);
+            break;
+          default:
+            MOZ_CRASH("unexpected modifier exception");
+        }
+        tokens[(cursor + 1) & ntokensMask].modifierExceptions |= modifierException;
+#endif
+    }
+
+    bool hasLookahead() { return lookahead > 0; }
+
+    Modifier getLookaheadModifier() {
+#ifdef DEBUG
+        return nextToken().modifier;
+#else
+        return None;
+#endif
+    }
+
+    void
+    verifyConsistentModifier(Modifier modifier, Token lookaheadToken) {
+#ifdef DEBUG
+        
+        if (modifier == lookaheadToken.modifier)
+            return;
+
+        if (lookaheadToken.modifierExceptions & OperandIsNone) {
+            
+            if (modifier == Operand && lookaheadToken.modifier == None)
+                return;
+        }
+
+        if (lookaheadToken.modifierExceptions & NoneIsOperand) {
+            
+            if (modifier == None && lookaheadToken.modifier == Operand)
+                return;
+        }
+
+        if (lookaheadToken.modifierExceptions & NoneIsKeywordIsName) {
+            
+            if (modifier == None && lookaheadToken.modifier == KeywordIsName)
+                return;
+        }
+
+        MOZ_ASSERT_UNREACHABLE("this token was previously looked up with a "
+                               "different modifier, potentially making "
+                               "tokenization non-deterministic");
+#endif
+    }
 
     
     
@@ -381,6 +507,7 @@ class MOZ_STACK_CLASS TokenStream
             cursor = (cursor + 1) & ntokensMask;
             TokenKind tt = currentToken().type;
             MOZ_ASSERT(tt != TOK_EOL);
+            verifyConsistentModifier(modifier, currentToken());
             *ttp = tt;
             return true;
         }
@@ -398,7 +525,8 @@ class MOZ_STACK_CLASS TokenStream
     bool peekToken(TokenKind* ttp, Modifier modifier = None) {
         if (lookahead > 0) {
             MOZ_ASSERT(!flags.hadError);
-            *ttp = tokens[(cursor + 1) & ntokensMask].type;
+            verifyConsistentModifier(modifier, nextToken());
+            *ttp = nextToken().type;
             return true;
         }
         if (!getTokenInternal(ttp, modifier))
@@ -413,11 +541,12 @@ class MOZ_STACK_CLASS TokenStream
             if (!getTokenInternal(&tt, modifier))
                 return false;
             ungetToken();
-            MOZ_ASSERT(lookahead != 0);
+            MOZ_ASSERT(hasLookahead());
         } else {
             MOZ_ASSERT(!flags.hadError);
+            verifyConsistentModifier(modifier, nextToken());
         }
-        *posp = tokens[(cursor + 1) & ntokensMask].pos;
+        *posp = nextToken().pos;
         return true;
     }
 
@@ -442,7 +571,8 @@ class MOZ_STACK_CLASS TokenStream
                 return reportError(JSMSG_OUT_OF_MEMORY);
             if (onThisLine) {
                 MOZ_ASSERT(!flags.hadError);
-                *ttp = tokens[(cursor + 1) & ntokensMask].type;
+                verifyConsistentModifier(modifier, nextToken());
+                *ttp = nextToken().type;
                 return true;
             }
         }
@@ -480,10 +610,10 @@ class MOZ_STACK_CLASS TokenStream
         return true;
     }
 
-    void consumeKnownToken(TokenKind tt) {
+    void consumeKnownToken(TokenKind tt, Modifier modifier = None) {
         bool matched;
-        MOZ_ASSERT(lookahead != 0);
-        MOZ_ALWAYS_TRUE(matchToken(&matched, tt));
+        MOZ_ASSERT(hasLookahead());
+        MOZ_ALWAYS_TRUE(matchToken(&matched, tt, modifier));
         MOZ_ALWAYS_TRUE(matched);
     }
 
@@ -820,6 +950,11 @@ class MOZ_STACK_CLASS TokenStream
 
     void updateLineInfoForEOL();
     void updateFlagsForEOL();
+
+    const Token& nextToken() {
+        MOZ_ASSERT(hasLookahead());
+        return tokens[(cursor + 1) & ntokensMask];
+    }
 
     
     const ReadOnlyCompileOptions& options_;
