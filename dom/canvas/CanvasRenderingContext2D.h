@@ -598,6 +598,10 @@ protected:
                    ErrorResult& error);
 
   
+  bool SetFontInternal(const nsAString& font, mozilla::ErrorResult& error);
+
+
+  
 
 
   static void EnsureErrorTarget();
