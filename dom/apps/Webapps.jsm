@@ -3757,11 +3757,21 @@ this.DOMApplicationRegistry = {
                          aIsSigned) {
     this._checkSignature(aNewApp, aIsSigned, aIsLocalFileInstall);
 
-    if (!aZipReader.hasEntry("manifest.webapp")) {
+    
+    
+    
+    
+    
+    let hasWebappManifest = aZipReader.hasEntry("manifest.webapp");
+    let hasJsonManifest = aZipReader.hasEntry("manifest.json");
+
+    if (!hasWebappManifest && !hasJsonManifest) {
       throw "MISSING_MANIFEST";
     }
 
-    let istream = aZipReader.getInputStream("manifest.webapp");
+    let istream =
+      aZipReader.getInputStream(hasWebappManifest ? "manifest.webapp"
+                                                  : "manifest.json");
 
     
     let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
@@ -3770,6 +3780,14 @@ this.DOMApplicationRegistry = {
 
     let newManifest = JSON.parse(converter.ConvertToUnicode(
           NetUtil.readInputStreamToString(istream, istream.available()) || ""));
+
+    if (!hasWebappManifest) {
+      
+      if (!UserCustomizations.checkExtensionManifest(newManifest)) {
+        throw "INVALID_MANIFEST";
+      }
+      newManifest = UserCustomizations.convertManifest(newManifest);
+    }
 
     if (!AppsUtils.checkManifest(newManifest, aOldApp)) {
       throw "INVALID_MANIFEST";
@@ -3814,8 +3832,11 @@ this.DOMApplicationRegistry = {
     let isLangPack = newManifest.role === "langpack" &&
                      (aIsSigned || allowUnsignedLangpack);
 
+    let isAddon = newManifest.role === "addon" &&
+                     (aIsSigned || AppsUtils.allowUnsignedAddons);
+
     let status = AppsUtils.getAppManifestStatus(newManifest);
-    if (status > maxStatus && !isLangPack) {
+    if (status > maxStatus && !isLangPack && !isAddon) {
       throw "INVALID_SECURITY_LEVEL";
     }
 
