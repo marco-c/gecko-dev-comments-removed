@@ -33,6 +33,7 @@ let gFxAccounts = {
       "weave:service:setup-complete",
       "weave:ui:login:error",
       "fxa-migration:state-changed",
+      this.FxAccountsCommon.ONLOGIN_NOTIFICATION,
       this.FxAccountsCommon.ONVERIFIED_NOTIFICATION,
       this.FxAccountsCommon.ONLOGOUT_NOTIFICATION,
       "weave:notification:removed",
@@ -222,10 +223,11 @@ let gFxAccounts = {
     this.updateMigrationNotification();
   },
 
+  
   updateAppMenuItem: function () {
     if (this._migrationInfo) {
       this.updateAppMenuItemForMigration();
-      return;
+      return Promise.resolve();
     }
 
     let profileInfoEnabled = false;
@@ -241,7 +243,7 @@ let gFxAccounts = {
       
       this.panelUIFooter.hidden = true;
       this.panelUIFooter.removeAttribute("fxastatus");
-      return;
+      return Promise.resolve();
     }
 
     this.panelUIFooter.hidden = false;
@@ -311,12 +313,18 @@ let gFxAccounts = {
       }
     }
 
-    
-    
-    fxAccounts.getSignedInUser().then(userData => {
+    return fxAccounts.getSignedInUser().then(userData => {
       
       updateWithUserData(userData);
-      return userData ? fxAccounts.getSignedInUserProfile() : null;
+      
+      
+      if (!userData || !userData.verified || !profileInfoEnabled) {
+        return null; 
+      }
+      return fxAccounts.getSignedInUserProfile().catch(err => {
+        
+        return null;
+      });
     }).then(profile => {
       if (!profile) {
         return;
@@ -327,7 +335,7 @@ let gFxAccounts = {
       
       
       
-      this.FxAccountsCommon.log.error("Error updating FxA profile", error);
+      this.FxAccountsCommon.log.error("Error updating FxA account info", error);
       updateWithUserData(null);
     });
   },
