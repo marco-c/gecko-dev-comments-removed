@@ -85,7 +85,7 @@ class StackAllocator : public std::allocator<T> {
   
   
   template<typename U, size_t other_capacity>
-  StackAllocator(const StackAllocator<U, other_capacity>& other)
+  explicit StackAllocator(const StackAllocator<U, other_capacity>& other)
       : source_(NULL) {
   }
 
