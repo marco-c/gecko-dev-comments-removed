@@ -204,9 +204,12 @@ nsJARChannel::nsJARChannel()
     , mOpeningRemote(false)
     , mSynthesizedStreamLength(0)
     , mForceNoIntercept(false)
+    , mBlockRemoteFiles(false)
 {
     if (!gJarProtocolLog)
         gJarProtocolLog = PR_NewLogModule("nsJarProtocol");
+
+    mBlockRemoteFiles = Preferences::GetBool("network.jar.block-remote-files", false);
 
     
     NS_ADDREF(gJarHandler);
@@ -1006,6 +1009,13 @@ nsJARChannel::ContinueAsyncOpen()
 
     if (!mJarFile) {
         
+
+        
+        if (mBlockRemoteFiles) {
+            mIsUnsafe = true;
+            return NS_ERROR_UNSAFE_CONTENT_TYPE;
+        }
+
         
         nsCOMPtr<nsIStreamListener> downloader = new MemoryDownloader(this);
         uint32_t loadFlags =
@@ -1184,6 +1194,10 @@ nsJARChannel::OnDownloadComplete(MemoryDownloader* aDownloader,
         channel->GetContentDispositionHeader(mContentDispositionHeader);
         mContentDisposition = NS_GetContentDispositionFromHeader(mContentDispositionHeader, this);
     }
+
+    
+    
+    MOZ_RELEASE_ASSERT(!mBlockRemoteFiles);
 
     if (NS_SUCCEEDED(status) && mIsUnsafe &&
         !Preferences::GetBool("network.jar.open-unsafe-types", false)) {

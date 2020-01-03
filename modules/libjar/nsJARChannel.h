@@ -139,6 +139,8 @@ private:
     
     bool                            mForceNoIntercept;
 
+    
+    bool                            mBlockRemoteFiles;
     friend class mozilla::net::InterceptedJARChannel;
 };
 
