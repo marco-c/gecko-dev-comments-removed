@@ -551,7 +551,7 @@ SyncServer.prototype = {
 
 
 
-  start: function start(port, cb) {
+  start: function start(port = -1, cb) {
     if (this.started) {
       this._log.warn("Warning: server already started on " + this.port);
       return;
