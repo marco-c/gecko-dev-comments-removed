@@ -743,8 +743,6 @@ private:
   
   void FinishWrite(bool aSucceeded);
 
-  static PLDHashOperator CopyRecordsToRWBuf(CacheIndexEntry *aEntry,
-                                            void* aClosure);
   static PLDHashOperator ApplyIndexChanges(CacheIndexEntry *aEntry,
                                            void* aClosure);
 
@@ -817,9 +815,6 @@ private:
   void EnsureCorrectStats();
   
   void FinishRead(bool aSucceeded);
-
-  static PLDHashOperator ProcessJournalEntry(CacheIndexEntry *aEntry,
-                                             void* aClosure);
 
   
   
