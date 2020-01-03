@@ -2871,6 +2871,10 @@ public:
     if (mElement) {
       nsRefPtr<HTMLMediaElement> deathGrip = mElement;
       mElement->PlaybackEnded();
+      
+      
+      mElement = nullptr;
+      NotifyWatchers();
     }
   }
 
