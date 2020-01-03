@@ -3997,11 +3997,12 @@ ElementRestyler::RestyleUndisplayedNodes(nsRestyleHint    aChildRestyleHint,
     if (MustRestyleSelf(thisChildHint, element)) {
       undisplayedContext =
         styleSet->ResolveStyleFor(element, aParentContext, mTreeMatchContext);
-    } else if (thisChildHint ||
-               styleSet->IsInRuleTreeReconstruct()) {
-      
-      
-
+    } else if (CanReparentStyleContext(thisChildHint)) {
+      undisplayedContext =
+        styleSet->ReparentStyleContext(undisplayed->mStyle,
+                                       aParentContext,
+                                       element);
+    } else {
       
       
       
@@ -4013,11 +4014,6 @@ ElementRestyler::RestyleUndisplayedNodes(nsRestyleHint    aChildRestyleHint,
                                               aParentContext,
                                               undisplayed->mStyle,
                                               rshint);
-    } else {
-      undisplayedContext =
-        styleSet->ReparentStyleContext(undisplayed->mStyle,
-                                       aParentContext,
-                                       element);
     }
     const nsStyleDisplay* display = undisplayedContext->StyleDisplay();
     if (display->mDisplay != aDisplay) {
