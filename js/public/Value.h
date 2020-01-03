@@ -1676,6 +1676,7 @@ class ValueOperations
     bool isFalse() const { return value()->isFalse(); }
     bool isNumber() const { return value()->isNumber(); }
     bool isInt32() const { return value()->isInt32(); }
+    bool isInt32(int32_t i32) const { return value()->isInt32(i32); }
     bool isDouble() const { return value()->isDouble(); }
     bool isString() const { return value()->isString(); }
     bool isSymbol() const { return value()->isSymbol(); }
@@ -1998,17 +1999,6 @@ PRIVATE_TO_JSVAL(void* ptr)
     return IMPL_TO_JSVAL(PRIVATE_PTR_TO_JSVAL_IMPL(ptr));
 }
 
-
-
-
-
-extern JS_PUBLIC_DATA(const jsval) JSVAL_NULL;
-extern JS_PUBLIC_DATA(const jsval) JSVAL_ZERO;
-extern JS_PUBLIC_DATA(const jsval) JSVAL_ONE;
-extern JS_PUBLIC_DATA(const jsval) JSVAL_FALSE;
-extern JS_PUBLIC_DATA(const jsval) JSVAL_TRUE;
-extern JS_PUBLIC_DATA(const jsval) JSVAL_VOID;
-
 namespace JS {
 
 extern JS_PUBLIC_DATA(const HandleValue) NullHandleValue;
@@ -2021,4 +2011,4 @@ extern JS_PUBLIC_DATA(const HandleValue) FalseHandleValue;
 #undef JS_VALUE_IS_CONSTEXPR
 #undef JS_RETURN_LAYOUT_FROM_BITS
 
-#endif
+#endif 
