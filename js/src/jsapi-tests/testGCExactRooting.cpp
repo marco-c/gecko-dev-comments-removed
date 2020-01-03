@@ -271,6 +271,42 @@ BEGIN_TEST(testGCRootedVector)
         CHECK(shape);
     }
 
+    CHECK(receiveConstRefToShapeVector(shapes));
+
+    
+    CHECK(receiveHandleToShapeVector(shapes));
+    CHECK(receiveMutableHandleToShapeVector(&shapes));
+
+    return true;
+}
+
+bool
+receiveConstRefToShapeVector(const JS::Rooted<TraceableVector<Shape*>>& rooted)
+{
+    
+    for (auto shape : rooted) {
+        CHECK(shape);
+    }
+    return true;
+}
+
+bool
+receiveHandleToShapeVector(JS::Handle<TraceableVector<Shape*>> handle)
+{
+    
+    for (auto shape : handle) {
+        CHECK(shape);
+    }
+    return true;
+}
+
+bool
+receiveMutableHandleToShapeVector(JS::MutableHandle<TraceableVector<Shape*>> handle)
+{
+    
+    for (auto shape : handle) {
+        CHECK(shape);
+    }
     return true;
 }
 END_TEST(testGCRootedVector)
