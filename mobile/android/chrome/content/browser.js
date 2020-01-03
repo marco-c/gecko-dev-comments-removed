@@ -1755,16 +1755,7 @@ var BrowserApp = {
         
         if (aData) {
           let data = JSON.parse(aData);
-          if (data.contentType === "mixed") {
-            if (data.allowContent) {
-              
-              flags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT;
-            } else {
-              
-              let docShell = browser.webNavigation.QueryInterface(Ci.nsIDocShell);
-              docShell.mixedContentChannel = null;
-            }
-          } else if (data.contentType === "tracking") {
+          if (data.contentType === "tracking") {
             
             
             
