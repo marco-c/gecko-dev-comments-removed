@@ -7,22 +7,22 @@
 
 
 
+const TEST_URI = `
+  <style type="text/css">
+    #testid {
+      background-color: blue;
+    }
+    .testclass, .unmatched {
+      background-color: green;
+    };
+  </style>
+  <div id='testid' class='testclass'>Styled Node</div>
+  <div id='testid2'>Styled Node</div>
+`;
+
 add_task(function*() {
-  yield addTab("data:text/html;charset=utf-8,browser_ruleview_ui.js");
-  let {toolbox, inspector, view} = yield openRuleView();
-
-  info("Creating the test document");
-  let style = "" +
-    "#testid {" +
-    "  background-color: blue;" +
-    "}" +
-    ".testclass, .unmatched {" +
-    "  background-color: green;" +
-    "}";
-  let styleNode = addStyle(content.document, style);
-  content.document.body.innerHTML = "<div id='testid' class='testclass'>Styled Node</div>" +
-                                    "<div id='testid2'>Styled Node</div>";
-
+  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
+  let {inspector, view} = yield openRuleView();
   yield testCreateNew(inspector, view);
 });
 
@@ -40,6 +40,7 @@ function* testCreateNew(inspector, ruleView) {
     "Editor contents are selected.");
 
   
+  
   EventUtils.synthesizeMouse(input, 1, 1, {}, ruleView.styleWindow);
   input.select();
 
@@ -54,10 +55,13 @@ function* testCreateNew(inspector, ruleView) {
 
   editor = inplaceEditor(ruleView.styleDocument.activeElement);
 
-  is(elementRuleEditor.rule.textProps.length,  1, "Should have created a new text property.");
-  is(elementRuleEditor.propertyList.children.length, 1, "Should have created a property editor.");
+  is(elementRuleEditor.rule.textProps.length, 1,
+    "Should have created a new text property.");
+  is(elementRuleEditor.propertyList.children.length, 1,
+    "Should have created a property editor.");
   let textProp = elementRuleEditor.rule.textProps[0];
-  is(editor, inplaceEditor(textProp.editor.valueSpan), "Should be editing the value span now.");
+  is(editor, inplaceEditor(textProp.editor.valueSpan),
+    "Should be editing the value span now.");
 
   let onMutated = inspector.once("markupmutation");
   editor.input.value = "purple";

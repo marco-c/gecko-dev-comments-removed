@@ -7,23 +7,23 @@
 
 
 
-const SEARCH = ":4px"
+const SEARCH = ":4px";
 
-let TEST_URI = [
-  '<style type="text/css">',
-  '  #testid {',
-  '    margin: 4px 0px;',
-  '  }',
-  '  .testclass {',
-  '    background-color: red;',
-  '  }',
-  '</style>',
-  '<h1 id="testid" class="testclass">Styled Node</h1>'
-].join("\n");
+const TEST_URI = `
+  <style type="text/css">
+    #testid {
+      margin: 4px 0px;
+    }
+    .testclass {
+      background-color: red;
+    }
+  </style>
+  <h1 id="testid" class="testclass">Styled Node</h1>
+`;
 
 add_task(function*() {
   yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
-  let {toolbox, inspector, view} = yield openRuleView();
+  let {inspector, view} = yield openRuleView();
   yield selectNode("#testid", inspector);
   yield testAddTextInFilter(inspector, view);
 });

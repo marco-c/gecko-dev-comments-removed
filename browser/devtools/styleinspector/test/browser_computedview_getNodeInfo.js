@@ -22,23 +22,23 @@ const {
   VIEW_NODE_IMAGE_URL_TYPE
 } = require("devtools/styleinspector/style-inspector-overlays");
 
-const PAGE_CONTENT = [
-  '<style type="text/css">',
-  '  body {',
-  '    background: red;',
-  '    color: white;',
-  '  }',
-  '  div {',
-  '    background: green;',
-  '  }',
-  '  div div {',
-  '    background-color: yellow;',
-  '    background-image: url(chrome://global/skin/icons/warning-64.png);',
-  '    color: red;',
-  '  }',
-  '</style>',
-  '<div><div id="testElement">Test element</div></div>'
-].join("\n");
+const TEST_URI = `
+  <style type="text/css">
+    body {
+      background: red;
+      color: white;
+    }
+    div {
+      background: green;
+    }
+    div div {
+      background-color: yellow;
+      background-image: url(chrome://global/skin/icons/warning-64.png);
+      color: red;
+    }
+  </style>
+  <div><div id="testElement">Test element</div></div>
+`;
 
 
 
@@ -102,7 +102,8 @@ const TEST_DATA = [
       ok("property" in nodeInfo.value);
       ok("value" in nodeInfo.value);
       is(nodeInfo.value.property, "background-image");
-      is(nodeInfo.value.value, "url(\"chrome://global/skin/icons/warning-64.png\")");
+      is(nodeInfo.value.value,
+         "url(\"chrome://global/skin/icons/warning-64.png\")");
       is(nodeInfo.value.url, "chrome://global/skin/icons/warning-64.png");
     }
   },
@@ -164,8 +165,7 @@ const TEST_DATA = [
 ];
 
 add_task(function*() {
-  yield addTab("data:text/html;charset=utf-8," + PAGE_CONTENT);
-
+  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   let {inspector, view} = yield openComputedView();
   yield selectNode("#testElement", inspector);
 

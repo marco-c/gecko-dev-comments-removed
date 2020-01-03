@@ -11,10 +11,7 @@ const TEST_URI = TEST_URL_ROOT + "doc_content_stylesheet.html";
 
 add_task(function*() {
   yield addTab(TEST_URI);
-
-  let target = getNode("#target");
-
-  let {toolbox, inspector, view} = yield openRuleView();
+  let {inspector, view} = yield openRuleView();
   yield selectNode("#target", inspector);
 
   info("Setting a font-weight property on all rules");

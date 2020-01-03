@@ -20,9 +20,8 @@ const {
   CssDocsTooltip,
   SwatchFilterTooltip
 } = require("devtools/shared/widgets/Tooltip");
-const {CssLogic} = require("devtools/styleinspector/css-logic");
 const EventEmitter = require("devtools/toolkit/event-emitter");
-const {Promise:promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
+const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
@@ -38,6 +37,7 @@ const VIEW_NODE_PROPERTY_TYPE = exports.VIEW_NODE_PROPERTY_TYPE = 2;
 const VIEW_NODE_VALUE_TYPE = exports.VIEW_NODE_VALUE_TYPE = 3;
 const VIEW_NODE_IMAGE_URL_TYPE = exports.VIEW_NODE_IMAGE_URL_TYPE = 4;
 const VIEW_NODE_LOCATION_TYPE = exports.VIEW_NODE_LOCATION_TYPE = 5;
+
 
 
 
@@ -60,7 +60,8 @@ function HighlightersOverlay(view) {
 
   
   
-  this.supportsHighlighters = this.highlighterUtils.supportsCustomHighlighters();
+  this.supportsHighlighters =
+    this.highlighterUtils.supportsCustomHighlighters();
 
   EventEmitter.decorate(this);
 }
@@ -138,12 +139,13 @@ HighlightersOverlay.prototype = {
     }
   },
 
-  _onMouseLeave: function(event) {
+  _onMouseLeave: function() {
     this._lastHovered = null;
     this._hideCurrent();
   },
 
   
+
 
 
 
@@ -158,6 +160,7 @@ HighlightersOverlay.prototype = {
   },
 
   
+
 
 
 
@@ -234,6 +237,7 @@ HighlightersOverlay.prototype = {
 
 
 
+
 function TooltipsOverlay(view) {
   this.view = view;
 
@@ -263,21 +267,23 @@ TooltipsOverlay.prototype = {
       return;
     }
 
+    let panelDoc = this.view.inspector.panelDoc;
+
     
-    this.previewTooltip = new Tooltip(this.view.inspector.panelDoc);
+    this.previewTooltip = new Tooltip(panelDoc);
     this.previewTooltip.startTogglingOnHover(this.view.element,
       this._onPreviewTooltipTargetHover.bind(this));
 
     
-    this.cssDocs = new CssDocsTooltip(this.view.inspector.panelDoc);
+    this.cssDocs = new CssDocsTooltip(panelDoc);
 
     if (this.isRuleView) {
       
-      this.colorPicker = new SwatchColorPickerTooltip(this.view.inspector.panelDoc);
+      this.colorPicker = new SwatchColorPickerTooltip(panelDoc);
       
-      this.cubicBezier = new SwatchCubicBezierTooltip(this.view.inspector.panelDoc);
+      this.cubicBezier = new SwatchCubicBezierTooltip(panelDoc);
       
-      this.filterEditor = new SwatchFilterTooltip(this.view.inspector.panelDoc);
+      this.filterEditor = new SwatchFilterTooltip(panelDoc);
     }
 
     this._isStarted = true;
@@ -320,12 +326,14 @@ TooltipsOverlay.prototype = {
 
 
 
-  _getTooltipType: function({type, value:prop}) {
+
+  _getTooltipType: function({type, value: prop}) {
     let tooltipType = null;
     let inspector = this.view.inspector;
 
     
-    if (type === VIEW_NODE_IMAGE_URL_TYPE && inspector.hasUrlToImageDataResolver) {
+    if (type === VIEW_NODE_IMAGE_URL_TYPE &&
+        inspector.hasUrlToImageDataResolver) {
       tooltipType = TOOLTIP_IMAGE_TYPE;
     }
 
@@ -341,6 +349,7 @@ TooltipsOverlay.prototype = {
   },
 
   
+
 
 
 

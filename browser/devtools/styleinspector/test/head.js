@@ -13,14 +13,18 @@ let {CssRuleView, _ElementStyle} = require("devtools/styleinspector/rule-view");
 let {CssLogic, CssSelector} = require("devtools/styleinspector/css-logic");
 let DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
 let {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
-let {editableField, getInplaceEditorForSpan: inplaceEditor} = require("devtools/shared/inplace-editor");
-let {console} = Components.utils.import("resource://gre/modules/devtools/Console.jsm", {});
+let {editableField, getInplaceEditorForSpan: inplaceEditor} =
+  require("devtools/shared/inplace-editor");
+let {console} =
+  Components.utils.import("resource://gre/modules/devtools/Console.jsm", {});
 
 
 waitForExplicitFinish();
 
-const TEST_URL_ROOT = "http://example.com/browser/browser/devtools/styleinspector/test/";
-const TEST_URL_ROOT_SSL = "https://example.com/browser/browser/devtools/styleinspector/test/";
+const TEST_URL_ROOT =
+  "http://example.com/browser/browser/devtools/styleinspector/test/";
+const TEST_URL_ROOT_SSL =
+  "https://example.com/browser/browser/devtools/styleinspector/test/";
 const ROOT_TEST_DIR = getRootDirectory(gTestPath);
 const FRAME_SCRIPT_URL = ROOT_TEST_DIR + "doc_frame_script.js";
 
@@ -48,6 +52,8 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.dump.emit");
   Services.prefs.clearUserPref("devtools.defaultColorUnit");
 });
+
+
 
 
 
@@ -123,6 +129,7 @@ function addTab(url) {
 
 
 
+
 function getNode(nodeOrSelector) {
   info("Getting the node for '" + nodeOrSelector + "'");
   return typeof nodeOrSelector === "string" ?
@@ -137,9 +144,11 @@ function getNode(nodeOrSelector) {
 
 
 
+
 function getNodeFront(selector, {walker}) {
   return walker.querySelector(walker.rootNode, selector);
 }
+
 
 
 
@@ -188,12 +197,14 @@ let selectNode = Task.async(function*(data, inspector, reason="test") {
 
 
 
+
 function clearCurrentNodeSelection(inspector) {
   info("Clearing the current selection");
   let updated = inspector.once("inspector-updated");
   inspector.selection.setNodeFront(null);
   return updated;
 }
+
 
 
 
@@ -239,6 +250,7 @@ let openInspector = Task.async(function*() {
 
 
 
+
 function waitForToolboxFrameFocus(toolbox) {
   info("Making sure that the toolbox's frame is focused");
   let def = promise.defer();
@@ -246,6 +258,7 @@ function waitForToolboxFrameFocus(toolbox) {
   waitForFocus(def.resolve, win);
   return def.promise;
 }
+
 
 
 
@@ -277,6 +290,7 @@ let openInspectorSideBar = Task.async(function*(id) {
 
 
 
+
 function openComputedView() {
   return openInspectorSideBar("computedview");
 }
@@ -287,9 +301,13 @@ function openComputedView() {
 
 
 
+
 function openRuleView() {
   return openInspectorSideBar("ruleview");
 }
+
+
+
 
 
 
@@ -327,11 +345,15 @@ function once(target, eventName, useCapture=false) {
 
 
 
+
+
 function wait(ms) {
   let def = promise.defer();
   content.setTimeout(def.resolve, ms);
   return def.promise;
 }
+
+
 
 
 
@@ -365,6 +387,11 @@ function waitForContentMessage(name) {
 
 
 
+
+
+
+
+
 function executeInContent(name, data={}, objects={}, expectResponse=true) {
   info("Sending message " + name + " to content");
   let mm = gBrowser.selectedBrowser.messageManager;
@@ -372,9 +399,9 @@ function executeInContent(name, data={}, objects={}, expectResponse=true) {
   mm.sendAsyncMessage(name, data, objects);
   if (expectResponse) {
     return waitForContentMessage(name);
-  } else {
-    return promise.resolve();
   }
+
+  return promise.resolve();
 }
 
 
@@ -384,9 +411,13 @@ function executeInContent(name, data={}, objects={}, expectResponse=true) {
 
 
 
+
+
+
+
 function* getComputedStyleProperty(selector, pseudo, propName) {
- return yield executeInContent("Test:GetComputedStylePropertyValue",
-                               {selector,
+  return yield executeInContent("Test:GetComputedStylePropertyValue",
+                                {selector,
                                 pseudo,
                                 name: propName});
 }
@@ -400,9 +431,15 @@ function* getComputedStyleProperty(selector, pseudo, propName) {
 
 
 
+
+
+
+
+
+
 function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
- return yield executeInContent("Test:WaitForComputedStylePropertyValue",
-                               {selector,
+  return yield executeInContent("Test:WaitForComputedStylePropertyValue",
+                                {selector,
                                 pseudo,
                                 expected,
                                 name});
@@ -413,7 +450,9 @@ function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
 
 
 
-let focusEditableField = Task.async(function*(ruleView, editable, xOffset=1, yOffset=1, options={}) {
+
+let focusEditableField = Task.async(function*(ruleView, editable, xOffset=1,
+    yOffset=1, options={}) {
   let onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
   EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
@@ -425,6 +464,7 @@ let focusEditableField = Task.async(function*(ruleView, editable, xOffset=1, yOf
 
   return onEdit;
 });
+
 
 
 
@@ -446,6 +486,7 @@ function isHoverTooltipTarget(tooltip, target) {
 
 
 
+
 function assertHoverTooltipOn(tooltip, element) {
   return isHoverTooltipTarget(tooltip, element).then(() => {
     ok(true, "A tooltip is defined on hover of the given element");
@@ -459,6 +500,7 @@ function assertHoverTooltipOn(tooltip, element) {
 
 
 
+
 function assertNoHoverTooltipOn(tooltip, element) {
   return isHoverTooltipTarget(tooltip, element).then(() => {
     ok(false, "A tooltip is defined on hover of the given element");
@@ -466,6 +508,7 @@ function assertNoHoverTooltipOn(tooltip, element) {
     ok(true, "No tooltip is defined on hover of the given element");
   });
 }
+
 
 
 
@@ -498,6 +541,7 @@ function waitForWindow() {
 
 
 
+
 let waitForTab = Task.async(function*() {
   info("Waiting for a tab to open");
   yield once(gBrowser.tabContainer, "TabOpen");
@@ -507,6 +551,9 @@ let waitForTab = Task.async(function*() {
   info("The tab load completed");
   return tab;
 });
+
+
+
 
 
 
@@ -542,15 +589,17 @@ function fireCopyEvent(element) {
 
 
 
+
+
 function waitForSuccess(validatorFn, name="untitled") {
   let def = promise.defer();
 
-  function wait(validatorFn) {
-    if (validatorFn()) {
+  function wait(validator) {
+    if (validator()) {
       ok(true, "Validator function " + name + " returned true");
       def.resolve();
     } else {
-      setTimeout(() => wait(validatorFn), 200);
+      setTimeout(() => wait(validator), 200);
     }
   }
   wait(validatorFn);
@@ -565,10 +614,11 @@ function waitForSuccess(validatorFn, name="untitled") {
 
 
 
+
 function addStyle(doc, style) {
   info("Adding a new style tag to the document with style content: " +
     style.substring(0, 50));
-  let node = doc.createElement('style');
+  let node = doc.createElement("style");
   node.setAttribute("type", "text/css");
   node.textContent = style;
   doc.getElementsByTagName("head")[0].appendChild(node);
@@ -582,9 +632,12 @@ function addStyle(doc, style) {
 
 
 
+
 function hasSideBarTab(inspector, id) {
   return !!inspector.sidebar.getWindowForTab(id);
 }
+
+
 
 
 
@@ -607,11 +660,17 @@ let getFontFamilyDataURL = Task.async(function*(font, nodeFront) {
 
 
 
+
+
+
 function synthesizeKeys(input, win) {
   for (let key of input.split("")) {
-     EventUtils.synthesizeKey(key, {}, win);
+    EventUtils.synthesizeKey(key, {}, win);
   }
 }
+
+
+
 
 
 
@@ -651,6 +710,9 @@ function getRuleViewRule(view, selectorText) {
 
 
 
+
+
+
 function getRuleViewProperty(view, selectorText, propertyName) {
   let prop;
 
@@ -679,6 +741,9 @@ function getRuleViewProperty(view, selectorText, propertyName) {
 
 
 
+
+
+
 function getRuleViewPropertyValue(view, selectorText, propertyName) {
   return getRuleViewProperty(view, selectorText, propertyName)
     .valueSpan.textContent;
@@ -691,10 +756,16 @@ function getRuleViewPropertyValue(view, selectorText, propertyName) {
 
 
 
+
+
+
 function getRuleViewSelector(view, selectorText) {
   let rule = getRuleViewRule(view, selectorText);
   return rule.querySelector(".ruleview-selector, .ruleview-selector-matched");
 }
+
+
+
 
 
 
@@ -721,7 +792,12 @@ function getRuleViewSelectorHighlighterIcon(view, selectorText) {
 
 
 
-let simulateColorPickerChange = Task.async(function*(ruleView, colorPicker, newRgba, expectedChange) {
+
+
+
+
+let simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
+    newRgba, expectedChange) {
   let onRuleViewChanged = ruleView.once("ruleview-changed");
   info("Getting the spectrum colorpicker object");
   let spectrum = yield colorPicker.spectrum;
@@ -748,6 +824,9 @@ let simulateColorPickerChange = Task.async(function*(ruleView, colorPicker, newR
 
 
 
+
+
+
 function getRuleViewLinkByIndex(view, index) {
   let links = view.styleDocument.querySelectorAll(".ruleview-rule-source");
   return links[index];
@@ -759,10 +838,17 @@ function getRuleViewLinkByIndex(view, index) {
 
 
 
+
+
+
 function getRuleViewLinkTextByIndex(view, index) {
   let link = getRuleViewLinkByIndex(view, index);
   return link.querySelector(".ruleview-rule-source-label").value;
 }
+
+
+
+
 
 
 
@@ -784,6 +870,7 @@ function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
 
 
 
+
 let focusNewRuleViewProperty = Task.async(function*(ruleEditor) {
   info("Clicking on a close ruleEditor brace to start editing a new property");
   ruleEditor.closeBrace.scrollIntoView();
@@ -795,6 +882,7 @@ let focusNewRuleViewProperty = Task.async(function*(ruleEditor) {
 
   return editor;
 });
+
 
 
 
@@ -836,6 +924,9 @@ let createNewRuleViewProperty = Task.async(function*(ruleEditor, inputValue) {
 
 
 
+
+
+
 function getComputedViewProperty(view, name) {
   let prop;
   for (let property of view.styleDocument.querySelectorAll(".property-view")) {
@@ -856,6 +947,9 @@ function getComputedViewProperty(view, name) {
 
 
 
+
+
+
 function getComputedViewPropertyView(view, name) {
   let propView;
   for (let propertyView of view.propertyViews) {
@@ -866,6 +960,9 @@ function getComputedViewPropertyView(view, name) {
   }
   return propView;
 }
+
+
+
 
 
 
@@ -908,10 +1005,16 @@ let getComputedViewMatchedRules = Task.async(function*(view, name) {
 
 
 
+
+
+
 function getComputedViewPropertyValue(view, name, propertyName) {
   return getComputedViewProperty(view, name, propertyName)
     .valueSpan.textContent;
 }
+
+
+
 
 
 
@@ -939,10 +1042,14 @@ function expandComputedViewPropertyByIndex(view, index) {
 
 
 
+
+
+
 function getComputedViewLinkByIndex(view, index) {
   let links = view.styleDocument.querySelectorAll(".rule-link .link");
   return links[index];
 }
+
 
 
 
@@ -976,9 +1083,9 @@ function waitForStyleEditor(toolbox, href) {
         info("Stylesheet editor selected");
         panel.UI.off("editor-selected", gotEditor);
 
-        editor.getSourceEditor().then(editor => {
+        editor.getSourceEditor().then(sourceEditor => {
           info("Stylesheet editor fully loaded");
-          def.resolve(editor);
+          def.resolve(sourceEditor);
         });
 
         return true;
@@ -999,6 +1106,8 @@ function waitForStyleEditor(toolbox, href) {
 
   return def.promise;
 }
+
+
 
 
 

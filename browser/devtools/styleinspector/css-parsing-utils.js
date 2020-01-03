@@ -204,6 +204,7 @@ function parsePseudoClassesAndAttributes(value) {
 
 
 
+
 function parseSingleValue(value) {
   let declaration = parseDeclarations("a: " + value + ";")[0];
   return {

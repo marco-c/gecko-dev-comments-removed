@@ -7,17 +7,17 @@
 
 
 
-let TEST_URI = [
-  "<style type='text/css'>",
-  "#testid {",
-  "  margin-left: 1px;",
-  "}",
-  ".testclass {",
-  "  margin: 2px;",
-  "}",
-  "</style>",
-  "<div id='testid' class='testclass'>Styled Node</div>"
-].join("\n");
+const TEST_URI = `
+  <style type='text/css'>
+  #testid {
+    margin-left: 1px;
+  }
+  .testclass {
+    margin: 2px;
+  }
+  </style>
+  <div id='testid' class='testclass'>Styled Node</div>
+`;
 
 add_task(function*() {
   yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));

@@ -11,23 +11,23 @@
 
 
 
-const PAGE_CONTENT = [
-  '<style type="text/css">',
-  '  body {',
-  '    color: green;',
-  '    background: red url("chrome://global/skin/icons/warning-64.png") no-repeat center center;',
-  '  }',
-  '  p {',
-  '    color: blue;',
-  '  }',
-  '</style>',
-  '<p>Testing the color picker tooltip!</p>'
-].join("\n");
+const TEST_URI = `
+  <style type="text/css">
+    body {
+      color: green;
+      background: red url("chrome://global/skin/icons/warning-64.png")
+        no-repeat center center;
+    }
+    p {
+      color: blue;
+    }
+  </style>
+  <p>Testing the color picker tooltip!</p>
+`;
 
 add_task(function*() {
-  yield addTab("data:text/html;charset=utf-8,rule view color picker tooltip test");
-  content.document.body.innerHTML = PAGE_CONTENT;
-  let {toolbox, inspector, view} = yield openRuleView();
+  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
+  let {inspector, view} = yield openRuleView();
 
   yield testSimpleMultipleColorChanges(inspector, view);
   yield testComplexMultipleColorChanges(inspector, view);

@@ -7,20 +7,20 @@
 
 
 
-let PAGE_CONTENT = [
-  '<style type="text/css">',
-  '  .testclass {',
-  '    text-align: center;',
-  '  }',
-  '  #testid3::first-letter {',
-  '    text-decoration: "italic"',
-  '  }',
-  '</style>',
-  '<div id="testid">Styled Node</div>',
-  '<span class="testclass">This is a span</span>',
-  '<div class="testclass2">A</div>',
-  '<div id="testid3">B</div>'
-].join("\n");
+const TEST_URI = `
+  <style type="text/css">
+    .testclass {
+      text-align: center;
+    }
+    #testid3::first-letter {
+      text-decoration: "italic"
+    }
+  </style>
+  <div id="testid">Styled Node</div>
+  <span class="testclass">This is a span</span>
+  <div class="testclass2">A</div>
+  <div id="testid3">B</div>
+`;
 
 const PSEUDO_PREF = "devtools.inspector.show_pseudo_elements";
 
@@ -28,7 +28,7 @@ add_task(function*() {
   
   Services.prefs.setBoolPref(PSEUDO_PREF, true);
 
-  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(PAGE_CONTENT));
+  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   let {inspector, view} = yield openRuleView();
 
   info("Selecting the test element");

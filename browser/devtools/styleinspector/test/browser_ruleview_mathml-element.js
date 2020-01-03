@@ -6,28 +6,27 @@
 
 
 
-const TEST_URL = [
-  "data:text/html;charset=utf-8,",
-  "<div>",
-  "  <math xmlns=\"http://www.w3.org/1998/Math/MathML\">",
-  "    <mfrac>",
-  "      <msubsup>",
-  "        <mi>a</mi>",
-  "        <mi>i</mi>",
-  "        <mi>j</mi>",
-  "      </msubsup>",
-  "      <msub>",
-  "        <mi>x</mi>",
-  "        <mn>0</mn>",
-  "      </msub>",
-  "    </mfrac>",
-  "  </math>",
-  "</div>"
-].join("");
+const TEST_URI = `
+  <div>
+    <math xmlns=\http://www.w3.org/1998/Math/MathML\>
+      <mfrac>
+        <msubsup>
+          <mi>a</mi>
+          <mi>i</mi>
+          <mi>j</mi>
+        </msubsup>
+        <msub>
+          <mi>x</mi>
+          <mn>0</mn>
+        </msub>
+      </mfrac>
+    </math>
+  </div>
+`;
 
 add_task(function*() {
-  yield addTab(TEST_URL);
-  let {toolbox, inspector, view} = yield openRuleView();
+  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
+  let {inspector, view} = yield openRuleView();
 
   info("Select the DIV node and verify the rule-view shows rules");
   yield selectNode("div", inspector);
