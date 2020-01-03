@@ -4878,7 +4878,14 @@ pref("intl.collation.mac.use_icu", true);
 
 
 pref("intl.ime.nstextinput.enable", false);
+
+#if !defined(RELEASE_BUILD) || defined(DEBUG)
+
+
+
+pref("intl.allow-insecure-text-input", false);
 #endif
+#endif // XP_MACOSX
 
 
 pref("dom.meta-viewport.enabled", false);
