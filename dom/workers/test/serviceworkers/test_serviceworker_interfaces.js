@@ -18,6 +18,10 @@
 
 
 
+
+
+
+
 var ecmaGlobals =
   [
     "Array",
@@ -85,11 +89,11 @@ var interfaceNamesInGlobalScope =
 
     "Blob",
 
-    { name: "BroadcastChannel", pref: "dom.broadcastChannel.enabled" },
+    "BroadcastChannel",
 
-    { name: "Cache", pref: "dom.caches.enabled" },
+    { name: "Cache", release: false },
 
-    { name: "CacheStorage", pref: "dom.caches.enabled" },
+    { name: "CacheStorage", release: false },
 
     "Client",
 
@@ -175,7 +179,7 @@ var interfaceNamesInGlobalScope =
 
     "URLSearchParams",
 
-   { name: "WebSocket", pref: "dom.workers.websocket.enabled" },
+    "WebSocket",
 
     "WindowClient",
 
