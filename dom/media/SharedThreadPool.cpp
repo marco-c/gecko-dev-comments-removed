@@ -119,7 +119,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) SharedThreadPool::Release(void)
   
   
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(mPool, &nsIThreadPool::Shutdown);
-  AbstractThread::MainThread()->Dispatch(r.forget());
+  NS_DispatchToMainThread(r);
 
   
   mRefCnt = 1;
