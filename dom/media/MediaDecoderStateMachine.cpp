@@ -1328,13 +1328,18 @@ void MediaDecoderStateMachine::StartDecoding()
 
   if (mDecodingFirstFrame &&
       (IsRealTime() || mSentFirstFrameLoadedEvent)) {
-    
-    
-    
-    
-    FinishDecodeFirstFrame();
-    if (mQueuedSeek.Exists()) {
+    if (IsRealTime()) {
+      FinishDecodeFirstFrame();
+    } else {
       
+      
+      
+      
+      
+      MOZ_ASSERT(mQueuedSeek.Exists() && mSentFirstFrameLoadedEvent,
+                 "Return from dormant must have queued seek");
+    }
+    if (mQueuedSeek.Exists()) {
       mPendingSeek.Steal(mQueuedSeek);
       SetState(DECODER_STATE_SEEKING);
       ScheduleStateMachine();
