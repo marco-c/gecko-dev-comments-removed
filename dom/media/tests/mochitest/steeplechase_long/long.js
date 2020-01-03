@@ -185,35 +185,33 @@ function verifyConnectionStatus(test) {
 
 
 
-function generateIntervalCommand(callback, interval, duration, name) {
+
+function generateIntervalCommand(callback, interval, duration) {
   interval = interval || 1000;
   duration = duration || 1000 * 3600 * 3;
-  name = name || 'INTERVAL_COMMAND';
 
-  return [
-    name,
-    function (test) {
-      var startTime = Date.now();
-      var intervalId = setInterval(function () {
-        if (callback) {
-          callback(test);
-        }
-
-        var failed = false;
-        Object.keys(_errorCount).forEach(function (label) {
-          if (_errorCount[label] > MAX_ERROR_CYCLES) {
-            ok(false, "Encountered more then " + MAX_ERROR_CYCLES + " cycles" +
-              " with errors on " + label);
-            failed = true;
+  return function INTERVAL_COMMAND(test) {
+      return new Promise (resolve=>{
+        var startTime = Date.now();
+        var intervalId = setInterval(function () {
+          if (callback) {
+            callback(test);
           }
-        });
+
+          var failed = false;
+          Object.keys(_errorCount).forEach(function (label) {
+            if (_errorCount[label] > MAX_ERROR_CYCLES) {
+              ok(false, "Encountered more then " + MAX_ERROR_CYCLES + " cycles" +
+              " with errors on " + label);
+              failed = true;
+            }
+          });
         var timeElapsed = Date.now() - startTime;
         if ((timeElapsed >= duration) || failed) {
           clearInterval(intervalId);
-          test.next();
+          resolve();
         }
       }, interval);
-    }
-  ]
+    });
+  };
 }
-
