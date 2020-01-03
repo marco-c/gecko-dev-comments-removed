@@ -642,8 +642,9 @@ MediaDecoderStateMachine::Push(AudioData* aSample)
   UpdateNextFrameStatus();
   DispatchDecodeTasksIfNeeded();
 
-  
-  mDecoder->GetReentrantMonitor().NotifyAll();
+  if (mAudioSink) {
+    mAudioSink->NotifyData();
+  }
 }
 
 void
@@ -789,6 +790,10 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
     case DECODER_STATE_DECODING: {
       CheckIfDecodeComplete();
       mDecoder->GetReentrantMonitor().NotifyAll();
+      
+      if (mAudioSink) {
+        mAudioSink->NotifyData();
+      }
       
       if (mAudioCaptured) {
         ScheduleStateMachine();
@@ -1053,9 +1058,6 @@ void MediaDecoderStateMachine::StopPlayback()
     mPlayDuration = GetClock();
     SetPlayStartTime(TimeStamp());
   }
-  
-  
-  mDecoder->GetReentrantMonitor().NotifyAll();
   NS_ASSERTION(!IsPlaying(), "Should report not playing at end of StopPlayback()");
 
   DispatchDecodeTasksIfNeeded();
@@ -1794,7 +1796,7 @@ MediaDecoderStateMachine::StartAudioThread()
 
   if (HasAudio() && !mAudioSink) {
     mAudioCompleted = false;
-    mAudioSink = new AudioSink(mAudioQueue, mDecoder->GetReentrantMonitor(),
+    mAudioSink = new AudioSink(mAudioQueue,
                                GetMediaTime(), mInfo.mAudio,
                                mDecoder->GetAudioChannel());
 

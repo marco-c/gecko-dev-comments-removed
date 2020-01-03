@@ -26,7 +26,6 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioSink)
 
   AudioSink(MediaQueue<AudioData>& aAudioQueue,
-            ReentrantMonitor& aMonitor,
             int64_t aStartTime,
             const AudioInfo& aInfo,
             dom::AudioChannel aChannel);
@@ -35,9 +34,10 @@ public:
   
   nsRefPtr<GenericPromise> Init();
 
-  int64_t GetPosition();
-
   
+
+
+  int64_t GetPosition();
   int64_t GetEndTime() const;
 
   
@@ -45,14 +45,16 @@ public:
   bool HasUnplayedFrames();
 
   
-  
   void Shutdown();
 
   void SetVolume(double aVolume);
   void SetPlaybackRate(double aPlaybackRate);
   void SetPreservesPitch(bool aPreservesPitch);
-
   void SetPlaying(bool aPlaying);
+
+  
+  
+  void NotifyData();
 
 private:
   ~AudioSink() {}
@@ -104,7 +106,7 @@ private:
   }
 
   ReentrantMonitor& GetReentrantMonitor() const {
-    return mDecoderMonitor;
+    return mMonitor;
   }
 
   void AssertCurrentThreadInMonitor() const {
@@ -114,7 +116,7 @@ private:
   void AssertOnAudioThread();
 
   MediaQueue<AudioData>& mAudioQueue;
-  ReentrantMonitor& mDecoderMonitor;
+  mutable ReentrantMonitor mMonitor;
 
   
   
