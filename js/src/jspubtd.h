@@ -93,7 +93,6 @@ struct JSCrossCompartmentCall;
 class JSErrorReport;
 struct JSExceptionState;
 struct JSFunctionSpec;
-struct JSIdArray;
 struct JSLocaleCallbacks;
 struct JSObjectMap;
 struct JSPrincipals;
@@ -218,7 +217,6 @@ class JS_PUBLIC_API(AutoGCRooter)
     enum {
         VALARRAY =     -2, 
         PARSER =       -3, 
-        IDARRAY =      -6, 
         VALVECTOR =   -10, 
         IDVECTOR =    -11, 
         OBJVECTOR =   -14, 

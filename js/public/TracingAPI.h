@@ -259,31 +259,6 @@ JSTracer::asCallbackTracer()
     return static_cast<JS::CallbackTracer*>(this);
 }
 
-namespace js {
-
-
-template <typename, typename=void> struct DefaultTracer;
-
-
-template <typename T>
-struct DefaultTracer<T, typename mozilla::EnableIf<!mozilla::IsPointer<T>::value &&
-                                                   mozilla::IsPod<T>::value>::Type> {
-    static void trace(JSTracer* trc, T* t, const char* name) {
-        MOZ_ASSERT(mozilla::IsPod<T>::value);
-        MOZ_ASSERT(!mozilla::IsPointer<T>::value);
-    }
-};
-
-
-template <typename T>
-struct DefaultTracer<T, typename mozilla::EnableIf<!mozilla::IsPod<T>::value>::Type> {
-    static void trace(JSTracer* trc, T* t, const char* name) {
-        t->trace(trc);
-    }
-};
-
-} 
-
 
 
 
@@ -365,5 +340,38 @@ JS_TraceIncomingCCWs(JSTracer* trc, const JS::ZoneSet& zones);
 extern JS_PUBLIC_API(void)
 JS_GetTraceThingInfo(char* buf, size_t bufsize, JSTracer* trc,
                      void* thing, JS::TraceKind kind, bool includeDetails);
+
+namespace js {
+
+
+template <typename, typename=void> struct DefaultTracer;
+
+
+template <typename T>
+struct DefaultTracer<T, typename mozilla::EnableIf<!mozilla::IsPointer<T>::value &&
+                                                   mozilla::IsPod<T>::value>::Type> {
+    static void trace(JSTracer* trc, T* t, const char* name) {
+        MOZ_ASSERT(mozilla::IsPod<T>::value);
+        MOZ_ASSERT(!mozilla::IsPointer<T>::value);
+    }
+};
+
+
+template <typename T>
+struct DefaultTracer<T, typename mozilla::EnableIf<!mozilla::IsPod<T>::value>::Type> {
+    static void trace(JSTracer* trc, T* t, const char* name) {
+        t->trace(trc);
+    }
+};
+
+template <>
+struct DefaultTracer<jsid>
+{
+    static void trace(JSTracer* trc, jsid* id, const char* name) {
+        JS_CallUnbarrieredIdTracer(trc, id, name);
+    }
+};
+
+} 
 
 #endif 

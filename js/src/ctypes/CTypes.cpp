@@ -3261,8 +3261,8 @@ ImplicitConvert(JSContext* cx,
     if (val.isObject() && !sourceData) {
       
       
-      AutoIdArray props(cx, JS_Enumerate(cx, valObj));
-      if (!props)
+      Rooted<IdVector> props(cx, IdVector(cx));
+      if (!JS_Enumerate(cx, valObj, &props))
         return false;
 
       
@@ -5343,8 +5343,8 @@ ExtractStructField(JSContext* cx, Value val, MutableHandleObject typeObj)
   }
 
   RootedObject obj(cx, &val.toObject());
-  AutoIdArray props(cx, JS_Enumerate(cx, obj));
-  if (!props)
+  Rooted<IdVector> props(cx, IdVector(cx));
+  if (!JS_Enumerate(cx, obj, &props))
     return nullptr;
 
   
