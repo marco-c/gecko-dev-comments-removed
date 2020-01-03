@@ -102,7 +102,7 @@ WMFDecoderModule::CreateVideoDecoder(const VideoInfo& aConfig,
     new WMFVideoMFTManager(aConfig,
                            aLayersBackend,
                            aImageContainer,
-                           sDXVAEnabled && ShouldUseDXVA(aConfig)));
+                           sDXVAEnabled));
 
   nsRefPtr<MFTDecoder> mft = manager->Init();
 
@@ -134,32 +134,11 @@ WMFDecoderModule::CreateAudioDecoder(const AudioInfo& aConfig,
 }
 
 bool
-WMFDecoderModule::ShouldUseDXVA(const VideoInfo& aConfig) const
-{
-  static bool isAMD = false;
-  static bool initialized = false;
-  if (!initialized) {
-    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-    nsAutoString vendor;
-    gfxInfo->GetAdapterVendorID(vendor);
-    isAMD = vendor.Equals(widget::GfxDriverInfo::GetDeviceVendor(widget::VendorAMD), nsCaseInsensitiveStringComparator()) ||
-            vendor.Equals(widget::GfxDriverInfo::GetDeviceVendor(widget::VendorATI), nsCaseInsensitiveStringComparator());
-    initialized = true;
-  }
-  if (!isAMD) {
-    return true;
-  }
-  
-  return aConfig.mDisplay.width <= 1920 && aConfig.mDisplay.height <= 1200;
-}
-
-bool
 WMFDecoderModule::SupportsSharedDecoders(const VideoInfo& aConfig) const
 {
   
   
-  return !AgnosticMimeType(aConfig.mMimeType) &&
-    (!sDXVAEnabled || ShouldUseDXVA(aConfig));
+  return !AgnosticMimeType(aConfig.mMimeType);
 }
 
 bool

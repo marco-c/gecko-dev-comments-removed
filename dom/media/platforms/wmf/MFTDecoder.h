@@ -59,6 +59,11 @@ public:
                 int64_t aTimestampUsecs);
   HRESULT Input(IMFSample* aSample);
 
+  HRESULT CreateInputSample(const uint8_t* aData,
+                            uint32_t aDataSize,
+                            int64_t aTimestampUsecs,
+                            RefPtr<IMFSample>* aOutSample);
+
   
   
   
@@ -80,14 +85,10 @@ public:
   
   HRESULT SendMFTMessage(MFT_MESSAGE_TYPE aMsg, ULONG_PTR aData);
 
-private:
 
   HRESULT SetDecoderOutputType(ConfigureOutputCallback aCallback, void* aData);
+private:
 
-  HRESULT CreateInputSample(const uint8_t* aData,
-                            uint32_t aDataSize,
-                            int64_t aTimestampUsecs,
-                            RefPtr<IMFSample>* aOutSample);
 
   HRESULT CreateOutputSample(RefPtr<IMFSample>* aOutSample);
 

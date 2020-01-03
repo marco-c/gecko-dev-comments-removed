@@ -214,15 +214,16 @@ WMFVideoMFTManager::InitInternal(bool aForceD3D9)
   RefPtr<IMFAttributes> attr(decoder->GetAttributes());
   UINT32 aware = 0;
   if (attr) {
-      attr->GetUINT32(MF_SA_D3D_AWARE, &aware);
-      attr->SetUINT32(CODECAPI_AVDecNumWorkerThreads,
-                      WMFDecoderModule::GetNumDecoderThreads());
-      hr = attr->SetUINT32(CODECAPI_AVLowLatencyMode, TRUE);
-      if (SUCCEEDED(hr)) {
-        LOG("Enabling Low Latency Mode");
-      } else {
-        LOG("Couldn't enable Low Latency Mode");
-      }
+    attr->GetUINT32(MF_SA_D3D_AWARE, &aware);
+    attr->SetUINT32(CODECAPI_AVDecNumWorkerThreads,
+      WMFDecoderModule::GetNumDecoderThreads());
+    hr = attr->SetUINT32(CODECAPI_AVLowLatencyMode, TRUE);
+    if (SUCCEEDED(hr)) {
+      LOG("Enabling Low Latency Mode");
+    }
+    else {
+      LOG("Couldn't enable Low Latency Mode");
+    }
   }
 
   if (useDxva) {
@@ -236,42 +237,19 @@ WMFVideoMFTManager::InitInternal(bool aForceD3D9)
       if (SUCCEEDED(hr)) {
         mUseHwAccel = true;
       } else {
+        mDXVA2Manager = nullptr;
         mDXVAFailureReason = nsPrintfCString("MFT_MESSAGE_SET_D3D_MANAGER failed with code %X", hr);
       }
-    } else {
+    }
+    else {
       mDXVAFailureReason.AssignLiteral("Decoder returned false for MF_SA_D3D_AWARE");
     }
   }
 
-  
-  RefPtr<IMFMediaType> inputType;
-  hr = wmf::MFCreateMediaType(byRef(inputType));
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
-  hr = inputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
-  hr = inputType->SetGUID(MF_MT_SUBTYPE, GetMediaSubtypeGUID());
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
-  hr = inputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_MixedInterlaceOrProgressive);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
-  RefPtr<IMFMediaType> outputType;
-  hr = wmf::MFCreateMediaType(byRef(outputType));
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
-  hr = outputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
-  GUID outputSubType = mUseHwAccel ? MFVideoFormat_NV12 : MFVideoFormat_YV12;
-  hr = outputType->SetGUID(MF_MT_SUBTYPE, outputSubType);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
-  hr = decoder->SetMediaTypes(inputType, outputType);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
-
   mDecoder = decoder;
+  hr = SetDecoderMediaTypes();
+  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
+
   LOG("Video Decoder initialized, Using DXVA: %s", (mUseHwAccel ? "Yes" : "No"));
 
   
@@ -285,16 +263,92 @@ WMFVideoMFTManager::InitInternal(bool aForceD3D9)
 }
 
 HRESULT
+WMFVideoMFTManager::SetDecoderMediaTypes()
+{
+  
+  RefPtr<IMFMediaType> inputType;
+  HRESULT hr = wmf::MFCreateMediaType(byRef(inputType));
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  hr = inputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  hr = inputType->SetGUID(MF_MT_SUBTYPE, GetMediaSubtypeGUID());
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  hr = inputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_MixedInterlaceOrProgressive);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  RefPtr<IMFMediaType> outputType;
+  hr = wmf::MFCreateMediaType(byRef(outputType));
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  hr = outputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  GUID outputSubType = mUseHwAccel ? MFVideoFormat_NV12 : MFVideoFormat_YV12;
+  hr = outputType->SetGUID(MF_MT_SUBTYPE, outputSubType);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  return mDecoder->SetMediaTypes(inputType, outputType);
+}
+
+HRESULT
 WMFVideoMFTManager::Input(MediaRawData* aSample)
 {
   if (!mDecoder) {
     
     return E_FAIL;
   }
+
+  HRESULT hr = mDecoder->CreateInputSample(aSample->Data(),
+                                           uint32_t(aSample->Size()),
+                                           aSample->mTime,
+                                           &mLastInput);
+  NS_ENSURE_TRUE(SUCCEEDED(hr) && mLastInput != nullptr, hr);
+
   
-  return mDecoder->Input(aSample->Data(),
-                         uint32_t(aSample->Size()),
-                         aSample->mTime);
+  return mDecoder->Input(mLastInput);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+WMFVideoMFTManager::MaybeToggleDXVA(IMFMediaType* aType)
+{
+  
+  if (!mDXVA2Manager || mStreamType != H264) {
+    return false;
+  }
+
+  if (mDXVA2Manager->SupportsConfig(aType)) {
+    if (!mUseHwAccel) {
+      
+      ULONG_PTR manager = ULONG_PTR(mDXVA2Manager->GetDXVADeviceManager());
+      HRESULT hr = mDecoder->SendMFTMessage(MFT_MESSAGE_SET_D3D_MANAGER, manager);
+      if (SUCCEEDED(hr)) {
+        mUseHwAccel = true;
+        return true;
+      }
+    }
+  } else if (mUseHwAccel) {
+    
+    HRESULT hr = mDecoder->SendMFTMessage(MFT_MESSAGE_SET_D3D_MANAGER, 0);
+    MOZ_ASSERT(SUCCEEDED(hr), "Attempting to fall back to software failed?");
+    mUseHwAccel = false;
+    return true;
+  }
+
+  return false;
 }
 
 HRESULT
@@ -303,6 +357,20 @@ WMFVideoMFTManager::ConfigureVideoFrameGeometry()
   RefPtr<IMFMediaType> mediaType;
   HRESULT hr = mDecoder->GetOutputMediaType(mediaType);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  
+  
+  
+  
+  if (MaybeToggleDXVA(mediaType)) {
+    hr = SetDecoderMediaTypes();
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+    HRESULT hr = mDecoder->GetOutputMediaType(mediaType);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+    mDecoder->Input(mLastInput);
+  }
 
   
   
