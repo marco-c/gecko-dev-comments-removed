@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_StorageEvent_h
 #define mozilla_dom_StorageEvent_h
@@ -13,7 +13,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/StorageEventBinding.h"
 
-// Helper for EventDispatcher.
+
 nsresult NS_NewDOMStorageEvent(nsIDOMEvent** aDOMEvent,
                                mozilla::dom::EventTarget* aOwner);
 
@@ -42,7 +42,7 @@ protected:
 public:
   virtual StorageEvent* AsStorageEvent();
 
-  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE;
+  virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE;
 
   static already_AddRefed<StorageEvent>
   Constructor(EventTarget* aOwner, const nsAString& aType,
@@ -86,7 +86,7 @@ public:
   }
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_StorageEvent_h
+#endif 

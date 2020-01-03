@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_WheelEvent_h_
 #define mozilla_dom_WheelEvent_h_
@@ -25,10 +25,10 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMWheelEvent Interface
+  
   NS_DECL_NSIDOMWHEELEVENT
   
-  // Forward to base class
+  
   NS_FORWARD_TO_MOUSEEVENT
 
   static
@@ -37,14 +37,14 @@ public:
                                            const WheelEventInit& aParam,
                                            ErrorResult& aRv);
 
-  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE
   {
-    return WheelEventBinding::Wrap(aCx, this);
+    return WheelEventBinding::Wrap(aCx, this, aGivenProto);
   }
 
-  // NOTE: DeltaX(), DeltaY() and DeltaZ() return CSS pixels when deltaMode is
-  //       DOM_DELTA_PIXEL. (The internal event's delta values are device pixels
-  //       if it's dispatched by widget)
+  
+  
+  
   double DeltaX();
   double DeltaY();
   double DeltaZ();
@@ -57,7 +57,7 @@ private:
   int32_t mAppUnitsPerDevPixel;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_WheelEvent_h_
+#endif 

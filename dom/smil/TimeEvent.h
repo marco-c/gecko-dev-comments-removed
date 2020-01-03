@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_TimeEvent_h_
 #define mozilla_dom_TimeEvent_h_
@@ -21,19 +21,19 @@ public:
             nsPresContext* aPresContext,
             InternalSMILTimeEvent* aEvent);
 
-  // nsISupports interface:
+  
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TimeEvent, Event)
 
-  // nsIDOMTimeEvent interface:
+  
   NS_DECL_NSIDOMTIMEEVENT
 
-  // Forward to base class
+  
   NS_FORWARD_TO_EVENT
 
-  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE
   {
-    return TimeEventBinding::Wrap(aCx, this);
+    return TimeEventBinding::Wrap(aCx, this, aGivenProto);
   }
 
   int32_t Detail() const
@@ -59,7 +59,7 @@ private:
   int32_t mDetail;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_TimeEvent_h_
+#endif 

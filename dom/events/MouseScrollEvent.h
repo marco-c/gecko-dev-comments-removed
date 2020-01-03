@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_MouseScrollEvent_h_
 #define mozilla_dom_MouseScrollEvent_h_
@@ -23,15 +23,15 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMMouseScrollEvent Interface
+  
   NS_DECL_NSIDOMMOUSESCROLLEVENT
 
-  // Forward to base class
+  
   NS_FORWARD_TO_MOUSEEVENT
 
-  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE
   {
-    return MouseScrollEventBinding::Wrap(aCx, this);
+    return MouseScrollEventBinding::Wrap(aCx, this, aGivenProto);
   }
 
   int32_t Axis();
@@ -55,7 +55,7 @@ protected:
   ~MouseScrollEvent() {}
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_MouseScrollEvent_h_
+#endif 

@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_dom_URLSearchParams_h
 #define mozilla_dom_URLSearchParams_h
@@ -37,14 +37,14 @@ public:
 
   URLSearchParams();
 
-  // WebIDL methods
+  
   nsISupports* GetParentObject() const
   {
     return nullptr;
   }
 
   virtual JSObject*
-  WrapObject(JSContext* aCx) MOZ_OVERRIDE;
+  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE;
 
   static already_AddRefed<URLSearchParams>
   Constructor(const GlobalObject& aGlobal, const nsAString& aInit,
@@ -102,7 +102,7 @@ private:
   nsCOMPtr<nsIUnicodeDecoder> mDecoder;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif /* mozilla_dom_URLSearchParams_h */
+#endif 

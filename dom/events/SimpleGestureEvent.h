@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifndef mozilla_dom_SimpleGestureEvent_h_
 #define mozilla_dom_SimpleGestureEvent_h_
@@ -27,12 +27,12 @@ public:
 
   NS_DECL_NSIDOMSIMPLEGESTUREEVENT
 
-  // Forward to base class
+  
   NS_FORWARD_TO_MOUSEEVENT
 
-  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE
   {
-    return SimpleGestureEventBinding::Wrap(aCx, this);
+    return SimpleGestureEventBinding::Wrap(aCx, this, aGivenProto);
   }
 
   uint32_t AllowedDirections();
@@ -73,7 +73,7 @@ protected:
   ~SimpleGestureEvent() {}
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_SimpleGestureEvent_h_
+#endif 

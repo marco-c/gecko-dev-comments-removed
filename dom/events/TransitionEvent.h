@@ -1,7 +1,7 @@
-/* vim: set shiftwidth=2 tabstop=8 autoindent cindent expandtab: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #ifndef mozilla_dom_TransitionEvent_h_
 #define mozilla_dom_TransitionEvent_h_
 
@@ -33,14 +33,14 @@ public:
               const TransitionEventInit& aParam,
               ErrorResult& aRv);
 
-  virtual JSObject* WrapObjectInternal(JSContext* aCx) MOZ_OVERRIDE
+  virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE
   {
-    return TransitionEventBinding::Wrap(aCx, this);
+    return TransitionEventBinding::Wrap(aCx, this, aGivenProto);
   }
 
-  // xpidl implementation
-  // GetPropertyName(nsAString& aPropertyName)
-  // GetPseudoElement(nsAString& aPreudoElement)
+  
+  
+  
 
   float ElapsedTime();
 
@@ -48,7 +48,7 @@ protected:
   ~TransitionEvent() {}
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
-#endif // mozilla_dom_TransitionEvent_h_
+#endif 

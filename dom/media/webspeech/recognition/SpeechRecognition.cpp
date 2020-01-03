@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "SpeechRecognition.h"
 
@@ -24,7 +24,7 @@
 
 #include <algorithm>
 
-// Undo the windows.h damage
+
 #if defined(XP_WIN) && defined(GetMessage)
 #undef GetMessage
 #endif
@@ -42,9 +42,9 @@ namespace dom {
 static const uint32_t kSAMPLE_RATE = 16000;
 static const uint32_t kSPEECH_DETECTION_TIMEOUT_MS = 10000;
 
-// number of frames corresponding to 300ms of audio to send to endpointer while
-// it's in environment estimation mode
-// kSAMPLE_RATE frames = 1s, kESTIMATION_FRAMES frames = 300ms
+
+
+
 static const uint32_t kESTIMATION_SAMPLES = 300 * kSAMPLE_RATE / 1000;
 
 #ifdef PR_LOGGING
@@ -141,9 +141,9 @@ SpeechRecognition::SetState(FSMState state)
 }
 
 JSObject*
-SpeechRecognition::WrapObject(JSContext* aCx)
+SpeechRecognition::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
-  return SpeechRecognitionBinding::Wrap(aCx, this);
+  return SpeechRecognitionBinding::Wrap(aCx, this, aGivenProto);
 }
 
 already_AddRefed<SpeechRecognition>
@@ -174,7 +174,7 @@ SpeechRecognition::ProcessEvent(SpeechEvent* aEvent)
          GetName(mCurrentState));
 
   if (mAborted && aEvent->mType != EVENT_ABORT) {
-    // ignore all events while aborting
+    
     return;
   }
 
@@ -188,8 +188,8 @@ SpeechRecognition::Transition(SpeechEvent* aEvent)
     case STATE_IDLE:
       switch (aEvent->mType) {
         case EVENT_START:
-          // TODO: may want to time out if we wait too long
-          // for user to approve
+          
+          
           WaitForAudioData(aEvent);
           break;
         case EVENT_STOP:
@@ -344,10 +344,10 @@ SpeechRecognition::Transition(SpeechEvent* aEvent)
   return;
 }
 
-/*
- * Handle a segment of recorded audio data.
- * Returns the number of samples that were processed.
- */
+
+
+
+
 uint32_t
 SpeechRecognition::ProcessAudioSegment(AudioSegment* aSegment, TrackRate aTrackRate)
 {
@@ -364,20 +364,20 @@ SpeechRecognition::ProcessAudioSegment(AudioSegment* aSegment, TrackRate aTrackR
   return samples;
 }
 
-/****************************************************************************
- * FSM Transition functions
- *
- * If a transition function may cause a DOM event to be fired,
- * it may also be re-entered, since the event handler may cause the
- * event loop to spin and new SpeechEvents to be processed.
- *
- * Rules:
- * 1) These methods should call SetState as soon as possible.
- * 2) If these methods dispatch DOM events, or call methods that dispatch
- * DOM events, that should be done as late as possible.
- * 3) If anything must happen after dispatching a DOM event, make sure
- * the state is still what the method expected it to be.
- ****************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void
 SpeechRecognition::Reset()
@@ -463,8 +463,8 @@ SpeechRecognition::WaitForSpeechEnd(SpeechEvent* aEvent)
     DispatchTrustedEvent(NS_LITERAL_STRING("speechend"));
 
     if (mCurrentState == STATE_RECOGNIZING) {
-      // FIXME: StopRecordingAndRecognize should only be called for single
-      // shot services for continuous we should just inform the service
+      
+      
       StopRecordingAndRecognize(aEvent);
     }
   }
@@ -478,10 +478,10 @@ SpeechRecognition::NotifyFinalResult(SpeechEvent* aEvent)
   SpeechRecognitionEventInit init;
   init.mBubbles = true;
   init.mCancelable = false;
-  // init.mResultIndex = 0;
+  
   init.mResults = aEvent->mRecognitionResultList;
   init.mInterpretation = NS_LITERAL_STRING("NOT_IMPLEMENTED");
-  // init.mEmma = nullptr;
+  
 
   nsRefPtr<SpeechRecognitionEvent> event =
     SpeechRecognitionEvent::Constructor(this, NS_LITERAL_STRING("result"), init);
@@ -528,14 +528,14 @@ SpeechRecognition::NotifyError(SpeechEvent* aEvent)
   return;
 }
 
-/**************************************
- * Event triggers and other functions *
- **************************************/
+
+
+
 NS_IMETHODIMP
 SpeechRecognition::StartRecording(DOMMediaStream* aDOMStream)
 {
-  // hold a reference so that the underlying stream
-  // doesn't get Destroy()'ed
+  
+  
   mDOMStream = aDOMStream;
 
   NS_ENSURE_STATE(mDOMStream->GetStream());
@@ -551,9 +551,9 @@ SpeechRecognition::StartRecording(DOMMediaStream* aDOMStream)
 NS_IMETHODIMP
 SpeechRecognition::StopRecording()
 {
-  // we only really need to remove the listener explicitly when testing,
-  // as our JS code still holds a reference to mDOMStream and only assigning
-  // it to nullptr isn't guaranteed to free the stream and the listener.
+  
+  
+  
   mDOMStream->GetStream()->RemoveListener(mSpeechListener);
   mSpeechListener = nullptr;
   mDOMStream = nullptr;
@@ -595,14 +595,14 @@ SpeechRecognition::ProcessTestEventRequest(nsISupports* aSubject, const nsAStrin
     Abort();
   } else if (aEventName.EqualsLiteral("EVENT_AUDIO_ERROR")) {
     DispatchError(SpeechRecognition::EVENT_AUDIO_ERROR,
-                  SpeechRecognitionErrorCode::Audio_capture, // TODO different codes?
+                  SpeechRecognitionErrorCode::Audio_capture, 
                   NS_LITERAL_STRING("AUDIO_ERROR test event"));
   } else {
     NS_ASSERTION(mTestConfig.mFakeRecognitionService,
                  "Got request for fake recognition service event, but "
                  TEST_PREFERENCE_FAKE_RECOGNITION_SERVICE " is unset");
 
-    // let the fake recognition service handle the request
+    
   }
 
   return;
@@ -765,10 +765,10 @@ SpeechRecognition::DispatchError(EventType aErrorType,
   NS_DispatchToMainThread(event);
 }
 
-/*
- * Buffer audio samples into mAudioSamplesBuffer until aBufferSize.
- * Updates mBufferedSamples and returns the number of samples that were buffered.
- */
+
+
+
+
 uint32_t
 SpeechRecognition::FillSamplesBuffer(const int16_t* aSamples,
                                      uint32_t aSampleCount)
@@ -787,13 +787,13 @@ SpeechRecognition::FillSamplesBuffer(const int16_t* aSamples,
   return samplesToCopy;
 }
 
-/*
- * Split a samples buffer starting of a given size into
- * chunks of equal size. The chunks are stored in the array
- * received as argument.
- * Returns the offset of the end of the last chunk that was
- * created.
- */
+
+
+
+
+
+
+
 uint32_t
 SpeechRecognition::SplitSamplesBuffer(const int16_t* aSamplesBuffer,
                                       uint32_t aSampleCount,
@@ -839,20 +839,20 @@ SpeechRecognition::FeedAudioData(already_AddRefed<SharedBuffer> aSamples,
   NS_ASSERTION(!NS_IsMainThread(),
                "FeedAudioData should not be called in the main thread");
 
-  // Endpointer expects to receive samples in chunks whose size is a
-  // multiple of its frame size.
-  // Since we can't assume we will receive the frames in appropriate-sized
-  // chunks, we must buffer and split them in chunks of mAudioSamplesPerChunk
-  // (a multiple of Endpointer's frame size) before feeding to Endpointer.
+  
+  
+  
+  
+  
 
-  // ensure aSamples is deleted
+  
   nsRefPtr<SharedBuffer> refSamples = aSamples;
 
   uint32_t samplesIndex = 0;
   const int16_t* samples = static_cast<int16_t*>(refSamples->Data());
   nsAutoTArray<nsRefPtr<SharedBuffer>, 5> chunksToSend;
 
-  // fill up our buffer and make a chunk out of it, if possible
+  
   if (mBufferedSamples > 0) {
     samplesIndex += FillSamplesBuffer(samples, aDuration);
 
@@ -862,14 +862,14 @@ SpeechRecognition::FeedAudioData(already_AddRefed<SharedBuffer> aSamples,
     }
   }
 
-  // create sample chunks of correct size
+  
   if (samplesIndex < aDuration) {
     samplesIndex += SplitSamplesBuffer(samples + samplesIndex,
                                        aDuration - samplesIndex,
                                        chunksToSend);
   }
 
-  // buffer remaining samples
+  
   if (samplesIndex < aDuration) {
     mBufferedSamples = 0;
     mAudioSamplesBuffer =
@@ -975,5 +975,5 @@ SpeechRecognition::GetUserMediaErrorCallback::OnError(nsISupports* aError)
   return NS_OK;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
