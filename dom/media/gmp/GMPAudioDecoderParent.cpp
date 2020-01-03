@@ -28,6 +28,8 @@ GMPAudioDecoderParent::GMPAudioDecoderParent(GMPContentParent* aPlugin)
   : mIsOpen(false)
   , mShuttingDown(false)
   , mActorDestroyed(false)
+  , mIsAwaitingResetComplete(false)
+  , mIsAwaitingDrainComplete(false)
   , mPlugin(aPlugin)
   , mCallback(nullptr)
 {
@@ -109,6 +111,8 @@ GMPAudioDecoderParent::Reset()
     return NS_ERROR_FAILURE;
   }
 
+  mIsAwaitingResetComplete = true;
+
   
   return NS_OK;
 }
@@ -127,6 +131,8 @@ GMPAudioDecoderParent::Drain()
     return NS_ERROR_FAILURE;
   }
 
+  mIsAwaitingDrainComplete = true;
+
   
   return NS_OK;
 }
@@ -137,6 +143,11 @@ GMPAudioDecoderParent::Close()
 {
   LOGD(("%s: %p", __FUNCTION__, this));
   MOZ_ASSERT(!mPlugin || mPlugin->GMPThread() == NS_GetCurrentThread());
+
+  
+  
+  
+  UnblockResetAndDrain();
 
   
   
@@ -164,6 +175,11 @@ GMPAudioDecoderParent::Shutdown()
   mShuttingDown = true;
 
   
+  
+  
+  UnblockResetAndDrain();
+
+  
   if (mCallback) {
     mCallback->Terminated();
     mCallback = nullptr;
@@ -183,6 +199,12 @@ GMPAudioDecoderParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   mIsOpen = false;
   mActorDestroyed = true;
+
+  
+  
+  
+  UnblockResetAndDrain();
+
   if (mCallback) {
     
     mCallback->Terminated();
@@ -230,6 +252,11 @@ GMPAudioDecoderParent::RecvDrainComplete()
     return false;
   }
 
+  if (!mIsAwaitingDrainComplete) {
+    return true;
+  }
+  mIsAwaitingDrainComplete = false;
+
   
   mCallback->DrainComplete();
 
@@ -243,6 +270,11 @@ GMPAudioDecoderParent::RecvResetComplete()
     return false;
   }
 
+  if (!mIsAwaitingResetComplete) {
+    return true;
+  }
+  mIsAwaitingResetComplete = false;
+
   
   mCallback->ResetComplete();
 
@@ -255,6 +287,11 @@ GMPAudioDecoderParent::RecvError(const GMPErr& aError)
   if (!mCallback) {
     return false;
   }
+
+  
+  
+  
+  UnblockResetAndDrain();
 
   
   mCallback->Error(aError);
@@ -279,6 +316,24 @@ GMPAudioDecoderParent::Recv__delete__()
   }
 
   return true;
+}
+
+void
+GMPAudioDecoderParent::UnblockResetAndDrain()
+{
+  if (!mCallback) {
+    MOZ_ASSERT(!mIsAwaitingResetComplete);
+    MOZ_ASSERT(!mIsAwaitingDrainComplete);
+    return;
+  }
+  if (mIsAwaitingResetComplete) {
+    mIsAwaitingResetComplete = false;
+    mCallback->ResetComplete();
+  }
+  if (mIsAwaitingDrainComplete) {
+    mIsAwaitingDrainComplete = false;
+    mCallback->DrainComplete();
+  }
 }
 
 } 

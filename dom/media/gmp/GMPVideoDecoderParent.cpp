@@ -43,6 +43,8 @@ GMPVideoDecoderParent::GMPVideoDecoderParent(GMPContentParent* aPlugin)
   , mIsOpen(false)
   , mShuttingDown(false)
   , mActorDestroyed(false)
+  , mIsAwaitingResetComplete(false)
+  , mIsAwaitingDrainComplete(false)
   , mPlugin(aPlugin)
   , mCallback(nullptr)
   , mVideoHost(this)
@@ -67,6 +69,12 @@ GMPVideoDecoderParent::Close()
 {
   LOGD(("%s: %p", __FUNCTION__, this));
   MOZ_ASSERT(!mPlugin || mPlugin->GMPThread() == NS_GetCurrentThread());
+
+  
+  
+  
+  UnblockResetAndDrain();
+
   
   
   mCallback = nullptr;
@@ -161,6 +169,8 @@ GMPVideoDecoderParent::Reset()
     return NS_ERROR_FAILURE;
   }
 
+  mIsAwaitingResetComplete = true;
+
   
   return NS_OK;
 }
@@ -178,6 +188,8 @@ GMPVideoDecoderParent::Drain()
   if (!SendDrain()) {
     return NS_ERROR_FAILURE;
   }
+
+  mIsAwaitingDrainComplete = true;
 
   
   return NS_OK;
@@ -208,6 +220,11 @@ GMPVideoDecoderParent::Shutdown()
   mShuttingDown = true;
 
   
+  
+  
+  UnblockResetAndDrain();
+
+  
   if (mCallback) {
     mCallback->Terminated();
     mCallback = nullptr;
@@ -228,6 +245,11 @@ GMPVideoDecoderParent::ActorDestroy(ActorDestroyReason aWhy)
   mIsOpen = false;
   mActorDestroyed = true;
   mVideoHost.DoneWithAPI();
+
+  
+  
+  
+  UnblockResetAndDrain();
 
   if (mCallback) {
     
@@ -307,6 +329,11 @@ GMPVideoDecoderParent::RecvDrainComplete()
     return false;
   }
 
+  if (!mIsAwaitingDrainComplete) {
+    return true;
+  }
+  mIsAwaitingDrainComplete = false;
+
   
   mCallback->DrainComplete();
 
@@ -320,6 +347,11 @@ GMPVideoDecoderParent::RecvResetComplete()
     return false;
   }
 
+  if (!mIsAwaitingResetComplete) {
+    return true;
+  }
+  mIsAwaitingResetComplete = false;
+
   
   mCallback->ResetComplete();
 
@@ -332,6 +364,11 @@ GMPVideoDecoderParent::RecvError(const GMPErr& aError)
   if (!mCallback) {
     return false;
   }
+
+  
+  
+  
+  UnblockResetAndDrain();
 
   
   mCallback->Error(aError);
@@ -385,6 +422,24 @@ GMPVideoDecoderParent::Recv__delete__()
   }
 
   return true;
+}
+
+void
+GMPVideoDecoderParent::UnblockResetAndDrain()
+{
+  if (!mCallback) {
+    MOZ_ASSERT(!mIsAwaitingResetComplete);
+    MOZ_ASSERT(!mIsAwaitingDrainComplete);
+    return;
+  }
+  if (mIsAwaitingResetComplete) {
+    mIsAwaitingResetComplete = false;
+    mCallback->ResetComplete();
+  }
+  if (mIsAwaitingDrainComplete) {
+    mIsAwaitingDrainComplete = false;
+    mCallback->DrainComplete();
+  }
 }
 
 } 
