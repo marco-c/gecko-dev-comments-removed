@@ -1110,7 +1110,8 @@ TextProperty.prototype = {
 
   stringifyProperty: function() {
     
-    let declaration = this.name + ": " + this.editor.committed.value + ";";
+    let declaration = this.name + ": " + this.editor.valueSpan.textContent +
+      ";";
 
     
     if (!this.enabled) {
