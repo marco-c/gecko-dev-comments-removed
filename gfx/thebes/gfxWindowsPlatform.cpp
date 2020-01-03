@@ -2183,7 +2183,7 @@ gfxWindowsPlatform::InitializeDevices()
   
   
   
-  DriverCrashGuard detectCrashes;
+  D3D11LayersCrashGuard detectCrashes;
   if (detectCrashes.Crashed()) {
     mAcceleration = FeatureStatus::Blocked;
     return;

@@ -20,8 +20,6 @@
 namespace mozilla {
 namespace gfx {
 
-bool DriverCrashGuard::sEnvironmentHasBeenUpdated = false;
-
 DriverCrashGuard::DriverCrashGuard()
  : mInitialized(false)
  , mIsChromeProcess(XRE_GetProcessType() == GeckoProcessType_Default)
@@ -42,12 +40,6 @@ DriverCrashGuard::InitializeIfNeeded()
 void
 DriverCrashGuard::Initialize()
 {
-  if (!mIsChromeProcess) {
-    
-    
-    return;
-  }
-
   if (!InitLockFilePath()) {
     gfxCriticalError(CriticalLog::DefaultOptions(false)) << "Failed to create the graphics startup lockfile.";
     return;
@@ -60,13 +52,11 @@ DriverCrashGuard::Initialize()
     return;
   }
 
-  if (UpdateEnvironment() || sEnvironmentHasBeenUpdated) {
-    
+  if (PrepareToGuard()) {
     
     
     
     AllowDriverInitAttempt();
-    sEnvironmentHasBeenUpdated = true;
     return;
   }
 
@@ -164,13 +154,28 @@ DriverCrashGuard::RecoverFromDriverInitCrash()
   return false;
 }
 
-bool
-DriverCrashGuard::UpdateEnvironment()
-{
-  mGfxInfo = services::GetGfxInfo();
 
+
+bool
+DriverCrashGuard::PrepareToGuard()
+{
+  static bool sBaseInfoChanged = false;
+  static bool sBaseInfoChecked = false;
+
+  if (!sBaseInfoChecked) {
+    sBaseInfoChecked = true;
+    sBaseInfoChanged = UpdateBaseEnvironment();
+  }
+
+  
+  return UpdateEnvironment() || sBaseInfoChanged;
+}
+
+bool
+DriverCrashGuard::UpdateBaseEnvironment()
+{
   bool changed = false;
-  if (mGfxInfo) {
+  if (mGfxInfo = services::GetGfxInfo()) {
     nsString value;
 
     
@@ -178,26 +183,10 @@ DriverCrashGuard::UpdateEnvironment()
     changed |= CheckAndUpdatePref("gfx.driver-init.driverVersion", value);
     mGfxInfo->GetAdapterDeviceID(value);
     changed |= CheckAndUpdatePref("gfx.driver-init.deviceID", value);
-
-    
-#if defined(XP_WIN)
-    bool d2dEnabled = gfxPrefs::Direct2DForceEnabled() ||
-                      (!gfxPrefs::Direct2DDisabled() && FeatureEnabled(nsIGfxInfo::FEATURE_DIRECT2D));
-    changed |= CheckAndUpdateBoolPref("gfx.driver-init.feature-d2d", d2dEnabled);
-
-    bool d3d11Enabled = !gfxPrefs::LayersPreferD3D9();
-    if (!FeatureEnabled(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS)) {
-      d3d11Enabled = false;
-    }
-    changed |= CheckAndUpdateBoolPref("gfx.driver-init.feature-d3d11", d3d11Enabled);
-#endif
   }
 
   
   changed |= CheckAndUpdatePref("gfx.driver-init.appVersion", NS_LITERAL_STRING(MOZ_APP_VERSION));
-
-  
-  changed |= (gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::None));
 
   return changed;
 }
@@ -246,6 +235,61 @@ DriverCrashGuard::FlushPreferences()
 
 void
 DriverCrashGuard::RecordTelemetry(TelemetryState aState)
+{
+  
+}
+
+D3D11LayersCrashGuard::D3D11LayersCrashGuard()
+{
+}
+
+void
+D3D11LayersCrashGuard::Initialize()
+{
+  if (!mIsChromeProcess) {
+    
+    
+    return;
+  }
+
+  DriverCrashGuard::Initialize();
+}
+
+bool
+D3D11LayersCrashGuard::UpdateEnvironment()
+{
+  static bool checked = false;
+  static bool changed = false;
+
+  if (checked) {
+    return changed;
+  }
+
+  checked = true;
+
+  if (mGfxInfo) {
+    
+#if defined(XP_WIN)
+    bool d2dEnabled = gfxPrefs::Direct2DForceEnabled() ||
+                      (!gfxPrefs::Direct2DDisabled() && FeatureEnabled(nsIGfxInfo::FEATURE_DIRECT2D));
+    changed |= CheckAndUpdateBoolPref("gfx.driver-init.feature-d2d", d2dEnabled);
+
+    bool d3d11Enabled = !gfxPrefs::LayersPreferD3D9();
+    if (!FeatureEnabled(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS)) {
+      d3d11Enabled = false;
+    }
+    changed |= CheckAndUpdateBoolPref("gfx.driver-init.feature-d3d11", d3d11Enabled);
+#endif
+  }
+
+  
+  changed |= (gfxPrefs::DriverInitStatus() == int32_t(DriverInitStatus::None));
+
+  return changed;
+}
+
+void
+D3D11LayersCrashGuard::RecordTelemetry(TelemetryState aState)
 {
   
   
