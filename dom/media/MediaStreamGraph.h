@@ -434,8 +434,6 @@ public:
   virtual CameraPreviewMediaStream* AsCameraPreviewStream() { return nullptr; }
 
   
-  void Init();
-  
   
   
 
