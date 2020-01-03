@@ -46,7 +46,7 @@ public class TabQueueDispatcher extends Locales.LocaleAwareActivity {
 
         
         
-        if (!AppConstants.MOZ_ANDROID_TAB_QUEUE || !AppConstants.NIGHTLY_BUILD) {
+        if (!AppConstants.MOZ_ANDROID_TAB_QUEUE) {
             loadNormally(safeIntent.getUnsafe());
             return;
         }
