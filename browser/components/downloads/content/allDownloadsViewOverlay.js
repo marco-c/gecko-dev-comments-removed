@@ -109,7 +109,7 @@ HistoryDownload.prototype = {
       this.canceled = false;
 
       
-      this.exists = false;
+      this.target.exists = false;
       this.target.size = undefined;
     }
   },
