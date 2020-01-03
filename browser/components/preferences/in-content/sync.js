@@ -362,7 +362,7 @@ let gSyncPane = {
         document.getElementById("fxaChangeDeviceName").disabled = !syncReady;
 
         
-        document.getElementById("fxaProfileImage").style.removeProperty("background-image");
+        document.getElementById("fxaProfileImage").style.removeProperty("list-style-image");
 
         
         
@@ -385,7 +385,7 @@ let gSyncPane = {
             let img = new Image();
             img.onload = () => {
               let bgImage = "url('" + data.avatar + "')";
-              document.getElementById("fxaProfileImage").style.backgroundImage = bgImage;
+              document.getElementById("fxaProfileImage").style.listStyleImage = bgImage;
             };
             img.src = data.avatar;
           }
