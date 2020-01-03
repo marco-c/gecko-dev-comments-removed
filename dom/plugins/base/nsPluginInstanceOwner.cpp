@@ -2859,6 +2859,15 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void)
       }
 #endif 
     }
+
+#ifndef XP_MACOSX
+    
+    
+    if (!mWidget && XRE_IsContentProcess()) {
+      return NS_ERROR_UNEXPECTED;
+    }
+#endif 
+
     if (!mWidget) {
       
       mWidget = do_CreateInstance(kWidgetCID, &rv);
