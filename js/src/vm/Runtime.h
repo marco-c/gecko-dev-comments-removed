@@ -1681,6 +1681,33 @@ struct JSRuntime : public JS::shadow::Runtime,
         
         
         uint64_t totalCPOWTime;
+
+        
+        
+        
+        
+        
+        
+        
+        struct TestCpuRescheduling
+        {
+            
+            
+            
+            
+            uint64_t stayed;
+            
+            
+            
+            
+            uint64_t moved;
+            TestCpuRescheduling()
+              : stayed(0),
+                moved(0)
+            { }
+        };
+        TestCpuRescheduling testCpuRescheduling;
+
     private:
         Stopwatch(const Stopwatch&) = delete;
         Stopwatch& operator=(const Stopwatch&) = delete;
