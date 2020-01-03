@@ -2076,8 +2076,6 @@ this.UITour.init();
 
 
 
-const DAILY_DISCRETE_TEXT_FIELD = Metrics.Storage.FIELD_DAILY_DISCRETE_TEXT;
-
 
 
 
@@ -2114,6 +2112,9 @@ const UITourHealthReport = {
 #endif
   }
 };
+
+#ifdef MOZ_SERVICES_HEALTHREPORT
+const DAILY_DISCRETE_TEXT_FIELD = Metrics.Storage.FIELD_DAILY_DISCRETE_TEXT;
 
 this.UITourMetricsProvider = function() {
   Metrics.Provider.call(this);
@@ -2184,3 +2185,4 @@ UITourTreatmentMeasurement1.prototype = Object.freeze({
     return result;
   }
 });
+#endif
