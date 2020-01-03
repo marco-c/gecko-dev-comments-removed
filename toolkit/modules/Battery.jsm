@@ -10,7 +10,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["GetBattery", "Battery"];
+this.EXPORTED_SYMBOLS = ["Battery"];
 
 const Ci = Components.interfaces;
 const Cc = Components.classes;
@@ -40,17 +40,6 @@ this.Debugging = {
   fake: false
 }
 
-this.GetBattery = function () {
-  return new Services.appShell.hiddenDOMWindow.Promise(function (resolve, reject) {
-    
-    if (Debugging.fake) {
-      resolve(gFakeBattery);
-      return;
-    }
-    Services.appShell.hiddenDOMWindow.navigator.getBattery().then(resolve, reject);
-  });
-};
-
 this.Battery = {};
 
 for (let k of ["charging", "chargingTime", "dischargingTime", "level"]) {
@@ -65,7 +54,7 @@ for (let k of ["charging", "chargingTime", "dischargingTime", "level"]) {
     },
     set: function(fakeSetting) {
       if (!Debugging.fake) {
-        throw new Error("Tried to set fake battery value when battery spoofing was disabled");
+          throw new Error("Tried to set fake battery value when battery spoofing was disabled");
       }
       gFakeBattery[prop] = fakeSetting;
     }
