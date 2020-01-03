@@ -19,6 +19,7 @@
 #include "nsServiceManagerUtils.h"
 
 #include "mozilla/dom/CSPDictionariesBinding.h"
+#include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/URLSearchParams.h"
 
@@ -34,6 +35,13 @@ OriginAttributes::CreateSuffix(nsACString& aStr) const
   UniquePtr<URLParams> params(new URLParams());
   nsAutoString value;
 
+  
+  
+  
+  
+  
+  
+
   if (mAppId != nsIScriptSecurityManager::NO_APP_ID) {
     value.AppendInt(mAppId);
     params->Set(NS_LITERAL_STRING("appId"), value);
@@ -44,6 +52,7 @@ OriginAttributes::CreateSuffix(nsACString& aStr) const
   }
 
   if (!mAddonId.IsEmpty()) {
+    MOZ_RELEASE_ASSERT(mAddonId.FindCharInSet(dom::quota::QuotaManager::kReplaceChars) == kNotFound);
     params->Set(NS_LITERAL_STRING("addonId"), mAddonId);
   }
 
@@ -60,6 +69,13 @@ OriginAttributes::CreateSuffix(nsACString& aStr) const
     aStr.AppendLiteral("^");
     aStr.Append(NS_ConvertUTF16toUTF8(value));
   }
+
+
+#ifdef DEBUG
+  nsAutoCString str;
+  str.Assign(aStr);
+  MOZ_ASSERT(str.FindCharInSet(dom::quota::QuotaManager::kReplaceChars) == kNotFound);
+#endif
 }
 
 namespace {
