@@ -11,9 +11,10 @@ This script follows these steps:
 (see srcdir option). Merge all properties into a single dict accounting for
 the priority of source directories.
 
-2. Read the list of sites from the 'browser.suggestedsites.list.INDEX'
-properties with value of these keys being an identifier for each suggested site
-e.g. browser.suggestedsites.list.0=mozilla, browser.suggestedsites.list.1=fxmarketplace.
+2. Read the list of sites from the list 'browser.suggestedsites.list.INDEX' and
+'browser.suggestedsites.restricted.list.INDEX' properties with value of these keys
+being an identifier for each suggested site e.g. browser.suggestedsites.list.0=mozilla,
+browser.suggestedsites.list.1=fxmarketplace.
 
 3. For each site identifier defined by the list keys, look for matching branches
 containing the respective properties i.e. url, title, etc. For example,
@@ -28,6 +29,7 @@ directory e.g. raw/suggestedsites.json, raw-pt-rBR/suggestedsites.json.
 from __future__ import absolute_import, print_function
 
 import argparse
+import copy
 import json
 import sys
 import os
@@ -78,9 +80,6 @@ def main(args):
 
     
     properties = merge_properties('region.properties', reversed(opts.srcdir))
-    names = properties.get_list('browser.suggestedsites.list')
-    if opts.verbose:
-        print('Reading {len} suggested sites: {names}'.format(len=len(names), names=names))
 
     
     image_url_template = 'android.resource://%s/drawable/suggestedsites_{name}' % opts.android_package_name
@@ -89,26 +88,45 @@ def main(args):
     
     
     sites = []
-    for name in names:
-        site = properties.get_dict('browser.suggestedsites.{name}'.format(name=name), required_keys=('title', 'url', 'bgcolor'))
-        site['imageurl'] = image_url_template.format(name=name)
-        sites.append(site)
 
-        
-        
-        
-        if not opts.resources:
-            continue
-        resources = os.path.abspath(opts.resources)
-        finder = FileFinder(resources)
-        matches = [p for p, _ in finder.find(drawables_template.format(name=name))]
-        if not matches:
-            raise Exception("Could not find drawable in '{resources}' for '{name}'"
-                .format(resources=resources, name=name))
-        else:
-            if opts.verbose:
-                print("Found {len} drawables in '{resources}' for '{name}': {matches}"
-                      .format(len=len(matches), resources=resources, name=name, matches=matches))
+    def add_names(names, defaults={}):
+        for name in names:
+            site = copy.deepcopy(defaults)
+            site.update(properties.get_dict('browser.suggestedsites.{name}'.format(name=name), required_keys=('title', 'url', 'bgcolor')))
+            site['imageurl'] = image_url_template.format(name=name)
+            sites.append(site)
+
+            
+            
+            
+            if not opts.resources:
+                continue
+            resources = os.path.abspath(opts.resources)
+            finder = FileFinder(resources)
+            matches = [p for p, _ in finder.find(drawables_template.format(name=name))]
+            if not matches:
+                raise Exception("Could not find drawable in '{resources}' for '{name}'"
+                    .format(resources=resources, name=name))
+            else:
+                if opts.verbose:
+                    print("Found {len} drawables in '{resources}' for '{name}': {matches}"
+                          .format(len=len(matches), resources=resources, name=name, matches=matches))
+
+    
+    
+    lists = [
+        ('browser.suggestedsites.list', {}),
+        ('browser.suggestedsites.restricted.list', {'restricted': True}),
+    ]
+    if opts.verbose:
+        print('Reading {len} suggested site lists: {lists}'.format(len=len(lists), lists=[list_name for list_name, _ in lists]))
+
+    for (list_name, list_item_defaults) in lists:
+        names = properties.get_list(list_name)
+        if opts.verbose:
+            print('Reading {len} suggested sites from {list}: {names}'.format(len=len(names), list=list_name, names=names))
+        add_names(names, list_item_defaults)
+
 
     
     output = os.path.abspath(opts.output)
