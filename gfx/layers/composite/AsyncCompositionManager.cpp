@@ -640,7 +640,6 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
     }
 
     const FrameMetrics& metrics = aLayer->GetFrameMetrics(i);
-    ScreenPoint offset(0, 0);
     
     
     
@@ -658,9 +657,6 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
 
     mIsFirstPaint = false;
     mLayersUpdated = false;
-
-    
-    mLayerManager->GetCompositor()->SetScreenRenderOffset(offset);
 
     
     
@@ -1017,7 +1013,6 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
   displayPort += scrollOffsetLayerPixels;
 
   LayerMargin fixedLayerMargins(0, 0, 0, 0);
-  ScreenPoint offset(0, 0);
 
   
   
@@ -1031,12 +1026,8 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
                                * LayerToParentLayerScale(1));
   ParentLayerPoint userScroll = metrics.GetScrollOffset() * userZoom;
   SyncViewportInfo(displayPort, geckoZoom, mLayersUpdated,
-                   userScroll, userZoom, fixedLayerMargins,
-                   offset);
+                   userScroll, userZoom, fixedLayerMargins);
   mLayersUpdated = false;
-
-  
-  mLayerManager->GetCompositor()->SetScreenRenderOffset(offset);
 
   
   
@@ -1189,8 +1180,7 @@ AsyncCompositionManager::SyncViewportInfo(const LayerIntRect& aDisplayPort,
                                           bool aLayersUpdated,
                                           ParentLayerPoint& aScrollOffset,
                                           CSSToParentLayerScale& aScale,
-                                          LayerMargin& aFixedLayerMargins,
-                                          ScreenPoint& aOffset)
+                                          LayerMargin& aFixedLayerMargins)
 {
 #ifdef MOZ_WIDGET_ANDROID
   AndroidBridge::Bridge()->SyncViewportInfo(aDisplayPort,
@@ -1198,8 +1188,7 @@ AsyncCompositionManager::SyncViewportInfo(const LayerIntRect& aDisplayPort,
                                             aLayersUpdated,
                                             aScrollOffset,
                                             aScale,
-                                            aFixedLayerMargins,
-                                            aOffset);
+                                            aFixedLayerMargins);
 #endif
 }
 
@@ -1211,14 +1200,13 @@ AsyncCompositionManager::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset,
                                           const CSSRect& aDisplayPort,
                                           const CSSToLayerScale& aDisplayResolution,
                                           bool aIsFirstPaint,
-                                          LayerMargin& aFixedLayerMargins,
-                                          ScreenPoint& aOffset)
+                                          LayerMargin& aFixedLayerMargins)
 {
 #ifdef MOZ_WIDGET_ANDROID
   AndroidBridge::Bridge()->SyncFrameMetrics(aScrollOffset, aZoom, aCssPageRect,
                                             aLayersUpdated, aDisplayPort,
                                             aDisplayResolution, aIsFirstPaint,
-                                            aFixedLayerMargins, aOffset);
+                                            aFixedLayerMargins);
 #endif
 }
 
