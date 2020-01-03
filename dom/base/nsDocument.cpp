@@ -11117,7 +11117,7 @@ public:
        true,  false,  nullptr);
     
     if (nsPIDOMWindow* win = mDocuments[0]->GetWindow()) {
-      win->SetFullscreenInternal(nsPIDOMWindow::eForFullscreenAPI, false);
+      win->SetFullscreenInternal(nsPIDOMWindow::eForForceExitFullscreen, false);
     }
     return NS_OK;
   }

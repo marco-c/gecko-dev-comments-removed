@@ -467,7 +467,11 @@ public:
     
     eForFullscreenMode,
     
-    eForFullscreenAPI
+    eForFullscreenAPI,
+    
+    
+    
+    eForForceExitFullscreen
   };
 
   

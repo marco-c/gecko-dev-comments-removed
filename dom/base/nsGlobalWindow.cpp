@@ -6302,11 +6302,18 @@ public:
     , mDuration(aDuration)
     , mStage(eBeforeToggle)
     , mFullscreen(aFullscreen)
-  {}
+  {
+    MOZ_COUNT_CTOR(FullscreenTransitionTask);
+  }
 
   NS_IMETHOD Run() override;
 
 private:
+  virtual ~FullscreenTransitionTask()
+  {
+    MOZ_COUNT_DTOR(FullscreenTransitionTask);
+  }
+
   enum Stage {
     
     
@@ -6485,6 +6492,10 @@ nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
              "may call FinishDOMFullscreenChange");
 
   NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
+
+  MOZ_ASSERT(aReason != eForForceExitFullscreen || !aFullScreen,
+             "FullscreenReason::eForForceExitFullscreen can "
+             "only be used with exiting fullscreen");
 
   
   
