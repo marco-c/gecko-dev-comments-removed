@@ -40,6 +40,10 @@
 #include "mozilla/Preferences.h"
 #endif
 
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+#include "WebrtcGmpVideoCodec.h"
+#endif
+
 #include <stdlib.h>
 
 namespace mozilla {
@@ -315,6 +319,14 @@ MediaPipelineFactory::CreateOrUpdateMediaPipeline(
     const JsepTrackPair& aTrackPair,
     const JsepTrack& aTrack)
 {
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+  
+  
+  
+  
+  WebrtcGmpPCHandleSetter setter(mPC->GetHandle());
+#endif
+
   MOZ_ASSERT(aTrackPair.mRtpTransport);
 
   bool receiving =
