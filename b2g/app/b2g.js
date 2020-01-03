@@ -102,7 +102,6 @@ pref("network.predictor.max-db-size", 2097152);
 pref("network.predictor.preserve", 50); 
 
 
-pref("browser.sessionhistory.max_total_viewers", 1);
 pref("browser.sessionhistory.max_entries", 50);
 pref("browser.sessionhistory.contentViewerTimeout", 360);
 
