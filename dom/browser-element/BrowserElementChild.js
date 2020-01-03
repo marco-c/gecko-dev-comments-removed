@@ -41,7 +41,15 @@ if (!('BrowserElementIsPreloaded' in this)) {
       } catch (e) {
       }
     }
+  }
 
+  if(Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
+    
+    if (isTopBrowserElement(docShell)) {
+      Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js");
+    }
+  } else {
+    
     Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js");
   }
 
