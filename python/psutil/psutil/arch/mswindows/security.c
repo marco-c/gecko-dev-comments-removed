@@ -13,14 +13,14 @@
 
 
 
-
 HANDLE
-psutil_token_from_handle(HANDLE hProcess) {
+token_from_handle(HANDLE hProcess) {
     HANDLE hToken = NULL;
 
-    if (! OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+    if (! OpenProcessToken(hProcess, TOKEN_QUERY, &hToken) ) {
         return PyErr_SetFromWindowsErr(0);
     }
+
     return hToken;
 }
 
@@ -38,8 +38,7 @@ psutil_token_from_handle(HANDLE hProcess) {
 
 
 
-int
-psutil_has_system_privilege(HANDLE hProcess) {
+int HasSystemPrivilege(HANDLE hProcess) {
     DWORD i;
     DWORD dwSize = 0;
     DWORD dwRetval = 0;
@@ -47,8 +46,8 @@ psutil_has_system_privilege(HANDLE hProcess) {
     DWORD dwNameSize = 256;
     
     BYTE *pBuffer = NULL;
-    TOKEN_PRIVILEGES *tp = NULL;
-    HANDLE hToken = psutil_token_from_handle(hProcess);
+    TOKEN_PRIVILEGES* tp = NULL;
+    HANDLE hToken = token_from_handle(hProcess);
 
     if (NULL == hToken) {
         return -1;
@@ -72,27 +71,25 @@ psutil_has_system_privilege(HANDLE hProcess) {
         return -1;
     }
 
-    if (! GetTokenInformation(hToken, TokenPrivileges, pBuffer,
-                              dwSize, &dwSize))
-    {
+    if (! GetTokenInformation(hToken, TokenPrivileges, pBuffer, dwSize, &dwSize) ) {
         PyErr_SetFromWindowsErr(0);
         free(pBuffer);
         return -1;
     }
 
     
-    tp = (TOKEN_PRIVILEGES *)pBuffer;
+    tp = (TOKEN_PRIVILEGES*)pBuffer;
 
     
-    for (i = 0; i < tp->PrivilegeCount; i++) {
+    for(i=0; i < tp->PrivilegeCount; i++) {
         
         strcpy(privName, "");
         dwNameSize = sizeof(privName) / sizeof(TCHAR);
         if (! LookupPrivilegeName(NULL,
-                                  &tp->Privileges[i].Luid,
-                                  (LPTSTR)privName,
-                                  &dwNameSize))
-        {
+                &tp->Privileges[i].Luid,
+                (LPTSTR)privName,
+                &dwNameSize)) {
+
             PyErr_SetFromWindowsErr(0);
             free(pBuffer);
             return -1;
@@ -103,22 +100,22 @@ psutil_has_system_privilege(HANDLE hProcess) {
             free(pBuffer);
             return 1;
         }
-    }
+
+    } 
 
     free(pBuffer);
     return 0;
 }
 
 
-BOOL
-psutil_set_privilege(HANDLE hToken, LPCTSTR Privilege, BOOL bEnablePrivilege)
+BOOL SetPrivilege(HANDLE hToken, LPCTSTR Privilege, BOOL bEnablePrivilege)
 {
     TOKEN_PRIVILEGES tp;
     LUID luid;
     TOKEN_PRIVILEGES tpPrevious;
-    DWORD cbPrevious = sizeof(TOKEN_PRIVILEGES);
+    DWORD cbPrevious=sizeof(TOKEN_PRIVILEGES);
 
-    if (!LookupPrivilegeValue( NULL, Privilege, &luid )) return FALSE;
+    if(!LookupPrivilegeValue( NULL, Privilege, &luid )) return FALSE;
 
     
     tp.PrivilegeCount = 1;
@@ -140,13 +137,13 @@ psutil_set_privilege(HANDLE hToken, LPCTSTR Privilege, BOOL bEnablePrivilege)
     tpPrevious.PrivilegeCount = 1;
     tpPrevious.Privileges[0].Luid = luid;
 
-    if (bEnablePrivilege) {
+    if(bEnablePrivilege) {
         tpPrevious.Privileges[0].Attributes |= (SE_PRIVILEGE_ENABLED);
     }
 
     else {
-        tpPrevious.Privileges[0].Attributes ^=
-            (SE_PRIVILEGE_ENABLED & tpPrevious.Privileges[0].Attributes);
+        tpPrevious.Privileges[0].Attributes ^= (SE_PRIVILEGE_ENABLED &
+                tpPrevious.Privileges[0].Attributes);
     }
 
     AdjustTokenPrivileges(
@@ -164,17 +161,16 @@ psutil_set_privilege(HANDLE hToken, LPCTSTR Privilege, BOOL bEnablePrivilege)
 }
 
 
-int
-psutil_set_se_debug()
+int SetSeDebug()
 {
     HANDLE hToken;
-    if (! OpenThreadToken(GetCurrentThread(),
-                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                          FALSE,
-                          &hToken)
-       ) {
-        if (GetLastError() == ERROR_NO_TOKEN) {
-            if (!ImpersonateSelf(SecurityImpersonation)) {
+    if(! OpenThreadToken(GetCurrentThread(),
+                         TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+                         FALSE,
+                         &hToken)
+                         ){
+        if (GetLastError() == ERROR_NO_TOKEN){
+            if (!ImpersonateSelf(SecurityImpersonation)){
                 CloseHandle(hToken);
                 return 0;
             }
@@ -182,7 +178,7 @@ psutil_set_se_debug()
                                  TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
                                  FALSE,
                                  &hToken)
-               ) {
+                                 ){
                 RevertToSelf();
                 CloseHandle(hToken);
                 return 0;
@@ -191,7 +187,7 @@ psutil_set_se_debug()
     }
 
     
-    if (! psutil_set_privilege(hToken, SE_DEBUG_NAME, TRUE)) {
+    if (! SetPrivilege(hToken, SE_DEBUG_NAME, TRUE)){
         RevertToSelf();
         CloseHandle(hToken);
         return 0;
@@ -203,33 +199,34 @@ psutil_set_se_debug()
 }
 
 
-int
-psutil_unset_se_debug()
+int UnsetSeDebug()
 {
     HANDLE hToken;
-    if (! OpenThreadToken(GetCurrentThread(),
-                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                          FALSE,
-                          &hToken)
-       ) {
-        if (GetLastError() == ERROR_NO_TOKEN) {
-            if (! ImpersonateSelf(SecurityImpersonation)) {
+    if(! OpenThreadToken(GetCurrentThread(),
+                        TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+                        FALSE,
+                        &hToken)
+                        ){
+        if(GetLastError() == ERROR_NO_TOKEN){
+            if(! ImpersonateSelf(SecurityImpersonation)){
+                
                 return 0;
             }
 
-            if (!OpenThreadToken(GetCurrentThread(),
-                                 TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                                 FALSE,
-                                 &hToken)
-               )
-            {
+            if(!OpenThreadToken(GetCurrentThread(),
+                                TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+                                FALSE,
+                                &hToken)
+                                ){
+                
                 return 0;
             }
         }
     }
 
     
-    if (! psutil_set_privilege(hToken, SE_DEBUG_NAME, FALSE)) {
+    if(!SetPrivilege(hToken, SE_DEBUG_NAME, FALSE)){
+        
         return 0;
     }
 
