@@ -117,42 +117,6 @@ CSSTransition::GetAnimationManager() const
   return context->TransitionManager();
 }
 
-void
-CSSTransition::QueueEvents()
-{
-  AnimationPlayState playState = PlayState();
-  bool newlyFinished = !mWasFinishedOnLastTick &&
-                       playState == AnimationPlayState::Finished;
-  mWasFinishedOnLastTick = playState == AnimationPlayState::Finished;
-
-  if (!newlyFinished || !mEffect || !mOwningElement.IsSet()) {
-    return;
-  }
-
-  dom::Element* owningElement;
-  nsCSSPseudoElements::Type owningPseudoType;
-  mOwningElement.GetElement(owningElement, owningPseudoType);
-  MOZ_ASSERT(owningElement, "Owning element should be set");
-
-  nsPresContext* presContext = mOwningElement.GetRenderedPresContext();
-  if (!presContext) {
-    return;
-  }
-  nsTransitionManager* manager = presContext->TransitionManager();
-
-  manager->QueueEvent(
-    TransitionEventInfo(owningElement, TransitionProperty(),
-                        mEffect->Timing().mIterationDuration,
-                        owningPseudoType));
-}
-
-void
-CSSTransition::Tick()
-{
-  Animation::Tick();
-  QueueEvents();
-}
-
 nsCSSProperty
 CSSTransition::TransitionProperty() const
 {
@@ -953,6 +917,14 @@ nsTransitionManager::FlushTransitions(FlushFlags aFlags)
           ComputedTiming computedTiming =
             anim->GetEffect()->GetComputedTiming();
           if (computedTiming.mPhase == ComputedTiming::AnimationPhase_After) {
+            nsCSSProperty prop =
+              anim->GetEffect()->AsTransition()->TransitionProperty();
+            TimeDuration duration =
+              anim->GetEffect()->Timing().mIterationDuration;
+            mEventDispatcher.QueueEvent(
+              TransitionEventInfo(collection->mElement, prop,
+                                  duration, collection->PseudoElementType()));
+
             
             
             
