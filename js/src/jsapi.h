@@ -5420,7 +5420,7 @@ BuildStackString(JSContext* cx, HandleObject stack, MutableHandleString stringp)
 
 namespace js {
 
-struct AutoStopwatch;
+class AutoStopwatch;
 
 
 
@@ -5554,18 +5554,27 @@ private:
 
 
 
+
+
+
 struct PerformanceGroupHolder {
     
     
     
-    js::PerformanceGroup* getGroup(JSContext*);
+    js::PerformanceGroup* getSharedGroup(JSContext*);
+
+    
+    js::PerformanceGroup* getOwnGroup(JSContext*);
 
     
     
     
     
-    inline bool isLinked() const {
-        return group_ != nullptr;
+    inline bool hasSharedGroup() const {
+        return sharedGroup_ != nullptr;
+    }
+    inline bool hasOwnGroup() const {
+        return ownGroup_ != nullptr;
     }
 
     
@@ -5575,10 +5584,12 @@ struct PerformanceGroupHolder {
 
     explicit PerformanceGroupHolder(JSRuntime* runtime)
       : runtime_(runtime)
-      , group_(nullptr)
+      , sharedGroup_(nullptr)
+      , ownGroup_(nullptr)
     {   }
     ~PerformanceGroupHolder();
-private:
+
+  private:
     
     
     
@@ -5589,7 +5600,8 @@ private:
     
     
     
-    js::PerformanceGroup* group_;
+    js::PerformanceGroup* sharedGroup_;
+    js::PerformanceGroup* ownGroup_;
 };
 
 
@@ -5615,6 +5627,10 @@ extern JS_PUBLIC_API(bool)
 SetStopwatchIsMonitoringJank(JSRuntime*, bool);
 extern JS_PUBLIC_API(bool)
 GetStopwatchIsMonitoringJank(JSRuntime*);
+extern JS_PUBLIC_API(bool)
+SetStopwatchIsMonitoringPerCompartment(JSRuntime*, bool);
+extern JS_PUBLIC_API(bool)
+GetStopwatchIsMonitoringPerCompartment(JSRuntime*);
 
 extern JS_PUBLIC_API(bool)
 IsStopwatchActive(JSRuntime*);
@@ -5626,7 +5642,9 @@ extern JS_PUBLIC_API(PerformanceData*)
 GetPerformanceData(JSRuntime*);
 
 typedef bool
-(PerformanceStatsWalker)(JSContext* cx, const PerformanceData& stats, uint64_t uid, void* closure);
+(PerformanceStatsWalker)(JSContext* cx,
+                         const PerformanceData& stats, uint64_t uid,
+                         const uint64_t* parentId, void* closure);
 
 
 
