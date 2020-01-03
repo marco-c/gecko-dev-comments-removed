@@ -1756,6 +1756,14 @@ Toolbox.prototype = {
         yield this.highlighterUtils.stopPicker();
         yield this._inspector.destroy();
         if (this._highlighter) {
+          
+          
+          
+          
+          
+          if (!this.highlighter.traits.autoHideOnDestroy) {
+            this.highlighterUtils.unhighlight();
+          }
           yield this._highlighter.destroy();
         }
         if (this._selection) {

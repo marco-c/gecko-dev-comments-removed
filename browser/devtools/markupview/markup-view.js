@@ -1466,11 +1466,6 @@ MarkupView.prototype = {
 
     this._destroyer = promise.resolve();
 
-    
-    
-    
-    
-    this._hideBoxModel();
     this._clearBriefBoxModelTimer();
 
     this._elt.removeEventListener("click", this._onMouseClick, false);
