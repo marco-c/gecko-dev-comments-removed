@@ -236,6 +236,10 @@ struct FieldInfo
   JS::Heap<JSObject*> mType;    
   size_t              mIndex;   
   size_t              mOffset;  
+
+  void trace(JSTracer* trc) {
+    JS_CallObjectTracer(trc, &mType, "fieldType");
+  }
 };
 
 struct UnbarrieredFieldInfo
@@ -534,13 +538,6 @@ namespace UInt64 {
 } 
 
 } 
-
-template <> struct DefaultTracer<ctypes::FieldInfo> {
-    static void trace(JSTracer* trc, ctypes::FieldInfo* t, const char* name) {
-        JS_CallObjectTracer(trc, &t->mType, "fieldType");
-    }
-};
-
 } 
 
 #endif 
