@@ -9,8 +9,10 @@ import org.mozilla.gecko.PrefsHelper;
 import org.mozilla.gecko.util.FloatUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
+import android.graphics.PointF;
 import android.util.Log;
 import android.view.animation.DecelerateInterpolator;
+import android.view.MotionEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +63,11 @@ public class DynamicToolbarAnimator {
 
     
     private DynamicToolbarAnimationTask mAnimationTask;
+
+    
+
+    private PointF mTouchStart;
+    private float mLastTouch;
 
     public DynamicToolbarAnimator(GeckoLayerClient aTarget) {
         mTarget = aTarget;
@@ -171,6 +178,134 @@ public class DynamicToolbarAnimator {
             Log.v(LOGTAG, "Resize viewport to dimensions " + viewWidth + "x" + viewHeightVisible);
             mTarget.setViewportSize(viewWidth, viewHeightVisible);
         }
+    }
+
+    
+
+
+
+
+
+    private static float shrinkAbs(float aValue, float aShrinkAmount) {
+        if (aShrinkAmount <= 0) {
+            return aValue;
+        }
+        float shrinkBy = Math.min(Math.abs(aValue), aShrinkAmount);
+        return (aValue < 0 ? aValue + shrinkBy : aValue - shrinkBy);
+    }
+
+    
+
+
+
+
+
+    private float decideTranslation(float aDelta,
+                                    ImmutableViewportMetrics aMetrics,
+                                    float aTouchTravelDistance) {
+
+        float exposeThreshold = aMetrics.getHeight() * SCROLL_TOOLBAR_THRESHOLD;
+        float translation = aDelta;
+
+        if (translation < 0) { 
+            translation = shrinkAbs(translation, aMetrics.getOverscroll().top);
+
+            
+            
+            
+            
+            
+            
+            boolean inBetween = (mToolbarTranslation != 0 && mToolbarTranslation != mMaxTranslation);
+            boolean reachedThreshold = -aTouchTravelDistance >= exposeThreshold;
+            boolean atBottomOfPage = aMetrics.viewportRectBottom() >= aMetrics.pageRectBottom;
+            if (inBetween || (reachedThreshold && !atBottomOfPage)) {
+                return translation;
+            }
+        } else {    
+            translation = shrinkAbs(translation, aMetrics.getOverscroll().bottom);
+
+            
+            
+            
+            boolean inBetween = (mToolbarTranslation != 0 && mToolbarTranslation != mMaxTranslation);
+            boolean reachedThreshold = aTouchTravelDistance >= exposeThreshold;
+            boolean atTopOfPage = aMetrics.viewportRectTop <= aMetrics.pageRectTop;
+            boolean isToolbarTranslated = (mToolbarTranslation != 0);
+            if (inBetween || reachedThreshold || (atTopOfPage && isToolbarTranslated)) {
+                return translation;
+            }
+        }
+
+        return 0;
+    }
+
+    boolean onInterceptTouchEvent(MotionEvent event) {
+        if (mPinned) {
+            return false;
+        }
+
+        
+        if (mAnimationTask != null) {
+            mTarget.getView().removeRenderTask(mAnimationTask);
+            mAnimationTask = null;
+        }
+
+        
+        
+        if (event.getActionMasked() != MotionEvent.ACTION_MOVE ||
+            event.getPointerCount() != 1)
+        {
+            if (mTouchStart != null) {
+                Log.v(LOGTAG, "Resetting touch sequence due to non-move");
+                mTouchStart = null;
+            }
+            return false;
+        }
+
+        if (mTouchStart != null) {
+            float prevDir = mLastTouch - mTouchStart.y;
+            float newDir = event.getRawY() - mLastTouch;
+            if (prevDir != 0 && newDir != 0 && ((prevDir < 0) != (newDir < 0))) {
+                Log.v(LOGTAG, "Direction changed: " + mTouchStart.y + " -> " + mLastTouch + " -> " + event.getRawY());
+                
+                
+                mTouchStart = null;
+            }
+        }
+
+        if (mTouchStart == null) {
+            mTouchStart = new PointF(event.getRawX(), event.getRawY());
+            mLastTouch = event.getRawY();
+            return false;
+        }
+
+        float deltaY = event.getRawY() - mLastTouch;
+        mLastTouch = event.getRawY();
+        float travelDistance = event.getRawY() - mTouchStart.y;
+
+        ImmutableViewportMetrics metrics = mTarget.getViewportMetrics();
+
+        if (metrics.getPageHeight() < metrics.getHeight()) {
+            return false;
+        }
+
+        float translation = decideTranslation(deltaY, metrics, travelDistance);
+        Log.v(LOGTAG, "Got vertical translation " + translation);
+
+        float oldToolbarTranslation = mToolbarTranslation;
+        float oldLayerViewTranslation = mLayerViewTranslation;
+        mToolbarTranslation = FloatUtils.clamp(mToolbarTranslation - translation, 0, mMaxTranslation);
+        mLayerViewTranslation = FloatUtils.clamp(mLayerViewTranslation - translation, 0, mMaxTranslation);
+
+        if (oldToolbarTranslation == mToolbarTranslation &&
+            oldLayerViewTranslation == mLayerViewTranslation) {
+            return false;
+        }
+
+        fireListeners();
+        mTarget.getView().requestRender();
+        return true;
     }
 
     class DynamicToolbarAnimationTask extends RenderTask {

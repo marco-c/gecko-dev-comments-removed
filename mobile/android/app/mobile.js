@@ -435,7 +435,8 @@ pref("ui.mouse.radius.visitedWeight", 120);
 pref("ui.mouse.radius.reposition", true);
 
 
-pref("browser.ui.show-margins-threshold", 10);
+
+pref("browser.ui.scroll-toolbar-threshold", 10);
 
 
 
