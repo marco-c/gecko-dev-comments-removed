@@ -75,13 +75,25 @@
 
   var dispatcher = new loop.Dispatcher();
 
-  var mockSDK = _.extend({
+  var MockSDK = function() {
+    dispatcher.register(this, [
+      "setupStreamElements"
+    ]);
+  };
+
+  MockSDK.prototype = {
+    setupStreamElements: function() {
+      
+    },
+
     sendTextChatMessage: function(message) {
       dispatcher.dispatch(new loop.shared.actions.ReceivedTextChatMessage({
         message: message.message
       }));
     }
-  }, Backbone.Events);
+  };
+
+  var mockSDK = new MockSDK();
 
   
 
@@ -116,7 +128,6 @@
     });
 
     store.forcedUpdate = function forcedUpdate(contentWindow) {
-
       
       
       try {
@@ -136,6 +147,17 @@
             camera: {height: 480, orientation: 0, width: 640}
           },
           remoteVideoEnabled: options.remoteVideoEnabled,
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
           matchMedia: contentWindow.matchMedia.bind(contentWindow),
           roomState: options.roomState,
           videoMuted: !!options.videoMuted
@@ -182,6 +204,10 @@
   });
 
   var updatingActiveRoomStore = makeActiveRoomStore({
+    roomState: ROOM_STATES.HAS_PARTICIPANTS
+  });
+
+  var updatingMobileActiveRoomStore = makeActiveRoomStore({
     roomState: ROOM_STATES.HAS_PARTICIPANTS
   });
 
@@ -272,14 +298,58 @@
     activeRoomStore: desktopRemoteFaceMuteActiveRoomStore
   });
 
-  var conversationStore = new loop.store.ConversationStore(dispatcher, {
-    client: {},
-    mozLoop: navigator.mozLoop,
-    sdkDriver: mockSDK
-  });
   var textChatStore = new loop.store.TextChatStore(dispatcher, {
     sdkDriver: mockSDK
   });
+
+  
+
+
+
+
+
+
+  function makeConversationStore() {
+    var roomDispatcher = new loop.Dispatcher();
+
+    var store = new loop.store.ConversationStore(dispatcher, {
+      client: {},
+      mozLoop: navigator.mozLoop,
+      sdkDriver: mockSDK
+    });
+
+    store.forcedUpdate = function forcedUpdate(contentWindow) {
+      
+      
+      try {
+        var newStoreState = {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          matchMedia: contentWindow.matchMedia.bind(contentWindow)
+        };
+
+        store.setStoreState(newStoreState);
+      } catch (ex) {
+        console.error("exception in forcedUpdate:", ex);
+      }
+    };
+
+    return store;
+  }
+
+  var conversationStores = [];
+  for (var index = 0; index < 5; index++) {
+    conversationStores[index] = makeConversationStore();
+  }
 
   
   textChatStore.updateRoomInfo(new sharedActions.UpdateRoomInfo({
@@ -341,7 +411,7 @@
 
   loop.store.StoreMixin.register({
     activeRoomStore: activeRoomStore,
-    conversationStore: conversationStore,
+    conversationStore: conversationStores[0],
     textChatStore: textChatStore
   });
 
@@ -359,14 +429,6 @@
   var mockClient = {
     requestCallUrlInfo: noop
   };
-
-  var mockConversationModel = new loop.shared.models.ConversationModel({
-    callerId: "Mrs Jones",
-    urlCreationDate: (new Date() / 1000).toString()
-  }, {
-    sdk: mockSDK
-  });
-  mockConversationModel.startSession = noop;
 
   var mockWebSocket = new loop.CallConnectionWebSocket({
     url: "fake",
@@ -763,7 +825,7 @@
               React.createElement("div", {className: "fx-embedded"}, 
                 React.createElement(CallFailedView, {dispatcher: dispatcher, 
                                 outgoing: false, 
-                                store: conversationStore})
+                                store: conversationStores[0]})
               )
             ), 
             React.createElement(Example, {dashed: true, 
@@ -772,7 +834,7 @@
               React.createElement("div", {className: "fx-embedded"}, 
                 React.createElement(CallFailedView, {dispatcher: dispatcher, 
                                 outgoing: true, 
-                                store: conversationStore})
+                                store: conversationStores[1]})
               )
             ), 
             React.createElement(Example, {dashed: true, 
@@ -781,18 +843,22 @@
               React.createElement("div", {className: "fx-embedded"}, 
                 React.createElement(CallFailedView, {dispatcher: dispatcher, emailLinkError: true, 
                                 outgoing: true, 
-                                store: conversationStore})
+                                store: conversationStores[0]})
               )
             )
           ), 
 
           React.createElement(Section, {name: "OngoingConversationView"}, 
-            React.createElement(FramedExample, {height: 254, 
-                           summary: "Desktop ongoing conversation window", 
-                           width: 298}, 
+            React.createElement(FramedExample, {
+              dashed: true, 
+              height: 394, 
+              onContentsRendered: conversationStores[0].forcedUpdate, 
+              summary: "Desktop ongoing conversation window", 
+              width: 298}, 
               React.createElement("div", {className: "fx-embedded"}, 
                 React.createElement(OngoingConversationView, {
                   audio: {enabled: true}, 
+                  conversationStore: conversationStores[0], 
                   dispatcher: dispatcher, 
                   localPosterUrl: "sample-img/video-screen-local.png", 
                   mediaConnected: true, 
@@ -802,28 +868,55 @@
               )
             ), 
 
-            React.createElement(FramedExample, {height: 600, 
-                           summary: "Desktop ongoing conversation window large", 
-                           width: 800}, 
-                React.createElement("div", {className: "fx-embedded"}, 
-                  React.createElement(OngoingConversationView, {
-                    audio: {enabled: true}, 
-                    dispatcher: dispatcher, 
-                    localPosterUrl: "sample-img/video-screen-local.png", 
-                    mediaConnected: true, 
-                    remotePosterUrl: "sample-img/video-screen-remote.png", 
-                    remoteVideoEnabled: true, 
-                    video: {enabled: true}})
-                )
+            React.createElement(FramedExample, {
+              dashed: true, 
+              height: 400, 
+              onContentsRendered: conversationStores[1].forcedUpdate, 
+              summary: "Desktop ongoing conversation window (medium)", 
+              width: 600}, 
+              React.createElement("div", {className: "fx-embedded"}, 
+                React.createElement(OngoingConversationView, {
+                  audio: {enabled: true}, 
+                  conversationStore: conversationStores[1], 
+                  dispatcher: dispatcher, 
+                  localPosterUrl: "sample-img/video-screen-local.png", 
+                  mediaConnected: true, 
+                  remotePosterUrl: "sample-img/video-screen-remote.png", 
+                  remoteVideoEnabled: true, 
+                  video: {enabled: true}})
+              )
             ), 
 
-            React.createElement(FramedExample, {height: 254, 
+            React.createElement(FramedExample, {
+              height: 600, 
+              onContentsRendered: conversationStores[2].forcedUpdate, 
+              summary: "Desktop ongoing conversation window (large)", 
+              width: 800}, 
+              React.createElement("div", {className: "fx-embedded"}, 
+                React.createElement(OngoingConversationView, {
+                  audio: {enabled: true}, 
+                  conversationStore: conversationStores[2], 
+                  dispatcher: dispatcher, 
+                  localPosterUrl: "sample-img/video-screen-local.png", 
+                  mediaConnected: true, 
+                  remotePosterUrl: "sample-img/video-screen-remote.png", 
+                  remoteVideoEnabled: true, 
+                  video: {enabled: true}})
+              )
+            ), 
+
+            React.createElement(FramedExample, {
+              dashed: true, 
+              height: 394, 
+              onContentsRendered: conversationStores[3].forcedUpdate, 
               summary: "Desktop ongoing conversation window - local face mute", 
               width: 298}, 
               React.createElement("div", {className: "fx-embedded"}, 
                 React.createElement(OngoingConversationView, {
                   audio: {enabled: true}, 
+                  conversationStore: conversationStores[3], 
                   dispatcher: dispatcher, 
+                  localPosterUrl: "sample-img/video-screen-local.png", 
                   mediaConnected: true, 
                   remotePosterUrl: "sample-img/video-screen-remote.png", 
                   remoteVideoEnabled: true, 
@@ -831,15 +924,19 @@
               )
             ), 
 
-            React.createElement(FramedExample, {height: 254, 
+            React.createElement(FramedExample, {
+              dashed: true, height: 394, 
+              onContentsRendered: conversationStores[4].forcedUpdate, 
               summary: "Desktop ongoing conversation window - remote face mute", 
               width: 298}, 
               React.createElement("div", {className: "fx-embedded"}, 
                 React.createElement(OngoingConversationView, {
                   audio: {enabled: true}, 
+                  conversationStore: conversationStores[4], 
                   dispatcher: dispatcher, 
                   localPosterUrl: "sample-img/video-screen-local.png", 
                   mediaConnected: true, 
+                  remotePosterUrl: "sample-img/video-screen-remote.png", 
                   remoteVideoEnabled: false, 
                   video: {enabled: true}})
               )
@@ -1171,12 +1268,12 @@
               cssClass: "standalone", 
               dashed: true, 
               height: 480, 
-              onContentsRendered: updatingActiveRoomStore.forcedUpdate, 
+              onContentsRendered: updatingMobileActiveRoomStore.forcedUpdate, 
               summary: "Standalone room conversation (has-participants, 600x480)", 
               width: 600}, 
                 React.createElement("div", {className: "standalone"}, 
                   React.createElement(StandaloneRoomView, {
-                    activeRoomStore: updatingActiveRoomStore, 
+                    activeRoomStore: updatingMobileActiveRoomStore, 
                     dispatcher: dispatcher, 
                     isFirefox: true, 
                     localPosterUrl: "sample-img/video-screen-local.png", 
@@ -1282,7 +1379,7 @@
 
       
       
-      var expectedWarningsCount = 23;
+      var expectedWarningsCount = 19;
       var warningsMismatch = caughtWarnings.length !== expectedWarningsCount;
       if (uncaughtError || warningsMismatch) {
         $("#results").append("<div class='failures'><em>" +
