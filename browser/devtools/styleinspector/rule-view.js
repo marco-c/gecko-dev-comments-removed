@@ -2212,6 +2212,7 @@ CssRuleView.prototype = {
     let isComputedHighlighted = false;
 
     
+    editor._populateComputed();
     for (let computed of editor.prop.computed) {
       if (computed.element) {
         
@@ -2841,6 +2842,7 @@ function TextPropertyEditor(aRuleEditor, aProperty) {
   this.prop = aProperty;
   this.prop.editor = this;
   this.browserWindow = this.doc.defaultView.top;
+  this._populatedComputed = false;
 
   this._onEnableClicked = this._onEnableClicked.bind(this);
   this._onExpandClicked = this._onExpandClicked.bind(this);
@@ -3185,21 +3187,34 @@ TextPropertyEditor.prototype = {
   
 
 
-  _updateComputed: function() {
-    
-    while (this.computed.hasChildNodes()) {
-      this.computed.removeChild(this.computed.lastChild);
-    }
 
-    let showExpander = false;
+  _updateComputed: function() {
+    this.computed.innerHTML = "";
+
+    let showExpander = this.prop.computed.some(c => c.name !== this.prop.name);
+    this.expander.style.visibility = showExpander ? "visible" : "hidden";
+
+    this._populatedComputed = false;
+    if (this.expander.hasAttribute("open")) {
+      this._populateComputed();
+    }
+  },
+
+  
+
+
+  _populateComputed: function() {
+    if (this._populatedComputed) {
+      return;
+    }
+    this._populatedComputed = true;
+
     for (let computed of this.prop.computed) {
       
       
       if (computed.name === this.prop.name) {
         continue;
       }
-
-      showExpander = true;
 
       let li = createChild(this.computed, "li", {
         class: "ruleview-computed"
@@ -3238,13 +3253,6 @@ TextPropertyEditor.prototype = {
       
       computed.element = li;
     }
-
-    
-    if (showExpander) {
-      this.expander.style.visibility = "visible";
-    } else {
-      this.expander.style.visibility = "hidden";
-    }
   },
 
   
@@ -3277,6 +3285,7 @@ TextPropertyEditor.prototype = {
     } else {
       this.expander.setAttribute("open", "true");
       this.computed.setAttribute("user-open", "");
+      this._populateComputed();
     }
 
     aEvent.stopPropagation();
@@ -3291,6 +3300,7 @@ TextPropertyEditor.prototype = {
     if (!this.computed.hasAttribute("user-open")) {
       this.expander.setAttribute("open", "true");
       this.computed.setAttribute("filter-open", "");
+      this._populateComputed();
     }
   },
 
