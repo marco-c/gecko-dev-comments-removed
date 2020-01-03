@@ -682,24 +682,9 @@ private:
   
   
   void OnAudioSinkComplete();
-public:
-  void DispatchOnAudioSinkComplete()
-  {
-    nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableMethod(this, &MediaDecoderStateMachine::OnAudioSinkComplete);
-    OwnerThread()->Dispatch(runnable.forget());
-  }
-private:
 
   
   void OnAudioSinkError();
-
-  void DispatchOnAudioSinkError()
-  {
-    nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableMethod(this, &MediaDecoderStateMachine::OnAudioSinkError);
-    OwnerThread()->Dispatch(runnable.forget());
-  }
 
   
   
