@@ -267,7 +267,8 @@ typedef bool
 
 
 typedef bool
-(* JSNewEnumerateOp)(JSContext* cx, JS::HandleObject obj, JS::AutoIdVector& properties);
+(* JSNewEnumerateOp)(JSContext* cx, JS::HandleObject obj, JS::AutoIdVector& properties,
+                     bool enumerableOnly);
 
 
 
