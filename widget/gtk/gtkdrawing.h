@@ -90,6 +90,8 @@ typedef enum {
   
   MOZ_GTK_BUTTON,
   
+  MOZ_GTK_TOOLBAR_BUTTON,
+  
   MOZ_GTK_CHECKBUTTON,
   
   MOZ_GTK_RADIOBUTTON,
