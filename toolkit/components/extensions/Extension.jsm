@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["Extension"];
+const EXPORTED_SYMBOLS = ["Extension"];
 
 
 
@@ -306,7 +306,7 @@ let GlobalManager = {
 
 
 
-this.Extension = function(addonData)
+function Extension(addonData)
 {
   let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
   let uuid = uuidGenerator.generateUUID().number;
