@@ -70,6 +70,8 @@ public:
 
   virtual bool RecvValue(const uint64_t& aID, nsString* aValue) override;
 
+  virtual bool RecvHelp(const uint64_t& aID, nsString* aHelp) override;
+
   
 
 

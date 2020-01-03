@@ -92,6 +92,11 @@ public:
   
 
 
+  void Help(nsString& aHelp) const;
+
+  
+
+
   void Description(nsString& aDesc) const;
 
   
