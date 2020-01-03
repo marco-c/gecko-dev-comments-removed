@@ -9,18 +9,18 @@
 
 #include "vm/RegExpObject.h"
 
-JSObject *
-js_InitRegExpClass(JSContext *cx, js::HandleObject obj);
-
-bool
-regexp_flags(JSContext *cx, unsigned argc, JS::Value *vp);
-
 
 
 
 
 
 namespace js {
+
+bool
+regexp_flags(JSContext *cx, unsigned argc, JS::Value *vp);
+
+JSObject *
+InitRegExpClass(JSContext *cx, HandleObject obj);
 
 
 

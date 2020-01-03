@@ -1042,10 +1042,10 @@ class LazyArrayBufferTable
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 };
 
-} 
-
 JSObject *
-js_InitTypedObjectModuleObject(JSContext *cx, JS::HandleObject obj);
+InitTypedObjectModuleObject(JSContext *cx, JS::HandleObject obj);
+
+} 
 
 template <>
 inline bool
