@@ -1260,10 +1260,6 @@ private:
 
   
   
-  bool mDecodingFrozenAtStateDecoding;
-
-  
-  
   bool mSentLoadedMetadataEvent;
   
   
