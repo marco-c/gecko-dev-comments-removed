@@ -119,7 +119,7 @@ function configureFxAccountIdentity() {
       let storageManager = new MockFxaStorageManager();
       
       storageManager.initialize(user);
-      return new AccountState(this, storageManager);
+      return new AccountState(storageManager);
     },
     getCertificate(data, keyPair, mustBeValidUntil) {
       this.cert = {

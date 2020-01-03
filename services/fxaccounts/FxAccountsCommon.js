@@ -216,9 +216,18 @@ exports.ERROR_MSG_METHOD_NOT_ALLOWED         = "METHOD_NOT_ALLOWED";
 
 
 
-exports.FXA_PWDMGR_PLAINTEXT_FIELDS = ["email", "verified", "authAt",
-                                       "sessionToken", "uid", "oauthTokens",
-                                       "profile"];
+
+exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set(
+  ["email", "verified", "authAt", "sessionToken", "uid", "oauthTokens", "profile"]);
+
+
+exports.FXA_PWDMGR_SECURE_FIELDS = new Set(
+  ["kA", "kB", "keyFetchToken", "unwrapBKey", "assertion"]);
+
+
+exports.FXA_PWDMGR_MEMORY_FIELDS = new Set(
+  ["cert", "keyPair"]);
+
 
 exports.FXA_PWDMGR_HOST = "chrome://FirefoxAccounts";
 

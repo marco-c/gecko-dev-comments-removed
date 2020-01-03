@@ -85,7 +85,7 @@ function MockFxAccounts() {
       
       let storage = new MockStorageManager();
       storage.initialize(credentials);
-      return new AccountState(this, storage);
+      return new AccountState(storage);
     },
   });
 }

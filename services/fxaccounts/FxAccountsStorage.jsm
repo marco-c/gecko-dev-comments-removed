@@ -62,10 +62,18 @@ this.FxAccountsStorageManager.prototype = {
         this._needToReadSecure = false;
         
         for (let [name, val] of Iterator(accountData)) {
-          if (FXA_PWDMGR_PLAINTEXT_FIELDS.indexOf(name) >= 0) {
+          if (FXA_PWDMGR_PLAINTEXT_FIELDS.has(name)) {
             this.cachedPlain[name] = val;
-          } else {
+          } else if (FXA_PWDMGR_SECURE_FIELDS.has(name)) {
             this.cachedSecure[name] = val;
+          } else {
+            
+            
+            
+            if (!FXA_PWDMGR_MEMORY_FIELDS.has(name)) {
+              log.warn("Unknown FxA field name in user data, treating as in-memory", name);
+            }
+            this.cachedMemory[name] = val;
           }
         }
         
@@ -121,7 +129,12 @@ this.FxAccountsStorageManager.prototype = {
   },
 
   
-  getAccountData: Task.async(function* () {
+  
+  
+  
+  
+  
+  getAccountData: Task.async(function* (fieldNames = null) {
     yield this._promiseInitialized;
     
     
@@ -130,20 +143,52 @@ this.FxAccountsStorageManager.prototype = {
       return null;
     }
     let result = {};
-    for (let [name, value] of Iterator(this.cachedPlain)) {
-      result[name] = value;
+    if (fieldNames === null) {
+      
+      for (let [name, value] of Iterator(this.cachedPlain)) {
+        result[name] = value;
+      }
+      
+      yield this._maybeReadAndUpdateSecure();
+      
+      
+      
+      for (let [name, value] of Iterator(this.cachedSecure)) {
+        result[name] = value;
+      }
+      
+      
+      return result;
     }
     
-    yield this._maybeReadAndUpdateSecure();
-    
-    
-    
-    for (let [name, value] of Iterator(this.cachedSecure)) {
-      result[name] = value;
+    if (!Array.isArray(fieldNames)) {
+      fieldNames = [fieldNames];
+    }
+    let checkedSecure = false;
+    for (let fieldName of fieldNames) {
+      if (FXA_PWDMGR_MEMORY_FIELDS.has(fieldName)) {
+        if (this.cachedMemory[fieldName] !== undefined) {
+          result[fieldName] = this.cachedMemory[fieldName];
+        }
+      } else if (FXA_PWDMGR_PLAINTEXT_FIELDS.has(fieldName)) {
+        if (this.cachedPlain[fieldName] !== undefined) {
+          result[fieldName] = this.cachedPlain[fieldName];
+        }
+      } else if (FXA_PWDMGR_SECURE_FIELDS.has(fieldName)) {
+        
+        if (!checkedSecure) {
+          yield this._maybeReadAndUpdateSecure();
+          checkedSecure = true;
+        }
+        if (this.cachedSecure[fieldName] !== undefined) {
+          result[fieldName] = this.cachedSecure[fieldName];
+        }
+      } else {
+        throw new Error("unexpected field '" + name + "'");
+      }
     }
     return result;
   }),
-
 
   
   
@@ -163,16 +208,27 @@ this.FxAccountsStorageManager.prototype = {
     log.debug("_updateAccountData with items", Object.keys(newFields));
     
     for (let [name, value] of Iterator(newFields)) {
-      if (FXA_PWDMGR_PLAINTEXT_FIELDS.indexOf(name) >= 0) {
+      if (FXA_PWDMGR_MEMORY_FIELDS.has(name)) {
+        if (value == null) {
+          delete this.cachedMemory[name];
+        } else {
+          this.cachedMemory[name] = value;
+        }
+      } else if (FXA_PWDMGR_PLAINTEXT_FIELDS.has(name)) {
         if (value == null) {
           delete this.cachedPlain[name];
         } else {
           this.cachedPlain[name] = value;
         }
-      } else {
+      } else if (FXA_PWDMGR_SECURE_FIELDS.has(name)) {
         
         
         this.cachedSecure[name] = value;
+      } else {
+        
+        
+        
+        throw new Error("unexpected field '" + name + "'");
       }
     }
     
@@ -185,6 +241,7 @@ this.FxAccountsStorageManager.prototype = {
   }),
 
   _clearCachedData() {
+    this.cachedMemory = {};
     this.cachedPlain = {};
     
     

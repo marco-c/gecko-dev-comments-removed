@@ -148,8 +148,13 @@ let wrapper = {
 
     if (accountData.customizeSync) {
       Services.prefs.setBoolPref(PREF_SYNC_SHOW_CUSTOMIZATION, true);
-      delete accountData.customizeSync;
     }
+    delete accountData.customizeSync;
+    
+    
+    
+    
+    delete accountData.sessionTokenContext;
 
     
     let newAccountEmail = accountData.email;
