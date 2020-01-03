@@ -86,6 +86,9 @@ public:
                                         const uint32_t& aScrollGeneration);
 
     
+    static nsIPresShell* GetRootContentDocumentPresShellForContent(nsIContent* aContent);
+
+    
 
 
 
