@@ -4526,10 +4526,11 @@ pref("dom.w3c_touch_events.enabled", 2);
 
 pref("dom.w3c_pointer_events.enabled", false);
 
-pref("layout.css.touch_action.enabled", false);
-
 
 pref("dom.imagecapture.enabled", false);
+
+
+pref("layout.css.touch_action.enabled", false);
 
 
 
