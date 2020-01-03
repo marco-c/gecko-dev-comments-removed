@@ -156,10 +156,14 @@ this.webrtcUI = {
 
       case "rtcpeer:Request": {
         
-        let request = aMessage.data;
+        let { callID, windowID } = aMessage.data;
+        
+        
+        
+
         let mm = aMessage.target.messageManager;
-        mm.sendAsyncMessage("rtcpeer:Allow", { callID: request.callID,
-                                               windowID: request.windowID });
+        mm.sendAsyncMessage("rtcpeer:Allow",
+                            { callID: callID, windowID: windowID });
         break;
       }
       case "rtcpeer:CancelRequest":
