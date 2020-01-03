@@ -279,9 +279,6 @@ protected:
   ParentLayerCoord ApplyResistance(ParentLayerCoord aOverscroll) const;
 
   
-  void ClearOverscrollAnimationState();
-
-  
   void StepOverscrollAnimation(double aStepDurationMilliseconds);
 
   
