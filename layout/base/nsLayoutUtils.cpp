@@ -7901,7 +7901,8 @@ nsLayoutUtils::CalculateRootCompositionSize(nsIFrame* aFrame,
   
   nsIFrame* rootRootScrollFrame = rootPresShell ? rootPresShell->GetRootScrollFrame() : nullptr;
   nsMargin scrollbarMargins = ScrollbarAreaToExcludeFromCompositionBoundsFor(rootRootScrollFrame);
-  CSSMargin margins = CSSMargin::FromAppUnits(scrollbarMargins);
+  LayoutDeviceMargin margins = LayoutDeviceMargin::FromAppUnits(scrollbarMargins,
+    rootPresContext->AppUnitsPerDevPixel());
   
   rootCompositionSize.width -= margins.LeftRight();
   rootCompositionSize.height -= margins.TopBottom();
@@ -8434,7 +8435,8 @@ nsLayoutUtils::ComputeFrameMetrics(nsIFrame* aForFrame,
 
   nsMargin sizes = ScrollbarAreaToExcludeFromCompositionBoundsFor(aScrollFrame);
   
-  ParentLayerMargin boundMargins = CSSMargin::FromAppUnits(sizes) * CSSToParentLayerScale(1.0f);
+  ParentLayerMargin boundMargins = LayoutDeviceMargin::FromAppUnits(sizes, auPerDevPixel)
+    * LayoutDeviceToParentLayerScale(1.0f);
   frameBounds.Deflate(boundMargins);
 
   metrics.SetCompositionBounds(frameBounds);
