@@ -1451,6 +1451,7 @@ MediaStreamGraphImpl::OneIteration(GraphTime aFrom, GraphTime aTo,
   UpdateGraph(stateEnd);
 
   Process(stateFrom, stateEnd);
+  mProcessedTime = stateEnd;
 
   
   

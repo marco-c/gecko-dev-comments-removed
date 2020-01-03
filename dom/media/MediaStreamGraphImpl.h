@@ -565,8 +565,13 @@ public:
 
 
 
-
   GraphTime mStateComputedTime = 0;
+  
+
+
+
+
+  GraphTime mProcessedTime = 0;
   
 
 
