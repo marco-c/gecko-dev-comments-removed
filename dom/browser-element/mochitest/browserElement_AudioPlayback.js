@@ -68,8 +68,4 @@ function runTest() {
   iframe.src = browserElementTestHelpers.emptyPage1;
 }
 
-addEventListener('testready', () => {
-  
-  SpecialPowers.pushPrefEnv({"set": [["media.useAudioChannelService", true]]},
-                            runTest);
-});
+addEventListener('testready', runTest);

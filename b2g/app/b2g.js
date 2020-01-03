@@ -928,8 +928,6 @@ pref("general.useragent.updates.retry", 86400);
 pref("general.useragent.device_id", "");
 
 
-pref("media.useAudioChannelService", true);
-
 pref("media.useAudioChannelAPI", true);
 
 pref("b2g.version", @MOZ_B2G_VERSION@);
