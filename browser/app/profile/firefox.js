@@ -454,11 +454,7 @@ pref("browser.tabs.drawInTitlebar", true);
 
 pref("browser.tabs.selectOwnerOnClose", true);
 
-#ifdef RELEASE_BUILD
-pref("browser.tabs.showAudioPlayingIcon", false);
-#else
 pref("browser.tabs.showAudioPlayingIcon", true);
-#endif
 
 pref("browser.ctrlTab.previews", false);
 
