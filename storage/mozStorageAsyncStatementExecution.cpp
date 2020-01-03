@@ -191,7 +191,7 @@ AsyncExecuteStatements::execute(StatementDataArray &aStatements,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  NS_ADDREF(*_stmt = event);
+  event.forget(_stmt);
   return NS_OK;
 }
 
