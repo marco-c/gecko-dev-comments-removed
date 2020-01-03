@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_indexeddb_idbobjectstore_h__
 #define mozilla_dom_indexeddb_idbobjectstore_h__
@@ -33,6 +33,7 @@ template <typename> class Sequence;
 namespace indexedDB {
 
 class FileManager;
+class IDBCursor;
 class IDBKeyRange;
 class IDBRequest;
 class IDBTransaction;
@@ -47,15 +48,18 @@ class IDBObjectStore MOZ_FINAL
   : public nsISupports
   , public nsWrapperCache
 {
+  
+  friend class IDBCursor; 
+
   static const JSClass sDummyPropJSClass;
 
   nsRefPtr<IDBTransaction> mTransaction;
   JS::Heap<JS::Value> mCachedKeyPath;
 
-  // This normally points to the ObjectStoreSpec owned by the parent IDBDatabase
-  // object. However, if this objectStore is part of a versionchange transaction
-  // and it gets deleted then the spec is copied into mDeletedSpec and mSpec is
-  // set to point at mDeletedSpec.
+  
+  
+  
+  
   const ObjectStoreSpec* mSpec;
   nsAutoPtr<ObjectStoreSpec> mDeletedSpec;
 
@@ -160,7 +164,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return AddOrPut(aCx, aValue, aKey, false, aRv);
+    return AddOrPut(aCx, aValue, aKey, false,  false, aRv);
   }
 
   already_AddRefed<IDBRequest>
@@ -171,11 +175,18 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return AddOrPut(aCx, aValue, aKey, true, aRv);
+    return AddOrPut(aCx, aValue, aKey, true,  false, aRv);
   }
 
   already_AddRefed<IDBRequest>
-  Delete(JSContext* aCx, JS::Handle<JS::Value> aKey, ErrorResult& aRv);
+  Delete(JSContext* aCx,
+         JS::Handle<JS::Value> aKey,
+         ErrorResult& aRv)
+  {
+    AssertIsOnOwningThread();
+
+    return DeleteInternal(aCx, aKey,  false, aRv);
+  }
 
   already_AddRefed<IDBRequest>
   Get(JSContext* aCx, JS::Handle<JS::Value> aKey, ErrorResult& aRv);
@@ -214,7 +225,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return GetAllInternal(/* aKeysOnly */ false, aCx, aKey, aLimit, aRv);
+    return GetAllInternal( false, aCx, aKey, aLimit, aRv);
   }
 
   already_AddRefed<IDBRequest>
@@ -225,7 +236,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return GetAllInternal(/* aKeysOnly */ true, aCx, aKey, aLimit, aRv);
+    return GetAllInternal( true, aCx, aKey, aLimit, aRv);
   }
 
   already_AddRefed<IDBRequest>
@@ -236,7 +247,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return OpenCursorInternal(/* aKeysOnly */ false, aCx, aRange, aDirection,
+    return OpenCursorInternal( false, aCx, aRange, aDirection,
                               aRv);
   }
 
@@ -248,7 +259,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return OpenCursorInternal(/* aKeysOnly */ true, aCx, aRange, aDirection,
+    return OpenCursorInternal( true, aCx, aRange, aDirection,
                               aRv);
   }
 
@@ -264,7 +275,7 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IDBObjectStore)
 
-  // nsWrapperCache
+  
   virtual JSObject*
   WrapObject(JSContext* aCx) MOZ_OVERRIDE;
 
@@ -286,7 +297,14 @@ private:
            JS::Handle<JS::Value> aValue,
            JS::Handle<JS::Value> aKey,
            bool aOverwrite,
+           bool aFromCursor,
            ErrorResult& aRv);
+
+  already_AddRefed<IDBRequest>
+  DeleteInternal(JSContext* aCx,
+                 JS::Handle<JS::Value> aKey,
+                 bool aFromCursor,
+                 ErrorResult& aRv);
 
   already_AddRefed<IDBRequest>
   GetAllInternal(bool aKeysOnly,
@@ -309,8 +327,8 @@ private:
                      ErrorResult& aRv);
 };
 
-} // namespace indexedDB
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
 
-#endif // mozilla_dom_indexeddb_idbobjectstore_h__
+#endif 
