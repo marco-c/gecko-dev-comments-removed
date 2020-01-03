@@ -108,11 +108,6 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
 
     
     
-    
-    mozilla::Maybe<JSFunction::AutoParseUsingFunctionBox> parseUsingFunctionBox;
-
-    
-    
     static const uint32_t NoYieldOffset = UINT32_MAX;
     uint32_t         lastYieldOffset;
 
@@ -275,8 +270,6 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
         inDeclDestructuring(false)
     {
         prs->pc = this;
-        if (sc->isFunctionBox())
-            parseUsingFunctionBox.emplace(prs->context, sc->asFunctionBox());
     }
 
     ~ParseContext();
@@ -470,10 +463,17 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
 
     ObjectBox* newObjectBox(JSObject* obj);
-    FunctionBox* newFunctionBox(Node fn, JSFunction* fun, ParseContext<ParseHandler>* outerpc,
-                                Directives directives, GeneratorKind generatorKind,
-                                JSObject* enclosingStaticScope);
+    FunctionBox* newFunctionBoxWithScope(Node fn, JSFunction* fun,
+                                         ParseContext<ParseHandler>* outerpc,
+                                         Directives directives, GeneratorKind generatorKind,
+                                         JSObject* staticScope);
 
+  private:
+    FunctionBox* newFunctionBox(Node fn, HandleFunction fun, ParseContext<ParseHandler>* outerpc,
+                                Directives directives, GeneratorKind generatorKind,
+                                HandleObject enclosingStaticScope);
+
+  public:
     
     FunctionBox* newFunctionBox(Node fn, HandleFunction fun, Directives directives,
                                 GeneratorKind generatorKind, HandleObject enclosingStaticScope)

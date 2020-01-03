@@ -191,6 +191,10 @@ class SharedContext
     bool inWith_;
     bool superScopeAlreadyNeedsHomeObject_;
 
+  protected:
+    void computeAllowSyntax(JSObject* staticScope);
+    void computeInWith(JSObject* staticScope);
+
   public:
     SharedContext(ExclusiveContext* cx, Directives directives,
                   bool extraWarnings)
@@ -211,8 +215,6 @@ class SharedContext
     
     
     virtual JSObject* staticScope() const = 0;
-    void computeAllowSyntax(JSObject* staticScope);
-    void computeInWith(JSObject* staticScope);
 
     virtual ObjectBox* toObjectBox() { return nullptr; }
     inline bool isFunctionBox() { return toObjectBox() && toObjectBox()->isFunctionBox(); }
@@ -275,7 +277,7 @@ class FunctionBox : public ObjectBox, public SharedContext
 {
   public:
     Bindings        bindings;               
-    JSObject*       enclosingStaticScope_;
+    JSObject*       staticScope_;
     uint32_t        bufStart;
     uint32_t        bufEnd;
     uint32_t        startLine;
@@ -283,6 +285,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     uint16_t        length;
 
     uint8_t         generatorKindBits_;     
+    bool            inWith_:1;              
     bool            inGenexpLambda:1;       
     bool            hasDestructuringArgs:1; 
     bool            useAsm:1;               
@@ -297,13 +300,13 @@ class FunctionBox : public ObjectBox, public SharedContext
 
     template <typename ParseHandler>
     FunctionBox(ExclusiveContext* cx, ObjectBox* traceListHead, JSFunction* fun,
-                JSObject* enclosingStaticScope, ParseContext<ParseHandler>* pc,
+                JSObject* staticScope, ParseContext<ParseHandler>* pc,
                 Directives directives, bool extraWarnings, GeneratorKind generatorKind);
 
     ObjectBox* toObjectBox() override { return this; }
     JSFunction* function() const { return &object->as<JSFunction>(); }
-    JSObject* staticScope() const override { return function(); }
-    JSObject* enclosingStaticScope() const { return enclosingStaticScope_; }
+    JSObject* staticScope() const override { return staticScope_; }
+    void switchStaticScopeToFunction();
 
     GeneratorKind generatorKind() const { return GeneratorKindFromBits(generatorKindBits_); }
     bool isGenerator() const { return generatorKind() != NotGenerator; }

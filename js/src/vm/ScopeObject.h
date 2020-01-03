@@ -26,6 +26,11 @@ class FunctionBox;
 class StaticWithObject;
 class StaticEvalObject;
 class StaticNonSyntacticScopeObjects;
+class StaticFunctionBoxScopeObject;
+
+
+
+
 
 
 
@@ -78,6 +83,7 @@ class StaticScopeIter
                obj->is<StaticWithObject>() ||
                obj->is<StaticEvalObject>() ||
                obj->is<StaticNonSyntacticScopeObjects>() ||
+               obj->is<StaticFunctionBoxScopeObject>() ||
                obj->is<JSFunction>();
     }
 
@@ -451,6 +457,33 @@ class NonSyntacticVariablesObject : public ScopeObject
     static const Class class_;
 
     static NonSyntacticVariablesObject* create(JSContext* cx, Handle<GlobalObject*> global);
+};
+
+
+
+class StaticFunctionBoxScopeObject : public ScopeObject
+{
+    static const unsigned FUNCTION_BOX_SLOT = 1;
+
+  public:
+    static const unsigned RESERVED_SLOTS = 2;
+    static const Class class_;
+
+    static StaticFunctionBoxScopeObject* create(ExclusiveContext* cx,
+                                                HandleObject enclosing);
+
+    void setFunctionBox(frontend::FunctionBox* funbox) {
+        setReservedSlot(FUNCTION_BOX_SLOT, PrivateValue(funbox));
+    }
+
+    frontend::FunctionBox* functionBox() {
+        return reinterpret_cast<frontend::FunctionBox*>(
+            getReservedSlot(FUNCTION_BOX_SLOT).toPrivate());
+    }
+
+    JSObject* enclosingScopeForStaticScopeIter() {
+        return getReservedSlot(SCOPE_CHAIN_SLOT).toObjectOrNull();
+    }
 };
 
 class NestedScopeObject : public ScopeObject
