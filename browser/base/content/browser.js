@@ -7180,6 +7180,14 @@ var gIdentityHandler = {
   },
 
   _isURILoadedFromFile(uri) {
+    try {
+      uri.host;
+      
+      return false;
+    } catch (e) {
+      
+    }
+
     
     
     let chanOptions = {uri, loadUsingSystemPrincipal: true};
