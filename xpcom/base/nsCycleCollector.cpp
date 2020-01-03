@@ -3423,8 +3423,7 @@ nsCycleCollector::Suspect(void* aPtr, nsCycleCollectionParticipant* aParti,
   CheckThreadSafety();
 
   
-  
-  
+  MOZ_ASSERT(!mScanInProgress, "Attempted to call Suspect() while a scan was in progress");
 
   if (MOZ_UNLIKELY(mScanInProgress)) {
     return;
