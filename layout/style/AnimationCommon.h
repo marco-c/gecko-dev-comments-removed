@@ -331,8 +331,6 @@ public:
   
   bool CanPerformOnCompositorThread(CanAnimateFlags aFlags) const;
 
-  void PostUpdateLayerAnimations();
-
   bool HasCurrentAnimationOfProperty(nsCSSProperty aProperty) const;
 
   bool IsForElement() const { 

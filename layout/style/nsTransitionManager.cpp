@@ -855,14 +855,10 @@ nsTransitionManager::UpdateCascadeResults(AnimationCollection* aTransitions,
 #endif
   }
 
+  
+  
   if (changed) {
-    mPresContext->RestyleManager()->IncrementAnimationGeneration();
-    aTransitions->UpdateAnimationGeneration(mPresContext);
-    aTransitions->PostUpdateLayerAnimations();
-
-    
-    aTransitions->mStyleRuleRefreshTime = TimeStamp();
-    aTransitions->mNeedsRefreshes = true;
+    aTransitions->RequestRestyle(AnimationCollection::RestyleType::Layer);
   }
 }
 

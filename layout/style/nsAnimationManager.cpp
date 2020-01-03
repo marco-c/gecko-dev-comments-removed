@@ -949,14 +949,9 @@ nsAnimationManager::UpdateCascadeResults(
     }
   }
 
+  
+  
   if (changed) {
-    nsPresContext* presContext = aElementAnimations->mManager->PresContext();
-    presContext->RestyleManager()->IncrementAnimationGeneration();
-    aElementAnimations->UpdateAnimationGeneration(presContext);
-    aElementAnimations->PostUpdateLayerAnimations();
-
-    
-    aElementAnimations->mNeedsRefreshes = true;
-    aElementAnimations->mStyleRuleRefreshTime = TimeStamp();
+    aElementAnimations->RequestRestyle(AnimationCollection::RestyleType::Layer);
   }
 }
