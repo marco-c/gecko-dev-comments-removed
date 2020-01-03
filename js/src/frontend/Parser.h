@@ -232,7 +232,7 @@ struct ParseContext : public GenericParseContext
 
 
     
-    Rooted<TraceableVector<JSFunction*>> innerFunctions;
+    AutoFunctionVector innerFunctions;
 
     
     
@@ -273,7 +273,7 @@ struct ParseContext : public GenericParseContext
         oldpc(prs->pc),
         lexdeps(prs->context),
         funcStmts(nullptr),
-        innerFunctions(prs->context, TraceableVector<JSFunction*>(prs->context)),
+        innerFunctions(prs->context),
         newDirectives(newDirectives),
         inDeclDestructuring(false)
     {
