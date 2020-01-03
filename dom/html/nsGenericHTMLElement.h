@@ -72,7 +72,7 @@ public:
   {
     GetHTMLAttr(nsGkAtoms::title, aTitle);
   }
-  NS_IMETHODIMP SetTitle(const nsAString& aTitle)
+  NS_IMETHODIMP SetTitle(const nsAString& aTitle) MOZ_OVERRIDE
   {
     SetHTMLAttr(nsGkAtoms::title, aTitle);
     return NS_OK;
@@ -81,7 +81,7 @@ public:
   {
     GetHTMLAttr(nsGkAtoms::lang, aLang);
   }
-  NS_IMETHODIMP SetLang(const nsAString& aLang)
+  NS_IMETHODIMP SetLang(const nsAString& aLang) MOZ_OVERRIDE
   {
     SetHTMLAttr(nsGkAtoms::lang, aLang);
     return NS_OK;
@@ -253,7 +253,7 @@ public:
   using nsINode::SetOn##name_;                                                \
   already_AddRefed<mozilla::dom::EventHandlerNonNull> GetOn##name_();         \
   void SetOn##name_(mozilla::dom::EventHandlerNonNull* handler);
-#include "mozilla/EventNameList.h" // IWYU pragma: keep
+#include "mozilla/EventNameList.h" 
 #undef ERROR_EVENT
 #undef FORWARDED_EVENT
 #undef EVENT
@@ -299,7 +299,7 @@ protected:
   virtual void GetItemValueText(nsAString& text);
   virtual void SetItemValueText(const nsAString& text);
 public:
-  virtual already_AddRefed<mozilla::dom::UndoManager> GetUndoManager();
+  virtual already_AddRefed<mozilla::dom::UndoManager> GetUndoManager() MOZ_OVERRIDE;
   virtual bool UndoScope() MOZ_OVERRIDE;
   virtual void SetUndoScope(bool aUndoScope, mozilla::ErrorResult& aError) MOZ_OVERRIDE;
   
@@ -1251,7 +1251,7 @@ public:
   virtual void SaveSubtreeState() MOZ_OVERRIDE;
 
   
-  virtual mozilla::dom::HTMLFieldSetElement* GetFieldSet();
+  virtual mozilla::dom::HTMLFieldSetElement* GetFieldSet() MOZ_OVERRIDE;
   virtual mozilla::dom::Element* GetFormElement() MOZ_OVERRIDE;
   mozilla::dom::HTMLFormElement* GetForm() const
   {
