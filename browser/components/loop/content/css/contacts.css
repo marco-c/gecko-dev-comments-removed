@@ -2,6 +2,11 @@
 
 
 
+html {
+  font-size: 10px;
+  font-family: sans-serif; 
+}
+
 .contact-import-spinner {
   display: none;
 }
@@ -281,8 +286,26 @@ html[dir="rtl"] .contact > .dropdown-menu {
   top: auto;
 }
 
-.contact-form > .button-group {
-  margin-top: 1rem;
+.contact-form {
+  padding: 14px; 
+}
+
+
+.contact-form header {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #4a4a4a;
+}
+
+.contact-form .form-content-container {
+  height: 24.1rem; 
+
+
+  padding-top: 4px; 
+
+
+
 }
 
 .contacts-gravatar-promo {
