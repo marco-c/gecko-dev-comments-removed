@@ -1148,9 +1148,6 @@ pref("dom.mozSettings.allowForceReadOnly", false);
 pref("dom.requestSync.enabled", true);
 
 
-pref("gfx.touch.resample", true);
-
-
 
 pref("dom.activities.developer_mode_only", "import-app");
 
