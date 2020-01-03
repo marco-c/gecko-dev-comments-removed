@@ -7291,7 +7291,14 @@ HTMLInputElement::SetFilePickerFiltersFromAccept(nsIFilePicker* filePicker)
       if (i == j) {
         continue;
       }
-      if (FindInReadable(filterToCheck.mFilter, filtersCopy[j].mFilter)) {
+      
+      
+      
+      
+      
+      
+      if (FindInReadable(filterToCheck.mFilter + NS_LITERAL_STRING(";"),
+                         filtersCopy[j].mFilter + NS_LITERAL_STRING(";"))) {
         
         
         
