@@ -26,9 +26,13 @@ class TextureClientHolder;
 
 
 
+
+
+
 class TextureClientRecycleAllocator
 {
-  ~TextureClientRecycleAllocator();
+protected:
+  virtual ~TextureClientRecycleAllocator();
 
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureClientRecycleAllocator)
@@ -39,11 +43,21 @@ public:
 
   
   already_AddRefed<TextureClient>
-  CreateOrRecycleForDrawing(gfx::SurfaceFormat aFormat,
-                            gfx::IntSize aSize,
-                            BackendSelector aSelector,
-                            TextureFlags aTextureFlags,
-                            TextureAllocationFlags flags = ALLOC_DEFAULT);
+  CreateOrRecycle(gfx::SurfaceFormat aFormat,
+                  gfx::IntSize aSize,
+                  BackendSelector aSelector,
+                  TextureFlags aTextureFlags,
+                  TextureAllocationFlags flags = ALLOC_DEFAULT);
+
+protected:
+  virtual already_AddRefed<TextureClient>
+  Allocate(gfx::SurfaceFormat aFormat,
+           gfx::IntSize aSize,
+           BackendSelector aSelector,
+           TextureFlags aTextureFlags,
+           TextureAllocationFlags aAllocFlags);
+
+  RefPtr<ISurfaceAllocator> mSurfaceAllocator;
 
 private:
   void RecycleCallbackImp(TextureClient* aClient);
@@ -51,9 +65,8 @@ private:
   static void RecycleCallback(TextureClient* aClient, void* aClosure);
 
   static const uint32_t kMaxPooledSized = 2;
-
   uint32_t mMaxPooledSize;
-  RefPtr<ISurfaceAllocator> mSurfaceAllocator;
+
   std::map<TextureClient*, RefPtr<TextureClientHolder> > mInUseClients;
 
   
