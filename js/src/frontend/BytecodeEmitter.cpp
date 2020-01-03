@@ -5768,12 +5768,12 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
             MOZ_ASSERT_IF(outersc->strict(), funbox->strictScript);
 
             
-            
             Rooted<JSScript*> parent(cx, script);
-            MOZ_ASSERT(parent->getVersion() == parser->options().version);
-            MOZ_ASSERT(parent->mutedErrors() == parser->options().mutedErrors());
-            const TransitiveCompileOptions& transitiveOptions = parser->options();
-            CompileOptions options(cx, transitiveOptions);
+            CompileOptions options(cx, parser->options());
+            options.setMutedErrors(parent->mutedErrors())
+                   .setNoScriptRval(false)
+                   .setForEval(false)
+                   .setVersion(parent->getVersion());
 
             Rooted<JSObject*> enclosingScope(cx, enclosingStaticScope());
             Rooted<JSObject*> sourceObject(cx, script->sourceObject());
