@@ -277,9 +277,11 @@ SpeechSynthesis::GetVoices(nsTArray< nsRefPtr<SpeechSynthesisVoice> >& aResult)
 
 
 void
-SpeechSynthesis::DropGlobalQueue()
+SpeechSynthesis::ForceEnd()
 {
-  nsSynthVoiceRegistry::GetInstance()->DropGlobalQueue();
+  if (mCurrentTask) {
+    mCurrentTask->ForceEnd();
+  }
 }
 
 } 

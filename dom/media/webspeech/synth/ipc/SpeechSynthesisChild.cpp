@@ -184,5 +184,12 @@ SpeechTaskChild::Cancel()
   mActor->SendCancel();
 }
 
+void
+SpeechTaskChild::ForceEnd()
+{
+  MOZ_ASSERT(mActor);
+  mActor->SendForceEnd();
+}
+
 } 
 } 
