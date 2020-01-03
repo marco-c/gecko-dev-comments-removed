@@ -160,6 +160,10 @@ FetchDriver::ContinueFetch(bool aCORSFlag)
       (mRequest->UnsafeRequest() && (!mRequest->HasSimpleMethod() || !mRequest->Headers()->HasOnlySimpleHeaders()))) {
     corsPreflight = true;
   }
+  
+  
+  
+  MOZ_ASSERT_IF(mRequest->Mode() == RequestMode::No_cors, !corsPreflight);
 
   mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_CORS);
   return HttpFetch(true , corsPreflight);
@@ -541,6 +545,8 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
   
   
   if (aCORSPreflightFlag) {
+    MOZ_ASSERT(mRequest->Mode() != RequestMode::No_cors,
+               "FetchDriver::ContinueFetch() should ensure that the request is not no-cors");
     nsCOMPtr<nsIChannel> preflightChannel;
     nsAutoTArray<nsCString, 5> unsafeHeaders;
     mRequest->Headers()->GetUnsafeHeaders(unsafeHeaders);
