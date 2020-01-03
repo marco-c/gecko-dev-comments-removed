@@ -4672,6 +4672,36 @@ IonBuilder::binaryArithTrySpecializedOnBaselineInspector(bool* emitted, JSOp op,
 }
 
 bool
+IonBuilder::binaryArithTrySharedStub(bool* emitted, JSOp op,
+                                     MDefinition* left, MDefinition* right)
+{
+    MOZ_ASSERT(*emitted == false);
+
+    
+
+    if (js_JitOptions.disableSharedStubs)
+        return true;
+
+    
+    if (JSOp(*pc) != op)
+        return true;
+
+    MBinarySharedStub *stub = MBinarySharedStub::New(alloc(), left, right);
+    current->add(stub);
+    current->push(stub);
+
+    
+    
+    maybeMarkEmpty(stub);
+
+    if (!resumeAfter(stub))
+        return false;
+
+    *emitted = true;
+    return true;
+}
+
+bool
 IonBuilder::jsop_binary_arith(JSOp op, MDefinition* left, MDefinition* right)
 {
     bool emitted = false;
@@ -4686,6 +4716,9 @@ IonBuilder::jsop_binary_arith(JSOp op, MDefinition* left, MDefinition* right)
         if (!binaryArithTrySpecializedOnBaselineInspector(&emitted, op, left, right) || emitted)
             return emitted;
     }
+
+    if (!binaryArithTrySharedStub(&emitted, op, left, right) || emitted)
+        return emitted;
 
     
     MDefinition::Opcode def_op = JSOpToMDefinition(op);
