@@ -31,6 +31,8 @@
 #include "nsTArrayForwardDeclare.h"
 #include "nsTObserverArray.h"
 
+class mozIApplicationClearPrivateDataParams;
+
 namespace mozilla {
 
 class OriginAttributes;
@@ -548,8 +550,9 @@ private:
   RemoveRegistrationInternal(ServiceWorkerRegistrationInfo* aRegistration);
 
   
+  
   void
-  RemoveAllRegistrations(nsIPrincipal* aPrincipal);
+  RemoveAllRegistrations(mozIApplicationClearPrivateDataParams* aParams);
 
   nsRefPtr<ServiceWorkerManagerChild> mActor;
 
