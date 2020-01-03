@@ -26,8 +26,6 @@ class CodeGeneratorARM64 : public CodeGeneratorShared
     CodeGeneratorARM64(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm);
 
   protected:
-    
-    NonAssertingLabel returnLabel_;
     NonAssertingLabel deoptLabel_;
 
     
@@ -73,8 +71,6 @@ class CodeGeneratorARM64 : public CodeGeneratorShared
     }
 
   protected:
-    bool generatePrologue();
-    bool generateEpilogue();
     bool generateOutOfLineCode();
 
     void emitRoundDouble(FloatRegister src, Register dest, Label* fail);

@@ -41,52 +41,6 @@ CodeGeneratorARM::CodeGeneratorARM(MIRGenerator* gen, LIRGraph* graph, MacroAsse
 {
 }
 
-bool
-CodeGeneratorARM::generatePrologue()
-{
-    MOZ_ASSERT(masm.framePushed() == 0);
-    MOZ_ASSERT(!gen->compilingAsmJS());
-#ifdef JS_USE_LINK_REGISTER
-    masm.pushReturnAddress();
-#endif
-
-    
-    if (isProfilerInstrumentationEnabled())
-        masm.profilerEnterFrame(StackPointer, CallTempReg0);
-
-    
-    masm.assertStackAlignment(JitStackAlignment, 0);
-
-    
-    masm.reserveStack(frameSize());
-    masm.checkStackAlignment();
-
-    emitTracelogIonStart();
-
-    return true;
-}
-
-bool
-CodeGeneratorARM::generateEpilogue()
-{
-    MOZ_ASSERT(!gen->compilingAsmJS());
-    masm.bind(&returnLabel_);
-
-    emitTracelogIonStop();
-
-    masm.freeStack(frameSize());
-    MOZ_ASSERT(masm.framePushed() == 0);
-
-    
-    
-    if (isProfilerInstrumentationEnabled())
-        masm.profilerExitFrame();
-
-    masm.pop(pc);
-    masm.flushBuffer();
-    return true;
-}
-
 void
 CodeGeneratorARM::emitBranch(Assembler::Condition cond, MBasicBlock* mirTrue, MBasicBlock* mirFalse)
 {

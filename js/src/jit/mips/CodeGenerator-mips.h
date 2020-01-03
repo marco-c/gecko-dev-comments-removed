@@ -25,8 +25,6 @@ class CodeGeneratorMIPS : public CodeGeneratorShared
     }
 
   protected:
-    
-    NonAssertingLabel returnLabel_;
     NonAssertingLabel deoptLabel_;
 
     inline Address ToAddress(const LAllocation& a);
@@ -75,8 +73,6 @@ class CodeGeneratorMIPS : public CodeGeneratorShared
     void bailout(LSnapshot* snapshot);
 
   protected:
-    bool generatePrologue();
-    bool generateEpilogue();
     bool generateOutOfLineCode();
 
     template <typename T>

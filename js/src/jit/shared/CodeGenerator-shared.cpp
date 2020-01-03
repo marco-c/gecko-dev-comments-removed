@@ -54,6 +54,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, Mac
 #endif
     lastOsiPointOffset_(0),
     safepoints_(graph->totalSlotCount(), (gen->info().nargs() + 1) * sizeof(Value)),
+    returnLabel_(),
     nativeToBytecodeMap_(nullptr),
     nativeToBytecodeMapSize_(0),
     nativeToBytecodeTableOffset_(0),
@@ -107,6 +108,54 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, Mac
     } else {
         frameClass_ = FrameSizeClass::FromDepth(frameDepth_);
     }
+}
+
+bool
+CodeGeneratorShared::generatePrologue()
+{
+    MOZ_ASSERT(masm.framePushed() == 0);
+    MOZ_ASSERT(!gen->compilingAsmJS());
+
+#ifdef JS_USE_LINK_REGISTER
+    masm.pushReturnAddress();
+#endif
+
+    
+    if (isProfilerInstrumentationEnabled())
+        masm.profilerEnterFrame(masm.getStackPointer(), CallTempReg0);
+
+    
+    masm.assertStackAlignment(JitStackAlignment, 0);
+
+    
+    masm.reserveStack(frameSize());
+    masm.checkStackAlignment();
+
+    emitTracelogIonStart();
+    return true;
+}
+
+bool
+CodeGeneratorShared::generateEpilogue()
+{
+    MOZ_ASSERT(!gen->compilingAsmJS());
+    masm.bind(&returnLabel_);
+
+    emitTracelogIonStop();
+
+    masm.freeStack(frameSize());
+    MOZ_ASSERT(masm.framePushed() == 0);
+
+    
+    
+    if (isProfilerInstrumentationEnabled())
+        masm.profilerExitFrame();
+
+    masm.ret();
+
+    
+    masm.flushBuffer();
+    return true;
 }
 
 bool
