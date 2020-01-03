@@ -4,7 +4,7 @@
 
 
 
-#include "jit/mips/MoveEmitter-mips.h"
+#include "jit/mips32/MoveEmitter-mips32.h"
 
 #include "jit/MacroAssembler-inl.h"
 

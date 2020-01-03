@@ -4,7 +4,7 @@
 
 
 
-#include "jit/mips/MacroAssembler-mips.h"
+#include "jit/mips32/MacroAssembler-mips32.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
@@ -13,7 +13,7 @@
 #include "jit/BaselineFrame.h"
 #include "jit/JitFrames.h"
 #include "jit/MacroAssembler.h"
-#include "jit/mips/Simulator-mips.h"
+#include "jit/mips32/Simulator-mips32.h"
 #include "jit/MoveEmitter.h"
 #include "jit/SharedICRegisters.h"
 

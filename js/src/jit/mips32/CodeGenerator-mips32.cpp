@@ -4,7 +4,7 @@
 
 
 
-#include "jit/mips/CodeGenerator-mips.h"
+#include "jit/mips32/CodeGenerator-mips32.h"
 
 #include "mozilla/MathAlgorithms.h"
 

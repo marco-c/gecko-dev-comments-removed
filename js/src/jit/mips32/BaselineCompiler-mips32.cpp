@@ -4,7 +4,7 @@
 
 
 
-#include "jit/mips/BaselineCompiler-mips.h"
+#include "jit/mips32/BaselineCompiler-mips32.h"
 
 using namespace js;
 using namespace js::jit;

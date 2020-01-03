@@ -4,7 +4,7 @@
 
 
 
-#include "jit/mips/Bailouts-mips.h"
+#include "jit/mips32/Bailouts-mips32.h"
 
 #include "jscntxt.h"
 #include "jscompartment.h"

@@ -4,7 +4,7 @@
 
 
 
-#include "jit/mips/Assembler-mips.h"
+#include "jit/mips32/Assembler-mips32.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
