@@ -32,16 +32,16 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIDOMHTMLCOLLECTION
 
-  virtual Element* GetElementAt(uint32_t aIndex) MOZ_OVERRIDE;
-  virtual nsINode* GetParentObject() MOZ_OVERRIDE
+  virtual Element* GetElementAt(uint32_t aIndex) override;
+  virtual nsINode* GetParentObject() override
   {
     return mParent;
   }
 
   virtual Element*
-  GetFirstNamedElement(const nsAString& aName, bool& aFound) MOZ_OVERRIDE;
+  GetFirstNamedElement(const nsAString& aName, bool& aFound) override;
   virtual void GetSupportedNames(unsigned aFlags,
-                                 nsTArray<nsString>& aNames) MOZ_OVERRIDE;
+                                 nsTArray<nsString>& aNames) override;
 
   NS_IMETHOD    ParentDestroyed();
 
@@ -49,11 +49,11 @@ public:
 
   
   using nsWrapperCache::GetWrapperPreserveColor;
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) MOZ_OVERRIDE;
+  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 protected:
   virtual ~TableRowsCollection();
 
-  virtual JSObject* GetWrapperPreserveColorInternal() MOZ_OVERRIDE
+  virtual JSObject* GetWrapperPreserveColorInternal() override
   {
     return nsWrapperCache::GetWrapperPreserveColor();
   }
@@ -107,37 +107,37 @@ NS_INTERFACE_MAP_END
 #define DO_FOR_EACH_ROWGROUP(_code)                                  \
   do {                                                               \
     if (mParent) {                                                   \
-                                                          \
+      /* THead */                                                    \
       HTMLTableSectionElement* rowGroup = mParent->GetTHead();       \
       nsIHTMLCollection* rows;                                       \
       if (rowGroup) {                                                \
         rows = rowGroup->Rows();                                     \
-        do {                                      \
+        do { /* gives scoping */                                     \
           _code                                                      \
         } while (0);                                                 \
       }                                                              \
-                                                        \
+      /* TBodies */                                                  \
       for (nsIContent* _node = mParent->nsINode::GetFirstChild();    \
            _node; _node = _node->GetNextSibling()) {                 \
         if (_node->IsHTMLElement(nsGkAtoms::tbody)) {                \
           rowGroup = static_cast<HTMLTableSectionElement*>(_node);   \
           rows = rowGroup->Rows();                                   \
-          do {                                    \
+          do { /* gives scoping */                                   \
             _code                                                    \
           } while (0);                                               \
         }                                                            \
       }                                                              \
-                                                    \
+      /* orphan rows */                                              \
       rows = mOrphanRows;                                            \
-      do {                                        \
+      do { /* gives scoping */                                       \
         _code                                                        \
       } while (0);                                                   \
-                                                          \
+      /* TFoot */                                                    \
       rowGroup = mParent->GetTFoot();                                \
       rows = nullptr;                                                \
       if (rowGroup) {                                                \
         rows = rowGroup->Rows();                                     \
-        do {                                      \
+        do { /* gives scoping */                                     \
           _code                                                      \
         } while (0);                                                 \
       }                                                              \
