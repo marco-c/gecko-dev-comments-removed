@@ -85,18 +85,6 @@ public:
   
   virtual void PushVideoPacket(NesteggPacketHolder* aItem);
 
-  
-  MediaResourceIndex* GetResource()
-  {
-    return &mResource;
-  }
-
-  int64_t GetEndDataOffset()
-  {
-    return mLastWebMBlockOffset < 0 || mIsExpectingMoreData
-      ? mResource.GetLength() : mLastWebMBlockOffset;
-  }
-
 private:
   friend class WebMTrackDemuxer;
 
@@ -164,12 +152,6 @@ private:
   bool mHasVideo;
   bool mHasAudio;
   bool mNeedReIndex;
-
-  
-  
-  
-  int64_t mLastWebMBlockOffset;
-  bool mIsExpectingMoreData;
 };
 
 class WebMTrackDemuxer : public MediaTrackDemuxer

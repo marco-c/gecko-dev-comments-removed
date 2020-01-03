@@ -113,7 +113,6 @@ private:
   void InitializationSegmentReceived();
   void ShutdownDemuxers();
   void CreateDemuxerforMIMEType();
-  void ResetDemuxingState();
   void NeedMoreData();
   void RejectAppend(nsresult aRejectValue, const char* aName);
   
@@ -152,8 +151,6 @@ private:
   
   Atomic<bool> mBufferFull;
   bool mFirstInitializationSegmentReceived;
-  
-  bool mNewSegmentStarted;
   bool mActiveTrack;
   Maybe<media::TimeUnit> mGroupStartTimestamp;
   media::TimeUnit mGroupEndTimestamp;
@@ -174,11 +171,9 @@ private:
   nsRefPtr<MediaDataDemuxer> mInputDemuxer;
   
   uint32_t mProcessedInput;
-  Maybe<media::TimeUnit> mLastParsedEndTime;
 
   void OnDemuxerInitDone(nsresult);
   void OnDemuxerInitFailed(DemuxerFailureReason aFailure);
-  void OnDemuxerResetDone(nsresult);
   MozPromiseRequestHolder<MediaDataDemuxer::InitPromise> mDemuxerInitRequest;
   bool mEncrypted;
 
