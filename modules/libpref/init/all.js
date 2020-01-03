@@ -472,7 +472,7 @@ pref("media.mediasource.mp4.enabled", true);
 pref("media.mediasource.webm.enabled", false);
 
 
-pref("media.mediasource.format-reader", false);
+pref("media.mediasource.format-reader", true);
 
 
 pref("media.mediasource.format-reader.webm", false);
