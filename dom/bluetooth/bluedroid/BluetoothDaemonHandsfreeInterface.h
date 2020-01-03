@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothdaemonhandsfreeinterface_h
-#define mozilla_dom_bluetooth_bluetoothdaemonhandsfreeinterface_h
+#ifndef mozilla_dom_bluetooth_bluedroid_BluetoothDaemonHandsfreeInterface_h
+#define mozilla_dom_bluetooth_bluedroid_BluetoothDaemonHandsfreeInterface_h
 
 #include "BluetoothDaemonHelpers.h"
 #include "BluetoothInterface.h"
@@ -471,4 +471,4 @@ private:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

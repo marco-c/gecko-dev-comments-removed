@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothutils_h
-#define mozilla_dom_bluetooth_bluetoothutils_h
+#ifndef mozilla_dom_bluetooth_BluetoothUtils_h
+#define mozilla_dom_bluetooth_BluetoothUtils_h
 
 #include "BluetoothCommon.h"
 #include "js/TypeDecls.h"
@@ -159,4 +159,4 @@ DispatchStatusChangedEvent(const nsAString& aType,
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

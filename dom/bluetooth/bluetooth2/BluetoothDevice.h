@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothdevice_h__
-#define mozilla_dom_bluetooth_bluetoothdevice_h__
+#ifndef mozilla_dom_bluetooth_BluetoothDevice_h
+#define mozilla_dom_bluetooth_BluetoothDevice_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -244,4 +244,4 @@ public:
   }
 };
 
-#endif
+#endif 

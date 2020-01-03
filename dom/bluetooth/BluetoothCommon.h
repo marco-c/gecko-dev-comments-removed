@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothcommon_h
-#define mozilla_dom_bluetooth_bluetoothcommon_h
+#ifndef mozilla_dom_bluetooth_BluetoothCommon_h
+#define mozilla_dom_bluetooth_BluetoothCommon_h
 
 #include "mozilla/Compiler.h"
 #include "mozilla/Observer.h"

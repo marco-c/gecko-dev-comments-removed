@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothrillistener_h__
-#define mozilla_dom_bluetooth_bluetoothrillistener_h__
+#ifndef mozilla_dom_bluetooth_BluetoothRilListener_h
+#define mozilla_dom_bluetooth_BluetoothRilListener_h
 
 #include "BluetoothCommon.h"
 
@@ -137,4 +137,4 @@ private:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

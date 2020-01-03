@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_ipc_bluetoothmessageutils_h__
-#define mozilla_dom_bluetooth_ipc_bluetoothmessageutils_h__
+#ifndef mozilla_dom_bluetooth_ipc_BluetoothMessageUtils_h
+#define mozilla_dom_bluetooth_ipc_BluetoothMessageUtils_h
 
 #include "mozilla/dom/bluetooth/BluetoothCommon.h"
 #include "ipc/IPCMessageUtils.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetootha2dpmanager_h__
-#define mozilla_dom_bluetooth_bluetootha2dpmanager_h__
+#ifndef mozilla_dom_bluetooth_bluedroid_BluetoothA2dpManager_h
+#define mozilla_dom_bluetooth_bluedroid_BluetoothA2dpManager_h
 
 #include "BluetoothCommon.h"
 #include "BluetoothInterface.h"

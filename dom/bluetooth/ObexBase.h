@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_obexbase_h__
-#define mozilla_dom_bluetooth_obexbase_h__
+#ifndef mozilla_dom_bluetooth_ObexBase_h
+#define mozilla_dom_bluetooth_ObexBase_h
 
 #include "BluetoothCommon.h"
 #include "nsAutoPtr.h"
@@ -337,4 +337,4 @@ bool ParseHeaders(const uint8_t* aHeaderStart,
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothgattservice_h__
-#define mozilla_dom_bluetooth_bluetoothgattservice_h__
+#ifndef mozilla_dom_bluetooth_BluetoothGattService_h
+#define mozilla_dom_bluetooth_BluetoothGattService_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BluetoothGattServiceBinding.h"
@@ -179,4 +179,4 @@ public:
   }
 };
 
-#endif
+#endif 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothhidmanager_h__
-#define mozilla_dom_bluetooth_bluetoothhidmanager_h__
+#ifndef mozilla_dom_bluetooth_BluetoothHidManager_h
+#define mozilla_dom_bluetooth_BluetoothHidManager_h
 
 #include "BluetoothCommon.h"
 #include "BluetoothProfileController.h"

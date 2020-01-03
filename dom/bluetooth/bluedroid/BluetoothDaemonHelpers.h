@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluedroid_bluetoothdaemonhelpers_h__
-#define mozilla_dom_bluetooth_bluedroid_bluetoothdaemonhelpers_h__
+#ifndef mozilla_dom_bluetooth_bluedroid_BluetoothDaemonHelpers_h
+#define mozilla_dom_bluetooth_bluedroid_BluetoothDaemonHelpers_h
 
 #include "BluetoothCommon.h"
 #include "mozilla/ArrayUtils.h"
@@ -1191,4 +1191,4 @@ public:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

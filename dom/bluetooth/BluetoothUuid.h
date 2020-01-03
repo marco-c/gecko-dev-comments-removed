@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothuuid_h__
-#define mozilla_dom_bluetooth_bluetoothuuid_h__
+#ifndef mozilla_dom_bluetooth_BluetoothUuid_h
+#define mozilla_dom_bluetooth_BluetoothUuid_h
 
 #include "BluetoothCommon.h"
 
@@ -82,4 +82,4 @@ enum BluetoothReservedChannels {
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

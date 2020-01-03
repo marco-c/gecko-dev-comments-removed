@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothpairinghandle_h
-#define mozilla_dom_bluetooth_bluetoothpairinghandle_h
+#ifndef mozilla_dom_bluetooth_BluetoothPairingHandle_h
+#define mozilla_dom_bluetooth_BluetoothPairingHandle_h
 
 #include "BluetoothCommon.h"
 #include "nsWrapperCache.h"

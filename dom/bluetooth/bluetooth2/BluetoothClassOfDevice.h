@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothclassofdevice_h
-#define mozilla_dom_bluetooth_bluetoothclassofdevice_h
+#ifndef mozilla_dom_bluetooth_BluetoothClassOfDevice_h
+#define mozilla_dom_bluetooth_BluetoothClassOfDevice_h
 
 #include "BluetoothCommon.h"
 #include "mozilla/Attributes.h"

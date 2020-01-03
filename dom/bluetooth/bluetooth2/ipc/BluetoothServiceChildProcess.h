@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_ipc_bluetoothservicechildprocess_h__
-#define mozilla_dom_bluetooth_ipc_bluetoothservicechildprocess_h__
+#ifndef mozilla_dom_bluetooth_ipc_BluetoothServiceChildProcess_h
+#define mozilla_dom_bluetooth_ipc_BluetoothServiceChildProcess_h
 
 #include "BluetoothService.h"
 

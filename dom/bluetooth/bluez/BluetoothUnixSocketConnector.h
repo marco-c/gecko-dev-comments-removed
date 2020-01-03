@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_BluetoothUnixSocketConnector_h
-#define mozilla_dom_bluetooth_BluetoothUnixSocketConnector_h
+#ifndef mozilla_dom_bluetooth_bluez_BluetoothUnixSocketConnector_h
+#define mozilla_dom_bluetooth_bluez_BluetoothUnixSocketConnector_h
 
 #include <bluetooth/bluetooth.h>
 #include "BluetoothCommon.h"
@@ -61,4 +61,4 @@ private:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

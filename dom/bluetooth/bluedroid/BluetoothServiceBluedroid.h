@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothservicebluedroid_h__
-#define mozilla_dom_bluetooth_bluetoothservicebluedroid_h__
+#ifndef mozilla_dom_bluetooth_bluedroid_BluetoothServiceBluedroid_h
+#define mozilla_dom_bluetooth_bluedroid_BluetoothServiceBluedroid_h
 
 #include "BluetoothCommon.h"
 #include "BluetoothInterface.h"
@@ -395,4 +395,4 @@ protected:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

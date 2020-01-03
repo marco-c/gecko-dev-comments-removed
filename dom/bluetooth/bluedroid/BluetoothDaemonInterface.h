@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluedroid_bluetoothdaemoninterface_h__
-#define mozilla_dom_bluetooth_bluedroid_bluetoothdaemoninterface_h__
+#ifndef mozilla_dom_bluetooth_bluedroid_BluetoothDaemonInterface_h
+#define mozilla_dom_bluetooth_bluedroid_BluetoothDaemonInterface_h
 
 #include "BluetoothInterface.h"
 #include "mozilla/ipc/DaemonSocketConsumer.h"
@@ -167,4 +167,4 @@ private:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

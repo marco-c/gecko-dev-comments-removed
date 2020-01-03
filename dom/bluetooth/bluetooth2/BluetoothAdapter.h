@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothadapter_h__
-#define mozilla_dom_bluetooth_bluetoothadapter_h__
+#ifndef mozilla_dom_bluetooth_BluetoothAdapter_h
+#define mozilla_dom_bluetooth_BluetoothAdapter_h
 
 #include "BluetoothCommon.h"
 #include "mozilla/Attributes.h"
@@ -417,4 +417,4 @@ private:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

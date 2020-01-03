@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothprofilemanagerbase_h__
-#define mozilla_dom_bluetooth_bluetoothprofilemanagerbase_h__
+#ifndef mozilla_dom_bluetooth_BluetoothProfileManagerBase_h
+#define mozilla_dom_bluetooth_BluetoothProfileManagerBase_h
 
 
 

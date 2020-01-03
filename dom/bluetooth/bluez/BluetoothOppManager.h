@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothoppmanager_h__
-#define mozilla_dom_bluetooth_bluetoothoppmanager_h__
+#ifndef mozilla_dom_bluetooth_bluez_BluetoothOppManager_h
+#define mozilla_dom_bluetooth_bluez_BluetoothOppManager_h
 
 #include "BluetoothCommon.h"
 #include "BluetoothProfileManagerBase.h"
@@ -228,4 +228,4 @@ private:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

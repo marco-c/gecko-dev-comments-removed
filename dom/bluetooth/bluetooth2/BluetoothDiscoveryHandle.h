@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothdiscoveryhandle_h
-#define mozilla_dom_bluetooth_bluetoothdiscoveryhandle_h
+#ifndef mozilla_dom_bluetooth_BluetoothDiscoveryHandle_h
+#define mozilla_dom_bluetooth_BluetoothDiscoveryHandle_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothinterface_h__
-#define mozilla_dom_bluetooth_bluetoothinterface_h__
+#ifndef mozilla_dom_bluetooth_BluetoothInterface_h
+#define mozilla_dom_bluetooth_BluetoothInterface_h
 
 #include "BluetoothCommon.h"
 #include "mozilla/dom/bluetooth/BluetoothTypes.h"
@@ -1254,4 +1254,4 @@ protected:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

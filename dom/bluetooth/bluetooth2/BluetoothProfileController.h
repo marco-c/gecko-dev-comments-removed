@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothprofilecontroller_h__
-#define mozilla_dom_bluetooth_bluetoothprofilecontroller_h__
+#ifndef mozilla_dom_bluetooth_BluetoothProfileController_h
+#define mozilla_dom_bluetooth_BluetoothProfileController_h
 
 #include "BluetoothUuid.h"
 #include "nsISupportsImpl.h"
@@ -157,4 +157,4 @@ private:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 

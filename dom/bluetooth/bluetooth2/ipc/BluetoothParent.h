@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_ipc_bluetoothparent_h__
-#define mozilla_dom_bluetooth_ipc_bluetoothparent_h__
+#ifndef mozilla_dom_bluetooth_ipc_BluetoothParent_h
+#define mozilla_dom_bluetooth_ipc_BluetoothParent_h
 
 #include "mozilla/dom/bluetooth/BluetoothCommon.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothledeviceevent_h
-#define mozilla_dom_bluetooth_bluetoothledeviceevent_h
+#ifndef mozilla_dom_bluetooth_BluetoothLeDeviceEvent_h
+#define mozilla_dom_bluetooth_BluetoothLeDeviceEvent_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"

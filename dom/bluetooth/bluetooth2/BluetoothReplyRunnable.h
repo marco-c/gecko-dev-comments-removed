@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_bluetooth_bluetoothreplyrunnable_h__
-#define mozilla_dom_bluetooth_bluetoothreplyrunnable_h__
+#ifndef mozilla_dom_bluetooth_BluetoothReplyRunnable_h
+#define mozilla_dom_bluetooth_BluetoothReplyRunnable_h
 
 #include "mozilla/Attributes.h"
 #include "BluetoothCommon.h"
@@ -90,4 +90,4 @@ protected:
 
 END_BLUETOOTH_NAMESPACE
 
-#endif
+#endif 
