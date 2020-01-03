@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_indexeddb_idbobjectstore_h__
 #define mozilla_dom_indexeddb_idbobjectstore_h__
@@ -52,10 +52,10 @@ class IDBObjectStore MOZ_FINAL
   nsRefPtr<IDBTransaction> mTransaction;
   JS::Heap<JS::Value> mCachedKeyPath;
 
-  
-  
-  
-  
+  // This normally points to the ObjectStoreSpec owned by the parent IDBDatabase
+  // object. However, if this objectStore is part of a versionchange transaction
+  // and it gets deleted then the spec is copied into mDeletedSpec and mSpec is
+  // set to point at mDeletedSpec.
   const ObjectStoreSpec* mSpec;
   nsAutoPtr<ObjectStoreSpec> mDeletedSpec;
 
@@ -184,15 +184,13 @@ public:
   Clear(ErrorResult& aRv);
 
   already_AddRefed<IDBIndex>
-  CreateIndex(JSContext* aCx,
-              const nsAString& aName,
+  CreateIndex(const nsAString& aName,
               const nsAString& aKeyPath,
               const IDBIndexParameters& aOptionalParameters,
               ErrorResult& aRv);
 
   already_AddRefed<IDBIndex>
-  CreateIndex(JSContext* aCx,
-              const nsAString& aName,
+  CreateIndex(const nsAString& aName,
               const Sequence<nsString>& aKeyPath,
               const IDBIndexParameters& aOptionalParameters,
               ErrorResult& aRv);
@@ -216,7 +214,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return GetAllInternal( false, aCx, aKey, aLimit, aRv);
+    return GetAllInternal(/* aKeysOnly */ false, aCx, aKey, aLimit, aRv);
   }
 
   already_AddRefed<IDBRequest>
@@ -227,7 +225,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return GetAllInternal( true, aCx, aKey, aLimit, aRv);
+    return GetAllInternal(/* aKeysOnly */ true, aCx, aKey, aLimit, aRv);
   }
 
   already_AddRefed<IDBRequest>
@@ -238,7 +236,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return OpenCursorInternal( false, aCx, aRange, aDirection,
+    return OpenCursorInternal(/* aKeysOnly */ false, aCx, aRange, aDirection,
                               aRv);
   }
 
@@ -250,7 +248,7 @@ public:
   {
     AssertIsOnOwningThread();
 
-    return OpenCursorInternal( true, aCx, aRange, aDirection,
+    return OpenCursorInternal(/* aKeysOnly */ true, aCx, aRange, aDirection,
                               aRv);
   }
 
@@ -266,7 +264,7 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IDBObjectStore)
 
-  
+  // nsWrapperCache
   virtual JSObject*
   WrapObject(JSContext* aCx) MOZ_OVERRIDE;
 
@@ -298,8 +296,7 @@ private:
                  ErrorResult& aRv);
 
   already_AddRefed<IDBIndex>
-  CreateIndexInternal(JSContext* aCx,
-                      const nsAString& aName,
+  CreateIndexInternal(const nsAString& aName,
                       const KeyPath& aKeyPath,
                       const IDBIndexParameters& aOptionalParameters,
                       ErrorResult& aRv);
@@ -312,8 +309,8 @@ private:
                      ErrorResult& aRv);
 };
 
-} 
-} 
-} 
+} // namespace indexedDB
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_dom_indexeddb_idbobjectstore_h__

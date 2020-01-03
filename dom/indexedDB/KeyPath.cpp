@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "KeyPath.h"
 #include "IDBObjectStore.h"
@@ -31,7 +31,7 @@ IgnoreWhitespace(char16_t c)
 typedef nsCharSeparatedTokenizerTemplate<IgnoreWhitespace> KeyPathTokenizer;
 
 bool
-IsValidKeyPathString(JSContext* aCx, const nsAString& aKeyPath)
+IsValidKeyPathString(const nsAString& aKeyPath)
 {
   NS_ASSERTION(!aKeyPath.IsVoid(), "What?");
 
@@ -44,22 +44,13 @@ IsValidKeyPathString(JSContext* aCx, const nsAString& aKeyPath)
       return false;
     }
 
-    JS::Rooted<JS::Value> stringVal(aCx);
-    if (!xpc::StringToJsval(aCx, token, &stringVal)) {
-      return false;
-    }
-
-    NS_ASSERTION(stringVal.toString(), "This should never happen");
-    JS::Rooted<JSString*> str(aCx, stringVal.toString());
-
-    bool isIdentifier = false;
-    if (!JS_IsIdentifier(aCx, str, &isIdentifier) || !isIdentifier) {
+    if (!JS_IsIdentifier(token.get(), token.Length())) {
       return false;
     }
   }
 
-  
-  
+  // If the very last character was a '.', the tokenizer won't give us an empty
+  // token, but the keyPath is still invalid.
   if (!aKeyPath.IsEmpty() &&
       aKeyPath.CharAt(aKeyPath.Length() - 1) == '.') {
     return false;
@@ -83,7 +74,7 @@ GetJSValFromKeyPathString(JSContext* aCx,
                           void* aClosure)
 {
   NS_ASSERTION(aCx, "Null pointer!");
-  NS_ASSERTION(IsValidKeyPathString(aCx, aKeyPathString),
+  NS_ASSERTION(IsValidKeyPathString(aKeyPathString),
                "This will explode!");
   NS_ASSERTION(!(aCallback || aClosure) || aOptions == CreateProperties,
                "This is not allowed!");
@@ -110,7 +101,7 @@ GetJSValFromKeyPathString(JSContext* aCx,
 
     bool hasProp;
     if (!targetObject) {
-      
+      // We're still walking the chain of existing objects
       if (!obj) {
         return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
       }
@@ -120,30 +111,30 @@ GetJSValFromKeyPathString(JSContext* aCx,
       IDB_ENSURE_TRUE(ok, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
       if (hasProp) {
-        
+        // Get if the property exists...
         JS::Rooted<JS::Value> intermediate(aCx);
         bool ok = JS_GetUCProperty(aCx, obj, keyPathChars, keyPathLen, &intermediate);
         IDB_ENSURE_TRUE(ok, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
-        
+        // Treat explicitly undefined as an error.
         if (intermediate == JSVAL_VOID) {
           return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
         }
         if (tokenizer.hasMoreTokens()) {
-          
+          // ...and walk to it if there are more steps...
           if (intermediate.isPrimitive()) {
             return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
           }
           obj = intermediate.toObjectOrNull();
         }
         else {
-          
+          // ...otherwise use it as key
           *aKeyJSVal = intermediate;
         }
       }
       else {
-        
-        
+        // If the property doesn't exist, fall into below path of starting
+        // to define properties, if allowed.
         if (aOptions == DoNotCreateProperties) {
           return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
         }
@@ -154,14 +145,14 @@ GetJSValFromKeyPathString(JSContext* aCx,
     }
 
     if (targetObject) {
-      
-      
+      // We have started inserting new objects or are about to just insert
+      // the first one.
 
       *aKeyJSVal = JSVAL_VOID;
 
       if (tokenizer.hasMoreTokens()) {
-        
-        
+        // If we're not at the end, we need to add a dummy object to the
+        // chain.
         JS::Rooted<JSObject*> dummy(aCx, JS_NewObject(aCx, nullptr, JS::NullPtr(),
                                                       JS::NullPtr()));
         if (!dummy) {
@@ -201,15 +192,15 @@ GetJSValFromKeyPathString(JSContext* aCx,
     }
   }
 
-  
-  
+  // We guard on rv being a success because we need to run the property
+  // deletion code below even if we should not be running the callback.
   if (NS_SUCCEEDED(rv) && aCallback) {
     rv = (*aCallback)(aCx, aClosure);
   }
 
   if (targetObject) {
-    
-    
+    // If this fails, we lose, and the web page sees a magical property
+    // appear on the object :-(
     bool succeeded;
     if (!JS_DeleteUCProperty2(aCx, targetObject,
                               targetObjectPropName.get(),
@@ -225,16 +216,16 @@ GetJSValFromKeyPathString(JSContext* aCx,
   return rv;
 }
 
-} 
+} // anonymous namespace
 
-
+// static
 nsresult
-KeyPath::Parse(JSContext* aCx, const nsAString& aString, KeyPath* aKeyPath)
+KeyPath::Parse(const nsAString& aString, KeyPath* aKeyPath)
 {
   KeyPath keyPath(0);
   keyPath.SetType(STRING);
 
-  if (!keyPath.AppendStringWithValidation(aCx, aString)) {
+  if (!keyPath.AppendStringWithValidation(aString)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -242,16 +233,15 @@ KeyPath::Parse(JSContext* aCx, const nsAString& aString, KeyPath* aKeyPath)
   return NS_OK;
 }
 
-
+//static
 nsresult
-KeyPath::Parse(JSContext* aCx, const mozilla::dom::Sequence<nsString>& aStrings,
-               KeyPath* aKeyPath)
+KeyPath::Parse(const Sequence<nsString>& aStrings, KeyPath* aKeyPath)
 {
   KeyPath keyPath(0);
   keyPath.SetType(ARRAY);
 
   for (uint32_t i = 0; i < aStrings.Length(); ++i) {
-    if (!keyPath.AppendStringWithValidation(aCx, aStrings[i])) {
+    if (!keyPath.AppendStringWithValidation(aStrings[i])) {
       return NS_ERROR_FAILURE;
     }
   }
@@ -260,7 +250,7 @@ KeyPath::Parse(JSContext* aCx, const mozilla::dom::Sequence<nsString>& aStrings,
   return NS_OK;
 }
 
-
+// static
 nsresult
 KeyPath::Parse(JSContext* aCx, const JS::Value& aValue_, KeyPath* aKeyPath)
 {
@@ -269,7 +259,7 @@ KeyPath::Parse(JSContext* aCx, const JS::Value& aValue_, KeyPath* aKeyPath)
 
   aKeyPath->SetType(NONEXISTENT);
 
-  
+  // See if this is a JS array.
   if (JS_IsArrayObject(aCx, aValue)) {
 
     JS::Rooted<JSObject*> obj(aCx, aValue.toObjectOrNull());
@@ -295,12 +285,12 @@ KeyPath::Parse(JSContext* aCx, const JS::Value& aValue_, KeyPath* aKeyPath)
         return NS_ERROR_FAILURE;
       }
 
-      if (!keyPath.AppendStringWithValidation(aCx, str)) {
+      if (!keyPath.AppendStringWithValidation(str)) {
         return NS_ERROR_FAILURE;
       }
     }
   }
-  
+  // Otherwise convert it to a string.
   else if (!aValue.isNull() && !aValue.isUndefined()) {
     JSString* jsstr;
     nsAutoJSString str;
@@ -311,7 +301,7 @@ KeyPath::Parse(JSContext* aCx, const JS::Value& aValue_, KeyPath* aKeyPath)
 
     keyPath.SetType(STRING);
 
-    if (!keyPath.AppendStringWithValidation(aCx, str)) {
+    if (!keyPath.AppendStringWithValidation(str)) {
       return NS_ERROR_FAILURE;
     }
   }
@@ -328,9 +318,9 @@ KeyPath::SetType(KeyPathType aType)
 }
 
 bool
-KeyPath::AppendStringWithValidation(JSContext* aCx, const nsAString& aString)
+KeyPath::AppendStringWithValidation(const nsAString& aString)
 {
-  if (!IsValidKeyPathString(aCx, aString)) {
+  if (!IsValidKeyPathString(aString)) {
     return false;
   }
 
@@ -454,10 +444,10 @@ KeyPath::SerializeToString(nsAString& aString) const
   }
 
   if (IsArray()) {
-    
-    
-    
-    
+    // We use a comma in the beginning to indicate that it's an array of
+    // key paths. This is to be able to tell a string-keypath from an
+    // array-keypath which contains only one item.
+    // It also makes serializing easier :-)
     uint32_t len = mStrings.Length();
     for (uint32_t i = 0; i < len; ++i) {
       aString.Append(',');
@@ -470,7 +460,7 @@ KeyPath::SerializeToString(nsAString& aString) const
   NS_NOTREACHED("What?");
 }
 
-
+// static
 KeyPath
 KeyPath::DeserializeFromString(const nsAString& aString)
 {
@@ -479,9 +469,9 @@ KeyPath::DeserializeFromString(const nsAString& aString)
   if (!aString.IsEmpty() && aString.First() == ',') {
     keyPath.SetType(ARRAY);
 
-    
-    
-    
+    // We use a comma in the beginning to indicate that it's an array of
+    // key paths. This is to be able to tell a string-keypath from an
+    // array-keypath which contains only one item.
     nsCharSeparatedTokenizerTemplate<IgnoreWhitespace> tokenizer(aString, ',');
     tokenizer.nextToken();
     while (tokenizer.hasMoreTokens()) {
@@ -553,26 +543,26 @@ KeyPath::ToJSVal(JSContext* aCx, JS::Heap<JS::Value>& aValue) const
 bool
 KeyPath::IsAllowedForObjectStore(bool aAutoIncrement) const
 {
-  
-  
+  // Any keypath that passed validation is allowed for non-autoIncrement
+  // objectStores.
   if (!aAutoIncrement) {
     return true;
   }
 
-  
+  // Array keypaths are not allowed for autoIncrement objectStores.
   if (IsArray()) {
     return false;
   }
 
-  
+  // Neither are empty strings.
   if (IsEmpty()) {
     return false;
   }
 
-  
+  // Everything else is ok.
   return true;
 }
 
-} 
-} 
-} 
+} // namespace indexedDB
+} // namespace dom
+} // namespace mozilla
