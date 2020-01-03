@@ -242,11 +242,6 @@ public:
     
     void ReportSpdyConnection(nsHttpConnection *, bool usingSpdy);
 
-    
-    
-    void ReportSpdyCWNDSetting(nsHttpConnectionInfo *host, uint32_t cwndValue);
-    uint32_t GetSpdyCWNDSetting(nsHttpConnectionInfo *host);
-
     bool     SupportsPipelining(nsHttpConnectionInfo *);
 
     bool GetConnectionData(nsTArray<HttpRetParams> *);
@@ -365,11 +360,6 @@ private:
         
         
         nsTArray<nsCString> mCoalescingKeys;
-
-        
-        
-        uint32_t            mSpdyCWND;
-        TimeStamp  mSpdyCWNDTimeStamp;
 
         
         
