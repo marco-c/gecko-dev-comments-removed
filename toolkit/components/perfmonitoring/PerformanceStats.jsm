@@ -49,7 +49,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "finalizer",
 
 const FINALIZATION_TOPIC = "performancemonitor-finalize";
 
-const PROPERTIES_META_IMMUTABLE = ["addonId", "isSystem", "isChildProcess", "groupId"];
+const PROPERTIES_META_IMMUTABLE = ["addonId", "isSystem", "isChildProcess", "groupId", "processId"];
 const PROPERTIES_META = [...PROPERTIES_META_IMMUTABLE, "windowId", "title", "name"];
 
 
