@@ -1775,10 +1775,16 @@ nsWindow::CaptureRollupEvents(nsIRollupListener *aListener,
             
             
             
-            
-            
-            gtk_grab_add(mShell);
-            GrabPointer(GetLastUserInputTime());
+            GdkWindowTypeHint gdkTypeHint = gtk_window_get_type_hint(GTK_WINDOW(mShell));
+            if (gdkTypeHint != GDK_WINDOW_TYPE_HINT_DND) {
+              
+              
+              
+              
+              
+              gtk_grab_add(mShell);
+              GrabPointer(GetLastUserInputTime());
+            }
         }
     }
     else {
