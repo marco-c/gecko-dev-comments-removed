@@ -51,10 +51,6 @@ public:
 
   
   
-  void SyncDispatch(already_AddRefed<nsIRunnable> aRunnable);
-
-  
-  
   
   
   
