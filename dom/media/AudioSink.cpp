@@ -193,9 +193,26 @@ AudioSink::SetPreservesPitch(bool aPreservesPitch)
 void
 AudioSink::SetPlaying(bool aPlaying)
 {
-  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-  mPlaying = aPlaying;
-  ScheduleNextLoopCrossThread();
+  AssertNotOnAudioThread();
+  nsRefPtr<AudioSink> self = this;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+    if (self->mState != AUDIOSINK_STATE_PLAYING ||
+        self->mPlaying == aPlaying) {
+      return;
+    }
+    self->mPlaying = aPlaying;
+    
+    if (!aPlaying && !self->mAudioStream->IsPaused()) {
+      self->mAudioStream->Pause();
+    } else if (aPlaying && self->mAudioStream->IsPaused()) {
+      self->mAudioStream->Resume();
+    }
+    
+    if (aPlaying && !self->mAudioLoopScheduled) {
+      self->AudioLoop();
+    }
+  });
+  DispatchTask(r.forget());
 }
 
 void
@@ -261,9 +278,6 @@ AudioSink::WaitingForAudioToPlay()
   
   AssertCurrentThreadInMonitor();
   if (!mStopAudioThread && (!mPlaying || ExpectMoreAudioData())) {
-    if (!mPlaying && !mAudioStream->IsPaused()) {
-      mAudioStream->Pause();
-    }
     return true;
   }
   return false;
@@ -273,10 +287,6 @@ bool
 AudioSink::IsPlaybackContinuing()
 {
   AssertCurrentThreadInMonitor();
-  if (mPlaying && mAudioStream->IsPaused()) {
-    mAudioStream->Resume();
-  }
-
   
   
   if (mStopAudioThread || AudioQueue().AtEndOfStream()) {
