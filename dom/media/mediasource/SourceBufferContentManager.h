@@ -16,9 +16,6 @@
 
 namespace mozilla {
 
-using media::TimeUnit;
-using media::TimeIntervals;
-
 namespace dom {
 class SourceBuffer;
 }
@@ -37,7 +34,7 @@ public:
   
   
   virtual bool
-  AppendData(MediaByteBuffer* aData, TimeUnit aTimestampOffset) = 0;
+  AppendData(MediaByteBuffer* aData, media::TimeUnit aTimestampOffset) = 0;
 
   
   
@@ -54,7 +51,8 @@ public:
 
   
   
-  virtual nsRefPtr<RangeRemovalPromise> RangeRemoval(TimeUnit aStart, TimeUnit aEnd) = 0;
+  virtual nsRefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
+                                                     media::TimeUnit aEnd) = 0;
 
   enum class EvictDataResult : int8_t
   {
@@ -69,10 +67,12 @@ public:
   
   
   virtual EvictDataResult
-  EvictData(TimeUnit aPlaybackTime, uint32_t aThreshold, TimeUnit* aBufferStartTime) = 0;
+  EvictData(media::TimeUnit aPlaybackTime,
+            uint32_t aThreshold,
+            media::TimeUnit* aBufferStartTime) = 0;
 
   
-  virtual void EvictBefore(TimeUnit aTime) = 0;
+  virtual void EvictBefore(media::TimeUnit aTime) = 0;
 
   
   
@@ -102,9 +102,9 @@ public:
     return AppendState::WAITING_FOR_SEGMENT;
   }
 
-  virtual void SetGroupStartTimestamp(const TimeUnit& aGroupStartTimestamp) {}
+  virtual void SetGroupStartTimestamp(const media::TimeUnit& aGroupStartTimestamp) {}
   virtual void RestartGroupStartTimestamp() {}
-  virtual TimeUnit GroupEndTimestamp() = 0;
+  virtual media::TimeUnit GroupEndTimestamp() = 0;
 
 #if defined(DEBUG)
   virtual void Dump(const char* aPath) { }

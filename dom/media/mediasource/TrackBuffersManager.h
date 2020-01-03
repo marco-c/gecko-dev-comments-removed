@@ -28,10 +28,6 @@ class MediaSourceDemuxer;
 class SourceBuffer;
 class SourceBufferResource;
 
-using media::TimeUnit;
-using media::TimeInterval;
-using media::TimeIntervals;
-
 class TrackBuffersManager : public SourceBufferContentManager {
 public:
   typedef MozPromise<bool, nsresult,  true> CodedFrameProcessingPromise;
@@ -41,7 +37,8 @@ public:
 
   TrackBuffersManager(dom::SourceBuffer* aParent, MediaSourceDecoder* aParentDecoder, const nsACString& aType);
 
-  bool AppendData(MediaByteBuffer* aData, TimeUnit aTimestampOffset) override;
+  bool AppendData(MediaByteBuffer* aData,
+                  media::TimeUnit aTimestampOffset) override;
 
   nsRefPtr<AppendPromise> BufferAppend() override;
 
@@ -49,14 +46,17 @@ public:
 
   void ResetParserState() override;
 
-  nsRefPtr<RangeRemovalPromise> RangeRemoval(TimeUnit aStart, TimeUnit aEnd) override;
+  nsRefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
+                                             media::TimeUnit aEnd) override;
 
   EvictDataResult
-  EvictData(TimeUnit aPlaybackTime, uint32_t aThreshold, TimeUnit* aBufferStartTime) override;
+  EvictData(media::TimeUnit aPlaybackTime,
+            uint32_t aThreshold,
+            media::TimeUnit* aBufferStartTime) override;
 
-  void EvictBefore(TimeUnit aTime) override;
+  void EvictBefore(media::TimeUnit aTime) override;
 
-  TimeIntervals Buffered() override;
+  media::TimeIntervals Buffered() override;
 
   int64_t GetSize() override;
 
@@ -69,27 +69,28 @@ public:
     return mAppendState;
   }
 
-  void SetGroupStartTimestamp(const TimeUnit& aGroupStartTimestamp) override;
+  void SetGroupStartTimestamp(const media::TimeUnit& aGroupStartTimestamp) override;
   void RestartGroupStartTimestamp() override;
-  TimeUnit GroupEndTimestamp() override;
+  media::TimeUnit GroupEndTimestamp() override;
 
   
   MediaInfo GetMetadata();
   const TrackBuffer& GetTrackBuffer(TrackInfo::TrackType aTrack);
-  const TimeIntervals& Buffered(TrackInfo::TrackType);
-  TimeIntervals SafeBuffered(TrackInfo::TrackType) const;
+  const media::TimeIntervals& Buffered(TrackInfo::TrackType);
+  media::TimeIntervals SafeBuffered(TrackInfo::TrackType) const;
   bool IsEnded() const
   {
     return mEnded;
   }
-  TimeUnit Seek(TrackInfo::TrackType aTrack, const TimeUnit& aTime);
+  media::TimeUnit Seek(TrackInfo::TrackType aTrack,
+                       const media::TimeUnit& aTime);
   uint32_t SkipToNextRandomAccessPoint(TrackInfo::TrackType aTrack,
-                                       const TimeUnit& aTimeThreadshold,
+                                       const media::TimeUnit& aTimeThreadshold,
                                        bool& aFound);
   already_AddRefed<MediaRawData> GetSample(TrackInfo::TrackType aTrack,
-                                           const TimeUnit& aFuzz,
+                                           const media::TimeUnit& aFuzz,
                                            bool& aError);
-  TimeUnit GetNextRandomAccessPoint(TrackInfo::TrackType aTrack);
+  media::TimeUnit GetNextRandomAccessPoint(TrackInfo::TrackType aTrack);
 
 #if defined(DEBUG)
   void Dump(const char* aPath) override;
@@ -117,8 +118,9 @@ private:
   
   void FinishCodedFrameProcessing();
   void CompleteResetParserState();
-  nsRefPtr<RangeRemovalPromise> CodedFrameRemovalWithPromise(TimeInterval aInterval);
-  bool CodedFrameRemoval(TimeInterval aInterval);
+  nsRefPtr<RangeRemovalPromise>
+    CodedFrameRemovalWithPromise(media::TimeInterval aInterval);
+  bool CodedFrameRemoval(media::TimeInterval aInterval);
   void SetAppendState(AppendState aAppendState);
 
   bool HasVideo() const
@@ -130,7 +132,7 @@ private:
     return mAudioTracks.mNumTracks > 0;
   }
 
-  typedef Pair<nsRefPtr<MediaByteBuffer>, TimeUnit> IncomingBuffer;
+  typedef Pair<nsRefPtr<MediaByteBuffer>, media::TimeUnit> IncomingBuffer;
   void AppendIncomingBuffer(IncomingBuffer aData);
   nsTArray<IncomingBuffer> mIncomingBuffers;
 
@@ -145,8 +147,8 @@ private:
   Atomic<bool> mBufferFull;
   bool mFirstInitializationSegmentReceived;
   bool mActiveTrack;
-  Maybe<TimeUnit> mGroupStartTimestamp;
-  TimeUnit mGroupEndTimestamp;
+  Maybe<media::TimeUnit> mGroupStartTimestamp;
+  media::TimeUnit mGroupEndTimestamp;
   nsCString mType;
 
   
@@ -185,7 +187,7 @@ private:
     OnDemuxFailed(TrackType::kAudioTrack, aFailure);
   }
 
-  void DoEvictData(const TimeUnit& aPlaybackTime, uint32_t aThreshold);
+  void DoEvictData(const media::TimeUnit& aPlaybackTime, uint32_t aThreshold);
 
   struct TrackData {
     TrackData()
@@ -200,20 +202,20 @@ private:
     
     
     
-    Maybe<TimeUnit> mLastDecodeTimestamp;
+    Maybe<media::TimeUnit> mLastDecodeTimestamp;
     
     
     
     
-    Maybe<TimeUnit> mLastFrameDuration;
+    Maybe<media::TimeUnit> mLastFrameDuration;
     
     
     
     
     
-    Maybe<TimeUnit> mHighestEndTimestamp;
+    Maybe<media::TimeUnit> mHighestEndTimestamp;
     
-    Maybe<TimeUnit> mLongestFrameDuration;
+    Maybe<media::TimeUnit> mLongestFrameDuration;
     
     
     
@@ -232,7 +234,7 @@ private:
     nsTArray<TrackBuffer> mBuffers;
     
     
-    TimeIntervals mBufferedRanges;
+    media::TimeIntervals mBufferedRanges;
     
     uint32_t mSizeBuffer;
     
@@ -243,9 +245,9 @@ private:
     
     Maybe<uint32_t> mNextGetSampleIndex;
     
-    TimeUnit mNextSampleTimecode;
+    media::TimeUnit mNextSampleTimecode;
     
-    TimeUnit mNextSampleTime;
+    media::TimeUnit mNextSampleTime;
 
     void ResetAppendState()
     {
@@ -262,11 +264,11 @@ private:
   void CheckSequenceDiscontinuity();
   void ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData);
   void CheckNextInsertionIndex(TrackData& aTrackData,
-                               const TimeUnit& aSampleTime);
+                               const media::TimeUnit& aSampleTime);
   void InsertFrames(TrackBuffer& aSamples,
-                    const TimeIntervals& aIntervals,
+                    const media::TimeIntervals& aIntervals,
                     TrackData& aTrackData);
-  void RemoveFrames(const TimeIntervals& aIntervals,
+  void RemoveFrames(const media::TimeIntervals& aIntervals,
                     TrackData& aTrackData,
                     uint32_t aStartIndex);
   void UpdateBufferedRanges();
@@ -306,9 +308,9 @@ private:
   }
   RefPtr<TaskQueue> mTaskQueue;
 
-  TimeInterval mAppendWindow;
-  TimeUnit mTimestampOffset;
-  TimeUnit mLastTimestampOffset;
+  media::TimeInterval mAppendWindow;
+  media::TimeUnit mTimestampOffset;
+  media::TimeUnit mLastTimestampOffset;
   void RestoreCachedVariables();
 
   
@@ -332,9 +334,9 @@ private:
   
   mutable Monitor mMonitor;
   
-  TimeIntervals mVideoBufferedRanges;
-  TimeIntervals mAudioBufferedRanges;
-  TimeUnit mOfficialGroupEndTimestamp;
+  media::TimeIntervals mVideoBufferedRanges;
+  media::TimeIntervals mAudioBufferedRanges;
+  media::TimeUnit mOfficialGroupEndTimestamp;
   
   MediaInfo mInfo;
 };

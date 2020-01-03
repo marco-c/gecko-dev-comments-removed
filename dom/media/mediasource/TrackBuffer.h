@@ -31,7 +31,8 @@ public:
 
   nsRefPtr<ShutdownPromise> Shutdown();
 
-  bool AppendData(MediaByteBuffer* aData, TimeUnit aTimestampOffset) override;
+  bool AppendData(MediaByteBuffer* aData,
+                  media::TimeUnit aTimestampOffset) override;
 
   
   
@@ -43,13 +44,16 @@ public:
   
   
   
-  EvictDataResult EvictData(TimeUnit aPlaybackTime, uint32_t aThreshold, TimeUnit* aBufferStartTime) override;
+  EvictDataResult EvictData(media::TimeUnit aPlaybackTime,
+                            uint32_t aThreshold,
+                            media::TimeUnit* aBufferStartTime) override;
 
   
   
-  void EvictBefore(TimeUnit aTime) override;
+  void EvictBefore(media::TimeUnit aTime) override;
 
-  nsRefPtr<RangeRemovalPromise> RangeRemoval(TimeUnit aStart, TimeUnit aEnd) override;
+  nsRefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
+                                             media::TimeUnit aEnd) override;
 
   void AbortAppendData() override;
 
@@ -68,7 +72,7 @@ public:
 
   void Detach() override;
 
-  TimeUnit GroupEndTimestamp() override
+  media::TimeUnit GroupEndTimestamp() override
   {
     return Buffered().GetEnd();
   }
@@ -211,7 +215,7 @@ private:
   
   int64_t mLastStartTimestamp;
   Maybe<int64_t> mLastEndTimestamp;
-  void AdjustDecodersTimestampOffset(TimeUnit aOffset);
+  void AdjustDecodersTimestampOffset(media::TimeUnit aOffset);
 
   
   media::TimeUnit mLastTimestampOffset;
