@@ -972,6 +972,8 @@ public:
 
   void OnAppThemeChanged();
 
+  void ReportUseCounters();
+
 private:
   void AddOnDemandBuiltInUASheet(mozilla::CSSStyleSheet* aSheet);
   nsRadioGroupStruct* GetRadioGroupInternal(const nsAString& aName) const;
@@ -1478,11 +1480,14 @@ public:
 
   static void XPCOMShutdown();
 
-  bool mIsTopLevelContentDocument:1;
+  bool mIsTopLevelContentDocument: 1;
+  bool mIsContentDocument: 1;
 
   bool IsTopLevelContentDocument();
-
   void SetIsTopLevelContentDocument(bool aIsTopLevelContentDocument);
+
+  bool IsContentDocument() const;
+  void SetIsContentDocument(bool aIsContentDocument);
 
   js::ExpandoAndGeneration mExpandoAndGeneration;
 
@@ -1675,6 +1680,14 @@ public:
   
   
   uint8_t mCancelledPointerLockRequests:2;
+
+  
+  
+  
+  
+  
+  
+  bool mReportedUseCounters:1;
 
   uint8_t mPendingFullscreenRequests;
 

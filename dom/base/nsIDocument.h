@@ -25,6 +25,7 @@
 #include "mozilla/net/ReferrerPolicy.h"  
 #include "nsWeakReference.h"
 #include "mozilla/dom/DocumentBinding.h"
+#include "mozilla/UseCounter.h"
 #include "mozilla/WeakPtr.h"
 #include "Units.h"
 #include "nsExpirationTracker.h"
@@ -1714,7 +1715,7 @@ public:
 
   bool IsResourceDoc() const {
     return IsBeingUsedAsImage() || 
-      !!mDisplayDocument;          
+      mHasDisplayDocument;         
   }
 
   
@@ -1743,6 +1744,7 @@ public:
     NS_PRECONDITION(!aDisplayDocument->GetDisplayDocument(),
                     "Display documents should not nest");
     mDisplayDocument = aDisplayDocument;
+    mHasDisplayDocument = !!aDisplayDocument;
   }
 
   
@@ -2316,6 +2318,8 @@ public:
     eAttributeChanged
   };
 
+  nsIDocument* GetTopLevelContentDocument();
+
   
 
 
@@ -2579,6 +2583,41 @@ public:
 
   bool DidFireDOMContentLoaded() const { return mDidFireDOMContentLoaded; }
 
+  void SetDocumentUseCounter(mozilla::UseCounter aUseCounter)
+  {
+    if (!mUseCounters[aUseCounter]) {
+      mUseCounters[aUseCounter] = true;
+    }
+  }
+
+  void SetPageUseCounter(mozilla::UseCounter aUseCounter);
+
+  void SetDocumentAndPageUseCounter(mozilla::UseCounter aUseCounter)
+  {
+    SetDocumentUseCounter(aUseCounter);
+    SetPageUseCounter(aUseCounter);
+  }
+
+  void PropagateUseCounters(nsIDocument* aParentDocument);
+
+protected:
+  bool GetUseCounter(mozilla::UseCounter aUseCounter)
+  {
+    return mUseCounters[aUseCounter];
+  }
+
+  void SetChildDocumentUseCounter(mozilla::UseCounter aUseCounter)
+  {
+    if (!mChildDocumentUseCounters[aUseCounter]) {
+      mChildDocumentUseCounters[aUseCounter] = true;
+    }
+  }
+
+  bool GetChildDocumentUseCounter(mozilla::UseCounter aUseCounter)
+  {
+    return mChildDocumentUseCounters[aUseCounter];
+  }
+
 private:
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
@@ -2811,6 +2850,12 @@ protected:
   bool mDidDocumentOpen : 1;
 
   
+  
+  
+  
+  bool mHasDisplayDocument : 1;
+
+  
   bool mFontFaceSetDirty : 1;
 
   
@@ -2956,6 +3001,14 @@ protected:
 
   
   PRCList mDOMMediaQueryLists;
+
+  
+  std::bitset<mozilla::eUseCounter_Count> mUseCounters;
+  
+  std::bitset<mozilla::eUseCounter_Count> mChildDocumentUseCounters;
+  
+  
+  std::bitset<mozilla::eUseCounter_Count> mNotifiedPageForUseCounter;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
