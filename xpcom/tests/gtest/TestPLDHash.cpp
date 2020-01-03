@@ -137,10 +137,7 @@ TEST(PLDHashTableTest, LazyStorage)
     ASSERT_TRUE(false); 
   }
 
-  
-  
-  mozilla::MallocSizeOf mallocSizeOf = nullptr;
-  ASSERT_EQ(PL_DHashTableSizeOfExcludingThis(&t, nullptr, mallocSizeOf), 0u);
+  ASSERT_EQ(t.ShallowSizeOfExcludingThis(moz_malloc_size_of), 0u);
 }
 
 

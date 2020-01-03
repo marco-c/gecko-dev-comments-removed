@@ -241,7 +241,7 @@ Preferences::SizeOfIncludingThisAndOtherStuff(mozilla::MallocSizeOf aMallocSizeO
   if (gHashTable) {
     
     
-    n += PL_DHashTableSizeOfExcludingThis(gHashTable, nullptr, aMallocSizeOf);
+    n += gHashTable->ShallowSizeOfIncludingThis(aMallocSizeOf);
   }
   if (gCacheData) {
     n += gCacheData->ShallowSizeOfIncludingThis(aMallocSizeOf);

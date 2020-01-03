@@ -52,9 +52,6 @@ private:
   PLDHashNumber mKeyHash;
 };
 
-typedef size_t (*PLDHashSizeOfEntryExcludingThisFun)(
-  PLDHashEntryHdr* aHdr, mozilla::MallocSizeOf aMallocSizeOf, void* aArg);
-
 #ifdef DEBUG
 
 
@@ -378,14 +375,10 @@ public:
   
   
   
-  size_t SizeOfIncludingThis(
-    PLDHashSizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-    mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr) const;
+  size_t ShallowSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
-  size_t SizeOfExcludingThis(
-    PLDHashSizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-    mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr) const;
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 #ifdef DEBUG
   
@@ -634,18 +627,6 @@ PL_DHashTableRemove(PLDHashTable* aTable, const void* aKey);
 
 void
 PL_DHashTableRawRemove(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
-
-size_t
-PL_DHashTableSizeOfExcludingThis(
-  const PLDHashTable* aTable,
-  PLDHashSizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-  mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr);
-
-size_t
-PL_DHashTableSizeOfIncludingThis(
-  const PLDHashTable* aTable,
-  PLDHashSizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-  mozilla::MallocSizeOf aMallocSizeOf, void* aArg = nullptr);
 
 #ifdef DEBUG
 void
