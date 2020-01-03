@@ -2420,6 +2420,21 @@ ObjectClient.prototype = {
       return aPacket;
     }
   }),
+
+  
+
+
+  getPromiseFulfillmentStack: DebuggerClient.requester({
+    type: "fulfillmentStack"
+  }, {
+    before: function(packet) {
+      if (this._grip.class !== "Promise") {
+        throw new Error("getPromiseFulfillmentStack is only valid for " +
+          "promise grips.");
+      }
+      return packet;
+    }
+  })
 };
 
 
