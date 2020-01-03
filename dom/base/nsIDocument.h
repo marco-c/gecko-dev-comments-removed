@@ -2694,136 +2694,128 @@ protected:
   mozilla::dom::VisibilityState mVisibilityState;
 
   
-  bool mBidiEnabled;
+  bool mBidiEnabled : 1;
   
-  bool mMathMLEnabled;
+  bool mMathMLEnabled : 1;
 
   
   
   
   
-  bool mIsInitialDocumentInWindow;
+  bool mIsInitialDocumentInWindow : 1;
 
   
   
-  bool mLoadedAsData;
-
-  
-  
-  
-  bool mLoadedAsInteractiveData;
-
-  
-  
-  bool mMayStartLayout;
-
-  
-  bool mHaveFiredTitleChange;
-
-  
-  bool mIsShowing;
-
-  
-  
-  bool mVisible;
+  bool mLoadedAsData : 1;
 
   
   
   
-  bool mRemovedFromDocShell;
+  bool mLoadedAsInteractiveData : 1;
 
   
   
-  bool mAllowDNSPrefetch;
+  bool mMayStartLayout : 1;
 
   
-  bool mIsStaticDocument;
+  bool mHaveFiredTitleChange : 1;
 
   
-  bool mCreatingStaticClone;
-
-  
-  bool mInUnlinkOrDeletion;
-
-  
-  bool mHasHadScriptHandlingObject;
-
-  
-  bool mIsBeingUsedAsImage;
+  bool mIsShowing : 1;
 
   
   
-  bool mIsSyntheticDocument;
-
-  
-  bool mHasLinksToUpdate;
-
-  
-  bool mNeedLayoutFlush;
-
-  
-  bool mNeedStyleFlush;
-
-  
-  bool mMayHaveDOMMutationObservers;
-
-  
-  bool mMayHaveAnimationObservers;
-
-  
-  bool mHasMixedActiveContentLoaded;
-
-  
-  bool mHasMixedActiveContentBlocked;
-
-  
-  bool mHasMixedDisplayContentLoaded;
-
-  
-  bool mHasMixedDisplayContentBlocked;
-
-  
-  bool mHasTrackingContentBlocked;
-
-  
-  bool mHasTrackingContentLoaded;
-
-  
-  bool mBFCacheDisallowed;
-
-  
-  
-  bool mHaveInputEncoding;
-
-  bool mHasHadDefaultView;
-
-  
-  bool mStyleSheetChangeEventsEnabled;
-
-  
-  bool mIsSrcdocDocument;
+  bool mVisible : 1;
 
   
   
   
-  bool mDidDocumentOpen;
-
-#ifdef DEBUG
-  
-
-
-
-  bool mIsLinkUpdateRegistrationsForbidden;
-#endif
+  bool mRemovedFromDocShell : 1;
 
   
-  bool mFontFaceSetDirty;
+  
+  bool mAllowDNSPrefetch : 1;
 
   
-  bool mGetUserFontSetCalled;
+  bool mIsStaticDocument : 1;
 
   
-  bool mPostedFlushUserFontSet;
+  bool mCreatingStaticClone : 1;
+
+  
+  bool mInUnlinkOrDeletion : 1;
+
+  
+  bool mHasHadScriptHandlingObject : 1;
+
+  
+  bool mIsBeingUsedAsImage : 1;
+
+  
+  
+  bool mIsSyntheticDocument : 1;
+
+  
+  bool mHasLinksToUpdate : 1;
+
+  
+  bool mNeedLayoutFlush : 1;
+
+  
+  bool mNeedStyleFlush : 1;
+
+  
+  bool mMayHaveDOMMutationObservers : 1;
+
+  
+  bool mMayHaveAnimationObservers : 1;
+
+  
+  bool mHasMixedActiveContentLoaded : 1;
+
+  
+  bool mHasMixedActiveContentBlocked : 1;
+
+  
+  bool mHasMixedDisplayContentLoaded : 1;
+
+  
+  bool mHasMixedDisplayContentBlocked : 1;
+
+  
+  bool mHasTrackingContentBlocked : 1;
+
+  
+  bool mHasTrackingContentLoaded : 1;
+
+  
+  bool mBFCacheDisallowed : 1;
+
+  
+  
+  bool mHaveInputEncoding : 1;
+
+  bool mHasHadDefaultView : 1;
+
+  
+  bool mStyleSheetChangeEventsEnabled : 1;
+
+  
+  bool mIsSrcdocDocument : 1;
+
+  
+  
+  
+  bool mDidDocumentOpen : 1;
+
+  
+  bool mFontFaceSetDirty : 1;
+
+  
+  bool mGetUserFontSetCalled : 1;
+
+  
+  bool mPostedFlushUserFontSet : 1;
 
   enum Type {
     eUnknown, 
@@ -2834,17 +2826,25 @@ protected:
     eXUL
   };
 
-  uint8_t mType;
+  Type mType;
 
   uint8_t mDefaultElementType;
 
-  enum {
+  enum Tri {
     eTriUnset = 0,
     eTriFalse,
     eTriTrue
   };
 
-  uint8_t mAllowXULXBL;
+  Tri mAllowXULXBL;
+
+#ifdef DEBUG
+  
+
+
+
+  bool mIsLinkUpdateRegistrationsForbidden;
+#endif
 
   
   
