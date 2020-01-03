@@ -824,6 +824,13 @@ public:
   void FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
                                 int32_t& aOffset);
 
+  
+
+
+
+
+  void HideCaret(bool aHide);
+
 protected:
   enum Tristate {
     eTriUnset,
@@ -883,6 +890,7 @@ protected:
   bool mDidPostCreate;    
   bool mDispatchInputEvent;
   bool mIsInEditAction;   
+  bool mHidingCaret;      
 
   friend bool NSCanUnload(nsISupports* serviceMgr);
   friend class nsAutoTxnsConserveSelection;

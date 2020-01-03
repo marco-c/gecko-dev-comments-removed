@@ -82,6 +82,21 @@ class nsCaret final : public nsISelectionListener
 
 
 
+
+
+
+
+    void AddForceHide();
+    
+
+
+
+
+    void RemoveForceHide();
+    
+
+
+
     void SetCaretReadOnly(bool inMakeReadonly);
     
 
@@ -201,17 +216,22 @@ protected:
 
 
     int32_t               mOverrideOffset;
-
-    
-
-
-    bool                  mIsBlinkOn;
     
 
 
 
 
     int32_t               mBlinkCount;
+    
+
+
+
+    uint32_t              mHideCount;
+
+    
+
+
+    bool                  mIsBlinkOn;
     
 
 

@@ -147,6 +147,7 @@ nsEditor::nsEditor()
 ,  mDidPostCreate(false)
 ,  mDispatchInputEvent(true)
 ,  mIsInEditAction(false)
+,  mHidingCaret(false)
 {
 }
 
@@ -158,6 +159,8 @@ nsEditor::~nsEditor()
     mComposition->OnEditorDestroyed();
     mComposition = nullptr;
   }
+  
+  HideCaret(false);
   mTxnMgr = nullptr;
 
   delete mPhonetic;
@@ -464,6 +467,8 @@ nsEditor::PreDestroy(bool aDestroyingFrames)
 
   
   RemoveEventListeners();
+  
+  HideCaret(false);
   mActionListeners.Clear();
   mEditorObservers.Clear();
   mDocStateListeners.Clear();
@@ -2064,6 +2069,10 @@ nsEditor::EndIMEComposition()
                    "nsIAbsorbingTransaction::Commit() failed");
     }
   }
+
+  
+  
+  HideCaret(false);
 
   
   mIMETextNode = nullptr;
@@ -5257,4 +5266,24 @@ nsEditor::GetIMESelectionStartOffsetIn(nsINode* aTextNode)
     }
   }
   return minOffset < INT32_MAX ? minOffset : -1;
+}
+
+void
+nsEditor::HideCaret(bool aHide)
+{
+  if (mHidingCaret == aHide) {
+    return;
+  }
+
+  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  NS_ENSURE_TRUE_VOID(presShell);
+  nsRefPtr<nsCaret> caret = presShell->GetCaret();
+  NS_ENSURE_TRUE_VOID(caret);
+
+  mHidingCaret = aHide;
+  if (aHide) {
+    caret->AddForceHide();
+  } else {
+    caret->RemoveForceHide();
+  }
 }
