@@ -18,11 +18,15 @@ namespace mozilla {
 class DecodedStreamGraphListener : public MediaStreamListener {
   typedef MediaStreamListener::MediaStreamGraphEvent MediaStreamGraphEvent;
 public:
-  explicit DecodedStreamGraphListener(MediaStream* aStream)
+  DecodedStreamGraphListener(MediaStream* aStream,
+                             MozPromiseHolder<GenericPromise>&& aPromise)
     : mMutex("DecodedStreamGraphListener::mMutex")
     , mStream(aStream)
     , mLastOutputTime(aStream->StreamTimeToMicroseconds(aStream->GetCurrentTime()))
-    , mStreamFinishedOnMainThread(false) {}
+    , mStreamFinishedOnMainThread(false)
+  {
+    mFinishPromise = Move(aPromise);
+  }
 
   void NotifyOutput(MediaStreamGraph* aGraph, GraphTime aCurrentTime) override
   {
@@ -43,6 +47,7 @@ public:
 
   void DoNotifyFinished()
   {
+    mFinishPromise.ResolveIfExists(true, __func__);
     MutexAutoLock lock(mMutex);
     mStreamFinishedOnMainThread = true;
   }
@@ -56,6 +61,7 @@ public:
   void Forget()
   {
     MOZ_ASSERT(NS_IsMainThread());
+    mFinishPromise.ResolveIfExists(true, __func__);
     MutexAutoLock lock(mMutex);
     mStream = nullptr;
   }
@@ -72,6 +78,8 @@ private:
   nsRefPtr<MediaStream> mStream;
   int64_t mLastOutputTime; 
   bool mStreamFinishedOnMainThread;
+  
+  MozPromiseHolder<GenericPromise> mFinishPromise;
 };
 
 static void
@@ -131,6 +139,8 @@ public:
   
   
   bool mEOSVideoCompensation;
+  
+  nsRefPtr<GenericPromise> mFinishPromise;
 };
 
 DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream, bool aPlaying)
@@ -145,7 +155,10 @@ DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream, bool aPlaying)
   , mPlaying(aPlaying)
   , mEOSVideoCompensation(false)
 {
-  mListener = new DecodedStreamGraphListener(mStream);
+  MozPromiseHolder<GenericPromise> promise;
+  mFinishPromise = promise.Ensure(__func__);
+  
+  mListener = new DecodedStreamGraphListener(mStream, Move(promise));
   mStream->AddListener(mListener);
 
   
@@ -251,8 +264,12 @@ DecodedStream::StartPlayback(int64_t aStartTime, const MediaInfo& aInfo)
   MOZ_ASSERT(mStartTime.isNothing(), "playback already started.");
   mStartTime.emplace(aStartTime);
   mInfo = aInfo;
+
   
-  return nullptr;
+  
+  
+  
+  return mData->mFinishPromise;
 }
 
 void DecodedStream::StopPlayback()
