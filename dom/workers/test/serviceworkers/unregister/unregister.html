@@ -1,7 +1,7 @@
-<!--
-  Any copyright is dedicated to the Public Domain.
-  http://creativecommons.org/publicdomain/zero/1.0/
--->
+
+
+
+
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -12,7 +12,7 @@
 <body>
 <script type="text/javascript">
 
-  onmessage = function(e) { parent.postMessage(e.data, "*"); }
+  navigator.serviceWorker.onmessage = function(e) { parent.postMessage(e.data, "*"); }
   navigator.serviceWorker.controller.postMessage("GO");
 
 </script>
