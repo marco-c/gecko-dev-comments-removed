@@ -890,8 +890,15 @@ DecodeAndCropBlob(Blob& aBlob, Maybe<IntRect>& aCropRect, ErrorResult& aRv)
     
     
     
-    MOZ_ASSERT(surface->GetType() == SurfaceType::DATA,
-          "The SourceSurface from just decoded Blob is not DataSourceSurface.");
+    
+    
+    
+    
+    
+    
+    
+    
+    
     RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
     croppedSurface = CropAndCopyDataSourceSurface(dataSurface, aCropRect.ref());
     aCropRect->MoveTo(0, 0);
