@@ -295,7 +295,7 @@ ThreadedDriver::RunThread()
       STREAM_LOG(LogLevel::Debug, ("Time did not advance"));
     }
 
-    mStateComputedTime = mNextStateComputedTime;
+    MOZ_ASSERT(mStateComputedTime == mNextStateComputedTime);
     mNextStateComputedTime =
       mGraphImpl->RoundUpToNextAudioBlock(
         mIterationEnd + mGraphImpl->MillisecondsToMediaTime(AUDIO_TARGET_MS));
@@ -822,7 +822,7 @@ AudioCallbackDriver::DataCallback(AudioDataValue* aBuffer, long aFrames)
   
   if (mBuffer.Available()) {
 
-    mStateComputedTime = mNextStateComputedTime;
+    MOZ_ASSERT(mStateComputedTime == mNextStateComputedTime);
 
     
     
