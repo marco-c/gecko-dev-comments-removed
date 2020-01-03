@@ -345,12 +345,10 @@ BytecodeEmitter::emitCall(JSOp op, uint16_t argc, ParseNode* pn)
 }
 
 bool
-BytecodeEmitter::emitDupAt(unsigned slot)
+BytecodeEmitter::emitDupAt(unsigned slotFromTop)
 {
-    MOZ_ASSERT(slot < unsigned(stackDepth));
+    MOZ_ASSERT(slotFromTop < unsigned(stackDepth));
 
-    
-    unsigned slotFromTop = stackDepth - 1 - slot;
     if (slotFromTop >= JS_BIT(24)) {
         reportError(nullptr, JSMSG_TOO_MANY_LOCALS);
         return false;
@@ -2787,7 +2785,7 @@ BytecodeEmitter::emitSuperElemOperands(ParseNode* pn, SuperElemOptions opts)
             return false;
 
         
-        if (!emitDupAt(this->stackDepth - 1 - 1))
+        if (!emitDupAt(1))
             return false;
     }
 
@@ -2898,11 +2896,11 @@ BytecodeEmitter::emitSuperElemIncDec(ParseNode* pn)
 
     
     
-    if (!emitDupAt(this->stackDepth - 1 - 2))       
+    if (!emitDupAt(2))                              
         return false;
-    if (!emitDupAt(this->stackDepth - 1 - 2))       
+    if (!emitDupAt(2))                              
         return false;
-    if (!emitDupAt(this->stackDepth - 1 - 2))       
+    if (!emitDupAt(2))                              
         return false;
     if (!emitElemOpBase(JSOP_GETELEM_SUPER))        
         return false;
@@ -4465,11 +4463,11 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
                 return false;
             break;
           case PNK_SUPERELEM:
-            if (!emitDupAt(this->stackDepth - 1 - 2))
+            if (!emitDupAt(2))
                 return false;
-            if (!emitDupAt(this->stackDepth - 1 - 2))
+            if (!emitDupAt(2))
                 return false;
-            if (!emitDupAt(this->stackDepth - 1 - 2))
+            if (!emitDupAt(2))
                 return false;
             if (!emitElemOpBase(JSOP_GETELEM_SUPER))
                 return false;
@@ -5370,7 +5368,7 @@ BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn, ptrdiff_t top)
         if (!emit1(JSOP_DUP))                             
             return false;
     } else {
-        if (!emitDupAt(this->stackDepth - 1 - 2))         
+        if (!emitDupAt(2))                                
             return false;
     }
     if (!emitIteratorNext(forHead))                       
@@ -6720,7 +6718,7 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
 
         if (isNewOp) {
             
-            if (!emitDupAt(this->stackDepth - 1 - (argc + 1)))
+            if (!emitDupAt(argc + 1))
                 return false;
         }
     } else {
@@ -6728,7 +6726,7 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
             return false;
 
         if (isNewOp) {
-            if (!emitDupAt(this->stackDepth - 1 - 2))
+            if (!emitDupAt(2))
                 return false;
         }
     }
@@ -7869,7 +7867,7 @@ BytecodeEmitter::emitTree(ParseNode* pn)
 
         if (!emitTree(pn->pn_kid))
             return false;
-        if (!emitDupAt(arrayCompDepth))
+        if (!emitDupAt(this->stackDepth - 1 - arrayCompDepth))
             return false;
         if (!emit1(JSOP_ARRAYPUSH))
             return false;

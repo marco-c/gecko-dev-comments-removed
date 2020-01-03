@@ -375,15 +375,7 @@ struct BytecodeEmitter
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    bool emitDupAt(unsigned slot);
+    bool emitDupAt(unsigned slotFromTop);
 
     
     
