@@ -46,8 +46,8 @@
 #include "nsRegion.h"                   
 #include "nsTArray.h"                   
 #ifdef MOZ_ENABLE_SKIA
-#include "skia/SkCanvas.h"              
-#include "skia/SkBitmapDevice.h"        
+#include "skia/include/core/SkCanvas.h"         
+#include "skia/include/core/SkBitmapDevice.h"   
 #else
 #define PIXMAN_DONT_DEFINE_STDINT
 #include "pixman.h"                     

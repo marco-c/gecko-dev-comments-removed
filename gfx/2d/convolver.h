@@ -35,7 +35,7 @@
 #include "base/basictypes.h"
 #include "base/cpu.h"
 #include "mozilla/Assertions.h"
-#include "skia/SkTypes.h"
+#include "skia/include/core/SkTypes.h"
 
 
 #if defined(__APPLE__)

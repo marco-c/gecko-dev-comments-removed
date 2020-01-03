@@ -28,7 +28,7 @@
 
 #include "convolver.h"
 #include <algorithm>
-#include "skia/SkTypes.h"
+#include "skia/include/core/SkTypes.h"
 
 #include <emmintrin.h>  
 

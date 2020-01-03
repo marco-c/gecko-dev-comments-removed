@@ -3,8 +3,8 @@
 
 
 
-#include "skia/GrContext.h"
-#include "skia/GrGLInterface.h"
+#include "skia/include/gpu/GrContext.h"
+#include "skia/include/gpu/gl/GrGLInterface.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/DebugOnly.h"
