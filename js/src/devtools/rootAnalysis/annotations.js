@@ -362,6 +362,10 @@ function listGCPointers() {
         'JS::Value',
         'jsid',
 
+        'js::TypeSet',
+        'js::TypeSet::ObjectKey',
+        'js::TypeSet::Type',
+
         
         'JS::AutoCheckCannotGC',
     ];
