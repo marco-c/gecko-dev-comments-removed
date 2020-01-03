@@ -115,8 +115,9 @@ public:
 
 
 
-  virtual nsRestyleHint
-    HasAttributeDependentStyle(AttributeRuleProcessorData* aData) = 0;
+  virtual nsRestyleHint HasAttributeDependentStyle(
+      AttributeRuleProcessorData* aData,
+      mozilla::RestyleHintData& aRestyleHintDataResult) = 0;
 
   
 
