@@ -16,7 +16,7 @@
 #include <asm/unistd.h>
 #include <linux/filter.h>
 
-#include <sys/cdefs.h>
+#include <sys/types.h>
 
 
 
