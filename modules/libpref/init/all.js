@@ -4348,6 +4348,9 @@ pref("layers.compositor-lru-size", 0);
 pref("geo.enabled", true);
 
 
+pref("geo.wifi.xhr.timeout", 60000);
+
+
 pref("device.sensors.enabled", true);
 
 
