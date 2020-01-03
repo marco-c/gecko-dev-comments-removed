@@ -91,6 +91,9 @@ nsGenericHTMLFrameElement::GetContentDocument()
   }
 
   nsIDocument *doc = win->GetDoc();
+  if (!doc) {
+    return nullptr;
+  }
 
   
   if (!nsContentUtils::SubjectPrincipal()->
