@@ -235,11 +235,6 @@ private:
 
   
   
-  
-  nsTArray<nsRefPtr<MessagePortBase>> mTransferringPort;
-
-  
-  
   nsTArray<nsRefPtr<MessagePortBase>> mTransferredPorts;
 
   
