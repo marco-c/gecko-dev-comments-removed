@@ -124,6 +124,8 @@ var interfaceNamesInGlobalScope =
 
     "IDBCursor",
 
+    "IDBCursorWithValue",
+
     "IDBDatabase",
 
     "IDBFactory",
