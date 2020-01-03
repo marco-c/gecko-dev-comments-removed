@@ -1947,5 +1947,9 @@ pref("view_source.tab", true);
 
 pref("dom.serviceWorkers.enabled", true);
 
+#ifdef NIGHTLY_BUILD
+pref("dom.serviceWorkers.interception.enabled", true);
+#endif
+
 
 pref("dom.push.enabled", true);
