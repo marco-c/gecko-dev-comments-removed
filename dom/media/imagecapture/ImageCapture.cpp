@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ImageCapture.h"
 #include "mozilla/dom/BlobEvent.h"
@@ -82,8 +82,8 @@ ImageCapture::GetVideoStreamTrack() const
 nsresult
 ImageCapture::TakePhotoByMediaEngine()
 {
-  // Callback for TakPhoto(), it also monitor the principal. If principal
-  // changes, it returns PHOTO_ERROR with security error.
+  
+  
   class TakePhotoCallback : public MediaEngineSource::PhotoCallback,
                             public DOMMediaStream::PrincipalChangeObserver
   {
@@ -145,38 +145,38 @@ ImageCapture::TakePhotoByMediaEngine()
 void
 ImageCapture::TakePhoto(ErrorResult& aResult)
 {
-  // According to spec, VideoStreamTrack.readyState must be "live"; however
-  // gecko doesn't implement it yet (bug 910249). Instead of readyState, we
-  // check VideoStreamTrack.enable before bug 910249 is fixed.
-  // The error code should be INVALID_TRACK, but spec doesn't define it in
-  // ImageCaptureError. So it returns PHOTO_ERROR here before spec updates.
+  
+  
+  
+  
+  
   if (!mVideoStreamTrack->Enabled()) {
     PostErrorEvent(ImageCaptureError::PHOTO_ERROR, NS_ERROR_FAILURE);
     return;
   }
 
-  // Try if MediaEngine supports taking photo.
+  
   nsresult rv = TakePhotoByMediaEngine();
 
-  // It falls back to MediaStreamGraph image capture if MediaEngine doesn't
-  // support TakePhoto().
+  
+  
   if (rv == NS_ERROR_NOT_IMPLEMENTED) {
     IC_LOG("MediaEngine doesn't support TakePhoto(), it falls back to MediaStreamGraph.");
     nsRefPtr<CaptureTask> task =
       new CaptureTask(this, mVideoStreamTrack->GetTrackID());
 
-    // It adds itself into MediaStreamGraph, so ImageCapture doesn't need to hold
-    // the reference.
+    
+    
     task->AttachStream();
   }
 }
 
 nsresult
-ImageCapture::PostBlobEvent(File* aBlob)
+ImageCapture::PostBlobEvent(Blob* aBlob)
 {
   MOZ_ASSERT(NS_IsMainThread());
   if (!CheckPrincipal()) {
-    // Media is not same-origin, don't allow the data out.
+    
     return PostErrorEvent(ImageCaptureError::PHOTO_ERROR, NS_ERROR_DOM_SECURITY_ERR);
   }
 
@@ -248,5 +248,5 @@ ImageCapture::CheckPrincipal()
   return subsumes;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
