@@ -60,9 +60,9 @@ public:
     , mPendingState(PendingState::NotPending)
     , mSequenceNum(kUnsequenced)
     , mIsRunningOnCompositor(false)
-    , mIsPreviousStateFinished(false)
     , mFinishedAtLastComposeStyle(false)
     , mIsRelevant(false)
+    , mFinishedIsResolved(false)
   {
   }
 
@@ -323,11 +323,21 @@ protected:
     DidSeek
   };
 
-  void UpdateTiming(SeekFlag aSeekFlag);
-  void UpdateFinishedState(SeekFlag aSeekFlag);
+  enum class SyncNotifyFlag {
+    Sync,
+    Async
+  };
+
+  void UpdateTiming(SeekFlag aSeekFlag,
+                    SyncNotifyFlag aSyncNotifyFlag);
+  void UpdateFinishedState(SeekFlag aSeekFlag,
+                           SyncNotifyFlag aSyncNotifyFlag);
   void UpdateEffect();
   void FlushStyle() const;
   void PostUpdate();
+  void ResetFinishedPromise();
+  void MaybeResolveFinishedPromise();
+  void DoFinishNotification(SyncNotifyFlag aSyncNotifyFlag);
 
   
 
@@ -385,13 +395,17 @@ protected:
   uint64_t mSequenceNum;
 
   bool mIsRunningOnCompositor;
-  
-  
-  bool mIsPreviousStateFinished; 
   bool mFinishedAtLastComposeStyle;
   
   
   bool mIsRelevant;
+
+  nsRevocableEventPtr<nsRunnableMethod<Animation>> mFinishNotificationTask;
+  
+  
+  
+  
+  bool mFinishedIsResolved;
 };
 
 } 
