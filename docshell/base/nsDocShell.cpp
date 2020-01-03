@@ -36,6 +36,7 @@
 #include "nsIDOMStorage.h"
 #include "nsIContentViewer.h"
 #include "nsIDocumentLoaderFactory.h"
+#include "nsIMozBrowserFrame.h"
 #include "nsCURILoader.h"
 #include "nsDocShellCID.h"
 #include "nsDOMCID.h"
@@ -10399,6 +10400,32 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       }
       nestedURI->GetInnerURI(getter_AddRefs(tempURI));
       nestedURI = do_QueryInterface(tempURI);
+    }
+  }
+
+  
+  
+  if (mScriptGlobal) {
+    
+    
+    
+
+    
+    
+    bool isAbout = false;
+    rv = aURI->SchemeIs("about", &isAbout);
+    if (NS_SUCCEEDED(rv) && !isAbout &&
+        nsIDocShell::GetIsApp()) {
+      nsCOMPtr<Element> frameElement = mScriptGlobal->GetFrameElementInternal();
+      if (frameElement) {
+        nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(frameElement);
+        
+        
+        
+        if (browserFrame && !browserFrame->GetReallyIsApp()) {
+          return NS_ERROR_MALFORMED_URI;
+        }
+      }
     }
   }
 
