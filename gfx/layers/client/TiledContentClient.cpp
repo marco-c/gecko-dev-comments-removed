@@ -1049,33 +1049,6 @@ void PadDrawTargetOutFromRegion(RefPtr<DrawTarget> drawTarget, nsIntRegion &regi
 }
 
 void
-ClientTiledLayerBuffer::PostValidate(const nsIntRegion& aPaintRegion,
-                                     const nsIntRegion& aDirtyRegion)
-{
-  if (gfxPrefs::TiledDrawTargetEnabled() && mMoz2DTiles.size() > 0) {
-    gfx::TileSet tileset;
-    for (size_t i = 0; i < mMoz2DTiles.size(); ++i) {
-      mMoz2DTiles[i].mTileOrigin -= mTilingOrigin;
-    }
-    tileset.mTiles = &mMoz2DTiles[0];
-    tileset.mTileCount = mMoz2DTiles.size();
-    RefPtr<DrawTarget> drawTarget = gfx::Factory::CreateTiledDrawTarget(tileset);
-    drawTarget->SetTransform(Matrix());
-
-    RefPtr<gfxContext> ctx = new gfxContext(drawTarget);
-    ctx->SetMatrix(
-      ctx->CurrentMatrix().Scale(mResolution, mResolution).Translate(ThebesPoint(-mTilingOrigin)));
-
-    mCallback(mPaintedLayer, ctx, aPaintRegion, aDirtyRegion,
-              DrawRegionClip::DRAW, nsIntRegion(), mCallbackData);
-    mMoz2DTiles.clear();
-    
-    mTilingOrigin = IntPoint(std::numeric_limits<int32_t>::max(),
-                             std::numeric_limits<int32_t>::max());
-  }
-}
-
-void
 ClientTiledLayerBuffer::UnlockTile(TileClient& aTile)
 {
   
@@ -1150,9 +1123,61 @@ void ClientTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
     }
   }
 
-  PostValidate(aPaintRegion, aDirtyRegion);
+  if (gfxPrefs::TiledDrawTargetEnabled() && mMoz2DTiles.size() > 0) {
+    gfx::TileSet tileset;
+    for (size_t i = 0; i < mMoz2DTiles.size(); ++i) {
+      mMoz2DTiles[i].mTileOrigin -= mTilingOrigin;
+    }
+    tileset.mTiles = &mMoz2DTiles[0];
+    tileset.mTileCount = mMoz2DTiles.size();
+    RefPtr<DrawTarget> drawTarget = gfx::Factory::CreateTiledDrawTarget(tileset);
+    drawTarget->SetTransform(Matrix());
 
-  for (TileClient& tile : mRetainedTiles) {
+    RefPtr<gfxContext> ctx = new gfxContext(drawTarget);
+    ctx->SetMatrix(
+      ctx->CurrentMatrix().Scale(mResolution, mResolution).Translate(ThebesPoint(-mTilingOrigin)));
+
+    mCallback(mPaintedLayer, ctx, aPaintRegion, aDirtyRegion,
+              DrawRegionClip::DRAW, nsIntRegion(), mCallbackData);
+    mMoz2DTiles.clear();
+    
+    mTilingOrigin = IntPoint(std::numeric_limits<int32_t>::max(),
+                             std::numeric_limits<int32_t>::max());
+  }
+
+  bool edgePaddingEnabled = gfxPrefs::TileEdgePaddingEnabled();
+
+  for (uint32_t i = 0; i < mRetainedTiles.Length(); ++i) {
+    TileClient& tile = mRetainedTiles[i];
+
+    
+    
+    
+    if (edgePaddingEnabled && mResolution == 1 &&
+        tile.mFrontBuffer && tile.mFrontBuffer->IsLocked()) {
+
+      const TileIntPoint tilePosition = newTiles.TilePosition(i);
+      IntPoint tileOffset = GetTileOffset(tilePosition);
+      
+      
+      IntRect tileRect = IntRect(tileOffset.x, tileOffset.y,
+                                 GetTileSize().width, GetTileSize().height);
+
+      nsIntRegion tileDrawRegion = IntRect(tileOffset, scaledTileSize);
+      tileDrawRegion.AndWith(aPaintRegion);
+
+      nsIntRegion tileValidRegion = mValidRegion;
+      tileValidRegion.OrWith(tileDrawRegion);
+
+      
+      if (!tileValidRegion.Contains(tileRect)) {
+        tileValidRegion = tileValidRegion.Intersect(tileRect);
+        
+        tileValidRegion.MoveBy(-IntPoint(tileOffset.x, tileOffset.y));
+        RefPtr<DrawTarget> drawTarget = tile.mFrontBuffer->BorrowDrawTarget();
+        PadDrawTargetOutFromRegion(drawTarget, tileValidRegion);
+      }
+    }
     UnlockTile(tile);
   }
 
@@ -1240,7 +1265,6 @@ ClientTiledLayerBuffer::ValidateTile(TileClient& aTile,
       }
     }
 
-    
     gfx::Tile moz2DTile;
     RefPtr<DrawTarget> dt = backBuffer->BorrowDrawTarget();
     RefPtr<DrawTarget> dtOnWhite;
@@ -1327,26 +1351,6 @@ ClientTiledLayerBuffer::ValidateTile(TileClient& aTile,
   }
 
   
-  
-  
-  if (mResolution == 1) {
-    IntRect unscaledTile = IntRect(aTileOrigin.x,
-                                       aTileOrigin.y,
-                                       GetTileSize().width,
-                                       GetTileSize().height);
-
-    nsIntRegion tileValidRegion = GetValidRegion();
-    tileValidRegion.Or(tileValidRegion, aDirtyRegion);
-    
-    if (!tileValidRegion.Contains(unscaledTile)) {
-      tileValidRegion = tileValidRegion.Intersect(unscaledTile);
-      
-      tileValidRegion.MoveBy(-nsIntPoint(unscaledTile.x, unscaledTile.y));
-      PadDrawTargetOutFromRegion(drawTarget, tileValidRegion);
-    }
-  }
-
-  
   aTile.mInvalidBack.SubOut(offsetScaledDirtyRegion);
 
 #ifdef GFX_TILEDLAYER_DEBUG_OVERLAY
@@ -1364,7 +1368,6 @@ ClientTiledLayerBuffer::ValidateTile(TileClient& aTile,
   tileRegion.SubOut(GetValidRegion());
   tileRegion.SubOut(aDirtyRegion); 
 
-  backBuffer->Unlock();
   backBuffer->SetWaste(tileRegion.Area() * mResolution * mResolution);
 
   if (createdTextureClient) {

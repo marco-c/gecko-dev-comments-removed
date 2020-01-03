@@ -277,7 +277,6 @@ struct TileClient
   nsIntRegion mInvalidFront;
   nsIntRegion mInvalidBack;
   nsExpirationState mExpirationState;
-
 private:
   
   
@@ -468,9 +467,6 @@ protected:
   bool ValidateTile(TileClient& aTile,
                     const nsIntPoint& aTileRect,
                     const nsIntRegion& dirtyRect);
-
-  void PostValidate(const nsIntRegion& aPaintRegion,
-                    const nsIntRegion& aDirtyRegion);
 
   void UnlockTile(TileClient& aTile);
 
