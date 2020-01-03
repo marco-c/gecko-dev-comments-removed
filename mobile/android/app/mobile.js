@@ -414,7 +414,7 @@ pref("font.size.inflation.minTwips", 0);
 
 pref("browser.ui.zoom.force-user-scalable", false);
 
-pref("ui.zoomedview.enabled", true);
+pref("ui.zoomedview.disabled", false);
 pref("ui.zoomedview.limitReadableSize", 8); 
 pref("ui.zoomedview.defaultZoomFactor", 2);
 pref("ui.zoomedview.simplified", true); 
@@ -525,7 +525,7 @@ pref("app.update.timerMinimumDelay", 30);
 
 
 pref("app.update.autodownload", "wifi");
-pref("app.update.url.android", "https://aus4.mozilla.org/update/4/%PRODUCT%/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/%MOZ_VERSION%/update.xml");
+pref("app.update.url.android", "https://aus5.mozilla.org/update/4/%PRODUCT%/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/%MOZ_VERSION%/update.xml");
 
 #ifdef MOZ_UPDATER
 
