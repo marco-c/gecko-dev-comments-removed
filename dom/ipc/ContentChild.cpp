@@ -764,6 +764,14 @@ ContentChild::AppendProcessId(nsACString& aName)
 }
 
 void
+ContentChild::InitGraphicsDeviceData()
+{
+    
+    
+    gfxPlatform::GetPlatform();
+}
+
+void
 ContentChild::InitXPCOM()
 {
     

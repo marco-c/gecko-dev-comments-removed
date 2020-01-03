@@ -373,6 +373,16 @@ public:
 
 NS_IMPL_ISUPPORTS(D3D9SharedTextureReporter, nsIMemoryReporter)
 
+
+
+static DeviceInitData sDeviceInitDataDoNotUseDirectly;
+static inline DeviceInitData&
+GetParentDevicePrefs()
+{
+  MOZ_ASSERT(XRE_IsContentProcess());
+  return sDeviceInitDataDoNotUseDirectly;
+}
+
 gfxWindowsPlatform::gfxWindowsPlatform()
   : mRenderMode(RENDER_GDI)
   , mIsWARP(false)
@@ -403,6 +413,7 @@ gfxWindowsPlatform::gfxWindowsPlatform()
     mFeatureLevels.AppendElement(D3D_FEATURE_LEVEL_10_0);
     mFeatureLevels.AppendElement(D3D_FEATURE_LEVEL_9_3);
 
+    UpdateDeviceInitData();
     InitializeDevices();
     UpdateRenderMode();
 
@@ -518,6 +529,9 @@ gfxWindowsPlatform::HandleDeviceReset()
   imgLoader::Singleton()->ClearCache(false);
   gfxAlphaBoxBlur::ShutdownBlurCache();
 
+  
+  
+  UpdateDeviceInitData();
   InitializeDevices();
   return true;
 }
@@ -1901,6 +1915,12 @@ CanUseWARP()
   }
 
   
+  
+  if (XRE_IsContentProcess()) {
+    return GetParentDevicePrefs().useD3D11WARP();
+  }
+
+  
   if (!IsWin8OrLater() ||
       gfxPrefs::LayersD3D11DisableWARP() ||
       GetModuleHandleA("nvdxgiwrap.dll"))
@@ -1916,6 +1936,14 @@ gfxWindowsPlatform::CheckD3D11Support(bool* aCanUseHardware)
   
   if (IsFeatureStatusFailure(mD3D11Status)) {
     return mD3D11Status;
+  }
+
+  if (XRE_IsContentProcess()) {
+    if (!GetParentDevicePrefs().useD3D11()) {
+      return FeatureStatus::Blocked;
+    }
+    *aCanUseHardware = !GetParentDevicePrefs().useD3D11WARP();
+    return FeatureStatus::Available;
   }
 
   if (gfxPrefs::LayersD3D11ForceWARP()) {
@@ -1982,6 +2010,12 @@ gfxWindowsPlatform::AttemptD3D11DeviceCreation()
   
   
   mDoesD3D11TextureSharingWork = ::DoesD3D11TextureSharingWork(mD3D11Device);
+
+  
+  
+  MOZ_ASSERT_IF(XRE_IsContentProcess(),
+                mDoesD3D11TextureSharingWork == GetParentDevicePrefs().d3d11TextureSharingWorks());
+
   mD3D11Device->SetExceptionMode(0);
   mIsWARP = false;
 }
@@ -2079,29 +2113,29 @@ gfxWindowsPlatform::AttemptD3D11ImageBridgeDeviceCreation()
 }
 
 void
+gfxWindowsPlatform::SetDeviceInitData(mozilla::gfx::DeviceInitData& aData)
+{
+  MOZ_ASSERT(XRE_IsContentProcess());
+  sDeviceInitDataDoNotUseDirectly = aData;
+}
+
+void
 gfxWindowsPlatform::InitializeDevices()
 {
   
+  mAcceleration = CheckAccelerationSupport();
   if (IsFeatureStatusFailure(mAcceleration)) {
     return;
   }
 
   
   
+  
   DriverInitCrashDetection detectCrashes;
-  if (detectCrashes.DisableAcceleration() || InSafeMode()) {
+  if (detectCrashes.DisableAcceleration()) {
     mAcceleration = FeatureStatus::Blocked;
     return;
   }
-
-  
-  if (!ShouldUseLayersAcceleration()) {
-    mAcceleration = FeatureStatus::Disabled;
-    return;
-  }
-
-  
-  mAcceleration = FeatureStatus::Available;
 
   
   
@@ -2115,6 +2149,38 @@ gfxWindowsPlatform::InitializeDevices()
   if (mD3D11Status == FeatureStatus::Available) {
     InitializeD2D();
   }
+}
+
+FeatureStatus
+gfxWindowsPlatform::CheckAccelerationSupport()
+{
+  
+  if (IsFeatureStatusFailure(mAcceleration)) {
+    return mAcceleration;
+  }
+  if (XRE_IsContentProcess()) {
+    return GetParentDevicePrefs().useAcceleration()
+           ? FeatureStatus::Available
+           : FeatureStatus::Blocked;
+  }
+  if (InSafeMode()) {
+    return FeatureStatus::Blocked;
+  }
+  if (!ShouldUseLayersAcceleration()) {
+    return FeatureStatus::Disabled;
+  }
+  return FeatureStatus::Available;
+}
+
+bool
+gfxWindowsPlatform::CanUseD3D11ImageBridge()
+{
+  if (XRE_IsContentProcess()) {
+    if (!GetParentDevicePrefs().useD3D11ImageBridge()) {
+      return false;
+    }
+  }
+  return !mIsWARP;
 }
 
 void
@@ -2170,7 +2236,7 @@ gfxWindowsPlatform::InitializeD3D11()
   mD3D11Status = FeatureStatus::Available;
   MOZ_ASSERT(mD3D11Device);
 
-  if (!mIsWARP) {
+  if (CanUseD3D11ImageBridge()) {
     AttemptD3D11ImageBridgeDeviceCreation();
   }
 
@@ -2204,6 +2270,12 @@ gfxWindowsPlatform::CheckD2DSupport()
   
   if (IsFeatureStatusFailure(mD2DStatus)) {
     return mD2DStatus;
+  }
+
+  if (XRE_IsContentProcess()) {
+    return GetParentDevicePrefs().useD2D()
+           ? FeatureStatus::Available
+           : FeatureStatus::Blocked;
   }
 
   if (!gfxPrefs::Direct2DForceEnabled() && IsD2DBlacklisted()) {
@@ -2265,6 +2337,11 @@ gfxWindowsPlatform::CheckD2D1Support()
   }
   if (!Factory::SupportsD2D1()) {
     return FeatureStatus::Unavailable;
+  }
+  if (XRE_IsContentProcess()) {
+    return GetParentDevicePrefs().useD2D1()
+           ? FeatureStatus::Available
+           : FeatureStatus::Blocked;
   }
   if (!gfxPrefs::Direct2DUse1_1()) {
     return FeatureStatus::Disabled;
@@ -2608,4 +2685,25 @@ gfxWindowsPlatform::GetD3D11Version()
     return 0;
   }
   return device->GetFeatureLevel();
+}
+
+void
+gfxWindowsPlatform::GetDeviceInitData(DeviceInitData* aOut)
+{
+  
+  UpdateRenderMode();
+
+  gfxPlatform::GetDeviceInitData(aOut);
+
+  
+  if (GetD3D11Status() != FeatureStatus::Available) {
+    return;
+  }
+
+  aOut->useD3D11() = true;
+  aOut->useD3D11ImageBridge() = !!mD3D11ImageBridgeDevice;
+  aOut->d3d11TextureSharingWorks() = mDoesD3D11TextureSharingWork;
+  aOut->useD3D11WARP() = mIsWARP;
+  aOut->useD2D() = (GetD2DStatus() == FeatureStatus::Available);
+  aOut->useD2D1() = (GetD2D1Status() == FeatureStatus::Available);
 }

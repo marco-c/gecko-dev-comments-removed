@@ -49,6 +49,7 @@ class DataSourceSurface;
 class ScaledFont;
 class DrawEventRecorder;
 class VsyncSource;
+class DeviceInitData;
 
 inline uint32_t
 BackendTypeBit(BackendType b)
@@ -486,6 +487,7 @@ public:
     static bool CanUseDirect3D11ANGLE();
 
     
+    
     bool ShouldUseLayersAcceleration();
 
     
@@ -646,6 +648,10 @@ public:
     virtual void TestDeviceReset(DeviceResetReason aReason)
     {}
 
+    
+    
+    virtual void GetDeviceInitData(mozilla::gfx::DeviceInitData* aOut);
+
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();
@@ -677,6 +683,17 @@ protected:
 
     void InitBackendPrefs(uint32_t aCanvasBitmask, mozilla::gfx::BackendType aCanvasDefault,
                           uint32_t aContentBitmask, mozilla::gfx::BackendType aContentDefault);
+
+    
+
+
+    void UpdateDeviceInitData();
+
+    
+
+
+    virtual void SetDeviceInitData(mozilla::gfx::DeviceInitData& aData)
+    {}
 
     
 
