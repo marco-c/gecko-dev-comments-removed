@@ -67,6 +67,10 @@ struct NumArg {
 #define NAS_DEFAULT_NUM 20  /* default number of NumberedArgument array */
 
 
+
+
+
+
 #define TYPE_INT16	0
 #define TYPE_UINT16	1
 #define TYPE_INTN	2
@@ -515,6 +519,15 @@ static struct NumArg* BuildArgArray( const char *fmt, va_list ap, int* rv, struc
 	        nas[cn].type = TYPE_INT64;
 	        c = *p++;
 	    }
+	} else if (c == 'z') {
+	    if (sizeof(size_t) == sizeof(PRInt32)) {
+	        nas[ cn ].type = TYPE_INT32;
+	    } else if (sizeof(size_t) == sizeof(PRInt64)) {
+	        nas[ cn ].type = TYPE_INT64;
+	    } else {
+		nas[ cn ].type = TYPE_UNKNOWN;
+	    }
+	    c = *p++;
 	}
 
 	
@@ -809,6 +822,13 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
 		type = TYPE_INT64;
 		c = *fmt++;
 	    }
+	} else if (c == 'z') {
+	    if (sizeof(size_t) == sizeof(PRInt32)) {
+	    	type = TYPE_INT32;
+	    } else if (sizeof(size_t) == sizeof(PRInt64)) {
+	    	type = TYPE_INT64;
+	    }
+	    c = *fmt++;
 	}
 
 	

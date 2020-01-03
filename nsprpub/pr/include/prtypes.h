@@ -510,6 +510,31 @@ typedef long PRWord;
 typedef unsigned long PRUword;
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef __clang_analyzer__
+#if __has_extension(attribute_analyzer_noreturn)
+#define PR_PRETEND_NORETURN __attribute__((analyzer_noreturn))
+#endif
+#endif
+
+#ifndef PR_PRETEND_NORETURN
+#define PR_PRETEND_NORETURN
+#endif
+
 #if defined(NO_NSPR_10_SUPPORT)
 #else
 
