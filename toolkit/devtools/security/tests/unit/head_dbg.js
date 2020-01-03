@@ -17,6 +17,7 @@ const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
 const Services = require("Services");
 const DevToolsUtils = require("devtools/toolkit/DevToolsUtils.js");
 const xpcInspector = require("xpcInspector");
+const { DebuggerServer } = require("devtools/server/main");
 
 
 
@@ -39,7 +40,6 @@ function tryImport(url) {
   }
 }
 
-tryImport("resource://gre/modules/devtools/dbg-server.jsm");
 tryImport("resource://gre/modules/devtools/dbg-client.jsm");
 
 

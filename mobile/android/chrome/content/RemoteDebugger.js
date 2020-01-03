@@ -5,8 +5,11 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "DebuggerServer",
-                                  "resource://gre/modules/devtools/dbg-server.jsm");
+XPCOMUtils.defineLazyGetter(this, "DebuggerServer", () => {
+  let { require } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+  let { DebuggerServer } = require("devtools/server/main");
+  return DebuggerServer;
+});
 
 let RemoteDebugger = {
   init() {

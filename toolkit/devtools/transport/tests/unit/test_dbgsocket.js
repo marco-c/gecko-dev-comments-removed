@@ -1,9 +1,6 @@
 
 
 
-Cu.import("resource://gre/modules/devtools/dbg-server.jsm");
-Cu.import("resource://gre/modules/devtools/dbg-client.jsm");
-
 let gPort;
 let gExtraListener;
 
