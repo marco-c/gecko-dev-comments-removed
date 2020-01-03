@@ -29,14 +29,19 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace CanvasUtils {
 
+
+
+
+
+
+
+
 void
 DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
                          nsIPrincipal *aPrincipal,
                          bool forceWriteOnly,
                          bool CORSUsed)
 {
-    NS_PRECONDITION(aPrincipal, "Must have a principal here");
-
     
     if (!aCanvasElement) {
         NS_WARNING("DoDrawImageSecurityCheck called without canvas element!");
@@ -55,6 +60,8 @@ DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
     
     if (CORSUsed)
         return;
+
+    NS_PRECONDITION(aPrincipal, "Must have a principal here");
 
     if (aCanvasElement->NodePrincipal()->Subsumes(aPrincipal)) {
         
