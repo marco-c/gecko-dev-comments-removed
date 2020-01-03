@@ -6940,6 +6940,13 @@ var gIdentityHandler = {
   
 
 
+  getMode: function() {
+    return this._mode;
+  },
+
+  
+
+
 
 
 

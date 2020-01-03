@@ -398,15 +398,12 @@ pref("media.peerconnection.default_iceservers", "[]");
 pref("media.peerconnection.ice.loopback", false); 
 pref("media.peerconnection.ice.tcp", false);
 pref("media.peerconnection.ice.link_local", false); 
-pref("media.peerconnection.ice.force_interface", ""); 
 pref("media.peerconnection.ice.relay_only", false); 
 pref("media.peerconnection.use_document_iceservers", true);
 pref("media.peerconnection.identity.enabled", true);
 pref("media.peerconnection.identity.timeout", 10000);
 pref("media.peerconnection.ice.stun_client_maximum_transmits", 7);
 pref("media.peerconnection.ice.trickle_grace_period", 5000);
-pref("media.peerconnection.ice.default_address_only", false);
-
 
 
 
@@ -1957,9 +1954,6 @@ pref("security.apps.privileged.CSP.default", "default-src * data: blob:; script-
 
 pref("security.mixed_content.block_active_content", false);
 pref("security.mixed_content.block_display_content", false);
-
-
-pref("security.sri.enable", false);
 
 
 pref("security.cert_pinning.enforcement_level", 0);
@@ -4414,6 +4408,10 @@ pref("full-screen-api.pointer-lock.enabled", true);
 
 pref("full-screen-api.transition-duration.enter", "200 200");
 pref("full-screen-api.transition-duration.leave", "200 200");
+
+pref("full-screen-api.warning.timeout", 3000);
+
+pref("full-screen-api.warning.delay", 500);
 
 
 pref("dom.idle-observers-api.enabled", true);

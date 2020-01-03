@@ -669,32 +669,49 @@ window[chromehidden~="toolbar"] toolbar:not(#nav-bar):not(#TabsToolbar):not(#pri
   background: black;
 }
 
-#full-screen-warning-container {
+#fullscreen-warning {
+  display: flex;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
   z-index: 2147483647 !important;
+  visibility: visible;
+  transition: transform 300ms ease-in;
+  
+
+  top: 0; left: 50%;
+  transform: translate(-50%, -100%);
+  
+
+  max-width: 95%;
   pointer-events: none;
 }
-
-#full-screen-warning-container[fade-warning-out] {
-  transition-property: opacity !important;
-  transition-duration: 500ms !important;
-  opacity: 0.0;
-}
-
-#full-screen-warning-message {
+#fullscreen-warning[hidden] {
   
 
-  max-width: 800px;
+  display: flex;
+  visibility: hidden !important;
+  transition: initial;
+  pointer-events: none !important;
+}
+#fullscreen-warning[onscreen] {
+  transform: translate(-50%, 50px);
+}
+#fullscreen-warning[ontop] {
+  
+  transform: translate(-50%, -10px);
 }
 
-#full-screen-domain-text {
+#fullscreen-domain-text,
+#fullscreen-generic-text {
   word-wrap: break-word;
   
-  min-width: 1px;
+  min-width: 1px
+}
+#fullscreen-domain-text:not([hidden]) + #fullscreen-generic-text {
+  display: none;
+}
+
+#fullscreen-exit-button {
+  pointer-events: auto;
 }
 
 

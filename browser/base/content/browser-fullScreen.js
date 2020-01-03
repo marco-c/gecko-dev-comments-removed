@@ -318,7 +318,6 @@ var FullScreen = {
   _WarningBox: {
     _element: null,
     _origin: null,
-    _fadeOutTimeout: null,
 
     
 
@@ -359,6 +358,22 @@ var FullScreen = {
         return;
       }
 
+      if (!this._element) {
+        this._element = document.getElementById("fullscreen-warning");
+        
+        this._element.addEventListener("transitionend", this);
+        window.addEventListener("mousemove", this, true);
+        
+        this._timeoutHide = new this.Timeout(() => {
+          this._state = "hidden";
+        }, gPrefService.getIntPref("full-screen-api.warning.timeout"));
+        
+        this._timeoutShow = new this.Timeout(() => {
+          this._state = "ontop";
+          this._timeoutHide.start();
+        }, gPrefService.getIntPref("full-screen-api.warning.delay"));
+      }
+
       
       if (aOrigin) {
         this._origin = aOrigin;
@@ -368,65 +383,123 @@ var FullScreen = {
       try {
         host = uri.host;
       } catch (e) { }
-      let hostLabel = document.getElementById("full-screen-domain-text");
-      if (host) {
-        
+      let textElem = document.getElementById("fullscreen-domain-text");
+      if (!host) {
+        textElem.setAttribute("hidden", true);
+      } else {
+        textElem.removeAttribute("hidden");
+        let hostLabel = document.getElementById("fullscreen-domain");
         
         let utils = {};
         Cu.import("resource://gre/modules/DownloadUtils.jsm", utils);
-        let displayHost = utils.DownloadUtils.getURIHost(uri.spec)[0];
-        let bundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
+        hostLabel.value = utils.DownloadUtils.getURIHost(uri.spec)[0];
+      }
+      this._element.className = gIdentityHandler.getMode();
 
-        hostLabel.textContent = bundle.formatStringFromName("fullscreen.entered", [displayHost], 1);
-        hostLabel.removeAttribute("hidden");
-      } else {
-        hostLabel.setAttribute("hidden", "true");
+      
+      
+      if (this._timeoutHide.delay <= 0) {
+        return;
       }
 
       
       
-      if (!this._element) {
-        this._element = document.getElementById("full-screen-warning-container");
-        
-        this._element.addEventListener("transitionend", this);
-        this._element.removeAttribute("hidden");
-        this._fadeOutTimeout = new this.Timeout(() => {
-          if (this._element) {
-            this._element.setAttribute("fade-warning-out", "true");
-          }
-        }, 3000);
-      } else {
-        this._element.removeAttribute("fade-warning-out");
-      }
-
-      
-      this._fadeOutTimeout.start();
+      this._state = "onscreen";
+      this._lastState = "hidden";
+      this._timeoutHide.start();
     },
 
     close: function() {
       if (!this._element) {
         return;
       }
+      
+      this._timeoutHide.cancel();
+      this._timeoutShow.cancel();
+      
+      this._state = "hidden";
+      this._element.setAttribute("hidden", true);
+      
       this._element.removeEventListener("transitionend", this);
-      this._fadeOutTimeout.cancel();
+      window.removeEventListener("mousemove", this, true);
+      
+      this._element = null;
+      this._timeoutHide = null;
+      this._timeoutShow = null;
 
       
       
       
       
       gBrowser.selectedBrowser.focus();
+    },
 
-      this._element.setAttribute("hidden", true);
-      this._element.removeAttribute("fade-warning-out");
-      this._fadeOutTimeout = null;
-      this._element = null;
+    
+    
+    
+    
+    _lastState: null,
+    _STATES: ["hidden", "ontop", "onscreen"],
+    get _state() {
+      for (let state of this._STATES) {
+        if (this._element.hasAttribute(state)) {
+          return state;
+        }
+      }
+      return "hiding";
+    },
+    set _state(newState) {
+      let currentState = this._state;
+      if (currentState == newState) {
+        return;
+      }
+      if (currentState != "hiding") {
+        this._lastState = currentState;
+        this._element.removeAttribute(currentState);
+      }
+      if (newState != "hidden") {
+        this._element.setAttribute(newState, true);
+      }
     },
 
     handleEvent: function(event) {
       switch (event.type) {
+        case "mousemove": {
+          let state = this._state;
+          if (state == "hidden") {
+            
+            
+            if (event.clientY != 0) {
+              this._timeoutShow.cancel();
+            } else if (this._timeoutShow.delay >= 0) {
+              this._timeoutShow.start();
+            }
+          } else {
+            let elemRect = this._element.getBoundingClientRect();
+            if (state == "hiding") {
+              
+              
+              if (event.clientY <= elemRect.bottom + 50) {
+                this._state = this._lastState;
+                this._timeoutHide.start();
+              }
+            } else if (state == "ontop" || this._lastState != "hidden") {
+              
+              
+              
+              
+              if (event.clientY > elemRect.bottom + 50) {
+                this._state = "hidden";
+                this._timeoutHide.cancel();
+              }
+            }
+          }
+          break;
+        }
         case "transitionend": {
-          if (event.propertyName == "opacity")
-            this.close();
+          if (this._state == "hiding") {
+            this._element.setAttribute("hidden", true);
+          }
           break;
         }
       }
