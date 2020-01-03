@@ -239,9 +239,12 @@ let gFxAccounts = {
       
       
       
+      this.panelUIFooter.hidden = true;
       this.panelUIFooter.removeAttribute("fxastatus");
       return;
     }
+
+    this.panelUIFooter.hidden = false;
 
     
     if (this._inCustomizationMode) {
