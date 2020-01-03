@@ -326,14 +326,6 @@ MediaStreamGraphImpl::StreamTimeToGraphTime(MediaStream* aStream,
 }
 
 GraphTime
-MediaStreamGraphImpl::GetAudioPosition(MediaStream* aStream)
-{
-  
-
-  return IterationEnd();
-}
-
-GraphTime
 MediaStreamGraphImpl::IterationEnd() const
 {
   return CurrentDriver()->IterationEnd();

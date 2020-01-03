@@ -391,10 +391,6 @@ public:
   
 
 
-  GraphTime GetAudioPosition(MediaStream* aStream);
-  
-
-
   void NotifyHasCurrentData(MediaStream* aStream);
   
 
