@@ -4372,11 +4372,11 @@ class DatabaseConnection final
 {
   friend class ConnectionPool;
 
-  enum CheckpointMode
+  enum class CheckpointMode
   {
-    CheckpointMode_Full,
-    CheckpointMode_Restart,
-    CheckpointMode_Truncate
+    Full,
+    Restart,
+    Truncate
   };
 
 public:
@@ -4457,7 +4457,7 @@ public:
   {
     AssertIsOnConnectionThread();
 
-    return CheckpointInternal(CheckpointMode_Full);
+    return CheckpointInternal(CheckpointMode::Full);
   }
 
   void
@@ -9131,20 +9131,19 @@ DatabaseConnection::CheckpointInternal(CheckpointMode aMode)
   stmtString.AssignLiteral("PRAGMA wal_checkpoint(");
 
   switch (aMode) {
-    case CheckpointMode_Full:
+    case CheckpointMode::Full:
       
       
       stmtString.AppendLiteral("FULL");
       break;
 
-    case CheckpointMode_Restart:
-      
+    case CheckpointMode::Restart:
       
       
       stmtString.AppendLiteral("RESTART");
       break;
 
-    case CheckpointMode_Truncate:
+    case CheckpointMode::Truncate:
       
       stmtString.AppendLiteral("TRUNCATE");
       break;
@@ -9226,7 +9225,7 @@ DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint)
 
   
   if (aNeedsCheckpoint || freedSomePages) {
-    rv = CheckpointInternal(CheckpointMode_Truncate);
+    rv = CheckpointInternal(CheckpointMode::Truncate);
     unused << NS_WARN_IF(NS_FAILED(rv));
   }
 
@@ -9301,7 +9300,7 @@ DatabaseConnection::ReclaimFreePagesWhileIdle(
     
     
     
-    rv = CheckpointInternal(CheckpointMode_Restart);
+    rv = CheckpointInternal(CheckpointMode::Restart);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
