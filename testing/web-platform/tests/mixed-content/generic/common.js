@@ -358,3 +358,4 @@ function requestViaObject(url) {
 
 function SanityChecker() {}
 SanityChecker.prototype.checkScenario = function() {};
+SanityChecker.prototype.setFailTimeout = function(test, timeout) {};

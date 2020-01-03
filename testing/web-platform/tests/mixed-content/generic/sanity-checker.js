@@ -36,3 +36,18 @@ SanityChecker.prototype.checkScenario = function(scenario, resourceInvoker) {
 
   }, "[MixedContentTestCase] The test scenario should be valid.");
 }
+
+
+SanityChecker.prototype.setFailTimeout = function(test, timeout) {
+  
+  
+  
+  
+  setTimeout(function() {
+    test.step(function() {
+      assert_equals(test.phase, test.phases.COMPLETE,
+                    "Expected test to complete.");
+      test.done();
+    })
+  }, timeout || 1000);
+}

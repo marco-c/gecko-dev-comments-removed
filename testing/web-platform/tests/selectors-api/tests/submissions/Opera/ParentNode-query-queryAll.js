@@ -17,7 +17,7 @@ function interfaceCheckQuery(type, obj) {
 
 
 
-function verifyStaticList(type, root) {
+function verifyStaticList(type, doc, root) {
   var pre, post, preLength;
 
   test(function() {

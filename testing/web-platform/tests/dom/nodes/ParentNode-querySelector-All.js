@@ -3,7 +3,7 @@
 
 
 
-function setupSpecialElements(parent) {
+function setupSpecialElements(doc, parent) {
   
   parent.appendChild(doc.createElement("null"));
   parent.appendChild(doc.createElement("undefined"));
@@ -75,7 +75,7 @@ function interfaceCheck(type, obj) {
 
 
 
-function verifyStaticList(type, root) {
+function verifyStaticList(type, doc, root) {
   var pre, post, preLength;
 
   test(function() {
