@@ -123,6 +123,8 @@ public:
                                  TransferringSupport aSupportsTransferring);
   virtual ~StructuredCloneHelper();
 
+  
+
   bool Write(JSContext* aCx,
              JS::Handle<JS::Value> aValue);
 
@@ -134,23 +136,41 @@ public:
             JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue);
 
+  
+  
+  
+  void MoveBufferDataToArray(FallibleTArray<uint8_t>& aArray,
+                             ErrorResult& aRv);
+
+  
+  
+  
   bool ReadFromBuffer(nsISupports* aParent,
                       JSContext* aCx,
                       uint64_t* aBuffer,
                       size_t aBufferLength,
-                      nsTArray<nsRefPtr<BlobImpl>>& aBlobImpls,
                       JS::MutableHandle<JS::Value> aValue);
 
-  const nsTArray<nsRefPtr<BlobImpl>>& ClonedBlobImpls() const
+  
+  void FreeBuffer(uint64_t* aBuffer,
+                  size_t aBufferLength);
+
+  nsTArray<nsRefPtr<BlobImpl>>& BlobImpls()
   {
-    MOZ_ASSERT(mBuffer, "Write() has never been called.");
+    MOZ_ASSERT(mSupportsCloning, "Blobs cannot be taken/set if cloning is not supported.");
     return mBlobImplArray;
   }
 
-  nsTArray<nsRefPtr<MessagePortBase>>& GetTransferredPorts()
+  const nsTArray<nsRefPtr<MessagePortBase>>& GetTransferredPorts() const
   {
     MOZ_ASSERT(mSupportsTransferring);
     return mTransferredPorts;
+  }
+
+  nsTArray<MessagePortIdentifier>& PortIdentifiers()
+  {
+    MOZ_ASSERT(mSupportsTransferring);
+    return mPortIdentifiers;
   }
 
   
