@@ -1392,6 +1392,21 @@ Element::GetElementsByClassName(const nsAString& aClassNames,
   return NS_OK;
 }
 
+
+
+
+
+static uint32_t
+EditableInclusiveDescendantCount(nsIContent* aContent)
+{
+  auto htmlElem = nsGenericHTMLElement::FromContent(aContent);
+  if (htmlElem) {
+    return htmlElem->EditableInclusiveDescendantCount();
+  }
+
+  return aContent->EditableDescendantCount();
+}
+
 nsresult
 Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                     nsIContent* aBindingParent,
@@ -1463,6 +1478,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   }
 
   bool hadForceXBL = HasFlag(NODE_FORCE_XBL_BINDINGS);
+
+  bool hadParent = !!GetParentNode();
 
   
   if (aParent) {
@@ -1555,6 +1572,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetDirOnBind(this, aParent);
   }
 
+  uint32_t editableDescendantCount = 0;
+
   
   
   nsresult rv;
@@ -1571,6 +1590,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
            child = child->GetNextSibling()) {
         rv = child->BindToTree(aDocument, this, this, allowScripts);
         NS_ENSURE_SUCCESS(rv, rv);
+
+        editableDescendantCount += EditableInclusiveDescendantCount(child);
       }
     }
   }
@@ -1583,6 +1604,28 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     rv = child->BindToTree(aDocument, this, aBindingParent,
                            aCompileEventHandlers);
     NS_ENSURE_SUCCESS(rv, rv);
+
+    editableDescendantCount += EditableInclusiveDescendantCount(child);
+  }
+
+  if (aDocument) {
+    
+    
+    MOZ_ASSERT(EditableDescendantCount() == 0);
+    ChangeEditableDescendantCount(editableDescendantCount);
+
+    if (!hadParent) {
+      uint32_t editableDescendantChange = EditableInclusiveDescendantCount(this);
+      if (editableDescendantChange != 0) {
+      
+      
+        nsIContent* parent = GetParent();
+        while (parent) {
+          parent->ChangeEditableDescendantCount(editableDescendantChange);
+          parent = parent->GetParent();
+        }
+      }
+    }
   }
 
   nsNodeUtils::ParentChainChanged(this);
@@ -1686,6 +1729,20 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     if (HasPointerLock()) {
       nsIDocument::UnlockPointer();
     }
+
+    if (GetParent() && GetParent()->IsInUncomposedDoc()) {
+      
+      
+      int32_t editableDescendantChange = -1 * EditableInclusiveDescendantCount(this);
+      if (editableDescendantChange != 0) {
+        nsIContent* parent = GetParent();
+        while (parent) {
+          parent->ChangeEditableDescendantCount(editableDescendantChange);
+          parent = parent->GetParent();
+        }
+      }
+    }
+
     if (GetParent()) {
       nsINode* p = mParent;
       mParent = nullptr;
@@ -1696,6 +1753,10 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     SetParentIsContent(false);
   }
   ClearInDocument();
+
+  
+  
+  ResetEditableDescendantCount();
 
   if (aNullParent || !mParent->IsInShadowTree()) {
     UnsetFlags(NODE_IS_IN_SHADOW_TREE);

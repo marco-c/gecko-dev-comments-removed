@@ -1054,6 +1054,12 @@ public:
 
 
     nsNodeWeakReference* MOZ_NON_OWNING_REF mWeakReference;
+
+    
+
+
+
+    uint32_t mEditableDescendantCount;
   };
 
   
@@ -1088,6 +1094,22 @@ public:
                  "Trying to unset write-only flags");
     nsWrapperCache::UnsetFlags(aFlagsToUnset);
   }
+
+  void ChangeEditableDescendantCount(int32_t aDelta);
+
+  
+
+
+
+  uint32_t EditableDescendantCount();
+
+  
+
+
+
+
+
+  void ResetEditableDescendantCount();
 
   void SetEditableFlag(bool aEditable)
   {
