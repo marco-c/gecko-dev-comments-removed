@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsNativeThemeWin_h
 #define nsNativeThemeWin_h
@@ -16,8 +16,6 @@
 #include "mozilla/TimeStamp.h"
 #include "nsSize.h"
 
-struct nsIntRect;
-
 class nsNativeThemeWin : private nsNativeTheme,
                          public nsITheme {
   virtual ~nsNativeThemeWin();
@@ -28,7 +26,7 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // The nsITheme interface.
   NS_IMETHOD DrawWidgetBackground(nsRenderingContext* aContext,
                                   nsIFrame* aFrame,
                                   uint8_t aWidgetType,
@@ -52,7 +50,7 @@ public:
 
   NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
                                   uint8_t aWidgetType,
-                                  nsIntSize* aResult,
+                                  mozilla::LayoutDeviceIntSize* aResult,
                                   bool* aIsOverridable);
 
   virtual Transparency GetWidgetTransparency(nsIFrame* aFrame, uint8_t aWidgetType);
@@ -105,7 +103,7 @@ protected:
                                nsIntMargin* aResult);
   nsresult ClassicGetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
                                        uint8_t aWidgetType,
-                                       nsIntSize* aResult,
+                                       mozilla::LayoutDeviceIntSize* aResult,
                                        bool* aIsOverridable);
   bool ClassicThemeSupportsWidget(nsPresContext* aPresContext, 
                                   nsIFrame* aFrame,
