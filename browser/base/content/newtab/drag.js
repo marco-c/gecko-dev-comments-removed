@@ -140,7 +140,7 @@ let gDrag = {
     
     let dragElement = document.createElementNS(HTML_NAMESPACE, "div");
     dragElement.classList.add("newtab-drag");
-    let scrollbox = document.getElementById("newtab-scrollbox");
+    let scrollbox = document.getElementById("newtab-vertical-margin");
     scrollbox.appendChild(dragElement);
     dt.setDragImage(dragElement, 0, 0);
 
