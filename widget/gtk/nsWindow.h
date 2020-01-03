@@ -166,6 +166,8 @@ public:
     
     gint               ConvertBorderStyles(nsBorderStyle aStyle);
 
+    GdkRectangle DevicePixelsToGdkRectRoundOut(nsIntRect rect);
+
     
 #if (MOZ_WIDGET_GTK == 2)
     gboolean           OnExposeEvent(GdkEventExpose *aEvent);
@@ -499,7 +501,6 @@ private:
     gint DevicePixelsToGdkCoordRoundUp(int pixels);
     gint DevicePixelsToGdkCoordRoundDown(int pixels);
     GdkPoint DevicePixelsToGdkPointRoundDown(nsIntPoint point);
-    GdkRectangle DevicePixelsToGdkRectRoundOut(nsIntRect rect);
     GdkRectangle DevicePixelsToGdkSizeRoundUp(nsIntSize pixelSize);
 
     
