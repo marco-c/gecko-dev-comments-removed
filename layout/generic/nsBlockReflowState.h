@@ -93,6 +93,32 @@ public:
                       nsIFrame *aReplacedBlock = nullptr,
                       uint32_t aFlags = 0);
 
+  
+  
+  
+  
+  
+  bool AdvanceToNextBand(const mozilla::LogicalRect& aFloatAvailableSpace,
+                         nscoord *aBCoord) const {
+    mozilla::WritingMode wm = mReflowState.GetWritingMode();
+    if (aFloatAvailableSpace.BSize(wm) > 0) {
+      
+      *aBCoord += aFloatAvailableSpace.BSize(wm);
+    } else {
+      if (mReflowState.AvailableHeight() != NS_UNCONSTRAINEDSIZE) {
+        
+        
+        return false;
+      }
+      NS_NOTREACHED("avail space rect with zero height!");
+      *aBCoord += 1;
+    }
+    return true;
+  }
+
+  bool ReplacedBlockFitsInAvailSpace(nsIFrame* aReplacedBlock,
+                            const nsFlowAreaRect& aFloatAvailableSpace) const;
+
   bool IsAdjacentWithTop() const {
     return mBCoord == mBorderPadding.BStart(mReflowState.GetWritingMode());
   }
@@ -117,7 +143,7 @@ public:
   void ComputeReplacedBlockOffsetsForFloats(nsIFrame* aFrame,
                           const mozilla::LogicalRect& aFloatAvailableSpace,
                                             nscoord&  aIStartResult,
-                                            nscoord&  aIEndResult);
+                                            nscoord&  aIEndResult) const;
 
   
   void ComputeBlockAvailSpace(nsIFrame* aFrame,
