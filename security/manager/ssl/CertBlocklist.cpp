@@ -399,37 +399,6 @@ WriteLine(nsIOutputStream* outputStream, const nsACString& string)
 }
 
 
-PLDHashOperator
-WriteIssuer(nsCStringHashKey* aHashKey, void* aUserArg)
-{
-  BlocklistSaveInfo* saveInfo = reinterpret_cast<BlocklistSaveInfo*>(aUserArg);
-  nsAutoPtr<BlocklistStringSet> issuerSet;
-
-  saveInfo->issuerTable.RemoveAndForget(aHashKey->GetKey(), issuerSet);
-
-  nsresult rv = WriteLine(saveInfo->outputStream, aHashKey->GetKey());
-  if (NS_FAILED(rv)) {
-    return PL_DHASH_STOP;
-  }
-
-  
-  for (auto iter = issuerSet->Iter(); !iter.Done(); iter.Next()) {
-    nsresult rv = WriteLine(saveInfo->outputStream,
-                            NS_LITERAL_CSTRING(" ") + iter.Get()->GetKey());
-    if (NS_FAILED(rv)) {
-      saveInfo->success = false;
-      break;
-    }
-  }
-
-  if (!saveInfo->success) {
-    saveInfo->success = false;
-    return PL_DHASH_STOP;
-  }
-  return PL_DHASH_NEXT;
-}
-
-
 
 
 
@@ -512,7 +481,32 @@ CertBlocklist::SaveEntries()
     return NS_ERROR_FAILURE;
   }
 
-  saveInfo.issuers.EnumerateEntries(WriteIssuer, &saveInfo);
+  for (auto iter = saveInfo.issuers.Iter(); !iter.Done(); iter.Next()) {
+    nsCStringHashKey* hashKey = iter.Get();
+    nsAutoPtr<BlocklistStringSet> issuerSet;
+    saveInfo.issuerTable.RemoveAndForget(hashKey->GetKey(), issuerSet);
+
+    nsresult rv = WriteLine(saveInfo.outputStream, hashKey->GetKey());
+    if (NS_FAILED(rv)) {
+      break;
+    }
+
+    
+    for (auto iter = issuerSet->Iter(); !iter.Done(); iter.Next()) {
+      nsresult rv = WriteLine(saveInfo.outputStream,
+                              NS_LITERAL_CSTRING(" ") + iter.Get()->GetKey());
+      if (NS_FAILED(rv)) {
+        saveInfo.success = false;
+        break;
+      }
+    }
+
+    if (!saveInfo.success) {
+      saveInfo.success = false;
+      break;
+    }
+  }
+
   if (!saveInfo.success) {
     MOZ_LOG(gCertBlockPRLog, LogLevel::Warning,
            ("CertBlocklist::SaveEntries writing revocation data failed"));
