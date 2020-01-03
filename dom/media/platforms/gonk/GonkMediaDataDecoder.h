@@ -18,6 +18,8 @@ class MediaRawData;
 
 class GonkDecoderManager {
 public:
+  typedef TrackInfo::TrackType TrackType;
+
   virtual ~GonkDecoderManager() {}
 
   
@@ -42,6 +44,8 @@ public:
   
   virtual bool HasQueuedSample() = 0;
 
+  virtual TrackType GetTrackType() = 0;
+
 protected:
   nsRefPtr<MediaByteBuffer> mCodecSpecificData;
 
@@ -61,9 +65,9 @@ public:
 
   ~GonkMediaDataDecoder();
 
-  virtual nsresult Init() override;
+  virtual nsRefPtr<InitPromise> Init() override;
 
-  virtual nsresult Input(MediaRawData* aSample);
+  virtual nsresult Input(MediaRawData* aSample) override;
 
   virtual nsresult Flush() override;
 

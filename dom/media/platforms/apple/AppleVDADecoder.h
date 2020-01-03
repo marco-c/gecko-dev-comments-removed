@@ -70,7 +70,7 @@ public:
                   MediaDataDecoderCallback* aCallback,
                   layers::ImageContainer* aImageContainer);
   virtual ~AppleVDADecoder();
-  virtual nsresult Init() override;
+  virtual nsRefPtr<InitPromise> Init() override;
   virtual nsresult Input(MediaRawData* aSample) override;
   virtual nsresult Flush() override;
   virtual nsresult Drain() override;
@@ -83,11 +83,15 @@ public:
   nsresult OutputFrame(CVPixelBufferRef aImage,
                        nsAutoPtr<AppleFrameRef> aFrameRef);
 
+  
+  nsresult InitializeSession();
+
  protected:
   AppleFrameRef* CreateAppleFrameRef(const MediaRawData* aSample);
   void DrainReorderedFrames();
   void ClearReorderedFrames();
   CFDictionaryRef CreateOutputConfiguration();
+  nsresult InitDecoder();
 
   nsRefPtr<MediaByteBuffer> mExtraData;
   nsRefPtr<FlushableTaskQueue> mTaskQueue;
@@ -107,8 +111,6 @@ private:
 
   
   nsresult SubmitFrame(MediaRawData* aSample);
-  
-  nsresult InitializeSession();
   CFDictionaryRef CreateDecoderSpecification();
 };
 

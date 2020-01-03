@@ -8,6 +8,7 @@
 #define PlatformDecoderModule_h_
 
 #include "MediaDecoderReader.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsTArray.h"
 #include "mozilla/RefPtr.h"
@@ -207,6 +208,14 @@ protected:
   virtual ~MediaDataDecoder() {};
 
 public:
+  enum DecoderFailureReason {
+    INIT_ERROR,
+    CANCELED
+  };
+
+  typedef TrackInfo::TrackType TrackType;
+  typedef MozPromise<TrackType, DecoderFailureReason,  true> InitPromise;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDecoder)
 
   
@@ -216,7 +225,7 @@ public:
   
   
   
-  virtual nsresult Init() = 0;
+  virtual nsRefPtr<InitPromise> Init() = 0;
 
   
   virtual nsresult Input(MediaRawData* aSample) = 0;
@@ -250,6 +259,8 @@ public:
   
   virtual nsresult Shutdown() = 0;
 
+  
+  
   
   virtual bool IsHardwareAccelerated() const { return false; }
 

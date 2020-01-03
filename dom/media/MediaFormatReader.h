@@ -105,7 +105,10 @@ private:
   void NotifyDemuxer(uint32_t aLength, int64_t aOffset);
   void ReturnOutput(MediaData* aData, TrackType aTrack);
 
-  bool EnsureDecodersSetup();
+  bool EnsureDecodersCreated();
+  
+  
+  bool EnsureDecodersInitialized();
 
   
   
@@ -194,6 +197,7 @@ private:
       , mWaitingForData(false)
       , mReceivedNewData(false)
       , mDiscontinuity(true)
+      , mDecoderInitialized(false)
       , mOutputRequested(false)
       , mInputExhausted(false)
       , mError(false)
@@ -242,6 +246,8 @@ private:
     }
 
     
+    
+    bool mDecoderInitialized;
     bool mOutputRequested;
     bool mInputExhausted;
     bool mError;
@@ -337,6 +343,9 @@ private:
 
   DecoderData& GetDecoderData(TrackType aTrack);
 
+  void OnDecoderInitDone(const nsTArray<TrackType>& aTrackTypes);
+  void OnDecoderInitFailed(MediaDataDecoder::DecoderFailureReason aReason);
+
   
   void OnDemuxerInitDone(nsresult);
   void OnDemuxerInitFailed(DemuxerFailureReason aFailure);
@@ -410,6 +419,9 @@ private:
   
   Maybe<media::TimeUnit> mPendingSeekTime;
   MozPromiseHolder<SeekPromise> mSeekPromise;
+
+  
+  MozPromiseRequestHolder<MediaDataDecoder::InitPromise::AllPromiseType> mDecodersInitRequest;
 
 #ifdef MOZ_EME
   nsRefPtr<CDMProxy> mCDMProxy;
