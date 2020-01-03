@@ -17,14 +17,11 @@ let chromeGlobal = this;
   const { dumpn } = DevToolsUtils;
   const { DebuggerServer, ActorPool } = Cu.import("resource://gre/modules/devtools/dbg-server.jsm", {});
 
+  
+  
   if (!DebuggerServer.initialized) {
     DebuggerServer.init();
-
-    
-    DebuggerServer.parentMessageManager = {
-      sendSyncMessage: sendSyncMessage,
-      addMessageListener: addMessageListener
-    };
+    DebuggerServer.isInChildProcess = true;
   }
 
   
@@ -42,6 +39,7 @@ let chromeGlobal = this;
     let prefix = msg.data.prefix;
 
     let conn = DebuggerServer.connectToParent(prefix, mm);
+    conn.parentMessageManager = mm;
     connections.set(prefix, conn);
 
     let actor = new DebuggerServer.ContentActor(conn, chromeGlobal, prefix);

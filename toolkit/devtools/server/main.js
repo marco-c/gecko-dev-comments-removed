@@ -882,9 +882,8 @@ var DebuggerServer = {
 
 
 
-  get isInChildProcess() {
-    return !!this.parentMessageManager;
-  },
+
+  isInChildProcess: false,
 
   
 
@@ -901,40 +900,19 @@ var DebuggerServer = {
       return;
     }
 
-    const gMessageManager = Cc["@mozilla.org/globalmessagemanager;1"].
-      getService(Ci.nsIMessageListenerManager);
-
-    gMessageManager.broadcastAsyncMessage("debug:setup-in-child", {
-      module: module,
-      setupChild: setupChild,
-      args: args,
+    this._childMessageManagers.forEach(mm => {
+      mm.sendAsyncMessage("debug:setup-in-child", {
+        module: module,
+        setupChild: setupChild,
+        args: args,
+      });
     });
   },
 
   
 
 
-
-
-
-
-
-
-
-
-
-  setupInParent: function({ module, setupParent }) {
-    if (!this.isInChildProcess) {
-      return false;
-    }
-
-    let { sendSyncMessage } = DebuggerServer.parentMessageManager;
-
-    return sendSyncMessage("debug:setup-in-parent", {
-      module: module,
-      setupParent: setupParent
-    });
-  },
+  _childMessageManagers: new Set(),
 
   
 
@@ -957,6 +935,7 @@ var DebuggerServer = {
     let mm = aFrame.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader
              .messageManager;
     mm.loadFrameScript("resource://gre/modules/devtools/server/child.js", false);
+    this._childMessageManagers.add(mm);
 
     let actor, childTransport;
     let prefix = aConnection.allocID("child");
@@ -1062,6 +1041,8 @@ var DebuggerServer = {
         mm.removeMessageListener("debug:actor", onActorCreated);
       }
       events.off(aConnection, "closed", destroy);
+
+      DebuggerServer._childMessageManagers.delete(mm);
     });
 
     
@@ -1332,6 +1313,13 @@ DebuggerServerConnection.prototype = {
 
   _transport: null,
   get transport() { return this._transport },
+
+  
+
+
+
+
+  parentMessageManager: null,
 
   close: function() {
     this._transport.close();
@@ -1721,5 +1709,30 @@ DebuggerServerConnection.prototype = {
     dumpn("/-------------------- dumping pool:");
     dumpn("--------------------- actorPool actors: " +
           uneval(Object.keys(aPool._actors)));
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  setupInParent: function({ conn, module, setupParent }) {
+    if (!this.parentMessageManager) {
+      return false;
+    }
+
+    let { sendSyncMessage } = this.parentMessageManager;
+
+    return sendSyncMessage("debug:setup-in-parent", {
+      module: module,
+      setupParent: setupParent
+    });
+  },
 };
