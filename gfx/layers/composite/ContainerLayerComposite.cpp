@@ -471,19 +471,21 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
   r = transform.TransformBounds(scrollRect.ToUnknownRect());
   compositor->FillRect(r, backgroundColor, clipRect, aContainer->GetEffectiveTransform());
 
-  int tileW = gfxPrefs::LayersTileWidth();
-  int tileH = gfxPrefs::LayersTileHeight();
+  
 
-  for (int x = scrollRect.x; x < scrollRect.XMost(); x += tileW) {
-    for (int y = scrollRect.y; y < scrollRect.YMost(); y += tileH) {
-      LayerRect tileRect = LayerRect(x - x % tileW, y - y % tileH, tileW, tileH);
-      r = transform.TransformBounds(tileRect.ToUnknownRect());
-      if (tileRect.Intersects(dp)) {
-        compositor->FillRect(r, tileActiveColor, clipRect, aContainer->GetEffectiveTransform());
-      }
-      compositor->SlowDrawRect(r, tileBorderColor, clipRect, aContainer->GetEffectiveTransform());
-    }
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   r = transform.TransformBounds(scrollRect.ToUnknownRect());
   compositor->SlowDrawRect(r, pageBorderColor, clipRect, aContainer->GetEffectiveTransform());
