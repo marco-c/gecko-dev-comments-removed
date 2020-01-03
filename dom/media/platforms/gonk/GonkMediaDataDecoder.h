@@ -19,12 +19,12 @@ class MediaRawData;
 class GonkDecoderManager {
 public:
   typedef TrackInfo::TrackType TrackType;
+  typedef MediaDataDecoder::InitPromise InitPromise;
+  typedef MediaDataDecoder::DecoderFailureReason DecoderFailureReason;
 
   virtual ~GonkDecoderManager() {}
 
-  
-  
-  virtual android::sp<android::MediaCodecProxy> Init(MediaDataDecoderCallback* aCallback) = 0;
+  virtual nsRefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) = 0;
 
   
   virtual nsresult Input(MediaRawData* aSample) = 0;
@@ -42,14 +42,21 @@ public:
   virtual nsresult Flush() = 0;
 
   
-  virtual bool HasQueuedSample() = 0;
+  nsresult Shutdown();
 
-  virtual TrackType GetTrackType() = 0;
+  
+  virtual bool HasQueuedSample() = 0;
 
 protected:
   nsRefPtr<MediaByteBuffer> mCodecSpecificData;
 
   nsAutoCString mMimeType;
+
+  
+  android::sp<android::MediaCodecProxy> mDecoder;
+
+  MozPromiseHolder<InitPromise> mInitPromise;
+
 };
 
 
@@ -94,7 +101,6 @@ private:
   RefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
 
-  android::sp<android::MediaCodecProxy> mDecoder;
   nsAutoPtr<GonkDecoderManager> mManager;
 
   

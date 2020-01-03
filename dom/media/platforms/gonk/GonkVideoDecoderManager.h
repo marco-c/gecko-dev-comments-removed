@@ -44,7 +44,7 @@ public:
 
   virtual ~GonkVideoDecoderManager() override;
 
-  virtual android::sp<MediaCodecProxy> Init(MediaDataDecoderCallback* aCallback) override;
+  virtual nsRefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) override;
 
   virtual nsresult Input(MediaRawData* aSample) override;
 
@@ -54,8 +54,6 @@ public:
   virtual nsresult Flush() override;
 
   virtual bool HasQueuedSample() override;
-
-  virtual TrackType GetTrackType() override { return TrackType::kVideoTrack; }
 
   static void RecycleCallback(TextureClient* aClient, void* aClosure);
 
@@ -168,10 +166,11 @@ private:
   Mutex mPendingReleaseItemsLock;
 
   
-  android::sp<android::MediaCodecProxy> mDecoder;
+  Monitor mMonitor;
 
   
-  Monitor mMonitor;
+  
+  nsRefPtr<TaskQueue> mReaderTaskQueue;
 
   
   
