@@ -723,8 +723,6 @@ private:
 
   
   void ProcessPendingOperations();
-  static PLDHashOperator UpdateEntryInIndex(CacheIndexEntryUpdate *aEntry,
-                                            void* aClosure);
 
   
   
@@ -762,9 +760,6 @@ private:
   void     RemoveIndexFromDisk();
   
   nsresult WriteLogToDisk();
-
-  static PLDHashOperator WriteEntryToLog(CacheIndexEntry *aEntry,
-                                         void* aClosure);
 
   
   
@@ -820,7 +815,6 @@ private:
   
   
   void EnsureCorrectStats();
-  static PLDHashOperator SumIndexStats(CacheIndexEntry *aEntry, void* aClosure);
   
   void FinishRead(bool aSucceeded);
 
