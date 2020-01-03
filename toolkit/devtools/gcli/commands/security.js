@@ -21,12 +21,19 @@ const BAD_IMG_SRC = "chrome://browser/content/gcli_sec_bad.svg";
 const CONTENT_SECURITY_POLICY = "Content-Security-Policy";
 const CONTENT_SECURITY_POLICY_REPORT_ONLY = "Content-Security-Policy-Report-Only";
 
-const DIR_UNSAFE_INLINE = "'unsafe-inline'";
-const DIR_UNSAFE_EVAL = "'unsafe-eval'";
+
 const POLICY_REPORT_ONLY = "report-only"
+
+
+const DIR_UPGRADE_INSECURE = "upgrade-insecure-requests";
+
+
+const SRC_UNSAFE_INLINE = "'unsafe-inline'";
+const SRC_UNSAFE_EVAL = "'unsafe-eval'";
 
 const WILDCARD_MSG = l10n.lookup("securityCSPRemWildCard");
 const XSS_WARNING_MSG = l10n.lookup("securityCSPPotentialXSS");
+
 
 exports.items = [
   {
@@ -73,6 +80,17 @@ exports.items = [
 
           
           var outSrcs = [];
+
+          
+          
+          if (dir === DIR_UPGRADE_INSECURE) {
+            outSrcs.push({
+              icon: GOOD_IMG_SRC,
+              src: "", 
+              desc: "" 
+            });
+          }
+
           for (var src in curDir) {
             var curSrc = curDir[src];
 
@@ -84,7 +102,7 @@ exports.items = [
               outIcon = MOD_IMG_SRC;
               outDesc = WILDCARD_MSG;
             }
-            if (curSrc == DIR_UNSAFE_INLINE || curSrc == DIR_UNSAFE_EVAL) {
+            if (curSrc == SRC_UNSAFE_INLINE || curSrc == SRC_UNSAFE_EVAL) {
               outIcon = BAD_IMG_SRC;
               outDesc = XSS_WARNING_MSG;
             }
