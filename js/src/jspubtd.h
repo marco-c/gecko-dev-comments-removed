@@ -48,7 +48,6 @@ struct Zone;
 namespace js {
 struct ContextFriendFields;
 class RootLists;
-class Shape;
 } 
 
 
@@ -220,7 +219,6 @@ class JS_PUBLIC_API(AutoGCRooter)
     enum {
         VALARRAY =     -2, 
         PARSER =       -3, 
-        SHAPEVECTOR =  -4, 
         IDARRAY =      -6, 
         VALVECTOR =   -10, 
         IDVECTOR =    -11, 
@@ -242,7 +240,6 @@ class JS_PUBLIC_API(AutoGCRooter)
     static ptrdiff_t GetTag(JSObject* obj) { return OBJVECTOR; }
     static ptrdiff_t GetTag(JSScript* script) { return SCRIPTVECTOR; }
     static ptrdiff_t GetTag(JSString* string) { return STRINGVECTOR; }
-    static ptrdiff_t GetTag(js::Shape* shape) { return SHAPEVECTOR; }
 
   private:
     AutoGCRooter ** const stackTop;
