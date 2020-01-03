@@ -86,8 +86,6 @@ const SCHEDULER_TICK_INTERVAL_MS = 5 * 60 * 1000;
 
 const SCHEDULER_TICK_IDLE_INTERVAL_MS = 60 * 60 * 1000;
 
-const SCHEDULER_RETRY_ATTEMPTS = 3;
-
 
 const SCHEDULER_MIDNIGHT_TOLERANCE_MS = 15 * 60 * 1000;
 
@@ -382,9 +380,6 @@ let TelemetryScheduler = {
   _log: null,
 
   
-  _dailyPingRetryAttempts: 0,
-
-  
   _schedulerTimer: null,
   
   _schedulerInterval: 0,
@@ -546,8 +541,8 @@ let TelemetryScheduler = {
 
     if (shouldSendDaily) {
       this._log.trace("_schedulerTickLogic - Daily ping due.");
-      return Impl._sendDailyPing().then(() => this._dailyPingSucceeded(now),
-                                        () => this._dailyPingFailed(now));
+      this._lastDailyPingTime = now;
+      return Impl._sendDailyPing();
     }
 
     
@@ -561,10 +556,6 @@ let TelemetryScheduler = {
 
     
     this._log.trace("_schedulerTickLogic - No ping due.");
-    
-    
-    
-    this._dailyPingRetryAttempts = 0;
     return Promise.resolve();
   },
 
@@ -595,33 +586,6 @@ let TelemetryScheduler = {
     }
 
     this._rescheduleTimeout();
-  },
-
-  
-
-
-
-  _dailyPingSucceeded: function(now) {
-    this._log.trace("_dailyPingSucceeded");
-    this._lastDailyPingTime = now;
-    this._dailyPingRetryAttempts = 0;
-  },
-
-  
-
-
-
-  _dailyPingFailed: function(now) {
-    this._log.error("_dailyPingFailed");
-    this._dailyPingRetryAttempts++;
-
-    
-    
-    if (this._dailyPingRetryAttempts >= SCHEDULER_RETRY_ATTEMPTS) {
-      this._log.error("_pingFailed - The daily ping failed too many times. Skipping it.");
-      this._dailyPingRetryAttempts = 0;
-      this._lastDailyPingTime = now;
-    }
   },
 
   
@@ -1894,8 +1858,8 @@ let Impl = {
     
     
     if (IS_UNIFIED_TELEMETRY) {
-      let abortedPromise = this._saveAbortedSessionPing(payload);
-      promise = promise.then(() => abortedPromise);
+      this._saveAbortedSessionPing(payload)
+          .catch(e => this._log.error("_sendDailyPing - Failed to save the aborted session ping", e));
     }
 
     return promise;
