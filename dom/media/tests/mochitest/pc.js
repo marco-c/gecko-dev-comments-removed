@@ -1189,18 +1189,15 @@ PeerConnectionWrapper.prototype = {
 
 
   waitForIceConnected : function() {
-    return new Promise((resolve, reject) => {
-      var iceConnectedChanged = () => {
-        if (this.isIceConnected()) {
-          delete this.ice_connection_callbacks.waitForIceConnected;
-          resolve();
-        } else if (! this.isIceConnectionPending()) {
-          delete this.ice_connection_callbacks.waitForIceConnected;
-          resolve();
-        }
+    return new Promise((resolve, reject) =>
+        this.ice_connection_callbacks.waitForIceConnected = () => {
+      if (this.isIceConnected()) {
+        delete this.ice_connection_callbacks.waitForIceConnected;
+        resolve();
+      } else if (!this.isIceConnectionPending()) {
+        delete this.ice_connection_callbacks.waitForIceConnected;
+        reject(new Error('ICE failed'));
       }
-
-      this.ice_connection_callbacks.waitForIceConnected = iceConnectedChanged;
     });
   },
 

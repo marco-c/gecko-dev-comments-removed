@@ -260,7 +260,12 @@ static void nr_ice_candidate_pair_stun_cb(NR_SOCKET s, int how, void *cb_arg)
           }
 
           
-          if(!cand){
+          if(!cand) {
+            if (pair->pctx->ctx->flags & NR_ICE_CTX_FLAGS_RELAY_ONLY) {
+              
+
+              goto done;
+            }
             if(r=nr_ice_candidate_create(pair->pctx->ctx,
               pair->local->component,pair->local->isock,pair->local->osock,
               PEER_REFLEXIVE,pair->local->tcp_type,0,pair->local->component->component_id,&cand))
