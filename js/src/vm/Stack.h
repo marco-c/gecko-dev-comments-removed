@@ -283,52 +283,52 @@ class InterpreterFrame
   public:
     enum Flags : uint32_t {
         
-        GLOBAL             =        0x1,  
-        FUNCTION           =        0x2,  
+        GLOBAL                 =        0x1,  
+        FUNCTION               =        0x2,  
 
         
-        EVAL               =        0x4,  
+        EVAL                   =        0x4,  
 
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        DEBUGGER_EVAL      =        0x8,
-
-        CONSTRUCTING       =       0x10,  
-
-        RESUMED_GENERATOR  =       0x20,  
-
-        
-
-        
-        HAS_CALL_OBJ       =      0x100,  
-        HAS_ARGS_OBJ       =      0x200,  
-
-        
-        HAS_RVAL           =      0x800,  
-        HAS_SCOPECHAIN     =     0x1000,  
-
-        
-        PREV_UP_TO_DATE    =     0x4000,  
 
         
 
 
 
-        DEBUGGEE           =     0x8000,  
+
+
+
+
+
+
+
+
+        DEBUGGER_EVAL          =        0x8,
+
+        CONSTRUCTING           =       0x10,  
+
+        RESUMED_GENERATOR      =       0x20,  
 
         
-        HAS_PUSHED_SPS_FRAME =   0x10000, 
+
+        
+        HAS_CALL_OBJ           =      0x100,  
+        HAS_ARGS_OBJ           =      0x200,  
+
+        
+        HAS_RVAL               =      0x800,  
+        HAS_SCOPECHAIN         =     0x1000,  
+
+        
+        PREV_UP_TO_DATE        =     0x4000,  
+
+        
+
+
+
+        DEBUGGEE               =     0x8000,  
+
+        
+        HAS_PUSHED_SPS_FRAME   =    0x10000, 
 
 
         
