@@ -107,6 +107,9 @@ struct ReturnTypeIs {
 
 
 
+
+
+
 class MozPromiseRefcountable
 {
 public:
