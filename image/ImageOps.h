@@ -79,7 +79,7 @@ public:
 
 
 
-  already_AddRefed<gfx::SourceSurface>
+  static already_AddRefed<gfx::SourceSurface>
   DecodeToSurface(nsIInputStream* aInputStream,
                   const nsACString& aMimeType,
                   uint32_t aFlags);
