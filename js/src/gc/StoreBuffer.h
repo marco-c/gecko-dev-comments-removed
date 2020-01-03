@@ -65,14 +65,12 @@ class StoreBuffer
 
 
 
-        const static size_t NumBufferEntries = 4096 / sizeof(T);
-        T buffer_[NumBufferEntries];
-        T* insert_;
+        T last_;
 
         
         const static size_t MaxEntries = 48 * 1024 / sizeof(T);
 
-        explicit MonoTypeBuffer() { clearBuffer(); }
+        explicit MonoTypeBuffer() : last_(T()) {}
         ~MonoTypeBuffer() { stores_.finish(); }
 
         bool init() {
@@ -82,13 +80,8 @@ class StoreBuffer
             return true;
         }
 
-        void clearBuffer() {
-            JS_POISON(buffer_, JS_EMPTY_STOREBUFFER_PATTERN, NumBufferEntries * sizeof(T));
-            insert_ = buffer_;
-        }
-
         void clear() {
-            clearBuffer();
+            last_ = T();
             if (stores_.initialized())
                 stores_.clear();
         }
@@ -96,33 +89,35 @@ class StoreBuffer
         
         void put(StoreBuffer* owner, const T& t) {
             MOZ_ASSERT(stores_.initialized());
-            *insert_++ = t;
-            if (MOZ_UNLIKELY(insert_ == buffer_ + NumBufferEntries))
-                sinkStores(owner);
+            sinkStore(owner);
+            last_ = t;
         }
 
         
-        void sinkStores(StoreBuffer* owner) {
-            MOZ_ASSERT(stores_.initialized());
-
-            for (T* p = buffer_; p < insert_; ++p) {
-                if (!stores_.put(*p))
-                    CrashAtUnhandlableOOM("Failed to allocate for MonoTypeBuffer::sinkStores.");
+        void unput(StoreBuffer* owner, const T& v) {
+            
+            if (last_ == v) {
+                last_ = T();
+                return;
             }
-            clearBuffer();
+            stores_.remove(v);
+        }
+
+        
+        void sinkStore(StoreBuffer* owner) {
+            MOZ_ASSERT(stores_.initialized());
+            if (last_) {
+                if (!stores_.put(last_))
+                    CrashAtUnhandlableOOM("Failed to allocate for MonoTypeBuffer::put.");
+            }
+            last_ = T();
 
             if (MOZ_UNLIKELY(stores_.count() > MaxEntries))
                 owner->setAboutToOverflow();
         }
 
-        
-        void unput(StoreBuffer* owner, const T& v) {
-            sinkStores(owner);
-            stores_.remove(v);
-        }
-
         bool has(StoreBuffer* owner, const T& v) {
-            sinkStores(owner);
+            sinkStore(owner);
             return stores_.has(v);
         }
 
@@ -226,6 +221,8 @@ class StoreBuffer
         CellPtrEdge untagged() const { return CellPtrEdge((Cell**)(uintptr_t(edge) & ~1)); }
         bool isTagged() const { return bool(uintptr_t(edge) & 1); }
 
+        explicit operator bool() const { return edge != nullptr; }
+
         typedef PointerEdgeHasher<CellPtrEdge> Hasher;
     };
 
@@ -250,6 +247,8 @@ class StoreBuffer
         ValueEdge tagged() const { return ValueEdge((JS::Value*)(uintptr_t(edge) | 1)); }
         ValueEdge untagged() const { return ValueEdge((JS::Value*)(uintptr_t(edge) & ~1)); }
         bool isTagged() const { return bool(uintptr_t(edge) & 1); }
+
+        explicit operator bool() const { return edge != nullptr; }
 
         typedef PointerEdgeHasher<ValueEdge> Hasher;
     };
@@ -293,6 +292,8 @@ class StoreBuffer
 
         void trace(TenuringTracer& mover) const;
 
+        explicit operator bool() const { return objectAndKind_ != 0; }
+
         typedef struct {
             typedef SlotsEdge Lookup;
             static HashNumber hash(const Lookup& l) { return l.objectAndKind_ ^ l.start_ ^ l.count_; }
@@ -318,6 +319,8 @@ class StoreBuffer
         void* deduplicationKey() const { return (void*)edge; }
 
         void trace(TenuringTracer& mover) const;
+
+        explicit operator bool() const { return edge != nullptr; }
 
         typedef PointerEdgeHasher<WholeCellEdges> Hasher;
     };
