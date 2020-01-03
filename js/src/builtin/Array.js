@@ -624,21 +624,13 @@ function ArrayIncludes(searchElement, fromIndex = 0) {
     return false;
 }
 
-#define ARRAY_ITERATOR_SLOT_ITERATED_OBJECT 0
-#define ARRAY_ITERATOR_SLOT_NEXT_INDEX 1
-#define ARRAY_ITERATOR_SLOT_ITEM_KIND 2
-
-#define ITEM_KIND_VALUE 0
-#define ITEM_KIND_KEY_AND_VALUE 1
-#define ITEM_KIND_KEY 2
-
 
 function CreateArrayIteratorAt(obj, kind, n) {
     var iteratedObject = ToObject(obj);
     var iterator = NewArrayIterator();
-    UnsafeSetReservedSlot(iterator, ARRAY_ITERATOR_SLOT_ITERATED_OBJECT, iteratedObject);
-    UnsafeSetReservedSlot(iterator, ARRAY_ITERATOR_SLOT_NEXT_INDEX, n);
-    UnsafeSetReservedSlot(iterator, ARRAY_ITERATOR_SLOT_ITEM_KIND, kind);
+    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, iteratedObject);
+    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, n);
+    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_ITEM_KIND, kind);
     return iterator;
 }
 function CreateArrayIterator(obj, kind) {
@@ -655,22 +647,22 @@ function ArrayIteratorNext() {
                             "ArrayIteratorNext");
     }
 
-    var a = UnsafeGetObjectFromReservedSlot(this, ARRAY_ITERATOR_SLOT_ITERATED_OBJECT);
+    var a = UnsafeGetObjectFromReservedSlot(this, ITERATOR_SLOT_TARGET);
     
-    var index = UnsafeGetReservedSlot(this, ARRAY_ITERATOR_SLOT_NEXT_INDEX);
-    var itemKind = UnsafeGetInt32FromReservedSlot(this, ARRAY_ITERATOR_SLOT_ITEM_KIND);
+    var index = UnsafeGetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX);
+    var itemKind = UnsafeGetInt32FromReservedSlot(this, ITERATOR_SLOT_ITEM_KIND);
     var result = { value: undefined, done: false };
 
     
     if (index >= TO_UINT32(a.length)) {
         
         
-        UnsafeSetReservedSlot(this, ARRAY_ITERATOR_SLOT_NEXT_INDEX, 0xffffffff);
+        UnsafeSetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX, 0xffffffff);
         result.done = true;
         return result;
     }
 
-    UnsafeSetReservedSlot(this, ARRAY_ITERATOR_SLOT_NEXT_INDEX, index + 1);
+    UnsafeSetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX, index + 1);
 
     if (itemKind === ITEM_KIND_VALUE) {
         result.value = a[index];

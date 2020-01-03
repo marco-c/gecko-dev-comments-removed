@@ -189,16 +189,13 @@ function String_repeat(count) {
     return T;
 }
 
-#define STRING_ITERATOR_SLOT_ITERATED_STRING 0
-#define STRING_ITERATOR_SLOT_NEXT_INDEX 1
-
 
 function String_iterator() {
     RequireObjectCoercible(this);
     var S = ToString(this);
     var iterator = NewStringIterator();
-    UnsafeSetReservedSlot(iterator, STRING_ITERATOR_SLOT_ITERATED_STRING, S);
-    UnsafeSetReservedSlot(iterator, STRING_ITERATOR_SLOT_NEXT_INDEX, 0);
+    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, S);
+    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, 0);
     return iterator;
 }
 
@@ -212,11 +209,11 @@ function StringIteratorNext() {
                             "StringIteratorNext");
     }
 
-    var S = UnsafeGetStringFromReservedSlot(this, STRING_ITERATOR_SLOT_ITERATED_STRING);
+    var S = UnsafeGetStringFromReservedSlot(this, ITERATOR_SLOT_TARGET);
     
     
     
-    var index = UnsafeGetInt32FromReservedSlot(this, STRING_ITERATOR_SLOT_NEXT_INDEX);
+    var index = UnsafeGetInt32FromReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX);
     var size = S.length;
     var result = { value: undefined, done: false };
 
@@ -234,7 +231,7 @@ function StringIteratorNext() {
         }
     }
 
-    UnsafeSetReservedSlot(this, STRING_ITERATOR_SLOT_NEXT_INDEX, index + charCount);
+    UnsafeSetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX, index + charCount);
     result.value = callFunction(std_String_substring, S, index, index + charCount);
 
     return result;
