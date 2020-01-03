@@ -3,6 +3,9 @@
 
 #include <jni.h>
 
+#include "mozilla/Move.h"
+#include "mozilla/TypeTraits.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/jni/Accessors.h"
 #include "mozilla/jni/Refs.h"
@@ -13,52 +16,161 @@ namespace mozilla {
 namespace jni {
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace {
+
+uintptr_t CheckNativeHandle(JNIEnv* env, uintptr_t handle)
+{
+    if (!handle) {
+        if (!env->ExceptionCheck()) {
+            ThrowException(env, "java/lang/NullPointerException",
+                           "Null native pointer");
+        }
+        return 0;
+    }
+    return handle;
+}
+
+template<class Impl, bool UseWeakPtr = mozilla::IsBaseOf<
+                         SupportsWeakPtr<Impl>, Impl>::value >
+struct NativePtr
+{
+    static Impl* Get(JNIEnv* env, jobject instance)
+    {
+        return reinterpret_cast<Impl*>(CheckNativeHandle(
+                env, GetNativeHandle(env, instance)));
+    }
+
+    template<class LocalRef>
+    static Impl* Get(const LocalRef& instance)
+    {
+        return Get(instance.Env(), instance.Get());
+    }
+
+    template<class LocalRef>
+    static void Set(const LocalRef& instance, UniquePtr<Impl>&& ptr)
+    {
+        Clear(instance);
+        SetNativeHandle(instance.Env(), instance.Get(),
+                          reinterpret_cast<uintptr_t>(ptr.release()));
+        HandleUncaughtException(instance.Env());
+    }
+
+    template<class LocalRef>
+    static void Clear(const LocalRef& instance)
+    {
+        UniquePtr<Impl> ptr(reinterpret_cast<Impl*>(
+                GetNativeHandle(instance.Env(), instance.Get())));
+        HandleUncaughtException(instance.Env());
+
+        if (ptr) {
+            SetNativeHandle(instance.Env(), instance.Get(), 0);
+            HandleUncaughtException(instance.Env());
+        }
+    }
+};
+
 template<class Impl>
-Impl* GetNativePtr(JNIEnv* env, jobject instance)
+struct NativePtr<Impl,  true>
 {
-    const auto ptr = reinterpret_cast<const WeakPtr<Impl>*>(
-            GetNativeHandle(env, instance));
-    if (!ptr) {
-        return nullptr;
+    static Impl* Get(JNIEnv* env, jobject instance)
+    {
+        const auto ptr = reinterpret_cast<WeakPtr<Impl>*>(
+                CheckNativeHandle(env, GetNativeHandle(env, instance)));
+        if (!ptr) {
+            return nullptr;
+        }
+
+        Impl* const impl = *ptr;
+        if (!impl) {
+            ThrowException(env, "java/lang/NullPointerException",
+                           "Native object already released");
+        }
+        return impl;
     }
 
-    Impl* const impl = *ptr;
-    if (!impl) {
-        ThrowException(env, "java/lang/NullPointerException",
-                       "Native object already released");
+    template<class LocalRef>
+    static Impl* Get(const LocalRef& instance)
+    {
+        return Get(instance.Env(), instance.Get());
     }
-    return impl;
-}
 
-template<class Impl, class LocalRef>
-Impl* GetNativePtr(const LocalRef& instance)
-{
-    return GetNativePtr<Impl>(instance.Env(), instance.Get());
-}
-
-template<class Impl, class LocalRef>
-void ClearNativePtr(const LocalRef& instance)
-{
-    JNIEnv* const env = instance.Env();
-    const auto ptr = reinterpret_cast<WeakPtr<Impl>*>(
-            GetNativeHandle(env, instance.Get()));
-    if (ptr) {
-        SetNativeHandle(env, instance.Get(), 0);
-        delete ptr;
-    } else {
-        
-        MOZ_ASSERT(env->ExceptionCheck());
-        env->ExceptionClear();
+    template<class LocalRef>
+    static void Set(const LocalRef& instance, SupportsWeakPtr<Impl>* ptr)
+    {
+        Clear(instance);
+        SetNativeHandle(instance.Env(), instance.Get(),
+                          reinterpret_cast<uintptr_t>(new WeakPtr<Impl>(ptr)));
+        HandleUncaughtException(instance.Env());
     }
-}
 
-template<class Impl, class LocalRef>
-void SetNativePtr(const LocalRef& instance, Impl* ptr)
-{
-    ClearNativePtr<Impl>(instance);
-    SetNativeHandle(instance.Env(), instance.Get(),
-                      reinterpret_cast<uintptr_t>(new WeakPtr<Impl>(ptr)));
-}
+    template<class LocalRef>
+    static void Clear(const LocalRef& instance)
+    {
+        const auto ptr = reinterpret_cast<WeakPtr<Impl>*>(
+                GetNativeHandle(instance.Env(), instance.Get()));
+        HandleUncaughtException(instance.Env());
+
+        if (ptr) {
+            SetNativeHandle(instance.Env(), instance.Get(), 0);
+            HandleUncaughtException(instance.Env());
+            delete ptr;
+        }
+    }
+};
+
+} 
 
 namespace detail {
 
@@ -88,7 +200,7 @@ public:
     static ReturnJNIType Wrap(JNIEnv* env, jobject instance,
                               typename TypeAdapter<Args>::JNIType... args)
     {
-        Impl* const impl = GetNativePtr<Impl>(env, instance);
+        Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return ReturnJNIType();
         }
@@ -101,7 +213,7 @@ public:
     static ReturnJNIType Wrap(JNIEnv* env, jobject instance,
                               typename TypeAdapter<Args>::JNIType... args)
     {
-        Impl* const impl = GetNativePtr<Impl>(env, instance);
+        Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return ReturnJNIType();
         }
@@ -125,7 +237,7 @@ public:
     static void Wrap(JNIEnv* env, jobject instance,
                      typename TypeAdapter<Args>::JNIType... args)
     {
-        Impl* const impl = GetNativePtr<Impl>(env, instance);
+        Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return;
         }
@@ -137,7 +249,7 @@ public:
     static void Wrap(JNIEnv* env, jobject instance,
                      typename TypeAdapter<Args>::JNIType... args)
     {
-        Impl* const impl = GetNativePtr<Impl>(env, instance);
+        Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return;
         }
@@ -245,8 +357,28 @@ public:
     }
 
 protected:
+
+    
+    static void AttachNative(const typename Cls::LocalRef& instance,
+                             SupportsWeakPtr<Impl>* ptr)
+    {
+        static_assert(mozilla::IsBaseOf<SupportsWeakPtr<Impl>, Impl>::value,
+                      "Attach with UniquePtr&& when not using WeakPtr");
+        return NativePtr<Impl>::Set(instance, ptr);
+    }
+
+    static void AttachNative(const typename Cls::LocalRef& instance,
+                             UniquePtr<Impl>&& ptr)
+    {
+        static_assert(!mozilla::IsBaseOf<SupportsWeakPtr<Impl>, Impl>::value,
+                      "Attach with SupportsWeakPtr* when using WeakPtr");
+        return NativePtr<Impl>::Set(instance, mozilla::Move(ptr));
+    }
+
+    
+    
     static Impl* GetNative(const typename Cls::LocalRef& instance) {
-        return GetNativePtr<Impl>(instance);
+        return NativePtr<Impl>::Get(instance);
     }
 
     NativeImpl() {
@@ -254,12 +386,8 @@ protected:
         Init();
     }
 
-    void AttachNative(const typename Cls::LocalRef& instance) {
-        SetNativePtr<>(instance, static_cast<Impl*>(this));
-    }
-
     void DisposeNative(const typename Cls::LocalRef& instance) {
-        ClearNativePtr<Impl>(instance);
+        NativePtr<Impl>::Clear(instance);
     }
 };
 
