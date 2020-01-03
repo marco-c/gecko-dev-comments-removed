@@ -499,60 +499,20 @@ FxAccountsInternal.prototype = {
     })
   },
 
-  
-
-
-  getKeyPair: Task.async(function* (mustBeValidUntil) {
-    
-    
-    
-    
-    
-    let ignoreCachedAuthCredentials = false;
-    try {
-      ignoreCachedAuthCredentials = Services.prefs.getBoolPref("services.sync.debug.ignoreCachedAuthCredentials");
-    } catch(e) {
-      
-    }
-    let currentState = this.currentAccountState;
-    let accountData = yield currentState.getUserAccountData("keyPair");
-    if (!ignoreCachedAuthCredentials && accountData.keyPair && (accountData.keyPair.validUntil > mustBeValidUntil)) {
-      log.debug("getKeyPair: already have a keyPair");
-      return accountData.keyPair.keyPair;
-    }
-    
-    let willBeValidUntil = this.now() + KEY_LIFETIME;
-    let kp = yield new Promise((resolve, reject) => {
-      jwcrypto.generateKeyPair("DS160", (err, kp) => {
-        if (err) {
-          return reject(err);
-        }
-        log.debug("got keyPair");
-        let toUpdate = {
-          keyPair: {
-            keyPair: kp,
-            validUntil: willBeValidUntil
-          },
-          cert: null
-        };
-        currentState.updateUserAccountData(toUpdate).then(() => {
-          resolve(kp);
-        }).catch(err => {
-          log.error("Failed to update account data with keypair and cert");
-        });
-      });
-    });
-    return kp;
-  }),
 
   
 
 
 
   getAssertion: function getAssertion(audience) {
+    return this._getAssertion(audience);
+  },
+
+  
+  
+  _getAssertion: function _getAssertion(audience) {
     log.debug("enter getAssertion()");
     let currentState = this.currentAccountState;
-    let mustBeValidUntil = this.now() + ASSERTION_USE_PERIOD;
     return currentState.getUserAccountData().then(data => {
       if (!data) {
         
@@ -562,12 +522,17 @@ FxAccountsInternal.prototype = {
         
         return null;
       }
-      return this.getKeyPair(mustBeValidUntil).then(keyPair => {
-        return this.getCertificate(data, keyPair, mustBeValidUntil)
-          .then(cert => {
-            return this.getAssertionFromCert(data, keyPair, cert, audience);
-          });
-      });
+      if (!data.sessionToken) {
+        
+        
+        log.error("getAssertion called without a session token!");
+        return null;
+      }
+      return this.getKeypairAndCertificate(currentState).then(
+        ({keyPair, certificate}) => {
+          return this.getAssertionFromCert(data, keyPair, certificate, audience);
+        }
+      );
     }).then(result => currentState.resolve(result));
   },
 
@@ -834,32 +799,89 @@ FxAccountsInternal.prototype = {
   
 
 
-  getCertificate: Task.async(function* (data, keyPair, mustBeValidUntil) {
+  getKeypairAndCertificate: Task.async(function* (currentState) {
     
-    let currentState = this.currentAccountState;
-    let accountData = yield currentState.getUserAccountData("cert");
-    if (accountData.cert && accountData.cert.validUntil > mustBeValidUntil) {
-      log.debug(" getCertificate already had one");
-      return accountData.cert.cert;
+    
+    
+    
+    
+    
+    let ignoreCachedAuthCredentials = false;
+    try {
+      ignoreCachedAuthCredentials = Services.prefs.getBoolPref("services.sync.debug.ignoreCachedAuthCredentials");
+    } catch(e) {
+      
     }
+    let mustBeValidUntil = this.now() + ASSERTION_USE_PERIOD;
+    let accountData = yield currentState.getUserAccountData(["cert", "keyPair", "sessionToken"]);
+
+    let keyPairValid = !ignoreCachedAuthCredentials &&
+                       accountData.keyPair &&
+                       (accountData.keyPair.validUntil > mustBeValidUntil);
+    let certValid = !ignoreCachedAuthCredentials &&
+                    accountData.cert &&
+                    (accountData.cert.validUntil > mustBeValidUntil);
+    
+    if (keyPairValid && certValid) {
+      log.debug("getKeypairAndCertificate: already have keyPair and certificate");
+      return {
+        keyPair: accountData.keyPair.rawKeyPair,
+        certificate: accountData.cert.rawCert
+      }
+    }
+    
+    
+    
+
+    
+    
+    
+    
+    
     if (Services.io.offline) {
       throw new Error(ERROR_OFFLINE);
     }
-    let willBeValidUntil = this.now() + CERT_LIFETIME;
-    let cert = yield this.getCertificateSigned(data.sessionToken,
-                                               keyPair.serializedPublicKey,
-                                               CERT_LIFETIME);
-    log.debug("getCertificate got a new one: " + !!cert);
-    if (cert) {
+
+    let keyPair;
+    if (keyPairValid) {
+      keyPair = accountData.keyPair;
+    } else {
+      let keyWillBeValidUntil = this.now() + KEY_LIFETIME;
+      keyPair = yield new Promise((resolve, reject) => {
+        jwcrypto.generateKeyPair("DS160", (err, kp) => {
+          if (err) {
+            return reject(err);
+          }
+          log.debug("got keyPair");
+          resolve({
+            rawKeyPair: kp,
+            validUntil: keyWillBeValidUntil,
+          });
+        });
+      });
+    }
+
+    
+    let certWillBeValidUntil = this.now() + CERT_LIFETIME;
+    let certificate = yield this.getCertificateSigned(accountData.sessionToken,
+                                                      keyPair.rawKeyPair.serializedPublicKey,
+                                                      CERT_LIFETIME);
+    log.debug("getCertificate got a new one: " + !!certificate);
+    if (certificate) {
+      
       let toUpdate = {
+        keyPair,
         cert: {
-          cert: cert,
-          validUntil: willBeValidUntil
-        }
+          rawCert: certificate,
+          validUntil: certWillBeValidUntil,
+        },
       };
       yield currentState.updateUserAccountData(toUpdate);
     }
-    return cert;
+    return {
+      keyPair: keyPair.rawKeyPair,
+      certificate: certificate,
+    }
   }),
 
   getUserAccountData: function() {

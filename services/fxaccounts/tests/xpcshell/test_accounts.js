@@ -166,6 +166,22 @@ function MockFxAccounts() {
   });
 }
 
+
+
+
+
+function MakeFxAccounts(internal = {}) {
+  if (!internal.newAccountState) {
+    
+    internal.newAccountState = function(credentials) {
+      let storage = new MockStorageManager();
+      storage.initialize(credentials);
+      return new AccountState(storage);
+    };
+  }
+  return new FxAccounts(internal);
+}
+
 add_test(function test_non_https_remote_server_uri_with_requireHttps_false() {
   Services.prefs.setBoolPref(
     "identity.fxaccounts.allowHttp",
@@ -195,16 +211,8 @@ add_test(function test_non_https_remote_server_uri() {
 });
 
 add_task(function test_get_signed_in_user_initially_unset() {
-  
-  
-  let account = new FxAccounts({
-    newAccountState(credentials) {
-      
-      let storage = new MockStorageManager();
-      storage.initialize(credentials);
-      return new AccountState(storage);
-    },
-  });
+  _("Check getSignedInUser initially and after signout reports no user");
+  let account = MakeFxAccounts();
   let credentials = {
     email: "foo@example.com",
     uid: "1234@lcip.org",
@@ -241,38 +249,22 @@ add_task(function test_get_signed_in_user_initially_unset() {
   do_check_eq(result, null);
 });
 
-add_task(function* test_getCertificate() {
-  _("getCertificate()");
-  
-  
-  
-  let fxa = new FxAccounts({
-    newAccountState(credentials) {
-      
-      let storage = new MockStorageManager();
-      storage.initialize(credentials);
-      return new AccountState(storage);
-    },
-  });
+add_task(function* test_getCertificateOffline() {
+  _("getCertificateOffline()");
+  let fxa = MakeFxAccounts();
   let credentials = {
     email: "foo@example.com",
     uid: "1234@lcip.org",
-    assertion: "foobar",
     sessionToken: "dead",
-    kA: "beef",
-    kB: "cafe",
-    verified: true
+    verified: true,
   };
+
   yield fxa.setSignedInUser(credentials);
 
   
-  fxa.internal.currentAccountState.cert = {
-    validUntil: Date.parse("Mon, 13 Jan 2000 21:45:06 GMT")
-  };
   let offline = Services.io.offline;
   Services.io.offline = true;
-  
-  yield fxa.internal.getCertificate().then(
+  yield fxa.internal.getKeypairAndCertificate(fxa.internal.currentAccountState).then(
     result => {
       Services.io.offline = offline;
       do_throw("Unexpected success");
@@ -283,8 +275,99 @@ add_task(function* test_getCertificate() {
       do_check_eq(err, "Error: OFFLINE");
     }
   );
+  yield fxa.signOut(true);
 });
 
+add_task(function* test_getCertificateCached() {
+  _("getCertificateCached()");
+  let fxa = MakeFxAccounts();
+  let credentials = {
+    email: "foo@example.com",
+    uid: "1234@lcip.org",
+    sessionToken: "dead",
+    verified: true,
+    
+    keyPair: {
+      validUntil: Date.now() + KEY_LIFETIME + 10000,
+      rawKeyPair: "good-keypair",
+    },
+    cert: {
+      validUntil: Date.now() + CERT_LIFETIME + 10000,
+      rawCert: "good-cert",
+    },
+  };
+
+  yield fxa.setSignedInUser(credentials);
+  let {keyPair, certificate} = yield fxa.internal.getKeypairAndCertificate(fxa.internal.currentAccountState);
+  
+  do_check_eq(keyPair, credentials.keyPair.rawKeyPair);
+  do_check_eq(certificate, credentials.cert.rawCert);
+  yield fxa.signOut(true);
+});
+
+add_task(function* test_getCertificateExpiredCert() {
+  _("getCertificateExpiredCert()");
+  let fxa = MakeFxAccounts({
+    getCertificateSigned() {
+      return "new cert";
+    }
+  });
+  let credentials = {
+    email: "foo@example.com",
+    uid: "1234@lcip.org",
+    sessionToken: "dead",
+    verified: true,
+    
+    keyPair: {
+      validUntil: Date.now() + KEY_LIFETIME + 10000,
+      rawKeyPair: "good-keypair",
+    },
+    
+    cert: {
+      validUntil: Date.parse("Mon, 13 Jan 2000 21:45:06 GMT"),
+      rawCert: "expired-cert",
+    },
+  };
+  yield fxa.setSignedInUser(credentials);
+  let {keyPair, certificate} = yield fxa.internal.getKeypairAndCertificate(fxa.internal.currentAccountState);
+  
+  do_check_eq(keyPair, credentials.keyPair.rawKeyPair);
+  do_check_neq(certificate, credentials.cert.rawCert);
+  yield fxa.signOut(true);
+});
+
+add_task(function* test_getCertificateExpiredKeypair() {
+  _("getCertificateExpiredKeypair()");
+  let fxa = MakeFxAccounts({
+    getCertificateSigned() {
+      return "new cert";
+    },
+  });
+  let credentials = {
+    email: "foo@example.com",
+    uid: "1234@lcip.org",
+    sessionToken: "dead",
+    verified: true,
+    
+    keyPair: {
+      validUntil: Date.now() - 1000,
+      rawKeyPair: "expired-keypair",
+    },
+    
+    cert: {
+      validUntil: Date.now() + CERT_LIFETIME + 10000,
+      rawCert: "expired-cert",
+    },
+  };
+
+  yield fxa.setSignedInUser(credentials);
+  let {keyPair, certificate} = yield fxa.internal.getKeypairAndCertificate(fxa.internal.currentAccountState);
+  
+  
+  do_check_neq(keyPair, credentials.keyPair.rawKeyPair);
+  do_check_neq(certificate, credentials.cert.rawCert);
+  yield fxa.signOut(true);
+});
 
 
 add_test(function test_client_mock() {
