@@ -414,14 +414,14 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin):
             self.fatal("Talos requires a path to the binary.  You can specify binary_path or add download-and-extract to your action list.")
 
         
-        options = ['-v', ]  
+        options = []
         if self.config.get('python_webserver', True):
             options.append('--develop')
         
         if binary_path.endswith('.exe'):
             binary_path = binary_path[:-4]
-        kw_options = {'output': 'talos.yml',  
-                      'executablePath': binary_path}
+        
+        kw_options = {'executablePath': binary_path}
         kw_options['activeTests'] = self.query_tests()
         if self.config.get('title'):
             kw_options['title'] = self.config['title']
