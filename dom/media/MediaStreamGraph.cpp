@@ -793,10 +793,7 @@ MediaStreamGraphImpl::RecomputeBlocking(GraphTime aEndBlockingDecisions)
   
   
   
-  if (aEndBlockingDecisions < mStateComputedTime) {
-    printf("State time can't go backward %ld < %ld.\n", static_cast<long>(aEndBlockingDecisions), static_cast<long>(mStateComputedTime));
-  }
-
+  MOZ_ASSERT(aEndBlockingDecisions >= mStateComputedTime);
   mStateComputedTime = aEndBlockingDecisions;
 
   if (blockingDecisionsWillChange) {
