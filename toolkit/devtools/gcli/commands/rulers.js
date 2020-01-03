@@ -59,13 +59,13 @@ exports.items = [
     hidden: true,
     exec: function(args, context) {
       let env = context.environment;
+      let { document } = env;
 
       
       
-      if (highlighters.has(env.document)) {
-        let { highlighter, environment } = highlighters.get(env.document);
+      if (highlighters.has(document)) {
+        let { highlighter } = highlighters.get(document);
         highlighter.destroy();
-        environment.destroy();
         return false;
       }
 
@@ -76,15 +76,15 @@ exports.items = [
 
       
       
-      highlighters.set(env.document, { highlighter, environment });
+      highlighters.set(document, { highlighter, environment });
 
       
       
       events.once(highlighter, "destroy", () => {
-        if (highlighters.has(env.document)) {
-          let { environment } = highlighters.get(env.document);
+        if (highlighters.has(document)) {
+          let { environment } = highlighters.get(document);
           environment.destroy();
-          highlighters.delete(env.document);
+          highlighters.delete(document);
         }
       });
 
