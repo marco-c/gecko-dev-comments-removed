@@ -30,8 +30,7 @@ add_task(function* () {
      "imported stylesheet has the same name as the filename");
 });
 
-function importSheet(ui, panelWindow)
-{
+function importSheet(ui, panelWindow) {
   
   let file = FileUtils.getFile("ProfD", [FILENAME]);
   let ostream = FileUtils.openSafeFileOutputStream(file);
@@ -39,14 +38,14 @@ function importSheet(ui, panelWindow)
                     .createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = "UTF-8";
   let istream = converter.convertToInputStream(SOURCE);
-  NetUtil.asyncCopy(istream, ostream, function (status) {
+  NetUtil.asyncCopy(istream, ostream, function() {
     FileUtils.closeSafeFileOutputStream(ostream);
 
     
     ui._mockImportFile = file;
 
-    waitForFocus(function () {
-      let document = panelWindow.document
+    waitForFocus(function() {
+      let document = panelWindow.document;
       let importButton = document.querySelector(".style-editor-importButton");
       ok(importButton, "import button exists");
 

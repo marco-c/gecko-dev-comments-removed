@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 const TESTCASE_URI = TEST_BASE_HTTPS + "media-rules-sourcemaps.html";
 const MAP_PREF = "devtools.styleeditor.source-maps-enabled";
@@ -60,7 +62,7 @@ function listenForMediaChange(UI) {
   let deferred = promise.defer();
   UI.once("media-list-changed", () => {
     deferred.resolve();
-  })
+  });
   return deferred.promise;
 }
 

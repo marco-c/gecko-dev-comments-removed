@@ -8,24 +8,43 @@
 
 const TESTCASE_URI = TEST_BASE_HTTP + "minified.html";
 
+
+
+
+
+
+
+
+
+
+
+
+
 const PRETTIFIED_SOURCE = "" +
-"body \{\r?\n" +                   
-  "\tbackground\:white;\r?\n" +   
-"\}\r?\n" +                       
-"div \{\r?\n" +                    
-  "\tfont\-size\:4em;\r?\n" +     
-  "\tcolor\:red\r?\n" +           
-"\}\r?\n" +                       
-"span \{\r?\n" +                   
-  "\tcolor\:green;\r?\n"          
-"\}\r?\n";                        
+"body \{\r?\n" +
+  "\tbackground\:white;\r?\n" +
+"\}\r?\n" +
+"div \{\r?\n" +
+  "\tfont\-size\:4em;\r?\n" +
+  "\tcolor\:red\r?\n" +
+"\}\r?\n" +
+"span \{\r?\n" +
+  "\tcolor\:green;\r?\n" +
+"\}\r?\n";
+
+
+
+
+
+
+
 
 const ORIGINAL_SOURCE = "" +
-"body \{ background\: red; \}\r?\n" + 
-"div \{\r?\n" +                       
-  "font\-size\: 5em;\r?\n" +          
-  "color\: red\r?\n" +                
-"\}";                                 
+"body \{ background\: red; \}\r?\n" +
+"div \{\r?\n" +
+  "font\-size\: 5em;\r?\n" +
+  "color\: red\r?\n" +
+"\}";
 
 add_task(function* () {
   let { ui } = yield openStyleEditorForURL(TESTCASE_URI);

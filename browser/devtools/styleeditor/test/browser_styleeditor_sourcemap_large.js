@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -15,8 +17,8 @@ add_task(function*() {
   yield openEditor(ui.editors[0]);
   let iframes = ui.selectedEditor.details.querySelectorAll("iframe");
 
-  is (iframes.length, 1, "There is only one editor iframe");
-  ok (ui.selectedEditor.summary.classList.contains("splitview-active"),
+  is(iframes.length, 1, "There is only one editor iframe");
+  ok(ui.selectedEditor.summary.classList.contains("splitview-active"),
     "The editor is selected");
 });
 
