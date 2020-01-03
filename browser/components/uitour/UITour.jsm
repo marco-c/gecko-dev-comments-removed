@@ -475,7 +475,7 @@ this.UITour = {
         }
 
         
-        this.showHeartbeat(window, messageManager, data);
+        this.showHeartbeat(window, data);
         break;
       }
 
@@ -1128,9 +1128,7 @@ this.UITour = {
 
 
 
-
-
-  showHeartbeat: function(aChromeWindow, aMessageManager, aOptions) {
+  showHeartbeat(aChromeWindow, aOptions) {
     let nb = aChromeWindow.document.getElementById("high-priority-global-notificationbox");
 
     
