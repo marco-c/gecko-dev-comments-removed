@@ -36,7 +36,7 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
         super(context, attrs);
 
         forwardButtonTranslationWidth =
-                getResources().getDimensionPixelOffset(R.dimen.new_tablet_nav_button_width);
+                getResources().getDimensionPixelOffset(R.dimen.tablet_nav_button_width);
 
         
         
