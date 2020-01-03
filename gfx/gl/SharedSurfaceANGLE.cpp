@@ -172,12 +172,10 @@ void
 SharedSurface_ANGLEShareHandle::ProducerReleaseImpl()
 {
     if (mKeyedMutex) {
-        GLLibraryEGL* egl = &sEGLLibrary;
+        
+        
+        
         mGL->fFlush();
-        egl->fSurfaceReleaseSyncANGLE(mEGL->Display(), mPBuffer);
-        
-        
-        
         mKeyedMutex->ReleaseSync(0);
         return;
     }

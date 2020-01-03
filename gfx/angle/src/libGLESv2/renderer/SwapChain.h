@@ -41,7 +41,6 @@ class SwapChain
 
     virtual HANDLE getShareHandle() {return mShareHandle;};
     virtual void* getKeyedMutex() {return NULL;};
-    virtual void releaseSync() {};
 
   protected:
     rx::NativeWindow mNativeWindow;  
