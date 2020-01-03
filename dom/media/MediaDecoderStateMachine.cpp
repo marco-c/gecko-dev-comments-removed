@@ -416,7 +416,6 @@ bool MediaDecoderStateMachine::HaveEnoughDecodedAudio(int64_t aAmpleAudioUSecs)
 
   
   
-  
   return true;
 }
 

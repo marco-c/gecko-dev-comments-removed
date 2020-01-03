@@ -819,11 +819,6 @@ public:
 
 
 
-  bool HaveEnoughBuffered(TrackID aID);
-  
-
-
-
 
 
   StreamTime GetEndOfAppendedData(TrackID aID);
@@ -925,7 +920,6 @@ protected:
     
     
     uint32_t mCommands;
-    bool mHaveEnough;
   };
 
   bool NeedsMixing();
