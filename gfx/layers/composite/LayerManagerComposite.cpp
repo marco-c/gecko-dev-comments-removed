@@ -204,40 +204,66 @@ LayerManagerComposite::BeginTransactionWithDrawTarget(DrawTarget* aTarget, const
   mTargetBounds = aRect;
 }
 
-void
-LayerManagerComposite::ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaqueRegion)
+static bool
+IsIntegerTranslation(const Matrix4x4& aMatrix, nsIntPoint* aOutTranslation)
 {
-  nsIntRegion localOpaque;
   Matrix transform2d;
-  bool isTranslation = false;
-  
-  
-  
-  if (aLayer->GetLocalTransform().Is2D(&transform2d)) {
+  if (aMatrix.Is2D(&transform2d)) {
     if (transform2d.IsIntegerTranslation()) {
-      isTranslation = true;
-      localOpaque = aOpaqueRegion;
-      localOpaque.MoveBy(-transform2d._31, -transform2d._32);
+      *aOutTranslation = nsIntPoint(transform2d._31, transform2d._32);
+      return true;
     }
   }
+  return false;
+}
 
+void
+LayerManagerComposite::ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaqueRegion, const nsIntRect* aClipFromAncestors)
+{
   
   
-  LayerComposite *composite = aLayer->AsLayerComposite();
-  if (!localOpaque.IsEmpty()) {
+  
+  nsIntPoint translation;
+  bool isTranslation = IsIntegerTranslation(aLayer->GetLocalTransform(), &translation);
+
+  LayerComposite* composite = aLayer->AsLayerComposite();
+
+  nsIntRegion localOpaque;
+  nsIntRect clip;
+  bool haveClip = false;
+
+  if (isTranslation) {
+    localOpaque = aOpaqueRegion.MovedBy(-translation);
+
+    
+    const Maybe<ParentLayerIntRect>& selfClip = aLayer->GetEffectiveClipRect();
+    if (aClipFromAncestors) {
+      clip = *aClipFromAncestors - translation;
+      if (selfClip) {
+        
+        clip = clip.Intersect(ParentLayerPixel::ToUntyped(*selfClip) - translation);
+      }
+      haveClip = true;
+    } else if (selfClip) {
+      clip = ParentLayerPixel::ToUntyped(*selfClip) - translation;
+      haveClip = true;
+    }
+
+    
+    
     nsIntRegion visible = composite->GetShadowVisibleRegion();
     nsIntRegion afterCulling;
     afterCulling.Sub(visible, localOpaque);
-    
-    
-    visible.AndWith(afterCulling.GetBounds());
+    if (haveClip) {
+      afterCulling.AndWith(clip);
+    }
     composite->SetShadowVisibleRegion(visible);
   }
 
   
   
   for (Layer* child = aLayer->GetLastChild(); child; child = child->GetPrevSibling()) {
-    ApplyOcclusionCulling(child, localOpaque);
+    ApplyOcclusionCulling(child, localOpaque, haveClip ? &clip : nullptr);
   }
 
   
@@ -246,14 +272,12 @@ LayerManagerComposite::ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaque
       !aLayer->HasMaskLayers() &&
       aLayer->GetLocalOpacity() == 1.0f) {
     if (aLayer->GetContentFlags() & Layer::CONTENT_OPAQUE) {
-      localOpaque.Or(localOpaque, composite->GetFullyRenderedRegion());
+      localOpaque.OrWith(composite->GetFullyRenderedRegion());
     }
-    localOpaque.MoveBy(transform2d._31, transform2d._32);
-    const Maybe<ParentLayerIntRect>& clip = aLayer->GetEffectiveClipRect();
-    if (clip) {
-      localOpaque.And(localOpaque, ParentLayerIntRect::ToUntyped(*clip));
+    if (haveClip) {
+      localOpaque.AndWith(clip);
     }
-    aOpaqueRegion.Or(aOpaqueRegion, localOpaque);
+    aOpaqueRegion.OrWith(localOpaque.MovedBy(translation));
   }
 }
 
@@ -309,7 +333,7 @@ LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
     mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
 
     nsIntRegion opaque;
-    ApplyOcclusionCulling(mRoot, opaque);
+    ApplyOcclusionCulling(mRoot, opaque, nullptr);
 
     Render();
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
@@ -976,7 +1000,7 @@ LayerManagerComposite::RenderToPresentationSurface()
 
   mRoot->ComputeEffectiveTransforms(matrix);
   nsIntRegion opaque;
-  ApplyOcclusionCulling(mRoot, opaque);
+  ApplyOcclusionCulling(mRoot, opaque, nullptr);
 
   nsIntRegion invalid;
   Rect bounds(0.0f, 0.0f, scale * pageWidth, (float)actualHeight);

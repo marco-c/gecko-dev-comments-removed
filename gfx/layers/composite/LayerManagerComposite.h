@@ -173,7 +173,7 @@ public:
 
 
 
-  void ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaqueRegion);
+  void ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaqueRegion, const nsIntRect* aClipFromAncestors);
 
   
 
