@@ -101,10 +101,36 @@ public:
                         int aSampleSize,
                         const gfx::IntSize& aResolution);
 
+  
+
+
+
+
+
+
+
+
+
   static already_AddRefed<Decoder>
   CreateAnonymousDecoder(DecoderType aType,
                          SourceBuffer* aSourceBuffer,
                          uint32_t aFlags);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<Decoder>
+  CreateAnonymousMetadataDecoder(DecoderType aType,
+                                 SourceBuffer* aSourceBuffer);
 
 private:
   virtual ~DecoderFactory() = 0;
