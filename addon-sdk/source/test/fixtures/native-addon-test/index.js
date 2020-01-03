@@ -1,4 +1,8 @@
-// Added noise to test AST walker
+
+
+
+
+ 
 for (var i = 0; i < 5; i++) {
   square(i);
 }
@@ -24,7 +28,7 @@ exports.require = require;
 let math = require('test-math');
 exports.areModulesCached = (math === exports.math);
 
-// Added noise to test AST walker
+
 function square (x) {
   let tmp = x;
   tmp *= x;
