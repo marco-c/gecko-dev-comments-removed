@@ -170,7 +170,8 @@ ClientTiledPaintedLayer::BeginPaint()
   
   
   
-  if (!hasTransformAnimation) {
+  if (!hasTransformAnimation &&
+      mContentClient->GetLowPrecisionTiledBuffer()) {
     ParentLayerRect criticalDisplayPort =
       (displayportMetrics.GetCriticalDisplayPort() * displayportMetrics.GetZoom())
       + displayportMetrics.GetCompositionBounds().TopLeft();
@@ -401,7 +402,14 @@ ClientTiledPaintedLayer::RenderLayer()
   void *data = ClientManager()->GetPaintedLayerCallbackData();
 
   if (!mContentClient) {
-    mContentClient = new MultiTiledContentClient(this, ClientManager());
+#if defined(MOZ_B2G) || defined(XP_MACOSX)
+    if (mCreationHint == LayerManager::NONE) {
+      mContentClient = new SingleTiledContentClient(this, ClientManager());
+    } else
+#endif
+    {
+      mContentClient = new MultiTiledContentClient(this, ClientManager());
+    }
 
     mContentClient->Connect();
     ClientManager()->AsShadowForwarder()->Attach(mContentClient, this);
@@ -538,6 +546,22 @@ ClientTiledPaintedLayer::RenderLayer()
   
   
   EndPaint();
+}
+
+bool
+ClientTiledPaintedLayer::IsOptimizedFor(LayerManager::PaintedLayerCreationHint aHint)
+{
+#if defined(MOZ_B2G) || defined(XP_MACOSX)
+  
+  
+  
+  
+  
+  
+  return aHint == GetCreationHint();
+#else
+  return true;
+#endif
 }
 
 void

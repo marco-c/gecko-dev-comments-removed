@@ -142,22 +142,6 @@ ClientPaintedLayer::RenderLayerWithReadback(ReadbackProcessor *aReadback)
   mContentClient->EndPaint(&readbackUpdates);
 }
 
-bool
-ClientLayerManager::IsOptimizedFor(PaintedLayer* aLayer, PaintedLayerCreationHint aHint)
-{
-#ifdef MOZ_B2G
-  
-  
-  
-  
-  
-  
-  return aHint == aLayer->GetCreationHint();
-#else
-  return LayerManager::IsOptimizedFor(aLayer, aHint);
-#endif
-}
-
 already_AddRefed<PaintedLayer>
 ClientLayerManager::CreatePaintedLayer()
 {
@@ -168,11 +152,7 @@ already_AddRefed<PaintedLayer>
 ClientLayerManager::CreatePaintedLayerWithHint(PaintedLayerCreationHint aHint)
 {
   NS_ASSERTION(InConstruction(), "Only allowed in construction phase");
-  if (
-#ifdef MOZ_B2G
-      aHint == SCROLLABLE &&
-#endif
-      gfxPrefs::LayersTilesEnabled()
+  if (gfxPrefs::LayersTilesEnabled()
 #ifndef MOZ_X11
       && (AsShadowForwarder()->GetCompositorBackendType() == LayersBackend::LAYERS_OPENGL ||
           AsShadowForwarder()->GetCompositorBackendType() == LayersBackend::LAYERS_D3D9 ||

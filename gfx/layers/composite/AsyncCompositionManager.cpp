@@ -32,6 +32,7 @@
 #include "nsTArray.h"                   
 #include "nsTArrayForwardDeclare.h"     
 #include "UnitTransforms.h"             
+#include "gfxPrefs.h"
 #if defined(MOZ_WIDGET_ANDROID)
 # include <android/log.h>
 # include "AndroidBridge.h"

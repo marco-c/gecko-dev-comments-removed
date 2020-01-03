@@ -389,13 +389,6 @@ public:
   
 
 
-  virtual bool IsOptimizedFor(PaintedLayer* aLayer,
-                              PaintedLayerCreationHint aCreationHint)
-  { return true; }
-
-  
-
-
 
   virtual already_AddRefed<PaintedLayer> CreatePaintedLayer() = 0;
   
@@ -1847,6 +1840,13 @@ public:
 
   bool UsedForReadback() { return mUsedForReadback; }
   void SetUsedForReadback(bool aUsed) { mUsedForReadback = aUsed; }
+
+  
+
+
+  virtual bool IsOptimizedFor(LayerManager::PaintedLayerCreationHint aCreationHint)
+  { return true; }
+
   
 
 
