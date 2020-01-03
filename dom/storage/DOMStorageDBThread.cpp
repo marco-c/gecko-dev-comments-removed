@@ -187,16 +187,16 @@ DOMStorageDBThread::InsertDBOp(DOMStorageDBThread::DBOperation* aOperation)
   
   nsAutoPtr<DOMStorageDBThread::DBOperation> opScope(aOperation);
 
-  if (mStopIOThread) {
-    
-    MOZ_ASSERT(false);
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
   if (NS_FAILED(mStatus)) {
     MonitorAutoUnlock unlock(mThreadObserver->GetMonitor());
     aOperation->Finalize(mStatus);
     return mStatus;
+  }
+
+  if (mStopIOThread) {
+    
+    MOZ_ASSERT(false);
+    return NS_ERROR_NOT_INITIALIZED;
   }
 
   switch (aOperation->Type()) {
