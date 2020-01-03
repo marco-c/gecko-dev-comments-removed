@@ -325,6 +325,12 @@ public:
   
 
 
+
+  DocAccessibleParent* Document() const { return mDoc; }
+
+  
+
+
   bool IsDoc() const { return mIsDoc; }
   DocAccessibleParent* AsDoc() const { return IsDoc() ? mDoc : nullptr; }
 
