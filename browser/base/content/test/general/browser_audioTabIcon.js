@@ -174,9 +174,6 @@ function* test_browser_swapping(tab, browser) {
     yield test_swapped_browser(tab, newBrowser, true)
 
     
-    yield new Promise(resolve => setTimeout(resolve, 3000));
-
-    
     
     tab = gBrowser.getTabForBrowser(newBrowser);
     yield ContentTask.spawn(newBrowser, {}, function* () {
