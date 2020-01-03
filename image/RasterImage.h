@@ -334,7 +334,13 @@ private:
 
 
 
-  void RecoverFromLossOfFrames(const nsIntSize& aSize, uint32_t aFlags);
+
+
+
+
+
+
+  void RecoverFromInvalidFrames(const nsIntSize& aSize, uint32_t aFlags);
 
 private: 
   nsIntSize                  mSize;
