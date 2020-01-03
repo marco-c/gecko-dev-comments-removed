@@ -4624,6 +4624,9 @@ pref("dom.vr.enabled", false);
 pref("dom.vr.add-test-devices", 1);
 
 
+pref("gfx.vr.mirror-textures", false);
+
+
 pref("wap.UAProf.url", "");
 pref("wap.UAProf.tagname", "x-wap-profile");
 

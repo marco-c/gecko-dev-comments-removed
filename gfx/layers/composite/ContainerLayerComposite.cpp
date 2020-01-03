@@ -40,6 +40,11 @@
 #define CULLING_LOG(...)
 
 
+#define DUMP(...) do { if (getenv("DUMP_DEBUG")) { printf_stderr(__VA_ARGS__); } } while(0)
+#define XYWH(k)  (k).x, (k).y, (k).width, (k).height
+#define XY(k)    (k).x, (k).y
+#define WH(k)    (k).width, (k).height
+
 namespace mozilla {
 namespace layers {
 
@@ -141,69 +146,138 @@ ContainerRenderVR(ContainerT* aContainer,
 
   RefPtr<CompositingRenderTarget> previousTarget = compositor->GetCurrentRenderTarget();
 
-  gfx::IntRect visibleRect = aContainer->GetEffectiveVisibleRegion().GetBounds();
-
   float opacity = aContainer->GetEffectiveOpacity();
 
-  gfx::IntRect surfaceRect = gfx::IntRect(visibleRect.x, visibleRect.y,
-                                          visibleRect.width, visibleRect.height);
+  
+  gfx::IntSize eyeResolution = aHMD->SuggestedEyeResolution();
+  gfx::IntRect eyeRect[2];
+  eyeRect[0] = gfx::IntRect(0, 0, eyeResolution.width, eyeResolution.height);
+  eyeRect[1] = gfx::IntRect(eyeResolution.width, 0, eyeResolution.width, eyeResolution.height);
+
   
   
-  
-  
-  
-  
+  gfx::IntRect surfaceRect = gfx::IntRect(0, 0, eyeResolution.width * 2, eyeResolution.height);
+
   int32_t maxTextureSize = compositor->GetMaxTextureSize();
   surfaceRect.width = std::min(maxTextureSize, surfaceRect.width);
   surfaceRect.height = std::min(maxTextureSize, surfaceRect.height);
 
-  
-  surface = compositor->CreateRenderTarget(surfaceRect, INIT_MODE_NONE);
-  if (!surface) {
-    return;
+  gfx::VRHMDRenderingSupport *vrRendering = aHMD->GetRenderingSupport();
+  if (PR_GetEnv("NO_VR_RENDERING")) vrRendering = nullptr;
+  if (vrRendering) {
+    if (!aContainer->mVRRenderTargetSet || aContainer->mVRRenderTargetSet->size != surfaceRect.Size()) {
+      aContainer->mVRRenderTargetSet = vrRendering->CreateRenderTargetSet(compositor, surfaceRect.Size());
+    }
+
+    surface = aContainer->mVRRenderTargetSet->GetNextRenderTarget();
+    if (!surface) {
+      NS_WARNING("GetNextRenderTarget failed");
+      return;
+    }
+  } else {
+    surface = compositor->CreateRenderTarget(surfaceRect, INIT_MODE_CLEAR);
+    if (!surface) {
+      return;
+    }
   }
+
+  gfx::IntRect rtBounds = previousTarget->GetRect();
+  DUMP("eyeResolution: %d %d targetRT: %d %d %d %d\n", WH(eyeResolution), XYWH(rtBounds));
 
   compositor->SetRenderTarget(surface);
 
   nsAutoTArray<Layer*, 12> children;
   aContainer->SortChildrenBy3DZOrder(children);
 
-  
+  gfx::Matrix4x4 origTransform = aContainer->GetEffectiveTransform();
 
-
-  gfx::IntRect surfaceClipRect(0, 0, surfaceRect.width, surfaceRect.height);
-  RenderTargetIntRect rtClipRect(0, 0, surfaceRect.width, surfaceRect.height);
   for (uint32_t i = 0; i < children.Length(); i++) {
     LayerComposite* layerToRender = static_cast<LayerComposite*>(children.ElementAt(i)->ImplData());
     Layer* layer = layerToRender->GetLayer();
+    uint32_t contentFlags = layer->GetContentFlags();
 
     if (layer->GetEffectiveVisibleRegion().IsEmpty() &&
         !layer->AsContainerLayer()) {
       continue;
     }
 
-    RenderTargetIntRect clipRect = layer->CalculateScissorRect(rtClipRect);
-    if (clipRect.IsEmpty()) {
-      continue;
-    }
+    
+    
+    if ((contentFlags & Layer::CONTENT_PRESERVE_3D) == 0) {
+      
+      DUMP("%p Switching to pre-rendered VR\n", aContainer);
 
-    layerToRender->Prepare(rtClipRect);
-    layerToRender->RenderLayer(surfaceClipRect);
+      
+      
+      
+      compositor->SetRenderTarget(surface);
+      aContainer->ReplaceEffectiveTransform(origTransform);
+      
+      
+      
+      
+      
+      nsIntRect layerBounds;
+      
+      
+      
+      if (layer->GetType() == Layer::TYPE_CANVAS) {
+        layerBounds = static_cast<CanvasLayer*>(layer)->GetBounds();
+      } else {
+        layerBounds = layer->GetEffectiveVisibleRegion().GetBounds();
+      }
+      DUMP("  layer %p [type %d] bounds [%d %d %d %d] surfaceRect [%d %d %d %d]\n", layer, (int) layer->GetType(),
+           XYWH(layerBounds), XYWH(surfaceRect));
+      
+      const gfx::Matrix4x4 childTransform = layer->GetEffectiveTransform();
+      bool restoreTransform = false;
+      if ((layerBounds.width != 0 && layerBounds.height != 0) &&
+          (layerBounds.width != surfaceRect.width ||
+           layerBounds.height != surfaceRect.height))
+      {
+        DUMP("  layer %p doesn't match, prescaling by %f %f\n", layer,
+             surfaceRect.width / float(layerBounds.width),
+             surfaceRect.height / float(layerBounds.height));
+        gfx::Matrix4x4 scaledChildTransform(childTransform);
+        scaledChildTransform.PreScale(surfaceRect.width / float(layerBounds.width),
+                                      surfaceRect.height / float(layerBounds.height),
+                                      1.0f);
+
+        layer->ReplaceEffectiveTransform(scaledChildTransform);
+        restoreTransform = true;
+      }
+
+      
+      
+      layerToRender->Prepare(RenderTargetIntRect(surfaceRect.x, surfaceRect.y,
+                                                 surfaceRect.width, surfaceRect.height));
+      layerToRender->RenderLayer(surfaceRect);
+
+      if (restoreTransform) {
+        layer->ReplaceEffectiveTransform(childTransform);
+      }
+    } else {
+      
+    }
   }
+
+  DUMP(" -- ContainerRenderVR [%p] after child layers\n", aContainer);
 
   
-#ifdef MOZ_DUMP_PAINTING
-  if (gfxUtils::sDumpPainting) {
-    RefPtr<gfx::DataSourceSurface> surf = surface->Dump(aManager->GetCompositor());
-    if (surf) {
-      WriteSnapshotToDumpFile(aContainer, surf);
-    }
-  }
-#endif
+  aContainer->ReplaceEffectiveTransform(origTransform);
 
+  
   compositor->SetRenderTarget(previousTarget);
 
-  gfx::Rect rect(visibleRect.x, visibleRect.y, visibleRect.width, visibleRect.height);
+  if (vrRendering) {
+    vrRendering->SubmitFrame(aContainer->mVRRenderTargetSet);
+    DUMP("<<< ContainerRenderVR [used vrRendering] [%p]\n", aContainer);
+    if (!gfxPrefs::VRMirrorTextures()) {
+      return;
+    }
+  }
+
+  gfx::Rect rect(surfaceRect.x, surfaceRect.y, surfaceRect.width, surfaceRect.height);
   gfx::Rect clipRect(aClipRect.x, aClipRect.y, aClipRect.width, aClipRect.height);
 
   
@@ -213,18 +287,29 @@ ContainerRenderVR(ContainerT* aContainer,
   
   EffectChain solidEffect(aContainer);
   solidEffect.mPrimaryEffect = new EffectSolidColor(Color(0.0, 0.0, 0.0, 1.0));
-  aManager->GetCompositor()->DrawQuad(rect, clipRect, solidEffect, opacity,
-                                      aContainer->GetEffectiveTransform());
+  aManager->GetCompositor()->DrawQuad(rect, rect, solidEffect, 1.0, gfx::Matrix4x4());
 
   
+  gfx::Matrix4x4 scaleTransform = aContainer->GetEffectiveTransform();
   EffectChain vrEffect(aContainer);
-  vrEffect.mPrimaryEffect = new EffectVRDistortion(aHMD, surface);
+  bool skipDistortion = vrRendering || PR_GetEnv("MOZ_GFX_VR_NO_DISTORTION");
+  if (skipDistortion) {
+    vrEffect.mPrimaryEffect = new EffectRenderTarget(surface);
+    scaleTransform.PreScale(rtBounds.width / float(surfaceRect.width),
+                            rtBounds.height / float(surfaceRect.height),
+                            1.0f);
+  } else {
+    vrEffect.mPrimaryEffect = new EffectVRDistortion(aHMD, surface);
+    
+  }
 
   
   
   
   aManager->GetCompositor()->DrawQuad(rect, clipRect, vrEffect, opacity,
-                                      aContainer->GetEffectiveTransform());
+                                      scaleTransform);
+
+  DUMP("<<< ContainerRenderVR [%p]\n", aContainer);
 }
 
 
