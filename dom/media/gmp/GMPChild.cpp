@@ -73,16 +73,14 @@ GMPChild::~GMPChild()
 }
 
 static bool
-GetFileBase(const std::string& aPluginPath,
+GetFileBase(const nsAString& aPluginPath,
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
             nsCOMPtr<nsIFile>& aLibDirectory,
 #endif
             nsCOMPtr<nsIFile>& aFileBase,
             nsAutoString& aBaseName)
 {
-  nsDependentCString pluginPath(aPluginPath.c_str());
-
-  nsresult rv = NS_NewLocalFile(NS_ConvertUTF8toUTF16(pluginPath),
+  nsresult rv = NS_NewLocalFile(aPluginPath,
                                 true, getter_AddRefs(aFileBase));
   if (NS_FAILED(rv)) {
     return false;
@@ -113,7 +111,7 @@ GetFileBase(const std::string& aPluginPath,
 }
 
 static bool
-GetPluginFile(const std::string& aPluginPath,
+GetPluginFile(const nsAString& aPluginPath,
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
               nsCOMPtr<nsIFile>& aLibDirectory,
 #endif
@@ -141,7 +139,7 @@ GetPluginFile(const std::string& aPluginPath,
 
 #ifdef XP_WIN
 static bool
-GetInfoFile(const std::string& aPluginPath,
+GetInfoFile(const nsAString& aPluginPath,
             nsCOMPtr<nsIFile>& aInfoFile)
 {
   nsAutoString baseName;
@@ -154,7 +152,7 @@ GetInfoFile(const std::string& aPluginPath,
 
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
 static bool
-GetPluginPaths(const std::string& aPluginPath,
+GetPluginPaths(const nsAString& aPluginPath,
                nsCString &aPluginDirectoryPath,
                nsCString &aPluginFilePath)
 {
@@ -259,13 +257,13 @@ GMPChild::SetMacSandboxInfo()
 #endif 
 
 bool
-GMPChild::Init(const std::string& aPluginPath,
-               const std::string& aVoucherPath,
+GMPChild::Init(const nsAString& aPluginPath,
+               const nsAString& aVoucherPath,
                base::ProcessId aParentPid,
                MessageLoop* aIOLoop,
                IPC::Channel* aChannel)
 {
-  LOGD("%s pluginPath=%s", __FUNCTION__, aPluginPath.c_str());
+  LOGD("%s pluginPath=%s", __FUNCTION__, NS_ConvertUTF16toUTF8(aPluginPath).get());
 
   if (NS_WARN_IF(!Open(aChannel, aParentPid, aIOLoop))) {
     return false;
@@ -288,7 +286,7 @@ GMPChild::RecvSetNodeId(const nsCString& aNodeId)
   
   
   
-  mNodeId = std::string(aNodeId.BeginReading(), aNodeId.EndReading());
+  mNodeId = aNodeId;
   return true;
 }
 
@@ -305,7 +303,7 @@ GMPChild::GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI)
 
 
 bool
-GMPChild::PreLoadLibraries(const std::string& aPluginPath)
+GMPChild::PreLoadLibraries(const nsAString& aPluginPath)
 {
   
   static const char* whitelist[] =
@@ -438,8 +436,8 @@ GMPChild::RecvStartPlugin()
 
   if (!mGMPLoader->Load(libPath.get(),
                         libPath.Length(),
-                        &mNodeId[0],
-                        mNodeId.size(),
+                        mNodeId.BeginWriting(),
+                        mNodeId.Length(),
                         platformAPI)) {
     NS_WARNING("Failed to load GMP");
     delete platformAPI;
@@ -613,7 +611,7 @@ GMPChild::ShutdownComplete()
 }
 
 static bool
-GetPluginVoucherFile(const std::string& aPluginPath,
+GetPluginVoucherFile(const nsAString& aPluginPath,
                      nsCOMPtr<nsIFile>& aOutVoucherFile)
 {
   nsAutoString baseName;
@@ -629,7 +627,7 @@ GetPluginVoucherFile(const std::string& aPluginPath,
 }
 
 bool
-GMPChild::PreLoadPluginVoucher(const std::string& aPluginPath)
+GMPChild::PreLoadPluginVoucher(const nsAString& aPluginPath)
 {
   nsCOMPtr<nsIFile> voucherFile;
   GetPluginVoucherFile(aPluginPath, voucherFile);
@@ -678,12 +676,9 @@ GMPChild::PreLoadSandboxVoucher()
   std::ifstream stream;
   #ifdef _MSC_VER
   
-  nsDependentCString utf8Path(mSandboxVoucherPath.c_str(),
-                              mSandboxVoucherPath.size());
-  NS_ConvertUTF8toUTF16 utf16Path(utf8Path);
-  stream.open(static_cast<const wchar_t*>(utf16Path.get()), std::ios::binary);
+  stream.open(static_cast<const wchar_t*>(mSandboxVoucherPath.get()), std::ios::binary);
   #else
-  stream.open(mSandboxVoucherPath.c_str(), std::ios::binary);
+  stream.open(NS_ConvertUTF16toUTF8(mSandboxVoucherPath).get(), std::ios::binary);
   #endif
   if (!stream.good()) {
     NS_WARNING("PreLoadSandboxVoucher can't find sandbox voucher file!");
