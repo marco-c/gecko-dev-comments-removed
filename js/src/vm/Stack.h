@@ -196,6 +196,8 @@ class AbstractFramePtr
     inline bool isGlobalFrame() const;
     inline bool isEvalFrame() const;
     inline bool isDebuggerEvalFrame() const;
+    inline bool hasCachedSavedFrame() const;
+    inline void setHasCachedSavedFrame();
 
     inline JSScript* script() const;
     inline JSFunction* fun() const;
@@ -328,14 +330,22 @@ class InterpreterFrame
         
         HAS_PUSHED_SPS_FRAME =   0x10000, 
 
+
+        
+
+
+
+        RUNNING_IN_JIT         =    0x20000,
+
+        
+        CREATE_SINGLETON       =    0x40000,   
+
         
 
 
 
-        RUNNING_IN_JIT     =    0x20000,
 
-        
-        CREATE_SINGLETON   =    0x40000   
+        HAS_CACHED_SAVED_FRAME =    0x80000,
     };
 
   private:
@@ -897,6 +907,13 @@ class InterpreterFrame
     }
 
     inline void unsetIsDebuggee();
+
+    bool hasCachedSavedFrame() const {
+        return flags_ & HAS_CACHED_SAVED_FRAME;
+    }
+    void setHasCachedSavedFrame() {
+        flags_ |= HAS_CACHED_SAVED_FRAME;
+    }
 
   public:
     void mark(JSTracer* trc);
@@ -1719,6 +1736,8 @@ class FrameIter
     bool isEvalFrame() const;
     bool isNonEvalFunctionFrame() const;
     bool hasArgs() const { return isNonEvalFunctionFrame(); }
+
+    bool hasCachedSavedFrame(JSContext* cx, bool* hasCachedSavedFramep);
 
     ScriptSource* scriptSource() const;
     const char* scriptFilename() const;
