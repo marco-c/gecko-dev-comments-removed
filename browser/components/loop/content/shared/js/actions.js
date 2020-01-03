@@ -80,7 +80,6 @@ loop.shared.actions = (function() {
 
 
     FetchRoomEmailLink: Action.define("fetchRoomEmailLink", {
-      roomOwner: String,
       roomName: String
     }),
 
@@ -307,8 +306,7 @@ loop.shared.actions = (function() {
     CreateRoom: Action.define("createRoom", {
       
       
-      nameTemplate: String,
-      roomOwner: String
+      nameTemplate: String
       
       
     }),
