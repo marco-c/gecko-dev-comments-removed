@@ -37,7 +37,8 @@ public abstract class MulticastDNSManager {
 
     public static MulticastDNSManager getInstance(final Context context) {
         if (instance == null) {
-            if (Versions.feature16Plus) {
+            
+            if (Versions.feature21Plus) {
                 instance = new NsdMulticastDNSManager(context);
             } else {
                 instance = new DummyMulticastDNSManager();
