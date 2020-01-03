@@ -339,7 +339,7 @@ str_charCodeAt(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-extern int
+extern uint32_t
 OneUcs4ToUtf8Char(uint8_t* utf8Buffer, uint32_t ucs4Char);
 
 extern size_t
