@@ -2122,6 +2122,12 @@ gfxWindowsPlatform::InitD3D11Devices()
     mD3D11Status = FeatureStatus::Failed;
   }
 
+  
+  
+  if (mD3D11Device && IsWin8OrLater()) {
+    mDoesD3D11TextureSharingWork = ::DoesD3D11TextureSharingWork(mD3D11Device);
+  }
+
   if (!mD3D11Device) {
     
     return;
