@@ -411,15 +411,13 @@ Toolbox.prototype = {
 
       
       
-      let profilerReady = this.initPerformance();
+      let performanceFrontConnection = this.initPerformance();
 
       
       
       
-      
-      
       if (DevToolsUtils.testing) {
-        yield profilerReady;
+        yield performanceFrontConnection;
       }
 
       this.emit("ready");
@@ -1986,17 +1984,21 @@ Toolbox.prototype = {
       return;
     }
 
-    if (this.performance) {
-      yield this.performance.open();
-      return this.performance;
+    if (this._performanceFrontConnection) {
+      return this._performanceFrontConnection.promise;
     }
 
-    this._performance = getPerformanceFront(this.target);
+    this._performanceFrontConnection = promise.defer();
+
+    this._performance = getPerformanceFront(this._target);
+
     yield this.performance.open();
+
     
     this.emit("profiler-connected");
 
-    return this.performance;
+    this._performanceFrontConnection.resolve(this.performance);
+    return this._performanceFrontConnection.promise;
   }),
 
   
@@ -2007,6 +2009,11 @@ Toolbox.prototype = {
   destroyPerformance: Task.async(function*() {
     if (!this.performance) {
       return;
+    }
+    
+    
+    if (this._performanceFrontConnection) {
+      yield this._performanceFrontConnection.promise;
     }
     yield this.performance.destroy();
     this._performance = null;
