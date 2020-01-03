@@ -102,6 +102,14 @@ public:
 
   void RefreshAgentsVolume(nsPIDOMWindow* aWindow);
 
+  
+  
+  
+  
+  void RefreshAgentsCapture(nsPIDOMWindow* aWindow,
+                            uint64_t aInnerWindowID);
+
+
 #ifdef MOZ_WIDGET_GONK
   void RegisterSpeakerManager(SpeakerManagerService* aSpeakerManager)
   {
