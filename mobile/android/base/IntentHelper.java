@@ -19,9 +19,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,6 +39,9 @@ public final class IntentHelper implements GeckoEventListener {
     
     private static String MARKET_INTENT_URI_PACKAGE_PREFIX = "market://details?id=";
     private static String EXTRA_BROWSER_FALLBACK_URL = "browser_fallback_url";
+
+    
+    private static String UNKNOWN_PROTOCOL_URI_PREFIX = "about:neterror?e=unknownProtocolFound&u=";
 
     private static IntentHelper instance;
 
@@ -133,8 +137,8 @@ public final class IntentHelper implements GeckoEventListener {
         final String uri = msg.optString("uri");
 
         if (TextUtils.isEmpty(uri)) {
-            displayToastCannotOpenLink();
-            Log.w(LOGTAG, "Received empty URL. Ignoring...");
+            openUnknownProtocolErrorPage("");
+            Log.w(LOGTAG, "Received empty URL - loading about:neterror");
             return;
         }
 
@@ -143,9 +147,14 @@ public final class IntentHelper implements GeckoEventListener {
             
             intent = Intent.parseUri(uri, 0);
         } catch (final URISyntaxException e) {
-            displayToastCannotOpenLink();
+            try {
+                openUnknownProtocolErrorPage(URLEncoder.encode(uri, "UTF-8"));
+            } catch (final UnsupportedEncodingException encodingE) {
+                openUnknownProtocolErrorPage("");
+            }
+
             
-            Log.w(LOGTAG, "Unable to parse Intent URI");
+            Log.w(LOGTAG, "Unable to parse Intent URI - loading about:neterror");
             return;
         }
 
@@ -172,15 +181,21 @@ public final class IntentHelper implements GeckoEventListener {
             Tabs.getInstance().loadUrl(fallbackUrl);
 
         }  else {
-            displayToastCannotOpenLink();
+            openUnknownProtocolErrorPage(intent.getData().toString());
             
-            Log.w(LOGTAG, "Unable to handle URI");
+            Log.w(LOGTAG, "Unable to open URI, default case - loading about:neterror");
         }
     }
 
-    private void displayToastCannotOpenLink() {
-        final String errText = activity.getResources().getString(R.string.intent_uri_cannot_open);
-        Toast.makeText(activity, errText, Toast.LENGTH_LONG).show();
+    
+
+
+
+
+
+    private void openUnknownProtocolErrorPage(final String encodedUri) {
+        final String errorUri = UNKNOWN_PROTOCOL_URI_PREFIX + encodedUri;
+        Tabs.getInstance().loadUrl(errorUri);
     }
 
     private void openWebActivity(JSONObject message) throws JSONException {
