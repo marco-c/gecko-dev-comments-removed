@@ -4,7 +4,7 @@
 
 
 
-#include "SharedThreadPool.h"
+#include "mozilla/SharedThreadPool.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"
