@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "nsIDOMClassInfo.h"
 #include "nsIDOMEvent.h"
@@ -30,7 +30,6 @@ AudioChannelManager::AudioChannelManager()
 {
   RegisterSwitchObserver(SWITCH_HEADPHONES, this);
   mState = GetCurrentSwitchState(SWITCH_HEADPHONES);
-  SetIsDOMBinding();
 }
 
 AudioChannelManager::~AudioChannelManager()
@@ -42,7 +41,7 @@ AudioChannelManager::~AudioChannelManager()
 
   target->RemoveSystemEventListener(NS_LITERAL_STRING("visibilitychange"),
                                     this,
-                                    /* useCapture = */ true);
+                                     true);
 }
 
 void
@@ -56,8 +55,8 @@ AudioChannelManager::Init(nsPIDOMWindow* aWindow)
 
   target->AddSystemEventListener(NS_LITERAL_STRING("visibilitychange"),
                                  this,
-                                 /* useCapture = */ true,
-                                 /* wantsUntrusted = */ false);
+                                  true,
+                                  false);
 }
 
 JSObject*
@@ -83,7 +82,7 @@ AudioChannelManager::SetVolumeControlChannel(const nsAString& aChannel)
 
   AudioChannel newChannel = AudioChannelService::GetAudioChannel(aChannel);
 
-  // Only normal channel doesn't need permission.
+  
   if (newChannel != AudioChannel::Normal) {
     nsCOMPtr<nsIPermissionManager> permissionManager =
       services::GetPermissionManager();
@@ -152,6 +151,6 @@ AudioChannelManager::HandleEvent(nsIDOMEvent* aEvent)
   return NS_OK;
 }
 
-} // namespace system
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
