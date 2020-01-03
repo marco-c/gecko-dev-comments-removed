@@ -17,63 +17,50 @@ template <typename T>
 void ArcToBezier(T* aSink, const Point &aOrigin, const Size &aRadius,
                  float aStartAngle, float aEndAngle, bool aAntiClockwise)
 {
-  Point startPoint(aOrigin.x + cosf(aStartAngle) * aRadius.width,
-                   aOrigin.y + sinf(aStartAngle) * aRadius.height);
-
-  aSink->LineTo(startPoint);
-
-  
-  
-  if (!aAntiClockwise && (aEndAngle < aStartAngle)) {
-    Float correction = Float(ceil((aStartAngle - aEndAngle) / (2.0f * M_PI)));
-    aEndAngle += float(correction * 2.0f * M_PI);
-  } else if (aAntiClockwise && (aStartAngle < aEndAngle)) {
-    Float correction = (Float)ceil((aEndAngle - aStartAngle) / (2.0f * M_PI));
-    aStartAngle += float(correction * 2.0f * M_PI);
-  }
-
-  
-  if (!aAntiClockwise && (aEndAngle - aStartAngle > 2 * M_PI)) {
-    aEndAngle = float(aStartAngle + 2.0f * M_PI);
-  } else if (aAntiClockwise && (aStartAngle - aEndAngle > 2.0f * M_PI)) {
-    aEndAngle = float(aStartAngle - 2.0f * M_PI);
-  }
-
-  
-  Float arcSweepLeft = fabs(aEndAngle - aStartAngle);
-
   Float sweepDirection = aAntiClockwise ? -1.0f : 1.0f;
 
+  
+  Float arcSweepLeft = (aEndAngle - aStartAngle) * sweepDirection;
+
+  
+  
+  if (arcSweepLeft < 0) {
+    
+    arcSweepLeft = Float(2.0f * M_PI) + fmodf(arcSweepLeft, Float(2.0f * M_PI));
+    
+    aStartAngle = aEndAngle - arcSweepLeft * sweepDirection;
+  } else if (arcSweepLeft > Float(2.0f * M_PI)) {
+    
+    arcSweepLeft = Float(2.0f * M_PI);
+  }
+
   Float currentStartAngle = aStartAngle;
+  Point currentStartPoint(aOrigin.x + cosf(aStartAngle) * aRadius.width,
+                          aOrigin.y + sinf(aStartAngle) * aRadius.height);
+
+  aSink->LineTo(currentStartPoint);
 
   while (arcSweepLeft > 0) {
     
     
-    Float currentEndAngle;
+    Float currentEndAngle =
+      currentStartAngle + std::min(arcSweepLeft, Float(M_PI / 2.0f)) * sweepDirection;
 
-    if (arcSweepLeft > M_PI / 2.0f) {
-      currentEndAngle = Float(currentStartAngle + M_PI / 2.0f * sweepDirection);
-    } else {
-      currentEndAngle = currentStartAngle + arcSweepLeft * sweepDirection;
-    }
-
-    Point currentStartPoint(aOrigin.x + cosf(currentStartAngle) * aRadius.width,
-                            aOrigin.y + sinf(currentStartAngle) * aRadius.height);
     Point currentEndPoint(aOrigin.x + cosf(currentEndAngle) * aRadius.width,
                           aOrigin.y + sinf(currentEndAngle) * aRadius.height);
 
     
     
     
-    Float kappaFactor = (4.0f / 3.0f) * tan((currentEndAngle - currentStartAngle) / 4.0f);
+    Float kappaFactor = (4.0f / 3.0f) * tanf((currentEndAngle - currentStartAngle) / 4.0f);
     Float kappaX = kappaFactor * aRadius.width;
     Float kappaY = kappaFactor * aRadius.height;
 
-    Point tangentStart(-sin(currentStartAngle), cos(currentStartAngle));
+    Point tangentStart(-sinf(currentStartAngle), cosf(currentStartAngle));
     Point cp1 = currentStartPoint;
     cp1 += Point(tangentStart.x * kappaX, tangentStart.y * kappaY);
 
-    Point revTangentEnd(sin(currentEndAngle), -cos(currentEndAngle));
+    Point revTangentEnd(sinf(currentEndAngle), -cosf(currentEndAngle));
     Point cp2 = currentEndPoint;
     cp2 += Point(revTangentEnd.x * kappaX, revTangentEnd.y * kappaY);
 
@@ -81,6 +68,7 @@ void ArcToBezier(T* aSink, const Point &aOrigin, const Size &aRadius,
 
     arcSweepLeft -= Float(M_PI / 2.0f);
     currentStartAngle = currentEndAngle;
+    currentStartPoint = currentEndPoint;
   }
 }
 
