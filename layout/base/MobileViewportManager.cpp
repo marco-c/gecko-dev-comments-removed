@@ -190,11 +190,14 @@ MobileViewportManager::UpdateSPCSPS(const ScreenIntSize& aDisplaySize,
 {
   ScreenSize compositionSize(aDisplaySize);
   ScreenMargin scrollbars =
-    CSSMargin::FromAppUnits(
+    LayoutDeviceMargin::FromAppUnits(
       nsLayoutUtils::ScrollbarAreaToExcludeFromCompositionBoundsFor(
-        mPresShell->GetRootScrollFrame()))
-    * CSSToScreenScale(1.0f); 
-                              
+        mPresShell->GetRootScrollFrame()),
+      mPresShell->GetPresContext()->AppUnitsPerDevPixel())
+    
+    
+    * LayoutDeviceToScreenScale(1.0f);
+
   compositionSize.width -= scrollbars.LeftRight();
   compositionSize.height -= scrollbars.TopBottom();
   CSSSize compSize = compositionSize / aZoom;
