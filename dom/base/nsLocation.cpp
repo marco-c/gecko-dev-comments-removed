@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sw=2 et tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsLocation.h"
 #include "nsIScriptSecurityManager.h"
@@ -64,7 +64,7 @@ nsLocation::~nsLocation()
   RemoveURLSearchParams();
 }
 
-// QueryInterface implementation for nsLocation
+
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsLocation)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsIDOMLocation)
@@ -114,28 +114,29 @@ nsLocation::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
 
   nsCOMPtr<nsISupports> owner;
   nsCOMPtr<nsIURI> sourceURI;
+  net::ReferrerPolicy referrerPolicy = net::RP_Default;
 
   if (JSContext *cx = nsContentUtils::GetCurrentJSContext()) {
-    // No cx means that there's no JS running, or at least no JS that
-    // was run through code that properly pushed a context onto the
-    // context stack (as all code that runs JS off of web pages
-    // does). We won't bother with security checks in this case, but
-    // we need to create the loadinfo etc.
+    
+    
+    
+    
+    
 
-    // Get security manager.
+    
     nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
     NS_ENSURE_STATE(ssm);
 
-    // Check to see if URI is allowed.
+    
     nsresult rv = ssm->CheckLoadURIFromScript(cx, aURI);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Make the load's referrer reflect changes to the document's URI caused by
-    // push/replaceState, if possible.  First, get the document corresponding to
-    // fp.  If the document's original URI (i.e. its URI before
-    // push/replaceState) matches the principal's URI, use the document's
-    // current URI as the referrer.  If they don't match, use the principal's
-    // URI.
+    
+    
+    
+    
+    
+    
 
     nsCOMPtr<nsIDocument> doc;
     nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
@@ -149,6 +150,7 @@ nsLocation::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
       docCurrentURI = doc->GetDocumentURI();
       rv = doc->NodePrincipal()->GetURI(getter_AddRefs(principalURI));
       NS_ENSURE_SUCCESS(rv, rv);
+      referrerPolicy = doc->GetReferrerPolicy();
     }
 
     bool urisEqual = false;
@@ -160,10 +162,10 @@ nsLocation::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
       sourceURI = docCurrentURI;
     }
     else {
-      // Use principalURI as long as it is not an nsNullPrincipalURI.
-      // We could add a method such as GetReferrerURI to principals to make this
-      // cleaner, but given that we need to start using Source Browsing Context
-      // for referrer (see Bug 960639) this may be wasted effort at this stage.
+      
+      
+      
+      
       if (principalURI) {
         bool isNullPrincipalScheme;
         rv = principalURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME,
@@ -177,7 +179,7 @@ nsLocation::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
     owner = nsContentUtils::SubjectPrincipal();
   }
 
-  // Create load info
+  
   nsCOMPtr<nsIDocShellLoadInfo> loadInfo;
   docShell->CreateLoadInfo(getter_AddRefs(loadInfo));
   NS_ENSURE_TRUE(loadInfo, NS_ERROR_FAILURE);
@@ -186,6 +188,7 @@ nsLocation::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
 
   if (sourceURI) {
     loadInfo->SetReferrer(sourceURI);
+    loadInfo->SetReferrerPolicy(referrerPolicy);
   }
 
   loadInfo.swap(*aLoadInfo);
@@ -209,8 +212,8 @@ nsLocation::GetURI(nsIURI** aURI, bool aGetInnermostURI)
   rv = webNav->GetCurrentURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // It is valid for docshell to return a null URI. Don't try to fixup
-  // if this happens.
+  
+  
   if (!uri) {
     return NS_OK;
   }
@@ -263,7 +266,7 @@ nsLocation::SetURI(nsIURI* aURI, bool aReplace)
       loadInfo->SetLoadType(nsIDocShellLoadInfo::loadStopContent);
     }
 
-    // Get the incumbent script's browsing context to set as source.
+    
     nsCOMPtr<nsPIDOMWindow> sourceWindow =
       do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
     if (sourceWindow) {
@@ -307,7 +310,7 @@ nsLocation::GetHash(nsAString& aHash)
     }
       
     if (NS_FAILED(rv)) {
-      // Oh, well.  No intl here!
+      
       NS_UnescapeURL(ref);
       CopyASCIItoUTF16(ref, unicodeRef);
       rv = NS_OK;
@@ -320,9 +323,9 @@ nsLocation::GetHash(nsAString& aHash)
   }
 
   if (aHash == mCachedHash) {
-    // Work around ShareThis stupidly polling location.hash every
-    // 5ms all the time by handing out the same exact string buffer
-    // we handed out last time.
+    
+    
+    
     aHash = mCachedHash;
   } else {
     mCachedHash = aHash;
@@ -493,7 +496,7 @@ nsLocation::SetHrefWithContext(JSContext* cx, const nsAString& aHref,
 {
   nsCOMPtr<nsIURI> base;
 
-  // Get the source of the caller
+  
   nsresult result = GetSourceBaseURL(cx, getter_AddRefs(base));
 
   if (NS_FAILED(result)) {
@@ -519,16 +522,16 @@ nsLocation::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
     result = NS_NewURI(getter_AddRefs(newUri), aHref, nullptr, aBase);
 
   if (newUri) {
-    /* Check with the scriptContext if it is currently processing a script tag.
-     * If so, this must be a <script> tag with a location.href in it.
-     * we want to do a replace load, in such a situation. 
-     * In other cases, for example if a event handler or a JS timer
-     * had a location.href in it, we want to do a normal load,
-     * so that the new url will be appended to Session History.
-     * This solution is tricky. Hopefully it isn't going to bite
-     * anywhere else. This is part of solution for bug # 39938, 72197
-     * 
-     */
+    
+
+
+
+
+
+
+
+
+
     bool inScriptTag = false;
     nsIScriptContext* scriptContext = nullptr;
     nsCOMPtr<nsPIDOMWindow> win = do_QueryInterface(GetEntryGlobal());
@@ -538,9 +541,9 @@ nsLocation::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
 
     if (scriptContext) {
       if (scriptContext->GetProcessingScriptTag()) {
-        // Now check to make sure that the script is running in our window,
-        // since we only want to replace if the location is set by a
-        // <script> tag in the same window.  See bug 178729.
+        
+        
+        
         nsCOMPtr<nsIScriptGlobalObject> ourGlobal =
           docShell ? docShell->GetScriptGlobalObject() : nullptr;
         inScriptTag = (ourGlobal == scriptContext->GetGlobalObject());
@@ -644,7 +647,7 @@ nsLocation::GetPort(nsAString& aPort)
       aPort.Append(portStr);
     }
 
-    // Don't propagate this exception to caller
+    
     result = NS_OK;
   }
 
@@ -663,7 +666,7 @@ nsLocation::SetPort(const nsAString& aPort)
     return rv;
   }
 
-  // perhaps use nsReadingIterators at some point?
+  
   NS_ConvertUTF16toUTF8 portStr(aPort);
   const char *buf = portStr.get();
   int32_t port = -1;
@@ -902,12 +905,12 @@ nsLocation::Reload(bool aForceget)
   nsCOMPtr<nsPIDOMWindow> window = docShell ? docShell->GetWindow() : nullptr;
 
   if (window && window->IsHandlingResizeEvent()) {
-    // location.reload() was called on a window that is handling a
-    // resize event. Sites do this since Netscape 4.x needed it, but
-    // we don't, and it's a horrible experience for nothing. In stead
-    // of reloading the page, just clear style data and reflow the
-    // page since some sites may use this trick to work around gecko
-    // reflow bugs, and this should have the same effect.
+    
+    
+    
+    
+    
+    
 
     nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
 
@@ -929,9 +932,9 @@ nsLocation::Reload(bool aForceget)
     }
     rv = webNav->Reload(reloadFlags);
     if (rv == NS_BINDING_ABORTED) {
-      // This happens when we attempt to reload a POST result and the user says
-      // no at the "do you want to reload?" prompt.  Don't propagate this one
-      // back to callers.
+      
+      
+      
       rv = NS_OK;
     }
   } else {
@@ -989,7 +992,7 @@ nsLocation::Assign(const nsAString& aUrl)
 NS_IMETHODIMP
 nsLocation::ToString(nsAString& aReturn)
 {
-  // NB: GetHref checks CallerSubsumes().
+  
   return GetHref(aReturn);
 }
 
@@ -1006,12 +1009,12 @@ nsLocation::GetSourceBaseURL(JSContext* cx, nsIURI** sourceURL)
 {
   *sourceURL = nullptr;
   nsIDocument* doc = GetEntryDocument();
-  // If there's no entry document, we either have no Script Entry Point or one
-  // that isn't a DOM Window.  This doesn't generally happen with the DOM,
-  // but can sometimes happen with extension code in certain IPC configurations.
-  // If this happens, try falling back on the current document associated with
-  // the docshell. If that fails, just return null and hope that the caller passed
-  // an absolute URI.
+  
+  
+  
+  
+  
+  
   if (!doc && GetDocShell()) {
     nsCOMPtr<nsPIDOMWindow> docShellWin = do_QueryInterface(GetDocShell()->GetScriptGlobalObject());
     if (docShellWin) {
@@ -1026,11 +1029,11 @@ nsLocation::GetSourceBaseURL(JSContext* cx, nsIURI** sourceURL)
 bool
 nsLocation::CallerSubsumes()
 {
-  // Get the principal associated with the location object.  Note that this is
-  // the principal of the page which will actually be navigated, not the
-  // principal of the Location object itself.  This is why we need this check
-  // even though we only allow limited cross-origin access to Location objects
-  // in general.
+  
+  
+  
+  
+  
   nsCOMPtr<nsIDOMWindow> outer = mInnerWindow->GetOuterWindow();
   if (MOZ_UNLIKELY(!outer))
     return false;
@@ -1062,8 +1065,8 @@ URLSearchParams*
 nsLocation::SearchParams()
 {
   if (!mSearchParams) {
-    // We must register this object to the URLSearchParams of the docshell in
-    // order to receive updates.
+    
+    
     nsRefPtr<URLSearchParams> searchParams = GetDocShellSearchParams();
     if (searchParams) {
       searchParams->AddObserver(this);
@@ -1084,7 +1087,7 @@ nsLocation::SetSearchParams(URLSearchParams& aSearchParams)
     mSearchParams->RemoveObserver(this);
   }
 
-  // the observer will be cleared using the cycle collector.
+  
   mSearchParams = &aSearchParams;
   mSearchParams->AddObserver(this);
 
@@ -1092,8 +1095,8 @@ nsLocation::SetSearchParams(URLSearchParams& aSearchParams)
   mSearchParams->Serialize(search);
   SetSearchInternal(search);
 
-  // We don't need to inform the docShell about this new SearchParams because
-  // setting the new value the docShell will refresh its value automatically.
+  
+  
 }
 
 void
@@ -1101,7 +1104,7 @@ nsLocation::URLSearchParamsUpdated(URLSearchParams* aSearchParams)
 {
   MOZ_ASSERT(mSearchParams);
 
-  // This change comes from content.
+  
   if (aSearchParams == mSearchParams) {
     nsAutoString search;
     mSearchParams->Serialize(search);
@@ -1109,7 +1112,7 @@ nsLocation::URLSearchParamsUpdated(URLSearchParams* aSearchParams)
     return;
   }
 
-  // This change comes from the docShell.
+  
 #ifdef DEBUG
   {
     nsRefPtr<URLSearchParams> searchParams = GetDocShellSearchParams();
