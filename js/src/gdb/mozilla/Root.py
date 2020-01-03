@@ -20,10 +20,6 @@ class Common(object):
 
     
     
-    strip_typedefs = False
-
-    
-    
     
     
     
@@ -46,8 +42,6 @@ class Common(object):
         ptr = self.value[self.member]
         if self.handle:
             ptr = ptr.dereference()
-        if self.strip_typedefs:
-            ptr = ptr.cast(ptr.type.strip_typedefs())
         if self.content_printer:
             return self.content_printer(ptr, self.cache).to_string()
         else:
@@ -59,7 +53,7 @@ class Common(object):
 
 @template_pretty_printer("JS::Rooted")
 class Rooted(Common):
-    strip_typedefs = True
+    pass
 
 @template_pretty_printer("JS::Handle")
 class Handle(Common):

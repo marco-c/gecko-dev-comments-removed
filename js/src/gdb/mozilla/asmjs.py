@@ -25,7 +25,7 @@ def on_stop(event):
         AsmJSFaultHandler = gdb.parse_and_eval("AsmJSFaultHandler")
         if buf['__sigaction_handler']['sa_handler'] == AsmJSFaultHandler:
             
-            print("js/src/gdb/mozilla/asmjs.py: Allowing AsmJSFaultHandler to run.")
+            print "js/src/gdb/mozilla/asmjs.py: Allowing AsmJSFaultHandler to run."
 
             
             
