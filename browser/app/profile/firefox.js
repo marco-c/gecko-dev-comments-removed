@@ -1889,7 +1889,7 @@ pref("privacy.trackingprotection.introURL", "https://support.mozilla.org/kb/trac
 pref("privacy.trackingprotection.introCount", 0);
 pref("privacy.trackingprotection.introURL", "https://support.mozilla.org/kb/tracking-protection-firefox");
 
-#ifdef NIGHTLY_BUILD
+#ifndef RELEASE_BUILD
 
 
 
