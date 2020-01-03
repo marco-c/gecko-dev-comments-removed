@@ -5949,7 +5949,8 @@ class MPow
     }
     bool writeRecoverData(CompactBufferWriter& writer) const override;
     bool canRecoverOnBailout() const override {
-        return true;
+        
+        return false;
     }
 
     ALLOW_CLONE(MPow)
