@@ -2252,7 +2252,7 @@ ServiceWorkerManager::SendPushEvent(const nsACString& aOriginAttributes,
 
   nsRefPtr<ServiceWorker> serviceWorker =
     CreateServiceWorkerForScope(attrs, aScope, nullptr );
-  if (!serviceWorker) {
+  if (NS_WARN_IF(!serviceWorker)) {
     return NS_ERROR_FAILURE;
   }
 
