@@ -203,7 +203,7 @@ ParseTask::ParseTask(ExclusiveContext* cx, JSObject* exclusiveContextGlobal, JSC
     alloc(JSRuntime::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
     exclusiveContextGlobal(initCx->runtime(), exclusiveContextGlobal),
     callback(callback), callbackData(callbackData),
-    script(nullptr), errors(cx), overRecursed(false)
+    script(nullptr), sourceObject(nullptr), errors(cx), overRecursed(false)
 {
 }
 
@@ -233,10 +233,8 @@ ParseTask::activate(JSRuntime* rt)
 bool
 ParseTask::finish(JSContext* cx)
 {
-    if (script) {
-        
-        
-        RootedScriptSource sso(cx, &script->sourceObject()->as<ScriptSourceObject>());
+    if (sourceObject) {
+        RootedScriptSource sso(cx, sourceObject);
         if (!ScriptSourceObject::initFromOptions(cx, sso, options))
             return false;
     }
@@ -1247,7 +1245,11 @@ HelperThread::handleParseWorkload()
         parseTask->script = frontend::CompileScript(parseTask->cx, &parseTask->alloc,
                                                     nullptr, nullptr, nullptr,
                                                     parseTask->options,
-                                                    srcBuf);
+                                                    srcBuf,
+                                                     nullptr,
+                                                     0,
+                                                     nullptr,
+                                                     &(parseTask->sourceObject));
     }
 
     
