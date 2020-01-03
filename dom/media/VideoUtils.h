@@ -17,11 +17,6 @@
 #include "nsSize.h"
 #include "nsRect.h"
 
-#if !(defined(XP_WIN) || defined(XP_MACOSX) || defined(LINUX)) || \
-    defined(MOZ_ASAN)
-
-#include "nsIThreadManager.h"
-#endif
 #include "nsThreadUtils.h"
 #include "prtime.h"
 #include "AudioSampleFormat.h"
@@ -164,18 +159,6 @@ static const int32_t MAX_VIDEO_HEIGHT = 3000;
 
 
 void ScaleDisplayByAspectRatio(nsIntSize& aDisplay, float aAspectRatio);
-
-
-#if defined(MOZ_ASAN)
-
-
-#define MEDIA_THREAD_STACK_SIZE nsIThreadManager::DEFAULT_STACK_SIZE
-#elif defined(XP_WIN) || defined(XP_MACOSX) || defined(LINUX)
-#define MEDIA_THREAD_STACK_SIZE (256 * 1024)
-#else
-
-#define MEDIA_THREAD_STACK_SIZE nsIThreadManager::DEFAULT_STACK_SIZE
-#endif
 
 
 

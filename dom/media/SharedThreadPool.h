@@ -10,6 +10,7 @@
 #include <queue>
 #include "mozilla/RefPtr.h"
 #include "nsThreadUtils.h"
+#include "nsIThreadManager.h"
 #include "nsIThreadPool.h"
 #include "nsISupports.h"
 #include "nsISupportsImpl.h"
@@ -65,6 +66,17 @@ public:
   
   
   static void SpinUntilEmpty();
+
+#if defined(MOZ_ASAN)
+  
+  
+  static const uint32_t kStackSize = nsIThreadManager::DEFAULT_STACK_SIZE;
+#elif defined(XP_WIN) || defined(XP_MACOSX) || defined(LINUX)
+  static const uint32_t kStackSize = (256 * 1024);
+#else
+  
+  static const uint32_t kStackSize = nsIThreadManager::DEFAULT_STACK_SIZE;
+#endif
 
 private:
 

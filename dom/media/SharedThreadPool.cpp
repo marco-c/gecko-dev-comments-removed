@@ -7,9 +7,9 @@
 #include "SharedThreadPool.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/StaticPtr.h"
 #include "nsDataHashtable.h"
-#include "VideoUtils.h"
 #include "nsXPCOMCIDInternal.h"
 #include "nsComponentManagerUtils.h"
 #ifdef XP_WIN
@@ -184,7 +184,7 @@ CreateThreadPool(const nsCString& aName)
   rv = pool->SetName(aName);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
-  rv = pool->SetThreadStackSize(MEDIA_THREAD_STACK_SIZE);
+  rv = pool->SetThreadStackSize(SharedThreadPool::kStackSize);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
 #ifdef XP_WIN
