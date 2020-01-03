@@ -455,7 +455,7 @@ protected:
 
 
 
-    jschar* mOffThreadCompileStringBuf;
+    char16_t* mOffThreadCompileStringBuf;
     size_t mOffThreadCompileStringLength;
 
     
