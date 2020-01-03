@@ -650,39 +650,6 @@ DataChannelWrapper.prototype = {
 
 
 
-function AudioStreamAnalyser(stream) {
-  if (stream.getAudioTracks().length === 0) {
-    throw new Error("No audio track in stream");
-  }
-  this.stream = stream;
-  this.audioContext = new AudioContext();
-  this.sourceNode = this.audioContext.createMediaStreamSource(this.stream);
-  this.analyser = this.audioContext.createAnalyser();
-  this.sourceNode.connect(this.analyser);
-  this.data = new Uint8Array(this.analyser.frequencyBinCount);
-}
-
-AudioStreamAnalyser.prototype = {
-  
-
-
-
-
-  getByteFrequencyData: function() {
-    this.analyser.getByteFrequencyData(this.data);
-    return this.data;
-  }
-};
-
-
-
-
-
-
-
-
-
-
 
 function PeerConnectionWrapper(label, configuration, h264) {
   this.configuration = configuration;
@@ -1559,20 +1526,20 @@ PeerConnectionWrapper.prototype = {
 
 
 
-  checkReceivingToneFrom : function(from) {
+  checkReceivingToneFrom : function(audiocontext, from) {
     var inputElem = from.localMediaElements[0];
 
     
     var inputSenderTracks = from._pc.getSenders().map(sn => sn.track);
     var inputAudioStream = from._pc.getLocalStreams()
       .find(s => s.getAudioTracks().some(t => inputSenderTracks.some(t2 => t == t2)));
-    var inputAnalyser = new AudioStreamAnalyser(inputAudioStream);
+    var inputAnalyser = new AudioStreamAnalyser(audiocontext, inputAudioStream);
 
     
     
     var outputAudioStream = this._pc.getRemoteStreams()
       .find(s => s.getAudioTracks().length > 0);
-    var outputAnalyser = new AudioStreamAnalyser(outputAudioStream);
+    var outputAnalyser = new AudioStreamAnalyser(audiocontext, outputAudioStream);
 
     var maxWithIndex = (a, b, i) => (b >= a.value) ? { value: b, index: i } : a;
     var initial = { value: -1, index: -1 };
