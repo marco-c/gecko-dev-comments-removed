@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jscntxt.h"
 #include "jscompartment.h"
@@ -16,13 +16,13 @@
 
 using namespace js;
 
-/*
- * Wrapper forwards this call directly to the wrapped object for efficiency
- * and transparency. In particular, the hint is needed to properly stringify
- * Date objects in certain cases - see bug 646129. Note also the
- * SecurityWrapper overrides this trap to avoid information leaks. See bug
- * 720619.
- */
+
+
+
+
+
+
+
 bool
 Wrapper::defaultValue(JSContext *cx, HandleObject proxy, JSType hint, MutableHandleValue vp) const
 {
@@ -33,13 +33,11 @@ Wrapper::defaultValue(JSContext *cx, HandleObject proxy, JSType hint, MutableHan
 }
 
 JSObject *
-Wrapper::New(JSContext *cx, JSObject *obj, JSObject *parent, const Wrapper *handler,
+Wrapper::New(JSContext *cx, JSObject *obj, const Wrapper *handler,
              const WrapperOptions &options)
 {
-    MOZ_ASSERT(parent);
-
     RootedValue priv(cx, ObjectValue(*obj));
-    return NewProxyObject(cx, handler, priv, options.proto(), parent, options);
+    return NewProxyObject(cx, handler, priv, options.proto(), nullptr, options);
 }
 
 JSObject *
@@ -66,9 +64,9 @@ Wrapper::wrappedObject(JSObject *wrapper)
 bool
 Wrapper::isConstructor(JSObject *obj) const
 {
-    // For now, all wrappers are constructable if they are callable. We will want to eventually
-    // decouple this behavior, but none of the Wrapper infrastructure is currently prepared for
-    // that.
+    
+    
+    
     return isCallable(obj);
 }
 
@@ -85,8 +83,8 @@ js::UncheckedUnwrap(JSObject *wrapped, bool stopAtOuter, unsigned *flagsp)
         flags |= Wrapper::wrapperHandler(wrapped)->flags();
         wrapped = wrapped->as<ProxyObject>().private_().toObjectOrNull();
 
-        // This can be called from DirectProxyHandler::weakmapKeyDelegate() on a
-        // wrapper whose referent has been moved while it is still unmarked.
+        
+        
         if (wrapped)
             wrapped = MaybeForwarded(wrapped);
     }
@@ -124,15 +122,14 @@ const Wrapper Wrapper::singleton((unsigned)0);
 const Wrapper Wrapper::singletonWithPrototype((unsigned)0, true);
 JSObject *Wrapper::defaultProto = TaggedProto::LazyProto;
 
-/* Compartments. */
+
 
 extern JSObject *
-js::TransparentObjectWrapper(JSContext *cx, HandleObject existing, HandleObject obj,
-                             HandleObject parent)
+js::TransparentObjectWrapper(JSContext *cx, HandleObject existing, HandleObject obj)
 {
-    // Allow wrapping outer window proxies.
+    
     MOZ_ASSERT(!obj->is<WrapperObject>() || obj->getClass()->ext.innerObject);
-    return Wrapper::New(cx, obj, parent, &CrossCompartmentWrapper::singleton);
+    return Wrapper::New(cx, obj, &CrossCompartmentWrapper::singleton);
 }
 
 ErrorCopier::~ErrorCopier()
@@ -156,13 +153,13 @@ bool Wrapper::finalizeInBackground(Value priv) const
     if (!priv.isObject())
         return true;
 
-    /*
-     * Make the 'background-finalized-ness' of the wrapper the same as the
-     * wrapped object, to allow transplanting between them.
-     *
-     * If the wrapped object is in the nursery then we know it doesn't have a
-     * finalizer, and so background finalization is ok.
-     */
+    
+
+
+
+
+
+
     if (IsInsideNursery(&priv.toObject()))
         return true;
     return IsBackgroundFinalized(priv.toObject().asTenured().getAllocKind());
