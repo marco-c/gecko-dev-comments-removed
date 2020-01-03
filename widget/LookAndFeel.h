@@ -404,14 +404,7 @@ public:
 
 
      eIntID_ScrollbarFadeBeginDelay,
-     eIntID_ScrollbarFadeDuration,
-      
-     
-
-
-
-     eIntID_ContextMenuOffsetVertical,
-     eIntID_ContextMenuOffsetHorizontal
+     eIntID_ScrollbarFadeDuration
   };
 
   
