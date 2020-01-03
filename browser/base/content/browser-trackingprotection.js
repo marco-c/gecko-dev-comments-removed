@@ -126,6 +126,9 @@ let TrackingProtection = {
     
     this.eventsHistogram.add(1);
 
+    
+    document.getElementById("identity-popup").hidePopup();
+
     BrowserReload();
   },
 
@@ -145,6 +148,9 @@ let TrackingProtection = {
 
     
     this.eventsHistogram.add(2);
+
+    
+    document.getElementById("identity-popup").hidePopup();
 
     BrowserReload();
   },
