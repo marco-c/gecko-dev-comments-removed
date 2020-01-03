@@ -18,6 +18,27 @@ const char FINAL_BIT = 0x80;
 
 
 
+
+
+static const uint32_t kObexRespHeaderSize = 3;
+
+
+
+
+
+
+static const uint32_t kObexBodyHeaderSize = 3;
+
+
+
+
+
+
+static const uint32_t kObexLeastMaxSize = 255;
+
+
+
+
 enum ObexHeaderId {
   Count = 0xC0,
   Name = 0x01,
@@ -260,6 +281,7 @@ public:
 
 
 
+
   bool GetAppParameter(uint8_t aTagId, uint8_t* aRetBuf, int aBufferSize) const
   {
     int length = mHeaders.Length();
@@ -323,6 +345,10 @@ int AppendHeaderBody(uint8_t* aRetBuf, int aBufferSize, const uint8_t* aBody,
                      int aLength);
 int AppendHeaderWho(uint8_t* aRetBuf, int aBufferSize, const uint8_t* aWho,
                     int aLength);
+int AppendHeaderAppParameters(uint8_t* aRetBuf, int aBufferSize,
+                              const uint8_t* aAppParameters, int aLength);
+int AppendAppParameter(uint8_t* aRetBuf, int aBufferSize, const uint8_t aTagId,
+                       const uint8_t* aValue, int aLength);
 int AppendHeaderLength(uint8_t* aRetBuf, int aObjectLength);
 int AppendHeaderConnectionId(uint8_t* aRetBuf, int aConnectionId);
 int AppendHeaderEndOfBody(uint8_t* aRetBuf);
