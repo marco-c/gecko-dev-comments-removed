@@ -917,7 +917,6 @@ nsTransitionManager::FlushTransitions(FlushFlags aFlags)
   TimeStamp now = mPresContext->RefreshDriver()->MostRecentRefresh();
   bool didThrottle = false;
   
-  
   {
     PRCList *next = PR_LIST_HEAD(&mElementCollections);
     while (next != &mElementCollections) {
@@ -958,12 +957,6 @@ nsTransitionManager::FlushTransitions(FlushFlags aFlags)
         collection->PostRestyleForAnimation(mPresContext);
       } else {
         didThrottle = true;
-      }
-
-      if (collection->mAnimations.IsEmpty()) {
-        collection->Destroy();
-        
-        collection = nullptr;
       }
     }
   }
