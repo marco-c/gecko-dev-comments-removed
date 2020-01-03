@@ -74,7 +74,7 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
 {
   NS_ENSURE_ARG_POINTER(aDocument);
 
-  nsCOMArray<nsISupports> sheets;
+  nsCOMArray<nsIStyleSheet> sheets;
 
   nsCOMPtr<nsIDocument> document = do_QueryInterface(aDocument);
   MOZ_ASSERT(document);
@@ -90,6 +90,17 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
     sheetType = nsStyleSet::eUserSheet;
     for (int32_t i = 0; i < styleSet->SheetCount(sheetType); i++) {
       sheets.AppendElement(styleSet->StyleSheetAt(sheetType, i));
+    }
+    nsAutoTArray<CSSStyleSheet*, 32> xblSheetArray;
+    styleSet->AppendAllXBLStyleSheets(xblSheetArray);
+
+    
+    nsTHashtable<nsPtrHashKey<CSSStyleSheet>> sheetSet;
+    for (CSSStyleSheet* sheet : xblSheetArray) {
+      if (!sheetSet.Contains(sheet)) {
+        sheetSet.PutEntry(sheet);
+        sheets.AppendElement(sheet);
+      }
     }
   }
 
