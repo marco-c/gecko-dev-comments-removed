@@ -600,7 +600,6 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
 
   Matrix4x4 oldTransform = aLayer->GetTransform();
 
-  Matrix4x4 combinedAsyncTransformWithoutOverscroll;
   Matrix4x4 combinedAsyncTransform;
   bool hasAsyncTransform = false;
   LayerMargin fixedLayerMargins(0, 0, 0, 0);
@@ -702,8 +701,22 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
       ancestorMaskLayers.AppendElement(ancestorMaskLayer);
     }
 
-    combinedAsyncTransformWithoutOverscroll *= asyncTransformWithoutOverscroll;
     combinedAsyncTransform *= asyncTransform;
+
+    
+    
+    
+    
+    
+    
+    
+    Matrix4x4 transformWithoutOverscrollOrOmta = aLayer->GetTransform() *
+        AdjustForClip(asyncTransformWithoutOverscroll, aLayer);
+
+    
+    
+    AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
+                              transformWithoutOverscrollOrOmta, fixedLayerMargins);
   }
 
   if (hasAsyncTransform) {
@@ -723,23 +736,6 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
       SetShadowTransform(maskLayer,
           maskLayer->GetLocalTransform() * combinedAsyncTransform);
     }
-
-    const FrameMetrics& bottom = LayerMetricsWrapper::BottommostScrollableMetrics(aLayer);
-    MOZ_ASSERT(bottom.IsScrollable());  
-
-    
-    
-    
-    
-    
-    
-    
-    Matrix4x4 transformWithoutOverscrollOrOmta = aLayer->GetTransform() *
-        AdjustForClip(combinedAsyncTransformWithoutOverscroll, aLayer);
-    
-    
-    AlignFixedAndStickyLayers(aLayer, aLayer, bottom.GetScrollId(), oldTransform,
-                              transformWithoutOverscrollOrOmta, fixedLayerMargins);
 
     appliedTransform = true;
   }
