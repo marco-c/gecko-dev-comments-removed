@@ -181,7 +181,7 @@ public class RestrictedProfiles {
         return isUserRestricted(GeckoAppShell.getContext());
     }
 
-    private static boolean isUserRestricted(final Context context) {
+    public static boolean isUserRestricted(final Context context) {
         
         if (getInGuest()) {
             return true;
