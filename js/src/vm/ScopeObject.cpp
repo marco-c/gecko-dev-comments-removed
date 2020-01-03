@@ -2037,8 +2037,6 @@ DebugScopes::addDebugScope(JSContext* cx, const ScopeIter& si, DebugScopeObject&
 {
     MOZ_ASSERT(!si.hasSyntacticScopeObject());
     MOZ_ASSERT(cx->compartment() == debugScope.compartment());
-    MOZ_ASSERT_IF(si.withinInitialFrame() && si.initialFrame().isFunctionFrame(),
-                  !si.initialFrame().callee()->isGenerator());
     
     MOZ_ASSERT_IF(si.type() == ScopeIter::Call, !si.fun().isGenerator());
 
@@ -2420,7 +2418,14 @@ GetDebugScopeForMissing(JSContext* cx, const ScopeIter& si)
       }
       case ScopeIter::Block: {
         
-        MOZ_ASSERT_IF(si.withinInitialFrame() && si.initialFrame().isFunctionFrame(),
+        
+        
+        
+        
+        
+        MOZ_ASSERT_IF(si.staticBlock().numVariables() > 0 &&
+                      si.withinInitialFrame() &&
+                      si.initialFrame().isFunctionFrame(),
                       !si.initialFrame().callee()->isGenerator());
 
         Rooted<StaticBlockObject*> staticBlock(cx, &si.staticBlock());
