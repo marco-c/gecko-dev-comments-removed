@@ -157,7 +157,7 @@ public class testAddSearchEngine extends AboutHomeTest {
                 }
 
                 final int actualCount = searchResultList.getAdapter().getCount()
-                        + searchEngineBar.getAdapter().getCount()
+                        + searchEngineBar.getAdapter().getItemCount()
                         - 1; 
 
                 return (actualCount == expectedCount);
