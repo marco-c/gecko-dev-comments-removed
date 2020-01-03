@@ -409,7 +409,6 @@ BluetoothAdapter::SetPropertyByValue(const BluetoothNamedValue& aValue)
       = value.get_ArrayOfnsString();
 
     for (uint32_t i = 0; i < pairedDeviceAddresses.Length(); i++) {
-      
       if (mDevices.Contains(pairedDeviceAddresses[i])) {
         
         
@@ -421,11 +420,8 @@ BluetoothAdapter::SetPropertyByValue(const BluetoothNamedValue& aValue)
       BT_APPEND_NAMED_VALUE(props, "Paired", true);
 
       
-      nsRefPtr<BluetoothDevice> pairedDevice =
-        BluetoothDevice::Create(GetOwner(), BluetoothValue(props));
-
-      
-      mDevices.AppendElement(pairedDevice);
+      mDevices.AppendElement(
+        BluetoothDevice::Create(GetOwner(), BluetoothValue(props)));
     }
 
     
@@ -693,12 +689,10 @@ BluetoothAdapter::SetName(const nsAString& aName, ErrorResult& aRv)
   nsString name(aName);
   BluetoothNamedValue property(NS_LITERAL_STRING("Name"),
                                BluetoothValue(name));
-  BT_ENSURE_TRUE_REJECT(
-    NS_SUCCEEDED(
-      bs->SetProperty(BluetoothObjectType::TYPE_ADAPTER, property,
-                      new BluetoothVoidReplyRunnable(nullptr, promise))),
-    promise,
-    NS_ERROR_DOM_OPERATION_ERR);
+  BT_ENSURE_SUCCESS_REJECT(
+    bs->SetProperty(BluetoothObjectType::TYPE_ADAPTER, property,
+                    new BluetoothVoidReplyRunnable(nullptr, promise)),
+    promise, NS_ERROR_DOM_OPERATION_ERR);
 
   return promise.forget();
 }
@@ -733,12 +727,10 @@ BluetoothAdapter::SetDiscoverable(bool aDiscoverable, ErrorResult& aRv)
   
   BluetoothNamedValue property(NS_LITERAL_STRING("Discoverable"),
                                BluetoothValue(aDiscoverable));
-  BT_ENSURE_TRUE_REJECT(
-    NS_SUCCEEDED(
-      bs->SetProperty(BluetoothObjectType::TYPE_ADAPTER, property,
-                      new BluetoothVoidReplyRunnable(nullptr, promise))),
-    promise,
-    NS_ERROR_DOM_OPERATION_ERR);
+  BT_ENSURE_SUCCESS_REJECT(
+    bs->SetProperty(BluetoothObjectType::TYPE_ADAPTER, property,
+                    new BluetoothVoidReplyRunnable(nullptr, promise)),
+    promise, NS_ERROR_DOM_OPERATION_ERR);
 
   return promise.forget();
 }
