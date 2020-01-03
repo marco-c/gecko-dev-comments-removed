@@ -2655,53 +2655,39 @@ MBinaryArithInstruction::infer(TempAllocator& alloc, BaselineInspector* inspecto
 
     
     
-    if (lhs == MIRType_Int32 && rhs == MIRType_Int32)
+    if (lhs == MIRType_Int32 && rhs == MIRType_Int32) {
         setResultType(MIRType_Int32);
-    
-    
-    else if (IsFloatingPointType(lhs) || IsFloatingPointType(rhs))
-        setResultType(MIRType_Double);
-    else
-        return inferFallback(inspector, pc);
 
-    
-    if (inspector->hasSeenDoubleResult(pc))
-        setResultType(MIRType_Double);
+        
+        
+        if (isMul() || isDiv()) {
+            bool typeChange = false;
+            EvaluateConstantOperands(alloc, this, &typeChange);
+            if (typeChange)
+                setResultType(MIRType_Double);
+        }
 
-    
-    
-    if ((isMul() || isDiv()) && lhs == MIRType_Int32 && rhs == MIRType_Int32) {
-        bool typeChange = false;
-        EvaluateConstantOperands(alloc, this, &typeChange);
-        if (typeChange)
+        
+        if (inspector->hasSeenDoubleResult(pc))
             setResultType(MIRType_Double);
+
+    } else if (IsFloatingPointType(lhs) || IsFloatingPointType(rhs)) {
+        
+        
+        
+        setResultType(MIRType_Double);
+    } else {
+        return inferFallback(inspector, pc);
     }
 
     MOZ_ASSERT(lhs < MIRType_String || lhs == MIRType_Value);
     MOZ_ASSERT(rhs < MIRType_String || rhs == MIRType_Value);
 
-    MIRType rval = this->type();
-
-    
-    if (lhs == MIRType_Value || rhs == MIRType_Value) {
-        if (!IsFloatingPointType(rval)) {
-            specialization_ = MIRType_None;
-            return;
-        }
-    }
-
-    
-    
-    if (rval == MIRType_Int32 && (lhs == MIRType_Undefined || rhs == MIRType_Undefined)) {
-        specialization_ = MIRType_None;
-        return;
-    }
-
-    specialization_ = rval;
-
     if (isAdd() || isMul())
         setCommutative();
-    setResultType(rval);
+
+    MOZ_ASSERT(IsNumberType(this->type()));
+    specialization_ = this->type();
 }
 
 void
