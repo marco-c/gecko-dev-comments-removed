@@ -17,17 +17,17 @@ void gobble(void *) { }
 void misuseGlobalClass(int len) {
   Global notValid; 
   Global alsoNotValid[2]; 
-  static Global valid; 
-  static Global alsoValid[2]; 
+  static Global notValid2; 
+  static Global alsoNotValid2[2]; 
 
-  gobble(&valid);
+  gobble(&notValid2);
   gobble(&notValid);
-  gobble(&alsoValid[0]);
+  gobble(&alsoNotValid2[0]);
 
   gobble(new Global); 
   gobble(new Global[10]); 
   gobble(new TemplateClass<int>); 
-  gobble(len <= 5 ? &valid : new Global); 
+  gobble(len <= 5 ? &notValid2 : new Global); 
 
   char buffer[sizeof(Global)];
   gobble(new (buffer) Global); 
