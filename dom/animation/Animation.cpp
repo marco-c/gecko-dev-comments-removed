@@ -912,9 +912,6 @@ Animation::UpdateFinishedState(SeekFlag aSeekFlag,
     DoFinishNotification(aSyncNotifyFlag);
   } else if (!currentFinishedState && mFinishedIsResolved) {
     ResetFinishedPromise();
-    if (mEffect->AsTransition()) {
-      mEffect->SetIsFinishedTransition(false);
-    }
   }
   
   

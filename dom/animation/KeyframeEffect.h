@@ -196,7 +196,6 @@ public:
     : AnimationEffectReadOnly(aDocument)
     , mTarget(aTarget)
     , mTiming(aTiming)
-    , mIsFinishedTransition(false)
     , mPseudoType(aPseudoType)
   {
     MOZ_ASSERT(aTarget, "null animation target is not yet supported");
@@ -282,20 +281,6 @@ public:
   static StickyTimeDuration
   ActiveDuration(const AnimationTiming& aTiming);
 
-  
-  
-  
-  
-  bool IsFinishedTransition() const {
-    return mIsFinishedTransition;
-  }
-
-  void SetIsFinishedTransition(bool aIsFinished) {
-    MOZ_ASSERT(AsTransition(),
-               "Calling SetIsFinishedTransition but it's not a transition");
-    mIsFinishedTransition = aIsFinished;
-  }
-
   bool IsInPlay(const Animation& aAnimation) const;
   bool IsCurrent(const Animation& aAnimation) const;
   bool IsInEffect() const;
@@ -328,9 +313,6 @@ protected:
   Nullable<TimeDuration> mParentTime;
 
   AnimationTiming mTiming;
-  
-  
-  bool mIsFinishedTransition;
   nsCSSPseudoElements::Type mPseudoType;
 
   InfallibleTArray<AnimationProperty> mProperties;
