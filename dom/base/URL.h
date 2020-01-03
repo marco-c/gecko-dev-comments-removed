@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 #ifndef URL_h___
 #define URL_h___
 
@@ -42,9 +42,9 @@ public:
 
   explicit URL(nsIURI* aURI);
 
-  // WebIDL methods
-  JSObject*
-  WrapObject(JSContext* aCx);
+  
+  bool
+  WrapObject(JSContext* aCx, JS::MutableHandle<JSObject*> aReflector);
 
   static already_AddRefed<URL>
   Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
@@ -122,7 +122,7 @@ public:
     GetHref(aRetval, aRv);
   }
 
-  // URLSearchParamsObserver
+  
   void URLSearchParamsUpdated(URLSearchParams* aSearchParams) MOZ_OVERRIDE;
 
 private:
@@ -155,4 +155,4 @@ bool IsChromeURI(nsIURI* aURI);
 }
 }
 
-#endif /* URL_h___ */
+#endif 
