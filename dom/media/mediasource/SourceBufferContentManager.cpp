@@ -5,6 +5,7 @@
 
 
 #include "SourceBufferContentManager.h"
+#include "mozilla/Preferences.h"
 #include "TrackBuffer.h"
 #include "TrackBuffersManager.h"
 

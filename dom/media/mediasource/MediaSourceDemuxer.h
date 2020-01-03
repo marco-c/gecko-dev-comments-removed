@@ -124,10 +124,10 @@ public:
 private:
   nsRefPtr<SeekPromise> DoSeek(media::TimeUnit aTime);
   nsRefPtr<SamplesPromise> DoGetSamples(int32_t aNumSamples);
-  nsRefPtr<SkipAccessPointPromise> DoSkipToNextRandomAccessPoint(TimeUnit aTimeThreadshold);
+  nsRefPtr<SkipAccessPointPromise> DoSkipToNextRandomAccessPoint(media::TimeUnit aTimeThreadshold);
   already_AddRefed<MediaRawData> GetSample(DemuxerFailureReason& aFailure);
   
-  TimeUnit GetNextRandomAccessPoint();
+  media::TimeUnit GetNextRandomAccessPoint();
 
   nsRefPtr<MediaSourceDemuxer> mParent;
   nsRefPtr<TrackBuffersManager> mManager;

@@ -139,7 +139,7 @@ private:
   void NotifyReaderDataRemoved(MediaDecoderReader* aReader);
 
   typedef MozPromise<bool, nsresult,  true> BufferedRangesUpdatedPromise;
-  nsRefPtr<BufferedRangesUpdatedPromise> UpdateBufferedRanges(Interval<int64_t> aByteRange, bool aNotifyParent);
+  nsRefPtr<BufferedRangesUpdatedPromise> UpdateBufferedRanges(media::Interval<int64_t> aByteRange, bool aNotifyParent);
 
   
   bool QueueInitializeDecoder(SourceBufferDecoder* aDecoder);
@@ -236,7 +236,7 @@ private:
 
   MozPromiseHolder<RangeRemovalPromise> mRangeRemovalPromise;
 
-  Interval<int64_t> mLastAppendRange;
+  media::Interval<int64_t> mLastAppendRange;
 
   
   media::TimeIntervals mBufferedRanges;
