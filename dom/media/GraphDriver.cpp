@@ -101,7 +101,7 @@ void GraphDriver::EnsureImmediateWakeUpLocked()
 
 void GraphDriver::UpdateStateComputedTime(GraphTime aStateComputedTime)
 {
-  MOZ_ASSERT(aStateComputedTime > mIterationEnd);
+  MOZ_ASSERT(aStateComputedTime >= mIterationEnd);
   
   
   
