@@ -1348,7 +1348,7 @@ class StringSegmentRange
 {
     
     
-    AutoStringVector stack;
+    Rooted<StringVector> stack;
     RootedLinearString cur;
 
     bool settle(JSString* str) {
@@ -1364,7 +1364,7 @@ class StringSegmentRange
 
   public:
     explicit StringSegmentRange(JSContext* cx)
-      : stack(cx), cur(cx)
+      : stack(cx, StringVector(cx)), cur(cx)
     {}
 
     MOZ_WARN_UNUSED_RESULT bool init(JSString* str) {

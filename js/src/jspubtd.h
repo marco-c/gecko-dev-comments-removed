@@ -224,7 +224,6 @@ class JS_PUBLIC_API(AutoGCRooter)
         IDVECTOR =    -11, 
         IDVALVECTOR = -12, 
         OBJVECTOR =   -14, 
-        STRINGVECTOR =-15, 
         SCRIPTVECTOR =-16, 
         NAMEVECTOR =  -17, 
         HASHABLEVALUE=-18, 
@@ -239,7 +238,6 @@ class JS_PUBLIC_API(AutoGCRooter)
     static ptrdiff_t GetTag(const jsid& id) { return IDVECTOR; }
     static ptrdiff_t GetTag(JSObject* obj) { return OBJVECTOR; }
     static ptrdiff_t GetTag(JSScript* script) { return SCRIPTVECTOR; }
-    static ptrdiff_t GetTag(JSString* string) { return STRINGVECTOR; }
 
   private:
     AutoGCRooter ** const stackTop;
