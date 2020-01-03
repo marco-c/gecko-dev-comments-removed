@@ -2062,6 +2062,12 @@ RangeAnalysis::addRangeAssertions()
                 continue;
             }
 
+            
+            
+            
+            if (ins->isIsNoIter())
+                continue;
+
             Range r(ins);
 
             

@@ -204,12 +204,8 @@ SuppressDeletedElements(JSContext *cx, HandleObject obj, uint32_t begin, uint32_
 
 
 
-
 extern bool
-IteratorMore(JSContext *cx, HandleObject iterobj, bool *res);
-
-extern bool
-IteratorNext(JSContext *cx, HandleObject iterobj, MutableHandleValue rval);
+IteratorMore(JSContext *cx, HandleObject iterobj, MutableHandleValue rval);
 
 extern bool
 ThrowStopIteration(JSContext *cx);

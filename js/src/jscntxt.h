@@ -490,9 +490,6 @@ struct JSContext : public js::ExclusiveContext,
 
 
 
-    
-    js::Value           iterValue;
-
     bool jitIsBroken;
 
     void updateJITEnabled();

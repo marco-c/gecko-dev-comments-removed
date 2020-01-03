@@ -865,16 +865,15 @@ iterator_next_impl(JSContext *cx, CallArgs args)
 
     RootedObject thisObj(cx, &args.thisv().toObject());
 
-    bool more;
-    if (!IteratorMore(cx, thisObj, &more))
+    if (!IteratorMore(cx, thisObj, args.rval()))
         return false;
 
-    if (!more) {
+    if (args.rval().isMagic(JS_NO_ITER_VALUE)) {
         ThrowStopIteration(cx);
         return false;
     }
 
-    return IteratorNext(cx, thisObj, args.rval());
+    return true;
 }
 
 static bool
@@ -1017,13 +1016,6 @@ js::ValueToIterator(JSContext *cx, unsigned flags, MutableHandleValue vp)
     
     JS_ASSERT_IF(flags & JSITER_KEYVALUE, flags & JSITER_FOREACH);
 
-    
-
-
-
-
-    cx->iterValue.setMagic(JS_NO_ITER_VALUE);
-
     RootedObject obj(cx);
     if (vp.isObject()) {
         
@@ -1047,8 +1039,6 @@ js::ValueToIterator(JSContext *cx, unsigned flags, MutableHandleValue vp)
 bool
 js::CloseIterator(JSContext *cx, HandleObject obj)
 {
-    cx->iterValue.setMagic(JS_NO_ITER_VALUE);
-
     if (obj->is<PropertyIteratorObject>()) {
         
         NativeIterator *ni = obj->as<PropertyIteratorObject>().getNativeIterator();
@@ -1255,31 +1245,28 @@ js::SuppressDeletedElements(JSContext *cx, HandleObject obj, uint32_t begin, uin
 }
 
 bool
-js::IteratorMore(JSContext *cx, HandleObject iterobj, bool *res)
+js::IteratorMore(JSContext *cx, HandleObject iterobj, MutableHandleValue rval)
 {
     
     NativeIterator *ni = nullptr;
     if (iterobj->is<PropertyIteratorObject>()) {
         
         ni = iterobj->as<PropertyIteratorObject>().getNativeIterator();
-        bool more = ni->props_cursor < ni->props_end;
-        if (ni->isKeyIter() || !more) {
-            *res = more;
+        if (ni->props_cursor >= ni->props_end) {
+            rval.setMagic(JS_NO_ITER_VALUE);
             return true;
         }
-    }
-
-    
-    if (!cx->iterValue.isMagic(JS_NO_ITER_VALUE)) {
-        *res = true;
-        return true;
+        if (ni->isKeyIter()) {
+            rval.setString(*ni->current());
+            ni->incCursor();
+            return true;
+        }
     }
 
     
     JS_CHECK_RECURSION(cx, return false);
 
     
-    RootedValue val(cx);
     if (ni) {
         JS_ASSERT(!ni->isKeyIter());
         RootedId id(cx);
@@ -1288,59 +1275,30 @@ js::IteratorMore(JSContext *cx, HandleObject iterobj, bool *res)
             return false;
         ni->incCursor();
         RootedObject obj(cx, ni->obj);
-        if (!JSObject::getGeneric(cx, obj, obj, id, &val))
+        if (!JSObject::getGeneric(cx, obj, obj, id, rval))
             return false;
-        if ((ni->flags & JSITER_KEYVALUE) && !NewKeyValuePair(cx, id, val, &val))
+        if ((ni->flags & JSITER_KEYVALUE) && !NewKeyValuePair(cx, id, rval, rval))
             return false;
-    } else {
-        
-        if (!JSObject::getProperty(cx, iterobj, iterobj, cx->names().next, &val))
-            return false;
-        if (!Invoke(cx, ObjectValue(*iterobj), val, 0, nullptr, &val)) {
-            
-            if (!cx->isExceptionPending())
-                return false;
-            RootedValue exception(cx);
-            if (!cx->getPendingException(&exception))
-                return false;
-            if (!JS_IsStopIteration(exception))
-                return false;
-
-            cx->clearPendingException();
-            cx->iterValue.setMagic(JS_NO_ITER_VALUE);
-            *res = false;
-            return true;
-        }
+        return true;
     }
 
     
-    JS_ASSERT(!val.isMagic(JS_NO_ITER_VALUE));
-    cx->iterValue = val;
-    *res = true;
-    return true;
-}
-
-bool
-js::IteratorNext(JSContext *cx, HandleObject iterobj, MutableHandleValue rval)
-{
-    
-    if (iterobj->is<PropertyIteratorObject>()) {
+    if (!JSObject::getProperty(cx, iterobj, iterobj, cx->names().next, rval))
+        return false;
+    if (!Invoke(cx, ObjectValue(*iterobj), rval, 0, nullptr, rval)) {
         
+        if (!cx->isExceptionPending())
+            return false;
+        RootedValue exception(cx);
+        if (!cx->getPendingException(&exception))
+            return false;
+        if (!JS_IsStopIteration(exception))
+            return false;
 
-
-
-        NativeIterator *ni = iterobj->as<PropertyIteratorObject>().getNativeIterator();
-        if (ni->isKeyIter()) {
-            JS_ASSERT(ni->props_cursor < ni->props_end);
-            rval.setString(*ni->current());
-            ni->incCursor();
-            return true;
-        }
+        cx->clearPendingException();
+        rval.setMagic(JS_NO_ITER_VALUE);
+        return true;
     }
-
-    JS_ASSERT(!cx->iterValue.isMagic(JS_NO_ITER_VALUE));
-    rval.set(cx->iterValue);
-    cx->iterValue.setMagic(JS_NO_ITER_VALUE);
 
     return true;
 }

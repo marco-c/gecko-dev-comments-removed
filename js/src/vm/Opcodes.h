@@ -622,9 +622,6 @@
 
 
 
-
-
-
  \
     macro(JSOP_MOREITER,  76, "moreiter",   NULL,         1,  1,  2,  JOF_BYTE) \
     
@@ -635,10 +632,8 @@
 
 
 
-
-
  \
-    macro(JSOP_ITERNEXT,  77, "iternext",   "<next>",     1,  0,  1,  JOF_BYTE) \
+    macro(JSOP_ISNOITER,  77, "isnoiter",   NULL,         1,  1,  2,  JOF_BYTE) \
     
 
 
