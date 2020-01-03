@@ -484,7 +484,7 @@ protected:
 
 
 
-  void DestroyCompositor();
+  virtual void DestroyCompositor();
   void DestroyLayerManager();
 
   void FreeShutdownObserver();
