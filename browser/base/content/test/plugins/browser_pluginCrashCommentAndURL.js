@@ -1,220 +1,200 @@
 Cu.import("resource://gre/modules/CrashSubmit.jsm", this);
 
-const CRASH_URL = "http://example.com/browser/browser/base/content/test/plugins/plugin_crashCommentAndURL.html";
 const SERVER_URL = "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
 
+let gTestRoot = getRootDirectory(gTestPath).replace("chrome://mochitests/content/", "http://127.0.0.1:8888/");
+let gTestBrowser = null;
+let config = {};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function frameScript() {
-  function fail(reason) {
-    sendAsyncMessage("test:crash-plugin:fail", {
-      reason: `Failure from frameScript: ${reason}`,
-    });
-  }
-
-  addMessageListener("test:crash-plugin", (message) => {
-    addEventListener("PluginCrashed", function onPluginCrashed(event) {
-      removeEventListener("PluginCrashed", onPluginCrashed);
-
-      let doc = content.document;
-      let plugin = doc.getElementById("plugin");
-      if (!plugin) {
-        fail("Could not find plugin element");
-        return;
-      }
-
-      let getUI = (anonid) => {
-        return doc.getAnonymousElementByAttribute(plugin, "anonid", anonid);
-      };
-
-      let style = content.getComputedStyle(getUI("pleaseSubmit"));
-      if (style.display != message.data.pleaseSubmitStyle) {
-        fail("Submission UI visibility is not correct. Expected " +
-             `${message.data.pleaseSubmitStyle} and got ${style.display}`);
-        return;
-      }
-
-      if (message.data.sendCrashMessage) {
-        sendAsyncMessage("test:crash-plugin:crashed", {
-          crashID: event.pluginDumpID,
-        });
-        return;
-      }
-
-      if (message.data.submitComment) {
-        getUI("submitComment").value = message.data.submitComment;
-      }
-      getUI("submitURLOptIn").checked = message.data.urlOptIn;
-      getUI("submitButton").click();
-    });
-
-    let plugin = content.document.getElementById("test");
-    try {
-      plugin.crash()
-    } catch(e) {
-    }
-  });
-}
-
-function test() {
-  
-  requestLongerTimeout(runs.length);
-  waitForExplicitFinish();
-  setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED);
-
+add_task(function* () {
   
   
   
   
   
-  let env = Cc["@mozilla.org/process/environment;1"].
-            getService(Components.interfaces.nsIEnvironment);
+  let env = Components.classes["@mozilla.org/process/environment;1"]
+                      .getService(Components.interfaces.nsIEnvironment);
   let noReport = env.get("MOZ_CRASHREPORTER_NO_REPORT");
-  let serverURL = env.get("MOZ_CRASHREPORTER_URL");
+  let serverUrl = env.get("MOZ_CRASHREPORTER_URL");
   env.set("MOZ_CRASHREPORTER_NO_REPORT", "");
   env.set("MOZ_CRASHREPORTER_URL", SERVER_URL);
 
-  let tab = gBrowser.loadOneTab("about:blank", { inBackground: false });
-  let browser = gBrowser.getBrowserForTab(tab);
-  let mm = browser.messageManager;
-  mm.loadFrameScript("data:,(" + frameScript.toString() + ")();", true);
+  gBrowser.selectedTab = gBrowser.addTab();
+  gTestBrowser = gBrowser.selectedBrowser;
 
-  mm.addMessageListener("test:crash-plugin:fail", (message) => {
-    ok(false, message.data.reason);
-  });
+  
+  Services.prefs.setIntPref("dom.ipc.plugins.timeoutSecs", 0);
 
-  Services.obs.addObserver(onSubmitStatus, "crash-report-status", false);
-
-  registerCleanupFunction(function cleanUp() {
+  registerCleanupFunction(Task.async(function*() {
+    Services.prefs.clearUserPref("dom.ipc.plugins.timeoutSecs");
     env.set("MOZ_CRASHREPORTER_NO_REPORT", noReport);
-    env.set("MOZ_CRASHREPORTER_URL", serverURL);
-    Services.obs.removeObserver(onSubmitStatus, "crash-report-status");
+    env.set("MOZ_CRASHREPORTER_URL", serverUrl);
+    env = null;
+    config = null;
+    gTestBrowser = null;
     gBrowser.removeCurrentTab();
-  });
+    window.focus();
+  }));
+});
 
-  doNextRun();
-}
-
-let runs = [
-  {
+add_task(function* () {
+  config = {
     shouldSubmissionUIBeVisible: true,
     comment: "",
-    urlOptIn: false,
-  },
-  {
+    urlOptIn: false
+  };
+
+  setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED);
+
+  let pluginCrashed = promisePluginCrashed();
+
+  yield promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html");
+
+  
+  yield promiseUpdatePluginBindings(gTestBrowser);
+
+  
+  yield pluginCrashed;
+
+  let crashReportStatus = TestUtils.topicObserved("crash-report-status", onSubmitStatus);
+
+  
+  let crashUiVisible = yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
+    let doc = content.document;
+    let plugin = doc.getElementById("plugin");
+    let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
+    let submitButton = doc.getAnonymousElementByAttribute(plugin, "anonid", "submitButton");
+    
+    doc.getAnonymousElementByAttribute(plugin, "anonid", "submitURLOptIn").checked = aConfig.urlOptIn;
+    submitButton.click();
+    return content.getComputedStyle(pleaseSubmit).display == "block";
+  });
+
+  yield crashReportStatus;
+
+  is(crashUiVisible, config.shouldSubmissionUIBeVisible, "The crash UI should be visible");
+});
+
+add_task(function* () {
+  config = {
     shouldSubmissionUIBeVisible: true,
     comment: "a test comment",
-    urlOptIn: true,
-  },
-  {
-    width: 300,
-    height: 300,
-    shouldSubmissionUIBeVisible: false,
-  },
-];
+    urlOptIn: true
+  };
 
-let currentRun = null;
+  setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED);
 
-function doNextRun() {
-  try {
-    if (!runs.length) {
-      finish();
-      return;
-    }
-    currentRun = runs.shift();
-    let args = ["width", "height"].reduce(function (memo, arg) {
-      if (arg in currentRun)
-        memo[arg] = currentRun[arg];
-      return memo;
-    }, {});
-    let mm = gBrowser.selectedBrowser.messageManager;
+  let pluginCrashed = promisePluginCrashed();
 
-    if (!currentRun.shouldSubmittionUIBeVisible) {
-      mm.addMessageListener("test:crash-plugin:crash", function onCrash(message) {
-        mm.removeMessageListener("test:crash-plugin:crash", onCrash);
+  yield promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html");
 
-        ok(!!message.data.crashID, "pluginDumpID should be set");
-        CrashSubmit.delete(message.data.crashID);
-        doNextRun();
-      });
-    }
+  
+  yield promiseUpdatePluginBindings(gTestBrowser);
 
-    mm.sendAsyncMessage("test:crash-plugin", {
-      pleaseSubmitStyle: currentRun.shouldSubmissionUIBeVisible ? "block" : "none",
-      submitComment: currentRun.comment,
-      urlOptIn: currentRun.urlOptIn,
-      sendOnCrashMessage: !currentRun.shouldSubmissionUIBeVisible,
-    });
-    gBrowser.loadURI(CRASH_URL + "?" +
-                     encodeURIComponent(JSON.stringify(args)));
+  
+  yield pluginCrashed;
+
+  let crashReportStatus = TestUtils.topicObserved("crash-report-status", onSubmitStatus);
+
+  
+  let crashUiVisible = yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
+    let doc = content.document;
+    let plugin = doc.getElementById("plugin");
+    let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
+    let submitButton = doc.getAnonymousElementByAttribute(plugin, "anonid", "submitButton");
     
-  }
-  catch (err) {
-    failWithException(err);
-    finish();
-  }
+    doc.getAnonymousElementByAttribute(plugin, "anonid", "submitURLOptIn").checked = aConfig.urlOptIn;
+    doc.getAnonymousElementByAttribute(plugin, "anonid", "submitComment").value = aConfig.comment;
+    submitButton.click();
+    return content.getComputedStyle(pleaseSubmit).display == "block";
+  });
+
+  yield crashReportStatus;
+
+  is(crashUiVisible, config.shouldSubmissionUIBeVisible, "The crash UI should be visible");
+});
+
+add_task(function* () {
+  config = {
+    shouldSubmissionUIBeVisible: false,
+    comment: "",
+    urlOptIn: true
+  };
+
+  setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED);
+
+  let pluginCrashed = promisePluginCrashed();
+
+  
+  yield promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html?" +
+                            encodeURIComponent(JSON.stringify({width: 300, height: 300})));
+
+  
+  yield promiseUpdatePluginBindings(gTestBrowser);
+
+  
+  yield pluginCrashed;
+
+  
+  let crashUiVisible = yield ContentTask.spawn(gTestBrowser, {}, function* () {
+    let doc = content.document;
+    let plugin = doc.getElementById("plugin");
+    let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
+    return !!pleaseSubmit && content.getComputedStyle(pleaseSubmit).display == "block";
+  });
+
+  is(crashUiVisible, config.shouldSubmissionUIBeVisible, "Plugin crash UI should not be visible");
+});
+
+function promisePluginCrashed() {
+  return new ContentTask.spawn(gTestBrowser, {}, function* () {
+    yield new Promise((resolve) => {
+      addEventListener("PluginCrashed", function onPluginCrashed() {
+        removeEventListener("PluginCrashed", onPluginCrashed);
+        resolve();
+      });
+    });
+  })
 }
 
-function onSubmitStatus(subj, topic, data) {
-  try {
+function onSubmitStatus(aSubject, aData) {
+  
+  if (aData != "success" && aData != "failed")
+    return false;
+
+  let propBag = aSubject.QueryInterface(Ci.nsIPropertyBag);
+  if (aData == "success") {
+    let remoteID = getPropertyBagValue(propBag, "serverCrashID");
+    ok(!!remoteID, "serverCrashID should be set");
+
     
-    if (data != "success" && data != "failed")
-      return;
-
-    let propBag = subj.QueryInterface(Ci.nsIPropertyBag);
-    if (data == "success") {
-      let remoteID = getPropertyBagValue(propBag, "serverCrashID");
-      ok(!!remoteID, "serverCrashID should be set");
-
-      
-      let file = Cc["@mozilla.org/file/local;1"]
-                   .createInstance(Ci.nsILocalFile);
-      file.initWithPath(Services.crashmanager._submittedDumpsDir);
-      file.append(remoteID + ".txt");
-      ok(file.exists(), "Submitted report file should exist");
-      file.remove(false);
-    }
-
-    let extra = getPropertyBagValue(propBag, "extra");
-    ok(extra instanceof Ci.nsIPropertyBag, "Extra data should be property bag");
-
-    let val = getPropertyBagValue(extra, "PluginUserComment");
-    if (currentRun.comment)
-      is(val, currentRun.comment,
-         "Comment in extra data should match comment in textbox");
-    else
-      ok(val === undefined,
-         "Comment should be absent from extra data when textbox is empty");
-
-    val = getPropertyBagValue(extra, "PluginContentURL");
-    if (currentRun.urlOptIn)
-      is(val, gBrowser.currentURI.spec,
-         "URL in extra data should match browser URL when opt-in checked");
-    else
-      ok(val === undefined,
-         "URL should be absent from extra data when opt-in not checked");
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+    file.initWithPath(Services.crashmanager._submittedDumpsDir);
+    file.append(remoteID + ".txt");
+    ok(file.exists(), "Submitted report file should exist");
+    file.remove(false);
   }
-  catch (err) {
-    failWithException(err);
-  }
-  doNextRun();
+
+  let extra = getPropertyBagValue(propBag, "extra");
+  ok(extra instanceof Ci.nsIPropertyBag, "Extra data should be property bag");
+
+  let val = getPropertyBagValue(extra, "PluginUserComment");
+  if (config.comment)
+    is(val, config.comment,
+       "Comment in extra data should match comment in textbox");
+  else
+    ok(val === undefined,
+       "Comment should be absent from extra data when textbox is empty");
+
+  val = getPropertyBagValue(extra, "PluginContentURL");
+  if (config.urlOptIn)
+    is(val, gBrowser.currentURI.spec,
+       "URL in extra data should match browser URL when opt-in checked");
+  else
+    ok(val === undefined,
+       "URL should be absent from extra data when opt-in not checked");
+
+  return true;
 }
 
 function getPropertyBagValue(bag, key) {
@@ -223,8 +203,4 @@ function getPropertyBagValue(bag, key) {
   }
   catch (e if e.result == Cr.NS_ERROR_FAILURE) {}
   return val;
-}
-
-function failWithException(err) {
-  ok(false, "Uncaught exception: " + err + "\n" + err.stack);
 }
