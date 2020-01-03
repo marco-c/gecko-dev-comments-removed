@@ -2684,7 +2684,7 @@ MDefinition::TruncateKind
 MStoreUnboxedScalar::operandTruncateKind(size_t index) const
 {
     
-    return index == 2 && isIntegerWrite() ? Truncate : NoTruncate;
+    return (truncateInput() && index == 2 && isIntegerWrite()) ? Truncate : NoTruncate;
 }
 
 MDefinition::TruncateKind
