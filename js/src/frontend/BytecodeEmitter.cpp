@@ -7007,8 +7007,11 @@ BytecodeEmitter::emitPropertyList(ParseNode* pn, MutableHandlePlainObject objp, 
             isIndex = true;
         } else if (key->isKind(PNK_OBJECT_PROPERTY_NAME) || key->isKind(PNK_STRING)) {
             
-            if (type == ClassBody && key->pn_atom == cx->names().constructor)
+            if (type == ClassBody && key->pn_atom == cx->names().constructor &&
+                !propdef->as<ClassMethod>().isStatic())
+            {
                 continue;
+            }
 
             
             
