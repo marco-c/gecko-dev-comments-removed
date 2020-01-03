@@ -213,11 +213,6 @@ let LoopCallsInternal = {
     
     
     
-    Services.prefs.setCharPref("loop.seenToS", "seen");
-
-    
-    
-    
     
 
     if (channelID == MozLoopService.channelIDs.callsFxA && MozLoopService.userProfile) {

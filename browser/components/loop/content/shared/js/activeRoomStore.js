@@ -762,9 +762,6 @@ loop.store.ActiveRoomStore = (function() {
         roomState: ROOM_STATES.HAS_PARTICIPANTS,
         used: true
       });
-
-      
-      this._mozLoop.setLoopPref("seenToS", "seen");
     },
 
     

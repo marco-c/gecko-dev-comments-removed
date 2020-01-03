@@ -270,10 +270,6 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
 
     setLoopPref: function(prefName, value) {
-      if (prefName === "seenToS") {
-        return;
-      }
-
       localStorage.setItem(prefName, value);
     },
 
