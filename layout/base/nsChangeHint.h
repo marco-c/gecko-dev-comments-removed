@@ -126,7 +126,7 @@ enum nsChangeHint {
 
 
 
-  nsChangeHint_UpdateContainingBlock = 0x20000,
+  nsChangeHint_AddOrRemoveTransform = 0x20000,
 
   
 
@@ -284,7 +284,7 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
           nsChangeHint_UpdateParentOverflow | \
           nsChangeHint_ChildrenOnlyTransform | \
           nsChangeHint_RecomputePosition | \
-          nsChangeHint_UpdateContainingBlock | \
+          nsChangeHint_AddOrRemoveTransform | \
           nsChangeHint_BorderStyleNoneChange | \
           nsChangeHint_NeedReflow | \
           nsChangeHint_ReflowChangesSizeOrPosition | \
@@ -302,7 +302,7 @@ inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint)
     nsChangeHint_UpdateParentOverflow |
     nsChangeHint_ChildrenOnlyTransform |
     nsChangeHint_RecomputePosition |
-    nsChangeHint_UpdateContainingBlock |
+    nsChangeHint_AddOrRemoveTransform |
     nsChangeHint_BorderStyleNoneChange |
     nsChangeHint_UpdateComputedBSize));
 

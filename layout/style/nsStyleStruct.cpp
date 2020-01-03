@@ -1307,7 +1307,7 @@ nsChangeHint nsStyleSVGReset::CalcDifference(const nsStyleSVGReset& aOther) cons
 
   if (HasFilters() != aOther.HasFilters()) {
     
-    NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock);
+    NS_UpdateHint(hint, nsChangeHint_AddOrRemoveTransform);
   }
 
   if (mClipPath != aOther.mClipPath ||
@@ -2808,7 +2808,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
     
     
     
-    NS_UpdateHint(hint, NS_CombineHint(nsChangeHint_UpdateContainingBlock,
+    NS_UpdateHint(hint, NS_CombineHint(nsChangeHint_AddOrRemoveTransform,
                           NS_CombineHint(nsChangeHint_UpdateOverflow,
                                          nsChangeHint_RepaintFrame)));
   } else {
@@ -2854,7 +2854,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
 
     if (HasPerspectiveStyle() != aOther.HasPerspectiveStyle()) {
       
-      NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock);
+      NS_UpdateHint(hint, nsChangeHint_AddOrRemoveTransform);
     }
 
     if (mChildPerspective != aOther.mChildPerspective ||

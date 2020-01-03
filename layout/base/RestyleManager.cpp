@@ -759,7 +759,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       }
     }
 
-    if ((hint & nsChangeHint_UpdateContainingBlock) && frame &&
+    if ((hint & nsChangeHint_AddOrRemoveTransform) && frame &&
         !(hint & nsChangeHint_ReconstructFrame)) {
       if (NeedToReframeForAddingOrRemovingTransform(frame) ||
           frame->GetType() == nsGkAtoms::fieldSetFrame ||
