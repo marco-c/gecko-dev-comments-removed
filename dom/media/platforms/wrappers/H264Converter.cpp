@@ -46,8 +46,9 @@ H264Converter::Init()
     return mDecoder->Init();
   }
 
-  return MediaDataDecoder::InitPromise::CreateAndReject(
-           MediaDataDecoder::DecoderFailureReason::INIT_ERROR, __func__);
+  
+  return MediaDataDecoder::InitPromise::CreateAndResolve(
+           TrackType::kVideoTrack, __func__);
 }
 
 nsresult
