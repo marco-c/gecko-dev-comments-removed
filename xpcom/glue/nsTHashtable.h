@@ -280,32 +280,30 @@ public:
 
 
 
-  typedef size_t (*SizeOfEntryExcludingThisFun)(EntryType* aEntry,
-                                                mozilla::MallocSizeOf aMallocSizeOf,
-                                                void* aArg);
+
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+  {
+    return mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  
+
+
+  size_t ShallowSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+  {
+    return aMallocSizeOf(this) + ShallowSizeOfExcludingThis(aMallocSizeOf);
+  }
 
   
 
 
 
 
-
-
-
-
-
-
-
-  size_t SizeOfExcludingThis(SizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-                             mozilla::MallocSizeOf aMallocSizeOf,
-                             void* aUserArg = nullptr) const
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   {
-    size_t n = 0;
-    n += mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    if (aSizeOfEntryExcludingThis) {
-      for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
-        n += aSizeOfEntryExcludingThis(iter.Get(), aMallocSizeOf, aUserArg);
-      }
+    size_t n = ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
+      n += (*iter.Get()).SizeOfExcludingThis(aMallocSizeOf);
     }
     return n;
   }
@@ -313,30 +311,9 @@ public:
   
 
 
-
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-  {
-    return SizeOfExcludingThis(BasicSizeOfEntryExcludingThisFun, aMallocSizeOf);
-  }
-
-  
-
-
-  size_t SizeOfIncludingThis(SizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-                             mozilla::MallocSizeOf aMallocSizeOf,
-                             void* aUserArg = nullptr) const
-  {
-    return aMallocSizeOf(this) +
-      SizeOfExcludingThis(aSizeOfEntryExcludingThis, aMallocSizeOf, aUserArg);
-  }
-
-  
-
-
-
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   {
-    return SizeOfIncludingThis(BasicSizeOfEntryExcludingThisFun, aMallocSizeOf);
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
   
@@ -389,14 +366,6 @@ private:
   static const PLDHashTableOps* Ops();
 
   
-
-
-
-  static size_t BasicSizeOfEntryExcludingThisFun(EntryType* aEntry,
-                                                 mozilla::MallocSizeOf aMallocSizeOf,
-                                                 void*);
-
-  
   nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>& aToEqual) = delete;
 };
 
@@ -434,16 +403,6 @@ nsTHashtable<EntryType>::Ops()
     s_InitEntry
   };
   return &sOps;
-}
-
-
-template<class EntryType>
-size_t
-nsTHashtable<EntryType>::BasicSizeOfEntryExcludingThisFun(EntryType* aEntry,
-                                                          mozilla::MallocSizeOf aMallocSizeOf,
-                                                          void*)
-{
-  return aEntry->SizeOfExcludingThis(aMallocSizeOf);
 }
 
 

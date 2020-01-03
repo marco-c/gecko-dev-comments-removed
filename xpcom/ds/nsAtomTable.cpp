@@ -519,7 +519,7 @@ NS_SizeOfAtomTablesIncludingThis(MallocSizeOf aMallocSizeOf,
   
   
   *aStatic = gStaticAtomTable
-           ? gStaticAtomTable->SizeOfIncludingThis(nullptr, aMallocSizeOf)
+           ? gStaticAtomTable->ShallowSizeOfIncludingThis(aMallocSizeOf)
            : 0;
 }
 

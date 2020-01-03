@@ -318,7 +318,7 @@ CategoryNode::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf)
 {
   
   
-  return mTable.SizeOfExcludingThis(nullptr, aMallocSizeOf);
+  return mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
 }
 
 
