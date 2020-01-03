@@ -60,7 +60,7 @@ add_task(function* test_date_container() {
 
   
   let promiseURIRemoved = promiseHistoryNotification("onDeleteURI",
-                                                     () => TEST_URI.equals(arguments[0]));
+                                                     v => TEST_URI.equals(v));
   PO._places.controller.doCommand("cmd_delete");
   yield promiseURIRemoved;
 
@@ -125,7 +125,7 @@ add_task(function* test_query_on_toolbar() {
 
   
   let promiseItemRemoved = promiseBookmarksNotification("onItemRemoved",
-                                                        () => query.guid == arguments[5]);
+                                                        (...args) => query.guid == args[5]);
   PO._places.controller.doCommand("cmd_delete");
   yield promiseItemRemoved;
 
