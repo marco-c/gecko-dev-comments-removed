@@ -40,6 +40,7 @@ class IMEContentObserver final : public nsISelectionListener
                                , public nsIEditorObserver
 {
 public:
+  typedef widget::IMENotification::SelectionChangeData SelectionChangeData;
   typedef widget::IMENotification::TextChangeData TextChangeData;
   typedef widget::IMENotification::TextChangeDataBase TextChangeDataBase;
 
@@ -167,6 +168,15 @@ private:
     mTextChangeData.Clear();
   }
 
+  
+
+
+
+
+
+
+  bool UpdateSelectionCache();
+
   nsCOMPtr<nsIWidget> mWidget;
   nsCOMPtr<nsISelection> mSelection;
   nsCOMPtr<nsIContent> mRootContent;
@@ -229,6 +239,11 @@ private:
   FlatTextCache mStartOfRemovingTextRangeCache;
 
   TextChangeData mTextChangeData;
+
+  
+  
+  
+  SelectionChangeData mSelectionData;
 
   EventStateManager* mESM;
 
