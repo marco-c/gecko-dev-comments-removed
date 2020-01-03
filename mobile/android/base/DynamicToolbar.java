@@ -106,6 +106,11 @@ public class DynamicToolbar {
             return;
         }
 
+        
+        if (visible == false && pinFlags.contains(PinReason.ACTION_MODE)) {
+            return;
+        }
+
         final boolean isImmediate = transition == VisibilityTransition.IMMEDIATE;
         if (visible) {
             layerView.getLayerMarginsAnimator().showMargins(isImmediate);
