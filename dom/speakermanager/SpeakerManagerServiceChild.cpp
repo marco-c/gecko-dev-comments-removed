@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SpeakerManagerServiceChild.h"
 #include "mozilla/Services.h"
@@ -20,18 +20,18 @@ using namespace mozilla::dom;
 
 StaticRefPtr<SpeakerManagerServiceChild> gSpeakerManagerServiceChild;
 
-
+// static
 SpeakerManagerService*
 SpeakerManagerServiceChild::GetOrCreateSpeakerManagerService()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
+  // If we already exist, exit early
   if (gSpeakerManagerServiceChild) {
     return gSpeakerManagerServiceChild;
   }
 
-  
+  // Create new instance, register, return
   nsRefPtr<SpeakerManagerServiceChild> service = new SpeakerManagerServiceChild();
 
   gSpeakerManagerServiceChild = service;
@@ -39,7 +39,7 @@ SpeakerManagerServiceChild::GetOrCreateSpeakerManagerService()
   return gSpeakerManagerServiceChild;
 }
 
-
+// static
 SpeakerManagerService*
 SpeakerManagerServiceChild::GetSpeakerManagerService()
 {
@@ -86,8 +86,8 @@ SpeakerManagerServiceChild::Shutdown()
 void
 SpeakerManagerServiceChild::SetAudioChannelActive(bool aIsActive)
 {
-  
-  
+  // Content process and switch to background with no audio and speaker forced.
+  // Then disable speaker
   for (uint32_t i = 0; i < mRegisteredSpeakerManagers.Length(); i++) {
     mRegisteredSpeakerManagers[i]->SetAudioChannelActive(aIsActive);
   }
@@ -96,7 +96,7 @@ SpeakerManagerServiceChild::SetAudioChannelActive(bool aIsActive)
 SpeakerManagerServiceChild::SpeakerManagerServiceChild()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  AudioChannelService* audioChannelService = AudioChannelService::GetAudioChannelService();
+  AudioChannelService* audioChannelService = AudioChannelService::GetOrCreateAudioChannelService();
   if (audioChannelService) {
     audioChannelService->RegisterSpeakerManager(this);
   }
@@ -105,7 +105,7 @@ SpeakerManagerServiceChild::SpeakerManagerServiceChild()
 
 SpeakerManagerServiceChild::~SpeakerManagerServiceChild()
 {
-  AudioChannelService* audioChannelService = AudioChannelService::GetAudioChannelService();
+  AudioChannelService* audioChannelService = AudioChannelService::GetOrCreateAudioChannelService();
   if (audioChannelService) {
     audioChannelService->UnregisterSpeakerManager(this);
   }

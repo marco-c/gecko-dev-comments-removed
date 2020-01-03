@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 40 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AudioChannelServiceChild.h"
 
@@ -26,20 +26,30 @@ using namespace mozilla::hal;
 
 StaticRefPtr<AudioChannelServiceChild> gAudioChannelServiceChild;
 
-
+// static
 AudioChannelService*
 AudioChannelServiceChild::GetAudioChannelService()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
+  return gAudioChannelServiceChild;
+
+}
+
+// static
+AudioChannelService*
+AudioChannelServiceChild::GetOrCreateAudioChannelService()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  // If we already exist, exit early
   if (gAudioChannelServiceChild) {
     return gAudioChannelServiceChild;
   }
 
-  
+  // Create new instance, register, return
   nsRefPtr<AudioChannelServiceChild> service = new AudioChannelServiceChild();
-  NS_ENSURE_TRUE(service, nullptr);
+  MOZ_ASSERT(service);
 
   gAudioChannelServiceChild = service;
   return gAudioChannelServiceChild;
@@ -75,7 +85,7 @@ AudioChannelServiceChild::GetState(AudioChannelAgent* aAgent, bool aElementHidde
   UpdateChannelType(data->mChannel, CONTENT_PROCESS_ID_MAIN, aElementHidden,
                     oldElementHidden);
 
-  
+  // Update visibility.
   data->mElementHidden = aElementHidden;
 
   ContentChild* cc = ContentChild::GetSingleton();
@@ -110,8 +120,8 @@ AudioChannelServiceChild::UnregisterAudioChannelAgent(AudioChannelAgent* aAgent)
     return;
   }
 
-  
-  
+  // We need to keep a copy because unregister will remove the
+  // AudioChannelAgentData object from the hashtable.
   AudioChannelAgentData data(*pData);
 
   AudioChannelService::UnregisterAudioChannelAgent(aAgent);

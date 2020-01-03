@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIDOMClassInfo.h"
 #include "nsIDOMEvent.h"
@@ -42,7 +42,7 @@ AudioChannelManager::~AudioChannelManager()
 
   target->RemoveSystemEventListener(NS_LITERAL_STRING("visibilitychange"),
                                     this,
-                                     true);
+                                    /* useCapture = */ true);
 }
 
 void
@@ -56,8 +56,8 @@ AudioChannelManager::Init(nsPIDOMWindow* aWindow)
 
   target->AddSystemEventListener(NS_LITERAL_STRING("visibilitychange"),
                                  this,
-                                  true,
-                                  false);
+                                 /* useCapture = */ true,
+                                 /* wantsUntrusted = */ false);
 }
 
 JSObject*
@@ -83,7 +83,7 @@ AudioChannelManager::SetVolumeControlChannel(const nsAString& aChannel)
 
   AudioChannel newChannel = AudioChannelService::GetAudioChannel(aChannel);
 
-  
+  // Only normal channel doesn't need permission.
   if (newChannel != AudioChannel::Normal) {
     nsCOMPtr<nsIPermissionManager> permissionManager =
       services::GetPermissionManager();
@@ -132,7 +132,7 @@ AudioChannelManager::NotifyVolumeControlChannelChanged()
   bool isActive = false;
   docshell->GetIsActive(&isActive);
 
-  AudioChannelService* service = AudioChannelService::GetAudioChannelService();
+  AudioChannelService* service = AudioChannelService::GetOrCreateAudioChannelService();
   if (isActive) {
     service->SetDefaultVolumeControlChannel(mVolumeChannel, isActive);
   } else {
@@ -152,6 +152,6 @@ AudioChannelManager::HandleEvent(nsIDOMEvent* aEvent)
   return NS_OK;
 }
 
-} 
-} 
-} 
+} // namespace system
+} // namespace dom
+} // namespace mozilla
