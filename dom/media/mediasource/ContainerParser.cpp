@@ -261,55 +261,86 @@ public:
     , mMonitor("MP4ContainerParser Index Monitor")
   {}
 
-  bool HasAtom(const mp4_demuxer::AtomType& aAtom, const MediaByteBuffer* aData) {
-    mp4_demuxer::ByteReader reader(aData);
-
-    while (reader.Remaining() >= 8) {
-      uint64_t size = reader.ReadU32();
-      const uint8_t* typec = reader.Peek(4);
-      uint32_t type = reader.ReadU32();
-      MSE_DEBUGV(MP4ContainerParser ,"Checking atom:'%c%c%c%c'",
-                typec[0], typec[1], typec[2], typec[3]);
-      if (mp4_demuxer::AtomType(type) == aAtom) {
-        reader.DiscardRemaining();
-        return true;
-      }
-      if (size == 1) {
-        
-        if (!reader.CanReadType<uint64_t>()) {
-          break;
-        }
-        size = reader.ReadU64();
-      } else if (size == 0) {
-        
-        
-        break;
-      }
-      if (reader.Remaining() < size - 8) {
-        
-        break;
-      }
-      reader.Read(size - 8);
-    }
-    reader.DiscardRemaining();
-    return false;
-  }
-
   bool IsInitSegmentPresent(MediaByteBuffer* aData) override
   {
     ContainerParser::IsInitSegmentPresent(aData);
     
     
     
-    return HasAtom(mp4_demuxer::AtomType("ftyp"), aData);
+    AtomParser parser(mType, aData);
+    return parser.StartWithInitSegment();
   }
 
   bool IsMediaSegmentPresent(MediaByteBuffer* aData) override
   {
-    ContainerParser::IsMediaSegmentPresent(aData);
-    return HasAtom(mp4_demuxer::AtomType("moof"), aData);
+    AtomParser parser(mType, aData);
+    return parser.StartWithMediaSegment();
   }
 
+private:
+  class AtomParser {
+  public:
+    AtomParser(const nsACString& aType, const MediaByteBuffer* aData)
+    {
+      const nsCString mType(aType); 
+      mp4_demuxer::ByteReader reader(aData);
+      mp4_demuxer::AtomType initAtom("ftyp");
+      mp4_demuxer::AtomType mediaAtom("moof");
+
+      while (reader.Remaining() >= 8) {
+        uint64_t size = reader.ReadU32();
+        const uint8_t* typec = reader.Peek(4);
+        uint32_t type = reader.ReadU32();
+        MSE_DEBUGV(AtomParser ,"Checking atom:'%c%c%c%c'",
+                   typec[0], typec[1], typec[2], typec[3]);
+        if (mInitOffset.isNothing() &&
+            mp4_demuxer::AtomType(type) == initAtom) {
+          mInitOffset = Some(reader.Offset());
+        }
+        if (mMediaOffset.isNothing() &&
+            mp4_demuxer::AtomType(type) == mediaAtom) {
+          mMediaOffset = Some(reader.Offset());
+        }
+        if (mInitOffset.isSome() && mMediaOffset.isSome()) {
+          
+          break;
+        }
+        if (size == 1) {
+          
+          if (!reader.CanReadType<uint64_t>()) {
+            break;
+          }
+          size = reader.ReadU64();
+        } else if (size == 0) {
+          
+          
+          break;
+        }
+        if (reader.Remaining() < size - 8) {
+          
+          break;
+        }
+        reader.Read(size - 8);
+      }
+      reader.DiscardRemaining();
+    }
+
+    bool StartWithInitSegment()
+    {
+      return mInitOffset.isSome() &&
+        (mMediaOffset.isNothing() || mInitOffset.ref() < mMediaOffset.ref());
+    }
+    bool StartWithMediaSegment()
+    {
+      return mMediaOffset.isSome() &&
+        (mInitOffset.isNothing() || mMediaOffset.ref() < mInitOffset.ref());
+    }
+  private:
+    Maybe<size_t> mInitOffset;
+    Maybe<size_t> mMediaOffset;
+  };
+
+public:
   bool ParseStartAndEndTimestamps(MediaByteBuffer* aData,
                                   int64_t& aStart, int64_t& aEnd) override
   {
