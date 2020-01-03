@@ -98,8 +98,8 @@ HMDInfoCardboard::HMDInfoCardboard()
 
 #if 1
   int32_t xcoord = 0;
-  if (getenv("FAKE_CARDBOARD_SCREEN")) {
-      const char *env = getenv("FAKE_CARDBOARD_SCREEN");
+  if (PR_GetEnv("FAKE_CARDBOARD_SCREEN")) {
+      const char *env = PR_GetEnv("FAKE_CARDBOARD_SCREEN");
       nsresult err;
       xcoord = nsCString(env).ToInteger(&err);
       if (err != NS_OK) xcoord = 0;
@@ -274,6 +274,12 @@ HMDInfoCardboard::SetFOV(const VRFieldOfView& aFOVLeft,
   mEyeResolution.width = 1920 / 2;
   mEyeResolution.height = 1080;
 
+  if (PR_GetEnv("FAKE_CARDBOARD_SCREEN")) {
+    
+    mEyeResolution.width *= 2;
+    mEyeResolution.height *= 2;
+  }
+
   mConfiguration.hmdType = mType;
   mConfiguration.value = 0;
   mConfiguration.fov[0] = aFOVLeft;
@@ -291,8 +297,13 @@ HMDInfoCardboard::FillDistortionConstants(uint32_t whichEye,
   
   values.eyeToSourceScaleAndOffset[0] = 0.0;
   values.eyeToSourceScaleAndOffset[1] = 0.0;
-  values.eyeToSourceScaleAndOffset[2] = 1.0;
-  values.eyeToSourceScaleAndOffset[3] = 1.0;
+  if (PR_GetEnv("FAKE_CARDBOARD_SCREEN")) {
+    values.eyeToSourceScaleAndOffset[2] = 2.0;
+    values.eyeToSourceScaleAndOffset[3] = 2.0;
+  } else {
+    values.eyeToSourceScaleAndOffset[2] = 1.0;
+    values.eyeToSourceScaleAndOffset[3] = 1.0;
+  }
 
   
   
