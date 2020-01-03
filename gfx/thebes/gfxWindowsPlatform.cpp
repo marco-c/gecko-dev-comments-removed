@@ -73,7 +73,7 @@
 #include "gfxPrefs.h"
 
 #include "VsyncSource.h"
-#include "DriverInitCrashDetection.h"
+#include "DriverCrashGuard.h"
 #include "mozilla/dom/ContentParent.h"
 
 using namespace mozilla;
@@ -2183,7 +2183,7 @@ gfxWindowsPlatform::InitializeDevices()
   
   
   
-  DriverInitCrashDetection detectCrashes;
+  DriverCrashGuard detectCrashes;
   if (detectCrashes.DisableAcceleration()) {
     mAcceleration = FeatureStatus::Blocked;
     return;

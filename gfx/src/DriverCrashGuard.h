@@ -2,8 +2,8 @@
 
 
 
-#ifndef gfx_src_DriverInitCrashDetection_h__
-#define gfx_src_DriverInitCrashDetection_h__
+#ifndef gfx_src_DriverCrashGuard_h__
+#define gfx_src_DriverCrashGuard_h__
 
 #include "gfxCore.h"
 #include "nsCOMPtr.h"
@@ -28,11 +28,11 @@ enum class DriverInitStatus
   Recovered
 };
 
-class DriverInitCrashDetection
+class DriverCrashGuard
 {
 public:
-  DriverInitCrashDetection();
-  ~DriverInitCrashDetection();
+  DriverCrashGuard();
+  ~DriverCrashGuard();
 
   bool DisableAcceleration() const;
 
