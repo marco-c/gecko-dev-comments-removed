@@ -517,18 +517,11 @@ Animation::HasLowerCompositeOrderThan(const Animation& aOther) const
 bool
 Animation::CanThrottle() const
 {
-  if (!mEffect ||
-      mEffect->IsFinishedTransition() ||
-      mEffect->Properties().IsEmpty()) {
-    return true;
-  }
+  
+  
 
-  if (!mIsRunningOnCompositor) {
-    return false;
-  }
-
-  if (PlayState() != AnimationPlayState::Finished) {
-    
+  
+  if (!mEffect || mEffect->Properties().IsEmpty()) {
     return true;
   }
 
@@ -536,7 +529,24 @@ Animation::CanThrottle() const
   
   
   
-  return mFinishedAtLastComposeStyle;
+  if (PlayState() == AnimationPlayState::Finished) {
+    return mFinishedAtLastComposeStyle;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!IsInEffect()) {
+    return true;
+  }
+
+  return mIsRunningOnCompositor;
 }
 
 void
