@@ -1,5 +1,8 @@
-setJitCompilerOption("baseline.warmup.trigger", 10);
-setJitCompilerOption("ion.warmup.trigger", 30);
+
+
+
+if (getJitCompilerOptions()["ion.warmup.trigger"] <= 90)
+    setJitCompilerOption("ion.warmup.trigger", 90);
 
 var uceFault = function (i) {
     if (i > 98)
@@ -7,11 +10,11 @@ var uceFault = function (i) {
     return false;
 };
 
-// Without "use script" in the inner function, the arguments might be
-// obersvable.
+
+
 function inline_notSoEmpty1(a, b, c, d) {
-    // This function is not strict, so we might be able to observe its
-    // arguments, if somebody ever called fun.arguments inside it.
+    
+    
     return { v: (a.v + b.v + c.v + d.v - 10) / 4 };
 }
 var uceFault_notSoEmpty1 = eval(uneval(uceFault).replace('uceFault', 'uceFault_notSoEmpty1'));
@@ -24,9 +27,21 @@ function notSoEmpty1() {
     var res = inline_notSoEmpty1(a, b, c, d);
     if (uceFault_notSoEmpty1(i) || uceFault_notSoEmpty1(i))
         assertEq(i, res.v);
+    
+    
+    
+    
+    assertRecoveredOnBailout(a, true);
+    assertRecoveredOnBailout(b, true);
+    assertRecoveredOnBailout(c, true);
+    assertRecoveredOnBailout(d, true);
+    assertRecoveredOnBailout(unused, true);
+    
+    
+    assertRecoveredOnBailout(res, false);
 }
 
-// Check that we can recover objects with their content.
+
 function inline_notSoEmpty2(a, b, c, d) {
     "use strict";
     return { v: (a.v + b.v + c.v + d.v - 10) / 4 };
@@ -41,9 +56,17 @@ function notSoEmpty2(i) {
     var res = inline_notSoEmpty2(a, b, c, d);
     if (uceFault_notSoEmpty2(i) || uceFault_notSoEmpty2(i))
         assertEq(i, res.v);
+    assertRecoveredOnBailout(a, true);
+    assertRecoveredOnBailout(b, true);
+    assertRecoveredOnBailout(c, true);
+    assertRecoveredOnBailout(d, true);
+    assertRecoveredOnBailout(unused, true);
+    
+    
+    assertRecoveredOnBailout(res, false);
 }
 
-// Check that we can recover objects with their content.
+
 var argFault_observeArg = function (i) {
     if (i > 98)
         return inline_observeArg.arguments[0];
@@ -56,12 +79,13 @@ function observeArg(i) {
     var obj = { test: i };
     var res = inline_observeArg(obj, i);
     assertEq(res.test, i);
+    assertRecoveredOnBailout(obj, true);
 }
 
-// Check case where one successor can have multiple times the same predecessor.
+
 function complexPhi(i) {
     var obj = { test: i };
-    switch (i) { // TableSwitch
+    switch (i) { 
         case 0: obj.test = 0; break;
         case 1: obj.test = 1; break;
         case 2: obj.test = 2; break;
@@ -72,30 +96,35 @@ function complexPhi(i) {
         case 9: obj.test = 9; break;
     }
     assertEq(obj.test, i);
+    assertRecoveredOnBailout(obj, true);
 }
 
-// Check case where one successor can have multiple times the same predecessor.
+
 function withinIf(i) {
     var x = undefined;
-    if (i > 5) {
+    if (i % 2 == 0) {
         let obj = { foo: i };
         x = obj.foo;
+        assertRecoveredOnBailout(obj, true);
         obj = undefined;
     } else {
         let obj = { bar: i };
         x = obj.bar;
+        assertRecoveredOnBailout(obj, true);
         obj = undefined;
     }
     assertEq(x, i);
 }
 
-// Check case where one successor can have multiple times the same predecessor.
+
 function unknownLoad(i) {
     var obj = { foo: i };
     assertEq(obj.bar, undefined);
+    
+    assertRecoveredOnBailout(obj, false);
 }
 
-// Check with dynamic slots.
+
 function resumeHere() {}
 function dynamicSlots(i) {
     var obj = {
@@ -105,14 +134,15 @@ function dynamicSlots(i) {
         p31: i + 31, p32: i + 32, p33: i + 33, p34: i + 34, p35: i + 35, p36: i + 36, p37: i + 37, p38: i + 38, p39: i + 39, p40: i + 40,
         p41: i + 41, p42: i + 42, p43: i + 43, p44: i + 44, p45: i + 45, p46: i + 46, p47: i + 47, p48: i + 48, p49: i + 49, p50: i + 50
     };
-    // Add a function call to capture a resumepoint at the end of the call or
-    // inside the inlined block, such as the bailout does not rewind to the
-    // beginning of the function.
+    
+    
+    
     resumeHere(); bailout();
     assertEq(obj.p0 + obj.p10 + obj.p20 + obj.p30 + obj.p40, 5 * i + 100);
+    assertRecoveredOnBailout(obj, true);
 }
 
-// Check that we can correctly recover allocations of new objects.
+
 function Point(x, y)
 {
     this.x = x;
@@ -124,6 +154,7 @@ function createThisWithTemplate(i)
     var p = new Point(i - 1, i + 1);
     bailout();
     assertEq(p.y - p.x, 2);
+    assertRecoveredOnBailout(p, true);
 }
 
 
