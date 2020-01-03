@@ -9678,9 +9678,23 @@ StkCommandParamsFactoryObject.prototype = {
     }
 
     
-    this.appendIconIfNecessary(selectedCtlvs[COMPREHENSIONTLV_TAG_ICON_ID] || null,
-                               textMsg,
-                               onComplete);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (textMsg.text !== "") {
+      
+      this.appendIconIfNecessary(selectedCtlvs[COMPREHENSIONTLV_TAG_ICON_ID] || null,
+                                 textMsg,
+                                 onComplete);
+    }
   },
 
   

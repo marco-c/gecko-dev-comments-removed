@@ -57,15 +57,13 @@ const TEST_DATA = [
                   "Return Result message not containing an error has been " +
                   "received from the network, the ME shall inform the SIM " +
                   "that the command has"}},
-  {command: "D046" + 
+  {command: "D044" + 
             "8103011200" + 
             "82028183" + 
-            "8500" + 
             "8A39F041E19058341E9149E592D9743EA151E9945AB55E" + 
             "B1596D2B2C1E93CBE6333AAD5EB3DBEE373C2E9FD3EBF6" +
             "3B3EAF6FC564335ACD76C3E560",
-   expect: {commandQualifier: 0x00,
-            text: ""}},
+   expect: {commandQualifier: 0x00}},
   {command: "D054" + 
             "8103011200" + 
             "82028183" + 
@@ -126,7 +124,16 @@ const TEST_DATA = [
             text: "你好"}},
 ];
 
-function testSendUSSD(aCommand, aExpect) {
+const TEST_CMD_NULL_ALPHA_ID =
+        "D046" + 
+        "8103011200" + 
+        "82028183" + 
+        "8500" + 
+        "8A39F041E19058341E9149E592D9743EA151E9945AB55E" + 
+        "B1596D2B2C1E93CBE6333AAD5EB3DBEE373C2E9FD3EBF6" +
+        "3B3EAF6FC564335ACD76C3E560";
+
+function verifySendUSSD(aCommand, aExpect) {
   is(aCommand.commandNumber, 0x01, "commandNumber");
   is(aCommand.typeOfCommand, MozIccManager.STK_CMD_SEND_USSD, "typeOfCommand");
   is(aCommand.commandQualifier, aExpect.commandQualifier, "commandQualifier");
@@ -144,8 +151,7 @@ function testSendUSSD(aCommand, aExpect) {
   }
 }
 
-
-startTestCommon(function() {
+function testSendUSSD() {
   let icc = getMozIcc();
   let promise = Promise.resolve();
   for (let i = 0; i < TEST_DATA.length; i++) {
@@ -156,12 +162,12 @@ startTestCommon(function() {
       let promises = [];
       
       promises.push(waitForTargetEvent(icc, "stkcommand")
-        .then((aEvent) => testSendUSSD(aEvent.command, data.expect)));
+        .then((aEvent) => verifySendUSSD(aEvent.command, data.expect)));
       
       promises.push(waitForSystemMessage("icc-stkcommand")
         .then((aMessage) => {
           is(aMessage.iccId, icc.iccInfo.iccid, "iccId");
-          testSendUSSD(aMessage.command, data.expect);
+          verifySendUSSD(aMessage.command, data.expect);
         }));
       
       promises.push(sendEmulatorStkPdu(data.command));
@@ -170,4 +176,31 @@ startTestCommon(function() {
     });
   }
   return promise;
+}
+
+function testSendUSSDNullAlphaId() {
+  let icc = getMozIcc();
+
+  
+  icc.addEventListener("stkcommand",
+    (event) => ok(false, event + " should not occur."));
+
+  
+  workingFrame.contentWindow.navigator.mozSetMessageHandler("icc-stkcommand",
+    (msg) => ok(false, msg + " should not be sent."));
+
+  
+  
+  log("send_ussd_cmd: " + TEST_CMD_NULL_ALPHA_ID);
+  return sendEmulatorStkPdu(TEST_CMD_NULL_ALPHA_ID)
+    .then(() => new Promise(function(resolve, reject) {
+      setTimeout(() => resolve(), 3000);
+    }));
+}
+
+
+startTestCommon(function() {
+  return Promise.resolve()
+    .then(() => testSendUSSD())
+    .then(() => testSendUSSDNullAlphaId());
 });

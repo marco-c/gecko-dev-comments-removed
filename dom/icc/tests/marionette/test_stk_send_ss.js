@@ -39,13 +39,11 @@ const TEST_DATA = [
                   "SEND SS proactive command shall not be checked against " +
                   "those of the FDN list. Upon receiving this command, the " +
                   "ME shall deci"}},
-  {command: "D01D" + 
+  {command: "D01B" + 
             "8103011100" + 
             "82028183" + 
-            "8500" + 
             "891091AA120A214365870921436587A901FB", 
-   expect: {commandQualifier: 0x00,
-            text: ""}},
+   expect: {commandQualifier: 0x00}},
   {command: "D02B" + 
             "8103011100" + 
             "82028183" + 
@@ -88,7 +86,14 @@ const TEST_DATA = [
             text: "你好"}},
 ];
 
-function testSendSS(aCommand, aExpect) {
+const TEST_CMD_NULL_ALPHA_ID =
+        "D01D" + 
+        "8103011100" + 
+        "82028183" + 
+        "8500" + 
+        "891091AA120A214365870921436587A901FB"; 
+
+function verifySendSS(aCommand, aExpect) {
   is(aCommand.commandNumber, 0x01, "commandNumber");
   is(aCommand.typeOfCommand, MozIccManager.STK_CMD_SEND_SS, "typeOfCommand");
   is(aCommand.commandQualifier, aExpect.commandQualifier, "commandQualifier");
@@ -106,8 +111,7 @@ function testSendSS(aCommand, aExpect) {
   }
 }
 
-
-startTestCommon(function() {
+function testSendSS() {
   let icc = getMozIcc();
   let promise = Promise.resolve();
   for (let i = 0; i < TEST_DATA.length; i++) {
@@ -118,12 +122,12 @@ startTestCommon(function() {
       let promises = [];
       
       promises.push(waitForTargetEvent(icc, "stkcommand")
-        .then((aEvent) => testSendSS(aEvent.command, data.expect)));
+        .then((aEvent) => verifySendSS(aEvent.command, data.expect)));
       
       promises.push(waitForSystemMessage("icc-stkcommand")
         .then((aMessage) => {
           is(aMessage.iccId, icc.iccInfo.iccid, "iccId");
-          testSendSS(aMessage.command, data.expect);
+          verifySendSS(aMessage.command, data.expect);
         }));
       
       promises.push(sendEmulatorStkPdu(data.command));
@@ -132,4 +136,31 @@ startTestCommon(function() {
     });
   }
   return promise;
+}
+
+function testSendSSNullAlphaId() {
+  let icc = getMozIcc();
+
+  
+  icc.addEventListener("stkcommand",
+    (event) => ok(false, event + " should not occur."));
+
+  
+  workingFrame.contentWindow.navigator.mozSetMessageHandler("icc-stkcommand",
+    (msg) => ok(false, msg + " should not be sent."));
+
+  
+  
+  log("send_ss_cmd: " + TEST_CMD_NULL_ALPHA_ID);
+  return sendEmulatorStkPdu(TEST_CMD_NULL_ALPHA_ID)
+    .then(() => new Promise(function(resolve, reject) {
+      setTimeout(() => resolve(), 3000);
+    }));
+}
+
+
+startTestCommon(function() {
+  return Promise.resolve()
+    .then(() => testSendSS())
+    .then(() => testSendSSNullAlphaId());
 });
