@@ -378,7 +378,19 @@ nsFrameLoader::ReallyStartLoadingInternal()
     }
   }
 
-  loadInfo->SetReferrerPolicy(mOwnerContent->OwnerDoc()->GetReferrerPolicy());
+  
+  
+  
+  
+  net::ReferrerPolicy referrerPolicy = mOwnerContent->OwnerDoc()->GetReferrerPolicy();
+  HTMLIFrameElement* iframe = HTMLIFrameElement::FromContent(mOwnerContent);
+  if (iframe) {
+    net::ReferrerPolicy iframeReferrerPolicy = iframe->GetReferrerPolicy();
+    if (iframeReferrerPolicy != net::RP_Unset) {
+      referrerPolicy = iframeReferrerPolicy;
+    }
+  }
+  loadInfo->SetReferrerPolicy(referrerPolicy);
 
   
   int32_t flags = nsIWebNavigation::LOAD_FLAGS_NONE;
