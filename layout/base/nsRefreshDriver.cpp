@@ -365,6 +365,7 @@ private:
         aVsyncTimestamp = mRecentVsync;
         mProcessedVsync = true;
       }
+      MOZ_ASSERT(aVsyncTimestamp <= TimeStamp::Now());
 
       
       
