@@ -1178,10 +1178,22 @@ InspectorPanel.prototype = {
 
 
 
-
-  followAttributeLink: function(e) {
+  onFollowLink: function() {
     let type = this.panelDoc.popupNode.dataset.type;
     let link = this.panelDoc.popupNode.dataset.link;
+
+    this.followAttributeLink(type, link);
+  },
+
+  
+
+
+
+
+  followAttributeLink: function(type, link) {
+    if (!type || !link) {
+      return;
+    }
 
     if (type === "uri" || type === "cssresource" || type === "jsresource") {
       
@@ -1215,9 +1227,16 @@ InspectorPanel.prototype = {
 
 
 
-
-  copyAttributeLink: function(e) {
+  onCopyLink: function() {
     let link = this.panelDoc.popupNode.dataset.link;
+
+    this.copyAttributeLink(link);
+  },
+
+  
+
+
+  copyAttributeLink: function(link) {
     
     
     this.inspector.resolveRelativeURL(link, this.selection.nodeFront).then(url => {
