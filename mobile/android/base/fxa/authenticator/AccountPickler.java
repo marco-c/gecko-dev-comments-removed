@@ -85,7 +85,8 @@ public class AccountPickler {
 
 
 
-  public static boolean deletePickle(final Context context, final String filename) {
+
+  public synchronized static boolean deletePickle(final Context context, final String filename) {
     return context.deleteFile(filename);
   }
 
@@ -126,7 +127,8 @@ public class AccountPickler {
 
 
 
-  public static void pickle(final AndroidFxAccount account, final String filename) {
+
+  public synchronized static void pickle(final AndroidFxAccount account, final String filename) {
     final ExtendedJSONObject o = toJSON(account, System.currentTimeMillis());
     writeToDisk(account.context, filename, o);
   }
@@ -162,7 +164,8 @@ public class AccountPickler {
 
 
 
-  public static AndroidFxAccount unpickle(final Context context, final String filename) {
+
+  public synchronized static AndroidFxAccount unpickle(final Context context, final String filename) {
     final String jsonString = Utils.readFile(context, filename);
     if (jsonString == null) {
       Logger.info(LOG_TAG, "Pickle file '" + filename + "' not found; aborting.");
