@@ -1958,6 +1958,12 @@ XMLHttpRequest::Open(const nsACString& aMethod, const nsAString& aUrl,
     return;
   }
 
+  
+  if (!mProxy) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
   --mProxy->mOpenCount;
   mProxy->mIsSyncXHR = !aAsync;
 }
