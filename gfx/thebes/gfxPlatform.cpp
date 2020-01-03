@@ -83,6 +83,7 @@
 
 #ifdef MOZ_WIDGET_ANDROID
 #include "TexturePoolOGL.h"
+#include "AndroidBridge.h"
 #endif
 
 #ifdef MOZ_WIDGET_GONK
@@ -579,6 +580,18 @@ gfxPlatform::Init()
     if (XRE_IsParentProcess() && gfxPrefs::HardwareVsyncEnabled()) {
       gPlatform->mVsyncSource = gPlatform->CreateHardwareVsyncSource();
     }
+
+    
+    
+    
+#ifdef MOZ_WIDGET_ANDROID
+    nsString vendorID;
+    gfxInfo->GetAdapterVendorID(vendorID);
+    gPlatform->mCanDetachSurfaceTexture = AndroidBridge::Bridge()->GetAPIVersion() >= 16 &&
+      !vendorID.EqualsLiteral("Imagination") &&
+      !vendorID.EqualsLiteral("ARM") &&
+      Preferences::GetBool("gfx.SurfaceTexture.detach.enabled", true);
+#endif
 }
 
 static bool sLayersIPCIsUp = false;
