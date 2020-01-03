@@ -23,6 +23,8 @@ enum class CreateContextFlags : int8_t {
     REQUIRE_COMPAT_PROFILE = 1 << 0,
     
     FORCE_ENABLE_HARDWARE = 1 << 1,
+    
+    ALLOW_OFFLINE_RENDERER =  1 << 2,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CreateContextFlags)
 
