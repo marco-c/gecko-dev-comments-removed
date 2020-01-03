@@ -1320,6 +1320,10 @@ private:
 
   
   
+  Mirror<bool> mSameOriginMedia;
+
+  
+  
   Canonical<media::NullableTimeUnit> mDuration;
 
   

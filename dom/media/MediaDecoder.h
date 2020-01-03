@@ -574,10 +574,6 @@ public:
 
   
   
-  bool IsSameOriginMedia();
-
-  
-  
   bool CanPlayThrough();
 
   void SetAudioChannel(dom::AudioChannel aChannel) { mAudioChannel = aChannel; }
@@ -943,10 +939,6 @@ protected:
   bool mMediaSeekable;
 
   
-  
-  bool mSameOriginMedia;
-
-  
 
 
 
@@ -1120,6 +1112,10 @@ protected:
   
   Canonical<bool> mLogicallySeeking;
 
+  
+  
+  Canonical<bool> mSameOriginMedia;
+
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
   AbstractCanonical<double>* CanonicalVolume() {
@@ -1145,6 +1141,9 @@ public:
   }
   AbstractCanonical<bool>* CanonicalLogicallySeeking() {
     return &mLogicallySeeking;
+  }
+  AbstractCanonical<bool>* CanonicalSameOriginMedia() {
+    return &mSameOriginMedia;
   }
 };
 
