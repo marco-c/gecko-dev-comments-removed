@@ -11,6 +11,9 @@
 
 
 
+
+"use strict";
+
 const testCases = [
   [["cookies", "sectest1.example.org"], 0, 0],
   ["cs2", 1, 1],

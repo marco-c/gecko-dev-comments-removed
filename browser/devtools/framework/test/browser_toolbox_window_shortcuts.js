@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 let {Toolbox} = require("devtools/framework/toolbox");
 
 let toolbox, toolIDs, idIndex, modifiedPrefs = [];

@@ -4,7 +4,9 @@
 
 
 
-const {Cc, Ci, Cu, Cr} = require("chrome");
+"use strict";
+
+const {Cu} = require("chrome");
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -26,7 +28,7 @@ this.StoragePanel = function StoragePanel(panelWin, toolbox) {
   this._panelWin = panelWin;
 
   this.destroy = this.destroy.bind(this);
-}
+};
 
 exports.StoragePanel = StoragePanel;
 
@@ -80,10 +82,10 @@ StoragePanel.prototype = {
 
     return Promise.resolve(null);
   },
-}
+};
 
 XPCOMUtils.defineLazyGetter(StoragePanel.prototype, "strings",
-  function () {
+  function() {
     return Services.strings.createBundle(
             "chrome://browser/locale/devtools/storage.properties");
   });

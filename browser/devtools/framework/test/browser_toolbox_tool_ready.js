@@ -1,12 +1,14 @@
 
 
 
+"use strict";
 
 
 
 
 
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("Error: Shader Editor is still waiting for a WebGL context to be created.");
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("Error: Shader Editor is " +
+  "still waiting for a WebGL context to be created.");
 
 function performChecks(target) {
   return Task.spawn(function*() {
