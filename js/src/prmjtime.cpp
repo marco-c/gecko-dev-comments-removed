@@ -6,7 +6,7 @@
 
 
 
-#include "vm/Time.h"
+#include "prmjtime.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
