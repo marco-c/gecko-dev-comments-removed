@@ -831,7 +831,7 @@ OnSharedPreferenceChangeListener
                         continue;
                     }
                 } else if (PREFS_QRCODE_ENABLED.equals(key)) {
-                    if (!AppConstants.NIGHTLY_BUILD || !InputOptionsUtils.supportsQrCodeReader(getApplicationContext())) {
+                    if (!InputOptionsUtils.supportsQrCodeReader(getApplicationContext())) {
                         
                         preferences.removePreference(pref);
                         i--;

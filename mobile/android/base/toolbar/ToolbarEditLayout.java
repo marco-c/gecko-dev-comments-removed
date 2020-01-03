@@ -253,10 +253,6 @@ public class ToolbarEditLayout extends ThemedLinearLayout {
     }
 
     private boolean qrCodeIsEnabled(Context context) {
-        
-        if(!AppConstants.NIGHTLY_BUILD) {
-            return false;
-        }
         final boolean qrCodeIsSupported = InputOptionsUtils.supportsQrCodeReader(context);
         if (!qrCodeIsSupported) {
             return false;
