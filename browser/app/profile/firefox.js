@@ -1929,6 +1929,10 @@ pref("browser.reader.detectedFirstArticle", false);
 
 pref("reader.parse-node-limit", 0);
 
+
+
+pref("reader.errors.includeURLs", true);
+
 pref("browser.pocket.enabled", true);
 pref("browser.pocket.api", "api.getpocket.com");
 pref("browser.pocket.site", "getpocket.com");

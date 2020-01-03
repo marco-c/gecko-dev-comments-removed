@@ -59,6 +59,10 @@ let Reader = {
           if (message.target.messageManager) {
             message.target.messageManager.sendAsyncMessage("Reader:ArticleData", { article: article });
           }
+        }, e => {
+          if (e && e.newURL) {
+            message.target.loadURI("about:reader?url=" + encodeURIComponent(e.newURL));
+          }
         });
         break;
 
@@ -289,6 +293,10 @@ let Reader = {
     
     
     return yield ReaderMode.downloadAndParseDocument(url).catch(e => {
+      if (e && e.newURL) {
+        
+        throw e;
+      }
       Cu.reportError("Error downloading and parsing document: " + e);
       return null;
     });
