@@ -887,12 +887,22 @@ class GCRuntime
 
     void requestMajorGC(JS::gcreason::Reason reason);
     SliceBudget defaultBudget(JS::gcreason::Reason reason, int64_t millis);
-    void collect(bool incremental, SliceBudget budget, JS::gcreason::Reason reason);
-    bool gcCycle(bool incremental, SliceBudget& budget, JS::gcreason::Reason reason);
-    gcstats::ZoneGCStats scanZonesBeforeGC();
     void budgetIncrementalGC(SliceBudget& budget);
     void resetIncrementalGC(const char* reason);
+
+    
+    
+    void checkCanCallAPI();
+
+    
+    
+    bool checkIfGCAllowedInCurrentState(JS::gcreason::Reason reason);
+
+    gcstats::ZoneGCStats scanZonesBeforeGC();
+    void collect(bool incremental, SliceBudget budget, JS::gcreason::Reason reason);
+    bool gcCycle(bool incremental, SliceBudget& budget, JS::gcreason::Reason reason);
     void incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason reason);
+
     void pushZealSelectedObjects();
     void purgeRuntime();
     bool beginMarkPhase(JS::gcreason::Reason reason);
