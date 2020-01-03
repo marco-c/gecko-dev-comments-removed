@@ -99,8 +99,11 @@
 
 namespace mozilla {
 
-class AudioSegment;
+namespace media {
 class AudioSink;
+}
+
+class AudioSegment;
 class TaskQueue;
 
 extern PRLogModuleInfo* gMediaDecoderLog;
@@ -512,11 +515,13 @@ protected:
 
   
   
-  void StopAudioThread();
+  
+  void StopAudioSink();
 
   
   
-  void StartAudioThread();
+  
+  void StartAudioSink();
 
   void StopDecodedStream();
 
@@ -997,7 +1002,7 @@ private:
   int64_t mFragmentEndTime;
 
   
-  RefPtr<AudioSink> mAudioSink;
+  RefPtr<media::AudioSink> mAudioSink;
 
   
   

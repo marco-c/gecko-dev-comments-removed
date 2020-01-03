@@ -14,7 +14,7 @@
 
 #include "MediaDecoderStateMachine.h"
 #include "MediaTimer.h"
-#include "AudioSink.h"
+#include "mediasink/DecodedAudioDataSink.h"
 #include "nsTArray.h"
 #include "MediaDecoder.h"
 #include "MediaDecoderReader.h"
@@ -1072,7 +1072,7 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   SetPlayStartTime(TimeStamp::Now());
   MOZ_ASSERT(IsPlaying());
 
-  StartAudioThread();
+  StartAudioSink();
   StartDecodedStream();
 
   DispatchDecodeTasksIfNeeded();
@@ -1461,7 +1461,7 @@ MediaDecoderStateMachine::Seek(SeekTarget aTarget)
   return mPendingSeek.mPromise.Ensure(__func__);
 }
 
-void MediaDecoderStateMachine::StopAudioThread()
+void MediaDecoderStateMachine::StopAudioSink()
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
@@ -1754,7 +1754,7 @@ MediaDecoderStateMachine::RequestVideoData()
 }
 
 void
-MediaDecoderStateMachine::StartAudioThread()
+MediaDecoderStateMachine::StartAudioSink()
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
@@ -1765,9 +1765,9 @@ MediaDecoderStateMachine::StartAudioThread()
 
   if (HasAudio() && !mAudioSink) {
     mAudioCompleted = false;
-    mAudioSink = new AudioSink(mAudioQueue,
-                               GetMediaTime(), mInfo.mAudio,
-                               mDecoder->GetAudioChannel());
+    mAudioSink = new DecodedAudioDataSink(mAudioQueue,
+                                          GetMediaTime(), mInfo.mAudio,
+                                          mDecoder->GetAudioChannel());
 
     mAudioSinkPromise.Begin(
       mAudioSink->Init()->Then(
@@ -2369,12 +2369,12 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
       
       
       
+        MaybeStartPlayback();
       if (VideoQueue().GetSize() > 1 ||
           (HasAudio() && !mAudioCompleted) ||
           (mAudioCaptured && !mDecodedStream->IsFinished()))
       {
         
-        MaybeStartPlayback();
         UpdateRenderedVideoFrames();
         NS_ASSERTION(!IsPlaying() ||
                      mLogicallySeeking ||
@@ -2409,7 +2409,7 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
 
         
         
-        StopAudioThread();
+        StopAudioSink();
         StopDecodedStream();
       }
 
@@ -2439,7 +2439,7 @@ MediaDecoderStateMachine::Reset()
   
   
   
-  StopAudioThread();
+  StopAudioSink();
   StopDecodedStream();
 
   mVideoFrameEndTime = -1;
@@ -3135,7 +3135,7 @@ void MediaDecoderStateMachine::DispatchAudioCaptured()
     ReentrantMonitorAutoEnter mon(self->mDecoder->GetReentrantMonitor());
     if (!self->mAudioCaptured) {
       
-      self->StopAudioThread();
+      self->StopAudioSink();
       self->mAudioCaptured = true;
       
       
@@ -3160,7 +3160,7 @@ void MediaDecoderStateMachine::DispatchAudioUncaptured()
       
       self->mAudioCaptured = false;
       if (self->IsPlaying()) {
-        self->StartAudioThread();
+        self->StartAudioSink();
       }
       self->ScheduleStateMachine();
     }

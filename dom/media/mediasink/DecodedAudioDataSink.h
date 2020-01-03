@@ -3,9 +3,10 @@
 
 
 
-#if !defined(AudioSink_h__)
-#define AudioSink_h__
+#if !defined(DecodedAudioDataSink_h__)
+#define DecodedAudioDataSink_h__
 
+#include "AudioSink.h"
 #include "MediaInfo.h"
 #include "mozilla/nsRefPtr.h"
 #include "nsISupportsImpl.h"
@@ -17,41 +18,37 @@
 #include "mozilla/ReentrantMonitor.h"
 
 namespace mozilla {
+namespace media {
 
-class AudioData;
-class AudioStream;
-template <class T> class MediaQueue;
-
-class AudioSink {
+class DecodedAudioDataSink : public AudioSink {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioSink)
 
-  AudioSink(MediaQueue<MediaData>& aAudioQueue,
-            int64_t aStartTime,
-            const AudioInfo& aInfo,
-            dom::AudioChannel aChannel);
-
-  
-  
-  nsRefPtr<GenericPromise> Init();
-
-  
-
-
-  int64_t GetPosition();
-  int64_t GetEndTime() const;
+  DecodedAudioDataSink(MediaQueue<MediaData>& aAudioQueue,
+                       int64_t aStartTime,
+                       const AudioInfo& aInfo,
+                       dom::AudioChannel aChannel);
 
   
   
-  bool HasUnplayedFrames();
+  nsRefPtr<GenericPromise> Init() override;
 
   
-  void Shutdown();
 
-  void SetVolume(double aVolume);
-  void SetPlaybackRate(double aPlaybackRate);
-  void SetPreservesPitch(bool aPreservesPitch);
-  void SetPlaying(bool aPlaying);
+
+  int64_t GetPosition() override;
+  int64_t GetEndTime() const override;
+
+  
+  
+  bool HasUnplayedFrames() override;
+
+  
+  void Shutdown() override;
+
+  void SetVolume(double aVolume) override;
+  void SetPlaybackRate(double aPlaybackRate) override;
+  void SetPreservesPitch(bool aPreservesPitch) override;
+  void SetPlaying(bool aPlaying) override;
 
 private:
   enum State {
@@ -62,7 +59,7 @@ private:
     AUDIOSINK_STATE_ERROR
   };
 
-  ~AudioSink() {}
+  virtual ~DecodedAudioDataSink() {}
 
   void DispatchTask(already_AddRefed<nsIRunnable>&& event);
   void SetState(State aState);
@@ -119,10 +116,6 @@ private:
   void StartAudioStreamPlaybackIfNeeded();
   void WriteSilence(uint32_t aFrames);
 
-  MediaQueue<MediaData>& AudioQueue() const {
-    return mAudioQueue;
-  }
-
   ReentrantMonitor& GetReentrantMonitor() const {
     return mMonitor;
   }
@@ -134,7 +127,6 @@ private:
   void AssertOnAudioThread();
   void AssertNotOnAudioThread();
 
-  MediaQueue<MediaData>& mAudioQueue;
   mutable ReentrantMonitor mMonitor;
 
   
@@ -168,7 +160,7 @@ private:
 
   const AudioInfo mInfo;
 
-  dom::AudioChannel mChannel;
+  const dom::AudioChannel mChannel;
 
   bool mStopAudioThread;
 
@@ -180,6 +172,7 @@ private:
   MediaEventListener mFinishListener;
 };
 
+} 
 } 
 
 #endif
