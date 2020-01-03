@@ -3,6 +3,7 @@
 
 
 
+
 #include "nsTHashtable.h"
 #include "nsBaseHashtable.h"
 #include "nsDataHashtable.h"
@@ -82,20 +83,31 @@ public:
   const EntityNode* mNode;
 };
 
-PLDHashOperator
-nsTEnumGo(EntityToUnicodeEntry* aEntry, void* userArg) {
-  printf("  enumerated \"%s\" = %u\n", 
-         aEntry->mNode->mStr, aEntry->mNode->mUnicode);
-
-  return PL_DHASH_NEXT;
+static uint32_t
+nsTIterPrint(nsTHashtable<EntityToUnicodeEntry>& hash)
+{
+  uint32_t n = 0;
+  for (auto iter = hash.Iter(); !iter.Done(); iter.Next()) {
+    EntityToUnicodeEntry* entry = iter.Get();
+    printf("  enumerated \"%s\" = %u\n",
+           entry->mNode->mStr, entry->mNode->mUnicode);
+    n++;
+  }
+  return n;
 }
 
-PLDHashOperator
-nsTEnumStop(EntityToUnicodeEntry* aEntry, void* userArg) {
-  printf("  enumerated \"%s\" = %u\n",
-         aEntry->mNode->mStr, aEntry->mNode->mUnicode);
-
-  return PL_DHASH_REMOVE;
+static uint32_t
+nsTIterPrintRemove(nsTHashtable<EntityToUnicodeEntry>& hash)
+{
+  uint32_t n = 0;
+  for (auto iter = hash.Iter(); !iter.Done(); iter.Next()) {
+    EntityToUnicodeEntry* entry = iter.Get();
+    printf("  enumerated \"%s\" = %u\n",
+           entry->mNode->mStr, entry->mNode->mUnicode);
+    iter.Remove();
+    n++;
+  }
+  return n;
 }
 
 void
@@ -151,7 +163,7 @@ testTHashtable(nsTHashtable<EntityToUnicodeEntry>& hash, uint32_t numEntries) {
   printf("not found; good.\n");
 
   printf("Enumerating:\n");
-  uint32_t count = hash.EnumerateEntries(nsTEnumGo, nullptr);
+  uint32_t count = nsTIterPrint(hash);
   if (count != numEntries) {
     printf("  Bad count!\n");
     exit (6);
@@ -381,7 +393,7 @@ main(void) {
   testTHashtable(EntityToUnicode, 5);
 
   printf("Enumerate-removing...\n");
-  uint32_t count = EntityToUnicode.EnumerateEntries(nsTEnumStop, nullptr);
+  uint32_t count = nsTIterPrintRemove(EntityToUnicode);
   if (count != 5) {
     printf("wrong count\n");
     exit (7);
@@ -389,7 +401,7 @@ main(void) {
   printf("OK\n");
 
   printf("Check enumeration...");
-  count = EntityToUnicode.EnumerateEntries(nsTEnumGo, nullptr);
+  count = nsTIterPrint(EntityToUnicode);
   if (count) {
     printf("entries remain in table!\n");
     exit (8);
@@ -404,7 +416,7 @@ main(void) {
   printf("OK\n");
 
   printf("Check enumeration...");
-  count = EntityToUnicode.EnumerateEntries(nsTEnumGo, nullptr);
+  count = nsTIterPrint(EntityToUnicode);
   if (count) {
     printf("entries remain in table!\n");
     exit (9);
