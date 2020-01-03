@@ -990,9 +990,12 @@ CompositorOGL::DrawQuad(const Rect& aRect,
   Rect destRect = aTransform.TransformBounds(aRect);
   mPixelsFilled += destRect.width * destRect.height;
 
+  IntPoint offset = mCurrentRenderTarget->GetOrigin();
+
   
   
   destRect.Inflate(1, 1);
+  destRect.MoveBy(-offset);
   if (!mRenderBound.Intersects(destRect)) {
     return;
   }
@@ -1092,7 +1095,6 @@ CompositorOGL::DrawQuad(const Rect& aRect,
       program->SetColorMatrix(effectColorMatrix->mColorMatrix);
   }
 
-  IntPoint offset = mCurrentRenderTarget->GetOrigin();
   program->SetRenderOffset(offset.x, offset.y);
   LayerScope::SetRenderOffset(offset.x, offset.y);
 
