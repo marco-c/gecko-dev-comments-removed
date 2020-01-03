@@ -36,6 +36,8 @@ function MarkerDetails(parent, splitter) {
 
   this._parent.addEventListener("click", this._onClick);
   this._splitter.addEventListener("mouseup", this._onSplitterMouseUp);
+
+  this.hidden = true;
 }
 
 MarkerDetails.prototype = {
@@ -51,8 +53,27 @@ MarkerDetails.prototype = {
 
 
 
+  get width() {
+    return +this._parent.getAttribute("width");
+  },
+
+  
+
+
+
   set hidden(value) {
-    this._parent.hidden = value;
+    if (this._parent.hidden != value) {
+      this._parent.hidden = value;
+      this.emit("resize");
+    }
+  },
+
+  
+
+
+
+  get hidden() {
+    return this._parent.hidden;
   },
 
   
