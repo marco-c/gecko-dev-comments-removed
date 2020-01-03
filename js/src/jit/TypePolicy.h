@@ -149,6 +149,19 @@ class ConvertToStringPolicy : public TypePolicy
 };
 
 
+
+template <unsigned Op>
+class ConvertToObjectOrNullPolicy : public TypePolicy
+{
+  public:
+    EMPTY_DATA_;
+    static bool staticAdjustInputs(TempAllocator &alloc, MInstruction *def);
+    bool adjustInputs(TempAllocator &alloc, MInstruction *def) {
+        return staticAdjustInputs(alloc, def);
+    }
+};
+
+
 template <unsigned Op>
 class IntPolicy : public BoxInputsPolicy
 {
