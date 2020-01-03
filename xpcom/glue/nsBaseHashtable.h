@@ -273,60 +273,17 @@ public:
 
 
 
-
-
-  typedef size_t
-    (*SizeOfEntryExcludingThisFun)(KeyType aKey,
-                                   const DataType& aData,
-                                   mozilla::MallocSizeOf aMallocSizeOf,
-                                   void* aUserArg);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  size_t SizeOfIncludingThis(SizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-                             mozilla::MallocSizeOf aMallocSizeOf,
-                             void* aUserArg = nullptr)
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   {
-    return aMallocSizeOf(this) +
-      this->SizeOfExcludingThis(aSizeOfEntryExcludingThis, aMallocSizeOf,
-                                aUserArg);
+    return this->mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
   
 
 
-
-
-
-
-
-
-
-
-
-  size_t SizeOfExcludingThis(SizeOfEntryExcludingThisFun aSizeOfEntryExcludingThis,
-                             mozilla::MallocSizeOf aMallocSizeOf,
-                             void* aUserArg = nullptr) const
+  size_t ShallowSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   {
-    size_t n = 0;
-    n += this->mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    if (aSizeOfEntryExcludingThis) {
-      for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
-        n += aSizeOfEntryExcludingThis(iter.Key(), iter.Data(), aMallocSizeOf,
-                                       aUserArg);
-      }
-    }
-    return n;
+    return aMallocSizeOf(this) + ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
 #ifdef DEBUG

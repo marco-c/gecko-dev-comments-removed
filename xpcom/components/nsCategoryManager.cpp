@@ -455,17 +455,6 @@ nsCategoryManager::CollectReports(nsIHandleReportCallback* aHandleReport,
                             "Memory used for the XPCOM category manager.");
 }
 
-static size_t
-SizeOfCategoryManagerTableEntryExcludingThis(nsDepCharHashKey::KeyType aKey,
-                                             const nsAutoPtr<CategoryNode>& aData,
-                                             MallocSizeOf aMallocSizeOf,
-                                             void* aUserArg)
-{
-  
-  
-  return aData.get()->SizeOfExcludingThis(aMallocSizeOf);
-}
-
 size_t
 nsCategoryManager::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
 {
@@ -473,8 +462,11 @@ nsCategoryManager::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
 
   n += PL_SizeOfArenaPoolExcludingPool(&mArena, aMallocSizeOf);
 
-  n += mTable.SizeOfExcludingThis(SizeOfCategoryManagerTableEntryExcludingThis,
-                                  aMallocSizeOf);
+  n += mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto iter = mTable.ConstIter(); !iter.Done(); iter.Next()) {
+    
+    n += iter.Data().get()->SizeOfExcludingThis(aMallocSizeOf);
+  }
 
   return n;
 }

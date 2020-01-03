@@ -377,20 +377,21 @@ StartupCache::SizeOfMapping()
 }
 
 size_t
-StartupCache::HeapSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
+StartupCache::HeapSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
     
     
-    return aMallocSizeOf(this) +
-           mTable.SizeOfExcludingThis(SizeOfEntryExcludingThis, aMallocSizeOf) +
-           mPendingWrites.ShallowSizeOfExcludingThis(aMallocSizeOf);
-}
 
- size_t
-StartupCache::SizeOfEntryExcludingThis(const nsACString& key, const nsAutoPtr<CacheEntry>& data,
-                                       mozilla::MallocSizeOf mallocSizeOf, void *)
-{
-    return data->SizeOfExcludingThis(mallocSizeOf);
+    size_t n = aMallocSizeOf(this);
+
+    n += mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (auto iter = mTable.ConstIter(); !iter.Done(); iter.Next()) {
+        n += iter.Data()->SizeOfIncludingThis(aMallocSizeOf);
+    }
+
+    n += mPendingWrites.ShallowSizeOfExcludingThis(aMallocSizeOf);
+
+    return n;
 }
 
 struct CacheWriteHolder

@@ -161,26 +161,21 @@ nsHTMLCSSStyleSheet::MediumFeaturesChanged(nsPresContext* aPresContext)
   return false;
 }
 
-size_t
-SizeOfCachedStyleAttrsEntryExcludingThis(nsStringHashKey::KeyType& aKey,
-                                         MiscContainer* const& aData,
-                                         mozilla::MallocSizeOf aMallocSizeOf,
-                                         void* userArg)
-{
-  
-  
-  return aKey.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-}
-
  size_t
 nsHTMLCSSStyleSheet::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
   
   
   
-  return mCachedStyleAttrs.SizeOfExcludingThis(SizeOfCachedStyleAttrsEntryExcludingThis,
-                                               aMallocSizeOf,
-                                               nullptr);
+  size_t n = 0;
+  n += mCachedStyleAttrs.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto iter = mCachedStyleAttrs.ConstIter(); !iter.Done(); iter.Next()) {
+    
+    
+    
+    n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  }
+  return n;
 }
 
  size_t

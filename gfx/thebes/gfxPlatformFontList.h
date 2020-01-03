@@ -300,10 +300,8 @@ protected:
 
     
     static size_t
-    SizeOfFamilyNameEntryExcludingThis(const nsAString&               aKey,
-                                       const nsRefPtr<gfxFontFamily>& aFamily,
-                                       mozilla::MallocSizeOf          aMallocSizeOf,
-                                       void*                          aUserArg);
+    SizeOfFontFamilyTableExcludingThis(const FontFamilyTable& aTable,
+                                       mozilla::MallocSizeOf aMallocSizeOf);
 
     
     FontFamilyTable mFontFamilies;

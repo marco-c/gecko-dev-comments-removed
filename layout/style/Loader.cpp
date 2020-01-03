@@ -2547,36 +2547,26 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(Loader, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(Loader, Release)
 
-struct SheetMemoryCounter {
-  size_t size;
-  mozilla::MallocSizeOf mallocSizeOf;
-};
-
-static size_t
-CountSheetMemory(URIPrincipalReferrerPolicyAndCORSModeHashKey* ,
-                 const nsRefPtr<CSSStyleSheet>& aSheet,
-                 mozilla::MallocSizeOf aMallocSizeOf,
-                 void* )
-{
-  
-  
-  
-  
-  if (aSheet->GetOwnerNode() || aSheet->GetParentSheet()) {
-    return 0;
-  }
-  return aSheet->SizeOfIncludingThis(aMallocSizeOf);
-}
-
 size_t
 Loader::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
-  size_t s = aMallocSizeOf(this);
+  size_t n = aMallocSizeOf(this);
 
   if (mSheets) {
-    s += mSheets->mCompleteSheets.SizeOfExcludingThis(CountSheetMemory, aMallocSizeOf);
+    n += mSheets->mCompleteSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (auto iter = mSheets->mCompleteSheets.ConstIter();
+         !iter.Done();
+         iter.Next()) {
+      
+      
+      
+      const nsRefPtr<CSSStyleSheet>& aSheet = iter.Data();
+      n += (aSheet->GetOwnerNode() || aSheet->GetParentSheet())
+         ? 0
+         : aSheet->SizeOfIncludingThis(aMallocSizeOf);
+    }
   }
-  s += mObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  n += mObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   
   
@@ -2589,7 +2579,7 @@ Loader::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   
   
 
-  return s;
+  return n;
 }
 
 } 
