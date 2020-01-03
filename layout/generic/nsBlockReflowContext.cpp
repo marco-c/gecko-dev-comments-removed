@@ -164,7 +164,8 @@ nsBlockReflowContext::ComputeCollapsedBStartMargin(const nsHTMLReflowState& aRS,
                                                availSpace);
             
             
-            if (kid->StyleDisplay()->mBreakType != NS_STYLE_CLEAR_NONE) {
+            if (kid->StyleDisplay()->mBreakType != NS_STYLE_CLEAR_NONE ||
+                !nsBlockFrame::BlockCanIntersectFloats(kid)) {
               *aMayNeedRetry = true;
             }
             if (ComputeCollapsedBStartMargin(innerReflowState, aMargin,
