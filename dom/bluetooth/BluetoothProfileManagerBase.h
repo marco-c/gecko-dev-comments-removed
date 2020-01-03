@@ -103,7 +103,7 @@ public:                                                                      \
                        BluetoothProfileController* aController) override;    \
   virtual void Disconnect(BluetoothProfileController* aController) override; \
   virtual void OnConnect(const nsAString& aErrorStr) override;               \
-  virtual void OnDisconnect(const nsAString& AErrorStr) override;            \
+  virtual void OnDisconnect(const nsAString& aErrorStr) override;            \
   virtual void Reset() override;
 
 END_BLUETOOTH_NAMESPACE

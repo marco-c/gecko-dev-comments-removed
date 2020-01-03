@@ -2521,7 +2521,8 @@ BluetoothDaemonGattClientInterface::Listen(
 
 void
 BluetoothDaemonGattClientInterface::Refresh(
-  int aClientIf, const nsAString& aBdAddr, BluetoothGattClientResultHandler* aRes)
+  int aClientIf, const nsAString& aBdAddr,
+  BluetoothGattClientResultHandler* aRes)
 {
   MOZ_ASSERT(mModule);
 

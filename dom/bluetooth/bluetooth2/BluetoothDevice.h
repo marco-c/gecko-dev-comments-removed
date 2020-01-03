@@ -127,9 +127,13 @@ private:
 
 
 
+
+
   BluetoothDeviceType ConvertUint32ToDeviceType(const uint32_t aValue);
 
   
+
+
 
 
 
@@ -138,6 +142,8 @@ private:
     ConvertStringToDeviceAttribute(const nsAString& aString);
 
   
+
+
 
 
 
