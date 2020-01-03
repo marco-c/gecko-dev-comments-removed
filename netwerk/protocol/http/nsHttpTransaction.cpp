@@ -252,10 +252,10 @@ nsHttpTransaction::Init(uint32_t caps,
 
 #ifdef MOZ_WIDGET_GONK
     if (mAppId != NECKO_NO_APP_ID) {
-        nsCOMPtr<nsINetworkInterface> activeNetwork;
-        GetActiveNetworkInterface(activeNetwork);
-        mActiveNetwork =
-            new nsMainThreadPtrHolder<nsINetworkInterface>(activeNetwork);
+        nsCOMPtr<nsINetworkInfo> activeNetworkInfo;
+        GetActiveNetworkInfo(activeNetworkInfo);
+        mActiveNetworkInfo =
+            new nsMainThreadPtrHolder<nsINetworkInfo>(activeNetworkInfo);
     }
 #endif
 
@@ -823,7 +823,7 @@ nsHttpTransaction::SaveNetworkStats(bool enforce)
 {
 #ifdef MOZ_WIDGET_GONK
     
-    if (!mActiveNetwork || mAppId == NECKO_NO_APP_ID) {
+    if (!mActiveNetworkInfo || mAppId == NECKO_NO_APP_ID) {
         return NS_OK;
     }
 
@@ -843,7 +843,7 @@ nsHttpTransaction::SaveNetworkStats(bool enforce)
     
     
     nsRefPtr<nsRunnable> event =
-        new SaveNetworkStatsEvent(mAppId, mIsInBrowser, mActiveNetwork,
+        new SaveNetworkStatsEvent(mAppId, mIsInBrowser, mActiveNetworkInfo,
                                   mCountRecv, mCountSent, false);
     NS_DispatchToMainThread(event);
 
