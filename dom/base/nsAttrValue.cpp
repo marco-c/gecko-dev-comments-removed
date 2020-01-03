@@ -29,6 +29,11 @@
 #include "nsIDocument.h"
 #include <algorithm>
 
+#ifdef LoadImage
+
+#undef LoadImage
+#endif
+
 using namespace mozilla;
 
 #define MISC_STR_PTR(_cont) \
