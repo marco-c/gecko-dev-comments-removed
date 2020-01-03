@@ -544,7 +544,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
     
     
-    Node standaloneFunctionBody(HandleFunction fun, const AutoNameVector& formals,
+    Node standaloneFunctionBody(HandleFunction fun, Handle<PropertyNameVector> formals,
                                 GeneratorKind generatorKind,
                                 Directives inheritedDirectives, Directives* newDirectives,
                                 HandleObject enclosingStaticScope);
