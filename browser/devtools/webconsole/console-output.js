@@ -44,6 +44,7 @@ const COMPAT = {
     INPUT: 4,
     OUTPUT: 5,
     SECURITY: 6,
+    SERVER: 7,
   },
 
   
@@ -68,11 +69,12 @@ const COMPAT = {
     [ null,         null,         null,   null,          ],  
     [ null,         null,         null,   null,          ],  
     [ "secerror",   "secwarn",    null,   null,          ],  
+    [ "servererror", "serverwarn", "serverinfo", "serverlog",   ],  
   ],
 
   
   CATEGORY_CLASS_FRAGMENTS: [ "network", "cssparser", "exception", "console",
-                              "input", "output", "security" ],
+                              "input", "output", "security", "server" ],
 
   
   SEVERITY_CLASS_FRAGMENTS: [ "error", "warn", "info", "log" ],
@@ -1300,7 +1302,7 @@ Messages.ConsoleGeneric = function(packet)
   let options = {
     className: "cm-s-mozilla",
     timestamp: packet.timeStamp,
-    category: "webdev",
+    category: packet.category || "webdev",
     severity: CONSOLE_API_LEVELS_TO_SEVERITIES[packet.level],
     prefix: packet.prefix,
     private: packet.private,
@@ -1571,7 +1573,7 @@ Messages.ConsoleTrace = function(packet)
   let options = {
     className: "cm-s-mozilla",
     timestamp: packet.timeStamp,
-    category: "webdev",
+    category: packet.category || "webdev",
     severity: CONSOLE_API_LEVELS_TO_SEVERITIES[packet.level],
     private: packet.private,
     filterDuplicates: true,
@@ -1708,7 +1710,7 @@ Messages.ConsoleTable = function(packet)
   let options = {
     className: "cm-s-mozilla",
     timestamp: packet.timeStamp,
-    category: "webdev",
+    category: packet.category || "webdev",
     severity: CONSOLE_API_LEVELS_TO_SEVERITIES[packet.level],
     private: packet.private,
     filterDuplicates: false,
