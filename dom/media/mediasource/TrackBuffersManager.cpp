@@ -877,7 +877,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
   }
 
   
-  mActiveTrack = false;
+  bool activeTrack = false;
 
   
   uint32_t streamID = sStreamSourceID++;
@@ -910,7 +910,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
       
       
       
-      mActiveTrack = true;
+      activeTrack = true;
       
       
       
@@ -942,7 +942,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
       
       
       
-      mActiveTrack = true;
+      activeTrack = true;
       
       
       
@@ -955,6 +955,9 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
     
     
     
+    if (activeTrack) {
+      mActiveTrack = true;
+    }
 
     
     mFirstInitializationSegmentReceived = true;
