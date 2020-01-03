@@ -48,6 +48,7 @@ typedef enum {
   GMPEndOfEnumeration = 11,
   GMPInvalidArgErr = 12,
   GMPAbortedErr = 13,
+  GMPRecordCorrupted = 14,
   GMPLastErr 
 } GMPErr;
 
