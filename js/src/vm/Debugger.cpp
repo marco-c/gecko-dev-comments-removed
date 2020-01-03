@@ -6953,7 +6953,7 @@ null(CallArgs& args)
     return true;
 }
 
- JSObject*
+ SavedFrame*
 Debugger::getObjectAllocationSite(JSObject& obj)
 {
     JSObject* metadata = GetObjectMetadata(&obj);
@@ -6962,7 +6962,7 @@ Debugger::getObjectAllocationSite(JSObject& obj)
 
     MOZ_ASSERT(!metadata->is<WrapperObject>());
     return SavedFrame::isSavedFrameAndNotProto(*metadata)
-        ? metadata
+        ? &metadata->as<SavedFrame>()
         : nullptr;
 }
 
