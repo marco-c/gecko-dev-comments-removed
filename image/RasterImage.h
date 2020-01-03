@@ -327,7 +327,7 @@ private:
 
 
 
-  nsresult SetMetadata(const ImageMetadata& aMetadata, bool aFromMetadataDecode);
+  void SetMetadata(const ImageMetadata& aMetadata, bool aFromMetadataDecode);
 
   
 
