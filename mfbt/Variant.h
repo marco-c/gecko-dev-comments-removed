@@ -289,14 +289,14 @@ public:
   }
 
   
-  explicit Variant(const Variant& aRhs)
+  Variant(const Variant& aRhs)
     : tag(aRhs.tag)
   {
     Impl::copyConstruct(ptr(), aRhs);
   }
 
   
-  explicit Variant(Variant&& aRhs)
+  Variant(Variant&& aRhs)
     : tag(aRhs.tag)
   {
     Impl::moveConstruct(ptr(), Move(aRhs));
