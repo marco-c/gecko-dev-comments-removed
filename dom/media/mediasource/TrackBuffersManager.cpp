@@ -97,6 +97,7 @@ TrackBuffersManager::TrackBuffersManager(dom::SourceBufferAttributes* aAttribute
   , mAppendState(AppendState::WAITING_FOR_SEGMENT)
   , mBufferFull(false)
   , mFirstInitializationSegmentReceived(false)
+  , mNewSegmentStarted(false)
   , mActiveTrack(false)
   , mType(aType)
   , mParser(ContainerParser::CreateForMIMEType(aType))
@@ -655,10 +656,12 @@ TrackBuffersManager::SegmentParserLoop()
           
           RecreateParser(false);
         }
+        mNewSegmentStarted = true;
         continue;
       }
       if (mParser->IsMediaSegmentPresent(mInputBuffer)) {
         SetAppendState(AppendState::PARSING_MEDIA_SEGMENT);
+        mNewSegmentStarted = true;
         continue;
       }
       
@@ -669,7 +672,7 @@ TrackBuffersManager::SegmentParserLoop()
     }
 
     int64_t start, end;
-    mParser->ParseStartAndEndTimestamps(mInputBuffer, start, end);
+    bool newData = mParser->ParseStartAndEndTimestamps(mInputBuffer, start, end);
     mProcessedInput += mInputBuffer->Length();
 
     
@@ -696,6 +699,22 @@ TrackBuffersManager::SegmentParserLoop()
         NeedMoreData();
         return;
       }
+
+      
+      
+      
+      
+      
+      if (newData) {
+        if (mNewSegmentStarted && mLastParsedEndTime.isSome() &&
+            start < mLastParsedEndTime.ref().ToMicroseconds()) {
+          ResetDemuxingState();
+          return;
+        }
+        mNewSegmentStarted = false;
+        mLastParsedEndTime = Some(TimeUnit::FromMicroseconds(end));
+      }
+
       
       nsRefPtr<TrackBuffersManager> self = this;
       mProcessingRequest.Begin(CodedFrameProcessing()
@@ -756,6 +775,7 @@ TrackBuffersManager::ShutdownDemuxers()
     mAudioTracks.mDemuxer = nullptr;
   }
   mInputDemuxer = nullptr;
+  mLastParsedEndTime.reset();
 }
 
 void
@@ -778,6 +798,58 @@ TrackBuffersManager::CreateDemuxerforMIMEType()
 #endif
   NS_WARNING("Not supported (yet)");
   return;
+}
+
+
+void
+TrackBuffersManager::ResetDemuxingState()
+{
+  MOZ_ASSERT(mParser && mParser->HasInitData());
+  RecreateParser(true);
+  mCurrentInputBuffer = new SourceBufferResource(mType);
+  
+  
+  
+  mCurrentInputBuffer->AppendData(mParser->InitData());
+  CreateDemuxerforMIMEType();
+  if (!mInputDemuxer) {
+    RejectAppend(NS_ERROR_FAILURE, __func__);
+    return;
+  }
+  mDemuxerInitRequest.Begin(mInputDemuxer->Init()
+                      ->Then(GetTaskQueue(), __func__,
+                             this,
+                             &TrackBuffersManager::OnDemuxerResetDone,
+                             &TrackBuffersManager::OnDemuxerInitFailed));
+}
+
+void
+TrackBuffersManager::OnDemuxerResetDone(nsresult)
+{
+  MOZ_ASSERT(OnTaskQueue());
+  MSE_DEBUG("mAbort:%d", static_cast<bool>(mAbort));
+  mDemuxerInitRequest.Complete();
+  if (mAbort) {
+    RejectAppend(NS_ERROR_ABORT, __func__);
+    return;
+  }
+
+  
+  uint32_t numVideos = mInputDemuxer->GetNumberTracks(TrackInfo::kVideoTrack);
+  if (numVideos) {
+    
+    mVideoTracks.mDemuxer = mInputDemuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+    MOZ_ASSERT(mVideoTracks.mDemuxer);
+  }
+
+  uint32_t numAudios = mInputDemuxer->GetNumberTracks(TrackInfo::kAudioTrack);
+  if (numAudios) {
+    
+    mAudioTracks.mDemuxer = mInputDemuxer->GetTrackDemuxer(TrackInfo::kAudioTrack, 0);
+    MOZ_ASSERT(mAudioTracks.mDemuxer);
+  }
+
+  SegmentParserLoop();
 }
 
 void
@@ -1056,6 +1128,14 @@ TrackBuffersManager::CodedFrameProcessing()
     
     uint32_t length =
       mediaRange.mEnd - (mProcessedInput - mInputBuffer->Length());
+    if (!length) {
+      
+      
+      
+      nsRefPtr<CodedFrameProcessingPromise> p = mProcessingPromise.Ensure(__func__);
+      CompleteCodedFrameProcessing();
+      return p;
+    }
     nsRefPtr<MediaByteBuffer> segment = new MediaByteBuffer;
     if (!segment->AppendElements(mInputBuffer->Elements(), length, fallible)) {
       return CodedFrameProcessingPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
