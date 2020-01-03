@@ -1165,3 +1165,6 @@ pref("dom.vr.cardboard.enabled", true);
 
 
 pref("dom.audiochannel.mutedByDefault", true);
+
+
+pref("dom.presentation.device.name", "Firefox OS");
