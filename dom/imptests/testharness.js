@@ -517,19 +517,27 @@
 
     function promise_test(func, name, properties) {
         var test = async_test(name, properties);
-        Promise.resolve(test.step(func, test, test))
-            .then(
-                function() {
-                    test.done();
-                })
-            .catch(test.step_func(
-                function(value) {
-                    if (value instanceof AssertionError) {
-                        throw value;
-                    }
-                    assert(false, "promise_test", null,
-                           "Unhandled rejection with value: ${value}", {value:value});
-                }));
+        
+        test.step(function() {
+            if (!tests.promise_tests) {
+                tests.promise_tests = Promise.resolve();
+            }
+        });
+        tests.promise_tests = tests.promise_tests.then(function() {
+            return Promise.resolve(test.step(func, test, test))
+                .then(
+                    function() {
+                        test.done();
+                    })
+                .catch(test.step_func(
+                    function(value) {
+                        if (value instanceof AssertionError) {
+                            throw value;
+                        }
+                        assert(false, "promise_test", null,
+                               "Unhandled rejection with value: ${value}", {value:value});
+                    }));
+        });
     }
 
     function promise_rejects(test, expected, promise) {
@@ -650,6 +658,14 @@
         object.addEventListener(event, callback, false);
     }
 
+    function step_timeout(f, t) {
+        var outer_this = this;
+        var args = Array.prototype.slice.call(arguments, 2);
+        return setTimeout(function() {
+            f.apply(outer_this, args);
+        }, t * tests.timeout_multiplier);
+    }
+
     expose(test, 'test');
     expose(async_test, 'async_test');
     expose(promise_test, 'promise_test');
@@ -658,6 +674,7 @@
     expose(setup, 'setup');
     expose(done, 'done');
     expose(on_event, 'on_event');
+    expose(step_timeout, 'step_timeout');
 
     
 
@@ -1414,6 +1431,14 @@
         });
     };
 
+    Test.prototype.step_timeout = function(f, timeout) {
+        var test_this = this;
+        var args = Array.prototype.slice.call(arguments, 2);
+        return setTimeout(this.step_func(function() {
+            return f.apply(test_this, args);
+        }, timeout * tests.timeout_multiplier));
+    }
+
     Test.prototype.add_cleanup = function(callback) {
         this.cleanup_callbacks.push(callback);
     };
@@ -2048,28 +2073,11 @@
             log.removeChild(log.lastChild);
         }
 
-        var script_prefix = null;
-        var scripts = document.getElementsByTagName("script");
-        for (var i = 0; i < scripts.length; i++) {
-            var src;
-            if (scripts[i].src) {
-                src = scripts[i].src;
-            } else if (scripts[i].href) {
-                
-                src = scripts[i].href.baseVal;
-            }
-
-            var matches = src && src.match(/^(.*\/|)testharness\.js$/);
-            if (matches) {
-                script_prefix = matches[1];
-                break;
-            }
-        }
-
-        if (script_prefix !== null) {
+        var harness_url = get_harness_url();
+        if (harness_url !== null) {
             var stylesheet = output_document.createElementNS(xhtml_ns, "link");
             stylesheet.setAttribute("rel", "stylesheet");
-            stylesheet.setAttribute("href", script_prefix + "testharness.css");
+            stylesheet.setAttribute("href", harness_url + "testharness.css");
             var heads = output_document.getElementsByTagName("head");
             if (heads.length) {
                 heads[0].appendChild(stylesheet);
@@ -2425,6 +2433,7 @@
 
     AssertionError.prototype.get_stack = function() {
         var stack = new Error().stack;
+        
         if (!stack) {
             try {
                 throw new Error();
@@ -2432,18 +2441,30 @@
                 stack = e.stack;
             }
         }
+
         var lines = stack.split("\n");
-        var rv = [];
-        var re = /\/resources\/testharness\.js/;
+
+        
+        
+        var re = new RegExp((get_script_url() || "\\btestharness.js") + ":\\d+:\\d+");
+
+        
+        
         var i = 0;
-        
-        while (!re.test(lines[i])) {
-            i++
+        while (!re.test(lines[i]) && i < lines.length) {
+            i++;
         }
+
         
-        while (re.test(lines[i])) {
-            i++
+        while (re.test(lines[i]) && i < lines.length) {
+            i++;
         }
+
+        
+        if (i >= lines.length) {
+            return stack;
+        }
+
         return lines.slice(i).join("\n");
     }
 
@@ -2491,7 +2512,7 @@
         Array.prototype.push.apply(array, items);
     }
 
-    function forEach (array, callback, thisObj)
+    function forEach(array, callback, thisObj)
     {
         for (var i = 0; i < array.length; i++) {
             if (array.hasOwnProperty(i)) {
@@ -2533,6 +2554,41 @@
         } catch (e) {
             return false;
         }
+    }
+
+    
+    function get_script_url()
+    {
+        if (!('document' in self)) {
+            return undefined;
+        }
+
+        var scripts = document.getElementsByTagName("script");
+        for (var i = 0; i < scripts.length; i++) {
+            var src;
+            if (scripts[i].src) {
+                src = scripts[i].src;
+            } else if (scripts[i].href) {
+                
+                src = scripts[i].href.baseVal;
+            }
+
+            var matches = src && src.match(/^(.*\/|)testharness\.js$/);
+            if (matches) {
+                return src;
+            }
+        }
+        return undefined;
+    }
+
+    
+
+    function get_harness_url()
+    {
+        var script_url = get_script_url();
+
+        
+        return script_url ? script_url.slice(0, script_url.lastIndexOf('/') + 1) : undefined;
     }
 
     function supports_post_message(w)
