@@ -258,8 +258,6 @@ public:
   
   virtual void WillRefresh(mozilla::TimeStamp aTime) override;
 
-  void FlushAnimations(FlushFlags aFlags);
-
   
 
 
