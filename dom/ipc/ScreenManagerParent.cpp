@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/unused.h"
 #include "nsIWidget.h"
