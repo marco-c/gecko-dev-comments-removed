@@ -843,9 +843,6 @@ ContentChild::InitXPCOM()
         global->SetInitialProcessData(data);
     }
 
-    DebugOnly<FileUpdateDispatcher*> observer = FileUpdateDispatcher::GetSingleton();
-    NS_ASSERTION(observer, "FileUpdateDispatcher is null");
-
     
     nsRefPtr<SystemMessageHandledObserver> sysMsgObserver =
         new SystemMessageHandledObserver();
