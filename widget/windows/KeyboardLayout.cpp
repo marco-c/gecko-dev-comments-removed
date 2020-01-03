@@ -1296,6 +1296,14 @@ NativeKey::HandleAppCommandMessage() const
   
   
   bool dispatchKeyEvent = (GET_DEVICE_LPARAM(mMsg.lParam) == FAPPCOMMAND_KEY);
+  if (dispatchKeyEvent) {
+    
+    
+    
+    
+    dispatchKeyEvent =
+      WinUtils::IsOurProcessWindow(reinterpret_cast<HWND>(mMsg.wParam));
+  }
 
   bool consumed = false;
 
