@@ -524,7 +524,8 @@ class B2GBuild(LocalesMixin, PurgeMixin,
         cmd = ['./build.sh']
         if target is not None:
             
-            if target == 'package-tests':
+            
+            if target in ('package-tests', 'blobfree'):
                 cmd.append('-j1')
             else:
                 
