@@ -66,6 +66,17 @@ const NOTIFICATION_DELAY_NEXT_RUNS_MSEC = 10 * 1000;
 
 
 
+let Policy = {
+  now: () => new Date(),
+  setShowInfobarTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
+  clearShowInfobarTimeout: (id) => clearTimeout(id),
+};
+
+
+
+
+
+
 
 
 
@@ -129,6 +140,27 @@ this.TelemetryReportingPolicy = {
 
   canUpload: function() {
     return TelemetryReportingPolicyImpl.canUpload();
+  },
+
+  
+
+
+  reset: function() {
+    return TelemetryReportingPolicyImpl.reset();
+  },
+
+  
+
+
+  testIsUserNotified: function() {
+    return TelemetryReportingPolicyImpl.isUserNotifiedOfCurrentPolicy;
+  },
+
+  
+
+
+  testInfobarShown: function() {
+    return TelemetryReportingPolicyImpl._infobarShownCallback();
   },
 };
 
@@ -254,6 +286,14 @@ let TelemetryReportingPolicyImpl = {
   
 
 
+  reset: function() {
+    this.shutdown();
+    return this.setup();
+  },
+
+  
+
+
   setup: function() {
     this._log.trace("setup");
 
@@ -272,7 +312,7 @@ let TelemetryReportingPolicyImpl = {
 
     this._detachObservers();
 
-    clearTimeout(this._startupNotificationTimerId);
+    Policy.clearShowInfobarTimeout(this._startupNotificationTimerId);
   },
 
   
@@ -354,7 +394,7 @@ let TelemetryReportingPolicyImpl = {
 
   _recordNotificationData: function() {
     this._log.trace("_recordNotificationData");
-    this.dataSubmissionPolicyNotifiedDate = new Date();
+    this.dataSubmissionPolicyNotifiedDate = Policy.now();
     this.dataSubmissionPolicyAcceptedVersion = this.currentPolicyVersion;
     
     
@@ -370,7 +410,7 @@ let TelemetryReportingPolicyImpl = {
     const delay =
       isFirstRun ? NOTIFICATION_DELAY_FIRST_RUN_MSEC: NOTIFICATION_DELAY_NEXT_RUNS_MSEC;
 
-    this._startupNotificationTimerId = setTimeout(
+    this._startupNotificationTimerId = Policy.setShowInfobarTimeout(
         
         () => this.canUpload(), delay);
     
