@@ -4,6 +4,8 @@
 
 
 
+
+
 "use strict";
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -35,7 +37,8 @@ let startup = Task.async(function*(inspector) {
 
   
   if (!typeof AnimationsPanel === "undefined") {
-    throw new Error("AnimationsPanel was not loaded in the animationinspector window");
+    throw new Error("AnimationsPanel was not loaded in the " +
+                    "animationinspector window");
   }
 
   
@@ -170,7 +173,7 @@ let AnimationsController = {
            gInspector.sidebar.getCurrentTabID() == "animationinspector";
   },
 
-  onPanelVisibilityChange: Task.async(function*(e, id) {
+  onPanelVisibilityChange: Task.async(function*() {
     if (this.isPanelVisible()) {
       this.onNewNodeFront();
       this.startAllAutoRefresh();
@@ -181,14 +184,15 @@ let AnimationsController = {
 
   onNewNodeFront: Task.async(function*() {
     
-    if (!this.isPanelVisible() || this.nodeFront === gInspector.selection.nodeFront) {
+    if (!this.isPanelVisible() ||
+        this.nodeFront === gInspector.selection.nodeFront) {
       return;
     }
 
     let done = gInspector.updating("animationscontroller");
 
-    if(!gInspector.selection.isConnected() ||
-       !gInspector.selection.isElementNode()) {
+    if (!gInspector.selection.isConnected() ||
+        !gInspector.selection.isElementNode()) {
       yield this.destroyAnimationPlayers();
       this.emit(this.PLAYERS_UPDATED_EVENT);
       done();
@@ -207,7 +211,7 @@ let AnimationsController = {
 
   toggleAll: function() {
     if (!this.hasToggleAll) {
-      return promis.resolve();
+      return promise.resolve();
     }
 
     return this.animationsFront.toggleAll().catch(Cu.reportError);
