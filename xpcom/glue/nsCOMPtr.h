@@ -110,9 +110,7 @@
 #endif
 
 namespace mozilla {
-namespace dom {
 template<class T> class OwningNonNull;
-} 
 } 
 
 template<class T>
@@ -535,7 +533,7 @@ public:
 
   
   template<class U>
-  MOZ_IMPLICIT nsCOMPtr(const mozilla::dom::OwningNonNull<U>& aOther);
+  MOZ_IMPLICIT nsCOMPtr(const mozilla::OwningNonNull<U>& aOther);
 
 
   
@@ -630,7 +628,7 @@ public:
 
   
   template<class U>
-  nsCOMPtr<T>& operator=(const mozilla::dom::OwningNonNull<U>& aOther);
+  nsCOMPtr<T>& operator=(const mozilla::OwningNonNull<U>& aOther);
 
   
   void swap(nsCOMPtr<T>& aRhs)

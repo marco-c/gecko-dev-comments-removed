@@ -1831,7 +1831,7 @@ void
 nsEditor::NotifyEditorObservers(NotificationForEditorObservers aNotification)
 {
   
-  nsTArray<mozilla::dom::OwningNonNull<nsIEditorObserver>> observers(mEditorObservers);
+  nsTArray<mozilla::OwningNonNull<nsIEditorObserver>> observers(mEditorObservers);
   switch (aNotification) {
     case eNotifyEditorObserversOfEnd:
       mIsInEditAction = false;

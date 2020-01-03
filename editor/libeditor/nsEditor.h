@@ -7,7 +7,7 @@
 #define __editor_h__
 
 #include "mozilla/Assertions.h"         
-#include "mozilla/dom/OwningNonNull.h"  
+#include "mozilla/OwningNonNull.h"      
 #include "mozilla/dom/Text.h"
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
@@ -848,11 +848,11 @@ protected:
 
   
   
-  nsTArray<mozilla::dom::OwningNonNull<nsIEditActionListener>> mActionListeners;
+  nsTArray<mozilla::OwningNonNull<nsIEditActionListener>> mActionListeners;
   
-  nsTArray<mozilla::dom::OwningNonNull<nsIEditorObserver>> mEditorObservers;
+  nsTArray<mozilla::OwningNonNull<nsIEditorObserver>> mEditorObservers;
   
-  nsTArray<mozilla::dom::OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
+  nsTArray<mozilla::OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
 
   nsSelectionState  mSavedSel;           
   nsRangeUpdater    mRangeUpdater;       

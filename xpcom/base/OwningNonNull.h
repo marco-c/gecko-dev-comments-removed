@@ -6,14 +6,13 @@
 
 
 
-#ifndef mozilla_dom_OwningNonNull_h
-#define mozilla_dom_OwningNonNull_h
+#ifndef mozilla_OwningNonNull_h
+#define mozilla_OwningNonNull_h
 
 #include "nsAutoPtr.h"
 #include "nsCycleCollectionNoteChild.h"
 
 namespace mozilla {
-namespace dom {
 
 template<class T>
 class OwningNonNull
@@ -132,30 +131,29 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
 }
 
 } 
-} 
 
 
 template<class T> template<class U>
-nsCOMPtr<T>::nsCOMPtr(const mozilla::dom::OwningNonNull<U>& aOther)
+nsCOMPtr<T>::nsCOMPtr(const mozilla::OwningNonNull<U>& aOther)
   : nsCOMPtr(aOther.get())
 {}
 
 template<class T> template<class U>
 nsCOMPtr<T>&
-nsCOMPtr<T>::operator=(const mozilla::dom::OwningNonNull<U>& aOther)
+nsCOMPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther)
 {
   return operator=(aOther.get());
 }
 
 
 template<class T> template<class U>
-nsRefPtr<T>::nsRefPtr(const mozilla::dom::OwningNonNull<U>& aOther)
+nsRefPtr<T>::nsRefPtr(const mozilla::OwningNonNull<U>& aOther)
   : nsRefPtr(aOther.get())
 {}
 
 template<class T> template<class U>
 nsRefPtr<T>&
-nsRefPtr<T>::operator=(const mozilla::dom::OwningNonNull<U>& aOther)
+nsRefPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther)
 {
   return operator=(aOther.get());
 }
