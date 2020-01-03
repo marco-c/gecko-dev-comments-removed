@@ -19,6 +19,7 @@
 #include "mozilla/Pair.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/Tuple.h"
 #include "nsIMemoryReporter.h"
 #include "gfx2DGlue.h"
 #include "gfxPattern.h"  
@@ -661,11 +662,8 @@ public:
     DrawableFrameRef ref;
     MatchType matchType = MatchType::NOT_FOUND;
     while (true) {
-      
-      Pair<already_AddRefed<CachedSurface>, MatchType> lookupResult =
+      Tie(surface, matchType) =
         cache->LookupBestMatch(aSurfaceKey, aAlternateFlags);
-      surface = lookupResult.first();
-      matchType = lookupResult.second();
 
       if (!surface) {
         return LookupResult(matchType);  
