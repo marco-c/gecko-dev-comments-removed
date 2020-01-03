@@ -255,7 +255,11 @@ public:
     static bool IsOptimus();
 
     bool IsWARP() { return mIsWARP; }
-    bool DoesD3D11TextureSharingWork() { return mDoesD3D11TextureSharingWork; }
+
+    
+    bool CompositorD3D11TextureSharingWorks() const {
+      return mCompositorD3D11TextureSharingWorks;
+    }
 
     bool SupportsApzWheelInput() const override {
       return true;
@@ -338,7 +342,7 @@ private:
     bool mIsWARP;
     bool mHasDeviceReset;
     bool mHasFakeDeviceReset;
-    bool mDoesD3D11TextureSharingWork;
+    bool mCompositorD3D11TextureSharingWorks;
     DeviceResetReason mDeviceResetReason;
 
     
