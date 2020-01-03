@@ -24,7 +24,7 @@ this.TabAttributes = Object.freeze({
 });
 
 let TabAttributesInternal = {
-  _attrs: new Set(),
+  _attrs: new Set(["muted"]),
 
   
   
