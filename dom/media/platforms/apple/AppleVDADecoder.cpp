@@ -75,7 +75,7 @@ AppleVDADecoder::~AppleVDADecoder()
 nsresult
 AppleVDADecoder::Init()
 {
-  if (!gfxPlatform::CanUseHardwareVideoDecoding()) {
+  if (!gfxPlatform::GetPlatform()->CanUseHardwareVideoDecoding()) {
     
     return NS_ERROR_FAILURE;
   }
