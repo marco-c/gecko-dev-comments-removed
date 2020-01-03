@@ -70,6 +70,7 @@ const {
 } = require("devtools/server/actors/highlighter");
 const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
   require("devtools/server/actors/layout");
+const LayoutHelpers = require("devtools/toolkit/layout-helpers");
 
 const {EventParsers} = require("devtools/toolkit/event-parsers");
 
@@ -115,8 +116,6 @@ const PSEUDO_SELECTORS = [
 
 let HELPER_SHEET = ".__fx-devtools-hide-shortcut__ { visibility: hidden !important } ";
 HELPER_SHEET += ":-moz-devtools-highlighted { outline: 2px dashed #F06!important; outline-offset: -2px!important } ";
-
-Cu.import("resource://gre/modules/devtools/LayoutHelpers.jsm");
 
 loader.lazyRequireGetter(this, "DevToolsUtils",
                          "devtools/toolkit/DevToolsUtils");
@@ -1471,7 +1470,6 @@ var WalkerActor = protocol.ActorClass({
     
     
     actor.observer = new actor.rawNode.defaultView.MutationObserver(this.onMutations);
-    actor.observer.mergeAttributeRecords = true;
     actor.observer.observe(node, {
       attributes: true,
       characterData: true,
@@ -2737,7 +2735,29 @@ var WalkerActor = protocol.ActorClass({
       this._orphaned = new Set();
     }
 
-    return pending;
+
+    
+    
+    let targetMap = {};
+    let filtered = pending.reverse().filter(mutation => {
+      if (mutation.type === "attributes") {
+        if (!targetMap[mutation.target]) {
+          targetMap[mutation.target] = {};
+        }
+        let attributesForTarget = targetMap[mutation.target];
+
+        if (attributesForTarget[mutation.attributeName]) {
+          
+          
+          return false;
+        }
+
+        attributesForTarget[mutation.attributeName] = true;
+      }
+      return true;
+    }).reverse();
+
+    return filtered;
   }, {
     request: {
       cleanup: Option(0)

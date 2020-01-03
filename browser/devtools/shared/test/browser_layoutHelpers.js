@@ -2,7 +2,7 @@
 
 
 
-let {LayoutHelpers} = Cu.import("resource://gre/modules/devtools/LayoutHelpers.jsm", {});
+const LayoutHelpers = require("devtools/toolkit/layout-helpers");
 
 
 const TEST_URI = TEST_URI_ROOT + "browser_layoutHelpers.html";
