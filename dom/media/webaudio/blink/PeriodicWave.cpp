@@ -181,7 +181,9 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
     unsigned halfSize = fftSize / 2;
     unsigned i;
 
-    numberOfComponents = std::min(numberOfComponents, halfSize + 1);
+    
+    
+    numberOfComponents = std::min(numberOfComponents, halfSize);
 
     m_bandLimitedTables.SetCapacity(m_numberOfRanges);
 
@@ -218,16 +220,12 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
             realP[i] = 0;
             imagP[i] = 0;
         }
-        
-        if (numberOfPartials < halfSize + 1)
-            realP[halfSize] = 0;
 
         
         realP[0] = 0;
 
         
         imagP[0] = 0;
-        imagP[halfSize] = 0;
 
         
         AlignedAudioFloatArray* table = new AlignedAudioFloatArray(m_periodicWaveSize);
