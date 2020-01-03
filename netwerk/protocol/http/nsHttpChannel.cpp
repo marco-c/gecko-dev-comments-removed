@@ -5197,10 +5197,6 @@ nsHttpChannel::BeginConnect()
         
         
         
-
-        
-        uint32_t loadFlags = mLoadFlags;
-
         mLoadFlags |= LOAD_ONLY_FROM_CACHE;
         mLoadFlags |= LOAD_FROM_CACHE;
         mLoadFlags &= ~VALIDATE_ALWAYS;
@@ -5211,8 +5207,7 @@ nsHttpChannel::BeginConnect()
             return rv;
         }
 
-        nsCOMPtr<nsIPrincipal> principal = GetURIPrincipal();
-        rv = pas->GetResource(principal, loadFlags, GetLoadContextInfo(this), this);
+        rv = pas->RequestURI(mURI, GetLoadContextInfo(this), this);
         if (NS_FAILED(rv)) {
             AsyncAbort(rv);
         }

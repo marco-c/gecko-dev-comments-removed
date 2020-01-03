@@ -59,13 +59,6 @@ function packagedAppContentHandler(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
-function getPrincipal(url) {
-  let uri = createURI(url);
-  return Components.classes["@mozilla.org/scriptsecuritymanager;1"]
-         .getService(Ci.nsIScriptSecurityManager)
-         .getNoAppCodebasePrincipal(uri);
-}
-
 
 
 var testData = {
@@ -177,10 +170,10 @@ var cacheListener = new packagedResourceListener(testData.content[0].data);
 
 
 function test_bad_args() {
-  Assert.throws(() => { paservice.getResource(getPrincipal("http://test.com"), 0, LoadContextInfo.default, cacheListener); }, "url's with no !// aren't allowed");
-  Assert.throws(() => { paservice.getResource(getPrincipal("http://test.com/package!//test"), 0, LoadContextInfo.default, null); }, "should have a callback");
-  Assert.throws(() => { paservice.getResource(null, 0, LoadContextInfo.default, cacheListener); }, "should have a URI");
-  Assert.throws(() => { paservice.getResource(getPrincipal("http://test.com/package!//test"), null, cacheListener); }, "should have a LoadContextInfo");
+  Assert.throws(() => { paservice.requestURI(createURI("http://test.com"), LoadContextInfo.default, cacheListener); }, "url's with no !// aren't allowed");
+  Assert.throws(() => { paservice.requestURI(createURI("http://test.com/package!//test"), LoadContextInfo.default, null); }, "should have a callback");
+  Assert.throws(() => { paservice.requestURI(null, LoadContextInfo.default, cacheListener); }, "should have a URI");
+  Assert.throws(() => { paservice.requestURI(createURI("http://test.com/package!//test"), null, cacheListener); }, "should have a LoadContextInfo");
   run_next_test();
 }
 
@@ -189,13 +182,13 @@ function test_bad_args() {
 
 function test_callback_gets_called() {
   packagePath = "/package";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, cacheListener);
+  paservice.requestURI(createURI(uri + packagePath + "!//index.html"), LoadContextInfo.default, cacheListener);
 }
 
 
 function test_same_content() {
   packagePath = "/package";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, cacheListener);
+  paservice.requestURI(createURI(uri + packagePath + "!//index.html"), LoadContextInfo.default, cacheListener);
 }
 
 
@@ -207,7 +200,7 @@ function test_request_number() {
 
 function test_updated_package() {
   packagePath = "/package";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default,
+  paservice.requestURI(createURI(uri + packagePath + "!//index.html"), LoadContextInfo.default,
       new packagedResourceListener(testData.content[0].data.replace(/\.\.\./g, 'xxx')));
 }
 
@@ -231,13 +224,13 @@ var listener404 = {
 
 function test_package_does_not_exist() {
   packagePath = "/package_non_existent";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, listener404);
+  paservice.requestURI(createURI(uri + packagePath + "!//index.html"), LoadContextInfo.default, listener404);
 }
 
 
 function test_file_does_not_exist() {
   packagePath = "/package"; 
-  paservice.getResource(getPrincipal(uri + packagePath + "!//file_non_existent.html"), 0, LoadContextInfo.default, listener404);
+  paservice.requestURI(createURI(uri + packagePath + "!//file_non_existent.html"), LoadContextInfo.default, listener404);
 }
 
 
@@ -278,13 +271,13 @@ function packagedAppBadContentHandler(metadata, response)
 
 function test_bad_package() {
   packagePath = "/badPackage";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, cacheListener);
+  paservice.requestURI(createURI(uri + packagePath + "!//index.html"), LoadContextInfo.default, cacheListener);
 }
 
 
 function test_bad_package_404() {
   packagePath = "/badPackage";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//file_non_existent.html"), 0, LoadContextInfo.default, listener404);
+  paservice.requestURI(createURI(uri + packagePath + "!//file_non_existent.html"), LoadContextInfo.default, listener404);
 }
 
 
