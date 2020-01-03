@@ -59,6 +59,16 @@ ProfilerActor.prototype = {
     return { features: nsIProfilerModule.GetFeatures([]) };
   },
 
+  onGetBufferInfo: function(request) {
+    let position = {}, totalSize = {}, generation = {};
+    nsIProfilerModule.GetBufferInfo(position, totalSize, generation);
+    return {
+      position: position.value,
+      totalSize: totalSize.value,
+      generation: generation.value
+    }
+  },
+
   
 
 
@@ -321,6 +331,7 @@ function checkProfilerConsumers() {
 
 
 ProfilerActor.prototype.requestTypes = {
+  "getBufferInfo": ProfilerActor.prototype.onGetBufferInfo,
   "getFeatures": ProfilerActor.prototype.onGetFeatures,
   "startProfiler": ProfilerActor.prototype.onStartProfiler,
   "stopProfiler": ProfilerActor.prototype.onStopProfiler,
