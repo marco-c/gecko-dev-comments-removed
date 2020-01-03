@@ -19,7 +19,7 @@
 #include "gmp-video-encode.h"
 #include "GMPPlatform.h"
 #include "mozilla/dom/CrashReporterChild.h"
-#include "mozilla/Tokenizer.h"
+#include "GMPUtils.h"
 #include "prio.h"
 
 using mozilla::dom::CrashReporterChild;
@@ -341,24 +341,6 @@ ReadIntoString(nsIFile* aFile,
   return rv;
 }
 
-static nsTArray<nsCString>
-SplitAt(Tokenizer::Token aDelim, const nsACString& aInput)
-{
-  nsTArray<nsCString> tokens;
-  Tokenizer tokenizer(aInput);
-
-  while (!tokenizer.HasFailed()) {
-    tokenizer.Record();
-    Tokenizer::Token token;
-    while (tokenizer.Next(token) && !token.Equals(aDelim))
-      ; 
-    nsAutoCString value;
-    tokenizer.Claim(value);
-    tokens.AppendElement(value);
-  }
-  return tokens;
-}
-
 
 
 bool
@@ -387,7 +369,9 @@ GMPChild::PreLoadLibraries(const nsAString& aPluginPath)
     return false;
   }
 
-  nsTArray<nsCString> lines = SplitAt(Tokenizer::Token::NewLine(), info);
+  
+  
+  nsTArray<nsCString> lines = SplitAt("\r\n", info);
   for (nsCString line : lines) {
     
     std::transform(line.BeginWriting(),
@@ -401,8 +385,8 @@ GMPChild::PreLoadLibraries(const nsAString& aPluginPath)
       continue;
     }
     
-    nsTArray<nsCString> libs = SplitAt(Tokenizer::Token::Char(','),
-                                       Substring(line, offset + strlen(libraries)));
+    nsTArray<nsCString> libs =
+      SplitAt(",", Substring(line, offset + strlen(libraries)));
     for (nsCString lib : libs) {
       lib.Trim(" ");
       for (const char* whiteListedLib : whitelist) {
