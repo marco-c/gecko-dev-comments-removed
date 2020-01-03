@@ -50,6 +50,8 @@
 #include <algorithm>
 #include "mozilla/Telemetry.h"
 
+using namespace mozilla::gfx;
+
 namespace mozilla {
 namespace image {
 
@@ -161,6 +163,27 @@ nsGIFDecoder2::BeginGIF()
   PostSize(mGIFStruct.screen_width, mGIFStruct.screen_height);
 }
 
+void
+nsGIFDecoder2::CheckForTransparency(IntRect aFrameRect)
+{
+  
+  if (mGIFStruct.is_transparent) {
+    PostHasTransparency();
+    return;
+  }
+
+  if (mGIFStruct.images_decoded > 0) {
+    return;  
+  }
+
+  
+  
+  IntRect imageRect(0, 0, mGIFStruct.screen_width, mGIFStruct.screen_height);
+  if (!imageRect.IsEqualEdges(aFrameRect)) {
+    PostHasTransparency();
+  }
+}
+
 
 nsresult
 nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
@@ -170,13 +193,14 @@ nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
   gfx::SurfaceFormat format;
   if (mGIFStruct.is_transparent) {
     format = gfx::SurfaceFormat::B8G8R8A8;
-    PostHasTransparency();
   } else {
     format = gfx::SurfaceFormat::B8G8R8X8;
   }
 
-  nsIntRect frameRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
-                      mGIFStruct.width, mGIFStruct.height);
+  IntRect frameRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
+                    mGIFStruct.width, mGIFStruct.height);
+
+  CheckForTransparency(frameRect);
 
   
   
@@ -186,12 +210,6 @@ nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
     rv = AllocateFrame(mGIFStruct.images_decoded, GetSize(),
                        frameRect, format, aDepth);
   } else {
-    if (!nsIntRect(nsIntPoint(), GetSize()).IsEqualEdges(frameRect)) {
-      
-      
-      PostHasTransparency();
-    }
-
     
     rv = AllocateFrame(mGIFStruct.images_decoded, GetSize(),
                        frameRect, format);
@@ -689,12 +707,6 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
       mGIFStruct.screen_height = GETINT16(q + 2);
       mGIFStruct.global_colormap_depth = (q[4]&0x07) + 1;
 
-      if (IsMetadataDecode()) {
-        MOZ_ASSERT(!mGIFOpen, "Gif should not be open at this point");
-        PostSize(mGIFStruct.screen_width, mGIFStruct.screen_height);
-        return;
-      }
-
       
       
       
@@ -731,6 +743,9 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
     case gif_image_start:
       switch (*q) {
         case GIF_TRAILER:
+          if (IsMetadataDecode()) {
+            return;
+          }
           mGIFStruct.state = gif_done;
           break;
 
@@ -943,6 +958,9 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
 
         
         if (IsMetadataDecode()) {
+          IntRect frameRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
+                            mGIFStruct.width, mGIFStruct.height);
+          CheckForTransparency(frameRect);
           return;
         }
       }

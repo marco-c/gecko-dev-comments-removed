@@ -370,6 +370,15 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       }
 
       
+      
+      
+      if ((mBIH.compression == BMPINFOHEADER::RLE8) ||
+          (mBIH.compression == BMPINFOHEADER::RLE4) ||
+          (mBIH.bpp == 32 && mUseAlphaData)) {
+        PostHasTransparency();
+      }
+
+      
       if (IsMetadataDecode()) {
         return;
       }

@@ -19,6 +19,8 @@
 
 #include <algorithm>
 
+using namespace mozilla::gfx;
+
 namespace mozilla {
 namespace image {
 
@@ -136,6 +138,20 @@ nsPNGDecoder::~nsPNGDecoder()
   }
 }
 
+void
+nsPNGDecoder::CheckForTransparency(SurfaceFormat aFormat,
+                                   const IntRect& aFrameRect)
+{
+  
+  if (aFormat == SurfaceFormat::B8G8R8A8) {
+    PostHasTransparency();
+  }
+
+  
+  MOZ_ASSERT_IF(mNumFrames == 0,
+                IntRect(IntPoint(), GetSize()).IsEqualEdges(aFrameRect));
+}
+
 
 nsresult
 nsPNGDecoder::CreateFrame(png_uint_32 aXOffset, png_uint_32 aYOffset,
@@ -145,17 +161,8 @@ nsPNGDecoder::CreateFrame(png_uint_32 aXOffset, png_uint_32 aYOffset,
   MOZ_ASSERT(HasSize());
   MOZ_ASSERT(!IsMetadataDecode());
 
-  if (aFormat == gfx::SurfaceFormat::B8G8R8A8) {
-    PostHasTransparency();
-  }
-
-  nsIntRect frameRect(aXOffset, aYOffset, aWidth, aHeight);
-  if (mNumFrames == 0 &&
-      !nsIntRect(nsIntPoint(), GetSize()).IsEqualEdges(frameRect)) {
-    
-    
-    PostHasTransparency();
-  }
+  IntRect frameRect(aXOffset, aYOffset, aWidth, aHeight);
+  CheckForTransparency(aFormat, frameRect);
 
   
   
@@ -268,7 +275,7 @@ nsPNGDecoder::InitInternal()
 
 #ifdef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
   
-  if (mCMSMode == eCMSMode_Off) {
+  if (mCMSMode == eCMSMode_Off || IsMetadataDecode()) {
     png_set_keep_unknown_chunks(mPNG, 1, color_chunks, 2);
   }
 
@@ -486,12 +493,6 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     png_longjmp(decoder->mPNG, 1);
   }
 
-  if (decoder->IsMetadataDecode()) {
-    
-    decoder->mSuccessfulEarlyFinish = true;
-    png_longjmp(decoder->mPNG, 1);
-  }
-
   if (color_type == PNG_COLOR_TYPE_PALETTE) {
     png_set_expand(png_ptr);
   }
@@ -592,6 +593,16 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     decoder->format = gfx::SurfaceFormat::B8G8R8A8;
   } else {
     png_longjmp(decoder->mPNG, 1); 
+  }
+
+  if (decoder->IsMetadataDecode()) {
+    decoder->CheckForTransparency(decoder->format,
+                                  IntRect(0, 0, width, height));
+
+    
+    
+    decoder->mSuccessfulEarlyFinish = true;
+    png_longjmp(decoder->mPNG, 1);
   }
 
 #ifdef PNG_APNG_SUPPORTED

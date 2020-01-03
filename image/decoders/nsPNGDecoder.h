@@ -35,6 +35,9 @@ public:
                        gfx::SurfaceFormat aFormat);
   void EndImageFrame();
 
+  void CheckForTransparency(gfx::SurfaceFormat aFormat,
+                            const gfx::IntRect& aFrameRect);
+
   
   
   bool IsValidICO() const
