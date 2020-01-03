@@ -4,11 +4,10 @@
 #include <jni.h>
 
 #include "mozilla/jni/Refs.h"
-#include "AndroidBridge.h"
 
 namespace mozilla {
 namespace jni {
-namespace {
+namespace detail {
 
 
 
@@ -35,6 +34,8 @@ template<class Cls> struct TypeAdapter<LocalRef<Cls>> {
     static constexpr auto Get = &JNIEnv::GetObjectField;
     static constexpr auto StaticGet = &JNIEnv::GetStaticObjectField;
 
+    
+    
     static LocalRef<Cls> ToNative(JNIEnv* env, jobject instance) {
         return LocalRef<Cls>::Adopt(env, instance);
     }
@@ -61,7 +62,7 @@ template<class Cls> struct TypeAdapter<Ref<Cls>> {
     static constexpr auto Set = &JNIEnv::SetObjectField;
     static constexpr auto StaticSet = &JNIEnv::SetStaticObjectField;
 
-    static Ref<Cls> ToNative(JNIEnv* env, jobject instance) {
+    static Ref<Cls> ToNative(JNIEnv* env, JNIType instance) {
         return Ref<Cls>::From(instance);
     }
 
@@ -79,6 +80,10 @@ template<class Cls> constexpr void
 
 template<> struct TypeAdapter<Param<String>>
         : public TypeAdapter<String::Ref>
+{};
+
+template<class Cls> struct TypeAdapter<const Cls&>
+        : public TypeAdapter<Cls>
 {};
 
 
@@ -100,20 +105,7 @@ template<> struct TypeAdapter<Param<String>>
         static NativeType ToNative(JNIEnv*, JNIType val) { \
             return static_cast<NativeType>(val); \
         } \
-    }; \
-    \
-    constexpr JNIType (JNIEnv::*TypeAdapter<NativeType>::Call) \
-            (jobject, jmethodID, jvalue*); \
-    constexpr JNIType (JNIEnv::*TypeAdapter<NativeType>::StaticCall) \
-            (jclass, jmethodID, jvalue*); \
-    constexpr JNIType (JNIEnv::*TypeAdapter<NativeType>::Get) \
-            (jobject, jfieldID); \
-    constexpr JNIType (JNIEnv::*TypeAdapter<NativeType>::StaticGet) \
-            (jclass, jfieldID); \
-    constexpr void (JNIEnv::*TypeAdapter<NativeType>::Set) \
-            (jobject, jfieldID, JNIType); \
-    constexpr void (JNIEnv::*TypeAdapter<NativeType>::StaticSet) \
-            (jclass, jfieldID, JNIType)
+    }
 
 
 DEFINE_PRIMITIVE_TYPE_ADAPTER(bool,     jboolean, Boolean);
@@ -128,6 +120,9 @@ DEFINE_PRIMITIVE_TYPE_ADAPTER(double,   jdouble,  Double);
 #undef DEFINE_PRIMITIVE_TYPE_ADAPTER
 
 } 
+
+using namespace detail;
+
 } 
 } 
 
