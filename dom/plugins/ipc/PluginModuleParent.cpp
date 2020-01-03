@@ -2412,7 +2412,10 @@ PluginModuleParent::DoShutdown(NPError* error)
     
     Close();
 
-    mShutdown = ok;
+    
+    
+    
+    mShutdown |= ok;
     if (!ok) {
         *error = NPERR_GENERIC_ERROR;
     }
