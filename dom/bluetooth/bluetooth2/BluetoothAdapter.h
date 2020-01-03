@@ -12,7 +12,6 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/BluetoothAdapterBinding.h"
 #include "mozilla/dom/BluetoothDeviceEvent.h"
-#include "mozilla/dom/BluetoothPbapParametersBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "nsCOMPtr.h"
 
@@ -90,9 +89,6 @@ public:
   IMPL_EVENT_HANDLER(pairingaborted);
   IMPL_EVENT_HANDLER(a2dpstatuschanged);
   IMPL_EVENT_HANDLER(hfpstatuschanged);
-  IMPL_EVENT_HANDLER(pullphonebookreq);
-  IMPL_EVENT_HANDLER(pullvcardentryreq);
-  IMPL_EVENT_HANDLER(pullvcardlistingreq);
   IMPL_EVENT_HANDLER(requestmediaplaystatus);
   IMPL_EVENT_HANDLER(scostatuschanged);
 
@@ -289,73 +285,6 @@ private:
 
 
   void HandleLeDeviceFound(const BluetoothValue& aValue);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  void HandlePullPhonebookReq(const BluetoothValue& aValue);
-
-  
-
-
-
-
-
-
-
-
-  void HandlePullVCardEntryReq(const BluetoothValue& aValue);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void HandlePullVCardListingReq(const BluetoothValue& aValue);
-
-  
-
-
-
-
-
-
-
-  Sequence<vCardProperties> getVCardProperties(const BluetoothValue &aValue);
-
-  
-
-
-
-
-  vCardOrderType ConvertStringToVCardOrderType(const nsAString& aString);
-
-  
-
-
-
-
-  vCardSearchKeyType ConvertStringToVCardSearchKeyType(
-    const nsAString& aString);
 
   
 
