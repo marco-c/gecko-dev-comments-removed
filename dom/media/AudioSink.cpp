@@ -250,21 +250,18 @@ AudioSink::InitializeAudioStream()
 void
 AudioSink::Drain()
 {
+  AssertOnAudioThread();
   MOZ_ASSERT(mPlaying && !mAudioStream->IsPaused());
-  AssertCurrentThreadInMonitor();
   
   
   mAudioStream->Start();
-  {
-    ReentrantMonitorAutoExit exit(GetReentrantMonitor());
-    mAudioStream->Drain();
-  }
+  mAudioStream->Drain();
 }
 
 void
 AudioSink::Cleanup()
 {
-  AssertCurrentThreadInMonitor();
+  AssertOnAudioThread();
   mEndPromise.Resolve(true, __func__);
   
   
@@ -280,9 +277,9 @@ AudioSink::ExpectMoreAudioData()
 bool
 AudioSink::WaitingForAudioToPlay()
 {
+  AssertOnAudioThread();
   
   
-  AssertCurrentThreadInMonitor();
   if (!mStopAudioThread && (!mPlaying || ExpectMoreAudioData())) {
     return true;
   }
@@ -292,7 +289,7 @@ AudioSink::WaitingForAudioToPlay()
 bool
 AudioSink::IsPlaybackContinuing()
 {
-  AssertCurrentThreadInMonitor();
+  AssertOnAudioThread();
   
   
   if (mStopAudioThread || AudioQueue().AtEndOfStream()) {
@@ -323,16 +320,13 @@ AudioSink::AudioLoop()
     }
 
     case AUDIOSINK_STATE_PLAYING: {
-      {
-        ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-        if (WaitingForAudioToPlay()) {
-          
-          break;
-        }
-        if (!IsPlaybackContinuing()) {
-          SetState(AUDIOSINK_STATE_COMPLETE);
-          break;
-        }
+      if (WaitingForAudioToPlay()) {
+        
+        break;
+      }
+      if (!IsPlaybackContinuing()) {
+        SetState(AUDIOSINK_STATE_COMPLETE);
+        break;
       }
       if (!PlayAudio()) {
         SetState(AUDIOSINK_STATE_COMPLETE);
@@ -405,7 +399,7 @@ AudioSink::PlayAudio()
 void
 AudioSink::FinishAudioLoop()
 {
-  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+  AssertOnAudioThread();
   MOZ_ASSERT(mStopAudioThread || AudioQueue().AtEndOfStream());
   if (!mStopAudioThread && mPlaying) {
     Drain();
