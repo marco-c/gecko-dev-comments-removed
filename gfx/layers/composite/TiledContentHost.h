@@ -195,14 +195,17 @@ public:
       TextureHost* host = mTiledBuffer.GetTile(0).mTextureHost;
       if (host) {
         MOZ_ASSERT(!mTiledBuffer.GetTile(0).mTextureHostOnWhite, "Component alpha not supported!");
-        LayerRenderState state = host->GetRenderState();
 
-        
-        
         gfx::IntPoint offset = mTiledBuffer.GetTileOffset(mTiledBuffer.GetPlacement().TilePosition(0));
 
-        state.SetOffset(offset - GetValidRegion().GetBounds().TopLeft());
-        return host->GetRenderState();
+        
+        if (offset != GetValidRegion().GetBounds().TopLeft()) {
+          return LayerRenderState();
+        }
+
+        LayerRenderState state = host->GetRenderState();
+        state.SetOffset(offset);
+        return state;
       }
     }
     return LayerRenderState();
