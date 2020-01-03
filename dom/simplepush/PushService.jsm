@@ -1774,7 +1774,8 @@ this.PushService = {
       }
 
       let nm = Cc["@mozilla.org/network/manager;1"].getService(Ci.nsINetworkManager);
-      if (nm.active && nm.active.type == Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE) {
+      if (nm.activeNetworkInfo &&
+          nm.activeNetworkInfo.type == Ci.nsINetworkInfo.NETWORK_TYPE_MOBILE) {
         let iccService = Cc["@mozilla.org/icc/iccservice;1"].getService(Ci.nsIIccService);
         
         
@@ -1789,7 +1790,7 @@ this.PushService = {
 
           let ips = {};
           let prefixLengths = {};
-          nm.active.getAddresses(ips, prefixLengths);
+          nm.activeNetworkInfo.getAddresses(ips, prefixLengths);
 
           return {
             mcc: iccInfo.mcc,
