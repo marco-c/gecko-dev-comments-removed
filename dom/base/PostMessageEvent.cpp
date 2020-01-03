@@ -9,6 +9,7 @@
 #include "MessageEvent.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/FileList.h"
+#include "mozilla/dom/FileListBinding.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/MessagePortBinding.h"
 #include "mozilla/dom/PMessagePort.h"
@@ -86,12 +87,27 @@ PostMessageEvent::ReadStructuredClone(JSContext* cx,
   if (tag == SCTAG_DOM_FILELIST) {
     NS_ASSERTION(!data, "Data should be empty");
 
-    nsISupports* supports;
-    if (JS_ReadBytes(reader, &supports, sizeof(supports))) {
+    
+    
+    FileListClonedData* fileListClonedData;
+    if (JS_ReadBytes(reader, &fileListClonedData, sizeof(fileListClonedData))) {
+      MOZ_ASSERT(fileListClonedData);
+
+      
+      
+      
+      
+      
       JS::Rooted<JS::Value> val(cx);
-      if (NS_SUCCEEDED(nsContentUtils::WrapNative(cx, supports, &val))) {
-        return val.toObjectOrNull();
+      {
+        nsRefPtr<FileList> fileList =
+          FileList::Create(scInfo->window, fileListClonedData);
+        if (!fileList || !ToJSValue(cx, fileList, &val)) {
+          return nullptr;
+        }
       }
+
+      return &val.toObject();
     }
   }
 
@@ -127,21 +143,20 @@ PostMessageEvent::WriteStructuredClone(JSContext* cx,
     }
   }
 
-  nsCOMPtr<nsIXPConnectWrappedNative> wrappedNative;
-  nsContentUtils::XPConnect()->
-    GetWrappedNativeOfJSObject(cx, obj, getter_AddRefs(wrappedNative));
-  if (wrappedNative) {
-    uint32_t scTag = 0;
-    nsISupports* supports = wrappedNative->Native();
-
-    nsCOMPtr<nsIDOMFileList> list = do_QueryInterface(supports);
-    if (list)
-      scTag = SCTAG_DOM_FILELIST;
-
-    if (scTag)
-      return JS_WriteUint32Pair(writer, scTag, 0) &&
-             JS_WriteBytes(writer, &supports, sizeof(supports)) &&
-             scInfo->event->StoreISupports(supports);
+  
+  {
+    FileList* fileList = nullptr;
+    if (NS_SUCCEEDED(UNWRAP_OBJECT(FileList, obj, fileList))) {
+      nsRefPtr<FileListClonedData> fileListClonedData =
+        fileList->CreateClonedData();
+      MOZ_ASSERT(fileListClonedData);
+      FileListClonedData* ptr = fileListClonedData.get();
+      if (JS_WriteUint32Pair(writer, SCTAG_DOM_FILELIST, 0) &&
+          JS_WriteBytes(writer, &ptr, sizeof(ptr))) {
+        scInfo->event->StoreISupports(fileListClonedData);
+        return true;
+      }
+    }
   }
 
   const JSStructuredCloneCallbacks* runtimeCallbacks =
