@@ -137,7 +137,11 @@ this.InsecurePasswordUtils = {
     
     if (this._checkForInsecureNestedDocuments(domDoc)) {
       this._sendWebConsoleMessage("InsecurePasswordsPresentOnIframe", domDoc);
+      isSafePage = false;
     }
+
+    
+    Services.telemetry.getHistogramById("PWMGR_LOGIN_PAGE_SAFETY").add(isSafePage);
 
     if (aForm.action.match(/^http:\/\//)) {
       this._sendWebConsoleMessage("InsecureFormActionPasswordsPresent", domDoc);
