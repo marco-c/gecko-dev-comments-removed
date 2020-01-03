@@ -10116,6 +10116,27 @@ IonBuilder::maybeUnboxForPropertyAccess(MDefinition* def)
 
     MUnbox* unbox = MUnbox::New(alloc(), def, type, MUnbox::Fallible);
     current->add(unbox);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (*pc == JSOP_CALLPROP || *pc == JSOP_CALLELEM) {
+        uint32_t idx = current->stackDepth() - 1;
+        MOZ_ASSERT(current->getSlot(idx) == def);
+        current->setSlot(idx, unbox);
+    }
+
     return unbox;
 }
 
