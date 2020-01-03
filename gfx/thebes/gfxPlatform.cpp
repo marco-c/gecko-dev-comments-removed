@@ -122,6 +122,7 @@ void ShutdownTileCache();
 
 using namespace mozilla;
 using namespace mozilla::layers;
+using namespace mozilla::gl;
 
 gfxPlatform *gPlatform = nullptr;
 static bool gEverInitialized = false;
@@ -494,7 +495,7 @@ gfxPlatform::Init()
 #endif
 
 #ifdef MOZ_GL_DEBUG
-    mozilla::gl::GLContext::StaticInit();
+    GLContext::StaticInit();
 #endif
 
     InitLayersAccelerationPrefs();
@@ -542,11 +543,11 @@ gfxPlatform::Init()
     gPlatform->mFontPrefsObserver = new FontPrefsObserver();
     Preferences::AddStrongObservers(gPlatform->mFontPrefsObserver, kObservedPrefs);
 
-    mozilla::gl::GLContext::PlatformStartup();
+    GLContext::PlatformStartup();
 
 #ifdef MOZ_WIDGET_ANDROID
     
-    mozilla::gl::TexturePoolOGL::Init();
+    TexturePoolOGL::Init();
 #endif
 
 #ifdef MOZ_WIDGET_GONK
@@ -626,11 +627,11 @@ gfxPlatform::Shutdown()
 
 #ifdef MOZ_WIDGET_ANDROID
     
-    mozilla::gl::TexturePoolOGL::Shutdown();
+    TexturePoolOGL::Shutdown();
 #endif
 
     
-    mozilla::gl::GLContextProvider::Shutdown();
+    GLContextProvider::Shutdown();
 
 #if defined(XP_WIN)
     
@@ -639,7 +640,7 @@ gfxPlatform::Shutdown()
     
     
     
-    mozilla::gl::GLContextProviderEGL::Shutdown();
+    GLContextProviderEGL::Shutdown();
 #endif
 
     
@@ -1078,7 +1079,7 @@ gfxPlatform::InitializeSkiaCacheLimits()
   }
 }
 
-mozilla::gl::SkiaGLGlue*
+SkiaGLGlue*
 gfxPlatform::GetSkiaGLGlue()
 {
 #ifdef USE_SKIA_GPU
@@ -1088,14 +1089,13 @@ gfxPlatform::GetSkiaGLGlue()
 
 
 
-    bool requireCompatProfile = true;
-    nsRefPtr<mozilla::gl::GLContext> glContext;
-    glContext = mozilla::gl::GLContextProvider::CreateHeadless(requireCompatProfile);
+    nsRefPtr<GLContext> glContext;
+    glContext = GLContextProvider::CreateHeadless(CreateContextFlags::REQUIRE_COMPAT_PROFILE);
     if (!glContext) {
       printf_stderr("Failed to create GLContext for SkiaGL!\n");
       return nullptr;
     }
-    mSkiaGlue = new mozilla::gl::SkiaGLGlue(glContext);
+    mSkiaGlue = new SkiaGLGlue(glContext);
     MOZ_ASSERT(mSkiaGlue->GetGrContext(), "No GrContext");
     InitializeSkiaCacheLimits();
   }
