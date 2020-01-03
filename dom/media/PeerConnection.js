@@ -323,6 +323,12 @@ RTCPeerConnection.prototype = {
   __init: function(rtcConfig) {
     this._winID = this._win.QueryInterface(Ci.nsIInterfaceRequestor)
     .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+    
+    
+    if (rtcConfig.iceTransportPolicy == "all" &&
+        Services.prefs.getBoolPref("media.peerconnection.ice.relay_only")) {
+      rtcConfig.iceTransportPolicy = "relay";
+    }
     if (!rtcConfig.iceServers ||
         !Services.prefs.getBoolPref("media.peerconnection.use_document_iceservers")) {
       try {
