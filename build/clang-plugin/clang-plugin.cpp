@@ -43,9 +43,7 @@ class DiagnosticsMatcher {
 public:
   DiagnosticsMatcher();
 
-  ASTConsumerPtr makeASTConsumer() {
-    return astMatcher.newASTConsumer();
-  }
+  ASTConsumerPtr makeASTConsumer() { return astMatcher.newASTConsumer(); }
 
 private:
   class ScopeChecker : public MatchFinder::MatchCallback {
@@ -126,7 +124,8 @@ private:
 namespace {
 
 std::string getDeclarationNamespace(const Decl *decl) {
-  const DeclContext *DC = decl->getDeclContext()->getEnclosingNamespaceContext();
+  const DeclContext *DC =
+      decl->getDeclContext()->getEnclosingNamespaceContext();
   const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(DC);
   if (!ND) {
     return "";
@@ -139,7 +138,7 @@ std::string getDeclarationNamespace(const Decl *decl) {
     ND = cast<NamespaceDecl>(ParentDC);
   }
 
-  const auto& name = ND->getName();
+  const auto &name = ND->getName();
   return name;
 }
 
@@ -148,7 +147,6 @@ bool isInIgnoredNamespaceForImplicitCtor(const Decl *decl) {
   if (name == "") {
     return false;
   }
-
 
   return name == "std" ||               
          name == "__gnu_cxx" ||         
@@ -171,10 +169,10 @@ bool isInIgnoredNamespaceForImplicitConversion(const Decl *decl) {
     return false;
   }
 
-  return name == "std" ||              
-         name == "__gnu_cxx" ||        
-         name == "google_breakpad" ||  
-         name == "testing";            
+  return name == "std" ||             
+         name == "__gnu_cxx" ||       
+         name == "google_breakpad" || 
+         name == "testing";           
 }
 
 bool isIgnoredPathForImplicitCtor(const Decl *decl) {
@@ -183,7 +181,7 @@ bool isIgnoredPathForImplicitCtor(const Decl *decl) {
   SmallString<1024> FileName = SM.getFilename(Loc);
   llvm::sys::fs::make_absolute(FileName);
   llvm::sys::path::reverse_iterator begin = llvm::sys::path::rbegin(FileName),
-                                    end   = llvm::sys::path::rend(FileName);
+                                    end = llvm::sys::path::rend(FileName);
   for (; begin != end; ++begin) {
     if (begin->compare_lower(StringRef("skia")) == 0 ||
         begin->compare_lower(StringRef("angle")) == 0 ||
@@ -209,7 +207,7 @@ bool isIgnoredPathForImplicitConversion(const Decl *decl) {
   SmallString<1024> FileName = SM.getFilename(Loc);
   llvm::sys::fs::make_absolute(FileName);
   llvm::sys::path::reverse_iterator begin = llvm::sys::path::rbegin(FileName),
-                                    end   = llvm::sys::path::rend(FileName);
+                                    end = llvm::sys::path::rend(FileName);
   for (; begin != end; ++begin) {
     if (begin->compare_lower(StringRef("graphite2")) == 0) {
       return true;
@@ -222,7 +220,6 @@ bool isInterestingDeclForImplicitConversion(const Decl *decl) {
   return !isInIgnoredNamespaceForImplicitConversion(decl) &&
          !isIgnoredPathForImplicitConversion(decl);
 }
-
 }
 
 class CustomTypeAnnotation {
@@ -249,16 +246,18 @@ class CustomTypeAnnotation {
 
 public:
   CustomTypeAnnotation(const char *Spelling, const char *Pretty)
-    : Spelling(Spelling), Pretty(Pretty) {};
+      : Spelling(Spelling), Pretty(Pretty){};
 
   
   bool hasEffectiveAnnotation(QualType T) {
     return directAnnotationReason(T).valid();
   }
-  void dumpAnnotationReason(DiagnosticsEngine &Diag, QualType T, SourceLocation Loc);
+  void dumpAnnotationReason(DiagnosticsEngine &Diag, QualType T,
+                            SourceLocation Loc);
 
-  void reportErrorIfPresent(DiagnosticsEngine &Diag, QualType T, SourceLocation Loc,
-                            unsigned ErrorID, unsigned NoteID) {
+  void reportErrorIfPresent(DiagnosticsEngine &Diag, QualType T,
+                            SourceLocation Loc, unsigned ErrorID,
+                            unsigned NoteID) {
     if (hasEffectiveAnnotation(T)) {
       Diag.Report(Loc, ErrorID) << T;
       Diag.Report(Loc, NoteID);
@@ -272,34 +271,33 @@ private:
 };
 
 static CustomTypeAnnotation StackClass =
-  CustomTypeAnnotation("moz_stack_class", "stack");
+    CustomTypeAnnotation("moz_stack_class", "stack");
 static CustomTypeAnnotation GlobalClass =
-  CustomTypeAnnotation("moz_global_class", "global");
+    CustomTypeAnnotation("moz_global_class", "global");
 static CustomTypeAnnotation NonHeapClass =
-  CustomTypeAnnotation("moz_nonheap_class", "non-heap");
+    CustomTypeAnnotation("moz_nonheap_class", "non-heap");
 static CustomTypeAnnotation HeapClass =
-  CustomTypeAnnotation("moz_heap_class", "heap");
+    CustomTypeAnnotation("moz_heap_class", "heap");
 static CustomTypeAnnotation MustUse =
-  CustomTypeAnnotation("moz_must_use", "must-use");
+    CustomTypeAnnotation("moz_must_use", "must-use");
 
 class MozChecker : public ASTConsumer, public RecursiveASTVisitor<MozChecker> {
   DiagnosticsEngine &Diag;
   const CompilerInstance &CI;
   DiagnosticsMatcher matcher;
+
 public:
   MozChecker(const CompilerInstance &CI) : Diag(CI.getDiagnostics()), CI(CI) {}
 
-  ASTConsumerPtr getOtherConsumer() {
-    return matcher.makeASTConsumer();
-  }
+  ASTConsumerPtr getOtherConsumer() { return matcher.makeASTConsumer(); }
 
   virtual void HandleTranslationUnit(ASTContext &ctx) {
     TraverseDecl(ctx.getTranslationUnitDecl());
   }
 
   static bool hasCustomAnnotation(const Decl *D, const char *Spelling) {
-    iterator_range<specific_attr_iterator<AnnotateAttr> > Attrs =
-      D->specific_attrs<AnnotateAttr>();
+    iterator_range<specific_attr_iterator<AnnotateAttr>> Attrs =
+        D->specific_attrs<AnnotateAttr>();
 
     for (AnnotateAttr *Attr : Attrs) {
       if (Attr->getAnnotation() == Spelling) {
@@ -311,12 +309,12 @@ public:
   }
 
   void HandleUnusedExprResult(const Stmt *stmt) {
-    const Expr* E = dyn_cast_or_null<Expr>(stmt);
+    const Expr *E = dyn_cast_or_null<Expr>(stmt);
     if (E) {
       QualType T = E->getType();
       if (MustUse.hasEffectiveAnnotation(T)) {
         unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-          DiagnosticIDs::Error, "Unused value of must-use type %0");
+            DiagnosticIDs::Error, "Unused value of must-use type %0");
 
         Diag.Report(E->getLocStart(), errorID) << T;
         MustUse.dumpAnnotationReason(Diag, T, E->getLocStart());
@@ -326,17 +324,20 @@ public:
 
   bool VisitCXXRecordDecl(CXXRecordDecl *d) {
     
-    if (!d->isThisDeclarationADefinition()) return true;
+    if (!d->isThisDeclarationADefinition())
+      return true;
 
     
     
     typedef std::vector<CXXMethodDecl *> OverridesVector;
     OverridesVector must_overrides;
     for (CXXRecordDecl::base_class_iterator base = d->bases_begin(),
-         e = d->bases_end(); base != e; ++base) {
+                                            e = d->bases_end();
+         base != e; ++base) {
       
       CXXRecordDecl *parent = base->getType()
-        .getDesugaredType(d->getASTContext())->getAsCXXRecordDecl();
+                                  .getDesugaredType(d->getASTContext())
+                                  ->getAsCXXRecordDecl();
       
       
       
@@ -346,17 +347,17 @@ public:
       }
       parent = parent->getDefinition();
       for (CXXRecordDecl::method_iterator M = parent->method_begin();
-          M != parent->method_end(); ++M) {
+           M != parent->method_end(); ++M) {
         if (hasCustomAnnotation(*M, "moz_must_override"))
           must_overrides.push_back(*M);
       }
     }
 
     for (OverridesVector::iterator it = must_overrides.begin();
-        it != must_overrides.end(); ++it) {
+         it != must_overrides.end(); ++it) {
       bool overridden = false;
       for (CXXRecordDecl::method_iterator M = d->method_begin();
-          !overridden && M != d->method_end(); ++M) {
+           !overridden && M != d->method_end(); ++M) {
         
         
         if (M->getName() == (*it)->getName() &&
@@ -370,8 +371,8 @@ public:
             DiagnosticIDs::Error, "%0 must override %1");
         unsigned overrideNote = Diag.getDiagnosticIDs()->getCustomDiagID(
             DiagnosticIDs::Note, "function to override is here");
-        Diag.Report(d->getLocation(), overrideID) << d->getDeclName() <<
-          (*it)->getDeclName();
+        Diag.Report(d->getLocation(), overrideID) << d->getDeclName()
+                                                  << (*it)->getDeclName();
         Diag.Report((*it)->getLocation(), overrideNote);
       }
     }
@@ -379,49 +380,50 @@ public:
     return true;
   }
 
-  bool VisitSwitchCase(SwitchCase* stmt) {
+  bool VisitSwitchCase(SwitchCase *stmt) {
     HandleUnusedExprResult(stmt->getSubStmt());
     return true;
   }
-  bool VisitCompoundStmt(CompoundStmt* stmt) {
-    for (CompoundStmt::body_iterator it = stmt->body_begin(), e = stmt->body_end();
+  bool VisitCompoundStmt(CompoundStmt *stmt) {
+    for (CompoundStmt::body_iterator it = stmt->body_begin(),
+                                     e = stmt->body_end();
          it != e; ++it) {
       HandleUnusedExprResult(*it);
     }
     return true;
   }
-  bool VisitIfStmt(IfStmt* Stmt) {
+  bool VisitIfStmt(IfStmt *Stmt) {
     HandleUnusedExprResult(Stmt->getThen());
     HandleUnusedExprResult(Stmt->getElse());
     return true;
   }
-  bool VisitWhileStmt(WhileStmt* Stmt) {
+  bool VisitWhileStmt(WhileStmt *Stmt) {
     HandleUnusedExprResult(Stmt->getBody());
     return true;
   }
-  bool VisitDoStmt(DoStmt* Stmt) {
+  bool VisitDoStmt(DoStmt *Stmt) {
     HandleUnusedExprResult(Stmt->getBody());
     return true;
   }
-  bool VisitForStmt(ForStmt* Stmt) {
+  bool VisitForStmt(ForStmt *Stmt) {
     HandleUnusedExprResult(Stmt->getBody());
     HandleUnusedExprResult(Stmt->getInit());
     HandleUnusedExprResult(Stmt->getInc());
     return true;
   }
-  bool VisitBinComma(BinaryOperator* Op) {
+  bool VisitBinComma(BinaryOperator *Op) {
     HandleUnusedExprResult(Op->getLHS());
     return true;
   }
 };
 
 
-typedef DenseMap<const CXXRecordDecl *,
-  std::pair<const Decl *, bool> > RefCountedMap;
+typedef DenseMap<const CXXRecordDecl *, std::pair<const Decl *, bool>>
+    RefCountedMap;
 RefCountedMap refCountedClasses;
 
 bool classHasAddRefRelease(const CXXRecordDecl *D) {
-  const RefCountedMap::iterator& it = refCountedClasses.find(D);
+  const RefCountedMap::iterator &it = refCountedClasses.find(D);
   if (it != refCountedClasses.end()) {
     return it->second.second;
   }
@@ -453,6 +455,7 @@ bool isClassRefCounted(const CXXRecordDecl *D) {
     return true;
 
   
+  
   for (CXXRecordDecl::base_class_const_iterator base = D->bases_begin();
        base != D->bases_end(); ++base) {
     bool super = isClassRefCounted(base->getType());
@@ -473,13 +476,18 @@ bool isClassRefCounted(QualType T) {
 
 
 
-typedef DenseMap<const CXXRecordDecl *, const CXXRecordDecl *> InferredMovability;
+
+typedef DenseMap<const CXXRecordDecl *, const CXXRecordDecl *>
+    InferredMovability;
 InferredMovability inferredMovability;
 
 bool isClassNonMemMovable(QualType T);
-const CXXRecordDecl* isClassNonMemMovableWorker(QualType T);
+const CXXRecordDecl *isClassNonMemMovableWorker(QualType T);
 
-const CXXRecordDecl* isClassNonMemMovableWorker(const CXXRecordDecl *D) {
+const CXXRecordDecl *isClassNonMemMovableWorker(const CXXRecordDecl *D) {
+  
+  
+  
   
   
   
@@ -498,6 +506,7 @@ const CXXRecordDecl* isClassNonMemMovableWorker(const CXXRecordDecl *D) {
   }
 
   
+  
   for (CXXRecordDecl::base_class_const_iterator base = D->bases_begin();
        base != D->bases_end(); ++base) {
     const CXXRecordDecl *result = isClassNonMemMovableWorker(base->getType());
@@ -506,6 +515,7 @@ const CXXRecordDecl* isClassNonMemMovableWorker(const CXXRecordDecl *D) {
     }
   }
 
+  
   
   for (RecordDecl::field_iterator field = D->field_begin(), e = D->field_end();
        field != e; ++field) {
@@ -518,7 +528,7 @@ const CXXRecordDecl* isClassNonMemMovableWorker(const CXXRecordDecl *D) {
   return 0;
 }
 
-const CXXRecordDecl* isClassNonMemMovableWorker(QualType T) {
+const CXXRecordDecl *isClassNonMemMovableWorker(QualType T) {
   while (const ArrayType *arrTy = T->getAsArrayTypeUnsafe())
     T = arrTy->getElementType();
   const CXXRecordDecl *clazz = T->getAsCXXRecordDecl();
@@ -526,8 +536,7 @@ const CXXRecordDecl* isClassNonMemMovableWorker(QualType T) {
 }
 
 bool isClassNonMemMovable(const CXXRecordDecl *D) {
-  InferredMovability::iterator it =
-    inferredMovability.find(D);
+  InferredMovability::iterator it = inferredMovability.find(D);
   if (it != inferredMovability.end())
     return !!it->second;
   const CXXRecordDecl *result = isClassNonMemMovableWorker(D);
@@ -542,18 +551,16 @@ bool isClassNonMemMovable(QualType T) {
   return clazz ? isClassNonMemMovable(clazz) : false;
 }
 
-const CXXRecordDecl* findWhyClassIsNonMemMovable(QualType T) {
+const CXXRecordDecl *findWhyClassIsNonMemMovable(QualType T) {
   while (const ArrayType *arrTy = T->getAsArrayTypeUnsafe())
     T = arrTy->getElementType();
   CXXRecordDecl *clazz = T->getAsCXXRecordDecl();
-  InferredMovability::iterator it =
-    inferredMovability.find(clazz);
+  InferredMovability::iterator it = inferredMovability.find(clazz);
   assert(it != inferredMovability.end());
   return it->second;
 }
 
-template<class T>
-bool IsInSystemHeader(const ASTContext &AC, const T &D) {
+template <class T> bool IsInSystemHeader(const ASTContext &AC, const T &D) {
   auto &SourceManager = AC.getSourceManager();
   auto ExpansionLoc = SourceManager.getExpansionLoc(D.getLocStart());
   if (ExpansionLoc.isInvalid()) {
@@ -587,7 +594,8 @@ const FieldDecl *getBaseRefCntMember(const CXXRecordDecl *D) {
     return refCntMember;
   }
 
-  for (CXXRecordDecl::base_class_const_iterator base = D->bases_begin(), e = D->bases_end();
+  for (CXXRecordDecl::base_class_const_iterator base = D->bases_begin(),
+                                                e = D->bases_end();
        base != e; ++base) {
     refCntMember = getBaseRefCntMember(base->getType());
     if (refCntMember) {
@@ -607,10 +615,9 @@ const FieldDecl *getBaseRefCntMember(QualType T) {
 bool typeHasVTable(QualType T) {
   while (const ArrayType *arrTy = T->getAsArrayTypeUnsafe())
     T = arrTy->getElementType();
-  CXXRecordDecl* offender = T->getAsCXXRecordDecl();
+  CXXRecordDecl *offender = T->getAsCXXRecordDecl();
   return offender && offender->hasDefinition() && offender->isDynamicClass();
 }
-
 }
 
 namespace clang {
@@ -637,43 +644,28 @@ AST_MATCHER(CXXRecordDecl, hasTrivialCtorDtor) {
 
 
 AST_MATCHER(FunctionDecl, hasNoAddRefReleaseOnReturnAttr) {
-  return MozChecker::hasCustomAnnotation(&Node, "moz_no_addref_release_on_return");
+  return MozChecker::hasCustomAnnotation(&Node,
+                                         "moz_no_addref_release_on_return");
 }
 
 
 AST_MATCHER(BinaryOperator, binaryArithmeticOperator) {
   BinaryOperatorKind opcode = Node.getOpcode();
-  return opcode == BO_Mul ||
-         opcode == BO_Div ||
-         opcode == BO_Rem ||
-         opcode == BO_Add ||
-         opcode == BO_Sub ||
-         opcode == BO_Shl ||
-         opcode == BO_Shr ||
-         opcode == BO_And ||
-         opcode == BO_Xor ||
-         opcode == BO_Or ||
-         opcode == BO_MulAssign ||
-         opcode == BO_DivAssign ||
-         opcode == BO_RemAssign ||
-         opcode == BO_AddAssign ||
-         opcode == BO_SubAssign ||
-         opcode == BO_ShlAssign ||
-         opcode == BO_ShrAssign ||
-         opcode == BO_AndAssign ||
-         opcode == BO_XorAssign ||
-         opcode == BO_OrAssign;
+  return opcode == BO_Mul || opcode == BO_Div || opcode == BO_Rem ||
+         opcode == BO_Add || opcode == BO_Sub || opcode == BO_Shl ||
+         opcode == BO_Shr || opcode == BO_And || opcode == BO_Xor ||
+         opcode == BO_Or || opcode == BO_MulAssign || opcode == BO_DivAssign ||
+         opcode == BO_RemAssign || opcode == BO_AddAssign ||
+         opcode == BO_SubAssign || opcode == BO_ShlAssign ||
+         opcode == BO_ShrAssign || opcode == BO_AndAssign ||
+         opcode == BO_XorAssign || opcode == BO_OrAssign;
 }
 
 
 AST_MATCHER(UnaryOperator, unaryArithmeticOperator) {
   UnaryOperatorKind opcode = Node.getOpcode();
-  return opcode == UO_PostInc ||
-         opcode == UO_PostDec ||
-         opcode == UO_PreInc ||
-         opcode == UO_PreDec ||
-         opcode == UO_Plus ||
-         opcode == UO_Minus ||
+  return opcode == UO_PostInc || opcode == UO_PostDec || opcode == UO_PreInc ||
+         opcode == UO_PreDec || opcode == UO_Plus || opcode == UO_Minus ||
          opcode == UO_Not;
 }
 
@@ -684,9 +676,7 @@ AST_MATCHER(BinaryOperator, binaryEqualityOperator) {
 }
 
 
-AST_MATCHER(QualType, isFloat) {
-  return Node->isRealFloatingType();
-}
+AST_MATCHER(QualType, isFloat) { return Node->isRealFloatingType(); }
 
 
 
@@ -716,24 +706,22 @@ AST_MATCHER(MemberExpr, isAddRefOrRelease) {
 }
 
 
-AST_MATCHER(QualType, isRefCounted) {
-  return isClassRefCounted(Node);
-}
+AST_MATCHER(QualType, isRefCounted) { return isClassRefCounted(Node); }
 
 #if CLANG_VERSION_FULL < 304
 
 
 
-AST_POLYMORPHIC_MATCHER_P(equalsBoundNode,
-                          std::string, ID) {
+AST_POLYMORPHIC_MATCHER_P(equalsBoundNode, std::string, ID) {
   BoundNodesTree bindings = Builder->build();
   bool haveMatchingResult = false;
   struct Visitor : public BoundNodesTree::Visitor {
     const NodeType &Node;
     std::string ID;
     bool &haveMatchingResult;
-    Visitor(const NodeType &Node, const std::string &ID, bool &haveMatchingResult)
-      : Node(Node), ID(ID), haveMatchingResult(haveMatchingResult) {}
+    Visitor(const NodeType &Node, const std::string &ID,
+            bool &haveMatchingResult)
+        : Node(Node), ID(ID), haveMatchingResult(haveMatchingResult) {}
     void visitMatch(const BoundNodes &BoundNodesView) override {
       if (BoundNodesView.getNodeAs<NodeType>(ID) == &Node) {
         haveMatchingResult = true;
@@ -751,18 +739,14 @@ AST_MATCHER(CXXRecordDecl, hasRefCntMember) {
   return isClassRefCounted(&Node) && getClassRefCntMember(&Node);
 }
 
-AST_MATCHER(QualType, hasVTable) {
-  return typeHasVTable(Node);
-}
+AST_MATCHER(QualType, hasVTable) { return typeHasVTable(Node); }
 
 AST_MATCHER(CXXRecordDecl, hasNeedsNoVTableTypeAttr) {
   return MozChecker::hasCustomAnnotation(&Node, "moz_needs_no_vtable_type");
 }
 
 
-AST_MATCHER(QualType, isNonMemMovable) {
-  return isClassNonMemMovable(Node);
-}
+AST_MATCHER(QualType, isNonMemMovable) { return isClassNonMemMovable(Node); }
 
 
 AST_MATCHER(CXXRecordDecl, needsMemMovable) {
@@ -772,25 +756,25 @@ AST_MATCHER(CXXRecordDecl, needsMemMovable) {
 AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
   const CXXConstructorDecl *decl = Node.getCanonicalDecl();
   return
-    
-    !isInIgnoredNamespaceForImplicitCtor(decl) &&
-    !isIgnoredPathForImplicitCtor(decl) &&
-    
-    decl->isConvertingConstructor(false) &&
-    
-    !decl->isCopyOrMoveConstructor() &&
-    
-    !decl->isDeleted();
+      
+      !isInIgnoredNamespaceForImplicitCtor(decl) &&
+      !isIgnoredPathForImplicitCtor(decl) &&
+      
+      decl->isConvertingConstructor(false) &&
+      
+      
+      !decl->isCopyOrMoveConstructor() &&
+      
+      !decl->isDeleted();
 }
+
 
 
 AST_MATCHER(CXXConstructorDecl, isMarkedImplicit) {
   return MozChecker::hasCustomAnnotation(&Node, "moz_implicit");
 }
 
-AST_MATCHER(CXXRecordDecl, isConcreteClass) {
-  return !Node.isAbstract();
-}
+AST_MATCHER(CXXRecordDecl, isConcreteClass) { return !Node.isAbstract(); }
 
 AST_MATCHER(QualType, autoNonAutoableType) {
   if (const AutoType *T = Node->getContainedAutoType()) {
@@ -800,51 +784,51 @@ AST_MATCHER(QualType, autoNonAutoableType) {
   }
   return false;
 }
-
 }
 }
 
 namespace {
 
-void CustomTypeAnnotation::dumpAnnotationReason(DiagnosticsEngine &Diag, QualType T, SourceLocation Loc) {
+void CustomTypeAnnotation::dumpAnnotationReason(DiagnosticsEngine &Diag,
+                                                QualType T,
+                                                SourceLocation Loc) {
   unsigned InheritsID = Diag.getDiagnosticIDs()->getCustomDiagID(
-    DiagnosticIDs::Note, "%1 is a %0 type because it inherits from a %0 type %2");
+      DiagnosticIDs::Note,
+      "%1 is a %0 type because it inherits from a %0 type %2");
   unsigned MemberID = Diag.getDiagnosticIDs()->getCustomDiagID(
-    DiagnosticIDs::Note, "%1 is a %0 type because member %2 is a %0 type %3");
+      DiagnosticIDs::Note, "%1 is a %0 type because member %2 is a %0 type %3");
   unsigned ArrayID = Diag.getDiagnosticIDs()->getCustomDiagID(
-    DiagnosticIDs::Note, "%1 is a %0 type because it is an array of %0 type %2");
+      DiagnosticIDs::Note,
+      "%1 is a %0 type because it is an array of %0 type %2");
   unsigned TemplID = Diag.getDiagnosticIDs()->getCustomDiagID(
-    DiagnosticIDs::Note, "%1 is a %0 type because it has a template argument %0 type %2");
+      DiagnosticIDs::Note,
+      "%1 is a %0 type because it has a template argument %0 type %2");
 
   AnnotationReason Reason = directAnnotationReason(T);
   for (;;) {
     switch (Reason.Kind) {
     case RK_ArrayElement:
-      Diag.Report(Loc, ArrayID)
-        << Pretty << T << Reason.Type;
+      Diag.Report(Loc, ArrayID) << Pretty << T << Reason.Type;
       break;
-    case RK_BaseClass:
-      {
-        const CXXRecordDecl *Decl = T->getAsCXXRecordDecl();
-        assert(Decl && "This type should be a C++ class");
+    case RK_BaseClass: {
+      const CXXRecordDecl *Decl = T->getAsCXXRecordDecl();
+      assert(Decl && "This type should be a C++ class");
 
-        Diag.Report(Decl->getLocation(), InheritsID)
-          << Pretty << T << Reason.Type;
-        break;
-      }
+      Diag.Report(Decl->getLocation(), InheritsID) << Pretty << T
+                                                   << Reason.Type;
+      break;
+    }
     case RK_Field:
       Diag.Report(Reason.Field->getLocation(), MemberID)
-        << Pretty << T << Reason.Field << Reason.Type;
+          << Pretty << T << Reason.Field << Reason.Type;
       break;
-    case RK_TemplateInherited:
-      {
-        const CXXRecordDecl *Decl = T->getAsCXXRecordDecl();
-        assert(Decl && "This type should be a C++ class");
+    case RK_TemplateInherited: {
+      const CXXRecordDecl *Decl = T->getAsCXXRecordDecl();
+      assert(Decl && "This type should be a C++ class");
 
-        Diag.Report(Decl->getLocation(), TemplID)
-          << Pretty << T << Reason.Type;
-        break;
-      }
+      Diag.Report(Decl->getLocation(), TemplID) << Pretty << T << Reason.Type;
+      break;
+    }
     default:
       return;
     }
@@ -865,9 +849,10 @@ bool CustomTypeAnnotation::hasLiteralAnnotation(QualType T) const {
   return false;
 }
 
-CustomTypeAnnotation::AnnotationReason CustomTypeAnnotation::directAnnotationReason(QualType T) {
+CustomTypeAnnotation::AnnotationReason
+CustomTypeAnnotation::directAnnotationReason(QualType T) {
   if (hasLiteralAnnotation(T)) {
-    AnnotationReason Reason = { T, RK_Direct, nullptr };
+    AnnotationReason Reason = {T, RK_Direct, nullptr};
     return Reason;
   }
 
@@ -881,7 +866,8 @@ CustomTypeAnnotation::AnnotationReason CustomTypeAnnotation::directAnnotationRea
   
   if (const ArrayType *Array = T->getAsArrayTypeUnsafe()) {
     if (hasEffectiveAnnotation(Array->getElementType())) {
-      AnnotationReason Reason = { Array->getElementType(), RK_ArrayElement, nullptr };
+      AnnotationReason Reason = {Array->getElementType(), RK_ArrayElement,
+                                 nullptr};
       Cache[Key] = Reason;
       return Reason;
     }
@@ -894,7 +880,7 @@ CustomTypeAnnotation::AnnotationReason CustomTypeAnnotation::directAnnotationRea
 
       for (const CXXBaseSpecifier &Base : Decl->bases()) {
         if (hasEffectiveAnnotation(Base.getType())) {
-          AnnotationReason Reason = { Base.getType(), RK_BaseClass, nullptr };
+          AnnotationReason Reason = {Base.getType(), RK_BaseClass, nullptr};
           Cache[Key] = Reason;
           return Reason;
         }
@@ -903,7 +889,7 @@ CustomTypeAnnotation::AnnotationReason CustomTypeAnnotation::directAnnotationRea
       
       for (const FieldDecl *Field : Decl->fields()) {
         if (hasEffectiveAnnotation(Field->getType())) {
-          AnnotationReason Reason = { Field->getType(), RK_Field, Field };
+          AnnotationReason Reason = {Field->getType(), RK_Field, Field};
           Cache[Key] = Reason;
           return Reason;
         }
@@ -912,9 +898,9 @@ CustomTypeAnnotation::AnnotationReason CustomTypeAnnotation::directAnnotationRea
       
       
       if (MozChecker::hasCustomAnnotation(
-            Decl, "moz_inherit_type_annotations_from_template_args")) {
+              Decl, "moz_inherit_type_annotations_from_template_args")) {
         const ClassTemplateSpecializationDecl *Spec =
-          dyn_cast<ClassTemplateSpecializationDecl>(Decl);
+            dyn_cast<ClassTemplateSpecializationDecl>(Decl);
         if (Spec) {
           const TemplateArgumentList &Args = Spec->getTemplateArgs();
 
@@ -923,7 +909,7 @@ CustomTypeAnnotation::AnnotationReason CustomTypeAnnotation::directAnnotationRea
               QualType Type = Arg.getAsType();
 
               if (hasEffectiveAnnotation(Type)) {
-                AnnotationReason Reason = { Type, RK_TemplateInherited, nullptr };
+                AnnotationReason Reason = {Type, RK_TemplateInherited, nullptr};
                 Cache[Key] = Reason;
                 return Reason;
               }
@@ -934,7 +920,7 @@ CustomTypeAnnotation::AnnotationReason CustomTypeAnnotation::directAnnotationRea
     }
   }
 
-  AnnotationReason Reason = { QualType(), RK_None, nullptr };
+  AnnotationReason Reason = {QualType(), RK_None, nullptr};
   Cache[Key] = Reason;
   return Reason;
 }
@@ -954,102 +940,129 @@ DiagnosticsMatcher::DiagnosticsMatcher() {
   astMatcher.addMatcher(varDecl().bind("node"), &scopeChecker);
   astMatcher.addMatcher(newExpr().bind("node"), &scopeChecker);
   astMatcher.addMatcher(materializeTemporaryExpr().bind("node"), &scopeChecker);
-  astMatcher.addMatcher(callExpr(callee(functionDecl(heapAllocator()))).bind("node"),
-                        &scopeChecker);
+  astMatcher.addMatcher(
+      callExpr(callee(functionDecl(heapAllocator()))).bind("node"),
+      &scopeChecker);
 
-  astMatcher.addMatcher(callExpr(allOf(hasDeclaration(noArithmeticExprInArgs()),
-          anyOf(
-              hasDescendant(binaryOperator(allOf(binaryArithmeticOperator(),
-                  hasLHS(hasDescendant(declRefExpr())),
-                  hasRHS(hasDescendant(declRefExpr()))
-              )).bind("node")),
-              hasDescendant(unaryOperator(allOf(unaryArithmeticOperator(),
-                  hasUnaryOperand(allOf(hasType(builtinType()),
-                                        anyOf(hasDescendant(declRefExpr()), declRefExpr())))
-              )).bind("node"))
-          )
-      )).bind("call"),
-    &arithmeticArgChecker);
-  astMatcher.addMatcher(constructExpr(allOf(hasDeclaration(noArithmeticExprInArgs()),
-          anyOf(
-              hasDescendant(binaryOperator(allOf(binaryArithmeticOperator(),
-                  hasLHS(hasDescendant(declRefExpr())),
-                  hasRHS(hasDescendant(declRefExpr()))
-              )).bind("node")),
-              hasDescendant(unaryOperator(allOf(unaryArithmeticOperator(),
-                  hasUnaryOperand(allOf(hasType(builtinType()),
-                                        anyOf(hasDescendant(declRefExpr()), declRefExpr())))
-              )).bind("node"))
-          )
-      )).bind("call"),
-    &arithmeticArgChecker);
+  astMatcher.addMatcher(
+      callExpr(allOf(hasDeclaration(noArithmeticExprInArgs()),
+                     anyOf(hasDescendant(
+                               binaryOperator(
+                                   allOf(binaryArithmeticOperator(),
+                                         hasLHS(hasDescendant(declRefExpr())),
+                                         hasRHS(hasDescendant(declRefExpr()))))
+                                   .bind("node")),
+                           hasDescendant(
+                               unaryOperator(
+                                   allOf(unaryArithmeticOperator(),
+                                         hasUnaryOperand(allOf(
+                                             hasType(builtinType()),
+                                             anyOf(hasDescendant(declRefExpr()),
+                                                   declRefExpr())))))
+                                   .bind("node")))))
+          .bind("call"),
+      &arithmeticArgChecker);
+  astMatcher.addMatcher(
+      constructExpr(
+          allOf(hasDeclaration(noArithmeticExprInArgs()),
+                anyOf(hasDescendant(
+                          binaryOperator(
+                              allOf(binaryArithmeticOperator(),
+                                    hasLHS(hasDescendant(declRefExpr())),
+                                    hasRHS(hasDescendant(declRefExpr()))))
+                              .bind("node")),
+                      hasDescendant(
+                          unaryOperator(
+                              allOf(unaryArithmeticOperator(),
+                                    hasUnaryOperand(allOf(
+                                        hasType(builtinType()),
+                                        anyOf(hasDescendant(declRefExpr()),
+                                              declRefExpr())))))
+                              .bind("node")))))
+          .bind("call"),
+      &arithmeticArgChecker);
 
   astMatcher.addMatcher(recordDecl(hasTrivialCtorDtor()).bind("node"),
-    &trivialCtorDtorChecker);
+                        &trivialCtorDtorChecker);
 
-  astMatcher.addMatcher(binaryOperator(allOf(binaryEqualityOperator(),
-          hasLHS(has(declRefExpr(hasType(qualType((isFloat())))).bind("lhs"))),
-          hasRHS(has(declRefExpr(hasType(qualType((isFloat())))).bind("rhs"))),
-          unless(anyOf(isInSystemHeader(), isInSkScalarDotH()))
-      )).bind("node"),
-    &nanExprChecker);
-
-  
-  astMatcher.addMatcher(callExpr(callee(functionDecl(hasNoAddRefReleaseOnReturnAttr()).bind("func")),
-                                 hasParent(memberExpr(isAddRefOrRelease(),
-                                                      hasParent(callExpr())).bind("member")
-      )).bind("node"),
-    &noAddRefReleaseOnReturnChecker);
-  
-  
-  astMatcher.addMatcher(callExpr(callee(functionDecl(hasNoAddRefReleaseOnReturnAttr()).bind("func")),
-                                 hasParent(castExpr(hasParent(memberExpr(isAddRefOrRelease(),
-                                                                         hasParent(callExpr())).bind("member"))))
-      ).bind("node"),
-    &noAddRefReleaseOnReturnChecker);
+  astMatcher.addMatcher(
+      binaryOperator(
+          allOf(binaryEqualityOperator(),
+                hasLHS(has(
+                    declRefExpr(hasType(qualType((isFloat())))).bind("lhs"))),
+                hasRHS(has(
+                    declRefExpr(hasType(qualType((isFloat())))).bind("rhs"))),
+                unless(anyOf(isInSystemHeader(), isInSkScalarDotH()))))
+          .bind("node"),
+      &nanExprChecker);
 
   
+  astMatcher.addMatcher(
+      callExpr(
+          callee(functionDecl(hasNoAddRefReleaseOnReturnAttr()).bind("func")),
+          hasParent(memberExpr(isAddRefOrRelease(), hasParent(callExpr()))
+                        .bind("member")))
+          .bind("node"),
+      &noAddRefReleaseOnReturnChecker);
   
   
-  
-  astMatcher.addMatcher(lambdaExpr(
-            hasDescendant(declRefExpr(hasType(pointerType(pointee(isRefCounted()))),
-                                      to(decl().bind("decl"))).bind("declref")),
-            unless(hasDescendant(decl(equalsBoundNode("decl"))))
-        ),
-    &refCountedInsideLambdaChecker);
+  astMatcher.addMatcher(
+      callExpr(
+          callee(functionDecl(hasNoAddRefReleaseOnReturnAttr()).bind("func")),
+          hasParent(castExpr(
+              hasParent(memberExpr(isAddRefOrRelease(), hasParent(callExpr()))
+                            .bind("member")))))
+          .bind("node"),
+      &noAddRefReleaseOnReturnChecker);
 
   
   
   
-  astMatcher.addMatcher(methodDecl(anyOf(hasName("operator bool"),
-                                         hasName("operator _Bool"))).bind("node"),
-    &explicitOperatorBoolChecker);
-
-  astMatcher.addMatcher(recordDecl(allOf(decl().bind("decl"),
-                                         hasRefCntMember())),
-                        &noDuplicateRefCntMemberChecker);
-
-  astMatcher.addMatcher(classTemplateSpecializationDecl(
-             allOf(hasAnyTemplateArgument(refersToType(hasVTable())),
-                   hasNeedsNoVTableTypeAttr())).bind("node"),
-     &needsNoVTableTypeChecker);
+  
+  astMatcher.addMatcher(
+      lambdaExpr(hasDescendant(
+                     declRefExpr(hasType(pointerType(pointee(isRefCounted()))),
+                                 to(decl().bind("decl")))
+                         .bind("declref")),
+                 unless(hasDescendant(decl(equalsBoundNode("decl"))))),
+      &refCountedInsideLambdaChecker);
 
   
-  astMatcher.addMatcher(classTemplateSpecializationDecl(
-      allOf(needsMemMovable(),
-            hasAnyTemplateArgument(refersToType(isNonMemMovable())))
-      ).bind("specialization"),
+  
+  
+  astMatcher.addMatcher(
+      methodDecl(anyOf(hasName("operator bool"), hasName("operator _Bool")))
+          .bind("node"),
+      &explicitOperatorBoolChecker);
+
+  astMatcher.addMatcher(
+      recordDecl(allOf(decl().bind("decl"), hasRefCntMember())),
+      &noDuplicateRefCntMemberChecker);
+
+  astMatcher.addMatcher(
+      classTemplateSpecializationDecl(
+          allOf(hasAnyTemplateArgument(refersToType(hasVTable())),
+                hasNeedsNoVTableTypeAttr()))
+          .bind("node"),
+      &needsNoVTableTypeChecker);
+
+  
+  astMatcher.addMatcher(
+      classTemplateSpecializationDecl(
+          allOf(needsMemMovable(),
+                hasAnyTemplateArgument(refersToType(isNonMemMovable()))))
+          .bind("specialization"),
       &nonMemMovableChecker);
 
   astMatcher.addMatcher(
       constructorDecl(isInterestingImplicitCtor(),
                       ofClass(allOf(isConcreteClass(), decl().bind("class"))),
-                      unless(isMarkedImplicit())).bind("ctor"),
+                      unless(isMarkedImplicit()))
+          .bind("ctor"),
       &explicitImplicitChecker);
 
-  astMatcher.addMatcher(varDecl(hasType(autoNonAutoableType())
-                          ).bind("node"), &noAutoTypeChecker);
+  astMatcher.addMatcher(varDecl(hasType(autoNonAutoableType())).bind("node"),
+                        &noAutoTypeChecker);
 }
 
 
@@ -1088,7 +1101,8 @@ void DiagnosticsMatcher::ScopeChecker::run(
       T = E->getAllocatedType();
       Loc = E->getLocStart();
     }
-  } else if (const Expr *E = Result.Nodes.getNodeAs<MaterializeTemporaryExpr>("node")) {
+  } else if (const Expr *E =
+                 Result.Nodes.getNodeAs<MaterializeTemporaryExpr>("node")) {
     Variety = AV_Temporary;
     T = E->getType().getUnqualifiedType();
     Loc = E->getLocStart();
@@ -1113,7 +1127,8 @@ void DiagnosticsMatcher::ScopeChecker::run(
       DiagnosticIDs::Error, "variable of type %0 is not valid on the heap");
 
   unsigned StackNoteID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Note, "value incorrectly allocated in an automatic variable");
+      DiagnosticIDs::Note,
+      "value incorrectly allocated in an automatic variable");
   unsigned GlobalNoteID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "value incorrectly allocated in a global variable");
   unsigned HeapNoteID = Diag.getDiagnosticIDs()->getCustomDiagID(
@@ -1153,11 +1168,13 @@ void DiagnosticsMatcher::ArithmeticArgChecker::run(
     const MatchFinder::MatchResult &Result) {
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Error, "cannot pass an arithmetic expression of built-in types to %0");
+      DiagnosticIDs::Error,
+      "cannot pass an arithmetic expression of built-in types to %0");
   const Expr *expr = Result.Nodes.getNodeAs<Expr>("node");
   if (const CallExpr *call = Result.Nodes.getNodeAs<CallExpr>("call")) {
     Diag.Report(expr->getLocStart(), errorID) << call->getDirectCallee();
-  } else if (const CXXConstructExpr *ctr = Result.Nodes.getNodeAs<CXXConstructExpr>("call")) {
+  } else if (const CXXConstructExpr *ctr =
+                 Result.Nodes.getNodeAs<CXXConstructExpr>("call")) {
     Diag.Report(expr->getLocStart(), errorID) << ctr->getConstructor();
   }
 }
@@ -1166,7 +1183,8 @@ void DiagnosticsMatcher::TrivialCtorDtorChecker::run(
     const MatchFinder::MatchResult &Result) {
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Error, "class %0 must have trivial constructors and destructors");
+      DiagnosticIDs::Error,
+      "class %0 must have trivial constructors and destructors");
   const CXXRecordDecl *node = Result.Nodes.getNodeAs<CXXRecordDecl>("node");
 
   bool badCtor = !node->hasTrivialDefaultConstructor();
@@ -1179,12 +1197,14 @@ void DiagnosticsMatcher::NaNExprChecker::run(
     const MatchFinder::MatchResult &Result) {
   if (!Result.Context->getLangOpts().CPlusPlus) {
     
+    
     return;
   }
 
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Error, "comparing a floating point value to itself for NaN checking can lead to incorrect results");
+      DiagnosticIDs::Error, "comparing a floating point value to itself for "
+                            "NaN checking can lead to incorrect results");
   unsigned noteID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "consider using mozilla::IsNaN instead");
   const BinaryOperator *expr = Result.Nodes.getNodeAs<BinaryOperator>("node");
@@ -1200,12 +1220,11 @@ void DiagnosticsMatcher::NaNExprChecker::run(
   
   
   
-  if (lhs->getFoundDecl() == rhs->getFoundDecl() &&
-      lhsExpr && rhsExpr &&
+  
+  if (lhs->getFoundDecl() == rhs->getFoundDecl() && lhsExpr && rhsExpr &&
       std::distance(lhsExpr->child_begin(), lhsExpr->child_end()) == 1 &&
       std::distance(rhsExpr->child_begin(), rhsExpr->child_end()) == 1 &&
-      *lhsExpr->child_begin() == lhs &&
-      *rhsExpr->child_begin() == rhs) {
+      *lhsExpr->child_begin() == lhs && *rhsExpr->child_begin() == rhs) {
     Diag.Report(expr->getLocStart(), errorID);
     Diag.Report(expr->getLocStart(), noteID);
   }
@@ -1219,7 +1238,8 @@ void DiagnosticsMatcher::NoAddRefReleaseOnReturnChecker::run(
   const Stmt *node = Result.Nodes.getNodeAs<Stmt>("node");
   const FunctionDecl *func = Result.Nodes.getNodeAs<FunctionDecl>("func");
   const MemberExpr *member = Result.Nodes.getNodeAs<MemberExpr>("member");
-  const CXXMethodDecl *method = dyn_cast<CXXMethodDecl>(member->getMemberDecl());
+  const CXXMethodDecl *method =
+      dyn_cast<CXXMethodDecl>(member->getMemberDecl());
 
   Diag.Report(node->getLocStart(), errorID) << func << method;
 }
@@ -1228,13 +1248,14 @@ void DiagnosticsMatcher::RefCountedInsideLambdaChecker::run(
     const MatchFinder::MatchResult &Result) {
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Error, "Refcounted variable %0 of type %1 cannot be captured by a lambda");
+      DiagnosticIDs::Error,
+      "Refcounted variable %0 of type %1 cannot be captured by a lambda");
   unsigned noteID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "Please consider using a smart pointer");
   const DeclRefExpr *declref = Result.Nodes.getNodeAs<DeclRefExpr>("declref");
 
-  Diag.Report(declref->getLocStart(), errorID) << declref->getFoundDecl() <<
-    declref->getType()->getPointeeType();
+  Diag.Report(declref->getLocStart(), errorID)
+      << declref->getFoundDecl() << declref->getType()->getPointeeType();
   Diag.Report(declref->getLocStart(), noteID);
 }
 
@@ -1245,7 +1266,8 @@ void DiagnosticsMatcher::ExplicitOperatorBoolChecker::run(
       DiagnosticIDs::Error, "bad implicit conversion operator for %0");
   unsigned noteID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "consider adding the explicit keyword to %0");
-  const CXXConversionDecl *method = Result.Nodes.getNodeAs<CXXConversionDecl>("node");
+  const CXXConversionDecl *method =
+      Result.Nodes.getNodeAs<CXXConversionDecl>("node");
   const CXXRecordDecl *clazz = method->getParent();
 
   if (!method->isExplicitSpecified() &&
@@ -1261,23 +1283,29 @@ void DiagnosticsMatcher::NoDuplicateRefCntMemberChecker::run(
     const MatchFinder::MatchResult &Result) {
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned warningID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Error, "Refcounted record %0 has multiple mRefCnt members");
+      DiagnosticIDs::Error,
+      "Refcounted record %0 has multiple mRefCnt members");
   unsigned note1ID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "Superclass %0 also has an mRefCnt member");
   unsigned note2ID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Note, "Consider using the _INHERITED macros for AddRef and Release here");
+      DiagnosticIDs::Note,
+      "Consider using the _INHERITED macros for AddRef and Release here");
 
   const CXXRecordDecl *decl = Result.Nodes.getNodeAs<CXXRecordDecl>("decl");
   const FieldDecl *refCntMember = getClassRefCntMember(decl);
-  assert(refCntMember && "The matcher checked to make sure we have a refCntMember");
+  assert(refCntMember &&
+         "The matcher checked to make sure we have a refCntMember");
 
   
-  for (CXXRecordDecl::base_class_const_iterator base = decl->bases_begin(), e = decl->bases_end();
+  
+  for (CXXRecordDecl::base_class_const_iterator base = decl->bases_begin(),
+                                                e = decl->bases_end();
        base != e; ++base) {
     const FieldDecl *baseRefCntMember = getBaseRefCntMember(base->getType());
     if (baseRefCntMember) {
       Diag.Report(decl->getLocStart(), warningID) << decl;
-      Diag.Report(baseRefCntMember->getLocStart(), note1ID) << baseRefCntMember->getParent();
+      Diag.Report(baseRefCntMember->getLocStart(), note1ID)
+          << baseRefCntMember->getParent();
       Diag.Report(refCntMember->getLocStart(), note2ID);
     }
   }
@@ -1287,17 +1315,18 @@ void DiagnosticsMatcher::NeedsNoVTableTypeChecker::run(
     const MatchFinder::MatchResult &Result) {
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Error, "%0 cannot be instantiated because %1 has a VTable");
+      DiagnosticIDs::Error,
+      "%0 cannot be instantiated because %1 has a VTable");
   unsigned noteID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "bad instantiation of %0 requested here");
 
   const ClassTemplateSpecializationDecl *specialization =
-    Result.Nodes.getNodeAs<ClassTemplateSpecializationDecl>("node");
+      Result.Nodes.getNodeAs<ClassTemplateSpecializationDecl>("node");
 
   
   QualType offender;
   const TemplateArgumentList &args =
-    specialization->getTemplateInstantiationArgs();
+      specialization->getTemplateInstantiationArgs();
   for (unsigned i = 0; i < args.size(); ++i) {
     offender = args[i].getAsType();
     if (typeHasVTable(offender)) {
@@ -1305,46 +1334,53 @@ void DiagnosticsMatcher::NeedsNoVTableTypeChecker::run(
     }
   }
 
-  Diag.Report(specialization->getLocStart(), errorID) << specialization << offender;
-  Diag.Report(specialization->getPointOfInstantiation(), noteID) << specialization;
+  Diag.Report(specialization->getLocStart(), errorID) << specialization
+                                                      << offender;
+  Diag.Report(specialization->getPointOfInstantiation(), noteID)
+      << specialization;
 }
 
 void DiagnosticsMatcher::NonMemMovableChecker::run(
     const MatchFinder::MatchResult &Result) {
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Error, "Cannot instantiate %0 with non-memmovable template argument %1");
+      DiagnosticIDs::Error,
+      "Cannot instantiate %0 with non-memmovable template argument %1");
   unsigned note1ID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "instantiation of %0 requested here");
   unsigned note2ID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Note, "%0 is non-memmovable because of the MOZ_NON_MEMMOVABLE annotation on %1");
-  unsigned note3ID = Diag.getDiagnosticIDs()->getCustomDiagID(DiagnosticIDs::Note, "%0");
+      DiagnosticIDs::Note, "%0 is non-memmovable because of the "
+                           "MOZ_NON_MEMMOVABLE annotation on %1");
+  unsigned note3ID =
+      Diag.getDiagnosticIDs()->getCustomDiagID(DiagnosticIDs::Note, "%0");
 
   
   const ClassTemplateSpecializationDecl *specialization =
-    Result.Nodes.getNodeAs<ClassTemplateSpecializationDecl>("specialization");
+      Result.Nodes.getNodeAs<ClassTemplateSpecializationDecl>("specialization");
   SourceLocation requestLoc = specialization->getPointOfInstantiation();
   const CXXRecordDecl *templ =
-    specialization->getSpecializedTemplate()->getTemplatedDecl();
+      specialization->getSpecializedTemplate()->getTemplatedDecl();
 
   
   const TemplateArgumentList &args =
-    specialization->getTemplateInstantiationArgs();
+      specialization->getTemplateInstantiationArgs();
   for (unsigned i = 0; i < args.size(); ++i) {
     QualType argType = args[i].getAsType();
     if (isClassNonMemMovable(args[i].getAsType())) {
       const CXXRecordDecl *reason = findWhyClassIsNonMemMovable(argType);
-      Diag.Report(specialization->getLocation(), errorID)
-        << specialization << argType;
+      Diag.Report(specialization->getLocation(), errorID) << specialization
+                                                          << argType;
       
       
       
       
       
-      Diag.Report(requestLoc, note1ID)
-        << specialization;
-      Diag.Report(reason->getLocation(), note2ID)
-        << argType << reason;
+      
+      
+      
+      
+      Diag.Report(requestLoc, note1ID) << specialization;
+      Diag.Report(reason->getLocation(), note2ID) << argType << reason;
     }
   }
 }
@@ -1355,11 +1391,14 @@ void DiagnosticsMatcher::ExplicitImplicitChecker::run(
   unsigned ErrorID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Error, "bad implicit conversion constructor for %0");
   unsigned NoteID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Note, "consider adding the explicit keyword to the constructor");
+      DiagnosticIDs::Note,
+      "consider adding the explicit keyword to the constructor");
 
   
+  
 
-  const CXXConstructorDecl *Ctor = Result.Nodes.getNodeAs<CXXConstructorDecl>("ctor");
+  const CXXConstructorDecl *Ctor =
+      Result.Nodes.getNodeAs<CXXConstructorDecl>("ctor");
   const CXXRecordDecl *Decl = Result.Nodes.getNodeAs<CXXRecordDecl>("class");
 
   Diag.Report(Ctor->getLocation(), ErrorID) << Decl->getDeclName();
@@ -1382,7 +1421,8 @@ void DiagnosticsMatcher::NoAutoTypeChecker::run(
 
 class MozCheckAction : public PluginASTAction {
 public:
-  ASTConsumerPtr CreateASTConsumer(CompilerInstance &CI, StringRef fileName) override {
+  ASTConsumerPtr CreateASTConsumer(CompilerInstance &CI,
+                                   StringRef fileName) override {
 #if CLANG_VERSION_FULL >= 306
     std::unique_ptr<MozChecker> checker(llvm::make_unique<MozChecker>(CI));
     ASTConsumerPtr other(checker->getOtherConsumer());
@@ -1394,7 +1434,7 @@ public:
 #else
     MozChecker *checker = new MozChecker(CI);
 
-    ASTConsumer *consumers[] = { checker, checker->getOtherConsumer() };
+    ASTConsumer *consumers[] = {checker, checker->getOtherConsumer()};
     return new MultiplexConsumer(consumers);
 #endif
   }
@@ -1406,5 +1446,5 @@ public:
 };
 }
 
-static FrontendPluginRegistry::Add<MozCheckAction>
-X("moz-check", "check moz action");
+static FrontendPluginRegistry::Add<MozCheckAction> X("moz-check",
+                                                     "check moz action");
